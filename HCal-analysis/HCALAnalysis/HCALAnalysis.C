@@ -31,7 +31,7 @@ int HCALAnalysis::Init(PHCompositeNode *topNode)
 
   outputfile = new TFile(OutFileName,"RECREATE");
 
-  calenergy = new TNtuple("calenergy","calenergy","e_hcin:e_hcout:e_cemc:ea_hcin:ea_hcout:ea_cemc:ev_hcin:ev_hcout:ev_cemc"); 
+  calenergy = new TNtuple("calenergy","calenergy","e_hcin:e_hcout:e_cemc:ea_hcin:ea_hcout:ea_cemc:ev_hcin:ev_hcout:ev_cemc:e_magnet:e_bh:e_emcelect:e_hcalin_spt"); 
 
   return 0; 
 }
@@ -56,6 +56,8 @@ int HCALAnalysis::process_event(PHCompositeNode *topNode)
   float e_hcin = 0.0, e_hcout = 0.0, e_cemc = 0.0; 
   float ea_hcin = 0.0, ea_hcout = 0.0, ea_cemc = 0.0; 
   float ev_hcin = 0.0, ev_hcout = 0.0, ev_cemc = 0.0; 
+  float e_magnet = 0.0, e_bh = 0.0; 
+  float e_emcelect = 0.0, e_hcalin_spt = 0.0; 
 
   PHG4HitContainer::ConstRange hcalout_hit_range = _hcalout_hit_container->getHits();
   for (PHG4HitContainer::ConstIterator hit_iter = hcalout_hit_range.first;
@@ -126,9 +128,53 @@ int HCALAnalysis::process_event(PHCompositeNode *topNode)
 
   }
 
+  PHG4HitContainer::ConstRange magnet_hit_range = _magnet_hit_container->getHits();
+  for (PHG4HitContainer::ConstIterator hit_iter = magnet_hit_range.first;
+       hit_iter != magnet_hit_range.second; hit_iter++){
+
+    PHG4Hit *this_hit =  hit_iter->second;
+    assert(this_hit); 
+
+    e_magnet += this_hit->get_edep(); 
+
+  }
+
+  PHG4HitContainer::ConstRange bh_hit_range = _bh_hit_container->getHits();
+  for (PHG4HitContainer::ConstIterator hit_iter = bh_hit_range.first;
+       hit_iter != bh_hit_range.second; hit_iter++){
+
+    PHG4Hit *this_hit =  hit_iter->second;
+    assert(this_hit); 
+
+    e_bh += this_hit->get_edep(); 
+
+  }
+
+  PHG4HitContainer::ConstRange cemc_electronics_hit_range = _cemc_electronics_hit_container->getHits();
+  for (PHG4HitContainer::ConstIterator hit_iter = cemc_electronics_hit_range.first;
+       hit_iter != cemc_electronics_hit_range.second; hit_iter++){
+
+    PHG4Hit *this_hit =  hit_iter->second;
+    assert(this_hit); 
+
+    e_emcelect += this_hit->get_edep(); 
+
+  }
+
+  PHG4HitContainer::ConstRange hcalin_spt_hit_range = _hcalin_spt_hit_container->getHits();
+  for (PHG4HitContainer::ConstIterator hit_iter = hcalin_spt_hit_range.first;
+       hit_iter != hcalin_spt_hit_range.second; hit_iter++){
+
+    PHG4Hit *this_hit =  hit_iter->second;
+    assert(this_hit); 
+
+    e_hcalin_spt += this_hit->get_edep(); 
+
+  }
+
   // Fill the ntuple
 
-  float ntdata[9]; 
+  float ntdata[13]; 
  
   ntdata[0] = e_hcout; 
   ntdata[1] = e_hcin; 
@@ -139,6 +185,10 @@ int HCALAnalysis::process_event(PHCompositeNode *topNode)
   ntdata[6] = ev_hcout; 
   ntdata[7] = ev_hcin; 
   ntdata[8] = ev_cemc; 
+  ntdata[9] = e_magnet; 
+  ntdata[10] = e_bh; 
+  ntdata[11] = e_emcelect; 
+  ntdata[12] = e_hcalin_spt; 
 
   calenergy->Fill(ntdata); 
   
@@ -179,6 +229,18 @@ void HCALAnalysis::GetNodes(PHCompositeNode *topNode)
 
   _cemc_abs_hit_container = findNode::getClass<PHG4HitContainer> (topNode, "G4HIT_ABSORBER_CEMC");
   if(!_cemc_abs_hit_container) { std::cout << PHWHERE << ":: No G4HIT_CEMC! No sense continuing" << std::endl; exit(1);}
+
+  _magnet_hit_container = findNode::getClass<PHG4HitContainer> (topNode, "G4HIT_MAGNET_0");
+  if(!_magnet_hit_container) { std::cout << PHWHERE << ":: No G4HIT_MAGNET_0! No sense continuing" << std::endl; exit(1);}
+
+  _bh_hit_container = findNode::getClass<PHG4HitContainer> (topNode, "G4HIT_BH_1");
+  if(!_bh_hit_container) { std::cout << PHWHERE << ":: No G4HIT_BH_1! No sense continuing" << std::endl; exit(1);}
+
+  _cemc_electronics_hit_container = findNode::getClass<PHG4HitContainer> (topNode, "G4HIT_EMCELECTRONICS_0");
+  if(!_cemc_electronics_hit_container) { std::cout << PHWHERE << ":: No G4HIT_EMCELECTRONICS_0! No sense continuing" << std::endl; exit(1);}
+
+  _hcalin_spt_hit_container = findNode::getClass<PHG4HitContainer> (topNode, "G4HIT_HCALIN_SPT");
+  if(!_hcalin_spt_hit_container) { std::cout << PHWHERE << ":: No G4HIT_HCALIN_SPT! No sense continuing" << std::endl; exit(1);}
 
   return;
 }
