@@ -1,9 +1,12 @@
-void Fun4All_HCALAnalysis(int nEvents = 0, char *input_file = "G4sPHENIXCells.root", const char *outFile = "outfile.root")
+void Fun4All_HCALAnalysis(int nEvents = 0, char *input_file = "G4sPHENIXCells_LC.root", const char *outFile = "outfile_LC.root")
 {
   gSystem->Load("libfun4all");
   gSystem->Load("libphg4hit.so");
   gSystem->Load("libg4detectors.so");
   gSystem->Load("libg4picoDst.so");
+  gSystem->Load("libg4decayer.so");
+  gSystem->Load("libg4eval.so");   
+  gSystem->Load("libg4hough.so"); 
   gSystem->Load("libHCALAnalysis.so");
  
   ///////////////////////////////////////////
