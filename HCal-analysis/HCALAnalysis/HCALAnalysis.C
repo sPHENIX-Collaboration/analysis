@@ -31,7 +31,7 @@ int HCALAnalysis::Init(PHCompositeNode *topNode)
 
   outputfile = new TFile(OutFileName,"RECREATE");
 
-  calenergy = new TNtuple("calenergy","calenergy","e_hcin:e_hcout:e_cemc:ea_hcin:ea_hcout:ea_cemc:ev_hcin:ev_hcout:ev_cemc:e_magnet:e_bh:e_emcelect:e_hcalin_spt"); 
+  calenergy = new TNtuple("calenergy","calenergy","e_hcin:e_hcout:e_cemc:ea_hcin:ea_hcout:ea_cemc:ev_hcin:ev_hcout:ev_cemc:e_magnet:e_bh:e_emcelect:e_hcalin_spt:sfemc:sfihcal:sfohcal:sfvemc:sfvihcal:sfvohcal:LCG:emc_LCG:hcalin_LCG:hcalout_LCG"); 
 
   return 0; 
 }
@@ -59,6 +59,11 @@ int HCALAnalysis::process_event(PHCompositeNode *topNode)
   float e_magnet = 0.0, e_bh = 0.0; 
   float e_emcelect = 0.0, e_hcalin_spt = 0.0; 
 
+  float lcg = 0.0; //longitudinal center of gravity
+  float emc_lcg = 0.0; 
+  float hcalin_lcg = 0.0; 
+  float hcalout_lcg = 0.0; 
+
   PHG4HitContainer::ConstRange hcalout_hit_range = _hcalout_hit_container->getHits();
   for (PHG4HitContainer::ConstIterator hit_iter = hcalout_hit_range.first;
        hit_iter != hcalout_hit_range.second; hit_iter++){
@@ -68,6 +73,13 @@ int HCALAnalysis::process_event(PHCompositeNode *topNode)
 
     e_hcout += this_hit->get_edep(); 
     ev_hcout += this_hit->get_light_yield();
+
+    float rin =  sqrt(pow(this_hit->get_x(0),2)+pow(this_hit->get_y(0),2)); 
+    float rout =  sqrt(pow(this_hit->get_x(1),2)+pow(this_hit->get_y(1),2)); 
+    
+    lcg += this_hit->get_edep()*(rin + ((rout-rin)/2.0)); 
+    hcalout_lcg += this_hit->get_edep()*(rin + ((rout-rin)/2.0)); 
+    
 
   }
 
@@ -81,6 +93,12 @@ int HCALAnalysis::process_event(PHCompositeNode *topNode)
     e_hcin += this_hit->get_edep(); 
     ev_hcin += this_hit->get_light_yield();
 
+    float rin =  sqrt(pow(this_hit->get_x(0),2)+pow(this_hit->get_y(0),2)); 
+    float rout =  sqrt(pow(this_hit->get_x(1),2)+pow(this_hit->get_y(1),2)); 
+    
+    lcg += this_hit->get_edep()*(rin + ((rout-rin)/2.0)); 
+    hcalin_lcg += this_hit->get_edep()*(rin + ((rout-rin)/2.0)); 
+
   }
 
   PHG4HitContainer::ConstRange cemc_hit_range = _cemc_hit_container->getHits();
@@ -93,6 +111,12 @@ int HCALAnalysis::process_event(PHCompositeNode *topNode)
     e_cemc += this_hit->get_edep(); 
     ev_cemc += this_hit->get_light_yield();
 
+    float rin =  sqrt(pow(this_hit->get_x(0),2)+pow(this_hit->get_y(0),2)); 
+    float rout =  sqrt(pow(this_hit->get_x(1),2)+pow(this_hit->get_y(1),2)); 
+    
+    lcg += this_hit->get_edep()*(rin + ((rout-rin)/2.0)); 
+    emc_lcg += this_hit->get_edep()*(rin + ((rout-rin)/2.0)); 
+
   }
 
   PHG4HitContainer::ConstRange hcalout_abs_hit_range = _hcalout_abs_hit_container->getHits();
@@ -103,6 +127,12 @@ int HCALAnalysis::process_event(PHCompositeNode *topNode)
     assert(this_hit); 
 
     ea_hcout += this_hit->get_edep(); 
+
+    float rin =  sqrt(pow(this_hit->get_x(0),2)+pow(this_hit->get_y(0),2)); 
+    float rout =  sqrt(pow(this_hit->get_x(1),2)+pow(this_hit->get_y(1),2)); 
+    
+    lcg += this_hit->get_edep()*(rin + ((rout-rin)/2.0)); 
+    hcalout_lcg += this_hit->get_edep()*(rin + ((rout-rin)/2.0)); 
 
   }
 
@@ -115,6 +145,12 @@ int HCALAnalysis::process_event(PHCompositeNode *topNode)
 
     ea_hcin += this_hit->get_edep(); 
 
+    float rin =  sqrt(pow(this_hit->get_x(0),2)+pow(this_hit->get_y(0),2)); 
+    float rout =  sqrt(pow(this_hit->get_x(1),2)+pow(this_hit->get_y(1),2)); 
+    
+    lcg += this_hit->get_edep()*(rin + ((rout-rin)/2.0)); 
+    hcalin_lcg += this_hit->get_edep()*(rin + ((rout-rin)/2.0)); 
+
   }
 
   PHG4HitContainer::ConstRange cemc_abs_hit_range = _cemc_abs_hit_container->getHits();
@@ -126,6 +162,12 @@ int HCALAnalysis::process_event(PHCompositeNode *topNode)
 
     ea_cemc += this_hit->get_edep(); 
 
+    float rin =  sqrt(pow(this_hit->get_x(0),2)+pow(this_hit->get_y(0),2)); 
+    float rout =  sqrt(pow(this_hit->get_x(1),2)+pow(this_hit->get_y(1),2)); 
+    
+    lcg += this_hit->get_edep()*(rin + ((rout-rin)/2.0)); 
+    emc_lcg += this_hit->get_edep()*(rin + ((rout-rin)/2.0)); 
+
   }
 
   PHG4HitContainer::ConstRange magnet_hit_range = _magnet_hit_container->getHits();
@@ -136,6 +178,11 @@ int HCALAnalysis::process_event(PHCompositeNode *topNode)
     assert(this_hit); 
 
     e_magnet += this_hit->get_edep(); 
+
+    float rin =  sqrt(pow(this_hit->get_x(0),2)+pow(this_hit->get_y(0),2)); 
+    float rout =  sqrt(pow(this_hit->get_x(1),2)+pow(this_hit->get_y(1),2)); 
+    
+    lcg += this_hit->get_edep()*(rin + ((rout-rin)/2.0)); 
 
   }
 
@@ -159,6 +206,11 @@ int HCALAnalysis::process_event(PHCompositeNode *topNode)
 
     e_emcelect += this_hit->get_edep(); 
 
+    float rin =  sqrt(pow(this_hit->get_x(0),2)+pow(this_hit->get_y(0),2)); 
+    float rout =  sqrt(pow(this_hit->get_x(1),2)+pow(this_hit->get_y(1),2)); 
+    
+    lcg += this_hit->get_edep()*(rin + ((rout-rin)/2.0)); 
+
   }
 
   PHG4HitContainer::ConstRange hcalin_spt_hit_range = _hcalin_spt_hit_container->getHits();
@@ -170,11 +222,23 @@ int HCALAnalysis::process_event(PHCompositeNode *topNode)
 
     e_hcalin_spt += this_hit->get_edep(); 
 
+    float rin =  sqrt(pow(this_hit->get_x(0),2)+pow(this_hit->get_y(0),2)); 
+    float rout =  sqrt(pow(this_hit->get_x(1),2)+pow(this_hit->get_y(1),2)); 
+    
+    lcg += this_hit->get_edep()*(rin + ((rout-rin)/2.0)); 
+
   }
+
+  //normalize the LCG
+  
+  lcg = lcg/(e_cemc+ea_cemc+e_emcelect+e_hcin+ea_hcin+e_hcalin_spt+e_hcout+ea_hcout+e_magnet);
+  hcalin_lcg = hcalin_lcg/(e_hcin+ea_hcin);
+  hcalout_lcg = hcalout_lcg/(e_hcout+ea_hcout);
+  emc_lcg = emc_lcg/(e_cemc+ea_cemc);
 
   // Fill the ntuple
 
-  float ntdata[13]; 
+  float ntdata[23]; 
  
   ntdata[0] = e_hcout; 
   ntdata[1] = e_hcin; 
@@ -189,6 +253,20 @@ int HCALAnalysis::process_event(PHCompositeNode *topNode)
   ntdata[10] = e_bh; 
   ntdata[11] = e_emcelect; 
   ntdata[12] = e_hcalin_spt; 
+
+  ntdata[13] = e_cemc/(e_cemc + ea_cemc + e_emcelect);
+  ntdata[14] = e_hcin/(e_hcin + ea_hcin + e_hcalin_spt);
+  ntdata[15] = e_hcout/(e_hcout + ea_hcout);
+
+  ntdata[16] = ev_cemc/(e_cemc + ea_cemc + e_emcelect);
+  ntdata[17] = ev_hcin/(e_hcin + ea_hcin + e_hcalin_spt);
+  ntdata[18] = ev_hcout/(e_hcout + ea_hcout);
+
+  ntdata[19] = lcg; 
+
+  ntdata[20] = emc_lcg; 
+  ntdata[21] = hcalin_lcg; 
+  ntdata[22] = hcalout_lcg; 
 
   calenergy->Fill(ntdata); 
   
