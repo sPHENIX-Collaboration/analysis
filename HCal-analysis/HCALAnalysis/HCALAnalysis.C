@@ -240,14 +240,14 @@ int HCALAnalysis::process_event(PHCompositeNode *topNode)
 
   float ntdata[23]; 
  
-  ntdata[0] = e_hcout; 
-  ntdata[1] = e_hcin; 
+  ntdata[0] = e_hcin; 
+  ntdata[1] = e_hcout; 
   ntdata[2] = e_cemc; 
-  ntdata[3] = ea_hcout; 
-  ntdata[4] = ea_hcin; 
+  ntdata[3] = ea_hcin; 
+  ntdata[4] = ea_hcout; 
   ntdata[5] = ea_cemc; 
-  ntdata[6] = ev_hcout; 
-  ntdata[7] = ev_hcin; 
+  ntdata[6] = ev_hcin; 
+  ntdata[7] = ev_hcout; 
   ntdata[8] = ev_cemc; 
   ntdata[9] = e_magnet; 
   ntdata[10] = e_bh; 
@@ -269,6 +269,15 @@ int HCALAnalysis::process_event(PHCompositeNode *topNode)
   ntdata[22] = hcalout_lcg; 
 
   calenergy->Fill(ntdata); 
+  
+  // crosscheck
+
+    //std::cout << std::endl; 
+    //std::cout << "ev_cemc = " << ev_cemc << " e_cemc + ea_cemc + e_emcelect = " << e_cemc + ea_cemc + e_emcelect << " ev_cemc/sfvemc " << ntdata[8]/ntdata[16] << std::endl; 
+    //std::cout << "ev_hcin = " << ev_hcin << " e_hcin + ea_hcin + e_hcalin_spt = " << e_hcin + ea_hcin + e_hcalin_spt << " ev_hcin/sfihcal " << ntdata[7]/ntdata[17] << std::endl; 
+    //std::cout << "ev_hcout = " << ev_hcout << " e_hcout + ea_hcout = " << e_hcout + ea_hcout << " ev_hcout/sfohcal " << ntdata[6]/ntdata[18] << std::endl; 
+    //std::cout << std::endl; 
+
   
   // any other return code might lead to aborting the event or analysis for everyone
   return 0;
