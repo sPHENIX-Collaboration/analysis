@@ -31,7 +31,7 @@ int HCALAnalysis::Init(PHCompositeNode *topNode)
 
   outputfile = new TFile(OutFileName,"RECREATE");
 
-  calenergy = new TNtuple("calenergy","calenergy","e_hcin:e_hcout:e_cemc:ea_hcin:ea_hcout:ea_cemc:ev_hcin:ev_hcout:ev_cemc:e_magnet:e_bh:e_emcelect:e_hcalin_spt:sfemc:sfihcal:sfohcal:sfvemc:sfvihcal:sfvohcal:LCG:emc_LCG:hcalin_LCG:hcalout_LCG"); 
+  calenergy = new TNtuple("calenergy","calenergy","e_hcin:e_hcout:e_cemc:ea_hcin:ea_hcout:ea_cemc:ev_hcin:ev_hcout:ev_cemc:e_magnet:e_bh:e_emcelect:e_hcalin_spt:sfemc:sfihcal:sfohcal:sfvemc:sfvihcal:sfvohcal:LCG:emc_LCG:hcalin_LCG:hcalout_LCG:e_svtx:e_svtx_support:e_bh_plus:e_bh_minus"); 
 
   return 0; 
 }
@@ -58,6 +58,8 @@ int HCALAnalysis::process_event(PHCompositeNode *topNode)
   float ev_hcin = 0.0, ev_hcout = 0.0, ev_cemc = 0.0; 
   float e_magnet = 0.0, e_bh = 0.0; 
   float e_emcelect = 0.0, e_hcalin_spt = 0.0; 
+  float e_svtx = 0.0, e_svtx_support = 0.0; 
+  float e_bh_plus = 0.0, e_bh_minus = 0.0; 
 
   float lcg = 0.0; //longitudinal center of gravity
   float emc_lcg = 0.0; 
@@ -197,6 +199,28 @@ int HCALAnalysis::process_event(PHCompositeNode *topNode)
 
   }
 
+  PHG4HitContainer::ConstRange bh_plus_hit_range = _bh_plus_hit_container->getHits();
+  for (PHG4HitContainer::ConstIterator hit_iter = bh_plus_hit_range.first;
+       hit_iter != bh_plus_hit_range.second; hit_iter++){
+
+    PHG4Hit *this_hit =  hit_iter->second;
+    assert(this_hit); 
+
+    e_bh_plus += this_hit->get_edep(); 
+
+  }
+
+  PHG4HitContainer::ConstRange bh_minus_hit_range = _bh_minus_hit_container->getHits();
+  for (PHG4HitContainer::ConstIterator hit_iter = bh_minus_hit_range.first;
+       hit_iter != bh_minus_hit_range.second; hit_iter++){
+
+    PHG4Hit *this_hit =  hit_iter->second;
+    assert(this_hit); 
+
+    e_bh_minus += this_hit->get_edep(); 
+
+  }
+
   PHG4HitContainer::ConstRange cemc_electronics_hit_range = _cemc_electronics_hit_container->getHits();
   for (PHG4HitContainer::ConstIterator hit_iter = cemc_electronics_hit_range.first;
        hit_iter != cemc_electronics_hit_range.second; hit_iter++){
@@ -229,6 +253,30 @@ int HCALAnalysis::process_event(PHCompositeNode *topNode)
 
   }
 
+  // SVTX
+
+  PHG4HitContainer::ConstRange svtx_hit_range = _svtx_hit_container->getHits();
+  for (PHG4HitContainer::ConstIterator hit_iter = svtx_hit_range.first;
+       hit_iter != svtx_hit_range.second; hit_iter++){
+
+    PHG4Hit *this_hit =  hit_iter->second;
+    assert(this_hit); 
+
+    e_svtx += this_hit->get_edep();    
+
+  }
+
+  PHG4HitContainer::ConstRange svtx_support_hit_range = _svtx_support_hit_container->getHits();
+  for (PHG4HitContainer::ConstIterator hit_iter = svtx_support_hit_range.first;
+       hit_iter != svtx_support_hit_range.second; hit_iter++){
+
+    PHG4Hit *this_hit =  hit_iter->second;
+    assert(this_hit); 
+
+    e_svtx_support += this_hit->get_edep();    
+
+  }
+
   //normalize the LCG
   
   lcg = lcg/(e_cemc+ea_cemc+e_emcelect+e_hcin+ea_hcin+e_hcalin_spt+e_hcout+ea_hcout+e_magnet);
@@ -238,7 +286,7 @@ int HCALAnalysis::process_event(PHCompositeNode *topNode)
 
   // Fill the ntuple
 
-  float ntdata[23]; 
+  float ntdata[27]; 
  
   ntdata[0] = e_hcin; 
   ntdata[1] = e_hcout; 
@@ -267,6 +315,12 @@ int HCALAnalysis::process_event(PHCompositeNode *topNode)
   ntdata[20] = emc_lcg; 
   ntdata[21] = hcalin_lcg; 
   ntdata[22] = hcalout_lcg; 
+
+  ntdata[23] = e_svtx; 
+  ntdata[24] = e_svtx_support; 
+
+  ntdata[25] = e_bh_plus; 
+  ntdata[26] = e_bh_minus; 
 
   calenergy->Fill(ntdata); 
   
@@ -328,6 +382,18 @@ void HCALAnalysis::GetNodes(PHCompositeNode *topNode)
 
   _hcalin_spt_hit_container = findNode::getClass<PHG4HitContainer> (topNode, "G4HIT_HCALIN_SPT");
   if(!_hcalin_spt_hit_container) { std::cout << PHWHERE << ":: No G4HIT_HCALIN_SPT! No sense continuing" << std::endl; exit(1);}
+
+  _svtx_hit_container = findNode::getClass<PHG4HitContainer> (topNode, "G4HIT_SVTX");
+  if(!_svtx_hit_container) { std::cout << PHWHERE << ":: No G4HIT_SVTX! No sense continuing" << std::endl; exit(1);}
+
+  _svtx_support_hit_container = findNode::getClass<PHG4HitContainer> (topNode, "G4HIT_SVTXSUPPORT");
+  if(!_svtx_support_hit_container) { std::cout << PHWHERE << ":: No G4HIT_SVTX_SUPPORT! No sense continuing" << std::endl; exit(1);}
+
+  _bh_plus_hit_container = findNode::getClass<PHG4HitContainer> (topNode, "G4HIT_BH_FORWARD_PLUS");
+  if(!_bh_plus_hit_container) { std::cout << PHWHERE << ":: No G4HIT_BH_FORWARD_PLUS! No sense continuing" << std::endl; exit(1);}
+
+  _bh_minus_hit_container = findNode::getClass<PHG4HitContainer> (topNode, "G4HIT_BH_FORWARD_NEG");
+  if(!_bh_minus_hit_container) { std::cout << PHWHERE << ":: No G4HIT_BH_FORWARD_NEG! No sense continuing" << std::endl; exit(1);}
 
   return;
 }

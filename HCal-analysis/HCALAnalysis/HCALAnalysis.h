@@ -35,8 +35,12 @@ class HCALAnalysis: public SubsysReco
   PHG4HitContainer* _cemc_abs_hit_container; 
   PHG4HitContainer* _magnet_hit_container; 
   PHG4HitContainer* _bh_hit_container; 
+  PHG4HitContainer* _bh_plus_hit_container; 
+  PHG4HitContainer* _bh_minus_hit_container; 
   PHG4HitContainer* _cemc_electronics_hit_container; 
   PHG4HitContainer* _hcalin_spt_hit_container; 
+  PHG4HitContainer* _svtx_hit_container; 
+  PHG4HitContainer* _svtx_support_hit_container; 
   
   TFile *outputfile; 
   TNtuple *calenergy; 
