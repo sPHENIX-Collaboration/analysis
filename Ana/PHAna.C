@@ -9,7 +9,6 @@
 #include "fun4all/Fun4AllServer.h"
 #include <TNtuple.h>
 #include "PHAna.h"
-#include <assert.h>
 #include <TH1.h>
 
 using namespace std;
@@ -106,7 +105,6 @@ void PHAna::fill_sf_ntuple(PHCompositeNode *topNode)
        hit_iter != hcalout_hit_range.second; hit_iter++)
     {
      PHG4Hit *this_hit =  hit_iter->second;
-     assert(this_hit);
      e_hcout += this_hit->get_edep();
      ev_hcout += this_hit->get_light_yield();
     }
@@ -118,7 +116,6 @@ void PHAna::fill_sf_ntuple(PHCompositeNode *topNode)
        hit_iter != hcalout_abs_hit_range.second; hit_iter++)
    {
     PHG4Hit *this_hit =  hit_iter->second;
-    assert(this_hit);
     ea_hcout += this_hit->get_edep();
    }
   
@@ -130,7 +127,6 @@ void PHAna::fill_sf_ntuple(PHCompositeNode *topNode)
        hit_iter != hcalin_hit_range.second; hit_iter++)
    {
     PHG4Hit *this_hit =  hit_iter->second;
-    assert(this_hit);
     e_hcin += this_hit->get_edep();
     ev_hcin += this_hit->get_light_yield();
    }
@@ -142,7 +138,6 @@ void PHAna::fill_sf_ntuple(PHCompositeNode *topNode)
        hit_iter != hcalin_abs_hit_range.second; hit_iter++)
    {
     PHG4Hit *this_hit =  hit_iter->second;
-    assert(this_hit);
 
     ea_hcin += this_hit->get_edep();
    }
@@ -152,7 +147,6 @@ void PHAna::fill_sf_ntuple(PHCompositeNode *topNode)
        hit_iter != hcalin_spt_hit_range.second; hit_iter++)
    {
     PHG4Hit *this_hit =  hit_iter->second;
-    assert(this_hit);
     ea_hcin += this_hit->get_edep();
    }
 
@@ -164,7 +158,6 @@ void PHAna::fill_sf_ntuple(PHCompositeNode *topNode)
        hit_iter != cemc_hit_range.second; hit_iter++)
    {
     PHG4Hit *this_hit =  hit_iter->second;
-    assert(this_hit);
 
     e_cemc += this_hit->get_edep();
     ev_cemc += this_hit->get_light_yield();
@@ -177,7 +170,6 @@ void PHAna::fill_sf_ntuple(PHCompositeNode *topNode)
        hit_iter != cemc_abs_hit_range.second; hit_iter++)
    {
     PHG4Hit *this_hit =  hit_iter->second;
-    assert(this_hit);
     ea_cemc += this_hit->get_edep();
    }
 
@@ -186,7 +178,6 @@ void PHAna::fill_sf_ntuple(PHCompositeNode *topNode)
        hit_iter != cemc_electronics_hit_range.second; hit_iter++)
    {
     PHG4Hit *this_hit =  hit_iter->second;
-    assert(this_hit);
 
     ea_cemc += this_hit->get_edep();
    }
