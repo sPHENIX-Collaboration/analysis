@@ -90,8 +90,9 @@ void PHAna::fill_truth_ntuple(PHCompositeNode *topNode)
    ntvars[3] = sqrt(Square(particle->get_px())+Square(particle->get_py()));
    ntvars[4] = atan2(particle->get_py(), particle->get_px());
    ntvars[5] = particle->get_pid();
-  }
   _truth->Fill( ntvars );
+  }
+
 }
 
 //_____________________________________
@@ -182,6 +183,7 @@ void PHAna::fill_sf_ntuple(PHCompositeNode *topNode)
     ea_cemc += this_hit->get_edep();
    }
 
+
   float ntvars[4];
   ntvars[0] = _event;
   ntvars[1] = ev_hcin/(e_hcin+ea_hcin);
@@ -212,77 +214,40 @@ void PHAna::GetNodes(PHCompositeNode *topNode)
 {
  //DST objects
  //Truth container
-  try{
   _truth_container = findNode::getClass<PHG4TruthInfoContainer>(topNode, "G4TruthInfo");
-  } catch( std::exception& e)
-  {
-   if(_event<2) cout << PHWHERE << e.what() << endl;
-  }
+  if(!_truth_container && _event<2) cout << PHWHERE << " PHG4TruthInfoContainer node not found on node tree" << endl;
 
  //Outer HCal hit container
- try{
   _hcalout_hit_container = findNode::getClass<PHG4HitContainer> (topNode, "G4HIT_HCALOUT");
-   } catch (std::exception& e)
-   {
-    if(_event<2) cout << PHWHERE << e.what() << endl;
-   }
+  if(!_hcalout_hit_container && _event<2) cout << PHWHERE << " G4HIT_HCALOUT node not found on node tree" << endl;
 
   //Outer HCal absorber hit container
-  try{
     _hcalout_abs_hit_container = findNode::getClass<PHG4HitContainer> (topNode, "G4HIT_ABSORBER_HCALOUT");
-   } catch (std::exception& e)
-   {
-    if(_event<2) cout << PHWHERE << e.what() << endl;
-   }
+   if(!_hcalout_abs_hit_container && _event<2) cout << PHWHERE << " G4HIT_ABSORBER_HCALOUT node not found on node tree" << endl;
   
  //Inner HCal hit container
- try{
    _hcalin_hit_container = findNode::getClass<PHG4HitContainer> (topNode, "G4HIT_HCALIN");
-    } catch (std::exception& e)
-   {
-    if(_event<2) cout << PHWHERE << e.what() << endl;
-   }
- 
+    if(!_hcalin_hit_container && _event<2) cout << PHWHERE << " G4HIT_HCALIN node not found on node tree" << endl;
+
  //Inner HCal absorber hit container
- try{
   _hcalin_abs_hit_container = findNode::getClass<PHG4HitContainer> (topNode, "G4HIT_ABSORBER_HCALIN");
-  } catch (std::exception& e)
-   {
-    if(_event<2) cout << PHWHERE << e.what() << endl;
-   }
+   if(!_hcalin_abs_hit_container && _event<2) cout << PHWHERE << " G4HIT_ABSORBER_HCALIN node not found on node tree" << endl;
 
   //Inner HCal support structure hit container
-  try{
      _hcalin_spt_hit_container = findNode::getClass<PHG4HitContainer> (topNode, "G4HIT_HCALIN_SPT");
-     } catch (std::exception& e)
-   {
-    if(_event<2) cout << PHWHERE << e.what() << endl;
-   }
+   if(!_hcalin_spt_hit_container && _event<2) cout << PHWHERE << " G4HIT_HCALIN_SPT node not found on node tree" << endl;
 
   //EMCAL hit container
-  try{
     _cemc_hit_container = findNode::getClass<PHG4HitContainer> (topNode, "G4HIT_CEMC");
-    } catch (std::exception& e)
-   {
-    if(_event<2) cout << PHWHERE << e.what() << endl;
-   }
+   if(!_cemc_hit_container && _event<2) cout << PHWHERE << " G4HIT_CEMC node not found on node tree" << endl;
 
   //EMCal absorber hit container
-  try{
      _cemc_abs_hit_container = findNode::getClass<PHG4HitContainer> (topNode, "G4HIT_ABSORBER_CEMC");
-     } catch (std::exception& e)
-   {
-    if(_event<2) cout << PHWHERE << e.what() << endl;
-   }
- 
-  //EMCal Electronics hit container
-  try{
-   _cemc_electronics_hit_container = findNode::getClass<PHG4HitContainer> (topNode, "G4HIT_EMCELECTRONICS_0");
-     } catch (std::exception& e)
-   {
-    if(_event<2) cout << PHWHERE << e.what() << endl;
-   }
+   if(!_cemc_abs_hit_container && _event<2) cout << PHWHERE << " G4HIT_ABSORBER_CEMC node not found on node tree" << endl;
 
+  //EMCal Electronics hit container
+   _cemc_electronics_hit_container = findNode::getClass<PHG4HitContainer> (topNode, "G4HIT_CEMC_ELECTRONICS");
+   if(!_cemc_electronics_hit_container && _event<2) cout << PHWHERE << " G4HIT_CEMC_EMCELECTRONICS node not found on node tree" << endl;
 
 }
 
