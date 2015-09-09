@@ -54,7 +54,6 @@ int SvtxSimPerformanceCheckReco::Init(PHCompositeNode *topNode) {
 
   // register histograms
   Fun4AllServer *se = Fun4AllServer::instance();
-  Fun4AllHistoManager *hm = se->getHistoManager("HISTOS");
 
   _truept_dptoverpt = new TH2D("truept_dptoverpt",
 			       "truept_dptoverpt",
@@ -139,35 +138,35 @@ int SvtxSimPerformanceCheckReco::Init(PHCompositeNode *topNode) {
 			"dz_vertex",
 			200,-0.1,0.1);
   
-  hm->registerHisto(_truept_dptoverpt);                    
+  se->registerHisto(_truept_dptoverpt);                    
 
-  hm->registerHisto(_truept_dca);                          
+  se->registerHisto(_truept_dca);                          
  
-  hm->registerHisto(_truept_particles_leaving7Hits);       
+  se->registerHisto(_truept_particles_leaving7Hits);       
 
-  hm->registerHisto(_truept_particles_recoWithExactHits);  
-  hm->registerHisto(_truept_particles_recoWithin1Hit);
-  hm->registerHisto(_truept_particles_recoWithin2Hits);
+  se->registerHisto(_truept_particles_recoWithExactHits);  
+  se->registerHisto(_truept_particles_recoWithin1Hit);
+  se->registerHisto(_truept_particles_recoWithin2Hits);
 
-  hm->registerHisto(_truept_particles_recoWithin2Percent); 
-  hm->registerHisto(_truept_particles_recoWithin4Percent);
-  hm->registerHisto(_truept_particles_recoWithin6Percent);
+  se->registerHisto(_truept_particles_recoWithin2Percent); 
+  se->registerHisto(_truept_particles_recoWithin4Percent);
+  se->registerHisto(_truept_particles_recoWithin6Percent);
 
-  hm->registerHisto(_recopt_tracks_all);                   
+  se->registerHisto(_recopt_tracks_all);                   
  
-  hm->registerHisto(_recopt_tracks_recoWithExactHits);     
-  hm->registerHisto(_recopt_tracks_recoWithin1Hit);
-  hm->registerHisto(_recopt_tracks_recoWithin2Hits);
+  se->registerHisto(_recopt_tracks_recoWithExactHits);     
+  se->registerHisto(_recopt_tracks_recoWithin1Hit);
+  se->registerHisto(_recopt_tracks_recoWithin2Hits);
 
-  hm->registerHisto(_recopt_tracks_recoWithin2Percent);    
-  hm->registerHisto(_recopt_tracks_recoWithin4Percent);
-  hm->registerHisto(_recopt_tracks_recoWithin6Percent);
+  se->registerHisto(_recopt_tracks_recoWithin2Percent);    
+  se->registerHisto(_recopt_tracks_recoWithin4Percent);
+  se->registerHisto(_recopt_tracks_recoWithin6Percent);
 
-  hm->registerHisto(_recopt_quality);                     
+  se->registerHisto(_recopt_quality);                     
  
-  hm->registerHisto(_dx_vertex);                          
-  hm->registerHisto(_dy_vertex);
-  hm->registerHisto(_dz_vertex);
+  se->registerHisto(_dx_vertex);                          
+  se->registerHisto(_dy_vertex);
+  se->registerHisto(_dz_vertex);
   
   return 0;
 }
@@ -198,7 +197,7 @@ int SvtxSimPerformanceCheckReco::process_event(PHCompositeNode *topNode) {
   // create SVTX eval stack
   SvtxEvalStack svtxevalstack(topNode);
 
-  SvtxVertexEval*   vertexeval = svtxevalstack.get_vertex_eval();
+  //SvtxVertexEval*   vertexeval = svtxevalstack.get_vertex_eval();
   SvtxTrackEval*     trackeval = svtxevalstack.get_track_eval();
   SvtxTruthEval*     trutheval = svtxevalstack.get_truth_eval();
   
@@ -310,11 +309,11 @@ int SvtxSimPerformanceCheckReco::process_event(PHCompositeNode *topNode) {
     }    
   }
 
-  PHG4VtxPoint* point = vertexeval->max_truth_point_by_ntracks(maxvertex);
+  //PHG4VtxPoint* point = vertexeval->max_truth_point_by_ntracks(maxvertex);
 
-  _dx_vertex->Fill(maxvertex->get_x() - point->get_x());
-  _dy_vertex->Fill(maxvertex->get_y() - point->get_y());
-  _dz_vertex->Fill(maxvertex->get_z() - point->get_z());
+  _dx_vertex->Fill(maxvertex->get_x());// - point->get_x());
+  _dy_vertex->Fill(maxvertex->get_y());// - point->get_y());
+  _dz_vertex->Fill(maxvertex->get_z());// - point->get_z());
   
   return 0;
 }
