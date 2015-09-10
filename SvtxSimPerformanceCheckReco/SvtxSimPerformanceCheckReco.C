@@ -34,16 +34,16 @@ SvtxSimPerformanceCheckReco::SvtxSimPerformanceCheckReco(const string &name)
     _truept_particles_recoWithExactHits(NULL),
     _truept_particles_recoWithin1Hit(NULL),
     _truept_particles_recoWithin2Hits(NULL),
-    _truept_particles_recoWithin2Percent(NULL),
+    _truept_particles_recoWithin3Percent(NULL),
     _truept_particles_recoWithin4Percent(NULL),
-    _truept_particles_recoWithin6Percent(NULL),
+    _truept_particles_recoWithin5Percent(NULL),
     _recopt_tracks_all(NULL),
     _recopt_tracks_recoWithExactHits(NULL),
     _recopt_tracks_recoWithin1Hit(NULL),
     _recopt_tracks_recoWithin2Hits(NULL),
-    _recopt_tracks_recoWithin2Percent(NULL),
+    _recopt_tracks_recoWithin3Percent(NULL),
     _recopt_tracks_recoWithin4Percent(NULL),
-    _recopt_tracks_recoWithin6Percent(NULL),
+    _recopt_tracks_recoWithin5Percent(NULL),
     _recopt_quality(NULL),
     _dx_vertex(NULL),
     _dy_vertex(NULL),
@@ -58,7 +58,7 @@ int SvtxSimPerformanceCheckReco::Init(PHCompositeNode *topNode) {
   _truept_dptoverpt = new TH2D("truept_dptoverpt",
 			       "truept_dptoverpt",
 			       40,0.0,40.0,
-			       200,0.0,2.0);
+			       200,-0.5,0.5);
   
   _truept_dca = new TH2D("truept_dca",
 			 "truept_dca",
@@ -81,16 +81,16 @@ int SvtxSimPerformanceCheckReco::Init(PHCompositeNode *topNode) {
 					       "truept_particles_recoWithin2Hits",
 					       20,0.0,10.0);
   
-  _truept_particles_recoWithin2Percent = new TH1D("truept_particles_recoWithin2Percent",
-						  "truept_particles_recoWithin2Percent",
+  _truept_particles_recoWithin3Percent = new TH1D("truept_particles_recoWithin3Percent",
+						  "truept_particles_recoWithin3Percent",
 						  20,0.0,10.0);
 
   _truept_particles_recoWithin4Percent = new TH1D("truept_particles_recoWithin4Percent",
 						  "truept_particles_recoWithin4Percent",
 						  20,0.0,10.0);
 
-  _truept_particles_recoWithin6Percent = new TH1D("truept_particles_recoWithin6Percent",
-						  "truept_particles_recoWithin6Percent",
+  _truept_particles_recoWithin5Percent = new TH1D("truept_particles_recoWithin5Percent",
+						  "truept_particles_recoWithin5Percent",
 						  20,0.0,10.0);
 
   _recopt_tracks_all = new TH1D("recopt_tracks_all",
@@ -109,16 +109,16 @@ int SvtxSimPerformanceCheckReco::Init(PHCompositeNode *topNode) {
 					    "recopt_tracks_recoWithin2Hits",
 					    20,0.0,10.0);
 
-  _recopt_tracks_recoWithin2Percent = new TH1D("recopt_tracks_recoWithin2Percent",
-					    "recopt_tracks_recoWithin2Percent",
+  _recopt_tracks_recoWithin3Percent = new TH1D("recopt_tracks_recoWithin3Percent",
+					    "recopt_tracks_recoWithin3Percent",
 					    20,0.0,10.0);
 
   _recopt_tracks_recoWithin4Percent = new TH1D("recopt_tracks_recoWithin4Percent",
 					       "recopt_tracks_recoWithin4Percent",
 					       20,0.0,10.0);
   
-  _recopt_tracks_recoWithin6Percent = new TH1D("recopt_tracks_recoWithin6Percent",
-					       "recopt_tracks_recoWithin6Percent",
+  _recopt_tracks_recoWithin5Percent = new TH1D("recopt_tracks_recoWithin5Percent",
+					       "recopt_tracks_recoWithin5Percent",
 					       20,0.0,10.0);
 
   _recopt_quality = new TH2D("recopt_quality",
@@ -128,15 +128,15 @@ int SvtxSimPerformanceCheckReco::Init(PHCompositeNode *topNode) {
 
   _dx_vertex = new TH1D("dx_vertex",
 			"dx_vertex",
-			200,-0.1,0.1);
+			200,-0.03,0.03);
 
   _dy_vertex = new TH1D("dy_vertex",
 			"dy_vertex",
-			200,-0.1,0.1);
+			200,-0.03,0.03);
 
   _dz_vertex = new TH1D("dz_vertex",
 			"dz_vertex",
-			200,-0.1,0.1);
+			200,-0.03,0.03);
   
   se->registerHisto(_truept_dptoverpt);                    
 
@@ -148,9 +148,9 @@ int SvtxSimPerformanceCheckReco::Init(PHCompositeNode *topNode) {
   se->registerHisto(_truept_particles_recoWithin1Hit);
   se->registerHisto(_truept_particles_recoWithin2Hits);
 
-  se->registerHisto(_truept_particles_recoWithin2Percent); 
+  se->registerHisto(_truept_particles_recoWithin3Percent); 
   se->registerHisto(_truept_particles_recoWithin4Percent);
-  se->registerHisto(_truept_particles_recoWithin6Percent);
+  se->registerHisto(_truept_particles_recoWithin5Percent);
 
   se->registerHisto(_recopt_tracks_all);                   
  
@@ -158,9 +158,9 @@ int SvtxSimPerformanceCheckReco::Init(PHCompositeNode *topNode) {
   se->registerHisto(_recopt_tracks_recoWithin1Hit);
   se->registerHisto(_recopt_tracks_recoWithin2Hits);
 
-  se->registerHisto(_recopt_tracks_recoWithin2Percent);    
+  se->registerHisto(_recopt_tracks_recoWithin3Percent);    
   se->registerHisto(_recopt_tracks_recoWithin4Percent);
-  se->registerHisto(_recopt_tracks_recoWithin6Percent);
+  se->registerHisto(_recopt_tracks_recoWithin5Percent);
 
   se->registerHisto(_recopt_quality);                     
  
@@ -236,14 +236,14 @@ int SvtxSimPerformanceCheckReco::process_event(PHCompositeNode *topNode) {
       } 
      
       float diff = fabs(recopt-truept)/truept;
-      if (diff < 0.06) {
-	_truept_particles_recoWithin6Percent->Fill(truept);
+      if (diff < 0.05) {
+	_truept_particles_recoWithin5Percent->Fill(truept);
       }
       if (diff < 0.04) {
 	_truept_particles_recoWithin4Percent->Fill(truept);
       }
-      if (diff < 0.02) {
-	_truept_particles_recoWithin2Percent->Fill(truept);
+      if (diff < 0.03) {
+	_truept_particles_recoWithin3Percent->Fill(truept);
       }      
     }    
   }
@@ -283,14 +283,14 @@ int SvtxSimPerformanceCheckReco::process_event(PHCompositeNode *topNode) {
       }
      
       float diff = fabs(recopt-truept)/truept;
-      if (diff < 0.06) {
-	_recopt_tracks_recoWithin6Percent->Fill(recopt);
+      if (diff < 0.05) {
+	_recopt_tracks_recoWithin5Percent->Fill(recopt);
       }
       if (diff < 0.04) {
 	_recopt_tracks_recoWithin4Percent->Fill(recopt);
       }
-      if (diff < 0.02) {
-	_recopt_tracks_recoWithin2Percent->Fill(recopt);
+      if (diff < 0.03) {
+	_recopt_tracks_recoWithin3Percent->Fill(recopt);
       }            
     }
   }

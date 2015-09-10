@@ -35,9 +35,9 @@ private:
   TH1D* _truept_particles_recoWithin1Hit;
   TH1D* _truept_particles_recoWithin2Hits;
 
-  TH1D* _truept_particles_recoWithin2Percent; // parttern reco eff by momentum match
+  TH1D* _truept_particles_recoWithin3Percent; // parttern reco eff by momentum match
   TH1D* _truept_particles_recoWithin4Percent;
-  TH1D* _truept_particles_recoWithin6Percent;
+  TH1D* _truept_particles_recoWithin5Percent;
 
   TH1D* _recopt_tracks_all;                   // purity baseline (non-embedded particles)
   
@@ -45,9 +45,9 @@ private:
   TH1D* _recopt_tracks_recoWithin1Hit;
   TH1D* _recopt_tracks_recoWithin2Hits;
 
-  TH1D* _recopt_tracks_recoWithin2Percent;    // purity by momentum match
+  TH1D* _recopt_tracks_recoWithin3Percent;    // purity by momentum match
   TH1D* _recopt_tracks_recoWithin4Percent;
-  TH1D* _recopt_tracks_recoWithin6Percent;
+  TH1D* _recopt_tracks_recoWithin5Percent;
 
   TH2D* _recopt_quality;                     // quality distributions
   
