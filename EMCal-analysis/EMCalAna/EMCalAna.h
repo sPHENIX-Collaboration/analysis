@@ -41,8 +41,6 @@ private:
 
   unsigned long _ievent;
 
-
-
   PHG4HitContainer* _hcalout_hit_container;
   PHG4HitContainer* _hcalin_hit_container;
   PHG4HitContainer* _cemc_hit_container;
