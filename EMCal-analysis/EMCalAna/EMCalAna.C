@@ -61,25 +61,21 @@ EMCalAna::Init(PHCompositeNode *topNode)
   _ievent = 0;
 
   Fun4AllServer *se = Fun4AllServer::instance();
-  Fun4AllHistoManager *hm = se->getHistoManager("HISTOS");
-  if (!hm)
-    {
-      hm = new Fun4AllHistoManager("HISTOS");
-      se->registerHistoManager(hm);
-    }
+  Fun4AllHistoManager *hm = se->getHistoManager("Fun4AllServerHISTOS");
+  assert(hm);
 
   hm->registerHisto(new TH1F("EMCalAna_h_CEMC_SF", //
-      "_h_CEMC_SF", 1000, 0, 1));
+      "_h_CEMC_SF", 1000, 0, .2));
   hm->registerHisto(new TH1F("EMCalAna_h_HCALIN_SF", //
-      "_h_HCALIN_SF", 1000, 0, 1));
+      "_h_HCALIN_SF", 1000, 0, .2));
   hm->registerHisto(new TH1F("EMCalAna_h_HCALOUT_SF", //
-      "_h_HCALOUT_SF", 1000, 0, 1));
+      "_h_HCALOUT_SF", 1000, 0, .2));
   hm->registerHisto(new TH1F("EMCalAna_h_CEMC_VSF", //
-      "_h_CEMC_VSF", 1000, 0, 1));
+      "_h_CEMC_VSF", 1000, 0, .2));
   hm->registerHisto(new TH1F("EMCalAna_h_HCALIN_VSF", //
-      "_h_HCALIN_VSF", 1000, 0, 1));
+      "_h_HCALIN_VSF", 1000, 0, .2));
   hm->registerHisto(new TH1F("EMCalAna_h_HCALOUT_VSF", //
-      "_h_HCALOUT_VSF", 1000, 0, 1));
+      "_h_HCALOUT_VSF", 1000, 0, .2));
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -243,7 +239,7 @@ EMCalAna::process_event(PHCompositeNode *topNode)
     }
 
   Fun4AllServer *se = Fun4AllServer::instance();
-  Fun4AllHistoManager *hm = se->getHistoManager("HISTOS");
+  Fun4AllHistoManager *hm = se->getHistoManager("Fun4AllServerHISTOS");
   assert(hm);
 
   TH1F* h = NULL;
