@@ -222,7 +222,7 @@ int SvtxSimPerformanceCheckReco::process_event(PHCompositeNode *topNode) {
       if (!track) continue;
 
       unsigned int nfromtruth = trackeval->get_nclusters_contribution(track,g4particle);
-      float recopt = sqrt(pow(track->get3Momentum(0),2)+pow(track->get3Momentum(1),2));     
+      float recopt = track->get_pt();
 
       unsigned int ndiff = abs((int)nfromtruth-7);
       if (ndiff <= 2) {
@@ -254,7 +254,7 @@ int SvtxSimPerformanceCheckReco::process_event(PHCompositeNode *topNode) {
        ++iter) {
     
     SvtxTrack*    track      = &iter->second;
-    float recopt = sqrt(pow(track->get3Momentum(0),2)+pow(track->get3Momentum(1),2));
+    float recopt = track->get_pt();
         
     PHG4Particle* g4particle = trackeval->max_truth_particle_by_nclusters(track);
     float truept = sqrt(pow(g4particle->get_px(),2)+pow(g4particle->get_py(),2));
@@ -262,9 +262,9 @@ int SvtxSimPerformanceCheckReco::process_event(PHCompositeNode *topNode) {
     if (trutheval->get_embed(g4particle) != 0) {
       // embedded results (quality or efficiency measures)
       _truept_dptoverpt->Fill(truept,(recopt-truept)/truept);
-      _truept_dca->Fill(truept,track->getDCA2D());
+      _truept_dca->Fill(truept,track->get_dca2d());
 
-      _recopt_quality->Fill(recopt,track->getQuality());      
+      _recopt_quality->Fill(recopt,track->get_quality());      
     } else {
       // non-embedded results (purity measures)
       _recopt_tracks_all->Fill(recopt);
