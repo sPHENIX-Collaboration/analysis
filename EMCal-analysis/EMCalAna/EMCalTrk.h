@@ -11,27 +11,29 @@
 #ifndef EMCALTRK_H_
 #define EMCALTRK_H_
 
-#include <TObject.h>
+#include <phool/PHObject.h>
+#include <phool/phool.h>
 
 /*!
  * \brief EMCalTrk
  */
-class EMCalTrk : public TObject
+class EMCalTrk : public PHObject
 {
 public:
   EMCalTrk();
   virtual
   ~EMCalTrk();
 
-  virtual void        Clear(Option_t * /*option*/ ="") ;
+  virtual void        Reset() ;
 
 
-  float trackID;
-  float charge;
+  int trackID;
+  int charge;
   float quality;
   float chisq;
   float ndf;
   float nhits;
+  unsigned int layers;
 
   float dca2d;
   float dca2dsigma;
@@ -63,8 +65,8 @@ public:
   float hcaloute;
 
   float gtrackID;
-  float gflavor;
-  float ng4hits;
+  int gflavor;
+  int ng4hits;
   float gpx;
   float gpy;
   float gpz;
@@ -77,8 +79,9 @@ public:
   float gfx;
   float gfy;
   float gfz;
-  float gembed;
-  float gprimary;
+  int gembed;
+
+  int nfromtruth;
 
 ClassDef(EMCalTrk,1)
 };

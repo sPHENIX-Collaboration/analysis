@@ -29,7 +29,352 @@ DrawEcal(void)
 //  DrawTowerSum_Res_2Fit_1DSpacalNoSVX();
 //  DrawTowerSum_Res_2Fit_1DSpacalNoSVX_Eta3();
   //  DrawCluster_Res_2Fit_2DSpacalNoSVX();
-    DrawCluster_Res_2Fit_1DSpacalNoSVX_Eta3();
+//    DrawCluster_Res_2Fit_1DSpacalNoSVX_Eta3();
+
+//  DrawTower_EMCDistribution(
+//      "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/sHijing/spacal2d/G4Hits_sPHENIX_sHijing-0-4.4fm_ALL.root_EMCalAna.root",
+//      "2D-proj. SPACAL in HIJING Au+Au 0-10% C");
+  //  DrawTower_EMCDistribution(
+  //      "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/sHijing/spacal1d/G4Hits_sPHENIX_sHijing-0-4.4fm_ALL.root_EMCalAna.root",
+  //      "1D-proj. SPACAL in HIJING Au+Au 0-10% C");
+//    DrawTower_EMCDistribution5x5(
+//        "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/sHijing/spacal1d/G4Hits_sPHENIX_sHijing-0-4.4fm_ALL.root_EMCalAna.root",
+//        "1D-proj. SPACAL in HIJING Au+Au 0-10% C");
+
+//    DrawEnergyDensity(
+//        "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/sHijing/spacal2d/G4Hits_sPHENIX_sHijing-0-4.4fm_ALL.root_EMCalAna.root",
+//        "Scintilator Energy Density with 2D-proj. SPACAL in HIJING Au+Au 0-10% C");
+  //    DrawEnergyDensity(
+  //        "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/sHijing/spacal1d/G4Hits_sPHENIX_sHijing-0-4.4fm_ALL.root_EMCalAna.root",
+  //        "Scintilator Energy Density with 1D-proj. SPACAL in HIJING Au+Au 0-10% C");
+
+  DrawTower_EMCTrigEff();
+}
+
+void
+DrawEnergyDensity(
+    const TString infile =
+        "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/sHijing/spacal2d/G4Hits_sPHENIX_sHijing-0-4.4fm_ALL.root_EMCalAna.root",
+    const TString title = "HIJING Au+Au 0-10% C + Geant4")
+{
+  TH1 * EMCalAna_h_CEMC_RZ = DrawTower_Load(infile, "EMCalAna_h_CEMC_RZ");
+  TH1 * EMCalAna_h_HCALIN_RZ = DrawTower_Load(infile, "EMCalAna_h_HCALIN_RZ");
+  TH1 * EMCalAna_h_HCALOUT_RZ = DrawTower_Load(infile, "EMCalAna_h_HCALOUT_RZ");
+
+  EMCalAna_h_CEMC_RZ->Add(EMCalAna_h_HCALIN_RZ);
+  EMCalAna_h_CEMC_RZ->Add(EMCalAna_h_HCALOUT_RZ);
+
+  for (int r = 1; r <= EMCalAna_h_CEMC_RZ->GetNbinsY(); r++)
+    {
+      const double radius = EMCalAna_h_CEMC_RZ->GetYaxis()->GetBinCenter(r);
+      const double circ = 2 * TMath::Pi() * radius;
+      for (int z = 1; z <= EMCalAna_h_CEMC_RZ->GetNbinsX(); z++)
+        {
+
+          EMCalAna_h_CEMC_RZ->SetBinContent(z, r,
+              EMCalAna_h_CEMC_RZ->GetBinContent(z, r) / circ);
+        }
+    }
+
+  TCanvas *c1 = new TCanvas("DrawEnergyDensity", "DrawEnergyDensity", 1800,
+      900);
+  c1->Divide(1, 1);
+  int idx = 1;
+  TPad * p;
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+  p->SetLogz();
+//  p->SetGridx(0);
+//  p->SetGridy(0);
+
+  EMCalAna_h_CEMC_RZ->SetTitle(";Z (cm);Radius (cm)");
+  EMCalAna_h_CEMC_RZ->Draw("colz");
+
+  t = new TText(.5, .95, (title));
+  t->SetNDC();
+  t->SetTextAlign(22);
+  t->Draw();
+
+  SaveCanvas(c1, infile + TString("_DrawEcal_") + TString(c1->GetName()),
+      kTRUE);
+}
+
+void
+DrawTower_EMCTrigEff(
+    const TString infile =
+        "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/")
+{
+  TH1F * rej_EMCalAna_h_CEMC_TOWER_4x4_max = DrawTower_Load(
+      infile
+          + "/pythia8/spacal2d/G4Hits_sPHENIX_pythia8-ALL.root_EMCalAna.root",
+      "EMCalAna_h_CEMC_TOWER_4x4_max");
+//  TH1F * sig_EMCalAna_h_CEMC_TOWER_4x4_max =
+//      DrawTower_Load(
+//          infile
+//              + "/single_particle/spacal2d/fieldmap/G4Hits_sPHENIX_e-_eta0ALL_4GeVALL_EMCalAna.root",
+//          "EMCalAna_h_CEMC_TOWER_4x4_max");
+  TH1F * sig_EMCalAna_h_CEMC_TOWER_4x4_max =
+      DrawTower_Load(
+          infile
+              + "emcstudies/nosvtx/spacal2d/fieldmap/ALLe-ALL_4GeVALLEMCalAna.root",
+          "EMCalAna_h_CEMC_TOWER_4x4_max");
+
+  TGraphErrors* ge_rej_EMCalAna_h_CEMC_TOWER_4x4_max = Distribution2Efficiency(
+      rej_EMCalAna_h_CEMC_TOWER_4x4_max);
+  TGraphErrors* ge_sig_EMCalAna_h_CEMC_TOWER_4x4_max = Distribution2Efficiency(
+      sig_EMCalAna_h_CEMC_TOWER_4x4_max);
+
+  TCanvas *c1 = new TCanvas("DrawTower_EMCTrigEff", "DrawTower_EMCTrigEff",
+      1800, 900);
+  c1->Divide(2, 2);
+  int idx = 1;
+  TPad * p;
+
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+  p->SetLogy();
+  rej_EMCalAna_h_CEMC_TOWER_4x4_max->Draw();
+
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+  p->SetLogy();
+  sig_EMCalAna_h_CEMC_TOWER_4x4_max->Draw();
+
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+  p->SetLogy();
+  ge_rej_EMCalAna_h_CEMC_TOWER_4x4_max->Draw("AP*");
+
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+  p->SetLogy();
+  ge_sig_EMCalAna_h_CEMC_TOWER_4x4_max->Draw("AP*");
+
+  SaveCanvas(c1, infile + TString("_DrawEcal_") + TString(c1->GetName()),
+      kTRUE);
+
+  TCanvas *c1 = new TCanvas("DrawTower_EMCTrigEff_Compile",
+      "DrawTower_EMCTrigEff_Compile", 1800, 900);
+//  c1->Divide(2, 2);
+  int idx = 1;
+  TPad * p;
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+  p->SetLogy();
+  p->SetGridx(0);
+  p->SetGridy(0);
+
+  p->DrawFrame(0, 1, 5, 1e4,
+      ";Minimum #SigmaE requirement (GeV);Rejection factor for MB events");
+
+  SaveCanvas(c1, infile + TString("_DrawEcal_") + TString(c1->GetName()),
+      kTRUE);
+}
+
+TGraphErrors *
+Distribution2Efficiency(TH1F * hCEMC3_Max)
+{
+  double threshold[1000] =
+    { 0 };
+  double eff[1000] =
+    { 0 };
+  double eff_err[1000] =
+    { 0 };
+
+  const double n = hCEMC3_Max->GetSum();
+  double pass = 0;
+  int cnt = 0;
+  for (int i = 1000; i >= 1; i--)
+    {
+      pass += hCEMC3_Max->GetBinContent(i);
+
+      const double pp = pass / n;
+//      const double z = 1.96;
+      const double z = 1.;
+
+      const double A = z * sqrt(1. / n * pp * (1 - pp) + z * z / 4 / n / n);
+      const double B = 1 / (1 + z * z / n);
+
+      threshold[cnt] = hCEMC3_Max->GetBinCenter(i);
+      eff[cnt] = (pp + z * z / 2 / n) * B;
+      eff_err[cnt] = A * B;
+
+      cout << threshold[cnt] << ": " << "CL " << eff[cnt] << "+/-"
+          << eff_err[cnt] << endl;
+      cnt++;
+    }
+  TGraphErrors * ge = new TGraphErrors(cnt, threshold, eff, NULL, eff_err);
+
+  return ge;
+}
+
+void
+DrawTower_EMCDistribution(
+    const TString infile =
+        "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/sHijing/spacal2d/G4Hits_sPHENIX_sHijing-0-4.4fm_ALL.root_EMCalAna.root",
+    const TString title = "HIJING Au+Au 0-10% C + Geant4 + Digi.")
+{
+  TH1F * hCEMC1 = DrawTower_Load(infile, "EMCalAna_h_CEMC_TOWER_1x1");
+  TH1F * hCEMC3 = DrawTower_Load(infile, "EMCalAna_h_CEMC_TOWER_3x3");
+
+  hCEMC1->Scale(1. / hCEMC1->GetSum());
+  const double mean1 = hCEMC1->GetMean();
+  hCEMC3->Scale(1. / hCEMC3->GetSum());
+  const double mean3 = hCEMC3->GetMean();
+
+  TCanvas *c1 = new TCanvas("DrawTower_EMCDistribution",
+      "DrawTower_EMCDistribution", 1800, 900);
+  c1->Divide(2, 1);
+  int idx = 1;
+  TPad * p;
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+  p->SetLogy();
+  p->SetGridx(0);
+  p->SetGridy(0);
+
+  hCEMC1->GetXaxis()->SetRangeUser(0, .6);
+  hCEMC1->SetTitle(";EMCal Single Tower Energy [GeV];A.U.");
+  hCEMC1->SetLineColor(kBlue + 2);
+  hCEMC1->SetLineWidth(3);
+  hCEMC1->Draw();
+
+  TText * t;
+  t = new TText(.6, .8, Form("Tower Mean = %.0f MeV", mean1 * 1000));
+  t->SetNDC();
+  t->SetTextAlign(22);
+  t->Draw();
+  t = new TText(.5, .95, (title));
+  t->SetNDC();
+  t->SetTextAlign(22);
+  t->Draw();
+
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+  p->SetLogy();
+  p->SetGridx(0);
+  p->SetGridy(0);
+
+  hCEMC3->GetXaxis()->SetRangeUser(0, 2);
+  hCEMC3->SetTitle(";EMCal 3x3 Tower Energy Sum [GeV];A.U.");
+  hCEMC3->SetLineColor(kRed + 2);
+  hCEMC3->SetLineWidth(3);
+  hCEMC3->Draw();
+
+  t = new TText(.6, .8, Form("3x3 Tower Mean = %.0f MeV", mean3 * 1000));
+  t->SetNDC();
+  t->SetTextAlign(22);
+  t->Draw();
+
+  SaveCanvas(c1, infile + TString("_DrawEcal_") + TString(c1->GetName()),
+      kTRUE);
+}
+
+void
+DrawTower_EMCDistribution5x5(
+    const TString infile =
+        "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/sHijing/spacal2d/G4Hits_sPHENIX_sHijing-0-4.4fm_ALL.root_EMCalAna.root",
+    const TString title = "HIJING Au+Au 0-10% C + Geant4 + Digi.")
+{
+  TH1F * hCEMC1 = DrawTower_Load(infile, "EMCalAna_h_CEMC_TOWER_1x1");
+  TH1F * hCEMC3 = DrawTower_Load(infile, "EMCalAna_h_CEMC_TOWER_5x5");
+
+  hCEMC1->Scale(1. / hCEMC1->GetSum());
+  const double mean1 = hCEMC1->GetMean();
+  hCEMC3->Scale(1. / hCEMC3->GetSum());
+  const double mean3 = hCEMC3->GetMean();
+
+  TCanvas *c1 = new TCanvas("DrawTower_EMCDistribution5x5",
+      "DrawTower_EMCDistribution5x5", 1800, 900);
+  c1->Divide(2, 1);
+  int idx = 1;
+  TPad * p;
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+  p->SetLogy();
+  p->SetGridx(0);
+  p->SetGridy(0);
+
+  hCEMC1->GetXaxis()->SetRangeUser(0, .6);
+  hCEMC1->SetTitle(";EMCal Single Tower Energy [GeV];A.U.");
+  hCEMC1->SetLineColor(kBlue + 2);
+  hCEMC1->SetLineWidth(3);
+  hCEMC1->Draw();
+
+  TText * t;
+  t = new TText(.6, .8, Form("Tower Mean = %.0f MeV", mean1 * 1000));
+  t->SetNDC();
+  t->SetTextAlign(22);
+  t->Draw();
+  t = new TText(.5, .95, (title));
+  t->SetNDC();
+  t->SetTextAlign(22);
+  t->Draw();
+
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+  p->SetLogy();
+  p->SetGridx(0);
+  p->SetGridy(0);
+
+  hCEMC3->GetXaxis()->SetRangeUser(0, 2);
+  hCEMC3->SetTitle(";EMCal 5x5 Tower Energy Sum [GeV];A.U.");
+  hCEMC3->SetLineColor(kRed + 2);
+  hCEMC3->SetLineWidth(3);
+  hCEMC3->Draw();
+
+  t = new TText(.6, .8, Form("5x5 Tower Mean = %.0f MeV", mean3 * 1000));
+  t->SetNDC();
+  t->SetTextAlign(22);
+  t->Draw();
+
+  SaveCanvas(c1, infile + TString("_DrawEcal_") + TString(c1->GetName()),
+      kTRUE);
+}
+
+TH1 *
+DrawTower_Load(
+    const TString infile =
+        "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/sHijing/spacal2d/G4Hits_sPHENIX_sHijing-0-4.4fm_ALL.root_EMCalAna.root",
+    const TString hist_name = "EMCalAna_h_CEMC_TOWER_1x1")
+{
+  TString chian_str = infile;
+  chian_str.ReplaceAll("ALL", "*");
+
+  TChain * t = new TChain("T_Index");
+  const int n = t->Add(chian_str);
+
+  cout << "Loaded " << n << " root files with " << chian_str << endl;
+  assert(n>0);
+
+  TH1 * h_sum = NULL;
+
+  TObjArray *fileElements = t->GetListOfFiles();
+  TIter next(fileElements);
+  TChainElement *chEl = 0;
+  while ((chEl = (TChainElement*) next()))
+    {
+
+      cout << "DrawTower_Load - processing " << chEl->GetTitle() << endl;
+      TFile * f = new TFile(chEl->GetTitle());
+      assert(f);
+
+      TH1 * h = (TH1 *) f->GetObjectChecked(hist_name, "TH1");
+      assert(h);
+
+      if (!h_sum)
+        {
+          h_sum = (TH1 *) h->Clone();
+          h_sum->ResetBit(kMustCleanup);
+          assert(h_sum);
+        }
+      else
+        {
+          h_sum->Add(h);
+        }
+    }
+
+  return h_sum;
 }
 
 void
@@ -396,7 +741,6 @@ DrawCluster_Res_2Fit(
   SaveCanvas(c1, base + "DrawEcal_" + TString(c1->GetName()), true);
 }
 
-
 void
 DrawCluster_Res_2Fit_1DSpacalNoSVX(
     const TString base =
@@ -437,8 +781,8 @@ DrawCluster_Res_2Fit_1DSpacalNoSVX(
   TGraphErrors * gamma_eta9_1d = DrawCluster_AnaP(
       base + "/nosvtx/spacal1d/fieldmap/G4Hits_sPHENIX", "gamma_eta0.90",
       false);
-  TCanvas *c1 = new TCanvas("DrawCluster_Res_2Fit_1DSpacalNoSVX", "DrawCluster_Res_2Fit_1DSpacalNoSVX",
-      1100, 900);
+  TCanvas *c1 = new TCanvas("DrawCluster_Res_2Fit_1DSpacalNoSVX",
+      "DrawCluster_Res_2Fit_1DSpacalNoSVX", 1100, 900);
   c1->Divide(1, 1);
   int idx = 1;
   TPad * p;
@@ -595,7 +939,6 @@ DrawCluster_Res_2Fit_1DSpacalNoSVX(
   SaveCanvas(c1, base + "DrawEcal_" + TString(c1->GetName()), true);
 }
 
-
 void
 DrawCluster_Res_2Fit_1DSpacalNoSVX_Eta3(
     const TString base =
@@ -630,9 +973,10 @@ DrawCluster_Res_2Fit_1DSpacalNoSVX_Eta3(
       base + "/nosvtx/spacal1d/fieldmap/G4Hits_sPHENIX", "e-_eta0.30", false);
 
   TGraphErrors * gamma_eta0_1d = DrawCluster_AnaP(
-      base + "/nosvtx/spacal1d/fieldmap/G4Hits_sPHENIX", "gamma_eta0.30", false);
-  TCanvas *c1 = new TCanvas("DrawCluster_Res_2Fit_1DSpacalNoSVX_Eta3", "DrawCluster_Res_2Fit_1DSpacalNoSVX_Eta3",
-      1100, 900);
+      base + "/nosvtx/spacal1d/fieldmap/G4Hits_sPHENIX", "gamma_eta0.30",
+      false);
+  TCanvas *c1 = new TCanvas("DrawCluster_Res_2Fit_1DSpacalNoSVX_Eta3",
+      "DrawCluster_Res_2Fit_1DSpacalNoSVX_Eta3", 1100, 900);
   c1->Divide(1, 1);
   int idx = 1;
   TPad * p;
@@ -682,8 +1026,6 @@ DrawCluster_Res_2Fit_1DSpacalNoSVX_Eta3(
           f_calo_l->GetParameter(1)), "l");
   entry->SetTextColor(kGray + 1);
 
-
-
   TF1 * f_calo = new TF1("f_calo_gamma_eta0_1d", "sqrt([0]*[0]+[1]*[1]/x)/100",
       0.5, 60);
   TF1 * f_calo_l = new TF1("f_calo_l_gamma_eta0_1d", "([0]+[1]/sqrt(x))/100",
@@ -717,14 +1059,11 @@ DrawCluster_Res_2Fit_1DSpacalNoSVX_Eta3(
           f_calo_l->GetParameter(1)), "l");
   entry->SetTextColor(kGray + 1);
 
-
-
   lg->Draw();
   lg2->Draw();
 
   SaveCanvas(c1, base + "DrawEcal_" + TString(c1->GetName()), true);
 }
-
 
 void
 DrawCluster_Res_2Fit_2DSpacalNoSVX(
@@ -766,8 +1105,8 @@ DrawCluster_Res_2Fit_2DSpacalNoSVX(
   TGraphErrors * gamma_eta9_1d = DrawCluster_AnaP(
       base + "/nosvtx/spacal2d/fieldmap/G4Hits_sPHENIX", "gamma_eta0.90",
       false);
-  TCanvas *c1 = new TCanvas("DrawCluster_Res_2Fit_2DSpacalNoSVX", "DrawCluster_Res_2Fit_2DSpacalNoSVX",
-      1100, 900);
+  TCanvas *c1 = new TCanvas("DrawCluster_Res_2Fit_2DSpacalNoSVX",
+      "DrawCluster_Res_2Fit_2DSpacalNoSVX", 1100, 900);
   c1->Divide(1, 1);
   int idx = 1;
   TPad * p;
@@ -923,7 +1262,6 @@ DrawCluster_Res_2Fit_2DSpacalNoSVX(
 
   SaveCanvas(c1, base + "DrawEcal_" + TString(c1->GetName()), true);
 }
-
 
 void
 DrawCluster_Res(
@@ -1191,8 +1529,8 @@ DrawTowerSum_Res_2Fit_1DSpacalNoSVX(
       base + "/nosvtx/spacal1d/fieldmap/G4Hits_sPHENIX", "gamma_eta0.90",
       false);
 
-  TCanvas *c1 = new TCanvas("DrawTowerSum_Res_2Fit_1DSpacalNoSVX", "DrawTowerSum_Res_2Fit_1DSpacalNoSVX",
-      1100, 900);
+  TCanvas *c1 = new TCanvas("DrawTowerSum_Res_2Fit_1DSpacalNoSVX",
+      "DrawTowerSum_Res_2Fit_1DSpacalNoSVX", 1100, 900);
   c1->Divide(1, 1);
   int idx = 1;
   TPad * p;
@@ -1349,7 +1687,6 @@ DrawTowerSum_Res_2Fit_1DSpacalNoSVX(
   SaveCanvas(c1, base + "DrawEcal_" + TString(c1->GetName()), true);
 }
 
-
 void
 DrawTowerSum_Res_2Fit_1DSpacalNoSVX_Eta3(
     const TString base =
@@ -1365,13 +1702,14 @@ DrawTowerSum_Res_2Fit_1DSpacalNoSVX_Eta3(
 //      base + "/nosvtx/spacal1d/fieldmap/G4Hits_sPHENIX", "e-_eta0.90", false);
 
   TGraphErrors * gamma_eta0_1d = DrawTowerSum_AnaP(
-      base + "/nosvtx/spacal1d/fieldmap/G4Hits_sPHENIX", "gamma_eta0.30", false);
+      base + "/nosvtx/spacal1d/fieldmap/G4Hits_sPHENIX", "gamma_eta0.30",
+      false);
 //  TGraphErrors * gamma_eta9_1d = DrawTowerSum_AnaP(
 //      base + "/nosvtx/spacal1d/fieldmap/G4Hits_sPHENIX", "gamma_eta0.90",
 //      false);
 
-  TCanvas *c1 = new TCanvas("DrawTowerSum_Res_2Fit_1DSpacalNoSVX_Eta3", "DrawTowerSum_Res_2Fit_1DSpacalNoSVX_Eta3",
-      1100, 900);
+  TCanvas *c1 = new TCanvas("DrawTowerSum_Res_2Fit_1DSpacalNoSVX_Eta3",
+      "DrawTowerSum_Res_2Fit_1DSpacalNoSVX_Eta3", 1100, 900);
   c1->Divide(1, 1);
   int idx = 1;
   TPad * p;
@@ -1421,8 +1759,6 @@ DrawTowerSum_Res_2Fit_1DSpacalNoSVX_Eta3(
           f_calo_l->GetParameter(1)), "l");
   entry->SetTextColor(kGray + 1);
 
-
-
   TF1 * f_calo = new TF1("f_calo_gamma_eta0_1d", "sqrt([0]*[0]+[1]*[1]/x)/100",
       0.5, 60);
   TF1 * f_calo_l = new TF1("f_calo_l_gamma_eta0_1d", "([0]+[1]/sqrt(x))/100",
@@ -1455,8 +1791,6 @@ DrawTowerSum_Res_2Fit_1DSpacalNoSVX_Eta3(
       Form("#DeltaE/E = %.1f%%  + %.1f%%/#sqrt{E}", f_calo_l->GetParameter(0),
           f_calo_l->GetParameter(1)), "l");
   entry->SetTextColor(kGray + 1);
-
-
 
   lg->Draw();
   lg2->Draw();

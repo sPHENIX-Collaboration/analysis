@@ -10,12 +10,15 @@
 #include "EMCalTrk.h"
 
 #include <string>
+#include <stdint.h>
 
 class PHCompositeNode;
 class PHG4HitContainer;
 class Fun4AllHistoManager;
 class TH1F;
 class TTree;
+class SvtxEvalStack;
+class PHG4Particle;
 
 /// \class EMCalAna
 class EMCalAna : public SubsysReco
@@ -23,11 +26,20 @@ class EMCalAna : public SubsysReco
 
 public:
 
-  EMCalAna( const std::string &filename = "cemc_ana.root", enu_flags flags = kDefaultFlag);
-  virtual
-  ~EMCalAna()
+  enum enu_flags
   {
-  }
+    kProcessSF = 1 << 1,
+    kProcessTower = 1 << 2,
+    kProcessTrk = 1 << 3,
+    kProcessUpslisonTrig = 1 << 4,
+
+    kDefaultFlag = kProcessSF | kProcessTower
+  };
+
+  EMCalAna(const std::string &filename = "cemc_ana.root", enu_flags flags =
+      kDefaultFlag);
+  virtual
+  ~EMCalAna();
 
   int
   Init(PHCompositeNode *topNode);
@@ -38,17 +50,7 @@ public:
   int
   End(PHCompositeNode *topNode);
 
-
-  enum enu_flags
-  {
-    kProcessSF = 1<<1,
-    kProcessTower = 1<<2,
-    kProcessTrk = 1<<3,
-
-    kDefaultFlag = kProcessSF | kProcessTower
-  };
-
-  enu_flags
+  uint32_t
   get_flags() const
   {
     return _flags;
@@ -57,13 +59,13 @@ public:
   void
   set_flags(enu_flags flags)
   {
-    _flags = flags;
+    _flags = (uint32_t) flags;
   }
 
   void
   set_flag(enu_flags flag)
   {
-    _flags |= flag;
+    _flags |= (uint32_t) flag;
   }
 
   bool
@@ -75,13 +77,13 @@ public:
   void
   reset_flag(enu_flags flag)
   {
-    _flags &= not flag;
+    _flags &= ~(uint32_t) flag;
   }
-
 
 private:
 
-  Fun4AllHistoManager * get_HistoManager();
+  Fun4AllHistoManager *
+  get_HistoManager();
 
   int
   Init_SF(PHCompositeNode *topNode);
@@ -98,12 +100,20 @@ private:
   int
   process_event_Trk(PHCompositeNode *topNode);
 
+  int
+  Init_UpslisonTrig(PHCompositeNode *topNode);
+  int
+  process_event_UpslisonTrig(PHCompositeNode *topNode);
+
+  void eval_trk(PHG4Particle * primary_particle, EMCalTrk & trk, PHCompositeNode *topNode);
+
+  SvtxEvalStack * _eval_stack;
   TTree * _T_EMCalTrk;
   EMCalTrk _trk;
 
   std::string _filename;
 
-  enu_flags _flags;
+  uint32_t _flags;
   unsigned long _ievent;
 
   PHG4HitContainer* _hcalout_hit_container;

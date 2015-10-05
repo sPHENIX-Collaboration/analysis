@@ -14,7 +14,7 @@ ClassImp(EMCalTrk)
 
 EMCalTrk::EMCalTrk()
 {
-  Clear();
+  Reset();
 }
 
 EMCalTrk::~EMCalTrk()
@@ -23,7 +23,7 @@ EMCalTrk::~EMCalTrk()
 }
 
 void
-EMCalTrk::Clear(Option_t * /*option*/)
+EMCalTrk::Reset()
 {
 
 }

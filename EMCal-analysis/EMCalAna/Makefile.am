@@ -34,7 +34,9 @@ libemcal_ana_la_SOURCES = \
   EMCalAna.C \
   EMCalAna_Dict.C \
   EMCalTrk.C \
-  EMCalTrk_Dict.C 
+  EMCalTrk_Dict.C \
+  UpsilonPair.C \
+  UpsilonPair_Dict.C 
 
 # Rule for generating table CINT dictionaries.
 %_Dict.C: %.h %LinkDef.h
