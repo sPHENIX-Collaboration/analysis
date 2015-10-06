@@ -22,6 +22,7 @@ libemcal_ana_la_LIBADD = \
   -lphg4hit \
   -lg4detectors_io \
   -lg4hough_io \
+  -lg4hough \
   -lcemc_io \
   -lg4jets_io \
   -lg4eval

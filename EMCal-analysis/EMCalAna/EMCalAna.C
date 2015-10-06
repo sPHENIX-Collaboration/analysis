@@ -49,8 +49,9 @@
 using namespace std;
 
 EMCalAna::EMCalAna(const std::string &filename, EMCalAna::enu_flags flags) :
-    SubsysReco("EMCalAna"), _eval_stack(NULL), _T_EMCalTrk(NULL), _filename(
-        filename), _flags(flags), _ievent(0)
+    SubsysReco("EMCalAna"), _eval_stack(NULL), _T_EMCalTrk(NULL), _trk(NULL), //
+    _magfield(1.5), //
+    _filename(filename), _flags(flags), _ievent(0)
 {
 
   verbosity = 1;
@@ -128,6 +129,21 @@ EMCalAna::InitRun(PHCompositeNode *topNode)
         }
 
       assert(upsilon_pair);
+    }
+  if (flag(kProcessTrk))
+    {
+      _trk = findNode::getClass<EMCalTrk>(dstNode, "EMCalTrk");
+
+      if (not _trk)
+        {
+          _trk = new EMCalTrk();
+
+          PHIODataNode<PHObject> *node = new PHIODataNode<PHObject>(_trk,
+              "EMCalTrk", "PHObject");
+          dstNode->addNode(node);
+        }
+
+      assert(_trk);
     }
 
   return Fun4AllReturnCodes::EVENT_OK;
@@ -228,7 +244,6 @@ EMCalAna::process_event_UpslisonTrig(PHCompositeNode *topNode)
 
   if (verbosity > 2)
     cout << "EMCalAna::process_event_UpslisonTrig() entered" << endl;
-  _trk.Clear();
 
   UpsilonPair * upsilon_pair = findNode::getClass<UpsilonPair>(topNode,
       "UpsilonPair");
@@ -323,12 +338,14 @@ EMCalAna::process_event_UpslisonTrig(PHCompositeNode *topNode)
       upsilon_pair->mass = invar.M();
 
       // cuts
-      const bool eta_pos_cut = fabs(gvpos.Eta())<1.0;
-      const bool eta_neg_cut = fabs(gvneg.Eta())<1.0;
-      const bool reco_upsilon_mass = fabs( upsilon_pair->mass - upsilon_mass )<0.2; // two sigma cuts
-      upsilon_pair->good_upsilon = eta_pos_cut and eta_neg_cut and reco_upsilon_mass;
+      const bool eta_pos_cut = fabs(gvpos.Eta()) < 1.0;
+      const bool eta_neg_cut = fabs(gvneg.Eta()) < 1.0;
+      const bool reco_upsilon_mass = fabs(upsilon_pair->mass - upsilon_mass)
+          < 0.2; // two sigma cuts
+      upsilon_pair->good_upsilon = eta_pos_cut and eta_neg_cut
+          and reco_upsilon_mass;
 
-      if (not upsilon_pair->good_upsilon )
+      if (not upsilon_pair->good_upsilon)
         {
           return Fun4AllReturnCodes::DISCARDEVENT;
         }
@@ -445,6 +462,42 @@ EMCalAna::eval_trk(PHG4Particle * g4particle, EMCalTrk & trk,
       pcaz = track->get_z();
 
       nfromtruth = trackeval->get_nclusters_contribution(track, g4particle);
+
+      trk.presdphi = track->get_cal_dphi(SvtxTrack::PRES);
+      trk.presdeta = track->get_cal_deta(SvtxTrack::PRES);
+      trk.prese3x3 = track->get_cal_energy_3x3(SvtxTrack::PRES);
+      trk.prese = track->get_cal_cluster_e(SvtxTrack::PRES);
+
+      trk.cemcdphi = track->get_cal_dphi(SvtxTrack::CEMC);
+      trk.cemcdeta = track->get_cal_deta(SvtxTrack::CEMC);
+      trk.cemce3x3 = track->get_cal_energy_3x3(SvtxTrack::CEMC);
+      trk.cemce = track->get_cal_cluster_e(SvtxTrack::CEMC);
+
+      trk.hcalindphi = track->get_cal_dphi(SvtxTrack::HCALIN);
+      trk.hcalindeta = track->get_cal_deta(SvtxTrack::HCALIN);
+      trk.hcaline3x3 = track->get_cal_energy_3x3(SvtxTrack::HCALIN);
+      trk.hcaline = track->get_cal_cluster_e(SvtxTrack::HCALIN);
+
+      trk.hcaloutdphi = track->get_cal_dphi(SvtxTrack::HCALOUT);
+      trk.hcaloutdeta = track->get_cal_deta(SvtxTrack::HCALOUT);
+      trk.hcaloute3x3 = track->get_cal_energy_3x3(SvtxTrack::HCALOUT);
+      trk.hcaloute = track->get_cal_cluster_e(SvtxTrack::HCALOUT);
+
+      eval_trk_proj( //
+          /*SvtxTrack **/track, //
+          /*EMCalTrk &*/trk,
+          /*enu_calo*/kCEMC, //
+          /*const double */gvz,
+          /*PHCompositeNode **/topNode //
+          );
+      eval_trk_proj( //
+          /*SvtxTrack **/track, //
+          /*EMCalTrk &*/trk,
+          /*enu_calo*/kHCALIN, //
+          /*const double */gvz,
+          /*PHCompositeNode **/topNode //
+          );
+
     }
 
   trk.gtrackID = gtrackID;
@@ -483,14 +536,335 @@ EMCalAna::eval_trk(PHG4Particle * g4particle, EMCalTrk & trk,
 
 }
 
+void
+EMCalAna::eval_trk_proj(
+    //
+    SvtxTrack * track, //
+    EMCalTrk & trk, EMCalAna::enu_calo calo_id, const double gvz,
+    PHCompositeNode *topNode //
+    )
+// Track projections
+{
+  string detector = "InvalidDetector";
+  double radius = 110;
+  if (calo_id == kCEMC)
+    {
+      detector = "CEMC";
+      radius = 105;
+    }
+  if (calo_id == kHCALIN)
+    {
+      detector = "HCALIN";
+      radius = 125;
+    }
+
+  if (!_eval_stack)
+    _eval_stack = new SvtxEvalStack(topNode);
+
+  // pull the tower geometry
+  string towergeonodename = "TOWERGEOM_" + detector;
+  RawTowerGeom *cemc_towergeo = findNode::getClass<RawTowerGeom>(topNode,
+      towergeonodename.c_str());
+  assert(cemc_towergeo);
+
+  if (verbosity > 1)
+    {
+      cemc_towergeo->identify();
+    }
+  // pull the towers
+  string towernodename = "TOWER_CALIB_" + detector;
+  RawTowerContainer *cemc_towerList = findNode::getClass<RawTowerContainer>(
+      topNode, towernodename.c_str());
+  assert(cemc_towerList);
+
+  if (verbosity > 3)
+    {
+      cout << __PRETTY_FUNCTION__ << " - info - handling track track p = ("
+          << track->get_px() << ", " << track->get_py() << ", "
+          << track->get_pz() << "), v = (" << track->get_x() << ", "
+          << track->get_z() << ", " << track->get_z() << ")" << " size_states "
+          << track->size_states() << endl;
+
+//              for (SvtxTrack::ConstStateIter iter = track->begin_states();
+//                  iter != track->end_states(); ++iter)
+//                {
+//                  const SvtxTrackState* state = iter->second;
+//                  double hitx = state->get_x();
+//                  double hity = state->get_y();
+//
+//                  cout << __PRETTY_FUNCTION__ << " - info - track projection : v="
+//                      << hitx << ", " << hity <<" p = "<< state->get_px()<<", "<< state->get_py() << endl;
+//                }
+//              track->empty_states();
+
+        {
+          std::vector<double> point;
+          point.assign(3, -9999.);
+          _hough.projectToRadius(track, _magfield, 10, point);
+
+          double x = point[0];
+          double y = point[1];
+          double z = point[2];
+          double phi = atan2(y, x);
+          double eta = asinh(z / sqrt(x * x + y * y));
+          cout << __PRETTY_FUNCTION__ << " - info - handling track proj. (" << x
+              << ", " << y << ", " << z << ")" << ", eta " << eta << ", phi"
+              << phi << endl;
+        }
+        {
+          std::vector<double> point;
+          point.assign(3, -9999.);
+          _hough.projectToRadius(track, _magfield, 20, point);
+          double x = point[0];
+          double y = point[1];
+          double z = point[2];
+          double phi = atan2(y, x);
+          double eta = asinh(z / sqrt(x * x + y * y));
+          cout << __PRETTY_FUNCTION__ << " - info - handling track proj. (" << x
+              << ", " << y << ", " << z << ")" << ", eta " << eta << ", phi"
+              << phi << endl;
+        }
+        {
+          std::vector<double> point;
+          point.assign(3, -9999.);
+          _hough.projectToRadius(track, _magfield, 30, point);
+          double x = point[0];
+          double y = point[1];
+          double z = point[2];
+          double phi = atan2(y, x);
+          double eta = asinh(z / sqrt(x * x + y * y));
+          cout << __PRETTY_FUNCTION__ << " - info - handling track proj. (" << x
+              << ", " << y << ", " << z << ")" << ", eta " << eta << ", phi"
+              << phi << endl;
+        }
+        {
+          std::vector<double> point;
+          point.assign(3, -9999.);
+          _hough.projectToRadius(track, _magfield, 40, point);
+          double x = point[0];
+          double y = point[1];
+          double z = point[2];
+          double phi = atan2(y, x);
+          double eta = asinh(z / sqrt(x * x + y * y));
+          cout << __PRETTY_FUNCTION__ << " - info - handling track proj. (" << x
+              << ", " << y << ", " << z << ")" << ", eta " << eta << ", phi"
+              << phi << endl;
+        }
+        {
+          std::vector<double> point;
+          point.assign(3, -9999.);
+          _hough.projectToRadius(track, _magfield, 50, point);
+          double x = point[0];
+          double y = point[1];
+          double z = point[2];
+          double phi = atan2(y, x);
+          double eta = asinh(z / sqrt(x * x + y * y));
+          cout << __PRETTY_FUNCTION__ << " - info - handling track proj. (" << x
+              << ", " << y << ", " << z << ")" << ", eta " << eta << ", phi"
+              << phi << endl;
+        }
+        {
+          std::vector<double> point;
+          point.assign(3, -9999.);
+          _hough.projectToRadius(track, _magfield, 60, point);
+          double x = point[0];
+          double y = point[1];
+          double z = point[2];
+          double phi = atan2(y, x);
+          double eta = asinh(z / sqrt(x * x + y * y));
+          cout << __PRETTY_FUNCTION__ << " - info - handling track proj. (" << x
+              << ", " << y << ", " << z << ")" << ", eta " << eta << ", phi"
+              << phi << endl;
+        }
+        {
+          std::vector<double> point;
+          point.assign(3, -9999.);
+          _hough.projectToRadius(track, _magfield, 70, point);
+          double x = point[0];
+          double y = point[1];
+          double z = point[2];
+          double phi = atan2(y, x);
+          double eta = asinh(z / sqrt(x * x + y * y));
+          cout << __PRETTY_FUNCTION__ << " - info - handling track proj. (" << x
+              << ", " << y << ", " << z << ")" << ", eta " << eta << ", phi"
+              << phi << endl;
+        }
+        {
+          std::vector<double> point;
+          point.assign(3, -9999.);
+          _hough.projectToRadius(track, _magfield, 80, point);
+          double x = point[0];
+          double y = point[1];
+          double z = point[2];
+          double phi = atan2(y, x);
+          double eta = asinh(z / sqrt(x * x + y * y));
+          cout << __PRETTY_FUNCTION__ << " - info - handling track proj. (" << x
+              << ", " << y << ", " << z << ")" << ", eta " << eta << ", phi"
+              << phi << endl;
+        }
+        {
+          std::vector<double> point;
+          point.assign(3, -9999.);
+          _hough.projectToRadius(track, _magfield, 100, point);
+          double x = point[0];
+          double y = point[1];
+          double z = point[2];
+          double phi = atan2(y, x);
+          double eta = asinh(z / sqrt(x * x + y * y));
+          cout << __PRETTY_FUNCTION__ << " - info - handling track proj. (" << x
+              << ", " << y << ", " << z << ")" << ", eta " << eta << ", phi"
+              << phi << endl;
+        }
+        {
+          std::vector<double> point;
+          point.assign(3, -9999.);
+          _hough.projectToRadius(track, _magfield, 1777, point);
+          double x = point[0];
+          double y = point[1];
+          double z = point[2];
+          double phi = atan2(y, x);
+          double eta = asinh(z / sqrt(x * x + y * y));
+          cout << __PRETTY_FUNCTION__ << " - info - handling track proj. (" << x
+              << ", " << y << ", " << z << ")" << ", eta " << eta << ", phi"
+              << phi << endl;
+        }
+    }
+
+  // curved tracks inside mag field
+  // straight projections thereafter
+  std::vector<double> point;
+  point.assign(3, -9999.);
+  _hough.projectToRadius(track, _magfield, radius, point);
+
+  assert( not isnan(point[0]));
+  assert( not isnan(point[1]));
+  assert( not isnan(point[2]));
+
+  double x = point[0];
+  double y = point[1];
+  double z = point[2] + gvz - track->get_z();
+
+  double phi = atan2(y, x);
+  double eta = asinh(z / sqrt(x * x + y * y));
+
+  // calculate 3x3 tower energy
+  int binphi = cemc_towergeo->get_phibin(phi);
+  int bineta = cemc_towergeo->get_etabin(eta);
+
+  double etabin_width = cemc_towergeo->get_etabounds(bineta).second
+      - cemc_towergeo->get_etabounds(bineta).first;
+  if (bineta > 1 and bineta < cemc_towergeo->get_etabins() - 1)
+    etabin_width = (cemc_towergeo->get_etacenter(bineta + 1)
+        - cemc_towergeo->get_etacenter(bineta - 1)) / 2.;
+  double phibin_width = cemc_towergeo->get_phistep();
+  assert(etabin_width>0);
+  assert(phibin_width>0);
+
+  const double etabin_shift = (cemc_towergeo->get_etacenter(bineta) - eta)
+      / etabin_width;
+  const double phibin_shift = (fmod(
+      cemc_towergeo->get_phicenter(binphi) - phi + 5 * M_PI, 2 * M_PI) - M_PI)
+      / phibin_width;
+
+  if (verbosity > 1)
+    cout << __PRETTY_FUNCTION__ << " - info - handling track proj. (" << x
+        << ", " << y << ", " << z << ")" << ", eta " << eta << ", phi" << phi
+        << ", bineta " << bineta << " - ["
+        << cemc_towergeo->get_etabounds(bineta).first << ", "
+        << cemc_towergeo->get_etabounds(bineta).second << "], etabin_shift = "
+        << etabin_shift << ", binphi " << binphi << " - ["
+        << cemc_towergeo->get_phibounds(binphi).first << ", "
+        << cemc_towergeo->get_phibounds(binphi).second << "], phibin_shift = "
+        << phibin_shift << endl;
+
+  const int bin_search_range = (trk.Max_N_Tower - 1) / 2;
+  for (int iphi = binphi - bin_search_range; iphi <= binphi + bin_search_range;
+      ++iphi)
+
+    for (int ieta = bineta - bin_search_range;
+        ieta <= bineta + bin_search_range; ++ieta)
+      {
+
+        // wrap around
+        int wrapphi = iphi;
+        if (wrapphi < 0)
+          {
+            wrapphi = cemc_towergeo->get_phibins() + wrapphi;
+          }
+        if (wrapphi >= cemc_towergeo->get_phibins())
+          {
+            wrapphi = wrapphi - cemc_towergeo->get_phibins();
+          }
+
+        // edges
+        if (ieta < 0)
+          continue;
+        if (ieta >= cemc_towergeo->get_etabins())
+          continue;
+
+        if (verbosity > 1)
+          cout << __PRETTY_FUNCTION__ << " - info - processing tower"
+              << ", bineta " << ieta << " - ["
+              << cemc_towergeo->get_etabounds(ieta).first << ", "
+              << cemc_towergeo->get_etabounds(ieta).second << "]" << ", binphi "
+              << wrapphi << " - ["
+              << cemc_towergeo->get_phibounds(wrapphi).first << ", "
+              << cemc_towergeo->get_phibounds(wrapphi).second << "]" << endl;
+
+        RawTower* tower = cemc_towerList->getTower(ieta, wrapphi);
+        double energy = 0;
+        if (tower)
+          {
+            if (verbosity > 1)
+              cout << __PRETTY_FUNCTION__ << " - info - tower " << ieta << " "
+                  << wrapphi << " energy = " << tower->get_energy() << endl;
+
+            energy = tower->get_energy();
+          }
+
+        if (calo_id == kCEMC)
+          {
+            trk.cemc_ieta //
+            [ieta - (bineta - bin_search_range)] //
+            [iphi - (binphi - bin_search_range)] //
+            = ieta - bineta + etabin_shift;
+            trk.cemc_iphi //
+            [ieta - (bineta - bin_search_range)] //
+            [iphi - (binphi - bin_search_range)] //
+            = iphi - binphi + phibin_shift;
+            trk.cemc_energy //
+            [ieta - (bineta - bin_search_range)] //
+            [iphi - (binphi - bin_search_range)] //
+            = energy;
+          }
+        if (calo_id == kHCALIN)
+          {
+            trk.hcalin_ieta //
+            [ieta - (bineta - bin_search_range)] //
+            [iphi - (binphi - bin_search_range)] //
+            = ieta - bineta + etabin_shift;
+            trk.hcalin_iphi //
+            [ieta - (bineta - bin_search_range)] //
+            [iphi - (binphi - bin_search_range)] //
+            = iphi - binphi + phibin_shift;
+            trk.hcalin_energy //
+            [ieta - (bineta - bin_search_range)] //
+            [iphi - (binphi - bin_search_range)] //
+            = energy;
+          }
+
+      } //            for (int ieta = bineta-1; ieta < bineta+2; ++ieta) {
+
+} //       // Track projections
+
 int
 EMCalAna::Init_Trk(PHCompositeNode *topNode)
 {
-  static const int BUFFER_SIZE = 32000;
-  _T_EMCalTrk = new TTree("T_EMCalTrk", "T_EMCalTrk");
-
-  _T_EMCalTrk->Branch("trk.", _trk.ClassName(), &_trk, BUFFER_SIZE);
-  _T_EMCalTrk->Branch("event", &_ievent, "event/I", BUFFER_SIZE);
+//  static const int BUFFER_SIZE = 32000;
+//  _T_EMCalTrk = new TTree("T_EMCalTrk", "T_EMCalTrk");
+//
+//  _T_EMCalTrk->Branch("trk.", _trk.ClassName(), &_trk, BUFFER_SIZE);
+//  _T_EMCalTrk->Branch("event", &_ievent, "event/I", BUFFER_SIZE);
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -501,29 +875,21 @@ EMCalAna::process_event_Trk(PHCompositeNode *topNode)
 
   if (verbosity > 2)
     cout << "EMCalAna::process_event_Trk() entered" << endl;
-  _trk.Clear();
 
-//  SvtxEvalStack svtxevalstack(topNode);
-//
-//  SvtxVertexEval* vertexeval = svtxevalstack.get_vertex_eval();
-//  SvtxTrackEval* trackeval = svtxevalstack.get_track_eval();
-//  SvtxClusterEval* clustereval = svtxevalstack.get_cluster_eval();
-//  SvtxHitEval* hiteval = svtxevalstack.get_hit_eval();
-//  SvtxTruthEval* trutheval = svtxevalstack.get_truth_eval();
-//
-//  SvtxTrackMap* trackmap = findNode::getClass<SvtxTrackMap>(topNode,
-//      "SvtxTrackMap");
-//  assert(trackmap);
-//  PHG4TruthInfoContainer* truthinfo =
-//      findNode::getClass<PHG4TruthInfoContainer>(topNode, "G4TruthInfo");
-//  assert(truthinfo);
-//  PHG4TruthInfoContainer::Map map = truthinfo->GetPrimaryMap();
-//
-//  for (PHG4TruthInfoContainer::ConstIterator iter = map.begin();
-//      iter != map.end(); ++iter)
-//    {
-//
-//    }
+  if (!_eval_stack)
+    _eval_stack = new SvtxEvalStack(topNode);
+
+  _trk = findNode::getClass<EMCalTrk>(topNode, "EMCalTrk");
+  assert(_trk);
+
+  PHG4TruthInfoContainer* truthinfo =
+      findNode::getClass<PHG4TruthInfoContainer>(topNode, "G4TruthInfo");
+  assert(truthinfo);
+  PHG4TruthInfoContainer::Map primary_map = truthinfo->GetPrimaryMap();
+
+  assert(primary_map.size()>0);
+
+  eval_trk(primary_map.rbegin()->second, *_trk, topNode);
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -763,27 +1129,37 @@ EMCalAna::Init_Tower(PHCompositeNode *topNode)
   hm->registerHisto(new TH1F("EMCalAna_h_CEMC_TOWER_1x1", //
       "h_CEMC_TOWER_1x1", 5000, 0, 50));
   hm->registerHisto(new TH1F("EMCalAna_h_CEMC_TOWER_1x1_max", //
-      "h_CEMC_TOWER_1x1_max", 5000, 0, 50));
+      "EMCalAna_h_CEMC_TOWER_1x1_max", 5000, 0, 50));
+  hm->registerHisto(new TH1F("EMCalAna_h_CEMC_TOWER_1x1_max_trigger_ADC", //
+      "EMCalAna_h_CEMC_TOWER_1x1_max_trigger_ADC", 5000, 0, 50));
 
   hm->registerHisto(new TH1F("EMCalAna_h_CEMC_TOWER_2x2", //
       "h_CEMC_TOWER_2x2", 5000, 0, 50));
   hm->registerHisto(new TH1F("EMCalAna_h_CEMC_TOWER_2x2_max", //
-      "h_CEMC_TOWER_2x2_max", 5000, 0, 50));
+      "EMCalAna_h_CEMC_TOWER_2x2_max", 5000, 0, 50));
+  hm->registerHisto(new TH1F("EMCalAna_h_CEMC_TOWER_2x2_max_trigger_ADC", //
+      "EMCalAna_h_CEMC_TOWER_2x2_max_trigger_ADC", 5000, 0, 50));
 
   hm->registerHisto(new TH1F("EMCalAna_h_CEMC_TOWER_3x3", //
       "h_CEMC_TOWER_3x3", 5000, 0, 50));
   hm->registerHisto(new TH1F("EMCalAna_h_CEMC_TOWER_3x3_max", //
-      "h_CEMC_TOWER_3x3_max", 5000, 0, 50));
+      "EMCalAna_h_CEMC_TOWER_3x3_max", 5000, 0, 50));
+  hm->registerHisto(new TH1F("EMCalAna_h_CEMC_TOWER_3x3_max_trigger_ADC", //
+      "EMCalAna_h_CEMC_TOWER_3x3_max_trigger_ADC", 5000, 0, 50));
 
   hm->registerHisto(new TH1F("EMCalAna_h_CEMC_TOWER_4x4", //
       "h_CEMC_TOWER_4x4", 5000, 0, 50));
   hm->registerHisto(new TH1F("EMCalAna_h_CEMC_TOWER_4x4_max", //
-      "h_CEMC_TOWER_4x4_max", 5000, 0, 50));
+      "EMCalAna_h_CEMC_TOWER_4x4_max", 5000, 0, 50));
+  hm->registerHisto(new TH1F("EMCalAna_h_CEMC_TOWER_4x4_max_trigger_ADC", //
+      "EMCalAna_h_CEMC_TOWER_4x4_max_trigger_ADC", 5000, 0, 50));
 
   hm->registerHisto(new TH1F("EMCalAna_h_CEMC_TOWER_5x5", //
       "h_CEMC_TOWER_4x4", 5000, 0, 50));
   hm->registerHisto(new TH1F("EMCalAna_h_CEMC_TOWER_5x5_max", //
-      "h_CEMC_TOWER_4x4_max", 5000, 0, 50));
+      "EMCalAna_h_CEMC_TOWER_5x5_max", 5000, 0, 50));
+  hm->registerHisto(new TH1F("EMCalAna_h_CEMC_TOWER_5x5_max_trigger_ADC", //
+      "EMCalAna_h_CEMC_TOWER_5x5_max_trigger_ADC", 5000, 0, 50));
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -816,6 +1192,7 @@ EMCalAna::process_event_Tower(PHCompositeNode *topNode)
       return Fun4AllReturnCodes::ABORTEVENT;
     }
 
+  static const double trigger_ADC_bin = 45. / 256.; //8-bit ADC max to 45 GeV
   static const int max_size = 5;
   map<int, string> size_label;
   size_label[1] = "1x1";
@@ -824,14 +1201,17 @@ EMCalAna::process_event_Tower(PHCompositeNode *topNode)
   size_label[4] = "4x4";
   size_label[5] = "5x5";
   map<int, double> max_energy;
+  map<int, double> max_energy_trigger_ADC;
   map<int, TH1F*> energy_hist_list;
   map<int, TH1F*> max_energy_hist_list;
+  map<int, TH1F*> max_energy_trigger_ADC_hist_list;
 
   Fun4AllHistoManager *hm = get_HistoManager();
   assert(hm);
   for (int size = 1; size <= max_size; ++size)
     {
       max_energy[size] = 0;
+      max_energy_trigger_ADC[size] = 0;
 
       TH1F* h = NULL;
 
@@ -842,6 +1222,12 @@ EMCalAna::process_event_Tower(PHCompositeNode *topNode)
           "EMCalAna_h_CEMC_TOWER_" + size_label[size] + "_max");
       assert(h);
       max_energy_hist_list[size] = h;
+
+      h = (TH1F*) hm->getHisto(
+          "EMCalAna_h_CEMC_TOWER_" + size_label[size] + "_max_trigger_ADC");
+      assert(h);
+      max_energy_trigger_ADC_hist_list[size] = h;
+
     }
 
   for (int binphi = 0; binphi < towergeom->get_phibins(); ++binphi)
@@ -851,6 +1237,7 @@ EMCalAna::process_event_Tower(PHCompositeNode *topNode)
           for (int size = 1; size <= max_size; ++size)
             {
               double energy = 0;
+              double energy_trigger_ADC = 0;
 
               for (int iphi = binphi; iphi < binphi + size; ++iphi)
                 {
@@ -868,9 +1255,16 @@ EMCalAna::process_event_Tower(PHCompositeNode *topNode)
                         }
 
                       RawTower* tower = towers->getTower(ieta, wrapphi);
+
                       if (tower)
                         {
-                          energy += tower->get_energy();
+                          const double e_intput = tower->get_energy();
+
+                          const double e_trigger_ADC = round(
+                              e_intput / trigger_ADC_bin) * trigger_ADC_bin;
+
+                          energy += e_intput;
+                          energy_trigger_ADC += e_trigger_ADC;
                         }
                     }
                 }
@@ -879,6 +1273,8 @@ EMCalAna::process_event_Tower(PHCompositeNode *topNode)
 
               if (energy > max_energy[size])
                 max_energy[size] = energy;
+              if (energy_trigger_ADC > max_energy_trigger_ADC[size])
+                max_energy_trigger_ADC[size] = energy_trigger_ADC;
 
             } //          for (int size = 1; size <= 4; ++size)
         }
@@ -887,6 +1283,8 @@ EMCalAna::process_event_Tower(PHCompositeNode *topNode)
   for (int size = 1; size <= max_size; ++size)
     {
       max_energy_hist_list[size]->Fill(max_energy[size]);
+      max_energy_trigger_ADC_hist_list[size]->Fill(
+          max_energy_trigger_ADC[size]);
     }
   return Fun4AllReturnCodes::EVENT_OK;
 }

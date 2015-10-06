@@ -3,6 +3,7 @@
 
 #include <fun4all/SubsysReco.h>
 #include <phool/PHCompositeNode.h>
+#include <g4hough/PHG4HoughTransform.h>
 
 #include <TNtuple.h>
 #include <TFile.h>
@@ -19,6 +20,9 @@ class TH1F;
 class TTree;
 class SvtxEvalStack;
 class PHG4Particle;
+class RawTowerGeom;
+class RawTowerContainer;
+class SvtxTrack;
 
 /// \class EMCalAna
 class EMCalAna : public SubsysReco
@@ -80,6 +84,9 @@ public:
     _flags &= ~(uint32_t) flag;
   }
 
+  float get_mag_field() const          {return _magfield;}
+  void  set_mag_field(float magfield) {_magfield = magfield;}
+
 private:
 
   Fun4AllHistoManager *
@@ -107,9 +114,27 @@ private:
 
   void eval_trk(PHG4Particle * primary_particle, EMCalTrk & trk, PHCompositeNode *topNode);
 
+  enum enu_calo
+  {
+    kCEMC,
+    kHCALIN,
+    kHCALOUT
+  };
+
+  void eval_trk_proj(//
+      SvtxTrack * track, //
+      EMCalTrk & trk,
+      enu_calo calo_id,//
+      const double gvz,
+      PHCompositeNode *topNode//
+      );
+
   SvtxEvalStack * _eval_stack;
   TTree * _T_EMCalTrk;
-  EMCalTrk _trk;
+  EMCalTrk * _trk;
+
+  double _magfield;
+  PHG4HoughTransform _hough;
 
   std::string _filename;
 

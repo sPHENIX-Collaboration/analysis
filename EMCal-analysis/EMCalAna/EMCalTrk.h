@@ -24,6 +24,8 @@ public:
   virtual
   ~EMCalTrk();
 
+  virtual void     Clear(Option_t *option="");
+
   virtual void        Reset() ;
 
 
@@ -83,7 +85,18 @@ public:
 
   int nfromtruth;
 
-ClassDef(EMCalTrk,1)
+  enum {Max_N_Tower = 11};
+
+  float cemc_ieta[Max_N_Tower][Max_N_Tower];
+  float cemc_iphi[Max_N_Tower][Max_N_Tower];
+  float cemc_energy[Max_N_Tower][Max_N_Tower];
+
+  float hcalin_ieta[Max_N_Tower][Max_N_Tower];
+  float hcalin_iphi[Max_N_Tower][Max_N_Tower];
+  float hcalin_energy[Max_N_Tower][Max_N_Tower];
+
+
+ClassDef(EMCalTrk,2)
 };
 
 #endif /* EMCALTRK_H_ */

@@ -36,7 +36,7 @@ public:
 
   float gmass;
   float mass;
-  bool good_upsilon;
+  bool  good_upsilon;
 
   enum {N_trk = 2};
 
