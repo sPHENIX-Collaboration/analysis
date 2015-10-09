@@ -47,8 +47,15 @@ DrawEcal(void)
   //    DrawEnergyDensity(
   //        "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/sHijing/spacal1d/G4Hits_sPHENIX_sHijing-0-4.4fm_ALL.root_EMCalAna.root",
   //        "Scintilator Energy Density with 1D-proj. SPACAL in HIJING Au+Au 0-10% C");
+      DrawEnergyDensityXY(
+          "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/sHijing/spacal2d/G4Hits_sPHENIX_sHijing-0-4.4fm_ALL.root_EMCalAna.root",
+          "Scintilator Energy Density with 2D-proj. SPACAL in HIJING Au+Au 0-10% C");
+        DrawEnergyDensityXY(
+            "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/sHijing/spacal1d/G4Hits_sPHENIX_sHijing-0-4.4fm_ALL.root_EMCalAna.root",
+            "Scintilator Energy Density with 1D-proj. SPACAL in HIJING Au+Au 0-10% C");
 
-  DrawTower_EMCTrigEff();
+
+//  DrawTower_EMCTrigEff();
 
 }
 
@@ -93,6 +100,56 @@ DrawEnergyDensity(
 
   t = new TText(.5, .95, (title));
   t->SetNDC();
+  t->SetTextAlign(22);
+  t->Draw();
+
+  SaveCanvas(c1, infile + TString("_DrawEcal_") + TString(c1->GetName()),
+      kTRUE);
+}
+
+void
+DrawEnergyDensityXY(
+    const TString infile =
+        "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/sHijing/spacal2d/G4Hits_sPHENIX_sHijing-0-4.4fm_ALL.root_EMCalAna.root",
+    const TString title = "HIJING Au+Au 0-10% C + Geant4")
+{
+  TH1 * EMCalAna_h_CEMC_RZ = DrawTower_Load(infile, "EMCalAna_h_CEMC_XY");
+  TH1 * EMCalAna_h_HCALIN_RZ = DrawTower_Load(infile, "EMCalAna_h_HCALIN_XY");
+  TH1 * EMCalAna_h_HCALOUT_RZ = DrawTower_Load(infile, "EMCalAna_h_HCALOUT_XY");
+
+  EMCalAna_h_CEMC_RZ->Add(EMCalAna_h_HCALIN_RZ);
+  EMCalAna_h_CEMC_RZ->Add(EMCalAna_h_HCALOUT_RZ);
+
+//  for (int r = 1; r <= EMCalAna_h_CEMC_RZ->GetNbinsY(); r++)
+//    {
+//      const double radius = EMCalAna_h_CEMC_RZ->GetYaxis()->GetBinCenter(r);
+//      const double circ = 2 * TMath::Pi() * radius;
+//      for (int z = 1; z <= EMCalAna_h_CEMC_RZ->GetNbinsX(); z++)
+//        {
+//
+//          EMCalAna_h_CEMC_RZ->SetBinContent(z, r,
+//              EMCalAna_h_CEMC_RZ->GetBinContent(z, r) / circ);
+//        }
+//    }
+
+  TCanvas *c1 = new TCanvas("DrawEnergyDensityXY", "DrawEnergyDensityXY", 900,
+      900);
+  c1->Divide(1, 1);
+  int idx = 1;
+  TPad * p;
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+  p->SetLogz();
+//  p->SetGridx(0);
+//  p->SetGridy(0);
+
+  EMCalAna_h_CEMC_RZ->SetTitle(";X (cm);Y (cm)");
+  EMCalAna_h_CEMC_RZ->Draw("colz");
+
+  TText *
+  t = new TText(.5, .95, (title));
+  t->SetNDC();
+  t->SetTextSize(0.03);
   t->SetTextAlign(22);
   t->Draw();
 

@@ -28,7 +28,7 @@ Draw_PHG4DSTReader( //
 //        const TString infile = "G4Hits_sPHENIX_e-_eta0_8GeV.root_Ana.root_DSTReader.root"//
 //    const TString infile =
 //        "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/single_particle/spacal2d/zerofield/G4Hits_sPHENIX_gamma_etaALL_50GeV.root_DSTReader.root" //
-    const TString infile = "G4sPHENIXCells.root_DSTReader.root" //
+//    const TString infile = "G4sPHENIXCells.root_DSTReader.root" //
 //    const TString infile = "G4sPHENIXCells_2DSpacal_100e10GeV.root_Ana.root_DSTReader.root"//
 //    const TString infile =
 //         "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/SPACAL_TestBeam_8GeV_CALICEBirk/Sim1096_eneg_DSTReader.root" //
@@ -452,9 +452,9 @@ DrawCalibratedE_PlotTestBeam(
 }
 
 void
-DrawCalibratedE_Plot(TString ID = "4.12GeV", TString config = "")
+//DrawCalibratedE_Plot(TString ID = "4.12GeV", TString config = "")
 //DrawCalibratedE_Plot(TString ID = "8GeV", TString config = "")
-//DrawCalibratedE_Plot(TString ID = "12GeV",TString config = "")
+DrawCalibratedE_Plot(TString ID = "12GeV",TString config = "")
 //DrawCalibratedE_Plot(TString ID = "8GeV",TString config = "_Range1um")
 //DrawCalibratedE_Plot(TString ID = "8GeV",TString config = "_CALICEBirk")
 //DrawCalibratedE_Plot(TString ID = "4GeV",TString config = "")
@@ -683,7 +683,7 @@ DrawCalibratedE_Plot(TString ID = "4.12GeV", TString config = "")
           f_gaus_data->GetParameter(2) / f_gaus_data->GetParameter(1) * 100),
       "pe");
   lg->AddEntry(h_eneg,
-      Form("#splitline{e^{-} in sPHENIX Geant4,}{#DeltaE/E = %.1f%%}",
+      Form("#splitline{e^{-} sim using sPHENIX Geant4,}{#DeltaE/E = %.1f%%}",
           f_gaus_sim->GetParameter(2) / f_gaus_sim->GetParameter(1) * 100),
       "lf");
   lg->Draw();
@@ -711,7 +711,7 @@ DrawCalibratedE_Plot(TString ID = "4.12GeV", TString config = "")
 
   ECalSumNonElectron->Draw();
   h_muonneg->Draw("same");
-  h_eneg_scale_hadron_data_tail->Draw("same");
+//  h_eneg_scale_hadron_data_tail->Draw("same");  ////////////// Guess of electron contamination
   h_pineg->Draw("same");
   h_kaonneg->Draw("same");
   ECalSumNonElectron->Draw("same");
@@ -721,11 +721,11 @@ DrawCalibratedE_Plot(TString ID = "4.12GeV", TString config = "")
   TLegend * lg = new TLegend(0.35, 0.65, 0.85, 0.9);
   lg->AddEntry(ECalSumNonElectron, Form("2014 eRD1 beam test (#bar{e-cut})"),
       "pe");
-  lg->AddEntry(h_pineg, Form("#pi^{-} in sPHENIX Geant4"), "l");
-  lg->AddEntry(h_kaonneg, Form("K^{-} in sPHENIX Geant4"), "l");
-  lg->AddEntry(h_eneg_scale_hadron_data_tail, Form("e^{-} in sPHENIX Geant4"),
-      "lf");
-  lg->AddEntry(h_muonneg, Form("#mu^{-} (~10%% data) in sPHENIX Geant4"), "lf");
+  lg->AddEntry(h_pineg, Form("#pi^{-} sim using sPHENIX Geant4"), "l");
+  lg->AddEntry(h_kaonneg, Form("K^{-} sim using sPHENIX Geant4"), "l");
+//  lg->AddEntry(h_eneg_scale_hadron_data_tail, Form("e^{-} sim using sPHENIX Geant4"),////////////// Guess of electron contamination
+//      "lf");////////////// Guess of electron contamination
+  lg->AddEntry(h_muonneg, Form("#mu^{-} (~10%% data) sim using sPHENIX Geant4"), "lf");
   lg->Draw();
 
   SaveCanvas(c1,

@@ -27,13 +27,16 @@ DrawEcal_pDST( //
 //    const TString infile = "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work//test_production/Upsilon/spacal2d/fieldon/SimALL_PythiaUpsilon.root_Ana.root"
 //        const TString infile =
 //            "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal2d/fieldmap/G4Hits_sPHENIX_e-_eta0_2GeV-ALL.root_Ana.root"
-        const TString infile =
-            "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal2d/fieldmap/G4Hits_sPHENIX_e-_eta0_8GeV-ALL.root_Ana.root"
+//    const TString infile =
+//        "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal2d/fieldmap/G4Hits_sPHENIX_pi-_eta0.90_8GeV-ALL.root_Ana.root"
+//    const TString infile =
+//        "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal1d/fieldmap/G4Hits_sPHENIX_e-_eta0_8GeV-ALL.root_Ana.root"
 //        const TString infile =
 //            "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal2d/fieldmap/G4Hits_sPHENIX_pi-_eta0_8GeV-ALL.root_Ana.root"
 //    const TString infile =
 //        "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal2d/fieldmap/G4Hits_sPHENIX_e-_eta0_24GeV-ALL.root_Ana.root"
-//    const TString infile = "./G4Hits_sPHENIX_pi-_eta0_8GeV.root_Ana.root"//
+//    const TString infile = "./G4Hits_sPHENIX_pi-_eta0_32GeV.root_Ana.root"//
+            const TString infile = "G4sPHENIXCellsnew.root_Ana.root"//
     )
 {
   SetOKStyle();
@@ -88,6 +91,172 @@ DrawEcal_pDST( //
 //  UpsilonPair_Checks(infile);
 
   TrackProjection_Checks(infile, "fabs(EMCalTrk_pt/EMCalTrk_gpt - 1)<0.05");
+  Edep_Checks(infile, 1.4, 1.4, "fabs(EMCalTrk_pt/EMCalTrk_gpt - 1)<0.05");
+}
+
+void
+MakeRadiusCut(TString infile, const double R_CEMC, const double R_HCALIN,
+    TCut good_track_cut)
+{
+  TCanvas *c1 = new TCanvas("MakeRadiusCut" + cuts, "Edep_Checks" + cuts, 900,
+      900);
+
+  c1->Print(
+      TString(_file0->GetName()) + TString("_DrawEcal_pDST_")
+          + TString(c1->GetName()) + ".pdf[");
+
+  T->Draw("DST.EMCalTrk.cemc_iphi>>hcemc_iphi(130,-6.5,6.5)",
+      "DST.EMCalTrk.cemc_energy");
+  hcemc_iphi->Fit("gaus", "M");
+  TF1* f = (TF1*) (hcemc_iphi->GetListOfFunctions()->At(0));
+  assert(f);
+  T->SetAlias("EMCalTrk_cor_cemc_iphi",
+      Form("DST.EMCalTrk.cemc_iphi - %f", f->GetParameter(1)));
+  c1->Print(
+      TString(_file0->GetName()) + TString("_DrawEcal_pDST_")
+          + TString(c1->GetName()) + ".pdf");
+
+  T->Draw("DST.EMCalTrk.cemc_ieta>>hcemc_ieta(130,-6.5,6.5)",
+      "DST.EMCalTrk.cemc_energy");
+  hcemc_ieta->Fit("gaus", "M");
+  TF1* f = (TF1*) (hcemc_ieta->GetListOfFunctions()->At(0));
+  assert(f);
+  T->SetAlias("EMCalTrk_cor_cemc_ieta",
+      Form("DST.EMCalTrk.cemc_ieta - %f", f->GetParameter(1)));
+  c1->Print(
+      TString(_file0->GetName()) + TString("_DrawEcal_pDST_")
+          + TString(c1->GetName()) + ".pdf");
+
+  T->Draw("DST.EMCalTrk.hcalin_iphi>>hhcalin_iphi(130,-6.5,6.5)",
+      "DST.EMCalTrk.hcalin_energy");
+  hhcalin_iphi->Fit("gaus", "M");
+  TF1* f = (TF1*) (hhcalin_iphi->GetListOfFunctions()->At(0));
+  assert(f);
+  T->SetAlias("EMCalTrk_cor_hcalin_iphi",
+      Form("DST.EMCalTrk.hcalin_iphi - %f", f->GetParameter(1)));
+  c1->Print(
+      TString(_file0->GetName()) + TString("_DrawEcal_pDST_")
+          + TString(c1->GetName()) + ".pdf");
+
+  T->Draw("DST.EMCalTrk.hcalin_ieta>>hhcalin_ieta(130,-6.5,6.5)",
+      "DST.EMCalTrk.hcalin_energy");
+  hhcalin_ieta->Fit("gaus", "M");
+  TF1* f = (TF1*) (hhcalin_ieta->GetListOfFunctions()->At(0));
+  assert(f);
+  T->SetAlias("EMCalTrk_cor_hcalin_ieta",
+      Form("DST.EMCalTrk.hcalin_ieta - %f", f->GetParameter(1)));
+  c1->Print(
+      TString(_file0->GetName()) + TString("_DrawEcal_pDST_")
+          + TString(c1->GetName()) + ".pdf");
+
+  c1->Print(
+      TString(_file0->GetName()) + TString("_DrawEcal_pDST_")
+          + TString(c1->GetName()) + ".pdf]");
+
+  T->SetAlias("EMCalTrk_cemc_e",
+      Form(
+          "1*Sum$( DST.EMCalTrk.cemc_energy * ( sqrt(EMCalTrk_cor_cemc_iphi*EMCalTrk_cor_cemc_iphi + EMCalTrk_cor_cemc_ieta*EMCalTrk_cor_cemc_ieta) < %f )   )",
+          R_CEMC));
+  T->SetAlias("EMCalTrk_hcalin_e",
+      Form(
+          "1*Sum$( DST.EMCalTrk.hcalin_energy * ( sqrt(EMCalTrk_cor_hcalin_iphi*EMCalTrk_cor_hcalin_iphi + EMCalTrk_cor_hcalin_ieta*EMCalTrk_cor_hcalin_ieta) < %f )   )",
+          R_CEMC));
+
+  T->SetAlias("EMCalTrk_cemc_ntower",
+      Form(
+          "1*Sum$(( sqrt(EMCalTrk_cor_cemc_iphi*EMCalTrk_cor_cemc_iphi + EMCalTrk_cor_cemc_ieta*EMCalTrk_cor_cemc_ieta) < %f )   )",
+          R_CEMC));
+  T->SetAlias("EMCalTrk_hcalin_ntower",
+      Form(
+          "1*Sum$( ( sqrt(EMCalTrk_cor_hcalin_iphi*EMCalTrk_cor_hcalin_iphi + EMCalTrk_cor_hcalin_ieta*EMCalTrk_cor_hcalin_ieta) < %f )   )",
+          R_CEMC));
+
+}
+
+void
+Edep_Checks(TString infile, const double R_CEMC, const double R_HCALIN,
+    TCut good_track_cut)
+{
+  MakeRadiusCut(infile, R_CEMC, R_HCALIN, good_track_cut);
+
+  double N_Event = T->GetEntries();
+
+  TCanvas *c1 = new TCanvas("Edep_Checks" + cuts, "Edep_Checks" + cuts, 1800,
+      900);
+  c1->Divide(2, 2);
+  int idx = 1;
+  TPad * p;
+
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+  p->SetLogy();
+  T->Draw("EMCalTrk_cemc_ntower>>hEMCalTrk_cemc_ntower(16,-.5,15.5)",
+      good_track_cut);
+  hEMCalTrk_cemc_ntower->SetTitle(
+      Form("CEMC Cluster Size (R = %.1f);Cluster Size (Towers);Probability",
+          R_CEMC));
+  hEMCalTrk_cemc_ntower->Scale(1. / N_Event);
+
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+  p->SetLogy();
+  T->Draw("EMCalTrk_hcalin_ntower>>hEMCalTrk_hcalin_ntower(16,-.5,15.5)",
+      good_track_cut);
+  hEMCalTrk_hcalin_ntower->SetTitle(
+      Form(
+          "HCal_{in} Cluster Size (R = %.1f);Cluster Size (Towers);Probability",
+          R_HCALIN));
+  hEMCalTrk_hcalin_ntower->Scale(1. / N_Event);
+
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+  p->SetLogy();
+  T->Draw("EMCalTrk_cemc_e>>hEMCalTrk_cemc_e(240,-.0,12)", good_track_cut);
+  hEMCalTrk_cemc_e->SetTitle(
+      Form(
+          "CEMC Cluster Energy (R = %.1f);Cluster Energy (/bin);Probability/bin",
+          R_CEMC));
+  hEMCalTrk_cemc_e->Scale(1. / N_Event);
+
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+  p->SetLogy();
+  T->Draw("EMCalTrk_hcalin_e>>hEMCalTrk_hcalin_e(240,-.0,12)", good_track_cut);
+  hEMCalTrk_hcalin_e->SetTitle(
+      Form(
+          "HCal_{in} Cluster Energy (R = %.1f);Cluster Energy (GeV);Probability/bin",
+          R_HCALIN));
+  hEMCalTrk_hcalin_e->Scale(1. / N_Event);
+
+  SaveCanvas(c1,
+      TString(_file0->GetName()) + TString("_DrawEcal_pDST_")
+          + Form("RCEMC%.1f_RCEMC%.1f_", R_CEMC, R_HCALIN)
+          + TString(c1->GetName()), kFALSE);
+
+  TCanvas *c1 = new TCanvas("Edep_Checks_2D" + cuts, "Edep_Checks_2D" + cuts,
+      900, 900);
+//  c1->Divide(2, 2);
+//  int idx = 1;
+//  TPad * p;
+
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+  p->SetLogz();
+  T->Draw(
+      "EMCalTrk_hcalin_e:EMCalTrk_cemc_e>>h2_EMCalTrk_hcalin_e_EMCalTrk_cemc_e(240,-.0,12, 240,-.0,12)",
+      good_track_cut, "colz");
+  h2_EMCalTrk_hcalin_e_EMCalTrk_cemc_e->SetTitle(
+      Form(
+          "Energy distribution;CEMC Cluster Energy (R = %.1f) in GeV;HCal_{in} Cluster Energy (R = %.1f) in GeV",
+          R_CEMC, R_HCALIN));
+  h2_EMCalTrk_hcalin_e_EMCalTrk_cemc_e->Scale(1. / N_Event);
+  h2_EMCalTrk_hcalin_e_EMCalTrk_cemc_e->GetZaxis()->SetRangeUser(1e-6, 1);
+
+  SaveCanvas(c1,
+      TString(_file0->GetName()) + TString("_DrawEcal_pDST_")
+          + Form("RCEMC%.1f_RCEMC%.1f_", R_CEMC, R_HCALIN)
+          + TString(c1->GetName()), kFALSE);
+
 }
 
 void
@@ -111,8 +280,7 @@ TrackProjection_Checks(TString infile, TCut good_track_cut)
   hcemc->SetTitle(
       "CEMC Tower Energy Distribution;Polar Distance (Tower Width);Azimuthal Distance (Tower Width)");
   hcemc->Scale(1. / N_Event);
-  hcemc->GetZaxis()->SetRangeUser(1e-5,30);
-
+  hcemc->GetZaxis()->SetRangeUser(1e-5, 30);
 
   p = (TPad *) c1->cd(idx++);
   c1->Update();
@@ -123,8 +291,7 @@ TrackProjection_Checks(TString infile, TCut good_track_cut)
   hcalin->SetTitle(
       "HCal_{in} Tower Energy Distribution;Polar Distance (Tower Width);Azimuthal Distance (Tower Width)");
   hcalin->Scale(1. / N_Event);
-  hcalin->GetZaxis()->SetRangeUser(1e-5,30);
-
+  hcalin->GetZaxis()->SetRangeUser(1e-5, 30);
 
   SaveCanvas(c1,
       TString(_file0->GetName()) + TString("_DrawEcal_pDST_")
@@ -173,28 +340,82 @@ TrackProjection_Checks(TString infile, TCut good_track_cut)
   p->SetLogz();
   T->Draw(
       "DST.EMCalTrk.cemc_iphi:DST.EMCalTrk.cemc_ieta>>hcemcc(130,-6.5,6.5,130,-6.5,6.5)",
-      TString("DST.EMCalTrk.cemc_energy * (") + TString( good_track_cut.GetTitle()) + ")", "colz");
+      TString("DST.EMCalTrk.cemc_energy * (")
+          + TString(good_track_cut.GetTitle()) + ")", "colz");
   hcemcc->SetTitle(
       "CEMC Tower Energy Distribution;Polar Distance (Tower Width);Azimuthal Distance (Tower Width)");
   hcemcc->Scale(1. / N_Event);
-  hcemcc->GetZaxis()->SetRangeUser(1e-5,30);
-
+  hcemcc->GetZaxis()->SetRangeUser(1e-5, 30);
 
   p = (TPad *) c1->cd(idx++);
   c1->Update();
   p->SetLogz();
   T->Draw(
       "DST.EMCalTrk.hcalin_iphi:DST.EMCalTrk.hcalin_ieta>>hcalinc(130,-6.5,6.5,130,-6.5,6.5)",
-      TString("DST.EMCalTrk.hcalin_energy * (") + TString( good_track_cut.GetTitle()) + ")", "colz");
+      TString("DST.EMCalTrk.hcalin_energy * (")
+          + TString(good_track_cut.GetTitle()) + ")", "colz");
   hcalinc->SetTitle(
       "HCal_{in} Tower Energy Distribution;Polar Distance (Tower Width);Azimuthal Distance (Tower Width)");
   hcalinc->Scale(1. / N_Event);
-  hcalinc->GetZaxis()->SetRangeUser(1e-5,30);
+  hcalinc->GetZaxis()->SetRangeUser(1e-5, 30);
 
   SaveCanvas(c1,
       TString(_file0->GetName()) + TString("_DrawEcal_pDST_")
           + TString(c1->GetName()), kFALSE);
 
+  TCanvas *c1 = new TCanvas("TrackProjection_Checks_Proj" + cuts,
+      "TrackProjection_Checks_Proj" + cuts, 1800, 900);
+  c1->Divide(2, 2);
+  int idx = 1;
+  TPad * p;
+
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+  p->SetLogy();
+
+  TH1 * proj = hcemc->ProjectionX();
+  proj->SetLineColor(kBlack);
+  proj->Draw("");
+  TH1 * proj = hcemcc->ProjectionX();
+  proj->SetLineColor(kRed);
+  proj->Draw("same");
+
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+  p->SetLogy();
+
+  TH1 * proj = hcalin->ProjectionX();
+  proj->SetLineColor(kBlack);
+  proj->Draw("");
+  TH1 * proj = hcalinc->ProjectionX();
+  proj->SetLineColor(kRed);
+  proj->Draw("same");
+
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+  p->SetLogy();
+
+  TH1 * proj = hcemc->ProjectionY();
+  proj->SetLineColor(kBlack);
+  proj->Draw("");
+  TH1 * proj = hcemcc->ProjectionY();
+  proj->SetLineColor(kRed);
+  proj->Draw("same");
+
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+  p->SetLogy();
+
+  TH1 * proj = hcalin->ProjectionY();
+  proj->SetLineColor(kBlack);
+  proj->Draw("");
+  TH1 * proj = hcalinc->ProjectionY();
+  proj->SetLineColor(kRed);
+  proj->Draw("same");
+
+  SaveCanvas(c1,
+      TString(_file0->GetName()) + TString("_DrawEcal_pDST_")
+          + TString(c1->GetName()), kFALSE);
 }
 
 void
