@@ -251,7 +251,10 @@ EMCalAna::process_event_UpslisonTrig(PHCompositeNode *topNode)
   static const double upsilon_mass = 9460.30e-3;
 
   if (!_eval_stack)
-    _eval_stack = new SvtxEvalStack(topNode);
+    {
+      _eval_stack = new SvtxEvalStack(topNode);
+      _eval_stack->set_strict(false);
+    }
 //
 //  SvtxVertexEval* vertexeval = svtxevalstack.get_vertex_eval();
 //  SvtxTrackEval* trackeval = svtxevalstack.get_track_eval();
@@ -362,7 +365,10 @@ EMCalAna::eval_trk(PHG4Particle * g4particle, EMCalTrk & trk,
   assert(g4particle);
 
   if (!_eval_stack)
-    _eval_stack = new SvtxEvalStack(topNode);
+    {
+      _eval_stack = new SvtxEvalStack(topNode);
+      _eval_stack->set_strict(false);
+    }
 //  SvtxVertexEval* vertexeval = _eval_stack->get_vertex_eval();
   SvtxTrackEval* trackeval = _eval_stack->get_track_eval();
 //  SvtxClusterEval* clustereval = _eval_stack->get_cluster_eval();
@@ -559,7 +565,10 @@ EMCalAna::eval_trk_proj(
     }
 
   if (!_eval_stack)
-    _eval_stack = new SvtxEvalStack(topNode);
+    {
+      _eval_stack = new SvtxEvalStack(topNode);
+      _eval_stack->set_strict(false);
+    }
 
   // pull the tower geometry
   string towergeonodename = "TOWERGEOM_" + detector;
@@ -877,7 +886,10 @@ EMCalAna::process_event_Trk(PHCompositeNode *topNode)
     cout << "EMCalAna::process_event_Trk() entered" << endl;
 
   if (!_eval_stack)
-    _eval_stack = new SvtxEvalStack(topNode);
+    {
+      _eval_stack = new SvtxEvalStack(topNode);
+      _eval_stack->set_strict(false);
+    }
 
   _trk = findNode::getClass<EMCalTrk>(topNode, "EMCalTrk");
   assert(_trk);
