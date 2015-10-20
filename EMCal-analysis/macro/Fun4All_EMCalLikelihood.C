@@ -1,0 +1,185 @@
+// $Id: $                                                                                             
+
+/*!
+ * \file Fun4All_EMCalLikelihood.C
+ * \brief 
+ * \author Jin Huang <jhuang@bnl.gov>
+ * \version $Revision:   $
+ * \date $Date: $
+ */
+
+#include <cassert>
+
+void
+Fun4All_EMCalLikelihood(const int nEvents = 0,
+    TString base_dir =
+        "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/",
+    TString pid = "e-", TString kine_config = "eta0_4GeV", TString ll_config =
+        "Edep_Distribution_ll_sample")
+{
+  const TString inputFile = base_dir + "/G4Hits_sPHENIX_" + pid + "_"
+      + kine_config + "-ALL.root_Ana.root.lst";
+  //                "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/G4Hits_sPHENIX_e-_eta0_2GeV-ALL.root_Ana.root.lst")
+
+  TString s_outputFile = inputFile;
+  s_outputFile += "_EMCalLikelihood.root";
+  const char * outputFile = s_outputFile.Data();
+
+  gSystem->Load("libfun4all.so");
+  gSystem->Load("libg4vertex.so");
+  gSystem->Load("libemcal_ana.so");
+
+  Fun4AllServer *se = Fun4AllServer::instance();
+  se->Verbosity(0);
+  // just if we set some flags somewhere in this macro
+  recoConsts *rc = recoConsts::instance();
+
+  double center_cemc_iphi = 1000;
+  double center_cemc_ieta = 1000;
+  double center_hcalin_iphi = 1000;
+  double center_hcalin_ieta = 1000;
+
+  double width = 0;
+  double width_emcal_eta = 0;
+
+  if (base_dir.Contains("spacal2d") && kine_config.Contains("eta0_"))
+    {
+      ///////////////////////////////////////////////
+      // Projection center based on /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/G4Hits_sPHENIX_e-_eta0_4GeV-ALL.root_Ana.root
+      ///////////////////////////////////////////////
+      center_cemc_iphi = 0.0952638; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/G4Hits_sPHENIX_e-_eta0_4GeV-ALL.root_Ana.root
+      center_cemc_ieta = 0.00397331; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/G4Hits_sPHENIX_e-_eta0_4GeV-ALL.root_Ana.root
+      center_hcalin_iphi = 0.354109; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/G4Hits_sPHENIX_pi-_eta0_4GeV-ALL.root_Ana.root
+      center_hcalin_ieta = -0.000273002; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/G4Hits_sPHENIX_pi-_eta0_4GeV-ALL.root_Ana.root
+
+      width = 1.4;
+      width_emcal_eta = 1.4;
+    }
+  else  if (base_dir.Contains("spacal1d") && kine_config.Contains("eta0.90_2GeV"))
+    {
+      center_cemc_iphi = 0.53236; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal1d/fieldmap/G4Hits_sPHENIX_e-_eta0.90_2GeV-ALL.root_Ana.root
+      center_cemc_ieta = 1.15917; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal1d/fieldmap/G4Hits_sPHENIX_e-_eta0.90_2GeV-ALL.root_Ana.root
+      center_hcalin_iphi = 0.445272; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal1d/fieldmap/G4Hits_sPHENIX_pi-_eta0.90_2GeV-ALL.root_Ana.root
+      center_hcalin_ieta = -0.180098; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal1d/fieldmap/G4Hits_sPHENIX_pi-_eta0.90_2GeV-ALL.root_Ana.root
+
+      width = 1.4;
+      width_emcal_eta = 2.6;
+    }
+  else  if (base_dir.Contains("spacal1d") && kine_config.Contains("eta0.90_4GeV"))
+    {
+      center_cemc_iphi = 0.251162; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal1d/fieldmap/G4Hits_sPHENIX_e-_eta0.90_4GeV-ALL.root_Ana.root
+      center_cemc_ieta = 1.35067; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal1d/fieldmap/G4Hits_sPHENIX_e-_eta0.90_4GeV-ALL.root_Ana.root
+      center_hcalin_iphi = 0.393433; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal1d/fieldmap/G4Hits_sPHENIX_pi-_eta0.90_4GeV-ALL.root_Ana.root
+      center_hcalin_ieta = -0.116632; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal1d/fieldmap/G4Hits_sPHENIX_pi-_eta0.90_4GeV-ALL.root_Ana.root
+
+      width = 1.4;
+      width_emcal_eta = 2.6;
+    }
+  else  if (base_dir.Contains("spacal1d") && kine_config.Contains("eta0.90_8GeV"))
+    {
+      center_cemc_iphi = 0.122055; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal1d/fieldmap/G4Hits_sPHENIX_e-_eta0.90_8GeV-ALL.root_Ana.root
+      center_cemc_ieta = 1.52588; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal1d/fieldmap/G4Hits_sPHENIX_e-_eta0.90_8GeV-ALL.root_Ana.root
+      center_hcalin_iphi = 0.644177; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal1d/fieldmap/G4Hits_sPHENIX_e-_eta0.90_8GeV-ALL.root_Ana.root
+      center_hcalin_ieta = -0.799621; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal1d/fieldmap/G4Hits_sPHENIX_e-_eta0.90_8GeV-ALL.root_Ana.root
+
+      width = 1.4;
+      width_emcal_eta = 2.6;
+    }
+  else
+    {
+      cout << "Error !!!!!! Unknown configuraiton"
+
+      return;
+    }
+
+  TH2F * h2_Edep_Distribution_e = NULL;
+  TH2F * h2_Edep_Distribution_pi = NULL;
+
+  // load edep ll input distribution
+    {
+      TFile * f =
+          new TFile(
+              base_dir + "/G4Hits_sPHENIX_e-_" + kine_config
+                  + "-ALL.root_Ana.root.lst_EMCalLikelihood.root_DrawEcal_Likelihood_"
+                  + ll_config + ".root");
+
+      if (f->IsOpen())
+        {
+          f->ls();
+          h2_Edep_Distribution_e = (TH2F *) f->GetObjectChecked(
+              "h2_Edep_Distribution", "TH2F");
+        }
+
+      TFile * f =
+          new TFile(
+              base_dir + "/G4Hits_sPHENIX_pi-_" + kine_config
+                  + "-ALL.root_Ana.root.lst_EMCalLikelihood.root_DrawEcal_Likelihood_"
+                  + ll_config + ".root");
+
+      if (f->IsOpen())
+        {
+          f->ls();
+          h2_Edep_Distribution_pi = (TH2F *) f->GetObjectChecked(
+              "h2_Edep_Distribution", "TH2F");
+        }
+//      assert(h2_Edep_Distribution_e);
+//      assert(h2_Edep_Distribution_pi);
+    }
+
+  EMCalLikelihood * emcal_ana = new EMCalLikelihood(
+      string(inputFile.Data()) + string("_hist.root"));
+  emcal_ana->Verbosity(5);
+
+  emcal_ana->set_center_cemc_ieta(center_cemc_ieta);
+  emcal_ana->set_center_cemc_iphi(center_cemc_iphi);
+  emcal_ana->set_center_hcalin_ieta(center_hcalin_ieta);
+  emcal_ana->set_center_hcalin_iphi(center_hcalin_iphi);
+
+  emcal_ana->set_width_cemc_ieta(width_emcal_eta);
+  emcal_ana->set_width_cemc_iphi(width);
+  emcal_ana->set_width_hcalin_ieta(width);
+  emcal_ana->set_width_hcalin_iphi(width);
+
+  if (h2_Edep_Distribution_e)
+    emcal_ana->set_h2_Edep_Distribution_e(h2_Edep_Distribution_e);
+  if (h2_Edep_Distribution_pi)
+    emcal_ana->set_h2_Edep_Distribution_pi(h2_Edep_Distribution_pi);
+
+  se->registerSubsystem(emcal_ana);
+
+  //--------------
+  // IO management
+  //--------------
+
+  // Hits file
+  Fun4AllInputManager *hitsin = new Fun4AllDstInputManager("DSTin");
+//  hitsin->fileopen(inputFile);
+  hitsin->AddListFile(inputFile.Data());
+  se->registerInputManager(hitsin);
+
+  Fun4AllDstOutputManager *out = new Fun4AllDstOutputManager("DSTOUT",
+      outputFile);
+  out->AddNode("Sync");
+  out->AddNode("UpsilonPair");
+  out->AddNode("EMCalTrk");
+  out->AddNode("GlobalVertexMap");
+  se->registerOutputManager(out);
+
+  gSystem->ListLibraries();
+
+//  se->Verbosity(10);
+  se->run(nEvents);
+//  se->dumpHistos(string(inputFile) + string("_hist.root"), "recreate");
+
+  //-----
+  // Exit
+  //-----
+  gSystem->Exec("ps -o sid,ppid,pid,user,comm,vsize,rssize,time");
+
+  se->End();
+
+  std::cout << "All done" << std::endl;
+  delete se;
+  gSystem->Exit(0);
+}
+

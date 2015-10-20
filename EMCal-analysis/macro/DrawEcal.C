@@ -23,10 +23,11 @@ DrawEcal(void)
 //  DrawCluster_AnaP() ;
 //  DrawCluster_Linearality();
 //  DrawCluster_Res();
-//  DrawCluster_Res_2Fit();
+  DrawCluster_Res_2Fit();
 //  DrawTowerSum_SingleE();
 //  DrawTowerSum_AnaP()->Draw("ap*");
-//  DrawTowerSum_Res_2Fit_1DSpacalNoSVX();
+  DrawCluster_Res_2Fit_Electron_NoSVX();
+  //  DrawTowerSum_Res_2Fit_1DSpacalNoSVX();
 //  DrawTowerSum_Res_2Fit_1DSpacalNoSVX_Eta3();
   //  DrawCluster_Res_2Fit_2DSpacalNoSVX();
 //    DrawCluster_Res_2Fit_1DSpacalNoSVX_Eta3();
@@ -47,12 +48,12 @@ DrawEcal(void)
   //    DrawEnergyDensity(
   //        "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/sHijing/spacal1d/G4Hits_sPHENIX_sHijing-0-4.4fm_ALL.root_EMCalAna.root",
   //        "Scintilator Energy Density with 1D-proj. SPACAL in HIJING Au+Au 0-10% C");
-      DrawEnergyDensityXY(
-          "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/sHijing/spacal2d/G4Hits_sPHENIX_sHijing-0-4.4fm_ALL.root_EMCalAna.root",
-          "Scintilator Energy Density with 2D-proj. SPACAL in HIJING Au+Au 0-10% C");
-        DrawEnergyDensityXY(
-            "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/sHijing/spacal1d/G4Hits_sPHENIX_sHijing-0-4.4fm_ALL.root_EMCalAna.root",
-            "Scintilator Energy Density with 1D-proj. SPACAL in HIJING Au+Au 0-10% C");
+//      DrawEnergyDensityXY(
+//          "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/sHijing/spacal2d/G4Hits_sPHENIX_sHijing-0-4.4fm_ALL.root_EMCalAna.root",
+//          "Scintilator Energy Density with 2D-proj. SPACAL in HIJING Au+Au 0-10% C");
+//        DrawEnergyDensityXY(
+//            "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/sHijing/spacal1d/G4Hits_sPHENIX_sHijing-0-4.4fm_ALL.root_EMCalAna.root",
+//            "Scintilator Energy Density with 1D-proj. SPACAL in HIJING Au+Au 0-10% C");
 
 
 //  DrawTower_EMCTrigEff();
@@ -968,8 +969,196 @@ DrawCluster_Res_2Fit(
   lg->Draw();
   lg2->Draw();
 
+  TLatex * t = new TLatex(0, 0.205,"Single photon in full sPHENIX detector");
+  t->Draw();
+
   SaveCanvas(c1, base + "DrawEcal_" + TString(c1->GetName()), true);
 }
+
+
+void
+DrawCluster_Res_2Fit_Electron_NoSVX(
+    const TString base =
+        "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/",
+    const TString config = "")
+{
+  gStyle->SetOptStat(0);
+  gStyle->SetOptFit(0);
+
+  TGraphErrors * gamma_eta0 = DrawCluster_AnaP(
+      base + "/nosvtx/spacal2d/fieldmap/G4Hits_sPHENIX", "e-_eta0", false);
+  TGraphErrors * gamma_eta9 = DrawCluster_AnaP(
+      base + "/nosvtx/spacal2d/fieldmap/G4Hits_sPHENIX", "e-_eta0.90", false);
+//
+  TGraphErrors * gamma_eta0_1d = DrawCluster_AnaP(
+      base + "/nosvtx/spacal1d/fieldmap/G4Hits_sPHENIX", "e-_eta0", false);
+  TGraphErrors * gamma_eta9_1d = DrawCluster_AnaP(
+      base + "/nosvtx/spacal1d/fieldmap/G4Hits_sPHENIX", "e-_eta0.90", false);
+
+
+  TCanvas *c1 = new TCanvas("DrawCluster_Res_2Fit_Electron_NoSVX", "DrawCluster_Res_2Fit_Electron_NoSVX",
+      1100, 900);
+  c1->Divide(1, 1);
+  int idx = 1;
+  TPad * p;
+
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+
+  p->SetGridx(0);
+  p->SetGridy(0);
+
+  p->DrawFrame(0, 0, 35, 20e-2,
+      ";Incoming Energy (GeV);Relative energy resolution, #DeltaE/E");
+
+  TLegend * lg = new TLegend(2, 9.6e-2, 17, 19.6e-2, NULL, "br");
+  TLegend * lg2 = new TLegend(16, 9e-2, 33, 19e-2, NULL, "br");
+
+  TF1 * f_calo = new TF1("f_calo_gamma_eta0", "sqrt([0]*[0]+[1]*[1]/x)/100",
+      0.5, 60);
+  TF1 * f_calo_l = new TF1("f_calo_l_gamma_eta0", "([0]+[1]/sqrt(x))/100", 0.5,
+      60);
+  gamma_eta0->Fit(f_calo, "RM0");
+  gamma_eta0->Fit(f_calo_l, "RM0");
+
+  gamma_eta0->SetLineColor(kRed + 1);
+  gamma_eta0->SetMarkerColor(kRed + 1);
+  gamma_eta0->SetLineWidth(2);
+  gamma_eta0->SetMarkerStyle(kFullSquare);
+  gamma_eta0->SetMarkerSize(2);
+  f_calo->SetLineColor(kRed + 1);
+  f_calo->SetLineWidth(2);
+  f_calo_l->SetLineColor(kRed + 1);
+  f_calo_l->SetLineWidth(2);
+  f_calo_l->SetLineStyle(kDashed);
+
+  f_calo->Draw("same");
+  f_calo_l->Draw("same");
+  gamma_eta0->Draw("p");
+
+  lg->AddEntry(gamma_eta0,
+      Form("2D-proj., #eta = 0.0-0.1", f_calo->GetParameter(0),
+          f_calo->GetParameter(1)), "p");
+  lg2->AddEntry(f_calo,
+      Form("#DeltaE/E = %.1f%% #oplus %.1f%%/#sqrt{E}", f_calo->GetParameter(0),
+          f_calo->GetParameter(1)), "l");
+  TLegendEntry * entry = lg2->AddEntry(f_calo_l,
+      Form("#DeltaE/E = %.1f%%  + %.1f%%/#sqrt{E}", f_calo_l->GetParameter(0),
+          f_calo_l->GetParameter(1)), "l");
+  entry->SetTextColor(kGray + 1);
+
+  TF1 * f_calo = new TF1("f_calo_gamma_eta9", "sqrt([0]*[0]+[1]*[1]/x)/100",
+      0.5, 60);
+  TF1 * f_calo_l = new TF1("f_calo_l_gamma_eta9", "([0]+[1]/sqrt(x))/100", 0.5,
+      60);
+  gamma_eta9->Fit(f_calo, "RM0");
+  gamma_eta9->Fit(f_calo_l, "RM0");
+
+  gamma_eta9->SetLineColor(kRed + 3);
+  gamma_eta9->SetMarkerColor(kRed + 3);
+  gamma_eta9->SetLineWidth(2);
+  gamma_eta9->SetMarkerStyle(kFullCircle);
+  gamma_eta9->SetMarkerSize(2);
+  f_calo->SetLineColor(kRed + 3);
+  f_calo->SetLineWidth(2);
+  f_calo_l->SetLineColor(kRed + 3);
+  f_calo_l->SetLineWidth(2);
+  f_calo_l->SetLineStyle(kDashed);
+
+  f_calo->Draw("same");
+  f_calo_l->Draw("same");
+  gamma_eta9->Draw("p");
+
+  TString ltitle = Form("2D-proj., #eta = 0.9-1.0", f_calo->GetParameter(0),
+      f_calo->GetParameter(1));
+  lg->AddEntry(gamma_eta9, ltitle.Data(), "p");
+  lg2->AddEntry(f_calo,
+      Form("#DeltaE/E = %.1f%% #oplus %.1f%%/#sqrt{E}", f_calo->GetParameter(0),
+          f_calo->GetParameter(1)), "l");
+  TLegendEntry * entry = lg2->AddEntry(f_calo_l,
+      Form("#DeltaE/E = %.1f%%  + %.1f%%/#sqrt{E}", f_calo_l->GetParameter(0),
+          f_calo_l->GetParameter(1)), "l");
+  entry->SetTextColor(kGray + 1);
+  cout << "Title = " << ltitle << endl;
+
+  TF1 * f_calo = new TF1("f_calo_gamma_eta0_1d", "sqrt([0]*[0]+[1]*[1]/x)/100",
+      0.5, 60);
+  TF1 * f_calo_l = new TF1("f_calo_l_gamma_eta0_1d", "([0]+[1]/sqrt(x))/100",
+      0.5, 60);
+  gamma_eta0_1d->Fit(f_calo, "RM0");
+  gamma_eta0_1d->Fit(f_calo_l, "RM0");
+
+  gamma_eta0_1d->SetLineColor(kBlue + 1);
+  gamma_eta0_1d->SetMarkerColor(kBlue + 1);
+  gamma_eta0_1d->SetLineWidth(2);
+  gamma_eta0_1d->SetMarkerStyle(kOpenSquare);
+  gamma_eta0_1d->SetMarkerSize(2);
+  f_calo->SetLineColor(kBlue + 1);
+  f_calo->SetLineWidth(2);
+  f_calo_l->SetLineColor(kBlue + 1);
+  f_calo_l->SetLineWidth(2);
+  f_calo_l->SetLineStyle(kDashed);
+
+  f_calo->Draw("same");
+  f_calo_l->Draw("same");
+  gamma_eta0_1d->Draw("p");
+
+  TString ltitle = Form("1D-proj., #eta = 0.0-0.1", f_calo->GetParameter(0),
+      f_calo->GetParameter(1));
+  lg->AddEntry(gamma_eta0_1d, ltitle.Data(), "p");
+  lg2->AddEntry(f_calo,
+      Form("#DeltaE/E = %.1f%% #oplus %.1f%%/#sqrt{E}", f_calo->GetParameter(0),
+          f_calo->GetParameter(1)), "l");
+  TLegendEntry * entry = lg2->AddEntry(f_calo_l,
+      Form("#DeltaE/E = %.1f%%  + %.1f%%/#sqrt{E}", f_calo_l->GetParameter(0),
+          f_calo_l->GetParameter(1)), "l");
+  entry->SetTextColor(kGray + 1);
+
+  TF1 * f_calo = new TF1("f_calo_gamma_eta0_1d", "sqrt([0]*[0]+[1]*[1]/x)/100",
+      0.5, 60);
+  TF1 * f_calo_l = new TF1("f_calo_l_gamma_eta0_1d", "([0]+[1]/sqrt(x))/100",
+      0.5, 60);
+  gamma_eta9_1d->Fit(f_calo, "RM0");
+  gamma_eta9_1d->Fit(f_calo_l, "RM0");
+
+  gamma_eta9_1d->SetLineColor(kBlue + 3);
+  gamma_eta9_1d->SetMarkerColor(kBlue + 3);
+  gamma_eta9_1d->SetLineWidth(2);
+  gamma_eta9_1d->SetMarkerStyle(kOpenCircle);
+  gamma_eta9_1d->SetMarkerSize(2);
+  f_calo->SetLineColor(kBlue + 3);
+  f_calo->SetLineWidth(2);
+  f_calo_l->SetLineColor(kBlue + 3);
+  f_calo_l->SetLineWidth(2);
+  f_calo_l->SetLineStyle(kDashed);
+
+  f_calo->Draw("same");
+  f_calo_l->Draw("same");
+  gamma_eta9_1d->Draw("p");
+
+  TString ltitle = Form("1D-proj., #eta = 0.9-1.0", f_calo->GetParameter(0),
+      f_calo->GetParameter(1));
+  lg->AddEntry(gamma_eta9_1d, ltitle.Data(), "p");
+  lg2->AddEntry(f_calo,
+      Form("#DeltaE/E = %.1f%% #oplus %.1f%%/#sqrt{E}", f_calo->GetParameter(0),
+          f_calo->GetParameter(1)), "l");
+  TLegendEntry * entry = lg2->AddEntry(f_calo_l,
+      Form("#DeltaE/E = %.1f%%  + %.1f%%/#sqrt{E}", f_calo_l->GetParameter(0),
+          f_calo_l->GetParameter(1)), "l");
+  entry->SetTextColor(kGray + 1);
+  cout << "Title = " << ltitle << endl;
+
+  lg->Draw();
+  lg2->Draw();
+
+
+  TLatex * t = new TLatex(0, 0.205,"Single electron in sPHENIX calorimetry (no tracker)");
+  t->Draw();
+
+
+  SaveCanvas(c1, base + "DrawEcal_" + TString(c1->GetName()), true);
+}
+
 
 void
 DrawCluster_Res_2Fit_1DSpacalNoSVX(

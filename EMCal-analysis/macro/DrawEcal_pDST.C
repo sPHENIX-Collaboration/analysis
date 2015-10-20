@@ -25,18 +25,37 @@ TString cuts = "";
 void
 DrawEcal_pDST( //
 //    const TString infile = "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work//test_production/Upsilon/spacal2d/fieldon/SimALL_PythiaUpsilon.root_Ana.root"
-//        const TString infile =
-//            "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal2d/fieldmap/G4Hits_sPHENIX_e-_eta0_2GeV-ALL.root_Ana.root"
-//    const TString infile =
-//        "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal2d/fieldmap/G4Hits_sPHENIX_pi-_eta0.90_8GeV-ALL.root_Ana.root"
-//    const TString infile =
-//        "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal1d/fieldmap/G4Hits_sPHENIX_e-_eta0_8GeV-ALL.root_Ana.root"
-//        const TString infile =
-//            "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal2d/fieldmap/G4Hits_sPHENIX_pi-_eta0_8GeV-ALL.root_Ana.root"
-//    const TString infile =
-//        "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal2d/fieldmap/G4Hits_sPHENIX_e-_eta0_24GeV-ALL.root_Ana.root"
+
+//        const TString infile =   "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/G4Hits_sPHENIX_pi-_eta0_8GeV-ALL.root_Ana.root"
+//        const TString infile =   "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/G4Hits_sPHENIX_e-_eta0_8GeV-ALL.root_Ana.root"
+//    const TString infile =  "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/G4Hits_sPHENIX_e-_eta0_4GeV-ALL.root_Ana.root"
+//  const TString infile = "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/G4Hits_sPHENIX_pi-_eta0_4GeV-ALL.root_Ana.root"
+//  const TString infile = "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/G4Hits_sPHENIX_e-_eta0_2GeV-ALL.root_Ana.root"
+//    const TString infile = "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/G4Hits_sPHENIX_pi-_eta0_2GeV-ALL.root_Ana.root"
+
+//        const TString infile =   "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/embedding/emcstudies/pidstudies/spacal2d/fieldmap/G4Hits_sPHENIX_pi-_eta0_8GeV-ALL.root_Ana.root"
+//        const TString infile =   "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/embedding/emcstudies/pidstudies/spacal2d/fieldmap/G4Hits_sPHENIX_e-_eta0_8GeV-ALL.root_Ana.root"
+//    const TString infile =  "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/embedding/emcstudies/pidstudies/spacal2d/fieldmap/G4Hits_sPHENIX_e-_eta0_4GeV-ALL.root_Ana.root"
+//  const TString infile = "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/embedding/emcstudies/pidstudies/spacal2d/fieldmap/G4Hits_sPHENIX_pi-_eta0_4GeV-ALL.root_Ana.root"
+//  const TString infile = "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/embedding/emcstudies/pidstudies/spacal2d/fieldmap/G4Hits_sPHENIX_e-_eta0_2GeV-ALL.root_Ana.root"
+//    const TString infile = "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/embedding/emcstudies/pidstudies/spacal2d/fieldmap/G4Hits_sPHENIX_pi-_eta0_2GeV-ALL.root_Ana.root"
+
+//        const TString infile =   "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal1d/fieldmap/G4Hits_sPHENIX_e-_eta0.90_8GeV-ALL.root_Ana.root"
+    //        const TString infile =   "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal1d/fieldmap/G4Hits_sPHENIX_pi-_eta0.90_8GeV-ALL.root_Ana.root"
+    //        const TString infile =   "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal1d/fieldmap/G4Hits_sPHENIX_e-_eta0.90_4GeV-ALL.root_Ana.root"
+    //            const TString infile =   "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal1d/fieldmap/G4Hits_sPHENIX_pi-_eta0.90_4GeV-ALL.root_Ana.root"
+//            const TString infile =   "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal1d/fieldmap/G4Hits_sPHENIX_e-_eta0.90_2GeV-ALL.root_Ana.root"
+//                const TString infile =   "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal1d/fieldmap/G4Hits_sPHENIX_pi-_eta0.90_2GeV-ALL.root_Ana.root"
+//
+//        const TString infile =   "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/embedding/emcstudies/pidstudies/spacal1d/fieldmap/G4Hits_sPHENIX_pi-_eta0.90_8GeV-ALL.root_Ana.root"
+//        const TString infile =   "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/embedding/emcstudies/pidstudies/spacal1d/fieldmap/G4Hits_sPHENIX_e-_eta0.90_8GeV-ALL.root_Ana.root"
+//    const TString infile =  "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/embedding/emcstudies/pidstudies/spacal1d/fieldmap/G4Hits_sPHENIX_e-_eta0.90_4GeV-ALL.root_Ana.root"
+//  const TString infile = "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/embedding/emcstudies/pidstudies/spacal1d/fieldmap/G4Hits_sPHENIX_pi-_eta0.90_4GeV-ALL.root_Ana.root"
+//  const TString infile = "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/embedding/emcstudies/pidstudies/spacal1d/fieldmap/G4Hits_sPHENIX_e-_eta0.90_2GeV-ALL.root_Ana.root"
+    const TString infile = "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/embedding/emcstudies/pidstudies/spacal1d/fieldmap/G4Hits_sPHENIX_pi-_eta0.90_2GeV-ALL.root_Ana.root"
+
 //    const TString infile = "./G4Hits_sPHENIX_pi-_eta0_32GeV.root_Ana.root"//
-            const TString infile = "G4sPHENIXCellsnew.root_Ana.root"//
+//            const TString infile = "G4Hits_sPHENIX_pi-_eta0_8GeV-0003.root_Ana.root"//
     )
 {
   SetOKStyle();
@@ -63,18 +82,28 @@ DrawEcal_pDST( //
 
       _file0 = new TFile;
       _file0->SetName(infile);
+
+      fstream flst(infile + ".lst", ios_base::out);
+
+      TObjArray *fileElements = t->GetListOfFiles();
+      TIter next(fileElements);
+      TChainElement *chEl = 0;
+      while ((chEl = (TChainElement*) next()))
+        {
+          flst << chEl->GetTitle() << endl;
+        }
+      flst.close();
+
+      cout << "Saved file list to " << infile + ".lst" << endl;
     }
 
   assert(_file0);
 
-  T->SetAlias("UpsilonPair_trk_gpt",
-      "1*sqrt(DST.UpsilonPair.trk.gpx**2 + DST.UpsilonPair.trk.gpy**2)");
-  T->SetAlias("UpsilonPair_trk_pt",
-      "1*sqrt(DST.UpsilonPair.trk.px**2 + DST.UpsilonPair.trk.py**2)");
+  T->SetAlias("UpsilonPair_trk_gpt", "1*sqrt(DST.UpsilonPair.trk.gpx**2 + DST.UpsilonPair.trk.gpy**2)");
+  T->SetAlias("UpsilonPair_trk_pt",   "1*sqrt(DST.UpsilonPair.trk.px**2 + DST.UpsilonPair.trk.py**2)");
 
-  T->SetAlias("EMCalTrk_pt", "1*sqrt(DST.EMCalTrk.px**2 + DST.EMCalTrk.px**2)");
-  T->SetAlias("EMCalTrk_gpt",
-      "1*sqrt(DST.EMCalTrk.gpx**2 + DST.EMCalTrk.gpx**2)");
+  T->SetAlias("EMCalTrk_pt", "1*sqrt(DST.EMCalTrk.px**2 + DST.EMCalTrk.py**2)");
+  T->SetAlias("EMCalTrk_gpt", "1*sqrt(DST.EMCalTrk.gpx**2 + DST.EMCalTrk.gpy**2)");
 
   const TCut event_sel = "1*1";
   cuts = "_all_event";
@@ -90,68 +119,155 @@ DrawEcal_pDST( //
 ////
 //  UpsilonPair_Checks(infile);
 
-  TrackProjection_Checks(infile, "fabs(EMCalTrk_pt/EMCalTrk_gpt - 1)<0.05");
-  Edep_Checks(infile, 1.4, 1.4, "fabs(EMCalTrk_pt/EMCalTrk_gpt - 1)<0.05");
+  TrackProjection_Checks(infile, "abs(EMCalTrk_pt/EMCalTrk_gpt - 1)<0.05");
+  Edep_Checks(infile, 1.4, 1.4, "abs(EMCalTrk_pt/EMCalTrk_gpt - 1)<0.05");
 }
 
 void
 MakeRadiusCut(TString infile, const double R_CEMC, const double R_HCALIN,
     TCut good_track_cut)
 {
-  TCanvas *c1 = new TCanvas("MakeRadiusCut" + cuts, "Edep_Checks" + cuts, 900,
-      900);
+  TCanvas *c1 = new TCanvas("MakeRadiusCut" + cuts, "MakeRadiusCut" + cuts,
+      1800, 900);
+  c1->Divide(4, 2);
+  int idx = 1;
+  TPad * p;
 
-  c1->Print(
-      TString(_file0->GetName()) + TString("_DrawEcal_pDST_")
-          + TString(c1->GetName()) + ".pdf[");
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+  p->SetLogy();
 
   T->Draw("DST.EMCalTrk.cemc_iphi>>hcemc_iphi(130,-6.5,6.5)",
-      "DST.EMCalTrk.cemc_energy");
+      TString("DST.EMCalTrk.cemc_energy * (")
+          + TString(good_track_cut.GetTitle()) + ")");
+  hcemc_iphi->SetTitle(
+      ";CEMC Azimuthal Distance (Tower Width);Energy Distribution");
   hcemc_iphi->Fit("gaus", "M");
   TF1* f = (TF1*) (hcemc_iphi->GetListOfFunctions()->At(0));
   assert(f);
   T->SetAlias("EMCalTrk_cor_cemc_iphi",
       Form("DST.EMCalTrk.cemc_iphi - %f", f->GetParameter(1)));
-  c1->Print(
-      TString(_file0->GetName()) + TString("_DrawEcal_pDST_")
-          + TString(c1->GetName()) + ".pdf");
+
+  const double center_cemc_iphi = f->GetParameter(1);
+
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+  p->SetLogy();
+
+  T->Draw("abs(EMCalTrk_cor_cemc_iphi)>>hEMCalTrk_cor_cemc_iphi(130,0,6.5)",
+      TString("DST.EMCalTrk.cemc_energy * (")
+          + TString(good_track_cut.GetTitle()) + ")");
+
+  p->DrawFrame(0, 1e-3, 6.5, 1,
+      ";CEMC Azimuthal Distance (Tower Width);Energy Leakage Ratio");
+  TGraphErrors * ge = Distribution2Efficiency(hEMCalTrk_cor_cemc_iphi);
+  ge->SetLineColor(kBlue + 2);
+  ge->SetMarkerColor(kBlue + 21);
+  ge->SetMarkerColor(kFullCircle);
+  ge->SetLineWidth(3);
+  ge->Draw("lp");
+
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+  p->SetLogy();
 
   T->Draw("DST.EMCalTrk.cemc_ieta>>hcemc_ieta(130,-6.5,6.5)",
-      "DST.EMCalTrk.cemc_energy");
+      TString("DST.EMCalTrk.cemc_energy * (")
+          + TString(good_track_cut.GetTitle()) + ")");
+  hcemc_ieta->SetTitle(
+      ";CEMC Polar Distance (Tower Width);Energy Distribution");
   hcemc_ieta->Fit("gaus", "M");
   TF1* f = (TF1*) (hcemc_ieta->GetListOfFunctions()->At(0));
   assert(f);
   T->SetAlias("EMCalTrk_cor_cemc_ieta",
       Form("DST.EMCalTrk.cemc_ieta - %f", f->GetParameter(1)));
-  c1->Print(
-      TString(_file0->GetName()) + TString("_DrawEcal_pDST_")
-          + TString(c1->GetName()) + ".pdf");
+
+  const double center_cemc_ieta = f->GetParameter(1);
+
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+  p->SetLogy();
+
+  T->Draw("abs(EMCalTrk_cor_cemc_ieta)>>hEMCalTrk_cor_cemc_ieta(130,0,6.5)",
+      TString("DST.EMCalTrk.cemc_energy * (")
+          + TString(good_track_cut.GetTitle()) + ")");
+
+  p->DrawFrame(0, 1e-3, 6.5, 1,
+      ";CEMC Polar Distance (Tower Width);Energy Leakage Ratio");
+  TGraphErrors * ge = Distribution2Efficiency(hEMCalTrk_cor_cemc_ieta);
+  ge->SetLineColor(kBlue + 2);
+  ge->SetMarkerColor(kBlue + 21);
+  ge->SetMarkerColor(kFullCircle);
+  ge->SetLineWidth(3);
+  ge->Draw("lp");
+
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+  p->SetLogy();
 
   T->Draw("DST.EMCalTrk.hcalin_iphi>>hhcalin_iphi(130,-6.5,6.5)",
-      "DST.EMCalTrk.hcalin_energy");
+      TString("DST.EMCalTrk.hcalin_energy * (")
+          + TString(good_track_cut.GetTitle()) + ")");
+  hhcalin_iphi->SetTitle(
+      ";HCal_{IN} Azimuthal Distance (Tower Width);Energy Distribution");
   hhcalin_iphi->Fit("gaus", "M");
   TF1* f = (TF1*) (hhcalin_iphi->GetListOfFunctions()->At(0));
   assert(f);
   T->SetAlias("EMCalTrk_cor_hcalin_iphi",
       Form("DST.EMCalTrk.hcalin_iphi - %f", f->GetParameter(1)));
-  c1->Print(
-      TString(_file0->GetName()) + TString("_DrawEcal_pDST_")
-          + TString(c1->GetName()) + ".pdf");
+
+  const double center_hcalin_iphi = f->GetParameter(1);
+
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+  p->SetLogy();
+
+  T->Draw("abs(EMCalTrk_cor_hcalin_iphi)>>hEMCalTrk_cor_hcalin_iphi(130,0,6.5)",
+      TString("DST.EMCalTrk.hcalin_energy * (")
+          + TString(good_track_cut.GetTitle()) + ")");
+
+  p->DrawFrame(0, 1e-3, 6.5, 1,
+      ";HCal_{IN} Azimuthal Distance (Tower Width);Energy Leakage Ratio");
+  TGraphErrors * ge = Distribution2Efficiency(hEMCalTrk_cor_hcalin_iphi);
+  ge->SetLineColor(kBlue + 2);
+  ge->SetMarkerColor(kBlue + 21);
+  ge->SetMarkerColor(kFullCircle);
+  ge->SetLineWidth(3);
+  ge->Draw("lp");
+
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+  p->SetLogy();
 
   T->Draw("DST.EMCalTrk.hcalin_ieta>>hhcalin_ieta(130,-6.5,6.5)",
-      "DST.EMCalTrk.hcalin_energy");
+      TString("DST.EMCalTrk.hcalin_energy * (")
+          + TString(good_track_cut.GetTitle()) + ")");
+  hhcalin_ieta->SetTitle(
+      ";HCal_{IN} Polar Distance (Tower Width);Energy Distribution");
   hhcalin_ieta->Fit("gaus", "M");
   TF1* f = (TF1*) (hhcalin_ieta->GetListOfFunctions()->At(0));
   assert(f);
   T->SetAlias("EMCalTrk_cor_hcalin_ieta",
       Form("DST.EMCalTrk.hcalin_ieta - %f", f->GetParameter(1)));
-  c1->Print(
-      TString(_file0->GetName()) + TString("_DrawEcal_pDST_")
-          + TString(c1->GetName()) + ".pdf");
 
-  c1->Print(
-      TString(_file0->GetName()) + TString("_DrawEcal_pDST_")
-          + TString(c1->GetName()) + ".pdf]");
+  const double center_hcalin_ieta = f->GetParameter(1);
+
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+  p->SetLogy();
+
+  T->Draw("abs(EMCalTrk_cor_hcalin_ieta)>>hEMCalTrk_cor_hcalin_ieta(130,0,6.5)",
+      TString("DST.EMCalTrk.hcalin_energy * (")
+          + TString(good_track_cut.GetTitle()) + ")");
+
+  p->DrawFrame(0, 1e-3, 6.5, 1,
+      ";HCal_{IN} Polar Distance (Tower Width);Energy Leakage Ratio");
+  TGraphErrors * ge = Distribution2Efficiency(hEMCalTrk_cor_hcalin_ieta);
+  ge->SetLineColor(kBlue + 2);
+  ge->SetMarkerColor(kBlue + 21);
+  ge->SetMarkerColor(kFullCircle);
+  ge->SetLineWidth(3);
+  ge->Draw("lp");
 
   T->SetAlias("EMCalTrk_cemc_e",
       Form(
@@ -165,11 +281,29 @@ MakeRadiusCut(TString infile, const double R_CEMC, const double R_HCALIN,
   T->SetAlias("EMCalTrk_cemc_ntower",
       Form(
           "1*Sum$(( sqrt(EMCalTrk_cor_cemc_iphi*EMCalTrk_cor_cemc_iphi + EMCalTrk_cor_cemc_ieta*EMCalTrk_cor_cemc_ieta) < %f )   )",
-          R_CEMC));
+          R_HCALIN));
   T->SetAlias("EMCalTrk_hcalin_ntower",
       Form(
           "1*Sum$( ( sqrt(EMCalTrk_cor_hcalin_iphi*EMCalTrk_cor_hcalin_iphi + EMCalTrk_cor_hcalin_ieta*EMCalTrk_cor_hcalin_ieta) < %f )   )",
-          R_CEMC));
+          R_HCALIN));
+
+  SaveCanvas(c1,
+      TString(_file0->GetName()) + TString("_DrawEcal_pDST_")
+          + Form("RCEMC%.1f_RCEMC%.1f_", R_CEMC, R_HCALIN)
+          + TString(c1->GetName()), kFALSE);
+
+  cout << "///////////////////////////////////////////////" << endl;
+  cout << "// Projection center based on " << _file0->GetName() << endl;
+  cout << "///////////////////////////////////////////////" << endl;
+
+  cout << "const double center_cemc_iphi = " << center_cemc_iphi << "; // "
+      << _file0->GetName() << endl;
+  cout << "const double center_cemc_ieta = " << center_cemc_ieta << "; // "
+      << _file0->GetName() << endl;
+  cout << "const double center_hcalin_iphi = " << center_hcalin_iphi << "; // "
+      << _file0->GetName() << endl;
+  cout << "const double center_hcalin_ieta = " << center_hcalin_ieta << "; // "
+      << _file0->GetName() << endl;
 
 }
 
@@ -181,8 +315,8 @@ Edep_Checks(TString infile, const double R_CEMC, const double R_HCALIN,
 
   double N_Event = T->GetEntries();
 
-  TCanvas *c1 = new TCanvas("Edep_Checks" + cuts, "Edep_Checks" + cuts, 1800,
-      900);
+  TCanvas *c1 = new TCanvas("Edep_Checks" + cuts, "Edep_Checks" + cuts, 1900,
+      950);
   c1->Divide(2, 2);
   int idx = 1;
   TPad * p;
@@ -461,3 +595,140 @@ UpsilonPair_Checks(TString infile)
           + TString(c1->GetName()), kFALSE);
 }
 
+TGraphErrors *
+Distribution2Efficiency(TH1F * hCEMC3_Max)
+{
+  double threshold[10000] =
+    { 0 };
+  double eff[10000] =
+    { 0 };
+  double eff_err[10000] =
+    { 0 };
+
+  assert(hCEMC3_Max->GetNbinsX()<10000);
+
+  const double n = hCEMC3_Max->GetSum();
+  double pass = 0;
+  int cnt = 0;
+  for (int i = hCEMC3_Max->GetNbinsX(); i >= 1; i--)
+    {
+      pass += hCEMC3_Max->GetBinContent(i);
+
+      const double pp = pass / n;
+//      const double z = 1.96;
+      const double z = 1.;
+
+      const double A = z * sqrt(1. / n * pp * (1 - pp) + z * z / 4 / n / n);
+      const double B = 1 / (1 + z * z / n);
+
+      threshold[cnt] = hCEMC3_Max->GetBinCenter(i);
+      eff[cnt] = (pp + z * z / 2 / n) * B;
+      eff_err[cnt] = A * B;
+
+      cout << threshold[cnt] << ": " << "CL " << eff[cnt] << "+/-"
+          << eff_err[cnt] << endl;
+      cnt++;
+    }
+  TGraphErrors * ge = new TGraphErrors(cnt, threshold, eff, NULL, eff_err);
+
+  return ge;
+}
+
+void
+Logs()
+{
+
+  ///////////////////////////////////////////////
+  // Projection center based on /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/G4Hits_sPHENIX_e-_eta0_8GeV-ALL.root_Ana.root
+  ///////////////////////////////////////////////
+  const double center_cemc_iphi = 0.0649585; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/G4Hits_sPHENIX_e-_eta0_8GeV-ALL.root_Ana.root
+  const double center_cemc_ieta = 0.00465546; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/G4Hits_sPHENIX_e-_eta0_8GeV-ALL.root_Ana.root
+  const double center_hcalin_iphi = 0.552238; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/G4Hits_sPHENIX_e-_eta0_8GeV-ALL.root_Ana.root
+  const double center_hcalin_ieta = -0.0102162; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/G4Hits_sPHENIX_e-_eta0_8GeV-ALL.root_Ana.root
+
+  ///////////////////////////////////////////////
+  // Projection center based on /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/G4Hits_sPHENIX_pi-_eta0_8GeV-ALL.root_Ana.root
+  ///////////////////////////////////////////////
+  const double center_cemc_iphi = 0.044375; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/G4Hits_sPHENIX_pi-_eta0_8GeV-ALL.root_Ana.root
+  const double center_cemc_ieta = 0.00680547; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/G4Hits_sPHENIX_pi-_eta0_8GeV-ALL.root_Ana.root
+  const double center_hcalin_iphi = 0.336741; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/G4Hits_sPHENIX_pi-_eta0_8GeV-ALL.root_Ana.root
+  const double center_hcalin_ieta = 0.00108616; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/G4Hits_sPHENIX_pi-_eta0_8GeV-ALL.root_Ana.root
+
+  ///////////////////////////////////////////////
+  // Projection center based on /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/G4Hits_sPHENIX_e-_eta0_4GeV-ALL.root_Ana.root
+  ///////////////////////////////////////////////
+  const double center_cemc_iphi = 0.0952638; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/G4Hits_sPHENIX_e-_eta0_4GeV-ALL.root_Ana.root
+  const double center_cemc_ieta = 0.00397331; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/G4Hits_sPHENIX_e-_eta0_4GeV-ALL.root_Ana.root
+  const double center_hcalin_iphi = 0.592338; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/G4Hits_sPHENIX_e-_eta0_4GeV-ALL.root_Ana.root
+  const double center_hcalin_ieta = -0.0118107; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/G4Hits_sPHENIX_e-_eta0_4GeV-ALL.root_Ana.root
+
+  ///////////////////////////////////////////////
+  // Projection center based on /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/G4Hits_sPHENIX_pi-_eta0_4GeV-ALL.root_Ana.root
+  ///////////////////////////////////////////////
+  const double center_cemc_iphi = 0.0577477; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/G4Hits_sPHENIX_pi-_eta0_4GeV-ALL.root_Ana.root
+  const double center_cemc_ieta = 0.00609392; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/G4Hits_sPHENIX_pi-_eta0_4GeV-ALL.root_Ana.root
+  const double center_hcalin_iphi = 0.354109; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/G4Hits_sPHENIX_pi-_eta0_4GeV-ALL.root_Ana.root
+  const double center_hcalin_ieta = -0.000273002; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/G4Hits_sPHENIX_pi-_eta0_4GeV-ALL.root_Ana.root
+
+  ///////////////////////////////////////////////
+  // Projection center based on /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/G4Hits_sPHENIX_e-_eta0_2GeV-ALL.root_Ana.root
+  ///////////////////////////////////////////////
+  const double center_cemc_iphi = 0.170699; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/G4Hits_sPHENIX_e-_eta0_2GeV-ALL.root_Ana.root
+  const double center_cemc_ieta = 0.00345903; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/G4Hits_sPHENIX_e-_eta0_2GeV-ALL.root_Ana.root
+  const double center_hcalin_iphi = 0.668343; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/G4Hits_sPHENIX_e-_eta0_2GeV-ALL.root_Ana.root
+  const double center_hcalin_ieta = -0.0130487; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/G4Hits_sPHENIX_e-_eta0_2GeV-ALL.root_Ana.root
+
+  ///////////////////////////////////////////////
+  // Projection center based on /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/G4Hits_sPHENIX_pi-_eta0_2GeV-ALL.root_Ana.root
+  ///////////////////////////////////////////////
+  const double center_cemc_iphi = 0.0898377; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/G4Hits_sPHENIX_pi-_eta0_2GeV-ALL.root_Ana.root
+  const double center_cemc_ieta = 0.00445598; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/G4Hits_sPHENIX_pi-_eta0_2GeV-ALL.root_Ana.root
+  const double center_hcalin_iphi = 0.376608; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/G4Hits_sPHENIX_pi-_eta0_2GeV-ALL.root_Ana.root
+  const double center_hcalin_ieta = -0.0074984; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/G4Hits_sPHENIX_pi-_eta0_2GeV-ALL.root_Ana.root
+
+
+
+  ///////////////////////////////////////////////
+  // Projection center based on /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal1d/fieldmap/G4Hits_sPHENIX_e-_eta0.90_8GeV-ALL.root_Ana.root
+  ///////////////////////////////////////////////
+  const double center_cemc_iphi = 0.122055; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal1d/fieldmap/G4Hits_sPHENIX_e-_eta0.90_8GeV-ALL.root_Ana.root
+  const double center_cemc_ieta = 1.52588; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal1d/fieldmap/G4Hits_sPHENIX_e-_eta0.90_8GeV-ALL.root_Ana.root
+  const double center_hcalin_iphi = 0.644177; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal1d/fieldmap/G4Hits_sPHENIX_e-_eta0.90_8GeV-ALL.root_Ana.root
+  const double center_hcalin_ieta = -0.799621; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal1d/fieldmap/G4Hits_sPHENIX_e-_eta0.90_8GeV-ALL.root_Ana.root
+  ///////////////////////////////////////////////
+  // Projection center based on /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal1d/fieldmap/G4Hits_sPHENIX_e-_eta0.90_8GeV-ALL.root_Ana.root
+  ///////////////////////////////////////////////
+  const double center_cemc_iphi = 0.122055; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal1d/fieldmap/G4Hits_sPHENIX_e-_eta0.90_8GeV-ALL.root_Ana.root
+  const double center_cemc_ieta = 1.52588; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal1d/fieldmap/G4Hits_sPHENIX_e-_eta0.90_8GeV-ALL.root_Ana.root
+  const double center_hcalin_iphi = 0.644177; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal1d/fieldmap/G4Hits_sPHENIX_e-_eta0.90_8GeV-ALL.root_Ana.root
+  const double center_hcalin_ieta = -0.799621; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal1d/fieldmap/G4Hits_sPHENIX_e-_eta0.90_8GeV-ALL.root_Ana.root
+  ///////////////////////////////////////////////
+  // Projection center based on /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal1d/fieldmap/G4Hits_sPHENIX_e-_eta0.90_4GeV-ALL.root_Ana.root
+  ///////////////////////////////////////////////
+  const double center_cemc_iphi = 0.251162; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal1d/fieldmap/G4Hits_sPHENIX_e-_eta0.90_4GeV-ALL.root_Ana.root
+  const double center_cemc_ieta = 1.35067; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal1d/fieldmap/G4Hits_sPHENIX_e-_eta0.90_4GeV-ALL.root_Ana.root
+  const double center_hcalin_iphi = 0.761301; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal1d/fieldmap/G4Hits_sPHENIX_e-_eta0.90_4GeV-ALL.root_Ana.root
+  const double center_hcalin_ieta = -0.874644; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal1d/fieldmap/G4Hits_sPHENIX_e-_eta0.90_4GeV-ALL.root_Ana.root
+  ///////////////////////////////////////////////
+  // Projection center based on /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal1d/fieldmap/G4Hits_sPHENIX_pi-_eta0.90_4GeV-ALL.root_Ana.root
+  ///////////////////////////////////////////////
+  const double center_cemc_iphi = 0.177891; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal1d/fieldmap/G4Hits_sPHENIX_pi-_eta0.90_4GeV-ALL.root_Ana.root
+  const double center_cemc_ieta = 2.62604; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal1d/fieldmap/G4Hits_sPHENIX_pi-_eta0.90_4GeV-ALL.root_Ana.root
+  const double center_hcalin_iphi = 0.393433; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal1d/fieldmap/G4Hits_sPHENIX_pi-_eta0.90_4GeV-ALL.root_Ana.root
+  const double center_hcalin_ieta = -0.116632; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal1d/fieldmap/G4Hits_sPHENIX_pi-_eta0.90_4GeV-ALL.root_Ana.root
+  ///////////////////////////////////////////////
+  // Projection center based on /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal1d/fieldmap/G4Hits_sPHENIX_e-_eta0.90_2GeV-ALL.root_Ana.root
+  ///////////////////////////////////////////////
+  const double center_cemc_iphi = 0.53236; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal1d/fieldmap/G4Hits_sPHENIX_e-_eta0.90_2GeV-ALL.root_Ana.root
+  const double center_cemc_ieta = 1.15917; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal1d/fieldmap/G4Hits_sPHENIX_e-_eta0.90_2GeV-ALL.root_Ana.root
+  const double center_hcalin_iphi = 0.899527; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal1d/fieldmap/G4Hits_sPHENIX_e-_eta0.90_2GeV-ALL.root_Ana.root
+  const double center_hcalin_ieta = -0.889783; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal1d/fieldmap/G4Hits_sPHENIX_e-_eta0.90_2GeV-ALL.root_Ana.root
+  ///////////////////////////////////////////////
+  // Projection center based on /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal1d/fieldmap/G4Hits_sPHENIX_pi-_eta0.90_2GeV-ALL.root_Ana.root
+  ///////////////////////////////////////////////
+  const double center_cemc_iphi = 0.378081; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal1d/fieldmap/G4Hits_sPHENIX_pi-_eta0.90_2GeV-ALL.root_Ana.root
+  const double center_cemc_ieta = 2.47524; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal1d/fieldmap/G4Hits_sPHENIX_pi-_eta0.90_2GeV-ALL.root_Ana.root
+  const double center_hcalin_iphi = 0.445272; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal1d/fieldmap/G4Hits_sPHENIX_pi-_eta0.90_2GeV-ALL.root_Ana.root
+  const double center_hcalin_ieta = -0.180098; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal1d/fieldmap/G4Hits_sPHENIX_pi-_eta0.90_2GeV-ALL.root_Ana.root
+
+}
