@@ -34,6 +34,8 @@ pkginclude_HEADERS =
 libemcal_ana_la_SOURCES = \
   EMCalAna.C \
   EMCalAna_Dict.C \
+  EMCalLikelihood.C \
+  EMCalLikelihood_Dict.C \
   EMCalTrk.C \
   EMCalTrk_Dict.C \
   UpsilonPair.C \

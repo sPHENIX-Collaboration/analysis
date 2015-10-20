@@ -24,10 +24,11 @@ public:
   virtual
   ~EMCalTrk();
 
-  virtual void     Clear(Option_t *option="");
+  virtual void
+  Clear(Option_t *option = "");
 
-  virtual void        Reset() ;
-
+  virtual void
+  Reset();
 
   int trackID;
   int charge;
@@ -66,9 +67,10 @@ public:
   float hcaloute3x3;
   float hcaloute;
 
-  float gtrackID;
+  int gtrackID;
   int gflavor;
   int ng4hits;
+
   float gpx;
   float gpy;
   float gpz;
@@ -85,18 +87,45 @@ public:
 
   int nfromtruth;
 
-  enum {Max_N_Tower = 11};
+  enum
+  {
+    Max_N_Tower = 11
+  };
 
   float cemc_ieta[Max_N_Tower][Max_N_Tower];
   float cemc_iphi[Max_N_Tower][Max_N_Tower];
   float cemc_energy[Max_N_Tower][Max_N_Tower];
+  float cemc_radius[Max_N_Tower][Max_N_Tower];
 
   float hcalin_ieta[Max_N_Tower][Max_N_Tower];
   float hcalin_iphi[Max_N_Tower][Max_N_Tower];
   float hcalin_energy[Max_N_Tower][Max_N_Tower];
+  float hcalin_radius[Max_N_Tower][Max_N_Tower];
 
+  float cemc_sum_energy;
+  int cemc_sum_n_tower;
+  float hcalin_sum_energy;
+  int hcalin_sum_n_tower;
 
-ClassDef(EMCalTrk,2)
+  //! log-likelihood electron - ep matching
+  float ll_ep_e;
+
+  //! log-likelihood hadron - ep matching
+  float ll_ep_h;
+
+  //! log-likelihood electron - emcal + inner HCal energy deposition
+  float ll_edep_e;
+
+  //! log-likelihood hadron - emcal + inner HCal energy deposition
+  float ll_edep_h;
+
+  //! log-likelihood electron - shower shape
+  float ll_shape_e;
+
+  //! log-likelihood hadron - shower shape
+  float ll_shape_h;
+
+ClassDef(EMCalTrk,8)
 };
 
 #endif /* EMCALTRK_H_ */

@@ -745,6 +745,14 @@ EMCalAna::eval_trk_proj(
   point.assign(3, -9999.);
   _hough.projectToRadius(track, _magfield, radius, point);
 
+  if (isnan(point[0]) or isnan(point[1]) or isnan(point[2]))
+    {
+      cout << __PRETTY_FUNCTION__ << "::" << Name()
+          << " - Error - track extrapolation failure:";
+      track->identify();
+      return;
+    }
+
   assert( not isnan(point[0]));
   assert( not isnan(point[1]));
   assert( not isnan(point[2]));
@@ -1300,4 +1308,3 @@ EMCalAna::process_event_Tower(PHCompositeNode *topNode)
     }
   return Fun4AllReturnCodes::EVENT_OK;
 }
-
