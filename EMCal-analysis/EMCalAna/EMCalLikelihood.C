@@ -149,8 +149,8 @@ EMCalLikelihood::Init(PHCompositeNode *topNode)
           }
       assert(min_prob>0);
 
-      for (int x = 1; x <= h2_Edep_Distribution_e->GetNbinsX(); ++x)
-        for (int y = 1; y <= h2_Edep_Distribution_e->GetNbinsX(); ++y)
+      for (int x = 0; x <= h2_Edep_Distribution_e->GetNbinsX()+1; ++x)
+        for (int y = 0; y <= h2_Edep_Distribution_e->GetNbinsX()+1; ++y)
           {
             const double binc = h2_Edep_Distribution_e->GetBinContent(x, y);
 
@@ -158,7 +158,7 @@ EMCalLikelihood::Init(PHCompositeNode *topNode)
               h2_Edep_Distribution_e->SetBinContent(x, y, min_prob);
           }
 
-      for (int x = 1; x <= h1_ep_Distribution_e->GetNbinsX(); ++x)
+      for (int x = 0; x <= h1_ep_Distribution_e->GetNbinsX()+1; ++x)
         {
           const double binc = h1_ep_Distribution_e->GetBinContent(x);
 
@@ -191,8 +191,8 @@ EMCalLikelihood::Init(PHCompositeNode *topNode)
           }
       assert(min_prob>0);
 
-      for (int x = 1; x <= h2_Edep_Distribution_pi->GetNbinsX(); ++x)
-        for (int y = 1; y <= h2_Edep_Distribution_pi->GetNbinsX(); ++y)
+      for (int x = 0; x <= h2_Edep_Distribution_pi->GetNbinsX()+1; ++x)
+        for (int y = 0; y <= h2_Edep_Distribution_pi->GetNbinsX()+1; ++y)
           {
             const double binc = h2_Edep_Distribution_pi->GetBinContent(x, y);
 
@@ -200,7 +200,7 @@ EMCalLikelihood::Init(PHCompositeNode *topNode)
               h2_Edep_Distribution_pi->SetBinContent(x, y, min_prob);
           }
 
-      for (int x = 1; x <= h1_ep_Distribution_pi->GetNbinsX(); ++x)
+      for (int x = 0; x <= h1_ep_Distribution_pi->GetNbinsX()+1; ++x)
         {
           const double binc = h1_ep_Distribution_pi->GetBinContent(x);
 
@@ -317,15 +317,23 @@ EMCalLikelihood::UpdateEnergyDepositionLikelihood(EMCalTrk * trk)
       h1_ep_Distribution_pi->GetNbinsX() == h2_Edep_Distribution_pi->GetNbinsX());
 
   const int binx = h2_Edep_Distribution_e->GetXaxis()->FindBin(
-      trk->cemc_sum_energy);
+      trk->get_ep());
   const int biny = h2_Edep_Distribution_e->GetYaxis()->FindBin(
       trk->hcalin_sum_energy);
 
     {
       double prob_e = h2_Edep_Distribution_e->GetBinContent(binx, biny);
+      if (!prob_e>0)
+        {
+          cout <<__PRETTY_FUNCTION__<<Name()<<" - Error - invalid likelihood value prob_e = "<<prob_e<< " @ bin "<<binx<<", "<<biny<<endl;
+        }
       assert(prob_e > 0);
 
       double prob_pi = h2_Edep_Distribution_pi->GetBinContent(binx, biny);
+      if (!prob_pi>0)
+        {
+          cout <<__PRETTY_FUNCTION__<<Name()<<" - Error - invalid likelihood value prob_pi = "<<prob_pi<< " @ bin "<<binx<<", "<<biny<<endl;
+        }
       assert(prob_pi >0);
 
       trk->ll_edep_e = log(prob_e);

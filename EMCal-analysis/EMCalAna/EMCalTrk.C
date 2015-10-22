@@ -39,8 +39,8 @@ EMCalTrk::Reset()
           hcalin_iphi[ieta][iphi] = -9999;
           cemc_energy[ieta][iphi] = -0;
           hcalin_energy[ieta][iphi] = -0;
-          cemc_radius[ieta][iphi] =9999;
-          hcalin_radius[ieta][iphi] =9999;
+          cemc_radius[ieta][iphi] = 9999;
+          hcalin_radius[ieta][iphi] = 9999;
         }
     }
 
@@ -122,4 +122,12 @@ EMCalTrk::Clear(Option_t *option)
   PHObject::Clear(option);
 
   Reset();
+}
+
+//! e/p based on CEMC and tracking
+double
+EMCalTrk::get_ep() const
+{
+  const double p2 = px * px + py * py + pz * pz;
+  return cemc_sum_energy / sqrt(p2);
 }

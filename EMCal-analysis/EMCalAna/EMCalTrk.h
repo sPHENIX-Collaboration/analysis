@@ -107,6 +107,10 @@ public:
   float hcalin_sum_energy;
   int hcalin_sum_n_tower;
 
+  //! e/p based on CEMC and tracking
+  double
+  get_ep() const;
+
   //! log-likelihood electron - ep matching
   float ll_ep_e;
 
@@ -125,7 +129,7 @@ public:
   //! log-likelihood hadron - shower shape
   float ll_shape_h;
 
-ClassDef(EMCalTrk,8)
+ClassDef(EMCalTrk,9)
 };
 
 #endif /* EMCALTRK_H_ */
