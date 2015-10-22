@@ -52,8 +52,10 @@ Fun4All_EMCalLikelihood(const int nEvents = 0,
       center_hcalin_iphi = 0.354109; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/G4Hits_sPHENIX_pi-_eta0_4GeV-ALL.root_Ana.root
       center_hcalin_ieta = -0.000273002; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/G4Hits_sPHENIX_pi-_eta0_4GeV-ALL.root_Ana.root
 
-      width = 1.4;
-      width_emcal_eta = 1.4;
+//      width = 1.4;
+//      width_emcal_eta = 1.4;
+      width = 1.6;
+      width_emcal_eta = 1.6;
     }
   else  if (base_dir.Contains("spacal1d") && kine_config.Contains("eta0.90_2GeV"))
     {
@@ -62,7 +64,7 @@ Fun4All_EMCalLikelihood(const int nEvents = 0,
       center_hcalin_iphi = 0.445272; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal1d/fieldmap/G4Hits_sPHENIX_pi-_eta0.90_2GeV-ALL.root_Ana.root
       center_hcalin_ieta = -0.180098; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal1d/fieldmap/G4Hits_sPHENIX_pi-_eta0.90_2GeV-ALL.root_Ana.root
 
-      width = 1.4;
+      width = 1.8;
       width_emcal_eta = 2.6;
     }
   else  if (base_dir.Contains("spacal1d") && kine_config.Contains("eta0.90_4GeV"))
@@ -72,7 +74,7 @@ Fun4All_EMCalLikelihood(const int nEvents = 0,
       center_hcalin_iphi = 0.393433; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal1d/fieldmap/G4Hits_sPHENIX_pi-_eta0.90_4GeV-ALL.root_Ana.root
       center_hcalin_ieta = -0.116632; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal1d/fieldmap/G4Hits_sPHENIX_pi-_eta0.90_4GeV-ALL.root_Ana.root
 
-      width = 1.4;
+      width = 1.8;
       width_emcal_eta = 2.6;
     }
   else  if (base_dir.Contains("spacal1d") && kine_config.Contains("eta0.90_8GeV"))
@@ -82,8 +84,42 @@ Fun4All_EMCalLikelihood(const int nEvents = 0,
       center_hcalin_iphi = 0.644177; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal1d/fieldmap/G4Hits_sPHENIX_e-_eta0.90_8GeV-ALL.root_Ana.root
       center_hcalin_ieta = -0.799621; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal1d/fieldmap/G4Hits_sPHENIX_e-_eta0.90_8GeV-ALL.root_Ana.root
 
-      width = 1.4;
+      width = 1.8;
       width_emcal_eta = 2.6;
+    }
+  else  if (base_dir.Contains("spacal2d") && kine_config.Contains("eta0.90_2GeV"))
+    {
+
+      const double center_cemc_iphi = 0.249273; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal2d/fieldmap/G4Hits_sPHENIX_e-_eta0.90_2GeV-ALL.root_Ana.root
+      const double center_cemc_ieta = 0.0146006; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal2d/fieldmap/G4Hits_sPHENIX_e-_eta0.90_2GeV-ALL.root_Ana.root
+
+      const double center_hcalin_iphi = 0.447927; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal2d/fieldmap/G4Hits_sPHENIX_pi-_eta0.90_2GeV-ALL.root_Ana.root
+      const double center_hcalin_ieta = -0.101503; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal2d/fieldmap/G4Hits_sPHENIX_pi-_eta0.90_2GeV-ALL.root_Ana.root
+
+      width = 1.6;
+      width_emcal_eta = 1.6;
+    }
+  else  if (base_dir.Contains("spacal2d") && kine_config.Contains("eta0.90_4GeV"))
+    {
+      const double center_cemc_iphi = 0.129035; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal2d/fieldmap/G4Hits_sPHENIX_e-_eta0.90_4GeV-ALL.root_Ana.root
+      const double center_cemc_ieta = 0.0222246; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal2d/fieldmap/G4Hits_sPHENIX_e-_eta0.90_4GeV-ALL.root_Ana.root
+
+      const double center_hcalin_iphi = 0.385379; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal2d/fieldmap/G4Hits_sPHENIX_pi-_eta0.90_4GeV-ALL.root_Ana.root
+      const double center_hcalin_ieta = -0.0596968; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal2d/fieldmap/G4Hits_sPHENIX_pi-_eta0.90_4GeV-ALL.root_Ana.root
+
+      width = 1.6;
+      width_emcal_eta = 1.6;
+    }
+  else  if (base_dir.Contains("spacal2d") && kine_config.Contains("eta0.90_8GeV"))
+    {
+      const double center_cemc_iphi = 0.0829824; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal2d/fieldmap/G4Hits_sPHENIX_e-_eta0.90_8GeV-ALL.root_Ana.root
+      const double center_cemc_ieta = 0.0275653; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal2d/fieldmap/G4Hits_sPHENIX_e-_eta0.90_8GeV-ALL.root_Ana.root
+
+      const double center_hcalin_iphi = 0.348779; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal2d/fieldmap/G4Hits_sPHENIX_pi-_eta0.90_8GeV-ALL.root_Ana.root
+      const double center_hcalin_ieta = -0.0348952; // /direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/single_particle/spacal2d/fieldmap/G4Hits_sPHENIX_pi-_eta0.90_8GeV-ALL.root_Ana.root
+
+      width = 1.6;
+      width_emcal_eta = 1.6;
     }
   else
     {

@@ -25,11 +25,11 @@ TString cuts = "";
 void
 DrawEcal_Likelihood(
     //
-//    TString base_dir =
-//        "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/",
-        TString base_dir =
-                        "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/embedding/emcstudies/pidstudies/spacal2d/fieldmap/",
-    TString pid = "e-", TString kine_config = "eta0_4GeV", int eval_mode = 0)
+    TString base_dir =
+        "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/",
+//        TString base_dir =
+//                        "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/embedding/emcstudies/pidstudies/spacal2d/fieldmap/",
+    TString pid = "e-", TString kine_config = "eta0_8GeV", int eval_mode = 0)
 {
 
   const TString infile = base_dir + "G4Hits_sPHENIX_" + pid + "_" + kine_config
@@ -88,12 +88,12 @@ DrawEcal_Likelihood(
 
   TCut event_sel = "1*1";
   cuts = "_all_event";
-  if (!eval_mode)
+  if (eval_mode == 0)
     {
       event_sel = "Entry$<50000 && fabs(EMCalTrk_pt/EMCalTrk_gpt - 1)<0.05";
       cuts = "_ll_sample";
     }
-  else
+  else  if (eval_mode == 1)
     {
 //      event_sel = "Entry$>50000 && fabs(EMCalTrk_pt/EMCalTrk_gpt - 1)<0.05";
       event_sel = " fabs(EMCalTrk_pt/EMCalTrk_gpt - 1)<0.05";
@@ -108,11 +108,11 @@ DrawEcal_Likelihood(
 
   T->SetEventList(elist);
 
-  if (!eval_mode)
+  if (eval_mode == 0)
     {
       Edep_Distribution(infile);
     }
-  else
+  else  if (eval_mode == 1)
     {
       Edep_LL_Distribution(infile);
       EP_LL_Distribution(infile);
@@ -256,7 +256,7 @@ Edep_Distribution(TString infile)
   c1->Update();
   p->SetLogz();
   T->Draw(
-      "DST.EMCalTrk.hcalin_sum_energy:DST.EMCalTrk.cemc_sum_energy>>h2_Edep_Distribution_raw(240,-.0,12, 240,-.0,12)",
+      "DST.EMCalTrk.hcalin_sum_energy:DST.EMCalTrk.get_ep()>>h2_Edep_Distribution_raw(240,-.0,1.5, 240,-.0,12)",
       "", "colz");
   h2_Edep_Distribution_raw->SetTitle(
       Form(
@@ -437,28 +437,28 @@ Edep_Checks(TString infile, TCut good_track_cut)
       TString(_file0->GetName()) + TString("_DrawEcal_pDST_")
           + TString(c1->GetName()), kFALSE);
 
-//  TCanvas *c1 = new TCanvas("Edep_Checks_2D" + cuts, "Edep_Checks_2D" + cuts,
-//      900, 900);
-////  c1->Divide(2, 2);
-////  int idx = 1;
-////  TPad * p;
-//
-//  p = (TPad *) c1->cd(idx++);
-//  c1->Update();
-//  p->SetLogz();
-//  T->Draw(
-//      "DST.EMCalTrk.hcalin_sum_energy:DST.EMCalTrk.cemc_sum_energy>>h2_EMCalTrk_hcalin_e_EMCalTrk_cemc_e(240,-.0,12, 240,-.0,12)",
-//      good_track_cut, "colz");
-//  h2_EMCalTrk_hcalin_e_EMCalTrk_cemc_e->SetTitle(
-//      Form(
-//          "Energy distribution;CEMC Cluster Energy in GeV;HCal_{in} Cluster Energy in GeV"));
-//  h2_EMCalTrk_hcalin_e_EMCalTrk_cemc_e->Scale(1. / N_Event);
-//  h2_EMCalTrk_hcalin_e_EMCalTrk_cemc_e->GetZaxis()->SetRangeUser(1. / N_Event,
-//      1);
-//
-//  SaveCanvas(c1,
-//      TString(_file0->GetName()) + TString("_DrawEcal_Likelihood_")
-//          + TString(c1->GetName()), kFALSE);
+  TCanvas *c1 = new TCanvas("Edep_Checks_2D" + cuts, "Edep_Checks_2D" + cuts,
+      900, 900);
+//  c1->Divide(2, 2);
+//  int idx = 1;
+//  TPad * p;
+
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+  p->SetLogz();
+  T->Draw(
+      "DST.EMCalTrk.hcalin_sum_energy:DST.EMCalTrk.cemc_sum_energy>>h2_EMCalTrk_hcalin_e_EMCalTrk_cemc_e(240,-.0,8, 240,-.0,8)",
+      good_track_cut, "colz");
+  h2_EMCalTrk_hcalin_e_EMCalTrk_cemc_e->SetTitle(
+      Form(
+          "Energy distribution;CEMC Cluster Energy in GeV;HCal_{in} Cluster Energy in GeV"));
+  h2_EMCalTrk_hcalin_e_EMCalTrk_cemc_e->Scale(1. / N_Event);
+  h2_EMCalTrk_hcalin_e_EMCalTrk_cemc_e->GetZaxis()->SetRangeUser(1. / N_Event,
+      1);
+
+  SaveCanvas(c1,
+      TString(_file0->GetName()) + TString("_DrawEcal_Likelihood_")
+          + TString(c1->GetName()), kFALSE);
 
 }
 

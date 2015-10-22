@@ -27,12 +27,12 @@ DrawEcal_Likelihood_Sum(
 //    TString base_dir =
 //        "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/",
 
-    //        TString base_dir =
-    //            "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/embedding/emcstudies/pidstudies/spacal2d/fieldmap/",
-//            TString kine_config = "eta0"
             TString base_dir =
-                "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/embedding/emcstudies/pidstudies/spacal1d/fieldmap/",
-            TString kine_config = "eta0.90"
+                "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/embedding/emcstudies/pidstudies/spacal2d/fieldmap/",
+//                    TString base_dir =
+//                        "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/embedding/emcstudies/pidstudies/spacal1d/fieldmap/",
+            TString kine_config = "eta0"
+//            TString kine_config = "eta0.90"
                 )
 {
   SetOKStyle();
@@ -49,6 +49,12 @@ DrawEcal_Likelihood_Sum(
 
   RejectionCurve(base_dir, kine_config, "EP_LL_Distribution_eval_sample",
       "hll_ep_diff", 0.5);
+
+//  RejectionCurve(base_dir, kine_config, "Edep_LL_Distribution_eval_sample",
+//      "hll_edep_diff", 0.85);
+//
+//  RejectionCurve(base_dir, kine_config, "EP_LL_Distribution_eval_sample",
+//      "hll_ep_diff", 0.85);
 
 }
 
@@ -72,18 +78,18 @@ RejectionCurve(
   c1->Update();
   p->SetLogy();
 
-  p->DrawFrame(min_eff, 1, 1, 1e3, ";Electron Efficiency;Hadron Rejection");
+  p->DrawFrame(min_eff, 10, 1, 1e3, ";Electron Efficiency;Hadron Rejection");
 
 
-//  TGraphErrors *ge = ExtractRejCurve(base_dir, kine_config + "_8GeV", ll_config,
-//      hist_name);
-//
-//  ge->SetLineColor(kRed + 2);
-//  ge->SetMarkerColor(kRed + 2);
-//  ge->SetFillColor(kRed - 9);
-//  ge->SetLineWidth(3);
+  TGraphErrors *ge = ExtractRejCurve(base_dir, kine_config + "_8GeV", ll_config,
+      hist_name);
+
+  ge->SetLineColor(kRed + 2);
+  ge->SetMarkerColor(kRed + 2);
+  ge->SetFillColor(kRed - 9);
+  ge->SetLineWidth(3);
 //  ge->Draw("3");
-//  ge->Draw("lx");
+  ge->Draw("lx");
 
   TGraphErrors *ge = ExtractRejCurve(base_dir, kine_config + "_4GeV", ll_config,
       hist_name);
@@ -92,7 +98,7 @@ RejectionCurve(
   ge->SetMarkerColor(kBlue + 2);
   ge->SetFillColor(kBlue - 9);
   ge->SetLineWidth(3);
-  ge->Draw("3");
+//  ge->Draw("3");
   ge->Draw("lx");
 
 
@@ -104,7 +110,7 @@ RejectionCurve(
   ge->SetMarkerColor(kGreen + 3);
   ge->SetFillColor(kGreen - 9);
   ge->SetLineWidth(3);
-  ge->Draw("3");
+//  ge->Draw("3");
   ge->Draw("lx");
 
   SaveCanvas(c1,
