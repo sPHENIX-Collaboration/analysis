@@ -759,7 +759,8 @@ EMCalAna::eval_trk_proj(
 
   double x = point[0];
   double y = point[1];
-  double z = point[2] + gvz - track->get_z();
+//  double z = point[2] + gvz - track->get_z();
+  double z = point[2];
 
   double phi = atan2(y, x);
   double eta = asinh(z / sqrt(x * x + y * y));
@@ -1159,6 +1160,8 @@ EMCalAna::Init_Tower(PHCompositeNode *topNode)
       "EMCalAna_h_CEMC_TOWER_2x2_max", 5000, 0, 50));
   hm->registerHisto(new TH1F("EMCalAna_h_CEMC_TOWER_2x2_max_trigger_ADC", //
       "EMCalAna_h_CEMC_TOWER_2x2_max_trigger_ADC", 5000, 0, 50));
+  hm->registerHisto(new TH1F("EMCalAna_h_CEMC_TOWER_2x2_slide2_max_trigger_ADC", //
+      "EMCalAna_h_CEMC_TOWER_2x2_slide2_max_trigger_ADC", 5000, 0, 50));
 
   hm->registerHisto(new TH1F("EMCalAna_h_CEMC_TOWER_3x3", //
       "h_CEMC_TOWER_3x3", 5000, 0, 50));
@@ -1173,6 +1176,8 @@ EMCalAna::Init_Tower(PHCompositeNode *topNode)
       "EMCalAna_h_CEMC_TOWER_4x4_max", 5000, 0, 50));
   hm->registerHisto(new TH1F("EMCalAna_h_CEMC_TOWER_4x4_max_trigger_ADC", //
       "EMCalAna_h_CEMC_TOWER_4x4_max_trigger_ADC", 5000, 0, 50));
+  hm->registerHisto(new TH1F("EMCalAna_h_CEMC_TOWER_4x4_slide2_max_trigger_ADC", //
+      "EMCalAna_h_CEMC_TOWER_4x4_slide2_max_trigger_ADC", 5000, 0, 50));
 
   hm->registerHisto(new TH1F("EMCalAna_h_CEMC_TOWER_5x5", //
       "h_CEMC_TOWER_4x4", 5000, 0, 50));
@@ -1222,9 +1227,11 @@ EMCalAna::process_event_Tower(PHCompositeNode *topNode)
   size_label[5] = "5x5";
   map<int, double> max_energy;
   map<int, double> max_energy_trigger_ADC;
+  map<int, double> slide2_max_energy_trigger_ADC;
   map<int, TH1F*> energy_hist_list;
   map<int, TH1F*> max_energy_hist_list;
   map<int, TH1F*> max_energy_trigger_ADC_hist_list;
+  map<int, TH1F*> slide2_max_energy_trigger_ADC_hist_list;
 
   Fun4AllHistoManager *hm = get_HistoManager();
   assert(hm);
@@ -1248,6 +1255,19 @@ EMCalAna::process_event_Tower(PHCompositeNode *topNode)
       assert(h);
       max_energy_trigger_ADC_hist_list[size] = h;
 
+      if (size ==2 or size == 4)
+        {
+          // sliding window made from 2x2 sums
+          slide2_max_energy_trigger_ADC[size] = 0;
+
+          h = (TH1F*) hm->getHisto(
+              "EMCalAna_h_CEMC_TOWER_" + size_label[size] + "_slide2_max_trigger_ADC");
+          assert(h);
+          slide2_max_energy_trigger_ADC_hist_list[size] = h;
+
+        }
+
+
     }
 
   for (int binphi = 0; binphi < towergeom->get_phibins(); ++binphi)
@@ -1258,6 +1278,7 @@ EMCalAna::process_event_Tower(PHCompositeNode *topNode)
             {
               double energy = 0;
               double energy_trigger_ADC = 0;
+              double slide2_energy_trigger_ADC = 0;
 
               for (int iphi = binphi; iphi < binphi + size; ++iphi)
                 {
@@ -1285,6 +1306,13 @@ EMCalAna::process_event_Tower(PHCompositeNode *topNode)
 
                           energy += e_intput;
                           energy_trigger_ADC += e_trigger_ADC;
+
+                          if ((size ==2 or size == 4) and (binphi%2==0) and (bineta%2 == 0) )
+                            {
+                              // sliding window made from 2x2 sums
+
+                              slide2_energy_trigger_ADC += e_trigger_ADC;
+                            }
                         }
                     }
                 }
@@ -1296,6 +1324,15 @@ EMCalAna::process_event_Tower(PHCompositeNode *topNode)
               if (energy_trigger_ADC > max_energy_trigger_ADC[size])
                 max_energy_trigger_ADC[size] = energy_trigger_ADC;
 
+
+              if ((size ==2 or size == 4) and (binphi%2==0) and (bineta%2 == 0) )
+                {
+                  // sliding window made from 2x2 sums
+
+                  if (slide2_energy_trigger_ADC > slide2_max_energy_trigger_ADC[size])
+                    slide2_max_energy_trigger_ADC[size] = slide2_energy_trigger_ADC;
+                }
+
             } //          for (int size = 1; size <= 4; ++size)
         }
     }
@@ -1305,6 +1342,13 @@ EMCalAna::process_event_Tower(PHCompositeNode *topNode)
       max_energy_hist_list[size]->Fill(max_energy[size]);
       max_energy_trigger_ADC_hist_list[size]->Fill(
           max_energy_trigger_ADC[size]);
+
+      if (size ==2 or size == 4)
+        {
+          // sliding window made from 2x2 sums
+          slide2_max_energy_trigger_ADC_hist_list[size]->Fill(
+              slide2_max_energy_trigger_ADC[size]);
+        }
     }
   return Fun4AllReturnCodes::EVENT_OK;
 }

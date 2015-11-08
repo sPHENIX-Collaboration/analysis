@@ -23,10 +23,10 @@ DrawEcal(void)
 //  DrawCluster_AnaP() ;
 //  DrawCluster_Linearality();
 //  DrawCluster_Res();
-  DrawCluster_Res_2Fit();
+//  DrawCluster_Res_2Fit();
 //  DrawTowerSum_SingleE();
 //  DrawTowerSum_AnaP()->Draw("ap*");
-  DrawCluster_Res_2Fit_Electron_NoSVX();
+//  DrawCluster_Res_2Fit_Electron_NoSVX();
   //  DrawTowerSum_Res_2Fit_1DSpacalNoSVX();
 //  DrawTowerSum_Res_2Fit_1DSpacalNoSVX_Eta3();
   //  DrawCluster_Res_2Fit_2DSpacalNoSVX();
@@ -57,6 +57,7 @@ DrawEcal(void)
 
 
 //  DrawTower_EMCTrigEff();
+//  DrawTower_EMCTrigEff_SlideingWindow2();
 
 }
 
@@ -224,24 +225,32 @@ DrawTower_EMCTrigEff(
   p->SetLogy();
   rej_EMCalAna_h_CEMC_TOWER_4x4_max->Draw();
   rej_EMCalAna_h_CEMC_TOWER_4x4_max_trigger_ADC->Draw("same");
+  rej_EMCalAna_h_CEMC_TOWER_4x4_max_trigger_ADC->SetLineColor(kRed);
+  rej_EMCalAna_h_CEMC_TOWER_4x4_max_trigger_ADC->SetMarkerColor(kRed);
 
   p = (TPad *) c1->cd(idx++);
   c1->Update();
   p->SetLogy();
   sig_EMCalAna_h_CEMC_TOWER_4x4_max->Draw();
   sig_EMCalAna_h_CEMC_TOWER_4x4_max_trigger_ADC->Draw("same");
+  sig_EMCalAna_h_CEMC_TOWER_4x4_max_trigger_ADC->SetLineColor(kRed);
+  sig_EMCalAna_h_CEMC_TOWER_4x4_max_trigger_ADC->SetMarkerColor(kRed);
 
   p = (TPad *) c1->cd(idx++);
   c1->Update();
   p->SetLogy();
   ge_rej_EMCalAna_h_CEMC_TOWER_4x4_max->Draw("AP*");
   ge_rej_EMCalAna_h_CEMC_TOWER_4x4_max_trigger_ADC->Draw("P");
+  ge_rej_EMCalAna_h_CEMC_TOWER_4x4_max_trigger_ADC->SetLineColor(kRed);
+  ge_rej_EMCalAna_h_CEMC_TOWER_4x4_max_trigger_ADC->SetMarkerColor(kRed);
 
   p = (TPad *) c1->cd(idx++);
   c1->Update();
   p->SetLogy();
   ge_sig_EMCalAna_h_CEMC_TOWER_4x4_max->Draw("AP*");
   ge_sig_EMCalAna_h_CEMC_TOWER_4x4_max_trigger_ADC->Draw("P");
+  ge_sig_EMCalAna_h_CEMC_TOWER_4x4_max_trigger_ADC->SetLineColor(kRed);
+  ge_sig_EMCalAna_h_CEMC_TOWER_4x4_max_trigger_ADC->SetMarkerColor(kRed);
 
   SaveCanvas(c1, infile + TString("_DrawEcal_") + TString(c1->GetName()),
       kTRUE);
@@ -397,6 +406,257 @@ DrawTower_EMCTrigEff(
   SaveCanvas(c1, infile + TString("_DrawEcal_") + TString(c1->GetName()),
       kTRUE);
 }
+
+
+void
+DrawTower_EMCTrigEff_SlideingWindow2(
+    const TString infile =
+        "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/")
+{
+  TH1F * rej_EMCalAna_h_CEMC_TOWER_4x4_max = DrawTower_Load(
+      infile
+          + "/pythia8/spacal2d/G4Hits_sPHENIX_pythia8-ALL.root_EMCalAna.root",
+      "EMCalAna_h_CEMC_TOWER_4x4_max");
+//  TH1F * sig_EMCalAna_h_CEMC_TOWER_4x4_max =
+//      DrawTower_Load(
+//          infile
+//              + "/single_particle/spacal2d/fieldmap/G4Hits_sPHENIX_e-_eta0ALL_4GeVALL_EMCalAna.root",
+//          "EMCalAna_h_CEMC_TOWER_4x4_max");
+//  TH1F * sig_EMCalAna_h_CEMC_TOWER_4x4_max =
+//      DrawTower_Load(
+//          infile
+//              + "emcstudies/nosvtx/spacal2d/fieldmap/ALLe-ALL_4GeVALLEMCalAna.root",
+//          "EMCalAna_h_CEMC_TOWER_4x4_max");
+  TH1F * sig_EMCalAna_h_CEMC_TOWER_4x4_max =
+      DrawTower_Load(
+          infile
+              + "../test_production/Upsilon/spacal2d/fieldon/SimALL_PythiaUpsilon.root_EMCalAna.root",
+          "EMCalAna_h_CEMC_TOWER_4x4_max");
+
+  TH1F * rej_EMCalAna_h_CEMC_TOWER_4x4_slide2_max_trigger_ADC = DrawTower_Load(
+      infile
+          + "/pythia8/spacal2d/G4Hits_sPHENIX_pythia8-ALL.root_EMCalAna.root",
+      "EMCalAna_h_CEMC_TOWER_4x4_slide2_max_trigger_ADC");
+//  TH1F * sig_EMCalAna_h_CEMC_TOWER_4x4_max =
+//      DrawTower_Load(
+//          infile
+//              + "/single_particle/spacal2d/fieldmap/G4Hits_sPHENIX_e-_eta0ALL_4GeVALL_EMCalAna.root",
+//          "EMCalAna_h_CEMC_TOWER_4x4_max");
+//  TH1F * sig_EMCalAna_h_CEMC_TOWER_4x4_max =
+//      DrawTower_Load(
+//          infile
+//              + "emcstudies/nosvtx/spacal2d/fieldmap/ALLe-ALL_4GeVALLEMCalAna.root",
+//          "EMCalAna_h_CEMC_TOWER_4x4_max");
+  TH1F * sig_EMCalAna_h_CEMC_TOWER_4x4_slide2_max_trigger_ADC =
+      DrawTower_Load(
+          infile
+              + "../test_production/Upsilon/spacal2d/fieldon/SimALL_PythiaUpsilon.root_EMCalAna.root",
+          "EMCalAna_h_CEMC_TOWER_4x4_slide2_max_trigger_ADC");
+
+  TGraphErrors* ge_rej_EMCalAna_h_CEMC_TOWER_4x4_max = Distribution2Efficiency(
+      rej_EMCalAna_h_CEMC_TOWER_4x4_max);
+  TGraphErrors* ge_sig_EMCalAna_h_CEMC_TOWER_4x4_max = Distribution2Efficiency(
+      sig_EMCalAna_h_CEMC_TOWER_4x4_max);
+
+  TGraphErrors* ge_rej_EMCalAna_h_CEMC_TOWER_4x4_slide2_max_trigger_ADC = Distribution2Efficiency(
+      rej_EMCalAna_h_CEMC_TOWER_4x4_slide2_max_trigger_ADC);
+  TGraphErrors* ge_sig_EMCalAna_h_CEMC_TOWER_4x4_slide2_max_trigger_ADC = Distribution2Efficiency(
+      sig_EMCalAna_h_CEMC_TOWER_4x4_slide2_max_trigger_ADC);
+
+  TCanvas *c1 = new TCanvas("DrawTower_EMCTrigEff_SlideingWindow2", "DrawTower_EMCTrigEff_SlideingWindow2",
+      1800, 900);
+  c1->Divide(2, 2);
+  int idx = 1;
+  TPad * p;
+
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+  p->SetLogy();
+  rej_EMCalAna_h_CEMC_TOWER_4x4_max->Draw();
+  rej_EMCalAna_h_CEMC_TOWER_4x4_slide2_max_trigger_ADC->Draw("same");
+  rej_EMCalAna_h_CEMC_TOWER_4x4_slide2_max_trigger_ADC->SetLineColor(kRed);
+  rej_EMCalAna_h_CEMC_TOWER_4x4_slide2_max_trigger_ADC->SetMarkerColor(kRed);
+
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+  p->SetLogy();
+  sig_EMCalAna_h_CEMC_TOWER_4x4_max->Draw();
+  sig_EMCalAna_h_CEMC_TOWER_4x4_slide2_max_trigger_ADC->Draw("same");
+  sig_EMCalAna_h_CEMC_TOWER_4x4_slide2_max_trigger_ADC->SetLineColor(kRed);
+  sig_EMCalAna_h_CEMC_TOWER_4x4_slide2_max_trigger_ADC->SetMarkerColor(kRed);
+
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+  p->SetLogy();
+  ge_rej_EMCalAna_h_CEMC_TOWER_4x4_max->Draw("AP*");
+  ge_rej_EMCalAna_h_CEMC_TOWER_4x4_slide2_max_trigger_ADC->Draw("P");
+  ge_rej_EMCalAna_h_CEMC_TOWER_4x4_slide2_max_trigger_ADC->SetLineColor(kRed);
+  ge_rej_EMCalAna_h_CEMC_TOWER_4x4_slide2_max_trigger_ADC->SetMarkerColor(kRed);
+
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+  p->SetLogy();
+  ge_sig_EMCalAna_h_CEMC_TOWER_4x4_max->Draw("AP*");
+  ge_sig_EMCalAna_h_CEMC_TOWER_4x4_slide2_max_trigger_ADC->Draw("P");
+  ge_sig_EMCalAna_h_CEMC_TOWER_4x4_slide2_max_trigger_ADC->SetLineColor(kRed);
+  ge_sig_EMCalAna_h_CEMC_TOWER_4x4_slide2_max_trigger_ADC->SetMarkerColor(kRed);
+
+  SaveCanvas(c1, infile + TString("_DrawEcal_") + TString(c1->GetName()),
+      kTRUE);
+
+  TGraphErrors* reg_ge_sig_EMCalAna_h_CEMC_TOWER_4x4_max =
+      (TGraphErrors*) ge_sig_EMCalAna_h_CEMC_TOWER_4x4_max->Clone(
+          "reg_ge_sig_EMCalAna_h_CEMC_TOWER_4x4_max");
+
+  TGraphErrors* reg_ge_sig_EMCalAna_h_CEMC_TOWER_4x4_slide2_max_trigger_ADC =
+      (TGraphErrors*) ge_sig_EMCalAna_h_CEMC_TOWER_4x4_slide2_max_trigger_ADC->Clone(
+          "reg_ge_sig_EMCalAna_h_CEMC_TOWER_4x4_slide2_max_trigger_ADC");
+
+//  const double * eff = reg_ge_sig_EMCalAna_h_CEMC_TOWER_4x4_max->GetY();
+//  const double reg = eff[reg_ge_sig_EMCalAna_h_CEMC_TOWER_4x4_max->GetN()-1];
+//  for (int i = 0; i < reg_ge_sig_EMCalAna_h_CEMC_TOWER_4x4_max->GetN(); ++i)
+//    {
+//
+//      eff[i] /=reg;
+//
+//      cout << i << ": regularted to "
+//          << eff[i] << " by "
+//          <<reg << endl;
+//    }
+
+  const double y_min = 1;
+  const double y_max = 1e5;
+  const double y_min2 = .8;
+  const double y_max2 = 1;
+
+  TGraphErrors* plot_reg_ge_sig_EMCalAna_h_CEMC_TOWER_4x4_max =
+      (TGraphErrors*) reg_ge_sig_EMCalAna_h_CEMC_TOWER_4x4_max->Clone(
+          "plot_reg_ge_sig_EMCalAna_h_CEMC_TOWER_4x4_max");
+  TGraphErrors* plot_ge_rej_EMCalAna_h_CEMC_TOWER_4x4_max =
+      (TGraphErrors*) ge_rej_EMCalAna_h_CEMC_TOWER_4x4_max->Clone(
+          "plot_ge_rej_EMCalAna_h_CEMC_TOWER_4x4_max");
+
+
+  TGraphErrors* plot_reg_ge_sig_EMCalAna_h_CEMC_TOWER_4x4_slide2_max_trigger_ADC =
+      (TGraphErrors*) reg_ge_sig_EMCalAna_h_CEMC_TOWER_4x4_slide2_max_trigger_ADC->Clone(
+          "plot_reg_ge_sig_EMCalAna_h_CEMC_TOWER_4x4_slide2_max_trigger_ADC");
+  TGraphErrors* plot_ge_rej_EMCalAna_h_CEMC_TOWER_4x4_slide2_max_trigger_ADC =
+      (TGraphErrors*) ge_rej_EMCalAna_h_CEMC_TOWER_4x4_slide2_max_trigger_ADC->Clone(
+          "plot_ge_rej_EMCalAna_h_CEMC_TOWER_4x4_slide2_max_trigger_ADC");
+
+  for (int i = 0; i < plot_ge_rej_EMCalAna_h_CEMC_TOWER_4x4_max->GetN(); ++i)
+    {
+      (plot_ge_rej_EMCalAna_h_CEMC_TOWER_4x4_max->GetY())[i] =1./(plot_ge_rej_EMCalAna_h_CEMC_TOWER_4x4_max->GetY())[i];
+    }
+
+  for (int i = 0; i < plot_reg_ge_sig_EMCalAna_h_CEMC_TOWER_4x4_max->GetN(); ++i)
+    {
+      (plot_reg_ge_sig_EMCalAna_h_CEMC_TOWER_4x4_max->GetY())[i] = exp(
+
+          ((plot_reg_ge_sig_EMCalAna_h_CEMC_TOWER_4x4_max->GetY())[i] - y_min2)/(y_max2 - y_min2)*(log(y_max) - log(y_min)) + log(y_min)
+
+      );
+    }
+
+
+  for (int i = 0; i < plot_ge_rej_EMCalAna_h_CEMC_TOWER_4x4_slide2_max_trigger_ADC->GetN(); ++i)
+    {
+      (plot_ge_rej_EMCalAna_h_CEMC_TOWER_4x4_slide2_max_trigger_ADC->GetY())[i] =1./(plot_ge_rej_EMCalAna_h_CEMC_TOWER_4x4_slide2_max_trigger_ADC->GetY())[i];
+    }
+
+  for (int i = 0; i < plot_reg_ge_sig_EMCalAna_h_CEMC_TOWER_4x4_slide2_max_trigger_ADC->GetN(); ++i)
+    {
+      (plot_reg_ge_sig_EMCalAna_h_CEMC_TOWER_4x4_slide2_max_trigger_ADC->GetY())[i] = exp(
+
+          ((plot_reg_ge_sig_EMCalAna_h_CEMC_TOWER_4x4_slide2_max_trigger_ADC->GetY())[i] - y_min2)/(y_max2 - y_min2)*(log(y_max) - log(y_min)) + log(y_min)
+
+      );
+    }
+
+
+  TCanvas *c1 = new TCanvas("DrawTower_EMCTrigEff_SlideingWindow2_Compile",
+      "DrawTower_EMCTrigEff_SlideingWindow2_Compile", 1800, 900);
+//  c1->Divide(2, 2);
+  int idx = 1;
+  TPad * p;
+
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+  p->SetLogy();
+  p->SetGridx(0);
+  p->SetGridy(0);
+  p->SetTicky(0);
+
+  p->DrawFrame(0, y_min, 5.5, y_max,
+      ";EMCal trigger #Sigma_{4x4}[ E_{Tower} ] requirement (GeV);Rejection factor for MB events");
+
+  TGaxis * a = new TGaxis(5.5,y_min,5.5, y_max,y_min2,y_max2,510,"+L");
+  a->SetTitle("Trigger efficiency for inclusive Upsilon (1S)");
+  a->SetLabelColor(kRed);
+  a->SetTitleColor(kRed);
+  a->SetLineColor(kRed);
+  a->SetTextFont(42);
+  a->Draw();
+
+  TLine * l = new TLine(4.3,y_min,4.3,y_max);
+  l->SetLineColor(kGray);
+  l->SetLineWidth(5);
+  l->Draw();
+
+  TLatex * t = new TLatex(0, y_max*1.1,"PYTHIA8 p+p #sqrt{s} = 200 GeV + Geant4 + Trigger Emulator");
+  t->Draw();
+
+  plot_reg_ge_sig_EMCalAna_h_CEMC_TOWER_4x4_max->SetFillColor(kRed);
+  plot_reg_ge_sig_EMCalAna_h_CEMC_TOWER_4x4_max->SetLineColor(kRed);
+  plot_reg_ge_sig_EMCalAna_h_CEMC_TOWER_4x4_max->SetLineWidth(3);
+  plot_reg_ge_sig_EMCalAna_h_CEMC_TOWER_4x4_max->SetLineStyle(kDashed);
+//  plot_reg_ge_sig_EMCalAna_h_CEMC_TOWER_4x4_max->Draw("3");
+  plot_reg_ge_sig_EMCalAna_h_CEMC_TOWER_4x4_max->Draw("lx");
+
+  plot_ge_rej_EMCalAna_h_CEMC_TOWER_4x4_max->SetFillColor(kBlack);
+  plot_ge_rej_EMCalAna_h_CEMC_TOWER_4x4_max->SetLineColor(kBlack);
+  plot_ge_rej_EMCalAna_h_CEMC_TOWER_4x4_max->SetLineWidth(3);
+  plot_ge_rej_EMCalAna_h_CEMC_TOWER_4x4_max->SetLineStyle(kDashed);
+//  plot_ge_rej_EMCalAna_h_CEMC_TOWER_4x4_max->Draw("3");
+  plot_ge_rej_EMCalAna_h_CEMC_TOWER_4x4_max->Draw("lx");
+
+
+  plot_reg_ge_sig_EMCalAna_h_CEMC_TOWER_4x4_slide2_max_trigger_ADC->SetFillColor(kRed);
+  plot_reg_ge_sig_EMCalAna_h_CEMC_TOWER_4x4_slide2_max_trigger_ADC->SetLineColor(kRed);
+  plot_reg_ge_sig_EMCalAna_h_CEMC_TOWER_4x4_slide2_max_trigger_ADC->SetLineWidth(3);
+  plot_reg_ge_sig_EMCalAna_h_CEMC_TOWER_4x4_slide2_max_trigger_ADC->Draw("3");
+  plot_reg_ge_sig_EMCalAna_h_CEMC_TOWER_4x4_slide2_max_trigger_ADC->Draw("lx");
+
+  plot_ge_rej_EMCalAna_h_CEMC_TOWER_4x4_slide2_max_trigger_ADC->SetFillColor(kBlack);
+  plot_ge_rej_EMCalAna_h_CEMC_TOWER_4x4_slide2_max_trigger_ADC->SetLineColor(kBlack);
+  plot_ge_rej_EMCalAna_h_CEMC_TOWER_4x4_slide2_max_trigger_ADC->SetLineWidth(3);
+  plot_ge_rej_EMCalAna_h_CEMC_TOWER_4x4_slide2_max_trigger_ADC->Draw("3");
+  plot_ge_rej_EMCalAna_h_CEMC_TOWER_4x4_slide2_max_trigger_ADC->Draw("lx");
+
+  TLegend * legd = new TLegend(0.13,0.5,0.6,0.9);
+
+  TLegendEntry   * le =
+  legd->AddEntry(plot_ge_rej_EMCalAna_h_CEMC_TOWER_4x4_slide2_max_trigger_ADC, "Rej. for MB (8-bit truncated 2x2 Sum)", "lx");
+  le->SetTextFont(42);
+  TLegendEntry   * le =
+  legd->AddEntry(plot_reg_ge_sig_EMCalAna_h_CEMC_TOWER_4x4_slide2_max_trigger_ADC, "Eff. for #Upsilon (8-bit truncated 2x2 Sum)", "lx");
+  le->SetTextFont(42);
+  le->SetTextColor(kRed);
+  TLegendEntry   * le =
+  legd->AddEntry(plot_ge_rej_EMCalAna_h_CEMC_TOWER_4x4_max, "Rej. for MB (full ADC info)", "lx");
+  le->SetTextFont(42);
+  TLegendEntry   * le =
+  legd->AddEntry(plot_reg_ge_sig_EMCalAna_h_CEMC_TOWER_4x4_max, "Eff. for #Upsilon (full ADC info)", "lx");
+  le->SetTextFont(42);
+  le->SetTextColor(kRed);
+
+  legd->Draw();
+
+  SaveCanvas(c1, infile + TString("_DrawEcal_") + TString(c1->GetName()),
+      kTRUE);
+}
+
+
 
 TGraphErrors *
 Distribution2Efficiency(TH1F * hCEMC3_Max)
