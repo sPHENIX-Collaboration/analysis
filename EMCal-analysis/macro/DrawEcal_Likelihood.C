@@ -24,17 +24,19 @@ TString cuts = "";
 
 void
 DrawEcal_Likelihood(
-    //
+//
+//    TString base_dir =
+//        "/phenix/sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/",
     TString base_dir =
-        "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/",
-//        TString base_dir =
-//                        "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/embedding/emcstudies/pidstudies/spacal2d/fieldmap/",
-    TString pid = "e-", TString kine_config = "eta0_8GeV", int eval_mode = 0)
+        "/phenix/sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/embedding/emcstudies/pidstudies/spacal2d/fieldmap/",
+//        TString pid = "anti_proton", //
+    TString pid = "e+", //
+    TString kine_config = "eta0_4GeV", int eval_mode = 0)
 {
 
   const TString infile = base_dir + "G4Hits_sPHENIX_" + pid + "_" + kine_config
       + "-ALL.root_Ana.root.lst_EMCalLikelihood.root";
-//                "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/G4Hits_sPHENIX_pi-_eta0_8GeV-ALL.root_Ana.root.lst_EMCalLikelihood.root"//
+//                "/phenix/sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/G4Hits_sPHENIX_pi-_eta0_8GeV-ALL.root_Ana.root.lst_EMCalLikelihood.root"//
 
   SetOKStyle();
   gStyle->SetOptStat(0);
@@ -49,6 +51,8 @@ DrawEcal_Likelihood(
     {
       TString chian_str = infile;
       chian_str.ReplaceAll("ALL", "*");
+      chian_str.ReplaceAll("+", "\\+");
+
 
       TChain * t = new TChain("T");
       const int n = t->Add(chian_str);
@@ -93,7 +97,7 @@ DrawEcal_Likelihood(
       event_sel = "Entry$<50000 && fabs(EMCalTrk_pt/EMCalTrk_gpt - 1)<0.05";
       cuts = "_ll_sample";
     }
-  else  if (eval_mode == 1)
+  else if (eval_mode == 1)
     {
 //      event_sel = "Entry$>50000 && fabs(EMCalTrk_pt/EMCalTrk_gpt - 1)<0.05";
       event_sel = " fabs(EMCalTrk_pt/EMCalTrk_gpt - 1)<0.05";
@@ -112,13 +116,16 @@ DrawEcal_Likelihood(
     {
       Edep_Distribution(infile);
     }
-  else  if (eval_mode == 1)
+  else if (eval_mode == 1)
     {
       Edep_LL_Distribution(infile);
       EP_LL_Distribution(infile);
     }
 
-    Edep_Checks(infile, "fabs(EMCalTrk_pt/EMCalTrk_gpt - 1)<0.05");
+//  Edep_Checks(infile, "fabs(EMCalTrk_pt/EMCalTrk_gpt - 1)<0.05");
+//  Ep_Checks(infile, "fabs(EMCalTrk_pt/EMCalTrk_gpt - 1)<0.05");
+  Edep_Checks(infile, "1");
+  Ep_Checks(infile, "1");
   //  ShowerShape_Checks(infile, "fabs(EMCalTrk_pt/EMCalTrk_gpt - 1)<0.05 && DST.EMCalTrk.cemc_sum_energy>3");
 }
 
@@ -256,7 +263,7 @@ Edep_Distribution(TString infile)
   c1->Update();
   p->SetLogz();
   T->Draw(
-      "DST.EMCalTrk.hcalin_sum_energy:DST.EMCalTrk.get_ep()>>h2_Edep_Distribution_raw(240,-.0,1.5, 240,-.0,12)",
+      "DST.EMCalTrk.hcalin_sum_energy:DST.EMCalTrk.get_ep()>>h2_Edep_Distribution_raw(240,-.0,2, 240,-.0,12)",
       "", "colz");
   h2_Edep_Distribution_raw->SetTitle(
       Form(
@@ -389,7 +396,8 @@ Edep_Checks(TString infile, TCut good_track_cut)
   p = (TPad *) c1->cd(idx++);
   c1->Update();
   p->SetLogy();
-  p->DrawFrame(-.0,1e-3,12,1,"CEMC Cut Eff;Cut on Cluster Energy (GeV);Efficiency");
+  p->DrawFrame(-.0, 1e-3, 12, 1,
+      "CEMC Cut Eff;Cut on Cluster Energy (GeV);Efficiency");
 
   TGraphErrors * ge = Distribution2Efficiency(hEMCalTrk_cemc_e);
   ge->SetLineColor(kBlue + 2);
@@ -397,7 +405,6 @@ Edep_Checks(TString infile, TCut good_track_cut)
   ge->SetMarkerColor(kFullCircle);
   ge->SetLineWidth(3);
   ge->Draw("lp");
-
 
   p = (TPad *) c1->cd(idx++);
   c1->Update();
@@ -409,7 +416,6 @@ Edep_Checks(TString infile, TCut good_track_cut)
       Form("HCal_{in} Cluster Size;Cluster Size (Towers);Probability"));
   hEMCalTrk_hcalin_ntower->Scale(1. / N_Event);
 
-
   p = (TPad *) c1->cd(idx++);
   c1->Update();
   p->SetLogy();
@@ -419,11 +425,11 @@ Edep_Checks(TString infile, TCut good_track_cut)
       Form("HCal_{in} Cluster Energy;Cluster Energy (GeV);Count/bin"));
 //  hEMCalTrk_hcalin_e->Scale(1. / N_Event);
 
-
   p = (TPad *) c1->cd(idx++);
   c1->Update();
   p->SetLogy();
-  p->DrawFrame(-.0,1e-3,12,1,"HCal_{in} Cut Eff;Cut on Cluster Energy (GeV);Efficiency");
+  p->DrawFrame(-.0, 1e-3, 12, 1,
+      "HCal_{in} Cut Eff;Cut on Cluster Energy (GeV);Efficiency");
 
   TGraphErrors * ge = Distribution2Efficiency(hEMCalTrk_hcalin_e);
   ge->SetLineColor(kBlue + 2);
@@ -431,7 +437,6 @@ Edep_Checks(TString infile, TCut good_track_cut)
   ge->SetMarkerColor(kFullCircle);
   ge->SetLineWidth(3);
   ge->Draw("lp");
-
 
   SaveCanvas(c1,
       TString(_file0->GetName()) + TString("_DrawEcal_pDST_")
@@ -455,6 +460,53 @@ Edep_Checks(TString infile, TCut good_track_cut)
   h2_EMCalTrk_hcalin_e_EMCalTrk_cemc_e->Scale(1. / N_Event);
   h2_EMCalTrk_hcalin_e_EMCalTrk_cemc_e->GetZaxis()->SetRangeUser(1. / N_Event,
       1);
+
+  SaveCanvas(c1,
+      TString(_file0->GetName()) + TString("_DrawEcal_Likelihood_")
+          + TString(c1->GetName()), kFALSE);
+
+}
+
+void
+Ep_Checks(TString infile, TCut good_track_cut)
+{
+
+  double N_Event = T->GetEntries();
+
+  TCanvas *c1 = new TCanvas("Ep_Checks" + cuts, "Ep_Checks" + cuts, 1900, 950);
+  c1->Divide(2, 1);
+  int idx = 1;
+  TPad * p;
+
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+  p->SetLogy();
+  T->Draw("DST.EMCalTrk.get_ep()>>hEMCalTrk_get_ep(240,-.0,2)",
+      good_track_cut);
+  hEMCalTrk_get_ep->SetTitle(
+      Form("CEMC Cluster Energy/Track Momentum;E/p;Count/bin"));
+//  hEMCalTrk_cemc_e->Scale(1. / N_Event);
+
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+
+  if (infile.Contains("e-") || infile.Contains("e+"))
+    {
+      p->DrawFrame(-.0, 0.8, 1.5, 1,
+          "CEMC E/p Cut Eff;Cut on E/p;Signal Efficiency");
+    }
+  else
+    {
+      p->DrawFrame(-.0, 1e-3, 1.5, 1,
+          "CEMC E/p Cut Eff;Cut on E/p;Background Efficiency or 1/Rejection");
+      p->SetLogy();
+    }
+  TGraphErrors * ge = Distribution2Efficiency(hEMCalTrk_get_ep);
+  ge->SetLineColor(kBlue + 2);
+  ge->SetMarkerColor(kBlue + 21);
+  ge->SetMarkerColor(kFullCircle);
+  ge->SetLineWidth(3);
+  ge->Draw("lp");
 
   SaveCanvas(c1,
       TString(_file0->GetName()) + TString("_DrawEcal_Likelihood_")
@@ -492,8 +544,8 @@ Distribution2Efficiency(TH1F * hCEMC3_Max)
       eff[cnt] = (pp + z * z / 2 / n) * B;
       eff_err[cnt] = A * B;
 
-      cout << threshold[cnt] << ": " << "CL " << eff[cnt] << "+/-"
-          << eff_err[cnt] << endl;
+//      cout << threshold[cnt] << ": " << "CL " << eff[cnt] << "+/-"
+//          << eff_err[cnt] << endl;
       cnt++;
     }
   TGraphErrors * ge = new TGraphErrors(cnt, threshold, eff, NULL, eff_err);
