@@ -1,13 +1,12 @@
 #include "EMCalLikelihood.h"
 #include "EMCalTrk.h"
 
-#include <fun4all/getClass.h>
+#include <phool/getClass.h>
 #include <fun4all/SubsysReco.h>
 #include <fun4all/Fun4AllServer.h>
 #include <fun4all/PHTFileServer.h>
 #include <phool/PHCompositeNode.h>
 #include <fun4all/Fun4AllReturnCodes.h>
-#include <fun4all/getClass.h>
 #include <fun4all/Fun4AllHistoManager.h>
 
 #include <phool/PHCompositeNode.h>
