@@ -773,8 +773,10 @@ EMCalAna::eval_trk_proj(
   if (bineta > 1 and bineta < cemc_towergeo->get_etabins() - 1)
     etabin_width = (cemc_towergeo->get_etacenter(bineta + 1)
         - cemc_towergeo->get_etacenter(bineta - 1)) / 2.;
-  double phibin_width = cemc_towergeo->get_etabounds(binphi).second
-      - cemc_towergeo->get_etabounds(binphi).first;
+
+  double phibin_width = cemc_towergeo->get_phibounds(binphi).second
+      - cemc_towergeo->get_phibounds(binphi).first;
+
   assert(etabin_width>0);
   assert(phibin_width>0);
 
