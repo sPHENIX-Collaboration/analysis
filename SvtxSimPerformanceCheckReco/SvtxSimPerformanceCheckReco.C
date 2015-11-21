@@ -1,7 +1,8 @@
 
 #include "SvtxSimPerformanceCheckReco.h"
 
-#include <fun4all/getClass.h>
+#include <phool/getClass.h>
+
 #include <fun4all/Fun4AllServer.h>
 
 #include <g4main/PHG4TruthInfoContainer.h>
@@ -202,9 +203,9 @@ int SvtxSimPerformanceCheckReco::process_event(PHCompositeNode *topNode) {
   SvtxTruthEval*     trutheval = svtxevalstack.get_truth_eval();
   
   // loop over all truth particles
-  PHG4TruthInfoContainer::Map map = truthinfo->GetPrimaryMap();
-  for (PHG4TruthInfoContainer::ConstIterator iter = map.begin(); 
-       iter != map.end(); 
+  PHG4TruthInfoContainer::Range range = truthinfo->GetPrimaryParticleRange();
+  for (PHG4TruthInfoContainer::ConstIterator iter = range.first; 
+       iter != range.second; 
        ++iter) {
     PHG4Particle* g4particle = iter->second;
     if (trutheval->get_embed(g4particle) == 0) continue;
@@ -253,7 +254,7 @@ int SvtxSimPerformanceCheckReco::process_event(PHCompositeNode *topNode) {
        iter != trackmap->end();
        ++iter) {
     
-    SvtxTrack*    track      = &iter->second;
+    SvtxTrack*    track      = iter->second;
     float recopt = track->get_pt();
         
     PHG4Particle* g4particle = trackeval->max_truth_particle_by_nclusters(track);
@@ -301,7 +302,7 @@ int SvtxSimPerformanceCheckReco::process_event(PHCompositeNode *topNode) {
   for (SvtxVertexMap::Iter iter = vertexmap->begin();
        iter != vertexmap->end();
        ++iter) {
-    SvtxVertex* vertex = &iter->second;
+    SvtxVertex* vertex = iter->second;
 
     if (vertex->size_tracks() > maxtracks) {
       maxvertex = vertex;
