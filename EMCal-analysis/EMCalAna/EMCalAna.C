@@ -18,7 +18,7 @@
 #include <g4hough/SvtxVertexMap.h>
 
 #include <g4cemc/RawTowerContainer.h>
-#include <g4cemc/RawTowerGeom.h>
+#include <g4cemc/RawTowerGeomContainer.h>
 #include <g4cemc/RawTower.h>
 #include <g4cemc/RawClusterContainer.h>
 #include <g4cemc/RawCluster.h>
@@ -571,7 +571,7 @@ EMCalAna::eval_trk_proj(
 
   // pull the tower geometry
   string towergeonodename = "TOWERGEOM_" + detector;
-  RawTowerGeom *cemc_towergeo = findNode::getClass<RawTowerGeom>(topNode,
+  RawTowerGeomContainer *cemc_towergeo = findNode::getClass<RawTowerGeomContainer>(topNode,
       towergeonodename.c_str());
   assert(cemc_towergeo);
 
@@ -773,7 +773,10 @@ EMCalAna::eval_trk_proj(
   if (bineta > 1 and bineta < cemc_towergeo->get_etabins() - 1)
     etabin_width = (cemc_towergeo->get_etacenter(bineta + 1)
         - cemc_towergeo->get_etacenter(bineta - 1)) / 2.;
-  double phibin_width = cemc_towergeo->get_phistep();
+
+  double phibin_width = cemc_towergeo->get_phibounds(binphi).second
+      - cemc_towergeo->get_phibounds(binphi).first;
+
   assert(etabin_width>0);
   assert(phibin_width>0);
 
@@ -1207,7 +1210,7 @@ EMCalAna::process_event_Tower(PHCompositeNode *topNode)
       return Fun4AllReturnCodes::DISCARDEVENT;
     }
   string towergeomnodename = "TOWERGEOM_" + detector;
-  RawTowerGeom *towergeom = findNode::getClass<RawTowerGeom>(topNode,
+  RawTowerGeomContainer *towergeom = findNode::getClass<RawTowerGeomContainer>(topNode,
       towergeomnodename.c_str());
   if (!towergeom)
     {

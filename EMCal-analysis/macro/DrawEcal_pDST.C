@@ -73,10 +73,10 @@ DrawEcal_pDST( //
 //            const TString infile =  "/phenix/sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal1d/fieldmap/G4Hits_sPHENIX_e+_eta0.90_4GeV-ALL.root_Ana.root"
 //          const TString infile = "/phenix/sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal1d/fieldmap/G4Hits_sPHENIX_pi+_eta0.90_4GeV-ALL.root_Ana.root"
 //          const TString infile = "/phenix/sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal1d/fieldmap/G4Hits_sPHENIX_e+_eta0.90_2GeV-ALL.root_Ana.root"
-            const TString infile = "/phenix/sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal1d/fieldmap/G4Hits_sPHENIX_pi+_eta0.90_2GeV-ALL.root_Ana.root"
+//            const TString infile = "/phenix/sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal1d/fieldmap/G4Hits_sPHENIX_pi+_eta0.90_2GeV-ALL.root_Ana.root"
 
-//    const TString infile = "G4Hits_sPHENIX_anti_proton_eta0_8GeV-0000.root_Ana.root" //
-//            const TString infile = "G4Hits_sPHENIX_pi-_eta0_8GeV-0003.root_Ana.root"//
+//    const TString infile = "G4Hits_sPHENIX_e-_eta0_8GeV-0000.root_Ana.root" //
+            const TString infile = "G4Hits_sPHENIX_pi-_eta0_8GeV-0000.root_Ana.root"//
     )
 {
   SetOKStyle();
@@ -145,9 +145,9 @@ DrawEcal_pDST( //
 //  UpsilonPair_Checks(infile);
 
 //  TrackProjection_Checks(infile, "abs(EMCalTrk_pt/EMCalTrk_gpt - 1)<0.05");
-  Edep_Checks(infile, 1.4, 1.4, "abs(EMCalTrk_pt/EMCalTrk_gpt - 1)<0.05");
+//  Edep_Checks(infile, 1.4, 1.4, "abs(EMCalTrk_pt/EMCalTrk_gpt - 1)<0.05");
 
-//  TrackProjection_Checks(infile, "abs(EMCalTrk_pt/EMCalTrk_gpt - 1)<0.05 && DST.EMCalTrk.cemce>2");
+  TrackProjection_Checks(infile, "abs(EMCalTrk_pt/EMCalTrk_gpt - 1)<0.05 && DST.EMCalTrk.cemce>2");
 //  Edep_Checks(infile, 1.4, 1.4, "abs(EMCalTrk_pt/EMCalTrk_gpt - 1)<0.05 && DST.EMCalTrk.cemce>2");
 }
 
