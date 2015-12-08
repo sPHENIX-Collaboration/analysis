@@ -303,7 +303,7 @@ int SvtxSimPerformanceCheckReco::process_event(PHCompositeNode *topNode) {
     float truept = sqrt(pow(g4particle->get_px(),2)+pow(g4particle->get_py(),2));
 
     if (trutheval->get_embed(g4particle) != 0) {
-      // embedded results (quality or efficiency measures)
+      // embedded results (quality or preformance measures)
       _truept_dptoverpt->Fill(truept,(recopt-truept)/truept);
       _truept_dca->Fill(truept,track->get_dca2d());
 
@@ -381,7 +381,7 @@ int SvtxSimPerformanceCheckReco::process_event(PHCompositeNode *topNode) {
       
       // purity axis
 
-      // answer: how often does a track that passes the chisq cut trace to
+      // answer: how often does a non-embedded track that passes the chisq cut trace to
       // a truth particle within 4% in pt
       
       for (SvtxTrackMap::Iter iter = trackmap->begin();
@@ -390,12 +390,13 @@ int SvtxSimPerformanceCheckReco::process_event(PHCompositeNode *topNode) {
 	
 	SvtxTrack*    track      = iter->second;
 	float recopt = track->get_pt();
-	
-	PHG4Particle* g4particle = trackeval->max_truth_particle_by_nclusters(track);
-	float truept = sqrt(pow(g4particle->get_px(),2)+pow(g4particle->get_py(),2));
-
 	if (recopt < ptmin) continue;
 	if (recopt > ptmax) continue;
+	
+	PHG4Particle* g4particle = trackeval->max_truth_particle_by_nclusters(track);
+	if (trutheval->get_embed(g4particle) != 0) continue;
+
+	float truept = sqrt(pow(g4particle->get_px(),2)+pow(g4particle->get_py(),2));
 	
 	++ntracks;
 
@@ -411,7 +412,7 @@ int SvtxSimPerformanceCheckReco::process_event(PHCompositeNode *topNode) {
       
       // efficiency axis
 
-      // answer: how often does a truth particle leaving 7-hits get reconstructed
+      // answer: how often does an embedded truth particle leaving 7-hits get reconstructed
       // with a chisq better than the cut
       
       PHG4TruthInfoContainer::Range range = truthinfo->GetPrimaryParticleRange();
