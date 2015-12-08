@@ -443,6 +443,7 @@ int SvtxSimPerformanceCheckReco::process_event(PHCompositeNode *topNode) {
 
       if ((nparticles != 0)&&(ntracks != 0)) {
 	histo->Fill(recoparticles/nparticles,puretracks/ntracks);
+	cout << ptmin << " " << chisqcut << " " << recoparticles/nparticles << " " << puretracks/ntracks << endl;
       }      
     }
   }
