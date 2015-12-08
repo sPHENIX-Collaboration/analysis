@@ -48,13 +48,9 @@ SvtxSimPerformanceCheckReco::SvtxSimPerformanceCheckReco(const string &name)
     _dx_vertex(NULL),
     _dy_vertex(NULL),
     _dz_vertex(NULL),
-    _eff_vs_purity_pt_0_1(NULL),
-    _eff_vs_purity_pt_1_2(NULL),
-    _eff_vs_purity_pt_2_3(NULL),
-    _eff_vs_purity_pt_3_4(NULL),
-    _eff_vs_purity_pt_4_5(NULL),
-    _eff_vs_purity_pt_5_6(NULL),
-    _eff_vs_purity_pt_6_7(NULL) { 
+    _truept_quality_particles_recoWithin4Percent(NULL),
+    _recopt_quality_tracks_all(NULL),
+    _recopt_quality_tracks_recoWithin4Percent(NULL) { 
 }
 
 int SvtxSimPerformanceCheckReco::Init(PHCompositeNode *topNode) {
@@ -145,33 +141,21 @@ int SvtxSimPerformanceCheckReco::Init(PHCompositeNode *topNode) {
 			"dz_vertex",
 			200,-0.03,0.03);
   
-  _eff_vs_purity_pt_0_1 = new TH2D("eff_vs_purity_pt_0_1",
-				   "eff_vs_purity_pt_0_1",
-				   100,0.0,1.0,100,0.0,1.0);
+  _truept_quality_particles_recoWithin4Percent = new TH2D("truept_quality_particles_recoWithin4Percent",
+							  "truept_quality_particles_recoWithin4Percent",
+							  20,0.0,10.0,
+							  100,0.0,5.0);
+
+  _recopt_quality_tracks_all = new TH2D("recopt_quality_tracks_all",
+					"recopt_quality_tracks_all",
+					20,0.0,10.0,
+					100,0.0,5.0);
+
+  _recopt_quality_tracks_all = new TH2D("recopt_quality_tracks_recoWithin4Percent",
+					"recopt_quality_tracks_recoWithin4Percent",
+					20,0.0,10.0,
+					100,0.0,5.0);
   
-  _eff_vs_purity_pt_1_2 = new TH2D("eff_vs_purity_pt_1_2",
-				   "eff_vs_purity_pt_1_2",
-				   100,0.0,1.0,100,0.0,1.0);
-
-  _eff_vs_purity_pt_2_3 = new TH2D("eff_vs_purity_pt_2_3",
-				   "eff_vs_purity_pt_2_3",
-				   100,0.0,1.0,100,0.0,1.0);
-
-  _eff_vs_purity_pt_3_4 = new TH2D("eff_vs_purity_pt_3_4",
-				   "eff_vs_purity_pt_3_4",
-				   100,0.0,1.0,100,0.0,1.0);
-
-  _eff_vs_purity_pt_4_5 = new TH2D("eff_vs_purity_pt_4_5",
-				   "eff_vs_purity_pt_4_5",
-				   100,0.0,1.0,100,0.0,1.0);
-
-  _eff_vs_purity_pt_5_6 = new TH2D("eff_vs_purity_pt_5_6",
-				   "eff_vs_purity_pt_5_6",
-				   100,0.0,1.0,100,0.0,1.0);
-
-  _eff_vs_purity_pt_6_7 = new TH2D("eff_vs_purity_pt_6_7",
-				   "eff_vs_purity_pt_6_7",
-				   100,0.0,1.0,100,0.0,1.0);
   
   se->registerHisto(_truept_dptoverpt);                    
 
@@ -203,13 +187,9 @@ int SvtxSimPerformanceCheckReco::Init(PHCompositeNode *topNode) {
   se->registerHisto(_dy_vertex);
   se->registerHisto(_dz_vertex);
 
-  se->registerHisto(_eff_vs_purity_pt_0_1);
-  se->registerHisto(_eff_vs_purity_pt_1_2);
-  se->registerHisto(_eff_vs_purity_pt_2_3);
-  se->registerHisto(_eff_vs_purity_pt_3_4);
-  se->registerHisto(_eff_vs_purity_pt_4_5);
-  se->registerHisto(_eff_vs_purity_pt_5_6);
-  se->registerHisto(_eff_vs_purity_pt_6_7);
+  se->registerHisto(_truept_quality_particles_recoWithin4Percent);
+  se->registerHisto(_recopt_quality_tracks_all);
+  se->registerHisto(_recopt_quality_tracks_recoWithin4Percent);
   
   return 0;
 }
@@ -262,8 +242,9 @@ int SvtxSimPerformanceCheckReco::process_event(PHCompositeNode *topNode) {
       _truept_particles_leaving7Hits->Fill(truept);
     
       SvtxTrack* track = trackeval->best_track_from(g4particle);
-      if (!track) continue;
-
+    
+      if (!track) {continue;}
+      
       unsigned int nfromtruth = trackeval->get_nclusters_contribution(track,g4particle);
       float recopt = track->get_pt();
 
@@ -284,6 +265,7 @@ int SvtxSimPerformanceCheckReco::process_event(PHCompositeNode *topNode) {
       }
       if (diff < 0.04) {
 	_truept_particles_recoWithin4Percent->Fill(truept);
+	_truept_quality_particles_recoWithin4Percent->Fill(truept,track->get_quality());
       }
       if (diff < 0.03) {
 	_truept_particles_recoWithin3Percent->Fill(truept);
@@ -311,6 +293,7 @@ int SvtxSimPerformanceCheckReco::process_event(PHCompositeNode *topNode) {
     } else {
       // non-embedded results (purity measures)
       _recopt_tracks_all->Fill(recopt);
+      _recopt_quality_tracks_all->Fill(recopt,track->get_quality());
 
       unsigned int nfromtruth = trackeval->get_nclusters_contribution(track,g4particle);
 
@@ -331,6 +314,7 @@ int SvtxSimPerformanceCheckReco::process_event(PHCompositeNode *topNode) {
       }
       if (diff < 0.04) {
 	_recopt_tracks_recoWithin4Percent->Fill(recopt);
+	_recopt_quality_tracks_recoWithin4Percent->Fill(recopt,track->get_quality());
       }
       if (diff < 0.03) {
 	_recopt_tracks_recoWithin3Percent->Fill(recopt);
@@ -357,97 +341,6 @@ int SvtxSimPerformanceCheckReco::process_event(PHCompositeNode *topNode) {
   _dx_vertex->Fill(maxvertex->get_x());// - point->get_x());
   _dy_vertex->Fill(maxvertex->get_y());// - point->get_y());
   _dz_vertex->Fill(maxvertex->get_z());// - point->get_z());
-
-  TH2D *histo = NULL;
-
-  // loop over pt window
-  for (float ptmin = 0.0; ptmin < 5.1; ptmin += 1.0) {
-    float ptmax = ptmin + 1.0;
-
-    if      (ptmin == 0.0) histo = _eff_vs_purity_pt_0_1;
-    else if (ptmin == 1.0) histo = _eff_vs_purity_pt_1_2;
-    else if (ptmin == 2.0) histo = _eff_vs_purity_pt_2_3;
-    else if (ptmin == 3.0) histo = _eff_vs_purity_pt_3_4;
-    else if (ptmin == 4.0) histo = _eff_vs_purity_pt_4_5;
-    else if (ptmin == 5.0) histo = _eff_vs_purity_pt_5_6;
-    else if (ptmin == 6.0) histo = _eff_vs_purity_pt_6_7;
-    else continue;
-
-    // loop over chisq cut
-    for (float chisqcut = 0.1; chisqcut < 10.1; chisqcut += 0.1) {
-
-      unsigned int ntracks = 0;
-      unsigned int puretracks = 0;
-      
-      // purity axis
-
-      // answer: how often does a non-embedded track that passes the chisq cut trace to
-      // a truth particle within 4% in pt
-      
-      for (SvtxTrackMap::Iter iter = trackmap->begin();
-	   iter != trackmap->end();
-	   ++iter) {
-	
-	SvtxTrack*    track      = iter->second;
-	float recopt = track->get_pt();
-	if (recopt < ptmin) continue;
-	if (recopt > ptmax) continue;
-	
-	PHG4Particle* g4particle = trackeval->max_truth_particle_by_nclusters(track);
-	if (trutheval->get_embed(g4particle) != 0) continue;
-
-	float truept = sqrt(pow(g4particle->get_px(),2)+pow(g4particle->get_py(),2));
-	
-	++ntracks;
-
-	if (track->get_quality() < chisqcut) {
-	  if (fabs(recopt-truept)/truept < 0.04) {
-	    ++puretracks;
-	  }
-	}
-      }
-
-      unsigned int nparticles = 0;
-      unsigned int recoparticles = 0;
-      
-      // efficiency axis
-
-      // answer: how often does an embedded truth particle leaving 7-hits get reconstructed
-      // with a chisq better than the cut
-      
-      PHG4TruthInfoContainer::Range range = truthinfo->GetPrimaryParticleRange();
-      for (PHG4TruthInfoContainer::ConstIterator iter = range.first; 
-	   iter != range.second; 
-	   ++iter) {
-	PHG4Particle* g4particle = iter->second;
-	if (trutheval->get_embed(g4particle) == 0) continue;
-	
-	float truept = sqrt(pow(g4particle->get_px(),2)+pow(g4particle->get_py(),2));
-	if (truept < ptmin) continue;
-	if (truept > ptmax) continue;
-	
-	std::set<PHG4Hit*> g4hits = trutheval->all_truth_hits(g4particle);     
-	float ng4hits = g4hits.size();  
-		
-	// examine truth particles that leave 7 detector hits
-	if (ng4hits == 7) {
-	  ++nparticles;
-	  
-	  SvtxTrack* track = trackeval->best_track_from(g4particle);
-	  if (!track) continue;
-
-	  if (track->get_quality() < chisqcut) {
-	    ++recoparticles;
-	  }
-	} 
-      }
-
-      if ((nparticles != 0)&&(ntracks != 0)) {
-	histo->Fill(recoparticles/nparticles,puretracks/ntracks);
-	cout << ptmin << " " << chisqcut << " " << recoparticles/nparticles << " " << puretracks/ntracks << endl;
-      }      
-    }
-  }
   
   return 0;
 }
