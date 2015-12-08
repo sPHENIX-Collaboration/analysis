@@ -22,6 +22,7 @@ libemcal_ana_la_LIBADD = \
   -lphg4hit \
   -lg4detectors_io \
   -lg4hough_io \
+  -lg4hough \
   -lcemc_io \
   -lg4jets_io \
   -lg4eval
@@ -32,7 +33,13 @@ pkginclude_HEADERS =
 
 libemcal_ana_la_SOURCES = \
   EMCalAna.C \
-  EMCalAna_Dict.C 
+  EMCalAna_Dict.C \
+  EMCalLikelihood.C \
+  EMCalLikelihood_Dict.C \
+  EMCalTrk.C \
+  EMCalTrk_Dict.C \
+  UpsilonPair.C \
+  UpsilonPair_Dict.C 
 
 # Rule for generating table CINT dictionaries.
 %_Dict.C: %.h %LinkDef.h
