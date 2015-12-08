@@ -54,6 +54,14 @@ private:
   TH1D* _dx_vertex;                          // vertex resolution
   TH1D* _dy_vertex;
   TH1D* _dz_vertex;
+
+  TH2D* _eff_vs_purity_pt_0_1;
+  TH2D* _eff_vs_purity_pt_1_2;
+  TH2D* _eff_vs_purity_pt_2_3;
+  TH2D* _eff_vs_purity_pt_3_4;
+  TH2D* _eff_vs_purity_pt_4_5;
+  TH2D* _eff_vs_purity_pt_5_6;
+  TH2D* _eff_vs_purity_pt_6_7;
 };
 
 #endif // __SVTXSIMPERFORMANCECHECKRECO_H__

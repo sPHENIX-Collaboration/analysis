@@ -1,7 +1,7 @@
 
 #include "SvtxSimPerformanceCheckReco.h"
 
-#include <fun4all/getClass.h>
+#include <phool/getClass.h>
 #include <fun4all/Fun4AllServer.h>
 
 #include <g4main/PHG4TruthInfoContainer.h>
@@ -47,7 +47,14 @@ SvtxSimPerformanceCheckReco::SvtxSimPerformanceCheckReco(const string &name)
     _recopt_quality(NULL),
     _dx_vertex(NULL),
     _dy_vertex(NULL),
-    _dz_vertex(NULL) { 
+    _dz_vertex(NULL),
+    _eff_vs_purity_pt_0_1(NULL),
+    _eff_vs_purity_pt_1_2(NULL),
+    _eff_vs_purity_pt_2_3(NULL),
+    _eff_vs_purity_pt_3_4(NULL),
+    _eff_vs_purity_pt_4_5(NULL),
+    _eff_vs_purity_pt_5_6(NULL),
+    _eff_vs_purity_pt_6_7(NULL) { 
 }
 
 int SvtxSimPerformanceCheckReco::Init(PHCompositeNode *topNode) {
@@ -138,6 +145,34 @@ int SvtxSimPerformanceCheckReco::Init(PHCompositeNode *topNode) {
 			"dz_vertex",
 			200,-0.03,0.03);
   
+  _eff_vs_purity_pt_0_1 = new TH2D("eff_vs_purity_pt_0_1",
+				   "eff_vs_purity_pt_0_1",
+				   100,0.0,1.0,100,0.0,1.0);
+  
+  _eff_vs_purity_pt_1_2 = new TH2D("eff_vs_purity_pt_1_2",
+				   "eff_vs_purity_pt_1_2",
+				   100,0.0,1.0,100,0.0,1.0);
+
+  _eff_vs_purity_pt_2_3 = new TH2D("eff_vs_purity_pt_2_3",
+				   "eff_vs_purity_pt_2_3",
+				   100,0.0,1.0,100,0.0,1.0);
+
+  _eff_vs_purity_pt_3_4 = new TH2D("eff_vs_purity_pt_3_4",
+				   "eff_vs_purity_pt_3_4",
+				   100,0.0,1.0,100,0.0,1.0);
+
+  _eff_vs_purity_pt_4_5 = new TH2D("eff_vs_purity_pt_4_5",
+				   "eff_vs_purity_pt_4_5",
+				   100,0.0,1.0,100,0.0,1.0);
+
+  _eff_vs_purity_pt_5_6 = new TH2D("eff_vs_purity_pt_5_6",
+				   "eff_vs_purity_pt_5_6",
+				   100,0.0,1.0,100,0.0,1.0);
+
+  _eff_vs_purity_pt_6_7 = new TH2D("eff_vs_purity_pt_6_7",
+				   "eff_vs_purity_pt_6_7",
+				   100,0.0,1.0,100,0.0,1.0);
+  
   se->registerHisto(_truept_dptoverpt);                    
 
   se->registerHisto(_truept_dca);                          
@@ -167,6 +202,14 @@ int SvtxSimPerformanceCheckReco::Init(PHCompositeNode *topNode) {
   se->registerHisto(_dx_vertex);                          
   se->registerHisto(_dy_vertex);
   se->registerHisto(_dz_vertex);
+
+  se->registerHisto(_eff_vs_purity_pt_0_1);
+  se->registerHisto(_eff_vs_purity_pt_1_2);
+  se->registerHisto(_eff_vs_purity_pt_2_3);
+  se->registerHisto(_eff_vs_purity_pt_3_4);
+  se->registerHisto(_eff_vs_purity_pt_4_5);
+  se->registerHisto(_eff_vs_purity_pt_5_6);
+  se->registerHisto(_eff_vs_purity_pt_6_7);
   
   return 0;
 }
@@ -314,6 +357,81 @@ int SvtxSimPerformanceCheckReco::process_event(PHCompositeNode *topNode) {
   _dx_vertex->Fill(maxvertex->get_x());// - point->get_x());
   _dy_vertex->Fill(maxvertex->get_y());// - point->get_y());
   _dz_vertex->Fill(maxvertex->get_z());// - point->get_z());
+
+  TH2D *histo = NULL;
+
+  // loop over pt window
+  for (float ptmin = 0.0; ptmin < 5.1; ptmin += 1.0) {
+    float ptmax = ptmin + 1.0;
+
+    if      (ptmin == 0.0) histo = _eff_vs_purity_pt_0_1;
+    else if (ptmin == 1.0) histo = _eff_vs_purity_pt_1_2;
+    else if (ptmin == 2.0) histo = _eff_vs_purity_pt_2_3;
+    else if (ptmin == 3.0) histo = _eff_vs_purity_pt_3_4;
+    else if (ptmin == 4.0) histo = _eff_vs_purity_pt_4_5;
+    else if (ptmin == 5.0) histo = _eff_vs_purity_pt_5_6;
+    else if (ptmin == 6.0) histo = _eff_vs_purity_pt_6_7;
+    else continue;
+
+    // loop over chisq cut
+    for (float chisqcut = 0.1; chisqcut < 10.1; chisqcut += 0.1) {
+
+      unsigned int ntracks = 0;
+      unsigned int puretracks = 0;
+      
+      // loop over all reco particles
+      for (SvtxTrackMap::Iter iter = trackmap->begin();
+	   iter != trackmap->end();
+	   ++iter) {
+	
+	SvtxTrack*    track      = &iter->second;
+	float recopt = track->get_pt();
+	
+	PHG4Particle* g4particle = trackeval->max_truth_particle_by_nclusters(track);
+	float truept = sqrt(pow(g4particle->get_px(),2)+pow(g4particle->get_py(),2));
+
+	if (recopt < ptmin) continue;
+	if (recopt > ptmax) continue;
+	
+	++ntracks;
+
+	if (track->get_quality() < chisqcut) ++puretracks;	
+      }
+
+      unsigned int nparticles = 0;
+      unsigned int recoparticles = 0;
+      
+      // loop over all true particles
+      PHG4TruthInfoContainer::Map map = truthinfo->GetPrimaryMap();
+      for (PHG4TruthInfoContainer::ConstIterator iter = map.begin(); 
+	   iter != map.end(); 
+	   ++iter) {
+	PHG4Particle* g4particle = iter->second;
+	if (trutheval->get_embed(g4particle) == 0) continue;
+
+	float truept = sqrt(pow(g4particle->get_px(),2)+pow(g4particle->get_py(),2));
+	if (truept < ptmin) continue;
+	if (truept > ptmax) continue;
+	
+	std::set<PHG4Hit*> g4hits = trutheval->all_truth_hits(g4particle);     
+	float ng4hits = g4hits.size();  
+		
+	// examine truth particles that leave 7 detector hits
+	if (ng4hits == 7) {
+	  ++nparticles;
+	  
+	  SvtxTrack* track = trackeval->best_track_from(g4particle);
+	  if (!track) continue;
+
+	  if (fabs(recopt-truept)/truept < 0.04) ++recoparticles;	  
+	} 
+      }
+
+      if ((nparticles != 0)&&(ntracks != 0)) {
+	histos->Fill(recoparticles/nparticles,puretracks/ntracks);
+      }      
+    }
+  }
   
   return 0;
 }
