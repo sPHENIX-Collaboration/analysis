@@ -267,14 +267,17 @@ EMCalAna::process_event_UpslisonTrig(PHCompositeNode *topNode)
   PHG4TruthInfoContainer* truthinfo =
       findNode::getClass<PHG4TruthInfoContainer>(topNode, "G4TruthInfo");
   assert(truthinfo);
-  PHG4TruthInfoContainer::Map primary_map = truthinfo->GetPrimaryMap();
+  PHG4TruthInfoContainer::Map particle_map = truthinfo->GetMap();
+  PHG4TruthInfoContainer::ConstRange primary_range =
+      truthinfo->GetPrimaryParticleRange();
 
   set<int> e_pos_candidate;
   set<int> e_neg_candidate;
 
-  for (PHG4TruthInfoContainer::Iterator iter = primary_map.begin();
-      iter != primary_map.end(); ++iter)
+  for (PHG4TruthInfoContainer::ConstIterator iter = primary_range.first;
+      iter != primary_range.second; ++iter)
     {
+
       PHG4Particle * particle = iter->second;
       assert(particle);
 
@@ -290,12 +293,12 @@ EMCalAna::process_event_UpslisonTrig(PHCompositeNode *topNode)
     for (set<int>::const_iterator i_e_neg = e_neg_candidate.begin();
         i_e_neg != e_neg_candidate.end(); ++i_e_neg)
       {
-        TLorentzVector vpos(primary_map[*i_e_pos]->get_px(),
-            primary_map[*i_e_pos]->get_py(), primary_map[*i_e_pos]->get_pz(),
-            primary_map[*i_e_pos]->get_e());
-        TLorentzVector vneg(primary_map[*i_e_neg]->get_px(),
-            primary_map[*i_e_neg]->get_py(), primary_map[*i_e_neg]->get_pz(),
-            primary_map[*i_e_neg]->get_e());
+        TLorentzVector vpos(particle_map[*i_e_pos]->get_px(),
+            particle_map[*i_e_pos]->get_py(), particle_map[*i_e_pos]->get_pz(),
+            particle_map[*i_e_pos]->get_e());
+        TLorentzVector vneg(particle_map[*i_e_neg]->get_px(),
+            particle_map[*i_e_neg]->get_py(), particle_map[*i_e_neg]->get_pz(),
+            particle_map[*i_e_neg]->get_e());
 
         TLorentzVector invar = vpos + vneg;
 
@@ -313,21 +316,21 @@ EMCalAna::process_event_UpslisonTrig(PHCompositeNode *topNode)
       const pair<int, int> best_upsilon_pair = mass_diff_id_map.begin()->second;
 
       //truth mass
-      TLorentzVector gvpos(primary_map[best_upsilon_pair.first]->get_px(),
-          primary_map[best_upsilon_pair.first]->get_py(),
-          primary_map[best_upsilon_pair.first]->get_pz(),
-          primary_map[best_upsilon_pair.first]->get_e());
-      TLorentzVector gvneg(primary_map[best_upsilon_pair.second]->get_px(),
-          primary_map[best_upsilon_pair.second]->get_py(),
-          primary_map[best_upsilon_pair.second]->get_pz(),
-          primary_map[best_upsilon_pair.second]->get_e());
+      TLorentzVector gvpos(particle_map[best_upsilon_pair.first]->get_px(),
+          particle_map[best_upsilon_pair.first]->get_py(),
+          particle_map[best_upsilon_pair.first]->get_pz(),
+          particle_map[best_upsilon_pair.first]->get_e());
+      TLorentzVector gvneg(particle_map[best_upsilon_pair.second]->get_px(),
+          particle_map[best_upsilon_pair.second]->get_py(),
+          particle_map[best_upsilon_pair.second]->get_pz(),
+          particle_map[best_upsilon_pair.second]->get_e());
       TLorentzVector ginvar = gvpos + gvneg;
       upsilon_pair->gmass = ginvar.M();
 
-      eval_trk(primary_map[best_upsilon_pair.first], *upsilon_pair->get_trk(0),
+      eval_trk(particle_map[best_upsilon_pair.first], *upsilon_pair->get_trk(0),
           topNode);
-      eval_trk(primary_map[best_upsilon_pair.second], *upsilon_pair->get_trk(1),
-          topNode);
+      eval_trk(particle_map[best_upsilon_pair.second],
+          *upsilon_pair->get_trk(1), topNode);
 
       //calculated mass
       TLorentzVector vpos(upsilon_pair->get_trk(0)->px,
@@ -571,8 +574,8 @@ EMCalAna::eval_trk_proj(
 
   // pull the tower geometry
   string towergeonodename = "TOWERGEOM_" + detector;
-  RawTowerGeomContainer *cemc_towergeo = findNode::getClass<RawTowerGeomContainer>(topNode,
-      towergeonodename.c_str());
+  RawTowerGeomContainer *cemc_towergeo = findNode::getClass<
+      RawTowerGeomContainer>(topNode, towergeonodename.c_str());
   assert(cemc_towergeo);
 
   if (verbosity > 1)
@@ -908,11 +911,13 @@ EMCalAna::process_event_Trk(PHCompositeNode *topNode)
   PHG4TruthInfoContainer* truthinfo =
       findNode::getClass<PHG4TruthInfoContainer>(topNode, "G4TruthInfo");
   assert(truthinfo);
-  PHG4TruthInfoContainer::Map primary_map = truthinfo->GetPrimaryMap();
+  PHG4TruthInfoContainer::ConstRange range =
+      truthinfo->GetPrimaryParticleRange();
 
-  assert(primary_map.size()>0);
+  assert(range.first != range.second);
+  // make sure there is at least one primary partcle
 
-  eval_trk(primary_map.rbegin()->second, *_trk, topNode);
+  eval_trk(range.first->second, *_trk, topNode);
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -1210,8 +1215,8 @@ EMCalAna::process_event_Tower(PHCompositeNode *topNode)
       return Fun4AllReturnCodes::DISCARDEVENT;
     }
   string towergeomnodename = "TOWERGEOM_" + detector;
-  RawTowerGeomContainer *towergeom = findNode::getClass<RawTowerGeomContainer>(topNode,
-      towergeomnodename.c_str());
+  RawTowerGeomContainer *towergeom = findNode::getClass<RawTowerGeomContainer>(
+      topNode, towergeomnodename.c_str());
   if (!towergeom)
     {
       cout << PHWHERE << ": Could not find node " << towergeomnodename.c_str()
@@ -1257,18 +1262,18 @@ EMCalAna::process_event_Tower(PHCompositeNode *topNode)
       assert(h);
       max_energy_trigger_ADC_hist_list[size] = h;
 
-      if (size ==2 or size == 4)
+      if (size == 2 or size == 4)
         {
           // sliding window made from 2x2 sums
           slide2_max_energy_trigger_ADC[size] = 0;
 
           h = (TH1F*) hm->getHisto(
-              "EMCalAna_h_CEMC_TOWER_" + size_label[size] + "_slide2_max_trigger_ADC");
+              "EMCalAna_h_CEMC_TOWER_" + size_label[size]
+                  + "_slide2_max_trigger_ADC");
           assert(h);
           slide2_max_energy_trigger_ADC_hist_list[size] = h;
 
         }
-
 
     }
 
@@ -1309,7 +1314,8 @@ EMCalAna::process_event_Tower(PHCompositeNode *topNode)
                           energy += e_intput;
                           energy_trigger_ADC += e_trigger_ADC;
 
-                          if ((size ==2 or size == 4) and (binphi%2==0) and (bineta%2 == 0) )
+                          if ((size == 2 or size == 4) and (binphi % 2 == 0)
+                              and (bineta % 2 == 0))
                             {
                               // sliding window made from 2x2 sums
 
@@ -1326,13 +1332,15 @@ EMCalAna::process_event_Tower(PHCompositeNode *topNode)
               if (energy_trigger_ADC > max_energy_trigger_ADC[size])
                 max_energy_trigger_ADC[size] = energy_trigger_ADC;
 
-
-              if ((size ==2 or size == 4) and (binphi%2==0) and (bineta%2 == 0) )
+              if ((size == 2 or size == 4) and (binphi % 2 == 0)
+                  and (bineta % 2 == 0))
                 {
                   // sliding window made from 2x2 sums
 
-                  if (slide2_energy_trigger_ADC > slide2_max_energy_trigger_ADC[size])
-                    slide2_max_energy_trigger_ADC[size] = slide2_energy_trigger_ADC;
+                  if (slide2_energy_trigger_ADC
+                      > slide2_max_energy_trigger_ADC[size])
+                    slide2_max_energy_trigger_ADC[size] =
+                        slide2_energy_trigger_ADC;
                 }
 
             } //          for (int size = 1; size <= 4; ++size)
@@ -1345,7 +1353,7 @@ EMCalAna::process_event_Tower(PHCompositeNode *topNode)
       max_energy_trigger_ADC_hist_list[size]->Fill(
           max_energy_trigger_ADC[size]);
 
-      if (size ==2 or size == 4)
+      if (size == 2 or size == 4)
         {
           // sliding window made from 2x2 sums
           slide2_max_energy_trigger_ADC_hist_list[size]->Fill(
