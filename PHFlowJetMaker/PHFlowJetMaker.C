@@ -15,8 +15,8 @@
 #include<phool/PHNodeIterator.h>
 #include<phool/PHNodeReset.h>
 #include<phool/PHObject.h>
+#include <phool/getClass.h>
 
-#include<fun4all/getClass.h>
 #include<fun4all/Fun4AllReturnCodes.h>
 
 #include <fastjet/JetDefinition.hh>
@@ -26,7 +26,7 @@
 
 #include <g4jets/JetV1.h>
 #include <g4jets/Jet.h>
-#include <g4jets/JetMap.h>
+#include <g4jets/JetMapV1.h>
 
 #include <TH1.h>
 #include <TH2.h>
@@ -34,6 +34,8 @@
 #include <TNtuple.h>
 #include <TFile.h>
 #include <TMath.h>
+
+#include <sstream>
 
 using namespace std;
 using namespace Fun4AllReturnCodes;
@@ -54,10 +56,10 @@ PHFlowJetMaker::PHFlowJetMaker(const std::string &name, const std::string algori
   min_jet_pT = 1.0;
   fastjet::Strategy strategy = fastjet::Best;
 
-  if (algorithm == "anti-kt")
+  if (algorithm == "AntiKt")
     fJetAlgorithm = new fastjet::JetDefinition (fastjet::antikt_algorithm,r_param,strategy);
   
-  if (algorithm == "kt")
+  if (algorithm == "Kt")
     fJetAlgorithm = new fastjet::JetDefinition (fastjet::kt_algorithm,r_param,strategy);
     
   //Define tolerance limits for track-cluster matching
@@ -111,7 +113,16 @@ int PHFlowJetMaker::create_node_tree(PHCompositeNode *topNode)
   PHCompositeNode *jetNode = dynamic_cast<PHCompositeNode*> (iter.findFirst("PHCompositeNode","JETS"));
   if(!jetNode)
     {
-      jetNode = new PHCompositeNode("JETS");
+
+      if (algorithm == "AntiKt")
+        jetNode = new PHCompositeNode("ANTIKT");
+
+      else if (algorithm == "Kt")
+        jetNode = new PHCompositeNode("KT");
+
+      else
+        jetNode = new PHCompositeNode(algorithm);
+
       dstNode->addNode(jetNode);
     }
 
@@ -125,34 +136,13 @@ int PHFlowJetMaker::create_node_tree(PHCompositeNode *topNode)
     }
 
   //Add flow jet node to jet node
-  flow_jet_map = new JetMap();
+  flow_jet_map = new JetMapV1();
   string nodeName = "Flow";
 
-  if(algorithm == "anti-kt")
-    {
-      nodeName = nodeName + "AntiKtJets";
-    }
-  else if(algorithm == "kt")
-    {
-      nodeName = nodeName + "KtJets";
-    }
+  stringstream snodeName;
+  snodeName << algorithm<<"_" <<nodeName<<"_r"<<r_param;
+  nodeName = snodeName.str();
 
-  if(r_param == 0.2)
-    {
-      nodeName = nodeName + "R0p2";
-    }
-  else if(r_param == 0.3)
-    {
-      nodeName = nodeName + "R0p3";
-    }
-  else if(r_param == 0.4)
-    {
-      nodeName = nodeName + "R0p4";
-    }
-  else if(r_param == 0.4)
-    {
-      nodeName = nodeName + "R0p4";
-    }
 
   PHIODataNode<PHObject> *PHFlowJetNode = new PHIODataNode<PHObject>(flow_jet_map,nodeName.c_str(),"PHObject");
 
@@ -200,17 +190,17 @@ int PHFlowJetMaker::process_event(PHCompositeNode* topNode)
   vector<fastjet::PseudoJet> flow_jets = jet_finder_flow.inclusive_jets(min_jet_pT);
 
   //Create JetMap from flow jets
-  if (algorithm == "anti-kt")
+  if (algorithm == "AntiKt")
     flow_jet_map->set_algo(Jet::ANTIKT);
   
-  if (algorithm == "kt")
+  if (algorithm == "Kt")
     flow_jet_map->set_algo(Jet::KT);
 
   flow_jet_map->set_par(r_param);
-  flow_jet_map->insert_src(Jet::TRACKS);
-  flow_jet_map->insert_src(Jet::CEMC_CLUSTERS);
-  flow_jet_map->insert_src(Jet::HCALIN_CLUSTERS);
-  flow_jet_map->insert_src(Jet::HCALOUT_CLUSTERS);
+  flow_jet_map->insert_src(Jet::TRACK);
+  flow_jet_map->insert_src(Jet::CEMC_CLUSTER);
+  flow_jet_map->insert_src(Jet::HCALIN_CLUSTER);
+  flow_jet_map->insert_src(Jet::HCALOUT_CLUSTER);
 
   for(unsigned int i=0; i<flow_jets.size(); i++)
     {
@@ -220,28 +210,27 @@ int PHFlowJetMaker::process_event(PHCompositeNode* topNode)
       float pz = flow_jets[i].pz();
       float energy = flow_jets[i].E();
 
-      cout << "--px = " << px << endl;
+//      cout << "--px = " << px << endl;
 
       j->set_px(px);
       j->set_py(py);
       j->set_pz(pz);
       j->set_e(energy);
-      j->set_property(Jet::prop_R , 0.3); 
 
       flow_jet_map->insert(j);
     }
   
-  cout << "IDENTIFYING JET MAP" << endl;
-  flow_jet_map->identify();
-
-  cout << "IDENTIFYING INDIVIDUAL JETS" << endl;
-  for(JetMap::Iter it = flow_jet_map->begin(); it != flow_jet_map->end(); it++)
-    {
-      (it->second)->identify();
-      cout << endl;
-    }
-
-  cout << "FOUND " << flow_jet_map->size() << " FLOW JETS" << endl;
+//  cout << "IDENTIFYING JET MAP" << endl;
+//  flow_jet_map->identify();
+//
+//  cout << "IDENTIFYING INDIVIDUAL JETS" << endl;
+//  for(JetMap::Iter it = flow_jet_map->begin(); it != flow_jet_map->end(); it++)
+//    {
+//      (it->second)->identify();
+//      cout << endl;
+//    }
+//
+//  cout << "FOUND " << flow_jet_map->size() << " FLOW JETS" << endl;
   return EVENT_OK;
 }
 
@@ -273,34 +262,34 @@ void PHFlowJetMaker::run_particle_flow(std::vector<fastjet::PseudoJet>& flow_par
   for(unsigned int i = 0; i < emc_clusters->size(); i++)
   {
     RawCluster* part = emc_clusters->getCluster(i);
-    double pT = (part->get_energy()/sfEMCAL)/cosh(part->get_eta());
+    double pT = (part->get_energy())/cosh(part->get_eta());
     emc_map[i] = new TLorentzVector();
-    emc_map[i]->SetPtEtaPhiE(pT,part->get_eta(),part->get_phi(),part->get_energy()/sfEMCAL);
+    emc_map[i]->SetPtEtaPhiE(pT,part->get_eta(),part->get_phi(),part->get_energy());
   }
 
   for(unsigned int i = 0; i < hci_clusters->size(); i++)
   {
     RawCluster* part = hci_clusters->getCluster(i);
-    double pT = (part->get_energy()/sfEMCAL)/cosh(part->get_eta());
+    double pT = (part->get_energy())/cosh(part->get_eta());
     hci_map[i] = new TLorentzVector();
-    hci_map[i]->SetPtEtaPhiE(pT,part->get_eta(),part->get_phi(),part->get_energy()/sfHCALIN);
+    hci_map[i]->SetPtEtaPhiE(pT,part->get_eta(),part->get_phi(),part->get_energy());
   }
 
   for(unsigned int i = 0; i < hco_clusters->size(); i++)
   {
     RawCluster* part = hco_clusters->getCluster(i);
-    double pT = (part->get_energy()/sfEMCAL)/cosh(part->get_eta());
+    double pT = (part->get_energy())/cosh(part->get_eta());
     hco_map[i] = new TLorentzVector();
-    hco_map[i]->SetPtEtaPhiE(pT,part->get_eta(),part->get_phi(),part->get_energy()/sfHCALOUT);
+    hco_map[i]->SetPtEtaPhiE(pT,part->get_eta(),part->get_phi(),part->get_energy());
   }
   
   //Loop over all tracks
   for(SvtxTrackMap::Iter iter = reco_tracks->begin(); iter != reco_tracks->end(); ++iter)
     {
-      SvtxTrack *trk = &iter->second;
-      px = trk->get3Momentum(0);
-      py = trk->get3Momentum(1);
-      pz = trk->get3Momentum(2);
+      SvtxTrack *trk = iter->second;
+      px = trk->get_px();
+      py = trk->get_py();
+      pz = trk->get_pz();
       pt = sqrt(px*px + py*py);
       p = sqrt(px*px + py*py + pz*pz);
       track_energy = TMath::Sqrt(p*p + 0.139*0.139); //Assume pion mass
@@ -319,7 +308,7 @@ void PHFlowJetMaker::run_particle_flow(std::vector<fastjet::PseudoJet>& flow_par
 	}
 
       //Quality cut on tracks
-      if(trk->getQuality() > 3.0) continue;
+      if(trk->get_quality() > 3.0) continue;
 
       //Find ID of clusters that match to track in each layer
       int emcID = -1;

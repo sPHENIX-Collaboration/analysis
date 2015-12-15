@@ -42,7 +42,7 @@ class PHFlowJetMaker: public SubsysReco
 {
  public:
 
-  PHFlowJetMaker(const std::string &name = "PHFlowJetMaker", const std::string algorithm = "anti-kt", double r_param = 0.3);
+  PHFlowJetMaker(const std::string &name = "PHFlowJetMaker", const std::string algorithm = "AntiKt", double r_param = 0.3);
 
   virtual ~PHFlowJetMaker();
 
