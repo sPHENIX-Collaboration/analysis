@@ -35,7 +35,9 @@
 #include <TFile.h>
 #include <TMath.h>
 
+#include <iomanip>
 #include <sstream>
+#include <iostream>
 
 using namespace std;
 using namespace Fun4AllReturnCodes;
@@ -140,7 +142,7 @@ int PHFlowJetMaker::create_node_tree(PHCompositeNode *topNode)
   string nodeName = "Flow";
 
   stringstream snodeName;
-  snodeName << algorithm<<"_" <<nodeName<<"_r"<<r_param;
+  snodeName << algorithm<<"_" <<nodeName<<"_r" << setfill('0') << setw(2) <<int(r_param*10);
   nodeName = snodeName.str();
 
 
@@ -159,7 +161,6 @@ int PHFlowJetMaker::create_node_tree(PHCompositeNode *topNode)
  */
 int PHFlowJetMaker::process_event(PHCompositeNode* topNode)
 {
-  cout << "------PHFlowJetMaker::process_event(PHCompositeNode*)------" << endl;
   
   //-------------------------------------------------
   // Get Information from Node Tree
