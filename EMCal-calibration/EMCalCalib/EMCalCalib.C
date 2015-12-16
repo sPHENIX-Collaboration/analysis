@@ -493,22 +493,22 @@ EMCalCalib::eval_photon(PHG4Particle * g4particle, MCPhoton & mc_photon,
       mc_photon.hcaloute3x3 = track->get_cal_energy_3x3(SvtxTrack::HCALOUT);
       mc_photon.hcaloute = track->get_cal_cluster_e(SvtxTrack::HCALOUT);
 
-      eval_photon_proj( //
-          /*PHG4Particle **/g4particle, //
-          /*MCPhoton &*/mc_photon,
-          /*enu_calo*/kCEMC, //
-          /*const double */gvz,
-          /*PHCompositeNode **/topNode //
-          );
-      eval_photon_proj( //
-          /*PHG4Particle **/g4particle, //
-          /*MCPhoton &*/mc_photon,
-          /*enu_calo*/kHCALIN, //
-          /*const double */gvz,
-          /*PHCompositeNode **/topNode //
-          );
-
     }
+
+  eval_photon_proj( //
+      /*PHG4Particle **/g4particle, //
+      /*MCPhoton &*/mc_photon,
+      /*enu_calo*/kCEMC, //
+      /*const double */gvz,
+      /*PHCompositeNode **/topNode //
+      );
+  eval_photon_proj( //
+      /*PHG4Particle **/g4particle, //
+      /*MCPhoton &*/mc_photon,
+      /*enu_calo*/kHCALIN, //
+      /*const double */gvz,
+      /*PHCompositeNode **/topNode //
+      );
 
   mc_photon.gtrackID = gtrackID;
   mc_photon.gflavor = gflavor;
