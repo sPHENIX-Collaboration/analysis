@@ -44,6 +44,11 @@ using namespace Fun4AllReturnCodes;
 
 typedef std::map<int,TLorentzVector*> tlvmap;
 
+
+ const float PHFlowJetMaker::sfEMCAL = 0.03;
+ const float PHFlowJetMaker::sfHCALIN = 0.071;
+ const float PHFlowJetMaker::sfHCALOUT = 0.04;
+
 /*
  * Constructor
  */
@@ -248,7 +253,7 @@ void PHFlowJetMaker::run_particle_flow(std::vector<fastjet::PseudoJet>& flow_par
   double px = 0;
   double py = 0;
   double pz = 0;
-  double pt = 0;
+//  double pt = 0;
   double et = 0;
   double p = 0;
   double track_energy = 0;
@@ -291,7 +296,7 @@ void PHFlowJetMaker::run_particle_flow(std::vector<fastjet::PseudoJet>& flow_par
       px = trk->get_px();
       py = trk->get_py();
       pz = trk->get_pz();
-      pt = sqrt(px*px + py*py);
+//      pt = sqrt(px*px + py*py);
       p = sqrt(px*px + py*py + pz*pz);
       track_energy = TMath::Sqrt(p*p + 0.139*0.139); //Assume pion mass
       phi = atan2(py,px);

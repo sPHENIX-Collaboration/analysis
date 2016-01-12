@@ -306,7 +306,7 @@ EMCalAna::process_event_UpslisonTrig(PHCompositeNode *topNode)
 
         const double mass_diff = fabs(mass - upsilon_mass);
 
-        mass_diff_id_map[mass_diff] = make_pair<int, int>(*i_e_pos, *i_e_neg);
+        mass_diff_id_map[mass_diff] = make_pair(*i_e_pos, *i_e_neg);
       }
 
   if (mass_diff_id_map.size() <= 0)
@@ -399,12 +399,12 @@ EMCalAna::eval_trk(PHG4Particle * g4particle, EMCalTrk & trk,
   float gvy = vtx->get_y();
   float gvz = vtx->get_z();
 
-  float gfpx = NULL;
-  float gfpy = NULL;
-  float gfpz = NULL;
-  float gfx = NULL;
-  float gfy = NULL;
-  float gfz = NULL;
+  float gfpx = NAN;
+  float gfpy = NAN;
+  float gfpz = NAN;
+  float gfx = NAN;
+  float gfy = NAN;
+  float gfz = NAN;
 
   PHG4Hit* outerhit = trutheval->get_outermost_truth_hit(g4particle);
   if (outerhit)
@@ -535,6 +535,7 @@ EMCalAna::eval_trk(PHG4Particle * g4particle, EMCalTrk & trk,
   trk.ndf = ndf;
   trk.nhits = nhits;
   trk.layers = layers;
+  trk.dca = dca;
   trk.dca2d = dca2d;
   trk.dca2dsigma = dca2dsigma;
   trk.pcax = pcax;
@@ -747,7 +748,7 @@ EMCalAna::eval_trk_proj(
   point.assign(3, -9999.);
   _hough.projectToRadius(track, _magfield, radius, point);
 
-  if (isnan(point[0]) or isnan(point[1]) or isnan(point[2]))
+  if (std::isnan(point[0]) or std::isnan(point[1]) or std::isnan(point[2]))
     {
       cout << __PRETTY_FUNCTION__ << "::" << Name()
           << " - Error - track extrapolation failure:";
@@ -755,9 +756,9 @@ EMCalAna::eval_trk_proj(
       return;
     }
 
-  assert( not isnan(point[0]));
-  assert( not isnan(point[1]));
-  assert( not isnan(point[2]));
+  assert( not std::isnan(point[0]));
+  assert( not std::isnan(point[1]));
+  assert( not std::isnan(point[2]));
 
   double x = point[0];
   double y = point[1];

@@ -38,6 +38,7 @@ public:
   float nhits;
   unsigned int layers;
 
+  float dca;
   float dca2d;
   float dca2dsigma;
   float px;
@@ -129,7 +130,7 @@ public:
   //! log-likelihood hadron - shower shape
   float ll_shape_h;
 
-ClassDef(EMCalTrk,9)
+ClassDef(EMCalTrk,10)
 };
 
 #endif /* EMCALTRK_H_ */

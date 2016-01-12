@@ -63,9 +63,9 @@ class PHFlowJetMaker: public SubsysReco
   private:
 			 
   //Sampling Fractions
-  static const float sfEMCAL = 0.03;
-  static const float sfHCALIN = 0.071;
-  static const float sfHCALOUT = 0.04;
+  static const float sfEMCAL ;
+  static const float sfHCALIN ;
+  static const float sfHCALOUT ;
 			 
   char *outfile;
   std::string algorithm;
