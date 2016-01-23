@@ -151,10 +151,10 @@ int SvtxSimPerformanceCheckReco::Init(PHCompositeNode *topNode) {
 					20,0.0,10.0,
 					100,0.0,5.0);
 
-  _recopt_quality_tracks_all = new TH2D("recopt_quality_tracks_recoWithin4Percent",
-					"recopt_quality_tracks_recoWithin4Percent",
-					20,0.0,10.0,
-					100,0.0,5.0);
+  _recopt_quality_tracks_recoWithin4Percent = new TH2D("recopt_quality_tracks_recoWithin4Percent",
+						       "recopt_quality_tracks_recoWithin4Percent",
+						       20,0.0,10.0,
+						       100,0.0,5.0);
   
   
   se->registerHisto(_truept_dptoverpt);                    
