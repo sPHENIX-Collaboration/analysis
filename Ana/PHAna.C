@@ -1,12 +1,13 @@
 #include <iostream>
-#include "fun4all/getClass.h"
-#include "g4main/PHG4HitContainer.h"
-#include "g4main/PHG4TruthInfoContainer.h"
-#include "g4main/PHG4Particle.h"
-#include "g4main/PHG4Hit.h"
-#include "g4main/PHG4VtxPoint.h"
-#include "fun4all/PHTFileServer.h"
-#include "fun4all/Fun4AllServer.h"
+#include <phool/phool.h>
+#include <phool/getClass.h>
+#include <g4main/PHG4HitContainer.h>
+#include <g4main/PHG4TruthInfoContainer.h>
+#include <g4main/PHG4Particle.h>
+#include <g4main/PHG4Hit.h>
+#include <g4main/PHG4VtxPoint.h>
+#include <fun4all/PHTFileServer.h>
+#include <fun4all/Fun4AllServer.h>
 #include <TNtuple.h>
 #include "PHAna.h"
 #include <TH1.h>
@@ -78,9 +79,12 @@ void PHAna::fill_truth_ntuple(PHCompositeNode *topNode)
 {
  map<int, PHG4Particle*>::const_iterator particle_iter;
  float ntvars[7];
- for( particle_iter = _truth_container->GetPrimaryMap().begin();
-      particle_iter != _truth_container->GetPrimaryMap().end();
-      particle_iter++)
+
+ PHG4TruthInfoContainer::ConstRange primary_range =
+     _truth_container->GetPrimaryParticleRange();
+
+ for (PHG4TruthInfoContainer::ConstIterator particle_iter = primary_range.first;
+     particle_iter != primary_range.second; ++particle_iter)
   {
    PHG4Particle *particle = particle_iter->second;
    ntvars[0] = _event;

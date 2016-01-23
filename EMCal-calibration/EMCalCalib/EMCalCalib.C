@@ -1,5 +1,5 @@
-#include "EMCalAna.h"
-#include "UpsilonPair.h"
+#include "EMCalCalib.h"
+#include "PhotonPair.h"
 
 #include <fun4all/SubsysReco.h>
 #include <fun4all/Fun4AllServer.h>
@@ -47,8 +47,9 @@
 
 using namespace std;
 
-EMCalAna::EMCalAna(const std::string &filename, EMCalAna::enu_flags flags) :
-    SubsysReco("EMCalAna"), _eval_stack(NULL), _T_EMCalTrk(NULL), _trk(NULL), //
+EMCalCalib::EMCalCalib(const std::string &filename, EMCalCalib::enu_flags flags) :
+    SubsysReco("EMCalCalib"), _eval_stack(NULL), _T_EMCalTrk(NULL), _mc_photon(
+        NULL), //
     _magfield(1.5), //
     _filename(filename), _flags(flags), _ievent(0)
 {
@@ -72,7 +73,7 @@ EMCalAna::EMCalAna(const std::string &filename, EMCalAna::enu_flags flags) :
 
 }
 
-EMCalAna::~EMCalAna()
+EMCalCalib::~EMCalCalib()
 {
   if (_eval_stack)
     {
@@ -81,7 +82,7 @@ EMCalAna::~EMCalAna()
 }
 
 int
-EMCalAna::InitRun(PHCompositeNode *topNode)
+EMCalCalib::InitRun(PHCompositeNode *topNode)
 {
   _ievent = 0;
 
@@ -115,43 +116,43 @@ EMCalAna::InitRun(PHCompositeNode *topNode)
 
   if (flag(kProcessUpslisonTrig))
     {
-      UpsilonPair * upsilon_pair = findNode::getClass<UpsilonPair>(dstNode,
-          "UpsilonPair");
-
-      if (not upsilon_pair)
-        {
-          upsilon_pair = new UpsilonPair();
-
-          PHIODataNode<PHObject> *node = new PHIODataNode<PHObject>(
-              upsilon_pair, "UpsilonPair", "PHObject");
-          dstNode->addNode(node);
-        }
-
-      assert(upsilon_pair);
+//      PhotonPair * photon_pair = findNode::getClass<PhotonPair>(dstNode,
+//          "PhotonPair");
+//
+//      if (not photon_pair)
+//        {
+//          photon_pair = new PhotonPair();
+//
+//          PHIODataNode<PHObject> *node = new PHIODataNode<PHObject>(
+//              photon_pair, "PhotonPair", "PHObject");
+//          dstNode->addNode(node);
+//        }
+//
+//      assert(photon_pair);
     }
-  if (flag(kProcessTrk))
+  if (flag(kProcessMCPhoton))
     {
-      _trk = findNode::getClass<EMCalTrk>(dstNode, "EMCalTrk");
+      _mc_photon = findNode::getClass<MCPhoton>(dstNode, "MCPhoton");
 
-      if (not _trk)
+      if (not _mc_photon)
         {
-          _trk = new EMCalTrk();
+          _mc_photon = new MCPhoton();
 
-          PHIODataNode<PHObject> *node = new PHIODataNode<PHObject>(_trk,
-              "EMCalTrk", "PHObject");
+          PHIODataNode<PHObject> *node = new PHIODataNode<PHObject>(_mc_photon,
+              "MCPhoton", "PHObject");
           dstNode->addNode(node);
         }
 
-      assert(_trk);
+      assert(_mc_photon);
     }
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
 int
-EMCalAna::End(PHCompositeNode *topNode)
+EMCalCalib::End(PHCompositeNode *topNode)
 {
-  cout << "EMCalAna::End - write to " << _filename << endl;
+  cout << "EMCalCalib::End - write to " << _filename << endl;
   PHTFileServer::get().cd(_filename);
 
   Fun4AllHistoManager *hm = get_HistoManager();
@@ -171,33 +172,33 @@ EMCalAna::End(PHCompositeNode *topNode)
 }
 
 int
-EMCalAna::Init(PHCompositeNode *topNode)
+EMCalCalib::Init(PHCompositeNode *topNode)
 {
 
   _ievent = 0;
 
-  cout << "EMCalAna::get_HistoManager - Making PHTFileServer " << _filename
+  cout << "EMCalCalib::get_HistoManager - Making PHTFileServer " << _filename
       << endl;
   PHTFileServer::get().open(_filename, "RECREATE");
 
   if (flag(kProcessSF))
     {
-      cout << "EMCalAna::Init - Process sampling fraction" << endl;
+      cout << "EMCalCalib::Init - Process sampling fraction" << endl;
       Init_SF(topNode);
     }
   if (flag(kProcessTower))
     {
-      cout << "EMCalAna::Init - Process tower occupancies" << endl;
+      cout << "EMCalCalib::Init - Process tower occupancies" << endl;
       Init_Tower(topNode);
     }
-  if (flag(kProcessTrk))
+  if (flag(kProcessMCPhoton))
     {
-      cout << "EMCalAna::Init - Process trakcs" << endl;
-      Init_Trk(topNode);
+      cout << "EMCalCalib::Init - Process trakcs" << endl;
+      Init_MCPhoton(topNode);
     }
   if (flag(kProcessUpslisonTrig))
     {
-      cout << "EMCalAna::Init - Process kProcessUpslisonTrig" << endl;
+      cout << "EMCalCalib::Init - Process kProcessUpslisonTrig" << endl;
       Init_UpslisonTrig(topNode);
     }
 
@@ -205,11 +206,11 @@ EMCalAna::Init(PHCompositeNode *topNode)
 }
 
 int
-EMCalAna::process_event(PHCompositeNode *topNode)
+EMCalCalib::process_event(PHCompositeNode *topNode)
 {
 
   if (verbosity > 2)
-    cout << "EMCalAna::process_event() entered" << endl;
+    cout << "EMCalCalib::process_event() entered" << endl;
 
   if (_eval_stack)
     _eval_stack->next_event(topNode);
@@ -224,36 +225,36 @@ EMCalAna::process_event(PHCompositeNode *topNode)
     process_event_SF(topNode);
   if (flag(kProcessTower))
     process_event_Tower(topNode);
-  if (flag(kProcessTrk))
-    process_event_Trk(topNode);
+  if (flag(kProcessMCPhoton))
+    process_event_MCPhoton(topNode);
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
 int
-EMCalAna::Init_UpslisonTrig(PHCompositeNode *topNode)
+EMCalCalib::Init_UpslisonTrig(PHCompositeNode *topNode)
 {
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
 int
-EMCalAna::process_event_UpslisonTrig(PHCompositeNode *topNode)
+EMCalCalib::process_event_UpslisonTrig(PHCompositeNode *topNode)
 {
 
   if (verbosity > 2)
-    cout << "EMCalAna::process_event_UpslisonTrig() entered" << endl;
+    cout << "EMCalCalib::process_event_UpslisonTrig() entered" << endl;
 
-  UpsilonPair * upsilon_pair = findNode::getClass<UpsilonPair>(topNode,
-      "UpsilonPair");
-  assert(upsilon_pair);
-  static const double upsilon_mass = 9460.30e-3;
+//  PhotonPair * photon_pair = findNode::getClass<PhotonPair>(topNode,
+//      "PhotonPair");
+//  assert(photon_pair);
+//  static const double upsilon_mass = 9460.30e-3;
 
-  if (!_eval_stack)
-    {
-      _eval_stack = new SvtxEvalStack(topNode);
-      _eval_stack->set_strict(false);
-    }
+//  if (!_eval_stack)
+//    {
+//      _eval_stack = new SvtxEvalStack(topNode);
+//      _eval_stack->set_strict(false);
+//    }
 //
 //  SvtxVertexEval* vertexeval = svtxevalstack.get_vertex_eval();
 //  SvtxTrackEval* trackeval = svtxevalstack.get_track_eval();
@@ -264,104 +265,105 @@ EMCalAna::process_event_UpslisonTrig(PHCompositeNode *topNode)
 //  SvtxTrackMap* trackmap = findNode::getClass<SvtxTrackMap>(topNode,
 //      "SvtxTrackMap");
 //  assert(trackmap);
-  PHG4TruthInfoContainer* truthinfo =
-      findNode::getClass<PHG4TruthInfoContainer>(topNode, "G4TruthInfo");
-  assert(truthinfo);
-  PHG4TruthInfoContainer::Map particle_map = truthinfo->GetMap();
-  PHG4TruthInfoContainer::ConstRange primary_range =
-      truthinfo->GetPrimaryParticleRange();
-
-  set<int> e_pos_candidate;
-  set<int> e_neg_candidate;
-
-  for (PHG4TruthInfoContainer::ConstIterator iter = primary_range.first;
-      iter != primary_range.second; ++iter)
-    {
-
-      PHG4Particle * particle = iter->second;
-      assert(particle);
-
-      if (particle->get_pid() == 11)
-        e_neg_candidate.insert(particle->get_track_id());
-      if (particle->get_pid() == -11)
-        e_pos_candidate.insert(particle->get_track_id());
-    }
-
-  map<double, pair<int, int> > mass_diff_id_map;
-  for (set<int>::const_iterator i_e_pos = e_pos_candidate.begin();
-      i_e_pos != e_pos_candidate.end(); ++i_e_pos)
-    for (set<int>::const_iterator i_e_neg = e_neg_candidate.begin();
-        i_e_neg != e_neg_candidate.end(); ++i_e_neg)
-      {
-        TLorentzVector vpos(particle_map[*i_e_pos]->get_px(),
-            particle_map[*i_e_pos]->get_py(), particle_map[*i_e_pos]->get_pz(),
-            particle_map[*i_e_pos]->get_e());
-        TLorentzVector vneg(particle_map[*i_e_neg]->get_px(),
-            particle_map[*i_e_neg]->get_py(), particle_map[*i_e_neg]->get_pz(),
-            particle_map[*i_e_neg]->get_e());
-
-        TLorentzVector invar = vpos + vneg;
-
-        const double mass = invar.M();
-
-        const double mass_diff = fabs(mass - upsilon_mass);
-
-        mass_diff_id_map[mass_diff] = make_pair(*i_e_pos, *i_e_neg);
-      }
-
-  if (mass_diff_id_map.size() <= 0)
-    return Fun4AllReturnCodes::DISCARDEVENT;
-  else
-    {
-      const pair<int, int> best_upsilon_pair = mass_diff_id_map.begin()->second;
-
-      //truth mass
-      TLorentzVector gvpos(particle_map[best_upsilon_pair.first]->get_px(),
-          particle_map[best_upsilon_pair.first]->get_py(),
-          particle_map[best_upsilon_pair.first]->get_pz(),
-          particle_map[best_upsilon_pair.first]->get_e());
-      TLorentzVector gvneg(particle_map[best_upsilon_pair.second]->get_px(),
-          particle_map[best_upsilon_pair.second]->get_py(),
-          particle_map[best_upsilon_pair.second]->get_pz(),
-          particle_map[best_upsilon_pair.second]->get_e());
-      TLorentzVector ginvar = gvpos + gvneg;
-      upsilon_pair->gmass = ginvar.M();
-
-      eval_trk(particle_map[best_upsilon_pair.first], *upsilon_pair->get_trk(0),
-          topNode);
-      eval_trk(particle_map[best_upsilon_pair.second],
-          *upsilon_pair->get_trk(1), topNode);
-
-      //calculated mass
-      TLorentzVector vpos(upsilon_pair->get_trk(0)->px,
-          upsilon_pair->get_trk(0)->py, upsilon_pair->get_trk(0)->pz, 0);
-      TLorentzVector vneg(upsilon_pair->get_trk(1)->px,
-          upsilon_pair->get_trk(1)->py, upsilon_pair->get_trk(1)->pz, 0);
-      vpos.SetE(vpos.P());
-      vneg.SetE(vneg.P());
-      TLorentzVector invar = vpos + vneg;
-      upsilon_pair->mass = invar.M();
-
-      // cuts
-      const bool eta_pos_cut = fabs(gvpos.Eta()) < 1.0;
-      const bool eta_neg_cut = fabs(gvneg.Eta()) < 1.0;
-      const bool reco_upsilon_mass = fabs(upsilon_pair->mass - upsilon_mass)
-          < 0.2; // two sigma cuts
-      upsilon_pair->good_upsilon = eta_pos_cut and eta_neg_cut
-          and reco_upsilon_mass;
-
-      if (not upsilon_pair->good_upsilon)
-        {
-          return Fun4AllReturnCodes::DISCARDEVENT;
-        }
-
-    }
+//  PHG4TruthInfoContainer* truthinfo =
+//      findNode::getClass<PHG4TruthInfoContainer>(topNode, "G4TruthInfo");
+//  assert(truthinfo);
+//  PHG4TruthInfoContainer::Map particle_map = truthinfo->GetMap();
+//  PHG4TruthInfoContainer::ConstRange primary_range =
+//      truthinfo->GetPrimaryParticleRange();
+//
+//  set<int> e_pos_candidate;
+//  set<int> e_neg_candidate;
+//
+//  for (PHG4TruthInfoContainer::ConstIterator iter = primary_range.first;
+//      iter != primary_range.second; ++iter)
+//    {
+//
+//      PHG4Particle * particle = iter->second;
+//      assert(particle);
+//
+//      if (particle->get_pid() == 11)
+//        e_neg_candidate.insert(particle->get_track_id());
+//      if (particle->get_pid() == -11)
+//        e_pos_candidate.insert(particle->get_track_id());
+//    }
+//
+//  map<double, pair<int, int> > mass_diff_id_map;
+//  for (set<int>::const_iterator i_e_pos = e_pos_candidate.begin();
+//      i_e_pos != e_pos_candidate.end(); ++i_e_pos)
+//    for (set<int>::const_iterator i_e_neg = e_neg_candidate.begin();
+//        i_e_neg != e_neg_candidate.end(); ++i_e_neg)
+//      {
+//        TLorentzVector vpos(particle_map[*i_e_pos]->get_px(),
+//            particle_map[*i_e_pos]->get_py(), particle_map[*i_e_pos]->get_pz(),
+//            particle_map[*i_e_pos]->get_e());
+//        TLorentzVector vneg(particle_map[*i_e_neg]->get_px(),
+//            particle_map[*i_e_neg]->get_py(), particle_map[*i_e_neg]->get_pz(),
+//            particle_map[*i_e_neg]->get_e());
+//
+//        TLorentzVector invar = vpos + vneg;
+//
+//        const double mass = invar.M();
+//
+//        const double mass_diff = fabs(mass - upsilon_mass);
+//
+//        mass_diff_id_map[mass_diff] = make_pair<int, int>(*i_e_pos, *i_e_neg);
+//      }
+//
+//  if (mass_diff_id_map.size() <= 0)
+//    return Fun4AllReturnCodes::DISCARDEVENT;
+//  else
+//    {
+//      const pair<int, int> best_upsilon_pair = mass_diff_id_map.begin()->second;
+//
+//      //truth mass
+//      TLorentzVector gvpos(particle_map[best_upsilon_pair.first]->get_px(),
+//          particle_map[best_upsilon_pair.first]->get_py(),
+//          particle_map[best_upsilon_pair.first]->get_pz(),
+//          particle_map[best_upsilon_pair.first]->get_e());
+//      TLorentzVector gvneg(particle_map[best_upsilon_pair.second]->get_px(),
+//          particle_map[best_upsilon_pair.second]->get_py(),
+//          particle_map[best_upsilon_pair.second]->get_pz(),
+//          particle_map[best_upsilon_pair.second]->get_e());
+//      TLorentzVector ginvar = gvpos + gvneg;
+//      photon_pair->gmass = ginvar.M();
+//
+//      eval_photon(particle_map[best_upsilon_pair.first], *photon_pair->get_trk(0),
+//          topNode);
+//      eval_photon(particle_map[best_upsilon_pair.second],
+//          *photon_pair->get_trk(1), topNode);
+//
+//      //calculated mass
+//      TLorentzVector vpos(photon_pair->get_trk(0)->px,
+//          photon_pair->get_trk(0)->py, photon_pair->get_trk(0)->pz, 0);
+//      TLorentzVector vneg(photon_pair->get_trk(1)->px,
+//          photon_pair->get_trk(1)->py, photon_pair->get_trk(1)->pz, 0);
+//      vpos.SetE(vpos.P());
+//      vneg.SetE(vneg.P());
+//      TLorentzVector invar = vpos + vneg;
+//      photon_pair->mass = invar.M();
+//
+//      // cuts
+//      const bool eta_pos_cut = fabs(gvpos.Eta()) < 1.0;
+//      const bool eta_neg_cut = fabs(gvneg.Eta()) < 1.0;
+//      const bool reco_upsilon_mass = fabs(photon_pair->mass - upsilon_mass)
+//          < 0.2; // two sigma cuts
+//      photon_pair->good_upsilon = eta_pos_cut and eta_neg_cut
+//          and reco_upsilon_mass;
+//
+//      if (not photon_pair->good_upsilon)
+//        {
+//          return Fun4AllReturnCodes::DISCARDEVENT;
+//        }
+//
+//    }
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
+//! project a photon to calorimeters and collect towers around it
 void
-EMCalAna::eval_trk(PHG4Particle * g4particle, EMCalTrk & trk,
+EMCalCalib::eval_photon(PHG4Particle * g4particle, MCPhoton & mc_photon,
     PHCompositeNode *topNode)
 {
   assert(g4particle);
@@ -399,12 +401,12 @@ EMCalAna::eval_trk(PHG4Particle * g4particle, EMCalTrk & trk,
   float gvy = vtx->get_y();
   float gvz = vtx->get_z();
 
-  float gfpx = NAN;
-  float gfpy = NAN;
-  float gfpz = NAN;
-  float gfx = NAN;
-  float gfy = NAN;
-  float gfz = NAN;
+  float gfpx = NULL;
+  float gfpy = NULL;
+  float gfpz = NULL;
+  float gfx = NULL;
+  float gfy = NULL;
+  float gfz = NULL;
 
   PHG4Hit* outerhit = trutheval->get_outermost_truth_hit(g4particle);
   if (outerhit)
@@ -471,89 +473,88 @@ EMCalAna::eval_trk(PHG4Particle * g4particle, EMCalTrk & trk,
 
       nfromtruth = trackeval->get_nclusters_contribution(track, g4particle);
 
-      trk.presdphi = track->get_cal_dphi(SvtxTrack::PRES);
-      trk.presdeta = track->get_cal_deta(SvtxTrack::PRES);
-      trk.prese3x3 = track->get_cal_energy_3x3(SvtxTrack::PRES);
-      trk.prese = track->get_cal_cluster_e(SvtxTrack::PRES);
+      mc_photon.presdphi = track->get_cal_dphi(SvtxTrack::PRES);
+      mc_photon.presdeta = track->get_cal_deta(SvtxTrack::PRES);
+      mc_photon.prese3x3 = track->get_cal_energy_3x3(SvtxTrack::PRES);
+      mc_photon.prese = track->get_cal_cluster_e(SvtxTrack::PRES);
 
-      trk.cemcdphi = track->get_cal_dphi(SvtxTrack::CEMC);
-      trk.cemcdeta = track->get_cal_deta(SvtxTrack::CEMC);
-      trk.cemce3x3 = track->get_cal_energy_3x3(SvtxTrack::CEMC);
-      trk.cemce = track->get_cal_cluster_e(SvtxTrack::CEMC);
+      mc_photon.cemcdphi = track->get_cal_dphi(SvtxTrack::CEMC);
+      mc_photon.cemcdeta = track->get_cal_deta(SvtxTrack::CEMC);
+      mc_photon.cemce3x3 = track->get_cal_energy_3x3(SvtxTrack::CEMC);
+      mc_photon.cemce = track->get_cal_cluster_e(SvtxTrack::CEMC);
 
-      trk.hcalindphi = track->get_cal_dphi(SvtxTrack::HCALIN);
-      trk.hcalindeta = track->get_cal_deta(SvtxTrack::HCALIN);
-      trk.hcaline3x3 = track->get_cal_energy_3x3(SvtxTrack::HCALIN);
-      trk.hcaline = track->get_cal_cluster_e(SvtxTrack::HCALIN);
+      mc_photon.hcalindphi = track->get_cal_dphi(SvtxTrack::HCALIN);
+      mc_photon.hcalindeta = track->get_cal_deta(SvtxTrack::HCALIN);
+      mc_photon.hcaline3x3 = track->get_cal_energy_3x3(SvtxTrack::HCALIN);
+      mc_photon.hcaline = track->get_cal_cluster_e(SvtxTrack::HCALIN);
 
-      trk.hcaloutdphi = track->get_cal_dphi(SvtxTrack::HCALOUT);
-      trk.hcaloutdeta = track->get_cal_deta(SvtxTrack::HCALOUT);
-      trk.hcaloute3x3 = track->get_cal_energy_3x3(SvtxTrack::HCALOUT);
-      trk.hcaloute = track->get_cal_cluster_e(SvtxTrack::HCALOUT);
-
-      eval_trk_proj( //
-          /*SvtxTrack **/track, //
-          /*EMCalTrk &*/trk,
-          /*enu_calo*/kCEMC, //
-          /*const double */gvz,
-          /*PHCompositeNode **/topNode //
-          );
-      eval_trk_proj( //
-          /*SvtxTrack **/track, //
-          /*EMCalTrk &*/trk,
-          /*enu_calo*/kHCALIN, //
-          /*const double */gvz,
-          /*PHCompositeNode **/topNode //
-          );
+      mc_photon.hcaloutdphi = track->get_cal_dphi(SvtxTrack::HCALOUT);
+      mc_photon.hcaloutdeta = track->get_cal_deta(SvtxTrack::HCALOUT);
+      mc_photon.hcaloute3x3 = track->get_cal_energy_3x3(SvtxTrack::HCALOUT);
+      mc_photon.hcaloute = track->get_cal_cluster_e(SvtxTrack::HCALOUT);
 
     }
 
-  trk.gtrackID = gtrackID;
-  trk.gflavor = gflavor;
-  trk.ng4hits = ng4hits;
-  trk.gpx = gpx;
-  trk.gpy = gpy;
-  trk.gpz = gpz;
-  trk.gvx = gvx;
-  trk.gvy = gvy;
-  trk.gvz = gvz;
-  trk.gfpx = gfpx;
-  trk.gfpy = gfpy;
-  trk.gfpz = gfpz;
-  trk.gfx = gfx;
-  trk.gfy = gfy;
-  trk.gfz = gfz;
-  trk.gembed = gembed;
+  eval_photon_proj( //
+      /*PHG4Particle **/g4particle, //
+      /*MCPhoton &*/mc_photon,
+      /*enu_calo*/kCEMC, //
+      /*const double */gvz,
+      /*PHCompositeNode **/topNode //
+      );
+  eval_photon_proj( //
+      /*PHG4Particle **/g4particle, //
+      /*MCPhoton &*/mc_photon,
+      /*enu_calo*/kHCALIN, //
+      /*const double */gvz,
+      /*PHCompositeNode **/topNode //
+      );
+
+  mc_photon.gtrackID = gtrackID;
+  mc_photon.gflavor = gflavor;
+  mc_photon.ng4hits = ng4hits;
+  mc_photon.gpx = gpx;
+  mc_photon.gpy = gpy;
+  mc_photon.gpz = gpz;
+  mc_photon.gvx = gvx;
+  mc_photon.gvy = gvy;
+  mc_photon.gvz = gvz;
+  mc_photon.gfpx = gfpx;
+  mc_photon.gfpy = gfpy;
+  mc_photon.gfpz = gfpz;
+  mc_photon.gfx = gfx;
+  mc_photon.gfy = gfy;
+  mc_photon.gfz = gfz;
+  mc_photon.gembed = gembed;
 //  trk.gprimary = gprimary;
-  trk.trackID = trackID;
-  trk.px = px;
-  trk.py = py;
-  trk.pz = pz;
-  trk.charge = charge;
-  trk.quality = quality;
-  trk.chisq = chisq;
-  trk.ndf = ndf;
-  trk.nhits = nhits;
-  trk.layers = layers;
-  trk.dca = dca;
-  trk.dca2d = dca2d;
-  trk.dca2dsigma = dca2dsigma;
-  trk.pcax = pcax;
-  trk.pcay = pcay;
-  trk.pcaz = pcaz;
-  trk.nfromtruth = nfromtruth;
+  mc_photon.trackID = trackID;
+  mc_photon.px = px;
+  mc_photon.py = py;
+  mc_photon.pz = pz;
+  mc_photon.charge = charge;
+  mc_photon.quality = quality;
+  mc_photon.chisq = chisq;
+  mc_photon.ndf = ndf;
+  mc_photon.nhits = nhits;
+  mc_photon.layers = layers;
+  mc_photon.dca2d = dca2d;
+  mc_photon.dca2dsigma = dca2dsigma;
+  mc_photon.pcax = pcax;
+  mc_photon.pcay = pcay;
+  mc_photon.pcaz = pcaz;
+  mc_photon.nfromtruth = nfromtruth;
 
 }
 
 void
-EMCalAna::eval_trk_proj(
-    //
-    SvtxTrack * track, //
-    EMCalTrk & trk, EMCalAna::enu_calo calo_id, const double gvz,
-    PHCompositeNode *topNode //
+EMCalCalib::eval_photon_proj( //
+    PHG4Particle * g4particle, //
+    MCPhoton & trk, enu_calo calo_id, //
+    const double gvz, PHCompositeNode *topNode //
     )
 // Track projections
 {
+  // hard coded radius
   string detector = "InvalidDetector";
   double radius = 110;
   if (calo_id == kCEMC)
@@ -589,181 +590,19 @@ EMCalAna::eval_trk_proj(
       topNode, towernodename.c_str());
   assert(cemc_towerList);
 
-  if (verbosity > 3)
-    {
-      cout << __PRETTY_FUNCTION__ << " - info - handling track track p = ("
-          << track->get_px() << ", " << track->get_py() << ", "
-          << track->get_pz() << "), v = (" << track->get_x() << ", "
-          << track->get_z() << ", " << track->get_z() << ")" << " size_states "
-          << track->size_states() << endl;
-
-//              for (SvtxTrack::ConstStateIter iter = track->begin_states();
-//                  iter != track->end_states(); ++iter)
-//                {
-//                  const SvtxTrackState* state = iter->second;
-//                  double hitx = state->get_x();
-//                  double hity = state->get_y();
-//
-//                  cout << __PRETTY_FUNCTION__ << " - info - track projection : v="
-//                      << hitx << ", " << hity <<" p = "<< state->get_px()<<", "<< state->get_py() << endl;
-//                }
-//              track->empty_states();
-
-        {
-          std::vector<double> point;
-          point.assign(3, -9999.);
-          _hough.projectToRadius(track, _magfield, 10, point);
-
-          double x = point[0];
-          double y = point[1];
-          double z = point[2];
-          double phi = atan2(y, x);
-          double eta = asinh(z / sqrt(x * x + y * y));
-          cout << __PRETTY_FUNCTION__ << " - info - handling track proj. (" << x
-              << ", " << y << ", " << z << ")" << ", eta " << eta << ", phi"
-              << phi << endl;
-        }
-        {
-          std::vector<double> point;
-          point.assign(3, -9999.);
-          _hough.projectToRadius(track, _magfield, 20, point);
-          double x = point[0];
-          double y = point[1];
-          double z = point[2];
-          double phi = atan2(y, x);
-          double eta = asinh(z / sqrt(x * x + y * y));
-          cout << __PRETTY_FUNCTION__ << " - info - handling track proj. (" << x
-              << ", " << y << ", " << z << ")" << ", eta " << eta << ", phi"
-              << phi << endl;
-        }
-        {
-          std::vector<double> point;
-          point.assign(3, -9999.);
-          _hough.projectToRadius(track, _magfield, 30, point);
-          double x = point[0];
-          double y = point[1];
-          double z = point[2];
-          double phi = atan2(y, x);
-          double eta = asinh(z / sqrt(x * x + y * y));
-          cout << __PRETTY_FUNCTION__ << " - info - handling track proj. (" << x
-              << ", " << y << ", " << z << ")" << ", eta " << eta << ", phi"
-              << phi << endl;
-        }
-        {
-          std::vector<double> point;
-          point.assign(3, -9999.);
-          _hough.projectToRadius(track, _magfield, 40, point);
-          double x = point[0];
-          double y = point[1];
-          double z = point[2];
-          double phi = atan2(y, x);
-          double eta = asinh(z / sqrt(x * x + y * y));
-          cout << __PRETTY_FUNCTION__ << " - info - handling track proj. (" << x
-              << ", " << y << ", " << z << ")" << ", eta " << eta << ", phi"
-              << phi << endl;
-        }
-        {
-          std::vector<double> point;
-          point.assign(3, -9999.);
-          _hough.projectToRadius(track, _magfield, 50, point);
-          double x = point[0];
-          double y = point[1];
-          double z = point[2];
-          double phi = atan2(y, x);
-          double eta = asinh(z / sqrt(x * x + y * y));
-          cout << __PRETTY_FUNCTION__ << " - info - handling track proj. (" << x
-              << ", " << y << ", " << z << ")" << ", eta " << eta << ", phi"
-              << phi << endl;
-        }
-        {
-          std::vector<double> point;
-          point.assign(3, -9999.);
-          _hough.projectToRadius(track, _magfield, 60, point);
-          double x = point[0];
-          double y = point[1];
-          double z = point[2];
-          double phi = atan2(y, x);
-          double eta = asinh(z / sqrt(x * x + y * y));
-          cout << __PRETTY_FUNCTION__ << " - info - handling track proj. (" << x
-              << ", " << y << ", " << z << ")" << ", eta " << eta << ", phi"
-              << phi << endl;
-        }
-        {
-          std::vector<double> point;
-          point.assign(3, -9999.);
-          _hough.projectToRadius(track, _magfield, 70, point);
-          double x = point[0];
-          double y = point[1];
-          double z = point[2];
-          double phi = atan2(y, x);
-          double eta = asinh(z / sqrt(x * x + y * y));
-          cout << __PRETTY_FUNCTION__ << " - info - handling track proj. (" << x
-              << ", " << y << ", " << z << ")" << ", eta " << eta << ", phi"
-              << phi << endl;
-        }
-        {
-          std::vector<double> point;
-          point.assign(3, -9999.);
-          _hough.projectToRadius(track, _magfield, 80, point);
-          double x = point[0];
-          double y = point[1];
-          double z = point[2];
-          double phi = atan2(y, x);
-          double eta = asinh(z / sqrt(x * x + y * y));
-          cout << __PRETTY_FUNCTION__ << " - info - handling track proj. (" << x
-              << ", " << y << ", " << z << ")" << ", eta " << eta << ", phi"
-              << phi << endl;
-        }
-        {
-          std::vector<double> point;
-          point.assign(3, -9999.);
-          _hough.projectToRadius(track, _magfield, 100, point);
-          double x = point[0];
-          double y = point[1];
-          double z = point[2];
-          double phi = atan2(y, x);
-          double eta = asinh(z / sqrt(x * x + y * y));
-          cout << __PRETTY_FUNCTION__ << " - info - handling track proj. (" << x
-              << ", " << y << ", " << z << ")" << ", eta " << eta << ", phi"
-              << phi << endl;
-        }
-        {
-          std::vector<double> point;
-          point.assign(3, -9999.);
-          _hough.projectToRadius(track, _magfield, 1777, point);
-          double x = point[0];
-          double y = point[1];
-          double z = point[2];
-          double phi = atan2(y, x);
-          double eta = asinh(z / sqrt(x * x + y * y));
-          cout << __PRETTY_FUNCTION__ << " - info - handling track proj. (" << x
-              << ", " << y << ", " << z << ")" << ", eta " << eta << ", phi"
-              << phi << endl;
-        }
-    }
-
   // curved tracks inside mag field
   // straight projections thereafter
   std::vector<double> point;
-  point.assign(3, -9999.);
-  _hough.projectToRadius(track, _magfield, radius, point);
+//  point.assign(3, -9999.);
+//  _hough.projectToRadius(track, _magfield, radius, point);
 
-  if (std::isnan(point[0]) or std::isnan(point[1]) or std::isnan(point[2]))
-    {
-      cout << __PRETTY_FUNCTION__ << "::" << Name()
-          << " - Error - track extrapolation failure:";
-      track->identify();
-      return;
-    }
+  const double pt = sqrt(
+      g4particle->get_px() * g4particle->get_px()
+          + g4particle->get_py() * g4particle->get_py());
 
-  assert( not std::isnan(point[0]));
-  assert( not std::isnan(point[1]));
-  assert( not std::isnan(point[2]));
-
-  double x = point[0];
-  double y = point[1];
-//  double z = point[2] + gvz - track->get_z();
-  double z = point[2];
+  double x = g4particle->get_px() / pt * radius;
+  double y = g4particle->get_py() / pt * radius;
+  double z = g4particle->get_pz() / pt * radius + gvz;
 
   double phi = atan2(y, x);
   double eta = asinh(z / sqrt(x * x + y * y));
@@ -882,7 +721,7 @@ EMCalAna::eval_trk_proj(
 } //       // Track projections
 
 int
-EMCalAna::Init_Trk(PHCompositeNode *topNode)
+EMCalCalib::Init_MCPhoton(PHCompositeNode *topNode)
 {
 //  static const int BUFFER_SIZE = 32000;
 //  _T_EMCalTrk = new TTree("T_EMCalTrk", "T_EMCalTrk");
@@ -894,11 +733,11 @@ EMCalAna::Init_Trk(PHCompositeNode *topNode)
 }
 
 int
-EMCalAna::process_event_Trk(PHCompositeNode *topNode)
+EMCalCalib::process_event_MCPhoton(PHCompositeNode *topNode)
 {
 
   if (verbosity > 2)
-    cout << "EMCalAna::process_event_Trk() entered" << endl;
+    cout << "EMCalCalib::process_event_MCPhoton() entered" << endl;
 
   if (!_eval_stack)
     {
@@ -906,8 +745,8 @@ EMCalAna::process_event_Trk(PHCompositeNode *topNode)
       _eval_stack->set_strict(false);
     }
 
-  _trk = findNode::getClass<EMCalTrk>(topNode, "EMCalTrk");
-  assert(_trk);
+  _mc_photon = findNode::getClass<MCPhoton>(topNode, "MCPhoton");
+  assert(_mc_photon);
 
   PHG4TruthInfoContainer* truthinfo =
       findNode::getClass<PHG4TruthInfoContainer>(topNode, "G4TruthInfo");
@@ -918,13 +757,13 @@ EMCalAna::process_event_Trk(PHCompositeNode *topNode)
   assert(range.first != range.second);
   // make sure there is at least one primary partcle
 
-  eval_trk(range.first->second, *_trk, topNode);
+  eval_photon(range.first->second, *_mc_photon, topNode);
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
 Fun4AllHistoManager *
-EMCalAna::get_HistoManager()
+EMCalCalib::get_HistoManager()
 {
 
   Fun4AllServer *se = Fun4AllServer::instance();
@@ -933,7 +772,7 @@ EMCalAna::get_HistoManager()
   if (not hm)
     {
       cout
-          << "EMCalAna::get_HistoManager - Making Fun4AllHistoManager EMCalAna_HISTOS"
+          << "EMCalCalib::get_HistoManager - Making Fun4AllHistoManager EMCalAna_HISTOS"
           << endl;
       hm = new Fun4AllHistoManager("EMCalAna_HISTOS");
       se->registerHistoManager(hm);
@@ -945,7 +784,7 @@ EMCalAna::get_HistoManager()
 }
 
 int
-EMCalAna::Init_SF(PHCompositeNode *topNode)
+EMCalCalib::Init_SF(PHCompositeNode *topNode)
 {
 
   Fun4AllHistoManager *hm = get_HistoManager();
@@ -982,11 +821,11 @@ EMCalAna::Init_SF(PHCompositeNode *topNode)
 }
 
 int
-EMCalAna::process_event_SF(PHCompositeNode *topNode)
+EMCalCalib::process_event_SF(PHCompositeNode *topNode)
 {
 
   if (verbosity > 2)
-    cout << "EMCalAna::process_event_SF() entered" << endl;
+    cout << "EMCalCalib::process_event_SF() entered" << endl;
 
   TH1F* h = NULL;
 
@@ -1149,7 +988,7 @@ EMCalAna::process_event_SF(PHCompositeNode *topNode)
 }
 
 int
-EMCalAna::Init_Tower(PHCompositeNode *topNode)
+EMCalCalib::Init_Tower(PHCompositeNode *topNode)
 {
 
   Fun4AllHistoManager *hm = get_HistoManager();
@@ -1198,12 +1037,12 @@ EMCalAna::Init_Tower(PHCompositeNode *topNode)
 }
 
 int
-EMCalAna::process_event_Tower(PHCompositeNode *topNode)
+EMCalCalib::process_event_Tower(PHCompositeNode *topNode)
 {
   const string detector("CEMC");
 
   if (verbosity > 2)
-    cout << "EMCalAna::process_event_SF() entered" << endl;
+    cout << "EMCalCalib::process_event_SF() entered" << endl;
 
   string towernodename = "TOWER_CALIB_" + detector;
   // Grab the towers

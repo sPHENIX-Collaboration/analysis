@@ -42,7 +42,7 @@ class PHFlowJetMaker: public SubsysReco
 {
  public:
 
-  PHFlowJetMaker(const std::string &name = "PHFlowJetMaker", const std::string algorithm = "anti-kt", double r_param = 0.3);
+  PHFlowJetMaker(const std::string &name = "PHFlowJetMaker", const std::string algorithm = "AntiKt", double r_param = 0.3);
 
   virtual ~PHFlowJetMaker();
 
@@ -63,9 +63,9 @@ class PHFlowJetMaker: public SubsysReco
   private:
 			 
   //Sampling Fractions
-  static const float sfEMCAL = 0.03;
-  static const float sfHCALIN = 0.071;
-  static const float sfHCALOUT = 0.04;
+  static const float sfEMCAL ;
+  static const float sfHCALIN ;
+  static const float sfHCALOUT ;
 			 
   char *outfile;
   std::string algorithm;

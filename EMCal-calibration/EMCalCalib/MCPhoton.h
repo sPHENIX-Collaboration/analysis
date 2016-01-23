@@ -1,28 +1,28 @@
 // $Id: $                                                                                             
 
 /*!
- * \file EMCalTrk.h
+ * \file MCPhoton.h
  * \brief 
  * \author Jin Huang <jhuang@bnl.gov>
  * \version $Revision:   $
  * \date $Date: $
  */
 
-#ifndef EMCALTRK_H_
-#define EMCALTRK_H_
+#ifndef MCPhoton_H_
+#define MCPhoton_H_
 
 #include <phool/PHObject.h>
 #include <phool/phool.h>
 
 /*!
- * \brief EMCalTrk
+ * \brief MCPhoton
  */
-class EMCalTrk : public PHObject
+class MCPhoton : public PHObject
 {
 public:
-  EMCalTrk();
+  MCPhoton();
   virtual
-  ~EMCalTrk();
+  ~MCPhoton();
 
   virtual void
   Clear(Option_t *option = "");
@@ -38,7 +38,6 @@ public:
   float nhits;
   unsigned int layers;
 
-  float dca;
   float dca2d;
   float dca2dsigma;
   float px;
@@ -130,7 +129,7 @@ public:
   //! log-likelihood hadron - shower shape
   float ll_shape_h;
 
-ClassDef(EMCalTrk,10)
+ClassDef(MCPhoton,9)
 };
 
-#endif /* EMCALTRK_H_ */
+#endif /* MCPhoton_H_ */
