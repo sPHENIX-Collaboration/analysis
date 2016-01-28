@@ -28,6 +28,7 @@ using namespace std;
 SvtxSimPerformanceCheckReco::SvtxSimPerformanceCheckReco(const string &name)
   : SubsysReco(name),
     _event(0),
+    _nlayers(7),
     _truept_dptoverpt(NULL),
     _truept_dca(NULL),
     _truept_particles_leaving7Hits(NULL),
@@ -238,7 +239,7 @@ int SvtxSimPerformanceCheckReco::process_event(PHCompositeNode *topNode) {
     float truept = sqrt(pow(g4particle->get_px(),2)+pow(g4particle->get_py(),2));
     
     // examine truth particles that leave 7 detector hits
-    if (ng4hits == 7) {
+    if (ng4hits == _nlayers) {
       _truept_particles_leaving7Hits->Fill(truept);
     
       SvtxTrack* track = trackeval->best_track_from(g4particle);
@@ -248,7 +249,7 @@ int SvtxSimPerformanceCheckReco::process_event(PHCompositeNode *topNode) {
       unsigned int nfromtruth = trackeval->get_nclusters_contribution(track,g4particle);
       float recopt = track->get_pt();
 
-      unsigned int ndiff = abs((int)nfromtruth-7);
+      unsigned int ndiff = abs((int)nfromtruth-_nlayers);
       if (ndiff <= 2) {
 	_truept_particles_recoWithin2Hits->Fill(truept);
       }
@@ -297,7 +298,7 @@ int SvtxSimPerformanceCheckReco::process_event(PHCompositeNode *topNode) {
 
       unsigned int nfromtruth = trackeval->get_nclusters_contribution(track,g4particle);
 
-      unsigned int ndiff = abs((int)nfromtruth-7);
+      unsigned int ndiff = abs((int)nfromtruth-_nlayers);
       if (ndiff <= 2) {
 	_recopt_tracks_recoWithin2Hits->Fill(recopt);
       }
