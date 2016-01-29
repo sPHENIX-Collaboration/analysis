@@ -249,7 +249,7 @@ int SvtxSimPerformanceCheckReco::process_event(PHCompositeNode *topNode) {
       unsigned int nfromtruth = trackeval->get_nclusters_contribution(track,g4particle);
       float recopt = track->get_pt();
 
-      unsigned int ndiff = abs((int)nfromtruth-_nlayers);
+      unsigned int ndiff = abs((int)nfromtruth-(int)_nlayers);
       if (ndiff <= 2) {
 	_truept_particles_recoWithin2Hits->Fill(truept);
       }
@@ -298,7 +298,7 @@ int SvtxSimPerformanceCheckReco::process_event(PHCompositeNode *topNode) {
 
       unsigned int nfromtruth = trackeval->get_nclusters_contribution(track,g4particle);
 
-      unsigned int ndiff = abs((int)nfromtruth-_nlayers);
+      unsigned int ndiff = abs((int)nfromtruth-(int)_nlayers);
       if (ndiff <= 2) {
 	_recopt_tracks_recoWithin2Hits->Fill(recopt);
       }
