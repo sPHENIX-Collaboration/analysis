@@ -55,16 +55,25 @@ class SimpleTrackingAnalysis: public SubsysReco
   TH1D* _recopt_tracks_recoWithin4Percent;
   TH1D* _recopt_tracks_recoWithin5Percent;
 
-  TH2D* _recopt_quality;                     // quality distributions
+  TH2D* _recopt_quality;                      // quality distributions
 
-  TH1D* _dx_vertex;                          // vertex resolution
+  TH1D* _dx_vertex;                           // vertex resolution
   TH1D* _dy_vertex;
   TH1D* _dz_vertex;
 
   TH2D* _truept_quality_particles_recoWithin4Percent;
-
   TH2D* _recopt_quality_tracks_all;
   TH2D* _recopt_quality_tracks_recoWithin4Percent;
+
+
+
+  TH2D* _energy_difference_emc;
+  TH2D* _energy_difference_hci;
+  TH2D* _energy_difference_hco;
+
+  TH2D* _energy_ratio_emc;
+  TH2D* _energy_ratio_hci;
+  TH2D* _energy_ratio_hco;
 
 };
 

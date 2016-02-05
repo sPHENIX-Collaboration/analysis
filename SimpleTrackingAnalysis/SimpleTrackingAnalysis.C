@@ -17,6 +17,10 @@
 #include <g4eval/SvtxVertexEval.h>
 #include <g4eval/SvtxTruthEval.h>
 
+// --- common to all calorimeters
+#include <g4cemc/RawCluster.h>
+#include <g4cemc/RawClusterContainer.h>
+
 #include <TH1D.h>
 #include <TH2D.h>
 
@@ -84,28 +88,28 @@ int SimpleTrackingAnalysis::Init(PHCompositeNode *topNode)
 
   // --- (mostly) the same set of histograms over reconstructed pt
 
-  _recopt_tracks_all = new TH1D("recopt_tracks_all", "recopt_tracks_all", 20,0.0,10.0);
+  _recopt_tracks_all = new TH1D("recopt_tracks_all", "", 20,0.0,10.0);
   se->registerHisto(_recopt_tracks_all);
 
-  _recopt_tracks_recoWithExactHits = new TH1D("recopt_tracks_recoWithExactHits", "recopt_tracks_recoWithExactHits", 20,0.0,10.0);
+  _recopt_tracks_recoWithExactHits = new TH1D("recopt_tracks_recoWithExactHits", "", 20,0.0,10.0);
   se->registerHisto(_recopt_tracks_recoWithExactHits);
 
-  _recopt_tracks_recoWithin1Hit = new TH1D("recopt_tracks_recoWithin1Hit", "recopt_tracks_recoWithin1Hit", 20,0.0,10.0);
+  _recopt_tracks_recoWithin1Hit = new TH1D("recopt_tracks_recoWithin1Hit", "", 20,0.0,10.0);
   se->registerHisto(_recopt_tracks_recoWithin1Hit);
 
-  _recopt_tracks_recoWithin2Hits = new TH1D("recopt_tracks_recoWithin2Hits", "recopt_tracks_recoWithin2Hits", 20,0.0,10.0);
+  _recopt_tracks_recoWithin2Hits = new TH1D("recopt_tracks_recoWithin2Hits", "", 20,0.0,10.0);
   se->registerHisto(_recopt_tracks_recoWithin2Hits);
 
-  _recopt_tracks_recoWithin3Percent = new TH1D("recopt_tracks_recoWithin3Percent", "recopt_tracks_recoWithin3Percent", 20,0.0,10.0);
+  _recopt_tracks_recoWithin3Percent = new TH1D("recopt_tracks_recoWithin3Percent", "", 20,0.0,10.0);
   se->registerHisto(_recopt_tracks_recoWithin3Percent);
 
-  _recopt_tracks_recoWithin4Percent = new TH1D("recopt_tracks_recoWithin4Percent", "recopt_tracks_recoWithin4Percent", 20,0.0,10.0);
+  _recopt_tracks_recoWithin4Percent = new TH1D("recopt_tracks_recoWithin4Percent", "", 20,0.0,10.0);
   se->registerHisto(_recopt_tracks_recoWithin4Percent);
 
-  _recopt_tracks_recoWithin5Percent = new TH1D("recopt_tracks_recoWithin5Percent", "recopt_tracks_recoWithin5Percent", 20,0.0,10.0);
+  _recopt_tracks_recoWithin5Percent = new TH1D("recopt_tracks_recoWithin5Percent", "", 20,0.0,10.0);
   se->registerHisto(_recopt_tracks_recoWithin5Percent);
 
-  _recopt_quality = new TH2D("recopt_quality", "recopt_quality", 20,0.0,10.0, 100,0.0,5.0);
+  _recopt_quality = new TH2D("recopt_quality", "", 20,0.0,10.0, 100,0.0,5.0);
   se->registerHisto(_recopt_quality);
 
 
@@ -123,18 +127,34 @@ int SimpleTrackingAnalysis::Init(PHCompositeNode *topNode)
 
 
 
-  // --- additional histograms
+  // --- additional tracking histograms
 
-  _truept_quality_particles_recoWithin4Percent = new TH2D("truept_quality_particles_recoWithin4Percent", "truept_quality_particles_recoWithin4Percent", 20,0.0,10.0, 100,0.0,5.0);
+  _truept_quality_particles_recoWithin4Percent = new TH2D("truept_quality_particles_recoWithin4Percent", "", 20,0.0,10.0, 100,0.0,5.0);
   se->registerHisto(_truept_quality_particles_recoWithin4Percent);
 
-  _recopt_quality_tracks_all = new TH2D("recopt_quality_tracks_all", "recopt_quality_tracks_all", 20,0.0,10.0, 100,0.0,5.0);
+  _recopt_quality_tracks_all = new TH2D("recopt_quality_tracks_all", "", 20,0.0,10.0, 100,0.0,5.0);
   se->registerHisto(_recopt_quality_tracks_all);
 
-  _recopt_quality_tracks_recoWithin4Percent = new TH2D("recopt_quality_tracks_recoWithin4Percent", "recopt_quality_tracks_recoWithin4Percent", 20,0.0,10.0, 100,0.0,5.0);
+  _recopt_quality_tracks_recoWithin4Percent = new TH2D("recopt_quality_tracks_recoWithin4Percent", "", 20,0.0,10.0, 100,0.0,5.0);
   se->registerHisto(_recopt_quality_tracks_recoWithin4Percent);
 
 
+
+  // --- some basic calorimeter performance histograms
+
+  _energy_difference_emc = new TH2D("energy_difference_emc", "", 20,0.0,10.0, 100,0.0,1.0);
+  _energy_difference_hci = new TH2D("energy_difference_hci", "", 20,0.0,10.0, 100,0.0,1.0);
+  _energy_difference_hco = new TH2D("energy_difference_hco", "", 20,0.0,10.0, 100,0.0,1.0);
+  se->registerHisto(_energy_difference_emc);
+  se->registerHisto(_energy_difference_hci);
+  se->registerHisto(_energy_difference_hco);
+
+  _energy_ratio_emc = new TH2D("energy_ratio_emc", "", 20,0.0,10.0, 100,0.0,1.0);
+  _energy_ratio_hci = new TH2D("energy_ratio_hci", "", 20,0.0,10.0, 100,0.0,1.0);
+  _energy_ratio_hco = new TH2D("energy_ratio_hco", "", 20,0.0,10.0, 100,0.0,1.0);
+  se->registerHisto(_energy_ratio_emc);
+  se->registerHisto(_energy_ratio_hci);
+  se->registerHisto(_energy_ratio_hco);
 
   return 0;
 
@@ -150,7 +170,7 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
   // --- Here we get the various data nodes we need to do the analysis
   // --- Then we use variables (accessed through class methods) to perform calculations
 
-  //cout << "Now processing event number " << nevents << endl; // would be good to add verbosity switch
+  cout << "Now processing event number " << nevents << endl; // would be good to add verbosity switch
 
   ++nevents; // You may as youtself, why ++nevents (pre-increment) rather
   // than nevents++ (post-increment)?  The short answer is performance.
@@ -182,12 +202,32 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
       exit(-1);
     }
 
+  // --- Raw cluster classes
+  bool clusters_available = true;
+  RawClusterContainer *emc_clusters = findNode::getClass<RawClusterContainer>(topNode,"CLUSTER_CEMC");
+  RawClusterContainer *hci_clusters = findNode::getClass<RawClusterContainer>(topNode,"CLUSTER_HCALIN");
+  RawClusterContainer *hco_clusters = findNode::getClass<RawClusterContainer>(topNode,"CLUSTER_HCALOUT");
+  if ( !emc_clusters || !hci_clusters || !hco_clusters )
+    {
+      cerr << PHWHERE << " WARNING: Can't find cluster nodes" << endl;
+      cerr << PHWHERE << "  emc_clusters " << emc_clusters << endl;
+      cerr << PHWHERE << "  hci_clusters " << hci_clusters << endl;
+      cerr << PHWHERE << "  hco_clusters " << hco_clusters << endl;
+      clusters_available = false;
+    }
+
+
+
   // --- Create SVTX eval stack
   SvtxEvalStack svtxevalstack(topNode);
   // --- Get evaluator objects from the eval stack
   SvtxVertexEval*   vertexeval = svtxevalstack.get_vertex_eval();
   SvtxTrackEval*     trackeval = svtxevalstack.get_track_eval();
   SvtxTruthEval*     trutheval = svtxevalstack.get_truth_eval();
+
+
+
+  cout << "Now going to loop over truth partcles..." << endl; // need verbosity switch
 
   // --- Loop over all truth particles
   PHG4TruthInfoContainer::Range range = truthinfo->GetPrimaryParticleRange();
@@ -197,23 +237,116 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
       // In C++ the iterator is a map, which has two members
       // first is the key (analogous the index of an arry),
       // second is the value (analogous to the value stored for the array index)
-      if ( trutheval->get_embed(g4particle ) == 0) continue;
+      if ( trutheval->get_embed(g4particle) == 0 ) continue; // only look at embedded particles (for now)
 
       set<PHG4Hit*> g4hits = trutheval->all_truth_hits(g4particle);
       float ng4hits = g4hits.size();
 
       float truept = sqrt(pow(g4particle->get_px(),2)+pow(g4particle->get_py(),2));
+      float true_energy = g4particle->get_e();
 
-      // examine truth particles that leave 7 detector hits
+      // --- Get the reconsructed SvtxTrack based on the best candidate from the truth info
+      SvtxTrack* track = trackeval->best_track_from(g4particle);
+      if (!track) continue;
+      float recopt = track->get_pt();
+
+      cout << "truept is " << truept << endl;
+      cout << "recopt is " << recopt << endl;
+
+
+
+      // ---------------------
+      // --- calorimeter stuff
+      // ---------------------
+
+      // --- emcal variables
+      float emc_energy = -9999;
+      float emc_eta = -9999;
+      float emc_pt = -9999;
+
+      // --- inner hcal variables
+      float hci_energy = -9999;
+      float hci_eta = -9999;
+      float hci_pt = -9999;
+
+      // --- outer hcal variables
+      float hco_energy = -9999;
+      float hco_eta = -9999;
+      float hco_pt = -9999;
+
+      // --- energy variables directly from the track object
+      float emc_energy_track = -9999;
+      float hci_energy_track = -9999;
+      float hco_energy_track = -9999;
+
+      if ( clusters_available )
+	{
+	  // --- get the energy values directly from the track
+	  emc_energy_track = track->get_cal_cluster_e(SvtxTrack::CEMC);
+	  hci_energy_track = track->get_cal_cluster_e(SvtxTrack::HCALIN);
+	  hco_energy_track = track->get_cal_cluster_e(SvtxTrack::HCALOUT);
+
+	  // --- get the cluster id number for the best match to the track for each calorimeter
+	  int emcID = (int)track->get_cal_cluster_id(SvtxTrack::CEMC);
+	  int hciID = (int)track->get_cal_cluster_id(SvtxTrack::HCALIN);
+	  int hcoID = (int)track->get_cal_cluster_id(SvtxTrack::HCALOUT);
+
+	  // --- get the single raw clusters for each calorimeter based on the id number
+	  RawCluster* emc_cluster_matched = emc_clusters->getCluster(emcID);
+	  RawCluster* hci_cluster_matched = hci_clusters->getCluster(hciID);
+	  RawCluster* hco_cluster_matched = hco_clusters->getCluster(hcoID);
+
+	  // --- emcal variables
+	  emc_energy = emc_cluster_matched->get_energy();
+	  emc_eta = emc_cluster_matched->get_eta();
+	  emc_pt = emc_energy/cosh(emc_eta);
+
+	  // --- inner hcal variables
+	  hci_energy = hci_cluster_matched->get_energy();
+	  hci_eta = hci_cluster_matched->get_eta();
+	  hci_pt = hci_energy/cosh(hci_eta);
+
+	  // --- outer hcal variables
+	  hco_energy = hco_cluster_matched->get_energy();
+	  hco_eta = hco_cluster_matched->get_eta();
+	  hco_pt = hco_energy/cosh(hco_eta);
+
+	  // --- check the variables
+	  cout << "emc_pt is " << emc_pt << endl;
+	  cout << "hci_pt is " << hci_pt << endl;
+	  cout << "hco_pt is " << hco_pt << endl;
+	  cout << "emc_energy is " << emc_energy << endl;
+	  cout << "hci_energy is " << hci_energy << endl;
+	  cout << "hco_energy is " << hco_energy << endl;
+	  cout << "emc_energy_track is " << emc_energy_track << endl;
+	  cout << "hci_energy_track is " << hci_energy_track << endl;
+	  cout << "hco_energy_track is " << hco_energy_track << endl;
+	}
+
+      float emc_ediff = (true_energy - emc_energy)/true_energy;
+      float hci_ediff = (true_energy - hci_energy)/true_energy;
+      float hco_ediff = (true_energy - hco_energy)/true_energy;
+
+      float emc_eratio = emc_energy/true_energy;
+      float hci_eratio = hci_energy/true_energy;
+      float hco_eratio = hco_energy/true_energy;
+
+      _energy_difference_emc->Fill(true_energy,emc_ediff);
+      _energy_difference_hci->Fill(true_energy,hci_ediff);
+      _energy_difference_hco->Fill(true_energy,hco_ediff);
+
+      _energy_ratio_emc->Fill(true_energy,emc_eratio);
+      _energy_ratio_hci->Fill(true_energy,hci_eratio);
+      _energy_ratio_hco->Fill(true_energy,hco_eratio);
+
+
+
+      // examine truth particles that leave all (7 or 8 depending on design) detector hits
       if ( ng4hits == nlayers )
 	{
 	  _truept_particles_leaving7Hits->Fill(truept);
 
-	  SvtxTrack* track = trackeval->best_track_from(g4particle);
-	  if (!track) continue;
-
 	  unsigned int nfromtruth = trackeval->get_nclusters_contribution(track,g4particle);
-	  float recopt = track->get_pt();
 
 	  unsigned int ndiff = abs((int)nfromtruth-(int)nlayers);
 	  if ( ndiff <= 2 ) _truept_particles_recoWithin2Hits->Fill(truept);

@@ -25,6 +25,7 @@ libSimpleTrackingAnalysis_la_SOURCES = \
 libSimpleTrackingAnalysis_la_LIBADD = \
   -lg4dst \
   -lg4eval \
+  -lcemc \
   -lphool
 
 BUILT_SOURCES = \
