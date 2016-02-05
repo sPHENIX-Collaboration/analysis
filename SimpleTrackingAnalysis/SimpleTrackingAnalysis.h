@@ -1,5 +1,5 @@
-#ifndef __SVTXSIMPERFORMANCECHECKRECO_H__
-#define __SVTXSIMPERFORMANCECHECKRECO_H__
+#ifndef __SIMPLETRACKINGANALYSIS_H__
+#define __SIMPLETRACKINGANALYSIS_H__
 
 #include <fun4all/SubsysReco.h>
 #include <string>
@@ -21,7 +21,13 @@ class SimpleTrackingAnalysis: public SubsysReco
 
   void set_nlayers(unsigned int x) {nlayers = x;}
 
+  void set_verbosity(int x) {verbosity = x;}
+  //void set_docalocuts(bool x) {docalocuts = x;}
+
  private:
+
+  int verbosity;
+  //bool docalocuts;
 
   // event counter
   unsigned long long nevents;
@@ -55,15 +61,24 @@ class SimpleTrackingAnalysis: public SubsysReco
   TH1D* _recopt_tracks_recoWithin4Percent;
   TH1D* _recopt_tracks_recoWithin5Percent;
 
+  TH1D* _recopt_tracks_withcalocuts_all;                   // purity baseline (non-embedded particles)
+
+  TH1D* _recopt_tracks_withcalocuts_recoWithExactHits;     // purity by nhit match
+  TH1D* _recopt_tracks_withcalocuts_recoWithin1Hit;
+  TH1D* _recopt_tracks_withcalocuts_recoWithin2Hits;
+
+  TH1D* _recopt_tracks_withcalocuts_recoWithin3Percent;    // purity by momentum match
+  TH1D* _recopt_tracks_withcalocuts_recoWithin4Percent;
+  TH1D* _recopt_tracks_withcalocuts_recoWithin5Percent;
+
   TH2D* _recopt_quality;                      // quality distributions
+  TH2D* _truept_quality_particles_recoWithin4Percent;
+  TH2D* _recopt_quality_tracks_all;
+  TH2D* _recopt_quality_tracks_recoWithin4Percent;
 
   TH1D* _dx_vertex;                           // vertex resolution
   TH1D* _dy_vertex;
   TH1D* _dz_vertex;
-
-  TH2D* _truept_quality_particles_recoWithin4Percent;
-  TH2D* _recopt_quality_tracks_all;
-  TH2D* _recopt_quality_tracks_recoWithin4Percent;
 
 
 
@@ -77,4 +92,4 @@ class SimpleTrackingAnalysis: public SubsysReco
 
 };
 
-#endif // __SVTXSIMPERFORMANCECHECKRECO_H__
+#endif // __SIMPLETRACKINGANALYSIS_H__

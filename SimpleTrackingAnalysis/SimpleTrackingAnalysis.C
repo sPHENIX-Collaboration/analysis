@@ -35,6 +35,8 @@ SimpleTrackingAnalysis::SimpleTrackingAnalysis(const string &name) : SubsysReco(
   cout << "Class constructor called " << endl;
   nevents = 0;
   nlayers = 7;
+  verbosity = 0;
+  //docalocuts = false;
 }
 
 
@@ -55,7 +57,7 @@ int SimpleTrackingAnalysis::Init(PHCompositeNode *topNode)
 
 
 
-  // --- histograms over true pt
+  // --- histograms over true pt, used for finding efficiencies
 
   _truept_dptoverpt = new TH2D("truept_dptoverpt", "", 40,0.0,40.0, 200,-0.5,0.5);
   se->registerHisto(_truept_dptoverpt);
@@ -86,7 +88,7 @@ int SimpleTrackingAnalysis::Init(PHCompositeNode *topNode)
 
 
 
-  // --- (mostly) the same set of histograms over reconstructed pt
+  // --- (mostly) the same set of histograms over reconstructed pt, used for studying purity
 
   _recopt_tracks_all = new TH1D("recopt_tracks_all", "", 20,0.0,10.0);
   se->registerHisto(_recopt_tracks_all);
@@ -109,8 +111,30 @@ int SimpleTrackingAnalysis::Init(PHCompositeNode *topNode)
   _recopt_tracks_recoWithin5Percent = new TH1D("recopt_tracks_recoWithin5Percent", "", 20,0.0,10.0);
   se->registerHisto(_recopt_tracks_recoWithin5Percent);
 
-  _recopt_quality = new TH2D("recopt_quality", "", 20,0.0,10.0, 100,0.0,5.0);
-  se->registerHisto(_recopt_quality);
+
+
+  // --- (mostly) the same set of histograms over reconstructed pt, used for studying purity, with calorimeter cuts
+
+  _recopt_tracks_withcalocuts_all = new TH1D("recopt_tracks_withcalocuts_all", "", 20,0.0,10.0);
+  se->registerHisto(_recopt_tracks_withcalocuts_all);
+
+  _recopt_tracks_withcalocuts_recoWithExactHits = new TH1D("recopt_tracks_withcalocuts_recoWithExactHits", "", 20,0.0,10.0);
+  se->registerHisto(_recopt_tracks_withcalocuts_recoWithExactHits);
+
+  _recopt_tracks_withcalocuts_recoWithin1Hit = new TH1D("recopt_tracks_withcalocuts_recoWithin1Hit", "", 20,0.0,10.0);
+  se->registerHisto(_recopt_tracks_withcalocuts_recoWithin1Hit);
+
+  _recopt_tracks_withcalocuts_recoWithin2Hits = new TH1D("recopt_tracks_withcalocuts_recoWithin2Hits", "", 20,0.0,10.0);
+  se->registerHisto(_recopt_tracks_withcalocuts_recoWithin2Hits);
+
+  _recopt_tracks_withcalocuts_recoWithin3Percent = new TH1D("recopt_tracks_withcalocuts_recoWithin3Percent", "", 20,0.0,10.0);
+  se->registerHisto(_recopt_tracks_withcalocuts_recoWithin3Percent);
+
+  _recopt_tracks_withcalocuts_recoWithin4Percent = new TH1D("recopt_tracks_withcalocuts_recoWithin4Percent", "", 20,0.0,10.0);
+  se->registerHisto(_recopt_tracks_withcalocuts_recoWithin4Percent);
+
+  _recopt_tracks_withcalocuts_recoWithin5Percent = new TH1D("recopt_tracks_withcalocuts_recoWithin5Percent", "", 20,0.0,10.0);
+  se->registerHisto(_recopt_tracks_withcalocuts_recoWithin5Percent);
 
 
 
@@ -127,7 +151,10 @@ int SimpleTrackingAnalysis::Init(PHCompositeNode *topNode)
 
 
 
-  // --- additional tracking histograms
+  // --- additional tracking histograms for studying quality
+
+  _recopt_quality = new TH2D("recopt_quality", "", 20,0.0,10.0, 100,0.0,5.0);
+  se->registerHisto(_recopt_quality);
 
   _truept_quality_particles_recoWithin4Percent = new TH2D("truept_quality_particles_recoWithin4Percent", "", 20,0.0,10.0, 100,0.0,5.0);
   se->registerHisto(_truept_quality_particles_recoWithin4Percent);
@@ -209,10 +236,13 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
   RawClusterContainer *hco_clusters = findNode::getClass<RawClusterContainer>(topNode,"CLUSTER_HCALOUT");
   if ( !emc_clusters || !hci_clusters || !hco_clusters )
     {
-      cerr << PHWHERE << " WARNING: Can't find cluster nodes" << endl;
-      cerr << PHWHERE << "  emc_clusters " << emc_clusters << endl;
-      cerr << PHWHERE << "  hci_clusters " << hci_clusters << endl;
-      cerr << PHWHERE << "  hco_clusters " << hco_clusters << endl;
+      if ( verbosity > -1 )
+	{
+	  cerr << PHWHERE << " WARNING: Can't find cluster nodes" << endl;
+	  cerr << PHWHERE << "  emc_clusters " << emc_clusters << endl;
+	  cerr << PHWHERE << "  hci_clusters " << hci_clusters << endl;
+	  cerr << PHWHERE << "  hco_clusters " << hco_clusters << endl;
+	}
       clusters_available = false;
     }
 
@@ -312,16 +342,19 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
 	  hco_pt = hco_energy/cosh(hco_eta);
 
 	  // --- check the variables
-	  cout << "emc_pt is " << emc_pt << endl;
-	  cout << "hci_pt is " << hci_pt << endl;
-	  cout << "hco_pt is " << hco_pt << endl;
-	  cout << "emc_energy is " << emc_energy << endl;
-	  cout << "hci_energy is " << hci_energy << endl;
-	  cout << "hco_energy is " << hco_energy << endl;
-	  cout << "emc_energy_track is " << emc_energy_track << endl;
-	  cout << "hci_energy_track is " << hci_energy_track << endl;
-	  cout << "hco_energy_track is " << hco_energy_track << endl;
-	}
+	  if ( verbosity > 0 )
+	    {
+	      cout << "emc_pt is " << emc_pt << endl;
+	      cout << "hci_pt is " << hci_pt << endl;
+	      cout << "hco_pt is " << hco_pt << endl;
+	      cout << "emc_energy is " << emc_energy << endl;
+	      cout << "hci_energy is " << hci_energy << endl;
+	      cout << "hco_energy is " << hco_energy << endl;
+	      cout << "emc_energy_track is " << emc_energy_track << endl;
+	      cout << "hci_energy_track is " << hci_energy_track << endl;
+	      cout << "hco_energy_track is " << hco_energy_track << endl;
+	    } // check on verbosity
+	} // check on clusters_available
 
       float emc_ediff = (true_energy - emc_energy)/true_energy;
       float hci_ediff = (true_energy - hci_energy)/true_energy;
@@ -380,6 +413,25 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
       PHG4Particle* g4particle = trackeval->max_truth_particle_by_nclusters(track);
       float truept = sqrt(pow(g4particle->get_px(),2)+pow(g4particle->get_py(),2));
 
+      // ---------------------
+      // --- calorimeter stuff
+      // ---------------------
+
+      // --- energy variables directly from the track object
+      float emc_energy_track = -9999;
+      //float hci_energy_track = -9999;
+      //float hco_energy_track = -9999;
+
+      if ( clusters_available )
+	{
+	  // --- get the energy values directly from the track
+	  emc_energy_track = track->get_cal_cluster_e(SvtxTrack::CEMC);
+	  //hci_energy_track = track->get_cal_cluster_e(SvtxTrack::HCALIN);
+	  //hco_energy_track = track->get_cal_cluster_e(SvtxTrack::HCALOUT);
+	}
+
+      // ---
+
       if (trutheval->get_embed(g4particle) != 0)
 	{
 	  // embedded results (quality or performance measures)
@@ -408,6 +460,35 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
 	      _recopt_quality_tracks_recoWithin4Percent->Fill(recopt,track->get_quality());
 	    }
 	  if ( diff < 0.03 ) _recopt_tracks_recoWithin3Percent->Fill(recopt);
+
+
+	  // --------------------------------------
+	  // --- same but now with calorimeter cuts
+	  // --------------------------------------
+
+	  // this needs careful study and consideration, just getting started for now...
+	  bool goodcalo = (emc_energy_track > 0.2 * recopt);
+
+	  if ( goodcalo )
+	    {
+	      _recopt_tracks_withcalocuts_all->Fill(recopt);
+
+	      unsigned int nfromtruth = trackeval->get_nclusters_contribution(track,g4particle);
+
+	      unsigned int ndiff = abs((int)nfromtruth-(int)nlayers);
+	      if ( ndiff <= 2 ) _recopt_tracks_withcalocuts_recoWithin2Hits->Fill(recopt);
+	      if ( ndiff <= 1 ) _recopt_tracks_withcalocuts_recoWithin1Hit->Fill(recopt);
+	      if ( ndiff == 0 ) _recopt_tracks_withcalocuts_recoWithExactHits->Fill(recopt);
+
+	      float diff = fabs(recopt-truept)/truept;
+	      if ( diff < 0.05 ) _recopt_tracks_withcalocuts_recoWithin5Percent->Fill(recopt);
+	      if ( diff < 0.04 ) _recopt_tracks_withcalocuts_recoWithin4Percent->Fill(recopt);
+	      if ( diff < 0.03 ) _recopt_tracks_withcalocuts_recoWithin3Percent->Fill(recopt);
+
+	    } // check on good calo
+
+	  // --- done with reco tracks
+
 	} // else (non-embedded results)
 
     } // loop over reco tracks
