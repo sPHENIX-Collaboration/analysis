@@ -20,6 +20,8 @@
 // --- common to all calorimeters
 #include <g4cemc/RawCluster.h>
 #include <g4cemc/RawClusterContainer.h>
+#include <g4eval/CaloEvalStack.h>
+#include <g4eval/CaloRawClusterEval.h>
 
 #include <TH1D.h>
 #include <TH2D.h>
@@ -169,19 +171,41 @@ int SimpleTrackingAnalysis::Init(PHCompositeNode *topNode)
 
   // --- some basic calorimeter performance histograms
 
-  _energy_difference_emc = new TH2D("energy_difference_emc", "", 20,0.0,10.0, 100,0.0,1.0);
-  _energy_difference_hci = new TH2D("energy_difference_hci", "", 20,0.0,10.0, 100,0.0,1.0);
-  _energy_difference_hco = new TH2D("energy_difference_hco", "", 20,0.0,10.0, 100,0.0,1.0);
+  _energy_difference_emc = new TH2D("energy_difference_emc", "", 20,0.0,10.0, 100,-1.0,1.0);
+  _energy_difference_hci = new TH2D("energy_difference_hci", "", 20,0.0,10.0, 100,-1.0,1.0);
+  _energy_difference_hco = new TH2D("energy_difference_hco", "", 20,0.0,10.0, 100,-1.0,1.0);
+  _energy_difference_tot_dumb = new TH2D("energy_difference_tot_dumb", "", 20,0.0,10.0, 100,-1.0,1.0);
+  _energy_difference_tot_smart = new TH2D("energy_difference_tot_smart", "", 20,0.0,10.0, 100,-1.0,1.0);
   se->registerHisto(_energy_difference_emc);
   se->registerHisto(_energy_difference_hci);
   se->registerHisto(_energy_difference_hco);
+  se->registerHisto(_energy_difference_tot_dumb);
+  se->registerHisto(_energy_difference_tot_smart);
 
   _energy_ratio_emc = new TH2D("energy_ratio_emc", "", 20,0.0,10.0, 100,0.0,1.0);
   _energy_ratio_hci = new TH2D("energy_ratio_hci", "", 20,0.0,10.0, 100,0.0,1.0);
   _energy_ratio_hco = new TH2D("energy_ratio_hco", "", 20,0.0,10.0, 100,0.0,1.0);
+  _energy_ratio_tot_dumb = new TH2D("energy_ratio_tot_dumb", "", 20,0.0,10.0, 100,0.0,1.0);
+  _energy_ratio_tot_smart = new TH2D("energy_ratio_tot_smart", "", 20,0.0,10.0, 100,0.0,1.0);
   se->registerHisto(_energy_ratio_emc);
   se->registerHisto(_energy_ratio_hci);
   se->registerHisto(_energy_ratio_hco);
+  se->registerHisto(_energy_ratio_tot_dumb);
+  se->registerHisto(_energy_ratio_tot_smart);
+
+  _energy_dphi_emc = new TH2D("energy_dphi_emc", "", 20,0.0,10.0, 100,-1.0,1.0);
+  _energy_dphi_hci = new TH2D("energy_dphi_hci", "", 20,0.0,10.0, 100,-1.0,1.0);
+  _energy_dphi_hco = new TH2D("energy_dphi_hco", "", 20,0.0,10.0, 100,-1.0,1.0);
+  se->registerHisto(_energy_dphi_emc);
+  se->registerHisto(_energy_dphi_hci);
+  se->registerHisto(_energy_dphi_hco);
+
+  _energy_deta_emc = new TH2D("energy_deta_emc", "", 20,0.0,10.0, 100,-1.0,1.0);
+  _energy_deta_hci = new TH2D("energy_deta_hci", "", 20,0.0,10.0, 100,-1.0,1.0);
+  _energy_deta_hco = new TH2D("energy_deta_hco", "", 20,0.0,10.0, 100,-1.0,1.0);
+  se->registerHisto(_energy_deta_emc);
+  se->registerHisto(_energy_deta_hci);
+  se->registerHisto(_energy_deta_hco);
 
   return 0;
 
@@ -231,17 +255,17 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
 
   // --- Raw cluster classes
   bool clusters_available = true;
-  RawClusterContainer *emc_clusters = findNode::getClass<RawClusterContainer>(topNode,"CLUSTER_CEMC");
-  RawClusterContainer *hci_clusters = findNode::getClass<RawClusterContainer>(topNode,"CLUSTER_HCALIN");
-  RawClusterContainer *hco_clusters = findNode::getClass<RawClusterContainer>(topNode,"CLUSTER_HCALOUT");
-  if ( !emc_clusters || !hci_clusters || !hco_clusters )
+  RawClusterContainer *emc_clustercontainer = findNode::getClass<RawClusterContainer>(topNode,"CLUSTER_CEMC");
+  RawClusterContainer *hci_clustercontainer = findNode::getClass<RawClusterContainer>(topNode,"CLUSTER_HCALIN");
+  RawClusterContainer *hco_clustercontainer = findNode::getClass<RawClusterContainer>(topNode,"CLUSTER_HCALOUT");
+  if ( !emc_clustercontainer || !hci_clustercontainer || !hco_clustercontainer )
     {
       if ( verbosity > -1 )
 	{
 	  cerr << PHWHERE << " WARNING: Can't find cluster nodes" << endl;
-	  cerr << PHWHERE << "  emc_clusters " << emc_clusters << endl;
-	  cerr << PHWHERE << "  hci_clusters " << hci_clusters << endl;
-	  cerr << PHWHERE << "  hco_clusters " << hco_clusters << endl;
+	  cerr << PHWHERE << "  emc_clustercontainer " << emc_clustercontainer << endl;
+	  cerr << PHWHERE << "  hci_clustercontainer " << hci_clustercontainer << endl;
+	  cerr << PHWHERE << "  hco_clustercontainer " << hco_clustercontainer << endl;
 	}
       clusters_available = false;
     }
@@ -255,9 +279,30 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
   SvtxTrackEval*     trackeval = svtxevalstack.get_track_eval();
   SvtxTruthEval*     trutheval = svtxevalstack.get_truth_eval();
 
+  // --- Create calorimter eval stacks
+  CaloEvalStack emc_caloevalstack(topNode,"CLUSTER_CEMC");
+  CaloEvalStack hci_caloevalstack(topNode,"CLUSTER_HCALIN");
+  CaloEvalStack hco_caloevalstack(topNode,"CLUSTER_HCALOUT");
+  // --- get the evaluator objects
+  CaloRawClusterEval *emc_rawclustereval = emc_caloevalstack.get_rawcluster_eval();
+  CaloRawClusterEval *hci_rawclustereval = hci_caloevalstack.get_rawcluster_eval();
+  CaloRawClusterEval *hco_rawclustereval = hco_caloevalstack.get_rawcluster_eval();
 
+  if ( verbosity > 0 || !clusters_available )
+    {
+      cout << "Eval stack memory addresses..." << endl;
+      cout << &svtxevalstack << endl;
+      cout << &emc_caloevalstack << endl;
+      cout << &hci_caloevalstack << endl;
+      cout << &hco_caloevalstack << endl;
+      cout << "Evaluator addresses..." << endl;
+      cout << trackeval << endl;
+      cout << emc_rawclustereval << endl;
+      cout << hci_rawclustereval << endl;
+      cout << hco_rawclustereval << endl;
+    }
 
-  cout << "Now going to loop over truth partcles..." << endl; // need verbosity switch
+  if ( verbosity > 0 ) cout << "Now going to loop over truth partcles..." << endl; // need verbosity switch
 
   // --- Loop over all truth particles
   PHG4TruthInfoContainer::Range range = truthinfo->GetPrimaryParticleRange();
@@ -280,97 +325,136 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
       if (!track) continue;
       float recopt = track->get_pt();
 
+
+      cout << endl;
+      cout << "------------------------------------------------------------------------------------" << endl;
       cout << "truept is " << truept << endl;
       cout << "recopt is " << recopt << endl;
-
+      cout << "true energy is " << true_energy << endl;
 
 
       // ---------------------
       // --- calorimeter stuff
       // ---------------------
 
-      // --- emcal variables
-      float emc_energy = -9999;
-      float emc_eta = -9999;
-      float emc_pt = -9999;
+      // --- Get the clusters from the best candidate from the truth info
+      RawCluster* emc_rawcluster = NULL;
+      RawCluster* hci_rawcluster = NULL;
+      RawCluster* hco_rawcluster = NULL;
+      if ( emc_rawclustereval ) emc_rawcluster = emc_rawclustereval->best_cluster_from(g4particle);
+      if ( hci_rawclustereval ) hci_rawcluster = hci_rawclustereval->best_cluster_from(g4particle);
+      if ( hco_rawclustereval ) hco_rawcluster = hco_rawclustereval->best_cluster_from(g4particle);
 
-      // --- inner hcal variables
-      float hci_energy = -9999;
-      float hci_eta = -9999;
-      float hci_pt = -9999;
+      if ( verbosity > 0 )
+	{
+	  cout << "RawCluster memory addresses..." << endl;
+	  cout << emc_rawcluster << endl;
+	  cout << hci_rawcluster << endl;
+	  cout << hco_rawcluster << endl;
+	}
 
-      // --- outer hcal variables
-      float hco_energy = -9999;
-      float hco_eta = -9999;
-      float hco_pt = -9999;
+      // --- energy variables from the best candidate clusters
+      float emc_energy_best = -9999;
+      float hci_energy_best = -9999;
+      float hco_energy_best = -9999;
 
       // --- energy variables directly from the track object
       float emc_energy_track = -9999;
       float hci_energy_track = -9999;
       float hco_energy_track = -9999;
 
-      if ( clusters_available )
+      cout << "Now attempting to get the energies..." << endl;
+
+      // --- get the energy values directly from the best candidate IF the cluster container exists
+      if ( emc_rawcluster ) emc_energy_track = emc_rawcluster->get_energy();
+      if ( hci_rawcluster ) hci_energy_track = hci_rawcluster->get_energy();
+      if ( hco_rawcluster ) hco_energy_track = hco_rawcluster->get_energy();
+
+      // --- get the energy values directly from the track IF the cluster container exists
+      if ( emc_clustercontainer ) emc_energy_track = track->get_cal_cluster_e(SvtxTrack::CEMC);
+      if ( hci_clustercontainer ) hci_energy_track = track->get_cal_cluster_e(SvtxTrack::HCALIN);
+      if ( hco_clustercontainer ) hco_energy_track = track->get_cal_cluster_e(SvtxTrack::HCALOUT);
+
+      float emc_dphi_track = -9999;
+      float hci_dphi_track = -9999;
+      float hco_dphi_track = -9999;
+      if ( emc_clustercontainer ) emc_dphi_track = track->get_cal_dphi(SvtxTrack::CEMC);
+      if ( hci_clustercontainer ) hci_dphi_track = track->get_cal_dphi(SvtxTrack::HCALIN);
+      if ( hco_clustercontainer ) hco_dphi_track = track->get_cal_dphi(SvtxTrack::HCALOUT);
+
+      float emc_deta_track = -9999;
+      float hci_deta_track = -9999;
+      float hco_deta_track = -9999;
+      if ( emc_clustercontainer ) emc_deta_track = track->get_cal_deta(SvtxTrack::CEMC);
+      if ( hci_clustercontainer ) hci_deta_track = track->get_cal_deta(SvtxTrack::HCALIN);
+      if ( hco_clustercontainer ) hco_deta_track = track->get_cal_deta(SvtxTrack::HCALOUT);
+
+      _energy_dphi_emc->Fill(true_energy,emc_dphi_track);
+      _energy_dphi_hci->Fill(true_energy,hci_dphi_track);
+      _energy_dphi_hco->Fill(true_energy,hco_dphi_track);
+
+      _energy_deta_emc->Fill(true_energy,emc_deta_track);
+      _energy_deta_hci->Fill(true_energy,hci_deta_track);
+      _energy_deta_hco->Fill(true_energy,hco_deta_track);
+
+      float assoc_dphi = 0.1; // adjust as needed, consider class set method
+      float assoc_deta = 0.1; // adjust as needed, consider class set method
+      bool good_emc_assoc = fabs(emc_dphi_track) < assoc_dphi && fabs(emc_deta_track) < assoc_deta;
+      bool good_hci_assoc = fabs(hci_dphi_track) < assoc_dphi && fabs(hci_deta_track) < assoc_deta;
+      bool good_hco_assoc = fabs(hco_dphi_track) < assoc_dphi && fabs(hco_deta_track) < assoc_deta;
+
+      // --- check the variables
+      if ( verbosity > 0 )
 	{
-	  // --- get the energy values directly from the track
-	  emc_energy_track = track->get_cal_cluster_e(SvtxTrack::CEMC);
-	  hci_energy_track = track->get_cal_cluster_e(SvtxTrack::HCALIN);
-	  hco_energy_track = track->get_cal_cluster_e(SvtxTrack::HCALOUT);
+	  cout << "emc_energy_best is " << emc_energy_best << endl;
+	  cout << "hci_energy_best is " << hci_energy_best << endl;
+	  cout << "hco_energy_best is " << hco_energy_best << endl;
+	  cout << "emc_energy_track is " << emc_energy_track << endl;
+	  cout << "hci_energy_track is " << hci_energy_track << endl;
+	  cout << "hco_energy_track is " << hco_energy_track << endl;
+	  cout << "emc_dphi_track is " << emc_dphi_track << endl;
+	  cout << "hci_dphi_track is " << hci_dphi_track << endl;
+	  cout << "hco_dphi_track is " << hco_dphi_track << endl;
+	  cout << "emc_deta_track is " << emc_deta_track << endl;
+	  cout << "hci_deta_track is " << hci_deta_track << endl;
+	  cout << "hco_deta_track is " << hco_deta_track << endl;
+	} // check on verbosity
 
-	  // --- get the cluster id number for the best match to the track for each calorimeter
-	  int emcID = (int)track->get_cal_cluster_id(SvtxTrack::CEMC);
-	  int hciID = (int)track->get_cal_cluster_id(SvtxTrack::HCALIN);
-	  int hcoID = (int)track->get_cal_cluster_id(SvtxTrack::HCALOUT);
+      float total_energy_dumb = 0;
+      if ( emc_energy_track >= 0 ) total_energy_dumb += emc_energy_track;
+      if ( hci_energy_track >= 0 ) total_energy_dumb += hci_energy_track;
+      if ( hco_energy_track >= 0 ) total_energy_dumb += hco_energy_track;
 
-	  // --- get the single raw clusters for each calorimeter based on the id number
-	  RawCluster* emc_cluster_matched = emc_clusters->getCluster(emcID);
-	  RawCluster* hci_cluster_matched = hci_clusters->getCluster(hciID);
-	  RawCluster* hco_cluster_matched = hco_clusters->getCluster(hcoID);
+      float total_energy_smart = 0;
+      if ( good_emc_assoc ) total_energy_smart += emc_energy_track;
+      if ( good_hci_assoc ) total_energy_smart += hci_energy_track;
+      if ( good_hco_assoc ) total_energy_smart += hco_energy_track;
 
-	  // --- emcal variables
-	  emc_energy = emc_cluster_matched->get_energy();
-	  emc_eta = emc_cluster_matched->get_eta();
-	  emc_pt = emc_energy/cosh(emc_eta);
 
-	  // --- inner hcal variables
-	  hci_energy = hci_cluster_matched->get_energy();
-	  hci_eta = hci_cluster_matched->get_eta();
-	  hci_pt = hci_energy/cosh(hci_eta);
 
-	  // --- outer hcal variables
-	  hco_energy = hco_cluster_matched->get_energy();
-	  hco_eta = hco_cluster_matched->get_eta();
-	  hco_pt = hco_energy/cosh(hco_eta);
+      float emc_ediff = (emc_energy_track - true_energy)/true_energy;
+      float hci_ediff = (hci_energy_track - true_energy)/true_energy;
+      float hco_ediff = (hco_energy_track - true_energy)/true_energy;
+      float tot_dumb_ediff = (total_energy_dumb - true_energy)/true_energy;
+      float tot_smart_ediff = (total_energy_smart - true_energy)/true_energy;
 
-	  // --- check the variables
-	  if ( verbosity > 0 )
-	    {
-	      cout << "emc_pt is " << emc_pt << endl;
-	      cout << "hci_pt is " << hci_pt << endl;
-	      cout << "hco_pt is " << hco_pt << endl;
-	      cout << "emc_energy is " << emc_energy << endl;
-	      cout << "hci_energy is " << hci_energy << endl;
-	      cout << "hco_energy is " << hco_energy << endl;
-	      cout << "emc_energy_track is " << emc_energy_track << endl;
-	      cout << "hci_energy_track is " << hci_energy_track << endl;
-	      cout << "hco_energy_track is " << hco_energy_track << endl;
-	    } // check on verbosity
-	} // check on clusters_available
-
-      float emc_ediff = (true_energy - emc_energy)/true_energy;
-      float hci_ediff = (true_energy - hci_energy)/true_energy;
-      float hco_ediff = (true_energy - hco_energy)/true_energy;
-
-      float emc_eratio = emc_energy/true_energy;
-      float hci_eratio = hci_energy/true_energy;
-      float hco_eratio = hco_energy/true_energy;
+      float emc_eratio = emc_energy_track/true_energy;
+      float hci_eratio = hci_energy_track/true_energy;
+      float hco_eratio = hco_energy_track/true_energy;
+      float tot_dumb_eratio = total_energy_dumb/true_energy;
+      float tot_smart_eratio = total_energy_smart/true_energy;
 
       _energy_difference_emc->Fill(true_energy,emc_ediff);
       _energy_difference_hci->Fill(true_energy,hci_ediff);
       _energy_difference_hco->Fill(true_energy,hco_ediff);
+      _energy_difference_tot_dumb->Fill(true_energy,tot_dumb_ediff);
+      _energy_difference_tot_smart->Fill(true_energy,tot_smart_ediff);
 
       _energy_ratio_emc->Fill(true_energy,emc_eratio);
       _energy_ratio_hci->Fill(true_energy,hci_eratio);
       _energy_ratio_hco->Fill(true_energy,hco_eratio);
+      _energy_ratio_tot_dumb->Fill(true_energy,tot_dumb_eratio);
+      _energy_ratio_tot_smart->Fill(true_energy,tot_smart_eratio);
 
 
 
@@ -422,13 +506,10 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
       //float hci_energy_track = -9999;
       //float hco_energy_track = -9999;
 
-      if ( clusters_available )
-	{
-	  // --- get the energy values directly from the track
-	  emc_energy_track = track->get_cal_cluster_e(SvtxTrack::CEMC);
-	  //hci_energy_track = track->get_cal_cluster_e(SvtxTrack::HCALIN);
-	  //hco_energy_track = track->get_cal_cluster_e(SvtxTrack::HCALOUT);
-	}
+      // --- get the energy values directly from the track
+      if ( emc_clustercontainer ) emc_energy_track = track->get_cal_cluster_e(SvtxTrack::CEMC);
+      //if ( hci_clustercontainer ) hci_energy_track = track->get_cal_cluster_e(SvtxTrack::HCALIN);
+      //if ( hco_clustercontainer ) hco_energy_track = track->get_cal_cluster_e(SvtxTrack::HCALOUT);
 
       // ---
 

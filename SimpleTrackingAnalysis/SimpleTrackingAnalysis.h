@@ -85,10 +85,22 @@ class SimpleTrackingAnalysis: public SubsysReco
   TH2D* _energy_difference_emc;
   TH2D* _energy_difference_hci;
   TH2D* _energy_difference_hco;
+  TH2D* _energy_difference_tot_dumb;
+  TH2D* _energy_difference_tot_smart;
 
   TH2D* _energy_ratio_emc;
   TH2D* _energy_ratio_hci;
   TH2D* _energy_ratio_hco;
+  TH2D* _energy_ratio_tot_dumb;
+  TH2D* _energy_ratio_tot_smart;
+
+  TH2D* _energy_dphi_emc;
+  TH2D* _energy_dphi_hci;
+  TH2D* _energy_dphi_hco;
+
+  TH2D* _energy_deta_emc;
+  TH2D* _energy_deta_hci;
+  TH2D* _energy_deta_hco;
 
 };
 
