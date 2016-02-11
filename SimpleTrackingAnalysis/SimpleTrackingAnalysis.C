@@ -588,9 +588,19 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
 	  maxtracks = vertex->size_tracks();
 	}
     }
+  if ( !maxvertex )
+    {
+      cerr << PHWHERE << " ERROR: cannot get reconstructed vertex" << endl;
+      return -1;
+    }
 
   // --- Get the coordinates for the vertex from the evaluator
   PHG4VtxPoint* point = vertexeval->max_truth_point_by_ntracks(maxvertex);
+  if ( !point )
+    {
+      cerr << PHWHERE << " ERROR: cannot get truth vertex" << endl;
+      return -1;
+    }
   _dx_vertex->Fill(maxvertex->get_x() - point->get_x());
   _dy_vertex->Fill(maxvertex->get_y() - point->get_y());
   _dz_vertex->Fill(maxvertex->get_z() - point->get_z());
