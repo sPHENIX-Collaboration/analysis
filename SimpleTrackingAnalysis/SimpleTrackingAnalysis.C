@@ -171,38 +171,38 @@ int SimpleTrackingAnalysis::Init(PHCompositeNode *topNode)
 
   // --- some basic calorimeter performance histograms
 
-  _energy_difference_emc = new TH2D("energy_difference_emc", "", 20,0.0,10.0, 100,-1.0,1.0);
-  _energy_difference_hci = new TH2D("energy_difference_hci", "", 20,0.0,10.0, 100,-1.0,1.0);
-  _energy_difference_hco = new TH2D("energy_difference_hco", "", 20,0.0,10.0, 100,-1.0,1.0);
-  _energy_difference_tot_dumb = new TH2D("energy_difference_tot_dumb", "", 20,0.0,10.0, 100,-1.0,1.0);
-  _energy_difference_tot_smart = new TH2D("energy_difference_tot_smart", "", 20,0.0,10.0, 100,-1.0,1.0);
+  _energy_difference_emc = new TH2D("energy_difference_emc", "", 300,0.0,30.0, 150,-1.0,2.0);
+  _energy_difference_hci = new TH2D("energy_difference_hci", "", 300,0.0,30.0, 150,-1.0,2.0);
+  _energy_difference_hco = new TH2D("energy_difference_hco", "", 300,0.0,30.0, 150,-1.0,2.0);
+  _energy_difference_tot_dumb = new TH2D("energy_difference_tot_dumb", "", 300,0.0,30.0, 150,-1.0,2.0);
+  _energy_difference_tot_smart = new TH2D("energy_difference_tot_smart", "", 300,0.0,30.0, 150,-1.0,2.0);
   se->registerHisto(_energy_difference_emc);
   se->registerHisto(_energy_difference_hci);
   se->registerHisto(_energy_difference_hco);
   se->registerHisto(_energy_difference_tot_dumb);
   se->registerHisto(_energy_difference_tot_smart);
 
-  _energy_ratio_emc = new TH2D("energy_ratio_emc", "", 20,0.0,10.0, 100,0.0,1.0);
-  _energy_ratio_hci = new TH2D("energy_ratio_hci", "", 20,0.0,10.0, 100,0.0,1.0);
-  _energy_ratio_hco = new TH2D("energy_ratio_hco", "", 20,0.0,10.0, 100,0.0,1.0);
-  _energy_ratio_tot_dumb = new TH2D("energy_ratio_tot_dumb", "", 20,0.0,10.0, 100,0.0,1.0);
-  _energy_ratio_tot_smart = new TH2D("energy_ratio_tot_smart", "", 20,0.0,10.0, 100,0.0,1.0);
+  _energy_ratio_emc = new TH2D("energy_ratio_emc", "", 300,0.0,30.0, 100,0.0,2.0);
+  _energy_ratio_hci = new TH2D("energy_ratio_hci", "", 300,0.0,30.0, 100,0.0,2.0);
+  _energy_ratio_hco = new TH2D("energy_ratio_hco", "", 300,0.0,30.0, 100,0.0,2.0);
+  _energy_ratio_tot_dumb = new TH2D("energy_ratio_tot_dumb", "", 300,0.0,30.0, 100,0.0,2.0);
+  _energy_ratio_tot_smart = new TH2D("energy_ratio_tot_smart", "", 300,0.0,30.0, 100,0.0,2.0);
   se->registerHisto(_energy_ratio_emc);
   se->registerHisto(_energy_ratio_hci);
   se->registerHisto(_energy_ratio_hco);
   se->registerHisto(_energy_ratio_tot_dumb);
   se->registerHisto(_energy_ratio_tot_smart);
 
-  _energy_dphi_emc = new TH2D("energy_dphi_emc", "", 20,0.0,10.0, 100,-1.0,1.0);
-  _energy_dphi_hci = new TH2D("energy_dphi_hci", "", 20,0.0,10.0, 100,-1.0,1.0);
-  _energy_dphi_hco = new TH2D("energy_dphi_hco", "", 20,0.0,10.0, 100,-1.0,1.0);
+  _energy_dphi_emc = new TH2D("energy_dphi_emc", "", 300,0.0,30.0, 100,-1.0,1.0);
+  _energy_dphi_hci = new TH2D("energy_dphi_hci", "", 300,0.0,30.0, 100,-1.0,1.0);
+  _energy_dphi_hco = new TH2D("energy_dphi_hco", "", 300,0.0,30.0, 100,-1.0,1.0);
   se->registerHisto(_energy_dphi_emc);
   se->registerHisto(_energy_dphi_hci);
   se->registerHisto(_energy_dphi_hco);
 
-  _energy_deta_emc = new TH2D("energy_deta_emc", "", 20,0.0,10.0, 100,-1.0,1.0);
-  _energy_deta_hci = new TH2D("energy_deta_hci", "", 20,0.0,10.0, 100,-1.0,1.0);
-  _energy_deta_hco = new TH2D("energy_deta_hco", "", 20,0.0,10.0, 100,-1.0,1.0);
+  _energy_deta_emc = new TH2D("energy_deta_emc", "", 300,0.0,30.0, 100,-1.0,1.0);
+  _energy_deta_hci = new TH2D("energy_deta_hci", "", 300,0.0,30.0, 100,-1.0,1.0);
+  _energy_deta_hco = new TH2D("energy_deta_hco", "", 300,0.0,30.0, 100,-1.0,1.0);
   se->registerHisto(_energy_deta_emc);
   se->registerHisto(_energy_deta_hci);
   se->registerHisto(_energy_deta_hco);
@@ -312,7 +312,7 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
       // In C++ the iterator is a map, which has two members
       // first is the key (analogous the index of an arry),
       // second is the value (analogous to the value stored for the array index)
-      if ( trutheval->get_embed(g4particle) == 0 ) continue; // only look at embedded particles (for now)
+      // if ( trutheval->get_embed(g4particle) == 0 ) continue; // only look at embedded particles (for now) // no good for hits files
 
       set<PHG4Hit*> g4hits = trutheval->all_truth_hits(g4particle);
       float ng4hits = g4hits.size();
