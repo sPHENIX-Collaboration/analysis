@@ -174,22 +174,26 @@ int SimpleTrackingAnalysis::Init(PHCompositeNode *topNode)
   _energy_difference_emc = new TH2D("energy_difference_emc", "", 300,0.0,30.0, 150,-1.0,2.0);
   _energy_difference_hci = new TH2D("energy_difference_hci", "", 300,0.0,30.0, 150,-1.0,2.0);
   _energy_difference_hco = new TH2D("energy_difference_hco", "", 300,0.0,30.0, 150,-1.0,2.0);
+  _energy_difference_hct = new TH2D("energy_difference_hct", "", 300,0.0,30.0, 150,-1.0,2.0);
   _energy_difference_tot_dumb = new TH2D("energy_difference_tot_dumb", "", 300,0.0,30.0, 150,-1.0,2.0);
   _energy_difference_tot_smart = new TH2D("energy_difference_tot_smart", "", 300,0.0,30.0, 150,-1.0,2.0);
   se->registerHisto(_energy_difference_emc);
   se->registerHisto(_energy_difference_hci);
   se->registerHisto(_energy_difference_hco);
+  se->registerHisto(_energy_difference_hct);
   se->registerHisto(_energy_difference_tot_dumb);
   se->registerHisto(_energy_difference_tot_smart);
 
   _energy_ratio_emc = new TH2D("energy_ratio_emc", "", 300,0.0,30.0, 100,0.0,2.0);
   _energy_ratio_hci = new TH2D("energy_ratio_hci", "", 300,0.0,30.0, 100,0.0,2.0);
   _energy_ratio_hco = new TH2D("energy_ratio_hco", "", 300,0.0,30.0, 100,0.0,2.0);
+  _energy_ratio_hct = new TH2D("energy_ratio_hct", "", 300,0.0,30.0, 100,0.0,2.0);
   _energy_ratio_tot_dumb = new TH2D("energy_ratio_tot_dumb", "", 300,0.0,30.0, 100,0.0,2.0);
   _energy_ratio_tot_smart = new TH2D("energy_ratio_tot_smart", "", 300,0.0,30.0, 100,0.0,2.0);
   se->registerHisto(_energy_ratio_emc);
   se->registerHisto(_energy_ratio_hci);
   se->registerHisto(_energy_ratio_hco);
+  se->registerHisto(_energy_ratio_hct);
   se->registerHisto(_energy_ratio_tot_dumb);
   se->registerHisto(_energy_ratio_tot_smart);
 
@@ -420,6 +424,10 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
 	  cout << "hco_deta_track is " << hco_deta_track << endl;
 	} // check on verbosity
 
+      float hct_energy_track = 0;
+      if ( hci_energy_track >= 0 ) hct_energy_track += hci_energy_track;
+      if ( hco_energy_track >= 0 ) hct_energy_track += hco_energy_track;
+
       float total_energy_dumb = 0;
       if ( emc_energy_track >= 0 ) total_energy_dumb += emc_energy_track;
       if ( hci_energy_track >= 0 ) total_energy_dumb += hci_energy_track;
@@ -435,24 +443,28 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
       float emc_ediff = (emc_energy_track - true_energy)/true_energy;
       float hci_ediff = (hci_energy_track - true_energy)/true_energy;
       float hco_ediff = (hco_energy_track - true_energy)/true_energy;
+      float hct_ediff = (hct_energy_track - true_energy)/true_energy;
       float tot_dumb_ediff = (total_energy_dumb - true_energy)/true_energy;
       float tot_smart_ediff = (total_energy_smart - true_energy)/true_energy;
 
       float emc_eratio = emc_energy_track/true_energy;
       float hci_eratio = hci_energy_track/true_energy;
       float hco_eratio = hco_energy_track/true_energy;
+      float hct_eratio = hct_energy_track/true_energy;
       float tot_dumb_eratio = total_energy_dumb/true_energy;
       float tot_smart_eratio = total_energy_smart/true_energy;
 
       _energy_difference_emc->Fill(true_energy,emc_ediff);
       _energy_difference_hci->Fill(true_energy,hci_ediff);
       _energy_difference_hco->Fill(true_energy,hco_ediff);
+      _energy_difference_hct->Fill(true_energy,hct_ediff);
       _energy_difference_tot_dumb->Fill(true_energy,tot_dumb_ediff);
       _energy_difference_tot_smart->Fill(true_energy,tot_smart_ediff);
 
       _energy_ratio_emc->Fill(true_energy,emc_eratio);
       _energy_ratio_hci->Fill(true_energy,hci_eratio);
       _energy_ratio_hco->Fill(true_energy,hco_eratio);
+      _energy_ratio_hct->Fill(true_energy,hct_eratio);
       _energy_ratio_tot_dumb->Fill(true_energy,tot_dumb_eratio);
       _energy_ratio_tot_smart->Fill(true_energy,tot_smart_eratio);
 
