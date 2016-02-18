@@ -171,19 +171,6 @@ int SimpleTrackingAnalysis::Init(PHCompositeNode *topNode)
 
   // --- some basic calorimeter performance histograms
 
-  _energy_difference_emc = new TH2D("energy_difference_emc", "", 300,0.0,30.0, 150,-1.0,2.0);
-  _energy_difference_hci = new TH2D("energy_difference_hci", "", 300,0.0,30.0, 150,-1.0,2.0);
-  _energy_difference_hco = new TH2D("energy_difference_hco", "", 300,0.0,30.0, 150,-1.0,2.0);
-  _energy_difference_hct = new TH2D("energy_difference_hct", "", 300,0.0,30.0, 150,-1.0,2.0);
-  _energy_difference_tot_dumb = new TH2D("energy_difference_tot_dumb", "", 300,0.0,30.0, 150,-1.0,2.0);
-  _energy_difference_tot_smart = new TH2D("energy_difference_tot_smart", "", 300,0.0,30.0, 150,-1.0,2.0);
-  se->registerHisto(_energy_difference_emc);
-  se->registerHisto(_energy_difference_hci);
-  se->registerHisto(_energy_difference_hco);
-  se->registerHisto(_energy_difference_hct);
-  se->registerHisto(_energy_difference_tot_dumb);
-  se->registerHisto(_energy_difference_tot_smart);
-
   _energy_ratio_emc = new TH2D("energy_ratio_emc", "", 300,0.0,30.0, 100,0.0,2.0);
   _energy_ratio_hci = new TH2D("energy_ratio_hci", "", 300,0.0,30.0, 100,0.0,2.0);
   _energy_ratio_hco = new TH2D("energy_ratio_hco", "", 300,0.0,30.0, 100,0.0,2.0);
@@ -196,6 +183,32 @@ int SimpleTrackingAnalysis::Init(PHCompositeNode *topNode)
   se->registerHisto(_energy_ratio_hct);
   se->registerHisto(_energy_ratio_tot_dumb);
   se->registerHisto(_energy_ratio_tot_smart);
+
+  _energy_ratio_elb_emc = new TH2D("energy_ratio_elb_emc", "", 300,0.0,30.0, 100,0.0,2.0);
+  _energy_ratio_elb_hci = new TH2D("energy_ratio_elb_hci", "", 300,0.0,30.0, 100,0.0,2.0);
+  _energy_ratio_elb_hco = new TH2D("energy_ratio_elb_hco", "", 300,0.0,30.0, 100,0.0,2.0);
+  _energy_ratio_elb_hct = new TH2D("energy_ratio_elb_hct", "", 300,0.0,30.0, 100,0.0,2.0);
+  _energy_ratio_elb_tot_dumb = new TH2D("energy_ratio_elb_tot_dumb", "", 300,0.0,30.0, 100,0.0,2.0);
+  _energy_ratio_elb_tot_smart = new TH2D("energy_ratio_elb_tot_smart", "", 300,0.0,30.0, 100,0.0,2.0);
+  se->registerHisto(_energy_ratio_elb_emc);
+  se->registerHisto(_energy_ratio_elb_hci);
+  se->registerHisto(_energy_ratio_elb_hco);
+  se->registerHisto(_energy_ratio_elb_hct);
+  se->registerHisto(_energy_ratio_elb_tot_dumb);
+  se->registerHisto(_energy_ratio_elb_tot_smart);
+
+  _energy_ratio_eub_emc = new TH2D("energy_ratio_eub_emc", "", 300,0.0,30.0, 100,0.0,2.0);
+  _energy_ratio_eub_hci = new TH2D("energy_ratio_eub_hci", "", 300,0.0,30.0, 100,0.0,2.0);
+  _energy_ratio_eub_hco = new TH2D("energy_ratio_eub_hco", "", 300,0.0,30.0, 100,0.0,2.0);
+  _energy_ratio_eub_hct = new TH2D("energy_ratio_eub_hct", "", 300,0.0,30.0, 100,0.0,2.0);
+  _energy_ratio_eub_tot_dumb = new TH2D("energy_ratio_eub_tot_dumb", "", 300,0.0,30.0, 100,0.0,2.0);
+  _energy_ratio_eub_tot_smart = new TH2D("energy_ratio_eub_tot_smart", "", 300,0.0,30.0, 100,0.0,2.0);
+  se->registerHisto(_energy_ratio_eub_emc);
+  se->registerHisto(_energy_ratio_eub_hci);
+  se->registerHisto(_energy_ratio_eub_hco);
+  se->registerHisto(_energy_ratio_eub_hct);
+  se->registerHisto(_energy_ratio_eub_tot_dumb);
+  se->registerHisto(_energy_ratio_eub_tot_smart);
 
   _energy_dphi_emc = new TH2D("energy_dphi_emc", "", 300,0.0,30.0, 100,-1.0,1.0);
   _energy_dphi_hci = new TH2D("energy_dphi_hci", "", 300,0.0,30.0, 100,-1.0,1.0);
@@ -291,6 +304,9 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
   CaloRawClusterEval *emc_rawclustereval = emc_caloevalstack.get_rawcluster_eval();
   CaloRawClusterEval *hci_rawclustereval = hci_caloevalstack.get_rawcluster_eval();
   CaloRawClusterEval *hco_rawclustereval = hco_caloevalstack.get_rawcluster_eval();
+  emc_rawclustereval->set_verbosity(0); // temp while resolving issues
+  hci_rawclustereval->set_verbosity(0); // temp while resolving issues
+  hco_rawclustereval->set_verbosity(0); // temp while resolving issues
 
   if ( verbosity > 0 || !clusters_available )
     {
@@ -330,12 +346,14 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
       float recopt = track->get_pt();
 
 
-      cout << endl;
-      cout << "------------------------------------------------------------------------------------" << endl;
-      cout << "truept is " << truept << endl;
-      cout << "recopt is " << recopt << endl;
-      cout << "true energy is " << true_energy << endl;
-
+      if ( verbosity > 0 )
+	{
+	  cout << endl;
+	  cout << "------------------------------------------------------------------------------------" << endl;
+	  cout << "truept is " << truept << endl;
+	  cout << "recopt is " << recopt << endl;
+	  cout << "true energy is " << true_energy << endl;
+	}
 
       // ---------------------
       // --- calorimeter stuff
@@ -349,7 +367,7 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
       if ( hci_rawclustereval ) hci_rawcluster = hci_rawclustereval->best_cluster_from(g4particle);
       if ( hco_rawclustereval ) hco_rawcluster = hco_rawclustereval->best_cluster_from(g4particle);
 
-      if ( verbosity > 0 )
+      if ( verbosity > 1 )
 	{
 	  cout << "RawCluster memory addresses..." << endl;
 	  cout << emc_rawcluster << endl;
@@ -367,7 +385,7 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
       float hci_energy_track = -9999;
       float hco_energy_track = -9999;
 
-      cout << "Now attempting to get the energies..." << endl;
+      if ( verbosity > 2 ) cout << "Now attempting to get the energies..." << endl;
 
       // --- get the energy values directly from the best candidate IF the cluster container exists
       if ( emc_rawcluster ) emc_energy_track = emc_rawcluster->get_energy();
@@ -440,13 +458,6 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
 
 
 
-      float emc_ediff = (emc_energy_track - true_energy)/true_energy;
-      float hci_ediff = (hci_energy_track - true_energy)/true_energy;
-      float hco_ediff = (hco_energy_track - true_energy)/true_energy;
-      float hct_ediff = (hct_energy_track - true_energy)/true_energy;
-      float tot_dumb_ediff = (total_energy_dumb - true_energy)/true_energy;
-      float tot_smart_ediff = (total_energy_smart - true_energy)/true_energy;
-
       float emc_eratio = emc_energy_track/true_energy;
       float hci_eratio = hci_energy_track/true_energy;
       float hco_eratio = hco_energy_track/true_energy;
@@ -454,19 +465,32 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
       float tot_dumb_eratio = total_energy_dumb/true_energy;
       float tot_smart_eratio = total_energy_smart/true_energy;
 
-      _energy_difference_emc->Fill(true_energy,emc_ediff);
-      _energy_difference_hci->Fill(true_energy,hci_ediff);
-      _energy_difference_hco->Fill(true_energy,hco_ediff);
-      _energy_difference_hct->Fill(true_energy,hct_ediff);
-      _energy_difference_tot_dumb->Fill(true_energy,tot_dumb_ediff);
-      _energy_difference_tot_smart->Fill(true_energy,tot_smart_ediff);
-
       _energy_ratio_emc->Fill(true_energy,emc_eratio);
       _energy_ratio_hci->Fill(true_energy,hci_eratio);
       _energy_ratio_hco->Fill(true_energy,hco_eratio);
       _energy_ratio_hct->Fill(true_energy,hct_eratio);
       _energy_ratio_tot_dumb->Fill(true_energy,tot_dumb_eratio);
       _energy_ratio_tot_smart->Fill(true_energy,tot_smart_eratio);
+
+      if ( emc_eratio < 0.1 )
+	{
+	  _energy_ratio_elb_emc->Fill(true_energy,emc_eratio);
+	  _energy_ratio_elb_hci->Fill(true_energy,hci_eratio);
+	  _energy_ratio_elb_hco->Fill(true_energy,hco_eratio);
+	  _energy_ratio_elb_hct->Fill(true_energy,hct_eratio);
+	  _energy_ratio_elb_tot_dumb->Fill(true_energy,tot_dumb_eratio);
+	  _energy_ratio_elb_tot_smart->Fill(true_energy,tot_smart_eratio);
+	}
+
+      if ( emc_eratio > 0.1 )
+	{
+	  _energy_ratio_eub_emc->Fill(true_energy,emc_eratio);
+	  _energy_ratio_eub_hci->Fill(true_energy,hci_eratio);
+	  _energy_ratio_eub_hco->Fill(true_energy,hco_eratio);
+	  _energy_ratio_eub_hct->Fill(true_energy,hct_eratio);
+	  _energy_ratio_eub_tot_dumb->Fill(true_energy,tot_dumb_eratio);
+	  _energy_ratio_eub_tot_smart->Fill(true_energy,tot_smart_eratio);
+	}
 
 
 
