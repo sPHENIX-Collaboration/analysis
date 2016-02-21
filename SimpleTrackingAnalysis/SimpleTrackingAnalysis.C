@@ -3,6 +3,10 @@
 #include <phool/getClass.h>
 #include <fun4all/Fun4AllServer.h>
 
+#include <phool/PHCompositeNode.h>
+//#include <g4hough/PHG4HoughTransform.h> CAUSES ERRORS DUE TO VertexFinder.h FAILING TO FIND <Eigen/LU>
+
+
 #include <g4main/PHG4TruthInfoContainer.h>
 #include <g4main/PHG4Particle.h>
 #include <g4main/PHG4VtxPoint.h>
@@ -18,15 +22,20 @@
 #include <g4eval/SvtxTruthEval.h>
 
 // --- common to all calorimeters
+#include <g4cemc/RawTowerGeomContainer.h>
+#include <g4cemc/RawTowerContainer.h>
+#include <g4cemc/RawTower.h>
 #include <g4cemc/RawCluster.h>
 #include <g4cemc/RawClusterContainer.h>
 #include <g4eval/CaloEvalStack.h>
 #include <g4eval/CaloRawClusterEval.h>
+#include <g4eval/CaloRawTowerEval.h>
 
 #include <TH1D.h>
 #include <TH2D.h>
 
 #include <iostream>
+#include <cassert>
 
 using namespace std;
 
@@ -38,6 +47,7 @@ SimpleTrackingAnalysis::SimpleTrackingAnalysis(const string &name) : SubsysReco(
   nevents = 0;
   nlayers = 7;
   verbosity = 0;
+  magneticfield = 1.4; // default is 1.5 but Mike's tracking stuff is using 1.4 for now...
   //docalocuts = false;
 }
 
@@ -238,7 +248,12 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
   // --- Here we get the various data nodes we need to do the analysis
   // --- Then we use variables (accessed through class methods) to perform calculations
 
-  cout << "Now processing event number " << nevents << endl; // would be good to add verbosity switch
+  if ( verbosity > -1 )
+    {
+      cout << endl;
+      cout << "------------------------------------------------------------------------------------" << endl;
+      cout << "Now processing event number " << nevents << endl; // would be good to add verbosity switch
+    }
 
   ++nevents; // You may as youtself, why ++nevents (pre-increment) rather
   // than nevents++ (post-increment)?  The short answer is performance.
@@ -287,6 +302,88 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
       clusters_available = false;
     }
 
+  // --- Tower geometry
+  RawTowerGeomContainer *emc_towergeo = findNode::getClass<RawTowerGeomContainer>(topNode,"TOWERGEOM_CEMC");
+  RawTowerGeomContainer *hci_towergeo = findNode::getClass<RawTowerGeomContainer>(topNode,"TOWERGEOM_HCALIN");
+  RawTowerGeomContainer *hco_towergeo = findNode::getClass<RawTowerGeomContainer>(topNode,"TOWERGEOM_HCALOUT");
+  if ( !emc_towergeo || !hci_towergeo || !hco_towergeo )
+    {
+      if ( verbosity > -1 )
+	{
+	  cerr << PHWHERE << " WARNING: Can't find cluster nodes" << endl;
+	  cerr << PHWHERE << "  emc_towergeo " << emc_towergeo << endl;
+	  cerr << PHWHERE << "  hci_towergeo " << hci_towergeo << endl;
+	  cerr << PHWHERE << "  hco_towergeo " << hco_towergeo << endl;
+	}
+    }
+  // --- Tower container
+  RawTowerContainer *emc_towercontainer = findNode::getClass<RawTowerContainer>(topNode,"TOWER_CALIB_CEMC");
+  RawTowerContainer *hci_towercontainer = findNode::getClass<RawTowerContainer>(topNode,"TOWER_CALIB_HCALIN");
+  RawTowerContainer *hco_towercontainer = findNode::getClass<RawTowerContainer>(topNode,"TOWER_CALIB_HCALOUT");
+  if ( !emc_towercontainer || !hci_towercontainer || !hco_towercontainer )
+    {
+      if ( verbosity > -1 )
+	{
+	  cerr << PHWHERE << " WARNING: Can't find cluster nodes" << endl;
+	  cerr << PHWHERE << "  emc_towercontainer " << emc_towercontainer << endl;
+	  cerr << PHWHERE << "  hci_towercontainer " << hci_towercontainer << endl;
+	  cerr << PHWHERE << "  hco_towercontainer " << hco_towercontainer << endl;
+	}
+    }
+
+
+
+
+  // --- a few quick ideas
+  // --- put this stuff into a separate class method,
+  // --- see if it's useful for others
+  // --- see if you can make a map that connects rawtower pointers with
+  // --- tower energies, ordered by energy (largest energy having lowest index
+
+  int nphi = emc_towergeo->get_phibins();
+  int neta = emc_towergeo->get_etabins();
+
+  vector<RawTower*> emc_towers;
+  double emc_totalenergy = 0;
+  int emc_maxtowerindex = -9;
+  double emc_maxenergy  = -9;
+  int emc_counter = 0;
+  for ( int iphi = 0; iphi <= nphi; ++iphi )
+    {
+      for ( int ieta = 0; ieta <= neta; ++ieta )
+	{
+	  RawTower* tower = emc_towercontainer->getTower(ieta, iphi);
+	  double energy = 0;
+	  if ( tower )
+	    {
+	      energy = tower->get_energy();
+	      emc_towers.push_back(tower);
+	      emc_totalenergy += energy;
+	      if ( energy > emc_maxenergy )
+		{
+		  emc_maxenergy = energy;
+		  emc_maxtowerindex = emc_counter;
+		}
+	      if ( energy > 1.0 && verbosity > 1 )
+		{
+		  cout << "In loop over all towers position " << emc_counter << endl;
+		  cout << "energy is " << energy << endl;
+		  cout << "max energy is " << emc_maxenergy << endl;
+		  cout << "max tower index is " << emc_maxtowerindex << endl;
+		}
+	      ++emc_counter; // must be last...
+	    } // check on tower
+	} // ieta
+    } // iphi
+
+  if ( verbosity > 1 ) cout << "done with loop over towers " << endl;
+  int emc_ntowers = emc_towers.size();
+  if ( verbosity > 1 ) cout << "number of emc towers is " << emc_ntowers << " " << emc_counter << endl;
+  if ( verbosity > 1 ) cout << "max tower index is " << emc_maxtowerindex << endl;
+  RawTower* emc_maxtower = emc_towers[emc_maxtowerindex];
+  double emc_maxenergy_check = emc_maxtower->get_energy();
+  if ( verbosity > 1 ) cout << "maximum energy is " << emc_maxenergy << " " << emc_maxenergy_check << endl;
+
 
 
   // --- Create SVTX eval stack
@@ -308,7 +405,7 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
   hci_rawclustereval->set_verbosity(0); // temp while resolving issues
   hco_rawclustereval->set_verbosity(0); // temp while resolving issues
 
-  if ( verbosity > 0 || !clusters_available )
+  if ( verbosity > 0 || ( !clusters_available && verbosity > -1 ) )
     {
       cout << "Eval stack memory addresses..." << endl;
       cout << &svtxevalstack << endl;
@@ -345,11 +442,25 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
       if (!track) continue;
       float recopt = track->get_pt();
 
+      // ----------------------------------------------------------------------
+      // ----------------------------------------------------------------------
+      // ----------------------------------------------------------------------
+
+      for ( int i = 0; i < emc_ntowers; ++i )
+	{
+
+	}
+
+      // ----------------------------------------------------------------------
+      // ----------------------------------------------------------------------
+      // ----------------------------------------------------------------------
+
+
+
+
 
       if ( verbosity > 0 )
 	{
-	  cout << endl;
-	  cout << "------------------------------------------------------------------------------------" << endl;
 	  cout << "truept is " << truept << endl;
 	  cout << "recopt is " << recopt << endl;
 	  cout << "true energy is " << true_energy << endl;
@@ -369,7 +480,7 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
 
       if ( verbosity > 1 )
 	{
-	  cout << "RawCluster memory addresses..." << endl;
+	  cout << "RawCluster memory addresses for best from truth..." << endl;
 	  cout << emc_rawcluster << endl;
 	  cout << hci_rawcluster << endl;
 	  cout << hco_rawcluster << endl;
@@ -396,6 +507,27 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
       if ( emc_clustercontainer ) emc_energy_track = track->get_cal_cluster_e(SvtxTrack::CEMC);
       if ( hci_clustercontainer ) hci_energy_track = track->get_cal_cluster_e(SvtxTrack::HCALIN);
       if ( hco_clustercontainer ) hco_energy_track = track->get_cal_cluster_e(SvtxTrack::HCALOUT);
+
+      if ( verbosity > 0 )
+	{
+	  cout << "emc_energy_track is " << emc_energy_track << endl;
+	  cout << "hci_energy_track is " << hci_energy_track << endl;
+	  cout << "hco_energy_track is " << hco_energy_track << endl;
+	}
+
+      if ( emc_clustercontainer ) emc_energy_track = track->get_cal_energy_3x3(SvtxTrack::CEMC);
+      if ( hci_clustercontainer ) hci_energy_track = track->get_cal_energy_3x3(SvtxTrack::HCALIN);
+      if ( hco_clustercontainer ) hco_energy_track = track->get_cal_energy_3x3(SvtxTrack::HCALOUT);
+
+      if ( verbosity > 0 )
+	{
+	  cout << "emc_energy_track is " << emc_energy_track << endl;
+	  cout << "hci_energy_track is " << hci_energy_track << endl;
+	  cout << "hco_energy_track is " << hco_energy_track << endl;
+	}
+
+      // -------------------------------------------------------------------------------------
+      // --- IMPORTANT NOTE: according to Jin, dphi and deta will not work correctly in HIJING
 
       float emc_dphi_track = -9999;
       float hci_dphi_track = -9999;
@@ -425,8 +557,10 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
       bool good_hci_assoc = fabs(hci_dphi_track) < assoc_dphi && fabs(hci_deta_track) < assoc_deta;
       bool good_hco_assoc = fabs(hco_dphi_track) < assoc_dphi && fabs(hco_deta_track) < assoc_deta;
 
+      // ------------------------------------------------------------------------------------------
+
       // --- check the variables
-      if ( verbosity > 0 )
+      if ( verbosity > 3 )
 	{
 	  cout << "emc_energy_best is " << emc_energy_best << endl;
 	  cout << "hci_energy_best is " << hci_energy_best << endl;
@@ -543,9 +677,9 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
       //float hco_energy_track = -9999;
 
       // --- get the energy values directly from the track
-      if ( emc_clustercontainer ) emc_energy_track = track->get_cal_cluster_e(SvtxTrack::CEMC);
-      //if ( hci_clustercontainer ) hci_energy_track = track->get_cal_cluster_e(SvtxTrack::HCALIN);
-      //if ( hco_clustercontainer ) hco_energy_track = track->get_cal_cluster_e(SvtxTrack::HCALOUT);
+      if ( emc_clustercontainer ) emc_energy_track = track->get_cal_energy_3x3(SvtxTrack::CEMC);
+      //if ( hci_clustercontainer ) hci_energy_track = track->get_cal_energy_3x3(SvtxTrack::HCALIN);
+      //if ( hco_clustercontainer ) hco_energy_track = track->get_cal_energy_3x3(SvtxTrack::HCALOUT);
 
       // ---
 

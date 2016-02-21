@@ -1,12 +1,14 @@
 #ifndef __SIMPLETRACKINGANALYSIS_H__
 #define __SIMPLETRACKINGANALYSIS_H__
 
+
+// --- need to check all these includes...
 #include <fun4all/SubsysReco.h>
-#include <string>
-#include <TH1D.h>
-#include <TH2D.h>
 
 class PHCompositeNode;
+//class PHG4HoughTransform;
+class TH1D;
+class TH2D;
 
 class SimpleTrackingAnalysis: public SubsysReco
 {
@@ -25,6 +27,22 @@ class SimpleTrackingAnalysis: public SubsysReco
   //void set_docalocuts(bool x) {docalocuts = x;}
 
  private:
+
+  // all values taken from sPHENIX pCDR
+  // note the somewhat mysterious overlap
+  // between the outer edge of the EMC
+  // and the inner edge of the inner HCal
+  // that shouldn't be a problem here, though
+  const double emc_radius_inner =  90.0;
+  const double hci_radius_inner = 115.7;
+  const double hco_radius_inner = 182.0;
+  const double emc_radius_outer = 116.1;
+  const double hci_radius_outer = 137.0;
+  const double hco_radius_outer = 268.5;
+
+  // PHG4HoughTransform _hough; ERROR
+
+  double magneticfield;
 
   int verbosity;
   //bool docalocuts;
