@@ -334,56 +334,45 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
 
 
 
-  // --- a few quick ideas
-  // --- put this stuff into a separate class method,
-  // --- see if it's useful for others
-  // --- see if you can make a map that connects rawtower pointers with
-  // --- tower energies, ordered by energy (largest energy having lowest index
+  // --- step 1: loop over all possible towers and make a map of energy, tower address
+  // --- step 2: loop over map in reverse order and fill a vector of tower addresses
+  // --- step 3: use vector of tower addresses (which are ordered by energy highest to lowest) as desired
+  // --- note: the vector is not really needed, as one can just get anything that's needed from the map
+  // ---       itself, but personally I like vectors
 
   int nphi = emc_towergeo->get_phibins();
   int neta = emc_towergeo->get_etabins();
 
-  vector<RawTower*> emc_towers;
-  double emc_totalenergy = 0;
-  int emc_maxtowerindex = -9;
-  double emc_maxenergy  = -9;
-  int emc_counter = 0;
+  map<double,RawTower*> emc_towers_map;
   for ( int iphi = 0; iphi <= nphi; ++iphi )
     {
       for ( int ieta = 0; ieta <= neta; ++ieta )
 	{
 	  RawTower* tower = emc_towercontainer->getTower(ieta, iphi);
-	  double energy = 0;
 	  if ( tower )
 	    {
-	      energy = tower->get_energy();
-	      emc_towers.push_back(tower);
-	      emc_totalenergy += energy;
-	      if ( energy > emc_maxenergy )
-		{
-		  emc_maxenergy = energy;
-		  emc_maxtowerindex = emc_counter;
-		}
-	      if ( energy > 1.0 && verbosity > 1 )
-		{
-		  cout << "In loop over all towers position " << emc_counter << endl;
-		  cout << "energy is " << energy << endl;
-		  cout << "max energy is " << emc_maxenergy << endl;
-		  cout << "max tower index is " << emc_maxtowerindex << endl;
-		}
-	      ++emc_counter; // must be last...
+	      double energy = tower->get_energy();
+	      emc_towers_map.insert(make_pair(energy,tower));
 	    } // check on tower
 	} // ieta
     } // iphi
 
-  if ( verbosity > 1 ) cout << "done with loop over towers " << endl;
-  int emc_ntowers = emc_towers.size();
-  if ( verbosity > 1 ) cout << "number of emc towers is " << emc_ntowers << " " << emc_counter << endl;
-  if ( verbosity > 1 ) cout << "max tower index is " << emc_maxtowerindex << endl;
-  RawTower* emc_maxtower = emc_towers[emc_maxtowerindex];
-  double emc_maxenergy_check = emc_maxtower->get_energy();
-  if ( verbosity > 1 ) cout << "maximum energy is " << emc_maxenergy << " " << emc_maxenergy_check << endl;
+  vector<RawTower*> emc_towers;
+  for ( map<double,RawTower*>::reverse_iterator rit = emc_towers_map.rbegin(); rit != emc_towers_map.rend(); ++rit )
+    {
+      if ( verbosity > 7 ) cout << "energy is " << rit->first << " tower address is " << rit->second << endl;
+      emc_towers.push_back(rit->second);
+    }
 
+  for ( unsigned int i = 0; i < emc_towers.size(); ++i )
+    {
+      RawTower* ctower = emc_towers[0];
+      RawTower* itower = emc_towers[i];
+      double cenergy = ctower->get_energy();
+      double ienergy = itower->get_energy();
+      if ( ienergy < 0.1*cenergy ) break; // just to see a few
+      if ( verbosity > 1 ) cout << "energy is " << ienergy << " tower address is " << itower << endl;
+    }
 
 
   // --- Create SVTX eval stack
@@ -446,10 +435,10 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
       // ----------------------------------------------------------------------
       // ----------------------------------------------------------------------
 
-      for ( int i = 0; i < emc_ntowers; ++i )
-	{
+      // for ( int i = 0; i < emc_ntowers; ++i )
+      // 	{
 
-	}
+      // 	}
 
       // ----------------------------------------------------------------------
       // ----------------------------------------------------------------------
