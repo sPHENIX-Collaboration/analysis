@@ -4,7 +4,7 @@
 #include <fun4all/Fun4AllServer.h>
 
 #include <phool/PHCompositeNode.h>
-//#include <g4hough/PHG4HoughTransform.h> CAUSES ERRORS DUE TO VertexFinder.h FAILING TO FIND <Eigen/LU>
+//#include <g4hough/PHG4HoughTransform.h> // CAUSES ERRORS DUE TO VertexFinder.h FAILING TO FIND <Eigen/LU>
 
 
 #include <g4main/PHG4TruthInfoContainer.h>
@@ -316,6 +316,7 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
 	  cerr << PHWHERE << "  hco_towergeo " << hco_towergeo << endl;
 	}
     }
+
   // --- Tower container
   RawTowerContainer *emc_towercontainer = findNode::getClass<RawTowerContainer>(topNode,"TOWER_CALIB_CEMC");
   RawTowerContainer *hci_towercontainer = findNode::getClass<RawTowerContainer>(topNode,"TOWER_CALIB_HCALIN");
@@ -341,21 +342,19 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
   // ---       itself, but personally I like vectors
 
   int nphi = emc_towergeo->get_phibins();
-  int neta = emc_towergeo->get_etabins();
+  //int neta = emc_towergeo->get_etabins();
 
   map<double,RawTower*> emc_towers_map;
-  for ( int iphi = 0; iphi <= nphi; ++iphi )
+  RawTowerContainer::Range emc_towerrange = emc_towercontainer->getTowers();
+  for ( RawTowerContainer::Iterator it = emc_towerrange.first; it != emc_towerrange.second; ++it )
     {
-      for ( int ieta = 0; ieta <= neta; ++ieta )
+      RawTower* tower = emc_towercontainer->getTower(it->first);
+      if ( tower )
 	{
-	  RawTower* tower = emc_towercontainer->getTower(ieta, iphi);
-	  if ( tower )
-	    {
-	      double energy = tower->get_energy();
-	      emc_towers_map.insert(make_pair(energy,tower));
-	    } // check on tower
-	} // ieta
-    } // iphi
+	  double energy = tower->get_energy();
+	  emc_towers_map.insert(make_pair(energy,tower));
+	} // check on tower
+    } // loop over tower range
 
   vector<RawTower*> emc_towers;
   for ( map<double,RawTower*>::reverse_iterator rit = emc_towers_map.rbegin(); rit != emc_towers_map.rend(); ++rit )
@@ -364,15 +363,55 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
       emc_towers.push_back(rit->second);
     }
 
+  if ( verbosity > 1 ) cout << "number of clusters is " << emc_clustercontainer->size() << endl;
+  RawClusterContainer::ConstRange emc_clusterrange = emc_clustercontainer->getClusters();
+  for ( RawClusterContainer::ConstIterator it = emc_clusterrange.first; it != emc_clusterrange.second; ++it )
+    {
+      RawCluster *cluster = emc_clustercontainer->getCluster(it->first);
+      int ntowers = cluster->getNTowers();
+      double energy = cluster->get_energy();
+      if ( ntowers > 2 )
+	{
+	  if ( verbosity > 2 ) cout << "cluster energy is " << energy << " and number of towers is " << ntowers << endl;
+	  RawCluster::TowerConstRange emc_towerrange = cluster->get_towers();
+	  for ( RawCluster::TowerConstIterator it_tower = emc_towerrange.first; it_tower != emc_towerrange.second; ++it_tower )
+	    {
+	      RawTower* tower = emc_towercontainer->getTower(it_tower->first);
+	      if ( tower )
+		{
+		  double energy_tower = tower->get_energy();
+		  if ( verbosity > 2 ) cout << "tower energy is " << energy_tower << " at address " << tower << endl;
+		} // check on tower
+	    } // loop over tower range
+	} // check on number of towers
+    } // loop over clusters
+
+  double emc_energysum = 0;
   for ( unsigned int i = 0; i < emc_towers.size(); ++i )
     {
+      // --- note: central stuff should be moved outside of loop for performance
       RawTower* ctower = emc_towers[0];
       RawTower* itower = emc_towers[i];
       double cenergy = ctower->get_energy();
       double ienergy = itower->get_energy();
-      if ( ienergy < 0.1*cenergy ) break; // just to see a few
+      if ( ienergy < 0.05*cenergy ) break; // just to see a few
       if ( verbosity > 1 ) cout << "energy is " << ienergy << " tower address is " << itower << endl;
+      // --- more stuff
+      emc_energysum += ienergy;
+      int etabin_center = ctower->get_bineta();
+      int phibin_center = ctower->get_binphi();
+      int etabin = itower->get_bineta();
+      int phibin = itower->get_binphi();
+      // recenter around central tower
+      etabin -= etabin_center;
+      phibin -= phibin_center;
+      // boundary and periodicity corrections...
+      if ( phibin > nphi/2 ) phibin -= nphi;
+      if ( phibin < -nphi/2 ) phibin += nphi;
+      if ( verbosity > 2 ) cout << "eta phi coordinates relative to central tower " << etabin << " " << phibin << endl;
+      if ( verbosity > 2 ) cout << "energy sum is " << emc_energysum << endl;
     }
+
 
 
   // --- Create SVTX eval stack
