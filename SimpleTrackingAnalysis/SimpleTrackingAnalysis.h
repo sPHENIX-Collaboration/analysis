@@ -10,9 +10,10 @@ class PHCompositeNode;
 //class PHG4HoughTransform;
 class TH1D;
 class TH2D;
-class RawCluster;
 class RawTower;
+class RawCluster;
 class RawTowerContainer;
+class RawClusterContainer;
 
 class SimpleTrackingAnalysis: public SubsysReco
 {
@@ -30,7 +31,9 @@ class SimpleTrackingAnalysis: public SubsysReco
   void set_verbosity(int x) {verbosity = x;}
   //void set_docalocuts(bool x) {docalocuts = x;}
 
+  std::vector<RawTower*> get_ordered_towers(RawCluster*, RawTowerContainer*);
   std::vector<RawTower*> get_ordered_towers(const RawTowerContainer*);
+  std::vector<RawCluster*> get_ordered_clusters(const RawClusterContainer*);
   void inspect_ordered_towers(const std::vector<RawTower*>&);
 
 

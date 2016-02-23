@@ -344,32 +344,17 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
   //int nphi = emc_towergeo->get_phibins();
   //int neta = emc_towergeo->get_etabins();
 
-  if ( verbosity > 1 ) cout << "number of clusters is " << emc_clustercontainer->size() << endl;
-  RawClusterContainer::ConstRange emc_clusterrange = emc_clustercontainer->getClusters();
-  for ( RawClusterContainer::ConstIterator it = emc_clusterrange.first; it != emc_clusterrange.second; ++it )
-    {
-      RawCluster *cluster = emc_clustercontainer->getCluster(it->first);
-      int ntowers = cluster->getNTowers();
-      double energy = cluster->get_energy();
-      if ( ntowers > 2 )
-	{
-	  if ( verbosity > 2 ) cout << "cluster energy is " << energy << " and number of towers is " << ntowers << endl;
-	  RawCluster::TowerConstRange emc_towerrange = cluster->get_towers();
-	  for ( RawCluster::TowerConstIterator it_tower = emc_towerrange.first; it_tower != emc_towerrange.second; ++it_tower )
-	    {
-	      RawTower* tower = emc_towercontainer->getTower(it_tower->first);
-	      if ( tower )
-		{
-		  double energy_tower = tower->get_energy();
-		  if ( verbosity > 2 ) cout << "tower energy is " << energy_tower << " at address " << tower << endl;
-		} // check on tower
-	    } // loop over tower range
-	} // check on number of towers
-    } // loop over clusters
 
+
+
+  vector<RawCluster*> emc_clusters = get_ordered_clusters(emc_clustercontainer);
+  //inspect_ordered_clusters(emc_clusters); // don't have this yet, but might want it
 
   vector<RawTower*> emc_towers = get_ordered_towers(emc_towercontainer);
   inspect_ordered_towers(emc_towers);
+
+  vector<RawTower*> emc_towers_from_cluster = get_ordered_towers(emc_clusters[0],emc_towercontainer);
+  inspect_ordered_towers(emc_towers_from_cluster);
 
 
 
@@ -783,16 +768,44 @@ int SimpleTrackingAnalysis::End(PHCompositeNode *topNode)
 
 
 // --- not sure if it's possible but it'd be nice to do some better function polymorphism here
+vector<RawCluster*> SimpleTrackingAnalysis::get_ordered_clusters(const RawClusterContainer* clusters)
+{
+
+  // getClusters has two options, const and non const, so I use const here
+  auto range = clusters->getClusters();
+
+  map<double,RawCluster*> cluster_map;
+  for ( auto it = range.first; it != range.second; ++it )
+    {
+      RawCluster* cluster = it->second;
+      double energy = cluster->get_energy();
+      cluster_map.insert(make_pair(energy,cluster));
+    }
+
+  vector<RawCluster*> cluster_list;
+  for ( auto rit = cluster_map.rbegin(); rit != cluster_map.rend(); ++rit )
+    {
+      RawCluster* cluster = rit->second;
+      cluster_list.push_back(cluster);
+    }
+
+  return cluster_list;
+
+}
+
+
+
+// --- not sure if it's possible but it'd be nice to do some better function polymorphism here
 vector<RawTower*> SimpleTrackingAnalysis::get_ordered_towers(const RawTowerContainer* towers)
 {
 
-  // --- this line for getting the range is the only difference
-  RawTowerContainer::ConstRange range = towers->getTowers();
+  // getTowers has two options, const and non const, so I use const here
+  auto range = towers->getTowers();
 
   map<double,RawTower*> tower_map;
   for ( auto it = range.first; it != range.second; ++it )
     {
-      RawTower *tower = it->second;
+      RawTower* tower = it->second;
       double energy = tower->get_energy();
       tower_map.insert(make_pair(energy,tower));
     }
@@ -800,7 +813,36 @@ vector<RawTower*> SimpleTrackingAnalysis::get_ordered_towers(const RawTowerConta
   vector<RawTower*> tower_list;
   for ( auto rit = tower_map.rbegin(); rit != tower_map.rend(); ++rit )
     {
-      RawTower *tower = rit->second;
+      RawTower* tower = rit->second;
+      tower_list.push_back(tower);
+    }
+
+  return tower_list;
+
+}
+
+
+
+// --- not sure if it's possible but it'd be nice to do some better function polymorphism here
+vector<RawTower*> SimpleTrackingAnalysis::get_ordered_towers(RawCluster* cluster, RawTowerContainer* towers)
+{
+
+  // note that RawCluster* cannot be const, get_towers is not declared as const function in class header
+  auto range = cluster->get_towers();
+
+  map<double,RawTower*> tower_map;
+  for ( auto it = range.first; it != range.second; ++it )
+    {
+      // note that RawTowerContainer cannot be const, getTower is not declared as a const function in class header
+      RawTower* tower = towers->getTower(it->first);
+      double energy = tower->get_energy();
+      tower_map.insert(make_pair(energy,tower));
+    }
+
+  vector<RawTower*> tower_list;
+  for ( auto rit = tower_map.rbegin(); rit != tower_map.rend(); ++rit )
+    {
+      RawTower* tower = rit->second;
       tower_list.push_back(tower);
     }
 
