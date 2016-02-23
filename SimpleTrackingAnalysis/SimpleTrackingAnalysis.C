@@ -344,25 +344,6 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
   //int nphi = emc_towergeo->get_phibins();
   //int neta = emc_towergeo->get_etabins();
 
-  map<double,RawTower*> emc_towers_map;
-  RawTowerContainer::Range emc_towerrange = emc_towercontainer->getTowers();
-  for ( RawTowerContainer::Iterator it = emc_towerrange.first; it != emc_towerrange.second; ++it )
-    {
-      RawTower* tower = emc_towercontainer->getTower(it->first);
-      if ( tower )
-	{
-	  double energy = tower->get_energy();
-	  emc_towers_map.insert(make_pair(energy,tower));
-	} // check on tower
-    } // loop over tower range
-
-  vector<RawTower*> emc_towers;
-  for ( map<double,RawTower*>::reverse_iterator rit = emc_towers_map.rbegin(); rit != emc_towers_map.rend(); ++rit )
-    {
-      if ( verbosity > 7 ) cout << "energy is " << rit->first << " tower address is " << rit->second << endl;
-      emc_towers.push_back(rit->second);
-    }
-
   if ( verbosity > 1 ) cout << "number of clusters is " << emc_clustercontainer->size() << endl;
   RawClusterContainer::ConstRange emc_clusterrange = emc_clustercontainer->getClusters();
   for ( RawClusterContainer::ConstIterator it = emc_clusterrange.first; it != emc_clusterrange.second; ++it )
@@ -387,11 +368,10 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
     } // loop over clusters
 
 
+  vector<RawTower*> emc_towers = get_ordered_towers(emc_towercontainer);
   inspect_ordered_towers(emc_towers);
 
-  vector<RawTower*> emc_towers2 = get_ordered_towers(emc_towercontainer);
 
-  inspect_ordered_towers(emc_towers2);
 
   return 0; // quick testing...
 
