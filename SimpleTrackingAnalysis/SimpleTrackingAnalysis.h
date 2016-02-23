@@ -4,11 +4,15 @@
 
 // --- need to check all these includes...
 #include <fun4all/SubsysReco.h>
+#include <vector>
 
 class PHCompositeNode;
 //class PHG4HoughTransform;
 class TH1D;
 class TH2D;
+class RawCluster;
+class RawTower;
+class RawTowerContainer;
 
 class SimpleTrackingAnalysis: public SubsysReco
 {
@@ -17,14 +21,18 @@ class SimpleTrackingAnalysis: public SubsysReco
 
   SimpleTrackingAnalysis(const std::string &name="SimpleTrackingAnalysis");
 
-  int Init(PHCompositeNode *topNode);
-  int process_event(PHCompositeNode *topNode);
-  int End(PHCompositeNode *topNode);
+  int Init(PHCompositeNode*);
+  int process_event(PHCompositeNode*);
+  int End(PHCompositeNode*);
 
   void set_nlayers(unsigned int x) {nlayers = x;}
 
   void set_verbosity(int x) {verbosity = x;}
   //void set_docalocuts(bool x) {docalocuts = x;}
+
+  std::vector<RawTower*> get_ordered_towers(const RawTowerContainer*);
+  void inspect_ordered_towers(const std::vector<RawTower*>&);
+
 
  private:
 

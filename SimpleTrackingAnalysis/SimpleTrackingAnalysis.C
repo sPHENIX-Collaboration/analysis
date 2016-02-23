@@ -341,7 +341,7 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
   // --- note: the vector is not really needed, as one can just get anything that's needed from the map
   // ---       itself, but personally I like vectors
 
-  int nphi = emc_towergeo->get_phibins();
+  //int nphi = emc_towergeo->get_phibins();
   //int neta = emc_towergeo->get_etabins();
 
   map<double,RawTower*> emc_towers_map;
@@ -386,31 +386,14 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
 	} // check on number of towers
     } // loop over clusters
 
-  double emc_energysum = 0;
-  for ( unsigned int i = 0; i < emc_towers.size(); ++i )
-    {
-      // --- note: central stuff should be moved outside of loop for performance
-      RawTower* ctower = emc_towers[0];
-      RawTower* itower = emc_towers[i];
-      double cenergy = ctower->get_energy();
-      double ienergy = itower->get_energy();
-      if ( ienergy < 0.05*cenergy ) break; // just to see a few
-      if ( verbosity > 1 ) cout << "energy is " << ienergy << " tower address is " << itower << endl;
-      // --- more stuff
-      emc_energysum += ienergy;
-      int etabin_center = ctower->get_bineta();
-      int phibin_center = ctower->get_binphi();
-      int etabin = itower->get_bineta();
-      int phibin = itower->get_binphi();
-      // recenter around central tower
-      etabin -= etabin_center;
-      phibin -= phibin_center;
-      // boundary and periodicity corrections...
-      if ( phibin > nphi/2 ) phibin -= nphi;
-      if ( phibin < -nphi/2 ) phibin += nphi;
-      if ( verbosity > 2 ) cout << "eta phi coordinates relative to central tower " << etabin << " " << phibin << endl;
-      if ( verbosity > 2 ) cout << "energy sum is " << emc_energysum << endl;
-    }
+
+  inspect_ordered_towers(emc_towers);
+
+  vector<RawTower*> emc_towers2 = get_ordered_towers(emc_towercontainer);
+
+  inspect_ordered_towers(emc_towers2);
+
+  return 0; // quick testing...
 
 
 
@@ -815,4 +798,66 @@ int SimpleTrackingAnalysis::End(PHCompositeNode *topNode)
 {
   cout << "End called. " << nevents << " events processed." << endl;
   return 0;
+}
+
+
+
+// --- not sure if it's possible but it'd be nice to do some better function polymorphism here
+vector<RawTower*> SimpleTrackingAnalysis::get_ordered_towers(const RawTowerContainer* towers)
+{
+
+  // --- this line for getting the range is the only difference
+  RawTowerContainer::ConstRange range = towers->getTowers();
+
+  map<double,RawTower*> tower_map;
+  for ( auto it = range.first; it != range.second; ++it )
+    {
+      RawTower *tower = it->second;
+      double energy = tower->get_energy();
+      tower_map.insert(make_pair(energy,tower));
+    }
+
+  vector<RawTower*> tower_list;
+  for ( auto rit = tower_map.rbegin(); rit != tower_map.rend(); ++rit )
+    {
+      RawTower *tower = rit->second;
+      tower_list.push_back(tower);
+    }
+
+  return tower_list;
+
+}
+
+
+
+void SimpleTrackingAnalysis::inspect_ordered_towers(const vector<RawTower*>& towers)
+{
+
+  double energysum = 0;
+  const int nphi = 256; // need a better way
+  for ( unsigned int i = 0; i < towers.size(); ++i )
+    {
+      // --- note: central stuff should be moved outside of loop for performance
+      RawTower* ctower = towers[0];
+      RawTower* itower = towers[i];
+      double cenergy = ctower->get_energy();
+      double ienergy = itower->get_energy();
+      if ( ienergy < 0.05*cenergy ) break; // just to see a few
+      if ( verbosity > 1 ) cout << "energy is " << ienergy << " tower address is " << itower << endl;
+      // --- more stuff
+      energysum += ienergy;
+      int etabin_center = ctower->get_bineta();
+      int phibin_center = ctower->get_binphi();
+      int etabin = itower->get_bineta();
+      int phibin = itower->get_binphi();
+      // recenter around central tower
+      etabin -= etabin_center;
+      phibin -= phibin_center;
+      // boundary and periodicity corrections...
+      if ( phibin > nphi/2 ) phibin -= nphi;
+      if ( phibin < -nphi/2 ) phibin += nphi;
+      if ( verbosity > 2 ) cout << "eta phi coordinates relative to central tower " << etabin << " " << phibin << endl;
+      if ( verbosity > 2 ) cout << "energy sum is " << energysum << endl;
+    }
+
 }
