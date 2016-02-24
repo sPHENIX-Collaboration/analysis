@@ -35,7 +35,7 @@
 #include <TH2D.h>
 
 #include <iostream>
-#include <cassert>
+//#include <cassert>
 
 using namespace std;
 
@@ -365,7 +365,7 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
     {
       if ( verbosity > -1 )
 	{
-	  cerr << PHWHERE << " WARNING: Can't find cluster nodes" << endl;
+	  cerr << PHWHERE << " WARNING: Can't find tower geometry nodes" << endl;
 	  cerr << PHWHERE << "  emc_towergeo " << emc_towergeo << endl;
 	  cerr << PHWHERE << "  hci_towergeo " << hci_towergeo << endl;
 	  cerr << PHWHERE << "  hco_towergeo " << hco_towergeo << endl;
@@ -380,7 +380,7 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
     {
       if ( verbosity > -1 )
 	{
-	  cerr << PHWHERE << " WARNING: Can't find cluster nodes" << endl;
+	  cerr << PHWHERE << " WARNING: Can't find tower container nodes" << endl;
 	  cerr << PHWHERE << "  emc_towercontainer " << emc_towercontainer << endl;
 	  cerr << PHWHERE << "  hci_towercontainer " << hci_towercontainer << endl;
 	  cerr << PHWHERE << "  hco_towercontainer " << hco_towercontainer << endl;
@@ -401,12 +401,9 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
 
 
 
-  vector<RawCluster*> emc_clusters;
-  vector<RawCluster*> hci_clusters;
-  vector<RawCluster*> hco_clusters;
-  if ( emc_clustercontainer ) emc_clusters = get_ordered_clusters(emc_clustercontainer);
-  if ( hci_clustercontainer ) hci_clusters = get_ordered_clusters(hci_clustercontainer);
-  if ( hco_clustercontainer ) hco_clusters = get_ordered_clusters(hco_clustercontainer);
+  vector<RawCluster*> emc_clusters = get_ordered_clusters(emc_clustercontainer);
+  vector<RawCluster*> hci_clusters = get_ordered_clusters(hci_clustercontainer);
+  vector<RawCluster*> hco_clusters = get_ordered_clusters(hco_clustercontainer);
 
 
 
@@ -536,17 +533,14 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
 	}
 
       // --- Get a vector of the towers from the cluster
-      vector<RawTower*> emc_towers_from_bestcluster;
-      vector<RawTower*> hci_towers_from_bestcluster;
-      vector<RawTower*> hco_towers_from_bestcluster;
-      if ( emc_bestcluster && emc_towercontainer ) emc_towers_from_bestcluster = get_ordered_towers(emc_bestcluster,emc_towercontainer);
-      if ( hci_bestcluster && hci_towercontainer ) hci_towers_from_bestcluster = get_ordered_towers(hci_bestcluster,hci_towercontainer);
-      if ( hco_bestcluster && hco_towercontainer ) hco_towers_from_bestcluster = get_ordered_towers(hco_bestcluster,hco_towercontainer);
+      vector<RawTower*> emc_towers_from_bestcluster = get_ordered_towers(emc_bestcluster,emc_towercontainer);
+      vector<RawTower*> hci_towers_from_bestcluster = get_ordered_towers(hci_bestcluster,hci_towercontainer);
+      vector<RawTower*> hco_towers_from_bestcluster = get_ordered_towers(hco_bestcluster,hco_towercontainer);
 
       // --- Inspect the towers (fills a bunch of histograms, prints to screen if verbose)
-      if ( emc_towers_from_bestcluster.size() ) inspect_ordered_towers(emc_towers_from_bestcluster,true_energy,SvtxTrack::CEMC);
-      if ( hci_towers_from_bestcluster.size() ) inspect_ordered_towers(hci_towers_from_bestcluster,true_energy,SvtxTrack::HCALIN);
-      if ( hco_towers_from_bestcluster.size() ) inspect_ordered_towers(hco_towers_from_bestcluster,true_energy,SvtxTrack::HCALOUT);
+      inspect_ordered_towers(emc_towers_from_bestcluster,true_energy,SvtxTrack::CEMC);
+      inspect_ordered_towers(hci_towers_from_bestcluster,true_energy,SvtxTrack::HCALIN);
+      inspect_ordered_towers(hco_towers_from_bestcluster,true_energy,SvtxTrack::HCALOUT);
 
       // ----------------------------------------------------------------------
       // ----------------------------------------------------------------------
@@ -567,9 +561,16 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
       if ( verbosity > 2 ) cout << "Now attempting to get the energies..." << endl;
 
       // --- get the energy values directly from the best candidate IF the cluster container exists
-      if ( emc_bestcluster ) emc_energy_track = emc_bestcluster->get_energy();
-      if ( hci_bestcluster ) hci_energy_track = hci_bestcluster->get_energy();
-      if ( hco_bestcluster ) hco_energy_track = hco_bestcluster->get_energy();
+      if ( emc_bestcluster ) emc_energy_best = emc_bestcluster->get_energy();
+      if ( hci_bestcluster ) hci_energy_best = hci_bestcluster->get_energy();
+      if ( hco_bestcluster ) hco_energy_best = hco_bestcluster->get_energy();
+
+      if ( verbosity > 0 )
+	{
+	  cout << "emc_energy_best is " << emc_energy_best << endl;
+	  cout << "hci_energy_best is " << hci_energy_best << endl;
+	  cout << "hco_energy_best is " << hco_energy_best << endl;
+	}
 
       // --- get the energy values directly from the track IF the cluster container exists
       if ( emc_clustercontainer ) emc_energy_track = track->get_cal_cluster_e(SvtxTrack::CEMC);
@@ -582,6 +583,10 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
 	  cout << "hci_energy_track is " << hci_energy_track << endl;
 	  cout << "hco_energy_track is " << hco_energy_track << endl;
 	}
+
+      // -------------------------------------------------------------------------------------
+      // --- IMPORTANT NOTE: according to Jin, the clusterizing will gather all towers in the
+      // ---                 calorimeter, so we need to use the 3x3 instead
 
       if ( emc_clustercontainer ) emc_energy_track = track->get_cal_energy_3x3(SvtxTrack::CEMC);
       if ( hci_clustercontainer ) hci_energy_track = track->get_cal_energy_3x3(SvtxTrack::HCALIN);
@@ -805,7 +810,7 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
     }
   if ( !maxvertex )
     {
-      cerr << PHWHERE << " ERROR: cannot get reconstructed vertex" << endl;
+      cerr << PHWHERE << " ERROR: cannot get reconstructed vertex (event number " << nevents << ")" << endl;
       return -1;
     }
 
@@ -813,7 +818,7 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
   PHG4VtxPoint* point = vertexeval->max_truth_point_by_ntracks(maxvertex);
   if ( !point )
     {
-      cerr << PHWHERE << " ERROR: cannot get truth vertex" << endl;
+      cerr << PHWHERE << " ERROR: cannot get truth vertex (event number " << nevents << ")" << endl;
       return -1;
     }
   _dx_vertex->Fill(maxvertex->get_x() - point->get_x());
@@ -839,6 +844,8 @@ int SimpleTrackingAnalysis::End(PHCompositeNode *topNode)
 // --- not sure if it's possible but it'd be nice to do some better function polymorphism here
 vector<RawCluster*> SimpleTrackingAnalysis::get_ordered_clusters(const RawClusterContainer* clusters)
 {
+
+  if ( clusters == NULL ) return vector<RawCluster*>();
 
   // getClusters has two options, const and non const, so I use const here
   auto range = clusters->getClusters();
@@ -868,6 +875,8 @@ vector<RawCluster*> SimpleTrackingAnalysis::get_ordered_clusters(const RawCluste
 vector<RawTower*> SimpleTrackingAnalysis::get_ordered_towers(const RawTowerContainer* towers)
 {
 
+  if ( towers == NULL ) return vector<RawTower*>();
+
   // getTowers has two options, const and non const, so I use const here
   auto range = towers->getTowers();
 
@@ -895,6 +904,8 @@ vector<RawTower*> SimpleTrackingAnalysis::get_ordered_towers(const RawTowerConta
 // --- not sure if it's possible but it'd be nice to do some better function polymorphism here
 vector<RawTower*> SimpleTrackingAnalysis::get_ordered_towers(RawCluster* cluster, RawTowerContainer* towers)
 {
+
+  if ( cluster == NULL || towers == NULL ) return vector<RawTower*>();
 
   // note that RawCluster* cannot be const, get_towers is not declared as const function in class header
   auto range = cluster->get_towers();
@@ -937,6 +948,8 @@ void SimpleTrackingAnalysis::inspect_ordered_towers(const vector<RawTower*>& tow
 
 void SimpleTrackingAnalysis::inspect_ordered_towers(const vector<RawTower*>& towers, double true_energy, int calo_layer)
 {
+
+  if ( towers.size() == 0 ) return;
 
   int nphi = 9999;
 
@@ -993,33 +1006,38 @@ void SimpleTrackingAnalysis::inspect_ordered_towers(const vector<RawTower*>& tow
 
   // characterize the tower energy with the truth energy
   double energy_sumtower[10] = {0};
+  double energy_singletower = 0;
   unsigned int nloop = 10;
   if ( towers.size() < nloop ) nloop = towers.size();
   for ( unsigned int i = 0; i < nloop; ++i )
     {
       // get the single and summed tower energies
-      double energy_singletower = towers[i]->get_energy();
-      for ( unsigned int j = 0; j < i; ++j ) energy_sumtower[i] += energy_singletower;
+      energy_singletower = towers[i]->get_energy();
+      energy_sumtower[i] = energy_singletower;
+      for ( unsigned int j = i; j > 0; --j ) energy_sumtower[j] += energy_sumtower[j-1];
 
-      // normalize
-      energy_singletower /= true_energy;
-      energy_sumtower[i] /= true_energy;
+      if ( verbosity > 5 )
+	{
+	  cout << "inspecting tower energies" << endl;
+	  cout << "single tower energy is " << energy_singletower << endl;
+	  cout << "sum tower energy is " << energy_sumtower[i] << endl;
+	}
 
       // fill histograms
-      if ( calo_layer == SvtxTrack::CEMC)
+      if ( calo_layer == SvtxTrack::CEMC )
 	{
-	  _tower_energy_emc[i]->Fill(energy_singletower,true_energy);
-	  _towersum_energy_emc[i]->Fill(energy_sumtower[i],true_energy);
+	  _tower_energy_emc[i]->Fill(true_energy,energy_singletower/true_energy);
+	  _towersum_energy_emc[i]->Fill(true_energy,energy_sumtower[i]/true_energy);
 	}
-      if ( calo_layer == SvtxTrack::HCALIN)
+      if ( calo_layer == SvtxTrack::HCALIN )
 	{
-	  _tower_energy_hci[i]->Fill(energy_singletower,true_energy);
-	  _towersum_energy_hci[i]->Fill(energy_sumtower[i],true_energy);
+	  _tower_energy_hci[i]->Fill(true_energy,energy_singletower/true_energy);
+	  _towersum_energy_hci[i]->Fill(true_energy,energy_sumtower[i]/true_energy);
 	}
-      if ( calo_layer == SvtxTrack::HCALOUT)
+      if ( calo_layer == SvtxTrack::HCALOUT )
 	{
-	  _tower_energy_hco[i]->Fill(energy_singletower,true_energy);
-	  _towersum_energy_hco[i]->Fill(energy_sumtower[i],true_energy);
+	  _tower_energy_hco[i]->Fill(true_energy,energy_singletower/true_energy);
+	  _towersum_energy_hco[i]->Fill(true_energy,energy_sumtower[i]/true_energy);
 	}
     } // fixed size loop
 
