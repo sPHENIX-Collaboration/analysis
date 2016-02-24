@@ -240,6 +240,10 @@ int SimpleTrackingAnalysis::Init(PHCompositeNode *topNode)
   _towers_5x5_emc = new TH2D("towers_5x5_emc", "", 5,-2.5,2.5, 5,-2.5,2.5);
   _towers_7x7_emc = new TH2D("towers_7x7_emc", "", 7,-3.5,3.5, 7,-3.5,3.5);
   _towers_9x9_emc = new TH2D("towers_9x9_emc", "", 9,-4.5,4.5, 9,-4.5,4.5);
+  se->registerHisto(_towers_3x3_emc);
+  se->registerHisto(_towers_5x5_emc);
+  se->registerHisto(_towers_7x7_emc);
+  se->registerHisto(_towers_9x9_emc);
 
   for ( int i = 0; i < 10; ++i )
     {
@@ -253,6 +257,10 @@ int SimpleTrackingAnalysis::Init(PHCompositeNode *topNode)
   _towers_5x5_hci = new TH2D("towers_5x5_hci", "", 5,-2.5,2.5, 5,-2.5,2.5);
   _towers_7x7_hci = new TH2D("towers_7x7_hci", "", 7,-3.5,3.5, 7,-3.5,3.5);
   _towers_9x9_hci = new TH2D("towers_9x9_hci", "", 9,-4.5,4.5, 9,-4.5,4.5);
+  se->registerHisto(_towers_3x3_hci);
+  se->registerHisto(_towers_5x5_hci);
+  se->registerHisto(_towers_7x7_hci);
+  se->registerHisto(_towers_9x9_hci);
 
   for ( int i = 0; i < 10; ++i )
     {
@@ -274,6 +282,10 @@ int SimpleTrackingAnalysis::Init(PHCompositeNode *topNode)
       se->registerHisto(_towersum_energy_hco[i]);
       se->registerHisto(_tower_energy_hco[i]);
     }
+  se->registerHisto(_towers_3x3_hco);
+  se->registerHisto(_towers_5x5_hco);
+  se->registerHisto(_towers_7x7_hco);
+  se->registerHisto(_towers_9x9_hco);
 
 
 
@@ -389,14 +401,12 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
 
 
 
-
-  vector<RawCluster*> emc_clusters = get_ordered_clusters(emc_clustercontainer);
-  vector<RawCluster*> hci_clusters = get_ordered_clusters(hci_clustercontainer);
-  vector<RawCluster*> hco_clusters = get_ordered_clusters(hco_clustercontainer);
-
-
-
-  return 0; // quick testing...
+  vector<RawCluster*> emc_clusters;
+  vector<RawCluster*> hci_clusters;
+  vector<RawCluster*> hco_clusters;
+  if ( emc_clustercontainer ) emc_clusters = get_ordered_clusters(emc_clustercontainer);
+  if ( hci_clustercontainer ) hci_clusters = get_ordered_clusters(hci_clustercontainer);
+  if ( hco_clustercontainer ) hco_clusters = get_ordered_clusters(hco_clustercontainer);
 
 
 
@@ -467,6 +477,33 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
       // ----------------------------------------------------------------------
       // ----------------------------------------------------------------------
 
+      // examine truth particles that leave all (7 or 8 depending on design) detector hits
+      if ( ng4hits == nlayers )
+	{
+	  _truept_particles_leaving7Hits->Fill(truept);
+
+	  unsigned int nfromtruth = trackeval->get_nclusters_contribution(track,g4particle);
+
+	  unsigned int ndiff = abs((int)nfromtruth-(int)nlayers);
+	  if ( ndiff <= 2 ) _truept_particles_recoWithin2Hits->Fill(truept);
+	  if ( ndiff <= 1 ) _truept_particles_recoWithin1Hit->Fill(truept);
+	  if ( ndiff == 0 ) _truept_particles_recoWithExactHits->Fill(truept);
+
+	  float diff = fabs(recopt-truept)/truept;
+	  if ( diff < 0.05 ) _truept_particles_recoWithin5Percent->Fill(truept);
+	  if ( diff < 0.04 )
+	    {
+	      _truept_particles_recoWithin4Percent->Fill(truept);
+	      _truept_quality_particles_recoWithin4Percent->Fill(truept,track->get_quality());
+	    }
+	  if ( diff < 0.03 ) _truept_particles_recoWithin3Percent->Fill(truept);
+
+	} // end of requirement of ng4hits == nlayers
+
+      // ----------------------------------------------------------------------
+      // ----------------------------------------------------------------------
+      // ----------------------------------------------------------------------
+
       // --- Get the clusters from the best candidate from the truth info using the eval
       RawCluster* emc_bestcluster = NULL;
       RawCluster* hci_bestcluster = NULL;
@@ -475,22 +512,41 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
       if ( hci_rawclustereval ) hci_bestcluster = hci_rawclustereval->best_cluster_from(g4particle);
       if ( hco_rawclustereval ) hco_bestcluster = hco_rawclustereval->best_cluster_from(g4particle);
 
+      if ( verbosity > 5 )
+	{
+	  cout << "Cluster addresses from best cluster " << endl;
+	  cout << emc_bestcluster << endl;
+	  cout << hci_bestcluster << endl;
+	  cout << hco_bestcluster << endl;
+	}
+
       // --- If that didn't work, take the largest cluster in the event
       // --- This is terrible for more than one particle, so I need to
       // --- develop my own track-cluster association...
-      if ( !emc_bestcluster ) emc_bestcluster = emc_clusters[0];
-      if ( !hci_bestcluster ) hci_bestcluster = hci_clusters[0];
-      if ( !hco_bestcluster ) hco_bestcluster = hco_clusters[0];
+      if ( !emc_bestcluster && emc_clusters.size() ) emc_bestcluster = emc_clusters[0];
+      if ( !hci_bestcluster && hci_clusters.size() ) hci_bestcluster = hci_clusters[0];
+      if ( !hco_bestcluster && hco_clusters.size() ) hco_bestcluster = hco_clusters[0];
+
+      if ( verbosity > 5 )
+	{
+	  cout << "Cluster addresses from my (very bad) association " << endl;
+	  cout << emc_bestcluster << endl;
+	  cout << hci_bestcluster << endl;
+	  cout << hco_bestcluster << endl;
+	}
 
       // --- Get a vector of the towers from the cluster
-      vector<RawTower*> emc_towers_from_bestcluster = get_ordered_towers(emc_bestcluster,emc_towercontainer);
-      vector<RawTower*> hci_towers_from_bestcluster = get_ordered_towers(hci_bestcluster,hci_towercontainer);
-      vector<RawTower*> hco_towers_from_bestcluster = get_ordered_towers(hco_bestcluster,hco_towercontainer);
+      vector<RawTower*> emc_towers_from_bestcluster;
+      vector<RawTower*> hci_towers_from_bestcluster;
+      vector<RawTower*> hco_towers_from_bestcluster;
+      if ( emc_bestcluster && emc_towercontainer ) emc_towers_from_bestcluster = get_ordered_towers(emc_bestcluster,emc_towercontainer);
+      if ( hci_bestcluster && hci_towercontainer ) hci_towers_from_bestcluster = get_ordered_towers(hci_bestcluster,hci_towercontainer);
+      if ( hco_bestcluster && hco_towercontainer ) hco_towers_from_bestcluster = get_ordered_towers(hco_bestcluster,hco_towercontainer);
 
       // --- Inspect the towers (fills a bunch of histograms, prints to screen if verbose)
-      inspect_ordered_towers(emc_towers_from_bestcluster,true_energy,SvtxTrack::CEMC);
-      inspect_ordered_towers(hci_towers_from_bestcluster,true_energy,SvtxTrack::HCALIN);
-      inspect_ordered_towers(hco_towers_from_bestcluster,true_energy,SvtxTrack::HCALOUT);
+      if ( emc_towers_from_bestcluster.size() ) inspect_ordered_towers(emc_towers_from_bestcluster,true_energy,SvtxTrack::CEMC);
+      if ( hci_towers_from_bestcluster.size() ) inspect_ordered_towers(hci_towers_from_bestcluster,true_energy,SvtxTrack::HCALIN);
+      if ( hco_towers_from_bestcluster.size() ) inspect_ordered_towers(hco_towers_from_bestcluster,true_energy,SvtxTrack::HCALOUT);
 
       // ----------------------------------------------------------------------
       // ----------------------------------------------------------------------
@@ -639,29 +695,6 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
 	}
 
 
-
-      // examine truth particles that leave all (7 or 8 depending on design) detector hits
-      if ( ng4hits == nlayers )
-	{
-	  _truept_particles_leaving7Hits->Fill(truept);
-
-	  unsigned int nfromtruth = trackeval->get_nclusters_contribution(track,g4particle);
-
-	  unsigned int ndiff = abs((int)nfromtruth-(int)nlayers);
-	  if ( ndiff <= 2 ) _truept_particles_recoWithin2Hits->Fill(truept);
-	  if ( ndiff <= 1 ) _truept_particles_recoWithin1Hit->Fill(truept);
-	  if ( ndiff == 0 ) _truept_particles_recoWithExactHits->Fill(truept);
-
-	  float diff = fabs(recopt-truept)/truept;
-	  if ( diff < 0.05 ) _truept_particles_recoWithin5Percent->Fill(truept);
-	  if ( diff < 0.04 )
-	    {
-	      _truept_particles_recoWithin4Percent->Fill(truept);
-	      _truept_quality_particles_recoWithin4Percent->Fill(truept,track->get_quality());
-	    }
-	  if ( diff < 0.03 ) _truept_particles_recoWithin3Percent->Fill(truept);
-
-	} // end of requirement of ng4hits == nlayers
 
     } // end of loop over truth particles
 
