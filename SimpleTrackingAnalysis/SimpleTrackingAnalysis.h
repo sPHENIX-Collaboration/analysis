@@ -35,6 +35,8 @@ class SimpleTrackingAnalysis: public SubsysReco
   std::vector<RawTower*> get_ordered_towers(const RawTowerContainer*);
   std::vector<RawCluster*> get_ordered_clusters(const RawClusterContainer*);
   void inspect_ordered_towers(const std::vector<RawTower*>&);
+  void inspect_ordered_towers(const std::vector<RawTower*>&, int);
+  void inspect_ordered_towers(const std::vector<RawTower*>&, double, int);
 
 
  private:
@@ -139,6 +141,30 @@ class SimpleTrackingAnalysis: public SubsysReco
   TH2D* _energy_deta_emc;
   TH2D* _energy_deta_hci;
   TH2D* _energy_deta_hco;
+
+  TH2D* _towers_3x3_emc;
+  TH2D* _towers_5x5_emc;
+  TH2D* _towers_7x7_emc;
+  TH2D* _towers_9x9_emc;
+
+  TH2D* _tower_energy_emc[10];
+  TH2D* _towersum_energy_emc[10];
+
+  TH2D* _towers_3x3_hci;
+  TH2D* _towers_5x5_hci;
+  TH2D* _towers_7x7_hci;
+  TH2D* _towers_9x9_hci;
+
+  TH2D* _tower_energy_hci[10];
+  TH2D* _towersum_energy_hci[10];
+
+  TH2D* _towers_3x3_hco;
+  TH2D* _towers_5x5_hco;
+  TH2D* _towers_7x7_hco;
+  TH2D* _towers_9x9_hco;
+
+  TH2D* _tower_energy_hco[10];
+  TH2D* _towersum_energy_hco[10];
 
 };
 

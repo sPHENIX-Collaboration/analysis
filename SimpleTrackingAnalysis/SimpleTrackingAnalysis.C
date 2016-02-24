@@ -234,6 +234,49 @@ int SimpleTrackingAnalysis::Init(PHCompositeNode *topNode)
   se->registerHisto(_energy_deta_hci);
   se->registerHisto(_energy_deta_hco);
 
+
+
+  _towers_3x3_emc = new TH2D("towers_3x3_emc", "", 3,-1.5,1.5, 3,-1.5,1.5);
+  _towers_5x5_emc = new TH2D("towers_5x5_emc", "", 5,-2.5,2.5, 5,-2.5,2.5);
+  _towers_7x7_emc = new TH2D("towers_7x7_emc", "", 7,-3.5,3.5, 7,-3.5,3.5);
+  _towers_9x9_emc = new TH2D("towers_9x9_emc", "", 9,-4.5,4.5, 9,-4.5,4.5);
+
+  for ( int i = 0; i < 10; ++i )
+    {
+      _towersum_energy_emc[i] = new TH2D(Form("towersum_energy_emc_%d",i), "", 300,0.0,30.0, 100,0.0,2.0);
+      _tower_energy_emc[i] = new TH2D(Form("tower_energy_emc_%d",i), "", 300,0.0,30.0, 100,0.0,2.0);
+      se->registerHisto(_towersum_energy_emc[i]);
+      se->registerHisto(_tower_energy_emc[i]);
+    }
+
+  _towers_3x3_hci = new TH2D("towers_3x3_hci", "", 3,-1.5,1.5, 3,-1.5,1.5);
+  _towers_5x5_hci = new TH2D("towers_5x5_hci", "", 5,-2.5,2.5, 5,-2.5,2.5);
+  _towers_7x7_hci = new TH2D("towers_7x7_hci", "", 7,-3.5,3.5, 7,-3.5,3.5);
+  _towers_9x9_hci = new TH2D("towers_9x9_hci", "", 9,-4.5,4.5, 9,-4.5,4.5);
+
+  for ( int i = 0; i < 10; ++i )
+    {
+      _towersum_energy_hci[i] = new TH2D(Form("towersum_energy_hci_%d",i), "", 300,0.0,30.0, 100,0.0,2.0);
+      _tower_energy_hci[i] = new TH2D(Form("tower_energy_hci_%d",i), "", 300,0.0,30.0, 100,0.0,2.0);
+      se->registerHisto(_towersum_energy_hci[i]);
+      se->registerHisto(_tower_energy_hci[i]);
+    }
+
+  _towers_3x3_hco = new TH2D("towers_3x3_hco", "", 3,-1.5,1.5, 3,-1.5,1.5);
+  _towers_5x5_hco = new TH2D("towers_5x5_hco", "", 5,-2.5,2.5, 5,-2.5,2.5);
+  _towers_7x7_hco = new TH2D("towers_7x7_hco", "", 7,-3.5,3.5, 7,-3.5,3.5);
+  _towers_9x9_hco = new TH2D("towers_9x9_hco", "", 9,-4.5,4.5, 9,-4.5,4.5);
+
+  for ( int i = 0; i < 10; ++i )
+    {
+      _towersum_energy_hco[i] = new TH2D(Form("towersum_energy_hco_%d",i), "", 300,0.0,30.0, 100,0.0,2.0);
+      _tower_energy_hco[i] = new TH2D(Form("tower_energy_hco_%d",i), "", 300,0.0,30.0, 100,0.0,2.0);
+      se->registerHisto(_towersum_energy_hco[i]);
+      se->registerHisto(_tower_energy_hco[i]);
+    }
+
+
+
   return 0;
 
 }
@@ -348,13 +391,8 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
 
 
   vector<RawCluster*> emc_clusters = get_ordered_clusters(emc_clustercontainer);
-  //inspect_ordered_clusters(emc_clusters); // don't have this yet, but might want it
-
-  vector<RawTower*> emc_towers = get_ordered_towers(emc_towercontainer);
-  inspect_ordered_towers(emc_towers);
-
-  vector<RawTower*> emc_towers_from_cluster = get_ordered_towers(emc_clusters[0],emc_towercontainer);
-  inspect_ordered_towers(emc_towers_from_cluster);
+  vector<RawCluster*> hci_clusters = get_ordered_clusters(hci_clustercontainer);
+  vector<RawCluster*> hco_clusters = get_ordered_clusters(hco_clustercontainer);
 
 
 
@@ -418,23 +456,6 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
       if (!track) continue;
       float recopt = track->get_pt();
 
-      // ----------------------------------------------------------------------
-      // ----------------------------------------------------------------------
-      // ----------------------------------------------------------------------
-
-      // for ( int i = 0; i < emc_ntowers; ++i )
-      // 	{
-
-      // 	}
-
-      // ----------------------------------------------------------------------
-      // ----------------------------------------------------------------------
-      // ----------------------------------------------------------------------
-
-
-
-
-
       if ( verbosity > 0 )
 	{
 	  cout << "truept is " << truept << endl;
@@ -442,25 +463,40 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
 	  cout << "true energy is " << true_energy << endl;
 	}
 
-      // ---------------------
-      // --- calorimeter stuff
-      // ---------------------
+      // ----------------------------------------------------------------------
+      // ----------------------------------------------------------------------
+      // ----------------------------------------------------------------------
 
-      // --- Get the clusters from the best candidate from the truth info
-      RawCluster* emc_rawcluster = NULL;
-      RawCluster* hci_rawcluster = NULL;
-      RawCluster* hco_rawcluster = NULL;
-      if ( emc_rawclustereval ) emc_rawcluster = emc_rawclustereval->best_cluster_from(g4particle);
-      if ( hci_rawclustereval ) hci_rawcluster = hci_rawclustereval->best_cluster_from(g4particle);
-      if ( hco_rawclustereval ) hco_rawcluster = hco_rawclustereval->best_cluster_from(g4particle);
+      // --- Get the clusters from the best candidate from the truth info using the eval
+      RawCluster* emc_bestcluster = NULL;
+      RawCluster* hci_bestcluster = NULL;
+      RawCluster* hco_bestcluster = NULL;
+      if ( emc_rawclustereval ) emc_bestcluster = emc_rawclustereval->best_cluster_from(g4particle);
+      if ( hci_rawclustereval ) hci_bestcluster = hci_rawclustereval->best_cluster_from(g4particle);
+      if ( hco_rawclustereval ) hco_bestcluster = hco_rawclustereval->best_cluster_from(g4particle);
 
-      if ( verbosity > 1 )
-	{
-	  cout << "RawCluster memory addresses for best from truth..." << endl;
-	  cout << emc_rawcluster << endl;
-	  cout << hci_rawcluster << endl;
-	  cout << hco_rawcluster << endl;
-	}
+      // --- If that didn't work, take the largest cluster in the event
+      // --- This is terrible for more than one particle, so I need to
+      // --- develop my own track-cluster association...
+      if ( !emc_bestcluster ) emc_bestcluster = emc_clusters[0];
+      if ( !hci_bestcluster ) hci_bestcluster = hci_clusters[0];
+      if ( !hco_bestcluster ) hco_bestcluster = hco_clusters[0];
+
+      // --- Get a vector of the towers from the cluster
+      vector<RawTower*> emc_towers_from_bestcluster = get_ordered_towers(emc_bestcluster,emc_towercontainer);
+      vector<RawTower*> hci_towers_from_bestcluster = get_ordered_towers(hci_bestcluster,hci_towercontainer);
+      vector<RawTower*> hco_towers_from_bestcluster = get_ordered_towers(hco_bestcluster,hco_towercontainer);
+
+      // --- Inspect the towers (fills a bunch of histograms, prints to screen if verbose)
+      inspect_ordered_towers(emc_towers_from_bestcluster,true_energy,SvtxTrack::CEMC);
+      inspect_ordered_towers(hci_towers_from_bestcluster,true_energy,SvtxTrack::HCALIN);
+      inspect_ordered_towers(hco_towers_from_bestcluster,true_energy,SvtxTrack::HCALOUT);
+
+      // ----------------------------------------------------------------------
+      // ----------------------------------------------------------------------
+      // ----------------------------------------------------------------------
+
+
 
       // --- energy variables from the best candidate clusters
       float emc_energy_best = -9999;
@@ -475,9 +511,9 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
       if ( verbosity > 2 ) cout << "Now attempting to get the energies..." << endl;
 
       // --- get the energy values directly from the best candidate IF the cluster container exists
-      if ( emc_rawcluster ) emc_energy_track = emc_rawcluster->get_energy();
-      if ( hci_rawcluster ) hci_energy_track = hci_rawcluster->get_energy();
-      if ( hco_rawcluster ) hco_energy_track = hco_rawcluster->get_energy();
+      if ( emc_bestcluster ) emc_energy_track = emc_bestcluster->get_energy();
+      if ( hci_bestcluster ) hci_energy_track = hci_bestcluster->get_energy();
+      if ( hco_bestcluster ) hco_energy_track = hco_bestcluster->get_energy();
 
       // --- get the energy values directly from the track IF the cluster container exists
       if ( emc_clustercontainer ) emc_energy_track = track->get_cal_cluster_e(SvtxTrack::CEMC);
@@ -854,20 +890,37 @@ vector<RawTower*> SimpleTrackingAnalysis::get_ordered_towers(RawCluster* cluster
 
 void SimpleTrackingAnalysis::inspect_ordered_towers(const vector<RawTower*>& towers)
 {
+  inspect_ordered_towers(towers,0,0);
+}
 
-  double energysum = 0;
-  const int nphi = 256; // need a better way
+
+
+void SimpleTrackingAnalysis::inspect_ordered_towers(const vector<RawTower*>& towers, int calo_layer)
+{
+  inspect_ordered_towers(towers,0,calo_layer);
+}
+
+
+
+void SimpleTrackingAnalysis::inspect_ordered_towers(const vector<RawTower*>& towers, double true_energy, int calo_layer)
+{
+
+  int nphi = 9999;
+
+  if ( calo_layer == SvtxTrack::CEMC ) nphi = 256;
+  if ( calo_layer == SvtxTrack::HCALIN ) nphi = 64;
+  if ( calo_layer == SvtxTrack::HCALOUT ) nphi = 64;
+
+  RawTower* ctower = towers[0]; // central tower
+
   for ( unsigned int i = 0; i < towers.size(); ++i )
     {
-      // --- note: central stuff should be moved outside of loop for performance
-      RawTower* ctower = towers[0];
       RawTower* itower = towers[i];
-      double cenergy = ctower->get_energy();
       double ienergy = itower->get_energy();
-      if ( ienergy < 0.05*cenergy ) break; // just to see a few
-      if ( verbosity > 1 ) cout << "energy is " << ienergy << " tower address is " << itower << endl;
-      // --- more stuff
-      energysum += ienergy;
+
+      if ( verbosity > 5 ) cout << "energy is " << ienergy << " tower address is " << itower << endl;
+
+      // get the coordinates
       int etabin_center = ctower->get_bineta();
       int phibin_center = ctower->get_binphi();
       int etabin = itower->get_bineta();
@@ -878,8 +931,63 @@ void SimpleTrackingAnalysis::inspect_ordered_towers(const vector<RawTower*>& tow
       // boundary and periodicity corrections...
       if ( phibin > nphi/2 ) phibin -= nphi;
       if ( phibin < -nphi/2 ) phibin += nphi;
-      if ( verbosity > 2 ) cout << "eta phi coordinates relative to central tower " << etabin << " " << phibin << endl;
-      if ( verbosity > 2 ) cout << "energy sum is " << energysum << endl;
-    }
+      if ( verbosity > 6 ) cout << "eta phi coordinates relative to central tower " << etabin << " " << phibin << endl;
 
-}
+      // fill some 2d coordinate space histograms
+      if ( calo_layer == SvtxTrack::CEMC)
+	{
+	  _towers_3x3_emc->Fill(etabin,phibin,ienergy);
+	  _towers_5x5_emc->Fill(etabin,phibin,ienergy);
+	  _towers_7x7_emc->Fill(etabin,phibin,ienergy);
+	  _towers_9x9_emc->Fill(etabin,phibin,ienergy);
+	}
+      if ( calo_layer == SvtxTrack::HCALIN)
+	{
+	  _towers_3x3_hci->Fill(etabin,phibin,ienergy);
+	  _towers_5x5_hci->Fill(etabin,phibin,ienergy);
+	  _towers_7x7_hci->Fill(etabin,phibin,ienergy);
+	  _towers_9x9_hci->Fill(etabin,phibin,ienergy);
+	}
+      if ( calo_layer == SvtxTrack::HCALOUT)
+	{
+	  _towers_3x3_hco->Fill(etabin,phibin,ienergy);
+	  _towers_5x5_hco->Fill(etabin,phibin,ienergy);
+	  _towers_7x7_hco->Fill(etabin,phibin,ienergy);
+	  _towers_9x9_hco->Fill(etabin,phibin,ienergy);
+	}
+
+    } // loop over towers
+
+  // characterize the tower energy with the truth energy
+  double energy_sumtower[10] = {0};
+  unsigned int nloop = 10;
+  if ( towers.size() < nloop ) nloop = towers.size();
+  for ( unsigned int i = 0; i < nloop; ++i )
+    {
+      // get the single and summed tower energies
+      double energy_singletower = towers[i]->get_energy();
+      for ( unsigned int j = 0; j < i; ++j ) energy_sumtower[i] += energy_singletower;
+
+      // normalize
+      energy_singletower /= true_energy;
+      energy_sumtower[i] /= true_energy;
+
+      // fill histograms
+      if ( calo_layer == SvtxTrack::CEMC)
+	{
+	  _tower_energy_emc[i]->Fill(energy_singletower,true_energy);
+	  _towersum_energy_emc[i]->Fill(energy_sumtower[i],true_energy);
+	}
+      if ( calo_layer == SvtxTrack::HCALIN)
+	{
+	  _tower_energy_hci[i]->Fill(energy_singletower,true_energy);
+	  _towersum_energy_hci[i]->Fill(energy_sumtower[i],true_energy);
+	}
+      if ( calo_layer == SvtxTrack::HCALOUT)
+	{
+	  _tower_energy_hco[i]->Fill(energy_singletower,true_energy);
+	  _towersum_energy_hco[i]->Fill(energy_sumtower[i],true_energy);
+	}
+    } // fixed size loop
+
+} // inspect_ordered_towers
