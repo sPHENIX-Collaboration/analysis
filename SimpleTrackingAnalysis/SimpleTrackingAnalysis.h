@@ -10,6 +10,8 @@ class PHCompositeNode;
 //class PHG4HoughTransform;
 class TH1D;
 class TH2D;
+//class TProfile;
+class TProfile2D;
 class RawTower;
 class RawCluster;
 class RawTowerContainer;
@@ -142,26 +144,26 @@ class SimpleTrackingAnalysis: public SubsysReco
   TH2D* _energy_deta_hci;
   TH2D* _energy_deta_hco;
 
-  TH2D* _towers_3x3_emc;
-  TH2D* _towers_5x5_emc;
-  TH2D* _towers_7x7_emc;
-  TH2D* _towers_9x9_emc;
+  TProfile2D* _towers_3x3_emc;
+  TProfile2D* _towers_5x5_emc;
+  TProfile2D* _towers_7x7_emc;
+  TProfile2D* _towers_9x9_emc;
 
   TH2D* _tower_energy_emc[10];
   TH2D* _towersum_energy_emc[10];
 
-  TH2D* _towers_3x3_hci;
-  TH2D* _towers_5x5_hci;
-  TH2D* _towers_7x7_hci;
-  TH2D* _towers_9x9_hci;
+  TProfile2D* _towers_3x3_hci;
+  TProfile2D* _towers_5x5_hci;
+  TProfile2D* _towers_7x7_hci;
+  TProfile2D* _towers_9x9_hci;
 
   TH2D* _tower_energy_hci[10];
   TH2D* _towersum_energy_hci[10];
 
-  TH2D* _towers_3x3_hco;
-  TH2D* _towers_5x5_hco;
-  TH2D* _towers_7x7_hco;
-  TH2D* _towers_9x9_hco;
+  TProfile2D* _towers_3x3_hco;
+  TProfile2D* _towers_5x5_hco;
+  TProfile2D* _towers_7x7_hco;
+  TProfile2D* _towers_9x9_hco;
 
   TH2D* _tower_energy_hco[10];
   TH2D* _towersum_energy_hco[10];

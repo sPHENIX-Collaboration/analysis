@@ -33,6 +33,7 @@
 
 #include <TH1D.h>
 #include <TH2D.h>
+#include <TProfile2D.h>
 
 #include <iostream>
 //#include <cassert>
@@ -236,10 +237,10 @@ int SimpleTrackingAnalysis::Init(PHCompositeNode *topNode)
 
 
 
-  _towers_3x3_emc = new TH2D("towers_3x3_emc", "", 3,-1.5,1.5, 3,-1.5,1.5);
-  _towers_5x5_emc = new TH2D("towers_5x5_emc", "", 5,-2.5,2.5, 5,-2.5,2.5);
-  _towers_7x7_emc = new TH2D("towers_7x7_emc", "", 7,-3.5,3.5, 7,-3.5,3.5);
-  _towers_9x9_emc = new TH2D("towers_9x9_emc", "", 9,-4.5,4.5, 9,-4.5,4.5);
+  _towers_3x3_emc = new TProfile2D("towers_3x3_emc", "", 3,-1.5,1.5, 3,-1.5,1.5, 0.0,9998.0,"");
+  _towers_5x5_emc = new TProfile2D("towers_5x5_emc", "", 5,-2.5,2.5, 5,-2.5,2.5, 0.0,9998.0,"");
+  _towers_7x7_emc = new TProfile2D("towers_7x7_emc", "", 7,-3.5,3.5, 7,-3.5,3.5, 0.0,9998.0,"");
+  _towers_9x9_emc = new TProfile2D("towers_9x9_emc", "", 9,-4.5,4.5, 9,-4.5,4.5, 0.0,9998.0,"");
   se->registerHisto(_towers_3x3_emc);
   se->registerHisto(_towers_5x5_emc);
   se->registerHisto(_towers_7x7_emc);
@@ -253,10 +254,10 @@ int SimpleTrackingAnalysis::Init(PHCompositeNode *topNode)
       se->registerHisto(_tower_energy_emc[i]);
     }
 
-  _towers_3x3_hci = new TH2D("towers_3x3_hci", "", 3,-1.5,1.5, 3,-1.5,1.5);
-  _towers_5x5_hci = new TH2D("towers_5x5_hci", "", 5,-2.5,2.5, 5,-2.5,2.5);
-  _towers_7x7_hci = new TH2D("towers_7x7_hci", "", 7,-3.5,3.5, 7,-3.5,3.5);
-  _towers_9x9_hci = new TH2D("towers_9x9_hci", "", 9,-4.5,4.5, 9,-4.5,4.5);
+  _towers_3x3_hci = new TProfile2D("towers_3x3_hci", "", 3,-1.5,1.5, 3,-1.5,1.5, 0.0,9998.0,"");
+  _towers_5x5_hci = new TProfile2D("towers_5x5_hci", "", 5,-2.5,2.5, 5,-2.5,2.5, 0.0,9998.0,"");
+  _towers_7x7_hci = new TProfile2D("towers_7x7_hci", "", 7,-3.5,3.5, 7,-3.5,3.5, 0.0,9998.0,"");
+  _towers_9x9_hci = new TProfile2D("towers_9x9_hci", "", 9,-4.5,4.5, 9,-4.5,4.5, 0.0,9998.0,"");
   se->registerHisto(_towers_3x3_hci);
   se->registerHisto(_towers_5x5_hci);
   se->registerHisto(_towers_7x7_hci);
@@ -270,10 +271,10 @@ int SimpleTrackingAnalysis::Init(PHCompositeNode *topNode)
       se->registerHisto(_tower_energy_hci[i]);
     }
 
-  _towers_3x3_hco = new TH2D("towers_3x3_hco", "", 3,-1.5,1.5, 3,-1.5,1.5);
-  _towers_5x5_hco = new TH2D("towers_5x5_hco", "", 5,-2.5,2.5, 5,-2.5,2.5);
-  _towers_7x7_hco = new TH2D("towers_7x7_hco", "", 7,-3.5,3.5, 7,-3.5,3.5);
-  _towers_9x9_hco = new TH2D("towers_9x9_hco", "", 9,-4.5,4.5, 9,-4.5,4.5);
+  _towers_3x3_hco = new TProfile2D("towers_3x3_hco", "", 3,-1.5,1.5, 3,-1.5,1.5, 0.0,9998.0,"");
+  _towers_5x5_hco = new TProfile2D("towers_5x5_hco", "", 5,-2.5,2.5, 5,-2.5,2.5, 0.0,9998.0,"");
+  _towers_7x7_hco = new TProfile2D("towers_7x7_hco", "", 7,-3.5,3.5, 7,-3.5,3.5, 0.0,9998.0,"");
+  _towers_9x9_hco = new TProfile2D("towers_9x9_hco", "", 9,-4.5,4.5, 9,-4.5,4.5, 0.0,9998.0,"");
 
   for ( int i = 0; i < 10; ++i )
     {
@@ -982,24 +983,24 @@ void SimpleTrackingAnalysis::inspect_ordered_towers(const vector<RawTower*>& tow
       // fill some 2d coordinate space histograms
       if ( calo_layer == SvtxTrack::CEMC)
 	{
-	  _towers_3x3_emc->Fill(etabin,phibin,ienergy);
-	  _towers_5x5_emc->Fill(etabin,phibin,ienergy);
-	  _towers_7x7_emc->Fill(etabin,phibin,ienergy);
-	  _towers_9x9_emc->Fill(etabin,phibin,ienergy);
+	  _towers_3x3_emc->Fill(etabin,phibin,ienergy/true_energy);
+	  _towers_5x5_emc->Fill(etabin,phibin,ienergy/true_energy);
+	  _towers_7x7_emc->Fill(etabin,phibin,ienergy/true_energy);
+	  _towers_9x9_emc->Fill(etabin,phibin,ienergy/true_energy);
 	}
       if ( calo_layer == SvtxTrack::HCALIN)
 	{
-	  _towers_3x3_hci->Fill(etabin,phibin,ienergy);
-	  _towers_5x5_hci->Fill(etabin,phibin,ienergy);
-	  _towers_7x7_hci->Fill(etabin,phibin,ienergy);
-	  _towers_9x9_hci->Fill(etabin,phibin,ienergy);
+	  _towers_3x3_hci->Fill(etabin,phibin,ienergy/true_energy);
+	  _towers_5x5_hci->Fill(etabin,phibin,ienergy/true_energy);
+	  _towers_7x7_hci->Fill(etabin,phibin,ienergy/true_energy);
+	  _towers_9x9_hci->Fill(etabin,phibin,ienergy/true_energy);
 	}
       if ( calo_layer == SvtxTrack::HCALOUT)
 	{
-	  _towers_3x3_hco->Fill(etabin,phibin,ienergy);
-	  _towers_5x5_hco->Fill(etabin,phibin,ienergy);
-	  _towers_7x7_hco->Fill(etabin,phibin,ienergy);
-	  _towers_9x9_hco->Fill(etabin,phibin,ienergy);
+	  _towers_3x3_hco->Fill(etabin,phibin,ienergy/true_energy);
+	  _towers_5x5_hco->Fill(etabin,phibin,ienergy/true_energy);
+	  _towers_7x7_hco->Fill(etabin,phibin,ienergy/true_energy);
+	  _towers_9x9_hco->Fill(etabin,phibin,ienergy/true_energy);
 	}
 
     } // loop over towers
