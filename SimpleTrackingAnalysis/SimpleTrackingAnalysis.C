@@ -2,6 +2,7 @@
 
 #include <phool/getClass.h>
 #include <fun4all/Fun4AllServer.h>
+#include <fun4all/Fun4AllReturnCodes.h>
 
 #include <phool/PHCompositeNode.h>
 //#include <g4hough/PHG4HoughTransform.h> // CAUSES ERRORS DUE TO VertexFinder.h FAILING TO FIND <Eigen/LU>
@@ -46,6 +47,8 @@ SimpleTrackingAnalysis::SimpleTrackingAnalysis(const string &name) : SubsysReco(
 {
   cout << "Class constructor called " << endl;
   nevents = 0;
+  nerrors = 0;
+  nwarnings = 0;
   nlayers = 7;
   verbosity = 0;
   magneticfield = 1.4; // default is 1.5 but Mike's tracking stuff is using 1.4 for now...
@@ -356,6 +359,7 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
 	  cerr << PHWHERE << "  hco_clustercontainer " << hco_clustercontainer << endl;
 	}
       clusters_available = false;
+      ++nwarnings;
     }
 
   // --- Tower geometry
@@ -371,6 +375,7 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
 	  cerr << PHWHERE << "  hci_towergeo " << hci_towergeo << endl;
 	  cerr << PHWHERE << "  hco_towergeo " << hco_towergeo << endl;
 	}
+      ++nwarnings;
     }
 
   // --- Tower container
@@ -386,6 +391,7 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
 	  cerr << PHWHERE << "  hci_towercontainer " << hci_towercontainer << endl;
 	  cerr << PHWHERE << "  hco_towercontainer " << hco_towercontainer << endl;
 	}
+      ++nwarnings;
     }
 
 
@@ -537,6 +543,24 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
       vector<RawTower*> emc_towers_from_bestcluster = get_ordered_towers(emc_bestcluster,emc_towercontainer);
       vector<RawTower*> hci_towers_from_bestcluster = get_ordered_towers(hci_bestcluster,hci_towercontainer);
       vector<RawTower*> hco_towers_from_bestcluster = get_ordered_towers(hco_bestcluster,hco_towercontainer);
+
+      // --- this condition should be impossible, and seems to be
+      if ( emc_bestcluster->getNTowers() < emc_towers_from_bestcluster.size() && verbosity > -3 )
+	{
+	  cerr << PHWHERE << " ERROR: number of towers from cluster " << emc_bestcluster->getNTowers()
+	       << " but number of towers in ordered tower " << emc_towers_from_bestcluster.size()
+	       << " event number " << nevents << endl;
+	  ++nerrors;
+	}
+
+      // --- this condition seems to happen pretty often, possible issue in iterators?
+      if ( emc_bestcluster->getNTowers() > emc_towers_from_bestcluster.size() && verbosity > -2 )
+	{
+	  cerr << PHWHERE << " WARNING: number of towers from cluster " << emc_bestcluster->getNTowers()
+	       << " but number of towers in ordered tower " << emc_towers_from_bestcluster.size()
+	       << " event number " << nevents << endl;
+	  ++nwarnings;
+	}
 
       // --- Inspect the towers (fills a bunch of histograms, prints to screen if verbose)
       inspect_ordered_towers(emc_towers_from_bestcluster,true_energy,SvtxTrack::CEMC);
@@ -812,7 +836,8 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
   if ( !maxvertex )
     {
       cerr << PHWHERE << " ERROR: cannot get reconstructed vertex (event number " << nevents << ")" << endl;
-      return -1;
+      ++nerrors;
+      return Fun4AllReturnCodes::DISCARDEVENT;
     }
 
   // --- Get the coordinates for the vertex from the evaluator
@@ -820,7 +845,8 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
   if ( !point )
     {
       cerr << PHWHERE << " ERROR: cannot get truth vertex (event number " << nevents << ")" << endl;
-      return -1;
+      ++nerrors;
+      return Fun4AllReturnCodes::DISCARDEVENT;
     }
   _dx_vertex->Fill(maxvertex->get_x() - point->get_x());
   _dy_vertex->Fill(maxvertex->get_y() - point->get_y());
@@ -828,7 +854,7 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
 
 
 
-  return 0;
+  return Fun4AllReturnCodes::EVENT_OK;
 
 }
 
@@ -836,7 +862,7 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
 
 int SimpleTrackingAnalysis::End(PHCompositeNode *topNode)
 {
-  cout << "End called. " << nevents << " events processed." << endl;
+  cout << "End called, " << nevents << " events processed with " << nerrors << " errors and " << nwarnings << " warnings." << endl;
   return 0;
 }
 
@@ -911,7 +937,7 @@ vector<RawTower*> SimpleTrackingAnalysis::get_ordered_towers(RawCluster* cluster
   // note that RawCluster* cannot be const, get_towers is not declared as const function in class header
   auto range = cluster->get_towers();
 
-  map<double,RawTower*> tower_map;
+  multimap<double,RawTower*> tower_map;
   for ( auto it = range.first; it != range.second; ++it )
     {
       // note that RawTowerContainer cannot be const, getTower is not declared as a const function in class header

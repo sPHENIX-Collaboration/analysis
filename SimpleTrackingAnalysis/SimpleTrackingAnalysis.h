@@ -64,6 +64,8 @@ class SimpleTrackingAnalysis: public SubsysReco
 
   // event counter
   unsigned long long nevents;
+  unsigned long long nerrors;
+  unsigned long long nwarnings;
 
   // number of layers
   unsigned int nlayers;
