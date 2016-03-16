@@ -544,24 +544,6 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
       vector<RawTower*> hci_towers_from_bestcluster = get_ordered_towers(hci_bestcluster,hci_towercontainer);
       vector<RawTower*> hco_towers_from_bestcluster = get_ordered_towers(hco_bestcluster,hco_towercontainer);
 
-      // --- this condition should be impossible, and seems to be
-      if ( emc_bestcluster->getNTowers() < emc_towers_from_bestcluster.size() && verbosity > -3 )
-	{
-	  cerr << PHWHERE << " ERROR: number of towers from cluster " << emc_bestcluster->getNTowers()
-	       << " but number of towers in ordered tower " << emc_towers_from_bestcluster.size()
-	       << " event number " << nevents << endl;
-	  ++nerrors;
-	}
-
-      // --- this condition seems to happen pretty often, possible issue in iterators?
-      if ( emc_bestcluster->getNTowers() > emc_towers_from_bestcluster.size() && verbosity > -2 )
-	{
-	  cerr << PHWHERE << " WARNING: number of towers from cluster " << emc_bestcluster->getNTowers()
-	       << " but number of towers in ordered tower " << emc_towers_from_bestcluster.size()
-	       << " event number " << nevents << endl;
-	  ++nwarnings;
-	}
-
       // --- Inspect the towers (fills a bunch of histograms, prints to screen if verbose)
       inspect_ordered_towers(emc_towers_from_bestcluster,true_energy,SvtxTrack::CEMC);
       inspect_ordered_towers(hci_towers_from_bestcluster,true_energy,SvtxTrack::HCALIN);
