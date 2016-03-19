@@ -129,7 +129,7 @@ int SimpleTrackingAnalysis::Init(PHCompositeNode *topNode)
 
 
 
-  // --- (mostly) the same set of histograms over reconstructed pt, used for studying purity, with calorimeter cuts
+  // --- purity study with calorimeter cuts
 
   _recopt_tracks_withcalocuts_all = new TH1D("recopt_tracks_withcalocuts_all", "", 20,0.0,10.0);
   se->registerHisto(_recopt_tracks_withcalocuts_all);
@@ -151,6 +151,55 @@ int SimpleTrackingAnalysis::Init(PHCompositeNode *topNode)
 
   _recopt_tracks_withcalocuts_recoWithin5Percent = new TH1D("recopt_tracks_withcalocuts_recoWithin5Percent", "", 20,0.0,10.0);
   se->registerHisto(_recopt_tracks_withcalocuts_recoWithin5Percent);
+
+
+  // for ( int i = 0; i < 10; ++i )
+  //   {
+  //     _recopt_tracks_withcalocuts_all_x[i] = new TH1D(Form("recopt_tracks_withcalocuts_all_%d",i), "", 20,0.0,10.0);
+  //     _recopt_tracks_withcalocuts_recoWithExactHits_x[i] = new TH1D(Form("recopt_tracks_withcalocuts_recoWithExactHits_%d",i), "", 20,0.0,10.0);
+  //     _recopt_tracks_withcalocuts_recoWithin1Hit_x[i] = new TH1D(Form("recopt_tracks_withcalocuts_recoWithin1Hit_%d",i), "", 20,0.0,10.0);
+  //     _recopt_tracks_withcalocuts_recoWithin2Hits_x[i] = new TH1D(Form("recopt_tracks_withcalocuts_recoWithin2Hits_%d",i), "", 20,0.0,10.0);
+  //     _recopt_tracks_withcalocuts_recoWithin3Percent_x[i] = new TH1D(Form("recopt_tracks_withcalocuts_recoWithin3Percent_%d",i), "", 20,0.0,10.0);
+  //     _recopt_tracks_withcalocuts_recoWithin4Percent_x[i] = new TH1D(Form("recopt_tracks_withcalocuts_recoWithin4Percent_%d",i), "", 20,0.0,10.0);
+  //     _recopt_tracks_withcalocuts_recoWithin5Percent_x[i] = new TH1D(Form("recopt_tracks_withcalocuts_recoWithin5Percent_%d",i), "", 20,0.0,10.0);
+
+  //     se->registerHisto(_recopt_tracks_withcalocuts_all_x[i]);
+  //     se->registerHisto(_recopt_tracks_withcalocuts_recoWithExactHits_x[i]);
+  //     se->registerHisto(_recopt_tracks_withcalocuts_recoWithin1Hit_x[i]);
+  //     se->registerHisto(_recopt_tracks_withcalocuts_recoWithin2Hits_x[i]);
+  //     se->registerHisto(_recopt_tracks_withcalocuts_recoWithin3Percent_x[i]);
+  //     se->registerHisto(_recopt_tracks_withcalocuts_recoWithin4Percent_x[i]);
+  //     se->registerHisto(_recopt_tracks_withcalocuts_recoWithin5Percent_x[i]);
+  //   }
+
+
+
+
+  // --- efficiency study with calorimter cuts
+
+  _truept_particles_withcalocuts_leaving7Hits = new TH1D("truept_particles_withcalocuts_leaving7Hits", "", 20,0.0,10.0);
+  se->registerHisto(_truept_particles_withcalocuts_leaving7Hits);
+
+  _truept_particles_withcalocuts_recoWithExactHits = new TH1D("truept_particles_withcalocuts_recoWithExactHits", "", 20,0.0,10.0);
+  se->registerHisto(_truept_particles_withcalocuts_recoWithExactHits);
+
+  _truept_particles_withcalocuts_recoWithin1Hit = new TH1D("truept_particles_withcalocuts_recoWithin1Hit", "", 20,0.0,10.0);
+  se->registerHisto(_truept_particles_withcalocuts_recoWithin1Hit);
+
+  _truept_particles_withcalocuts_recoWithin2Hits = new TH1D("truept_particles_withcalocuts_recoWithin2Hits", "", 20,0.0,10.0);
+  se->registerHisto(_truept_particles_withcalocuts_recoWithin2Hits);
+
+  _truept_particles_withcalocuts_recoWithin3Percent = new TH1D("truept_particles_withcalocuts_recoWithin3Percent", "", 20,0.0,10.0);
+  se->registerHisto(_truept_particles_withcalocuts_recoWithin3Percent);
+
+  _truept_particles_withcalocuts_recoWithin4Percent = new TH1D("truept_particles_withcalocuts_recoWithin4Percent", "", 20,0.0,10.0);
+  se->registerHisto(_truept_particles_withcalocuts_recoWithin4Percent);
+
+  _truept_particles_withcalocuts_recoWithin5Percent = new TH1D("truept_particles_withcalocuts_recoWithin5Percent", "", 20,0.0,10.0);
+  se->registerHisto(_truept_particles_withcalocuts_recoWithin5Percent);
+
+
+
 
 
 
@@ -180,6 +229,37 @@ int SimpleTrackingAnalysis::Init(PHCompositeNode *topNode)
 
   _recopt_quality_tracks_recoWithin4Percent = new TH2D("recopt_quality_tracks_recoWithin4Percent", "", 20,0.0,10.0, 100,0.0,5.0);
   se->registerHisto(_recopt_quality_tracks_recoWithin4Percent);
+
+
+
+  // --- special stuff...
+
+  th1d_true_nonembedded_electron_recopt = new TH1D("th1d_true_nonembedded_electron_recopt","",20,0,10);
+  th1d_reco_nonembedded_electron_recopt = new TH1D("th1d_reco_nonembedded_electron_recopt","",20,0,10);
+  th1d_true_nonembedded_pion_recopt = new TH1D("th1d_true_nonembedded_pion_recopt","",20,0,10);
+  th1d_reco_nonembedded_pion_recopt = new TH1D("th1d_reco_nonembedded_pion_recopt","",20,0,10);
+  se->registerHisto(th1d_true_nonembedded_electron_recopt);
+  se->registerHisto(th1d_reco_nonembedded_electron_recopt);
+  se->registerHisto(th1d_true_nonembedded_pion_recopt);
+  se->registerHisto(th1d_reco_nonembedded_pion_recopt);
+
+  th1d_true_embedded_electron_recopt = new TH1D("th1d_true_embedded_electron_recopt","",20,0,10);
+  th1d_reco_embedded_electron_recopt = new TH1D("th1d_reco_embedded_electron_recopt","",20,0,10);
+  th1d_true_embedded_pion_recopt = new TH1D("th1d_true_embedded_pion_recopt","",20,0,10);
+  th1d_reco_embedded_pion_recopt = new TH1D("th1d_reco_embedded_pion_recopt","",20,0,10);
+  se->registerHisto(th1d_true_embedded_electron_recopt);
+  se->registerHisto(th1d_reco_embedded_electron_recopt);
+  se->registerHisto(th1d_true_embedded_pion_recopt);
+  se->registerHisto(th1d_reco_embedded_pion_recopt);
+
+  th1d_true_all_electron_recopt = new TH1D("th1d_true_all_electron_recopt","",20,0,10);
+  th1d_reco_all_electron_recopt = new TH1D("th1d_reco_all_electron_recopt","",20,0,10);
+  th1d_true_all_pion_recopt = new TH1D("th1d_true_all_pion_recopt","",20,0,10);
+  th1d_reco_all_pion_recopt = new TH1D("th1d_reco_all_pion_recopt","",20,0,10);
+  se->registerHisto(th1d_true_all_electron_recopt);
+  se->registerHisto(th1d_reco_all_electron_recopt);
+  se->registerHisto(th1d_true_all_pion_recopt);
+  se->registerHisto(th1d_reco_all_pion_recopt);
 
 
 
@@ -457,7 +537,17 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
       // In C++ the iterator is a map, which has two members
       // first is the key (analogous the index of an arry),
       // second is the value (analogous to the value stored for the array index)
-      // if ( trutheval->get_embed(g4particle) == 0 ) continue; // only look at embedded particles (for now) // no good for hits files
+      int particleID = g4particle->get_pid();
+
+      if ( trutheval->get_embed(g4particle) == 0 && fabs(particleID) == 11 && verbosity > 0 )
+        {
+          cout << "NON EMBEDDED ELECTRON!!!  WHEE!!! " << particleID << " " << iter->first << endl;
+        }
+
+      if ( trutheval->get_embed(g4particle) == 0 ) continue; // only look at embedded particles // no good for hits files
+      bool iselectron = fabs(particleID) == 11;
+      bool ispion = fabs(particleID) == 211;
+      if ( verbosity > 0 ) cout << "embedded particle ID is " << particleID << " ispion " << ispion << " iselectron " << iselectron << " " << iter->first << endl;
 
       set<PHG4Hit*> g4hits = trutheval->all_truth_hits(g4particle);
       float ng4hits = g4hits.size();
@@ -469,6 +559,7 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
       SvtxTrack* track = trackeval->best_track_from(g4particle);
       if (!track) continue;
       float recopt = track->get_pt();
+      float recop = track->get_p();
 
       if ( verbosity > 0 )
 	{
@@ -476,33 +567,6 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
 	  cout << "recopt is " << recopt << endl;
 	  cout << "true energy is " << true_energy << endl;
 	}
-
-      // ----------------------------------------------------------------------
-      // ----------------------------------------------------------------------
-      // ----------------------------------------------------------------------
-
-      // examine truth particles that leave all (7 or 8 depending on design) detector hits
-      if ( ng4hits == nlayers )
-	{
-	  _truept_particles_leaving7Hits->Fill(truept);
-
-	  unsigned int nfromtruth = trackeval->get_nclusters_contribution(track,g4particle);
-
-	  unsigned int ndiff = abs((int)nfromtruth-(int)nlayers);
-	  if ( ndiff <= 2 ) _truept_particles_recoWithin2Hits->Fill(truept);
-	  if ( ndiff <= 1 ) _truept_particles_recoWithin1Hit->Fill(truept);
-	  if ( ndiff == 0 ) _truept_particles_recoWithExactHits->Fill(truept);
-
-	  float diff = fabs(recopt-truept)/truept;
-	  if ( diff < 0.05 ) _truept_particles_recoWithin5Percent->Fill(truept);
-	  if ( diff < 0.04 )
-	    {
-	      _truept_particles_recoWithin4Percent->Fill(truept);
-	      _truept_quality_particles_recoWithin4Percent->Fill(truept,track->get_quality());
-	    }
-	  if ( diff < 0.03 ) _truept_particles_recoWithin3Percent->Fill(truept);
-
-	} // end of requirement of ng4hits == nlayers
 
       // ----------------------------------------------------------------------
       // ----------------------------------------------------------------------
@@ -572,7 +636,7 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
       if ( hci_bestcluster ) hci_energy_best = hci_bestcluster->get_energy();
       if ( hco_bestcluster ) hco_energy_best = hco_bestcluster->get_energy();
 
-      if ( verbosity > 0 )
+      if ( verbosity > 5 )
 	{
 	  cout << "emc_energy_best is " << emc_energy_best << endl;
 	  cout << "hci_energy_best is " << hci_energy_best << endl;
@@ -584,7 +648,7 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
       if ( hci_clustercontainer ) hci_energy_track = track->get_cal_cluster_e(SvtxTrack::HCALIN);
       if ( hco_clustercontainer ) hco_energy_track = track->get_cal_cluster_e(SvtxTrack::HCALOUT);
 
-      if ( verbosity > 0 )
+      if ( verbosity > 5 )
 	{
 	  cout << "emc_energy_track is " << emc_energy_track << endl;
 	  cout << "hci_energy_track is " << hci_energy_track << endl;
@@ -706,7 +770,56 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
 	  _energy_ratio_eub_tot_smart->Fill(true_energy,tot_smart_eratio);
 	}
 
+      // ----------------------------------------------------------------------
+      // ----------------------------------------------------------------------
+      // ----------------------------------------------------------------------
 
+      //cout << "starting the main part of the truth analysis" << endl;
+
+      // examine truth particles that leave all (7 or 8 depending on design) detector hits
+      if ( ng4hits == nlayers )
+	{
+	  _truept_particles_leaving7Hits->Fill(truept);
+
+	  unsigned int nfromtruth = trackeval->get_nclusters_contribution(track,g4particle);
+
+	  unsigned int ndiff = abs((int)nfromtruth-(int)nlayers);
+	  if ( ndiff <= 2 ) _truept_particles_recoWithin2Hits->Fill(truept);
+	  if ( ndiff <= 1 ) _truept_particles_recoWithin1Hit->Fill(truept);
+	  if ( ndiff == 0 ) _truept_particles_recoWithExactHits->Fill(truept);
+
+	  float diff = fabs(recopt-truept)/truept;
+	  if ( diff < 0.05 ) _truept_particles_recoWithin5Percent->Fill(truept);
+	  if ( diff < 0.04 )
+	    {
+	      _truept_particles_recoWithin4Percent->Fill(truept);
+	      _truept_quality_particles_recoWithin4Percent->Fill(truept,track->get_quality());
+	    }
+	  if ( diff < 0.03 ) _truept_particles_recoWithin3Percent->Fill(truept);
+
+	  bool goodcalo = (total_energy_dumb > 0.5 * recop);
+
+          //cout << "looking at calorimeter stuff " << goodcalo << " " << total_energy_dumb << endl;
+
+	  if ( goodcalo )
+	    {
+	      _truept_particles_withcalocuts_leaving7Hits->Fill(recopt);
+
+	      unsigned int nfromtruth = trackeval->get_nclusters_contribution(track,g4particle);
+
+	      unsigned int ndiff = abs((int)nfromtruth-(int)nlayers);
+	      if ( ndiff <= 2 ) _truept_particles_withcalocuts_recoWithin2Hits->Fill(recopt);
+	      if ( ndiff <= 1 ) _truept_particles_withcalocuts_recoWithin1Hit->Fill(recopt);
+	      if ( ndiff == 0 ) _truept_particles_withcalocuts_recoWithExactHits->Fill(recopt);
+
+	      float diff = fabs(recopt-truept)/truept;
+	      if ( diff < 0.05 ) _truept_particles_withcalocuts_recoWithin5Percent->Fill(recopt);
+	      if ( diff < 0.04 ) _truept_particles_withcalocuts_recoWithin4Percent->Fill(recopt);
+	      if ( diff < 0.03 ) _truept_particles_withcalocuts_recoWithin3Percent->Fill(recopt);
+
+	    } // check on good calo
+
+	} // end of requirement of ng4hits == nlayers
 
     } // end of loop over truth particles
 
@@ -719,10 +832,15 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
       // --- Get the StxTrack object (from the iterator)
       SvtxTrack* track = iter->second;
       float recopt = track->get_pt();
+      float recop = track->get_p();
 
       // --- Get the truth particle from the evaluator
       PHG4Particle* g4particle = trackeval->max_truth_particle_by_nclusters(track);
       float truept = sqrt(pow(g4particle->get_px(),2)+pow(g4particle->get_py(),2));
+      int particleID = g4particle->get_pid();
+      if ( verbosity > 5 ) cout << "particle ID is " << particleID << endl;
+      bool iselectron = fabs(particleID) == 11;
+      bool ispion = fabs(particleID) == 211;
 
       // ---------------------
       // --- calorimeter stuff
@@ -730,15 +848,37 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
 
       // --- energy variables directly from the track object
       float emc_energy_track = -9999;
-      //float hci_energy_track = -9999;
-      //float hco_energy_track = -9999;
+      float hci_energy_track = -9999;
+      float hco_energy_track = -9999;
 
       // --- get the energy values directly from the track
       if ( emc_clustercontainer ) emc_energy_track = track->get_cal_energy_3x3(SvtxTrack::CEMC);
-      //if ( hci_clustercontainer ) hci_energy_track = track->get_cal_energy_3x3(SvtxTrack::HCALIN);
-      //if ( hco_clustercontainer ) hco_energy_track = track->get_cal_energy_3x3(SvtxTrack::HCALOUT);
+      if ( hci_clustercontainer ) hci_energy_track = track->get_cal_energy_3x3(SvtxTrack::HCALIN);
+      if ( hco_clustercontainer ) hco_energy_track = track->get_cal_energy_3x3(SvtxTrack::HCALOUT);
+
+      float total_energy = 0;
+      if ( emc_energy_track > 0 ) total_energy += emc_energy_track;
+      if ( hci_energy_track > 0 ) total_energy += hci_energy_track;
+      if ( hco_energy_track > 0 ) total_energy += hco_energy_track;
+
+      if ( verbosity > 2 ) cout << "total calo energy is " << total_energy << endl;
 
       // ---
+
+      //cout << "now starting the reco part of the analysis" << endl;
+
+      // --- this selection based on inner hcal modeling as of 20160317
+      // --- happy St. Paddy's!
+      bool iselectronR = total_energy < 0.4 * recop;
+      bool ispionR = total_energy > 0.8 * recop;
+
+      if ( iselectron ) th1d_true_all_electron_recopt->Fill(recopt);
+      if ( ispion ) th1d_true_all_pion_recopt->Fill(recopt);
+      if ( iselectronR ) th1d_reco_all_electron_recopt->Fill(recopt);
+      if ( ispionR ) th1d_reco_all_pion_recopt->Fill(recopt);
+
+      if ( iselectronR ) th1d_reco_embedded_electron_recopt->Fill(recopt);
+      if ( ispionR ) th1d_reco_embedded_pion_recopt->Fill(recopt);
 
       if (trutheval->get_embed(g4particle) != 0)
 	{
@@ -746,9 +886,19 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
 	  _truept_dptoverpt->Fill(truept,(recopt-truept)/truept);
 	  _truept_dca->Fill(truept,track->get_dca2d());
 	  _recopt_quality->Fill(recopt,track->get_quality());
+          if ( verbosity > 0 ) cout << "embedded particle ID is " << particleID << " ispion" << ispion << " iselectron " << iselectron << endl;
+          // ---
+          if ( iselectron ) th1d_true_embedded_electron_recopt->Fill(recopt);
+          if ( ispion ) th1d_true_embedded_pion_recopt->Fill(recopt);
 	} // end if (embedded results)
       else
 	{
+          // electron and pion (hadron) id
+          if ( iselectronR ) th1d_reco_nonembedded_electron_recopt->Fill(recopt);
+          if ( ispionR ) th1d_reco_nonembedded_pion_recopt->Fill(recopt);
+          if ( iselectron ) th1d_true_nonembedded_electron_recopt->Fill(recopt);
+          if ( ispion ) th1d_true_nonembedded_pion_recopt->Fill(recopt);
+
 	  // non-embedded results (purity measures)
 	  _recopt_tracks_all->Fill(recopt);
 	  _recopt_quality_tracks_all->Fill(recopt,track->get_quality());
@@ -775,7 +925,9 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
 	  // --------------------------------------
 
 	  // this needs careful study and consideration, just getting started for now...
-	  bool goodcalo = (emc_energy_track > 0.2 * recopt);
+	  bool goodcalo = (total_energy > 0.5 * recop);
+
+          //cout << "now looking at calorimeter stuff " << goodcalo << " " << total_energy << endl;
 
 	  if ( goodcalo )
 	    {
@@ -794,6 +946,29 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
 	      if ( diff < 0.03 ) _recopt_tracks_withcalocuts_recoWithin3Percent->Fill(recopt);
 
 	    } // check on good calo
+
+          // for ( int i = 0; i < 10; ++i )
+          //   {
+          //     float eindex = (float)i/5.0 + 0.1;
+          //     goodcalo = total_energy > eindex * recop;
+          //     cout << "energy index is " << eindex << endl;
+          //     if ( goodcalo )
+          //       {
+          //         _recopt_tracks_withcalocuts_all_x[i]->Fill(recopt);
+
+          //         unsigned int nfromtruth = trackeval->get_nclusters_contribution(track,g4particle);
+
+          //         unsigned int ndiff = abs((int)nfromtruth-(int)nlayers);
+          //         if ( ndiff <= 2 ) _recopt_tracks_withcalocuts_recoWithin2Hits_x[i]->Fill(recopt);
+          //         if ( ndiff <= 1 ) _recopt_tracks_withcalocuts_recoWithin1Hit_x[i]->Fill(recopt);
+          //         if ( ndiff == 0 ) _recopt_tracks_withcalocuts_recoWithExactHits_x[i]->Fill(recopt);
+
+          //         float diff = fabs(recopt-truept)/truept;
+          //         if ( diff < 0.05 ) _recopt_tracks_withcalocuts_recoWithin5Percent_x[i]->Fill(recopt);
+          //         if ( diff < 0.04 ) _recopt_tracks_withcalocuts_recoWithin4Percent_x[i]->Fill(recopt);
+          //         if ( diff < 0.03 ) _recopt_tracks_withcalocuts_recoWithin3Percent_x[i]->Fill(recopt);
+          //       } // check on good calo
+	  //   } // end of for loop for energy indices
 
 	  // --- done with reco tracks
 
@@ -973,7 +1148,7 @@ void SimpleTrackingAnalysis::inspect_ordered_towers(const vector<RawTower*>& tow
       RawTower* itower = towers[i];
       double ienergy = itower->get_energy();
 
-      if ( verbosity > 5 ) cout << "energy is " << ienergy << " tower address is " << itower << endl;
+      // if ( verbosity > 5 ) cout << "energy is " << ienergy << " tower address is " << itower << endl;
 
       // get the coordinates
       int etabin_center = ctower->get_bineta();
@@ -986,7 +1161,7 @@ void SimpleTrackingAnalysis::inspect_ordered_towers(const vector<RawTower*>& tow
       // boundary and periodicity corrections...
       if ( phibin > nphi/2 ) phibin -= nphi;
       if ( phibin < -nphi/2 ) phibin += nphi;
-      if ( verbosity > 6 ) cout << "eta phi coordinates relative to central tower " << etabin << " " << phibin << endl;
+      // if ( verbosity > 6 ) cout << "eta phi coordinates relative to central tower " << etabin << " " << phibin << endl;
 
       // fill some 2d coordinate space histograms
       if ( calo_layer == SvtxTrack::CEMC)
@@ -1025,12 +1200,12 @@ void SimpleTrackingAnalysis::inspect_ordered_towers(const vector<RawTower*>& tow
       energy_sumtower[i] = energy_singletower;
       for ( unsigned int j = i; j > 0; --j ) energy_sumtower[j] += energy_sumtower[j-1];
 
-      if ( verbosity > 5 )
-	{
-	  cout << "inspecting tower energies" << endl;
-	  cout << "single tower energy is " << energy_singletower << endl;
-	  cout << "sum tower energy is " << energy_sumtower[i] << endl;
-	}
+      // if ( verbosity > 5 )
+      //   {
+      //     cout << "inspecting tower energies" << endl;
+      //     cout << "single tower energy is " << energy_singletower << endl;
+      //     cout << "sum tower energy is " << energy_sumtower[i] << endl;
+      //   }
 
       // fill histograms
       if ( calo_layer == SvtxTrack::CEMC )
