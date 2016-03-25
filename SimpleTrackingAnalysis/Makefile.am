@@ -16,11 +16,15 @@ lib_LTLIBRARIES = \
 
 include_HEADERS = \
   SimpleTrackingAnalysis.h \
-  SimpleTrackingAnalysisLinkDef.h
+  SimpleTrackingAnalysisLinkDef.h \
+  STACalorimeterCharacterization.h \
+  STACalorimeterCharacterizationLinkDef.h
 
 libSimpleTrackingAnalysis_la_SOURCES = \
   SimpleTrackingAnalysis.C \
-  SimpleTrackingAnalysis_Dict.C
+  SimpleTrackingAnalysis_Dict.C \
+  STACalorimeterCharacterization.C \
+  STACalorimeterCharacterization_Dict.C
 
 libSimpleTrackingAnalysis_la_LIBADD = \
   -lg4dst \
