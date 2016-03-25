@@ -33,12 +33,6 @@ class SimpleTrackingAnalysis: public SubsysReco
   void set_verbosity(int x) {verbosity = x;}
   //void set_docalocuts(bool x) {docalocuts = x;}
 
-  std::vector<RawTower*> get_ordered_towers(RawCluster*, RawTowerContainer*);
-  std::vector<RawTower*> get_ordered_towers(const RawTowerContainer*);
-  std::vector<RawCluster*> get_ordered_clusters(const RawClusterContainer*);
-  void inspect_ordered_towers(const std::vector<RawTower*>&);
-  void inspect_ordered_towers(const std::vector<RawTower*>&, int);
-  void inspect_ordered_towers(const std::vector<RawTower*>&, double, int);
 
 
  private:
@@ -162,58 +156,6 @@ class SimpleTrackingAnalysis: public SubsysReco
 
 
 
-  TH2D* _energy_ratio_emc;
-  TH2D* _energy_ratio_hci;
-  TH2D* _energy_ratio_hco;
-  TH2D* _energy_ratio_hct;
-  TH2D* _energy_ratio_tot_dumb;
-  TH2D* _energy_ratio_tot_smart;
-
-  TH2D* _energy_ratio_elb_emc;
-  TH2D* _energy_ratio_elb_hci;
-  TH2D* _energy_ratio_elb_hco;
-  TH2D* _energy_ratio_elb_hct;
-  TH2D* _energy_ratio_elb_tot_dumb;
-  TH2D* _energy_ratio_elb_tot_smart;
-
-  TH2D* _energy_ratio_eub_emc;
-  TH2D* _energy_ratio_eub_hci;
-  TH2D* _energy_ratio_eub_hco;
-  TH2D* _energy_ratio_eub_hct;
-  TH2D* _energy_ratio_eub_tot_dumb;
-  TH2D* _energy_ratio_eub_tot_smart;
-
-  TH2D* _energy_dphi_emc;
-  TH2D* _energy_dphi_hci;
-  TH2D* _energy_dphi_hco;
-
-  TH2D* _energy_deta_emc;
-  TH2D* _energy_deta_hci;
-  TH2D* _energy_deta_hco;
-
-  TProfile2D* _towers_3x3_emc;
-  TProfile2D* _towers_5x5_emc;
-  TProfile2D* _towers_7x7_emc;
-  TProfile2D* _towers_9x9_emc;
-
-  TH2D* _tower_energy_emc[10];
-  TH2D* _towersum_energy_emc[10];
-
-  TProfile2D* _towers_3x3_hci;
-  TProfile2D* _towers_5x5_hci;
-  TProfile2D* _towers_7x7_hci;
-  TProfile2D* _towers_9x9_hci;
-
-  TH2D* _tower_energy_hci[10];
-  TH2D* _towersum_energy_hci[10];
-
-  TProfile2D* _towers_3x3_hco;
-  TProfile2D* _towers_5x5_hco;
-  TProfile2D* _towers_7x7_hco;
-  TProfile2D* _towers_9x9_hco;
-
-  TH2D* _tower_energy_hco[10];
-  TH2D* _towersum_energy_hco[10];
 
 };
 
