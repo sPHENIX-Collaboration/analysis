@@ -18,10 +18,15 @@ public:
   int process_event(PHCompositeNode *topNode);
   int End(PHCompositeNode *topNode);
 
+  void set_nlayers(unsigned int nlayers) {_nlayers = nlayers;}
+
 private:
 
   // event counter
   unsigned long long _event;
+
+  // number of layers
+  unsigned int _nlayers;
 
   // output histograms ---------------------------------------------------------
   
