@@ -90,9 +90,9 @@ DrawEMCalTower( //
 //  HCALDistribution("TOWER_HCALIN", "Inner HCal");
 //  HCALDistribution("TOWER_HCALOUT", "Outer HCal");
 
-//  EMCDistribution();
-//  EMCDistribution(true);
-//  EMCDistribution_SUM();
+  EMCDistribution();
+  EMCDistribution(true);
+  EMCDistribution_SUM();
 }
 
 void
