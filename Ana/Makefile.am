@@ -15,7 +15,7 @@ lib_LTLIBRARIES = \
   libPHAna.la
 
 libPHAna_la_SOURCES = \
-  PHAna.C \
+  PHAna.cc \
   PHAnaDict.C
 
 libPHAna_la_LIBADD = \
