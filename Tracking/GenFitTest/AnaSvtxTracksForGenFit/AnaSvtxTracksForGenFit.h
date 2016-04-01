@@ -6,10 +6,11 @@
 
 //Forward declerations
 class PHCompositeNode;
-class PHG4HitContainer;
 class PHG4TruthInfoContainer;
+class SvtxClusterMap;
+class SvtxEvalStack;
 class TFile;
-class TNtuple;
+class TTree;
 
 
 //Brief: basic ntuple and histogram creation for sim evaluation

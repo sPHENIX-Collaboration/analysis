@@ -23,8 +23,23 @@
 #include <fun4all/PHTFileServer.h>
 #include <fun4all/Fun4AllServer.h>
 
-#include <TNtuple.h>
-#include <TH1.h>
+#include <g4hough/SvtxVertexMap.h>
+#include <g4hough/SvtxVertex.h>
+#include <g4hough/SvtxTrackMap.h>
+#include <g4hough/SvtxTrack.h>
+#include <g4hough/SvtxClusterMap.h>
+#include <g4hough/SvtxCluster.h>
+#include <g4hough/SvtxHitMap.h>
+#include <g4hough/SvtxHit.h>
+
+#include <g4eval/SvtxEvalStack.h>
+#include <g4eval/SvtxTrackEval.h>
+#include <g4eval/SvtxClusterEval.h>
+#include <g4eval/SvtxTruthEval.h>
+#include <g4eval/SvtxVertexEval.h>
+#include <g4eval/SvtxHitEval.h>
+
+#include <TTree.h>
 
 #include <iostream>
 
@@ -99,7 +114,7 @@ int AnaSvtxTracksForGenFit::process_event(PHCompositeNode *topNode)
 
   if (!_svtxevalstack) {
     _svtxevalstack = new SvtxEvalStack(topNode);
-    _svtxevalstack->set_strict(_strict);
+    _svtxevalstack->set_strict(false);
     _svtxevalstack->set_verbosity(verbosity + 1);
   } else {
     _svtxevalstack->next_event(topNode);
@@ -119,7 +134,7 @@ int AnaSvtxTracksForGenFit::End(PHCompositeNode *topNode)
 
   PHTFileServer::get().cd( _outfile );
 
-  _tree->Write();
+  _tracks->Write();
 
   if (_svtxevalstack) delete _svtxevalstack;
 
@@ -137,10 +152,7 @@ void AnaSvtxTracksForGenFit::fill_tree(PHCompositeNode *topNode)
   reset_variables();
 
   // get evaluators
-  SvtxVertexEval*   vertexeval = _svtxevalstack->get_vertex_eval();
   SvtxTrackEval*     trackeval = _svtxevalstack->get_track_eval();
-  SvtxClusterEval* clustereval = _svtxevalstack->get_cluster_eval();
-  SvtxHitEval*         hiteval = _svtxevalstack->get_hit_eval();
   SvtxTruthEval*     trutheval = _svtxevalstack->get_truth_eval();
 
   if (_truth_container)
@@ -272,30 +284,6 @@ void AnaSvtxTracksForGenFit::GetNodes(PHCompositeNode * topNode)
 
 }
 
-//_____________________________________
-void AnaSvtxTracksForGenFit::fill_truth_ntuple(PHCompositeNode * topNode)
-{
-  map<int, PHG4Particle*>::const_iterator particle_iter;
-  float ntvars[7];
-
-  PHG4TruthInfoContainer::ConstRange primary_range =
-    _truth_container->GetPrimaryParticleRange();
-
-  for (PHG4TruthInfoContainer::ConstIterator particle_iter = primary_range.first;
-       particle_iter != primary_range.second; ++particle_iter)
-  {
-    PHG4Particle *particle = particle_iter->second;
-    ntvars[0] = _event;
-    ntvars[1] = particle->get_e();
-    ntvars[2] = 0.5 * log((particle->get_e() + particle->get_pz()) /
-                          (particle->get_e() - particle->get_pz()));
-    ntvars[3] = sqrt(Square(particle->get_px()) + Square(particle->get_py()));
-    ntvars[4] = atan2(particle->get_py(), particle->get_px());
-    ntvars[5] = particle->get_pid();
-    _truth->Fill( ntvars );
-  }
-
-}
 
 
 
