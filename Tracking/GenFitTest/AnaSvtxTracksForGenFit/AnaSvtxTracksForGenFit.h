@@ -1,0 +1,125 @@
+#ifndef __AnaSvtxTracksForGenFit_H__
+#define __AnaSvtxTracksForGenFit_H__
+
+#include <fun4all/SubsysReco.h>
+#include <string>
+
+//Forward declerations
+class PHCompositeNode;
+class PHG4HitContainer;
+class PHG4TruthInfoContainer;
+class TFile;
+class TNtuple;
+
+
+//Brief: basic ntuple and histogram creation for sim evaluation
+class AnaSvtxTracksForGenFit: public SubsysReco
+{
+ public: 
+  //Default constructor
+  AnaSvtxTracksForGenFit(const std::string &name="AnaSvtxTracksForGenFit");
+
+  //Initialization, called for initialization
+  int Init(PHCompositeNode *);
+
+  //Process Event, called for each event
+  int process_event(PHCompositeNode *);
+
+  //End, write and close files
+  int End(PHCompositeNode *);
+
+  //Change output filename
+  void set_filename(const char* file)
+  { if(file) _outfile = file; }
+
+  float Square(float x){ return x*x; }
+
+  //Flags of different kinds of outputs
+  enum Flag
+  {
+    //all disabled
+    NONE = 0,
+
+    //truth
+    TRUTH = (1<<0),
+
+    //histograms
+    HIST = (1<<1),
+
+    //Sampling fractions
+    SF = (1<<2),
+
+    //Inner HCal Towers
+    HCALIN_TOWER = (1<<3),
+    
+    //All flags ON
+    ALL = (1<<4)-1
+  };
+
+  //Set the flag
+  //Flags should be set like set_flag(AnaSvtxTracksForGenFit::TRUTH, true) from macro
+  void set_flag(const Flag& flag, const bool& value)
+  {
+   if(value) _flags |= flag;
+   else _flags &= (~flag);
+  }
+
+  //User modules
+  void fill_ttree(PHCompositeNode*);
+
+ private:
+  //output filename
+  std::string _outfile;
+   
+  //Event counter
+  int _event;
+
+  //Get all the nodes
+  void GetNodes(PHCompositeNode *);
+  
+  //flags
+  unsigned int _flags;
+
+  //TTrees
+  TTree* _tracks;
+  int event;
+  //-- truth
+  int gtrackID;
+  int gflavor;
+  float gpx;
+  float gpy;
+  float gpz;
+  float gvx;
+  float gvy;
+  float gvz;
+  //-- reco
+  int trackID;
+  int charge;
+  int nhits;
+  float px;
+  float py;
+  float pz;
+  //-- clusters
+  int clusterID[7];
+  int layer[7];
+  float x[7];
+  float y[7];
+  float z[7];
+  float size_dphi[7];
+  float size_dz[7];
+
+  //Node pointers
+  PHG4TruthInfoContainer* _truth_container;
+  PHG4HitContainer* _hcalout_hit_container;
+  PHG4HitContainer* _hcalin_hit_container;
+  PHG4HitContainer* _cemc_hit_container;
+  PHG4HitContainer* _hcalout_abs_hit_container;
+  PHG4HitContainer* _hcalin_abs_hit_container;
+  PHG4HitContainer* _cemc_abs_hit_container;
+  PHG4HitContainer* _cemc_electronics_hit_container;
+  PHG4HitContainer* _hcalin_spt_hit_container;
+
+
+};
+
+#endif //* __AnaSvtxTracksForGenFit_H__ *//
