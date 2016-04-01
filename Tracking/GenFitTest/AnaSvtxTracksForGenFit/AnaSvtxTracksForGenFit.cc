@@ -35,15 +35,14 @@ using namespace std;
 //--  simple initialization
 //----------------------------------------------------------------------------//
 AnaSvtxTracksForGenFit::AnaSvtxTracksForGenFit(const string &name):
-  SubsysReco(name),
-  _flags( NONE )
+  SubsysReco( name ),
+  _flags( NONE ),
+  _tracks( NULL ),
+  _svtxevalstack( NULL )
 {
-//initialize
+  //initialize
   _event = 0;
   _outfile = "AnaSvtxTracksForGenFit.root";
-  _truth = 0;
-  _sf = 0;
-  _hcalin_towers = 0;
 }
 
 //----------------------------------------------------------------------------//
@@ -93,13 +92,20 @@ int AnaSvtxTracksForGenFit::Init(PHCompositeNode *topNode)
 int AnaSvtxTracksForGenFit::process_event(PHCompositeNode *topNode)
 {
   _event++;
-  if (_event % 1000 == 0) cout << PHWHERE << "Events processed: " << _event << endl;
+  if (_event % 1000 == 0)
+    cout << PHWHERE << "Events processed: " << _event << endl;
+
   GetNodes(topNode);
-  if (_flags & TRUTH) fill_truth_ntuple(topNode);
 
-  if (_flags & HIST) fill_histos(topNode);
+  if (!_svtxevalstack) {
+    _svtxevalstack = new SvtxEvalStack(topNode);
+    _svtxevalstack->set_strict(_strict);
+    _svtxevalstack->set_verbosity(verbosity + 1);
+  } else {
+    _svtxevalstack->next_event(topNode);
+  }
 
-  if (_flags & SF) fill_sf_ntuple(topNode);
+  fill_tree(topNode);
 
   return 0;
 }
@@ -110,15 +116,13 @@ int AnaSvtxTracksForGenFit::process_event(PHCompositeNode *topNode)
 //----------------------------------------------------------------------------//
 int AnaSvtxTracksForGenFit::End(PHCompositeNode *topNode)
 {
+
   PHTFileServer::get().cd( _outfile );
-  if ( _truth ) _truth->Write();
-  if ( _sf ) _sf->Write();
-  if (_flags & HIST)
-  {
-    Fun4AllServer *se = Fun4AllServer::instance();
-    Fun4AllHistoManager *hm = se->getHistoManager("HISTOS");
-    for (unsigned int i = 0; i < hm->nHistos(); i++) hm->getHisto(i)->Write();
-  }
+
+  _tree->Write();
+
+  if (_svtxevalstack) delete _svtxevalstack;
+
   return 0;
 }
 
@@ -129,6 +133,74 @@ int AnaSvtxTracksForGenFit::End(PHCompositeNode *topNode)
 //----------------------------------------------------------------------------//
 void AnaSvtxTracksForGenFit::fill_tree(PHCompositeNode *topNode)
 {
+  // Make sure to reset all the TTree variables before trying to set them.
+  reset_variables();
+
+  // get evaluators
+  SvtxVertexEval*   vertexeval = _svtxevalstack->get_vertex_eval();
+  SvtxTrackEval*     trackeval = _svtxevalstack->get_track_eval();
+  SvtxClusterEval* clustereval = _svtxevalstack->get_cluster_eval();
+  SvtxHitEval*         hiteval = _svtxevalstack->get_hit_eval();
+  SvtxTruthEval*     trutheval = _svtxevalstack->get_truth_eval();
+
+  if (_truth_container)
+  {
+
+    PHG4TruthInfoContainer::ConstRange range =
+      _truth_container->GetPrimaryParticleRange();
+
+    for (PHG4TruthInfoContainer::ConstIterator iter = range.first;
+         iter != range.second;
+         ++iter)
+    {
+
+      PHG4Particle* g4particle = iter->second;
+
+      gtrackID = g4particle->get_track_id();
+      gflavor  = g4particle->get_pid();
+
+      PHG4VtxPoint* vtx = trutheval->get_vertex(g4particle);
+      gvx      = vtx->get_x();
+      gvy      = vtx->get_y();
+      gvz      = vtx->get_z();
+
+      SvtxTrack* track = trackeval->best_track_from(g4particle);
+      if (track)
+      {
+        trackID   = track->get_id();
+        charge    = track->get_charge();
+        nhits     = track->size_clusters();
+        px        = track->get_px();
+        py        = track->get_py();
+        pz        = track->get_pz();
+
+
+        int iclus = 0;
+        for (SvtxTrack::ConstClusterIter iter = track->begin_clusters();
+             iter != track->end_clusters();
+             ++iter)
+        {
+          unsigned int cluster_id = *iter;
+          SvtxCluster* cluster = _clustermap->get(cluster_id);
+          unsigned int l = cluster->get_layer();
+
+          clusterID[iclus] = (int)cluster_id;
+          layer[iclus] = (int)l;
+          x[iclus] = cluster->get_x();
+          y[iclus] = cluster->get_y();
+          z[iclus] = cluster->get_z();
+          size_dphi[iclus] = cluster->get_phi_size();
+          size_dz[iclus] = cluster->get_z_size();
+
+          ++iclus;
+        }
+
+      } // if(track)
+    } // for( iter)
+  } //if (_truth_container)
+
+  _tracks->Fill();
+  return;
 
 }
 
@@ -177,49 +249,31 @@ void AnaSvtxTracksForGenFit::reset_variables()
 //-- GetNodes():
 //--   Get all the all the required nodes off the node tree
 //----------------------------------------------------------------------------//
-void AnaSvtxTracksForGenFit::GetNodes(PHCompositeNode *topNode)
+void AnaSvtxTracksForGenFit::GetNodes(PHCompositeNode * topNode)
 {
-//DST objects
-//Truth container
+  //DST objects
+  //Truth container
   _truth_container = findNode::getClass<PHG4TruthInfoContainer>(topNode, "G4TruthInfo");
-  if (!_truth_container && _event < 2) cout << PHWHERE << " PHG4TruthInfoContainer node not found on node tree" << endl;
+  if (!_truth_container && _event < 2)
+  {
+    cout << PHWHERE
+         << " PHG4TruthInfoContainer node not found on node tree"
+         << endl;
+  }
 
-//Outer HCal hit container
-  _hcalout_hit_container = findNode::getClass<PHG4HitContainer> (topNode, "G4HIT_HCALOUT");
-  if (!_hcalout_hit_container && _event < 2) cout << PHWHERE << " G4HIT_HCALOUT node not found on node tree" << endl;
-
-  //Outer HCal absorber hit container
-  _hcalout_abs_hit_container = findNode::getClass<PHG4HitContainer> (topNode, "G4HIT_ABSORBER_HCALOUT");
-  if (!_hcalout_abs_hit_container && _event < 2) cout << PHWHERE << " G4HIT_ABSORBER_HCALOUT node not found on node tree" << endl;
-
-//Inner HCal hit container
-  _hcalin_hit_container = findNode::getClass<PHG4HitContainer> (topNode, "G4HIT_HCALIN");
-  if (!_hcalin_hit_container && _event < 2) cout << PHWHERE << " G4HIT_HCALIN node not found on node tree" << endl;
-
-//Inner HCal absorber hit container
-  _hcalin_abs_hit_container = findNode::getClass<PHG4HitContainer> (topNode, "G4HIT_ABSORBER_HCALIN");
-  if (!_hcalin_abs_hit_container && _event < 2) cout << PHWHERE << " G4HIT_ABSORBER_HCALIN node not found on node tree" << endl;
-
-  //Inner HCal support structure hit container
-  _hcalin_spt_hit_container = findNode::getClass<PHG4HitContainer> (topNode, "G4HIT_HCALIN_SPT");
-  if (!_hcalin_spt_hit_container && _event < 2) cout << PHWHERE << " G4HIT_HCALIN_SPT node not found on node tree" << endl;
-
-  //EMCAL hit container
-  _cemc_hit_container = findNode::getClass<PHG4HitContainer> (topNode, "G4HIT_CEMC");
-  if (!_cemc_hit_container && _event < 2) cout << PHWHERE << " G4HIT_CEMC node not found on node tree" << endl;
-
-  //EMCal absorber hit container
-  _cemc_abs_hit_container = findNode::getClass<PHG4HitContainer> (topNode, "G4HIT_ABSORBER_CEMC");
-  if (!_cemc_abs_hit_container && _event < 2) cout << PHWHERE << " G4HIT_ABSORBER_CEMC node not found on node tree" << endl;
-
-  //EMCal Electronics hit container
-  _cemc_electronics_hit_container = findNode::getClass<PHG4HitContainer> (topNode, "G4HIT_CEMC_ELECTRONICS");
-  if (!_cemc_electronics_hit_container && _event < 2) cout << PHWHERE << " G4HIT_CEMC_EMCELECTRONICS node not found on node tree" << endl;
+  //Svtx Clusters
+  _clustermap = findNode::getClass<SvtxClusterMap>(topNode, "SvtxClusterMap");
+  if (!_clustermap && _event < 2)
+  {
+    cout << PHWHERE
+         << " SvtxClusterMap node not found on node tree"
+         << endl;
+  }
 
 }
 
 //_____________________________________
-void AnaSvtxTracksForGenFit::fill_truth_ntuple(PHCompositeNode *topNode)
+void AnaSvtxTracksForGenFit::fill_truth_ntuple(PHCompositeNode * topNode)
 {
   map<int, PHG4Particle*>::const_iterator particle_iter;
   float ntvars[7];

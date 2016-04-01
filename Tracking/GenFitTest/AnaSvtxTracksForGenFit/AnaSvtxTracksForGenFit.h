@@ -94,15 +94,10 @@ class AnaSvtxTracksForGenFit: public SubsysReco
 
   //Node pointers
   PHG4TruthInfoContainer* _truth_container;
-  PHG4HitContainer* _hcalout_hit_container;
-  PHG4HitContainer* _hcalin_hit_container;
-  PHG4HitContainer* _cemc_hit_container;
-  PHG4HitContainer* _hcalout_abs_hit_container;
-  PHG4HitContainer* _hcalin_abs_hit_container;
-  PHG4HitContainer* _cemc_abs_hit_container;
-  PHG4HitContainer* _cemc_electronics_hit_container;
-  PHG4HitContainer* _hcalin_spt_hit_container;
+  SvtxClusterMap* _clustermap;
 
+  // eval stack
+  SvtxEvalStack* _svtxevalstack;
 
 };
 
