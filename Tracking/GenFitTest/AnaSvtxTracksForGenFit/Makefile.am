@@ -21,6 +21,7 @@ libAnaSvtxTracksForGenFit_la_SOURCES = \
 libAnaSvtxTracksForGenFit_la_LIBADD = \
   -lg4detectors \
   -lphg4hit \
+  -lg4eval \
   -lphool
 
 install-exec-hook:
