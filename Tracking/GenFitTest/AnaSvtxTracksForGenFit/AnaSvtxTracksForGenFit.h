@@ -65,7 +65,8 @@ class AnaSvtxTracksForGenFit: public SubsysReco
   }
 
   //User modules
-  void fill_ttree(PHCompositeNode*);
+  void fill_tree(PHCompositeNode*);
+  void reset_variables();
 
  private:
   //output filename

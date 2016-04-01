@@ -30,7 +30,10 @@
 
 using namespace std;
 
-//____________________________________
+//----------------------------------------------------------------------------//
+//-- Constructor:
+//--  simple initialization
+//----------------------------------------------------------------------------//
 AnaSvtxTracksForGenFit::AnaSvtxTracksForGenFit(const string &name):
   SubsysReco(name),
   _flags( NONE )
@@ -43,7 +46,10 @@ AnaSvtxTracksForGenFit::AnaSvtxTracksForGenFit(const string &name):
   _hcalin_towers = 0;
 }
 
-//___________________________________
+//----------------------------------------------------------------------------//
+//-- Init():
+//--   Intialize all histograms, trees, and ntuples
+//----------------------------------------------------------------------------//
 int AnaSvtxTracksForGenFit::Init(PHCompositeNode *topNode)
 {
   cout << PHWHERE << " Openning file " << _outfile << endl;
@@ -79,8 +85,11 @@ int AnaSvtxTracksForGenFit::Init(PHCompositeNode *topNode)
   return 0;
 }
 
-//__________________________________
-//Call user instructions for every event
+//----------------------------------------------------------------------------//
+//-- process_event():
+//--   Call user instructions for every event.
+//--   This function contains the analysis structure.
+//----------------------------------------------------------------------------//
 int AnaSvtxTracksForGenFit::process_event(PHCompositeNode *topNode)
 {
   _event++;
@@ -95,165 +104,79 @@ int AnaSvtxTracksForGenFit::process_event(PHCompositeNode *topNode)
   return 0;
 }
 
-//__________________________________
-void AnaSvtxTracksForGenFit::fill_histos(PHCompositeNode *topNode)
+//----------------------------------------------------------------------------//
+//-- End():
+//--   End method, wrap everything up
+//----------------------------------------------------------------------------//
+int AnaSvtxTracksForGenFit::End(PHCompositeNode *topNode)
 {
-  Fun4AllServer *se = Fun4AllServer::instance();
-  Fun4AllHistoManager *hm = se->getHistoManager("HISTOS");
-
-  if (_truth_container)
+  PHTFileServer::get().cd( _outfile );
+  if ( _truth ) _truth->Write();
+  if ( _sf ) _sf->Write();
+  if (_flags & HIST)
   {
-    PHG4VtxPoint *point = _truth_container->GetPrimaryVtx( _truth_container->GetPrimaryVertexIndex() );
-    TH1F *h = (TH1F*) hm->getHisto("zvertex");
-    if (h) h->Fill( point->get_z() );
-    h = (TH1F*) hm->getHisto("xvertex");
-    if (h) h->Fill( point->get_x() );
-    h = (TH1F*) hm->getHisto("yvertex");
-    if (h) h->Fill( point->get_y() );
+    Fun4AllServer *se = Fun4AllServer::instance();
+    Fun4AllHistoManager *hm = se->getHistoManager("HISTOS");
+    for (unsigned int i = 0; i < hm->nHistos(); i++) hm->getHisto(i)->Write();
+  }
+  return 0;
+}
+
+
+//----------------------------------------------------------------------------//
+//-- fill_tree():
+//--   Fill the trees with truth, track fit, and cluster information
+//----------------------------------------------------------------------------//
+void AnaSvtxTracksForGenFit::fill_tree(PHCompositeNode *topNode)
+{
+
+}
+
+//----------------------------------------------------------------------------//
+//-- reset_variables():
+//--   Reset all the tree variables to their default values.
+//--   Needs to be called at the start of every event
+//----------------------------------------------------------------------------//
+void AnaSvtxTracksForGenFit::reset_variables()
+{
+  event = -9999;
+
+  //-- truth
+  gtrackID = -9999;
+  gflavor = -9999;
+  gpx = -9999;
+  gpy = -9999;
+  gpz = -9999;
+  gvx = -9999;
+  gvy = -9999;
+  gvz = -9999;
+
+  //-- reco
+  trackID = -9999;
+  charge = -9999;
+  nhits = -9999;
+  px = -9999;
+  py = -9999;
+  pz = -9999;
+
+  //-- clusters
+  for (int i = 0; i < 7; i++)
+  {
+    clusterID[i] = -9999;
+    layer[i] = -9999;
+    x[i] = -9999;
+    y[i] = -9999;
+    z[i] = -9999;
+    size_dphi[i] = -9999;
+    size_dz[i] = -9999;
   }
 
 }
 
-//_____________________________________
-void AnaSvtxTracksForGenFit::fill_truth_ntuple(PHCompositeNode *topNode)
-{
-  map<int, PHG4Particle*>::const_iterator particle_iter;
-  float ntvars[7];
-
-  PHG4TruthInfoContainer::ConstRange primary_range =
-    _truth_container->GetPrimaryParticleRange();
-
-  for (PHG4TruthInfoContainer::ConstIterator particle_iter = primary_range.first;
-       particle_iter != primary_range.second; ++particle_iter)
-  {
-    PHG4Particle *particle = particle_iter->second;
-    ntvars[0] = _event;
-    ntvars[1] = particle->get_e();
-    ntvars[2] = 0.5 * log((particle->get_e() + particle->get_pz()) /
-                          (particle->get_e() - particle->get_pz()));
-    ntvars[3] = sqrt(Square(particle->get_px()) + Square(particle->get_py()));
-    ntvars[4] = atan2(particle->get_py(), particle->get_px());
-    ntvars[5] = particle->get_pid();
-    _truth->Fill( ntvars );
-  }
-
-}
-
-//_____________________________________
-void AnaSvtxTracksForGenFit::fill_sf_ntuple(PHCompositeNode *topNode)
-{
-  //Total Outer HCal energy deposited and light yield
-  float e_hcout = 0.;
-  float ev_hcout = 0.;
-  PHG4HitContainer::ConstRange hcalout_hit_range = _hcalout_hit_container->getHits();
-  for (PHG4HitContainer::ConstIterator hit_iter = hcalout_hit_range.first;
-       hit_iter != hcalout_hit_range.second; hit_iter++)
-  {
-    PHG4Hit *this_hit =  hit_iter->second;
-    e_hcout += this_hit->get_edep();
-    ev_hcout += this_hit->get_light_yield();
-  }
-
-  //Total Outer HCal absorbed energy
-  float ea_hcout = 0.;
-  PHG4HitContainer::ConstRange hcalout_abs_hit_range = _hcalout_abs_hit_container->getHits();
-  for (PHG4HitContainer::ConstIterator hit_iter = hcalout_abs_hit_range.first;
-       hit_iter != hcalout_abs_hit_range.second; hit_iter++)
-  {
-    PHG4Hit *this_hit =  hit_iter->second;
-    ea_hcout += this_hit->get_edep();
-  }
-
-  //Total Inner HCal energy deposit and light yield
-  float e_hcin = 0.;
-  float ev_hcin = 0.;
-  PHG4HitContainer::ConstRange hcalin_hit_range = _hcalin_hit_container->getHits();
-  for (PHG4HitContainer::ConstIterator hit_iter = hcalin_hit_range.first;
-       hit_iter != hcalin_hit_range.second; hit_iter++)
-  {
-    PHG4Hit *this_hit =  hit_iter->second;
-    e_hcin += this_hit->get_edep();
-    ev_hcin += this_hit->get_light_yield();
-  }
-
-  //Total Inner HCal absorbed energy
-  float ea_hcin = 0.;
-  PHG4HitContainer::ConstRange hcalin_abs_hit_range = _hcalin_abs_hit_container->getHits();
-  for (PHG4HitContainer::ConstIterator hit_iter = hcalin_abs_hit_range.first;
-       hit_iter != hcalin_abs_hit_range.second; hit_iter++)
-  {
-    PHG4Hit *this_hit =  hit_iter->second;
-
-    ea_hcin += this_hit->get_edep();
-  }
-
-  PHG4HitContainer::ConstRange hcalin_spt_hit_range = _hcalin_spt_hit_container->getHits();
-  for (PHG4HitContainer::ConstIterator hit_iter = hcalin_spt_hit_range.first;
-       hit_iter != hcalin_spt_hit_range.second; hit_iter++)
-  {
-    PHG4Hit *this_hit =  hit_iter->second;
-    ea_hcin += this_hit->get_edep();
-  }
-
-  //Total EMCal deposited energy and light yield
-  float e_cemc = 0.;
-  float ev_cemc = 0.;
-  PHG4HitContainer::ConstRange cemc_hit_range = _cemc_hit_container->getHits();
-  for (PHG4HitContainer::ConstIterator hit_iter = cemc_hit_range.first;
-       hit_iter != cemc_hit_range.second; hit_iter++)
-  {
-    PHG4Hit *this_hit =  hit_iter->second;
-
-    e_cemc += this_hit->get_edep();
-    ev_cemc += this_hit->get_light_yield();
-  }
-
-  //Total EMCal absorbed energy
-  float ea_cemc = 0.;
-  PHG4HitContainer::ConstRange cemc_abs_hit_range = _cemc_abs_hit_container->getHits();
-  for (PHG4HitContainer::ConstIterator hit_iter = cemc_abs_hit_range.first;
-       hit_iter != cemc_abs_hit_range.second; hit_iter++)
-  {
-    PHG4Hit *this_hit =  hit_iter->second;
-    ea_cemc += this_hit->get_edep();
-  }
-
-  PHG4HitContainer::ConstRange cemc_electronics_hit_range = _cemc_electronics_hit_container->getHits();
-  for (PHG4HitContainer::ConstIterator hit_iter = cemc_electronics_hit_range.first;
-       hit_iter != cemc_electronics_hit_range.second; hit_iter++)
-  {
-    PHG4Hit *this_hit =  hit_iter->second;
-
-    ea_cemc += this_hit->get_edep();
-  }
-
-
-  float ntvars[4];
-  ntvars[0] = _event;
-  ntvars[1] = ev_hcin / (e_hcin + ea_hcin);
-  ntvars[2] = ev_hcout / (e_hcout + ea_hcout);
-  ntvars[3] = ev_cemc / (e_cemc + ea_cemc);
-
-  _sf->Fill( ntvars );
-}
-
-//___________________________________
-void AnaSvtxTracksForGenFit::create_histos()
-{
-  Fun4AllServer *se = Fun4AllServer::instance();
-  Fun4AllHistoManager *hm = se->getHistoManager("HISTOS");
-  if (!hm)
-  {
-    hm = new Fun4AllHistoManager("HISTOS");
-    se->registerHistoManager(hm);
-  }
-  hm->registerHisto( new TH1F("zvertex", "zvertex", 120, -30, 30) );
-  hm->registerHisto( new TH1F("xvertex", "xvertex", 120, -5, 5) );
-  hm->registerHisto( new TH1F("yvertex", "yvertex", 120, -5, 5) );
-
-}
-
-//___________________________________
+//----------------------------------------------------------------------------//
+//-- GetNodes():
+//--   Get all the all the required nodes off the node tree
+//----------------------------------------------------------------------------//
 void AnaSvtxTracksForGenFit::GetNodes(PHCompositeNode *topNode)
 {
 //DST objects
@@ -295,18 +218,30 @@ void AnaSvtxTracksForGenFit::GetNodes(PHCompositeNode *topNode)
 
 }
 
-//______________________________________
-int AnaSvtxTracksForGenFit::End(PHCompositeNode *topNode)
+//_____________________________________
+void AnaSvtxTracksForGenFit::fill_truth_ntuple(PHCompositeNode *topNode)
 {
-  PHTFileServer::get().cd( _outfile );
-  if ( _truth ) _truth->Write();
-  if ( _sf ) _sf->Write();
-  if (_flags & HIST)
+  map<int, PHG4Particle*>::const_iterator particle_iter;
+  float ntvars[7];
+
+  PHG4TruthInfoContainer::ConstRange primary_range =
+    _truth_container->GetPrimaryParticleRange();
+
+  for (PHG4TruthInfoContainer::ConstIterator particle_iter = primary_range.first;
+       particle_iter != primary_range.second; ++particle_iter)
   {
-    Fun4AllServer *se = Fun4AllServer::instance();
-    Fun4AllHistoManager *hm = se->getHistoManager("HISTOS");
-    for (unsigned int i = 0; i < hm->nHistos(); i++) hm->getHisto(i)->Write();
+    PHG4Particle *particle = particle_iter->second;
+    ntvars[0] = _event;
+    ntvars[1] = particle->get_e();
+    ntvars[2] = 0.5 * log((particle->get_e() + particle->get_pz()) /
+                          (particle->get_e() - particle->get_pz()));
+    ntvars[3] = sqrt(Square(particle->get_px()) + Square(particle->get_py()));
+    ntvars[4] = atan2(particle->get_py(), particle->get_px());
+    ntvars[5] = particle->get_pid();
+    _truth->Fill( ntvars );
   }
-  return 0;
+
 }
+
+
 
