@@ -32,28 +32,11 @@ class AnaSvtxTracksForGenFit: public SubsysReco
   void set_filename(const char* file)
   { if(file) _outfile = file; }
 
-  float Square(float x){ return x*x; }
-
   //Flags of different kinds of outputs
   enum Flag
   {
     //all disabled
     NONE = 0,
-
-    //truth
-    TRUTH = (1<<0),
-
-    //histograms
-    HIST = (1<<1),
-
-    //Sampling fractions
-    SF = (1<<2),
-
-    //Inner HCal Towers
-    HCALIN_TOWER = (1<<3),
-    
-    //All flags ON
-    ALL = (1<<4)-1
   };
 
   //Set the flag
