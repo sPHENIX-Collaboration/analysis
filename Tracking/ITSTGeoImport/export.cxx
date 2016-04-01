@@ -4,38 +4,68 @@ void init()
     TGeoManager::Import("ALICE_ITS_tgeo.root");
 }
 
-TGeoNode* getNode(TString name)
+typedef TGeoNode* pTGeoNode;
+pTGeoNode getNode(pTGeoNode root, TString name)
 {
-    TGeoNode* root = gGeoManager->GetTopNode();
-    return dfs(root, name);
+    pTGeoNode node = NULL;
+    dfs(root, name, node);
+
+    cout << name;
+    if(node != NULL)
+    {
+        cout << " Found!" << endl;
+    }
+    else
+    {
+        cout << " NOT Found!" << endl;
+    }
+    return node;
 }
 
 
-TGeoNode* dfs(TGeoNode* node, TString name)
+void dfs(pTGeoNode node, TString name,  pTGeoNode& res)
 {
-    if(node->GetName() == name) return node;
-    if(node->GetNdaughters() == 0) return NULL;
+    if(res != NULL) return;
+    if(node->GetName() == name) res = node;
+    if(node->GetNdaughters() == 0) return;
     
     for(int i = 0; i < node->GetNdaughters(); ++i)
     {
-        return dfs(node->GetDaughter(i), name);
+        dfs(node->GetDaughter(i), name, res);
     }
 }
 
 void export()
 {
-    /*
-    TGeoNode* node1 = getNode("ITSULayer0_1");
-    TGeoNode* node2 = getNode("Barrel0_1");
+    pTGeoNode root = gGeoManager->GetTopNode();
 
-    TGeoVolume* vol = node1->GetVolume();
-    vol->RemoveNode(node2);
+    pTGeoNode node_inner = getNode(root, "ITSUWrapVol0_1");
+    pTGeoNode nodeb1 = getNode(node_inner, "Barrel0_1");
+    pTGeoNode nodeb2 = getNode(node_inner, "Barrel1_1");
+    pTGeoNode nodeb3 = getNode(node_inner, "Barrel2_1");
 
-    TGeoMaterial *matVacuum = new TGeoMaterial("Vacuum", 0,0,0);
-    TGeoMedium *Vacuum = new TGeoMedium("Vacuum",1, matVacuum); 
-    TGeoVolume* world = gGeoManager->MakeBox("TOPBOX", Vacuum, 1000, 1000, 1000);
-    world->AddNode(vol, 0);*/
+    TGeoVolume* vol_inner = node_inner->GetVolume();
+    vol_inner->RemoveNode(nodeb1);
+    vol_inner->RemoveNode(nodeb2);
+    vol_inner->RemoveNode(nodeb3);
 
-    //gGeoManager->SetTopVolume(world);
+    pTGeoNode node_mid = getNode(root, "ITSUWrapVol1_1");
+    pTGeoNode nodeb4 = getNode(node_mid, "Barrel3_1");
+    pTGeoNode nodeb5 = getNode(node_mid, "Barrel4_1");
+
+    TGeoVolume* vol_mid = node_mid->GetVolume();
+    vol_mid->RemoveNode(nodeb4);
+    vol_mid->RemoveNode(nodeb5);
+
+    pTGeoNode node_outer = getNode(root, "ITSUWrapVol2_1");
+    pTGeoNode nodeb6 = getNode(node_outer, "Barrel5_1");
+    pTGeoNode nodeb7 = getNode(node_outer, "Barrel6_1");
+
+    TGeoVolume* vol_outer = node_outer->GetVolume();
+    vol_outer->RemoveNode(nodeb6);
+    vol_outer->RemoveNode(nodeb7);   
+
+    pTGeoNode top = getNode(root, "ITSV_2");
+    gGeoManager->SetTopVolume(top->GetVolume());
     gROOT->ProcessLine("TGDMLWrite::StartGDMLWriting(gGeoManager,\"all.gdml\",\"\")");
 }
