@@ -26,11 +26,8 @@ TString cuts = "";
 
 void
 DrawEMCalTower( //
-    const TString infile =
-//    "G4o.root_DSTReader.root" //
-//        "../../sPHENIX_work/Prototype_2016/test_sim/15Degree_1Col/Prototype_e-_8_Seg0_DSTReader.root"//
-//        "../../sPHENIX_work/Prototype_2016/test_sim/90Degree_1Col/Prototype_proton_120_Seg0_DSTReader.root"//
-        "../../sPHENIX_work/Prototype_2016/test_sim/90Degree_100mrad_No0Sup/Prototype_mu-_2_Seg0_DSTReader.root"//
+    const TString infile = "data/Prototype2_CEMC.root_DSTReader.root" //
+//        "../../sPHENIX_work/Prototype_2016/test_sim/90Degree_100mrad_No0Sup/Prototype_mu-_2_Seg0_DSTReader.root"//
     )
 {
   SetOKStyle();
@@ -59,14 +56,19 @@ DrawEMCalTower( //
 
   assert(_file0);
 
-  T->SetAlias("ActiveTower",
-      "TOWER_CALIB_CEMC[].get_binphi()<8 && TOWER_CALIB_CEMC[].get_bineta()<8");
-  T->SetAlias("EnergySum",
-      "1*Sum$(TOWER_CALIB_CEMC[].get_energy() * ActiveTower)");
+  T->SetAlias("ActiveTower_LG",
+      "TOWER_CALIB_LG_CEMC[].get_binphi()<8 && TOWER_CALIB_LG_CEMC[].get_bineta()<8");
+  T->SetAlias("EnergySum_LG",
+      "1*Sum$(TOWER_CALIB_LG_CEMC[].get_energy() * ActiveTower_LG)");
+
+  T->SetAlias("ActiveTower_HG",
+      "TOWER_CALIB_HG_CEMC[].get_binphi()<8 && TOWER_CALIB_HG_CEMC[].get_bineta()<8");
+  T->SetAlias("EnergySum_HG",
+      "1*Sum$(TOWER_CALIB_HG_CEMC[].get_energy() * ActiveTower_HG)");
 
 //
   const TCut event_sel = "1*1";
-  cuts = "all_event";
+  cuts = "_all_event";
 //  const TCut event_sel = "Entry$==3";
 //  cuts = "ev3";
 //  const TCut event_sel = "Entry$<2";
@@ -83,26 +85,98 @@ DrawEMCalTower( //
 
   T->SetEventList(elist);
 
-//  FHCal_Dist();
-//  TrigDistribution();
-//  EMCDistribution();
 
-//  HCALDistribution("TOWER_HCALIN", "Inner HCal");
-//  HCALDistribution("TOWER_HCALOUT", "Outer HCal");
-
-  EMCDistribution();
-  EMCDistribution(true);
+  EMCDistribution_Fast("HG");
+  EMCDistribution_Fast("LG", true);
   EMCDistribution_SUM();
 }
 
 void
-EMCDistribution( bool log_scale = false)
+EMCDistribution_Fast(TString gain = "LG", bool log_scale = false)
+{
+  TString hname = "EMCDistribution_" + gain + TString(log_scale ? "_Log" : "") + cuts;
+
+  TH2 * h2 = NULL;
+  if (log_scale)
+    {
+      h2 = new TH2F(hname,
+          Form(";Calibrated Tower Energy Sum (GeV);Count / bin"), 300, 10e-3,
+          100, 64, -.5, 63.5);
+      QAHistManagerDef::useLogBins(h2->GetXaxis());
+    }
+  else
+    {
+      h2 = new TH2F(hname,
+          Form(";Calibrated Tower Energy Sum (GeV);Count / bin"), 100, -.050,
+          .5, 64, -.5, 63.5);
+    }
+
+  T->Draw(
+      "TOWER_CALIB_" + gain + "_CEMC[].get_bineta() + 8* TOWER_CALIB_" + gain
+          + "_CEMC[].get_binphi():TOWER_CALIB_" + gain
+          + "_CEMC[].get_energy()>>" + hname, "", "goff");
+
+  TText * t;
+  TCanvas *c1 = new TCanvas(
+      "EMCDistribution_" + gain + TString(log_scale ? "_Log" : "") + cuts,
+      "EMCDistribution_" + gain + TString(log_scale ? "_Log" : "") + cuts, 1800,
+      950);
+  c1->Divide(8, 8, 0., 0.01);
+  int idx = 1;
+  TPad * p;
+
+  for (int iphi = 8 - 1; iphi >= 0; iphi--)
+    {
+      for (int ieta = 0; ieta < 8; ieta++)
+        {
+          p = (TPad *) c1->cd(idx++);
+          c1->Update();
+
+          if (log_scale)
+            {
+              p->SetLogy();
+              p->SetLogx();
+            }
+          p->SetGridx(0);
+          p->SetGridy(0);
+
+          TString hname = Form("hEnergy_ieta%d_iphi%d", ieta, iphi)
+              + TString(log_scale ? "_Log" : "");
+
+          TH1 * h = h2->ProjectionX(hname,ieta+8*iphi,ieta+8*iphi);
+
+          h->SetLineWidth(0);
+          h->SetLineColor(kBlue + 3);
+          h->SetFillColor(kBlue + 3);
+          h->GetXaxis()->SetTitleSize(.09);
+          h->GetXaxis()->SetLabelSize(.08);
+          h->GetYaxis()->SetLabelSize(.08);
+
+          h->Draw();
+
+          TText *t = new TText(.9, .9, Form("Col%d Row%d", ieta, iphi));
+          t->SetTextAlign(33);
+          t->SetTextSize(.15);
+          t->SetNDC();
+          t->Draw();
+        }
+    }
+
+  SaveCanvas(c1,
+      TString(_file0->GetName()) + TString("_DrawEMCalTower_")
+          + TString(c1->GetName()), kTRUE);
+
+}
+
+void
+EMCDistribution(TString gain = "LG", bool log_scale = false)
 {
 
   TText * t;
   TCanvas *c1 = new TCanvas(
-      "EMCDistribution" + TString(log_scale ? "_Log" : "") + cuts,
-      "EMCDistribution" + TString(log_scale ? "_Log" : "") + cuts, 1800, 1000);
+      "EMCDistribution_" + gain + TString(log_scale ? "_Log" : "") + cuts,
+      "EMCDistribution_" + gain + TString(log_scale ? "_Log" : "") + cuts, 1800,
+      1000);
   c1->Divide(8, 8, 0., 0.01);
   int idx = 1;
   TPad * p;
@@ -133,8 +207,8 @@ EMCDistribution( bool log_scale = false)
                 5e-3, 100);
           else
             h = new TH1F(hname,
-                Form(";Calibrated Tower Energy Sum (GeV);Count / bin"), 100, -.050,
-                .5);
+                Form(";Calibrated Tower Energy Sum (GeV);Count / bin"), 100,
+                -.050, .5);
 
           h->SetLineWidth(0);
           h->SetLineColor(kBlue + 3);
@@ -146,10 +220,10 @@ EMCDistribution( bool log_scale = false)
           if (log_scale)
             QAHistManagerDef::useLogBins(h->GetXaxis());
 
-          T->Draw("TOWER_CALIB_CEMC[].get_energy()>>" + hname,
+          T->Draw("TOWER_CALIB_" + gain + "_CEMC[].get_energy()>>" + hname,
               Form(
-                  "TOWER_CALIB_CEMC[].get_bineta()==%d && TOWER_CALIB_CEMC[].get_binphi()==%d",
-                  ieta, iphi), "");
+                  "TOWER_CALIB_%s_CEMC[].get_bineta()==%d && TOWER_CALIB_%s_CEMC[].get_binphi()==%d",
+                  gain.Data(), ieta, gain.Data(), iphi), "");
 
           TText *t = new TText(.9, .9, Form("Col%d Row%d", ieta, iphi));
           t->SetTextAlign(33);
@@ -164,19 +238,21 @@ EMCDistribution( bool log_scale = false)
           + TString(c1->GetName()), kTRUE);
 
 }
-
 void
 EMCDistribution_SUM(TString sTOWER = "TOWER_CEMC")
 {
-  TH1 * hEnergySum = new TH1F("hEnergySum",
-      ";Calibrated Tower Energy Sum (GeV);Count / bin", 300, 0, 30);
+  TH1 * EnergySum_LG = new TH1F("EnergySum_LG",
+      ";Low-gain Tower Energy Sum (GeV);Count / bin", 300, 0, 100);
+  TH1 * EnergySum_HG = new TH1F("EnergySum_HG",
+      ";High-gain Tower Energy Sum (GeV);Count / bin", 300, 0, 3);
 
-  T->Draw("EnergySum>>hEnergySum", "", "goff");
+  T->Draw("EnergySum_LG>>EnergySum_LG", "", "goff");
+  T->Draw("EnergySum_HG>>EnergySum_HG", "", "goff");
 
   TText * t;
   TCanvas *c1 = new TCanvas("EMCDistribution_SUM" + cuts,
-      "EMCDistribution_SUM" + cuts, 1000, 600);
-  c1->Divide(2, 1);
+      "EMCDistribution_SUM" + cuts, 1000, 960);
+  c1->Divide(2, 2);
   int idx = 1;
   TPad * p;
 
@@ -186,7 +262,7 @@ EMCDistribution_SUM(TString sTOWER = "TOWER_CEMC")
   p->SetGridx(0);
   p->SetGridy(0);
 
-  TH1 * h = hEnergySum->DrawClone();
+  TH1 * h = (TH1 *) EnergySum_LG->DrawClone();
   h->SetLineWidth(2);
   h->SetLineColor(kBlue + 3);
 //  h->Sumw2();
@@ -198,9 +274,45 @@ EMCDistribution_SUM(TString sTOWER = "TOWER_CEMC")
   p->SetGridx(0);
   p->SetGridy(0);
 
-  TH1 * h = (TH1 *) hEnergySum->DrawClone();
+  TH1 * h = (TH1 *) EnergySum_LG->DrawClone();
 
-  TF1 * fgaus = new TF1("fgaus", "gaus", 0, 100);
+  TF1 * fgaus = new TF1("fgaus_LG", "gaus", 0, 100);
+  fgaus->SetParameters(1, h->GetMean() - 2 * h->GetRMS(),
+      h->GetMean() + 2 * h->GetRMS());
+  h->Fit(fgaus, "M");
+
+  h->Sumw2();
+  h->GetXaxis()->SetRangeUser(h->GetMean() - 4 * h->GetRMS(),
+      h->GetMean() + 4 * h->GetRMS());
+
+  h->SetLineWidth(2);
+  h->SetMarkerStyle(kFullCircle);
+
+  h->SetTitle(
+      Form("#DeltaE/<E> = %.1f%%",
+          100 * fgaus->GetParameter(2) / fgaus->GetParameter(1)));
+
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+  p->SetLogy();
+  p->SetGridx(0);
+  p->SetGridy(0);
+
+  TH1 * h = (TH1 *) EnergySum_HG->DrawClone();
+  h->SetLineWidth(2);
+  h->SetLineColor(kBlue + 3);
+//  h->Sumw2();
+  h->GetXaxis()->SetRangeUser(0, h->GetMean() + 5 * h->GetRMS());
+
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+//  p->SetLogy();
+  p->SetGridx(0);
+  p->SetGridy(0);
+
+  TH1 * h = (TH1 *) EnergySum_HG->DrawClone();
+
+  TF1 * fgaus = new TF1("fgaus_HG", "gaus", 0, 100);
   fgaus->SetParameters(1, h->GetMean() - 2 * h->GetRMS(),
       h->GetMean() + 2 * h->GetRMS());
   h->Fit(fgaus, "M");
