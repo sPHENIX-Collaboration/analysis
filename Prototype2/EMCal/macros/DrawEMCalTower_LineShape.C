@@ -46,12 +46,13 @@ DrawEMCalTower_LineShape( //
   p->SetGridx(0);
   p->SetGridy(0);
 
-  p->DrawFrame(0, .0008, E * 1.3, 1, Form("Line shape for %.1f GeV beam;Energy Sum (GeV);Probability / bin", E));
+  p->DrawFrame(0, .0008, E * 1.3, 1,
+      Form("Line shape for %.1f GeV beam (Green: e^{-}, Red: #pi^{-}, Blue: K^{-}, Black: #mu^{-});Energy Sum (GeV);Probability / bin", E));
 
-  MakeOnePlot(base, "e-", sE, kGreen + 3)->DrawClone("same");
-  MakeOnePlot(base, "pi-", sE, kRed )->DrawClone("same");
-  MakeOnePlot(base, "kaon-", sE, kBlue )->DrawClone("same");
-  MakeOnePlot(base, "mu-", sE, kBlack )->DrawClone("same");
+  MakeOnePlot(base, "e-", sE, kGreen + 3)->DrawClone("same E1")->DrawClone("same hist LF2");
+  MakeOnePlot(base, "pi-", sE, kRed )->DrawClone("same E1");
+  MakeOnePlot(base, "kaon-", sE, kBlue )->DrawClone("same E1");
+  MakeOnePlot(base, "mu-", sE, kBlack )->DrawClone("same E1");
 
   SaveCanvas(c1, base + TString(c1->GetName()), kTRUE);
 }
@@ -62,22 +63,25 @@ MakeOnePlot(const TString base, const TString particle, const TString sE,
 {
 
   TString fname = base + TString("Prototype_") + particle + "_" + sE
-      + "_Seg0_DSTReader.root_DrawEMCalTower_EMCDistribution_SUMall_event.root";
+      + "_SegALL_DSTReader.root_DrawEMCalTower_EMCDistribution_SUM_all_event.root";
 //  Prototype_e-_2_Seg0_DSTReader.root_DrawEMCalTower_EMCDistribution_SUMall_event.root
 
   TFile * f = new TFile(fname);
   assert(f->IsOpen());
 
-  TH1 * hEnergySum = (TH1 *) f->GetObjectChecked("hEnergySum", "TH1");
+  TH1 * hEnergySum = (TH1 *) f->GetObjectChecked("EnergySum_LG", "TH1");
   assert(hEnergySum);
 
   hEnergySum->Scale(1. / hEnergySum->Integral(1, -1));
-  hEnergySum->GetFunction("fgaus")->Delete();
+  hEnergySum->GetFunction("fgaus_LG")->Delete();
   hEnergySum->SetStats(false);
+  hEnergySum->Rebin(2);
 
   hEnergySum->SetFillColor(color);
   hEnergySum->SetLineColor(color);
   hEnergySum->SetMarkerColor(color);
+  hEnergySum->SetMarkerSize(1.5);
+  hEnergySum->SetLineWidth(3);
 
   return hEnergySum;
 }

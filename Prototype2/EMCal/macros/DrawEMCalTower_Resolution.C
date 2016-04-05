@@ -30,9 +30,9 @@ DrawEMCalTower_Resolution( //
   gStyle->SetOptFit(1111);
   TVirtualFitter::SetDefaultFitter("Minuit2");
 
-  const int N = 5;
+  const int N = 7;
   const double Es[] =
-    { 2, 4, 8, 12, 24 };
+    {1, 2, 4, 8, 12, 16, 24};
   double mean[1000];
   double dmean[1000];
   double res[1000];
@@ -126,19 +126,22 @@ GetOnePlot(const TString base, const TString particle, const TString sE)
 {
 
   TString fname = base + TString("Prototype_") + particle + "_" + sE
-      + "_Seg0_DSTReader.root_DrawEMCalTower_EMCDistribution_SUMall_event.root";
+      + "_SegALL_DSTReader.root_DrawEMCalTower_EMCDistribution_SUM_all_event.root";
 //  Prototype_e-_2_Seg0_DSTReader.root_DrawEMCalTower_EMCDistribution_SUMall_event.root
 
   cout <<"Process "<<fname<<endl;
   TFile * f = new TFile(fname);
   assert(f->IsOpen());
 
-  TH1 * hEnergySum = (TH1 *) f->GetObjectChecked("hEnergySum", "TH1");
+  TH1 * hEnergySum = (TH1 *) f->GetObjectChecked("EnergySum_LG", "TH1");
   assert(hEnergySum);
+  new TCanvas();
+  hEnergySum->DrawClone();
 
   hEnergySum->Scale(1. / hEnergySum->Integral(1, -1));
-  TF1 * fgaus = hEnergySum->GetFunction("fgaus");
+  TF1 * fgaus = hEnergySum->GetFunction("fgaus_LG");
   assert(fgaus);
+
 
   vector<double> v(4);
   v[0] = fgaus->GetParameter(1);

@@ -242,7 +242,7 @@ void
 EMCDistribution_SUM(TString sTOWER = "TOWER_CEMC")
 {
   TH1 * EnergySum_LG = new TH1F("EnergySum_LG",
-      ";Low-gain Tower Energy Sum (GeV);Count / bin", 300, 0, 100);
+      ";Low-gain Tower Energy Sum (GeV);Count / bin", 1500, 0, 100);
   TH1 * EnergySum_HG = new TH1F("EnergySum_HG",
       ";High-gain Tower Energy Sum (GeV);Count / bin", 300, 0, 3);
 
