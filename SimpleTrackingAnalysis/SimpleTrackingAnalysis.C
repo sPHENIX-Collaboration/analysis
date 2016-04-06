@@ -73,6 +73,37 @@ int SimpleTrackingAnalysis::Init(PHCompositeNode *topNode)
 
 
 
+  // --- special stuff...
+
+  th1d_true_nonembedded_electron_recopt = new TH1D("th1d_true_nonembedded_electron_recopt","",20,0,10);
+  th1d_reco_nonembedded_electron_recopt = new TH1D("th1d_reco_nonembedded_electron_recopt","",20,0,10);
+  th1d_true_nonembedded_pion_recopt = new TH1D("th1d_true_nonembedded_pion_recopt","",20,0,10);
+  th1d_reco_nonembedded_pion_recopt = new TH1D("th1d_reco_nonembedded_pion_recopt","",20,0,10);
+  se->registerHisto(th1d_true_nonembedded_electron_recopt);
+  se->registerHisto(th1d_reco_nonembedded_electron_recopt);
+  se->registerHisto(th1d_true_nonembedded_pion_recopt);
+  se->registerHisto(th1d_reco_nonembedded_pion_recopt);
+
+  th1d_true_embedded_electron_recopt = new TH1D("th1d_true_embedded_electron_recopt","",20,0,10);
+  th1d_reco_embedded_electron_recopt = new TH1D("th1d_reco_embedded_electron_recopt","",20,0,10);
+  th1d_true_embedded_pion_recopt = new TH1D("th1d_true_embedded_pion_recopt","",20,0,10);
+  th1d_reco_embedded_pion_recopt = new TH1D("th1d_reco_embedded_pion_recopt","",20,0,10);
+  se->registerHisto(th1d_true_embedded_electron_recopt);
+  se->registerHisto(th1d_reco_embedded_electron_recopt);
+  se->registerHisto(th1d_true_embedded_pion_recopt);
+  se->registerHisto(th1d_reco_embedded_pion_recopt);
+
+  th1d_true_all_electron_recopt = new TH1D("th1d_true_all_electron_recopt","",20,0,10);
+  th1d_reco_all_electron_recopt = new TH1D("th1d_reco_all_electron_recopt","",20,0,10);
+  th1d_true_all_pion_recopt = new TH1D("th1d_true_all_pion_recopt","",20,0,10);
+  th1d_reco_all_pion_recopt = new TH1D("th1d_reco_all_pion_recopt","",20,0,10);
+  se->registerHisto(th1d_true_all_electron_recopt);
+  se->registerHisto(th1d_reco_all_electron_recopt);
+  se->registerHisto(th1d_true_all_pion_recopt);
+  se->registerHisto(th1d_reco_all_pion_recopt);
+
+
+
   // --- additional tracking histograms for studying quality
 
   _recopt_quality = new TH2D("recopt_quality", "", 20,0.0,10.0, 100,0.0,5.0);
