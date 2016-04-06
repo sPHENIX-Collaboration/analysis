@@ -84,6 +84,7 @@ class AnaSvtxTracksForGenFit: public SubsysReco
   float px;
   float py;
   float pz;
+  float dca2d;
   //-- clusters
   int clusterID[7];
   int layer[7];

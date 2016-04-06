@@ -26,7 +26,7 @@ for lv in root.iter('volume'):
 
     element = xml.etree.ElementTree.SubElement(lv, 'auxiliary')
     element.set('auxtype', 'SensDet')
-    element.set('auxvlue', lv.attrib['name'])
+    element.set('auxvalue', lv.attrib['name'])
 
 # reparse the xml to a string
 rough_string = xml.etree.ElementTree.tostring(root, 'utf-8')
