@@ -2950,7 +2950,7 @@
     <volume name="ITSUSensor0">
       <materialref ref="ITS_SI"/>
       <solidref ref="TGeoBBox0x3"/>
-      <auxiliary auxtype="SensDet" auxvlue="ITSUSensor0"/>
+      <auxiliary auxtype="SensDet" auxvalue="ITSUSensor0"/>
     </volume>
     <volume name="ITSUChip0">
       <materialref ref="ITS_SI"/>
@@ -3910,7 +3910,7 @@
     <volume name="ITSUSensor1">
       <materialref ref="ITS_SI"/>
       <solidref ref="TGeoBBox0x19"/>
-      <auxiliary auxtype="SensDet" auxvlue="ITSUSensor1"/>
+      <auxiliary auxtype="SensDet" auxvalue="ITSUSensor1"/>
     </volume>
     <volume name="ITSUChip1">
       <materialref ref="ITS_SI"/>
@@ -4811,7 +4811,7 @@
     <volume name="ITSUSensor2">
       <materialref ref="ITS_SI"/>
       <solidref ref="TGeoBBox0x35"/>
-      <auxiliary auxtype="SensDet" auxvlue="ITSUSensor2"/>
+      <auxiliary auxtype="SensDet" auxvalue="ITSUSensor2"/>
     </volume>
     <volume name="ITSUChip2">
       <materialref ref="ITS_SI"/>
@@ -5760,7 +5760,7 @@
     <volume name="ITSUSensor3">
       <materialref ref="ITS_SI"/>
       <solidref ref="TGeoBBox0x49"/>
-      <auxiliary auxtype="SensDet" auxvlue="ITSUSensor3"/>
+      <auxiliary auxtype="SensDet" auxvalue="ITSUSensor3"/>
     </volume>
     <volume name="ITSUChip3">
       <materialref ref="ITS_SI"/>
@@ -6769,7 +6769,7 @@
     <volume name="ITSUSensor4">
       <materialref ref="ITS_SI"/>
       <solidref ref="TGeoBBox0x51"/>
-      <auxiliary auxtype="SensDet" auxvlue="ITSUSensor4"/>
+      <auxiliary auxtype="SensDet" auxvalue="ITSUSensor4"/>
     </volume>
     <volume name="ITSUChip4">
       <materialref ref="ITS_SI"/>
@@ -7342,7 +7342,7 @@
     <volume name="ITSUSensor5">
       <materialref ref="ITS_SI"/>
       <solidref ref="TGeoBBox0x53"/>
-      <auxiliary auxtype="SensDet" auxvlue="ITSUSensor5"/>
+      <auxiliary auxtype="SensDet" auxvalue="ITSUSensor5"/>
     </volume>
     <volume name="ITSUChip5">
       <materialref ref="ITS_SI"/>
@@ -8039,7 +8039,7 @@
     <volume name="ITSUSensor6">
       <materialref ref="ITS_SI"/>
       <solidref ref="TGeoBBox0x55"/>
-      <auxiliary auxtype="SensDet" auxvlue="ITSUSensor6"/>
+      <auxiliary auxtype="SensDet" auxvalue="ITSUSensor6"/>
     </volume>
     <volume name="ITSUChip6">
       <materialref ref="ITS_SI"/>
