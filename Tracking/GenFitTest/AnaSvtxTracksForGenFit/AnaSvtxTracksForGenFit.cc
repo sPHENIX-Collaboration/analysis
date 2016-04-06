@@ -87,6 +87,7 @@ int AnaSvtxTracksForGenFit::Init(PHCompositeNode *topNode)
   _tracks->Branch("px", &px, "px/F");
   _tracks->Branch("py", &py, "py/F");
   _tracks->Branch("pz", &pz, "pz/F");
+  _tracks->Branch("dca2d", &dca2d, "dca2d/F");
   _tracks->Branch("clusterID", &clusterID, "clusterID[nhits]/I");
   _tracks->Branch("layer", &layer, "layer[nhits]/I");
   _tracks->Branch("x", &x, "x[nhits]/F");
@@ -176,6 +177,10 @@ void AnaSvtxTracksForGenFit::fill_tree(PHCompositeNode *topNode)
       gvy      = vtx->get_y();
       gvz      = vtx->get_z();
 
+			gpx			 = g4particle->get_px();
+			gpy			 = g4particle->get_py();
+			gpz			 = g4particle->get_pz();
+
       SvtxTrack* track = trackeval->best_track_from(g4particle);
       if (track)
       {
@@ -185,6 +190,7 @@ void AnaSvtxTracksForGenFit::fill_tree(PHCompositeNode *topNode)
         px        = track->get_px();
         py        = track->get_py();
         pz        = track->get_pz();
+        dca2d     = track->get_dca2d();
 
 
         int iclus = 0;
@@ -242,6 +248,7 @@ void AnaSvtxTracksForGenFit::reset_variables()
   px = -9999;
   py = -9999;
   pz = -9999;
+  dca2d = -9999;
 
   //-- clusters
   for (int i = 0; i < 7; i++)
