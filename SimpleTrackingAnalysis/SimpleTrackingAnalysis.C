@@ -73,6 +73,22 @@ int SimpleTrackingAnalysis::Init(PHCompositeNode *topNode)
 
 
 
+  // --- additional tracking histograms for studying quality
+
+  _recopt_quality = new TH2D("recopt_quality", "", 20,0.0,10.0, 100,0.0,5.0);
+  se->registerHisto(_recopt_quality);
+
+  _truept_quality_particles_recoWithin4Percent = new TH2D("truept_quality_particles_recoWithin4Percent", "", 20,0.0,10.0, 100,0.0,5.0);
+  se->registerHisto(_truept_quality_particles_recoWithin4Percent);
+
+  _recopt_quality_tracks_all = new TH2D("recopt_quality_tracks_all", "", 20,0.0,10.0, 100,0.0,5.0);
+  se->registerHisto(_recopt_quality_tracks_all);
+
+  _recopt_quality_tracks_recoWithin4Percent = new TH2D("recopt_quality_tracks_recoWithin4Percent", "", 20,0.0,10.0, 100,0.0,5.0);
+  se->registerHisto(_recopt_quality_tracks_recoWithin4Percent);
+
+
+
   // --- histograms over true pt, used for finding efficiencies
 
   _truept_dptoverpt = new TH2D("truept_dptoverpt", "", 40,0.0,40.0, 200,-0.5,0.5);
