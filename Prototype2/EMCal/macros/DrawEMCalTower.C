@@ -115,7 +115,6 @@ EMCDistribution_Fast(TString gain = "LG", bool log_scale = false)
       "TOWER_CALIB_" + gain + "_CEMC[].get_bineta() + 8* TOWER_CALIB_" + gain
           + "_CEMC[].get_binphi():TOWER_CALIB_" + gain
           + "_CEMC[].get_energy()>>" + hname, "", "goff");
-
   TText * t;
   TCanvas *c1 = new TCanvas(
       "EMCDistribution_" + gain + TString(log_scale ? "_Log" : "") + cuts,
@@ -143,7 +142,7 @@ EMCDistribution_Fast(TString gain = "LG", bool log_scale = false)
           TString hname = Form("hEnergy_ieta%d_iphi%d", ieta, iphi)
               + TString(log_scale ? "_Log" : "");
 
-          TH1 * h = h2->ProjectionX(hname,ieta+8*iphi,ieta+8*iphi);
+          TH1 * h = h2->ProjectionX(hname,ieta+8*iphi+1,ieta+8*iphi+1); // axis bin number is encoded as ieta+8*iphi+1
 
           h->SetLineWidth(0);
           h->SetLineColor(kBlue + 3);
