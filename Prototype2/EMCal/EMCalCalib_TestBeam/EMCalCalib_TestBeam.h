@@ -7,8 +7,6 @@
 
 #include <TNtuple.h>
 #include <TFile.h>
-
-
 #include <string>
 #include <stdint.h>
 
@@ -31,10 +29,9 @@ public:
 
   enum enu_flags
   {
-    kProcessSF = 1 << 1,
-    kProcessTower = 1 << 2,
-    kProcessMCPhoton = 1 << 3,
-    kProcessUpslisonTrig = 1 << 4,
+    kProcessTower = 1 << 1
+  }
+   
 
     kDefaultFlag = kProcessSF | kProcessTower
   };
@@ -52,36 +49,6 @@ public:
   process_event(PHCompositeNode *topNode);
   int
   End(PHCompositeNode *topNode);
-
-  uint32_t
-  get_flags() const
-  {
-    return _flags;
-  }
-
-  void
-  set_flags(enu_flags flags)
-  {
-    _flags = (uint32_t) flags;
-  }
-
-  void
-  set_flag(enu_flags flag)
-  {
-    _flags |= (uint32_t) flag;
-  }
-
-  bool
-  flag(enu_flags flag)
-  {
-    return _flags & flag;
-  }
-
-  void
-  reset_flag(enu_flags flag)
-  {
-    _flags &= ~(uint32_t) flag;
-  }
 
  
 
@@ -103,14 +70,13 @@ private:
     kCEMC, kHCALIN, kHCALOUT
   };
 
-  SvtxEvalStack * _eval_stack;
+  // SvtxEvalStack * _eval_stack;
   TTree * _T_EMCalTrk;
 
 
  
   std::string _filename;
 
-  uint32_t _flags;
   unsigned long _ievent;
 
 
