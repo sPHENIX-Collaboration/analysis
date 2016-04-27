@@ -45,7 +45,7 @@ using namespace std;
 
 SimpleTrackingAnalysis::SimpleTrackingAnalysis(const string &name) : SubsysReco(name)
 {
-  cout << "Class constructor called " << endl;
+  cout << "SimpleTrackingAnalysis class constructor called " << endl;
   nevents = 0;
   nerrors = 0;
   nwarnings = 0;
@@ -67,6 +67,7 @@ int SimpleTrackingAnalysis::Init(PHCompositeNode *topNode)
   // --- Histograms are instantiated here and then registered with the Fun4All server
   // --------------------------------------------------------------------------------
 
+  cout << "SimpleTrackingAnalysis::Init called" << endl;
 
   // --- get instance of
   Fun4AllServer *se = Fun4AllServer::instance();
@@ -200,16 +201,16 @@ int SimpleTrackingAnalysis::Init(PHCompositeNode *topNode)
   se->registerHisto(_recopt_tracks_withcalocuts_recoWithin5Percent);
 
 
-  th2d_recopt_tracks_withcalocuts_all = new TH2D(Form("th2d_recopt_tracks_withcalocuts_all"), "", 20,0.0,10.0, 20,0.0,2.0);
-  th2d_recopt_tracks_withcalocuts_recoWithExactHits = new TH2D(Form("th2d_recopt_tracks_withcalocuts_recoWithExactHits"), "", 20,0.0,10.0, 20,0.0,2.0);
-  th2d_recopt_tracks_withcalocuts_recoWithin1Hit = new TH2D(Form("th2d_recopt_tracks_withcalocuts_recoWithin1Hit"), "", 20,0.0,10.0, 20,0.0,2.0);
-  th2d_recopt_tracks_withcalocuts_recoWithin2Hits = new TH2D(Form("th2d_recopt_tracks_withcalocuts_recoWithin2Hits"), "", 20,0.0,10.0, 20,0.0,2.0);
-  th2d_recopt_tracks_withcalocuts_recoWithin3Percent = new TH2D(Form("th2d_recopt_tracks_withcalocuts_recoWithin3Percent"), "", 20,0.0,10.0, 20,0.0,2.0);
-  th2d_recopt_tracks_withcalocuts_recoWithin4Percent = new TH2D(Form("th2d_recopt_tracks_withcalocuts_recoWithin4Percent"), "", 20,0.0,10.0, 20,0.0,2.0);
-  th2d_recopt_tracks_withcalocuts_recoWithin5Percent = new TH2D(Form("th2d_recopt_tracks_withcalocuts_recoWithin5Percent"), "", 20,0.0,10.0, 20,0.0,2.0);
-  th2d_recopt_tracks_withcalocuts_recoWithin1Sigma = new TH2D(Form("th2d_recopt_tracks_withcalocuts_recoWithin1Sigma"), "", 20,0.0,10.0, 20,0.0,2.0);
-  th2d_recopt_tracks_withcalocuts_recoWithin2Sigma = new TH2D(Form("th2d_recopt_tracks_withcalocuts_recoWithin2Sigma"), "", 20,0.0,10.0, 20,0.0,2.0);
-  th2d_recopt_tracks_withcalocuts_recoWithin3Sigma = new TH2D(Form("th2d_recopt_tracks_withcalocuts_recoWithin3Sigma"), "", 20,0.0,10.0, 20,0.0,2.0);
+  th2d_recopt_tracks_withcalocuts_all = new TH2D(Form("th2d_recopt_tracks_withcalocuts_all"), "", 80,0.0,40.0, 20,0.0,2.0);
+  th2d_recopt_tracks_withcalocuts_recoWithExactHits = new TH2D(Form("th2d_recopt_tracks_withcalocuts_recoWithExactHits"), "", 80,0.0,40.0, 20,0.0,2.0);
+  th2d_recopt_tracks_withcalocuts_recoWithin1Hit = new TH2D(Form("th2d_recopt_tracks_withcalocuts_recoWithin1Hit"), "", 80,0.0,40.0, 20,0.0,2.0);
+  th2d_recopt_tracks_withcalocuts_recoWithin2Hits = new TH2D(Form("th2d_recopt_tracks_withcalocuts_recoWithin2Hits"), "", 80,0.0,40.0, 20,0.0,2.0);
+  th2d_recopt_tracks_withcalocuts_recoWithin3Percent = new TH2D(Form("th2d_recopt_tracks_withcalocuts_recoWithin3Percent"), "", 80,0.0,40.0, 20,0.0,2.0);
+  th2d_recopt_tracks_withcalocuts_recoWithin4Percent = new TH2D(Form("th2d_recopt_tracks_withcalocuts_recoWithin4Percent"), "", 80,0.0,40.0, 20,0.0,2.0);
+  th2d_recopt_tracks_withcalocuts_recoWithin5Percent = new TH2D(Form("th2d_recopt_tracks_withcalocuts_recoWithin5Percent"), "", 80,0.0,40.0, 20,0.0,2.0);
+  th2d_recopt_tracks_withcalocuts_recoWithin1Sigma = new TH2D(Form("th2d_recopt_tracks_withcalocuts_recoWithin1Sigma"), "", 80,0.0,40.0, 20,0.0,2.0);
+  th2d_recopt_tracks_withcalocuts_recoWithin2Sigma = new TH2D(Form("th2d_recopt_tracks_withcalocuts_recoWithin2Sigma"), "", 80,0.0,40.0, 20,0.0,2.0);
+  th2d_recopt_tracks_withcalocuts_recoWithin3Sigma = new TH2D(Form("th2d_recopt_tracks_withcalocuts_recoWithin3Sigma"), "", 80,0.0,40.0, 20,0.0,2.0);
 
   se->registerHisto(th2d_recopt_tracks_withcalocuts_all);
   se->registerHisto(th2d_recopt_tracks_withcalocuts_recoWithExactHits);
@@ -250,16 +251,16 @@ int SimpleTrackingAnalysis::Init(PHCompositeNode *topNode)
   se->registerHisto(_truept_particles_withcalocuts_recoWithin5Percent);
 
 
-  th2d_truept_particles_withcalocuts_leaving7Hits = new TH2D(Form("th2d_truept_particles_withcalocuts_leaving7Hits"), "", 20,0.0,10.0, 20,0.0,2.0);
-  th2d_truept_particles_withcalocuts_recoWithExactHits = new TH2D(Form("th2d_truept_particles_withcalocuts_recoWithExactHits"), "", 20,0.0,10.0, 20,0.0,2.0);
-  th2d_truept_particles_withcalocuts_recoWithin1Hit = new TH2D(Form("th2d_truept_particles_withcalocuts_recoWithin1Hit"), "", 20,0.0,10.0, 20,0.0,2.0);
-  th2d_truept_particles_withcalocuts_recoWithin2Hits = new TH2D(Form("th2d_truept_particles_withcalocuts_recoWithin2Hits"), "", 20,0.0,10.0, 20,0.0,2.0);
-  th2d_truept_particles_withcalocuts_recoWithin3Percent = new TH2D(Form("th2d_truept_particles_withcalocuts_recoWithin3Percent"), "", 20,0.0,10.0, 20,0.0,2.0);
-  th2d_truept_particles_withcalocuts_recoWithin4Percent = new TH2D(Form("th2d_truept_particles_withcalocuts_recoWithin4Percent"), "", 20,0.0,10.0, 20,0.0,2.0);
-  th2d_truept_particles_withcalocuts_recoWithin5Percent = new TH2D(Form("th2d_truept_particles_withcalocuts_recoWithin5Percent"), "", 20,0.0,10.0, 20,0.0,2.0);
-  th2d_truept_particles_withcalocuts_recoWithin1Sigma = new TH2D(Form("th2d_truept_particles_withcalocuts_recoWithin1Sigma"), "", 20,0.0,10.0, 20,0.0,2.0);
-  th2d_truept_particles_withcalocuts_recoWithin2Sigma = new TH2D(Form("th2d_truept_particles_withcalocuts_recoWithin2Sigma"), "", 20,0.0,10.0, 20,0.0,2.0);
-  th2d_truept_particles_withcalocuts_recoWithin3Sigma = new TH2D(Form("th2d_truept_particles_withcalocuts_recoWithin3Sigma"), "", 20,0.0,10.0, 20,0.0,2.0);
+  th2d_truept_particles_withcalocuts_leaving7Hits = new TH2D(Form("th2d_truept_particles_withcalocuts_leaving7Hits"), "", 80,0.0,40.0, 20,0.0,2.0);
+  th2d_truept_particles_withcalocuts_recoWithExactHits = new TH2D(Form("th2d_truept_particles_withcalocuts_recoWithExactHits"), "", 80,0.0,40.0, 20,0.0,2.0);
+  th2d_truept_particles_withcalocuts_recoWithin1Hit = new TH2D(Form("th2d_truept_particles_withcalocuts_recoWithin1Hit"), "", 80,0.0,40.0, 20,0.0,2.0);
+  th2d_truept_particles_withcalocuts_recoWithin2Hits = new TH2D(Form("th2d_truept_particles_withcalocuts_recoWithin2Hits"), "", 80,0.0,40.0, 20,0.0,2.0);
+  th2d_truept_particles_withcalocuts_recoWithin3Percent = new TH2D(Form("th2d_truept_particles_withcalocuts_recoWithin3Percent"), "", 80,0.0,40.0, 20,0.0,2.0);
+  th2d_truept_particles_withcalocuts_recoWithin4Percent = new TH2D(Form("th2d_truept_particles_withcalocuts_recoWithin4Percent"), "", 80,0.0,40.0, 20,0.0,2.0);
+  th2d_truept_particles_withcalocuts_recoWithin5Percent = new TH2D(Form("th2d_truept_particles_withcalocuts_recoWithin5Percent"), "", 80,0.0,40.0, 20,0.0,2.0);
+  th2d_truept_particles_withcalocuts_recoWithin1Sigma = new TH2D(Form("th2d_truept_particles_withcalocuts_recoWithin1Sigma"), "", 80,0.0,40.0, 20,0.0,2.0);
+  th2d_truept_particles_withcalocuts_recoWithin2Sigma = new TH2D(Form("th2d_truept_particles_withcalocuts_recoWithin2Sigma"), "", 80,0.0,40.0, 20,0.0,2.0);
+  th2d_truept_particles_withcalocuts_recoWithin3Sigma = new TH2D(Form("th2d_truept_particles_withcalocuts_recoWithin3Sigma"), "", 80,0.0,40.0, 20,0.0,2.0);
 
   se->registerHisto(th2d_truept_particles_withcalocuts_leaving7Hits);
   se->registerHisto(th2d_truept_particles_withcalocuts_recoWithExactHits);
