@@ -14,12 +14,8 @@ libPHAna_la_LDFLAGS = \
 lib_LTLIBRARIES = \
   libPHAna.la
 
-include_HEADERS = \
-  PHAna.h \
-  PHAnaLinkDef.h
-
 libPHAna_la_SOURCES = \
-  PHAna.C \
+  PHAna.cc \
   PHAnaDict.C
 
 libPHAna_la_LIBADD = \
@@ -46,8 +42,6 @@ testexternals.C:
 	echo "  return 0;" >> $@
 	echo "}" >> $@
 
-##############################################
-# please add new classes in alphabetical order
 # Rule for generating CINT dictionaries from class headers.
 %Dict.C: %.h %LinkDef.h
 	rootcint -f $@ -c $(CINTFLAGS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $^

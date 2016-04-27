@@ -1,0 +1,19 @@
+Copied over from analysis folder of Edward Kistenev
+
+-----------------------------
+
+From: Edward Kistenev <kistenev@bnl.gov>
+Subject: Re: [Sphenix-github-l] [sPHENIX-Collaboration/coresoftware] 2016 prototype online production software (#134)
+Date: April 13, 2016 at 2:01:18 AM CDT
+To: sPHENIX-Collaboration/coresoftware <reply+0100b61f48d7721cd2a0095aef3b083f95a7f2e2f93bd71992cf0000000113259c8992a169ce08d18d71@reply.github.com>
+Cc: sPHENIX-Collaboration/coresoftware <coresoftware@noreply.github.com>
+
+Hi, Jin,
+may I suggest to add to the library my analysis code which I just completed to test. It is not exactly conforms to sPHENIX standards but it writes root file with all graphical objects (histograms) which I could think about and it is very simple to use. All what it takes is to type 
+.x runHelper.C(runKind, runNumber, eventsToRead=0, displayMode=3) where 
+runKind  etc, display mode (1)-show event by event digititizations, (2) Lego plots in calorimeters (3) full processing and producing summaries (creates r# directory to store all TCanvases).
+	      	      	   	    	  Edward
+PS. Examples of the Canvases produced by code could be found in /sphenix/data/data01/kistenev/rootf/canvases/ (one subdirecory per run).
+ 
+Edward Kistenev, PhD
+PHENIX Physicist

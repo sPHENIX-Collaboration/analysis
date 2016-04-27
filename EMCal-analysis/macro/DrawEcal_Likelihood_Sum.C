@@ -25,12 +25,12 @@ TString cuts = "";
 void
 DrawEcal_Likelihood_Sum(
 //    TString base_dir =
-//        "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/",
+//        "../../sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/",
 
     TString base_dir =
-        "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/embedding/emcstudies/pidstudies/spacal2d/fieldmap/",
+        "../../sPHENIX_work/production_analysis/embedding/emcstudies/pidstudies/spacal2d/fieldmap/",
 //                    TString base_dir =
-//                        "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/embedding/emcstudies/pidstudies/spacal1d/fieldmap/",
+//                        "../../sPHENIX_work/production_analysis/embedding/emcstudies/pidstudies/spacal1d/fieldmap/",
     TString kine_config = "eta0"
 //            TString kine_config = "eta0.90"
     )
@@ -74,21 +74,23 @@ DrawEcal_Likelihood_Sum(
 //  RejectionCurve_ppSummary();
 //  RejectionCurve_ppSummaryPos();
 
-//  RejectionCurve_AuAuSummary("/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/embedding/emcstudies/pidstudies/spacal2d/fieldmap/",
+//  RejectionCurve_AuAuSummary("../../sPHENIX_work/production_analysis/embedding/emcstudies/pidstudies/spacal2d/fieldmap/",
 //      "2-D Proj. SPACAL, e^{-} VS h^{-} in Au+Au 10%C");
-//  RejectionCurve_AuAuSummaryPos("/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/embedding/emcstudies/pidstudies/spacal2d/fieldmap/",
-//      "2-D Proj. SPACAL, e^{-} VS h^{+} in Au+Au 10%C");
-    RejectionCurve_AuAuSummary("/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/embedding/emcstudies/pidstudies/spacal1d/fieldmap/",
-        "1-D Proj. SPACAL, e^{-} VS h^{-} in Au+Au 10%C");
-    RejectionCurve_AuAuSummaryPos("/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/embedding/emcstudies/pidstudies/spacal1d/fieldmap/",
-        "1-D Proj. SPACAL, e^{-} VS h^{+} in Au+Au 10%C");
+//  RejectionCurve_AuAuSummaryPos("../../sPHENIX_work/production_analysis/embedding/emcstudies/pidstudies/spacal2d/fieldmap/",
+//      "2-D Proj. SPACAL, e^{+} VS h^{+} in Au+Au 10%C");
+//    RejectionCurve_AuAuSummary("../../sPHENIX_work/production_analysis/embedding/emcstudies/pidstudies/spacal1d/fieldmap/",
+//        "1-D Proj. SPACAL, e^{-} VS h^{-} in Au+Au 10%C");
+//    RejectionCurve_AuAuSummaryPos("../../sPHENIX_work/production_analysis/embedding/emcstudies/pidstudies/spacal1d/fieldmap/",
+//        "1-D Proj. SPACAL, e^{+} VS h^{+} in Au+Au 10%C");
+
+  RejectionCurve_AuAuSummary_Compare();
 
 }
 
 void
 RejectionCurvePos(
     TString base_dir =
-        "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/",
+        "../../sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/",
     TString kine_config = "eta0", //
     TString ll_config = "Edep_LL_Distribution_eval_sample", //
     TString hist_name = "hll_edep_diff", //
@@ -203,7 +205,7 @@ RejectionCurvePos(
 void
 RejectionCurve(
     TString base_dir =
-        "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/",
+        "../../sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/",
     TString kine_config = "eta0", //
     TString ll_config = "Edep_LL_Distribution_eval_sample", //
     TString hist_name = "hll_edep_diff", //
@@ -317,7 +319,7 @@ RejectionCurve(
 void
 RejectionCurve_PiProton(
     TString base_dir =
-        "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/",
+        "../../sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/",
     TString kine_config = "eta0", //
     TString ll_config = "Edep_LL_Distribution_eval_sample", //
     TString hist_name = "hll_edep_diff", //
@@ -432,7 +434,7 @@ RejectionCurve_PiProton(
 void
 RejectionCurve_PiProtonPos(
     TString base_dir =
-        "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/",
+        "../../sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/",
     TString kine_config = "eta0", //
     TString ll_config = "Edep_LL_Distribution_eval_sample", //
     TString hist_name = "hll_edep_diff", //
@@ -548,7 +550,7 @@ RejectionCurve_PiProtonPos(
 void
 RejectionCurve_RejMethodComparison(
     TString base_dir =
-        "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/",
+        "../../sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/",
     TString kine_config = "eta0", //
     const double min_eff = 0.85)
 {
@@ -687,7 +689,7 @@ RejectionCurve_RejMethodComparison(
 void
 RejectionCurve_ppSummary(
     TString base_dir =
-        "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/",
+        "../../sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/",
     //
     const double min_eff = 0.85)
 {
@@ -857,7 +859,7 @@ RejectionCurve_ppSummary(
 void
 RejectionCurve_ppSummaryPos(
     TString base_dir =
-        "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/",
+        "../../sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/",
     //
     const double min_eff = 0.85)
 {
@@ -1027,7 +1029,7 @@ RejectionCurve_ppSummaryPos(
 void
 RejectionCurve_AuAuSummary(
     TString base_dir =
-        "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/embedding/emcstudies/pidstudies/spacal2d/fieldmap/",
+        "../../sPHENIX_work/production_analysis/embedding/emcstudies/pidstudies/spacal2d/fieldmap/",
     TString label = "2-D Proj. SPACAL, e^{-} VS h^{-} in Au+Au 10%C", //
     const double min_eff = 0.6)
 {
@@ -1044,7 +1046,8 @@ RejectionCurve_AuAuSummary(
   p->SetGridx(0);
   p->SetGridy(0);
 
-  p->DrawFrame(min_eff, 1, 1, 1e3, ";Electron Efficiency;Negatively Charged Hadron Rejection");
+  p->DrawFrame(min_eff, 1, 1, 1e3,
+      ";Electron Efficiency;Negatively Charged Hadron Rejection");
   TLine * l = new TLine(0.9, 1, 0.9, 1e3);
   l->SetLineColor(kGray);
   l->SetLineWidth(5);
@@ -1090,6 +1093,8 @@ RejectionCurve_AuAuSummary(
   ge->SetLineWidth(3);
 //  ge->Draw("3");
   ge->Draw("lx");
+
+  ge->SetName("MergeExtractRejCurve_" + kine_config + "_8GeV");
   leg2->AddEntry(ge, "8 GeV/c", "lx");
 
   TGraphErrors *ge_pi = ExtractRejCurve(base_dir, kine_config + "_4GeV", //
@@ -1108,6 +1113,7 @@ RejectionCurve_AuAuSummary(
   ge->SetLineWidth(3);
   //  ge->Draw("3");
   ge->Draw("lx");
+  ge->SetName("MergeExtractRejCurve_" + kine_config + "_4GeV");
   leg2->AddEntry(ge, "4 GeV/c", "lx");
 
   TGraphErrors *ge_pi = ExtractRejCurve(base_dir, kine_config + "_2GeV", //
@@ -1126,6 +1132,7 @@ RejectionCurve_AuAuSummary(
   ge->SetLineWidth(3);
   //  ge->Draw("3");
   ge->Draw("lx");
+  ge->SetName("MergeExtractRejCurve_" + kine_config + "_2GeV");
   leg2->AddEntry(ge, "2 GeV/c", "lx");
 
   TString kine_config = "eta0.90";
@@ -1147,6 +1154,7 @@ RejectionCurve_AuAuSummary(
   ge->SetLineWidth(3);
 //  ge->Draw("3");
   ge->SetLineStyle(kDashed);
+  ge->SetName("MergeExtractRejCurve_" + kine_config + "_8GeV");
   ge->Draw("lx");
 
   TGraphErrors *ge_pi = ExtractRejCurve(base_dir, kine_config + "_4GeV", //
@@ -1165,6 +1173,7 @@ RejectionCurve_AuAuSummary(
   ge->SetLineWidth(3);
   //  ge->Draw("3");
   ge->SetLineStyle(kDashed);
+  ge->SetName("MergeExtractRejCurve_" + kine_config + "_4GeV");
   ge->Draw("lx");
 
   TGraphErrors *ge_pi = ExtractRejCurve(base_dir, kine_config + "_2GeV", //
@@ -1183,6 +1192,7 @@ RejectionCurve_AuAuSummary(
   ge->SetLineWidth(3);
   //  ge->Draw("3");
   ge->SetLineStyle(kDashed);
+  ge->SetName("MergeExtractRejCurve_" + kine_config + "_2GeV");
   ge->Draw("lx");
 
   leg2->Draw();
@@ -1192,18 +1202,16 @@ RejectionCurve_AuAuSummary(
       base_dir + TString("DrawEcal_Likelihood_Sum_") + TString(c1->GetName()));
 }
 
-
-
 void
 RejectionCurve_AuAuSummaryPos(
     TString base_dir =
-        "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/embedding/emcstudies/pidstudies/spacal2d/fieldmap/",
+        "../../sPHENIX_work/production_analysis/embedding/emcstudies/pidstudies/spacal2d/fieldmap/",
     TString label = "2-D Proj. SPACAL, e^{-} VS h^{+} in Au+Au 10%C", //
     const double min_eff = 0.6)
 {
 
   TCanvas *c1 = new TCanvas("RejectionCurve_AuAuSummaryPos",
-      "RejectionCurve_AuAuSummaryPos: "+label, 900, 900);
+      "RejectionCurve_AuAuSummaryPos: " + label, 900, 900);
   c1->Divide(1, 1);
   int idx = 1;
   TPad * p;
@@ -1214,7 +1222,8 @@ RejectionCurve_AuAuSummaryPos(
   p->SetGridx(0);
   p->SetGridy(0);
 
-  p->DrawFrame(min_eff, 1, 1, 1e3, ";Electron Efficiency;Positively Charged Hadron Rejection");
+  p->DrawFrame(min_eff, 1, 1, 1e3,
+      ";Electron Efficiency;Positively Charged Hadron Rejection");
   TLine * l = new TLine(0.9, 1, 0.9, 1e3);
   l->SetLineColor(kGray);
   l->SetLineWidth(5);
@@ -1259,6 +1268,7 @@ RejectionCurve_AuAuSummaryPos(
   ge->SetFillColor(kRed - 9);
   ge->SetLineWidth(3);
 //  ge->Draw("3");
+  ge->SetName("MergeExtractRejCurve_" + kine_config + "_8GeV");
   ge->Draw("lx");
   leg2->AddEntry(ge, "8 GeV/c", "lx");
 
@@ -1277,6 +1287,7 @@ RejectionCurve_AuAuSummaryPos(
   ge->SetFillColor(kBlue - 9);
   ge->SetLineWidth(3);
   //  ge->Draw("3");
+  ge->SetName("MergeExtractRejCurve_" + kine_config + "_4GeV");
   ge->Draw("lx");
   leg2->AddEntry(ge, "4 GeV/c", "lx");
 
@@ -1296,6 +1307,7 @@ RejectionCurve_AuAuSummaryPos(
   ge->SetLineWidth(3);
   //  ge->Draw("3");
   ge->Draw("lx");
+  ge->SetName("MergeExtractRejCurve_" + kine_config + "_2GeV");
   leg2->AddEntry(ge, "2 GeV/c", "lx");
 
   TString kine_config = "eta0.90";
@@ -1317,6 +1329,7 @@ RejectionCurve_AuAuSummaryPos(
   ge->SetLineWidth(3);
 //  ge->Draw("3");
   ge->SetLineStyle(kDashed);
+  ge->SetName("MergeExtractRejCurve_" + kine_config + "_8GeV");
   ge->Draw("lx");
 
   TGraphErrors *ge_pi = ExtractRejCurve(base_dir, kine_config + "_4GeV", //
@@ -1335,6 +1348,7 @@ RejectionCurve_AuAuSummaryPos(
   ge->SetLineWidth(3);
   //  ge->Draw("3");
   ge->SetLineStyle(kDashed);
+  ge->SetName("MergeExtractRejCurve_" + kine_config + "_4GeV");
   ge->Draw("lx");
 
   TGraphErrors *ge_pi = ExtractRejCurve(base_dir, kine_config + "_2GeV", //
@@ -1353,6 +1367,7 @@ RejectionCurve_AuAuSummaryPos(
   ge->SetLineWidth(3);
   //  ge->Draw("3");
   ge->SetLineStyle(kDashed);
+  ge->SetName("MergeExtractRejCurve_" + kine_config + "_2GeV");
   ge->Draw("lx");
 
   leg2->Draw();
@@ -1362,14 +1377,159 @@ RejectionCurve_AuAuSummaryPos(
       base_dir + TString("DrawEcal_Likelihood_Sum_") + TString(c1->GetName()));
 }
 
+TGraph *
+rejection_ratio(TFile * f_2d, TFile * f_1d, TString graph_name)
+{
+  cout << "rejection_ratio - processing " << graph_name << endl;
 
+  TGraph * g_2d = (TGraph *) f_2d->GetObjectChecked(graph_name, "TGraph");
+  assert(g_2d);
+  TGraph * g_1d = (TGraph *) f_1d->GetObjectChecked(graph_name, "TGraph");
+  assert(g_1d);
 
+  assert(g_1d -> GetN() == g_2d -> GetN());
 
+  double xs[10000] =
+    { 0 };
+  double ys[10000] =
+    { 0 };
+
+//  for (int i = 0; i < g_2d->GetN(); i++)
+//    {
+//
+//      (g_r->GetY())[i] = (g_2d->GetY())[i] / (g_1d->GetY())[i];
+//
+////      cout <<"At "<<(g_2d->GetX())[i] <<" -> "
+////          <<(g_2d->GetY())[i] <<"/"<< (g_1d->GetY())[i] <<" = "<<(g_r->GetY())[i] <<endl;
+//
+//    }
+
+  int i = 0;
+  for (double x = 0.6; x < 0.99; x += 0.01)
+    {
+      xs[i] = x;
+
+      ys[i] = g_2d->Eval(x) / g_1d->Eval(x);
+
+      cout << "At " <<  xs[i]  << " -> " << g_2d->Eval(x) << "/"
+          << g_1d->Eval(x) << " = " << ys[i] << endl;
+      i++;
+    }
+
+  TGraph * g_r = new TGraph(i, xs, ys);
+  g_r->SetName(TString(g_1d->GetName()) + TString("_RejRatio"));
+
+  g_r->SetLineStyle(g_2d->GetLineStyle());
+
+  g_r->SetLineColor(g_2d->GetLineColor());
+  g_r->SetLineWidth(g_2d->GetLineWidth());
+
+  return g_r;
+}
+
+void
+RejectionCurve_AuAuSummary_Compare()
+{
+
+  TString base_dir =
+      "../../sPHENIX_work/production_analysis/embedding/emcstudies/pidstudies/";
+  TString label = "1D VS 2D rejection ratio, e^{-} VS h^{-} in Au+Au 10%C"; //
+  const double min_eff = 0.6;
+
+  TFile * f_2d =
+      new TFile(
+          base_dir
+              + "/spacal2d/fieldmap/DrawEcal_Likelihood_Sum_RejectionCurve_AuAuSummary.root");
+  assert(f_2d -> IsOpen());
+  TFile * f_1d =
+      new TFile(
+          base_dir
+              + "/spacal1d/fieldmap/DrawEcal_Likelihood_Sum_RejectionCurve_AuAuSummary.root");
+  assert(f_1d -> IsOpen());
+
+  TCanvas *c1 = new TCanvas("RejectionCurve_AuAuSummary_Compare",
+      "RejectionCurve_AuAuSummary_Compare", 900, 900);
+  c1->Divide(1, 1);
+  int idx = 1;
+  TPad * p;
+
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+//  p->SetLogy();
+  p->SetGridx(0);
+  p->SetGridy(0);
+
+  p->DrawFrame(min_eff, .5, 1, 1.5,
+      ";Electron Efficiency;h^{-} Rejection Ratio, (2D proj.)/(1D proj.)");
+  TLine * l = new TLine(min_eff, 1, 1, 1);
+  l->SetLineColor(kGray);
+  l->SetLineWidth(2);
+  l->Draw();
+
+  TLatex * text = new TLatex(0.6, 1.5 +0.03, label);
+  text->SetTextAlign(11);
+  text->SetTextSize(0.044);
+  text->SetTextFont(42);
+  text->Draw();
+
+  TLegend * leg1 = new TLegend(0.12, 0.15, 0.42, 0.4);
+  TLegend * leg2 = new TLegend(0.42, 0.15, 0.67, 0.4);
+
+  TGraph *ge = new TGraphErrors();
+  ge->SetLineWidth(3);
+  leg1->AddEntry(ge, "0.0 < #eta < 0.1", "lx");
+  TGraph *ge = new TGraphErrors();
+  ge->SetLineWidth(3);
+  ge->SetLineStyle(kDashed);
+  leg1->AddEntry(ge, "0.9 < #eta < 1.0", "lx");
+//  TGraphErrors *ge = new TGraphErrors();
+//  ge->SetLineWidth(3);
+//  ge->SetLineStyle(kDotted);
+//  leg1->AddEntry(ge, "Cut on min. E/p", "lx");
+
+  TString kine_config = "eta0";
+
+  TString name = ("MergeExtractRejCurve_" + kine_config + "_8GeV");
+  TGraph * ge = rejection_ratio(f_2d, f_1d, name);
+
+//  ge->Draw("lx");
+//  leg2->AddEntry(ge, "8 GeV/c", "lx");
+
+  TString name = ("MergeExtractRejCurve_" + kine_config + "_4GeV");
+  TGraph * ge = rejection_ratio(f_2d, f_1d, name);
+  ge->Draw("lx");
+  leg2->AddEntry(ge, "4 GeV/c", "lx");
+
+  TString name = ("MergeExtractRejCurve_" + kine_config + "_2GeV");
+  TGraph * ge = rejection_ratio(f_2d, f_1d, name);
+  ge->Draw("lx");
+  leg2->AddEntry(ge, "2 GeV/c", "lx");
+
+  TString kine_config = "eta0.90";
+
+  TString name = ("MergeExtractRejCurve_" + kine_config + "_8GeV");
+  TGraph * ge = rejection_ratio(f_2d, f_1d, name);
+//  ge->Draw("lx");
+
+  TString name = ("MergeExtractRejCurve_" + kine_config + "_4GeV");
+  TGraph * ge = rejection_ratio(f_2d, f_1d, name);
+  ge->Draw("lx");
+
+  TString name = ("MergeExtractRejCurve_" + kine_config + "_2GeV");
+  TGraph * ge = rejection_ratio(f_2d, f_1d, name);
+  ge->Draw("lx");
+
+  leg2->Draw();
+  leg1->Draw();
+
+  SaveCanvas(c1,
+      base_dir + TString("DrawEcal_Likelihood_Sum_") + TString(c1->GetName()));
+}
 
 void
 RejectionCurve_RejMethodComparison_AntiProton(
     TString base_dir =
-        "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/",
+        "../../sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/",
     TString kine_config = "eta0", //
     const double min_eff = 0.85)
 {
@@ -1509,7 +1669,7 @@ RejectionCurve_RejMethodComparison_AntiProton(
 void
 RejectionCurve_PIDComparison(
     TString base_dir =
-        "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/",
+        "../../sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/",
     TString kine_config = "eta0", //
     const double min_eff = 0.85)
 {
@@ -1648,7 +1808,7 @@ RejectionCurve_PIDComparison(
 TGraphErrors *
 ExtractRejCurve(
     TString base_dir =
-        "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/",
+        "../../sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/",
     TString kine_config = "eta0_4GeV", //
     TString ll_config = "EP_LL_Distribution_ll_sample", //
     TString hist_name = "hll_ep_diff", //
