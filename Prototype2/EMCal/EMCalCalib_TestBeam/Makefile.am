@@ -32,14 +32,8 @@ pkginclude_HEADERS =
 #pkginclude_HEADERS = $(include_HEADERS)
 
 libemcal_calib_la_SOURCES = \
-  EMCalCalib.C \
-  EMCalCalib_Dict.C \
   EMCalCalib_TestBeam.C \
-  EMCalCalib_TestBeam_Dict.C \
-  MCPhoton.C \
-  MCPhoton_Dict.C \
-  PhotonPair.C \
-  PhotonPair_Dict.C 
+  EMCalCalib_TestBeam_Dict.C 
 
 # Rule for generating table CINT dictionaries.
 %_Dict.C: %.h %LinkDef.h
