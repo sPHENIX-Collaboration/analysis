@@ -39,7 +39,7 @@ DrawPrototype2EMCalTower( //
   gSystem->Load("libqa_modules.so");
   gSystem->Load("libPrototype2.so");
 
-  gROOT->LoadMacro("Prototype2_DSTReader.C+");
+//  gROOT->LoadMacro("Prototype2_DSTReader.C+");
 
   if (!_file0)
     {
@@ -70,7 +70,10 @@ DrawPrototype2EMCalTower( //
   T->SetAlias("EnergySum_HG",
       "1*Sum$(TOWER_HG_CEMC[].get_energy() * ActiveTower_HG)");
 
-  T->SetAlias("C2_Inner_e", "1*TOWER_RAW_C2[0].energy");
+//  T->SetAlias("C2_Inner_e", "1*TOWER_RAW_C2[0].energy");
+  T->SetAlias("C2_Inner_e", "1*abs(TOWER_RAW_C2[2].energy)");
+  T->SetAlias("C2_Outer_e", "1*abs(TOWER_RAW_C2[3].energy)");
+  T->SetAlias("C2_Sum_e", "C2_Inner_e + C2_Outer_e");
 
 //  "TOWER_CALIB_CEMC.energy * ( Sum$( TOWER_CALIB_CEMC.get_column()==2 && TOWER_CALIB_CEMC.get_row()==1
 
@@ -83,36 +86,57 @@ DrawPrototype2EMCalTower( //
       "Sum$(TOWER_CALIB_HODO_VERTICAL.towerid * (abs(TOWER_CALIB_HODO_VERTICAL.energy)>30) * abs(TOWER_CALIB_HODO_VERTICAL.energy))/Sum$((abs(TOWER_CALIB_HODO_VERTICAL.energy)>30) * abs(TOWER_CALIB_HODO_VERTICAL.energy))");
   T->SetAlias("Valid_HODO_VERTICAL",
       "Sum$(abs(TOWER_CALIB_HODO_VERTICAL.energy)>30) > 0");
+
   T->SetAlias("Average_HODO_HORIZONTAL",
       "Sum$(TOWER_CALIB_HODO_HORIZONTAL.towerid * (abs(TOWER_CALIB_HODO_HORIZONTAL.energy)>30) * abs(TOWER_CALIB_HODO_HORIZONTAL.energy))/Sum$((abs(TOWER_CALIB_HODO_HORIZONTAL.energy)>30) * abs(TOWER_CALIB_HODO_HORIZONTAL.energy))");
   T->SetAlias("Valid_HODO_HORIZONTAL",
       "Sum$(abs(TOWER_CALIB_HODO_HORIZONTAL.energy)>30) > 0");
 
+  T->SetAlias("No_Triger_VETO",
+      "Sum$(abs(TOWER_RAW_TRIGGER_VETO.energy)>15)==0");
+
   T->SetAlias("Energy_Sum_col1_row2_3x3",
-      "Sum$( (abs(TOWER_CALIB_CEMC.get_column()-2)<=1 && abs(TOWER_CALIB_CEMC.get_row()-1)<=1 ) * TOWER_CALIB_CEMC.get_energy())");
+      "Sum$( (abs(TOWER_CALIB_CEMC.get_column()-1)<=1 && abs(TOWER_CALIB_CEMC.get_row()-2)<=1 ) * TOWER_CALIB_CEMC.get_energy())");
   T->SetAlias("Energy_Sum_col1_row2_5x5",
-      "Sum$( (abs(TOWER_CALIB_CEMC.get_column()-2)<=2 && abs(TOWER_CALIB_CEMC.get_row()-1)<=2 ) * TOWER_CALIB_CEMC.get_energy())");
+      "Sum$( (abs(TOWER_CALIB_CEMC.get_column()-1)<=2 && abs(TOWER_CALIB_CEMC.get_row()-2)<=2 ) * TOWER_CALIB_CEMC.get_energy())");
+  T->SetAlias("Energy_Sum_col2_row2_5x5",
+      "Sum$( (abs(TOWER_CALIB_CEMC.get_column()-2)<=2 && abs(TOWER_CALIB_CEMC.get_row()-2)<=2 ) * TOWER_CALIB_CEMC.get_energy())");
+  T->SetAlias("Energy_Sum_CEMC", "1*Sum$(TOWER_CALIB_CEMC.get_energy())");
+
+  T->SetAlias("MIP_Count_Col2",
+      "Sum$( abs( TOWER_RAW_CEMC.get_energy() )>20 && abs( TOWER_RAW_CEMC.get_energy() )<200 && TOWER_CALIB_CEMC.get_column() == 2 )");
+  T->SetAlias("Pedestal_Count_AllCEMC",
+      "Sum$( abs( TOWER_RAW_CEMC.get_energy() )<20)");
 
 //
   TCut event_sel = "1*1";
   if (plot_all)
     {
-      event_sel = "1*1";
-      cuts = "_all_event";
+//      event_sel = "1*1";
+//      cuts = "_all_event";
+      event_sel = "Valid_HODO_HORIZONTAL && Valid_HODO_VERTICAL";
+      cuts = "_Valid_HODO";
     }
   else
     {
 //      event_sel = "1*1";
 //      cuts = "_all_event";
 //      event_sel = "Valid_HODO_HORIZONTAL && Valid_HODO_VERTICAL";
-      cuts = "_Valid_HODO";
-      event_sel = "Valid_HODO_HORIZONTAL && Valid_HODO_VERTICAL && Average_HODO_HORIZONTAL>1.5 && Average_HODO_HORIZONTAL<4.5 && Average_HODO_VERTICAL>3.5 && Average_HODO_VERTICAL<6.5";
-      cuts = "_Valid_HODO_center_col1_row2";
+//      cuts = "_Valid_HODO";
+      event_sel =
+          "Valid_HODO_HORIZONTAL && Valid_HODO_VERTICAL && No_Triger_VETO";
+      cuts = "_Valid_HODO_Trigger_VETO";
+//      event_sel = "Valid_HODO_HORIZONTAL && Valid_HODO_VERTICAL && (MIP_Count_Col2 == 8) && (Pedestal_Count_AllCEMC >= 64 - 8)";
+//      cuts = "_Valid_HODO_MIP_Col2_PedestalOther";
+//      event_sel = "Valid_HODO_HORIZONTAL && Valid_HODO_VERTICAL && Average_HODO_VERTICAL>1.5 && Average_HODO_VERTICAL<4.5 && Average_HODO_HORIZONTAL>3.5 && Average_HODO_HORIZONTAL<6.5";
+//      cuts = "_Valid_HODO_center_col1_row2";
 //      event_sel =
 //          "C2_Inner_e>100 && Valid_HODO_HORIZONTAL && Valid_HODO_VERTICAL && Average_HODO_HORIZONTAL>1.5 && Average_HODO_HORIZONTAL<4.5 && Average_HODO_VERTICAL>3.5 && Average_HODO_VERTICAL<6.5";
 //      cuts = "_Valid_HODO_center_col1_row2_C2";
 //      event_sel = "abs(Average_column - 1)<.5 && abs(Average_row - 2) < .5";
 //      cuts = "_tower_center_col1_row2";
+//      event_sel = "Valid_HODO_HORIZONTAL && Valid_HODO_VERTICAL && abs(C2_Inner_e)<10";
+//      cuts = "_Valid_HODO_VetoC2";
     }
 
   cout << "Build event selection of " << (const char *) event_sel << endl;
@@ -124,11 +148,29 @@ DrawPrototype2EMCalTower( //
 
   T->SetEventList(elist);
 
+//  int rnd = rand();
+//  gDirectory->mkdir(Form("dir_%d", rnd));
+//  gDirectory->cd(Form("dir_%d", rnd));
+//  if (plot_all)
+//    EMCDistribution_SUM("Energy_Sum_col1_row2_5x5");
+
+  int rnd = rand();
+  gDirectory->mkdir(Form("dir_%d", rnd));
+  gDirectory->cd(Form("dir_%d", rnd));
+  if (plot_all)
+    EMCDistribution_ShowShape("C2_Sum_e");
+
   int rnd = rand();
   gDirectory->mkdir(Form("dir_%d", rnd));
   gDirectory->cd(Form("dir_%d", rnd));
 //  if (plot_all)
-    EMCDistribution_SUM("Energy_Sum_col1_row2_5x5");
+  EMCDistribution_SUM("Energy_Sum_CEMC", "C2_Sum_e");
+
+  int rnd = rand();
+  gDirectory->mkdir(Form("dir_%d", rnd));
+  gDirectory->cd(Form("dir_%d", rnd));
+  if (plot_all)
+    EMCDistribution_SUM("Energy_Sum_col2_row2_5x5", "C2_Sum_e");
 
   int rnd = rand();
   gDirectory->mkdir(Form("dir_%d", rnd));
@@ -154,16 +196,103 @@ DrawPrototype2EMCalTower( //
   if (plot_all)
     EMCDistribution_ADC();
 
-//  Prototype2_DSTReader * r = new Prototype2_DSTReader(T);
-  if (!plot_all)
-    T->Process("Prototype2_DSTReader.C+",
-        TString(_file0->GetName())
-            + TString("_DrawPrototype2EMCalTower_Prototype2_DSTReader_") + cuts
-            + TString(".dat"));
+//  if (!plot_all)
+//    T->Process("Prototype2_DSTReader.C+",
+//        TString(_file0->GetName())
+//            + TString("_DrawPrototype2EMCalTower_Prototype2_DSTReader") + cuts
+//            + TString(".dat"));
 }
 
 void
-EMCDistribution_SUM(TString sTOWER = "Energy_Sum_col1_row2_5x5")
+EMCDistribution_ShowShape(TString CherenkovSignal = "C2_Inner",
+    const double che_cut = 100)
+{
+  TString cut_pass = CherenkovSignal + Form(">%.1f", che_cut);
+  TString cut_rej = CherenkovSignal + Form("<%.1f", che_cut);
+
+  const double event_pass = T->GetEntries(cut_pass);
+  const double event_rej = T->GetEntries(cut_rej);
+
+  TH2 * EnergyDist_pass = new TH2F("EnergyDist_pass",
+      cut_pass + ";Column;Row;<Energy> / Event / Tower", 8, -.5, 7.5, 8, -.5,
+      7.5);
+  TH2 * EnergyDist_rej = new TH2F("EnergyDist_rej",
+      cut_rej + ";Column;Row;<Energy> / Event / Tower", 8, -.5, 7.5, 8, -.5,
+      7.5);
+
+  TH1 * Che_full = new TH1F("Che_full",
+      ";" + CherenkovSignal + " Signal (ADC);Count / bin", 200, 0, 2000);
+  TH1 * Che_pass = new TH1F("Che_pass",
+      ";" + CherenkovSignal + " Signal (ADC);Count / bin", 200, 0, 2000);
+  TH1 * Che_rej = new TH1F("Che_rej",
+      ";" + CherenkovSignal + " Signal (ADC);Count / bin", 200, 0, 2000);
+
+  Che_full->SetLineColor(kBlue + 3);
+  Che_full->SetLineWidth(2);
+  Che_pass->SetLineColor(kGreen + 3);
+  Che_pass->SetLineWidth(2);
+  Che_pass->SetFillColor(kGreen + 3);
+  Che_pass->SetFillStyle(1);
+  Che_rej->SetLineColor(kBlue + 3);
+  Che_rej->SetLineWidth(2);
+  Che_rej->SetFillColor(kBlue + 3);
+  Che_rej->SetFillStyle(1);
+
+  T->Draw(
+      "TOWER_CALIB_CEMC[].get_binphi():TOWER_CALIB_CEMC[].get_bineta()>>EnergyDist_pass",
+      Form("(%s) * (TOWER_CALIB_CEMC[].get_energy())", cut_pass.Data()),
+      "goff");
+  T->Draw(
+      "TOWER_CALIB_CEMC[].get_binphi():TOWER_CALIB_CEMC[].get_bineta()>>EnergyDist_rej",
+      Form("(%s) * (TOWER_CALIB_CEMC[].get_energy())", cut_rej.Data()), "goff");
+
+  T->Draw(CherenkovSignal + ">>Che_full", NULL, "goff");
+  T->Draw(CherenkovSignal + ">>Che_pass", cut_pass, "goff");
+  T->Draw(CherenkovSignal + ">>Che_rej", cut_rej, "goff");
+
+  EnergyDist_pass->Scale(1. / event_pass);
+  EnergyDist_rej->Scale(1. / event_rej);
+
+  TText * t;
+  TCanvas *c1 = new TCanvas("EMCDistribution_ShowShape" + cuts,
+      "EMCDistribution_ShowShape" + cuts, 1800, 600);
+  c1->Divide(3, 1);
+  int idx = 1;
+  TPad * p;
+
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+  p->SetLogy();
+  p->SetGridx(0);
+  p->SetGridy(0);
+
+  Che_full->DrawClone();
+  Che_pass->DrawClone("same");
+  Che_rej->DrawClone("same");
+
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+//  p->SetLogy();
+
+  EnergyDist_pass->DrawClone("LEGO2Z");
+
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+//  p->SetLogy();
+//  p->SetGridx(0);
+//  p->SetGridy(0);
+
+  EnergyDist_rej->DrawClone("LEGO2Z");
+
+  SaveCanvas(c1,
+      TString(_file0->GetName()) + TString("_DrawPrototype2EMCalTower_")
+          + TString(c1->GetName()), false);
+
+}
+
+void
+EMCDistribution_SUM(TString sTOWER = "Energy_Sum_col1_row2_5x5",
+    TString CherenkovSignal = "C2_Inner")
 {
   TH1 * EnergySum_LG_full = new TH1F("EnergySum_LG_full",
       ";Full range Tower Energy Sum (GeV);Count / bin", 300, 0, 40);
@@ -173,9 +302,10 @@ EMCDistribution_SUM(TString sTOWER = "Energy_Sum_col1_row2_5x5")
 //      ";Low range Tower Energy Sum (ADC);Count / bin", 50, 0, 500);
 
   TH1 * C2_Inner_full = new TH1F("C2_Inner_full",
-      ";C2 Inner Signal (ADC);Count / bin", 200, 0, 2000);
-  TH1 * C2_Inner = new TH1F("C2_Inner", ";C2 Inner Signal (ADC);Count / bin",
-      200, 0, 2000);
+      CherenkovSignal + ";Cherenkov Signal (ADC);Count / bin", 200, 0, 2000);
+  TH1 * C2_Inner = new TH1F("C2_Inner",
+      CherenkovSignal + ";Cherenkov Inner Signal (ADC);Count / bin", 200, 0,
+      2000);
 
   EnergySum_LG_full->SetLineColor(kBlue + 3);
   EnergySum_LG_full->SetLineWidth(2);
@@ -191,16 +321,18 @@ EMCDistribution_SUM(TString sTOWER = "Energy_Sum_col1_row2_5x5")
   C2_Inner->SetLineWidth(3);
   C2_Inner->SetMarkerColor(kGreen + 3);
 
-  TCut c2 = "C2_Inner_e>100";
+  TCut c2 = CherenkovSignal + ">100";
 
   T->Draw(sTOWER + ">>EnergySum_LG_full", "", "goff");
   T->Draw(sTOWER + ">>EnergySum_LG", c2, "goff");
-  T->Draw("C2_Inner_e>>C2_Inner_full", "", "goff");
-  T->Draw("C2_Inner_e>>C2_Inner", c2, "goff");
+  T->Draw(CherenkovSignal + ">>C2_Inner_full", "", "goff");
+  T->Draw(CherenkovSignal + ">>C2_Inner", c2, "goff");
 
   TText * t;
-  TCanvas *c1 = new TCanvas("EMCDistribution_SUM_" + sTOWER + cuts,
-      "EMCDistribution_SUM_" + sTOWER + cuts, 1800, 600);
+  TCanvas *c1 = new TCanvas(
+      "EMCDistribution_SUM_" + sTOWER + "_" + CherenkovSignal + cuts,
+      "EMCDistribution_SUM_" + sTOWER + "_" + CherenkovSignal + cuts, 1800,
+      600);
   c1->Divide(3, 1);
   int idx = 1;
   TPad * p;

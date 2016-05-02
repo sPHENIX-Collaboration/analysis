@@ -20,6 +20,8 @@
 #include "SetOKStyle.C"
 using namespace std;
 
+bool mask = true;
+
 void
 DrawPrototype2EMCalTower_ResolutionRecalib(
 //
@@ -28,7 +30,11 @@ DrawPrototype2EMCalTower_ResolutionRecalib(
 {
   SetOKStyle();
   gStyle->SetOptStat(0);
-  gStyle->SetOptFit(1111);
+  gStyle->SetGridStyle(0);
+  if (mask)
+    gStyle->SetOptFit(0);
+  else
+    gStyle->SetOptFit(1111);
   TVirtualFitter::SetDefaultFitter("Minuit2");
 
   const int N = 6;
@@ -44,7 +50,8 @@ DrawPrototype2EMCalTower_ResolutionRecalib(
 
   TText * t;
   TCanvas *c1 = new TCanvas(
-      "DrawPrototype2EMCalTower_ResolutionRecalib_RunSummary",
+      "DrawPrototype2EMCalTower_ResolutionRecalib_RunSummary"
+          + TString(mask ? "Mask" : ""),
       "DrawPrototype2EMCalTower_ResolutionRecalib_RunSummary", 1800, 900);
   c1->Divide(3, 2);
   int idx = 1;
@@ -55,12 +62,15 @@ DrawPrototype2EMCalTower_ResolutionRecalib(
       p = (TPad *) c1->cd(idx++);
       c1->Update();
 
+      p->SetGridx(0);
+      p->SetGridy(0);
+
       const double E = Es[i];
 
       vector<double> v(4);
 
 //      v = GetOnePlot(base, runs[i], cut);
-      v = RecalibratorMakeOnePlot(base, runs[i]);
+      v = RecalibratorMakeOnePlot(base, runs[i], E);
 
       mean[i] = v[0];
       dmean[i] = v[1];
@@ -152,42 +162,7 @@ DrawPrototype2EMCalTower_ResolutionRecalib(
 }
 
 vector<double>
-GetOnePlot(const TString base, const int run, TString cut)
-{
-//  beam_00002063-0000_DSTReader.root_DrawPrototype2EMCalTower_EMCDistribution_SUM_Energy_Sum_col1_row2_5x5_tower_center_col1_row2.png
-//  TString fname = base + TString("Prototype_") + particle + "_" + sE
-//      + "_SegALL_DSTReader.root_DrawPrototype2EMCalTower_EMCDistribution_SUM_all_event.root";
-  TString fname =
-      base
-          + Form(
-              "/beam_0000%d-0000_DSTReader.root_DrawPrototype2EMCalTower_EMCDistribution_SUM_Energy_Sum_",
-              run) + cut + ".root";
-//  Prototype_e-_2_Seg0_DSTReader.root_DrawPrototype2EMCalTower_EMCDistribution_SUMall_event.root
-
-  cout << "Process " << fname << endl;
-  TFile * f = new TFile(fname);
-  assert(f->IsOpen());
-
-  TH1 * hEnergySum = (TH1 *) f->GetObjectChecked("EnergySum_LG", "TH1");
-  assert(hEnergySum);
-  new TCanvas();
-  hEnergySum->DrawClone();
-
-  hEnergySum->Scale(1. / hEnergySum->Integral(1, -1));
-  TF1 * fgaus = hEnergySum->GetFunction("fgaus_LG");
-  assert(fgaus);
-
-  vector<double> v(4);
-  v[0] = fgaus->GetParameter(1);
-  v[1] = fgaus->GetParError(1);
-  v[2] = fgaus->GetParameter(2);
-  v[3] = fgaus->GetParError(2);
-
-  return v;
-}
-
-vector<double>
-RecalibratorMakeOnePlot(const TString base, const int run)
+RecalibratorMakeOnePlot(const TString base, const int run, const double E)
 {
 //  /phenix/u/jinhuang/tmp/miliped_work/Production_0414/calirbated_2040.dat
 
@@ -201,9 +176,9 @@ RecalibratorMakeOnePlot(const TString base, const int run)
 
   TH1 * EnergySum_LG_production = new TH1F(
       Form("EnergySum_LG_production_%d", run),
-      Form(";Run %d 5x5 Tower Energy Sum (GeV);Count / bin", run), 300, 0, 30);
+      Form(";Run %d: 5x5 EMCal Energy Sum (GeV);Count / bin", run), 400, 0, 30);
   TH1 * EnergySum_LG_recalib = new TH1F(Form("EnergySum_LG_recalib_%d", run),
-      Form(";Run %d 5x5 Tower Energy Sum (GeV);Count / bin", run), 300, 0, 30);
+      Form(";Run %d: 5x5 EMCal Energy Sum (GeV);Count / bin", run), 400, 0, 30);
 
   int count = 0;
   while (!f.eof())
@@ -231,13 +206,18 @@ RecalibratorMakeOnePlot(const TString base, const int run)
 
   EnergySum_LG_production->SetLineColor(kBlue + 3);
   EnergySum_LG_production->SetLineWidth(2);
+  EnergySum_LG_production->SetMarkerStyle(kFullCircle);
+  EnergySum_LG_production->SetMarkerColor(kBlue + 3);
   EnergySum_LG_recalib->SetLineColor(kRed + 3);
   EnergySum_LG_recalib->SetLineWidth(2);
+  EnergySum_LG_recalib->SetMarkerStyle(kFullCircle);
+  EnergySum_LG_recalib->SetMarkerColor(kRed + 3);
 
   EnergySum_LG_recalib->Sumw2();
 
   TH1 * h = (TH1 *) EnergySum_LG_recalib->DrawClone();
-  EnergySum_LG_production->DrawClone("same");
+  if (!mask)
+    EnergySum_LG_production->DrawClone("same");
 
   TF1 * fgaus_g = new TF1("fgaus_LG_g", "gaus", h->GetMean() - 1 * h->GetRMS(),
       h->GetMean() + 4 * h->GetRMS());
@@ -246,20 +226,23 @@ RecalibratorMakeOnePlot(const TString base, const int run)
   h->Fit(fgaus_g, "MR0N");
 
   TF1 * fgaus = new TF1("fgaus_LG", "gaus",
-      fgaus_g->GetParameter(1) - 2 * fgaus_g->GetParameter(2),
-      fgaus_g->GetParameter(1) + 2 * fgaus_g->GetParameter(2));
+      fgaus_g->GetParameter(1) - 3 * fgaus_g->GetParameter(2),
+      fgaus_g->GetParameter(1) + 3 * fgaus_g->GetParameter(2));
   fgaus->SetParameters(fgaus_g->GetParameter(0), fgaus_g->GetParameter(1),
       fgaus_g->GetParameter(2));
   fgaus->SetLineColor(kRed);
+  fgaus->SetLineWidth(4);
   h->Fit(fgaus, "MR");
 
-  h->Sumw2();
-  h->GetXaxis()->SetRangeUser(h->GetMean() - 4 * h->GetRMS(),
-      h->GetMean() + 4 * h->GetRMS());
-
-  h->SetTitle(
-      Form("#DeltaE/<E> = %.1f%%",
-          100 * fgaus->GetParameter(2) / fgaus->GetParameter(1)));
+//  h->Sumw2();
+  h->GetXaxis()->SetRangeUser(h->GetMean() - 5 * h->GetRMS(),
+      h->GetMean() + 5 * h->GetRMS());
+  if (!mask)
+    h->SetTitle(
+        Form("#DeltaE/<E> = %.1f%% @ Beam = %.0f GeV",
+            100 * fgaus->GetParameter(2) / fgaus->GetParameter(1), E));
+  else
+    h->SetTitle(Form("Beam = %.0f GeV", E));
 
   assert(fgaus);
 

@@ -24,7 +24,7 @@ void
 DrawPrototype2EMCalTower_Resolution(
     //
     const TString base =
-        "/gpfs/mnt/gpfs02/sphenix/user/jinhuang/Prototype_2016/Production_0414/",
+        "/gpfs/mnt/gpfs02/sphenix/user/jinhuang/Prototype_2016/Production_0417_CEMC_MIP_set2_v3/",
     TString cut = "col1_row2_5x5_Valid_HODO_center_col1_row2")
 {
   SetOKStyle();
@@ -173,61 +173,3 @@ GetOnePlot(const TString base, const int run, TString cut)
   return v;
 }
 
-vector<double>
-RecalibratorMakeOnePlot(const int run)
-{
-//  /phenix/u/jinhuang/tmp/miliped_work/Production_0414/calirbated_2040.dat
-
-  TString fname = Form(
-      "/phenix/u/jinhuang/tmp/miliped_work/Production_0414/calirbated_2040.dat",
-      run);
-//  Prototype_e-_2_Seg0_DSTReader.root_DrawPrototype2EMCalTower_EMCDistribution_SUMall_event.root
-
-  cout << "Process " << fname << endl;
-
-
-  fstream f(fname, ios_base::in);
-  assert(f.is_open());
-
-  TH1 * EnergySum_LG_production = new TH1F(Form("EnergySum_LG_production_%d", run),
-      Form(";Run %d 5x5 Tower Energy Sum (GeV);Count / bin",run), 300, 0, 40);
-  TH1 * EnergySum_LG_recalib = new TH1F(Form("EnergySum_LG_recalib_%d", run),
-      Form(";Run %d 5x5 Tower Energy Sum (GeV);Count / bin",run), 300, 0, 40);
-
-  int count = 0;
-  while (!f.eof())
-    {
-      string line;
-      getline(f, line);
-
-      double old_E = -1, new_E = -1;
-      char tab;
-      sline >> old_E >> tab >> new_E;
-
-      assert(old_E >= 0);
-      assert(new_E >= 0);
-
-      EnergySum_LG_production->Fill(old_E);
-      EnergySum_LG_recalib->Fill(new_E);
-
-    }
-
-  EnergySum_LG_recalib->Draw();
-
-  TH1 * hEnergySum = (TH1 *) f->GetObjectChecked("EnergySum_LG", "TH1");
-  assert(hEnergySum);
-  new TCanvas();
-  hEnergySum->DrawClone();
-
-  hEnergySum->Scale(1. / hEnergySum->Integral(1, -1));
-  TF1 * fgaus = hEnergySum->GetFunction("fgaus_LG");
-  assert(fgaus);
-
-  vector<double> v(4);
-  v[0] = fgaus->GetParameter(1);
-  v[1] = fgaus->GetParError(1);
-  v[2] = fgaus->GetParameter(2);
-  v[3] = fgaus->GetParError(2);
-
-  return v;
-}
