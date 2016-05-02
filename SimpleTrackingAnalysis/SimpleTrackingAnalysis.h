@@ -94,37 +94,45 @@ class SimpleTrackingAnalysis: public SubsysReco
 
 
   TH1D* _recopt_tracks_withcalocuts_all;                   // purity baseline (non-embedded particles)
-
   TH1D* _recopt_tracks_withcalocuts_recoWithExactHits;     // purity by nhit match
   TH1D* _recopt_tracks_withcalocuts_recoWithin1Hit;
   TH1D* _recopt_tracks_withcalocuts_recoWithin2Hits;
-
   TH1D* _recopt_tracks_withcalocuts_recoWithin3Percent;    // purity by momentum match
   TH1D* _recopt_tracks_withcalocuts_recoWithin4Percent;
   TH1D* _recopt_tracks_withcalocuts_recoWithin5Percent;
 
+  TH2D* th2d_recopt_tracks_withcalocuts_all;                   // purity baseline (non-embedded particles)
+  TH2D* th2d_recopt_tracks_withcalocuts_recoWithExactHits;     // purity by nhit match
+  TH2D* th2d_recopt_tracks_withcalocuts_recoWithin1Hit;
+  TH2D* th2d_recopt_tracks_withcalocuts_recoWithin2Hits;
+  TH2D* th2d_recopt_tracks_withcalocuts_recoWithin3Percent;    // purity by momentum match
+  TH2D* th2d_recopt_tracks_withcalocuts_recoWithin4Percent;
+  TH2D* th2d_recopt_tracks_withcalocuts_recoWithin5Percent;
+  TH2D* th2d_recopt_tracks_withcalocuts_recoWithin1Sigma;    // purity by momentum match
+  TH2D* th2d_recopt_tracks_withcalocuts_recoWithin2Sigma;
+  TH2D* th2d_recopt_tracks_withcalocuts_recoWithin3Sigma;
+
 
   TH1D* _truept_particles_withcalocuts_leaving7Hits;                   // purity baseline (non-embedded particles)
-
   TH1D* _truept_particles_withcalocuts_recoWithExactHits;     // purity by nhit match
   TH1D* _truept_particles_withcalocuts_recoWithin1Hit;
   TH1D* _truept_particles_withcalocuts_recoWithin2Hits;
-
   TH1D* _truept_particles_withcalocuts_recoWithin3Percent;    // purity by momentum match
   TH1D* _truept_particles_withcalocuts_recoWithin4Percent;
   TH1D* _truept_particles_withcalocuts_recoWithin5Percent;
 
+  TH2D* th2d_truept_particles_withcalocuts_leaving7Hits;                   // purity baseline (non-embedded particles)
+  TH2D* th2d_truept_particles_withcalocuts_recoWithExactHits;     // purity by nhit match
+  TH2D* th2d_truept_particles_withcalocuts_recoWithin1Hit;
+  TH2D* th2d_truept_particles_withcalocuts_recoWithin2Hits;
+  TH2D* th2d_truept_particles_withcalocuts_recoWithin3Percent;    // purity by momentum match
+  TH2D* th2d_truept_particles_withcalocuts_recoWithin4Percent;
+  TH2D* th2d_truept_particles_withcalocuts_recoWithin5Percent;
+  TH2D* th2d_truept_particles_withcalocuts_recoWithin1Sigma;    // purity by momentum match
+  TH2D* th2d_truept_particles_withcalocuts_recoWithin2Sigma;
+  TH2D* th2d_truept_particles_withcalocuts_recoWithin3Sigma;
 
 
-  TH1D* _recopt_tracks_withcalocuts_all_x[10];                   // purity baseline (non-embedded particles)
-
-  TH1D* _recopt_tracks_withcalocuts_recoWithExactHits_x[10];     // purity by nhit match
-  TH1D* _recopt_tracks_withcalocuts_recoWithin1Hit_x[10];
-  TH1D* _recopt_tracks_withcalocuts_recoWithin2Hits_x[10];
-
-  TH1D* _recopt_tracks_withcalocuts_recoWithin3Percent_x[10];    // purity by momentum match
-  TH1D* _recopt_tracks_withcalocuts_recoWithin4Percent_x[10];
-  TH1D* _recopt_tracks_withcalocuts_recoWithin5Percent_x[10];
 
 
 
@@ -153,7 +161,8 @@ class SimpleTrackingAnalysis: public SubsysReco
   TH1D* th1d_true_all_pion_recopt;
   TH1D* th1d_reco_all_pion_recopt;
 
-
+  TH1D* hmult;
+  TH1D* hmult_vertex;
 
 
 
