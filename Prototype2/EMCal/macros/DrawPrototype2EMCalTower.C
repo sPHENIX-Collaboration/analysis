@@ -25,12 +25,15 @@ using namespace std;
 TFile * _file0 = NULL;
 TTree * T = NULL;
 TString cuts = "";
+double beam_momentum_selection = -16;
 
 void
 DrawPrototype2EMCalTower( //
     const TString infile = "data/TB_DST.root_DSTReader.root", //
-    bool plot_all = false)
+    bool plot_all = false, const double momentum = -16)
 {
+  beam_momentum_selection = momentum;
+
   SetOKStyle();
   gStyle->SetOptStat(0);
   gStyle->SetOptFit(1111);
@@ -103,6 +106,33 @@ DrawPrototype2EMCalTower( //
       "Sum$( (abs(TOWER_CALIB_CEMC.get_column()-2)<=2 && abs(TOWER_CALIB_CEMC.get_row()-2)<=2 ) * TOWER_CALIB_CEMC.get_energy())");
   T->SetAlias("Energy_Sum_CEMC", "1*Sum$(TOWER_CALIB_CEMC.get_energy())");
 
+  // 12 GeV calibration
+//  EDM=9.83335e-18    STRATEGY= 1      ERROR MATRIX ACCURATE
+//EXT PARAMETER                                   STEP         FIRST
+//NO.   NAME      VALUE            ERROR          SIZE      DERIVATIVE
+//1  p0           1.19768e+01   7.30605e-02   3.76799e-05   4.24290e-09
+//2  p1           8.71776e+00   6.82987e-02   3.52240e-05   6.80808e-08
+
+  T->SetAlias("Energy_Sum_Hadron_CEMC",
+      "1.14*12./8.71776e+00*Sum$(TOWER_CALIB_CEMC.get_energy())"); // full bias
+//  T->SetAlias("Energy_Sum_Hadron_CEMC",
+//      "1.14*12./8.71776e+00*(16./6.93250e+00)*Sum$(TOWER_CALIB_CEMC.get_energy())"); // half-gain bias
+  T->SetAlias("CEMC_MIP", "Energy_Sum_Hadron_CEMC<0.7");
+
+  // 12 GeV calibration
+//  FCN=9.63681 FROM HESSE     STATUS=OK             14 CALLS          56 TOTAL
+//                      EDM=1.49963e-17    STRATEGY= 1      ERROR MATRIX ACCURATE
+//   EXT PARAMETER                                   STEP         FIRST
+//   NO.   NAME      VALUE            ERROR          SIZE      DERIVATIVE
+//    1  p0           9.50430e+00   8.42691e-02   3.83666e-06   1.41105e-08
+//    2  p1           6.99727e+00   1.06583e-01   4.85258e-06   5.85631e-08
+
+  T->SetAlias("Energy_Sum_Hadron_HCALIN",
+      "12./6.99727e+00*Sum$(TOWER_CALIB_LG_HCALIN.get_energy())");
+  T->SetAlias("HCALIN_MIP", "Energy_Sum_Hadron_HCALIN<0.5");
+  T->SetAlias("Energy_Sum_Hadron_HCALOUT",
+      "12./9.50430e+00*Sum$(TOWER_CALIB_LG_HCALOUT.get_energy())");
+
   T->SetAlias("MIP_Count_Col2",
       "Sum$( abs( TOWER_RAW_CEMC.get_energy() )>20 && abs( TOWER_RAW_CEMC.get_energy() )<200 && TOWER_CALIB_CEMC.get_column() == 2 )");
   T->SetAlias("Pedestal_Count_AllCEMC",
@@ -110,14 +140,8 @@ DrawPrototype2EMCalTower( //
 
 //
   TCut event_sel = "1*1";
+
   if (plot_all)
-    {
-//      event_sel = "1*1";
-//      cuts = "_all_event";
-      event_sel = "Valid_HODO_HORIZONTAL && Valid_HODO_VERTICAL";
-      cuts = "_Valid_HODO";
-    }
-  else
     {
 //      event_sel = "1*1";
 //      cuts = "_all_event";
@@ -126,6 +150,35 @@ DrawPrototype2EMCalTower( //
       event_sel =
           "Valid_HODO_HORIZONTAL && Valid_HODO_VERTICAL && No_Triger_VETO";
       cuts = "_Valid_HODO_Trigger_VETO";
+    }
+  else
+    {
+      event_sel = Form("(beam_MTNRG_GeV == %f)", beam_momentum_selection);
+      cuts = Form("_%.0fGeV", beam_momentum_selection);
+
+      cout << "Build event selection of " << (const char *) event_sel << endl;
+
+      T->Draw(">>EventListRunCut", event_sel);
+      TEventList * elist = gDirectory->GetObjectChecked("EventListRunCut",
+          "TEventList");
+      cout << elist->GetN() << " / " << T->GetEntriesFast()
+          << " events selected" << endl;
+      T->SetEventList(elist);
+//      event_sel = "1*1";
+//      cuts = "_all_event";
+//      event_sel = "Valid_HODO_HORIZONTAL && Valid_HODO_VERTICAL";
+//      cuts = "_Valid_HODO";
+      event_sel =
+          "Valid_HODO_HORIZONTAL && Valid_HODO_VERTICAL && No_Triger_VETO";
+      cuts = "_Valid_HODO_Trigger_VETO";
+//      event_sel =
+//          event_sel
+//              + "Valid_HODO_HORIZONTAL && Valid_HODO_VERTICAL && No_Triger_VETO  && (C2_Sum_e<50)";
+//      cuts = cuts + "_Valid_HODO_Trigger_VETO_C2_Sum_Hadron";
+//      event_sel =
+//          event_sel
+//              + "Valid_HODO_HORIZONTAL && Valid_HODO_VERTICAL && No_Triger_VETO && CEMC_MIP && (C2_Sum_e<100)";
+//      cuts = cuts + "_Valid_HODO_Trigger_VETO_CEMC_MIP_C2_Sum_Hadron";
 //      event_sel = "Valid_HODO_HORIZONTAL && Valid_HODO_VERTICAL && (MIP_Count_Col2 == 8) && (Pedestal_Count_AllCEMC >= 64 - 8)";
 //      cuts = "_Valid_HODO_MIP_Col2_PedestalOther";
 //      event_sel = "Valid_HODO_HORIZONTAL && Valid_HODO_VERTICAL && Average_HODO_VERTICAL>1.5 && Average_HODO_VERTICAL<4.5 && Average_HODO_HORIZONTAL>3.5 && Average_HODO_HORIZONTAL<6.5";
@@ -163,14 +216,20 @@ DrawPrototype2EMCalTower( //
   int rnd = rand();
   gDirectory->mkdir(Form("dir_%d", rnd));
   gDirectory->cd(Form("dir_%d", rnd));
-//  if (plot_all)
-  EMCDistribution_SUM("Energy_Sum_CEMC", "C2_Sum_e");
+  if (plot_all)
+    EMCDistribution_SUM("Energy_Sum_CEMC", "C2_Sum_e");
 
   int rnd = rand();
   gDirectory->mkdir(Form("dir_%d", rnd));
   gDirectory->cd(Form("dir_%d", rnd));
-  if (plot_all)
+//  if (plot_all)
     EMCDistribution_SUM("Energy_Sum_col2_row2_5x5", "C2_Sum_e");
+
+  int rnd = rand();
+  gDirectory->mkdir(Form("dir_%d", rnd));
+  gDirectory->cd(Form("dir_%d", rnd));
+//  if (plot_all)
+  EMCDistribution_HCalCalibration();
 
   int rnd = rand();
   gDirectory->mkdir(Form("dir_%d", rnd));
@@ -201,6 +260,107 @@ DrawPrototype2EMCalTower( //
 //        TString(_file0->GetName())
 //            + TString("_DrawPrototype2EMCalTower_Prototype2_DSTReader") + cuts
 //            + TString(".dat"));
+}
+
+void
+EMCDistribution_HCalCalibration()
+{
+  gStyle->SetOptStat(0);
+  gStyle->SetOptFit(1111);
+
+  TH1F * h1_HCalOut = new TH1F("h1_HCalOut",
+      "(CEMC MIP && HCal_{IN} MIP);EMCal + HCal_{IN} + HCal_{OUT} (GeV)", 100,
+      0, abs(beam_momentum_selection) * 2.);
+
+  TH2 * h2_HCalOut_HCalIn =
+      new TH2F("h2_HCalOut_HCalIn",
+          "Energy Balance HCal_{OUT} and HCal_{IN} (CEMC MIP && NOT HCal_{IN} MIP);(HCal_{OUT} - HCal_{IN})/HCal Sum;EMCal + HCal_{IN} + HCal_{OUT} (GeV)",
+          10, -1, 1, 100, 0, abs(beam_momentum_selection) * 2.);
+
+  TH2 * h2_HCal_EMCal =
+      new TH2F("h2_HCal_EMCal",
+          "Energy Balance HCal_{SUM} and EMCal (NOT CEMC MIP);(HCal_{SUM} - EMCal)/Sum;EMCal + HCal_{IN} + HCal_{OUT} (GeV)",
+          10, -1, 1, 100, 0, abs(beam_momentum_selection) * 2.);
+
+  TText * t;
+  TCanvas *c1 = new TCanvas("EMCDistribution_HCalCalibration" + cuts,
+      "EMCDistribution_HCalCalibration" + cuts, 1800, 600);
+  c1->Divide(3, 1);
+  int idx = 1;
+  TPad * p;
+
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+
+  T->Draw(
+      "Energy_Sum_Hadron_CEMC + Energy_Sum_Hadron_HCALIN + Energy_Sum_Hadron_HCALOUT:(Energy_Sum_Hadron_HCALOUT - Energy_Sum_Hadron_HCALIN)/(Energy_Sum_Hadron_HCALIN+Energy_Sum_Hadron_HCALOUT)>>h2_HCalOut_HCalIn",
+      "(!HCALIN_MIP) && CEMC_MIP", "goff");
+  h2_HCalOut_HCalIn->FitSlicesY();
+
+  TH1 * h2_HCalOut_HCalIn_1 = (TH1 *) gDirectory->GetObjectChecked(
+      "h2_HCalOut_HCalIn_1", "TH1D");
+  assert(h2_HCalOut_HCalIn_1);
+  h2_HCalOut_HCalIn_1->SetMarkerStyle(kFullCircle);
+
+  TF1 * f_HCalOut_HCalIn = new TF1("f_HCalOut_HCalIn",
+      "[0] * (x+1)/2 + [1]*(1-x)/2", -.8, 0.8);
+  f_HCalOut_HCalIn->SetLineColor(kMagenta);
+  f_HCalOut_HCalIn->SetLineWidth(3);
+  h2_HCalOut_HCalIn_1->Fit(f_HCalOut_HCalIn, "MR0");
+
+  h2_HCalOut_HCalIn->DrawClone("colz");
+  h2_HCalOut_HCalIn_1->DrawClone("SAME");
+  f_HCalOut_HCalIn->DrawClone("same");
+
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+
+  T->Draw(
+      "Energy_Sum_Hadron_CEMC + Energy_Sum_Hadron_HCALIN + Energy_Sum_Hadron_HCALOUT:(Energy_Sum_Hadron_HCALIN + Energy_Sum_Hadron_HCALOUT - Energy_Sum_Hadron_CEMC)/(Energy_Sum_Hadron_CEMC + Energy_Sum_Hadron_HCALIN + Energy_Sum_Hadron_HCALOUT)>>h2_HCal_EMCal",
+      "! CEMC_MIP", "goff");
+  h2_HCal_EMCal->FitSlicesY();
+
+  TH1 * h2_HCal_EMCal_1 = (TH1 *) gDirectory->GetObjectChecked(
+      "h2_HCal_EMCal_1", "TH1D");
+  assert(h2_HCal_EMCal_1);
+  h2_HCal_EMCal_1->SetMarkerStyle(kFullCircle);
+
+  TF1 * f_HCal_EMCal = new TF1("f_HCal_EMCal", "[0] * (x+1)/2 + [1]*(1-x)/2",
+      -.8, 0.8);
+  f_HCal_EMCal->SetLineColor(kMagenta);
+  f_HCal_EMCal->SetLineWidth(3);
+  h2_HCal_EMCal_1->Fit(f_HCal_EMCal, "MR0");
+
+  h2_HCal_EMCal->DrawClone("colz");
+  h2_HCal_EMCal_1->DrawClone("SAME");
+  f_HCal_EMCal->DrawClone("same");
+
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+
+  T->Draw(
+      "Energy_Sum_Hadron_CEMC + Energy_Sum_Hadron_HCALIN + Energy_Sum_Hadron_HCALOUT>>h1_HCalOut",
+      "HCALIN_MIP && CEMC_MIP", "goff");
+
+  TH1 * h2_HCal_EMCal_ProjY = (TH1 *) h2_HCal_EMCal->ProjectionY(
+      "h2_HCal_EMCal_ProjY",2,9)->DrawClone();
+  TH1 * h2_HCalOut_HCalIn_ProjY = (TH1 *) h2_HCalOut_HCalIn->ProjectionY(
+      "h2_HCalOut_HCalIn_ProjY")->DrawClone("same");
+  h1_HCalOut->Draw("same");
+
+  h2_HCal_EMCal_ProjY->SetTitle("Red: 3 Calo shower, Blue: MIP EMCal, Green: MIP EMCal & HCal_{IN}");
+
+  h2_HCal_EMCal_ProjY->SetLineColor(kRed + 2);
+  h2_HCal_EMCal_ProjY->SetLineWidth(3);
+  h2_HCalOut_HCalIn_ProjY->SetLineColor(kBlue + 2);
+  h2_HCalOut_HCalIn_ProjY->SetLineWidth(2);
+  h1_HCalOut->SetLineColor(kGreen+3);
+  h1_HCalOut->SetLineWidth(3);
+
+  SaveCanvas(c1,
+      TString(_file0->GetName()) + TString("_DrawPrototype2EMCalTower_")
+          + TString(c1->GetName()), false);
+
 }
 
 void
