@@ -113,10 +113,10 @@ DrawPrototype2EMCalTower( //
 //1  p0           1.19768e+01   7.30605e-02   3.76799e-05   4.24290e-09
 //2  p1           8.71776e+00   6.82987e-02   3.52240e-05   6.80808e-08
 
-  T->SetAlias("Energy_Sum_Hadron_CEMC",
-      "1.14*12./8.71776e+00*Sum$(TOWER_CALIB_CEMC.get_energy())"); // full bias
 //  T->SetAlias("Energy_Sum_Hadron_CEMC",
-//      "1.14*12./8.71776e+00*(16./6.93250e+00)*Sum$(TOWER_CALIB_CEMC.get_energy())"); // half-gain bias
+//      "1.14*12./8.71776e+00*Sum$(TOWER_CALIB_CEMC.get_energy())"); // full bias
+  T->SetAlias("Energy_Sum_Hadron_CEMC",
+      "1.14*12./8.71776e+00*(16./6.93250e+00)*(28/33.3405)*Sum$(TOWER_CALIB_CEMC.get_energy())"); // half-gain bias
   T->SetAlias("CEMC_MIP", "Energy_Sum_Hadron_CEMC<0.7");
 
   // 12 GeV calibration
@@ -153,7 +153,7 @@ DrawPrototype2EMCalTower( //
     }
   else
     {
-      if (0)
+      if (1)
       {// energy selection
       event_sel = Form("(beam_MTNRG_GeV == %f)", beam_momentum_selection);
       cuts = Form("_%.0fGeV", beam_momentum_selection);
@@ -172,24 +172,30 @@ DrawPrototype2EMCalTower( //
 //      cuts = "_all_event";
 //      event_sel = "Valid_HODO_HORIZONTAL && Valid_HODO_VERTICAL";
 //      cuts = "_Valid_HODO";
-      event_sel =
-          "Valid_HODO_HORIZONTAL && Valid_HODO_VERTICAL && No_Triger_VETO";
-      cuts = "_Valid_HODO_Trigger_VETO";
 //      event_sel =
-//          event_sel
-//              + "Valid_HODO_HORIZONTAL && Valid_HODO_VERTICAL && No_Triger_VETO  && (C2_Sum_e<50)";
-//      cuts = cuts + "_Valid_HODO_Trigger_VETO_C2_Sum_Hadron";
+//          "Valid_HODO_HORIZONTAL && Valid_HODO_VERTICAL && No_Triger_VETO";
+//      cuts = "_Valid_HODO_Trigger_VETO";
+
+      event_sel =
+          event_sel
+              + "Valid_HODO_HORIZONTAL && Valid_HODO_VERTICAL && No_Triger_VETO  && (C2_Sum_e<50)";
+      cuts = cuts + "_Valid_HODO_Trigger_VETO_C2_Sum_Hadron";
+
 //      event_sel =
 //          event_sel
 //              + "Valid_HODO_HORIZONTAL && Valid_HODO_VERTICAL && No_Triger_VETO && CEMC_MIP && (C2_Sum_e<100)";
 //      cuts = cuts + "_Valid_HODO_Trigger_VETO_CEMC_MIP_C2_Sum_Hadron";
+
 //      event_sel = "Valid_HODO_HORIZONTAL && Valid_HODO_VERTICAL && (MIP_Count_Col2 == 8) && (Pedestal_Count_AllCEMC >= 64 - 8)";
 //      cuts = "_Valid_HODO_MIP_Col2_PedestalOther";
+
 //      event_sel = "Valid_HODO_HORIZONTAL && Valid_HODO_VERTICAL && Average_HODO_VERTICAL>1.5 && Average_HODO_VERTICAL<4.5 && Average_HODO_HORIZONTAL>3.5 && Average_HODO_HORIZONTAL<6.5";
 //      cuts = "_Valid_HODO_center_col1_row2";
+
 //      event_sel =
 //          "C2_Inner_e>100 && Valid_HODO_HORIZONTAL && Valid_HODO_VERTICAL && Average_HODO_HORIZONTAL>1.5 && Average_HODO_HORIZONTAL<4.5 && Average_HODO_VERTICAL>3.5 && Average_HODO_VERTICAL<6.5";
 //      cuts = "_Valid_HODO_center_col1_row2_C2";
+
 //      event_sel = "abs(Average_column - 1)<.5 && abs(Average_row - 2) < .5";
 //      cuts = "_tower_center_col1_row2";
 //      event_sel = "Valid_HODO_HORIZONTAL && Valid_HODO_VERTICAL && abs(C2_Inner_e)<10";
@@ -232,7 +238,7 @@ DrawPrototype2EMCalTower( //
   int rnd = rand();
   gDirectory->mkdir(Form("dir_%d", rnd));
   gDirectory->cd(Form("dir_%d", rnd));
-  if (plot_all)
+//  if (plot_all)
   EMCDistribution_HCalCalibration();
 
   int rnd = rand();
@@ -250,7 +256,7 @@ DrawPrototype2EMCalTower( //
   int rnd = rand();
   gDirectory->mkdir(Form("dir_%d", rnd));
   gDirectory->cd(Form("dir_%d", rnd));
-//  if (plot_all)
+  if (plot_all)
     EMCDistribution_PeakSample_Fast();
 
   int rnd = rand();
