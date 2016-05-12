@@ -113,10 +113,12 @@ DrawPrototype2EMCalTower( //
 //1  p0           1.19768e+01   7.30605e-02   3.76799e-05   4.24290e-09
 //2  p1           8.71776e+00   6.82987e-02   3.52240e-05   6.80808e-08
 
+//    T->SetAlias("Energy_Sum_Hadron_CEMC",
+//        "1*Sum$(TOWER_CALIB_CEMC.get_energy())"); // full bias
+    T->SetAlias("Energy_Sum_Hadron_CEMC",
+        "1.14*12./8.71776e+00*Sum$(TOWER_CALIB_CEMC.get_energy())"); // full bias
 //  T->SetAlias("Energy_Sum_Hadron_CEMC",
-//      "1.14*12./8.71776e+00*Sum$(TOWER_CALIB_CEMC.get_energy())"); // full bias
-  T->SetAlias("Energy_Sum_Hadron_CEMC",
-      "1.14*12./8.71776e+00*(16./6.93250e+00)*(28/33.3405)*Sum$(TOWER_CALIB_CEMC.get_energy())"); // half-gain bias
+//      "1.14*12./8.71776e+00*(16./6.93250e+00)*(28/33.3405)*Sum$(TOWER_CALIB_CEMC.get_energy())"); // half-gain bias
   T->SetAlias("CEMC_MIP", "Energy_Sum_Hadron_CEMC<0.7");
 
   // 12 GeV calibration
@@ -127,11 +129,16 @@ DrawPrototype2EMCalTower( //
 //    1  p0           9.50430e+00   8.42691e-02   3.83666e-06   1.41105e-08
 //    2  p1           6.99727e+00   1.06583e-01   4.85258e-06   5.85631e-08
 
-  T->SetAlias("Energy_Sum_Hadron_HCALIN",
-      "12./6.99727e+00*Sum$(TOWER_CALIB_LG_HCALIN.get_energy())");
-  T->SetAlias("HCALIN_MIP", "Energy_Sum_Hadron_HCALIN<0.5");
-  T->SetAlias("Energy_Sum_Hadron_HCALOUT",
-      "12./9.50430e+00*Sum$(TOWER_CALIB_LG_HCALOUT.get_energy())");
+//  T->SetAlias("Energy_Sum_Hadron_HCALIN",
+//      "1*Sum$(TOWER_CALIB_LG_HCALIN.get_energy())");
+//  T->SetAlias("HCALIN_MIP", "Energy_Sum_Hadron_HCALIN<0.5");
+//  T->SetAlias("Energy_Sum_Hadron_HCALOUT",
+//      "1*Sum$(TOWER_CALIB_LG_HCALOUT.get_energy())");
+      T->SetAlias("Energy_Sum_Hadron_HCALIN",
+          "12./6.99727e+00*Sum$(TOWER_CALIB_LG_HCALIN.get_energy())");
+      T->SetAlias("HCALIN_MIP", "Energy_Sum_Hadron_HCALIN<0.5");
+      T->SetAlias("Energy_Sum_Hadron_HCALOUT",
+          "12./9.50430e+00*Sum$(TOWER_CALIB_LG_HCALOUT.get_energy())");
 
   T->SetAlias("MIP_Count_Col2",
       "Sum$( abs( TOWER_RAW_CEMC.get_energy() )>20 && abs( TOWER_RAW_CEMC.get_energy() )<200 && TOWER_CALIB_CEMC.get_column() == 2 )");

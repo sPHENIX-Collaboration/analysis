@@ -34,7 +34,7 @@ DrawPrototype2EMCalTower_ResolutionRecalib(
   if (mask)
     gStyle->SetOptFit(0);
   else
-    gStyle->SetOptFit(1111);
+    gStyle->SetOptFit(0);
   TVirtualFitter::SetDefaultFitter("Minuit2");
 
   const int N = 6;
@@ -92,27 +92,55 @@ DrawPrototype2EMCalTower_ResolutionRecalib(
   ge_linear->SetMarkerColor(kBlue + 3);
   ge_linear->SetLineWidth(2);
   ge_linear->SetMarkerStyle(kFullCircle);
-  ge_linear->SetMarkerSize(1.5);
+  ge_linear->SetMarkerSize(2);
 
   ge_res->SetLineColor(kBlue + 3);
   ge_res->SetMarkerColor(kBlue + 3);
   ge_res->SetLineWidth(2);
   ge_res->SetMarkerStyle(kFullCircle);
-  ge_res->SetMarkerSize(1.5);
+  ge_res->SetMarkerSize(2);
 
   TF1 * f_calo_r = new TF1("f_calo_r", "sqrt([0]*[0]+[1]*[1]/x)/100", 0.5, 25);
   TF1 * f_calo_l = new TF1("f_calo_l", "pol2", 0.5, 25);
 
-  TF1 * f_calo_sim = new TF1("f_calo_r", "sqrt([0]*[0]+[1]*[1]/x)/100", 0.5,
+  f_calo_r->SetLineColor(kBlue + 3);
+  f_calo_r->SetLineWidth(3);
+
+  TF1 * f_calo_sim = new TF1("f_calo_sim", "sqrt([0]*[0]+[1]*[1]/x)/100", 0.5,
       25);
   f_calo_sim->SetParameters(2.4, 11.8);
-  f_calo_sim->SetLineWidth(1);
+  f_calo_sim->SetLineWidth(3);
   f_calo_sim->SetLineColor(kGreen + 2);
 
   TF1 * f_calo_l_sim = new TF1("f_calo_l", "pol2", 0.5, 25);
-  f_calo_l_sim->SetParameters(-0.03389, 0.9666, -0.0002822);
-  f_calo_l_sim->SetLineWidth(1);
+//  f_calo_l_sim->SetParameters(-0.03389, 0.9666, -0.0002822);
+  f_calo_l_sim->SetParameters(-0., 1, -0.);
+//  f_calo_l_sim->SetLineWidth(1);
   f_calo_l_sim->SetLineColor(kGreen + 2);
+  f_calo_l_sim->SetLineWidth(3);
+
+  TFile * f_ref =
+      new TFile(
+          "/gpfs/mnt/gpfs02/sphenix/user/jinhuang/Prototype_2016/Production_0417_CEMC_MIP_set2_v3/DrawPrototype2EMCalTower_Resolution_Run2042_col1_row2_5x5_Valid_HODO_center_col1_row2.root");
+  assert(f_ref->IsOpen());
+
+  TGraphErrors * ge_res_ref = (TGraphErrors *) f_ref->GetObjectChecked("Graph",
+      "TGraphErrors");
+  assert(ge_res_ref);
+  ge_res_ref->SetObjectStat(0);
+
+  TF1 * f_calo_r_ref = (TF1 *) f_ref->GetObjectChecked("f_calo_r", "TF1");
+  assert(f_calo_r_ref);
+
+  ge_res_ref->SetLineColor(kBlue);
+  ge_res_ref->SetMarkerColor(kBlue);
+  ge_res_ref->SetLineWidth(2);
+  ge_res_ref->SetMarkerStyle(kOpenCircle);
+  ge_res_ref->SetMarkerSize(2);
+
+  f_calo_r_ref->SetLineColor(kBlue);
+  f_calo_r_ref->SetMarkerColor(kBlue);
+  f_calo_r_ref->SetLineWidth(2);
 
   TText * t;
   TCanvas *c1 = new TCanvas(
@@ -129,16 +157,22 @@ DrawPrototype2EMCalTower_ResolutionRecalib(
   p->SetGridx(0);
   p->SetGridy(0);
 
-  p->DrawFrame(0, 0, 25, 30,
-      Form("Linearity;Input energy (GeV);Measured Energy (GeV)"));
+  TLegend* leg = new TLegend(.15, .7, .6, .85);
+
+  p->DrawFrame(0, 0, 25, 25,
+      Form("Electron Linearity;Input energy (GeV);Measured Energy (GeV)"));
   TLine * l = new TLine(0, 0, 25, 25);
   l->SetLineColor(kGray);
 //  l->Draw();
 
-  ge_linear->Draw("p");
-  ge_linear->Fit(f_calo_l, "RM0");
-  f_calo_l->Draw("same");
   f_calo_l_sim->Draw("same");
+  ge_linear->Draw("p");
+//  ge_linear->Fit(f_calo_l, "RM0");
+//  f_calo_l->Draw("same");
+
+  leg->AddEntry(ge_linear, "T-1044 data", "ep");
+  leg->AddEntry(f_calo_l_sim, "Unity", "l");
+  leg->Draw();
 
   p = (TPad *) c1->cd(idx++);
   c1->Update();
@@ -149,14 +183,35 @@ DrawPrototype2EMCalTower_ResolutionRecalib(
   TH1 * hframe = p->DrawFrame(0, 0, 25, 0.2,
       Form("Resolution;Input energy (GeV);#DeltaE/<E>"));
 
-  ge_res->Draw("p");
-  ge_res->Fit(f_calo_r, "RM0");
+  ge_res->Fit(f_calo_r, "RM0Q");
+
+  f_calo_r_ref->Draw("same");
+  ge_res_ref->Draw("p");
   f_calo_r->Draw("same");
   f_calo_sim->Draw("same");
+  ge_res->Draw("p");
 
-  hframe->SetTitle(
+  TLegend* leg = new TLegend(.2, .6, .85, .9);
+  leg->AddEntry(ge_res_ref, "T-1044, MIP calib.", "ep");
+  leg->AddEntry(f_calo_r_ref,
       Form("#DeltaE/E = %.1f%% #oplus %.1f%%/#sqrt{E}",
-          f_calo_r->GetParameter(0), f_calo_r->GetParameter(1)));
+          f_calo_r_ref->GetParameter(0), f_calo_r_ref->GetParameter(1)), "l");
+//  leg->AddEntry(new TH1(), "", "l");
+  leg->AddEntry((TObject*)0, " ", "");
+  leg->AddEntry(ge_res, "T-1044, e-shower calib.", "ep");
+  leg->AddEntry(f_calo_r,
+      Form("#DeltaE/E = %.1f%% #oplus %.1f%%/#sqrt{E}",
+          f_calo_r->GetParameter(0), f_calo_r->GetParameter(1)), "l");
+  leg->Draw();
+
+  TLegend* leg = new TLegend(.2, .15, .85, .3);
+
+  leg->AddEntry(f_calo_sim,
+      Form("Simulation, #DeltaE/E = %.1f%% #oplus %.1f%%/#sqrt{E}",
+          f_calo_sim->GetParameter(0), f_calo_sim->GetParameter(1)), "l");
+  leg->Draw();
+
+  hframe->SetTitle("Electron Resolution");
 
   SaveCanvas(c1, base + TString(c1->GetName()), kTRUE);
 }
@@ -226,8 +281,8 @@ RecalibratorMakeOnePlot(const TString base, const int run, const double E)
   h->Fit(fgaus_g, "MR0N");
 
   TF1 * fgaus = new TF1("fgaus_LG", "gaus",
-      fgaus_g->GetParameter(1) - 3 * fgaus_g->GetParameter(2),
-      fgaus_g->GetParameter(1) + 3 * fgaus_g->GetParameter(2));
+      fgaus_g->GetParameter(1) - 2 * fgaus_g->GetParameter(2),
+      fgaus_g->GetParameter(1) + 2 * fgaus_g->GetParameter(2));
   fgaus->SetParameters(fgaus_g->GetParameter(0), fgaus_g->GetParameter(1),
       fgaus_g->GetParameter(2));
   fgaus->SetLineColor(kRed);

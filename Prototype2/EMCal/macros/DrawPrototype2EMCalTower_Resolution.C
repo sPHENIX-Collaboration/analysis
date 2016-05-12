@@ -29,7 +29,7 @@ DrawPrototype2EMCalTower_Resolution(
 {
   SetOKStyle();
   gStyle->SetOptStat(0);
-  gStyle->SetOptFit(1111);
+  gStyle->SetOptFit(0);
   TVirtualFitter::SetDefaultFitter("Minuit2");
 
   const int N = 6;
@@ -80,13 +80,13 @@ DrawPrototype2EMCalTower_Resolution(
   TF1 * f_calo_r = new TF1("f_calo_r", "sqrt([0]*[0]+[1]*[1]/x)/100", 0.5, 25);
   TF1 * f_calo_l = new TF1("f_calo_l", "pol2", 0.5, 25);
 
-  TF1 * f_calo_sim = new TF1("f_calo_r", "sqrt([0]*[0]+[1]*[1]/x)/100", 0.5,
+  TF1 * f_calo_sim = new TF1("f_calo_sim", "sqrt([0]*[0]+[1]*[1]/x)/100", 0.5,
       25);
   f_calo_sim->SetParameters(2.4, 11.8);
   f_calo_sim->SetLineWidth(1);
   f_calo_sim->SetLineColor(kGreen + 2);
 
-  TF1 * f_calo_l_sim = new TF1("f_calo_l", "pol2", 0.5, 25);
+  TF1 * f_calo_l_sim = new TF1("f_calo_l_sim", "pol2", 0.5, 25);
   f_calo_l_sim->SetParameters(-0.03389, 0.9666, -0.0002822);
   f_calo_l_sim->SetLineWidth(1);
   f_calo_l_sim->SetLineColor(kGreen + 2);
@@ -158,11 +158,26 @@ GetOnePlot(const TString base, const int run, TString cut)
   TH1 * hEnergySum = (TH1 *) f->GetObjectChecked("EnergySum_LG", "TH1");
   assert(hEnergySum);
   new TCanvas();
-  hEnergySum->DrawClone();
+  TH1 * h = hEnergySum->DrawClone();
 
   hEnergySum->Scale(1. / hEnergySum->Integral(1, -1));
-  TF1 * fgaus = hEnergySum->GetFunction("fgaus_LG");
-  assert(fgaus);
+//  TF1 * fgaus = hEnergySum->GetFunction("fgaus_LG");
+//  assert(fgaus);
+
+  TF1 * fgaus_g = new TF1("fgaus_LG_g", "gaus", h->GetMean() - 1 * h->GetRMS(),
+      h->GetMean() + 4 * h->GetRMS());
+  fgaus_g->SetParameters(1, h->GetMean() - 2 * h->GetRMS(),
+      h->GetMean() + 2 * h->GetRMS());
+  h->Fit(fgaus_g, "MR0N");
+
+  TF1 * fgaus = new TF1("fgaus_LG", "gaus",
+      fgaus_g->GetParameter(1) - 2 * fgaus_g->GetParameter(2),
+      fgaus_g->GetParameter(1) + 2 * fgaus_g->GetParameter(2));
+  fgaus->SetParameters(fgaus_g->GetParameter(0), fgaus_g->GetParameter(1),
+      fgaus_g->GetParameter(2));
+  fgaus->SetLineColor(kRed);
+  fgaus->SetLineWidth(4);
+  h->Fit(fgaus, "MR");
 
   vector<double> v(4);
   v[0] = fgaus->GetParameter(1);
