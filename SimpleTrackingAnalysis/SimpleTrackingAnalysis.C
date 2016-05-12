@@ -76,78 +76,43 @@ int SimpleTrackingAnalysis::Init(PHCompositeNode *topNode)
 
   // --- special stuff...
 
-  th1d_true_nonembedded_electron_recopt = new TH1D("th1d_true_nonembedded_electron_recopt","",20,0,10);
-  th1d_reco_nonembedded_electron_recopt = new TH1D("th1d_reco_nonembedded_electron_recopt","",20,0,10);
-  th1d_true_nonembedded_pion_recopt = new TH1D("th1d_true_nonembedded_pion_recopt","",20,0,10);
-  th1d_reco_nonembedded_pion_recopt = new TH1D("th1d_reco_nonembedded_pion_recopt","",20,0,10);
-  se->registerHisto(th1d_true_nonembedded_electron_recopt);
-  se->registerHisto(th1d_reco_nonembedded_electron_recopt);
-  se->registerHisto(th1d_true_nonembedded_pion_recopt);
-  se->registerHisto(th1d_reco_nonembedded_pion_recopt);
-
-  th1d_true_embedded_electron_recopt = new TH1D("th1d_true_embedded_electron_recopt","",20,0,10);
-  th1d_reco_embedded_electron_recopt = new TH1D("th1d_reco_embedded_electron_recopt","",20,0,10);
-  th1d_true_embedded_pion_recopt = new TH1D("th1d_true_embedded_pion_recopt","",20,0,10);
-  th1d_reco_embedded_pion_recopt = new TH1D("th1d_reco_embedded_pion_recopt","",20,0,10);
-  se->registerHisto(th1d_true_embedded_electron_recopt);
-  se->registerHisto(th1d_reco_embedded_electron_recopt);
-  se->registerHisto(th1d_true_embedded_pion_recopt);
-  se->registerHisto(th1d_reco_embedded_pion_recopt);
-
-  th1d_true_all_electron_recopt = new TH1D("th1d_true_all_electron_recopt","",20,0,10);
-  th1d_reco_all_electron_recopt = new TH1D("th1d_reco_all_electron_recopt","",20,0,10);
-  th1d_true_all_pion_recopt = new TH1D("th1d_true_all_pion_recopt","",20,0,10);
-  th1d_reco_all_pion_recopt = new TH1D("th1d_reco_all_pion_recopt","",20,0,10);
-  se->registerHisto(th1d_true_all_electron_recopt);
-  se->registerHisto(th1d_reco_all_electron_recopt);
-  se->registerHisto(th1d_true_all_pion_recopt);
-  se->registerHisto(th1d_reco_all_pion_recopt);
 
 
 
   // --- additional tracking histograms for studying quality
 
   _recopt_quality = new TH2D("recopt_quality", "", 20,0.0,10.0, 100,0.0,5.0);
-  se->registerHisto(_recopt_quality);
-
-  _truept_quality_particles_recoWithin4Percent = new TH2D("truept_quality_particles_recoWithin4Percent", "", 20,0.0,10.0, 100,0.0,5.0);
-  se->registerHisto(_truept_quality_particles_recoWithin4Percent);
-
   _recopt_quality_tracks_all = new TH2D("recopt_quality_tracks_all", "", 20,0.0,10.0, 100,0.0,5.0);
-  se->registerHisto(_recopt_quality_tracks_all);
-
   _recopt_quality_tracks_recoWithin4Percent = new TH2D("recopt_quality_tracks_recoWithin4Percent", "", 20,0.0,10.0, 100,0.0,5.0);
+  _truept_quality_particles_recoWithin4Percent = new TH2D("truept_quality_particles_recoWithin4Percent", "", 20,0.0,10.0, 100,0.0,5.0);
+
+  se->registerHisto(_recopt_quality);
+  se->registerHisto(_recopt_quality_tracks_all);
   se->registerHisto(_recopt_quality_tracks_recoWithin4Percent);
+  se->registerHisto(_truept_quality_particles_recoWithin4Percent);
 
 
 
   // --- histograms over true pt, used for finding efficiencies
 
-  _truept_dptoverpt = new TH2D("truept_dptoverpt", "", 40,0.0,40.0, 200,-0.5,0.5);
-  se->registerHisto(_truept_dptoverpt);
-
   _truept_dca = new TH2D("truept_dca", "", 20,0.0,10.0, 200,-0.1,0.1);
-  se->registerHisto(_truept_dca);
-
-  _truept_particles_leaving7Hits = new TH1D("truept_particles_leaving7Hits", "", 20,0.0,10.0);
-  se->registerHisto(_truept_particles_leaving7Hits);
-
+  _truept_dptoverpt = new TH2D("truept_dptoverpt", "", 40,0.0,40.0, 200,-0.5,0.5);
+  _truept_particles_leavingAllHits = new TH1D("truept_particles_leavingAllHits", "", 20,0.0,10.0);
   _truept_particles_recoWithExactHits = new TH1D("truept_particles_recoWithExactHits", "", 20,0.0,10.0);
-  se->registerHisto(_truept_particles_recoWithExactHits);
-
   _truept_particles_recoWithin1Hit = new TH1D("truept_particles_recoWithin1Hit", "", 20,0.0,10.0);
-  se->registerHisto(_truept_particles_recoWithin1Hit);
-
   _truept_particles_recoWithin2Hits = new TH1D("truept_particles_recoWithin2Hits", "", 20,0.0,10.0);
-  se->registerHisto(_truept_particles_recoWithin2Hits);
-
   _truept_particles_recoWithin3Percent = new TH1D("truept_particles_recoWithin3Percent", "", 20,0.0,10.0);
-  se->registerHisto(_truept_particles_recoWithin3Percent);
-
   _truept_particles_recoWithin4Percent = new TH1D("truept_particles_recoWithin4Percent", "", 20,0.0,10.0);
-  se->registerHisto(_truept_particles_recoWithin4Percent);
-
   _truept_particles_recoWithin5Percent = new TH1D("truept_particles_recoWithin5Percent", "", 20,0.0,10.0);
+
+  se->registerHisto(_truept_dca);
+  se->registerHisto(_truept_dptoverpt);
+  se->registerHisto(_truept_particles_leavingAllHits);
+  se->registerHisto(_truept_particles_recoWithExactHits);
+  se->registerHisto(_truept_particles_recoWithin1Hit);
+  se->registerHisto(_truept_particles_recoWithin2Hits);
+  se->registerHisto(_truept_particles_recoWithin3Percent);
+  se->registerHisto(_truept_particles_recoWithin4Percent);
   se->registerHisto(_truept_particles_recoWithin5Percent);
 
 
@@ -155,51 +120,24 @@ int SimpleTrackingAnalysis::Init(PHCompositeNode *topNode)
   // --- (mostly) the same set of histograms over reconstructed pt, used for studying purity
 
   _recopt_tracks_all = new TH1D("recopt_tracks_all", "", 20,0.0,10.0);
-  se->registerHisto(_recopt_tracks_all);
-
   _recopt_tracks_recoWithExactHits = new TH1D("recopt_tracks_recoWithExactHits", "", 20,0.0,10.0);
-  se->registerHisto(_recopt_tracks_recoWithExactHits);
-
   _recopt_tracks_recoWithin1Hit = new TH1D("recopt_tracks_recoWithin1Hit", "", 20,0.0,10.0);
-  se->registerHisto(_recopt_tracks_recoWithin1Hit);
-
   _recopt_tracks_recoWithin2Hits = new TH1D("recopt_tracks_recoWithin2Hits", "", 20,0.0,10.0);
-  se->registerHisto(_recopt_tracks_recoWithin2Hits);
-
   _recopt_tracks_recoWithin3Percent = new TH1D("recopt_tracks_recoWithin3Percent", "", 20,0.0,10.0);
-  se->registerHisto(_recopt_tracks_recoWithin3Percent);
-
   _recopt_tracks_recoWithin4Percent = new TH1D("recopt_tracks_recoWithin4Percent", "", 20,0.0,10.0);
-  se->registerHisto(_recopt_tracks_recoWithin4Percent);
-
   _recopt_tracks_recoWithin5Percent = new TH1D("recopt_tracks_recoWithin5Percent", "", 20,0.0,10.0);
+
+  se->registerHisto(_recopt_tracks_all);
+  se->registerHisto(_recopt_tracks_recoWithExactHits);
+  se->registerHisto(_recopt_tracks_recoWithin1Hit);
+  se->registerHisto(_recopt_tracks_recoWithin2Hits);
+  se->registerHisto(_recopt_tracks_recoWithin3Percent);
+  se->registerHisto(_recopt_tracks_recoWithin4Percent);
   se->registerHisto(_recopt_tracks_recoWithin5Percent);
 
 
 
   // --- purity study with calorimeter cuts
-
-  _recopt_tracks_withcalocuts_all = new TH1D("recopt_tracks_withcalocuts_all", "", 20,0.0,10.0);
-  se->registerHisto(_recopt_tracks_withcalocuts_all);
-
-  _recopt_tracks_withcalocuts_recoWithExactHits = new TH1D("recopt_tracks_withcalocuts_recoWithExactHits", "", 20,0.0,10.0);
-  se->registerHisto(_recopt_tracks_withcalocuts_recoWithExactHits);
-
-  _recopt_tracks_withcalocuts_recoWithin1Hit = new TH1D("recopt_tracks_withcalocuts_recoWithin1Hit", "", 20,0.0,10.0);
-  se->registerHisto(_recopt_tracks_withcalocuts_recoWithin1Hit);
-
-  _recopt_tracks_withcalocuts_recoWithin2Hits = new TH1D("recopt_tracks_withcalocuts_recoWithin2Hits", "", 20,0.0,10.0);
-  se->registerHisto(_recopt_tracks_withcalocuts_recoWithin2Hits);
-
-  _recopt_tracks_withcalocuts_recoWithin3Percent = new TH1D("recopt_tracks_withcalocuts_recoWithin3Percent", "", 20,0.0,10.0);
-  se->registerHisto(_recopt_tracks_withcalocuts_recoWithin3Percent);
-
-  _recopt_tracks_withcalocuts_recoWithin4Percent = new TH1D("recopt_tracks_withcalocuts_recoWithin4Percent", "", 20,0.0,10.0);
-  se->registerHisto(_recopt_tracks_withcalocuts_recoWithin4Percent);
-
-  _recopt_tracks_withcalocuts_recoWithin5Percent = new TH1D("recopt_tracks_withcalocuts_recoWithin5Percent", "", 20,0.0,10.0);
-  se->registerHisto(_recopt_tracks_withcalocuts_recoWithin5Percent);
-
 
   th2d_recopt_tracks_withcalocuts_all = new TH2D(Form("th2d_recopt_tracks_withcalocuts_all"), "", 80,0.0,40.0, 20,0.0,2.0);
   th2d_recopt_tracks_withcalocuts_recoWithExactHits = new TH2D(Form("th2d_recopt_tracks_withcalocuts_recoWithExactHits"), "", 80,0.0,40.0, 20,0.0,2.0);
@@ -229,29 +167,7 @@ int SimpleTrackingAnalysis::Init(PHCompositeNode *topNode)
 
   // --- efficiency study with calorimter cuts
 
-  _truept_particles_withcalocuts_leaving7Hits = new TH1D("truept_particles_withcalocuts_leaving7Hits", "", 20,0.0,10.0);
-  se->registerHisto(_truept_particles_withcalocuts_leaving7Hits);
-
-  _truept_particles_withcalocuts_recoWithExactHits = new TH1D("truept_particles_withcalocuts_recoWithExactHits", "", 20,0.0,10.0);
-  se->registerHisto(_truept_particles_withcalocuts_recoWithExactHits);
-
-  _truept_particles_withcalocuts_recoWithin1Hit = new TH1D("truept_particles_withcalocuts_recoWithin1Hit", "", 20,0.0,10.0);
-  se->registerHisto(_truept_particles_withcalocuts_recoWithin1Hit);
-
-  _truept_particles_withcalocuts_recoWithin2Hits = new TH1D("truept_particles_withcalocuts_recoWithin2Hits", "", 20,0.0,10.0);
-  se->registerHisto(_truept_particles_withcalocuts_recoWithin2Hits);
-
-  _truept_particles_withcalocuts_recoWithin3Percent = new TH1D("truept_particles_withcalocuts_recoWithin3Percent", "", 20,0.0,10.0);
-  se->registerHisto(_truept_particles_withcalocuts_recoWithin3Percent);
-
-  _truept_particles_withcalocuts_recoWithin4Percent = new TH1D("truept_particles_withcalocuts_recoWithin4Percent", "", 20,0.0,10.0);
-  se->registerHisto(_truept_particles_withcalocuts_recoWithin4Percent);
-
-  _truept_particles_withcalocuts_recoWithin5Percent = new TH1D("truept_particles_withcalocuts_recoWithin5Percent", "", 20,0.0,10.0);
-  se->registerHisto(_truept_particles_withcalocuts_recoWithin5Percent);
-
-
-  th2d_truept_particles_withcalocuts_leaving7Hits = new TH2D(Form("th2d_truept_particles_withcalocuts_leaving7Hits"), "", 80,0.0,40.0, 20,0.0,2.0);
+  th2d_truept_particles_withcalocuts_leavingAllHits = new TH2D(Form("th2d_truept_particles_withcalocuts_leavingAllHits"), "", 80,0.0,40.0, 20,0.0,2.0);
   th2d_truept_particles_withcalocuts_recoWithExactHits = new TH2D(Form("th2d_truept_particles_withcalocuts_recoWithExactHits"), "", 80,0.0,40.0, 20,0.0,2.0);
   th2d_truept_particles_withcalocuts_recoWithin1Hit = new TH2D(Form("th2d_truept_particles_withcalocuts_recoWithin1Hit"), "", 80,0.0,40.0, 20,0.0,2.0);
   th2d_truept_particles_withcalocuts_recoWithin2Hits = new TH2D(Form("th2d_truept_particles_withcalocuts_recoWithin2Hits"), "", 80,0.0,40.0, 20,0.0,2.0);
@@ -262,7 +178,7 @@ int SimpleTrackingAnalysis::Init(PHCompositeNode *topNode)
   th2d_truept_particles_withcalocuts_recoWithin2Sigma = new TH2D(Form("th2d_truept_particles_withcalocuts_recoWithin2Sigma"), "", 80,0.0,40.0, 20,0.0,2.0);
   th2d_truept_particles_withcalocuts_recoWithin3Sigma = new TH2D(Form("th2d_truept_particles_withcalocuts_recoWithin3Sigma"), "", 80,0.0,40.0, 20,0.0,2.0);
 
-  se->registerHisto(th2d_truept_particles_withcalocuts_leaving7Hits);
+  se->registerHisto(th2d_truept_particles_withcalocuts_leavingAllHits);
   se->registerHisto(th2d_truept_particles_withcalocuts_recoWithExactHits);
   se->registerHisto(th2d_truept_particles_withcalocuts_recoWithin1Hit);
   se->registerHisto(th2d_truept_particles_withcalocuts_recoWithin2Hits);
@@ -280,12 +196,10 @@ int SimpleTrackingAnalysis::Init(PHCompositeNode *topNode)
   // --- vertex residual histograms
 
   _dx_vertex = new TH1D("dx_vertex", "dx_vertex", 200,-0.03,0.03);
-  se->registerHisto(_dx_vertex);
-
   _dy_vertex = new TH1D("dy_vertex", "dy_vertex", 200,-0.03,0.03);
-  se->registerHisto(_dy_vertex);
-
   _dz_vertex = new TH1D("dz_vertex", "dz_vertex", 200,-0.03,0.03);
+  se->registerHisto(_dy_vertex);
+  se->registerHisto(_dx_vertex);
   se->registerHisto(_dz_vertex);
 
   hmult = new TH1D("hmult","",5000,-0.5,4999.5);
@@ -344,22 +258,6 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
       cerr << PHWHERE << " ERROR: Can't find SvtxVertexMap" << endl;
       exit(-1);
     }
-
-
-
-
-
-  // --- step 1: loop over all possible towers and make a map of energy, tower address
-  // --- step 2: loop over map in reverse order and fill a vector of tower addresses
-  // --- step 3: use vector of tower addresses (which are ordered by energy highest to lowest) as desired
-  // --- note: the vector is not really needed, as one can just get anything that's needed from the map
-  // ---       itself, but personally I like vectors
-
-  //int nphi = emc_towergeo->get_phibins();
-  //int neta = emc_towergeo->get_etabins();
-
-
-
 
 
 
@@ -470,7 +368,7 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
       // examine truth particles that leave all (7 or 8 depending on design) detector hits
       if ( ng4hits == nlayers )
 	{
-	  _truept_particles_leaving7Hits->Fill(truept);
+	  _truept_particles_leavingAllHits->Fill(truept);
 
 	  unsigned int nfromtruth = trackeval->get_nclusters_contribution(track,g4particle);
 
@@ -489,24 +387,11 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
 	  if ( diff < 0.03 ) _truept_particles_recoWithin3Percent->Fill(truept);
 
           double good_energy = total_energy_dumb - 3.14;
-	  bool goodcalo = (good_energy > 0.5 * recop);
 
-          //cout << "looking at calorimeter stuff " << goodcalo << " " << total_energy_dumb << endl;
-
-	  if ( goodcalo )
-	    {
-	      _truept_particles_withcalocuts_leaving7Hits->Fill(truept);
-	      if ( ndiff <= 2 ) _truept_particles_withcalocuts_recoWithin2Hits->Fill(truept);
-	      if ( ndiff <= 1 ) _truept_particles_withcalocuts_recoWithin1Hit->Fill(truept);
-	      if ( ndiff == 0 ) _truept_particles_withcalocuts_recoWithExactHits->Fill(truept);
-	      if ( diff < 0.05 ) _truept_particles_withcalocuts_recoWithin5Percent->Fill(truept);
-	      if ( diff < 0.04 ) _truept_particles_withcalocuts_recoWithin4Percent->Fill(truept);
-	      if ( diff < 0.03 ) _truept_particles_withcalocuts_recoWithin3Percent->Fill(truept);
-	    } // check on good calo
 
           double eoverp = good_energy/recop;
           double sigmapt = 0.011 + 0.0008*recopt;
-          th2d_truept_particles_withcalocuts_leaving7Hits->Fill(truept,eoverp);
+          th2d_truept_particles_withcalocuts_leavingAllHits->Fill(truept,eoverp);
           if ( ndiff <= 2 ) th2d_truept_particles_withcalocuts_recoWithin2Hits->Fill(truept,eoverp);
           if ( ndiff <= 1 ) th2d_truept_particles_withcalocuts_recoWithin1Hit->Fill(truept,eoverp);
           if ( ndiff == 0 ) th2d_truept_particles_withcalocuts_recoWithExactHits->Fill(truept,eoverp);
@@ -558,23 +443,6 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
 
       if ( verbosity > 2 ) cout << "total calo energy is " << total_energy << endl;
 
-      // ---
-
-      //cout << "now starting the reco part of the analysis" << endl;
-
-      // --- this selection based on inner hcal modeling as of 20160317
-      // --- happy St. Paddy's!
-      bool iselectronR = total_energy < 0.4 * recop;
-      bool ispionR = total_energy > 0.8 * recop;
-
-      if ( iselectron ) th1d_true_all_electron_recopt->Fill(recopt);
-      if ( ispion ) th1d_true_all_pion_recopt->Fill(recopt);
-      if ( iselectronR ) th1d_reco_all_electron_recopt->Fill(recopt);
-      if ( ispionR ) th1d_reco_all_pion_recopt->Fill(recopt);
-
-      if ( iselectronR ) th1d_reco_embedded_electron_recopt->Fill(recopt);
-      if ( ispionR ) th1d_reco_embedded_pion_recopt->Fill(recopt);
-
       if (trutheval->get_embed(g4particle) != 0)
 	{
 	  // embedded results (quality or performance measures)
@@ -583,16 +451,10 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
 	  _recopt_quality->Fill(recopt,track->get_quality());
           if ( verbosity > 0 ) cout << "embedded particle ID is " << particleID << " ispion " << ispion << " iselectron " << iselectron << endl;
           // ---
-          if ( iselectron ) th1d_true_embedded_electron_recopt->Fill(recopt);
-          if ( ispion ) th1d_true_embedded_pion_recopt->Fill(recopt);
 	} // end if (embedded results)
       else
 	{
           // electron and pion (hadron) id
-          if ( iselectronR ) th1d_reco_nonembedded_electron_recopt->Fill(recopt);
-          if ( ispionR ) th1d_reco_nonembedded_pion_recopt->Fill(recopt);
-          if ( iselectron ) th1d_true_nonembedded_electron_recopt->Fill(recopt);
-          if ( ispion ) th1d_true_nonembedded_pion_recopt->Fill(recopt);
 
 	  // non-embedded results (purity measures)
 	  _recopt_tracks_all->Fill(recopt);
@@ -621,23 +483,6 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
 
           double good_energy = total_energy - 3.14;
 
-	  // this needs careful study and consideration, just getting started for now...
-	  bool goodcalo = (good_energy > 0.5 * recop);
-
-          //cout << "now looking at calorimeter stuff " << goodcalo << " " << total_energy << endl;
-
-	  if ( goodcalo )
-	    {
-	      _recopt_tracks_withcalocuts_all->Fill(recopt);
-	      if ( ndiff <= 2 ) _recopt_tracks_withcalocuts_recoWithin2Hits->Fill(recopt);
-	      if ( ndiff <= 1 ) _recopt_tracks_withcalocuts_recoWithin1Hit->Fill(recopt);
-	      if ( ndiff == 0 ) _recopt_tracks_withcalocuts_recoWithExactHits->Fill(recopt);
-	      if ( diff < 0.05 ) _recopt_tracks_withcalocuts_recoWithin5Percent->Fill(recopt);
-	      if ( diff < 0.04 ) _recopt_tracks_withcalocuts_recoWithin4Percent->Fill(recopt);
-	      if ( diff < 0.03 ) _recopt_tracks_withcalocuts_recoWithin3Percent->Fill(recopt);
-
-	    } // check on good calo
-
           double eoverp = good_energy/recop;
           double sigmapt = 0.011 + 0.0008*recopt;
           th2d_recopt_tracks_withcalocuts_all->Fill(recopt,eoverp);
@@ -660,6 +505,7 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
 
 
   hmult->Fill(ntracks);
+
   // --- Get the leading vertex
   SvtxVertex* maxvertex = NULL;
   unsigned int maxtracks = 0;
@@ -690,6 +536,7 @@ int SimpleTrackingAnalysis::process_event(PHCompositeNode *topNode)
   _dx_vertex->Fill(maxvertex->get_x() - point->get_x());
   _dy_vertex->Fill(maxvertex->get_y() - point->get_y());
   _dz_vertex->Fill(maxvertex->get_z() - point->get_z());
+
   hmult_vertex->Fill(ntracks);
 
 
