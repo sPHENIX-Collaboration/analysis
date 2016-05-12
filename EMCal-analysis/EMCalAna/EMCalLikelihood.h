@@ -18,6 +18,7 @@
 
 #include <string>
 #include <stdint.h>
+#include <utility>      // std::pair, std::make_pair
 
 class EMCalTrk;
 class TH2;
@@ -45,6 +46,9 @@ public:
 
   Fun4AllHistoManager *
   get_HistoManager();
+
+  void
+  ApplyEMCalGanging(EMCalTrk * trk);
 
   void
   UpdateEnergyDeposition(EMCalTrk * trk);
@@ -171,6 +175,14 @@ public:
   {
     width_hcalin_iphi = widthHcalinIphi;
   }
+
+  void do_ganging(unsigned int eta, unsigned int phi)
+  {
+    _do_ganging = true;
+    _ganging_size.first= eta;
+    _ganging_size.second= phi;
+  }
+
 private:
   std::string _filename;
 
@@ -193,6 +205,10 @@ private:
   TH1 * h1_ep_Distribution_e;
   TH1 * h1_ep_Distribution_pi;
 
+  bool _do_ganging;
+
+  //! eta and phi ganging
+  std::pair<unsigned int, unsigned int> _ganging_size;
 };
 
 #endif /* EMCALLIKELIHOOD_H_ */

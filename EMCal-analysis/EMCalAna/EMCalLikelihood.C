@@ -54,7 +54,8 @@ EMCalLikelihood::EMCalLikelihood(const std::string &filename) :
     width_cemc_iphi(NAN), width_cemc_ieta(NAN), //
     width_hcalin_iphi(NAN), width_hcalin_ieta(NAN), //
     h2_Edep_Distribution_e(NULL), h2_Edep_Distribution_pi(NULL), //
-    h1_ep_Distribution_e(NULL), h1_ep_Distribution_pi(NULL)
+    h1_ep_Distribution_e(NULL), h1_ep_Distribution_pi(NULL), //
+    _do_ganging(false), _ganging_size(1, 1)
 {
 
 }
@@ -141,15 +142,15 @@ EMCalLikelihood::Init(PHCompositeNode *topNode)
         for (int y = 1; y <= h2_Edep_Distribution_e->GetNbinsX(); ++y)
           {
             const double binc = h2_Edep_Distribution_e->GetBinContent(x, y);
-            assert(binc>=0);
+            assert(binc >= 0);
 
             if (binc > 0 and binc < min_prob)
               min_prob = binc;
           }
-      assert(min_prob>0);
+      assert(min_prob > 0);
 
-      for (int x = 0; x <= h2_Edep_Distribution_e->GetNbinsX()+1; ++x)
-        for (int y = 0; y <= h2_Edep_Distribution_e->GetNbinsX()+1; ++y)
+      for (int x = 0; x <= h2_Edep_Distribution_e->GetNbinsX() + 1; ++x)
+        for (int y = 0; y <= h2_Edep_Distribution_e->GetNbinsX() + 1; ++y)
           {
             const double binc = h2_Edep_Distribution_e->GetBinContent(x, y);
 
@@ -157,7 +158,7 @@ EMCalLikelihood::Init(PHCompositeNode *topNode)
               h2_Edep_Distribution_e->SetBinContent(x, y, min_prob);
           }
 
-      for (int x = 0; x <= h1_ep_Distribution_e->GetNbinsX()+1; ++x)
+      for (int x = 0; x <= h1_ep_Distribution_e->GetNbinsX() + 1; ++x)
         {
           const double binc = h1_ep_Distribution_e->GetBinContent(x);
 
@@ -183,15 +184,15 @@ EMCalLikelihood::Init(PHCompositeNode *topNode)
         for (int y = 1; y <= h2_Edep_Distribution_pi->GetNbinsX(); ++y)
           {
             const double binc = h2_Edep_Distribution_pi->GetBinContent(x, y);
-            assert(binc>=0);
+            assert(binc >= 0);
 
             if (binc > 0 and binc < min_prob)
               min_prob = binc;
           }
-      assert(min_prob>0);
+      assert(min_prob > 0);
 
-      for (int x = 0; x <= h2_Edep_Distribution_pi->GetNbinsX()+1; ++x)
-        for (int y = 0; y <= h2_Edep_Distribution_pi->GetNbinsX()+1; ++y)
+      for (int x = 0; x <= h2_Edep_Distribution_pi->GetNbinsX() + 1; ++x)
+        for (int y = 0; y <= h2_Edep_Distribution_pi->GetNbinsX() + 1; ++y)
           {
             const double binc = h2_Edep_Distribution_pi->GetBinContent(x, y);
 
@@ -199,7 +200,7 @@ EMCalLikelihood::Init(PHCompositeNode *topNode)
               h2_Edep_Distribution_pi->SetBinContent(x, y, min_prob);
           }
 
-      for (int x = 0; x <= h1_ep_Distribution_pi->GetNbinsX()+1; ++x)
+      for (int x = 0; x <= h1_ep_Distribution_pi->GetNbinsX() + 1; ++x)
         {
           const double binc = h1_ep_Distribution_pi->GetBinContent(x);
 
@@ -219,6 +220,9 @@ EMCalLikelihood::process_event(PHCompositeNode *topNode)
     cout << "EMCalLikelihood::process_event - " << _ievent << endl;
 
   _ievent++;
+
+  if (_do_ganging)
+    ApplyEMCalGanging();
 
   UpdateEnergyDeposition(_trk);
 
@@ -247,6 +251,24 @@ EMCalLikelihood::get_HistoManager()
   assert(hm);
 
   return hm;
+}
+
+void
+EMCalLikelihood::ApplyEMCalGanging(EMCalTrk * trk)
+{
+  assert(trk);
+  assert(_ganging_size.first > 1 or _ganging_size.second > 1);
+  assert(_ganging_size.first > 0 and _ganging_size.second > 0);
+
+  static bool once = true;
+  if (once)
+    {
+      once = false;
+
+      cout << "EMCalLikelihood::ApplyEMCalGanging - apply EMCal ganging "
+          << _ganging_size.first << "x" << _ganging_size.second << endl;
+    }
+
 }
 
 void
@@ -307,33 +329,39 @@ EMCalLikelihood::UpdateEnergyDepositionLikelihood(EMCalTrk * trk)
   assert(h1_ep_Distribution_pi);
 
   assert(
-      h2_Edep_Distribution_e->GetNbinsX() == h2_Edep_Distribution_pi->GetNbinsX());
+      h2_Edep_Distribution_e->GetNbinsX()
+          == h2_Edep_Distribution_pi->GetNbinsX());
   assert(
-      h2_Edep_Distribution_e->GetNbinsY() == h2_Edep_Distribution_pi->GetNbinsY());
+      h2_Edep_Distribution_e->GetNbinsY()
+          == h2_Edep_Distribution_pi->GetNbinsY());
   assert(
       h2_Edep_Distribution_e->GetNbinsX() == h1_ep_Distribution_e->GetNbinsX());
   assert(
-      h1_ep_Distribution_pi->GetNbinsX() == h2_Edep_Distribution_pi->GetNbinsX());
+      h1_ep_Distribution_pi->GetNbinsX()
+          == h2_Edep_Distribution_pi->GetNbinsX());
 
-  const int binx = h2_Edep_Distribution_e->GetXaxis()->FindBin(
-      trk->get_ep());
+  const int binx = h2_Edep_Distribution_e->GetXaxis()->FindBin(trk->get_ep());
   const int biny = h2_Edep_Distribution_e->GetYaxis()->FindBin(
       trk->hcalin_sum_energy);
 
     {
       double prob_e = h2_Edep_Distribution_e->GetBinContent(binx, biny);
-      if (!prob_e>0)
+      if (!prob_e > 0)
         {
-          cout <<__PRETTY_FUNCTION__<<Name()<<" - Error - invalid likelihood value prob_e = "<<prob_e<< " @ bin "<<binx<<", "<<biny<<endl;
+          cout << __PRETTY_FUNCTION__ << Name()
+              << " - Error - invalid likelihood value prob_e = " << prob_e
+              << " @ bin " << binx << ", " << biny << endl;
         }
       assert(prob_e > 0);
 
       double prob_pi = h2_Edep_Distribution_pi->GetBinContent(binx, biny);
-      if (!prob_pi>0)
+      if (!prob_pi > 0)
         {
-          cout <<__PRETTY_FUNCTION__<<Name()<<" - Error - invalid likelihood value prob_pi = "<<prob_pi<< " @ bin "<<binx<<", "<<biny<<endl;
+          cout << __PRETTY_FUNCTION__ << Name()
+              << " - Error - invalid likelihood value prob_pi = " << prob_pi
+              << " @ bin " << binx << ", " << biny << endl;
         }
-      assert(prob_pi >0);
+      assert(prob_pi > 0);
 
       trk->ll_edep_e = log(prob_e);
       trk->ll_edep_h = log(prob_pi);
@@ -344,7 +372,7 @@ EMCalLikelihood::UpdateEnergyDepositionLikelihood(EMCalTrk * trk)
       assert(prob_e > 0);
 
       double prob_pi = h1_ep_Distribution_pi->GetBinContent(binx);
-      assert(prob_pi >0);
+      assert(prob_pi > 0);
 
       trk->ll_ep_e = log(prob_e);
       trk->ll_ep_h = log(prob_pi);
