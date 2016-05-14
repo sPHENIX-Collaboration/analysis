@@ -160,7 +160,7 @@ DrawPrototype2EMCalTower( //
     }
   else
     {
-      if (1)
+      if (0)
       {// energy selection
       event_sel = Form("(beam_MTNRG_GeV == %f)", beam_momentum_selection);
       cuts = Form("_%.0fGeV", beam_momentum_selection);
@@ -245,7 +245,7 @@ DrawPrototype2EMCalTower( //
   int rnd = rand();
   gDirectory->mkdir(Form("dir_%d", rnd));
   gDirectory->cd(Form("dir_%d", rnd));
-//  if (plot_all)
+  if (plot_all)
   EMCDistribution_HCalCalibration();
 
   int rnd = rand();
