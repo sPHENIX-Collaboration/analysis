@@ -25,13 +25,13 @@ TString cuts = "";
 void
 DrawEcal_Likelihood(
 //
-//    TString base_dir =
-//        "/phenix/sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/",
     TString base_dir =
-        "/phenix/sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/embedding/emcstudies/pidstudies/spacal2d/fieldmap/",
+        "/phenix/sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis_cemc2x2/emcstudies/pidstudies/spacal2d/fieldmap/",
+//    TString base_dir =
+//        "/phenix/sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis_cemc2x2/embedding/emcstudies/pidstudies/spacal2d/fieldmap/",
 //        TString pid = "anti_proton", //
-    TString pid = "e+", //
-    TString kine_config = "eta0_4GeV", int eval_mode = 0)
+    TString pid = "e-", //
+    TString kine_config = "eta0_8GeV", int eval_mode = 0)
 {
 
   const TString infile = base_dir + "G4Hits_sPHENIX_" + pid + "_" + kine_config

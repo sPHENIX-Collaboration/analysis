@@ -1,12 +1,23 @@
 #!/bin/tcsh -f
 
 
+#set base_dirs = ( \
+	#	/gpfs/mnt/gpfs02/sphenix/sim/sim01/phnxreco/users/jinhuang/sPHENIX_work//production_analysis_cemc2x2//emcstudies/pidstudies/spacal2d/fieldmap/ \
+#);
+
 set base_dirs = ( \
-	/phenix/sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/ \
-	/phenix/sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal1d/fieldmap/ \
-	/phenix/sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/embedding/emcstudies/pidstudies/spacal2d/fieldmap/ \
-	/phenix/sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/embedding/emcstudies/pidstudies/spacal1d/fieldmap/ \
+	/gpfs/mnt/gpfs02/sphenix/sim/sim01/phnxreco/users/jinhuang/sPHENIX_work//production_analysis_cemc2x2//emcstudies/pidstudies/spacal2d/fieldmap/ \
+	/gpfs/mnt/gpfs02/sphenix/sim/sim01/phnxreco/users/jinhuang/sPHENIX_work//production_analysis_cemc2x2//emcstudies/pidstudies/spacal1d/fieldmap/ \
+	/gpfs/mnt/gpfs02/sphenix/sim/sim01/phnxreco/users/jinhuang/sPHENIX_work//production_analysis_cemc2x2//embedding/emcstudies/pidstudies/spacal2d/fieldmap/ \
+	/gpfs/mnt/gpfs02/sphenix/sim/sim01/phnxreco/users/jinhuang/sPHENIX_work//production_analysis_cemc2x2//embedding/emcstudies/pidstudies/spacal1d/fieldmap/ \
 );
+
+#set base_dirs = ( \
+#	/gpfs/mnt/gpfs02/sphenix/sim/sim01/phnxreco/users/jinhuang/sPHENIX_work//production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/ \
+#	/gpfs/mnt/gpfs02/sphenix/sim/sim01/phnxreco/users/jinhuang/sPHENIX_work//production_analysis/emcstudies/pidstudies/spacal1d/fieldmap/ \
+#	/gpfs/mnt/gpfs02/sphenix/sim/sim01/phnxreco/users/jinhuang/sPHENIX_work//production_analysis/embedding/emcstudies/pidstudies/spacal2d/fieldmap/ \
+#	/gpfs/mnt/gpfs02/sphenix/sim/sim01/phnxreco/users/jinhuang/sPHENIX_work//production_analysis/embedding/emcstudies/pidstudies/spacal1d/fieldmap/ \
+#);
 
 set kine_configs = (eta0 eta0.90);
 

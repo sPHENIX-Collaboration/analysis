@@ -25,12 +25,12 @@ TString cuts = "";
 void
 DrawEcal_Likelihood_Sum(
 //    TString base_dir =
-//        "../../sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/",
+//        "../../sPHENIX_work/production_analysis_cemc2x2/emcstudies/pidstudies/spacal2d/fieldmap/",
 
     TString base_dir =
-        "../../sPHENIX_work/production_analysis/embedding/emcstudies/pidstudies/spacal2d/fieldmap/",
+        "../../sPHENIX_work/production_analysis_cemc2x2/embedding/emcstudies/pidstudies/spacal2d/fieldmap/",
 //                    TString base_dir =
-//                        "../../sPHENIX_work/production_analysis/embedding/emcstudies/pidstudies/spacal1d/fieldmap/",
+//                        "../../sPHENIX_work/production_analysis_cemc2x2/embedding/emcstudies/pidstudies/spacal1d/fieldmap/",
     TString kine_config = "eta0"
 //            TString kine_config = "eta0.90"
     )
@@ -44,8 +44,8 @@ DrawEcal_Likelihood_Sum(
   gSystem->Load("libemcal_ana.so");
   gSystem->Load("libg4vertex.so");
 
-//  RejectionCurve(base_dir, kine_config, "Edep_LL_Distribution_eval_sample",
-//      "hll_edep_diff", 0.6);
+  RejectionCurve(base_dir, kine_config, "Edep_LL_Distribution_eval_sample",
+      "hll_edep_diff", 0.6);
 //
 //  RejectionCurvePos(base_dir, kine_config, "Edep_LL_Distribution_eval_sample",
 //      "hll_edep_diff", 0.6);
@@ -74,13 +74,13 @@ DrawEcal_Likelihood_Sum(
 //  RejectionCurve_ppSummary();
 //  RejectionCurve_ppSummaryPos();
 
-//  RejectionCurve_AuAuSummary("../../sPHENIX_work/production_analysis/embedding/emcstudies/pidstudies/spacal2d/fieldmap/",
+//  RejectionCurve_AuAuSummary("../../sPHENIX_work/production_analysis_cemc2x2/embedding/emcstudies/pidstudies/spacal2d/fieldmap/",
 //      "2-D Proj. SPACAL, e^{-} VS h^{-} in Au+Au 10%C");
-//  RejectionCurve_AuAuSummaryPos("../../sPHENIX_work/production_analysis/embedding/emcstudies/pidstudies/spacal2d/fieldmap/",
+//  RejectionCurve_AuAuSummaryPos("../../sPHENIX_work/production_analysis_cemc2x2/embedding/emcstudies/pidstudies/spacal2d/fieldmap/",
 //      "2-D Proj. SPACAL, e^{+} VS h^{+} in Au+Au 10%C");
-//    RejectionCurve_AuAuSummary("../../sPHENIX_work/production_analysis/embedding/emcstudies/pidstudies/spacal1d/fieldmap/",
+//    RejectionCurve_AuAuSummary("../../sPHENIX_work/production_analysis_cemc2x2/embedding/emcstudies/pidstudies/spacal1d/fieldmap/",
 //        "1-D Proj. SPACAL, e^{-} VS h^{-} in Au+Au 10%C");
-//    RejectionCurve_AuAuSummaryPos("../../sPHENIX_work/production_analysis/embedding/emcstudies/pidstudies/spacal1d/fieldmap/",
+//    RejectionCurve_AuAuSummaryPos("../../sPHENIX_work/production_analysis_cemc2x2/embedding/emcstudies/pidstudies/spacal1d/fieldmap/",
 //        "1-D Proj. SPACAL, e^{+} VS h^{+} in Au+Au 10%C");
 
   RejectionCurve_AuAuSummary_Compare();
@@ -90,7 +90,7 @@ DrawEcal_Likelihood_Sum(
 void
 RejectionCurvePos(
     TString base_dir =
-        "../../sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/",
+        "../../sPHENIX_work/production_analysis_cemc2x2/emcstudies/pidstudies/spacal2d/fieldmap/",
     TString kine_config = "eta0", //
     TString ll_config = "Edep_LL_Distribution_eval_sample", //
     TString hist_name = "hll_edep_diff", //
@@ -205,7 +205,7 @@ RejectionCurvePos(
 void
 RejectionCurve(
     TString base_dir =
-        "../../sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/",
+        "../../sPHENIX_work/production_analysis_cemc2x2/emcstudies/pidstudies/spacal2d/fieldmap/",
     TString kine_config = "eta0", //
     TString ll_config = "Edep_LL_Distribution_eval_sample", //
     TString hist_name = "hll_edep_diff", //
@@ -319,7 +319,7 @@ RejectionCurve(
 void
 RejectionCurve_PiProton(
     TString base_dir =
-        "../../sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/",
+        "../../sPHENIX_work/production_analysis_cemc2x2/emcstudies/pidstudies/spacal2d/fieldmap/",
     TString kine_config = "eta0", //
     TString ll_config = "Edep_LL_Distribution_eval_sample", //
     TString hist_name = "hll_edep_diff", //
@@ -434,7 +434,7 @@ RejectionCurve_PiProton(
 void
 RejectionCurve_PiProtonPos(
     TString base_dir =
-        "../../sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/",
+        "../../sPHENIX_work/production_analysis_cemc2x2/emcstudies/pidstudies/spacal2d/fieldmap/",
     TString kine_config = "eta0", //
     TString ll_config = "Edep_LL_Distribution_eval_sample", //
     TString hist_name = "hll_edep_diff", //
@@ -550,7 +550,7 @@ RejectionCurve_PiProtonPos(
 void
 RejectionCurve_RejMethodComparison(
     TString base_dir =
-        "../../sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/",
+        "../../sPHENIX_work/production_analysis_cemc2x2/emcstudies/pidstudies/spacal2d/fieldmap/",
     TString kine_config = "eta0", //
     const double min_eff = 0.85)
 {
@@ -689,7 +689,7 @@ RejectionCurve_RejMethodComparison(
 void
 RejectionCurve_ppSummary(
     TString base_dir =
-        "../../sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/",
+        "../../sPHENIX_work/production_analysis_cemc2x2/emcstudies/pidstudies/spacal2d/fieldmap/",
     //
     const double min_eff = 0.85)
 {
@@ -859,7 +859,7 @@ RejectionCurve_ppSummary(
 void
 RejectionCurve_ppSummaryPos(
     TString base_dir =
-        "../../sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/",
+        "../../sPHENIX_work/production_analysis_cemc2x2/emcstudies/pidstudies/spacal2d/fieldmap/",
     //
     const double min_eff = 0.85)
 {
@@ -1029,7 +1029,7 @@ RejectionCurve_ppSummaryPos(
 void
 RejectionCurve_AuAuSummary(
     TString base_dir =
-        "../../sPHENIX_work/production_analysis/embedding/emcstudies/pidstudies/spacal2d/fieldmap/",
+        "../../sPHENIX_work/production_analysis_cemc2x2/embedding/emcstudies/pidstudies/spacal2d/fieldmap/",
     TString label = "2-D Proj. SPACAL, e^{-} VS h^{-} in Au+Au 10%C", //
     const double min_eff = 0.6)
 {
@@ -1205,7 +1205,7 @@ RejectionCurve_AuAuSummary(
 void
 RejectionCurve_AuAuSummaryPos(
     TString base_dir =
-        "../../sPHENIX_work/production_analysis/embedding/emcstudies/pidstudies/spacal2d/fieldmap/",
+        "../../sPHENIX_work/production_analysis_cemc2x2/embedding/emcstudies/pidstudies/spacal2d/fieldmap/",
     TString label = "2-D Proj. SPACAL, e^{-} VS h^{+} in Au+Au 10%C", //
     const double min_eff = 0.6)
 {
@@ -1432,7 +1432,7 @@ RejectionCurve_AuAuSummary_Compare()
 {
 
   TString base_dir =
-      "../../sPHENIX_work/production_analysis/embedding/emcstudies/pidstudies/";
+      "../../sPHENIX_work/production_analysis_cemc2x2/embedding/emcstudies/pidstudies/";
   TString label = "1D VS 2D rejection ratio, e^{-} VS h^{-} in Au+Au 10%C"; //
   const double min_eff = 0.6;
 
@@ -1529,7 +1529,7 @@ RejectionCurve_AuAuSummary_Compare()
 void
 RejectionCurve_RejMethodComparison_AntiProton(
     TString base_dir =
-        "../../sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/",
+        "../../sPHENIX_work/production_analysis_cemc2x2/emcstudies/pidstudies/spacal2d/fieldmap/",
     TString kine_config = "eta0", //
     const double min_eff = 0.85)
 {
@@ -1669,7 +1669,7 @@ RejectionCurve_RejMethodComparison_AntiProton(
 void
 RejectionCurve_PIDComparison(
     TString base_dir =
-        "../../sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/",
+        "../../sPHENIX_work/production_analysis_cemc2x2/emcstudies/pidstudies/spacal2d/fieldmap/",
     TString kine_config = "eta0", //
     const double min_eff = 0.85)
 {
@@ -1808,7 +1808,7 @@ RejectionCurve_PIDComparison(
 TGraphErrors *
 ExtractRejCurve(
     TString base_dir =
-        "../../sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/",
+        "../../sPHENIX_work/production_analysis_cemc2x2/emcstudies/pidstudies/spacal2d/fieldmap/",
     TString kine_config = "eta0_4GeV", //
     TString ll_config = "EP_LL_Distribution_ll_sample", //
     TString hist_name = "hll_ep_diff", //

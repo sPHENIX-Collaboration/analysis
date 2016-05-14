@@ -124,6 +124,11 @@ EMCalLikelihood::Init(PHCompositeNode *topNode)
   Fun4AllHistoManager *hm = get_HistoManager();
   assert(hm);
 
+  TH2F * h_merge_direction = new TH2F("h_merge_direction",
+      "h_merge_direction;merge eta shift;merge phi shift", 10, -.5, 9.5, 10,
+      -.5, 9.5);
+  hm->registerHisto(h_merge_direction);
+
   if (h2_Edep_Distribution_e)
     {
       h2_Edep_Distribution_e =
@@ -214,15 +219,15 @@ EMCalLikelihood::Init(PHCompositeNode *topNode)
 int
 EMCalLikelihood::process_event(PHCompositeNode *topNode)
 {
-  const double significand = _ievent / TMath::Power(10, (int) (log10(_ievent)));
+//  const double significand = _ievent / TMath::Power(10, (int) (log10(_ievent)));
 
-  if (fmod(significand, 1.0) == 0 && significand <= 10)
-    cout << "EMCalLikelihood::process_event - " << _ievent << endl;
+//  if (fmod(significand, 1.0) == 0 && significand <= 10)
+//    cout << "EMCalLikelihood::process_event - " << _ievent << endl;
 
   _ievent++;
 
   if (_do_ganging)
-    ApplyEMCalGanging();
+    ApplyEMCalGanging(_trk);
 
   UpdateEnergyDeposition(_trk);
 
@@ -269,6 +274,82 @@ EMCalLikelihood::ApplyEMCalGanging(EMCalTrk * trk)
           << _ganging_size.first << "x" << _ganging_size.second << endl;
     }
 
+  // estimate an eta-phi bin
+  TVector3 vertex(trk->gvx, trk->gvy, trk->gvz);
+  TVector3 momentum(trk->gpx, trk->gpy, trk->gpz);
+  const double radius = 100; // center of CEMC.
+  const double eta_bin_cm = 2.5;
+  const double phi_bin_rad = 0.025;
+
+  assert(momentum.Pt() > 0);
+
+  TVector3 proj = vertex + radius / momentum.Pt() * momentum;
+  const int eta_bin = floor(proj.Z() / eta_bin_cm);
+  const int phi_bin = floor(proj.Phi() / phi_bin_rad);
+
+  const int merge_plus_eta = (eta_bin % _ganging_size.first);
+  const bool merge_plus_phi = (phi_bin % _ganging_size.second);
+
+  Fun4AllHistoManager *hm = get_HistoManager();
+  assert(hm);
+
+  TH2F * h_merge_direction = (TH2F *) hm->getHisto("h_merge_direction");
+  assert(h_merge_direction);
+
+  h_merge_direction->Fill(merge_plus_eta, merge_plus_phi);
+
+  for (int ieta = 0; ieta < trk->Max_N_Tower; ++ieta)
+    {
+      for (int iphi = 0; iphi < trk->Max_N_Tower; ++iphi)
+        {
+          bool out_of_edge = false;
+
+          double cemc_ieta = 0;
+          double cemc_iphi = 0;
+          double cemc_energy = 0;
+
+          for (unsigned int dieta = 0; dieta < _ganging_size.first; ++dieta)
+            {
+              const unsigned int fetch_eta = _ganging_size.first * ieta + dieta + merge_plus_eta;
+
+              if ( fetch_eta>= trk->Max_N_Tower or out_of_edge)
+                {
+                  out_of_edge = true;
+                  break;
+                }
+
+              for (unsigned int diphi = 0; diphi < _ganging_size.second; ++diphi)
+                {
+                  const unsigned int fetch_phi = _ganging_size.first * iphi + diphi + merge_plus_phi;
+
+                  if (fetch_phi>= trk->Max_N_Tower or out_of_edge)
+                    {
+                      out_of_edge = true;
+                      break;
+                    }
+
+                  cemc_ieta += trk->cemc_ieta[fetch_eta][fetch_phi];
+                  cemc_iphi += trk->cemc_iphi[fetch_eta][fetch_phi];
+                  cemc_energy += trk->cemc_energy[fetch_eta][fetch_phi];
+                }
+            }
+
+          if (out_of_edge)
+            {
+              trk->cemc_ieta[ieta][iphi] = -9999;
+              trk->cemc_iphi[ieta][iphi] = -9999;
+              trk->cemc_energy[ieta][iphi] = -0;
+            }
+          else
+            {
+              trk->cemc_ieta[ieta][iphi] = cemc_ieta / _ganging_size.first
+                  / _ganging_size.second;
+              trk->cemc_iphi[ieta][iphi] = cemc_iphi / _ganging_size.first
+                  / _ganging_size.second;
+              trk->cemc_energy[ieta][iphi] = cemc_energy;
+            }
+        }
+    }
 }
 
 void
@@ -329,16 +410,13 @@ EMCalLikelihood::UpdateEnergyDepositionLikelihood(EMCalTrk * trk)
   assert(h1_ep_Distribution_pi);
 
   assert(
-      h2_Edep_Distribution_e->GetNbinsX()
-          == h2_Edep_Distribution_pi->GetNbinsX());
+      h2_Edep_Distribution_e->GetNbinsX() == h2_Edep_Distribution_pi->GetNbinsX());
   assert(
-      h2_Edep_Distribution_e->GetNbinsY()
-          == h2_Edep_Distribution_pi->GetNbinsY());
+      h2_Edep_Distribution_e->GetNbinsY() == h2_Edep_Distribution_pi->GetNbinsY());
   assert(
       h2_Edep_Distribution_e->GetNbinsX() == h1_ep_Distribution_e->GetNbinsX());
   assert(
-      h1_ep_Distribution_pi->GetNbinsX()
-          == h2_Edep_Distribution_pi->GetNbinsX());
+      h1_ep_Distribution_pi->GetNbinsX() == h2_Edep_Distribution_pi->GetNbinsX());
 
   const int binx = h2_Edep_Distribution_e->GetXaxis()->FindBin(trk->get_ep());
   const int biny = h2_Edep_Distribution_e->GetYaxis()->FindBin(
