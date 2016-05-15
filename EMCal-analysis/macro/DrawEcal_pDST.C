@@ -26,7 +26,8 @@ void
 DrawEcal_pDST( //
 //    const TString infile = "../../sPHENIX_work//test_production/Upsilon/spacal2d/fieldon/SimALL_PythiaUpsilon.root_Ana.root"
 
-    const TString infile = "../../sPHENIX_work/production_analysis_cemc2x2//emcstudies/pidstudies/spacal2d/fieldmap/G4Hits_sPHENIX_e-_eta0_8GeV-ALL.root_Ana.root.lst_EMCalLikelihood.root"
+//    const TString infile = "../../sPHENIX_work/production_analysis//emcstudies/pidstudies/spacal2d/fieldmap/G4Hits_sPHENIX_e-_eta0_8GeV-ALL.root_Ana.root.lst_EMCalLikelihood.root"
+        const TString infile = "../../sPHENIX_work/production_analysis_cemc2x2//emcstudies/pidstudies/spacal2d/fieldmap/G4Hits_sPHENIX_e-_eta0_8GeV-ALL.root_Ana.root.lst_EMCalLikelihood.root"
 
 //        const TString infile =   "../../sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/G4Hits_sPHENIX_pi-_eta0_8GeV-ALL.root_Ana.root"
 //        const TString infile =   "../../sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/G4Hits_sPHENIX_e-_eta0_8GeV-ALL.root_Ana.root"

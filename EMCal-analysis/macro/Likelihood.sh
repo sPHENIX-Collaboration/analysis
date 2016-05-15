@@ -43,6 +43,7 @@ foreach energy ($energys)
 	end
 end
 
+# exit
 	
 foreach energy ($energys)
 	foreach pid ($pids)

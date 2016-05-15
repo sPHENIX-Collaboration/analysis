@@ -307,16 +307,40 @@ Fun4All_EMCalLikelihood(const int nEvents = 100000000,
   emcal_ana->set_center_hcalin_ieta(center_hcalin_ieta);
   emcal_ana->set_center_hcalin_iphi(center_hcalin_iphi);
 
+  // -------------------------------------------------------------------
+  // No CEMC ganging readout
+  // -------------------------------------------------------------------
 //  emcal_ana->set_width_cemc_ieta(width_emcal_eta);
 //  emcal_ana->set_width_cemc_iphi(width);
 //  emcal_ana->set_width_hcalin_ieta(width);
 //  emcal_ana->set_width_hcalin_iphi(width);
 
+  // -------------------------------------------------------------------
+  // 2x2 CEMC ganging readout, cluster size x (2x2)
+  // -------------------------------------------------------------------
+//  emcal_ana->do_ganging(2,2);
+//  emcal_ana->set_width_cemc_ieta(width_emcal_eta*2);
+//  emcal_ana->set_width_cemc_iphi(width*2);
+//  emcal_ana->set_width_hcalin_ieta(width*2);
+//  emcal_ana->set_width_hcalin_iphi(width*2);
+
+  // -------------------------------------------------------------------
+  // 2x2 CEMC ganging readout, cluster size x (1.4x1.4)
+  // -------------------------------------------------------------------
+//  emcal_ana->do_ganging(2,2);
+//  emcal_ana->set_width_cemc_ieta(width_emcal_eta*1.4);
+//  emcal_ana->set_width_cemc_iphi(width*1.4);
+//  emcal_ana->set_width_hcalin_ieta(width*1.4);
+//  emcal_ana->set_width_hcalin_iphi(width*1.4);
+
+  // -------------------------------------------------------------------
+  // 2x2 CEMC ganging readout, cluster size x (1.2x1.2)
+  // -------------------------------------------------------------------
   emcal_ana->do_ganging(2,2);
-  emcal_ana->set_width_cemc_ieta(width_emcal_eta*2);
-  emcal_ana->set_width_cemc_iphi(width*2);
-  emcal_ana->set_width_hcalin_ieta(width*2);
-  emcal_ana->set_width_hcalin_iphi(width*2);
+  emcal_ana->set_width_cemc_ieta(width_emcal_eta*1.2);
+  emcal_ana->set_width_cemc_iphi(width*1.2);
+  emcal_ana->set_width_hcalin_ieta(width);
+  emcal_ana->set_width_hcalin_iphi(width);
 
   if (h2_Edep_Distribution_e)
     emcal_ana->set_h2_Edep_Distribution_e(h2_Edep_Distribution_e);

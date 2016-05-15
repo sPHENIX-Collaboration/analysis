@@ -31,6 +31,6 @@ foreach base_dir ($base_dirs)
 		echo $base_dir/Likelihood_$kine_config.log;
 		echo "======================================================";
 
-		Likelihood.sh $kine_config $base_dir | & tee $base_dir/Likelihood_$kine_config.log; 
+		nice Likelihood.sh $kine_config $base_dir | & tee $base_dir/Likelihood_$kine_config.log; 
 	end
 end

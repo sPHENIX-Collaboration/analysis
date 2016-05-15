@@ -44,9 +44,9 @@ DrawEcal_Likelihood_Sum(
   gSystem->Load("libemcal_ana.so");
   gSystem->Load("libg4vertex.so");
 
-  RejectionCurve(base_dir, kine_config, "Edep_LL_Distribution_eval_sample",
-      "hll_edep_diff", 0.6);
-//
+//  RejectionCurve(base_dir, kine_config, "Edep_LL_Distribution_eval_sample",
+//      "hll_edep_diff", 0.6);
+////
 //  RejectionCurvePos(base_dir, kine_config, "Edep_LL_Distribution_eval_sample",
 //      "hll_edep_diff", 0.6);
 
@@ -83,7 +83,8 @@ DrawEcal_Likelihood_Sum(
 //    RejectionCurve_AuAuSummaryPos("../../sPHENIX_work/production_analysis_cemc2x2/embedding/emcstudies/pidstudies/spacal1d/fieldmap/",
 //        "1-D Proj. SPACAL, e^{+} VS h^{+} in Au+Au 10%C");
 
-  RejectionCurve_AuAuSummary_Compare();
+  //  RejectionCurve_AuAuSummary_Compare();
+    RejectionCurve_AuAuSummary_Compare2();
 
 }
 
@@ -1510,6 +1511,103 @@ RejectionCurve_AuAuSummary_Compare()
   TString name = ("MergeExtractRejCurve_" + kine_config + "_8GeV");
   TGraph * ge = rejection_ratio(f_2d, f_1d, name);
 //  ge->Draw("lx");
+
+  TString name = ("MergeExtractRejCurve_" + kine_config + "_4GeV");
+  TGraph * ge = rejection_ratio(f_2d, f_1d, name);
+  ge->Draw("lx");
+
+  TString name = ("MergeExtractRejCurve_" + kine_config + "_2GeV");
+  TGraph * ge = rejection_ratio(f_2d, f_1d, name);
+  ge->Draw("lx");
+
+  leg2->Draw();
+  leg1->Draw();
+
+  SaveCanvas(c1,
+      base_dir + TString("DrawEcal_Likelihood_Sum_") + TString(c1->GetName()));
+}
+
+void
+RejectionCurve_AuAuSummary_Compare2()
+{
+
+  TString base_dir =
+      "../../sPHENIX_work/production_analysis_cemc2x2/embedding/emcstudies/pidstudies/";
+  TString base_dir2 =
+      "../../sPHENIX_work/production_analysis/embedding/emcstudies/pidstudies/";
+  TString label = "2x2-Ganging rej. ratio, e^{-} VS h^{-} in Au+Au 10%C"; //
+  const double min_eff = 0.6;
+
+  TFile * f_2d =
+      new TFile(
+          base_dir
+              + "/spacal2d/fieldmap/DrawEcal_Likelihood_Sum_RejectionCurve_AuAuSummary.root");
+  assert(f_2d -> IsOpen());
+  TFile * f_1d =
+      new TFile(
+          base_dir2
+              + "/spacal2d/fieldmap/DrawEcal_Likelihood_Sum_RejectionCurve_AuAuSummary.root");
+  assert(f_1d -> IsOpen());
+
+  TCanvas *c1 = new TCanvas("RejectionCurve_AuAuSummary_Compare",
+      "RejectionCurve_AuAuSummary_Compare", 900, 900);
+  c1->Divide(1, 1);
+  int idx = 1;
+  TPad * p;
+
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+//  p->SetLogy();
+  p->SetGridx(0);
+  p->SetGridy(0);
+
+  p->DrawFrame(min_eff, .0, 1, 1.1,
+      ";Electron Efficiency;h^{-} Rejection Ratio, (2x2 Ganging)/(Nominal)");
+  TLine * l = new TLine(min_eff, 1, 1, 1);
+  l->SetLineColor(kGray);
+  l->SetLineWidth(2);
+  l->Draw();
+
+  TLatex * text = new TLatex(0.6, 1.1 +0.03, label);
+  text->SetTextAlign(11);
+  text->SetTextSize(0.044);
+  text->SetTextFont(42);
+  text->Draw();
+
+  TLegend * leg1 = new TLegend(0.12, 0.15, 0.42, 0.4);
+  TLegend * leg2 = new TLegend(0.42, 0.15, 0.67, 0.4);
+
+  TGraph *ge = new TGraphErrors();
+  ge->SetLineWidth(3);
+  leg1->AddEntry(ge, "0.0 < #eta < 0.1", "lx");
+  TGraph *ge = new TGraphErrors();
+  ge->SetLineWidth(3);
+  ge->SetLineStyle(kDashed);
+  leg1->AddEntry(ge, "0.9 < #eta < 1.0", "lx");
+
+  TString kine_config = "eta0";
+
+  TString name = ("MergeExtractRejCurve_" + kine_config + "_8GeV");
+  TGraph * ge = rejection_ratio(f_2d, f_1d, name);
+
+  ge->Draw("lx");
+  leg2->AddEntry(ge, "8 GeV/c", "lx");
+
+  TString name = ("MergeExtractRejCurve_" + kine_config + "_4GeV");
+  TGraph * ge = rejection_ratio(f_2d, f_1d, name);
+  ge->Draw("lx");
+  leg2->AddEntry(ge, "4 GeV/c", "lx");
+
+  TString name = ("MergeExtractRejCurve_" + kine_config + "_2GeV");
+  TGraph * ge = rejection_ratio(f_2d, f_1d, name);
+  ge->Draw("lx");
+  leg2->AddEntry(ge, "2 GeV/c", "lx");
+
+  TString kine_config = "eta0.90";
+
+  TString name = ("MergeExtractRejCurve_" + kine_config + "_8GeV");
+  TGraph * ge = rejection_ratio(f_2d, f_1d, name);
+  ge->Draw("lx");
 
   TString name = ("MergeExtractRejCurve_" + kine_config + "_4GeV");
   TGraph * ge = rejection_ratio(f_2d, f_1d, name);
