@@ -76,15 +76,15 @@ DrawEcal_Likelihood_Sum(
 
 //  RejectionCurve_AuAuSummary("../../sPHENIX_work/production_analysis_cemc2x2/embedding/emcstudies/pidstudies/spacal2d/fieldmap/",
 //      "2-D Proj. SPACAL, e^{-} VS h^{-} in Au+Au 10%C");
-//  RejectionCurve_AuAuSummaryPos("../../sPHENIX_work/production_analysis_cemc2x2/embedding/emcstudies/pidstudies/spacal2d/fieldmap/",
-//      "2-D Proj. SPACAL, e^{+} VS h^{+} in Au+Au 10%C");
+  RejectionCurve_AuAuSummaryPos("../../sPHENIX_work/production_analysis_cemc2x2/embedding/emcstudies/pidstudies/spacal2d/fieldmap/",
+      "2-D Proj. SPACAL, e^{+} VS h^{+} in Au+Au 10%C");
 //    RejectionCurve_AuAuSummary("../../sPHENIX_work/production_analysis_cemc2x2/embedding/emcstudies/pidstudies/spacal1d/fieldmap/",
 //        "1-D Proj. SPACAL, e^{-} VS h^{-} in Au+Au 10%C");
 //    RejectionCurve_AuAuSummaryPos("../../sPHENIX_work/production_analysis_cemc2x2/embedding/emcstudies/pidstudies/spacal1d/fieldmap/",
 //        "1-D Proj. SPACAL, e^{+} VS h^{+} in Au+Au 10%C");
 
   //  RejectionCurve_AuAuSummary_Compare();
-    RejectionCurve_AuAuSummary_Compare2();
+//    RejectionCurve_AuAuSummary_Compare2();
 
 }
 
