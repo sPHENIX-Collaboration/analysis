@@ -24,6 +24,7 @@
 #include <TH2F.h>
 #include <TVector3.h>
 #include <TLorentzVector.h>
+#include <TAxis.h>
 
 #include <exception>
 #include <stdexcept>
@@ -55,44 +56,15 @@ int
 SoftLeptonTaggingTruth::InitRun(PHCompositeNode *topNode)
 {
 
-  if (flag(kProcessTruthMatching) || flag(kProcessRecoSpectrum))
-    {
-      for (set<string>::const_iterator it_reco_jets = _reco_jets.begin();
-          it_reco_jets != _reco_jets.end(); ++it_reco_jets)
-        {
-          const string & reco_jet = *it_reco_jets;
-
-          jetevalstacks_map::iterator it_jetevalstack = _jetevalstacks.find(
-              reco_jet);
-
-          if (it_jetevalstack == _jetevalstacks.end())
-            {
-              _jetevalstacks[reco_jet] = shared_ptr < JetEvalStack
-                  > (new JetEvalStack(topNode, reco_jet, _truth_jet));
-              assert(_jetevalstacks[reco_jet]);
-              _jetevalstacks[reco_jet]->set_strict(true);
-              _jetevalstacks[reco_jet]->set_verbosity(verbosity + 1);
-            }
-          else
-            {
-              assert(it_jetevalstack->second);
-            }
-        }
-    }
-
   if (flag(kProcessTruthSpectrum))
     {
-      for (set<string>::const_iterator it_reco_jets = _reco_jets.begin();
-          it_reco_jets != _reco_jets.end(); ++it_reco_jets)
-        {
-          if (not _jettrutheval)
-            _jettrutheval = shared_ptr < JetTruthEval
-                > (new JetTruthEval(topNode, _truth_jet));
+      if (not _jettrutheval)
+        _jettrutheval = shared_ptr < JetTruthEval
+            > (new JetTruthEval(topNode, _truth_jet));
 
-          assert(_jettrutheval);
-          _jettrutheval->set_strict(true);
-          _jettrutheval->set_verbosity(verbosity + 1);
-        }
+      assert(_jettrutheval);
+      _jettrutheval->set_strict(true);
+      _jettrutheval->set_verbosity(verbosity + 1);
     }
 
   return Fun4AllReturnCodes::EVENT_OK;
@@ -115,35 +87,9 @@ SoftLeptonTaggingTruth::Init(PHCompositeNode *topNode)
   if (flag(kProcessTruthSpectrum))
     {
       if (verbosity >= 1)
-        cout << "SoftLeptonTaggingTruth::Init - Process TruthSpectrum " << _truth_jet
-            << endl;
+        cout << "SoftLeptonTaggingTruth::Init - Process TruthSpectrum "
+            << _truth_jet << endl;
       Init_Spectrum(topNode, _truth_jet);
-    }
-
-  if (flag(kProcessRecoSpectrum))
-    {
-      for (set<string>::const_iterator it_reco_jets = _reco_jets.begin();
-          it_reco_jets != _reco_jets.end(); ++it_reco_jets)
-        {
-          const string & reco_jet = *it_reco_jets;
-          if (verbosity >= 1)
-            cout << "SoftLeptonTaggingTruth::Init - Process Reco jet spectrum "
-                << reco_jet << endl;
-          Init_Spectrum(topNode, reco_jet);
-        }
-    }
-
-  if (flag(kProcessTruthMatching))
-    {
-      for (set<string>::const_iterator it_reco_jets = _reco_jets.begin();
-          it_reco_jets != _reco_jets.end(); ++it_reco_jets)
-        {
-          const string & reco_jet = *it_reco_jets;
-          if (verbosity >= 1)
-            cout << "SoftLeptonTaggingTruth::Init - Process Reco jet spectrum "
-                << reco_jet << endl;
-          Init_TruthMatching(topNode, reco_jet);
-        }
     }
 
   return Fun4AllReturnCodes::EVENT_OK;
@@ -173,34 +119,6 @@ SoftLeptonTaggingTruth::process_event(PHCompositeNode *topNode)
       process_Spectrum(topNode, _truth_jet, false);
     }
 
-  if (flag(kProcessRecoSpectrum))
-    {
-      for (set<string>::const_iterator it_reco_jets = _reco_jets.begin();
-          it_reco_jets != _reco_jets.end(); ++it_reco_jets)
-        {
-          const string & reco_jet = *it_reco_jets;
-          if (verbosity >= 1)
-            cout
-                << "SoftLeptonTaggingTruth::process_event - Process Reco jet spectrum "
-                << reco_jet << endl;
-          process_Spectrum(topNode, reco_jet, true);
-        }
-    }
-
-  if (flag(kProcessTruthMatching))
-    {
-      for (set<string>::const_iterator it_reco_jets = _reco_jets.begin();
-          it_reco_jets != _reco_jets.end(); ++it_reco_jets)
-        {
-          const string & reco_jet = *it_reco_jets;
-          if (verbosity >= 1)
-            cout
-                << "SoftLeptonTaggingTruth::process_event - Process Reco jet spectrum "
-                << reco_jet << endl;
-          process_TruthMatching(topNode, reco_jet);
-        }
-    }
-
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
@@ -210,7 +128,8 @@ SoftLeptonTaggingTruth::set_eta_range(double low, double high)
 {
   if (low > high)
     swap(low, high);
-  assert(low < high); // eliminate zero range
+  assert(low < high);
+  // eliminate zero range
 
   eta_range.first = low;
   eta_range.second = high;
@@ -540,341 +459,47 @@ SoftLeptonTaggingTruth::process_Spectrum(PHCompositeNode *topNode,
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
-int
-SoftLeptonTaggingTruth::Init_TruthMatching(PHCompositeNode *topNode,
-    const std::string & reco_jet_name)
+//! Get a pointer to the default hist manager for QA modules
+Fun4AllHistoManager *
+SoftLeptonTaggingTruth::getHistoManager()
 {
-  Fun4AllHistoManager *hm = getHistoManager();
+
+  Fun4AllServer *se = Fun4AllServer::instance();
+  Fun4AllHistoManager *hm = se->getHistoManager("histSoftLeptonTaggingTruth");
+
+  if (not hm)
+    {
+//        cout
+//            << "QAHistManagerDef::get_HistoManager - Making Fun4AllHistoManager EMCalAna_HISTOS"
+//            << endl;
+      hm = new Fun4AllHistoManager("histSoftLeptonTaggingTruth");
+      se->registerHistoManager(hm);
+    }
+
   assert(hm);
 
-  TH2F * h = new TH2F(
-      TString(get_histo_prefix(_truth_jet, reco_jet_name))
-          + "Matching_Count_Truth_Et", //
-      TString(reco_jet_name) + " Matching Count, " + get_eta_range_str()
-          + ";E_{T, Truth} (GeV)", 20, 0, 100, 3, 0.5, 3.5);
-  h->GetYaxis()->SetBinLabel(1, "Total");
-  h->GetYaxis()->SetBinLabel(2, "Matched");
-  h->GetYaxis()->SetBinLabel(3, "Unique Matched");
-  hm->registerHisto(h);
-
-  h = new TH2F(
-      //
-      TString(get_histo_prefix(_truth_jet, reco_jet_name))
-          + "Matching_Count_Reco_Et", //
-      TString(reco_jet_name) + " Matching Count, " + get_eta_range_str()
-          + ";E_{T, Reco} (GeV)", 20, 0, 100, 3, 0.5, 3.5);
-  h->GetYaxis()->SetBinLabel(1, "Total");
-  h->GetYaxis()->SetBinLabel(2, "Matched");
-  h->GetYaxis()->SetBinLabel(3, "Unique Matched");
-  hm->registerHisto(h);
-
-  h = new TH2F(
-      TString(get_histo_prefix(_truth_jet, reco_jet_name)) + "Matching_dEt", //
-      TString(reco_jet_name) + " E_{T} difference, " + get_eta_range_str()
-          + ";E_{T, Truth} (GeV);E_{T, Reco} / E_{T, Truth}", 20, 0, 100, 100,
-      0, 2);
-  hm->registerHisto(h);
-
-  h = new TH2F(
-      TString(get_histo_prefix(_truth_jet, reco_jet_name)) + "Matching_dE", //
-      TString(reco_jet_name) + " Jet Energy Difference, " + get_eta_range_str()
-          + ";E_{Truth} (GeV);E_{Reco} / E_{Truth}", 20, 0, 100, 100, 0, 2);
-  hm->registerHisto(h);
-
-  h = new TH2F(
-      TString(get_histo_prefix(_truth_jet, reco_jet_name)) + "Matching_dEta", //
-      TString(reco_jet_name) + " #eta difference, " + get_eta_range_str()
-          + ";E_{T, Truth} (GeV);#eta_{Reco} - #eta_{Truth}", 20, 0, 100, 200,
-      -.1, .1);
-  hm->registerHisto(h);
-
-  h = new TH2F(
-      TString(get_histo_prefix(_truth_jet, reco_jet_name)) + "Matching_dPhi", //
-      TString(reco_jet_name) + " #phi difference, " + get_eta_range_str()
-          + ";E_{T, Truth} (GeV);#phi_{Reco} - #phi_{Truth} (rad)", 20, 0, 100,
-      200, -.1, .1);
-  hm->registerHisto(h);
-
-  return Fun4AllReturnCodes::EVENT_OK;
+  return hm;
 }
 
-int
-SoftLeptonTaggingTruth::process_TruthMatching(PHCompositeNode *topNode,
-    const std::string & reco_jet_name)
+//! utility function to
+void
+SoftLeptonTaggingTruth::useLogBins(TAxis * axis)
 {
-  assert(_jet_match_dPhi > 0);
-  assert(_jet_match_dEta > 0);
-  assert(_jet_match_dE_Ratio > 0);
+  assert(axis);
+  assert(axis->GetXmin()>0);
+  assert( axis->GetXmax()>0);
 
-  Fun4AllHistoManager *hm = getHistoManager();
-  assert(hm);
+  const int bins = axis->GetNbins();
 
-  TH2F * Matching_Count_Truth_Et = dynamic_cast<TH2F*>(hm->getHisto(
-      (get_histo_prefix(_truth_jet, reco_jet_name)) + "Matching_Count_Truth_Et" //
-          ));
-  assert(Matching_Count_Truth_Et);
-  TH2F * Matching_Count_Reco_Et = dynamic_cast<TH2F*>(hm->getHisto(
-      (get_histo_prefix(_truth_jet, reco_jet_name)) + "Matching_Count_Reco_Et" //
-          ));
-  assert(Matching_Count_Reco_Et);
-  TH2F * Matching_dEt = dynamic_cast<TH2F*>(hm->getHisto(
-      (get_histo_prefix(_truth_jet, reco_jet_name)) + "Matching_dEt" //
-          ));
-  assert(Matching_dEt);
-  TH2F * Matching_dE = dynamic_cast<TH2F*>(hm->getHisto(
-      (get_histo_prefix(_truth_jet, reco_jet_name)) + "Matching_dE" //
-          ));
-  assert(Matching_dE);
-  TH2F * Matching_dEta = dynamic_cast<TH2F*>(hm->getHisto(
-      (get_histo_prefix(_truth_jet, reco_jet_name)) + "Matching_dEta" //
-          ));
-  assert(Matching_dEta);
-  TH2F * Matching_dPhi = dynamic_cast<TH2F*>(hm->getHisto(
-      (get_histo_prefix(_truth_jet, reco_jet_name)) + "Matching_dPhi" //
-          ));
-  assert(Matching_dPhi);
+  Axis_t from = log10(axis->GetXmin());
+  Axis_t to = log10(axis->GetXmax());
+  Axis_t width = (to - from) / bins;
+  vector<Axis_t> new_bins(bins + 1);
 
-  jetevalstacks_map::iterator it_stack = _jetevalstacks.find(reco_jet_name);
-  assert(it_stack != _jetevalstacks.end());
-  shared_ptr<JetEvalStack> eval_stack = it_stack->second;
-  assert(eval_stack);
-  JetRecoEval* recoeval = eval_stack->get_reco_eval();
-  assert(recoeval);
-
-  // iterate over truth jets
-  JetMap* truthjets = findNode::getClass<JetMap>(topNode, _truth_jet);
-  if (!truthjets)
+  for (int i = 0; i <= bins; i++)
     {
-      cout
-          << "SoftLeptonTaggingTruth::process_TruthMatching - Error can not find DST JetMap node "
-          << _truth_jet << endl;
-      exit(-1);
+      new_bins[i] = TMath::Power(10, from + i * width);
     }
+  axis->Set(bins, new_bins.data());
 
-  // search for leading truth
-  Jet* truthjet = NULL;
-  double max_et = 0;
-  for (JetMap::Iter iter = truthjets->begin(); iter != truthjets->end(); ++iter)
-    {
-      Jet* jet = iter->second;
-      assert(jet);
-
-      if (not jet_acceptance_cut(jet))
-        continue;
-
-      if (jet->get_et() > max_et)
-        {
-          truthjet = jet;
-          max_et = jet->get_et();
-        }
-
-    }
-
-  // match leading truth
-  if (truthjet)
-    {
-      if (verbosity > 1)
-        {
-          cout << "SoftLeptonTaggingTruth::process_TruthMatching - " << _truth_jet
-              << " process truth jet ";
-          truthjet->identify();
-        }
-
-      Matching_Count_Truth_Et->Fill(truthjet->get_et(), "Total", 1);
-
-        { // inclusive best energy match
-
-          const Jet* recojet = recoeval->best_jet_from(truthjet);
-          if (verbosity > 1)
-            {
-              cout << "SoftLeptonTaggingTruth::process_TruthMatching - " << _truth_jet
-                  << " inclusively matched with best reco jet: ";
-              recojet->identify();
-            }
-
-          if (recojet)
-            {
-              const double dPhi = recojet->get_phi() - truthjet->get_phi();
-              Matching_dPhi->Fill(truthjet->get_et(), dPhi);
-
-              if (fabs(dPhi) < _jet_match_dPhi)
-                {
-
-                  const double dEta = recojet->get_eta() - truthjet->get_eta();
-                  Matching_dEta->Fill(truthjet->get_et(), dEta);
-
-                  if (fabs(dEta) < _jet_match_dEta)
-                    {
-
-                      const double Et_r = recojet->get_et()
-                          / (truthjet->get_et() + 1e-9);
-                      const double E_r = recojet->get_e()
-                          / (truthjet->get_e() + 1e-9);
-                      Matching_dEt->Fill(truthjet->get_et(), Et_r);
-                      Matching_dE->Fill(truthjet->get_et(), E_r);
-
-                      if (fabs(E_r - 1) < _jet_match_dE_Ratio)
-                        {
-                          // matched in eta, phi and energy
-
-                          Matching_Count_Truth_Et->Fill(truthjet->get_et(),
-                              "Matched", 1);
-                        }
-
-                    } //  if (fabs(dEta) < 0.1)
-
-                } // if (fabs(dPhi) < 0.1)
-
-            } //       if (recojet)
-        } // inclusive best energy match
-        { // unique match
-
-          const Jet* recojet = recoeval->unique_reco_jet_from_truth(truthjet);
-          if (recojet)
-            {
-
-              if (verbosity > 1)
-                {
-                  cout << "SoftLeptonTaggingTruth::process_TruthMatching - " << _truth_jet
-                      << " uniquely matched with reco jet: ";
-                  recojet->identify();
-                }
-
-
-              const double dPhi = recojet->get_phi() - truthjet->get_phi();
-
-              if (fabs(dPhi) < _jet_match_dPhi)
-                {
-
-                  const double dEta = recojet->get_eta() - truthjet->get_eta();
-
-                  if (fabs(dEta) < _jet_match_dEta)
-                    {
-
-                      const double E_r = recojet->get_e()
-                          / (truthjet->get_e() + 1e-9);
-                      if (fabs(E_r - 1) < _jet_match_dE_Ratio)
-                        {
-                          // matched in eta, phi and energy
-
-                          Matching_Count_Truth_Et->Fill(truthjet->get_et(),
-                              "Unique Matched", 1);
-                        }
-
-                    } //  if (fabs(dEta) < 0.1)
-
-                } // if (fabs(dPhi) < 0.1)
-
-            } //       if (recojet)
-        } // unique match
-
-    } //  if (truthjet)
-
-// next for reco jets
-  JetMap* recojets = findNode::getClass<JetMap>(topNode, reco_jet_name);
-  if (!recojets)
-    {
-      cout
-          << "SoftLeptonTaggingTruth::process_TruthMatching - Error can not find DST JetMap node "
-          << reco_jet_name << endl;
-      exit(-1);
-    }
-
-  // search for leading reco jet
-  Jet* recojet = NULL;
-  max_et = 0;
-  for (JetMap::Iter iter = recojets->begin(); iter != recojets->end(); ++iter)
-    {
-      Jet* jet = iter->second;
-      assert(jet);
-
-      if (not jet_acceptance_cut(jet))
-        continue;
-
-      if (jet->get_et() > max_et)
-        {
-          recojet = jet;
-          max_et = jet->get_et();
-        }
-
-    }
-
-  // match leading reco jet
-  if (recojet)
-    {
-      if (verbosity > 1)
-        {
-          cout << "SoftLeptonTaggingTruth::process_TruthMatching - " << reco_jet_name
-              << " process reco jet ";
-          recojet->identify();
-        }
-
-      Matching_Count_Reco_Et->Fill(recojet->get_et(), "Total", 1);
-
-        { // inclusive best energy match
-          Jet* truthjet = recoeval->max_truth_jet_by_energy(recojet);
-          if (truthjet)
-            {
-
-              const double dPhi = recojet->get_phi() - truthjet->get_phi();
-              if (fabs(dPhi) < _jet_match_dPhi)
-                {
-
-                  const double dEta = recojet->get_eta() - truthjet->get_eta();
-                  if (fabs(dEta) < _jet_match_dEta)
-                    {
-
-                      const double E_r = recojet->get_e()
-                          / (truthjet->get_e() + 1e-9);
-
-                      if (fabs(E_r - 1) < _jet_match_dE_Ratio)
-                        {
-                          // matched in eta, phi and energy
-
-                          Matching_Count_Reco_Et->Fill(recojet->get_et(),
-                              "Unique Matched", 1);
-                        }
-
-                    } //  if (fabs(dEta) < 0.1)
-
-                } // if (fabs(dPhi) < 0.1)
-
-            } //      if (truthjet)
-        } // inclusive best energy match
-
-        { // unique match
-          Jet* truthjet = recoeval->unique_truth_jet_from_reco(recojet);
-          if (truthjet)
-            {
-
-              const double dPhi = recojet->get_phi() - truthjet->get_phi();
-              if (fabs(dPhi) < _jet_match_dPhi)
-                {
-
-                  const double dEta = recojet->get_eta() - truthjet->get_eta();
-                  if (fabs(dEta) < _jet_match_dEta)
-                    {
-
-                      const double E_r = recojet->get_e()
-                          / (truthjet->get_e() + 1e-9);
-
-                      if (fabs(E_r - 1) < _jet_match_dE_Ratio)
-                        {
-                          // matched in eta, phi and energy
-
-                          Matching_Count_Reco_Et->Fill(recojet->get_et(),
-                              "Matched", 1);
-                        }
-
-                    } //  if (fabs(dEta) < 0.1)
-
-                } // if (fabs(dPhi) < 0.1)
-
-            } //      if (truthjet)
-        } // unique match
-
-    } // if (recojet)
-
-  return Fun4AllReturnCodes::EVENT_OK;
 }
-

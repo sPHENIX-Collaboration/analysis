@@ -14,7 +14,6 @@
 #endif
 
 #include <TString.h>
-#include <TAxis.h>
 
 class PHCompositeNode;
 class Fun4AllHistoManager;
@@ -22,6 +21,7 @@ class TH1F;
 class JetEvalStack;
 class JetTruthEval;
 class Jet;
+class TAxis;
 
 /// \class SoftLeptonTaggingTruth
 class SoftLeptonTaggingTruth : public SubsysReco
@@ -34,15 +34,7 @@ public:
     //! spectrum of truth jets
     kProcessTruthSpectrum = 1 << 1,
 
-    //! spectrum of reconstructed jets
-    kProcessRecoSpectrum = 1 << 2,
-
-    //! comparison of reco jet VS truth
-    kProcessTruthMatching = 1 << 3,
-
-    //! default. Do everything
-    kDefaultFlag = kProcessTruthSpectrum | kProcessRecoSpectrum
-        | kProcessTruthMatching
+    kDefaultFlag = kProcessTruthSpectrum
   };
 
   SoftLeptonTaggingTruth(const std::string & truth_jet, enu_flags flags =
@@ -148,15 +140,10 @@ private:
 
   //! Get a pointer to the default hist manager for QA modules
   Fun4AllHistoManager *
-  getHistoManager()
-  {
-    return NULL;
-  }
+  getHistoManager();
 
   void
-  useLogBins(TAxis * axis)
-  {
-  }
+  useLogBins(TAxis * axis);
 
   int
   Init_Spectrum(PHCompositeNode *topNode, const std::string & jet_name);
@@ -164,12 +151,6 @@ private:
   process_Spectrum(PHCompositeNode *topNode, const std::string & jet_name,
       const bool is_reco_jet);
 
-  int
-  Init_TruthMatching(PHCompositeNode *topNode,
-      const std::string & reco_jet_name);
-  int
-  process_TruthMatching(PHCompositeNode *topNode,
-      const std::string & reco_jet_name);
 
   //! common prefix for QA histograms
   std::string
