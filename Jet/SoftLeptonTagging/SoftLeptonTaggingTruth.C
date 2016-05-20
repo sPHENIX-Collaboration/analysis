@@ -25,6 +25,8 @@
 #include <TVector3.h>
 #include <TLorentzVector.h>
 #include <TAxis.h>
+#include <TLine.h>
+#include <TDatabasePDG.h>
 
 #include <exception>
 #include <stdexcept>
@@ -41,9 +43,9 @@ SoftLeptonTaggingTruth::SoftLeptonTaggingTruth(const std::string & truth_jet,
     enu_flags flags) :
     SubsysReco("SoftLeptonTaggingTruth_" + truth_jet), //
     _jetevalstacks(), //
-    _truth_jet(truth_jet), _reco_jets(), _flags(flags), //
+    _truth_jet(truth_jet), _reco_jets(), _truth_container(NULL), _flags(flags), //
     eta_range(-1, 1), //
-    _jet_match_dEta(.1), _jet_match_dPhi(.1), _jet_match_dE_Ratio(.5)
+    _jet_match_dR(.7), _jet_match_dca(.2), _jet_match_E_Ratio(.0)
 {
 
 }
@@ -55,6 +57,14 @@ SoftLeptonTaggingTruth::~SoftLeptonTaggingTruth()
 int
 SoftLeptonTaggingTruth::InitRun(PHCompositeNode *topNode)
 {
+  _truth_container = findNode::getClass<PHG4TruthInfoContainer>(topNode,
+      "G4TruthInfo");
+  if (!_truth_container)
+    {
+      cout << "SoftLeptonTaggingTruth::InitRun - Fatal Error - "
+          << "unable to find DST node " << "G4TruthInfo" << endl;
+      assert(_truth_container);
+    }
 
   if (flag(kProcessTruthSpectrum))
     {
@@ -275,6 +285,57 @@ SoftLeptonTaggingTruth::Init_Spectrum(PHCompositeNode *topNode,
           TString(jet_name) + " inclusive jet #phi, " + get_eta_range_str()
               + ";#phi;Jet energy density", 50, -M_PI, M_PI));
 
+  TH2F * h2 = NULL;
+
+  h2 = new TH2F(
+      //
+      TString(get_histo_prefix(jet_name)) + "Leading_Trk_PtRel", //
+      TString(jet_name) + " leading jet, " + get_eta_range_str()
+          + ";j_{T} (GeV/c);Particle Selection", 100, 0, 10, 4, 0.5, 4.5);
+  i = 1;
+  h2->GetYaxis()->SetBinLabel(i++, "Electron");
+  h2->GetYaxis()->SetBinLabel(i++, "Muon");
+  h2->GetYaxis()->SetBinLabel(i++, "Other Charged");
+  h2->GetYaxis()->SetBinLabel(i++, "Other Neutral");
+  hm->registerHisto(h2);
+
+  h2 = new TH2F(
+      //
+      TString(get_histo_prefix(jet_name)) + "Leading_Trk_DCA2D", //
+      TString(jet_name) + " leading jet, " + get_eta_range_str()
+          + ";DCA_{2D} (cm);Particle Selection", 200, -.2, .2, 4, 0.5, 4.5);
+  i = 1;
+  h2->GetYaxis()->SetBinLabel(i++, "Electron");
+  h2->GetYaxis()->SetBinLabel(i++, "Muon");
+  h2->GetYaxis()->SetBinLabel(i++, "Other Charged");
+  h2->GetYaxis()->SetBinLabel(i++, "Other Neutral");
+  hm->registerHisto(h2);
+
+  h2 = new TH2F(
+      //
+      TString(get_histo_prefix(jet_name)) + "Leading_Trk_PoverETotal", //
+      TString(jet_name) + " leading jet, " + get_eta_range_str()
+          + ";|P_{part.}|c/E_{Jet};Particle Selection", 120, 0, 1.2, 4, 0.5,
+      4.5);
+  i = 1;
+  h2->GetYaxis()->SetBinLabel(i++, "Electron");
+  h2->GetYaxis()->SetBinLabel(i++, "Muon");
+  h2->GetYaxis()->SetBinLabel(i++, "Other Charged");
+  h2->GetYaxis()->SetBinLabel(i++, "Other Neutral");
+  hm->registerHisto(h2);
+
+  h2 = new TH2F(
+      //
+      TString(get_histo_prefix(jet_name)) + "Leading_Trk_dR", //
+      TString(jet_name) + " leading jet, " + get_eta_range_str()
+          + ";#DeltaR;Particle Selection", 100, 0, 1, 4, 0.5, 4.5);
+  i = 1;
+  h2->GetYaxis()->SetBinLabel(i++, "Electron");
+  h2->GetYaxis()->SetBinLabel(i++, "Muon");
+  h2->GetYaxis()->SetBinLabel(i++, "Other Charged");
+  h2->GetYaxis()->SetBinLabel(i++, "Other Neutral");
+  hm->registerHisto(h2);
+
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
@@ -454,7 +515,97 @@ SoftLeptonTaggingTruth::process_Spectrum(PHCompositeNode *topNode,
           lleak->Fill(bh_e / leading_jet->get_e());
 
         }
-    }
+
+      TH2F * lptrel = dynamic_cast<TH2F*>(hm->getHisto(
+          (get_histo_prefix(jet_name)) + "Leading_Trk_PtRel" //
+              ));
+      assert(lptrel);
+      TH2F * ldca2d = dynamic_cast<TH2F*>(hm->getHisto(
+          (get_histo_prefix(jet_name)) + "Leading_Trk_DCA2D" //
+              ));
+      assert(ldca2d);
+      TH2F * lpoe = dynamic_cast<TH2F*>(hm->getHisto(
+          (get_histo_prefix(jet_name)) + "Leading_Trk_PoverETotal" //
+              ));
+      assert(lpoe);
+      TH2F * ldr = dynamic_cast<TH2F*>(hm->getHisto(
+          (get_histo_prefix(jet_name)) + "Leading_Trk_dR" //
+              ));
+      assert(ldr);
+
+      // jet vector
+      TVector3 j_v(leading_jet->get_px(), leading_jet->get_py(),
+          leading_jet->get_pz());
+
+      PHG4TruthInfoContainer::ConstRange primary_range =
+          _truth_container->GetPrimaryParticleRange();
+      for (PHG4TruthInfoContainer::ConstIterator particle_iter =
+          primary_range.first; particle_iter != primary_range.second;
+          ++particle_iter)
+        {
+          PHG4Particle *particle = particle_iter->second;
+          assert(particle);
+          const PHG4VtxPoint* primary_vtx = //
+              _truth_container->GetPrimaryVtx(particle->get_vtx_id());
+          assert(primary_vtx);
+
+          TVector3 p_v(particle->get_px(), particle->get_py(),
+              particle->get_pz());
+
+          TVector3 v_v(primary_vtx->get_x(), primary_vtx->get_y(),
+              primary_vtx->get_z());
+
+          const double dR = sqrt(
+              (p_v.Eta() - j_v.Eta()) * (p_v.Eta() - j_v.Eta())
+                  + (p_v.Phi() - j_v.Phi()) * (p_v.Phi() - j_v.Phi()));
+          const double E_Ratio = p_v.Mag() / leading_jet->get_e();
+
+          const double charge3 = TDatabasePDG::Instance()->GetParticle(
+              particle->get_pid())->Charge();
+          TVector3 dca_v(cos(p_v.Phi() + TMath::Pi() / 2),
+              sin(p_v.Phi() + TMath::Pi() / 2), 0);
+          const double dca2d = v_v.Dot(dca_v) * copysign(1, charge3);
+
+          if (dR > _jet_match_dR)
+            continue;
+          if (abs(dca2d) > _jet_match_dca)
+            continue;
+          if (E_Ratio < _jet_match_E_Ratio)
+            continue;
+
+
+          int histo_pid = 0;
+          if (abs(particle->get_pid())
+              == TDatabasePDG::Instance()->GetParticle("e-")->PdgCode())
+            histo_pid = ldr->GetYaxis()->FindBin("Electron");
+          else if (abs(particle->get_pid())
+              == TDatabasePDG::Instance()->GetParticle("mu-")->PdgCode())
+            histo_pid = ldr->GetYaxis()->FindBin("Muon");
+          else if (charge3 != 0)
+            histo_pid = ldr->GetYaxis()->FindBin("Other Charged");
+          else
+            histo_pid = ldr->GetYaxis()->FindBin("Other Neutral");
+          assert(histo_pid);
+
+          if (verbosity)
+            {
+              cout
+                  << "SoftLeptonTaggingTruth::process_Spectrum - particle hist ID "
+                  << histo_pid << ", charge x 3 = " << charge3 << ", dR = "
+                  << dR << ", E_Ratio = " << E_Ratio << "/"
+                  << _jet_match_E_Ratio << " for ";
+              particle->identify();
+            }
+
+          const double pT_rel = p_v.Dot(j_v) / j_v.Mag();
+
+          ldr->Fill(dR, histo_pid);
+          lpoe->Fill(E_Ratio, histo_pid);
+          lptrel->Fill(pT_rel, histo_pid);
+          ldca2d->Fill(dca2d, histo_pid);
+        } //       for (PHG4TruthInfoContainer::ConstIterator particle_iter =
+
+    } //   if (leading_jet)
 
   return Fun4AllReturnCodes::EVENT_OK;
 }

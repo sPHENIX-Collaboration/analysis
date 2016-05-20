@@ -22,6 +22,7 @@ class JetEvalStack;
 class JetTruthEval;
 class Jet;
 class TAxis;
+class PHG4TruthInfoContainer;
 
 /// \class SoftLeptonTaggingTruth
 class SoftLeptonTaggingTruth : public SubsysReco
@@ -83,44 +84,44 @@ public:
 
   //! Energy ratio difference cut from 1 for matched jets
   double
-  get_jet_match_dE_Ratio() const
+  get_jet_match_E_Ratio() const
   {
-    return _jet_match_dE_Ratio;
+    return _jet_match_E_Ratio;
   }
 
   //! Energy ratio difference cut from 1 for matched jets
   void
-  set_jet_match_dE_Ratio(double jetMatchDERatio)
+  set_jet_match_E_Ratio(double jetMatchDERatio)
   {
-    _jet_match_dE_Ratio = jetMatchDERatio;
+    _jet_match_E_Ratio = jetMatchDERatio;
   }
 
   //! Eta difference cut for matched jets
   double
-  get_jet_match_dEta() const
+  get_jet_match_dR() const
   {
-    return _jet_match_dEta;
+    return _jet_match_dR;
   }
 
   //! Eta difference cut for matched jets
   void
-  set_jet_match_dEta(double jetMatchDEta)
+  set_jet_match_dR(double jetMatchDEta)
   {
-    _jet_match_dEta = jetMatchDEta;
+    _jet_match_dR = jetMatchDEta;
   }
 
   //! Phi difference cut for matched jets
   double
-  get_jet_match_dPhi() const
+  get_jet_match_dca() const
   {
-    return _jet_match_dPhi;
+    return _jet_match_dca;
   }
 
   //! Phi difference cut for matched jets
   void
-  set_jet_match_dPhi(double jetMatchDPhi)
+  set_jet_match_dca(double jetMatchDPhi)
   {
-    _jet_match_dPhi = jetMatchDPhi;
+    _jet_match_dca = jetMatchDPhi;
   }
 
   //! set eta range
@@ -136,11 +137,11 @@ public:
   int
   End(PHCompositeNode *topNode);
 
-private:
-
   //! Get a pointer to the default hist manager for QA modules
-  Fun4AllHistoManager *
+  static Fun4AllHistoManager *
   getHistoManager();
+
+private:
 
   void
   useLogBins(TAxis * axis);
@@ -150,7 +151,6 @@ private:
   int
   process_Spectrum(PHCompositeNode *topNode, const std::string & jet_name,
       const bool is_reco_jet);
-
 
   //! common prefix for QA histograms
   std::string
@@ -170,6 +170,8 @@ private:
   //! list of reco jet
   std::set<std::string> _reco_jets;
 
+  PHG4TruthInfoContainer* _truth_container;
+
   uint32_t _flags;
 
   //! eta range
@@ -185,13 +187,13 @@ private:
   jet_acceptance_cut(const Jet * jet) const;
 
   //! Eta difference cut for matched jets
-  double _jet_match_dEta;
+  double _jet_match_dR;
 
   //! Phi difference cut for matched jets
-  double _jet_match_dPhi;
+  double _jet_match_dca;
 
   //! Energy ratio difference cut from 1 for matched jets
-  double _jet_match_dE_Ratio;
+  double _jet_match_E_Ratio;
 };
 
 #endif // __CALOEVALUATOR_H__
