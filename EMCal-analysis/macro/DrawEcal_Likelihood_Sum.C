@@ -1549,8 +1549,8 @@ RejectionCurve_AuAuSummary_Compare2()
               + "/spacal2d/fieldmap/DrawEcal_Likelihood_Sum_RejectionCurve_AuAuSummary.root");
   assert(f_1d -> IsOpen());
 
-  TCanvas *c1 = new TCanvas("RejectionCurve_AuAuSummary_Compare",
-      "RejectionCurve_AuAuSummary_Compare", 900, 900);
+  TCanvas *c1 = new TCanvas("RejectionCurve_AuAuSummary_Compare2",
+      "RejectionCurve_AuAuSummary_Compare2", 900, 900);
   c1->Divide(1, 1);
   int idx = 1;
   TPad * p;

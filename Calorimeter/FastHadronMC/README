@@ -1,0 +1,41 @@
+Sat 5/21/2016 12:07 PM
+sphenix-software-l-bounces@lists.bnl.gov; on behalf of; Gabor David <david@bnl.gov>
+
+[Sphenix-software-l] EMCal fast hadron simulation model
+
+		     I put the first shot on the fast hadron deposit simulator on github in my directory vorosful/emcal
+
+fasthadv4.C
+fasthadv4.h
+
+	The files are also available in
+
+/direct/phenix+u/david/fasthadmc
+
+	The plot c1.png shows how it works for 4, 8, 12 GeV hadrons with the current values of parameters.  The total energy deposit (and relative probabilities) are reasonably close to the full simulations shown in
+
+https://wiki.bnl.gov/sPHENIX/index.php/File:T-1044_SIM_DrawEMCalTower_LineShape_4.png
+https://wiki.bnl.gov/sPHENIX/index.php/File:T-1044_SIM_DrawEMCalTower_LineShape_8.png
+https://wiki.bnl.gov/sPHENIX/index.php/File:T-1044_SIM_DrawEMCalTower_LineShape_12.png
+
+	I tried to provide plenty of inline comments and explanations; it should be sufficient if you want to play with the parameters yourself.
+
+ 	While the code can use plenty more tuning, its advantage is that the components are physics-motivated.  It generates the minimum ionizing, hadronic and electromagnetic part of a "generic" hadron in 3 dimensions, and deposits  them into the "towers" of an (arbitrary) rectangular detector.  This can (and will) then serve as a starting point for a clustering algorithm.
+
+ 	For the moment I stopped tuning the parameters; once better calibrated data from identified hadrons are available - both total energy deposit AND individual showers to tune the shape!  - I'll continue.
+
+ 	Thanks,
+
+ 	Gabor
+
+--
+Gabor David  (david@bnl.gov)
+Brookhaven National Laboratory
+Physics Department, Bldg 510/c
+UPTON NY 11973
+Tel: (631)344-3016
+FAX: (631)344-3253
+_______________________________________________
+Sphenix-software-l mailing list
+Sphenix-software-l@lists.bnl.gov
+https://lists.bnl.gov/mailman/listinfo/sphenix-software-l
