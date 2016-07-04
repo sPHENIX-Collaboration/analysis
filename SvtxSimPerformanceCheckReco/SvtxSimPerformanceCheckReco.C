@@ -164,15 +164,15 @@ int SvtxSimPerformanceCheckReco::Init(PHCompositeNode *topNode) {
 
   _dx_vertex = new TH1D("dx_vertex",
 			"dx_vertex",
-			200,-0.03,0.03);
+			200,-0.01,0.01);
 
   _dy_vertex = new TH1D("dy_vertex",
 			"dy_vertex",
-			200,-0.03,0.03);
+			200,-0.01,0.01);
 
   _dz_vertex = new TH1D("dz_vertex",
 			"dz_vertex",
-			200,-0.03,0.03);
+			200,-0.01,0.01);
   
   _truept_quality_particles_recoWithin4Percent = new TH2D("truept_quality_particles_recoWithin4Percent",
 							  "truept_quality_particles_recoWithin4Percent",
