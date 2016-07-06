@@ -4,8 +4,6 @@ INCLUDES = \
   -I$(includedir) \
   -I$(OFFLINE_MAIN)/include/eigen3 \
   -I$(OFFLINE_MAIN)/include \
-  -I$(G4_MAIN)/include \
-  -I$(G4_MAIN)/include/Geant4 \
   -I`root-config --incdir`
 
 lib_LTLIBRARIES = \
@@ -19,12 +17,7 @@ libemcal_calib_la_LDFLAGS = \
 
 libemcal_calib_la_LIBADD = \
   -lfun4all \
-  -lphg4hit \
-  -lg4detectors_io \
-  -lg4hough_io \
-  -lg4hough \
   -lcemc_io \
-  -lg4jets_io \
   -lg4eval
 
 pkginclude_HEADERS = 
@@ -34,6 +27,7 @@ pkginclude_HEADERS =
 libemcal_calib_la_SOURCES = \
   EMCalCalib_TestBeam.C \
   EMCalCalib_TestBeam_Dict.C 
+ 
 
 # Rule for generating table CINT dictionaries.
 %_Dict.C: %.h %LinkDef.h
