@@ -46,9 +46,11 @@ using namespace std;
 PHG4HitKalmanFitter::PHG4HitKalmanFitter(const std::string &name) :
 		SubsysReco(name),
 		_truth_container(NULL), _trackmap_out(NULL), _fitter (NULL), _mag_field_file_name("/phenix/upgrades/decadal/fieldmaps/fsPHENIX.2d.root"),
-		 _mag_field_re_scaling_factor(1.), _reverse_mag_field(true), _fit_alg_name("KalmanFitterRefTrack"), _do_evt_display(false),
-		 _FGEM_phi_resolution(100E-4), //100um
-		 _FGEM_r_resolution(1.)
+		 _mag_field_re_scaling_factor(1.), _reverse_mag_field(false), _fit_alg_name("KalmanFitterRefTrack"), _do_evt_display(false),
+		 _FGEM_phi_resolution(50E-4), //100um
+		 _FGEM_r_resolution(1.),
+		 _pat_rec_hit_finding_eff(1.),
+		 _pat_rec_nosise_prob(0.)
 
 		 {
 
@@ -119,20 +121,21 @@ int PHG4HitKalmanFitter::process_event(PHCompositeNode *topNode) {
 		//! Create measurements
 		std::vector<PHGenFit::Measurement*> measurements;
 
-//		const bool use_vertex_in_fitting = true;
-//
-//		PHGenFit::Measurement* vtx_meas = NULL;
-//
-//		if (use_vertex_in_fitting) {
-//			vtx_meas = VertexMeasurement(
-//					TVector3(0, 0, 0), 0.0050, 0.0050);
-//			measurements.push_back(vtx_meas);
-//		}
+		const bool _use_vertex_in_fitting = true;
+
+		PHGenFit::Measurement* vtx_meas = NULL;
+
+		if (_use_vertex_in_fitting) {
+			vtx_meas = VertexMeasurement(
+					TVector3(0, 0, 0), 0.0050, 0.0050);
+			measurements.push_back(vtx_meas);
+		}
 
 		PseudoPatternRecognition(particle, measurements, seed_pos, seed_mom, seed_cov);
 
 		if (measurements.size() < 3) {
-			LogDebug("measurements.size() < 3");
+			if(verbosity >= 2)
+				LogWarning("measurements.size() < 3");
 			continue;
 		}
 
@@ -145,7 +148,7 @@ int PHG4HitKalmanFitter::process_event(PHCompositeNode *topNode) {
 		 * e-:	11
 		 * e+:	-11
 		 */
-		int pid = 13; //
+		int pid = 211; //
 		//SMART(genfit::AbsTrackRep) rep = NEW(genfit::RKTrackRep)(pid);
 		genfit::AbsTrackRep* rep = new genfit::RKTrackRep(pid);
 
@@ -300,9 +303,10 @@ int PHG4HitKalmanFitter::PseudoPatternRecognition(
 				LogDebug("No PHG4Hit Found!");
 				continue;
 			}
-			if (hit->get_trkid() == particle->get_track_id()) {
+			if (hit->get_trkid() == particle->get_track_id() || gRandom->Uniform(0,1) < _pat_rec_nosise_prob) {
 				PHGenFit::Measurement* meas = PHG4HitToMeasurementVerticalPlane(hit);
-				meas_out.push_back(meas);
+				if(gRandom->Uniform(0,1) <= _pat_rec_hit_finding_eff)
+					meas_out.push_back(meas);
 			}
 		}
 
@@ -365,7 +369,7 @@ SvtxTrack* PHG4HitKalmanFitter::MakeSvtxTrack(
 
 
 
-PHGenFit::PlanarMeasurement* PHG4HitKalmanFitter::PHG4HitToMeasurementVerticalPlane(PHG4Hit* g4hit) {
+PHGenFit::PlanarMeasurement* PHG4HitKalmanFitter::PHG4HitToMeasurementVerticalPlane(const PHG4Hit* g4hit) {
 
 	PHGenFit::PlanarMeasurement* meas = NULL;
 
@@ -400,6 +404,25 @@ PHGenFit::PlanarMeasurement* PHG4HitKalmanFitter::PHG4HitToMeasurementVerticalPl
 	return meas;
 }
 
+
+PHGenFit::PlanarMeasurement* PHG4HitKalmanFitter::VertexMeasurement(const TVector3 &vtx, const double dr,
+		const double dphi) {
+	PHGenFit::PlanarMeasurement* meas = NULL;
+
+	TVector3 u(1, 0, 0);
+	TVector3 v(0, 1, 0);
+
+	TVector3 pos = vtx;
+
+	double u_smear = gRandom->Gaus(0, dphi);
+	double v_smear = gRandom->Gaus(0, dr);
+	pos.SetX(vtx.X() + u_smear * u.X() + v_smear * v.X());
+	pos.SetY(vtx.Y() + u_smear * u.Y() + v_smear * v.Y());
+
+	meas = new PHGenFit::PlanarMeasurement(pos, u, v, dr, dphi);
+
+	return meas;
+}
 
 
 

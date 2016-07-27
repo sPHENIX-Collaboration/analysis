@@ -127,6 +127,29 @@ public:
 		_reverse_mag_field = reverseMagField;
 	}
 
+	double get_pat_rec_hit_finding_eff() const {
+		return _pat_rec_hit_finding_eff;
+	}
+
+	void set_pat_rec_hit_finding_eff(double patRecHitFindingEff) {
+		if(!(patRecHitFindingEff>=0&&patRecHitFindingEff<=1)) {
+			std::cout<<"ERROR: _pat_rec_hit_finding_eff out of range! \n";
+		}
+		_pat_rec_hit_finding_eff = patRecHitFindingEff;
+	}
+
+	double get_pat_rec_nosise_prob() const {
+		return _pat_rec_nosise_prob;
+	}
+
+	void set_pat_rec_nosise_prob(double patRecNosiseProb) {
+		if(!(patRecNosiseProb <= 1. && patRecNosiseProb >= 0)) {
+			std::cout<<"ERROR: _pat_rec_nosise_prob out of range! \n";
+			return;
+		}
+		_pat_rec_nosise_prob = patRecNosiseProb;
+	}
+
 private:
 
 	/*!
@@ -146,7 +169,10 @@ private:
 			std::vector<PHGenFit::Measurement*> & meas_out, TVector3& seed_pos,
 			TVector3& seed_mom, TMatrixDSym& seed_cov, const bool do_smearing = true);
 
-	PHGenFit::PlanarMeasurement* PHG4HitToMeasurementVerticalPlane(PHG4Hit* g4hit);
+	PHGenFit::PlanarMeasurement* PHG4HitToMeasurementVerticalPlane(const PHG4Hit* g4hit);
+
+	PHGenFit::PlanarMeasurement* VertexMeasurement(const TVector3 &vtx, const double dr,
+			const double dphi);
 
 	/*!
 	 * Make SvtxTrack from PHGenFit::Track
@@ -192,7 +218,14 @@ private:
 	 */
 
 	double _FGEM_phi_resolution;
+
 	double _FGEM_r_resolution;
+
+	//!
+	double _pat_rec_hit_finding_eff;
+
+	//!
+	double _pat_rec_nosise_prob;
 
 
 
