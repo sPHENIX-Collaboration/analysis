@@ -132,7 +132,7 @@ int PHG4HitKalmanFitter::process_event(PHCompositeNode *topNode) {
 		PseudoPatternRecognition(particle, measurements, seed_pos, seed_mom, seed_cov);
 
 		if (measurements.size() < 3) {
-			//LogDEBUG;
+			LogDebug("measurements.size() < 3");
 			continue;
 		}
 
@@ -293,9 +293,13 @@ int PHG4HitKalmanFitter::PseudoPatternRecognition(
 		}
 
 		for (PHG4HitContainer::ConstIterator itr =
-				_phg4hits[ilayer]->getHits(0).first;
-				itr != _phg4hits[ilayer]->getHits(0).second; ++itr) {
+				_phg4hits[ilayer]->getHits().first;
+				itr != _phg4hits[ilayer]->getHits().second; ++itr) {
 			PHG4Hit * hit = itr->second;
+			if(!hit) {
+				LogDebug("No PHG4Hit Found!");
+				continue;
+			}
 			if (hit->get_trkid() == particle->get_track_id()) {
 				PHGenFit::Measurement* meas = PHG4HitToMeasurementVerticalPlane(hit);
 				meas_out.push_back(meas);
