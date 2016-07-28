@@ -8,14 +8,16 @@
 #ifndef __PHG4HitKalmanFitter_H__
 #define __PHG4HitKalmanFitter_H__
 
-#include <fun4all/SubsysReco.h>
-#include <g4main/PHG4HitContainer.h>
-#include <GenFit/MeasuredStateOnPlane.h>
-#include <phgenfit/Measurement.h>
+#include <iostream>
 #include <string>
 #include <vector>
 
-#include "/afs/rhic.bnl.gov/x8664_sl6/opt/sphenix/core/root-5.34.34/include/TVector3.h"
+#include <fun4all/SubsysReco.h>
+
+#include <TVector3.h>
+
+#include <g4main/PHG4HitContainer.h>
+#include <phgenfit/Measurement.h>
 
 class PHG4Particle;
 namespace PHGenFit {

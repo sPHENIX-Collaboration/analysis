@@ -5,34 +5,35 @@
  *  \author		Haiwang Yu <yuhw@nmsu.edu>
  */
 
-#include "PHG4HitKalmanFitter.h"
+#include <cmath>
+#include <map>
 
 #include <fun4all/Fun4AllReturnCodes.h>
-#include <g4main/PHG4Hit.h>
-#include <g4main/PHG4HitContainer.h>
-#include <g4main/PHG4Particle.h>
-#include <g4main/PHG4TruthInfoContainer.h>
-#include <GenFit/MeasuredStateOnPlane.h>
 #include <GenFit/RKTrackRep.h>
 #include <phool/getClass.h>
 #include <phool/phool.h>
 #include <phool/PHCompositeNode.h>
 #include <phool/PHIODataNode.h>
 #include <phool/PHNodeIterator.h>
-#include <iostream>
-#include <map>
-#include <utility>
 
-#include "/afs/rhic.bnl.gov/x8664_sl6/opt/phenix/root-5.30.03-patched/include/TRandom.h"
-#include "/afs/rhic.bnl.gov/x8664_sl6/opt/sphenix/core/root-5.34.34/include/TMath.h"
-#include "/afs/rhic.bnl.gov/x8664_sl6/opt/sphenix/core/root-5.34.34/include/TString.h"
-#include "/afs/rhic.bnl.gov/x8664_sl6/opt/sphenix/core/root-5.34.34/include/TVector3.h"
-#include "../../../../GitHub/HaiwangYu/install/include/g4hough/SvtxTrack_v1.h"
-#include "../../../../GitHub/HaiwangYu/install/include/g4hough/SvtxTrackMap_v1.h"
-#include "../../../../GitHub/HaiwangYu/install/include/phgenfit/Fitter.h"
-#include "../../../../GitHub/HaiwangYu/install/include/phgenfit/PlanarMeasurement.h"
-#include "../../../../GitHub/HaiwangYu/install/include/phgenfit/Track.h"
-#include "../../../../GitHub/HaiwangYu/install/include/phgeom/PHGeomUtility.h"
+#include <GenFit/StateOnPlane.h>
+
+#include <TRandom.h>
+#include <TString.h>
+#include <TMath.h>
+
+#include <g4hough/SvtxTrack_v1.h>
+#include <g4hough/SvtxTrackMap.h>
+#include <g4hough/SvtxTrackMap_v1.h>
+#include <g4main/PHG4Hit.h>
+#include <g4main/PHG4Particle.h>
+#include <g4main/PHG4TruthInfoContainer.h>
+#include <phgenfit/Fitter.h>
+#include <phgenfit/PlanarMeasurement.h>
+#include <phgenfit/Track.h>
+#include <phgeom/PHGeomUtility.h>
+
+#include "PHG4HitKalmanFitter.h"
 
 
 #define LogDebug(exp)		std::cout<<"DEBUG: "	<<__FILE__<<": "<<__LINE__<<": "<< exp <<"\n"
@@ -148,7 +149,7 @@ int PHG4HitKalmanFitter::process_event(PHCompositeNode *topNode) {
 		 * e-:	11
 		 * e+:	-11
 		 */
-		int pid = 211; //
+		int pid = 13; //
 		//SMART(genfit::AbsTrackRep) rep = NEW(genfit::RKTrackRep)(pid);
 		genfit::AbsTrackRep* rep = new genfit::RKTrackRep(pid);
 
