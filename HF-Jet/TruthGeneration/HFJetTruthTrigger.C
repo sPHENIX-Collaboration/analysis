@@ -51,6 +51,8 @@ HFJetTruthTrigger::Init(PHCompositeNode *topNode)
   _f = new TFile( _foutname.c_str(), "RECREATE");
 
   _h2 = new TH2D("h2", "", 100, 0, 100.0, 40, -2, +2);
+  _h2_b = new TH2D("h2_b", "", 100, 0, 100.0, 40, -2, +2);
+  _h2_c = new TH2D("h2_c", "", 100, 0, 100.0, 40, -2, +2);
   _h2all = new TH2D("h2all", "", 100, 0, 100.0, 40, -2, +2);
 
   return 0;
@@ -87,6 +89,8 @@ HFJetTruthTrigger::process_event(PHCompositeNode *topNode)
       if (this_pt < 10 || fabs(this_eta) > 5)
         continue;
 
+      _h2all->Fill(this_jet->get_pt(), this_eta);
+
       if (this_pt > 25 && this_pt < 30 && fabs(this_eta) < 0.6)
         {
           //pass_event = true;
@@ -99,7 +103,6 @@ HFJetTruthTrigger::process_event(PHCompositeNode *topNode)
 
       int jet_flavor = 0;
 
-      _h2all->Fill(this_jet->get_pt(), this_eta);
 
       //std::cout << " truth jet #" << ijet_t << ", pt / eta / phi = " << this_pt << " / " << this_eta << " / " << this_phi << ", checking flavor" << std::endl;
         {
@@ -114,11 +117,12 @@ HFJetTruthTrigger::process_event(PHCompositeNode *topNode)
 
               int pidabs = abs((*p)->pdg_id());
               // b-jet overrides everything
-              if (pidabs == 5)
+              if (pidabs == 5 && pidabs > abs(jet_flavor))
                 {
                   //std::cout << " --BOTTOM--> pt / eta / phi = " <<  (*p)->momentum().perp() << " / " << (*p)->momentum().pseudoRapidity() << " / " << (*p)->momentum().phi() << std::endl;
                   //(*p)->print();
                   jet_flavor = (*p)->pdg_id();
+                  _h2_b->Fill(this_jet->get_pt(), this_eta);
 
                 }
               else if (pidabs == 4 && pidabs > abs(jet_flavor))
@@ -126,6 +130,7 @@ HFJetTruthTrigger::process_event(PHCompositeNode *topNode)
                   //std::cout << " --CHARM --> pt / eta / phi = " <<  (*p)->momentum().perp() << " / " << (*p)->momentum().pseudoRapidity() << " / " << (*p)->momentum().phi() << std::endl;
                   //(*p)->print();
                   jet_flavor = (*p)->pdg_id();
+                  _h2_c->Fill(this_jet->get_pt(), this_eta);
 
                 }
             }
@@ -151,14 +156,14 @@ HFJetTruthTrigger::process_event(PHCompositeNode *topNode)
 
   if (pass_event && _total_pass >= _maxevent)
     {
-      std::cout << " --> FAIL due to max events = " << _total_pass << std::endl;
+//      std::cout << " --> FAIL due to max events = " << _total_pass << std::endl;
       _ievent++;
       return -1;
     }
   else if (pass_event)
     {
       _total_pass++;
-      std::cout << " --> PASS, total = " << _total_pass << std::endl;
+//      std::cout << " --> PASS, total = " << _total_pass << std::endl;
       _ievent++;
       return 0;
     }
@@ -176,6 +181,7 @@ HFJetTruthTrigger::End(PHCompositeNode *topNode)
 
   std::cout << " DVP PASSED " << _total_pass << " events" << std::endl;
 
+  _f->cd();
   _f->Write();
   //_f->Close();
 

@@ -47,6 +47,8 @@ class HFJetTruthTrigger: public SubsysReco
 
   TH2D *_h2;
   TH2D *_h2all;
+  TH2D *_h2_b;
+  TH2D *_h2_c;
 
   std::string _foutname;
 
