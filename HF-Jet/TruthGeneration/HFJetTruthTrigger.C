@@ -115,7 +115,6 @@ HFJetTruthTrigger::process_event(PHCompositeNode *topNode)
                   //(*p)->print();
                   jet_flavor = (*p)->pdg_id();
 
-                  this_jet->set_property(static_cast<Jet::PROPERTY>(prop_JetPartonFlavor), pidabs);
                 }
               else if (pidabs == 4 && pidabs > abs(jet_flavor))
                 {
@@ -128,6 +127,7 @@ HFJetTruthTrigger::process_event(PHCompositeNode *topNode)
 
 
           this_jet->set_property(static_cast<Jet::PROPERTY>(prop_JetPartonFlavor), jet_flavor);
+//          this_jet->identify();
 
         }
 
