@@ -1,5 +1,7 @@
 #include "HFJetTruthTrigger.h"
 
+#include "HFJetDefs.h"
+
 #include <phool/getClass.h>
 #include <fun4all/Fun4AllServer.h>
 
@@ -9,7 +11,7 @@
 #include <g4main/PHG4Particle.h>
 #include <g4main/PHG4Hit.h>
 
-#include "TLorentzVector.h"
+#include <TLorentzVector.h>
 #include <iostream>
 
 #include <g4jets/JetMap.h>
@@ -111,20 +113,25 @@ HFJetTruthTrigger::process_event(PHCompositeNode *topNode)
                 {
                   //std::cout << " --BOTTOM--> pt / eta / phi = " <<  (*p)->momentum().perp() << " / " << (*p)->momentum().pseudoRapidity() << " / " << (*p)->momentum().phi() << std::endl;
                   //(*p)->print();
-                  jet_flavor = 2;
-                }
+                  jet_flavor = (*p)->pdg_id();
 
-              if (pidabs == 4 && jet_flavor != 2)
+                  this_jet->set_property(static_cast<Jet::PROPERTY>(prop_JetPartonFlavor), pidabs);
+                }
+              else if (pidabs == 4 && pidabs > abs(jet_flavor))
                 {
                   //std::cout << " --CHARM --> pt / eta / phi = " <<  (*p)->momentum().perp() << " / " << (*p)->momentum().pseudoRapidity() << " / " << (*p)->momentum().phi() << std::endl;
                   //(*p)->print();
-                  jet_flavor = 1;
+                  jet_flavor = (*p)->pdg_id();
+
                 }
             }
 
+
+          this_jet->set_property(static_cast<Jet::PROPERTY>(prop_JetPartonFlavor), jet_flavor);
+
         }
 
-      if (jet_flavor == _flavor)
+      if (abs(jet_flavor) == _flavor)
         {
           pass_event = true;
           //std::cout << " --> this is flavor " << jet_flavor << " like I want " << std::endl;

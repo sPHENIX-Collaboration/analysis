@@ -21,7 +21,8 @@ libHFJetTruthGeneration_la_LIBADD = \
   -lg4eval \
   -lphhepmc
 
-pkginclude_HEADERS = 
+pkginclude_HEADERS = \
+	HFJetDefs.h
 
 #pkginclude_HEADERS = $(include_HEADERS)
 
