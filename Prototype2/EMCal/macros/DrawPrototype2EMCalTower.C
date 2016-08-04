@@ -179,14 +179,14 @@ DrawPrototype2EMCalTower( //
 //      cuts = "_all_event";
 //      event_sel = "Valid_HODO_HORIZONTAL && Valid_HODO_VERTICAL";
 //      cuts = "_Valid_HODO";
-//      event_sel =
-//          "Valid_HODO_HORIZONTAL && Valid_HODO_VERTICAL && No_Triger_VETO";
-//      cuts = "_Valid_HODO_Trigger_VETO";
-
       event_sel =
-          event_sel
-              + "Valid_HODO_HORIZONTAL && Valid_HODO_VERTICAL && No_Triger_VETO  && (C2_Sum_e<50)";
-      cuts = cuts + "_Valid_HODO_Trigger_VETO_C2_Sum_Hadron";
+          "Valid_HODO_HORIZONTAL && Valid_HODO_VERTICAL && No_Triger_VETO";
+      cuts = "_Valid_HODO_Trigger_VETO";
+
+//      event_sel =
+//          event_sel
+//              + "Valid_HODO_HORIZONTAL && Valid_HODO_VERTICAL && No_Triger_VETO  && (C2_Sum_e<50)";
+//      cuts = cuts + "_Valid_HODO_Trigger_VETO_C2_Sum_Hadron";
 
 //      event_sel =
 //          event_sel
