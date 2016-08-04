@@ -12,6 +12,11 @@
 #include <g4main/PHG4Hit.h>
 
 #include <TLorentzVector.h>
+#include <TTree.h>
+#include <TFile.h>
+#include <TH2D.h>
+
+#include <cmath>
 #include <iostream>
 
 #include <g4jets/JetMap.h>
@@ -43,7 +48,7 @@ HFJetTruthTrigger::Init(PHCompositeNode *topNode)
 
   _total_pass = 0;
 
-  //_f = new TFile( _foutname.c_str(), "RECREATE");
+  _f = new TFile( _foutname.c_str(), "RECREATE");
 
   _h2 = new TH2D("h2", "", 100, 0, 100.0, 40, -2, +2);
   _h2all = new TH2D("h2all", "", 100, 0, 100.0, 40, -2, +2);
@@ -171,7 +176,7 @@ HFJetTruthTrigger::End(PHCompositeNode *topNode)
 
   std::cout << " DVP PASSED " << _total_pass << " events" << std::endl;
 
-  //_f->Write();
+  _f->Write();
   //_f->Close();
 
   return 0;

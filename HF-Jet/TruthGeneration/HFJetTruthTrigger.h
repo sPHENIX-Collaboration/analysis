@@ -5,12 +5,12 @@
 // --- need to check all these includes...
 #include <fun4all/SubsysReco.h>
 #include <vector>
+#include <cmath>
 
-#include "TMath.h"
 
-#include "TTree.h"
-//#include "TFile.h"
-#include "TH2D.h"
+class TTree;
+class TFile;
+class TH2D;
 
 class PHCompositeNode;
 
@@ -43,7 +43,7 @@ class HFJetTruthTrigger: public SubsysReco
   int _ievent;
   int _total_pass;
 
-  //TFile *_f;
+  TFile *_f;
 
   TH2D *_h2;
   TH2D *_h2all;
