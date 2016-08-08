@@ -47,14 +47,14 @@ class SvtxEvalStack;
 class TFile;
 class TTree;
 
-class PHG4HitKalmanFitter: public SubsysReco {
+class PHG4TrackFastSim: public SubsysReco {
 public:
 
 	//! Default constructor
-	PHG4HitKalmanFitter(const std::string &name = "PHG4HitKalmanFitter");
+	PHG4TrackFastSim(const std::string &name = "PHG4HitKalmanFitter");
 
 	//! dtor
-	~PHG4HitKalmanFitter();
+	~PHG4TrackFastSim();
 
 	//!Initialization, called for initialization
 	int Init(PHCompositeNode *);
@@ -82,19 +82,19 @@ public:
 	}
 
 	double get_FGEM_phi_resolution() const {
-		return _FGEM_phi_resolution;
+		return _phi_resolution;
 	}
 
 	void set_FGEM_phi_resolution(double fgemPhiResolution) {
-		_FGEM_phi_resolution = fgemPhiResolution;
+		_phi_resolution = fgemPhiResolution;
 	}
 
 	double get_FGEM_r_resolution() const {
-		return _FGEM_r_resolution;
+		return _r_resolution;
 	}
 
 	void set_FGEM_r_resolution(double fgemRResolution) {
-		_FGEM_r_resolution = fgemRResolution;
+		_r_resolution = fgemRResolution;
 	}
 
 	const std::string& get_fit_alg_name() const {
@@ -219,9 +219,9 @@ private:
 	 * For PseudoPatternRecognition function.
 	 */
 
-	double _FGEM_phi_resolution;
+	double _phi_resolution;
 
-	double _FGEM_r_resolution;
+	double _r_resolution;
 
 	//!
 	double _pat_rec_hit_finding_eff;

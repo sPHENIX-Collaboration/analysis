@@ -40,16 +40,16 @@
 #define LogError(exp)		std::cout<<"ERROR: "	<<__FILE__<<": "<<__LINE__<<": "<< exp <<"\n"
 #define LogWarning(exp)	std::cout<<"WARNING: "	<<__FILE__<<": "<<__LINE__<<": "<< exp <<"\n"
 
-#define N_DETECTOR_LAYER 5
+#define _N_DETECTOR_LAYER 5
 
 using namespace std;
 
-PHG4HitKalmanFitter::PHG4HitKalmanFitter(const std::string &name) :
+PHG4TrackFastSim::PHG4TrackFastSim(const std::string &name) :
 		SubsysReco(name),
 		_truth_container(NULL), _trackmap_out(NULL), _fitter (NULL), _mag_field_file_name("/phenix/upgrades/decadal/fieldmaps/fsPHENIX.2d.root"),
 		 _mag_field_re_scaling_factor(1.), _reverse_mag_field(false), _fit_alg_name("KalmanFitterRefTrack"), _do_evt_display(false),
-		 _FGEM_phi_resolution(50E-4), //100um
-		 _FGEM_r_resolution(1.),
+		 _phi_resolution(50E-4), //100um
+		 _r_resolution(1.),
 		 _pat_rec_hit_finding_eff(1.),
 		 _pat_rec_nosise_prob(0.)
 
@@ -57,24 +57,24 @@ PHG4HitKalmanFitter::PHG4HitKalmanFitter(const std::string &name) :
 
 	_event = 0;
 
-	for(int i=0;i<N_DETECTOR_LAYER;i++) {
+	for(int i=0;i<_N_DETECTOR_LAYER;i++) {
 		_phg4hits_names.push_back(Form("G4HIT_FGEM_%1d",i));
 	}
 }
 
-PHG4HitKalmanFitter::~PHG4HitKalmanFitter() {
+PHG4TrackFastSim::~PHG4TrackFastSim() {
 	delete _fitter;
 }
 
 /*
  * Init
  */
-int PHG4HitKalmanFitter::Init(PHCompositeNode *topNode) {
+int PHG4TrackFastSim::Init(PHCompositeNode *topNode) {
 
 	return Fun4AllReturnCodes::EVENT_OK;
 }
 
-int PHG4HitKalmanFitter::InitRun(PHCompositeNode *topNode) {
+int PHG4TrackFastSim::InitRun(PHCompositeNode *topNode) {
 
 
 	CreateNodes(topNode);
@@ -94,12 +94,12 @@ int PHG4HitKalmanFitter::InitRun(PHCompositeNode *topNode) {
 	return Fun4AllReturnCodes::EVENT_OK;
 }
 
-int PHG4HitKalmanFitter::End(PHCompositeNode *topNode) {
+int PHG4TrackFastSim::End(PHCompositeNode *topNode) {
 
 	return Fun4AllReturnCodes::EVENT_OK;
 }
 
-int PHG4HitKalmanFitter::process_event(PHCompositeNode *topNode) {
+int PHG4TrackFastSim::process_event(PHCompositeNode *topNode) {
 
 	GetNodes(topNode);
 
@@ -181,7 +181,7 @@ int PHG4HitKalmanFitter::process_event(PHCompositeNode *topNode) {
 	return Fun4AllReturnCodes::EVENT_OK;
 }
 
-int PHG4HitKalmanFitter::CreateNodes(PHCompositeNode *topNode) {
+int PHG4TrackFastSim::CreateNodes(PHCompositeNode *topNode) {
 	// create nodes...
 	PHNodeIterator iter(topNode);
 
@@ -213,7 +213,7 @@ int PHG4HitKalmanFitter::CreateNodes(PHCompositeNode *topNode) {
 	return Fun4AllReturnCodes::EVENT_OK;
 }
 
-int PHG4HitKalmanFitter::GetNodes(PHCompositeNode * topNode) {
+int PHG4TrackFastSim::GetNodes(PHCompositeNode * topNode) {
 	//DST objects
 	//Truth container
 	_truth_container = findNode::getClass<PHG4TruthInfoContainer>(topNode,
@@ -224,7 +224,7 @@ int PHG4HitKalmanFitter::GetNodes(PHCompositeNode * topNode) {
 		return Fun4AllReturnCodes::ABORTEVENT;
 	}
 
-	for(int i=0;i<N_DETECTOR_LAYER;i++) {
+	for(int i=0;i<_N_DETECTOR_LAYER;i++) {
 		PHG4HitContainer* phg4hit = findNode::getClass<PHG4HitContainer>(topNode,
 				_phg4hits_names[i].c_str());
 		if (!phg4hit && _event < 2) {
@@ -247,7 +247,7 @@ int PHG4HitKalmanFitter::GetNodes(PHCompositeNode * topNode) {
 	return Fun4AllReturnCodes::EVENT_OK;
 }
 
-int PHG4HitKalmanFitter::PseudoPatternRecognition(
+int PHG4TrackFastSim::PseudoPatternRecognition(
 		const PHG4Particle* particle,
 		std::vector<PHGenFit::Measurement*>& meas_out, TVector3& seed_pos,
 		TVector3& seed_mom, TMatrixDSym& seed_cov, const bool do_smearing) {
@@ -260,7 +260,7 @@ int PHG4HitKalmanFitter::PseudoPatternRecognition(
 	seed_cov.ResizeTo(6, 6);
 
 	for (int i = 0; i < 3; i++) {
-		seed_cov[i][i] = _FGEM_phi_resolution * _FGEM_phi_resolution;
+		seed_cov[i][i] = _phi_resolution * _phi_resolution;
 	}
 
 	for (int i = 3; i < 6; i++) {
@@ -289,7 +289,7 @@ int PHG4HitKalmanFitter::PseudoPatternRecognition(
 
 	meas_out.clear();
 
-	for(int ilayer=0; ilayer<N_DETECTOR_LAYER; ilayer++) {
+	for(int ilayer=0; ilayer<_N_DETECTOR_LAYER; ilayer++) {
 
 		if(!_phg4hits[ilayer]) {
 			LogError("No _phg4hits[i] found!");
@@ -316,7 +316,7 @@ int PHG4HitKalmanFitter::PseudoPatternRecognition(
 	return Fun4AllReturnCodes::EVENT_OK;
 }
 
-SvtxTrack* PHG4HitKalmanFitter::MakeSvtxTrack(
+SvtxTrack* PHG4TrackFastSim::MakeSvtxTrack(
 		const PHGenFit::Track* phgf_track) {
 
 	double chi2 = phgf_track->get_chi2();
@@ -370,7 +370,7 @@ SvtxTrack* PHG4HitKalmanFitter::MakeSvtxTrack(
 
 
 
-PHGenFit::PlanarMeasurement* PHG4HitKalmanFitter::PHG4HitToMeasurementVerticalPlane(const PHG4Hit* g4hit) {
+PHGenFit::PlanarMeasurement* PHG4TrackFastSim::PHG4HitToMeasurementVerticalPlane(const PHG4Hit* g4hit) {
 
 	PHGenFit::PlanarMeasurement* meas = NULL;
 
@@ -386,13 +386,13 @@ PHGenFit::PlanarMeasurement* PHG4HitKalmanFitter::PHG4HitToMeasurementVerticalPl
 	TVector3 u = v.Cross(TVector3(0,0,1));
 	u = 1/u.Mag() * u;
 
-	double u_smear = gRandom->Gaus(0, _FGEM_phi_resolution);
-	double v_smear = gRandom->Gaus(0, _FGEM_r_resolution);
+	double u_smear = gRandom->Gaus(0, _phi_resolution);
+	double v_smear = gRandom->Gaus(0, _r_resolution);
 	pos.SetX(g4hit->get_avg_x() + u_smear*u.X() + v_smear*v.X());
 	pos.SetY(g4hit->get_avg_y() + u_smear*u.Y() + v_smear*v.Y());
 
 
-	meas = new PHGenFit::PlanarMeasurement(pos, u, v, _FGEM_phi_resolution, _FGEM_r_resolution);
+	meas = new PHGenFit::PlanarMeasurement(pos, u, v, _phi_resolution, _r_resolution);
 
 //	std::cout<<"------------\n";
 //	pos.Print();
@@ -406,7 +406,7 @@ PHGenFit::PlanarMeasurement* PHG4HitKalmanFitter::PHG4HitToMeasurementVerticalPl
 }
 
 
-PHGenFit::PlanarMeasurement* PHG4HitKalmanFitter::VertexMeasurement(const TVector3 &vtx, const double dr,
+PHGenFit::PlanarMeasurement* PHG4TrackFastSim::VertexMeasurement(const TVector3 &vtx, const double dr,
 		const double dphi) {
 	PHGenFit::PlanarMeasurement* meas = NULL;
 
