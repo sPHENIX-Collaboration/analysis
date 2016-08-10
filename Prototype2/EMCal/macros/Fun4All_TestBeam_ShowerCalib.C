@@ -1,0 +1,62 @@
+int
+Fun4All_TestBeam_ShowerCalib(const int nEvents = 10000000, const char * inputFile =
+    "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2016/ShowerCalib/dst.lst")
+{
+  TString s_outputFile = inputFile;
+  s_outputFile += "_Ana.root";
+  const char * outputFile = s_outputFile.Data();
+
+  //---------------
+  // Load libraries
+  //---------------
+  gSystem->Load("libPrototype2.so");
+  gSystem->Load("libProto2ShowCalib.so");
+
+  //---------------
+  // Fun4All server
+  //---------------
+
+  Fun4AllServer *se = Fun4AllServer::instance();
+  se->Verbosity(1);
+
+  //-------------- 
+  // IO management
+  //--------------
+
+  // Hits file
+  Fun4AllInputManager *hitsin = new Fun4AllDstInputManager("DSTin");
+//  hitsin->fileopen(inputFile);
+  hitsin->AddListFile(inputFile);
+  se->registerInputManager(hitsin);
+
+  Proto2ShowerCalib * emcal_ana = new Proto2ShowerCalib(
+      string(inputFile) + string("_EMCalCalib.root"));
+
+  emcal_ana->Verbosity(1);
+  se->registerSubsystem(emcal_ana);
+
+  cout << "nEVENTS :" << nEvents << endl;
+
+  //-----------------
+  // Event processing
+  //-----------------
+  if (nEvents < 0)
+    {
+      return;
+    }
+
+  gSystem->ListLibraries();
+
+  se->run(nEvents);
+
+  //-----
+  // Exit
+  //-----
+  gSystem->Exec("ps -o sid,ppid,pid,user,comm,vsize,rssize,time");
+
+  se->End();
+
+  std::cout << "All done" << std::endl;
+  delete se;
+  gSystem->Exit(0);
+}
