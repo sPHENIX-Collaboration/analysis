@@ -36,6 +36,8 @@
 #include <g4eval/SvtxHitEval.h>
 
 #include <TTree.h>
+#include <TH2D.h>
+#include <TVector3.h>
 
 #include <iostream>
 
@@ -83,6 +85,14 @@ int FastTrackingEval::Init(PHCompositeNode *topNode) {
 	_eval_tree_tracks->Branch("pz", &pz, "pz/F");
 	_eval_tree_tracks->Branch("dca2d", &dca2d, "dca2d/F");
 
+	_h2d_Delta_mom_vs_truth_eta = new TH2D("_h2d_Delta_mom_vs_truth_eta",
+			"#frac{#Delta p}{truth p} vs. truth #eta", 9, -0.25, 4.25, 1000, -1,
+			1);
+
+	_h2d_Delta_mom_vs_truth_mom = new TH2D("_h2d_Delta_mom_vs_truth_mom",
+			"#frac{#Delta p}{truth p} vs. truth p", 41, -0.5, 40.5, 1000, -1,
+			1);
+
 	return Fun4AllReturnCodes::EVENT_OK;
 }
 
@@ -93,7 +103,7 @@ int FastTrackingEval::Init(PHCompositeNode *topNode) {
 //----------------------------------------------------------------------------//
 int FastTrackingEval::process_event(PHCompositeNode *topNode) {
 	_event++;
-	if (_event % 1000 == 0)
+	if (verbosity >= 2 and _event % 1000 == 0)
 		cout << PHWHERE << "Events processed: " << _event << endl;
 
 	GetNodes(topNode);
@@ -112,6 +122,9 @@ int FastTrackingEval::End(PHCompositeNode *topNode) {
 	PHTFileServer::get().cd(_outfile_name);
 
 	_eval_tree_tracks->Write();
+
+	_h2d_Delta_mom_vs_truth_eta->Write();
+	_h2d_Delta_mom_vs_truth_mom->Write();
 
 	//PHTFileServer::get().close();
 
@@ -179,9 +192,16 @@ void FastTrackingEval::fill_tree(PHCompositeNode *topNode) {
 			py = track->get_py();
 			pz = track->get_pz();
 			dca2d = track->get_dca2d();
+
+			TVector3 truth_mom(gpx,gpy,gpz);
+			TVector3 reco_mom(px, py, pz);
+
+			_h2d_Delta_mom_vs_truth_mom->Fill(truth_mom.Mag(), (reco_mom.Mag()-truth_mom.Mag())/truth_mom.Mag());
+			_h2d_Delta_mom_vs_truth_eta->Fill(truth_mom.Eta(), (reco_mom.Mag()-truth_mom.Mag())/truth_mom.Mag());
 		}
 
 		_eval_tree_tracks->Fill();
+
 	}
 
 	return;

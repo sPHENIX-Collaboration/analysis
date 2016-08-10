@@ -18,6 +18,7 @@ class SvtxClusterMap;
 class SvtxTrackMap;
 class TFile;
 class TTree;
+class TH2D;
 
 
 //Brief: basic ntuple and histogram creation for sim evaluation
@@ -93,6 +94,10 @@ class FastTrackingEval: public SubsysReco
   float py;
   float pz;
   float dca2d;
+
+  //Histos
+  TH2D* _h2d_Delta_mom_vs_truth_mom;
+  TH2D* _h2d_Delta_mom_vs_truth_eta;
 
   //Node pointers
   PHG4TruthInfoContainer* _truth_container;
