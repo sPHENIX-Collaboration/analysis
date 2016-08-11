@@ -1,5 +1,5 @@
 int
-Fun4All_TestBeam_ShowerCalib(const int nEvents = 10000000, const char * inputFile =
+Fun4All_TestBeam_ShowerCalib(const int nEvents = 1000, const char * inputFile =
     "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2016/ShowerCalib/dst.lst")
 {
   TString s_outputFile = inputFile;

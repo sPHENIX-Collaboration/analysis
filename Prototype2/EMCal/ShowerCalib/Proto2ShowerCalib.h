@@ -6,6 +6,7 @@
 #include <TFile.h>
 #include <string>
 #include <stdint.h>
+#include <fstream>
 
 class PHCompositeNode;
 class PHG4HitContainer;
@@ -64,6 +65,7 @@ private:
 
   };
 
+  fstream fdata;
 };
 
 #endif // __Proto2ShowerCalib_H__
