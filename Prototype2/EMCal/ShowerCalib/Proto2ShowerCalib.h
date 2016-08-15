@@ -38,34 +38,69 @@ public:
   int
   End(PHCompositeNode *topNode);
 
+  class Eval_Run: public TObject
+  {
+  public:
+    virtual ~Eval_Run(){}
+
+    int run;
+    int event;
+
+    float beam_mom;
+
+    int hodo_h;
+    int hodo_v;
+
+    float C2_sum;
+
+    bool valid_hodo_v;
+    bool valid_hodo_h;
+    bool trigger_veto_pass;
+    bool good_temp;
+    bool good_e;
+    bool good_data;
+
+  ClassDef(Eval_Run,1)
+  };
+
+  class Eval_Cluster: public TObject
+  {
+  public:
+    virtual ~Eval_Cluster(){}
+    int cluster_size;
+    int max_col;
+    int max_row;
+
+    float average_col;
+    float average_row;
+    float sum_E;
+
+  ClassDef(Eval_Cluster,1)
+  };
+
 private:
 
   Fun4AllHistoManager *
   get_HistoManager();
 
+  std::pair<int, int>
+  find_max(RawTowerContainer* towers, int cluster_size);
+
   std::string _filename;
 
   unsigned long _ievent;
 
-  class TemperatureCorrection
-  {
-  public:
-
-    static
-    double
-    Apply(const double Amplitude, const double T)
-    {
-      //! Change of gain VS T
-      // https://indico.bnl.gov/conferenceDisplay.py?confId=2293 : Joey Smiga
-      static const double Slope = -.589/16.76; // m / b
-      static const double T0 = 28.86; // reference temperature
-
-      return Amplitude / (1. + Slope * (T - T0));
-    }
-
-  };
-
   fstream fdata;
+
+  Eval_Run _eval_run;
+  Eval_Cluster _eval_3x3_raw;
+  Eval_Cluster _eval_5x5_raw;
+  Eval_Cluster _eval_3x3_prod;
+  Eval_Cluster _eval_5x5_prod;
+  Eval_Cluster _eval_3x3_temp;
+  Eval_Cluster _eval_5x5_temp;
+  Eval_Cluster _eval_3x3_recalib;
+  Eval_Cluster _eval_5x5_recalib;
 };
 
 #endif // __Proto2ShowerCalib_H__
