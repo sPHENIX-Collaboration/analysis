@@ -46,6 +46,22 @@ Proto2ShowerCalib::Proto2ShowerCalib(const std::string &filename) :
 
   verbosity = 1;
 
+  _eval_run.reset();
+  _eval_3x3_raw.reset();
+  _eval_5x5_raw.reset();
+  _eval_3x3_prod.reset();
+  _eval_5x5_prod.reset();
+  _eval_3x3_temp.reset();
+  _eval_5x5_temp.reset();
+  _eval_3x3_recalib.reset();
+  _eval_5x5_recalib.reset();
+
+  for (int col = 0; col < n_size; ++col)
+    for (int row = 0; row < n_size; ++row)
+      {
+        _recalib_const[make_pair(col, row)] = 0;
+      }
+
 }
 
 Proto2ShowerCalib::~Proto2ShowerCalib()
@@ -184,6 +200,17 @@ Proto2ShowerCalib::process_event(PHCompositeNode *topNode)
   if (verbosity > 2)
     cout << "Proto2ShowerCalib::process_event() entered" << endl;
 
+  // init eval objects
+  _eval_run.reset();
+  _eval_3x3_raw.reset();
+  _eval_5x5_raw.reset();
+  _eval_3x3_prod.reset();
+  _eval_5x5_prod.reset();
+  _eval_3x3_temp.reset();
+  _eval_5x5_temp.reset();
+  _eval_3x3_recalib.reset();
+  _eval_5x5_recalib.reset();
+
   Fun4AllHistoManager *hm = get_HistoManager();
   assert(hm);
 
@@ -207,8 +234,8 @@ Proto2ShowerCalib::process_event(PHCompositeNode *topNode)
   assert(eventheader);
 
   _eval_run.run = eventheader->get_RunNumber();
-  if (verbosity>4)
-  cout <<__PRETTY_FUNCTION__<<_eval_run.run<<endl;
+  if (verbosity > 4)
+    cout << __PRETTY_FUNCTION__ << _eval_run.run << endl;
 
   _eval_run.event = eventheader->get_EvtSequence();
 
@@ -351,6 +378,28 @@ Proto2ShowerCalib::process_event(PHCompositeNode *topNode)
       and trigger_veto_pass;
   hNormalization->Fill("good_e", good_e);
 
+  // simple clustering
+  pair<int, int> max_3x3 = find_max(TOWER_CALIB_CEMC, 3);
+  pair<int, int> max_5x5 = find_max(TOWER_CALIB_CEMC, 5);
+
+  _eval_3x3_raw.max_col = max_3x3.first;
+  _eval_3x3_raw.max_row = max_3x3.second;
+  _eval_3x3_prod.max_col = max_3x3.first;
+  _eval_3x3_prod.max_row = max_3x3.second;
+  _eval_3x3_temp.max_col = max_3x3.first;
+  _eval_3x3_temp.max_row = max_3x3.second;
+  _eval_3x3_recalib.max_col = max_3x3.first;
+  _eval_3x3_recalib.max_row = max_3x3.second;
+
+  _eval_5x5_raw.max_col = max_5x5.first;
+  _eval_5x5_raw.max_row = max_5x5.second;
+  _eval_5x5_prod.max_col = max_5x5.first;
+  _eval_5x5_prod.max_row = max_5x5.second;
+  _eval_5x5_temp.max_col = max_5x5.first;
+  _eval_5x5_temp.max_row = max_5x5.second;
+  _eval_5x5_recalib.max_col = max_5x5.first;
+  _eval_5x5_recalib.max_row = max_5x5.second;
+
   // tower
   bool good_temp = true;
   double sum_energy_calib = 0;
@@ -373,6 +422,9 @@ Proto2ShowerCalib::process_event(PHCompositeNode *topNode)
           RawTower* tower = it->second;
           assert(tower);
 
+          const int col = tower->get_column();
+          const int row = tower->get_row();
+
           const double energy_calib = tower->get_energy();
           sum_energy_calib += energy_calib;
 
@@ -393,14 +445,73 @@ Proto2ShowerCalib::process_event(PHCompositeNode *topNode)
 
           const double energy_T = TemperatureCorrection::Apply(energy_calib, T);
 
+          // recalibration
+          assert(_recalib_const.find(make_pair(col,row)) != _recalib_const.end());
+          const double energy_recalib = energy_T * _recalib_const[make_pair(col,row)];
+
+          // energy sums
           sum_energy_T += energy_T;
 
           // calibration file
           if (good_e)
             sdata << tower->get_energy() << "\t";
-//          fdata<<tower_raw->get_energy()<<"\t";
+
+          // cluster 3x3
+          if (col >= max_3x3.first - 1 and col <= max_3x3.first + 1)
+            if (row >= max_3x3.second - 1 and row <= max_3x3.second + 1)
+              {
+                // in cluster
+
+                _eval_3x3_raw.average_col += abs(tower_raw->get_energy()) * col;
+                _eval_3x3_raw.average_row += abs(tower_raw->get_energy()) * row;
+                _eval_3x3_raw.sum_E += abs(tower_raw->get_energy());
+
+                _eval_3x3_prod.average_col += energy_calib * col;
+                _eval_3x3_prod.average_row += energy_calib * row;
+                _eval_3x3_prod.sum_E += energy_calib;
+
+                _eval_3x3_temp.average_col += energy_T * col;
+                _eval_3x3_temp.average_row += energy_T * row;
+                _eval_3x3_temp.sum_E += energy_T;
+
+                _eval_3x3_recalib.average_col += energy_recalib * col;
+                _eval_3x3_recalib.average_row += energy_recalib * row;
+                _eval_3x3_recalib.sum_E += energy_recalib;
+              }
+
+          // cluster 5x5
+          if (col >= max_5x5.first - 2 and col <= max_5x5.first + 2)
+            if (row >= max_5x5.second - 2 and row <= max_5x5.second + 2)
+              {
+                // in cluster
+
+                _eval_5x5_raw.average_col += abs(tower_raw->get_energy()) * col;
+                _eval_5x5_raw.average_row += abs(tower_raw->get_energy()) * row;
+                _eval_5x5_raw.sum_E += abs(tower_raw->get_energy());
+
+                _eval_5x5_prod.average_col += energy_calib * col;
+                _eval_5x5_prod.average_row += energy_calib * row;
+                _eval_5x5_prod.sum_E += energy_calib;
+
+                _eval_5x5_temp.average_col += energy_T * col;
+                _eval_5x5_temp.average_row += energy_T * row;
+                _eval_5x5_temp.sum_E += energy_T;
+
+                _eval_5x5_recalib.average_col += energy_recalib * col;
+                _eval_5x5_recalib.average_row += energy_recalib * row;
+                _eval_5x5_recalib.sum_E += energy_recalib;
+              }
         }
     }
+
+  _eval_3x3_raw.reweight_clus_pol();
+  _eval_5x5_raw.reweight_clus_pol();
+  _eval_3x3_prod.reweight_clus_pol();
+  _eval_5x5_prod.reweight_clus_pol();
+  _eval_3x3_temp.reweight_clus_pol();
+  _eval_5x5_temp.reweight_clus_pol();
+  _eval_3x3_recalib.reweight_clus_pol();
+  _eval_5x5_recalib.reweight_clus_pol();
 
   const double EoP = sum_energy_T / abs(_eval_run.beam_mom);
   hNormalization->Fill("good_temp", good_temp);
@@ -411,6 +522,8 @@ Proto2ShowerCalib::process_event(PHCompositeNode *topNode)
   _eval_run.good_temp = good_temp;
   _eval_run.good_e = good_e;
   _eval_run.good_data = good_data;
+  _eval_run.sum_energy_T = sum_energy_T;
+  _eval_run.EoP = EoP;
 
   if (good_data)
     {
@@ -441,5 +554,84 @@ Proto2ShowerCalib::process_event(PHCompositeNode *topNode)
 pair<int, int>
 Proto2ShowerCalib::find_max(RawTowerContainer* towers, int cluster_size)
 {
-  return make_pair(-1, -1);
+  const int clus_edge_size = (cluster_size - 1) / 2;
+  assert(clus_edge_size >= 0);
+
+  pair<int, int> max(-1000, -1000);
+  double max_e = 0;
+
+  for (int col = 0; col < n_size; ++col)
+    for (int row = 0; row < n_size; ++row)
+      {
+        double energy = 0;
+
+        for (int dcol = col - clus_edge_size; dcol <= col + clus_edge_size;
+            ++dcol)
+          for (int drow = row - clus_edge_size; drow <= row + clus_edge_size;
+              ++drow)
+            {
+              if (dcol < 0 or drow < 0)
+                continue;
+
+              RawTower * t = towers->getTower(dcol, drow);
+              if (t)
+                energy += t->get_energy();
+            }
+
+        if (energy > max_e)
+          {
+            max = make_pair(col, row);
+            max_e = energy;
+          }
+      }
+
+  return max;
 }
+
+int
+Proto2ShowerCalib::LoadRecalibMap(const std::string & file)
+{
+  if (verbosity)
+    {
+      cout << __PRETTY_FUNCTION__ << " - input recalibration constant from "
+          << file << endl;
+    }
+
+  ifstream fcalib(file);
+
+  assert(fcalib.is_open());
+
+  string line;
+
+  while (not fcalib.eof())
+    {
+      getline(fcalib, line);
+
+      if (verbosity>10 )
+        {
+          cout << __PRETTY_FUNCTION__ <<" get line "<< line << endl;
+        }
+      istringstream sline(line);
+
+      int col = -1;
+      int row = -1;
+      double calib = 0;
+
+      sline >> col >> row >> calib;
+
+      if (not sline.fail())
+        {
+          if (verbosity)
+            {
+              cout << __PRETTY_FUNCTION__ << " - recalibration constant  "
+                  << col << "," << row << " = " << calib << endl;
+            }
+
+          _recalib_const[make_pair(col, row)] = calib;
+        }
+
+    }
+
+  return _recalib_const.size();
+}
+

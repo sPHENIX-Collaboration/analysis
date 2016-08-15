@@ -38,10 +38,41 @@ public:
   int
   End(PHCompositeNode *topNode);
 
-  class Eval_Run: public TObject
+  int
+  LoadRecalibMap(const std::string & file);
+
+  class Eval_Run : public TObject
   {
   public:
-    virtual ~Eval_Run(){}
+    Eval_Run()
+    {
+      reset();
+    }
+    virtual
+    ~Eval_Run()
+    {
+    }
+
+    void
+    reset()
+    {
+      run = -31454;
+      event = -31454;
+      beam_mom = -0;
+      hodo_h = -31454;
+      hodo_v = -31454;
+      C2_sum = -31454;
+
+      sum_energy_T = -31454;
+      EoP = -31454;
+
+      valid_hodo_v = false;
+      valid_hodo_h = false;
+      trigger_veto_pass = false;
+      good_temp = false;
+      good_e = false;
+      good_data = false;
+    }
 
     int run;
     int event;
@@ -53,6 +84,11 @@ public:
 
     float C2_sum;
 
+    //! sum tower energy after temp correction
+    float sum_energy_T;
+    //! sum tower E over P after temp correction
+    float EoP;
+
     bool valid_hodo_v;
     bool valid_hodo_h;
     bool trigger_veto_pass;
@@ -60,14 +96,49 @@ public:
     bool good_e;
     bool good_data;
 
-  ClassDef(Eval_Run,1)
+  ClassDef(Eval_Run,2)
   };
 
-  class Eval_Cluster: public TObject
+  class Eval_Cluster : public TObject
   {
   public:
-    virtual ~Eval_Cluster(){}
-    int cluster_size;
+    Eval_Cluster()
+    {
+      reset();
+    }
+
+    virtual
+    ~Eval_Cluster()
+    {
+    }
+
+    void
+    reset()
+    {
+      max_col = -1;
+      max_row = -1;
+      average_col = 0;
+      average_row = 0;
+
+      sum_E = 0;
+    }
+
+    void
+    reweight_clus_pol()
+    {
+      if (sum_E > 0)
+        {
+          average_col /= sum_E;
+          average_row /= sum_E;
+        }
+      else
+        {
+          average_col = -31454;
+          average_row = -31454;
+
+        }
+    }
+
     int max_col;
     int max_row;
 
@@ -75,10 +146,16 @@ public:
     float average_row;
     float sum_E;
 
-  ClassDef(Eval_Cluster,1)
+  ClassDef(Eval_Cluster,2)
   };
 
 private:
+
+  // calorimeter size
+  enum
+  {
+    n_size = 8
+  };
 
   Fun4AllHistoManager *
   get_HistoManager();
@@ -93,14 +170,20 @@ private:
   fstream fdata;
 
   Eval_Run _eval_run;
+
   Eval_Cluster _eval_3x3_raw;
   Eval_Cluster _eval_5x5_raw;
+
   Eval_Cluster _eval_3x3_prod;
   Eval_Cluster _eval_5x5_prod;
+
   Eval_Cluster _eval_3x3_temp;
   Eval_Cluster _eval_5x5_temp;
+
   Eval_Cluster _eval_3x3_recalib;
   Eval_Cluster _eval_5x5_recalib;
+
+  std::map<std::pair<int, int>, double> _recalib_const;
 };
 
 #endif // __Proto2ShowerCalib_H__
