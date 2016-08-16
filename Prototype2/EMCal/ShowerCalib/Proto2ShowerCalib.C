@@ -355,7 +355,7 @@ Proto2ShowerCalib::process_event(PHCompositeNode *topNode)
   assert(hCheck_Hodo_V);
   int hodo_v_count = 0;
     {
-      auto range = TOWER_CALIB_HODO_HORIZONTAL->getTowers();
+      auto range = TOWER_CALIB_HODO_VERTICAL->getTowers();
       for (auto it = range.first; it != range.second; ++it)
         {
           RawTower* tower = it->second;
@@ -446,15 +446,26 @@ Proto2ShowerCalib::process_event(PHCompositeNode *topNode)
           const double energy_T = TemperatureCorrection::Apply(energy_calib, T);
 
           // recalibration
-          assert(_recalib_const.find(make_pair(col,row)) != _recalib_const.end());
-          const double energy_recalib = energy_T * _recalib_const[make_pair(col,row)];
+          assert(
+              _recalib_const.find(make_pair(col, row)) != _recalib_const.end());
+          const double energy_recalib = energy_T
+              * _recalib_const[make_pair(col, row)];
 
           // energy sums
           sum_energy_T += energy_T;
 
           // calibration file
-          if (good_e)
-            sdata << tower->get_energy() << "\t";
+//          sdata << tower->get_energy() << "\t";
+          // calibration file - only output 5x5 towers
+          if (col >= max_5x5.first - 2 and col <= max_5x5.first + 2
+              and row >= max_5x5.second - 2 and row <= max_5x5.second + 2)
+            {
+              sdata << tower->get_energy() << "\t";
+            }
+          else
+            {
+              sdata << 0 << "\t";
+            }
 
           // cluster 3x3
           if (col >= max_3x3.first - 1 and col <= max_3x3.first + 1)
@@ -525,6 +536,7 @@ Proto2ShowerCalib::process_event(PHCompositeNode *topNode)
   _eval_run.sum_energy_T = sum_energy_T;
   _eval_run.EoP = EoP;
 
+  // E/p
   if (good_data)
     {
       if (verbosity >= 3)
@@ -536,7 +548,11 @@ Proto2ShowerCalib::process_event(PHCompositeNode *topNode)
       assert(hEoP);
 
       hEoP->Fill(EoP, abs(_eval_run.beam_mom));
+    }
 
+  // calibration file
+  if (good_data and abs(beam_mom) >= 4 and abs(beam_mom) <= 8)
+    {
       assert(fdata.is_open());
 
       fdata << sdata.str();
@@ -607,9 +623,9 @@ Proto2ShowerCalib::LoadRecalibMap(const std::string & file)
     {
       getline(fcalib, line);
 
-      if (verbosity>10 )
+      if (verbosity > 10)
         {
-          cout << __PRETTY_FUNCTION__ <<" get line "<< line << endl;
+          cout << __PRETTY_FUNCTION__ << " get line " << line << endl;
         }
       istringstream sline(line);
 
