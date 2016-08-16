@@ -551,7 +551,7 @@ Proto2ShowerCalib::process_event(PHCompositeNode *topNode)
     }
 
   // calibration file
-  if (good_data and abs(beam_mom) >= 4 and abs(beam_mom) <= 8)
+  if (good_data and abs(_eval_run.beam_mom) >= 4 and abs(_eval_run.beam_mom) <= 8)
     {
       assert(fdata.is_open());
 
