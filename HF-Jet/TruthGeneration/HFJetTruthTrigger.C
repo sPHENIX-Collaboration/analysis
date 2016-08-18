@@ -4,6 +4,7 @@
 
 #include <phool/getClass.h>
 #include <fun4all/Fun4AllServer.h>
+#include <fun4all/Fun4AllReturnCodes.h>
 
 #include <phool/PHCompositeNode.h>
 
@@ -217,7 +218,7 @@ HFJetTruthTrigger::process_event(PHCompositeNode *topNode)
         std::cout << __PRETTY_FUNCTION__ << " --> FAIL due to max events = "
             << _total_pass << std::endl;
       _ievent++;
-      return -1;
+      return Fun4AllReturnCodes::DISCARDEVENT;
     }
   else if (pass_event)
     {
@@ -226,14 +227,14 @@ HFJetTruthTrigger::process_event(PHCompositeNode *topNode)
         std::cout << __PRETTY_FUNCTION__ << " --> PASS, total = " << _total_pass
             << std::endl;
       _ievent++;
-      return 0;
+      return Fun4AllReturnCodes::EVENT_OK;
     }
   else
     {
       if (verbosity >= HFJetTruthTrigger::VERBOSITY_SOME)
         std::cout << __PRETTY_FUNCTION__ << " --> FAIL " << std::endl;
       _ievent++;
-      return -1;
+      return Fun4AllReturnCodes::DISCARDEVENT;
     }
 }
 
