@@ -103,6 +103,8 @@ HFJetTruthTrigger::process_event(PHCompositeNode *topNode)
         {
           //pass_event = true;
           _h2->Fill(this_jet->get_pt(), this_eta);
+          if (verbosity >= HFJetTruthTrigger::VERBOSITY_MORE)
+            this_jet->identify();
         }
       else
         {
