@@ -192,14 +192,20 @@ HFJetTruthTrigger::process_event(PHCompositeNode *topNode)
         {
           pass_event = true;
           if (verbosity >= HFJetTruthTrigger::VERBOSITY_MORE)
-            std::cout << " --> this is flavor " << jet_flavor << " like I want "
-                << std::endl;
+            {
+              this_jet->identify();
+              std::cout << " --> this is flavor " << jet_flavor
+                  << " like I want " << std::endl;
+            }
         }
       else
         {
           if (verbosity >= HFJetTruthTrigger::VERBOSITY_MORE)
-            std::cout << " --> this is flavor " << jet_flavor
-                << " which I do NOT want " << std::endl;
+            {
+              this_jet->identify();
+              std::cout << " --> this is flavor " << jet_flavor
+                  << " which I do NOT want " << std::endl;
+            }
         }
 
       ijet_t++;
