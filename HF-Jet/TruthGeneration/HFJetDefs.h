@@ -18,7 +18,10 @@ enum HFJetProperty
 {
 
   prop_JetPartonFlavor = 1000,
-  prop_JetHadronFlavor = 1001
+  prop_JetPartonZT = 1001,
+
+  prop_JetHadronFlavor = 1010,
+  prop_JetHadronZT = 1011
 
 };
 

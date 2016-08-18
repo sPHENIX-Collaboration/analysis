@@ -15,6 +15,7 @@
 #include <TTree.h>
 #include <TFile.h>
 #include <TH2D.h>
+#include <TDatabasePDG.h>
 
 #include <cmath>
 #include <iostream>
@@ -26,7 +27,8 @@
 #include <HepMC/GenEvent.h>
 #include <HepMC/GenVertex.h>
 
-HFJetTruthTrigger::HFJetTruthTrigger(std::string filename, int flavor, int maxevent) :
+HFJetTruthTrigger::HFJetTruthTrigger(std::string filename, int flavor,
+    int maxevent) :
     SubsysReco("HFJetTagger")
 {
 
@@ -35,6 +37,12 @@ HFJetTruthTrigger::HFJetTruthTrigger(std::string filename, int flavor, int maxev
   _flavor = flavor;
 
   _maxevent = maxevent;
+
+  _pt_min = 25;
+  _pt_max = 100;
+
+  _eta_min = -.6;
+  _eta_max = +.6;
 
 }
 
@@ -48,7 +56,7 @@ HFJetTruthTrigger::Init(PHCompositeNode *topNode)
 
   _total_pass = 0;
 
-  _f = new TFile( _foutname.c_str(), "RECREATE");
+  _f = new TFile(_foutname.c_str(), "RECREATE");
 
   _h2 = new TH2D("h2", "", 100, 0, 100.0, 40, -2, +2);
   _h2_b = new TH2D("h2_b", "", 100, 0, 100.0, 40, -2, +2);
@@ -62,18 +70,17 @@ HFJetTruthTrigger::Init(PHCompositeNode *topNode)
 int
 HFJetTruthTrigger::process_event(PHCompositeNode *topNode)
 {
-
-  if ((_ievent % 1000) == 0)
-    std::cout << "DVP : at process_event #" << _ievent << std::endl;
-
   PHHepMCGenEvent *genevt = findNode::getClass<PHHepMCGenEvent>(topNode,
       "PHHepMCGenEvent");
   HepMC::GenEvent* theEvent = genevt->getEvent();
   //theEvent->print();
 
   JetMap* truth_jets = findNode::getClass<JetMap>(topNode, "AntiKt_Truth_r04");
+  const double jet_radius = truth_jets->get_par();
 
-  //std::cout << "truth jets has size " << truth_jets->size() << std::endl;
+  if (verbosity >= HFJetTruthTrigger::VERBOSITY_MORE)
+    std::cout << __PRETTY_FUNCTION__ << ": truth jets has size "
+        << truth_jets->size() << " and R = " << jet_radius << std::endl;
 
   int ijet_t = 0;
   bool pass_event = false;
@@ -91,7 +98,8 @@ HFJetTruthTrigger::process_event(PHCompositeNode *topNode)
 
       _h2all->Fill(this_jet->get_pt(), this_eta);
 
-      if (this_pt > 25 && this_pt < 30 && fabs(this_eta) < 0.6)
+      if (this_pt > _pt_min && this_pt < _pt_max && (this_eta) > _eta_min
+          && (this_eta) < _eta_max)
         {
           //pass_event = true;
           _h2->Fill(this_jet->get_pt(), this_eta);
@@ -102,53 +110,94 @@ HFJetTruthTrigger::process_event(PHCompositeNode *topNode)
         }
 
       int jet_flavor = 0;
-
+      double jet_parton_zt = 0;
 
       //std::cout << " truth jet #" << ijet_t << ", pt / eta / phi = " << this_pt << " / " << this_eta << " / " << this_phi << ", checking flavor" << std::endl;
+
+      //TODO: lack taggign scheme of gluon splitting -> QQ_bar
+      for (HepMC::GenEvent::particle_const_iterator p =
+          theEvent->particles_begin(); p != theEvent->particles_end(); ++p)
         {
-          for (HepMC::GenEvent::particle_const_iterator p =
-              theEvent->particles_begin(); p != theEvent->particles_end(); ++p)
+
+          float dR = deltaR((*p)->momentum().pseudoRapidity(), this_eta,
+              (*p)->momentum().phi(), this_phi);
+          if (dR > jet_radius)
+            continue;
+
+          int pidabs = abs((*p)->pdg_id());
+          const double zt = (*p)->momentum().perp() / this_pt;
+
+          if (pidabs == TDatabasePDG::Instance()->GetParticle("c")->PdgCode() //
+          or pidabs == TDatabasePDG::Instance()->GetParticle("b")->PdgCode() //
+          or pidabs == TDatabasePDG::Instance()->GetParticle("t")->PdgCode()) // handle heavy quarks only. All other favor tagged as default 0
             {
 
-              float dR = deltaR((*p)->momentum().pseudoRapidity(), this_eta,
-                  (*p)->momentum().phi(), this_phi);
-              if (dR > 0.4)
-                continue;
-
-              int pidabs = abs((*p)->pdg_id());
-              // b-jet overrides everything
-              if (pidabs == 5 && pidabs > abs(jet_flavor))
+              if (pidabs > abs(jet_flavor)) // heavy quark found
                 {
-                  //std::cout << " --BOTTOM--> pt / eta / phi = " <<  (*p)->momentum().perp() << " / " << (*p)->momentum().pseudoRapidity() << " / " << (*p)->momentum().phi() << std::endl;
-                  //(*p)->print();
+                  jet_parton_zt = zt;
                   jet_flavor = (*p)->pdg_id();
-                  _h2_b->Fill(this_jet->get_pt(), this_eta);
+                }
+              else if (pidabs == abs(jet_flavor)) // same quark mass. next compare zt
+                {
+                  if (zt > jet_parton_zt)
+                    {
+                      jet_parton_zt = zt;
+                      jet_flavor = (*p)->pdg_id();
+                    }
+                }
+
+              if (pidabs
+                  == TDatabasePDG::Instance()->GetParticle("b")->PdgCode())
+                {
+                  if (verbosity >= HFJetTruthTrigger::VERBOSITY_MORE)
+                    std::cout << " --BOTTOM--> pt / eta / phi = "
+                        << (*p)->momentum().perp() << " / "
+                        << (*p)->momentum().pseudoRapidity() << " / "
+                        << (*p)->momentum().phi() << std::endl;
 
                 }
-              else if (pidabs == 4 && pidabs > abs(jet_flavor))
+              else if (pidabs
+                  == TDatabasePDG::Instance()->GetParticle("c")->PdgCode())
                 {
-                  //std::cout << " --CHARM --> pt / eta / phi = " <<  (*p)->momentum().perp() << " / " << (*p)->momentum().pseudoRapidity() << " / " << (*p)->momentum().phi() << std::endl;
-                  //(*p)->print();
-                  jet_flavor = (*p)->pdg_id();
-                  _h2_c->Fill(this_jet->get_pt(), this_eta);
-
+                  if (verbosity >= HFJetTruthTrigger::VERBOSITY_MORE)
+                    std::cout << " --CHARM --> pt / eta / phi = "
+                        << (*p)->momentum().perp() << " / "
+                        << (*p)->momentum().pseudoRapidity() << " / "
+                        << (*p)->momentum().phi() << std::endl;
                 }
             }
+        } //       for (HepMC::GenEvent::particle_const_iterator p =
 
-
-          this_jet->set_property(static_cast<Jet::PROPERTY>(prop_JetPartonFlavor), jet_flavor);
-//          this_jet->identify();
+      if (abs(jet_flavor)
+          == TDatabasePDG::Instance()->GetParticle("b")->PdgCode())
+        {
+          _h2_b->Fill(this_jet->get_pt(), this_eta);
 
         }
+      else if (abs(jet_flavor)
+          == TDatabasePDG::Instance()->GetParticle("c")->PdgCode())
+        {
+          _h2_c->Fill(this_jet->get_pt(), this_eta);
+        }
+
+      this_jet->set_property(static_cast<Jet::PROPERTY>(prop_JetPartonFlavor),
+          jet_flavor);
+      this_jet->set_property(static_cast<Jet::PROPERTY>(prop_JetPartonZT),
+          jet_parton_zt);
+//          this_jet->identify();
 
       if (abs(jet_flavor) == _flavor)
         {
           pass_event = true;
-          //std::cout << " --> this is flavor " << jet_flavor << " like I want " << std::endl;
+          if (verbosity >= HFJetTruthTrigger::VERBOSITY_MORE)
+            std::cout << " --> this is flavor " << jet_flavor << " like I want "
+                << std::endl;
         }
       else
         {
-          //std::cout << " --> this is flavor " << jet_flavor << " which I do NOT want " << std::endl;
+          if (verbosity >= HFJetTruthTrigger::VERBOSITY_MORE)
+            std::cout << " --> this is flavor " << jet_flavor
+                << " which I do NOT want " << std::endl;
         }
 
       ijet_t++;
@@ -156,20 +205,25 @@ HFJetTruthTrigger::process_event(PHCompositeNode *topNode)
 
   if (pass_event && _total_pass >= _maxevent)
     {
-//      std::cout << " --> FAIL due to max events = " << _total_pass << std::endl;
+      if (verbosity >= HFJetTruthTrigger::VERBOSITY_SOME)
+        std::cout << __PRETTY_FUNCTION__ << " --> FAIL due to max events = "
+            << _total_pass << std::endl;
       _ievent++;
       return -1;
     }
   else if (pass_event)
     {
       _total_pass++;
-//      std::cout << " --> PASS, total = " << _total_pass << std::endl;
+      if (verbosity >= HFJetTruthTrigger::VERBOSITY_SOME)
+        std::cout << __PRETTY_FUNCTION__ << " --> PASS, total = " << _total_pass
+            << std::endl;
       _ievent++;
       return 0;
     }
   else
     {
-      //std::cout << " --> FAIL " << std::endl;
+      if (verbosity >= HFJetTruthTrigger::VERBOSITY_SOME)
+        std::cout << __PRETTY_FUNCTION__ << " --> FAIL " << std::endl;
       _ievent++;
       return -1;
     }
@@ -179,7 +233,9 @@ int
 HFJetTruthTrigger::End(PHCompositeNode *topNode)
 {
 
-  std::cout << " DVP PASSED " << _total_pass << " events" << std::endl;
+  if (verbosity >= HFJetTruthTrigger::VERBOSITY_SOME)
+    std::cout << __PRETTY_FUNCTION__ << " DVP PASSED " << _total_pass
+        << " events" << std::endl;
 
   _f->cd();
   _f->Write();

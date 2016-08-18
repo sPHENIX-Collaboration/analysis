@@ -39,9 +39,9 @@ public:
 void
 DrawPrototype2ShowerCalib( //
     const TString infile =
-//        "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2016/ShowerCalib/UIUC18.lst_EMCalCalib.root" //
+        "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2016/ShowerCalib/UIUC21.lst_EMCalCalib.root" //
 //        "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2016/ShowerCalib/THP.lst_EMCalCalib.root"//
-        "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2016/ShowerCalib/Tilt0.lst_EMCalCalib.root"//
+//        "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2016/ShowerCalib/Tilt0.lst_EMCalCalib.root"//
     )
 {
 
@@ -78,10 +78,19 @@ DrawPrototype2ShowerCalib( //
 
   event_sel = "good_data";
   cuts = "_good_data";
-  //  event_sel = "good_data && info.hodo_h==4 && info.hodo_v==3";
-  //  cuts = "_good_data_h4_v3";
-//    event_sel = "good_data && info.hodo_h>=3 && info.hodo_h<=4 && info.hodo_v>=2 && info.hodo_v<=4";
+//    event_sel = "good_data && info.hodo_h==4 && info.hodo_v==3";
 //    cuts = "_good_data_h4_v3";
+  //    event_sel = "good_data && info.hodo_h>=3 && info.hodo_h<=4 && info.hodo_v>=2 && info.hodo_v<=4";
+  //    cuts = "_good_data_h34_v234";
+//  event_sel = "good_data && info.hodo_h>=2 && info.hodo_h<=4 && info.hodo_v>=4 && info.hodo_v<=6";
+//  cuts = "_good_data_h234_v456";
+//  event_sel = "good_data && info.hodo_h>=3 && info.hodo_h<=3 && info.hodo_v>=5 && info.hodo_v<=5";
+//  cuts = "_good_data_h3_v5";
+//    event_sel = "good_data && info.hodo_h>=4 && info.hodo_h<=6 && info.hodo_v>=2 && info.hodo_v<=4";
+//    cuts = "_good_data_h456_v234";
+    event_sel = "good_data && info.hodo_h==5 && info.hodo_v==3";
+    cuts = "_good_data_h5_v3";
+
 
   cout << "Build event selection of " << (const char *) event_sel << endl;
 
@@ -138,7 +147,7 @@ DrawPrototype2ShowerCalib( //
   leg->AddEntry(ges_clus_5x5_prod.linearity, ges_clus_5x5_prod.name, "ep");
   leg->AddEntry(ges_clus_3x3_prod.linearity, ges_clus_3x3_prod.name, "ep");
   leg->AddEntry(ges_clus_5x5_temp.linearity, ges_clus_5x5_temp.name, "ep");
-  leg->AddEntry(ges_clus_5x5_recalib.linearity, ges_clus_5x5_recalib.name, "ep");
+  leg->AddEntry(ges_clus_5x5_recalib.linearity,  "clus_5x5_recalib", "ep");
   leg->AddEntry(f_calo_l_sim, "Unity", "l");
   leg->Draw();
 
@@ -187,7 +196,7 @@ DrawPrototype2ShowerCalib( //
           ges_clus_5x5_temp.f_res->GetParameter(0),
           ges_clus_5x5_temp.f_res->GetParameter(1)), "l");
 
-  leg->AddEntry(ges_clus_5x5_recalib.resolution, ges_clus_5x5_recalib.name, "ep");
+  leg->AddEntry(ges_clus_5x5_recalib.resolution, "clus_5x5_recalib", "ep");
   leg->AddEntry(ges_clus_5x5_recalib.f_res,
       Form("#DeltaE/E = %.1f%% #oplus %.1f%%/#sqrt{E}",
           ges_clus_5x5_recalib.f_res->GetParameter(0),
