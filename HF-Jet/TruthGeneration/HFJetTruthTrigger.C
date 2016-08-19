@@ -349,9 +349,9 @@ HFJetTruthTrigger::hadron_tagging(Jet * this_jet, HepMC::GenEvent* theEvent,
         }
     } //       for (HepMC::GenEvent::particle_const_iterator p =
 
-  this_jet->set_property(static_cast<Jet::PROPERTY>(prop_JetPartonFlavor),
+  this_jet->set_property(static_cast<Jet::PROPERTY>(prop_JetHadronFlavor),
       jet_flavor);
-  this_jet->set_property(static_cast<Jet::PROPERTY>(prop_JetPartonZT),
+  this_jet->set_property(static_cast<Jet::PROPERTY>(prop_JetHadronZT),
       jet_parton_zt);
 //          this_jet->identify();
 
