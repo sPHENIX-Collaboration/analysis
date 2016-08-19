@@ -31,7 +31,7 @@
 
 HFJetTruthTrigger::HFJetTruthTrigger(std::string filename, int flavor,
     std::string jet_node, int maxevent) :
-    SubsysReco("HFJetTagger")
+    SubsysReco("HFJetTagger_" + jet_node)
 {
 
   _foutname = filename;
