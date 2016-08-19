@@ -29,8 +29,8 @@
 #include <HepMC/GenEvent.h>
 #include <HepMC/GenVertex.h>
 
-HFJetTruthTrigger::HFJetTruthTrigger(std::string filename, int flavor, std::string jet_node,
-    int maxevent) :
+HFJetTruthTrigger::HFJetTruthTrigger(std::string filename, int flavor,
+    std::string jet_node, int maxevent) :
     SubsysReco("HFJetTagger")
 {
 
@@ -309,7 +309,7 @@ HFJetTruthTrigger::hadron_tagging(Jet * this_jet, HepMC::GenEvent* theEvent,
       const double zt = (*p)->momentum().perp() / this_pt;
 
       if (pidabs == TDatabasePDG::Instance()->GetParticle("c")->PdgCode() //
-      or pidabs == TDatabasePDG::Instance()->GetParticle("b")->PdgCode() ) // handle heavy quarks only. All other favor tagged as default 0
+      or pidabs == TDatabasePDG::Instance()->GetParticle("b")->PdgCode()) // handle heavy quarks only. All other favor tagged as default 0
         {
 
           if (pidabs > abs(jet_flavor)) // heavy quark found
@@ -329,22 +329,28 @@ HFJetTruthTrigger::hadron_tagging(Jet * this_jet, HepMC::GenEvent* theEvent,
           if (pidabs == TDatabasePDG::Instance()->GetParticle("b")->PdgCode())
             {
               if (verbosity >= HFJetTruthTrigger::VERBOSITY_MORE)
-                std::cout << __PRETTY_FUNCTION__
-                    << " --BOTTOM--> pt / eta / phi = "
-                    << (*p)->momentum().perp() << " / "
-                    << (*p)->momentum().pseudoRapidity() << " / "
-                    << (*p)->momentum().phi() << std::endl;
+                {
+                  std::cout << __PRETTY_FUNCTION__
+                      << " --BOTTOM--> pt / eta / phi = "
+                      << (*p)->momentum().perp() << " / "
+                      << (*p)->momentum().pseudoRapidity() << " / "
+                      << (*p)->momentum().phi() << " with hadron ";
+                  pdg_p->Print();
+                }
 
             }
           else if (pidabs
               == TDatabasePDG::Instance()->GetParticle("c")->PdgCode())
             {
               if (verbosity >= HFJetTruthTrigger::VERBOSITY_MORE)
-                std::cout << __PRETTY_FUNCTION__
-                    << " --CHARM --> pt / eta / phi = "
-                    << (*p)->momentum().perp() << " / "
-                    << (*p)->momentum().pseudoRapidity() << " / "
-                    << (*p)->momentum().phi() << std::endl;
+                {
+                  std::cout << __PRETTY_FUNCTION__
+                      << " --CHARM --> pt / eta / phi = "
+                      << (*p)->momentum().perp() << " / "
+                      << (*p)->momentum().pseudoRapidity() << " / "
+                      << (*p)->momentum().phi() << " with hadron ";
+                  pdg_p->Print();
+                }
             }
         }
     } //       for (HepMC::GenEvent::particle_const_iterator p =
@@ -356,7 +362,8 @@ HFJetTruthTrigger::hadron_tagging(Jet * this_jet, HepMC::GenEvent* theEvent,
 //          this_jet->identify();
 
   if (verbosity >= HFJetTruthTrigger::VERBOSITY_MORE)
-    std::cout << __PRETTY_FUNCTION__ <<" jet_flavor = "<<jet_flavor<<std::endl;
+    std::cout << __PRETTY_FUNCTION__ << " jet_flavor = " << jet_flavor
+        << std::endl;
 
   return jet_flavor;
 }
