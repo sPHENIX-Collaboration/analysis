@@ -29,7 +29,7 @@
 #include <HepMC/GenEvent.h>
 #include <HepMC/GenVertex.h>
 
-HFJetTruthTrigger::HFJetTruthTrigger(std::string filename, int flavor,
+HFJetTruthTrigger::HFJetTruthTrigger(std::string filename, int flavor, std::string jet_node,
     int maxevent) :
     SubsysReco("HFJetTagger")
 {
@@ -46,6 +46,7 @@ HFJetTruthTrigger::HFJetTruthTrigger(std::string filename, int flavor,
   _eta_min = -.6;
   _eta_max = +.6;
 
+  _jet_name = jet_node;
 }
 
 int
@@ -77,7 +78,7 @@ HFJetTruthTrigger::process_event(PHCompositeNode *topNode)
   HepMC::GenEvent* theEvent = genevt->getEvent();
   //theEvent->print();
 
-  JetMap* truth_jets = findNode::getClass<JetMap>(topNode, "AntiKt_Truth_r04");
+  JetMap* truth_jets = findNode::getClass<JetMap>(topNode, _jet_name);
   const double jet_radius = truth_jets->get_par();
 
   if (verbosity >= HFJetTruthTrigger::VERBOSITY_MORE)

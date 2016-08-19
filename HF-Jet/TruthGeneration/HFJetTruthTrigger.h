@@ -5,6 +5,7 @@
 #include <fun4all/SubsysReco.h>
 #include <vector>
 #include <cmath>
+#include <string>
 #include <limits.h>
 
 class TTree;
@@ -23,7 +24,7 @@ class HFJetTruthTrigger : public SubsysReco
 
 public:
 
-  HFJetTruthTrigger(std::string filename, int flavor, int maxevent = INT_MAX);
+  HFJetTruthTrigger(std::string filename, int flavor = 5, std::string jet_node = "AntiKt_Truth_r04", int maxevent = INT_MAX);
 
   int
   Init(PHCompositeNode*);
@@ -128,6 +129,7 @@ private:
   double _eta_min;
   double _eta_max;
 
+  std::string _jet_name;
 };
 
 #endif // __HFJetTruthTrigger_H__
