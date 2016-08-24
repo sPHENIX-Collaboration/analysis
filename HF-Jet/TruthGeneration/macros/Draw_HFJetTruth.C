@@ -25,7 +25,7 @@ TTree * T = NULL;
 void
 Draw_HFJetTruth(const TString infile =
     "../macros3/G4sPHENIXCells.root_DSTReader.root",
-    const double int_lumi = 181777 / 1.466e-05 / 1e9, const double dy = 0.6*2)
+    const double int_lumi = 678156/7.882e-05 / 1e9, const double dy = 0.6*2)
 {
   SetOKStyle();
   gStyle->SetOptStat(0);
@@ -63,10 +63,10 @@ Draw_HFJetTruth(const TString infile =
       "goff");
 
   T->Draw("AntiKt_Truth_r04.get_pt()>>h_b",
-      "AntiKt_Truth_r04.get_pt()>25 && abs(AntiKt_Truth_r04.get_eta())<0.6 && AntiKt_Truth_r04.get_property(1000)==5",
+      "AntiKt_Truth_r04.get_pt()>25 && abs(AntiKt_Truth_r04.get_eta())<0.6 && abs(AntiKt_Truth_r04.get_property(1000))==5",
       "goff");
   T->Draw("AntiKt_Truth_r04.get_pt()* AntiKt_Truth_r04.get_property(1001) >>h_bq",
-      "AntiKt_Truth_r04.get_pt()>25 && abs(AntiKt_Truth_r04.get_eta())<0.6 && AntiKt_Truth_r04.get_property(1000)==5",
+      "AntiKt_Truth_r04.get_pt()>25 && abs(AntiKt_Truth_r04.get_eta())<0.6 && abs(AntiKt_Truth_r04.get_property(1000))==5",
       "goff");
 
 //  T->Draw("AntiKt_Truth_r04.get_pt()>>h_bh",
@@ -78,7 +78,7 @@ Draw_HFJetTruth(const TString infile =
 //      "goff");
 //
 //  T->Draw("AntiKt_Truth_r04.get_pt()>>h_c",
-//      "AntiKt_Truth_r04.get_pt()>25 && abs(AntiKt_Truth_r04.get_eta())<0.6 && AntiKt_Truth_r04.get_property(1000)==4",
+//      "AntiKt_Truth_r04.get_pt()>25 && abs(AntiKt_Truth_r04.get_eta())<0.6 && abs(AntiKt_Truth_r04.get_property(1000))==4",
 //      "goff");
 
   Convert2CrossSection(hall , int_lumi, dy);
