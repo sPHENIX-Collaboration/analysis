@@ -39,9 +39,10 @@ public:
 void
 DrawPrototype2ShowerCalib( //
     const TString infile =
-        "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2016/ShowerCalib/UIUC21.lst_EMCalCalib.root" //
+//        "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2016/ShowerCalib/UIUC21.lst_EMCalCalib.root" //
 //        "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2016/ShowerCalib/THP.lst_EMCalCalib.root"//
-//        "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2016/ShowerCalib/Tilt0.lst_EMCalCalib.root"//
+        //        "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2016/ShowerCalib/Tilt0.lst_EMCalCalib.root"//
+                "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2016/ShowerCalib/Rot45.lst_EMCalCalib.root"//
     )
 {
 
@@ -88,8 +89,15 @@ DrawPrototype2ShowerCalib( //
 //  cuts = "_good_data_h3_v5";
 //    event_sel = "good_data && info.hodo_h>=4 && info.hodo_h<=6 && info.hodo_v>=2 && info.hodo_v<=4";
 //    cuts = "_good_data_h456_v234";
-    event_sel = "good_data && info.hodo_h==5 && info.hodo_v==3";
-    cuts = "_good_data_h5_v3";
+  //    event_sel = "good_data && info.hodo_h==5 && info.hodo_v==3";
+  //    cuts = "_good_data_h5_v3";
+
+//  event_sel = "good_data && info.hodo_h==5 && info.hodo_v==5";
+//  cuts = "_good_data_h5_v5";
+//  event_sel = "good_data &&  info.hodo_v==5";
+//  cuts = "_good_data_hall_v5";
+  event_sel = "good_data && ( info.hodo_v==5 ||  info.hodo_v==4)";
+  cuts = "_good_data_hall_v45";
 
 
   cout << "Build event selection of " << (const char *) event_sel << endl;
@@ -103,6 +111,8 @@ DrawPrototype2ShowerCalib( //
 
   HodoscopeCheck();
   vector<double> beam_mom(GetBeamMom());
+
+//  return;
 
   lin_res ges_clus_5x5_prod = GetResolution("clus_5x5_prod", beam_mom, kBlue);
   lin_res ges_clus_3x3_prod = GetResolution("clus_3x3_prod", beam_mom,
