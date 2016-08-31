@@ -96,6 +96,14 @@ public:
     _pt_min = ptMin;
   }
 
+  //! action to take if no jet fitting _flavor requirement found. Action defined in <fun4all/Fun4AllReturnCodes.h>
+  //! Default action is DISCARDEVENT for DST level filtering, one can further choose ABORTEVENT to use it as processing level filtering
+  void
+  set_rejection_action(int action)
+  {
+    _rejection_action = action;
+  }
+
 private:
 
   //! tag jet flavor by parton matching, like PRL 113, 132301 (2014)
@@ -130,6 +138,9 @@ private:
   double _eta_max;
 
   std::string _jet_name;
+
+  //! action to take if no jet fitting _flavor requirement found. Action defined in <fun4all/Fun4AllReturnCodes.h>
+  int _rejection_action;
 };
 
 #endif // __HFJetTruthTrigger_H__
