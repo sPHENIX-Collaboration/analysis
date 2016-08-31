@@ -66,7 +66,7 @@ Draw_HFJetTruth(const TString infile =
   TH1 * h_bq = new TH1F("h_bq", ";p_{T} (GeV/c)", 100, 0, 100);
   TH1 * h_bh = new TH1F("h_bh", ";p_{T} (GeV/c)", 100, 0, 100);
   TH1 * h_bh5 = new TH1F("h_bh5", ";p_{T} (GeV/c)", 100, 0, 100);
-  TH1 * h_bh5 = new TH1F("h_ch5", ";p_{T} (GeV/c)", 100, 0, 100);
+  TH1 * h_ch5 = new TH1F("h_ch5", ";p_{T} (GeV/c)", 100, 0, 100);
   TH1 * h_c = new TH1F("h_c", ";p_{T} (GeV/c)", 100, 0, 100);
 
   T->Draw("AntiKt_Truth_r04.get_pt()>>hall",
@@ -149,10 +149,10 @@ Draw_HFJetTruth(const TString infile =
   gr_phenix->Draw("pe");
 
   h_b->Draw("same");
-//  h_bh5->Draw("same");
+  h_bh5->Draw("same");
 //  h_bq->Draw("same");
   h_c->Draw("same");
-//  h_ch5->Draw("same");
+  h_ch5->Draw("same");
 
   hall->GetXaxis()->SetRangeUser(18, 60);
   hall->GetYaxis()->SetTitle(
@@ -166,9 +166,9 @@ Draw_HFJetTruth(const TString infile =
       "lpe");
   leg->AddEntry(h_c, "c-quark jet, Pythia8, Truth, anti-k_{t}, R=0.4", "lpe");
   leg->AddEntry(h_b, "b-quark jet, Pythia8, Truth, anti-k_{t}, R=0.4", "lpe");
-//  leg->AddEntry(h_bh5,
-//      "b-hadron jet, Pythia8, Truth, anti-k_{t}, R=0.4, p_{T, b-hadron}>5 GeV/c",
-//      "lpe");
+  leg->AddEntry(h_bh5,
+      "b-hadron jet, Pythia8, Truth, anti-k_{t}, R=0.4, p_{T, b-hadron}>5 GeV/c",
+      "lpe");
   leg->AddEntry(gr_phenix, "PHENIX inclusive jet, PRL 116, 122301 (2016)", "ple");
 //  leg->AddEntry(gr_fonll_c, "c-quark, FONLL v1.3.2, CTEQ6.6, |y|<0.6", "f");
   leg->AddEntry(gr_fonll_b, "b-quark, FONLL v1.3.2, CTEQ6.6, |y|<0.6", "f");
