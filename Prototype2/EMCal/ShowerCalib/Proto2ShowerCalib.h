@@ -41,6 +41,9 @@ public:
   int
   LoadRecalibMap(const std::string & file);
 
+  void
+  is_sim(bool b) {_is_sim = b;}
+
   class Eval_Run : public TObject
   {
   public:
@@ -156,6 +159,8 @@ private:
   {
     n_size = 8
   };
+
+  bool _is_sim;
 
   Fun4AllHistoManager *
   get_HistoManager();
