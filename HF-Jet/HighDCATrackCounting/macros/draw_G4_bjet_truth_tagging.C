@@ -24,11 +24,14 @@ float deltaR( float eta1, float eta2, float phi1, float phi2 ) {
 void draw_G4_bjet_truth_tagging(
 		const char* input = "MIE_1M/HFtag_jet.root",
 		const TString tag_method = "Parton", // Parton, Hadron
-		const char* tracking_option_name = "2014 proposal tracker"
+		const char* tracking_option_name = "2014 proposal tracker",
+		const int dca_method = 0 // direct from g4hough, reco-vertex and strait line assumption, dca3d reco-vertex and strait line assumption
 		) { 
 
 	const double simulation_jet_energy = 20;
 
+	gROOT->LoadMacro("SetOKStyle.C");
+	SetOKStyle();
 
 	TFile *fout = TFile::Open("dca_eval.root","recreate");
 	fout->cd();
@@ -243,6 +246,16 @@ void draw_G4_bjet_truth_tagging(
 	float track_dca2d[100];
 	float track_dca2d_error[100];
 	float track_dca2d_phi[100];
+
+	float track_dca2d_calc[100];
+	float track_dca2d_calc_truth[100];
+	float track_dca3d_calc[100];
+	float track_dca3d_calc_truth[100];
+
+	float track_quality[100];
+	float track_chisq[100];
+	int track_ndf[100];
+
 	bool track_best_primary[100];
 	unsigned int track_best_nclusters[100];
 	int track_best_pid[100];
@@ -273,6 +286,16 @@ void draw_G4_bjet_truth_tagging(
 	ttree->SetBranchAddress("track_dca2d",  track_dca2d );
 	ttree->SetBranchAddress("track_dca2d_error",  track_dca2d_error );
 	ttree->SetBranchAddress("track_dca2d_phi",  track_dca2d_phi );
+
+	ttree->SetBranchAddress("track_dca2d_calc",  track_dca2d_calc );
+	ttree->SetBranchAddress("track_dca2d_calc_truth",  track_dca2d_calc_truth );
+	ttree->SetBranchAddress("track_dca3d_calc",  track_dca3d_calc );
+	ttree->SetBranchAddress("track_dca3d_calc_truth",  track_dca3d_calc_truth );
+
+	ttree->SetBranchAddress("track_quality",   track_quality );
+	ttree->SetBranchAddress("track_chisq",   track_chisq );
+	ttree->SetBranchAddress("track_ndf",   track_ndf );
+
 	ttree->SetBranchAddress("track_best_primary",  track_best_primary );
 	ttree->SetBranchAddress("track_best_nclusters",  track_best_nclusters );
 	ttree->SetBranchAddress("track_best_pid",  track_best_pid );
@@ -391,6 +414,8 @@ void draw_G4_bjet_truth_tagging(
 
 			for (int itrk = 0; itrk < track_n; itrk++) {
 
+				if(!(track_quality[itrk]<1.)) continue; // yuhw
+
 				_dca2d[itrk] = -99;
 				_dca2d_error[itrk] = -99;
 
@@ -399,7 +424,9 @@ void draw_G4_bjet_truth_tagging(
 
 
 				track_dca2d[ itrk ] = fabs( track_dca2d[ itrk ] );
-				if (track_dca2d[ itrk ] > 0.1) continue;//yuhw
+				if(dca_method == 1) track_dca2d[ itrk ] = fabs( track_dca2d_calc[ itrk ] ); 
+				if(dca_method == 2) track_dca2d[ itrk ] = fabs( track_dca3d_calc[ itrk ] ); 
+				if (! (track_dca2d[ itrk ] < 0.1)) continue; // yuhw
 
 				// set sign WRT jet
 				{
@@ -914,11 +941,15 @@ void draw_G4_bjet_truth_tagging(
 		tg_bjetE_vs_bjetP_third_highest_dca->SetPoint( tg_bjetE_vs_bjetP_third_highest_dca->GetN(), eff, pur );
 	}
 
+	//const float plot_min_S_cut = 1.;
+	const float plot_max_S_cut = 10.;
 	TGraph *tg_bjetE_vs_bjetP_highest_S = new TGraph();
 	for (int n = 0; n < h1_jet_highest_S_EFF[0]->GetNbinsX(); n++) {
 		if ( h1_jet_highest_S_EFF[0]->GetBinContent( n + 1 ) == 0 ) continue;
 		float eff = h1_jet_highest_S_EFF[2]->GetBinContent( n + 1 );
 		if(eff < plot_min_bjet_eff_cut) continue;
+		//if(h1_jet_highest_S_EFF[0]->GetBinCenter(n+1) < plot_min_S_cut) continue;
+		if(h1_jet_highest_S_EFF[0]->GetBinCenter(n+1) > plot_max_S_cut) continue;
 		float pur = h1_jet_highest_S_FINE[2]->Integral( n + 1, -1 ) /
 			(h1_jet_highest_S_FINE[0]->Integral( n + 1, -1 )+
 			 h1_jet_highest_S_FINE[1]->Integral( n + 1, -1 )+
@@ -931,6 +962,8 @@ void draw_G4_bjet_truth_tagging(
 		if ( h1_jet_second_highest_S_EFF[0]->GetBinContent( n + 1 ) == 0 ) continue;
 		float eff = h1_jet_second_highest_S_EFF[2]->GetBinContent( n + 1 );
 		if(eff < plot_min_bjet_eff_cut) continue;
+		//if(h1_jet_second_highest_S_EFF[0]->GetBinCenter(n+1) < plot_min_S_cut) continue;
+		if(h1_jet_second_highest_S_EFF[0]->GetBinCenter(n+1) > plot_max_S_cut) continue;
 		float pur = h1_jet_second_highest_S_FINE[2]->Integral( n + 1, -1 ) /
 			(h1_jet_second_highest_S_FINE[0]->Integral( n + 1, -1 )+
 			 h1_jet_second_highest_S_FINE[1]->Integral( n + 1, -1 )+
@@ -943,6 +976,8 @@ void draw_G4_bjet_truth_tagging(
 		if ( h1_jet_third_highest_S_EFF[0]->GetBinContent( n + 1 ) == 0 ) continue;
 		float eff = h1_jet_third_highest_S_EFF[2]->GetBinContent( n + 1 );
 		if(eff < plot_min_bjet_eff_cut) continue;
+		//if(h1_jet_third_highest_S_EFF[0]->GetBinCenter(n+1) < plot_min_S_cut) continue;
+		if(h1_jet_third_highest_S_EFF[0]->GetBinCenter(n+1) > plot_max_S_cut) continue;
 		float pur = h1_jet_third_highest_S_FINE[2]->Integral( n + 1, -1 ) /
 			(h1_jet_third_highest_S_FINE[0]->Integral( n + 1, -1 )+
 			 h1_jet_third_highest_S_FINE[1]->Integral( n + 1, -1 )+
@@ -1039,6 +1074,8 @@ void draw_G4_bjet_truth_tagging(
 	tc->Print("plot/tg_bjetE_vs_bjetP_algs.pdf");
 	tc->Print("plot/tg_bjetE_vs_bjetP_algs.root");
 	//------------
+	//SetOKStyle();
+	gPad->SetGrid(1,1);
 
 	gPad->SetLogy(1);
 

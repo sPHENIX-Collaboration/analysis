@@ -73,8 +73,14 @@ private:
 	float _b_track_eta[1000];
 	float _b_track_phi[1000];
 	unsigned int _b_track_nclusters[1000];
+
 	float _b_track_dca2d[1000];
 	float _b_track_dca2d_error[1000];
+	float _b_track_dca2d_calc[1000];
+	float _b_track_dca2d_calc_truth[1000];
+	float _b_track_dca3d_calc[1000];
+	float _b_track_dca3d_calc_truth[1000];
+
 	float _b_track_dca2d_phi[1000];
 
 	float _b_track_quality[1000];
