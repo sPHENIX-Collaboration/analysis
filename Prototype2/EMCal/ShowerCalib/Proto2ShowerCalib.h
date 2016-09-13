@@ -68,6 +68,8 @@ public:
 
       sum_energy_T = -31454;
       EoP = -31454;
+      truth_y = -31454;
+      truth_z = -31454;
 
       valid_hodo_v = false;
       valid_hodo_h = false;
@@ -99,7 +101,10 @@ public:
     bool good_e;
     bool good_data;
 
-  ClassDef(Eval_Run,2)
+    float truth_y;
+    float truth_z;
+
+  ClassDef(Eval_Run,3)
   };
 
   class Eval_Cluster : public TObject

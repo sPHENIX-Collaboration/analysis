@@ -41,8 +41,11 @@ DrawPrototype2ShowerCalib( //
     const TString infile =
 //        "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2016/ShowerCalib/UIUC21.lst_EMCalCalib.root" //
 //        "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2016/ShowerCalib/THP.lst_EMCalCalib.root"//
-        //        "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2016/ShowerCalib/Tilt0.lst_EMCalCalib.root"//
-                "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2016/ShowerCalib/Rot45.lst_EMCalCalib.root"//
+//            "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2016/ShowerCalib/Tilt0.lst_EMCalCalib.root"//
+//        "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2016/ShowerCalib/Rot45.lst_EMCalCalib.root"//
+//        "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2016/EMCal_sim/./0Degree_1Col_LightCollectionSeanStoll_CrackScan/Prototype_e-_8_SegALL_EMCalCalib.root"//
+        //        "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2016/EMCal_sim/./10DegreeRot_1Col_LightCollectionSeanStoll_CrackScan/Prototype_e-_8_SegALL_EMCalCalib.root"//
+                "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2016/EMCal_sim/./10DegreeRot_1Col_LightCollectionSeanStoll/Prototype_e-_ALL_SegALL_EMCalCalib.root"//
     )
 {
 
@@ -77,8 +80,14 @@ DrawPrototype2ShowerCalib( //
 
   assert(_file0);
 
-  event_sel = "good_data";
-  cuts = "_good_data";
+//  event_sel = "1";
+//  cuts = "_all_data";
+  event_sel = "abs(truth_z + 15.9)<0.25 && abs(truth_y - .1)<0.25";
+  cuts = "_10DegreeRot_h1_v1";
+//  event_sel = "good_data";
+//  cuts = "_good_data";
+//  event_sel = "info.beam_mom == -8 && good_data";
+//  cuts = "_8GeV_good_data";
 //    event_sel = "good_data && info.hodo_h==4 && info.hodo_v==3";
 //    cuts = "_good_data_h4_v3";
   //    event_sel = "good_data && info.hodo_h>=3 && info.hodo_h<=4 && info.hodo_v>=2 && info.hodo_v<=4";
@@ -96,9 +105,8 @@ DrawPrototype2ShowerCalib( //
 //  cuts = "_good_data_h5_v5";
 //  event_sel = "good_data &&  info.hodo_v==5";
 //  cuts = "_good_data_hall_v5";
-  event_sel = "good_data && ( info.hodo_v==5 ||  info.hodo_v==4)";
-  cuts = "_good_data_hall_v45";
-
+//  event_sel = "good_data && ( info.hodo_v==5 ||  info.hodo_v==4)";
+//  cuts = "_good_data_hall_v45";
 
   cout << "Build event selection of " << (const char *) event_sel << endl;
 
@@ -109,7 +117,307 @@ DrawPrototype2ShowerCalib( //
 
   T->SetEventList(elist);
 
-  HodoscopeCheck();
+//  PositionDependenceData("clus_5x5_prod.sum_E");
+//  PositionDependenceData("clus_5x5_recalib.sum_E");
+//  HodoscopeCheck();
+//  Get_Res_linear_Summmary();
+
+//  PositionDependenceSim("clus_5x5_prod.sum_E", -0, 5); // 0 degree tilted
+//  SimPositionCheck(-15); // 10 degree tilted
+//  PositionDependenceSim("clus_5x5_prod.sum_E", -15, 5); // 10 degree tilted
+  Get_Res_linear_Summmary_Sim();
+}
+
+void
+PositionDependenceData(TString sTOWER = "clus_5x5_prod.sum_E",
+    const double z_shift = 0, const int n_div = 1)
+{
+  TH3F * EnergySum_LG3 =
+      new TH3F("EnergySum_LG3",
+          ";Horizontal Hodoscope (5 mm);Vertical Hodoscope (5 mm);5x5 Cluster Energy (GeV)", //
+          8, -.5, 7.5, //
+          8, -.5, 7.5, //
+          200, 1, 20);
+
+  T->Draw(sTOWER + ":7-hodo_v:hodo_h>>EnergySum_LG3", "", "goff");
+
+  TProfile2D * EnergySum_LG3_xy = EnergySum_LG3->Project3DProfile("yx");
+  TH2 * EnergySum_LG3_zx = EnergySum_LG3->Project3D("zx");
+  TH2 * EnergySum_LG3_zy = EnergySum_LG3->Project3D("zy");
+
+  TGraphErrors * ge_EnergySum_LG3_zx = FitProfile(EnergySum_LG3_zx);
+  TGraphErrors * ge_EnergySum_LG3_zy = FitProfile(EnergySum_LG3_zy);
+
+  TText * t;
+  TCanvas *c1 = new TCanvas(
+      TString(Form("EMCDistributionVSBeam_SUM_NDiv%d_", n_div)) + sTOWER + cuts,
+      TString(Form("EMCDistributionVSBeam_SUM_NDiv%d_", n_div)) + sTOWER + cuts,
+      1000, 960);
+  c1->Divide(2, 2);
+  int idx = 1;
+  TPad * p;
+
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+//  p->SetLogy();
+  p->SetGridx(0);
+  p->SetGridy(0);
+
+  EnergySum_LG3_xy->Draw("colz");
+  EnergySum_LG3_xy->SetTitle(
+      "Position scan;Horizontal Hodoscope (5 mm);Vertical Hodoscope (5 mm)");
+
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+//  p->SetLogy();
+  p->SetGridx(0);
+  p->SetGridy(0);
+
+  EnergySum_LG3_zx->Draw("colz");
+  EnergySum_LG3_zx->SetTitle(
+      "Position scan;Horizontal Hodoscope (5 mm);5x5 Cluster Energy (GeV)");
+
+  ge_EnergySum_LG3_zx->SetLineWidth(2);
+  ge_EnergySum_LG3_zx->SetMarkerStyle(kFullCircle);
+  ge_EnergySum_LG3_zx->Draw("pe");
+
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+//  p->SetLogy();
+  p->SetGridx(0);
+  p->SetGridy(0);
+
+  EnergySum_LG3_zy->Draw("colz");
+  EnergySum_LG3_zy->SetTitle(
+      "Position scan;Vertical Hodoscope (5 mm);5x5 Cluster Energy (GeV)");
+
+  ge_EnergySum_LG3_zy->SetLineWidth(2);
+  ge_EnergySum_LG3_zy->SetMarkerStyle(kFullCircle);
+  ge_EnergySum_LG3_zy->Draw("pe");
+
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+//  p->SetLogy();
+  p->SetGridx(0);
+  p->SetGridy(0);
+
+  TH1 * h = (TH1 *) EnergySum_LG3->ProjectionZ();
+
+  TF1 * fgaus = new TF1("fgaus_LG", "gaus", 0, 100);
+  fgaus->SetParameters(1, h->GetMean() - 2 * h->GetRMS(),
+      h->GetMean() + 2 * h->GetRMS());
+  h->Fit(fgaus, "M");
+
+  h->Sumw2();
+  h->GetXaxis()->SetRangeUser(h->GetMean() - 4 * h->GetRMS(),
+      h->GetMean() + 4 * h->GetRMS());
+  EnergySum_LG3_zx->GetYaxis()->SetRangeUser(h->GetMean() - 4 * h->GetRMS(),
+      h->GetMean() + 4 * h->GetRMS());
+  EnergySum_LG3_zy->GetYaxis()->SetRangeUser(h->GetMean() - 4 * h->GetRMS(),
+      h->GetMean() + 4 * h->GetRMS());
+
+  h->SetLineWidth(2);
+  h->SetMarkerStyle(kFullCircle);
+
+  h->SetTitle(
+      Form("#DeltaE/<E> = %.1f%%",
+          100 * fgaus->GetParameter(2) / fgaus->GetParameter(1)));
+
+  SaveCanvas(c1,
+      TString(_file0->GetName()) + TString("_DrawPrototype2ShowerCalib_")
+          + TString(c1->GetName()), kTRUE);
+}
+
+void
+PositionDependenceSim(TString sTOWER = "clus_5x5_prod.sum_E",
+    const double z_shift = 0, const int n_div = 1)
+{
+  TH3F * EnergySum_LG3 =
+      new TH3F("EnergySum_LG3",
+          ";Beam Horizontal Pos (cm);Beam Vertical Pos (cm);5x5 Cluster Energy (GeV)", //
+          20 * n_div, z_shift - 5, z_shift + 5, //
+          20 * n_div, -5, 5, //
+          200, 1, 20);
+
+  T->Draw(sTOWER + ":info.truth_y:info.truth_z>>EnergySum_LG3", "", "goff");
+
+  TProfile2D * EnergySum_LG3_xy = EnergySum_LG3->Project3DProfile("yx");
+  TH2 * EnergySum_LG3_zx = EnergySum_LG3->Project3D("zx");
+  TH2 * EnergySum_LG3_zy = EnergySum_LG3->Project3D("zy");
+
+  TGraphErrors * ge_EnergySum_LG3_zx = FitProfile(EnergySum_LG3_zx);
+  TGraphErrors * ge_EnergySum_LG3_zy = FitProfile(EnergySum_LG3_zy);
+
+  TText * t;
+  TCanvas *c1 = new TCanvas(
+      TString(Form("EMCDistributionVSBeam_SUM_NDiv%d_", n_div)) + sTOWER + cuts,
+      TString(Form("EMCDistributionVSBeam_SUM_NDiv%d_", n_div)) + sTOWER + cuts,
+      1000, 960);
+  c1->Divide(2, 2);
+  int idx = 1;
+  TPad * p;
+
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+//  p->SetLogy();
+  p->SetGridx(0);
+  p->SetGridy(0);
+
+  EnergySum_LG3_xy->Draw("colz");
+  EnergySum_LG3_xy->SetTitle(
+      "Position scan;Beam Horizontal Pos (cm);Beam Vertical Pos (cm)");
+
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+//  p->SetLogy();
+  p->SetGridx(0);
+  p->SetGridy(0);
+
+  EnergySum_LG3_zx->Draw("colz");
+  EnergySum_LG3_zx->SetTitle(
+      "Position scan;Beam Horizontal Pos (cm);5x5 Cluster Energy (GeV)");
+
+  ge_EnergySum_LG3_zx->SetLineWidth(2);
+  ge_EnergySum_LG3_zx->SetMarkerStyle(kFullCircle);
+  ge_EnergySum_LG3_zx->Draw("pe");
+
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+//  p->SetLogy();
+  p->SetGridx(0);
+  p->SetGridy(0);
+
+  EnergySum_LG3_zy->Draw("colz");
+  EnergySum_LG3_zy->SetTitle(
+      "Position scan;Beam Vertical Pos (cm);5x5 Cluster Energy (GeV)");
+
+  ge_EnergySum_LG3_zy->SetLineWidth(2);
+  ge_EnergySum_LG3_zy->SetMarkerStyle(kFullCircle);
+  ge_EnergySum_LG3_zy->Draw("pe");
+
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+//  p->SetLogy();
+  p->SetGridx(0);
+  p->SetGridy(0);
+
+  TH1 * h = (TH1 *) EnergySum_LG3->ProjectionZ();
+
+  TF1 * fgaus = new TF1("fgaus_LG", "gaus", 0, 100);
+  fgaus->SetParameters(1, h->GetMean() - 2 * h->GetRMS(),
+      h->GetMean() + 2 * h->GetRMS());
+  h->Fit(fgaus, "M");
+
+  h->Sumw2();
+  h->GetXaxis()->SetRangeUser(h->GetMean() - 4 * h->GetRMS(),
+      h->GetMean() + 4 * h->GetRMS());
+  EnergySum_LG3_zx->GetYaxis()->SetRangeUser(h->GetMean() - 4 * h->GetRMS(),
+      h->GetMean() + 4 * h->GetRMS());
+  EnergySum_LG3_zy->GetYaxis()->SetRangeUser(h->GetMean() - 4 * h->GetRMS(),
+      h->GetMean() + 4 * h->GetRMS());
+
+  h->SetLineWidth(2);
+  h->SetMarkerStyle(kFullCircle);
+
+  h->SetTitle(
+      Form("#DeltaE/<E> = %.1f%%",
+          100 * fgaus->GetParameter(2) / fgaus->GetParameter(1)));
+
+  SaveCanvas(c1,
+      TString(_file0->GetName()) + TString("_DrawPrototype2ShowerCalib_")
+          + TString(c1->GetName()), kTRUE);
+}
+
+void
+HodoscopeCheck()
+{
+  vector<double> mom;
+
+  TText * t;
+  TCanvas *c1 = new TCanvas("HodoscopeCheck" + cuts, "HodoscopeCheck" + cuts,
+      1300, 950);
+
+  c1->Divide(2, 1);
+  int idx = 1;
+  TPad * p;
+
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+  p->SetGridx(1);
+  p->SetGridy(1);
+  p->SetLogz();
+
+  T->Draw("clus_5x5_prod.average_col:hodo_h>>h2_h(8,-.5,7.5,160,-.5,7.5)",
+      "good_data", "colz");
+  h2_h->SetTitle(
+      "Horizontal hodoscope check;Horizontal Hodoscope;5x5 cluster mean col");
+
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+  p->SetGridx(1);
+  p->SetGridy(1);
+  p->SetLogz();
+
+  T->Draw("clus_5x5_prod.average_row:hodo_v>>h2_v(8,-.5,7.5,160,-.5,7.5)",
+      "good_data", "colz");
+  h2_v->SetTitle(
+      "Vertical hodoscope check;Vertical Hodoscope;5x5 cluster mean row");
+
+  SaveCanvas(c1,
+      TString(_file0->GetName()) + "_DrawPrototype2ShowerCalib_"
+          + TString(c1->GetName()), kTRUE);
+
+  return mom;
+}
+
+void
+SimPositionCheck(const double shift_z  = 0)
+{
+  vector<double> mom;
+
+  TText * t;
+  TCanvas *c1 = new TCanvas("SimPositionCheck" + cuts, "SimPositionCheck" + cuts,
+      1300, 950);
+
+  c1->Divide(2, 1);
+  int idx = 1;
+  TPad * p;
+
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+  p->SetGridx(1);
+  p->SetGridy(1);
+  p->SetLogz();
+
+  T->Draw(Form("clus_5x5_prod.average_col:truth_z>>h2_h(30,%f,%f,160,-.5,7.5)",shift_z-1.5, shift_z+ 1.5),
+      "1", "colz");
+  h2_h->SetTitle(
+      "Horizontal hodoscope check;Horizontal beam pos;5x5 cluster mean col");
+
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+  p->SetGridx(1);
+  p->SetGridy(1);
+  p->SetLogz();
+
+  T->Draw("clus_5x5_prod.average_row:truth_y>>h2_v(30,-1.5,1.5,160,-.5,7.5)",
+      "1", "colz");
+  h2_v->SetTitle(
+      "Vertical hodoscope check;Vertical beam pos;5x5 cluster mean row");
+
+  SaveCanvas(c1,
+      TString(_file0->GetName()) + "_DrawPrototype2ShowerCalib_"
+          + TString(c1->GetName()), kTRUE);
+
+  return ;
+}
+
+
+
+void
+Get_Res_linear_Summmary()
+{
+
   vector<double> beam_mom(GetBeamMom());
 
 //  return;
@@ -118,11 +426,12 @@ DrawPrototype2ShowerCalib( //
   lin_res ges_clus_3x3_prod = GetResolution("clus_3x3_prod", beam_mom,
       kBlue + 3);
   lin_res ges_clus_5x5_temp = GetResolution("clus_5x5_temp", beam_mom,
-      kRed -2);
+      kRed - 2);
   lin_res ges_clus_5x5_recalib = GetResolution("clus_5x5_recalib", beam_mom,
       kRed + 3);
 
-  TCanvas *c1 = new TCanvas(Form("Res_linear")+ cuts, Form("Res_linear")+ cuts, 1300, 600);
+  TCanvas *c1 = new TCanvas(Form("Res_linear") + cuts,
+      Form("Res_linear") + cuts, 1300, 600);
   c1->Divide(2, 1);
   int idx = 1;
   TPad * p;
@@ -157,7 +466,7 @@ DrawPrototype2ShowerCalib( //
   leg->AddEntry(ges_clus_5x5_prod.linearity, ges_clus_5x5_prod.name, "ep");
   leg->AddEntry(ges_clus_3x3_prod.linearity, ges_clus_3x3_prod.name, "ep");
   leg->AddEntry(ges_clus_5x5_temp.linearity, ges_clus_5x5_temp.name, "ep");
-  leg->AddEntry(ges_clus_5x5_recalib.linearity,  "clus_5x5_recalib", "ep");
+  leg->AddEntry(ges_clus_5x5_recalib.linearity, "clus_5x5_recalib", "ep");
   leg->AddEntry(f_calo_l_sim, "Unity", "l");
   leg->Draw();
 
@@ -231,45 +540,105 @@ DrawPrototype2ShowerCalib( //
 }
 
 void
-HodoscopeCheck()
+Get_Res_linear_Summmary_Sim()
 {
-  vector<double> mom;
 
-  TText * t;
-  TCanvas *c1 = new TCanvas("HodoscopeCheck" + cuts, "HodoscopeCheck" + cuts,
-      1300, 950);
+  vector<double> beam_mom(GetBeamMom());
 
+//  return;
+
+  lin_res ges_clus_5x5_prod = GetResolution("clus_5x5_prod", beam_mom, kBlue);
+  lin_res ges_clus_3x3_prod = GetResolution("clus_3x3_prod", beam_mom,
+      kBlue + 3);
+
+  TCanvas *c1 = new TCanvas(Form("Res_linear") + cuts,
+      Form("Res_linear") + cuts, 1300, 600);
   c1->Divide(2, 1);
   int idx = 1;
   TPad * p;
 
   p = (TPad *) c1->cd(idx++);
   c1->Update();
-  p->SetGridx(1);
-  p->SetGridy(1);
-  p->SetLogz();
+//  p->SetLogy();
 
-  T->Draw("clus_5x5_prod.average_col:hodo_h>>h2_h(8,-.5,7.5,160,-.5,7.5)",
-      "good_data", "colz");
-  h2_h->SetTitle(
-      "Horizontal hodoscope check;Horizontal Hodoscope;5x5 cluster mean col");
+  TLegend* leg = new TLegend(.15, .7, .6, .85);
+
+  p->DrawFrame(0, 0, 25, 25,
+      Form("Electron Linearity;Input energy (GeV);Measured Energy (GeV)"));
+  TLine * l = new TLine(0, 0, 25, 25);
+  l->SetLineColor(kGray);
+//  l->Draw();
+
+  TF1 * f_calo_l_sim = new TF1("f_calo_l", "pol2", 0.5, 25);
+//  f_calo_l_sim->SetParameters(-0.03389, 0.9666, -0.0002822);
+  f_calo_l_sim->SetParameters(-0., 1, -0.);
+//  f_calo_l_sim->SetLineWidth(1);
+  f_calo_l_sim->SetLineColor(kGreen + 2);
+  f_calo_l_sim->SetLineWidth(3);
+
+  f_calo_l_sim->Draw("same");
+  ges_clus_5x5_prod.linearity->Draw("p");
+  ges_clus_3x3_prod.linearity->Draw("p");
+//  ge_linear->Fit(f_calo_l, "RM0");
+//  f_calo_l->Draw("same");
+
+  leg->AddEntry(ges_clus_5x5_prod.linearity, ges_clus_5x5_prod.name, "ep");
+  leg->AddEntry(ges_clus_3x3_prod.linearity, ges_clus_3x3_prod.name, "ep");
+  leg->AddEntry(f_calo_l_sim, "Unity", "l");
+  leg->Draw();
 
   p = (TPad *) c1->cd(idx++);
   c1->Update();
-  p->SetGridx(1);
-  p->SetGridy(1);
-  p->SetLogz();
+//  p->SetLogy();
+  p->SetGridx(0);
+  p->SetGridy(0);
 
-  T->Draw("clus_5x5_prod.average_row:hodo_v>>h2_v(8,-.5,7.5,160,-.5,7.5)",
-      "good_data", "colz");
-  h2_v->SetTitle(
-      "Vertical hodoscope check;Vertical Hodoscope;5x5 cluster mean row");
+  TF1 * f_calo_sim = new TF1("f_calo_sim", "sqrt([0]*[0]+[1]*[1]/x)/100", 0.5,
+      25);
+  f_calo_sim->SetParameters(2.4, 11.8);
+  f_calo_sim->SetLineWidth(3);
+  f_calo_sim->SetLineColor(kGreen + 2);
+
+  TH1 * hframe = p->DrawFrame(0, 0, 25, 0.3,
+      Form("Resolution;Input energy (GeV);#DeltaE/<E>"));
+
+  TLegend* leg = new TLegend(.2, .6, .85, .9);
+
+  ges_clus_5x5_prod.f_res->Draw("same");
+  ges_clus_5x5_prod.resolution->Draw("ep");
+  ges_clus_3x3_prod.f_res->Draw("same");
+  ges_clus_3x3_prod.resolution->Draw("ep");
+  f_calo_sim->Draw("same");
+
+  leg->AddEntry(ges_clus_5x5_prod.resolution, ges_clus_5x5_prod.name, "ep");
+  leg->AddEntry(ges_clus_5x5_prod.f_res,
+      Form("#DeltaE/E = %.1f%% #oplus %.1f%%/#sqrt{E}",
+          ges_clus_5x5_prod.f_res->GetParameter(0),
+          ges_clus_5x5_prod.f_res->GetParameter(1)), "l");
+
+  leg->AddEntry(ges_clus_3x3_prod.resolution, ges_clus_3x3_prod.name, "ep");
+  leg->AddEntry(ges_clus_3x3_prod.f_res,
+      Form("#DeltaE/E = %.1f%% #oplus %.1f%%/#sqrt{E}",
+          ges_clus_3x3_prod.f_res->GetParameter(0),
+          ges_clus_3x3_prod.f_res->GetParameter(1)), "l");
+
+//  leg->AddEntry(new TH1(), "", "l");
+//  leg->AddEntry((TObject*) 0, " ", "");
+
+  leg->Draw();
+
+  TLegend* leg = new TLegend(.2, .1, .85, .3);
+
+  leg->AddEntry(f_calo_sim,
+      Form("Prelim. Sim., #DeltaE/E = %.1f%% #oplus %.1f%%/#sqrt{E}",
+          f_calo_sim->GetParameter(0), f_calo_sim->GetParameter(1)), "l");
+  leg->Draw();
+
+  hframe->SetTitle("Electron Resolution");
 
   SaveCanvas(c1,
       TString(_file0->GetName()) + "_DrawPrototype2ShowerCalib_"
           + TString(c1->GetName()), kTRUE);
-
-  return mom;
 }
 
 vector<double>
@@ -327,8 +696,8 @@ GetResolution(TString cluster_name, vector<double> beam_mom, Color_t col)
       const double momemtum = beam_mom[i];
       const TString histname = Form("hLineShape%.0fGeV", momemtum);
 
-      TH1F * h = new TH1F(histname, histname + ";Observed energy (GeV)", (momemtum<=6 ? 25:50),
-          momemtum / 2, momemtum * 1.5);
+      TH1F * h = new TH1F(histname, histname + ";Observed energy (GeV)",
+          (momemtum <= 6 ? 25 : 50), momemtum / 2, momemtum * 1.5);
       T->Draw(cluster_name + ".sum_E>>" + histname,
           Form("abs(info.beam_mom)==%f", momemtum));
 
@@ -400,3 +769,68 @@ GetResolution(TString cluster_name, vector<double> beam_mom, Color_t col)
 
   return ret;
 }
+
+
+TGraphErrors *
+FitProfile(const TH2 * h2)
+{
+
+  TProfile * p2 = h2->ProfileX();
+
+  int n = 0;
+  double x[1000];
+  double ex[1000];
+  double y[1000];
+  double ey[1000];
+
+  for (int i = 1; i <= h2->GetNbinsX(); i++)
+    {
+      TH1D * h1 = h2->ProjectionY(Form("htmp_%d", rand()), i, i);
+
+      if (h1->GetSum() < 30)
+        {
+          cout << "FitProfile - ignore bin " << i << endl;
+          continue;
+        }
+      else
+        {
+          cout << "FitProfile - fit bin " << i << endl;
+        }
+
+      TF1 fgaus("fgaus", "gaus", -p2->GetBinError(i) * 4,
+          p2->GetBinError(i) * 4);
+
+      TF1 f2(Form("dgaus"), "gaus + [3]*exp(-0.5*((x-[1])/[4])**2) + [5]",
+          -p2->GetBinError(i) * 4, p2->GetBinError(i) * 4);
+
+      fgaus.SetParameter(1, p2->GetBinContent(i));
+      fgaus.SetParameter(2, p2->GetBinError(i));
+
+      h1->Fit(&fgaus, "MQ");
+
+      f2.SetParameters(fgaus.GetParameter(0) / 2, fgaus.GetParameter(1),
+          fgaus.GetParameter(2), fgaus.GetParameter(0) / 2,
+          fgaus.GetParameter(2) / 4, 0);
+
+      h1->Fit(&f2, "MQ");
+
+//      new TCanvas;
+//      h1->Draw();
+//      fgaus.Draw("same");
+//      break;
+
+      x[n] = p2->GetBinCenter(i);
+      ex[n] = (p2->GetBinCenter(2) - p2->GetBinCenter(1)) / 2;
+      y[n] = fgaus.GetParameter(1);
+      ey[n] = fgaus.GetParError(1);
+
+//      p2->SetBinContent(i, fgaus.GetParameter(1));
+//      p2->SetBinError(i, fgaus.GetParameter(2));
+
+      n++;
+      delete h1;
+    }
+
+  return new TGraphErrors(n, x, y, ex, ey);
+}
+

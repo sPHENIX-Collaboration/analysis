@@ -18,6 +18,10 @@
 
 #include <phool/PHCompositeNode.h>
 
+#include <g4main/PHG4TruthInfoContainer.h>
+#include <g4main/PHG4Particle.h>
+#include <g4main/PHG4VtxPoint.h>
+
 #include <TNtuple.h>
 #include <TFile.h>
 #include <TH1F.h>
@@ -246,6 +250,30 @@ Proto2ShowerCalib::process_event(PHCompositeNode *topNode)
       _eval_run.event = eventheader->get_EvtSequence();
     }
 
+  if (_is_sim)
+    {
+
+      PHG4TruthInfoContainer* truthInfoList = findNode::getClass<
+          PHG4TruthInfoContainer>(topNode, "G4TruthInfo");
+
+      assert(truthInfoList);
+
+      _eval_run.run = -1;
+
+      const PHG4Particle * p = truthInfoList->GetPrimaryParticleRange().first->second;
+      assert(p);
+
+      const PHG4VtxPoint * v = truthInfoList->GetVtx(p->get_vtx_id());
+      assert(v);
+
+      _eval_run.beam_mom = sqrt(
+          p->get_px() * p->get_px() + p->get_py() * p->get_py()
+              + p->get_pz() * p->get_pz());
+      _eval_run.truth_y = v->get_y();
+      _eval_run.truth_z = v->get_z();
+
+    }
+
   // normalization
   TH1F * hNormalization = dynamic_cast<TH1F *>(hm->getHisto("hNormalization"));
   assert(hNormalization);
@@ -253,10 +281,10 @@ Proto2ShowerCalib::process_event(PHCompositeNode *topNode)
   hNormalization->Fill("ALL", 1);
 
   RawTowerContainer* TOWER_RAW_CEMC = findNode::getClass<RawTowerContainer>(
-      topNode, _is_sim? "TOWER_RAW_LG_CEMC" : "TOWER_RAW_CEMC");
+      topNode, _is_sim ? "TOWER_RAW_LG_CEMC" : "TOWER_RAW_CEMC");
   assert(TOWER_RAW_CEMC);
   RawTowerContainer* TOWER_CALIB_CEMC = findNode::getClass<RawTowerContainer>(
-      topNode,_is_sim? "TOWER_CALIB_LG_CEMC" :  "TOWER_CALIB_CEMC");
+      topNode, _is_sim ? "TOWER_CALIB_LG_CEMC" : "TOWER_CALIB_CEMC");
   assert(TOWER_CALIB_CEMC);
 
   // other nodes
@@ -459,8 +487,10 @@ Proto2ShowerCalib::process_event(PHCompositeNode *topNode)
           const int col = tower->get_bineta();
           const int row = tower->get_binphi();
 
-          if (col <0 or col >=8) continue;
-          if (row <0 or row >=8) continue;
+          if (col < 0 or col >= 8)
+            continue;
+          if (row < 0 or row >= 8)
+            continue;
 
           const double energy_calib = tower->get_energy();
           sum_energy_calib += energy_calib;
