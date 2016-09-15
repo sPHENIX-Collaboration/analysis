@@ -6,14 +6,11 @@ void Summary(const char *input_root_name = "g4fwdtrack_fastsim_eval.root") {
 	TH2D* _h2d_Delta_mom_vs_truth_mom = (TH2D*) in_file->Get("_h2d_Delta_mom_vs_truth_mom");
 	TH2D* _h2d_Delta_mom_vs_truth_eta = (TH2D*) in_file->Get("_h2d_Delta_mom_vs_truth_eta");
 
-	gStyle->SetOptFit();
-	gStyle->SetOptStat(000000000);
-
 
 	TCanvas *c0 = new TCanvas("c0","c0");
-	c0->Divide(2,1);
+	//c0->Divide(2,1);
 
-	c0->cd(1);
+	//c0->cd(1);
 	_h2d_Delta_mom_vs_truth_mom->FitSlicesY();
 	TH1D *h1d_mom_resolution_vs_truth_mom = (TH1D*)  gDirectory->Get("_h2d_Delta_mom_vs_truth_mom_2");
 
@@ -42,4 +39,8 @@ void Summary(const char *input_root_name = "g4fwdtrack_fastsim_eval.root") {
 	h1d_mom_resolution_vs_truth_mom->GetYaxis()->SetRangeUser(y_min-0.01, y_max+0.01);
 
 	c0->Update();
+
+	gStyle->SetOptFit();
+	gStyle->SetOptStat(000000000);
+
 }

@@ -2,7 +2,7 @@
 int Fun4All_G4_fsPHENIX_FastSim(
 		       const int nEvents = 2,
 		       const char * inputFile = "/gpfs02/phenix/prod/sPHENIX/preCDR/pro.1-beta.5/single_particle/spacal1d/fieldmap/G4Hits_sPHENIX_e-_eta0_16GeV.root",
-		       const char * outputFile = "DST_TrackFastSim_FGEM.root"
+		       const char * outputFile = "DST_PHG4TrackFastSim.root"
 		       )
 {
   //===============
