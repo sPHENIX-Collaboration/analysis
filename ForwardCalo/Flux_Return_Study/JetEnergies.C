@@ -40,7 +40,11 @@ JetEnergies::JetEnergies(const string &name,
     _ntp_truthjet(NULL),
     _filename(filename),
     _tfile(NULL),
-    _FluxReturn_hit_container(NULL)
+    _FluxReturn_plus_hit_container(NULL),
+    _FluxReturn_minus_hit_container(NULL),
+    _BH_1_hit_container(NULL),
+    _BH_Forward_hit_container(NULL),
+    _BH_Negative_hit_container(NULL)
 {
   verbosity = 0;
 }
@@ -59,7 +63,7 @@ int JetEnergies::Init(PHCompositeNode *topNode) {
   if (_do_truthjet_eval) _ntp_truthjet = new TNtuple("ntp_truthjet","truth jet => best reco jet",
 						     "event:gid:gncomp:geta:gphi:ge:gpt:"
 						     "id:ncomp:eta:phi:e:pt:"
-						     "efromtruth:e_FR");
+						     "efromtruth:e_FR_plus:e_FR_minus:e_BH1:e_BH_plus:e_BH_minus");
 
   
   return Fun4AllReturnCodes::EVENT_OK;
@@ -70,7 +74,13 @@ int JetEnergies::InitRun(PHCompositeNode *topNode)
 {
   //cout << "In InitRun" << endl;
   //Here I add the container for the Plug Door hits
-  _FluxReturn_hit_container = findNode::getClass<PHG4HitContainer>(topNode,      "G4HIT_FLUXRET_ETA_PLUS");
+  _FluxReturn_plus_hit_container = findNode::getClass<PHG4HitContainer>(topNode,      "G4HIT_FLUXRET_ETA_PLUS");
+  _FluxReturn_minus_hit_container = findNode::getClass<PHG4HitContainer>(topNode,      "G4HIT_FLUXRET_ETA_MINUS");
+
+  _BH_1_hit_container = findNode::getClass<PHG4HitContainer>(topNode,"G4HIT_BH_1");
+  _BH_Forward_hit_container = findNode::getClass<PHG4HitContainer>(topNode,"G4HIT_BH_FORWARD_PLUS");
+  _BH_Negative_hit_container = findNode::getClass<PHG4HitContainer>(topNode,"G4HIT_BH_FORWARD_NEG");
+
 
   //Used for debugging
   /*  
@@ -155,28 +165,11 @@ void JetEnergies::fillOutputNtuples(PHCompositeNode *topNode) {
   
   if (verbosity > 2) cout << "JetEnergies::fillOutputNtuples() entered" << endl;
 
-
-  //cout << "Executing Modified part of code" << endl;
-  float e_FR = 0;//Holds Energy deposited in Flux Return
-  //Check if hit container exists mostly used for debugging
-  if( _FluxReturn_hit_container )
-    {
-      //cout << "Execute my code" << endl;      
-      PHG4HitContainer::ConstRange FluxReturn_hit_range = _FluxReturn_hit_container->getHits();      
-      //For loop that will store the total energy deposited in the flux return in 'e_FR'
-      //cout << "Starting for loop" << endl;
-      for (PHG4HitContainer::ConstIterator hit_iter = FluxReturn_hit_range.first; hit_iter != FluxReturn_hit_range.second; hit_iter++)
-	{
-	  PHG4Hit *this_hit = hit_iter->second;
-	  assert(this_hit);
-	  e_FR += this_hit->get_edep();
-	}
-      
-      //cout << "End of for loop" << endl;
-      //cout << "Value of e_FR: " << e_FR << endl;
-      
-    }
-  //cout << "Executing Rest of original code" << endl;
+  float e_FR_plus = GetTotalEnergy( _FluxReturn_plus_hit_container );
+  float e_FR_minus = GetTotalEnergy( _FluxReturn_minus_hit_container );
+  float e_BH1 = GetTotalEnergy( _BH_1_hit_container );
+  float e_BH_plus = GetTotalEnergy( _BH_Forward_hit_container );
+  float e_BH_minus = GetTotalEnergy( _BH_Negative_hit_container );
 
   JetRecoEval*   recoeval = _jetevalstack->get_reco_eval();
   //JetTruthEval* trutheval = _jetevalstack->get_truth_eval();
@@ -291,7 +284,7 @@ void JetEnergies::fillOutputNtuples(PHCompositeNode *topNode) {
 	efromtruth = recoeval->get_energy_contribution(recojet,truthjet);
       }
       
-      float truthjet_data[15] = {(float) _ievent,
+      float truthjet_data[19] = {(float) _ievent,
 				 gid,
 				 gncomp,
 				 geta,
@@ -305,7 +298,11 @@ void JetEnergies::fillOutputNtuples(PHCompositeNode *topNode) {
 				 e,
 				 pt,
 				 efromtruth,
-				 e_FR
+				 e_FR_plus,
+				 e_FR_minus,
+				 e_BH1,
+				 e_BH_plus,
+				 e_BH_minus
       };
 
       _ntp_truthjet->Fill(truthjet_data);
@@ -313,4 +310,33 @@ void JetEnergies::fillOutputNtuples(PHCompositeNode *topNode) {
   }
 
   return;
+}
+
+
+//Function that iterates over all the hits for a given object and returns the total energy deposited in that object requires that the object is set as active in the G4_Setup file otherwise may not work
+float JetEnergies::GetTotalEnergy(PHG4HitContainer *hit_object)
+{
+  //cout << "Executing Modified part of code" << endl;
+  float e_object = 0;//Holds Energy deposited in object of interest
+  //Check if hit container exists mostly used for debugging
+  if( hit_object )
+    {
+      //cout << "Execute my code" << endl;      
+      PHG4HitContainer::ConstRange object_hit_range = hit_object->getHits();
+      //For loop that will store the total energy deposited in the object in 'e_object'
+      //cout << "Starting for loop" << endl;
+      for (PHG4HitContainer::ConstIterator hit_iter = object_hit_range.first; hit_iter != object_hit_range.second; hit_iter++)
+	{
+	  PHG4Hit *this_hit = hit_iter->second;
+	  assert(this_hit);
+	  e_object += this_hit->get_edep();
+	}
+      
+      //cout << "End of for loop" << endl;
+      //cout << "Value of e_FR: " << e_FR << endl;
+      
+    }
+  //cout << "Executing Rest of original code" << endl;
+  return e_object;
+
 }

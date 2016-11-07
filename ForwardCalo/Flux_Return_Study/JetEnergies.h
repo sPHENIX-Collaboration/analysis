@@ -3,7 +3,7 @@
 
 //===============================================
 /// \file JetEnergies.h
-/// \brief copy of JetEvaluator.h that will add the energy absorbed by the plug door and the black hole to the list of items in the generated ntuple
+/// \brief copy of JetEvaluator.h that will add the energy absorbed by the plug door and the black hole to the list of items in the generated truth jet ntuple
 
 // VERY IMPORTANT: In order to get the flux return energy the Flux Return must be set to active in the G4Setup file otherwise this may not work
 
@@ -52,6 +52,8 @@ class JetEnergies : public SubsysReco {
   
  private:
 
+  float GetTotalEnergy(PHG4HitContainer* hit_object);
+
   std::string _recojetname;
   std::string _truthjetname;
   
@@ -76,7 +78,11 @@ class JetEnergies : public SubsysReco {
   TFile *_tfile;
 
   //For some reason this declaration has to go here
-  PHG4HitContainer* _FluxReturn_hit_container;
+  PHG4HitContainer* _FluxReturn_plus_hit_container;
+  PHG4HitContainer* _FluxReturn_minus_hit_container;
+  PHG4HitContainer* _BH_1_hit_container;
+  PHG4HitContainer* _BH_Forward_hit_container;
+  PHG4HitContainer* _BH_Negative_hit_container;
 
   // subroutines
   void printInputInfo(PHCompositeNode *topNode);    ///< print out the input object information (debugging upstream components)
