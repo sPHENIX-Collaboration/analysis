@@ -250,6 +250,8 @@ void draw_G4_bjet_truth_tagging(
 	float track_dca2d_calc[100];
 	float track_dca2d_calc_truth[100];
 	float track_dca3d_calc[100];
+	float track_dca3d[100];
+	float track_dca3d_error[100];
 	float track_dca3d_calc_truth[100];
 
 	float track_quality[100];
@@ -290,6 +292,8 @@ void draw_G4_bjet_truth_tagging(
 	ttree->SetBranchAddress("track_dca2d_calc",  track_dca2d_calc );
 	ttree->SetBranchAddress("track_dca2d_calc_truth",  track_dca2d_calc_truth );
 	ttree->SetBranchAddress("track_dca3d_calc",  track_dca3d_calc );
+	ttree->SetBranchAddress("track_dca3d",  track_dca3d );
+	ttree->SetBranchAddress("track_dca3d_error",  track_dca3d_error );
 	ttree->SetBranchAddress("track_dca3d_calc_truth",  track_dca3d_calc_truth );
 
 	ttree->SetBranchAddress("track_quality",   track_quality );
@@ -416,9 +420,6 @@ void draw_G4_bjet_truth_tagging(
 
 				if(!(track_quality[itrk]<1.)) continue; // yuhw
 
-				_dca2d[itrk] = -99;
-				_dca2d_error[itrk] = -99;
-
 				float dR = deltaR( truthjet_eta[ j ], track_eta[ itrk ], truthjet_phi[ j ], track_phi[ itrk ] );
 				if (dR > 0.4) continue;
 
@@ -426,6 +427,10 @@ void draw_G4_bjet_truth_tagging(
 				track_dca2d[ itrk ] = fabs( track_dca2d[ itrk ] );
 				if(dca_method == 1) track_dca2d[ itrk ] = fabs( track_dca2d_calc[ itrk ] ); 
 				if(dca_method == 2) track_dca2d[ itrk ] = fabs( track_dca3d_calc[ itrk ] ); 
+				if(dca_method == 3) { 
+					track_dca2d[ itrk ] = fabs( track_dca3d[ itrk ] );
+					track_dca2d_error[ itrk ] = fabs( track_dca3d_error[ itrk ] );
+				}
 				if (! (track_dca2d[ itrk ] < 0.1)) continue; // yuhw
 
 				// set sign WRT jet
@@ -448,6 +453,9 @@ void draw_G4_bjet_truth_tagging(
 				}
 
 				ntrk++;
+
+				_dca2d[ntrk-1] = -99;
+				_dca2d_error[ntrk-1] = -99;
 
 				if (track_pt[ itrk ] > 1)
 					ntrk1++;
@@ -564,21 +572,21 @@ void draw_G4_bjet_truth_tagging(
 				}
 				*/	  
 
-				if(iflavor == 0) {
-					_dca2d[itrk] = track_dca2d[ itrk ];
-					_dca2d_error[itrk] = track_dca2d_error[ itrk ];
-				}
+				//if(iflavor == 0) {
+					_dca2d[ntrk-1] = track_dca2d[ itrk ];
+					_dca2d_error[ntrk-1] = track_dca2d_error[ itrk ];
+				//}
 
 			} // end tracks
 
-			if(iflavor==0) {
+			//if(iflavor==0) {
 				_n_tracks = ntrk;
 				_highest_dca2d = highest_dca;
 				_second_highest_dca2d = second_highest_dca;
 				_highest_S = highest_S;
 				_second_highest_S = second_highest_S;
 				T->Fill();
-			}
+			//}
 
 			h1_jet_ntrk[iflavor]->Fill( ntrk );
 			h1_jet_ntrk1[iflavor]->Fill( ntrk1 );

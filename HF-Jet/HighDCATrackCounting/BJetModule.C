@@ -46,7 +46,9 @@ using namespace std;
 
 BJetModule::BJetModule(const string &name) :
 		SubsysReco(name),
-		_verbose (true){
+		_verbose (true),
+		_trackmap_name("SvtxTrackMap"),
+		_vertexmap_name("SvtxVertexMap"){
 
 	_foutname = name;
 
@@ -91,6 +93,8 @@ int BJetModule::Init(PHCompositeNode *topNode) {
 
 		_b_track_dca2d[n] = -1;
 		_b_track_dca2d_error[n] = -1;
+		_b_track_dca3d[n] = -1;
+		_b_track_dca3d_error[n] = -1;
 		_b_track_dca2d_calc[n] = -1;
 		_b_track_dca2d_calc_truth[n] = -1;
 		_b_track_dca3d_calc[n] = -1;
@@ -156,6 +160,10 @@ int BJetModule::Init(PHCompositeNode *topNode) {
 	_tree->Branch("track_dca2d", _b_track_dca2d, "track_dca2d[track_n]/F");
 	_tree->Branch("track_dca2d_error", _b_track_dca2d_error,
 			"track_dca2d_error[track_n]/F");
+
+	_tree->Branch("track_dca3d", _b_track_dca3d, "track_dca3d[track_n]/F");
+	_tree->Branch("track_dca3d_error", _b_track_dca3d_error,
+			"track_dca3d_error[track_n]/F");
 
 	_tree->Branch("track_dca2d_calc", _b_track_dca2d_calc, "track_dca2d_calc[track_n]/F");
 	_tree->Branch("track_dca2d_calc_truth", _b_track_dca2d_calc_truth,
@@ -357,11 +365,11 @@ int BJetModule::process_event(PHCompositeNode *topNode) {
 	}
 
 	SvtxTrackMap* trackmap = findNode::getClass<SvtxTrackMap>(topNode,
-			"SvtxTrackMap");
+			_trackmap_name.c_str());
 	SvtxEvalStack *svtxevalstack = new SvtxEvalStack(topNode);
 
 	SvtxVertexMap* vertexmap = findNode::getClass<SvtxVertexMap>(topNode,
-			"SvtxVertexMap");
+			_vertexmap_name.c_str());
 
 	svtxevalstack->next_event(topNode);
 
@@ -432,6 +440,9 @@ int BJetModule::process_event(PHCompositeNode *topNode) {
 		//float dca = track->get_dca();
 		float dca2d = track->get_dca2d();
 		float dca2d_error = track->get_dca2d_error();
+
+		float dca3d = track->get_dca();
+		float dca3d_error = track->get_dca_error();
 
 		TVector3 track_point(track->get_x(),track->get_y(),track->get_z());
 		TVector3 track_direction(track->get_px(),track->get_py(),track->get_pz());
@@ -527,6 +538,9 @@ int BJetModule::process_event(PHCompositeNode *topNode) {
 
 		_b_track_dca2d[_b_track_n] = dca2d;
 		_b_track_dca2d_error[_b_track_n] = dca2d_error;
+
+		_b_track_dca3d[_b_track_n] = dca3d;
+		_b_track_dca3d_error[_b_track_n] = dca3d_error;
 
 		_b_track_dca2d_calc[_b_track_n] = dca2d_calc;
 		_b_track_dca2d_calc_truth[_b_track_n] = dca2d_calc_truth;

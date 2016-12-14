@@ -29,6 +29,22 @@ public:
 	int process_event(PHCompositeNode*);
 	int End(PHCompositeNode*);
 
+	const std::string& get_trackmap_name() const {
+		return _trackmap_name;
+	}
+
+	void set_trackmap_name(const std::string& trackmapName) {
+		_trackmap_name = trackmapName;
+	}
+
+	const std::string& get_vertexmap_name() const {
+		return _vertexmap_name;
+	}
+
+	void set_vertexmap_name(const std::string& vertexmapName) {
+		_vertexmap_name = vertexmapName;
+	}
+
 private:
 
 	float dR(float eta1, float eta2, float phi1, float phi2) {
@@ -45,6 +61,9 @@ private:
 	}
 
 	bool _verbose;
+
+	std::string _trackmap_name;
+	std::string _vertexmap_name;
 
 	int _ievent;
 
@@ -76,6 +95,10 @@ private:
 
 	float _b_track_dca2d[1000];
 	float _b_track_dca2d_error[1000];
+
+	float _b_track_dca3d[1000];
+	float _b_track_dca3d_error[1000];
+
 	float _b_track_dca2d_calc[1000];
 	float _b_track_dca2d_calc_truth[1000];
 	float _b_track_dca3d_calc[1000];
