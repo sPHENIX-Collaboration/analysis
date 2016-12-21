@@ -1,8 +1,12 @@
 #ifndef __TRACKINGPERFORMANCECHECK_H__
 #define __TRACKINGPERFORMANCECHECK_H__
 
+#include <map>
+
 #include <fun4all/SubsysReco.h>
 #include <string>
+#include <TH1F.h>
+#include <TH2F.h>
 #include <TH1D.h>
 #include <TH2D.h>
 
@@ -18,67 +22,35 @@ public:
   int process_event(PHCompositeNode *topNode);
   int End(PHCompositeNode *topNode);
 
-  void set_nlayers(unsigned int nlayers) {_nlayers = nlayers;}
-  void set_inner_layer_mask(unsigned int mask) {_inner_layer_mask = mask;}
-
 private:
 
-  // event counter
-  unsigned long long _event;
-
-  // number of layers
-  unsigned int _nlayers;
-
-  unsigned int _inner_layer_mask;
-
   // output histograms ---------------------------------------------------------
-  
-  TH2D* _truept_dptoverpt;                    // momentum resolution
+  std::map<int,int> fEmbedded;
 
-  TH2D* _truept_dca;                          // dca resolution
-  
-  TH1D* _truept_particles_leaving7Hits;       // pattern reco eff baseline
-  
-  TH1D* _truept_particles_recoWithExactHits;  // pattern reco eff by nhits
-  TH1D* _truept_particles_recoWithin1Hit;
-  TH1D* _truept_particles_recoWithin2Hits;
+  TH1F *fHNEvents;
 
-  TH1D* _truept_particles_recoWithExactInnerHits;  // pattern reco eff by nhits
-  TH1D* _truept_particles_recoWithin1InnerHit;
-  TH1D* _truept_particles_recoWithin2InnerHits;
+  TH1F *fHNTruths;
+  TH1F *fHNEmbedded;
+  TH1F *fHNReconstructables;
+  TH1F *fPt[3];
+  TH1F *fEta[3];
+  TH1F *fPhi[3];
+  TH1F *fHEmbeddedNHits[3];
 
-  TH1D* _truept_particles_recoWithin3Percent; // parttern reco eff by momentum match
-  TH1D* _truept_particles_recoWithin4Percent;
-  TH1D* _truept_particles_recoWithin5Percent;
+  TH1F *fHNTracks;
+  TH1F *fHNTracksMatched;
+  TH1F *fHNTracksEmbedded;
+  TH1F *fHNTracksReconstructable;
+  TH1F *fHRPt[4];
+  TH1F *fHREta[4];
+  TH1F *fHRPhi[4];
+  TH2F *fHRDca2D[4];
+  TH1F *fHNClustersContribution[3];
+  TH2F *fHPtResolution[3];
+  TH2F *fHPhiResolution[3];
+  TH2F *fHEtaResolution[3];
 
-  TH1D* _recopt_tracks_all;                   // purity baseline (non-embedded particles)
-  
-  TH1D* _recopt_tracks_recoWithExactHits;     // purity by nhit match
-  TH1D* _recopt_tracks_recoWithin1Hit;
-  TH1D* _recopt_tracks_recoWithin2Hits;
-
-  TH1D* _recopt_tracks_recoWithExactInnerHits;
-  TH1D* _recopt_tracks_recoWithin1InnerHit;
-  TH1D* _recopt_tracks_recoWithin2InnerHits;
-
-  TH1D* _recopt_tracks_recoWithin3Percent;    // purity by momentum match
-  TH1D* _recopt_tracks_recoWithin4Percent;
-  TH1D* _recopt_tracks_recoWithin5Percent;
-
-  TH2D* _recopt_quality;                     // quality distributions
-  
-  TH1D* _dx_vertex;                          // vertex resolution
-  TH1D* _dy_vertex;
-  TH1D* _dz_vertex;
-
-  TH2D* _truept_quality_particles_recoWithin4Percent;
-
-  TH2D* _recopt_quality_tracks_all;
-  TH2D* _recopt_quality_tracks_recoWithin4Percent;
-
-  TH1D* h_nparticles;
-  TH1D* h_nparticlesembed;
-
+  TH1F *fHNVertexes;
 };
 
 #endif // __SVTXSIMPERFORMANCECHECKRECO_H__

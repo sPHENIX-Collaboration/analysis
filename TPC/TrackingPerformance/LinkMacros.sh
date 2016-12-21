@@ -4,6 +4,7 @@ rm G4*
 ln -s ${DIR}/G4Setup_sPHENIX.C .
 ln -s ${DIR}/G4_Pipe.C .
 ln -s ${DIR}/G4_Svtx_maps+IT+tpc.C .
+ln -s ${DIR}/G4_Svtx_maps_ladders+intt+tpc.C
 ln -s ${DIR}/G4_PreShower.C .
 ln -s ${DIR}/G4_CEmc_Spacal.C .
 ln -s ${DIR}/G4_HcalIn_ref.C .

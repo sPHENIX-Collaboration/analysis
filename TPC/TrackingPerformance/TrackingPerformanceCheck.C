@@ -18,6 +18,9 @@
 #include <g4eval/SvtxVertexEval.h>
 #include <g4eval/SvtxTruthEval.h>
 
+#include "TMath.h"
+#include <TH1F.h>
+#include <TH2F.h>
 #include <TH1D.h>
 #include <TH2D.h>
 
@@ -26,425 +29,283 @@
 using namespace std;
 
 TrackingPerformanceCheck::TrackingPerformanceCheck(const string &name)
-  : SubsysReco(name),
-    _event(0),
-    _nlayers(7),
-    _inner_layer_mask(0x7),
-    _truept_dptoverpt(NULL),
-    _truept_dca(NULL),
-    _truept_particles_leaving7Hits(NULL),
-    _truept_particles_recoWithExactHits(NULL),
-    _truept_particles_recoWithin1Hit(NULL),
-    _truept_particles_recoWithin2Hits(NULL),
-    _truept_particles_recoWithExactInnerHits(NULL),
-    _truept_particles_recoWithin1InnerHit(NULL),
-    _truept_particles_recoWithin2InnerHits(NULL),
-    _truept_particles_recoWithin3Percent(NULL),
-    _truept_particles_recoWithin4Percent(NULL),
-    _truept_particles_recoWithin5Percent(NULL),
-    _recopt_tracks_all(NULL),
-    _recopt_tracks_recoWithExactHits(NULL),
-    _recopt_tracks_recoWithin1Hit(NULL),
-    _recopt_tracks_recoWithin2Hits(NULL),
-    _recopt_tracks_recoWithExactInnerHits(NULL),
-    _recopt_tracks_recoWithin1InnerHit(NULL),
-    _recopt_tracks_recoWithin2InnerHits(NULL),
-    _recopt_tracks_recoWithin3Percent(NULL),
-    _recopt_tracks_recoWithin4Percent(NULL),
-    _recopt_tracks_recoWithin5Percent(NULL),
-    _recopt_quality(NULL),
-    _dx_vertex(NULL),
-    _dy_vertex(NULL),
-    _dz_vertex(NULL),
-    _truept_quality_particles_recoWithin4Percent(NULL),
-    _recopt_quality_tracks_all(NULL),
-    _recopt_quality_tracks_recoWithin4Percent(NULL),
-    h_nparticles(NULL),
-    h_nparticlesembed(NULL)
-
- { 
+  : SubsysReco(name) {
 }
 
 int TrackingPerformanceCheck::Init(PHCompositeNode *topNode) {
-
   // register histograms
   Fun4AllServer *se = Fun4AllServer::instance();
 
-  _truept_dptoverpt = new TH2D("truept_dptoverpt",
-			       "truept_dptoverpt",
-			       40,0.0,40.0,
-			       200,-0.5,0.5);
-  
-  _truept_dca = new TH2D("truept_dca",
-			 "truept_dca",
-			 20,0.0,10.0,
-			 200,-0.1,0.1);
+  const int nptbinsPONE = 30;
+  Int_t nptbins = nptbinsPONE - 1;
+  Double_t ptbins[nptbinsPONE];
+  ptbins[0] = 0.2;
+  for(int i=1; i!=9; ++i)
+    ptbins[i] = 0.2 + i*0.2;
+  for(int i=0; i!=11; ++i)
+    ptbins[9+i] = 2.0 + i*0.5;
+  for(int i=0; i!=10; ++i)
+    ptbins[20+i] = 7.0 + i*1.0;
+  for(int i=0; i!=nptbinsPONE; ++i) std::cout << i << " " << ptbins[i] << std::endl;
 
-  _truept_particles_leaving7Hits = new TH1D("truept_particles_leaving7Hits",
-					    "truept_particles_leaving7Hits",
-					    20,0.0,10.0);
+  fHNEvents = new TH1F("Events","Events",1,-0.5,0.5);
+  se->registerHisto(fHNEvents);
 
-  _truept_particles_recoWithExactHits = new TH1D("truept_particles_recoWithExactHits",
-						 "truept_particles_recoWithExactHits",
-						 20,0.0,10.0);
+  fHNTruths = new TH1F("Truths0_N","Number of Truths",100,-0.5,9999.5);
+  se->registerHisto(fHNTruths);
+  fHNEmbedded = new TH1F("Truths1_N","Number of Embedded",100,-0.5,99.5);
+  se->registerHisto(fHNEmbedded);
+  fHNReconstructables = new TH1F("Truths2_N","Number of Reconstructables",100,-0.5,99.5);
+  se->registerHisto(fHNReconstructables);
+  for(int i=0; i!=3; ++i) {
+    fPt[i] = new TH1F(Form("Truths%d_Pt",i),Form("Truths%d_Pt",i),nptbins,ptbins);
+    fPhi[i] = new TH1F(Form("Truths%d_Phi",i),Form("Truths%d_Phi",i),100,0,TMath::TwoPi());
+    fEta[i] = new TH1F(Form("Truths%d_Eta",i),Form("Truths%d_Eta",i),100,-10,+10);
+    se->registerHisto(fPt[i]);
+    se->registerHisto(fPhi[i]);
+    se->registerHisto(fEta[i]);
+  }
+  fHEmbeddedNHits[0] = new TH1F("Truths1_Hits","Number of TPCHits in Embedded",61,-0.5,60.5);
+  se->registerHisto(fHEmbeddedNHits[0]);
+  fHEmbeddedNHits[1] = new TH1F("Truths2_Hits","Number of TPCHits in Reconstructable",61,-0.5,60.5);
+  se->registerHisto(fHEmbeddedNHits[1]);
 
-  _truept_particles_recoWithin1Hit = new TH1D("truept_particles_recoWithin1Hit",
-					      "truept_particles_recoWithin1Hit",
-					      20,0.0,10.0);
-
-  _truept_particles_recoWithin2Hits = new TH1D("truept_particles_recoWithin2Hits",
-					       "truept_particles_recoWithin2Hits",
-					       20,0.0,10.0);
-
-  _truept_particles_recoWithExactInnerHits = new TH1D("truept_particles_recoWithExactInnerHits",
-						      "truept_particles_recoWithExactInnerHits",
-						 20,0.0,10.0);
-
-  _truept_particles_recoWithin1InnerHit = new TH1D("truept_particles_recoWithin1InnerHit",
-						   "truept_particles_recoWithin1InnerHit",
-						   20,0.0,10.0);
-  
-  _truept_particles_recoWithin2InnerHits = new TH1D("truept_particles_recoWithin2InnerHits",
-						    "truept_particles_recoWithin2InnerHits",
-						    20,0.0,10.0);
-  
-  
-  _truept_particles_recoWithin3Percent = new TH1D("truept_particles_recoWithin3Percent",
-						  "truept_particles_recoWithin3Percent",
-						  20,0.0,10.0);
-
-  _truept_particles_recoWithin4Percent = new TH1D("truept_particles_recoWithin4Percent",
-						  "truept_particles_recoWithin4Percent",
-						  20,0.0,10.0);
-
-  _truept_particles_recoWithin5Percent = new TH1D("truept_particles_recoWithin5Percent",
-						  "truept_particles_recoWithin5Percent",
-						  20,0.0,10.0);
-
-  _recopt_tracks_all = new TH1D("recopt_tracks_all",
-				"recopt_tracks_all",
-				20,0.0,10.0);
-
-  _recopt_tracks_recoWithExactHits = new TH1D("recopt_tracks_recoWithExactHits",
-					      "recopt_tracks_recoWithExactHits",
-					      20,0.0,10.0);
-
-  _recopt_tracks_recoWithin1Hit = new TH1D("recopt_tracks_recoWithin1Hit",
-					   "recopt_tracks_recoWithin1Hit",
-					   20,0.0,10.0);
-  
-  _recopt_tracks_recoWithin2Hits = new TH1D("recopt_tracks_recoWithin2Hits",
-					    "recopt_tracks_recoWithin2Hits",
-					    20,0.0,10.0);
-
-  _recopt_tracks_recoWithExactInnerHits = new TH1D("recopt_tracks_recoWithExactInnerHits",
-					      "recopt_tracks_recoWithExactInnerHits",
-					      20,0.0,10.0);
-
-  _recopt_tracks_recoWithin1InnerHit = new TH1D("recopt_tracks_recoWithin1InnerHit",
-					   "recopt_tracks_recoWithin1InnerHit",
-					   20,0.0,10.0);
-  
-  _recopt_tracks_recoWithin2InnerHits = new TH1D("recopt_tracks_recoWithin2InnerHits",
-					    "recopt_tracks_recoWithin2InnerHits",
-					    20,0.0,10.0);
-  
-  _recopt_tracks_recoWithin3Percent = new TH1D("recopt_tracks_recoWithin3Percent",
-					    "recopt_tracks_recoWithin3Percent",
-					    20,0.0,10.0);
-
-  _recopt_tracks_recoWithin4Percent = new TH1D("recopt_tracks_recoWithin4Percent",
-					       "recopt_tracks_recoWithin4Percent",
-					       20,0.0,10.0);
-  
-  _recopt_tracks_recoWithin5Percent = new TH1D("recopt_tracks_recoWithin5Percent",
-					       "recopt_tracks_recoWithin5Percent",
-					       20,0.0,10.0);
-
-  _recopt_quality = new TH2D("recopt_quality",
-			     "recopt_quality",
-			     20,0.0,10.0,
-			     100,0.0,5.0);
-
-  _dx_vertex = new TH1D("dx_vertex",
-			"dx_vertex",
-			200,-0.01,0.01);
-
-  _dy_vertex = new TH1D("dy_vertex",
-			"dy_vertex",
-			200,-0.01,0.01);
-
-  _dz_vertex = new TH1D("dz_vertex",
-			"dz_vertex",
-			200,-0.01,0.01);
-  
-  _truept_quality_particles_recoWithin4Percent = new TH2D("truept_quality_particles_recoWithin4Percent",
-							  "truept_quality_particles_recoWithin4Percent",
-							  20,0.0,10.0,
-							  100,0.0,5.0);
-
-  _recopt_quality_tracks_all = new TH2D("recopt_quality_tracks_all",
-					"recopt_quality_tracks_all",
-					20,0.0,10.0,
-					100,0.0,5.0);
-
-  _recopt_quality_tracks_recoWithin4Percent = new TH2D("recopt_quality_tracks_recoWithin4Percent",
-						       "recopt_quality_tracks_recoWithin4Percent",
-						       20,0.0,10.0,
-						       100,0.0,5.0);
-  
-  h_nparticles=new TH1D("h_nparticles","h_nparticles",100,0.,3000);
-  h_nparticlesembed=new TH1D("h_nparticlesembed","h_nparticlesembed",100,0.,1000);
-
-  se->registerHisto(_truept_dptoverpt);                    
-
-  se->registerHisto(_truept_dca);                          
- 
-  se->registerHisto(_truept_particles_leaving7Hits);       
-
-  se->registerHisto(_truept_particles_recoWithExactHits);  
-  se->registerHisto(_truept_particles_recoWithin1Hit);
-  se->registerHisto(_truept_particles_recoWithin2Hits);
-
-  se->registerHisto(_truept_particles_recoWithExactInnerHits);  
-  se->registerHisto(_truept_particles_recoWithin1InnerHit);
-  se->registerHisto(_truept_particles_recoWithin2InnerHits);
-  
-  se->registerHisto(_truept_particles_recoWithin3Percent); 
-  se->registerHisto(_truept_particles_recoWithin4Percent);
-  se->registerHisto(_truept_particles_recoWithin5Percent);
-
-  se->registerHisto(_recopt_tracks_all);                   
- 
-  se->registerHisto(_recopt_tracks_recoWithExactHits);     
-  se->registerHisto(_recopt_tracks_recoWithin1Hit);
-  se->registerHisto(_recopt_tracks_recoWithin2Hits);
-
-  se->registerHisto(_recopt_tracks_recoWithExactInnerHits);     
-  se->registerHisto(_recopt_tracks_recoWithin1InnerHit);
-  se->registerHisto(_recopt_tracks_recoWithin2InnerHits);
-  
-  se->registerHisto(_recopt_tracks_recoWithin3Percent);    
-  se->registerHisto(_recopt_tracks_recoWithin4Percent);
-  se->registerHisto(_recopt_tracks_recoWithin5Percent);
-
-  se->registerHisto(_recopt_quality);                     
- 
-  se->registerHisto(_dx_vertex);                          
-  se->registerHisto(_dy_vertex);
-  se->registerHisto(_dz_vertex);
-
-  se->registerHisto(_truept_quality_particles_recoWithin4Percent);
-  se->registerHisto(_recopt_quality_tracks_all);
-  se->registerHisto(_recopt_quality_tracks_recoWithin4Percent);
-  se->registerHisto(h_nparticles);
-  se->registerHisto(h_nparticlesembed);  
+  fHNTracks = new TH1F("Tracks0_N","Number of Tracks",100,-0.5,9999.5);
+  se->registerHisto(fHNTracks);
+  fHNTracksMatched = new TH1F("Tracks1_N","Number of Tracks Matched to Truth",100,-0.5,9999.5);
+  se->registerHisto(fHNTracksMatched);
+  fHNTracksEmbedded = new TH1F("Tracks2_N","Number of Tracks Matched to Embedded",100,-0.5,99.5);
+  se->registerHisto(fHNTracksEmbedded);
+  fHNTracksReconstructable = new TH1F("Tracks3_N","Number of Tracks Matched to Reconstructable",100,-0.5,99.5);
+  se->registerHisto(fHNTracksReconstructable);
+  for(int i=0; i!=4; ++i) {
+    fHRPt[i] = new TH1F(Form("Tracks%d_Pt",i),Form("Tracks%d_Pt",i),nptbins,ptbins);
+    fHRPhi[i] = new TH1F(Form("Tracks%d_Phi",i),Form("Tracks%d_Phi",i),100,0,TMath::TwoPi());
+    fHREta[i] = new TH1F(Form("Tracks%d_Eta",i),Form("Tracks%d_Eta",i),100,-10,+10);
+    fHRDca2D[i] = new TH2F( Form("Tracks%d_Dca2D",i),Form("Dca2D %d;PT;DCA2D",i),nptbins,ptbins,200,-1.0,1.0);
+    se->registerHisto(fHRPt[i]);
+    se->registerHisto(fHRPhi[i]);
+    se->registerHisto(fHREta[i]);
+    se->registerHisto(fHRDca2D[i]);
+  }
+  for(int i=0; i!=3; ++i) {
+    fHNClustersContribution[i] = new TH1F(Form("Tracks%d_NClusters",i+1),
+					  "Number of Clusters Belonging to Truth",100,-0.5,99.5);
+    se->registerHisto(fHNClustersContribution[i]);
+    fHPtResolution[i] = new TH2F(Form("Tracks%d_ResPt",i+1),
+				 "PtResolution;PT;REL DIFF",
+				 nptbins,ptbins,200,-5.0,5.0);
+    se->registerHisto(fHPtResolution[i]);
+    fHPhiResolution[i] = new TH2F(Form("Tracks%d_ResPhi",i+1),
+				  "PhiResolution;PT;REL DIFF",
+				  nptbins,ptbins,200,-0.1,+0.1);
+    se->registerHisto(fHPhiResolution[i]);
+    fHEtaResolution[i] = new TH2F(Form("Tracks%d_ResEta",i+1),
+				  "EtaResolution;PT;REL DIFF",
+				  nptbins,ptbins,200,-0.1,+0.1);
+    se->registerHisto(fHEtaResolution[i]);
+  }
+  fHNVertexes = new TH1F("Vertexes_N","Number of Vertexes",10,-0.5,9.5);
+  se->registerHisto(fHNVertexes);
   return 0;
 }
 
 int TrackingPerformanceCheck::process_event(PHCompositeNode *topNode) {
-
-  ++_event;
-  
-  // need things off of the DST...
+  std::cout << "TrackingPerformanceCheck [ENTER]" << std::endl;
+  fHNEvents->Fill(0);
+  fEmbedded.clear();
   PHG4TruthInfoContainer* truthinfo = findNode::getClass<PHG4TruthInfoContainer>(topNode,"G4TruthInfo");
+  SvtxTrackMap* trackmap = findNode::getClass<SvtxTrackMap>(topNode,"SvtxTrackMap");
+  SvtxVertexMap* vertexmap = findNode::getClass<SvtxVertexMap>(topNode,"SvtxVertexMap");
   if (!truthinfo) {
     cerr << PHWHERE << " ERROR: Can't find G4TruthInfo" << endl;
     exit(-1);
   }
-
-  SvtxTrackMap* trackmap = findNode::getClass<SvtxTrackMap>(topNode,"SvtxTrackMap");
   if (!trackmap) {
     cerr << PHWHERE << " ERROR: Can't find SvtxTrackMap" << endl;
     exit(-1);
   }
-
-  SvtxVertexMap* vertexmap = findNode::getClass<SvtxVertexMap>(topNode,"SvtxVertexMap");
   if (!vertexmap) {
     cerr << PHWHERE << " ERROR: Can't find SvtxVertexMap" << endl;
     exit(-1);
   }
 
-  // create SVTX eval stack
   SvtxEvalStack svtxevalstack(topNode);
-
-  SvtxVertexEval*   vertexeval = svtxevalstack.get_vertex_eval();
-  SvtxTrackEval*     trackeval = svtxevalstack.get_track_eval();
-  SvtxTruthEval*     trutheval = svtxevalstack.get_truth_eval();
+  SvtxVertexEval *vertexeval = svtxevalstack.get_vertex_eval();
+  SvtxTrackEval *trackeval = svtxevalstack.get_track_eval();
+  SvtxTruthEval *trutheval = svtxevalstack.get_truth_eval();
   
-  // loop over all truth particles
-  int nparticlesembed=0;
-  int nparticles=0;
+  int nA=0;
+  int nB=0;
+  int nC=0;
   PHG4TruthInfoContainer::Range range = truthinfo->GetPrimaryParticleRange();
-  for (PHG4TruthInfoContainer::ConstIterator iter = range.first; 
-       iter != range.second; 
-       ++iter) {
-    PHG4Particle* g4particle = iter->second;
-    if(g4particle){
-      nparticles++;
-      cout<<"nparticles"<<nparticles<<endl;
-      if(trutheval->get_embed(g4particle)>0){ nparticlesembed++;}
-    }
-
-    if (trutheval->get_embed(g4particle) == 0) continue;
-    
-    std::set<PHG4Hit*> g4hits = trutheval->all_truth_hits(g4particle);     
-    float ng4hits = g4hits.size();  
-
-    float truept = sqrt(pow(g4particle->get_px(),2)+pow(g4particle->get_py(),2));
-    
-    // examine truth particles that leave 7 detector hits
-    if (ng4hits == _nlayers) {
-      _truept_particles_leaving7Hits->Fill(truept);
-    
-      SvtxTrack* track = trackeval->best_track_from(g4particle);
-    
-      if (!track) {continue;}
-      
-      unsigned int nfromtruth = trackeval->get_nclusters_contribution(track,g4particle);
-      float recopt = track->get_pt();
-
-      unsigned int ndiff = abs((int)nfromtruth-(int)_nlayers);
-      if (ndiff <= 2) {
-	_truept_particles_recoWithin2Hits->Fill(truept);
-      }
-      if (ndiff <= 1) {
-	_truept_particles_recoWithin1Hit->Fill(truept);
-      }
-      if (ndiff == 0) {
-	_truept_particles_recoWithExactHits->Fill(truept);
-      } 
-
-      unsigned int layersfromtruth = trackeval->get_nclusters_contribution_by_layer(track,g4particle);
-      unsigned int innerhits = (layersfromtruth & _inner_layer_mask);
-      unsigned int ninnerhitsfromtruth = 0;
-      unsigned int ninnerlayers = 0;
-      for (unsigned int i = 0; i < 32; ++i) {
-	ninnerhitsfromtruth += (0x1 & (innerhits >> i));
-	ninnerlayers += (0x1 & (_inner_layer_mask >> i));
-      }
-      
-      ndiff = abs((int)ninnerhitsfromtruth-(int)ninnerlayers);
-      if (ndiff <= 2) {
-	_truept_particles_recoWithin2InnerHits->Fill(truept);
-      }
-      if (ndiff <= 1) {
-	_truept_particles_recoWithin1InnerHit->Fill(truept);
-      }
-      if (ndiff == 0) {
-	_truept_particles_recoWithExactInnerHits->Fill(truept);
-      } 
-      
-      float diff = fabs(recopt-truept)/truept;
-      if (diff < 0.05) {
-	_truept_particles_recoWithin5Percent->Fill(truept);
-      }
-      if (diff < 0.04) {
-	_truept_particles_recoWithin4Percent->Fill(truept);
-	_truept_quality_particles_recoWithin4Percent->Fill(truept,track->get_quality());
-      }
-      if (diff < 0.03) {
-	_truept_particles_recoWithin3Percent->Fill(truept);
-      }      
-    }    
-    h_nparticles->Fill(nparticles);
-    h_nparticlesembed->Fill(nparticlesembed);
+  // We need a method to distinguish between embedded and reconstructables. The current flag for embeded is an int with zero and one, so naturally this can be extended to hold values higher than two. However the current list cannot be modified, because the only accessor returns const_iterator, so we either change that in the base class (PH4TruthInfoContainer) or we clone the list (what we currently do here). Since this list only concerns embedded particles, it is going to be small
+  std::pair< std::map<int,int>::const_iterator, std::map<int,int>::const_iterator > rangeE = truthinfo->GetEmbeddedTrkIds();
+  for(std::map<int,int>::const_iterator iterE=rangeE.first; iterE!=rangeE.second; ++iterE) {
+    int tid = (*iterE).first;
+    int tem = (*iterE).second;
+    fEmbedded.insert( std::make_pair(tid,tem) );
   }
+  std::cout << "TrackingPerformanceCheck ==> Embedded: " << fEmbedded.size() << std::endl;
+  for(PHG4TruthInfoContainer::ConstIterator iter = range.first; 
+      iter != range.second; 
+      ++iter) {
+    PHG4Particle* g4particle = iter->second;
+    if(!g4particle) continue;
+    nA++; // all
+    float px = g4particle->get_px();
+    float py = g4particle->get_py();
+    float pz = g4particle->get_pz();
+    float pt = TMath::Sqrt( px*px + py*py );
+    float p = TMath::Sqrt( px*px + py*py + pz*pz );
+    float phi = TMath::Pi()+TMath::ATan2(-py,-px);
+    float eta = 1.e30;
+    if(p != TMath::Abs(pz)) eta = 0.5*TMath::Log((p+pz)/(p-pz));
+    fPt[0]->Fill(pt);
+    fPhi[0]->Fill(phi);
+    fEta[0]->Fill(eta);
+    //if(trutheval->get_embed(g4particle)==0) continue;
+    int id = g4particle->get_track_id();
+    std::map<int,int>::iterator embeddedflag = fEmbedded.find(id);
+    if(embeddedflag==fEmbedded.end()) continue; // not found
+    if((*embeddedflag).second==0) continue; // not embedded
+    //====> EMBEDDED
+    nB++; // embedded
+    // need a method to count how many layers where crossed by truth. Solution is to loop over g4hits and flag layers as hits belong to them.
+    std::set<PHG4Hit*> g4hits = trutheval->all_truth_hits(g4particle);     
+    bool hit[67];
+    for(int i=0; i!=67; ++i) hit[i] = false;
+    for(std::set<PHG4Hit*>::iterator iter = g4hits.begin();
+	iter != g4hits.end();
+	++iter) {
+      PHG4Hit *candidate = *iter;
+      unsigned int lyr = candidate->get_layer();
+      hit[lyr] = true;
+    }
+    int nhits = 0;
+    for(int i=7; i!=67; ++i) if(hit[i]) nhits++; // counts only tpc hits
+    fPt[1]->Fill(pt);
+    fPhi[1]->Fill(phi);
+    fEta[1]->Fill(eta);
+    fHEmbeddedNHits[0]->Fill( nhits );
+    //====> RECONSTRUCTABLES
+    if(nhits<40) continue; // threshold at 2/3 of nlayers
+    (*embeddedflag).second = 2;
+    nC++; // reconstructable
+    fPt[2]->Fill(pt);
+    fPhi[2]->Fill(phi);
+    fEta[2]->Fill(eta);
+    fHEmbeddedNHits[1]->Fill( nhits );
+  }
+  fHNTruths->Fill(nA);
+  fHNEmbedded->Fill(nB);
+  fHNReconstructables->Fill(nC);
 
   // loop over all reco particles
-    for (SvtxTrackMap::Iter iter = trackmap->begin();
-       iter != trackmap->end();
-       ++iter) {
-    
-    SvtxTrack*    track      = iter->second;
-    float recopt = track->get_pt();
-  
-      
+  nA = 0;
+  nB = 0;
+  nC = 0;
+  int nD = 0;
+  for(SvtxTrackMap::Iter iter = trackmap->begin();
+      iter != trackmap->end(); ++iter) {
+    nA++;
+    SvtxTrack *track = iter->second;
+    if (!track) continue;
+    float rpx = track->get_px();
+    float rpy = track->get_py();
+    float rpz = track->get_pz();
+    float rpt = TMath::Sqrt( rpx*rpx + rpy*rpy );
+    float rp = TMath::Sqrt( rpx*rpx + rpy*rpy + rpz*rpz );
+    float rphi = TMath::Pi()+TMath::ATan2(-rpy,-rpx);
+    float reta = 1.e30;
+    if(rp != TMath::Abs(rpz)) reta = 0.5*TMath::Log((rp+rpz)/(rp-rpz));
+    float rdca2d = track->get_dca2d();
+    fHRPt[0]->Fill(rpt);
+    fHRPhi[0]->Fill(rphi);
+    fHREta[0]->Fill(reta);
+    fHRDca2D[0]->Fill(rpt,rdca2d);
+    // check if matches to a MCTruth
     PHG4Particle* g4particle = trackeval->max_truth_particle_by_nclusters(track);
-    float truept = sqrt(pow(g4particle->get_px(),2)+pow(g4particle->get_py(),2));
-
-    if (trutheval->get_embed(g4particle) != 0) {
-      // embedded results (quality or preformance measures)
-      _truept_dptoverpt->Fill(truept,(recopt-truept)/truept);
-      _truept_dca->Fill(truept,track->get_dca2d());
-
-      _recopt_quality->Fill(recopt,track->get_quality());      
-    } else {
-      // non-embedded results (purity measures)
-      _recopt_tracks_all->Fill(recopt);
-      _recopt_quality_tracks_all->Fill(recopt,track->get_quality());
-
-      unsigned int nfromtruth = trackeval->get_nclusters_contribution(track,g4particle);
-
-      unsigned int ndiff = abs((int)nfromtruth-(int)_nlayers);
-      if (ndiff <= 2) {
-	_recopt_tracks_recoWithin2Hits->Fill(recopt);
-      }
-      if (ndiff <= 1) {
-	_recopt_tracks_recoWithin1Hit->Fill(recopt);
-      }
-      if (ndiff == 0) {
-	_recopt_tracks_recoWithExactHits->Fill(recopt);
-      }
-
-      unsigned int layersfromtruth = trackeval->get_nclusters_contribution_by_layer(track,g4particle);
-      unsigned int innerhits = (layersfromtruth & _inner_layer_mask);
-      unsigned int ninnerhitsfromtruth = 0;
-      unsigned int ninnerlayers = 0;
-      for (unsigned int i = 0; i < 32; ++i) {
-	ninnerhitsfromtruth += (0x1 & (innerhits >> i));
-	ninnerlayers += (0x1 & (_inner_layer_mask >> i));
-      }
-      
-      ndiff = abs((int)ninnerhitsfromtruth-(int)ninnerlayers);
-      if (ndiff <= 2) {
-	_recopt_tracks_recoWithin2InnerHits->Fill(recopt);
-      }
-      if (ndiff <= 1) {
-	_recopt_tracks_recoWithin1InnerHit->Fill(recopt);
-      }
-      if (ndiff == 0) {
-	_recopt_tracks_recoWithExactInnerHits->Fill(recopt);
-      } 
-     
-      float diff = fabs(recopt-truept)/truept;
-      if (diff < 0.05) {
-	_recopt_tracks_recoWithin5Percent->Fill(recopt);
-      }
-      if (diff < 0.04) {
-	_recopt_tracks_recoWithin4Percent->Fill(recopt);
-	_recopt_quality_tracks_recoWithin4Percent->Fill(recopt,track->get_quality());
-      }
-      if (diff < 0.03) {
-	_recopt_tracks_recoWithin3Percent->Fill(recopt);
-      }            
-    }
+    if(!g4particle) continue;
+    nB++;
+    float px = g4particle->get_px();
+    float py = g4particle->get_py();
+    float pz = g4particle->get_pz();
+    float pt = TMath::Sqrt( px*px + py*py );
+    float p = TMath::Sqrt( px*px + py*py + pz*pz );
+    float phi = TMath::Pi()+TMath::ATan2(-py,-px);
+    float eta = 1.e30;
+    if(p != TMath::Abs(pz)) eta = 0.5*TMath::Log((p+pz)/(p-pz));
+    int nclusterscontrib = int( trackeval->get_nclusters_contribution(track,g4particle) );
+    float ptreldiff = (rpt-pt)/pt;
+    float phireldiff = (rphi-phi)/phi;
+    float etareldiff = (reta-eta)/eta;
+    fHNClustersContribution[0]->Fill( nclusterscontrib );
+    fHPtResolution[0]->Fill(pt,ptreldiff);
+    fHPhiResolution[0]->Fill(pt,phireldiff);
+    fHEtaResolution[0]->Fill(pt,etareldiff);
+    fHRPt[1]->Fill(rpt);
+    fHRPhi[1]->Fill(rphi);
+    fHREta[1]->Fill(reta);
+    fHRDca2D[1]->Fill(rpt,rdca2d);
+    // check if it was embedded
+    int id = g4particle->get_track_id();
+    std::map<int,int>::iterator embeddedflag = fEmbedded.find(id);
+    if(embeddedflag==fEmbedded.end()) continue; // not found
+    if((*embeddedflag).second==0) continue; // not embedded
+    nC++;
+    fHNClustersContribution[1]->Fill( nclusterscontrib );
+    fHPtResolution[1]->Fill(pt,ptreldiff);
+    fHPhiResolution[1]->Fill(pt,phireldiff);
+    fHEtaResolution[1]->Fill(pt,etareldiff);
+    fHRPt[2]->Fill(rpt);
+    fHRPhi[2]->Fill(rphi);
+    fHREta[2]->Fill(reta);
+    fHRDca2D[2]->Fill(rpt,rdca2d);
+    // check if it was reconstructable
+    if((*embeddedflag).second==1) continue; // not reconstructable
+    nD++;
+    fHNClustersContribution[2]->Fill( nclusterscontrib );
+    fHPtResolution[2]->Fill(pt,ptreldiff);
+    fHPhiResolution[2]->Fill(pt,phireldiff);
+    fHEtaResolution[2]->Fill(pt,etareldiff);
+    fHRPt[3]->Fill(rpt);
+    fHRPhi[3]->Fill(rphi);
+    fHREta[3]->Fill(reta);
+    fHRDca2D[3]->Fill(rpt,rdca2d);
   }
+  fHNTracks->Fill( nA );
+  fHNTracksMatched->Fill( nB );
+  fHNTracksEmbedded->Fill( nC );
+  fHNTracksReconstructable->Fill( nD );
  
   // get leading vertex
   SvtxVertex* maxvertex = NULL;
   unsigned int maxtracks = 0;  
+  nA=0;
   for (SvtxVertexMap::Iter iter = vertexmap->begin();
        iter != vertexmap->end();
        ++iter) {
+    nA++;
     SvtxVertex* vertex = iter->second;
-
     if (vertex->size_tracks() > maxtracks) {
       maxvertex = vertex;
       maxtracks = vertex->size_tracks();
-    }    
+    }
   }
+  fHNVertexes->Fill(nA);
   
-  if (maxvertex) {
+  /*
+  if(maxvertex) {
     PHG4VtxPoint* point = vertexeval->max_truth_point_by_ntracks(maxvertex);
-
     if (point) {
       _dx_vertex->Fill(maxvertex->get_x() - point->get_x());
       _dy_vertex->Fill(maxvertex->get_y() - point->get_y());
       _dz_vertex->Fill(maxvertex->get_z() - point->get_z());
     }
   }
-
+  */
+  std::cout << "TrackingPerformanceCheck [EXIT]" << std::endl;
   return 0;
 }
 
