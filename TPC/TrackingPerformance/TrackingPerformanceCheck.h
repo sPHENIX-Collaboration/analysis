@@ -45,7 +45,7 @@ private:
   TH1F *fHREta[4];
   TH1F *fHRPhi[4];
   TH2F *fHRDca2D[4];
-  TH1F *fHNClustersContribution[3];
+  TH2F *fHNClustersContribution[3];
   TH2F *fHPtResolution[3];
   TH2F *fHPhiResolution[3];
   TH2F *fHEtaResolution[3];

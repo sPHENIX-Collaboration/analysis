@@ -36,7 +36,7 @@ int TrackingPerformanceCheck::Init(PHCompositeNode *topNode) {
   // register histograms
   Fun4AllServer *se = Fun4AllServer::instance();
 
-  const int nptbinsPONE = 30;
+  const int nptbinsPONE = 52;
   Int_t nptbins = nptbinsPONE - 1;
   Double_t ptbins[nptbinsPONE];
   ptbins[0] = 0.2;
@@ -45,17 +45,22 @@ int TrackingPerformanceCheck::Init(PHCompositeNode *topNode) {
   for(int i=0; i!=11; ++i)
     ptbins[9+i] = 2.0 + i*0.5;
   for(int i=0; i!=10; ++i)
-    ptbins[20+i] = 7.0 + i*1.0;
+    ptbins[20+i] = 8.0 + i*1.0;
+  for(int i=0; i!=12; ++i)
+    ptbins[30+i] = 18.0 + i*2.0;
+  for(int i=0; i!=10; ++i)
+    ptbins[42+i] = 45.0 + i*5.0;
+
   for(int i=0; i!=nptbinsPONE; ++i) std::cout << i << " " << ptbins[i] << std::endl;
 
   fHNEvents = new TH1F("Events","Events",1,-0.5,0.5);
   se->registerHisto(fHNEvents);
 
-  fHNTruths = new TH1F("Truths0_N","Number of Truths",100,-0.5,9999.5);
+  fHNTruths = new TH1F("Truths0_N","Number of Truths",100,-0.5,11999.5);
   se->registerHisto(fHNTruths);
-  fHNEmbedded = new TH1F("Truths1_N","Number of Embedded",100,-0.5,99.5);
+  fHNEmbedded = new TH1F("Truths1_N","Number of Embedded",50,-0.5,49.5);
   se->registerHisto(fHNEmbedded);
-  fHNReconstructables = new TH1F("Truths2_N","Number of Reconstructables",100,-0.5,99.5);
+  fHNReconstructables = new TH1F("Truths2_N","Number of Reconstructables",50,-0.5,49.5);
   se->registerHisto(fHNReconstructables);
   for(int i=0; i!=3; ++i) {
     fPt[i] = new TH1F(Form("Truths%d_Pt",i),Form("Truths%d_Pt",i),nptbins,ptbins);
@@ -70,18 +75,18 @@ int TrackingPerformanceCheck::Init(PHCompositeNode *topNode) {
   fHEmbeddedNHits[1] = new TH1F("Truths2_Hits","Number of TPCHits in Reconstructable",61,-0.5,60.5);
   se->registerHisto(fHEmbeddedNHits[1]);
 
-  fHNTracks = new TH1F("Tracks0_N","Number of Tracks",100,-0.5,9999.5);
+  fHNTracks = new TH1F("Tracks0_N","Number of Tracks",100,-0.5,1999.5);
   se->registerHisto(fHNTracks);
-  fHNTracksMatched = new TH1F("Tracks1_N","Number of Tracks Matched to Truth",100,-0.5,9999.5);
+  fHNTracksMatched = new TH1F("Tracks1_N","Number of Tracks Matched to Truth",100,-0.5,1999.5);
   se->registerHisto(fHNTracksMatched);
-  fHNTracksEmbedded = new TH1F("Tracks2_N","Number of Tracks Matched to Embedded",100,-0.5,99.5);
+  fHNTracksEmbedded = new TH1F("Tracks2_N","Number of Tracks Matched to Embedded",50,-0.5,49.5);
   se->registerHisto(fHNTracksEmbedded);
-  fHNTracksReconstructable = new TH1F("Tracks3_N","Number of Tracks Matched to Reconstructable",100,-0.5,99.5);
+  fHNTracksReconstructable = new TH1F("Tracks3_N","Number of Tracks Matched to Reconstructable",50,-0.5,49.5);
   se->registerHisto(fHNTracksReconstructable);
   for(int i=0; i!=4; ++i) {
     fHRPt[i] = new TH1F(Form("Tracks%d_Pt",i),Form("Tracks%d_Pt",i),nptbins,ptbins);
     fHRPhi[i] = new TH1F(Form("Tracks%d_Phi",i),Form("Tracks%d_Phi",i),100,0,TMath::TwoPi());
-    fHREta[i] = new TH1F(Form("Tracks%d_Eta",i),Form("Tracks%d_Eta",i),100,-10,+10);
+    fHREta[i] = new TH1F(Form("Tracks%d_Eta",i),Form("Tracks%d_Eta",i),100,-1.5,+1.5);
     fHRDca2D[i] = new TH2F( Form("Tracks%d_Dca2D",i),Form("Dca2D %d;PT;DCA2D",i),nptbins,ptbins,200,-1.0,1.0);
     se->registerHisto(fHRPt[i]);
     se->registerHisto(fHRPhi[i]);
@@ -89,12 +94,13 @@ int TrackingPerformanceCheck::Init(PHCompositeNode *topNode) {
     se->registerHisto(fHRDca2D[i]);
   }
   for(int i=0; i!=3; ++i) {
-    fHNClustersContribution[i] = new TH1F(Form("Tracks%d_NClusters",i+1),
-					  "Number of Clusters Belonging to Truth",100,-0.5,99.5);
+    fHNClustersContribution[i] = new TH2F(Form("Tracks%d_NClusters",i+1),
+					  "Number of Clusters Belonging to Truth",
+					  nptbins,ptbins,70,-0.5,69.5);
     se->registerHisto(fHNClustersContribution[i]);
     fHPtResolution[i] = new TH2F(Form("Tracks%d_ResPt",i+1),
 				 "PtResolution;PT;REL DIFF",
-				 nptbins,ptbins,200,-5.0,5.0);
+				 nptbins,ptbins,200,-1.5,+1.5);
     se->registerHisto(fHPtResolution[i]);
     fHPhiResolution[i] = new TH2F(Form("Tracks%d_ResPhi",i+1),
 				  "PhiResolution;PT;REL DIFF",
@@ -240,7 +246,7 @@ int TrackingPerformanceCheck::process_event(PHCompositeNode *topNode) {
     float ptreldiff = (rpt-pt)/pt;
     float phireldiff = (rphi-phi)/phi;
     float etareldiff = (reta-eta)/eta;
-    fHNClustersContribution[0]->Fill( nclusterscontrib );
+    fHNClustersContribution[0]->Fill(pt, nclusterscontrib);
     fHPtResolution[0]->Fill(pt,ptreldiff);
     fHPhiResolution[0]->Fill(pt,phireldiff);
     fHEtaResolution[0]->Fill(pt,etareldiff);
@@ -254,7 +260,7 @@ int TrackingPerformanceCheck::process_event(PHCompositeNode *topNode) {
     if(embeddedflag==fEmbedded.end()) continue; // not found
     if((*embeddedflag).second==0) continue; // not embedded
     nC++;
-    fHNClustersContribution[1]->Fill( nclusterscontrib );
+    fHNClustersContribution[1]->Fill(pt, nclusterscontrib );
     fHPtResolution[1]->Fill(pt,ptreldiff);
     fHPhiResolution[1]->Fill(pt,phireldiff);
     fHEtaResolution[1]->Fill(pt,etareldiff);
@@ -265,7 +271,7 @@ int TrackingPerformanceCheck::process_event(PHCompositeNode *topNode) {
     // check if it was reconstructable
     if((*embeddedflag).second==1) continue; // not reconstructable
     nD++;
-    fHNClustersContribution[2]->Fill( nclusterscontrib );
+    fHNClustersContribution[2]->Fill(pt, nclusterscontrib );
     fHPtResolution[2]->Fill(pt,ptreldiff);
     fHPhiResolution[2]->Fill(pt,phireldiff);
     fHEtaResolution[2]->Fill(pt,etareldiff);
