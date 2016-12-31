@@ -131,7 +131,7 @@ Draw_HFJetTruth(const TString infile =
   gr_phenix->SetMarkerColor(kBlack);
   gr_phenix->SetMarkerStyle(kOpenCross);
 
-  TCanvas *c1 = new TCanvas("Draw_HFJetTruth", "Draw_HFJetTruth", 1000, 860);
+  TCanvas *c1 = new TCanvas("Draw_HFJetTruth_PR", "Draw_HFJetTruth_PR", 1000, 860);
 //  c1->Divide(2, 2);
   int idx = 1;
   TPad * p;
@@ -149,10 +149,10 @@ Draw_HFJetTruth(const TString infile =
   gr_phenix->Draw("pe");
 
   h_b->Draw("same");
-  h_bh5->Draw("same");
+//  h_bh5->Draw("same");
 //  h_bq->Draw("same");
-  h_c->Draw("same");
-  h_ch5->Draw("same");
+//  h_c->Draw("same");
+//  h_ch5->Draw("same");
 
   hall->GetXaxis()->SetRangeUser(18, 60);
   hall->GetYaxis()->SetTitle(
@@ -161,14 +161,14 @@ Draw_HFJetTruth(const TString infile =
   TLegend * leg = new TLegend(0.4, 0.6, 0.95, 0.95);
   leg->SetFillColor(kWhite);
   leg->SetFillStyle(1001);
-  leg->SetHeader("p+p, #sqrt{s} = 200 GeV, |#eta|<0.6");
+  leg->SetHeader("p+p collisions @ sPHENIX, #sqrt{s} = 200 GeV, |#eta|<0.6");
   leg->AddEntry(hall, "Inclusive jet, Pythia8, Truth, anti-k_{t}, R=0.4",
       "lpe");
-  leg->AddEntry(h_c, "c-quark jet, Pythia8, Truth, anti-k_{t}, R=0.4", "lpe");
+//  leg->AddEntry(h_c, "c-quark jet, Pythia8, Truth, anti-k_{t}, R=0.4", "lpe");
   leg->AddEntry(h_b, "b-quark jet, Pythia8, Truth, anti-k_{t}, R=0.4", "lpe");
-  leg->AddEntry(h_bh5,
-      "b-hadron jet, Pythia8, Truth, anti-k_{t}, R=0.4, p_{T, b-hadron}>5 GeV/c",
-      "lpe");
+//  leg->AddEntry(h_bh5,
+//      "b-hadron jet, Pythia8, Truth, anti-k_{t}, R=0.4, p_{T, b-hadron}>5 GeV/c",
+//      "lpe");
   leg->AddEntry(gr_phenix, "PHENIX inclusive jet, PRL 116, 122301 (2016)", "ple");
 //  leg->AddEntry(gr_fonll_c, "c-quark, FONLL v1.3.2, CTEQ6.6, |y|<0.6", "f");
   leg->AddEntry(gr_fonll_b, "b-quark, FONLL v1.3.2, CTEQ6.6, |y|<0.6", "f");
