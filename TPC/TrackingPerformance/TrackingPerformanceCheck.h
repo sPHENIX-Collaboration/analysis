@@ -29,26 +29,21 @@ private:
 
   TH1F *fHNEvents;
 
-  TH1F *fHNTruths;
-  TH1F *fHNEmbedded;
-  TH1F *fHNReconstructables;
-  TH1F *fPt[3];
-  TH1F *fEta[3];
-  TH1F *fPhi[3];
-  TH1F *fHEmbeddedNHits[3];
+  TH1F *fHTN[4];
+  TH1F *fHTPt[4];
+  TH1F *fHTEta[4];
+  TH1F *fHTPhi[4];
+  TH1F *fHTNHits[4];
 
-  TH1F *fHNTracks;
-  TH1F *fHNTracksMatched;
-  TH1F *fHNTracksEmbedded;
-  TH1F *fHNTracksReconstructable;
+  TH1F *fHRN[4];
   TH1F *fHRPt[4];
   TH1F *fHREta[4];
   TH1F *fHRPhi[4];
   TH2F *fHRDca2D[4];
-  TH2F *fHNClustersContribution[3];
-  TH2F *fHPtResolution[3];
-  TH2F *fHPhiResolution[3];
-  TH2F *fHEtaResolution[3];
+  TH2F *fHRNClustersContribution[4];
+  TH2F *fHRPtResolution[4];
+  TH2F *fHRPhiResolution[4];
+  TH2F *fHREtaResolution[4];
 
   TH1F *fHNVertexes;
 };

@@ -1,17 +1,17 @@
-void ConfigureInput(char *inputFile) {
-  const bool hijing = false;
-  const bool nosync = true;
+void ConfigureInput(TString inputFile) {
+  const bool hijing = true;
+  const bool nosync = false;
   const bool genera = true;
 
   Fun4AllServer *se = Fun4AllServer::instance();
 
   if(hijing) {
     HepMCNodeReader *hr = new HepMCNodeReader();
-    hr->SmearVertex(0.0,0.0,-5.0);
+    //hr->SmearVertex(0.0,0.0,-5.0); // did not have before
     se->registerSubsystem(hr);
     Fun4AllInputManager *in = new Fun4AllHepMCInputManager( "DSTIN" );
     se->registerInputManager( in );
-    in->fileopen( inputfile ); //fileopen only after you register!
+    in->fileopen( inputFile.Data() ); //fileopen only after you register!
     //se->fileopen( in->Name().c_str(), "/gpfs/mnt/gpfs02/phenix/hhj/hhj1/frawley/tracking/stage1_jobs/in/hijing_01499.txt.bz2" );
   }
 
@@ -39,7 +39,7 @@ void ConfigureInput(char *inputFile) {
     gen->set_vertex_size_parameters(0.0, 0.0);
     gen->set_eta_range(-1.1,+1.1);
     gen->set_phi_range(-1.0 * TMath::Pi(), 1.0 * TMath::Pi());
-    gen->set_pt_range(0.2, 10.0);
+    gen->set_pt_range(0.2, 39.0);
     gen->Embed(1);
     gen->Verbosity(0);
 
@@ -156,8 +156,8 @@ int Fun( const int nEvents = 1,
   time.Start();
   Libraries();
 
-  const char *inputFile = Form("/gpfs/mnt/gpfs02/phenix/hhj/hhj1/frawley/tracking/stage1_jobs/in/hijing_%05d.txt.bz2",nFile);
-  const char *outputFile = Form("output/output_%05d.root",nFile);
+  TString inputFile = Form("/gpfs/mnt/gpfs02/phenix/hhj/hhj1/frawley/tracking/stage1_jobs/in/hijing_%05d.txt.bz2",nFile);
+  TString outputFile = Form("output/output_%05d.root",nFile);
 
   Fun4AllServer *se = Fun4AllServer::instance();
   se->Verbosity(0);
@@ -173,7 +173,7 @@ int Fun( const int nEvents = 1,
   std::cout << "RUNNING..." << std::endl;
   //se->Print();
   se->run(nEvents);
-  se->dumpHistos(outputFile);
+  se->dumpHistos(outputFile.Data());
   se->End();
   std::cout << "ALL DONE" << std::endl;
   time.Stop();
