@@ -29,16 +29,23 @@ private:
 
   TH1F *fHNEvents;
 
-  TH1F *fHTN[4];
-  TH1F *fHTPt[4];
-  TH1F *fHTEta[4];
-  TH1F *fHTPhi[4];
-  TH1F *fHTNHits[4];
+  TH1F *fHTN[5];
+  TH1F *fHTPt[5];
+  TH1F *fHTEta[5];
+  TH1F *fHTPhi[5];
+  TH1F *fHTNHits[5];
+  TH1F *fHTChi2[5];
+  TH2F *fHTDca2D[5];
+  TH2F *fHTNClustersContribution[5];
+  TH2F *fHTPtResolution[5];
+  TH2F *fHTPhiResolution[5];
+  TH2F *fHTEtaResolution[5];
 
   TH1F *fHRN[4];
   TH1F *fHRPt[4];
   TH1F *fHREta[4];
   TH1F *fHRPhi[4];
+  TH1F *fHRChi2[4];
   TH2F *fHRDca2D[4];
   TH2F *fHRNClustersContribution[4];
   TH2F *fHRPtResolution[4];

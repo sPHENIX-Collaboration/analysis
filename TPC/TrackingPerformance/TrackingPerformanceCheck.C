@@ -56,8 +56,8 @@ int TrackingPerformanceCheck::Init(PHCompositeNode *topNode) {
   fHNEvents = new TH1F("Events","Events",1,-0.5,0.5);
   se->registerHisto(fHNEvents);
 
-  TString sTname[4] = {"AllG4Particles","Primaries","Embedded","Reconstructables"};
-  for(int i=0; i!=4; ++i) {
+  TString sTname[5] = {"AllG4Particles","Primaries","Embedded","Reconstructables","RecoMatched"};
+  for(int i=0; i!=5; ++i) {
     fHTN[i] = new TH1F(Form("Truths%d_N",i),Form("Number of %s",sTname[i].Data()),50,-0.5,49.5);
     fHTPt[i] = new TH1F(Form("Truths%d_Pt",i),Form("%s Pt",sTname[i].Data()),nptbins,ptbins);
     fHTPhi[i] = new TH1F(Form("Truths%d_Phi",i),Form("%s Phi",sTname[i].Data()),100,0,TMath::TwoPi());
@@ -69,6 +69,19 @@ int TrackingPerformanceCheck::Init(PHCompositeNode *topNode) {
     if(i<2) continue;
     fHTNHits[i] = new TH1F(Form("Truths%d_Hits",i),Form("Number of TPCHits in %s",sTname[i].Data()),61,-0.5,60.5);
     se->registerHisto(fHTNHits[i]);
+    if(i<4) continue;
+    fHTChi2[i] = new TH1F(Form("Truths%d_Chi2NDF",i),Form("%s Chi2NDF",sTname[i].Data()),100,0,5);
+    fHTDca2D[i] = new TH2F( Form("Truths%d_Dca2D",i),Form("%s Dca2D;PT;DCA2D",sTname[i].Data()),nptbins,ptbins,200,-1.0,1.0);
+    fHTNClustersContribution[i] = new TH2F(Form("Truths%d_NClusters",i), Form("%s Number of Clusters Matched",sTname[i].Data()), nptbins,ptbins,70,-0.5,69.5);
+    fHTPtResolution[i] = new TH2F(Form("Truths%d_ResPt",i), Form("%s PtResolution;PT;REL DIFF",sTname[i].Data()), nptbins,ptbins,200,-1.5,+1.5);
+    fHTPhiResolution[i] = new TH2F(Form("Truths%d_ResPhi",i), Form("%s PhiResolution;PT;REL DIFF",sTname[i].Data()), nptbins,ptbins,200,-0.1,+0.1);
+    fHTEtaResolution[i] = new TH2F(Form("Truths%d_ResEta",i), Form("%s EtaResolution;PT;REL DIFF",sTname[i].Data()), nptbins,ptbins,200,-0.1,+0.1);
+    se->registerHisto(fHTChi2[i]);
+    se->registerHisto(fHTDca2D[i]);
+    se->registerHisto(fHTNClustersContribution[i]);
+    se->registerHisto(fHTPtResolution[i]);
+    se->registerHisto(fHTPhiResolution[i]);
+    se->registerHisto(fHTEtaResolution[i]);
   }
 
   TString sRname[4] = {"AllTracks","M2G4Particle","M2Embedded","M2Reconstructable"};
@@ -77,11 +90,13 @@ int TrackingPerformanceCheck::Init(PHCompositeNode *topNode) {
     fHRPt[i] = new TH1F(Form("Tracks%d_Pt",i),Form("%s Pt",sRname[i].Data()),nptbins,ptbins);
     fHRPhi[i] = new TH1F(Form("Tracks%d_Phi",i),Form("%s Phi",sRname[i].Data()),100,0,TMath::TwoPi());
     fHREta[i] = new TH1F(Form("Tracks%d_Eta",i),Form("%s Eta",sRname[i].Data()),100,-1.5,+1.5);
+    fHRChi2[i] = new TH1F(Form("Tracks%d_Chi2NDF",i),Form("%s Chi2NDF",sRname[i].Data()),100,0,5);
     fHRDca2D[i] = new TH2F( Form("Tracks%d_Dca2D",i),Form("%s Dca2D;PT;DCA2D",sRname[i].Data()),nptbins,ptbins,200,-1.0,1.0);
     se->registerHisto(fHRN[i]);
     se->registerHisto(fHRPt[i]);
     se->registerHisto(fHRPhi[i]);
     se->registerHisto(fHREta[i]);
+    se->registerHisto(fHRChi2[i]);
     se->registerHisto(fHRDca2D[i]);
     if(i<1) continue;
     fHRNClustersContribution[i] = new TH2F(Form("Tracks%d_NClusters",i), Form("%s Number of Clusters Matched",sRname[i].Data()), nptbins,ptbins,70,-0.5,69.5);
@@ -131,6 +146,7 @@ int TrackingPerformanceCheck::process_event(PHCompositeNode *topNode) {
 
   SvtxEvalStack svtxevalstack(topNode);
   SvtxTruthEval *trutheval = svtxevalstack.get_truth_eval();  
+  SvtxTrackEval *trackeval = svtxevalstack.get_track_eval();
   //PHG4TruthInfoContainer::Range range = truthinfo->GetPrimaryParticleRange();
   PHG4TruthInfoContainer::Range range = truthinfo->GetParticleRange();
   int nA=0;
@@ -165,7 +181,7 @@ int TrackingPerformanceCheck::process_event(PHCompositeNode *topNode) {
     if((*embeddedflag).second==0) continue; // not embedded
     //====> EMBEDDED
     nC++; // embedded
-    // need a method to count how many layers where crossed by truth. Solution is to loop over g4hits and flag layers as hits belong to them.
+    //need a method to count how many layers where crossed by truth. Solution is to loop over g4hits and flag layers as hits belong to them.
     std::set<PHG4Hit*> g4hits = trutheval->all_truth_hits(g4particle);     
     bool hit[67];
     for(int i=0; i!=67; ++i) hit[i] = false;
@@ -190,6 +206,35 @@ int TrackingPerformanceCheck::process_event(PHCompositeNode *topNode) {
     fHTPhi[3]->Fill(phi);
     fHTEta[3]->Fill(eta);
     fHTNHits[3]->Fill( nhits );
+    SvtxTrack *best = trackeval->best_track_from(g4particle); // get the best track (max nclus) for this truth
+    if(!best) continue;
+    //====> MATCHED TO TRACK
+    float rpx = best->get_px();
+    float rpy = best->get_py();
+    float rpz = best->get_pz();
+    float rpt = TMath::Sqrt( rpx*rpx + rpy*rpy );
+    float rp = TMath::Sqrt( rpx*rpx + rpy*rpy + rpz*rpz );
+    float rphi = TMath::Pi()+TMath::ATan2(-rpy,-rpx);
+    float reta = 1.e30;
+    if(rp != TMath::Abs(rpz)) reta = 0.5*TMath::Log((rp+rpz)/(rp-rpz));
+    int nclusterscontrib = int( trackeval->get_nclusters_contribution(best,g4particle) ); // computes nclus
+    float rdca2d = best->get_dca2d();
+    int ndf = int(best->get_ndf());
+    float chi2ndf = -1;
+    if(ndf!=0) chi2ndf = best->get_chisq() / ndf;
+    float ptreldiff = (rpt-pt)/pt;
+    float phireldiff = (rphi-phi)/phi;
+    float etareldiff = (reta-eta)/eta;
+    fHTPt[4]->Fill(pt);
+    fHTPhi[4]->Fill(phi);
+    fHTEta[4]->Fill(eta);
+    fHTNHits[4]->Fill( nhits );
+    fHTChi2[4]->Fill(chi2ndf);
+    fHTDca2D[4]->Fill(pt,rdca2d);
+    fHTPtResolution[4]->Fill(pt,ptreldiff);
+    fHTPhiResolution[4]->Fill(pt,phireldiff);
+    fHTEtaResolution[4]->Fill(pt,etareldiff);
+    fHTNClustersContribution[4]->Fill(pt, nclusterscontrib );
   }
   fHTN[0]->Fill(nA);
   fHTN[1]->Fill(nB);
@@ -201,7 +246,7 @@ int TrackingPerformanceCheck::process_event(PHCompositeNode *topNode) {
   nB = 0;
   nC = 0;
   nD = 0;
-  SvtxTrackEval *trackeval = svtxevalstack.get_track_eval();
+  std::cout << "TRACKS!" << std::endl;
   for(SvtxTrackMap::Iter iter = trackmap->begin();
       iter != trackmap->end(); ++iter) {
     //ALL TRACKS
@@ -217,15 +262,20 @@ int TrackingPerformanceCheck::process_event(PHCompositeNode *topNode) {
     float reta = 1.e30;
     if(rp != TMath::Abs(rpz)) reta = 0.5*TMath::Log((rp+rpz)/(rp-rpz));
     float rdca2d = track->get_dca2d();
+    int ndf = int(track->get_ndf());
+    float chi2ndf = -1;
+    if(ndf!=0) chi2ndf = track->get_chisq() / ndf;
     fHRPt[0]->Fill(rpt);
     fHRPhi[0]->Fill(rphi);
     fHREta[0]->Fill(reta);
+    fHRChi2[0]->Fill(chi2ndf);
     fHRDca2D[0]->Fill(rpt,rdca2d);
     // check if matches to a MCTruth
     PHG4Particle* g4particle = trackeval->max_truth_particle_by_nclusters(track); // get the most probable (max nclus) truth
     if(!g4particle) continue;
     SvtxTrack *best = trackeval->best_track_from(g4particle); // get the best track (max nclus) for this truth
     if(!best) continue;
+    //std::cout << track->get_id() << " ==> " << g4particle->get_track_id() << " ==> " << best->get_id() << std::endl;
     if(best!=track) continue; // skippping low quality duplicates
     //MATCHED
     nB++;
@@ -241,22 +291,26 @@ int TrackingPerformanceCheck::process_event(PHCompositeNode *topNode) {
     fHRPt[1]->Fill(rpt);
     fHRPhi[1]->Fill(rphi);
     fHREta[1]->Fill(reta);
+    fHRChi2[1]->Fill(chi2ndf);
     fHRDca2D[1]->Fill(rpt,rdca2d);
     fHRNClustersContribution[1]->Fill(pt, nclusterscontrib);
     // check if it was embedded
     int id = g4particle->get_track_id();
     std::map<int,int>::iterator embeddedflag = fEmbedded.find(id);
     if(embeddedflag==fEmbedded.end()) continue; // not found
+    //std::cout << " " << track->get_id() << " ==> " << g4particle->get_track_id() << "(" << (*embeddedflag).second << ")" << " ==> " << best->get_id() << std::endl;
     if((*embeddedflag).second==0) continue; // not embedded
     //EMBEDDED
     nC++;
     fHRPt[2]->Fill(rpt);
     fHRPhi[2]->Fill(rphi);
     fHREta[2]->Fill(reta);
+    fHRChi2[2]->Fill(chi2ndf);
     fHRDca2D[2]->Fill(rpt,rdca2d);
     fHRNClustersContribution[2]->Fill(pt, nclusterscontrib );
     // check if it was reconstructable
     if((*embeddedflag).second==1) continue; // not reconstructable
+    //std::cout << " " << track->get_id() << " ==> " << g4particle->get_track_id() << "(" << (*embeddedflag).second << ")" << " ==> " << best->get_id() << std::endl;
     //RECONSTRUCTABLE
     nD++;
     float ptreldiff = (rpt-pt)/pt;
@@ -265,12 +319,12 @@ int TrackingPerformanceCheck::process_event(PHCompositeNode *topNode) {
     fHRPt[3]->Fill(rpt);
     fHRPhi[3]->Fill(rphi);
     fHREta[3]->Fill(reta);
+    fHRChi2[3]->Fill(chi2ndf);
     fHRDca2D[3]->Fill(rpt,rdca2d);
     fHRPtResolution[3]->Fill(pt,ptreldiff);
     fHRPhiResolution[3]->Fill(pt,phireldiff);
     fHREtaResolution[3]->Fill(pt,etareldiff);
     fHRNClustersContribution[3]->Fill(pt, nclusterscontrib );
-
   }
   fHRN[0]->Fill( nA );
   fHRN[1]->Fill( nB );
