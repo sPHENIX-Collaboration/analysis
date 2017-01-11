@@ -37,6 +37,8 @@ PhotonJet::PhotonJet(const std::string &name) : SubsysReco("PHOTONJET")
   outfilename = name;
 
   //add other initializers here
+  //default use isocone algorithm
+  use_isocone=1;
 }
 
 int PhotonJet::Init(PHCompositeNode *topnode)
@@ -191,7 +193,7 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
 
     float energysum = ConeSum(cluster,clusters,trackmap,isoconeradius);
     bool conecut = energysum > 0.1*clus_energy;
-    if(conecut)
+    if(conecut && use_isocone)
       continue;
    
     isolated_clusters->Fill();

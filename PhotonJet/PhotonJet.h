@@ -25,11 +25,13 @@ class PhotonJet: public SubsysReco
   
   PhotonJet(const std::string &name="photonjet.root");
   double isoconeradius,mincluspt;
+  int use_isocone;
   int Init(PHCompositeNode*);
   int process_event(PHCompositeNode*);
   int End(PHCompositeNode*);
   void Set_Isocone_radius(double rad){isoconeradius = rad;};
   void set_cluspt_mincut(double pt){mincluspt = pt;};
+  void use_isocone_algorithm(int yes){use_isocone=yes;};//1 is use it, 0 is don't use it
  private:
 
 
