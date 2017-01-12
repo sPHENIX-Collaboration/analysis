@@ -18,6 +18,9 @@ class SvtxTrackMap;
 class JetMap;
 class JetEvalStack;
 class JetRecoEval;
+class SvtxTrackEval;
+class PHG4TruthInfoContainer;
+
 class PhotonJet: public SubsysReco
 {
 
@@ -25,6 +28,7 @@ class PhotonJet: public SubsysReco
   
   PhotonJet(const std::string &name="photonjet.root");
   double isoconeradius,mincluspt;
+  float jet_cone_size;
   int use_isocone;
   int Init(PHCompositeNode*);
   int process_event(PHCompositeNode*);
@@ -32,15 +36,17 @@ class PhotonJet: public SubsysReco
   void Set_Isocone_radius(double rad){isoconeradius = rad;};
   void set_cluspt_mincut(double pt){mincluspt = pt;};
   void use_isocone_algorithm(int yes){use_isocone=yes;};//1 is use it, 0 is don't use it
- private:
+  void set_jetcone_size(float size){jet_cone_size = size;}//float for jet cone size, i.e. 0.2,0.3,0.4, etc.
 
 
-  
+
+
+private:
 
   void Set_Tree_Branches();
  
   float ConeSum(RawCluster *cluster, RawClusterContainer *cluster_container, SvtxTrackMap *trackmap, float coneradius);
-  void GetRecoHadronsAndJets(RawCluster *trig, SvtxTrackMap *tracks, JetMap *jets, JetRecoEval *recoeval);
+  void GetRecoHadronsAndJets(RawCluster *trig, SvtxTrackMap *tracks, JetMap *jets, JetRecoEval *recoeval, SvtxTrackEval *trackeval, PHG4TruthInfoContainer *alltruth);
 
 
 
@@ -145,6 +151,16 @@ class PhotonJet: public SubsysReco
   float haddphi;
   float hadpout;
   float haddeta;
+  bool _truth_is_primary;
+  float _truthtrackpx;
+  float _truthtrackpy;
+  float _truthtrackpz;
+  float _truthtrackp;
+  float _truthtracke;
+  float _truthtrackpt;
+  float _truthtrackphi;
+  float _truthtracketa;
+  int _truthtrackpid;
 
 
   //all truth particles

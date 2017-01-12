@@ -25,7 +25,7 @@
 #include <g4hough/SvtxTrack.h>
 
 #include <g4eval/SvtxEvalStack.h>
-
+#include <sstream>
 
 using namespace std;
 
@@ -39,6 +39,9 @@ PhotonJet::PhotonJet(const std::string &name) : SubsysReco("PHOTONJET")
   //add other initializers here
   //default use isocone algorithm
   use_isocone=1;
+  
+  //default use 0.3 jet cone
+  jet_cone_size=0.3;
 }
 
 int PhotonJet::Init(PHCompositeNode *topnode)
@@ -73,13 +76,56 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
 
 
   //get the nodes from the NodeTree
-  JetMap* truth_jets = findNode::getClass<JetMap>(topnode,"AntiKt_Truth_r04");
-  JetMap *reco_jets = findNode::getClass<JetMap>(topnode,"AntiKt_Tower_r04");
+
+
+  //get the right size jets
+  ostringstream truthjetsize;
+  ostringstream recojetsize;
+
+  truthjetsize.str("");
+  truthjetsize<<"AntiKt_Truth_r";
+  recojetsize.str("");
+  recojetsize<<"AntiKt_Tower_r";
+
+  if(jet_cone_size==0.2){
+    truthjetsize<<"02";
+    recojetsize<<"02";
+    }
+  else if(jet_cone_size==0.3){
+    truthjetsize<<"03";
+    recojetsize<<"03";
+  }
+  else if(jet_cone_size==0.4){
+    truthjetsize<<"04";
+    recojetsize<<"04";
+  }
+   else if(jet_cone_size==0.5){
+    truthjetsize<<"05";
+    recojetsize<<"05";
+  }
+  //if its some other number just set it to 0.4
+   else{
+     truthjetsize<<"04";
+     recojetsize<<"04";
+   }
+
+  JetMap* truth_jets = findNode::getClass<JetMap>(topnode,truthjetsize.str().c_str());
+  JetMap *reco_jets = findNode::getClass<JetMap>(topnode,recojetsize.str().c_str());
   PHG4TruthInfoContainer* truthinfo = findNode::getClass<PHG4TruthInfoContainer>(topnode,"G4TruthInfo");
   RawClusterContainer *clusters = findNode::getClass<RawClusterContainer>(topnode,"CLUSTER_CEMC");
   SvtxTrackMap *trackmap = findNode::getClass<SvtxTrackMap>(topnode,"SvtxTrackMap");
-  JetEvalStack* _jetevalstack = new JetEvalStack(topnode,"AntiKt_Tower_r04","AntiKt_Truth_r04");
+  
+  //for truth jet matching
+  JetEvalStack* _jetevalstack = new JetEvalStack(topnode,recojetsize.str().c_str(),truthjetsize.str().c_str());
   PHG4TruthInfoContainer::Range range = truthinfo->GetPrimaryParticleRange();
+
+  //for truth track matching
+  SvtxEvalStack *svtxevalstack = new SvtxEvalStack(topnode);
+  svtxevalstack->next_event(topnode);
+
+  
+
+
 
   if(!truth_jets){
       cout<<"no truth jets"<<endl;
@@ -108,11 +154,11 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
 
 
   JetRecoEval* recoeval = _jetevalstack->get_reco_eval();
-
+  SvtxTrackEval *trackeval = svtxevalstack->get_track_eval();
 
  /***********************************************
 
-  GET THE TRUTH PARTICLES
+  GET ALL THE TRUTH PARTICLES
 
   ************************************************/
 
@@ -188,7 +234,7 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
     //only interested in high pt photons to be isolated
     if(clus_pt<mincluspt)
       continue;
-    if(fabs(clus_eta)>(1.0-isoconeradius))
+    if(fabs(clus_eta)>(1.0-isoconeradius) && use_isocone)
       continue;
 
     float energysum = ConeSum(cluster,clusters,trackmap,isoconeradius);
@@ -198,7 +244,7 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
    
     isolated_clusters->Fill();
     
-    GetRecoHadronsAndJets(cluster, trackmap, reco_jets,recoeval);
+    GetRecoHadronsAndJets(cluster, trackmap, reco_jets,recoeval,trackeval,truthinfo);
 
   }
 
@@ -210,10 +256,7 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
 
   ************************************************/
   
-  SvtxEvalStack *svtxevalstack = new SvtxEvalStack(topnode);
-  svtxevalstack->next_event(topnode);
 
-  SvtxTrackEval *trackeval = svtxevalstack->get_track_eval();
 
   for(SvtxTrackMap::Iter iter = trackmap->begin(); iter!=trackmap->end(); ++iter){
 
@@ -383,7 +426,9 @@ int PhotonJet::End(PHCompositeNode *topnode)
 void PhotonJet::GetRecoHadronsAndJets(RawCluster *trig,
 				      SvtxTrackMap *tracks,
 				      JetMap *jets,
-				      JetRecoEval *recoeval)
+				      JetRecoEval *recoeval,
+				      SvtxTrackEval *trackeval,
+				      PHG4TruthInfoContainer *alltruth)
 {
 
   float trig_phi = trig->get_phi();
@@ -417,6 +462,23 @@ void PhotonJet::GetRecoHadronsAndJets(RawCluster *trig,
       haddphi+=2.*pi;
     if(haddphi>threepi2)
       haddphi-=2.*pi;
+
+    PHG4Particle *truthtrack = trackeval->max_truth_particle_by_nclusters(track);
+    _truth_is_primary = alltruth->is_primary(truthtrack);
+    
+    _truthtrackpx = truthtrack->get_px();
+    _truthtrackpy = truthtrack->get_py();
+    _truthtrackpz = truthtrack->get_pz();
+    _truthtrackp = sqrt(truthtrackpx*truthtrackpx+truthtrackpy*truthtrackpy+truthtrackpz*truthtrackpz);
+    
+    _truthtracke = truthtrack->get_e();
+    TLorentzVector *Truthtrack = new TLorentzVector();
+    Truthtrack->SetPxPyPzE(truthtrackpx,truthtrackpy,truthtrackpz,truthtracke);
+    _truthtrackpt = Truthtrack->Pt();
+    _truthtrackphi = Truthtrack->Phi();
+    _truthtracketa = Truthtrack->Eta();
+    _truthtrackpid = truthtrack->get_pid();
+
 
 
     haddeta = trig_eta-_tr_eta;
@@ -743,6 +805,20 @@ void PhotonJet::Set_Tree_Branches()
   isophot_had_tree->Branch("hadpout",&hadpout,"hadpout/F");
   isophot_had_tree->Branch("haddeta",&haddeta,"haddeta/F");
   isophot_had_tree->Branch("nevents",&nevents,"nevents/I");
+  isophot_had_tree->Branch("_truthtrackpx",&_truthtrackpx,"_truthtrackpx/F");
+  isophot_had_tree->Branch("_truthtrackpy",&_truthtrackpy,"_truthtrackpy/F");
+  isophot_had_tree->Branch("_truthtrackpz",&_truthtrackpz,"_truthtrackpz/F");
+  isophot_had_tree->Branch("_truthtrackp",&_truthtrackp,"_truthtrackp/F");
+  isophot_had_tree->Branch("_truthtracke",&_truthtracke,"_truthtracke/F");
+  isophot_had_tree->Branch("_truthtrackpt",&_truthtrackpt,"_truthtrackpt/F");
+  isophot_had_tree->Branch("_truthtrackphi",&_truthtrackphi,"_truthtrackphi/F");
+  isophot_had_tree->Branch("_truthtracketa",&_truthtracketa,"_truthtracketa/F");
+  isophot_had_tree->Branch("_truthtrackpid",&_truthtrackpid,"_truthtrackpid/I");
+  isophot_had_tree->Branch("_truth_is_primary",&_truth_is_primary,"_truth_is_primary/B");
+
+
+
+
 
   truth_g4particles = new TTree("truthtree","a tree with all truth particles");
   truth_g4particles->Branch("truthpx",&truthpx,"truthpx/F");
