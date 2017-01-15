@@ -73,10 +73,10 @@ int TrackingPerformanceCheck::Init(PHCompositeNode *topNode) {
     se->registerHisto(fHTNHits[i]);
     if(i<4) continue;
     fHTChi2[i] = new TH2F(Form("Truths%d_Chi2NDF",i),Form("%s Chi2NDF;PT;CHI2NDF",sTname[i].Data()),nptbins,ptbins,100,0,5);
-    fHTDca2D[i] = new TH2F( Form("Truths%d_Dca2D",i),Form("%s Dca2D;PT;DCA2D",sTname[i].Data()),nptbins,ptbins,200,-1.0,1.0);
+    fHTDca2D[i] = new TH2F( Form("Truths%d_Dca2D",i),Form("%s Dca2D;PT;DCA2D",sTname[i].Data()),nptbins,ptbins,200,-0.003,+0.003);
     fHTNClustersContribution[i] = new TH2F(Form("Truths%d_NClusters",i), Form("%s Number of Clusters Matched",sTname[i].Data()), nptbins,ptbins,70,-0.5,69.5);
-    fHTPtResolution[i] = new TH2F(Form("Truths%d_ResPt",i), Form("%s PtResolution;PT;REL DIFF",sTname[i].Data()), nptbins,ptbins,200,-1.1,+1.1);
-    fHTPtResolution2[i] = new TH2F(Form("Truths%d_Res2Pt",i), Form("%s PtResolution2;PT;DIFF",sTname[i].Data()), nptbins,ptbins,200,-0.2,+0.2);
+    fHTPtResolution[i] = new TH2F(Form("Truths%d_ResPt",i), Form("%s PtResolution;PT;REL DIFF",sTname[i].Data()), nptbins,ptbins,400,-1.1,+1.1);
+    fHTPtResolution2[i] = new TH2F(Form("Truths%d_Res2Pt",i), Form("%s PtResolution2;PT;DIFF",sTname[i].Data()), nptbins,ptbins,400,-0.2,+0.2);
     fHTPhiResolution[i] = new TH2F(Form("Truths%d_ResPhi",i), Form("%s PhiResolution;PT;REL DIFF",sTname[i].Data()), nptbins,ptbins,200,-0.1,+0.1);
     fHTEtaResolution[i] = new TH2F(Form("Truths%d_ResEta",i), Form("%s EtaResolution;PT;REL DIFF",sTname[i].Data()), nptbins,ptbins,200,-0.1,+0.1);
     se->registerHisto(fHTChi2[i]);
@@ -96,7 +96,7 @@ int TrackingPerformanceCheck::Init(PHCompositeNode *topNode) {
     fHREta[i] = new TH1F(Form("Tracks%d_Eta",i),Form("%s Eta",sRname[i].Data()),100,-1.5,+1.5);
     fHRTPCClus[i] = new TH2F(Form("Tracks%d_TPCClus",i),Form("%s TPCCLus;PT;TPCClusters",sRname[i].Data()),nptbins,ptbins,70,-0.5,69.5);
     fHRChi2[i] = new TH2F(Form("Tracks%d_Chi2NDF",i),Form("%s Chi2NDF;PT;CHI2NDF",sRname[i].Data()),nptbins,ptbins,100,0,5);
-    fHRDca2D[i] = new TH2F( Form("Tracks%d_Dca2D",i),Form("%s Dca2D;PT;DCA2D",sRname[i].Data()),nptbins,ptbins,200,-1.0,1.0);
+    fHRDca2D[i] = new TH2F( Form("Tracks%d_Dca2D",i),Form("%s Dca2D;PT;DCA2D",sRname[i].Data()),nptbins,ptbins,200,-0.003,+0.003);
     se->registerHisto(fHRN[i]);
     se->registerHisto(fHRPt[i]);
     se->registerHisto(fHRPhi[i]);
@@ -105,8 +105,8 @@ int TrackingPerformanceCheck::Init(PHCompositeNode *topNode) {
     se->registerHisto(fHRChi2[i]);
     se->registerHisto(fHRDca2D[i]);
     if(i<2) continue;
-    fHRPtResolution[i] = new TH2F(Form("Tracks%d_ResPt",i), Form("%s PtResolution;PT;REL DIFF",sRname[i].Data()), nptbins,ptbins,200,-1.5,+1.5);
-    fHRPtResolution2[i] = new TH2F(Form("Tracks%d_Res2Pt",i), Form("%s PtResolution2;PT;DIFF",sRname[i].Data()), nptbins,ptbins,200,-0.2,+0.2);
+    fHRPtResolution[i] = new TH2F(Form("Tracks%d_ResPt",i), Form("%s PtResolution;PT;REL DIFF",sRname[i].Data()), nptbins,ptbins,400,-1.5,+1.5);
+    fHRPtResolution2[i] = new TH2F(Form("Tracks%d_Res2Pt",i), Form("%s PtResolution2;PT;DIFF",sRname[i].Data()), nptbins,ptbins,400,-0.2,+0.2);
     fHRPhiResolution[i] = new TH2F(Form("Tracks%d_ResPhi",i), Form("%s PhiResolution;PT;REL DIFF",sRname[i].Data()), nptbins,ptbins,200,-0.1,+0.1);
     fHREtaResolution[i] = new TH2F(Form("Tracks%d_ResEta",i), Form("%s EtaResolution;PT;REL DIFF",sRname[i].Data()), nptbins,ptbins,200,-0.1,+0.1);
     fHRNClustersContribution[i] = new TH2F(Form("Tracks%d_NClustersContri",i), Form("%s Number of Clusters Contribution",sRname[i].Data()), nptbins,ptbins,70,-0.5,69.5);
@@ -293,7 +293,7 @@ int TrackingPerformanceCheck::process_event(PHCompositeNode *topNode) {
     fHRChi2[0]->Fill(rpt,chi2ndf);
     fHRDca2D[0]->Fill(rpt,rdca2d);
     if(chi2ndf>2) continue;
-    if(tpcclus>30) continue;
+    if(tpcclus<25) continue;
     //===> SELECTED
     nB++;
     fHRPt[1]->Fill(rpt);
