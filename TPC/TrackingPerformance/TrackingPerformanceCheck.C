@@ -129,7 +129,7 @@ int TrackingPerformanceCheck::Init(PHCompositeNode *topNode) {
 }
 
 int TrackingPerformanceCheck::process_event(PHCompositeNode *topNode) {
-  std::cout << "TrackingPerformanceCheck [ENTER]" << std::endl;
+  //std::cout << "TrackingPerformanceCheck [ENTER]" << std::endl;
   fHNEvents->Fill(0);
   fEmbedded.clear();
   PHG4TruthInfoContainer* truthinfo = findNode::getClass<PHG4TruthInfoContainer>(topNode,"G4TruthInfo");
@@ -263,7 +263,7 @@ int TrackingPerformanceCheck::process_event(PHCompositeNode *topNode) {
   nB = 0;
   nC = 0;
   nD = 0;
-  std::cout << "TRACKS!" << std::endl;
+  //std::cout << "TRACKS!" << std::endl;
   for(SvtxTrackMap::Iter iter = trackmap->begin();
       iter != trackmap->end(); ++iter) {
     //===> ALL TRACKS
@@ -403,7 +403,7 @@ int TrackingPerformanceCheck::process_event(PHCompositeNode *topNode) {
     }
   }
   */
-  std::cout << "TrackingPerformanceCheck [EXIT]" << std::endl;
+  //std::cout << "TrackingPerformanceCheck [EXIT]" << std::endl;
   return 0;
 }
 

@@ -157,7 +157,7 @@ int Fun( const int nEvents = 1,
 
   TString inputFile = Form("/gpfs/mnt/gpfs02/phenix/hhj/hhj1/frawley/tracking/stage1_jobs/in/hijing_%05d.txt.bz2",nFile);
   //TString outputFile = Form("output/output_%05d.root",nFile);
-  TString outputFile = Form("temp/output_%05d.root",nFile);
+  TString outputFile = Form("output_%05d.root",nFile);
 
   Fun4AllServer *se = Fun4AllServer::instance();
   se->Verbosity(0);
@@ -171,8 +171,10 @@ int Fun( const int nEvents = 1,
   revperf->SetLayerTPCBegins(7);
   revperf->SetReconstructableTPCHits(30);
   revperf->SetFairClustersContribution(20);
-  revperf->SetGoodTrackChi2NDF(2.0);
-  revperf->SetGoodTrackTPCClusters(20);
+  //revperf->SetGoodTrackChi2NDF(2.0);
+  //revperf->SetGoodTrackTPCClusters(20);
+  revperf->SetGoodTrackChi2NDF(9999.0);
+  revperf->SetGoodTrackTPCClusters(0);
   se->registerSubsystem(revperf);
 
   std::cout << "RUNNING..." << std::endl;
