@@ -21,11 +21,20 @@ public:
   int Init(PHCompositeNode *topNode);
   int process_event(PHCompositeNode *topNode);
   int End(PHCompositeNode *topNode);
+  void SetLayerTPCBegins(int v) {fLayerTPCBegins=v;}
+  void SetReconstructableTPCHits(int v) {fReconstructable_TPCHits=v;}
+  void SetFairClustersContribution(int v) {fFair_ClustersContribution=v;}
+  void SetGoodTrackChi2NDF(float v) {fGTrack_Chi2NDF=v;}
+  void SetGoodTrackTPCClusters(int v) {fGTrack_TPCClusters=v;}
 
 private:
 
-  // output histograms ---------------------------------------------------------
   std::map<int,int> fEmbedded;
+  int fLayerTPCBegins;
+  int fReconstructable_TPCHits;
+  int fFair_ClustersContribution;
+  float fGTrack_Chi2NDF;
+  int fGTrack_TPCClusters;
 
   TH1F *fHNEvents;
 

@@ -2,6 +2,7 @@ DIR="/phenix/u/cperez/sphenix/software/macros/macros/g4simulations/"
 
 rm G4*
 ln -s ${DIR}/G4Setup_sPHENIX.C .
+ln -s ${DIR}/G4_TPC.C .
 ln -s ${DIR}/G4_Pipe.C .
 ln -s ${DIR}/G4_Svtx_maps+IT+tpc.C .
 ln -s ${DIR}/G4_Svtx_maps_ladders+intt+tpc.C

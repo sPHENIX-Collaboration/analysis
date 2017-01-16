@@ -30,8 +30,14 @@
 
 using namespace std;
 
-TrackingPerformanceCheck::TrackingPerformanceCheck(const string &name)
-  : SubsysReco(name) {
+TrackingPerformanceCheck::TrackingPerformanceCheck(const string &name) :
+  SubsysReco(name),
+  fLayerTPCBegins(7),
+  fReconstructable_TPCHits(30), // 40/60 or 30/40
+  fFair_ClustersContribution(20), // 25/67 or 20/47
+  fGTrack_Chi2NDF(2.0),
+  fGTrack_TPCClusters(20) // 25/60 or 20/40
+{
 }
 
 int TrackingPerformanceCheck::Init(PHCompositeNode *topNode) {
@@ -191,8 +197,8 @@ int TrackingPerformanceCheck::process_event(PHCompositeNode *topNode) {
     nC++; // embedded
     //need a method to count how many layers where crossed by truth. Solution is to loop over g4hits and flag layers as hits belong to them.
     std::set<PHG4Hit*> g4hits = trutheval->all_truth_hits(g4particle);     
-    bool hit[67];
-    for(int i=0; i!=67; ++i) hit[i] = false;
+    bool hit[70];
+    for(int i=0; i!=70; ++i) hit[i] = false;
     for(std::set<PHG4Hit*>::iterator iter = g4hits.begin();
 	iter != g4hits.end();
 	++iter) {
@@ -201,13 +207,13 @@ int TrackingPerformanceCheck::process_event(PHCompositeNode *topNode) {
       hit[lyr] = true;
     }
     int nhits = 0;
-    for(int i=7; i!=67; ++i) if(hit[i]) nhits++; // counts only tpc hits
+    for(int i=fLayerTPCBegins; i!=70; ++i) if(hit[i]) nhits++; // counts only tpc hits
     fHTPt[2]->Fill(pt);
     fHTPhi[2]->Fill(phi);
     fHTEta[2]->Fill(eta);
     fHTNHits[2]->Fill( nhits );
     //====> RECONSTRUCTABLES
-    if(nhits<40) continue; // threshold at 2/3 of nlayers
+    if(nhits<fReconstructable_TPCHits) continue;
     (*embeddedflag).second = 2;
     nD++; // reconstructable
     fHTPt[3]->Fill(pt);
@@ -226,7 +232,7 @@ int TrackingPerformanceCheck::process_event(PHCompositeNode *topNode) {
     float reta = 1.e30;
     if(rp != TMath::Abs(rpz)) reta = 0.5*TMath::Log((rp+rpz)/(rp-rpz));
     int nclusterscontrib = int( trackeval->get_nclusters_contribution(best,g4particle) ); // computes nclus
-    if(nclusterscontrib<25) continue;
+    if(nclusterscontrib<fFair_ClustersContribution) continue;
     float rdca2d = best->get_dca2d();
     int ndf = int(best->get_ndf());
     float chi2ndf = -1;
@@ -272,7 +278,7 @@ int TrackingPerformanceCheck::process_event(PHCompositeNode *topNode) {
       SvtxCluster* cluster = clustermap->get(cluster_id);
       if(!cluster) continue;
       int lyr = cluster->get_layer();
-      if(lyr>6) tpcclus++;
+      if(lyr>=fLayerTPCBegins) tpcclus++;
     }
     float rpx = track->get_px();
     float rpy = track->get_py();
@@ -292,8 +298,8 @@ int TrackingPerformanceCheck::process_event(PHCompositeNode *topNode) {
     fHRTPCClus[0]->Fill(rpt,tpcclus);
     fHRChi2[0]->Fill(rpt,chi2ndf);
     fHRDca2D[0]->Fill(rpt,rdca2d);
-    if(chi2ndf>2) continue;
-    if(tpcclus<25) continue;
+    if(chi2ndf>fGTrack_Chi2NDF) continue;
+    if(tpcclus<fGTrack_TPCClusters) continue;
     //===> SELECTED
     nB++;
     fHRPt[1]->Fill(rpt);

@@ -1,5 +1,5 @@
 void ConfigureInput(TString inputFile) {
-  const bool hijing = true;
+  const bool hijing = false;
   const bool nosync = false;
   const bool genera = true;
 
@@ -25,7 +25,7 @@ void ConfigureInput(TString inputFile) {
     PHG4SimpleEventGenerator *gen = new PHG4SimpleEventGenerator( "PIONS" );
     gen->add_particles("pi-",5); // mu+,e+,proton,pi+,Upsilon
     gen->add_particles("pi+",5); // mu-,e-,anti_proton,pi-
-    if(1) {
+    if(hijing||nosync) {
       gen->set_reuse_existing_vertex(true);
       gen->set_existing_vertex_offset_vector(0.0, 0.0, 0.0);
     } else {
@@ -97,7 +97,6 @@ void ConfigureDetectors() {
   bool do_jet_eval = false;
   bool do_dst_compress = false;
   bool do_DSTReader = false;
-
  
   G4Setup(absorberactive, magfield, TPythia6Decayer::kAll,
 	  do_svtx, do_preshower, do_cemc, do_hcalin, do_magnet,
@@ -157,7 +156,8 @@ int Fun( const int nEvents = 1,
   Libraries();
 
   TString inputFile = Form("/gpfs/mnt/gpfs02/phenix/hhj/hhj1/frawley/tracking/stage1_jobs/in/hijing_%05d.txt.bz2",nFile);
-  TString outputFile = Form("output/output_%05d.root",nFile);
+  //TString outputFile = Form("output/output_%05d.root",nFile);
+  TString outputFile = Form("temp/output_%05d.root",nFile);
 
   Fun4AllServer *se = Fun4AllServer::instance();
   se->Verbosity(0);
@@ -168,6 +168,11 @@ int Fun( const int nEvents = 1,
 
   //ADDTASKS
   TrackingPerformanceCheck *revperf = new TrackingPerformanceCheck();
+  revperf->SetLayerTPCBegins(7);
+  revperf->SetReconstructableTPCHits(30);
+  revperf->SetFairClustersContribution(20);
+  revperf->SetGoodTrackChi2NDF(2.0);
+  revperf->SetGoodTrackTPCClusters(20);
   se->registerSubsystem(revperf);
 
   std::cout << "RUNNING..." << std::endl;
