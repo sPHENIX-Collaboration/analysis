@@ -37,6 +37,7 @@ using namespace std;
 
 ClassImp(Proto2ShowerCalib::HCAL_shower);
 ClassImp(Proto2ShowerCalib::Eval_Run);
+ClassImp(Proto2ShowerCalib::Time_Samples);
 
 Proto2ShowerCalib::Proto2ShowerCalib(const std::string &filename) :
     SubsysReco("Proto2ShowerCalib"), _filename(filename), _ievent(0)
@@ -44,8 +45,10 @@ Proto2ShowerCalib::Proto2ShowerCalib(const std::string &filename) :
 
   verbosity = 1;
   _is_sim = false;
+  _fill_time_samples = false;
   _eval_run.reset();
   _shower.reset();
+  _time_samples.reset();
 
   for (int col = 0; col < n_size_emcal; ++col)
     for (int row = 0; row < n_size_emcal; ++row)
@@ -61,6 +64,13 @@ Proto2ShowerCalib::Proto2ShowerCalib(const std::string &filename) :
      }
 
 }
+
+void Proto2ShowerCalib::fill_time_samples(const bool b)
+{ 
+  _fill_time_samples = b; 
+}
+
+
 
 Proto2ShowerCalib::~Proto2ShowerCalib()
 {
@@ -181,6 +191,7 @@ Proto2ShowerCalib::Init(PHCompositeNode *topNode)
 
   T->Branch("info", &_eval_run);
   T->Branch("shower", &_shower);
+  if(_fill_time_samples) T->Branch("time", &_time_samples);  
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -202,7 +213,7 @@ Proto2ShowerCalib::process_event(PHCompositeNode *topNode)
   PdbParameterMap *info = findNode::getClass<PdbParameterMap>(topNode,
       "RUN_INFO");
 
-  if(!_is_sim) assert(info);
+  //if(!_is_sim) assert(info);
  
   if(info)
   {
@@ -219,7 +230,7 @@ Proto2ShowerCalib::process_event(PHCompositeNode *topNode)
 
   EventHeader* eventheader = findNode::getClass<EventHeader>(topNode,
       "EventHeader");
-  if(!_is_sim) assert(eventheader);
+  //if(!_is_sim) assert(eventheader);
 
   if( eventheader )
   {
@@ -238,15 +249,15 @@ Proto2ShowerCalib::process_event(PHCompositeNode *topNode)
   // other nodes
   RawTowerContainer* TOWER_CALIB_TRIGGER_VETO = findNode::getClass<
       RawTowerContainer>(topNode, "TOWER_CALIB_TRIGGER_VETO");
-  if(!_is_sim) assert(TOWER_CALIB_TRIGGER_VETO);
+  //if(!_is_sim) assert(TOWER_CALIB_TRIGGER_VETO);
 
   RawTowerContainer* TOWER_CALIB_HODO_HORIZONTAL = findNode::getClass<
       RawTowerContainer>(topNode, "TOWER_CALIB_HODO_HORIZONTAL");
-  if(!_is_sim) assert(TOWER_CALIB_HODO_HORIZONTAL);
+  //if(!_is_sim) assert(TOWER_CALIB_HODO_HORIZONTAL);
 
   RawTowerContainer* TOWER_CALIB_HODO_VERTICAL = findNode::getClass<
       RawTowerContainer>(topNode, "TOWER_CALIB_HODO_VERTICAL");
-  if(!_is_sim) assert(TOWER_CALIB_HODO_VERTICAL);
+  //if(!_is_sim) assert(TOWER_CALIB_HODO_VERTICAL);
 
  RawTowerContainer* TOWER_RAW_CEMC;
   if(!_is_sim) 
@@ -270,6 +281,18 @@ Proto2ShowerCalib::process_event(PHCompositeNode *topNode)
  }
   assert(TOWER_CALIB_CEMC);
 
+  RawTowerContainer* TOWER_RAW_LG_HCALIN = 0;
+  RawTowerContainer* TOWER_RAW_HG_HCALIN = 0;
+  if(!_is_sim)
+  {
+   TOWER_RAW_LG_HCALIN = findNode::getClass<RawTowerContainer>(
+      topNode, "TOWER_RAW_LG_HCALIN");
+   TOWER_RAW_HG_HCALIN= findNode::getClass<RawTowerContainer>(
+      topNode, "TOWER_RAW_HG_HCALIN");
+   assert(TOWER_RAW_LG_HCALIN);
+   assert(TOWER_RAW_HG_HCALIN);
+  }
+
   RawTowerContainer* TOWER_CALIB_HCALIN;
   if(!_is_sim)
   {
@@ -281,6 +304,18 @@ Proto2ShowerCalib::process_event(PHCompositeNode *topNode)
   }
   assert(TOWER_CALIB_HCALIN);
 
+  RawTowerContainer* TOWER_RAW_LG_HCALOUT = 0;
+  RawTowerContainer* TOWER_RAW_HG_HCALOUT = 0;
+  if(!_is_sim)
+  {
+   TOWER_RAW_LG_HCALOUT = findNode::getClass<RawTowerContainer>(
+      topNode, "TOWER_RAW_LG_HCALOUT");
+   TOWER_RAW_HG_HCALOUT = findNode::getClass<RawTowerContainer>(
+      topNode, "TOWER_RAW_HG_HCALOUT");
+   assert(TOWER_RAW_LG_HCALOUT);
+   assert(TOWER_RAW_HG_HCALOUT);
+  }
+
   RawTowerContainer* TOWER_CALIB_HCALOUT = findNode::getClass<RawTowerContainer>(
       topNode, "TOWER_CALIB_LG_HCALOUT");
   assert(TOWER_CALIB_HCALOUT);
@@ -291,12 +326,12 @@ Proto2ShowerCalib::process_event(PHCompositeNode *topNode)
 
   RawTowerContainer* TOWER_CALIB_C1 = findNode::getClass<RawTowerContainer>(
       topNode, "TOWER_CALIB_C1");
-  if(!_is_sim) assert(TOWER_CALIB_C1);
+  //if(!_is_sim) assert(TOWER_CALIB_C1);
   RawTowerContainer* TOWER_CALIB_C2 = findNode::getClass<RawTowerContainer>(
       topNode, "TOWER_CALIB_C2");
-  if(!_is_sim) assert(TOWER_CALIB_C2);
+  //if(!_is_sim) assert(TOWER_CALIB_C2);
 
-  if(!_is_sim)
+  if(!_is_sim && TOWER_CALIB_C2 && TOWER_CALIB_C1 && eventheader)
   {
   // Cherenkov
   RawTower * t_c2_in = NULL;
@@ -536,6 +571,62 @@ Proto2ShowerCalib::process_event(PHCompositeNode *topNode)
   _shower.sum_e_recal = emcal_sum_energy_recalib + hcalin_sum_energy_recalib + hcalout_sum_energy_recalib ;
 
   
+  if(_fill_time_samples && !_is_sim)
+  {
+   //HCALIN
+   {
+    auto range = TOWER_RAW_LG_HCALIN->getTowers();
+    for (auto it = range.first; it != range.second; ++it)
+    {
+      RawTower_Prototype2* tower = dynamic_cast<RawTower_Prototype2 *>(it->second);
+      assert(tower);
+
+      int col = tower->get_column();
+      int row = tower->get_row();
+      int towerid = row + 4*col;
+      for(int isample=0; isample<24; isample++)
+       _time_samples.hcalin_time_samples[towerid][isample] =
+                tower->get_signal_samples(isample);
+
+     }
+    }
+
+   //HCALOUT
+   {
+    auto range = TOWER_RAW_LG_HCALOUT->getTowers();
+    for (auto it = range.first; it != range.second; ++it)
+    {
+      RawTower_Prototype2* tower = dynamic_cast<RawTower_Prototype2 *>(it->second);
+      assert(tower);
+
+      int col = tower->get_column();
+      int row = tower->get_row();
+      int towerid = row + 4*col;
+      for(int isample=0; isample<24; isample++) 
+       _time_samples.hcalout_time_samples[towerid][isample] = 
+		tower->get_signal_samples(isample);
+
+     }
+    }
+
+   //EMCAL
+   {
+    auto range = TOWER_RAW_CEMC->getTowers();
+    for (auto it = range.first; it != range.second; ++it)
+    {
+      RawTower_Prototype2* tower = dynamic_cast<RawTower_Prototype2 *>(it->second);
+      assert(tower);
+
+      int col = tower->get_column();
+      int row = tower->get_row();
+      int towerid = row + 8*col;
+      for(int isample=0; isample<24; isample++)
+       _time_samples.emcal_time_samples[towerid][isample] =
+                tower->get_signal_samples(isample);
+
+     }
+    }
+  }
 
   TTree * T = dynamic_cast<TTree *>(hm->getHisto("T"));
   assert(T);
