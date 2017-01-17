@@ -18,6 +18,10 @@
 
 #include <phool/PHCompositeNode.h>
 
+#include <g4main/PHG4TruthInfoContainer.h>
+#include <g4main/PHG4Particle.h>
+#include <g4main/PHG4VtxPoint.h>
+
 #include <TNtuple.h>
 #include <TFile.h>
 #include <TH1F.h>
@@ -41,7 +45,8 @@ ClassImp(Proto2ShowerCalib::Eval_Cluster);
 ClassImp(Proto2ShowerCalib::Eval_Run);
 
 Proto2ShowerCalib::Proto2ShowerCalib(const std::string &filename) :
-    SubsysReco("Proto2ShowerCalib"), _filename(filename), _ievent(0)
+    SubsysReco("Proto2ShowerCalib"), _is_sim(false), _filename(filename), _ievent(
+        0)
 {
 
   verbosity = 1;
@@ -214,30 +219,60 @@ Proto2ShowerCalib::process_event(PHCompositeNode *topNode)
   Fun4AllHistoManager *hm = get_HistoManager();
   assert(hm);
 
-  PdbParameterMap *info = findNode::getClass<PdbParameterMap>(topNode,
-      "RUN_INFO");
+  if (not _is_sim)
+    {
+      PdbParameterMap *info = findNode::getClass<PdbParameterMap>(topNode,
+          "RUN_INFO");
 
-  assert(info);
+      assert(info);
 
-  PHG4Parameters run_info_copy("RunInfo");
-  run_info_copy.FillFrom(info);
+      PHG4Parameters run_info_copy("RunInfo");
+      run_info_copy.FillFrom(info);
 
-  _eval_run.beam_mom = run_info_copy.get_double_param("beam_MTNRG_GeV");
+      _eval_run.beam_mom = run_info_copy.get_double_param("beam_MTNRG_GeV");
 
-  TH1F * hBeam_Mom = dynamic_cast<TH1F *>(hm->getHisto("hBeam_Mom"));
-  assert(hBeam_Mom);
+      TH1F * hBeam_Mom = dynamic_cast<TH1F *>(hm->getHisto("hBeam_Mom"));
+      assert(hBeam_Mom);
 
-  hBeam_Mom->Fill(_eval_run.beam_mom);
+      hBeam_Mom->Fill(_eval_run.beam_mom);
+    }
 
   EventHeader* eventheader = findNode::getClass<EventHeader>(topNode,
       "EventHeader");
-  assert(eventheader);
+  if (not _is_sim)
+    {
+      assert(eventheader);
 
-  _eval_run.run = eventheader->get_RunNumber();
-  if (verbosity > 4)
-    cout << __PRETTY_FUNCTION__ << _eval_run.run << endl;
+      _eval_run.run = eventheader->get_RunNumber();
+      if (verbosity > 4)
+        cout << __PRETTY_FUNCTION__ << _eval_run.run << endl;
 
-  _eval_run.event = eventheader->get_EvtSequence();
+      _eval_run.event = eventheader->get_EvtSequence();
+    }
+
+  if (_is_sim)
+    {
+
+      PHG4TruthInfoContainer* truthInfoList = findNode::getClass<
+          PHG4TruthInfoContainer>(topNode, "G4TruthInfo");
+
+      assert(truthInfoList);
+
+      _eval_run.run = -1;
+
+      const PHG4Particle * p = truthInfoList->GetPrimaryParticleRange().first->second;
+      assert(p);
+
+      const PHG4VtxPoint * v = truthInfoList->GetVtx(p->get_vtx_id());
+      assert(v);
+
+      _eval_run.beam_mom = sqrt(
+          p->get_px() * p->get_px() + p->get_py() * p->get_py()
+              + p->get_pz() * p->get_pz());
+      _eval_run.truth_y = v->get_y();
+      _eval_run.truth_z = v->get_z();
+
+    }
 
   // normalization
   TH1F * hNormalization = dynamic_cast<TH1F *>(hm->getHisto("hNormalization"));
@@ -245,72 +280,97 @@ Proto2ShowerCalib::process_event(PHCompositeNode *topNode)
 
   hNormalization->Fill("ALL", 1);
 
+  RawTowerContainer* TOWER_RAW_CEMC = findNode::getClass<RawTowerContainer>(
+      topNode, _is_sim ? "TOWER_RAW_LG_CEMC" : "TOWER_RAW_CEMC");
+  assert(TOWER_RAW_CEMC);
+  RawTowerContainer* TOWER_CALIB_CEMC = findNode::getClass<RawTowerContainer>(
+      topNode, _is_sim ? "TOWER_CALIB_LG_CEMC" : "TOWER_CALIB_CEMC");
+  assert(TOWER_CALIB_CEMC);
+
   // other nodes
   RawTowerContainer* TOWER_CALIB_TRIGGER_VETO = findNode::getClass<
       RawTowerContainer>(topNode, "TOWER_CALIB_TRIGGER_VETO");
-  assert(TOWER_CALIB_TRIGGER_VETO);
+  if (not _is_sim)
+    {
+      assert(TOWER_CALIB_TRIGGER_VETO);
+    }
 
   RawTowerContainer* TOWER_CALIB_HODO_HORIZONTAL = findNode::getClass<
       RawTowerContainer>(topNode, "TOWER_CALIB_HODO_HORIZONTAL");
-  assert(TOWER_CALIB_HODO_HORIZONTAL);
+  if (not _is_sim)
+    {
+      assert(TOWER_CALIB_HODO_HORIZONTAL);
+    }
   RawTowerContainer* TOWER_CALIB_HODO_VERTICAL = findNode::getClass<
       RawTowerContainer>(topNode, "TOWER_CALIB_HODO_VERTICAL");
-  assert(TOWER_CALIB_HODO_VERTICAL);
+  if (not _is_sim)
+    {
+      assert(TOWER_CALIB_HODO_VERTICAL);
+    }
 
-  RawTowerContainer* TOWER_RAW_CEMC = findNode::getClass<RawTowerContainer>(
-      topNode, "TOWER_RAW_CEMC");
-  assert(TOWER_RAW_CEMC);
-  RawTowerContainer* TOWER_CALIB_CEMC = findNode::getClass<RawTowerContainer>(
-      topNode, "TOWER_CALIB_CEMC");
-  assert(TOWER_CALIB_CEMC);
   RawTowerContainer* TOWER_TEMPERATURE_EMCAL = findNode::getClass<
       RawTowerContainer>(topNode, "TOWER_TEMPERATURE_EMCAL");
-  assert(TOWER_TEMPERATURE_EMCAL);
+  if (not _is_sim)
+    {
+      assert(TOWER_TEMPERATURE_EMCAL);
+    }
 
   RawTowerContainer* TOWER_CALIB_C1 = findNode::getClass<RawTowerContainer>(
       topNode, "TOWER_CALIB_C1");
-  assert(TOWER_CALIB_C1);
+  if (not _is_sim)
+    {
+      assert(TOWER_CALIB_C1);
+    }
   RawTowerContainer* TOWER_CALIB_C2 = findNode::getClass<RawTowerContainer>(
       topNode, "TOWER_CALIB_C2");
-  assert(TOWER_CALIB_C2);
+  if (not _is_sim)
+    {
+      assert(TOWER_CALIB_C2);
+    }
 
   // Cherenkov
-  RawTower * t_c2_in = NULL;
-  RawTower * t_c2_out = NULL;
-
-  if (eventheader->get_RunNumber() >= 2105)
+  bool cherekov_e = false;
+  if (not _is_sim)
     {
-      t_c2_in = TOWER_CALIB_C2->getTower(10);
-      t_c2_out = TOWER_CALIB_C2->getTower(11);
+      RawTower * t_c2_in = NULL;
+      RawTower * t_c2_out = NULL;
+
+      assert(eventheader);
+      if (eventheader->get_RunNumber() >= 2105)
+        {
+          t_c2_in = TOWER_CALIB_C2->getTower(10);
+          t_c2_out = TOWER_CALIB_C2->getTower(11);
+        }
+      else
+        {
+          t_c2_in = TOWER_CALIB_C2->getTower(0);
+          t_c2_out = TOWER_CALIB_C2->getTower(1);
+        }
+      assert(t_c2_in);
+      assert(t_c2_out);
+
+      const double c2_in = t_c2_in->get_energy();
+      const double c2_out = t_c2_out->get_energy();
+      const double c1 = TOWER_CALIB_C1->getTower(0)->get_energy();
+
+      _eval_run.C2_sum = c2_in + c2_out;
+      cherekov_e = (_eval_run.C2_sum) > 100;
+      hNormalization->Fill("C2-e", cherekov_e);
+
+      TH2F * hCheck_Cherenkov = dynamic_cast<TH2F *>(hm->getHisto(
+          "hCheck_Cherenkov"));
+      assert(hCheck_Cherenkov);
+      hCheck_Cherenkov->Fill(c1, "C1", 1);
+      hCheck_Cherenkov->Fill(c2_in, "C2 in", 1);
+      hCheck_Cherenkov->Fill(c2_out, "C2 out", 1);
+      hCheck_Cherenkov->Fill(c2_in + c2_out, "C2 sum", 1);
     }
-  else
-    {
-      t_c2_in = TOWER_CALIB_C2->getTower(0);
-      t_c2_out = TOWER_CALIB_C2->getTower(1);
-    }
-  assert(t_c2_in);
-  assert(t_c2_out);
-
-  const double c2_in = t_c2_in->get_energy();
-  const double c2_out = t_c2_out->get_energy();
-  const double c1 = TOWER_CALIB_C1->getTower(0)->get_energy();
-
-  _eval_run.C2_sum = c2_in + c2_out;
-  bool cherekov_e = (_eval_run.C2_sum) > 100;
-  hNormalization->Fill("C2-e", cherekov_e);
-
-  TH2F * hCheck_Cherenkov = dynamic_cast<TH2F *>(hm->getHisto(
-      "hCheck_Cherenkov"));
-  assert(hCheck_Cherenkov);
-  hCheck_Cherenkov->Fill(c1, "C1", 1);
-  hCheck_Cherenkov->Fill(c2_in, "C2 in", 1);
-  hCheck_Cherenkov->Fill(c2_out, "C2 out", 1);
-  hCheck_Cherenkov->Fill(c2_in + c2_out, "C2 sum", 1);
 
   // veto
   TH1F * hCheck_Veto = dynamic_cast<TH1F *>(hm->getHisto("hCheck_Veto"));
   assert(hCheck_Veto);
   bool trigger_veto_pass = true;
+  if (not _is_sim)
     {
       auto range = TOWER_CALIB_TRIGGER_VETO->getTowers();
       for (auto it = range.first; it != range.second; ++it)
@@ -331,6 +391,7 @@ Proto2ShowerCalib::process_event(PHCompositeNode *topNode)
   TH1F * hCheck_Hodo_H = dynamic_cast<TH1F *>(hm->getHisto("hCheck_Hodo_H"));
   assert(hCheck_Hodo_H);
   int hodo_h_count = 0;
+  if (not _is_sim)
     {
       auto range = TOWER_CALIB_HODO_HORIZONTAL->getTowers();
       for (auto it = range.first; it != range.second; ++it)
@@ -354,6 +415,7 @@ Proto2ShowerCalib::process_event(PHCompositeNode *topNode)
   TH1F * hCheck_Hodo_V = dynamic_cast<TH1F *>(hm->getHisto("hCheck_Hodo_V"));
   assert(hCheck_Hodo_V);
   int hodo_v_count = 0;
+  if (not _is_sim)
     {
       auto range = TOWER_CALIB_HODO_VERTICAL->getTowers();
       for (auto it = range.first; it != range.second; ++it)
@@ -374,8 +436,8 @@ Proto2ShowerCalib::process_event(PHCompositeNode *topNode)
   _eval_run.valid_hodo_v = valid_hodo_v;
   hNormalization->Fill("valid_hodo_v", valid_hodo_v);
 
-  const bool good_e = valid_hodo_v and valid_hodo_h and cherekov_e
-      and trigger_veto_pass;
+  const bool good_e = (valid_hodo_v and valid_hodo_h and cherekov_e
+      and trigger_veto_pass) and (not _is_sim);
   hNormalization->Fill("good_e", good_e);
 
   // simple clustering
@@ -422,8 +484,13 @@ Proto2ShowerCalib::process_event(PHCompositeNode *topNode)
           RawTower* tower = it->second;
           assert(tower);
 
-          const int col = tower->get_column();
-          const int row = tower->get_row();
+          const int col = tower->get_bineta();
+          const int row = tower->get_binphi();
+
+          if (col < 0 or col >= 8)
+            continue;
+          if (row < 0 or row >= 8)
+            continue;
 
           const double energy_calib = tower->get_energy();
           sum_energy_calib += energy_calib;
@@ -431,19 +498,23 @@ Proto2ShowerCalib::process_event(PHCompositeNode *topNode)
           RawTower* tower_raw = TOWER_RAW_CEMC->getTower(key);
           assert(tower_raw);
 
-          RawTower_Temperature * temp_t =
-              dynamic_cast<RawTower_Temperature *>(TOWER_TEMPERATURE_EMCAL->getTower(
-                  tower->get_row(), tower->get_column())); // note swap of col/row in temperature storage
-          assert(temp_t);
+          double energy_T = 0;
+          if (not _is_sim)
+            {
+              RawTower_Temperature * temp_t =
+                  dynamic_cast<RawTower_Temperature *>(TOWER_TEMPERATURE_EMCAL->getTower(
+                      tower->get_row(), tower->get_column())); // note swap of col/row in temperature storage
+              assert(temp_t);
 
-          const double T = temp_t->get_temperature_from_time(
-              eventheader->get_TimeStamp());
-          hTemperature->Fill(T);
+              const double T = temp_t->get_temperature_from_time(
+                  eventheader->get_TimeStamp());
+              hTemperature->Fill(T);
 
-          if (T < 25 or T > 35)
-            good_temp = false;
+              if (T < 25 or T > 35)
+                good_temp = false;
 
-          const double energy_T = TemperatureCorrection::Apply(energy_calib, T);
+              energy_T = TemperatureCorrection::Apply(energy_calib, T);
+            }
 
           // recalibration
           assert(
@@ -551,7 +622,8 @@ Proto2ShowerCalib::process_event(PHCompositeNode *topNode)
     }
 
   // calibration file
-  if (good_data and abs(_eval_run.beam_mom) >= 4 and abs(_eval_run.beam_mom) <= 8)
+  if (good_data and abs(_eval_run.beam_mom) >= 4
+      and abs(_eval_run.beam_mom) <= 8)
     {
       assert(fdata.is_open());
 

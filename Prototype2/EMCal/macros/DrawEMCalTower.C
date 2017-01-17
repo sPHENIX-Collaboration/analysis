@@ -27,7 +27,9 @@ TString cuts = "";
 void
 DrawEMCalTower( //
     const TString infile = // "data/Prototype2_CEMC.root_DSTReader.root" //
-        "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2016/EMCal_sim/15Degree_1Col_LightCollection//Prototype_e-_16_SegALL_DSTReader.root"//
+//        "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2016/EMCal_sim/15Degree_1Col_LightCollection//Prototype_e-_16_SegALL_DSTReader.root"//
+        "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2016/EMCal_sim/./0Degree_1Col_LightCollectionSeanStoll_CrackScan/Prototype_e-_8_SegALL_DSTReader.root"//
+//        "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2016/EMCal_sim/./10DegreeRot_1Col_LightCollectionSeanStoll_CrackScan/Prototype_e-_8_SegALL_DSTReader.root"//
     )
 {
   SetOKStyle();
@@ -87,8 +89,11 @@ DrawEMCalTower( //
 
 //  EMCDistribution_Fast("HG");
 //  EMCDistribution_Fast("LG", true);
-  EMCDistributionVSBeam_SUM();
-  EMCDistribution_SUM();
+//  EMCDistributionVSBeam_SUM();
+  EMCDistributionVSBeam_SUM("TOWER_CEMC", -0, 5); // 0 degree tilted
+//  EMCDistributionVSBeam_SUM("TOWER_CEMC", -15); // 10 degree tilted
+//  EMCDistributionVSBeam_SUM("TOWER_CEMC", -15, 5); // 10 degree tilted
+//  EMCDistribution_SUM();
 }
 
 void
@@ -336,30 +341,31 @@ EMCDistribution_SUM(TString sTOWER = "TOWER_CEMC")
 }
 
 void
-EMCDistributionVSBeam_SUM(TString sTOWER = "TOWER_CEMC")
+EMCDistributionVSBeam_SUM(TString sTOWER = "TOWER_CEMC", const double z_shift =
+    0, const int n_div = 1)
 {
   TH3F * EnergySum_LG3 =
       new TH3F("EnergySum_LG3",
           ";Beam Horizontal Pos (cm);Beam Horizontal Vertical (cm);Low-gain Tower Energy Sum (GeV)", //
-          20, -5, 5, //
-          20, -5, 5, //
+          20 * n_div, z_shift - 5, z_shift + 5, //
+          20 * n_div, -5, 5, //
           200, 0, 20);
 
   T->Draw("EnergySum_LG:PHG4VtxPoint.vy:PHG4VtxPoint.vz>>EnergySum_LG3", "",
       "goff");
 
   TProfile2D * EnergySum_LG3_xy = EnergySum_LG3->Project3DProfile("yx");
-  TH2 * EnergySum_LG3_zx = EnergySum_LG3->Project3D ("zx");
-  TH2 * EnergySum_LG3_zy = EnergySum_LG3->Project3D ("zy");
+  TH2 * EnergySum_LG3_zx = EnergySum_LG3->Project3D("zx");
+  TH2 * EnergySum_LG3_zy = EnergySum_LG3->Project3D("zy");
 
-
-  TGraphErrors * ge_EnergySum_LG3_zx =  FitProfile(EnergySum_LG3_zx);
-  TGraphErrors * ge_EnergySum_LG3_zy =  FitProfile(EnergySum_LG3_zy);
-
+  TGraphErrors * ge_EnergySum_LG3_zx = FitProfile(EnergySum_LG3_zx);
+  TGraphErrors * ge_EnergySum_LG3_zy = FitProfile(EnergySum_LG3_zy);
 
   TText * t;
-  TCanvas *c1 = new TCanvas("EMCDistributionVSBeam_SUM" + cuts,
-      "EMCDistributionVSBeam_SUM" + cuts, 1000, 960);
+  TCanvas *c1 = new TCanvas(
+      TString(Form("EMCDistributionVSBeam_SUM_NDiv%d", n_div)) + cuts,
+      TString(Form("EMCDistributionVSBeam_SUM_NDiv%d", n_div)) + cuts, 1000,
+      960);
   c1->Divide(2, 2);
   int idx = 1;
   TPad * p;
@@ -386,7 +392,7 @@ EMCDistributionVSBeam_SUM(TString sTOWER = "TOWER_CEMC")
 
   ge_EnergySum_LG3_zx->SetLineWidth(2);
   ge_EnergySum_LG3_zx->SetMarkerStyle(kFullCircle);
-  ge_EnergySum_LG3_zx -> Draw("pe");
+  ge_EnergySum_LG3_zx->Draw("pe");
 
   p = (TPad *) c1->cd(idx++);
   c1->Update();
@@ -400,7 +406,7 @@ EMCDistributionVSBeam_SUM(TString sTOWER = "TOWER_CEMC")
 
   ge_EnergySum_LG3_zy->SetLineWidth(2);
   ge_EnergySum_LG3_zy->SetMarkerStyle(kFullCircle);
-  ge_EnergySum_LG3_zy -> Draw("pe");
+  ge_EnergySum_LG3_zy->Draw("pe");
 
   p = (TPad *) c1->cd(idx++);
   c1->Update();

@@ -1,5 +1,5 @@
-#ifndef __HFJetTruthTrigger_H__
-#define __HFJetTruthTrigger_H__
+#ifndef __DirectPhotonPythia_H__
+#define __DirectPhotonPythia_H__
 
 // --- need to check all these includes...
 #include <fun4all/SubsysReco.h>
@@ -7,10 +7,13 @@
 #include <cmath>
 #include <string>
 #include <limits.h>
+#include <TNtuple.h>
 
 class TTree;
 class TFile;
 class TH2D;
+class TH1D;
+
 
 class PHCompositeNode;
 class Jet;
@@ -19,12 +22,12 @@ namespace HepMC
   class GenEvent;
 }
 
-class HFJetTruthTrigger : public SubsysReco
+class DirectPhotonPythia : public SubsysReco
 {
 
 public:
 
-  HFJetTruthTrigger(std::string filename, int flavor = 5, std::string jet_node = "AntiKt_Truth_r04", int maxevent = INT_MAX);
+  DirectPhotonPythia(std::string filename);
 
   int
   Init(PHCompositeNode*);
@@ -120,11 +123,13 @@ private:
   int _total_pass;
 
   TFile *_f;
-
+ 
+  TH1D *_h1;
   TH2D *_h2;
   TH2D *_h2all;
   TH2D *_h2_b;
   TH2D *_h2_c;
+  TNtuple *_ntp_gamma;
 
   std::string _foutname;
 
@@ -143,4 +148,4 @@ private:
   int _rejection_action;
 };
 
-#endif // __HFJetTruthTrigger_H__
+#endif // __DirectPhotonPythia_H__

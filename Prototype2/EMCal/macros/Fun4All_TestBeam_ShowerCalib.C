@@ -10,7 +10,6 @@ Fun4All_TestBeam_ShowerCalib(const int nEvents = 1000, const char * inputFile =
   // Load libraries
   //---------------
   gSystem->Load("libPrototype2.so");
-  gSystem->Load("libProto2ShowCalib.so");
 
   //---------------
   // Fun4All server
@@ -29,6 +28,7 @@ Fun4All_TestBeam_ShowerCalib(const int nEvents = 1000, const char * inputFile =
   hitsin->AddListFile(inputFile);
   se->registerInputManager(hitsin);
 
+  gSystem->Load("libProto2ShowCalib.so");
   Proto2ShowerCalib * emcal_ana = new Proto2ShowerCalib(
       string(inputFile) + string("_EMCalCalib.root"));
 

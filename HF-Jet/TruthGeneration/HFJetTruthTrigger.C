@@ -47,6 +47,8 @@ HFJetTruthTrigger::HFJetTruthTrigger(std::string filename, int flavor,
   _eta_max = +.6;
 
   _jet_name = jet_node;
+
+  _rejection_action = Fun4AllReturnCodes::DISCARDEVENT;
 }
 
 int
@@ -146,7 +148,7 @@ HFJetTruthTrigger::process_event(PHCompositeNode *topNode)
         std::cout << __PRETTY_FUNCTION__ << " --> FAIL due to max events = "
             << _total_pass << std::endl;
       _ievent++;
-      return Fun4AllReturnCodes::DISCARDEVENT;
+      return _rejection_action;
     }
   else if (pass_event)
     {
@@ -162,7 +164,7 @@ HFJetTruthTrigger::process_event(PHCompositeNode *topNode)
       if (verbosity >= HFJetTruthTrigger::VERBOSITY_SOME)
         std::cout << __PRETTY_FUNCTION__ << " --> FAIL " << std::endl;
       _ievent++;
-      return Fun4AllReturnCodes::DISCARDEVENT;
+      return _rejection_action;
     }
 }
 
