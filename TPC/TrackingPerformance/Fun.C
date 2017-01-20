@@ -1,31 +1,23 @@
 void ConfigureInput(TString inputFile) {
-  const bool hijing = false;
-  const bool nosync = false;
+  const bool hijing = true;
   const bool genera = true;
 
   Fun4AllServer *se = Fun4AllServer::instance();
 
   if(hijing) {
     HepMCNodeReader *hr = new HepMCNodeReader();
-    //hr->SmearVertex(0.0,0.0,-5.0); // did not have before
+    //hr->SmearVertex(0.0,0.0,-5.0); // optional
     se->registerSubsystem(hr);
     Fun4AllInputManager *in = new Fun4AllHepMCInputManager( "DSTIN" );
     se->registerInputManager( in );
     in->fileopen( inputFile.Data() ); //fileopen only after you register!
-    //se->fileopen( in->Name().c_str(), "/gpfs/mnt/gpfs02/phenix/hhj/hhj1/frawley/tracking/stage1_jobs/in/hijing_01499.txt.bz2" );
-  }
-
-  if(nosync) {
-    Fun4AllDstInputManager *in1 = new Fun4AllNoSyncDstInputManager("NOSYNCDST");
-    se->registerInputManager(in1);
-    in1->AddListFile("/sphenix/sim/sim01/production/2016-07-12/sHijing/spacal2d/G4Hits_sPHENIX_sHijing-0-4.4fm.list");
   }
 
   if(genera) {
     PHG4SimpleEventGenerator *gen = new PHG4SimpleEventGenerator( "PIONS" );
     gen->add_particles("pi-",5); // mu+,e+,proton,pi+,Upsilon
     gen->add_particles("pi+",5); // mu-,e-,anti_proton,pi-
-    if(hijing||nosync) {
+    if(hijing) {
       gen->set_reuse_existing_vertex(true);
       gen->set_existing_vertex_offset_vector(0.0, 0.0, 0.0);
     } else {
@@ -33,7 +25,7 @@ void ConfigureInput(TString inputFile) {
 					    PHG4SimpleEventGenerator::Uniform,
 					    PHG4SimpleEventGenerator::Uniform);
       gen->set_vertex_distribution_mean(0.0, 0.0, 0.0);
-      gen->set_vertex_distribution_width(0.0, 0.0, 5.0);
+      gen->set_vertex_distribution_width(0.0, 0.0, 0.0);
     }
     gen->set_vertex_size_function(PHG4SimpleEventGenerator::Uniform);
     gen->set_vertex_size_parameters(0.0, 0.0);
@@ -171,10 +163,8 @@ int Fun( const int nEvents = 1,
   revperf->SetLayerTPCBegins(7);
   revperf->SetReconstructableTPCHits(30);
   revperf->SetFairClustersContribution(20);
-  //revperf->SetGoodTrackChi2NDF(2.0);
-  //revperf->SetGoodTrackTPCClusters(20);
-  revperf->SetGoodTrackChi2NDF(9999.0);
-  revperf->SetGoodTrackTPCClusters(0);
+  revperf->SetGoodTrackChi2NDF(2.0);
+  revperf->SetGoodTrackTPCClusters(20);
   se->registerSubsystem(revperf);
 
   std::cout << "RUNNING..." << std::endl;
