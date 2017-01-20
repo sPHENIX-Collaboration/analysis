@@ -1,6 +1,10 @@
 void RunBDiJetModule(
-		const char* input = "/phenix/hhj3/dcm07e/sPHENIX/macros/macros/g4simulations/G4sPHENIXCells.root",
-		const char* output = "HFtag_bjet.root"
+    // const char* input = "/phenix/hhj3/dcm07e/sPHENIX/macros/macros/g4simulations/G4sPHENIXCells.root",
+		// const char* input = "/phenix/hhj3/dcm07e/sPHENIX/macros/macros/g4simulations/G4sPHENIX_bjets_AuAu.root",
+    // const char* input = "pythia8_bjets_pp.list",                     
+    // const char* output = "HFtag_bjet_pp.root"
+    const char* input = "pythia8_bjets_AuAu0-10.list",                     
+    const char* output = "HFtag_bjet_AuAu0-10.root"
 		) {
 
 
