@@ -41,7 +41,7 @@ DrawPrototype2ShowerCalib( //
     const TString infile =
 //        "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2016/ShowerCalib/UIUC21.lst_EMCalCalib.root" //
 //        "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2016/ShowerCalib/THP.lst_EMCalCalib.root"//
-                "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2016/ShowerCalib/Tilt0.lst_EMCalCalib.root"//
+//                "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2016/ShowerCalib/Tilt0.lst_EMCalCalib.root"//
 //                "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2016/ShowerCalib/UpTilt5.lst_EMCalCalib.root"//
 //                    "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2016/ShowerCalib/Rot45.lst_EMCalCalib.root"//
 //        "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2016/ShowerCalib/Rot45.lst_EMCalCalib.root"//
@@ -55,7 +55,8 @@ DrawPrototype2ShowerCalib( //
 //        "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2016/EMCal_sim/./0Degree_1Col_LightCollectionSeanStoll/Prototype_pi-_8_SegALL_EMCalCalib.root"//
 //            "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2016/EMCal_sim/./0Degree_1Col_LightCollectionSeanStoll/Prototype_kaon-_8_SegALL_EMCalCalib.root"//
 //                "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2016/EMCal_sim/./0Degree_1Col_LightCollectionSeanStoll/Prototype_mu-_8_SegALL_EMCalCalib.root"//
-//        "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2016/EMCal_sim/./45DegreeRot_1Col_LightCollectionSeanStoll/Prototype_e-_ALL_SegA_ALL_EMCalCalib.root"//
+        //        "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2016/EMCal_sim/./45DegreeRot_1Col_LightCollectionSeanStoll/Prototype_e-_ALL_SegA_ALL_EMCalCalib.root"//
+                "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2017/sim/EMCalOnly_0Tilt_FlatLightCollection/Prototype_e-_ALL_SegA_ALL_EMCalCalib.root"//
     )
 {
 
@@ -90,8 +91,8 @@ DrawPrototype2ShowerCalib( //
 
   assert(_file0);
 
-//  event_sel = "1";
-//  cuts = "_all_data";
+  event_sel = "1";
+  cuts = "_all_data";
 //    event_sel = "abs(truth_z )<0.25 && abs(truth_y )<0.25";
 //    cuts = "_0DegreeRot_h1_v1";
 //  event_sel = "abs(truth_z )<1.25 && abs(truth_y )<1.25";
@@ -129,9 +130,9 @@ DrawPrototype2ShowerCalib( //
 //    event_sel =
 //        "info.beam_mom == -8 && good_temp && valid_hodo_v && valid_hodo_h&& trigger_veto_pass && info.hodo_h>=1 && info.hodo_h<=5 && info.hodo_v>=3 && info.hodo_v<=7 && abs(clus_5x5_prod.average_col -2)<=1 && abs(clus_5x5_prod.average_row -2)<=1";
 //    cuts = "_Neg8GeV_quality_h12345_v34567_col2_row2";
-    event_sel =
-        "info.beam_mom == -12 && good_temp && valid_hodo_v && valid_hodo_h&& trigger_veto_pass && info.hodo_h>=1 && info.hodo_h<=5 && info.hodo_v>=3 && info.hodo_v<=7 && abs(clus_5x5_prod.average_col -2)<=1 && abs(clus_5x5_prod.average_row -2)<=1";
-    cuts = "_Neg12GeV_quality_h12345_v34567_col2_row2";
+//    event_sel =
+//        "info.beam_mom == -12 && good_temp && valid_hodo_v && valid_hodo_h&& trigger_veto_pass && info.hodo_h>=1 && info.hodo_h<=5 && info.hodo_v>=3 && info.hodo_v<=7 && abs(clus_5x5_prod.average_col -2)<=1 && abs(clus_5x5_prod.average_row -2)<=1";
+//    cuts = "_Neg12GeV_quality_h12345_v34567_col2_row2";
 //  event_sel =
 //      "info.beam_mom == -4 && good_temp && valid_hodo_v && valid_hodo_h&& trigger_veto_pass && info.hodo_h==3 && info.hodo_v==5 && abs(clus_5x5_prod.average_col -2)<=1 && abs(clus_5x5_prod.average_row -2)<=1";
 //  cuts = "_Neg4GeV_quality_h3_v5_col2_row2";
@@ -160,10 +161,11 @@ DrawPrototype2ShowerCalib( //
 //  event_sel = "good_data && ( info.hodo_v==5 ||  info.hodo_v==4)";
 //  cuts = "_good_data_hall_v45";
 
+      T->SetAlias("SimEnergyScale","1*1");
 //    // based on /phenix/u/jinhuang/links/sPHENIX_work/Prototype_2016/ShowerCalib/UIUC21.lst_EMCalCalib.root_DrawPrototype2ShowerCalib_LineShapeData_Neg8GeV_good_data_h5_v3.svg
 //    T->SetAlias("SimEnergyScale","8.74635e+00/7.60551");
   //  // based on /phenix/u/jinhuang/links/sPHENIX_work/Prototype_2016/ShowerCalib/Tilt0.lst_EMCalCalib.root_DrawPrototype2ShowerCalib_LineShapeData_Neg8GeV_quality_h3_v5_col2_row2.root_DrawPrototype2ShowerCalib_SumLineShapeCompare_Electron_8GeV_QGSP_BERT_HP.root
-    T->SetAlias("SimEnergyScale","8.88178/8.16125e+00");
+//    T->SetAlias("SimEnergyScale","8.88178/8.16125e+00");
   // Tilt0.lst <-> QGSP_BERT_HP Birk 0.151
 //    T->SetAlias("SimEnergyScale","8.88178/8.01845");
   // Tilt0.lst <-> QGSP_BERT_HP Birk 0.18
@@ -184,9 +186,9 @@ DrawPrototype2ShowerCalib( //
 //  // data stuff
 //  PositionDependenceData("clus_5x5_prod.sum_E");
 //  PositionDependenceData("clus_5x5_recalib.sum_E");
-  HodoscopeCheck();
+//  HodoscopeCheck();
 //    LineShapeData("abs(info.C2_sum)<100",  "(info.C2_sum)>600 && (info.C2_sum)<1300"); // 4 GeV
-    LineShapeData("abs(info.C2_sum)<100",  "(info.C2_sum)>500 && (info.C2_sum)<1300"); // 8 GeV
+//    LineShapeData("abs(info.C2_sum)<100",  "(info.C2_sum)>500 && (info.C2_sum)<1300"); // 8 GeV
 //  LineShapeData("abs(info.C2_sum)<100",  "(info.C2_sum)>200 && (info.C2_sum)<1300"); // 12 GeV
 
 //  Get_Res_linear_Summmary();
@@ -195,11 +197,11 @@ DrawPrototype2ShowerCalib( //
 //  SimPositionCheck(-0); // 0 degree tilted
 //  LineShapeSim();
 
-//  PositionDependenceSim("clus_5x5_prod.sum_E", -0, 5); // 0 degree tilted
+  PositionDependenceSim("clus_5x5_prod.sum_E", -0, 5); // 0 degree tilted
 //  SimPositionCheck(-15); // 10 degree tilted
 //  PositionDependenceSim("clus_5x5_prod.sum_E", -15, 5); // 10 degree tilted
 //    SimPositionCheck(-40+3); // 45 degree tilted
-//  Get_Res_linear_Summmary_Sim();
+  Get_Res_linear_Summmary_Sim();
 }
 
 void
