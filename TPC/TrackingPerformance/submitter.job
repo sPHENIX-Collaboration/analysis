@@ -1,0 +1,20 @@
+N = 2000
+ID = $(Cluster).$(Process) 
+
+Universe       = vanilla
+Initialdir     = /gpfs/mnt/gpfs02/sphenix/user/cperez/software/analysis/TPC/TrackingPerformance
+Executable     = /bin/csh
+Arguments      = dojob.csh $(Process)
+
+Notification   = Error
+Log            = log/$(Cluster).log
+Output         = log/$(ID).out
+Error          = log/$(ID).err
+Requirements   = (CPU_Experiment == "phenix") && (MEMORY_LIMIT > 2000000) && (CPU_Speed >= 1)
+
+Priority       = +20
+GetEnv         = True
++Experiment    = "PHENIX"
++Job_Type      = "highmem"
+
+Queue $(N)

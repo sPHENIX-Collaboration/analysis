@@ -114,6 +114,7 @@ public:
      hcal_asym = -999;
     }
 
+
    float emcal_e;
    float hcalin_e;
    float hcalout_e;
@@ -126,8 +127,41 @@ public:
    float sum_e_recal;
   };
 
+
+  class Time_Samples : public TObject
+  {
+   public:
+    Time_Samples(){ reset(); }
+    virtual ~Time_Samples(){}
+
+    void reset()
+    {
+     for(int itower=0; itower<16; itower++)
+     {
+      for(int isamp=0; isamp<24; isamp++)
+      {
+       hcalin_time_samples[itower][isamp] = -9999;
+       hcalout_time_samples[itower][isamp] = -9999;
+      }
+     }
+
+     for(int itower=0; itower<64; itower++)
+     {
+      for(int isamp=0; isamp<24; isamp++)
+      {
+       emcal_time_samples[itower][isamp] = -9999;
+      }
+     }
+    }
+   float hcalin_time_samples[16][24];
+   float hcalout_time_samples[16][24];
+   float emcal_time_samples[64][24];
+  };
+
   void set_sim(const bool b)
   { _is_sim = b; }
+
+  void fill_time_samples(const bool);
 
 private:
 
@@ -152,7 +186,10 @@ private:
 
   HCAL_shower _shower;
 
+  Time_Samples _time_samples;
+ 
   bool _is_sim;
+  bool _fill_time_samples;
   std::map<std::pair<int, int>, double> _emcal_recalib_const;
   std::map<std::pair<int, int>, double> _hcalin_recalib_const;
   std::map<std::pair<int, int>, double> _hcalout_recalib_const;
