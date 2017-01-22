@@ -1,7 +1,8 @@
 int Jin_BJet(
 		const int nEvents = 1000,
-		char* inputFile, char* outputFile, 
-	int which_tracking = 0
+		char* inputFile,
+		char* outputFile, 
+		int which_tracking = 0
 		)
 {
 	//===============

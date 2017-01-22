@@ -96,8 +96,11 @@ private:
 	float _b_track_dca2d[1000];
 	float _b_track_dca2d_error[1000];
 
-	float _b_track_dca3d[1000];
-	float _b_track_dca3d_error[1000];
+	float _b_track_dca3d_xy[1000];
+	float _b_track_dca3d_xy_error[1000];
+
+	float _b_track_dca3d_z[1000];
+	float _b_track_dca3d_z_error[1000];
 
 	float _b_track_dca2d_calc[1000];
 	float _b_track_dca2d_calc_truth[1000];
@@ -105,6 +108,9 @@ private:
 	float _b_track_dca3d_calc_truth[1000];
 
 	float _b_track_dca2d_phi[1000];
+	float _b_track_dca2d_x[1000];
+	float _b_track_dca2d_y[1000];
+	float _b_track_dca2d_z[1000];
 
 	float _b_track_quality[1000];
 	float _b_track_chisq[1000];

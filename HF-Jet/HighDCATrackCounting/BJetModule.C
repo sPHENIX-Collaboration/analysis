@@ -93,14 +93,20 @@ int BJetModule::Init(PHCompositeNode *topNode) {
 
 		_b_track_dca2d[n] = -1;
 		_b_track_dca2d_error[n] = -1;
-		_b_track_dca3d[n] = -1;
-		_b_track_dca3d_error[n] = -1;
+		_b_track_dca3d_xy[n] = -1;
+		_b_track_dca3d_xy_error[n] = -1;
+		_b_track_dca3d_z[n] = -1;
+		_b_track_dca3d_z_error[n] = -1;
 		_b_track_dca2d_calc[n] = -1;
 		_b_track_dca2d_calc_truth[n] = -1;
 		_b_track_dca3d_calc[n] = -1;
 		_b_track_dca3d_calc_truth[n] = -1;
 
 		_b_track_dca2d_phi[n] = -99;
+		_b_track_dca2d_x[n] = -99;
+		_b_track_dca2d_y[n] = -99;
+		_b_track_dca2d_z[n] = -99;
+
 		_b_track_quality[n] = -99;
 		_b_track_chisq[n] = -99;
 		_b_track_ndf[n] = -99;
@@ -161,9 +167,13 @@ int BJetModule::Init(PHCompositeNode *topNode) {
 	_tree->Branch("track_dca2d_error", _b_track_dca2d_error,
 			"track_dca2d_error[track_n]/F");
 
-	_tree->Branch("track_dca3d", _b_track_dca3d, "track_dca3d[track_n]/F");
-	_tree->Branch("track_dca3d_error", _b_track_dca3d_error,
-			"track_dca3d_error[track_n]/F");
+	_tree->Branch("track_dca3d_xy", _b_track_dca3d_xy, "track_dca3d_xy[track_n]/F");
+	_tree->Branch("track_dca3d_xy_error", _b_track_dca3d_xy_error,
+			"track_dca3d_xy_error[track_n]/F");
+
+	_tree->Branch("track_dca3d_z", _b_track_dca3d_z, "track_dca3d_z[track_n]/F");
+	_tree->Branch("track_dca3d_z_error", _b_track_dca3d_z_error,
+			"track_dca3d_z_error[track_n]/F");
 
 	_tree->Branch("track_dca2d_calc", _b_track_dca2d_calc, "track_dca2d_calc[track_n]/F");
 	_tree->Branch("track_dca2d_calc_truth", _b_track_dca2d_calc_truth,
@@ -175,6 +185,12 @@ int BJetModule::Init(PHCompositeNode *topNode) {
 
 	_tree->Branch("track_dca2d_phi", _b_track_dca2d_phi,
 			"track_dca2d_phi[track_n]/F");
+	_tree->Branch("track_dca2d_x", _b_track_dca2d_x,
+			"track_dca2d_x[track_n]/F");
+	_tree->Branch("track_dca2d_y", _b_track_dca2d_y,
+			"track_dca2d_y[track_n]/F");
+	_tree->Branch("track_dca2d_z", _b_track_dca2d_z,
+			"track_dca2d_z[track_n]/F");
 
 	_tree->Branch("track_quality", _b_track_quality,
 			"track_quality[track_n]/F");
@@ -224,7 +240,7 @@ double calc_dca(const TVector3 &track_point, const TVector3 &track_direction, co
 
 int BJetModule::process_event(PHCompositeNode *topNode) {
 
-	std::cout << "DVP : at process_event #" << _ievent << std::endl;
+//	std::cout << "DVP : at process_event #" << _ievent << std::endl;
 
 	_b_event = _ievent;
 
@@ -266,7 +282,7 @@ int BJetModule::process_event(PHCompositeNode *topNode) {
 			"AntiKt_Truth_r04");
 	_b_truthjet_n = 0;
 
-	int ijet_t = 0;
+//	int ijet_t = 0;
 	for (JetMap::Iter iter = truth_jets->begin(); iter != truth_jets->end();
 			++iter) {
 		Jet* this_jet = iter->second;
@@ -285,9 +301,9 @@ int BJetModule::process_event(PHCompositeNode *topNode) {
 		_b_truthjet_eta[_b_truthjet_n] = this_eta;
 
 		if (_verbose)
-			std::cout << " truth jet #" << ijet_t << ", pt / eta / phi = "
-					<< this_pt << " / " << this_eta << " / " << this_phi
-					<< std::endl;
+//			std::cout << " truth jet #" << ijet_t << ", pt / eta / phi = "
+//					<< this_pt << " / " << this_eta << " / " << this_phi
+//					<< std::endl;
 
 		_b_truthjet_n++;
 	}
@@ -296,7 +312,7 @@ int BJetModule::process_event(PHCompositeNode *topNode) {
 	//PHG4TruthInfoContainer::Range range = truthinfo->GetParticleRange();
 
 	_b_particle_n = 0;
-	LogDebug("");
+
 	int itruth = 0;
 	for (PHG4TruthInfoContainer::ConstIterator iter = range.first;
 			iter != range.second; ++iter) {
@@ -441,8 +457,11 @@ int BJetModule::process_event(PHCompositeNode *topNode) {
 		float dca2d = track->get_dca2d();
 		float dca2d_error = track->get_dca2d_error();
 
-		float dca3d = track->get_dca();
-		float dca3d_error = track->get_dca_error();
+		float dca3d_xy = track->get_dca3d_xy();
+		float dca3d_xy_error = track->get_dca3d_xy_error();
+
+		float dca3d_z = track->get_dca3d_z();
+		float dca3d_z_error = track->get_dca3d_z_error();
 
 		TVector3 track_point(track->get_x(),track->get_y(),track->get_z());
 		TVector3 track_direction(track->get_px(),track->get_py(),track->get_pz());
@@ -464,11 +483,11 @@ int BJetModule::process_event(PHCompositeNode *topNode) {
 //				vertex_err_x*vertex_err_x +
 //				vertex_err_y*vertex_err_y);
 
-		float x = track->get_x() - vertex_x;
-		float y = track->get_y() - vertex_y;
-		float z = track->get_z() - vertex_z;
+		float dca_x = track->get_x() - vertex_x;
+		float dca_y = track->get_y() - vertex_y;
+		float dca_z = track->get_z() - vertex_z;
 
-		TVector3 dca_vector(x, y, z);
+		TVector3 dca_vector(dca_x, dca_y, dca_z);
 
 		float dca_phi = dca_vector.Phi();
 
@@ -539,8 +558,11 @@ int BJetModule::process_event(PHCompositeNode *topNode) {
 		_b_track_dca2d[_b_track_n] = dca2d;
 		_b_track_dca2d_error[_b_track_n] = dca2d_error;
 
-		_b_track_dca3d[_b_track_n] = dca3d;
-		_b_track_dca3d_error[_b_track_n] = dca3d_error;
+		_b_track_dca3d_xy[_b_track_n] = dca3d_xy;
+		_b_track_dca3d_xy_error[_b_track_n] = dca3d_xy_error;
+
+		_b_track_dca3d_z[_b_track_n] = dca3d_z;
+		_b_track_dca3d_z_error[_b_track_n] = dca3d_z_error;
 
 		_b_track_dca2d_calc[_b_track_n] = dca2d_calc;
 		_b_track_dca2d_calc_truth[_b_track_n] = dca2d_calc_truth;
@@ -549,6 +571,9 @@ int BJetModule::process_event(PHCompositeNode *topNode) {
 		_b_track_dca3d_calc_truth[_b_track_n] = dca3d_calc_truth;
 
 		_b_track_dca2d_phi[_b_track_n] = dca_phi;
+		_b_track_dca2d_x[_b_track_n] = dca_x;
+		_b_track_dca2d_y[_b_track_n] = dca_y;
+		_b_track_dca2d_z[_b_track_n] = dca_z;
 
 		_b_track_quality[_b_track_n] = track->get_quality();
 		_b_track_chisq[_b_track_n] = track->get_chisq();
