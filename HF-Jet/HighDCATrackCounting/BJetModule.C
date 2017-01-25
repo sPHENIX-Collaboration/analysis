@@ -112,6 +112,7 @@ int BJetModule::Init(PHCompositeNode *topNode) {
 		_b_track_ndf[n] = -99;
 
 		_b_track_best_nclusters[n] = 0;
+		_b_track_best_nclusters_by_layer[n] = 0;
 		_b_track_best_embed[n] = 0;
 		_b_track_best_primary[n] = false;
 		_b_track_best_pid[n] = 0;
@@ -160,9 +161,6 @@ int BJetModule::Init(PHCompositeNode *topNode) {
 	_tree->Branch("track_eta", _b_track_eta, "track_eta[track_n]/F");
 	_tree->Branch("track_phi", _b_track_phi, "track_phi[track_n]/F");
 
-	_tree->Branch("track_nclusters", _b_track_nclusters,
-			"track_nclusters[track_n]/i");
-
 	_tree->Branch("track_dca2d", _b_track_dca2d, "track_dca2d[track_n]/F");
 	_tree->Branch("track_dca2d_error", _b_track_dca2d_error,
 			"track_dca2d_error[track_n]/F");
@@ -199,8 +197,16 @@ int BJetModule::Init(PHCompositeNode *topNode) {
 	_tree->Branch("track_ndf", _b_track_ndf,
 			"track_ndf[track_n]/I");
 
+	_tree->Branch("track_nclusters", _b_track_nclusters,
+			"track_nclusters[track_n]/i");
+	_tree->Branch("track_best_nclusters_by_layer", _b_track_best_nclusters_by_layer,
+			"track_best_nclusters_by_layer[track_n]/i");
+
 	_tree->Branch("track_best_nclusters", _b_track_best_nclusters,
 			"track_best_nclusters[track_n]/i");
+	_tree->Branch("track_best_nclusters_by_layer", _b_track_best_nclusters_by_layer,
+				"track_best_nclusters_by_layer[track_n]/i");
+
 	_tree->Branch("track_best_embed", _b_track_best_embed,
 			"track_best_embed[track_n]/i");
 	_tree->Branch("track_best_primary", _b_track_best_primary,
@@ -387,6 +393,8 @@ int BJetModule::process_event(PHCompositeNode *topNode) {
 	SvtxVertexMap* vertexmap = findNode::getClass<SvtxVertexMap>(topNode,
 			_vertexmap_name.c_str());
 
+	SvtxClusterMap* clustermap = findNode::getClass<SvtxClusterMap>(topNode,"SvtxClusterMap");
+
 	svtxevalstack->next_event(topNode);
 
 	SvtxTrackEval *trackeval = svtxevalstack->get_track_eval();
@@ -440,11 +448,24 @@ int BJetModule::process_event(PHCompositeNode *topNode) {
 		std::set<PHG4Hit*> assoc_hits = trackeval->all_truth_hits(track);
 
 		unsigned int nclusters = track->size_clusters();
+		unsigned int nclusters_by_layer = 0;
+		for (SvtxTrack::ConstClusterIter iter = track->begin_clusters();
+				iter != track->end_clusters(); ++iter) {
+			unsigned int cluster_id = *iter;
+			SvtxCluster* cluster = clustermap->get(cluster_id);
+			if(cluster) {
+				unsigned int cluster_layer = cluster->get_layer();
+				nclusters_by_layer |= (0xFFFFFFFF & (0x1 << cluster_layer));
+			}
+		}
 
 		PHG4Particle* g4particle = trackeval->max_truth_particle_by_nclusters(
 				track);
 		unsigned int truth_nclusters = trackeval->get_nclusters_contribution(
 				track, g4particle);
+		unsigned int truth_nclusters_by_layer = trackeval->get_nclusters_contribution_by_layer(
+				track, g4particle);
+
 		unsigned int truth_embed_id = truthinfo->isEmbeded(
 				g4particle->get_track_id());
 		bool truth_is_primary = truthinfo->is_primary(g4particle);
@@ -553,8 +574,6 @@ int BJetModule::process_event(PHCompositeNode *topNode) {
 		_b_track_eta[_b_track_n] = track_eta;
 		_b_track_phi[_b_track_n] = track_phi;
 
-		_b_track_nclusters[_b_track_n] = nclusters;
-
 		_b_track_dca2d[_b_track_n] = dca2d;
 		_b_track_dca2d_error[_b_track_n] = dca2d_error;
 
@@ -579,7 +598,10 @@ int BJetModule::process_event(PHCompositeNode *topNode) {
 		_b_track_chisq[_b_track_n] = track->get_chisq();
 		_b_track_ndf[_b_track_n] = track->get_ndf();
 
+		_b_track_nclusters[_b_track_n] = nclusters;
+		_b_track_nclusters_by_layer[_b_track_n] = nclusters_by_layer;
 		_b_track_best_nclusters[_b_track_n] = truth_nclusters;
+		_b_track_best_nclusters_by_layer[_b_track_n] = truth_nclusters_by_layer;
 		_b_track_best_embed[_b_track_n] = truth_embed_id;
 		_b_track_best_primary[_b_track_n] = truth_is_primary;
 		_b_track_best_pid[_b_track_n] = truth_pid;
