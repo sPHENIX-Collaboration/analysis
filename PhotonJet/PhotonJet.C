@@ -27,6 +27,9 @@
 #include <g4eval/SvtxEvalStack.h>
 #include <sstream>
 
+#include <phhepmc/PHHepMCGenEvent.h>
+#include <HepMC/GenEvent.h>
+#include <HepMC/GenVertex.h>
 using namespace std;
 
 
@@ -156,16 +159,9 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
   JetRecoEval* recoeval = _jetevalstack->get_reco_eval();
   SvtxTrackEval *trackeval = svtxevalstack->get_track_eval();
 
- /***********************************************
-
-  GET ALL THE TRUTH PARTICLES
-
-  ************************************************/
-
-
-
+ 
   for( PHG4TruthInfoContainer::ConstIterator iter = range.first; iter!=range.second; ++iter){
-
+    
     PHG4Particle *truth = iter->second;
     
     truthpx = truth->get_px();
@@ -178,16 +174,54 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
     vec.SetPxPyPzE(truthpx,truthpy,truthpz,truthenergy);
     
     truthpt = sqrt(truthpx*truthpx+truthpy*truthpy);
-    if(truthpt<0.5)
-      continue;
+  
     
     truthphi = vec.Phi();
     trutheta = vec.Eta();
     truthpid = truth->get_pid();
     
-    truth_g4particles->Fill();
-
+   
   }
+
+   /***********************************************
+
+  GET ALL THE HEPMC EVENT LEVEL TRUTH PARTICLES
+
+  ************************************************/
+  
+  PHHepMCGenEvent *hepmcevent = findNode::getClass<PHHepMCGenEvent>(topnode,"PHHepMCGenEvent");
+
+  if(!hepmcevent){
+    cout<<"hepmc event node is missing, BAILING"<<endl;
+    return 0;
+  }
+
+  HepMC::GenEvent *truthevent = hepmcevent->getEvent();
+  if(!truthevent){
+    cout<< PHWHERE <<"no evt pointer under phhepmvgenevent found "<<endl;
+    return 0;
+  }
+ 
+  for(HepMC::GenEvent::particle_const_iterator iter = truthevent->particles_begin(); iter!=truthevent->particles_end();++iter){
+
+    truthenergy = (*iter)->momentum().e();   
+    truthpid = (*iter)->pdg_id();
+    trutheta = (*iter)->momentum().pseudoRapidity();
+    truthphi = (*iter)->momentum().phi();
+    truthpx = (*iter)->momentum().px();
+    truthpy = (*iter)->momentum().py();
+    truthpz = (*iter)->momentum().pz();
+    truthpt = sqrt(truthpx*truthpx+truthpy*truthpy);
+    cout<<truthpid<<"   "<<truthenergy<<"   "<<trutheta<<"   "<<truthphi<<endl;
+
+    truth_g4particles->Fill();
+  
+  }
+  
+
+
+
+
 
 
   /***********************************************

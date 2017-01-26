@@ -20,7 +20,7 @@ class JetEvalStack;
 class JetRecoEval;
 class SvtxTrackEval;
 class PHG4TruthInfoContainer;
-
+class PHHepMCGenEvent;
 class PhotonJet: public SubsysReco
 {
 
