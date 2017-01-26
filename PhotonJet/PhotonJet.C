@@ -212,7 +212,7 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
     truthpy = (*iter)->momentum().py();
     truthpz = (*iter)->momentum().pz();
     truthpt = sqrt(truthpx*truthpx+truthpy*truthpy);
-    cout<<truthpid<<"   "<<truthenergy<<"   "<<trutheta<<"   "<<truthphi<<endl;
+   
 
     truth_g4particles->Fill();
   
