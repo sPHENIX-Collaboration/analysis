@@ -20,7 +20,7 @@
 #include "SetOKStyle.C"
 using namespace std;
 
-//#include "Prototype2_DSTReader.h"
+//#include "Prototype3_DSTReader.h"
 
 TFile * _file0 = NULL;
 TTree * T = NULL;
@@ -28,8 +28,8 @@ TString cuts = "";
 double beam_momentum_selection = -16;
 
 void
-DrawPrototype2EMCalTower( //
-    const TString infile = "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2016/Production_0715_EMCalSet2_HCalPR12/beam_00002237-0000_DSTReader.root", //
+DrawPrototype3EMCalTower( //
+    const TString infile = "data/beam_00003373.root_DSTReader.root", //
     bool plot_all = false, const double momentum = -16)
 {
   beam_momentum_selection = momentum;
@@ -40,9 +40,9 @@ DrawPrototype2EMCalTower( //
   TVirtualFitter::SetDefaultFitter("Minuit2");
   gSystem->Load("libg4eval.so");
   gSystem->Load("libqa_modules.so");
-  gSystem->Load("libPrototype2.so");
+  gSystem->Load("libPrototype3.so");
 
-//  gROOT->LoadMacro("Prototype2_DSTReader.C+");
+//  gROOT->LoadMacro("Prototype3_DSTReader.C+");
 
   if (!_file0)
     {
@@ -257,7 +257,7 @@ DrawPrototype2EMCalTower( //
   int rnd = rand();
   gDirectory->mkdir(Form("dir_%d", rnd));
   gDirectory->cd(Form("dir_%d", rnd));
-  if (plot_all)
+//  if (plot_all)
     EMCDistribution_Fast("RAW");
 
   int rnd = rand();
@@ -279,9 +279,9 @@ DrawPrototype2EMCalTower( //
     EMCDistribution_ADC();
 
 //  if (!plot_all)
-//    T->Process("Prototype2_DSTReader.C+",
+//    T->Process("Prototype3_DSTReader.C+",
 //        TString(_file0->GetName())
-//            + TString("_DrawPrototype2EMCalTower_Prototype2_DSTReader") + cuts
+//            + TString("_DrawPrototype3EMCalTower_Prototype3_DSTReader") + cuts
 //            + TString(".dat"));
 }
 
@@ -381,7 +381,7 @@ EMCDistribution_HCalCalibration()
   h1_HCalOut->SetLineWidth(3);
 
   SaveCanvas(c1,
-      TString(_file0->GetName()) + TString("_DrawPrototype2EMCalTower_")
+      TString(_file0->GetName()) + TString("_DrawPrototype3EMCalTower_")
           + TString(c1->GetName()), false);
 
 }
@@ -468,7 +468,7 @@ EMCDistribution_ShowShape(TString CherenkovSignal = "C2_Inner",
   EnergyDist_rej->DrawClone("LEGO2Z");
 
   SaveCanvas(c1,
-      TString(_file0->GetName()) + TString("_DrawPrototype2EMCalTower_")
+      TString(_file0->GetName()) + TString("_DrawPrototype3EMCalTower_")
           + TString(c1->GetName()), false);
 
 }
@@ -612,7 +612,7 @@ EMCDistribution_SUM(TString sTOWER = "Energy_Sum_col1_row2_5x5",
 //          100 * fgaus->GetParameter(2) / fgaus->GetParameter(1)));
 
   SaveCanvas(c1,
-      TString(_file0->GetName()) + TString("_DrawPrototype2EMCalTower_")
+      TString(_file0->GetName()) + TString("_DrawPrototype3EMCalTower_")
           + TString(c1->GetName()), false);
 
 }
@@ -734,7 +734,7 @@ EMCDistribution_Fast(TString gain = "CALIB", bool full_gain = false)
     }
 
   SaveCanvas(c1,
-      TString(_file0->GetName()) + TString("_DrawPrototype2EMCalTower_")
+      TString(_file0->GetName()) + TString("_DrawPrototype3EMCalTower_")
           + TString(c1->GetName()), false);
 
 }
@@ -837,7 +837,7 @@ EMCDistribution_PeakSample_Fast(bool full_gain = false)
     }
 
   SaveCanvas(c1,
-      TString(_file0->GetName()) + TString("_DrawPrototype2EMCalTower_")
+      TString(_file0->GetName()) + TString("_DrawPrototype3EMCalTower_")
           + TString(c1->GetName()), false);
 
 }
@@ -912,7 +912,7 @@ EMCDistribution(TString gain = "CALIB", bool log_scale = false)
     }
 
   SaveCanvas(c1,
-      TString(_file0->GetName()) + TString("_DrawPrototype2EMCalTower_")
+      TString(_file0->GetName()) + TString("_DrawPrototype3EMCalTower_")
           + TString(c1->GetName()), false);
 
 }
@@ -993,7 +993,7 @@ EMCDistribution_ADC(bool log_scale = true)
     }
 
   SaveCanvas(c1,
-      TString(_file0->GetName()) + TString("_DrawPrototype2EMCalTower_")
+      TString(_file0->GetName()) + TString("_DrawPrototype3EMCalTower_")
           + TString(c1->GetName()), false);
 
 }
