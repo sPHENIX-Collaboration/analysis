@@ -120,9 +120,12 @@ private:
 	unsigned int _b_track_nclusters_by_layer[1000];
 	unsigned int _b_track_best_nclusters[1000];
 	unsigned int _b_track_best_nclusters_by_layer[1000];
+
 	unsigned int _b_track_best_embed[1000];
 	bool _b_track_best_primary[1000];
 	int _b_track_best_pid[1000];
+	float _b_track_best_pt[1000];
+	float _b_track_best_dca3d_xy[1000];
 
 	int _b_track_best_in[1000];
 	int _b_track_best_out[1000];

@@ -43,7 +43,9 @@ void draw_G4_bjet_truth_tagging(
 	const double simulation_jet_energy = 20;
 	const double _max_dca_cut = 0.1;
 
-	const double _plot_min_bjet_eff_cut = 0.1;
+	const double _plot_min_bjet_eff_cut = 0.05;
+
+	const int jet_embed_flag = 10;
 
 	//gROOT->LoadMacro("SetOKStyle.C");
 	SetOKStyle();
@@ -78,17 +80,26 @@ void draw_G4_bjet_truth_tagging(
 
 	TH1D *h1_jet_pt[3];
 
+	TH1D *h1_track_best_pt_embed_0_10GeV_pion[3];
+
 	TH1D *h1_track_pt[3];
 	TH1D *h1_track_pt_pri[3];
 	TH1D *h1_track_pt_fake[3];
 	TH1D *h1_track_pt_sec[3];
 
+	TH1D *h1_particle_pt_embed_0_10GeV_pion[3];  
+
 	TH1D *h1_particle_pt[3];  
+	TH1D *h1_particle_pt_0_10GeV_pion[3];  
 	TH1D *h1_particle_pt_dca0[3];  
 	TH1D *h1_particle_pt_dca1[3];  
 	TH1D *h1_particle_pt_species[5][3];
 
 	for (int flavor = 0; flavor < 3; flavor++) {
+
+		{ ostringstream temp_o_str_s; temp_o_str_s << "h1_track_best_pt_embed_0_10GeV_pion" << flavor; h1_track_best_pt_embed_0_10GeV_pion[flavor] = new TH1D( temp_o_str_s.str().c_str(),"",60,0,30); }
+		{ ostringstream temp_o_str_s; temp_o_str_s << "h1_particle_pt_embed_0_10GeV_pion" << flavor; h1_particle_pt_embed_0_10GeV_pion[flavor] = new TH1D( temp_o_str_s.str().c_str(),"",60,0,30); }
+
 		{ ostringstream temp_o_str_s; temp_o_str_s << "h1_jet_pt_" << flavor; h1_jet_pt[flavor] = new TH1D( temp_o_str_s.str().c_str(),"",30,0,60); }
 		{ ostringstream temp_o_str_s; temp_o_str_s << "h1_track_pt_" << flavor; h1_track_pt[flavor] = new TH1D( temp_o_str_s.str().c_str(),"",30,0,30); }
 		{ ostringstream temp_o_str_s; temp_o_str_s << "h1_track_pt_pri_" << flavor; h1_track_pt_pri[flavor] = new TH1D( temp_o_str_s.str().c_str(),"",30,0,30); }
@@ -194,6 +205,7 @@ void draw_G4_bjet_truth_tagging(
 	float truthjet_phi[10];
 
 	int particle_n;
+	int particle_embed[_MAX_N_PARTICLES_];
 	float particle_pt[_MAX_N_PARTICLES_];
 	float particle_eta[_MAX_N_PARTICLES_];
 	float particle_phi[_MAX_N_PARTICLES_];
@@ -230,8 +242,12 @@ void draw_G4_bjet_truth_tagging(
 
 	bool track_best_primary[_MAX_N_TRACKS_];
 	unsigned int track_nclusters[_MAX_N_TRACKS_];
+	unsigned int track_nclusters_by_layer[_MAX_N_TRACKS_];
 	unsigned int track_best_nclusters[_MAX_N_TRACKS_];
+	unsigned int track_best_nclusters_by_layer[_MAX_N_TRACKS_];
+	unsigned int track_best_embed[_MAX_N_TRACKS_];
 	int track_best_pid[_MAX_N_TRACKS_];
+	float track_best_pt[_MAX_N_TRACKS_];
 	float track_best_dca[_MAX_N_TRACKS_];
 	int track_best_parent_pid[_MAX_N_TRACKS_];
 
@@ -246,6 +262,7 @@ void draw_G4_bjet_truth_tagging(
 	ttree->SetBranchAddress("truthjet_phi",  truthjet_phi );
 
 	ttree->SetBranchAddress("particle_n",   &particle_n );
+	ttree->SetBranchAddress("particle_embed",   particle_embed );
 	ttree->SetBranchAddress("particle_pt",   particle_pt );
 	ttree->SetBranchAddress("particle_eta",  particle_eta );
 	ttree->SetBranchAddress("particle_phi",  particle_phi );
@@ -279,8 +296,12 @@ void draw_G4_bjet_truth_tagging(
 
 	ttree->SetBranchAddress("track_best_primary",  track_best_primary );
 	ttree->SetBranchAddress("track_nclusters",  track_nclusters );
+	ttree->SetBranchAddress("track_nclusters_by_layer",  track_nclusters_by_layer );
 	ttree->SetBranchAddress("track_best_nclusters",  track_best_nclusters );
+	ttree->SetBranchAddress("track_best_nclusters_by_layer",  track_best_nclusters_by_layer );
+	ttree->SetBranchAddress("track_best_embed",  track_best_embed );
 	ttree->SetBranchAddress("track_best_pid",  track_best_pid );
+	ttree->SetBranchAddress("track_best_pt",  track_best_pt );
 	ttree->SetBranchAddress("track_best_dca",  track_best_dca );
 	ttree->SetBranchAddress("track_best_parent_pid", track_best_parent_pid );
 
@@ -289,7 +310,7 @@ void draw_G4_bjet_truth_tagging(
 
 
 	int nentries = ttree->GetEntries();
-	//nentries = TMath::Min(10000,nentries);
+//	nentries = TMath::Min(1000,nentries);
 
 	for (int e = 0 ; e < nentries; e++) {
 
@@ -330,6 +351,9 @@ void draw_G4_bjet_truth_tagging(
 
 				float dR = deltaR( truthjet_eta[ j ], particle_eta[ p ], truthjet_phi[ j ], particle_phi[ p ] );
 				if (dR > 0.4) continue;
+
+				if(particle_embed[p] == jet_embed_flag  && abs(particle_pid[p]) == 211 )
+					h1_particle_pt_embed_0_10GeV_pion[iflavor]->Fill( particle_pt[ p ] );
 
 				h1_particle_pt[iflavor]->Fill( particle_pt[ p ] );
 				h1_particle_dca[iflavor]->Fill( particle_dca[ p ] );
@@ -492,6 +516,9 @@ void draw_G4_bjet_truth_tagging(
 
 				if (track_pt[ itrk ] > 1)
 					ntrk1++;
+
+				if(track_best_embed[itrk] == jet_embed_flag && abs(track_best_pid[itrk]) == 211 ) 
+					h1_track_best_pt_embed_0_10GeV_pion[iflavor]->Fill( track_best_pt[ itrk ] );
 
 				h1_track_pt[iflavor]->Fill( track_pt[ itrk ] );
 				h1_track_dca[iflavor]->Fill( track_dca2d[ itrk ] );
@@ -823,55 +850,84 @@ void draw_G4_bjet_truth_tagging(
 
 	// -------- Rejection
 	TGraph *tg_bjetE_vs_ljetR_highest_dca = new TGraph();
+	TGraph *tg_bjetE_vs_ljetE_highest_dca = new TGraph();
 	for (int n = 0; n < h1_jet_highest_dca_EFF[0]->GetNbinsX(); n++) {
 		if ( h1_jet_highest_dca_EFF[0]->GetBinContent( n + 1 ) == 0 ) continue;
 		float eff = h1_jet_highest_dca_EFF[2]->GetBinContent( n + 1 );
+		if(eff < _plot_min_bjet_eff_cut) continue;
 		float rej = 1 /  h1_jet_highest_dca_EFF[0]->GetBinContent( n + 1 );
 		tg_bjetE_vs_ljetR_highest_dca->SetPoint( tg_bjetE_vs_ljetR_highest_dca->GetN(), eff, rej );
+		tg_bjetE_vs_ljetE_highest_dca->SetPoint( tg_bjetE_vs_ljetE_highest_dca->GetN(), eff, 1./rej );
 	}
 
 	TGraph *tg_bjetE_vs_ljetR_second_highest_dca = new TGraph();
+	TGraph *tg_bjetE_vs_ljetE_second_highest_dca = new TGraph();
 	for (int n = 0; n < h1_jet_second_highest_dca_EFF[0]->GetNbinsX(); n++) {
 		if ( h1_jet_second_highest_dca_EFF[0]->GetBinContent( n + 1 ) == 0 ) continue;
 		float eff = h1_jet_second_highest_dca_EFF[2]->GetBinContent( n + 1 );
+		if(eff < _plot_min_bjet_eff_cut) continue;
 		float rej = 1 /  h1_jet_second_highest_dca_EFF[0]->GetBinContent( n + 1 );
 		tg_bjetE_vs_ljetR_second_highest_dca->SetPoint( tg_bjetE_vs_ljetR_second_highest_dca->GetN(), eff, rej );
+		tg_bjetE_vs_ljetE_second_highest_dca->SetPoint( tg_bjetE_vs_ljetE_second_highest_dca->GetN(), eff, 1./rej );
 	}
 
 	TGraph *tg_bjetE_vs_ljetR_third_highest_dca = new TGraph();
+	TGraph *tg_bjetE_vs_ljetE_third_highest_dca = new TGraph();
 	for (int n = 0; n < h1_jet_third_highest_dca_EFF[0]->GetNbinsX(); n++) {
 		if ( h1_jet_third_highest_dca_EFF[0]->GetBinContent( n + 1 ) == 0 ) continue;
 		float eff = h1_jet_third_highest_dca_EFF[2]->GetBinContent( n + 1 );
+		if(eff < _plot_min_bjet_eff_cut) continue;
 		float rej = 1 /  h1_jet_third_highest_dca_EFF[0]->GetBinContent( n + 1 );
 		tg_bjetE_vs_ljetR_third_highest_dca->SetPoint( tg_bjetE_vs_ljetR_third_highest_dca->GetN(), eff, rej );
+		tg_bjetE_vs_ljetE_third_highest_dca->SetPoint( tg_bjetE_vs_ljetE_third_highest_dca->GetN(), eff, 1./rej );
 	}
 
 	TGraph *tg_bjetE_vs_ljetR_highest_S = new TGraph();
+	TGraph *tg_bjetE_vs_ljetE_highest_S = new TGraph();
+	TGraph *tg_bjetE_vs_cjetE_highest_S = new TGraph();
 	for (int n = 0; n < h1_jet_highest_S_EFF[0]->GetNbinsX(); n++) {
 		if ( h1_jet_highest_S_EFF[0]->GetBinContent( n + 1 ) == 0 ) continue;
 		float eff = h1_jet_highest_S_EFF[2]->GetBinContent( n + 1 );
+		if(eff < _plot_min_bjet_eff_cut) continue;
+		float eff_c = h1_jet_highest_S_EFF[1]->GetBinContent( n + 1 );
 		float rej = 1 /  h1_jet_highest_S_EFF[0]->GetBinContent( n + 1 );
 		tg_bjetE_vs_ljetR_highest_S->SetPoint( tg_bjetE_vs_ljetR_highest_S->GetN(), eff, rej );
+		tg_bjetE_vs_ljetE_highest_S->SetPoint( tg_bjetE_vs_ljetE_highest_S->GetN(), eff, 1./rej );
+		//if(tg_bjetE_vs_ljetR_highest_S->GetN() == 0) continue;
+		tg_bjetE_vs_cjetE_highest_S->SetPoint( tg_bjetE_vs_ljetE_highest_S->GetN(), eff, eff_c );
 	}
 
 	TGraph *tg_bjetE_vs_ljetR_second_highest_S = new TGraph();
+	TGraph *tg_bjetE_vs_ljetE_second_highest_S = new TGraph();
+	TGraph *tg_bjetE_vs_cjetE_second_highest_S = new TGraph();
 	for (int n = 0; n < h1_jet_second_highest_S_EFF[0]->GetNbinsX(); n++) {
 		if ( h1_jet_second_highest_S_EFF[0]->GetBinContent( n + 1 ) == 0 ) continue;
 		float eff = h1_jet_second_highest_S_EFF[2]->GetBinContent( n + 1 );
+		if(eff < _plot_min_bjet_eff_cut) continue;
 		float rej = 1 /  h1_jet_second_highest_S_EFF[0]->GetBinContent( n + 1 );
+		float eff_c = h1_jet_second_highest_S_EFF[1]->GetBinContent( n + 1 );
 		tg_bjetE_vs_ljetR_second_highest_S->SetPoint( tg_bjetE_vs_ljetR_second_highest_S->GetN(), eff, rej );
+		tg_bjetE_vs_ljetE_second_highest_S->SetPoint( tg_bjetE_vs_ljetE_second_highest_S->GetN(), eff, 1./rej );
+		//if(tg_bjetE_vs_ljetE_second_highest_S->GetN()==0) continue;
+		tg_bjetE_vs_cjetE_second_highest_S->SetPoint( tg_bjetE_vs_ljetE_second_highest_S->GetN(), eff, eff_c );
 	}
 
 	TGraph *tg_bjetE_vs_ljetR_third_highest_S = new TGraph();
+	TGraph *tg_bjetE_vs_ljetE_third_highest_S = new TGraph();
+	TGraph *tg_bjetE_vs_cjetE_third_highest_S = new TGraph();
 	for (int n = 0; n < h1_jet_third_highest_S_EFF[0]->GetNbinsX(); n++) {
 		if ( h1_jet_third_highest_S_EFF[0]->GetBinContent( n + 1 ) == 0 ) continue;
 		float eff = h1_jet_third_highest_S_EFF[2]->GetBinContent( n + 1 );
+		if(eff < _plot_min_bjet_eff_cut) continue;
 		float rej = 1 /  h1_jet_third_highest_S_EFF[0]->GetBinContent( n + 1 );
+		float eff_c = h1_jet_third_highest_S_EFF[1]->GetBinContent( n + 1 );
 		tg_bjetE_vs_ljetR_third_highest_S->SetPoint( tg_bjetE_vs_ljetR_third_highest_S->GetN(), eff, rej );
+		tg_bjetE_vs_ljetE_third_highest_S->SetPoint( tg_bjetE_vs_ljetE_third_highest_S->GetN(), eff, 1./rej );
+		//if(tg_bjetE_vs_ljetE_third_highest_S->GetN()==0) continue;
+		tg_bjetE_vs_cjetE_third_highest_S->SetPoint( tg_bjetE_vs_ljetE_third_highest_S->GetN(), eff, eff_c );
 	}
 
 	// -------- Purity
-	//const float _plot_min_bjet_eff_cut = 0.1; 
 	TGraph *tg_bjetE_vs_bjetP_highest_dca = new TGraph();
 	for (int n = 0; n < h1_jet_highest_dca_EFF[0]->GetNbinsX(); n++) {
 		if ( h1_jet_highest_dca_EFF[0]->GetBinContent( n + 1 ) == 0 ) continue;
@@ -991,6 +1047,85 @@ void draw_G4_bjet_truth_tagging(
 	tc->Print("plot/tg_bjetE_vs_ljetR_algs.pdf");
 	tc->Print("plot/tg_bjetE_vs_ljetR_algs.root");
 
+
+	//bjetE_vs_ljetE
+	TH1D *hFrame_bjetE_vs_ljetE = new TH1D("hFrame_bjetE_vs_ljetE",";#it{b}-jet efficiency;#it{l}-jet efficiency",1,0,1.05);
+	hFrame_bjetE_vs_ljetE->GetYaxis()->SetRangeUser(1E-4,1.05);
+
+	hFrame_bjetE_vs_ljetE->Draw();
+
+	//tg_bjetE_vs_ljetE_highest_dca->SetLineWidth(2);
+	//tg_bjetE_vs_ljetE_second_highest_dca->SetLineWidth(2);
+	//tg_bjetE_vs_ljetE_third_highest_dca->SetLineWidth(2);
+
+	//tg_bjetE_vs_ljetE_highest_dca->SetLineColor(kBlack);
+	//tg_bjetE_vs_ljetE_second_highest_dca->SetLineColor(kRed);
+	//tg_bjetE_vs_ljetE_third_highest_dca->SetLineColor(kYellow+2);
+
+	tg_bjetE_vs_ljetE_highest_S->SetLineWidth(2);
+	tg_bjetE_vs_ljetE_second_highest_S->SetLineWidth(2);
+	tg_bjetE_vs_ljetE_third_highest_S->SetLineWidth(2);
+
+	tg_bjetE_vs_ljetE_highest_S->SetLineColor(kBlue);
+	tg_bjetE_vs_ljetE_second_highest_S->SetLineColor(kGreen+2);
+	tg_bjetE_vs_ljetE_third_highest_S->SetLineColor(kMagenta+2);
+
+	//tg_bjetE_vs_ljetE_highest_dca->Draw("L,same");
+	//tg_bjetE_vs_ljetE_second_highest_dca->Draw("L,same");
+	//tg_bjetE_vs_ljetE_third_highest_dca->Draw("L,same");
+	tg_bjetE_vs_ljetE_highest_S->Draw("L,same");
+	tg_bjetE_vs_ljetE_second_highest_S->Draw("L,same");
+	tg_bjetE_vs_ljetE_third_highest_S->Draw("L,same");
+
+	myText(0.65,0.62,kBlue,   		"1-track, #it{S}_{DCA}");
+	myText(0.65,0.55,kGreen+2,		"2-track, #it{S}_{DCA}");
+	myText(0.65,0.48,kMagenta+2,	"3-track, #it{S}_{DCA}");
+	myText(0.20, 0.3,kBlack,  		Form("Pythia8, #approx%2.0f GeV jets, %s tracking", simulation_jet_energy, tracking_option_name));
+
+	tc->Print("plot/tg_bjetE_vs_ljetE_algs.pdf");
+	tc->Print("plot/tg_bjetE_vs_ljetE_algs.root");
+
+
+	//bjetE_vs_cjetE
+	TH1D *hFrame_bjetE_vs_cjetE = new TH1D("hFrame_bjetE_vs_cjetE",";#it{b}-jet efficiency;#it{c}-jet efficiency",1,0,1.05);
+	hFrame_bjetE_vs_cjetE->GetYaxis()->SetRangeUser(1E-3,1.05);
+
+	hFrame_bjetE_vs_cjetE->Draw();
+
+	//tg_bjetE_vs_cjetE_highest_dca->SetLineWidth(2);
+	//tg_bjetE_vs_cjetE_second_highest_dca->SetLineWidth(2);
+	//tg_bjetE_vs_cjetE_third_highest_dca->SetLineWidth(2);
+
+	//tg_bjetE_vs_cjetE_highest_dca->SetLineColor(kBlack);
+	//tg_bjetE_vs_cjetE_second_highest_dca->SetLineColor(kRed);
+	//tg_bjetE_vs_cjetE_third_highest_dca->SetLineColor(kYellow+2);
+
+	tg_bjetE_vs_cjetE_highest_S->SetLineWidth(2);
+	tg_bjetE_vs_cjetE_second_highest_S->SetLineWidth(2);
+	tg_bjetE_vs_cjetE_third_highest_S->SetLineWidth(2);
+
+	tg_bjetE_vs_cjetE_highest_S->SetLineColor(kBlue);
+	tg_bjetE_vs_cjetE_second_highest_S->SetLineColor(kGreen+2);
+	tg_bjetE_vs_cjetE_third_highest_S->SetLineColor(kMagenta+2);
+
+	//tg_bjetE_vs_cjetE_highest_dca->Draw("L,same");
+	//tg_bjetE_vs_cjetE_second_highest_dca->Draw("L,same");
+	//tg_bjetE_vs_cjetE_third_highest_dca->Draw("L,same");
+	tg_bjetE_vs_cjetE_highest_S->RemovePoint(0);
+	tg_bjetE_vs_cjetE_highest_S->Draw("L,same");
+	tg_bjetE_vs_cjetE_second_highest_S->RemovePoint(0);
+	tg_bjetE_vs_cjetE_second_highest_S->Draw("L,same");
+	tg_bjetE_vs_cjetE_third_highest_S->RemovePoint(0);
+	tg_bjetE_vs_cjetE_third_highest_S->Draw("L,same");
+
+	myText(0.65,0.62,kBlue,   		"1-track, #it{S}_{DCA}");
+	myText(0.65,0.55,kGreen+2,		"2-track, #it{S}_{DCA}");
+	myText(0.65,0.48,kMagenta+2,	"3-track, #it{S}_{DCA}");
+	myText(0.20, 0.3,kBlack,  		Form("Pythia8, #approx%2.0f GeV jets, %s tracking", simulation_jet_energy, tracking_option_name));
+
+	tc->Print("plot/tg_bjetE_vs_cjetE_algs.pdf");
+	tc->Print("plot/tg_bjetE_vs_cjetE_algs.root");
+
 	//------------
 	TH1D *hFrame_bjetE_vs_bjetP = new TH1D("hFrame_bjetE_vs_bjetP",";#it{b}-jet efficiency;#it{b}-jet purity",1,0,1.05);
 	hFrame_bjetE_vs_bjetP->GetYaxis()->SetRangeUser(0, 1.);
@@ -1020,17 +1155,17 @@ void draw_G4_bjet_truth_tagging(
 	tg_bjetE_vs_bjetP_third_highest_S->SetLineColor(kBlue);
 
 	//DEBUG
-	tg_bjetE_vs_bjetP_highest_dca->SetName("tg_bjetE_vs_bjetP_highest_dca");
-	tg_bjetE_vs_bjetP_second_highest_dca->SetName("tg_bjetE_vs_bjetP_second_highest_dca");;
-	tg_bjetE_vs_bjetP_third_highest_dca->SetName("tg_bjetE_vs_bjetP_third_highest_dca");
+	//tg_bjetE_vs_bjetP_highest_dca->SetName("tg_bjetE_vs_bjetP_highest_dca");
+	//tg_bjetE_vs_bjetP_second_highest_dca->SetName("tg_bjetE_vs_bjetP_second_highest_dca");;
+	//tg_bjetE_vs_bjetP_third_highest_dca->SetName("tg_bjetE_vs_bjetP_third_highest_dca");
 
 	tg_bjetE_vs_bjetP_highest_S->SetName("tg_bjetE_vs_bjetP_highest_S");
 	tg_bjetE_vs_bjetP_second_highest_S->SetName("tg_bjetE_vs_bjetP_second_highest_S");;
 	tg_bjetE_vs_bjetP_third_highest_S->SetName("tg_bjetE_vs_bjetP_third_highest_S");
 
-	tg_bjetE_vs_bjetP_highest_dca->Draw("L,same");
-	tg_bjetE_vs_bjetP_second_highest_dca->Draw("L,same");
-	tg_bjetE_vs_bjetP_third_highest_dca->Draw("L,same");
+	//tg_bjetE_vs_bjetP_highest_dca->Draw("L,same");
+	//tg_bjetE_vs_bjetP_second_highest_dca->Draw("L,same");
+	//tg_bjetE_vs_bjetP_third_highest_dca->Draw("L,same");
 
 	tg_bjetE_vs_bjetP_highest_S->Draw("L,same");
 	tg_bjetE_vs_bjetP_second_highest_S->Draw("L,same");
@@ -1081,6 +1216,11 @@ void draw_G4_bjet_truth_tagging(
 	}
 
 	{
+
+		TGraph *tg_ = new TGraph();
+		for (int n = 0; n < h1_jet_highest_dca_EFF[0]->GetNbinsX(); n++) {
+		}
+
 		h1_track_pt[1]->SetLineColor( kRed );
 		h1_track_pt[2]->SetLineColor( kBlue );
 		h1_track_pt[0]->SetTitle(";#it{p}_{T} [GeV];counts / GeV");
@@ -1099,9 +1239,6 @@ void draw_G4_bjet_truth_tagging(
 		h1_track_pt[0]->Draw();
 		h1_track_pt_sec[0]->Draw("same");
 		h1_track_pt_fake[0]->Draw("same");
-
-
-
 		tc->Print("plot/h1_track_pt_ljet.pdf");
 
 		h1_track_pt_sec[1]->SetLineColor( kBlue );

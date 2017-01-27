@@ -90,6 +90,7 @@ int BJetModule::Init(PHCompositeNode *topNode) {
 		_b_track_eta[n] = -1;
 		_b_track_phi[n] = -1;
 		_b_track_nclusters[n] = 0;
+		_b_track_nclusters_by_layer[n] = 0;
 
 		_b_track_dca2d[n] = -1;
 		_b_track_dca2d_error[n] = -1;
@@ -199,8 +200,8 @@ int BJetModule::Init(PHCompositeNode *topNode) {
 
 	_tree->Branch("track_nclusters", _b_track_nclusters,
 			"track_nclusters[track_n]/i");
-	_tree->Branch("track_best_nclusters_by_layer", _b_track_best_nclusters_by_layer,
-			"track_best_nclusters_by_layer[track_n]/i");
+	_tree->Branch("track_nclusters_by_layer", _b_track_nclusters_by_layer,
+			"track_nclusters_by_layer[track_n]/i");
 
 	_tree->Branch("track_best_nclusters", _b_track_best_nclusters,
 			"track_best_nclusters[track_n]/i");
@@ -213,7 +214,8 @@ int BJetModule::Init(PHCompositeNode *topNode) {
 			"track_best_primary[track_n]/O");
 	_tree->Branch("track_best_pid", _b_track_best_pid,
 			"track_best_pid[track_n]/I");
-
+	_tree->Branch("track_best_pt", _b_track_best_pt,
+				"track_best_pt[track_n]/F");
 	_tree->Branch("track_best_in", _b_track_best_in,
 			"track_best_in[track_n]/I");
 	_tree->Branch("track_best_out", _b_track_best_out,
@@ -351,11 +353,12 @@ int BJetModule::process_event(PHCompositeNode *topNode) {
 				|| truth_pid == -16 || truth_pid == 14 || truth_pid == -14)
 			continue;
 
+		_b_particle_pid[_b_particle_n] = truth_pid;
 		_b_particle_pt[_b_particle_n] = truth_pt;
 		_b_particle_eta[_b_particle_n] = truth_eta;
 		_b_particle_phi[_b_particle_n] = truth_phi;
-		_b_particle_pid[_b_particle_n] = truth_pid;
 		_b_particle_embed[_b_particle_n] = embed_id;
+
 
 		for (HepMC::GenEvent::particle_const_iterator p =
 				theEvent->particles_begin(); p != theEvent->particles_end();
@@ -455,12 +458,13 @@ int BJetModule::process_event(PHCompositeNode *topNode) {
 			SvtxCluster* cluster = clustermap->get(cluster_id);
 			if(cluster) {
 				unsigned int cluster_layer = cluster->get_layer();
-				nclusters_by_layer |= (0xFFFFFFFF & (0x1 << cluster_layer));
+				nclusters_by_layer |= (0x3FFFFFFF & (0x1 << cluster_layer));
 			}
 		}
 
 		PHG4Particle* g4particle = trackeval->max_truth_particle_by_nclusters(
 				track);
+
 		unsigned int truth_nclusters = trackeval->get_nclusters_contribution(
 				track, g4particle);
 		unsigned int truth_nclusters_by_layer = trackeval->get_nclusters_contribution_by_layer(
@@ -470,6 +474,9 @@ int BJetModule::process_event(PHCompositeNode *topNode) {
 				g4particle->get_track_id());
 		bool truth_is_primary = truthinfo->is_primary(g4particle);
 		int truth_pid = g4particle->get_pid();
+
+		//TVector3 g4particle_mom(g4particle->get_px(),g4particle->get_py(),g4particle->get_pz());
+		//_b_track_best_pt[_b_track_n] = g4particle_mom.Pt();
 
 		//int truth_parent_id = g4particle->get_parent_id();
 		//int truth_primary_id = g4particle->get_primary_id();
@@ -511,12 +518,6 @@ int BJetModule::process_event(PHCompositeNode *topNode) {
 		TVector3 dca_vector(dca_x, dca_y, dca_z);
 
 		float dca_phi = dca_vector.Phi();
-
-		if (_verbose) {
-			//std::cout << " --> reco-track #" << itrack << " , pt / eta / phi = " << track_pt  << " / " << track_eta << " / " << track_phi << ", nhits = " << assoc_hits.size() << ", nclusters = " << nclusters << " (of which " << truth_nclusters << " from best truth particle, which has embed = " << truth_embed_id << " and is_primary = " << truth_is_primary << " ), dca / dca2D / 2D error = " << dca << " / " << dca2d << " / " << dca2d_error << std::endl;
-			//std::cout << " --> --> x / y / z = " << x << " / " << y << " / " << z << ", r = " << sqrt( x * x + y*y ) << ", rho = " << sqrt( x*x + y*y + z*z ) << std::endl;
-			//std::cout << " --> --> parent / primary id = " << truth_parent_id << " / " << truth_primary_id << std::endl;
-		}
 
 		TLorentzVector t;
 		t.SetPxPyPzE(g4particle->get_px(), g4particle->get_py(),
@@ -605,12 +606,12 @@ int BJetModule::process_event(PHCompositeNode *topNode) {
 		_b_track_best_embed[_b_track_n] = truth_embed_id;
 		_b_track_best_primary[_b_track_n] = truth_is_primary;
 		_b_track_best_pid[_b_track_n] = truth_pid;
-
+		_b_track_best_pt[_b_track_n] = truth_pt;
+		_b_track_best_dca[_b_track_n] = truth_dca;
 		_b_track_best_in[_b_track_n] = truth_in;
 		_b_track_best_out[_b_track_n] = truth_out;
 		_b_track_best_parent_pid[_b_track_n] = truth_parent_pid;
 
-		_b_track_best_dca[_b_track_n] = truth_dca;
 
 		_b_track_n++;
 
