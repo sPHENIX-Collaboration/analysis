@@ -28,9 +28,10 @@ void
 DrawEMCalTower( //
     const TString infile = // "data/Prototype2_CEMC.root_DSTReader.root" //
 //        "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2016/EMCal_sim/15Degree_1Col_LightCollection//Prototype_e-_16_SegALL_DSTReader.root"//
-        "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2016/EMCal_sim/./0Degree_1Col_LightCollectionSeanStoll_CrackScan/Prototype_e-_8_SegALL_DSTReader.root"//
+//        "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2016/EMCal_sim/./0Degree_1Col_LightCollectionSeanStoll_CrackScan/Prototype_e-_8_SegALL_DSTReader.root"//
 //        "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2016/EMCal_sim/./10DegreeRot_1Col_LightCollectionSeanStoll_CrackScan/Prototype_e-_8_SegALL_DSTReader.root"//
-    )
+"/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2017/sim/MuonCalib//1k_Muon_DSTReader.root"
+)
 {
   SetOKStyle();
   gStyle->SetOptStat(0);
@@ -87,10 +88,10 @@ DrawEMCalTower( //
 
   T->SetEventList(elist);
 
-//  EMCDistribution_Fast("HG");
+  EMCDistribution_Fast("HG");
 //  EMCDistribution_Fast("LG", true);
 //  EMCDistributionVSBeam_SUM();
-  EMCDistributionVSBeam_SUM("TOWER_CEMC", -0, 5); // 0 degree tilted
+//  EMCDistributionVSBeam_SUM("TOWER_CEMC", -0, 5); // 0 degree tilted
 //  EMCDistributionVSBeam_SUM("TOWER_CEMC", -15); // 10 degree tilted
 //  EMCDistributionVSBeam_SUM("TOWER_CEMC", -15, 5); // 10 degree tilted
 //  EMCDistribution_SUM();
