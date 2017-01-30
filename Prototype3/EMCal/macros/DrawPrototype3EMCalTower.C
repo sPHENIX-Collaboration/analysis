@@ -115,8 +115,8 @@ DrawPrototype3EMCalTower( //
 
 //    T->SetAlias("Energy_Sum_Hadron_CEMC",
 //        "1*Sum$(TOWER_CALIB_CEMC.get_energy())"); // full bias
-    T->SetAlias("Energy_Sum_Hadron_CEMC",
-        "1.14*12./8.71776e+00*Sum$(TOWER_CALIB_CEMC.get_energy())"); // full bias
+  T->SetAlias("Energy_Sum_Hadron_CEMC",
+      "1.14*12./8.71776e+00*Sum$(TOWER_CALIB_CEMC.get_energy())"); // full bias
 //  T->SetAlias("Energy_Sum_Hadron_CEMC",
 //      "1.14*12./8.71776e+00*(16./6.93250e+00)*(28/33.3405)*Sum$(TOWER_CALIB_CEMC.get_energy())"); // half-gain bias
   T->SetAlias("CEMC_MIP", "Energy_Sum_Hadron_CEMC<0.7");
@@ -134,11 +134,11 @@ DrawPrototype3EMCalTower( //
 //  T->SetAlias("HCALIN_MIP", "Energy_Sum_Hadron_HCALIN<0.5");
 //  T->SetAlias("Energy_Sum_Hadron_HCALOUT",
 //      "1*Sum$(TOWER_CALIB_LG_HCALOUT.get_energy())");
-      T->SetAlias("Energy_Sum_Hadron_HCALIN",
-          "12./6.99727e+00*Sum$(TOWER_CALIB_LG_HCALIN.get_energy())");
-      T->SetAlias("HCALIN_MIP", "Energy_Sum_Hadron_HCALIN<0.5");
-      T->SetAlias("Energy_Sum_Hadron_HCALOUT",
-          "12./9.50430e+00*Sum$(TOWER_CALIB_LG_HCALOUT.get_energy())");
+  T->SetAlias("Energy_Sum_Hadron_HCALIN",
+      "12./6.99727e+00*Sum$(TOWER_CALIB_LG_HCALIN.get_energy())");
+  T->SetAlias("HCALIN_MIP", "Energy_Sum_Hadron_HCALIN<0.5");
+  T->SetAlias("Energy_Sum_Hadron_HCALOUT",
+      "12./9.50430e+00*Sum$(TOWER_CALIB_LG_HCALOUT.get_energy())");
 
   T->SetAlias("MIP_Count_Col2",
       "Sum$( abs( TOWER_RAW_CEMC.get_energy() )>20 && abs( TOWER_RAW_CEMC.get_energy() )<200 && TOWER_CALIB_CEMC.get_column() == 2 )");
@@ -161,19 +161,20 @@ DrawPrototype3EMCalTower( //
   else
     {
       if (0)
-      {// energy selection
-      event_sel = Form("(beam_MTNRG_GeV == %f)", beam_momentum_selection);
-      cuts = Form("_%.0fGeV", beam_momentum_selection);
+        { // energy selection
+          event_sel = Form("(beam_MTNRG_GeV == %f)", beam_momentum_selection);
+          cuts = Form("_%.0fGeV", beam_momentum_selection);
 
-      cout << "Build event selection of " << (const char *) event_sel << endl;
+          cout << "Build event selection of " << (const char *) event_sel
+              << endl;
 
-      T->Draw(">>EventListRunCut", event_sel);
-      TEventList * elist = gDirectory->GetObjectChecked("EventListRunCut",
-          "TEventList");
-      cout << elist->GetN() << " / " << T->GetEntriesFast()
-          << " events selected" << endl;
-      T->SetEventList(elist);
-      }
+          T->Draw(">>EventListRunCut", event_sel);
+          TEventList * elist = gDirectory->GetObjectChecked("EventListRunCut",
+              "TEventList");
+          cout << elist->GetN() << " / " << T->GetEntriesFast()
+              << " events selected" << endl;
+          T->SetEventList(elist);
+        }
 
 //      event_sel = "1*1";
 //      cuts = "_all_event";
@@ -224,11 +225,11 @@ DrawPrototype3EMCalTower( //
 //  if (plot_all)
 //    EMCDistribution_SUM("Energy_Sum_col1_row2_5x5");
 
-  int rnd = rand();
-  gDirectory->mkdir(Form("dir_%d", rnd));
-  gDirectory->cd(Form("dir_%d", rnd));
-  if (plot_all)
-    EMCDistribution_ShowShape("C2_Sum_e");
+//  int rnd = rand();
+//  gDirectory->mkdir(Form("dir_%d", rnd));
+//  gDirectory->cd(Form("dir_%d", rnd));
+//  if (plot_all)
+//    EMCDistribution_ShowShape("C2_Sum_e");
 
   int rnd = rand();
   gDirectory->mkdir(Form("dir_%d", rnd));
@@ -246,7 +247,7 @@ DrawPrototype3EMCalTower( //
   gDirectory->mkdir(Form("dir_%d", rnd));
   gDirectory->cd(Form("dir_%d", rnd));
   if (plot_all)
-  EMCDistribution_HCalCalibration();
+    EMCDistribution_HCalCalibration();
 
   int rnd = rand();
   gDirectory->mkdir(Form("dir_%d", rnd));
@@ -257,14 +258,14 @@ DrawPrototype3EMCalTower( //
   int rnd = rand();
   gDirectory->mkdir(Form("dir_%d", rnd));
   gDirectory->cd(Form("dir_%d", rnd));
-//  if (plot_all)
-    EMCDistribution_Fast("RAW");
-
-  int rnd = rand();
-  gDirectory->mkdir(Form("dir_%d", rnd));
-  gDirectory->cd(Form("dir_%d", rnd));
   if (plot_all)
-    EMCDistribution_PeakSample_Fast();
+    EMCDistribution_Fast("RAW");
+//
+//  int rnd = rand();
+//  gDirectory->mkdir(Form("dir_%d", rnd));
+//  gDirectory->cd(Form("dir_%d", rnd));
+//  if (plot_all)
+//    EMCDistribution_PeakSample_Fast();
 
   int rnd = rand();
   gDirectory->mkdir(Form("dir_%d", rnd));
@@ -366,18 +367,19 @@ EMCDistribution_HCalCalibration()
       "HCALIN_MIP && CEMC_MIP", "goff");
 
   TH1 * h2_HCal_EMCal_ProjY = (TH1 *) h2_HCal_EMCal->ProjectionY(
-      "h2_HCal_EMCal_ProjY",2,9)->DrawClone();
+      "h2_HCal_EMCal_ProjY", 2, 9)->DrawClone();
   TH1 * h2_HCalOut_HCalIn_ProjY = (TH1 *) h2_HCalOut_HCalIn->ProjectionY(
       "h2_HCalOut_HCalIn_ProjY")->DrawClone("same");
   h1_HCalOut->Draw("same");
 
-  h2_HCal_EMCal_ProjY->SetTitle("Red: 3 Calo shower, Blue: MIP EMCal, Green: MIP EMCal & HCal_{IN}");
+  h2_HCal_EMCal_ProjY->SetTitle(
+      "Red: 3 Calo shower, Blue: MIP EMCal, Green: MIP EMCal & HCal_{IN}");
 
   h2_HCal_EMCal_ProjY->SetLineColor(kRed + 2);
   h2_HCal_EMCal_ProjY->SetLineWidth(3);
   h2_HCalOut_HCalIn_ProjY->SetLineColor(kBlue + 2);
   h2_HCalOut_HCalIn_ProjY->SetLineWidth(2);
-  h1_HCalOut->SetLineColor(kGreen+3);
+  h1_HCalOut->SetLineColor(kGreen + 3);
   h1_HCalOut->SetLineWidth(3);
 
   SaveCanvas(c1,
@@ -662,7 +664,7 @@ EMCDistribution_Fast(TString gain = "CALIB", bool full_gain = false)
       T->Draw(
           "TOWER_" + gain + "_CEMC[].get_bineta() + 8* TOWER_" + gain
               + "_CEMC[].get_binphi():TOWER_" + gain
-              + "_CEMC[].get_energy()*(-1)>>" + hname, "", "goff");
+              + "_CEMC[].get_energy()>>" + hname, "", "goff");
     }
 
   TText * t;
@@ -765,14 +767,16 @@ EMCDistribution_PeakSample_Fast(bool full_gain = false)
         }
       T->Draw(
           "TOWER_" + gain + "_CEMC[].get_bineta() + 8* TOWER_" + gain
-              + "_CEMC[].get_binphi():(TOWER_RAW_CEMC[].signal_samples[10] - TOWER_RAW_CEMC[].signal_samples[0])*(-1)>>" + hname, "", "goff");
+              + "_CEMC[].get_binphi():(TOWER_RAW_CEMC[].signal_samples[10] - TOWER_RAW_CEMC[].signal_samples[0])*(-1)>>"
+              + hname, "", "goff");
     }
 
   TText * t;
   TCanvas *c1 = new TCanvas(
-      "EMCDistribution_PeakSample_Fast_"  + TString(full_gain ? "_FullGain" : "") + cuts,
-      "EMCDistribution_PeakSample_Fast_"  + TString(full_gain ? "_FullGain" : "") + cuts,
-      1800, 950);
+      "EMCDistribution_PeakSample_Fast_" + TString(full_gain ? "_FullGain" : "")
+          + cuts,
+      "EMCDistribution_PeakSample_Fast_" + TString(full_gain ? "_FullGain" : "")
+          + cuts, 1800, 950);
   c1->Divide(8, 8, 0., 0.01);
   int idx = 1;
   TPad * p;
@@ -841,8 +845,6 @@ EMCDistribution_PeakSample_Fast(bool full_gain = false)
           + TString(c1->GetName()), false);
 
 }
-
-
 
 void
 EMCDistribution(TString gain = "CALIB", bool log_scale = false)
@@ -955,7 +957,7 @@ EMCDistribution_ADC(bool log_scale = true)
                 Form(";Calibrated Tower Energy Sum (GeV);Count / bin"), 24, -.5,
                 23.5,
 //                128+64, 0, 3096);
-                550, 1500, 2050);
+                2050, 1500, 3550);
 //          else
 //            h = new TH2F(hname,
 //                Form(";Calibrated Tower Energy Sum (GeV);Count / bin"), 100,
