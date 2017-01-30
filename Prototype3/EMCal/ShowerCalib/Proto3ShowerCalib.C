@@ -1,8 +1,8 @@
-#include "Proto2ShowerCalib.h"
+#include "Proto3ShowerCalib.h"
 #include "TemperatureCorrection.h"
 
-#include <prototype2/RawTower_Temperature.h>
-#include <prototype2/RawTower_Prototype2.h>
+#include <prototype3/RawTower_Temperature.h>
+#include <prototype3/RawTower_Prototype3.h>
 #include <g4cemc/RawTowerContainer.h>
 #include <pdbcalbase/PdbParameterMap.h>
 #include <g4detectors/PHG4Parameters.h>
@@ -41,11 +41,11 @@
 
 using namespace std;
 
-ClassImp(Proto2ShowerCalib::Eval_Cluster);
-ClassImp(Proto2ShowerCalib::Eval_Run);
+ClassImp(Proto3ShowerCalib::Eval_Cluster);
+ClassImp(Proto3ShowerCalib::Eval_Run);
 
-Proto2ShowerCalib::Proto2ShowerCalib(const std::string &filename) :
-    SubsysReco("Proto2ShowerCalib"), _is_sim(false), _filename(filename), _ievent(
+Proto3ShowerCalib::Proto3ShowerCalib(const std::string &filename) :
+    SubsysReco("Proto3ShowerCalib"), _is_sim(false), _filename(filename), _ievent(
         0)
 {
 
@@ -69,23 +69,23 @@ Proto2ShowerCalib::Proto2ShowerCalib(const std::string &filename) :
 
 }
 
-Proto2ShowerCalib::~Proto2ShowerCalib()
+Proto3ShowerCalib::~Proto3ShowerCalib()
 {
 }
 
 Fun4AllHistoManager *
-Proto2ShowerCalib::get_HistoManager()
+Proto3ShowerCalib::get_HistoManager()
 {
 
   Fun4AllServer *se = Fun4AllServer::instance();
-  Fun4AllHistoManager *hm = se->getHistoManager("Proto2ShowerCalib_HISTOS");
+  Fun4AllHistoManager *hm = se->getHistoManager("Proto3ShowerCalib_HISTOS");
 
   if (not hm)
     {
       cout
-          << "Proto2ShowerCalib::get_HistoManager - Making Fun4AllHistoManager Proto2ShowerCalib_HISTOS"
+          << "Proto3ShowerCalib::get_HistoManager - Making Fun4AllHistoManager Proto3ShowerCalib_HISTOS"
           << endl;
-      hm = new Fun4AllHistoManager("Proto2ShowerCalib_HISTOS");
+      hm = new Fun4AllHistoManager("Proto3ShowerCalib_HISTOS");
       se->registerHistoManager(hm);
     }
 
@@ -95,10 +95,10 @@ Proto2ShowerCalib::get_HistoManager()
 }
 
 int
-Proto2ShowerCalib::InitRun(PHCompositeNode *topNode)
+Proto3ShowerCalib::InitRun(PHCompositeNode *topNode)
 {
   if (verbosity)
-    cout << "Proto2ShowerCalib::InitRun" << endl;
+    cout << "Proto3ShowerCalib::InitRun" << endl;
 
   _ievent = 0;
 
@@ -116,9 +116,9 @@ Proto2ShowerCalib::InitRun(PHCompositeNode *topNode)
 }
 
 int
-Proto2ShowerCalib::End(PHCompositeNode *topNode)
+Proto3ShowerCalib::End(PHCompositeNode *topNode)
 {
-  cout << "Proto2ShowerCalib::End - write to " << _filename << endl;
+  cout << "Proto3ShowerCalib::End - write to " << _filename << endl;
   PHTFileServer::get().cd(_filename);
 
   Fun4AllHistoManager *hm = get_HistoManager();
@@ -135,12 +135,12 @@ Proto2ShowerCalib::End(PHCompositeNode *topNode)
 }
 
 int
-Proto2ShowerCalib::Init(PHCompositeNode *topNode)
+Proto3ShowerCalib::Init(PHCompositeNode *topNode)
 {
 
   _ievent = 0;
 
-  cout << "Proto2ShowerCalib::get_HistoManager - Making PHTFileServer "
+  cout << "Proto3ShowerCalib::get_HistoManager - Making PHTFileServer "
       << _filename << endl;
   PHTFileServer::get().open(_filename, "RECREATE");
 
@@ -199,11 +199,11 @@ Proto2ShowerCalib::Init(PHCompositeNode *topNode)
 }
 
 int
-Proto2ShowerCalib::process_event(PHCompositeNode *topNode)
+Proto3ShowerCalib::process_event(PHCompositeNode *topNode)
 {
 
   if (verbosity > 2)
-    cout << "Proto2ShowerCalib::process_event() entered" << endl;
+    cout << "Proto3ShowerCalib::process_event() entered" << endl;
 
   // init eval objects
   _eval_run.reset();
@@ -640,7 +640,7 @@ Proto2ShowerCalib::process_event(PHCompositeNode *topNode)
 }
 
 pair<int, int>
-Proto2ShowerCalib::find_max(RawTowerContainer* towers, int cluster_size)
+Proto3ShowerCalib::find_max(RawTowerContainer* towers, int cluster_size)
 {
   const int clus_edge_size = (cluster_size - 1) / 2;
   assert(clus_edge_size >= 0);
@@ -677,7 +677,7 @@ Proto2ShowerCalib::find_max(RawTowerContainer* towers, int cluster_size)
 }
 
 int
-Proto2ShowerCalib::LoadRecalibMap(const std::string & file)
+Proto3ShowerCalib::LoadRecalibMap(const std::string & file)
 {
   if (verbosity)
     {

@@ -1,5 +1,5 @@
-#ifndef __Proto2ShowerCalib_H__
-#define __Proto2ShowerCalib_H__
+#ifndef __Proto3ShowerCalib_H__
+#define __Proto3ShowerCalib_H__
 
 #include <fun4all/SubsysReco.h>
 #include <TNtuple.h>
@@ -19,15 +19,15 @@ class RawTowerGeom;
 class RawTowerContainer;
 class SvtxTrack;
 
-/// \class Proto2ShowerCalib
-class Proto2ShowerCalib : public SubsysReco
+/// \class Proto3ShowerCalib
+class Proto3ShowerCalib : public SubsysReco
 {
 
 public:
 
-  Proto2ShowerCalib(const std::string &filename = "cemc_ana.root");
+  Proto3ShowerCalib(const std::string &filename = "cemc_ana.root");
   virtual
-  ~Proto2ShowerCalib();
+  ~Proto3ShowerCalib();
 
   int
   Init(PHCompositeNode *topNode);
@@ -196,4 +196,4 @@ private:
   std::map<std::pair<int, int>, double> _recalib_const;
 };
 
-#endif // __Proto2ShowerCalib_H__
+#endif // __Proto3ShowerCalib_H__

@@ -9,15 +9,15 @@ INCLUDES = \
   -I`root-config --incdir`
 
 lib_LTLIBRARIES = \
-   libProto2ShowCalib.la
+   libProto3ShowCalib.la
 
 AM_CXXFLAGS = -Wall -Werror -msse2
 
-libProto2ShowCalib_la_LDFLAGS = \
+libProto3ShowCalib_la_LDFLAGS = \
   -L$(libdir) \
   -L$(OFFLINE_MAIN)/lib
 
-libProto2ShowCalib_la_LIBADD = \
+libProto3ShowCalib_la_LIBADD = \
   -lfun4all \
   -lg4dst \
   -lPrototype2
@@ -26,9 +26,9 @@ pkginclude_HEADERS =
 
 #pkginclude_HEADERS = $(include_HEADERS)
 
-libProto2ShowCalib_la_SOURCES = \
-  Proto2ShowerCalib.C \
-  Proto2ShowerCalib_Dict.C 
+libProto3ShowCalib_la_SOURCES = \
+  Proto3ShowerCalib.C \
+  Proto3ShowerCalib_Dict.C 
 
 # Rule for generating table CINT dictionaries.
 %_Dict.C: %.h %LinkDef.h
@@ -46,7 +46,7 @@ BUILT_SOURCES = \
   testexternals.C
 
 testexternals_LDADD = \
-  libProto2ShowCalib.la
+  libProto3ShowCalib.la
 
 testexternals.C:
 	echo "//*** this is a generated file. Do not commit, do not edit" > $@
