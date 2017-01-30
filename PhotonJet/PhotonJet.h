@@ -54,6 +54,7 @@ private:
   TTree *tree;
   TTree *cluster_tree;
   TTree *truth_g4particles;
+  TTree *truthtree;
   TTree *isolated_clusters;
   TTree *tracktree;
   TTree *truthjettree;
@@ -171,7 +172,7 @@ private:
   float truthpt;
   float truthenergy;
   int truthpid;
-
+  int numparticlesinevent;
 
 
   const float pi2 = -1.5707963;

@@ -180,7 +180,7 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
     trutheta = vec.Eta();
     truthpid = truth->get_pid();
     
-   
+    truth_g4particles->Fill();
   }
 
    /***********************************************
@@ -201,7 +201,7 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
     cout<< PHWHERE <<"no evt pointer under phhepmvgenevent found "<<endl;
     return 0;
   }
- 
+  numparticlesinevent=0;
   for(HepMC::GenEvent::particle_const_iterator iter = truthevent->particles_begin(); iter!=truthevent->particles_end();++iter){
 
     truthenergy = (*iter)->momentum().e();   
@@ -214,8 +214,8 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
     truthpt = sqrt(truthpx*truthpx+truthpy*truthpy);
    
 
-    truth_g4particles->Fill();
-  
+    truthtree->Fill();
+    numparticlesinevent++;
   }
   
 
@@ -854,7 +854,7 @@ void PhotonJet::Set_Tree_Branches()
 
 
 
-  truth_g4particles = new TTree("truthtree","a tree with all truth particles");
+  truth_g4particles = new TTree("truthtree_g4","a tree with all truth g4 particles");
   truth_g4particles->Branch("truthpx",&truthpx,"truthpx/F");
   truth_g4particles->Branch("truthpy",&truthpy,"truthpy/F");
   truth_g4particles->Branch("truthpz",&truthpz,"truthpz/F");
@@ -865,6 +865,22 @@ void PhotonJet::Set_Tree_Branches()
   truth_g4particles->Branch("truthpt",&truthpt,"truthpt/F");
   truth_g4particles->Branch("truthpid",&truthpid,"truthpid/I");
   truth_g4particles->Branch("nevents",&nevents,"nevents/I");
+
+
+  truthtree = new TTree("truthtree","a tree with all truth pythia particles");
+  truthtree->Branch("truthpx",&truthpx,"truthpx/F");
+  truthtree->Branch("truthpy",&truthpy,"truthpy/F");
+  truthtree->Branch("truthpz",&truthpz,"truthpz/F");
+  truthtree->Branch("truthp",&truthp,"truthp/F");
+  truthtree->Branch("truthenergy",&truthenergy,"truthenergy/F");
+  truthtree->Branch("truthphi",&truthphi,"truthphi/F");
+  truthtree->Branch("trutheta",&trutheta,"trutheta/F");
+  truthtree->Branch("truthpt",&truthpt,"truthpt/F");
+  truthtree->Branch("truthpid",&truthpid,"truthpid/I");
+  truthtree->Branch("nevents",&nevents,"nevents/I");
+  truthtree->Branch("numparticlesinevent",&numparticlesinevent,"numparticlesinevent/I");
+
+
 }
 
 
