@@ -173,7 +173,7 @@ private:
   float truthenergy;
   int truthpid;
   int numparticlesinevent;
-
+  int process_id;
 
   const float pi2 = -1.5707963;
   const float threepi2 = 4.71238898;

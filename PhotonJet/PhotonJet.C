@@ -202,6 +202,7 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
     return 0;
   }
   numparticlesinevent=0;
+  process_id = truthevent->signal_process_id();
   for(HepMC::GenEvent::particle_const_iterator iter = truthevent->particles_begin(); iter!=truthevent->particles_end();++iter){
 
     truthenergy = (*iter)->momentum().e();   
@@ -276,6 +277,36 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
     if(conecut && use_isocone)
       continue;
    
+
+    //find the associated truth high pT photon with this reconstructed photon
+    for( PHG4TruthInfoContainer::ConstIterator iter = range.first; iter!=range.second; ++iter){
+    
+      PHG4Particle *truth = iter->second;
+      
+      truthpid = truth->get_pid();
+      if(truthpid==22){
+	truthpx = truth->get_px();
+	truthpy = truth->get_py();
+	truthpz = truth->get_pz();
+	truthenergy = truth->get_e();
+	truthpt = sqrt(truthpx*truthpx+truthpy*truthpy);
+	if(truthpt<mincluspt)
+	  continue;
+	
+	TLorentzVector vec;
+	vec.SetPxPyPzE(truthpx,truthpy,truthpz,truthenergy);
+	truthphi = vec.Phi();
+	trutheta = vec.Eta();
+	if(fabs(truthphi-clus_phi)>0.03 || fabs(trutheta-clus_eta)>0.03)
+	  continue;
+	
+
+      }
+    
+
+    }
+
+
     isolated_clusters->Fill();
     
     GetRecoHadronsAndJets(cluster, trackmap, reco_jets,recoeval,trackeval,truthinfo);
@@ -783,6 +814,13 @@ void PhotonJet::Set_Tree_Branches()
   isophot_jet_tree->Branch("clus_px",&clus_px,"clus_px/F");
   isophot_jet_tree->Branch("clus_py",&clus_py,"clus_py/F");
   isophot_jet_tree->Branch("clus_pz",&clus_pz,"clus_pz/F");
+  isophot_jet_tree->Branch("truthenergy",&truthenergy,"truthenergy/F");
+  isophot_jet_tree->Branch("truthpt",&truthpt,"truthpt/F");
+  isophot_jet_tree->Branch("truthphi",&truthphi,"truthphi/F");
+  isophot_jet_tree->Branch("trutheta",&trutheta,"trutheta/F");
+  isophot_jet_tree->Branch("truthpx",&truthpx,"truthpx/F");
+  isophot_jet_tree->Branch("truthpy",&truthpy,"truthpy/F");
+  isophot_jet_tree->Branch("truthpz",&truthpz,"truthpz/F");
   isophot_jet_tree->Branch("_recojetpt",&_recojetpt,"_recojetpt/F");
   isophot_jet_tree->Branch("_recojetpx",&_recojetpx,"_recojetpx/F");
   isophot_jet_tree->Branch("_recojetpy",&_recojetpy,"_recojetpy/F");
@@ -806,7 +844,7 @@ void PhotonJet::Set_Tree_Branches()
   isophot_jet_tree->Branch("_truthjetpx",&_truthjetpx,"_truthjetpx/F");
   isophot_jet_tree->Branch("_truthjetpy",&_truthjetpy,"_truthjetpy/F");
   isophot_jet_tree->Branch("_truthjetpz",&_truthjetpz,"_truthjetpz/F");
-  
+  isophot_jet_tree->Branch("process_id",&process_id,"process_id/I");
 
 
   isophot_had_tree = new TTree("isophoton-hads","a tree with correlated isolated photons and hadrons"); 
@@ -822,6 +860,15 @@ void PhotonJet::Set_Tree_Branches()
   isophot_had_tree->Branch("clus_px",&clus_px,"clus_px/F");
   isophot_had_tree->Branch("clus_py",&clus_py,"clus_py/F");
   isophot_had_tree->Branch("clus_pz",&clus_pz,"clus_pz/F");
+  isophot_had_tree->Branch("truthenergy",&truthenergy,"truthenergy/F");
+  isophot_had_tree->Branch("truthpt",&truthpt,"truthpt/F");
+  isophot_had_tree->Branch("truthphi",&truthphi,"truthphi/F");
+  isophot_had_tree->Branch("trutheta",&trutheta,"trutheta/F");
+  isophot_had_tree->Branch("truthpx",&truthpx,"truthpx/F");
+  isophot_had_tree->Branch("truthpy",&truthpy,"truthpy/F");
+  isophot_had_tree->Branch("truthpz",&truthpz,"truthpz/F");
+
+
   isophot_had_tree->Branch("_tr_px",&_tr_px,"_tr_px/F");
   isophot_had_tree->Branch("_tr_py",&_tr_py,"_tr_py/F");
   isophot_had_tree->Branch("_tr_pz",&_tr_pz,"_tr_pz/F");
@@ -849,6 +896,8 @@ void PhotonJet::Set_Tree_Branches()
   isophot_had_tree->Branch("_truthtracketa",&_truthtracketa,"_truthtracketa/F");
   isophot_had_tree->Branch("_truthtrackpid",&_truthtrackpid,"_truthtrackpid/I");
   isophot_had_tree->Branch("_truth_is_primary",&_truth_is_primary,"_truth_is_primary/B");
+  isophot_had_tree->Branch("process_id",&process_id,"process_id/I");
+
 
 
 
@@ -865,7 +914,7 @@ void PhotonJet::Set_Tree_Branches()
   truth_g4particles->Branch("truthpt",&truthpt,"truthpt/F");
   truth_g4particles->Branch("truthpid",&truthpid,"truthpid/I");
   truth_g4particles->Branch("nevents",&nevents,"nevents/I");
-
+  truth_g4particles->Branch("process_id",&process_id,"process_id/I");
 
   truthtree = new TTree("truthtree","a tree with all truth pythia particles");
   truthtree->Branch("truthpx",&truthpx,"truthpx/F");
@@ -879,7 +928,7 @@ void PhotonJet::Set_Tree_Branches()
   truthtree->Branch("truthpid",&truthpid,"truthpid/I");
   truthtree->Branch("nevents",&nevents,"nevents/I");
   truthtree->Branch("numparticlesinevent",&numparticlesinevent,"numparticlesinevent/I");
-
+  truthtree->Branch("process_id",&process_id,"process_id/I");
 
 }
 
