@@ -23,7 +23,7 @@ Of course one can add whatever they would like to the file PhotonJet.C to add le
 ## More detailed things (will continue adding as code develops)
 
 There are a few public functions that one can set automatically, for example the minimum photon pT cut or the isolation cone size. 
-The isolation cone algorithm is by default used; one can change this with the function use_isocone_algorithm. The isolation algorithm details
-are in the code, but it currently checks for reconstructed tracks and clusters within a cone size radius set by the user greater than 200 
-MeV in pT.  
+The isolation cone algorithm is by default used; one can change this with the function use_isocone_algorithm. The isolation algorithm details are in the code, but it currently checks for reconstructed tracks and clusters within a cone size radius set by the user greater than 200 MeV in pT. One can also change the cone size used for the jets. The default size is R=0.3, and the DSTnodes can accomodate R=0.2 to R=0.8 in increments of 0.1.
+
+There are two different truth trees; one is produced with the node "PHG4TruthInfoContainer" and the other is from the raw HEPMC files, i.e. the tree "truthtree" contains all of the PYTHIA output which includes parton info while the "truth_g4particles" is a more condensed truth tree without the parton information.
 
