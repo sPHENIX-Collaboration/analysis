@@ -105,6 +105,7 @@ DrawPrototype3EMCalTower( //
   T->SetAlias("Energy_Sum_col2_row2_5x5",
       "Sum$( (abs(TOWER_CALIB_CEMC.get_column()-2)<=2 && abs(TOWER_CALIB_CEMC.get_row()-2)<=2 ) * TOWER_CALIB_CEMC.get_energy())");
   T->SetAlias("Energy_Sum_CEMC", "1*Sum$(TOWER_CALIB_CEMC.get_energy())");
+  T->SetAlias("Energy_Sum_RAW_CEMC", ".01*4/6*Sum$(TOWER_RAW_CEMC.get_energy())");
 
   // 12 GeV calibration
 //  EDM=9.83335e-18    STRATEGY= 1      ERROR MATRIX ACCURATE
@@ -234,13 +235,18 @@ DrawPrototype3EMCalTower( //
   int rnd = rand();
   gDirectory->mkdir(Form("dir_%d", rnd));
   gDirectory->cd(Form("dir_%d", rnd));
-  if (plot_all)
+//  if (plot_all)
     EMCDistribution_SUM("Energy_Sum_CEMC", "C2_Sum_e");
+  int rnd = rand();
+  gDirectory->mkdir(Form("dir_%d", rnd));
+  gDirectory->cd(Form("dir_%d", rnd));
+//  if (plot_all)
+    EMCDistribution_SUM("Energy_Sum_RAW_CEMC", "C2_Sum_e");
 
   int rnd = rand();
   gDirectory->mkdir(Form("dir_%d", rnd));
   gDirectory->cd(Form("dir_%d", rnd));
-  if (plot_all)
+ if (plot_all)
     EMCDistribution_SUM("Energy_Sum_col2_row2_5x5", "C2_Sum_e");
 
   int rnd = rand();
@@ -276,7 +282,7 @@ DrawPrototype3EMCalTower( //
   int rnd = rand();
   gDirectory->mkdir(Form("dir_%d", rnd));
   gDirectory->cd(Form("dir_%d", rnd));
-  if (plot_all)
+//   if (plot_all)
     EMCDistribution_ADC();
 
 //  if (!plot_all)
@@ -480,14 +486,14 @@ EMCDistribution_SUM(TString sTOWER = "Energy_Sum_col1_row2_5x5",
     TString CherenkovSignal = "C2_Inner")
 {
   TH1 * EnergySum_LG_full = new TH1F("EnergySum_LG_full",
-      ";Full range Tower Energy Sum (GeV);Count / bin", 300, 0, 40);
+      ";Full range Tower Energy Sum (GeV);Count / bin", 900, 0, 120);
   TH1 * EnergySum_LG = new TH1F("EnergySum_LG",
-      ";Full range Tower Energy Sum (GeV);Count / bin", 300, 0, 40);
+      ";Full range Tower Energy Sum (GeV);Count / bin", 900, 0, 120);
 //  TH1 * EnergySum_HG = new TH1F("EnergySum_HG",
 //      ";Low range Tower Energy Sum (ADC);Count / bin", 50, 0, 500);
 
   TH1 * C2_Inner_full = new TH1F("C2_Inner_full",
-      CherenkovSignal + ";Cherenkov Signal (ADC);Count / bin", 200, 0, 2000);
+      CherenkovSignal + ";Cherenkov Signal (ADC);Count / bin", 1000, 0, 2000);
   TH1 * C2_Inner = new TH1F("C2_Inner",
       CherenkovSignal + ";Cherenkov Inner Signal (ADC);Count / bin", 200, 0,
       2000);
@@ -506,7 +512,7 @@ EMCDistribution_SUM(TString sTOWER = "Energy_Sum_col1_row2_5x5",
   C2_Inner->SetLineWidth(3);
   C2_Inner->SetMarkerColor(kGreen + 3);
 
-  TCut c2 = CherenkovSignal + ">100";
+  TCut c2 = CherenkovSignal + ">240";
 
   T->Draw(sTOWER + ">>EnergySum_LG_full", "", "goff");
   T->Draw(sTOWER + ">>EnergySum_LG", c2, "goff");
@@ -957,7 +963,7 @@ EMCDistribution_ADC(bool log_scale = true)
                 Form(";Calibrated Tower Energy Sum (GeV);Count / bin"), 24, -.5,
                 23.5,
 //                128+64, 0, 3096);
-                2050, 1500, 3550);
+                4098, -1, 4097);
 //          else
 //            h = new TH2F(hname,
 //                Form(";Calibrated Tower Energy Sum (GeV);Count / bin"), 100,
@@ -969,6 +975,7 @@ EMCDistribution_ADC(bool log_scale = true)
           h->GetXaxis()->SetTitleSize(.09);
           h->GetXaxis()->SetLabelSize(.08);
           h->GetYaxis()->SetLabelSize(.08);
+          h->GetYaxis()->SetRangeUser(2000,3000);
 
 //          if (log_scale)
 //            QAHistManagerDef::useLogBins(h->GetYaxis());
