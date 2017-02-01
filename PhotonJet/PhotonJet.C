@@ -279,34 +279,41 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
    
 
     //find the associated truth high pT photon with this reconstructed photon
+
+ 
+   
     for( PHG4TruthInfoContainer::ConstIterator iter = range.first; iter!=range.second; ++iter){
     
       PHG4Particle *truth = iter->second;
       
-      truthpid = truth->get_pid();
-      if(truthpid==22){
-	truthpx = truth->get_px();
-	truthpy = truth->get_py();
-	truthpz = truth->get_pz();
-	truthenergy = truth->get_e();
-	truthpt = sqrt(truthpx*truthpx+truthpy*truthpy);
-	if(truthpt<mincluspt)
+      clustruthpid = truth->get_pid();
+      if(clustruthpid==22){
+	clustruthpx = truth->get_px();
+	clustruthpy = truth->get_py();
+	clustruthpz = truth->get_pz();
+	clustruthenergy = truth->get_e();
+	clustruthpt = sqrt(clustruthpx*clustruthpx+clustruthpy*clustruthpy);
+	if(clustruthpt<mincluspt)
 	  continue;
 	
 	TLorentzVector vec;
-	vec.SetPxPyPzE(truthpx,truthpy,truthpz,truthenergy);
-	truthphi = vec.Phi();
-	trutheta = vec.Eta();
-	if(fabs(truthphi-clus_phi)>0.03 || fabs(trutheta-clus_eta)>0.03)
+	vec.SetPxPyPzE(clustruthpx,clustruthpy,clustruthpz,clustruthenergy);
+	clustruthphi = vec.Phi();
+	clustrutheta = vec.Eta();
+	if(fabs(clustruthphi-clus_phi)>0.03 || fabs(clustrutheta-clus_eta)>0.03)
 	  continue;
 	
+	//once the photon is found and the values are set
+	//just break out of the loop 
+	break;
+
 
       }
     
 
     }
 
-
+ 
     isolated_clusters->Fill();
     
     GetRecoHadronsAndJets(cluster, trackmap, reco_jets,recoeval,trackeval,truthinfo);
@@ -499,7 +506,35 @@ void PhotonJet::GetRecoHadronsAndJets(RawCluster *trig,
   float trig_phi = trig->get_phi();
   float trig_eta = trig->get_eta();
 
- 
+  PHG4TruthInfoContainer::Range range = alltruth->GetPrimaryParticleRange();
+
+  for( PHG4TruthInfoContainer::ConstIterator iter = range.first; iter!=range.second; ++iter){
+    
+    PHG4Particle *truth = iter->second;
+    
+    clustruthpid = truth->get_pid();
+    if(clustruthpid==22){
+      clustruthpx = truth->get_px();
+      clustruthpy = truth->get_py();
+      clustruthpz = truth->get_pz();
+      clustruthenergy = truth->get_e();
+      clustruthpt = sqrt(clustruthpx*clustruthpx+clustruthpy*clustruthpy);
+      if(clustruthpt<mincluspt)
+	continue;
+      
+      TLorentzVector vec;
+      vec.SetPxPyPzE(clustruthpx,clustruthpy,clustruthpz,clustruthenergy);
+      clustruthphi = vec.Phi();
+      clustrutheta = vec.Eta();
+      if(fabs(clustruthphi-trig_phi)>0.03 || fabs(clustrutheta-trig_eta)>0.03)
+	continue;
+      
+      //once the values are set, we've found the truth photon so just break out of this loop
+      break; 
+    }
+  }
+
+
   for(SvtxTrackMap::Iter iter = tracks->begin(); iter!=tracks->end(); ++iter){
 
     SvtxTrack *track = iter->second;
@@ -732,7 +767,13 @@ void PhotonJet::Set_Tree_Branches()
   isolated_clusters->Branch("clus_py",&clus_py,"clus_py/F");
   isolated_clusters->Branch("clus_pz",&clus_pz,"clus_pz/F");
   isolated_clusters->Branch("nevents",&nevents,"nenvents/I");
-
+  isolated_clusters->Branch("clustruthenergy",&clustruthenergy,"clustruthenergy/F");
+  isolated_clusters->Branch("clustruthpt",&clustruthpt,"clustruthpt/F");
+  isolated_clusters->Branch("clustruthphi",&clustruthphi,"clustruthphi/F");
+  isolated_clusters->Branch("clustrutheta",&clustrutheta,"clustrutheta/F");
+  isolated_clusters->Branch("clustruthpx",&clustruthpx,"clustruthpx/F");
+  isolated_clusters->Branch("clustruthpy",&clustruthpy,"clustruthpy/F");
+  isolated_clusters->Branch("clustruthpz",&clustruthpz,"clustruthpz/F");
 
   tracktree = new TTree("tracktree","a tree with svtx tracks");
   tracktree->Branch("tr_px",&tr_px,"tr_px/F");
@@ -814,13 +855,13 @@ void PhotonJet::Set_Tree_Branches()
   isophot_jet_tree->Branch("clus_px",&clus_px,"clus_px/F");
   isophot_jet_tree->Branch("clus_py",&clus_py,"clus_py/F");
   isophot_jet_tree->Branch("clus_pz",&clus_pz,"clus_pz/F");
-  isophot_jet_tree->Branch("truthenergy",&truthenergy,"truthenergy/F");
-  isophot_jet_tree->Branch("truthpt",&truthpt,"truthpt/F");
-  isophot_jet_tree->Branch("truthphi",&truthphi,"truthphi/F");
-  isophot_jet_tree->Branch("trutheta",&trutheta,"trutheta/F");
-  isophot_jet_tree->Branch("truthpx",&truthpx,"truthpx/F");
-  isophot_jet_tree->Branch("truthpy",&truthpy,"truthpy/F");
-  isophot_jet_tree->Branch("truthpz",&truthpz,"truthpz/F");
+  isophot_jet_tree->Branch("clustruthenergy",&clustruthenergy,"clustruthenergy/F");
+  isophot_jet_tree->Branch("clustruthpt",&clustruthpt,"clustruthpt/F");
+  isophot_jet_tree->Branch("clustruthphi",&clustruthphi,"clustruthphi/F");
+  isophot_jet_tree->Branch("clustrutheta",&clustrutheta,"clustrutheta/F");
+  isophot_jet_tree->Branch("clustruthpx",&clustruthpx,"clustruthpx/F");
+  isophot_jet_tree->Branch("clustruthpy",&clustruthpy,"clustruthpy/F");
+  isophot_jet_tree->Branch("clustruthpz",&clustruthpz,"clustruthpz/F");
   isophot_jet_tree->Branch("_recojetpt",&_recojetpt,"_recojetpt/F");
   isophot_jet_tree->Branch("_recojetpx",&_recojetpx,"_recojetpx/F");
   isophot_jet_tree->Branch("_recojetpy",&_recojetpy,"_recojetpy/F");
@@ -860,13 +901,13 @@ void PhotonJet::Set_Tree_Branches()
   isophot_had_tree->Branch("clus_px",&clus_px,"clus_px/F");
   isophot_had_tree->Branch("clus_py",&clus_py,"clus_py/F");
   isophot_had_tree->Branch("clus_pz",&clus_pz,"clus_pz/F");
-  isophot_had_tree->Branch("truthenergy",&truthenergy,"truthenergy/F");
-  isophot_had_tree->Branch("truthpt",&truthpt,"truthpt/F");
-  isophot_had_tree->Branch("truthphi",&truthphi,"truthphi/F");
-  isophot_had_tree->Branch("trutheta",&trutheta,"trutheta/F");
-  isophot_had_tree->Branch("truthpx",&truthpx,"truthpx/F");
-  isophot_had_tree->Branch("truthpy",&truthpy,"truthpy/F");
-  isophot_had_tree->Branch("truthpz",&truthpz,"truthpz/F");
+  isophot_had_tree->Branch("clustruthenergy",&clustruthenergy,"clustruthenergy/F");
+  isophot_had_tree->Branch("clustruthpt",&clustruthpt,"clustruthpt/F");
+  isophot_had_tree->Branch("clustruthphi",&clustruthphi,"clustruthphi/F");
+  isophot_had_tree->Branch("clustrutheta",&clustrutheta,"clustrutheta/F");
+  isophot_had_tree->Branch("clustruthpx",&clustruthpx,"clustruthpx/F");
+  isophot_had_tree->Branch("clustruthpy",&clustruthpy,"clustruthpy/F");
+  isophot_had_tree->Branch("clustruthpz",&clustruthpz,"clustruthpz/F");
 
 
   isophot_had_tree->Branch("_tr_px",&_tr_px,"_tr_px/F");

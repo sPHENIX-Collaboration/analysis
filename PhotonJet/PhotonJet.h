@@ -175,6 +175,17 @@ private:
   int numparticlesinevent;
   int process_id;
 
+
+  //clust truth variables
+  float clustruthpx;
+  float clustruthpy;
+  float clustruthpz;
+  float clustruthenergy;
+  float clustruthpt;
+  float clustruthphi;
+  float clustrutheta;
+  int clustruthpid;
+
   const float pi2 = -1.5707963;
   const float threepi2 = 4.71238898;
   const float pi = 3.1415926;
