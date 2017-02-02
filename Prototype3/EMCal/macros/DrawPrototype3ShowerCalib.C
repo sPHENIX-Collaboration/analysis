@@ -39,7 +39,8 @@ public:
 void
 DrawPrototype3ShowerCalib( //
     const TString infile =
-                "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2017/ShowerCalib/2nd_tower21.lst_EMCalCalib.root"//
+        "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2017/ShowerCalib/2nd_tower21.lst_EMCalCalib.root"//
+//        "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2017/ShowerCalib/2nd_tower45.lst_EMCalCalib.root"//
     )
 {
 
@@ -92,14 +93,18 @@ DrawPrototype3ShowerCalib( //
 //    cuts = "_45DegreeRot_h1_v1";
 //  event_sel = "good_data";
 //  cuts = "_good_data";
-//  event_sel = "info.beam_mom == -8 && good_data";
-//  cuts = "_8GeV_good_data";
+//  event_sel = "info.beam_mom == -8 && good_e";
+//  cuts = "_8GeV_good_e";
 //  event_sel = "info.beam_mom == -6";
 //  cuts = "_Neg6GeV";
-    event_sel = "good_e && C2_sum>500 && info.hodo_h==3 && info.hodo_v==3";
-    cuts = "_good_data_h3_v3";
-//      event_sel = "good_e && C2_sum>500&& info.hodo_h>=2 && info.hodo_h<=3 && info.hodo_v>=2 && info.hodo_v<=4";
-//      cuts = "_good_data_h23_v234";
+      event_sel = "good_e && C2_sum>500 && info.hodo_h==3 && info.hodo_v==3"; // Tower 21
+      cuts = "_good_data_h3_v3";
+  //      event_sel = "good_e && C2_sum>500&& info.hodo_h>=2 && info.hodo_h<=3 && info.hodo_v>=2 && info.hodo_v<=4"; // Tower 21
+  //      cuts = "_good_data_h23_v234";
+//      event_sel = "good_e && C2_sum>500 && info.hodo_h==3 && info.hodo_v==2"; // Tower 45
+//      cuts = "_good_data_h3_v2";
+//        event_sel = "good_e && C2_sum>500&& info.hodo_h>=2 && info.hodo_h<=3 && info.hodo_v>=1 && info.hodo_v<=3"; // Tower 54
+//        cuts = "_good_data_h23_v123";
 //  event_sel = "good_data && info.hodo_h>=2 && info.hodo_h<=4 && info.hodo_v>=4 && info.hodo_v<=6";
 //  cuts = "_good_data_h234_v456";
 //  event_sel = "good_data && info.hodo_h>=3 && info.hodo_h<=3 && info.hodo_v>=5 && info.hodo_v<=5";
