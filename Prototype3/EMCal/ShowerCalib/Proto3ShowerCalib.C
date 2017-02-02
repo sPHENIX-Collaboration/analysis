@@ -354,7 +354,7 @@ Proto3ShowerCalib::process_event(PHCompositeNode *topNode)
       const double c1 = TOWER_CALIB_C1->getTower(0)->get_energy();
 
       _eval_run.C2_sum = c2_in + c2_out;
-      cherekov_e = (_eval_run.C2_sum) > 240;
+      cherekov_e = (_eval_run.C2_sum) > (abs(_eval_run.beam_mom )>=10?100:240);
       hNormalization->Fill("C2-e", cherekov_e);
 
       TH2F * hCheck_Cherenkov = dynamic_cast<TH2F *>(hm->getHisto(
