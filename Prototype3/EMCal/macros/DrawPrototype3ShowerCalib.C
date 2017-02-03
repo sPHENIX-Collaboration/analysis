@@ -93,18 +93,22 @@ DrawPrototype3ShowerCalib( //
 //    cuts = "_45DegreeRot_h1_v1";
 //  event_sel = "good_data";
 //  cuts = "_good_data";
-//  event_sel = "info.beam_mom == -8 && good_e";
-//  cuts = "_8GeV_good_e";
+  //  event_sel = "info.beam_mom == -8 && good_e";
+  //  cuts = "_8GeV_good_e";
+//    event_sel = "info.beam_mom == -12 && good_e";
+//    cuts = "_12GeV_good_e";
 //  event_sel = "info.beam_mom == -6";
 //  cuts = "_Neg6GeV";
-      event_sel = "good_e && C2_sum>500 && info.hodo_h==3 && info.hodo_v==3"; // Tower 21
+      event_sel = "good_e  && info.hodo_h==3 && info.hodo_v==3"; // Tower 21
       cuts = "_good_data_h3_v3";
-  //      event_sel = "good_e && C2_sum>500&& info.hodo_h>=2 && info.hodo_h<=3 && info.hodo_v>=2 && info.hodo_v<=4"; // Tower 21
-  //      cuts = "_good_data_h23_v234";
-//      event_sel = "good_e && C2_sum>500 && info.hodo_h==3 && info.hodo_v==2"; // Tower 45
+//        event_sel = "good_e && info.hodo_h>=2 && info.hodo_h<=3 && info.hodo_v>=2 && info.hodo_v<=4"; // Tower 21
+//        cuts = "_good_data_h23_v234";
+//      event_sel = "good_e  && info.hodo_h==3 && info.hodo_v==2"; // Tower 45
 //      cuts = "_good_data_h3_v2";
-//        event_sel = "good_e && C2_sum>500&& info.hodo_h>=2 && info.hodo_h<=3 && info.hodo_v>=1 && info.hodo_v<=3"; // Tower 54
-//        cuts = "_good_data_h23_v123";
+//  event_sel = "good_e && info.hodo_h>=2 && info.hodo_h<=3 && info.hodo_v>=1 && info.hodo_v<=3"; // Tower 45
+//  cuts = "_good_data_h23_v123";
+//  event_sel = "good_e && info.hodo_h>=1 && info.hodo_h<=5 && info.hodo_v>=1 && info.hodo_v<=5"; // Tower 45
+//  cuts = "_good_data_h12345_v12345";
 //  event_sel = "good_data && info.hodo_h>=2 && info.hodo_h<=4 && info.hodo_v>=4 && info.hodo_v<=6";
 //  cuts = "_good_data_h234_v456";
 //  event_sel = "good_data && info.hodo_h>=3 && info.hodo_h<=3 && info.hodo_v>=5 && info.hodo_v<=5";
@@ -895,8 +899,8 @@ GetResolution(TString cluster_name, vector<double> beam_mom, Color_t col)
       h->Fit(fgaus_g, "MR0N");
 
       TF1 * fgaus = new TF1("fgaus_LG", "gaus",
-          fgaus_g->GetParameter(1) - 2 * fgaus_g->GetParameter(2),
-          fgaus_g->GetParameter(1) + 2 * fgaus_g->GetParameter(2));
+          fgaus_g->GetParameter(1) - 3 * fgaus_g->GetParameter(2),
+          fgaus_g->GetParameter(1) + 3 * fgaus_g->GetParameter(2));
       fgaus->SetParameters(fgaus_g->GetParameter(0), fgaus_g->GetParameter(1),
           fgaus_g->GetParameter(2));
       h->Fit(fgaus, "MR");
