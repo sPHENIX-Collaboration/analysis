@@ -282,7 +282,7 @@ DrawPrototype3EMCalTower( //
   int rnd = rand();
   gDirectory->mkdir(Form("dir_%d", rnd));
   gDirectory->cd(Form("dir_%d", rnd));
-//   if (plot_all)
+   if (plot_all)
     EMCDistribution_ADC();
 
 //  if (!plot_all)
