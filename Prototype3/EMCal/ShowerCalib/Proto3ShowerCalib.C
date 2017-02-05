@@ -235,6 +235,10 @@ Proto3ShowerCalib::process_event(PHCompositeNode *topNode)
       assert(hBeam_Mom);
 
       hBeam_Mom->Fill(_eval_run.beam_mom);
+
+      _eval_run.beam_2CH_mm = run_info_copy.get_double_param("beam_2CH_mm");
+      _eval_run.beam_2CV_mm = run_info_copy.get_double_param("beam_2CV_mm");
+
     }
 
   EventHeader* eventheader = findNode::getClass<EventHeader>(topNode,
@@ -598,7 +602,8 @@ Proto3ShowerCalib::process_event(PHCompositeNode *topNode)
   const double EoP = sum_energy_T / abs(_eval_run.beam_mom);
   hNormalization->Fill("good_temp", good_temp);
 
-  bool good_data = good_e and good_temp;
+//  bool good_data = good_e and good_temp;
+  bool good_data = good_e ;
   hNormalization->Fill("good_data", good_data);
 
   _eval_run.good_temp = good_temp;

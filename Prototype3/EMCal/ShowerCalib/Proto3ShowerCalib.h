@@ -104,7 +104,10 @@ public:
     float truth_y;
     float truth_z;
 
-  ClassDef(Eval_Run,3)
+    float beam_2CH_mm;
+    float beam_2CV_mm;
+
+  ClassDef(Eval_Run,4)
   };
 
   class Eval_Cluster : public TObject
