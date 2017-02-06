@@ -62,7 +62,7 @@ ExampleAnalysisDSTReader(
       "Sum$(abs(TOWER_CALIB_HODO_HORIZONTAL.energy)>30) > 0");
 
   T->SetAlias("Hodoscope_h3_v2",
-      "abs(Average_HODO_HORIZONTAL-3)<.5 && abs(Average_HODO_VERTICAL-2)<.5")
+      "abs(Average_HODO_HORIZONTAL-3)<.5 && abs(Average_HODO_VERTICAL-2)<.5");
 
   // Nothing in trigger veto counter
   T->SetAlias("No_Triger_VETO",
@@ -120,9 +120,9 @@ ExampleAnalysisDSTReader(
   p->SetLogy();
 
   T->Draw(
-      "Energy_Sum_CEMC + Energy_Sum_HCALIN + Energy_Sum_HCALOUT>>hEnergy_Sum_CEMC(400,0,20)",
-      "Valid_Hodoscope_Clean_VETO_Counter && CherenkovCut", "");
-  hEnergy_Sum_CEMC->SetTitle(
+      "Energy_Sum_CEMC + Energy_Sum_HCALIN + Energy_Sum_HCALOUT>>hEnergy_Sum(400,0,20)",
+      "Valid_Hodoscope_Clean_VETO_Counter", "");
+  hEnergy_Sum->SetTitle(
       "All three calorimeter energy Sum;Energy Sum (GeV)");
 
   c1->Update();
@@ -130,23 +130,23 @@ ExampleAnalysisDSTReader(
   p->SetLogy();
 
   TH1 * hEnergy_Sum_CEMC_v2h3 = new TH1F("hEnergy_Sum_CEMC_v2h3",
-      ";EMCal energy sum (GeV);Count / bin", 900, 0, 120);
+      ";EMCal Calibrated Energy Sum (GeV);Count / bin", 100, 0, 20);
 
-  T->Draw("Energy_Sum_CEMC>>hEnergy_Sum_CEMC_v2h3(400,0,20)",
+  T->Draw("Energy_Sum_CEMC>>hEnergy_Sum_CEMC_v2h3",
       "Valid_Hodoscope_Clean_VETO_Counter && CherenkovCut && Hodoscope_h3_v2",
       "");
 
   TF1 * fgaus_g = new TF1("fgaus_LG_g", "gaus",
-      hEnergy_Sum_CEMC_v2h3->GetMean() - 1 * hEnergy_Sum_CEMC_v2h3->GetRMS(),
-      hEnergy_Sum_CEMC_v2h3->GetMean() + 4 * hEnergy_Sum_CEMC_v2h3->GetRMS());
+      hEnergy_Sum_CEMC_v2h3->GetMean() - 2 * hEnergy_Sum_CEMC_v2h3->GetRMS(),
+      hEnergy_Sum_CEMC_v2h3->GetMean() + 2 * hEnergy_Sum_CEMC_v2h3->GetRMS());
   fgaus_g->SetParameters(1,
       hEnergy_Sum_CEMC_v2h3->GetMean() - 2 * hEnergy_Sum_CEMC_v2h3->GetRMS(),
       hEnergy_Sum_CEMC_v2h3->GetMean() + 2 * hEnergy_Sum_CEMC_v2h3->GetRMS());
   hEnergy_Sum_CEMC_v2h3->Fit(fgaus_g, "MR0N");
 
   TF1 * fgaus = new TF1("fgaus_LG", "gaus",
-      fgaus_g->GetParameter(1) - 1 * fgaus_g->GetParameter(2),
-      fgaus_g->GetParameter(1) + 4 * fgaus_g->GetParameter(2));
+      fgaus_g->GetParameter(1) - 3 * fgaus_g->GetParameter(2),
+      fgaus_g->GetParameter(1) + 3 * fgaus_g->GetParameter(2));
   fgaus->SetParameters(fgaus_g->GetParameter(0), fgaus_g->GetParameter(1),
       fgaus_g->GetParameter(2));
   hEnergy_Sum_CEMC_v2h3->Fit(fgaus, "MR");
