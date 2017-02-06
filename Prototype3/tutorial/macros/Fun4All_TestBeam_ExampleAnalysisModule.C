@@ -1,5 +1,5 @@
 int
-Fun4All_TestBeam_ExampleAnalysisModule(const int nEvents = 10000000,
+Fun4All_TestBeam_ExampleAnalysisModule(const int nEvents = 10000,
     const char * inputFile =
     // Let's take a look at run 3533, which is -8 GeV/c secondary beam centered on EMCal tower 45.
     // More runs are produced in data production: https://wiki.bnl.gov/sPHENIX/index.php/2017_calorimeter_beam_test/Data_Production_and_Analysis#Production_Information
@@ -31,7 +31,8 @@ Fun4All_TestBeam_ExampleAnalysisModule(const int nEvents = 10000000,
   //load your analysis module's lib
   gSystem->Load("libProto3_ExampleAnalysisModule.so");
 
-  //load your analysis module
+  //load your analysis module.
+  // This one is an example defined in ../ExampleAnalysisModule/
   ExampleAnalysisModule * emcal_ana = new ExampleAnalysisModule(
       "ExampleAnalysis.root");
   se->registerSubsystem(emcal_ana);

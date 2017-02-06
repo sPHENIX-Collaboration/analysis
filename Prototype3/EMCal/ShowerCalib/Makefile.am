@@ -20,7 +20,7 @@ libProto3ShowCalib_la_LDFLAGS = \
 libProto3ShowCalib_la_LIBADD = \
   -lfun4all \
   -lg4dst \
-  -lPrototype2
+  -lPrototype3
 
 pkginclude_HEADERS = 
 
