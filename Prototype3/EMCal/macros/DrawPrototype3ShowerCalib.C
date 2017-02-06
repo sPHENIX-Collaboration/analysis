@@ -93,14 +93,14 @@ DrawPrototype3ShowerCalib( //
 //    cuts = "_45DegreeRot_h1_v1";
 //  event_sel = "good_data";
 //  cuts = "_good_data";
-  //  event_sel = "info.beam_mom == -8 && good_e";
-  //  cuts = "_8GeV_good_e";
+    event_sel = "info.beam_mom == -8 && good_e";
+    cuts = "_8GeV_good_e";
 //    event_sel = "info.beam_mom == -12 && good_e";
 //    cuts = "_12GeV_good_e";
 //  event_sel = "info.beam_mom == -6";
 //  cuts = "_Neg6GeV";
-      event_sel = "good_e  && info.hodo_h==3 && info.hodo_v==3"; // Tower 21
-      cuts = "_good_data_h3_v3";
+//      event_sel = "good_e  && info.hodo_h==3 && info.hodo_v==3"; // Tower 21
+//      cuts = "_good_data_h3_v3";
 //        event_sel = "good_e && info.hodo_h>=2 && info.hodo_h<=3 && info.hodo_v>=2 && info.hodo_v<=4"; // Tower 21
 //        cuts = "_good_data_h23_v234";
 //      event_sel = "good_e  && info.hodo_h==3 && info.hodo_v==2"; // Tower 45
@@ -178,12 +178,12 @@ DrawPrototype3ShowerCalib( //
 //  // data stuff
   PositionDependenceData("clus_5x5_prod.sum_E");
 //  PositionDependenceData("clus_5x5_recalib.sum_E");
-  HodoscopeCheck();
+//  HodoscopeCheck();
 //    LineShapeData("abs(info.C2_sum)<100",  "(info.C2_sum)>600 && (info.C2_sum)<1300"); // 4 GeV
 //    LineShapeData("abs(info.C2_sum)<100",  "(info.C2_sum)>500 && (info.C2_sum)<1300"); // 8 GeV
 //  LineShapeData("abs(info.C2_sum)<100",  "(info.C2_sum)>200 && (info.C2_sum)<1300"); // 12 GeV
 
-  Get_Res_linear_Summmary();
+//  Get_Res_linear_Summmary();
 
   // simulation stuff
 //  SimPositionCheck(-0); // 0 degree tilted
