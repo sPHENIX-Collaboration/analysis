@@ -52,7 +52,7 @@ ExampleAnalysisModule::ExampleAnalysisModule(const std::string &filename) :
   verbosity = 1;
 
   _eval_run.reset();
-  _eval_5x5_prod.reset();
+  _eval_5x5_CEMC.reset();
 }
 
 ExampleAnalysisModule::~ExampleAnalysisModule()
@@ -133,23 +133,27 @@ ExampleAnalysisModule::Init(PHCompositeNode *topNode)
 
   //! Histogram of Cherenkov counters
   TH2F * hCheck_Cherenkov = new TH2F("hCheck_Cherenkov", "hCheck_Cherenkov",
-      1000, -2000, 2000, 5, .5, 5.5);
+      110, -20, 2000, 5, .5, 5.5);
   hCheck_Cherenkov->GetYaxis()->SetBinLabel(1, "C1");
   hCheck_Cherenkov->GetYaxis()->SetBinLabel(2, "C2 in");
   hCheck_Cherenkov->GetYaxis()->SetBinLabel(3, "C2 out");
   hCheck_Cherenkov->GetYaxis()->SetBinLabel(4, "C2 sum");
+  hCheck_Cherenkov->GetXaxis()->SetTitle("Amplitude");
+  hCheck_Cherenkov->GetYaxis()->SetTitle("Cherenkov Channel");
   hm->registerHisto(hCheck_Cherenkov);
 
   //! Envent nomalization
   TH1F * hNormalization = new TH1F("hNormalization", "hNormalization", 10, .5,
       10.5);
-  hCheck_Cherenkov->GetXaxis()->SetBinLabel(1, "ALL");
-  hCheck_Cherenkov->GetXaxis()->SetBinLabel(2, "C2-e");
-  hCheck_Cherenkov->GetXaxis()->SetBinLabel(3, "trigger_veto_pass");
-  hCheck_Cherenkov->GetXaxis()->SetBinLabel(4, "valid_hodo_h");
-  hCheck_Cherenkov->GetXaxis()->SetBinLabel(5, "valid_hodo_v");
-  hCheck_Cherenkov->GetXaxis()->SetBinLabel(6, "good_e");
-  hCheck_Cherenkov->GetXaxis()->SetBinLabel(6, "good_anti_e");
+  hNormalization->GetXaxis()->SetBinLabel(1, "ALL");
+  hNormalization->GetXaxis()->SetBinLabel(2, "C2-e");
+  hNormalization->GetXaxis()->SetBinLabel(3, "trigger_veto_pass");
+  hNormalization->GetXaxis()->SetBinLabel(4, "valid_hodo_h");
+  hNormalization->GetXaxis()->SetBinLabel(5, "valid_hodo_v");
+  hNormalization->GetXaxis()->SetBinLabel(6, "good_e");
+  hNormalization->GetXaxis()->SetBinLabel(6, "good_anti_e");
+  hNormalization->GetXaxis()->SetTitle("Cuts");
+  hNormalization->GetYaxis()->SetTitle("Event count");
   hm->registerHisto(hNormalization);
 
   hm->registerHisto(new TH1F("hCheck_Veto", "hCheck_Veto", 1000, -500, 500));
@@ -166,7 +170,7 @@ ExampleAnalysisModule::Init(PHCompositeNode *topNode)
   hm->registerHisto(T);
 
   T->Branch("info", &_eval_run);
-  T->Branch("clus_5x5_prod", &_eval_5x5_prod);
+  T->Branch("clus_5x5_CEMC", &_eval_5x5_CEMC);
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -180,7 +184,7 @@ ExampleAnalysisModule::process_event(PHCompositeNode *topNode)
 
   // init eval objects
   _eval_run.reset();
-  _eval_5x5_prod.reset();
+  _eval_5x5_CEMC.reset();
 
   Fun4AllHistoManager *hm = get_HistoManager();
   assert(hm);
@@ -426,10 +430,99 @@ ExampleAnalysisModule::process_event(PHCompositeNode *topNode)
   // simple clustering by matching to cluster of max energy
   pair<int, int> max_5x5 = find_max(TOWER_CALIB_CEMC, 5);
 
-  _eval_5x5_prod.max_col = max_5x5.first;
-  _eval_5x5_prod.max_row = max_5x5.second;
+  _eval_5x5_CEMC.max_col = max_5x5.first;
+  _eval_5x5_CEMC.max_row = max_5x5.second;
 
-  _eval_5x5_prod.reweight_clus_pol();
+  // process EMCals
+    {
+      double sum_energy_calib = 0;
+
+      auto range = TOWER_CALIB_CEMC->getTowers();
+      for (auto it = range.first; it != range.second; ++it)
+        {
+
+          RawTower* tower = it->second;
+          assert(tower);
+
+          const int col = tower->get_bineta();
+          const int row = tower->get_binphi();
+
+          if (col < 0 or col >= 8)
+            continue;
+          if (row < 0 or row >= 8)
+            continue;
+
+          const double energy_calib = tower->get_energy();
+          sum_energy_calib += energy_calib;
+
+          // cluster 5x5
+          if (col >= max_5x5.first - 2 and col <= max_5x5.first + 2)
+            if (row >= max_5x5.second - 2 and row <= max_5x5.second + 2)
+              {
+                // in cluster
+
+                _eval_5x5_CEMC.average_col += energy_calib * col;
+                _eval_5x5_CEMC.average_row += energy_calib * row;
+                _eval_5x5_CEMC.sum_E += energy_calib;
+
+              }
+        } //       for (auto it = range.first; it != range.second; ++it)
+      _eval_5x5_CEMC.reweight_clus_pol();
+
+      _eval_run.sum_E_CEMC = sum_energy_calib;
+    } // process EMCals
+
+  // process inner HCAL
+    {
+      double sum_energy_calib = 0;
+
+      auto range = TOWER_CALIB_LG_HCALIN->getTowers();
+      for (auto it = range.first; it != range.second; ++it)
+        {
+
+          RawTower* tower = it->second;
+          assert(tower);
+
+          const int col = tower->get_bineta();
+          const int row = tower->get_binphi();
+
+          if (col < 0 or col >= 4)
+            continue;
+          if (row < 0 or row >= 4)
+            continue;
+
+          const double energy_calib = tower->get_energy();
+          sum_energy_calib += energy_calib;
+
+        } //       for (auto it = range.first; it != range.second; ++it)
+      _eval_run.sum_E_HCAL_IN = sum_energy_calib;
+    } // process inner HCAL
+
+  // process outer HCAL
+    {
+      double sum_energy_calib = 0;
+
+      auto range = TOWER_CALIB_LG_HCALOUT->getTowers();
+      for (auto it = range.first; it != range.second; ++it)
+        {
+
+          RawTower* tower = it->second;
+          assert(tower);
+
+          const int col = tower->get_bineta();
+          const int row = tower->get_binphi();
+
+          if (col < 0 or col >= 4)
+            continue;
+          if (row < 0 or row >= 4)
+            continue;
+
+          const double energy_calib = tower->get_energy();
+          sum_energy_calib += energy_calib;
+
+        } //       for (auto it = range.first; it != range.second; ++it)
+      _eval_run.sum_E_HCAL_OUT = sum_energy_calib;
+    } // process inner HCAL
 
   _eval_run.good_e = good_e;
   _eval_run.good_anti_e = good_anti_e;

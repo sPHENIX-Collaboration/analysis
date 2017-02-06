@@ -222,7 +222,7 @@ private:
   Eval_Run _eval_run;
 
   //! clusters of max 5x5 EMCal cluster. To be copied to output TTree T
-  Eval_Cluster _eval_5x5_prod;
+  Eval_Cluster _eval_5x5_CEMC;
 
 };
 

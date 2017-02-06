@@ -1,3 +1,12 @@
+
+/*!
+ * \file Fun4All_TestBeam_ExampleAnalysisModule.C
+ * \brief // this macro is part of analysis tutorial: https://wiki.bnl.gov/sPHENIX/index.php/2017_calorimeter_beam_test/Tutorial#Level_2:_formal_analysis_via_analysis_module
+ * \author Jin Huang <jhuang@bnl.gov>
+ * \version $Revision:   $
+ * \date $Date: $
+ */
+
 int
 Fun4All_TestBeam_ExampleAnalysisModule(const int nEvents = 10000,
     const char * inputFile =
