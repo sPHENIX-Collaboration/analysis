@@ -158,7 +158,7 @@ DrawPrototype3ShowerCalib( //
 //  event_sel = "good_data && ( info.hodo_v==5 ||  info.hodo_v==4)";
 //  cuts = "_good_data_hall_v45";
 
-      T->SetAlias("SimEnergyScale", "1*1");
+      T->SetAlias("SimEnergyScale","1*1");
 //    // based on /phenix/u/jinhuang/links/sPHENIX_work/Prototype_2016/ShowerCalib/UIUC21.lst_EMCalCalib.root_DrawPrototype3ShowerCalib_LineShapeData_Neg8GeV_good_data_h5_v3.svg
 //    T->SetAlias("SimEnergyScale","8.74635e+00/7.60551");
   //  // based on /phenix/u/jinhuang/links/sPHENIX_work/Prototype_2016/ShowerCalib/Tilt0.lst_EMCalCalib.root_DrawPrototype3ShowerCalib_LineShapeData_Neg8GeV_quality_h3_v5_col2_row2.root_DrawPrototype3ShowerCalib_SumLineShapeCompare_Electron_8GeV_QGSP_BERT_HP.root
