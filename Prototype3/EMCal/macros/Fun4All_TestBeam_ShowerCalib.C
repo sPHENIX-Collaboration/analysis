@@ -33,7 +33,7 @@ Fun4All_TestBeam_ShowerCalib(const int nEvents = 10000000, const char * inputFil
       string(inputFile) + string("_EMCalCalib.root"));
 
   emcal_ana->Verbosity(1);
-  emcal_ana->LoadRecalibMap( "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2016/ShowerCalib/ShowerCalibFit_CablibConst.dat");
+  emcal_ana->LoadRecalibMap( "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2017/ShowerCalib/ShowerCalibFit_CablibConst.dat");
   se->registerSubsystem(emcal_ana);
 
   cout << "nEVENTS :" << nEvents << endl;

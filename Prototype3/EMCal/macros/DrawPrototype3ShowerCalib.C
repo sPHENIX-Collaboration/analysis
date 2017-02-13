@@ -39,8 +39,9 @@ public:
 void
 DrawPrototype3ShowerCalib( //
     const TString infile =
-        "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2017/ShowerCalib/2nd_tower21.lst_EMCalCalib.root"//
-//        "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2017/ShowerCalib/2nd_tower45.lst_EMCalCalib.root"//
+//        "/sphenix/user/jinhuang/Prototype_2017/ShowerCalib/JointEnergyScan1.lst_EMCalCalib.root"//
+//        "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2017/ShowerCalib/2nd_tower21.lst_EMCalCalib.root"//
+        "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2017/ShowerCalib/2nd_tower45.lst_EMCalCalib.root"//
     )
 {
 
@@ -95,22 +96,24 @@ DrawPrototype3ShowerCalib( //
 //  cuts = "_good_data";
 //    event_sel = "info.beam_mom == -8 && good_e";
 //    cuts = "_8GeV_good_e";
-//    event_sel = "info.beam_mom == -12 && good_e";
-//    cuts = "_12GeV_good_e";
+  //    event_sel = "info.beam_mom == -12 && good_e";
+  //    cuts = "_12GeV_good_e";
+//      event_sel = "info.beam_mom == -16 && good_e";
+//      cuts = "_16GeV_good_e";
 //  event_sel = "info.beam_mom == -6";
 //  cuts = "_Neg6GeV";
 //      event_sel = "good_e  && info.hodo_h==3 && info.hodo_v==3"; // Tower 21
 //      cuts = "_good_data_h3_v3";
   //        event_sel = "good_e && info.hodo_h>=2 && info.hodo_h<=3 && info.hodo_v>=2 && info.hodo_v<=4"; // Tower 21
   //        cuts = "_good_data_h23_v234";
-          event_sel = "good_e && info.hodo_h>=0 && info.hodo_h<=4 && info.hodo_v>=0 && info.hodo_v<=4"; // Tower 21
-          cuts = "_good_data_h01234_v01234";
+//          event_sel = "good_e && info.hodo_h>=0 && info.hodo_h<=4 && info.hodo_v>=0 && info.hodo_v<=4"; // Tower 21
+//          cuts = "_good_data_h01234_v01234";
 //      event_sel = "good_e  && info.hodo_h==3 && info.hodo_v==2"; // Tower 45
 //      cuts = "_good_data_h3_v2";
 //  event_sel = "good_e && info.hodo_h>=2 && info.hodo_h<=3 && info.hodo_v>=1 && info.hodo_v<=3"; // Tower 45
 //  cuts = "_good_data_h23_v123";
-//  event_sel = "good_e && info.hodo_h>=1 && info.hodo_h<=5 && info.hodo_v>=1 && info.hodo_v<=5"; // Tower 45
-//  cuts = "_good_data_h12345_v12345";
+  event_sel = "good_e && info.hodo_h>=1 && info.hodo_h<=5 && info.hodo_v>=1 && info.hodo_v<=5"; // Tower 45
+  cuts = "_good_data_h12345_v12345";
 //  event_sel = "good_data && info.hodo_h>=2 && info.hodo_h<=4 && info.hodo_v>=4 && info.hodo_v<=6";
 //  cuts = "_good_data_h234_v456";
 //  event_sel = "good_data && info.hodo_h>=3 && info.hodo_h<=3 && info.hodo_v>=5 && info.hodo_v<=5";
@@ -178,9 +181,9 @@ DrawPrototype3ShowerCalib( //
   T->SetEventList(elist);
 
 //  // data stuff
-  PositionDependenceData("clus_5x5_prod.sum_E");
+//  PositionDependenceData("clus_5x5_prod.sum_E");
 //  PositionDependenceData("clus_5x5_recalib.sum_E");
-  HodoscopeCheck();
+//  HodoscopeCheck();
 //    LineShapeData("abs(info.C2_sum)<100",  "(info.C2_sum)>600 && (info.C2_sum)<1300"); // 4 GeV
 //    LineShapeData("abs(info.C2_sum)<100",  "(info.C2_sum)>500 && (info.C2_sum)<1300"); // 8 GeV
 //  LineShapeData("abs(info.C2_sum)<100",  "(info.C2_sum)>200 && (info.C2_sum)<1300"); // 12 GeV
@@ -611,8 +614,8 @@ Get_Res_linear_Summmary()
 //      kBlue + 3);
 //  lin_res ges_clus_5x5_temp = GetResolution("clus_5x5_temp", beam_mom,
 //      kRed - 2);
-//  lin_res ges_clus_5x5_recalib = GetResolution("clus_5x5_recalib", beam_mom,
-//      kRed + 3);
+  lin_res ges_clus_5x5_recalib = GetResolution("clus_5x5_recalib", beam_mom,
+      kRed + 3);
 
   TCanvas *c1 = new TCanvas(Form("Res_linear") + cuts,
       Form("Res_linear") + cuts, 1300, 600);
@@ -643,14 +646,14 @@ Get_Res_linear_Summmary()
   ges_clus_5x5_prod.linearity->Draw("p");
 //  ges_clus_3x3_prod.linearity->Draw("p");
 //  ges_clus_5x5_temp.linearity->Draw("p");
-//  ges_clus_5x5_recalib.linearity->Draw("p");
+  ges_clus_5x5_recalib.linearity->Draw("p");
 //  ge_linear->Fit(f_calo_l, "RM0");
 //  f_calo_l->Draw("same");
 
   leg->AddEntry(ges_clus_5x5_prod.linearity, ges_clus_5x5_prod.name, "ep");
 //  leg->AddEntry(ges_clus_3x3_prod.linearity, ges_clus_3x3_prod.name, "ep");
 //  leg->AddEntry(ges_clus_5x5_temp.linearity, ges_clus_5x5_temp.name, "ep");
-//  leg->AddEntry(ges_clus_5x5_recalib.linearity, "clus_5x5_recalib", "ep");
+  leg->AddEntry(ges_clus_5x5_recalib.linearity, "clus_5x5_recalib", "ep");
   leg->AddEntry(f_calo_l_sim, "Unity", "l");
   leg->Draw();
 
@@ -677,8 +680,8 @@ Get_Res_linear_Summmary()
 //  ges_clus_3x3_prod.resolution->Draw("ep");
 //  ges_clus_5x5_temp.f_res->Draw("same");
 //  ges_clus_5x5_temp.resolution->Draw("ep");
-//  ges_clus_5x5_recalib.f_res->Draw("same");
-//  ges_clus_5x5_recalib.resolution->Draw("ep");
+  ges_clus_5x5_recalib.f_res->Draw("same");
+  ges_clus_5x5_recalib.resolution->Draw("ep");
   f_calo_sim->Draw("same");
 
   leg->AddEntry(ges_clus_5x5_prod.resolution, ges_clus_5x5_prod.name, "ep");
@@ -699,11 +702,11 @@ Get_Res_linear_Summmary()
 //          ges_clus_5x5_temp.f_res->GetParameter(0),
 //          ges_clus_5x5_temp.f_res->GetParameter(1)), "l");
 //
-//  leg->AddEntry(ges_clus_5x5_recalib.resolution, "clus_5x5_recalib", "ep");
-//  leg->AddEntry(ges_clus_5x5_recalib.f_res,
-//      Form("#DeltaE/E = %.1f%% #oplus %.1f%%/#sqrt{E}",
-//          ges_clus_5x5_recalib.f_res->GetParameter(0),
-//          ges_clus_5x5_recalib.f_res->GetParameter(1)), "l");
+  leg->AddEntry(ges_clus_5x5_recalib.resolution, "clus_5x5_recalib", "ep");
+  leg->AddEntry(ges_clus_5x5_recalib.f_res,
+      Form("#DeltaE/E = %.1f%% #oplus %.1f%%/#sqrt{E}",
+          ges_clus_5x5_recalib.f_res->GetParameter(0),
+          ges_clus_5x5_recalib.f_res->GetParameter(1)), "l");
 //  leg->AddEntry(new TH1(), "", "l");
 //  leg->AddEntry((TObject*) 0, " ", "");
 
