@@ -112,7 +112,8 @@ DrawPrototype3ShowerCalib( //
 //      cuts = "_good_data_h3_v2";
 //  event_sel = "good_e && info.hodo_h>=2 && info.hodo_h<=3 && info.hodo_v>=1 && info.hodo_v<=3"; // Tower 45
 //  cuts = "_good_data_h23_v123";
-  event_sel = "good_e && info.hodo_h>=1 && info.hodo_h<=5 && info.hodo_v>=1 && info.hodo_v<=5"; // Tower 45
+  event_sel =
+      "good_e && info.hodo_h>=1 && info.hodo_h<=5 && info.hodo_v>=1 && info.hodo_v<=5"; // Tower 45
   cuts = "_good_data_h12345_v12345";
 //  event_sel = "good_data && info.hodo_h>=2 && info.hodo_h<=4 && info.hodo_v>=4 && info.hodo_v<=6";
 //  cuts = "_good_data_h234_v456";
@@ -158,7 +159,7 @@ DrawPrototype3ShowerCalib( //
 //  event_sel = "good_data && ( info.hodo_v==5 ||  info.hodo_v==4)";
 //  cuts = "_good_data_hall_v45";
 
-      T->SetAlias("SimEnergyScale", "1*1");
+  T->SetAlias("SimEnergyScale", "1*1");
 //    // based on /phenix/u/jinhuang/links/sPHENIX_work/Prototype_2016/ShowerCalib/UIUC21.lst_EMCalCalib.root_DrawPrototype3ShowerCalib_LineShapeData_Neg8GeV_good_data_h5_v3.svg
 //    T->SetAlias("SimEnergyScale","8.74635e+00/7.60551");
   //  // based on /phenix/u/jinhuang/links/sPHENIX_work/Prototype_2016/ShowerCalib/Tilt0.lst_EMCalCalib.root_DrawPrototype3ShowerCalib_LineShapeData_Neg8GeV_quality_h3_v5_col2_row2.root_DrawPrototype3ShowerCalib_SumLineShapeCompare_Electron_8GeV_QGSP_BERT_HP.root
@@ -168,7 +169,7 @@ DrawPrototype3ShowerCalib( //
   // Tilt0.lst <-> QGSP_BERT_HP Birk 0.18
 //    T->SetAlias("SimEnergyScale","8.88178/7.94838");
 
-    //  Dummy
+  //  Dummy
 //    T->SetAlias("SimEnergyScale","1*1");
 
   cout << "Build event selection of " << (const char *) event_sel << endl;
@@ -646,14 +647,14 @@ Get_Res_linear_Summmary()
   ges_clus_5x5_prod.linearity->Draw("p");
 //  ges_clus_3x3_prod.linearity->Draw("p");
 //  ges_clus_5x5_temp.linearity->Draw("p");
-  ges_clus_5x5_recalib.linearity->Draw("p");
+//  ges_clus_5x5_recalib.linearity->Draw("p");
 //  ge_linear->Fit(f_calo_l, "RM0");
 //  f_calo_l->Draw("same");
 
   leg->AddEntry(ges_clus_5x5_prod.linearity, ges_clus_5x5_prod.name, "ep");
 //  leg->AddEntry(ges_clus_3x3_prod.linearity, ges_clus_3x3_prod.name, "ep");
 //  leg->AddEntry(ges_clus_5x5_temp.linearity, ges_clus_5x5_temp.name, "ep");
-  leg->AddEntry(ges_clus_5x5_recalib.linearity, "clus_5x5_recalib", "ep");
+//  leg->AddEntry(ges_clus_5x5_recalib.linearity, "clus_5x5_recalib", "ep");
   leg->AddEntry(f_calo_l_sim, "Unity", "l");
   leg->Draw();
 
@@ -680,8 +681,8 @@ Get_Res_linear_Summmary()
 //  ges_clus_3x3_prod.resolution->Draw("ep");
 //  ges_clus_5x5_temp.f_res->Draw("same");
 //  ges_clus_5x5_temp.resolution->Draw("ep");
-  ges_clus_5x5_recalib.f_res->Draw("same");
-  ges_clus_5x5_recalib.resolution->Draw("ep");
+//  ges_clus_5x5_recalib.f_res->Draw("same");
+//  ges_clus_5x5_recalib.resolution->Draw("ep");
   f_calo_sim->Draw("same");
 
   leg->AddEntry(ges_clus_5x5_prod.resolution, ges_clus_5x5_prod.name, "ep");
@@ -702,11 +703,11 @@ Get_Res_linear_Summmary()
 //          ges_clus_5x5_temp.f_res->GetParameter(0),
 //          ges_clus_5x5_temp.f_res->GetParameter(1)), "l");
 //
-  leg->AddEntry(ges_clus_5x5_recalib.resolution, "clus_5x5_recalib", "ep");
-  leg->AddEntry(ges_clus_5x5_recalib.f_res,
-      Form("#DeltaE/E = %.1f%% #oplus %.1f%%/#sqrt{E}",
-          ges_clus_5x5_recalib.f_res->GetParameter(0),
-          ges_clus_5x5_recalib.f_res->GetParameter(1)), "l");
+//  leg->AddEntry(ges_clus_5x5_recalib.resolution, "clus_5x5_recalib", "ep");
+//  leg->AddEntry(ges_clus_5x5_recalib.f_res,
+//      Form("#DeltaE/E = %.1f%% #oplus %.1f%%/#sqrt{E}",
+//          ges_clus_5x5_recalib.f_res->GetParameter(0),
+//          ges_clus_5x5_recalib.f_res->GetParameter(1)), "l");
 //  leg->AddEntry(new TH1(), "", "l");
 //  leg->AddEntry((TObject*) 0, " ", "");
 
@@ -715,7 +716,8 @@ Get_Res_linear_Summmary()
   TLegend* leg = new TLegend(.1, .1, .85, .35);
 
   leg->AddEntry(f_calo_sim,
-      Form("#splitline{Simulation w/ flat light collection}{#DeltaE/E = %.1f%% #oplus %.1f%%/#sqrt{E}}",
+      Form(
+          "#splitline{Simulation w/ flat light collection}{#DeltaE/E = %.1f%% #oplus %.1f%%/#sqrt{E}}",
           f_calo_sim->GetParameter(0), f_calo_sim->GetParameter(1)), "l");
   leg->Draw();
 
@@ -888,7 +890,8 @@ GetResolution(TString cluster_name, vector<double> beam_mom, Color_t col)
       c1->Update();
 
       const double momemtum = beam_mom[i];
-      const TString histname = Form("hLineShape%.0fGeV", momemtum);
+      const TString histname = Form("hLineShape%.0fGeV_", momemtum)
+          + cluster_name;
 
       TH1F * h = new TH1F(histname, histname + ";Observed energy (GeV)",
           (momemtum <= 6 ? 25 : 50), momemtum / 2, momemtum * 1.5);
@@ -897,13 +900,13 @@ GetResolution(TString cluster_name, vector<double> beam_mom, Color_t col)
 
       h->Sumw2();
 
-      TF1 * fgaus_g = new TF1("fgaus_LG_g", "gaus",
+      TF1 * fgaus_g = new TF1("fgaus_LG_g_" + cluster_name, "gaus",
           h->GetMean() - 1 * h->GetRMS(), h->GetMean() + 4 * h->GetRMS());
       fgaus_g->SetParameters(1, h->GetMean() - 2 * h->GetRMS(),
           h->GetMean() + 2 * h->GetRMS());
       h->Fit(fgaus_g, "MR0N");
 
-      TF1 * fgaus = new TF1("fgaus_LG", "gaus",
+      TF1 * fgaus = new TF1("fgaus_LG_" + cluster_name, "gaus",
           fgaus_g->GetParameter(1) - 3 * fgaus_g->GetParameter(2),
           fgaus_g->GetParameter(1) + 3 * fgaus_g->GetParameter(2));
       fgaus->SetParameters(fgaus_g->GetParameter(0), fgaus_g->GetParameter(1),
@@ -941,7 +944,8 @@ GetResolution(TString cluster_name, vector<double> beam_mom, Color_t col)
   ret.name = cluster_name;
   ret.linearity = ge_linear;
   ret.resolution = ge_res;
-  ret.f_res = new TF1("f_calo_r", "sqrt([0]*[0]+[1]*[1]/x)/100", 0.5, 25);
+  ret.f_res = new TF1("f_calo_r_" + cluster_name, "sqrt([0]*[0]+[1]*[1]/x)/100",
+      0.5, 25);
   ge_res->Fit(ret.f_res, "RM0QN");
 
   ge_linear->SetLineColor(col);
