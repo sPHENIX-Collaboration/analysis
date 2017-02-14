@@ -264,7 +264,8 @@ Proto3ShowerCalib::process_event(PHCompositeNode *topNode)
 
       _eval_run.run = -1;
 
-      const PHG4Particle * p = truthInfoList->GetPrimaryParticleRange().first->second;
+      const PHG4Particle * p =
+          truthInfoList->GetPrimaryParticleRange().first->second;
       assert(p);
 
       const PHG4VtxPoint * v = truthInfoList->GetVtx(p->get_vtx_id());
@@ -358,7 +359,8 @@ Proto3ShowerCalib::process_event(PHCompositeNode *topNode)
       const double c1 = TOWER_CALIB_C1->getTower(0)->get_energy();
 
       _eval_run.C2_sum = c2_in + c2_out;
-      cherekov_e = (_eval_run.C2_sum) > (abs(_eval_run.beam_mom )>=10?100:240);
+      cherekov_e = (_eval_run.C2_sum)
+          > (abs(_eval_run.beam_mom) >= 10 ? 100 : 240);
       hNormalization->Fill("C2-e", cherekov_e);
 
       TH2F * hCheck_Cherenkov = dynamic_cast<TH2F *>(hm->getHisto(
@@ -502,23 +504,23 @@ Proto3ShowerCalib::process_event(PHCompositeNode *topNode)
           RawTower* tower_raw = TOWER_RAW_CEMC->getTower(key);
           assert(tower_raw);
 
-          double energy_T = 0;
-          if (not _is_sim)
-            {
-              RawTower_Temperature * temp_t =
-                  dynamic_cast<RawTower_Temperature *>(TOWER_TEMPERATURE_EMCAL->getTower(
-                      tower->get_row(), tower->get_column())); // note swap of col/row in temperature storage
-              assert(temp_t);
-
-              const double T = temp_t->get_temperature_from_time(
-                  eventheader->get_TimeStamp());
-              hTemperature->Fill(T);
-
-              if (T < 25 or T > 35)
-                good_temp = false;
-
-              energy_T = TemperatureCorrection::Apply(energy_calib, T);
-            }
+          double energy_T = energy_calib;
+//          if (not _is_sim)
+//            {
+//              RawTower_Temperature * temp_t =
+//                  dynamic_cast<RawTower_Temperature *>(TOWER_TEMPERATURE_EMCAL->getTower(
+//                      tower->get_row(), tower->get_column())); // note swap of col/row in temperature storage
+//              assert(temp_t);
+//
+//              const double T = temp_t->get_temperature_from_time(
+//                  eventheader->get_TimeStamp());
+//              hTemperature->Fill(T);
+//
+//              if (T < 25 or T > 35)
+//                good_temp = false;
+//
+//              energy_T = TemperatureCorrection::Apply(energy_calib, T);
+//            }
 
           // recalibration
           assert(
@@ -532,8 +534,8 @@ Proto3ShowerCalib::process_event(PHCompositeNode *topNode)
           // calibration file
 //          sdata << tower->get_energy() << "\t";
           // calibration file - only output 5x5 towers
-          if (col >= max_5x5.first - 2 and col <= max_5x5.first + 2
-              and row >= max_5x5.second - 2 and row <= max_5x5.second + 2)
+          if (col >= max_5x5.first - 1 and col <= max_5x5.first + 1
+              and row >= max_5x5.second - 1 and row <= max_5x5.second + 1)
             {
               sdata << tower->get_energy() << "\t";
             }
@@ -603,7 +605,7 @@ Proto3ShowerCalib::process_event(PHCompositeNode *topNode)
   hNormalization->Fill("good_temp", good_temp);
 
 //  bool good_data = good_e and good_temp;
-  bool good_data = good_e ;
+  bool good_data = good_e;
   hNormalization->Fill("good_data", good_data);
 
   _eval_run.good_temp = good_temp;
@@ -628,7 +630,11 @@ Proto3ShowerCalib::process_event(PHCompositeNode *topNode)
 
   // calibration file
   if (good_data and abs(_eval_run.beam_mom) >= 4
-      and abs(_eval_run.beam_mom) <= 8)
+      and abs(_eval_run.beam_mom) <= 8
+      and abs(_eval_3x3_raw.average_col - round(_eval_3x3_raw.average_col))
+          < 0.1
+      and abs(_eval_3x3_raw.average_row - round(_eval_3x3_raw.average_row))
+          < 0.1)
     {
       assert(fdata.is_open());
 

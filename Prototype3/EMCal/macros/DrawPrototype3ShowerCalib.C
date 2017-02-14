@@ -39,6 +39,7 @@ public:
 void
 DrawPrototype3ShowerCalib( //
     const TString infile =
+//        "/sphenix/user/jinhuang/Prototype_2017/ShowerCalib/JointEnergyScan1.lst_EMCalCalib.root"//
         "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2017/ShowerCalib/2nd_tower21.lst_EMCalCalib.root"//
 //        "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2017/ShowerCalib/2nd_tower45.lst_EMCalCalib.root"//
     )
@@ -91,23 +92,27 @@ DrawPrototype3ShowerCalib( //
 //    cuts = "_10DegreeRot_h3_v3";
 //    event_sel = "abs(truth_z + 37)<0.25 && abs(truth_y )<0.25";
 //    cuts = "_45DegreeRot_h1_v1";
-//  event_sel = "good_data";
-//  cuts = "_good_data";
-    event_sel = "info.beam_mom == -8 && good_e";
-    cuts = "_8GeV_good_e";
-//    event_sel = "info.beam_mom == -12 && good_e";
-//    cuts = "_12GeV_good_e";
+//  event_sel = "good_e";
+//  cuts = "_good_e";
+//    event_sel = "info.beam_mom == -8 && good_e";
+//    cuts = "_8GeV_good_e";
+//      event_sel = "info.beam_mom == -12 && good_e";
+//      cuts = "_12GeV_good_e";
+//      event_sel = "info.beam_mom == -16 && good_e";
+//      cuts = "_16GeV_good_e";
 //  event_sel = "info.beam_mom == -6";
 //  cuts = "_Neg6GeV";
-//      event_sel = "good_e  && info.hodo_h==3 && info.hodo_v==3"; // Tower 21
-//      cuts = "_good_data_h3_v3";
-//        event_sel = "good_e && info.hodo_h>=2 && info.hodo_h<=3 && info.hodo_v>=2 && info.hodo_v<=4"; // Tower 21
-//        cuts = "_good_data_h23_v234";
+      event_sel = "good_e  && info.hodo_h==2 && info.hodo_v==3"; // Tower 21
+      cuts = "_good_data_h2_v3";
+//          event_sel = "good_e && info.hodo_h>=2 && info.hodo_h<=3 && info.hodo_v>=1 && info.hodo_v<=3"; // Tower 21
+//          cuts = "_good_data_h23_v123";
+//          event_sel = "good_e && info.hodo_h>=1 && info.hodo_h<=5 && info.hodo_v>=0 && info.hodo_v<=4 && abs(info.beam_mom)<16"; // Tower 21
+//          cuts = "_good_data_h12345_v01234";
 //      event_sel = "good_e  && info.hodo_h==3 && info.hodo_v==2"; // Tower 45
 //      cuts = "_good_data_h3_v2";
 //  event_sel = "good_e && info.hodo_h>=2 && info.hodo_h<=3 && info.hodo_v>=1 && info.hodo_v<=3"; // Tower 45
 //  cuts = "_good_data_h23_v123";
-//  event_sel = "good_e && info.hodo_h>=1 && info.hodo_h<=5 && info.hodo_v>=1 && info.hodo_v<=5"; // Tower 45
+//  event_sel = "good_e && info.hodo_h>=1 && info.hodo_h<=5 && info.hodo_v>=1 && info.hodo_v<=5 && abs(info.beam_mom)<16"; // Tower 45
 //  cuts = "_good_data_h12345_v12345";
 //  event_sel = "good_data && info.hodo_h>=2 && info.hodo_h<=4 && info.hodo_v>=4 && info.hodo_v<=6";
 //  cuts = "_good_data_h234_v456";
@@ -153,7 +158,7 @@ DrawPrototype3ShowerCalib( //
 //  event_sel = "good_data && ( info.hodo_v==5 ||  info.hodo_v==4)";
 //  cuts = "_good_data_hall_v45";
 
-      T->SetAlias("SimEnergyScale","1*1");
+  T->SetAlias("SimEnergyScale", "1*1");
 //    // based on /phenix/u/jinhuang/links/sPHENIX_work/Prototype_2016/ShowerCalib/UIUC21.lst_EMCalCalib.root_DrawPrototype3ShowerCalib_LineShapeData_Neg8GeV_good_data_h5_v3.svg
 //    T->SetAlias("SimEnergyScale","8.74635e+00/7.60551");
   //  // based on /phenix/u/jinhuang/links/sPHENIX_work/Prototype_2016/ShowerCalib/Tilt0.lst_EMCalCalib.root_DrawPrototype3ShowerCalib_LineShapeData_Neg8GeV_quality_h3_v5_col2_row2.root_DrawPrototype3ShowerCalib_SumLineShapeCompare_Electron_8GeV_QGSP_BERT_HP.root
@@ -163,7 +168,7 @@ DrawPrototype3ShowerCalib( //
   // Tilt0.lst <-> QGSP_BERT_HP Birk 0.18
 //    T->SetAlias("SimEnergyScale","8.88178/7.94838");
 
-    //  Dummy
+  //  Dummy
 //    T->SetAlias("SimEnergyScale","1*1");
 
   cout << "Build event selection of " << (const char *) event_sel << endl;
@@ -178,12 +183,12 @@ DrawPrototype3ShowerCalib( //
 //  // data stuff
   PositionDependenceData("clus_5x5_prod.sum_E");
 //  PositionDependenceData("clus_5x5_recalib.sum_E");
-//  HodoscopeCheck();
+  HodoscopeCheck();
 //    LineShapeData("abs(info.C2_sum)<100",  "(info.C2_sum)>600 && (info.C2_sum)<1300"); // 4 GeV
 //    LineShapeData("abs(info.C2_sum)<100",  "(info.C2_sum)>500 && (info.C2_sum)<1300"); // 8 GeV
 //  LineShapeData("abs(info.C2_sum)<100",  "(info.C2_sum)>200 && (info.C2_sum)<1300"); // 12 GeV
 
-//  Get_Res_linear_Summmary();
+  Get_Res_linear_Summmary();
 
   // simulation stuff
 //  SimPositionCheck(-0); // 0 degree tilted
@@ -209,7 +214,8 @@ PositionDependenceData(TString sTOWER = "clus_5x5_prod.sum_E",
 
   T->Draw(sTOWER + ":7-hodo_v:hodo_h>>EnergySum_LG3", "", "goff");
 
-  TProfile2D * EnergySum_LG3_xy = EnergySum_LG3->Project3DProfile("yx");
+  TProfile2D * EnergySum_LG3_prof_xy = EnergySum_LG3->Project3DProfile("yx");
+  TH2 * EnergySum_LG3_yx = EnergySum_LG3->Project3D("yx");
   TH2 * EnergySum_LG3_zx = EnergySum_LG3->Project3D("zx");
   TH2 * EnergySum_LG3_zy = EnergySum_LG3->Project3D("zy");
 
@@ -231,9 +237,22 @@ PositionDependenceData(TString sTOWER = "clus_5x5_prod.sum_E",
   p->SetGridx(0);
   p->SetGridy(0);
 
-  EnergySum_LG3_xy->Draw("colz");
-  EnergySum_LG3_xy->SetTitle(
-      "Position scan;Horizontal Hodoscope (5 mm);Vertical Hodoscope (5 mm)");
+  EnergySum_LG3_prof_xy->SetMinimum(0);
+
+  EnergySum_LG3_prof_xy->Draw("colz");
+  EnergySum_LG3_prof_xy->SetTitle(
+      "Energy response;Horizontal Hodoscope (5 mm);7 - Vertical Hodoscope (5 mm)");
+
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+//  p->SetLogy();
+  p->SetGridx(0);
+  p->SetGridy(0);
+
+  EnergySum_LG3_yx->SetMinimum(0);
+  EnergySum_LG3_yx->Draw("colz");
+  EnergySum_LG3_yx->SetTitle(
+      "Event counts;Horizontal Hodoscope (5 mm);7 - Vertical Hodoscope (5 mm)");
 
   p = (TPad *) c1->cd(idx++);
   c1->Update();
@@ -257,39 +276,39 @@ PositionDependenceData(TString sTOWER = "clus_5x5_prod.sum_E",
 
   EnergySum_LG3_zy->Draw("colz");
   EnergySum_LG3_zy->SetTitle(
-      "Position scan;Vertical Hodoscope (5 mm);5x5 Cluster Energy (GeV)");
+      "Position scan;7 - Vertical Hodoscope (5 mm);5x5 Cluster Energy (GeV)");
 
   ge_EnergySum_LG3_zy->SetLineWidth(2);
   ge_EnergySum_LG3_zy->SetMarkerStyle(kFullCircle);
   ge_EnergySum_LG3_zy->Draw("pe");
 
-  p = (TPad *) c1->cd(idx++);
-  c1->Update();
-//  p->SetLogy();
-  p->SetGridx(0);
-  p->SetGridy(0);
-
-  TH1 * h = (TH1 *) EnergySum_LG3->ProjectionZ();
-
-  TF1 * fgaus = new TF1("fgaus_LG", "gaus", 0, 100);
-  fgaus->SetParameters(1, h->GetMean() - 2 * h->GetRMS(),
-      h->GetMean() + 2 * h->GetRMS());
-  h->Fit(fgaus, "M");
-
-  h->Sumw2();
-  h->GetXaxis()->SetRangeUser(h->GetMean() - 4 * h->GetRMS(),
-      h->GetMean() + 4 * h->GetRMS());
-  EnergySum_LG3_zx->GetYaxis()->SetRangeUser(h->GetMean() - 4 * h->GetRMS(),
-      h->GetMean() + 4 * h->GetRMS());
-  EnergySum_LG3_zy->GetYaxis()->SetRangeUser(h->GetMean() - 4 * h->GetRMS(),
-      h->GetMean() + 4 * h->GetRMS());
-
-  h->SetLineWidth(2);
-  h->SetMarkerStyle(kFullCircle);
-
-  h->SetTitle(
-      Form("#DeltaE/<E> = %.1f%%",
-          100 * fgaus->GetParameter(2) / fgaus->GetParameter(1)));
+//  p = (TPad *) c1->cd(idx++);
+//  c1->Update();
+////  p->SetLogy();
+//  p->SetGridx(0);
+//  p->SetGridy(0);
+//
+//  TH1 * h = (TH1 *) EnergySum_LG3->ProjectionZ();
+//
+//  TF1 * fgaus = new TF1("fgaus_LG", "gaus", 0, 100);
+//  fgaus->SetParameters(1, h->GetMean() - 2 * h->GetRMS(),
+//      h->GetMean() + 2 * h->GetRMS());
+//  h->Fit(fgaus, "M");
+//
+//  h->Sumw2();
+//  h->GetXaxis()->SetRangeUser(h->GetMean() - 4 * h->GetRMS(),
+//      h->GetMean() + 4 * h->GetRMS());
+//  EnergySum_LG3_zx->GetYaxis()->SetRangeUser(h->GetMean() - 4 * h->GetRMS(),
+//      h->GetMean() + 4 * h->GetRMS());
+//  EnergySum_LG3_zy->GetYaxis()->SetRangeUser(h->GetMean() - 4 * h->GetRMS(),
+//      h->GetMean() + 4 * h->GetRMS());
+//
+//  h->SetLineWidth(2);
+//  h->SetMarkerStyle(kFullCircle);
+//
+//  h->SetTitle(
+//      Form("#DeltaE/<E> = %.1f%%",
+//          100 * fgaus->GetParameter(2) / fgaus->GetParameter(1)));
 
   SaveCanvas(c1,
       TString(_file0->GetName()) + TString("_DrawPrototype3ShowerCalib_")
@@ -609,8 +628,8 @@ Get_Res_linear_Summmary()
 //      kBlue + 3);
 //  lin_res ges_clus_5x5_temp = GetResolution("clus_5x5_temp", beam_mom,
 //      kRed - 2);
-//  lin_res ges_clus_5x5_recalib = GetResolution("clus_5x5_recalib", beam_mom,
-//      kRed + 3);
+  lin_res ges_clus_5x5_recalib = GetResolution("clus_5x5_recalib", beam_mom,
+      kRed + 3);
 
   TCanvas *c1 = new TCanvas(Form("Res_linear") + cuts,
       Form("Res_linear") + cuts, 1300, 600);
@@ -641,14 +660,14 @@ Get_Res_linear_Summmary()
   ges_clus_5x5_prod.linearity->Draw("p");
 //  ges_clus_3x3_prod.linearity->Draw("p");
 //  ges_clus_5x5_temp.linearity->Draw("p");
-//  ges_clus_5x5_recalib.linearity->Draw("p");
+  ges_clus_5x5_recalib.linearity->Draw("p");
 //  ge_linear->Fit(f_calo_l, "RM0");
 //  f_calo_l->Draw("same");
 
   leg->AddEntry(ges_clus_5x5_prod.linearity, ges_clus_5x5_prod.name, "ep");
 //  leg->AddEntry(ges_clus_3x3_prod.linearity, ges_clus_3x3_prod.name, "ep");
 //  leg->AddEntry(ges_clus_5x5_temp.linearity, ges_clus_5x5_temp.name, "ep");
-//  leg->AddEntry(ges_clus_5x5_recalib.linearity, "clus_5x5_recalib", "ep");
+  leg->AddEntry(ges_clus_5x5_recalib.linearity, "clus_5x5_recalib", "ep");
   leg->AddEntry(f_calo_l_sim, "Unity", "l");
   leg->Draw();
 
@@ -664,7 +683,7 @@ Get_Res_linear_Summmary()
   f_calo_sim->SetLineWidth(3);
   f_calo_sim->SetLineColor(kGreen + 2);
 
-  TH1 * hframe = p->DrawFrame(0, 0, 25, 0.3,
+  TH1 * hframe = p->DrawFrame(0, 0, 25, 0.2,
       Form("Resolution;Input energy (GeV);#DeltaE/<E>"));
 
   TLegend* leg = new TLegend(.2, .6, .85, .9);
@@ -675,8 +694,8 @@ Get_Res_linear_Summmary()
 //  ges_clus_3x3_prod.resolution->Draw("ep");
 //  ges_clus_5x5_temp.f_res->Draw("same");
 //  ges_clus_5x5_temp.resolution->Draw("ep");
-//  ges_clus_5x5_recalib.f_res->Draw("same");
-//  ges_clus_5x5_recalib.resolution->Draw("ep");
+  ges_clus_5x5_recalib.f_res->Draw("same");
+  ges_clus_5x5_recalib.resolution->Draw("ep");
   f_calo_sim->Draw("same");
 
   leg->AddEntry(ges_clus_5x5_prod.resolution, ges_clus_5x5_prod.name, "ep");
@@ -697,20 +716,21 @@ Get_Res_linear_Summmary()
 //          ges_clus_5x5_temp.f_res->GetParameter(0),
 //          ges_clus_5x5_temp.f_res->GetParameter(1)), "l");
 //
-//  leg->AddEntry(ges_clus_5x5_recalib.resolution, "clus_5x5_recalib", "ep");
-//  leg->AddEntry(ges_clus_5x5_recalib.f_res,
-//      Form("#DeltaE/E = %.1f%% #oplus %.1f%%/#sqrt{E}",
-//          ges_clus_5x5_recalib.f_res->GetParameter(0),
-//          ges_clus_5x5_recalib.f_res->GetParameter(1)), "l");
+  leg->AddEntry(ges_clus_5x5_recalib.resolution, "clus_5x5_recalib", "ep");
+  leg->AddEntry(ges_clus_5x5_recalib.f_res,
+      Form("#DeltaE/E = %.1f%% #oplus %.1f%%/#sqrt{E}",
+          ges_clus_5x5_recalib.f_res->GetParameter(0),
+          ges_clus_5x5_recalib.f_res->GetParameter(1)), "l");
 //  leg->AddEntry(new TH1(), "", "l");
 //  leg->AddEntry((TObject*) 0, " ", "");
 
   leg->Draw();
 
-  TLegend* leg = new TLegend(.1, .1, .85, .35);
+  TLegend* leg = new TLegend(.1, .15, .85, .25);
 
   leg->AddEntry(f_calo_sim,
-      Form("#splitline{Simulation w/ flat light collection}{#DeltaE/E = %.1f%% #oplus %.1f%%/#sqrt{E}}",
+      Form(
+          "#splitline{Simulation w/ flat light collection}{#DeltaE/E = %.1f%% #oplus %.1f%%/#sqrt{E}}",
           f_calo_sim->GetParameter(0), f_calo_sim->GetParameter(1)), "l");
   leg->Draw();
 
@@ -883,7 +903,8 @@ GetResolution(TString cluster_name, vector<double> beam_mom, Color_t col)
       c1->Update();
 
       const double momemtum = beam_mom[i];
-      const TString histname = Form("hLineShape%.0fGeV", momemtum);
+      const TString histname = Form("hLineShape%.0fGeV_", momemtum)
+          + cluster_name;
 
       TH1F * h = new TH1F(histname, histname + ";Observed energy (GeV)",
           (momemtum <= 6 ? 25 : 50), momemtum / 2, momemtum * 1.5);
@@ -892,13 +913,13 @@ GetResolution(TString cluster_name, vector<double> beam_mom, Color_t col)
 
       h->Sumw2();
 
-      TF1 * fgaus_g = new TF1("fgaus_LG_g", "gaus",
+      TF1 * fgaus_g = new TF1("fgaus_LG_g_" + cluster_name, "gaus",
           h->GetMean() - 1 * h->GetRMS(), h->GetMean() + 4 * h->GetRMS());
       fgaus_g->SetParameters(1, h->GetMean() - 2 * h->GetRMS(),
           h->GetMean() + 2 * h->GetRMS());
       h->Fit(fgaus_g, "MR0N");
 
-      TF1 * fgaus = new TF1("fgaus_LG", "gaus",
+      TF1 * fgaus = new TF1("fgaus_LG_" + cluster_name, "gaus",
           fgaus_g->GetParameter(1) - 3 * fgaus_g->GetParameter(2),
           fgaus_g->GetParameter(1) + 3 * fgaus_g->GetParameter(2));
       fgaus->SetParameters(fgaus_g->GetParameter(0), fgaus_g->GetParameter(1),
@@ -936,7 +957,8 @@ GetResolution(TString cluster_name, vector<double> beam_mom, Color_t col)
   ret.name = cluster_name;
   ret.linearity = ge_linear;
   ret.resolution = ge_res;
-  ret.f_res = new TF1("f_calo_r", "sqrt([0]*[0]+[1]*[1]/x)/100", 0.5, 25);
+  ret.f_res = new TF1("f_calo_r_" + cluster_name, "sqrt([0]*[0]+[1]*[1]/x)/100",
+      0.5, 25);
   ge_res->Fit(ret.f_res, "RM0QN");
 
   ge_linear->SetLineColor(col);
