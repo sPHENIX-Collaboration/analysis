@@ -74,10 +74,10 @@ DrawPrototype3EMCalTower( //
       "1*Sum$(TOWER_HG_CEMC[].get_energy() * ActiveTower_HG)");
 
 //  T->SetAlias("C2_Inner_e", "1*TOWER_RAW_C2[0].energy");
-  T->SetAlias("C2_Inner_e", "1*abs(TOWER_RAW_C2[2].energy)");
-  T->SetAlias("C2_Outer_e", "1*abs(TOWER_RAW_C2[3].energy)");
+  T->SetAlias("C2_Inner_e", "1*(TOWER_CALIB_C2[2].energy)");
+  T->SetAlias("C2_Outer_e", "1*(TOWER_CALIB_C2[3].energy)");
   T->SetAlias("C2_Sum_e", "C2_Inner_e + C2_Outer_e");
-  T->SetAlias("C1", "0 + TOWER_RAW_C2[0].energy");
+  T->SetAlias("C1", "0 + TOWER_CALIB_C1[0].energy");
 
 //  "TOWER_CALIB_CEMC.energy * ( Sum$( TOWER_CALIB_CEMC.get_column()==2 && TOWER_CALIB_CEMC.get_row()==1
 
