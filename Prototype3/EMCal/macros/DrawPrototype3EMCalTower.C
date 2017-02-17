@@ -77,6 +77,7 @@ DrawPrototype3EMCalTower( //
   T->SetAlias("C2_Inner_e", "1*abs(TOWER_RAW_C2[2].energy)");
   T->SetAlias("C2_Outer_e", "1*abs(TOWER_RAW_C2[3].energy)");
   T->SetAlias("C2_Sum_e", "C2_Inner_e + C2_Outer_e");
+  T->SetAlias("C1", "0 + TOWER_RAW_C2[0].energy");
 
 //  "TOWER_CALIB_CEMC.energy * ( Sum$( TOWER_CALIB_CEMC.get_column()==2 && TOWER_CALIB_CEMC.get_row()==1
 
@@ -226,21 +227,21 @@ DrawPrototype3EMCalTower( //
 //  if (plot_all)
 //    EMCDistribution_SUM("Energy_Sum_col1_row2_5x5");
 
-//  int rnd = rand();
-//  gDirectory->mkdir(Form("dir_%d", rnd));
-//  gDirectory->cd(Form("dir_%d", rnd));
+  int rnd = rand();
+  gDirectory->mkdir(Form("dir_%d", rnd));
+  gDirectory->cd(Form("dir_%d", rnd));
 //  if (plot_all)
-//    EMCDistribution_ShowShape("C2_Sum_e");
+    EMCDistribution_ShowShape("C1");
 
   int rnd = rand();
   gDirectory->mkdir(Form("dir_%d", rnd));
   gDirectory->cd(Form("dir_%d", rnd));
-//  if (plot_all)
-    EMCDistribution_SUM("Energy_Sum_CEMC", "C2_Sum_e");
+  if (plot_all)
+    EMCDistribution_SUM("Energy_Sum_CEMC", "C1");
   int rnd = rand();
   gDirectory->mkdir(Form("dir_%d", rnd));
   gDirectory->cd(Form("dir_%d", rnd));
-//  if (plot_all)
+  if (plot_all)
     EMCDistribution_SUM("Energy_Sum_RAW_CEMC", "C2_Sum_e");
 
   int rnd = rand();
@@ -396,7 +397,7 @@ EMCDistribution_HCalCalibration()
 
 void
 EMCDistribution_ShowShape(TString CherenkovSignal = "C2_Inner",
-    const double che_cut = 100)
+    const double che_cut = 10)
 {
   TString cut_pass = CherenkovSignal + Form(">%.1f", che_cut);
   TString cut_rej = CherenkovSignal + Form("<%.1f", che_cut);
@@ -409,6 +410,9 @@ EMCDistribution_ShowShape(TString CherenkovSignal = "C2_Inner",
       7.5);
   TH2 * EnergyDist_rej = new TH2F("EnergyDist_rej",
       cut_rej + ";Column;Row;<Energy> / Event / Tower", 8, -.5, 7.5, 8, -.5,
+      7.5);
+  TH2 * Hodoscope_dist = new TH2F("Hodoscope_dist",
+      cut_rej + ";7 - Horizontal Hodoscope (5 mm);7 - Vertical Hodoscope (5 mm); Event / finger^2", 8, -.5, 7.5, 8, -.5,
       7.5);
 
   TH1 * Che_full = new TH1F("Che_full",
@@ -436,6 +440,8 @@ EMCDistribution_ShowShape(TString CherenkovSignal = "C2_Inner",
   T->Draw(
       "TOWER_CALIB_CEMC[].get_binphi():TOWER_CALIB_CEMC[].get_bineta()>>EnergyDist_rej",
       Form("(%s) * (TOWER_CALIB_CEMC[].get_energy())", cut_rej.Data()), "goff");
+  T->Draw(
+      "7 - Average_HODO_VERTICAL:7 - Average_HODO_HORIZONTAL>>Hodoscope_dist","1", "goff");
 
   T->Draw(CherenkovSignal + ">>Che_full", NULL, "goff");
   T->Draw(CherenkovSignal + ">>Che_pass", cut_pass, "goff");
@@ -446,8 +452,8 @@ EMCDistribution_ShowShape(TString CherenkovSignal = "C2_Inner",
 
   TText * t;
   TCanvas *c1 = new TCanvas("EMCDistribution_ShowShape" + cuts,
-      "EMCDistribution_ShowShape" + cuts, 1800, 600);
-  c1->Divide(3, 1);
+      "EMCDistribution_ShowShape" + cuts, 1100, 950);
+  c1->Divide(2, 2);
   int idx = 1;
   TPad * p;
 
@@ -465,7 +471,7 @@ EMCDistribution_ShowShape(TString CherenkovSignal = "C2_Inner",
   c1->Update();
 //  p->SetLogy();
 
-  EnergyDist_pass->DrawClone("LEGO2Z");
+  EnergyDist_pass->DrawClone("colz");
 
   p = (TPad *) c1->cd(idx++);
   c1->Update();
@@ -473,7 +479,15 @@ EMCDistribution_ShowShape(TString CherenkovSignal = "C2_Inner",
 //  p->SetGridx(0);
 //  p->SetGridy(0);
 
-  EnergyDist_rej->DrawClone("LEGO2Z");
+  EnergyDist_rej->DrawClone("colz");
+
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+//  p->SetLogy();
+//  p->SetGridx(0);
+//  p->SetGridy(0);
+
+  Hodoscope_dist->DrawClone("colz");
 
   SaveCanvas(c1,
       TString(_file0->GetName()) + TString("_DrawPrototype3EMCalTower_")
