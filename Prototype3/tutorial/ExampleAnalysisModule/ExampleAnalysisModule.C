@@ -522,7 +522,7 @@ ExampleAnalysisModule::process_event(PHCompositeNode *topNode)
 
         } //       for (auto it = range.first; it != range.second; ++it)
       _eval_run.sum_E_HCAL_OUT = sum_energy_calib;
-    } // process inner HCAL
+    } // process outer HCAL
 
   _eval_run.good_e = good_e;
   _eval_run.good_anti_e = good_anti_e;
