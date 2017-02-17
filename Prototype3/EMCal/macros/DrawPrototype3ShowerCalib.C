@@ -40,8 +40,10 @@ void
 DrawPrototype3ShowerCalib( //
     const TString infile =
 //        "/sphenix/user/jinhuang/Prototype_2017/ShowerCalib/JointEnergyScan1.lst_EMCalCalib.root"//
-        "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2017/ShowerCalib/2nd_tower21.lst_EMCalCalib.root"//
+//        "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2017/ShowerCalib/2nd_tower21.lst_EMCalCalib.root"//
 //        "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2017/ShowerCalib/2nd_tower45.lst_EMCalCalib.root"//
+//        "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2017/ShowerCalib/test.lst_EMCalCalib.root"//
+        "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2017/ShowerCalib/JointEnergyScan2_tower45_Neg.lst_EMCalCalib.root"//
     )
 {
 
@@ -102,18 +104,24 @@ DrawPrototype3ShowerCalib( //
 //      cuts = "_16GeV_good_e";
 //  event_sel = "info.beam_mom == -6";
 //  cuts = "_Neg6GeV";
-      event_sel = "good_e  && info.hodo_h==2 && info.hodo_v==3"; // Tower 21
-      cuts = "_good_data_h2_v3";
+//      event_sel = "good_e  && info.hodo_h==2 && info.hodo_v==3"; // Tower 21
+//      cuts = "_good_data_h2_v3";
 //          event_sel = "good_e && info.hodo_h>=2 && info.hodo_h<=3 && info.hodo_v>=1 && info.hodo_v<=3"; // Tower 21
 //          cuts = "_good_data_h23_v123";
 //          event_sel = "good_e && info.hodo_h>=1 && info.hodo_h<=5 && info.hodo_v>=0 && info.hodo_v<=4 && abs(info.beam_mom)<16"; // Tower 21
 //          cuts = "_good_data_h12345_v01234";
-//      event_sel = "good_e  && info.hodo_h==3 && info.hodo_v==2"; // Tower 45
-//      cuts = "_good_data_h3_v2";
-//  event_sel = "good_e && info.hodo_h>=2 && info.hodo_h<=3 && info.hodo_v>=1 && info.hodo_v<=3"; // Tower 45
-//  cuts = "_good_data_h23_v123";
-//  event_sel = "good_e && info.hodo_h>=1 && info.hodo_h<=5 && info.hodo_v>=1 && info.hodo_v<=5 && abs(info.beam_mom)<16"; // Tower 45
-//  cuts = "_good_data_h12345_v12345";
+      //      event_sel = "good_e  && info.hodo_h==3 && info.hodo_v==2"; // Tower 45
+      //      cuts = "_good_data_h3_v2";
+      //  event_sel = "good_e && info.hodo_h>=2 && info.hodo_h<=3 && info.hodo_v>=1 && info.hodo_v<=3"; // Tower 45
+      //  cuts = "_good_data_h23_v123";
+      //  event_sel = "good_e && info.hodo_h>=1 && info.hodo_h<=5 && info.hodo_v>=1 && info.hodo_v<=5 && abs(info.beam_mom)<16"; // Tower 45
+      //  cuts = "_good_data_h12345_v12345";
+//            event_sel = "good_e  && info.hodo_h==2 && info.hodo_v==2"; // JointEnergyScan2_tower45_Neg
+//            cuts = "_good_data_h2_v2";
+//        event_sel = "good_e && info.hodo_h>=1 && info.hodo_h<=2 && info.hodo_v>=1 && info.hodo_v<=3"; // JointEnergyScan2_tower45_Neg
+//        cuts = "_good_data_h12_v123";
+        event_sel = "good_e && info.hodo_h>=0 && info.hodo_h<=4 && info.hodo_v>=0 && info.hodo_v<=4"; // JointEnergyScan2_tower45_Neg
+        cuts = "_good_data_h01234_v01234";
 //  event_sel = "good_data && info.hodo_h>=2 && info.hodo_h<=4 && info.hodo_v>=4 && info.hodo_v<=6";
 //  cuts = "_good_data_h234_v456";
 //  event_sel = "good_data && info.hodo_h>=3 && info.hodo_h<=3 && info.hodo_v>=5 && info.hodo_v<=5";
