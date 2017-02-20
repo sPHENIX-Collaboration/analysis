@@ -44,6 +44,7 @@ DrawPrototype3ShowerCalib( //
 //        "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2017/ShowerCalib/2nd_tower45.lst_EMCalCalib.root"//
 //        "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2017/ShowerCalib/test.lst_EMCalCalib.root"//
 //        "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2017/ShowerCalib/JointEnergyScan2_tower45_Neg.lst_EMCalCalib.root"//
+//        "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2017/ShowerCalib/JointEnergyScan3_tower21_NormBias.lst_EMCalCalib.root"//
         "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2017/ShowerCalib/JointEnergyScan3_tower21_LowBias.lst_EMCalCalib.root"//
     )
 {
@@ -125,8 +126,10 @@ DrawPrototype3ShowerCalib( //
 //        cuts = "_good_data_h01234_v01234";
 //                  event_sel = "good_e  && info.hodo_h==4 && info.hodo_v==4"; // JointEnergyScan3_tower21_LowBias
 //                  cuts = "_good_data_h4_v4";
-//              event_sel = "good_e && info.hodo_h>=4 && info.hodo_h<=5 && info.hodo_v>=3 && info.hodo_v<=5"; // JointEnergyScan3_tower21_LowBias
-//              cuts = "_good_data_h45_v345";
+                  //              event_sel = "good_e && info.hodo_h>=4 && info.hodo_h<=5 && info.hodo_v>=3 && info.hodo_v<=5 "; // JointEnergyScan3_tower21_LowBias
+                  //              cuts = "_good_data_h45_v345";
+//                                event_sel = "good_e && info.hodo_h>=4 && info.hodo_h<=5 && info.hodo_v>=3 && info.hodo_v<=4 "; // JointEnergyScan3_tower21_LowBias
+//                                cuts = "_good_data_h45_v34";
 //  event_sel = "good_e && info.hodo_h>=2 && info.hodo_h<=6 && info.hodo_v>=2 && info.hodo_v<=6"; // JointEnergyScan3_tower21_LowBias
 //  cuts = "_good_data_h23456_v23456";
   event_sel = "good_e && info.hodo_h>=1 && info.hodo_h<=5 && info.hodo_v>=1 && info.hodo_v<=5"; // JointEnergyScan3_tower21_LowBias
@@ -205,7 +208,8 @@ DrawPrototype3ShowerCalib( //
 //    LineShapeData("abs(info.C2_sum)<100",  "(info.C2_sum)>500 && (info.C2_sum)<1300"); // 8 GeV
 //  LineShapeData("abs(info.C2_sum)<100",  "(info.C2_sum)>200 && (info.C2_sum)<1300"); // 12 GeV
 
-  Get_Res_linear_Summmary();
+//  Get_Res_linear_Summmary("sum_E");
+  Get_Res_linear_Summmary("sum_E*2");
 
   // simulation stuff
 //  SimPositionCheck(-0); // 0 degree tilted
@@ -633,20 +637,20 @@ SimPositionCheck(const double shift_z = 0)
 }
 
 void
-Get_Res_linear_Summmary()
+Get_Res_linear_Summmary(TString e_sum = "sum_E")
 {
 
   vector<double> beam_mom(GetBeamMom());
 
 //  return;
 
-  lin_res ges_clus_5x5_prod = GetResolution("clus_5x5_prod", beam_mom, kBlue);
-  lin_res ges_clus_3x3_prod = GetResolution("clus_3x3_prod", beam_mom,
-      kBlue + 3);
+  lin_res ges_clus_5x5_prod = GetResolution("clus_5x5_prod", beam_mom, kBlue,e_sum);
+//  lin_res ges_clus_3x3_prod = GetResolution("clus_3x3_prod", beam_mom,
+//      kBlue + 3,e_sum);
 //  lin_res ges_clus_5x5_temp = GetResolution("clus_5x5_temp", beam_mom,
-//      kRed - 2);
+//      kRed - 2,e_sum);
 //  lin_res ges_clus_5x5_recalib = GetResolution("clus_5x5_recalib", beam_mom,
-//      kRed + 3);
+//      kRed + 3,e_sum);
 
   TCanvas *c1 = new TCanvas(Form("Res_linear") + cuts,
       Form("Res_linear") + cuts, 1300, 600);
@@ -675,14 +679,14 @@ Get_Res_linear_Summmary()
 
   f_calo_l_sim->Draw("same");
   ges_clus_5x5_prod.linearity->Draw("p");
-  ges_clus_3x3_prod.linearity->Draw("p");
+//  ges_clus_3x3_prod.linearity->Draw("p");
 //  ges_clus_5x5_temp.linearity->Draw("p");
 //  ges_clus_5x5_recalib.linearity->Draw("p");
 //  ge_linear->Fit(f_calo_l, "RM0");
 //  f_calo_l->Draw("same");
 
   leg->AddEntry(ges_clus_5x5_prod.linearity, ges_clus_5x5_prod.name, "ep");
-  leg->AddEntry(ges_clus_3x3_prod.linearity, ges_clus_3x3_prod.name, "ep");
+//  leg->AddEntry(ges_clus_3x3_prod.linearity, ges_clus_3x3_prod.name, "ep");
 //  leg->AddEntry(ges_clus_5x5_temp.linearity, ges_clus_5x5_temp.name, "ep");
 //  leg->AddEntry(ges_clus_5x5_recalib.linearity, "clus_5x5_recalib", "ep");
   leg->AddEntry(f_calo_l_sim, "Unity", "l");
@@ -707,8 +711,8 @@ Get_Res_linear_Summmary()
 
   ges_clus_5x5_prod.f_res->Draw("same");
   ges_clus_5x5_prod.resolution->Draw("ep");
-  ges_clus_3x3_prod.f_res->Draw("same");
-  ges_clus_3x3_prod.resolution->Draw("ep");
+//  ges_clus_3x3_prod.f_res->Draw("same");
+//  ges_clus_3x3_prod.resolution->Draw("ep");
 //  ges_clus_5x5_temp.f_res->Draw("same");
 //  ges_clus_5x5_temp.resolution->Draw("ep");
 //  ges_clus_5x5_recalib.f_res->Draw("same");
@@ -721,11 +725,11 @@ Get_Res_linear_Summmary()
           ges_clus_5x5_prod.f_res->GetParameter(0),
           ges_clus_5x5_prod.f_res->GetParameter(1)), "l");
 
-  leg->AddEntry(ges_clus_3x3_prod.resolution, ges_clus_3x3_prod.name, "ep");
-  leg->AddEntry(ges_clus_3x3_prod.f_res,
-      Form("#DeltaE/E = %.1f%% #oplus %.1f%%/#sqrt{E}",
-          ges_clus_3x3_prod.f_res->GetParameter(0),
-          ges_clus_3x3_prod.f_res->GetParameter(1)), "l");
+//  leg->AddEntry(ges_clus_3x3_prod.resolution, ges_clus_3x3_prod.name, "ep");
+//  leg->AddEntry(ges_clus_3x3_prod.f_res,
+//      Form("#DeltaE/E = %.1f%% #oplus %.1f%%/#sqrt{E}",
+//          ges_clus_3x3_prod.f_res->GetParameter(0),
+//          ges_clus_3x3_prod.f_res->GetParameter(1)), "l");
 //
 //  leg->AddEntry(ges_clus_5x5_temp.resolution, ges_clus_5x5_temp.name, "ep");
 //  leg->AddEntry(ges_clus_5x5_temp.f_res,
@@ -766,9 +770,9 @@ Get_Res_linear_Summmary_Sim()
 
 //  return;
 
-  lin_res ges_clus_5x5_prod = GetResolution("clus_5x5_prod", beam_mom, kBlue);
+  lin_res ges_clus_5x5_prod = GetResolution("clus_5x5_prod", beam_mom, kBlue,"sum_E");
   lin_res ges_clus_3x3_prod = GetResolution("clus_3x3_prod", beam_mom,
-      kBlue + 3);
+      kBlue + 3,"sum_E");
 
   TCanvas *c1 = new TCanvas(Form("Res_linear") + cuts,
       Form("Res_linear") + cuts, 1300, 600);
@@ -900,7 +904,7 @@ GetBeamMom()
 }
 
 lin_res
-GetResolution(TString cluster_name, vector<double> beam_mom, Color_t col)
+GetResolution(TString cluster_name, vector<double> beam_mom, Color_t col,TString e_sum = "sum_E")
 {
   vector<double> mean;
   vector<double> mean_err;
@@ -925,7 +929,7 @@ GetResolution(TString cluster_name, vector<double> beam_mom, Color_t col)
 
       TH1F * h = new TH1F(histname, histname + ";Observed energy (GeV)",
           (momemtum <= 6 ? 25 : 50), momemtum / 2, momemtum * 1.5);
-      T->Draw(cluster_name + ".sum_E>>" + histname,
+      T->Draw(cluster_name + "."+e_sum+">>" + histname,
           Form("abs(abs(info.beam_mom)-%f)/%f<.06", momemtum, momemtum));
 
       h->Sumw2();
