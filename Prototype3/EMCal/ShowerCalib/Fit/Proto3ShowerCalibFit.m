@@ -8,10 +8,10 @@ global low_tower_IDs;
 
 %%
 
-DataFolder = 'E:/tmp/ShowerCalib/';
+DataFolder = 'E:/tmp/Transfer Buffer/ShowerCalib/';
 
 % FileID = {'Rot45','THP','UIUC18','UpTilt5', 'ShowerDepth'};
-FileID = {'Rot45','THP','UIUC18','UIUC21','Tilt0', 'ShowerDepth'};
+FileID = {'3rd_positionscan'};
 FileList = FileID;
 
 sim_const = 3/100;
@@ -88,7 +88,7 @@ figure('name',['DrawDataSet_EnergyFraction'],'PaperPositionMode','auto', ...
 SumFraction = [];
 
 for i = 1:N_Runs
-    subplot(4,4,i);
+    subplot(1,1,i);
     total_E = ones(size(DataSet(i).data)) .*DataSet(i).E;
     Fraction = DataSet(i).data ./ total_E;
     MeanFraction = mean(Fraction, 1);
@@ -132,7 +132,8 @@ xlabel('MeanFraction');
 
 subplot(1,3,3);
 
-low_tower_IDs =reshape( MeanFraction<0.004, 1, Ndata);
+low_tower_IDs =reshape( MeanFraction<0.01, 1, Ndata);
+% low_tower_IDs =reshape( MeanFraction<0.0001, 1, Ndata);
 
 imagesc(0:7, 0:7, reshape(low_tower_IDs, 8, 8));
 colorbar
@@ -147,7 +148,8 @@ SaveCanvas([DataFolder 'EnergyCalibFIt'],gcf);
 % return
 %%
 
-InitConst_RunScale = [InitConst ones(1,  N_Runs)];
+% InitConst_RunScale = [InitConst ones(1,  N_Runs)];
+InitConst_RunScale = [InitConst ];
 % InitConst_RunScale = [InitConst ];
 
 data_selection(InitConst_RunScale,10);
@@ -193,14 +195,14 @@ x = fminsearch(@(x) object_function(x), x,...
 data_selection(x,2);
 
 calib_const = x(1:Ndata);
-E_scale = x((Ndata+1):(Ndata + N_Runs));
+% E_scale = x((Ndata+1):(Ndata + N_Runs));
+E_scale = ones(N_Runs);
 
 
 figure('name',['CalibConst'],'PaperPositionMode','auto', ...
     'position',[100,0,1800,400]) ;
 
 subplot(1,3,1);
-
 
 plot(calib_const);
 title(sprintf('Calibration constant'));
@@ -220,13 +222,91 @@ ylabel('Row ID');
 
 subplot(1,3,3);
 
-plot(E_scale);
-title(sprintf('Energy scale constant, mean = %.1f', mean(E_scale)));
+plot(E_scale,'x');
+title(sprintf('Energy scale constant, mean = %.2f', mean(E_scale)));
 xlabel('Run ID');
 ylabel('Energy scale New / Old');
+set(gca,'YLim',[0.5,1.5])
+grid on
 
 
 SaveCanvas([DataFolder 'EnergyCalibFIt'],gcf);
+%%
+
+% figure('name',['CalibConstVSModuleDensity'],'PaperPositionMode','auto', ...
+%     'position',[100,0,1300,1000]) ;
+% 
+% ModuleDensity =[
+% 10.19	8.47	8.96	9.77
+% 9.74	9.96	10.00	9.87
+% 9.25	9.83	9.32	10.10
+% 9.59	9.39	10.06	9.62
+% 9.48	9.5	9.34	9.33
+% 9.43	9.34	9.39	9.55
+% 9.21	9.55	9.3	9.3
+% 9.5	9.6	9.3	9.24
+% ];
+% 
+% ModuleDensity = ModuleDensity(8:-1:1,:);
+% 
+% ModuleDensity = [ModuleDensity(:,1) ModuleDensity(:,1) ModuleDensity(:,2) ModuleDensity(:,2) ModuleDensity(:,3) ModuleDensity(:,3) ModuleDensity(:,4) ModuleDensity(:,4)];
+% 
+% subplot(2,2,1);
+% imagesc(0:7, 0:7,ModuleDensity);
+% colorbar
+% set(gca,'YDir','normal')
+% 
+% title(sprintf('Module Density (g/cm^3)'));
+% xlabel('Column ID');
+% ylabel('Row ID');
+% 
+% 
+% subplot(2,2,2);
+% 
+% imagesc(0:7, 0:7, reshape(calib_const, 8, 8));
+% colorbar
+% set(gca,'YDir','normal');
+% 
+% title(sprintf('Calibration constant, New / Old'));
+% xlabel('Column ID');
+% ylabel('Row ID');
+% 
+% 
+% subplot(2,2,3);
+% 
+% [calib_const_col, calib_const_row]= meshgrid(0:7,0:7);
+% 
+% calib_const_col = reshape(calib_const_col,1,64);
+% calib_const_row = reshape(calib_const_row,1,64);
+% % IDs = ~low_tower_IDs;
+% IDs = (calib_const_col >=3 & calib_const_col<=5 & calib_const_row>=4 & calib_const_row<=6);
+% 
+% dens = reshape(ModuleDensity,1, 8* 8);
+% dens = dens(IDs);
+% 
+% plot(calib_const(IDs),dens, 'o');
+% title(sprintf('THP 3x3, Calibration adjustment VS density'));
+% xlabel('Calibration constant, New / Old');
+% ylabel('Module Density');
+% 
+% subplot(2,2,4);
+% 
+% 
+% IDs = ~low_tower_IDs;
+% % IDs = (calib_const_col >=3 & calib_const_col<=5 & calib_const_row>=4 & calib_const_row<=6);
+% 
+% dens = reshape(ModuleDensity,1, 8* 8);
+% dens = dens(IDs);
+% 
+% plot(calib_const(IDs),dens, 'o');
+% title(sprintf('All calibrated modules, Calibration adjustment VS density'));
+% xlabel('Calibration constant, New / Old');
+% ylabel('Module Density');
+% 
+% SaveCanvas([DataFolder 'EnergyCalibFIt'],gcf);
+
+
+
 %%
 
 DrawDataSet(DataSet,calib_const,'Optimized');
