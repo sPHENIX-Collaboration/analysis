@@ -11,7 +11,8 @@ Nevent = 0;
 % disp(size(x));
 
 calib_const = x(1:Ndata);
-E_scale = x((Ndata+1):(Ndata + N_Runs));
+% E_scale = x((Ndata+1):(Ndata + N_Runs));
+E_scale = ones(N_Runs);
 E_scale_low_tower = mean(calib_const);
 
 % E_scale = [E_scale N_Runs - sum(E_scale)]; % fix mean energy point
@@ -29,6 +30,7 @@ for i = 1:N_Runs
     
     total_E = sum(data, 2);
     
+%     AChi2 = abs((total_E - DataSet(i).E.*E_scale(i))./(DataSet(i).DE * DataSet(i).E.*E_scale(i)));
     AChi2 = abs((total_E - DataSet(i).E.*E_scale(i))./(DataSet(i).DE * DataSet(i).E.*E_scale(i)));
     %     AChi2 = AChi2(AChi2<SigmaRej);
     

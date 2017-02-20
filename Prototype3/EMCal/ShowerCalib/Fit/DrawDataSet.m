@@ -6,7 +6,7 @@ function DrawDataSet(DataSet, calibconst, name)
         'position',[100,0,1800,1000]) ;
     
     for i = 1:N_Runs
-        subplot(4,4,i);
+        subplot(1,1,i);
 
         total_E = sum( DataSet(i).data* calibconst', 2) ;
 

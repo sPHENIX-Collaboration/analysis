@@ -6,7 +6,8 @@ global DataSet;
 N_Runs = size(DataSet , 2);
 
 calib_const = x(1:Ndata);
-E_scale = x((Ndata+1):(Ndata + N_Runs));
+% E_scale = x((Ndata+1):(Ndata + N_Runs));
+E_scale = ones(N_Runs);
 
 for i = 1:N_Runs
     
