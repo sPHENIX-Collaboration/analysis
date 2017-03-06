@@ -143,7 +143,7 @@ OnlineAnalysis(TString filename =
 void
 FitVerticalScan(const TString input =
 //    "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2016/mpvPerTower.root"
-    "getMeanRMS_Summary.root")
+    "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2016/getMeanRMS_Summary.root")
 {
 //  gROOT->SetStyle("Modern");
   SetOKStyle();
@@ -178,10 +178,11 @@ FitVerticalScan(const TString input =
 //  OnlineAnalysis();
 
   TGraphErrors * g_final = new TGraphErrors((vg_src[0])->GetN());
-  g_final->SetMarkerSize(2);
+  g_final->SetMarkerSize(3);
   g_final->SetMarkerStyle(kFullCircle);
   g_final->SetMarkerColor(kBlue + 3);
   g_final->SetFillColor(kWhite);
+  g_final->SetLineWidth(3);
   g_final->SetFillStyle(0);
 
 //  TF1 * f_att = new TF1("f_att","(exp(-((14-x)/[0])) + 0.3 * exp(-((x-10 + 13)/[0])) )*[1]",0,20);
@@ -249,16 +250,19 @@ FitVerticalScan(const TString input =
 
   gPad->SetGridx(0);
   gPad->SetGridy(0);
+  gPad->SetRightMargin(0.99);
+  gPad->SetLeftMargin(0.15);
+  gPad->SetBottomMargin(0.2);
 
   TH1 * frame = gPad->DrawFrame(0, .9, 13.9, 1.1);
   frame->SetTitle(
-      ";Beam position along the length of module (cm);MIP signal amplitude (A. U.)");
+      ";Beam position along the length of module (cm);MIP amplitude (A. U.)");
   frame->GetXaxis()->SetTitleOffset(1);
-  frame->GetXaxis()->SetTitleSize(0.05);
-  frame->GetXaxis()->SetLabelSize(0.05);
+  frame->GetXaxis()->SetTitleSize(0.08);
+  frame->GetXaxis()->SetLabelSize(0.08);
   frame->GetYaxis()->SetTitleOffset(.7);
-  frame->GetYaxis()->SetTitleSize(0.05);
-  frame->GetYaxis()->SetLabelSize(0.05);
+  frame->GetYaxis()->SetTitleSize(0.08);
+  frame->GetYaxis()->SetLabelSize(0.08);
   frame->GetXaxis()->CenterTitle();
 
 //  f_att->DrawClone("same");
@@ -267,7 +271,7 @@ FitVerticalScan(const TString input =
 //  g_final->Fit("pol1");
   g_final->Print();
 
-  TLegend *leg = new TLegend(.1, .65, .65, .9);
+  TLegend *leg = new TLegend(.15, .7, .8, .9);
   leg->AddEntry(g_final, "Data, Averaged over 8 towers","ep");
   leg->AddEntry(f_att,
       Form("Fit, C#timesExp[ -(13.9 - x) / L_{eff} ], L_{eff} = %.0f#pm%.0f cm",
@@ -276,10 +280,11 @@ FitVerticalScan(const TString input =
   leg->Draw();
 
   TLatex latex;
+  latex.SetTextSize(0.08);
   latex.SetTextAlign(12);
-  latex.DrawLatex(0,0.88,"|#leftarrow Mirror side");
+  latex.DrawLatex(0,0.92,"#leftarrow Mirror side");
   latex.SetTextAlign(32);
-  latex.DrawLatex(13.9,0.88,"Lightguide side #rightarrow|");
+  latex.DrawLatex(13.9,0.92,"Lightguide side #rightarrow");
 
   SaveCanvas(c1, TString(_file0->GetName()) + TString(c1->GetName()), kTRUE);
 }
