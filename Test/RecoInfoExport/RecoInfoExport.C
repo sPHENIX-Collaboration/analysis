@@ -85,7 +85,7 @@ RecoInfoExport::process_event(PHCompositeNode *topNode)
       fdata << (boost::format("%1% (1..%2% hits)") % calo_name % towers->size())
           << endl;
 
-  bool first = true;
+      bool first = true;
       RawTowerContainer::ConstRange begin_end = towers->getTowers();
       RawTowerContainer::ConstIterator rtiter;
       for (rtiter = begin_end.first; rtiter != begin_end.second; ++rtiter)
@@ -96,15 +96,18 @@ RecoInfoExport::process_event(PHCompositeNode *topNode)
           float eta = towergeom->get_etacenter(tower->get_bineta());
           float phi = towergeom->get_phicenter(tower->get_binphi());
 
-              if (first)
-                {
-                  first = false;
-                }
-              else
-                fdata << ",";
+          phi = atan2(cos(phi), sin(phi));
 
-              fdata <<(boost::format("[%1%,%2%,%3%]") % eta % phi % tower->get_energy());
+          if (first)
+            {
+              first = false;
+            }
+          else
+            fdata << ",";
 
+          fdata
+              << (boost::format("[%1%,%2%,%3%]") % eta % phi
+                  % tower->get_energy());
 
         }
 
@@ -140,12 +143,12 @@ RecoInfoExport::process_event(PHCompositeNode *topNode)
 
           std::set<PHG4Hit*> g4hits = trutheval->all_truth_hits(g4particle);
 
-          map<int, PHG4Hit *> layer_sort;
+          map<float, PHG4Hit *> layer_sort;
           for (auto & hit : g4hits)
             {
               if (hit->get_layer() != UINT_MAX)
                 {
-                  layer_sort[hit->get_layer()] = hit;
+                  layer_sort[hit->get_avg_t()] = hit;
 //              cout << "hit->get_layer() -> ";
 //              hit->identify();
                 }
