@@ -29,12 +29,15 @@
 
 #include <TH1D.h>
 #include <TH2D.h>
+#include <TDatabasePDG.h>
+#include <TVector3.h>
 
 #include <iostream>
 #include <cassert>
 #include <fstream>
 #include <sstream>
 #include <boost/format.hpp>
+#include <boost/math/special_functions/sign.hpp>
 
 using namespace std;
 
@@ -154,8 +157,10 @@ RecoInfoExport::process_event(PHCompositeNode *topNode)
                 }
             }
 
-          if (layer_sort.size() > 5)
+          if (layer_sort.size() > 5) // minimal track length cut
             {
+
+              stringstream spts;
 
               bool first = true;
               for (auto & hit_pair : layer_sort)
@@ -163,26 +168,56 @@ RecoInfoExport::process_event(PHCompositeNode *topNode)
                   if (first)
                     {
                       first = false;
-
-                      fdata << "[";
                     }
                   else
-                    fdata << ",";
+                    spts << ",";
 
-                  fdata << "[";
-                  fdata << hit_pair.second->get_avg_x();
-                  fdata << ",";
-                  fdata << hit_pair.second->get_avg_y();
-                  fdata << ",";
-                  fdata << hit_pair.second->get_avg_z();
-                  fdata << "]";
+                  spts << "[";
+                  spts << hit_pair.second->get_avg_x();
+                  spts << ",";
+                  spts << hit_pair.second->get_avg_y();
+                  spts << ",";
+                  spts << hit_pair.second->get_avg_z();
+                  spts << "]";
                 }
 
-              if (first)
+              const int abs_pid = abs(g4particle->get_pid());
+              int t = 5;
+              if (abs_pid
+                  == TDatabasePDG::Instance()->GetParticle("pi+")->PdgCode())
                 {
-                  fdata << "[";
+                  t = 1;
                 }
-              fdata << "]" << endl;
+              else if (abs_pid
+                  == TDatabasePDG::Instance()->GetParticle("proton")->PdgCode())
+                {
+                  t = 2;
+                }
+              else if (abs_pid
+                  == TDatabasePDG::Instance()->GetParticle("K+")->PdgCode())
+                {
+                  t = 3;
+                }
+              else if (abs_pid
+                  == TDatabasePDG::Instance()->GetParticle("e-")->PdgCode())
+                {
+                  t = 3;
+                }
+
+              const TVector3 mom(g4particle->get_px(), g4particle->get_py(),
+                  g4particle->get_pz());
+
+              const TParticlePDG * pdg_part =
+                  TDatabasePDG::Instance()->GetParticle(11);
+              const int c =
+                  (pdg_part != nullptr) ? (copysign(1, pdg_part->Charge())) : 0;
+
+              fdata
+                  << (boost::format(
+                      "{ \"pt\": %1%, \"t\": %2%, \"e\": %3%, \"p\": %4%, \"c\": %5%, \"pts\":[ %6% ]}")
+                      % mom.Pt() % t % mom.PseudoRapidity() % mom.Phi() % c
+                      % spts.str()) << endl;
+
             }
         }
     }
