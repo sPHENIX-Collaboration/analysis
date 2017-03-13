@@ -196,7 +196,7 @@ RecoInfoExport::process_event(PHCompositeNode *topNode)
                   TVector3 pos(hit_pair.second->get_avg_x(),hit_pair.second->get_avg_y(),hit_pair.second->get_avg_z());
 
                   // hit step cuts
-                  if ((pos - last_pos).Mag() < _min_track_hit_dist and hit_pair.first == (layer_sort.rbegin()->first))
+                  if ((pos - last_pos).Mag() < _min_track_hit_dist and hit_pair.first != (layer_sort.rbegin()->first))
                     continue;
 
                   last_pos = pos;
