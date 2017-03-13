@@ -31,13 +31,13 @@ public:
   }
 
   double
-  get_T_threshold() const
+  get_pT_threshold() const
   {
     return _pT_threshold;
   }
 
   void
-  set_T_threshold(double tThreshold)
+  set_pT_threshold(double tThreshold)
   {
     _pT_threshold = tThreshold;
   }
