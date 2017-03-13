@@ -54,6 +54,17 @@ public:
     _tower_threshold = towerThreshold;
   }
 
+  double
+  get_min_track_hit_dist() const
+  {
+    return _min_track_hit_dist;
+  }
+
+  void
+  set_min_track_hit_dist(double minTrackHitDist)
+  {
+    _min_track_hit_dist = minTrackHitDist;
+  }
 private:
 
   int _event;
@@ -63,6 +74,7 @@ private:
 
   double _tower_threshold;
   double _pT_threshold;
+  double _min_track_hit_dist;
 };
 
 #endif // __RecoInfoExport_H__

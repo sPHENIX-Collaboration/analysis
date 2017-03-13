@@ -43,7 +43,8 @@ using namespace std;
 
 RecoInfoExport::RecoInfoExport(const string &name) :
     SubsysReco(name), _event(0), _calo_names(
-      { "CEMC", "HCALIN", "HCALOUT" }), _tower_threshold(0), _pT_threshold(0)
+      { "CEMC", "HCALIN", "HCALOUT" }), _tower_threshold(0), _pT_threshold(0), _min_track_hit_dist(
+        0)
 {
 }
 
@@ -161,14 +162,24 @@ RecoInfoExport::process_event(PHCompositeNode *topNode)
 
           std::set<PHG4Hit*> g4hits = trutheval->all_truth_hits(g4particle);
 
+          map<float, PHG4Hit *> time_sort;
           map<float, PHG4Hit *> layer_sort;
           for (auto & hit : g4hits)
             {
-              if (hit->get_layer() != UINT_MAX)
+              if (hit)
                 {
-                  layer_sort[hit->get_avg_t()] = hit;
-//              cout << "hit->get_layer() -> ";
-//              hit->identify();
+                  time_sort[hit->get_avg_t()] = hit;
+                }
+            }
+
+          for (auto & hit_pair : time_sort)
+            {
+
+              if (hit_pair.second->get_layer() != UINT_MAX
+                  and layer_sort.find(hit_pair.second->get_layer())
+                      == layer_sort.end())
+                {
+                  layer_sort[hit_pair.second->get_layer()] = hit_pair.second;
                 }
             }
 
@@ -177,9 +188,19 @@ RecoInfoExport::process_event(PHCompositeNode *topNode)
 
               stringstream spts;
 
+              TVector3 last_pos(0,0,0);
+
               bool first = true;
               for (auto & hit_pair : layer_sort)
                 {
+                  TVector3 pos(hit_pair.second->get_avg_x(),hit_pair.second->get_avg_y(),hit_pair.second->get_avg_z());
+
+                  // hit step cuts
+                  if ((pos - last_pos).Mag() < _min_track_hit_dist and hit_pair.first == (layer_sort.rbegin()->first))
+                    continue;
+
+                  last_pos = pos;
+
                   if (first)
                     {
                       first = false;
@@ -188,11 +209,11 @@ RecoInfoExport::process_event(PHCompositeNode *topNode)
                     spts << ",";
 
                   spts << "[";
-                  spts << hit_pair.second->get_avg_x();
+                  spts << pos.x();
                   spts << ",";
-                  spts << hit_pair.second->get_avg_y();
+                  spts << pos.y();
                   spts << ",";
-                  spts << hit_pair.second->get_avg_z();
+                  spts << pos.z();
                   spts << "]";
                 }
 
