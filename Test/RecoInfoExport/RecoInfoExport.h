@@ -30,12 +30,39 @@ public:
     _file_prefix = s;
   }
 
+  double
+  get_T_threshold() const
+  {
+    return _pT_threshold;
+  }
+
+  void
+  set_T_threshold(double tThreshold)
+  {
+    _pT_threshold = tThreshold;
+  }
+
+  double
+  get_tower_threshold() const
+  {
+    return _tower_threshold;
+  }
+
+  void
+  set_tower_threshold(double towerThreshold)
+  {
+    _tower_threshold = towerThreshold;
+  }
+
 private:
 
   int _event;
   std::string _file_prefix;
 
   std::vector<std::string> _calo_names;
+
+  double _tower_threshold;
+  double _pT_threshold;
 };
 
 #endif // __RecoInfoExport_H__

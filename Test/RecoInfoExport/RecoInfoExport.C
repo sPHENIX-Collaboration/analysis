@@ -43,7 +43,7 @@ using namespace std;
 
 RecoInfoExport::RecoInfoExport(const string &name) :
     SubsysReco(name), _event(0), _calo_names(
-      { "CEMC", "HCALIN", "HCALOUT" })
+      { "CEMC", "HCALIN", "HCALOUT" }), _tower_threshold(0), _pT_threshold(0)
 {
 }
 
@@ -85,15 +85,27 @@ RecoInfoExport::process_event(PHCompositeNode *topNode)
           return Fun4AllReturnCodes::ABORTRUN;
         }
 
-      fdata << (boost::format("%1% (1..%2% hits)") % calo_name % towers->size())
-          << endl;
+      set<const RawTower *> good_towers;
 
-      bool first = true;
       RawTowerContainer::ConstRange begin_end = towers->getTowers();
       RawTowerContainer::ConstIterator rtiter;
       for (rtiter = begin_end.first; rtiter != begin_end.second; ++rtiter)
         {
-          RawTower *tower = rtiter->second;
+          const RawTower *tower = rtiter->second;
+          assert(tower);
+          if (tower->get_energy() > _tower_threshold)
+            {
+              good_towers.insert(tower);
+            }
+        }
+
+      fdata
+          << (boost::format("%1% (1..%2% hits)") % calo_name
+              % good_towers.size()) << endl;
+
+      bool first = true;
+      for (const auto & tower : good_towers)
+        {
           assert(tower);
 
           float eta = towergeom->get_etacenter(tower->get_bineta());
@@ -144,6 +156,9 @@ RecoInfoExport::process_event(PHCompositeNode *topNode)
         {
           PHG4Particle* g4particle = iter->second;
 
+          const TVector3 mom(g4particle->get_px(), g4particle->get_py(),
+              g4particle->get_pz());
+
           std::set<PHG4Hit*> g4hits = trutheval->all_truth_hits(g4particle);
 
           map<float, PHG4Hit *> layer_sort;
@@ -157,7 +172,7 @@ RecoInfoExport::process_event(PHCompositeNode *topNode)
                 }
             }
 
-          if (layer_sort.size() > 5) // minimal track length cut
+          if (layer_sort.size() > 5 and mom.Pt() > _pT_threshold) // minimal track length cut
             {
 
               stringstream spts;
@@ -203,9 +218,6 @@ RecoInfoExport::process_event(PHCompositeNode *topNode)
                 {
                   t = 3;
                 }
-
-              const TVector3 mom(g4particle->get_px(), g4particle->get_py(),
-                  g4particle->get_pz());
 
               const TParticlePDG * pdg_part =
                   TDatabasePDG::Instance()->GetParticle(11);
