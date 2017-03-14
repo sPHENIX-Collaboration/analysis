@@ -40,9 +40,11 @@ void
 DrawPrototype3ShowerCalib( //
     const TString infile =
 //        "/sphenix/user/jinhuang/Prototype_2017/ShowerCalib/JointEnergyScan1.lst_EMCalCalib.root"//
-        "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2017/ShowerCalib/2nd_tower21.lst_EMCalCalib.root"//
+    // "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2017/ShowerCalib/2nd_tower21.lst_EMCalCalib.root"//
 //        "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2017/ShowerCalib/2nd_tower45.lst_EMCalCalib.root"//
-    )
+      "first_jointscan_T21_ShowerCalib.root"
+    //   "jointenergyscan3_blockboundaries_nominalhv.root"
+   )
 {
 
   SetOKStyle();
@@ -76,6 +78,51 @@ DrawPrototype3ShowerCalib( //
 
   assert(_file0);
 
+  //JOE'S CUTS FOR THIRD EMCAL ENERGY SCAN
+  //   event_sel = "good_e  && info.hodo_h==4 && info.hodo_v==2"; // Tower 21
+  //  cuts = "_good_data_h3_v3";
+  //   event_sel = "good_e && info.hodo_h>=3 && info.hodo_h<=4 && info.hodo_v>=1 && info.hodo_v<=3"; // Tower 21
+     //    cuts = "_good_data_h23_v234";
+  //event_sel = "good_e && info.hodo_h>=2 && info.hodo_h<=6 && info.hodo_v>=0 && info.hodo_v<=4"; // Tower 21
+  // cuts = "_good_data_h01234_v01234";
+  // event_sel = "good_e  && info.hodo_h==4 && info.hodo_v==2"; // Tower 45
+  //   cuts = "_good_data_h4_v2";
+  // event_sel = "good_e && info.hodo_h>=4 && info.hodo_h<=5 && info.hodo_v>=1 && info.hodo_v<=3"; // Tower 45
+  //    cuts = "_good_data_h23_v123";
+  //  event_sel = "good_e && info.hodo_h>=2 && info.hodo_h<=6 && info.hodo_v>=1 && info.hodo_v<=5"; // Tower 45
+  //   cuts = "_good_data_h12345_v12345";
+
+
+  //JOE'S CUTS FOR THE FIRST JOINT EMCAL HCAL SCAN
+  //  event_sel = "good_e  && info.hodo_h==3 && info.hodo_v==6"; // Tower 21
+  //  cuts = "_good_data_h3_v3";
+  //   event_sel = "good_e && info.hodo_h>=3 && info.hodo_h<=4 && info.hodo_v>=5 && info.hodo_v<=7"; // Tower 21
+  //     cuts = "_good_data_h23_v234";
+  //event_sel = "good_e && info.hodo_h>=1 && info.hodo_h<=5 && info.hodo_v>=3 && info.hodo_v<=7"; // Tower 21
+  //cuts = "_good_data_h01234_v01234";
+  //  event_sel = "good_e  && info.hodo_h==3 && info.hodo_v==2"; // Tower 45
+  //   cuts = "_good_data_h4_v2";
+  //  event_sel = "good_e && info.hodo_h>=2 && info.hodo_h<=3 && info.hodo_v>=1 && info.hodo_v<=3"; // Tower 45
+   //    cuts = "_good_data_h23_v123";
+  //   event_sel = "good_e && info.hodo_h>=1 && info.hodo_h<=5 && info.hodo_v>=0 && info.hodo_v<=4"; // Tower 45
+  //   cuts = "_good_data_h12345_v12345";
+
+
+    //JOE'S CUTS FOR THE THIRD JOINT EMCAL HCAL SCAN
+  // event_sel = "good_e  && info.hodo_h==4 && info.hodo_v==4"; // Tower 21
+  //  cuts = "_good_data_h3_v3";
+  //   event_sel = "good_e && info.hodo_h>=3 && info.hodo_h<=4 && info.hodo_v>=5 && info.hodo_v<=7"; // Tower 21
+  //     cuts = "_good_data_h23_v234";
+  //event_sel = "good_e && info.hodo_h>=1 && info.hodo_h<=5 && info.hodo_v>=3 && info.hodo_v<=7"; // Tower 21
+  //cuts = "_good_data_h01234_v01234";
+ 
+
+
+
+
+
+
+
 //  event_sel = "1";
 //  cuts = "_all_data";
 //    event_sel = "abs(truth_z )<0.25 && abs(truth_y )<0.25";
@@ -93,17 +140,17 @@ DrawPrototype3ShowerCalib( //
 //    event_sel = "abs(truth_z + 37)<0.25 && abs(truth_y )<0.25";
 //    cuts = "_45DegreeRot_h1_v1";
 //  event_sel = "good_e";
-//  cuts = "_good_e";
-//    event_sel = "info.beam_mom == -8 && good_e";
-//    cuts = "_8GeV_good_e";
+// cuts = "_good_e";
+     event_sel = "info.beam_mom == -8 && good_e";
+     cuts = "_8GeV_good_e";
 //      event_sel = "info.beam_mom == -12 && good_e";
 //      cuts = "_12GeV_good_e";
 //      event_sel = "info.beam_mom == -16 && good_e";
 //      cuts = "_16GeV_good_e";
 //  event_sel = "info.beam_mom == -6";
 //  cuts = "_Neg6GeV";
-      event_sel = "good_e  && info.hodo_h==2 && info.hodo_v==3"; // Tower 21
-      cuts = "_good_data_h2_v3";
+    //     event_sel = "good_e  && info.hodo_h==2 && info.hodo_v==3"; // Tower 21
+    //   cuts = "_good_data_h2_v3";
 //          event_sel = "good_e && info.hodo_h>=2 && info.hodo_h<=3 && info.hodo_v>=1 && info.hodo_v<=3"; // Tower 21
 //          cuts = "_good_data_h23_v123";
 //          event_sel = "good_e && info.hodo_h>=1 && info.hodo_h<=5 && info.hodo_v>=0 && info.hodo_v<=4 && abs(info.beam_mom)<16"; // Tower 21
@@ -181,7 +228,7 @@ DrawPrototype3ShowerCalib( //
   T->SetEventList(elist);
 
 //  // data stuff
-  PositionDependenceData("clus_5x5_prod.sum_E");
+  PositionDependenceData("clus_5x5_recalib.sum_E");
 //  PositionDependenceData("clus_5x5_recalib.sum_E");
   HodoscopeCheck();
 //    LineShapeData("abs(info.C2_sum)<100",  "(info.C2_sum)>600 && (info.C2_sum)<1300"); // 4 GeV
@@ -213,6 +260,9 @@ PositionDependenceData(TString sTOWER = "clus_5x5_prod.sum_E",
           200, 1, 20);
 
   T->Draw(sTOWER + ":7-hodo_v:hodo_h>>EnergySum_LG3", "", "goff");
+  TFile *jjoeoutfile = new TFile("jjoeoutfile.root","recreate");
+  EnergySum_LG3->Write();
+  jjoeoutfile->Close();
 
   TProfile2D * EnergySum_LG3_prof_xy = EnergySum_LG3->Project3DProfile("yx");
   TH2 * EnergySum_LG3_yx = EnergySum_LG3->Project3D("yx");
