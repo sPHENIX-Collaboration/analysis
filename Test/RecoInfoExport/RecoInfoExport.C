@@ -188,15 +188,19 @@ RecoInfoExport::process_event(PHCompositeNode *topNode)
 
               stringstream spts;
 
-              TVector3 last_pos(0,0,0);
+              TVector3 last_pos(0, 0, 0);
 
               bool first = true;
               for (auto & hit_pair : layer_sort)
                 {
-                  TVector3 pos(hit_pair.second->get_avg_x(),hit_pair.second->get_avg_y(),hit_pair.second->get_avg_z());
+                  TVector3 pos(hit_pair.second->get_avg_x(),
+                      hit_pair.second->get_avg_y(),
+                      hit_pair.second->get_avg_z());
 
                   // hit step cuts
-                  if ((pos - last_pos).Mag() < _min_track_hit_dist and hit_pair.first != (layer_sort.rbegin()->first))
+                  if ((pos - last_pos).Mag() < _min_track_hit_dist
+                      and hit_pair.first != (layer_sort.rbegin()->first)
+                      and hit_pair.first != (layer_sort.begin()->first))
                     continue;
 
                   last_pos = pos;
