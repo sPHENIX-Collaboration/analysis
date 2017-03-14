@@ -525,8 +525,10 @@ Proto3ShowerCalib::process_event(PHCompositeNode *topNode)
           // recalibration
           assert(
               _recalib_const.find(make_pair(col, row)) != _recalib_const.end());
-          const double energy_recalib = energy_T
-              * _recalib_const[make_pair(col, row)];
+          const double energy_recalib = energy_T;
+
+	  //new production already takes into account this recalibration (Jins shower recal)
+	    //              * _recalib_const[make_pair(col, row)];
 
           // energy sums
           sum_energy_T += energy_T;
