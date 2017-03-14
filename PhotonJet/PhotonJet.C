@@ -44,7 +44,8 @@ PhotonJet::PhotonJet(const std::string &name) : SubsysReco("PHOTONJET")
   use_isocone=1;
   
   //default use 0.3 jet cone
-  jet_cone_size=0.3;
+  jet_cone_size=3;
+  nevents=0;
 }
 
 int PhotonJet::Init(PHCompositeNode *topnode)
@@ -53,7 +54,7 @@ int PhotonJet::Init(PHCompositeNode *topnode)
 
 
   file = new TFile(outfilename.c_str(),"RECREATE");
-  nevents=0;
+  
 
   histo = new TH1F("histo","histo",100,-3,3);
 
@@ -89,31 +90,39 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
   truthjetsize<<"AntiKt_Truth_r";
   recojetsize.str("");
   recojetsize<<"AntiKt_Tower_r";
-
-  if(jet_cone_size==0.2){
+  cout<<"jet cone size is "<<jet_cone_size<<endl;
+  bool istrue = jet_cone_size==3;
+  cout<<istrue<<endl;
+  if(jet_cone_size==2){
     truthjetsize<<"02";
     recojetsize<<"02";
     }
-  else if(jet_cone_size==0.3){
+  else if(jet_cone_size==3){
     truthjetsize<<"03";
     recojetsize<<"03";
   }
-  else if(jet_cone_size==0.4){
+  else if(jet_cone_size==4){
     truthjetsize<<"04";
     recojetsize<<"04";
   }
-   else if(jet_cone_size==0.5){
+   else if(jet_cone_size==5){
     truthjetsize<<"05";
     recojetsize<<"05";
   }
+    cout<<"GETTING TRUTH JETS:   "<<truthjetsize.str().c_str()<<endl;
+  cout<<"GETTING RECO JETS:    "<<recojetsize.str().c_str()<<endl;
+  /*
   //if its some other number just set it to 0.4
    else{
      truthjetsize<<"04";
      recojetsize<<"04";
    }
+  */
 
-  JetMap* truth_jets = findNode::getClass<JetMap>(topnode,truthjetsize.str().c_str());
-  JetMap *reco_jets = findNode::getClass<JetMap>(topnode,recojetsize.str().c_str());
+  JetMap* truth_jets = findNode::getClass<JetMap>(topnode,"AntiKt_Truth_r03");
+    //findNode::getClass<JetMap>(topnode,truthjetsize.str().c_str());
+  JetMap *reco_jets =findNode::getClass<JetMap>(topnode,"AntiKt_Tower_r03");
+    // findNode::getClass<JetMap>(topnode,recojetsize.str().c_str());
   PHG4TruthInfoContainer* truthinfo = findNode::getClass<PHG4TruthInfoContainer>(topnode,"G4TruthInfo");
   RawClusterContainer *clusters = findNode::getClass<RawClusterContainer>(topnode,"CLUSTER_CEMC");
   SvtxTrackMap *trackmap = findNode::getClass<SvtxTrackMap>(topnode,"SvtxTrackMap");

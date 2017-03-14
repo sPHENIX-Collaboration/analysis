@@ -28,7 +28,7 @@ class PhotonJet: public SubsysReco
   
   PhotonJet(const std::string &name="photonjet.root");
   double isoconeradius,mincluspt;
-  float jet_cone_size;
+  int jet_cone_size;
   int use_isocone;
   int Init(PHCompositeNode*);
   int process_event(PHCompositeNode*);
@@ -36,8 +36,8 @@ class PhotonJet: public SubsysReco
   void Set_Isocone_radius(double rad){isoconeradius = rad;};
   void set_cluspt_mincut(double pt){mincluspt = pt;};
   void use_isocone_algorithm(int yes){use_isocone=yes;};//1 is use it, 0 is don't use it
-  void set_jetcone_size(float size){jet_cone_size = size;}//float for jet cone size, i.e. 0.2,0.3,0.4, etc.
-
+  void set_jetcone_size(int size){jet_cone_size = size;}//float for jet cone size, i.e. 0.2,0.3,0.4, etc.
+  void SetFirstEventNum(int eventnum){nevents = eventnum;}//setting the first event based on job number so that each event has an individual eventnum
 
 
 
