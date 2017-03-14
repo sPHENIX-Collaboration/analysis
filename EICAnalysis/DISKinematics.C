@@ -34,7 +34,7 @@ DISKinematics::Init(PHCompositeNode *topNode)
   _ievent = 0;
 
   _fout_root = new TFile(_foutname.c_str(), "RECREATE");
-  _tree_dis = new TNtuple("tree_dis","DIS kinematics info","event:x:Q2:e_px:e_py:e_pz:e_p:e_e:e_eta:e_phi");
+  _tree_dis = new TNtuple("tree_dis","DIS kinematics info","event:ev_x1:ev_x2:ev_Q2:x:Q2:y:s:e1_px:e1_py:e1_pz:e1_p:e1_e:e1_eta:e1_theta:e1_phi");
 
   return 0;
 }
@@ -44,11 +44,25 @@ DISKinematics::process_event(PHCompositeNode *topNode)
 {
   _ievent ++;
 
-  //  cout << "Processing event #" << _ievent << endl;
+  //cout << "Processing event #" << _ievent << endl;
 
   PHHepMCGenEvent *genevt = findNode::getClass<PHHepMCGenEvent>(topNode,
                                                                 "PHHepMCGenEvent");
   HepMC::GenEvent* theEvent = genevt->getEvent();
+
+  float ev_x1 = theEvent->pdf_info()->x1();
+  float ev_x2 = theEvent->pdf_info()->x2();
+  float ev_Q2 = theEvent->pdf_info()->scalePDF();
+
+  /* incoming electron data */
+  float e0_e = _e_ebeam;
+
+  TLorentzVector v4_e0(0, 0, -e0_e, e0_e);
+
+  /* incoming proton data */
+  float p0_e = _e_pbeam;
+
+  TLorentzVector v4_p0(0, 0, p0_e, p0_e);
 
   /* Loop over all particles, look for first stable electron in event record*/
   for (HepMC::GenEvent::particle_const_iterator p = theEvent->particles_begin();
@@ -59,41 +73,39 @@ DISKinematics::process_event(PHCompositeNode *topNode)
 
       /* electron found */
       if ( TString(pdg_p->GetName()) == "e-" && (*p)->status() == 1 )
-	{
+        {
+          /* scattered electron data */
+          float e1_px = (*p)->momentum().px();
+          float e1_py = (*p)->momentum().py();
+          float e1_pz = (*p)->momentum().pz();
+          float e1_p = sqrt(e1_px*e1_px + e1_py*e1_py + e1_pz*e1_pz);
+          float e1_e = (*p)->momentum().e();
+          float e1_eta = (*p)->momentum().eta();
+          float e1_theta = (*p)->momentum().theta();
+          float e1_phi = (*p)->momentum().phi();
 
-	  /* electron data */
-	  float e_px = (*p)->momentum().px();
-	  float e_py = (*p)->momentum().py();
-	  float e_pz = (*p)->momentum().pz();
-	  float e_p = sqrt(e_px*e_px + e_py*e_py + e_pz*e_pz);
-	  float e_e = (*p)->momentum().e();
-	  float e_eta = (*p)->momentum().eta();
-	  float e_theta = (*p)->momentum().theta();
-	  float e_phi = (*p)->momentum().phi();
+          TLorentzVector v4_e1( e1_px, e1_py, e1_pz, e1_e );
 
-	  /* event kinematics */
-	  TLorentzVector v4_electron(0,0,-_e_ebeam,_e_ebeam);
-	  TLorentzVector v4_proton(0,0,_e_pbeam,_e_pbeam);
-	  TLorentzVector v4_electron_prime(e_px,e_py,e_pz,e_e);
-	  //d1d2angle = v_d1.Angle(v_d2.Vect()); // get angle between v_d1 and v_d2
+          /* for purpose of calculations, 'theta' angle of the scattered electron is defined as angle
+             between 'scattered electron' and 'direction of incoming electron'. Since initial electron
+             has 'theta = Pi' in coordinate system, we need to use 'theta_rel = Pi - theta' for calculations
+             of kinematics. */
+          //float e1_theta_rel = M_PI - e1_theta;
 
-	  float dis_Q2 = 2*_e_ebeam*e_e*(1+cos(e_theta));
+          /* event kinematics */
+          float dis_x = ev_x2;
+          float dis_Q2 = ev_Q2;
 
-	  float dis_y = 1 - ( e_e / _e_ebeam ) * cos(e_theta/2.) * cos(e_theta/2.);
-	  float dis_s = 4 * _e_ebeam * _e_pbeam;
+          float dis_y = dis_Q2 / (4.*dis_x*e0_e*p0_e);
+          float dis_s = 4 * e0_e * p0_e;
 
-	  //	  TLorentzVector v4_q = (v4_electron - v4_electron_prime);
-	  //	  float dis_x = dis_Q2 / ( v4_q * v4_proton );
-	  float dis_x = dis_Q2 / ( dis_s * dis_y );
+          /* fill output TNtuple */
+          float dis_data[70] = {(float)_ievent,ev_x1,ev_x2,ev_Q2,dis_x,dis_Q2,dis_y,dis_s,e1_px,e1_py,e1_pz,e1_p,e1_e,e1_eta,e1_theta,e1_phi};
+          _tree_dis -> Fill(dis_data);
 
-
-	  /* fill output TNtuple */
-	  float dis_data[70] = {(float)_ievent,dis_x,dis_Q2,e_px,e_py,e_pz,e_p,e_e,e_eta,e_phi};
-	  _tree_dis -> Fill(dis_data);
-
-	  /* break loop */
-	  break;
-	}
+          /* break loop */
+          break;
+        }
     }
 
   return 0;
