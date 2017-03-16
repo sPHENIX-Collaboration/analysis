@@ -1,0 +1,128 @@
+# $Id: eic.mac,v 1.6 2014/07/31 23:29:28 jinhuang Exp $
+#
+# Macro file for the initialization phase of "exampleN03.cc"
+# when running in interactive mode
+#
+# Sets some default verbose
+#
+/control/verbose 2
+/control/saveHistory
+/run/verbose 2
+#
+# create empty scene
+#
+/vis/scene/create
+#
+# Create a scene handler for a specific graphics system
+# (Edit the next line(s) to choose another graphic system)
+#
+# Use this open statement to get an .eps and .prim files
+# suitable for viewing in DAWN. this will pop up a gui with some options and
+# write information into a g4_XX.prim file. This file has to be processed
+# by a separate program like: 
+# dawn g4_XX.prim
+# dawn is installed under /opt/phenix, it produces a hi res eps file
+# suitable for transparencies or publications
+#/vis/open DAWNFILE
+#
+# Use this open statement instead to get a HepRep version 1 file
+# suitable for viewing in WIRED.
+#/vis/open HepRepFile
+#
+# Use this open statement instead to get a HepRep version 2 file
+# suitable for viewing in WIRED.
+#/vis/open HepRepXML
+#
+#/vis/open RayTracer
+#/vis/rayTracer/column 1600
+#/vis/rayTracer/row 900
+#/vis/rayTracer/target 0 0 0 m
+#/vis/rayTracer/backgroundColour .5 .5 .5
+
+# Use this open statement instead for OpenGL in immediate mode.
+#/vis/open OGLI 3900x2100-0+0
+/vis/open OGLSX 1600x900-0+0
+# this will just open an X11 window and draw every event
+# /vis/open OGLSX
+#/vis/viewer/set/sectionPlane on 0 0 0 m 2 0 0
+#/vis/viewer/set/viewpointThetaPhi 270 0
+#/vis/viewer/addCutawayPlane 0 0 0 m 1 0 0
+#/vis/viewer/set/viewpointThetaPhi 240 20
+#/vis/viewer/set/viewpointThetaPhi 240 -10
+/vis/viewer/set/viewpointThetaPhi 180 0
+/vis/viewer/zoom 1
+#/vis/viewer/zoom 8.
+#
+
+#
+# Output an empty detector
+/vis/viewer/flush
+# Jin - Disable auto refresh while scene and
+# trajectories are established:
+/vis/viewer/set/autoRefresh false
+#
+# Draw trajectories at end of event, showing trajectory points as
+# markers of size 2 pixels
+/vis/scene/add/trajectories smooth
+/vis/modeling/trajectories/create/drawByCharge
+#/vis/modeling/trajectories/drawByCharge-0/default/setDrawStepPts true
+/vis/modeling/trajectories/drawByCharge-0/default/setStepPtsSize 2
+# (if too many tracks cause core dump => /tracking/storeTrajectory 0)
+#
+# To draw gammas only
+/vis/filtering/trajectories/create/particleFilter
+#/vis/filtering/trajectories/particleFilter-0/add gamma
+#/vis/filtering/trajectories/particleFilter-0/add neutron
+# Remove all neutrios - Jin
+/vis/filtering/trajectories/particleFilter-0/add nu_e
+/vis/filtering/trajectories/particleFilter-0/add nu_tau
+/vis/filtering/trajectories/particleFilter-0/add nu_mu
+/vis/filtering/trajectories/particleFilter-0/add anti_nu_e
+/vis/filtering/trajectories/particleFilter-0/add anti_nu_tau
+/vis/filtering/trajectories/particleFilter-0/add anti_nu_mu
+#
+# To draw charged particles only (revert gamma/neutron selection)
+/vis/filtering/trajectories/particleFilter-0/invert true
+#
+/vis/filtering/trajectories/create/attributeFilter
+/vis/filtering/trajectories/attributeFilter-0/setAttribute IMag
+/vis/filtering/trajectories/attributeFilter-0/addInterval 20 MeV 100 GeV
+# Many other options available with /vis/modeling and /vis/filtering.
+# For example, select colour by particle ID
+/vis/modeling/trajectories/create/drawByParticleID
+/vis/modeling/trajectories/drawByParticleID-0/set e- green
+/vis/modeling/trajectories/drawByParticleID-0/set pi- red
+/vis/modeling/trajectories/drawByParticleID-0/set pi+ red
+/vis/modeling/trajectories/drawByParticleID-0/set kaon- red
+/vis/modeling/trajectories/drawByParticleID-0/set kaon+ red
+/vis/modeling/trajectories/drawByParticleID-0/set kaon0L red
+/vis/modeling/trajectories/drawByParticleID-0/set gamma cyan
+/vis/modeling/trajectories/drawByParticleID-0/set proton blue
+/vis/modeling/trajectories/drawByParticleID-0/set anti_proton blue
+/vis/modeling/trajectories/drawByParticleID-0/set neutron magenta
+/vis/modeling/trajectories/drawByParticleID-0/set anti_neutron magenta
+/vis/modeling/trajectories/drawByParticleID-0/set muon+ yellow
+/vis/modeling/trajectories/drawByParticleID-0/set muon- yellow
+#
+/vis/scene/endOfEventAction accumulate
+#
+# At end of each run, an automatic flush causes graphical output.
+#/run/beamOn 1
+# When you exit Geant4, you will find a file called scene-0.heprep.zip.
+# Unzipping this will give you three separate HepRep files suitable for
+# viewing in WIRED.
+# The first file will contain just detector geometry.
+# The second file will contain the detector plus one event.
+# The third file will contain the detector plus ten events.
+/vis/viewer/set/background white
+/vis/ogl/set/displayListLimit 200000
+
+# Re-establish auto refreshing and verbosity:
+/vis/viewer/set/autoRefresh true
+
+# set print mode to vectored
+#/vis/ogl/set/printMode vectored
+# set print size larger than screen
+#/vis/ogl/set/printSize 3200 1800
+# print
+#/vis/ogl/printEPS
