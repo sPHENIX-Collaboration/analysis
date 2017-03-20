@@ -31,8 +31,8 @@ public:
   void
   set_beam_energies( float beam_electron , float beam_proton )
   {
-    _e_ebeam = fabs( beam_electron );
-    _e_pbeam = fabs( beam_proton );
+    _ebeam_E = fabs( beam_electron );
+    _pbeam_E = fabs( beam_proton );
   }
 
 private:
@@ -49,8 +49,8 @@ private:
   TNtuple* _tree_dis;
 
   /* beam energies electron and proton */
-  float _e_ebeam;
-  float _e_pbeam;
+  float _ebeam_E;
+  float _pbeam_E;
 };
 
 #endif // __DISKinematics_H__
