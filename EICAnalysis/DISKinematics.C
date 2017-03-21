@@ -44,7 +44,7 @@ DISKinematics::process_event(PHCompositeNode *topNode)
 {
   _ievent ++;
 
-  //cout << "Processing event #" << _ievent << endl;
+  //  cout << "Processing event #" << _ievent << endl;
 
   PHHepMCGenEvent *genevt = findNode::getClass<PHHepMCGenEvent>(topNode,
                                                                 "PHHepMCGenEvent");
@@ -65,8 +65,7 @@ DISKinematics::process_event(PHCompositeNode *topNode)
 
   //  TLorentzVector v4_p0(0, 0, p0_E, p0_E);
 
-  /* Loop over all particles, look for beam particles, as well as first stable electron in event record
-     and consider this the 'scattered electron' particle_e1*/
+  /* Loop over all particles, look for beam particles, as well as final state electron */
   HepMC::GenParticle *particle_e0 = NULL;
   HepMC::GenParticle *particle_e1 = NULL;
   HepMC::GenParticle *particle_p0 = NULL;
@@ -76,19 +75,27 @@ DISKinematics::process_event(PHCompositeNode *topNode)
 
       TParticlePDG * pdg_p = TDatabasePDG::Instance()->GetParticle( (*p)->pdg_id() );
 
-      //       cout << (*p)->barcode() << " ; " << TString(pdg_p->GetName()) << " ; " << (*p)->status() << " ; " << (*p)->production_vertex() << " ; " << (*p)->end_vertex() << " ; " << (*p)->momentum().e() << " ; " << (*p)->momentum().theta() << endl;
+      //      cout << (*p)->barcode() << " ; " << TString(pdg_p->GetName()) << " ; " << (*p)->status() << " ; " << (*p)->production_vertex() << " ; " << (*p)->end_vertex() << " ; " << (*p)->momentum().e() << " ; " << (*p)->momentum().theta() << endl;
 
       /* beam electron found */
-      if ( TString(pdg_p->GetName()) == "e-" && (*p)->status() == 3 && (*p)->production_vertex() == NULL )
+      if ( particle_e0 == NULL && TString(pdg_p->GetName()) == "e-" && (*p)->status() == 3 && (*p)->production_vertex() == NULL )
 	particle_e0 = (*p);
 
       /* beam proton found */
-      if ( TString(pdg_p->GetName()) == "proton" && (*p)->status() == 3 && (*p)->production_vertex() == NULL )
+      if (  particle_p0 == NULL && TString(pdg_p->GetName()) == "proton" && (*p)->status() == 3 && (*p)->production_vertex() == NULL )
 	particle_p0 = (*p);
 
-      /* scattered electron found */
-      if ( TString(pdg_p->GetName()) == "e-" && (*p)->status() == 1 )
-	particle_e1 = (*p);
+      /* final state electron found */
+      //if ( particle_e1 == NULL && TString(pdg_p->GetName()) == "e-" && (*p)->status() == 1 )
+      //particle_e1 = (*p);
+      if ( (*p)->production_vertex() != NULL )
+	{
+	  if ( particle_e1 == NULL && TString(pdg_p->GetName()) == "e-" && (*p)->status() == 3 &&
+	       (*p)->production_vertex()->particles_out_size() == 2 && (*p)->production_vertex()->particles_in_size() == 2 )
+	    {
+	      particle_e1 = (*p);
+	    }
+	}
 
       /* break loop if all found */
       if ( particle_e0 && particle_e1 && particle_p0 )
