@@ -34,7 +34,7 @@ DISKinematics::Init(PHCompositeNode *topNode)
   _ievent = 0;
 
   _fout_root = new TFile(_foutname.c_str(), "RECREATE");
-  _tree_dis = new TNtuple("tree_dis","DIS kinematics info","event:true_x1:true_x2:true_Q2:event_s:electron_x:electron_Q2:electron_y:e1_px:e1_py:e1_pz:e1_p:e1_E:e1_eta:e1_theta:e1_phi:e0_E:p0_E");
+  _tree_dis = new TNtuple("tree_dis","DIS kinematics info","event:true_process:true_x1:true_x2:true_Q2:event_s:electron_x:electron_Q2:electron_y:e1_px:e1_py:e1_pz:e1_p:e1_E:e1_eta:e1_theta:e1_phi:e0_E:p0_E");
 
   return 0;
 }
@@ -50,6 +50,7 @@ DISKinematics::process_event(PHCompositeNode *topNode)
                                                                 "PHHepMCGenEvent");
   HepMC::GenEvent* theEvent = genevt->getEvent();
 
+  int true_process_id = theEvent->signal_process_id();
   float ev_x1 = theEvent->pdf_info()->x1();
   float ev_x2 = theEvent->pdf_info()->x2();
   float ev_Q2 = theEvent->pdf_info()->scalePDF();
@@ -140,7 +141,7 @@ DISKinematics::process_event(PHCompositeNode *topNode)
 
 
       /* fill output TNtuple */
-      float dis_data[70] = {(float)_ievent,ev_x1,ev_x2,ev_Q2,dis_s,dis_x,dis_Q2,dis_y,e1_px,e1_py,e1_pz,e1_p,e1_E,e1_eta,e1_theta,e1_phi,e0_E,p0_E};
+      float dis_data[70] = {(float)_ievent,(float)true_process_id,ev_x1,ev_x2,ev_Q2,dis_s,dis_x,dis_Q2,dis_y,e1_px,e1_py,e1_pz,e1_p,e1_E,e1_eta,e1_theta,e1_phi,e0_E,p0_E};
 
       _tree_dis -> Fill(dis_data);
 
