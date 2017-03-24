@@ -29,7 +29,7 @@ double beam_momentum_selection = -16;
 
 void
 DrawPrototype2EMCalTower( //
-    const TString infile = "data/TB_DST.root_DSTReader.root", //
+    const TString infile = "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2016/Production_0715_EMCalSet2_HCalPR12/beam_00002237-0000_DSTReader.root", //
     bool plot_all = false, const double momentum = -16)
 {
   beam_momentum_selection = momentum;
@@ -233,7 +233,7 @@ DrawPrototype2EMCalTower( //
   int rnd = rand();
   gDirectory->mkdir(Form("dir_%d", rnd));
   gDirectory->cd(Form("dir_%d", rnd));
-//  if (plot_all)
+  if (plot_all)
     EMCDistribution_SUM("Energy_Sum_CEMC", "C2_Sum_e");
 
   int rnd = rand();
