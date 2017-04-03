@@ -2,6 +2,7 @@
 #include "TTree.h"
 
 #include "TGraph.h"
+#include "TGraphErrors.h"
 #include "TH1D.h"
 #include "TH2D.h"
 #include "TCanvas.h"
@@ -15,6 +16,12 @@
 #include "AtlasUtils.C"
 #include "SetOKStyle.C"
 #include "add_purity_text.C"
+
+float binorminal_error(float a, float b) {
+	if(a > b || a < 0 || b < 0) return 9999.;
+	float e = a/b;
+	return sqrt(e*(1-e)/b);
+}
 
 float deltaR( float eta1, float eta2, float phi1, float phi2 ) {
 
@@ -35,17 +42,19 @@ void draw_G4_bjet_truth_tagging(
 		const TString tag_method = "Parton", // Parton, Hadron
 		const char* tracking_option_name = "2014 proposal tracker",
 		const int dca_method = 4, // direct from g4hough, reco-vertex and strait line assumption, dca3d reco-vertex and strait line assumption
-		const double max_track_quality_cut = 1.,
-		const double min_track_pt_cut = 0.0,
-		const int max_fake_cluster = 1000
+		const double max_track_quality_cut = 1.5,
+		const double min_track_pt_cut = 1.0,
+		const double max_dca_cut = 0.1,
+		const int min_MAPS_hits = 2
 		) { 
 
-	const double simulation_jet_energy = 20;
-	const double _max_dca_cut = 0.1;
 
 	const double _plot_min_bjet_eff_cut = 0.05;
 
+	const int max_fake_cluster = 1000;
 	const int jet_embed_flag = 10;
+
+	const double simulation_jet_energy = 20;
 
 	//gROOT->LoadMacro("SetOKStyle.C");
 	SetOKStyle();
@@ -81,13 +90,13 @@ void draw_G4_bjet_truth_tagging(
 	TH1D *h1_jet_pt[3];
 
 	TH1D *h1_track_best_pt_embed_0_10GeV_pion[3];
+	TH1D *h1_particle_pt_embed_0_10GeV_pion[3];  
+
 
 	TH1D *h1_track_pt[3];
 	TH1D *h1_track_pt_pri[3];
 	TH1D *h1_track_pt_fake[3];
 	TH1D *h1_track_pt_sec[3];
-
-	TH1D *h1_particle_pt_embed_0_10GeV_pion[3];  
 
 	TH1D *h1_particle_pt[3];  
 	TH1D *h1_particle_pt_0_10GeV_pion[3];  
@@ -97,8 +106,8 @@ void draw_G4_bjet_truth_tagging(
 
 	for (int flavor = 0; flavor < 3; flavor++) {
 
-		{ ostringstream temp_o_str_s; temp_o_str_s << "h1_track_best_pt_embed_0_10GeV_pion" << flavor; h1_track_best_pt_embed_0_10GeV_pion[flavor] = new TH1D( temp_o_str_s.str().c_str(),"",60,0,30); }
-		{ ostringstream temp_o_str_s; temp_o_str_s << "h1_particle_pt_embed_0_10GeV_pion" << flavor; h1_particle_pt_embed_0_10GeV_pion[flavor] = new TH1D( temp_o_str_s.str().c_str(),"",60,0,30); }
+		{ ostringstream temp_o_str_s; temp_o_str_s << "h1_track_best_pt_embed_0_10GeV_pion_" << flavor; h1_track_best_pt_embed_0_10GeV_pion[flavor] = new TH1D( temp_o_str_s.str().c_str(),"",60,0,30); }
+		{ ostringstream temp_o_str_s; temp_o_str_s << "h1_particle_pt_embed_0_10GeV_pion_" << flavor; h1_particle_pt_embed_0_10GeV_pion[flavor] = new TH1D( temp_o_str_s.str().c_str(),"",60,0,30); }
 
 		{ ostringstream temp_o_str_s; temp_o_str_s << "h1_jet_pt_" << flavor; h1_jet_pt[flavor] = new TH1D( temp_o_str_s.str().c_str(),"",30,0,60); }
 		{ ostringstream temp_o_str_s; temp_o_str_s << "h1_track_pt_" << flavor; h1_track_pt[flavor] = new TH1D( temp_o_str_s.str().c_str(),"",30,0,30); }
@@ -122,7 +131,7 @@ void draw_G4_bjet_truth_tagging(
 
 	for (int flavor = 0; flavor < 3; flavor++) {
 		{ ostringstream temp_o_str_s; temp_o_str_s << "h1_particle_dca_" << flavor; h1_particle_dca[flavor] = new TH1D( temp_o_str_s.str().c_str(),"",80,0,20); }
-		{ ostringstream temp_o_str_s; temp_o_str_s << "h1_track_dca_" << flavor; h1_track_dca[flavor] = new TH1D( temp_o_str_s.str().c_str(),"",400,-0.2,+0.2); }
+		{ ostringstream temp_o_str_s; temp_o_str_s << "h1_track_dca_" << flavor; h1_track_dca[flavor] = new TH1D( temp_o_str_s.str().c_str(),"",100,-0.2,+0.2); }
 		for (int species = 0; species < 5; species++) {
 			{ ostringstream temp_o_str_s; temp_o_str_s << "h1_particle_dca_species" << species << "_" << flavor;
 				h1_particle_dca_species[species][flavor] = new TH1D( temp_o_str_s.str().c_str(), "", 80, 0, 20 );
@@ -205,7 +214,7 @@ void draw_G4_bjet_truth_tagging(
 	float truthjet_phi[10];
 
 	int particle_n;
-	int particle_embed[_MAX_N_PARTICLES_];
+	unsigned int particle_embed[_MAX_N_PARTICLES_];
 	float particle_pt[_MAX_N_PARTICLES_];
 	float particle_eta[_MAX_N_PARTICLES_];
 	float particle_phi[_MAX_N_PARTICLES_];
@@ -310,7 +319,7 @@ void draw_G4_bjet_truth_tagging(
 
 
 	int nentries = ttree->GetEntries();
-//	nentries = TMath::Min(1000,nentries);
+	//nentries = TMath::Min(1000,nentries);
 
 	for (int e = 0 ; e < nentries; e++) {
 
@@ -352,7 +361,8 @@ void draw_G4_bjet_truth_tagging(
 				float dR = deltaR( truthjet_eta[ j ], particle_eta[ p ], truthjet_phi[ j ], particle_phi[ p ] );
 				if (dR > 0.4) continue;
 
-				if(particle_embed[p] == jet_embed_flag  && abs(particle_pid[p]) == 211 )
+				if(particle_embed[p] == jet_embed_flag  && abs(particle_pid[p]) == 211 
+						&& abs(particle_eta[p]) < 1.)
 					h1_particle_pt_embed_0_10GeV_pion[iflavor]->Fill( particle_pt[ p ] );
 
 				h1_particle_pt[iflavor]->Fill( particle_pt[ p ] );
@@ -424,6 +434,12 @@ void draw_G4_bjet_truth_tagging(
 
 				if(!(track_pt[itrk]>min_track_pt_cut)) continue; // yuhw
 
+				int MAPS_hits = 0;
+				for(int i=0;i<3;i++){
+					if((track_nclusters_by_layer[itrk] & (0x1 << i)) > 0) MAPS_hits ++;
+				}
+				if(MAPS_hits < min_MAPS_hits) continue; 
+
 				if (! ( abs(track_nclusters [itrk] - track_best_nclusters[itrk]) <= max_fake_cluster) ) continue; // yuhw
 
 				float dR = deltaR( truthjet_eta[ j ], track_eta[ itrk ], truthjet_phi[ j ], track_phi[ itrk ] );
@@ -465,7 +481,7 @@ void draw_G4_bjet_truth_tagging(
 				}
 
 
-				if (! (track_dca2d[ itrk ] < _max_dca_cut)) continue; // yuhw
+				if (! (track_dca2d[ itrk ] < max_dca_cut)) continue; // yuhw
 
 				// set sign WRT jet
 				if(
@@ -1080,7 +1096,7 @@ void draw_G4_bjet_truth_tagging(
 	myText(0.65,0.62,kBlue,   		"1-track, #it{S}_{DCA}");
 	myText(0.65,0.55,kGreen+2,		"2-track, #it{S}_{DCA}");
 	myText(0.65,0.48,kMagenta+2,	"3-track, #it{S}_{DCA}");
-	myText(0.20, 0.3,kBlack,  		Form("Pythia8, #approx%2.0f GeV jets, %s tracking", simulation_jet_energy, tracking_option_name));
+	//myText(0.20, 0.3,kBlack,  		Form("Pythia8, #approx%2.0f GeV jets, %s tracking", simulation_jet_energy, tracking_option_name));
 
 	tc->Print("plot/tg_bjetE_vs_ljetE_algs.pdf");
 	tc->Print("plot/tg_bjetE_vs_ljetE_algs.root");
@@ -1121,7 +1137,7 @@ void draw_G4_bjet_truth_tagging(
 	myText(0.65,0.62,kBlue,   		"1-track, #it{S}_{DCA}");
 	myText(0.65,0.55,kGreen+2,		"2-track, #it{S}_{DCA}");
 	myText(0.65,0.48,kMagenta+2,	"3-track, #it{S}_{DCA}");
-	myText(0.20, 0.3,kBlack,  		Form("Pythia8, #approx%2.0f GeV jets, %s tracking", simulation_jet_energy, tracking_option_name));
+	//myText(0.20, 0.3,kBlack,  		Form("Pythia8, #approx%2.0f GeV jets, %s tracking", simulation_jet_energy, tracking_option_name));
 
 	tc->Print("plot/tg_bjetE_vs_cjetE_algs.pdf");
 	tc->Print("plot/tg_bjetE_vs_cjetE_algs.root");
@@ -1221,6 +1237,46 @@ void draw_G4_bjet_truth_tagging(
 		for (int n = 0; n < h1_jet_highest_dca_EFF[0]->GetNbinsX(); n++) {
 		}
 
+
+		TGraphErrors *tg_tracking_eff_vs_pt[3];
+		for(int i=0;i<3;i++) {
+			tg_tracking_eff_vs_pt[i] = new TGraphErrors();
+			for(int n = 1; n <= h1_track_best_pt_embed_0_10GeV_pion[i]->GetNbinsX(); n++) {
+				float pt = h1_particle_pt_embed_0_10GeV_pion[i]->GetBinCenter(n);
+				float num = h1_track_best_pt_embed_0_10GeV_pion[i]->GetBinContent(n);
+				float den = h1_particle_pt_embed_0_10GeV_pion[i]->GetBinContent(n);
+				if(num<=0 || den <=0) continue;
+				float eff = num/den;
+				tg_tracking_eff_vs_pt[i]->SetPoint(tg_tracking_eff_vs_pt[i]->GetN(), pt, eff);
+				float eff_err = binorminal_error(num, den);
+				tg_tracking_eff_vs_pt[i]->SetPointError(tg_tracking_eff_vs_pt[i]->GetN()-1, 0.25, eff_err);
+			}
+		}
+
+		gPad->SetLogy(0);
+		TH1D *hFrame_tracking_eff_vs_pt = new TH1D("hFrame_tracking_eff_vs_pt",";p_{T}^{Truth} [GeV/c];tracking eff.",60, 0, 30);
+		hFrame_tracking_eff_vs_pt->GetYaxis()->SetRangeUser(0, 1.1);
+		hFrame_tracking_eff_vs_pt->Draw();
+
+		tg_tracking_eff_vs_pt[0]->SetMarkerStyle(20);
+		tg_tracking_eff_vs_pt[0]->SetMarkerColor(kRed);
+
+		tg_tracking_eff_vs_pt[0]->SetLineWidth(2);
+
+		tg_tracking_eff_vs_pt[0]->SetLineColor(kRed);
+
+		tg_tracking_eff_vs_pt[0]->Draw("p,same");
+		tg_tracking_eff_vs_pt[0]->Print();
+
+		myText(0.2, 0.45,kBlack,  		Form("#chi^{2}/n.d.f. < %2.1f", max_track_quality_cut));
+		myText(0.2, 0.35,kBlack,  		Form("#MAPS >= %1d", min_MAPS_hits));
+		myText(0.2, 0.25,kBlack,  		Form("|dca| < %1.1fcm", max_dca_cut));
+
+		tc->Print("plot/tg_tracking_eff_vs_pt.pdf");
+		tc->Print("plot/tg_tracking_eff_vs_pt.root");
+		gPad->SetLogy(1);
+
+
 		h1_track_pt[1]->SetLineColor( kRed );
 		h1_track_pt[2]->SetLineColor( kBlue );
 		h1_track_pt[0]->SetTitle(";#it{p}_{T} [GeV];counts / GeV");
@@ -1274,8 +1330,10 @@ void draw_G4_bjet_truth_tagging(
 		myText(0.65,0.83,kRed,"charm jets");
 		myText(0.65,0.76,kBlue,"bottom jets");
 
+		gPad->SetGrid(0,0);
 		tc->Print("plot/h1_track_dca_scale.pdf");
 		tc->Print("plot/h1_track_dca_scale.root");
+		gPad->SetGrid(1,1);
 	}
 
 	{
