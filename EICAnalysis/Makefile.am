@@ -24,11 +24,14 @@ libeicana_la_LIBADD = \
 
 pkginclude_HEADERS = \
   DISKinematics.h \
+  Leptoquarks.h \
   Quarkonia2LeptonsMC.h
 
 libeicana_la_SOURCES = \
   DISKinematics.C \
   DISKinematics_Dict.C \
+  Leptoquarks.C \
+  Leptoquarks_Dict.C \
   Quarkonia2LeptonsMC.C \
   Quarkonia2LeptonsMC_Dict.C
 
