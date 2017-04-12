@@ -47,13 +47,29 @@ DISKinematics::process_event(PHCompositeNode *topNode)
   //  cout << "Processing event #" << _ievent << endl;
 
   PHHepMCGenEvent *genevt = findNode::getClass<PHHepMCGenEvent>(topNode,
-                                                                "PHHepMCGenEvent");
+                                                               "PHHepMCGenEvent");
   HepMC::GenEvent* theEvent = genevt->getEvent();
 
+  if ( !theEvent )
+    {
+      cout << "Missing GenEvent!" << endl;
+    }
+  else
+    {
+      cout << "Found a GenEvent with " << theEvent->particles_size() << " particles and " << theEvent->vertices_size() << " vetices" << endl;
+    }
+
   int true_process_id = theEvent->signal_process_id();
-  float ev_x1 = theEvent->pdf_info()->x1();
-  float ev_x2 = theEvent->pdf_info()->x2();
-  float ev_Q2 = theEvent->pdf_info()->scalePDF();
+  float ev_x1 = -999;
+  float ev_x2 = -999;
+  float ev_Q2 = -999;
+
+  if ( theEvent->pdf_info() )
+    {
+      ev_x1 = theEvent->pdf_info()->x1();
+      ev_x2 = theEvent->pdf_info()->x2();
+      ev_Q2 = theEvent->pdf_info()->scalePDF();
+    }
 
   /* incoming electron data */
   //  float e0_E = _e_ebeam;
@@ -74,8 +90,6 @@ DISKinematics::process_event(PHCompositeNode *topNode)
     {
 
       TParticlePDG * pdg_p = TDatabasePDG::Instance()->GetParticle( (*p)->pdg_id() );
-
-      //      cout << (*p)->barcode() << " ; " << TString(pdg_p->GetName()) << " ; " << (*p)->status() << " ; " << (*p)->production_vertex() << " ; " << (*p)->end_vertex() << " ; " << (*p)->momentum().e() << " ; " << (*p)->momentum().theta() << endl;
 
       /* beam electron found */
       if ( particle_e0 == NULL && TString(pdg_p->GetName()) == "e-" && (*p)->status() == 3 && (*p)->production_vertex() == NULL )
