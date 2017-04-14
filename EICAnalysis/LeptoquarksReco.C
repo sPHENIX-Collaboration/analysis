@@ -13,9 +13,8 @@
 #include <TH2D.h>
 #include <TDatabasePDG.h>
 
-#include <phhepmc/PHHepMCGenEvent.h>
-#include <HepMC/GenEvent.h>
-#include <HepMC/GenVertex.h>
+#include <g4jets/JetMap.h>
+#include <g4jets/Jet.h>
 
 using namespace std;
 
@@ -44,19 +43,32 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
   cout << endl;
   cout << "Processing event " << _ievent << endl;
 
-//  JetMap* recojets = findNode::getClass<JetMap>(topNode,_recojetname.c_str());
-//  141     if (!recojets) {
-//    142       cerr << PHWHERE << " ERROR: Can't find " << _recojetname << endl;
-//    143       exit(-1);
-//    144     }
-//  145   
-//    146     // for every recojet
-//    147     for (JetMap::Iter iter = recojets->begin();
-//		 148          iter != recojets->end();
-//		 149          ++iter) {
-//    150       Jet* recojet = iter->second;
-//
+  string recojetname = "AntiKt_Tower_r05";
 
+  JetMap* recojets = findNode::getClass<JetMap>(topNode,recojetname.c_str());
+  if (!recojets)
+    {
+      cerr << PHWHERE << " ERROR: Can't find " << recojetname << endl;
+      exit(-1);
+    }
+
+
+     // for every recojet
+  for (JetMap::Iter iter = recojets->begin();
+       iter != recojets->end();
+       ++iter)
+    {
+      Jet* recojet = iter->second;
+
+      float id    = recojet->get_id();
+      float ncomp = recojet->size_comp();
+      float eta   = recojet->get_eta();
+      float phi   = recojet->get_phi();
+      float e     = recojet->get_e();
+      float pt    = recojet->get_pt();
+
+      cout << "Found a jet: " << id << " " << ncomp << " " << eta << " " << phi << " " << e << " " << pt << endl;
+    }
 
   return 0;
 }

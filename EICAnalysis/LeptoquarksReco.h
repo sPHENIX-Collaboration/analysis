@@ -9,10 +9,6 @@ class TFile;
 class TH1D;
 
 class PHCompositeNode;
-namespace HepMC
-{
-  class GenEvent;
-}
 
 class LeptoquarksReco : public SubsysReco
 {
