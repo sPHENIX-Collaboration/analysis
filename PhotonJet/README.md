@@ -27,3 +27,8 @@ The isolation cone algorithm is by default used; one can change this with the fu
 
 There are two different truth trees; one is produced with the node "PHG4TruthInfoContainer" and the other is from the raw HEPMC files, i.e. the tree "truthtree" contains all of the PYTHIA output which includes parton info while the "truth_g4particles" is a more condensed truth tree without the parton information.
 
+
+Additional functionality has been added to look at forward jets. Tracked jet capabilities were added as well; one can set the use of these in their macro. 
+
+
+
