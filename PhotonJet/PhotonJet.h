@@ -28,26 +28,27 @@ class PhotonJet: public SubsysReco
   
   PhotonJet(const std::string &name="photonjet.root");
   double isoconeradius,mincluspt;
+  double minjetpt;
   int jet_cone_size;
   int use_isocone;
+  int eval_tracked_jets;
+  int etalow;
+  int etahigh;
   int Init(PHCompositeNode*);
   int process_event(PHCompositeNode*);
   int End(PHCompositeNode*);
+  void set_jetpt_mincut(double pt){minjetpt = pt;};
   void Set_Isocone_radius(double rad){isoconeradius = rad;};
   void set_cluspt_mincut(double pt){mincluspt = pt;};
   void use_isocone_algorithm(int yes){use_isocone=yes;};//1 is use it, 0 is don't use it
   void set_jetcone_size(int size){jet_cone_size = size;}//float for jet cone size, i.e. 0.2,0.3,0.4, etc.
   void SetFirstEventNum(int eventnum){nevents = eventnum;}//setting the first event based on job number so that each event has an individual eventnum
-
-
+  void use_tracked_jets(int useit){eval_tracked_jets=useit;};
+  void set_eta_lowhigh(float low, float high){etalow=low; etahigh=high;};
 
 private:
 
-  void Set_Tree_Branches();
  
-  float ConeSum(RawCluster *cluster, RawClusterContainer *cluster_container, SvtxTrackMap *trackmap, float coneradius);
-  void GetRecoHadronsAndJets(RawCluster *trig, SvtxTrackMap *tracks, JetMap *jets, JetRecoEval *recoeval, SvtxTrackEval *trackeval, PHG4TruthInfoContainer *alltruth);
-
 
 
   TFile *file;
@@ -60,6 +61,7 @@ private:
   TTree *truthjettree;
   TTree *recojettree;
   TTree *isophot_jet_tree;
+  TTree *isophot_trackjet_tree;
   TTree *isophot_had_tree;
   std::string outfilename;
 
@@ -106,6 +108,7 @@ private:
   float truthjetp;
   float truthjetenergy;
 
+
   //all reco jets
   float recojetpt;
   float recojetpx,recojetpy,recojetpz;
@@ -137,6 +140,29 @@ private:
   float _truthjetmass;
   float _truthjetp;
   float _truthjetenergy;
+
+
+  //isophot+reco track jet
+  float _trecojetid;
+  float _trecojetpt;
+  float _trecojetpx,_trecojetpy,_trecojetpz;
+  float _trecojetphi;
+  float _trecojeteta;
+  float _trecojetmass;
+  float _trecojetp;
+  float _trecojetenergy;
+  float tjetdphi;
+  float tjetpout;
+  float tjetdeta;
+  float _ttruthjetid;
+  float _ttruthjetpt;
+  float _ttruthjetpx,_ttruthjetpy,_ttruthjetpz;
+  float _ttruthjetphi;
+  float _ttruthjeteta;
+  float _ttruthjetmass;
+  float _ttruthjetp;
+  float _ttruthjetenergy;
+
 
   //isophot+reco hadron
   float _tr_px,_tr_py,_tr_pz;
@@ -185,6 +211,18 @@ private:
   float clustruthphi;
   float clustrutheta;
   int clustruthpid;
+
+
+
+   void Set_Tree_Branches();
+ 
+  float ConeSum(RawCluster *cluster, RawClusterContainer *cluster_container, SvtxTrackMap *trackmap, float coneradius);
+  void GetRecoHadronsAndJets(RawCluster *trig, SvtxTrackMap *tracks, JetMap *jets, JetMap *trackedjets, JetRecoEval *recoeval, SvtxTrackEval *trackeval, PHG4TruthInfoContainer *alltruth);
+ void initialize_values();
+
+
+
+
 
   const float pi2 = -1.5707963;
   const float threepi2 = 4.71238898;
