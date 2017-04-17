@@ -38,11 +38,11 @@ private:
   int _ievent;
   int _total_pass;
 
-  std::string _foutname;
-  TFile *_fout_root;
+  std::string _filename;
+  TFile *_tfile;
 
   /* output tree and variables */
-  TNtuple* _tree_dis;
+  TNtuple* _ntp_leptoquark;
 
   /* beam energies electron and proton */
   float _ebeam_E;
