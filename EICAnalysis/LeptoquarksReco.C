@@ -86,16 +86,16 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
 		Jet* recojet = iter->second;
 
 		float id    = recojet->get_id();
-		//      float ncomp = recojet->size_comp();
-		//      float eta   = recojet->get_eta();
-		//      float phi   = recojet->get_phi();
+		float ncomp = recojet->size_comp();
+		float eta   = recojet->get_eta();
+		float phi   = recojet->get_phi();
 		float e     = recojet->get_e();
-		//      float pt    = recojet->get_pt();
+		//float pt    = recojet->get_pt();
 
 		if(e > max_energy) max_energy_id = id;
 
-		//	recojet->identify(std::cout);
-		//      cout << "Found a jet: " << id << " " << ncomp << " " << eta << " " << phi << " " << e << " " << pt << endl;
+		//recojet->identify(std::cout);
+		cout << "Found a jet: " << id << " " << e << " "<< ncomp << " "<< eta << " " << phi << endl;
 	}
 
 //	cout << "Maximum energy jet is:" << endl;
@@ -126,7 +126,7 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
 	GlobalVertex* vtx = vertexmap->begin()->second;
 	float vtxz = NAN;
 	if (vtx) vtxz = vtx->get_z();
-	else cout << "ERROR: Clogal vertex not found" << endl;
+	else cout << "ERROR: Global vertex not found" << endl;
 	double calorimeter = 0;
 
 	for (Jet::ConstIter citer = max_energy_jet->begin_comp(); citer != max_energy_jet->end_comp(); ++citer)
@@ -182,6 +182,14 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
 //			cout << "*******" << tower->get_energy() << endl;
 //			cout << tower->get_bineta() << "   " << tower->get_binphi() << endl;
 
+			RawTower::ShowerConstRange shower_begin_end = tower->get_g4showers();
+			RawTower::ShowerConstIterator shower_iter;
+			for (shower_iter = shower_begin_end.first; shower_iter !=  shower_begin_end.second; ++shower_iter) 
+			{
+				cout << "shower found!!" << endl;
+			}
+			
+
 			RawTowerGeom * tower_geom = geom->get_tower_geometry(tower -> get_key());
 			assert(tower_geom);
 
@@ -211,6 +219,7 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
 
 		}
 		else cout << "******* ERROR: tower not found " << endl;
+		tower_found = false;
 	}
 
 	return 0;
