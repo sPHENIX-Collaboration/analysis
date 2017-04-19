@@ -26,7 +26,9 @@
 #include <g4vertex/GlobalVertex.h>
 
 #include <g4main/PHG4Shower.h>
+#include <g4main/PHG4Particle.h>
 #include "g4main/PHG4TruthInfoContainer.h"
+#include "g4eval/CaloRawTowerEval.h"
 
 #include <iostream>
 #include <vector>
@@ -125,6 +127,7 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
 	RawTowerContainer::ConstIterator rtiter3;
 
 	RawTowerGeomContainer *geom = NULL;
+	CaloRawTowerEval *towereval = NULL;
 
 	GlobalVertexMap* vertexmap = findNode::getClass<GlobalVertexMap>(topNode,"GlobalVertexMap");
 	if (!vertexmap) {
@@ -150,6 +153,18 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
 				geom = findNode::getClass<RawTowerGeomContainer>(topNode,"TOWERGEOM_CEMC");
 				tower = tower_i;
 				tower_found = true;
+
+				if ( _map_towereval.find("CEMC") == _map_towereval.end() )
+				  {
+				    _map_towereval.insert( make_pair( "CEMC", new CaloRawTowerEval(topNode, "CEMC") ) );
+				  }
+
+				towereval = _map_towereval.find("CEMC")->second;
+				cout << "Looking for primary particle:" << endl;
+				if( (towereval->max_truth_primary_particle_by_energy(tower)) )
+				  cout << "Primary particle in tower: " << (towereval->max_truth_primary_particle_by_energy(tower))->get_name() << endl;
+				else
+				  cout << "NONE found" << endl;
 				break;
 			}
 		}

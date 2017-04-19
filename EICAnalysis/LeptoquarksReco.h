@@ -3,6 +3,7 @@
 
 #include <fun4all/SubsysReco.h>
 #include <math.h>
+#include <map>
 
 class TNtuple;
 class TFile;
@@ -10,6 +11,7 @@ class TH1D;
 
 class PHCompositeNode;
 class PHG4TruthInfoContainer;
+class CaloRawTowerEval;
 
 class LeptoquarksReco : public SubsysReco
 {
@@ -51,6 +53,9 @@ private:
 
   PHG4TruthInfoContainer* _truthinfo;
 
+  /* CaloRawTowerEvaluators to access tru particle info for
+   * given towers */
+  std::map< std::string, CaloRawTowerEval* > _map_towereval;
 };
 
 #endif // __LeptoquarksReco_H__
