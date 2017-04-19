@@ -20,9 +20,13 @@
 #include <g4cemc/RawTowerContainer.h>
 #include <g4cemc/RawTowerGeom.h>
 #include <g4cemc/RawTower.h>
+#include <g4cemc/RawTowerv1.h>
 
 #include <g4vertex/GlobalVertexMap.h>
 #include <g4vertex/GlobalVertex.h>
+
+#include <g4main/PHG4Shower.h>
+#include "g4main/PHG4TruthInfoContainer.h"
 
 #include <iostream>
 #include <vector>
@@ -36,7 +40,8 @@ LeptoquarksReco::LeptoquarksReco(std::string filename) :
 	_ievent(0),
 	_filename(filename),
 	_tfile(nullptr),
-	_ntp_leptoquark(nullptr)
+	_ntp_leptoquark(nullptr),
+	_truthinfo(nullptr)
 {
 	_filename = filename;
 
@@ -54,6 +59,8 @@ LeptoquarksReco::Init(PHCompositeNode *topNode)
 	_tfile = new TFile(_filename.c_str(), "RECREATE");
 	_ntp_leptoquark = new TNtuple("ntp_leptoquark","max energy jet from LQ events",
 		"event:clusterid:towerid:calorimeterid:towereta:towerphi:towerbineta:towerbinphi:towerenergy:towerz");
+
+	_truthinfo = findNode::getClass<PHG4TruthInfoContainer>(topNode,"G4TruthInfo");
 
 	return 0;
 }
@@ -131,7 +138,7 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
 
 	for (Jet::ConstIter citer = max_energy_jet->begin_comp(); citer != max_energy_jet->end_comp(); ++citer)
 	{
-//		cout << citer->second << endl;
+		cout << "Jet: " << citer->first << " " << citer->second << endl;
 		RawTower *tower = NULL;
 		bool tower_found = false;
 		for (rtiter = begin_end.first; rtiter !=  begin_end.second; ++rtiter) 
@@ -182,16 +189,23 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
 //			cout << "*******" << tower->get_energy() << endl;
 //			cout << tower->get_bineta() << "   " << tower->get_binphi() << endl;
 
+			RawTowerGeom * tower_geom = geom->get_tower_geometry(tower -> get_key());
+			assert(tower_geom);
+
 			RawTower::ShowerConstRange shower_begin_end = tower->get_g4showers();
 			RawTower::ShowerConstIterator shower_iter;
 			for (shower_iter = shower_begin_end.first; shower_iter !=  shower_begin_end.second; ++shower_iter) 
 			{
-				cout << "shower found!!" << endl;
+				assert(tower);
+				cout << "shower found!!" << shower_iter->first << " " << shower_iter->second << endl;
+//				PHG4Shower* shower = NULL;
+//				shower = _truthinfo->GetShower(shower_iter->first);
+//				if(shower != NULL) shower->identify(std::cout);
+//				if(shower != NULL) cout << "ding" << endl;
+//				else cout << "ERROR" << endl;
+//				cout << shower->get_id() << endl;
 			}
 			
-
-			RawTowerGeom * tower_geom = geom->get_tower_geometry(tower -> get_key());
-			assert(tower_geom);
 
 			double r = tower_geom->get_center_radius();
 			double phi = atan2(tower_geom->get_center_y(), tower_geom->get_center_x());

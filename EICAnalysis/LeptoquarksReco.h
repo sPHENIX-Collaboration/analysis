@@ -9,6 +9,7 @@ class TFile;
 class TH1D;
 
 class PHCompositeNode;
+class PHG4TruthInfoContainer;
 
 class LeptoquarksReco : public SubsysReco
 {
@@ -47,6 +48,9 @@ private:
   /* beam energies electron and proton */
   float _ebeam_E;
   float _pbeam_E;
+
+  PHG4TruthInfoContainer* _truthinfo;
+
 };
 
 #endif // __LeptoquarksReco_H__
