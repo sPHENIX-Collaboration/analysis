@@ -60,7 +60,7 @@ LeptoquarksReco::Init(PHCompositeNode *topNode)
 
 	_tfile = new TFile(_filename.c_str(), "RECREATE");
 	_ntp_leptoquark = new TNtuple("ntp_leptoquark","max energy jet from LQ events",
-		"event:clusterid:towerid:calorimeterid:towereta:towerphi:towerbineta:towerbinphi:towerenergy:towerz");
+		"event:clusterid:towerid:calorimeterid:towereta:towerphi:towerbineta:towerbinphi:towerenergy:towerz:isTauTower");
 
 	_truthinfo = findNode::getClass<PHG4TruthInfoContainer>(topNode,"G4TruthInfo");
 
@@ -86,6 +86,7 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
 
 	float max_energy_id = 0;
 	float max_energy = 0;
+//	int jet_count = 0;
 
 	// for every recojet
 	for (JetMap::Iter iter = recojets->begin();
@@ -95,16 +96,16 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
 		Jet* recojet = iter->second;
 
 		float id    = recojet->get_id();
-		float ncomp = recojet->size_comp();
-		float eta   = recojet->get_eta();
-		float phi   = recojet->get_phi();
+//		float ncomp = recojet->size_comp();
+//		float eta   = recojet->get_eta();
+//		float phi   = recojet->get_phi();
 		float e     = recojet->get_e();
-		//float pt    = recojet->get_pt();
+//		float pt    = recojet->get_pt();
 
 		if(e > max_energy) max_energy_id = id;
 
 		//recojet->identify(std::cout);
-		cout << "Found a jet: " << id << " " << e << " "<< ncomp << " "<< eta << " " << phi << endl;
+//		cout << "Found a jet: " << id << " " << e << " "<< ncomp << " "<< eta << " " << phi << endl;
 	}
 
 //	cout << "Maximum energy jet is:" << endl;
@@ -141,7 +142,7 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
 
 	for (Jet::ConstIter citer = max_energy_jet->begin_comp(); citer != max_energy_jet->end_comp(); ++citer)
 	{
-		cout << "Jet: " << citer->first << " " << citer->second << endl;
+//		cout << "Jet: " << citer->first << " " << citer->second << endl;
 		RawTower *tower = NULL;
 		bool tower_found = false;
 		for (rtiter = begin_end.first; rtiter !=  begin_end.second; ++rtiter) 
@@ -155,16 +156,11 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
 				tower_found = true;
 
 				if ( _map_towereval.find("CEMC") == _map_towereval.end() )
-				  {
-				    _map_towereval.insert( make_pair( "CEMC", new CaloRawTowerEval(topNode, "CEMC") ) );
-				  }
-
+				{
+					_map_towereval.insert( make_pair( "CEMC", new CaloRawTowerEval(topNode, "CEMC") ) );
+				}
 				towereval = _map_towereval.find("CEMC")->second;
-				cout << "Looking for primary particle:" << endl;
-				if( (towereval->max_truth_primary_particle_by_energy(tower)) )
-				  cout << "Primary particle in tower: " << (towereval->max_truth_primary_particle_by_energy(tower))->get_name() << endl;
-				else
-				  cout << "NONE found" << endl;
+
 				break;
 			}
 		}
@@ -179,6 +175,13 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
 					geom = findNode::getClass<RawTowerGeomContainer>(topNode,"TOWERGEOM_HCALIN");
 					tower = tower_i;
 					tower_found = true;
+
+					if ( _map_towereval.find("HCALIN") == _map_towereval.end() )
+					{
+						_map_towereval.insert( make_pair( "HCALIN", new CaloRawTowerEval(topNode, "HCALIN") ) );
+					}
+					towereval = _map_towereval.find("HCALIN")->second;
+
 					break;
 				}
 			}
@@ -194,6 +197,13 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
 					geom = findNode::getClass<RawTowerGeomContainer>(topNode,"TOWERGEOM_HCALOUT");
 					tower = tower_i;
 					tower_found = true;
+
+					if ( _map_towereval.find("HCALOUT") == _map_towereval.end() )
+					{
+						_map_towereval.insert( make_pair( "HCALOUT", new CaloRawTowerEval(topNode, "HCALOUT") ) );
+					}
+					towereval = _map_towereval.find("HCALOUT")->second;
+
 					break;
 				}
 			}
@@ -201,26 +211,39 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
 
 		if(tower_found)
 		{
-//			cout << "*******" << tower->get_energy() << endl;
-//			cout << tower->get_bineta() << "   " << tower->get_binphi() << endl;
+			int tau_tower = 0;
+			cout << "Looking for primary particle:" << endl;
+			if( (towereval->max_truth_primary_particle_by_energy(tower)) )
+			{
+				cout 	<< "      Primary particle in tower: " << (towereval->max_truth_primary_particle_by_energy(tower))->get_name() << " with energy: " 
+					<< (towereval->max_truth_primary_particle_by_energy(tower))->get_e() << " GeV" << endl;
+				if( (towereval->max_truth_primary_particle_by_energy(tower))->get_name() == "tau-" ) tau_tower = 1;
+				else tau_tower = 2;
+			}
+			else
+			{
+				tau_tower = 0;
+				cout << "NONE found" << endl;
+			}
 
 			RawTowerGeom * tower_geom = geom->get_tower_geometry(tower -> get_key());
 			assert(tower_geom);
 
+/*
 			RawTower::ShowerConstRange shower_begin_end = tower->get_g4showers();
 			RawTower::ShowerConstIterator shower_iter;
 			for (shower_iter = shower_begin_end.first; shower_iter !=  shower_begin_end.second; ++shower_iter) 
 			{
 				assert(tower);
 				cout << "shower found!!" << shower_iter->first << " " << shower_iter->second << endl;
-//				PHG4Shower* shower = NULL;
-//				shower = _truthinfo->GetShower(shower_iter->first);
-//				if(shower != NULL) shower->identify(std::cout);
-//				if(shower != NULL) cout << "ding" << endl;
-//				else cout << "ERROR" << endl;
-//				cout << shower->get_id() << endl;
+				PHG4Shower* shower = NULL;
+				shower = _truthinfo->GetShower(shower_iter->first);
+				if(shower != NULL) shower->identify(std::cout);
+				if(shower != NULL) cout << "ding" << endl;
+				else cout << "ERROR" << endl;
+				cout << shower->get_id() << endl;
 			}
-			
+*/			
 
 			double r = tower_geom->get_center_radius();
 			double phi = atan2(tower_geom->get_center_y(), tower_geom->get_center_x());
@@ -229,8 +252,6 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
 			double z = z0 - vtxz;
 
 			double eta = asinh(z/r); // eta after shift from vertex
-
-//			cout << eta << "     " << phi << endl << endl;
 
 			float lqjet_data[14] = {(float) _ievent,
 				(float) citer->second,
@@ -241,7 +262,8 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
 				(float) tower->get_bineta(),
 				(float) tower->get_binphi(),
 				(float) tower->get_energy(),
-				(float) z
+				(float) z,
+				(float) tau_tower
 			};
 
 			_ntp_leptoquark->Fill(lqjet_data);
