@@ -230,17 +230,22 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
 				{
 					PHG4Particle *particle_i = NULL;
 					particle_i = (towereval->max_truth_primary_particle_by_energy(tower));
-					if(particle_i)
+					if(!particle_i) 
+					{
+						cout << "*********ERROR: Particle not found" << endl;
+						continue;
+					}
+					else if(particle_i)
 //					std::string type = typeid( (towereval->max_truth_primary_particle_by_energy(tower)) ).name();
 //					cout << type << endl;
 //					if(type.find("PHG4Particle") != std::string::npos)
 					{
-						cout << " ding" << endl;
-//						(towereval->max_truth_primary_particle_by_energy(tower))->identify(std::cout);
-						cout 	<< "      Primary particle in tower: " 
- 							<< particle_i->get_pid() << " / "
-							<< particle_i->get_name() << " with energy: " 
-							<< particle_i->get_e() << " GeV" << endl;
+//						cout << " ding" << endl;
+//						particle_i->identify(std::cout);
+//						cout 	<< "      Primary particle in tower: " 
+// 							<< particle_i->get_pid() << " / "
+//							<< particle_i->get_name() << " with energy: " 
+//							<< particle_i->get_e() << " GeV" << endl;
 						if( particle_i->get_name() == "tau-" ) tau_tower = 1;
 						else tau_tower = 2;
 //						cout << " ding" << endl << endl;
@@ -282,7 +287,7 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
 				_ntp_leptoquark->Fill(lqjet_data);
 
 			}
-			else cout << "******* ERROR: tower not found " << endl;
+			else cout << "******* ERROR: tower not found. Calorimeter may not be defined in LeptoquarksReco. Skipping. " << endl;
 			tower_found = false;
 		}
 		is_max_energy_jet = 0;
