@@ -34,6 +34,8 @@
 #include <vector>
 #include <cstdlib>
 #include <cassert>
+#include <typeinfo>
+#include <string>
 
 using namespace std;
 
@@ -60,7 +62,7 @@ LeptoquarksReco::Init(PHCompositeNode *topNode)
 
 	_tfile = new TFile(_filename.c_str(), "RECREATE");
 	_ntp_leptoquark = new TNtuple("ntp_leptoquark","max energy jet from LQ events",
-		"event:clusterid:towerid:calorimeterid:towereta:towerphi:towerbineta:towerbinphi:towerenergy:towerz:isTauTower");
+		"event:jetid:isMaxEnergyJet:clusterid:towerid:calorimeterid:towereta:towerphi:towerbineta:towerbinphi:towerenergy:towerz:isTauTower");
 
 	_truthinfo = findNode::getClass<PHG4TruthInfoContainer>(topNode,"G4TruthInfo");
 
@@ -86,6 +88,7 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
 
 	float max_energy_id = 0;
 	float max_energy = 0;
+	float is_max_energy_jet = 0;
 //	int jet_count = 0;
 
 	// for every recojet
@@ -108,171 +111,182 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
 //		cout << "Found a jet: " << id << " " << e << " "<< ncomp << " "<< eta << " " << phi << endl;
 	}
 
-//	cout << "Maximum energy jet is:" << endl;
-	Jet *max_energy_jet = recojets->get(max_energy_id);
-//	max_energy_jet->identify(std::cout);
-
-	RawTowerContainer *towers = NULL;
-	towers = findNode::getClass<RawTowerContainer>(topNode,"TOWER_CALIB_CEMC");
-	RawTowerContainer::ConstRange begin_end = towers->getTowers();
-	RawTowerContainer::ConstIterator rtiter;
-
-	RawTowerContainer *towers2 = NULL;
-	towers2 = findNode::getClass<RawTowerContainer>(topNode,"TOWER_CALIB_HCALIN");
-	RawTowerContainer::ConstRange begin_end2 = towers2->getTowers();
-	RawTowerContainer::ConstIterator rtiter2;
-
-	RawTowerContainer *towers3 = NULL;
-	towers3 = findNode::getClass<RawTowerContainer>(topNode,"TOWER_CALIB_HCALOUT");
-	RawTowerContainer::ConstRange begin_end3 = towers3->getTowers();
-	RawTowerContainer::ConstIterator rtiter3;
-
-	RawTowerGeomContainer *geom = NULL;
-	CaloRawTowerEval *towereval = NULL;
-
-	GlobalVertexMap* vertexmap = findNode::getClass<GlobalVertexMap>(topNode,"GlobalVertexMap");
-	if (!vertexmap) {
-		cout << "ERROR: Vertex map not found" << endl;
-	}
-	GlobalVertex* vtx = vertexmap->begin()->second;
-	float vtxz = NAN;
-	if (vtx) vtxz = vtx->get_z();
-	else cout << "ERROR: Global vertex not found" << endl;
-	double calorimeter = 0;
-
-	for (Jet::ConstIter citer = max_energy_jet->begin_comp(); citer != max_energy_jet->end_comp(); ++citer)
+	for (JetMap::Iter iter = recojets->begin();
+	iter != recojets->end();
+	++iter)
 	{
-//		cout << "Jet: " << citer->first << " " << citer->second << endl;
-		RawTower *tower = NULL;
-		bool tower_found = false;
-		for (rtiter = begin_end.first; rtiter !=  begin_end.second; ++rtiter) 
-		{
-			RawTower *tower_i = rtiter->second;
-			if(tower_i->get_id() == citer->second)
-			{
-				calorimeter = 1;
-				geom = findNode::getClass<RawTowerGeomContainer>(topNode,"TOWERGEOM_CEMC");
-				tower = tower_i;
-				tower_found = true;
+		
+	//	cout << "Maximum energy jet is:" << endl;
+	//	Jet *max_energy_jet = recojets->get(max_energy_id);
+		Jet *max_energy_jet = iter->second;
+//		if(max_energy_jet->get_e() < 0.1) continue;
+		if((iter->second)->get_id() == max_energy_id) is_max_energy_jet = 1;
+		else is_max_energy_jet = 0;
+	//	cout << is_max_energy_jet << endl;
+	//	max_energy_jet->identify(std::cout);
 
-				if ( _map_towereval.find("CEMC") == _map_towereval.end() )
-				{
-					_map_towereval.insert( make_pair( "CEMC", new CaloRawTowerEval(topNode, "CEMC") ) );
-				}
-				towereval = _map_towereval.find("CEMC")->second;
+		RawTowerContainer *towers = NULL;
+		towers = findNode::getClass<RawTowerContainer>(topNode,"TOWER_CALIB_CEMC");
+		RawTowerContainer::ConstRange begin_end = towers->getTowers();
+		RawTowerContainer::ConstIterator rtiter;
 
-				break;
-			}
+		RawTowerContainer *towers2 = NULL;
+		towers2 = findNode::getClass<RawTowerContainer>(topNode,"TOWER_CALIB_HCALIN");
+		RawTowerContainer::ConstRange begin_end2 = towers2->getTowers();
+		RawTowerContainer::ConstIterator rtiter2;
+
+		RawTowerContainer *towers3 = NULL;
+		towers3 = findNode::getClass<RawTowerContainer>(topNode,"TOWER_CALIB_HCALOUT");
+		RawTowerContainer::ConstRange begin_end3 = towers3->getTowers();
+		RawTowerContainer::ConstIterator rtiter3;
+
+		RawTowerGeomContainer *geom = NULL;
+		CaloRawTowerEval *towereval = NULL;
+
+		GlobalVertexMap* vertexmap = findNode::getClass<GlobalVertexMap>(topNode,"GlobalVertexMap");
+		if (!vertexmap) {
+			cout << "ERROR: Vertex map not found" << endl;
 		}
-		if (tower_found == false)
+		GlobalVertex* vtx = vertexmap->begin()->second;
+		float vtxz = NAN;
+		if (vtx) vtxz = vtx->get_z();
+		else cout << "ERROR: Global vertex not found" << endl;
+		double calorimeter = 0;
+
+		for (Jet::ConstIter citer = max_energy_jet->begin_comp(); citer != max_energy_jet->end_comp(); ++citer)
 		{
-			for (rtiter2 = begin_end2.first; rtiter2 !=  begin_end2.second; ++rtiter2) 
+	//		cout << "Jet: " << citer->first << " " << citer->second << endl;
+			RawTower *tower = NULL;
+			bool tower_found = false;
+			for (rtiter = begin_end.first; rtiter !=  begin_end.second; ++rtiter) 
 			{
-				RawTower *tower_i = rtiter2->second;
+				RawTower *tower_i = rtiter->second;
 				if(tower_i->get_id() == citer->second)
 				{
-					calorimeter = 2;
-					geom = findNode::getClass<RawTowerGeomContainer>(topNode,"TOWERGEOM_HCALIN");
+					calorimeter = 1;
+					geom = findNode::getClass<RawTowerGeomContainer>(topNode,"TOWERGEOM_CEMC");
 					tower = tower_i;
 					tower_found = true;
 
-					if ( _map_towereval.find("HCALIN") == _map_towereval.end() )
+					if ( _map_towereval.find("CEMC") == _map_towereval.end() )
 					{
-						_map_towereval.insert( make_pair( "HCALIN", new CaloRawTowerEval(topNode, "HCALIN") ) );
+						_map_towereval.insert( make_pair( "CEMC", new CaloRawTowerEval(topNode, "CEMC") ) );
 					}
-					towereval = _map_towereval.find("HCALIN")->second;
+					towereval = _map_towereval.find("CEMC")->second;
 
 					break;
 				}
 			}
-		}
-		if(tower_found == false)
-		{
-			for (rtiter3 = begin_end3.first; rtiter3 !=  begin_end3.second; ++rtiter3) 
+			if (tower_found == false)
 			{
-				RawTower *tower_i = rtiter3->second;
-				if(tower_i->get_id() == citer->second)
+				for (rtiter2 = begin_end2.first; rtiter2 !=  begin_end2.second; ++rtiter2) 
 				{
-					calorimeter = 3;
-					geom = findNode::getClass<RawTowerGeomContainer>(topNode,"TOWERGEOM_HCALOUT");
-					tower = tower_i;
-					tower_found = true;
-
-					if ( _map_towereval.find("HCALOUT") == _map_towereval.end() )
+					RawTower *tower_i = rtiter2->second;
+					if(tower_i->get_id() == citer->second)
 					{
-						_map_towereval.insert( make_pair( "HCALOUT", new CaloRawTowerEval(topNode, "HCALOUT") ) );
-					}
-					towereval = _map_towereval.find("HCALOUT")->second;
+						calorimeter = 2;
+						geom = findNode::getClass<RawTowerGeomContainer>(topNode,"TOWERGEOM_HCALIN");
+						tower = tower_i;
+						tower_found = true;
 
-					break;
+						if ( _map_towereval.find("HCALIN") == _map_towereval.end() )
+						{
+							_map_towereval.insert( make_pair( "HCALIN", new CaloRawTowerEval(topNode, "HCALIN") ) );
+						}
+						towereval = _map_towereval.find("HCALIN")->second;
+
+						break;
+					}
 				}
 			}
+			if(tower_found == false)
+			{
+				for (rtiter3 = begin_end3.first; rtiter3 !=  begin_end3.second; ++rtiter3) 
+				{
+					RawTower *tower_i = rtiter3->second;
+					if(tower_i->get_id() == citer->second)
+					{
+						calorimeter = 3;
+						geom = findNode::getClass<RawTowerGeomContainer>(topNode,"TOWERGEOM_HCALOUT");
+						tower = tower_i;
+						tower_found = true;
+
+						if ( _map_towereval.find("HCALOUT") == _map_towereval.end() )
+						{
+							_map_towereval.insert( make_pair( "HCALOUT", new CaloRawTowerEval(topNode, "HCALOUT") ) );
+						}
+						towereval = _map_towereval.find("HCALOUT")->second;
+
+						break;
+					}
+				}
+			}
+
+			if(tower_found)
+			{
+				int tau_tower = 0;
+//				cout << "Looking for primary particle:" << endl;
+				if( (towereval->max_truth_primary_particle_by_energy(tower)) )
+				{
+					PHG4Particle *particle_i = NULL;
+					particle_i = (towereval->max_truth_primary_particle_by_energy(tower));
+					if(particle_i)
+//					std::string type = typeid( (towereval->max_truth_primary_particle_by_energy(tower)) ).name();
+//					cout << type << endl;
+//					if(type.find("PHG4Particle") != std::string::npos)
+					{
+						cout << " ding" << endl;
+//						(towereval->max_truth_primary_particle_by_energy(tower))->identify(std::cout);
+						cout 	<< "      Primary particle in tower: " 
+ 							<< particle_i->get_pid() << " / "
+							<< particle_i->get_name() << " with energy: " 
+							<< particle_i->get_e() << " GeV" << endl;
+						if( particle_i->get_name() == "tau-" ) tau_tower = 1;
+						else tau_tower = 2;
+//						cout << " ding" << endl << endl;
+					}
+					else { cout << "ERROR: TypeID is: " << /*type <<*/ " not PHG4Particle." << endl; }
+				}
+				else
+				{
+					tau_tower = 0;
+//					cout << "NONE found" << endl;
+				}
+
+				RawTowerGeom * tower_geom = geom->get_tower_geometry(tower -> get_key());
+				assert(tower_geom);
+
+				double r = tower_geom->get_center_radius();
+				double phi = atan2(tower_geom->get_center_y(), tower_geom->get_center_x());
+				double z0 = tower_geom->get_center_z();
+
+				double z = z0 - vtxz;
+
+				double eta = asinh(z/r); // eta after shift from vertex
+
+				float lqjet_data[14] = {(float) _ievent,	//event number
+					(float) (iter->second)->get_id(),	//jet id
+					(float) is_max_energy_jet,		// is this the maximum energy jet?
+					(float) citer->second,
+					(float) tower->get_id(),
+					(float) calorimeter,
+					(float) eta,
+					(float) phi,
+					(float) tower->get_bineta(),
+					(float) tower->get_binphi(),
+					(float) tower->get_energy(),
+					(float) z,
+					(float) tau_tower
+				};
+
+				_ntp_leptoquark->Fill(lqjet_data);
+
+			}
+			else cout << "******* ERROR: tower not found " << endl;
+			tower_found = false;
 		}
-
-		if(tower_found)
-		{
-			int tau_tower = 0;
-			cout << "Looking for primary particle:" << endl;
-			if( (towereval->max_truth_primary_particle_by_energy(tower)) )
-			{
-				cout 	<< "      Primary particle in tower: " << (towereval->max_truth_primary_particle_by_energy(tower))->get_name() << " with energy: " 
-					<< (towereval->max_truth_primary_particle_by_energy(tower))->get_e() << " GeV" << endl;
-				if( (towereval->max_truth_primary_particle_by_energy(tower))->get_name() == "tau-" ) tau_tower = 1;
-				else tau_tower = 2;
-			}
-			else
-			{
-				tau_tower = 0;
-				cout << "NONE found" << endl;
-			}
-
-			RawTowerGeom * tower_geom = geom->get_tower_geometry(tower -> get_key());
-			assert(tower_geom);
-
-/*
-			RawTower::ShowerConstRange shower_begin_end = tower->get_g4showers();
-			RawTower::ShowerConstIterator shower_iter;
-			for (shower_iter = shower_begin_end.first; shower_iter !=  shower_begin_end.second; ++shower_iter) 
-			{
-				assert(tower);
-				cout << "shower found!!" << shower_iter->first << " " << shower_iter->second << endl;
-				PHG4Shower* shower = NULL;
-				shower = _truthinfo->GetShower(shower_iter->first);
-				if(shower != NULL) shower->identify(std::cout);
-				if(shower != NULL) cout << "ding" << endl;
-				else cout << "ERROR" << endl;
-				cout << shower->get_id() << endl;
-			}
-*/			
-
-			double r = tower_geom->get_center_radius();
-			double phi = atan2(tower_geom->get_center_y(), tower_geom->get_center_x());
-			double z0 = tower_geom->get_center_z();
-
-			double z = z0 - vtxz;
-
-			double eta = asinh(z/r); // eta after shift from vertex
-
-			float lqjet_data[14] = {(float) _ievent,
-				(float) citer->second,
-				(float) tower->get_id(),
-				(float) calorimeter,
-				(float) eta,
-				(float) phi,
-				(float) tower->get_bineta(),
-				(float) tower->get_binphi(),
-				(float) tower->get_energy(),
-				(float) z,
-				(float) tau_tower
-			};
-
-			_ntp_leptoquark->Fill(lqjet_data);
-
-		}
-		else cout << "******* ERROR: tower not found " << endl;
-		tower_found = false;
+		is_max_energy_jet = 0;
 	}
-
 	return 0;
 }
 
