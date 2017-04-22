@@ -62,7 +62,7 @@ LeptoquarksReco::Init(PHCompositeNode *topNode)
 
 	_tfile = new TFile(_filename.c_str(), "RECREATE");
 	_ntp_leptoquark = new TNtuple("ntp_leptoquark","max energy jet from LQ events",
-		"event:jetid:isMaxEnergyJet:clusterid:towerid:calorimeterid:towereta:towerphi:towerbineta:towerbinphi:towerenergy:towerz:isTauTower");
+		"event:jetid:isMaxEnergyJet:towerid:calorimeterid:towereta:towerphi:towerbineta:towerbinphi:towerenergy:towerz:isTauTower");
 
 	_truthinfo = findNode::getClass<PHG4TruthInfoContainer>(topNode,"G4TruthInfo");
 
@@ -89,9 +89,8 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
 	float max_energy_id = 0;
 	float max_energy = 0;
 	float is_max_energy_jet = 0;
-//	int jet_count = 0;
 
-	// for every recojet
+	//loop over every recojet in the event to determine the maximum energy jet.
 	for (JetMap::Iter iter = recojets->begin();
 	iter != recojets->end();
 	++iter)
@@ -99,31 +98,23 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
 		Jet* recojet = iter->second;
 
 		float id    = recojet->get_id();
-//		float ncomp = recojet->size_comp();
-//		float eta   = recojet->get_eta();
-//		float phi   = recojet->get_phi();
 		float e     = recojet->get_e();
-//		float pt    = recojet->get_pt();
 
 		if(e > max_energy) max_energy_id = id;
-
-		//recojet->identify(std::cout);
-//		cout << "Found a jet: " << id << " " << e << " "<< ncomp << " "<< eta << " " << phi << endl;
 	}
 
+	//loop over every jet identified in the event, this time we will be able to record which is the max energy jet and store this info.
 	for (JetMap::Iter iter = recojets->begin();
 	iter != recojets->end();
 	++iter)
 	{
 		
-	//	cout << "Maximum energy jet is:" << endl;
-	//	Jet *max_energy_jet = recojets->get(max_energy_id);
-		Jet *max_energy_jet = iter->second;
+//		cout << "Maximum energy jet is:" << endl;
+//		Jet *max_energy_jet = recojets->get(max_energy_id);
+		Jet *max_energy_jet = iter->second;	//Not actually the max energy jet anymore, just every jet.
 //		if(max_energy_jet->get_e() < 0.1) continue;
 		if((iter->second)->get_id() == max_energy_id) is_max_energy_jet = 1;
 		else is_max_energy_jet = 0;
-	//	cout << is_max_energy_jet << endl;
-	//	max_energy_jet->identify(std::cout);
 
 		RawTowerContainer *towers = NULL;
 		towers = findNode::getClass<RawTowerContainer>(topNode,"TOWER_CALIB_CEMC");
@@ -153,9 +144,10 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
 		else cout << "ERROR: Global vertex not found" << endl;
 		double calorimeter = 0;
 
+		//Loop over all of the towers in a jet
 		for (Jet::ConstIter citer = max_energy_jet->begin_comp(); citer != max_energy_jet->end_comp(); ++citer)
 		{
-	//		cout << "Jet: " << citer->first << " " << citer->second << endl;
+			//Look for each tower in the calorimeters
 			RawTower *tower = NULL;
 			bool tower_found = false;
 			for (rtiter = begin_end.first; rtiter !=  begin_end.second; ++rtiter) 
@@ -222,6 +214,7 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
 				}
 			}
 
+			// If the tower is found, get the PHG4Particle which contributes the most energy to that tower.
 			if(tower_found)
 			{
 				int tau_tower = 0;
@@ -236,26 +229,22 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
 						continue;
 					}
 					else if(particle_i)
-//					std::string type = typeid( (towereval->max_truth_primary_particle_by_energy(tower)) ).name();
-//					cout << type << endl;
-//					if(type.find("PHG4Particle") != std::string::npos)
 					{
-//						cout << " ding" << endl;
-//						particle_i->identify(std::cout);
 //						cout 	<< "      Primary particle in tower: " 
 // 							<< particle_i->get_pid() << " / "
 //							<< particle_i->get_name() << " with energy: " 
 //							<< particle_i->get_e() << " GeV" << endl;
 						if( particle_i->get_name() == "tau-" ) tau_tower = 1;
 						else tau_tower = 2;
-//						cout << " ding" << endl << endl;
 					}
-					else { cout << "ERROR: TypeID is: " << /*type <<*/ " not PHG4Particle." << endl; }
+					else 
+					{
+						cout << "ERROR: Type is: not PHG4Particle." << endl; 
+					}
 				}
 				else
 				{
 					tau_tower = 0;
-//					cout << "NONE found" << endl;
 				}
 
 				RawTowerGeom * tower_geom = geom->get_tower_geometry(tower -> get_key());
@@ -272,22 +261,21 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
 				float lqjet_data[14] = {(float) _ievent,	//event number
 					(float) (iter->second)->get_id(),	//jet id
 					(float) is_max_energy_jet,		// is this the maximum energy jet?
-					(float) citer->second,
-					(float) tower->get_id(),
-					(float) calorimeter,
-					(float) eta,
-					(float) phi,
-					(float) tower->get_bineta(),
-					(float) tower->get_binphi(),
-					(float) tower->get_energy(),
-					(float) z,
-					(float) tau_tower
+					(float) tower->get_id(),		//tower id
+					(float) calorimeter,			//calorimeter id. 1 = CEMC, 2 = HCALIN, 3 = HCALOUT
+					(float) eta,				//eta of tower calculated from bin/calorimeter information
+					(float) phi,				//phi of tower calculated from bin/calorimeter information
+					(float) tower->get_bineta(),		//eta bin of tower
+					(float) tower->get_binphi(),		//phi bin of tower
+					(float) tower->get_energy(),		//energy deposited in tower
+					(float) z,				//z position of calorimeter relative to interaction point
+					(float) tau_tower			//is the primary source of energy in this tower a tau?
 				};
 
 				_ntp_leptoquark->Fill(lqjet_data);
 
 			}
-			else cout << "******* ERROR: tower not found. Calorimeter may not be defined in LeptoquarksReco. Skipping. " << endl;
+			else cout << "******* ERROR in LeptoquarksReco: tower not found. Calorimeter may not be defined in LeptoquarksReco. Skipping. " << endl;
 			tower_found = false;
 		}
 		is_max_energy_jet = 0;
