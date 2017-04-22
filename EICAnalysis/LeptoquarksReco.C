@@ -75,7 +75,7 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
 	_ievent ++;
 
 	cout << endl;
-	cout << "Processing event " << _ievent << endl;
+	cout << "LeptoquarksReco: Processing event " << _ievent << endl;
 
 	string recojetname = "AntiKt_Tower_r05";
 
@@ -116,24 +116,6 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
 		if((iter->second)->get_id() == max_energy_id) is_max_energy_jet = 1;
 		else is_max_energy_jet = 0;
 
-		RawTowerContainer *towers = NULL;
-		towers = findNode::getClass<RawTowerContainer>(topNode,"TOWER_CALIB_CEMC");
-		RawTowerContainer::ConstRange begin_end = towers->getTowers();
-		RawTowerContainer::ConstIterator rtiter;
-
-		RawTowerContainer *towers2 = NULL;
-		towers2 = findNode::getClass<RawTowerContainer>(topNode,"TOWER_CALIB_HCALIN");
-		RawTowerContainer::ConstRange begin_end2 = towers2->getTowers();
-		RawTowerContainer::ConstIterator rtiter2;
-
-		RawTowerContainer *towers3 = NULL;
-		towers3 = findNode::getClass<RawTowerContainer>(topNode,"TOWER_CALIB_HCALOUT");
-		RawTowerContainer::ConstRange begin_end3 = towers3->getTowers();
-		RawTowerContainer::ConstIterator rtiter3;
-
-		RawTowerGeomContainer *geom = NULL;
-		CaloRawTowerEval *towereval = NULL;
-
 		GlobalVertexMap* vertexmap = findNode::getClass<GlobalVertexMap>(topNode,"GlobalVertexMap");
 		if (!vertexmap) {
 			cout << "ERROR: Vertex map not found" << endl;
@@ -147,6 +129,14 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
 		//Loop over all of the towers in a jet
 		for (Jet::ConstIter citer = max_energy_jet->begin_comp(); citer != max_energy_jet->end_comp(); ++citer)
 		{
+			RawTowerContainer *towers = NULL;
+			towers = findNode::getClass<RawTowerContainer>(topNode,"TOWER_CALIB_CEMC");
+			RawTowerContainer::ConstRange begin_end = towers->getTowers();
+			RawTowerContainer::ConstIterator rtiter;
+
+			RawTowerGeomContainer *geom = NULL;
+			CaloRawTowerEval *towereval = NULL;
+
 			//Look for each tower in the calorimeters
 			RawTower *tower = NULL;
 			bool tower_found = false;
@@ -171,6 +161,11 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
 			}
 			if (tower_found == false)
 			{
+				RawTowerContainer *towers2 = NULL;
+				towers2 = findNode::getClass<RawTowerContainer>(topNode,"TOWER_CALIB_HCALIN");
+				RawTowerContainer::ConstRange begin_end2 = towers2->getTowers();
+				RawTowerContainer::ConstIterator rtiter2;
+
 				for (rtiter2 = begin_end2.first; rtiter2 !=  begin_end2.second; ++rtiter2) 
 				{
 					RawTower *tower_i = rtiter2->second;
@@ -193,6 +188,11 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
 			}
 			if(tower_found == false)
 			{
+				RawTowerContainer *towers3 = NULL;
+				towers3 = findNode::getClass<RawTowerContainer>(topNode,"TOWER_CALIB_HCALOUT");
+				RawTowerContainer::ConstRange begin_end3 = towers3->getTowers();
+				RawTowerContainer::ConstIterator rtiter3;
+
 				for (rtiter3 = begin_end3.first; rtiter3 !=  begin_end3.second; ++rtiter3) 
 				{
 					RawTower *tower_i = rtiter3->second;
@@ -213,38 +213,114 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
 					}
 				}
 			}
+			if(tower_found == false)
+			{
+				RawTowerContainer *towers3 = NULL;
+				towers3 = findNode::getClass<RawTowerContainer>(topNode,"TOWER_CALIB_FEMC");
+				RawTowerContainer::ConstRange begin_end3 = towers3->getTowers();
+				RawTowerContainer::ConstIterator rtiter3;
+
+				for (rtiter3 = begin_end3.first; rtiter3 !=  begin_end3.second; ++rtiter3) 
+				{
+					RawTower *tower_i = rtiter3->second;
+					if(tower_i->get_id() == citer->second)
+					{
+						calorimeter = 11;
+						geom = findNode::getClass<RawTowerGeomContainer>(topNode,"TOWERGEOM_FEMC");
+						tower = tower_i;
+						tower_found = true;
+
+						if ( _map_towereval.find("FEMC") == _map_towereval.end() )
+						{
+							_map_towereval.insert( make_pair( "FEMC", new CaloRawTowerEval(topNode, "FEMC") ) );
+						}
+						towereval = _map_towereval.find("FEMC")->second;
+
+						break;
+					}
+				}
+			}
+			if(tower_found == false)
+			{
+				RawTowerContainer *towers3 = NULL;
+				towers3 = findNode::getClass<RawTowerContainer>(topNode,"TOWER_CALIB_FHCAL");
+				RawTowerContainer::ConstRange begin_end3 = towers3->getTowers();
+				RawTowerContainer::ConstIterator rtiter3;
+
+				for (rtiter3 = begin_end3.first; rtiter3 !=  begin_end3.second; ++rtiter3) 
+				{
+					RawTower *tower_i = rtiter3->second;
+					if(tower_i->get_id() == citer->second)
+					{
+						calorimeter = 12;
+						geom = findNode::getClass<RawTowerGeomContainer>(topNode,"TOWERGEOM_FHCAL");
+						tower = tower_i;
+						tower_found = true;
+
+						if ( _map_towereval.find("FHCAL") == _map_towereval.end() )
+						{
+							_map_towereval.insert( make_pair( "FHCAL", new CaloRawTowerEval(topNode, "FHCAL") ) );
+						}
+						towereval = _map_towereval.find("FHCAL")->second;
+
+						break;
+					}
+				}
+			}
+			if(tower_found == false)
+			{
+				RawTowerContainer *towers3 = NULL;
+				towers3 = findNode::getClass<RawTowerContainer>(topNode,"TOWER_CALIB_EEMC");
+				RawTowerContainer::ConstRange begin_end3 = towers3->getTowers();
+				RawTowerContainer::ConstIterator rtiter3;
+
+				for (rtiter3 = begin_end3.first; rtiter3 !=  begin_end3.second; ++rtiter3) 
+				{
+					RawTower *tower_i = rtiter3->second;
+					if(tower_i->get_id() == citer->second)
+					{
+						calorimeter = 21;
+						geom = findNode::getClass<RawTowerGeomContainer>(topNode,"TOWERGEOM_EEMC");
+						tower = tower_i;
+						tower_found = true;
+
+						if ( _map_towereval.find("EEMC") == _map_towereval.end() )
+						{
+							_map_towereval.insert( make_pair( "EEMC", new CaloRawTowerEval(topNode, "EEMC") ) );
+						}
+						towereval = _map_towereval.find("EEMC")->second;
+
+						break;
+					}
+				}
+			}
 
 			// If the tower is found, get the PHG4Particle which contributes the most energy to that tower.
 			if(tower_found)
 			{
 				int tau_tower = 0;
-//				cout << "Looking for primary particle:" << endl;
-				if( (towereval->max_truth_primary_particle_by_energy(tower)) )
+//				cout << endl <<  "Looking for primary particle in tower " << tower->get_id() << endl;
+
+				PHG4Particle *particle_i = NULL;
+				particle_i = (towereval->max_truth_primary_particle_by_energy(tower));
+
+				if(!particle_i) 
 				{
-					PHG4Particle *particle_i = NULL;
-					particle_i = (towereval->max_truth_primary_particle_by_energy(tower));
-					if(!particle_i) 
-					{
-						cout << "*********ERROR: Particle not found" << endl;
-						continue;
-					}
-					else if(particle_i)
-					{
+					cout << "*********Warning in LeptoquarksReco: Particle not found in tower " << tower->get_id() << ". May be noise." << endl;
+//					continue;
+				}
+				else if(particle_i)
+				{
 //						cout 	<< "      Primary particle in tower: " 
 // 							<< particle_i->get_pid() << " / "
 //							<< particle_i->get_name() << " with energy: " 
 //							<< particle_i->get_e() << " GeV" << endl;
-						if( particle_i->get_name() == "tau-" ) tau_tower = 1;
-						else tau_tower = 2;
-					}
-					else 
-					{
-						cout << "ERROR: Type is: not PHG4Particle." << endl; 
-					}
+//					if( particle_i->get_name() == "tau-" ) tau_tower = 1;
+					tau_tower = 2;
 				}
-				else
+				else 
 				{
-					tau_tower = 0;
+					cout << "********ERROR in LeptoquarksReco: Condition should not be possible." << endl; 
 				}
 
 				RawTowerGeom * tower_geom = geom->get_tower_geometry(tower -> get_key());
