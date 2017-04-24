@@ -82,13 +82,15 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
 	JetMap* recojets = findNode::getClass<JetMap>(topNode,recojetname.c_str());
 	if (!recojets)
 	{
-	cerr << PHWHERE << " ERROR: Can't find " << recojetname << endl;
-	exit(-1);
+		cerr << PHWHERE << " ERROR: Can't find " << recojetname << endl;
+		exit(-1);
 	}
 
-	float max_energy_id = 0;
-	float max_energy = 0;
+//	float max_energy_id = 0;
+//	float max_energy = 0;
 	float is_max_energy_jet = 0;
+
+	std::vector<float> energy_list;
 
 	//loop over every recojet in the event to determine the maximum energy jet.
 	for (JetMap::Iter iter = recojets->begin();
@@ -97,10 +99,21 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
 	{
 		Jet* recojet = iter->second;
 
-		float id    = recojet->get_id();
+//		float id    = recojet->get_id();
 		float e     = recojet->get_e();
+		energy_list.push_back(e);
 
-		if(e > max_energy) max_energy_id = id;
+//		if(e > max_energy) max_energy_id = id;
+	}
+
+	//Rank the entries in the energy_list by energy (highest energyy = 1, second highest = 2, etc.)
+	vector<float> energy_list_sorted = energy_list;
+	std::sort(energy_list_sorted.begin(), energy_list_sorted.end(), std::greater<float>());
+
+	map<float, int> energyRankMap;
+	for(int i = 0; (unsigned)i < energy_list_sorted.size(); i++)
+	{
+		energyRankMap.insert(make_pair(energy_list_sorted[i],i));
 	}
 
 	//loop over every jet identified in the event, this time we will be able to record which is the max energy jet and store this info.
@@ -113,8 +126,12 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
 //		Jet *max_energy_jet = recojets->get(max_energy_id);
 		Jet *max_energy_jet = iter->second;	//Not actually the max energy jet anymore, just every jet.
 //		if(max_energy_jet->get_e() < 0.1) continue;
-		if((iter->second)->get_id() == max_energy_id) is_max_energy_jet = 1;
-		else is_max_energy_jet = 0;
+//		if((iter->second)->get_id() == max_energy_id) is_max_energy_jet = 1;
+//		else is_max_energy_jet = 0;
+
+		auto it = energyRankMap.find(max_energy_jet->get_e());
+		is_max_energy_jet = it->second + 1;
+//		cout << it->second + 1 << " " << max_energy_jet->get_e() << endl;
 
 		GlobalVertexMap* vertexmap = findNode::getClass<GlobalVertexMap>(topNode,"GlobalVertexMap");
 		if (!vertexmap) {
