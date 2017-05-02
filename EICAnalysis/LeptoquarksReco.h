@@ -46,6 +46,7 @@ private:
 
   /* output tree and variables */
   TNtuple* _ntp_leptoquark;
+  TNtuple* _ntp_jet;
 
   /* beam energies electron and proton */
   float _ebeam_E;
