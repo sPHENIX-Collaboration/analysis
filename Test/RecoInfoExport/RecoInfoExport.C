@@ -43,7 +43,8 @@ using namespace std;
 
 RecoInfoExport::RecoInfoExport(const string &name) :
     SubsysReco(name), _event(0), _calo_names(
-      { "CEMC", "HCALIN", "HCALOUT" })
+      { "CEMC", "HCALIN", "HCALOUT" }), _tower_threshold(0), _pT_threshold(0), _min_track_hit_dist(
+        0)
 {
 }
 
@@ -85,15 +86,27 @@ RecoInfoExport::process_event(PHCompositeNode *topNode)
           return Fun4AllReturnCodes::ABORTRUN;
         }
 
-      fdata << (boost::format("%1% (1..%2% hits)") % calo_name % towers->size())
-          << endl;
+      set<const RawTower *> good_towers;
 
-      bool first = true;
       RawTowerContainer::ConstRange begin_end = towers->getTowers();
       RawTowerContainer::ConstIterator rtiter;
       for (rtiter = begin_end.first; rtiter != begin_end.second; ++rtiter)
         {
-          RawTower *tower = rtiter->second;
+          const RawTower *tower = rtiter->second;
+          assert(tower);
+          if (tower->get_energy() > _tower_threshold)
+            {
+              good_towers.insert(tower);
+            }
+        }
+
+      fdata
+          << (boost::format("%1% (1..%2% hits)") % calo_name
+              % good_towers.size()) << endl;
+
+      bool first = true;
+      for (const auto & tower : good_towers)
+        {
           assert(tower);
 
           float eta = towergeom->get_etacenter(tower->get_bineta());
@@ -144,27 +157,54 @@ RecoInfoExport::process_event(PHCompositeNode *topNode)
         {
           PHG4Particle* g4particle = iter->second;
 
+          const TVector3 mom(g4particle->get_px(), g4particle->get_py(),
+              g4particle->get_pz());
+
           std::set<PHG4Hit*> g4hits = trutheval->all_truth_hits(g4particle);
 
+          map<float, PHG4Hit *> time_sort;
           map<float, PHG4Hit *> layer_sort;
           for (auto & hit : g4hits)
             {
-              if (hit->get_layer() != UINT_MAX)
+              if (hit)
                 {
-                  layer_sort[hit->get_avg_t()] = hit;
-//              cout << "hit->get_layer() -> ";
-//              hit->identify();
+                  time_sort[hit->get_avg_t()] = hit;
                 }
             }
 
-          if (layer_sort.size() > 5) // minimal track length cut
+          for (auto & hit_pair : time_sort)
+            {
+
+              if (hit_pair.second->get_layer() != UINT_MAX
+                  and layer_sort.find(hit_pair.second->get_layer())
+                      == layer_sort.end())
+                {
+                  layer_sort[hit_pair.second->get_layer()] = hit_pair.second;
+                }
+            }
+
+          if (layer_sort.size() > 5 and mom.Pt() > _pT_threshold) // minimal track length cut
             {
 
               stringstream spts;
 
+              TVector3 last_pos(0, 0, 0);
+
               bool first = true;
               for (auto & hit_pair : layer_sort)
                 {
+                  TVector3 pos(hit_pair.second->get_avg_x(),
+                      hit_pair.second->get_avg_y(),
+                      hit_pair.second->get_avg_z());
+
+                  // hit step cuts
+                  if ((pos - last_pos).Mag() < _min_track_hit_dist
+                      and hit_pair.first != (layer_sort.rbegin()->first)
+                      and hit_pair.first != (layer_sort.begin()->first))
+                    continue;
+
+                  last_pos = pos;
+
                   if (first)
                     {
                       first = false;
@@ -173,11 +213,11 @@ RecoInfoExport::process_event(PHCompositeNode *topNode)
                     spts << ",";
 
                   spts << "[";
-                  spts << hit_pair.second->get_avg_x();
+                  spts << pos.x();
                   spts << ",";
-                  spts << hit_pair.second->get_avg_y();
+                  spts << pos.y();
                   spts << ",";
-                  spts << hit_pair.second->get_avg_z();
+                  spts << pos.z();
                   spts << "]";
                 }
 
@@ -203,9 +243,6 @@ RecoInfoExport::process_event(PHCompositeNode *topNode)
                 {
                   t = 3;
                 }
-
-              const TVector3 mom(g4particle->get_px(), g4particle->get_py(),
-                  g4particle->get_pz());
 
               const TParticlePDG * pdg_part =
                   TDatabasePDG::Instance()->GetParticle(11);

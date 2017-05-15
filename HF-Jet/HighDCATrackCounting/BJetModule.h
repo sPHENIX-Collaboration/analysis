@@ -29,6 +29,22 @@ public:
 	int process_event(PHCompositeNode*);
 	int End(PHCompositeNode*);
 
+	const std::string& get_trackmap_name() const {
+		return _trackmap_name;
+	}
+
+	void set_trackmap_name(const std::string& trackmapName) {
+		_trackmap_name = trackmapName;
+	}
+
+	const std::string& get_vertexmap_name() const {
+		return _vertexmap_name;
+	}
+
+	void set_vertexmap_name(const std::string& vertexmapName) {
+		_vertexmap_name = vertexmapName;
+	}
+
 private:
 
 	float dR(float eta1, float eta2, float phi1, float phi2) {
@@ -45,6 +61,9 @@ private:
 	}
 
 	bool _verbose;
+
+	std::string _trackmap_name;
+	std::string _vertexmap_name;
 
 	int _ievent;
 
@@ -72,25 +91,41 @@ private:
 	float _b_track_pt[1000];
 	float _b_track_eta[1000];
 	float _b_track_phi[1000];
-	unsigned int _b_track_nclusters[1000];
+
 
 	float _b_track_dca2d[1000];
 	float _b_track_dca2d_error[1000];
+
+	float _b_track_dca3d_xy[1000];
+	float _b_track_dca3d_xy_error[1000];
+
+	float _b_track_dca3d_z[1000];
+	float _b_track_dca3d_z_error[1000];
+
 	float _b_track_dca2d_calc[1000];
 	float _b_track_dca2d_calc_truth[1000];
 	float _b_track_dca3d_calc[1000];
 	float _b_track_dca3d_calc_truth[1000];
 
 	float _b_track_dca2d_phi[1000];
+	float _b_track_dca2d_x[1000];
+	float _b_track_dca2d_y[1000];
+	float _b_track_dca2d_z[1000];
 
 	float _b_track_quality[1000];
 	float _b_track_chisq[1000];
 	int _b_track_ndf[1000];
 
+	unsigned int _b_track_nclusters[1000];
+	unsigned int _b_track_nclusters_by_layer[1000];
 	unsigned int _b_track_best_nclusters[1000];
+	unsigned int _b_track_best_nclusters_by_layer[1000];
+
 	unsigned int _b_track_best_embed[1000];
 	bool _b_track_best_primary[1000];
 	int _b_track_best_pid[1000];
+	float _b_track_best_pt[1000];
+	float _b_track_best_dca3d_xy[1000];
 
 	int _b_track_best_in[1000];
 	int _b_track_best_out[1000];

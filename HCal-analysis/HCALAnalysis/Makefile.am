@@ -1,6 +1,12 @@
 AUTOMAKE_OPTIONS = foreign
 
-INCLUDES = -I$(includedir) -I$(OFFLINE_MAIN)/include -I$(ROOTSYS)/include -I$(G4_MAIN)/include
+INCLUDES = \
+  -I$(includedir) \
+  -I$(OFFLINE_MAIN)/include/eigen3 \
+  -I$(OFFLINE_MAIN)/include \
+  -I$(G4_MAIN)/include \
+  -I$(G4_MAIN)/include/Geant4 \
+  -I`root-config --incdir`
 
 SUBDIRS = 
 
@@ -20,6 +26,8 @@ libHCALAnalysis_la_SOURCES = \
 libHCALAnalysis_la_LIBADD = \
   -L$(libdir) \
   -L$(OFFLINE_MAIN)/lib \
+  -lfun4all \
+  -lg4dst \
   -lSubsysReco \
   -lphg4hit
 
