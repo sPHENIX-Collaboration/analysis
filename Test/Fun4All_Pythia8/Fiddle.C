@@ -1,3 +1,6 @@
+/// abbreviate file with just the code:
+/// $ cat Fiddle.C | sed '/\/\/\//d' > Fiddle_CODE.C
+
 int Fiddle()
 {
 	/// load some libraries.
@@ -57,6 +60,3 @@ int Fiddle()
 	delete se;
 	gSystem->Exit(0);
 }
-
-/// abbreviate file with just the code:
-/// $ cat Fiddle.C | sed '/\/\/\//d' > Fiddle_CODE.C
