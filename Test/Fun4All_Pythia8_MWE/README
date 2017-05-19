@@ -1,9 +1,9 @@
+NAME
+	Fun4All_Pythia8_MWE -- minimum working example for using PYTHIA8 in sPHENIX
+
 SYNOPSIS
-	
 	these files are meant to give a minimum working example
 	on how to get PYTHIA working with sPHENIX software.
-
-DIRECTORY STRUCTURE
 	
 	Fiddle.C
 	Fiddle_OUT.dat
@@ -12,7 +12,6 @@ DIRECTORY STRUCTURE
 	phpythia8.cfg
 
 DESCRIPTION
-
 	Fiddle.C is the most important file.
 	interperting it via
 		
@@ -34,3 +33,11 @@ DESCRIPTION
 	i will be expanding on these fiddles in a new directory,
 	prolly named ../Fun4All_Pythia8_MORE/
 	so you can look there when you are done here.
+
+SEE ALSO
+	Fun4All_Pythia8_MORE/
+
+AUTHORS
+	jordan roth <jdroth@umich.edu>
+	
+	lots of help from joe osborn
