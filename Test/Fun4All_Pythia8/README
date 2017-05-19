@@ -7,7 +7,7 @@ DESCRIPTION
 	
 	.
 	|-- Fiddle.C
-	|-- Fiddle_OUT.dat
+	|-- hepmc.dat
 	|-- README
 	|-- logfile
 	`-- phpythia8.cfg
@@ -17,7 +17,7 @@ DESCRIPTION
 		
 		$ root Fiddle.C
 	
-	generates the HepMC output file Fiddle_OUT.dat
+	generates the HepMC output file hepmc.dat
 	the file logfile contains the stdout/stderr
 	that i got when interperting Fiddle.C
 		
@@ -27,7 +27,7 @@ DESCRIPTION
 	that Fiddle.C reads to know what to do.
 	
 	i recommend
-	(1) making sure that you can reproduce Fiddle_OUT.dat
+	(1) making sure that you can reproduce hepmc.dat
 	(2) screwing with phpythia8.cfg
 
 SEE ALSO

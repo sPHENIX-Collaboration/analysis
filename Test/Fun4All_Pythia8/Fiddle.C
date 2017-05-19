@@ -44,7 +44,7 @@ int Fiddle()
 	/// HepMC is *the best* output format
 	/// ...i am not joking i love plaintext.
 	
-	Fun4AllHepMCOutputManager *hepmc = new Fun4AllHepMCOutputManager("HEPMCOUT", "Fiddle_OUT.dat");
+	Fun4AllHepMCOutputManager *hepmc = new Fun4AllHepMCOutputManager("HEPMCOUT", "hepmc.dat");
 	se->registerOutputManager(hepmc);
 	
 	/// run the analysis task.
