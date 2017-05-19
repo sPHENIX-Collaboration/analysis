@@ -5,11 +5,12 @@ DESCRIPTION
 	these files are meant to give a minimum working example
 	on how to get PYTHIA working with sPHENIX software.
 	
-	Fiddle.C
-	Fiddle_OUT.dat
-	README
-	logfile
-	phpythia8.cfg
+	.
+	|-- Fiddle.C
+	|-- Fiddle_OUT.dat
+	|-- README
+	|-- logfile
+	`-- phpythia8.cfg
 	
 	Fiddle.C is the most important file.
 	interperting it via
