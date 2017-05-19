@@ -22,6 +22,7 @@ libPhotonJet_la_SOURCES = \
   PhotonJet_Dict.C
 libPhotonJet_la_LIBADD = \
   -lg4dst \
+  -lcalotrigger \
   -lg4eval \
   -lcemc \
   -lphool

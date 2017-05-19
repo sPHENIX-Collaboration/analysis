@@ -13,7 +13,7 @@
 #include <g4cemc/RawTowerGeomContainer.h>
 #include <g4cemc/RawTower.h>
 #include <g4cemc/RawTowerGeom.h>
-
+#include <CaloTriggerInfo.h>
 #include <g4cemc/RawClusterContainer.h>
 #include <g4cemc/RawCluster.h>
 
@@ -74,17 +74,13 @@ int PhotonJet::Init(PHCompositeNode *topnode)
 
   file = new TFile(outfilename.c_str(),"RECREATE");
   
-
+  ntruthconstituents_h = new TH1F("ntruthconstituents","",200,0,200);
   histo = new TH1F("histo","histo",100,-3,3);
 
   tree = new TTree("tree","a tree");
   tree->Branch("nevents",&nevents,"nevents/I");
 
   Set_Tree_Branches();
-
-
-
-
 
 
   return 0;
@@ -141,7 +137,14 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
     recojetsize<<"06";
     trackjetsize<<"06";
    }
+  
+  else if(jet_cone_size==7){
+    truthjetsize<<"07";
+    recojetsize<<"07";
+    trackjetsize<<"07";
+  }
   //if its some other number just set it to 0.4
+  
    else{
      truthjetsize<<"04";
      recojetsize<<"04";
@@ -151,21 +154,26 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
 
 
   JetMap* truth_jets =
-    // findNode::getClass<JetMap>(topnode,"AntiKt_Truth_r03");
+    //findNode::getClass<JetMap>(topnode,"AntiKt_Truth_r04");
     findNode::getClass<JetMap>(topnode,truthjetsize.str().c_str());
   JetMap *reco_jets =
-    //findNode::getClass<JetMap>(topnode,"AntiKt_Tower_r03");
+    //findNode::getClass<JetMap>(topnode,"AntiKt_Tower_r04");
     findNode::getClass<JetMap>(topnode,recojetsize.str().c_str());
   
   JetMap *tracked_jets = 
     findNode::getClass<JetMap>(topnode,trackjetsize.str().c_str());
-  
+    //findNode::getClass<JetMap>(topnode,"AntiKt_Track_r04");
   PHG4TruthInfoContainer* truthinfo = findNode::getClass<PHG4TruthInfoContainer>(topnode,"G4TruthInfo");
   RawClusterContainer *clusters = findNode::getClass<RawClusterContainer>(topnode,"CLUSTER_CEMC");
   SvtxTrackMap *trackmap = findNode::getClass<SvtxTrackMap>(topnode,"SvtxTrackMap");
-  
+
+  //trigger emulator
+  CaloTriggerInfo *trigger = findNode::getClass<CaloTriggerInfo>(topnode,"CaloTriggerInfo");
+
   //for truth jet matching
   JetEvalStack* _jetevalstack = new JetEvalStack(topnode,recojetsize.str().c_str(),truthjetsize.str().c_str());
+  //JetEvalStack* _jetevalstack = new JetEvalStack(topnode,"AntiKt_Tower_r04","AntiKt_Truth_r04");
+
   PHG4TruthInfoContainer::Range range = truthinfo->GetPrimaryParticleRange();
   
   //for truth track matching
@@ -174,11 +182,16 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
 
   
   
+  
+
+  if(!trigger){
+    cout<<"NO TRIGGER EMULATOR, BAILING"<<endl;
+    return 0;
+  }
   if(!tracked_jets && eval_tracked_jets){
     cout<<"no tracked jets, bailing"<<endl;
     return 0;
   }
-  
   if(!truth_jets){
       cout<<"no truth jets"<<endl;
       return 0;
@@ -210,28 +223,7 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
   SvtxTrackEval *trackeval = svtxevalstack->get_track_eval();
   JetTruthEval *trutheval = _jetevalstack->get_truth_eval();
  
-  for( PHG4TruthInfoContainer::ConstIterator iter = range.first; iter!=range.second; ++iter){
-    
-    PHG4Particle *truth = iter->second;
-    
-    truthpx = truth->get_px();
-    truthpy = truth->get_py();
-    truthpz = truth->get_pz();
-    truthp = sqrt(truthpx*truthpx+truthpy*truthpy+truthpz*truthpz);
-    truthenergy = truth->get_e();
-    
-    TLorentzVector vec;
-    vec.SetPxPyPzE(truthpx,truthpy,truthpz,truthenergy);
-    
-    truthpt = sqrt(truthpx*truthpx+truthpy*truthpy);
-  
-    
-    truthphi = vec.Phi();
-    trutheta = vec.Eta();
-    truthpid = truth->get_pid();
-    
-    truth_g4particles->Fill();
-  }
+ 
 
    /***********************************************
 
@@ -252,6 +244,25 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
     cout<< PHWHERE <<"no evt pointer under phhepmvgenevent found "<<endl;
     return 0;
   }
+
+  //get the interacting protons
+  if(truthevent->valid_beam_particles()){
+    HepMC::GenParticle *part1 = truthevent->beam_particles().first;
+
+    //beam energy
+    beam_energy = fabs(part1->momentum().pz());  
+  }
+
+  //Parton info
+  HepMC::PdfInfo *pdfinfo = truthevent->pdf_info();
+  
+  partid1 = pdfinfo->id1();
+  partid2 = pdfinfo->id2();
+  x1 = pdfinfo->x1();
+  x2 = pdfinfo->x2();
+  
+ 
+
   numparticlesinevent=0;
   process_id = truthevent->signal_process_id();
   for(HepMC::GenEvent::particle_const_iterator iter = truthevent->particles_begin(); iter!=truthevent->particles_end();++iter){
@@ -264,18 +275,158 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
     truthpy = (*iter)->momentum().py();
     truthpz = (*iter)->momentum().pz();
     truthpt = sqrt(truthpx*truthpx+truthpy*truthpy);
-    
-    
+
+
     truthtree->Fill();
     numparticlesinevent++;
   }
   
+
+
+
+
+
+
+
+  cluseventenergy=0;
+  cluseventphi=0;
+  cluseventpt=0;
+  cluseventeta=0;
+  float lastenergy=0;
+  for( PHG4TruthInfoContainer::ConstIterator iter = range.first; iter!=range.second; ++iter){
+    
+    PHG4Particle *truth = iter->second;
+    
+    truthpx = truth->get_px();
+    truthpy = truth->get_py();
+    truthpz = truth->get_pz();
+    truthp = sqrt(truthpx*truthpx+truthpy*truthpy+truthpz*truthpz);
+    truthenergy = truth->get_e();
+    
+    TLorentzVector vec;
+    vec.SetPxPyPzE(truthpx,truthpy,truthpz,truthenergy);
+    
+    truthpt = sqrt(truthpx*truthpx+truthpy*truthpy);
+  
+    
+    truthphi = vec.Phi();
+    trutheta = vec.Eta();
+    truthpid = truth->get_pid();
+            
+    if(truthpid==22 &&  truthenergy>lastenergy && fabs(trutheta)<1.1){
+      lastenergy=truthenergy;
+      cluseventenergy=truthenergy;
+      cluseventpt = truthpt;
+      cluseventphi = truthphi;
+      cluseventeta = trutheta;
+
+    }
+    truth_g4particles->Fill();
+  }
+
+
+
+
+
+
+    /***************************************
+
+   TRUTH JETS
+
+   ***************************************/
+
+  float hardest_jet=0;
+  for(JetMap::Iter iter = truth_jets->begin(); iter!=truth_jets->end(); ++iter){
+    Jet *jet = iter->second;
+    
+    truthjetpt = jet->get_pt();
+    if(truthjetpt<minjetpt)
+      continue;
+    
+    truthjeteta = jet->get_eta();
+
+    //make the width extra just to be safe
+    if(truthjeteta<(etalow-1) || truthjeteta>(etahigh+1))
+      continue;
+
+    truthjetpx = jet->get_px();
+    truthjetpy = jet->get_py();
+    truthjetpz = jet->get_pz();
+    truthjetphi = jet->get_phi();
+    truthjetmass = jet->get_mass();
+    truthjetp = jet->get_p();
+    truthjetenergy = jet->get_e();
     
 
+    //check that the jet isn't just a photon or something like this
+    //needs at least 2 constituents and that 90% of jet isn't from one photon
+    std::set<PHG4Particle*> truthjetcomp = 
+      trutheval->all_truth_particles(jet);
+    int ntruthconstituents=0;
+    float truthjetenergysum=0;
+    float truthjethighestphoton=0;
+    for(std::set<PHG4Particle*>::iterator iter2 = truthjetcomp.begin();
+	iter2!=truthjetcomp.end();
+	++iter2){
+      
+      PHG4Particle *truthpart = *iter2;
+      if(!truthpart){
+	cout<<"no truth particles in the jet??"<<endl;
+	break;
+      }
+      ntruthconstituents++;
+      
+      int constpid = truthpart->get_pid();
+      float conste = truthpart->get_e();
+      
+      truthjetenergysum+=conste;
+      
+      if(constpid==22){
+	if(conste>truthjethighestphoton)
+	  truthjethighestphoton = conste;
+	
+      }
+      
+    }
+    ntruthconstituents_h->Fill(ntruthconstituents);
+    
+    //if the highest energy photon in the jet is 90% of the jets energy
+    //its probably an isolated photon and so we want to not include it in the tree
+    if(ntruthconstituents<3)
+      continue;
+    
+    
+    if(truthjetpt>hardest_jet){
+      hardest_jet=truthjetpt;
+      hardest_jetpt = truthjetpt;
+      hardest_jetenergy = truthjetenergy;
+      hardest_jeteta = truthjeteta;
+      hardest_jetphi = truthjetphi;
+    }
+
+    truthjettree->Fill();
+    
+  }
+ 
+  event_tree->Fill();
+ 
+
+
+
+  /***********************************************
+
+   TRIGGER EMULATOR INFO
+
+  ************************************************/
+  E_4x4 = trigger->get_best_EMCal_4x4_E();
+  phi_4x4 = trigger->get_best_EMCal_4x4_phi();
+  eta_4x4 = trigger->get_best_EMCal_4x4_eta();
+  E_2x2 = trigger->get_best_EMCal_2x2_E();
+  phi_2x2 = trigger->get_best_EMCal_2x2_phi();
+  eta_2x2 = trigger->get_best_EMCal_2x2_eta();
   
 
 
- 
 
   /***********************************************
 
@@ -335,8 +486,6 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
 
     //find the associated truth high pT photon with this reconstructed photon
 
- 
-   
     for( PHG4TruthInfoContainer::ConstIterator iter = range.first; iter!=range.second; ++iter){
     
       PHG4Particle *truth = iter->second;
@@ -348,32 +497,32 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
 	clustruthpz = truth->get_pz();
 	clustruthenergy = truth->get_e();
 	clustruthpt = sqrt(clustruthpx*clustruthpx+clustruthpy*clustruthpy);
-	//if(clustruthpt<mincluspt)
-	//continue;
+	if(clustruthenergy<2.)
+	  continue;
 	
 	TLorentzVector vec;
 	vec.SetPxPyPzE(clustruthpx,clustruthpy,clustruthpz,clustruthenergy);
 	clustruthphi = vec.Phi();
 	clustrutheta = vec.Eta();
-	if(fabs(clustruthphi-clus_phi)>0.03 || fabs(clustrutheta-clus_eta)>0.03)
+	if(fabs(clustruthphi-clus_phi)>0.02 || fabs(clustrutheta-clus_eta)>0.02)
 	  continue;
 	
+	
+
+
 	//once the photon is found and the values are set
 	//just break out of the loop 
 	break;
-
-
       }
     
-
     }
-
- 
-    isolated_clusters->Fill();
     
+    isolated_clusters->Fill();
+
     GetRecoHadronsAndJets(cluster, trackmap, reco_jets,tracked_jets,recoeval,trackeval,truthinfo);
 
   }
+ 
 
 
 
@@ -384,11 +533,10 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
   ************************************************/
 
   if(eval_tracked_jets){
-
     for(SvtxTrackMap::Iter iter = trackmap->begin(); iter!=trackmap->end(); ++iter){
       
       SvtxTrack *track = iter->second;
-      
+    
       //get reco info
       tr_px = track->get_px();
       tr_py = track->get_py();
@@ -449,41 +597,6 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
 
 
 
-  /***************************************
-
-   TRUTH JETS
-
-   ***************************************/
-
-
-  for(JetMap::Iter iter = truth_jets->begin(); iter!=truth_jets->end(); ++iter){
-    Jet *jet = iter->second;
-    
-    truthjetpt = jet->get_pt();
-    if(truthjetpt<minjetpt)
-      continue;
-    
-    truthjeteta = jet->get_eta();
-
-    //make the width extra just to be safe
-    if(truthjeteta<(etalow-1) || truthjeteta>(etahigh+1))
-      continue;
-
-    truthjetpx = jet->get_px();
-    truthjetpy = jet->get_py();
-    truthjetpz = jet->get_pz();
-    truthjetphi = jet->get_phi();
-    truthjetmass = jet->get_mass();
-    truthjetp = jet->get_p();
-    truthjetenergy = jet->get_e();
-    
-    truthjettree->Fill();
-    
-  
-
-
-  }
-
 
 
 /***************************************
@@ -516,6 +629,7 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
     recojetp = jet->get_p();
     recojetenergy = jet->get_e();
 
+    
     if(truthjet){
       truthjetid = truthjet->get_id();
       truthjetp = truthjet->get_p();
@@ -936,6 +1050,17 @@ void PhotonJet::Set_Tree_Branches()
   cluster_tree->Branch("clus_pz",&clus_pz,"clus_pz/F");
   cluster_tree->Branch("nevents",&nevents,"nevents/I");
   cluster_tree->Branch("process_id",&process_id,"process_id/I");
+  cluster_tree->Branch("x1",&x1,"x1/F");
+  cluster_tree->Branch("x2",&x2,"x2/F");
+  cluster_tree->Branch("partid1",&partid1,"partid1/I");
+  cluster_tree->Branch("partid2",&partid2,"partid2/I");
+  cluster_tree->Branch("E_4x4",&E_4x4,"E_4x4/F");
+  cluster_tree->Branch("phi_4x4",&phi_4x4,"phi_4x4/F");
+  cluster_tree->Branch("eta_4x4",&eta_4x4,"eta_4x4/F");
+  cluster_tree->Branch("E_2x2",&E_2x2,"E_2x2/F");
+  cluster_tree->Branch("phi_2x2",&phi_2x2,"phi_2x2/F");
+  cluster_tree->Branch("eta_2x2",&eta_2x2,"eta_2x2/F");
+
 
   isolated_clusters = new TTree("isolated_clusters","a tree with isolated EMCal clusters");
   isolated_clusters->Branch("clus_energy",&clus_energy,"clus_energy/F");
@@ -959,6 +1084,17 @@ void PhotonJet::Set_Tree_Branches()
   isolated_clusters->Branch("clustruthpy",&clustruthpy,"clustruthpy/F");
   isolated_clusters->Branch("clustruthpz",&clustruthpz,"clustruthpz/F");
   isolated_clusters->Branch("process_id",&process_id,"process_id/I");
+  isolated_clusters->Branch("x1",&x1,"x1/F");
+  isolated_clusters->Branch("x2",&x2,"x2/F");
+  isolated_clusters->Branch("partid1",&partid1,"partid1/I");
+  isolated_clusters->Branch("partid2",&partid2,"partid2/I");
+  isolated_clusters->Branch("E_4x4",&E_4x4,"E_4x4/F");
+  isolated_clusters->Branch("phi_4x4",&phi_4x4,"phi_4x4/F");
+  isolated_clusters->Branch("eta_4x4",&eta_4x4,"eta_4x4/F");
+  isolated_clusters->Branch("E_2x2",&E_2x2,"E_2x2/F");
+  isolated_clusters->Branch("phi_2x2",&phi_2x2,"phi_2x2/F");
+  isolated_clusters->Branch("eta_2x2",&eta_2x2,"eta_2x2/F");
+
 
   tracktree = new TTree("tracktree","a tree with svtx tracks");
   tracktree->Branch("tr_px",&tr_px,"tr_px/F");
@@ -987,7 +1123,10 @@ void PhotonJet::Set_Tree_Branches()
   tracktree->Branch("truthtrackpid",&truthtrackpid,"truthtrackpid/I");
   tracktree->Branch("truth_is_primary",&truth_is_primary,"truth_is_primary/B");
   tracktree->Branch("process_id",&process_id,"process_id/I");
-
+  tracktree->Branch("x1",&x1,"x1/F");
+  tracktree->Branch("x2",&x2,"x2/F");
+  tracktree->Branch("partid1",&partid1,"partid1/I");
+  tracktree->Branch("partid2",&partid2,"partid2/I");
 
 
   truthjettree = new TTree("truthjettree","a tree with truth jets");
@@ -1002,6 +1141,17 @@ void PhotonJet::Set_Tree_Branches()
   truthjettree->Branch("truthjetenergy",&truthjetenergy,"truthjetenergy/F");
   truthjettree->Branch("nevents",&nevents,"nevents/I");
   truthjettree->Branch("process_id",&process_id,"process_id/I");
+  truthjettree->Branch("x1",&x1,"x1/F");
+  truthjettree->Branch("x2",&x2,"x2/F");
+  truthjettree->Branch("partid1",&partid1,"partid1/I");
+  truthjettree->Branch("partid2",&partid2,"partid2/I");
+  truthjettree->Branch("E_4x4",&E_4x4,"E_4x4/F");
+  truthjettree->Branch("phi_4x4",&phi_4x4,"phi_4x4/F");
+  truthjettree->Branch("eta_4x4",&eta_4x4,"eta_4x4/F");
+  truthjettree->Branch("E_2x2",&E_2x2,"E_2x2/F");
+  truthjettree->Branch("phi_2x2",&phi_2x2,"phi_2x2/F");
+  truthjettree->Branch("eta_2x2",&eta_2x2,"eta_2x2/F");
+
 
   recojettree = new TTree("recojettree","a tree with reco jets");
   recojettree->Branch("recojetpt",&recojetpt,"recojetpt/F");
@@ -1026,6 +1176,16 @@ void PhotonJet::Set_Tree_Branches()
   recojettree->Branch("truthjetpz",&truthjetpz,"truthjetpz/F");
   recojettree->Branch("process_id",&process_id,"process_id/I");
   recojettree->Branch("truthjetmass",&truthjetmass,"truthjetmass/F");
+  recojettree->Branch("x1",&x1,"x1/F");
+  recojettree->Branch("x2",&x2,"x2/F");
+  recojettree->Branch("partid1",&partid1,"partid1/I");
+  recojettree->Branch("partid2",&partid2,"partid2/I");
+  recojettree->Branch("E_4x4",&E_4x4,"E_4x4/F");
+  recojettree->Branch("phi_4x4",&phi_4x4,"phi_4x4/F");
+  recojettree->Branch("eta_4x4",&eta_4x4,"eta_4x4/F");
+  recojettree->Branch("E_2x2",&E_2x2,"E_2x2/F");
+  recojettree->Branch("phi_2x2",&phi_2x2,"phi_2x2/F");
+  recojettree->Branch("eta_2x2",&eta_2x2,"eta_2x2/F");
 
   isophot_jet_tree = new TTree("isophoton-jets",
 			       "a tree with correlated isolated photons and jets"); 
@@ -1072,8 +1232,16 @@ void PhotonJet::Set_Tree_Branches()
   isophot_jet_tree->Branch("_truthjetpy",&_truthjetpy,"_truthjetpy/F");
   isophot_jet_tree->Branch("_truthjetpz",&_truthjetpz,"_truthjetpz/F");
   isophot_jet_tree->Branch("process_id",&process_id,"process_id/I");
-
-
+  isophot_jet_tree->Branch("x1",&x1,"x1/F");
+  isophot_jet_tree->Branch("x2",&x2,"x2/F");
+  isophot_jet_tree->Branch("partid1",&partid1,"partid1/I");
+  isophot_jet_tree->Branch("partid2",&partid2,"partid2/I");
+  isophot_jet_tree->Branch("E_4x4",&E_4x4,"E_4x4/F");
+  isophot_jet_tree->Branch("phi_4x4",&phi_4x4,"phi_4x4/F");
+  isophot_jet_tree->Branch("eta_4x4",&eta_4x4,"eta_4x4/F");
+  isophot_jet_tree->Branch("E_2x2",&E_2x2,"E_2x2/F");
+  isophot_jet_tree->Branch("phi_2x2",&phi_2x2,"phi_2x2/F");
+  isophot_jet_tree->Branch("eta_2x2",&eta_2x2,"eta_2x2/F");
   
   isophot_trackjet_tree = new TTree("isophoton-trackjets",
 			       "a tree with correlated isolated photons and track jets"); 
@@ -1120,8 +1288,16 @@ void PhotonJet::Set_Tree_Branches()
   isophot_trackjet_tree->Branch("_ttruthjetpy",&_ttruthjetpy,"_ttruthjetpy/F");
   isophot_trackjet_tree->Branch("_ttruthjetpz",&_ttruthjetpz,"_ttruthjetpz/F");
   isophot_trackjet_tree->Branch("process_id",&process_id,"process_id/I");
-
-
+  isophot_trackjet_tree->Branch("x1",&x1,"x1/F");
+  isophot_trackjet_tree->Branch("x2",&x2,"x2/F");
+  isophot_trackjet_tree->Branch("partid1",&partid1,"partid1/I");
+  isophot_trackjet_tree->Branch("partid2",&partid2,"partid2/I");
+  isophot_trackjet_tree->Branch("E_4x4",&E_4x4,"E_4x4/F");
+  isophot_trackjet_tree->Branch("phi_4x4",&phi_4x4,"phi_4x4/F");
+  isophot_trackjet_tree->Branch("eta_4x4",&eta_4x4,"eta_4x4/F");
+  isophot_trackjet_tree->Branch("E_2x2",&E_2x2,"E_2x2/F");
+  isophot_trackjet_tree->Branch("phi_2x2",&phi_2x2,"phi_2x2/F");
+  isophot_trackjet_tree->Branch("eta_2x2",&eta_2x2,"eta_2x2/F");
 
   isophot_had_tree = new TTree("isophoton-hads","a tree with correlated isolated photons and hadrons"); 
   isophot_had_tree->Branch("clus_energy",&clus_energy,"clus_energy/F");
@@ -1173,8 +1349,16 @@ void PhotonJet::Set_Tree_Branches()
   isophot_had_tree->Branch("_truthtrackpid",&_truthtrackpid,"_truthtrackpid/I");
   isophot_had_tree->Branch("_truth_is_primary",&_truth_is_primary,"_truth_is_primary/B");
   isophot_had_tree->Branch("process_id",&process_id,"process_id/I");
-
-
+  isophot_had_tree->Branch("x1",&x1,"x1/F");
+  isophot_had_tree->Branch("x2",&x2,"x2/F");
+  isophot_had_tree->Branch("partid1",&partid1,"partid1/I");
+  isophot_had_tree->Branch("partid2",&partid2,"partid2/I");
+  isophot_had_tree->Branch("E_4x4",&E_4x4,"E_4x4/F");
+  isophot_had_tree->Branch("phi_4x4",&phi_4x4,"phi_4x4/F");
+  isophot_had_tree->Branch("eta_4x4",&eta_4x4,"eta_4x4/F");
+  isophot_had_tree->Branch("E_2x2",&E_2x2,"E_2x2/F");
+  isophot_had_tree->Branch("phi_2x2",&phi_2x2,"phi_2x2/F");
+  isophot_had_tree->Branch("eta_2x2",&eta_2x2,"eta_2x2/F");
 
 
 
@@ -1191,6 +1375,18 @@ void PhotonJet::Set_Tree_Branches()
   truth_g4particles->Branch("truthpid",&truthpid,"truthpid/I");
   truth_g4particles->Branch("nevents",&nevents,"nevents/I");
   truth_g4particles->Branch("process_id",&process_id,"process_id/I");
+  truth_g4particles->Branch("x1",&x1,"x1/F");
+  truth_g4particles->Branch("x2",&x2,"x2/F");
+  truth_g4particles->Branch("partid1",&partid1,"partid1/I");
+  truth_g4particles->Branch("partid2",&partid2,"partid2/I");
+  truth_g4particles->Branch("E_4x4",&E_4x4,"E_4x4/F");
+  truth_g4particles->Branch("phi_4x4",&phi_4x4,"phi_4x4/F");
+  truth_g4particles->Branch("eta_4x4",&eta_4x4,"eta_4x4/F");
+  truth_g4particles->Branch("E_2x2",&E_2x2,"E_2x2/F");
+  truth_g4particles->Branch("phi_2x2",&phi_2x2,"phi_2x2/F");
+  truth_g4particles->Branch("eta_2x2",&eta_2x2,"eta_2x2/F");
+
+
 
   truthtree = new TTree("truthtree","a tree with all truth pythia particles");
   truthtree->Branch("truthpx",&truthpx,"truthpx/F");
@@ -1205,13 +1401,42 @@ void PhotonJet::Set_Tree_Branches()
   truthtree->Branch("nevents",&nevents,"nevents/I");
   truthtree->Branch("numparticlesinevent",&numparticlesinevent,"numparticlesinevent/I");
   truthtree->Branch("process_id",&process_id,"process_id/I");
+  truthtree->Branch("x1",&x1,"x1/F");
+  truthtree->Branch("x2",&x2,"x2/F");
+  truthtree->Branch("partid1",&partid1,"partid1/I");
+  truthtree->Branch("partid2",&partid2,"partid2/I");
+
+
+  event_tree = new TTree("eventtree","A tree with 2 to 2 event info");
+  event_tree->Branch("x1",&x1,"x1/F");
+  event_tree->Branch("x2",&x2,"x2/F");
+  event_tree->Branch("partid1",&partid1,"partid1/I");
+  event_tree->Branch("partid2",&partid2,"partid2/I");
+  event_tree->Branch("process_id",&process_id,"process_id/I");
+  event_tree->Branch("nevents",&nevents,"nevents/I");
+  event_tree->Branch("cluseventenergy",&cluseventenergy,"cluseventenergy/F");
+  event_tree->Branch("cluseventeta",&cluseventeta,"cluseventeta/F");
+  event_tree->Branch("cluseventpt",&cluseventpt,"cluseventpt/F");
+  event_tree->Branch("cluseventphi",&cluseventphi,"cluseventphi/F");
+  event_tree->Branch("hardest_jetpt",&hardest_jetpt,"hardest_jetpt/F");
+  event_tree->Branch("hardest_jetphi",&hardest_jetphi,"hardest_jetphi/F");
+  event_tree->Branch("hardest_jeteta",&hardest_jeteta,"hardest_jeteta/F");
+  event_tree->Branch("hardest_jetenergy",&hardest_jetenergy,"hardest_jetenergy/F");
+  event_tree->Branch("E_4x4",&E_4x4,"E_4x4/F");
+  event_tree->Branch("phi_4x4",&phi_4x4,"phi_4x4/F");
+  event_tree->Branch("eta_4x4",&eta_4x4,"eta_4x4/F");
+  event_tree->Branch("E_2x2",&E_2x2,"E_2x2/F");
+  event_tree->Branch("phi_2x2",&phi_2x2,"phi_2x2/F");
+  event_tree->Branch("eta_2x2",&eta_2x2,"eta_2x2/F");
+
+
 
 }
 
 
 void PhotonJet::initialize_values()
 {
-
+  event_tree=0;
   tree=0;
   cluster_tree=0;
   truth_g4particles=0;
@@ -1383,4 +1608,14 @@ void PhotonJet::initialize_values()
   clustrutheta=-999;
   clustruthpid=-999;
 
+  beam_energy=0;
+  x1 = 0;
+  x2 = 0;
+  partid1 = 0;
+  partid2 = 0;
+
+  hardest_jetpt=0;
+  hardest_jetphi=0;
+  hardest_jeteta=0;
+  hardest_jetenergy=0;
 }

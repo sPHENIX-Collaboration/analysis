@@ -21,6 +21,7 @@ class JetRecoEval;
 class SvtxTrackEval;
 class PHG4TruthInfoContainer;
 class PHHepMCGenEvent;
+class CaloTriggerInfo;
 class PhotonJet: public SubsysReco
 {
 
@@ -49,7 +50,7 @@ class PhotonJet: public SubsysReco
 private:
 
  
-
+  TH1 *ntruthconstituents_h;
 
   TFile *file;
   TTree *tree;
@@ -63,10 +64,22 @@ private:
   TTree *isophot_jet_tree;
   TTree *isophot_trackjet_tree;
   TTree *isophot_had_tree;
+  TTree *event_tree;
   std::string outfilename;
 
   int nevents;
   TH1F *histo;
+
+  float beam_energy;
+  float x1;
+  float x2;
+  int partid1;
+  int partid2;
+ 
+  float hardest_jetpt;
+  float hardest_jetphi;
+  float hardest_jeteta;
+  float hardest_jetenergy;
 
   //cluster info
   float clus_energy;
@@ -212,7 +225,19 @@ private:
   float clustrutheta;
   int clustruthpid;
 
+  float cluseventenergy;
+  float cluseventphi;
+  float cluseventeta;
+  float cluseventpt;
 
+
+  //trigger emulator info (emcal trigger)
+  float E_4x4;
+  float phi_4x4;
+  float eta_4x4;
+  float E_2x2;
+  float phi_2x2;
+  float eta_2x2;
 
    void Set_Tree_Branches();
  
