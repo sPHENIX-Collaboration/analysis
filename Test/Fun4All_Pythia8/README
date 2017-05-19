@@ -1,7 +1,7 @@
 NAME
-	Fun4All_Pythia8_MWE -- minimum working example for using PYTHIA8 in sPHENIX
+	Fun4All_Pythia8_MWE/ -- minimum working example for using PYTHIA8 in sPHENIX
 
-SYNOPSIS
+DESCRIPTION
 	these files are meant to give a minimum working example
 	on how to get PYTHIA working with sPHENIX software.
 	
@@ -10,8 +10,7 @@ SYNOPSIS
 	README
 	logfile
 	phpythia8.cfg
-
-DESCRIPTION
+	
 	Fiddle.C is the most important file.
 	interperting it via
 		
