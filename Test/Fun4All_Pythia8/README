@@ -1,5 +1,5 @@
 NAME
-	Fun4All_Pythia8_MWE/ -- minimum working example for using PYTHIA8 in sPHENIX
+	Fun4All_Pythia8/ -- minimum working example for using PYTHIA8 in sPHENIX
 
 DESCRIPTION
 	these files are meant to give a minimum working example
@@ -28,13 +28,9 @@ DESCRIPTION
 	i recommend
 	(1) making sure that you can reproduce Fiddle_OUT.dat
 	(2) screwing with phpythia8.cfg
-	
-	i will be expanding on these fiddles in a new directory,
-	prolly named ../Fun4All_Pythia8_MORE/
-	so you can look there when you are done here.
 
 SEE ALSO
-	Fun4All_Pythia8_MORE/
+	http://home.thep.lu.se/~torbjorn/pythia81html/Welcome.html
 
 AUTHORS
 	jordan roth <jdroth@umich.edu>
