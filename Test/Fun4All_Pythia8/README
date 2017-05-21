@@ -1,0 +1,40 @@
+NAME
+	Fun4All_Pythia8/ -- minimum working example for using PYTHIA8 in sPHENIX
+
+DESCRIPTION
+	these files are meant to give a minimum working example
+	on how to get PYTHIA working with sPHENIX software.
+	
+	.
+	|-- Fiddle.C
+	|-- hepmc.dat
+	|-- README
+	|-- logfile
+	`-- phpythia8.cfg
+	
+	Fiddle.C is the most important file.
+	interperting it via
+		
+		$ root Fiddle.C
+	
+	generates the HepMC output file hepmc.dat
+	the file logfile contains the stdout/stderr
+	that i got when interperting Fiddle.C
+		
+		$ root Fiddle.C >& logfile
+	
+	phpythia.cfg is a PYTHIA8 config file
+	that Fiddle.C reads to know what to do.
+	
+	i recommend
+	(1) making sure that you can reproduce hepmc.dat
+	(2) screwing with phpythia8.cfg
+
+SEE ALSO
+	PYTHIA: http://home.thep.lu.se/~torbjorn/pythia81html/Welcome.html
+	Fun4All: https://wiki.bnl.gov/sPHENIX/index.php/Software
+
+AUTHORS
+	jordan roth <jdroth@umich.edu>
+	
+	lots of help from joe osborn
