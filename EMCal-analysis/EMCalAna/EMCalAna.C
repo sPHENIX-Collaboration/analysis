@@ -12,10 +12,15 @@
 #include <phool/PHCompositeNode.h>
 
 #include <g4main/PHG4TruthInfoContainer.h>
+#include <g4main/PHG4HitContainer.h>
+#include <g4main/PHG4Hit.h>
 #include <g4main/PHG4VtxPoint.h>
 #include <g4main/PHG4Particle.h>
 
 #include <g4hough/SvtxVertexMap.h>
+#include <g4hough/SvtxTrack.h>
+#include <g4hough/SvtxCluster.h>
+#include <g4hough/SvtxClusterMap.h>
 
 #include <g4cemc/RawTowerContainer.h>
 #include <g4cemc/RawTowerGeomContainer.h>
