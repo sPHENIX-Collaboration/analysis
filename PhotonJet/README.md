@@ -30,5 +30,6 @@ There are two different truth trees; one is produced with the node "PHG4TruthInf
 
 Additional functionality has been added to look at forward jets. Tracked jet capabilities were added as well; one can set the use of these in their macro. 
 
-
+##Information on using the Trigger Emulator
+A trigger emulator was added by the UC Boulder group under offline/packages/trigger/. Currently as of the end of May 2017 this is not included in the sPHENIX nightly build, so this package must be built locally by the individual if trigger capabilities are desired. Additionally the two files from this packge CaloTriggerInfo.h and CaloTriggerInfo.C must be included in the PhotonJet directory, as they are included in the header of PhotonJet.C. The PhotonJet Makefile won't compile without the local compilation of the trigger emulator package as it searches for these libraries. There is also a flag in the PhotonJet package which can be set to false if trigger capabilities are not required; this bypasses all triggering nodes/functions.  
 
