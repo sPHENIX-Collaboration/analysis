@@ -45,13 +45,17 @@ PhotonJet::PhotonJet(const std::string &name) : SubsysReco("PHOTONJET")
   //default use isocone algorithm
   use_isocone=0;
 
+  //default do not use tracked jets 
   eval_tracked_jets=0;  
 
   //default use 0.3 jet cone
   jet_cone_size=3;
+
+  //default set beginning number of events to 0
+  //this can be changed with one of the public functions if e.g. you want individual event number IDs for multiple MC blocks of events
   nevents=0;
 
-  //default to barrel
+  //default to barrel acceptance
   etalow=-1;
   etahigh=1;
 
@@ -60,6 +64,9 @@ PhotonJet::PhotonJet(const std::string &name) : SubsysReco("PHOTONJET")
   
   //default mincluscut
   mincluspt = 0.5;
+
+  //default to not use the trigger emulator
+  usetrigger=0;
 
 }
 
@@ -72,14 +79,20 @@ int PhotonJet::Init(PHCompositeNode *topnode)
   cout<<"USING ISOLATION CONE: "<<use_isocone<<endl;
 
 
+
+  //create output photonjet tfile which contains output TTrees
   file = new TFile(outfilename.c_str(),"RECREATE");
   
+  //create basic histograms
   ntruthconstituents_h = new TH1F("ntruthconstituents","",200,0,200);
   histo = new TH1F("histo","histo",100,-3,3);
 
+  //create basic tree
   tree = new TTree("tree","a tree");
   tree->Branch("nevents",&nevents,"nevents/I");
 
+
+  //main trees are set in this fxn - branch addresses are defined to global data types
   Set_Tree_Branches();
 
 
@@ -91,10 +104,11 @@ int PhotonJet::Init(PHCompositeNode *topnode)
 int PhotonJet::process_event(PHCompositeNode *topnode)
 {
  
+  // event number tracker, 
   cout<<"at event number "<<nevents<<endl;
 
 
-  //get the nodes from the NodeTree
+ 
 
 
   //get the requested size jets
@@ -102,7 +116,7 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
   ostringstream recojetsize;
   ostringstream trackjetsize;
 
-
+  //these are the node names for Truth, Calorimeter tower, and tracked jets
   truthjetsize.str("");
   truthjetsize<<"AntiKt_Truth_r";
   recojetsize.str("");
@@ -152,7 +166,10 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
   
 
 
+  //get the nodes from the NodeTree
 
+
+  //JetMap nodes
   JetMap* truth_jets =
     //findNode::getClass<JetMap>(topnode,"AntiKt_Truth_r04");
     findNode::getClass<JetMap>(topnode,truthjetsize.str().c_str());
@@ -163,8 +180,15 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
   JetMap *tracked_jets = 
     findNode::getClass<JetMap>(topnode,trackjetsize.str().c_str());
     //findNode::getClass<JetMap>(topnode,"AntiKt_Track_r04");
+
+
+  //G4 truth particle node
   PHG4TruthInfoContainer* truthinfo = findNode::getClass<PHG4TruthInfoContainer>(topnode,"G4TruthInfo");
+
+  //EMCal raw tower cluster node
   RawClusterContainer *clusters = findNode::getClass<RawClusterContainer>(topnode,"CLUSTER_CEMC");
+
+  //SVTX tracks node
   SvtxTrackMap *trackmap = findNode::getClass<SvtxTrackMap>(topnode,"SvtxTrackMap");
 
   //trigger emulator
@@ -183,8 +207,8 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
   
   
   
-
-  if(!trigger){
+  //Make sure all nodes for analysis are here. If one isn't in the NodeTree, bail
+  if(!trigger && usetrigger){
     cout<<"NO TRIGGER EMULATOR, BAILING"<<endl;
     return 0;
   }
@@ -218,7 +242,7 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
   }
   
  
-
+  //For jet and track truth/reco matching
   JetRecoEval* recoeval = _jetevalstack->get_reco_eval();
   SvtxTrackEval *trackeval = svtxevalstack->get_track_eval();
   JetTruthEval *trutheval = _jetevalstack->get_truth_eval();
@@ -239,6 +263,7 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
     return 0;
   }
   
+  //get the event characteristics, inherited from HepMC classes
   HepMC::GenEvent *truthevent = hepmcevent->getEvent();
   if(!truthevent){
     cout<< PHWHERE <<"no evt pointer under phhepmvgenevent found "<<endl;
@@ -264,9 +289,12 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
  
 
   numparticlesinevent=0;
+  
+  //Get the PYTHIA signal process id identifying the 2-to-2 hard process
   process_id = truthevent->signal_process_id();
   for(HepMC::GenEvent::particle_const_iterator iter = truthevent->particles_begin(); iter!=truthevent->particles_end();++iter){
     
+    //get each pythia particle characteristics
     truthenergy = (*iter)->momentum().e();   
     truthpid = (*iter)->pdg_id();
     trutheta = (*iter)->momentum().pseudoRapidity();
@@ -277,6 +305,7 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
     truthpt = sqrt(truthpx*truthpx+truthpy*truthpy);
 
 
+    //fill the truth tree
     truthtree->Fill();
     numparticlesinevent++;
   }
@@ -293,10 +322,14 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
   cluseventpt=0;
   cluseventeta=0;
   float lastenergy=0;
+
+  //loop over the G4 truth (stable) particles
   for( PHG4TruthInfoContainer::ConstIterator iter = range.first; iter!=range.second; ++iter){
     
+    //get this particle
     PHG4Particle *truth = iter->second;
     
+    //get this particles momentum, etc.
     truthpx = truth->get_px();
     truthpy = truth->get_py();
     truthpz = truth->get_pz();
@@ -313,6 +346,8 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
     trutheta = vec.Eta();
     truthpid = truth->get_pid();
             
+
+    //find the highest energy photon in the event at midrapidity
     if(truthpid==22 &&  truthenergy>lastenergy && fabs(trutheta)<1.1){
       lastenergy=truthenergy;
       cluseventenergy=truthenergy;
@@ -321,6 +356,7 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
       cluseventeta = trutheta;
 
     }
+    //fill the g4 truth tree
     truth_g4particles->Fill();
   }
 
@@ -335,17 +371,20 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
 
    ***************************************/
 
+  //loop over the truth jets
   float hardest_jet=0;
   for(JetMap::Iter iter = truth_jets->begin(); iter!=truth_jets->end(); ++iter){
     Jet *jet = iter->second;
     
     truthjetpt = jet->get_pt();
+
+    //only collect truthjets above the minjetpt cut
     if(truthjetpt<minjetpt)
       continue;
     
     truthjeteta = jet->get_eta();
 
-    //make the width extra just to be safe
+    //make the width extra just to be safe and collect truth jets that might be e.g. half in the sphenix acceptance
     if(truthjeteta<(etalow-1) || truthjeteta>(etahigh+1))
       continue;
 
@@ -359,21 +398,25 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
     
 
     //check that the jet isn't just a photon or something like this
-    //needs at least 2 constituents and that 90% of jet isn't from one photon
+  
+    //get the truth constituents of the jet
     std::set<PHG4Particle*> truthjetcomp = 
       trutheval->all_truth_particles(jet);
     int ntruthconstituents=0;
     float truthjetenergysum=0;
     float truthjethighestphoton=0;
+    //loop over the constituents of the truth jet
     for(std::set<PHG4Particle*>::iterator iter2 = truthjetcomp.begin();
 	iter2!=truthjetcomp.end();
 	++iter2){
       
+      //get the particle of the truthjet
       PHG4Particle *truthpart = *iter2;
       if(!truthpart){
 	cout<<"no truth particles in the jet??"<<endl;
 	break;
       }
+      
       ntruthconstituents++;
       
       int constpid = truthpart->get_pid();
@@ -390,12 +433,12 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
     }
     ntruthconstituents_h->Fill(ntruthconstituents);
     
-    //if the highest energy photon in the jet is 90% of the jets energy
-    //its probably an isolated photon and so we want to not include it in the tree
+    //we want jets that are real jets, not just an e.g. isolated photon
+    //require that the number of constituents in the jet be larger than 3 
     if(ntruthconstituents<3)
       continue;
     
-    
+    //identify the highest pt jet in the event
     if(truthjetpt>hardest_jet){
       hardest_jet=truthjetpt;
       hardest_jetpt = truthjetpt;
@@ -404,10 +447,12 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
       hardest_jetphi = truthjetphi;
     }
 
+    //fill the truthjet tree
     truthjettree->Fill();
     
   }
  
+  //fill the event tree with e.g. x1,x2 partonic momentum fractions, process id, highest energy photon, etc.
   event_tree->Fill();
  
 
@@ -418,13 +463,17 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
    TRIGGER EMULATOR INFO
 
   ************************************************/
-  E_4x4 = trigger->get_best_EMCal_4x4_E();
-  phi_4x4 = trigger->get_best_EMCal_4x4_phi();
-  eta_4x4 = trigger->get_best_EMCal_4x4_eta();
-  E_2x2 = trigger->get_best_EMCal_2x2_E();
-  phi_2x2 = trigger->get_best_EMCal_2x2_phi();
-  eta_2x2 = trigger->get_best_EMCal_2x2_eta();
-  
+  if(usetrigger){
+    //get the 4x4 trigger tile info
+    E_4x4 = trigger->get_best_EMCal_4x4_E();
+    phi_4x4 = trigger->get_best_EMCal_4x4_phi();
+    eta_4x4 = trigger->get_best_EMCal_4x4_eta();
+
+    //get the 2x2 trigger tile info
+    E_2x2 = trigger->get_best_EMCal_2x2_E();
+    phi_2x2 = trigger->get_best_EMCal_2x2_phi();
+    eta_2x2 = trigger->get_best_EMCal_2x2_eta();
+  }
 
 
 
@@ -438,17 +487,21 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
   RawClusterContainer::ConstRange begin_end = clusters->getClusters();
   RawClusterContainer::ConstIterator clusiter;
   
+  //loop over the emcal clusters
   for(clusiter = begin_end.first; clusiter!=begin_end.second; ++clusiter){
 
+    //get this cluster
     RawCluster *cluster = clusiter->second;
 
+    
+    //get cluster characteristics
     clus_energy = cluster->get_energy();
     clus_eta = cluster->get_eta();
     clus_theta = 2.*TMath::ATan((TMath::Exp(-1.*clus_eta)));
     clus_pt = clus_energy*TMath::Sin(clus_theta);
     clus_phi = cluster->get_phi();
     
-    if(clus_pt<0.5)
+    if(clus_pt<mincluspt)
       continue;
 
     if(clus_eta<etalow)
@@ -472,13 +525,17 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
 
     cluster_tree->Fill();
 
-    //only interested in high pt photons to be isolated
-    if(clus_pt<mincluspt && use_isocone)
+    //only interested in high pt photons to be isolated i.e. direct photons
+    if(clus_pt<5 && use_isocone)
       continue;
     if(fabs(clus_eta)>(1.0-isoconeradius) && use_isocone)
       continue;
 
+    
+    //get the energy sum 
     float energysum = ConeSum(cluster,clusters,trackmap,isoconeradius);
+
+    //check if energy sum is less than 10% of isolated photon energy
     bool conecut = energysum > 0.1*clus_energy;
     if(conecut && use_isocone)
       continue;
@@ -487,38 +544,39 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
     //find the associated truth high pT photon with this reconstructed photon
 
     for( PHG4TruthInfoContainer::ConstIterator iter = range.first; iter!=range.second; ++iter){
-    
+      //get this truth particle
       PHG4Particle *truth = iter->second;
       
       clustruthpid = truth->get_pid();
+      
+      //check that it is a photon, i.e. pid==22
       if(clustruthpid==22){
 	clustruthpx = truth->get_px();
 	clustruthpy = truth->get_py();
 	clustruthpz = truth->get_pz();
 	clustruthenergy = truth->get_e();
 	clustruthpt = sqrt(clustruthpx*clustruthpx+clustruthpy*clustruthpy);
-	if(clustruthenergy<2.)
+	if(clustruthenergy<5.)
 	  continue;
 	
 	TLorentzVector vec;
 	vec.SetPxPyPzE(clustruthpx,clustruthpy,clustruthpz,clustruthenergy);
 	clustruthphi = vec.Phi();
 	clustrutheta = vec.Eta();
+	//check that the truth photon has similar eta/phi to reco photon
 	if(fabs(clustruthphi-clus_phi)>0.02 || fabs(clustrutheta-clus_eta)>0.02)
 	  continue;
 	
-	
-
-
 	//once the photon is found and the values are set
 	//just break out of the loop 
 	break;
       }
     
     }
-    
+    //fill isolated clusters tree
     isolated_clusters->Fill();
-
+    
+    //get back to back reconstructed hadrons/jets for photon-jet processes
     GetRecoHadronsAndJets(cluster, trackmap, reco_jets,tracked_jets,recoeval,trackeval,truthinfo);
 
   }
@@ -676,7 +734,7 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
      
       //if the highest energy photon in the jet is 90% of the jets energy
       //its probably an isolated photon and so we want to not include it in the tree
-      if(truthjethighestphoton/truthjetenergysum>0.9 || ntruthconstituents<2)
+      if(truthjethighestphoton/truthjetenergysum>0.9 || ntruthconstituents<4)
 	continue;
 
     }
@@ -1436,6 +1494,13 @@ void PhotonJet::Set_Tree_Branches()
 
 void PhotonJet::initialize_values()
 {
+  E_4x4=0;
+  phi_4x4=0;
+  eta_4x4=0;
+  E_2x2=0;
+  phi_2x2=0;
+  eta_2x2=0;
+
   event_tree=0;
   tree=0;
   cluster_tree=0;
