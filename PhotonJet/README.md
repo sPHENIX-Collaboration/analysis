@@ -1,6 +1,6 @@
 ## Basic intro and how to get started
 
-This analysis package is designed to be run over with the main sPHENIX G4 macro, Fun4All_G4_sPHENIX.C. When written, it was made to be run over dedicated PYTHIA direct photon-jet events that were output into HEPMC format, although in principle any input that works with Fun4All_G4_sPHENIX.C should work. 
+This analysis package is designed to be run over with the main sPHENIX G4 macro, Fun4All_G4_sPHENIX.C. When written, it was made to be run over dedicated PYTHIA direct photon-jet events that were output into HEPMC format, although in principle any input that works with Fun4All_G4_sPHENIX.C should work. The standard "generic" PYTHIA triggers can be used to generate events, i.e. the PHPy8ParticleTrigger set to find photons and the PHPy8JetTrigger set to find jets of your choosing.
 
 In order to run the macro and include the PhotonJet analysis package, the following steps should be taken:
 
@@ -30,6 +30,8 @@ There are two different truth trees; one is produced with the node "PHG4TruthInf
 
 Additional functionality has been added to look at forward jets. Tracked jet capabilities were added as well; one can set the use of these in their macro. 
 
-##Information on using the Trigger Emulator
+## Information on using the Trigger Emulator
 A trigger emulator was added by the UC Boulder group under offline/packages/trigger/. Currently as of the end of May 2017 this is not included in the sPHENIX nightly build, so this package must be built locally by the individual if trigger capabilities are desired. Additionally the two files from this packge CaloTriggerInfo.h and CaloTriggerInfo.C must be included in the PhotonJet directory, as they are included in the header of PhotonJet.C. The PhotonJet Makefile won't compile without the local compilation of the trigger emulator package as it searches for these libraries. There is also a flag in the PhotonJet package which can be set to false if trigger capabilities are not required; this bypasses all triggering nodes/functions.  
 
+## Additional code packages
+There are two additional code packages, Photons and TruthPhotonJet. Photons is a similar analysis package to PhotonJet with less of the overhead and is intended to be used with a single photon generator. TruthPhotonJet is also similar to PhotonJet but is intended to be used only with truth PYTHIA information. The purpose is to quickly generate and analyze truth PYTHIA events to determine e.g. the pT/eta reach of jets/photons, etc.
