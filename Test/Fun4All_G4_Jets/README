@@ -31,7 +31,7 @@ DESCRIPTION
 	getTuples.C is a macro that describes the contents
 	of g4jeteval.root and demonstrates how you might
 	go about doing analysis on the data. this is where
-	the ROOT tips live. run it like
+	the ROOT tips live.
 	
 	hepmc.dat is a HepMC data file, containing 1,000 events
 	produced by PYTHIA for hard QCD processes.
