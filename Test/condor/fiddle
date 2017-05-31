@@ -1,7 +1,0 @@
-#!/bin/sh
-
-## print arguments to stdout, with angle brackets.
-echo "<<$@>>"
-
-## print arguments to stderr, with asterixes.
-echo "**$@**" >&2
