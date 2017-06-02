@@ -9,6 +9,7 @@ class TFile;
 class TH1D;
 
 class PHCompositeNode;
+class PHG4TruthInfoContainer;
 class PHG4Hit;
 class PHG4HitContainer;
 
@@ -38,6 +39,9 @@ private:
   bool _verbose;
 
   int _ievent;
+
+  /* Truth info container */
+  PHG4TruthInfoContainer* _truthinfo;
 
   /* Hit collection storing RICH photon hits */
   std::string _richhits_name;

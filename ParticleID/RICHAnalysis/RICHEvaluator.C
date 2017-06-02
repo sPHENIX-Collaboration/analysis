@@ -9,6 +9,8 @@
 
 #include <g4main/PHG4Hit.h>
 #include <g4main/PHG4HitContainer.h>
+#include <g4main/PHG4Particle.h>
+#include "g4main/PHG4TruthInfoContainer.h"
 
 // ROOT includes
 #include <TTree.h>
@@ -18,12 +20,15 @@
 using namespace std;
 
 RICHEvaluator::RICHEvaluator(std::string filename, std::string richname) :
-  SubsysReco("RICHEvaluator" )
+  SubsysReco("RICHEvaluator" ),
+  _ievent(0),
+  _truthinfo(nullptr),
+  _richhits_name(richname),
+  _richhits(nullptr),
+  _foutname(filename),
+  _fout_root(nullptr)
 {
-  _richhits_name = richname;
-  _richhits = NULL;
-  _foutname = filename;
-  _fout_root = NULL;
+
 }
 
 int
@@ -39,6 +44,10 @@ RICHEvaluator::Init(PHCompositeNode *topNode)
   reset_tree_vars();
   init_tree();
 
+  /*get data nodes */
+  _richhits = findNode::getClass<PHG4HitContainer>(topNode,_richhits_name);
+  _truthinfo = findNode::getClass<PHG4TruthInfoContainer>(topNode,"G4TruthInfo");
+
   return 0;
 }
 
@@ -51,14 +60,28 @@ RICHEvaluator::process_event(PHCompositeNode *topNode)
   reset_tree_vars();
 
   /* Loop over all G4Hits in container (i.e. RICH photons in event) */
-  _richhits = findNode::getClass<PHG4HitContainer>(topNode,_richhits_name);
-
   PHG4HitContainer::ConstRange rich_hits_begin_end = _richhits->getHits();
   PHG4HitContainer::ConstIterator rich_hits_iter;
 
   for (rich_hits_iter = rich_hits_begin_end.first; rich_hits_iter !=  rich_hits_begin_end.second; ++rich_hits_iter)
     {
       PHG4Hit *hit_i = rich_hits_iter->second;
+
+      /* Get matching truth particle */
+      PHG4Particle* particle = NULL;
+      if ( _truthinfo )
+	particle = _truthinfo->GetParticle( hit_i->get_trkid() );
+      else
+	cout << "Missing Truth Info Container!" << endl;
+
+      if ( !particle )
+	{
+	  cout << "NO truth particle found!" << endl;
+	}
+      else
+	{
+	  cout << "Truth particle: " << particle->get_name() << endl;
+	}
 
       /* Variables that need to be filled for output tree */
       _hit_x0 =  hit_i->get_x(0);
