@@ -29,75 +29,12 @@ int Fun4All_G4_EICIR(
   // What to run
   //======================
 
-  bool do_bbc = false;
-
   bool do_pipe = false;
 
   bool do_magnet = true;
 
   // Extended IR
   bool do_ExtendedIR = true;
-
-  //================
-
-  bool do_svtx = false;
-  bool do_svtx_cell = false;
-  bool do_svtx_track = false;
-  bool do_svtx_eval = false;
-  bool do_preshower = false;
-  bool do_cemc = false;
-  bool do_cemc_cell = false;
-  bool do_cemc_twr = false;
-  bool do_cemc_cluster = false;
-  bool do_cemc_eval = false;
-  bool do_hcalin = false;
-  bool do_hcalin_cell = false;
-  bool do_hcalin_twr = false;
-  bool do_hcalin_cluster = false;
-  bool do_hcalin_eval = false;
-  bool do_hcalout = false;
-  bool do_hcalout_cell = false;
-  bool do_hcalout_twr = false;
-  bool do_hcalout_cluster = false;
-  bool do_hcalout_eval = false;
-  bool do_global = false;
-  bool do_global_fastsim = false;
-  bool do_jet_reco = false;
-  bool do_jet_eval = false;
-  bool do_fwd_jet_reco = false;
-  bool do_fwd_jet_eval = false;
-
-  // EICDetector geometry - barrel
-
-  bool do_DIRC = false;
-
-  // EICDetector geometry - 'hadron' direction
-
-  bool do_FGEM = false;
-
-  bool do_RICH = false;
-  bool do_Aerogel = false;
-
-  bool do_FEMC = false;
-  bool do_FEMC_cell = false;
-  bool do_FEMC_twr = false;
-  bool do_FEMC_cluster = false;
-
-  bool do_FHCAL = false;
-  bool do_FHCAL_cell = false;
-  bool do_FHCAL_twr = false;
-  bool do_FHCAL_cluster = false;
-
-
-  // EICDetector geometry - 'hadron' direction
-
-  bool do_EGEM = false;
-
-  bool do_EEMC = false;
-  bool do_EEMC_cell = false;
-  bool do_EEMC_twr = false;
-  bool do_EEMC_cluster = false;
-
 
   //---------------
   // Load libraries
@@ -113,7 +50,7 @@ int Fun4All_G4_EICIR(
 
   // establish the geometry and reconstruction setup
   gROOT->LoadMacro("G4Setup_EICIR.C");
-  G4Init(do_svtx,do_preshower,do_cemc,do_hcalin,do_magnet,do_hcalout,do_pipe,do_FGEM,do_EGEM,do_FEMC,do_FHCAL,do_EEMC,do_DIRC,do_RICH,do_Aerogel,do_ExtendedIR);
+  G4Init(do_magnet,do_pipe,do_ExtendedIR);
 
   int absorberactive = 0; // set to 1 to make all absorbers active volumes
   //  const string magfield = "1.5"; // if like float -> solenoidal field in T, if string use as fieldmap name (including path)
@@ -231,20 +168,10 @@ int Fun4All_G4_EICIR(
       // Detector description
       //---------------------
 
-      G4Setup(absorberactive, magfield, TPythia6Decayer::kAll,do_svtx,do_preshower,do_cemc,do_hcalin,do_magnet,do_hcalout,do_pipe,do_FGEM,do_EGEM,do_FEMC,do_FHCAL,do_EEMC,do_DIRC,do_RICH,do_Aerogel,do_ExtendedIR,magfield_rescale);
+      G4Setup(absorberactive, magfield, TPythia6Decayer::kAll,do_magnet,do_pipe,do_ExtendedIR,magfield_rescale);
 
     }
 
-  //---------
-  // BBC Reco
-  //---------
-
-  if (do_bbc)
-    {
-      gROOT->LoadMacro("G4_Bbc.C");
-      BbcInit();
-      Bbc_Reco();
-    }
 
   //--------------
   // IO management
