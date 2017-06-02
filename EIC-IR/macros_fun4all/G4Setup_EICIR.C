@@ -88,6 +88,33 @@ int G4Setup(const int absorberactive = 0,
   if ( do_ExtendedIR )
     IRSetup(g4Reco);
 
+
+  // discs to track very forward protons
+  PHG4CylinderSubsystem *fwd_disc_1 = new PHG4CylinderSubsystem("FWDDISC1", 0);
+  fwd_disc_1->set_int_param("lengthviarapidity",0);
+  fwd_disc_1->set_double_param("length",5);
+  fwd_disc_1->set_double_param("radius",0);
+  fwd_disc_1->set_double_param("thickness",200);
+  fwd_disc_1->set_double_param("place_z",2000); // cm
+  fwd_disc_1->set_string_param("material","G4_Galactic");
+  fwd_disc_1->SetActive(true);
+  fwd_disc_1->SuperDetector("FWDDISC1");
+  fwd_disc_1->OverlapCheck(overlapcheck);
+  g4Reco->registerSubsystem(fwd_disc_1);
+
+  PHG4CylinderSubsystem *fwd_disc_2 = new PHG4CylinderSubsystem("FWDDISC2", 0);
+  fwd_disc_2->set_int_param("lengthviarapidity",0);
+  fwd_disc_2->set_double_param("length",5);
+  fwd_disc_2->set_double_param("radius",0);
+  fwd_disc_2->set_double_param("thickness",200);
+  fwd_disc_2->set_double_param("place_z",2500); // cm
+  fwd_disc_2->set_string_param("material","G4_Galactic");
+  fwd_disc_2->SetActive(true);
+  fwd_disc_2->SuperDetector("FWDDISC2");
+  fwd_disc_2->OverlapCheck(overlapcheck);
+  g4Reco->registerSubsystem(fwd_disc_2);
+
+
   // sPHENIX forward flux return(s)
   PHG4CylinderSubsystem *flux_return_plus = new PHG4CylinderSubsystem("FWDFLUXRET", 0);
   flux_return_plus->set_int_param("lengthviarapidity",0);

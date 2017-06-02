@@ -37,6 +37,8 @@ G4DSTreader_EICIR( const char * outputFile = "G4sPHENIXCells.root",//
   if (save_g4_raw)
     {
       ana->AddNode("BH_FORWARD_PLUS");
+      ana->AddNode("FWDDISC1");
+      ana->AddNode("FWDDISC2");
     }
 
   Fun4AllServer *se = Fun4AllServer::instance();
