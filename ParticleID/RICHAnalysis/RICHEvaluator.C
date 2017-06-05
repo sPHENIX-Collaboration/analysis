@@ -1,0 +1,151 @@
+#include "RICHEvaluator.h"
+
+// Fun4All includes
+#include <fun4all/Fun4AllServer.h>
+#include <fun4all/Fun4AllReturnCodes.h>
+
+#include <phool/getClass.h>
+#include <phool/PHCompositeNode.h>
+
+#include <g4main/PHG4Hit.h>
+#include <g4main/PHG4HitContainer.h>
+#include <g4main/PHG4Particle.h>
+#include "g4main/PHG4TruthInfoContainer.h"
+
+// ROOT includes
+#include <TTree.h>
+#include <TFile.h>
+#include <TString.h>
+
+using namespace std;
+
+RICHEvaluator::RICHEvaluator(std::string filename, std::string richname) :
+  SubsysReco("RICHEvaluator" ),
+  _ievent(0),
+  _truthinfo(nullptr),
+  _richhits_name(richname),
+  _richhits(nullptr),
+  _foutname(filename),
+  _fout_root(nullptr)
+{
+
+}
+
+int
+RICHEvaluator::Init(PHCompositeNode *topNode)
+{
+  _verbose = false;
+  _ievent = 0;
+
+  /* create output file */
+  _fout_root = new TFile(_foutname.c_str(), "RECREATE");
+
+  /* create output tree */
+  reset_tree_vars();
+  init_tree();
+
+  /*get data nodes */
+  _richhits = findNode::getClass<PHG4HitContainer>(topNode,_richhits_name);
+  _truthinfo = findNode::getClass<PHG4TruthInfoContainer>(topNode,"G4TruthInfo");
+
+  return 0;
+}
+
+int
+RICHEvaluator::process_event(PHCompositeNode *topNode)
+{
+  _ievent ++;
+
+  /* reset tree variables */
+  reset_tree_vars();
+
+  /* Loop over all G4Hits in container (i.e. RICH photons in event) */
+  PHG4HitContainer::ConstRange rich_hits_begin_end = _richhits->getHits();
+  PHG4HitContainer::ConstIterator rich_hits_iter;
+
+  for (rich_hits_iter = rich_hits_begin_end.first; rich_hits_iter !=  rich_hits_begin_end.second; ++rich_hits_iter)
+    {
+      PHG4Hit *hit_i = rich_hits_iter->second;
+
+      /* Get matching truth particle */
+      PHG4Particle* particle = NULL;
+      if ( _truthinfo )
+	particle = _truthinfo->GetParticle( hit_i->get_trkid() );
+      else
+	cout << "Missing Truth Info Container!" << endl;
+
+      if ( !particle )
+	{
+	  cout << "NO truth particle found!" << endl;
+	}
+      else
+	{
+	  cout << "Truth particle: " << particle->get_name() << endl;
+	}
+
+      /* Variables that need to be filled for output tree */
+      _hit_x0 =  hit_i->get_x(0);
+      _hit_y0 =  hit_i->get_y(0);
+      _hit_z0 =  hit_i->get_z(0);
+      /* END of output tree variables */
+
+      /* fill output TTree */
+      _tree_rich->Fill();
+    }
+  /* END Loop over all G4Hits in container (i.e. RICH photons in event) */
+
+  return 0;
+}
+
+int
+RICHEvaluator::End(PHCompositeNode *topNode)
+{
+  _fout_root->cd();
+  _tree_rich->Write();
+  _fout_root->Close();
+
+  return 0;
+}
+
+void
+RICHEvaluator::reset_tree_vars()
+{
+  _hit_x0 = -999;
+  _hit_y0 = -999;
+  _hit_z0 = -999;
+
+  _hit_lx0 = -999;
+  _hit_ly0 = -999;
+  _hit_lz0 = -999;
+
+  _track_px = -999;
+  _track_py = -999;
+  _track_pz = -999;
+
+  _track_e = -999;
+  _edep = -999;
+
+  _bankid = -999;
+  _volumeid = -999;
+  _hitid = -999;
+  _pid = -999;
+  _mpid = -999;
+  _trackid = -999;
+  _mtrackid = -999;
+  _otrackid = -999;
+
+  return;
+}
+
+int
+RICHEvaluator::init_tree()
+{
+  _tree_rich = new TTree("tree_rich","RICH info");
+
+  _tree_rich->Branch("event", &_ievent);
+  _tree_rich->Branch("hit_x", &_hit_x0);
+  _tree_rich->Branch("hit_y", &_hit_y0);
+  _tree_rich->Branch("hit_z", &_hit_z0);
+
+  return 0;
+}
