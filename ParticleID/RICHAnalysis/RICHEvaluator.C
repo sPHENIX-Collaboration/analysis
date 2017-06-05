@@ -17,14 +17,15 @@
 #include <TFile.h>
 #include <TString.h>
 
+// other C++ includes
+#include <cassert>
+
 using namespace std;
 
 RICHEvaluator::RICHEvaluator(std::string filename, std::string richname) :
   SubsysReco("RICHEvaluator" ),
   _ievent(0),
-  _truthinfo(nullptr),
   _richhits_name(richname),
-  _richhits(nullptr),
   _foutname(filename),
   _fout_root(nullptr)
 {
@@ -44,10 +45,6 @@ RICHEvaluator::Init(PHCompositeNode *topNode)
   reset_tree_vars();
   init_tree();
 
-  /*get data nodes */
-  _richhits = findNode::getClass<PHG4HitContainer>(topNode,_richhits_name);
-  _truthinfo = findNode::getClass<PHG4TruthInfoContainer>(topNode,"G4TruthInfo");
-
   return 0;
 }
 
@@ -59,8 +56,23 @@ RICHEvaluator::process_event(PHCompositeNode *topNode)
   /* reset tree variables */
   reset_tree_vars();
 
+  /*get data nodes */
+  PHG4HitContainer* richhits =
+    findNode::getClass<PHG4HitContainer>(topNode,_richhits_name);
+
+  /* skip event if no RICH hits found */
+  if ( !richhits )
+    return 0;
+
+  /* get truth info node */
+  PHG4TruthInfoContainer* truthinfo =
+    findNode::getClass<PHG4TruthInfoContainer>(topNode, "G4TruthInfo");
+
+  /* abort if no truth info container found */
+  assert(truthinfo);
+
   /* Loop over all G4Hits in container (i.e. RICH photons in event) */
-  PHG4HitContainer::ConstRange rich_hits_begin_end = _richhits->getHits();
+  PHG4HitContainer::ConstRange rich_hits_begin_end = richhits->getHits();
   PHG4HitContainer::ConstIterator rich_hits_iter;
 
   for (rich_hits_iter = rich_hits_begin_end.first; rich_hits_iter !=  rich_hits_begin_end.second; ++rich_hits_iter)
@@ -69,19 +81,26 @@ RICHEvaluator::process_event(PHCompositeNode *topNode)
 
       /* Get matching truth particle */
       PHG4Particle* particle = NULL;
-      if ( _truthinfo )
-	particle = _truthinfo->GetParticle( hit_i->get_trkid() );
+      PHG4Particle* parent = NULL;
+      if ( truthinfo )
+	{
+	  cout << "Found a Truth Info Container!" << endl;
+	  particle = truthinfo->GetParticle( hit_i->get_trkid() );
+	  parent = truthinfo->GetParticle( particle->get_parent_id() );
+	}
       else
 	cout << "Missing Truth Info Container!" << endl;
 
-      if ( !particle )
-	{
-	  cout << "NO truth particle found!" << endl;
-	}
-      else
-	{
+      if ( particle )
 	  cout << "Truth particle: " << particle->get_name() << endl;
-	}
+      else
+	cout << "NO truth particle found!" << endl;
+
+      if ( parent )
+	  cout << "Parent particle: " << parent->get_name() << endl;
+      else
+	cout << "NO parent particle found!" << endl;
+
 
       /* Variables that need to be filled for output tree */
       _hit_x0 =  hit_i->get_x(0);

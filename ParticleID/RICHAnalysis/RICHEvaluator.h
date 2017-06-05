@@ -9,9 +9,6 @@ class TFile;
 class TH1D;
 
 class PHCompositeNode;
-class PHG4TruthInfoContainer;
-class PHG4Hit;
-class PHG4HitContainer;
 
 class RICHEvaluator : public SubsysReco
 {
@@ -40,12 +37,8 @@ private:
 
   int _ievent;
 
-  /* Truth info container */
-  PHG4TruthInfoContainer* _truthinfo;
-
   /* Hit collection storing RICH photon hits */
   std::string _richhits_name;
-  PHG4HitContainer* _richhits;
 
   /* ROOT file to store output ROOT tree */
   std::string _foutname;
