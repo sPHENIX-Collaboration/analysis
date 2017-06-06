@@ -90,29 +90,21 @@ int G4Setup(const int absorberactive = 0,
 
 
   // discs to track very forward protons
-  PHG4CylinderSubsystem *fwd_disc_1 = new PHG4CylinderSubsystem("FWDDISC1", 0);
-  fwd_disc_1->set_int_param("lengthviarapidity",0);
-  fwd_disc_1->set_double_param("length",5);
-  fwd_disc_1->set_double_param("radius",0);
-  fwd_disc_1->set_double_param("thickness",200);
-  fwd_disc_1->set_double_param("place_z",2000); // cm
-  fwd_disc_1->set_string_param("material","G4_Galactic");
-  fwd_disc_1->SetActive(true);
-  fwd_disc_1->SuperDetector("FWDDISC1");
-  fwd_disc_1->OverlapCheck(overlapcheck);
-  g4Reco->registerSubsystem(fwd_disc_1);
-
-  PHG4CylinderSubsystem *fwd_disc_2 = new PHG4CylinderSubsystem("FWDDISC2", 0);
-  fwd_disc_2->set_int_param("lengthviarapidity",0);
-  fwd_disc_2->set_double_param("length",5);
-  fwd_disc_2->set_double_param("radius",0);
-  fwd_disc_2->set_double_param("thickness",200);
-  fwd_disc_2->set_double_param("place_z",2500); // cm
-  fwd_disc_2->set_string_param("material","G4_Galactic");
-  fwd_disc_2->SetActive(true);
-  fwd_disc_2->SuperDetector("FWDDISC2");
-  fwd_disc_2->OverlapCheck(overlapcheck);
-  g4Reco->registerSubsystem(fwd_disc_2);
+  PHG4CylinderSubsystem *fwd_disc;
+  for ( unsigned i = 0; i < 100; i++ )
+    {
+      fwd_disc = new PHG4CylinderSubsystem("FWDDISC", i);
+      fwd_disc->set_int_param("lengthviarapidity",0);
+      fwd_disc->set_double_param("length",1);
+      fwd_disc->set_double_param("radius",0);
+      fwd_disc->set_double_param("thickness",5.0);
+      fwd_disc->set_double_param("place_z",450+i*10.0); // cm
+      fwd_disc->set_string_param("material","G4_Galactic");
+      fwd_disc->SetActive(true);
+      fwd_disc->SuperDetector("FWDDISC");
+      fwd_disc->OverlapCheck(overlapcheck);
+      g4Reco->registerSubsystem(fwd_disc);
+    }
 
 
   // sPHENIX forward flux return(s)
@@ -164,7 +156,7 @@ int G4Setup(const int absorberactive = 0,
   blackhole->set_int_param("lengthviarapidity",0);
   blackhole->set_double_param("length",0.1); // make it cover the world in length
   //blackhole->set_double_param("place_z",g4Reco->GetWorldSizeZ()/2. - 0.1  - no_overlapp);
-  blackhole->set_double_param("place_z",3000);
+  blackhole->set_double_param("place_z",10000);
   blackhole->BlackHole();
   blackhole->set_double_param("thickness",radius - no_overlapp); // it needs some thickness
   blackhole->SetActive(); // always see what leaks out

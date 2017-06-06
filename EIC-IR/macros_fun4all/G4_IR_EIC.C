@@ -8,7 +8,7 @@ double IRSetup(PHG4Reco* g4Reco,
 	      int verbosity = 0) {
 
   /* Increase world size to fit extended IR magnets */
-  g4Reco->SetWorldSizeZ(6500);
+  g4Reco->SetWorldSizeZ(20000);
 
   /* Define outer radius for all extneded IR magnets */
   double ir_magnet_outer_radius = 50;
