@@ -106,6 +106,24 @@ RICHEvaluator::process_event(PHCompositeNode *topNode)
       _hit_x0 =  hit_i->get_x(0);
       _hit_y0 =  hit_i->get_y(0);
       _hit_z0 =  hit_i->get_z(0);
+      
+      // hit_lx0, hit_ly0, hit_lz0
+      
+      _track_px = parent->get_px();
+      _track_py = parent->get_py();
+      _track_pz = parent->get_pz();
+
+      _track_e = parent->get_e();
+      // edep
+
+      // bankid, volumeid
+      _hitid = hit_i->get_hit_id();
+      _pid = particle->get_pid();
+      _mpid = parent->get_pid();
+      _trackid = particle->get_track_id();
+      _mtrackid = parent->get_track_id();
+      // otrackid
+
       /* END of output tree variables */
 
       /* fill output TTree */
@@ -161,10 +179,26 @@ RICHEvaluator::init_tree()
 {
   _tree_rich = new TTree("tree_rich","RICH info");
 
-  _tree_rich->Branch("event", &_ievent);
-  _tree_rich->Branch("hit_x", &_hit_x0);
-  _tree_rich->Branch("hit_y", &_hit_y0);
-  _tree_rich->Branch("hit_z", &_hit_z0);
+  _tree_rich->Branch("event", &_ievent, "Event number /I");
+  _tree_rich->Branch("hit_x", &_hit_x0, "Global x-hit /D");
+  _tree_rich->Branch("hit_y", &_hit_y0, "Global y-hit /D");
+  _tree_rich->Branch("hit_z", &_hit_z0, "Global z-hit /D");
+  _tree_rich->Branch("ghit_x", &_hit_lx0, "Local x-hit /D");
+  _tree_rich->Branch("ghit_y", &_hit_ly0, "Local y-hit /D");
+  _tree_rich->Branch("ghit_z", &_hit_lz0, "Local z-hit /D");
+  _tree_rich->Branch("px", &_track_px, "Track x-momentum /D");
+  _tree_rich->Branch("py", &_track_py, "Track y-momentum /D");
+  _tree_rich->Branch("pz", &_track_pz, "Track z-momentum /D");
+  _tree_rich->Branch("e", &_track_e, "Track energy /D");
+  _tree_rich->Branch("edep", &_edep, "Energy deposited in material /D");
+  _tree_rich->Branch("bankid", &_bankid, "Bank ID /I");
+  _tree_rich->Branch("volumeid", &_volumeid, "Volume ID /I");
+  _tree_rich->Branch("hitid", &_hitid, "Hit ID /I");
+  _tree_rich->Branch("pid", &_pid, "Particle ID /I");
+  _tree_rich->Branch("mpid", &_mpid, "Mother particle ID /I");
+  _tree_rich->Branch("trackid", &_trackid, "Track ID /I");
+  _tree_rich->Branch("mtrackid", &_mtrackid, "Mother track ID /I");
+  _tree_rich->Branch("otrackid", &_otrackid, "Original track ID /I");
 
   return 0;
 }
