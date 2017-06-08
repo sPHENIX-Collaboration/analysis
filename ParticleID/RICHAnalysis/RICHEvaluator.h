@@ -47,20 +47,20 @@ private:
   /* output tree and variables */
   TTree* _tree_rich;
 
-  float _hit_x0;
-  float _hit_y0;
-  float _hit_z0;
+  double _hit_x0;
+  double _hit_y0;
+  double _hit_z0;
 
-  float _hit_lx0;
-  float _hit_ly0;
-  float _hit_lz0;
+  double _hit_lx0;
+  double _hit_ly0;
+  double _hit_lz0;
 
-  float _track_px;
-  float _track_py;
-  float _track_pz;
+  double _track_px;
+  double _track_py;
+  double _track_pz;
 
-  float _track_e;
-  float _edep;
+  double _track_e;
+  double _edep;
 
   int _bankid;
   int _volumeid;
