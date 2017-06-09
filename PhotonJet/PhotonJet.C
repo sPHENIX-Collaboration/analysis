@@ -68,6 +68,12 @@ PhotonJet::PhotonJet(const std::string &name) : SubsysReco("PHOTONJET")
   //default to not use the trigger emulator
   usetrigger=0;
 
+  //default to using position corrected cemc
+  use_pos_cor_cemc = 1;
+  
+  //default to not AA and not using background subtraction
+  is_AA = 0;
+
 }
 
 int PhotonJet::Init(PHCompositeNode *topnode)
@@ -95,7 +101,7 @@ int PhotonJet::Init(PHCompositeNode *topnode)
   //main trees are set in this fxn - branch addresses are defined to global data types
   Set_Tree_Branches();
 
-
+  
   return 0;
 }
 
@@ -173,10 +179,12 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
   JetMap* truth_jets =
     //findNode::getClass<JetMap>(topnode,"AntiKt_Truth_r04");
     findNode::getClass<JetMap>(topnode,truthjetsize.str().c_str());
-  JetMap *reco_jets =
+  JetMap *reco_jets = 0;
+  if(!is_AA){
     //findNode::getClass<JetMap>(topnode,"AntiKt_Tower_r04");
-    findNode::getClass<JetMap>(topnode,recojetsize.str().c_str());
+   reco_jets = findNode::getClass<JetMap>(topnode,recojetsize.str().c_str());
   
+  }
   JetMap *tracked_jets = 
     findNode::getClass<JetMap>(topnode,trackjetsize.str().c_str());
     //findNode::getClass<JetMap>(topnode,"AntiKt_Track_r04");
@@ -186,17 +194,22 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
   PHG4TruthInfoContainer* truthinfo = findNode::getClass<PHG4TruthInfoContainer>(topnode,"G4TruthInfo");
 
   //EMCal raw tower cluster node
-  RawClusterContainer *clusters = findNode::getClass<RawClusterContainer>(topnode,"CLUSTER_CEMC");
+  RawClusterContainer *clusters =0;
+  if(!use_pos_cor_cemc)
+    clusters = findNode::getClass<RawClusterContainer>(topnode,"CLUSTER_CEMC");
+  
+  //EMCal position calibrated cluster node
+  if(use_pos_cor_cemc)
+    clusters = findNode::getClass<RawClusterContainer>(topnode,"CLUSTER_POS_COR_CEMC");
 
   //SVTX tracks node
+ 
   SvtxTrackMap *trackmap = findNode::getClass<SvtxTrackMap>(topnode,"SvtxTrackMap");
 
   //trigger emulator
   CaloTriggerInfo *trigger = findNode::getClass<CaloTriggerInfo>(topnode,"CaloTriggerInfo");
 
-  //for truth jet matching
-  JetEvalStack* _jetevalstack = new JetEvalStack(topnode,recojetsize.str().c_str(),truthjetsize.str().c_str());
-  //JetEvalStack* _jetevalstack = new JetEvalStack(topnode,"AntiKt_Tower_r04","AntiKt_Truth_r04");
+
 
   PHG4TruthInfoContainer::Range range = truthinfo->GetPrimaryParticleRange();
   
@@ -205,7 +218,27 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
   svtxevalstack->next_event(topnode);
 
   
+
+  if(is_AA){
+    
+    reco_jets =
+      //findNode::getClass<JetMap>(topnode,"AntiKt_Tower_r04");
+      findNode::getClass<JetMap>(topnode,"AntiKt_Tower_r04_Sub1");
+  }
   
+
+  //for truth jet matching
+  JetEvalStack* _jetevalstack = 0;
+  if(!is_AA)
+    _jetevalstack = 
+      new JetEvalStack(topnode,recojetsize.str().c_str(),
+		       truthjetsize.str().c_str());
+ 
+  else
+    _jetevalstack = new JetEvalStack(topnode,
+				     "AntiKt_Tower_r04_Sub1",
+				     truthjetsize.str().c_str());
+
   
   //Make sure all nodes for analysis are here. If one isn't in the NodeTree, bail
   if(!trigger && usetrigger){
@@ -232,7 +265,7 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
     cout<<"no cluster info"<<endl;
     return 0;
   }
-  if(!trackmap){
+  if(!trackmap &&eval_tracked_jets){
     cout<<"no track map"<<endl;
     return 0;
   }
@@ -526,20 +559,20 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
     cluster_tree->Fill();
 
     //only interested in high pt photons to be isolated i.e. direct photons
-    if(clus_pt<5 && use_isocone)
+    if(clus_pt<5)
       continue;
     if(fabs(clus_eta)>(1.0-isoconeradius) && use_isocone)
       continue;
 
-    
-    //get the energy sum 
-    float energysum = ConeSum(cluster,clusters,trackmap,isoconeradius);
-
-    //check if energy sum is less than 10% of isolated photon energy
-    bool conecut = energysum > 0.1*clus_energy;
-    if(conecut && use_isocone)
-      continue;
-   
+    if(use_isocone){
+      //get the energy sum 
+      float energysum = ConeSum(cluster,clusters,trackmap,isoconeradius);
+      
+      //check if energy sum is less than 10% of isolated photon energy
+      bool conecut = energysum > 0.1*clus_energy;
+      if(conecut)
+	continue;
+    }
 
     //find the associated truth high pT photon with this reconstructed photon
 
@@ -556,7 +589,7 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
 	clustruthpz = truth->get_pz();
 	clustruthenergy = truth->get_e();
 	clustruthpt = sqrt(clustruthpx*clustruthpx+clustruthpy*clustruthpy);
-	if(clustruthenergy<5.)
+	if(clustruthenergy<25.)
 	  continue;
 	
 	TLorentzVector vec;
@@ -577,7 +610,7 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
     isolated_clusters->Fill();
     
     //get back to back reconstructed hadrons/jets for photon-jet processes
-    GetRecoHadronsAndJets(cluster, trackmap, reco_jets,tracked_jets,recoeval,trackeval,truthinfo);
+    GetRecoHadronsAndJets(cluster, trackmap, reco_jets,tracked_jets,recoeval,trackeval,truthinfo,trutheval);
 
   }
  
@@ -779,7 +812,8 @@ void PhotonJet::GetRecoHadronsAndJets(RawCluster *trig,
 				      JetMap *trackedjets,
 				      JetRecoEval *recoeval,
 				      SvtxTrackEval *trackeval,
-				      PHG4TruthInfoContainer *alltruth)
+				      PHG4TruthInfoContainer *alltruth,
+				      JetTruthEval *trutheval)
 {
 
   float trig_phi = trig->get_phi();
@@ -986,6 +1020,39 @@ void PhotonJet::GetRecoHadronsAndJets(RawCluster *trig,
 
     }
     
+    //check that the jet isn't just a photon or something like this
+    //needs at least 2 constituents and that 90% of jet isn't from one photon
+    std::set<PHG4Particle*> truthjetcomp = 
+      trutheval->all_truth_particles(truthjet);
+    int ntruthconstituents=0;
+    float truthjetenergysum=0;
+    float truthjethighestphoton=0;
+    for(std::set<PHG4Particle*>::iterator iter2 = truthjetcomp.begin();
+	iter2!=truthjetcomp.end();
+	++iter2){
+      
+      PHG4Particle *truthpart = *iter2;
+      if(!truthpart){
+	cout<<"no truth particles in the jet??"<<endl;
+	break;
+      }
+      ntruthconstituents++;
+      
+      int constpid = truthpart->get_pid();
+      float conste = truthpart->get_e();
+      
+      truthjetenergysum+=conste;
+      
+      if(constpid==22){
+	if(conste>truthjethighestphoton)
+	  truthjethighestphoton = conste;
+	
+      }
+      
+    }
+    if(ntruthconstituents<2)
+      continue;
+
     jetdphi = trig_phi-_recojetphi;
     if(jetdphi<pi2)
       jetdphi+=2.*pi;

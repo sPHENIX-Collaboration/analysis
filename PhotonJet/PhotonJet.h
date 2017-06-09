@@ -22,6 +22,8 @@ class SvtxTrackEval;
 class PHG4TruthInfoContainer;
 class PHHepMCGenEvent;
 class CaloTriggerInfo;
+class JetTruthEval;
+
 class PhotonJet: public SubsysReco
 {
 
@@ -35,9 +37,15 @@ class PhotonJet: public SubsysReco
   int eval_tracked_jets;
   int etalow;
   int etahigh;
+  int usetrigger;
+  int use_pos_cor_cemc;
+  int is_AA;
+
   int Init(PHCompositeNode*);
   int process_event(PHCompositeNode*);
   int End(PHCompositeNode*);
+
+  void use_trigger_emulator(int yesorno){usetrigger=yesorno;};
   void set_jetpt_mincut(double pt){minjetpt = pt;};
   void Set_Isocone_radius(double rad){isoconeradius = rad;};
   void set_cluspt_mincut(double pt){mincluspt = pt;};
@@ -46,6 +54,9 @@ class PhotonJet: public SubsysReco
   void SetFirstEventNum(int eventnum){nevents = eventnum;}//setting the first event based on job number so that each event has an individual eventnum
   void use_tracked_jets(int useit){eval_tracked_jets=useit;};
   void set_eta_lowhigh(float low, float high){etalow=low; etahigh=high;};
+  void use_positioncorrection_CEMC(int useit){use_pos_cor_cemc = useit;};
+  
+  void set_AA_collisions(int isaa){is_AA = isaa;};
 
 private:
 
@@ -242,7 +253,7 @@ private:
    void Set_Tree_Branches();
  
   float ConeSum(RawCluster *cluster, RawClusterContainer *cluster_container, SvtxTrackMap *trackmap, float coneradius);
-  void GetRecoHadronsAndJets(RawCluster *trig, SvtxTrackMap *tracks, JetMap *jets, JetMap *trackedjets, JetRecoEval *recoeval, SvtxTrackEval *trackeval, PHG4TruthInfoContainer *alltruth);
+  void GetRecoHadronsAndJets(RawCluster *trig, SvtxTrackMap *tracks, JetMap *jets, JetMap *trackedjets, JetRecoEval *recoeval, SvtxTrackEval *trackeval, PHG4TruthInfoContainer *alltruth, JetTruthEval *trutheval);
  void initialize_values();
 
 
