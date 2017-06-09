@@ -30,8 +30,11 @@ There are two different truth trees; one is produced with the node "PHG4TruthInf
 
 Additional functionality has been added to look at forward jets. Tracked jet capabilities were added as well; one can set the use of these in their macro. 
 
-## Information on using the Trigger Emulator
-A trigger emulator was added by the UC Boulder group under offline/packages/trigger/. Currently as of the end of May 2017 this is not included in the sPHENIX nightly build, so this package must be built locally by the individual if trigger capabilities are desired. Additionally the two files from this packge CaloTriggerInfo.h and CaloTriggerInfo.C must be included in the PhotonJet directory, as they are included in the header of PhotonJet.C. The PhotonJet Makefile won't compile without the local compilation of the trigger emulator package as it searches for these libraries. There is also a flag in the PhotonJet package which can be set to false if trigger capabilities are not required; this bypasses all triggering nodes/functions.  
+One can additionally choose to use or not use the position correction in the CEMC via the flag use_positioncorrection_CEMC. For pure photon measurements this should be used as it improves the resolution on the constant energy term of the photon by 1-2%
+
+## Addition of HIJING embedding capabilities
+In order to produce photon-jets in heavy ion background environments, PYTHIA events can be embedded into HIJING hits files. The code has been updated to include these capabilities; notably the flag "set_AA_collisions" must be set to 1 in order to grab the correct nodes from the node tree. This is because the jets undergo a background subtraction method, and this is put onto a different node. If you want regular pp capabilities, then just set this flag to 0 and it will get the usual tower-jet nodes.
+
 
 ## Additional code packages
 There are two additional code packages, Photons and TruthPhotonJet. Photons is a similar analysis package to PhotonJet with less of the overhead and is intended to be used with a single photon generator. TruthPhotonJet is also similar to PhotonJet but is intended to be used only with truth PYTHIA information. The purpose is to quickly generate and analyze truth PYTHIA events to determine e.g. the pT/eta reach of jets/photons, etc.
