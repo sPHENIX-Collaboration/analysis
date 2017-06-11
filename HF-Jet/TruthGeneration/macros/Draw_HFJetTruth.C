@@ -9,6 +9,7 @@
  */
 
 #include <TFile.h>
+#include <TGraphAsymmErrors.h>
 #include <TGraphErrors.h>
 #include <TLatex.h>
 #include <TLine.h>
@@ -23,8 +24,8 @@ TFile *_file0 = NULL;
 TTree *T = NULL;
 
 void Draw_HFJetTruth(const TString infile =
-//                         "/sphenix/user/jinhuang/HF-jet/event_gen/200pp_pythia8_CTEQ6L_20GeV/200pp_pythia8_CTEQ6L_20GeV_ALL.cfg_eneg_DSTReader.root",
-//                     double int_lumi = 210715 / 5.533e-05 / 1e9, const double dy = 0.6 * 2)
+                         //                         "/sphenix/user/jinhuang/HF-jet/event_gen/200pp_pythia8_CTEQ6L_20GeV/200pp_pythia8_CTEQ6L_20GeV_ALL.cfg_eneg_DSTReader.root",
+                     //                     double int_lumi = 210715 / 5.533e-05 / 1e9, const double dy = 0.6 * 2)
                      "/sphenix/user/jinhuang/HF-jet/event_gen/200pp_pythia8_CTEQ6L_7GeV/200pp_pythia8_CTEQ6L_7GeV_ALL.cfg_eneg_DSTReader.root",
                      double int_lumi = 891093 / 3.332e-02 / 1e9, const double dy = 0.6 * 2)
 //"/sphenix/user/jinhuang/HF-jet/event_gen/200pp_pythia8_CTEQ6L/200pp_pythia8_CTEQ6L_111ALL.cfg_eneg_DSTReader.root",
@@ -63,7 +64,7 @@ void Draw_HFJetTruth(const TString infile =
     _file0->SetName(infile);
   }
 
-  //  DrawCrossSection(int_lumi, dy);
+  //    DrawCrossSection(int_lumi, dy);
   CrossSection2RAA_Proposal(infile);
   CrossSection2RAA(infile);
 }
@@ -424,10 +425,47 @@ void CrossSection2RAA(const TString infile)
   TLegend *leg = new TLegend(.0, .70, .85, .93);
   leg->SetFillStyle(0);
   leg->AddEntry("", "#it{#bf{sPHENIX}} Simulation", "");
-  leg->AddEntry("", "Au+Au 0-10%C, #sqrt{s_{NN}}=200 GeV", "");
+  leg->AddEntry("", "#it{b}-jet #it{R}_{#it{AA}}, Au+Au 0-10%C, #sqrt{s_{NN}}=200 GeV", "");
+  leg->AddEntry("", Form("PYTHIA-8 #it{b}-jet, Anti-k_{T} R=0.4, |#eta|<%.1f, CTEQ6L", dy / 2), "");
   leg->AddEntry("", Form("#it{p}+#it{p}: %.0f pb^{-1}, %.0f%% Eff., %.0f%% Pur.", pp_lumi, pp_eff * 100, pp_purity * 100), "");
   leg->AddEntry("", Form("Au+Au: %.0fB col., %.0f%% Eff., %.0f%% Pur.", '%', AuAu_MB_Evt / 1e9, AuAu_eff * 100, AuAu_purity * 100), "");
   leg->Draw();
+
+  SaveCanvas(c1, infile + "_" + TString(c1->GetName()), kTRUE);
+
+  TCanvas *c1 = new TCanvas("Draw_HFJetTruth_CrossSection2RAA_Theory", "Draw_HFJetTruth_CrossSection2RAA_Theory", 700, 600);
+  c1->Divide(1, 1);
+  int idx = 1;
+  TPad *p;
+
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+
+  p->DrawFrame(15, 0, 50, 1.2)
+      ->SetTitle(";Transverse Momentum [GeV/#it{c}];#it{R}_{#it{AA}}");
+
+
+  TGraph *g20 = pQCDModel_HuangKangVitev(2.0);
+  TGraph *g22 = pQCDModel_HuangKangVitev(2.2);
+
+  g20->SetLineColor(kGreen + 3);
+  g22->SetLineColor(kRed + 3);
+  g20->SetLineWidth(3);
+  g22->SetLineWidth(3);
+
+  g20->Draw("l");
+  g22->Draw("l");
+
+  ge_RAA->DrawClone("pe");
+  leg->DrawClone();
+
+  TLegend *leg1 = new TLegend(.2, .20, .85, .35);
+  leg1->SetHeader("#splitline{pQCD, Phys.Lett. B726 (2013) 251-256}{#sqrt{s_{NN}}=200 GeV, #it{b}-jet R=0.4}");
+  leg1->AddEntry("","","");
+  leg1->AddEntry(g20,"g^{med} = 2.0","l");
+  leg1->AddEntry(g22,"g^{med} = 2.2","l");
+  leg1->Draw();
+
   SaveCanvas(c1, infile + "_" + TString(c1->GetName()), kTRUE);
 }
 
@@ -457,8 +495,8 @@ TGraphErrors *GetRAA(TH1 *h_pp, TH1 *h_AA)
     }
   }
 
-  TGraphErrors * ge = new TGraphErrors(n_bin, xs, ys, NULL, eys);
-  ge->SetName(TString("RAA_")+h_AA->GetName());
+  TGraphErrors *ge = new TGraphErrors(n_bin, xs, ys, NULL, eys);
+  ge->SetName(TString("RAA_") + h_AA->GetName());
 
   return ge;
 }
@@ -562,6 +600,8 @@ GetFONLL_B()
   //  28.9474 2.4892e+00 1.7492e+00 3.5856e+00 1.7493e+00 3.5856e+00 2.4835e+00 2.4892e+00
   //  30.0000 1.7693e+00 1.2394e+00 2.5556e+00 1.2394e+00 2.5556e+00 1.7633e+00 1.7693e+00
 
+  const double deta = 0.6 * 2;
+
   const double pts[] =
       {
 
@@ -592,6 +632,13 @@ GetFONLL_B()
 
   TGraphAsymmErrors *gr = new TGraphAsymmErrors(20, pts, centrals, 0, 0, min,
                                                 max);
+
+  for (int i = 0; i < gr->GetN(); ++i)
+  {
+    (gr->GetY())[i] /= deta;
+    (gr->GetEYhigh())[i] /= deta;
+    (gr->GetEYlow())[i] /= deta;
+  }
 
   return gr;
 }
@@ -633,6 +680,8 @@ GetFONLL_C()
   //  27.8947 2.1346e+00 1.3500e+00 3.2500e+00 1.4543e+00 3.1946e+00 1.7438e+00 2.4816e+00
   //  28.9474 1.4557e+00 9.1535e-01 2.2239e+00 9.8868e-01 2.1845e+00 1.1839e+00 1.6985e+00
   //  30.0000 9.9826e-01 6.2400e-01 1.5310e+00 6.7571e-01 1.5029e+00 8.0844e-01 1.1690e+00
+
+  const double deta = 0.6 * 2;
 
   const double pts[] =
       {
@@ -678,7 +727,128 @@ GetFONLL_C()
   TGraphAsymmErrors *gr = new TGraphAsymmErrors(20, pts, centrals, 0, 0, min,
                                                 max);
 
+  for (int i = 0; i < gr->GetN(); ++i)
+  {
+    (gr->GetY())[i] /= deta;
+    (gr->GetEYhigh())[i] /= deta;
+    (gr->GetEYlow())[i] /= deta;
+  }
+
   return gr;
+}
+
+TGraph *pQCDModel_HuangKangVitev(const double g)
+{
+  // arXiv:1306.0909v2 [hep-ph]
+  // Preliminary for sPHENIX energy
+
+  //  R = 0.4;
+  if (g == 2.0)
+  {
+    //  g=2.0
+    //  10.130739 0.8087402
+    //  13.8755   0.7102165
+    //  17.915709 0.64113617
+    //  19.950817 0.62270004
+    //  21.838287 0.59506375
+    //  24.758118 0.5618901
+    //  28.149998 0.53331053
+    //  30.303171 0.5194738
+    //  35.701473 0.52399224
+    //  40.21508  0.54508865
+    //  49.182514 0.53758913
+    //  54.492188 0.5338267
+    //  59.890347 0.52914274
+
+    const double pT[] =
+        {
+            10.130739,
+            13.8755,
+            17.915709,
+            19.950817,
+            21.838287,
+            24.758118,
+            28.149998,
+            30.303171,
+            35.701473,
+            40.21508,
+            49.182514,
+            54.492188,
+            59.890347};
+
+    const double RAA[] =
+        {
+            0.8087402,
+            0.7102165,
+            0.64113617,
+            0.62270004,
+            0.59506375,
+            0.5618901,
+            0.53331053,
+            0.5194738,
+            0.52399224,
+            0.54508865,
+            0.53758913,
+            0.5338267,
+            0.52914274};
+
+    return new TGraph(13, pT, RAA);
+  }
+  else if (g == 2.2)
+  {
+    //  g=2.2
+    //  10.040924 0.72499925
+    //  11.750852 0.6623964
+    //  15.820038 0.56018674
+    //  18.946156 0.51412654
+    //  19.860464 0.50491005
+    //  21.010588 0.484647
+    //  24.343283 0.44410512
+    //  29.888279 0.39800778
+    //  35.876522 0.4006767
+    //  40.154125 0.42085648
+    //  47.941647 0.41521555
+    //  55.64066  0.40865576
+    //  59.91793  0.4076699
+
+    const double pT[] =
+        {
+            10.040924,
+            11.750852,
+            15.820038,
+            18.946156,
+            19.860464,
+            21.010588,
+            24.343283,
+            29.888279,
+            35.876522,
+            40.154125,
+            47.941647,
+            55.64066,
+            59.91793};
+
+    const double RAA[] =
+        {
+            0.72499925,
+            0.6623964,
+            0.56018674,
+            0.51412654,
+            0.50491005,
+            0.484647,
+            0.44410512,
+            0.39800778,
+            0.4006767,
+            0.42085648,
+            0.41521555,
+            0.40865576,
+            0.4076699};
+
+    return new TGraph(13, pT, RAA);
+  }
+  else
+  {
+    assert(0);
+  }
 }
 
 TGraph *
