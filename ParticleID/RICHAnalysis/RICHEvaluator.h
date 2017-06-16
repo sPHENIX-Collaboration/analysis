@@ -59,7 +59,12 @@ private:
   double _track_py;
   double _track_pz;
 
+  double _mtrack_px;
+  double _mtrack_py;
+  double _mtrack_pz;
+
   double _track_e;
+  double _mtrack_e;
   double _edep;
 
   int _bankid;
