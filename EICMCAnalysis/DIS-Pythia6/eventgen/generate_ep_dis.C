@@ -204,13 +204,13 @@ int generate_ep_dis(   double eELEC = 10.,
     if (i % 1000 == 0) cout << "Event # " << i << endl;
     // Make one event and fill the tree
     pythia->GenerateEvent();
-    tree->Fill();
 
     nPart = pythia->GetN();
     Q2 = pythia->GetPARI(22);
     x = pythia->GetPARI(32);
     y = Q2 / (4.*x*eELEC*ePROT);
 
+    tree->Fill();
     // nParticles->Fill();
   }
 
