@@ -120,8 +120,8 @@ int Fun4All_G4_EICIR(
       /* angle of particle phi:
 	 pz = p * cos(psi)
 	 px = p * sin(psi) */
-      double psi_mrad = 0;
-      double ptot = 250*1;
+      double psi_mrad = 22;
+      double ptot = 275*1;
 
       double px = ptot * sin(psi_mrad / 1000.);
       double py = 0;
