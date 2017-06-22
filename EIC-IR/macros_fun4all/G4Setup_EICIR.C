@@ -91,13 +91,13 @@ int G4Setup(const int absorberactive = 0,
 
   // discs to track very forward protons
   PHG4CylinderSubsystem *fwd_disc;
-  for ( unsigned i = 0; i < 100; i++ )
+  for ( unsigned i = 0; i < 900; i++ )
     {
       fwd_disc = new PHG4CylinderSubsystem("FWDDISC", i);
       fwd_disc->set_int_param("lengthviarapidity",0);
       fwd_disc->set_double_param("length",1);
       fwd_disc->set_double_param("radius",0);
-      fwd_disc->set_double_param("thickness",5.0);
+      fwd_disc->set_double_param("thickness",200.0);
       fwd_disc->set_double_param("place_z",450+i*10.0); // cm
       fwd_disc->set_string_param("material","G4_Galactic");
       fwd_disc->SetActive(true);
@@ -108,7 +108,7 @@ int G4Setup(const int absorberactive = 0,
 
 
   // sPHENIX forward flux return(s)
-  PHG4CylinderSubsystem *flux_return_plus = new PHG4CylinderSubsystem("FWDFLUXRET", 0);
+  /* PHG4CylinderSubsystem *flux_return_plus = new PHG4CylinderSubsystem("FWDFLUXRET", 0);
   flux_return_plus->set_int_param("lengthviarapidity",0);
   flux_return_plus->set_double_param("length",10.2);
   flux_return_plus->set_double_param("radius",2.1);
@@ -120,7 +120,7 @@ int G4Setup(const int absorberactive = 0,
   flux_return_plus->OverlapCheck(overlapcheck);
   g4Reco->registerSubsystem(flux_return_plus);
 
-  PHG4CylinderSubsystem *flux_return_minus = new PHG4CylinderSubsystem("FWDFLUXRET", 0);
+   PHG4CylinderSubsystem *flux_return_minus = new PHG4CylinderSubsystem("FWDFLUXRET", 0);
   flux_return_minus->set_int_param("lengthviarapidity",0);
   flux_return_minus->set_double_param("length",10.2);
   flux_return_minus->set_double_param("radius",90.0);
@@ -130,13 +130,13 @@ int G4Setup(const int absorberactive = 0,
   flux_return_minus->SetActive(false);
   flux_return_minus->SuperDetector("FLUXRET_ETA_MINUS");
   flux_return_minus->OverlapCheck(overlapcheck);
-  g4Reco->registerSubsystem(flux_return_minus);
+  g4Reco->registerSubsystem(flux_return_minus);*/
 
   //----------------------------------------
   // BLACKHOLE
 
   // swallow all particles coming out of the backend of sPHENIX
-  PHG4CylinderSubsystem *blackhole = new PHG4CylinderSubsystem("BH", 1);
+  /*  PHG4CylinderSubsystem *blackhole = new PHG4CylinderSubsystem("BH", 1);
   blackhole->set_double_param("radius",radius + 100); // add 100 cm
 
   blackhole->set_int_param("lengthviarapidity",0);
@@ -163,7 +163,7 @@ int G4Setup(const int absorberactive = 0,
   blackhole->OverlapCheck(overlapcheck);
   g4Reco->registerSubsystem(blackhole);
 
-  blackhole = new PHG4CylinderSubsystem("BH_FORWARD_NEG", 1);
+   blackhole = new PHG4CylinderSubsystem("BH_FORWARD_NEG", 1);
   blackhole->SuperDetector("BH_FORWARD_NEG");
   blackhole->set_double_param("radius",0); // add 10 cm
   blackhole->set_int_param("lengthviarapidity",0);
