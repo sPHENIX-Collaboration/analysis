@@ -352,7 +352,7 @@ void CrossSection2RAA(const TString infile)
   // 5-year lumi in [sPH-TRG-000]
   ////////////////////////////
 
-  const double pp_lumi = 197;                          // pb^-1 [sPH-TRG-000]
+  const double pp_lumi = 200;                          // pb^-1 [sPH-TRG-000], rounded up from 197 pb^-1
   const double pp_inelastic_crosssec = 42e-3 / 1e-12;  // 42 mb in pb [sPH-TRG-000]
 
   const double AuAu_MB_Evt = 550e9;  // [sPH-TRG-000]
