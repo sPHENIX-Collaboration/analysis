@@ -67,6 +67,7 @@ void Draw_HFJetTruth(const TString infile =
   //    DrawCrossSection(int_lumi, dy);
   CrossSection2RAA_Proposal(infile);
   CrossSection2RAA(infile);
+  CrossSection2RAA(infile, false);
 }
 
 void DrawCrossSection(double int_lumi, const double dy)
@@ -328,7 +329,7 @@ void CrossSection2RAA_Proposal(const TString infile)
   //  p->SetLogy();
 
   p->DrawFrame(0, 0, 100, 1.2)
-      ->SetTitle(";Transverse Momentum [GeV/#it{c}];#it{R}_{#it{AA}}");
+      ->SetTitle(";Transverse Momentum [GeV/#it{c}];#it{R}_{AA}");
   TLatex t;
   t.DrawLatex(10, 1, Form("#splitline{pp lumi %.0f pb^{-1}}{#splitline{AuAu 0-20 in 100B MB}{eff %.1f  }}", pp_lumi_proposal, eff_proposal));
 
@@ -338,8 +339,10 @@ void CrossSection2RAA_Proposal(const TString infile)
   SaveCanvas(c1, infile + "_" + TString(c1->GetName()), kTRUE);
 }
 
-void CrossSection2RAA(const TString infile)
+void CrossSection2RAA(const TString infile, const bool use_AA_jet_trigger = true)
 {
+  const TString s_suffix(use_AA_jet_trigger ? "_AAJetTriggered" : "");
+
   const double b_jet_RAA = 0.6;
   const double dy = .7 * 2;
 
@@ -355,7 +358,7 @@ void CrossSection2RAA(const TString infile)
   const double pp_lumi = 200;                          // pb^-1 [sPH-TRG-000], rounded up from 197 pb^-1
   const double pp_inelastic_crosssec = 42e-3 / 1e-12;  // 42 mb in pb [sPH-TRG-000]
 
-  const double AuAu_MB_Evt = 550e9;  // [sPH-TRG-000]
+  const double AuAu_MB_Evt = use_AA_jet_trigger ?  550e9 : 240e9;  // [sPH-TRG-000], depending on whether jet trigger applied in AA collisions
   const double pAu_MB_Evt = 600e9;   // [sPH-TRG-000]
 
   const double AuAu_Ncoll_C0_10 = 960.2;  // [DOI:?10.1103/PhysRevC.87.034911?]
@@ -381,7 +384,7 @@ void CrossSection2RAA(const TString infile)
   cout << "\t"
        << "pAu_eq_lumi_C0_100 = " << pAu_eq_lumi_C0_100 << endl;
 
-  TCanvas *c1 = new TCanvas("Draw_HFJetTruth_CrossSection2RAA_Ratio", "Draw_HFJetTruth_CrossSection2RAA_Ratio", 700, 600);
+  TCanvas *c1 = new TCanvas("Draw_HFJetTruth_CrossSection2RAA_Ratio" + s_suffix, "Draw_HFJetTruth_CrossSection2RAA_Ratio"+ s_suffix, 700, 600);
   c1->Divide(1, 1);
   int idx = 1;
   TPad *p;
@@ -402,7 +405,7 @@ void CrossSection2RAA(const TString infile)
   g_AA->Draw("same");
   SaveCanvas(c1, infile + "_" + TString(c1->GetName()), kTRUE);
 
-  TCanvas *c1 = new TCanvas("Draw_HFJetTruth_CrossSection2RAA", "Draw_HFJetTruth_CrossSection2RAA", 700, 600);
+  TCanvas *c1 = new TCanvas("Draw_HFJetTruth_CrossSection2RAA"+ s_suffix, "Draw_HFJetTruth_CrossSection2RAA"+ s_suffix, 700, 600);
   c1->Divide(1, 1);
   int idx = 1;
   TPad *p;
@@ -411,7 +414,7 @@ void CrossSection2RAA(const TString infile)
   c1->Update();
 
   p->DrawFrame(15, 0, 50, 1.2)
-      ->SetTitle(";Transverse Momentum [GeV/#it{c}];#it{R}_{#it{AA}}");
+      ->SetTitle(";Transverse Momentum [GeV/#it{c}];#it{R}_{AA}");
 
   TGraphErrors *ge_RAA = GetRAA(g_pp, g_AA);
 
@@ -425,7 +428,7 @@ void CrossSection2RAA(const TString infile)
   TLegend *leg = new TLegend(.0, .70, .85, .93);
   leg->SetFillStyle(0);
   leg->AddEntry("", "#it{#bf{sPHENIX}} Simulation", "");
-  leg->AddEntry("", "#it{b}-jet #it{R}_{#it{AA}}, Au+Au 0-10%C, #sqrt{s_{NN}}=200 GeV", "");
+  leg->AddEntry("", "#it{b}-jet #it{R}_{AA}, Au+Au 0-10%C, #sqrt{s_{NN}}=200 GeV", "");
   leg->AddEntry("", Form("PYTHIA-8 #it{b}-jet, Anti-k_{T} R=0.4, |#eta|<%.1f, CTEQ6L", dy / 2), "");
   leg->AddEntry("", Form("#it{p}+#it{p}: %.0f pb^{-1}, %.0f%% Eff., %.0f%% Pur.", pp_lumi, pp_eff * 100, pp_purity * 100), "");
   leg->AddEntry("", Form("Au+Au: %.0fB col., %.0f%% Eff., %.0f%% Pur.", '%', AuAu_MB_Evt / 1e9, AuAu_eff * 100, AuAu_purity * 100), "");
@@ -433,7 +436,7 @@ void CrossSection2RAA(const TString infile)
 
   SaveCanvas(c1, infile + "_" + TString(c1->GetName()), kTRUE);
 
-  TCanvas *c1 = new TCanvas("Draw_HFJetTruth_CrossSection2RAA_Theory", "Draw_HFJetTruth_CrossSection2RAA_Theory", 700, 600);
+  TCanvas *c1 = new TCanvas("Draw_HFJetTruth_CrossSection2RAA_Theory"+ s_suffix, "Draw_HFJetTruth_CrossSection2RAA_Theory"+ s_suffix, 700, 600);
   c1->Divide(1, 1);
   int idx = 1;
   TPad *p;
@@ -442,7 +445,7 @@ void CrossSection2RAA(const TString infile)
   c1->Update();
 
   p->DrawFrame(15, 0, 50, 1.2)
-      ->SetTitle(";Transverse Momentum [GeV/#it{c}];#it{R}_{#it{AA}}");
+      ->SetTitle(";Transverse Momentum [GeV/#it{c}];#it{R}_{AA}");
 
 
   TGraph *g20 = pQCDModel_HuangKangVitev(2.0);
