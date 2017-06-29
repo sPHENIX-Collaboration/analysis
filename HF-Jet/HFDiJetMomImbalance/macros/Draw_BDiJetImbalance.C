@@ -13,6 +13,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <TFile.h>
+#include <TChain.h>
 #include <TTree.h>
 #include <TH1.h>
 #include <TCanvas.h>
@@ -21,6 +22,8 @@
 #include <TMath.h>
 #include <TLegend.h>
 #include <TRandom3.h>
+#include <TString.h>
+#include <TSystem.h>
 
 #include <iostream>
 
@@ -34,21 +37,52 @@ void Draw_BDiJetImbalance()
   //==========================================================================//
   // SET RUNNING CONDITIONS
   //==========================================================================//
+  bool print_plots = true;
 
-  bool is_pp = true;
+  bool is_pp = false;
 
   // const char* inFile = "HFtag_bjet.root";
-  const char* inFile = "HFtag_bjet_pp.root";
-  if (!is_pp)
-    const char* inFile = "HFtag_bjet_AuAu0-10.root";
+  // const char* inFile = "HFtag_bjet_pp.root";
+  // const char* inFile = "/phenix/plhf/dcm07e/sPHENIX/bjetsims/test.root";
+  // if (!is_pp)
+  //   const char* inFile = "HFtag_bjet_AuAu0-10.root";
 
+  const char* inDir = "/phenix/plhf/dcm07e/sPHENIX/bjetsims/ana";
+
+  // // desired nn integrated luminosity [pb^{-1}]
+  // double lumiDesired = 175;
+  // if ( !is_pp )
+  //   lumiDesired = 229; // AuAu 0-10% central (10B events)
+  // desired nn integrated luminosity [pb^{-1}]
+  double lumiDesired = 200;
+  TString scol("p + p #sqrt{s_{_{NN}}} = 200 GeV");
+  TString slumi(Form("#int L dt = %.0f pb^{-1} |z| < 10 cm", lumiDesired));
+  if ( !is_pp )
+  {
+    // equivelant nn luminosity:
+    // N_{evt}^{NN} / sigma_NN = N_{evt}^{AA}*Ncoll / sigma_NN
+    // = 10e9 * 962 / 42e9 pb = 229 pb^-1
+    double evntDesired = 24e9; // AuAu 0-10% central
+    lumiDesired = evntDesired * 962 / 42e9; // AuAu 0-10% central
+    scol = "0-10% Au + Au #sqrt{s_{_{NN}}}=200 GeV";
+    slumi = Form("%.0fB events |z| < 10 cm", evntDesired / 1.e9);
+  }
+
+  // luminosity per file generated [pb^{-1}]
+  double lumiPerFile = 99405 / (4.641e-06 * 1e12);
+  double lumiRead = 0;
 
   double pT1min = 20;
   double pT2min = 10;
-  double etamax = 1.0;
+  // double etamax = 1.0;
+  double etamax = 0.7;
 
-  double bJetEff = 0.5; // b-jet tagging efficiency
-  double bJetPur = 1.; // b-jet tagging purity
+  // double bJetEff = 0.5; // b-jet tagging efficiency
+  double bJetEff = 0.60; // p+p b-jet tagging efficiency
+  if ( !is_pp )
+    bJetEff = 0.40;
+
+  double bJetPur = 0.40; // b-jet tagging purity
 
   double RAA = 1.0;
   if (!is_pp)
@@ -67,7 +101,7 @@ void Draw_BDiJetImbalance()
   //==========================================================================//
 
   //-- tree variables
-  TTree *ttree;
+  TChain *ttree;
   Int_t           event;
   Int_t           truthjet_n;
   Int_t           truthjet_parton_flavor[100];
@@ -121,6 +155,9 @@ void Draw_BDiJetImbalance()
   hdijet_dphi->Sumw2();
   hdijet_xj->Sumw2();
 
+  // for fixing the uncertainties
+  TH1D* hdijet_xj_fix;
+
   //-- other
   TRandom3 *rand = new TRandom3();
 
@@ -129,22 +166,68 @@ void Draw_BDiJetImbalance()
   //==========================================================================//
   // LOAD TTREE
   //==========================================================================//
+  // cout << endl;
+  // cout << "--> Reading data from " << inFile << endl;
+
+  // TFile *fin = TFile::Open(inFile);
+  // if (!fin)
+  // {
+  //   cout << "ERROR!! Unable to open " << inFile << endl;
+  //   return;
+  // }
+
+  // ttree = (TTree*) fin->Get("ttree");
+  // if (!ttree)
+  // {
+  //   cout << "ERROR!! Unable to find ttree in " << inFile << endl;
+  //   return;
+  // }
+
   cout << endl;
-  cout << "--> Reading data from " << inFile << endl;
+  cout << "--> Reading data from dir: " << inDir << endl;
 
-  TFile *fin = TFile::Open(inFile);
-  if (!fin)
+  // calculate the number of files necessary for the desired luminosity
+  int nfiles = (int)(lumiDesired / lumiPerFile);
+  cout << "  desired luminosity : " << lumiDesired << endl;
+  cout << "  luminosity per file: " << lumiPerFile << endl;
+  cout << "  N files needed     : " << nfiles << endl;
+
+
+  // check the number of files found in the directory
+  int nfound = (gSystem->GetFromPipe(Form("ls %s/*.root | wc -l", inDir))).Atoi();
+  cout << "  N files found      : " << nfound << endl;
+
+  if (nfound < nfiles)
   {
-    cout << "ERROR!! Unable to open " << inFile << endl;
-    return;
+    cout << "WARNING!! There are not enough files for the desired luminosity." << endl;
+    cout << "          Will scale the statistical uncertainties accordingly." << endl;
+    // return;
   }
 
-  ttree = (TTree*) fin->Get("ttree");
-  if (!ttree)
+  // chain the desired files
+  ttree = new TChain("ttree");
+  int nread = 0;
+
+  TString fileList = gSystem->GetFromPipe(Form("ls %s/*.root", inDir));
+
+  int spos = fileList.First("\n");
+  while (spos > 0 && nread < nfiles)
   {
-    cout << "ERROR!! Unable to find ttree in " << inFile << endl;
-    return;
+    TString tfile = fileList(0, spos);
+    // cout << tsub << endl;
+
+    ttree->Add(tfile.Data());
+
+
+    // chop off the file
+    fileList = fileList(spos + 1, fileList.Length());
+    spos = fileList.First("\n");
+    nread++;
   }
+
+  cout << " successfully read in " << nread << " files" << endl;
+  lumiRead = lumiPerFile * nread;
+
 
   ttree->SetBranchAddress("event", &event);
   ttree->SetBranchAddress("truthjet_n", &truthjet_n);
@@ -168,11 +251,12 @@ void Draw_BDiJetImbalance()
   {
     ttree->GetEntry(ientry);
 
-    if (ientry % 1000 == 0) cout << "----> Processing event " << ientry << endl;
+    if (ientry % 100000 == 0) cout << "----> Processing event " << ientry << endl;
 
     //-- apply acceptance to each jet
     for (int i = 0; i < truthjet_n; i++)
-      acc[i] = (rand->Uniform() < bJetEff) && (rand->Uniform() < RAA);
+      acc[i] = (rand->Uniform() < bJetEff);
+      // acc[i] = (rand->Uniform() < bJetEff) && (rand->Uniform() < RAA);
 
     //-- get kinematics for all b-jets
     for (int i = 0; i < truthjet_n; i++)
@@ -232,7 +316,8 @@ void Draw_BDiJetImbalance()
 
 
         // check if we accept the leading jet
-        if ( pT1 < pT1min || TMath::Abs(eta1) > etamax || !acc1 )
+        // only take RAA hit once
+        if ( pT1 < pT1min || TMath::Abs(eta1) > etamax || !acc1  || rand->Uniform() > RAA)
           continue;
 
         // calculate the delta phi
@@ -293,9 +378,66 @@ void Draw_BDiJetImbalance()
   {
     hdijet_eff_eta2[i]->Divide(hdijet_sing_eta2);
   }
+
   //-- normalize to integral 1
   hdijet_dphi->Scale(1. / hdijet_dphi->Integral());
   hdijet_xj->Scale(1. / hdijet_xj->Integral());
+
+  //-- scale statistical uncertainties if not enough simulated events
+  if ( lumiRead < lumiDesired )
+  {
+    cout << endl;
+    cout << "-- Scaling statistical uncertainties by:" << endl;
+    cout << "  sqrt(" << lumiRead << "/" << lumiDesired << ") = "
+         << TMath::Sqrt(lumiRead / lumiDesired) << endl;
+    for (int ix = 1; ix <= hdijet_xj->GetNbinsX(); ix++)
+    {
+      double be = hdijet_xj->GetBinError(ix);
+      be = be * TMath::Sqrt(lumiRead / lumiDesired);
+      hdijet_xj->SetBinError(ix, be);
+    } // ix
+  }
+
+  //-- fix statistical uncertainties for purity
+  hdijet_xj_fix = (TH1D*) hdijet_xj->Clone("hdijet_xj_fix");
+  hdijet_xj_fix->SetLineColor(kRed);
+  hdijet_xj_fix->SetMarkerColor(kRed);
+  for (int ix = 1; ix <= hdijet_xj->GetNbinsX(); ix++)
+  {
+    double bc = hdijet_xj->GetBinContent(ix);
+    double be = hdijet_xj->GetBinError(ix);
+
+    // increase the bin error due to the purity
+    // need to square it, once for each bjet
+    be = be / TMath::Sqrt(bJetPur * bJetPur);
+    hdijet_xj_fix->SetBinError(ix, be);
+  } // ix
+
+
+
+  //==========================================================================//
+  // <x_j>
+  //==========================================================================//
+  cout << endl;
+  cout << "--> Calculating <x_j>" << endl;
+
+  double sum = 0;
+  double w = 0;
+  double err = 0;
+  for (int i = 1; i <= hdijet_xj->GetNbinsX(); i++)
+  {
+    double c = hdijet_xj->GetBinContent(i);
+    if (c > 0)
+    {
+      sum += c * hdijet_xj->GetBinCenter(i);
+      w += c;
+      err += TMath::Power(c * hdijet_xj->GetBinError(i), 2);
+    }
+  }
+  double mean = sum / w;
+  err = TMath::Sqrt(err) / w;
+
+  cout << "  <x_j>=" << mean << " +/- " << err << endl;
 
   //==========================================================================//
   // PLOT OBJECTS
@@ -306,16 +448,20 @@ void Draw_BDiJetImbalance()
   hdijet_xj->SetMarkerStyle(kFullCircle);
   hdijet_xj->SetMarkerColor(kBlack);
   hdijet_xj->SetLineColor(kBlack);
-  hdijet_xj->GetYaxis()->SetTitleFont(63);
-  hdijet_xj->GetYaxis()->SetTitleSize(24);
-  hdijet_xj->GetYaxis()->SetTitleOffset(1.4);
-  hdijet_xj->GetYaxis()->SetLabelFont(63);
-  hdijet_xj->GetYaxis()->SetLabelSize(20);
-  hdijet_xj->GetXaxis()->SetTitleFont(63);
-  hdijet_xj->GetXaxis()->SetTitleSize(24);
-  hdijet_xj->GetXaxis()->SetTitleOffset(1.0);
-  hdijet_xj->GetXaxis()->SetLabelFont(63);
-  hdijet_xj->GetXaxis()->SetLabelSize(20);
+  // hdijet_xj->GetYaxis()->SetTitleFont(63);
+  // hdijet_xj->GetYaxis()->SetTitleSize(24);
+  // hdijet_xj->GetYaxis()->SetTitleOffset(1.4);
+  // hdijet_xj->GetYaxis()->SetLabelFont(63);
+  // hdijet_xj->GetYaxis()->SetLabelSize(20);
+  // hdijet_xj->GetXaxis()->SetTitleFont(63);
+  // hdijet_xj->GetXaxis()->SetTitleSize(24);
+  // hdijet_xj->GetXaxis()->SetTitleOffset(1.0);
+  // hdijet_xj->GetXaxis()->SetLabelFont(63);
+  // hdijet_xj->GetXaxis()->SetLabelSize(20);
+
+  hdijet_xj_fix->SetMarkerStyle(kFullCircle);
+  hdijet_xj_fix->SetMarkerColor(kBlack);
+  hdijet_xj_fix->SetLineColor(kBlack);
 
   hdijet_dphi->SetMarkerStyle(kFullCircle);
   hdijet_dphi->SetMarkerColor(kBlack);
@@ -401,13 +547,13 @@ void Draw_BDiJetImbalance()
 
   cjet->cd(1);
   gPad->SetLogy();
-  hjet_pT->GetYaxis()->SetRangeUser(0.5, 1.1 * hjet_pT->GetMaximum());
+  hjet_pT->GetYaxis()->SetRangeUser(0.5, 1.5 * hjet_pT->GetMaximum());
   hjet_pT->GetXaxis()->SetRangeUser(0, 50);
   hjet_pT->Draw();
-  hdijet_pT1->Draw("same");
-  hdijet_pT2->Draw("same");
+  // hdijet_pT1->Draw("same");
+  // hdijet_pT2->Draw("same");
 
-  leg_jetpt->Draw("same");
+  // leg_jetpt->Draw("same");
 
   cjet->cd(2);
   hjet_eta->Draw("HIST");
@@ -459,32 +605,98 @@ void Draw_BDiJetImbalance()
   cdijet2->cd(2);
   hdijet_dphi->Draw();
 
+
+
+
+
+
+  // make this one consistent with sPHENIX style
   TCanvas *cdijet = new TCanvas("cdijet", "dijet", 600, 600);
-  cdijet->SetMargin(0.12, 0.02, 0.12, 0.02);
-  cdijet->SetTicks(1, 1);
+  // cdijet->SetMargin(0.12, 0.02, 0.12, 0.02);
+  // cdijet->SetTicks(1, 1);
   cdijet->cd();
-  hdijet_xj->Draw();
+  hdijet_xj_fix->GetYaxis()->SetRangeUser(0, 0.3);
+  hdijet_xj_fix->Draw();
+  // hdijet_xj->Draw("same");
 
-  ltxt.DrawLatex(0.2, 0.92, "Di b-jets (Pythia8)");
-  if (is_pp)
+
+  TLegend *legsphenix = new TLegend(0.15, 0.5, 0.5, 0.9);
+  legsphenix->SetFillStyle(0);
+  legsphenix->SetBorderSize(0);
+  legsphenix->AddEntry("", "#it{#bf{sPHENIX}} Simulation", "");
+  legsphenix->AddEntry("", "Di b-jets (Pythia8, CTEQ6L)", "");
+  // if (is_pp)
+  // {
+  //   legsphenix->AddEntry("", "p + p #sqrt{s_{_{NN}}} = 200 GeV", "");
+  //   legsphenix->AddEntry("", Form("#int L dt = %.0f pb^{-1} |z| < 10 cm", lumiDesired), "");
+  // }
+  // else
+  // {
+  //   legsphenix->AddEntry("", "0-10% Au + Au #sqrt{s_{_{NN}}}=200 GeV", "");
+  //   legsphenix->AddEntry("", "10B events |z| < 10 cm", "");
+  // }
+  legsphenix->AddEntry("", scol.Data(), "");
+  legsphenix->AddEntry("", slumi.Data(), "");
+  legsphenix->AddEntry("", "anti-k_{T}, R = 0.4", "");
+  legsphenix->AddEntry("", Form(" |#eta| < %.1f", etamax), "");
+  legsphenix->AddEntry("", Form(" |#Delta#phi_{12}| > 2#pi/3"), "");
+  legsphenix->AddEntry("", Form("p_{T, 1} > % .0f GeV", pT1min), "");
+  legsphenix->AddEntry("", Form("p_{T, 2} > % .0f GeV", pT2min), "");
+  legsphenix->AddEntry("", Form("%.0f%% b-jet Eff, %.0f%% b-jet Pur.", bJetEff * 100., bJetPur * 100.), "");
+  legsphenix->Draw("same");
+
+  // ltxt.DrawLatex(0.2, 0.92, "Di b-jets (Pythia8)");
+  // if (is_pp)
+  // {
+  //   ltxt.DrawLatex(0.2, 0.86, "p + p #sqrt{s_{_{NN}}} = 200 GeV");
+  //   ltxt.DrawLatex(0.2, 0.80, "#int L dt = 175 pb^{-1} |z| < 10 cm");
+  // }
+  // else
+  // {
+  //   ltxt.DrawLatex(0.2, 0.86, "0-10% Au + Au #sqrt{s_{_{NN}}}=200 GeV");
+  //   ltxt.DrawLatex(0.2, 0.80, "10B events |z| < 10 cm");
+  // }
+  // ltxt.DrawLatex(0.2, 0.74, "anti-k_{T}, R = 0.4");
+  // ltxt.DrawLatex(0.2, 0.68, Form("p_{T, 1} > % .0f GeV", pT1min));
+  // ltxt.DrawLatex(0.2, 0.62, Form("p_{T, 2} > % .0f GeV", pT2min));
+  // ltxt.DrawLatex(0.2, 0.56, Form(" |#eta| < %.0f", etamax));
+  // ltxt.DrawLatex(0.2, 0.50, Form(" |#Delta#phi_{12}| > 2#pi/3"));
+
+
+  //==========================================================================//
+  // PRINT PLOTS
+  //==========================================================================//
+  if (print_plots)
   {
-    ltxt.DrawLatex(0.2, 0.86, "p + p #sqrt{s_{_{NN}}} = 200 GeV");
-    ltxt.DrawLatex(0.2, 0.80, "#int L dt = 175 pb^{-1} |z| < 10 cm");
-  }
-  else
-  {
-    ltxt.DrawLatex(0.2, 0.86, "0-10% Au + Au #sqrt{s_{_{NN}}}=200 GeV");
-    ltxt.DrawLatex(0.2, 0.80, "10B events |z| < 10 cm");
-  }
-  ltxt.DrawLatex(0.2, 0.74, "anti-k_{T}, R = 0.4");
-  ltxt.DrawLatex(0.2, 0.68, Form("p_{T, 1} > % .0f GeV", pT1min));
-  ltxt.DrawLatex(0.2, 0.62, Form("p_{T, 2} > % .0f GeV", pT2min));
-  ltxt.DrawLatex(0.2, 0.56, Form(" | #Delta#phi_{12}| > 2#pi/3"));
+    if (is_pp)
+    {
+      // cjet->Print("bjet_kinematics_pp.pdf");
+      // cdijet2->Print("dibjet_2panel_pp.pdf");
+      cdijet->Print("dibjet_imbalance_pp.pdf");
+      cdijet->Print("dibjet_imbalance_pp.C");
+      cdijet->Print("dibjet_imbalance_pp.root");
 
-  if (is_pp)
-    cdijet->Print("dibjet_imbalance_pp.pdf");
-  else
-    cdijet->Print("dibjet_imbalance_AuAu0-10.pdf");
+      TFile *fout = new TFile("dibjet_imbalance_histos_pp.root","RECREATE");
+      fout->cd();
+      hdijet_xj->Write();
+      hdijet_xj_fix->Write();
+      fout->Close();
+      delete fout;
 
+    }
+    else
+    {
+      cdijet->Print("dibjet_imbalance_AuAu0-10.pdf");
+      cdijet->Print("dibjet_imbalance_AuAu0-10.C");
+      cdijet->Print("dibjet_imbalance_AuAu0-10.root");
+
+      TFile *fout = new TFile("dibjet_imbalance_histos_AuAu0-10.root","RECREATE");
+      fout->cd();
+      hdijet_xj->Write();
+      hdijet_xj_fix->Write();
+      fout->Close();
+      delete fout;
+    }
+  }
 
 }
