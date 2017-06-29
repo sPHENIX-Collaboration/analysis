@@ -18,10 +18,6 @@
 #include <TString.h>
 #include <TH2D.h>
 #include <TDatabasePDG.h>
-
-#include <cmath>
-#include <iostream>
-
 #include <g4jets/JetMap.h>
 #include <g4jets/Jet.h>
 
@@ -29,9 +25,22 @@
 #include <HepMC/GenEvent.h>
 #include <HepMC/GenVertex.h>
 
+#include <cmath>
+#include <iostream>
+#include <cstddef>
+
+
 HFJetTruthTrigger::HFJetTruthTrigger(std::string filename, int flavor,
     std::string jet_node, int maxevent) :
-    SubsysReco("HFJetTagger_" + jet_node)
+    SubsysReco("HFJetTagger_" + jet_node),
+     _verbose(0),
+     _ievent(0),
+     _total_pass(0),
+     _f(nullptr),
+     _h2(nullptr),
+     _h2all(nullptr),
+     _h2_b(nullptr),
+     _h2_c(nullptr)
 {
 
   _foutname = filename;

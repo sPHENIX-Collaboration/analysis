@@ -1,7 +1,7 @@
 #ifndef __HCALANALYSIS_H__
 #define __HCALANALYSIS_H__
 
-#include "fun4all/SubsysReco.h"
+#include <fun4all/SubsysReco.h>
 #include <string>
 
 class PHCompositeNode;
