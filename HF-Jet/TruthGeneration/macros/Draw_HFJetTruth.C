@@ -65,9 +65,10 @@ void Draw_HFJetTruth(const TString infile =
   }
 
   //    DrawCrossSection(int_lumi, dy);
-  CrossSection2RAA_Proposal(infile);
-  CrossSection2RAA(infile);
-  CrossSection2RAA(infile, false);
+  Draw_HFJetTruth_DrawCrossSection_PR(infile);
+  //  CrossSection2RAA_Proposal(infile);
+  //  CrossSection2RAA(infile);
+  //  CrossSection2RAA(infile, false);
 }
 
 void DrawCrossSection(double int_lumi, const double dy)
@@ -187,6 +188,38 @@ void DrawCrossSection(double int_lumi, const double dy)
   leg->Draw();
 
   SaveCanvas(c1, TString(_file0->GetName()) + TString(c1->GetName()), kTRUE);
+}
+
+void Draw_HFJetTruth_DrawCrossSection_PR(const TString infile)
+{
+  TFile *f = TFile::Open(infile + "Draw_HFJetTruth_DrawCrossSection.root");
+  assert(f);
+
+  TH1F *hall = (TH1F *) f->GetObjectChecked("hall", "TH1F");
+  assert(hall);
+  TH1F *h_b = (TH1F *) f->GetObjectChecked("h_b", "TH1F");
+  assert(h_b);
+
+  hall->SetMarkerColor(kBlack);
+  hall->SetLineColor(kBlack);
+  hall->SetMarkerStyle(kFullCircle);
+
+  h_b->SetMarkerColor(kBlue + 2);
+  h_b->SetLineColor(kBlue + 2);
+  h_b->SetMarkerStyle(kFullCircle);
+
+  TGraphAsymmErrors *gr_fonll_b = GetFONLL_B();
+  gr_fonll_b->SetFillColor(kBlue - 7);
+  gr_fonll_b->SetFillStyle(1001);
+  TGraphAsymmErrors *gr_fonll_c = GetFONLL_C();
+  gr_fonll_c->SetFillColor(kRed - 7);
+  gr_fonll_c->SetFillStyle(3003);
+  TGraph *gr_phenix = GetPHENIX_jet();
+  gr_phenix->SetLineColor(kGray + 2);
+  gr_phenix->SetLineWidth(3);
+  gr_phenix->SetMarkerColor(kGray + 2);
+  gr_phenix->SetMarkerSize(2);
+  gr_phenix->SetMarkerStyle(kFullSquare);
 
   TCanvas *c1 = new TCanvas("Draw_HFJetTruth_DrawCrossSection_PR", "Draw_HFJetTruth_DrawCrossSection_PR", 1000, 860);
   //  c1->Divide(2, 2);
@@ -195,40 +228,28 @@ void DrawCrossSection(double int_lumi, const double dy)
 
   p = (TPad *) c1->cd(idx++);
   c1->Update();
-  p->SetGridx(0);
-  p->SetGridy(0);
   p->SetLogy();
 
-  hall->Draw();
+  TH1 *hframe = p->DrawFrame(12, 0.1, 70, 1e8);
+  hframe->SetTitle(";p_{T} [GeV/c];d^{2}#sigma/(dp_{T}d#eta) [pb/(GeV/c)]");
+
 
   gr_fonll_b->Draw("3");
-  //  gr_fonll_c->Draw("3");
   gr_phenix->Draw("pe");
 
+  hall->Draw("same");
   h_b->Draw("same");
-  //  h_bh5->Draw("same");
-  //  h_bq->Draw("same");
-  //  h_c->Draw("same");
-  //  h_ch5->Draw("same");
 
-  hall->GetXaxis()->SetRangeUser(12, 60);
-  hall->GetYaxis()->SetTitle(
-      "d^{2}#sigma/(dp_{T}dy), d^{2}#sigma/(dp_{T}d#eta) [pb/(GeV/c)]");
-
-  TLegend *leg = new TLegend(0.45, 0.6, 0.99, 0.95);
+  TLegend *leg = new TLegend(0.2, 0.7, 0.95, 0.92);
   leg->SetFillColor(kWhite);
   leg->SetFillStyle(1001);
-  leg->SetHeader("p+p collisions @ sPHENIX, #sqrt{s} = 200 GeV, |#eta|<0.6");
-  leg->AddEntry(hall, "Inclusive jet, Pythia8, Truth, anti-k_{t}, R=0.4",
+//  leg->SetHeader("#splitline{#it{#bf{sPHENIX }} Simulation}{p+p, #sqrt{s} = 200 GeV, |#eta|<0.6}");
+  leg->SetHeader("#it{#bf{sPHENIX }} Simulation, #it{p}+#it{p} #sqrt{s} = 200 GeV, |#eta|<0.6");
+  leg->AddEntry(hall, "Inclusive jet, PYTHIA8 + CTEQ6L, anti-k_{T} R=0.4",
                 "lpe");
-  //  leg->AddEntry(h_c, "c-quark jet, Pythia8, Truth, anti-k_{t}, R=0.4", "lpe");
-  leg->AddEntry(h_b, "b-quark jet, Pythia8, Truth, anti-k_{t}, R=0.4", "lpe");
-  //  leg->AddEntry(h_bh5,
-  //      "b-hadron jet, Pythia8, Truth, anti-k_{t}, R=0.4, p_{T, b-hadron}>5 GeV/c",
-  //      "lpe");
+  leg->AddEntry(h_b, "#it{b}-quark jet, PYTHIA8 + CTEQ6L, anti-k_{T} R=0.4", "lpe");
   leg->AddEntry(gr_phenix, "PHENIX inclusive jet, PRL 116, 122301 (2016)", "ple");
-  //  leg->AddEntry(gr_fonll_c, "c-quark, FONLL v1.3.2, CTEQ6.6, |y|<0.6", "f");
-  leg->AddEntry(gr_fonll_b, "b-quark, FONLL v1.3.2, CTEQ6.6, |y|<0.6", "f");
+  leg->AddEntry(gr_fonll_b, "#it{b}-quark, FONLL v1.3.2, CTEQ6.6", "f");
   leg->Draw();
 
   SaveCanvas(c1, TString(_file0->GetName()) + TString(c1->GetName()), kTRUE);
@@ -358,8 +379,8 @@ void CrossSection2RAA(const TString infile, const bool use_AA_jet_trigger = true
   const double pp_lumi = 200;                          // pb^-1 [sPH-TRG-000], rounded up from 197 pb^-1
   const double pp_inelastic_crosssec = 42e-3 / 1e-12;  // 42 mb in pb [sPH-TRG-000]
 
-  const double AuAu_MB_Evt = use_AA_jet_trigger ?  550e9 : 240e9;  // [sPH-TRG-000], depending on whether jet trigger applied in AA collisions
-  const double pAu_MB_Evt = 600e9;   // [sPH-TRG-000]
+  const double AuAu_MB_Evt = use_AA_jet_trigger ? 550e9 : 240e9;  // [sPH-TRG-000], depending on whether jet trigger applied in AA collisions
+  const double pAu_MB_Evt = 600e9;                                // [sPH-TRG-000]
 
   const double AuAu_Ncoll_C0_10 = 960.2;  // [DOI:?10.1103/PhysRevC.87.034911?]
   const double AuAu_Ncoll_C0_20 = 770.6;  // [DOI:?10.1103/PhysRevC.91.064904?]
@@ -384,7 +405,7 @@ void CrossSection2RAA(const TString infile, const bool use_AA_jet_trigger = true
   cout << "\t"
        << "pAu_eq_lumi_C0_100 = " << pAu_eq_lumi_C0_100 << endl;
 
-  TCanvas *c1 = new TCanvas("Draw_HFJetTruth_CrossSection2RAA_Ratio" + s_suffix, "Draw_HFJetTruth_CrossSection2RAA_Ratio"+ s_suffix, 700, 600);
+  TCanvas *c1 = new TCanvas("Draw_HFJetTruth_CrossSection2RAA_Ratio" + s_suffix, "Draw_HFJetTruth_CrossSection2RAA_Ratio" + s_suffix, 700, 600);
   c1->Divide(1, 1);
   int idx = 1;
   TPad *p;
@@ -405,7 +426,7 @@ void CrossSection2RAA(const TString infile, const bool use_AA_jet_trigger = true
   g_AA->Draw("same");
   SaveCanvas(c1, infile + "_" + TString(c1->GetName()), kTRUE);
 
-  TCanvas *c1 = new TCanvas("Draw_HFJetTruth_CrossSection2RAA"+ s_suffix, "Draw_HFJetTruth_CrossSection2RAA"+ s_suffix, 700, 600);
+  TCanvas *c1 = new TCanvas("Draw_HFJetTruth_CrossSection2RAA" + s_suffix, "Draw_HFJetTruth_CrossSection2RAA" + s_suffix, 700, 600);
   c1->Divide(1, 1);
   int idx = 1;
   TPad *p;
@@ -425,18 +446,21 @@ void CrossSection2RAA(const TString infile, const bool use_AA_jet_trigger = true
   ge_RAA->Draw("pe");
   ge_RAA->Print();
 
-  TLegend *leg = new TLegend(.0, .70, .85, .93);
+  TLegend *leg = new TLegend(.0, .76, .85, .93);
   leg->SetFillStyle(0);
-  leg->AddEntry("", "#it{#bf{sPHENIX}} Simulation", "");
-  leg->AddEntry("", "#it{b}-jet #it{R}_{AA}, Au+Au 0-10%C, #sqrt{s_{NN}}=200 GeV", "");
+  leg->AddEntry("", "#it{#bf{sPHENIX }} Simulation", "");
   leg->AddEntry("", Form("PYTHIA-8 #it{b}-jet, Anti-k_{T} R=0.4, |#eta|<%.1f, CTEQ6L", dy / 2), "");
   leg->AddEntry("", Form("#it{p}+#it{p}: %.0f pb^{-1}, %.0f%% Eff., %.0f%% Pur.", pp_lumi, pp_eff * 100, pp_purity * 100), "");
   leg->AddEntry("", Form("Au+Au: %.0fB col., %.0f%% Eff., %.0f%% Pur.", '%', AuAu_MB_Evt / 1e9, AuAu_eff * 100, AuAu_purity * 100), "");
   leg->Draw();
 
+  TLegend *leg2 = new TLegend(.17, .70, .88, .77);
+  leg2->AddEntry(ge_RAA, "#it{b}-jet #it{R}_{AA}, Au+Au 0-10%C, #sqrt{s_{NN}}=200 GeV", "pl");
+  leg2->Draw();
+
   SaveCanvas(c1, infile + "_" + TString(c1->GetName()), kTRUE);
 
-  TCanvas *c1 = new TCanvas("Draw_HFJetTruth_CrossSection2RAA_Theory"+ s_suffix, "Draw_HFJetTruth_CrossSection2RAA_Theory"+ s_suffix, 700, 600);
+  TCanvas *c1 = new TCanvas("Draw_HFJetTruth_CrossSection2RAA_Theory" + s_suffix, "Draw_HFJetTruth_CrossSection2RAA_Theory" + s_suffix, 700, 600);
   c1->Divide(1, 1);
   int idx = 1;
   TPad *p;
@@ -446,7 +470,6 @@ void CrossSection2RAA(const TString infile, const bool use_AA_jet_trigger = true
 
   p->DrawFrame(15, 0, 50, 1.2)
       ->SetTitle(";Transverse Momentum [GeV/#it{c}];#it{R}_{AA}");
-
 
   TGraph *g20 = pQCDModel_HuangKangVitev(2.0);
   TGraph *g22 = pQCDModel_HuangKangVitev(2.2);
@@ -461,12 +484,13 @@ void CrossSection2RAA(const TString infile, const bool use_AA_jet_trigger = true
 
   ge_RAA->DrawClone("pe");
   leg->DrawClone();
+  leg2->DrawClone();
 
   TLegend *leg1 = new TLegend(.2, .20, .85, .35);
   leg1->SetHeader("#splitline{pQCD, Phys.Lett. B726 (2013) 251-256}{#sqrt{s_{NN}}=200 GeV, #it{b}-jet R=0.4}");
-  leg1->AddEntry("","","");
-  leg1->AddEntry(g20,"g^{med} = 2.0","l");
-  leg1->AddEntry(g22,"g^{med} = 2.2","l");
+  leg1->AddEntry("", "", "");
+  leg1->AddEntry(g20, "g^{med} = 2.0", "l");
+  leg1->AddEntry(g22, "g^{med} = 2.2", "l");
   leg1->Draw();
 
   SaveCanvas(c1, infile + "_" + TString(c1->GetName()), kTRUE);
