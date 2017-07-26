@@ -18,7 +18,9 @@ noinst_HEADERS = \
 
 libantisigma_la_SOURCES = \
   EdepNtuple.cc \
-  EdepNtuple_Dict.C 
+  EdepNtuple_Dict.C \
+  ShowerSize.cc \
+  ShowerSize_Dict.C
 
 libantisigma_la_LDFLAGS = \
    -L$(libdir) \
@@ -28,6 +30,8 @@ libantisigma_la_LDFLAGS = \
 
 ################################################
 # linking tests
+
+BUILT_SOURCES = testexternals.C
 
 noinst_PROGRAMS = \
   testexternals
