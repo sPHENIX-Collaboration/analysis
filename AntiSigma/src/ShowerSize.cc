@@ -94,7 +94,19 @@ ShowerSize::process_event( PHCompositeNode* topNode )
 	double theta = atan(sqrt(hit_iter->second->get_avg_x() * hit_iter->second->get_avg_x() +
 				 hit_iter->second->get_avg_y() * hit_iter->second->get_avg_y()) /
 			    hit_iter->second->get_avg_z());
-	double deltasqrt = sqrt((phi-ntvars[0])*(phi-ntvars[0])+(theta-ntvars[1])*(theta-ntvars[1]));
+
+// handle rollover from pi to -pi
+	double diffphi = phi-ntvars[0];
+	if (diffphi > M_PI)
+	{
+	  diffphi -= 2*M_PI;
+	}
+	else if (diffphi < - M_PI)
+	{
+	  diffphi += 2*M_PI;
+	}
+// theta goes from 0-PI --> no rollover problem
+	double deltasqrt = sqrt(diffphi*diffphi+(theta-ntvars[1])*(theta-ntvars[1]));
 	double edep = hit_iter->second->get_edep();
 	eall[0] += edep;
 	for (int i=0; i<10; i++)
