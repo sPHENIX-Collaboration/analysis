@@ -225,7 +225,7 @@ void GenFitTrackProp::fill_tree(PHCompositeNode *topNode) {
 //		<<": track->size_clusters(): " << track->size_clusters()
 //		<<endl;
 
-		genfit::MeasuredStateOnPlane* msop = nullptr;
+		genfit::MeasuredStateOnPlane* msop80 = nullptr;
 
 		TDatabasePDG *pdg = TDatabasePDG::Instance();
 		int reco_charge = track->get_charge();
@@ -251,9 +251,9 @@ void GenFitTrackProp::fill_tree(PHCompositeNode *topNode) {
 
 			TVector3 n(trackstate->get_x(), trackstate->get_y(), 0);
 			genfit::SharedPlanePtr plane (new genfit::DetPlane(pos, n));
-			msop = new genfit::MeasuredStateOnPlane(rep);
-			msop->setPosMomCov(pos, mom, cov);
-			msop->setPlane(plane);
+			msop80 = new genfit::MeasuredStateOnPlane(rep);
+			msop80->setPosMomCov(pos, mom, cov);
+			msop80->setPlane(plane);
 
 			radius80 = pos.Perp();
 		}
@@ -263,7 +263,16 @@ void GenFitTrackProp::fill_tree(PHCompositeNode *topNode) {
 		TVector3 line_direction(0,0,1);
 
 		pathlength80 = last_state_iter->first;
-		pathlength85 = pathlength80 + rep->extrapolateToCylinder(*msop, radius, line_point, line_direction);
+		genfit::MeasuredStateOnPlane* msop85 = new genfit::MeasuredStateOnPlane(*msop80);
+		rep->extrapolateToCylinder(*msop85, radius, line_point, line_direction);
+		//pathlength85 = pathlength80 + rep->extrapolateToCylinder(*msop85, radius, line_point, line_direction);
+
+		TVector3 tof_hit_pos(msop85->getPos());
+		TVector3 tof_hit_norm(msop85->getPos().X(),msop85->getPos().Y(),0);
+		genfit::SharedPlanePtr tof_module_plane (new genfit::DetPlane(tof_hit_pos,tof_hit_norm));
+
+		genfit::MeasuredStateOnPlane* msop_tof_module = new genfit::MeasuredStateOnPlane(*msop80);
+		pathlength85 = pathlength80 + rep->extrapolateToPlane(*msop_tof_module, tof_module_plane);
 
 		//! Truth information
 		PHG4Particle* g4particle = trackeval->max_truth_particle_by_nclusters(
