@@ -14,7 +14,7 @@
 #include <sstream>
 
 #include "AtlasUtils.C"
-#include "SetOKStyle.C"
+#include "sPhenixStyle.C"
 #include "add_purity_text.C"
 
 float binorminal_error(float a, float b) {
@@ -57,7 +57,8 @@ void draw_G4_bjet_truth_tagging(
 	const double simulation_jet_energy = 20;
 
 	//gROOT->LoadMacro("SetOKStyle.C");
-	SetOKStyle();
+	//SetOKStyle();
+	SetsPhenixStyle();
 
 	TFile *fout = TFile::Open("dca_eval.root","recreate");
 	fout->cd();

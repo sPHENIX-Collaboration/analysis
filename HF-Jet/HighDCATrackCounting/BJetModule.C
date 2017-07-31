@@ -24,7 +24,7 @@
 
 #include <g4hough/SvtxTrackMap.h>
 #include <g4hough/SvtxTrack.h>
-
+#include <g4hough/SvtxClusterMap.h>
 #include <g4hough/SvtxVertexMap.h>
 #include <g4hough/SvtxVertex.h>
 
