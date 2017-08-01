@@ -17,9 +17,9 @@ class lin_res
   TF1 *f_res;
 };
 
-//TString base_dataset = "/phenix/u/jinhuang/links/sPHENIX_work/prod_analysis/hadron_shower_res_nightly/";
+TString base_dataset = "/phenix/u/jinhuang/links/sPHENIX_work/prod_analysis/hadron_shower_res_nightly/";
 //TString base_dataset = "/phenix/u/jinhuang/links/sPHENIX_work/prod_analysis/hadron_shower_res_hcaldigi/";
-TString base_dataset = "/phenix/u/jinhuang/links/sPHENIX_work/prod_analysis/hadron_shower_res_hcaldigi_sampling/";
+//TString base_dataset = "/phenix/u/jinhuang/links/sPHENIX_work/prod_analysis/hadron_shower_res_hcaldigi_sampling/";
 
 void DrawHadronShowers(void)
 {
@@ -98,8 +98,8 @@ void EtaScan(void)
   QA_Eta9->f_res->SetLineColor(kCyan + 3);
   QA_Eta9->f_res->SetLineStyle(kDashed);
 
-  TCanvas *c1 = new TCanvas(Form("ClusterSizeScan"),
-                            Form("ClusterSizeScan"), 1300, 600);
+  TCanvas *c1 = new TCanvas(Form("EtaScan"),
+                            Form("EtaScan"), 1300, 600);
   c1->Divide(2, 1);
   int idx = 1;
   TPad *p;
