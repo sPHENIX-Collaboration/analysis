@@ -27,6 +27,7 @@ ShowerSize::ShowerSize(const std::string &name, const std::string &filename):
   _filename(filename),
   ntups(nullptr),
   ntupe(nullptr),
+  ntup(nullptr),
   outfile(nullptr)
 {}
 
@@ -45,6 +46,7 @@ ShowerSize::Init( PHCompositeNode* )
   outfile = new TFile(_filename.c_str(), "RECREATE");
   ntups = new TNtuple("sz"," Shower size","rad:em:hi:ho:mag:bh");
   ntupe = new TNtuple("truth", "The Absolute Truth", "phi:theta:eta:e:p");
+  ntup = new TNtuple("de", "Change in Angles", "ID:dphi:dtheta:dtotal:edep");
   return 0;
 }
 
@@ -65,6 +67,10 @@ ShowerSize::process_event( PHCompositeNode* topNode )
     ntvars[1] = atan(sqrt(particle->get_py()*particle->get_py() + 
 			  particle->get_px()*particle->get_px()) /
 		     particle->get_pz());
+    if (ntvars[1] < 0)
+      {
+	ntvars[1]+=M_PI;
+      }
     ntvars[2] = 0.5*log((particle->get_e()+particle->get_pz())/
 			(particle->get_e()-particle->get_pz()));
     ntvars[3] = particle->get_e();
@@ -78,6 +84,7 @@ ShowerSize::process_event( PHCompositeNode* topNode )
   double mag[10] = {0};
   double bh[10] = {0};
   double eall[5] = {0};
+  float detid[5] = {0};
   string nodename[2] = {"G4HIT_CEMC","G4HIT_ABSORBER_CEMC"};
   for (int j=0; j<2;j++)
   {
@@ -105,13 +112,25 @@ ShowerSize::process_event( PHCompositeNode* topNode )
 	{
 	  diffphi += 2*M_PI;
 	}
+	//	double difftheta = theta-ntvars[1];
+	if (theta < 0)
+	  {
+	    theta += M_PI;
+	  }
+	double difftheta = theta-ntvars[1];
 // theta goes from 0-PI --> no rollover problem
-	double deltasqrt = sqrt(diffphi*diffphi+(theta-ntvars[1])*(theta-ntvars[1]));
+	double deltasqrt = sqrt(diffphi*diffphi+difftheta*difftheta);
 	double edep = hit_iter->second->get_edep();
 	eall[0] += edep;
+	detid[0] = 0;
+	detid[1] = diffphi;
+	detid[2] = theta-ntvars[1];
+	detid[3] = deltasqrt;
+	detid[4] = edep;
+	ntup->Fill(detid);
 	for (int i=0; i<10; i++)
 	{
-	  if (deltasqrt < i*0.1)
+	  if (deltasqrt < (i+1)*0.025)
 	  {
 	    emc[i]+=edep;
 	  }
@@ -136,12 +155,35 @@ ShowerSize::process_event( PHCompositeNode* topNode )
 	double theta = atan(sqrt(hit_iter->second->get_avg_x() * hit_iter->second->get_avg_x() +
 				 hit_iter->second->get_avg_y() * hit_iter->second->get_avg_y()) /
 			    hit_iter->second->get_avg_z());
-	double deltasqrt = sqrt((phi-ntvars[0])*(phi-ntvars[0])+(theta-ntvars[1])*(theta-ntvars[1]));
+ // handle rollover from pi to -pi
+	double diffphi = phi-ntvars[0];
+	if (diffphi > M_PI)
+	{
+	  diffphi -= 2*M_PI;
+	}
+	else if (diffphi < - M_PI)
+	{
+	  diffphi += 2*M_PI;
+	}
+	//	double difftheta = theta-ntvars[1];
+	if (theta < 0)
+	  {
+	    theta += M_PI;
+	  }
+	double difftheta = theta-ntvars[1];
+// theta goes from 0-PI --> no rollover problem
+	double deltasqrt = sqrt(diffphi*diffphi+difftheta*difftheta);
 	double edep = hit_iter->second->get_edep();
-	eall[1] += edep;
+	eall[0] += edep;
+	detid[0] = 1;
+	detid[1] = diffphi;
+	detid[2] = theta-ntvars[1];
+	detid[3] = deltasqrt;
+	detid[4] = edep;
+	ntup->Fill(detid);
 	for (int i=0; i<10; i++)
 	{
-	  if (deltasqrt < i*0.1)
+	  if (deltasqrt < (i+1)*0.025)
 	  {
 	    ih[i]+=edep;
 	  }
@@ -166,12 +208,35 @@ ShowerSize::process_event( PHCompositeNode* topNode )
 	double theta = atan(sqrt(hit_iter->second->get_avg_x() * hit_iter->second->get_avg_x() +
 				 hit_iter->second->get_avg_y() * hit_iter->second->get_avg_y()) /
 			    hit_iter->second->get_avg_z());
-	double deltasqrt = sqrt((phi-ntvars[0])*(phi-ntvars[0])+(theta-ntvars[1])*(theta-ntvars[1]));
+// handle rollover from pi to -pi
+	double diffphi = phi-ntvars[0];
+	if (diffphi > M_PI)
+	{
+	  diffphi -= 2*M_PI;
+	}
+	else if (diffphi < - M_PI)
+	{
+	  diffphi += 2*M_PI;
+	}
+	//	double difftheta = theta-ntvars[1];
+	if (theta < 0)
+	  {
+	    theta += M_PI;
+	  }
+	double difftheta = theta-ntvars[1];
+// theta goes from 0-PI --> no rollover problem
+	double deltasqrt = sqrt(diffphi*diffphi+difftheta*difftheta);
 	double edep = hit_iter->second->get_edep();
-	eall[2] += edep;
+	eall[0] += edep;
+	detid[0] = 2;
+	detid[1] = diffphi;
+	detid[2] = theta-ntvars[1];
+	detid[3] = deltasqrt;
+	detid[4] = edep;
+	ntup->Fill(detid);
 	for (int i=0; i<10; i++)
 	{
-	  if (deltasqrt < i*0.1)
+	  if (deltasqrt < (i+1)*0.025)
 	  {
 	    oh[i]+=edep;
 	  }
@@ -192,12 +257,35 @@ ShowerSize::process_event( PHCompositeNode* topNode )
       double theta = atan(sqrt(hit_iter->second->get_avg_x() * hit_iter->second->get_avg_x() +
 			       hit_iter->second->get_avg_y() * hit_iter->second->get_avg_y()) /
 			  hit_iter->second->get_avg_z());
-      double deltasqrt = sqrt((phi-ntvars[0])*(phi-ntvars[0])+(theta-ntvars[1])*(theta-ntvars[1]));
-      double edep = hit_iter->second->get_edep();
-      eall[3] += edep;
+// handle rollover from pi to -pi
+	double diffphi = phi-ntvars[0];
+	if (diffphi > M_PI)
+	{
+	  diffphi -= 2*M_PI;
+	}
+	else if (diffphi < - M_PI)
+	{
+	  diffphi += 2*M_PI;
+	}
+	//double difftheta = theta-ntvars[1];
+	if (theta < 0)
+	  {
+	    theta += M_PI;
+	  }
+	double difftheta = theta-ntvars[1];
+// theta goes from 0-PI --> no rollover problem
+	double deltasqrt = sqrt(diffphi*diffphi+difftheta*difftheta);
+	double edep = hit_iter->second->get_edep();
+	eall[0] += edep;
+	detid[0] = 3;
+	detid[1] = diffphi;
+	detid[2] = theta-ntvars[1];
+	detid[3] = deltasqrt;
+	detid[4] = edep;
+	ntup->Fill(detid);
       for (int i=0; i<10; i++)
       {
-	if (deltasqrt < i*0.1)
+	if (deltasqrt < (i+1)*0.025)
 	{
 	  mag[i]+=edep;
 	}
@@ -217,12 +305,35 @@ ShowerSize::process_event( PHCompositeNode* topNode )
       double theta = atan(sqrt(hit_iter->second->get_avg_x() * hit_iter->second->get_avg_x() +
 			       hit_iter->second->get_avg_y() * hit_iter->second->get_avg_y()) /
 			  hit_iter->second->get_avg_z());
-      double deltasqrt = sqrt((phi-ntvars[0])*(phi-ntvars[0])+(theta-ntvars[1])*(theta-ntvars[1]));
-      double edep = hit_iter->second->get_edep();
-      eall[4] += edep;
+// handle rollover from pi to -pi
+	double diffphi = phi-ntvars[0];
+	if (diffphi > M_PI)
+	{
+	  diffphi -= 2*M_PI;
+	}
+	else if (diffphi < - M_PI)
+	{
+	  diffphi += 2*M_PI;
+	}
+	//	double difftheta = theta-ntvars[1];
+	if (theta < 0)
+	  {
+	    theta += M_PI;
+	  }
+	double difftheta = theta-ntvars[1];
+// theta goes from 0-PI --> no rollover problem
+	double deltasqrt = sqrt(diffphi*diffphi+difftheta*difftheta);
+	double edep = hit_iter->second->get_edep();
+	eall[0] += edep;
+	detid[0] = 4;
+	detid[1] = diffphi;
+	detid[2] = theta-ntvars[1];
+	detid[3] = deltasqrt;
+	detid[4] = edep;
+	ntup->Fill(detid);
       for (int i=0; i<10; i++)
       {
-	if (deltasqrt < i*0.1)
+	if (deltasqrt < (i+1)*0.025)
 	{
 	  bh[i]+=edep;
 	}

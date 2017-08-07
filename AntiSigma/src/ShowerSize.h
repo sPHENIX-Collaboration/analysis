@@ -47,6 +47,7 @@ protected:
   std::map<std::string, int> _detid;
   TNtuple *ntups;
   TNtuple *ntupe;
+  TNtuple *ntup;
   TFile *outfile;
 };
 
