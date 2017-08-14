@@ -1,6 +1,6 @@
 JEWELTest.lo: JEWELTest.C JEWELTest.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/fun4all/SubsysReco.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/fun4all/Fun4AllBase.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/fun4all/SubsysReco.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/fun4all/Fun4AllBase.h \
  /opt/gcc/4.8.2/include/c++/4.8.2/string \
  /opt/gcc/4.8.2/include/c++/4.8.2/x86_64-redhat-linux7E/bits/c++config.h \
  /usr/include/bits/wordsize.h \
@@ -94,40 +94,40 @@ JEWELTest.lo: JEWELTest.C JEWELTest.h \
  /opt/gcc/4.8.2/include/c++/4.8.2/bits/stl_vector.h \
  /opt/gcc/4.8.2/include/c++/4.8.2/bits/stl_bvector.h \
  /opt/gcc/4.8.2/include/c++/4.8.2/bits/vector.tcc \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TTree.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TBranch.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TNamed.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TObject.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/Rtypes.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/RConfig.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/RVersion.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/DllImport.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/Rtypeinfo.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TTree.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TBranch.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TNamed.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TObject.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/Rtypes.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/RConfig.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/RVersion.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/DllImport.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/Rtypeinfo.h \
  /opt/gcc/4.8.2/include/c++/4.8.2/typeinfo /usr/include/string.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/snprintf.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/strlcpy.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/snprintf.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/strlcpy.h \
  /usr/include/unistd.h /usr/include/bits/posix_opt.h \
  /usr/include/bits/environments.h /usr/include/bits/confname.h \
  /usr/include/getopt.h /opt/gcc/4.8.2/include/c++/4.8.2/atomic \
  /opt/gcc/4.8.2/include/c++/4.8.2/bits/atomic_base.h \
  /opt/gcc/4.8.2/lib/gcc/x86_64-redhat-linux7E/4.8.2/include/stdbool.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TGenericClassInfo.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TSchemaHelper.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TStorage.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TVersionCheck.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/Riosfwd.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TBuffer.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TString.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TMathBase.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TGenericClassInfo.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TSchemaHelper.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TStorage.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TVersionCheck.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/Riosfwd.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TBuffer.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TString.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TMathBase.h \
  /opt/gcc/4.8.2/include/c++/4.8.2/cmath /usr/include/math.h \
  /usr/include/bits/huge_val.h /usr/include/bits/huge_valf.h \
  /usr/include/bits/huge_vall.h /usr/include/bits/inf.h \
  /usr/include/bits/nan.h /usr/include/bits/mathdef.h \
  /usr/include/bits/mathcalls.h /usr/include/bits/mathinline.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TObjArray.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TSeqCollection.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TCollection.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TIterator.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TObjArray.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TSeqCollection.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TCollection.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TIterator.h \
  /opt/gcc/4.8.2/include/c++/4.8.2/iterator \
  /opt/gcc/4.8.2/include/c++/4.8.2/ostream \
  /opt/gcc/4.8.2/include/c++/4.8.2/ios \
@@ -148,18 +148,18 @@ JEWELTest.lo: JEWELTest.C JEWELTest.h \
  /opt/gcc/4.8.2/include/c++/4.8.2/istream \
  /opt/gcc/4.8.2/include/c++/4.8.2/bits/istream.tcc \
  /opt/gcc/4.8.2/include/c++/4.8.2/bits/stream_iterator.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TAttFill.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TDataType.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TDictionary.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/Property.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/ESTLType.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TAttLine.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TAttMarker.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TArrayD.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TArray.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TArrayI.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TClass.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TObjString.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TAttFill.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TDataType.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TDictionary.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/Property.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/ESTLType.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TAttLine.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TAttMarker.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TArrayD.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TArray.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TArrayI.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TClass.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TObjString.h \
  /opt/gcc/4.8.2/include/c++/4.8.2/map \
  /opt/gcc/4.8.2/include/c++/4.8.2/bits/stl_tree.h \
  /opt/gcc/4.8.2/include/c++/4.8.2/bits/stl_map.h \
@@ -170,11 +170,11 @@ JEWELTest.lo: JEWELTest.C JEWELTest.h \
  /opt/gcc/4.8.2/include/c++/4.8.2/stdexcept \
  /opt/gcc/4.8.2/include/c++/4.8.2/bits/uses_allocator.h \
  /opt/gcc/4.8.2/include/c++/4.8.2/bits/stl_multimap.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/ThreadLocalStorage.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/RConfigure.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TVirtualTreePlayer.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TMath.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TError.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/ThreadLocalStorage.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/RConfigure.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TVirtualTreePlayer.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TMath.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TError.h \
  /opt/gcc/4.8.2/include/c++/4.8.2/algorithm \
  /opt/gcc/4.8.2/include/c++/4.8.2/bits/stl_algo.h \
  /opt/gcc/4.8.2/include/c++/4.8.2/bits/algorithmfwd.h \
@@ -198,106 +198,132 @@ JEWELTest.lo: JEWELTest.C JEWELTest.h \
  /opt/gcc/4.8.2/include/c++/4.8.2/bits/stl_numeric.h \
  /opt/gcc/4.8.2/include/c++/4.8.2/functional \
  /opt/gcc/4.8.2/lib/gcc/x86_64-redhat-linux7E/4.8.2/include/float.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TH1.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TAxis.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TAttAxis.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TArrayC.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TArrayS.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TArrayF.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/Foption.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TVectorFfwd.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TVectorDfwd.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TFitResultPtr.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TH2.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TMatrixFBasefwd.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TMatrixDBasefwd.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TFile.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TDirectoryFile.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TDirectory.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TList.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TDatime.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TUUID.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TMap.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/THashTable.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TUrl.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/phool/getClass.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/phool/PHNodeIterator.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/phool/phool.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TH1.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TAxis.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TAttAxis.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TArrayC.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TArrayS.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TArrayF.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/Foption.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TVectorFfwd.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TVectorDfwd.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TFitResultPtr.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TH2.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TMatrixFBasefwd.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TMatrixDBasefwd.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TFile.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TDirectoryFile.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TDirectory.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TList.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TDatime.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TUUID.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TMap.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/THashTable.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TUrl.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/phool/getClass.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/phool/PHNodeIterator.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/phool/phool.h \
  /opt/gcc/4.8.2/include/c++/4.8.2/iostream \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/phool/PHCompositeNode.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/phool/PHNode.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/phool/PHPointerList.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/phool/PHIODataNode.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/phool/PHDataNode.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/phool/PHIOManager.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/phool/PHNodeIOManager.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/phool/PHTypedNodeIterator.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/phool/PHCompositeNode.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/phool/PHNode.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/phool/PHPointerList.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/phool/PHIODataNode.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/phool/PHDataNode.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/phool/PHIOManager.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/phool/PHNodeIOManager.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/phool/PHTypedNodeIterator.h \
  /opt/gcc/4.8.2/include/c++/4.8.2/cstddef \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/phool/phooldefs.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TObject.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/fun4all/Fun4AllServer.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/fun4all/Fun4AllHistoManager.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/phool/PHTimer.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/phool/phooldefs.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TObject.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/fun4all/Fun4AllServer.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/fun4all/Fun4AllHistoManager.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/phool/PHTimer.h \
  /opt/gcc/4.8.2/include/c++/4.8.2/sstream \
  /opt/gcc/4.8.2/include/c++/4.8.2/bits/sstream.tcc \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/phool/PHCompositeNode.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/g4main/PHG4TruthInfoContainer.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/phool/PHObject.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/phool/PHCompositeNode.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4main/PHG4TruthInfoContainer.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/phool/PHObject.h \
  /opt/gcc/4.8.2/include/c++/4.8.2/set \
  /opt/gcc/4.8.2/include/c++/4.8.2/bits/stl_set.h \
  /opt/gcc/4.8.2/include/c++/4.8.2/bits/stl_multiset.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/g4main/PHG4Particle.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/g4main/PHG4Hit.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/g4main/PHG4HitDefs.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TLorentzVector.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TVector3.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TVector2.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TMatrix.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TMatrixF.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TMatrixT.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TMatrixTBase.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TMatrixTUtils.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TMatrixFfwd.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TMatrixFUtils.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TMatrixFUtilsfwd.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TRotation.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/g4jets/JetMap.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/g4jets/Jet.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/g4jets/Jet.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/g4cemc/RawTowerContainer.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/g4cemc/RawTowerDefs.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/phool/phool.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/g4cemc/RawTowerGeomContainer.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/g4cemc/RawTower.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/g4detectors/PHG4CellDefs.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/g4cemc/RawTowerGeom.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/g4cemc/RawClusterContainer.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/g4cemc/RawClusterDefs.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/g4cemc/RawCluster.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/g4detectors/PHG4ScintillatorSlatContainer.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/g4detectors/PHG4ScintillatorSlat.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/g4detectors/PHG4ScintillatorSlatDefs.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/g4main/PHG4HitDefs.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/g4eval/JetEvalStack.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/g4eval/JetRecoEval.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/g4eval/JetTruthEval.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/g4eval/SvtxEvalStack.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/g4eval/SvtxVertexEval.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/g4eval/SvtxTrackEval.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/g4eval/SvtxClusterEval.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/g4eval/SvtxHitEval.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/g4eval/SvtxTruthEval.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/g4eval/BaseTruthEval.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/g4eval/CaloEvalStack.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/g4eval/CaloRawClusterEval.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/g4eval/CaloRawTowerEval.h \
- /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/g4eval/CaloTruthEval.h
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/phhepmc/PHHepMCGenEvent.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/phool/phool.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/HepMC/GenEvent.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/HepMC/GenVertex.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/HepMC/WeightContainer.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/HepMC/SimpleVector.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/HepMC/enable_if.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/HepMC/is_arithmetic.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/HepMC/SimpleVector.icc \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/HepMC/IteratorRange.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/HepMC/GenParticle.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/HepMC/Flow.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/HepMC/Polarization.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/HepMC/GenCrossSection.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/HepMC/HeavyIon.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/HepMC/PdfInfo.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/HepMC/Units.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/HepMC/HepMCDefs.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/fun4all/Fun4AllReturnCodes.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4main/PHG4Particle.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4main/PHG4Hit.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4main/PHG4HitDefs.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TLorentzVector.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TVector3.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TVector2.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TMatrix.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TMatrixF.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TMatrixT.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TMatrixTBase.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TMatrixTUtils.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TMatrixFfwd.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TMatrixFUtils.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TMatrixFUtilsfwd.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TRotation.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4jets/JetMap.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4jets/Jet.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4jets/Jet.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4cemc/RawTowerContainer.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4cemc/RawTowerDefs.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4cemc/RawTowerGeomContainer.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4cemc/RawTower.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4detectors/PHG4CellDefs.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4cemc/RawTowerGeom.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4cemc/RawClusterContainer.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4cemc/RawClusterDefs.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4cemc/RawCluster.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4detectors/PHG4ScintillatorSlatContainer.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4detectors/PHG4ScintillatorSlat.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4detectors/PHG4ScintillatorSlatDefs.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4main/PHG4HitDefs.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4eval/JetEvalStack.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4eval/JetRecoEval.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4eval/JetTruthEval.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4eval/SvtxEvalStack.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4eval/SvtxVertexEval.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4eval/SvtxTrackEval.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4eval/SvtxClusterEval.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4eval/SvtxHitEval.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4eval/SvtxTruthEval.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4eval/BaseTruthEval.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4eval/CaloEvalStack.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4eval/CaloRawClusterEval.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4eval/CaloRawTowerEval.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4eval/CaloTruthEval.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4hough/SvtxTrackMap.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4hough/SvtxTrack.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4hough/SvtxTrackState.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4hough/SvtxTrack.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4eval/SvtxEvalStack.h \
+ /opt/gcc/4.8.2/include/c++/4.8.2/list \
+ /opt/gcc/4.8.2/include/c++/4.8.2/bits/stl_list.h \
+ /opt/gcc/4.8.2/include/c++/4.8.2/bits/list.tcc
 
 JEWELTest.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/fun4all/SubsysReco.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/fun4all/SubsysReco.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/fun4all/Fun4AllBase.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/fun4all/Fun4AllBase.h:
 
 /opt/gcc/4.8.2/include/c++/4.8.2/string:
 
@@ -541,31 +567,31 @@ JEWELTest.h:
 
 /opt/gcc/4.8.2/include/c++/4.8.2/bits/vector.tcc:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TTree.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TTree.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TBranch.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TBranch.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TNamed.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TNamed.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TObject.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TObject.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/Rtypes.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/Rtypes.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/RConfig.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/RConfig.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/RVersion.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/RVersion.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/DllImport.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/DllImport.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/Rtypeinfo.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/Rtypeinfo.h:
 
 /opt/gcc/4.8.2/include/c++/4.8.2/typeinfo:
 
 /usr/include/string.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/snprintf.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/snprintf.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/strlcpy.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/strlcpy.h:
 
 /usr/include/unistd.h:
 
@@ -583,21 +609,21 @@ JEWELTest.h:
 
 /opt/gcc/4.8.2/lib/gcc/x86_64-redhat-linux7E/4.8.2/include/stdbool.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TGenericClassInfo.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TGenericClassInfo.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TSchemaHelper.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TSchemaHelper.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TStorage.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TStorage.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TVersionCheck.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TVersionCheck.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/Riosfwd.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/Riosfwd.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TBuffer.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TBuffer.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TString.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TString.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TMathBase.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TMathBase.h:
 
 /opt/gcc/4.8.2/include/c++/4.8.2/cmath:
 
@@ -619,13 +645,13 @@ JEWELTest.h:
 
 /usr/include/bits/mathinline.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TObjArray.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TObjArray.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TSeqCollection.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TSeqCollection.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TCollection.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TCollection.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TIterator.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TIterator.h:
 
 /opt/gcc/4.8.2/include/c++/4.8.2/iterator:
 
@@ -669,29 +695,29 @@ JEWELTest.h:
 
 /opt/gcc/4.8.2/include/c++/4.8.2/bits/stream_iterator.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TAttFill.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TAttFill.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TDataType.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TDataType.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TDictionary.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TDictionary.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/Property.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/Property.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/ESTLType.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/ESTLType.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TAttLine.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TAttLine.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TAttMarker.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TAttMarker.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TArrayD.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TArrayD.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TArray.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TArray.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TArrayI.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TArrayI.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TClass.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TClass.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TObjString.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TObjString.h:
 
 /opt/gcc/4.8.2/include/c++/4.8.2/map:
 
@@ -713,15 +739,15 @@ JEWELTest.h:
 
 /opt/gcc/4.8.2/include/c++/4.8.2/bits/stl_multimap.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/ThreadLocalStorage.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/ThreadLocalStorage.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/RConfigure.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/RConfigure.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TVirtualTreePlayer.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TVirtualTreePlayer.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TMath.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TMath.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TError.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TError.h:
 
 /opt/gcc/4.8.2/include/c++/4.8.2/algorithm:
 
@@ -769,95 +795,95 @@ JEWELTest.h:
 
 /opt/gcc/4.8.2/lib/gcc/x86_64-redhat-linux7E/4.8.2/include/float.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TH1.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TH1.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TAxis.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TAxis.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TAttAxis.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TAttAxis.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TArrayC.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TArrayC.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TArrayS.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TArrayS.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TArrayF.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TArrayF.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/Foption.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/Foption.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TVectorFfwd.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TVectorFfwd.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TVectorDfwd.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TVectorDfwd.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TFitResultPtr.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TFitResultPtr.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TH2.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TH2.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TMatrixFBasefwd.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TMatrixFBasefwd.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TMatrixDBasefwd.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TMatrixDBasefwd.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TFile.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TFile.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TDirectoryFile.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TDirectoryFile.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TDirectory.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TDirectory.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TList.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TList.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TDatime.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TDatime.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TUUID.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TUUID.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TMap.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TMap.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/THashTable.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/THashTable.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TUrl.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TUrl.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/phool/getClass.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/phool/getClass.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/phool/PHNodeIterator.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/phool/PHNodeIterator.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/phool/phool.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/phool/phool.h:
 
 /opt/gcc/4.8.2/include/c++/4.8.2/iostream:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/phool/PHCompositeNode.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/phool/PHCompositeNode.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/phool/PHNode.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/phool/PHNode.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/phool/PHPointerList.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/phool/PHPointerList.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/phool/PHIODataNode.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/phool/PHIODataNode.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/phool/PHDataNode.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/phool/PHDataNode.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/phool/PHIOManager.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/phool/PHIOManager.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/phool/PHNodeIOManager.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/phool/PHNodeIOManager.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/phool/PHTypedNodeIterator.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/phool/PHTypedNodeIterator.h:
 
 /opt/gcc/4.8.2/include/c++/4.8.2/cstddef:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/phool/phooldefs.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/phool/phooldefs.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TObject.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TObject.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/fun4all/Fun4AllServer.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/fun4all/Fun4AllServer.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/fun4all/Fun4AllHistoManager.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/fun4all/Fun4AllHistoManager.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/phool/PHTimer.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/phool/PHTimer.h:
 
 /opt/gcc/4.8.2/include/c++/4.8.2/sstream:
 
 /opt/gcc/4.8.2/include/c++/4.8.2/bits/sstream.tcc:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/phool/PHCompositeNode.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/phool/PHCompositeNode.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/g4main/PHG4TruthInfoContainer.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4main/PHG4TruthInfoContainer.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/phool/PHObject.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/phool/PHObject.h:
 
 /opt/gcc/4.8.2/include/c++/4.8.2/set:
 
@@ -865,94 +891,146 @@ JEWELTest.h:
 
 /opt/gcc/4.8.2/include/c++/4.8.2/bits/stl_multiset.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/g4main/PHG4Particle.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/phhepmc/PHHepMCGenEvent.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/g4main/PHG4Hit.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/phool/phool.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/g4main/PHG4HitDefs.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/HepMC/GenEvent.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TLorentzVector.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/HepMC/GenVertex.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TVector3.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/HepMC/WeightContainer.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TVector2.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/HepMC/SimpleVector.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TMatrix.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/HepMC/enable_if.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TMatrixF.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/HepMC/is_arithmetic.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TMatrixT.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/HepMC/SimpleVector.icc:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TMatrixTBase.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/HepMC/IteratorRange.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TMatrixTUtils.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/HepMC/GenParticle.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TMatrixFfwd.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/HepMC/Flow.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TMatrixFUtils.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/HepMC/Polarization.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TMatrixFUtilsfwd.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/HepMC/GenCrossSection.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/root/include/TRotation.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/HepMC/HeavyIon.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/g4jets/JetMap.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/HepMC/PdfInfo.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/g4jets/Jet.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/HepMC/Units.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/g4jets/Jet.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/HepMC/HepMCDefs.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/g4cemc/RawTowerContainer.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/fun4all/Fun4AllReturnCodes.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/g4cemc/RawTowerDefs.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4main/PHG4Particle.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/phool/phool.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4main/PHG4Hit.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/g4cemc/RawTowerGeomContainer.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4main/PHG4HitDefs.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/g4cemc/RawTower.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TLorentzVector.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/g4detectors/PHG4CellDefs.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TVector3.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/g4cemc/RawTowerGeom.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TVector2.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/g4cemc/RawClusterContainer.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TMatrix.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/g4cemc/RawClusterDefs.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TMatrixF.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/g4cemc/RawCluster.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TMatrixT.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/g4detectors/PHG4ScintillatorSlatContainer.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TMatrixTBase.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/g4detectors/PHG4ScintillatorSlat.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TMatrixTUtils.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/g4detectors/PHG4ScintillatorSlatDefs.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TMatrixFfwd.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/g4main/PHG4HitDefs.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TMatrixFUtils.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/g4eval/JetEvalStack.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TMatrixFUtilsfwd.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/g4eval/JetRecoEval.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/include/TRotation.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/g4eval/JetTruthEval.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4jets/JetMap.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/g4eval/SvtxEvalStack.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4jets/Jet.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/g4eval/SvtxVertexEval.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4jets/Jet.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/g4eval/SvtxTrackEval.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4cemc/RawTowerContainer.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/g4eval/SvtxClusterEval.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4cemc/RawTowerDefs.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/g4eval/SvtxHitEval.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4cemc/RawTowerGeomContainer.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/g4eval/SvtxTruthEval.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4cemc/RawTower.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/g4eval/BaseTruthEval.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4detectors/PHG4CellDefs.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/g4eval/CaloEvalStack.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4cemc/RawTowerGeom.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/g4eval/CaloRawClusterEval.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4cemc/RawClusterContainer.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/g4eval/CaloRawTowerEval.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4cemc/RawClusterDefs.h:
 
-/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.1/include/g4eval/CaloTruthEval.h:
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4cemc/RawCluster.h:
+
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4detectors/PHG4ScintillatorSlatContainer.h:
+
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4detectors/PHG4ScintillatorSlat.h:
+
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4detectors/PHG4ScintillatorSlatDefs.h:
+
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4main/PHG4HitDefs.h:
+
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4eval/JetEvalStack.h:
+
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4eval/JetRecoEval.h:
+
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4eval/JetTruthEval.h:
+
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4eval/SvtxEvalStack.h:
+
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4eval/SvtxVertexEval.h:
+
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4eval/SvtxTrackEval.h:
+
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4eval/SvtxClusterEval.h:
+
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4eval/SvtxHitEval.h:
+
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4eval/SvtxTruthEval.h:
+
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4eval/BaseTruthEval.h:
+
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4eval/CaloEvalStack.h:
+
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4eval/CaloRawClusterEval.h:
+
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4eval/CaloRawTowerEval.h:
+
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4eval/CaloTruthEval.h:
+
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4hough/SvtxTrackMap.h:
+
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4hough/SvtxTrack.h:
+
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4hough/SvtxTrackState.h:
+
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4hough/SvtxTrack.h:
+
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/include/g4eval/SvtxEvalStack.h:
+
+/opt/gcc/4.8.2/include/c++/4.8.2/list:
+
+/opt/gcc/4.8.2/include/c++/4.8.2/bits/stl_list.h:
+
+/opt/gcc/4.8.2/include/c++/4.8.2/bits/list.tcc:

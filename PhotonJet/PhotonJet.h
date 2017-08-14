@@ -163,3 +163,4 @@ class PhotonJet: public SubsysReco
 };
 
 #endif // __PHOTONJET_H__
+
