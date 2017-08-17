@@ -1,11 +1,16 @@
-#ifndef ShowerSize_h__
-#define ShowerSize_h__
+#ifndef HijingShowerSize_h__
+#define HijingShowerSize_h__
 
 #include <fun4all/SubsysReco.h>
 #include <map>
 #include <set>
 #include <string>
 #include <vector>
+
+// rootcint barfs with this header so we need to hide it
+#ifndef __CINT__
+#include <gsl/gsl_rng.h>
+#endif
 
 // Forward declerations
 class Fun4AllHistoManager;
@@ -15,15 +20,15 @@ class TH1;
 class TH2;
 class TNtuple;
 
-class ShowerSize: public SubsysReco
+class HijingShowerSize: public SubsysReco
 {
  public:
 
   //! constructor
-  ShowerSize( const std::string &name = "ShowerSize", const std::string &filename = "ShowerSize.root" );
+  HijingShowerSize( const std::string &name = "HijingShowerSize", const std::string &filename = "HijingShowerSize.root" );
 
   //! destructor
-  virtual ~ShowerSize();
+  virtual ~HijingShowerSize();
 
   //! full initialization
   int Init(PHCompositeNode *);
@@ -49,6 +54,10 @@ protected:
   TNtuple *ntupe;
   TNtuple *ntup;
   TFile *outfile;
+  unsigned int seed;
+#ifndef __CINT__
+  gsl_rng *RandomGenerator;
+#endif
 };
 
 #endif 
