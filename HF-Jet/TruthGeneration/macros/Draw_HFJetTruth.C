@@ -586,6 +586,22 @@ void CrossSection2v2(const TString infile, const bool use_AA_jet_trigger = true,
   TGraph *g_AA_C40_60 = CrossSection2v2Uncert(h_b, b_jet_RAA, dy, AuAu_eq_lumi_C40_60 * AuAu_eff * AuAu_purity, ep_resolution, 2*.7);
   TGraph *g_AA_C60_92 = CrossSection2v2Uncert(h_b, b_jet_RAA, dy, AuAu_eq_lumi_C60_92 * AuAu_eff * AuAu_purity, ep_resolution, 3*.7);
   //
+  g_AA_C0_10->SetLineColor(kBlue+3);
+  g_AA_C10_20->SetLineColor(kAzure+3);
+  g_AA_C20_40->SetLineColor(kTeal+3);
+  g_AA_C40_60->SetLineColor(kSpring+3);
+
+  g_AA_C0_10->SetMarkerColor(kBlue+3);
+  g_AA_C10_20->SetMarkerColor(kAzure+3);
+  g_AA_C20_40->SetMarkerColor(kTeal+3);
+  g_AA_C40_60->SetMarkerColor(kSpring+3);
+
+  g_AA_C0_10->SetMarkerStyle(kFullCircle);
+  g_AA_C10_20->SetMarkerStyle(kFullSquare);
+  g_AA_C20_40->SetMarkerStyle(kFullDiamond);
+  g_AA_C40_60->SetMarkerStyle(kFullCross);
+
+
   //
   TCanvas *c1 = new TCanvas("Draw_HFJetTruth_CrossSection2v2" + s_suffix, "Draw_HFJetTruth_CrossSection2v2" + s_suffix, 700, 600);
   c1->Divide(1, 1);
@@ -619,7 +635,7 @@ void CrossSection2v2(const TString infile, const bool use_AA_jet_trigger = true,
     leg->AddEntry("", Form("Au+Au: %.0fB col., %.0f%% Eff., %.0f%% Pur.", '%', AuAu_MB_Evt / 1e9, AuAu_eff * 100, AuAu_purity * 100), "");
     leg->Draw();
   //
-    TLegend *leg2 = new TLegend(.2, .55, 1, .78);
+    TLegend *leg2 = new TLegend(.19, .55, 1, .78);
     leg2->SetHeader( Form("#it{b}-jet v_{2} Projection, #it{R}_{AA, #it{b}-jet}=%.1f, Res(#Psi_{2})=%.1f", b_jet_RAA, ep_resolution));
     leg2->AddEntry(g_AA_C0_10, "Au+Au 0-10%C", "pl");
     leg2->AddEntry(g_AA_C10_20, "Au+Au 10-20%C", "pl");
