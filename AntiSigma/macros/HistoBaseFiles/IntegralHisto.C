@@ -12,17 +12,17 @@ void EdepPercentSmall (/*TH1 *h1*/)//const char *part="e")//,int nevent = 1000)
   int var = 11;
   double intnum[1000]  = {0};
   double varnum[1000] = {0};
-  char *part[] = {"anti_neutron"};
+  char *part[] = {"gamma","neutron","anti_neutron"};
   int i = 0;
   int w =4;
-  //TCanvas *c3 = new TCanvas("TresGraphitos","stupid graph",1);
-  // TH1F *h4 = new TH1F("histo","histo",1000,0,.5);
+  TCanvas *c3 = new TCanvas("TresGraphitos","stupid graph",1);
+  TH1F *h4 = new TH1F("histo","histo",1000,0,.5);
   //TH2F *h3 = new TH2F("HistoGraph","HistoGraph",1000,0,.55,1000,0,1.2);
-  // TMarker *grmark = new TMarker();
+  TMarker *grmark = new TMarker();
   //	  TCanvas *c19 = new TCanvas();
   // h3->Draw();
-  for (int q=0; q<1; q++) 
-  {
+  for (int q=0; q<3; q++) 
+    {
       for (int w=0; w<9;w++)
       	{
 	  cout << "TEST VI" << endl;
@@ -48,15 +48,13 @@ void EdepPercentSmall (/*TH1 *h1*/)//const char *part="e")//,int nevent = 1000)
 	  varnum[0] = 0;
 	  intnum[0] = 0;
 	  char fname [100];
-	  sprintf(fname, "Gamma_Neutron_Energy_Graphs.root");
+	  sprintf(fname, "PosterHistos.root");
 	  TFile *fout = TFile::Open(fname,"UPDATE");
-	  // h1->Write();
-	  //fout->Write();
+	  h1->Write();
+	  fout->Write();
 	  f->Close();
-	  //char hname[100];
-	  //sprintf(hname,"%s%dGeV",part[q],pz[w]);
 	  // cout << h1->Integral() << " "  <<  hname << " " << pz[i] << endl;
-	  //TH2 *h2 = new TH2F("hname","hname",1,0,5,1,0,1.2);
+	  TH2 *h2 = new TH2F("meanvals","anti_neutron",1,0,5,1,0,1.2);
 	  gStyle->SetOptStat(0);
 
 	  
@@ -94,13 +92,13 @@ void EdepPercentSmall (/*TH1 *h1*/)//const char *part="e")//,int nevent = 1000)
 	      cout << "idiot" << endl;
 	    }
 	  gr->SetMaximum(1.2);
-	  //h2->Draw();
-	  //gr->Draw("A*");
+	  h2->Draw();
+	  gr->Draw("A*");
 	  //gr->Draw("ALP")
 	  //c3->DrawFrame(0,0,0.5,1.2);
 	  // gr->PaintGrapHist((i-1),varnum,intnum,"chopt");
 	  //	  gr->SetHistogram(h4);
-	  //h4->Write();
+	  h4->Write();
 	  gr->Write();
 	  cout << "TEST 1" << endl;
 	  //  TH2F *h3 = (TH2F *) "HistoGraph";
@@ -123,30 +121,28 @@ void EdepPercentSmall (/*TH1 *h1*/)//const char *part="e")//,int nevent = 1000)
 	    }
 	  
 	}
-       }
-  
-  /*  int engy[2] = {2,50};
-  for (int j=2;j<2;j++)
-  {
+    }
+  for (int j=0;j<9;j++)
+    {
       cout << "TEST VIII" << endl;
       TFile *fhist = TFile::Open("PosterHistos.root");
       cout << "TEST IX" << endl;
-      // char anhtotname[300];
-      //sprintf(anhtotname,"anti_neutron%dGeV;ConeSize;Percentage of Energy Deposited",pz[j]);
-      // auto h32 = (TH2F*)fhist->Get(anhtotname);
+      char anhtotname[300];
+      sprintf(anhtotname,"anti_neutron%dGeV;ConeSize;Percentage of Energy Deposited",pz[j]);
+      auto h32 = (TH2F*)fhist->Get(anhtotname);
       char nhtotname[300];
-      sprintf(nhtotname,"neutron%dGeV;ConeSize;Percentage of Energy Deposited",engy[j]);
+       sprintf(nhtotname,"neutron%dGeV;ConeSize;Percentage of Energy Deposited",pz[j]);
       auto h12 = (TH2F*)fhist->Get(nhtotname);
       cout << "TEST X" << endl;
       char ghtotname[300];
-      sprintf(ghtotname,"gamma%dGeV;ConeSize;Percentage of Energy Deposited",engy[j]);
+      sprintf(ghtotname,"gamma%dGeV;ConeSize;Percentage of Energy Deposited",pz[j]);
       auto h22 = (TH2F*)fhist->Get(ghtotname);
       cout << "TEST XI" << endl;
       TCanvas *c12 = new TCanvas();
       cout << "TEST XII" << endl;
-      // h32->Draw();
+      h32->Draw();
       cout << "TEST XIII" << endl;
-      h12->Draw();
+      h12->Draw("PMC same");
       h22->Draw("PMC same");
       cout <<"TEST XIV" << endl;
       fhist->Close();
@@ -154,20 +150,18 @@ void EdepPercentSmall (/*TH1 *h1*/)//const char *part="e")//,int nevent = 1000)
     }
   TCanvas *c123 = new TCanvas();
   TFile *ff = TFile::Open("PosterHistos.root");
-  auto h101 = (TH2F*)ff->Get("gamma1GeV;ConeSize;Percentage of Energy Deposited");
+  auto h101 = (TH2F*)ff->Get("anti_neutron1GeV;ConeSize;Percentage of Energy Deposited");
   h101->Draw();
   ff->Close();
   for (int o=0;o<8;o++)
     { 
       TFile *f_all = TFile::Open("PosterHistos.root");
       char aname[200];
-      sprintf(aname,"gamma%dGeV;ConeSize;Percentage of Energy Deposited",pz[(o+1)]);
+      sprintf(aname,"anti_neutron%dGeV;ConeSize;Percentage of Energy Deposited",pz[(o+1)]);
       auto h100 = (TH2F*)f_all->Get(aname);
       h100->Draw("PMC same");
       f_all->Close();
-    
-      }
-  */
+    }
 }
 
 
