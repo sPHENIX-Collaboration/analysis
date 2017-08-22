@@ -22,14 +22,21 @@ libantisigma_la_SOURCES = \
   ShowerSize.cc \
   ShowerSize_Dict.C \
   HijingShowerSize.cc \
-  HijingShowerSize_Dict.C
+  HijingShowerSize_Dict.C \
+  SigmaTimingNtuple.cc \
+  SigmaTimingNtuple_Dict.C \
+  TimingNtuple.cc \
+  TimingNtuple_Dict.C \
+  TowerTiming.cc \
+  TowerTiming_Dict.C
 
 libantisigma_la_LDFLAGS = \
    -L$(libdir) \
    -L$(OFFLINE_MAIN)/lib \
    -lphg4hit \
    -lgsl \
-   -lgslcblas
+   -lgslcblas \
+   -lcemc
 
 
 ################################################

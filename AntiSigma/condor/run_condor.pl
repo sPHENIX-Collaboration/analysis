@@ -39,7 +39,6 @@ my $listfile = sprintf("%s/%s.list",$outdir,$suffix);
 my $outputdir = sprintf("%s/ntuple",$outdir);
 mkpath($outputdir);
 my $outputfile = sprintf("%s/%s.root",$outputdir,$suffix);
-
 open(F,">$listfile");
 my $nfiles = 0;
 for (my $iseg=0; $iseg<12; $iseg++)
@@ -53,6 +52,7 @@ for (my $iseg=0; $iseg<12; $iseg++)
     print F "$infile\n";
     $nfiles++;
 }
+close(F);
 if ($nfiles <= 0)
 {
     die "no files in list - dying now\n";

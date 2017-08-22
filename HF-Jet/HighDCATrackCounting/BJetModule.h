@@ -116,6 +116,8 @@ private:
 	float _b_track_chisq[1000];
 	int _b_track_ndf[1000];
 
+	int _b_track_nmaps[1000];
+
 	unsigned int _b_track_nclusters[1000];
 	unsigned int _b_track_nclusters_by_layer[1000];
 	unsigned int _b_track_best_nclusters[1000];

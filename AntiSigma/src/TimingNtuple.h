@@ -1,5 +1,5 @@
-#ifndef ShowerSize_h__
-#define ShowerSize_h__
+#ifndef TimingNtuple_h__
+#define TimingNtuple_h__
 
 #include <fun4all/SubsysReco.h>
 #include <map>
@@ -10,20 +10,21 @@
 // Forward declerations
 class Fun4AllHistoManager;
 class PHCompositeNode;
+class PHG4Hit;
 class TFile;
 class TH1;
 class TH2;
 class TNtuple;
 
-class ShowerSize: public SubsysReco
+class TimingNtuple: public SubsysReco
 {
  public:
 
   //! constructor
-  ShowerSize( const std::string &name = "ShowerSize", const std::string &filename = "ShowerSize.root" );
+  TimingNtuple( const std::string &name = "TimingNtuple", const std::string &filename = "TimingNtuple.root" );
 
   //! destructor
-  virtual ~ShowerSize();
+  virtual ~TimingNtuple();
 
   //! full initialization
   int Init(PHCompositeNode *);
@@ -37,6 +38,7 @@ class ShowerSize: public SubsysReco
   void AddNode(const std::string &name, const int detid=0);
 
 protected:
+  double get_dtotal(const PHG4Hit *hit, const double phi, const double theta);
   int nblocks;
   Fun4AllHistoManager *hm;
   std::vector<TH1 *> nhits;
@@ -45,9 +47,8 @@ protected:
   std::string _filename;
   std::set<std::string> _node_postfix;
   std::map<std::string, int> _detid;
-  TNtuple *ntups;
-  TNtuple *ntupe;
   TNtuple *ntup;
+  TNtuple *ntupt;
   TFile *outfile;
 };
 

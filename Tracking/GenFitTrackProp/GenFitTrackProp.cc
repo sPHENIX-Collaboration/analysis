@@ -62,7 +62,7 @@ GenFitTrackProp::GenFitTrackProp(const string &name, const int pid_guess) :
 
 		_fitter(nullptr),
 		_mag_field_file_name("/phenix/upgrades/decadal/fieldmaps/sPHENIX.2d.root"),
-		_reverse_mag_field(false),
+		_reverse_mag_field(true),
 		_mag_field_re_scaling_factor(1.4/1.5),
 		_track_fitting_alg_name("DafRef"),
 		_do_evt_display(false),
@@ -227,11 +227,11 @@ void GenFitTrackProp::fill_tree(PHCompositeNode *topNode) {
 
 		genfit::MeasuredStateOnPlane* msop80 = nullptr;
 
-		TDatabasePDG *pdg = TDatabasePDG::Instance();
+		auto pdg = unique_ptr<TDatabasePDG> (TDatabasePDG::Instance());
 		int reco_charge = track->get_charge();
 		int gues_charge = pdg->GetParticle(_pid_guess)->Charge();
 		if(reco_charge*gues_charge<0) _pid_guess *= -1;
-
+		if(_reverse_mag_field) _pid_guess *= -1;
 
 		genfit::AbsTrackRep* rep = new genfit::RKTrackRep(_pid_guess);
 
@@ -249,11 +249,8 @@ void GenFitTrackProp::fill_tree(PHCompositeNode *topNode) {
 				}
 			}
 
-			TVector3 n(trackstate->get_x(), trackstate->get_y(), 0);
-			genfit::SharedPlanePtr plane (new genfit::DetPlane(pos, n));
 			msop80 = new genfit::MeasuredStateOnPlane(rep);
 			msop80->setPosMomCov(pos, mom, cov);
-			msop80->setPlane(plane);
 
 			radius80 = pos.Perp();
 		}

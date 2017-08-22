@@ -10,6 +10,6 @@ echo 'here comes your environment'
 printenv
 echo arg1 \(listfile\): $1
 echo arg2 \(outfile\): $2
-echo running root.exe -q -b MakeShowerSize.C\(\"$1\",\"$2\",2000\)
-root.exe -q -b MakeShowerSize.C\(\"$1\",\"$2\",2000\)
+echo running root.exe -q -b MakeShowerSize.C\(\"$1\",\"$2\",0\)
+root.exe -q -b MakeShowerSize.C\(\"$1\",\"$2\",0\)
 echo "script done"
