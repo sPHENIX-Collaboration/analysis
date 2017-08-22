@@ -1,4 +1,4 @@
-#include "ShowerSize.h"
+#include "HijingShowerSize.h"
 
 #include <g4main/PHG4HitContainer.h>
 #include <g4main/PHG4Hit.h>
@@ -10,17 +10,20 @@
 #include <fun4all/Fun4AllHistoManager.h>
 
 #include <phool/getClass.h>
+#include <phool/PHRandomSeed.h>
 
 #include <TFile.h>
 #include <TH1.h>
 #include <TH2.h>
 #include <TNtuple.h>
 
+#include <gsl/gsl_rng.h>
+
 #include<sstream>
 
 using namespace std;
 
-ShowerSize::ShowerSize(const std::string &name, const std::string &filename):
+HijingShowerSize::HijingShowerSize(const std::string &name, const std::string &filename):
   SubsysReco( name ),
   nblocks(0),
   hm(nullptr),
@@ -29,54 +32,51 @@ ShowerSize::ShowerSize(const std::string &name, const std::string &filename):
   ntupe(nullptr),
   ntup(nullptr),
   outfile(nullptr)
-{}
+{
+  RandomGenerator = gsl_rng_alloc(gsl_rng_mt19937);
+  seed = PHRandomSeed(); // fixed seed is handled in this funtcion
+  cout << Name() << " random seed: " << seed << endl;
+  gsl_rng_set(RandomGenerator,seed);
+  return;
+}
 
-ShowerSize::~ShowerSize()
+HijingShowerSize::~HijingShowerSize()
 {
   //  delete ntup;
+  gsl_rng_free (RandomGenerator);
   delete hm;
 } 
 
 
 int
-ShowerSize::Init( PHCompositeNode* )
+HijingShowerSize::Init( PHCompositeNode* )
 {
   ostringstream hname, htit;
   hm = new  Fun4AllHistoManager(Name());
   outfile = new TFile(_filename.c_str(), "RECREATE");
   ntups = new TNtuple("sz"," Shower size","rad:em:hi:ho:mag:bh");
-  ntupe = new TNtuple("truth", "The Absolute Truth", "phi:theta:eta:e:p");
+  ntupe = new TNtuple("truth", "The Absolute Truth", "phi:theta");
   ntup = new TNtuple("de", "Change in Angles", "ID:dphi:dtheta:dtotal:edep");
   return 0;
 }
 
 int
-ShowerSize::process_event( PHCompositeNode* topNode )
+HijingShowerSize::process_event( PHCompositeNode* topNode )
 {
-  map<int, PHG4Particle*>::const_iterator particle_iter;
-  PHG4TruthInfoContainer *_truth_container = findNode::getClass<PHG4TruthInfoContainer>(topNode, "G4TruthInfo");
-
-  PHG4TruthInfoContainer::ConstRange primary_range =
-    _truth_container->GetPrimaryParticleRange();
-  float ntvars[5] = {0};
-  for (PHG4TruthInfoContainer::ConstIterator particle_iter = primary_range.first;
-       particle_iter != primary_range.second; ++particle_iter)
+  float ntvars[5][2] = {0};
+  float tupvars[2];
+  for (int i=0; i<5; i++)
   {
-    PHG4Particle *particle = particle_iter->second;
-    ntvars[0] = atan2(particle->get_py(), particle->get_px());
-    ntvars[1] = atan(sqrt(particle->get_py()*particle->get_py() + 
-			  particle->get_px()*particle->get_px()) /
-		     particle->get_pz());
-    if (ntvars[1] < 0)
+    ntvars[i][0] = 4*M_PI*gsl_rng_uniform_pos(RandomGenerator) - 2*M_PI;
+    ntvars[i][1] = (1.62-1.52)*gsl_rng_uniform_pos(RandomGenerator) + 1.52;
+    if (ntvars[i][1] < 0)
       {
-	ntvars[1]+=M_PI;
+	ntvars[i][1]+=M_PI;
       }
-    ntvars[2] = 0.5*log((particle->get_e()+particle->get_pz())/
-			(particle->get_e()-particle->get_pz()));
-    ntvars[3] = particle->get_e();
-    ntvars[4] = particle->get_pz();
+    tupvars[0] = ntvars[i][0];
+    tupvars[1] = ntvars[i][1];
+  ntupe->Fill(tupvars);
   }
-  ntupe->Fill(ntvars);
   PHG4HitContainer *hits = nullptr;
   double emc[10] = {0};
   double ih[10] = {0};
@@ -103,7 +103,9 @@ ShowerSize::process_event( PHCompositeNode* topNode )
 			    hit_iter->second->get_avg_z());
 
 // handle rollover from pi to -pi
-	double diffphi = phi-ntvars[0];
+	for (int i = 0; i<5; i++)
+	{
+	double diffphi = phi-ntvars[i][0];
 	if (diffphi > M_PI)
 	{
 	  diffphi -= 2*M_PI;
@@ -117,14 +119,18 @@ ShowerSize::process_event( PHCompositeNode* topNode )
 	  {
 	    theta += M_PI;
 	  }
-	double difftheta = theta-ntvars[1];
+	double difftheta = theta-ntvars[i][1];
 // theta goes from 0-PI --> no rollover problem
 	double deltasqrt = sqrt(diffphi*diffphi+difftheta*difftheta);
+	if (deltasqrt>0.5)
+	{
+	  continue;
+	}
 	double edep = hit_iter->second->get_edep();
 	eall[0] += edep;
 	detid[0] = 0;
 	detid[1] = diffphi;
-	detid[2] = theta-ntvars[1];
+	detid[2] = difftheta;
 	detid[3] = deltasqrt;
 	detid[4] = edep;
 	ntup->Fill(detid);
@@ -134,6 +140,7 @@ ShowerSize::process_event( PHCompositeNode* topNode )
 	  {
 	    emc[i]+=edep;
 	  }
+	}
 	}
       }
     }
@@ -156,7 +163,9 @@ ShowerSize::process_event( PHCompositeNode* topNode )
 				 hit_iter->second->get_avg_y() * hit_iter->second->get_avg_y()) /
 			    hit_iter->second->get_avg_z());
  // handle rollover from pi to -pi
-	double diffphi = phi-ntvars[0];
+	for (int i=0; i<5; i++)
+	{
+	double diffphi = phi-ntvars[i][0];
 	if (diffphi > M_PI)
 	{
 	  diffphi -= 2*M_PI;
@@ -170,14 +179,18 @@ ShowerSize::process_event( PHCompositeNode* topNode )
 	  {
 	    theta += M_PI;
 	  }
-	double difftheta = theta-ntvars[1];
+	double difftheta = theta-ntvars[i][1];
 // theta goes from 0-PI --> no rollover problem
 	double deltasqrt = sqrt(diffphi*diffphi+difftheta*difftheta);
+	if (deltasqrt>0.5)
+	{
+	  continue;
+	}
 	double edep = hit_iter->second->get_edep();
 	eall[0] += edep;
 	detid[0] = 1;
 	detid[1] = diffphi;
-	detid[2] = theta-ntvars[1];
+	detid[2] = difftheta;
 	detid[3] = deltasqrt;
 	detid[4] = edep;
 	ntup->Fill(detid);
@@ -187,6 +200,7 @@ ShowerSize::process_event( PHCompositeNode* topNode )
 	  {
 	    ih[i]+=edep;
 	  }
+	}
 	}
       }
     }
@@ -209,7 +223,9 @@ ShowerSize::process_event( PHCompositeNode* topNode )
 				 hit_iter->second->get_avg_y() * hit_iter->second->get_avg_y()) /
 			    hit_iter->second->get_avg_z());
 // handle rollover from pi to -pi
-	double diffphi = phi-ntvars[0];
+	for (int i=0; i<5; i++)
+	{
+	double diffphi = phi-ntvars[i][0];
 	if (diffphi > M_PI)
 	{
 	  diffphi -= 2*M_PI;
@@ -223,14 +239,18 @@ ShowerSize::process_event( PHCompositeNode* topNode )
 	  {
 	    theta += M_PI;
 	  }
-	double difftheta = theta-ntvars[1];
+	double difftheta = theta-ntvars[i][1];
 // theta goes from 0-PI --> no rollover problem
 	double deltasqrt = sqrt(diffphi*diffphi+difftheta*difftheta);
+	if (deltasqrt>0.5)
+	{
+	  continue;
+	}
 	double edep = hit_iter->second->get_edep();
 	eall[0] += edep;
 	detid[0] = 2;
 	detid[1] = diffphi;
-	detid[2] = theta-ntvars[1];
+	detid[2] = difftheta;
 	detid[3] = deltasqrt;
 	detid[4] = edep;
 	ntup->Fill(detid);
@@ -240,6 +260,7 @@ ShowerSize::process_event( PHCompositeNode* topNode )
 	  {
 	    oh[i]+=edep;
 	  }
+	}
 	}
       }
     }
@@ -258,7 +279,9 @@ ShowerSize::process_event( PHCompositeNode* topNode )
 			       hit_iter->second->get_avg_y() * hit_iter->second->get_avg_y()) /
 			  hit_iter->second->get_avg_z());
 // handle rollover from pi to -pi
-	double diffphi = phi-ntvars[0];
+      for (int i=0; i<5; i++)
+      {
+	double diffphi = phi-ntvars[i][0];
 	if (diffphi > M_PI)
 	{
 	  diffphi -= 2*M_PI;
@@ -272,14 +295,18 @@ ShowerSize::process_event( PHCompositeNode* topNode )
 	  {
 	    theta += M_PI;
 	  }
-	double difftheta = theta-ntvars[1];
+	double difftheta = theta-ntvars[i][1];
 // theta goes from 0-PI --> no rollover problem
 	double deltasqrt = sqrt(diffphi*diffphi+difftheta*difftheta);
+	if (deltasqrt>0.5)
+	{
+	  continue;
+	}
 	double edep = hit_iter->second->get_edep();
 	eall[0] += edep;
 	detid[0] = 3;
 	detid[1] = diffphi;
-	detid[2] = theta-ntvars[1];
+	detid[2] = difftheta;
 	detid[3] = deltasqrt;
 	detid[4] = edep;
 	ntup->Fill(detid);
@@ -289,6 +316,7 @@ ShowerSize::process_event( PHCompositeNode* topNode )
 	{
 	  mag[i]+=edep;
 	}
+      }
       }
     }
   }
@@ -306,7 +334,9 @@ ShowerSize::process_event( PHCompositeNode* topNode )
 			       hit_iter->second->get_avg_y() * hit_iter->second->get_avg_y()) /
 			  hit_iter->second->get_avg_z());
 // handle rollover from pi to -pi
-	double diffphi = phi-ntvars[0];
+      for (int i=0; i<5; i++)
+      {
+	double diffphi = phi-ntvars[i][0];
 	if (diffphi > M_PI)
 	{
 	  diffphi -= 2*M_PI;
@@ -320,14 +350,18 @@ ShowerSize::process_event( PHCompositeNode* topNode )
 	  {
 	    theta += M_PI;
 	  }
-	double difftheta = theta-ntvars[1];
+	double difftheta = theta-ntvars[i][1];
 // theta goes from 0-PI --> no rollover problem
 	double deltasqrt = sqrt(diffphi*diffphi+difftheta*difftheta);
+	if (deltasqrt>0.5)
+	{
+	  continue;
+	}
 	double edep = hit_iter->second->get_edep();
 	eall[0] += edep;
 	detid[0] = 4;
 	detid[1] = diffphi;
-	detid[2] = theta-ntvars[1];
+	detid[2] = difftheta;
 	detid[3] = deltasqrt;
 	detid[4] = edep;
 	ntup->Fill(detid);
@@ -337,6 +371,7 @@ ShowerSize::process_event( PHCompositeNode* topNode )
 	{
 	  bh[i]+=edep;
 	}
+      }
       }
     }
   }
@@ -364,7 +399,7 @@ ShowerSize::process_event( PHCompositeNode* topNode )
 }
 
 int
-ShowerSize::End(PHCompositeNode * topNode)
+HijingShowerSize::End(PHCompositeNode * topNode)
 {
   outfile->cd();
   //  ntup->Write();
@@ -378,7 +413,7 @@ ShowerSize::End(PHCompositeNode * topNode)
 }
 
 void
-ShowerSize::AddNode(const std::string &name, const int detid)
+HijingShowerSize::AddNode(const std::string &name, const int detid)
 {
   _node_postfix.insert(name);
   _detid[name] = detid;

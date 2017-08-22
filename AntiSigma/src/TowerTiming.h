@@ -1,5 +1,5 @@
-#ifndef ShowerSize_h__
-#define ShowerSize_h__
+#ifndef TowerTiming_h__
+#define TowerTiming_h__
 
 #include <fun4all/SubsysReco.h>
 #include <map>
@@ -15,15 +15,15 @@ class TH1;
 class TH2;
 class TNtuple;
 
-class ShowerSize: public SubsysReco
+class TowerTiming: public SubsysReco
 {
  public:
 
   //! constructor
-  ShowerSize( const std::string &name = "ShowerSize", const std::string &filename = "ShowerSize.root" );
+  TowerTiming( const std::string &name = "TowerTiming", const std::string &filename = "TowerTiming.root" );
 
   //! destructor
-  virtual ~ShowerSize();
+  virtual ~TowerTiming();
 
   //! full initialization
   int Init(PHCompositeNode *);
@@ -45,9 +45,8 @@ protected:
   std::string _filename;
   std::set<std::string> _node_postfix;
   std::map<std::string, int> _detid;
-  TNtuple *ntups;
+  TNtuple *ntuptwr;
   TNtuple *ntupe;
-  TNtuple *ntup;
   TFile *outfile;
 };
 
