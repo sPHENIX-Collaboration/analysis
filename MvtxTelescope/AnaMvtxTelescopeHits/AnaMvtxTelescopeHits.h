@@ -45,6 +45,8 @@ class JetMap;
 
 class TFile;
 class TTree;
+class TH1D;
+class TH2D;
 
 class AnaMvtxTelescopeHits: public SubsysReco {
 
@@ -81,6 +83,7 @@ private:
   TH1D* hlayer;
   TH1D* hsize_phi[4];
   TH1D* hsize_z[4]; 
+  TH2D* hphiz[4];
 
 
   //-- internal variables

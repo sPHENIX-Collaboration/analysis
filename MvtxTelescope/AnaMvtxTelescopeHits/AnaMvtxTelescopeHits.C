@@ -72,6 +72,8 @@
 #include "TTree.h"
 #include "TFile.h"
 #include "TLorentzVector.h"
+#include "TH1.h"
+#include "TH2.h"
 
 
 #include <iostream>
@@ -114,12 +116,19 @@ int AnaMvtxTelescopeHits::Init(PHCompositeNode *topNode)
   for (int il = 0; il < 4; il++)
   {
     hsize_phi[il] = new TH1D(Form("hsize_phi_l%i", il),
-                             ";cluster size #phi",
-                             1000, -100, 100);
+                             ";cluster size #phi [cm]",
+                             100, 0, 0.1);
 
     hsize_z[il] = new TH1D(Form("hsize_z_l%i", il),
-                             ";cluster size z",
-                             1000, -100, 100);
+                             ";cluster size z [cm]",
+                             100, 0, 0.1);
+
+    hphiz[il] = new TH2D(Form("hphiz_l%i", il),
+                             ";z [cm]; #phi",
+                             1000, -10, 10,
+                             100, -0.1, 0.1);
+
+
   } // il
 
 
@@ -179,6 +188,9 @@ int AnaMvtxTelescopeHits::process_event(PHCompositeNode *topNode)
       continue;
     hsize_phi[lyr]->Fill(clus->get_phi_size());
     hsize_z[lyr]->Fill(clus->get_z_size());
+
+    double phi = TMath::ATan2(clus->get_y(), clus->get_x());
+    hphiz[lyr]->Fill(clus->get_z(), phi);
   }
 
   //-- Cleanup
@@ -205,7 +217,7 @@ int AnaMvtxTelescopeHits::GetNodes(PHCompositeNode * topNode)
 
   // Input Svtx Clusters
   _clustermap = findNode::getClass<SvtxClusterMap>(topNode, "SvtxClusterMap");
-  if (!_clustermap && _ana_reco && _ievent < 2) {
+  if (!_clustermap && _ievent < 2) {
     std::cout << PHWHERE << " SvtxClusterMap node not found on node tree"
               << std::endl;
     return Fun4AllReturnCodes::ABORTEVENT;
