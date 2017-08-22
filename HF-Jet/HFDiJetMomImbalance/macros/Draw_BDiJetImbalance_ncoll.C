@@ -194,7 +194,7 @@ void Draw_BDiJetImbalance_ncoll()
   // haxis->SetMinimum(0.551);
   // haxis->SetMaximum(0.749);
   haxis->SetMinimum(0.601);
-  haxis->SetMaximum(0.799);
+  haxis->SetMaximum(0.779);
 
   TLatex lbl;
   lbl.SetTextAlign(22);
@@ -217,7 +217,7 @@ void Draw_BDiJetImbalance_ncoll()
   for (int i = 0; i < NCENT; i++)
     lbl.DrawLatex(ncoll[i], mxj_auau[i] + 0.02 + 0.01*(i%2), centlim[i]);
 
-  TLegend *leg = new TLegend(0.15, 0.2, 0.5, 0.50);
+  TLegend *leg = new TLegend(0.10, 0.20, 0.70, 0.55);
   leg->SetFillStyle(0);
   leg->SetBorderSize(0);
   leg->AddEntry("", "#it{#bf{sPHENIX}} Simulation", "");
