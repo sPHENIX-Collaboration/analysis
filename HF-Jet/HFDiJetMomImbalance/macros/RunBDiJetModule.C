@@ -1,14 +1,16 @@
-void RunBDiJetModule(
-    // const char* input = "/phenix/hhj3/dcm07e/sPHENIX/macros/macros/g4simulations/G4sPHENIXCells.root",
-		// const char* input = "/phenix/hhj3/dcm07e/sPHENIX/macros/macros/g4simulations/G4sPHENIX_bjets_AuAu.root",
-    // const char* input = "pythia8_bjets_pp.list",                     
-    // const char* output = "HFtag_bjet_pp.root"
-    // const char* input = "pythia8_bjets_AuAu0-10.list",                     
-    // const char* output = "HFtag_bjet_AuAu0-10.root"
-    const char* input = "/phenix/plhf/dcm07e/sPHENIX/bjetsims/dst/pythia8_bjets_10_0.root",
-    const char* output = "test/test.root"
-		) {
 
+void RunBDiJetModule(
+    const int nEvents = 0,
+    // const char* input = "/phenix/plhf/dcm07e/sPHENIX/bjetsims/dst/pythia8_bjets_10_0.root",
+    // const char* input = "/gpfs/mnt/gpfs04/sphenix/user/shlim/01.Tracking/jobdir_SVReco_all_6th_ana45/DST_PYTHIA_run001874.root",
+    const char* input = "/gpfs/mnt/gpfs02/phenix/hhj/hhj3/dcm07e/sPHENIX/macros/macros/g4simulations/G4sPHENIX.root",
+    const char* output = "test/test.root"
+		) 
+{
+
+  //---------------
+  // Load libraries
+  //---------------
 
   gSystem->Load("libfun4all.so");
   gSystem->Load("libg4detectors.so");
@@ -18,19 +20,25 @@ void RunBDiJetModule(
   gSystem->Load("libcemc.so");
   gSystem->Load("libg4eval.so");
 
-  // gSystem->Load("libfun4all.so");
-  // gSystem->Load("libg4eval.so");
-
   gSystem->Load("libBDiJetModule.so");
+
+  //---------------
+  // Fun4All server
+  //---------------
 
   Fun4AllServer *se = Fun4AllServer::instance();
   se->Verbosity(0); 
 
-  BDiJetModule *tm;
+  //--------
+  // Modules
+  //--------
 
-  tm = new BDiJetModule( output );
-
+  BDiJetModule *tm = new BDiJetModule( "BDiJetModule", output );
   se->registerSubsystem( tm );
+
+  //------
+  // Input
+  //------
 
   Fun4AllInputManager *in = new Fun4AllDstInputManager("DSTin");
 
@@ -42,8 +50,19 @@ void RunBDiJetModule(
 
 	se->registerInputManager(in);
 
-	se->run( 0 );
+  //----
+  // Run
+  //----
+
+	se->run( nEvents );
+
+  //-----
+  // Exit
+  //-----
 
 	se->End();
+  std::cout << "All done" << std::endl;
+  delete se;
+  gSystem->Exit(0);
 
 }
