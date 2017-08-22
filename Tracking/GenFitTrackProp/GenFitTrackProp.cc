@@ -249,11 +249,8 @@ void GenFitTrackProp::fill_tree(PHCompositeNode *topNode) {
 				}
 			}
 
-			TVector3 n(trackstate->get_x(), trackstate->get_y(), 0);
-			genfit::SharedPlanePtr plane (new genfit::DetPlane(pos, n));
 			msop80 = new genfit::MeasuredStateOnPlane(rep);
 			msop80->setPosMomCov(pos, mom, cov);
-			msop80->setPlane(plane);
 
 			radius80 = pos.Perp();
 		}
