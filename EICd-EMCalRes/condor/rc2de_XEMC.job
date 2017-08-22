@@ -1,0 +1,18 @@
+Initialdir = /sphenix/user/jordan/examples/eicplots_4
+Executable = $(Initialdir)/condor/rc2de_XEMC.csh
+Input      = /dev/null
+Output     = $(Initialdir)/condor/out/$(Process)
+Error      = $(Initialdir)/condor/err/$(Process)
+Log        = $(Initialdir)/condor/log/$(Process)
+
+Rank = CPU_Speed
+#Nice_User = True
+
++Experiment = "star"
++Job_Type = "cas"
+PeriodicHold = (NumJobStarts>=1 && JobStatus == 1)
+
+## i cannot get ROOT to run without this
+GetEnv = True
+
+Queue Arguments From ../util/table_de_XEMC

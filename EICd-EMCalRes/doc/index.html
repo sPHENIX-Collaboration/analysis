@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<link rel="stylesheet" type="text/css" href="style.css">
+		<script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS_HTML"></script>
+	</head>
+	<body>
+		<h1>EIC detector EMCal energy resolution simulations</h1>
+		<p style="text-align:center;margin:0in;">
+			jordan roth, joe osborn, nils feege<br/>
+			jdroth@umich.edu<br/>
+			updated 22 August 2017
+		</p>
+		<p>This document describes some simulated single-particle energy resolution plots that were generated for the future EIC detector's electromagnetic calorimeters. The resolution was computed for electrons and positrons, and it was computed differentially in particle energy and pseudorapidity. The pseudorapidity did not seem to have a big effect on the resolution, within each calorimeter, so pseudorapidity-integrated energy resolutions were also computed for each calorimeter.</p>
+		<h2>SIMULATION</h2>
+		<p>For each combination of energy and pseudorapidity, 2,000 single-particle events were simulated, for both electrons and positrons. Nine energy values and nine pseudorapidity values were used, so a total of 162,000 events were simulated for each particle species.</p>
+		<h3>particle generation</h3>
+		<p>The <code>PHG4SimpleEventGenerator</code> class was used for particle generation.</p>
+		<h4>energies</h4>
+		<p>The EIC's electron beam is expected be accelerated to at most around 21.2&nbsp;GeV, so 25&nbsp;GeV was taken as a safe upper limit for scattered electrons hitting the calorimeters. A low-end energy of around 0.5&nbsp;GeV was desired. Because the energy resolution goes like 1&oplus;1/&radic;E, it was decided to sample energies on a 1/x<sup>2</sup> scale. On this scale, 0.2 maps to 25&nbsp;GeV and 1.25 maps to 0.64&nbsp;GeV. About eight samples was deemed adequate. In summary, electrons and positrons were generated with the following energies.</p>
+		<table>
+			<tr>
+				<th>energy&nbsp;(GeV)</th>
+				<td>25.0</td>
+				<td>21.2</td>
+				<td>8.2</td>
+				<td>4.0</td>
+				<td>2.4</td>
+				<td>1.6</td>
+				<td>1.1</td>
+				<td>0.83</td>
+				<td>0.64</td>
+			</tr>
+		</table>
+		<p>The extra point at 21.2&nbsp;GeV was added because preliminary analysis found that the uncertainty on the O(1) term in the energy resolution fit was rather large. Because the O(1/&radic;E) term is small at large energies, an extra point at high energy should have helped to reduce the O(1) term's uncertainty.</p>
+		<p>Technically, particles were generated with these values of momentum in GeV/c, but for electrons at these energies the distinction is negligible. Particles were all generated with exactly these momenta.</p>
+		<h4>pseudorapidities</h4>
+		<p>The EIC detector's pseudorapidity coverage goes from -4 to 4. This region is covered by three electromagnetic calorimeters. The electron-going calorimeter, EEMC, covers the region from -4 to -1. The central calorimeter, CEMC, covers the region -1 to 1. The hadron-going calorimeter, FEMC, covers the region 1 to 4. It was desired to sample roughly uniformly in pseudorapidity, with multiple samples from each calorimeter. About three samples per calorimeter was deemed sufficient. In summary, electrons and positrons were generated with the following pseudorapidities.</p>
+		<table>
+			<tr>
+				<th>pseudorapidity</th>
+				<td>3.2</td>
+				<td>2.4</td>
+				<td>1.6</td>
+				<td>0.8</td>
+				<td>0.0</td>
+				<td>-0.4</td>
+				<td>-1.6</td>
+				<td>-2.4</td>
+				<td>-3.2</td>
+			</tr>
+			<tr>
+				<th></th>
+				<td colspan="3" style="text-align:center;">FEMC</td>
+				<td colspan="3" style="text-align:center;">CEMC</td>
+				<td colspan="3" style="text-align:center;">EEMC</td>
+			</tr>
+		</table>
+		<p>The value of -0.4 was used instead of -0.8 because CEMC was expected to behave roughly symmetricly, and I wanted to spice things up a bit.</p>
+		<p>After particles were assigned one of these nominal pseudorapidity values, their true pseudorapidity was randomly sampled from a uniform distribution of full width 0.4, centered on the nominal pseudorapidity.</p>
+		<h4>azimuthal angles</h4>
+		<p>The azimuthal heading of each particle was randomly sampled from a uniform distribution that covered from -&pi; to &pi;.</p>
+		<h4>production vertices</h4>
+		<p>Each particle's production vertex was given x and y coordinates of zero. The z coordinate was randomly sampled from a gaussian centered at zero with a standard deviation of 27&nbsp;cm.</p>
+		<h3>detector simulation</h3>
+		<p>The functions defined in the <code>G4Setup_EICDetector.C</code> CINT macro file were used to create a GEANT4 simulation of the EIC detector. Generally, default arguments were used. As of my writing, the GEANT4 simulation includes the following detector components.</p>
+		<ul>
+			<li>the sPHENIX beam pipe</li>
+			<li>the sPHENIX silicon vertexer (SVTX)</li>
+			<li>the sPHENIX time projection chamber (TPC)</li>
+			<li>the sPHENIX central electromagnetic calorimeter (CEMC)</li>
+			<li>the sPHENIX inner hadronic calorimeter (inner HCAL)</li>
+			<li>the sPHENIX outer hadronic calorimeter (outer HCAL)</li>
+			<li>the sPHENIX magnet</li>
+			<li>the fsPHENIX forward flux returns</li>
+			<li>the fsPHENIX forward electromagnetic calorimeter (FEMC)</li>
+			<li>a central cherenkov detector (DIRC)</li>
+			<li>forward gas tracking stations (FGEM)</li>
+			<li>a forward gas cherenkov detector (RICH)</li>
+			<li>a forward aerogel cherenkov detector</li>
+			<li>backward gas tracking stations (EGEM)</li>
+			<li>a backward electromagnetic calorimeter (EEMC)</li>
+		</ul>
+		<p>Noticeably absent from this list are a BBC, roman pots, a ZDC, and FHCAL. None of these absences should have affected the results described in this document, however.</p>
+		<p>The two-dimensional magnetic field of the detector was taken from the file <code>sPHENIX.2d.root</code>.</p>
+		<p>The most important detector components for this study are EEMC, CEMC, and FEMC. EEMC is a lead tungstenate crystal calorimeter, CEMC is a tungsten-scintillating sampling calorimeter, and FEMC is a lead-scintillating sampling calorimeter.</p>
+		<h2>ANALYSIS</h2>
+		<p>Energy resolution is taken to be the width of the peak in the reconstructed particles' energy spectrum, normalized by the particles' truth energy. To reconstruct the electrons and positrons, standard segmentation, towering, and clustering algorithms are run over each simulated event. The <code>*_Cells()</code>, <code>*_Towers()</code>, and <code>*_Clusters()</code> functions from the CINT macro files loaded by <code>G4Init()</code> from <code>G4Setup_EICDetector.C</code> are used, where the <code>*</code> may evaluate to <code>EEMC</code>, <code>CEMC</code>, or <code>FEMC</code>. Clusters with energy less than 0.2&nbsp;GeV are discarded. Events without any clusters over 0.2&nbsp;GeV are discarded. The energy of the highest-energy cluster from each event is then taken as the reconstructed electron or positron's energy. This reconstructed energy is divided by the particle's truth energy, and the resulting ratio is histogrammed. This histogram is then fit with a gaussian, as shown below. The standard deviation of this fit is taken as the energy resolution.</p>
+		<h4>FIGURE: QA0</h4>
+		<p class="caption">Histogram of normalized reconstructed energy of 21.2&nbsp;GeV electrons with pseudorapidity -0.4&plusmn;0.2. The black line shows the histogrammed pseudodata, the unfilled smooth curve shows the gaussian fit, and the yellow-filled curve shows the initial guess made for the fit.</p>
+		<img src="img/QA000111042120.png"></img>
+		<p>The energy spectrum has a much fatter lower tail than a gaussian, so sometimes I had problems where the gaussian's lower tail would fit to the tail of the energy spectrum. The problem was especially prevalent with EEMC, which has really tall thin peaks. Getting all the spectra to fit correctly required a whole lot of fiddling with the fitting algorithm's parameters. I am disclosing this because lots of fiddling can create biased results.</p>
+		<p>The fact that the energy spectra are not gaussian may indicate that the calorimeters' clustering algorithms need work. I think that Nils mentioned at some point that they are not mature yet. Alternatively, I may be neglecting some cut that would make the energy spectra a lot easier to fit.</p>
+		<p>The calorimeter energy resolutions are expected to fall on a curve like 1&oplus;1/&radic;E. To compute the O(1) and O(1/&radic;E) coefficients, the energy resolution was plotted against truth energy for each pseudorapidity value. This curve was then fit with the template function 1&oplus;1/&radic;E, as shown in the figure below. The best-fit parameters were then extracted.</p>
+		<h4>FIGURE: QA1</h4>
+		<p class="caption">Plot of energy resolution versus truth energy for electrons with pseudorapidity -3.2&plusmn;0.2. The points show the energy resolution values computed from pseudodata, and the solid line shows the best-fit curve.</p>
+		<img src="img/QA00011132.png"></img>
+		<p>The three energy resolution curves for FEMC are displayed below. They look pretty similar, but the best-fit parameters are definitely correlated with pseudorapidity. Maybe this again shows that I need to be more selective with my energy resolution fitting histograms?</p>
+		<h4>FIGURE: QA3</h4>
+		<p class="caption">Electron energy resolution curves for all pseudorapidities in the FEMC acceptance.</p>
+		<img src="img/CHECK.png"></img>
+		<p>Because the best-fit curves for each calorimeter were so similar, the energy resolution was re-computed after combining data sets according to the calorimeter that the electrons or positrons should be detected in. For example, the 21.2&nbsp;GeV data sets for pseudorapidities of -3.2, -2.4, and -1.6 were combined into a single 21.2&nbsp;GeV EEMC data set. Using these combined data sets, the normalized reconstructed energies were re-histogrammed, the energy resolutions re-computed, and the energy resolution curves re-fit.</p>
+		<p>Combining data sets like this obviously reduces the statistical uncertainty on the computed energy resolution values, but I have gotten to thinking lately that I may also have introduced a new source of systematic error. I am not 100% sure about that. You should probably ask someone smarter than me what he or she thinks about this.</p>
+		<p>The energy resolution curves for each detector, for both electrons and positrons, are displayed below.</p>
+		<p>Note: the electron energy resolution values at 0.64&nbsp;GeV for pseudorapidities of 0.0 and -3.2 are each computed with only 1,800 out of 2,000 events. The positron energy resolution value at 0.83&nbsp;GeV and pseudorapidity 2.4 also uses 200 fewer events than normal. This is due to a failure of certain GEANT4 jobs to complete correctly when submitted to HTCondor. I do not expect these failures to noticeably affect the results displayed below.</p>
+		<h4>FIGURE: PR electrons</h4>
+		<img src="img/PR00011.png"></img>
+		<h4>FIGURE: PR positrons</h4>
+		<img src="img/PR10011.png"></img>
+	</body>
+</html>

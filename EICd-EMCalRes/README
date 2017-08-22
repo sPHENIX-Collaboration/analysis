@@ -1,0 +1,67 @@
+NAME
+	eicplots/ - energy resolution plots for EIC detector
+
+DESCRIPTION
+	this makes energy resolution plots for EICd's electromagnetic calorimeters.
+	it evaluates their performance on electrons and positrons.
+	
+	energy resolution (dE/E) is computed by...
+		
+		specifying the truth energies (E) of a large number of electrons.
+		simulating the electrons' production in EICd
+		simulating the electrons' interaction with EICd
+		reconstructing the electrons' energies
+		dividing the reconstructed energies by the truth energies
+		histogramming that ratio
+		fitting the histogram to a gaussian
+		extracting the gaussian's standard deviation
+	
+	compute energy resolution differentially in bins of...
+		
+		energy
+		flavor
+		pseudorapidity
+
+DIRECTORY STRUCTURE
+	.
+	|-- README
+	|-- WORKFLOW
+	|-- condor/
+	|-- data/
+	|-- macro/
+	|-- spec
+	|-- src/
+	`-- util/
+	
+	this README gave a brief sketch of what this project does.
+	for a more detailed description, read spec.
+	for a step-by-step guide on how to use this code, read WORKFLOW.
+	
+	most of the code that does real work
+	for this project
+	is stored under macro/ or src/
+	macro/ is for ROOT macros
+	that will be interpreted by CINT,
+	src/ is for compiled modules.
+	
+	since a lot of this project involved huge amounts of simulated data,
+	it uses condor extensively
+	to leverage the power of RCF's computing clusters.
+	files relevant to using condor are stored under condor/
+	most of the condor jobs are run large numbers of times
+	with lots of different arguments.
+	i use scripts to generate those argument lists,
+	and those scripts are stored under util/
+	the argument lists are also in util/
+	
+	all the internal data files,
+	as well as quality assurance files
+	and output plots
+	are stored under data/
+
+AUTHORS
+	jordan roth <jdroth@umich.edu>
+	
+	lots of help from joe osborn
+	
+	original idea by nils feege

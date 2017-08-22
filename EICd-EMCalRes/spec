@@ -1,0 +1,199 @@
+__________________
+## INTRODUCTION
+
+> i need to make energy resolution plots for EIC detector's electromagnetic calorimeters.
+> i need to evaluate their performance on electrons and positrons.
+> 
+> energy resolution (dE/E) is computed by...
+> 	
+> 	specifying the truth energies (E) of a large number of electrons.
+> 	simulating the electrons' production in EICd
+> 	simulating the electrons' interaction with EICd
+> 	reconstructing the electrons' energies
+> 	dividing the reconstructed energies by the truth energies
+> 	histogramming that ratio
+> 	fitting the histogram to a gaussian
+> 	extracting the gaussian's standard deviation
+
+EICd's electromagnetic calorimeters cover nearly disjoint pseudorapidity ranges.
+by specifying an electron's pseudorapidity, i probably specify the calorimeter it will hit.
+i really should check this, though.
+
+> i should compute energy resolution differentially in bins of...
+> 	
+> 	energy
+> 	flavor
+> 	pseudorapidity
+
+______________________________
+## FUNCTIONAL SPECIFICATION
+
+# PARTICLE GENERATION
+
+the electron beam energy in EIC should be at most 21.2GeV [1, p159].
+the simulated electrons' maximum energy should be a bit more than 21.2GeV.
+chris's minimum momentum was 1GeV/c, and his maximum was 50GeV/c [2].
+the simulated electrons' minimum momentum should be around 0.5GeV/c.
+
+chris used 9 samples, kinda uniform-ish on a log scale.
+i am expecting the resolution curve to go like "1/sqrt(E)".
+there is also a constant piece, but its derivative is zero.
+it would make sense to sample energies on a "1/x^2" scale.
+on a "1/x^2" scale, 0.2 is 25GeV and 1.25 is 0.64GeV.
+energies of "1 / (0.2 + 1.05 * i/7)^2" for "i" from 0 to 7 sound pretty good.
+
+revision: i did all the computations and a fit with those momenta.
+revision: turns out, the relative uncertainty on the contant term was huge.
+revision: at least, compared to the relative uncertainty on the 1/sqrt(E) term.
+revision: so, i added another high-energy point at 21.2GeV/c.
+
+> electrons will be generated with these momenta...
+> 	
+> 	25  21.2  8.2  4.0  2.4  1.6  1.1  .83  .64  (in GeV/c)
+
+electron mass (511keV) is small compared to the momentum scale.
+
+> truth energy is taken to equal momentum.
+
+EICd will have three electromagnetic calorimeters.
+EEMC covers "-4 < eta < -1".
+CEMC covers "-1 < eta < +1".
+FEMC covers "+1 < eta < +4".
+
+chris used 4 pseudorapidity samples, uniformly distributed from 0.0 to 0.9.
+he does *not* sample all the way to 1.
+joe's sPHENIX resolution curves were pretty evenly spaced, with this uniform sampling.
+points of "i * 4/5" for "i" from -4 to 4 sound pretty good.
+a true uniform sampling symmetric about zero would be redundant for CEMC, though.
+
+> particles will be generated with these pseudorapidities...
+> 	
+> 	3.2  2.4  1.6  0.8  0.0  -0.4  -1.6  -2.4  -3.2
+> 	 -----------    ------------    -------------- 
+> 	    FEMC            CEMC             EEMC
+
+chris adds uniform-sampled noise of amplitude 0.05 to his pseudorapidity samples.
+i am taking larger rapidity steps, and i want to be closer to full coverage.
+
+> each particle should have a pseudorapidity within 0.2 of its nominal value.
+> an event-wise modulation should be sampled randomly from a uniform distribution.
+
+chris generates events uniformly randomly distributed over full azimuth.
+
+> the particles will be uniformly distributed over full azimuth.
+> each particle's azimuthal heading will be randomly generated.
+
+at RHIC, collision vertices are distributed on gaussian in z.
+the standard deviation is about 10cm.
+chris uses a uniform distribution with a half-width of 10cm.
+the standard EIC detector macro uses a uniform distribution with a half-width of 5cm [3].
+..seriously, fuck all y'alls.
+
+revision: i read the upgrade proposal closer.
+revision: the actual standard deviation for the EIC detector will be closer to 27cm.
+revision: maybe there will be a quality cut that requires "abs(z) < 5cm".
+revision: that would explain the use of a 5cm half-width uniform distribution.
+
+> each collision vertex will be randomly sampled from a gaussian with a 27cm standard deviation in "z".
+
+chris generated 10 files of 1,000 events for each momentum-pseudorapidity combination.
+10,000 counts gives an uncertainty of about 1%.
+
+> i should generate 10,000 events for each flavor/momentum/pseudorapidity combination.
+
+revision: 10,000 events per tuple would take a bit more time than i want,
+revision: so i am shrinking it to 2,000 events per tuple.
+revision: 10 GEANT4 files of 200 events each.
+
+# DETECTOR SIMULATION
+
+i am going to try to mimic the EIC macro, mostly.
+
+except the BBC.. that thing is not actually implimented yet, so i will not use it.
+plus, most people do not call the Bbc() function from G4_Bbc.C, which kinda defeats the point of preempting the code's implimentation.
+in order to call Bbc() i would need to manually access the global PHG4Reco instance, and i do not want to do that.
+i would prefer to wait until the BBC is implimented and included in G4Init() and G4Setup() by default.
+
+the EIC macro uses G4Init() and G4Setup() from G4Setup_EICDetector.C.
+G4Setup_EICDetector.C uses the fsPHENIX FEMC decription macro, not the EICd version.
+it also not clear to me that the iron forward flux returns are correctly described.
+it also seems to limit the detector's rapidity coverage to the range "-1.1 < y < 1.1".
+it also completely leaves out EIC detector's roman pots and ZDC.
+so.. not my problem.
+more important, somebody might fix these issues at some point.
+when that happens, i do not want to need to modify my code to fit best practices.
+and when i say "not my problem" i mean "it is all of our problem, and i will not work around the issue in my one little piece of code and copy those fixes all over the place whenever i need to do new simulations". that would just be shitty coding.
+
+at the time of my writing, the default detector components from G4Setup_EICDetector.C are...
+	
+	the sPHENIX beam pipe
+	the sPHENIX silicon vertexer (SVTX)
+	the sPHENIX time projection chamber (TPC)
+	the sPHENIX central electromagnetic calorimeter (CEMC)
+	the sPHENIX inner and outer central hadronic calorimeters (inner/outer HCAL)
+	the sPHENIX magnet
+	the fsPHENIX forward flux returns
+	a central cherenkov detector (DIRC)
+	forward gas tracking stations (FGEM)
+	a forward gas cherenkov detector (RICH)
+	a forward aerogel cherenkov detector
+	the fsPHENIX forward electromagnetic calorimeter (FEMC)
+	a forward hadronic calorimeter (FHCAL)
+	backward gas tracking stations (EGEM)
+	a backward electromagnetic calorimeter (EEMC)
+
+revision: turns out, FEMC and FHCAL are disabled by default.
+revision: but they seem to work fine. what the fuck.
+revision: i enable FEMC manually for these simulations.
+
+the standard EIC macro sets absorberactive to 0.
+the default in G4Setup() is 0.
+chris uses absorberactive of 1.
+
+the EIC macro uses the magnetic field map "/phenix/upgrades/decadal/fieldmaps/sPHENIX.2d.root" rescaled by 1.4/1.5.
+by default, G4Setup() uses a constant field.
+chris uses the same magnetic field map as the EIC macro, but unscaled.
+
+> the following code is used to describe the detector and the ePHENIX magnetic field:
+> 	
+> 	gROOT->LoadMacro("G4Setup_EICDetector.C")
+> 	G4Init()
+> 	G4Setup(1, "/phenix/upgrades/decadal/fieldmaps/sPHENIX.2d.root")
+> 
+> note! this means that the BBC, roman pots, and ZDC are *not* included.
+> also, the sPHENIX SVTX and TPC, and the fsPHENIX FEMC and forward flux returns, *are* included.
+
+# EVENT RECONSTRUCTION
+
+> i need to reconstruct clusters from CEMC, FEMC, and EEMC.
+
+# PHYSICS ANALYSIS
+
+in a real analysis, you do not know that one electron made more than one cluster.
+if no clusters are generated, that is accounted for in efficiency, not resolution.
+joe discarded clusters with "pT < 0.2GeV/c".
+
+> for each event, electron energy is taken as the highest reconstructed cluster energy.
+> clusters with transverse momentum less than 0.2GeV/c are discarded.
+> events with no viable reconstructed clusters are discarded.
+
+revision: i am pretty sure that now, instead of cutting on pT,
+revision: i am cutting out all clusters with energy less than 0.2GeV
+revision: you might want to check src/ClusterPeeler.C to be sure.
+
+> energy resolution is computed in each flavor/energy/pseudorapidity bin.
+> the energy dimension is collapsed by plotting dE/E against E.
+> the points are fit to a two-parameter function like "1 (+) 1/sqrt(E)".
+> the best-fit parameters are plotted on a 2D plane.. one point for each flavor/pseudorapidity bin.
+> instead of points, shaded uncertainty boxes are drawn.
+> the plot is saved in the file "PR.pdf".
+
+revision: that description of PR.pdf is a straight lie.
+
+________________
+## REFERENCES
+
+[1] sPHENIX upgrade proposal... arXiv:1501.06197v1
+[2] chris's files... [[:rcf:]]/sphenix/data/data02/review_2017-08-02/
+[3] standard ePHENIX macro file... [[:git:]]/macros/macros/g4simulations/Fun4All_G4_EICDetector.C
+[4] particle data group monte carlo numbering scheme... http://pdg.lbl.gov/mc_particle_id_contents.html

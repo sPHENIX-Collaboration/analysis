@@ -1,0 +1,19 @@
+read this, i guess??
+
+to re-compile everything, do like
+	
+	$ cd build/
+	$ ../autogen.sh --prefix="$MYINSTALL"
+	$ make ; make install
+	$ cd ..
+	$ ./clean.sh
+
+clean.sh is just 'cause i hate having a bunch of left-over build files
+laying around my source code directory.
+heck, i hate having autogen.sh and LinkDef.h files and whatever else around,
+but i am not really sure how to get rid of those.
+
+anyway......
+
+the ClusterPeeler class is used in g42rc.C
+it peels cluster data off the PHOOL node tree.

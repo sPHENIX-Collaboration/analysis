@@ -1,0 +1,26 @@
+when: when did i notice the bug?
+where: whereabouts can i find the bug?
+what: what bit of code is causing the bug?
+why: why is that code buggy?
+workaround: how can i live with the bug?
+
+when: 20170710
+where: line 9 of G4_CEmc_Spacal.C
+what: use of symbol PHG4CylinderGeom_Spacalv1::k2DProjectiveSpacal
+why: symbol is defined in libg4detectors.so, but that library is not loaded yet
+workaround: load libg4detectors.so **before loading G4_CEmc_Spacal.C**
+
+when: 20170710
+where: line 40 of G4_EEMC.C
+what: call to PHG4CrystalCalorimeterSubsystem::SetAbsorberActive()
+why: method does not exist
+workaround: comment out the line (for absorberactive of 0, need to do more hacking)
+
+when: 20170714
+where: line 129 of G4Setup_EICDetector.C
+what: in G4Setup(), do_FEMC and do_FHCAL default to false
+why: this does not correctly describe the EIC detector
+workaround: override the defaults
+
+note: i am not sure that G4Setup_EICDetector.C is right macro to use for the EIC detector.
+      for example, uses the fsPHENIX FEMC instead of EIC detector FEMC.

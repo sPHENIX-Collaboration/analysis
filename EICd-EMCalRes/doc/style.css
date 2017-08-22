@@ -1,0 +1,36 @@
+body {
+	margin: auto;
+	max-width: 36em;
+}
+h1 {
+	text-align: center;
+}
+h3 {
+	margin-left: 1em;
+}
+h4 {
+	margin-left: 1.5em;
+	font-style: italic;
+}
+p {
+	text-align: justify;
+}
+p, ul {
+	margin-left: 2em;
+}
+p.caption {
+	font-size: 80%;
+	margin-left: 2.5em;
+}
+table {
+	border: 1px solid black;
+	margin: auto;
+}
+th {
+	padding: 1ex;
+	text-align: left;
+}
+td {
+	padding: 1ex;
+	vertical-align: top;
+}

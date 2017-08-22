@@ -1,0 +1,76 @@
+NAME
+	condor/ - files for running jobs
+
+DESCRIPTION
+	mostly basic condor crap for running jobs on computing farms.
+	some *.csh scripts do all computations locally, though.
+	
+	for the most part, each *.csh shell script
+	calls one *.C ROOT macro that lives in ../macro/
+	this is not quite the case with rc2de.csh, however.
+	
+	also, this directory contains two special utilities:
+		
+		submit.sh
+		checkdone.sh
+	
+	you do not need to use them,
+	but i wrote them
+	so i know what they do
+	so i think that they are useful.
+
+DIRECTORY STRUCTURE
+	.
+	|-- README
+	|-- check_pa.csh
+	|-- checkdone.sh
+	|-- de2pa.csh
+	|-- de2pa.job
+	|-- de2pa_XEMC.csh
+	|-- de2pa_XEMC.job
+	|-- err/
+	|-- g42rc.csh
+	|-- g42rc.job
+	|-- log/
+	|-- make_g4.csh
+	|-- make_g4.job
+	|-- out/
+	|-- pa2pr_XEMC.csh
+	|-- rc2de.csh
+	|-- rc2de.job
+	|-- rc2de_XEMC.csh
+	|-- rc2de_XEMC.job
+	`-- submit.sh
+	
+	err/ log/ and out/ hold the output
+	and logs of the condor jobs.
+	
+	each *.csh script has a *.job file.
+	except for check_pa.csh and pa2pr_XEMC.csh .. those have no job files.
+	each *.job file links to a table_* file in ../util/
+		
+		g4 .. generate GEANT4 files
+		rc .. reconstruct calorimeter clusters
+		de .. compute energy resolution
+		pa .. fit energy resolution curves
+		pr .. make publication-quality plots
+	
+	the XEMC files do not look at particles differentially in pseudorapidity.
+	instead, they look at particles differentially in calorimeter.
+	
+	submit.sh is convenience script for clearing
+	log/ and err/ and out/
+	before submitting a new set of jobs.
+	
+	checkdone.sh sorts through the log files
+	to see which ones do not mention the word
+	"terminate".
+	if it comes up empty, it means that all your jobs
+	are probably done.
+	using condor_q every five minutes is frowned upon,
+	so checkdone.sh checks with just local data.
+	check with
+		
+		$ condor_q $USER
+	
+	to be sure that everything is done.

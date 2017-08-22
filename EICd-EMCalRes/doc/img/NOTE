@@ -1,0 +1,5 @@
+to make the PNG files, the follow were run the on PDF files.
+	
+	$ gm convert fig.pdf fig.png
+	$ gm convert fig.png -gravity SouthWest -chop 26%x26% fig.png
+	$ gm convert fig.png -gravity NorthWest -chop 7%x7% -gravity SouthEast -chop 7%x7% fig.png
