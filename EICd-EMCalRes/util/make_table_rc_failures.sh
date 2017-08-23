@@ -36,17 +36,17 @@ while read name_file_g4 name_file_rc all_the_rest; do
 	fi
 	
 	#check to see if any RC files
-	#contain exactly 6689 bytes.
+	#contain exactly 6689 or 6821 bytes.
 	#if so, their G4 file was not properly closed.
 	
-	echo "$ls_line" | grep -q -e " 6689 "
+	echo "$ls_line" | grep -q -e " 6689 " -e " 6821 "
 	if [ "$?" = "0" ]; then
 		printf '%s %s %s\n' $name_file_g4 $name_file_rc "$all_the_rest"
 		
 		#echo a warning, 'cause the *real* failure here
 		#is that the G4 job did not complete correctly.
 		
-		printf "***WARNING!*** $name_file_g4 has not been closed correctly and is corrupted. you must re-generate the file.\n"
+		printf "***WARNING!*** $name_file_g4 has not been closed correctly and is corrupted. you must re-generate the file.\n" >&2
 	fi
 done < table_rc >> table_rc-TEMPORARY
 

@@ -252,6 +252,8 @@ RECONSTRUCT CALORIMETER CLUSTERS
 	revision: checks for these broken G4 files, which i think appear as
 	revision: RC files with exactly 6689 bytes. not 100% sure.
 	revision: you still need to manually create the new table_g4 file.
+	
+	revision: RC files with exactly 6821 bytes seem to indicate the same issue.
 
 COMPUTE ENERGY RESOLUTION
 	this one is a little weird,
