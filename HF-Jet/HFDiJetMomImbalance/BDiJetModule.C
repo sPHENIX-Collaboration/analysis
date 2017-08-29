@@ -14,6 +14,7 @@
 #include <phool/PHNodeIterator.h>
 
 #include <phgeom/PHGeomUtility.h>
+#include <phfield/PHFieldUtility.h>
 
 #include <fun4all/Fun4AllServer.h>
 #include <fun4all/Fun4AllReturnCodes.h>
@@ -110,9 +111,6 @@ BDiJetModule::BDiJetModule(const std::string &name,
   _cut_jet_pT(10.0),
   _cut_jet_eta(0.7),
   _cut_jet_R(0.4),
-  _mag_field_file_name("/phenix/upgrades/decadal/fieldmaps/sPHENIX.2d.root"),
-  _mag_field_re_scaling_factor(1.4 / 1.5),
-  _reverse_mag_field(true),
   _track_fitting_alg_name("DafRef"),
   _fitter(NULL),
   _vertexing_method("avf-smoothing:1"),
@@ -140,9 +138,9 @@ int BDiJetModule::InitRun(PHCompositeNode *topNode)
 {
 
   TGeoManager* tgeo_manager = PHGeomUtility::GetTGeoManager(topNode);
+  PHField * field = PHFieldUtility::GetFieldMapNode(nullptr, topNode);
 
-  _fitter = PHGenFit::Fitter::getInstance(tgeo_manager, _mag_field_file_name.data(),
-                                          (_reverse_mag_field) ? -1. * _mag_field_re_scaling_factor : _mag_field_re_scaling_factor,
+  _fitter = PHGenFit::Fitter::getInstance(tgeo_manager, field,
                                           _track_fitting_alg_name, "RKTrackRep", _do_evt_display);
 
   if (!_fitter) {
