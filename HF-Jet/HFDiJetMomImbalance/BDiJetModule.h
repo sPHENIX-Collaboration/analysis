@@ -151,11 +151,6 @@ private:
   double _cut_jet_eta;               //! Cut on jet eta
   double _cut_jet_R;                 //! Cut on jet R
 
-  std::string _mag_field_file_name;   //! File name for magnetic field map
-  float _mag_field_re_scaling_factor; //! rescale mag field, modify the original mag field read in
-  bool _reverse_mag_field;            //! Switch to reverse Magnetic field
-
-
   std::string _track_fitting_alg_name;
   PHGenFit::Fitter* _fitter;
 
