@@ -2,43 +2,33 @@ AUTOMAKE_OPTIONS = foreign
 
 INCLUDES = \
   -I$(includedir) \
-	-I$(MY_INSTALL)/include \
-  -I$(OFFLINE_MAIN)/include \
   -I$(OFFLINE_MAIN)/include/eigen3 \
+  -I$(OFFLINE_MAIN)/include \
+  -I$(G4_MAIN)/include \
+  -I$(G4_MAIN)/include/Geant4 \
   -I`root-config --incdir`
 
-#libBDiJetModule_la_LDFLAGS = \
-#  -L$(libdir) \
-#  -L$(OFFLINE_MAIN)/lib
-
 lib_LTLIBRARIES = \
-   libBDiJetModule.la
+   libProto3ShowCalib.la
 
-AM_CXXFLAGS = -Wall -Werror -msse2 -DRAVE -DRaveDllExport=
+AM_CXXFLAGS = -Wall -Werror -msse2
 
-AM_LDFLAGS = \
-	-L$(libdir) \
-	-L$(MY_INSTALL)/lib \
-	-L$(OFFLINE_MAIN)/lib
+libProto3ShowCalib_la_LDFLAGS = \
+  -L$(libdir) \
+  -L$(OFFLINE_MAIN)/lib
 
-libBDiJetModule_la_SOURCES = \
-  BDiJetModule.C \
-  BDiJetModule_Dict.C
- 
-
-libBDiJetModule_la_LIBADD = \
+libProto3ShowCalib_la_LIBADD = \
   -lfun4all \
-	-lg4detectors \
   -lg4dst \
-  -lg4eval \
-	-lg4hough_io \
-  -lg4jets \
-	-lgenfit2 \
-	-lgenfit2exp \
-	-lPHGenFit \
-  -lphhepmc
+  -lPrototype3
+
+pkginclude_HEADERS = 
 
 #pkginclude_HEADERS = $(include_HEADERS)
+
+libProto3ShowCalib_la_SOURCES = \
+  Proto3ShowerCalib.C \
+  Proto3ShowerCalib_Dict.C 
 
 # Rule for generating table CINT dictionaries.
 %_Dict.C: %.h %LinkDef.h
@@ -56,9 +46,7 @@ BUILT_SOURCES = \
   testexternals.C
 
 testexternals_LDADD = \
-  libBDiJetModule.la
-
-testexternals_SOURCES = testexternals.C
+  libProto3ShowCalib.la
 
 testexternals.C:
 	echo "//*** this is a generated file. Do not commit, do not edit" > $@

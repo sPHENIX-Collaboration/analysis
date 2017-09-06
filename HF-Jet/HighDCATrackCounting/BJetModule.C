@@ -24,7 +24,7 @@
 
 #include <g4hough/SvtxTrackMap.h>
 #include <g4hough/SvtxTrack.h>
-
+#include <g4hough/SvtxClusterMap.h>
 #include <g4hough/SvtxVertexMap.h>
 #include <g4hough/SvtxVertex.h>
 
@@ -89,6 +89,9 @@ int BJetModule::Init(PHCompositeNode *topNode) {
 		_b_track_pt[n] = -1;
 		_b_track_eta[n] = -1;
 		_b_track_phi[n] = -1;
+
+		_b_track_nmaps[n] = 0;
+
 		_b_track_nclusters[n] = 0;
 		_b_track_nclusters_by_layer[n] = 0;
 
@@ -197,6 +200,8 @@ int BJetModule::Init(PHCompositeNode *topNode) {
 			"track_chisq[track_n]/F");
 	_tree->Branch("track_ndf", _b_track_ndf,
 			"track_ndf[track_n]/I");
+
+	_tree->Branch("track_nmaps", _b_track_nmaps, "track_nmaps[track_n]/I");
 
 	_tree->Branch("track_nclusters", _b_track_nclusters,
 			"track_nclusters[track_n]/i");
@@ -450,6 +455,7 @@ int BJetModule::process_event(PHCompositeNode *topNode) {
 
 		std::set<PHG4Hit*> assoc_hits = trackeval->all_truth_hits(track);
 
+		int nmaps = 0;
 		unsigned int nclusters = track->size_clusters();
 		unsigned int nclusters_by_layer = 0;
 		for (SvtxTrack::ConstClusterIter iter = track->begin_clusters();
@@ -458,6 +464,7 @@ int BJetModule::process_event(PHCompositeNode *topNode) {
 			SvtxCluster* cluster = clustermap->get(cluster_id);
 			if(cluster) {
 				unsigned int cluster_layer = cluster->get_layer();
+				if(cluster_layer<3) ++nmaps;
 				nclusters_by_layer |= (0x3FFFFFFF & (0x1 << cluster_layer));
 			}
 		}
@@ -598,6 +605,8 @@ int BJetModule::process_event(PHCompositeNode *topNode) {
 		_b_track_quality[_b_track_n] = track->get_quality();
 		_b_track_chisq[_b_track_n] = track->get_chisq();
 		_b_track_ndf[_b_track_n] = track->get_ndf();
+
+		_b_track_nmaps[_b_track_n] = nmaps;
 
 		_b_track_nclusters[_b_track_n] = nclusters;
 		_b_track_nclusters_by_layer[_b_track_n] = nclusters_by_layer;

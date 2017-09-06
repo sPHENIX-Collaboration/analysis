@@ -7,12 +7,12 @@ INCLUDES = \
   -I$(OFFLINE_MAIN)/include/eigen3 \
   -I`root-config --incdir`
 
-#libBDiJetModule_la_LDFLAGS = \
+#libAnaMvtxTelescopeHits_la_LDFLAGS = \
 #  -L$(libdir) \
 #  -L$(OFFLINE_MAIN)/lib
 
 lib_LTLIBRARIES = \
-   libBDiJetModule.la
+   libAnaMvtxTelescopeHits.la
 
 AM_CXXFLAGS = -Wall -Werror -msse2 -DRAVE -DRaveDllExport=
 
@@ -21,12 +21,12 @@ AM_LDFLAGS = \
 	-L$(MY_INSTALL)/lib \
 	-L$(OFFLINE_MAIN)/lib
 
-libBDiJetModule_la_SOURCES = \
-  BDiJetModule.C \
-  BDiJetModule_Dict.C
+libAnaMvtxTelescopeHits_la_SOURCES = \
+  AnaMvtxTelescopeHits.C \
+  AnaMvtxTelescopeHits_Dict.C
  
 
-libBDiJetModule_la_LIBADD = \
+libAnaMvtxTelescopeHits_la_LIBADD = \
   -lfun4all \
 	-lg4detectors \
   -lg4dst \
@@ -56,7 +56,7 @@ BUILT_SOURCES = \
   testexternals.C
 
 testexternals_LDADD = \
-  libBDiJetModule.la
+  libAnaMvtxTelescopeHits.la
 
 testexternals_SOURCES = testexternals.C
 

@@ -31,7 +31,9 @@
 #include <phgenfit/Fitter.h>
 #include <phgenfit/PlanarMeasurement.h>
 #include <phgenfit/Track.h>
+
 #include <phgeom/PHGeomUtility.h>
+#include <phfield/PHFieldUtility.h>
 
 #include "PHG4HitKalmanFitter.h"
 
@@ -46,8 +48,7 @@ using namespace std;
 
 PHG4TrackFastSim::PHG4TrackFastSim(const std::string &name) :
 		SubsysReco(name),
-		_truth_container(NULL), _trackmap_out(NULL), _fitter (NULL), _mag_field_file_name("/phenix/upgrades/decadal/fieldmaps/fsPHENIX.2d.root"),
-		 _mag_field_re_scaling_factor(1.), _reverse_mag_field(false), _fit_alg_name("KalmanFitterRefTrack"), _do_evt_display(false),
+		_truth_container(NULL), _trackmap_out(NULL), _fitter (NULL), _fit_alg_name("KalmanFitterRefTrack"), _do_evt_display(false),
 		 _phi_resolution(50E-4), //100um
 		 _r_resolution(1.),
 		 _pat_rec_hit_finding_eff(1.),
@@ -80,10 +81,10 @@ int PHG4TrackFastSim::InitRun(PHCompositeNode *topNode) {
 	CreateNodes(topNode);
 
 	TGeoManager* tgeo_manager = PHGeomUtility::GetTGeoManager(topNode);
-
+  PHField * field = PHFieldUtility::GetFieldMapNode(nullptr, topNode);
 	//_fitter = new PHGenFit::Fitter("sPHENIX_Geo.root","sPHENIX.2d.root", 1.4 / 1.5);
 	_fitter = PHGenFit::Fitter::getInstance(tgeo_manager,
-			_mag_field_file_name.data(), (_reverse_mag_field) ? -1.*_mag_field_re_scaling_factor : _mag_field_re_scaling_factor, "KalmanFitterRefTrack", "RKTrackRep",
+	    field, "KalmanFitterRefTrack", "RKTrackRep",
 			_do_evt_display);
 
 	if (!_fitter) {
@@ -348,7 +349,7 @@ SvtxTrack* PHG4TrackFastSim::MakeSvtxTrack(
 
 	out_track->set_chisq(chi2);
 	out_track->set_ndf(ndf);
-	out_track->set_charge((_reverse_mag_field) ? -1.*phgf_track->get_charge() : phgf_track->get_charge());
+	out_track->set_charge(phgf_track->get_charge());
 
 	out_track->set_px(mom.Px());
 	out_track->set_py(mom.Py());

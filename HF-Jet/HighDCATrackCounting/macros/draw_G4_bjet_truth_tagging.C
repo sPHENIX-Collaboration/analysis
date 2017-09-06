@@ -14,7 +14,7 @@
 #include <sstream>
 
 #include "AtlasUtils.C"
-#include "SetOKStyle.C"
+#include "/phenix/u/yuhw/RootMacros/sPHENIXStyle/sPhenixStyle.C"
 #include "add_purity_text.C"
 
 float binorminal_error(float a, float b) {
@@ -57,13 +57,15 @@ void draw_G4_bjet_truth_tagging(
 	const double simulation_jet_energy = 20;
 
 	//gROOT->LoadMacro("SetOKStyle.C");
-	SetOKStyle();
+	//SetOKStyle();
+	SetsPhenixStyle();
 
 	TFile *fout = TFile::Open("dca_eval.root","recreate");
 	fout->cd();
 	TTree *T = new TTree("T","eval tree");
 	int _jet_parton_flavor;
 	int _n_tracks;
+	float _track_eta[_MAX_N_TRACKS_];
 	float _track_pt[_MAX_N_TRACKS_];
 	float _chi2_ndf[_MAX_N_TRACKS_];
 	float _dca2d[_MAX_N_TRACKS_];
@@ -76,6 +78,7 @@ void draw_G4_bjet_truth_tagging(
 	float _second_highest_S;
 	T->Branch("jet_parton_flavor",&_jet_parton_flavor,"jet_parton_flavor/I");
 	T->Branch("n_tracks",&_n_tracks,"n_tracks/I");
+	T->Branch("track_eta",_track_eta,"track_eta[n_tracks]/F");
 	T->Branch("track_pt",_track_pt,"track_pt[n_tracks]/F");
 	T->Branch("chi2_ndf",_chi2_ndf,"chi2_ndf[n_tracks]/F");
 	T->Branch("dca2d",_dca2d,"dca2d[n_tracks]/F");
@@ -250,6 +253,7 @@ void draw_G4_bjet_truth_tagging(
 	int track_ndf[_MAX_N_TRACKS_];
 
 	bool track_best_primary[_MAX_N_TRACKS_];
+	int track_nmaps[_MAX_N_TRACKS_];
 	unsigned int track_nclusters[_MAX_N_TRACKS_];
 	unsigned int track_nclusters_by_layer[_MAX_N_TRACKS_];
 	unsigned int track_best_nclusters[_MAX_N_TRACKS_];
@@ -304,6 +308,7 @@ void draw_G4_bjet_truth_tagging(
 	ttree->SetBranchAddress("track_ndf",   track_ndf );
 
 	ttree->SetBranchAddress("track_best_primary",  track_best_primary );
+	ttree->SetBranchAddress("track_nmaps", track_nmaps);
 	ttree->SetBranchAddress("track_nclusters",  track_nclusters );
 	ttree->SetBranchAddress("track_nclusters_by_layer",  track_nclusters_by_layer );
 	ttree->SetBranchAddress("track_best_nclusters",  track_best_nclusters );
@@ -434,11 +439,13 @@ void draw_G4_bjet_truth_tagging(
 
 				if(!(track_pt[itrk]>min_track_pt_cut)) continue; // yuhw
 
-				int MAPS_hits = 0;
-				for(int i=0;i<3;i++){
-					if((track_nclusters_by_layer[itrk] & (0x1 << i)) > 0) MAPS_hits ++;
-				}
-				if(MAPS_hits < min_MAPS_hits) continue; 
+//				int MAPS_hits = 0;
+//				for(int i=0;i<3;i++){
+//					if((track_nclusters_by_layer[itrk] & (0x1 << i)) > 0) MAPS_hits ++;
+//				}
+//				if(MAPS_hits < min_MAPS_hits) continue;
+
+				if(track_nmaps[itrk] < min_MAPS_hits) continue;
 
 				if (! ( abs(track_nclusters [itrk] - track_best_nclusters[itrk]) <= max_fake_cluster) ) continue; // yuhw
 
@@ -525,6 +532,7 @@ void draw_G4_bjet_truth_tagging(
 
 				ntrk++;
 
+				_track_eta[ntrk-1] = -99;
 				_track_pt[ntrk-1] = -99;
 				_chi2_ndf[ntrk-1] = -99;
 				_dca2d[ntrk-1] = -99;
@@ -579,6 +587,7 @@ void draw_G4_bjet_truth_tagging(
 					continue;
 				}
 
+				_track_eta[ntrk-1] = track_eta[ itrk ];
 				_track_pt[ntrk-1] = track_pt[ itrk ];
 				_chi2_ndf[ntrk-1] = track_quality[ itrk ];
 				_dca2d[ntrk-1] = track_dca2d[ itrk ];
