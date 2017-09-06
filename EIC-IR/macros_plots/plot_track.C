@@ -1,3 +1,65 @@
+TPolyLine* TraceBox( float angle, float center_z, float center_x, float length, float aperture_radius, float outer_radius )
+{
+  /* center of magnet box */
+  TVector3* vcenter = new TVector3( center_z,
+				    center_x,
+				    0.0 );
+
+  /* fill corner positions in 3D vector TVector objects for easier rotation */
+  const unsigned npts = 5;
+  TObjArray a;
+
+  /* corner points in unrotated coordinate system */
+  a.AddLast( new TVector3( 0.0 - ( length / 2. ),
+			   0.0 + outer_radius,
+			   0.0 ) );
+
+  a.AddLast( new TVector3( 0.0 + ( length / 2. ),
+			   0.0 + outer_radius,
+			   0.0 ) );
+
+  a.AddLast( new TVector3( 0.0 + ( length / 2. ),
+			   0.0 + aperture_radius,
+			   0.0 ) );
+
+  a.AddLast( new TVector3( 0.0 - ( length / 2. ),
+			   0.0 + aperture_radius,
+			   0.0 ) );
+
+  a.AddLast( new TVector3( 0.0 - ( length / 2. ),
+			   0.0 + outer_radius,
+			   0.0 ) );
+
+  /* loop over array and rotate points coordinate system and move to real center */
+  for ( int i = 0; i < npts; i++ )
+    {
+      /* calculated rotated x, y */
+      float rotated_x = ( (TVector3*)a[i] )->X() * cos( angle ) - ( (TVector3*)a[i] )->Y() * sin( angle );
+      float rotated_y = ( (TVector3*)a[i] )->X() * sin( angle ) + ( (TVector3*)a[i] )->Y() * cos( angle );
+
+      /* add center offset */
+      rotated_x += center_z;
+      rotated_y += center_x;
+
+      /* set vector coordinates to new x, y */
+      ( (TVector3*)a[i] )->SetX( rotated_x );
+      ( (TVector3*)a[i] )->SetY( rotated_y );
+    }
+
+  /* extract two 1-D arrays from array of vectors with corner points coordinates */
+  float xarr[ npts ];
+  float yarr[ npts ];
+
+  for ( int i = 0; i < npts; i++ )
+    {
+      xarr[i] = ( (TVector3*)a[i] )->X();
+      yarr[i] = ( (TVector3*)a[i] )->Y();
+    }
+
+  /* create and return TPolyLine object */
+  return new TPolyLine(npts, xarr, yarr);
+}
+
 int
 plot_track()
 {
@@ -58,15 +120,15 @@ plot_track()
     length *= 100;
 
     // define magnet outer radius
-    outer_radius = 30.0; // cm
+    float outer_radius = 30.0; // cm
 
     //flip sign of dipole field component- positive y axis in Geant4 is defined as 'up',
     // positive z axis  as the hadron-going direction
     // in a right-handed coordinate system x,y,z
     B *= -1;
 
-    // convert angle from millirad to degrees
-    angle = (angle / 1000.) * (180./TMath::Pi());
+    // convert angle from millirad to rad
+    angle = (angle / 1000.);
 
     // Place IR component
     cout << "New IR component: " << name << " at z = " << center_z << endl;
@@ -75,9 +137,8 @@ plot_track()
     volname.append(name);
 
     /* Draw box for magnet position on canvas */
-    /* TODO: Use angle! */
-    TBox *b1 = new TBox(center_z - length/2,center_x-outer_radius,center_z+length/2,center_x-aperture_radius); //lower box
-    TBox *b2 = new TBox(center_z - length/2,center_x+aperture_radius,center_z+length/2,center_x+outer_radius);//upper box
+    TPolyLine *b1 = TraceBox( angle, center_z, center_x, length, aperture_radius, outer_radius ); //upper box
+    TPolyLine *b2 = TraceBox( angle, center_z, center_x, length, -1 * aperture_radius, -1 * outer_radius ); //lower box
 
     if(B != 0 && gradient == 0.0){
       //dipole magnet
@@ -94,9 +155,8 @@ plot_track()
       b1->SetFillColor(kGray+1);
       b2->SetFillColor(kGray+1);
     }
-    b1->Draw("same");
-    b2->Draw("same");
-
+    b1->Draw("Fsame");
+    b2->Draw("Fsame");
   }
 
   /* draw particle trajectory */
