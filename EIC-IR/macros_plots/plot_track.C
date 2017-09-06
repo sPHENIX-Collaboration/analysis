@@ -2,20 +2,17 @@ int
 plot_track()
 {
 
-  TFile *fin = new TFile("G4EICIR.root_DSTReader.root");
+  /* Open iput file with trajectories from GEANT4 */
+  TFile *fin = new TFile("data/G4EICIR.root_DSTReader.root");
 
+  /* Get tree from file */
   TTree *tin = (TTree*)fin->Get("T");
 
   int nhits = 0;
   tin->SetBranchAddress("n_G4HIT_FWDDISC",&nhits);
 
-  TH1F *h1 = new TH1F("h1","",10,0,15000);
-  h1->GetXaxis()->SetRangeUser(0,12000);
-  h1->GetYaxis()->SetRangeUser(-200,200);
-  h1->GetXaxis()->SetTitle("Z(cm)");
-  h1->GetYaxis()->SetTitle("X(cm)");
-
-  /* create graph */
+  /* create graph of particle trajectory */
+  /* Use only first event (for now) */
   tin->GetEntry(0);
   cout << "hits: " << nhits << endl;
 
@@ -25,12 +22,19 @@ plot_track()
   g1->SetMarkerStyle(7);
   g1->SetMarkerSize(1);
 
+  /* Create frame histogram for plot */
+  TH1F *h1 = new TH1F("h1","",10,0,15000);
+  h1->GetXaxis()->SetRangeUser(0,12000);
+  h1->GetYaxis()->SetRangeUser(-50,200);
+  h1->GetXaxis()->SetTitle("Z(cm)");
+  h1->GetYaxis()->SetTitle("X(cm)");
+
+  /* Plot frame histogram */
   TCanvas *c1 = new TCanvas();
   h1->Draw("AXIS");
-  g1->Draw("Psame");
 
-// Read IR configuration file- this needs to go somewhere else using parameters and a .root file to store them
-  string irfile = "updated-magnets-2017.dat";
+  /* Read IR configuration file- this needs to go somewhere else using parameters and a .root file to store them */
+  string irfile = "data/updated-magnets-2017.dat";
   ifstream irstream(irfile.c_str());
 
   while(!irstream.eof()){
@@ -53,12 +57,15 @@ plot_track()
     aperture_radius *= 100;
     length *= 100;
 
+    // define magnet outer radius
+    outer_radius = 30.0; // cm
+
     //flip sign of dipole field component- positive y axis in Geant4 is defined as 'up',
     // positive z axis  as the hadron-going direction
-    // in a right-handed coordinate system x,y,z 
+    // in a right-handed coordinate system x,y,z
     B *= -1;
 
-    // convert angle from millirad to degrees 
+    // convert angle from millirad to degrees
     angle = (angle / 1000.) * (180./TMath::Pi());
 
     // Place IR component
@@ -67,44 +74,33 @@ plot_track()
     string volname = "IRMAGNET_";
     volname.append(name);
 
-    //   TBox *b1 = new TBox(length/2,-0.3,center_z + length,-0.1);//both at same z, one positive and one negative
-    TBox *b1 = new TBox(center_z - length/2,center_x-30,center_z+length/2,center_x-aperture_radius); //lower box
-     TBox *b2 = new TBox(center_z - length/2,center_x+aperture_radius,center_z+length/2,center_x+30);//upper box
-
+    /* Draw box for magnet position on canvas */
+    /* TODO: Use angle! */
+    TBox *b1 = new TBox(center_z - length/2,center_x-outer_radius,center_z+length/2,center_x-aperture_radius); //lower box
+    TBox *b2 = new TBox(center_z - length/2,center_x+aperture_radius,center_z+length/2,center_x+outer_radius);//upper box
 
     if(B != 0 && gradient == 0.0){
       //dipole magnet
-      b1->SetFillColor(kRed);
-       b2->SetFillColor(kRed);
-      }
+      b1->SetFillColor(kOrange+1);
+      b2->SetFillColor(kOrange+1);
+    }
     else if( B == 0 && gradient != 0.0){
       //quad magnet
-      b1->SetFillColor(kGreen);
-       b2->SetFillColor(kGreen);
+      b1->SetFillColor(kBlue+1);
+      b2->SetFillColor(kBlue+1);
     }
     else{
       //placeholder magnet
-      b1->SetFillColor(kBlue);
-      b2->SetFillColor(kBlue);
+      b1->SetFillColor(kGray+1);
+      b2->SetFillColor(kGray+1);
     }
     b1->Draw("same");
     b2->Draw("same");
 
-    /* if ( B != 0 && gradient == 0.0 )
-      {
-	ir_magnet_i->set_string_param("magtype","dipole");
-	ir_magnet_i->set_double_param("field_y",B);
-      }
-    else if ( B == 0 && gradient != 0.0 )
-      {
-	ir_magnet_i->set_string_param("magtype","quadrupole");
-	ir_magnet_i->set_double_param("fieldgradient",gradient);
-      } */  
-
   }
 
-    // TBox *b = new TBox(493,-7.1,527,26.9);
-    // b->Draw("same");
+  /* draw particle trajectory */
+  g1->Draw("LPsame");
 
   return 0;
 }
