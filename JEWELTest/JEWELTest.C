@@ -30,12 +30,17 @@
 
 #include <HepMC/GenEvent.h>
 
+#include "fastjet/ClusterSequence.hh"
+#include "fastjet/ClusterSequenceArea.hh"
+
 #include <list>
 
 using namespace std;
 
+const bool printDebug = true;
+const float pi = 3.1415926;
+
 float deltaR( float eta1, float eta2, float phi1, float phi2 ) {
-  const float pi = 3.1415926;
   float deta = eta1 - eta2;
   float dphi = phi1 - phi2;
   if (dphi > pi) dphi -= 2*pi;
@@ -45,12 +50,14 @@ float deltaR( float eta1, float eta2, float phi1, float phi2 ) {
 
 }
 
+
 JEWELTest::JEWELTest(const std::string &name) : SubsysReco("JEWELTEST")
 {
   outfilename = name;
 
   //add other initializers here
 }
+
 
 int JEWELTest::Init(PHCompositeNode *topnode)
 {
@@ -78,12 +85,15 @@ int JEWELTest::process_event(PHCompositeNode *topnode)
   JetMap *reco_jets = findNode::getClass<JetMap>(topnode,"AntiKt_Tower_r06");
   PHG4TruthInfoContainer* truthinfo = findNode::getClass<PHG4TruthInfoContainer>(topnode,"G4TruthInfo");
   RawClusterContainer *clusters = findNode::getClass<RawClusterContainer>(topnode,"CLUSTER_CEMC");
-  RawTowerContainer *cemctowers = findNode::getClass<RawTowerContainer>(topNode,"TOWER_CALIB_CEMC");
-  RawTowerContainer *hcalintowers = findNode::getClass<RawTowerContainer>(topNode,"TOWER_CALIB_HCALIN");
-  RawTowerContainer *hcalouttowers = findNode::getClass<RawTowerContainer>(topNode,"TOWER_CALIB_HCALOUT");
-  RawTowerGeomContainer *cemcgeom = findNode::getClass<RawTowerGeomContainer>(topNode, "TOWERGEOM_CEMC");
-  RawTowerGeomContainer *hcalingeom = findNode::getClass<RawTowerGeomContainer>(topNode, "TOWERGEOM_HCALIN");
-  RawTowerGeomContainer *hcaloutgeom = findNode::getClass<RawTowerGeomContainer>(topNode, "TOWERGEOM_HCALOUT");
+  RawTowerContainer *cemctowers = findNode::getClass<RawTowerContainer>(topnode,"TOWER_CALIB_CEMC");
+  RawTowerContainer *hcalintowers = findNode::getClass<RawTowerContainer>(topnode,"TOWER_CALIB_HCALIN");
+  RawTowerContainer *hcalouttowers = findNode::getClass<RawTowerContainer>(topnode,"TOWER_CALIB_HCALOUT");
+  RawTowerContainer *cemctowers_sub = findNode::getClass<RawTowerContainer>(topnode,"TOWER_CALIB_CEMC_SUB1");
+  RawTowerContainer *hcalintowers_sub = findNode::getClass<RawTowerContainer>(topnode,"TOWER_CALIB_HCALIN_SUB1");
+  RawTowerContainer *hcalouttowers_sub = findNode::getClass<RawTowerContainer>(topnode,"TOWER_CALIB_HCALOUT_SUB1");
+  RawTowerGeomContainer *cemcgeom = findNode::getClass<RawTowerGeomContainer>(topnode, "TOWERGEOM_CEMC");
+  RawTowerGeomContainer *hcalingeom = findNode::getClass<RawTowerGeomContainer>(topnode, "TOWERGEOM_HCALIN");
+  RawTowerGeomContainer *hcaloutgeom = findNode::getClass<RawTowerGeomContainer>(topnode, "TOWERGEOM_HCALOUT");
   // SvtxTrackMap *trackmap = findNode::getClass<SvtxTrackMap>(topnode,"SvtxTrackMap");
   JetEvalStack* _jetevalstack = new JetEvalStack(topnode,"AntiKt_Tower_r06","AntiKt_Truth_r06");
   PHHepMCGenEvent *genevt = findNode::getClass<PHHepMCGenEvent>(topnode, "PHHepMCGenEvent");
@@ -116,6 +126,18 @@ int JEWELTest::process_event(PHCompositeNode *topnode)
   }
   if(!hcalouttowers){
     if(printDebug) std::cout<<"no hcalouttowers info"<<std::endl;
+    // return 0;
+  }
+  if(!cemctowers_sub){
+    if(printDebug) std::cout<<"no cemctowers_sub info"<<std::endl;
+    // return 0;
+  }
+  if(!hcalintowers_sub){
+    if(printDebug) std::cout<<"no hcalintowers_sub info"<<std::endl;
+    // return 0;
+  }
+  if(!hcalouttowers_sub){
+    if(printDebug) std::cout<<"no hcalouttowers_sub info"<<std::endl;
     // return 0;
   }
   if(!cemcgeom){
@@ -151,21 +173,30 @@ int JEWELTest::process_event(PHCompositeNode *topnode)
   //! Checking if additional scattering centers are available from HepMC file 
   //! get the scattered particles from the gen event:
   std::list<HepMC::GenParticle *> scatcenterparticles;
-  std::list<HepMC::GenParticle *> finalstateparticles;
+  vector <bool> scattincluster;
   for (HepMC::GenEvent::vertex_iterator v = evt->vertices_begin(); v != evt->vertices_end(); ++v) {    
     scatcenterparticles.clear();
-    finalstateparticles.clear();
     for (HepMC::GenVertex::particle_iterator p = (*v)->particles_begin(HepMC::children);
 	 p != (*v)->particles_end(HepMC::children); ++p) {
       if ((*p)->status() == 3) {
 	scatcenterparticles.push_back(*p);
+	scattincluster.push_back(false);
       }
+    }
+  }
+  
+  std::list<HepMC::GenParticle *> finalstateparticles;
+  for (HepMC::GenEvent::vertex_iterator v = evt->vertices_begin(); v != evt->vertices_end(); ++v) {    
+    finalstateparticles.clear();
+    for (HepMC::GenVertex::particle_iterator p = (*v)->particles_begin(HepMC::children);
+	 p != (*v)->particles_end(HepMC::children); ++p) {
       if ((*p)->status() == 1) {
 	finalstateparticles.push_back(*p);
       }
     }
   }
   
+
   std::list<HepMC::GenParticle *>::const_iterator fiter;
   for (fiter = finalstateparticles.begin(); fiter != finalstateparticles.end(); ++fiter) {
     if (verbosity > 1) (*fiter)->print();
@@ -434,34 +465,18 @@ int JEWELTest::process_event(PHCompositeNode *topnode)
 	  double genjet_constituentpx = genjet_constituent->get_px();
 	  double genjet_constituentpy = genjet_constituent->get_py();
 	  double genjet_constituentpz = genjet_constituent->get_pz();
-	  // double genjet_constituentp = sqrt(genjet_constituentpx*genjet_constituentpx+
-	  // 					genjet_constituentpy*genjet_constituentpy+
-	  // 					genjet_constituentpz*genjet_constituentpz);
 	  double genjet_constituentenergy = genjet_constituent->get_e();
     
 	  TLorentzVector vecj;
 	  vecj.SetPxPyPzE(genjet_constituentpx,genjet_constituentpy,genjet_constituentpz,genjet_constituentenergy);
     
-	  // double genjet_constituentpt = sqrt(genjet_constituentpx*genjet_constituentpx+
-	  // 				     genjet_constituentpy*genjet_constituentpy);
 	  double genjet_constituentphi = vecj.Phi();
 	  double genjet_constituenteta = vecj.Eta();
 
 	  const double _delRTruth = deltaR(scattcentereta, genjet_constituenteta,
 					   scattcenterphi, genjet_constituentphi);
-	  // const double _delRJet = deltaR(truthjeteta, genjet_constituenteta,
-	  // 				 truthjetphi, genjet_constituentphi);
-
-	  // if(_delRJet < 0.6){
-	  //   if(printDebug) std::cout<<"scattering center = ("<< scattcentereta <<", "<<scattcenterphi<<"), jet constituent = ("<<
-	  //     genjet_constituenteta<<", "<<genjet_constituentphi<<")"<<std::endl;
-	  //   if(printDebug) std::cout<<"_delRTruth = " << _delRTruth<<std::endl;
-	  //   if(printDebug) std::cout<<"********"<<std::endl;
-	  // }
 	  
 	  if(_delRTruth < 1e-5){
-	    // _delRSmall = _delRTruth;
-	    // _delRposition = counter;
 	    isinJet = true;
 	  }
 	  counter++;
@@ -534,177 +549,236 @@ int JEWELTest::process_event(PHCompositeNode *topnode)
     if(printDebug) std::cout<<"eta = "<<recojeteta<<std::endl;
     if(printDebug) std::cout<<"phi = "<<recojetphi<<std::endl;
     
-    TLorentzVector jt;
-    //, bkg, jt_sub;
+    TLorentzVector jt, bkg, jt_sub;
 
-    if(printDebug) std::cout<<" RECO Jet constituents 4-vector "<<std::endl;
+    // if(printDebug) std::cout<<" RECO Jet constituents 4-vector "<<std::endl;
     //! loop over all the constituents in the recojet
     for (Jet::ConstIter citer = jet->begin_comp(); citer != jet->end_comp(); ++citer) {
       Jet::SRC source = citer->first;
-      if(printDebug) std::cout<<"going into the recojet constituent source" << source<<std::endl;
       unsigned int index = citer->second;
-      if(printDebug) std::cout<<"going into the recojet constituent index" << index<<std::endl;
 
+      RawTower* recojet_constituent;
+      // RawTowerGeom * tower_geom;
+      int towerid=-1;
+
+      int phibin;
+      int etabin;
+      double phi;
+      double eta;
+      std::pair< double, double > phiBounds;
+      std::pair< double, double > etaBounds;
+      double phiWidth;
+      double etaWidth;
+      
       if (source == Jet::CEMC_TOWER) {
-	RawTower* recojet_constituent = cemctowers->getCluster(index);
-	if(printDebug) std::cout<<"got the  recojet constituent object "<<std::endl;
+	recojet_constituent = cemctowers->getTower(index);
+	// tower_geom = cemcgeom->get_tower_geometry(recojet_constituent -> get_key());
+	// assert(tower_geom);
+	towerid = 0;
+	phibin = recojet_constituent->get_binphi();
+	etabin = recojet_constituent->get_bineta();
+	phi = fmod( cemcgeom->get_phicenter(phibin) +  pi, 2.0 * pi);
+	eta = cemcgeom->get_etacenter(etabin);
+	etaBounds = cemcgeom->get_etabounds(etabin);
+	phiBounds = cemcgeom->get_phibounds(phibin);
+	etaWidth = TMath::Abs(etaBounds.second - etaBounds.first)/2;
+	phiWidth = TMath::Abs(phiBounds.second - phiBounds.first)/2;	
+	// if(printDebug) std::cout<<"got the  recojet constituent object "<<std::endl;
       }else if(source == Jet::HCALIN_TOWER){
-	RawTower* recojet_constituent = cemctowers->getCluster(index);
-	if(printDebug) std::cout<<"got the  recojet constituent object rawcluster"<<std::endl;	
-      }else if(source == Jet::HCALIN_TOWER){
-	RawTower* recojet_constituent = cemctowers->getCluster(index);
-	if(printDebug) std::cout<<"got the  recojet constituent object rawcluster"<<std::endl;	
+	recojet_constituent = hcalintowers->getTower(index);
+	// tower_geom = hcalingeom->get_tower_geometry(recojet_constituent -> get_key());
+	// assert(tower_geom);
+	towerid = 1;
+	phibin = recojet_constituent->get_binphi();
+	etabin = recojet_constituent->get_bineta();
+	phi = fmod( hcalingeom->get_phicenter(phibin) +  pi, 2.0 * pi);
+	eta = hcalingeom->get_etacenter(etabin);
+	phiBounds = hcalingeom->get_phibounds(phibin);
+	etaBounds = hcalingeom->get_etabounds(etabin);
+	etaWidth = TMath::Abs(etaBounds.second - etaBounds.first)/2;
+	phiWidth = TMath::Abs(phiBounds.second - phiBounds.first)/2;	
+	// if(printDebug) std::cout<<"got the  recojet constituent object rawcluster"<<std::endl;	
+      }else if(source == Jet::HCALOUT_TOWER){
+	recojet_constituent = hcalouttowers->getTower(index);
+	// tower_geom = hcaloutgeom->get_tower_geometry(recojet_constituent -> get_key());
+	// assert(tower_geom);
+	towerid = 2;
+	phibin = recojet_constituent->get_binphi();
+	etabin = recojet_constituent->get_bineta();
+	phi = fmod( hcaloutgeom->get_phicenter(phibin) +  pi, 2.0 * pi);
+	eta = hcaloutgeom->get_etacenter(etabin);
+	phiBounds = hcaloutgeom->get_phibounds(phibin);
+	etaBounds = hcaloutgeom->get_etabounds(etabin);	
+	etaWidth = TMath::Abs(etaBounds.second - etaBounds.first)/2;
+	phiWidth = TMath::Abs(phiBounds.second - phiBounds.first)/2;	
+	// if(printDebug) std::cout<<"got the  recojet constituent object rawcluster"<<std::endl;	
+      }else if (source == Jet::CEMC_TOWER_SUB1) {
+	recojet_constituent = cemctowers_sub->getTower(index);
+	// tower_geom = cemcgeom->get_tower_geometry(recojet_constituent -> get_key());
+	// assert(tower_geom);
+	towerid = 3;
+	phibin = recojet_constituent->get_binphi();
+	etabin = recojet_constituent->get_bineta();
+	phi = fmod( cemcgeom->get_phicenter(phibin) +  pi, 2.0 * pi);
+	eta = cemcgeom->get_etacenter(etabin);
+	phiBounds = cemcgeom->get_phibounds(phibin);
+	etaBounds = cemcgeom->get_etabounds(etabin);
+	etaWidth = TMath::Abs(etaBounds.second - etaBounds.first)/2;
+	phiWidth = TMath::Abs(phiBounds.second - phiBounds.first)/2;	
+	// if(printDebug) std::cout<<"got the  recojet constituent object "<<std::endl;
+      }else if(source == Jet::HCALIN_TOWER_SUB1){
+	recojet_constituent = hcalintowers_sub->getTower(index);
+	// tower_geom = hcalingeom->get_tower_geometry(recojet_constituent -> get_key());
+	// assert(tower_geom);
+	towerid = 4;
+	phibin = recojet_constituent->get_binphi();
+	etabin = recojet_constituent->get_bineta();
+	phi = fmod( hcalingeom->get_phicenter(phibin) +  pi, 2.0 * pi);
+	eta = hcalingeom->get_etacenter(etabin);
+	phiBounds = hcalingeom->get_phibounds(phibin);
+	etaBounds = hcalingeom->get_etabounds(etabin);
+	etaWidth = TMath::Abs(etaBounds.second - etaBounds.first)/2;
+	phiWidth = TMath::Abs(phiBounds.second - phiBounds.first)/2;	
+	// if(printDebug) std::cout<<"got the  recojet constituent object rawcluster"<<std::endl;	
+      }else if(source == Jet::HCALOUT_TOWER_SUB1){
+	recojet_constituent = hcalouttowers_sub->getTower(index);
+	// tower_geom = hcaloutgeom->get_tower_geometry(recojet_constituent -> get_key());
+	// assert(tower_geom);
+	towerid = 5;
+	phibin = recojet_constituent->get_binphi();
+	etabin = recojet_constituent->get_bineta();
+	phi = fmod( hcalingeom->get_phicenter(phibin) +  pi, 2.0 * pi);
+	eta = hcalingeom->get_etacenter(etabin);
+	phiBounds = hcalingeom->get_phibounds(phibin);
+	etaBounds = hcalingeom->get_etabounds(etabin);
+	etaWidth = TMath::Abs(etaBounds.second - etaBounds.first)/2;
+	phiWidth = TMath::Abs(phiBounds.second - phiBounds.first)/2;	
+	// if(printDebug) std::cout<<"got the  recojet constituent object rawcluster"<<std::endl;	
       }else {
 	if(printDebug) std::cout << PHWHERE << " reco jet contains something other than ecal/hcal towers!" << std::endl;
 	// exit(-1);
 	continue;
       }
+
+      if (phi<0) phi += 2*pi;
+      phi -= pi;
       
-      RawTowerGeom * tower_geom = geom->get_tower_geometry(recojet_constituent -> get_key());
-      assert(tower_geom);
+      //! loop over the scattering centers and find those that belong to the jet constituents
+      //! need to only use them once. per constituent. 
+      
+      // double r = tower_geom->get_center_radius();
+      // double phi_2 = atan2(tower_geom->get_center_y(), tower_geom->get_center_x());
+      // double z0 = tower_geom->get_center_z();
  
-      double r = tower_geom->get_center_radius();
-      double phi = atan2(tower_geom->get_center_y(), tower_geom->get_center_x());
-      double z0 = tower_geom->get_center_z();
+      // double z = z0 - 0.0;
  
-      double z = z0 - vtxz;
- 
-      double eta = asinh(z/r); // eta after shift from vertex
- 
-      double pt = tower->get_energy() / cosh(eta);
+      // double eta_2 = asinh(z/r); // eta after shift from vertex
+      
+      double e = recojet_constituent->get_energy();
+      double pt = e / cosh(eta);
       double px = pt * cos(phi);
       double py = pt * sin(phi);
       double pz = pt * sinh(eta);
+      double p = sqrt(px*px + py*py + pz*pz);
+
+      recojet_constituent_px = px;
+      recojet_constituent_py = py;
+      recojet_constituent_pz = pz;
+      recojet_constituent_p = p;
+      recojet_constituent_energy = e;
+      recojet_constituent_eta = eta;
+      recojet_constituent_phi = phi;
+      recojet_constituent_pt = pt;
+      recojet_constituent_ID = 	towerid;
+
+      recojetconstituents->Fill();
       
-      double cluster_energy = recojet_constituent->get_energy();
-      if(printDebug) std::cout<<"got the  recojet constituent object energy "<<cluster_energy<<std::endl;
-      double cluster_eta = recojet_constituent->get_eta();
-      if(printDebug) std::cout<<"got the  recojet constituent object bineta "<<cluster_eta<<std::endl;
-      double cluster_theta = 2.*TMath::ATan((TMath::Exp(-1.*cluster_eta)));
-      if(printDebug) std::cout<<"got the  recojet constituent object theta "<<cluster_theta<<std::endl;
-      double cluster_pt = cluster_energy*TMath::Sin(cluster_theta);
-      if(printDebug) std::cout<<"got the  recojet constituent object pt "<<cluster_pt<<std::endl;
-      double cluster_phi = recojet_constituent->get_phi();
-      if(printDebug) std::cout<<"got the  recojet constituent object phi "<<cluster_phi<<std::endl;
+      
+      // if(printDebug){
+      // 	std::cout<<"Tower Geometry TYPE = "<<towerid<<std::endl;
+      // 	std::cout<<"Eta = ["<<etaBounds.first<<","<<etaBounds.second<<"], "
+      // 		 <<"Phi = ["<<phiBounds.first<<","<<phiBounds.second<<"]"<<std::endl;
+      // 	std::cout<<"GeoMethod tower eta = "<<eta<<", compared to eta_2 = "<<eta_2<<std::endl;
+      // 	std::cout<<"GeoMethod tower phi = "<<phi<<", compared to phi_2 = "<<phi_2<<std::endl;
+      // 	std::cout<<"GeoMethod tower pT = "<<pt<<std::endl;
+      // }
+      
+      TLorentzVector vec;
+      vec.SetPtEtaPhiE(pt,eta,phi,e);
+
+      jt+=vec;
+    
+      if(printDebug) std::cout<<vec.Px()<<"\t"<<vec.Py()<<"\t"<<vec.Pz()<<"\t"<<vec.E()<<"\t"<<vec.Pt()<<std::endl;
+      
+      // double tower_energy = recojet_constituent->get_energy();
+      // if(printDebug) std::cout<<"got the  recojet constituent object energy "<<tower_energy<<std::endl;
+      // double tower_eta = recojet_constituent->get_eta();
+      // if(printDebug) std::cout<<"got the  recojet constituent object bineta "<<tower_eta<<std::endl;
+      // double tower_theta = 2.*TMath::ATan((TMath::Exp(-1.*tower_eta)));
+      // if(printDebug) std::cout<<"got the  recojet constituent object theta "<<tower_theta<<std::endl;
+      // double tower_pt = tower_energy*TMath::Sin(tower_theta);
+      // if(printDebug) std::cout<<"got the  recojet constituent object pt "<<tower_pt<<std::endl;
+      // double tower_phi = recojet_constituent->get_phi();
+      // if(printDebug) std::cout<<"got the  recojet constituent object phi "<<tower_phi<<std::endl;
       // double recojet_constituentp = sqrt(recojet_constituentpx*recojet_constituentpx+
       // 					recojet_constituentpy*recojet_constituentpy+
       // 					recojet_constituentpz*recojet_constituentpz);
 
-      TLorentzVector vec;
-      vec.SetPtEtaPhiE(cluster_pt,cluster_eta,cluster_phi,cluster_energy);
-
-      jt+=vec;
-
-      if(printDebug) std::cout<<vec.Px()<<"\t"<<vec.Py()<<"\t"<<vec.Pz()<<"\t"<<vec.E()<<"\t"<<vec.Pt()<<std::endl;
+      if(printDebug){
+	std::cout<<"jet constituent boundary= Eta ["<<eta-etaWidth<<", "<<eta+etaWidth
+		 <<"], Phi ["<<phi-phiWidth<<", "<<phi+phiWidth<<"]"<<std::endl;
+      }
       
-    }
-    /*
-
-    if(printDebug) std::cout<<"Reco Jet 4-vector "<<std::endl;
-    if(printDebug) std::cout<<"pT = "<<jt.Pt()<<std::endl;
-    if(printDebug) std::cout<<"eta = "<<jt.Eta()<<std::endl;
-    if(printDebug) std::cout<<"phi = "<<jt.Phi()<<std::endl;
-
-    if(doSubtraction){
-
-      std::list<HepMC::GenParticle *>::const_iterator fiter;
-      for (fiter = scatcenterparticles.begin(); fiter != scatcenterparticles.end(); ++fiter) {
-	if (verbosity > 1) (*fiter)->print();
-	scattcenterpx = (*fiter)->momentum().px();
-	scattcenterpy = (*fiter)->momentum().py();
-	scattcenterpz = (*fiter)->momentum().pz();
-	scattcenterp = sqrt(scattcenterpx*scattcenterpx+scattcenterpy*scattcenterpy+scattcenterpz*scattcenterpz);
-	scattcenterenergy = (*fiter)->momentum().e();
-
-	TLorentzVector vec;
-	vec.SetPxPyPzE(scattcenterpx,scattcenterpy,scattcenterpz,scattcenterenergy);      
-	scattcenterpt = sqrt(scattcenterpx*scattcenterpx+scattcenterpy*scattcenterpy);
-	scattcenterphi = vec.Phi();
-	scattcentereta = vec.Eta();
-
-	bool isinJet = false;	  
-	// double _delRSmall = 100;
-	// double _delRposition = 0;
+      if(doSubtraction){
 	int counter = 0;
+	std::list<HepMC::GenParticle *>::const_iterator fiter;
+	for (fiter = scatcenterparticles.begin(); fiter != scatcenterparticles.end(); ++fiter) {
+	  if (verbosity > 1) (*fiter)->print();
+	  scattcenterpx = (*fiter)->momentum().px();
+	  scattcenterpy = (*fiter)->momentum().py();
+	  scattcenterpz = (*fiter)->momentum().pz();
+	  scattcenterp = sqrt(scattcenterpx*scattcenterpx+scattcenterpy*scattcenterpy+scattcenterpz*scattcenterpz);
+	  scattcenterenergy = (*fiter)->momentum().e();	  
+	  TLorentzVector vec;
+	  vec.SetPxPyPzE(scattcenterpx,scattcenterpy,scattcenterpz,scattcenterenergy);      
+	  scattcenterpt = sqrt(scattcenterpx*scattcenterpx+scattcenterpy*scattcenterpy);
+	  scattcenterphi = vec.Phi();
+	  scattcentereta = vec.Eta();
 
-	// if(printDebug) std::cout<<"Truth Jet constituents loop "<<std::endl;
-
-	//! loop over all the constituents in the truthjet
-	for (Jet::ConstIter citer = jet->begin_comp(); citer != jet->end_comp(); ++citer) {
-	  Jet::SRC source = citer->first;
-	  unsigned int index = citer->second;
-	  if (source != Jet::CEMC_TOWER) {
-	    if(printDebug) std::cout << PHWHERE << " RECO jet contains something other than towers !" << std::endl;
-	    exit(-1);
+	  if(printDebug){
+	    std::cout<<"sc: ["<<scattcentereta<<", "<<scattcenterphi<<"]"<<std::endl;
+	    std::cout<<"delta R = "<<deltaR(scattcentereta, recojet_constituent_eta,
+					    scattcenterphi, recojet_constituent_phi)<<std::endl;
 	  }
-
-	  RawTower* recojet_constituent = towers->getTower(index);
-	  double tower_energy = recojet_constituent->get_energy();
-	  double tower_eta = recojet_constituent->get_bineta();
-	  double tower_theta = 2.*TMath::ATan((TMath::Exp(-1.*tower_eta)));
-	  double tower_pt = tower_energy*TMath::Sin(tower_theta);
-	  double tower_phi = recojet_constituent->get_binphi();
-	  // double recojet_constituentp = sqrt(recojet_constituentpx*recojet_constituentpx+
-	  // 					recojet_constituentpy*recojet_constituentpy+
-	  // 					recojet_constituentpz*recojet_constituentpz);
 	  
-	  TLorentzVector vecj;
-	  vecj.SetPtEtaPhiE(tower_pt,tower_eta,tower_phi,tower_energy);
-	      
-	  // double recojet_constituentpt = sqrt(recojet_constituentpx*recojet_constituentpx+
-	  // 				     recojet_constituentpy*recojet_constituentpy);
-	  double recojet_constituentphi = vecj.Phi();
-	  double recojet_constituenteta = vecj.Eta();
-
-	  const double _delRTruth = deltaR(scattcentereta, recojet_constituenteta,
-					   scattcenterphi, recojet_constituentphi);
-	  // if(printDebug) std::cout<<"_delRTruth = " << _delRTruth<<std::endl;
-	  // const double _delRJet = deltaR(recojeteta, recojet_constituenteta,
-	  // 				 recojetphi, recojet_constituentphi);
-
-	  // if(_delRJet < 0.6){
-	  
-	  //   if(printDebug) std::cout<<"scattering center = ("<< scattcentereta <<", "<<scattcenterphi<<"), jet constituent = ("<<
-	  //     recojet_constituenteta<<", "<<recojet_constituentphi<<")"<<std::endl;
-	  //   if(printDebug) std::cout<<"_delRTruth = " << _delRTruth<<std::endl;
-	  //   if(printDebug) std::cout<<"********"<<std::endl;
-	  // }
-	  
-	  if(_delRTruth < 1e-5){
-	    // _delRSmall = _delRTruth;
-	    // _delRposition = counter;
-	    isinJet = true;
+	  if(scattcentereta >= etaBounds.first && scattcentereta < etaBounds.second &&
+	     scattcenterphi >= phiBounds.first && scattcenterphi < phiBounds.second &&
+	     !scattincluster.at(counter)){
+	    bkg+=vec;
+	    
+	    scattincluster.at(counter) = true;
 	  }
+	  
 	  counter++;
-	}// jet constituents loop
-	
-	// sum the background contribution
-	if(isinJet){
-
-	  bkg += vec;
-	  
 	}
-
-      }//! scattering center loop 
-
-      if(printDebug) std::cout<<"Total BKG in RECO Jet "<<std::endl;
-      if(printDebug) std::cout<<"pT = "<<bkg.Pt()<<std::endl;
-      if(printDebug) std::cout<<"eta = "<<bkg.Eta()<<std::endl;
-      if(printDebug) std::cout<<"phi = "<<bkg.Phi()<<std::endl;
-      
-      
-      jt_sub = jt - bkg;
-      
-    } else {
-      jt_sub = jt;
+      }
     }
+    
+    if(printDebug) std::cout<<"Total BKG in RECO Jet "<<std::endl;
+    if(printDebug) std::cout<<"pT = "<<bkg.Pt()<<std::endl;
+    if(printDebug) std::cout<<"eta = "<<bkg.Eta()<<std::endl;
+    if(printDebug) std::cout<<"phi = "<<bkg.Phi()<<std::endl;
+    
+    
+    if(doSubtraction)
+      jt_sub = jt - bkg;
+    else
+      jt_sub = jt;
     
     if(printDebug) std::cout<<"BKG subtracted RECO Jet 4-vector "<<std::endl;
     if(printDebug) std::cout<<"pT = "<<jt_sub.Pt()<<std::endl;
     if(printDebug) std::cout<<"eta = "<<jt_sub.Eta()<<std::endl;
-    if(printDebug) std::cout<<"phi = "<<jt_sub.Phi()<<std::endl;
-
-    */
+    if(printDebug) std::cout<<"phi = "<<jt_sub.Phi()<<std::endl;    
     
     if(truthjet){
       truthjetid = truthjet->get_id();
@@ -862,6 +936,18 @@ void JEWELTest::Set_Tree_Branches()
   truth_g4particles->Branch("truthpt",&truthpt,"truthpt/F");
   truth_g4particles->Branch("truthpid",&truthpid,"truthpid/I");
   truth_g4particles->Branch("nevents",&nevents,"nevents/I");
+
+  recojetconstituents = new TTree("recojet_constituent_tree","a tree with all recojet_constituent_ particles");
+  recojetconstituents->Branch("recojet_constituent_px",&recojet_constituent_px,"recojet_constituent_px/F");
+  recojetconstituents->Branch("recojet_constituent_py",&recojet_constituent_py,"recojet_constituent_py/F");
+  recojetconstituents->Branch("recojet_constituent_pz",&recojet_constituent_pz,"recojet_constituent_pz/F");
+  recojetconstituents->Branch("recojet_constituent_p",&recojet_constituent_p,"recojet_constituent_p/F");
+  recojetconstituents->Branch("recojet_constituent_energy",&recojet_constituent_energy,"recojet_constituent_energy/F");
+  recojetconstituents->Branch("recojet_constituent_phi",&recojet_constituent_phi,"recojet_constituent_phi/F");
+  recojetconstituents->Branch("recojet_constituent_eta",&recojet_constituent_eta,"recojet_constituent_eta/F");
+  recojetconstituents->Branch("recojet_constituent_pt",&recojet_constituent_pt,"recojet_constituent_pt/F");
+  recojetconstituents->Branch("recojet_constituent_ID",&recojet_constituent_ID,"recojet_constituent_ID/I");
+  recojetconstituents->Branch("nevents",&nevents,"nevents/I");  
 
   scattcenter = new TTree("scattcentertree","a tree with all scattcenter particles");
   scattcenter->Branch("scattcenterpx",&scattcenterpx,"scattcenterpx/F");

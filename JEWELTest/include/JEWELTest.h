@@ -15,11 +15,14 @@ class PHCompositeNode;
 class RawClusterContainer;
 class RawCluster;
 class RawTower;
+class RawTowerContainer;
+class RawTowerGeomContainer;
 class SvtxTrackMap; 
 class JetMap;
 class JetEvalStack;
 class JetRecoEval;
 // class PHHepMCGenEvent;
+
 
 class JEWELTest: public SubsysReco
 {
@@ -30,6 +33,7 @@ class JEWELTest: public SubsysReco
   int Init(PHCompositeNode*);
   int process_event(PHCompositeNode*);
   int End(PHCompositeNode*);
+
  private:
   
 
@@ -43,6 +47,7 @@ class JEWELTest: public SubsysReco
   /* TTree *tracktree;  */
   TTree *truthjettree;
   TTree *recojettree;
+  TTree *recojetconstituents;
   TTree *scattcenter;
   TTree *finalstate;
   std::string outfilename;
@@ -124,6 +129,21 @@ class JEWELTest: public SubsysReco
   float truthenergy;
   int truthpid;
 
+  //all recojet_constituent_ particles
+  float recojet_constituent_px,recojet_constituent_py,recojet_constituent_pz;
+  float recojet_constituent_p;
+  float recojet_constituent_phi;
+  float recojet_constituent_eta;
+  float recojet_constituent_pt;
+  float recojet_constituent_energy;
+  /* float recojet_constituent_bkgsub_px,recojet_constituent_bkgsub_py,recojet_constituent_bkgsub_pz; */
+  /* float recojet_constituent_bkgsub_p; */
+  /* float recojet_constituent_bkgsub_phi; */
+  /* float recojet_constituent_bkgsub_eta; */
+  /* float recojet_constituent_bkgsub_pt; */
+  /* float recojet_constituent_bkgsub_energy; */
+  int recojet_constituent_ID;
+  
   //all scatteringcenter particles
   float scattcenterpx, scattcenterpy, scattcenterpz;
   float scattcenterp;
