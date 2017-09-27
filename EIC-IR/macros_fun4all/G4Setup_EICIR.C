@@ -53,6 +53,10 @@ int G4Setup(const int absorberactive = 0,
   PHG4Reco* g4Reco = new PHG4Reco();
   g4Reco->set_rapidity_coverage(1.1); // according to drawings
 
+  /* Set World Volume material to G4Galactic for beam line studies
+   * (beam would be inside vacuum tubes) */
+  g4Reco->SetWorldMaterial("G4_Galactic");
+
   if (decayType != TPythia6Decayer::kAll) {
     g4Reco->set_force_decay(decayType);
   }
