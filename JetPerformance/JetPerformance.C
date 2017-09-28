@@ -223,7 +223,7 @@ int JetPerformance::process_event(PHCompositeNode *topnode)
 	HepMC::GenParticle* parton = recoeval->get_mother_parton(jet, theEvent, 0.4);
 	if(!parton)
 	  parton_flavor = -1;
-	else parton_flavor = parton->pdg_id());
+	else parton_flavor = parton->pdg_id();
 
 	int ptbin = -1, etabin = -1;
 	
@@ -329,7 +329,7 @@ int JetPerformance::process_event(PHCompositeNode *topnode)
 	if(!parton)
 	  reco_noHcalIn_parton_flavor = -1;
 	else
-	  reco_noHcalIn_parton_flavor = parton->pdg_id());
+	  reco_noHcalIn_parton_flavor = parton->pdg_id();
 
 	int ptbin = -1, etabin = -1;
 	
