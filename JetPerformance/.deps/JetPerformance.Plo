@@ -271,6 +271,23 @@ JetPerformance.lo: JetPerformance.C JetPerformance.h \
  /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.3/include/g4cemc/RawTower.h \
  /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.3/include/g4detectors/PHG4CellDefs.h \
  /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.3/include/g4cemc/RawTowerGeom.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.3/include/phhepmc/PHHepMCGenEvent.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.3/include/HepMC/GenEvent.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.3/include/HepMC/GenVertex.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.3/include/HepMC/WeightContainer.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.3/include/HepMC/SimpleVector.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.3/include/HepMC/enable_if.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.3/include/HepMC/is_arithmetic.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.3/include/HepMC/SimpleVector.icc \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.3/include/HepMC/IteratorRange.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.3/include/HepMC/GenParticle.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.3/include/HepMC/Flow.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.3/include/HepMC/Polarization.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.3/include/HepMC/GenCrossSection.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.3/include/HepMC/HeavyIon.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.3/include/HepMC/PdfInfo.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.3/include/HepMC/Units.h \
+ /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.3/include/HepMC/HepMCDefs.h \
  /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.3/include/g4cemc/RawClusterContainer.h \
  /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.3/include/g4cemc/RawClusterDefs.h \
  /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.3/include/g4cemc/RawCluster.h \
@@ -919,6 +936,40 @@ JetPerformance.h:
 /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.3/include/g4detectors/PHG4CellDefs.h:
 
 /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.3/include/g4cemc/RawTowerGeom.h:
+
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.3/include/phhepmc/PHHepMCGenEvent.h:
+
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.3/include/HepMC/GenEvent.h:
+
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.3/include/HepMC/GenVertex.h:
+
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.3/include/HepMC/WeightContainer.h:
+
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.3/include/HepMC/SimpleVector.h:
+
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.3/include/HepMC/enable_if.h:
+
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.3/include/HepMC/is_arithmetic.h:
+
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.3/include/HepMC/SimpleVector.icc:
+
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.3/include/HepMC/IteratorRange.h:
+
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.3/include/HepMC/GenParticle.h:
+
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.3/include/HepMC/Flow.h:
+
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.3/include/HepMC/Polarization.h:
+
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.3/include/HepMC/GenCrossSection.h:
+
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.3/include/HepMC/HeavyIon.h:
+
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.3/include/HepMC/PdfInfo.h:
+
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.3/include/HepMC/Units.h:
+
+/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.3/include/HepMC/HepMCDefs.h:
 
 /afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.3/include/g4cemc/RawClusterContainer.h:
 
