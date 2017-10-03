@@ -25,6 +25,7 @@ set pids = ('e-' 'pi-' 'kaon-' 'anti_proton' 'e+' 'pi+' 'kaon+' 'proton');
 
 set energys = (2GeV 4GeV 8GeV);
 # set energys = (2GeV 4GeV );
+# set energys = (8GeV );
 
 set q = '"';
 
@@ -42,16 +43,18 @@ foreach energy ($energys)
 	end
 end
 
+# exit
 	
 foreach energy ($energys)
 	foreach pid ($pids)
 	
-		echo root -b -q "Fun4All_EMCalLikelihood.C(0, ${q}${base_dir}${q}, ${q}${pid}${q}, ${q}${kine_config}_${energy}${q})";
-		root -b -q "Fun4All_EMCalLikelihood.C(0, ${q}${base_dir}${q}, ${q}${pid}${q}, ${q}${kine_config}_${energy}${q})" & ;
+		echo root -b -q "Fun4All_EMCalLikelihood.C(10000000, ${q}${base_dir}${q}, ${q}${pid}${q}, ${q}${kine_config}_${energy}${q})";
+		root -b -q "Fun4All_EMCalLikelihood.C(10000000, ${q}${base_dir}${q}, ${q}${pid}${q}, ${q}${kine_config}_${energy}${q})" & ;
 
 	end
 end
 		wait;
+	
 	
 foreach energy ($energys)
 	foreach pid ($pids)
@@ -67,9 +70,9 @@ end
 foreach energy ($energys)
 	foreach pid ($pids)
 	
-		echo root -b -q "Fun4All_EMCalLikelihood.C(0, ${q}${base_dir}${q}, ${q}${pid}${q}, ${q}${kine_config}_${energy}${q})";
+		echo root -b -q "Fun4All_EMCalLikelihood.C(10000000, ${q}${base_dir}${q}, ${q}${pid}${q}, ${q}${kine_config}_${energy}${q})";
 
-		root -b -q "Fun4All_EMCalLikelihood.C(0, ${q}${base_dir}${q}, ${q}${pid}${q}, ${q}${kine_config}_${energy}${q})" & ;
+		root -b -q "Fun4All_EMCalLikelihood.C(10000000, ${q}${base_dir}${q}, ${q}${pid}${q}, ${q}${kine_config}_${energy}${q})" & ;
 
 	end
 end

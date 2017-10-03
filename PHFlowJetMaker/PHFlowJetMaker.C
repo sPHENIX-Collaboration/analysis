@@ -64,10 +64,10 @@ PHFlowJetMaker::PHFlowJetMaker(const std::string &name, const std::string algori
   fastjet::Strategy strategy = fastjet::Best;
 
   if (algorithm == "AntiKt")
-    fJetAlgorithm = new fastjet::JetDefinition (fastjet::antikt_algorithm,r_param,strategy);
+    fJetAlgorithm = new fastjet::JetDefinition (fastjet::antikt_algorithm,r_param,fastjet::E_scheme,strategy);
   
   if (algorithm == "Kt")
-    fJetAlgorithm = new fastjet::JetDefinition (fastjet::kt_algorithm,r_param,strategy);
+    fJetAlgorithm = new fastjet::JetDefinition (fastjet::kt_algorithm,r_param,fastjet::E_scheme,strategy);
     
   //Define tolerance limits for track-cluster matching
   match_tolerance_low = new TF1("match_tolerance_low","pol4");

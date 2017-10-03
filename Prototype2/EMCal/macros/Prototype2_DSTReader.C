@@ -80,24 +80,36 @@ Prototype2_DSTReader::Process(Long64_t entry)
 
   GetEntry(entry);
 
+//  for (int t = 0; t < kMaxTOWER_CALIB_CEMC; ++t)
+//    {
+//      typedef unsigned int keytype;
+//      static unsigned int calo_idbits = 8;
+//      static unsigned int tower_idbits = sizeof(keytype) * 8 - calo_idbits;
+//      static unsigned int index1_idbits = tower_idbits / 2;
+//      const int calo_tower_id = TOWER_CALIB_CEMC_towerid[t];
+//      const int col = (calo_tower_id >> index1_idbits) & 0xFFF;
+//      const int row = calo_tower_id & 0xFFF;
+//
+////      (abs(TOWER_CALIB_CEMC.get_column()-2)<=2 && abs(TOWER_CALIB_CEMC.get_row()-1)<=2 )
+//      if ((abs(col - 2) <= 2 && abs(row - 1) <= 2))
+//        {
+//          fout << TOWER_CALIB_CEMC_energy[t] << "\t";
+//        }
+//
+//    }
+
   for (int t = 0; t < kMaxTOWER_CALIB_CEMC; ++t)
     {
-      typedef unsigned int keytype;
-      static unsigned int calo_idbits = 8;
-      static unsigned int tower_idbits = sizeof(keytype) * 8 - calo_idbits;
-      static unsigned int index1_idbits = tower_idbits / 2;
-      const int calo_tower_id = TOWER_CALIB_CEMC_towerid[t];
-      const int col = (calo_tower_id >> index1_idbits) & 0xFFF;
-      const int row = calo_tower_id & 0xFFF;
-
-//      (abs(TOWER_CALIB_CEMC.get_column()-2)<=2 && abs(TOWER_CALIB_CEMC.get_row()-1)<=2 )
-      if ((abs(col - 2) <= 2 && abs(row - 1) <= 2))
-        {
-          fout << TOWER_CALIB_CEMC_energy[t] << "\t";
-        }
-
+      fout << TOWER_CALIB_CEMC_energy[t] << "\t";
     }
-
+  for (int t = 0; t < kMaxTOWER_CALIB_LG_HCALIN; ++t)
+    {
+      fout << TOWER_CALIB_LG_HCALIN_energy[t] << "\t";
+    }
+  for (int t = 0; t < kMaxTOWER_CALIB_LG_HCALOUT; ++t)
+    {
+      fout << TOWER_CALIB_LG_HCALOUT_energy[t] << "\t";
+    }
   fout << endl;
 
   return kTRUE;

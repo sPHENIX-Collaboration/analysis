@@ -54,7 +54,8 @@ EMCalLikelihood::EMCalLikelihood(const std::string &filename) :
     width_cemc_iphi(NAN), width_cemc_ieta(NAN), //
     width_hcalin_iphi(NAN), width_hcalin_ieta(NAN), //
     h2_Edep_Distribution_e(NULL), h2_Edep_Distribution_pi(NULL), //
-    h1_ep_Distribution_e(NULL), h1_ep_Distribution_pi(NULL)
+    h1_ep_Distribution_e(NULL), h1_ep_Distribution_pi(NULL), //
+    _do_ganging(false), _ganging_size(1, 1)
 {
 
 }
@@ -123,6 +124,11 @@ EMCalLikelihood::Init(PHCompositeNode *topNode)
   Fun4AllHistoManager *hm = get_HistoManager();
   assert(hm);
 
+  TH2F * h_merge_direction = new TH2F("h_merge_direction",
+      "h_merge_direction;merge eta shift;merge phi shift", 10, -.5, 9.5, 10,
+      -.5, 9.5);
+  hm->registerHisto(h_merge_direction);
+
   if (h2_Edep_Distribution_e)
     {
       h2_Edep_Distribution_e =
@@ -141,15 +147,15 @@ EMCalLikelihood::Init(PHCompositeNode *topNode)
         for (int y = 1; y <= h2_Edep_Distribution_e->GetNbinsX(); ++y)
           {
             const double binc = h2_Edep_Distribution_e->GetBinContent(x, y);
-            assert(binc>=0);
+            assert(binc >= 0);
 
             if (binc > 0 and binc < min_prob)
               min_prob = binc;
           }
-      assert(min_prob>0);
+      assert(min_prob > 0);
 
-      for (int x = 0; x <= h2_Edep_Distribution_e->GetNbinsX()+1; ++x)
-        for (int y = 0; y <= h2_Edep_Distribution_e->GetNbinsX()+1; ++y)
+      for (int x = 0; x <= h2_Edep_Distribution_e->GetNbinsX() + 1; ++x)
+        for (int y = 0; y <= h2_Edep_Distribution_e->GetNbinsX() + 1; ++y)
           {
             const double binc = h2_Edep_Distribution_e->GetBinContent(x, y);
 
@@ -157,7 +163,7 @@ EMCalLikelihood::Init(PHCompositeNode *topNode)
               h2_Edep_Distribution_e->SetBinContent(x, y, min_prob);
           }
 
-      for (int x = 0; x <= h1_ep_Distribution_e->GetNbinsX()+1; ++x)
+      for (int x = 0; x <= h1_ep_Distribution_e->GetNbinsX() + 1; ++x)
         {
           const double binc = h1_ep_Distribution_e->GetBinContent(x);
 
@@ -183,15 +189,15 @@ EMCalLikelihood::Init(PHCompositeNode *topNode)
         for (int y = 1; y <= h2_Edep_Distribution_pi->GetNbinsX(); ++y)
           {
             const double binc = h2_Edep_Distribution_pi->GetBinContent(x, y);
-            assert(binc>=0);
+            assert(binc >= 0);
 
             if (binc > 0 and binc < min_prob)
               min_prob = binc;
           }
-      assert(min_prob>0);
+      assert(min_prob > 0);
 
-      for (int x = 0; x <= h2_Edep_Distribution_pi->GetNbinsX()+1; ++x)
-        for (int y = 0; y <= h2_Edep_Distribution_pi->GetNbinsX()+1; ++y)
+      for (int x = 0; x <= h2_Edep_Distribution_pi->GetNbinsX() + 1; ++x)
+        for (int y = 0; y <= h2_Edep_Distribution_pi->GetNbinsX() + 1; ++y)
           {
             const double binc = h2_Edep_Distribution_pi->GetBinContent(x, y);
 
@@ -199,7 +205,7 @@ EMCalLikelihood::Init(PHCompositeNode *topNode)
               h2_Edep_Distribution_pi->SetBinContent(x, y, min_prob);
           }
 
-      for (int x = 0; x <= h1_ep_Distribution_pi->GetNbinsX()+1; ++x)
+      for (int x = 0; x <= h1_ep_Distribution_pi->GetNbinsX() + 1; ++x)
         {
           const double binc = h1_ep_Distribution_pi->GetBinContent(x);
 
@@ -213,12 +219,15 @@ EMCalLikelihood::Init(PHCompositeNode *topNode)
 int
 EMCalLikelihood::process_event(PHCompositeNode *topNode)
 {
-  const double significand = _ievent / TMath::Power(10, (int) (log10(_ievent)));
+//  const double significand = _ievent / TMath::Power(10, (int) (log10(_ievent)));
 
-  if (fmod(significand, 1.0) == 0 && significand <= 10)
-    cout << "EMCalLikelihood::process_event - " << _ievent << endl;
+//  if (fmod(significand, 1.0) == 0 && significand <= 10)
+//    cout << "EMCalLikelihood::process_event - " << _ievent << endl;
 
   _ievent++;
+
+  if (_do_ganging)
+    ApplyEMCalGanging(_trk);
 
   UpdateEnergyDeposition(_trk);
 
@@ -247,6 +256,100 @@ EMCalLikelihood::get_HistoManager()
   assert(hm);
 
   return hm;
+}
+
+void
+EMCalLikelihood::ApplyEMCalGanging(EMCalTrk * trk)
+{
+  assert(trk);
+  assert(_ganging_size.first > 1 or _ganging_size.second > 1);
+  assert(_ganging_size.first > 0 and _ganging_size.second > 0);
+
+  static bool once = true;
+  if (once)
+    {
+      once = false;
+
+      cout << "EMCalLikelihood::ApplyEMCalGanging - apply EMCal ganging "
+          << _ganging_size.first << "x" << _ganging_size.second << endl;
+    }
+
+  // estimate an eta-phi bin
+  TVector3 vertex(trk->gvx, trk->gvy, trk->gvz);
+  TVector3 momentum(trk->gpx, trk->gpy, trk->gpz);
+  const double radius = 100; // center of CEMC.
+  const double eta_bin_cm = 2.5;
+  const double phi_bin_rad = 0.025;
+
+  assert(momentum.Pt() > 0);
+
+  TVector3 proj = vertex + radius / momentum.Pt() * momentum;
+  const int eta_bin = floor(proj.Z() / eta_bin_cm);
+  const int phi_bin = floor(proj.Phi() / phi_bin_rad);
+
+  const int merge_plus_eta = (eta_bin % _ganging_size.first);
+  const bool merge_plus_phi = (phi_bin % _ganging_size.second);
+
+  Fun4AllHistoManager *hm = get_HistoManager();
+  assert(hm);
+
+  TH2F * h_merge_direction = (TH2F *) hm->getHisto("h_merge_direction");
+  assert(h_merge_direction);
+
+  h_merge_direction->Fill(merge_plus_eta, merge_plus_phi);
+
+  for (int ieta = 0; ieta < trk->Max_N_Tower; ++ieta)
+    {
+      for (int iphi = 0; iphi < trk->Max_N_Tower; ++iphi)
+        {
+          bool out_of_edge = false;
+
+          double cemc_ieta = 0;
+          double cemc_iphi = 0;
+          double cemc_energy = 0;
+
+          for (unsigned int dieta = 0; dieta < _ganging_size.first; ++dieta)
+            {
+              const unsigned int fetch_eta = _ganging_size.first * ieta + dieta + merge_plus_eta;
+
+              if ( fetch_eta>= trk->Max_N_Tower or out_of_edge)
+                {
+                  out_of_edge = true;
+                  break;
+                }
+
+              for (unsigned int diphi = 0; diphi < _ganging_size.second; ++diphi)
+                {
+                  const unsigned int fetch_phi = _ganging_size.first * iphi + diphi + merge_plus_phi;
+
+                  if (fetch_phi>= trk->Max_N_Tower or out_of_edge)
+                    {
+                      out_of_edge = true;
+                      break;
+                    }
+
+                  cemc_ieta += trk->cemc_ieta[fetch_eta][fetch_phi];
+                  cemc_iphi += trk->cemc_iphi[fetch_eta][fetch_phi];
+                  cemc_energy += trk->cemc_energy[fetch_eta][fetch_phi];
+                }
+            }
+
+          if (out_of_edge)
+            {
+              trk->cemc_ieta[ieta][iphi] = -9999;
+              trk->cemc_iphi[ieta][iphi] = -9999;
+              trk->cemc_energy[ieta][iphi] = -0;
+            }
+          else
+            {
+              trk->cemc_ieta[ieta][iphi] = cemc_ieta / _ganging_size.first
+                  / _ganging_size.second;
+              trk->cemc_iphi[ieta][iphi] = cemc_iphi / _ganging_size.first
+                  / _ganging_size.second;
+              trk->cemc_energy[ieta][iphi] = cemc_energy;
+            }
+        }
+    }
 }
 
 void
@@ -315,25 +418,28 @@ EMCalLikelihood::UpdateEnergyDepositionLikelihood(EMCalTrk * trk)
   assert(
       h1_ep_Distribution_pi->GetNbinsX() == h2_Edep_Distribution_pi->GetNbinsX());
 
-  const int binx = h2_Edep_Distribution_e->GetXaxis()->FindBin(
-      trk->get_ep());
+  const int binx = h2_Edep_Distribution_e->GetXaxis()->FindBin(trk->get_ep());
   const int biny = h2_Edep_Distribution_e->GetYaxis()->FindBin(
       trk->hcalin_sum_energy);
 
     {
       double prob_e = h2_Edep_Distribution_e->GetBinContent(binx, biny);
-      if (!prob_e>0)
+      if (!prob_e > 0)
         {
-          cout <<__PRETTY_FUNCTION__<<Name()<<" - Error - invalid likelihood value prob_e = "<<prob_e<< " @ bin "<<binx<<", "<<biny<<endl;
+          cout << __PRETTY_FUNCTION__ << Name()
+              << " - Error - invalid likelihood value prob_e = " << prob_e
+              << " @ bin " << binx << ", " << biny << endl;
         }
       assert(prob_e > 0);
 
       double prob_pi = h2_Edep_Distribution_pi->GetBinContent(binx, biny);
-      if (!prob_pi>0)
+      if (!prob_pi > 0)
         {
-          cout <<__PRETTY_FUNCTION__<<Name()<<" - Error - invalid likelihood value prob_pi = "<<prob_pi<< " @ bin "<<binx<<", "<<biny<<endl;
+          cout << __PRETTY_FUNCTION__ << Name()
+              << " - Error - invalid likelihood value prob_pi = " << prob_pi
+              << " @ bin " << binx << ", " << biny << endl;
         }
-      assert(prob_pi >0);
+      assert(prob_pi > 0);
 
       trk->ll_edep_e = log(prob_e);
       trk->ll_edep_h = log(prob_pi);
@@ -344,7 +450,7 @@ EMCalLikelihood::UpdateEnergyDepositionLikelihood(EMCalTrk * trk)
       assert(prob_e > 0);
 
       double prob_pi = h1_ep_Distribution_pi->GetBinContent(binx);
-      assert(prob_pi >0);
+      assert(prob_pi > 0);
 
       trk->ll_ep_e = log(prob_e);
       trk->ll_ep_h = log(prob_pi);

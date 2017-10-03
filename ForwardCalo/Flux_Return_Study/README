@@ -1,0 +1,16 @@
+To run this module make it the usual way as indicated on the sphenix website
+(e.g. running autogen.sh, then make, and make install)
+
+To use it must do a few things:
+In the G4_FwdJets.C macro inside the 'Jet_FwdEval' function replace 'JetEvaluator' to 'JetEnergies' leaving everything else the same.
+
+In the G4Setup file for the part that makes the flux return and the Black Holes find the line that has something like 'SetActive->(...)' replace the '...' with 'true'
+
+Once completed it should work with the regular Fun4All file and when run should generate a file that look likes 'g4fwdjet_eval.root': Note this name can be modified in the Fun4All file.
+In this file there is an ntuple called ntp_truthjet.  Inside this ntuple will be the total energy deposited into the Flux Returns, and Black Holes.
+e_FR_plus  = Total energy deposited in forward flux return
+e_FR_minus = Total energy deposited in negative flux return
+e_BH1      = Total energy deposited in Black Hole 1
+e_BH_plus  = Total energy deposited in forward Black Hole
+e_BH_minus = Total energy deposited in negative Black Hole
+

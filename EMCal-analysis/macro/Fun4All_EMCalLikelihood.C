@@ -11,10 +11,10 @@
 #include <cassert>
 
 void
-Fun4All_EMCalLikelihood(const int nEvents = 0,
+Fun4All_EMCalLikelihood(const int nEvents = 100000000,
     TString base_dir =
-        "/phenix/sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/emcstudies/pidstudies/spacal2d/fieldmap/",
-    TString pid = "e+", TString kine_config = "eta0.90_4GeV", TString ll_config =
+        "../..//sPHENIX_work/production_analysis_cemc2x2/emcstudies/pidstudies/spacal2d/fieldmap/",
+    TString pid = "e-", TString kine_config = "eta0_8GeV", TString ll_config =
         "Edep_Distribution_ll_sample")
 {
   const TString inputFile = base_dir + "/G4Hits_sPHENIX_" + pid + "_"
@@ -30,10 +30,11 @@ Fun4All_EMCalLikelihood(const int nEvents = 0,
   gSystem->Load("libemcal_ana.so");
 
   Fun4AllServer *se = Fun4AllServer::instance();
-  se->Verbosity(0);
+  se->Verbosity(1);
 //    se->Verbosity(10);
   // just if we set some flags somewhere in this macro
   recoConsts *rc = recoConsts::instance();
+  rc->set_IntFlag("",0);
 
   double center_cemc_iphi = 1000;
   double center_cemc_ieta = 1000;
@@ -306,8 +307,38 @@ Fun4All_EMCalLikelihood(const int nEvents = 0,
   emcal_ana->set_center_hcalin_ieta(center_hcalin_ieta);
   emcal_ana->set_center_hcalin_iphi(center_hcalin_iphi);
 
-  emcal_ana->set_width_cemc_ieta(width_emcal_eta);
-  emcal_ana->set_width_cemc_iphi(width);
+  // -------------------------------------------------------------------
+  // No CEMC ganging readout
+  // -------------------------------------------------------------------
+//  emcal_ana->set_width_cemc_ieta(width_emcal_eta);
+//  emcal_ana->set_width_cemc_iphi(width);
+//  emcal_ana->set_width_hcalin_ieta(width);
+//  emcal_ana->set_width_hcalin_iphi(width);
+
+  // -------------------------------------------------------------------
+  // 2x2 CEMC ganging readout, cluster size x (2x2)
+  // -------------------------------------------------------------------
+//  emcal_ana->do_ganging(2,2);
+//  emcal_ana->set_width_cemc_ieta(width_emcal_eta*2);
+//  emcal_ana->set_width_cemc_iphi(width*2);
+//  emcal_ana->set_width_hcalin_ieta(width*2);
+//  emcal_ana->set_width_hcalin_iphi(width*2);
+
+  // -------------------------------------------------------------------
+  // 2x2 CEMC ganging readout, cluster size x (1.4x1.4)
+  // -------------------------------------------------------------------
+//  emcal_ana->do_ganging(2,2);
+//  emcal_ana->set_width_cemc_ieta(width_emcal_eta*1.4);
+//  emcal_ana->set_width_cemc_iphi(width*1.4);
+//  emcal_ana->set_width_hcalin_ieta(width*1.4);
+//  emcal_ana->set_width_hcalin_iphi(width*1.4);
+
+  // -------------------------------------------------------------------
+  // 2x2 CEMC ganging readout, cluster size x (1.2x1.2)
+  // -------------------------------------------------------------------
+  emcal_ana->do_ganging(2,2);
+  emcal_ana->set_width_cemc_ieta(width_emcal_eta*1.2);
+  emcal_ana->set_width_cemc_iphi(width*1.2);
   emcal_ana->set_width_hcalin_ieta(width);
   emcal_ana->set_width_hcalin_iphi(width);
 
@@ -315,6 +346,7 @@ Fun4All_EMCalLikelihood(const int nEvents = 0,
     emcal_ana->set_h2_Edep_Distribution_e(h2_Edep_Distribution_e);
   if (h2_Edep_Distribution_pi)
     emcal_ana->set_h2_Edep_Distribution_pi(h2_Edep_Distribution_pi);
+
 
   se->registerSubsystem(emcal_ana);
 
@@ -337,6 +369,8 @@ Fun4All_EMCalLikelihood(const int nEvents = 0,
   se->registerOutputManager(out);
 
   gSystem->ListLibraries();
+
+//  return;
 
   se->run(nEvents);
 //  se->dumpHistos(string(inputFile) + string("_hist.root"), "recreate");

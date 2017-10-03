@@ -1,19 +1,35 @@
 //  General sPHENIX tools
-#include "phool/PHCompositeNode.h"
-#include "phool/phool.h"
-#include "fun4all/getClass.h"
+
 #include "HCALAnalysis.h"
 
-#include "g4main/PHG4HitContainer.h"
-#include "g4main/PHG4Hit.h"
+#include <g4cemc/RawTowerContainer.h>
+#include <pdbcalbase/PdbParameterMap.h>
+#include <g4detectors/PHG4Parameters.h>
+#include <ffaobjects/EventHeader.h>
+#include <g4detectors/PHG4ScintillatorSlat.h>
+#include <g4detectors/PHG4ScintillatorSlatContainer.h>
+#include <g4detectors/PHG4ScintillatorSlatDefs.h>
+
+#include <fun4all/SubsysReco.h>
+#include <fun4all/Fun4AllServer.h>
+#include <fun4all/PHTFileServer.h>
+#include <phool/PHCompositeNode.h>
+#include <fun4all/Fun4AllReturnCodes.h>
+#include <phool/getClass.h>
+#include <fun4all/Fun4AllHistoManager.h>
+#include <phool/getClass.h>
+
+
+#include <g4main/PHG4HitContainer.h>
+#include <g4main/PHG4Hit.h>
 
 //  Root classes
-#include "TH1.h"
-#include "TH2.h"
-#include "TPythia6.h"
-#include "TMath.h"
-#include "TFile.h"
-#include "TNtuple.h"
+#include <TH1.h>
+#include <TH2.h>
+#include <TPythia6.h>
+#include <TMath.h>
+#include <TFile.h>
+#include <TNtuple.h>
 #include <TLorentzVector.h>
 
 #include <assert.h>
@@ -371,13 +387,13 @@ void HCALAnalysis::GetNodes(PHCompositeNode *topNode)
   _cemc_abs_hit_container = findNode::getClass<PHG4HitContainer> (topNode, "G4HIT_ABSORBER_CEMC");
   if(!_cemc_abs_hit_container) { std::cout << PHWHERE << ":: No G4HIT_CEMC! No sense continuing" << std::endl; exit(1);}
 
-  _magnet_hit_container = findNode::getClass<PHG4HitContainer> (topNode, "G4HIT_MAGNET_0");
-  if(!_magnet_hit_container) { std::cout << PHWHERE << ":: No G4HIT_MAGNET_0! No sense continuing" << std::endl; exit(1);}
+  _magnet_hit_container = findNode::getClass<PHG4HitContainer> (topNode, "G4HIT_MAGNET");
+  if(!_magnet_hit_container) { std::cout << PHWHERE << ":: No G4HIT_MAGNET! No sense continuing" << std::endl; exit(1);}
 
   _bh_hit_container = findNode::getClass<PHG4HitContainer> (topNode, "G4HIT_BH_1");
   if(!_bh_hit_container) { std::cout << PHWHERE << ":: No G4HIT_BH_1! No sense continuing" << std::endl; exit(1);}
 
-  _cemc_electronics_hit_container = findNode::getClass<PHG4HitContainer> (topNode, "G4HIT_EMCELECTRONICS_0");
+  _cemc_electronics_hit_container = findNode::getClass<PHG4HitContainer> (topNode, "G4HIT_CEMC_ELECTRONICS");
   if(!_cemc_electronics_hit_container) { std::cout << PHWHERE << ":: No G4HIT_EMCELECTRONICS_0! No sense continuing" << std::endl; exit(1);}
 
   _hcalin_spt_hit_container = findNode::getClass<PHG4HitContainer> (topNode, "G4HIT_HCALIN_SPT");
