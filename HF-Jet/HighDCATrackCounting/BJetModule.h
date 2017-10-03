@@ -107,10 +107,10 @@ private:
 	float _b_track_dca3d_calc[1000];
 	float _b_track_dca3d_calc_truth[1000];
 
-	float _b_track_dca2d_phi[1000];
-	float _b_track_dca2d_x[1000];
-	float _b_track_dca2d_y[1000];
-	float _b_track_dca2d_z[1000];
+	float _b_track_pca_phi[1000];
+	float _b_track_pca_x[1000];
+	float _b_track_pca_y[1000];
+	float _b_track_pca_z[1000];
 
 	float _b_track_quality[1000];
 	float _b_track_chisq[1000];
@@ -127,12 +127,13 @@ private:
 	bool _b_track_best_primary[1000];
 	int _b_track_best_pid[1000];
 	float _b_track_best_pt[1000];
-	float _b_track_best_dca3d_xy[1000];
 
 	int _b_track_best_in[1000];
 	int _b_track_best_out[1000];
 	int _b_track_best_parent_pid[1000];
-	float _b_track_best_dca[1000];
+
+	float _b_track_best_decay_length[1000];
+	float _b_track_best_dca2d[1000];
 
 	//float _b_track_particle_pt[100];
 	//float _b_track_particle_eta[100];

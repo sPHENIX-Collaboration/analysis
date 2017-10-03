@@ -232,10 +232,10 @@ void draw_G4_bjet_truth_tagging(
 	float track_dca2d[_MAX_N_TRACKS_];
 	float track_dca2d_error[_MAX_N_TRACKS_];
 
-	float track_dca2d_phi[_MAX_N_TRACKS_];
-	float track_dca2d_x[_MAX_N_TRACKS_];
-	float track_dca2d_y[_MAX_N_TRACKS_];
-	float track_dca2d_z[_MAX_N_TRACKS_];
+	float track_pca_phi[_MAX_N_TRACKS_];
+	float track_pca_x[_MAX_N_TRACKS_];
+	float track_pca_y[_MAX_N_TRACKS_];
+	float track_pca_z[_MAX_N_TRACKS_];
 
 	float track_dca2d_calc[_MAX_N_TRACKS_];
 	float track_dca2d_calc_truth[_MAX_N_TRACKS_];
@@ -261,7 +261,7 @@ void draw_G4_bjet_truth_tagging(
 	unsigned int track_best_embed[_MAX_N_TRACKS_];
 	int track_best_pid[_MAX_N_TRACKS_];
 	float track_best_pt[_MAX_N_TRACKS_];
-	float track_best_dca[_MAX_N_TRACKS_];
+	float track_best_decay_length[_MAX_N_TRACKS_];
 	int track_best_parent_pid[_MAX_N_TRACKS_];
 
 	TFile *f = TFile::Open(Form("%s",input),"READ");
@@ -289,10 +289,10 @@ void draw_G4_bjet_truth_tagging(
 	ttree->SetBranchAddress("track_dca2d",  track_dca2d );
 	ttree->SetBranchAddress("track_dca2d_error",  track_dca2d_error );
 
-	ttree->SetBranchAddress("track_dca2d_phi",  track_dca2d_phi );
-	ttree->SetBranchAddress("track_dca2d_x",  track_dca2d_x );
-	ttree->SetBranchAddress("track_dca2d_y",  track_dca2d_y );
-	ttree->SetBranchAddress("track_dca2d_z",  track_dca2d_z );
+	ttree->SetBranchAddress("track_pca_phi",  track_pca_phi );
+	ttree->SetBranchAddress("track_pca_x",  track_pca_x );
+	ttree->SetBranchAddress("track_pca_y",  track_pca_y );
+	ttree->SetBranchAddress("track_pca_z",  track_pca_z );
 
 	ttree->SetBranchAddress("track_dca2d_calc",  track_dca2d_calc );
 	ttree->SetBranchAddress("track_dca2d_calc_truth",  track_dca2d_calc_truth );
@@ -316,7 +316,7 @@ void draw_G4_bjet_truth_tagging(
 	ttree->SetBranchAddress("track_best_embed",  track_best_embed );
 	ttree->SetBranchAddress("track_best_pid",  track_best_pid );
 	ttree->SetBranchAddress("track_best_pt",  track_best_pt );
-	ttree->SetBranchAddress("track_best_dca",  track_best_dca );
+	ttree->SetBranchAddress("track_best_decay_length",  track_best_decay_length );
 	ttree->SetBranchAddress("track_best_parent_pid", track_best_parent_pid );
 
 	//int rem = 0;
@@ -498,10 +498,10 @@ void draw_G4_bjet_truth_tagging(
 						dca_method  == 5
 					) // dca2d methods
 				{
-					float dphi = track_dca2d_phi[ itrk ] - truthjet_phi[ j ];
+					float dphi = track_pca_phi[ itrk ] - truthjet_phi[ j ];
 
 					//if (iflavor == 2 && track_dca2d[ itrk ] > 0.05) 
-					//	std::cout << truthjet_phi[ j ] << " / " <<  track_dca2d_phi[ itrk ] << std::endl;
+					//	std::cout << truthjet_phi[ j ] << " / " <<  track_pca_phi[ itrk ] << std::endl;
 
 					if (dphi > +3.14159) dphi -= 2*3.14159;
 					if (dphi < -3.14159) dphi += 2*3.14159;
@@ -510,9 +510,9 @@ void draw_G4_bjet_truth_tagging(
 						track_dca2d[ itrk ] = -1 * track_dca2d[ itrk ];
 				} else { 
 					TVector3 dca_vec(
-							track_dca2d_x[ itrk ],
-							track_dca2d_y[ itrk ],
-							track_dca2d_z[ itrk ]
+							track_pca_x[ itrk ],
+							track_pca_y[ itrk ],
+							track_pca_z[ itrk ]
 							);
 					TVector3 jet_vec(0,0,0);
 					jet_vec.SetPtEtaPhi(

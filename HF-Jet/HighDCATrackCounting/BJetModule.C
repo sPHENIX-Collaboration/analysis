@@ -106,10 +106,10 @@ int BJetModule::Init(PHCompositeNode *topNode) {
 		_b_track_dca3d_calc[n] = -1;
 		_b_track_dca3d_calc_truth[n] = -1;
 
-		_b_track_dca2d_phi[n] = -99;
-		_b_track_dca2d_x[n] = -99;
-		_b_track_dca2d_y[n] = -99;
-		_b_track_dca2d_z[n] = -99;
+		_b_track_pca_phi[n] = -99;
+		_b_track_pca_x[n] = -99;
+		_b_track_pca_y[n] = -99;
+		_b_track_pca_z[n] = -99;
 
 		_b_track_quality[n] = -99;
 		_b_track_chisq[n] = -99;
@@ -185,14 +185,10 @@ int BJetModule::Init(PHCompositeNode *topNode) {
 	_tree->Branch("track_dca3d_calc_truth", _b_track_dca3d_calc_truth,
 			"track_dca3d_calc_truth[track_n]/F");
 
-	_tree->Branch("track_dca2d_phi", _b_track_dca2d_phi,
-			"track_dca2d_phi[track_n]/F");
-	_tree->Branch("track_dca2d_x", _b_track_dca2d_x,
-			"track_dca2d_x[track_n]/F");
-	_tree->Branch("track_dca2d_y", _b_track_dca2d_y,
-			"track_dca2d_y[track_n]/F");
-	_tree->Branch("track_dca2d_z", _b_track_dca2d_z,
-			"track_dca2d_z[track_n]/F");
+	_tree->Branch("track_pca_phi", _b_track_pca_phi,"track_pca_phi[track_n]/F");
+	_tree->Branch("track_pca_x", _b_track_pca_x,"track_pca_x[track_n]/F");
+	_tree->Branch("track_pca_y", _b_track_pca_y,"track_pca_y[track_n]/F");
+	_tree->Branch("track_pca_z", _b_track_pca_z,"track_pca_z[track_n]/F");
 
 	_tree->Branch("track_quality", _b_track_quality,
 			"track_quality[track_n]/F");
@@ -227,8 +223,9 @@ int BJetModule::Init(PHCompositeNode *topNode) {
 			"track_best_out[track_n]/I");
 	_tree->Branch("track_best_parent_pid", _b_track_best_parent_pid,
 			"track_best_parent_pid[track_n]/I");
-	_tree->Branch("track_best_dca", _b_track_best_dca,
-			"track_best_dca[track_n]/F");
+
+	_tree->Branch("track_best_decay_length", _b_track_best_decay_length,"track_best_decay_length[track_n]/F");
+	_tree->Branch("track_best_dca2d", _b_track_best_dca2d, "track_best_dca2d[track_n]/F");
 
 	//_tree->Branch("track_particle_pt", _b_track_particle_pt, "track_particle_pt[track_n]/F");
 	//_tree->Branch("track_particle_eta", _b_track_particle_eta, "track_particle_eta[track_n]/F");
@@ -307,8 +304,16 @@ int BJetModule::process_event(PHCompositeNode *topNode) {
 		if (this_jet->get_pt() < 10 || fabs(this_eta) > 2)
 			continue;
 
-		_b_truthjet_parton_flavor[_b_truthjet_n] = this_jet->get_property(static_cast<Jet::PROPERTY>(prop_JetPartonFlavor));
-		_b_truthjet_hadron_flavor[_b_truthjet_n] = this_jet->get_property(static_cast<Jet::PROPERTY>(prop_JetHadronFlavor));
+		int jet_flavor = -999;
+
+		jet_flavor = this_jet->get_property(static_cast<Jet::PROPERTY>(prop_JetPartonFlavor));
+		if(abs(jet_flavor)<100)
+			_b_truthjet_parton_flavor[_b_truthjet_n] = jet_flavor;
+
+		jet_flavor = this_jet->get_property(static_cast<Jet::PROPERTY>(prop_JetHadronFlavor));
+		if(abs(jet_flavor)<100)
+			_b_truthjet_hadron_flavor[_b_truthjet_n] = jet_flavor;
+
 		_b_truthjet_pt[_b_truthjet_n] = this_pt;
 		_b_truthjet_phi[_b_truthjet_n] = this_phi;
 		_b_truthjet_eta[_b_truthjet_n] = this_eta;
@@ -438,7 +443,6 @@ int BJetModule::process_event(PHCompositeNode *topNode) {
 
 	_b_track_n = 0;
 
-	int itrack = 0;
 	for (SvtxTrackMap::Iter iter = trackmap->begin(); iter != trackmap->end();
 			++iter) {
 
@@ -537,7 +541,8 @@ int BJetModule::process_event(PHCompositeNode *topNode) {
 		int truth_in = -1;
 		int truth_out = -1;
 		int truth_parent_pid = 0;
-		float truth_dca = -99;
+		float truth_decay_length = -99;
+		float truth_dca2d = -99;
 
 		int nhepmc = 0;
 		for (HepMC::GenEvent::particle_const_iterator p =
@@ -573,7 +578,19 @@ int BJetModule::process_event(PHCompositeNode *topNode) {
 
 			truth_parent_pid = (*first_parent)->pdg_id();
 
-			truth_dca = production_vertex->point3d().perp();
+			truth_decay_length = production_vertex->point3d().perp();
+
+			TVector3 mc_point(
+					production_vertex->point3d().x(),
+					production_vertex->point3d().y(),
+					0);
+
+			TVector3 mc_line(
+					(*p)->momentum().x(),
+					(*p)->momentum().y(),
+					0);
+
+			truth_dca2d = calc_dca(mc_point, mc_line, TVector3(0,0,0));
 
 			nhepmc++;
 		}
@@ -597,10 +614,10 @@ int BJetModule::process_event(PHCompositeNode *topNode) {
 		_b_track_dca3d_calc[_b_track_n] = dca3d_calc;
 		_b_track_dca3d_calc_truth[_b_track_n] = dca3d_calc_truth;
 
-		_b_track_dca2d_phi[_b_track_n] = dca_phi;
-		_b_track_dca2d_x[_b_track_n] = dca_x;
-		_b_track_dca2d_y[_b_track_n] = dca_y;
-		_b_track_dca2d_z[_b_track_n] = dca_z;
+		_b_track_pca_phi[_b_track_n] = dca_phi;
+		_b_track_pca_x[_b_track_n] = dca_x;
+		_b_track_pca_y[_b_track_n] = dca_y;
+		_b_track_pca_z[_b_track_n] = dca_z;
 
 		_b_track_quality[_b_track_n] = track->get_quality();
 		_b_track_chisq[_b_track_n] = track->get_chisq();
@@ -610,22 +627,28 @@ int BJetModule::process_event(PHCompositeNode *topNode) {
 
 		_b_track_nclusters[_b_track_n] = nclusters;
 		_b_track_nclusters_by_layer[_b_track_n] = nclusters_by_layer;
+
 		_b_track_best_nclusters[_b_track_n] = truth_nclusters;
 		_b_track_best_nclusters_by_layer[_b_track_n] = truth_nclusters_by_layer;
 		_b_track_best_embed[_b_track_n] = truth_embed_id;
 		_b_track_best_primary[_b_track_n] = truth_is_primary;
 		_b_track_best_pid[_b_track_n] = truth_pid;
 		_b_track_best_pt[_b_track_n] = truth_pt;
-		_b_track_best_dca[_b_track_n] = truth_dca;
+
 		_b_track_best_in[_b_track_n] = truth_in;
 		_b_track_best_out[_b_track_n] = truth_out;
 		_b_track_best_parent_pid[_b_track_n] = truth_parent_pid;
 
+		_b_track_best_decay_length[_b_track_n] = truth_decay_length;
+		_b_track_best_dca2d[_b_track_n] = truth_dca2d;
+
+//		cout
+//		<< __LINE__
+//		<< ": " << _b_track_best_decay_length[_b_track_n]
+//		<< ": " << _b_track_best_dca2d[_b_track_n]
+//		<<endl;
 
 		_b_track_n++;
-
-		itrack++;
-
 	}
 
 	_tree->Fill();
