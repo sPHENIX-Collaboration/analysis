@@ -163,8 +163,6 @@ int SimpleTrackingAnalysis::Init(PHCompositeNode *topNode)
 
 
 
-
-
   // --- efficiency study with calorimter cuts
 
   th2d_truept_particles_withcalocuts_leavingAllHits = new TH2D(Form("th2d_truept_particles_withcalocuts_leavingAllHits"), "", 80,0.0,40.0, 20,0.0,2.0);
@@ -190,6 +188,44 @@ int SimpleTrackingAnalysis::Init(PHCompositeNode *topNode)
   se->registerHisto(th2d_truept_particles_withcalocuts_recoWithin3Sigma);
 
 
+
+  // --- new additional (eventual replacement?) histograms for purity study
+
+  th2d_reco_calo_nhits8 = new TH2D("th2d_reco_calo_nhits8", "", 80,0.0,40.0, 20,0.0,2.0);
+  th2d_reco_calo_nhits7 = new TH2D("th2d_reco_calo_nhits7", "", 80,0.0,40.0, 20,0.0,2.0);
+  th2d_reco_calo_nhits6 = new TH2D("th2d_reco_calo_nhits6", "", 80,0.0,40.0, 20,0.0,2.0);
+  th2d_reco_calo_nhits5 = new TH2D("th2d_reco_calo_nhits5", "", 80,0.0,40.0, 20,0.0,2.0);
+  th2d_reco_calo_nhits4 = new TH2D("th2d_reco_calo_nhits4", "", 80,0.0,40.0, 20,0.0,2.0);
+  th2d_reco_calo_nhits3 = new TH2D("th2d_reco_calo_nhits3", "", 80,0.0,40.0, 20,0.0,2.0);
+  th2d_reco_calo_nhits2 = new TH2D("th2d_reco_calo_nhits2", "", 80,0.0,40.0, 20,0.0,2.0);
+  th2d_reco_calo_nhits1 = new TH2D("th2d_reco_calo_nhits1", "", 80,0.0,40.0, 20,0.0,2.0);
+
+  th2d_reco_calo_pt1sigma = new TH2D("th2d_reco_calo_pt1sigma", "", 80,0.0,40.0, 20,0.0,2.0);
+  th2d_reco_calo_pt2sigma = new TH2D("th2d_reco_calo_pt2sigma", "", 80,0.0,40.0, 20,0.0,2.0);
+  th2d_reco_calo_pt3sigma = new TH2D("th2d_reco_calo_pt3sigma", "", 80,0.0,40.0, 20,0.0,2.0);
+  th2d_reco_calo_pt4sigma = new TH2D("th2d_reco_calo_pt4sigma", "", 80,0.0,40.0, 20,0.0,2.0);
+  th2d_reco_calo_pt5sigma = new TH2D("th2d_reco_calo_pt5sigma", "", 80,0.0,40.0, 20,0.0,2.0);
+  th2d_reco_calo_pt6sigma = new TH2D("th2d_reco_calo_pt6sigma", "", 80,0.0,40.0, 20,0.0,2.0);
+
+
+
+  // --- new additional (eventual replacement?) histograms for purity study
+
+  th2d_true_calo_nhits8 = new TH2D("th2d_true_calo_nhits8", "", 80,0.0,40.0, 20,0.0,2.0);
+  th2d_true_calo_nhits7 = new TH2D("th2d_true_calo_nhits7", "", 80,0.0,40.0, 20,0.0,2.0);
+  th2d_true_calo_nhits6 = new TH2D("th2d_true_calo_nhits6", "", 80,0.0,40.0, 20,0.0,2.0);
+  th2d_true_calo_nhits5 = new TH2D("th2d_true_calo_nhits5", "", 80,0.0,40.0, 20,0.0,2.0);
+  th2d_true_calo_nhits4 = new TH2D("th2d_true_calo_nhits4", "", 80,0.0,40.0, 20,0.0,2.0);
+  th2d_true_calo_nhits3 = new TH2D("th2d_true_calo_nhits3", "", 80,0.0,40.0, 20,0.0,2.0);
+  th2d_true_calo_nhits2 = new TH2D("th2d_true_calo_nhits2", "", 80,0.0,40.0, 20,0.0,2.0);
+  th2d_true_calo_nhits1 = new TH2D("th2d_true_calo_nhits1", "", 80,0.0,40.0, 20,0.0,2.0);
+
+  th2d_true_calo_pt1sigma = new TH2D("th2d_true_calo_pt1sigma", "", 80,0.0,40.0, 20,0.0,2.0);
+  th2d_true_calo_pt2sigma = new TH2D("th2d_true_calo_pt2sigma", "", 80,0.0,40.0, 20,0.0,2.0);
+  th2d_true_calo_pt3sigma = new TH2D("th2d_true_calo_pt3sigma", "", 80,0.0,40.0, 20,0.0,2.0);
+  th2d_true_calo_pt4sigma = new TH2D("th2d_true_calo_pt4sigma", "", 80,0.0,40.0, 20,0.0,2.0);
+  th2d_true_calo_pt5sigma = new TH2D("th2d_true_calo_pt5sigma", "", 80,0.0,40.0, 20,0.0,2.0);
+  th2d_true_calo_pt6sigma = new TH2D("th2d_true_calo_pt6sigma", "", 80,0.0,40.0, 20,0.0,2.0);
 
 
 

@@ -116,6 +116,42 @@ class SimpleTrackingAnalysis: public SubsysReco
   TH2D* th2d_truept_particles_withcalocuts_recoWithin2Sigma;
   TH2D* th2d_truept_particles_withcalocuts_recoWithin3Sigma;
 
+  // --- new additional (eventual replacement?) histograms for purity study
+  TH2D* th2d_reco_calo_nhits8;
+  TH2D* th2d_reco_calo_nhits7;
+  TH2D* th2d_reco_calo_nhits6;
+  TH2D* th2d_reco_calo_nhits5;
+  TH2D* th2d_reco_calo_nhits4;
+  TH2D* th2d_reco_calo_nhits3;
+  TH2D* th2d_reco_calo_nhits2;
+  TH2D* th2d_reco_calo_nhits1;
+
+  TH2D* th2d_reco_calo_pt1sigma;
+  TH2D* th2d_reco_calo_pt2sigma;
+  TH2D* th2d_reco_calo_pt3sigma;
+  TH2D* th2d_reco_calo_pt4sigma;
+  TH2D* th2d_reco_calo_pt5sigma;
+  TH2D* th2d_reco_calo_pt6sigma;
+
+
+
+  // --- new additional (eventual replacement?) histograms for purity study
+  TH2D* th2d_true_calo_nhits8;
+  TH2D* th2d_true_calo_nhits7;
+  TH2D* th2d_true_calo_nhits6;
+  TH2D* th2d_true_calo_nhits5;
+  TH2D* th2d_true_calo_nhits4;
+  TH2D* th2d_true_calo_nhits3;
+  TH2D* th2d_true_calo_nhits2;
+  TH2D* th2d_true_calo_nhits1;
+
+  TH2D* th2d_true_calo_pt1sigma;
+  TH2D* th2d_true_calo_pt2sigma;
+  TH2D* th2d_true_calo_pt3sigma;
+  TH2D* th2d_true_calo_pt4sigma;
+  TH2D* th2d_true_calo_pt5sigma;
+  TH2D* th2d_true_calo_pt6sigma;
+
 
   // vertex info hisograms
   TH1D* _dx_vertex;
