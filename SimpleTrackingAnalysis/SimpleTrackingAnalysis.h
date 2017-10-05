@@ -66,16 +66,17 @@ class SimpleTrackingAnalysis: public SubsysReco
 
   // output histograms ---------------------------------------------------------
 
-  TH2D* _truept_dptoverpt;                    // momentum resolution
+  TH2D* _recopt_quality;                      // quality distributions
+  TH2D* _recopt_quality_tracks_all;
+  TH2D* _recopt_quality_tracks_recoWithin4Percent;
+  TH2D* _truept_quality_particles_recoWithin4Percent;
 
-  TH2D* _truept_dca;                          // dca resolution
-
-  TH1D* _truept_particles_leaving7Hits;       // pattern reco eff baseline
-
-  TH1D* _truept_particles_recoWithExactHits;  // pattern reco eff by nhits
+  TH2D* _truept_dca; // dca resolution
+  TH2D* _truept_dptoverpt; // momentum resolution
+  TH1D* _truept_particles_leavingAllHits; // pattern reco eff baseline
+  TH1D* _truept_particles_recoWithExactHits; // pattern reco eff by nhits
   TH1D* _truept_particles_recoWithin1Hit;
   TH1D* _truept_particles_recoWithin2Hits;
-
   TH1D* _truept_particles_recoWithin3Percent; // parttern reco eff by momentum match
   TH1D* _truept_particles_recoWithin4Percent;
   TH1D* _truept_particles_recoWithin5Percent;
@@ -83,83 +84,79 @@ class SimpleTrackingAnalysis: public SubsysReco
 
 
   TH1D* _recopt_tracks_all;                   // purity baseline (non-embedded particles)
-
   TH1D* _recopt_tracks_recoWithExactHits;     // purity by nhit match
   TH1D* _recopt_tracks_recoWithin1Hit;
   TH1D* _recopt_tracks_recoWithin2Hits;
-
   TH1D* _recopt_tracks_recoWithin3Percent;    // purity by momentum match
   TH1D* _recopt_tracks_recoWithin4Percent;
   TH1D* _recopt_tracks_recoWithin5Percent;
 
 
-  TH1D* _recopt_tracks_withcalocuts_all;                   // purity baseline (non-embedded particles)
-  TH1D* _recopt_tracks_withcalocuts_recoWithExactHits;     // purity by nhit match
-  TH1D* _recopt_tracks_withcalocuts_recoWithin1Hit;
-  TH1D* _recopt_tracks_withcalocuts_recoWithin2Hits;
-  TH1D* _recopt_tracks_withcalocuts_recoWithin3Percent;    // purity by momentum match
-  TH1D* _recopt_tracks_withcalocuts_recoWithin4Percent;
-  TH1D* _recopt_tracks_withcalocuts_recoWithin5Percent;
-
-  TH2D* th2d_recopt_tracks_withcalocuts_all;                   // purity baseline (non-embedded particles)
-  TH2D* th2d_recopt_tracks_withcalocuts_recoWithExactHits;     // purity by nhit match
+  // purity histograms for calo cuts
+  TH2D* th2d_recopt_tracks_withcalocuts_all; // purity baseline (non-embedded particles)
+  TH2D* th2d_recopt_tracks_withcalocuts_recoWithExactHits; // purity by nhit match
   TH2D* th2d_recopt_tracks_withcalocuts_recoWithin1Hit;
   TH2D* th2d_recopt_tracks_withcalocuts_recoWithin2Hits;
-  TH2D* th2d_recopt_tracks_withcalocuts_recoWithin3Percent;    // purity by momentum match
+  TH2D* th2d_recopt_tracks_withcalocuts_recoWithin3Percent; // purity by momentum match
   TH2D* th2d_recopt_tracks_withcalocuts_recoWithin4Percent;
   TH2D* th2d_recopt_tracks_withcalocuts_recoWithin5Percent;
-  TH2D* th2d_recopt_tracks_withcalocuts_recoWithin1Sigma;    // purity by momentum match
+  TH2D* th2d_recopt_tracks_withcalocuts_recoWithin1Sigma; // purity by momentum match
   TH2D* th2d_recopt_tracks_withcalocuts_recoWithin2Sigma;
   TH2D* th2d_recopt_tracks_withcalocuts_recoWithin3Sigma;
 
-
-  TH1D* _truept_particles_withcalocuts_leaving7Hits;                   // purity baseline (non-embedded particles)
-  TH1D* _truept_particles_withcalocuts_recoWithExactHits;     // purity by nhit match
-  TH1D* _truept_particles_withcalocuts_recoWithin1Hit;
-  TH1D* _truept_particles_withcalocuts_recoWithin2Hits;
-  TH1D* _truept_particles_withcalocuts_recoWithin3Percent;    // purity by momentum match
-  TH1D* _truept_particles_withcalocuts_recoWithin4Percent;
-  TH1D* _truept_particles_withcalocuts_recoWithin5Percent;
-
-  TH2D* th2d_truept_particles_withcalocuts_leaving7Hits;                   // purity baseline (non-embedded particles)
-  TH2D* th2d_truept_particles_withcalocuts_recoWithExactHits;     // purity by nhit match
+  // efficiency histograms for calo cuts
+  TH2D* th2d_truept_particles_withcalocuts_leavingAllHits;
+  TH2D* th2d_truept_particles_withcalocuts_recoWithExactHits;
   TH2D* th2d_truept_particles_withcalocuts_recoWithin1Hit;
   TH2D* th2d_truept_particles_withcalocuts_recoWithin2Hits;
-  TH2D* th2d_truept_particles_withcalocuts_recoWithin3Percent;    // purity by momentum match
+  TH2D* th2d_truept_particles_withcalocuts_recoWithin3Percent;
   TH2D* th2d_truept_particles_withcalocuts_recoWithin4Percent;
   TH2D* th2d_truept_particles_withcalocuts_recoWithin5Percent;
-  TH2D* th2d_truept_particles_withcalocuts_recoWithin1Sigma;    // purity by momentum match
+  TH2D* th2d_truept_particles_withcalocuts_recoWithin1Sigma;
   TH2D* th2d_truept_particles_withcalocuts_recoWithin2Sigma;
   TH2D* th2d_truept_particles_withcalocuts_recoWithin3Sigma;
 
+  // --- new additional (eventual replacement?) histograms for purity study
+  TH2D* th2d_reco_calo_nhits8;
+  TH2D* th2d_reco_calo_nhits7;
+  TH2D* th2d_reco_calo_nhits6;
+  TH2D* th2d_reco_calo_nhits5;
+  TH2D* th2d_reco_calo_nhits4;
+  TH2D* th2d_reco_calo_nhits3;
+  TH2D* th2d_reco_calo_nhits2;
+  TH2D* th2d_reco_calo_nhits1;
+
+  TH2D* th2d_reco_calo_pt1sigma;
+  TH2D* th2d_reco_calo_pt2sigma;
+  TH2D* th2d_reco_calo_pt3sigma;
+  TH2D* th2d_reco_calo_pt4sigma;
+  TH2D* th2d_reco_calo_pt5sigma;
+  TH2D* th2d_reco_calo_pt6sigma;
 
 
 
+  // --- new additional (eventual replacement?) histograms for purity study
+  TH2D* th2d_true_calo_nhits8;
+  TH2D* th2d_true_calo_nhits7;
+  TH2D* th2d_true_calo_nhits6;
+  TH2D* th2d_true_calo_nhits5;
+  TH2D* th2d_true_calo_nhits4;
+  TH2D* th2d_true_calo_nhits3;
+  TH2D* th2d_true_calo_nhits2;
+  TH2D* th2d_true_calo_nhits1;
+
+  TH2D* th2d_true_calo_pt1sigma;
+  TH2D* th2d_true_calo_pt2sigma;
+  TH2D* th2d_true_calo_pt3sigma;
+  TH2D* th2d_true_calo_pt4sigma;
+  TH2D* th2d_true_calo_pt5sigma;
+  TH2D* th2d_true_calo_pt6sigma;
 
 
-  TH2D* _recopt_quality;                      // quality distributions
-  TH2D* _truept_quality_particles_recoWithin4Percent;
-  TH2D* _recopt_quality_tracks_all;
-  TH2D* _recopt_quality_tracks_recoWithin4Percent;
-
-  TH1D* _dx_vertex;                           // vertex resolution
+  // vertex info hisograms
+  TH1D* _dx_vertex;
   TH1D* _dy_vertex;
   TH1D* _dz_vertex;
-
-  TH1D* th1d_true_nonembedded_electron_recopt;
-  TH1D* th1d_reco_nonembedded_electron_recopt;
-  TH1D* th1d_true_nonembedded_pion_recopt;
-  TH1D* th1d_reco_nonembedded_pion_recopt;
-
-  TH1D* th1d_true_embedded_electron_recopt;
-  TH1D* th1d_reco_embedded_electron_recopt;
-  TH1D* th1d_true_embedded_pion_recopt;
-  TH1D* th1d_reco_embedded_pion_recopt;
-
-  TH1D* th1d_true_all_electron_recopt;
-  TH1D* th1d_reco_all_electron_recopt;
-  TH1D* th1d_true_all_pion_recopt;
-  TH1D* th1d_reco_all_pion_recopt;
 
   TH1D* hmult;
   TH1D* hmult_vertex;
