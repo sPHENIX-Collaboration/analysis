@@ -43,8 +43,8 @@ private:
   /* calculate emission angle for single track and photon */
   double calculate_emission_angle( SvtxTrack_FastSim *track_j, PHG4Hit *hit_i );
 
-  /* fill 'fake' track map with truth info */
-  SvtxTrackMap* fill_truth_trackmap(PHG4TruthInfoContainer*, PHG4HitContainer*);
+//  /* fill 'fake' track map with truth info */
+//  SvtxTrackMap* fill_truth_trackmap(PHG4TruthInfoContainer*, PHG4HitContainer*);
 
   bool _verbose;
 

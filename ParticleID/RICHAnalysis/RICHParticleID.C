@@ -65,10 +65,6 @@ RICHParticleID::process_event(PHCompositeNode *topNode)
 {
   _ievent ++;
 
-  /* get truth info node */
-  PHG4TruthInfoContainer* truthinfo =
-    findNode::getClass<PHG4TruthInfoContainer>(topNode, "G4TruthInfo");
-
   /* Get all photon hits in RICH for this event */
   PHG4HitContainer* richhits =
     findNode::getClass<PHG4HitContainer>(topNode,_richhits_name);
@@ -76,15 +72,19 @@ RICHParticleID::process_event(PHCompositeNode *topNode)
   /* Get track collection with all tracks in this event */
   SvtxTrackMap* trackmap =
     findNode::getClass<SvtxTrackMap>(topNode,_trackmap_name);
-  ///* Check if trackmap found */
-  //if (!trackmap) {
-  //  cout << PHWHERE << "SvtxTrackMap node not found on node tree"
-  //       << endl;
-  //  return Fun4AllReturnCodes::ABORTEVENT;
-  //}
+  /* Check if trackmap found */
+  if (!trackmap) {
+    cout << PHWHERE << "SvtxTrackMap node not found on node tree"
+         << endl;
+    return Fun4AllReturnCodes::ABORTEVENT;
+  }
+
+  /* get truth info node */
+  //PHG4TruthInfoContainer* truthinfo =
+  //findNode::getClass<PHG4TruthInfoContainer>(topNode, "G4TruthInfo");
 
   /* Create fake SvtxTrackMap from Truth Info container */
-  trackmap = fill_truth_trackmap(truthinfo, richhits);
+  //trackmap = fill_truth_trackmap(truthinfo, richhits);
 
   /* Loop over tracks */
   for (SvtxTrackMap::ConstIter track_itr = trackmap->begin();
@@ -174,46 +174,46 @@ RICHParticleID::init_tree()
 }
 
 
-SvtxTrackMap*
-RICHParticleID::fill_truth_trackmap( PHG4TruthInfoContainer *truthinfo, PHG4HitContainer* richhits )
-{
-  SvtxTrackMap* trackmap = new SvtxTrackMap_v1();
-
-  vector< unsigned > v_id_used;
-
-  /* Loop over all G4Hits in container (i.e. RICH photons in event) */
-  PHG4HitContainer::ConstRange rich_hits_begin_end = richhits->getHits();
-  PHG4HitContainer::ConstIterator rich_hits_iter;
-
-  for (rich_hits_iter = rich_hits_begin_end.first; rich_hits_iter !=  rich_hits_begin_end.second; ++rich_hits_iter)
-    {
-      PHG4Hit *hit_i = rich_hits_iter->second;
-
-      /* Get matching truth particle */
-      PHG4Particle* particle = truthinfo->GetParticle( hit_i->get_trkid() );
-      PHG4Particle* parent = truthinfo->GetParticle( particle->get_parent_id() );
-      PHG4VtxPoint* vertex = truthinfo->GetVtx( parent->get_vtx_id() );
-
-      /* check that track has not been used yet in track container */
-      unsigned parent_id = parent->get_track_id();
-      if ( find( v_id_used.begin(), v_id_used.end(), parent_id ) != v_id_used.end())
-	continue;
-
-      /* create track object */
-      SvtxTrack_FastSim *track1 = new SvtxTrack_FastSim();
-
-      track1->set_x( vertex->get_x() );
-      track1->set_y( vertex->get_y() );
-      track1->set_z( vertex->get_z() );
-
-      track1->set_px( parent->get_px() );
-      track1->set_py( parent->get_py() );
-      track1->set_pz( parent->get_pz() );
-
-      trackmap->insert( track1 );
-
-      v_id_used.push_back( parent->get_track_id() );
-    }
-
-  return trackmap;
-}
+//SvtxTrackMap*
+//RICHParticleID::fill_truth_trackmap( PHG4TruthInfoContainer *truthinfo, PHG4HitContainer* richhits )
+//{
+//  SvtxTrackMap* trackmap = new SvtxTrackMap_v1();
+//
+//  vector< unsigned > v_id_used;
+//
+//  /* Loop over all G4Hits in container (i.e. RICH photons in event) */
+//  PHG4HitContainer::ConstRange rich_hits_begin_end = richhits->getHits();
+//  PHG4HitContainer::ConstIterator rich_hits_iter;
+//
+//  for (rich_hits_iter = rich_hits_begin_end.first; rich_hits_iter !=  rich_hits_begin_end.second; ++rich_hits_iter)
+//    {
+//      PHG4Hit *hit_i = rich_hits_iter->second;
+//
+//      /* Get matching truth particle */
+//      PHG4Particle* particle = truthinfo->GetParticle( hit_i->get_trkid() );
+//      PHG4Particle* parent = truthinfo->GetParticle( particle->get_parent_id() );
+//      PHG4VtxPoint* vertex = truthinfo->GetVtx( parent->get_vtx_id() );
+//
+//      /* check that track has not been used yet in track container */
+//      unsigned parent_id = parent->get_track_id();
+//      if ( find( v_id_used.begin(), v_id_used.end(), parent_id ) != v_id_used.end())
+//	continue;
+//
+//      /* create track object */
+//      SvtxTrack_FastSim *track1 = new SvtxTrack_FastSim();
+//
+//      track1->set_x( vertex->get_x() );
+//      track1->set_y( vertex->get_y() );
+//      track1->set_z( vertex->get_z() );
+//
+//      track1->set_px( parent->get_px() );
+//      track1->set_py( parent->get_py() );
+//      track1->set_pz( parent->get_pz() );
+//
+//      trackmap->insert( track1 );
+//
+//      v_id_used.push_back( parent->get_track_id() );
+//    }
+//
+//  return trackmap;
+//}
