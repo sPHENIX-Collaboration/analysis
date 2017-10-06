@@ -46,6 +46,8 @@ private:
 
   /* output tree and variables */
   TTree* _tree_rich;
+  TTree* _tree_plane;
+  TTree* _tree_irt;
 
   double _hit_x0;
   double _hit_y0;
@@ -54,6 +56,10 @@ private:
   double _hit_lx0;
   double _hit_ly0;
   double _hit_lz0;
+
+  double _emi_x;
+  double _emi_y;
+  double _emi_z;
 
   double _track_px;
   double _track_py;
@@ -75,6 +81,16 @@ private:
   int _trackid;
   int _mtrackid;
   int _otrackid;
+
+  double phitx;
+  double phity;
+  double phitz;
+  double ppx;
+  double ppy;
+  double ppz;
+  double pp;
+  int pid;
+  int vtx;
 
 };
 
