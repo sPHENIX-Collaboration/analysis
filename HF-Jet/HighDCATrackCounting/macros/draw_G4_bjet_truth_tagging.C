@@ -48,6 +48,7 @@ void draw_G4_bjet_truth_tagging(
 		const int min_MAPS_hits = 2
 		) { 
 
+	const double _vertex_z_cut = 10;//cm
 
 	const double _plot_min_bjet_eff_cut = 0.05;
 
@@ -62,7 +63,7 @@ void draw_G4_bjet_truth_tagging(
 
 	TFile *fout = TFile::Open("dca_eval.root","recreate");
 	fout->cd();
-	TTree *T = new TTree("T","eval tree");
+	TTree *Tout = new TTree("Tout","eval tree");
 	int _jet_parton_flavor;
 	int _n_tracks;
 	float _track_eta[_MAX_N_TRACKS_];
@@ -76,19 +77,19 @@ void draw_G4_bjet_truth_tagging(
 	float _second_highest_dca2d_error;
 	float _highest_S;
 	float _second_highest_S;
-	T->Branch("jet_parton_flavor",&_jet_parton_flavor,"jet_parton_flavor/I");
-	T->Branch("n_tracks",&_n_tracks,"n_tracks/I");
-	T->Branch("track_eta",_track_eta,"track_eta[n_tracks]/F");
-	T->Branch("track_pt",_track_pt,"track_pt[n_tracks]/F");
-	T->Branch("chi2_ndf",_chi2_ndf,"chi2_ndf[n_tracks]/F");
-	T->Branch("dca2d",_dca2d,"dca2d[n_tracks]/F");
-	T->Branch("dca2d_error",_dca2d_error,"dca2d_error[n_tracks]/F");
-	T->Branch("highest_dca2d",&_highest_dca2d,"highest_dca2d/F");
-	T->Branch("highest_dca2d_error",&_highest_dca2d_error,"highest_dca2d_error/F");
-	T->Branch("second_highest_dca2d",&_second_highest_dca2d,"second_highest_dca2d/F");
-	T->Branch("second_highest_dca2d_error",&_second_highest_dca2d_error,"second_highest_dca2d_error/F");
-	T->Branch("highest_S",&_highest_S,"highest_S/F");
-	T->Branch("second_highest_S",&_second_highest_S,"second_highest_S/F");
+	Tout->Branch("jet_parton_flavor",&_jet_parton_flavor,"jet_parton_flavor/I");
+	Tout->Branch("n_tracks",&_n_tracks,"n_tracks/I");
+	Tout->Branch("track_eta",_track_eta,"track_eta[n_tracks]/F");
+	Tout->Branch("track_pt",_track_pt,"track_pt[n_tracks]/F");
+	Tout->Branch("chi2_ndf",_chi2_ndf,"chi2_ndf[n_tracks]/F");
+	Tout->Branch("dca2d",_dca2d,"dca2d[n_tracks]/F");
+	Tout->Branch("dca2d_error",_dca2d_error,"dca2d_error[n_tracks]/F");
+	Tout->Branch("highest_dca2d",&_highest_dca2d,"highest_dca2d/F");
+	Tout->Branch("highest_dca2d_error",&_highest_dca2d_error,"highest_dca2d_error/F");
+	Tout->Branch("second_highest_dca2d",&_second_highest_dca2d,"second_highest_dca2d/F");
+	Tout->Branch("second_highest_dca2d_error",&_second_highest_dca2d_error,"second_highest_dca2d_error/F");
+	Tout->Branch("highest_S",&_highest_S,"highest_S/F");
+	Tout->Branch("second_highest_S",&_second_highest_S,"second_highest_S/F");
 
 	TH1D *h1_jet_pt[3];
 
@@ -209,6 +210,11 @@ void draw_G4_bjet_truth_tagging(
 	TH2D *h2_track_pt_dcaerror = new TH2D("h2_track_pt_dcaerror","",30,0,30,100,0,0.01);
 	TH2D *h2_track_dca_dcaerror = new TH2D("h2_track_dca_dcaerror","",100,-0.2,0.2,100,0,0.01);
 
+	int truth_vertex_n;
+	float truth_vertex_x[10];
+	float truth_vertex_y[10];
+	float truth_vertex_z[10];
+
 	int truthjet_n;
 	int truthjet_parton_flavor[10];
 	int truthjet_hadron_flavor[10];
@@ -221,8 +227,10 @@ void draw_G4_bjet_truth_tagging(
 	float particle_pt[_MAX_N_PARTICLES_];
 	float particle_eta[_MAX_N_PARTICLES_];
 	float particle_phi[_MAX_N_PARTICLES_];
-	float particle_dca[_MAX_N_PARTICLES_];
 	int particle_pid[_MAX_N_PARTICLES_];
+
+
+	float particle_dca_xy[_MAX_N_PARTICLES_];
 
 	int track_n;
 	float track_pt[_MAX_N_TRACKS_];
@@ -252,85 +260,109 @@ void draw_G4_bjet_truth_tagging(
 	float track_chisq[_MAX_N_TRACKS_];
 	int track_ndf[_MAX_N_TRACKS_];
 
-	bool track_best_primary[_MAX_N_TRACKS_];
 	int track_nmaps[_MAX_N_TRACKS_];
 	unsigned int track_nclusters[_MAX_N_TRACKS_];
 	unsigned int track_nclusters_by_layer[_MAX_N_TRACKS_];
+
+
 	unsigned int track_best_nclusters[_MAX_N_TRACKS_];
 	unsigned int track_best_nclusters_by_layer[_MAX_N_TRACKS_];
+
 	unsigned int track_best_embed[_MAX_N_TRACKS_];
+	bool track_best_primary[_MAX_N_TRACKS_];
 	int track_best_pid[_MAX_N_TRACKS_];
-	float track_best_pt[_MAX_N_TRACKS_];
-	float track_best_decay_length[_MAX_N_TRACKS_];
 	int track_best_parent_pid[_MAX_N_TRACKS_];
 
+	float track_best_pt[_MAX_N_TRACKS_];
+	float track_best_vertex_x[_MAX_N_TRACKS_];
+	float track_best_vertex_y[_MAX_N_TRACKS_];
+	float track_best_vertex_z[_MAX_N_TRACKS_];
+	float track_best_dca_xy[_MAX_N_TRACKS_];
+	float track_best_dca_z[_MAX_N_TRACKS_];
+
 	TFile *f = TFile::Open(Form("%s",input),"READ");
-	TTree *ttree = (TTree*) f->Get("ttree");
+	TTree *Tin = (TTree*) f->Get("T");
 
-	ttree->SetBranchAddress("truthjet_n",   &truthjet_n );
-	ttree->SetBranchAddress("truthjet_parton_flavor",   truthjet_parton_flavor );
-	ttree->SetBranchAddress("truthjet_hadron_flavor",   truthjet_hadron_flavor );
-	ttree->SetBranchAddress("truthjet_pt",   truthjet_pt );
-	ttree->SetBranchAddress("truthjet_eta",  truthjet_eta );
-	ttree->SetBranchAddress("truthjet_phi",  truthjet_phi );
+	Tin->SetBranchAddress("truth_vertex_n",   &truth_vertex_n);
+	Tin->SetBranchAddress("truth_vertex_x",   truth_vertex_x );
+	Tin->SetBranchAddress("truth_vertex_y",   truth_vertex_y );
+	Tin->SetBranchAddress("truth_vertex_z",   truth_vertex_z );
 
-	ttree->SetBranchAddress("particle_n",   &particle_n );
-	ttree->SetBranchAddress("particle_embed",   particle_embed );
-	ttree->SetBranchAddress("particle_pt",   particle_pt );
-	ttree->SetBranchAddress("particle_eta",  particle_eta );
-	ttree->SetBranchAddress("particle_phi",  particle_phi );
-	ttree->SetBranchAddress("particle_dca",  particle_dca );
-	ttree->SetBranchAddress("particle_pid",  particle_pid );
+	Tin->SetBranchAddress("truthjet_n",   &truthjet_n );
+	Tin->SetBranchAddress("truthjet_parton_flavor",   truthjet_parton_flavor );
+	Tin->SetBranchAddress("truthjet_hadron_flavor",   truthjet_hadron_flavor );
+	Tin->SetBranchAddress("truthjet_pt",   truthjet_pt );
+	Tin->SetBranchAddress("truthjet_eta",  truthjet_eta );
+	Tin->SetBranchAddress("truthjet_phi",  truthjet_phi );
 
-	ttree->SetBranchAddress("track_n",   &track_n );
-	ttree->SetBranchAddress("track_pt",   track_pt );
-	ttree->SetBranchAddress("track_eta",  track_eta );
-	ttree->SetBranchAddress("track_phi",  track_phi );
-	ttree->SetBranchAddress("track_dca2d",  track_dca2d );
-	ttree->SetBranchAddress("track_dca2d_error",  track_dca2d_error );
+	Tin->SetBranchAddress("particle_n",   &particle_n );
+	Tin->SetBranchAddress("particle_embed",   particle_embed );
+	Tin->SetBranchAddress("particle_pt",   particle_pt );
+	Tin->SetBranchAddress("particle_eta",  particle_eta );
+	Tin->SetBranchAddress("particle_phi",  particle_phi );
+	Tin->SetBranchAddress("particle_pid",  particle_pid );
 
-	ttree->SetBranchAddress("track_pca_phi",  track_pca_phi );
-	ttree->SetBranchAddress("track_pca_x",  track_pca_x );
-	ttree->SetBranchAddress("track_pca_y",  track_pca_y );
-	ttree->SetBranchAddress("track_pca_z",  track_pca_z );
+	Tin->SetBranchAddress("particle_dca_xy",  particle_dca_xy );
 
-	ttree->SetBranchAddress("track_dca2d_calc",  track_dca2d_calc );
-	ttree->SetBranchAddress("track_dca2d_calc_truth",  track_dca2d_calc_truth );
-	ttree->SetBranchAddress("track_dca3d_calc",  track_dca3d_calc );
-	ttree->SetBranchAddress("track_dca3d_xy",  track_dca3d_xy );
-	ttree->SetBranchAddress("track_dca3d_xy_error",  track_dca3d_xy_error );
-	ttree->SetBranchAddress("track_dca3d_z",  track_dca3d_z );
-	ttree->SetBranchAddress("track_dca3d_z_error",  track_dca3d_z_error );
-	ttree->SetBranchAddress("track_dca3d_calc_truth",  track_dca3d_calc_truth );
+	Tin->SetBranchAddress("track_n",   &track_n );
+	Tin->SetBranchAddress("track_pt",   track_pt );
+	Tin->SetBranchAddress("track_eta",  track_eta );
+	Tin->SetBranchAddress("track_phi",  track_phi );
+	Tin->SetBranchAddress("track_dca2d",  track_dca2d );
+	Tin->SetBranchAddress("track_dca2d_error",  track_dca2d_error );
 
-	ttree->SetBranchAddress("track_quality",   track_quality );
-	ttree->SetBranchAddress("track_chisq",   track_chisq );
-	ttree->SetBranchAddress("track_ndf",   track_ndf );
+	Tin->SetBranchAddress("track_pca_phi",  track_pca_phi );
+	Tin->SetBranchAddress("track_pca_x",  track_pca_x );
+	Tin->SetBranchAddress("track_pca_y",  track_pca_y );
+	Tin->SetBranchAddress("track_pca_z",  track_pca_z );
 
-	ttree->SetBranchAddress("track_best_primary",  track_best_primary );
-	ttree->SetBranchAddress("track_nmaps", track_nmaps);
-	ttree->SetBranchAddress("track_nclusters",  track_nclusters );
-	ttree->SetBranchAddress("track_nclusters_by_layer",  track_nclusters_by_layer );
-	ttree->SetBranchAddress("track_best_nclusters",  track_best_nclusters );
-	ttree->SetBranchAddress("track_best_nclusters_by_layer",  track_best_nclusters_by_layer );
-	ttree->SetBranchAddress("track_best_embed",  track_best_embed );
-	ttree->SetBranchAddress("track_best_pid",  track_best_pid );
-	ttree->SetBranchAddress("track_best_pt",  track_best_pt );
-	ttree->SetBranchAddress("track_best_decay_length",  track_best_decay_length );
-	ttree->SetBranchAddress("track_best_parent_pid", track_best_parent_pid );
+	Tin->SetBranchAddress("track_dca2d_calc",  track_dca2d_calc );
+	Tin->SetBranchAddress("track_dca2d_calc_truth",  track_dca2d_calc_truth );
+	Tin->SetBranchAddress("track_dca3d_calc",  track_dca3d_calc );
+	Tin->SetBranchAddress("track_dca3d_xy",  track_dca3d_xy );
+	Tin->SetBranchAddress("track_dca3d_xy_error",  track_dca3d_xy_error );
+	Tin->SetBranchAddress("track_dca3d_z",  track_dca3d_z );
+	Tin->SetBranchAddress("track_dca3d_z_error",  track_dca3d_z_error );
+	Tin->SetBranchAddress("track_dca3d_calc_truth",  track_dca3d_calc_truth );
+
+	Tin->SetBranchAddress("track_quality",   track_quality );
+	Tin->SetBranchAddress("track_chisq",   track_chisq );
+	Tin->SetBranchAddress("track_ndf",   track_ndf );
+
+	Tin->SetBranchAddress("track_best_primary",  track_best_primary );
+	Tin->SetBranchAddress("track_nmaps", track_nmaps);
+	Tin->SetBranchAddress("track_nclusters",  track_nclusters );
+	Tin->SetBranchAddress("track_nclusters_by_layer",  track_nclusters_by_layer );
+	Tin->SetBranchAddress("track_best_nclusters",  track_best_nclusters );
+	Tin->SetBranchAddress("track_best_nclusters_by_layer",  track_best_nclusters_by_layer );
+	Tin->SetBranchAddress("track_best_embed",  track_best_embed );
+	Tin->SetBranchAddress("track_best_pid",  track_best_pid );
+	Tin->SetBranchAddress("track_best_parent_pid", track_best_parent_pid );
+
+	Tin->SetBranchAddress("track_best_pt",  track_best_pt );
+	Tin->SetBranchAddress("track_best_vertex_x",  track_best_vertex_x );
+	Tin->SetBranchAddress("track_best_vertex_y",  track_best_vertex_y );
+	Tin->SetBranchAddress("track_best_vertex_z",  track_best_vertex_z );
+
+	Tin->SetBranchAddress("track_best_dca_xy",  track_best_dca_xy );
+	Tin->SetBranchAddress("track_best_dca_z",  track_best_dca_z );
 
 	//int rem = 0;
 	//int rems[6] = {0,0,0,0,0,0};
 
 
-	int nentries = ttree->GetEntries();
+	int nentries = Tin->GetEntries();
 	//nentries = TMath::Min(1000,nentries);
 
 	for (int e = 0 ; e < nentries; e++) {
 
 		if(e%1000 == 0) cout<<"Processing: "<<100.*e/nentries <<"\% \n";
 
-		ttree->GetEntry( e );
+		Tin->GetEntry( e );
+
+		if(!(truth_vertex_n >= 0)) continue;
+
+		if(!(abs(truth_vertex_z[0])<_vertex_z_cut)) continue;
 
 		for (int j = 0; j < truthjet_n; j++) {
 
@@ -371,18 +403,18 @@ void draw_G4_bjet_truth_tagging(
 					h1_particle_pt_embed_0_10GeV_pion[iflavor]->Fill( particle_pt[ p ] );
 
 				h1_particle_pt[iflavor]->Fill( particle_pt[ p ] );
-				h1_particle_dca[iflavor]->Fill( particle_dca[ p ] );
-				if (particle_dca[ p ] < 0.000001)
+				h1_particle_dca[iflavor]->Fill( particle_dca_xy[ p ] );
+				if (particle_dca_xy[ p ] < 0.000001)
 					h1_particle_pt_dca0[iflavor]->Fill( particle_pt[ p ] );
 				else
 					h1_particle_pt_dca1[iflavor]->Fill( particle_pt[ p ] );
-				//h1_particle_dca[iflavor]->Fill( particle_dca[ p ] );
+				//h1_particle_dca[iflavor]->Fill( particle_dca_xy[ p ] );
 
 				// 
 				if (particle_pid[ p ] == 211 || particle_pid[ p ] == -211 ) {
 					// pi+-
 					h1_particle_pt_species[0][iflavor]->Fill( particle_pt[ p ] );
-					h1_particle_dca_species[0][iflavor]->Fill( particle_dca[ p ] );
+					h1_particle_dca_species[0][iflavor]->Fill( particle_dca_xy[ p ] );
 
 					//h1_particle_dcareco_pri_id0->Fill( particle_dca2d[ p ] );
 					//h1_particle_Sreco_pri_id0->Fill( particle_dca2d[ p ] / particle_dca2d_error[ p ] );
@@ -390,7 +422,7 @@ void draw_G4_bjet_truth_tagging(
 				else if (particle_pid[ p ] == 321 || particle_pid[ p ] == -321 ) {
 					// k+-
 					h1_particle_pt_species[1][iflavor]->Fill( particle_pt[ p ] );
-					h1_particle_dca_species[1][iflavor]->Fill( particle_dca[ p ] );
+					h1_particle_dca_species[1][iflavor]->Fill( particle_dca_xy[ p ] );
 
 					//h1_particle_dcareco_pri_id1->Fill( particle_dca2d[ p ] );
 					//h1_particle_Sreco_pri_id1->Fill( particle_dca2d[ p ] / particle_dca2d_error[ p ] );
@@ -398,7 +430,7 @@ void draw_G4_bjet_truth_tagging(
 				else if (particle_pid[ p ] == 2212 || particle_pid[ p ] == -2212 ) {
 					// p+-
 					h1_particle_pt_species[2][iflavor]->Fill( particle_pt[ p ] );
-					h1_particle_dca_species[2][iflavor]->Fill( particle_dca[ p ] );
+					h1_particle_dca_species[2][iflavor]->Fill( particle_dca_xy[ p ] );
 
 					//h1_particle_dcareco_pri_id2->Fill( particle_dca2d[ p ] );
 					//h1_particle_Sreco_pri_id2->Fill( particle_dca2d[ p ] / particle_dca2d_error[ p ] );
@@ -406,7 +438,7 @@ void draw_G4_bjet_truth_tagging(
 				else if (particle_pid[ p ] == 11 || particle_pid[ p ] == -11 ) {
 					// e+-
 					h1_particle_pt_species[3][iflavor]->Fill( particle_pt[ p ] );
-					h1_particle_dca_species[3][iflavor]->Fill( particle_dca[ p ] );
+					h1_particle_dca_species[3][iflavor]->Fill( particle_dca_xy[ p ] );
 
 					//h1_particle_dcareco_pri_id3->Fill( particle_dca2d[ p ] );
 					//h1_particle_Sreco_pri_id3->Fill( particle_dca2d[ p ] / particle_dca2d_error[ p ] );
@@ -414,7 +446,7 @@ void draw_G4_bjet_truth_tagging(
 				else if (particle_pid[ p ] == 13 || particle_pid[ p ] == -13 ) {
 					// mu+-
 					h1_particle_pt_species[4][iflavor]->Fill( particle_pt[ p ] );
-					h1_particle_dca_species[4][iflavor]->Fill( particle_dca[ p ] );
+					h1_particle_dca_species[4][iflavor]->Fill( particle_dca_xy[ p ] );
 
 					//h1_particle_dcareco_pri_id4->Fill( particle_dca2d[ p ] );
 					//h1_particle_Sreco_pri_id4->Fill( particle_dca2d[ p ] / particle_dca2d_error[ p ] );
@@ -452,7 +484,10 @@ void draw_G4_bjet_truth_tagging(
 				float dR = deltaR( truthjet_eta[ j ], track_eta[ itrk ], truthjet_phi[ j ], track_phi[ itrk ] );
 				if (dR > 0.4) continue;
 
-
+				/**
+				 * @Different DCA method
+				 * @{
+				 */
 				track_dca2d[ itrk ] = fabs( track_dca2d[ itrk ] );
 				if(dca_method == 1) track_dca2d[ itrk ] = fabs( track_dca2d_calc[ itrk ] ); 
 				if(dca_method == 2) track_dca2d[ itrk ] = fabs( track_dca3d_calc[ itrk ] ); 
@@ -486,11 +521,15 @@ void draw_G4_bjet_truth_tagging(
 						pow(track_dca3d_z_error[ itrk ],2)
 						;
 				}
+				//@}
 
 
 				if (! (track_dca2d[ itrk ] < max_dca_cut)) continue; // yuhw
 
-				// set sign WRT jet
+				/**
+				 * @Set sign WRT jet
+				 * @{
+				 */
 				if(
 						dca_method  == 0 ||
 						dca_method  == 1 ||
@@ -524,6 +563,7 @@ void draw_G4_bjet_truth_tagging(
 						track_dca2d[ itrk ] = -1 * track_dca2d[ itrk ];	
 					}
 				}
+				// @}
 
 				if (iflavor == 2) {
 					h2_track_pt_dcaerror->Fill(  track_pt[ itrk ],  track_dca2d_error[ itrk ] );
@@ -601,7 +641,7 @@ void draw_G4_bjet_truth_tagging(
 			_second_highest_dca2d = second_highest_dca;
 			_highest_S = highest_S;
 			_second_highest_S = second_highest_S;
-			T->Fill();
+			Tout->Fill();
 
 			h1_jet_ntrk[iflavor]->Fill( ntrk );
 			h1_jet_ntrk1[iflavor]->Fill( ntrk1 );
@@ -1538,5 +1578,5 @@ void draw_G4_bjet_truth_tagging(
 	tc->Print("plot/h1_jet_third_highest_S_zoom.pdf");
 
 	fout->cd();
-	T->Write();
+	Tout->Write();
 }

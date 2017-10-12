@@ -72,6 +72,11 @@ private:
 
 	int _b_event;
 
+	int _b_truth_vertex_n;
+	float _b_truth_vertex_x[10];
+	float _b_truth_vertex_y[10];
+	float _b_truth_vertex_z[10];
+
 	int _b_truthjet_n;
 	int _b_truthjet_parton_flavor[10];
 	int _b_truthjet_hadron_flavor[10];
@@ -85,7 +90,12 @@ private:
 	float _b_particle_phi[1000];
 	int _b_particle_pid[1000];
 	unsigned int _b_particle_embed[1000];
-	float _b_particle_dca[1000];
+
+	float _b_particle_vertex_x[1000];
+	float _b_particle_vertex_y[1000];
+	float _b_particle_vertex_z[1000];
+	float _b_particle_dca_xy[1000];
+	float _b_particle_dca_z[1000];
 
 	int _b_track_n;
 	float _b_track_pt[1000];
@@ -132,13 +142,11 @@ private:
 	int _b_track_best_out[1000];
 	int _b_track_best_parent_pid[1000];
 
-	float _b_track_best_decay_length[1000];
-	float _b_track_best_dca2d[1000];
-
-	//float _b_track_particle_pt[100];
-	//float _b_track_particle_eta[100];
-	//float _b_track_particle_phi[100];
-	//int _b_track_particle_pid[100];
+	float _b_track_best_vertex_x[1000];
+	float _b_track_best_vertex_y[1000];
+	float _b_track_best_vertex_z[1000];
+	float _b_track_best_dca_xy[1000];
+	float _b_track_best_dca_z[1000];
 
 	std::string _foutname;
 
