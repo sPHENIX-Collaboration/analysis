@@ -14,13 +14,15 @@
 #include <TDatabasePDG.h>
 
 #include <phhepmc/PHHepMCGenEvent.h>
+#include <phhepmc/PHHepMCGenEventMap.h>
 #include <HepMC/GenEvent.h>
 #include <HepMC/GenVertex.h>
 
 using namespace std;
 
 Leptoquarks::Leptoquarks(std::string filename) :
-  SubsysReco("Leptoquarks" )
+  SubsysReco("Leptoquarks" ),
+  _embedding_id(1)
 {
   _foutname = filename;
   _ebeam_E = 10;
@@ -44,8 +46,22 @@ Leptoquarks::process_event(PHCompositeNode *topNode)
   cout << endl;
   cout << "Processing event " << _ievent << endl;
 
-  PHHepMCGenEvent *genevt = findNode::getClass<PHHepMCGenEvent>(topNode,
-                                                                "PHHepMCGenEvent");
+  PHHepMCGenEventMap * geneventmap = findNode::getClass<PHHepMCGenEventMap>(topNode, "PHHepMCGenEventMap");
+  if (!geneventmap)
+  {
+    std::cout <<PHWHERE<<" - Fatal error - missing node PHHepMCGenEventMap"<<std::endl;
+    return Fun4AllReturnCodes::ABORTRUN;
+  }
+
+  PHHepMCGenEvent *genevt = geneventmap->get(_embedding_id);
+  if (!genevt)
+  {
+    std::cout <<PHWHERE<<" - Fatal error - node PHHepMCGenEventMap missing subevent with embedding ID "<<_embedding_id;
+    std::cout <<". Print PHHepMCGenEventMap:";
+    geneventmap->identify();
+    return Fun4AllReturnCodes::ABORTRUN;
+  }
+
   HepMC::GenEvent* theEvent = genevt->getEvent();
 
   if ( !theEvent )
