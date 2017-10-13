@@ -79,6 +79,9 @@ RICHParticleID::process_event(PHCompositeNode *topNode)
     return Fun4AllReturnCodes::ABORTEVENT;
   }
 
+  cout << "Track map size: " << trackmap->size() << endl;
+  cout << "RICH hits size: " << richhits->size() << endl;
+
   /* get truth info node */
   //PHG4TruthInfoContainer* truthinfo =
   //findNode::getClass<PHG4TruthInfoContainer>(topNode, "G4TruthInfo");
@@ -121,10 +124,26 @@ RICHParticleID::process_event(PHCompositeNode *topNode)
 
 double RICHParticleID::calculate_emission_angle( SvtxTrack_FastSim *track_j, PHG4Hit *hit_i )
 {
+
+  double momv[3] = {0.,0.,0.};
+  double m_emi[3] = {0.,0.,0.};
+
+  double mpx = track_j->get_px();
+  double mpy = track_j->get_py();
+  double mpz = track_j->get_pz();
+  
+  momv[0] = mpx/(mpx*mpx + mpy*mpy + mpz*mpz);
+  momv[1] = mpy/(mpx*mpx + mpy*mpy + mpz*mpz);
+  momv[2] = mpz/(mpx*mpx + mpy*mpy + mpz*mpz); 
+
+  m_emi[0] = (220/momv[2])*momv[0]; // mean emission point
+  m_emi[1] = (220/momv[2])*momv[1];
+  m_emi[2] = (220/momv[2])*momv[2];
+
   /* Input parameters for indirect ray tracing algorithm */
-  double Ex = track_j->get_x() + track_j->get_px();
-  double Ey = track_j->get_x() + track_j->get_py();
-  double Ez = track_j->get_x() + track_j->get_pz();
+  double Ex = m_emi[0];
+  double Ey = m_emi[1];
+  double Ez = m_emi[2];
   double Dx = hit_i->get_x(0);
   double Dy = hit_i->get_y(0);
   double Dz = hit_i->get_z(0);
