@@ -133,7 +133,6 @@ RICHParticleID::process_event(PHCompositeNode *topNode)
 
 double RICHParticleID::calculate_emission_angle( double m_emi[3], PHG4Hit *hit_i )
 {
-
   /* Input parameters for indirect ray tracing algorithm */
   double Ex = m_emi[0];
   double Ey = m_emi[1];
