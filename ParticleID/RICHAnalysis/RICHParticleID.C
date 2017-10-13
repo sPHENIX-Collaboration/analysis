@@ -21,6 +21,7 @@
 #include <TTree.h>
 #include <TFile.h>
 #include <TString.h>
+#include <TMath.h>
 
 // other C++ includes
 #include <cassert>
@@ -140,6 +141,8 @@ double RICHParticleID::calculate_emission_angle( SvtxTrack_FastSim *track_j, PHG
   m_emi[1] = (220/momv[2])*momv[1];
   m_emi[2] = (220/momv[2])*momv[2];
 
+  int sec = hit_i->get_detid();
+
   /* Input parameters for indirect ray tracing algorithm */
   double Ex = m_emi[0];
   double Ey = m_emi[1];
@@ -147,12 +150,12 @@ double RICHParticleID::calculate_emission_angle( SvtxTrack_FastSim *track_j, PHG
   double Dx = hit_i->get_x(0);
   double Dy = hit_i->get_y(0);
   double Dz = hit_i->get_z(0);
-  double vx = track_j->get_x();
-  double vy = track_j->get_y();
-  double vz = track_j->get_z();
+  double vx = -18.5*TMath::Sin(sec*TMath::Pi()/4); // mirror center of each octant
+  double vy = 18.5*TMath::Cos(sec*TMath::Pi()/4);
+  double vz = 75;
   int select_radiator=0;
 
-  /* Call algorithm to determine eimission angle of photon i w.r.t. track j */
+  /* Call algorithm to determine emission angle of photon i w.r.t. track j */
   float theta_c = _analyzer->ind_ray(Ex, Ey, Ez, Dx, Dy, Dz, vx, vy, vz, select_radiator); //Indirect Ray Tracing
 
   return theta_c;
