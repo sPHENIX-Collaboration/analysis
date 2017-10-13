@@ -34,14 +34,18 @@ public:
 
 private:
 
-  /* reset all output tree variables */
+  /** reset all output tree variables */
   void reset_tree_vars();
 
-  /* initialize output tree */
+  /** initialize output tree */
   int init_tree();
 
-  /* calculate emission angle for single track and photon */
-  double calculate_emission_angle( SvtxTrack_FastSim *track_j, PHG4Hit *hit_i );
+  /** calculate emission angle for single track and photon */
+  double calculate_emission_angle( double m_emi[3], PHG4Hit *hit_i );
+
+  /** get position from track state */
+  bool get_position_from_track_state(  SvtxTrack_FastSim * track, std::string statename, double arr_pos[3] );
+
 
 //  /* fill 'fake' track map with truth info */
 //  SvtxTrackMap* fill_truth_trackmap(PHG4TruthInfoContainer*, PHG4HitContainer*);

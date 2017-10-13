@@ -16,6 +16,7 @@
 
 #include <g4hough/SvtxTrackMap_v1.h>
 #include <g4hough/SvtxTrack_FastSim.h>
+#include <g4hough/SvtxTrackState.h>
 
 // ROOT includes
 #include <TTree.h>
@@ -95,6 +96,13 @@ RICHParticleID::process_event(PHCompositeNode *topNode)
 
     SvtxTrack_FastSim* track_j = dynamic_cast<SvtxTrack_FastSim*>(track_itr->second);
 
+    /* Get mean emission point from track in RICH */
+    double m_emi[3] = {0.,0.,0.};
+
+    /* 'Continue' with next track if RICH not found in state list for this track */
+    if ( ! get_position_from_track_state( track_j, "RICH", m_emi ) )
+      continue;
+
     /* Loop over all G4Hits in container (i.e. RICH photons in event) */
     PHG4HitContainer::ConstRange rich_hits_begin_end = richhits->getHits();
     PHG4HitContainer::ConstIterator rich_hits_iter;
@@ -103,7 +111,7 @@ RICHParticleID::process_event(PHCompositeNode *topNode)
       {
         PHG4Hit *hit_i = rich_hits_iter->second;
 
-        float theta_c = calculate_emission_angle( track_j, hit_i );
+        float theta_c = calculate_emission_angle( m_emi, hit_i );
 
         /* Set reconstructed emission angle for output tree */
         _theta_reco = theta_c;
@@ -122,24 +130,8 @@ RICHParticleID::process_event(PHCompositeNode *topNode)
 }
 
 
-double RICHParticleID::calculate_emission_angle( SvtxTrack_FastSim *track_j, PHG4Hit *hit_i )
+double RICHParticleID::calculate_emission_angle( double m_emi[3], PHG4Hit *hit_i )
 {
-
-  double momv[3] = {0.,0.,0.};
-  double m_emi[3] = {0.,0.,0.};
-
-  double mpx = track_j->get_px();
-  double mpy = track_j->get_py();
-  double mpz = track_j->get_pz();
-  
-  momv[0] = mpx/(mpx*mpx + mpy*mpy + mpz*mpz);
-  momv[1] = mpy/(mpx*mpx + mpy*mpy + mpz*mpz);
-  momv[2] = mpz/(mpx*mpx + mpy*mpy + mpz*mpz); 
-
-  m_emi[0] = (220/momv[2])*momv[0]; // mean emission point
-  m_emi[1] = (220/momv[2])*momv[1];
-  m_emi[2] = (220/momv[2])*momv[2];
-
   /* Input parameters for indirect ray tracing algorithm */
   double Ex = m_emi[0];
   double Ey = m_emi[1];
@@ -147,15 +139,40 @@ double RICHParticleID::calculate_emission_angle( SvtxTrack_FastSim *track_j, PHG
   double Dx = hit_i->get_x(0);
   double Dy = hit_i->get_y(0);
   double Dz = hit_i->get_z(0);
-  double vx = track_j->get_x();
-  double vy = track_j->get_y();
-  double vz = track_j->get_z();
+  double vx = 1;
+  double vy = 1;
+  double vz = 1;
   int select_radiator=0;
 
   /* Call algorithm to determine eimission angle of photon i w.r.t. track j */
   float theta_c = _analyzer->ind_ray(Ex, Ey, Ez, Dx, Dy, Dz, vx, vy, vz, select_radiator); //Indirect Ray Tracing
 
   return theta_c;
+}
+
+
+bool
+RICHParticleID::get_position_from_track_state(  SvtxTrack_FastSim * track, string statename, double arr_pos[3] )
+{
+  arr_pos[0] = 0;
+  arr_pos[1] = 0;
+  arr_pos[2] = 0;
+
+  /* Use the track states to project to the RICH */
+  for (SvtxTrack::ConstStateIter state_itr = track->begin_states();
+       state_itr != track->end_states(); state_itr++) {
+
+    SvtxTrackState *temp = dynamic_cast<SvtxTrackState*>(state_itr->second);
+
+    if( (temp->get_name()==statename) ){
+      arr_pos[0] = temp->get_x();
+      arr_pos[1] = temp->get_y();
+      arr_pos[2] = temp->get_z();
+      return true;
+    }
+  }
+
+  return false;
 }
 
 
@@ -216,7 +233,7 @@ RICHParticleID::init_tree()
 //      /* check that track has not been used yet in track container */
 //      unsigned parent_id = parent->get_track_id();
 //      if ( find( v_id_used.begin(), v_id_used.end(), parent_id ) != v_id_used.end())
-//	continue;
+//      continue;
 //
 //      /* create track object */
 //      SvtxTrack_FastSim *track1 = new SvtxTrack_FastSim();
