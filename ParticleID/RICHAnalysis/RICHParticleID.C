@@ -100,9 +100,11 @@ RICHParticleID::process_event(PHCompositeNode *topNode)
     /* Get mean emission point from track in RICH */
     double m_emi[3] = {0.,0.,0.};
 
+    get_position_from_track_state( track_j, "RICH", m_emi);
+
     /* 'Continue' with next track if RICH not found in state list for this track */
-    if ( ! get_position_from_track_state( track_j, "RICH", m_emi ) )
-      continue;
+    //if ( ! get_position_from_track_state( track_j, "RICH", m_emi ) )
+    //  continue;
 
     /* Loop over all G4Hits in container (i.e. RICH photons in event) */
     PHG4HitContainer::ConstRange rich_hits_begin_end = richhits->getHits();
@@ -149,6 +151,12 @@ double RICHParticleID::calculate_emission_angle( double m_emi[3], PHG4Hit *hit_i
 
   int select_radiator=0;
 
+  /* Troubleshoot */
+  cout << "Parameters into ind_ray():" << endl;
+  cout << "Ex, Ey, Ez = " << Ex << " " << Ey << " " << Ez << endl;
+  cout << "Dx, Dy, Dz = " << Dx << " " << Dy << " " << Dz << endl;
+  cout << "vx, vy, vz = " << vx << " " << vy << " " << vz << endl;
+
   /* Call algorithm to determine emission angle of photon i w.r.t. track j */
   float theta_c = _analyzer->ind_ray(Ex, Ey, Ez, Dx, Dy, Dz, vx, vy, vz, select_radiator); //Indirect Ray Tracing
 
@@ -176,6 +184,8 @@ RICHParticleID::get_position_from_track_state(  SvtxTrack_FastSim * track, strin
       return true;
     }
   }
+  
+  cout << "in position function, array = " << arr_pos[0] << " " << arr_pos[1] << " " << arr_pos[2] << endl;
 
   return false;
 }
