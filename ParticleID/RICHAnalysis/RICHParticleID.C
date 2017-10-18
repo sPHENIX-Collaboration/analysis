@@ -90,25 +90,27 @@ RICHParticleID::process_event(PHCompositeNode *topNode)
 
     SvtxTrack_FastSim* track_j = dynamic_cast<SvtxTrack_FastSim*>(track_itr->second);
 
+
     /* Get mean emission point from track in RICH */
     double m_emi[3] = {0.,0.,0.};
 
-    get_position_from_track_state( track_j, "RICH", m_emi);
+    /* 'Continue' with next track if RICH not found in state list for this track */
+    if ( ! get_position_from_track_state( track_j, "RICH", m_emi ) )
+      continue;
 
 
     /* Fill momv object which is the normalized momentum vector of the track in the RICH (i.e. its direction) */
     double momv[3] = {0.,0.,0.};
 
-    get_momentum_from_track_state( track_j, "RICH", momv );
+    /* 'Continue' with next track if RICH not found in state list for this track */
+    if ( ! get_momentum_from_track_state( track_j, "RICH", momv ) )
+      continue;
 
     double momv_norm = sqrt( momv[0]*momv[0] + momv[1]*momv[1] + momv[2]*momv[2] );
     momv[0] /= momv_norm;
     momv[1] /= momv_norm;
     momv[2] /= momv_norm;
 
-    /* 'Continue' with next track if RICH not found in state list for this track */
-    //if ( ! get_position_from_track_state( track_j, "RICH", m_emi ) )
-    //  continue;
 
     /* Loop over all G4Hits in container (i.e. RICH photons in event) */
     PHG4HitContainer::ConstRange rich_hits_begin_end = richhits->getHits();
