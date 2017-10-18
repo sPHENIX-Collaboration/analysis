@@ -41,11 +41,13 @@ private:
   int init_tree();
 
   /** calculate emission angle for single track and photon */
-  double calculate_emission_angle( double m_emi[3], PHG4Hit *hit_i );
+  double calculate_emission_angle( double m_emi[3], double momv[3], PHG4Hit *hit_i );
 
   /** get position from track state */
   bool get_position_from_track_state(  SvtxTrack_FastSim * track, std::string statename, double arr_pos[3] );
 
+  /** get track momentum from track state */
+  bool get_momentum_from_track_state(  SvtxTrack_FastSim * track, std::string statename, double arr_mom[3] );
 
 //  /* fill 'fake' track map with truth info */
 //  SvtxTrackMap* fill_truth_trackmap(PHG4TruthInfoContainer*, PHG4HitContainer*);

@@ -102,6 +102,18 @@ RICHParticleID::process_event(PHCompositeNode *topNode)
 
     get_position_from_track_state( track_j, "RICH", m_emi);
 
+
+    /* Fill momv object which is the normalized momentum vector of the track in the RICH (i.e. its direction) */
+    double momv[3] = {0.,0.,0.};
+
+    get_momentum_from_track_state( track_j, "RICH", momv );
+
+    double momv_norm = sqrt( momv[0]*momv[0] + momv[1]*momv[1] + momv[2]*momv[2] );
+    momv[0] /= momv_norm;
+    momv[1] /= momv_norm;
+    momv[2] /= momv_norm;
+
+
     /* 'Continue' with next track if RICH not found in state list for this track */
     //if ( ! get_position_from_track_state( track_j, "RICH", m_emi ) )
     //  continue;
@@ -114,7 +126,7 @@ RICHParticleID::process_event(PHCompositeNode *topNode)
       {
         PHG4Hit *hit_i = rich_hits_iter->second;
 
-        float theta_c = calculate_emission_angle( m_emi, hit_i );
+        float theta_c = calculate_emission_angle( m_emi, momv, hit_i );
 
         /* Set reconstructed emission angle for output tree */
         _theta_reco = theta_c;
@@ -133,7 +145,7 @@ RICHParticleID::process_event(PHCompositeNode *topNode)
 }
 
 
-double RICHParticleID::calculate_emission_angle( double m_emi[3], PHG4Hit *hit_i )
+double RICHParticleID::calculate_emission_angle( double m_emi[3], double momv[3], PHG4Hit *hit_i )
 {
   /* Input parameters for indirect ray tracing algorithm */
   double Ex = m_emi[0];
@@ -144,10 +156,14 @@ double RICHParticleID::calculate_emission_angle( double m_emi[3], PHG4Hit *hit_i
   double Dy = hit_i->get_y(0);
   double Dz = hit_i->get_z(0);
 
+  double vx = momv[0];
+  double vy = momv[1];
+  double vz = momv[2];
+
   int sec = hit_i->get_detid();
-  double vx = -18.5*TMath::Sin(sec*TMath::Pi()/4); // mirror center of each octant
-  double vy = 18.5*TMath::Cos(sec*TMath::Pi()/4);
-  double vz = 75;
+  double cx = -18.5*TMath::Sin(sec*TMath::Pi()/4); // mirror center of each octant
+  double cy = 18.5*TMath::Cos(sec*TMath::Pi()/4);
+  double cz = 75;
 
   int select_radiator=0;
 
@@ -156,6 +172,10 @@ double RICHParticleID::calculate_emission_angle( double m_emi[3], PHG4Hit *hit_i
   cout << "Ex, Ey, Ez = " << Ex << " " << Ey << " " << Ez << endl;
   cout << "Dx, Dy, Dz = " << Dx << " " << Dy << " " << Dz << endl;
   cout << "vx, vy, vz = " << vx << " " << vy << " " << vz << endl;
+
+  /* Set mirror parameters */
+  double R_mirror = 195; // cm
+  _analyzer->set_mirror(cx, cy, cz, R_mirror);
 
   /* Call algorithm to determine emission angle of photon i w.r.t. track j */
   float theta_c = _analyzer->ind_ray(Ex, Ey, Ez, Dx, Dy, Dz, vx, vy, vz, select_radiator); //Indirect Ray Tracing
@@ -186,6 +206,33 @@ RICHParticleID::get_position_from_track_state(  SvtxTrack_FastSim * track, strin
   }
   
   cout << "in position function, array = " << arr_pos[0] << " " << arr_pos[1] << " " << arr_pos[2] << endl;
+
+  return false;
+}
+
+
+bool
+RICHParticleID::get_momentum_from_track_state(  SvtxTrack_FastSim * track, string statename, double arr_mom[3] )
+{
+  arr_mom[0] = 0;
+  arr_mom[1] = 0;
+  arr_mom[2] = 0;
+
+  /* Use the track states to project to the RICH */
+  for (SvtxTrack::ConstStateIter state_itr = track->begin_states();
+       state_itr != track->end_states(); state_itr++) {
+
+    SvtxTrackState *temp = dynamic_cast<SvtxTrackState*>(state_itr->second);
+
+    if( (temp->get_name()==statename) ){
+      arr_mom[0] = temp->get_px();
+      arr_mom[1] = temp->get_py();
+      arr_mom[2] = temp->get_pz();
+      return true;
+    }
+  }
+
+  cout << "in momentum function, array = " << arr_mom[0] << " " << arr_mom[1] << " " << arr_mom[2] << endl;
 
   return false;
 }
