@@ -1,6 +1,6 @@
 {
 //=========Macro generated from canvas: Draw_HFJetTruth_CrossSection2v2_EPR0.7/Draw_HFJetTruth_CrossSection2v2_EPR0.7
-//=========  (Thu Aug 17 22:26:37 2017) by ROOT version5.34/36
+//=========  (Tue Oct 17 20:36:19 2017) by ROOT version5.34/36
    TCanvas *Draw_HFJetTruth_CrossSection2v2_EPR0.7 = new TCanvas("Draw_HFJetTruth_CrossSection2v2_EPR0.7", "Draw_HFJetTruth_CrossSection2v2_EPR0.7",23,135,700,600);
    gStyle->SetOptFit(1);
    gStyle->SetOptStat(0);
@@ -111,55 +111,7 @@
    gre->Draw("pe");
    
    gre = new TGraphErrors(4);
-   gre->SetName("ge_h_b_copyv2424238335");
-   gre->SetTitle("Graph");
-   gre->SetFillColor(1);
-
-   ci = TColor::GetColor("#003366");
-   gre->SetLineColor(ci);
-   gre->SetLineWidth(3);
-
-   ci = TColor::GetColor("#003366");
-   gre->SetMarkerColor(ci);
-   gre->SetMarkerStyle(21);
-   gre->SetMarkerSize(2);
-   gre->SetPoint(0,17.5,0);
-   gre->SetPointError(0,0,0.0054304);
-   gre->SetPoint(1,22.5,0);
-   gre->SetPointError(1,0,0.01305732);
-   gre->SetPoint(2,27.5,0);
-   gre->SetPointError(2,0,0.02983324);
-   gre->SetPoint(3,32.5,0);
-   gre->SetPointError(3,0,0.06566371);
-   
-   TH1F *Graph_ge_h_b_copyv24242383354 = new TH1F("Graph_ge_h_b_copyv24242383354","Graph",100,16,34);
-   Graph_ge_h_b_copyv24242383354->SetMinimum(-0.07879645);
-   Graph_ge_h_b_copyv24242383354->SetMaximum(0.07879645);
-   Graph_ge_h_b_copyv24242383354->SetDirectory(0);
-   Graph_ge_h_b_copyv24242383354->SetStats(0);
-   Graph_ge_h_b_copyv24242383354->SetLineWidth(2);
-   Graph_ge_h_b_copyv24242383354->SetMarkerStyle(20);
-   Graph_ge_h_b_copyv24242383354->SetMarkerSize(1.2);
-   Graph_ge_h_b_copyv24242383354->GetXaxis()->SetLabelFont(42);
-   Graph_ge_h_b_copyv24242383354->GetXaxis()->SetLabelSize(0.05);
-   Graph_ge_h_b_copyv24242383354->GetXaxis()->SetTitleSize(0.05);
-   Graph_ge_h_b_copyv24242383354->GetXaxis()->SetTitleOffset(1.4);
-   Graph_ge_h_b_copyv24242383354->GetXaxis()->SetTitleFont(42);
-   Graph_ge_h_b_copyv24242383354->GetYaxis()->SetLabelFont(42);
-   Graph_ge_h_b_copyv24242383354->GetYaxis()->SetLabelSize(0.05);
-   Graph_ge_h_b_copyv24242383354->GetYaxis()->SetTitleSize(0.05);
-   Graph_ge_h_b_copyv24242383354->GetYaxis()->SetTitleOffset(1.4);
-   Graph_ge_h_b_copyv24242383354->GetYaxis()->SetTitleFont(42);
-   Graph_ge_h_b_copyv24242383354->GetZaxis()->SetLabelFont(42);
-   Graph_ge_h_b_copyv24242383354->GetZaxis()->SetLabelSize(0.05);
-   Graph_ge_h_b_copyv24242383354->GetZaxis()->SetTitleSize(0.05);
-   Graph_ge_h_b_copyv24242383354->GetZaxis()->SetTitleFont(42);
-   gre->SetHistogram(Graph_ge_h_b_copyv24242383354);
-   
-   gre->Draw("pe");
-   
-   gre = new TGraphErrors(4);
-   gre->SetName("ge_h_b_copyv2719885386");
+   gre->SetName("ge_h_b_copyv21649760492");
    gre->SetTitle("Graph");
    gre->SetFillColor(1);
 
@@ -172,83 +124,37 @@
    gre->SetMarkerStyle(33);
    gre->SetMarkerSize(2);
    gre->SetPoint(0,18.2,0);
-   gre->SetPointError(0,0,0.005480619);
+   gre->SetPointError(0,0,0.003857505);
    gre->SetPoint(1,23.2,0);
-   gre->SetPointError(1,0,0.01317807);
+   gre->SetPointError(1,0,0.009275319);
    gre->SetPoint(2,28.2,0);
-   gre->SetPointError(2,0,0.03010913);
+   gre->SetPointError(2,0,0.02119215);
    gre->SetPoint(3,33.2,0);
-   gre->SetPointError(3,0,0.06627095);
+   gre->SetPointError(3,0,0.04664447);
    
-   TH1F *Graph_ge_h_b_copyv27198853865 = new TH1F("Graph_ge_h_b_copyv27198853865","Graph",100,16.7,34.7);
-   Graph_ge_h_b_copyv27198853865->SetMinimum(-0.07952514);
-   Graph_ge_h_b_copyv27198853865->SetMaximum(0.07952514);
-   Graph_ge_h_b_copyv27198853865->SetDirectory(0);
-   Graph_ge_h_b_copyv27198853865->SetStats(0);
-   Graph_ge_h_b_copyv27198853865->SetLineWidth(2);
-   Graph_ge_h_b_copyv27198853865->SetMarkerStyle(20);
-   Graph_ge_h_b_copyv27198853865->SetMarkerSize(1.2);
-   Graph_ge_h_b_copyv27198853865->GetXaxis()->SetLabelFont(42);
-   Graph_ge_h_b_copyv27198853865->GetXaxis()->SetLabelSize(0.05);
-   Graph_ge_h_b_copyv27198853865->GetXaxis()->SetTitleSize(0.05);
-   Graph_ge_h_b_copyv27198853865->GetXaxis()->SetTitleOffset(1.4);
-   Graph_ge_h_b_copyv27198853865->GetXaxis()->SetTitleFont(42);
-   Graph_ge_h_b_copyv27198853865->GetYaxis()->SetLabelFont(42);
-   Graph_ge_h_b_copyv27198853865->GetYaxis()->SetLabelSize(0.05);
-   Graph_ge_h_b_copyv27198853865->GetYaxis()->SetTitleSize(0.05);
-   Graph_ge_h_b_copyv27198853865->GetYaxis()->SetTitleOffset(1.4);
-   Graph_ge_h_b_copyv27198853865->GetYaxis()->SetTitleFont(42);
-   Graph_ge_h_b_copyv27198853865->GetZaxis()->SetLabelFont(42);
-   Graph_ge_h_b_copyv27198853865->GetZaxis()->SetLabelSize(0.05);
-   Graph_ge_h_b_copyv27198853865->GetZaxis()->SetTitleSize(0.05);
-   Graph_ge_h_b_copyv27198853865->GetZaxis()->SetTitleFont(42);
-   gre->SetHistogram(Graph_ge_h_b_copyv27198853865);
-   
-   gre->Draw("pe");
-   
-   gre = new TGraphErrors(3);
-   gre->SetName("ge_h_b_copyv21649760492");
-   gre->SetTitle("Graph");
-   gre->SetFillColor(1);
-
-   ci = TColor::GetColor("#669933");
-   gre->SetLineColor(ci);
-   gre->SetLineWidth(3);
-
-   ci = TColor::GetColor("#669933");
-   gre->SetMarkerColor(ci);
-   gre->SetMarkerStyle(34);
-   gre->SetMarkerSize(2);
-   gre->SetPoint(0,18.9,0);
-   gre->SetPointError(0,0,0.009725491);
-   gre->SetPoint(1,23.9,0);
-   gre->SetPointError(1,0,0.02338481);
-   gre->SetPoint(2,28.9,0);
-   gre->SetPointError(2,0,0.05342938);
-   
-   TH1F *Graph_ge_h_b_copyv216497604926 = new TH1F("Graph_ge_h_b_copyv216497604926","Graph",100,17.9,29.9);
-   Graph_ge_h_b_copyv216497604926->SetMinimum(-0.06411525);
-   Graph_ge_h_b_copyv216497604926->SetMaximum(0.06411525);
-   Graph_ge_h_b_copyv216497604926->SetDirectory(0);
-   Graph_ge_h_b_copyv216497604926->SetStats(0);
-   Graph_ge_h_b_copyv216497604926->SetLineWidth(2);
-   Graph_ge_h_b_copyv216497604926->SetMarkerStyle(20);
-   Graph_ge_h_b_copyv216497604926->SetMarkerSize(1.2);
-   Graph_ge_h_b_copyv216497604926->GetXaxis()->SetLabelFont(42);
-   Graph_ge_h_b_copyv216497604926->GetXaxis()->SetLabelSize(0.05);
-   Graph_ge_h_b_copyv216497604926->GetXaxis()->SetTitleSize(0.05);
-   Graph_ge_h_b_copyv216497604926->GetXaxis()->SetTitleOffset(1.4);
-   Graph_ge_h_b_copyv216497604926->GetXaxis()->SetTitleFont(42);
-   Graph_ge_h_b_copyv216497604926->GetYaxis()->SetLabelFont(42);
-   Graph_ge_h_b_copyv216497604926->GetYaxis()->SetLabelSize(0.05);
-   Graph_ge_h_b_copyv216497604926->GetYaxis()->SetTitleSize(0.05);
-   Graph_ge_h_b_copyv216497604926->GetYaxis()->SetTitleOffset(1.4);
-   Graph_ge_h_b_copyv216497604926->GetYaxis()->SetTitleFont(42);
-   Graph_ge_h_b_copyv216497604926->GetZaxis()->SetLabelFont(42);
-   Graph_ge_h_b_copyv216497604926->GetZaxis()->SetLabelSize(0.05);
-   Graph_ge_h_b_copyv216497604926->GetZaxis()->SetTitleSize(0.05);
-   Graph_ge_h_b_copyv216497604926->GetZaxis()->SetTitleFont(42);
-   gre->SetHistogram(Graph_ge_h_b_copyv216497604926);
+   TH1F *Graph_ge_h_b_copyv216497604924 = new TH1F("Graph_ge_h_b_copyv216497604924","Graph",100,16.7,34.7);
+   Graph_ge_h_b_copyv216497604924->SetMinimum(-0.05597336);
+   Graph_ge_h_b_copyv216497604924->SetMaximum(0.05597336);
+   Graph_ge_h_b_copyv216497604924->SetDirectory(0);
+   Graph_ge_h_b_copyv216497604924->SetStats(0);
+   Graph_ge_h_b_copyv216497604924->SetLineWidth(2);
+   Graph_ge_h_b_copyv216497604924->SetMarkerStyle(20);
+   Graph_ge_h_b_copyv216497604924->SetMarkerSize(1.2);
+   Graph_ge_h_b_copyv216497604924->GetXaxis()->SetLabelFont(42);
+   Graph_ge_h_b_copyv216497604924->GetXaxis()->SetLabelSize(0.05);
+   Graph_ge_h_b_copyv216497604924->GetXaxis()->SetTitleSize(0.05);
+   Graph_ge_h_b_copyv216497604924->GetXaxis()->SetTitleOffset(1.4);
+   Graph_ge_h_b_copyv216497604924->GetXaxis()->SetTitleFont(42);
+   Graph_ge_h_b_copyv216497604924->GetYaxis()->SetLabelFont(42);
+   Graph_ge_h_b_copyv216497604924->GetYaxis()->SetLabelSize(0.05);
+   Graph_ge_h_b_copyv216497604924->GetYaxis()->SetTitleSize(0.05);
+   Graph_ge_h_b_copyv216497604924->GetYaxis()->SetTitleOffset(1.4);
+   Graph_ge_h_b_copyv216497604924->GetYaxis()->SetTitleFont(42);
+   Graph_ge_h_b_copyv216497604924->GetZaxis()->SetLabelFont(42);
+   Graph_ge_h_b_copyv216497604924->GetZaxis()->SetLabelSize(0.05);
+   Graph_ge_h_b_copyv216497604924->GetZaxis()->SetTitleSize(0.05);
+   Graph_ge_h_b_copyv216497604924->GetZaxis()->SetTitleFont(42);
+   gre->SetHistogram(Graph_ge_h_b_copyv216497604924);
    
    gre->Draw("pe");
    
@@ -312,19 +218,7 @@
    entry->SetMarkerStyle(20);
    entry->SetMarkerSize(2);
    entry->SetTextFont(42);
-   entry=leg->AddEntry("ge_h_b_copyv2424238335","Au+Au 10-20%C","pl");
-
-   ci = TColor::GetColor("#003366");
-   entry->SetLineColor(ci);
-   entry->SetLineStyle(1);
-   entry->SetLineWidth(3);
-
-   ci = TColor::GetColor("#003366");
-   entry->SetMarkerColor(ci);
-   entry->SetMarkerStyle(21);
-   entry->SetMarkerSize(2);
-   entry->SetTextFont(42);
-   entry=leg->AddEntry("ge_h_b_copyv2719885386","Au+Au 20-40%C","pl");
+   entry=leg->AddEntry("ge_h_b_copyv21649760492","Au+Au 10-40%C","pl");
 
    ci = TColor::GetColor("#006633");
    entry->SetLineColor(ci);
@@ -334,18 +228,6 @@
    ci = TColor::GetColor("#006633");
    entry->SetMarkerColor(ci);
    entry->SetMarkerStyle(33);
-   entry->SetMarkerSize(2);
-   entry->SetTextFont(42);
-   entry=leg->AddEntry("ge_h_b_copyv21649760492","Au+Au 40-60%C","pl");
-
-   ci = TColor::GetColor("#669933");
-   entry->SetLineColor(ci);
-   entry->SetLineStyle(1);
-   entry->SetLineWidth(3);
-
-   ci = TColor::GetColor("#669933");
-   entry->SetMarkerColor(ci);
-   entry->SetMarkerStyle(34);
    entry->SetMarkerSize(2);
    entry->SetTextFont(42);
    leg->Draw();

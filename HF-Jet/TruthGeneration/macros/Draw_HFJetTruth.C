@@ -537,6 +537,7 @@ void CrossSection2v2(const TString infile, const bool use_AA_jet_trigger = true,
   const double AuAu_Ncoll_C0_20 = 770.6;  // [DOI:?10.1103/PhysRevC.91.064904?]
   const double AuAu_Ncoll_C10_20 = 603;   // [sPH-HF-2017-001-v1]
   const double AuAu_Ncoll_C20_40 = 296;   // [sPH-HF-2017-001-v1]
+  const double AuAu_Ncoll_C10_40 =  (AuAu_Ncoll_C10_20*10 + AuAu_Ncoll_C20_40*20)/30;
   const double AuAu_Ncoll_C40_60 = 94;    //  [sPH-HF-2017-001-v1]
   const double AuAu_Ncoll_C60_92 = 15;    //  [sPH-HF-2017-001-v1]
   const double AuAu_Ncoll_C0_100 = 250;   // pb^-1 [sPH-TRG-000]
@@ -548,6 +549,7 @@ void CrossSection2v2(const TString infile, const bool use_AA_jet_trigger = true,
 
   const double AuAu_eq_lumi_C10_20 = AuAu_MB_Evt * .1 * AuAu_Ncoll_C10_20 / pp_inelastic_crosssec;          //
   const double AuAu_eq_lumi_C20_40 = AuAu_MB_Evt * .2 * AuAu_Ncoll_C20_40 / pp_inelastic_crosssec;          //
+  const double AuAu_eq_lumi_C10_40 = AuAu_MB_Evt * .3 * AuAu_Ncoll_C10_40 / pp_inelastic_crosssec;          //
   const double AuAu_eq_lumi_C40_60 = AuAu_MB_Evt * .2 * AuAu_Ncoll_C40_60 / pp_inelastic_crosssec;          //
   const double AuAu_eq_lumi_C60_92 = AuAu_MB_Evt * (.92 - .6) * AuAu_Ncoll_C60_92 / pp_inelastic_crosssec;  //
 
@@ -573,6 +575,8 @@ void CrossSection2v2(const TString infile, const bool use_AA_jet_trigger = true,
   cout << "\t"
        << "AuAu_eq_lumi_C20_40 = " << AuAu_eq_lumi_C20_40 << endl;
   cout << "\t"
+       << "AuAu_eq_lumi_C10_40 = " << AuAu_eq_lumi_C10_40 << endl;
+  cout << "\t"
        << "AuAu_eq_lumi_C40_60 = " << AuAu_eq_lumi_C40_60 << endl;
   cout << "\t"
        << "AuAu_eq_lumi_C60_92 = " << AuAu_eq_lumi_C60_92 << endl;
@@ -583,22 +587,26 @@ void CrossSection2v2(const TString infile, const bool use_AA_jet_trigger = true,
   TGraph *g_AA_C0_20 = CrossSection2v2Uncert(h_b, b_jet_RAA, dy, AuAu_eq_lumi_C0_20 * AuAu_eff * AuAu_purity, ep_resolution, 0);
   TGraph *g_AA_C10_20 = CrossSection2v2Uncert(h_b, b_jet_RAA, dy, AuAu_eq_lumi_C10_20 * AuAu_eff * AuAu_purity, ep_resolution, 0);
   TGraph *g_AA_C20_40 = CrossSection2v2Uncert(h_b, b_jet_RAA, dy, AuAu_eq_lumi_C20_40 * AuAu_eff * AuAu_purity, ep_resolution, 1*.7);
+  TGraph *g_AA_C10_40 = CrossSection2v2Uncert(h_b, b_jet_RAA, dy, AuAu_eq_lumi_C10_40 * AuAu_eff * AuAu_purity, ep_resolution, 1*.7);
   TGraph *g_AA_C40_60 = CrossSection2v2Uncert(h_b, b_jet_RAA, dy, AuAu_eq_lumi_C40_60 * AuAu_eff * AuAu_purity, ep_resolution, 2*.7);
   TGraph *g_AA_C60_92 = CrossSection2v2Uncert(h_b, b_jet_RAA, dy, AuAu_eq_lumi_C60_92 * AuAu_eff * AuAu_purity, ep_resolution, 3*.7);
   //
   g_AA_C0_10->SetLineColor(kBlue+3);
   g_AA_C10_20->SetLineColor(kAzure+3);
   g_AA_C20_40->SetLineColor(kTeal+3);
+  g_AA_C10_40->SetLineColor(kTeal+3);
   g_AA_C40_60->SetLineColor(kSpring+3);
 
   g_AA_C0_10->SetMarkerColor(kBlue+3);
   g_AA_C10_20->SetMarkerColor(kAzure+3);
   g_AA_C20_40->SetMarkerColor(kTeal+3);
+  g_AA_C10_40->SetMarkerColor(kTeal+3);
   g_AA_C40_60->SetMarkerColor(kSpring+3);
 
   g_AA_C0_10->SetMarkerStyle(kFullCircle);
   g_AA_C10_20->SetMarkerStyle(kFullSquare);
   g_AA_C20_40->SetMarkerStyle(kFullDiamond);
+  g_AA_C10_40->SetMarkerStyle(kFullDiamond);
   g_AA_C40_60->SetMarkerStyle(kFullCross);
 
 
@@ -615,9 +623,10 @@ void CrossSection2v2(const TString infile, const bool use_AA_jet_trigger = true,
       ->SetTitle(";Transverse Momentum [GeV/#it{c}];v_{2}");
   //
   g_AA_C0_10->Draw("pe");
-  g_AA_C10_20->Draw("pe");
-  g_AA_C20_40->Draw("pe");
-  g_AA_C40_60->Draw("pe");
+//  g_AA_C10_20->Draw("pe");
+//  g_AA_C20_40->Draw("pe");
+  g_AA_C10_40->Draw("pe");
+//  g_AA_C40_60->Draw("pe");
 
   //  g_AA_C20_40->Draw("same");
   //
@@ -638,9 +647,10 @@ void CrossSection2v2(const TString infile, const bool use_AA_jet_trigger = true,
     TLegend *leg2 = new TLegend(.19, .55, 1, .78);
     leg2->SetHeader( Form("#it{b}-jet v_{2} Projection, #it{R}_{AA, #it{b}-jet}=%.1f, Res(#Psi_{2})=%.1f", b_jet_RAA, ep_resolution));
     leg2->AddEntry(g_AA_C0_10, "Au+Au 0-10%C", "pl");
-    leg2->AddEntry(g_AA_C10_20, "Au+Au 10-20%C", "pl");
-    leg2->AddEntry(g_AA_C20_40, "Au+Au 20-40%C", "pl");
-    leg2->AddEntry(g_AA_C40_60, "Au+Au 40-60%C", "pl");
+//    leg2->AddEntry(g_AA_C10_20, "Au+Au 10-20%C", "pl");
+//    leg2->AddEntry(g_AA_C20_40, "Au+Au 20-40%C", "pl");
+    leg2->AddEntry(g_AA_C10_40, "Au+Au 10-40%C", "pl");
+//    leg2->AddEntry(g_AA_C40_60, "Au+Au 40-60%C", "pl");
     leg2->SetFillStyle(0);
     leg2->Draw();
 
