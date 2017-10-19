@@ -68,7 +68,7 @@ RICHParticleID::Init(PHCompositeNode *topNode)
 
   /* Throw warning if refractive index is not greater than 1 */
   if ( _refractive_index <= 1 )
-    cout << "WARNING: Refractive index for radiator volume is " << _refractive_index << endl;
+    cout << PHWHERE << " WARNING: Refractive index for radiator volume is " << _refractive_index << endl;
 
   return 0;
 }
@@ -92,9 +92,6 @@ RICHParticleID::process_event(PHCompositeNode *topNode)
          << endl;
     return Fun4AllReturnCodes::ABORTEVENT;
   }
-
-  cout << "Track map size: " << trackmap->size() << endl;
-  cout << "RICH hits size: " << richhits->size() << endl;
 
   /* Loop over tracks */
   for (SvtxTrackMap::ConstIter track_itr = trackmap->begin();
@@ -182,18 +179,20 @@ double RICHParticleID::calculate_emission_angle( double m_emi[3], double momv[3]
 
   int select_radiator=0;
 
-  /* Troubleshoot */
-  cout << "Parameters into ind_ray():" << endl;
-  cout << "Ex, Ey, Ez = " << Ex << " " << Ey << " " << Ez << endl;
-  cout << "Dx, Dy, Dz = " << Dx << " " << Dy << " " << Dz << endl;
-  cout << "vx, vy, vz = " << vx << " " << vy << " " << vz << endl;
-
   /* Set mirror parameters */
   double R_mirror = 195; // cm
   _analyzer->set_mirror(cx, cy, cz, R_mirror);
 
   /* Call algorithm to determine emission angle of photon i w.r.t. track j */
+  cout<<"V (momv):  " << vx <<"  "<< vy <<"  "<< vz <<endl;
+  cout<<"E (m_emi): " << Ex <<"  "<< Ey <<"  "<< Ez <<endl;
+  cout<<"D (d_hit): " << Dx <<"  "<< Dy <<"  "<< Dz <<endl;
+  cout<<"ctr:       " << cx <<"  "<< cy <<"  "<< cz <<endl;
+
   float theta_c = _analyzer->ind_ray(Ex, Ey, Ez, Dx, Dy, Dz, vx, vy, vz, select_radiator); //Indirect Ray Tracing
+
+  cout<<"theta_c :  " << theta_c << endl;
+  cout << "======" << endl;
 
   return theta_c;
 }
@@ -245,8 +244,6 @@ RICHParticleID::get_position_from_track_state(  SvtxTrack_FastSim * track, strin
     }
   }
 
-  cout << "in position function, array = " << arr_pos[0] << " " << arr_pos[1] << " " << arr_pos[2] << endl;
-
   return false;
 }
 
@@ -271,8 +268,6 @@ RICHParticleID::get_momentum_from_track_state(  SvtxTrack_FastSim * track, strin
       return true;
     }
   }
-
-  cout << "in momentum function, array = " << arr_mom[0] << " " << arr_mom[1] << " " << arr_mom[2] << endl;
 
   return false;
 }
