@@ -36,6 +36,8 @@ RICHParticleID::RICHParticleID(std::string tracksname, std::string richname, std
   _ievent(0),
   _trackmap_name(tracksname),
   _richhits_name(richname),
+  _trackstate_name("RICH"),
+  _refractive_index(1),
   _foutname(filename),
   _fout_root(nullptr),
   _analyzer(nullptr),
@@ -63,6 +65,10 @@ RICHParticleID::Init(PHCompositeNode *topNode)
 
   /* access to PDG databse information */
   _pdg = new TDatabasePDG();
+
+  /* Throw warning if refractive index is not greater than 1 */
+  if ( _refractive_index <= 1 )
+    cout << "WARNING: Refractive index for radiator volume is " << _refractive_index << endl;
 
   return 0;
 }
@@ -101,7 +107,7 @@ RICHParticleID::process_event(PHCompositeNode *topNode)
     double m_emi[3] = {0.,0.,0.};
 
     /* 'Continue' with next track if RICH not found in state list for this track */
-    if ( ! get_position_from_track_state( track_j, "RICH", m_emi ) )
+    if ( ! get_position_from_track_state( track_j, _trackstate_name, m_emi ) )
       continue;
 
 
@@ -109,7 +115,7 @@ RICHParticleID::process_event(PHCompositeNode *topNode)
     double momv[3] = {0.,0.,0.};
 
     /* 'Continue' with next track if RICH not found in state list for this track */
-    if ( ! get_momentum_from_track_state( track_j, "RICH", momv ) )
+    if ( ! get_momentum_from_track_state( track_j, _trackstate_name, momv ) )
       continue;
 
     double momv_norm = sqrt( momv[0]*momv[0] + momv[1]*momv[1] + momv[2]*momv[2] );
@@ -121,10 +127,6 @@ RICHParticleID::process_event(PHCompositeNode *topNode)
     /* Calculate true emission angle for output tree */
     _theta_true = 0;
 
-    /* Get index of refraction for RICH material */
-    /* @TODO: replace hard-coded number with something else */
-    double index_refraction = 1.000526;
-
     /* get truth info node */
     PHG4TruthInfoContainer* truthinfo =
       findNode::getClass<PHG4TruthInfoContainer>(topNode, "G4TruthInfo");
@@ -132,7 +134,7 @@ RICHParticleID::process_event(PHCompositeNode *topNode)
     /* If truth info found use it to calculate truth emission angle */
     if ( truthinfo )
       {
-        _theta_true = calculate_true_emission_angle( truthinfo , track_j , index_refraction );
+        _theta_true = calculate_true_emission_angle( truthinfo , track_j , _refractive_index );
       }
 
 
@@ -197,7 +199,7 @@ double RICHParticleID::calculate_emission_angle( double m_emi[3], double momv[3]
 }
 
 
-double RICHParticleID::calculate_true_emission_angle( PHG4TruthInfoContainer* truthinfo, SvtxTrack_FastSim * track, double index_refraction )
+double RICHParticleID::calculate_true_emission_angle( PHG4TruthInfoContainer* truthinfo, SvtxTrack_FastSim * track, double index )
 {
   /* Get truth particle associated with track */
   PHG4Particle* particle = truthinfo->GetParticle( track->get_truth_track_id() );
@@ -217,7 +219,7 @@ double RICHParticleID::calculate_true_emission_angle( PHG4TruthInfoContainer* tr
   double beta = ptotal / sqrt( mass * mass + ptotal * ptotal );
 
   /* Calculate emission angle for Cerenkov light */
-  double theta_c = acos( 1 / ( index_refraction * beta ) );
+  double theta_c = acos( 1 / ( index * beta ) );
 
   return theta_c;
 }

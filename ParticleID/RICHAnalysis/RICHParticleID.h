@@ -32,6 +32,19 @@ public:
   int
   End(PHCompositeNode*);
 
+  /* set name of the track state inside the RICH radiator volume */
+  void set_trackstate_name( std::string newname )
+  {
+    _trackstate_name = newname;
+    return;
+  }
+
+  /* set refractive index of RICH radiator */
+  void set_refractive_index( float newidx )
+  {
+    _refractive_index = newidx;
+    return;
+  }
 
 private:
 
@@ -45,16 +58,13 @@ private:
   double calculate_emission_angle( double m_emi[3], double momv[3], PHG4Hit *hit_i );
 
   /** calculate true Cerenkov light emission angle from truth particle infromation */
-  double calculate_true_emission_angle( PHG4TruthInfoContainer* truthinfo, SvtxTrack_FastSim * track, double index_refraction );
+  double calculate_true_emission_angle( PHG4TruthInfoContainer* truthinfo, SvtxTrack_FastSim * track, double index );
 
   /** get position from track state */
   bool get_position_from_track_state(  SvtxTrack_FastSim * track, std::string statename, double arr_pos[3] );
 
   /** get track momentum from track state */
   bool get_momentum_from_track_state( SvtxTrack_FastSim * track, std::string statename, double arr_mom[3] );
-
-  //  /* fill 'fake' track map with truth info */
-  //  SvtxTrackMap* fill_truth_trackmap(PHG4TruthInfoContainer*, PHG4HitContainer*);
 
   bool _verbose;
 
@@ -65,6 +75,12 @@ private:
 
   /* Hit collection storing RICH photon hits */
   std::string _richhits_name;
+
+  /* Name of the track state inside the RICH radiator volume */
+  std::string _trackstate_name;
+
+  /* Refractive index of RICH radiator */
+  float _refractive_index;
 
   /* ROOT file to store output ROOT tree */
   std::string _foutname;
