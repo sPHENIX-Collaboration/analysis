@@ -12,7 +12,7 @@
 #include <g4main/PHG4HitContainer.h>
 #include <g4main/PHG4Particle.h>
 #include <g4main/PHG4VtxPoint.h>
-#include "g4main/PHG4TruthInfoContainer.h"
+#include <g4main/PHG4TruthInfoContainer.h>
 
 #include <g4hough/SvtxTrackMap_v1.h>
 #include <g4hough/SvtxTrack_FastSim.h>
@@ -23,6 +23,7 @@
 #include <TFile.h>
 #include <TString.h>
 #include <TMath.h>
+#include <TDatabasePDG.h>
 
 // other C++ includes
 #include <cassert>
@@ -36,7 +37,9 @@ RICHParticleID::RICHParticleID(std::string tracksname, std::string richname, std
   _trackmap_name(tracksname),
   _richhits_name(richname),
   _foutname(filename),
-  _fout_root(nullptr)
+  _fout_root(nullptr),
+  _analyzer(nullptr),
+  _pdg(nullptr)
 {
 
 }
@@ -57,6 +60,9 @@ RICHParticleID::Init(PHCompositeNode *topNode)
 
   /* create analyzer object */
   _analyzer = new eic_dual_rich();
+
+  /* access to PDG databse information */
+  _pdg = new TDatabasePDG();
 
   return 0;
 }
@@ -112,6 +118,24 @@ RICHParticleID::process_event(PHCompositeNode *topNode)
     momv[2] /= momv_norm;
 
 
+    /* Calculate true emission angle for output tree */
+    _theta_true = 0;
+
+    /* Get index of refraction for RICH material */
+    /* @TODO: replace hard-coded number with something else */
+    double index_refraction = 1.000526;
+
+    /* get truth info node */
+    PHG4TruthInfoContainer* truthinfo =
+      findNode::getClass<PHG4TruthInfoContainer>(topNode, "G4TruthInfo");
+
+    /* If truth info found use it to calculate truth emission angle */
+    if ( truthinfo )
+      {
+        _theta_true = calculate_true_emission_angle( truthinfo , track_j , index_refraction );
+      }
+
+
     /* Loop over all G4Hits in container (i.e. RICH photons in event) */
     PHG4HitContainer::ConstRange rich_hits_begin_end = richhits->getHits();
     PHG4HitContainer::ConstIterator rich_hits_iter;
@@ -120,13 +144,8 @@ RICHParticleID::process_event(PHCompositeNode *topNode)
       {
         PHG4Hit *hit_i = rich_hits_iter->second;
 
-        float theta_c = calculate_emission_angle( m_emi, momv, hit_i );
-
         /* Set reconstructed emission angle for output tree */
-        _theta_reco = theta_c;
-
-        /* Calculate true emission angle for output tree */
-        _theta_true = 0;
+        _theta_reco = calculate_emission_angle( m_emi, momv, hit_i );
 
         /* Fill tree */
         _tree_rich->Fill();
@@ -178,6 +197,31 @@ double RICHParticleID::calculate_emission_angle( double m_emi[3], double momv[3]
 }
 
 
+double RICHParticleID::calculate_true_emission_angle( PHG4TruthInfoContainer* truthinfo, SvtxTrack_FastSim * track, double index_refraction )
+{
+  /* Get truth particle associated with track */
+  PHG4Particle* particle = truthinfo->GetParticle( track->get_truth_track_id() );
+
+  /* Get particle ID */
+  int pid = particle->get_pid();
+
+  /* Get particle mass */
+  double mass = _pdg->GetParticle(pid)->Mass();
+
+  /* Get particle total momentum */
+  double ptotal = sqrt( track->get_px() * track->get_px() +
+                        track->get_py() * track->get_py() +
+                        track->get_pz() * track->get_pz() );
+
+  /* Calculate 'beta' */
+  double beta = ptotal / sqrt( mass * mass + ptotal * ptotal );
+
+  /* Calculate emission angle for Cerenkov light */
+  double theta_c = acos( 1 / ( index_refraction * beta ) );
+
+  return theta_c;
+}
+
 bool
 RICHParticleID::get_position_from_track_state(  SvtxTrack_FastSim * track, string statename, double arr_pos[3] )
 {
@@ -198,7 +242,7 @@ RICHParticleID::get_position_from_track_state(  SvtxTrack_FastSim * track, strin
       return true;
     }
   }
-  
+
   cout << "in position function, array = " << arr_pos[0] << " " << arr_pos[1] << " " << arr_pos[2] << endl;
 
   return false;
