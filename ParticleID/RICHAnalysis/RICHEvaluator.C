@@ -85,6 +85,7 @@ RICHEvaluator::process_event(PHCompositeNode *topNode)
   /* abort if no truth info container found */
   assert(truthinfo);
 
+
   /* Loop over tracks */
   for (SvtxTrackMap::ConstIter track_itr = trackmap->begin(); track_itr != trackmap->end(); track_itr++) {
 
@@ -239,7 +240,7 @@ RICHEvaluator::reset_tree_vars()
   _mtrack_px = -999;
   _mtrack_py = -999;
   _mtrack_pz = -999;
-  
+
   _track_e = -999;
   _mtrack_e = -999;
   _edep = -999;
@@ -318,7 +319,7 @@ RICHEvaluator::init_tree()
   _tree_irt->Branch("Cx", &_Cx, "Center x-coord. /D");
   _tree_irt->Branch("Cy", &_Cy, "Center y-coord. /D");
   _tree_irt->Branch("Cz", &_Cz, "Center z-coord. /D");
-  
+
   return 0;
 }
 

@@ -720,7 +720,7 @@ void SvtxEvaluatorHaiwang::fillOutputNtuples(PHCompositeNode *topNode) {
       if (g4particle) {
 
 	if (_scan_for_embedded) {
-	  if (trutheval->get_embed(g4particle) == 0) continue;
+	  if (trutheval->get_embed(g4particle) <= 0) continue;
 	}
 	
 	gflavor   = g4particle->get_pid();
@@ -889,7 +889,7 @@ void SvtxEvaluatorHaiwang::fillOutputNtuples(PHCompositeNode *topNode) {
 	  if (g4particle) {
 
 	    if (_scan_for_embedded) {
-	      if (trutheval->get_embed(g4particle) == 0) continue;
+	      if (trutheval->get_embed(g4particle) <= 0) continue;
 	    }
 	    
 	    gtrackID = g4particle->get_track_id();
@@ -1133,7 +1133,7 @@ void SvtxEvaluatorHaiwang::fillOutputNtuples(PHCompositeNode *topNode) {
 	SvtxTrack* track = iter->second;
 	PHG4Particle* truth = trackeval->max_truth_particle_by_nclusters(track);
 	if (truth) {	  
-	  if (trutheval->get_embed(truth) == 0) continue;
+	  if (trutheval->get_embed(truth) <= 0) continue;
 	}
 	
 	for (SvtxTrack::ConstClusterIter iter = track->begin_clusters();
@@ -1300,7 +1300,7 @@ void SvtxEvaluatorHaiwang::fillOutputNtuples(PHCompositeNode *topNode) {
 	PHG4Particle* g4particle = iter->second;
 
 	if (_scan_for_embedded) {
-	  if (trutheval->get_embed(g4particle) == 0) continue;
+	  if (trutheval->get_embed(g4particle) <= 0) continue;
 	}
 	
 	float gtrackID = g4particle->get_track_id();
@@ -1554,7 +1554,7 @@ void SvtxEvaluatorHaiwang::fillOutputNtuples(PHCompositeNode *topNode) {
 	if (g4particle) {
 
 	  if (_scan_for_embedded) {
-	    if (trutheval->get_embed(g4particle) == 0) continue;
+	    if (trutheval->get_embed(g4particle) <= 0) continue;
 	  }
 	  
 	  gtrackID = g4particle->get_track_id();

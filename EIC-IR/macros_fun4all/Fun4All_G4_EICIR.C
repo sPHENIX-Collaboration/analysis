@@ -1,6 +1,6 @@
 
 int Fun4All_G4_EICIR(
-		     const int nEvents = 10,
+		     const int nEvents = 1,
 		     const char * inputFile = "/gpfs02/phenix/prod/sPHENIX/preCDR/pro.1-beta.5/single_particle/spacal1d/fieldmap/G4Hits_sPHENIX_e-_eta0_16GeV.root",
 		     const char * outputFile = "G4EICIR.root"
 		     )
@@ -9,20 +9,7 @@ int Fun4All_G4_EICIR(
   // Input options
   //===============
 
-  // Either:
-  // read previously generated g4-hits files, in this case it opens a DST and skips
-  // the simulations step completely. The G4Setup macro is only loaded to get information
-  // about the number of layers used for the cell reco code
-  const bool readhits = false;
-  // Or:
-  // read files in HepMC format (typically output from event generators like hijing or pythia)
-  const bool readhepmc = false; // read HepMC files
-  // Or:
-  // Use particle generator
-  const bool runpythia8 = false;
-  const bool runpythia6 = false;
-
-  // USe particle gun
+  // Use particle gun
   const bool pgun = true;
 
   //======================
@@ -80,125 +67,50 @@ int Fun4All_G4_EICIR(
   // Event generation
   //-----------------
 
-  if (readhits)
-    {
-      // Get the hits from a file
-      // The input manager is declared later
-    }
-  else if (readhepmc)
-    {
-      // this module is needed to read the HepMC records into our G4 sims
-      // but only if you read HepMC input files
-      HepMCNodeReader *hr = new HepMCNodeReader();
-      se->registerSubsystem(hr);
-    }
-  else if (runpythia8)
-    {
-      gSystem->Load("libPHPythia8.so");
-
-      PHPythia8* pythia8 = new PHPythia8();
-      // see coresoftware/generators/PHPythia8 for example config
-      pythia8->set_config_file("phpythia8.cfg");
-      se->registerSubsystem(pythia8);
-
-      HepMCNodeReader *hr = new HepMCNodeReader();
-      se->registerSubsystem(hr);
-    }
-  else if (runpythia6)
-    {
-      gSystem->Load("libPHPythia6.so");
-
-      PHPythia6 *pythia6 = new PHPythia6();
-      pythia6->set_config_file("phpythia6.cfg");
-      se->registerSubsystem(pythia6);
-
-      HepMCNodeReader *hr = new HepMCNodeReader();
-      se->registerSubsystem(hr);
-    }
-  else if (pgun)
+  if (pgun)
     {
       /* angle of particle phi:
 	 pz = p * cos(psi)
 	 px = p * sin(psi) */
-      double psi_mrad = 22; // nominal
-      //      double psi_mrad = 22+5; // compare nominal 22 mrad to 22 +/- 5 mrad
-      //      double psi_mrad = 22-5; // compare nominal 22 mrad to 22 +/- 5 mrad
-      double ptot = 275*1;
+      double psi_mrad = 0;
+
+      double ptot = 250*1;
+
+      double vx = 0;
+      double vy = 0;
+      double vz = 0;
 
       double px = ptot * sin(psi_mrad / 1000.);
       double py = 0;
       double pz = ptot * cos(psi_mrad / 1000.);
 
       PHG4ParticleGun*gun = new PHG4ParticleGun();
-      //gun->set_name("gamma");
       gun->set_name("proton");
+      gun->set_vtx(vx,vy,vz);
       gun->set_mom(px,py,pz);
       se->registerSubsystem(gun);
     }
   else
     {
-      // toss low multiplicity dummy events
-      PHG4SimpleEventGenerator *gen = new PHG4SimpleEventGenerator();
-      //gen->add_particles("e-",1); // mu+,e+,proton,pi+,Upsilon
-      //gen->add_particles("e+",5); // mu-,e-,anti_proton,pi-
-      gen->add_particles("proton",1); // mu-,e-,anti_proton,pi-
-      if (readhepmc) {
-        gen->set_reuse_existing_vertex(true);
-        gen->set_existing_vertex_offset_vector(0.0,0.0,0.0);
-      } else {
-        gen->set_vertex_distribution_function(PHG4SimpleEventGenerator::Uniform,
-                                              PHG4SimpleEventGenerator::Uniform,
-                                              PHG4SimpleEventGenerator::Uniform);
-        gen->set_vertex_distribution_mean(0.0,0.0,0.0);
-        gen->set_vertex_distribution_width(0.0,0.0,5.0);
-      }
-      gen->set_vertex_size_function(PHG4SimpleEventGenerator::Uniform);
-      gen->set_vertex_size_parameters(0.0,0.0);
-      gen->set_eta_range(100.0, 100.0);
-      //gen->set_eta_range(3.0, 3.0); //EICDetector FWD
-      gen->set_phi_range(-1.0*TMath::Pi(), 1.0*TMath::Pi());
-      //gen->set_phi_range(TMath::Pi()/2-0.1, TMath::Pi()/2-0.1);
-      gen->set_p_range(250.0, 250.0);
-      gen->Embed(1);
-      gen->Verbosity(0);
-      se->registerSubsystem(gen);
+      cout << "WARNING: No events being generated!" << endl;
     }
 
-  if (!readhits)
-    {
-      //---------------------
-      // Detector description
-      //---------------------
+  //---------------------
+  // Detector description
+  //---------------------
 
-      G4Setup(absorberactive, magfield, TPythia6Decayer::kAll,do_magnet,do_pipe,do_ExtendedIR,magfield_rescale);
+  G4Setup(absorberactive, magfield, TPythia6Decayer::kAll,do_magnet,do_pipe,do_ExtendedIR,magfield_rescale);
 
-    }
 
 
   //--------------
   // IO management
   //--------------
 
-  if (readhits)
-    {
-      // Hits file
-      Fun4AllInputManager *hitsin = new Fun4AllDstInputManager("DSTin");
-      hitsin->fileopen(inputFile);
-      se->registerInputManager(hitsin);
-    }
-  if (readhepmc)
-    {
-      Fun4AllInputManager *in = new Fun4AllHepMCInputManager( "DSTIN");
-      se->registerInputManager( in );
-      se->fileopen( in->Name().c_str(), inputFile );
-    }
-  else
-    {
-      // for single particle generators we just need something which drives
-      // the event loop, the Dummy Input Mgr does just that
-      Fun4AllInputManager *in = new Fun4AllDummyInputManager( "JADE");
-      se->registerInputManager( in );
-    }
+  // for single particle generators we just need something which drives
+  // the event loop, the Dummy Input Mgr does just that
+  Fun4AllInputManager *in = new Fun4AllDummyInputManager( "JADE");
+  se->registerInputManager( in );
 
   //Convert DST to human command readable TTree for quick poke around the outputs
   gROOT->LoadMacro("G4_DSTReader_EICIR.C");
@@ -206,9 +118,9 @@ int Fun4All_G4_EICIR(
   G4DSTreader_EICIR( outputFile, //
 		     /*int*/ absorberactive );
 
-  //Fun4AllDstOutputManager *out = new Fun4AllDstOutputManager("DSTOUT", outputFile);
+  Fun4AllDstOutputManager *out = new Fun4AllDstOutputManager("DSTOUT", outputFile);
   //if (do_dst_compress) DstCompress(out);
-  //se->registerOutputManager(out);
+  se->registerOutputManager(out);
 
   if (nEvents == 0 && !readhits && !readhepmc)
     {
@@ -227,7 +139,6 @@ int Fun4All_G4_EICIR(
       se->End();
       std::cout << "All done" << std::endl;
 
-
       std::cout << "==== Useful display commands ==" << std::endl;
       cout << "draw axis: " << endl;
       cout << " G4Cmd(\"/vis/scene/add/axes 0 0 0 50 cm\")" << endl;
@@ -245,7 +156,6 @@ int Fun4All_G4_EICIR(
     }
   else
     {
-
       se->run(nEvents);
 
       se->End();
