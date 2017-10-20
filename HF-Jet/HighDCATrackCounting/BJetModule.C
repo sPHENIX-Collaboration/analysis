@@ -31,6 +31,7 @@
 #include <g4eval/SvtxEvalStack.h>
 
 #include <phhepmc/PHHepMCGenEvent.h>
+#include <phhepmc/PHHepMCGenEventMap.h>
 #include <HepMC/GenEvent.h>
 #include <HepMC/GenVertex.h>
 
@@ -48,7 +49,8 @@ BJetModule::BJetModule(const string &name) :
 		SubsysReco(name),
 		_verbose (true),
 		_trackmap_name("SvtxTrackMap"),
-		_vertexmap_name("SvtxVertexMap"){
+		_vertexmap_name("SvtxVertexMap"),
+    _embedding_id(1){
 
 	_foutname = name;
 
@@ -257,8 +259,21 @@ int BJetModule::process_event(PHCompositeNode *topNode) {
 
 	_b_event = _ievent;
 
-	PHHepMCGenEvent *genevt = findNode::getClass<PHHepMCGenEvent>(topNode,
-			"PHHepMCGenEvent");
+  PHHepMCGenEventMap * geneventmap = findNode::getClass<PHHepMCGenEventMap>(topNode, "PHHepMCGenEventMap");
+  if (!geneventmap)
+  {
+    std::cout <<PHWHERE<<" - Fatal error - missing node PHHepMCGenEventMap"<<std::endl;
+    return Fun4AllReturnCodes::ABORTRUN;
+  }
+
+  PHHepMCGenEvent *genevt = geneventmap->get(_embedding_id);
+  if (!genevt)
+  {
+    std::cout <<PHWHERE<<" - Fatal error - node PHHepMCGenEventMap missing subevent with embedding ID "<<_embedding_id;
+    std::cout <<". Print PHHepMCGenEventMap:";
+    geneventmap->identify();
+    return Fun4AllReturnCodes::ABORTRUN;
+  }
 	HepMC::GenEvent* theEvent = genevt->getEvent();
 	//theEvent->print();
 
