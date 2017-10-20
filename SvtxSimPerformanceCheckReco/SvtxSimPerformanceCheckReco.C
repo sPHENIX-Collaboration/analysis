@@ -271,7 +271,7 @@ int SvtxSimPerformanceCheckReco::process_event(PHCompositeNode *topNode) {
        iter != range.second; 
        ++iter) {
     PHG4Particle* g4particle = iter->second;
-    if (trutheval->get_embed(g4particle) == 0) continue;
+    if (trutheval->get_embed(g4particle) <= 0) continue;
     
     std::set<PHG4Hit*> g4hits = trutheval->all_truth_hits(g4particle);     
     float ng4hits = g4hits.size();  
@@ -345,7 +345,7 @@ int SvtxSimPerformanceCheckReco::process_event(PHCompositeNode *topNode) {
     PHG4Particle* g4particle = trackeval->max_truth_particle_by_nclusters(track);
     float truept = sqrt(pow(g4particle->get_px(),2)+pow(g4particle->get_py(),2));
 
-    if (trutheval->get_embed(g4particle) != 0) {
+    if (trutheval->get_embed(g4particle) > 0) {
       // embedded results (quality or preformance measures)
       _truept_dptoverpt->Fill(truept,(recopt-truept)/truept);
       _truept_dca->Fill(truept,track->get_dca2d());

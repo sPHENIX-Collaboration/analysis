@@ -104,6 +104,19 @@ public:
     _rejection_action = action;
   }
 
+  //! The embedding ID for the HepMC subevent to be analyzed.
+  //! embedding ID for the event
+  //! positive ID is the embedded event of interest, e.g. jetty event from pythia
+  //! negative IDs are backgrounds, .e.g out of time pile up collisions
+  //! Usually, ID = 0 means the primary Au+Au collision background
+  int get_embedding_id() const { return _embedding_id; }
+  //
+  //! The embedding ID for the HepMC subevent to be analyzed.
+  //! embedding ID for the event
+  //! positive ID is the embedded event of interest, e.g. jetty event from pythia
+  //! negative IDs are backgrounds, .e.g out of time pile up collisions
+  //! Usually, ID = 0 means the primary Au+Au collision background
+  void set_embedding_id(int id) { _embedding_id = id; }
 private:
 
   //! tag jet flavor by parton matching, like PRL 113, 132301 (2014)
@@ -141,6 +154,13 @@ private:
 
   //! action to take if no jet fitting _flavor requirement found. Action defined in <fun4all/Fun4AllReturnCodes.h>
   int _rejection_action;
+
+  //! The embedding ID for the HepMC subevent to be analyzed.
+  //! positive ID is the embedded event of interest, e.g. jetty event from pythia
+  //! negative IDs are backgrounds, .e.g out of time pile up collisions
+  //! Usually, ID = 0 means the primary Au+Au collision background
+  int _embedding_id;
+
 };
 
 #endif // __HFJetTruthTrigger_H__

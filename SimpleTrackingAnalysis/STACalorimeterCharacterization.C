@@ -352,12 +352,12 @@ int STACalorimeterCharacterization::process_event(PHCompositeNode *topNode)
       // second is the value (analogous to the value stored for the array index)
       int particleID = g4particle->get_pid();
 
-      if ( trutheval->get_embed(g4particle) == 0 && fabs(particleID) == 11 && verbosity > 0 )
+      if ( trutheval->get_embed(g4particle) <= 0 && fabs(particleID) == 11 && verbosity > 0 )
         {
           cout << "NON EMBEDDED ELECTRON!!!  WHEE!!! " << particleID << " " << iter->first << endl;
         }
 
-      if ( trutheval->get_embed(g4particle) == 0 ) continue; // only look at embedded particles // no good for hits files
+      if ( trutheval->get_embed(g4particle) <= 0 ) continue; // only look at embedded particles // no good for hits files
       bool iselectron = fabs(particleID) == 11;
       bool ispion = fabs(particleID) == 211;
       if ( verbosity > 0 ) cout << "embedded particle ID is " << particleID << " ispion " << ispion << " iselectron " << iselectron << " " << iter->first << endl;

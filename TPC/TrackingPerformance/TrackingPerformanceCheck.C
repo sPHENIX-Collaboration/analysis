@@ -154,6 +154,7 @@ int TrackingPerformanceCheck::process_event(PHCompositeNode *topNode) {
   for(std::map<int,int>::const_iterator iterE=rangeE.first; iterE!=rangeE.second; ++iterE) {
     int tid = (*iterE).first;
     int tem = (*iterE).second;
+    if (tem > 0) //embeded signal
     fEmbedded.insert( std::make_pair(tid,tem) );
   }
   //std::cout << "TrackingPerformanceCheck ==> Embedded: " << fEmbedded.size() << std::endl;
