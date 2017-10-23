@@ -17,6 +17,25 @@
 #include "/phenix/u/yuhw/RootMacros/sPHENIXStyle/sPhenixStyle.C"
 #include "add_purity_text.C"
 
+namespace BJetDCA {
+	enum DCAMethod {
+		DCA2d = 0,
+		DCA2d_calc = 1,
+		DCA3d_calc = 2,
+
+		DCA3d = 4,
+		DCA3d_xy = 5,
+		DCA3d_sqrt = 6,
+
+		TruthDCA3d = 14
+	};
+
+	enum JetMethod {
+		TruthJet = 0,
+		RecoJet = 1
+	};
+}
+
 float binorminal_error(float a, float b) {
 	if(a > b || a < 0 || b < 0) return 9999.;
 	float e = a/b;
@@ -41,12 +60,14 @@ void draw_G4_bjet_truth_tagging(
 		const char* input = "MIE_1M/HFtag_jet.root",
 		const TString tag_method = "Parton", // Parton, Hadron
 		const char* tracking_option_name = "2014 proposal tracker",
-		const int dca_method = 4, // direct from g4hough, reco-vertex and strait line assumption, dca3d reco-vertex and strait line assumption
+		const int dca_method = BJetDCA::DCA3d, // direct from g4hough, reco-vertex and strait line assumption, dca3d reco-vertex and strait line assumption
+		const int jet_method = BJetDCA::RecoJet,
 		const double max_track_quality_cut = 1.5,
-		const double min_track_pt_cut = 1.0,
+		const double min_track_pt_cut = 0.5,
 		const double max_dca_cut = 0.1,
 		const int min_MAPS_hits = 2
 		) { 
+
 
 	const double _vertex_z_cut = 10;//cm
 
@@ -161,6 +182,23 @@ void draw_G4_bjet_truth_tagging(
 		{ ostringstream temp_o_str_s; temp_o_str_s << "h1_jet_third_highest_S_" << flavor; h1_jet_third_highest_S[flavor] = new TH1D( temp_o_str_s.str().c_str(),"",70,-20,+50); }
 	}
 
+	TH1D *h1_particle_dca_order[3][3];
+
+	TH1D *h1_particle_dca_order_eff[3][3];
+
+	for (int flavor = 0; flavor < 3; ++flavor) {
+		for(int iorder = 0; iorder < 3; ++iorder) {
+			{
+				ostringstream temp_o_str_s; temp_o_str_s << "h1_particle_dca_order"<< iorder <<"_" << flavor;
+				h1_particle_dca_order[iorder][flavor] = new TH1D( temp_o_str_s.str().c_str(),"",600,-0.1,+0.2);
+			}
+			{
+				ostringstream temp_o_str_s; temp_o_str_s << "h1_particle_dca_order_eff"<< iorder <<"_" << flavor;
+				h1_particle_dca_order_eff[iorder][flavor] = new TH1D( temp_o_str_s.str().c_str(),"",600,-0.1,+0.2);
+			}
+		}
+	}
+
 
 	TH1D *h1_jet_highest_dca_FINE[3];
 	TH1D *h1_jet_second_highest_dca_FINE[3];
@@ -218,9 +256,15 @@ void draw_G4_bjet_truth_tagging(
 	int truthjet_n;
 	int truthjet_parton_flavor[10];
 	int truthjet_hadron_flavor[10];
+
 	float truthjet_pt[10];
 	float truthjet_eta[10];
 	float truthjet_phi[10];
+
+	int recojet_valid[10];
+	float recojet_pt[10];
+	float recojet_eta[10];
+	float recojet_phi[10];
 
 	int particle_n;
 	unsigned int particle_embed[_MAX_N_PARTICLES_];
@@ -229,8 +273,11 @@ void draw_G4_bjet_truth_tagging(
 	float particle_phi[_MAX_N_PARTICLES_];
 	int particle_pid[_MAX_N_PARTICLES_];
 
-
+	float particle_vertex_x[_MAX_N_PARTICLES_];
+	float particle_vertex_y[_MAX_N_PARTICLES_];
+	float particle_vertex_z[_MAX_N_PARTICLES_];
 	float particle_dca_xy[_MAX_N_PARTICLES_];
+	float particle_dca_z[_MAX_N_PARTICLES_];
 
 	int track_n;
 	float track_pt[_MAX_N_TRACKS_];
@@ -248,8 +295,8 @@ void draw_G4_bjet_truth_tagging(
 	float track_dca2d_calc[_MAX_N_TRACKS_];
 	float track_dca2d_calc_truth[_MAX_N_TRACKS_];
 	float track_dca3d_calc[_MAX_N_TRACKS_];
-	float track_dca3d[_MAX_N_TRACKS_];
-	float track_dca3d_error[_MAX_N_TRACKS_];
+//	float track_dca3d[_MAX_N_TRACKS_];
+//	float track_dca3d_error[_MAX_N_TRACKS_];
 	float track_dca3d_xy[_MAX_N_TRACKS_];
 	float track_dca3d_xy_error[_MAX_N_TRACKS_];
 	float track_dca3d_z[_MAX_N_TRACKS_];
@@ -295,6 +342,11 @@ void draw_G4_bjet_truth_tagging(
 	Tin->SetBranchAddress("truthjet_eta",  truthjet_eta );
 	Tin->SetBranchAddress("truthjet_phi",  truthjet_phi );
 
+	Tin->SetBranchAddress("recojet_valid",   recojet_valid );
+	Tin->SetBranchAddress("recojet_pt",   recojet_pt );
+	Tin->SetBranchAddress("recojet_eta",  recojet_eta );
+	Tin->SetBranchAddress("recojet_phi",  recojet_phi );
+
 	Tin->SetBranchAddress("particle_n",   &particle_n );
 	Tin->SetBranchAddress("particle_embed",   particle_embed );
 	Tin->SetBranchAddress("particle_pt",   particle_pt );
@@ -302,7 +354,12 @@ void draw_G4_bjet_truth_tagging(
 	Tin->SetBranchAddress("particle_phi",  particle_phi );
 	Tin->SetBranchAddress("particle_pid",  particle_pid );
 
+
+	Tin->SetBranchAddress("particle_vertex_x",  particle_vertex_x );
+	Tin->SetBranchAddress("particle_vertex_y",  particle_vertex_y );
+	Tin->SetBranchAddress("particle_vertex_z",  particle_vertex_z );
 	Tin->SetBranchAddress("particle_dca_xy",  particle_dca_xy );
+	Tin->SetBranchAddress("particle_dca_z",  particle_dca_z );
 
 	Tin->SetBranchAddress("track_n",   &track_n );
 	Tin->SetBranchAddress("track_pt",   track_pt );
@@ -382,21 +439,67 @@ void draw_G4_bjet_truth_tagging(
 			if ( fabs( truthjet_eta[ j ]) > 0.6 ) continue;
 			if (truthjet_pt[ j ] < 20 ) continue;
 
-
-
-			//std::cout << " event #" << e << " jet #" << j << " pt/eta/phi = " << truthjet_pt[ j ] << " / " << truthjet_eta[ j ] << " / " << truthjet_phi[ j ] << std::endl;
-
 			h1_jet_pt[iflavor]->Fill( truthjet_pt[ j ] );
 
-			int ntrk = 0;
-			int ntrk1 = 0;
+			float jet_pt =  truthjet_pt[j];
+			float jet_eta = truthjet_eta[j];
+			float jet_phi = truthjet_phi[j];
+
+			if(jet_method == BJetDCA::RecoJet) {
+				jet_pt =  recojet_pt[j];
+				jet_eta = recojet_eta[j];
+				jet_phi = recojet_phi[j];
+			}
+
+			float particle_dca_1 = -99;
+			float particle_dca_2 = -99;
+			float particle_dca_3 = -99;
 
 			for (int p = 0; p < particle_n; p++) {
 
-				if ( particle_pid[ p ] == 16 || particle_pid[ p ] == -16) continue;
+				if (!(
+						abs(particle_pid[p])==211 || abs(particle_pid[p])==321 || abs(particle_pid[p])==2212 ||
+						abs(particle_pid[p])==11 || abs(particle_pid[p])==13
+						)) continue;
 
-				float dR = deltaR( truthjet_eta[ j ], particle_eta[ p ], truthjet_phi[ j ], particle_phi[ p ] );
-				if (dR > 0.4) continue;
+				float dR = deltaR( jet_eta, particle_eta[ p ], jet_phi, particle_phi[ p ] );
+				if (!(dR < 0.4)) continue;
+
+				if(!(particle_pt[p]>min_track_pt_cut)) continue;
+
+
+				float particle_dca = sqrt(
+						pow(particle_dca_xy[p],2) +
+						pow(particle_dca_z[p],2)
+						);
+
+
+				TVector3 dca_vec(
+						particle_vertex_x[ p ] - truth_vertex_x[0],
+						particle_vertex_y[ p ] - truth_vertex_y[0],
+						particle_vertex_z[ p ] - truth_vertex_z[0]
+						);
+				TVector3 jet_vec(0,0,0);
+				jet_vec.SetPtEtaPhi(
+						jet_pt,
+						jet_eta,
+						jet_phi
+						);
+
+				particle_dca = ( dca_vec.Dot(jet_vec) < 0 ) ?  -1 * particle_dca : particle_dca;
+
+				if(!(abs(particle_dca)<max_dca_cut)) continue;
+
+				if ( particle_dca > particle_dca_1 ) {
+					particle_dca_3 = particle_dca_2;
+					particle_dca_2 = particle_dca_1;
+					particle_dca_1 = particle_dca;
+				} else if ( particle_dca > particle_dca_2 ) {
+					particle_dca_3 = particle_dca_2;
+					particle_dca_2 = particle_dca;
+				} else if (  particle_dca > particle_dca_3 ) {
+					particle_dca_3 = particle_dca;
+				}
 
 				if(particle_embed[p] == jet_embed_flag  && abs(particle_pid[p]) == 211 
 						&& abs(particle_eta[p]) < 1.)
@@ -408,53 +511,41 @@ void draw_G4_bjet_truth_tagging(
 					h1_particle_pt_dca0[iflavor]->Fill( particle_pt[ p ] );
 				else
 					h1_particle_pt_dca1[iflavor]->Fill( particle_pt[ p ] );
-				//h1_particle_dca[iflavor]->Fill( particle_dca_xy[ p ] );
 
 				// 
 				if (particle_pid[ p ] == 211 || particle_pid[ p ] == -211 ) {
 					// pi+-
 					h1_particle_pt_species[0][iflavor]->Fill( particle_pt[ p ] );
 					h1_particle_dca_species[0][iflavor]->Fill( particle_dca_xy[ p ] );
-
-					//h1_particle_dcareco_pri_id0->Fill( particle_dca2d[ p ] );
-					//h1_particle_Sreco_pri_id0->Fill( particle_dca2d[ p ] / particle_dca2d_error[ p ] );
 				}
 				else if (particle_pid[ p ] == 321 || particle_pid[ p ] == -321 ) {
 					// k+-
 					h1_particle_pt_species[1][iflavor]->Fill( particle_pt[ p ] );
 					h1_particle_dca_species[1][iflavor]->Fill( particle_dca_xy[ p ] );
-
-					//h1_particle_dcareco_pri_id1->Fill( particle_dca2d[ p ] );
-					//h1_particle_Sreco_pri_id1->Fill( particle_dca2d[ p ] / particle_dca2d_error[ p ] );
 				}
 				else if (particle_pid[ p ] == 2212 || particle_pid[ p ] == -2212 ) {
 					// p+-
 					h1_particle_pt_species[2][iflavor]->Fill( particle_pt[ p ] );
 					h1_particle_dca_species[2][iflavor]->Fill( particle_dca_xy[ p ] );
-
-					//h1_particle_dcareco_pri_id2->Fill( particle_dca2d[ p ] );
-					//h1_particle_Sreco_pri_id2->Fill( particle_dca2d[ p ] / particle_dca2d_error[ p ] );
 				}
 				else if (particle_pid[ p ] == 11 || particle_pid[ p ] == -11 ) {
 					// e+-
 					h1_particle_pt_species[3][iflavor]->Fill( particle_pt[ p ] );
 					h1_particle_dca_species[3][iflavor]->Fill( particle_dca_xy[ p ] );
-
-					//h1_particle_dcareco_pri_id3->Fill( particle_dca2d[ p ] );
-					//h1_particle_Sreco_pri_id3->Fill( particle_dca2d[ p ] / particle_dca2d_error[ p ] );
 				}
 				else if (particle_pid[ p ] == 13 || particle_pid[ p ] == -13 ) {
 					// mu+-
 					h1_particle_pt_species[4][iflavor]->Fill( particle_pt[ p ] );
 					h1_particle_dca_species[4][iflavor]->Fill( particle_dca_xy[ p ] );
-
-					//h1_particle_dcareco_pri_id4->Fill( particle_dca2d[ p ] );
-					//h1_particle_Sreco_pri_id4->Fill( particle_dca2d[ p ] / particle_dca2d_error[ p ] );
 				}
 				else {
-					//std::cout << " --> particle #" << p << " (dR = " << dR << "), pt/eta/phi = " << particle_pt[ p ] << " / " << particle_eta[ p ] << " / " << particle_phi[ p ] << ", pid = " << particle_pid[ p ] << std::endl; //yuhw
+					std::cout << " --> particle #" << p << " (dR = " << dR << "), pt/eta/phi = " << particle_pt[ p ] << " / " << particle_eta[ p ] << " / " << particle_phi[ p ] << ", pid = " << particle_pid[ p ] << std::endl; //yuhw
 				}
 			}
+
+			h1_particle_dca_order[0][iflavor]->Fill( particle_dca_1 );
+			h1_particle_dca_order[1][iflavor]->Fill( particle_dca_2 );
+			h1_particle_dca_order[2][iflavor]->Fill( particle_dca_3 );
 
 			float highest_S = -99;
 			float highest_dca = -99;
@@ -465,8 +556,15 @@ void draw_G4_bjet_truth_tagging(
 			float third_highest_S = -99;
 			float third_highest_dca = -99;
 
+			int ntrk = 0;
+			int ntrk1 = 0;
+
 			for (int itrk = 0; itrk < track_n; itrk++) {
 
+				/**
+				 * @Track level cuts
+				 * @{
+				 */
 				if(!(track_quality[itrk]<max_track_quality_cut)) continue; // yuhw
 
 				if(!(track_pt[itrk]>min_track_pt_cut)) continue; // yuhw
@@ -481,21 +579,22 @@ void draw_G4_bjet_truth_tagging(
 
 				if (! ( abs(track_nclusters [itrk] - track_best_nclusters[itrk]) <= max_fake_cluster) ) continue; // yuhw
 
-				float dR = deltaR( truthjet_eta[ j ], track_eta[ itrk ], truthjet_phi[ j ], track_phi[ itrk ] );
+				float dR = deltaR( jet_eta, track_eta[ itrk ], jet_phi, track_phi[ itrk ] );
 				if (dR > 0.4) continue;
+				//@}
 
 				/**
 				 * @Different DCA method
 				 * @{
 				 */
-				track_dca2d[ itrk ] = fabs( track_dca2d[ itrk ] );
-				if(dca_method == 1) track_dca2d[ itrk ] = fabs( track_dca2d_calc[ itrk ] ); 
-				if(dca_method == 2) track_dca2d[ itrk ] = fabs( track_dca3d_calc[ itrk ] ); 
-				if(dca_method == 3) { 
-					track_dca2d[ itrk ] = fabs( track_dca3d[ itrk ] );
-					track_dca2d_error[ itrk ] = fabs( track_dca3d_error[ itrk ] );
-				}
-				if(dca_method == 4) { 
+				if(dca_method == BJetDCA::DCA2d) track_dca2d[ itrk ] = fabs( track_dca2d[ itrk ] );
+				if(dca_method == BJetDCA::DCA2d_calc) track_dca2d[ itrk ] = fabs( track_dca2d_calc[ itrk ] );
+				if(dca_method == BJetDCA::DCA3d_calc) track_dca2d[ itrk ] = fabs( track_dca3d_calc[ itrk ] );
+//				if(dca_method == 3) {
+//					track_dca2d[ itrk ] = fabs( track_dca3d[ itrk ] );
+//					track_dca2d_error[ itrk ] = fabs( track_dca3d_error[ itrk ] );
+//				}
+				if(dca_method == BJetDCA::DCA3d) {
 					float sigmalized_dca3d = sqrt(
 							pow(track_dca3d_xy[ itrk ]/track_dca3d_xy_error[ itrk ],2) +
 							pow(track_dca3d_z[ itrk ]/track_dca3d_z_error[ itrk ],2)
@@ -507,11 +606,11 @@ void draw_G4_bjet_truth_tagging(
 					track_dca2d[ itrk ] = sigmalized_dca3d*effective_sigma;
 					track_dca2d_error[ itrk ] = effective_sigma;
 				}
-				if(dca_method == 5) { 
+				if(dca_method == BJetDCA::DCA3d_xy) {
 					track_dca2d[ itrk ] = fabs( track_dca3d_xy[ itrk ] );
 					track_dca2d_error[ itrk ] = fabs( track_dca3d_xy_error[ itrk ] );
 				}
-				if(dca_method == 6) { 
+				if(dca_method == BJetDCA::DCA3d_sqrt) {
 					float sigmalized_dca3d = 
 						pow(track_dca3d_xy[ itrk ]/track_dca3d_xy_error[ itrk ],2) +
 						pow(track_dca3d_z[ itrk ]/track_dca3d_z_error[ itrk ],2)
@@ -520,6 +619,17 @@ void draw_G4_bjet_truth_tagging(
 						pow(track_dca3d_xy_error[ itrk ],2) +
 						pow(track_dca3d_z_error[ itrk ],2)
 						;
+				}
+
+				if(dca_method == BJetDCA::TruthDCA3d) {
+					float effective_sigma = 0.0020; // To fit into histogram
+					float sigmalized_dca3d = sqrt(
+							pow(track_best_dca_xy[ itrk ],2) +
+							pow(track_best_dca_z[ itrk ],2)
+							) / effective_sigma;
+
+					track_dca2d[ itrk ] = sigmalized_dca3d*effective_sigma;
+					track_dca2d_error[ itrk ] = effective_sigma;
 				}
 				//@}
 
@@ -531,10 +641,9 @@ void draw_G4_bjet_truth_tagging(
 				 * @{
 				 */
 				if(
-						dca_method  == 0 ||
-						dca_method  == 1 ||
-						dca_method  == 2 ||
-						dca_method  == 5
+						dca_method  == BJetDCA::DCA2d ||
+						dca_method  == BJetDCA::DCA2d_calc ||
+						dca_method  == BJetDCA::DCA3d_xy
 					) // dca2d methods
 				{
 					float dphi = track_pca_phi[ itrk ] - truthjet_phi[ j ];
@@ -547,7 +656,14 @@ void draw_G4_bjet_truth_tagging(
 					dphi = fabs(dphi);
 					if (dphi > 3.14159/2)
 						track_dca2d[ itrk ] = -1 * track_dca2d[ itrk ];
-				} else { 
+				}
+
+				if(
+						dca_method  == BJetDCA::DCA3d_calc ||
+						dca_method  == BJetDCA::DCA3d ||
+						dca_method  == BJetDCA::DCA3d_sqrt
+						)
+				{
 					TVector3 dca_vec(
 							track_pca_x[ itrk ],
 							track_pca_y[ itrk ],
@@ -555,12 +671,32 @@ void draw_G4_bjet_truth_tagging(
 							);
 					TVector3 jet_vec(0,0,0);
 					jet_vec.SetPtEtaPhi(
-							truthjet_pt[j],
-							truthjet_eta[j],
-							truthjet_phi[j]
+							jet_pt,
+							jet_eta,
+							jet_phi
 							);
 					if( dca_vec.Dot(jet_vec) < 0 ) {
 						track_dca2d[ itrk ] = -1 * track_dca2d[ itrk ];	
+					}
+				}
+
+				if(
+						dca_method  == BJetDCA::TruthDCA3d
+						)
+				{
+					TVector3 dca_vec(
+							track_best_vertex_x[ itrk ] - truth_vertex_x[0],
+							track_best_vertex_y[ itrk ] - truth_vertex_y[0],
+							track_best_vertex_z[ itrk ] - truth_vertex_z[0]
+							);
+					TVector3 jet_vec(0,0,0);
+					jet_vec.SetPtEtaPhi(
+							jet_pt,
+							jet_eta,
+							jet_phi
+							);
+					if( dca_vec.Dot(jet_vec) < 0 ) {
+						track_dca2d[ itrk ] = -1 * track_dca2d[ itrk ];
 					}
 				}
 				// @}
@@ -729,17 +865,43 @@ void draw_G4_bjet_truth_tagging(
 
 	gPad->SetLogy(1);
 
-	h1_jet_highest_dca[1]->SetLineColor( kRed );
-	h1_jet_highest_dca[2]->SetLineColor( kBlue );
-
-	h1_jet_highest_dca[0]->SetTitle(";largest DCA [cm];counts / 0.005 cm");
-	h1_jet_highest_dca[0]->Draw();
-	h1_jet_highest_dca[1]->Draw("same");
-	h1_jet_highest_dca[2]->Draw("same");
+	/*
+	 * @Plot dca_FINE
+	 * @{
+	 */
+	h1_jet_highest_dca_FINE[1]->SetLineColor( kRed );
+	h1_jet_highest_dca_FINE[2]->SetLineColor( kBlue );
+	h1_jet_highest_dca_FINE[0]->SetTitle(";largest DCA [cm];counts / 0.005 cm");
+	h1_jet_highest_dca_FINE[0]->Draw();
+	h1_jet_highest_dca_FINE[1]->Draw("same");
+	h1_jet_highest_dca_FINE[2]->Draw("same");
 	myText(0.2,0.90,kBlack,"light jets");
 	myText(0.2,0.83,kRed,"charm jets");
 	myText(0.2,0.76,kBlue,"bottom jets");
-	tc->Print("plot/h1_jet_highest_dca.pdf");
+	tc->Print("plot/h1_jet_highest_dca_FINE.pdf");
+
+	h1_jet_second_highest_dca_FINE[1]->SetLineColor( kRed );
+	h1_jet_second_highest_dca_FINE[2]->SetLineColor( kBlue );
+	h1_jet_second_highest_dca_FINE[0]->SetTitle(";largest DCA [cm];counts / 0.005 cm");
+	h1_jet_second_highest_dca_FINE[0]->Draw();
+	h1_jet_second_highest_dca_FINE[1]->Draw("same");
+	h1_jet_second_highest_dca_FINE[2]->Draw("same");
+	myText(0.2,0.90,kBlack,"light jets");
+	myText(0.2,0.83,kRed,"charm jets");
+	myText(0.2,0.76,kBlue,"bottom jets");
+	tc->Print("plot/h1_jet_second_highest_dca_FINE.pdf");
+
+	h1_jet_third_highest_dca_FINE[1]->SetLineColor( kRed );
+	h1_jet_third_highest_dca_FINE[2]->SetLineColor( kBlue );
+	h1_jet_third_highest_dca_FINE[0]->SetTitle(";largest DCA [cm];counts / 0.005 cm");
+	h1_jet_third_highest_dca_FINE[0]->Draw();
+	h1_jet_third_highest_dca_FINE[1]->Draw("same");
+	h1_jet_third_highest_dca_FINE[2]->Draw("same");
+	myText(0.2,0.90,kBlack,"light jets");
+	myText(0.2,0.83,kRed,"charm jets");
+	myText(0.2,0.76,kBlue,"bottom jets");
+	tc->Print("plot/h1_jet_third_highest_dca_FINE.pdf");
+	//@}
 
 	h1_jet_highest_S[1]->SetLineColor( kRed );
 	h1_jet_highest_S[2]->SetLineColor( kBlue );
@@ -803,6 +965,9 @@ void draw_G4_bjet_truth_tagging(
 	myText(0.6,0.76,kBlue,"bottom jets");
 	tc->Print("plot/h1_jet_third_highest_S.pdf");
 
+	/*
+	 * @{
+	 */
 	for (int flavor = 0; flavor < 3; flavor++) {
 		for (int n = 0; n < h1_jet_highest_dca_FINE[flavor]->GetNbinsX(); n++) {
 			h1_jet_highest_dca_EFF[flavor]->SetBinContent( n + 1, h1_jet_highest_dca_FINE[flavor]->Integral( n + 1, -1 ) / h1_jet_highest_dca_FINE[flavor]->Integral(-1,-1) );
@@ -909,6 +1074,7 @@ void draw_G4_bjet_truth_tagging(
 	myText(0.7,0.69,kBlue,"bottom jets");
 
 	tc->Print("plot/h1_eff_third_highest_S.pdf");
+	//@}
 
 	//float rates[3] = { 4.83287e-06, 5.6243e-09 * 0.35, 7.35424e-09 * 0.35 };
 	//float bpurity = beff * rates[2] / ( beff * rates[2] + ceff * rates[1] + leff * rates[0] );
@@ -1228,9 +1394,9 @@ void draw_G4_bjet_truth_tagging(
 	tg_bjetE_vs_bjetP_second_highest_S->SetName("tg_bjetE_vs_bjetP_second_highest_S");;
 	tg_bjetE_vs_bjetP_third_highest_S->SetName("tg_bjetE_vs_bjetP_third_highest_S");
 
-	//tg_bjetE_vs_bjetP_highest_dca->Draw("L,same");
-	//tg_bjetE_vs_bjetP_second_highest_dca->Draw("L,same");
-	//tg_bjetE_vs_bjetP_third_highest_dca->Draw("L,same");
+	tg_bjetE_vs_bjetP_highest_dca->Draw("L,same");
+	tg_bjetE_vs_bjetP_second_highest_dca->Draw("L,same");
+	tg_bjetE_vs_bjetP_third_highest_dca->Draw("L,same");
 
 	tg_bjetE_vs_bjetP_highest_S->Draw("L,same");
 	tg_bjetE_vs_bjetP_second_highest_S->Draw("L,same");
@@ -1576,6 +1742,111 @@ void draw_G4_bjet_truth_tagging(
 	myText(0.6,0.83,kRed,"charm jets");
 	myText(0.6,0.76,kBlue,"bottom jets");
 	tc->Print("plot/h1_jet_third_highest_S_zoom.pdf");
+
+
+	/*
+	 * @particle DCA
+	 * @{
+	 */
+	TGraph *tg_bjetE_vs_bjetP_particle[3];
+	for(int iorder = 0; iorder < 3; ++iorder) {
+
+		h1_particle_dca_order[iorder][1]->SetLineColor( kRed );
+		h1_particle_dca_order[iorder][2]->SetLineColor( kBlue );
+		h1_particle_dca_order[iorder][0]->SetTitle(";DCA^{particle}_{min} [cm];efficiency");
+
+		h1_particle_dca_order[iorder][0]->Draw();
+		h1_particle_dca_order[iorder][1]->Draw("same");
+		h1_particle_dca_order[iorder][2]->Draw("same");
+
+		if(iorder==0) myText(0.5,0.90,kBlack,"DCA^{particle}_{largest}");
+		if(iorder==1) myText(0.5,0.90,kBlack,"DCA^{particle}_{second}");
+		if(iorder==2) myText(0.5,0.90,kBlack,"DCA^{particle}_{third}");
+
+		myText(0.7,0.83,kBlack,"light jets");
+		myText(0.7,0.76,kRed,"charm jets");
+		myText(0.7,0.69,kBlue,"bottom jets");
+
+		if(iorder==0) tc->Print("plot/h1_particle_dca_order_0.pdf");
+		if(iorder==1) tc->Print("plot/h1_particle_dca_order_1.pdf");
+		if(iorder==2) tc->Print("plot/h1_particle_dca_order_2.pdf");
+
+		for (int flavor = 0; flavor < 3; flavor++) {
+			for (int n = 0; n < h1_particle_dca_order[iorder][flavor]->GetNbinsX(); n++) {
+				h1_particle_dca_order_eff[iorder][flavor]->SetBinContent(
+						n + 1,
+						h1_particle_dca_order[iorder][flavor]->Integral( n + 1, -1 )/h1_particle_dca_order[iorder][flavor]->Integral(-1,-1) );
+			}
+		}
+
+		h1_particle_dca_order_eff[iorder][1]->SetLineColor( kRed );
+		h1_particle_dca_order_eff[iorder][2]->SetLineColor( kBlue );
+		h1_particle_dca_order_eff[iorder][0]->SetTitle(";DCA^{particle}_{min} [cm];efficiency");
+
+		h1_particle_dca_order_eff[iorder][0]->Draw();
+		h1_particle_dca_order_eff[iorder][1]->Draw("same");
+		h1_particle_dca_order_eff[iorder][2]->Draw("same");
+
+		if(iorder==0) myText(0.5,0.90,kBlack,"DCA^{particle}_{largest} > DCA^{particle}_{min} cut");
+		if(iorder==1) myText(0.5,0.90,kBlack,"DCA^{particle}_{second}  > DCA^{particle}_{min} cut");
+		if(iorder==2) myText(0.5,0.90,kBlack,"DCA^{particle}_{third}   > DCA^{particle}_{min} cut");
+
+		myText(0.7,0.83,kBlack,"light jets");
+		myText(0.7,0.76,kRed,"charm jets");
+		myText(0.7,0.69,kBlue,"bottom jets");
+
+		if(iorder==0) tc->Print("plot/h1_particle_dca_order_eff_0.pdf");
+		if(iorder==1) tc->Print("plot/h1_particle_dca_order_eff_1.pdf");
+		if(iorder==2) tc->Print("plot/h1_particle_dca_order_eff_2.pdf");
+
+		tg_bjetE_vs_bjetP_particle[iorder] = new TGraph();
+		for (int n = 0; n < h1_particle_dca_order_eff[iorder][0]->GetNbinsX(); n++) {
+			if (h1_particle_dca_order_eff[iorder][0]->GetBinContent(n + 1) == 0)
+				continue;
+			float eff = h1_particle_dca_order_eff[iorder][2]->GetBinContent(n + 1);
+			if (eff < _plot_min_bjet_eff_cut)
+				continue;
+			float pur = h1_particle_dca_order[iorder][2]->Integral(n + 1, -1)
+					/ (h1_particle_dca_order[iorder][0]->Integral(n + 1, -1)
+							+ h1_particle_dca_order[iorder][1]->Integral(n + 1, -1)
+							+ h1_particle_dca_order[iorder][2]->Integral(n + 1, -1));
+			tg_bjetE_vs_bjetP_particle[iorder]->SetPoint(
+					tg_bjetE_vs_bjetP_particle[iorder]->GetN(), eff, pur);
+		}
+
+		int line_width = 4;
+
+		tg_bjetE_vs_bjetP_particle[iorder]->SetLineWidth(line_width);
+		tg_bjetE_vs_bjetP_particle[iorder]->SetLineStyle(0);
+
+		if(iorder == 0) tg_bjetE_vs_bjetP_particle[iorder]->SetLineColor(kGreen+2);
+		if(iorder == 1) tg_bjetE_vs_bjetP_particle[iorder]->SetLineColor(kRed);
+		if(iorder == 2) tg_bjetE_vs_bjetP_particle[iorder]->SetLineColor(kBlue);
+
+
+		if(iorder == 0) tg_bjetE_vs_bjetP_particle[iorder]->SetName("tg_bjetE_vs_bjetP_particle_0");
+		if(iorder == 1) tg_bjetE_vs_bjetP_particle[iorder]->SetName("tg_bjetE_vs_bjetP_particle_1");
+		if(iorder == 2) tg_bjetE_vs_bjetP_particle[iorder]->SetName("tg_bjetE_vs_bjetP_particle_2");
+	}
+
+	TH1D *hFrame_bjetE_vs_bjetP_particle = new TH1D("hFrame_bjetE_vs_bjetP_particle",";#it{b}-jet efficiency;#it{b}-jet purity",1,0,1.05);
+	hFrame_bjetE_vs_bjetP_particle->GetYaxis()->SetRangeUser(0, 1.);
+	hFrame_bjetE_vs_bjetP_particle->Draw();
+
+	tg_bjetE_vs_bjetP_particle[0]->Draw("L,same");
+	tg_bjetE_vs_bjetP_particle[1]->Draw("L,same");
+	tg_bjetE_vs_bjetP_particle[2]->Draw("L,same");
+
+	//add_purity_text(tracking_option_name);
+
+	gPad->SetGrid(0,0);
+	gPad->SetLogy(0);
+
+	tc->Print("plot/tg_bjetE_vs_bjetP_particle.pdf");
+	tc->Print("plot/tg_bjetE_vs_bjetP_particle.root");
+	//@}
+
+
 
 	fout->cd();
 	Tout->Write();
