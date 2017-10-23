@@ -21,13 +21,17 @@ librichana_la_LIBADD = \
   -lg4eval \
   -lphhepmc
 
-
 pkginclude_HEADERS = \
-  RICHEvaluator.h 
+  RICHEvaluator.h \
+  RICHParticleID.h \
+  dualrich_analyzer.h
 
 librichana_la_SOURCES = \
   RICHEvaluator.C \
-  RICHEvaluator_Dict.C
+  RICHEvaluator_Dict.C \
+  RICHParticleID.C \
+  RICHParticleID_Dict.C\
+  dualrich_analyzer.cc
 
 # Rule for generating table CINT dictionaries.
 %_Dict.C: %.h %LinkDef.h
