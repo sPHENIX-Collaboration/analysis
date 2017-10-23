@@ -18,6 +18,8 @@
 #include "TFile.h"
 
 class PHCompositeNode;
+//class JetEvalStack;
+//class SvtxEvalStack;
 
 class BJetModule: public SubsysReco {
 
@@ -26,6 +28,7 @@ public:
 	BJetModule(const std::string &name = "BJetModule");
 
 	int Init(PHCompositeNode*);
+	int reset_tree_vars();
 	int process_event(PHCompositeNode*);
 	int End(PHCompositeNode*);
 
@@ -80,9 +83,16 @@ private:
 	int _b_truthjet_n;
 	int _b_truthjet_parton_flavor[10];
 	int _b_truthjet_hadron_flavor[10];
+
 	float _b_truthjet_pt[10];
 	float _b_truthjet_eta[10];
 	float _b_truthjet_phi[10];
+
+	int _b_recojet_valid[10];
+	float _b_recojet_pt[10];
+	float _b_recojet_eta[10];
+	float _b_recojet_phi[10];
+
 
 	int _b_particle_n;
 	float _b_particle_pt[1000];
@@ -149,6 +159,9 @@ private:
 	float _b_track_best_dca_z[1000];
 
 	std::string _foutname;
+
+//	JetEvalStack *jet_eval_stack;
+//	SvtxEvalStack *svtxevalstack;
 
 };
 

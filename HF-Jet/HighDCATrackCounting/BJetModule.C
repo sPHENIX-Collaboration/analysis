@@ -11,6 +11,7 @@
 
 
 #include <fun4all/Fun4AllServer.h>
+#include <fun4all/Fun4AllReturnCodes.h>
 
 #include <phool/getClass.h>
 #include <phool/PHCompositeNode.h>
@@ -31,6 +32,7 @@
 #include <g4hough/SvtxVertex.h>
 
 #include <g4eval/SvtxEvalStack.h>
+#include <g4eval/JetEvalStack.h>
 
 #include <phhepmc/PHHepMCGenEvent.h>
 #include <HepMC/GenEvent.h>
@@ -60,12 +62,7 @@ BJetModule::BJetModule(const string &name) :
 
 }
 
-int BJetModule::Init(PHCompositeNode *topNode) {
-
-
-	_ievent = 0;
-
-	_b_event = -1;
+int BJetModule::reset_tree_vars() {
 
 	_b_truthjet_n = 0;
 
@@ -74,10 +71,14 @@ int BJetModule::Init(PHCompositeNode *topNode) {
 		_b_truthjet_parton_flavor[n] = -9999;
 		_b_truthjet_hadron_flavor[n] = -9999;
 
-		_b_truthjet_pt[n] = -1;
-		_b_truthjet_eta[n] = -1;
-		_b_truthjet_phi[n] = -1;
+		_b_truthjet_pt[n] = -99;
+		_b_truthjet_eta[n] = -99;
+		_b_truthjet_phi[n] = -99;
 
+		_b_recojet_valid[n] = 0;
+		_b_truthjet_pt[n] = -99;
+		_b_truthjet_eta[n] = -99;
+		_b_truthjet_phi[n] = -99;
 	}
 
 	_b_particle_n = 0;
@@ -145,6 +146,17 @@ int BJetModule::Init(PHCompositeNode *topNode) {
 
 	}
 
+	return 0;
+}
+
+int BJetModule::Init(PHCompositeNode *topNode) {
+	_ievent = 0;
+
+	_b_event = -1;
+
+	reset_tree_vars();
+
+
 	_f = new TFile(_foutname.c_str(), "RECREATE");
 
 	_tree = new TTree("T", "a withered deciduous tree");
@@ -160,10 +172,13 @@ int BJetModule::Init(PHCompositeNode *topNode) {
 	_tree->Branch("truthjet_parton_flavor", _b_truthjet_parton_flavor, "truthjet_parton_flavor[truthjet_n]/I");
 	_tree->Branch("truthjet_hadron_flavor", _b_truthjet_hadron_flavor, "truthjet_hadron_flavor[truthjet_n]/I");
 	_tree->Branch("truthjet_pt", _b_truthjet_pt, "truthjet_pt[truthjet_n]/F");
-	_tree->Branch("truthjet_eta", _b_truthjet_eta,
-			"truthjet_eta[truthjet_n]/F");
-	_tree->Branch("truthjet_phi", _b_truthjet_phi,
-			"truthjet_phi[truthjet_n]/F");
+	_tree->Branch("truthjet_eta", _b_truthjet_eta,"truthjet_eta[truthjet_n]/F");
+	_tree->Branch("truthjet_phi", _b_truthjet_phi,"truthjet_phi[truthjet_n]/F");
+
+	_tree->Branch("recojet_valid", _b_recojet_valid, "recojet_valid[truthjet_n]/I");
+	_tree->Branch("recojet_pt", _b_recojet_pt, "recojet_pt[truthjet_n]/F");
+	_tree->Branch("recojet_eta", _b_recojet_eta,"recojet_eta[truthjet_n]/F");
+	_tree->Branch("recojet_phi", _b_recojet_phi,"recojet_phi[truthjet_n]/F");
 
 	_tree->Branch("particle_n", &_b_particle_n, "particle_n/I");
 	_tree->Branch("particle_pt", _b_particle_pt, "particle_pt[particle_n]/F");
@@ -184,12 +199,10 @@ int BJetModule::Init(PHCompositeNode *topNode) {
 	_tree->Branch("track_phi", _b_track_phi, "track_phi[track_n]/F");
 
 	_tree->Branch("track_dca2d", _b_track_dca2d, "track_dca2d[track_n]/F");
-	_tree->Branch("track_dca2d_error", _b_track_dca2d_error,
-			"track_dca2d_error[track_n]/F");
+	_tree->Branch("track_dca2d_error", _b_track_dca2d_error,"track_dca2d_error[track_n]/F");
 
 	_tree->Branch("track_dca3d_xy", _b_track_dca3d_xy, "track_dca3d_xy[track_n]/F");
-	_tree->Branch("track_dca3d_xy_error", _b_track_dca3d_xy_error,
-			"track_dca3d_xy_error[track_n]/F");
+	_tree->Branch("track_dca3d_xy_error", _b_track_dca3d_xy_error,"track_dca3d_xy_error[track_n]/F");
 
 	_tree->Branch("track_dca3d_z", _b_track_dca3d_z, "track_dca3d_z[track_n]/F");
 	_tree->Branch("track_dca3d_z_error", _b_track_dca3d_z_error,"track_dca3d_z_error[track_n]/F");
@@ -231,6 +244,19 @@ int BJetModule::Init(PHCompositeNode *topNode) {
 
 	_tree->Branch("track_best_dca_xy", _b_track_best_dca_xy, "track_best_dca_xy[track_n]/F");
 	_tree->Branch("track_best_dca_z",  _b_track_best_dca_z, "track_best_dca_z[track_n]/F");
+
+//	jet_eval_stack = new JetEvalStack(topNode, "AntiKt_Tower_r04", "AntiKt_Truth_r04");
+//	if(!jet_eval_stack) {
+//		LogError("!jet_eval_stack");
+//		return Fun4AllReturnCodes::ABORTRUN;
+//	}
+
+
+//	svtxevalstack = new SvtxEvalStack(topNode);
+//	if(!svtxevalstack) {
+//		LogError("!svtxevalstack");
+//		return Fun4AllReturnCodes::ABORTRUN;
+//	}
 
 	return 0;
 
@@ -321,6 +347,8 @@ int BJetModule::process_event(PHCompositeNode *topNode) {
 
 	_b_event = _ievent;
 
+	reset_tree_vars();
+
 	PHHepMCGenEvent *genevt = findNode::getClass<PHHepMCGenEvent>(topNode,"PHHepMCGenEvent");
 	HepMC::GenEvent* theEvent = genevt->getEvent();
 	//theEvent->print();
@@ -335,33 +363,51 @@ int BJetModule::process_event(PHCompositeNode *topNode) {
 	TVector3 truth_primary_vertex(first_point->get_x(),first_point->get_y(),first_point->get_z());
 	++_b_truth_vertex_n;
 
+	JetEvalStack *jet_eval_stack = new JetEvalStack(topNode, "AntiKt_Tower_r04", "AntiKt_Truth_r04");
+	if(!jet_eval_stack) {
+		LogError("!jet_eval_stack");
+		return Fun4AllReturnCodes::ABORTRUN;
+	}
+
+	JetRecoEval *jet_reco_eval = jet_eval_stack->get_reco_eval();
+	if(!jet_reco_eval) {
+		LogError("!jet_reco_eval");
+		return Fun4AllReturnCodes::ABORTRUN;
+	}
 
 	JetMap* truth_jets = findNode::getClass<JetMap>(topNode,"AntiKt_Truth_r04");
+
 	_b_truthjet_n = 0;
 	for (JetMap::Iter iter = truth_jets->begin(); iter != truth_jets->end();
 			++iter) {
-		Jet* this_jet = iter->second;
+		Jet* truth_jet = iter->second;
 
-		float this_pt = this_jet->get_pt();
-		float this_phi = this_jet->get_phi();
-		float this_eta = this_jet->get_eta();
-
-		if (this_jet->get_pt() < 10 || fabs(this_eta) > 2)
+		if (truth_jet->get_pt() < 10 || fabs(truth_jet->get_eta()) > 2)
 			continue;
+
+		_b_truthjet_pt[_b_truthjet_n]  = truth_jet->get_pt();
+		_b_truthjet_phi[_b_truthjet_n] = truth_jet->get_phi();
+		_b_truthjet_eta[_b_truthjet_n] = truth_jet->get_eta();
+
 
 		int jet_flavor = -999;
 
-		jet_flavor = this_jet->get_property(static_cast<Jet::PROPERTY>(prop_JetPartonFlavor));
+		jet_flavor = truth_jet->get_property(static_cast<Jet::PROPERTY>(prop_JetPartonFlavor));
 		if(abs(jet_flavor)<100)
 			_b_truthjet_parton_flavor[_b_truthjet_n] = jet_flavor;
 
-		jet_flavor = this_jet->get_property(static_cast<Jet::PROPERTY>(prop_JetHadronFlavor));
+		jet_flavor = truth_jet->get_property(static_cast<Jet::PROPERTY>(prop_JetHadronFlavor));
 		if(abs(jet_flavor)<100)
 			_b_truthjet_hadron_flavor[_b_truthjet_n] = jet_flavor;
 
-		_b_truthjet_pt[_b_truthjet_n] = this_pt;
-		_b_truthjet_phi[_b_truthjet_n] = this_phi;
-		_b_truthjet_eta[_b_truthjet_n] = this_eta;
+		Jet* reco_jet = jet_reco_eval->best_jet_from(truth_jet);
+
+		if(!reco_jet) continue;
+
+		_b_recojet_valid[_b_truthjet_n] = 1;
+		_b_recojet_pt[_b_truthjet_n] = reco_jet->get_pt();
+		_b_recojet_phi[_b_truthjet_n] = reco_jet->get_phi();
+		_b_recojet_eta[_b_truthjet_n] = reco_jet->get_eta();
 
 		_b_truthjet_n++;
 	}
@@ -489,6 +535,11 @@ int BJetModule::process_event(PHCompositeNode *topNode) {
 	SvtxClusterMap* clustermap = findNode::getClass<SvtxClusterMap>(topNode,"SvtxClusterMap");
 
 	SvtxEvalStack *svtxevalstack = new SvtxEvalStack(topNode);
+	if(!svtxevalstack) {
+		LogError("!svtxevalstack");
+		return Fun4AllReturnCodes::ABORTRUN;
+	}
+
 	svtxevalstack->next_event(topNode);
 	SvtxTrackEval *trackeval = svtxevalstack->get_track_eval();
 
@@ -731,6 +782,9 @@ int BJetModule::End(PHCompositeNode *topNode) {
 	//_tree->Write();
 	_f->Write();
 	_f->Close();
+
+//	delete jet_eval_stack;
+//	delete svtxevalstack;
 
 	return 0;
 }
