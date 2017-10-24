@@ -18,6 +18,8 @@
 #include "TFile.h"
 
 class PHCompositeNode;
+//class JetEvalStack;
+//class SvtxEvalStack;
 
 class BJetModule: public SubsysReco {
 
@@ -26,6 +28,7 @@ public:
 	BJetModule(const std::string &name = "BJetModule");
 
 	int Init(PHCompositeNode*);
+	int reset_tree_vars();
 	int process_event(PHCompositeNode*);
 	int End(PHCompositeNode*);
 
@@ -45,19 +48,6 @@ public:
 		_vertexmap_name = vertexmapName;
 	}
 
-  //! The embedding ID for the HepMC subevent to be analyzed.
-  //! embedding ID for the event
-  //! positive ID is the embedded event of interest, e.g. jetty event from pythia
-  //! negative IDs are backgrounds, .e.g out of time pile up collisions
-  //! Usually, ID = 0 means the primary Au+Au collision background
-  int get_embedding_id() const { return _embedding_id; }
-  //
-  //! The embedding ID for the HepMC subevent to be analyzed.
-  //! embedding ID for the event
-  //! positive ID is the embedded event of interest, e.g. jetty event from pythia
-  //! negative IDs are backgrounds, .e.g out of time pile up collisions
-  //! Usually, ID = 0 means the primary Au+Au collision background
-  void set_embedding_id(int id) { _embedding_id = id; }
 private:
 
 	float dR(float eta1, float eta2, float phi1, float phi2) {
@@ -85,12 +75,24 @@ private:
 
 	int _b_event;
 
+	int _b_truth_vertex_n;
+	float _b_truth_vertex_x[10];
+	float _b_truth_vertex_y[10];
+	float _b_truth_vertex_z[10];
+
 	int _b_truthjet_n;
 	int _b_truthjet_parton_flavor[10];
 	int _b_truthjet_hadron_flavor[10];
+
 	float _b_truthjet_pt[10];
 	float _b_truthjet_eta[10];
 	float _b_truthjet_phi[10];
+
+	int _b_recojet_valid[10];
+	float _b_recojet_pt[10];
+	float _b_recojet_eta[10];
+	float _b_recojet_phi[10];
+
 
 	int _b_particle_n;
 	float _b_particle_pt[1000];
@@ -98,7 +100,12 @@ private:
 	float _b_particle_phi[1000];
 	int _b_particle_pid[1000];
 	unsigned int _b_particle_embed[1000];
-	float _b_particle_dca[1000];
+
+	float _b_particle_vertex_x[1000];
+	float _b_particle_vertex_y[1000];
+	float _b_particle_vertex_z[1000];
+	float _b_particle_dca_xy[1000];
+	float _b_particle_dca_z[1000];
 
 	int _b_track_n;
 	float _b_track_pt[1000];
@@ -120,10 +127,10 @@ private:
 	float _b_track_dca3d_calc[1000];
 	float _b_track_dca3d_calc_truth[1000];
 
-	float _b_track_dca2d_phi[1000];
-	float _b_track_dca2d_x[1000];
-	float _b_track_dca2d_y[1000];
-	float _b_track_dca2d_z[1000];
+	float _b_track_pca_phi[1000];
+	float _b_track_pca_x[1000];
+	float _b_track_pca_y[1000];
+	float _b_track_pca_z[1000];
 
 	float _b_track_quality[1000];
 	float _b_track_chisq[1000];
@@ -140,19 +147,21 @@ private:
 	bool _b_track_best_primary[1000];
 	int _b_track_best_pid[1000];
 	float _b_track_best_pt[1000];
-	float _b_track_best_dca3d_xy[1000];
 
 	int _b_track_best_in[1000];
 	int _b_track_best_out[1000];
 	int _b_track_best_parent_pid[1000];
-	float _b_track_best_dca[1000];
 
-	//float _b_track_particle_pt[100];
-	//float _b_track_particle_eta[100];
-	//float _b_track_particle_phi[100];
-	//int _b_track_particle_pid[100];
+	float _b_track_best_vertex_x[1000];
+	float _b_track_best_vertex_y[1000];
+	float _b_track_best_vertex_z[1000];
+	float _b_track_best_dca_xy[1000];
+	float _b_track_best_dca_z[1000];
 
 	std::string _foutname;
+
+//	JetEvalStack *jet_eval_stack;
+//	SvtxEvalStack *svtxevalstack;
 
   //! The embedding ID for the HepMC subevent to be analyzed.
   //! positive ID is the embedded event of interest, e.g. jetty event from pythia
