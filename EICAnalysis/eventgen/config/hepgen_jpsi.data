@@ -9,7 +9,7 @@ BMRD   0
 * Physics process: 1 gamma, 2 W ex., 3 Z, 4 full NC - LSTHFL(4), 5 HiExcProd
 PROC   5
 * LEPTO 'soft' cuts: x, y, Q2, W2, nu, E', phi (min/max) - CUT(1-14)
-CUTL   0.0001  1.0  0.0  1.0  1.0  10.0  0.00  1000.0     8.0  144.0  0.0   200.0  0.00  6.28318
+CUTL   0.0001  1.0  0.0  1.0  1.0  1000000.0  0.00  1000000.0     0.0  1000000.0  0.0   1000000.0  0.00  6.28318
 
 * limits for tprim generation
 *TLIM   0.001  1.2
