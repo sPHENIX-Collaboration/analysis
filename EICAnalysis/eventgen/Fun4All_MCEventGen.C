@@ -1,6 +1,6 @@
 
 int Fun4All_MCEventGen(
-		       const int nEvents = 1000,
+		       const int nEvents = 100000,
 		       const char * outputFile = "G4MCEventGen.root"
 		       )
 {
@@ -27,7 +27,7 @@ int Fun4All_MCEventGen(
   bool do_DSTReader = true;
 
   // Option to run DIS analysis module- need to compile analysis library first!
-  bool do_analysis_DIS = false;
+  bool do_analysis_DIS = true;
 
   // Option to save DST output file
   bool do_DSTOutput = false;
@@ -105,7 +105,7 @@ int Fun4All_MCEventGen(
 
       sHEPGen *hepgen = new sHEPGen();
       hepgen->set_datacard_file("config/hepgen_dvcs.data");
-      hepgen->set_momentum_electron(-20);
+      hepgen->set_momentum_electron(-10);
       hepgen->set_momentum_hadron(250);
       se->registerSubsystem(hepgen);
 
