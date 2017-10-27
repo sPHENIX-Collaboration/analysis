@@ -592,7 +592,7 @@ int Fun4All_G4_EICDetector_RICH(
   gSystem->Load("librichana.so");
   gSystem->Load("libg4detectors.so");
 
-  RICHEvaluator *eval_rich = new RICHEvaluator("eval_RICH.root", "G4HIT_RICH");
+  RICHEvaluator *eval_rich = new RICHEvaluator("SvtxTrackMap", "G4HIT_RICH", "eval_RICH.root");
   se->registerSubsystem(eval_rich);
 
   RICHParticleID *richpid = new RICHParticleID("SvtxTrackMap", "G4HIT_RICH", "eval_RICH_PID.root");
