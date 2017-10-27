@@ -289,6 +289,9 @@ void eic_bnl_rich::acq(string input_filename, int ind){
       d_hit[2] = eic_rich_hit_z;
       
       //cout<<theta*rtd<<"  "<<phi*rtd<<endl;
+      //cout<<"V: "<<momv[0]<<"  "<<momv[1]<<"  "<<momv[2]<<endl;
+      cout<<"E: "<<m_emi[0]<<"  "<<m_emi[1]<<"  "<<m_emi[2]<<endl;
+      //cout<<"D: "<<d_hit[0]<<"  "<<d_hit[1]<<"  "<<d_hit[2]<<endl;
       //cout<<eic_rich_volumeid<<endl;
 
       rr[0] = -18.5*TMath::Sin(eic_rich_volumeid*TMath::Pi()/4.);
@@ -296,15 +299,9 @@ void eic_bnl_rich::acq(string input_filename, int ind){
       rr[2] = 75.;
       sec = eic_rich_volumeid;
 
+      //cout<<rr[0]<<"  "<<rr[1]<<"  "<<rr[2]<<endl;
+
       ch = ind_ray(m_emi[0], m_emi[1], m_emi[2], d_hit[0], d_hit[1], d_hit[2], rr[0], rr[1], rr[2], momv[0], momv[1], momv[2]);
-
-      cout<<"V (momv):  "<<momv[0]<<"  "<<momv[1]<<"  "<<momv[2]<<endl;
-      cout<<"E (m_emi): "<<m_emi[0]<<"  "<<m_emi[1]<<"  "<<m_emi[2]<<endl;
-      cout<<"D (d_hit): "<<d_hit[0]<<"  "<<d_hit[1]<<"  "<<d_hit[2]<<endl;
-      cout<<"ctr:       "<<rr[0]<<"  "<<rr[1]<<"  "<<rr[2]<<endl;
-      cout<<"theta_c:   "<<ch<<endl;
-      cout << "=====" << endl;
-
       //cout<<ch<<endl;
       if(ch<(theta_cc+0.01) && ch>(theta_cc-0.01))ch_ang->Fill(ch);
     }
@@ -327,10 +324,9 @@ void eic_bnl_rich::run(){
   myfile.open ("prova.txt");
   Double_t sigma[300], pang[300];
   Int_t ii = 0;
-  Int_t imax = 1;
-
-  for(Int_t i=1;i<=imax;i++){
-    acq("eval_RICH.root",i);
+  
+  for(Int_t i=1;i<=100;i++){
+    acq("../pion_RICH_ideal.root",i);
     if(i<=100 && c_rms!=0){
       sigma[ii] = c_rms;
       pang[ii] = p_ang;
