@@ -67,7 +67,7 @@ LeptoquarksReco::Init(PHCompositeNode *topNode)
 	_ntp_jet = new TNtuple("ntp_jet","all jet information from LQ events",
 		"event:jet_id:isMaxEnergyJet:jet_eta:jet_phi:jet_mass:jet_p:jet_pT:jet_eT:jet_e:jet_px:jet_py:jet_pz");
 
-	_truthinfo = findNode::getClass<PHG4TruthInfoContainer>(topNode,"G4TruthInfo");
+
 
 	return 0;
 }
@@ -79,6 +79,8 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
 
 	cout << endl;
 	cout << "LeptoquarksReco: Processing event " << _ievent << endl;
+
+	_truthinfo = findNode::getClass<PHG4TruthInfoContainer>(topNode,"G4TruthInfo");
 
 	if (!_truthinfo) {
           cerr << PHWHERE << " ERROR: Can't find G4TruthInfo" << endl;
