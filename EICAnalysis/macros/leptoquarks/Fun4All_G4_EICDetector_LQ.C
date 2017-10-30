@@ -17,7 +17,7 @@ int Fun4All_G4_EICDetector_LQ(
 
 
 
-  string directory = "/direct/phenix+u/spjeffas/analysis/EICAnalysis/macros/leptoquarks/output/";
+  string directory = "./";
 
 
   //===============
