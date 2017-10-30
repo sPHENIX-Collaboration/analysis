@@ -80,6 +80,12 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
 	cout << endl;
 	cout << "LeptoquarksReco: Processing event " << _ievent << endl;
 
+	if (!_truthinfo) {
+          cerr << PHWHERE << " ERROR: Can't find G4TruthInfo" << endl;
+          exit(-1);
+        }
+
+
 	string recojetname = "AntiKt_Tower_r05";
 
 	JetMap* recojets = findNode::getClass<JetMap>(topNode,recojetname.c_str());
