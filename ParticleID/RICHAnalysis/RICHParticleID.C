@@ -123,15 +123,17 @@ RICHParticleID::process_event(PHCompositeNode *topNode)
 
     /* Calculate true emission angle for output tree */
     _theta_true = 0;
+    _mass_true = 0;
 
     /* get truth info node */
     PHG4TruthInfoContainer* truthinfo =
       findNode::getClass<PHG4TruthInfoContainer>(topNode, "G4TruthInfo");
 
-    /* If truth info found use it to calculate truth emission angle */
+    /* If truth info found use it to calculate truth emission angle and truth mass */
     if ( truthinfo )
       {
         _theta_true = calculate_true_emission_angle( truthinfo , track_j , _refractive_index );
+	_mass_true = calculate_true_mass( truthinfo, track_j );
       }
 
 
@@ -143,8 +145,9 @@ RICHParticleID::process_event(PHCompositeNode *topNode)
       {
         PHG4Hit *hit_i = rich_hits_iter->second;
 
-        /* Set reconstructed emission angle for output tree */
+        /* Set reconstructed emission angle and reconstructed mass for output tree */
         _theta_reco = calculate_emission_angle( m_emi, momv, hit_i );
+	_mass_reco = calculate_reco_mass( momv_norm, _theta_reco, _refractive_index );
 
         /* Fill tree */
         _tree_rich->Fill();
@@ -184,15 +187,16 @@ double RICHParticleID::calculate_emission_angle( double m_emi[3], double momv[3]
   _analyzer->set_mirror(cx, cy, cz, R_mirror);
 
   /* Call algorithm to determine emission angle of photon i w.r.t. track j */
+  /* 
   cout<<"V (momv):  " << vx <<"  "<< vy <<"  "<< vz <<endl;
   cout<<"E (m_emi): " << Ex <<"  "<< Ey <<"  "<< Ez <<endl;
   cout<<"D (d_hit): " << Dx <<"  "<< Dy <<"  "<< Dz <<endl;
   cout<<"ctr:       " << cx <<"  "<< cy <<"  "<< cz <<endl;
-
+  */
   float theta_c = _analyzer->ind_ray(Ex, Ey, Ez, Dx, Dy, Dz, vx, vy, vz, select_radiator); //Indirect Ray Tracing
 
-  cout<<"theta_c :  " << theta_c << endl;
-  cout << "======" << endl;
+  //cout<<"theta_c :  " << theta_c << endl;
+  //cout << "======" << endl;
 
   return theta_c;
 }
@@ -214,7 +218,7 @@ double RICHParticleID::calculate_true_emission_angle( PHG4TruthInfoContainer* tr
                         track->get_py() * track->get_py() +
                         track->get_pz() * track->get_pz() );
 
-  /* Calculate 'beta' */
+  /* Calculate beta = v/c */
   double beta = ptotal / sqrt( mass * mass + ptotal * ptotal );
 
   /* Calculate emission angle for Cerenkov light */
@@ -222,6 +226,34 @@ double RICHParticleID::calculate_true_emission_angle( PHG4TruthInfoContainer* tr
 
   return theta_c;
 }
+
+
+double RICHParticleID::calculate_reco_mass( double mom, double theta_reco, double index )
+{
+  /* Calculate beta from reco angle */
+  double beta = 1/( index * cos(theta_reco) );
+
+  /* Calculate mass from beta */
+  double mass = mom * sqrt( 1/( beta * beta ) - 1 );
+
+  return mass;
+}
+
+
+double RICHParticleID::calculate_true_mass( PHG4TruthInfoContainer* truthinfo, SvtxTrack_FastSim * track )
+{
+  /* Get truth particle associated with track */
+  PHG4Particle* particle = truthinfo->GetParticle( track->get_truth_track_id() );
+
+  /* Get particle ID */
+  int pid = particle->get_pid();
+
+  /* Get particle mass */
+  double mass = _pdg->GetParticle(pid)->Mass();
+
+  return mass;
+}
+
 
 bool
 RICHParticleID::get_position_from_track_state(  SvtxTrack_FastSim * track, string statename, double arr_pos[3] )
@@ -289,6 +321,8 @@ RICHParticleID::reset_tree_vars()
 {
   _theta_true = -1;
   _theta_reco = -1;
+  _mass_true = -1;
+  _mass_reco = -1;
 
   return;
 }
@@ -302,6 +336,8 @@ RICHParticleID::init_tree()
   _tree_rich->Branch("event", &_ievent, "Event number /I");
   _tree_rich->Branch("theta_true", &_theta_true, "True emission angle /F");
   _tree_rich->Branch("theta_reco", &_theta_reco, "Reconstructed emission angle /F");
+  _tree_rich->Branch("mass_true", &_mass_true, "True particle mass /F");
+  _tree_rich->Branch("mass_reco", &_mass_reco, "Reconstructed particle mass /F");
 
   return 0;
 }
