@@ -57,8 +57,14 @@ private:
   /** calculate emission angle for single track and photon */
   double calculate_emission_angle( double m_emi[3], double momv[3], PHG4Hit *hit_i );
 
-  /** calculate true Cerenkov light emission angle from truth particle infromation */
+  /** calculate true Cerenkov light emission angle from truth particle information */
   double calculate_true_emission_angle( PHG4TruthInfoContainer* truthinfo, SvtxTrack_FastSim * track, double index );
+
+  /** calculate mass for single track and photon */
+  double calculate_reco_mass( double mom, double theta_reco, double index );
+
+  /** calculate true particle mass from truth particle information */
+  double calculate_true_mass( PHG4TruthInfoContainer* truthinfo, SvtxTrack_FastSim * track);
 
   /** get position from track state */
   bool get_position_from_track_state(  SvtxTrack_FastSim * track, std::string statename, double arr_pos[3] );
@@ -90,6 +96,8 @@ private:
   TTree* _tree_rich;
   float _theta_true;
   float _theta_reco;
+  float _mass_true;
+  float _mass_reco;
 
   /* analyzer object */
   eic_dual_rich *_analyzer;
