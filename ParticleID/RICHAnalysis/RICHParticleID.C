@@ -93,12 +93,18 @@ RICHParticleID::process_event(PHCompositeNode *topNode)
     return Fun4AllReturnCodes::ABORTEVENT;
   }
 
+  /* get truth info node */
+  PHG4TruthInfoContainer* truthinfo =
+    findNode::getClass<PHG4TruthInfoContainer>(topNode, "G4TruthInfo");
+
+  /* abort if no truth container found */
+  assert(truthinfo);
+
   /* Loop over tracks */
   for (SvtxTrackMap::ConstIter track_itr = trackmap->begin();
        track_itr != trackmap->end(); track_itr++) {
 
     SvtxTrack_FastSim* track_j = dynamic_cast<SvtxTrack_FastSim*>(track_itr->second);
-
 
     /* Get mean emission point from track in RICH */
     double m_emi[3] = {0.,0.,0.};
@@ -106,7 +112,6 @@ RICHParticleID::process_event(PHCompositeNode *topNode)
     /* 'Continue' with next track if RICH not found in state list for this track */
     if ( ! get_position_from_track_state( track_j, _trackstate_name, m_emi ) )
       continue;
-
 
     /* Fill momv object which is the normalized momentum vector of the track in the RICH (i.e. its direction) */
     double momv[3] = {0.,0.,0.};
@@ -120,14 +125,9 @@ RICHParticleID::process_event(PHCompositeNode *topNode)
     momv[1] /= momv_norm;
     momv[2] /= momv_norm;
 
-
     /* Calculate true emission angle for output tree */
     _theta_true = 0;
     _mass_true = 0;
-
-    /* get truth info node */
-    PHG4TruthInfoContainer* truthinfo =
-      findNode::getClass<PHG4TruthInfoContainer>(topNode, "G4TruthInfo");
 
     /* If truth info found use it to calculate truth emission angle and truth mass */
     if ( truthinfo )
@@ -144,6 +144,38 @@ RICHParticleID::process_event(PHCompositeNode *topNode)
     for (rich_hits_iter = rich_hits_begin_end.first; rich_hits_iter !=  rich_hits_begin_end.second; ++rich_hits_iter)
       {
         PHG4Hit *hit_i = rich_hits_iter->second;
+	PHG4Particle* particle = NULL;
+	PHG4Particle* parent = NULL;
+	if ( truthinfo )
+          {  
+            particle = truthinfo->GetParticle( hit_i->get_trkid() );
+            parent = truthinfo->GetParticle( particle->get_parent_id() );
+	  }
+	
+	_hit_x0 =  hit_i->get_x(0);
+        _hit_y0 =  hit_i->get_y(0);
+        _hit_z0 =  hit_i->get_z(0);
+
+	_track_px = particle->get_px();
+        _track_py = particle->get_py();
+        _track_pz = particle->get_pz();
+
+        _mtrack_px = parent->get_px();
+        _mtrack_py = parent->get_py();
+        _mtrack_pz = parent->get_pz();
+
+        _track_e = particle->get_e();
+        _mtrack_e = parent->get_e();
+        _edep = hit_i->get_edep();
+
+	_bankid = 0;
+        _volumeid = hit_i->get_detid();
+        _hitid = hit_i->get_hit_id();
+	_pid = particle->get_pid();
+        _mpid = parent->get_pid();
+        _trackid = particle->get_track_id();
+        _mtrackid = parent->get_track_id();
+	_otrackid = _mtrackid;
 
         /* Set reconstructed emission angle and reconstructed mass for output tree */
         _theta_reco = calculate_emission_angle( m_emi, momv, hit_i );
@@ -319,10 +351,35 @@ RICHParticleID::End(PHCompositeNode *topNode)
 void
 RICHParticleID::reset_tree_vars()
 {
-  _theta_true = -1;
-  _theta_reco = -1;
-  _mass_true = -1;
-  _mass_reco = -1;
+  _hit_x0 = -999;
+  _hit_y0 = -999;
+  _hit_z0 = -999;
+
+  _track_px = -999;
+  _track_py = -999;
+  _track_pz = -999;
+
+  _mtrack_px = -999;
+  _mtrack_py = -999;
+  _mtrack_pz = -999;
+
+  _track_e = -999;
+  _mtrack_e = -999;
+  _edep = -999;
+
+  _bankid = -999;
+  _volumeid = -999;
+  _hitid = -999;
+  _pid = -999;
+  _mpid = -999;
+  _trackid = -999;
+  _mtrackid = -999;
+  _otrackid = -999;
+
+  _theta_true = -999;
+  _theta_reco = -999;
+  _mass_true = -999;
+  _mass_reco = -999;
 
   return;
 }
@@ -334,6 +391,27 @@ RICHParticleID::init_tree()
   _tree_rich = new TTree("pid_rich","RICH ParticleID info");
 
   _tree_rich->Branch("event", &_ievent, "Event number /I");
+  _tree_rich->Branch("hit_x", &_hit_x0, "Global x-hit /D");
+  _tree_rich->Branch("hit_y", &_hit_y0, "Global y-hit /D");
+  _tree_rich->Branch("hit_z", &_hit_z0, "Global z-hit /D");
+  _tree_rich->Branch("px", &_track_px, "Particle x-momentum /D");
+  _tree_rich->Branch("py", &_track_py, "Particle y-momentum /D");
+  _tree_rich->Branch("pz", &_track_pz, "Particle z-momentum /D");
+  _tree_rich->Branch("mpx", &_mtrack_px, "Mother x-momentum /D");
+  _tree_rich->Branch("mpy", &_mtrack_py, "Mother y-momentum /D");
+  _tree_rich->Branch("mpz", &_mtrack_pz, "Mother z-momentum /D");
+  _tree_rich->Branch("e", &_track_e, "Track energy /D");
+  _tree_rich->Branch("me", &_mtrack_e, "Mother track energy /D");
+  _tree_rich->Branch("edep", &_edep, "Energy deposited in material /D");
+  _tree_rich->Branch("bankid", &_bankid, "Bank ID /I");
+  _tree_rich->Branch("volumeid", &_volumeid, "Volume ID /I");
+  _tree_rich->Branch("hitid", &_hitid, "Hit ID /I");
+  _tree_rich->Branch("pid", &_pid, "Particle ID /I");
+  _tree_rich->Branch("mpid", &_mpid, "Mother ID /I");
+  _tree_rich->Branch("trackid", &_trackid, "Track ID /I");
+  _tree_rich->Branch("mtrackid", &_mtrackid, "Mother track ID /I");
+  _tree_rich->Branch("otrackid", &_otrackid, "Original track ID /I");
+
   _tree_rich->Branch("theta_true", &_theta_true, "True emission angle /F");
   _tree_rich->Branch("theta_reco", &_theta_reco, "Reconstructed emission angle /F");
   _tree_rich->Branch("mass_true", &_mass_true, "True particle mass /F");

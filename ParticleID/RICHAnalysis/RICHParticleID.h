@@ -94,6 +94,32 @@ private:
 
   /* output tree and variables */
   TTree* _tree_rich;
+
+  double _hit_x0;
+  double _hit_y0;
+  double _hit_z0;
+
+  double _track_px;
+  double _track_py;
+  double _track_pz;
+
+  double _mtrack_px;
+  double _mtrack_py;
+  double _mtrack_pz;
+
+  double _track_e;
+  double _mtrack_e;
+  double _edep;
+
+  int _bankid;
+  int _volumeid;
+  int _hitid;
+  int _pid;
+  int _mpid;
+  int _trackid;
+  int _mtrackid;
+  int _otrackid;
+
   float _theta_true;
   float _theta_reco;
   float _mass_true;
