@@ -18,11 +18,11 @@ colormap(myColorMap);
 % n = 10000000;
 n = 50000;
 % n = 500000;
-% full_rate = 100e3;
-full_rate = 50e3;
+full_rate = 100e3;
+% full_rate = 50e3;
 trig_rate = 15e3;
-trigger_window = 13e-6;
-% trigger_window = 17.5e-6;
+% trigger_window = 13e-6;
+trigger_window = 17.5e-6;
 % trigger_window = 35e-6;
 
 TargetEta = 1.1;
@@ -210,7 +210,37 @@ end
 
 SaveCavas(SaveName,gcf);
 
+%% Collision pile up histogram
 
+nPileUp = zeros(  sum(TriggerBCO(PerTriggerBCO:(TimeSpanBCO-PerTriggerBCO)))  ,1)  ;
+
+iTrig = 1;
+for i = PerTriggerBCO:(TimeSpanBCO-PerTriggerBCO)
+    
+    if (TriggerBCO(i));
+        
+        nPileUp(iTrig) = sum( CollisionBCO((i-PerTriggerBCO):(i+PerTriggerBCO)) );
+        
+        iTrig = iTrig +1;
+    end
+
+end
+%%
+
+figure('name','nPileUp','PaperPositionMode','auto', ...
+    'position',[100,0,1000,800]) ;
+
+hist(nPileUp,0:20);
+
+set(gca,'XLim',[-1,11]);
+xlabel('Number of collisions per trigger','FontSize',14);
+ylabel('Count per bin','FontSize',14);
+title(sprintf('<Number of collision> = %.2f @ %.0f kHz Collision, %.0f kHz Trigger %.0f us Drift',...
+    mean(nPileUp),...
+    full_rate/1e3,trig_rate/1e3,trigger_window*1e6),'FontSize',16);
+
+SaveCavas(SaveName,gcf);
+    
 %%
 
 % fprintf('Throttled event / total = %.3f; Throttled data / total = %.3f; Triggered event / total = %.3f; Triggered data / total = = %.3f\n',...
