@@ -212,32 +212,49 @@ SaveCavas(SaveName,gcf);
 
 %% Collision pile up histogram
 
-nPileUp = zeros(  sum(TriggerBCO(PerTriggerBCO:(TimeSpanBCO-PerTriggerBCO)))  ,1)  ;
+nPileUpTrig = zeros(  sum(TriggerBCO(PerTriggerBCO+1:(TimeSpanBCO-PerTriggerBCO)))  ,1)  ;
+nPileUpRnd = zeros(  TimeSpanBCO - 2*PerTriggerBCO  ,1)  ;
 
 iTrig = 1;
-for i = PerTriggerBCO:(TimeSpanBCO-PerTriggerBCO)
+for i = PerTriggerBCO+1:(TimeSpanBCO-PerTriggerBCO)
     
     if (TriggerBCO(i));
         
-        nPileUp(iTrig) = sum( CollisionBCO((i-PerTriggerBCO):(i+PerTriggerBCO)) );
+        nPileUpTrig(iTrig) = sum( CollisionBCO((i-PerTriggerBCO):(i+PerTriggerBCO)) );
         
         iTrig = iTrig +1;
     end
+    
+    nPileUpRnd(i- PerTriggerBCO + 1) = sum( CollisionBCO((i-PerTriggerBCO):(i+PerTriggerBCO)) );
+    
 
 end
 %%
 
 figure('name','nPileUp','PaperPositionMode','auto', ...
-    'position',[100,0,1000,800]) ;
+    'position',[100,0,2000,800]) ;
 
-hist(nPileUp,0:20);
+subplot(1,2,1)
+
+hist(nPileUpTrig,0:20);
 
 set(gca,'XLim',[-1,11]);
-xlabel('Number of collisions per trigger','FontSize',14);
+xlabel('Number of collisions in TPC drift window','FontSize',14);
 ylabel('Count per bin','FontSize',14);
-title(sprintf('<Number of collision> = %.2f @ %.0f kHz Collision, %.0f kHz Trigger %.0f us Drift',...
-    mean(nPileUp),...
-    full_rate/1e3,trig_rate/1e3,trigger_window*1e6),'FontSize',16);
+title(sprintf('Collision trigger: <# collision in TPC window> = %.2f @ %.0f kHz Collision, %.0f us Drift',...
+    mean(nPileUpTrig),...
+    full_rate/1e3,trigger_window*1e6),'FontSize',16);
+
+subplot(1,2,2)
+
+hist(nPileUpRnd,0:20);
+
+set(gca,'XLim',[-1,11]);
+xlabel('Number of collisions in TPC drift window','FontSize',14);
+ylabel('Count per bin','FontSize',14);
+title(sprintf('Random trigger: <# collision in TPC window> = %.2f @ %.0f kHz Collision, %.0f us Drift',...
+    mean(nPileUpRnd),...
+    full_rate/1e3,trigger_window*1e6),'FontSize',16);
 
 SaveCavas(SaveName,gcf);
     
