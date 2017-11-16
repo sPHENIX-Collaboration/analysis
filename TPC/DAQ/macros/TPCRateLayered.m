@@ -21,8 +21,8 @@ n = 50000;
 % full_rate = 100e3;
 full_rate = 50e3;
 trig_rate = 15e3;
-% trigger_window = 13e-6;
-trigger_window = 17.5e-6;
+trigger_window = 13e-6;
+% trigger_window = 17.5e-6;
 % trigger_window = 35e-6;
 
 TargetEta = 1.1;
@@ -87,7 +87,7 @@ grid on
 daspect([1 1 1])
 
 xlabel('|z| position (cm)','FontSize',14);
-ylabel('R position','FontSize',14);
+ylabel('R position (cm)','FontSize',14);
 c.Label.String = 'FEE data (bit) per MB collision per |z|-R bin (integrated over z-sign and azimuth)';
 c.Label.FontSize = 14;
 
@@ -114,7 +114,7 @@ ylabel('R position','FontSize',14);
 c.Label.String = 'FEE data (bit) per MB collision per |z|-R bin (integrated over z-sign and azimuth)';
 c.Label.FontSize = 14;
 
-title(sprintf('FEE data (bit) per MB collision per |z|-R bin, total = %.1f Mbit', sum(sum(dataBitRingBCO))/1e6),'FontSize',16);
+title(sprintf('FEE data (bit) after DAM acceptance filtering, total = %.1f Mbit', sum(sum(dataBitRingBCOAfterMask))/1e6),'FontSize',16);
 
 
 
@@ -146,25 +146,33 @@ imagesc( DataBCO(:,1:DataPlotRangeBCO) );
 c = colorbar;
 hold on;
 set(gca,'YDir','normal');
+set(gca,'YLim',[-4,nRing+1]);
 
-xlabel('Time/ADC bin','FontSize',14);
-ylabel('R bin','FontSize',14);
+xlabel('BCO bin (100 ns)','FontSize',14);
+ylabel('Radial layer number','FontSize',14);
 c.Label.String = 'FEE data (bit)';
 c.Label.FontSize = 14;
-title(sprintf('FEE data input to DAM. Rate = %.0f Gbps @ %.0f kHz Collision, %.0f kHz Trigger %.0f, us Drift',...
+title(sprintf('FEE data input to DAM. Rate = %.0f Gbps @ %.0f kHz Collision, %.0f kHz Trigger %.0f us Drift',...
     sum(sum(DataBCO))/TimeSpan/1e9,full_rate/1e3,trig_rate/1e3,trigger_window*1e6),'FontSize',16);
 
 for i = 1:DataPlotRangeBCO
     
     if (TriggerBCO(i) >0)
         
-        plot([i i], [1 nRing],'r--','LineWidth',2);
+        plot([i i], [-3 nRing],'r--','LineWidth',2);
+        plot([i,i+PerTriggerBCO], [-3 -3], 'r-', 'LineWidth', 2)
+        plot([i,i+PerTriggerBCO], [-1 -1], 'k-', 'LineWidth', 2)
+        
     elseif (CollisionBCO(i) >0)
         
-        plot([i i], [1 nRing],'k--','LineWidth',2);
+        plot([i i], [-1 nRing],'k--','LineWidth',2);
+        plot([i,i+PerTriggerBCO], [-1 -1], 'k-', 'LineWidth', 2)
     end
     
+    
 end
+
+
 
 subplot(2,1,2)
 
@@ -172,12 +180,13 @@ imagesc( PlotThrottleDataBCO );
 c = colorbar;
 hold on;
 set(gca,'YDir','normal');
+set(gca,'YLim',[-4,nRing+1]);
 
-xlabel('Time/ADC bin','FontSize',14);
-ylabel('R bin','FontSize',14);
+xlabel('BCO bin (100 ns)','FontSize',14);
+ylabel('Radial layer number','FontSize',14);
 c.Label.String = 'FEE data equavelent (bit)';
 c.Label.FontSize = 14;
-title(sprintf('After trigger-based throttle: Throttled data rate = %.0f Gbps, Triggered data rate = %.0f Gbps ',...
+title(sprintf('DAM data output: Throttled data rate = %.0f Gbps, Triggered data rate = %.0f Gbps ',...
     ThrottleDataRate * DAMCompressionFactor/1e9 ,...
     TriggerDataRate * DAMCompressionFactor/1e9...
     ),'FontSize',16);
@@ -186,10 +195,14 @@ for i = 1:DataPlotRangeBCO
     
     if (TriggerBCO(i) >0)
         
-        plot([i i], [1 nRing],'r--','LineWidth',2);
+        plot([i i], [-3 nRing],'r--','LineWidth',2);
+        plot([i,i+PerTriggerBCO], [-3 -3], 'r-', 'LineWidth', 2)
+        plot([i,i+PerTriggerBCO], [-1 -1], 'k-', 'LineWidth', 2)
+        
     elseif (CollisionBCO(i) >0)
         
-        plot([i i], [1 nRing],'k--','LineWidth',2);
+        plot([i i], [-1 nRing],'k--','LineWidth',2);
+        plot([i,i+PerTriggerBCO], [-1 -1], 'k-', 'LineWidth', 2)
     end
     
     
