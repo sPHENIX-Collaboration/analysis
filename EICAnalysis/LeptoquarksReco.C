@@ -1,5 +1,10 @@
 #include "LeptoquarksReco.h"
 
+#include <phhepmc/PHHepMCGenEvent.h>
+#include <phhepmc/PHHepMCGenEventMap.h>
+#include <HepMC/GenEvent.h>
+#include <HepMC/GenVertex.h>
+
 #include <phool/getClass.h>
 #include <fun4all/Fun4AllServer.h>
 #include <fun4all/Fun4AllReturnCodes.h>
@@ -63,11 +68,11 @@ LeptoquarksReco::Init(PHCompositeNode *topNode)
 
 	_tfile = new TFile(_filename.c_str(), "RECREATE");
 	_ntp_leptoquark = new TNtuple("ntp_leptoquark","all tower information from LQ events",
-		"event:jetid:isMaxEnergyJet:jet_eta:jet_phi:towerid:calorimeterid:towereta:towerphi:towerbineta:towerbinphi:towerenergy:towerz:isTauTower:jet_mass");
+		"event:jetid:isMaxEnergyJet:isMinDeltaRJet:jet_eta:jet_phi:delta_R:towerid:calorimeterid:towereta:towerphi:towerbineta:towerbinphi:towerenergy:towerz:isTauTower:jet_mass");
 	_ntp_jet = new TNtuple("ntp_jet","all jet information from LQ events",
-		"event:jet_id:isMaxEnergyJet:jet_eta:jet_phi:jet_mass:jet_p:jet_pT:jet_eT:jet_e:jet_px:jet_py:jet_pz");
+		"event:jet_id:isMaxEnergyJet:isMinDeltaRJet:jet_eta:jet_phi:delta_R:jet_mass:jet_p:jet_pT:jet_eT:jet_e:jet_px:jet_py:jet_pz");
 
-
+	_truthinfo = findNode::getClass<PHG4TruthInfoContainer>(topNode,"G4TruthInfo");
 
 	return 0;
 }
@@ -80,14 +85,48 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
 	cout << endl;
 	cout << "LeptoquarksReco: Processing event " << _ievent << endl;
 
-	_truthinfo = findNode::getClass<PHG4TruthInfoContainer>(topNode,"G4TruthInfo");
 
-	if (!_truthinfo) {
+	double bkgd_cut = 5;
+	double tau_eta=100, tau_phi=100;
+	double temp_phi;
+	//	double DIS_eta=100, DIS_phi=100;
+
+	PHHepMCGenEventMap *genevtmap = findNode::getClass<PHHepMCGenEventMap>(topNode,"PHHepMCGenEventMap");
+        if (!genevtmap) {
           cerr << PHWHERE << " ERROR: Can't find G4TruthInfo" << endl;
           exit(-1);
         }
+	
+        for (PHHepMCGenEventMap::ReverseIter iter = genevtmap->rbegin(); iter != genevtmap->rend(); ++iter)
+	  {
+
+	    PHHepMCGenEvent *genevt = iter->second;
+	    HepMC::GenEvent *theEvent = genevt->getEvent();
+	    
+	    for ( HepMC::GenEvent::particle_iterator p = theEvent->particles_begin();
+		  p != theEvent->particles_end(); ++p ) {
+	      
+	      if ( (*p)->production_vertex() ) {
+		for ( HepMC::GenVertex::particle_iterator mother 
+			= (*p)->production_vertex()->
+			particles_begin(HepMC::parents);
+		      mother != (*p)->production_vertex()->
+			particles_end(HepMC::parents); 
+		      ++mother ) {
+
+		  if ((*p)->pdg_id()==15 && (*mother)->pdg_id()==15){
+                    tau_eta=(*p)->momentum().eta();
+                    tau_phi=(*p)->momentum().phi();
+                    if(tau_phi>TMath::Pi()) tau_phi = tau_phi-2*TMath::Pi();
+                  }
 
 
+		} 
+	      }
+	    } 
+	  }// end loop over all particles in event record //
+	
+	
 	string recojetname = "AntiKt_Tower_r05";
 
 	JetMap* recojets = findNode::getClass<JetMap>(topNode,recojetname.c_str());
@@ -97,42 +136,74 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
 		exit(-1);
 	}
 
+	
 //	float max_energy_id = 0;
 //	float max_energy = 0;
 	float is_max_energy_jet = 0;
+	float is_min_delta_R_jet = 0;
+
 
 	std::vector<float> energy_list;
+	std::vector<float> delta_R_list;
 
-	//loop over every recojet in the event to determine the maximum energy jet.
+
+	int temp_i=0;
 	for (JetMap::Iter iter = recojets->begin();
-	iter != recojets->end();
+	     iter != recojets->end();
 	++iter)
 	{
 		Jet* recojet = iter->second;
 
-//		float id    = recojet->get_id();
-		float e     = recojet->get_e();
-		energy_list.push_back(e);
+//              float id    = recojet->get_id();                                                                                                                                                            
+                float e = recojet->get_e();
+	
+                energy_list.push_back(e);
 
-//		if(e > max_energy) max_energy_id = id;
+//              if(e > max_energy) max_energy_id = id;  
+
+		float eta = recojet->get_eta();
+                float phi = recojet->get_phi();
+		
+		if(tau_phi < -0.9*TMath::Pi() && phi > 0.9*TMath::Pi()) phi = phi-2*TMath::Pi();
+		if(tau_phi > 0.9*TMath::Pi() && phi < -0.9*TMath::Pi()) tau_phi = tau_phi-2*TMath::Pi();
+
+
+
+                float delta_R = sqrt(pow(eta-tau_eta,2)+pow(phi-tau_phi,2));
+		if (e<bkgd_cut){
+		  delta_R_list.push_back(10+temp_i);
+		  temp_i++;
+		}
+		else delta_R_list.push_back(delta_R);
+		
 	}
 
 	//Rank the entries in the energy_list by energy (highest energyy = 1, second highest = 2, etc.)
 	vector<float> energy_list_sorted = energy_list;
+	vector<float> delta_R_list_sorted = delta_R_list;
 	std::sort(energy_list_sorted.begin(), energy_list_sorted.end(), std::greater<float>());
+	std::sort(delta_R_list_sorted.begin(), delta_R_list_sorted.end(), std::less<float>());
 
 	map<float, int> energyRankMap;
+	map<float, int> deltaRRankMap;
 	for(int i = 0; (unsigned)i < energy_list_sorted.size(); i++)
 	{
-		energyRankMap.insert(make_pair(energy_list_sorted[i],i));
+	  deltaRRankMap.insert(make_pair(delta_R_list_sorted[i],i));
+	  energyRankMap.insert(make_pair(energy_list_sorted[i],i));
 	}
+
+	//Used to get rid of repeated jets
+	std::vector<int> index_list;
+	index_list.push_back(0);
+	temp_i=0;
 
 	//loop over every jet identified in the event, this time we will be able to record which is the max energy jet and store this info.
 	for (JetMap::Iter iter = recojets->begin();
-	iter != recojets->end();
+	     iter != recojets->end();
 	++iter)
 	{
-		
+	  
+	  bool repeat = false;
 //		cout << "Maximum energy jet is:" << endl;
 //		Jet *max_energy_jet = recojets->get(max_energy_id);
 		Jet *max_energy_jet = iter->second;	//Not actually the max energy jet anymore, just every jet.
@@ -151,9 +222,31 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
 		float jet_py = max_energy_jet->get_py();
 		float jet_pz = max_energy_jet->get_pz();
 
+		
+		temp_phi = jet_phi;
+		
+		if(tau_phi < -0.9*TMath::Pi() && jet_phi > 0.9*TMath::Pi()) temp_phi = jet_phi-2*TMath::Pi();
+		
+
+    		float delta_R = sqrt(pow(jet_eta-tau_eta,2)+pow(temp_phi-tau_phi,2));
+		if(jet_e<bkgd_cut) {
+		  delta_R = 10+temp_i;
+		  temp_i++;
+		}
+		
 		auto it = energyRankMap.find(max_energy_jet->get_e());
+		auto it_2 = deltaRRankMap.find(delta_R);
+
+		is_min_delta_R_jet = it_2->second + 1;
 		is_max_energy_jet = it->second + 1;
-//		cout << it->second + 1 << " " << max_energy_jet->get_e() << endl;
+
+		//Loop to make sure no jets are repeated
+		for(int i=0; (unsigned)i<index_list.size(); i++){
+		  if (is_max_energy_jet == index_list[i]) repeat = true;
+		}
+		
+		if (repeat) continue;
+		index_list.push_back(is_max_energy_jet);
 
 		GlobalVertexMap* vertexmap = findNode::getClass<GlobalVertexMap>(topNode,"GlobalVertexMap");
 		if (!vertexmap) {
@@ -345,7 +438,7 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
 
 				if(!particle_i) 
 				{
-					cout << "*********Warning in LeptoquarksReco: Particle not found in tower " << tower->get_id() << ". May be noise." << endl;
+				  //cout << "*********Warning in LeptoquarksReco: Particle not found in tower " << tower->get_id() << ". May be noise." << endl;
 //					continue;
 				}
 				else if(particle_i)
@@ -373,11 +466,13 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
 
 				double eta = asinh(z/r); // eta after shift from vertex
 
-				float lqjet_data[15] = {(float) _ievent,	//event number
+				float lqjet_data[17] = {(float) _ievent,	//event number
 					(float) (iter->second)->get_id(),	//jet id
 					(float) is_max_energy_jet,		//is this the maximum energy jet?
+					(float) is_min_delta_R_jet,              //is this the minimum R jet?
 					(float) jet_eta,			//eta of the jet
-					(float) jet_phi,			//phi of the jet
+					(float) jet_phi,                        //phi of the jet
+					(float) delta_R,			//distance from true tau
 					(float) tower->get_id(),		//tower id
 					(float) calorimeter,			//calorimeter id. 1 = CEMC, 2 = HCALIN, 3 = HCALOUT
 					(float) eta,				//eta of tower calculated from bin/calorimeter information
@@ -396,12 +491,14 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
 			else cout << "******* ERROR in LeptoquarksReco: tower not found. Calorimeter may not be defined in LeptoquarksReco. Skipping. " << endl;
 			tower_found = false;
 		}
-
-		float lqjet_data[14] = {(float) _ievent,	//event number
+		
+		float lqjet_data[16] = {(float) _ievent,	//event number
 			(float) (max_energy_jet)->get_id(),	//jet id
 			(float) is_max_energy_jet,		//is this the maximum energy jet?
+			(float) is_min_delta_R_jet,              //is this the minimum R jet?		
 			(float) jet_eta,			//
 			(float) jet_phi,
+			(float) delta_R,                       
 			(float) jet_mass,
 			(float) jet_momentum,
 			(float) jet_trans_momentum,
@@ -415,6 +512,7 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
 		_ntp_jet->Fill(lqjet_data);
 
 		is_max_energy_jet = 0;
+		is_min_delta_R_jet = 0;
 	}
 	return 0;
 }
