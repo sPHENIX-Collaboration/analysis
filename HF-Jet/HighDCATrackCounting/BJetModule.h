@@ -25,7 +25,7 @@ class BJetModule: public SubsysReco {
 
 public:
 
-	BJetModule(const std::string &name = "BJetModule");
+	BJetModule(const std::string &name = "BJetModule", const std::string &out = "HFtag.root");
 
 	int Init(PHCompositeNode*);
 	int reset_tree_vars();

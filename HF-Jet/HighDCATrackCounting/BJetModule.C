@@ -42,7 +42,7 @@
 #include "TLorentzVector.h"
 #include "TDatabasePDG.h"
 
-
+#include <memory>
 #include <iostream>
 
 //#define _DEBUG_
@@ -53,11 +53,12 @@
 
 using namespace std;
 
-BJetModule::BJetModule(const string &name) :
+BJetModule::BJetModule(const string &name, const string& out) :
 		SubsysReco(name),
 		_verbose (true),
 		_trackmap_name("SvtxTrackMap"),
-		_vertexmap_name("SvtxVertexMap"){
+		_vertexmap_name("SvtxVertexMap"),
+		_embedding_id(1){
 
 	_foutname = name;
 
@@ -285,10 +286,20 @@ bool calc_dca3d_line(
 	if(track_direction.Mag() == 0) return false;
 
 	TVector3 PV = track_point - vertex;
+	if(PV.Mag() < 0.000001) {
+		dca_xy = 0;
+		dca_z = 0;
+		return true;
+	}
 
 	TVector3 PVxMom = track_direction.Cross(PV);
 
 	TVector3 PCA = track_direction;
+
+	if(PVxMom.Mag() < 0.000001) {
+		std::cout << __FILE__ <<": " << __LINE__ << ": PVxMom.Mag2() < 0.000001" <<std::endl;
+		return false;
+	}
 
 	PCA.Rotate(TMath::PiOver2(), PVxMom); // direction
 
@@ -508,7 +519,6 @@ int BJetModule::process_event(PHCompositeNode *topNode) {
 			<<": " << TDatabasePDG::Instance()->GetParticle(truth_pid)->GetName()
 			<<": truth_dca_xy: " << truth_dca_xy
 			<<": truth_dca_z: " << truth_dca_z
-			<<": charge: " << charge
 			<<endl<<endl;
 		}
 #endif
@@ -608,7 +618,7 @@ int BJetModule::process_event(PHCompositeNode *topNode) {
 		if (fabs(track_eta) > 1)
 			continue;
 
-		std::set<PHG4Hit*> assoc_hits = trackeval->all_truth_hits(track);
+		std::set<PHG4Hit*> assoc_hits = trackeval->all_truth_hits(track);//TODO
 
 		int nmaps = 0;
 		unsigned int nclusters = track->size_clusters();
