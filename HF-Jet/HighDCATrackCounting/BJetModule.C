@@ -55,12 +55,11 @@ using namespace std;
 
 BJetModule::BJetModule(const string &name, const string& out) :
 		SubsysReco(name),
-		_verbose (true),
+		_foutname(out),
 		_trackmap_name("SvtxTrackMap"),
 		_vertexmap_name("SvtxVertexMap"),
 		_embedding_id(1){
 
-	_foutname = name;
 
 }
 
@@ -247,19 +246,6 @@ int BJetModule::Init(PHCompositeNode *topNode) {
 	_tree->Branch("track_best_dca_xy", _b_track_best_dca_xy, "track_best_dca_xy[track_n]/F");
 	_tree->Branch("track_best_dca_z",  _b_track_best_dca_z, "track_best_dca_z[track_n]/F");
 
-//	jet_eval_stack = new JetEvalStack(topNode, "AntiKt_Tower_r04", "AntiKt_Truth_r04");
-//	if(!jet_eval_stack) {
-//		LogError("!jet_eval_stack");
-//		return Fun4AllReturnCodes::ABORTRUN;
-//	}
-
-
-//	svtxevalstack = new SvtxEvalStack(topNode);
-//	if(!svtxevalstack) {
-//		LogError("!svtxevalstack");
-//		return Fun4AllReturnCodes::ABORTRUN;
-//	}
-
 	return 0;
 
 }
@@ -394,7 +380,8 @@ int BJetModule::process_event(PHCompositeNode *topNode) {
 	TVector3 truth_primary_vertex(first_point->get_x(),first_point->get_y(),first_point->get_z());
 	++_b_truth_vertex_n;
 
-	JetEvalStack *jet_eval_stack = new JetEvalStack(topNode, "AntiKt_Tower_r04", "AntiKt_Truth_r04");
+	//JetEvalStack *jet_eval_stack = new JetEvalStack(topNode, "AntiKt_Tower_r04", "AntiKt_Truth_r04");
+	auto jet_eval_stack = unique_ptr<JetEvalStack> (new JetEvalStack(topNode, "AntiKt_Tower_r04", "AntiKt_Truth_r04"));
 	if(!jet_eval_stack) {
 		LogError("!jet_eval_stack");
 		return Fun4AllReturnCodes::ABORTRUN;
@@ -430,9 +417,10 @@ int BJetModule::process_event(PHCompositeNode *topNode) {
 		jet_flavor = truth_jet->get_property(static_cast<Jet::PROPERTY>(prop_JetHadronFlavor));
 		if(abs(jet_flavor)<100)
 			_b_truthjet_hadron_flavor[_b_truthjet_n] = jet_flavor;
-
+		cout << "DEBUG: " << __LINE__ << endl;
+		//auto reco_jet = unique_ptr<Jet>(jet_reco_eval->best_jet_from(truth_jet));
 		Jet* reco_jet = jet_reco_eval->best_jet_from(truth_jet);
-
+		cout << "DEBUG: " << __LINE__ << endl;
 		if(!reco_jet) continue;
 
 		_b_recojet_valid[_b_truthjet_n] = 1;
@@ -441,6 +429,7 @@ int BJetModule::process_event(PHCompositeNode *topNode) {
 		_b_recojet_eta[_b_truthjet_n] = reco_jet->get_eta();
 
 		_b_truthjet_n++;
+		cout << "DEBUG: " << __LINE__ << endl;
 	}
 
 	PHG4TruthInfoContainer::Range range = truthinfo->GetPrimaryParticleRange();
@@ -504,7 +493,7 @@ int BJetModule::process_event(PHCompositeNode *topNode) {
 		calc_dca3d_line(truth_dca_xy, truth_dca_z, track_point, track_mom, truth_primary_vertex);
 
 #ifdef _DEBUG_
-		if(_verbose) {
+		{
 			cout<<"track_point: --------------"<<endl;
 			track_point.Print();
 
@@ -544,7 +533,7 @@ int BJetModule::process_event(PHCompositeNode *topNode) {
 //			HepMC::GenVertex *production_vertex = (*p)->production_vertex();
 //			_b_particle_dca_xy[_b_particle_n] = production_vertex->point3d().perp();
 //
-//			if(_verbose) {
+//			{
 //				cout
 //				<< __LINE__
 //				<<": From HepMC: {"
@@ -564,7 +553,8 @@ int BJetModule::process_event(PHCompositeNode *topNode) {
 
 	SvtxClusterMap* clustermap = findNode::getClass<SvtxClusterMap>(topNode,"SvtxClusterMap");
 
-	SvtxEvalStack *svtxevalstack = new SvtxEvalStack(topNode);
+	//SvtxEvalStack *svtxevalstack = new SvtxEvalStack(topNode);
+	auto svtxevalstack = unique_ptr<SvtxEvalStack> (new SvtxEvalStack(topNode));
 	if(!svtxevalstack) {
 		LogError("!svtxevalstack");
 		return Fun4AllReturnCodes::ABORTRUN;
@@ -618,7 +608,7 @@ int BJetModule::process_event(PHCompositeNode *topNode) {
 		if (fabs(track_eta) > 1)
 			continue;
 
-		std::set<PHG4Hit*> assoc_hits = trackeval->all_truth_hits(track);//TODO
+		//std::set<PHG4Hit*> assoc_hits = trackeval->all_truth_hits(track);//TODO
 
 		int nmaps = 0;
 		unsigned int nclusters = track->size_clusters();
@@ -802,6 +792,11 @@ int BJetModule::process_event(PHCompositeNode *topNode) {
 	_tree->Fill();
 
 	_ievent++;
+
+
+	//delete jet_eval_stack;
+	//delete svtxevalstack;
+
 	return 0;
 
 }
@@ -812,9 +807,6 @@ int BJetModule::End(PHCompositeNode *topNode) {
 	//_tree->Write();
 	_f->Write();
 	_f->Close();
-
-//	delete jet_eval_stack;
-//	delete svtxevalstack;
 
 	return 0;
 }
