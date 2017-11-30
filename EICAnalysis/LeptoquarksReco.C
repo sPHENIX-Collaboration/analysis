@@ -51,13 +51,12 @@ LeptoquarksReco::LeptoquarksReco(std::string filename) :
 	_tfile(nullptr),
 	_ntp_leptoquark(nullptr),
 	_ntp_jet(nullptr),
-	_truthinfo(nullptr)
+	_ebeam_E(0),
+	_pbeam_E(0),
+	_truthinfo(nullptr),
+	_jetcolname("AntiKt_Tower_r05")
 {
-	_filename = filename;
 
-
-	//  _ebeam_E = 10;
-	//  _pbeam_E = 250;
 }
 
 int
@@ -68,7 +67,7 @@ LeptoquarksReco::Init(PHCompositeNode *topNode)
 
 	_tfile = new TFile(_filename.c_str(), "RECREATE");
 	_ntp_leptoquark = new TNtuple("ntp_leptoquark","all tower information from LQ events",
-		"event:jetid:isMaxEnergyJet:isMinDeltaRJet:jet_eta:jet_phi:delta_R:towerid:calorimeterid:towereta:towerphi:towerbineta:towerbinphi:towerenergy:towerz:isTauTower:jet_mass");
+		"event:jetid:isMaxEnergyJet:isMinDeltaRJet:jet_eta:jet_phi:jet_e:delta_R:towerid:calorimeterid:towereta:towerphi:towerbineta:towerbinphi:towerenergy:towerz:isTauTower:jet_mass");
 	_ntp_jet = new TNtuple("ntp_jet","all jet information from LQ events",
 		"event:jet_id:isMaxEnergyJet:isMinDeltaRJet:jet_eta:jet_phi:delta_R:jet_mass:jet_p:jet_pT:jet_eT:jet_e:jet_px:jet_py:jet_pz");
 
@@ -88,8 +87,7 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
 
 	double bkgd_cut = 5;
 	double tau_eta=100, tau_phi=100;
-	double temp_phi;
-	//	double DIS_eta=100, DIS_phi=100;
+
 
 	PHHepMCGenEventMap *genevtmap = findNode::getClass<PHHepMCGenEventMap>(topNode,"PHHepMCGenEventMap");
         if (!genevtmap) {
@@ -118,7 +116,7 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
                     tau_eta=(*p)->momentum().eta();
                     tau_phi=(*p)->momentum().phi();
                     if(tau_phi>TMath::Pi()) tau_phi = tau_phi-2*TMath::Pi();
-                  }
+		  }
 
 
 		} 
@@ -127,12 +125,11 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
 	  }// end loop over all particles in event record //
 	
 	
-	string recojetname = "AntiKt_Tower_r05";
 
-	JetMap* recojets = findNode::getClass<JetMap>(topNode,recojetname.c_str());
+	JetMap* recojets = findNode::getClass<JetMap>(topNode,_jetcolname.c_str());
 	if (!recojets)
 	{
-		cerr << PHWHERE << " ERROR: Can't find " << recojetname << endl;
+		cerr << PHWHERE << " ERROR: Can't find " << _jetcolname << endl;
 		exit(-1);
 	}
 
@@ -141,7 +138,7 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
 //	float max_energy = 0;
 	float is_max_energy_jet = 0;
 	float is_min_delta_R_jet = 0;
-
+	float temp_phi_tau, temp_phi_jet;
 
 	std::vector<float> energy_list;
 	std::vector<float> delta_R_list;
@@ -163,13 +160,14 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
 
 		float eta = recojet->get_eta();
                 float phi = recojet->get_phi();
-		
-		if(tau_phi < -0.9*TMath::Pi() && phi > 0.9*TMath::Pi()) phi = phi-2*TMath::Pi();
-		if(tau_phi > 0.9*TMath::Pi() && phi < -0.9*TMath::Pi()) tau_phi = tau_phi-2*TMath::Pi();
+		temp_phi_tau = tau_phi;
+
+		if((tau_phi < -0.9*TMath::Pi()) && (phi > 0.9*TMath::Pi())) phi = phi-2*TMath::Pi();
+		if((tau_phi > 0.9*TMath::Pi()) && (phi < -0.9*TMath::Pi())) temp_phi_tau = tau_phi-2*TMath::Pi();
 
 
 
-                float delta_R = sqrt(pow(eta-tau_eta,2)+pow(phi-tau_phi,2));
+                float delta_R = sqrt(pow(eta-tau_eta,2)+pow(phi-temp_phi_tau,2));
 		if (e<bkgd_cut){
 		  delta_R_list.push_back(10+temp_i);
 		  temp_i++;
@@ -223,12 +221,13 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
 		float jet_pz = max_energy_jet->get_pz();
 
 		
-		temp_phi = jet_phi;
+		temp_phi_jet = jet_phi;
+		temp_phi_tau = tau_phi;
 		
-		if(tau_phi < -0.9*TMath::Pi() && jet_phi > 0.9*TMath::Pi()) temp_phi = jet_phi-2*TMath::Pi();
-		
+		if((tau_phi < -0.9*TMath::Pi()) && (jet_phi > 0.9*TMath::Pi())) temp_phi_jet = jet_phi-2*TMath::Pi();
+		if((tau_phi > 0.9*TMath::Pi()) && (jet_phi < -0.9*TMath::Pi())) temp_phi_tau = tau_phi-2*TMath::Pi();
 
-    		float delta_R = sqrt(pow(jet_eta-tau_eta,2)+pow(temp_phi-tau_phi,2));
+    		float delta_R = sqrt(pow(jet_eta-tau_eta,2)+pow(temp_phi_jet-temp_phi_tau,2));
 		if(jet_e<bkgd_cut) {
 		  delta_R = 10+temp_i;
 		  temp_i++;
@@ -466,12 +465,13 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
 
 				double eta = asinh(z/r); // eta after shift from vertex
 
-				float lqjet_data[17] = {(float) _ievent,	//event number
+				float lqjet_data[18] = {(float) _ievent,	//event number
 					(float) (iter->second)->get_id(),	//jet id
 					(float) is_max_energy_jet,		//is this the maximum energy jet?
-					(float) is_min_delta_R_jet,              //is this the minimum R jet?
+					(float) is_min_delta_R_jet,             //is this the minimum R jet?
 					(float) jet_eta,			//eta of the jet
 					(float) jet_phi,                        //phi of the jet
+					(float) jet_e,                          //Energy of jet
 					(float) delta_R,			//distance from true tau
 					(float) tower->get_id(),		//tower id
 					(float) calorimeter,			//calorimeter id. 1 = CEMC, 2 = HCALIN, 3 = HCALOUT
@@ -514,6 +514,8 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
 		is_max_energy_jet = 0;
 		is_min_delta_R_jet = 0;
 	}
+
+    
 	return 0;
 }
 
