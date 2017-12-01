@@ -25,7 +25,7 @@ class BJetModule: public SubsysReco {
 
 public:
 
-	BJetModule(const std::string &name = "BJetModule");
+	BJetModule(const std::string &name = "BJetModule", const std::string &out = "HFtag.root");
 
 	int Init(PHCompositeNode*);
 	int reset_tree_vars();
@@ -63,7 +63,7 @@ private:
 
 	}
 
-	bool _verbose;
+	std::string _foutname;
 
 	std::string _trackmap_name;
 	std::string _vertexmap_name;
@@ -157,11 +157,6 @@ private:
 	float _b_track_best_vertex_z[1000];
 	float _b_track_best_dca_xy[1000];
 	float _b_track_best_dca_z[1000];
-
-	std::string _foutname;
-
-//	JetEvalStack *jet_eval_stack;
-//	SvtxEvalStack *svtxevalstack;
 
   //! The embedding ID for the HepMC subevent to be analyzed.
   //! positive ID is the embedded event of interest, e.g. jetty event from pythia

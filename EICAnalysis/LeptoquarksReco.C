@@ -1,5 +1,9 @@
 #include "LeptoquarksReco.h"
 
+#include <g4hough/SvtxTrackMap_v1.h>
+#include <g4hough/SvtxTrack_FastSim.h>
+#include <g4hough/SvtxTrackState.h>
+
 #include <phhepmc/PHHepMCGenEvent.h>
 #include <phhepmc/PHHepMCGenEventMap.h>
 #include <HepMC/GenEvent.h>
@@ -70,6 +74,8 @@ LeptoquarksReco::Init(PHCompositeNode *topNode)
 		"event:jetid:isMaxEnergyJet:isMinDeltaRJet:jet_eta:jet_phi:jet_e:delta_R:towerid:calorimeterid:towereta:towerphi:towerbineta:towerbinphi:towerenergy:towerz:isTauTower:jet_mass");
 	_ntp_jet = new TNtuple("ntp_jet","all jet information from LQ events",
 		"event:jet_id:isMaxEnergyJet:isMinDeltaRJet:jet_eta:jet_phi:delta_R:jet_mass:jet_p:jet_pT:jet_eT:jet_e:jet_px:jet_py:jet_pz");
+	_ntp_track = new TNtuple("ntp_track","all track information from LQ events",
+			       "event:track_eta:track_phi");
 
 	_truthinfo = findNode::getClass<PHG4TruthInfoContainer>(topNode,"G4TruthInfo");
 
@@ -123,7 +129,63 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
 	      }
 	    } 
 	  }// end loop over all particles in event record //
+
+
+
 	
+	/* Get track collection with all tracks in this event */
+	SvtxTrackMap* trackmap =
+	  findNode::getClass<SvtxTrackMap>(topNode,"SvtxTrackMap");
+        /* Check if trackmap found */
+
+	
+	if (!trackmap) {
+	  cout << PHWHERE << "SvtxTrackMap node not found on node tree"
+	       << endl;
+	  return Fun4AllReturnCodes::ABORTEVENT;
+	}
+
+	/* Loop over tracks */
+	for (SvtxTrackMap::ConstIter track_itr = trackmap->begin();
+	     track_itr != trackmap->end(); track_itr++) {
+
+	  SvtxTrack* track_j = dynamic_cast<SvtxTrack*>(track_itr->second);
+
+	  double cal_eta = track_j->get_eta();
+	  double cal_phi = track_j->get_phi();
+
+
+	  float track_data[3] = {(float) _ievent,        //event number                                                                                                           
+				  (float) cal_eta,                        //eta of the track                                                                                                            
+				  (float) cal_phi,                        //phi of the track                                                                                                            
+	  };
+
+	  _ntp_track->Fill(track_data);
+
+
+
+	  /*
+           // Use the track states to project to the RICH /
+           for (SvtxTrack::ConstStateIter state_itr = track_j->begin_states();
+		               state_itr != track_j->end_states(); state_itr++) {
+
+	     
+             SvtxTrackState *temp = dynamic_cast<SvtxTrackState*>(state_itr->second);
+
+             string statename = "CEMC";
+
+	     cout<<temp->get_name()<<endl;
+             if( (temp->get_name()==statename) ){
+               double track_cemc_x = temp->get_x();
+               double track_cemc_y = temp->get_y();
+               double track_cemc_z = temp->get_z();
+               cout << "Track impact point on CEMC: " << track_cemc_x << " , " << track_cemc_y << " , " << track_cemc_z << endl;
+            }
+          }
+*/
+	}
+
+
 	
 
 	JetMap* recojets = findNode::getClass<JetMap>(topNode,_jetcolname.c_str());
@@ -492,7 +554,7 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
 			tower_found = false;
 		}
 		
-		float lqjet_data[16] = {(float) _ievent,	//event number
+		float lqjet_data[18] = {(float) _ievent,	//event number
 			(float) (max_energy_jet)->get_id(),	//jet id
 			(float) is_max_energy_jet,		//is this the maximum energy jet?
 			(float) is_min_delta_R_jet,              //is this the minimum R jet?		
@@ -525,6 +587,7 @@ LeptoquarksReco::End(PHCompositeNode *topNode)
   _tfile->cd();
   _ntp_leptoquark->Write();
   _ntp_jet->Write();
+  _ntp_track->Write();
   _tfile->Close();
 
   return 0;

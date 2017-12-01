@@ -106,6 +106,11 @@ HFJetTruthTrigger::process_event(PHCompositeNode *topNode)
   //theEvent->print();
 
   JetMap* truth_jets = findNode::getClass<JetMap>(topNode, _jet_name);
+  if (!truth_jets)
+  {
+    std::cout <<PHWHERE<<" - Fatal error - node " << _jet_name << " JetMap missing."<< std::endl;
+    return Fun4AllReturnCodes::ABORTRUN;
+  }
   const double jet_radius = truth_jets->get_par();
 
   if (verbosity >= HFJetTruthTrigger::VERBOSITY_MORE)
