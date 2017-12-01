@@ -64,80 +64,295 @@ class JetPerformance: public SubsysReco
  private:
 
   //! tag jet flavor by parton matching, like PRL 113, 132301 (2014)
-  /* int parton_tagging(Jet * jet, HepMC::GenEvent*, const double match_radius); */
+  int parton_tagging(Jet * jet, HepMC::GenEvent*, const double match_radius); 
+  float parton_frag(Jet * jet, HepMC::GenEvent*, const double match_radius);
+  void clearallvectors();
   
   void Set_Tree_Branches();
- 
-  TFile *file;
-  TTree *tree;
-  TTree *truthjettree;
-  TTree *recojettree;
-  TTree *reco_noHcalIn_jettree;
-  TH1F * hRecoJetpT;
-  TH1F * hRecoJeteta;
-  TH1F * hRecoJetphi;
-  TH1F * hReco_NoHcalIn_JetpT;
-  TH1F * hReco_NoHcalIn_Jeteta;
-  TH1F * hReco_NoHcalIn_Jetphi;
-  TH1F * hReco_NoHcalIn_GenJetdelR;
-  TH1F * hGenJetpT;
-  TH1F * hGenJeteta;
-  TH1F * hGenJetphi;
-  TH1F * hRecoGenJetdelR;
-  TH1F * hJER[nbins_pt][nbins_eta];
-  TH1F * hJER_allpT_allEta;  
-  TH1F * hJER_noHcalIn[nbins_pt][nbins_eta];
-  TH1F * hJER_noHcalIn_allpT_allEta;  
-  
   std::string outfilename;
 
   int nevents;
-  TH1F *histo;
+  float weight;
+  int signal_processID;
+  int mpi;
+  float event_scale;
+  float alpha_QCD;
+  float alpha_QED;
+  TH1F *histo; 
+  TFile *file;
+  TTree *tree;  
 
-  //all truth jets
-  float truthjetpt;
-  float truthjetpx,truthjetpy,truthjetpz;
-  float truthjetphi;
-  float truthjeteta;
-  float truthjetmass;
-  float truthjetp;
-  float truthjetenergy;
+  TH1F * hRecoJetpT_R02;
+  TH1F * hRecoJeteta_R02;
+  TH1F * hRecoJetphi_R02;
+  TH1F * hReco_NoHcalIn_JetpT_R02;
+  TH1F * hReco_NoHcalIn_Jeteta_R02;
+  TH1F * hReco_NoHcalIn_Jetphi_R02;
+  TH1F * hReco_NoHcalIn_GenJetdelR_R02;
+  TH1F * hGenJetpT_R02;
+  TH1F * hGenJeteta_R02;
+  TH1F * hGenJetphi_R02;
+  TH1F * hRecoGenJetdelR_R02;
+  TH1F * hJER_R02[nbins_pt][nbins_eta];
+  TH1F * hJER_allpT_allEta_R02;  
+  TH1F * hJER_noHcalIn_R02[nbins_pt][nbins_eta];
+  TH1F * hJER_noHcalIn_allpT_allEta_R02;  
 
-  //all reco jets
-  float recojetpt;
-  float recojetpx;
-  float recojetpy;
-  float recojetpz;
-  float recojetphi;
-  float recojeteta;
-  float recojetmass;
-  float recojetp;
-  float recojetenergy;
-  float recojetid;
-  float truthjetid;
-  float recogenpTratio;
-  float delRrecotruth;
-  int parton_flavor;
-  int recojetsubid;
+  TTree *truth_g4particles;
+  TTree *truthjettree_R02;
+  TTree *recojettree_R02;
+  TTree *reco_noHcalIn_jettree_R02;
 
-  //all reco_noHcalIn_ jets
-  float reco_noHcalIn_jetpt;
-  float reco_noHcalIn_jetpx;
-  float reco_noHcalIn_jetpy;
-  float reco_noHcalIn_jetpz;
-  float reco_noHcalIn_jetphi;
-  float reco_noHcalIn_jeteta;
-  float reco_noHcalIn_jetmass;
-  float reco_noHcalIn_jetp;
-  float reco_noHcalIn_jetenergy;
-  float reco_noHcalIn_jetid;
-  float reco_noHcalIn_truthjetid;
-  float reco_noHcalIn_genpTratio;
-  float delRreco_noHcalIn_truth;
-  int reco_noHcalIn_parton_flavor;
-  int reco_noHcalIn_jetsubid;
+  TTree *truthjettree_R03;
+  TTree *recojettree_R03;
+  TTree *reco_noHcalIn_jettree_R03;
+  TH1F * hRecoJetpT_R03;
+  TH1F * hRecoJeteta_R03;
+  TH1F * hRecoJetphi_R03;
+  TH1F * hReco_NoHcalIn_JetpT_R03;
+  TH1F * hReco_NoHcalIn_Jeteta_R03;
+  TH1F * hReco_NoHcalIn_Jetphi_R03;
+  TH1F * hReco_NoHcalIn_GenJetdelR_R03;
+  TH1F * hGenJetpT_R03;
+  TH1F * hGenJeteta_R03;
+  TH1F * hGenJetphi_R03;
+  TH1F * hRecoGenJetdelR_R03;
+  TH1F * hJER_R03[nbins_pt][nbins_eta];
+  TH1F * hJER_allpT_allEta_R03;  
+  TH1F * hJER_noHcalIn_R03[nbins_pt][nbins_eta];
+  TH1F * hJER_noHcalIn_allpT_allEta_R03;  
+  
+  TTree *truthjettree_R04;
+  TTree *recojettree_R04;
+  TTree *reco_noHcalIn_jettree_R04;
+  TH1F * hRecoJetpT_R04;
+  TH1F * hRecoJeteta_R04;
+  TH1F * hRecoJetphi_R04;
+  TH1F * hReco_NoHcalIn_JetpT_R04;
+  TH1F * hReco_NoHcalIn_Jeteta_R04;
+  TH1F * hReco_NoHcalIn_Jetphi_R04;
+  TH1F * hReco_NoHcalIn_GenJetdelR_R04;
+  TH1F * hGenJetpT_R04;
+  TH1F * hGenJeteta_R04;
+  TH1F * hGenJetphi_R04;
+  TH1F * hRecoGenJetdelR_R04;
+  TH1F * hJER_R04[nbins_pt][nbins_eta];
+  TH1F * hJER_allpT_allEta_R04;  
+  TH1F * hJER_noHcalIn_R04[nbins_pt][nbins_eta];
+  TH1F * hJER_noHcalIn_allpT_allEta_R04;  
   
 
+  
+  //all truth particles
+  std::vector<float> truthpx;
+  std::vector<float> truthpy;
+  std::vector<float> truthpz;
+  std::vector<float> truthp;
+  std::vector<float> truthphi;
+  std::vector<float> trutheta;
+  std::vector<float> truthpt;
+  std::vector<float> truthenergy;
+  std::vector<int> truthpid;  
+
+  //all truth jets
+  std::vector<float> truthjetpt_R02;
+  std::vector<float> truthjetpx_R02;
+  std::vector<float> truthjetpy_R02;
+  std::vector<float> truthjetpz_R02;
+  std::vector<float> truthjetphi_R02;
+  std::vector<float> truthjeteta_R02;
+  std::vector<float> truthjetmass_R02;
+  std::vector<float> truthjetp_R02;
+  std::vector<float> truthjetenergy_R02;
+
+  //all reco jets
+  std::vector<float> recojetpt_R02;
+  std::vector<float> recojetpx_R02;
+  std::vector<float> recojetpy_R02;
+  std::vector<float> recojetpz_R02;
+  std::vector<float> recojetphi_R02;
+  std::vector<float> recojeteta_R02;
+  std::vector<float> recojetmass_R02;
+  std::vector<float> recojetp_R02;
+  std::vector<float> recojetenergy_R02;
+  std::vector<float> recojetid_R02;
+  std::vector<float> truthjetid_R02;
+  std::vector<float> truthjetpt_reco_R02;
+  std::vector<float> truthjetpx_reco_R02;
+  std::vector<float> truthjetpy_reco_R02;
+  std::vector<float> truthjetpz_reco_R02;
+  std::vector<float> truthjetphi_reco_R02;
+  std::vector<float> truthjeteta_reco_R02;
+  std::vector<float> truthjetmass_reco_R02;
+  std::vector<float> truthjetp_reco_R02;
+  std::vector<float> truthjetenergy_reco_R02;
+  std::vector<float> recogenpTratio_R02;
+  std::vector<float> delRrecotruth_R02;
+  std::vector<int> parton_flavor_R02;
+  std::vector<float> parton_frag_zt_R02;
+  std::vector<int> recojetsubid_R02;
+
+  //all reco_noHcalIn_ jets
+  std::vector<float> reco_noHcalIn_jetpt_R02;
+  std::vector<float> reco_noHcalIn_jetpx_R02;
+  std::vector<float> reco_noHcalIn_jetpy_R02;
+  std::vector<float> reco_noHcalIn_jetpz_R02;
+  std::vector<float> reco_noHcalIn_jetphi_R02;
+  std::vector<float> reco_noHcalIn_jeteta_R02;
+  std::vector<float> reco_noHcalIn_jetmass_R02;
+  std::vector<float> reco_noHcalIn_jetp_R02;
+  std::vector<float> reco_noHcalIn_jetenergy_R02;
+  std::vector<float> reco_noHcalIn_jetid_R02;
+  std::vector<float> reco_noHcalIn_truthjetid_R02;
+  std::vector<float> truthjetpt_reco_noHcalIn_R02;
+  std::vector<float> truthjetpx_reco_noHcalIn_R02;
+  std::vector<float> truthjetpy_reco_noHcalIn_R02;
+  std::vector<float> truthjetpz_reco_noHcalIn_R02;
+  std::vector<float> truthjetphi_reco_noHcalIn_R02;
+  std::vector<float> truthjeteta_reco_noHcalIn_R02;
+  std::vector<float> truthjetmass_reco_noHcalIn_R02;
+  std::vector<float> truthjetp_reco_noHcalIn_R02;
+  std::vector<float> truthjetenergy_reco_noHcalIn_R02;
+  std::vector<float> reco_noHcalIn_genpTratio_R02;
+  std::vector<float> delRreco_noHcalIn_truth_R02;
+  std::vector<int> reco_noHcalIn_parton_flavor_R02;
+  std::vector<float> reco_noHcalIn_parton_frag_zt_R02;
+  std::vector<int> reco_noHcalIn_jetsubid_R02;
+  
+
+  //all truth jets
+  std::vector<float> truthjetpt_R03;
+  std::vector<float> truthjetpx_R03;
+  std::vector<float> truthjetpy_R03;
+  std::vector<float> truthjetpz_R03;
+  std::vector<float> truthjetphi_R03;
+  std::vector<float> truthjeteta_R03;
+  std::vector<float> truthjetmass_R03;
+  std::vector<float> truthjetp_R03;
+  std::vector<float> truthjetenergy_R03;
+
+  //all reco jets
+  std::vector<float> recojetpt_R03;
+  std::vector<float> recojetpx_R03;
+  std::vector<float> recojetpy_R03;
+  std::vector<float> recojetpz_R03;
+  std::vector<float> recojetphi_R03;
+  std::vector<float> recojeteta_R03;
+  std::vector<float> recojetmass_R03;
+  std::vector<float> recojetp_R03;
+  std::vector<float> recojetenergy_R03;
+  std::vector<float> recojetid_R03;
+  std::vector<float> truthjetid_R03;
+  std::vector<float> truthjetpt_reco_R03;
+  std::vector<float> truthjetpx_reco_R03;
+  std::vector<float> truthjetpy_reco_R03;
+  std::vector<float> truthjetpz_reco_R03;
+  std::vector<float> truthjetphi_reco_R03;
+  std::vector<float> truthjeteta_reco_R03;
+  std::vector<float> truthjetmass_reco_R03;
+  std::vector<float> truthjetp_reco_R03;
+  std::vector<float> truthjetenergy_reco_R03;
+  std::vector<float> recogenpTratio_R03;
+  std::vector<float> delRrecotruth_R03;
+  std::vector<int> parton_flavor_R03;
+  std::vector<float> parton_frag_zt_R03;
+  std::vector<int> recojetsubid_R03;
+
+  //all reco_noHcalIn_ jets
+  std::vector<float> reco_noHcalIn_jetpt_R03;
+  std::vector<float> reco_noHcalIn_jetpx_R03;
+  std::vector<float> reco_noHcalIn_jetpy_R03;
+  std::vector<float> reco_noHcalIn_jetpz_R03;
+  std::vector<float> reco_noHcalIn_jetphi_R03;
+  std::vector<float> reco_noHcalIn_jeteta_R03;
+  std::vector<float> reco_noHcalIn_jetmass_R03;
+  std::vector<float> reco_noHcalIn_jetp_R03;
+  std::vector<float> reco_noHcalIn_jetenergy_R03;
+  std::vector<float> reco_noHcalIn_jetid_R03;
+  std::vector<float> reco_noHcalIn_truthjetid_R03;
+  std::vector<float> truthjetpt_reco_noHcalIn_R03;
+  std::vector<float> truthjetpx_reco_noHcalIn_R03;
+  std::vector<float> truthjetpy_reco_noHcalIn_R03;
+  std::vector<float> truthjetpz_reco_noHcalIn_R03;
+  std::vector<float> truthjetphi_reco_noHcalIn_R03;
+  std::vector<float> truthjeteta_reco_noHcalIn_R03;
+  std::vector<float> truthjetmass_reco_noHcalIn_R03;
+  std::vector<float> truthjetp_reco_noHcalIn_R03;
+  std::vector<float> truthjetenergy_reco_noHcalIn_R03;
+  std::vector<float> reco_noHcalIn_genpTratio_R03;
+  std::vector<float> delRreco_noHcalIn_truth_R03;
+  std::vector<int> reco_noHcalIn_parton_flavor_R03;
+  std::vector<float> reco_noHcalIn_parton_frag_zt_R03;
+  std::vector<int> reco_noHcalIn_jetsubid_R03;
+
+
+  //all truth jets
+  std::vector<float> truthjetpt_R04;
+  std::vector<float> truthjetpx_R04;
+  std::vector<float> truthjetpy_R04;
+  std::vector<float> truthjetpz_R04;
+  std::vector<float> truthjetphi_R04;
+  std::vector<float> truthjeteta_R04;
+  std::vector<float> truthjetmass_R04;
+  std::vector<float> truthjetp_R04;
+  std::vector<float> truthjetenergy_R04;
+
+  //all reco jets
+  std::vector<float> recojetpt_R04;
+  std::vector<float> recojetpx_R04;
+  std::vector<float> recojetpy_R04;
+  std::vector<float> recojetpz_R04;
+  std::vector<float> recojetphi_R04;
+  std::vector<float> recojeteta_R04;
+  std::vector<float> recojetmass_R04;
+  std::vector<float> recojetp_R04;
+  std::vector<float> recojetenergy_R04;
+  std::vector<float> recojetid_R04;
+  std::vector<float> truthjetid_R04;
+  std::vector<float> truthjetpt_reco_R04;
+  std::vector<float> truthjetpx_reco_R04;
+  std::vector<float> truthjetpy_reco_R04;
+  std::vector<float> truthjetpz_reco_R04;
+  std::vector<float> truthjetphi_reco_R04;
+  std::vector<float> truthjeteta_reco_R04;
+  std::vector<float> truthjetmass_reco_R04;
+  std::vector<float> truthjetp_reco_R04;
+  std::vector<float> truthjetenergy_reco_R04;
+  std::vector<float> recogenpTratio_R04;
+  std::vector<float> delRrecotruth_R04;
+  std::vector<int> parton_flavor_R04;
+  std::vector<float> parton_frag_zt_R04;
+  std::vector<int> recojetsubid_R04;
+
+  //all reco_noHcalIn_ jets
+  std::vector<float> reco_noHcalIn_jetpt_R04;
+  std::vector<float> reco_noHcalIn_jetpx_R04;
+  std::vector<float> reco_noHcalIn_jetpy_R04;
+  std::vector<float> reco_noHcalIn_jetpz_R04;
+  std::vector<float> reco_noHcalIn_jetphi_R04;
+  std::vector<float> reco_noHcalIn_jeteta_R04;
+  std::vector<float> reco_noHcalIn_jetmass_R04;
+  std::vector<float> reco_noHcalIn_jetp_R04;
+  std::vector<float> reco_noHcalIn_jetenergy_R04;
+  std::vector<float> reco_noHcalIn_jetid_R04;
+  std::vector<float> reco_noHcalIn_truthjetid_R04;
+  std::vector<float> truthjetpt_reco_noHcalIn_R04;
+  std::vector<float> truthjetpx_reco_noHcalIn_R04;
+  std::vector<float> truthjetpy_reco_noHcalIn_R04;
+  std::vector<float> truthjetpz_reco_noHcalIn_R04;
+  std::vector<float> truthjetphi_reco_noHcalIn_R04;
+  std::vector<float> truthjeteta_reco_noHcalIn_R04;
+  std::vector<float> truthjetmass_reco_noHcalIn_R04;
+  std::vector<float> truthjetp_reco_noHcalIn_R04;
+  std::vector<float> truthjetenergy_reco_noHcalIn_R04;
+  std::vector<float> reco_noHcalIn_genpTratio_R04;
+  std::vector<float> delRreco_noHcalIn_truth_R04;
+  std::vector<int> reco_noHcalIn_parton_flavor_R04;
+  std::vector<float> reco_noHcalIn_parton_frag_zt_R04;
+  std::vector<int> reco_noHcalIn_jetsubid_R04;
+  
+  
+  
 };
 
 #endif // __JETPERFORMANCE_H__

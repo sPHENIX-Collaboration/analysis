@@ -756,7 +756,7 @@ S["am__EXEEXT_FALSE"]=""
 S["am__EXEEXT_TRUE"]="#"
 S["LTLIBOBJS"]=""
 S["LIBOBJS"]=""
-S["ROOTLIBS"]="-L/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.4/root/lib -lCore -lCint -lRIO -lNet -lHist -lGraf -lGraf3d -lGpad -lTree -lRint -lPostscript -lMatrix"\
+S["ROOTLIBS"]="-L/afs/rhic.bnl.gov/sphenix/sys/x8664_sl6/new.2/root/lib -lCore -lCint -lRIO -lNet -lHist -lGraf -lGraf3d -lGpad -lTree -lRint -lPostscript -lMatrix"\
 " -lPhysics -lMathCore -lThread -pthread -lm -ldl -rdynamic"
 S["CXXCPP"]="g++ -E"
 S["CPP"]="gcc -E"
