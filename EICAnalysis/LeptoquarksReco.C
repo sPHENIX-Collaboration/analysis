@@ -67,7 +67,7 @@ LeptoquarksReco::Init(PHCompositeNode *topNode)
 
   /* NTuple to store track information */
   _ntp_track = new TNtuple("ntp_track","all track information from LQ events",
-                           "event:track_eta:track_phi");
+                           "event:track_eta:track_phi:track_pt:track_p:track_charge:track_quality");
 
   return 0;
 }
@@ -78,20 +78,23 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
   /* count up event number */
   _ievent ++;
 
-  /* set some values- @TODO: should this be done elsewhere? */
+  /* set some values- @TODO: should this be done elsewhere? Member variable? */
   double bkgd_cut = 5;
-  double tau_eta=100, tau_phi=100;
-
-  /* Get truth particles from event generator */
-  PHHepMCGenEventMap *genevtmap = findNode::getClass<PHHepMCGenEventMap>(topNode,"PHHepMCGenEventMap");
-  if (!genevtmap) {
-    cerr << PHWHERE << " ERROR: Can't find G4TruthInfo" << endl;
-    exit(-1);
-  }
 
   /* Finding the TAU particle in the event
    *
    */
+  /* @TODO: Use boolean to indicate whether there is a tau in this event or not? */
+  //bool   tau_found = false;
+  double tau_eta=100;
+  double tau_phi=100;
+
+  /* --> Get truth particles from event generator */
+  PHHepMCGenEventMap *genevtmap = findNode::getClass<PHHepMCGenEventMap>(topNode,"PHHepMCGenEventMap");
+  if (!genevtmap) {
+    cerr << PHWHERE << " ERROR: Can't find PHHepMCGenEventMap" << endl;
+    return Fun4AllReturnCodes::ABORTEVENT;
+  }
 
   /* --> Loop over all truth events in event generator collection */
   for (PHHepMCGenEventMap::ReverseIter iter = genevtmap->rbegin(); iter != genevtmap->rend(); ++iter)
@@ -113,18 +116,21 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
                   particles_begin(HepMC::parents);
                 mother != (*p)->production_vertex()->
                   particles_end(HepMC::parents);
-                ++mother ) {
+                ++mother )
+	    {
+	      /* --> If mother particle is tau, set tau eta and phi */
+	      /* @TODO: What does this IF statement mean? Particles (*p) AND (*mother) have to be TAU??? */
+	      /* @TODO: Can there be multiple TAU in an event? What happens then? How about checking for status? */
+	      if ((*p)->pdg_id()==15 && (*mother)->pdg_id()==15)
+		{
+		  tau_eta=(*p)->momentum().eta();
+		  tau_phi=(*p)->momentum().phi();
+		  //tau_found = true;
 
-	    /* --> If mother particle is tau, set tau eta and phi */
-            if ((*p)->pdg_id()==15 && (*mother)->pdg_id()==15)
-	      {
-		tau_eta=(*p)->momentum().eta();
-		tau_phi=(*p)->momentum().phi();
-
-		/* correct angle for 'wraparound' at PI */
-		if(tau_phi>TMath::Pi()) tau_phi = tau_phi-2*TMath::Pi();
-	      }
-          }
+		  /* correct angle for 'wraparound' at phi == Pi */
+		  if(tau_phi>TMath::Pi()) tau_phi = tau_phi-2*TMath::Pi();
+		}
+	    }
         }
       }
     }// end loop over all particles in event record //
@@ -137,8 +143,6 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
   /* Get track collection with all tracks in this event */
   SvtxTrackMap* trackmap =
     findNode::getClass<SvtxTrackMap>(topNode,"SvtxTrackMap");
-
-  /* Check if trackmap found */
   if (!trackmap)
     {
       cout << PHWHERE << "SvtxTrackMap node not found on node tree"
@@ -152,12 +156,13 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
 
     SvtxTrack* track_j = dynamic_cast<SvtxTrack*>(track_itr->second);
 
-    double cal_eta = track_j->get_eta();
-    double cal_phi = track_j->get_phi();
-
-    float track_data[3] = {(float) _ievent,        //event number
-                           (float) cal_eta,        //eta of the track
-                           (float) cal_phi,        //phi of the track
+    float track_data[7] = {(float) _ievent,                   //event number
+                           (float) track_j->get_eta(),        //eta of the track
+                           (float) track_j->get_phi(),        //phi of the track
+			   (float) track_j->get_pt(),         //transverse momentum of track
+			   (float) track_j->get_p(),          //total momentum of track
+			   (float) track_j->get_charge(),     //electric charge of track
+			   (float) track_j->get_quality()     //track quality
     };
 
     _ntp_track->Fill(track_data);
@@ -173,7 +178,7 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
   if (!recojets)
     {
       cerr << PHWHERE << " ERROR: Can't find " << _jetcolname << endl;
-      exit(-1);
+      return Fun4AllReturnCodes::ABORTEVENT;
     }
 
   float is_max_energy_jet = 0;
