@@ -1,16 +1,17 @@
 #ifndef __LeptoquarksReco_H__
 #define __LeptoquarksReco_H__
 
+/* Fun4All includes */
 #include <fun4all/SubsysReco.h>
+
+/* STL includes */
 #include <math.h>
 #include <map>
 
 class TNtuple;
 class TFile;
-class TH1D;
 
 class PHCompositeNode;
-class PHG4TruthInfoContainer;
 class CaloRawTowerEval;
 
 class LeptoquarksReco : public SubsysReco
@@ -58,8 +59,6 @@ private:
   /* beam energies electron and proton */
   float _ebeam_E;
   float _pbeam_E;
-
-  PHG4TruthInfoContainer* _truthinfo;
 
   /** name of jet collection */
   std::string _jetcolname;

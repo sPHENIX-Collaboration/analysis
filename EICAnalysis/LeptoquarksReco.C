@@ -1,50 +1,38 @@
 #include "LeptoquarksReco.h"
 
+/* STL includes */
+#include <cassert>
+
+/* Fun4All includes */
 #include <g4hough/SvtxTrackMap_v1.h>
-#include <g4hough/SvtxTrack_FastSim.h>
-#include <g4hough/SvtxTrackState.h>
 
 #include <phhepmc/PHHepMCGenEvent.h>
 #include <phhepmc/PHHepMCGenEventMap.h>
-#include <HepMC/GenEvent.h>
-#include <HepMC/GenVertex.h>
 
 #include <phool/getClass.h>
-#include <fun4all/Fun4AllServer.h>
+
 #include <fun4all/Fun4AllReturnCodes.h>
 
-#include <phool/PHCompositeNode.h>
-
-#include <TLorentzVector.h>
-#include <TNtuple.h>
-#include <TFile.h>
-#include <TString.h>
-#include <TH2D.h>
-#include <TDatabasePDG.h>
-
 #include <g4jets/JetMap.h>
-#include <g4jets/Jet.h>
 
 #include <g4cemc/RawTowerGeomContainer.h>
 #include <g4cemc/RawTowerContainer.h>
 #include <g4cemc/RawTowerGeom.h>
-#include <g4cemc/RawTower.h>
 #include <g4cemc/RawTowerv1.h>
 
 #include <g4vertex/GlobalVertexMap.h>
 #include <g4vertex/GlobalVertex.h>
 
-#include <g4main/PHG4Shower.h>
 #include <g4main/PHG4Particle.h>
-#include "g4main/PHG4TruthInfoContainer.h"
-#include "g4eval/CaloRawTowerEval.h"
 
-#include <iostream>
-#include <vector>
-#include <cstdlib>
-#include <cassert>
-#include <typeinfo>
-#include <string>
+#include <g4eval/CaloRawTowerEval.h>
+
+/* ROOT includes */
+#include <TLorentzVector.h>
+#include <TDatabasePDG.h>
+#include <TString.h>
+#include <TNtuple.h>
+#include <TFile.h>
 
 using namespace std;
 
@@ -57,27 +45,29 @@ LeptoquarksReco::LeptoquarksReco(std::string filename) :
   _ntp_jet(nullptr),
   _ebeam_E(0),
   _pbeam_E(0),
-  _truthinfo(nullptr),
   _jetcolname("AntiKt_Tower_r05")
 {
-
+  // pass
 }
 
 int
 LeptoquarksReco::Init(PHCompositeNode *topNode)
 {
-  _verbose = false;
   _ievent = 0;
 
   _tfile = new TFile(_filename.c_str(), "RECREATE");
+
+  /* NTuple to store information about leptoquark candidate */
   _ntp_leptoquark = new TNtuple("ntp_leptoquark","all tower information from LQ events",
                                 "event:jetid:isMaxEnergyJet:isMinDeltaRJet:jet_eta:jet_phi:jet_e:delta_R:towerid:calorimeterid:towereta:towerphi:towerbineta:towerbinphi:towerenergy:towerz:isTauTower:jet_mass");
+
+  /* NTuple to store jet information */
   _ntp_jet = new TNtuple("ntp_jet","all jet information from LQ events",
                          "event:jet_id:isMaxEnergyJet:isMinDeltaRJet:jet_eta:jet_phi:delta_R:jet_mass:jet_p:jet_pT:jet_eT:jet_e:jet_px:jet_py:jet_pz");
+
+  /* NTuple to store track information */
   _ntp_track = new TNtuple("ntp_track","all track information from LQ events",
                            "event:track_eta:track_phi");
-
-  _truthinfo = findNode::getClass<PHG4TruthInfoContainer>(topNode,"G4TruthInfo");
 
   return 0;
 }
@@ -85,32 +75,39 @@ LeptoquarksReco::Init(PHCompositeNode *topNode)
 int
 LeptoquarksReco::process_event(PHCompositeNode *topNode)
 {
+  /* count up event number */
   _ievent ++;
 
-  cout << endl;
-  cout << "LeptoquarksReco: Processing event " << _ievent << endl;
-
-
+  /* set some values- @TODO: should this be done elsewhere? */
   double bkgd_cut = 5;
   double tau_eta=100, tau_phi=100;
 
-
+  /* Get truth particles from event generator */
   PHHepMCGenEventMap *genevtmap = findNode::getClass<PHHepMCGenEventMap>(topNode,"PHHepMCGenEventMap");
   if (!genevtmap) {
     cerr << PHWHERE << " ERROR: Can't find G4TruthInfo" << endl;
     exit(-1);
   }
 
+  /* Finding the TAU particle in the event
+   *
+   */
+
+  /* --> Loop over all truth events in event generator collection */
   for (PHHepMCGenEventMap::ReverseIter iter = genevtmap->rbegin(); iter != genevtmap->rend(); ++iter)
     {
 
       PHHepMCGenEvent *genevt = iter->second;
       HepMC::GenEvent *theEvent = genevt->getEvent();
 
+      /* --> Loop over all truth particles in event generator collection */
       for ( HepMC::GenEvent::particle_iterator p = theEvent->particles_begin();
             p != theEvent->particles_end(); ++p ) {
 
+	/* --> Check truth particle production vertex */
         if ( (*p)->production_vertex() ) {
+
+	  /* --> Loop over potential mother particles */
           for ( HepMC::GenVertex::particle_iterator mother
                   = (*p)->production_vertex()->
                   particles_begin(HepMC::parents);
@@ -118,32 +115,36 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
                   particles_end(HepMC::parents);
                 ++mother ) {
 
-            if ((*p)->pdg_id()==15 && (*mother)->pdg_id()==15){
-              tau_eta=(*p)->momentum().eta();
-              tau_phi=(*p)->momentum().phi();
-              if(tau_phi>TMath::Pi()) tau_phi = tau_phi-2*TMath::Pi();
-            }
+	    /* --> If mother particle is tau, set tau eta and phi */
+            if ((*p)->pdg_id()==15 && (*mother)->pdg_id()==15)
+	      {
+		tau_eta=(*p)->momentum().eta();
+		tau_phi=(*p)->momentum().phi();
 
-
+		/* correct angle for 'wraparound' at PI */
+		if(tau_phi>TMath::Pi()) tau_phi = tau_phi-2*TMath::Pi();
+	      }
           }
         }
       }
     }// end loop over all particles in event record //
 
 
-
+  /* Check reconstructed track information
+   *
+   */
 
   /* Get track collection with all tracks in this event */
   SvtxTrackMap* trackmap =
     findNode::getClass<SvtxTrackMap>(topNode,"SvtxTrackMap");
+
   /* Check if trackmap found */
-
-
-  if (!trackmap) {
-    cout << PHWHERE << "SvtxTrackMap node not found on node tree"
-         << endl;
-    return Fun4AllReturnCodes::ABORTEVENT;
-  }
+  if (!trackmap)
+    {
+      cout << PHWHERE << "SvtxTrackMap node not found on node tree"
+	   << endl;
+      return Fun4AllReturnCodes::ABORTEVENT;
+    }
 
   /* Loop over tracks */
   for (SvtxTrackMap::ConstIter track_itr = trackmap->begin();
@@ -154,40 +155,20 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
     double cal_eta = track_j->get_eta();
     double cal_phi = track_j->get_phi();
 
-
     float track_data[3] = {(float) _ievent,        //event number
-                           (float) cal_eta,                        //eta of the track
-                           (float) cal_phi,                        //phi of the track
+                           (float) cal_eta,        //eta of the track
+                           (float) cal_phi,        //phi of the track
     };
 
     _ntp_track->Fill(track_data);
+  } // end loop over reco tracks //
 
 
+  /* Check reconstructed jet information
+   *
+   */
 
-    /*
-    // Use the track states to project to the RICH /
-    for (SvtxTrack::ConstStateIter state_itr = track_j->begin_states();
-    state_itr != track_j->end_states(); state_itr++) {
-
-
-    SvtxTrackState *temp = dynamic_cast<SvtxTrackState*>(state_itr->second);
-
-    string statename = "CEMC";
-
-    cout<<temp->get_name()<<endl;
-    if( (temp->get_name()==statename) ){
-    double track_cemc_x = temp->get_x();
-    double track_cemc_y = temp->get_y();
-    double track_cemc_z = temp->get_z();
-    cout << "Track impact point on CEMC: " << track_cemc_x << " , " << track_cemc_y << " , " << track_cemc_z << endl;
-    }
-    }
-    */
-  }
-
-
-
-
+  /* Get reco jets collection */
   JetMap* recojets = findNode::getClass<JetMap>(topNode,_jetcolname.c_str());
   if (!recojets)
     {
@@ -195,9 +176,6 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
       exit(-1);
     }
 
-
-  //    float max_energy_id = 0;
-  //    float max_energy = 0;
   float is_max_energy_jet = 0;
   float is_min_delta_R_jet = 0;
   float temp_phi_tau, temp_phi_jet;
@@ -205,7 +183,7 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
   std::vector<float> energy_list;
   std::vector<float> delta_R_list;
 
-
+  /* Loop over all jets */
   int temp_i=0;
   for (JetMap::Iter iter = recojets->begin();
        iter != recojets->end();
@@ -213,12 +191,12 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
     {
       Jet* recojet = iter->second;
 
-      //              float id    = recojet->get_id();
+      //      float id    = recojet->get_id();
       float e = recojet->get_e();
 
       energy_list.push_back(e);
 
-      //              if(e > max_energy) max_energy_id = id;
+      //      if(e > max_energy) max_energy_id = id;
 
       float eta = recojet->get_eta();
       float phi = recojet->get_phi();
@@ -226,7 +204,6 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
 
       if((tau_phi < -0.9*TMath::Pi()) && (phi > 0.9*TMath::Pi())) phi = phi-2*TMath::Pi();
       if((tau_phi > 0.9*TMath::Pi()) && (phi < -0.9*TMath::Pi())) temp_phi_tau = tau_phi-2*TMath::Pi();
-
 
 
       float delta_R = sqrt(pow(eta-tau_eta,2)+pow(phi-temp_phi_tau,2));
@@ -238,7 +215,7 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
 
     }
 
-  //Rank the entries in the energy_list by energy (highest energyy = 1, second highest = 2, etc.)
+  /* Rank the entries in the energy_list by energy (highest energyy = 1, second highest = 2, etc.) */
   vector<float> energy_list_sorted = energy_list;
   vector<float> delta_R_list_sorted = delta_R_list;
   std::sort(energy_list_sorted.begin(), energy_list_sorted.end(), std::greater<float>());
@@ -252,12 +229,12 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
       energyRankMap.insert(make_pair(energy_list_sorted[i],i));
     }
 
-  //Used to get rid of repeated jets
+  /* Used to get rid of repeated jets */
   std::vector<int> index_list;
   index_list.push_back(0);
   temp_i=0;
 
-  //loop over every jet identified in the event, this time we will be able to record which is the max energy jet and store this info.
+  /* loop over every jet identified in the event, this time we will be able to record which is the max energy jet and store this info. */
   for (JetMap::Iter iter = recojets->begin();
        iter != recojets->end();
        ++iter)
@@ -281,7 +258,6 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
       float jet_px = max_energy_jet->get_px();
       float jet_py = max_energy_jet->get_py();
       float jet_pz = max_energy_jet->get_pz();
-
 
       temp_phi_jet = jet_phi;
       temp_phi_tau = tau_phi;
@@ -319,7 +295,7 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
       else cout << "ERROR: Global vertex not found" << endl;
       double calorimeter = 0;
 
-      //Loop over all of the towers in a jet
+      /* Loop over all of the towers in a jet */
       for (Jet::ConstIter citer = max_energy_jet->begin_comp(); citer != max_energy_jet->end_comp(); ++citer)
         {
           RawTowerContainer *towers = NULL;
@@ -330,7 +306,7 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
           RawTowerGeomContainer *geom = NULL;
           CaloRawTowerEval *towereval = NULL;
 
-          //Look for each tower in the calorimeters
+          /* Look for each tower in the calorimeters */
           RawTower *tower = NULL;
           bool tower_found = false;
           for (rtiter = begin_end.first; rtiter !=  begin_end.second; ++rtiter)
@@ -488,7 +464,7 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
                 }
             }
 
-          // If the tower is found, get the PHG4Particle which contributes the most energy to that tower.
+          /* If the tower is found, get the PHG4Particle which contributes the most energy to that tower. */
           if(tower_found)
             {
               int tau_tower = 0;
