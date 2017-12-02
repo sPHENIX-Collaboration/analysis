@@ -508,6 +508,7 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
 
               double eta = asinh(z/r); // eta after shift from vertex
 
+	      /* Store information for jet that is candidate to be from Leptoquark->Tau decay */
               float lqjet_data[18] = {(float) _ievent,  //event number
                                       (float) (iter->second)->get_id(), //jet id
                                       (float) is_max_energy_jet,                //is this the maximum energy jet?
@@ -535,24 +536,25 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
           tower_found = false;
         }
 
-      float lqjet_data[18] = {(float) _ievent,  //event number
-                              (float) (max_energy_jet)->get_id(),       //jet id
-                              (float) is_max_energy_jet,                //is this the maximum energy jet?
-                              (float) is_min_delta_R_jet,              //is this the minimum R jet?
-                              (float) jet_eta,                  //
-                              (float) jet_phi,
-                              (float) delta_R,
-                              (float) jet_mass,
-                              (float) jet_momentum,
-                              (float) jet_trans_momentum,
-                              (float) jet_trans_e,
-                              (float) jet_e,
-                              (float) jet_px,
-                              (float) jet_py,
-                              (float) jet_pz
+      /* Store jet information */
+      float jet_data[15] = {(float) _ievent,  //event number
+			    (float) (max_energy_jet)->get_id(),       //jet id
+			    (float) is_max_energy_jet,                //is this the maximum energy jet?
+			    (float) is_min_delta_R_jet,              //is this the minimum R jet?
+			    (float) jet_eta,                  //
+			    (float) jet_phi,
+			    (float) delta_R,
+			    (float) jet_mass,
+			    (float) jet_momentum,
+			    (float) jet_trans_momentum,
+			    (float) jet_trans_e,
+			    (float) jet_e,
+			    (float) jet_px,
+			    (float) jet_py,
+			    (float) jet_pz
       };
 
-      _ntp_jet->Fill(lqjet_data);
+      _ntp_jet->Fill(jet_data);
 
       is_max_energy_jet = 0;
       is_min_delta_R_jet = 0;
