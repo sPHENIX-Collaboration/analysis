@@ -34,6 +34,12 @@ public:
     _pbeam_E = fabs( beam_proton );
   }
 
+  void
+  set_reco_jet_collection( std::string newname )
+  {
+    _jetcolname = newname;
+  }
+
 private:
 
   bool _verbose;
@@ -47,12 +53,16 @@ private:
   /* output tree and variables */
   TNtuple* _ntp_leptoquark;
   TNtuple* _ntp_jet;
+  TNtuple* _ntp_track;
 
   /* beam energies electron and proton */
   float _ebeam_E;
   float _pbeam_E;
 
   PHG4TruthInfoContainer* _truthinfo;
+
+  /** name of jet collection */
+  std::string _jetcolname;
 
   /* CaloRawTowerEvaluators to access tru particle info for
    * given towers */
