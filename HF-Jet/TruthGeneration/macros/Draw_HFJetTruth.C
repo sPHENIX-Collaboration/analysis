@@ -68,9 +68,10 @@ void Draw_HFJetTruth(const TString infile =
   //  Draw_HFJetTruth_DrawCrossSection_PR(infile);
   //  CrossSection2RAA_Proposal(infile);
   //    CrossSection2RAA(infile);
-  CrossSection2RAA(infile, false);
-  CrossSection2v2(infile, false, .7);
-  CrossSection2v2(infile, false, .4);
+  const double acceptance = 2.* (0.85 - .4);
+  CrossSection2RAA(infile, false, acceptance);
+  CrossSection2v2(infile, false, .7, acceptance);
+  CrossSection2v2(infile, false, .4, acceptance);
 }
 
 void DrawCrossSection(double int_lumi, const double dy)
@@ -361,7 +362,7 @@ void CrossSection2RAA_Proposal(const TString infile)
   SaveCanvas(c1, infile + "_" + TString(c1->GetName()), kTRUE);
 }
 
-void CrossSection2RAA(const TString infile, const bool use_AA_jet_trigger = true)
+void CrossSection2RAA(const TString infile, const bool use_AA_jet_trigger = true, const double dy = .7 * 2)
 {
   TFile *f = TFile::Open(infile + "Draw_HFJetTruth_DrawCrossSection.root");
   assert(f);
@@ -372,9 +373,9 @@ void CrossSection2RAA(const TString infile, const bool use_AA_jet_trigger = true
   assert(h_b);
 
   const TString s_suffix(use_AA_jet_trigger ? "_AAJetTriggered" : "");
+  s_suffix += Form("_deta%.2f",dy/2);
 
   const double b_jet_RAA = 0.6;
-  const double dy = .7 * 2;
 
   const double pp_eff = 0.6;
   const double pp_purity = 0.4;
@@ -458,7 +459,7 @@ void CrossSection2RAA(const TString infile, const bool use_AA_jet_trigger = true
   TLegend *leg = new TLegend(.0, .76, .85, .93);
   leg->SetFillStyle(0);
   leg->AddEntry("", "#it{#bf{sPHENIX }} Simulation", "");
-  leg->AddEntry("", Form("PYTHIA-8 #it{b}-jet, Anti-k_{T} R=0.4, |#eta|<%.1f, CTEQ6L", dy / 2), "");
+  leg->AddEntry("", Form("PYTHIA-8 #it{b}-jet, Anti-k_{T} R=0.4, |#eta|<%.2f, CTEQ6L", dy / 2), "");
   leg->AddEntry("", Form("#it{p}+#it{p}: %.0f pb^{-1}, %.0f%% Eff., %.0f%% Pur.", pp_lumi, pp_eff * 100, pp_purity * 100), "");
   leg->AddEntry("", Form("Au+Au: %.0fB col., %.0f%% Eff., %.0f%% Pur.", '%', AuAu_MB_Evt / 1e9, AuAu_eff * 100, AuAu_purity * 100), "");
   leg->Draw();
@@ -505,7 +506,7 @@ void CrossSection2RAA(const TString infile, const bool use_AA_jet_trigger = true
   SaveCanvas(c1, infile + "_" + TString(c1->GetName()), kTRUE);
 }
 
-void CrossSection2v2(const TString infile, const bool use_AA_jet_trigger = true,const double ep_resolution = 0.7)
+void CrossSection2v2(const TString infile, const bool use_AA_jet_trigger = true,const double ep_resolution = 0.7, const double dy = .7 * 2)
 {
   TFile *f = TFile::Open(infile + "Draw_HFJetTruth_DrawCrossSection.root");
   assert(f);
@@ -516,7 +517,6 @@ void CrossSection2v2(const TString infile, const bool use_AA_jet_trigger = true,
   assert(h_b);
 
   const double b_jet_RAA = 0.6;
-  const double dy = .7 * 2;
 
   const double pp_eff = 0.6;
   const double pp_purity = 0.4;
@@ -560,6 +560,7 @@ void CrossSection2v2(const TString infile, const bool use_AA_jet_trigger = true,
 
   const TString s_suffix(use_AA_jet_trigger ? "_AAJetTriggered" : "");
   s_suffix += Form("_EPR%.1f",ep_resolution);
+  s_suffix += Form("_deta%.2f",dy/2);
 
   cout << "CrossSection2v2 integrated luminosity assumptions in pb^-1: " << endl;
   cout << "\t"
@@ -640,7 +641,7 @@ void CrossSection2v2(const TString infile, const bool use_AA_jet_trigger = true,
     TLegend *leg = new TLegend(.0, .78, .85, .93);
     leg->SetFillStyle(0);
     leg->AddEntry("", "#it{#bf{sPHENIX }} Simulation", "");
-    leg->AddEntry("", Form("PYTHIA-8 #it{b}-jet, Anti-k_{T} R=0.4, |#eta|<%.1f, CTEQ6L", dy / 2), "");
+    leg->AddEntry("", Form("PYTHIA-8 #it{b}-jet, Anti-k_{T} R=0.4, |#eta|<%.2f, CTEQ6L", dy / 2), "");
     leg->AddEntry("", Form("Au+Au: %.0fB col., %.0f%% Eff., %.0f%% Pur.", '%', AuAu_MB_Evt / 1e9, AuAu_eff * 100, AuAu_purity * 100), "");
     leg->Draw();
   //
