@@ -10,7 +10,7 @@ int Fun4All_G4_EICDetector_LQ(
   const int n_TPC_layers = 40;  // use 60 for backward compatibility only
   
 
-  string outputFile = "/direct/phenix+u/spjeffas/analysis/EICAnalysis/macros/leptoquarks/G4_Leptoquark_DST_p"+pbeam+"_e"+ebeam+"_"+n+"events.root";
+  string outputFile = "/gpfs/mnt/gpfs02/phenix/scratch/spjeffas/data/G4_Leptoquark_DST_p"+pbeam+"_e"+ebeam+"_"+n+"events.root";
   //Get parameter variables from parameter file
   
   int nEvents;

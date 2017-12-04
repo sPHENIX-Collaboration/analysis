@@ -1,5 +1,5 @@
 int Fun4All_G4_EICDetector_LQ_analysis(
-			      string n="1",
+			      string n="201",
 			      string ebeam="20",
 			      string pbeam="250",
 			      //string inputFile,
@@ -10,7 +10,7 @@ int Fun4All_G4_EICDetector_LQ_analysis(
     
   //Get parameter variables from parameter file
   
-  string inputFile="G4_Leptoquark_DST_p250_e20_"+n+"events.root";
+  string inputFile="/gpfs/mnt/gpfs02/phenix/scratch/spjeffas/data/G4_Leptoquark_DST_p250_e20_"+n+"events.root";
 
   int nEvents;
   stringstream geek(n);
