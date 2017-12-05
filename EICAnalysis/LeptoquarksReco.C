@@ -110,7 +110,7 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
 	/* --> Check truth particle production vertex */
         if ( (*p)->production_vertex() ) {
 
-	  /* --> Loop over potential mother particles */
+	  /* --> Loop over mother particles at production vertex */
           for ( HepMC::GenVertex::particle_iterator mother
                   = (*p)->production_vertex()->
                   particles_begin(HepMC::parents);
@@ -118,16 +118,19 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
                   particles_end(HepMC::parents);
                 ++mother )
 	    {
-	      /* --> If mother particle is tau, set tau eta and phi */
-	      /* @TODO: What does this IF statement mean? Particles (*p) AND (*mother) have to be TAU??? */
-	      /* @TODO: Can there be multiple TAU in an event? What happens then? How about checking for status? */
+	      /* --> If mother particle is tau, set tau eta and phi
+	       * In event generator, tau with status 11 is daughter of tau with status 21.
+	       * The tau with status 11 is the tau which decays into hadrons etc... This is the tau we want to select
+	       * Therefore, condition that particle is "tau" AND mother is "tau". */
+	      /* @TODO: Can there be multiple TAU in an event? What happens then? How about checking for status 11 (p) and status 21 (mother)? */
 	      if ((*p)->pdg_id()==15 && (*mother)->pdg_id()==15)
 		{
 		  tau_eta=(*p)->momentum().eta();
 		  tau_phi=(*p)->momentum().phi();
 		  //tau_found = true;
 
-		  /* correct angle for 'wraparound' at phi == Pi */
+		  /* Event record uses 0 < phi < 2Pi, while Fun4All uses -Pi < phi < Pi.
+		   * Therefore, correct angle for 'wraparound' at phi == Pi */
 		  if(tau_phi>TMath::Pi()) tau_phi = tau_phi-2*TMath::Pi();
 		}
 	    }
@@ -207,6 +210,9 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
       float phi = recojet->get_phi();
       temp_phi_tau = tau_phi;
 
+      /* Particles at phi = PI+x and phi = PI-x are actually close to each other in phi, but simply calculating
+       * the difference in phi would give a large distance (because phi ranges from -PI to +PI in the convention
+       * used. Account for this by subtracting 2PI is particles fall within this border area. */
       if((tau_phi < -0.9*TMath::Pi()) && (phi > 0.9*TMath::Pi())) phi = phi-2*TMath::Pi();
       if((tau_phi > 0.9*TMath::Pi()) && (phi < -0.9*TMath::Pi())) temp_phi_tau = tau_phi-2*TMath::Pi();
 
