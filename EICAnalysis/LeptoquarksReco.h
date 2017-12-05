@@ -13,6 +13,13 @@ class TFile;
 
 class PHCompositeNode;
 class CaloRawTowerEval;
+class JetMap;
+class SvtxTrackMap;
+class PHHepMCGenEventMap;
+
+class TauCandidate;
+
+typedef std::map<float, TauCandidate> map_tcan;
 
 class LeptoquarksReco : public SubsysReco
 {
@@ -52,9 +59,7 @@ private:
   TFile *_tfile;
 
   /* output tree and variables */
-  TNtuple* _ntp_leptoquark;
   TNtuple* _ntp_jet;
-  TNtuple* _ntp_track;
 
   /* beam energies electron and proton */
   float _ebeam_E;
@@ -66,6 +71,15 @@ private:
   /* CaloRawTowerEvaluators to access tru particle info for
    * given towers */
   std::map< std::string, CaloRawTowerEval* > _map_towereval;
+
+  int AddTrueTauTag( map_tcan&, PHHepMCGenEventMap* );
+
+  int AddJetStructureInformation( map_tcan&, JetMap* );
+
+  int AddTrackInformation( map_tcan&, SvtxTrackMap* );
+
+  int WriteTauCandidatesToTree( map_tcan& );
+
 };
 
 #endif // __LeptoquarksReco_H__
