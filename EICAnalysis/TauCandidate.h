@@ -22,8 +22,22 @@ public:
   void identify(std::ostream& os = std::cout) const;
 
   /** Manually set properties of this tau candidate */
+  void set_jetshape_econe_r1( float er1 ) { _jetshape_econe_r1 = er1; }
+  void set_jetshape_econe_r2( float er2 ) { _jetshape_econe_r2 = er2; }
+  void set_jetshape_econe_r3( float er3 ) { _jetshape_econe_r3 = er3; }
+  void set_jetshape_r90( float r90 ) { _jetshape_r90 = r90; }
+  void set_jetshape_rms( float rms ) { _jetshape_rms = rms; }
+
   void set_is_tau( bool id ) { _is_tau = id; }
   void set_is_uds( bool id ) { _is_uds = id; }
+
+  void set_tau_etotal( float etotal ) { _tau_etotal = etotal; }
+  void set_tau_eta( float eta ) { _tau_eta = eta; }
+  void set_tau_phi( float phi ) { _tau_phi = phi; }
+
+  void set_uds_etotal( float etotal ) { _uds_etotal = etotal; }
+  void set_uds_eta( float eta ) { _uds_eta = eta; }
+  void set_uds_phi( float phi ) { _uds_phi = phi; }
 
   void set_tracks_count( int ntracks ) { _tracks_count = ntracks; }
   void set_tracks_chargesum( int qtracks ) { _tracks_chargesum = qtracks; }
@@ -39,8 +53,22 @@ public:
   float get_jet_ptrans() const { return _jet_ptrans; }
   float get_jet_mass() const { return _jet_mass; }
 
+  float get_jetshape_econe_r1() const { return _jetshape_econe_r1; }
+  float get_jetshape_econe_r2() const { return _jetshape_econe_r2; }
+  float get_jetshape_econe_r3() const { return _jetshape_econe_r3; }
+  float get_jetshape_r90() const { return _jetshape_r90; }
+  float get_jetshape_rms() const { return _jetshape_rms; }
+
   bool get_is_tau() const { return _is_tau; }
   bool get_is_uds() const { return _is_uds; }
+
+  float get_tau_etotal() const { return _tau_etotal; }
+  float get_tau_eta() const { return _tau_eta; }
+  float get_tau_phi() const { return _tau_phi; }
+
+  float get_uds_etotal() const { return _uds_etotal; }
+  float get_uds_eta() const { return _uds_eta; }
+  float get_uds_phi() const { return _uds_phi; }
 
   int get_tracks_count() const { return _tracks_count; }
   int get_tracks_chargesum() const { return _tracks_chargesum; }
@@ -60,11 +88,28 @@ protected:
   const float _jet_ptrans;
   const float _jet_mass;
 
+  /** Jet structure properties */
+  float _jetshape_econe_r1;
+  float _jetshape_econe_r2;
+  float _jetshape_econe_r3;
+  float _jetshape_r90;
+  float _jetshape_rms;
+
   /** Does this jet come from a 'truth' tau from hard scattering? */
   bool _is_tau;
 
   /** Does this jet come from a 'truth' u-, d-, or s-quark from hard scattering? */
   bool _is_uds;
+
+  /** Properites of event generator "true" tau */
+  float _tau_etotal;
+  float _tau_eta;
+  float _tau_phi;
+
+  /** Properites of event generator "true" quark from hard scattering */
+  float _uds_etotal;
+  float _uds_eta;
+  float _uds_phi;
 
   /** Number of tracks within cone around jet axis */
   int _tracks_count;
