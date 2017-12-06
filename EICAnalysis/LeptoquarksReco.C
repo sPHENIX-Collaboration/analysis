@@ -43,6 +43,7 @@ LeptoquarksReco::LeptoquarksReco(std::string filename) :
   _filename(filename),
   _tfile(nullptr),
   _ntp_jet(nullptr),
+  _ntp_jet2(nullptr),
   _ebeam_E(0),
   _pbeam_E(0),
   _jetcolname("AntiKt_Tower_r05")
@@ -60,6 +61,9 @@ LeptoquarksReco::Init(PHCompositeNode *topNode)
   /* NTuple to store tau candidate information */
   _ntp_jet = new TNtuple("ntp_jet","all jet information from LQ events",
                          "event:jet_id:isMaxEnergyJet:isMinDeltaRJet:jet_eta:jet_phi:delta_R:jet_mass:jet_p:jet_pT:jet_eT:jet_e:jet_px:jet_py:jet_pz");
+
+  _ntp_jet2 = new TNtuple("ntp_jet2","all tau candidate (jet) information from LQ events",
+                          "ievent:jet_id:is_tau:is_uds:tau_etotal:tau_eta:tau_phi:uds_etotal:uds_eta:uds_phi:jet_eta:jet_phi:jet_etotal:jet_etrans:jet_ptotal:jet_ptrans:jet_mass:jetshape_econe_r1:jetshape_econe_r2:jetshape_econe_r3:jetshape_r90:jetshape_rms:tracks_count:tracks_chargesum:tracks_rmax");
 
   return 0;
 }
@@ -192,9 +196,9 @@ LeptoquarksReco::AddTrueTauTag( map_tcan& tauCandidateMap, PHHepMCGenEventMap *g
                     /* Is child a quark? */
                     else if ( (*lq_child)->pdg_id() > 0 && (*lq_child)->pdg_id() < 7 )
                       {
-			particle_quark = (*lq_child);
-			UpdateFinalStateParticle( particle_quark );
-		      }
+                        particle_quark = (*lq_child);
+                        UpdateFinalStateParticle( particle_quark );
+                      }
                   }
               }
 
@@ -404,6 +408,35 @@ LeptoquarksReco::WriteTauCandidatesToTree( map_tcan& tauCandidateMap )
 
       _ntp_jet->Fill(jet_data);
 
+
+      float jet2_data[25] = {(float) _ievent,
+                             (float) (iter->second).get_jet_id(),
+                             (float) (iter->second).get_is_tau(),
+                             (float) (iter->second).get_is_uds(),
+			     (float) (iter->second).get_tau_etotal(),
+			     (float) (iter->second).get_tau_eta(),
+			     (float) (iter->second).get_tau_phi(),
+			     (float) (iter->second).get_uds_etotal(),
+			     (float) (iter->second).get_uds_eta(),
+			     (float) (iter->second).get_uds_phi(),
+			     (float) (iter->second).get_jet_eta(),
+                             (float) (iter->second).get_jet_phi(),
+                             (float) (iter->second).get_jet_etotal(),
+                             (float) (iter->second).get_jet_etrans(),
+                             (float) (iter->second).get_jet_ptotal(),
+                             (float) (iter->second).get_jet_ptrans(),
+                             (float) (iter->second).get_jet_mass(),
+                             (float) (iter->second).get_jetshape_econe_r1(),
+                             (float) (iter->second).get_jetshape_econe_r2(),
+                             (float) (iter->second).get_jetshape_econe_r3(),
+                             (float) (iter->second).get_jetshape_r90(),
+                             (float) (iter->second).get_jetshape_rms(),
+                             (float) (iter->second).get_tracks_count(),
+                             (float) (iter->second).get_tracks_chargesum(),
+                             (float) (iter->second).get_tracks_rmax()
+      };
+
+      _ntp_jet2->Fill(jet2_data);
     }
 
   return 0;
@@ -440,6 +473,7 @@ LeptoquarksReco::End(PHCompositeNode *topNode)
 {
   _tfile->cd();
   _ntp_jet->Write();
+  _ntp_jet2->Write();
   _tfile->Close();
 
   return 0;
