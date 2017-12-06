@@ -8,6 +8,11 @@
 #include <math.h>
 #include <map>
 
+/*HepMC include */
+#include <phhepmc/PHHepMCGenEvent.h>
+#include <phhepmc/PHHepMCGenEventMap.h>
+
+
 class TNtuple;
 class TFile;
 
@@ -80,6 +85,8 @@ private:
 
   int WriteTauCandidatesToTree( map_tcan& );
 
+  /** Check if this is the final state particle or not- update pointer if needed */
+  void UpdateFinalStateParticle( HepMC::GenParticle *& );
 };
 
 #endif // __LeptoquarksReco_H__

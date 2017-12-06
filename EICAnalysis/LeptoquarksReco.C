@@ -7,8 +7,8 @@
 /* Fun4All includes */
 #include <g4hough/SvtxTrackMap_v1.h>
 
-#include <phhepmc/PHHepMCGenEvent.h>
-#include <phhepmc/PHHepMCGenEventMap.h>
+//#include <phhepmc/PHHepMCGenEvent.h>
+//#include <phhepmc/PHHepMCGenEventMap.h>
 
 #include <phool/getClass.h>
 
@@ -137,58 +137,88 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
 int
 LeptoquarksReco::AddTrueTauTag( map_tcan& tauCandidateMap, PHHepMCGenEventMap *genevtmap )
 {
-  /* Finding the TAU particle in the event */
-  bool   tau_found = false;
-  double tau_eta=100;
-  double tau_phi=100;
+  /* Look for leptoquark and tau particle in the event */
+  //  bool   lq_found = false;
+  HepMC::GenParticle* particle_lq = NULL;
+  HepMC::GenParticle* particle_lq_tau = NULL;
+  HepMC::GenParticle* particle_lq_quark = NULL;
 
   /* --> Loop over all truth events in event generator collection */
   for (PHHepMCGenEventMap::ReverseIter iter = genevtmap->rbegin(); iter != genevtmap->rend(); ++iter)
     {
-
+      cout << "ONE event" << endl;
       PHHepMCGenEvent *genevt = iter->second;
       HepMC::GenEvent *theEvent = genevt->getEvent();
 
-      /* --> Loop over all truth particles in event generator collection */
+      /* check if GenEvent object found */
+      if ( !theEvent )
+        {
+          cout << "ERROR: Missing GenEvent!" << endl;
+          return -1;
+        }
+
+      /* Loop over all truth particles in event generator collection
+       *
+       * particle   ...   PGD code
+       * -------------------------
+       * LQ_ue      ...    39
+       * tau-       ...    15
+       * pi+        ...    211
+       * pi-        ...   -211
+       * u          ...    2
+       * d          ...    1 */
       for ( HepMC::GenEvent::particle_iterator p = theEvent->particles_begin();
             p != theEvent->particles_end(); ++p ) {
 
-        /* --> Check truth particle production vertex */
-        if ( (*p)->production_vertex() ) {
+        /* check particle ID == LQ_ue */
+        if ( (*p)->pdg_id() == 39 )
+          {
+            cout << "FOUND: " << (*p)->pdg_id() << endl;
+            particle_lq = (*p);
 
-          /* --> Loop over mother particles at production vertex */
-          for ( HepMC::GenVertex::particle_iterator mother
-                  = (*p)->production_vertex()->
-                  particles_begin(HepMC::parents);
-                mother != (*p)->production_vertex()->
-                  particles_end(HepMC::parents);
-                ++mother )
-            {
-              /* --> If mother particle is tau, set tau eta and phi
-               * In event generator, tau with status 11 is daughter of tau with status 21.
-               * The tau with status 11 is the tau which decays into hadrons etc... This is the tau we want to select
-               * Therefore, condition that particle is "tau" AND mother is "tau". */
-              /* @TODO: Can there be multiple TAU in an event? What happens then? How about checking for status 11 (p) and status 21 (mother)? */
-              if ((*p)->pdg_id()==15 && (*mother)->pdg_id()==15)
-                {
-                  tau_eta=(*p)->momentum().eta();
-                  tau_phi=(*p)->momentum().phi();
-                  tau_found = true;
+            /* Where does it end (=decay)? */
+            if ( particle_lq->end_vertex() )
+              {
+                /* Loop over mother particles at production vertex */
+                for ( HepMC::GenVertex::particle_iterator lq_child
+                        = particle_lq->end_vertex()->
+                        particles_begin(HepMC::children);
+                      lq_child != particle_lq->end_vertex()->
+                        particles_end(HepMC::children);
+                      ++lq_child )
+                  {
+                    /* Is child a tau? */
+                    if ( (*lq_child)->pdg_id() == 15 )
+                      {
+                        particle_lq_tau = (*lq_child);
+                        UpdateFinalStateParticle( particle_lq_tau );
+                      }
+                    /* Is child a quark? */
+                    else if ( (*lq_child)->pdg_id() > 0 && (*lq_child)->pdg_id() < 7 )
+                      {
+			particle_lq_quark = (*lq_child);
+			UpdateFinalStateParticle( particle_lq_quark );
+		      }
+                  }
+              }
 
-                  /* Event record uses 0 < phi < 2Pi, while Fun4All uses -Pi < phi < Pi.
-                   * Therefore, correct angle for 'wraparound' at phi == Pi */
-                  if(tau_phi>TMath::Pi()) tau_phi = tau_phi-2*TMath::Pi();
-                }
-            }
-        }
-      }
-    }// end loop over all particles in event record //
+            /* end loop if leptoquark found */
+            break;
+          } // end if leptoquark //
+      } // end loop over all particles in event //
+    }// end loop over genevtmap //
 
-  //cout << "Found tau at eta = " << tau_eta << " and phi = " << tau_phi << endl;
-
-  /* If TAU in event: Find the tau candidate with smalles deltaR */
-  if( tau_found )
+  /* If TAU in event: Tag the tau candidate (i.e. jet) with smalles delta_R from this tau */
+  if( particle_lq_tau )
     {
+      double tau_eta = particle_lq_tau->momentum().eta();
+      double tau_phi = particle_lq_tau->momentum().phi();
+
+      /* Event record uses 0 < phi < 2Pi, while Fun4All uses -Pi < phi < Pi.
+       * Therefore, correct angle for 'wraparound' at phi == Pi */
+      if(tau_phi>TMath::Pi()) tau_phi = tau_phi-2*TMath::Pi();
+
+      /* find jet with smallest delta_R from tau */
       float min_delta_R = 100;
       map_tcan::iterator min_delta_R_iter = tauCandidateMap.end();
 
@@ -296,7 +326,7 @@ LeptoquarksReco::AddTrackInformation( map_tcan& tauCandidateMap, SvtxTrackMap* t
 
       } // end loop over reco tracks //
 
-      /* Set track-based properties for tau candidate */
+        /* Set track-based properties for tau candidate */
       (iter->second).set_tracks_count( tracks_count );
       (iter->second).set_tracks_chargesum( tracks_chargesum );
       (iter->second).set_tracks_rmax( tracks_rmax );
@@ -342,6 +372,32 @@ LeptoquarksReco::WriteTauCandidatesToTree( map_tcan& tauCandidateMap )
     }
 
   return 0;
+}
+
+
+void
+LeptoquarksReco::UpdateFinalStateParticle( HepMC::GenParticle *&particle )
+{
+  bool final_state = false;
+  while ( !final_state )
+    {
+      cout << "PARTICLE status: " << particle->status() << endl;
+      for ( HepMC::GenVertex::particle_iterator child
+              = particle->end_vertex()->particles_begin(HepMC::children);
+            child != particle->end_vertex()->particles_end(HepMC::children);
+            ++child )
+        {
+	  cout << (*child)->pdg_id() << endl;
+          /* If there is a child of same particle ID, this was not the final state particle- update pointer to particle and repeat */
+          if ( (*child)->pdg_id() == particle->pdg_id() )
+            {
+              particle = (*child);
+              break;
+            }
+          final_state = true;
+        }
+    }
+  return;
 }
 
 
