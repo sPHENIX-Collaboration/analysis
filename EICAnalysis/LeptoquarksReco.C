@@ -245,6 +245,50 @@ LeptoquarksReco::AddTrueTauTag( map_tcan& tauCandidateMap, PHHepMCGenEventMap *g
         (min_delta_R_iter->second).set_is_tau( true );
     }
 
+
+  /* If QUARK (->jet) in event: Tag the tau candidate (i.e. jet) with smalles delta_R from this quark */
+  /* @TODO: This is a copy from the loop to tag the tau candidate with smallest delta_R w.r.t. final state tau-
+   * instead of copying the code, make a function that can be called for both (GetMinDeltaRElement or similar) */
+  if( particle_quark )
+    {
+      double quark_eta = particle_quark->momentum().eta();
+      double quark_phi = particle_quark->momentum().phi();
+
+      /* Event record uses 0 < phi < 2Pi, while Fun4All uses -Pi < phi < Pi.
+       * Therefore, correct angle for 'wraparound' at phi == Pi */
+      if(quark_phi>TMath::Pi()) quark_phi = quark_phi-2*TMath::Pi();
+
+      /* find jet with smallest delta_R from quark */
+      float min_delta_R = 100;
+      map_tcan::iterator min_delta_R_iter = tauCandidateMap.end();
+
+      for (map_tcan::iterator iter = tauCandidateMap.begin();
+           iter != tauCandidateMap.end();
+           ++iter)
+        {
+          float eta = (iter->second).get_jet_eta();
+          float phi = (iter->second).get_jet_phi();
+          float temp_phi_quark = quark_phi;
+
+          /* Particles at phi = PI+x and phi = PI-x are actually close to each other in phi, but simply calculating
+           * the difference in phi would give a large distance (because phi ranges from -PI to +PI in the convention
+           * used. Account for this by subtracting 2PI is particles fall within this border area. */
+          if((quark_phi < -0.9*TMath::Pi()) && (phi > 0.9*TMath::Pi())) phi = phi-2*TMath::Pi();
+          if((quark_phi > 0.9*TMath::Pi()) && (phi < -0.9*TMath::Pi())) temp_phi_quark = quark_phi-2*TMath::Pi();
+
+          float delta_R = sqrt(pow(eta-quark_eta,2)+pow(phi-temp_phi_quark,2));
+
+          if ( delta_R < min_delta_R )
+            {
+              min_delta_R_iter = iter;
+              min_delta_R = delta_R;
+            }
+        }
+      /* set is_uds = TRUE for TauCandiate with smallest delta_R */
+      if ( min_delta_R_iter != tauCandidateMap.end() )
+        (min_delta_R_iter->second).set_is_uds( true );
+    }
+
   return 0;
 }
 
