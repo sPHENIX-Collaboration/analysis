@@ -194,11 +194,17 @@ LeptoquarksReco::AddTrueTauTag( map_tcan& tauCandidateMap, PHHepMCGenEventMap *g
                         UpdateFinalStateParticle( particle_tau );
                       }
                     /* Is child a quark? */
-                    else if ( (*lq_child)->pdg_id() > 0 && (*lq_child)->pdg_id() < 7 )
+                    else if ( abs((*lq_child)->pdg_id()) > 0 && abs((*lq_child)->pdg_id() < 7) )
                       {
                         particle_quark = (*lq_child);
                         UpdateFinalStateParticle( particle_quark );
                       }
+		    /* What else could it be? */
+		    else
+		      {
+			cerr << PHWHERE << " ERROR: Didn't expect to find a leptoquark child with pdg_id " << (*lq_child)->pdg_id() << endl;
+			return Fun4AllReturnCodes::ABORTEVENT;
+		      }
                   }
               }
 
@@ -244,9 +250,15 @@ LeptoquarksReco::AddTrueTauTag( map_tcan& tauCandidateMap, PHHepMCGenEventMap *g
               min_delta_R = delta_R;
             }
         }
+
       /* set is_tau = TRUE for TauCandiate with smallest delta_R */
       if ( min_delta_R_iter != tauCandidateMap.end() )
-        (min_delta_R_iter->second).set_is_tau( true );
+	{
+	  (min_delta_R_iter->second).set_is_tau( true );
+	  (min_delta_R_iter->second).set_tau_etotal( particle_tau->momentum().e() );
+	  (min_delta_R_iter->second).set_tau_eta( tau_eta );
+	  (min_delta_R_iter->second).set_tau_phi( tau_phi );
+	}
     }
 
 
@@ -288,9 +300,15 @@ LeptoquarksReco::AddTrueTauTag( map_tcan& tauCandidateMap, PHHepMCGenEventMap *g
               min_delta_R = delta_R;
             }
         }
+
       /* set is_uds = TRUE for TauCandiate with smallest delta_R */
       if ( min_delta_R_iter != tauCandidateMap.end() )
-        (min_delta_R_iter->second).set_is_uds( true );
+	{
+	  (min_delta_R_iter->second).set_is_uds( true );
+	  (min_delta_R_iter->second).set_uds_etotal( particle_tau->momentum().e() );
+	  (min_delta_R_iter->second).set_uds_eta( quark_eta );
+	  (min_delta_R_iter->second).set_uds_phi( quark_phi );
+	}
     }
 
   return 0;
