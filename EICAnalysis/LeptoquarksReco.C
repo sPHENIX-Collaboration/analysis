@@ -108,6 +108,20 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
     return Fun4AllReturnCodes::ABORTEVENT;
   }
 
+  /* Get collection of CEMC towers */
+  RawTowerContainer *towers = findNode::getClass<RawTowerContainer>(topNode,"TOWER_CALIB_CEMC");
+  if (!towers) {
+    cerr << PHWHERE << " ERROR: Can't find TOWER_CALIB_CEMC" << endl;
+    return Fun4AllReturnCodes::ABORTEVENT;
+  }
+
+  /* get CEMC geometry collection */
+  RawTowerGeomContainer *geom = findNode::getClass<RawTowerGeomContainer>(topNode,"TOWERGEOM_CEMC");
+  if (!geom) {
+    cerr << PHWHERE << " ERROR: Can't find TOWERGEOM_CEMC" << endl;
+    return Fun4AllReturnCodes::ABORTEVENT;
+  }
+
   /* Loop over all jets to collect tau candidate objects */
   for (JetMap::Iter iter = recojets->begin();
        iter != recojets->end();
@@ -125,7 +139,7 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
   AddTrueTauTag( tauCandidateMap, genevtmap );
 
   /* Add jet structure information to tau candidates */
-  AddJetStructureInformation( tauCandidateMap, recojets );
+  AddJetStructureInformation( tauCandidateMap, recojets, towers, geom );
 
   /* Add track information to tau candidates */
   AddTrackInformation( tauCandidateMap, trackmap );
@@ -199,12 +213,12 @@ LeptoquarksReco::AddTrueTauTag( map_tcan& tauCandidateMap, PHHepMCGenEventMap *g
                         particle_quark = (*lq_child);
                         UpdateFinalStateParticle( particle_quark );
                       }
-		    /* What else could it be? */
-		    else
-		      {
-			cerr << PHWHERE << " ERROR: Didn't expect to find a leptoquark child with pdg_id " << (*lq_child)->pdg_id() << endl;
-			return Fun4AllReturnCodes::ABORTEVENT;
-		      }
+                    /* What else could it be? */
+                    else
+                      {
+                        cerr << PHWHERE << " ERROR: Didn't expect to find a leptoquark child with pdg_id " << (*lq_child)->pdg_id() << endl;
+                        return Fun4AllReturnCodes::ABORTEVENT;
+                      }
                   }
               }
 
@@ -253,12 +267,12 @@ LeptoquarksReco::AddTrueTauTag( map_tcan& tauCandidateMap, PHHepMCGenEventMap *g
 
       /* set is_tau = TRUE for TauCandiate with smallest delta_R */
       if ( min_delta_R_iter != tauCandidateMap.end() )
-	{
-	  (min_delta_R_iter->second).set_is_tau( true );
-	  (min_delta_R_iter->second).set_tau_etotal( particle_tau->momentum().e() );
-	  (min_delta_R_iter->second).set_tau_eta( tau_eta );
-	  (min_delta_R_iter->second).set_tau_phi( tau_phi );
-	}
+        {
+          (min_delta_R_iter->second).set_is_tau( true );
+          (min_delta_R_iter->second).set_tau_etotal( particle_tau->momentum().e() );
+          (min_delta_R_iter->second).set_tau_eta( tau_eta );
+          (min_delta_R_iter->second).set_tau_phi( tau_phi );
+        }
     }
 
 
@@ -303,12 +317,12 @@ LeptoquarksReco::AddTrueTauTag( map_tcan& tauCandidateMap, PHHepMCGenEventMap *g
 
       /* set is_uds = TRUE for TauCandiate with smallest delta_R */
       if ( min_delta_R_iter != tauCandidateMap.end() )
-	{
-	  (min_delta_R_iter->second).set_is_uds( true );
-	  (min_delta_R_iter->second).set_uds_etotal( particle_tau->momentum().e() );
-	  (min_delta_R_iter->second).set_uds_eta( quark_eta );
-	  (min_delta_R_iter->second).set_uds_phi( quark_phi );
-	}
+        {
+          (min_delta_R_iter->second).set_is_uds( true );
+          (min_delta_R_iter->second).set_uds_etotal( particle_tau->momentum().e() );
+          (min_delta_R_iter->second).set_uds_eta( quark_eta );
+          (min_delta_R_iter->second).set_uds_phi( quark_phi );
+        }
     }
 
   return 0;
@@ -316,17 +330,98 @@ LeptoquarksReco::AddTrueTauTag( map_tcan& tauCandidateMap, PHHepMCGenEventMap *g
 
 
 int
-LeptoquarksReco::AddJetStructureInformation( map_tcan& tauCandidateMap, JetMap* recojets )
+LeptoquarksReco::AddJetStructureInformation( map_tcan& tauCandidateMap, JetMap* recojets, RawTowerContainer *towers, RawTowerGeomContainer *geom )
 {
   /* Cone size around jet axis within which to look for tracks */
-  //float delta_R_cutoff = 0.5;
+  float delta_R_cutoff_r1 = 0.2;
+  float delta_R_cutoff_r2 = 0.5;
+  float delta_R_cutoff_r3 = 1.0;
 
   /* Loop over tau candidates */
   for (map_tcan::iterator iter = tauCandidateMap.begin();
        iter != tauCandidateMap.end();
        ++iter)
     {
-      /* @TODO: Implement adding jet structure properties to Tau candidates */
+      /* get jet axis */
+      float jet_eta = (iter->second).get_jet_eta();
+      float jet_phi = (iter->second).get_jet_phi();
+
+      /* collect jet structure properties */
+      float er1 = 0;
+      float er2 = 0;
+      float er3 = 0;
+      float r90 = 0;
+      float rms = 0;
+      float rms_esum = 0;
+      unsigned rms_ntower = 0;
+
+      /* define CEMC tower iterator */
+      RawTowerContainer::ConstRange begin_end = towers->getTowers();
+      RawTowerContainer::ConstIterator rtiter;
+
+      /* loop over all tower in CEMC calorimeter */
+      for (rtiter = begin_end.first; rtiter !=  begin_end.second; ++rtiter)
+        {
+          /* get tower energy */
+          RawTower *tower = rtiter->second;
+          float tower_energy = tower->get_energy();
+
+          /* get eta and phi of tower and check angle delta_R w.r.t. jet axis */
+          RawTowerGeom * tower_geom = geom->get_tower_geometry(tower -> get_key());
+          float tower_eta = tower_geom->get_eta();
+          float tower_phi = tower_geom->get_phi();
+	  float temp_jet_phi = jet_phi;
+
+          /* If accounting for displaced vertex, need to calculate eta and phi:
+             double r = tower_geom->get_center_radius();
+             double phi = atan2(tower_geom->get_center_y(), tower_geom->get_center_x());
+             double z0 = tower_geom->get_center_z();
+             double z = z0 - vtxz;
+             double eta = asinh(z/r); // eta after shift from vertex
+          */
+
+          /* Particles at phi = PI+x and phi = PI-x are actually close to each other in phi, but simply calculating
+           * the difference in phi would give a large distance (because phi ranges from -PI to +PI in the convention
+           * used. Account for this by subtracting 2PI is particles fall within this border area. */
+          if((jet_phi < -0.9*TMath::Pi()) && (tower_phi > 0.9*TMath::Pi())) tower_phi = tower_phi-2*TMath::Pi();
+          if((jet_phi > 0.9*TMath::Pi()) && (tower_phi < -0.9*TMath::Pi())) temp_jet_phi = jet_phi-2*TMath::Pi();
+
+          float delta_R = sqrt(pow(tower_eta-jet_eta,2)+pow(tower_phi-temp_jet_phi,2));
+
+          if ( delta_R <= delta_R_cutoff_r1 )
+            {
+              er1 += tower_energy;
+            }
+          else if ( delta_R <= delta_R_cutoff_r2 )
+            {
+              er2 += tower_energy;
+            }
+          else if ( delta_R <= delta_R_cutoff_r3 )
+            {
+              er3 += tower_energy;
+	    }
+
+	  if ( delta_R <= delta_R_cutoff_r3 )
+	    {
+	      rms += tower_energy*delta_R*delta_R;
+	      rms_esum += tower_energy;
+	      rms_ntower++;
+            }
+
+	  /* @TODO: calculate cone size for 90% of jet energy containment, i.e. r90
+	   * r90 = ? */
+        }
+
+      rms /= rms_esum;
+      rms /= rms_ntower;
+      rms = sqrt( rms );
+
+      /* set tau candidate properties */
+      (iter->second).set_jetshape_econe_r1( er1 );
+      (iter->second).set_jetshape_econe_r2( er2 );
+      (iter->second).set_jetshape_econe_r3( er3 );
+      (iter->second).set_jetshape_r90( r90 );
+      (iter->second).set_jetshape_rms( rms );
     }
 
   return 0;
@@ -431,13 +526,13 @@ LeptoquarksReco::WriteTauCandidatesToTree( map_tcan& tauCandidateMap )
                              (float) (iter->second).get_jet_id(),
                              (float) (iter->second).get_is_tau(),
                              (float) (iter->second).get_is_uds(),
-			     (float) (iter->second).get_tau_etotal(),
-			     (float) (iter->second).get_tau_eta(),
-			     (float) (iter->second).get_tau_phi(),
-			     (float) (iter->second).get_uds_etotal(),
-			     (float) (iter->second).get_uds_eta(),
-			     (float) (iter->second).get_uds_phi(),
-			     (float) (iter->second).get_jet_eta(),
+                             (float) (iter->second).get_tau_etotal(),
+                             (float) (iter->second).get_tau_eta(),
+                             (float) (iter->second).get_tau_phi(),
+                             (float) (iter->second).get_uds_etotal(),
+                             (float) (iter->second).get_uds_eta(),
+                             (float) (iter->second).get_uds_phi(),
+                             (float) (iter->second).get_jet_eta(),
                              (float) (iter->second).get_jet_phi(),
                              (float) (iter->second).get_jet_etotal(),
                              (float) (iter->second).get_jet_etrans(),

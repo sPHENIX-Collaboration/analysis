@@ -18,6 +18,8 @@ class TFile;
 
 class PHCompositeNode;
 class CaloRawTowerEval;
+class RawTowerContainer;
+class RawTowerGeomContainer;
 class JetMap;
 class SvtxTrackMap;
 class PHHepMCGenEventMap;
@@ -80,7 +82,7 @@ private:
 
   int AddTrueTauTag( map_tcan&, PHHepMCGenEventMap* );
 
-  int AddJetStructureInformation( map_tcan&, JetMap* );
+  int AddJetStructureInformation( map_tcan&, JetMap*, RawTowerContainer*, RawTowerGeomContainer* );
 
   int AddTrackInformation( map_tcan&, SvtxTrackMap* );
 
