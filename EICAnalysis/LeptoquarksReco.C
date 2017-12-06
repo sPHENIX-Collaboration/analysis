@@ -109,8 +109,6 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
        iter != recojets->end();
        ++iter)
     {
-      //cout << "New jet with ID " << (iter->second)->get_id() << " and energy " << (iter->second)->get_e() << endl;
-
       /* skip jets below energy threshold */
       if ( (iter->second)->get_e() < _tau_jet_emin )
         continue;
@@ -140,13 +138,12 @@ LeptoquarksReco::AddTrueTauTag( map_tcan& tauCandidateMap, PHHepMCGenEventMap *g
   /* Look for leptoquark and tau particle in the event */
   //  bool   lq_found = false;
   HepMC::GenParticle* particle_lq = NULL;
-  HepMC::GenParticle* particle_lq_tau = NULL;
-  HepMC::GenParticle* particle_lq_quark = NULL;
+  HepMC::GenParticle* particle_tau = NULL;
+  HepMC::GenParticle* particle_quark = NULL;
 
   /* --> Loop over all truth events in event generator collection */
   for (PHHepMCGenEventMap::ReverseIter iter = genevtmap->rbegin(); iter != genevtmap->rend(); ++iter)
     {
-      cout << "ONE event" << endl;
       PHHepMCGenEvent *genevt = iter->second;
       HepMC::GenEvent *theEvent = genevt->getEvent();
 
@@ -173,7 +170,6 @@ LeptoquarksReco::AddTrueTauTag( map_tcan& tauCandidateMap, PHHepMCGenEventMap *g
         /* check particle ID == LQ_ue */
         if ( (*p)->pdg_id() == 39 )
           {
-            cout << "FOUND: " << (*p)->pdg_id() << endl;
             particle_lq = (*p);
 
             /* Where does it end (=decay)? */
@@ -190,14 +186,14 @@ LeptoquarksReco::AddTrueTauTag( map_tcan& tauCandidateMap, PHHepMCGenEventMap *g
                     /* Is child a tau? */
                     if ( (*lq_child)->pdg_id() == 15 )
                       {
-                        particle_lq_tau = (*lq_child);
-                        UpdateFinalStateParticle( particle_lq_tau );
+                        particle_tau = (*lq_child);
+                        UpdateFinalStateParticle( particle_tau );
                       }
                     /* Is child a quark? */
                     else if ( (*lq_child)->pdg_id() > 0 && (*lq_child)->pdg_id() < 7 )
                       {
-			particle_lq_quark = (*lq_child);
-			UpdateFinalStateParticle( particle_lq_quark );
+			particle_quark = (*lq_child);
+			UpdateFinalStateParticle( particle_quark );
 		      }
                   }
               }
@@ -209,10 +205,10 @@ LeptoquarksReco::AddTrueTauTag( map_tcan& tauCandidateMap, PHHepMCGenEventMap *g
     }// end loop over genevtmap //
 
   /* If TAU in event: Tag the tau candidate (i.e. jet) with smalles delta_R from this tau */
-  if( particle_lq_tau )
+  if( particle_tau )
     {
-      double tau_eta = particle_lq_tau->momentum().eta();
-      double tau_phi = particle_lq_tau->momentum().phi();
+      double tau_eta = particle_tau->momentum().eta();
+      double tau_phi = particle_tau->momentum().phi();
 
       /* Event record uses 0 < phi < 2Pi, while Fun4All uses -Pi < phi < Pi.
        * Therefore, correct angle for 'wraparound' at phi == Pi */
@@ -240,7 +236,6 @@ LeptoquarksReco::AddTrueTauTag( map_tcan& tauCandidateMap, PHHepMCGenEventMap *g
 
           if ( delta_R < min_delta_R )
             {
-              //cout << "New minimal delta_R = " << delta_R << endl;
               min_delta_R_iter = iter;
               min_delta_R = delta_R;
             }
@@ -342,14 +337,10 @@ LeptoquarksReco::WriteTauCandidatesToTree( map_tcan& tauCandidateMap )
 {
 
   /* Loop over all tau candidates */
-  //cout << "*** Loop over all TauCandidates ***" <<endl;
-
   for (map< float, TauCandidate >::iterator iter = tauCandidateMap.begin();
        iter != tauCandidateMap.end();
        ++iter)
     {
-      //iter->second.identify();
-
       float jet_data[18] = {(float) _ievent,  //event number
                             (float) (iter->second).get_jet_id(),       //jet id
                             (float) 0, //is_max_energy_jet,                //is this the maximum energy jet?
@@ -381,13 +372,12 @@ LeptoquarksReco::UpdateFinalStateParticle( HepMC::GenParticle *&particle )
   bool final_state = false;
   while ( !final_state )
     {
-      cout << "PARTICLE status: " << particle->status() << endl;
+      /* Loop over all children at the end vertex of this particle */
       for ( HepMC::GenVertex::particle_iterator child
               = particle->end_vertex()->particles_begin(HepMC::children);
             child != particle->end_vertex()->particles_end(HepMC::children);
             ++child )
         {
-	  cout << (*child)->pdg_id() << endl;
           /* If there is a child of same particle ID, this was not the final state particle- update pointer to particle and repeat */
           if ( (*child)->pdg_id() == particle->pdg_id() )
             {
