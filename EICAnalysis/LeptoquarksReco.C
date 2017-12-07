@@ -435,43 +435,51 @@ LeptoquarksReco::AddJetStructureInformation( map_tcan& tauCandidateMap, JetMap* 
                   rms_esum += tower_energy;
                   rms_ntower++;
                 }
-
-              /* @TODO: calculate cone size for 90% of jet energy containment, i.e. r90
-               * r90 = ? */
             }
         }
 
-      for(int r_i = 1; r_i<n_steps+1; r_i++){
-	  float e_tower_sum = 0;
-	  for (rtiter = begin_end.first; rtiter !=  begin_end.second; ++rtiter)
-	    {
-	      RawTower *tower = rtiter->second;
-	      float tower_energy = tower->get_energy();
-
-	      RawTowerGeom * tower_geom = geom->get_tower_geometry(tower -> get_key());
-	      float tower_eta = tower_geom->get_eta();
-	      float tower_phi = tower_geom->get_phi();
-	      float temp_jet_phi = jet_phi;
-
-
-	      if((jet_phi < -0.9*TMath::Pi()) && (tower_phi > 0.9*TMath::Pi())) tower_phi = tower_phi-2*TMath::Pi();
-	      if((jet_phi > 0.9*TMath::Pi()) && (tower_phi < -0.9*TMath::Pi())) temp_jet_phi = jet_phi-2*TMath::Pi();
-
-	      float delta_R = sqrt(pow(tower_eta-jet_eta,2)+pow(tower_phi-temp_jet_phi,2));
-	      
-	      if(delta_R < r_i*delta_R_cutoff_r2/n_steps) {
-		e_tower_sum = e_tower_sum + tower_energy;
-		r90 = r_i*delta_R_cutoff_r2/n_steps;
-	      }	      
-	    }
-	  
-	  if (e_tower_sum >= 0.9*jet_e) break;
-	}
-	    
-
+      /* finalize calculation of rms */
       rms /= rms_esum;
       rms /= rms_ntower;
       rms = sqrt( rms );
+
+      /* Search for cone angle that contains 90% of jet energy */
+      for(int r_i = 1; r_i<n_steps+1; r_i++){
+        float e_tower_sum = 0;
+
+        /* Loop over all tower (and geometry) collections */
+        for ( unsigned i = 0; i < v_towers.size(); i++ )
+          {
+            /* define tower iterator */
+            RawTowerContainer::ConstRange begin_end = (v_towers.at(i))->getTowers();
+            RawTowerContainer::ConstIterator rtiter;
+
+            if (e_tower_sum >= 0.9*jet_e) break;
+
+            for (rtiter = begin_end.first; rtiter !=  begin_end.second; ++rtiter)
+              {
+                RawTower *tower = rtiter->second;
+                float tower_energy = tower->get_energy();
+
+		RawTowerGeom * tower_geom = (v_tower_geoms.at(i))->get_tower_geometry(tower -> get_key());
+                float tower_eta = tower_geom->get_eta();
+                float tower_phi = tower_geom->get_phi();
+                float temp_jet_phi = jet_phi;
+
+                if((jet_phi < -0.9*TMath::Pi()) && (tower_phi > 0.9*TMath::Pi())) tower_phi = tower_phi-2*TMath::Pi();
+                if((jet_phi > 0.9*TMath::Pi()) && (tower_phi < -0.9*TMath::Pi())) temp_jet_phi = jet_phi-2*TMath::Pi();
+
+                float delta_R = sqrt(pow(tower_eta-jet_eta,2)+pow(tower_phi-temp_jet_phi,2));
+
+                if(delta_R < r_i*delta_R_cutoff_r2/n_steps) {
+                  e_tower_sum = e_tower_sum + tower_energy;
+                  r90 = r_i*delta_R_cutoff_r2/n_steps;
+                }
+              }
+
+            if (e_tower_sum >= 0.9*jet_e) break;
+          }
+      }
 
       /* set tau candidate properties */
       (iter->second).set_jetshape_econe_r1( er1 );
@@ -528,12 +536,12 @@ LeptoquarksReco::AddTrackInformation( map_tcan& tauCandidateMap, SvtxTrackMap* t
         float delta_R = sqrt(pow(track_eta-jet_eta,2)+pow(track_phi-temp_jet_phi,2));
 
         /* If track within search cone, update track information for tau candidate */
-	
+
         if ( delta_R < delta_R_cutoff )
           {
             tracks_count++;
             tracks_chargesum += track_charge;
-	    
+
             if ( delta_R > tracks_rmax )
               tracks_rmax = delta_R;
           }
@@ -544,7 +552,7 @@ LeptoquarksReco::AddTrackInformation( map_tcan& tauCandidateMap, SvtxTrackMap* t
       (iter->second).set_tracks_count( tracks_count );
       (iter->second).set_tracks_chargesum( tracks_chargesum );
       (iter->second).set_tracks_rmax( tracks_rmax );
-      
+
     } // end loop over tau  candidates
 
   return 0;
