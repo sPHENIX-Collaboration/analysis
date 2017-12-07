@@ -359,6 +359,8 @@ LeptoquarksReco::AddJetStructureInformation( map_tcan& tauCandidateMap, JetMap* 
   float delta_R_cutoff_r2 = 0.5;
   float delta_R_cutoff_r3 = 1.0;
 
+  int n_steps = 50;
+
   /* Loop over tau candidates */
   for (map_tcan::iterator iter = tauCandidateMap.begin();
        iter != tauCandidateMap.end();
@@ -367,6 +369,7 @@ LeptoquarksReco::AddJetStructureInformation( map_tcan& tauCandidateMap, JetMap* 
       /* get jet axis */
       float jet_eta = (iter->second).get_jet_eta();
       float jet_phi = (iter->second).get_jet_phi();
+      float jet_e = (iter->second).get_jet_etotal();
 
       /* collect jet structure properties */
       float er1 = 0;
@@ -438,6 +441,34 @@ LeptoquarksReco::AddJetStructureInformation( map_tcan& tauCandidateMap, JetMap* 
             }
         }
 
+      for(int r_i = 1; r_i<n_steps+1; r_i++){
+	  float e_tower_sum = 0;
+	  for (rtiter = begin_end.first; rtiter !=  begin_end.second; ++rtiter)
+	    {
+	      RawTower *tower = rtiter->second;
+	      float tower_energy = tower->get_energy();
+
+	      RawTowerGeom * tower_geom = geom->get_tower_geometry(tower -> get_key());
+	      float tower_eta = tower_geom->get_eta();
+	      float tower_phi = tower_geom->get_phi();
+	      float temp_jet_phi = jet_phi;
+
+
+	      if((jet_phi < -0.9*TMath::Pi()) && (tower_phi > 0.9*TMath::Pi())) tower_phi = tower_phi-2*TMath::Pi();
+	      if((jet_phi > 0.9*TMath::Pi()) && (tower_phi < -0.9*TMath::Pi())) temp_jet_phi = jet_phi-2*TMath::Pi();
+
+	      float delta_R = sqrt(pow(tower_eta-jet_eta,2)+pow(tower_phi-temp_jet_phi,2));
+	      
+	      if(delta_R < r_i*delta_R_cutoff_r2/n_steps) {
+		e_tower_sum = e_tower_sum + tower_energy;
+		r90 = r_i*delta_R_cutoff_r2/n_steps;
+	      }	      
+	    }
+	  
+	  if (e_tower_sum >= 0.9*jet_e) break;
+	}
+	    
+
       rms /= rms_esum;
       rms /= rms_ntower;
       rms = sqrt( rms );
@@ -497,11 +528,12 @@ LeptoquarksReco::AddTrackInformation( map_tcan& tauCandidateMap, SvtxTrackMap* t
         float delta_R = sqrt(pow(track_eta-jet_eta,2)+pow(track_phi-temp_jet_phi,2));
 
         /* If track within search cone, update track information for tau candidate */
+	
         if ( delta_R < delta_R_cutoff )
           {
             tracks_count++;
             tracks_chargesum += track_charge;
-
+	    
             if ( delta_R > tracks_rmax )
               tracks_rmax = delta_R;
           }
@@ -512,7 +544,7 @@ LeptoquarksReco::AddTrackInformation( map_tcan& tauCandidateMap, SvtxTrackMap* t
       (iter->second).set_tracks_count( tracks_count );
       (iter->second).set_tracks_chargesum( tracks_chargesum );
       (iter->second).set_tracks_rmax( tracks_rmax );
-
+      
     } // end loop over tau  candidates
 
   return 0;
