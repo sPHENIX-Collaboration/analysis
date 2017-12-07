@@ -90,6 +90,9 @@ private:
 
   /** Check if this is the final state particle or not- update pointer if needed */
   void UpdateFinalStateParticle( HepMC::GenParticle *& );
+
+  /** Calculate Delta R ("distance in eta-phi space") between two sets of eta, phi angles */
+  float CalculateDeltaR( float, float, float, float );
 };
 
 #endif // __LeptoquarksReco_H__

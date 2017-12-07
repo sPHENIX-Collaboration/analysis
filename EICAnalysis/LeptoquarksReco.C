@@ -270,15 +270,8 @@ LeptoquarksReco::AddTrueTauTag( map_tcan& tauCandidateMap, PHHepMCGenEventMap *g
         {
           float eta = (iter->second).get_jet_eta();
           float phi = (iter->second).get_jet_phi();
-          float temp_phi_tau = tau_phi;
 
-          /* Particles at phi = PI+x and phi = PI-x are actually close to each other in phi, but simply calculating
-           * the difference in phi would give a large distance (because phi ranges from -PI to +PI in the convention
-           * used. Account for this by subtracting 2PI is particles fall within this border area. */
-          if((tau_phi < -0.9*TMath::Pi()) && (phi > 0.9*TMath::Pi())) phi = phi-2*TMath::Pi();
-          if((tau_phi > 0.9*TMath::Pi()) && (phi < -0.9*TMath::Pi())) temp_phi_tau = tau_phi-2*TMath::Pi();
-
-          float delta_R = sqrt(pow(eta-tau_eta,2)+pow(phi-temp_phi_tau,2));
+          float delta_R = CalculateDeltaR( eta, phi, tau_eta, tau_phi );
 
           if ( delta_R < min_delta_R )
             {
@@ -320,15 +313,8 @@ LeptoquarksReco::AddTrueTauTag( map_tcan& tauCandidateMap, PHHepMCGenEventMap *g
         {
           float eta = (iter->second).get_jet_eta();
           float phi = (iter->second).get_jet_phi();
-          float temp_phi_quark = quark_phi;
 
-          /* Particles at phi = PI+x and phi = PI-x are actually close to each other in phi, but simply calculating
-           * the difference in phi would give a large distance (because phi ranges from -PI to +PI in the convention
-           * used. Account for this by subtracting 2PI is particles fall within this border area. */
-          if((quark_phi < -0.9*TMath::Pi()) && (phi > 0.9*TMath::Pi())) phi = phi-2*TMath::Pi();
-          if((quark_phi > 0.9*TMath::Pi()) && (phi < -0.9*TMath::Pi())) temp_phi_quark = quark_phi-2*TMath::Pi();
-
-          float delta_R = sqrt(pow(eta-quark_eta,2)+pow(phi-temp_phi_quark,2));
+          float delta_R = CalculateDeltaR( eta, phi, quark_eta, quark_phi );
 
           if ( delta_R < min_delta_R )
             {
@@ -398,7 +384,6 @@ LeptoquarksReco::AddJetStructureInformation( map_tcan& tauCandidateMap, JetMap* 
               RawTowerGeom * tower_geom = (v_tower_geoms.at(i))->get_tower_geometry(tower -> get_key());
               float tower_eta = tower_geom->get_eta();
               float tower_phi = tower_geom->get_phi();
-              float temp_jet_phi = jet_phi;
 
               /* If accounting for displaced vertex, need to calculate eta and phi:
                  double r = tower_geom->get_center_radius();
@@ -408,13 +393,7 @@ LeptoquarksReco::AddJetStructureInformation( map_tcan& tauCandidateMap, JetMap* 
                  double eta = asinh(z/r); // eta after shift from vertex
               */
 
-              /* Particles at phi = PI+x and phi = PI-x are actually close to each other in phi, but simply calculating
-               * the difference in phi would give a large distance (because phi ranges from -PI to +PI in the convention
-               * used. Account for this by subtracting 2PI is particles fall within this border area. */
-              if((jet_phi < -0.9*TMath::Pi()) && (tower_phi > 0.9*TMath::Pi())) tower_phi = tower_phi-2*TMath::Pi();
-              if((jet_phi > 0.9*TMath::Pi()) && (tower_phi < -0.9*TMath::Pi())) temp_jet_phi = jet_phi-2*TMath::Pi();
-
-              float delta_R = sqrt(pow(tower_eta-jet_eta,2)+pow(tower_phi-temp_jet_phi,2));
+              float delta_R = CalculateDeltaR( tower_eta , tower_phi, jet_eta, jet_phi );
 
               if ( delta_R <= delta_R_cutoff_r1 )
                 {
@@ -464,12 +443,8 @@ LeptoquarksReco::AddJetStructureInformation( map_tcan& tauCandidateMap, JetMap* 
 		RawTowerGeom * tower_geom = (v_tower_geoms.at(i))->get_tower_geometry(tower -> get_key());
                 float tower_eta = tower_geom->get_eta();
                 float tower_phi = tower_geom->get_phi();
-                float temp_jet_phi = jet_phi;
 
-                if((jet_phi < -0.9*TMath::Pi()) && (tower_phi > 0.9*TMath::Pi())) tower_phi = tower_phi-2*TMath::Pi();
-                if((jet_phi > 0.9*TMath::Pi()) && (tower_phi < -0.9*TMath::Pi())) temp_jet_phi = jet_phi-2*TMath::Pi();
-
-                float delta_R = sqrt(pow(tower_eta-jet_eta,2)+pow(tower_phi-temp_jet_phi,2));
+		float delta_R = CalculateDeltaR( tower_eta , tower_phi, jet_eta, jet_phi );
 
                 if(delta_R < r_i*delta_R_cutoff_r2/n_steps) {
                   e_tower_sum = e_tower_sum + tower_energy;
@@ -525,15 +500,8 @@ LeptoquarksReco::AddTrackInformation( map_tcan& tauCandidateMap, SvtxTrackMap* t
         float track_eta = track->get_eta();
         float track_phi = track->get_phi();
         int track_charge = track->get_charge();
-        double temp_jet_phi = jet_phi;
 
-        /* Particles at phi = PI+x and phi = PI-x are actually close to each other in phi, but simply calculating
-         * the difference in phi would give a large distance (because phi ranges from -PI to +PI in the convention
-         * used. Account for this by subtracting 2PI is particles fall within this border area. */
-        if((jet_phi < -0.9*TMath::Pi()) && (track_phi > 0.9*TMath::Pi())) track_phi = track_phi-2*TMath::Pi();
-        if((jet_phi > 0.9*TMath::Pi()) && (track_phi < -0.9*TMath::Pi())) temp_jet_phi = jet_phi-2*TMath::Pi();
-
-        float delta_R = sqrt(pow(track_eta-jet_eta,2)+pow(track_phi-temp_jet_phi,2));
+        float delta_R = CalculateDeltaR( track_eta, track_phi, jet_eta, jet_phi );
 
         /* If track within search cone, update track information for tau candidate */
 
@@ -619,6 +587,21 @@ LeptoquarksReco::WriteTauCandidatesToTree( map_tcan& tauCandidateMap )
     }
 
   return 0;
+}
+
+
+float
+LeptoquarksReco::CalculateDeltaR( float eta1, float phi1, float eta2, float phi2 )
+{
+  /* Particles at phi = PI+x and phi = PI-x are actually close to each other in phi, but simply calculating
+   * the difference in phi would give a large distance (because phi ranges from -PI to +PI in the convention
+   * used. Account for this by subtracting 2PI is particles fall within this border area. */
+  if( ( phi1 < -0.9*TMath::Pi()) && ( phi2 >  0.9*TMath::Pi() ) ) phi2 = phi2 - 2*TMath::Pi();
+  if( ( phi1 >  0.9*TMath::Pi()) && ( phi2 < -0.9*TMath::Pi() ) ) phi1 = phi1 - 2*TMath::Pi();
+
+  float delta_R = sqrt( pow( eta2 - eta1, 2 ) + pow( phi2 - phi1, 2 ) );
+
+  return delta_R;
 }
 
 
