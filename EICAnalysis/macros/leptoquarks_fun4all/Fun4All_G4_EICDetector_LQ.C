@@ -1,14 +1,16 @@
 int Fun4All_G4_EICDetector_LQ(
-			      string n="1",
-			      string ebeam="20",
-			      string pbeam="250",
-			      string inputFile="Test.1event.root",
-			      const char * outputFile = "G4EICDetector.root"
+			      string n,
+			      string ebeam,
+			      string pbeam,
+			      string inputFile
+			      //string inputFile="/direct/phenix+u/spjeffas/LQGENEP/TestOut.1093event.root"
 			   )
 {
   // Set the number of TPC layer
   const int n_TPC_layers = 40;  // use 60 for backward compatibility only
   
+
+  string outputFile = "/gpfs/mnt/gpfs02/phenix/scratch/spjeffas/data/G4_Leptoquark_DST_p"+pbeam+"_e"+ebeam+"_"+n+"events.root";
   //Get parameter variables from parameter file
   
   int nEvents;
@@ -16,14 +18,10 @@ int Fun4All_G4_EICDetector_LQ(
   geek>>nEvents;
 
 
-
-  string directory = "./";
-
-
   //===============
   // Input options
   //===============
-  const char * outputFile = "Tree";
+  
   // Either:
   // read previously generated g4-hits files, in this case it opens a DST and skips
   // the simulations step completely. The G4Setup macro is only loaded to get information
@@ -249,9 +247,6 @@ int Fun4All_G4_EICDetector_LQ(
       eicr->OpenInputFile(inputFile);
 
       se->registerSubsystem(eicr);
-
-      HepMCNodeReader *hr = new HepMCNodeReader();
-      se->registerSubsystem(hr);
     }
   else if (runpythia8)
     {
@@ -271,7 +266,7 @@ int Fun4All_G4_EICDetector_LQ(
 
       PHPythia6 *pythia6 = new PHPythia6();
       // see coresoftware/generators/PHPythia6 for example config
-      pythia6->set_config_file("phpythia6_ep.cfg");
+      pythia6->set_config_file("/direct/phenix+u/spjeffas/coresoftware/generators/PHPythia6/phpythia6_ep.cfg");
       se->registerSubsystem(pythia6);
 
       HepMCNodeReader *hr = new HepMCNodeReader();
@@ -558,49 +553,7 @@ int Fun4All_G4_EICDetector_LQ(
       CaloTrigger_Sim();
     }
 
-  //---------
-  // Jet reco
-  //---------
-
-  if (do_jet_reco)
-    {
-      gROOT->LoadMacro("G4_Jets.C");
-      Jet_Reco();
-    }
-
-  if (do_HIjetreco) {
-    gROOT->LoadMacro("G4_HIJetReco.C");
-    HIJetReco();
-  }
-
-  if (do_fwd_jet_reco)
-    {
-      gROOT->LoadMacro("G4_FwdJets.C");
-      Jet_FwdReco();
-    }
-
-  //----------------------
-  // Simulation evaluation
-  //----------------------
-  
-
-  if (do_svtx_eval) Svtx_Eval(directory+"g4svtx_p"+pbeam+"_e"+ebeam+"_"+n+"events_eval.root");
-
-  if (do_cemc_eval) CEMC_Eval(directory+"g4cemc_p"+pbeam+"_e"+ebeam+"_"+n+"events_eval.root");
-
-  if (do_hcalin_eval) HCALInner_Eval(directory+"g4hcalin_p"+pbeam+"_e"+ebeam+"_"+n+"events_eval.root");
-
-  if (do_hcalout_eval) HCALOuter_Eval(directory+"g4hcalout_p"+pbeam+"_e"+ebeam+"_"+n+"events_eval.root");
-
-  if (do_jet_eval) Jet_Eval(directory+"g4jet_p"+pbeam+"_e"+ebeam+"_"+n+"events_eval.root");
-
-  if (do_fwd_jet_eval) Jet_FwdEval(directory+"g4fwdjet_p"+pbeam+"_e"+ebeam+"_"+n+"events_eval.root");
-
-  if(do_lepto_analysis){
-    gROOT->LoadMacro("G4_Lepto.C");
-    G4_Lepto(directory+"LeptoAna_p"+pbeam+"_e"+ebeam+"_"+n+"events.root");
-  }
-
+    
  
   
   //--------------
@@ -655,9 +608,9 @@ int Fun4All_G4_EICDetector_LQ(
                                );
     }
 
-  //Fun4AllDstOutputManager *out = new Fun4AllDstOutputManager("DSTOUT", outputFile);
-  //if (do_dst_compress) DstCompress(out);
-  //se->registerOutputManager(out);
+  Fun4AllDstOutputManager *out = new Fun4AllDstOutputManager("DSTOUT", outputFile);
+  if (do_dst_compress) DstCompress(out);
+  se->registerOutputManager(out);
 
   //-----------------
   // Event processing
