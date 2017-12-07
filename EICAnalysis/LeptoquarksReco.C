@@ -422,6 +422,12 @@ LeptoquarksReco::AddJetStructureInformation( map_tcan& tauCandidateMap, JetMap* 
       rms /= rms_ntower;
       rms = sqrt( rms );
 
+      /* normalize energies in rings */
+      float ersum = er1 + er2 + er3;
+      er1 /= ersum;
+      er2 /= ersum;
+      er3 /= ersum;
+
       /* Search for cone angle that contains 90% of jet energy */
       for(int r_i = 1; r_i<n_steps+1; r_i++){
         float e_tower_sum = 0;
