@@ -82,7 +82,7 @@ private:
 
   int AddTrueTauTag( map_tcan&, PHHepMCGenEventMap* );
 
-  int AddJetStructureInformation( map_tcan&, JetMap*, RawTowerContainer*, RawTowerGeomContainer* );
+  int AddJetStructureInformation( map_tcan&, JetMap*, std::vector<RawTowerContainer*>, std::vector<RawTowerGeomContainer*> );
 
   int AddTrackInformation( map_tcan&, SvtxTrackMap* );
 

@@ -108,19 +108,41 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
     return Fun4AllReturnCodes::ABORTEVENT;
   }
 
-  /* Get collection of CEMC towers */
-  RawTowerContainer *towers = findNode::getClass<RawTowerContainer>(topNode,"TOWER_CALIB_CEMC");
-  if (!towers) {
-    cerr << PHWHERE << " ERROR: Can't find TOWER_CALIB_CEMC" << endl;
-    return Fun4AllReturnCodes::ABORTEVENT;
-  }
+  /* create vectors of all tower collections and tower geometry collections used */
+  vector<string> v_calonames;
+  v_calonames.push_back("CEMC");
+  v_calonames.push_back("HCALIN");
+  v_calonames.push_back("HCALOUT");
 
-  /* get CEMC geometry collection */
-  RawTowerGeomContainer *geom = findNode::getClass<RawTowerGeomContainer>(topNode,"TOWERGEOM_CEMC");
-  if (!geom) {
-    cerr << PHWHERE << " ERROR: Can't find TOWERGEOM_CEMC" << endl;
-    return Fun4AllReturnCodes::ABORTEVENT;
-  }
+  vector<RawTowerContainer*> v_towers;
+  vector<RawTowerGeomContainer*> v_tower_geoms;
+
+  for ( unsigned i = 0; i < v_calonames.size(); i++ )
+    {
+      /* Get collection of CEMC towers */
+      string towers_name = "TOWER_CALIB_";
+      towers_name.append( v_calonames.at(i) );
+
+      RawTowerContainer *towers = findNode::getClass<RawTowerContainer>(topNode,towers_name);
+      if (!towers) {
+        cerr << PHWHERE << " ERROR: Can't find " << towers_name << endl;
+        return Fun4AllReturnCodes::ABORTEVENT;
+      }
+
+      v_towers.push_back( towers );
+
+      /* get CEMC geometry collection */
+      string towergeom_name = "TOWERGEOM_";
+      towergeom_name.append( v_calonames.at(i) );
+
+      RawTowerGeomContainer *geom = findNode::getClass<RawTowerGeomContainer>(topNode,towergeom_name);
+      if (!geom) {
+        cerr << PHWHERE << " ERROR: Can't find " << towergeom_name << endl;
+        return Fun4AllReturnCodes::ABORTEVENT;
+      }
+
+      v_tower_geoms.push_back(geom);
+    }
 
   /* Loop over all jets to collect tau candidate objects */
   for (JetMap::Iter iter = recojets->begin();
@@ -139,7 +161,7 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
   AddTrueTauTag( tauCandidateMap, genevtmap );
 
   /* Add jet structure information to tau candidates */
-  AddJetStructureInformation( tauCandidateMap, recojets, towers, geom );
+  AddJetStructureInformation( tauCandidateMap, recojets, v_towers, v_tower_geoms );
 
   /* Add track information to tau candidates */
   AddTrackInformation( tauCandidateMap, trackmap );
@@ -330,7 +352,7 @@ LeptoquarksReco::AddTrueTauTag( map_tcan& tauCandidateMap, PHHepMCGenEventMap *g
 
 
 int
-LeptoquarksReco::AddJetStructureInformation( map_tcan& tauCandidateMap, JetMap* recojets, RawTowerContainer *towers, RawTowerGeomContainer *geom )
+LeptoquarksReco::AddJetStructureInformation( map_tcan& tauCandidateMap, JetMap* recojets, vector<RawTowerContainer*> v_towers, vector<RawTowerGeomContainer*> v_tower_geoms )
 {
   /* Cone size around jet axis within which to look for tracks */
   float delta_R_cutoff_r1 = 0.2;
@@ -355,61 +377,65 @@ LeptoquarksReco::AddJetStructureInformation( map_tcan& tauCandidateMap, JetMap* 
       float rms_esum = 0;
       unsigned rms_ntower = 0;
 
-      /* define CEMC tower iterator */
-      RawTowerContainer::ConstRange begin_end = towers->getTowers();
-      RawTowerContainer::ConstIterator rtiter;
-
-      /* loop over all tower in CEMC calorimeter */
-      for (rtiter = begin_end.first; rtiter !=  begin_end.second; ++rtiter)
+      /* Loop over all tower (and geometry) collections */
+      for ( unsigned i = 0; i < v_towers.size(); i++ )
         {
-          /* get tower energy */
-          RawTower *tower = rtiter->second;
-          float tower_energy = tower->get_energy();
+          /* define tower iterator */
+          RawTowerContainer::ConstRange begin_end = (v_towers.at(i))->getTowers();
+          RawTowerContainer::ConstIterator rtiter;
 
-          /* get eta and phi of tower and check angle delta_R w.r.t. jet axis */
-          RawTowerGeom * tower_geom = geom->get_tower_geometry(tower -> get_key());
-          float tower_eta = tower_geom->get_eta();
-          float tower_phi = tower_geom->get_phi();
-	  float temp_jet_phi = jet_phi;
-
-          /* If accounting for displaced vertex, need to calculate eta and phi:
-             double r = tower_geom->get_center_radius();
-             double phi = atan2(tower_geom->get_center_y(), tower_geom->get_center_x());
-             double z0 = tower_geom->get_center_z();
-             double z = z0 - vtxz;
-             double eta = asinh(z/r); // eta after shift from vertex
-          */
-
-          /* Particles at phi = PI+x and phi = PI-x are actually close to each other in phi, but simply calculating
-           * the difference in phi would give a large distance (because phi ranges from -PI to +PI in the convention
-           * used. Account for this by subtracting 2PI is particles fall within this border area. */
-          if((jet_phi < -0.9*TMath::Pi()) && (tower_phi > 0.9*TMath::Pi())) tower_phi = tower_phi-2*TMath::Pi();
-          if((jet_phi > 0.9*TMath::Pi()) && (tower_phi < -0.9*TMath::Pi())) temp_jet_phi = jet_phi-2*TMath::Pi();
-
-          float delta_R = sqrt(pow(tower_eta-jet_eta,2)+pow(tower_phi-temp_jet_phi,2));
-
-          if ( delta_R <= delta_R_cutoff_r1 )
+          /* loop over all tower in CEMC calorimeter */
+          for (rtiter = begin_end.first; rtiter !=  begin_end.second; ++rtiter)
             {
-              er1 += tower_energy;
-            }
-          else if ( delta_R <= delta_R_cutoff_r2 )
-            {
-              er2 += tower_energy;
-            }
-          else if ( delta_R <= delta_R_cutoff_r3 )
-            {
-              er3 += tower_energy;
-	    }
+              /* get tower energy */
+              RawTower *tower = rtiter->second;
+              float tower_energy = tower->get_energy();
 
-	  if ( delta_R <= delta_R_cutoff_r3 )
-	    {
-	      rms += tower_energy*delta_R*delta_R;
-	      rms_esum += tower_energy;
-	      rms_ntower++;
-            }
+              /* get eta and phi of tower and check angle delta_R w.r.t. jet axis */
+              RawTowerGeom * tower_geom = (v_tower_geoms.at(i))->get_tower_geometry(tower -> get_key());
+              float tower_eta = tower_geom->get_eta();
+              float tower_phi = tower_geom->get_phi();
+              float temp_jet_phi = jet_phi;
 
-	  /* @TODO: calculate cone size for 90% of jet energy containment, i.e. r90
-	   * r90 = ? */
+              /* If accounting for displaced vertex, need to calculate eta and phi:
+                 double r = tower_geom->get_center_radius();
+                 double phi = atan2(tower_geom->get_center_y(), tower_geom->get_center_x());
+                 double z0 = tower_geom->get_center_z();
+                 double z = z0 - vtxz;
+                 double eta = asinh(z/r); // eta after shift from vertex
+              */
+
+              /* Particles at phi = PI+x and phi = PI-x are actually close to each other in phi, but simply calculating
+               * the difference in phi would give a large distance (because phi ranges from -PI to +PI in the convention
+               * used. Account for this by subtracting 2PI is particles fall within this border area. */
+              if((jet_phi < -0.9*TMath::Pi()) && (tower_phi > 0.9*TMath::Pi())) tower_phi = tower_phi-2*TMath::Pi();
+              if((jet_phi > 0.9*TMath::Pi()) && (tower_phi < -0.9*TMath::Pi())) temp_jet_phi = jet_phi-2*TMath::Pi();
+
+              float delta_R = sqrt(pow(tower_eta-jet_eta,2)+pow(tower_phi-temp_jet_phi,2));
+
+              if ( delta_R <= delta_R_cutoff_r1 )
+                {
+                  er1 += tower_energy;
+                }
+              else if ( delta_R <= delta_R_cutoff_r2 )
+                {
+                  er2 += tower_energy;
+                }
+              else if ( delta_R <= delta_R_cutoff_r3 )
+                {
+                  er3 += tower_energy;
+                }
+
+              if ( delta_R <= delta_R_cutoff_r3 )
+                {
+                  rms += tower_energy*delta_R*delta_R;
+                  rms_esum += tower_energy;
+                  rms_ntower++;
+                }
+
+              /* @TODO: calculate cone size for 90% of jet energy containment, i.e. r90
+               * r90 = ? */
+            }
         }
 
       rms /= rms_esum;
