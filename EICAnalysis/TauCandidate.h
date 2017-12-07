@@ -118,7 +118,7 @@ protected:
   int _tracks_chargesum;
 
   /** Track with maximum angle w.r.t. jet axis but still within search cone around jet axis */
-  int _tracks_rmax;
+  float _tracks_rmax;
 
 };
 
