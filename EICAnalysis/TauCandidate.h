@@ -35,6 +35,10 @@ public:
   void set_tau_eta( float eta ) { _tau_eta = eta; }
   void set_tau_phi( float phi ) { _tau_phi = phi; }
 
+  void set_tau_decay_prong( int prong ) { _tau_decay_prong = prong; }
+  void set_tau_decay_hcharged( int hcharged ) { _tau_decay_hcharged = hcharged; }
+  void set_tau_decay_lcharged( int lcharged ) { _tau_decay_lcharged = lcharged; }
+
   void set_uds_etotal( float etotal ) { _uds_etotal = etotal; }
   void set_uds_eta( float eta ) { _uds_eta = eta; }
   void set_uds_phi( float phi ) { _uds_phi = phi; }
@@ -65,6 +69,9 @@ public:
   float get_tau_etotal() const { return _tau_etotal; }
   float get_tau_eta() const { return _tau_eta; }
   float get_tau_phi() const { return _tau_phi; }
+  int   get_tau_decay_prong() const { return _tau_decay_prong; }
+  int   get_tau_decay_hcharged() const { return _tau_decay_hcharged; }
+  int   get_tau_decay_lcharged() const { return _tau_decay_lcharged; }
 
   float get_uds_etotal() const { return _uds_etotal; }
   float get_uds_eta() const { return _uds_eta; }
@@ -105,6 +112,10 @@ protected:
   float _tau_etotal;
   float _tau_eta;
   float _tau_phi;
+
+  int _tau_decay_prong;
+  int _tau_decay_hcharged;
+  int _tau_decay_lcharged;
 
   /** Properites of event generator "true" quark from hard scattering */
   float _uds_etotal;
