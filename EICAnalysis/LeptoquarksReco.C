@@ -64,7 +64,7 @@ LeptoquarksReco::Init(PHCompositeNode *topNode)
                          "event:jet_id:isMaxEnergyJet:isMinDeltaRJet:jet_eta:jet_phi:delta_R:jet_mass:jet_p:jet_pT:jet_eT:jet_e:jet_px:jet_py:jet_pz");
 
   _ntp_jet2 = new TNtuple("ntp_jet2","all tau candidate (jet) information from LQ events",
-                          "ievent:jet_id:is_tau:is_uds:tau_etotal:tau_eta:tau_phi:tau_decay_prong:tau_decay_hcharged:tau_decay_lcharged:uds_etotal:uds_eta:uds_phi:jet_eta:jet_phi:jet_etotal:jet_etrans:jet_ptotal:jet_ptrans:jet_mass:jetshape_econe_r1:jetshape_econe_r2:jetshape_econe_r3:jetshape_r90:jetshape_rms:tracks_count:tracks_chargesum:tracks_rmax");
+                          "ievent:jet_id:is_tau:is_uds:tau_etotal:tau_eta:tau_phi:tau_decay_prong:tau_decay_hcharged:tau_decay_lcharged:uds_etotal:uds_eta:uds_phi:jet_eta:jet_phi:jet_etotal:jet_etrans:jet_ptotal:jet_ptrans:jet_mass:jetshape_econe_r1:jetshape_econe_r2:jetshape_econe_r3:jetshape_r90:jetshape_rms:jetshape_radius:tracks_count:tracks_chargesum:tracks_rmax");
 
   return 0;
 }
@@ -609,7 +609,7 @@ LeptoquarksReco::WriteTauCandidatesToTree( map_tcan& tauCandidateMap )
       _ntp_jet->Fill(jet_data);
 
 
-      float jet2_data[28] = {(float) _ievent,
+      float jet2_data[29] = {(float) _ievent,
                              (float) (iter->second).get_jet_id(),
                              (float) (iter->second).get_is_tau(),
                              (float) (iter->second).get_is_uds(),
@@ -634,6 +634,7 @@ LeptoquarksReco::WriteTauCandidatesToTree( map_tcan& tauCandidateMap )
                              (float) (iter->second).get_jetshape_econe_r3(),
                              (float) (iter->second).get_jetshape_r90(),
                              (float) (iter->second).get_jetshape_rms(),
+			     (float) (iter->second).get_jetshape_radius(),
                              (float) (iter->second).get_tracks_count(),
                              (float) (iter->second).get_tracks_chargesum(),
                              (float) (iter->second).get_tracks_rmax()
