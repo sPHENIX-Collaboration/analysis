@@ -27,6 +27,7 @@ public:
   void set_jetshape_econe_r3( float er3 ) { _jetshape_econe_r3 = er3; }
   void set_jetshape_r90( float r90 ) { _jetshape_r90 = r90; }
   void set_jetshape_rms( float rms ) { _jetshape_rms = rms; }
+  void set_jetshape_radius( float radius ) { _jetshape_radius = radius; }
 
   void set_is_tau( bool id ) { _is_tau = id; }
   void set_is_uds( bool id ) { _is_uds = id; }
@@ -62,6 +63,7 @@ public:
   float get_jetshape_econe_r3() const { return _jetshape_econe_r3; }
   float get_jetshape_r90() const { return _jetshape_r90; }
   float get_jetshape_rms() const { return _jetshape_rms; }
+  float get_jetshape_radius() const { return _jetshape_radius; }
 
   bool get_is_tau() const { return _is_tau; }
   bool get_is_uds() const { return _is_uds; }
@@ -101,6 +103,7 @@ protected:
   float _jetshape_econe_r3;
   float _jetshape_r90;
   float _jetshape_rms;
+  float _jetshape_radius;
 
   /** Does this jet come from a 'truth' tau from hard scattering? */
   bool _is_tau;

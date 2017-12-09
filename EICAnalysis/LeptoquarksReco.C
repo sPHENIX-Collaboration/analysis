@@ -403,6 +403,7 @@ LeptoquarksReco::AddJetStructureInformation( map_tcan& tauCandidateMap, JetMap* 
       float er2 = 0;
       float er3 = 0;
       float r90 = 0;
+      float radius = 0;
       float rms = 0;
       float rms_esum = 0;
       unsigned rms_ntower = 0;
@@ -454,11 +455,15 @@ LeptoquarksReco::AddJetStructureInformation( map_tcan& tauCandidateMap, JetMap* 
                   rms += tower_energy*delta_R*delta_R;
                   rms_esum += tower_energy;
                   rms_ntower++;
+
+                  radius += tower_energy*delta_R;
                 }
             }
         }
 
-      /* finalize calculation of rms */
+      /* finalize calculation of rms and radius */
+      radius /= rms_esum;
+
       rms /= rms_esum;
       rms /= rms_ntower;
       rms = sqrt( rms );
@@ -509,6 +514,7 @@ LeptoquarksReco::AddJetStructureInformation( map_tcan& tauCandidateMap, JetMap* 
       (iter->second).set_jetshape_econe_r3( er3 );
       (iter->second).set_jetshape_r90( r90 );
       (iter->second).set_jetshape_rms( rms );
+      (iter->second).set_jetshape_radius( radius );
     }
 
   return 0;

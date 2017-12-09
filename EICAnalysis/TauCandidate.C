@@ -22,6 +22,7 @@ TauCandidate::TauCandidate( Jet* jet ) :
   _jetshape_econe_r3(0),
   _jetshape_r90(0),
   _jetshape_rms(0),
+  _jetshape_radius(0),
   _is_tau( false ),
   _is_uds( false ),
   _tau_etotal(0),
