@@ -386,6 +386,10 @@ LeptoquarksReco::AddJetStructureInformation( map_tcan& tauCandidateMap, JetMap* 
   float delta_R_cutoff_r2 = 0.5;
   float delta_R_cutoff_r3 = 1.0;
 
+  /* energy threshold for considering tower */
+  float tower_emin = 0.1;
+
+  /* number of steps for finding r90 */
   int n_steps = 50;
 
   /* Loop over tau candidates */
@@ -406,7 +410,6 @@ LeptoquarksReco::AddJetStructureInformation( map_tcan& tauCandidateMap, JetMap* 
       float radius = 0;
       float rms = 0;
       float rms_esum = 0;
-      unsigned rms_ntower = 0;
 
       /* Loop over all tower (and geometry) collections */
       for ( unsigned i = 0; i < v_towers.size(); i++ )
@@ -421,6 +424,10 @@ LeptoquarksReco::AddJetStructureInformation( map_tcan& tauCandidateMap, JetMap* 
               /* get tower energy */
               RawTower *tower = rtiter->second;
               float tower_energy = tower->get_energy();
+
+	      /* check if tower above energy treshold */
+	      if ( tower_energy < tower_emin )
+		continue;
 
               /* get eta and phi of tower and check angle delta_R w.r.t. jet axis */
               RawTowerGeom * tower_geom = (v_tower_geoms.at(i))->get_tower_geometry(tower -> get_key());
@@ -450,11 +457,10 @@ LeptoquarksReco::AddJetStructureInformation( map_tcan& tauCandidateMap, JetMap* 
                   er3 += tower_energy;
                 }
 
-              if ( delta_R <= delta_R_cutoff_r3 )
+              if ( delta_R <= delta_R_cutoff_r2 )
                 {
                   rms += tower_energy*delta_R*delta_R;
                   rms_esum += tower_energy;
-                  rms_ntower++;
 
                   radius += tower_energy*delta_R;
                 }
@@ -465,14 +471,13 @@ LeptoquarksReco::AddJetStructureInformation( map_tcan& tauCandidateMap, JetMap* 
       radius /= rms_esum;
 
       rms /= rms_esum;
-      rms /= rms_ntower;
       rms = sqrt( rms );
 
       /* normalize energies in rings */
-      float ersum = er1 + er2 + er3;
-      er1 /= ersum;
-      er2 /= ersum;
-      er3 /= ersum;
+      //float ersum = er1 + er2 + er3;
+      //er1 /= ersum;
+      //er2 /= ersum;
+      //er3 /= ersum;
 
       /* Search for cone angle that contains 90% of jet energy */
       for(int r_i = 1; r_i<n_steps+1; r_i++){
@@ -491,6 +496,10 @@ LeptoquarksReco::AddJetStructureInformation( map_tcan& tauCandidateMap, JetMap* 
               {
                 RawTower *tower = rtiter->second;
                 float tower_energy = tower->get_energy();
+
+		/* check if tower is above minimum tower energy required */
+		if ( tower_energy < tower_emin )
+		  continue;
 
 		RawTowerGeom * tower_geom = (v_tower_geoms.at(i))->get_tower_geometry(tower -> get_key());
                 float tower_eta = tower_geom->get_eta();
@@ -524,7 +533,8 @@ int
 LeptoquarksReco::AddTrackInformation( map_tcan& tauCandidateMap, SvtxTrackMap* trackmap )
 {
   /* Cone size around jet axis within which to look for tracks */
-  float delta_R_cutoff = 0.5;
+  float delta_R_cutoff_1 = 0.2;
+  float delta_R_cutoff_2 = 0.5;
 
   /* Loop over tau candidates */
   for (map_tcan::iterator iter = tauCandidateMap.begin();
@@ -558,14 +568,16 @@ LeptoquarksReco::AddTrackInformation( map_tcan& tauCandidateMap, SvtxTrackMap* t
 
         /* If track within search cone, update track information for tau candidate */
 
-        if ( delta_R < delta_R_cutoff )
+        if ( delta_R < delta_R_cutoff_1 )
           {
             tracks_count++;
             tracks_chargesum += track_charge;
+	  }
 
-            if ( delta_R > tracks_rmax )
-              tracks_rmax = delta_R;
-          }
+	if ( ( delta_R < delta_R_cutoff_2 ) && ( delta_R > tracks_rmax ) )
+	  {
+	    tracks_rmax = delta_R;
+	  }
 
       } // end loop over reco tracks //
 
