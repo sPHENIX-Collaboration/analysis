@@ -12,6 +12,7 @@ class PHCompositeNode;
 namespace HepMC
 {
   class GenEvent;
+  class GenParticle;
 }
 
 class Leptoquarks : public SubsysReco
@@ -59,7 +60,7 @@ private:
   TFile *_fout_root;
 
   /* output tree and variables */
-  TNtuple* _tree_dis;
+  TNtuple* _tree_event;
 
   /* beam energies electron and proton */
   float _ebeam_E;
@@ -69,6 +70,10 @@ private:
   //! negative IDs are backgrounds, .e.g out of time pile up collisions
   //! Usually, ID = 0 means the primary Au+Au collision background
   int _embedding_id;
+
+  /** Check if this is the final state particle or not- update pointer if needed */
+  void UpdateFinalStateParticle( HepMC::GenParticle *& );
+
 };
 
 #endif // __Leptoquarks_H__
