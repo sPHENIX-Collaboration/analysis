@@ -72,9 +72,6 @@ LeptoquarksReco::Init(PHCompositeNode *topNode)
 int
 LeptoquarksReco::process_event(PHCompositeNode *topNode)
 {
-  /* count up event number */
-  _ievent ++;
-
   /* set some values- @TODO: should this be done elsewhere? Member variable? */
   double _tau_jet_emin = 5;
 
@@ -169,6 +166,9 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
 
   /* Add information about tau candidats to output tree */
   WriteTauCandidatesToTree( tauCandidateMap );
+
+  /* count up event number */
+  _ievent ++;
 
   return 0;
 }

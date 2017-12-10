@@ -49,8 +49,6 @@ Leptoquarks::Init(PHCompositeNode *topNode)
 int
 Leptoquarks::process_event(PHCompositeNode *topNode)
 {
-  _ievent ++;
-
   /* Access GenEventMap */
   PHHepMCGenEventMap * geneventmap = findNode::getClass<PHHepMCGenEventMap>(topNode, "PHHepMCGenEventMap");
   if (!geneventmap)
@@ -170,8 +168,8 @@ Leptoquarks::process_event(PHCompositeNode *topNode)
 
       tau_e = particle_tau->momentum().e();
       tau_p = sqrt( pow( particle_tau->momentum().px(), 2 ) +
-		    pow( particle_tau->momentum().py(), 2 ) +
-		    pow( particle_tau->momentum().pz(), 2 ) );
+                    pow( particle_tau->momentum().py(), 2 ) +
+                    pow( particle_tau->momentum().pz(), 2 ) );
       tau_pt = particle_tau->momentum().perp();
 
       /* Add information about tau decay */
@@ -221,8 +219,8 @@ Leptoquarks::process_event(PHCompositeNode *topNode)
 
       quark_e  = particle_quark->momentum().e();
       quark_p  = sqrt( pow( particle_quark->momentum().px(), 2 ) +
-		       pow( particle_quark->momentum().py(), 2 ) +
-		       pow( particle_quark->momentum().pz(), 2 ) );
+                       pow( particle_quark->momentum().py(), 2 ) +
+                       pow( particle_quark->momentum().pz(), 2 ) );
       quark_pt = particle_quark->momentum().perp();
 
     }
@@ -247,6 +245,9 @@ Leptoquarks::process_event(PHCompositeNode *topNode)
   };
 
   _tree_event->Fill( event_data );
+
+  /* count up event number */
+  _ievent ++;
 
   return 0;
 }
