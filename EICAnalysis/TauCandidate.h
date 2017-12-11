@@ -3,6 +3,8 @@
 
 #include <phool/PHObject.h>
 
+#include <map>
+
 class Jet;
 
 /**
@@ -22,9 +24,7 @@ public:
   void identify(std::ostream& os = std::cout) const;
 
   /** Manually set properties of this tau candidate */
-  void set_jetshape_econe_r1( float er1 ) { _jetshape_econe_r1 = er1; }
-  void set_jetshape_econe_r2( float er2 ) { _jetshape_econe_r2 = er2; }
-  void set_jetshape_econe_r3( float er3 ) { _jetshape_econe_r3 = er3; }
+  void set_jetshape_econe( float r1, float er1 ) { _jetshape_econe.insert( std::make_pair( r1, er1 ) ); }
   void set_jetshape_r90( float r90 ) { _jetshape_r90 = r90; }
   void set_jetshape_rms( float rms ) { _jetshape_rms = rms; }
   void set_jetshape_radius( float radius ) { _jetshape_radius = radius; }
@@ -58,9 +58,7 @@ public:
   float get_jet_ptrans() const { return _jet_ptrans; }
   float get_jet_mass() const { return _jet_mass; }
 
-  float get_jetshape_econe_r1() const { return _jetshape_econe_r1; }
-  float get_jetshape_econe_r2() const { return _jetshape_econe_r2; }
-  float get_jetshape_econe_r3() const { return _jetshape_econe_r3; }
+  float get_jetshape_econe( float r1 ) const { return _jetshape_econe.find( r1 )->second; }
   float get_jetshape_r90() const { return _jetshape_r90; }
   float get_jetshape_rms() const { return _jetshape_rms; }
   float get_jetshape_radius() const { return _jetshape_radius; }
@@ -98,9 +96,7 @@ protected:
   const float _jet_mass;
 
   /** Jet structure properties */
-  float _jetshape_econe_r1;
-  float _jetshape_econe_r2;
-  float _jetshape_econe_r3;
+  std::map< float, float > _jetshape_econe;
   float _jetshape_r90;
   float _jetshape_rms;
   float _jetshape_radius;

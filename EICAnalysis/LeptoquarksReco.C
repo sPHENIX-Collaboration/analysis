@@ -518,9 +518,9 @@ LeptoquarksReco::AddJetStructureInformation( map_tcan& tauCandidateMap, JetMap* 
       }
 
       /* set tau candidate properties */
-      (iter->second).set_jetshape_econe_r1( er1 );
-      (iter->second).set_jetshape_econe_r2( er2 );
-      (iter->second).set_jetshape_econe_r3( er3 );
+      (iter->second).set_jetshape_econe( delta_R_cutoff_r1, er1 );
+      (iter->second).set_jetshape_econe( delta_R_cutoff_r2, er2 );
+      (iter->second).set_jetshape_econe( delta_R_cutoff_r3, er3 );
       (iter->second).set_jetshape_r90( r90 );
       (iter->second).set_jetshape_rms( rms );
       (iter->second).set_jetshape_radius( radius );
@@ -641,9 +641,9 @@ LeptoquarksReco::WriteTauCandidatesToTree( map_tcan& tauCandidateMap )
                              (float) (iter->second).get_jet_ptotal(),
                              (float) (iter->second).get_jet_ptrans(),
                              (float) (iter->second).get_jet_mass(),
-                             (float) (iter->second).get_jetshape_econe_r1(),
-                             (float) (iter->second).get_jetshape_econe_r2(),
-                             (float) (iter->second).get_jetshape_econe_r3(),
+                             (float) (iter->second).get_jetshape_econe( 0.2 ),
+                             (float) (iter->second).get_jetshape_econe( 0.5 ),
+                             (float) (iter->second).get_jetshape_econe( 1.0 ),
                              (float) (iter->second).get_jetshape_r90(),
                              (float) (iter->second).get_jetshape_rms(),
 			     (float) (iter->second).get_jetshape_radius(),
