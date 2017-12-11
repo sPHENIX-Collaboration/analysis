@@ -64,7 +64,7 @@ LeptoquarksReco::Init(PHCompositeNode *topNode)
                          "event:jet_id:isMaxEnergyJet:isMinDeltaRJet:jet_eta:jet_phi:delta_R:jet_mass:jet_p:jet_pT:jet_eT:jet_e:jet_px:jet_py:jet_pz");
 
   _ntp_jet2 = new TNtuple("ntp_jet2","all tau candidate (jet) information from LQ events",
-                          "ievent:jet_id:is_tau:is_uds:tau_etotal:tau_eta:tau_phi:tau_decay_prong:tau_decay_hcharged:tau_decay_lcharged:uds_etotal:uds_eta:uds_phi:jet_eta:jet_phi:jet_etotal:jet_etrans:jet_ptotal:jet_ptrans:jet_mass:jetshape_econe_r1:jetshape_econe_r2:jetshape_econe_r3:jetshape_r90:jetshape_rms:jetshape_radius:tracks_count:tracks_chargesum:tracks_rmax");
+                          "ievent:jet_id:is_tau:is_uds:tau_etotal:tau_eta:tau_phi:tau_decay_prong:tau_decay_hcharged:tau_decay_lcharged:uds_etotal:uds_eta:uds_phi:jet_eta:jet_phi:jet_etotal:jet_etrans:jet_ptotal:jet_ptrans:jet_mass:jetshape_econe_r1:jetshape_econe_r2:jetshape_econe_r3:jetshape_econe_r4:jetshape_econe_r5:jetshape_econe_r6:jetshape_econe_r7:jetshape_econe_r8:jetshape_econe_r9:jetshape_econe_r10:jetshape_r90:jetshape_rms:jetshape_radius:tracks_count:tracks_chargesum:tracks_rmax");
 
   return 0;
 }
@@ -382,12 +382,19 @@ int
 LeptoquarksReco::AddJetStructureInformation( map_tcan& tauCandidateMap, JetMap* recojets, vector<RawTowerContainer*> v_towers, vector<RawTowerGeomContainer*> v_tower_geoms )
 {
   /* Cone size around jet axis within which to look for tracks */
-  float delta_R_cutoff_r1 = 0.2;
-  float delta_R_cutoff_r2 = 0.5;
-  float delta_R_cutoff_r3 = 1.0;
+  float delta_R_cutoff_r1 = 0.1;
+  float delta_R_cutoff_r2 = 0.2;
+  float delta_R_cutoff_r3 = 0.3;
+  float delta_R_cutoff_r4 = 0.4;
+  float delta_R_cutoff_r5 = 0.5;
+  float delta_R_cutoff_r6 = 0.6;
+  float delta_R_cutoff_r7 = 0.7;
+  float delta_R_cutoff_r8 = 0.8;
+  float delta_R_cutoff_r9 = 0.9;
+  float delta_R_cutoff_r10 = 1.0;
 
   /* energy threshold for considering tower */
-  float tower_emin = 0.1;
+  float tower_emin = 0.0;
 
   /* number of steps for finding r90 */
   int n_steps = 50;
@@ -406,6 +413,13 @@ LeptoquarksReco::AddJetStructureInformation( map_tcan& tauCandidateMap, JetMap* 
       float er1 = 0;
       float er2 = 0;
       float er3 = 0;
+      float er4 = 0;
+      float er5 = 0;
+      float er6 = 0;
+      float er7 = 0;
+      float er8 = 0;
+      float er9 = 0;
+      float er10 = 0;
       float r90 = 0;
       float radius = 0;
       float rms = 0;
@@ -456,8 +470,36 @@ LeptoquarksReco::AddJetStructureInformation( map_tcan& tauCandidateMap, JetMap* 
                 {
                   er3 += tower_energy;
                 }
+              else if ( delta_R <= delta_R_cutoff_r4 )
+                {
+                  er4 += tower_energy;
+                }
+              else if ( delta_R <= delta_R_cutoff_r5 )
+                {
+                  er5 += tower_energy;
+                }
+              else if ( delta_R <= delta_R_cutoff_r6 )
+                {
+                  er6 += tower_energy;
+                }
+              else if ( delta_R <= delta_R_cutoff_r7 )
+                {
+                  er7 += tower_energy;
+                }
+              else if ( delta_R <= delta_R_cutoff_r8 )
+                {
+                  er8 += tower_energy;
+                }
+              else if ( delta_R <= delta_R_cutoff_r9 )
+                {
+                  er9 += tower_energy;
+                }
+              else if ( delta_R <= delta_R_cutoff_r10 )
+                {
+                  er10 += tower_energy;
+                }
 
-              if ( delta_R <= delta_R_cutoff_r2 )
+              if ( delta_R <= delta_R_cutoff_r5 )
                 {
                   rms += tower_energy*delta_R*delta_R;
                   rms_esum += tower_energy;
@@ -507,9 +549,9 @@ LeptoquarksReco::AddJetStructureInformation( map_tcan& tauCandidateMap, JetMap* 
 
 		float delta_R = CalculateDeltaR( tower_eta , tower_phi, jet_eta, jet_phi );
 
-                if(delta_R < r_i*delta_R_cutoff_r2/n_steps) {
+                if(delta_R < r_i*delta_R_cutoff_r5/n_steps) {
                   e_tower_sum = e_tower_sum + tower_energy;
-                  r90 = r_i*delta_R_cutoff_r2/n_steps;
+                  r90 = r_i*delta_R_cutoff_r5/n_steps;
                 }
               }
 
@@ -521,6 +563,13 @@ LeptoquarksReco::AddJetStructureInformation( map_tcan& tauCandidateMap, JetMap* 
       (iter->second).set_jetshape_econe( delta_R_cutoff_r1, er1 );
       (iter->second).set_jetshape_econe( delta_R_cutoff_r2, er2 );
       (iter->second).set_jetshape_econe( delta_R_cutoff_r3, er3 );
+      (iter->second).set_jetshape_econe( delta_R_cutoff_r4, er4 );
+      (iter->second).set_jetshape_econe( delta_R_cutoff_r5, er5 );
+      (iter->second).set_jetshape_econe( delta_R_cutoff_r6, er6 );
+      (iter->second).set_jetshape_econe( delta_R_cutoff_r7, er7 );
+      (iter->second).set_jetshape_econe( delta_R_cutoff_r8, er8 );
+      (iter->second).set_jetshape_econe( delta_R_cutoff_r9, er9 );
+      (iter->second).set_jetshape_econe( delta_R_cutoff_r10, er10 );
       (iter->second).set_jetshape_r90( r90 );
       (iter->second).set_jetshape_rms( rms );
       (iter->second).set_jetshape_radius( radius );
@@ -621,7 +670,7 @@ LeptoquarksReco::WriteTauCandidatesToTree( map_tcan& tauCandidateMap )
       _ntp_jet->Fill(jet_data);
 
 
-      float jet2_data[29] = {(float) _ievent,
+      float jet2_data[36] = {(float) _ievent,
                              (float) (iter->second).get_jet_id(),
                              (float) (iter->second).get_is_tau(),
                              (float) (iter->second).get_is_uds(),
@@ -641,8 +690,15 @@ LeptoquarksReco::WriteTauCandidatesToTree( map_tcan& tauCandidateMap )
                              (float) (iter->second).get_jet_ptotal(),
                              (float) (iter->second).get_jet_ptrans(),
                              (float) (iter->second).get_jet_mass(),
+                             (float) (iter->second).get_jetshape_econe( 0.1 ),
                              (float) (iter->second).get_jetshape_econe( 0.2 ),
+                             (float) (iter->second).get_jetshape_econe( 0.3 ),
+                             (float) (iter->second).get_jetshape_econe( 0.4 ),
                              (float) (iter->second).get_jetshape_econe( 0.5 ),
+                             (float) (iter->second).get_jetshape_econe( 0.6 ),
+                             (float) (iter->second).get_jetshape_econe( 0.7 ),
+                             (float) (iter->second).get_jetshape_econe( 0.8 ),
+                             (float) (iter->second).get_jetshape_econe( 0.9 ),
                              (float) (iter->second).get_jetshape_econe( 1.0 ),
                              (float) (iter->second).get_jetshape_r90(),
                              (float) (iter->second).get_jetshape_rms(),
