@@ -44,9 +44,9 @@ public:
   void set_uds_eta( float eta ) { _uds_eta = eta; }
   void set_uds_phi( float phi ) { _uds_phi = phi; }
 
-  void set_tracks_count( int ntracks ) { _tracks_count = ntracks; }
-  void set_tracks_chargesum( int qtracks ) { _tracks_chargesum = qtracks; }
-  void set_tracks_rmax( float rmax ) { _tracks_rmax = rmax; }
+  void set_tracks_count( float r1, int ntracks ) { _tracks_count.insert( std::make_pair( r1, ntracks ) ); }
+  void set_tracks_chargesum( float r1, int qtracks ) { _tracks_chargesum.insert( std::make_pair( r1, qtracks ) ); }
+  void set_tracks_rmax( float r1, float rmax ) { _tracks_rmax.insert( std::make_pair( r1, rmax ) ); }
 
   /** Retrieve properties of this tau candidate */
   unsigned int get_jet_id() const { return _jet_id; }
@@ -77,9 +77,9 @@ public:
   float get_uds_eta() const { return _uds_eta; }
   float get_uds_phi() const { return _uds_phi; }
 
-  int get_tracks_count() const { return _tracks_count; }
-  int get_tracks_chargesum() const { return _tracks_chargesum; }
-  float get_tracks_rmax() const { return _tracks_rmax; }
+  int get_tracks_count( float r1 ) const { return _tracks_count.find( r1 )->second; }
+  int get_tracks_chargesum( float r1 ) const { return _tracks_chargesum.find( r1 )->second; }
+  float get_tracks_rmax( float r1 ) const { return _tracks_rmax.find( r1 )->second; }
 
 protected:
 
@@ -122,13 +122,13 @@ protected:
   float _uds_phi;
 
   /** Number of tracks within cone around jet axis */
-  int _tracks_count;
+  std::map< float, int > _tracks_count;
 
   /** Sum of charges of tracks within cone around jet axis */
-  int _tracks_chargesum;
+  std::map< float, int > _tracks_chargesum;
 
   /** Track with maximum angle w.r.t. jet axis but still within search cone around jet axis */
-  float _tracks_rmax;
+  std::map< float, float > _tracks_rmax;
 
 };
 

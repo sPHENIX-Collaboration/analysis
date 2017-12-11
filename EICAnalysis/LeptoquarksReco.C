@@ -64,7 +64,7 @@ LeptoquarksReco::Init(PHCompositeNode *topNode)
                          "event:jet_id:isMaxEnergyJet:isMinDeltaRJet:jet_eta:jet_phi:delta_R:jet_mass:jet_p:jet_pT:jet_eT:jet_e:jet_px:jet_py:jet_pz");
 
   _ntp_jet2 = new TNtuple("ntp_jet2","all tau candidate (jet) information from LQ events",
-                          "ievent:jet_id:is_tau:is_uds:tau_etotal:tau_eta:tau_phi:tau_decay_prong:tau_decay_hcharged:tau_decay_lcharged:uds_etotal:uds_eta:uds_phi:jet_eta:jet_phi:jet_etotal:jet_etrans:jet_ptotal:jet_ptrans:jet_mass:jetshape_econe_r1:jetshape_econe_r2:jetshape_econe_r3:jetshape_econe_r4:jetshape_econe_r5:jetshape_econe_r6:jetshape_econe_r7:jetshape_econe_r8:jetshape_econe_r9:jetshape_econe_r10:jetshape_r90:jetshape_rms:jetshape_radius:tracks_count:tracks_chargesum:tracks_rmax");
+                          "ievent:jet_id:is_tau:is_uds:tau_etotal:tau_eta:tau_phi:tau_decay_prong:tau_decay_hcharged:tau_decay_lcharged:uds_etotal:uds_eta:uds_phi:jet_eta:jet_phi:jet_etotal:jet_etrans:jet_ptotal:jet_ptrans:jet_mass:jetshape_econe_r1:jetshape_econe_r2:jetshape_econe_r3:jetshape_econe_r4:jetshape_econe_r5:jetshape_econe_r6:jetshape_econe_r7:jetshape_econe_r8:jetshape_econe_r9:jetshape_econe_r10:jetshape_r90:jetshape_rms:jetshape_radius:tracks_count_r1:tracks_chargesum_r1:tracks_rmax_r1:tracks_count_r2:tracks_chargesum_r2:tracks_rmax_r2");
 
   return 0;
 }
@@ -590,9 +590,13 @@ LeptoquarksReco::AddTrackInformation( map_tcan& tauCandidateMap, SvtxTrackMap* t
        iter != tauCandidateMap.end();
        ++iter)
     {
-      int tracks_count = 0;
-      int tracks_chargesum = 0;
-      float tracks_rmax = 0;
+      int tracks_count_r1 = 0;
+      int tracks_chargesum_r1 = 0;
+      float tracks_rmax_r1 = 0;
+
+      int tracks_count_r2 = 0;
+      int tracks_chargesum_r2 = 0;
+      float tracks_rmax_r2 = 0;
 
       float jet_eta = (iter->second).get_jet_eta();
       float jet_phi = (iter->second).get_jet_phi();
@@ -619,21 +623,32 @@ LeptoquarksReco::AddTrackInformation( map_tcan& tauCandidateMap, SvtxTrackMap* t
 
         if ( delta_R < delta_R_cutoff_1 )
           {
-            tracks_count++;
-            tracks_chargesum += track_charge;
+            tracks_count_r1++;
+            tracks_chargesum_r1 += track_charge;
+
+	    if ( delta_R > tracks_rmax_r1 )
+	      tracks_rmax_r1 = delta_R;
 	  }
 
-	if ( ( delta_R < delta_R_cutoff_2 ) && ( delta_R > tracks_rmax ) )
-	  {
-	    tracks_rmax = delta_R;
+        if ( delta_R < delta_R_cutoff_2 )
+          {
+            tracks_count_r2++;
+            tracks_chargesum_r2 += track_charge;
+
+	    if ( delta_R > tracks_rmax_r2 )
+	      tracks_rmax_r2 = delta_R;
 	  }
 
       } // end loop over reco tracks //
 
         /* Set track-based properties for tau candidate */
-      (iter->second).set_tracks_count( tracks_count );
-      (iter->second).set_tracks_chargesum( tracks_chargesum );
-      (iter->second).set_tracks_rmax( tracks_rmax );
+      (iter->second).set_tracks_count( delta_R_cutoff_1, tracks_count_r1 );
+      (iter->second).set_tracks_chargesum( delta_R_cutoff_1, tracks_chargesum_r1 );
+      (iter->second).set_tracks_rmax( delta_R_cutoff_1, tracks_rmax_r1 );
+
+      (iter->second).set_tracks_count( delta_R_cutoff_2, tracks_count_r2 );
+      (iter->second).set_tracks_chargesum( delta_R_cutoff_2, tracks_chargesum_r2 );
+      (iter->second).set_tracks_rmax( delta_R_cutoff_2, tracks_rmax_r2 );
 
     } // end loop over tau  candidates
 
@@ -670,7 +685,7 @@ LeptoquarksReco::WriteTauCandidatesToTree( map_tcan& tauCandidateMap )
       _ntp_jet->Fill(jet_data);
 
 
-      float jet2_data[36] = {(float) _ievent,
+      float jet2_data[39] = {(float) _ievent,
                              (float) (iter->second).get_jet_id(),
                              (float) (iter->second).get_is_tau(),
                              (float) (iter->second).get_is_uds(),
@@ -703,9 +718,12 @@ LeptoquarksReco::WriteTauCandidatesToTree( map_tcan& tauCandidateMap )
                              (float) (iter->second).get_jetshape_r90(),
                              (float) (iter->second).get_jetshape_rms(),
 			     (float) (iter->second).get_jetshape_radius(),
-                             (float) (iter->second).get_tracks_count(),
-                             (float) (iter->second).get_tracks_chargesum(),
-                             (float) (iter->second).get_tracks_rmax()
+                             (float) (iter->second).get_tracks_count( 0.2 ),
+                             (float) (iter->second).get_tracks_chargesum( 0.2 ),
+                             (float) (iter->second).get_tracks_rmax( 0.2 ),
+                             (float) (iter->second).get_tracks_count( 0.5 ),
+                             (float) (iter->second).get_tracks_chargesum( 0.5 ),
+                             (float) (iter->second).get_tracks_rmax( 0.5 )
       };
 
       _ntp_jet2->Fill(jet2_data);

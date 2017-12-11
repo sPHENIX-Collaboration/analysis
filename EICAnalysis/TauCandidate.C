@@ -30,10 +30,7 @@ TauCandidate::TauCandidate( Jet* jet ) :
   _tau_decay_lcharged(0),
   _uds_etotal(0),
   _uds_eta(0),
-  _uds_phi(0),
-  _tracks_count(0),
-  _tracks_chargesum(0),
-  _tracks_rmax(0)
+  _uds_phi(0)
 {
 
 }
@@ -46,7 +43,7 @@ TauCandidate::identify(ostream& os) const
        << ", jet_eta: " << get_jet_eta()
        << ", jet_phi: " << get_jet_phi()
        << ", jet_etotal: " << get_jet_etotal()
-       << ", tracks_count: " << get_tracks_count()
+       << ", tracks_count: " << get_tracks_count(0.2)
        << ", is_tau: " << get_is_tau() << endl;
   return;
 }
