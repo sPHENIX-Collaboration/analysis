@@ -18,27 +18,33 @@ colormap(myColorMap);
 % n = 10000000;
 n = 50000;
 % n = 500000;
+% full_rate = 250e3;
 full_rate = 100e3;
+% full_rate = 150e3;
+% full_rate = 100e3;
 % full_rate = 50e3;
 trig_rate = 15e3;
-% trigger_window = 13e-6;
-trigger_window = 17.5e-6;
+% trigger_window = 4e-6;
+trigger_window = 13e-6;
+% trigger_window = 17.5e-6;
 % trigger_window = 35e-6;
 
 TargetEta = 1.1;
 % TargetEta = 3;
 
-SaveName = sprintf('TPCRateLayered_%.0fHzCol_%.0fHzTrig_%.0fusDrift',full_rate,trig_rate,trigger_window*1e6);
+nRing = 40;
+% nRing = 48;
+
+SaveName = sprintf('TPCRateLayered_%.0fHzCol_%.0fHzTrig_%.0fusDrift_nRing%d',full_rate,trig_rate,trigger_window*1e6, nRing);
 
 %% Generic constants
 
 
-nRing = 40;
 minR = 30;
 maxR = 78;
 maxZ = 105;
 dNdeta = 2 * 180 * 2; % Pre-CDR table 3.3 with effective factor x2 and two signs x2
-bitPerHit =3*5*10 * 1.4;  % Pre-CDR table 3.3 with effective factor 
+bitPerHit =3*5*10 * 1.4;  % Pre-CDR table 3.3 with effective factor
 DAMCompressionFactor = 1.02 * 0.5 * 0.6; % Repacking, clustering, compression
 
 BCO = 10e6;
@@ -210,6 +216,131 @@ end
 
 SaveCavas(SaveName,gcf);
 
+
+%% Event stream display - 1D
+
+figure('name','DataStream1D','PaperPositionMode','auto', ...
+    'position',[100,0,2400,800]) ;
+
+subplot(2,1,1)
+
+bar( PlotDataBCO(nRing,:) ,1);
+% c = colorbar;
+hold on;
+set(gca,'YDir','normal');
+set(gca, 'XLim',[0 DataPlotRangeBCO]);
+ylim = get(gca,'YLim');
+y_max = ylim(2);
+
+xlabel('BCO bin (100 ns)','FontSize',14);
+ylabel('Data in last TPC layer (bit/BCO)','FontSize',14);
+% c.Label.String = 'FEE data (bit)';
+% c.Label.FontSize = 14;
+title(sprintf('FEE data input to DAM. Rate = %.0f Gbps @ %.0f kHz Collision, %.0f kHz Trigger %.0f us Drift',...
+    sum(sum(DataBCO))/TimeSpan/1e9,full_rate/1e3,trig_rate/1e3,trigger_window*1e6),'FontSize',16);
+
+for i = 1:DataPlotRangeBCO
+    
+    if (TriggerBCO(i) >0)
+        
+        plot([i i], [-.15 1].*y_max,'r--','LineWidth',1);
+        plot([i,i+PerTriggerBCO], [-.15 -.15].*y_max, 'r-', 'LineWidth', 1)
+        plot([i,i+PerTriggerBCO], [-.1 -.1].*y_max, 'k-', 'LineWidth', 1)
+        
+    elseif (CollisionBCO(i) >0)
+        
+        plot([i i], [-.1 1].*y_max,'k--','LineWidth',1);
+        plot([i,i+PerTriggerBCO],  [-.1 -.1].*y_max, 'k-', 'LineWidth', 1)
+    end
+    
+    
+end
+
+
+
+subplot(2,1,2)
+
+bar( PlotThrottleDataBCO(nRing,:), 1 );
+% c = colorbar;
+hold on;
+set(gca,'YDir','normal');
+set(gca, 'XLim',[0 DataPlotRangeBCO]);
+% set(gca,'YLim',[-4,nRing+1]);
+
+xlabel('BCO bin (100 ns)','FontSize',14);
+ylabel('Data in last TPC layer (bit/BCO)','FontSize',14);
+% c.Label.String = 'FEE data equavelent (bit)';
+% c.Label.FontSize = 14;
+title(sprintf('DAM data output: Throttled data rate = %.0f Gbps, Triggered data rate = %.0f Gbps ',...
+    ThrottleDataRate * DAMCompressionFactor/1e9 ,...
+    TriggerDataRate * DAMCompressionFactor/1e9...
+    ),'FontSize',16);
+
+for i = 1:DataPlotRangeBCO
+    
+    if (TriggerBCO(i) >0)
+        
+        plot([i i], [-.15 1].*y_max,'r--','LineWidth',1);
+        plot([i,i+PerTriggerBCO], [-.15 -.15].*y_max, 'r-', 'LineWidth', 1)
+        plot([i,i+PerTriggerBCO], [-.1 -.1].*y_max, 'k-', 'LineWidth', 1)
+        
+    elseif (CollisionBCO(i) >0)
+        
+        plot([i i], [-.1 1].*y_max,'k--','LineWidth',1);
+        plot([i,i+PerTriggerBCO],  [-.1 -.1].*y_max, 'k-', 'LineWidth', 1)
+    end
+    
+    
+end
+
+
+SaveCavas(SaveName,gcf);
+
+%% FEE Data Rate
+
+DataRadialLayerRate = sum(DataBCO, 2) / TimeSpan;
+
+if nRing == 40
+    
+    FEEDataRate = [sum( DataRadialLayerRate(1:8))/5;
+        sum( DataRadialLayerRate((8+1):(8+16)))/8;
+        sum( DataRadialLayerRate((8+1+16):(8+16+16)))/12]...
+        /12/2;%12 sectors and two sides
+elseif nRing == 48
+    
+    FEEDataRate = [sum( DataRadialLayerRate(1:16))/6;
+        sum( DataRadialLayerRate((16+1):(16+16)))/8;
+        sum( DataRadialLayerRate((16+1+16):(16+16+16)))/12]...
+        /12/2;%12 sectors and two sides
+    
+else
+    assert(0);
+end
+
+
+%% FEE Data Rate Plot
+
+figure('name','FEEDataRate','PaperPositionMode','auto', ...
+    'position',[100,0,800,400]) ;
+
+
+bar( FEEDataRate/1e9 );
+% c = colorbar;
+hold on;
+set(gca,'YDir','normal');
+% set(gca, 'XLim',[0 DataPlotRangeBCO]);
+ylim = get(gca,'YLim');
+y_max = ylim(2);
+
+xlabel('Module Number','FontSize',16);
+ylabel('Average data rate per FEE (Gbps)','FontSize',16);
+% c.Label.String = 'FEE data (bit)';
+% c.Label.FontSize = 14;
+title(sprintf('FEE data input to DAM. Total = %.0f Gbps @ %.0f kHz Collision, %.0f kHz Trigger %.0f us Drift',...
+    sum(sum(DataBCO))/TimeSpan/1e9,full_rate/1e3,trig_rate/1e3,trigger_window*1e6),'FontSize',12);
+
+SaveCavas(SaveName,gcf);
+
 %% Collision pile up histogram
 
 nPileUpTrig = zeros(  sum(TriggerBCO(PerTriggerBCO+1:(TimeSpanBCO-PerTriggerBCO)))  ,1)  ;
@@ -227,7 +358,7 @@ for i = PerTriggerBCO+1:(TimeSpanBCO-PerTriggerBCO)
     
     nPileUpRnd(i- PerTriggerBCO + 1) = sum( CollisionBCO((i-PerTriggerBCO):(i+PerTriggerBCO)) );
     
-
+    
 end
 %%
 
@@ -257,7 +388,7 @@ title(sprintf('Random trigger: <# collision in TPC window> = %.2f @ %.0f kHz Col
     full_rate/1e3,trigger_window*1e6),'FontSize',16);
 
 SaveCavas(SaveName,gcf);
-    
+
 %%
 
 % fprintf('Throttled event / total = %.3f; Throttled data / total = %.3f; Triggered event / total = %.3f; Triggered data / total = = %.3f\n',...
@@ -273,11 +404,13 @@ fprintf('per event effective track = %.0f , per event FEE data = %.0f bits, tota
 fprintf('Trigger rate*drift window = %.2f;Full rate*drift window= %.2f;Trigger rate/full rate = %.2f (input)/%.2f(MC); \n',...
     trig_rate*trigger_window,full_rate*trigger_window,trig_rate/full_rate, sum(TriggerBCO)/sum(CollisionBCO)  );
 
-fprintf('throttled data / total = %.3f; Triggered data / total = %.3f; throttled/trigger = %.3f \n',...
-   ThrottleDataRate/TotalDataRate,...
-   TriggerDataRate/TotalDataRate,...
-   ThrottleDataRate/TriggerDataRate...
-);
+fprintf('throttled data / total = %.3f; Triggered data / total = %.3f; throttled/trigger = %.3f; Triggered data/Per event data = %.3f \n',...
+    ThrottleDataRate/TotalDataRate,...
+    TriggerDataRate/TotalDataRate,...
+    ThrottleDataRate/TriggerDataRate,...
+    sum(sum(DataBCO.*TriggerAcceptBCO)) ./ (sum(sum(dataBitRingBCOAfterMask)).*sum(TriggerBCO))...
+    );
+%    sum(sum(DataBCO.*TriggerAcceptBCO)) ./ (sum(sum(dataBitRingBCOAfterMask)).*sum(CollisionBCO))...
 
 fprintf('throttled data rate = %.0f Gbps; Triggered data rate = %.0f Gbps\n',...
     ThrottleDataRate * DAMCompressionFactor/1e9 ,...
