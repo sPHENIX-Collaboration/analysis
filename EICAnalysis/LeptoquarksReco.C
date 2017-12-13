@@ -40,11 +40,14 @@ using namespace std;
 
 LeptoquarksReco::LeptoquarksReco(std::string filename) :
   SubsysReco("LeptoquarksReco" ),
+  _save_towers(false),
+  _save_tracks(false),
   _ievent(0),
   _filename(filename),
   _tfile(nullptr),
   _ntp_jet(nullptr),
   _ntp_jet2(nullptr),
+  _ntp_tower(nullptr),
   _ebeam_E(0),
   _pbeam_E(0),
   _jetcolname("AntiKt_Tower_r05")
@@ -65,6 +68,18 @@ LeptoquarksReco::Init(PHCompositeNode *topNode)
 
   _ntp_jet2 = new TNtuple("ntp_jet2","all tau candidate (jet) information from LQ events",
                           "ievent:jet_id:is_tau:is_uds:tau_etotal:tau_eta:tau_phi:tau_decay_prong:tau_decay_hcharged:tau_decay_lcharged:uds_etotal:uds_eta:uds_phi:jet_eta:jet_phi:jet_etotal:jet_etrans:jet_ptotal:jet_ptrans:jet_mass:jetshape_econe_r1:jetshape_econe_r2:jetshape_econe_r3:jetshape_econe_r4:jetshape_econe_r5:jetshape_econe_r6:jetshape_econe_r7:jetshape_econe_r8:jetshape_econe_r9:jetshape_econe_r10:jetshape_r90:jetshape_rms:jetshape_radius:tracks_count_r1:tracks_chargesum_r1:tracks_rmax_r1:tracks_count_r2:tracks_chargesum_r2:tracks_rmax_r2");
+
+  if ( _save_towers )
+    {
+      _ntp_tower = new TNtuple("ntp_tower","towers from all all tau candidates",
+                               "ievent:jet_id:is_tau:is_uds:tau_etotal:tau_eta:tau_phi:tau_decay_prong:tau_decay_hcharged:tau_decay_lcharged:uds_etotal:uds_eta:uds_phi:jet_eta:jet_phi:jet_etotal:tower_calo_id:tower_eta:tower_phi:tower_delta_r:tower_e");
+    }
+
+  if ( _save_tracks )
+    {
+      _ntp_track = new TNtuple("ntp_track","tracks from all all tau candidates",
+                               "ievent:jet_id:is_tau:is_uds:tau_etotal:tau_eta:tau_phi:tau_decay_prong:tau_decay_hcharged:tau_decay_lcharged:uds_etotal:uds_eta:uds_phi:jet_eta:jet_phi:jet_etotal:track_quality:track_eta:track_phi:track_delta_r:track_p");
+    }
 
   return 0;
 }
@@ -289,45 +304,45 @@ LeptoquarksReco::AddTrueTauTag( map_tcan& tauCandidateMap, PHHepMCGenEventMap *g
           (min_delta_R_iter->second).set_tau_eta( tau_eta );
           (min_delta_R_iter->second).set_tau_phi( tau_phi );
 
-	  /* Add information about tau decay */
-	  int tau_decay_prong = 0;
-	  int tau_decay_hcharged = 0;
-	  int tau_decay_lcharged = 0;
+          /* Add information about tau decay */
+          int tau_decay_prong = 0;
+          int tau_decay_hcharged = 0;
+          int tau_decay_lcharged = 0;
 
-	  /* Loop over all particle at end vertex */
-	  if ( particle_tau->end_vertex() )
-	    {
-	      for ( HepMC::GenVertex::particle_iterator tau_decay
-		      = particle_tau->end_vertex()->
-		      particles_begin(HepMC::children);
-		    tau_decay != particle_tau->end_vertex()->
-		      particles_end(HepMC::children);
-		    ++tau_decay )
-		{
-		  /* Get entry from TParticlePDG because HepMC::GenPArticle does not provide charge or class of particle */
-		  TParticlePDG * pdg_p = TDatabasePDG::Instance()->GetParticle( (*tau_decay)->pdg_id() );
+          /* Loop over all particle at end vertex */
+          if ( particle_tau->end_vertex() )
+            {
+              for ( HepMC::GenVertex::particle_iterator tau_decay
+                      = particle_tau->end_vertex()->
+                      particles_begin(HepMC::children);
+                    tau_decay != particle_tau->end_vertex()->
+                      particles_end(HepMC::children);
+                    ++tau_decay )
+                {
+                  /* Get entry from TParticlePDG because HepMC::GenPArticle does not provide charge or class of particle */
+                  TParticlePDG * pdg_p = TDatabasePDG::Instance()->GetParticle( (*tau_decay)->pdg_id() );
 
-		  /* Check if particle is charged */
-		  if ( pdg_p->Charge() != 0 )
-		    {
-		      tau_decay_prong += 1;
+                  /* Check if particle is charged */
+                  if ( pdg_p->Charge() != 0 )
+                    {
+                      tau_decay_prong += 1;
 
-		      /* Check if particle is lepton */
-		      if ( string( pdg_p->ParticleClass() ) == "Lepton" )
-			tau_decay_lcharged += 1;
+                      /* Check if particle is lepton */
+                      if ( string( pdg_p->ParticleClass() ) == "Lepton" )
+                        tau_decay_lcharged += 1;
 
-		      /* Check if particle is hadron, i.e. Meson or Baryon */
-		      else if ( ( string( pdg_p->ParticleClass() ) == "Meson"  ) ||
-				( string( pdg_p->ParticleClass() ) == "Baryon" ) )
-			tau_decay_hcharged += 1;
-		    }
-		}
+                      /* Check if particle is hadron, i.e. Meson or Baryon */
+                      else if ( ( string( pdg_p->ParticleClass() ) == "Meson"  ) ||
+                                ( string( pdg_p->ParticleClass() ) == "Baryon" ) )
+                        tau_decay_hcharged += 1;
+                    }
+                }
 
-	      /* Update TauCandidate entry */
-	      (min_delta_R_iter->second).set_tau_decay_prong( tau_decay_prong );
-	      (min_delta_R_iter->second).set_tau_decay_hcharged( tau_decay_hcharged );
-	      (min_delta_R_iter->second).set_tau_decay_lcharged( tau_decay_lcharged );
-	    }
+              /* Update TauCandidate entry */
+              (min_delta_R_iter->second).set_tau_decay_prong( tau_decay_prong );
+              (min_delta_R_iter->second).set_tau_decay_hcharged( tau_decay_hcharged );
+              (min_delta_R_iter->second).set_tau_decay_lcharged( tau_decay_lcharged );
+            }
         }
     }
 
@@ -426,10 +441,10 @@ LeptoquarksReco::AddJetStructureInformation( map_tcan& tauCandidateMap, JetMap* 
       float rms_esum = 0;
 
       /* Loop over all tower (and geometry) collections */
-      for ( unsigned i = 0; i < v_towers.size(); i++ )
+      for ( unsigned calo_id = 0; calo_id < v_towers.size(); calo_id++ )
         {
           /* define tower iterator */
-          RawTowerContainer::ConstRange begin_end = (v_towers.at(i))->getTowers();
+          RawTowerContainer::ConstRange begin_end = (v_towers.at(calo_id))->getTowers();
           RawTowerContainer::ConstIterator rtiter;
 
           /* loop over all tower in CEMC calorimeter */
@@ -439,12 +454,12 @@ LeptoquarksReco::AddJetStructureInformation( map_tcan& tauCandidateMap, JetMap* 
               RawTower *tower = rtiter->second;
               float tower_energy = tower->get_energy();
 
-	      /* check if tower above energy treshold */
-	      if ( tower_energy < tower_emin )
-		continue;
+              /* check if tower above energy treshold */
+              if ( tower_energy < tower_emin )
+                continue;
 
               /* get eta and phi of tower and check angle delta_R w.r.t. jet axis */
-              RawTowerGeom * tower_geom = (v_tower_geoms.at(i))->get_tower_geometry(tower -> get_key());
+              RawTowerGeom * tower_geom = (v_tower_geoms.at(calo_id))->get_tower_geometry(tower -> get_key());
               float tower_eta = tower_geom->get_eta();
               float tower_phi = tower_geom->get_phi();
 
@@ -458,6 +473,36 @@ LeptoquarksReco::AddJetStructureInformation( map_tcan& tauCandidateMap, JetMap* 
 
               float delta_R = CalculateDeltaR( tower_eta , tower_phi, jet_eta, jet_phi );
 
+              /* if save_towers set true: add tower to tree */
+              if ( _save_towers )
+                {
+                  float tower_data[39] = {(float) _ievent,
+                                          (float) (iter->second).get_jet_id(),
+                                          (float) (iter->second).get_is_tau(),
+                                          (float) (iter->second).get_is_uds(),
+                                          (float) (iter->second).get_tau_etotal(),
+                                          (float) (iter->second).get_tau_eta(),
+                                          (float) (iter->second).get_tau_phi(),
+                                          (float) (iter->second).get_tau_decay_prong(),
+                                          (float) (iter->second).get_tau_decay_hcharged(),
+                                          (float) (iter->second).get_tau_decay_lcharged(),
+                                          (float) (iter->second).get_uds_etotal(),
+                                          (float) (iter->second).get_uds_eta(),
+                                          (float) (iter->second).get_uds_phi(),
+                                          (float) (iter->second).get_jet_eta(),
+                                          (float) (iter->second).get_jet_phi(),
+                                          (float) (iter->second).get_jet_etotal(),
+                                          (float) calo_id,
+                                          (float) tower_eta,
+                                          (float) tower_phi,
+                                          (float) delta_R,
+                                          (float) tower_energy
+                  };
+
+                  _ntp_tower->Fill(tower_data);
+                }
+
+              /* check delta R distance tower from jet axis */
               if ( delta_R <= delta_R_cutoff_r1 )
                 {
                   er1 += tower_energy;
@@ -539,15 +584,15 @@ LeptoquarksReco::AddJetStructureInformation( map_tcan& tauCandidateMap, JetMap* 
                 RawTower *tower = rtiter->second;
                 float tower_energy = tower->get_energy();
 
-		/* check if tower is above minimum tower energy required */
-		if ( tower_energy < tower_emin )
-		  continue;
+                /* check if tower is above minimum tower energy required */
+                if ( tower_energy < tower_emin )
+                  continue;
 
-		RawTowerGeom * tower_geom = (v_tower_geoms.at(i))->get_tower_geometry(tower -> get_key());
+                RawTowerGeom * tower_geom = (v_tower_geoms.at(i))->get_tower_geometry(tower -> get_key());
                 float tower_eta = tower_geom->get_eta();
                 float tower_phi = tower_geom->get_phi();
 
-		float delta_R = CalculateDeltaR( tower_eta , tower_phi, jet_eta, jet_phi );
+                float delta_R = CalculateDeltaR( tower_eta , tower_phi, jet_eta, jet_phi );
 
                 if(delta_R < r_i*delta_R_cutoff_r5/n_steps) {
                   e_tower_sum = e_tower_sum + tower_energy;
@@ -619,25 +664,53 @@ LeptoquarksReco::AddTrackInformation( map_tcan& tauCandidateMap, SvtxTrackMap* t
 
         float delta_R = CalculateDeltaR( track_eta, track_phi, jet_eta, jet_phi );
 
-        /* If track within search cone, update track information for tau candidate */
+        /* if save_tracks set true: add track to tree */
+        if ( _save_tracks )
+          {
+            float track_data[39] = {(float) _ievent,
+                                    (float) (iter->second).get_jet_id(),
+                                    (float) (iter->second).get_is_tau(),
+                                    (float) (iter->second).get_is_uds(),
+                                    (float) (iter->second).get_tau_etotal(),
+                                    (float) (iter->second).get_tau_eta(),
+                                    (float) (iter->second).get_tau_phi(),
+                                    (float) (iter->second).get_tau_decay_prong(),
+                                    (float) (iter->second).get_tau_decay_hcharged(),
+                                    (float) (iter->second).get_tau_decay_lcharged(),
+                                    (float) (iter->second).get_uds_etotal(),
+                                    (float) (iter->second).get_uds_eta(),
+                                    (float) (iter->second).get_uds_phi(),
+                                    (float) (iter->second).get_jet_eta(),
+                                    (float) (iter->second).get_jet_phi(),
+                                    (float) (iter->second).get_jet_etotal(),
+                                    (float) track->get_quality(),
+				    (float) track_eta,
+                                    (float) track_phi,
+                                    (float) delta_R,
+                                    (float) track->get_p()
+            };
 
+            _ntp_track->Fill(track_data);
+          }
+
+        /* If track within search cone, update track information for tau candidate */
         if ( delta_R < delta_R_cutoff_1 )
           {
             tracks_count_r1++;
             tracks_chargesum_r1 += track_charge;
 
-	    if ( delta_R > tracks_rmax_r1 )
-	      tracks_rmax_r1 = delta_R;
-	  }
+            if ( delta_R > tracks_rmax_r1 )
+              tracks_rmax_r1 = delta_R;
+          }
 
         if ( delta_R < delta_R_cutoff_2 )
           {
             tracks_count_r2++;
             tracks_chargesum_r2 += track_charge;
 
-	    if ( delta_R > tracks_rmax_r2 )
-	      tracks_rmax_r2 = delta_R;
-	  }
+            if ( delta_R > tracks_rmax_r2 )
+              tracks_rmax_r2 = delta_R;
+          }
 
       } // end loop over reco tracks //
 
@@ -717,7 +790,7 @@ LeptoquarksReco::WriteTauCandidatesToTree( map_tcan& tauCandidateMap )
                              (float) (iter->second).get_jetshape_econe( 1.0 ),
                              (float) (iter->second).get_jetshape_r90(),
                              (float) (iter->second).get_jetshape_rms(),
-			     (float) (iter->second).get_jetshape_radius(),
+                             (float) (iter->second).get_jetshape_radius(),
                              (float) (iter->second).get_tracks_count( 0.2 ),
                              (float) (iter->second).get_tracks_chargesum( 0.2 ),
                              (float) (iter->second).get_tracks_rmax( 0.2 ),
@@ -779,6 +852,13 @@ LeptoquarksReco::End(PHCompositeNode *topNode)
   _tfile->cd();
   _ntp_jet->Write();
   _ntp_jet2->Write();
+
+  if ( _ntp_tower )
+    _ntp_tower->Write();
+
+  if ( _ntp_track )
+    _ntp_track->Write();
+
   _tfile->Close();
 
   return 0;

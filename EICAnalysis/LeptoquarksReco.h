@@ -42,6 +42,21 @@ public:
   int
   End(PHCompositeNode*);
 
+
+  void
+  set_save_towers( bool savetower=true )
+  {
+    _save_towers = savetower;
+  }
+
+
+  void
+  set_save_tracks( bool savetracks=true )
+  {
+    _save_tracks = savetracks;
+  }
+
+
   void
   set_beam_energies( float beam_electron , float beam_proton )
   {
@@ -58,6 +73,8 @@ public:
 private:
 
   bool _verbose;
+  bool _save_towers;
+  bool _save_tracks;
 
   int _ievent;
   int _total_pass;
@@ -68,6 +85,8 @@ private:
   /* output tree and variables */
   TNtuple* _ntp_jet;
   TNtuple* _ntp_jet2;
+  TNtuple* _ntp_tower;
+  TNtuple* _ntp_track;
 
   /* beam energies electron and proton */
   float _ebeam_E;
