@@ -6,20 +6,23 @@
 
 int compare_observables()
 {
-  gStyle->SetOptStat(1);
+  gStyle->SetOptStat(0);
+
+  unsigned col1 = kOrange+7;
+  unsigned col2 = kBlue+2;
 
   /* open inout files and merge trees */
   TChain chain("ntp_jet2");
-  chain.Add("data/p250_e20_1000events_file1_LeptoAna_r10.root");
-  chain.Add("data/p250_e20_1000events_file2_LeptoAna_r10.root");
-  chain.Add("data/p250_e20_1000events_file3_LeptoAna_r10.root");
-  chain.Add("data/p250_e20_1000events_file4_LeptoAna_r10.root");
-  chain.Add("data/p250_e20_1000events_file5_LeptoAna_r10.root");
-  chain.Add("data/p250_e20_1000events_file6_LeptoAna_r10.root");
-  chain.Add("data/p250_e20_1000events_file7_LeptoAna_r10.root");
-  chain.Add("data/p250_e20_1000events_file8_LeptoAna_r10.root");
-  chain.Add("data/p250_e20_1000events_file9_LeptoAna_r10.root");
-  chain.Add("data/p250_e20_1000events_file10_LeptoAna_r10.root");
+  chain.Add("data/p250_e20_1000events_file1_LeptoAna_r05.root");
+  chain.Add("data/p250_e20_1000events_file2_LeptoAna_r05.root");
+  chain.Add("data/p250_e20_1000events_file3_LeptoAna_r05.root");
+  chain.Add("data/p250_e20_1000events_file4_LeptoAna_r05.root");
+  chain.Add("data/p250_e20_1000events_file5_LeptoAna_r05.root");
+  chain.Add("data/p250_e20_1000events_file6_LeptoAna_r05.root");
+  chain.Add("data/p250_e20_1000events_file7_LeptoAna_r05.root");
+  chain.Add("data/p250_e20_1000events_file8_LeptoAna_r05.root");
+  chain.Add("data/p250_e20_1000events_file9_LeptoAna_r05.root");
+  chain.Add("data/p250_e20_1000events_file10_LeptoAna_r05.root");
 
   /* particle selection */
   TCut select_true_uds("is_uds==1 && abs(uds_eta)<0.8");
@@ -36,21 +39,21 @@ int compare_observables()
   vector< float > plots_xmax;
 
   /* R_max */
-  observables.push_back( "tracks_rmax" );
+  observables.push_back( "tracks_rmax_r2" );
   observables_name.push_back( "R_{track}^{max}" );
   plots_ymax.push_back(0.2);
   plots_xmin.push_back(0);
   plots_xmax.push_back(1);
 
   /* Number of tracks */
-  observables.push_back( "tracks_count" );
+  observables.push_back( "tracks_count_r1" );
   observables_name.push_back( "N_{tracks}" );
   plots_ymax.push_back(0.8);
   plots_xmin.push_back(0);
   plots_xmax.push_back(10);
 
   /* Charge sum from tracks */
-  observables.push_back( "tracks_chargesum" );
+  observables.push_back( "tracks_chargesum_r1" );
   observables_name.push_back( "#Sigma q_{tracks}" );
   plots_ymax.push_back(0.8);
   plots_xmin.push_back(-5);
@@ -77,12 +80,19 @@ int compare_observables()
   plots_xmin.push_back(0);
   plots_xmax.push_back(1);
 
+  /* Jet eta */
+  observables.push_back( "jet_eta" );
+  observables_name.push_back( "#eta_{jet}" );
+  plots_ymax.push_back(0.1);
+  plots_xmin.push_back(-2);
+  plots_xmax.push_back(2);
+
   /* Jet mass */
-  //observables.push_back( "jet_mass" );
-  //observables_name.push_back( "Mass_{jet}" );
-  //plots_ymax.push_back(0.06);
-  //plots_xmin.push_back(0);
-  //plots_xmax.push_back(10);
+  observables.push_back( "jet_mass" );
+  observables_name.push_back( "Mass_{jet}" );
+  plots_ymax.push_back(0.1);
+  plots_xmin.push_back(0);
+  plots_xmax.push_back(10);
 
   /* Plot distributions */
   TString name_uds_base("h_uds_");
@@ -107,25 +117,30 @@ int compare_observables()
       h_uds->Scale(1./h_uds->Integral());
       h_uds->GetXaxis()->SetTitle( observables_name.at(i) );
       h_uds->GetYaxis()->SetRangeUser(0, plots_ymax.at(i) );
+      h_uds->SetLineColor(col1);
+      h_uds->SetFillColor(col1);
+      h_uds->SetFillStyle(1001);
 
       chain.Draw( observables.at(i) + " >> " + name_tau_i, select_true_tau, "");
       h_tau->Scale(1./h_tau->Integral());
-      h_tau->SetLineColor(kRed);
-      h_tau->SetFillColor(kRed);
-      h_tau->SetFillStyle(1001);
+      h_tau->SetLineColor(col2);
+      h_tau->SetFillColor(col2);
+      h_tau->SetFillStyle(0);
 
       /* create Canvas and draw histograms */
       TCanvas *c1 = new TCanvas();
 
       h_uds->DrawClone("");
       h_tau->DrawClone("sames");
-      h_uds->DrawClone("sames");
 
       gPad->RedrawAxis();
+
+      c1->Print( Form( "plots/compare_observables_%d.eps", i ) );
+      c1->Print( Form( "plots/compare_observables_%d.png", i ) );
     }
 
   /* test manual cuts */
-  TCut select_tau("tracks_chargesum == -1 && tracks_count == 3 && tracks_rmax < 0.25 && jetshape_radius < 0.2");
+  TCut select_tau("tracks_chargesum_r1 == -1 && tracks_count_r1 == 3 && tracks_rmax_r2 < 0.25 && jetshape_radius < 0.2");
 
   float n_true_uds = chain.GetEntries(select_true_uds);
   float n_true_tau = chain.GetEntries(select_true_tau);
