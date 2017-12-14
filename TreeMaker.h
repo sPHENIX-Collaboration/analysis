@@ -23,11 +23,11 @@ class TreeMaker: public SubsysReco
 
  private:
 
-  TFile *_f;
+  TFile *outfile;
 
-  TTree *_tree;
+  TTree *tree;
 
-  std::string _foutname;
+  std::string foutname;
 
   int b_tower_n;
   int b_tower_layer[10000];
