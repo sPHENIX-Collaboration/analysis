@@ -43,7 +43,7 @@ int run_macro(
   // HI part
 
   RetowerCEMC *rcemc = new RetowerCEMC();
-  rcemc->Verbosity( 1 );
+  rcemc->Verbosity( 0 );
   se->registerSubsystem( rcemc );
 
   JetReco *towerjetreco = new JetReco();
@@ -53,27 +53,27 @@ int run_macro(
   towerjetreco->add_algo(new FastJetAlgo(Jet::ANTIKT,0.2),"AntiKt_Tower_HIRecoSeedsRaw_r02");
   towerjetreco->set_algo_node("ANTIKT");
   towerjetreco->set_input_node("TOWER");
-  towerjetreco->Verbosity(10);
+  towerjetreco->Verbosity(0);
   se->registerSubsystem(towerjetreco);
 
   DetermineTowerBackground *dtb = new DetermineTowerBackground();
   dtb->SetBackgroundOutputName("TowerBackground_Sub1");
   dtb->SetSeedType( 0 );
-  dtb->Verbosity( 2 );
+  dtb->Verbosity( 0 );
   se->registerSubsystem( dtb );
 
   CopyAndSubtractJets *casj = new CopyAndSubtractJets();
-  casj->Verbosity( 1 );
+  casj->Verbosity( 0 );
   se->registerSubsystem( casj );
 
   DetermineTowerBackground *dtb2 = new DetermineTowerBackground();
   dtb2->SetBackgroundOutputName("TowerBackground_Sub2");
   dtb2->SetSeedType( 1 );
-  dtb2->Verbosity( 2 );
+  dtb2->Verbosity( 0 );
   se->registerSubsystem( dtb2 );
 
   SubtractTowers *st = new SubtractTowers();
-  st->Verbosity( 2 );
+  st->Verbosity( 0 );
   se->registerSubsystem( st );
 
   JetReco *towerjetreco = new JetReco();
@@ -86,7 +86,7 @@ int run_macro(
   towerjetreco->add_algo(new FastJetAlgoSub(Jet::ANTIKT,0.5,1),"AntiKt_Tower_r05_Sub1");
   towerjetreco->set_algo_node("ANTIKT");
   towerjetreco->set_input_node("TOWER");
-  towerjetreco->Verbosity( 2 );
+  towerjetreco->Verbosity( 0 );
   se->registerSubsystem(towerjetreco);
 
   TreeMaker *tt = new TreeMaker( outfile );
