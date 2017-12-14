@@ -32,6 +32,9 @@
 #include <jetbackground/TowerBackground.h>
 
 
+using std::cout;
+using std::endl;
+
 TreeMaker::TreeMaker(const std::string &name) : SubsysReco("TREEMAKER")
 {
   foutname = name;
@@ -81,15 +84,15 @@ int TreeMaker::Init(PHCompositeNode *topNode)
   tree->Branch("jet5_eta",b_jet5_eta,"jet5_eta[jet5_n]/F");
   tree->Branch("jet5_phi",b_jet5_phi,"jet5_phi[jet5_n]/F");
 
+  // tree->Branch("jet2seed_n", &b_jet2seed_n,"jet2seed_n/I");
+  // tree->Branch("jet2seed_pt", b_jet2seed_pt,"jet2seed_pt[jet2seed_n]/F");
+  // tree->Branch("jet2seed_eta",b_jet2seed_eta,"jet2seed_eta[jet2seed_n]/F");
+  // tree->Branch("jet2seed_phi",b_jet2seed_phi,"jet2seed_phi[jet2seed_n]/F");
+
   tree->Branch("jet2sub_n", &b_jet2sub_n,"jet2sub_n/I");
   tree->Branch("jet2sub_pt", b_jet2sub_pt,"jet2sub_pt[jet2sub_n]/F");
   tree->Branch("jet2sub_eta",b_jet2sub_eta,"jet2sub_eta[jet2sub_n]/F");
   tree->Branch("jet2sub_phi",b_jet2sub_phi,"jet2sub_phi[jet2sub_n]/F");
-
-  tree->Branch("jet2seed_n", &b_jet2seed_n,"jet2seed_n/I");
-  tree->Branch("jet2seed_pt", b_jet2seed_pt,"jet2seed_pt[jet2seed_n]/F");
-  tree->Branch("jet2seed_eta",b_jet2seed_eta,"jet2seed_eta[jet2seed_n]/F");
-  tree->Branch("jet2seed_phi",b_jet2seed_phi,"jet2seed_phi[jet2seed_n]/F");
 
   tree->Branch("jet3sub_n", &b_jet3sub_n,"jet3sub_n/I");
   tree->Branch("jet3sub_pt", b_jet3sub_pt,"jet3sub_pt[jet3sub_n]/F");
@@ -133,7 +136,7 @@ int TreeMaker::Init(PHCompositeNode *topNode)
 int TreeMaker::process_event(PHCompositeNode *topNode)
 {
 
-  std::cout << "DVP : at process_event, tree size is: " << tree->GetEntries() << std::endl;
+  //cout << "DVP : at process_event, tree size is: " << tree->GetEntries() << endl;
 
 
   b_tower_n = 0;
@@ -162,276 +165,300 @@ int TreeMaker::process_event(PHCompositeNode *topNode)
   bbkg_n = 0;
 
 
-  {
-    JetMap* truth_jets = findNode::getClass<JetMap>(topNode,"AntiKt_Truth_r02");
-    //std::cout << "R = 0.2 truth jets has size " << truth_jets->size() << std::endl;
 
-    for (JetMap::Iter iter = truth_jets->begin(); iter != truth_jets->end(); ++iter) {
+  // ------------------------------------------------------------------------------
+  // --- get truth jet information
+  // ------------------------------------------------------------------------------
+
+  JetMap* truth2_jets = findNode::getClass<JetMap>(topNode,"AntiKt_Truth_r02");
+  //cout << "R = 0.2 truth jets has size " << truth2_jets->size() << endl;
+  for (JetMap::Iter iter = truth2_jets->begin(); iter != truth2_jets->end(); ++iter)
+    {
       Jet* this_jet = iter->second;
-
       float this_pt = this_jet->get_pt();
       float this_phi = this_jet->get_phi();
       float this_eta = this_jet->get_eta();
-
       if (this_jet->get_pt() < 5 || fabs(this_eta) > 5) continue;
-
       b_truthjet2_pt[ b_truthjet2_n ] = this_pt;
       b_truthjet2_eta[ b_truthjet2_n ] = this_eta;
       b_truthjet2_phi[ b_truthjet2_n ] = this_phi;
-
-      std::cout << " truth R=0.2 jet # " << b_truthjet2_n << " pt / eta / phi / m = " << this_pt << " / " << this_eta << " / " << this_phi << std::endl;
-
+      //cout << " truth R=0.2 jet # " << b_truthjet2_n << " pt / eta / phi / m = " << this_pt << " / " << this_eta << " / " << this_phi << endl;
       b_truthjet2_n++;
-    }
+    } // loop over R = 0.2 truth jets
 
-  }
-
-  {
-    JetMap* truth_jets = findNode::getClass<JetMap>(topNode,"AntiKt_Truth_r03");
-    //std::cout << "R = 0.3 truth jets has size " << truth_jets->size() << std::endl;
-
-    for (JetMap::Iter iter = truth_jets->begin(); iter != truth_jets->end(); ++iter) {
-
+  JetMap* truth3_jets = findNode::getClass<JetMap>(topNode,"AntiKt_Truth_r03");
+  //cout << "R = 0.3 truth jets has size " << truth3_jets->size() << endl;
+  for (JetMap::Iter iter = truth3_jets->begin(); iter != truth3_jets->end(); ++iter)
+    {
       Jet* this_jet = iter->second;
-
       float this_pt = this_jet->get_pt();
       float this_phi = this_jet->get_phi();
       float this_eta = this_jet->get_eta();
-
       if (this_jet->get_pt() < 5 || fabs(this_eta) > 5) continue;
-
       b_truthjet3_pt[ b_truthjet3_n ] = this_pt;
       b_truthjet3_eta[ b_truthjet3_n ] = this_eta;
       b_truthjet3_phi[ b_truthjet3_n ] = this_phi;
-
-      std::cout << " truth R=0.3 jet # " << b_truthjet3_n << " pt / eta / phi / m = " << this_pt << " / " << this_eta << " / " << this_phi << std::endl;
-
+      //cout << " truth R=0.3 jet # " << b_truthjet3_n << " pt / eta / phi / m = " << this_pt << " / " << this_eta << " / " << this_phi << endl;
       b_truthjet3_n++;
-    }
+    } // loop over R = 0.3 truth jets
 
-  }
-
-  {
-    JetMap* truth_jets = findNode::getClass<JetMap>(topNode,"AntiKt_Truth_r04");
-    //std::cout << "R = 0.4 truth jets has size " << truth_jets->size() << std::endl;
-
-    for (JetMap::Iter iter = truth_jets->begin(); iter != truth_jets->end(); ++iter) {
+  JetMap* truth4_jets = findNode::getClass<JetMap>(topNode,"AntiKt_Truth_r04");
+  //cout << "R = 0.4 truth jets has size " << truth4_jets->size() << endl;
+  for (JetMap::Iter iter = truth4_jets->begin(); iter != truth4_jets->end(); ++iter)
+    {
       Jet* this_jet = iter->second;
-
       float this_pt = this_jet->get_pt();
       float this_phi = this_jet->get_phi();
       float this_eta = this_jet->get_eta();
-
       if (this_jet->get_pt() < 5 || fabs(this_eta) > 5) continue;
-
       b_truthjet4_pt[ b_truthjet4_n ] = this_pt;
       b_truthjet4_eta[ b_truthjet4_n ] = this_eta;
       b_truthjet4_phi[ b_truthjet4_n ] = this_phi;
-
-      std::cout << " truth R=0.4 jet # " << b_truthjet4_n << " pt / eta / phi / m = " << this_pt << " / " << this_eta << " / " << this_phi << std::endl;
-
+      //cout << " truth R=0.4 jet # " << b_truthjet4_n << " pt / eta / phi / m = " << this_pt << " / " << this_eta << " / " << this_phi << endl;
       b_truthjet4_n++;
-    }
-  }
+    } // loop over R = 0.4 truth jets
 
-  {
-    JetMap* reco2_jets = findNode::getClass<JetMap>(topNode,"AntiKt_Tower_HIRecoSeedsRaw_r02");
-    //std::cout << "reco jets R=0.2 has size " << reco2_jets->size() << std::endl;
-
-    for (JetMap::Iter iter = reco2_jets->begin(); iter != reco2_jets->end(); ++iter) {
+  JetMap* truth5_jets = findNode::getClass<JetMap>(topNode,"AntiKt_Truth_r05");
+  //cout << "R = 0.5 truth jets has size " << truth5_jets->size() << endl;
+  for (JetMap::Iter iter = truth5_jets->begin(); iter != truth5_jets->end(); ++iter)
+    {
       Jet* this_jet = iter->second;
-
       float this_pt = this_jet->get_pt();
       float this_phi = this_jet->get_phi();
       float this_eta = this_jet->get_eta();
-
       if (this_jet->get_pt() < 5 || fabs(this_eta) > 5) continue;
-
-      std::cout << " SeedRaw R=0.2 jet #" << b_jet2_n << ", pt / eta / phi = " << this_pt << " / " << this_eta << " / " << this_phi << std::endl;
-    }
-  }
-  {
-    JetMap* reco2_jets = findNode::getClass<JetMap>(topNode,"AntiKt_Tower_HIRecoSeedsSub_r02");
-    //std::cout << "reco jets R=0.2 has size " << reco2_jets->size() << std::endl;
-
-    for (JetMap::Iter iter = reco2_jets->begin(); iter != reco2_jets->end(); ++iter) {
-      Jet* this_jet = iter->second;
-
-      float this_pt = this_jet->get_pt();
-      float this_phi = this_jet->get_phi();
-      float this_eta = this_jet->get_eta();
-
-      b_jet2seed_pt[ b_jet2seed_n ] = this_pt;
-      b_jet2seed_eta[ b_jet2seed_n ] = this_eta;
-      b_jet2seed_phi[ b_jet2seed_n ] = this_phi;
-
-      if (this_jet->get_pt() < 5 || fabs(this_eta) > 5) continue;
-
-      std::cout << " SeedSub R=0.2 jet #" << b_jet2seed_n << ", pt / eta / phi = " << this_pt << " / " << this_eta << " / " << this_phi << std::endl;
-
-      b_jet2seed_n++;
-    }
-  }
-
-  {
-    JetMap* truth_jets = findNode::getClass<JetMap>(topNode,"AntiKt_Truth_r05");
-    //std::cout << "R = 0.4 truth jets has size " << truth_jets->size() << std::endl;
-
-    for (JetMap::Iter iter = truth_jets->begin(); iter != truth_jets->end(); ++iter) {
-      Jet* this_jet = iter->second;
-
-      float this_pt = this_jet->get_pt();
-      float this_phi = this_jet->get_phi();
-      float this_eta = this_jet->get_eta();
-
-      if (this_jet->get_pt() < 5 || fabs(this_eta) > 5) continue;
-
       b_truthjet5_pt[ b_truthjet5_n ] = this_pt;
       b_truthjet5_eta[ b_truthjet5_n ] = this_eta;
       b_truthjet5_phi[ b_truthjet5_n ] = this_phi;
-
-      std::cout << " truth R=0.5 jet # " << b_truthjet5_n << " pt / eta / phi / m = " << this_pt << " / " << this_eta << " / " << this_phi << std::endl;
-
+      //cout << " truth R=0.5 jet # " << b_truthjet5_n << " pt / eta / phi / m = " << this_pt << " / " << this_eta << " / " << this_phi << endl;
       b_truthjet5_n++;
-    }
-  }
+    } // loop over R = 0.5 truth jets
 
 
 
-  // now do subtracted collections
-  {
-    JetMap* reco4_jets = findNode::getClass<JetMap>(topNode,"AntiKt_Tower_r02_Sub1");
-    //std::cout << "reco jets R=0.4 has size " << reco4_jets->size() << std::endl;
+  // ------------------------------------------------------------------------------
+  // --- get jet seed information
+  // ------------------------------------------------------------------------------
 
-    for (JetMap::Iter iter = reco4_jets->begin(); iter != reco4_jets->end(); ++iter) {
+  // JetMap* seedraw_jets = findNode::getClass<JetMap>(topNode,"AntiKt_Tower_HIRecoSeedsRaw_r02");
+  // //cout << "reco jets R=0.2 has size " << seedraw_jets->size() << endl;
+  // for (JetMap::Iter iter = seedraw_jets->begin(); iter != seedraw_jets->end(); ++iter)
+  //   {
+  //     Jet* this_jet = iter->second;
+  //     float this_pt = this_jet->get_pt();
+  //     float this_phi = this_jet->get_phi();
+  //     float this_eta = this_jet->get_eta();
+  //     if (this_jet->get_pt() < 5 || fabs(this_eta) > 5) continue;
+  //     //cout << " SeedRaw R=0.2 jet #" << b_jet2_n << ", pt / eta / phi = " << this_pt << " / " << this_eta << " / " << this_phi << endl;
+  //   }
+
+  // JetMap* seedsub_jets = findNode::getClass<JetMap>(topNode,"AntiKt_Tower_HIRecoSeedsSub_r02");
+  // //cout << "reco jets R=0.2 has size " << seedsub_jets->size() << endl;
+  // for (JetMap::Iter iter = seedsub_jets->begin(); iter != seedsub_jets->end(); ++iter)
+  //   {
+  //     Jet* this_jet = iter->second;
+  //     float this_pt = this_jet->get_pt();
+  //     float this_phi = this_jet->get_phi();
+  //     float this_eta = this_jet->get_eta();
+  //     b_jet2seed_pt[ b_jet2seed_n ] = this_pt;
+  //     b_jet2seed_eta[ b_jet2seed_n ] = this_eta;
+  //     b_jet2seed_phi[ b_jet2seed_n ] = this_phi;
+  //     if (this_jet->get_pt() < 5 || fabs(this_eta) > 5) continue;
+  //     //cout << " SeedSub R=0.2 jet #" << b_jet2seed_n << ", pt / eta / phi = " << this_pt << " / " << this_eta << " / " << this_phi << endl;
+  //     b_jet2seed_n++;
+  //   }
+
+
+
+  // ------------------------------------------------------------------------------
+  // --- get reconstructed jet information (no subtraction)
+  // ------------------------------------------------------------------------------
+
+  // JetMap* nsreco2_jets = findNode::getClass<JetMap>(topNode,"AntiKt_Tower_r02");
+  // //cout << "reco jets R=0.2 has size " << nsreco2_jets->size() << endl;
+  // for (JetMap::Iter iter = nsreco2_jets->begin(); iter != nsreco2_jets->end(); ++iter)
+  //   {
+  //     Jet* this_jet = iter->second;
+  //     float this_pt = this_jet->get_pt();
+  //     float this_phi = this_jet->get_phi();
+  //     float this_eta = this_jet->get_eta();
+  //     if (this_jet->get_pt() < 10 || fabs(this_eta) > 5) continue; // stricter pt cut for unsubtracted
+  //     b_jet2_pt[ b_jet2_n ] = this_pt;
+  //     b_jet2_eta[ b_jet2_n ] = this_eta;
+  //     b_jet2_phi[ b_jet2_n ] = this_phi;
+  //     //cout << " pp reco R=0.2 jet #" << b_jet2_n << ", pt / eta / phi = " << this_pt << " / " << this_eta << " / " << this_phi << endl;
+  //     b_jet2_n++;
+  //   } // loop over R=0.2 jets
+
+  // JetMap* nsreco3_jets = findNode::getClass<JetMap>(topNode,"AntiKt_Tower_r02");
+  // //cout << "reco jets R=0.3 has size " << nsreco3_jets->size() << endl;
+  // for (JetMap::Iter iter = nsreco3_jets->begin(); iter != nsreco3_jets->end(); ++iter)
+  //   {
+  //     Jet* this_jet = iter->second;
+  //     float this_pt = this_jet->get_pt();
+  //     float this_phi = this_jet->get_phi();
+  //     float this_eta = this_jet->get_eta();
+  //     if (this_jet->get_pt() < 10 || fabs(this_eta) > 5) continue; // stricter pt cut for unsubtracted
+  //     b_jet2_pt[ b_jet2_n ] = this_pt;
+  //     b_jet2_eta[ b_jet2_n ] = this_eta;
+  //     b_jet2_phi[ b_jet2_n ] = this_phi;
+  //     //cout << " pp reco R=0.3 jet #" << b_jet2_n << ", pt / eta / phi = " << this_pt << " / " << this_eta << " / " << this_phi << endl;
+  //     b_jet2_n++;
+  //   } // loop over R=0.3 jets
+
+  // JetMap* nsreco4_jets = findNode::getClass<JetMap>(topNode,"AntiKt_Tower_r02");
+  // //cout << "reco jets R=0.4 has size " << nsreco4_jets->size() << endl;
+  // for (JetMap::Iter iter = nsreco4_jets->begin(); iter != nsreco4_jets->end(); ++iter)
+  //   {
+  //     Jet* this_jet = iter->second;
+  //     float this_pt = this_jet->get_pt();
+  //     float this_phi = this_jet->get_phi();
+  //     float this_eta = this_jet->get_eta();
+  //     if (this_jet->get_pt() < 10 || fabs(this_eta) > 5) continue; // stricter pt cut for unsubtracted
+  //     b_jet2_pt[ b_jet2_n ] = this_pt;
+  //     b_jet2_eta[ b_jet2_n ] = this_eta;
+  //     b_jet2_phi[ b_jet2_n ] = this_phi;
+  //     //cout << " pp reco R=0.4 jet #" << b_jet2_n << ", pt / eta / phi = " << this_pt << " / " << this_eta << " / " << this_phi << endl;
+  //     b_jet2_n++;
+  //   } // loop over R=0.4 jets
+
+  // JetMap* nsreco5_jets = findNode::getClass<JetMap>(topNode,"AntiKt_Tower_r02");
+  // //cout << "reco jets R=0.5 has size " << nsreco5_jets->size() << endl;
+  // for (JetMap::Iter iter = nsreco5_jets->begin(); iter != nsreco5_jets->end(); ++iter)
+  //   {
+  //     Jet* this_jet = iter->second;
+  //     float this_pt = this_jet->get_pt();
+  //     float this_phi = this_jet->get_phi();
+  //     float this_eta = this_jet->get_eta();
+  //     if (this_jet->get_pt() < 10 || fabs(this_eta) > 5) continue; // stricter pt cut for unsubtracted
+  //     b_jet2_pt[ b_jet2_n ] = this_pt;
+  //     b_jet2_eta[ b_jet2_n ] = this_eta;
+  //     b_jet2_phi[ b_jet2_n ] = this_phi;
+  //     //cout << " pp reco R=0.2 jet #" << b_jet2_n << ", pt / eta / phi = " << this_pt << " / " << this_eta << " / " << this_phi << endl;
+  //     b_jet2_n++;
+  //   } // loop over R=0.5 jets
+
+
+
+  // ------------------------------------------------------------------------------
+  // --- get reconstructed jet information (with subtraction)
+  // ------------------------------------------------------------------------------
+
+  JetMap* reco2_jets = findNode::getClass<JetMap>(topNode,"AntiKt_Tower_r02_Sub1");
+  //cout << "reco jets R=0.4 has size " << reco2_jets->size() << endl;
+  for (JetMap::Iter iter = reco2_jets->begin(); iter != reco2_jets->end(); ++iter)
+    {
       Jet* this_jet = iter->second;
-
       float this_pt = this_jet->get_pt();
       float this_phi = this_jet->get_phi();
       float this_eta = this_jet->get_eta();
-
       if (this_jet->get_pt() < 5 || fabs(this_eta) > 5) continue;
-
       b_jet2sub_pt[ b_jet2sub_n ] = this_pt;
       b_jet2sub_eta[ b_jet2sub_n ] = this_eta;
       b_jet2sub_phi[ b_jet2sub_n ] = this_phi;
-
-      std::cout << " reco R=0.2 jet (Sub1) #" << b_jet2sub_n << ", pt / eta / phi = " << this_pt << " / " << this_eta << " / " << this_phi << std::endl;
-
+      //cout << " reco R=0.2 jet (Sub1) #" << b_jet2sub_n << ", pt / eta / phi = " << this_pt << " / " << this_eta << " / " << this_phi << endl;
       b_jet2sub_n++;
-    }
-  }
+    } // loop over R=0.2 reco jets
 
-  // now do subtracted collections
-  {
-    JetMap* reco4_jets = findNode::getClass<JetMap>(topNode,"AntiKt_Tower_r03_Sub1");
-    //std::cout << "reco jets R=0.4 has size " << reco4_jets->size() << std::endl;
-
-    for (JetMap::Iter iter = reco4_jets->begin(); iter != reco4_jets->end(); ++iter) {
+  JetMap* reco3_jets = findNode::getClass<JetMap>(topNode,"AntiKt_Tower_r03_Sub1");
+  //cout << "reco jets R=0.4 has size " << reco3_jets->size() << endl;
+  for (JetMap::Iter iter = reco3_jets->begin(); iter != reco3_jets->end(); ++iter)
+    {
       Jet* this_jet = iter->second;
-
       float this_pt = this_jet->get_pt();
       float this_phi = this_jet->get_phi();
       float this_eta = this_jet->get_eta();
-
       if (this_jet->get_pt() < 5 || fabs(this_eta) > 5) continue;
-
       b_jet3sub_pt[ b_jet3sub_n ] = this_pt;
       b_jet3sub_eta[ b_jet3sub_n ] = this_eta;
       b_jet3sub_phi[ b_jet3sub_n ] = this_phi;
-
-      std::cout << " reco R=0.3 jet (Sub1) #" << b_jet3sub_n << ", pt / eta / phi = " << this_pt << " / " << this_eta << " / " << this_phi << std::endl;
-
+      //cout << " reco R=0.3 jet (Sub1) #" << b_jet3sub_n << ", pt / eta / phi = " << this_pt << " / " << this_eta << " / " << this_phi << endl;
       b_jet3sub_n++;
-    }
-  }
+    } // loop over R=0.3 reco jets
 
-  // now do subtracted collections
-  {
-    JetMap* reco4_jets = findNode::getClass<JetMap>(topNode,"AntiKt_Tower_r04_Sub1");
-    //std::cout << "reco jets R=0.4 has size " << reco4_jets->size() << std::endl;
-
-    for (JetMap::Iter iter = reco4_jets->begin(); iter != reco4_jets->end(); ++iter) {
+  JetMap* reco4_jets = findNode::getClass<JetMap>(topNode,"AntiKt_Tower_r04_Sub1");
+  //cout << "reco jets R=0.4 has size " << reco4_jets->size() << endl;
+  for (JetMap::Iter iter = reco4_jets->begin(); iter != reco4_jets->end(); ++iter)
+    {
       Jet* this_jet = iter->second;
-
       float this_pt = this_jet->get_pt();
       float this_phi = this_jet->get_phi();
       float this_eta = this_jet->get_eta();
-
       if (this_jet->get_pt() < 5 || fabs(this_eta) > 5) continue;
-
       b_jet4sub_pt[ b_jet4sub_n ] = this_pt;
       b_jet4sub_eta[ b_jet4sub_n ] = this_eta;
       b_jet4sub_phi[ b_jet4sub_n ] = this_phi;
-
-      std::cout << " reco R=0.4 jet (Sub1) #" << b_jet4sub_n << ", pt / eta / phi = " << this_pt << " / " << this_eta << " / " << this_phi << std::endl;
-
+      //cout << " reco R=0.4 jet (Sub1) #" << b_jet4sub_n << ", pt / eta / phi = " << this_pt << " / " << this_eta << " / " << this_phi << endl;
       b_jet4sub_n++;
-    }
-  }
+    } // loop over R=0.4 reco jets
 
-
-  {
-    JetMap* reco5_jets = findNode::getClass<JetMap>(topNode,"AntiKt_Tower_r05_Sub1");
-    //std::cout << "reco jets R=0.4 has size " << reco4_jets->size() << std::endl;
-
-    for (JetMap::Iter iter = reco5_jets->begin(); iter != reco5_jets->end(); ++iter) {
+  JetMap* reco5_jets = findNode::getClass<JetMap>(topNode,"AntiKt_Tower_r05_Sub1");
+  //cout << "reco jets R=0.4 has size " << reco4_jets->size() << endl;
+  for (JetMap::Iter iter = reco5_jets->begin(); iter != reco5_jets->end(); ++iter)
+    {
       Jet* this_jet = iter->second;
-
       float this_pt = this_jet->get_pt();
       float this_phi = this_jet->get_phi();
       float this_eta = this_jet->get_eta();
-
       if (this_jet->get_pt() < 5 || fabs(this_eta) > 5) continue;
-
       b_jet5sub_pt[ b_jet5sub_n ] = this_pt;
       b_jet5sub_eta[ b_jet5sub_n ] = this_eta;
       b_jet5sub_phi[ b_jet5sub_n ] = this_phi;
-
-      std::cout << " reco R=0.5 jet (Sub1) #" << b_jet5sub_n << ", pt / eta / phi = " << this_pt << " / " << this_eta << " / " << this_phi << std::endl;
-
+      //cout << " reco R=0.5 jet (Sub1) #" << b_jet5sub_n << ", pt / eta / phi = " << this_pt << " / " << this_eta << " / " << this_phi << endl;
       b_jet5sub_n++;
-    }
-  }
+    } // loop over R=0.5 jets
 
 
-  b_cluster_n = 0;
+
+  b_cluster_n = 0; // used only here
+
+  b_particle_n = 0; // used only here
 
 
-  b_particle_n = 0;
+
+
+
+  // -----------------------------------------------------------------------------------------------------
+  // --- tower background part
+  // -----------------------------------------------------------------------------------------------------
 
 
 
   TowerBackground* towerbackground1 = findNode::getClass<TowerBackground>(topNode,"TowerBackground_Sub1");
-  std::cout << "TowerBackground_Sub1" << std::endl;
-  //towerbackground->identify();
-
-  TowerBackground* towerbackground2 = findNode::getClass<TowerBackground>(topNode,"TowerBackground_Sub2");
-  std::cout << "TowerBackground_Sub2" << std::endl;
-  //towerbackground2->identify();
-
+  //cout << "TowerBackground_Sub1" << endl;
   bbkg_n = 0;
-  bbkg2_n = 0;
-
-  for (int layer = 0; layer < 3; layer++) {
-    for (unsigned int n = 0; n < towerbackground1->get_UE( layer ).size(); n++) {
+  for (int layer = 0; layer < 3; layer++)
+  {
+    for (unsigned int n = 0; n < towerbackground1->get_UE( layer ).size(); n++)
+    {
       bbkg_layer[ bbkg_n ] = layer;
       bbkg_eta[ bbkg_n ] = n;
       bbkg_E[ bbkg_n ] =  towerbackground1->get_UE( layer ).at( n );
-
       bbkg_n++;
-    }
-  }
+    } // loop over size of tower background
+  } // loop over calorimeter layers
 
-  for (int layer = 0; layer < 3; layer++) {
-    for (unsigned int n = 0; n < towerbackground2->get_UE( layer ).size(); n++) {
+
+
+  TowerBackground* towerbackground2 = findNode::getClass<TowerBackground>(topNode,"TowerBackground_Sub2");
+  //cout << "TowerBackground_Sub2" << endl;
+  bbkg2_n = 0;
+  for (int layer = 0; layer < 3; layer++)
+  {
+    for (unsigned int n = 0; n < towerbackground2->get_UE( layer ).size(); n++)
+    {
       bbkg2_layer[ bbkg2_n ] = layer;
       bbkg2_eta[ bbkg2_n ] = n;
       bbkg2_E[ bbkg2_n ] =  towerbackground2->get_UE( layer ).at( n );
-
       bbkg2_n++;
-    }
-  }
+    } // loop over size of tower background
+  } // loop over calorimeter layers
+
+
+
+  // -----------------------------------------------------------------------------------------------------
+  // --- all done!  fill the tree and move on to the next event
+  // -----------------------------------------------------------------------------------------------------
 
   tree->Fill();
 
@@ -442,10 +469,9 @@ int TreeMaker::process_event(PHCompositeNode *topNode)
 
 int TreeMaker::End(PHCompositeNode *topNode)
 {
-
   outfile->Write();
   outfile->Close();
-
+  cout << "All done!  Have a nice day!" << endl;
   return 0;
 }
 
