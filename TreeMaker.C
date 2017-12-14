@@ -1,38 +1,42 @@
-#include "TreeMaker.h"
-
-#include <phool/getClass.h>
-#include <fun4all/Fun4AllServer.h>
-
-#include <phool/PHCompositeNode.h>
-
-#include "TLorentzVector.h"
 #include <iostream>
 
+// --- header for this clase
+#include <TreeMaker.h>
+
+// --- basic sPhenix environment stuff
+#include <fun4all/Fun4AllServer.h>
+#include <phool/getClass.h>
+#include <phool/PHCompositeNode.h>
+
+// --- trigger
 #include <calotrigger/CaloTriggerInfo.h>
 
-#include <g4cemc/RawClusterContainer.h>
-#include <g4cemc/RawCluster.h>
+// --- truth information
+#include <g4main/PHG4TruthInfoContainer.h>
+#include <g4main/PHG4Particle.h>
 
+// --- calorimeter towers
 #include <g4cemc/RawTowerGeom.h>
 #include <g4cemc/RawTower.h>
 #include <g4cemc/RawTowerContainer.h>
 #include <g4cemc/RawTowerGeomContainer_Cylinderv1.h>
 #include <g4cemc/RawTowerGeomContainer.h>
+// --- calorimeter clusters
+#include <g4cemc/RawClusterContainer.h>
+#include <g4cemc/RawCluster.h>
 
+// --- jet specific stuff
+#include <TLorentzVector.h>
 #include <g4jets/JetMap.h>
 #include <g4jets/Jet.h>
-
-#include <g4main/PHG4TruthInfoContainer.h>
-#include <g4main/PHG4Particle.h>
-
 #include <jetbackground/TowerBackground.h>
+
 
 TreeMaker::TreeMaker(const std::string &name) : SubsysReco("TRIGGERTEST")
 {
-
   foutname = name;
-
 }
+
 
 int TreeMaker::Init(PHCompositeNode *topNode)
 {
