@@ -9,21 +9,21 @@
 #include <phool/PHCompositeNode.h>
 
 // --- trigger
-#include <calotrigger/CaloTriggerInfo.h>
+//#include <calotrigger/CaloTriggerInfo.h>
 
 // --- truth information
-#include <g4main/PHG4TruthInfoContainer.h>
-#include <g4main/PHG4Particle.h>
+//#include <g4main/PHG4TruthInfoContainer.h>
+//#include <g4main/PHG4Particle.h>
 
 // --- calorimeter towers
-#include <g4cemc/RawTowerGeom.h>
-#include <g4cemc/RawTower.h>
-#include <g4cemc/RawTowerContainer.h>
-#include <g4cemc/RawTowerGeomContainer_Cylinderv1.h>
-#include <g4cemc/RawTowerGeomContainer.h>
+//#include <g4cemc/RawTowerGeom.h>
+//#include <g4cemc/RawTower.h>
+//#include <g4cemc/RawTowerContainer.h>
+//#include <g4cemc/RawTowerGeomContainer_Cylinderv1.h>
+//#include <g4cemc/RawTowerGeomContainer.h>
 // --- calorimeter clusters
-#include <g4cemc/RawClusterContainer.h>
-#include <g4cemc/RawCluster.h>
+//#include <g4cemc/RawClusterContainer.h>
+//#include <g4cemc/RawCluster.h>
 
 // --- jet specific stuff
 #include <TLorentzVector.h>
@@ -32,7 +32,7 @@
 #include <jetbackground/TowerBackground.h>
 
 
-TreeMaker::TreeMaker(const std::string &name) : SubsysReco("TRIGGERTEST")
+TreeMaker::TreeMaker(const std::string &name) : SubsysReco("TREEMAKER")
 {
   foutname = name;
 }

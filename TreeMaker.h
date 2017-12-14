@@ -1,5 +1,5 @@
-#ifndef __TRUTHJETTRIGGER_H__
-#define __TRUTHJETTRIGGER_H__
+#ifndef __TREEMAKER_H__
+#define __TREEMAKER_H__
 
 // --- need to check all these includes...
 #include <fun4all/SubsysReco.h>
@@ -154,4 +154,4 @@ class TreeMaker: public SubsysReco
 
 };
 
-#endif // __TRUTHJETTRIGGER_H__
+#endif // __TREEMAKER_H__
