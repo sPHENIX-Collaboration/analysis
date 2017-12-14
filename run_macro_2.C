@@ -1,9 +1,9 @@
-int run_macro_2( 
-	      std::string infile = "../../jet-devel-dec-17-dev/macros/macros/g4simulations/G4sPHENIX.root",
-	      std::string outfile = "test.root"
-	       )
+int run_macro_2(
+                std::string infile = "G4sPHENIX_2.root",
+                std::string outfile = "test.root"
+                )
 {
-  
+
   gSystem->Load("libfun4all.so");
   gSystem->Load("libg4detectors.so");
   gSystem->Load("libphhepmc.so");

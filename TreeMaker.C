@@ -39,7 +39,7 @@ int TreeMaker::Init(PHCompositeNode *topNode)
 
   _f = new TFile( _foutname.c_str(), "RECREATE");
 
-  _tree = new TTree("ttree","a succulent orange tree");
+  _tree = new TTree("ttree","sequoia");
 
   /*
   _tree->Branch("tower_total_0",&_b_tower_total_0, "tower_total_0/F");
@@ -394,22 +394,22 @@ int TreeMaker::process_event(PHCompositeNode *topNode)
   {
     JetMap* truth_jets = findNode::getClass<JetMap>(topNode,"AntiKt_Truth_r02");
     //std::cout << "R = 0.2 truth jets has size " << truth_jets->size() << std::endl;
-    
+
     for (JetMap::Iter iter = truth_jets->begin(); iter != truth_jets->end(); ++iter) {
       Jet* this_jet = iter->second;
-    
+
       float this_pt = this_jet->get_pt();
       float this_phi = this_jet->get_phi();
       float this_eta = this_jet->get_eta();
-      
+
       if (this_jet->get_pt() < 5 || fabs(this_eta) > 5) continue;
-      
+
       _b_truthjet2_pt[ _b_truthjet2_n ] = this_pt;
       _b_truthjet2_eta[ _b_truthjet2_n ] = this_eta;
       _b_truthjet2_phi[ _b_truthjet2_n ] = this_phi;
-      
+
       std::cout << " truth R=0.2 jet # " << _b_truthjet2_n << " pt / eta / phi / m = " << this_pt << " / " << this_eta << " / " << this_phi << std::endl;
-      
+
       _b_truthjet2_n++;
     }
 
@@ -418,21 +418,21 @@ int TreeMaker::process_event(PHCompositeNode *topNode)
   {
     JetMap* truth_jets = findNode::getClass<JetMap>(topNode,"AntiKt_Truth_r03");
     //std::cout << "R = 0.3 truth jets has size " << truth_jets->size() << std::endl;
-    
+
     for (JetMap::Iter iter = truth_jets->begin(); iter != truth_jets->end(); ++iter) {
 
       Jet* this_jet = iter->second;
-    
+
       float this_pt = this_jet->get_pt();
       float this_phi = this_jet->get_phi();
       float this_eta = this_jet->get_eta();
-      
+
       if (this_jet->get_pt() < 5 || fabs(this_eta) > 5) continue;
-      
+
       _b_truthjet3_pt[ _b_truthjet3_n ] = this_pt;
       _b_truthjet3_eta[ _b_truthjet3_n ] = this_eta;
       _b_truthjet3_phi[ _b_truthjet3_n ] = this_phi;
-      
+
       std::cout << " truth R=0.3 jet # " << _b_truthjet3_n << " pt / eta / phi / m = " << this_pt << " / " << this_eta << " / " << this_phi << std::endl;
 
       _b_truthjet3_n++;
@@ -443,25 +443,25 @@ int TreeMaker::process_event(PHCompositeNode *topNode)
   {
     JetMap* truth_jets = findNode::getClass<JetMap>(topNode,"AntiKt_Truth_r04");
     //std::cout << "R = 0.4 truth jets has size " << truth_jets->size() << std::endl;
-    
+
     for (JetMap::Iter iter = truth_jets->begin(); iter != truth_jets->end(); ++iter) {
       Jet* this_jet = iter->second;
-    
+
       float this_pt = this_jet->get_pt();
       float this_phi = this_jet->get_phi();
       float this_eta = this_jet->get_eta();
-      
+
       if (this_jet->get_pt() < 5 || fabs(this_eta) > 5) continue;
-      
+
       _b_truthjet4_pt[ _b_truthjet4_n ] = this_pt;
       _b_truthjet4_eta[ _b_truthjet4_n ] = this_eta;
       _b_truthjet4_phi[ _b_truthjet4_n ] = this_phi;
-      
+
       std::cout << " truth R=0.4 jet # " << _b_truthjet4_n << " pt / eta / phi / m = " << this_pt << " / " << this_eta << " / " << this_phi << std::endl;
 
       _b_truthjet4_n++;
     }
-  }    
+  }
 
   {
     JetMap* reco2_jets = findNode::getClass<JetMap>(topNode,"AntiKt_Tower_HIRecoSeedsRaw_r02");
@@ -469,11 +469,11 @@ int TreeMaker::process_event(PHCompositeNode *topNode)
 
     for (JetMap::Iter iter = reco2_jets->begin(); iter != reco2_jets->end(); ++iter) {
       Jet* this_jet = iter->second;
-      
+
       float this_pt = this_jet->get_pt();
       float this_phi = this_jet->get_phi();
       float this_eta = this_jet->get_eta();
-      
+
       if (this_jet->get_pt() < 5 || fabs(this_eta) > 5) continue;
 
       std::cout << " SeedRaw R=0.2 jet #" << _b_jet2_n << ", pt / eta / phi = " << this_pt << " / " << this_eta << " / " << this_phi << std::endl;
@@ -485,11 +485,11 @@ int TreeMaker::process_event(PHCompositeNode *topNode)
 
     for (JetMap::Iter iter = reco2_jets->begin(); iter != reco2_jets->end(); ++iter) {
       Jet* this_jet = iter->second;
-      
+
       float this_pt = this_jet->get_pt();
       float this_phi = this_jet->get_phi();
       float this_eta = this_jet->get_eta();
-      
+
       _b_jet2seed_pt[ _b_jet2seed_n ] = this_pt;
       _b_jet2seed_eta[ _b_jet2seed_n ] = this_eta;
       _b_jet2seed_phi[ _b_jet2seed_n ] = this_phi;
@@ -505,25 +505,25 @@ int TreeMaker::process_event(PHCompositeNode *topNode)
   {
     JetMap* truth_jets = findNode::getClass<JetMap>(topNode,"AntiKt_Truth_r05");
     //std::cout << "R = 0.4 truth jets has size " << truth_jets->size() << std::endl;
-    
+
     for (JetMap::Iter iter = truth_jets->begin(); iter != truth_jets->end(); ++iter) {
       Jet* this_jet = iter->second;
-    
+
       float this_pt = this_jet->get_pt();
       float this_phi = this_jet->get_phi();
       float this_eta = this_jet->get_eta();
-      
+
       if (this_jet->get_pt() < 5 || fabs(this_eta) > 5) continue;
-      
+
       _b_truthjet5_pt[ _b_truthjet5_n ] = this_pt;
       _b_truthjet5_eta[ _b_truthjet5_n ] = this_eta;
       _b_truthjet5_phi[ _b_truthjet5_n ] = this_phi;
-      
+
       std::cout << " truth R=0.5 jet # " << _b_truthjet5_n << " pt / eta / phi / m = " << this_pt << " / " << this_eta << " / " << this_phi << std::endl;
 
       _b_truthjet5_n++;
     }
-  }    
+  }
 
   /*
   {
@@ -532,19 +532,19 @@ int TreeMaker::process_event(PHCompositeNode *topNode)
 
     for (JetMap::Iter iter = reco2_jets->begin(); iter != reco2_jets->end(); ++iter) {
       Jet* this_jet = iter->second;
-      
+
       float this_pt = this_jet->get_pt();
       float this_phi = this_jet->get_phi();
       float this_eta = this_jet->get_eta();
-      
+
       if (this_jet->get_pt() < 10 || fabs(this_eta) > 5) continue;
-      
+
       _b_jet2_pt[ _b_jet2_n ] = this_pt;
       _b_jet2_eta[ _b_jet2_n ] = this_eta;
       _b_jet2_phi[ _b_jet2_n ] = this_phi;
 
       std::cout << " pp reco R=0.2 jet #" << _b_jet2_n << ", pt / eta / phi = " << this_pt << " / " << this_eta << " / " << this_phi << std::endl;
-      
+
       _b_jet2_n++;
     }
   }
@@ -555,19 +555,19 @@ int TreeMaker::process_event(PHCompositeNode *topNode)
 
     for (JetMap::Iter iter = reco3_jets->begin(); iter != reco3_jets->end(); ++iter) {
       Jet* this_jet = iter->second;
-      
+
       float this_pt = this_jet->get_pt();
       float this_phi = this_jet->get_phi();
       float this_eta = this_jet->get_eta();
-      
+
       if (this_jet->get_pt() < 10 || fabs(this_eta) > 5) continue;
-      
+
       _b_jet3_pt[ _b_jet3_n ] = this_pt;
       _b_jet3_eta[ _b_jet3_n ] = this_eta;
       _b_jet3_phi[ _b_jet3_n ] = this_phi;
 
       std::cout << " reco R=0.3 jet #" << _b_jet3_n << ", pt / eta / phi = " << this_pt << " / " << this_eta << " / " << this_phi << std::endl;
-      
+
       _b_jet3_n++;
     }
   }
@@ -578,19 +578,19 @@ int TreeMaker::process_event(PHCompositeNode *topNode)
 
     for (JetMap::Iter iter = reco4_jets->begin(); iter != reco4_jets->end(); ++iter) {
       Jet* this_jet = iter->second;
-      
+
       float this_pt = this_jet->get_pt();
       float this_phi = this_jet->get_phi();
       float this_eta = this_jet->get_eta();
-      
+
       if (this_jet->get_pt() < 10 || fabs(this_eta) > 5) continue;
-      
+
       _b_jet4_pt[ _b_jet4_n ] = this_pt;
       _b_jet4_eta[ _b_jet4_n ] = this_eta;
       _b_jet4_phi[ _b_jet4_n ] = this_phi;
 
       std::cout << " pp reco R=0.4 jet #" << _b_jet4_n << ", pt / eta / phi = " << this_pt << " / " << this_eta << " / " << this_phi << std::endl;
-      
+
       _b_jet4_n++;
     }
   }
@@ -603,19 +603,19 @@ int TreeMaker::process_event(PHCompositeNode *topNode)
 
     for (JetMap::Iter iter = reco4_jets->begin(); iter != reco4_jets->end(); ++iter) {
       Jet* this_jet = iter->second;
-      
+
       float this_pt = this_jet->get_pt();
       float this_phi = this_jet->get_phi();
       float this_eta = this_jet->get_eta();
-      
+
       if (this_jet->get_pt() < 10 || fabs(this_eta) > 5) continue;
-      
+
       _b_jet5_pt[ _b_jet5_n ] = this_pt;
       _b_jet5_eta[ _b_jet5_n ] = this_eta;
       _b_jet5_phi[ _b_jet5_n ] = this_phi;
 
       std::cout << " reco R=0.5 jet #" << _b_jet5_n << ", pt / eta / phi = " << this_pt << " / " << this_eta << " / " << this_phi << std::endl;
-      
+
       _b_jet5_n++;
     }
   }
@@ -629,19 +629,19 @@ int TreeMaker::process_event(PHCompositeNode *topNode)
 
     for (JetMap::Iter iter = reco4_jets->begin(); iter != reco4_jets->end(); ++iter) {
       Jet* this_jet = iter->second;
-      
+
       float this_pt = this_jet->get_pt();
       float this_phi = this_jet->get_phi();
       float this_eta = this_jet->get_eta();
-      
+
       if (this_jet->get_pt() < 5 || fabs(this_eta) > 5) continue;
-      
+
       _b_jet2sub_pt[ _b_jet2sub_n ] = this_pt;
       _b_jet2sub_eta[ _b_jet2sub_n ] = this_eta;
       _b_jet2sub_phi[ _b_jet2sub_n ] = this_phi;
 
       std::cout << " reco R=0.2 jet (Sub1) #" << _b_jet2sub_n << ", pt / eta / phi = " << this_pt << " / " << this_eta << " / " << this_phi << std::endl;
-      
+
       _b_jet2sub_n++;
     }
   }
@@ -653,19 +653,19 @@ int TreeMaker::process_event(PHCompositeNode *topNode)
 
     for (JetMap::Iter iter = reco4_jets->begin(); iter != reco4_jets->end(); ++iter) {
       Jet* this_jet = iter->second;
-      
+
       float this_pt = this_jet->get_pt();
       float this_phi = this_jet->get_phi();
       float this_eta = this_jet->get_eta();
-      
+
       if (this_jet->get_pt() < 5 || fabs(this_eta) > 5) continue;
-      
+
       _b_jet3sub_pt[ _b_jet3sub_n ] = this_pt;
       _b_jet3sub_eta[ _b_jet3sub_n ] = this_eta;
       _b_jet3sub_phi[ _b_jet3sub_n ] = this_phi;
 
       std::cout << " reco R=0.3 jet (Sub1) #" << _b_jet3sub_n << ", pt / eta / phi = " << this_pt << " / " << this_eta << " / " << this_phi << std::endl;
-      
+
       _b_jet3sub_n++;
     }
   }
@@ -677,19 +677,19 @@ int TreeMaker::process_event(PHCompositeNode *topNode)
 
     for (JetMap::Iter iter = reco4_jets->begin(); iter != reco4_jets->end(); ++iter) {
       Jet* this_jet = iter->second;
-      
+
       float this_pt = this_jet->get_pt();
       float this_phi = this_jet->get_phi();
       float this_eta = this_jet->get_eta();
-      
+
       if (this_jet->get_pt() < 5 || fabs(this_eta) > 5) continue;
-      
+
       _b_jet4sub_pt[ _b_jet4sub_n ] = this_pt;
       _b_jet4sub_eta[ _b_jet4sub_n ] = this_eta;
       _b_jet4sub_phi[ _b_jet4sub_n ] = this_phi;
 
       std::cout << " reco R=0.4 jet (Sub1) #" << _b_jet4sub_n << ", pt / eta / phi = " << this_pt << " / " << this_eta << " / " << this_phi << std::endl;
-      
+
       _b_jet4sub_n++;
     }
   }
@@ -701,19 +701,19 @@ int TreeMaker::process_event(PHCompositeNode *topNode)
 
     for (JetMap::Iter iter = reco5_jets->begin(); iter != reco5_jets->end(); ++iter) {
       Jet* this_jet = iter->second;
-      
+
       float this_pt = this_jet->get_pt();
       float this_phi = this_jet->get_phi();
       float this_eta = this_jet->get_eta();
-      
+
       if (this_jet->get_pt() < 5 || fabs(this_eta) > 5) continue;
-      
+
       _b_jet5sub_pt[ _b_jet5sub_n ] = this_pt;
       _b_jet5sub_eta[ _b_jet5sub_n ] = this_eta;
       _b_jet5sub_phi[ _b_jet5sub_n ] = this_phi;
 
       std::cout << " reco R=0.5 jet (Sub1) #" << _b_jet5sub_n << ", pt / eta / phi = " << this_pt << " / " << this_eta << " / " << this_phi << std::endl;
-      
+
       _b_jet5sub_n++;
     }
   }
@@ -750,7 +750,7 @@ int TreeMaker::process_event(PHCompositeNode *topNode)
 
   {
   RawClusterContainer *clusters = findNode::getClass<RawClusterContainer>(topNode,"CLUSTER_HCALIN");
-  
+
   RawClusterContainer::ConstRange begin_end = clusters->getClusters();
   RawClusterContainer::ConstIterator rtiter;
 
@@ -788,7 +788,7 @@ int TreeMaker::process_event(PHCompositeNode *topNode)
     RawCluster *cluster = rtiter->second;
 
     float pt = cluster->get_energy() / cosh(  cluster->get_eta() );
-    
+
     if (pt < 0.1) continue;
 
     _b_cluster_pt[ _b_cluster_n ] = pt;
@@ -813,22 +813,22 @@ int TreeMaker::process_event(PHCompositeNode *topNode)
     PHG4Particle* g4particle = iter->second; // You may ask yourself, why second?
 
     //if ( truthinfo->isEmbeded( g4particle->get_track_id() ) != 17 ) continue;
-    
+
     TLorentzVector t; t.SetPxPyPzE( g4particle->get_px(), g4particle->get_py(), g4particle->get_pz(), g4particle->get_e() );
-    
+
     float truth_pt = t.Pt();
     //if (truth_pt < 1) continue;
     float truth_eta = t.Eta();
     if (fabs(truth_eta) > 1.1) continue;
     float truth_phi = t.Phi();
     int truth_pid = g4particle->get_pid();
-    
+
     //if (truth_pid == 22 || truth_pid == 2112 || truth_pid == -2112 || truth_pid == 130) continue;
     //if (truth_pid == 2112 || truth_pid == -2112 || truth_pid == 130) continue;
     // save high-pT photons
     //if (truth_pid == 22 && truth_pt < 20) continue;
     //if (truth_pid == 12 || truth_pid == -12 || truth_pid == 13 || truth_pid == -13 || truth_pid == 14 || truth_pid == -14) continue;
-    
+
     _b_particle_pt[ _b_particle_n ] = truth_pt;
     _b_particle_eta[ _b_particle_n ] = truth_eta;
     _b_particle_phi[ _b_particle_n ] = truth_phi;
@@ -836,9 +836,9 @@ int TreeMaker::process_event(PHCompositeNode *topNode)
     //_b_particle_embed[ _b_particle_n ] = embed_id;
 
     //std::cout << " --> truth #" << _b_particle_n << ", pt / eta / phi = " << truth_pt << " / " << truth_eta << " / " << truth_phi << ", PID " << truth_pid << ", embed = " <<  truthinfo->isEmbeded( g4particle->get_track_id() ) << std::endl;
-    
+
     _b_particle_n++;
-    
+
   }
   */
 
@@ -855,7 +855,7 @@ int TreeMaker::process_event(PHCompositeNode *topNode)
       _b_tower_E[ _b_tower_n ] = tower->get_energy();
       _b_tower_eta[ _b_tower_n ] = tower_geom->get_eta();
       _b_tower_phi[ _b_tower_n ] = tower_geom->get_phi();
-      
+
       float deta = _b_tower_eta[ _b_tower_n ] - _b_particle_eta[ 0 ] ;
       float dphi = _b_tower_phi[ _b_tower_n ] - _b_particle_phi[ 0 ] ;
       if (dphi > +3.14159) dphi -= 2 * 3.14159;
@@ -912,7 +912,7 @@ int TreeMaker::process_event(PHCompositeNode *topNode)
       _b_tower_n++;
     }
   }
-  */  
+  */
 
   /*
   //
@@ -975,38 +975,38 @@ int TreeMaker::process_event(PHCompositeNode *topNode)
     std::cout << " --> get_best_EMCal_4x4_E = " << triggerinfo->get_best_EMCal_4x4_E() << std::endl;
     //std::cout << " --> get_best_EMCal_4x4_eta = " << triggerinfo->get_best_EMCal_4x4_eta() << std::endl;
     //std::cout << " --> get_best_EMCal_4x4_phi = " << triggerinfo->get_best_EMCal_4x4_phi() << std::endl;
-    
+
     _b_trigEM2_E =  triggerinfo->get_best_EMCal_2x2_E();
     _b_trigEM2_eta = triggerinfo->get_best_EMCal_2x2_eta();
     _b_trigEM2_phi = triggerinfo->get_best_EMCal_2x2_phi();
-    
+
     _b_trigEM4_E =  triggerinfo->get_best_EMCal_4x4_E();
     _b_trigEM4_eta = triggerinfo->get_best_EMCal_4x4_eta();
     _b_trigEM4_phi = triggerinfo->get_best_EMCal_4x4_phi();
-    
+
     //
-    
+
     _b_trigFull2_E = triggerinfo->get_best_FullCalo_0p2x0p2_E();
     std::cout << " --> get_best_FullCalo_0p2x0p2_E = " << _b_trigFull2_E << std::endl;
-    
+
     _b_trigFull4_E = triggerinfo->get_best_FullCalo_0p4x0p4_E();
     std::cout << " --> get_best_FullCalo_0p4x0p4_E = " << _b_trigFull4_E << std::endl;
-    
+
     _b_trigFull6_E = triggerinfo->get_best_FullCalo_0p6x0p6_E();
     std::cout << " --> get_best_FullCalo_0p6x0p6_E = " << _b_trigFull6_E << std::endl;
-    
+
     _b_trigFull8_E = triggerinfo->get_best_FullCalo_0p8x0p8_E();
     std::cout << " --> get_best_FullCalo_0p8x0p8_E = " << _b_trigFull8_E << std::endl;
-    
+
     _b_trigFull10_E = triggerinfo->get_best_FullCalo_1p0x1p0_E();
     std::cout << " --> get_best_FullCalo_1p0x1p0_E = " << _b_trigFull10_E << std::endl;
-    
+
     _b_trigFull2_eta = triggerinfo->get_best_FullCalo_0p2x0p2_eta();
     _b_trigFull4_eta = triggerinfo->get_best_FullCalo_0p4x0p4_eta();
     _b_trigFull6_eta = triggerinfo->get_best_FullCalo_0p6x0p6_eta();
     _b_trigFull8_eta = triggerinfo->get_best_FullCalo_0p8x0p8_eta();
     _b_trigFull10_eta = triggerinfo->get_best_FullCalo_1p0x1p0_eta();
-    
+
     _b_trigFull2_phi = triggerinfo->get_best_FullCalo_0p2x0p2_phi();
     _b_trigFull4_phi = triggerinfo->get_best_FullCalo_0p4x0p4_phi();
     _b_trigFull6_phi = triggerinfo->get_best_FullCalo_0p6x0p6_phi();
@@ -1027,7 +1027,7 @@ int TreeMaker::process_event(PHCompositeNode *topNode)
   _b_bkg_n = 0;
   _b_bkg2_n = 0;
 
-  for (int layer = 0; layer < 3; layer++) { 
+  for (int layer = 0; layer < 3; layer++) {
     for (unsigned int n = 0; n < towerbackground1->get_UE( layer ).size(); n++) {
       _b_bkg_layer[ _b_bkg_n ] = layer;
       _b_bkg_eta[ _b_bkg_n ] = n;
@@ -1037,7 +1037,7 @@ int TreeMaker::process_event(PHCompositeNode *topNode)
     }
   }
 
-  for (int layer = 0; layer < 3; layer++) { 
+  for (int layer = 0; layer < 3; layer++) {
     for (unsigned int n = 0; n < towerbackground2->get_UE( layer ).size(); n++) {
       _b_bkg2_layer[ _b_bkg2_n ] = layer;
       _b_bkg2_eta[ _b_bkg2_n ] = n;
