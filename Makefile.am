@@ -20,6 +20,7 @@ include_HEADERS = \
 
 libTreeMaker_la_SOURCES = \
   TreeMaker.C \
+  TreeMakerInitializations.C \
   TreeMaker_Dict.C
 
 libTreeMaker_la_LIBADD = \

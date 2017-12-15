@@ -21,6 +21,9 @@ class TreeMaker: public SubsysReco
   int process_event(PHCompositeNode*);
   int End(PHCompositeNode*);
 
+  int InitializeTree();
+  int InitializeCounters();
+
  private:
 
   TFile *outfile;
