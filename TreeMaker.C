@@ -290,53 +290,53 @@ int TreeMaker::process_event(PHCompositeNode *topNode)
       b_jet2_n++;
     } // loop over R=0.2 jets
 
-  // JetMap* nsreco3_jets = findNode::getClass<JetMap>(topNode,"AntiKt_Tower_r03");
-  // //cout << "reco jets R=0.3 has size " << nsreco3_jets->size() << endl;
-  // for (JetMap::Iter iter = nsreco3_jets->begin(); iter != nsreco3_jets->end(); ++iter)
-  //   {
-  //     Jet* this_jet = iter->second;
-  //     float this_pt = this_jet->get_pt();
-  //     float this_phi = this_jet->get_phi();
-  //     float this_eta = this_jet->get_eta();
-  //     if (this_jet->get_pt() < 10 || fabs(this_eta) > 5) continue; // stricter pt cut for unsubtracted
-  //     b_jet3_pt[ b_jet3_n ] = this_pt;
-  //     b_jet3_eta[ b_jet3_n ] = this_eta;
-  //     b_jet3_phi[ b_jet3_n ] = this_phi;
-  //     //cout << " pp reco R=0.3 jet #" << b_jet3_n << ", pt / eta / phi = " << this_pt << " / " << this_eta << " / " << this_phi << endl;
-  //     b_jet3_n++;
-  //   } // loop over R=0.3 jets
+  JetMap* nsreco3_jets = findNode::getClass<JetMap>(topNode,"AntiKt_Tower_r03");
+  //cout << "reco jets R=0.3 has size " << nsreco3_jets->size() << endl;
+  for (JetMap::Iter iter = nsreco3_jets->begin(); iter != nsreco3_jets->end(); ++iter)
+    {
+      Jet* this_jet = iter->second;
+      float this_pt = this_jet->get_pt();
+      float this_phi = this_jet->get_phi();
+      float this_eta = this_jet->get_eta();
+      if (this_jet->get_pt() < 10 || fabs(this_eta) > 5) continue; // stricter pt cut for unsubtracted
+      b_jet3_pt[ b_jet3_n ] = this_pt;
+      b_jet3_eta[ b_jet3_n ] = this_eta;
+      b_jet3_phi[ b_jet3_n ] = this_phi;
+      //cout << " pp reco R=0.3 jet #" << b_jet3_n << ", pt / eta / phi = " << this_pt << " / " << this_eta << " / " << this_phi << endl;
+      b_jet3_n++;
+    } // loop over R=0.3 jets
 
-  // JetMap* nsreco4_jets = findNode::getClass<JetMap>(topNode,"AntiKt_Tower_r04");
-  // //cout << "reco jets R=0.4 has size " << nsreco4_jets->size() << endl;
-  // for (JetMap::Iter iter = nsreco4_jets->begin(); iter != nsreco4_jets->end(); ++iter)
-  //   {
-  //     Jet* this_jet = iter->second;
-  //     float this_pt = this_jet->get_pt();
-  //     float this_phi = this_jet->get_phi();
-  //     float this_eta = this_jet->get_eta();
-  //     if (this_jet->get_pt() < 10 || fabs(this_eta) > 5) continue; // stricter pt cut for unsubtracted
-  //     b_jet4_pt[ b_jet4_n ] = this_pt;
-  //     b_jet4_eta[ b_jet4_n ] = this_eta;
-  //     b_jet4_phi[ b_jet4_n ] = this_phi;
-  //     //cout << " pp reco R=0.4 jet #" << b_jet4_n << ", pt / eta / phi = " << this_pt << " / " << this_eta << " / " << this_phi << endl;
-  //     b_jet4_n++;
-  //   } // loop over R=0.4 jets
+  JetMap* nsreco4_jets = findNode::getClass<JetMap>(topNode,"AntiKt_Tower_r04");
+  //cout << "reco jets R=0.4 has size " << nsreco4_jets->size() << endl;
+  for (JetMap::Iter iter = nsreco4_jets->begin(); iter != nsreco4_jets->end(); ++iter)
+    {
+      Jet* this_jet = iter->second;
+      float this_pt = this_jet->get_pt();
+      float this_phi = this_jet->get_phi();
+      float this_eta = this_jet->get_eta();
+      if (this_jet->get_pt() < 10 || fabs(this_eta) > 5) continue; // stricter pt cut for unsubtracted
+      b_jet4_pt[ b_jet4_n ] = this_pt;
+      b_jet4_eta[ b_jet4_n ] = this_eta;
+      b_jet4_phi[ b_jet4_n ] = this_phi;
+      //cout << " pp reco R=0.4 jet #" << b_jet4_n << ", pt / eta / phi = " << this_pt << " / " << this_eta << " / " << this_phi << endl;
+      b_jet4_n++;
+    } // loop over R=0.4 jets
 
-  // JetMap* nsreco5_jets = findNode::getClass<JetMap>(topNode,"AntiKt_Tower_r05");
-  // //cout << "reco jets R=0.5 has size " << nsreco5_jets->size() << endl;
-  // for (JetMap::Iter iter = nsreco5_jets->begin(); iter != nsreco5_jets->end(); ++iter)
-  //   {
-  //     Jet* this_jet = iter->second;
-  //     float this_pt = this_jet->get_pt();
-  //     float this_phi = this_jet->get_phi();
-  //     float this_eta = this_jet->get_eta();
-  //     if (this_jet->get_pt() < 10 || fabs(this_eta) > 5) continue; // stricter pt cut for unsubtracted
-  //     b_jet5_pt[ b_jet5_n ] = this_pt;
-  //     b_jet5_eta[ b_jet5_n ] = this_eta;
-  //     b_jet5_phi[ b_jet5_n ] = this_phi;
-  //     //cout << " pp reco R=0.2 jet #" << b_jet5_n << ", pt / eta / phi = " << this_pt << " / " << this_eta << " / " << this_phi << endl;
-  //     b_jet5_n++;
-  //   } // loop over R=0.5 jets
+  JetMap* nsreco5_jets = findNode::getClass<JetMap>(topNode,"AntiKt_Tower_r05");
+  //cout << "reco jets R=0.5 has size " << nsreco5_jets->size() << endl;
+  for (JetMap::Iter iter = nsreco5_jets->begin(); iter != nsreco5_jets->end(); ++iter)
+    {
+      Jet* this_jet = iter->second;
+      float this_pt = this_jet->get_pt();
+      float this_phi = this_jet->get_phi();
+      float this_eta = this_jet->get_eta();
+      if (this_jet->get_pt() < 10 || fabs(this_eta) > 5) continue; // stricter pt cut for unsubtracted
+      b_jet5_pt[ b_jet5_n ] = this_pt;
+      b_jet5_eta[ b_jet5_n ] = this_eta;
+      b_jet5_phi[ b_jet5_n ] = this_phi;
+      //cout << " pp reco R=0.2 jet #" << b_jet5_n << ", pt / eta / phi = " << this_pt << " / " << this_eta << " / " << this_phi << endl;
+      b_jet5_n++;
+    } // loop over R=0.5 jets
 
 
 

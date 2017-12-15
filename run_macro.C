@@ -77,6 +77,15 @@ int run_macro(
   se->registerSubsystem( st );
 
   JetReco *towerjetreco = new JetReco();
+  // --- added by Ron (is this right?)
+  towerjetreco->add_input(new TowerJetInput(Jet::CEMC_TOWER_RETOWER));
+  towerjetreco->add_input(new TowerJetInput(Jet::HCALIN_TOWER));
+  towerjetreco->add_input(new TowerJetInput(Jet::HCALOUT_TOWER));
+  towerjetreco->add_algo(new FastJetAlgo(Jet::ANTIKT,0.2),"AntiKt_Tower_r02");
+  towerjetreco->add_algo(new FastJetAlgo(Jet::ANTIKT,0.3),"AntiKt_Tower_r03");
+  towerjetreco->add_algo(new FastJetAlgo(Jet::ANTIKT,0.4),"AntiKt_Tower_r04");
+  towerjetreco->add_algo(new FastJetAlgo(Jet::ANTIKT,0.5),"AntiKt_Tower_r05");
+  // ---
   towerjetreco->add_input(new TowerJetInput(Jet::CEMC_TOWER_SUB1));
   towerjetreco->add_input(new TowerJetInput(Jet::HCALIN_TOWER_SUB1));
   towerjetreco->add_input(new TowerJetInput(Jet::HCALOUT_TOWER_SUB1));
