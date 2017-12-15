@@ -65,6 +65,18 @@ int TreeMaker::Init(PHCompositeNode *topNode)
   tree->Branch("particle_phi", b_particle_phi,"particle_phi[particle_n]/F");
   tree->Branch("particle_pid", b_particle_pid,"particle_pid[particle_n]/I");
 
+  tree->Branch("jet2seedraw_n", &b_jet2seedraw_n,"jet2seedraw_n/I");
+  tree->Branch("jet2seedraw_e", b_jet2seedraw_e,"jet2seedraw_e[jet2seedraw_n]/F");
+  tree->Branch("jet2seedraw_pt", b_jet2seedraw_pt,"jet2seedraw_pt[jet2seedraw_n]/F");
+  tree->Branch("jet2seedraw_eta",b_jet2seedraw_eta,"jet2seedraw_eta[jet2seedraw_n]/F");
+  tree->Branch("jet2seedraw_phi",b_jet2seedraw_phi,"jet2seedraw_phi[jet2seedraw_n]/F");
+
+  tree->Branch("jet2seedsub_n", &b_jet2seedsub_n,"jet2seedsub_n/I");
+  tree->Branch("jet2seedsub_e", b_jet2seedsub_e,"jet2seedsub_e[jet2seedsub_n]/F");
+  tree->Branch("jet2seedsub_pt", b_jet2seedsub_pt,"jet2seedsub_pt[jet2seedsub_n]/F");
+  tree->Branch("jet2seedsub_eta",b_jet2seedsub_eta,"jet2seedsub_eta[jet2seedsub_n]/F");
+  tree->Branch("jet2seedsub_phi",b_jet2seedsub_phi,"jet2seedsub_phi[jet2seedsub_n]/F");
+
   tree->Branch("jet2_n", &b_jet2_n,"jet2_n/I");
   tree->Branch("jet2_e", b_jet2_e,"jet2_e[jet2_n]/F");
   tree->Branch("jet2_pt", b_jet2_pt,"jet2_pt[jet2_n]/F");
@@ -88,12 +100,6 @@ int TreeMaker::Init(PHCompositeNode *topNode)
   tree->Branch("jet5_pt", b_jet5_pt,"jet5_pt[jet5_n]/F");
   tree->Branch("jet5_eta",b_jet5_eta,"jet5_eta[jet5_n]/F");
   tree->Branch("jet5_phi",b_jet5_phi,"jet5_phi[jet5_n]/F");
-
-  // tree->Branch("jet2seed_n", &b_jet2seed_n,"jet2seed_n/I");
-  // tree->Branch("jet2seed_e", b_jet2seed_e,"jet2seed_e[jet2seed_n]/F");
-  // tree->Branch("jet2seed_pt", b_jet2seed_pt,"jet2seed_pt[jet2seed_n]/F");
-  // tree->Branch("jet2seed_eta",b_jet2seed_eta,"jet2seed_eta[jet2seed_n]/F");
-  // tree->Branch("jet2seed_phi",b_jet2seed_phi,"jet2seed_phi[jet2seed_n]/F");
 
   tree->Branch("jet2sub_n", &b_jet2sub_n,"jet2sub_n/I");
   tree->Branch("jet2sub_e", b_jet2sub_e,"jet2sub_e[jet2sub_n]/F");
@@ -169,7 +175,8 @@ int TreeMaker::process_event(PHCompositeNode *topNode)
   b_jet4_n = 0;
   b_jet5_n = 0;
 
-  b_jet2seed_n = 0;
+  b_jet2seedraw_n = 0;
+  b_jet2seedsub_n = 0;
 
   b_jet2sub_n = 0;
   b_jet3sub_n = 0;
@@ -262,33 +269,38 @@ int TreeMaker::process_event(PHCompositeNode *topNode)
   // --- get jet seed information
   // ------------------------------------------------------------------------------
 
-  // JetMap* seedraw_jets = findNode::getClass<JetMap>(topNode,"AntiKt_Tower_HIRecoSeedsRaw_r02");
-  // //cout << "reco jets R=0.2 has size " << seedraw_jets->size() << endl;
-  // for (JetMap::Iter iter = seedraw_jets->begin(); iter != seedraw_jets->end(); ++iter)
-  //   {
-  //     Jet* this_jet = iter->second;
-  //     float this_pt = this_jet->get_pt();
-  //     float this_phi = this_jet->get_phi();
-  //     float this_eta = this_jet->get_eta();
-  //     if (this_jet->get_pt() < 5 || fabs(this_eta) > 5) continue;
-  //     //cout << " SeedRaw R=0.2 jet #" << b_jet2_n << ", pt / eta / phi = " << this_pt << " / " << this_eta << " / " << this_phi << endl;
-  //   }
+  JetMap* seedraw_jets = findNode::getClass<JetMap>(topNode,"AntiKt_Tower_HIRecoSeedsRaw_r02");
+  //cout << "reco jets R=0.2 has size " << seedraw_jets->size() << endl;
+  for (JetMap::Iter iter = seedraw_jets->begin(); iter != seedraw_jets->end(); ++iter)
+    {
+      Jet* this_jet = iter->second;
+      float this_pt = this_jet->get_pt();
+      float this_phi = this_jet->get_phi();
+      float this_eta = this_jet->get_eta();
+      if (this_jet->get_pt() < 5 || fabs(this_eta) > 5) continue;
+      b_jet2seedraw_pt[ b_jet2seedraw_n ] = this_pt;
+      b_jet2seedraw_eta[ b_jet2seedraw_n ] = this_eta;
+      b_jet2seedraw_phi[ b_jet2seedraw_n ] = this_phi;
+      if (this_jet->get_pt() < 5 || fabs(this_eta) > 5) continue;
+      //cout << " SeedRaw R=0.2 jet #" << b_jet2seedraw_n << ", pt / eta / phi = " << this_pt << " / " << this_eta << " / " << this_phi << endl;
+      b_jet2seedraw_n++;
+    }
 
-  // JetMap* seedsub_jets = findNode::getClass<JetMap>(topNode,"AntiKt_Tower_HIRecoSeedsSub_r02");
-  // //cout << "reco jets R=0.2 has size " << seedsub_jets->size() << endl;
-  // for (JetMap::Iter iter = seedsub_jets->begin(); iter != seedsub_jets->end(); ++iter)
-  //   {
-  //     Jet* this_jet = iter->second;
-  //     float this_pt = this_jet->get_pt();
-  //     float this_phi = this_jet->get_phi();
-  //     float this_eta = this_jet->get_eta();
-  //     b_jet2seed_pt[ b_jet2seed_n ] = this_pt;
-  //     b_jet2seed_eta[ b_jet2seed_n ] = this_eta;
-  //     b_jet2seed_phi[ b_jet2seed_n ] = this_phi;
-  //     if (this_jet->get_pt() < 5 || fabs(this_eta) > 5) continue;
-  //     //cout << " SeedSub R=0.2 jet #" << b_jet2seed_n << ", pt / eta / phi = " << this_pt << " / " << this_eta << " / " << this_phi << endl;
-  //     b_jet2seed_n++;
-  //   }
+  JetMap* seedsub_jets = findNode::getClass<JetMap>(topNode,"AntiKt_Tower_HIRecoSeedsSub_r02");
+  //cout << "reco jets R=0.2 has size " << seedsub_jets->size() << endl;
+  for (JetMap::Iter iter = seedsub_jets->begin(); iter != seedsub_jets->end(); ++iter)
+    {
+      Jet* this_jet = iter->second;
+      float this_pt = this_jet->get_pt();
+      float this_phi = this_jet->get_phi();
+      float this_eta = this_jet->get_eta();
+      b_jet2seedsub_pt[ b_jet2seedsub_n ] = this_pt;
+      b_jet2seedsub_eta[ b_jet2seedsub_n ] = this_eta;
+      b_jet2seedsub_phi[ b_jet2seedsub_n ] = this_phi;
+      if (this_jet->get_pt() < 5 || fabs(this_eta) > 5) continue;
+      //cout << " SeedSub R=0.2 jet #" << b_jet2seedsub_n << ", pt / eta / phi = " << this_pt << " / " << this_eta << " / " << this_phi << endl;
+      b_jet2seedsub_n++;
+    }
 
 
 

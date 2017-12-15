@@ -104,11 +104,17 @@ class TreeMaker: public SubsysReco
   float b_jet2sub_eta[200];
   float b_jet2sub_phi[200];
 
-  int b_jet2seed_n;
-  float b_jet2seed_e[200];
-  float b_jet2seed_pt[200];
-  float b_jet2seed_eta[200];
-  float b_jet2seed_phi[200];
+  int b_jet2seedraw_n;
+  float b_jet2seedraw_e[200];
+  float b_jet2seedraw_pt[200];
+  float b_jet2seedraw_eta[200];
+  float b_jet2seedraw_phi[200];
+
+  int b_jet2seedsub_n;
+  float b_jet2seedsub_e[200];
+  float b_jet2seedsub_pt[200];
+  float b_jet2seedsub_eta[200];
+  float b_jet2seedsub_phi[200];
 
   int b_truthjet5_n;
   float b_truthjet5_e[200];
