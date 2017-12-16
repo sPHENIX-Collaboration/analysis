@@ -15,7 +15,7 @@
 #include <climits>
 
 #include "AtlasUtils.C"
-#include "SetOKStyle.C"
+#include "/phenix/u/yuhw/RootMacros/sPHENIXStyle/sPhenixStyle.C"
 #include "add_purity_text.C"
 
 float binorminal_error(float a, float b) {
@@ -67,7 +67,8 @@ void draw_G4_dibjet_truth_tagging(
 
 
 	//gROOT->LoadMacro("SetOKStyle.C");
-	SetOKStyle();
+	//SetOKStyle();
+	SetsPhenixStyle();
 
 	TFile *fout = TFile::Open("dca_eval.root","recreate");
 	fout->cd();
@@ -1038,7 +1039,7 @@ void draw_G4_dibjet_truth_tagging(
 	h1_jet_highest_S_EFF[0]->Draw();
 	h1_jet_highest_S_EFF[1]->Draw("same");
 	h1_jet_highest_S_EFF[2]->Draw("same");
-	h1_jet_highest_S_EFF[0]>GetYaxis()->SetRangeUser(1E-3,1.1);
+	h1_jet_highest_S_EFF[0]->GetYaxis()->SetRangeUser(1E-3,1.1);
 
 	myText(0.5,0.90,kBlack,"#it{S}_{largest} > #it{S}_{min} cut");
 	myText(0.7,0.83,kBlack,"light jets");
