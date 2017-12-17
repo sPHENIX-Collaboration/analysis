@@ -265,6 +265,7 @@ LeptoquarksReco::AddTrueTauTag( map_tcan& tauCandidateMap, PHHepMCGenEventMap *g
           } // end if leptoquark //
       } // end loop over all particles in event //
     }// end loop over genevtmap //
+  
 
   /* If TAU in event: Tag the tau candidate (i.e. jet) with smalles delta_R from this tau */
   if( particle_tau )
@@ -296,8 +297,8 @@ LeptoquarksReco::AddTrueTauTag( map_tcan& tauCandidateMap, PHHepMCGenEventMap *g
             }
         }
 
-      /* set is_tau = TRUE for TauCandiate with smallest delta_R */
-      if ( min_delta_R_iter != tauCandidateMap.end() )
+      /* set is_tau = TRUE for TauCandiate with smallest delta_R within reasonable range*/
+      if ( min_delta_R_iter != tauCandidateMap.end() && min_delta_R<0.5)
         {
           (min_delta_R_iter->second).set_is_tau( true );
           (min_delta_R_iter->second).set_tau_etotal( particle_tau->momentum().e() );
@@ -312,32 +313,72 @@ LeptoquarksReco::AddTrueTauTag( map_tcan& tauCandidateMap, PHHepMCGenEventMap *g
           /* Loop over all particle at end vertex */
           if ( particle_tau->end_vertex() )
             {
+	      /* Function that calls itself instead of doing the same loop. Still need to debug */
+	      //  FinDecayParticles(particle_tau, tau_decay_prong, tau_decay_hcharged, tau_decay_lcharged);
+	      
+	      // Loop over particles at vertex of tau
               for ( HepMC::GenVertex::particle_iterator tau_decay
                       = particle_tau->end_vertex()->
                       particles_begin(HepMC::children);
                     tau_decay != particle_tau->end_vertex()->
                       particles_end(HepMC::children);
                     ++tau_decay )
-                {
-                  /* Get entry from TParticlePDG because HepMC::GenPArticle does not provide charge or class of particle */
-                  TParticlePDG * pdg_p = TDatabasePDG::Instance()->GetParticle( (*tau_decay)->pdg_id() );
+                {     
+		  // check if particle decays further
+		  if(!(*tau_decay)->end_vertex()){            
 
-                  /* Check if particle is charged */
-                  if ( pdg_p->Charge() != 0 )
-                    {
-                      tau_decay_prong += 1;
+		    // Get entry from TParticlePDG because HepMC::GenPArticle does not provide charge or class of particle 
+		    TParticlePDG * pdg_p = TDatabasePDG::Instance()->GetParticle( (*tau_decay)->pdg_id() );
+		    
+		    // Check if particle is charged 
+		    if ( pdg_p->Charge() != 0 )
+		      {
+			tau_decay_prong += 1;
 
-                      /* Check if particle is lepton */
-                      if ( string( pdg_p->ParticleClass() ) == "Lepton" )
-                        tau_decay_lcharged += 1;
+			// Check if particle is lepton 
+			if ( string( pdg_p->ParticleClass() ) == "Lepton" )
+			  tau_decay_lcharged += 1;
 
-                      /* Check if particle is hadron, i.e. Meson or Baryon */
-                      else if ( ( string( pdg_p->ParticleClass() ) == "Meson"  ) ||
-                                ( string( pdg_p->ParticleClass() ) == "Baryon" ) )
-                        tau_decay_hcharged += 1;
-                    }
-                }
-
+			// Check if particle is hadron, i.e. Meson or Baryon 
+			else if ( ( string( pdg_p->ParticleClass() ) == "Meson"  ) ||
+				  ( string( pdg_p->ParticleClass() ) == "Baryon" ) )
+			  tau_decay_hcharged += 1;
+		      }
+		  }
+		  
+		  // loop over decay if particle decays further
+		  else if((*tau_decay)->end_vertex()){            
+		    
+		    //further decay loop
+		    for ( HepMC::GenVertex::particle_iterator second_tau_decay
+			    = (*tau_decay)->end_vertex()->
+			    particles_begin(HepMC::children);
+			  second_tau_decay != (*tau_decay)->end_vertex()->
+			    particles_end(HepMC::children);
+			  ++second_tau_decay )
+		      {
+			
+			// Get entry from TParticlePDG because HepMC::GenPArticle does not provide charge or class of particle 
+			TParticlePDG * pdg_p2 = TDatabasePDG::Instance()->GetParticle( (*second_tau_decay)->pdg_id() );
+			
+			// Check if particle is charged 
+			if ( pdg_p2->Charge() != 0 )
+			  {
+			    tau_decay_prong += 1;
+			    
+			    // Check if particle is lepton 
+			    if ( string( pdg_p2->ParticleClass() ) == "Lepton" )
+			      tau_decay_lcharged += 1;
+			    
+			    // Check if particle is hadron, i.e. Meson or Baryon 
+			    else if ( ( string( pdg_p2->ParticleClass() ) == "Meson"  ) ||
+				      ( string( pdg_p2->ParticleClass() ) == "Baryon" ) )
+			      tau_decay_hcharged += 1;
+			  }
+		      }
+		  }
+		}
+	      
               /* Update TauCandidate entry */
               (min_delta_R_iter->second).set_tau_decay_prong( tau_decay_prong );
               (min_delta_R_iter->second).set_tau_decay_hcharged( tau_decay_hcharged );
@@ -345,7 +386,7 @@ LeptoquarksReco::AddTrueTauTag( map_tcan& tauCandidateMap, PHHepMCGenEventMap *g
             }
         }
     }
-
+  
 
   /* If QUARK (->jet) in event: Tag the tau candidate (i.e. jet) with smalles delta_R from this quark */
   /* @TODO: This is a copy from the loop to tag the tau candidate with smallest delta_R w.r.t. final state tau-
@@ -379,8 +420,8 @@ LeptoquarksReco::AddTrueTauTag( map_tcan& tauCandidateMap, PHHepMCGenEventMap *g
             }
         }
 
-      /* set is_uds = TRUE for TauCandiate with smallest delta_R */
-      if ( min_delta_R_iter != tauCandidateMap.end() )
+      /* set is_uds = TRUE for TauCandiate with smallest delta_R within reasonable range*/
+      if ( min_delta_R_iter != tauCandidateMap.end() && min_delta_R<0.5)
         {
           (min_delta_R_iter->second).set_is_uds( true );
           (min_delta_R_iter->second).set_uds_etotal( particle_tau->momentum().e() );
@@ -863,3 +904,43 @@ LeptoquarksReco::End(PHCompositeNode *topNode)
 
   return 0;
 }
+
+/*
+void
+LeptoquarksReco::FindDecayParticles( HepMC::GenParticle *particle_tau, int &tau_decay_prong, int &tau_decay_hcharged, int &tau_decay_lcharged){
+
+  for ( HepMC::GenVertex::particle_iterator tau_decay                                                                                                                                           
+	  = particle_tau->end_vertex()->                                                                                                                                                        
+	  particles_begin(HepMC::children);                                                                                                                                                     
+	tau_decay != particle_tau->end_vertex()->                                                                                                                                               
+	  particles_end(HepMC::children);                                                                                                                                                       
+	++tau_decay )                                                                                                                                                                           
+    {                                                                                                                                                                                           
+                                                                                                                                                                                                           
+      if(!(*tau_decay)->end_vertex()){                                                                                                                                                          
+                                                                                                                                                                                                          
+	// Get entry from TParticlePDG because HepMC::GenPArticle does not provide charge or class of particle                                                                                  
+	TParticlePDG * pdg_p = TDatabasePDG::Instance()->GetParticle( (*tau_decay)->pdg_id() );                                                                                                 
+	
+	// Check if particle is charged                                                                                                                                                         
+	if ( pdg_p->Charge() != 0 )                                                                                                                                                             
+	  {                                                                                                                                                                                     
+	    tau_decay_prong += 1;                                                                                                                                                               
+                                                                                                                                                                                                           
+	    // Check if particle is lepton                                                                                                                                                      
+	    if ( string( pdg_p->ParticleClass() ) == "Lepton" )                                                                                                                                 
+	      tau_decay_lcharged += 1;                                                                                                                                                          
+                                                                                                                                                                                                           
+	    // Check if particle is hadron, i.e. Meson or Baryon                                                                                                                                
+	    else if ( ( string( pdg_p->ParticleClass() ) == "Meson"  ) ||                                                                                                                       
+		      ( string( pdg_p->ParticleClass() ) == "Baryon" ) )                                                                                                                        
+	      tau_decay_hcharged += 1;                                                                                                                                                          
+	  }                                                                                                                                                                                     
+      }                                                                                                                                                                                         
+                                                                                                                                                                                                           
+      //HepMC::GenVertex::particle_iterator secondary_decay = (*tau_decay)->end_vertex;                                                                                                         
+      else if((*tau_decay)->end_vertex()) FindDecayProducts((*tau_decay), tau_decay_prong, tau_decay_hcharged, tau_decay_lcharged);
+    }
+
+}
+*/

@@ -12,7 +12,6 @@
 #include <phhepmc/PHHepMCGenEvent.h>
 #include <phhepmc/PHHepMCGenEventMap.h>
 
-
 class TNtuple;
 class TFile;
 
@@ -23,6 +22,7 @@ class RawTowerGeomContainer;
 class JetMap;
 class SvtxTrackMap;
 class PHHepMCGenEventMap;
+
 
 class TauCandidate;
 
@@ -112,6 +112,9 @@ private:
 
   /** Calculate Delta R ("distance in eta-phi space") between two sets of eta, phi angles */
   float CalculateDeltaR( float, float, float, float );
+
+  /* Function to find final decay of tau */
+  //  void FindDecayParticles(HepMC::GenParticle *, int&, int&, int&);
 };
 
 #endif // __LeptoquarksReco_H__
