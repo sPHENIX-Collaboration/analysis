@@ -38,6 +38,15 @@ int TreeMaker::Init(PHCompositeNode *topNode)
 }
 
 
+int TreeMaker::InitRun(PHCompositeNode *topNode)
+{
+  cout << "TreeMaker::InitRun called" << endl;
+  int cn_status = CreateNode(topNode);
+  cout << "TreeMaker::InitRun : CreateNode returned " << cn_status << endl;
+  return 0;
+}
+
+
 
 int TreeMaker::process_event(PHCompositeNode *topNode)
 {

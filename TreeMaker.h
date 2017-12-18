@@ -18,6 +18,7 @@ class TreeMaker: public SubsysReco
   ~TreeMaker();
 
   int Init(PHCompositeNode*);
+  int InitRun(PHCompositeNode*);
   int process_event(PHCompositeNode*);
   int End(PHCompositeNode*);
   int CreateNode(PHCompositeNode*);
