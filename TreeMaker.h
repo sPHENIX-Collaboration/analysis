@@ -20,6 +20,7 @@ class TreeMaker: public SubsysReco
   int Init(PHCompositeNode*);
   int process_event(PHCompositeNode*);
   int End(PHCompositeNode*);
+  int CreateNode(PHCompositeNode*);
 
   int InitializeTree();
   int InitializeCounters();

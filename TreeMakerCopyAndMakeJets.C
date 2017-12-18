@@ -39,8 +39,18 @@ int TreeMaker::CopyAndMakeJets(PHCompositeNode *topNode)
 
   // --- jet objects
   JetMap* old_jets = findNode::getClass<JetMap>(topNode,"AntiKt_Tower_r02");
-  //JetMap* new_jets = findNode::getClass<JetMap>(topNode,"AntiKt_Tower_Mod_r02"); // this node doesn't exist yet
-  JetMap* new_jets = new JetMapV1();
+  JetMap* new_jets = findNode::getClass<JetMap>(topNode,"AntiKt_Tower_Mod_r02"); // this node is created in createnode
+  //JetMap* new_jets = new JetMapV1();
+  if ( verbosity > 0 )
+    {
+      cout << "Regular jet node: " << old_jets << endl;
+      cout << "Modified jet node: " << new_jets << endl;
+    }
+  if ( !old_jets || ! new_jets )
+    {
+      cout << "One or more invalid pointers, exiting event" << endl;
+      return 0;
+    }
 
   if ( verbosity > 0 )
     {

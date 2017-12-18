@@ -63,7 +63,7 @@ int TreeMaker::CopyAndMakeClusters(PHCompositeNode *topNode)
       double ecore  = old_cluster->get_ecore();
       double chi2   = old_cluster->get_chi2();
       double prob   = old_cluster->get_prob();
-      if ( verbosity > 0 )
+      if ( verbosity > 10 )
         {
           cout << "for old cluster:"  << endl;
           cout << "energy " << energy << endl;
