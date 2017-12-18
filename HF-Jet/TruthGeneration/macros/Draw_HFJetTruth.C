@@ -64,14 +64,18 @@ void Draw_HFJetTruth(const TString infile =
     _file0->SetName(infile);
   }
 
-  //    DrawCrossSection(int_lumi, dy);
+//      DrawCrossSection(int_lumi, dy);
   //  Draw_HFJetTruth_DrawCrossSection_PR(infile);
   //  CrossSection2RAA_Proposal(infile);
   //    CrossSection2RAA(infile);
-  const double acceptance = 2.* (0.85 - .4);
-  CrossSection2RAA(infile, false, acceptance);
-  CrossSection2v2(infile, false, .7, acceptance);
-  CrossSection2v2(infile, false, .4, acceptance);
+  const double acceptance1 = 2.* (1.1 - .4);
+  CrossSection2RAA(infile, false, acceptance1);
+
+  const double acceptance2 = 2.* (0.85 - .4);
+  CrossSection2RAA(infile, false, acceptance2);
+
+//  CrossSection2v2(infile, false, .7, acceptance);
+//  CrossSection2v2(infile, false, .4, acceptance);
 }
 
 void DrawCrossSection(double int_lumi, const double dy)
@@ -444,7 +448,7 @@ void CrossSection2RAA(const TString infile, const bool use_AA_jet_trigger = true
   p = (TPad *) c1->cd(idx++);
   c1->Update();
 
-  p->DrawFrame(15, 0, 50, 1.2)
+  p->DrawFrame(11, 0, 50, 1.2)
       ->SetTitle(";Transverse Momentum [GeV/#it{c}];#it{R}_{AA}");
 
   TGraphErrors *ge_RAA = GetRAA(g_pp, g_AA);
@@ -478,7 +482,7 @@ void CrossSection2RAA(const TString infile, const bool use_AA_jet_trigger = true
   p = (TPad *) c1->cd(idx++);
   c1->Update();
 
-  p->DrawFrame(15, 0, 50, 1.2)
+  p->DrawFrame(11, 0, 50, 1.2)
       ->SetTitle(";Transverse Momentum [GeV/#it{c}];#it{R}_{AA}");
 
   TGraph *g20 = pQCDModel_HuangKangVitev(2.0);
@@ -496,7 +500,7 @@ void CrossSection2RAA(const TString infile, const bool use_AA_jet_trigger = true
   leg->DrawClone();
   leg2->DrawClone();
 
-  TLegend *leg1 = new TLegend(.2, .20, .85, .35);
+  TLegend *leg1 = new TLegend(.2, .20, .85, .37);
   leg1->SetHeader("#splitline{pQCD, Phys.Lett. B726 (2013) 251-256}{#sqrt{s_{NN}}=200 GeV, #it{b}-jet R=0.4}");
   leg1->AddEntry("", "", "");
   leg1->AddEntry(g20, "g^{med} = 2.0", "l");
