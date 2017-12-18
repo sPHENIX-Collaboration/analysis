@@ -13,20 +13,24 @@ int compare_observables()
 
   /* open inout files and merge trees */
   TChain chain("ntp_jet2");
-  chain.Add("data/p250_e20_1000events_file1_LeptoAna_r05.root");
-  chain.Add("data/p250_e20_1000events_file2_LeptoAna_r05.root");
-  chain.Add("data/p250_e20_1000events_file3_LeptoAna_r05.root");
-  chain.Add("data/p250_e20_1000events_file4_LeptoAna_r05.root");
-  chain.Add("data/p250_e20_1000events_file5_LeptoAna_r05.root");
-  chain.Add("data/p250_e20_1000events_file6_LeptoAna_r05.root");
-  chain.Add("data/p250_e20_1000events_file7_LeptoAna_r05.root");
-  chain.Add("data/p250_e20_1000events_file8_LeptoAna_r05.root");
-  chain.Add("data/p250_e20_1000events_file9_LeptoAna_r05.root");
-  chain.Add("data/p250_e20_1000events_file10_LeptoAna_r05.root");
+  chain.Add("data_3pions/p250_e20_0events_file1093_LeptoAna_r05.root");
+  chain.Add("data_3pions/p250_e20_0events_file1096_LeptoAna_r05.root");
+  chain.Add("data_3pions/p250_e20_0events_file1101_LeptoAna_r05.root");
+  chain.Add("data_3pions/p250_e20_0events_file1115_LeptoAna_r05.root");
+  chain.Add("data_3pions/p250_e20_0events_file1122_LeptoAna_r05.root");
+  chain.Add("data_3pions/p250_e20_0events_file1127_LeptoAna_r05.root");
+  chain.Add("data_3pions/p250_e20_0events_file1131_LeptoAna_r05.root");
+  chain.Add("data_3pions/p250_e20_0events_file1164_LeptoAna_r05.root");
 
   /* particle selection */
-  TCut select_true_uds("is_uds==1 && abs(uds_eta)<0.8");
-  TCut select_true_tau("is_tau==1 && tau_decay_prong==3 && abs(tau_eta)<0.8");
+  TCut select_true_uds("is_tau==0");
+  TCut select_true_tau("is_tau==1 && sqrt( (tau_eta-jet_eta)*(tau_eta-jet_eta) + (tau_phi-jet_phi)*(tau_phi-jet_phi) ) < 0.1");
+
+  TCut select_accept_jet("abs(jet_eta)<1.0 && jet_ptrans > 5");
+
+  //TCut select_prong("tracks_count_r1 == 3 && tracks_chargesum_r1 == -1");
+  //TCut select_prong("tracks_count_r2 == 3");
+  TCut select_prong("1");
 
   /* Create temporary canvas */
   TCanvas* ctemp = new TCanvas();
@@ -41,42 +45,42 @@ int compare_observables()
   /* R_max */
   observables.push_back( "tracks_rmax_r2" );
   observables_name.push_back( "R_{track}^{max}" );
-  plots_ymax.push_back(0.2);
+  plots_ymax.push_back(0.06);
   plots_xmin.push_back(0);
-  plots_xmax.push_back(1);
+  plots_xmax.push_back(0.5);
 
   /* Number of tracks */
-  observables.push_back( "tracks_count_r1" );
+  observables.push_back( "tracks_count_r2" );
   observables_name.push_back( "N_{tracks}" );
-  plots_ymax.push_back(0.8);
+  plots_ymax.push_back(0.9);
   plots_xmin.push_back(0);
   plots_xmax.push_back(10);
 
   /* Charge sum from tracks */
-  observables.push_back( "tracks_chargesum_r1" );
+  observables.push_back( "tracks_chargesum_r2" );
   observables_name.push_back( "#Sigma q_{tracks}" );
-  plots_ymax.push_back(0.8);
+  plots_ymax.push_back(0.9);
   plots_xmin.push_back(-5);
   plots_xmax.push_back(5);
 
   /* Jet radius */
   observables.push_back( "jetshape_radius" );
   observables_name.push_back( "R_{jet}" );
-  plots_ymax.push_back(0.2);
+  plots_ymax.push_back(0.08);
+  plots_xmin.push_back(0);
+  plots_xmax.push_back(0.5);
+
+  /* Jetshape */
+  observables.push_back( "jetshape_econe_r1 / (jetshape_econe_r1 + jetshape_econe_r2 + jetshape_econe_r3 + jetshape_econe_r4 + jetshape_econe_r5 + jetshape_econe_r6 + jetshape_econe_r7 + jetshape_econe_r8 + jetshape_econe_r9 + jetshape_econe_r10)" );
+  observables_name.push_back( "E_{cone}^{R<0.1} / E_{cone}^{R<1.0}" );
+  plots_ymax.push_back(0.08);
   plots_xmin.push_back(0);
   plots_xmax.push_back(1);
 
   /* Jetshape */
-  observables.push_back( "jetshape_econe_r1 / (jetshape_econe_r1 + jetshape_econe_r2 + jetshape_econe_r3)" );
-  observables_name.push_back( "E_{cone}^{r1} / #Sigma E_{cone}^{ri}" );
-  plots_ymax.push_back(0.1);
-  plots_xmin.push_back(0);
-  plots_xmax.push_back(1);
-
-  /* Jetshape */
-  observables.push_back( "jetshape_econe_r2 / (jetshape_econe_r1 + jetshape_econe_r2 + jetshape_econe_r3)" );
-  observables_name.push_back( "E_{cone}^{r2} / #Sigma E_{cone}^{ri}" );
-  plots_ymax.push_back(0.1);
+  observables.push_back( "(jetshape_econe_r1 + jetshape_econe_r2) / (jetshape_econe_r1 + jetshape_econe_r2 + jetshape_econe_r3 + jetshape_econe_r4 + jetshape_econe_r5)" );
+  observables_name.push_back( "E_{cone}^{R<0.2} / E_{cone}^{R<0.5}" );
+  plots_ymax.push_back(0.08);
   plots_xmin.push_back(0);
   plots_xmax.push_back(1);
 
@@ -93,6 +97,13 @@ int compare_observables()
   plots_ymax.push_back(0.1);
   plots_xmin.push_back(0);
   plots_xmax.push_back(10);
+
+  /* Jet energy */
+  observables.push_back( "jet_etotal" );
+  observables_name.push_back( "E_{jet}" );
+  plots_ymax.push_back(0.08);
+  plots_xmin.push_back(0);
+  plots_xmax.push_back(70);
 
   /* Plot distributions */
   TString name_uds_base("h_uds_");
@@ -113,7 +124,7 @@ int compare_observables()
       TH1F* h_uds = new TH1F( name_uds_i, "", 100, plots_xmin.at(i), plots_xmax.at(i));
       TH1F* h_tau = new TH1F( name_tau_i, "", 100, plots_xmin.at(i), plots_xmax.at(i));
 
-      chain.Draw( observables.at(i) + " >> " + name_uds_i, select_true_uds, "");
+      chain.Draw( observables.at(i) + " >> " + name_uds_i, select_true_uds && select_accept_jet, "");
       h_uds->Scale(1./h_uds->Integral());
       h_uds->GetXaxis()->SetTitle( observables_name.at(i) );
       h_uds->GetYaxis()->SetRangeUser(0, plots_ymax.at(i) );
@@ -121,7 +132,7 @@ int compare_observables()
       h_uds->SetFillColor(col1);
       h_uds->SetFillStyle(1001);
 
-      chain.Draw( observables.at(i) + " >> " + name_tau_i, select_true_tau, "");
+      chain.Draw( observables.at(i) + " >> " + name_tau_i, select_true_tau && select_accept_jet, "");
       h_tau->Scale(1./h_tau->Integral());
       h_tau->SetLineColor(col2);
       h_tau->SetFillColor(col2);
@@ -138,27 +149,6 @@ int compare_observables()
       c1->Print( Form( "plots/compare_observables_%d.eps", i ) );
       c1->Print( Form( "plots/compare_observables_%d.png", i ) );
     }
-
-  /* test manual cuts */
-  TCut select_tau("tracks_chargesum_r1 == -1 && tracks_count_r1 == 3 && tracks_rmax_r2 < 0.25 && jetshape_radius < 0.2");
-
-  float n_true_uds = chain.GetEntries(select_true_uds);
-  float n_true_tau = chain.GetEntries(select_true_tau);
-
-  float n_uds_as_tau = chain.GetEntries(select_true_uds && select_tau);
-  float n_tau_as_tau = chain.GetEntries(select_true_tau && select_tau);
-
-  cout << "CUT tests: " << endl;
-  cout << "Selection of TRUE TAU:   " << select_true_tau.GetTitle() << endl;
-  cout << "Selection of TRUE QUARK: " << select_true_uds.GetTitle() << endl;
-  cout << endl;
-  cout << "Total TAU:   " << n_true_tau << endl;
-  cout << "Total QUARK: " << n_true_uds << endl;
-  cout << endl;
-  cout << "Selection of RECO TAU:   " << select_tau.GetTitle() << endl;
-  cout << endl;
-  cout << "True  positive rate: " << n_tau_as_tau / n_true_tau << endl;
-  cout << "False positive rate: " << n_uds_as_tau / n_true_uds << endl;
 
   return 0;
 }
