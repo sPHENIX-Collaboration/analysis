@@ -24,6 +24,7 @@ libTreeMaker_la_SOURCES = \
   TreeMakerGetJets.C \
   TreeMakerBackgrounds.C \
   TreeMakerCopyAndMakeJets.C \
+  TreeMakerCopyAndMakeClusters.C \
   TreeMaker_Dict.C
 
 libTreeMaker_la_LIBADD = \

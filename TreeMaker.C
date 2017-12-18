@@ -56,6 +56,7 @@ int TreeMaker::process_event(PHCompositeNode *topNode)
   // --- new stuff
 
   CopyAndMakeJets(topNode);
+  CopyAndMakeClusters(topNode);
 
 
 

@@ -29,6 +29,7 @@ class TreeMaker: public SubsysReco
   int GetRecoJets(PHCompositeNode*);
   int GetTowerBackgrounds(PHCompositeNode*);
   int CopyAndMakeJets(PHCompositeNode*);
+  int CopyAndMakeClusters(PHCompositeNode*);
 
  private:
 
