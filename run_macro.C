@@ -78,7 +78,7 @@ int run_macro(
 
   JetReco *towerjetreco = new JetReco();
   // --- added by Ron (is this right?)
-  towerjetreco->add_input(new TowerJetInput(Jet::CEMC_TOWER_RETOWER));
+  towerjetreco->add_input(new TowerJetInput(Jet::CEMC_TOWER));
   towerjetreco->add_input(new TowerJetInput(Jet::HCALIN_TOWER));
   towerjetreco->add_input(new TowerJetInput(Jet::HCALOUT_TOWER));
   towerjetreco->add_algo(new FastJetAlgo(Jet::ANTIKT,0.2),"AntiKt_Tower_r02");
@@ -99,6 +99,7 @@ int run_macro(
   se->registerSubsystem(towerjetreco);
 
   TreeMaker *tt = new TreeMaker( outfile );
+  tt->Verbosity(2);
   se->registerSubsystem( tt );
 
   se->run( 1 );

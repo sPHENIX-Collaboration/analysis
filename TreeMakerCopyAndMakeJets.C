@@ -1,0 +1,175 @@
+#include <TreeMaker.h>
+
+#include <phool/getClass.h>
+#include <phool/PHCompositeNode.h>
+
+// --- calorimeter towers
+#include <g4cemc/RawTower.h>
+#include <g4cemc/RawTowerContainer.h>
+#include <g4cemc/RawTowerGeom.h>
+#include <g4cemc/RawTowerGeomContainer.h>
+
+// --- jet specific stuff
+#include <g4jets/Jet.h>
+#include <g4jets/JetMap.h>
+#include <g4jets/JetV1.h>
+#include <g4jets/JetMapV1.h>
+
+using std::cout;
+using std::endl;
+
+
+
+int TreeMaker::CopyAndMakeJets(PHCompositeNode *topNode)
+{
+
+  // -----------------------------------------------------------------------------------------------------
+  // ---
+  // -----------------------------------------------------------------------------------------------------
+
+  // --- calorimeter tower containers
+  RawTowerContainer* towersEM3 = findNode::getClass<RawTowerContainer>(topNode, "TOWER_CALIB_CEMC");
+  RawTowerContainer* towersIH3 = findNode::getClass<RawTowerContainer>(topNode, "TOWER_CALIB_HCALIN");
+  RawTowerContainer* towersOH3 = findNode::getClass<RawTowerContainer>(topNode, "TOWER_CALIB_HCALOUT");
+
+  // --- calorimeter geometry objects
+  RawTowerGeomContainer* geomEM = findNode::getClass<RawTowerGeomContainer>(topNode, "TOWERGEOM_CEMC");
+  RawTowerGeomContainer* geomIH = findNode::getClass<RawTowerGeomContainer>(topNode, "TOWERGEOM_HCALIN");
+  RawTowerGeomContainer* geomOH = findNode::getClass<RawTowerGeomContainer>(topNode, "TOWERGEOM_HCALOUT");
+
+  // --- jet objects
+  JetMap* old_jets = findNode::getClass<JetMap>(topNode,"AntiKt_Tower_r02");
+  //JetMap* new_jets = findNode::getClass<JetMap>(topNode,"AntiKt_Tower_Mod_r02"); // this node doesn't exist yet
+  JetMap* new_jets = new JetMapV1();
+
+  if ( verbosity > 0 )
+    {
+      cout << "process_event: entering with # original jets = " << old_jets->size() << endl;
+      cout << "process_event: entering with # new jets = " << new_jets->size() << endl;
+    }
+
+  // --- iterate over jets
+  int ijet = 0;
+  for ( JetMap::Iter iter = old_jets->begin(); iter != old_jets->end(); ++iter )
+    {
+      // --- get information from this jet (an element of the jet container)
+      Jet* this_jet = iter->second;
+      float this_e = this_jet->get_e();
+      float this_pt = this_jet->get_pt();
+      float this_phi = this_jet->get_phi();
+      float this_eta = this_jet->get_eta();
+      // --- create a new jet object
+      Jet *new_jet = new JetV1();
+      float new_total_px = 0;
+      float new_total_py = 0;
+      float new_total_pz = 0;
+      float new_total_e = 0;
+      if ( verbosity > 3 && this_pt > 5 )
+        {
+          cout << "process_event: unsubtracted jet with e / pt / eta / phi = "
+               << this_e << " / " << this_pt << " / " << this_eta << " / " << this_phi << endl;
+        }
+      // --- now loop over individual constituents of this jet
+      for ( Jet::ConstIter comp = this_jet->begin_comp(); comp != this_jet->end_comp(); ++comp )
+        {
+          RawTower *tower = 0;
+          RawTowerGeom *tower_geom = 0;
+          double comp_e = 0;
+          double comp_eta = 0;
+          double comp_phi = 0;
+          int comp_ieta = 0;
+          int comp_iphi = 0;
+          //double comp_background = 0;
+          // --- need to understand what 5 means
+          // --- obviously something to do with inner hcal
+          if ( (*comp).first == 5 )
+            {
+              tower = towersIH3->getTower( (*comp).second );
+              tower_geom = geomIH->get_tower_geometry(tower->get_key());
+              comp_ieta = geomIH->get_etabin( tower_geom->get_eta() );
+              comp_iphi = geomIH->get_phibin( tower_geom->get_phi() );
+            }
+          // --- need to understand what 7 means
+          // --- obviously something to do with outer hcal
+          else if ( (*comp).first == 7 )
+            {
+              tower = towersOH3->getTower( (*comp).second );
+              tower_geom = geomOH->get_tower_geometry(tower->get_key());
+              comp_ieta = geomOH->get_etabin( tower_geom->get_eta() );
+              comp_iphi = geomOH->get_phibin( tower_geom->get_phi() );
+            }
+          // --- need to understand what 13 means
+          // --- obviously something to do with emcal
+          else if ( (*comp).first == 13 )
+            {
+              tower = towersEM3->getTower( (*comp).second );
+              tower_geom = geomEM->get_tower_geometry(tower->get_key());
+              comp_ieta = geomEM->get_etabin( tower_geom->get_eta() );
+              comp_iphi = geomEM->get_phibin( tower_geom->get_phi() );
+            }
+
+          // --- if tower is not null, get the energy for this consituent
+          if ( tower ) comp_e = tower->get_energy();
+          // --- if tower geometry is not null, get the eta and phi
+          if ( tower_geom )
+            {
+              comp_eta = tower_geom->get_eta();
+              comp_phi = tower_geom->get_phi();
+            }
+
+          // --- if very high verbosity, print lots of stuff to screen
+          if ( verbosity > 4 && this_jet->get_pt() > 5 )
+            {
+              cout << "process_event: --> constituent in layer " << (*comp).first
+                   << ", has unsub E = " << comp_e << ", is at ieta #" << comp_ieta
+                   << " and iphi # = " << comp_iphi << endl;
+            }
+
+          // --- update constituent energy based on some algorithm to be developed
+          double comp_new_e = comp_e;
+
+          // --- define new kinematics for constituent
+          double comp_px = comp_new_e / cosh( comp_eta ) * cos( comp_phi );
+          double comp_py = comp_new_e / cosh( comp_eta ) * sin( comp_phi );
+          double comp_pz = comp_new_e * tanh( comp_eta );
+
+          // --- add up the total for the new jet based on the modified constituents
+          new_total_px += comp_px;
+          new_total_py += comp_py;
+          new_total_pz += comp_pz;
+          new_total_e += comp_new_e;
+        } // end of loop over jet constituents
+
+      // --- set the properties for the new jet
+      new_jet->set_px( new_total_px );
+      new_jet->set_py( new_total_py );
+      new_jet->set_pz( new_total_pz );
+      new_jet->set_e( new_total_e );
+      new_jet->set_id(ijet);
+
+      // --- put the jet into a new container class
+      new_jets->insert( new_jet );
+
+      if (verbosity > 1 && this_pt > 5)
+        {
+          cout << "process_event: old jet #" << ijet << ", old px / py / pz / e = "
+               << this_jet->get_px() << " / " << this_jet->get_py() << " / "
+               << this_jet->get_pz() << " / " << this_jet->get_e() << endl;
+          cout << "process_event: new jet #" << ijet << ", new px / py / pz / e = "
+               << new_jet->get_px() << " / " << new_jet->get_py() << " / "
+               << new_jet->get_pz() << " / " << new_jet->get_e() << endl;
+        }
+
+      ijet++; // increment jet counter
+
+    } // end of loop over jet maps (list of jets)
+
+  if ( verbosity > 0 )
+    {
+      cout << "process_event: exiting with # original jets = " << old_jets->size() << endl;
+      cout << "process_event: exiting with # new jets = " << new_jets->size() << endl;
+    }
+
+  return 0;
+
+}

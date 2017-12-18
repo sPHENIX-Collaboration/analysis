@@ -3,7 +3,6 @@
 
 // --- need to check all these includes...
 #include <fun4all/SubsysReco.h>
-#include <vector>
 
 #include "TTree.h"
 #include "TFile.h"
@@ -16,6 +15,7 @@ class TreeMaker: public SubsysReco
  public:
 
   TreeMaker(const std::string &name="TreeMaker.root");
+  ~TreeMaker();
 
   int Init(PHCompositeNode*);
   int process_event(PHCompositeNode*);
@@ -28,6 +28,7 @@ class TreeMaker: public SubsysReco
   int GetSeedJets(PHCompositeNode*);
   int GetRecoJets(PHCompositeNode*);
   int GetTowerBackgrounds(PHCompositeNode*);
+  int CopyAndMakeJets(PHCompositeNode*);
 
  private:
 

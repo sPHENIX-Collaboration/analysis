@@ -8,48 +8,39 @@
 #include <phool/getClass.h>
 #include <phool/PHCompositeNode.h>
 
-// --- trigger
-//#include <calotrigger/CaloTriggerInfo.h>
-
-// --- truth information
-//#include <g4main/PHG4TruthInfoContainer.h>
-//#include <g4main/PHG4Particle.h>
-
-// --- calorimeter towers
-//#include <g4cemc/RawTowerGeom.h>
-//#include <g4cemc/RawTower.h>
-//#include <g4cemc/RawTowerContainer.h>
-//#include <g4cemc/RawTowerGeomContainer_Cylinderv1.h>
-//#include <g4cemc/RawTowerGeomContainer.h>
-// --- calorimeter clusters
-//#include <g4cemc/RawClusterContainer.h>
-//#include <g4cemc/RawCluster.h>
-
-// --- jet specific stuff
-#include <TLorentzVector.h>
-#include <g4jets/JetMap.h>
-#include <g4jets/Jet.h>
-#include <jetbackground/TowerBackground.h>
-
 
 using std::cout;
 using std::endl;
 
+
+
 TreeMaker::TreeMaker(const std::string &name) : SubsysReco("TREEMAKER")
 {
+  cout << "TreeMaker::TreeMaker called" << endl;
   foutname = name;
+}
+
+
+TreeMaker::~TreeMaker()
+{
+  cout << "TreeMaker::~TreeMaker called" << endl;
 }
 
 
 int TreeMaker::Init(PHCompositeNode *topNode)
 {
+  cout << "TreeMaker::Init called" << endl;
   outfile = TFile::Open(foutname.c_str(),"RECREATE");
   InitializeTree();
   return 0;
 }
 
+
+
 int TreeMaker::process_event(PHCompositeNode *topNode)
 {
+
+  // --- Dennis stuff
 
   InitializeCounters();
 
@@ -61,6 +52,10 @@ int TreeMaker::process_event(PHCompositeNode *topNode)
 
   b_cluster_n = 0; // used only here
   b_particle_n = 0; // used only here
+
+  // --- new stuff
+
+  CopyAndMakeJets(topNode);
 
 
 
@@ -77,6 +72,7 @@ int TreeMaker::process_event(PHCompositeNode *topNode)
 
 int TreeMaker::End(PHCompositeNode *topNode)
 {
+  cout << "TreeMaker::End called" << endl;
   outfile->Write();
   outfile->Close();
   cout << "All done!  Have a nice day!" << endl;
