@@ -8,9 +8,6 @@
 #include <phool/getClass.h>
 #include <phool/PHCompositeNode.h>
 
-
-
-
 using std::cout;
 using std::endl;
 
@@ -52,32 +49,26 @@ int TreeMaker::process_event(PHCompositeNode *topNode)
 {
 
   // --- Dennis stuff
-
   InitializeCounters();
-
   GetTruthJets(topNode);
   GetSeedJets(topNode);
   GetRecoJets(topNode);
-
   GetTowerBackgrounds(topNode);
 
+  // --- should clean up these variables
   b_cluster_n = 0; // used only here
   b_particle_n = 0; // used only here
 
   // --- new stuff
-
   CopyAndMakeJets(topNode);
   CopyAndMakeClusters(topNode);
 
-
-
-  // -----------------------------------------------------------------------------------------------------
-  // --- all done!  fill the tree and move on to the next event
-  // -----------------------------------------------------------------------------------------------------
-
+  // --- fill the tree
   tree->Fill();
 
+  // --- all done!
   return 0;
+
 }
 
 

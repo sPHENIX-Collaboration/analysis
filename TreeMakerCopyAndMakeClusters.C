@@ -62,8 +62,7 @@ int TreeMaker::CopyAndMakeClusters(PHCompositeNode *topNode)
       return 0;
     }
 
-
-
+  // --- print sizes of old and new objects for diagnostic purposes
   if ( verbosity > 0 )
     {
       cout << "process_event: entering with # original clusters = " << clustersEM3->size() << endl;
