@@ -9,10 +9,11 @@
 #include <phool/PHCompositeNode.h>
 
 // --- jet specific stuff
-#include <g4jets/Jet.h>
 #include <g4jets/JetMap.h>
-#include <g4jets/JetV1.h>
 #include <g4jets/JetMapV1.h>
+
+// --- calorimeter clusters
+#include <g4cemc/RawClusterContainer.h>
 
 using std::cout;
 using std::endl;
@@ -25,6 +26,10 @@ int TreeMaker::CreateNode(PHCompositeNode *topNode)
   cout << "TreeMaker::CreateNode called" << endl;
 
   PHNodeIterator iter(topNode);
+
+  // -----------------------------
+  // --- Make the new jet node ---
+  // -----------------------------
 
   // --- Look for the DST node
   PHCompositeNode *dstNode = dynamic_cast<PHCompositeNode*>(iter.findFirst("PHCompositeNode", "DST"));
@@ -51,21 +56,54 @@ int TreeMaker::CreateNode(PHCompositeNode *topNode)
     }
 
   // --- Check if the new node exists (it should not) and then store the new jet collection
-  JetMap* test_jets = findNode::getClass<JetMap>(topNode,"AntiKt_Tower_Mod_r02");
-  if ( !test_jets )
+  JetMap* check_jets = findNode::getClass<JetMap>(topNode,"AntiKt_Tower_Mod_r02");
+  if ( !check_jets )
     {
       // --- If the new node doesn't already exist (good) then make it
-      if ( verbosity > 0 ) cout << "TreeMaker::CreateNode : creating AntiKt_Tower_Mod_r02 node " << endl;
-      JetMap *sub_jets = new JetMapV1();
-      PHIODataNode<PHObject> *subjetNode = new PHIODataNode<PHObject>( sub_jets, "AntiKt_Tower_Mod_r02", "PHObject");
+      cout << "TreeMaker::CreateNode : creating AntiKt_Tower_Mod_r02 node " << endl;
+      JetMap *mod_jets = new JetMapV1();
+      PHIODataNode<PHObject> *modjetNode = new PHIODataNode<PHObject>( mod_jets, "AntiKt_Tower_Mod_r02", "PHObject");
       // --- node structure for jets is DST -> ANTIKT -> TOWER (or CLUSTER or TRACK or whatever) -> specific jet node
-      towerNode->addNode(subjetNode);
+      towerNode->addNode(modjetNode);
     }
   else
     {
       // --- If the new node already exists (bad) issue a warning and then do nothing
       cout << "TreeMaker::CreateNode : AntiKt_Tower_Mod_r02 already exists! " << endl;
     }
+
+  // --------------------------------------
+  // --- Make the new cemc cluster node ---
+  // --------------------------------------
+
+  // --- Look for the CEMC node (main node for us)
+  PHCompositeNode *cemcNode = dynamic_cast<PHCompositeNode*>(iter.findFirst("PHCompositeNode", "CEMC"));
+  if ( !cemcNode )
+    {
+      cout << PHWHERE << "CEMC node not found, doing nothing." << endl;
+      return -2;
+    }
+
+  // --- Check if the new node exists (it should not) and then store the new cluster collection
+  RawClusterContainer* check_clusters = findNode::getClass<RawClusterContainer>(topNode,"CLUSTER_CEMC_MOD");
+  if ( !check_clusters )
+    {
+      // --- If the new node doesn't already exist (good) then make it
+      cout << "TreeMaker::CreateNode : creating CLUSTER_CEMC_MOD node " << endl;
+      RawClusterContainer *mod_clusters = new RawClusterContainer();
+      PHIODataNode<PHObject> *clusterNode = new PHIODataNode<PHObject>( mod_clusters, "CLUSTER_CEMC_MOD", "PHObject");
+      // --- node structure for clusters is CEMC -> CLUSTER_CEMC
+      cemcNode->addNode(clusterNode);
+    }
+  else
+    {
+      // --- If the new node already exists (bad) issue a warning and then do nothing
+      cout << "TreeMaker::CreateNode : CLUSTER_CEMC_MOD already exists! " << endl;
+    }
+
+  // ------------
+  // --- All done
+  // ------------
 
   return 0;
 

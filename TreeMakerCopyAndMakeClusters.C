@@ -49,7 +49,26 @@ int TreeMaker::CopyAndMakeClusters(PHCompositeNode *topNode)
     }
 
   // --- make new cluster object
-  RawClusterContainer* new_clusters = new RawClusterContainer(); // no node on the tree yet
+  RawClusterContainer* new_clusters = findNode::getClass<RawClusterContainer>(topNode,"CLUSTER_CEMC_MOD"); // this node is created in createnode
+  //RawClusterContainer* new_clusters = new RawClusterContainer(); // no node on the tree yet
+  if ( verbosity > 0 )
+    {
+      cout << "Regular clusters node: " << clustersEM3 << endl;
+      cout << "Modified clusters node: " << new_clusters << endl;
+    }
+  if ( !clustersEM3 || !new_clusters )
+    {
+      cout << "One or more invalid pointers, exiting event" << endl;
+      return 0;
+    }
+
+
+
+  if ( verbosity > 0 )
+    {
+      cout << "process_event: entering with # original clusters = " << clustersEM3->size() << endl;
+      cout << "process_event: entering with # new clusters = " << new_clusters->size() << endl;
+    }
 
   // --- loop over cemc clusters
   RawClusterContainer::Range cemc_range = clustersEM3->getClusters();
