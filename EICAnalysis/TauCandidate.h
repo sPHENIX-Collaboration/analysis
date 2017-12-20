@@ -2,134 +2,102 @@
 #define TAUCANDIDATE_H__
 
 #include <phool/PHObject.h>
+#include <cmath>
+#include <climits>
 
-#include <map>
-
-class Jet;
-
-/**
- * This class combines information from a jet, the energy distributio nwithin that jet, and charged tracks to
- * collect properties that allow the identification of tau->hadrons decays. */
 class TauCandidate: public PHObject
 {
 public:
+  TauCandidate() {}
+  virtual ~TauCandidate() {}
 
-  /** Default constructor. */
-  TauCandidate( Jet* );
+  virtual void identify(std::ostream& os = std::cout) const;
 
-  /** Default destructor. */
-  ~TauCandidate() {}
+  virtual void Copy(TauCandidate const &tc);
 
-  /** Print some information about this tau candidate (for debugging purposes) */
-  void identify(std::ostream& os = std::cout) const;
+  friend std::ostream &operator<<(std::ostream & stream, const TauCandidate * tc);
 
-  /** Manually set properties of this tau candidate */
-  void set_jetshape_econe( float r1, float er1 ) { _jetshape_econe.insert( std::make_pair( r1, er1 ) ); }
-  void set_jetshape_r90( float r90 ) { _jetshape_r90 = r90; }
-  void set_jetshape_rms( float rms ) { _jetshape_rms = rms; }
-  void set_jetshape_radius( float radius ) { _jetshape_radius = radius; }
+  virtual void Reset();
 
-  void set_is_tau( bool id ) { _is_tau = id; }
-  void set_is_uds( bool id ) { _is_uds = id; }
+  virtual void print() const {std::cout<<"TauCandidate base class - print() not implemented"<<std::endl;}
 
-  void set_tau_etotal( float etotal ) { _tau_etotal = etotal; }
-  void set_tau_eta( float eta ) { _tau_eta = eta; }
-  void set_tau_phi( float phi ) { _tau_phi = phi; }
+  //! Procedure to add a new PROPERTY tag:
+  //! 1.add new tag below with unique value,
+  //! 2.add a short name to TauCandidate::get_property_info
+  enum PROPERTY
+    {//
 
-  void set_tau_decay_prong( int prong ) { _tau_decay_prong = prong; }
-  void set_tau_decay_hcharged( int hcharged ) { _tau_decay_hcharged = hcharged; }
-  void set_tau_decay_lcharged( int lcharged ) { _tau_decay_lcharged = lcharged; }
+      //-- Truth properties: 1 - 100  --
+      evtgen_is_tau = 1,
+      evtgen_tau_etotal = 2,
+      evtgen_tau_eta = 3,
+      evtgen_tau_phi = 4,
+      evtgen_tau_decay_prong = 5,
+      evtgen_tau_decay_hcharged = 6,
+      evtgen_tau_decay_lcharged = 7,
 
-  void set_uds_etotal( float etotal ) { _uds_etotal = etotal; }
-  void set_uds_eta( float eta ) { _uds_eta = eta; }
-  void set_uds_phi( float phi ) { _uds_phi = phi; }
+      evtgen_is_uds = 11,
+      evtgen_uds_etotal = 12,
+      evtgen_uds_eta = 13,
+      evtgen_uds_phi = 14,
 
-  void set_tracks_count( float r1, int ntracks ) { _tracks_count.insert( std::make_pair( r1, ntracks ) ); }
-  void set_tracks_chargesum( float r1, int qtracks ) { _tracks_chargesum.insert( std::make_pair( r1, qtracks ) ); }
-  void set_tracks_rmax( float r1, float rmax ) { _tracks_rmax.insert( std::make_pair( r1, rmax ) ); }
+      //-- Jet properties: 101 - ?  --
+      jet_id = 101,
+      jet_eta = 102,
+      jet_phi = 103,
+      jet_etotal = 104,
+      jet_etrans = 105,
+      jet_ptotal = 106,
+      jet_ptrans = 107,
+      jet_mass = 108,
+      jet_ncomp = 109,
 
-  /** Retrieve properties of this tau candidate */
-  unsigned int get_jet_id() const { return _jet_id; }
-  float get_jet_eta() const { return _jet_eta; }
-  float get_jet_phi() const { return _jet_phi; }
-  float get_jet_etotal() const { return _jet_etotal; }
-  float get_jet_etrans() const { return _jet_etrans; }
-  float get_jet_ptotal() const { return _jet_ptotal; }
-  float get_jet_ptrans() const { return _jet_ptrans; }
-  float get_jet_mass() const { return _jet_mass; }
+      //-- Jet shape in calorimeter: 120 - 200  --
+      jetshape_radius = 121,
+      jetshape_rms = 122,
+      jetshape_r90 = 123,
 
-  float get_jetshape_econe( float r1 ) const { return _jetshape_econe.find( r1 )->second; }
-  float get_jetshape_r90() const { return _jetshape_r90; }
-  float get_jetshape_rms() const { return _jetshape_rms; }
-  float get_jetshape_radius() const { return _jetshape_radius; }
+      jetshape_econe_r01 = 131,
+      jetshape_econe_r02 = 132,
+      jetshape_econe_r04 = 134,
 
-  bool get_is_tau() const { return _is_tau; }
-  bool get_is_uds() const { return _is_uds; }
+      //-- Track information: 201 - 300  --
+      tracks_count_r02 = 210,
+      tracks_count_r04 = 211,
 
-  float get_tau_etotal() const { return _tau_etotal; }
-  float get_tau_eta() const { return _tau_eta; }
-  float get_tau_phi() const { return _tau_phi; }
-  int   get_tau_decay_prong() const { return _tau_decay_prong; }
-  int   get_tau_decay_hcharged() const { return _tau_decay_hcharged; }
-  int   get_tau_decay_lcharged() const { return _tau_decay_lcharged; }
+      tracks_rmax_r02 = 215,
+      tracks_rmax_r04 = 216,
 
-  float get_uds_etotal() const { return _uds_etotal; }
-  float get_uds_eta() const { return _uds_eta; }
-  float get_uds_phi() const { return _uds_phi; }
+      tracks_chargesum_r02 = 220,
+      tracks_chargesum_r04 = 221,
 
-  int get_tracks_count( float r1 ) const { return _tracks_count.find( r1 )->second; }
-  int get_tracks_chargesum( float r1 ) const { return _tracks_chargesum.find( r1 )->second; }
-  float get_tracks_rmax( float r1 ) const { return _tracks_rmax.find( r1 )->second; }
+      //! max limit in order to fit into 8 bit unsigned number
+      prop_MAX_NUMBER = UCHAR_MAX
+    };
+
+  enum PROPERTY_TYPE
+    {//
+      type_int = 1,
+      type_uint = 2,
+      type_float = 3,
+      type_unknown = -1
+    };
+
+  virtual bool  has_property(const PROPERTY prop_id) const {return false;}
+  virtual float get_property_float(const PROPERTY prop_id) const {return NAN;}
+  virtual int   get_property_int(const PROPERTY prop_id) const {return INT_MIN;}
+  virtual unsigned int   get_property_uint(const PROPERTY prop_id) const {return UINT_MAX;}
+  virtual void  set_property(const PROPERTY prop_id, const float value) {return;}
+  virtual void  set_property(const PROPERTY prop_id, const int value) {return;}
+  virtual void  set_property(const PROPERTY prop_id, const unsigned int value) {return;}
+  static std::pair<const std::string,PROPERTY_TYPE> get_property_info(PROPERTY prop_id);
+  static bool check_property(const PROPERTY prop_id, const PROPERTY_TYPE prop_type);
+  static std::string get_property_type(const PROPERTY_TYPE prop_type);
 
 protected:
-
-  /**
-   * Save properties of the jet that serves as basis for this tau candidate.
-   * These are const to preserve the information of the jet that was initially considered tau candidate. */
-  const unsigned int _jet_id;
-  const float _jet_eta;
-  const float _jet_phi;
-  const float _jet_etotal;
-  const float _jet_etrans;
-  const float _jet_ptotal;
-  const float _jet_ptrans;
-  const float _jet_mass;
-
-  /** Jet structure properties */
-  std::map< float, float > _jetshape_econe;
-  float _jetshape_r90;
-  float _jetshape_rms;
-  float _jetshape_radius;
-
-  /** Does this jet come from a 'truth' tau from hard scattering? */
-  bool _is_tau;
-
-  /** Does this jet come from a 'truth' u-, d-, or s-quark from hard scattering? */
-  bool _is_uds;
-
-  /** Properites of event generator "true" tau */
-  float _tau_etotal;
-  float _tau_eta;
-  float _tau_phi;
-
-  int _tau_decay_prong;
-  int _tau_decay_hcharged;
-  int _tau_decay_lcharged;
-
-  /** Properites of event generator "true" quark from hard scattering */
-  float _uds_etotal;
-  float _uds_eta;
-  float _uds_phi;
-
-  /** Number of tracks within cone around jet axis */
-  std::map< float, int > _tracks_count;
-
-  /** Sum of charges of tracks within cone around jet axis */
-  std::map< float, int > _tracks_chargesum;
-
-  /** Track with maximum angle w.r.t. jet axis but still within search cone around jet axis */
-  std::map< float, float > _tracks_rmax;
-
+  virtual unsigned int get_property_nocheck(const PROPERTY prop_id) const {return UINT_MAX;}
+  virtual void set_property_nocheck(const PROPERTY prop_id,const unsigned int) {return;}
+  //ClassDef(TauCandidate,1)
 };
 
 #endif

@@ -26,7 +26,7 @@ class PHHepMCGenEventMap;
 
 class TauCandidate;
 
-typedef std::map<float, TauCandidate> map_tcan;
+typedef std::map<float, TauCandidate*> map_tcan;
 
 class LeptoquarksReco : public SubsysReco
 {
