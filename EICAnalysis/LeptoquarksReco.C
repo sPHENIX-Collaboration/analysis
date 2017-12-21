@@ -536,22 +536,18 @@ LeptoquarksReco::AddJetStructureInformation( map_tcan& tauCandidateMap, JetMap* 
 int
 LeptoquarksReco::AddTrackInformation( map_tcan& tauCandidateMap, SvtxTrackMap* trackmap )
 {
-  /* Cone size around jet axis within which to look for tracks */
-  float delta_R_cutoff_1 = 0.2;
-  float delta_R_cutoff_2 = 0.4;
-
   /* Loop over tau candidates */
   for (map_tcan::iterator iter = tauCandidateMap.begin();
        iter != tauCandidateMap.end();
        ++iter)
     {
-      uint tracks_count_r1 = 0;
-      int tracks_chargesum_r1 = 0;
-      float tracks_rmax_r1 = 0;
+      uint tracks_count_r02 = 0;
+      int tracks_chargesum_r02 = 0;
+      float tracks_rmax_r02 = 0;
 
-      uint tracks_count_r2 = 0;
-      int tracks_chargesum_r2 = 0;
-      float tracks_rmax_r2 = 0;
+      uint tracks_count_r04 = 0;
+      int tracks_chargesum_r04 = 0;
+      float tracks_rmax_r04 = 0;
 
       float jet_eta = (iter->second)->get_property_float( TauCandidate::jet_eta );
       float jet_phi = (iter->second)->get_property_float( TauCandidate::jet_phi );
@@ -604,33 +600,33 @@ LeptoquarksReco::AddTrackInformation( map_tcan& tauCandidateMap, SvtxTrackMap* t
           }
 
         /* If track within search cone, update track information for tau candidate */
-        if ( delta_R < delta_R_cutoff_1 )
+        if ( delta_R < 0.2 )
           {
-            tracks_count_r1++;
-            tracks_chargesum_r1 += track_charge;
+            tracks_count_r02++;
+            tracks_chargesum_r02 += track_charge;
 
-            if ( delta_R > tracks_rmax_r1 )
-              tracks_rmax_r1 = delta_R;
+            if ( delta_R > tracks_rmax_r02 )
+              tracks_rmax_r02 = delta_R;
           }
 
-        if ( delta_R < delta_R_cutoff_2 )
+        if ( delta_R < 0.4 )
           {
-            tracks_count_r2++;
-            tracks_chargesum_r2 += track_charge;
+            tracks_count_r04++;
+            tracks_chargesum_r04 += track_charge;
 
-            if ( delta_R > tracks_rmax_r2 )
-              tracks_rmax_r2 = delta_R;
+            if ( delta_R > tracks_rmax_r04 )
+              tracks_rmax_r04 = delta_R;
           }
 
       } // end loop over reco tracks //
 
       /* Set track-based properties for tau candidate */
-      (iter->second)->set_property( TauCandidate::tracks_count_r02, tracks_count_r1 );
-      (iter->second)->set_property( TauCandidate::tracks_chargesum_r02, tracks_chargesum_r1 );
-      (iter->second)->set_property( TauCandidate::tracks_rmax_r02, tracks_rmax_r1 );
-      (iter->second)->set_property( TauCandidate::tracks_count_r04, tracks_count_r2 );
-      (iter->second)->set_property( TauCandidate::tracks_chargesum_r04, tracks_chargesum_r2 );
-      (iter->second)->set_property( TauCandidate::tracks_rmax_r04, tracks_rmax_r2 );
+      (iter->second)->set_property( TauCandidate::tracks_count_r02, tracks_count_r02 );
+      (iter->second)->set_property( TauCandidate::tracks_chargesum_r02, tracks_chargesum_r02 );
+      (iter->second)->set_property( TauCandidate::tracks_rmax_r02, tracks_rmax_r02 );
+      (iter->second)->set_property( TauCandidate::tracks_count_r04, tracks_count_r04 );
+      (iter->second)->set_property( TauCandidate::tracks_chargesum_r04, tracks_chargesum_r04 );
+      (iter->second)->set_property( TauCandidate::tracks_rmax_r04, tracks_rmax_r04 );
 
     } // end loop over tau  candidates
 
