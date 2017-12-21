@@ -1,6 +1,8 @@
 #ifndef __LeptoquarksReco_H__
 #define __LeptoquarksReco_H__
 
+#include "TauCandidate.h"
+
 /* Fun4All includes */
 #include <fun4all/SubsysReco.h>
 
@@ -13,6 +15,7 @@
 #include <phhepmc/PHHepMCGenEventMap.h>
 
 class TNtuple;
+class TTree;
 class TFile;
 
 class PHCompositeNode;
@@ -83,6 +86,7 @@ private:
   TFile *_tfile;
 
   /* output tree and variables */
+  TTree* _t_candidate;
   TNtuple* _ntp_jet;
   TNtuple* _ntp_jet2;
   TNtuple* _ntp_tower;
@@ -95,9 +99,13 @@ private:
   /** name of jet collection */
   std::string _jetcolname;
 
-  /* CaloRawTowerEvaluators to access tru particle info for
+  /** CaloRawTowerEvaluators to access tru particle info for
    * given towers */
   std::map< std::string, CaloRawTowerEval* > _map_towereval;
+
+  /** Map of TauCandidate properties that will be written to
+   * output ROOT Tree */
+  std::map< TauCandidate::PROPERTY , float > _map_treebranches;
 
   int AddTrueTauTag( map_tcan&, PHHepMCGenEventMap* );
 

@@ -33,6 +33,7 @@
 #include <TDatabasePDG.h>
 #include <TString.h>
 #include <TNtuple.h>
+#include <TTree.h>
 #include <TFile.h>
 #include <TDatabasePDG.h>
 
@@ -45,6 +46,7 @@ LeptoquarksReco::LeptoquarksReco(std::string filename) :
   _ievent(0),
   _filename(filename),
   _tfile(nullptr),
+  _t_candidate(nullptr),
   _ntp_jet(nullptr),
   _ntp_jet2(nullptr),
   _ntp_tower(nullptr),
@@ -61,6 +63,56 @@ LeptoquarksReco::Init(PHCompositeNode *topNode)
   _ievent = 0;
 
   _tfile = new TFile(_filename.c_str(), "RECREATE");
+
+  /* Add TauCandidate properties to map that defines output tree */
+  float dummy = 0;
+  _map_treebranches.insert( make_pair( TauCandidate::jet_id , dummy ) );
+  _map_treebranches.insert( make_pair( TauCandidate::evtgen_is_tau , dummy ) );
+  _map_treebranches.insert( make_pair( TauCandidate::evtgen_is_uds , dummy ) );
+  _map_treebranches.insert( make_pair( TauCandidate::evtgen_tau_etotal , dummy ) );
+  _map_treebranches.insert( make_pair( TauCandidate::evtgen_tau_eta , dummy ) );
+  _map_treebranches.insert( make_pair( TauCandidate::evtgen_tau_phi , dummy ) );
+  _map_treebranches.insert( make_pair( TauCandidate::evtgen_tau_decay_prong , dummy ) );
+  _map_treebranches.insert( make_pair( TauCandidate::evtgen_tau_decay_hcharged , dummy ) );
+  _map_treebranches.insert( make_pair( TauCandidate::evtgen_tau_decay_lcharged , dummy ) );
+  _map_treebranches.insert( make_pair( TauCandidate::evtgen_uds_etotal , dummy ) );
+  _map_treebranches.insert( make_pair( TauCandidate::evtgen_uds_eta , dummy ) );
+  _map_treebranches.insert( make_pair( TauCandidate::evtgen_uds_phi , dummy ) );
+  _map_treebranches.insert( make_pair( TauCandidate::jet_eta , dummy ) );
+  _map_treebranches.insert( make_pair( TauCandidate::jet_phi , dummy ) );
+  _map_treebranches.insert( make_pair( TauCandidate::jet_etotal , dummy ) );
+  _map_treebranches.insert( make_pair( TauCandidate::jet_etrans , dummy ) );
+  _map_treebranches.insert( make_pair( TauCandidate::jet_ptotal , dummy ) );
+  _map_treebranches.insert( make_pair( TauCandidate::jet_ptrans , dummy ) );
+  _map_treebranches.insert( make_pair( TauCandidate::jet_mass , dummy ) );
+  _map_treebranches.insert( make_pair( TauCandidate::jetshape_econe_r01 , dummy ) );
+  _map_treebranches.insert( make_pair( TauCandidate::jetshape_econe_r02 , dummy ) );
+  _map_treebranches.insert( make_pair( TauCandidate::jetshape_econe_r03 , dummy ) );
+  _map_treebranches.insert( make_pair( TauCandidate::jetshape_econe_r04 , dummy ) );
+  _map_treebranches.insert( make_pair( TauCandidate::jetshape_econe_r05 , dummy ) );
+  _map_treebranches.insert( make_pair( TauCandidate::jetshape_r90 , dummy ) );
+  _map_treebranches.insert( make_pair( TauCandidate::jetshape_rms , dummy ) );
+  _map_treebranches.insert( make_pair( TauCandidate::jetshape_radius , dummy ) );
+  _map_treebranches.insert( make_pair( TauCandidate::tracks_count_r02 , dummy ) );
+  _map_treebranches.insert( make_pair( TauCandidate::tracks_chargesum_r02 , dummy ) );
+  _map_treebranches.insert( make_pair( TauCandidate::tracks_rmax_r02 , dummy ) );
+  _map_treebranches.insert( make_pair( TauCandidate::tracks_count_r04 , dummy ) );
+  _map_treebranches.insert( make_pair( TauCandidate::tracks_chargesum_r04 , dummy ) );
+  _map_treebranches.insert( make_pair( TauCandidate::tracks_rmax_r04 , dummy ) );
+
+  /* Create tree for information about tau candidates */
+  _t_candidate = new TTree("candidates", "a Tree with tau candidates");
+  _t_candidate->Branch("event", &_ievent, "event/I");
+  for ( map< TauCandidate::PROPERTY , float >::iterator iter = _map_treebranches.begin();
+        iter != _map_treebranches.end();
+        ++iter)
+    {
+      //cout << "ADDING BRANCH " << TauCandidate::get_property_info( (iter->first) ).first << "\tOF TYPE\t" << TauCandidate::get_property_type( TauCandidate::get_property_info( (iter->first) ).second ) << endl;
+
+      _t_candidate->Branch(TauCandidate::get_property_info( (iter->first) ).first.c_str(),
+                                &(iter->second),
+                                TauCandidate::get_property_info( (iter->first) ).first.c_str());
+    }
 
   /* NTuple to store tau candidate information */
   _ntp_jet = new TNtuple("ntp_jet","all jet information from LQ events",
@@ -562,11 +614,11 @@ LeptoquarksReco::AddJetStructureInformation( map_tcan& tauCandidateMap, JetMap* 
                 {
                   er3 += tower_energy;
                 }
-	      if ( delta_R <= delta_R_cutoff_r4 )
+              if ( delta_R <= delta_R_cutoff_r4 )
                 {
                   er4 += tower_energy;
                 }
-	      if ( delta_R <= delta_R_cutoff_r5 )
+              if ( delta_R <= delta_R_cutoff_r5 )
                 {
                   er5 += tower_energy;
                 }
@@ -736,7 +788,7 @@ LeptoquarksReco::AddTrackInformation( map_tcan& tauCandidateMap, SvtxTrackMap* t
 
       } // end loop over reco tracks //
 
-        /* Set track-based properties for tau candidate */
+      /* Set track-based properties for tau candidate */
       (iter->second)->set_property( TauCandidate::tracks_count_r02, tracks_count_r1 );
       (iter->second)->set_property( TauCandidate::tracks_chargesum_r02, tracks_chargesum_r1 );
       (iter->second)->set_property( TauCandidate::tracks_rmax_r02, tracks_rmax_r1 );
@@ -759,6 +811,32 @@ LeptoquarksReco::WriteTauCandidatesToTree( map_tcan& tauCandidateMap )
        iter != tauCandidateMap.end();
        ++iter)
     {
+      /* update information in map and fill tree */
+      for ( map< TauCandidate::PROPERTY , float >::iterator iter_prop = _map_treebranches.begin();
+            iter_prop != _map_treebranches.end();
+            ++iter_prop)
+        {
+          switch ( TauCandidate::get_property_info( (iter_prop->first) ).second ) {
+
+          case TauCandidate::type_float :
+            (iter_prop->second) = (iter->second)->get_property_float( (iter_prop->first) );
+            break;
+
+          case TauCandidate::type_int :
+            (iter_prop->second) = (iter->second)->get_property_int( (iter_prop->first) );
+            break;
+
+          case TauCandidate::type_uint :
+            (iter_prop->second) = (iter->second)->get_property_uint( (iter_prop->first) );
+            break;
+
+          case TauCandidate::type_unknown :
+            break;
+          }
+        }
+      _t_candidate->Fill();
+
+
       float jet_data[18] = {(float) _ievent,  //event number
                             (float) (iter->second)->get_property_uint( TauCandidate::jet_id ),       //jet id
                             (float) 0, //is_max_energy_jet,                //is this the maximum energy jet?
@@ -803,11 +881,11 @@ LeptoquarksReco::WriteTauCandidatesToTree( map_tcan& tauCandidateMap )
                              (float) (iter->second)->get_property_float( TauCandidate::jetshape_econe_r03 ),
                              (float) (iter->second)->get_property_float( TauCandidate::jetshape_econe_r04 ),
                              (float) (iter->second)->get_property_float( TauCandidate::jetshape_econe_r05 ),
-			     (float) 0, //jetshpae_econe_r6
-			     (float) 0, //jetshpae_econe_r7
-			     (float) 0, //jetshpae_econe_r8
-			     (float) 0, //jetshpae_econe_r9
-			     (float) 0, //jetshpae_econe_r10
+                             (float) 0, //jetshpae_econe_r6
+                             (float) 0, //jetshpae_econe_r7
+                             (float) 0, //jetshpae_econe_r8
+                             (float) 0, //jetshpae_econe_r9
+                             (float) 0, //jetshpae_econe_r10
                              (float) (iter->second)->get_property_float( TauCandidate::jetshape_r90 ),
                              (float) (iter->second)->get_property_float( TauCandidate::jetshape_rms ),
                              (float) (iter->second)->get_property_float( TauCandidate::jetshape_radius ),
@@ -870,6 +948,10 @@ int
 LeptoquarksReco::End(PHCompositeNode *topNode)
 {
   _tfile->cd();
+
+  if ( _t_candidate )
+    _t_candidate->Write();
+
   _ntp_jet->Write();
   _ntp_jet2->Write();
 
