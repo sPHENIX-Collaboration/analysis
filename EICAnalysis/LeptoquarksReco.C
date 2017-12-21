@@ -1,5 +1,6 @@
 #include "LeptoquarksReco.h"
 #include "TauCandidatev1.h"
+#include "TruthTrackerHepMC.h"
 
 /* STL includes */
 #include <cassert>
@@ -35,7 +36,6 @@
 #include <TNtuple.h>
 #include <TTree.h>
 #include <TFile.h>
-#include <TDatabasePDG.h>
 
 using namespace std;
 
@@ -110,8 +110,8 @@ LeptoquarksReco::Init(PHCompositeNode *topNode)
       //cout << "ADDING BRANCH " << TauCandidate::get_property_info( (iter->first) ).first << "\tOF TYPE\t" << TauCandidate::get_property_type( TauCandidate::get_property_info( (iter->first) ).second ) << endl;
 
       _t_candidate->Branch(TauCandidate::get_property_info( (iter->first) ).first.c_str(),
-                                &(iter->second),
-                                TauCandidate::get_property_info( (iter->first) ).first.c_str());
+                           &(iter->second),
+                           TauCandidate::get_property_info( (iter->first) ).first.c_str());
     }
 
   /* NTuple to store tau candidate information */
@@ -260,80 +260,29 @@ int
 LeptoquarksReco::AddTrueTauTag( map_tcan& tauCandidateMap, PHHepMCGenEventMap *genevtmap )
 {
   /* Look for leptoquark and tau particle in the event */
-  //  bool   lq_found = false;
-  HepMC::GenParticle* particle_lq = NULL;
-  HepMC::GenParticle* particle_tau = NULL;
+  TruthTrackerHepMC truth;
+  truth.set_hepmc_geneventmap( genevtmap );
+
+  int pdg_lq = 39; // leptoquark
+  int pdg_tau = 15; // tau lepton
+
+  HepMC::GenParticle* particle_lq = truth.FindParticle( pdg_lq );
+  HepMC::GenParticle* particle_tau = truth.FindDaughterParticle( pdg_tau, particle_lq );
+
+  /* loop over all quark PDG codes until finding a matching quark */
   HepMC::GenParticle* particle_quark = NULL;
-
-  /* --> Loop over all truth events in event generator collection */
-  for (PHHepMCGenEventMap::ReverseIter iter = genevtmap->rbegin(); iter != genevtmap->rend(); ++iter)
+  for ( int pdg_quark = 1; pdg_quark < 7; pdg_quark++ )
     {
-      PHHepMCGenEvent *genevt = iter->second;
-      HepMC::GenEvent *theEvent = genevt->getEvent();
+      /* try quark */
+      particle_quark = truth.FindDaughterParticle( pdg_quark, particle_lq );
+      if (particle_quark)
+	break;
 
-      /* check if GenEvent object found */
-      if ( !theEvent )
-        {
-          cout << "ERROR: Missing GenEvent!" << endl;
-          return -1;
-        }
-
-      /* Loop over all truth particles in event generator collection
-       *
-       * particle   ...   PGD code
-       * -------------------------
-       * LQ_ue      ...    39
-       * tau-       ...    15
-       * pi+        ...    211
-       * pi-        ...   -211
-       * u          ...    2
-       * d          ...    1 */
-      for ( HepMC::GenEvent::particle_iterator p = theEvent->particles_begin();
-            p != theEvent->particles_end(); ++p ) {
-
-        /* check particle ID == LQ_ue */
-        if ( (*p)->pdg_id() == 39 )
-          {
-            particle_lq = (*p);
-
-            /* Where does it end (=decay)? */
-            if ( particle_lq->end_vertex() )
-              {
-                /* Loop over mother particles at production vertex */
-                for ( HepMC::GenVertex::particle_iterator lq_child
-                        = particle_lq->end_vertex()->
-                        particles_begin(HepMC::children);
-                      lq_child != particle_lq->end_vertex()->
-                        particles_end(HepMC::children);
-                      ++lq_child )
-                  {
-                    /* Is child a tau? */
-                    if ( (*lq_child)->pdg_id() == 15 )
-                      {
-                        particle_tau = (*lq_child);
-                        UpdateFinalStateParticle( particle_tau );
-                      }
-                    /* Is child a quark? */
-                    else if ( abs((*lq_child)->pdg_id()) > 0 && abs((*lq_child)->pdg_id() < 7) )
-                      {
-                        particle_quark = (*lq_child);
-                        UpdateFinalStateParticle( particle_quark );
-                      }
-                    /* What else could it be? */
-                    else
-                      {
-                        cerr << PHWHERE << " ERROR: Didn't expect to find a leptoquark child with pdg_id " << (*lq_child)->pdg_id() << endl;
-                        return Fun4AllReturnCodes::ABORTEVENT;
-                      }
-                  }
-              }
-
-            /* end loop if leptoquark found */
-            break;
-          } // end if leptoquark //
-      } // end loop over all particles in event //
-    }// end loop over genevtmap //
-
+      /* try anti-quark */
+      particle_quark = truth.FindDaughterParticle( -pdg_quark, particle_lq );
+      if (particle_quark)
+	break;
+    }
 
   /* If TAU in event: Tag the tau candidate (i.e. jet) with smalles delta_R from this tau */
   if( particle_tau )
@@ -916,31 +865,6 @@ LeptoquarksReco::CalculateDeltaR( float eta1, float phi1, float eta2, float phi2
   float delta_R = sqrt( pow( eta2 - eta1, 2 ) + pow( phi2 - phi1, 2 ) );
 
   return delta_R;
-}
-
-
-void
-LeptoquarksReco::UpdateFinalStateParticle( HepMC::GenParticle *&particle )
-{
-  bool final_state = false;
-  while ( !final_state )
-    {
-      /* Loop over all children at the end vertex of this particle */
-      for ( HepMC::GenVertex::particle_iterator child
-              = particle->end_vertex()->particles_begin(HepMC::children);
-            child != particle->end_vertex()->particles_end(HepMC::children);
-            ++child )
-        {
-          /* If there is a child of same particle ID, this was not the final state particle- update pointer to particle and repeat */
-          if ( (*child)->pdg_id() == particle->pdg_id() )
-            {
-              particle = (*child);
-              break;
-            }
-          final_state = true;
-        }
-    }
-  return;
 }
 
 

@@ -28,7 +28,8 @@ pkginclude_HEADERS = \
   LeptoquarksReco.h \
   Quarkonia2LeptonsMC.h\
   TauCandidate.h\
-  TauCandidatev1.h
+  TauCandidatev1.h\
+  TruthTrackerHepMC.h
 
 libeicana_la_SOURCES = \
   DISKinematics.C \
@@ -42,7 +43,8 @@ libeicana_la_SOURCES = \
   TauCandidate.C\
   TauCandidate_Dict.C\
   TauCandidatev1.C\
-  TauCandidatev1_Dict.C
+  TauCandidatev1_Dict.C\
+  TruthTrackerHepMC.C
 
 # Rule for generating table CINT dictionaries.
 %_Dict.C: %.h %LinkDef.h
