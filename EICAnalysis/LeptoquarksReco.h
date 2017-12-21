@@ -5,6 +5,7 @@
 
 /* Fun4All includes */
 #include <fun4all/SubsysReco.h>
+#include <g4cemc/RawTowerDefs.h>
 
 /* STL includes */
 #include <math.h>
@@ -30,6 +31,7 @@ class PHHepMCGenEventMap;
 class TauCandidate;
 
 typedef std::map<float, TauCandidate*> map_tcan;
+typedef std::map< RawTowerDefs::CalorimeterId , std::pair< RawTowerContainer*, RawTowerGeomContainer* > > map_cdata;
 
 class LeptoquarksReco : public SubsysReco
 {
@@ -112,7 +114,7 @@ private:
 
   int AddTrueTauTag( map_tcan&, PHHepMCGenEventMap* );
 
-  int AddJetStructureInformation( map_tcan&, JetMap*, std::vector<RawTowerContainer*>, std::vector<RawTowerGeomContainer*> );
+  int AddJetStructureInformation( map_tcan&, JetMap*, map_cdata* );
 
   int AddTrackInformation( map_tcan&, SvtxTrackMap* );
 
@@ -123,6 +125,17 @@ private:
 
   /** Calculate Delta R ("distance in eta-phi space") between two sets of eta, phi angles */
   float CalculateDeltaR( float, float, float, float );
+
+  /** Enum to identify calorimeter types */
+  enum CALOTYPE
+  {
+    calo_cemc,
+    calo_ihcal,
+    calo_ohcal,
+    calo_femc,
+    calo_fhcal,
+    calo_eemc
+  };
 
 };
 

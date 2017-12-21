@@ -168,20 +168,21 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
     return Fun4AllReturnCodes::ABORTEVENT;
   }
 
-  /* create vectors of all tower collections and tower geometry collections used */
-  vector<string> v_calonames;
-  v_calonames.push_back("CEMC");
-  v_calonames.push_back("HCALIN");
-  v_calonames.push_back("HCALOUT");
+  /* create map of all tower collections and tower geometry collections used */
+  map_cdata map_calotower;
 
-  vector<RawTowerContainer*> v_towers;
-  vector<RawTowerGeomContainer*> v_tower_geoms;
+  /* Select calorimeter to include */
+  vector< RawTowerDefs::CalorimeterId > v_caloids;
+  v_caloids.push_back( RawTowerDefs::CEMC );
+  v_caloids.push_back( RawTowerDefs::HCALIN );
+  v_caloids.push_back( RawTowerDefs::HCALOUT );
 
-  for ( unsigned i = 0; i < v_calonames.size(); i++ )
+  /* Fill map with calorimeter data */
+  for ( unsigned i = 0; i < v_caloids.size(); i++ )
     {
-      /* Get collection of CEMC towers */
+      /* Get collection of towers */
       string towers_name = "TOWER_CALIB_";
-      towers_name.append( v_calonames.at(i) );
+      towers_name.append( RawTowerDefs::convert_caloid_to_name( v_caloids.at( i ) ) );
 
       RawTowerContainer *towers = findNode::getClass<RawTowerContainer>(topNode,towers_name);
       if (!towers) {
@@ -189,11 +190,9 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
         return Fun4AllReturnCodes::ABORTEVENT;
       }
 
-      v_towers.push_back( towers );
-
-      /* get CEMC geometry collection */
+      /* get geometry collection */
       string towergeom_name = "TOWERGEOM_";
-      towergeom_name.append( v_calonames.at(i) );
+      towergeom_name.append( RawTowerDefs::convert_caloid_to_name( v_caloids.at( i ) ) );
 
       RawTowerGeomContainer *geom = findNode::getClass<RawTowerGeomContainer>(topNode,towergeom_name);
       if (!geom) {
@@ -201,8 +200,10 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
         return Fun4AllReturnCodes::ABORTEVENT;
       }
 
-      v_tower_geoms.push_back(geom);
+      /* Insert tower and geometry collections in map */
+      map_calotower.insert( make_pair( v_caloids.at( i ), make_pair( towers, geom ) ) );
     }
+
 
   /* Loop over all jets to collect tau candidate objects */
   for (JetMap::Iter iter = recojets->begin();
@@ -238,7 +239,7 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
   AddTrueTauTag( tauCandidateMap, genevtmap );
 
   /* Add jet structure information to tau candidates */
-  AddJetStructureInformation( tauCandidateMap, recojets, v_towers, v_tower_geoms );
+  AddJetStructureInformation( tauCandidateMap, recojets, &map_calotower );
 
   /* Add track information to tau candidates */
   AddTrackInformation( tauCandidateMap, trackmap );
@@ -341,7 +342,7 @@ LeptoquarksReco::AddTrueTauTag( map_tcan& tauCandidateMap, PHHepMCGenEventMap *g
 
 
 int
-LeptoquarksReco::AddJetStructureInformation( map_tcan& tauCandidateMap, JetMap* recojets, vector<RawTowerContainer*> v_towers, vector<RawTowerGeomContainer*> v_tower_geoms )
+LeptoquarksReco::AddJetStructureInformation( map_tcan& tauCandidateMap, JetMap* recojets, map_cdata* map_towers )
 {
   /* Cone size around jet axis within which to look for tracks */
   float delta_R_cutoff_r1 = 0.1;
@@ -378,10 +379,12 @@ LeptoquarksReco::AddJetStructureInformation( map_tcan& tauCandidateMap, JetMap* 
       float rms_esum = 0;
 
       /* Loop over all tower (and geometry) collections */
-      for ( unsigned calo_id = 0; calo_id < v_towers.size(); calo_id++ )
+      for (map_cdata::iterator iter_calo = map_towers->begin();
+	   iter_calo != map_towers->end();
+	   ++iter_calo)
         {
           /* define tower iterator */
-          RawTowerContainer::ConstRange begin_end = (v_towers.at(calo_id))->getTowers();
+          RawTowerContainer::ConstRange begin_end = ((iter_calo->second).first)->getTowers();
           RawTowerContainer::ConstIterator rtiter;
 
           /* loop over all tower in CEMC calorimeter */
@@ -396,7 +399,7 @@ LeptoquarksReco::AddJetStructureInformation( map_tcan& tauCandidateMap, JetMap* 
                 continue;
 
               /* get eta and phi of tower and check angle delta_R w.r.t. jet axis */
-              RawTowerGeom * tower_geom = (v_tower_geoms.at(calo_id))->get_tower_geometry(tower -> get_key());
+              RawTowerGeom * tower_geom = ((iter_calo->second).second)->get_tower_geometry(tower -> get_key());
               float tower_eta = tower_geom->get_eta();
               float tower_phi = tower_geom->get_phi();
 
@@ -429,7 +432,7 @@ LeptoquarksReco::AddJetStructureInformation( map_tcan& tauCandidateMap, JetMap* 
                                           (float) (iter->second)->get_property_float( TauCandidate::jet_eta ),
                                           (float) (iter->second)->get_property_float( TauCandidate::jet_phi ),
                                           (float) (iter->second)->get_property_float( TauCandidate::jet_etotal ),
-                                          (float) calo_id,
+                                          (float) (iter_calo->first),
                                           (float) tower_eta,
                                           (float) tower_phi,
                                           (float) delta_R,
@@ -488,10 +491,12 @@ LeptoquarksReco::AddJetStructureInformation( map_tcan& tauCandidateMap, JetMap* 
         float e_tower_sum = 0;
 
         /* Loop over all tower (and geometry) collections */
-        for ( unsigned i = 0; i < v_towers.size(); i++ )
+	for (map_cdata::iterator iter_calo = map_towers->begin();
+	     iter_calo != map_towers->end();
+	     ++iter_calo)
           {
             /* define tower iterator */
-            RawTowerContainer::ConstRange begin_end = (v_towers.at(i))->getTowers();
+            RawTowerContainer::ConstRange begin_end = ((iter_calo->second).first)->getTowers();
             RawTowerContainer::ConstIterator rtiter;
 
             if (e_tower_sum >= 0.9*jet_e) break;
@@ -505,7 +510,7 @@ LeptoquarksReco::AddJetStructureInformation( map_tcan& tauCandidateMap, JetMap* 
                 if ( tower_energy < tower_emin )
                   continue;
 
-                RawTowerGeom * tower_geom = (v_tower_geoms.at(i))->get_tower_geometry(tower -> get_key());
+                RawTowerGeom * tower_geom = ((iter_calo->second).second)->get_tower_geometry(tower -> get_key());
                 float tower_eta = tower_geom->get_eta();
                 float tower_phi = tower_geom->get_phi();
 
