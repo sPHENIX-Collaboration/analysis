@@ -668,7 +668,8 @@ LeptoquarksReco::WriteTauCandidatesToTree( map_tcan& tauCandidateMap )
         }
       _t_candidate->Fill();
 
-
+      /* Old style: Fill ntuple manually */
+      /* @TODO: Phase out this ntuple */
       float jet_data[18] = {(float) _ievent,  //event number
                             (float) (iter->second)->get_property_uint( TauCandidate::jet_id ),       //jet id
                             (float) 0, //is_max_energy_jet,                //is this the maximum energy jet?
@@ -688,6 +689,8 @@ LeptoquarksReco::WriteTauCandidatesToTree( map_tcan& tauCandidateMap )
 
       _ntp_jet->Fill(jet_data);
 
+      /* Old style: Fill ntuple manually */
+      /* @TODO: Phase out this ntuple */
       float jet2_data[39] = {(float) _ievent,
                              (float) (iter->second)->get_property_uint( TauCandidate::jet_id ),
                              (float) (iter->second)->get_property_uint( TauCandidate::evtgen_is_tau ),
@@ -735,9 +738,11 @@ LeptoquarksReco::WriteTauCandidatesToTree( map_tcan& tauCandidateMap )
   return 0;
 }
 
+
 TauCandidate*
 LeptoquarksReco::FindMinDeltaRCandidate( map_tcan *candidates, const float eta_ref, const float phi_ref )
 {
+  /* TauCandidate with eta, phi closest to reference */
   TauCandidate* best_candidate = NULL;
 
   float eta_ref_local = eta_ref;
