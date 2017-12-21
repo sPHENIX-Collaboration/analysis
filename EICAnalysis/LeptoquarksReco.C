@@ -82,6 +82,7 @@ LeptoquarksReco::Init(PHCompositeNode *topNode)
   _map_treebranches.insert( make_pair( TauCandidate::jet_ptotal , dummy ) );
   _map_treebranches.insert( make_pair( TauCandidate::jet_ptrans , dummy ) );
   _map_treebranches.insert( make_pair( TauCandidate::jet_mass , dummy ) );
+  _map_treebranches.insert( make_pair( TauCandidate::jet_ncomp , dummy ) );
   _map_treebranches.insert( make_pair( TauCandidate::jetshape_econe_r01 , dummy ) );
   _map_treebranches.insert( make_pair( TauCandidate::jetshape_econe_r02 , dummy ) );
   _map_treebranches.insert( make_pair( TauCandidate::jetshape_econe_r03 , dummy ) );
@@ -225,6 +226,7 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
       tc->set_property( TauCandidate::jet_ptotal , (iter->second)->get_p() );
       tc->set_property( TauCandidate::jet_ptrans , (iter->second)->get_pt() );
       tc->set_property( TauCandidate::jet_mass , (iter->second)->get_mass() );
+      tc->set_property( TauCandidate::jet_ncomp , (uint)(iter->second)->size_comp() );
 
       tc->set_property( TauCandidate::evtgen_is_tau, (uint)0 );
       tc->set_property( TauCandidate::evtgen_is_uds, (uint)0 );
