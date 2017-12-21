@@ -59,7 +59,9 @@ public:
 
       jetshape_econe_r01 = 131,
       jetshape_econe_r02 = 132,
+      jetshape_econe_r03 = 133,
       jetshape_econe_r04 = 134,
+      jetshape_econe_r05 = 135,
 
       //-- Track information: 201 - 300  --
       tracks_count_r02 = 210,

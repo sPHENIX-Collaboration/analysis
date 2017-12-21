@@ -67,7 +67,7 @@ LeptoquarksReco::Init(PHCompositeNode *topNode)
                          "event:jet_id:isMaxEnergyJet:isMinDeltaRJet:jet_eta:jet_phi:delta_R:jet_mass:jet_p:jet_pT:jet_eT:jet_e:jet_px:jet_py:jet_pz");
 
   _ntp_jet2 = new TNtuple("ntp_jet2","all tau candidate (jet) information from LQ events",
-                          "ievent:jet_id:is_tau:is_uds:tau_etotal:tau_eta:tau_phi:tau_decay_prong:tau_decay_hcharged:tau_decay_lcharged:uds_etotal:uds_eta:uds_phi:jet_eta:jet_phi:jet_etotal:jet_etrans:jet_ptotal:jet_ptrans:jet_mass:jetshape_econe_r01:jetshape_econe_r02:jetshape_econe_r04:jetshape_r90:jetshape_rms:jetshape_radius:tracks_count_r02:tracks_chargesum_r02:tracks_rmax_r02:tracks_count_r04:tracks_chargesum_r04:tracks_rmax_r04");
+                          "ievent:jet_id:is_tau:is_uds:tau_etotal:tau_eta:tau_phi:tau_decay_prong:tau_decay_hcharged:tau_decay_lcharged:uds_etotal:uds_eta:uds_phi:jet_eta:jet_phi:jet_etotal:jet_etrans:jet_ptotal:jet_ptrans:jet_mass:jetshape_econe_r1:jetshape_econe_r2:jetshape_econe_r3:jetshape_econe_r4:jetshape_econe_r5:jetshape_econe_r6:jetshape_econe_r7:jetshape_econe_r8:jetshape_econe_r9:jetshape_econe_r10:jetshape_r90:jetshape_rms:jetshape_radius:tracks_count_r1:tracks_chargesum_r1:tracks_rmax_r1:tracks_count_r2:tracks_chargesum_r2:tracks_rmax_r2");
 
   if ( _save_towers )
     {
@@ -456,6 +456,7 @@ LeptoquarksReco::AddJetStructureInformation( map_tcan& tauCandidateMap, JetMap* 
   /* Cone size around jet axis within which to look for tracks */
   float delta_R_cutoff_r1 = 0.1;
   float delta_R_cutoff_r2 = 0.2;
+  float delta_R_cutoff_r3 = 0.3;
   float delta_R_cutoff_r4 = 0.4;
   float delta_R_cutoff_r5 = 0.5;
 
@@ -478,7 +479,9 @@ LeptoquarksReco::AddJetStructureInformation( map_tcan& tauCandidateMap, JetMap* 
       /* collect jet structure properties */
       float er1 = 0;
       float er2 = 0;
+      float er3 = 0;
       float er4 = 0;
+      float er5 = 0;
       float r90 = 0;
       float radius = 0;
       float rms = 0;
@@ -555,9 +558,17 @@ LeptoquarksReco::AddJetStructureInformation( map_tcan& tauCandidateMap, JetMap* 
                 {
                   er2 += tower_energy;
                 }
+              if ( delta_R <= delta_R_cutoff_r3 )
+                {
+                  er3 += tower_energy;
+                }
 	      if ( delta_R <= delta_R_cutoff_r4 )
                 {
                   er4 += tower_energy;
+                }
+	      if ( delta_R <= delta_R_cutoff_r5 )
+                {
+                  er5 += tower_energy;
                 }
 
               if ( delta_R <= delta_R_cutoff_r5 )
@@ -623,7 +634,9 @@ LeptoquarksReco::AddJetStructureInformation( map_tcan& tauCandidateMap, JetMap* 
       /* set tau candidate properties */
       (iter->second)->set_property( TauCandidate::jetshape_econe_r01, er1 );
       (iter->second)->set_property( TauCandidate::jetshape_econe_r02, er2 );
+      (iter->second)->set_property( TauCandidate::jetshape_econe_r03, er3 );
       (iter->second)->set_property( TauCandidate::jetshape_econe_r04, er4 );
+      (iter->second)->set_property( TauCandidate::jetshape_econe_r05, er5 );
       (iter->second)->set_property( TauCandidate::jetshape_r90, r90 );
       (iter->second)->set_property( TauCandidate::jetshape_rms, rms );
       (iter->second)->set_property( TauCandidate::jetshape_radius, radius );
@@ -765,7 +778,7 @@ LeptoquarksReco::WriteTauCandidatesToTree( map_tcan& tauCandidateMap )
 
       _ntp_jet->Fill(jet_data);
 
-      float jet2_data[32] = {(float) _ievent,
+      float jet2_data[39] = {(float) _ievent,
                              (float) (iter->second)->get_property_uint( TauCandidate::jet_id ),
                              (float) (iter->second)->get_property_uint( TauCandidate::evtgen_is_tau ),
                              (float) (iter->second)->get_property_uint( TauCandidate::evtgen_is_uds ),
@@ -787,7 +800,14 @@ LeptoquarksReco::WriteTauCandidatesToTree( map_tcan& tauCandidateMap )
                              (float) (iter->second)->get_property_float( TauCandidate::jet_mass ),
                              (float) (iter->second)->get_property_float( TauCandidate::jetshape_econe_r01 ),
                              (float) (iter->second)->get_property_float( TauCandidate::jetshape_econe_r02 ),
+                             (float) (iter->second)->get_property_float( TauCandidate::jetshape_econe_r03 ),
                              (float) (iter->second)->get_property_float( TauCandidate::jetshape_econe_r04 ),
+                             (float) (iter->second)->get_property_float( TauCandidate::jetshape_econe_r05 ),
+			     (float) 0, //jetshpae_econe_r6
+			     (float) 0, //jetshpae_econe_r7
+			     (float) 0, //jetshpae_econe_r8
+			     (float) 0, //jetshpae_econe_r9
+			     (float) 0, //jetshpae_econe_r10
                              (float) (iter->second)->get_property_float( TauCandidate::jetshape_r90 ),
                              (float) (iter->second)->get_property_float( TauCandidate::jetshape_rms ),
                              (float) (iter->second)->get_property_float( TauCandidate::jetshape_radius ),

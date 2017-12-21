@@ -126,8 +126,14 @@ TauCandidate::get_property_info(const PROPERTY prop_id)
     case  jetshape_econe_r02:
       return make_pair("jetshape_econe_r02",TauCandidate::type_float);
 
+    case  jetshape_econe_r03:
+      return make_pair("jetshape_econe_r03",TauCandidate::type_float);
+
     case  jetshape_econe_r04:
       return make_pair("jetshape_econe_r04",TauCandidate::type_float);
+
+    case  jetshape_econe_r05:
+      return make_pair("jetshape_econe_r05",TauCandidate::type_float);
 
       // ------
 
