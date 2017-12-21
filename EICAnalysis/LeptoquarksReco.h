@@ -96,6 +96,9 @@ private:
   float _ebeam_E;
   float _pbeam_E;
 
+  /* set minimum energy for tau jets to consider */
+  float _tau_jet_emin;
+
   /** name of jet collection */
   std::string _jetcolname;
 

@@ -48,6 +48,7 @@ LeptoquarksReco::LeptoquarksReco(std::string filename) :
   _ntp_tower(nullptr),
   _ebeam_E(0),
   _pbeam_E(0),
+  _tau_jet_emin(5.0),
   _jetcolname("AntiKt_Tower_r05")
 {
 
@@ -135,9 +136,6 @@ LeptoquarksReco::Init(PHCompositeNode *topNode)
 int
 LeptoquarksReco::process_event(PHCompositeNode *topNode)
 {
-  /* set some values- @TODO: should this be done elsewhere? Member variable? */
-  double _tau_jet_emin = 5;
-
   /* Create map to collect tau candidates.
    * Use energy as 'key' to the map because energy is unique for each jet, while there are sometimes multiple jets (same energy,
    * different jet ID) in the input jet collection. Also, map automatically sorts entries by key, i.e. this gives list of tau candidates
