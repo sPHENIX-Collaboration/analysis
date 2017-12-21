@@ -115,14 +115,9 @@ private:
 
   int WriteTauCandidatesToTree( map_tcan& );
 
-  /** Check if this is the final state particle or not- update pointer if needed */
-  void UpdateFinalStateParticle( HepMC::GenParticle *& );
-
   /** Calculate Delta R ("distance in eta-phi space") between two sets of eta, phi angles */
   float CalculateDeltaR( float, float, float, float );
 
-  /* Function to find final decay of tau */
-  //  void FindDecayParticles(HepMC::GenParticle *, int&, int&, int&);
 };
 
 #endif // __LeptoquarksReco_H__

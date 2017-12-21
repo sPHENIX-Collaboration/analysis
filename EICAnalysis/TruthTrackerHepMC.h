@@ -43,6 +43,8 @@ public:
       Return pointer to first daughter particle with matching ID found. */
   HepMC::GenParticle* FindDaughterParticle( int , HepMC::GenParticle* );
 
+  /** Function to find final decay products of given particle */
+  void FindDecayParticles(HepMC::GenParticle *, uint&, uint&, uint&);
 
 private:
 
