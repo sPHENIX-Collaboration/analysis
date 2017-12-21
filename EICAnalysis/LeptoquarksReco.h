@@ -118,6 +118,9 @@ private:
 
   int WriteTauCandidatesToTree( map_tcan& );
 
+  /** Find tau candidate in map that is closest to given eta, phi angle */
+  TauCandidate* FindMinDeltaRCandidate( map_tcan*, const float, const float );
+
   /** Calculate Delta R ("distance in eta-phi space") between two sets of eta, phi angles */
   float CalculateDeltaR( float, float, float, float );
 

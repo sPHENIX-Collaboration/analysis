@@ -260,120 +260,77 @@ LeptoquarksReco::AddTrueTauTag( map_tcan& tauCandidateMap, PHHepMCGenEventMap *g
   int pdg_lq = 39; // leptoquark
   int pdg_tau = 15; // tau lepton
 
+  /* Search for leptoquark in event */
   HepMC::GenParticle* particle_lq = truth.FindParticle( pdg_lq );
+
+  /* Search for lq->tau decay in event */
   HepMC::GenParticle* particle_tau = truth.FindDaughterParticle( pdg_tau, particle_lq );
 
-  /* loop over all quark PDG codes until finding a matching quark */
+  /* Search for lq->quark decay in event.
+   * Loop over all quark PDG codes until finding a matching quark. */
   HepMC::GenParticle* particle_quark = NULL;
   for ( int pdg_quark = 1; pdg_quark < 7; pdg_quark++ )
     {
       /* try quark */
       particle_quark = truth.FindDaughterParticle( pdg_quark, particle_lq );
       if (particle_quark)
-	break;
+        break;
 
       /* try anti-quark */
       particle_quark = truth.FindDaughterParticle( -pdg_quark, particle_lq );
       if (particle_quark)
-	break;
+        break;
     }
 
   /* If TAU in event: Tag the tau candidate (i.e. jet) with smalles delta_R from this tau */
   if( particle_tau )
     {
-      double tau_eta = particle_tau->momentum().eta();
-      double tau_phi = particle_tau->momentum().phi();
-
-      /* Event record uses 0 < phi < 2Pi, while Fun4All uses -Pi < phi < Pi.
-       * Therefore, correct angle for 'wraparound' at phi == Pi */
-      if(tau_phi>TMath::Pi()) tau_phi = tau_phi-2*TMath::Pi();
-
-      /* find jet with smallest delta_R from tau */
-      float min_delta_R = 100;
-      map_tcan::iterator min_delta_R_iter = tauCandidateMap.end();
-
-      for (map_tcan::iterator iter = tauCandidateMap.begin();
-           iter != tauCandidateMap.end();
-           ++iter)
-        {
-          float eta = (iter->second)->get_property_float( TauCandidate::jet_eta );
-          float phi = (iter->second)->get_property_float( TauCandidate::jet_phi );
-
-          float delta_R = CalculateDeltaR( eta, phi, tau_eta, tau_phi );
-
-          if ( delta_R < min_delta_R )
-            {
-              min_delta_R_iter = iter;
-              min_delta_R = delta_R;
-            }
-        }
+      TauCandidate* best_match = FindMinDeltaRCandidate( &tauCandidateMap,
+                                                         particle_tau->momentum().eta(),
+                                                         particle_tau->momentum().phi() );
 
       /* set is_tau = TRUE for TauCandiate with smallest delta_R within reasonable range*/
-      if ( min_delta_R_iter != tauCandidateMap.end() && min_delta_R<0.5)
+      if ( best_match )
         {
-          (min_delta_R_iter->second)->set_property( TauCandidate::evtgen_is_tau, (uint)1 );
-          (min_delta_R_iter->second)->set_property( TauCandidate::evtgen_tau_etotal, (float)particle_tau->momentum().e() );
-          (min_delta_R_iter->second)->set_property( TauCandidate::evtgen_tau_eta, (float)tau_eta );
-          (min_delta_R_iter->second)->set_property( TauCandidate::evtgen_tau_phi, (float)tau_phi );
-
-          /* Add information about tau decay */
-          uint tau_decay_prong = 0;
-          uint tau_decay_hcharged = 0;
-          uint tau_decay_lcharged = 0;
+          /* Update TauCandidate entry */
+          best_match->set_property( TauCandidate::evtgen_is_tau, (uint)1 );
+          best_match->set_property( TauCandidate::evtgen_tau_etotal, (float)particle_tau->momentum().e() );
+          best_match->set_property( TauCandidate::evtgen_tau_eta, (float)particle_tau->momentum().eta() );
+          best_match->set_property( TauCandidate::evtgen_tau_phi, (float)particle_tau->momentum().phi() );
 
           /* Check particle decay if end-vertex found */
           if ( particle_tau->end_vertex() )
             {
+	      /* Add information about tau decay */
+	      uint tau_decay_prong = 0;
+	      uint tau_decay_hcharged = 0;
+	      uint tau_decay_lcharged = 0;
+
               /* Count how many charged particles (hadrons and leptons) a given particle decays into. */
               truth.FindDecayParticles( particle_tau, tau_decay_prong, tau_decay_hcharged, tau_decay_lcharged );
-            }
 
-	  /* Update TauCandidate entry */
-	  (min_delta_R_iter->second)->set_property( TauCandidate::evtgen_tau_decay_prong, tau_decay_prong );
-	  (min_delta_R_iter->second)->set_property( TauCandidate::evtgen_tau_decay_hcharged, tau_decay_hcharged );
-	  (min_delta_R_iter->second)->set_property( TauCandidate::evtgen_tau_decay_lcharged, tau_decay_lcharged );
+	      /* Update tau candidate entry */
+	      best_match->set_property( TauCandidate::evtgen_tau_decay_prong, tau_decay_prong );
+	      best_match->set_property( TauCandidate::evtgen_tau_decay_hcharged, tau_decay_hcharged );
+	      best_match->set_property( TauCandidate::evtgen_tau_decay_lcharged, tau_decay_lcharged );
+            }
         }
     }
 
   /* If QUARK (->jet) in event: Tag the tau candidate (i.e. jet) with smalles delta_R from this quark */
-  /* @TODO: This is a copy from the loop to tag the tau candidate with smallest delta_R w.r.t. final state tau-
-   * instead of copying the code, make a function that can be called for both (GetMinDeltaRElement or similar) */
   if( particle_quark )
     {
-      double quark_eta = particle_quark->momentum().eta();
-      double quark_phi = particle_quark->momentum().phi();
+      TauCandidate* best_match = FindMinDeltaRCandidate( &tauCandidateMap,
+                                                         particle_quark->momentum().eta(),
+                                                         particle_quark->momentum().phi() );
 
-      /* Event record uses 0 < phi < 2Pi, while Fun4All uses -Pi < phi < Pi.
-       * Therefore, correct angle for 'wraparound' at phi == Pi */
-      if(quark_phi>TMath::Pi()) quark_phi = quark_phi-2*TMath::Pi();
-
-      /* find jet with smallest delta_R from quark */
-      float min_delta_R = 100;
-      map_tcan::iterator min_delta_R_iter = tauCandidateMap.end();
-
-      for (map_tcan::iterator iter = tauCandidateMap.begin();
-           iter != tauCandidateMap.end();
-           ++iter)
+      /* set is_uds = TRUE for TauCandiate with smallest delta_R if found */
+      if ( best_match )
         {
-          float eta = (iter->second)->get_property_float( TauCandidate::jet_eta );
-          float phi = (iter->second)->get_property_float( TauCandidate::jet_phi );
-
-          float delta_R = CalculateDeltaR( eta, phi, quark_eta, quark_phi );
-
-          if ( delta_R < min_delta_R )
-            {
-              min_delta_R_iter = iter;
-              min_delta_R = delta_R;
-            }
-        }
-
-      /* set is_uds = TRUE for TauCandiate with smallest delta_R within reasonable range*/
-      if ( min_delta_R_iter != tauCandidateMap.end() && min_delta_R<0.5)
-        {
-          (min_delta_R_iter->second)->set_property( TauCandidate::evtgen_is_uds, (uint)1 );
-          (min_delta_R_iter->second)->set_property( TauCandidate::evtgen_uds_etotal, (float)particle_quark->momentum().e() );
-          (min_delta_R_iter->second)->set_property( TauCandidate::evtgen_uds_eta, (float)quark_eta );
-          (min_delta_R_iter->second)->set_property( TauCandidate::evtgen_uds_phi, (float)quark_phi );
+          best_match->set_property( TauCandidate::evtgen_is_uds, (uint)1 );
+          best_match->set_property( TauCandidate::evtgen_uds_etotal, (float)particle_quark->momentum().e() );
+          best_match->set_property( TauCandidate::evtgen_uds_eta, (float)particle_quark->momentum().eta() );
+          best_match->set_property( TauCandidate::evtgen_uds_phi, (float)particle_quark->momentum().phi() );
         }
     }
 
@@ -780,6 +737,45 @@ LeptoquarksReco::WriteTauCandidatesToTree( map_tcan& tauCandidateMap )
     }
 
   return 0;
+}
+
+TauCandidate*
+LeptoquarksReco::FindMinDeltaRCandidate( map_tcan *candidates, const float eta_ref, const float phi_ref )
+{
+  TauCandidate* best_candidate = NULL;
+
+  float eta_ref_local = eta_ref;
+  float phi_ref_local = phi_ref;
+
+  /* Event record uses 0 < phi < 2Pi, while Fun4All uses -Pi < phi < Pi.
+   * Therefore, correct angle for 'wraparound' at phi == Pi */
+  if( phi_ref_local > TMath::Pi() ) phi_ref_local = phi_ref_local - 2*TMath::Pi();
+
+  /* find jet with smallest delta_R from quark */
+  float min_delta_R = 100;
+  map_tcan::iterator min_delta_R_iter = candidates->end();
+
+  for (map_tcan::iterator iter = candidates->begin();
+       iter != candidates->end();
+       ++iter)
+    {
+      float eta = (iter->second)->get_property_float( TauCandidate::jet_eta );
+      float phi = (iter->second)->get_property_float( TauCandidate::jet_phi );
+
+      float delta_R = CalculateDeltaR( eta, phi, eta_ref_local, phi_ref_local );
+
+      if ( delta_R < min_delta_R )
+	{
+	  min_delta_R_iter = iter;            ;
+	  min_delta_R = delta_R;
+	}
+    }
+
+  /* set best_candidate to TauCandiate with smallest delta_R within reasonable range*/
+  if ( min_delta_R_iter != candidates->end() && min_delta_R < 0.5 )
+    best_candidate = min_delta_R_iter->second;
+
+  return best_candidate;
 }
 
 
