@@ -16,7 +16,7 @@ int event_counts()
   chain_event.Add("data_3pions/p250_e20_0events_file1131_LeptoAna_TruthEvent.root");
   chain_event.Add("data_3pions/p250_e20_0events_file1164_LeptoAna_TruthEvent.root");
 
-  TChain chain("ntp_jet2");
+  TChain chain("candidates");
   chain.Add("data_3pions/p250_e20_0events_file1093_LeptoAna_r05.root");
   chain.Add("data_3pions/p250_e20_0events_file1096_LeptoAna_r05.root");
   chain.Add("data_3pions/p250_e20_0events_file1101_LeptoAna_r05.root");
@@ -30,21 +30,21 @@ int event_counts()
   cout << "TOTAL events: " << chain_event.GetEntries() << endl;
   cout << "  && tau within abs(eta)<1: " << chain_event.GetEntries("abs(tau_eta) < 1.0") << endl;
 
-  cout << "TOTAL tau found: " << chain.GetEntries("is_tau == 1") << endl;
-  cout << "  && tau within abs(jet_eta)<1 && jet_pT > 5 GeV: " << chain.GetEntries("is_tau == 1 && abs(jet_eta) < 1.0 && jet_ptrans > 5") << endl;
-  cout << "  && Delte_R < 0.1: " << chain.GetEntries("is_tau == 1 && abs(jet_eta) < 1.0 && jet_ptrans>5 && sqrt( (tau_eta-jet_eta)*(tau_eta-jet_eta) + (tau_phi-jet_phi)*(tau_phi-jet_phi) ) < 0.1") << endl;
+  cout << "TOTAL tau found: " << chain.GetEntries("evtgen_is_tau == 1") << endl;
+  cout << "  && tau within abs(jet_eta)<1 && jet_pT > 5 GeV: " << chain.GetEntries("evtgen_is_tau == 1 && abs(jet_eta) < 1.0 && jet_ptrans > 5") << endl;
+  cout << "  && Delte_R < 0.1: " << chain.GetEntries("evtgen_is_tau == 1 && abs(jet_eta) < 1.0 && jet_ptrans>5 && sqrt( (evtgen_tau_eta-jet_eta)*(evtgen_tau_eta-jet_eta) + (evtgen_tau_phi-jet_phi)*(evtgen_tau_phi-jet_phi) ) < 0.1") << endl;
 
   cout << endl;
   cout << endl;
   cout << endl;
 
-  cout << "OTHER JETS found within acceptance: " << chain.GetEntries("is_tau == 0 && abs(jet_eta) < 1.0 && jet_ptrans>5") << endl;
+  cout << "OTHER JETS found within acceptance: " << chain.GetEntries("evtgen_is_tau == 0 && abs(jet_eta) < 1.0 && jet_ptrans>5") << endl;
 
 
 
   /* Plot tau angle reconstruction quality */
   TCanvas *c1 = new TCanvas();
-  chain.Draw("sqrt( (tau_eta-jet_eta)*(tau_eta-jet_eta) + (tau_phi-jet_phi)*(tau_phi-jet_phi) ) >> h1(50,0,0.5)", "is_tau == 1 && abs(jet_eta) < 1.0 && jet_ptrans > 5" );
+  chain.Draw("sqrt( (evtgen_tau_eta-jet_eta)*(evtgen_tau_eta-jet_eta) + (evtgen_tau_phi-jet_phi)*(evtgen_tau_phi-jet_phi) ) >> h1(50,0,0.5)", "evtgen_is_tau == 1 && abs(jet_eta) < 1.0 && jet_ptrans > 5" );
   h1->GetXaxis()->SetTitle("#DeltaR (#tau_{jet} - #tau_{true})");
   c1->Print("plots/event_counts_deltaR.eps");
   c1->Print("plots/event_counts_deltaR.png");

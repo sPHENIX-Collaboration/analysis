@@ -12,7 +12,7 @@ int test_cuts()
   unsigned col2 = kBlue+2;
 
   /* open inout files and merge trees */
-  TChain chain("ntp_jet2");
+  TChain chain("candidates");
   chain.Add("data_3pions/p250_e20_0events_file1093_LeptoAna_r05.root");
   chain.Add("data_3pions/p250_e20_0events_file1096_LeptoAna_r05.root");
   chain.Add("data_3pions/p250_e20_0events_file1101_LeptoAna_r05.root");
@@ -23,16 +23,12 @@ int test_cuts()
   chain.Add("data_3pions/p250_e20_0events_file1164_LeptoAna_r05.root");
 
   /* particle selection */
-  TCut select_true_uds("is_tau==0");
-  TCut select_true_tau("is_tau==1 && sqrt( (tau_eta-jet_eta)*(tau_eta-jet_eta) + (tau_phi-jet_phi)*(tau_phi-jet_phi) ) < 0.1");
+  TCut select_true_uds("evtgen_is_tau==0");
+  TCut select_true_tau("evtgen_is_tau==1 && sqrt( (evtgen_tau_eta-jet_eta)*(evtgen_tau_eta-jet_eta) + (evtgen_tau_phi-jet_phi)*(evtgen_tau_phi-jet_phi) ) < 0.1");
 
   TCut select_accept_jet("abs(jet_eta)<1.0 && jet_ptrans > 5");
 
-  //TCut select_prong("tracks_count_r1 == 3 && tracks_chargesum_r1 == -1");
-  //TCut select_prong("tracks_count_r2 == 3");
-  //TCut select_prong("1");
-
-  TCut select_tau("tracks_count_r2 == 3 && tracks_chargesum_r2 == -1 && tracks_rmax_r2 < 0.2 && jetshape_radius < 0.15");
+  TCut select_tau("tracks_count_r04 == 3 && tracks_chargesum_r04 == -1 && tracks_rmax_r04 < 0.20 && jetshape_radius < 0.15");
 
   float n_trueaccept_uds = chain.GetEntries(select_true_uds && select_accept_jet);
   float n_trueaccept_tau = chain.GetEntries(select_true_tau && select_accept_jet);

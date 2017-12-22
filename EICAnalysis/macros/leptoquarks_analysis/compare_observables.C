@@ -12,7 +12,7 @@ int compare_observables()
   unsigned col2 = kBlue+2;
 
   /* open inout files and merge trees */
-  TChain chain("ntp_jet2");
+  TChain chain("candidates");
   chain.Add("data_3pions/p250_e20_0events_file1093_LeptoAna_r05.root");
   chain.Add("data_3pions/p250_e20_0events_file1096_LeptoAna_r05.root");
   chain.Add("data_3pions/p250_e20_0events_file1101_LeptoAna_r05.root");
@@ -23,13 +23,13 @@ int compare_observables()
   chain.Add("data_3pions/p250_e20_0events_file1164_LeptoAna_r05.root");
 
   /* particle selection */
-  TCut select_true_uds("is_tau==0");
-  TCut select_true_tau("is_tau==1 && sqrt( (tau_eta-jet_eta)*(tau_eta-jet_eta) + (tau_phi-jet_phi)*(tau_phi-jet_phi) ) < 0.1");
+  TCut select_true_uds("evtgen_is_tau==0");
+  TCut select_true_tau("evtgen_is_tau==1 && sqrt( (evtgen_tau_eta-jet_eta)*(evtgen_tau_eta-jet_eta) + (evtgen_tau_phi-jet_phi)*(evtgen_tau_phi-jet_phi) ) < 0.1");
 
   TCut select_accept_jet("abs(jet_eta)<1.0 && jet_ptrans > 5");
 
-  //TCut select_prong("tracks_count_r1 == 3 && tracks_chargesum_r1 == -1");
-  //TCut select_prong("tracks_count_r2 == 3");
+  //TCut select_prong("tracks_count_r02 == 3 && tracks_chargesum_r02 == -1");
+  //TCut select_prong("tracks_count_r04 == 3");
   TCut select_prong("1");
 
   /* Create temporary canvas */
@@ -43,21 +43,21 @@ int compare_observables()
   vector< float > plots_xmax;
 
   /* R_max */
-  observables.push_back( "tracks_rmax_r2" );
+  observables.push_back( "tracks_rmax_r04" );
   observables_name.push_back( "R_{track}^{max}" );
   plots_ymax.push_back(0.06);
   plots_xmin.push_back(0);
   plots_xmax.push_back(0.5);
 
   /* Number of tracks */
-  observables.push_back( "tracks_count_r2" );
+  observables.push_back( "tracks_count_r04" );
   observables_name.push_back( "N_{tracks}" );
   plots_ymax.push_back(0.9);
   plots_xmin.push_back(0);
   plots_xmax.push_back(10);
 
   /* Charge sum from tracks */
-  observables.push_back( "tracks_chargesum_r2" );
+  observables.push_back( "tracks_chargesum_r04" );
   observables_name.push_back( "#Sigma q_{tracks}" );
   plots_ymax.push_back(0.9);
   plots_xmin.push_back(-5);
@@ -71,14 +71,14 @@ int compare_observables()
   plots_xmax.push_back(0.5);
 
   /* Jetshape */
-  observables.push_back( "jetshape_econe_r1 / (jetshape_econe_r1 + jetshape_econe_r2 + jetshape_econe_r3 + jetshape_econe_r4 + jetshape_econe_r5 + jetshape_econe_r6 + jetshape_econe_r7 + jetshape_econe_r8 + jetshape_econe_r9 + jetshape_econe_r10)" );
-  observables_name.push_back( "E_{cone}^{R<0.1} / E_{cone}^{R<1.0}" );
+  observables.push_back( "jetshape_econe_r01 / jetshape_econe_r05" );
+  observables_name.push_back( "E_{cone}^{R<0.1} / E_{cone}^{R<0.5}" );
   plots_ymax.push_back(0.08);
   plots_xmin.push_back(0);
   plots_xmax.push_back(1);
 
   /* Jetshape */
-  observables.push_back( "(jetshape_econe_r1 + jetshape_econe_r2) / (jetshape_econe_r1 + jetshape_econe_r2 + jetshape_econe_r3 + jetshape_econe_r4 + jetshape_econe_r5)" );
+  observables.push_back( "jetshape_econe_r02 / jetshape_econe_r05" );
   observables_name.push_back( "E_{cone}^{R<0.2} / E_{cone}^{R<0.5}" );
   plots_ymax.push_back(0.08);
   plots_xmin.push_back(0);
@@ -92,7 +92,7 @@ int compare_observables()
   plots_xmax.push_back(2);
 
   /* Jet mass */
-  observables.push_back( "jet_mass" );
+  observables.push_back( "jet_minv" );
   observables_name.push_back( "Mass_{jet}" );
   plots_ymax.push_back(0.1);
   plots_xmin.push_back(0);
