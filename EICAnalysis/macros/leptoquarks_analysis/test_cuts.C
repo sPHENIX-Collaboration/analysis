@@ -1,9 +1,10 @@
+#include "tau_commons.h"
+
 /**
  * Test manual cuts
  *
  * Written by nils.feege@stonybrook.edu
  */
-
 int test_cuts()
 {
   gStyle->SetOptStat(0);
@@ -23,31 +24,24 @@ int test_cuts()
   chain.Add("data_3pions/p250_e20_0events_file1164_LeptoAna_r05.root");
 
   /* particle selection */
-  TCut select_true_uds("evtgen_is_tau==0");
-  TCut select_true_tau("evtgen_is_tau==1 && sqrt( (evtgen_tau_eta-jet_eta)*(evtgen_tau_eta-jet_eta) + (evtgen_tau_phi-jet_phi)*(evtgen_tau_phi-jet_phi) ) < 0.1");
-
-  TCut select_accept_jet("abs(jet_eta)<1.0 && jet_ptrans > 5");
-
-  TCut select_tau("tracks_count_r04 == 3 && tracks_chargesum_r04 == -1 && tracks_rmax_r04 < 0.20 && jetshape_radius < 0.15");
-
-  float n_trueaccept_uds = chain.GetEntries(select_true_uds && select_accept_jet);
-  float n_trueaccept_tau = chain.GetEntries(select_true_tau && select_accept_jet);
+  float n_trueaccept_uds = chain.GetEntries(tau_commons::select_true_uds && tau_commons::select_accept_jet);
+  float n_trueaccept_tau = chain.GetEntries(tau_commons::select_true_tau && tau_commons::select_accept_jet);
 
   /* True positive = tau-identified-as-tau */
-  float n_tau_as_tau = chain.GetEntries( select_true_tau && select_accept_jet &&  select_tau);
-  float n_tau_as_uds = chain.GetEntries( select_true_tau && select_accept_jet && !select_tau);
+  float n_tau_as_tau = chain.GetEntries( tau_commons::select_true_tau && tau_commons::select_accept_jet &&  tau_commons::select_tau);
+  float n_tau_as_uds = chain.GetEntries( tau_commons::select_true_tau && tau_commons::select_accept_jet && !tau_commons::select_tau);
 
-  float n_uds_as_uds = chain.GetEntries( select_true_uds && select_accept_jet && !select_tau );
-  float n_uds_as_tau = chain.GetEntries( select_true_uds && select_accept_jet &&  select_tau );
+  float n_uds_as_uds = chain.GetEntries( tau_commons::select_true_uds && tau_commons::select_accept_jet && !tau_commons::select_tau );
+  float n_uds_as_tau = chain.GetEntries( tau_commons::select_true_uds && tau_commons::select_accept_jet &&  tau_commons::select_tau );
 
-  cout << "Selection of TRUE TAU:   " << select_true_tau.GetTitle() << endl;
-  cout << "Selection of TRUE QUARK: " << select_true_uds.GetTitle() << endl;
-  cout << "Selection of JET acceptance:   " << select_accept_jet.GetTitle() << endl;
+  cout << "Selection of TRUE TAU:   " << tau_commons::select_true_tau.GetTitle() << endl;
+  cout << "Selection of TRUE QUARK: " << tau_commons::select_true_uds.GetTitle() << endl;
+  cout << "Selection of JET acceptance:   " << tau_commons::select_accept_jet.GetTitle() << endl;
   cout << endl;
   cout << "Total sample TAU:   " << n_trueaccept_tau << endl;
   cout << "Total sample QUARK: " << n_trueaccept_uds << endl;
   cout << endl;
-  cout << "Selection of RECO TAU:   " << select_tau.GetTitle() << endl;
+  cout << "Selection of RECO TAU:   " << tau_commons::select_tau.GetTitle() << endl;
   cout << endl;
   cout << "Tau-as-tau (True  Positive): " << n_tau_as_tau << endl;
   cout << "Tau-as-uds (False Negative): " << n_tau_as_uds << endl;

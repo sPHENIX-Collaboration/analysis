@@ -1,9 +1,10 @@
+#include "tau_commons.h"
+
 /**
  * Compare reconstructed observables between tau jets and quark jets
  *
  * Written by nils.feege@stonybrook.edu
  */
-
 int compare_observables()
 {
   gStyle->SetOptStat(0);
@@ -23,11 +24,6 @@ int compare_observables()
   chain.Add("data_3pions/p250_e20_0events_file1164_LeptoAna_r05.root");
 
   /* particle selection */
-  TCut select_true_uds("evtgen_is_tau==0");
-  TCut select_true_tau("evtgen_is_tau==1 && sqrt( (evtgen_tau_eta-jet_eta)*(evtgen_tau_eta-jet_eta) + (evtgen_tau_phi-jet_phi)*(evtgen_tau_phi-jet_phi) ) < 0.1");
-
-  TCut select_accept_jet("abs(jet_eta)<1.0 && jet_ptrans > 5");
-
   //TCut select_prong("tracks_count_r02 == 3 && tracks_chargesum_r02 == -1");
   //TCut select_prong("tracks_count_r04 == 3");
   TCut select_prong("1");
@@ -124,7 +120,7 @@ int compare_observables()
       TH1F* h_uds = new TH1F( name_uds_i, "", 100, plots_xmin.at(i), plots_xmax.at(i));
       TH1F* h_tau = new TH1F( name_tau_i, "", 100, plots_xmin.at(i), plots_xmax.at(i));
 
-      chain.Draw( observables.at(i) + " >> " + name_uds_i, select_true_uds && select_accept_jet, "");
+      chain.Draw( observables.at(i) + " >> " + name_uds_i, tau_commons::select_true_uds && tau_commons::select_accept_jet, "");
       h_uds->Scale(1./h_uds->Integral());
       h_uds->GetXaxis()->SetTitle( observables_name.at(i) );
       h_uds->GetYaxis()->SetRangeUser(0, plots_ymax.at(i) );
@@ -132,7 +128,7 @@ int compare_observables()
       h_uds->SetFillColor(col1);
       h_uds->SetFillStyle(1001);
 
-      chain.Draw( observables.at(i) + " >> " + name_tau_i, select_true_tau && select_accept_jet, "");
+      chain.Draw( observables.at(i) + " >> " + name_tau_i, tau_commons::select_true_tau && tau_commons::select_accept_jet, "");
       h_tau->Scale(1./h_tau->Integral());
       h_tau->SetLineColor(col2);
       h_tau->SetFillColor(col2);
