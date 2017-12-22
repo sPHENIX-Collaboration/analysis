@@ -137,6 +137,32 @@ TauCandidate::get_property_info(const PROPERTY prop_id)
 
       // ------
 
+    case  jetshape_emcal_radius:
+      return make_pair("jetshape_emcal_radius",TauCandidate::type_float);
+
+    case  jetshape_emcal_rms:
+      return make_pair("jetshape_emcal_rms",TauCandidate::type_float);
+
+    case  jetshape_emcal_r90:
+      return make_pair("jetshape_emcal_r90",TauCandidate::type_float);
+
+    case  jetshape_emcal_econe_r01:
+      return make_pair("jetshape_emcal_econe_r01",TauCandidate::type_float);
+
+    case  jetshape_emcal_econe_r02:
+      return make_pair("jetshape_emcal_econe_r02",TauCandidate::type_float);
+
+    case  jetshape_emcal_econe_r03:
+      return make_pair("jetshape_emcal_econe_r03",TauCandidate::type_float);
+
+    case  jetshape_emcal_econe_r04:
+      return make_pair("jetshape_emcal_econe_r04",TauCandidate::type_float);
+
+    case  jetshape_emcal_econe_r05:
+      return make_pair("jetshape_emcal_econe_r05",TauCandidate::type_float);
+
+      // ------
+
     case  tracks_count_r02:
       return make_pair("tracks_count_r02",TauCandidate::type_uint);
 

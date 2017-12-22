@@ -91,6 +91,14 @@ LeptoquarksReco::Init(PHCompositeNode *topNode)
   _map_treebranches.insert( make_pair( TauCandidate::jetshape_r90 , dummy ) );
   _map_treebranches.insert( make_pair( TauCandidate::jetshape_rms , dummy ) );
   _map_treebranches.insert( make_pair( TauCandidate::jetshape_radius , dummy ) );
+  _map_treebranches.insert( make_pair( TauCandidate::jetshape_emcal_econe_r01 , dummy ) );
+  _map_treebranches.insert( make_pair( TauCandidate::jetshape_emcal_econe_r02 , dummy ) );
+  _map_treebranches.insert( make_pair( TauCandidate::jetshape_emcal_econe_r03 , dummy ) );
+  _map_treebranches.insert( make_pair( TauCandidate::jetshape_emcal_econe_r04 , dummy ) );
+  _map_treebranches.insert( make_pair( TauCandidate::jetshape_emcal_econe_r05 , dummy ) );
+  _map_treebranches.insert( make_pair( TauCandidate::jetshape_emcal_r90 , dummy ) );
+  _map_treebranches.insert( make_pair( TauCandidate::jetshape_emcal_rms , dummy ) );
+  _map_treebranches.insert( make_pair( TauCandidate::jetshape_emcal_radius , dummy ) );
   _map_treebranches.insert( make_pair( TauCandidate::tracks_count_r02 , dummy ) );
   _map_treebranches.insert( make_pair( TauCandidate::tracks_chargesum_r02 , dummy ) );
   _map_treebranches.insert( make_pair( TauCandidate::tracks_rmax_r02 , dummy ) );
@@ -378,6 +386,17 @@ LeptoquarksReco::AddJetStructureInformation( map_tcan& tauCandidateMap, JetMap* 
       float rms = 0;
       float rms_esum = 0;
 
+      /* collect jet structure properties- EMCal ONLY */
+      float emcal_er1 = 0;
+      float emcal_er2 = 0;
+      float emcal_er3 = 0;
+      float emcal_er4 = 0;
+      float emcal_er5 = 0;
+      float emcal_r90 = 0;
+      float emcal_radius = 0;
+      float emcal_rms = 0;
+      float emcal_rms_esum = 0;
+
       /* Loop over all tower (and geometry) collections */
       for (map_cdata::iterator iter_calo = map_towers->begin();
 	   iter_calo != map_towers->end();
@@ -446,22 +465,32 @@ LeptoquarksReco::AddJetStructureInformation( map_tcan& tauCandidateMap, JetMap* 
               if ( delta_R <= delta_R_cutoff_r1 )
                 {
                   er1 += tower_energy;
+		  if ( (iter_calo->first) == RawTowerDefs::CEMC )
+		    emcal_er1 += tower_energy;
                 }
               if ( delta_R <= delta_R_cutoff_r2 )
                 {
                   er2 += tower_energy;
+		  if ( (iter_calo->first) == RawTowerDefs::CEMC )
+		    emcal_er2 += tower_energy;
                 }
               if ( delta_R <= delta_R_cutoff_r3 )
                 {
                   er3 += tower_energy;
+		  if ( (iter_calo->first) == RawTowerDefs::CEMC )
+		    emcal_er3 += tower_energy;
                 }
               if ( delta_R <= delta_R_cutoff_r4 )
                 {
                   er4 += tower_energy;
+		  if ( (iter_calo->first) == RawTowerDefs::CEMC )
+		    emcal_er4 += tower_energy;
                 }
               if ( delta_R <= delta_R_cutoff_r5 )
                 {
                   er5 += tower_energy;
+		  if ( (iter_calo->first) == RawTowerDefs::CEMC )
+		    emcal_er5 += tower_energy;
                 }
 
               if ( delta_R <= delta_R_cutoff_r5 )
@@ -470,21 +499,40 @@ LeptoquarksReco::AddJetStructureInformation( map_tcan& tauCandidateMap, JetMap* 
                   rms_esum += tower_energy;
 
                   radius += tower_energy*delta_R;
+
+		  if ( (iter_calo->first) == RawTowerDefs::CEMC )
+		    {
+		      emcal_rms += tower_energy*delta_R*delta_R;
+		      emcal_rms_esum += tower_energy;
+		      emcal_radius += tower_energy*delta_R;
+		    }
                 }
             }
         }
 
       /* finalize calculation of rms and radius */
-      radius /= rms_esum;
-
-      rms /= rms_esum;
-      rms = sqrt( rms );
-
-      /* normalize energies in rings */
-      //float ersum = er1 + er2 + er3;
-      //er1 /= ersum;
-      //er2 /= ersum;
-      //er3 /= ersum;
+      if ( rms_esum > 0 )
+	{
+	  radius /= rms_esum;
+	  rms    /= rms_esum;
+	  rms     = sqrt( rms );
+	}
+      else
+	{
+	  radius = -1;
+	  rms = -1;
+	}
+      if ( emcal_rms_esum > 0 )
+	{
+	  emcal_radius /= emcal_rms_esum;
+	  emcal_rms    /= emcal_rms_esum;
+	  emcal_rms     = sqrt( emcal_rms );
+	}
+      else
+	{
+	  emcal_radius = -1;
+	  emcal_rms = -1;
+	}
 
       /* Search for cone angle that contains 90% of jet energy */
       for(int r_i = 1; r_i<n_steps+1; r_i++){
@@ -535,6 +583,14 @@ LeptoquarksReco::AddJetStructureInformation( map_tcan& tauCandidateMap, JetMap* 
       (iter->second)->set_property( TauCandidate::jetshape_r90, r90 );
       (iter->second)->set_property( TauCandidate::jetshape_rms, rms );
       (iter->second)->set_property( TauCandidate::jetshape_radius, radius );
+      (iter->second)->set_property( TauCandidate::jetshape_emcal_econe_r01, emcal_er1 );
+      (iter->second)->set_property( TauCandidate::jetshape_emcal_econe_r02, emcal_er2 );
+      (iter->second)->set_property( TauCandidate::jetshape_emcal_econe_r03, emcal_er3 );
+      (iter->second)->set_property( TauCandidate::jetshape_emcal_econe_r04, emcal_er4 );
+      (iter->second)->set_property( TauCandidate::jetshape_emcal_econe_r05, emcal_er5 );
+      (iter->second)->set_property( TauCandidate::jetshape_emcal_r90, emcal_r90 );
+      (iter->second)->set_property( TauCandidate::jetshape_emcal_rms, emcal_rms );
+      (iter->second)->set_property( TauCandidate::jetshape_emcal_radius, emcal_radius );
     }
 
   return 0;

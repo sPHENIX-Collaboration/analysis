@@ -63,6 +63,16 @@ public:
       jetshape_econe_r04 = 134,
       jetshape_econe_r05 = 135,
 
+      jetshape_emcal_radius = 161,
+      jetshape_emcal_rms = 162,
+      jetshape_emcal_r90 = 163,
+
+      jetshape_emcal_econe_r01 = 171,
+      jetshape_emcal_econe_r02 = 172,
+      jetshape_emcal_econe_r03 = 173,
+      jetshape_emcal_econe_r04 = 174,
+      jetshape_emcal_econe_r05 = 175,
+
       //-- Track information: 201 - 300  --
       tracks_count_r02 = 210,
       tracks_count_r04 = 211,
