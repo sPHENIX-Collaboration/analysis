@@ -230,68 +230,7 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
       /* create new tau candidate */
       TauCandidatev1 *tc = new TauCandidatev1();
       tc->set_candidate_id( (iter->second)->get_id() );
-
-      /* calculate transverse mass of jet */
-      float jet_mtrans = sqrt( pow( (iter->second)->get_mass(), 2 ) +
-                               pow( (iter->second)->get_pt(), 2 ) );
-
-      /* count jet ncomp above thresholds */
-      unsigned int jet_ncomp_above_0p1 = 0;
-      unsigned int jet_ncomp_above_1 = 0;
-      unsigned int jet_ncomp_above_10 = 0;
-
-      for (Jet::ConstIter jcompiter = (iter->second)->begin_comp(); jcompiter != (iter->second)->end_comp(); ++jcompiter)
-        {
-          RawTowerDefs::CalorimeterId calo_id = RawTowerDefs::NONE;
-
-          switch ( jcompiter->first )
-            {
-            case Jet::CEMC_TOWER:
-              calo_id = RawTowerDefs::CEMC;
-              break;
-            case Jet::HCALIN_TOWER:
-              calo_id = RawTowerDefs::HCALIN;
-              break;
-            case Jet::HCALOUT_TOWER:
-              calo_id = RawTowerDefs::HCALOUT;
-              break;
-	    default:
-	      break;
-            }
-
-	  /* continue if no calorimeter id found */
-	  if ( calo_id == RawTowerDefs::NONE )
-	    continue;
-
-	  /* get tower container from map, find tower in tower container, get tower energy */
-	  float e_component = 0;
-	  if ( map_calotower.find( calo_id ) != map_calotower.end() )
-	    e_component = ( ( ( map_calotower.find( calo_id ) )->second ).first )->getTower( jcompiter->second )->get_energy();
-
-	  /* check if energy is above threshold and count up matching counters accordingly */
-	  if ( e_component > 0.1 )
-	    jet_ncomp_above_0p1++;
-	  if ( e_component > 1 )
-	    jet_ncomp_above_1++;
-	  if ( e_component > 10 )
-	    jet_ncomp_above_10++;
-        }
-
-      /* set tau candidate jet properties */
       tc->set_property( TauCandidate::jet_id , (iter->second)->get_id() );
-      tc->set_property( TauCandidate::jet_eta , (iter->second)->get_eta() );
-      tc->set_property( TauCandidate::jet_phi , (iter->second)->get_phi() );
-      tc->set_property( TauCandidate::jet_etotal , (iter->second)->get_e() );
-      tc->set_property( TauCandidate::jet_etrans , (iter->second)->get_et() );
-      tc->set_property( TauCandidate::jet_ptotal , (iter->second)->get_p() );
-      tc->set_property( TauCandidate::jet_ptrans , (iter->second)->get_pt() );
-      tc->set_property( TauCandidate::jet_minv , (iter->second)->get_mass() );
-      tc->set_property( TauCandidate::jet_mtrans , jet_mtrans );
-      tc->set_property( TauCandidate::jet_ncomp , (uint)(iter->second)->size_comp() );
-      tc->set_property( TauCandidate::jet_ncomp_above_0p1 , jet_ncomp_above_0p1 );
-      tc->set_property( TauCandidate::jet_ncomp_above_1 , jet_ncomp_above_1 );
-      tc->set_property( TauCandidate::jet_ncomp_above_10 , jet_ncomp_above_10 );
-      tc->set_property( TauCandidate::jet_ncomp_emcal , (uint)(iter->second)->count_comp( Jet::CEMC_TOWER ) );
 
       /* set tau candidate MC truth properties */
       tc->set_property( TauCandidate::evtgen_is_tau, (uint)0 );
@@ -303,6 +242,9 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
 
   /* Add tag for true Tau particle jet to tau candidates */
   AddTrueTauTag( tauCandidateMap, genevtmap );
+
+  /* Add jet information to tau candidates */
+  AddJetInformation( tauCandidateMap, recojets, &map_calotower );
 
   /* Add jet structure information to tau candidates */
   AddJetStructureInformation( tauCandidateMap, &map_calotower );
@@ -405,6 +347,83 @@ LeptoquarksReco::AddTrueTauTag( map_tcan& tauCandidateMap, PHHepMCGenEventMap *g
 
   return 0;
 }
+
+
+int
+LeptoquarksReco::AddJetInformation( map_tcan& tauCandidateMap, JetMap* recojets, map_cdata* map_calotower )
+{
+  /* Loop over tau candidates */
+  for (map_tcan::iterator iter = tauCandidateMap.begin();
+       iter != tauCandidateMap.end();
+       ++iter)
+    {
+      Jet* jetx = recojets->get( (iter->second)->get_property_uint( TauCandidate::jet_id ) );
+
+      /* calculate transverse mass of jet */
+      float jet_mtrans = sqrt( pow( jetx->get_mass(), 2 ) +
+                               pow( jetx->get_pt(), 2 ) );
+
+      /* count jet ncomp above thresholds */
+      unsigned int jet_ncomp_above_0p1 = 0;
+      unsigned int jet_ncomp_above_1 = 0;
+      unsigned int jet_ncomp_above_10 = 0;
+
+      for (Jet::ConstIter jcompiter = jetx->begin_comp(); jcompiter != jetx->end_comp(); ++jcompiter)
+        {
+          RawTowerDefs::CalorimeterId calo_id = RawTowerDefs::NONE;
+
+          switch ( jcompiter->first )
+            {
+            case Jet::CEMC_TOWER:
+              calo_id = RawTowerDefs::CEMC;
+              break;
+            case Jet::HCALIN_TOWER:
+              calo_id = RawTowerDefs::HCALIN;
+              break;
+            case Jet::HCALOUT_TOWER:
+              calo_id = RawTowerDefs::HCALOUT;
+              break;
+            default:
+              break;
+            }
+
+          /* continue if no calorimeter id found */
+          if ( calo_id == RawTowerDefs::NONE )
+            continue;
+
+          /* get tower container from map, find tower in tower container, get tower energy */
+          float e_component = 0;
+          if ( map_calotower->find( calo_id ) != map_calotower->end() )
+            e_component = ( ( ( map_calotower->find( calo_id ) )->second ).first )->getTower( jcompiter->second )->get_energy();
+
+          /* check if energy is above threshold and count up matching counters accordingly */
+          if ( e_component > 0.1 )
+            jet_ncomp_above_0p1++;
+          if ( e_component > 1 )
+            jet_ncomp_above_1++;
+          if ( e_component > 10 )
+            jet_ncomp_above_10++;
+        }
+
+      /* set tau candidate jet properties */
+      (iter->second)->set_property( TauCandidate::jet_eta , jetx->get_eta() );
+      (iter->second)->set_property( TauCandidate::jet_phi , jetx->get_phi() );
+      (iter->second)->set_property( TauCandidate::jet_etotal , jetx->get_e() );
+      (iter->second)->set_property( TauCandidate::jet_etrans , jetx->get_et() );
+      (iter->second)->set_property( TauCandidate::jet_ptotal , jetx->get_p() );
+      (iter->second)->set_property( TauCandidate::jet_ptrans , jetx->get_pt() );
+      (iter->second)->set_property( TauCandidate::jet_minv , jetx->get_mass() );
+      (iter->second)->set_property( TauCandidate::jet_mtrans , jet_mtrans );
+      (iter->second)->set_property( TauCandidate::jet_ncomp , (uint)jetx->size_comp() );
+      (iter->second)->set_property( TauCandidate::jet_ncomp_above_0p1 , jet_ncomp_above_0p1 );
+      (iter->second)->set_property( TauCandidate::jet_ncomp_above_1 , jet_ncomp_above_1 );
+      (iter->second)->set_property( TauCandidate::jet_ncomp_above_10 , jet_ncomp_above_10 );
+      (iter->second)->set_property( TauCandidate::jet_ncomp_emcal , (uint)jetx->count_comp( Jet::CEMC_TOWER ) );
+    }
+
+  return 0;
+}
+
 
 
 int
