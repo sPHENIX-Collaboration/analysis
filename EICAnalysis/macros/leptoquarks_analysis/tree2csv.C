@@ -1,3 +1,5 @@
+#include "tau_commons.h"
+
 /**
  * Save ROOT::TTree as CSV file
  *
@@ -26,7 +28,7 @@ int tree2csv( TString filelist, TString csv_out = TString("output_raw.txt") )
   in.close();
 
   /* particle selection */
-  TCut select_jetcandidates("abs(jet_eta)<1.0 && jet_ptrans>5 && ( (evtgen_is_tau == 0) || (evtgen_is_tau==1 && sqrt( (evtgen_tau_eta-jet_eta)*(evtgen_tau_eta-jet_eta) + (evtgen_tau_phi-jet_phi)*(evtgen_tau_phi-jet_phi) ) < 0.1) )");
+  TCut select_jetcandidates( tau_commons::select_accept_jet && ( tau_commons::select_true_uds || tau_commons::select_true_tau ) );
 
   /* select columns to keep */
   TString cols_keep("*");
