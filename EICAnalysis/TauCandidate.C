@@ -103,11 +103,17 @@ TauCandidate::get_property_info(const PROPERTY prop_id)
     case  jet_ptrans:
       return make_pair("jet_ptrans",TauCandidate::type_float);
 
-    case  jet_mass:
-      return make_pair("jet_mass",TauCandidate::type_float);
+    case  jet_minv:
+      return make_pair("jet_minv",TauCandidate::type_float);
+
+    case  jet_mtrans:
+      return make_pair("jet_mtrans",TauCandidate::type_float);
 
     case  jet_ncomp:
       return make_pair("jet_ncomp",TauCandidate::type_uint);
+
+    case  jet_ncomp_emcal:
+      return make_pair("jet_ncomp_emcal",TauCandidate::type_uint);
 
       // ------
 

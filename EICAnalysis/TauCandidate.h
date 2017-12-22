@@ -49,8 +49,10 @@ public:
       jet_etrans = 105,
       jet_ptotal = 106,
       jet_ptrans = 107,
-      jet_mass = 108,
-      jet_ncomp = 109,
+      jet_minv   = 108,
+      jet_mtrans = 109,
+      jet_ncomp  = 110,
+      jet_ncomp_emcal  = 111,
 
       //-- Jet shape in calorimeter: 120 - 200  --
       jetshape_radius = 121,

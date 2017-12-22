@@ -81,8 +81,10 @@ LeptoquarksReco::Init(PHCompositeNode *topNode)
   _map_treebranches.insert( make_pair( TauCandidate::jet_etrans , dummy ) );
   _map_treebranches.insert( make_pair( TauCandidate::jet_ptotal , dummy ) );
   _map_treebranches.insert( make_pair( TauCandidate::jet_ptrans , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::jet_mass , dummy ) );
+  _map_treebranches.insert( make_pair( TauCandidate::jet_minv , dummy ) );
+  _map_treebranches.insert( make_pair( TauCandidate::jet_mtrans , dummy ) );
   _map_treebranches.insert( make_pair( TauCandidate::jet_ncomp , dummy ) );
+  _map_treebranches.insert( make_pair( TauCandidate::jet_ncomp_emcal , dummy ) );
   _map_treebranches.insert( make_pair( TauCandidate::jetshape_econe_r01 , dummy ) );
   _map_treebranches.insert( make_pair( TauCandidate::jetshape_econe_r02 , dummy ) );
   _map_treebranches.insert( make_pair( TauCandidate::jetshape_econe_r03 , dummy ) );
@@ -222,11 +224,15 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
       if ( (iter->second)->get_e() < _tau_jet_emin )
         continue;
 
-      /* add tau candidate jet to collection */
+      /* create new tau candidate */
       TauCandidatev1 *tc = new TauCandidatev1();
-
       tc->set_candidate_id( (iter->second)->get_id() );
 
+      /* calculate transverse mass of jet */
+      float jet_mtrans = sqrt( pow( (iter->second)->get_mass(), 2 ) +
+			       pow( (iter->second)->get_pt(), 2 ) );
+
+      /* set tau candidate jet properties */
       tc->set_property( TauCandidate::jet_id , (iter->second)->get_id() );
       tc->set_property( TauCandidate::jet_eta , (iter->second)->get_eta() );
       tc->set_property( TauCandidate::jet_phi , (iter->second)->get_phi() );
@@ -234,12 +240,16 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
       tc->set_property( TauCandidate::jet_etrans , (iter->second)->get_et() );
       tc->set_property( TauCandidate::jet_ptotal , (iter->second)->get_p() );
       tc->set_property( TauCandidate::jet_ptrans , (iter->second)->get_pt() );
-      tc->set_property( TauCandidate::jet_mass , (iter->second)->get_mass() );
+      tc->set_property( TauCandidate::jet_minv , (iter->second)->get_mass() );
+      tc->set_property( TauCandidate::jet_mtrans , jet_mtrans );
       tc->set_property( TauCandidate::jet_ncomp , (uint)(iter->second)->size_comp() );
+      tc->set_property( TauCandidate::jet_ncomp_emcal , (uint)(iter->second)->count_comp( Jet::CEMC_TOWER ) );
 
+      /* set tau candidate MC truth properties */
       tc->set_property( TauCandidate::evtgen_is_tau, (uint)0 );
       tc->set_property( TauCandidate::evtgen_is_uds, (uint)0 );
 
+      /* add tau candidate to collection */
       tauCandidateMap.insert( make_pair( (iter->second)->get_e(), tc ) );
     }
 
@@ -740,7 +750,7 @@ LeptoquarksReco::WriteTauCandidatesToTree( map_tcan& tauCandidateMap )
                             (float) (iter->second)->get_property_float( TauCandidate::jet_eta ),                  //
                             (float) (iter->second)->get_property_float( TauCandidate::jet_phi ),
                             (float) 0, //delta_R,
-                            (float) (iter->second)->get_property_float( TauCandidate::jet_mass ),
+                            (float) (iter->second)->get_property_float( TauCandidate::jet_minv ),
                             (float) (iter->second)->get_property_float( TauCandidate::jet_ptotal ),
                             (float) (iter->second)->get_property_float( TauCandidate::jet_ptrans ),
                             (float) (iter->second)->get_property_float( TauCandidate::jet_etrans ),
@@ -773,7 +783,7 @@ LeptoquarksReco::WriteTauCandidatesToTree( map_tcan& tauCandidateMap )
                              (float) (iter->second)->get_property_float( TauCandidate::jet_etrans ),
                              (float) (iter->second)->get_property_float( TauCandidate::jet_ptotal ),
                              (float) (iter->second)->get_property_float( TauCandidate::jet_ptrans ),
-                             (float) (iter->second)->get_property_float( TauCandidate::jet_mass ),
+                             (float) (iter->second)->get_property_float( TauCandidate::jet_minv ),
                              (float) (iter->second)->get_property_float( TauCandidate::jetshape_econe_r01 ),
                              (float) (iter->second)->get_property_float( TauCandidate::jetshape_econe_r02 ),
                              (float) (iter->second)->get_property_float( TauCandidate::jetshape_econe_r03 ),
