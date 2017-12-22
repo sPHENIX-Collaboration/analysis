@@ -240,9 +240,6 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
       tauCandidateMap.insert( make_pair( (iter->second)->get_e(), tc ) );
     }
 
-  /* Add tag for true Tau particle jet to tau candidates */
-  AddTrueTauTag( tauCandidateMap, genevtmap );
-
   /* Add jet information to tau candidates */
   AddJetInformation( tauCandidateMap, recojets, &map_calotower );
 
@@ -251,6 +248,9 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
 
   /* Add track information to tau candidates */
   AddTrackInformation( tauCandidateMap, trackmap );
+
+  /* Add tag for true Tau particle jet to tau candidates */
+  AddTrueTauTag( tauCandidateMap, genevtmap );
 
   /* Add information about tau candidats to output tree */
   WriteTauCandidatesToTree( tauCandidateMap );
