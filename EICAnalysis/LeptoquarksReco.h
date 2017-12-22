@@ -114,7 +114,7 @@ private:
 
   int AddTrueTauTag( map_tcan&, PHHepMCGenEventMap* );
 
-  int AddJetStructureInformation( map_tcan&, JetMap*, map_cdata* );
+  int AddJetStructureInformation( map_tcan&, map_cdata* );
 
   int AddTrackInformation( map_tcan&, SvtxTrackMap* );
 

@@ -247,7 +247,7 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
   AddTrueTauTag( tauCandidateMap, genevtmap );
 
   /* Add jet structure information to tau candidates */
-  AddJetStructureInformation( tauCandidateMap, recojets, &map_calotower );
+  AddJetStructureInformation( tauCandidateMap, &map_calotower );
 
   /* Add track information to tau candidates */
   AddTrackInformation( tauCandidateMap, trackmap );
@@ -350,7 +350,7 @@ LeptoquarksReco::AddTrueTauTag( map_tcan& tauCandidateMap, PHHepMCGenEventMap *g
 
 
 int
-LeptoquarksReco::AddJetStructureInformation( map_tcan& tauCandidateMap, JetMap* recojets, map_cdata* map_towers )
+LeptoquarksReco::AddJetStructureInformation( map_tcan& tauCandidateMap, map_cdata* map_towers )
 {
   /* Cone size around jet axis within which to look for tracks */
   float delta_R_cutoff_r1 = 0.1;
