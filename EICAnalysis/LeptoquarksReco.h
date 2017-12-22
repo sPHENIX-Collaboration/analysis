@@ -30,8 +30,8 @@ class PHHepMCGenEventMap;
 
 class TauCandidate;
 
-typedef std::map<float, TauCandidate*> map_tcan;
-typedef std::map< RawTowerDefs::CalorimeterId , std::pair< RawTowerContainer*, RawTowerGeomContainer* > > map_cdata;
+typedef std::map<float, TauCandidate*> type_map_tcan;
+typedef std::map< RawTowerDefs::CalorimeterId , std::pair< RawTowerContainer*, RawTowerGeomContainer* > > type_map_cdata;
 
 class LeptoquarksReco : public SubsysReco
 {
@@ -112,18 +112,18 @@ private:
    * output ROOT Tree */
   std::map< TauCandidate::PROPERTY , float > _map_treebranches;
 
-  int AddTrueTauTag( map_tcan&, PHHepMCGenEventMap* );
+  int AddTrueTauTag( type_map_tcan&, PHHepMCGenEventMap* );
 
-  int AddJetInformation( map_tcan&, JetMap*, map_cdata* );
+  int AddJetInformation( type_map_tcan&, JetMap*, type_map_cdata* );
 
-  int AddJetStructureInformation( map_tcan&, map_cdata* );
+  int AddJetStructureInformation( type_map_tcan&, type_map_cdata* );
 
-  int AddTrackInformation( map_tcan&, SvtxTrackMap* );
+  int AddTrackInformation( type_map_tcan&, SvtxTrackMap* );
 
-  int WriteTauCandidatesToTree( map_tcan& );
+  int WriteTauCandidatesToTree( type_map_tcan& );
 
   /** Find tau candidate in map that is closest to given eta, phi angle */
-  TauCandidate* FindMinDeltaRCandidate( map_tcan*, const float, const float );
+  TauCandidate* FindMinDeltaRCandidate( type_map_tcan*, const float, const float );
 
   /** Calculate Delta R ("distance in eta-phi space") between two sets of eta, phi angles */
   float CalculateDeltaR( float, float, float, float );

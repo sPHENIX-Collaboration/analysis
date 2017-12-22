@@ -154,7 +154,7 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
    * Use energy as 'key' to the map because energy is unique for each jet, while there are sometimes multiple jets (same energy,
    * different jet ID) in the input jet collection. Also, map automatically sorts entries by key, i.e. this gives list of tau candidates
    * sorted by energy. */
-  map_tcan tauCandidateMap;
+  type_map_tcan tauCandidateMap;
 
   /* Get reco jets collection */
   JetMap* recojets = findNode::getClass<JetMap>(topNode,_jetcolname.c_str());
@@ -182,7 +182,7 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
   }
 
   /* create map of all tower collections and tower geometry collections used */
-  map_cdata map_calotower;
+  type_map_cdata map_calotower;
 
   /* Select calorimeter to include */
   vector< RawTowerDefs::CalorimeterId > v_caloids;
@@ -262,7 +262,7 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
 }
 
 int
-LeptoquarksReco::AddTrueTauTag( map_tcan& tauCandidateMap, PHHepMCGenEventMap *genevtmap )
+LeptoquarksReco::AddTrueTauTag( type_map_tcan& tauCandidateMap, PHHepMCGenEventMap *genevtmap )
 {
   /* Look for leptoquark and tau particle in the event */
   TruthTrackerHepMC truth;
@@ -350,10 +350,10 @@ LeptoquarksReco::AddTrueTauTag( map_tcan& tauCandidateMap, PHHepMCGenEventMap *g
 
 
 int
-LeptoquarksReco::AddJetInformation( map_tcan& tauCandidateMap, JetMap* recojets, map_cdata* map_calotower )
+LeptoquarksReco::AddJetInformation( type_map_tcan& tauCandidateMap, JetMap* recojets, type_map_cdata* map_calotower )
 {
   /* Loop over tau candidates */
-  for (map_tcan::iterator iter = tauCandidateMap.begin();
+  for (type_map_tcan::iterator iter = tauCandidateMap.begin();
        iter != tauCandidateMap.end();
        ++iter)
     {
@@ -427,7 +427,7 @@ LeptoquarksReco::AddJetInformation( map_tcan& tauCandidateMap, JetMap* recojets,
 
 
 int
-LeptoquarksReco::AddJetStructureInformation( map_tcan& tauCandidateMap, map_cdata* map_towers )
+LeptoquarksReco::AddJetStructureInformation( type_map_tcan& tauCandidateMap, type_map_cdata* map_towers )
 {
   /* Cone size around jet axis within which to look for tracks */
   float delta_R_cutoff_r1 = 0.1;
@@ -443,7 +443,7 @@ LeptoquarksReco::AddJetStructureInformation( map_tcan& tauCandidateMap, map_cdat
   int n_steps = 50;
 
   /* Loop over tau candidates */
-  for (map_tcan::iterator iter = tauCandidateMap.begin();
+  for (type_map_tcan::iterator iter = tauCandidateMap.begin();
        iter != tauCandidateMap.end();
        ++iter)
     {
@@ -475,7 +475,7 @@ LeptoquarksReco::AddJetStructureInformation( map_tcan& tauCandidateMap, map_cdat
       float emcal_rms_esum = 0;
 
       /* Loop over all tower (and geometry) collections */
-      for (map_cdata::iterator iter_calo = map_towers->begin();
+      for (type_map_cdata::iterator iter_calo = map_towers->begin();
            iter_calo != map_towers->end();
            ++iter_calo)
         {
@@ -616,7 +616,7 @@ LeptoquarksReco::AddJetStructureInformation( map_tcan& tauCandidateMap, map_cdat
         float e_tower_sum = 0;
 
         /* Loop over all tower (and geometry) collections */
-        for (map_cdata::iterator iter_calo = map_towers->begin();
+        for (type_map_cdata::iterator iter_calo = map_towers->begin();
              iter_calo != map_towers->end();
              ++iter_calo)
           {
@@ -674,10 +674,10 @@ LeptoquarksReco::AddJetStructureInformation( map_tcan& tauCandidateMap, map_cdat
 }
 
 int
-LeptoquarksReco::AddTrackInformation( map_tcan& tauCandidateMap, SvtxTrackMap* trackmap )
+LeptoquarksReco::AddTrackInformation( type_map_tcan& tauCandidateMap, SvtxTrackMap* trackmap )
 {
   /* Loop over tau candidates */
-  for (map_tcan::iterator iter = tauCandidateMap.begin();
+  for (type_map_tcan::iterator iter = tauCandidateMap.begin();
        iter != tauCandidateMap.end();
        ++iter)
     {
@@ -775,11 +775,11 @@ LeptoquarksReco::AddTrackInformation( map_tcan& tauCandidateMap, SvtxTrackMap* t
 
 
 int
-LeptoquarksReco::WriteTauCandidatesToTree( map_tcan& tauCandidateMap )
+LeptoquarksReco::WriteTauCandidatesToTree( type_map_tcan& tauCandidateMap )
 {
 
   /* Loop over all tau candidates */
-  for (map_tcan::iterator iter = tauCandidateMap.begin();
+  for (type_map_tcan::iterator iter = tauCandidateMap.begin();
        iter != tauCandidateMap.end();
        ++iter)
     {
@@ -880,7 +880,7 @@ LeptoquarksReco::WriteTauCandidatesToTree( map_tcan& tauCandidateMap )
 
 
 TauCandidate*
-LeptoquarksReco::FindMinDeltaRCandidate( map_tcan *candidates, const float eta_ref, const float phi_ref )
+LeptoquarksReco::FindMinDeltaRCandidate( type_map_tcan *candidates, const float eta_ref, const float phi_ref )
 {
   /* TauCandidate with eta, phi closest to reference */
   TauCandidate* best_candidate = NULL;
@@ -894,9 +894,9 @@ LeptoquarksReco::FindMinDeltaRCandidate( map_tcan *candidates, const float eta_r
 
   /* find jet with smallest delta_R from quark */
   float min_delta_R = 100;
-  map_tcan::iterator min_delta_R_iter = candidates->end();
+  type_map_tcan::iterator min_delta_R_iter = candidates->end();
 
-  for (map_tcan::iterator iter = candidates->begin();
+  for (type_map_tcan::iterator iter = candidates->begin();
        iter != candidates->end();
        ++iter)
     {
