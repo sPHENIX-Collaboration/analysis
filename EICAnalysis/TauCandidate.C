@@ -112,6 +112,15 @@ TauCandidate::get_property_info(const PROPERTY prop_id)
     case  jet_ncomp:
       return make_pair("jet_ncomp",TauCandidate::type_uint);
 
+    case  jet_ncomp_above_0p1:
+      return make_pair("jet_ncomp_above_0p1",TauCandidate::type_uint);
+
+    case  jet_ncomp_above_1:
+      return make_pair("jet_ncomp_above_1",TauCandidate::type_uint);
+
+    case  jet_ncomp_above_10:
+      return make_pair("jet_ncomp_above_10",TauCandidate::type_uint);
+
     case  jet_ncomp_emcal:
       return make_pair("jet_ncomp_emcal",TauCandidate::type_uint);
 

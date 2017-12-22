@@ -84,6 +84,9 @@ LeptoquarksReco::Init(PHCompositeNode *topNode)
   _map_treebranches.insert( make_pair( TauCandidate::jet_minv , dummy ) );
   _map_treebranches.insert( make_pair( TauCandidate::jet_mtrans , dummy ) );
   _map_treebranches.insert( make_pair( TauCandidate::jet_ncomp , dummy ) );
+  _map_treebranches.insert( make_pair( TauCandidate::jet_ncomp_above_0p1 , dummy ) );
+  _map_treebranches.insert( make_pair( TauCandidate::jet_ncomp_above_1 , dummy ) );
+  _map_treebranches.insert( make_pair( TauCandidate::jet_ncomp_above_10 , dummy ) );
   _map_treebranches.insert( make_pair( TauCandidate::jet_ncomp_emcal , dummy ) );
   _map_treebranches.insert( make_pair( TauCandidate::jetshape_econe_r01 , dummy ) );
   _map_treebranches.insert( make_pair( TauCandidate::jetshape_econe_r02 , dummy ) );
@@ -230,7 +233,49 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
 
       /* calculate transverse mass of jet */
       float jet_mtrans = sqrt( pow( (iter->second)->get_mass(), 2 ) +
-			       pow( (iter->second)->get_pt(), 2 ) );
+                               pow( (iter->second)->get_pt(), 2 ) );
+
+      /* count jet ncomp above thresholds */
+      unsigned int jet_ncomp_above_0p1 = 0;
+      unsigned int jet_ncomp_above_1 = 0;
+      unsigned int jet_ncomp_above_10 = 0;
+
+      for (Jet::ConstIter jcompiter = (iter->second)->begin_comp(); jcompiter != (iter->second)->end_comp(); ++jcompiter)
+        {
+          RawTowerDefs::CalorimeterId calo_id = RawTowerDefs::NONE;
+
+          switch ( jcompiter->first )
+            {
+            case Jet::CEMC_TOWER:
+              calo_id = RawTowerDefs::CEMC;
+              break;
+            case Jet::HCALIN_TOWER:
+              calo_id = RawTowerDefs::HCALIN;
+              break;
+            case Jet::HCALOUT_TOWER:
+              calo_id = RawTowerDefs::HCALOUT;
+              break;
+	    default:
+	      break;
+            }
+
+	  /* continue if no calorimeter id found */
+	  if ( calo_id == RawTowerDefs::NONE )
+	    continue;
+
+	  /* get tower container from map, find tower in tower container, get tower energy */
+	  float e_component = 0;
+	  if ( map_calotower.find( calo_id ) != map_calotower.end() )
+	    e_component = ( ( ( map_calotower.find( calo_id ) )->second ).first )->getTower( jcompiter->second )->get_energy();
+
+	  /* check if energy is above threshold and count up matching counters accordingly */
+	  if ( e_component > 0.1 )
+	    jet_ncomp_above_0p1++;
+	  if ( e_component > 1 )
+	    jet_ncomp_above_1++;
+	  if ( e_component > 10 )
+	    jet_ncomp_above_10++;
+        }
 
       /* set tau candidate jet properties */
       tc->set_property( TauCandidate::jet_id , (iter->second)->get_id() );
@@ -243,6 +288,9 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
       tc->set_property( TauCandidate::jet_minv , (iter->second)->get_mass() );
       tc->set_property( TauCandidate::jet_mtrans , jet_mtrans );
       tc->set_property( TauCandidate::jet_ncomp , (uint)(iter->second)->size_comp() );
+      tc->set_property( TauCandidate::jet_ncomp_above_0p1 , jet_ncomp_above_0p1 );
+      tc->set_property( TauCandidate::jet_ncomp_above_1 , jet_ncomp_above_1 );
+      tc->set_property( TauCandidate::jet_ncomp_above_10 , jet_ncomp_above_10 );
       tc->set_property( TauCandidate::jet_ncomp_emcal , (uint)(iter->second)->count_comp( Jet::CEMC_TOWER ) );
 
       /* set tau candidate MC truth properties */
@@ -322,18 +370,18 @@ LeptoquarksReco::AddTrueTauTag( map_tcan& tauCandidateMap, PHHepMCGenEventMap *g
           /* Check particle decay if end-vertex found */
           if ( particle_tau->end_vertex() )
             {
-	      /* Add information about tau decay */
-	      uint tau_decay_prong = 0;
-	      uint tau_decay_hcharged = 0;
-	      uint tau_decay_lcharged = 0;
+              /* Add information about tau decay */
+              uint tau_decay_prong = 0;
+              uint tau_decay_hcharged = 0;
+              uint tau_decay_lcharged = 0;
 
               /* Count how many charged particles (hadrons and leptons) a given particle decays into. */
               truth.FindDecayParticles( particle_tau, tau_decay_prong, tau_decay_hcharged, tau_decay_lcharged );
 
-	      /* Update tau candidate entry */
-	      best_match->set_property( TauCandidate::evtgen_tau_decay_prong, tau_decay_prong );
-	      best_match->set_property( TauCandidate::evtgen_tau_decay_hcharged, tau_decay_hcharged );
-	      best_match->set_property( TauCandidate::evtgen_tau_decay_lcharged, tau_decay_lcharged );
+              /* Update tau candidate entry */
+              best_match->set_property( TauCandidate::evtgen_tau_decay_prong, tau_decay_prong );
+              best_match->set_property( TauCandidate::evtgen_tau_decay_hcharged, tau_decay_hcharged );
+              best_match->set_property( TauCandidate::evtgen_tau_decay_lcharged, tau_decay_lcharged );
             }
         }
     }
@@ -409,8 +457,8 @@ LeptoquarksReco::AddJetStructureInformation( map_tcan& tauCandidateMap, map_cdat
 
       /* Loop over all tower (and geometry) collections */
       for (map_cdata::iterator iter_calo = map_towers->begin();
-	   iter_calo != map_towers->end();
-	   ++iter_calo)
+           iter_calo != map_towers->end();
+           ++iter_calo)
         {
           /* define tower iterator */
           RawTowerContainer::ConstRange begin_end = ((iter_calo->second).first)->getTowers();
@@ -475,32 +523,32 @@ LeptoquarksReco::AddJetStructureInformation( map_tcan& tauCandidateMap, map_cdat
               if ( delta_R <= delta_R_cutoff_r1 )
                 {
                   er1 += tower_energy;
-		  if ( (iter_calo->first) == RawTowerDefs::CEMC )
-		    emcal_er1 += tower_energy;
+                  if ( (iter_calo->first) == RawTowerDefs::CEMC )
+                    emcal_er1 += tower_energy;
                 }
               if ( delta_R <= delta_R_cutoff_r2 )
                 {
                   er2 += tower_energy;
-		  if ( (iter_calo->first) == RawTowerDefs::CEMC )
-		    emcal_er2 += tower_energy;
+                  if ( (iter_calo->first) == RawTowerDefs::CEMC )
+                    emcal_er2 += tower_energy;
                 }
               if ( delta_R <= delta_R_cutoff_r3 )
                 {
                   er3 += tower_energy;
-		  if ( (iter_calo->first) == RawTowerDefs::CEMC )
-		    emcal_er3 += tower_energy;
+                  if ( (iter_calo->first) == RawTowerDefs::CEMC )
+                    emcal_er3 += tower_energy;
                 }
               if ( delta_R <= delta_R_cutoff_r4 )
                 {
                   er4 += tower_energy;
-		  if ( (iter_calo->first) == RawTowerDefs::CEMC )
-		    emcal_er4 += tower_energy;
+                  if ( (iter_calo->first) == RawTowerDefs::CEMC )
+                    emcal_er4 += tower_energy;
                 }
               if ( delta_R <= delta_R_cutoff_r5 )
                 {
                   er5 += tower_energy;
-		  if ( (iter_calo->first) == RawTowerDefs::CEMC )
-		    emcal_er5 += tower_energy;
+                  if ( (iter_calo->first) == RawTowerDefs::CEMC )
+                    emcal_er5 += tower_energy;
                 }
 
               if ( delta_R <= delta_R_cutoff_r5 )
@@ -510,48 +558,48 @@ LeptoquarksReco::AddJetStructureInformation( map_tcan& tauCandidateMap, map_cdat
 
                   radius += tower_energy*delta_R;
 
-		  if ( (iter_calo->first) == RawTowerDefs::CEMC )
-		    {
-		      emcal_rms += tower_energy*delta_R*delta_R;
-		      emcal_rms_esum += tower_energy;
-		      emcal_radius += tower_energy*delta_R;
-		    }
+                  if ( (iter_calo->first) == RawTowerDefs::CEMC )
+                    {
+                      emcal_rms += tower_energy*delta_R*delta_R;
+                      emcal_rms_esum += tower_energy;
+                      emcal_radius += tower_energy*delta_R;
+                    }
                 }
             }
         }
 
       /* finalize calculation of rms and radius */
       if ( rms_esum > 0 )
-	{
-	  radius /= rms_esum;
-	  rms    /= rms_esum;
-	  rms     = sqrt( rms );
-	}
+        {
+          radius /= rms_esum;
+          rms    /= rms_esum;
+          rms     = sqrt( rms );
+        }
       else
-	{
-	  radius = -1;
-	  rms = -1;
-	}
+        {
+          radius = -1;
+          rms = -1;
+        }
       if ( emcal_rms_esum > 0 )
-	{
-	  emcal_radius /= emcal_rms_esum;
-	  emcal_rms    /= emcal_rms_esum;
-	  emcal_rms     = sqrt( emcal_rms );
-	}
+        {
+          emcal_radius /= emcal_rms_esum;
+          emcal_rms    /= emcal_rms_esum;
+          emcal_rms     = sqrt( emcal_rms );
+        }
       else
-	{
-	  emcal_radius = -1;
-	  emcal_rms = -1;
-	}
+        {
+          emcal_radius = -1;
+          emcal_rms = -1;
+        }
 
       /* Search for cone angle that contains 90% of jet energy */
       for(int r_i = 1; r_i<n_steps+1; r_i++){
         float e_tower_sum = 0;
 
         /* Loop over all tower (and geometry) collections */
-	for (map_cdata::iterator iter_calo = map_towers->begin();
-	     iter_calo != map_towers->end();
-	     ++iter_calo)
+        for (map_cdata::iterator iter_calo = map_towers->begin();
+             iter_calo != map_towers->end();
+             ++iter_calo)
           {
             /* define tower iterator */
             RawTowerContainer::ConstRange begin_end = ((iter_calo->second).first)->getTowers();
@@ -839,10 +887,10 @@ LeptoquarksReco::FindMinDeltaRCandidate( map_tcan *candidates, const float eta_r
       float delta_R = CalculateDeltaR( eta, phi, eta_ref_local, phi_ref_local );
 
       if ( delta_R < min_delta_R )
-	{
-	  min_delta_R_iter = iter;            ;
-	  min_delta_R = delta_R;
-	}
+        {
+          min_delta_R_iter = iter;            ;
+          min_delta_R = delta_R;
+        }
     }
 
   /* set best_candidate to TauCandiate with smallest delta_R within reasonable range*/

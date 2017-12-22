@@ -52,7 +52,10 @@ public:
       jet_minv   = 108,
       jet_mtrans = 109,
       jet_ncomp  = 110,
-      jet_ncomp_emcal  = 111,
+      jet_ncomp_above_0p1  = 111,
+      jet_ncomp_above_1    = 112,
+      jet_ncomp_above_10   = 113,
+      jet_ncomp_emcal      = 115,
 
       //-- Jet shape in calorimeter: 120 - 200  --
       jetshape_radius = 121,
