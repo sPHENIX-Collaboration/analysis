@@ -66,7 +66,6 @@ Double_t eic_bnl_rich::ind_ray(double Ex, double Ey, double Ez, double Dx, doubl
 
   LongDouble_t th,a,d;
   LongDouble_t x,dx;
-
   LongDouble_t y,y1;
 
   LongDouble_t eps = 0.00000000001;
@@ -103,7 +102,7 @@ Double_t eic_bnl_rich::ind_ray(double Ex, double Ey, double Ez, double Dx, doubl
   y1 = R*(a*cos(x)+d*cos(th-x))-2*a*d*cos(th-2*x);
   cout<<"y, y1 is:  "<<y<<"  "<<y1<<endl;
   //dx = -(f->newp(x, th, a, d, R)/f->newpp(x, th, a, d, R));
-  dx = -y/y1;
+  dx = -1*y/y1;
 
   while(TMath::Abs(dx)>eps && i<100){
 
@@ -111,7 +110,7 @@ Double_t eic_bnl_rich::ind_ray(double Ex, double Ey, double Ez, double Dx, doubl
     y = R*(a*sin(x)-d*sin(th-x))+a*d*sin(th-2*x);
     y1 = R*(a*cos(x)+d*cos(th-x))-2*a*d*cos(th-2*x);
     //dx = -(f->newp(x, th, a, d, R)/f->newpp(x, th, a, d, R));
-    dx = -y/y1;
+    dx = -1*y/y1;
     i++;
 
     cout << "New dx: " << dx << endl;
@@ -317,7 +316,7 @@ void eic_bnl_rich::acq(string input_filename, int ind){
   c_mean = ch_ang->GetMean();
   c_rms = ch_ang->GetRMS();
 
-  delete ch_ang;
+  //delete ch_ang;
 }
   
 void eic_bnl_rich::run(){
