@@ -1,12 +1,12 @@
 #ifndef PHFLOWJETMAKER_H__
 #define PHFLOWJETMAKER_H__
 
+#include <TLorentzVector.h>
 #include <fun4all/SubsysReco.h>
 #include <map>
 #include <set>
 #include <string>
 #include <vector>
-#include <TLorentzVector.h>
 
 class Fun4AllHistoManager;
 class PHCompositeNode;
@@ -30,27 +30,26 @@ class TF1;
 class TH2F;
 class TNtuple;
 
-namespace fastjet {
-  class PseudoJet;
-  class JetDefinition;
-  class SISConePlugin;
-  class ClusterSequence;
+namespace fastjet
+{
+class PseudoJet;
+class JetDefinition;
+class SISConePlugin;
+class ClusterSequence;
 }
 
-
-class PHFlowJetMaker: public SubsysReco
+class PHFlowJetMaker : public SubsysReco
 {
  public:
-
-  PHFlowJetMaker(const std::string &name = "PHFlowJetMaker", const std::string algorithm = "AntiKt", double r_param = 0.3);
+  PHFlowJetMaker(const std::string& name = "PHFlowJetMaker", const std::string algorithm = "AntiKt", double r_param = 0.3);
 
   virtual ~PHFlowJetMaker();
 
-  int Init(PHCompositeNode *);
+  int Init(PHCompositeNode*);
 
-  int process_event(PHCompositeNode *);
+  int process_event(PHCompositeNode*);
 
-  int End(PHCompositeNode *);
+  int End(PHCompositeNode*);
 
   void create_calo_pseudojets(std::vector<fastjet::PseudoJet>& particles, RawClusterContainer* emc_clusters, RawClusterContainer* hci_clusters, RawClusterContainer* hco_clusters);
 
@@ -58,30 +57,28 @@ class PHFlowJetMaker: public SubsysReco
 
   int get_matched(double clus_energy, double track_energy);
 
-  int create_node_tree(PHCompositeNode *);
+  int create_node_tree(PHCompositeNode*);
 
-  private:
-
+ private:
   //Sampling Fractions
-  static const float sfEMCAL ;
-  static const float sfHCALIN ;
-  static const float sfHCALOUT ;
+  static const float sfEMCAL;
+  static const float sfHCALIN;
+  static const float sfHCALOUT;
 
-  char *outfile;
+  char* outfile;
   std::string algorithm;
   double r_param;
 
-  JetMap *flow_jet_map;
+  JetMap* flow_jet_map;
 
   //Tolerance for cluster-track matching
-  TF1 *match_tolerance_low;
-  TF1 *match_tolerance_high;
+  TF1* match_tolerance_low;
+  TF1* match_tolerance_high;
 
   fastjet::JetDefinition* fJetAlgorithm;
   double min_jet_pT;
 
-			 // PHPyJetContainerV2 *flow_jet_container;
-
+  // PHPyJetContainerV2 *flow_jet_container;
 };
 
 #endif
