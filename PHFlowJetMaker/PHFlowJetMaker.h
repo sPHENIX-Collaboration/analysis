@@ -33,7 +33,7 @@ class TNtuple;
 namespace fastjet {
   class PseudoJet;
   class JetDefinition;
-  class SISConePlugin;    
+  class SISConePlugin;
   class ClusterSequence;
 }
 
@@ -57,16 +57,16 @@ class PHFlowJetMaker: public SubsysReco
   void run_particle_flow(std::vector<fastjet::PseudoJet>& flow_particles, RawClusterContainer* emc_clusters, RawClusterContainer* hci_clusters, RawClusterContainer* hco_clusters, SvtxTrackMap* reco_tracks);
 
   int get_matched(double clus_energy, double track_energy);
-  
+
   int create_node_tree(PHCompositeNode *);
 
   private:
-			 
+
   //Sampling Fractions
   static const float sfEMCAL ;
   static const float sfHCALIN ;
   static const float sfHCALOUT ;
-			 
+
   char *outfile;
   std::string algorithm;
   double r_param;
