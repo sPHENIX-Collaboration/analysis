@@ -159,7 +159,7 @@ void eic_bnl_rich::acq(string input_filename, int ind){
   }
   //else cout << "open file " << input_filename << endl;
 
-  TTree *eic_rich = (TTree*) file->Get("tree_rich");
+  TTree *eic_rich = (TTree*) file->Get("pid_rich");
   
   Int_t eic_rich_event=0,eic_rich_bankid=0,eic_rich_volumeid=0,eic_rich_hitid=0,*eic_rich_pid=0,eic_rich_mpid=0,eic_rich_trackid=0,eic_rich_mtrackid=0,eic_rich_otrackid=0;
   Double_t eic_rich_hit_x=0,eic_rich_hit_y=0,eic_rich_hit_z=0,eic_rich_lhit_x=0,eic_rich_lhit_y=0,eic_rich_lhit_z=0, eic_rich_emi_x=0, eic_rich_emi_y=0, eic_rich_emi_z=0,eic_rich_px=0,eic_rich_py=0,eic_rich_pz=0,eic_rich_mpx=0,eic_rich_mpy=0,eic_rich_mpz=0,eic_rich_e=0,eic_rich_me=0,eic_rich_edep=0;
@@ -168,9 +168,6 @@ void eic_bnl_rich::acq(string input_filename, int ind){
   eic_rich->SetBranchAddress("hit_x",&eic_rich_hit_x);
   eic_rich->SetBranchAddress("hit_y",&eic_rich_hit_y);
   eic_rich->SetBranchAddress("hit_z",&eic_rich_hit_z);
-  eic_rich->SetBranchAddress("lhit_x",&eic_rich_lhit_x);
-  eic_rich->SetBranchAddress("lhit_y",&eic_rich_lhit_y);
-  eic_rich->SetBranchAddress("lhit_z",&eic_rich_lhit_z);
   eic_rich->SetBranchAddress("emi_x",&eic_rich_emi_x);
   eic_rich->SetBranchAddress("emi_y",&eic_rich_emi_y);
   eic_rich->SetBranchAddress("emi_z",&eic_rich_emi_z);
