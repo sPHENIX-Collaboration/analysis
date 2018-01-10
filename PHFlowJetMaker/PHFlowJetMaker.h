@@ -15,6 +15,7 @@ class RawTowerContainer;
 class RawTowerGeom;
 class RawClusterContainer;
 class RawCluster;
+class GlobalVertex;
 class PHMCTowerContainerV1;
 class RawClusterContainer;
 class PHFastjetContainer;
@@ -51,9 +52,10 @@ class PHFlowJetMaker : public SubsysReco
 
   int End(PHCompositeNode*);
 
-  void create_calo_pseudojets(std::vector<fastjet::PseudoJet>& particles, RawClusterContainer* emc_clusters, RawClusterContainer* hci_clusters, RawClusterContainer* hco_clusters);
+// * Jin - disable. Please use the standard cluster jet on the node tree
+//  void create_calo_pseudojets(std::vector<fastjet::PseudoJet>& particles, RawClusterContainer* emc_clusters, RawClusterContainer* hci_clusters, RawClusterContainer* hco_clusters, GlobalVertex* vtx, GlobalVertex* vtx);
 
-  void run_particle_flow(std::vector<fastjet::PseudoJet>& flow_particles, RawClusterContainer* emc_clusters, RawClusterContainer* hci_clusters, RawClusterContainer* hco_clusters, SvtxTrackMap* reco_tracks);
+  void run_particle_flow(std::vector<fastjet::PseudoJet>& flow_particles, RawClusterContainer* emc_clusters, RawClusterContainer* hci_clusters, RawClusterContainer* hco_clusters, SvtxTrackMap* reco_tracks, GlobalVertex* vtx);
 
   int get_matched(double clus_energy, double track_energy);
 

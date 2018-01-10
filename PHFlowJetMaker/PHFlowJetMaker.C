@@ -7,6 +7,10 @@
 #include <PHFlowJetMaker.h>
 #include <calobase/RawCluster.h>
 #include <calobase/RawClusterContainer.h>
+#include <calobase/RawClusterUtility.h>
+
+#include <g4vertex/GlobalVertex.h>
+#include <g4vertex/GlobalVertexMap.h>
 
 #include <g4hough/SvtxTrack.h>
 #include <g4hough/SvtxTrackMap.h>
@@ -44,6 +48,7 @@ using namespace Fun4AllReturnCodes;
 
 typedef std::map<int, TLorentzVector*> tlvmap;
 
+// Jin - this thing is obsolete. Clusters now already have calibrated energies
 const float PHFlowJetMaker::sfEMCAL = 0.03;
 const float PHFlowJetMaker::sfHCALIN = 0.071;
 const float PHFlowJetMaker::sfHCALOUT = 0.04;
@@ -176,19 +181,38 @@ int PHFlowJetMaker::process_event(PHCompositeNode* topNode)
   //Get reconstructed tracks from nodetree
   SvtxTrackMap* reco_tracks = findNode::getClass<SvtxTrackMap>(topNode, "SvtxTrackMap");
 
+  //Vertex for converting cluster position to momentum direction
+  GlobalVertexMap* vertexmap = findNode::getClass<GlobalVertexMap>(topNode, "GlobalVertexMap");
+  if (!vertexmap)
+  {
+    cout << "PHFlowJetMaker::process_event - Fatal Error - GlobalVertexMap node is missing. Please turn on the do_global flag in the main macro in order to reconstruct the global vertex." << endl;
+    assert(vertexmap);  // force quit
+
+    return Fun4AllReturnCodes::ABORTRUN;
+  }
+
+  if (!vertexmap->empty())
+  {
+    cout << "PHFlowJetMaker::process_event - Fatal Error - GlobalVertexMap node is empty. Please turn on the do_global flag in the main macro in order to reconstruct the global vertex." << endl;
+
+    return Fun4AllReturnCodes::ABORTRUN;
+  }
+  GlobalVertex* vtx = vertexmap->begin()->second;
+  assert(vtx);
+
   //-------------------------------------------------
   // Create Jets
   //-------------------------------------------------
 
-  //Create jets from raw clusters
-  vector<fastjet::PseudoJet> raw_cluster_particles;
-  create_calo_pseudojets(raw_cluster_particles, emc_clusters, hci_clusters, hco_clusters);
-  fastjet::ClusterSequence jet_finder_raw(raw_cluster_particles, *fJetAlgorithm);
-  vector<fastjet::PseudoJet> raw_cluster_jets = jet_finder_raw.inclusive_jets(min_jet_pT);
+  //  //Create jets from raw clusters
+  //  vector<fastjet::PseudoJet> raw_cluster_particles;
+  //  create_calo_pseudojets(raw_cluster_particles, emc_clusters, hci_clusters, hco_clusters, vtx);
+  //  fastjet::ClusterSequence jet_finder_raw(raw_cluster_particles, *fJetAlgorithm);
+  //  vector<fastjet::PseudoJet> raw_cluster_jets = jet_finder_raw.inclusive_jets(min_jet_pT);
 
   //Apply particle flow jets algorithm and create jets from flow particles
   vector<fastjet::PseudoJet> flow_particles;
-  run_particle_flow(flow_particles, emc_clusters, hci_clusters, hco_clusters, reco_tracks);
+  run_particle_flow(flow_particles, emc_clusters, hci_clusters, hco_clusters, reco_tracks, vtx);
   fastjet::ClusterSequence jet_finder_flow(flow_particles, *fJetAlgorithm);
   vector<fastjet::PseudoJet> flow_jets = jet_finder_flow.inclusive_jets(min_jet_pT);
 
@@ -240,8 +264,10 @@ int PHFlowJetMaker::process_event(PHCompositeNode* topNode)
 /*
  * Run particle flow algorithm
  */
-void PHFlowJetMaker::run_particle_flow(std::vector<fastjet::PseudoJet>& flow_particles, RawClusterContainer* emc_clusters, RawClusterContainer* hci_clusters, RawClusterContainer* hco_clusters, SvtxTrackMap* reco_tracks)
+void PHFlowJetMaker::run_particle_flow(std::vector<fastjet::PseudoJet>& flow_particles, RawClusterContainer* emc_clusters, RawClusterContainer* hci_clusters, RawClusterContainer* hco_clusters, SvtxTrackMap* reco_tracks, GlobalVertex* vtx)
 {
+  CLHEP::Hep3Vector vertex(vtx->get_x(), vtx->get_y(), vtx->get_z());
+
   double emc_energy = 0;
   double hci_energy = 0;
   double hco_energy = 0;
@@ -265,25 +291,47 @@ void PHFlowJetMaker::run_particle_flow(std::vector<fastjet::PseudoJet>& flow_par
   for (unsigned int i = 0; i < emc_clusters->size(); i++)
   {
     RawCluster* part = emc_clusters->getCluster(i);
-    double pT = (part->get_energy()) / cosh(part->get_eta());
+    //    double pT = (part->get_energy()) / cosh(part->get_eta());
+
+    CLHEP::Hep3Vector E_vec_cluster = RawClusterUtility::GetEVec(*part, vertex);
+
     emc_map[i] = new TLorentzVector();
-    emc_map[i]->SetPtEtaPhiE(pT, part->get_eta(), part->get_phi(), part->get_energy());
+    //    emc_map[i]->SetPtEtaPhiE(pT, part->get_eta(), part->get_phi(), part->get_energy());
+    emc_map[i]->SetPxPyPzE(
+        E_vec_cluster.x(),
+        E_vec_cluster.y(),
+        E_vec_cluster.z(),
+        E_vec_cluster.mag());
   }
 
   for (unsigned int i = 0; i < hci_clusters->size(); i++)
   {
     RawCluster* part = hci_clusters->getCluster(i);
-    double pT = (part->get_energy()) / cosh(part->get_eta());
+    //    double pT = (part->get_energy()) / cosh(part->get_eta());
+    CLHEP::Hep3Vector E_vec_cluster = RawClusterUtility::GetEVec(*part, vertex);
     hci_map[i] = new TLorentzVector();
-    hci_map[i]->SetPtEtaPhiE(pT, part->get_eta(), part->get_phi(), part->get_energy());
+    hci_map[i]->
+        //    SetPtEtaPhiE(pT, part->get_eta(), part->get_phi(), part->get_energy());
+        SetPxPyPzE(
+            E_vec_cluster.x(),
+            E_vec_cluster.y(),
+            E_vec_cluster.z(),
+            E_vec_cluster.mag());
   }
 
   for (unsigned int i = 0; i < hco_clusters->size(); i++)
   {
     RawCluster* part = hco_clusters->getCluster(i);
-    double pT = (part->get_energy()) / cosh(part->get_eta());
+    //    double pT = (part->get_energy()) / cosh(part->get_eta());
+    CLHEP::Hep3Vector E_vec_cluster = RawClusterUtility::GetEVec(*part, vertex);
     hco_map[i] = new TLorentzVector();
-    hco_map[i]->SetPtEtaPhiE(pT, part->get_eta(), part->get_phi(), part->get_energy());
+    hco_map[i]->
+        //    SetPtEtaPhiE(pT, part->get_eta(), part->get_phi(), part->get_energy());
+        SetPxPyPzE(
+            E_vec_cluster.x(),
+            E_vec_cluster.y(),
+            E_vec_cluster.z(),
+            E_vec_cluster.mag());
   }
 
   //Loop over all tracks
@@ -471,72 +519,75 @@ void PHFlowJetMaker::run_particle_flow(std::vector<fastjet::PseudoJet>& flow_par
 
 /*
  * Create pseudojets from calorimeter clusters before applying particle flow algorithm
+ * Jin - disable. Please use the standard cluster jet on the node tree
  */
-void PHFlowJetMaker::create_calo_pseudojets(std::vector<fastjet::PseudoJet>& particles, RawClusterContainer* emc_clusters, RawClusterContainer* hci_clusters, RawClusterContainer* hco_clusters)
-{
-  //Loop over EMCAL clusters
-  for (unsigned int i = 0; i < emc_clusters->size(); i++)
-  {
-    RawCluster* part = emc_clusters->getCluster(i);
-    double eta = part->get_eta();
-    double phi = part->get_phi();
-    double energy = part->get_energy() / sfEMCAL;
-    double eT = energy / cosh(eta);
-    double pz = eT * sinh(eta);
-
-    if (eT < 0.000001)
-    {
-      eT = 0.001;
-      pz = eT * sinh(eta);
-      energy = sqrt(eT * eT + pz * pz);
-    }
-
-    fastjet::PseudoJet pseudoJet(eT * cos(phi), eT * sin(phi), pz, energy);
-    particles.push_back(pseudoJet);
-  }
-
-  //Loop over HCALIN clusters
-  for (unsigned int i = 0; i < hci_clusters->size(); i++)
-  {
-    RawCluster* part = hci_clusters->getCluster(i);
-    double eta = part->get_eta();
-    double phi = part->get_phi();
-    double energy = part->get_energy() / sfHCALIN;
-    double eT = energy / cosh(eta);
-    double pz = eT * sinh(eta);
-
-    if (eT < 0.000001)
-    {
-      eT = 0.001;
-      pz = eT * sinh(eta);
-      energy = sqrt(eT * eT + pz * pz);
-    }
-
-    fastjet::PseudoJet pseudoJet(eT * cos(phi), eT * sin(phi), pz, energy);
-    particles.push_back(pseudoJet);
-  }
-
-  //Loop over HCALOUT clusters
-  for (unsigned int i = 0; i < hco_clusters->size(); i++)
-  {
-    RawCluster* part = hco_clusters->getCluster(i);
-    double eta = part->get_eta();
-    double phi = part->get_phi();
-    double energy = part->get_energy() / sfHCALOUT;
-    double eT = energy / cosh(eta);
-    double pz = eT * sinh(eta);
-
-    if (eT < 0.000001)
-    {
-      eT = 0.001;
-      pz = eT * sinh(eta);
-      energy = sqrt(eT * eT + pz * pz);
-    }
-
-    fastjet::PseudoJet pseudoJet(eT * cos(phi), eT * sin(phi), pz, energy);
-    particles.push_back(pseudoJet);
-  }
-}
+//void PHFlowJetMaker::create_calo_pseudojets(std::vector<fastjet::PseudoJet>& particles, RawClusterContainer* emc_clusters, RawClusterContainer* hci_clusters, RawClusterContainer* hco_clusters, GlobalVertex* vtx)
+//{
+//  CLHEP::Hep3Vector vertex(vtx->get_x(), vtx->get_y(), vtx->get_z());
+//
+//  //Loop over EMCAL clusters
+//  for (unsigned int i = 0; i < emc_clusters->size(); i++)
+//  {
+//    RawCluster* part = emc_clusters->getCluster(i);
+//    double eta = part->get_eta();
+//    double phi = part->get_phi();
+//    double energy = part->get_energy() / sfEMCAL;
+//    double eT = energy / cosh(eta);
+//    double pz = eT * sinh(eta);
+//
+//    if (eT < 0.000001)
+//    {
+//      eT = 0.001;
+//      pz = eT * sinh(eta);
+//      energy = sqrt(eT * eT + pz * pz);
+//    }
+//
+//    fastjet::PseudoJet pseudoJet(eT * cos(phi), eT * sin(phi), pz, energy);
+//    particles.push_back(pseudoJet);
+//  }
+//
+//  //Loop over HCALIN clusters
+//  for (unsigned int i = 0; i < hci_clusters->size(); i++)
+//  {
+//    RawCluster* part = hci_clusters->getCluster(i);
+//    double eta = part->get_eta();
+//    double phi = part->get_phi();
+//    double energy = part->get_energy() / sfHCALIN;
+//    double eT = energy / cosh(eta);
+//    double pz = eT * sinh(eta);
+//
+//    if (eT < 0.000001)
+//    {
+//      eT = 0.001;
+//      pz = eT * sinh(eta);
+//      energy = sqrt(eT * eT + pz * pz);
+//    }
+//
+//    fastjet::PseudoJet pseudoJet(eT * cos(phi), eT * sin(phi), pz, energy);
+//    particles.push_back(pseudoJet);
+//  }
+//
+//  //Loop over HCALOUT clusters
+//  for (unsigned int i = 0; i < hco_clusters->size(); i++)
+//  {
+//    RawCluster* part = hco_clusters->getCluster(i);
+//    double eta = part->get_eta();
+//    double phi = part->get_phi();
+//    double energy = part->get_energy() / sfHCALOUT;
+//    double eT = energy / cosh(eta);
+//    double pz = eT * sinh(eta);
+//
+//    if (eT < 0.000001)
+//    {
+//      eT = 0.001;
+//      pz = eT * sinh(eta);
+//      energy = sqrt(eT * eT + pz * pz);
+//    }
+//
+//    fastjet::PseudoJet pseudoJet(eT * cos(phi), eT * sin(phi), pz, energy);
+//    particles.push_back(pseudoJet);
+//  }
+//}
 
 /*
  * Given a track and cluster energies, determine if they match within tolerance
