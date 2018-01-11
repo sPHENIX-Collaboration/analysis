@@ -8,16 +8,19 @@
 #include <g4main/PHG4Hit.h>
 
 #include <TLorentzVector.h>
-#include <iostream>
 #include <g4jets/JetMap.h>
 #include <g4jets/Jet.h>
-#include <g4cemc/RawTowerContainer.h>
-#include <g4cemc/RawTowerGeomContainer.h>
-#include <g4cemc/RawTower.h>
-#include <g4cemc/RawTowerGeom.h>
+#include <calobase/RawTowerContainer.h>
+#include <calobase/RawTowerGeomContainer.h>
+#include <calobase/RawTower.h>
+#include <calobase/RawTowerGeom.h>
 
-#include <g4cemc/RawClusterContainer.h>
-#include <g4cemc/RawCluster.h>
+#include <calobase/RawClusterContainer.h>
+#include <calobase/RawCluster.h>
+#include <calobase/RawClusterUtility.h>
+
+#include <g4vertex/GlobalVertexMap.h>
+#include <g4vertex/GlobalVertex.h>
 
 #include <g4detectors/PHG4ScintillatorSlatContainer.h>
 #include <g4eval/JetEvalStack.h>
@@ -26,6 +29,8 @@
 
 #include <g4eval/SvtxEvalStack.h>
 
+#include <iostream>
+#include <cassert>
 
 using namespace std;
 
@@ -104,6 +109,23 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
     return 0;
   }
 
+  GlobalVertexMap* vertexmap = findNode::getClass<GlobalVertexMap>(topnode,"GlobalVertexMap");
+  if (!vertexmap) {
+
+    cout <<"PhotonJet::process_event - Fatal Error - GlobalVertexMap node is missing. Please turn on the do_global flag in the main macro in order to reconstruct the global vertex."<<endl;
+    assert(vertexmap); // force quit
+
+    return 0;
+  }
+
+  if (!vertexmap->empty()) {
+    cout <<"PhotonJet::process_event - Fatal Error - GlobalVertexMap node is empty. Please turn on the do_global flag in the main macro in order to reconstruct the global vertex."<<endl;
+    return 0;
+  }
+
+  GlobalVertex* vtx = vertexmap->begin()->second;
+  if (vtx == nullptr) return 0;
+
 
   JetRecoEval* recoeval = _jetevalstack->get_reco_eval();
 
@@ -156,11 +178,19 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
 
     RawCluster *cluster = clusiter->second;
 
-    clus_energy = cluster->get_energy();
-    clus_eta = cluster->get_eta();
-    clus_theta = 2.*TMath::ATan((TMath::Exp(-1.*clus_eta)));
-    clus_pt = clus_energy*TMath::Sin(clus_theta);
-    clus_phi = cluster->get_phi();
+//    clus_energy = cluster->get_energy();
+//    clus_eta = cluster->get_eta();
+//    clus_theta = 2.*TMath::ATan((TMath::Exp(-1.*clus_eta)));
+//    clus_pt = clus_energy*TMath::Sin(clus_theta);
+//    clus_phi = cluster->get_phi();
+
+    CLHEP::Hep3Vector vertex(vtx->get_x(),vtx->get_y(),vtx->get_z());
+    CLHEP::Hep3Vector E_vec_cluster = RawClusterUtility::GetEVec(*cluster, vertex);
+    clus_energy = E_vec_cluster.mag();
+    clus_eta = E_vec_cluster.pseudoRapidity();
+//    clus_theta = E_vec_cluster.getTheta();
+    clus_pt = E_vec_cluster.perp();
+    clus_phi = E_vec_cluster.getPhi();
     
     if(clus_pt<0.5)
       continue;
@@ -189,14 +219,14 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
     if(fabs(clus_eta)>(1.0-isoconeradius))
       continue;
 
-    float energysum = ConeSum(cluster,clusters,trackmap,isoconeradius);
+    float energysum = ConeSum(cluster,clusters,trackmap,isoconeradius,vtx);
     bool conecut = energysum > 0.1*clus_energy;
     if(conecut)
       continue;
    
     isolated_clusters->Fill();
     
-    GetRecoHadronsAndJets(cluster, trackmap, reco_jets,recoeval);
+    GetRecoHadronsAndJets(cluster, trackmap, reco_jets,recoeval,vtx);
 
   }
 
@@ -381,11 +411,15 @@ int PhotonJet::End(PHCompositeNode *topnode)
 void PhotonJet::GetRecoHadronsAndJets(RawCluster *trig,
 				      SvtxTrackMap *tracks,
 				      JetMap *jets,
-				      JetRecoEval *recoeval)
+				      JetRecoEval *recoeval,
+				       GlobalVertex* vtx)
 {
 
-  float trig_phi = trig->get_phi();
-  float trig_eta = trig->get_eta();
+  CLHEP::Hep3Vector vertex(vtx->get_x(),vtx->get_y(),vtx->get_z());
+  CLHEP::Hep3Vector E_vec_cluster = RawClusterUtility::GetEVec(*trig, vertex);
+
+  float trig_phi = E_vec_cluster.getPhi();// trig->get_phi();
+  float trig_eta = E_vec_cluster.pseudoRapidity();//trig->get_eta();
 
  
   for(SvtxTrackMap::Iter iter = tracks->begin(); iter!=tracks->end(); ++iter){
@@ -489,8 +523,11 @@ void PhotonJet::GetRecoHadronsAndJets(RawCluster *trig,
 float PhotonJet::ConeSum(RawCluster *cluster, 
 			 RawClusterContainer *cluster_container,
 			 SvtxTrackMap *trackmap,
-			 float coneradius)
+			 float coneradius,
+			 GlobalVertex* vtx)
 {
+  CLHEP::Hep3Vector vertex(vtx->get_x(),vtx->get_y(),vtx->get_z());
+  CLHEP::Hep3Vector E_vec_cluster = RawClusterUtility::GetEVec(*cluster, vertex);
 
   float energyptsum=0;
   
@@ -503,16 +540,18 @@ float PhotonJet::ConeSum(RawCluster *cluster,
     //check to make sure that the candidate isolated photon isn't being counted in the energy sum
     if(conecluster->get_energy() == cluster->get_energy())
       if(conecluster->get_phi() == cluster->get_phi())
-	if(conecluster->get_eta() == cluster->get_eta())
+	if(conecluster->get_z() == cluster->get_z())
 	  continue;
 
-    float cone_pt = conecluster->get_energy()/TMath::CosH(conecluster->get_eta());
+    CLHEP::Hep3Vector E_vec_conecluster = RawClusterUtility::GetEVec(*conecluster, vertex);
+
+    float cone_pt = E_vec_conecluster.perp();
     if(cone_pt<0.2)
       continue;
     
     float cone_e = conecluster->get_energy();
-    float cone_eta = conecluster->get_eta();
-    float cone_phi = conecluster->get_phi();
+    float cone_eta = E_vec_conecluster.pseudoRapidity();
+    float cone_phi =  E_vec_conecluster.getPhi();
     
 
 
@@ -522,7 +561,7 @@ float PhotonJet::ConeSum(RawCluster *cluster,
     if(dphi>pi)
       dphi-=2.*pi;
     
-    float deta = cluster->get_eta()-cone_eta;
+    float deta = E_vec_cluster.pseudoRapidity()-cone_eta;
 
    
     float radius = sqrt(dphi*dphi+deta*deta);
@@ -546,8 +585,8 @@ float PhotonJet::ConeSum(RawCluster *cluster,
       continue;
     float trackphi = track->get_phi();
     float tracketa = track->get_eta();
-    float dphi = cluster->get_phi()-trackphi;
-    float deta = cluster->get_eta()-tracketa;
+    float dphi =E_vec_cluster.getPhi()-trackphi;
+    float deta = E_vec_cluster.pseudoRapidity()-tracketa;
     float radius = sqrt(dphi*dphi+deta*deta);
   
     if(radius<coneradius){
