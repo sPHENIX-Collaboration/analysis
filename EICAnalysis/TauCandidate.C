@@ -82,6 +82,20 @@ TauCandidate::get_property_info(const PROPERTY prop_id)
 
       // ------
 
+    case  evtgen_is_ele:
+      return make_pair("evtgen_is_ele",TauCandidate::type_uint);
+
+    case  evtgen_ele_etotal:
+      return make_pair("evtgen_ele_etotal",TauCandidate::type_float);
+
+    case  evtgen_ele_eta:
+      return make_pair("evtgen_ele_eta",TauCandidate::type_float);
+
+    case  evtgen_ele_phi:
+      return make_pair("evtgen_ele_phi",TauCandidate::type_float);
+
+      // ------
+
     case  jet_id:
       return make_pair("jet_id",TauCandidate::type_uint);
 
@@ -175,6 +189,26 @@ TauCandidate::get_property_info(const PROPERTY prop_id)
 
     case  jetshape_emcal_econe_r05:
       return make_pair("jetshape_emcal_econe_r05",TauCandidate::type_float);
+
+      // ------
+
+    case  track_id:
+      return make_pair("track_id",TauCandidate::type_uint);
+
+    case  track_eta:
+      return make_pair("track_eta",TauCandidate::type_float);
+
+    case  track_phi:
+      return make_pair("track_phi",TauCandidate::type_float);
+
+    case  track_ptotal:
+      return make_pair("track_ptotal",TauCandidate::type_float);
+
+    case  track_ptrans:
+      return make_pair("track_ptrans",TauCandidate::type_float);
+
+    case  track_charge:
+      return make_pair("track_charge",TauCandidate::type_int);
 
       // ------
 

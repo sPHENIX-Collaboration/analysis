@@ -41,6 +41,11 @@ public:
       evtgen_uds_eta = 13,
       evtgen_uds_phi = 14,
 
+      evtgen_is_ele = 21,
+      evtgen_ele_etotal = 22,
+      evtgen_ele_eta = 23,
+      evtgen_ele_phi = 24,
+
       //-- Jet properties: 101 - ?  --
       jet_id = 101,
       jet_eta = 102,
@@ -78,7 +83,7 @@ public:
       jetshape_emcal_econe_r04 = 174,
       jetshape_emcal_econe_r05 = 175,
 
-      //-- Track information: 201 - 300  --
+      //-- Track information: 201 - 250  --
       tracks_count_r02 = 210,
       tracks_count_r04 = 211,
 
@@ -87,6 +92,14 @@ public:
 
       tracks_chargesum_r02 = 220,
       tracks_chargesum_r04 = 221,
+
+      //-- 1-track properties: 251 - 300  --
+      track_id = 251,
+      track_eta = 252,
+      track_phi = 253,
+      track_ptotal = 256,
+      track_ptrans = 257,
+      track_charge = 258,
 
       //! max limit in order to fit into 8 bit unsigned number
       prop_MAX_NUMBER = UCHAR_MAX
