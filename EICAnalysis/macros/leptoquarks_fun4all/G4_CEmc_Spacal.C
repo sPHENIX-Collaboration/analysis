@@ -369,7 +369,7 @@ void CEMC_Clusters(int verbosity = 0)
   gSystem->Load("libg4detectors.so");
   Fun4AllServer *se = Fun4AllServer::instance();
 
-  RawClusterBuilder *ClusterBuilder = new RawClusterBuilder("EmcRawClusterBuilder");
+  RawClusterBuilderGraph *ClusterBuilder = new RawClusterBuilderGraph("EmcRawClusterBuilder");
   ClusterBuilder->Detector("CEMC");
   ClusterBuilder->Verbosity(verbosity);
   se->registerSubsystem(ClusterBuilder);

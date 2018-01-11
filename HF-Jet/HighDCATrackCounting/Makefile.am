@@ -26,7 +26,7 @@ libBJetModule_la_SOURCES = \
 libBJetModule_la_LIBADD = \
   -lg4dst \
   -lg4eval \
-  -lcemc \
+  -lcalo_util \
   -lphool
 
 BUILT_SOURCES = \

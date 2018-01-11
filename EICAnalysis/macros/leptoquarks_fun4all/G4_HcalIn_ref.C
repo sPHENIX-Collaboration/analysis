@@ -189,7 +189,7 @@ void HCALInner_Clusters(int verbosity = 0) {
   gSystem->Load("libg4detectors.so");
   Fun4AllServer *se = Fun4AllServer::instance();
   
-  RawClusterBuilder* ClusterBuilder = new RawClusterBuilder("HcalInRawClusterBuilder");
+  RawClusterBuilderGraph* ClusterBuilder = new RawClusterBuilderGraph("HcalInRawClusterBuilder");
   ClusterBuilder->Detector("HCALIN");
   ClusterBuilder->Verbosity(verbosity);
   se->registerSubsystem( ClusterBuilder );
