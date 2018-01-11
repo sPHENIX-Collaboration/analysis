@@ -191,9 +191,9 @@ int PHFlowJetMaker::process_event(PHCompositeNode* topNode)
     return Fun4AllReturnCodes::ABORTRUN;
   }
 
-  if (!vertexmap->empty())
+  if (vertexmap->empty())
   {
-    cout << "PHFlowJetMaker::process_event - Fatal Error - GlobalVertexMap node is empty. Please turn on the do_global flag in the main macro in order to reconstruct the global vertex." << endl;
+    cout << "PHFlowJetMaker::process_event - Fatal Error - GlobalVertexMap node is empty. Please turn on the do_bbc or tracking reco flags in the main macro in order to reconstruct the global vertex." << endl;
 
     return Fun4AllReturnCodes::ABORTRUN;
   }

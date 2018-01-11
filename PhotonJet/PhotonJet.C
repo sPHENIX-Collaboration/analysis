@@ -118,8 +118,8 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
     return 0;
   }
 
-  if (!vertexmap->empty()) {
-    cout <<"PhotonJet::process_event - Fatal Error - GlobalVertexMap node is empty. Please turn on the do_global flag in the main macro in order to reconstruct the global vertex."<<endl;
+  if (vertexmap->empty()) {
+    cout <<"PhotonJet::process_event - Fatal Error - GlobalVertexMap node is empty. Please turn on the do_bbc or tracking reco flags in the main macro in order to reconstruct the global vertex."<<endl;
     return 0;
   }
 
