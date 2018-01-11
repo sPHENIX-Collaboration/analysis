@@ -43,6 +43,7 @@ LeptoquarksReco::LeptoquarksReco(std::string filename) :
   _filename(filename),
   _tfile(nullptr),
   _t_candidate(nullptr),
+  _t_event(nullptr),
   _ntp_jet(nullptr),
   _ntp_jet2(nullptr),
   _ntp_tower(nullptr),
@@ -124,6 +125,30 @@ LeptoquarksReco::Init(PHCompositeNode *topNode)
                            &(iter->second),
                            TauCandidate::get_property_info( (iter->first) ).first.c_str());
     }
+
+
+  /* Add branches to map that defines output tree for event-wise properties */
+  _map_eventbranches.insert( make_pair( "Et_miss" , dummy ) );
+  _map_eventbranches.insert( make_pair( "Et_miss_phi" , dummy ) );
+  _map_eventbranches.insert( make_pair( "reco_tau_found" , dummy ) );
+  _map_eventbranches.insert( make_pair( "reco_tau_is_tau" , dummy ) );
+  _map_eventbranches.insert( make_pair( "reco_tau_eta" , dummy ) );
+  _map_eventbranches.insert( make_pair( "reco_tau_phi" , dummy ) );
+  _map_eventbranches.insert( make_pair( "reco_tau_ptotal" , dummy ) );
+
+
+  /* Create tree for information about full event */
+  _t_event = new TTree("event", "a Tree with global event information");
+  _t_event->Branch("event", &_ievent, "event/I");
+  for ( map< string , float >::iterator iter = _map_eventbranches.begin();
+        iter != _map_eventbranches.end();
+        ++iter)
+    {
+      _t_event->Branch( (iter->first).c_str(),
+			    &(iter->second),
+			    (iter->first).c_str() );
+    }
+
 
   /* NTuple to store tau candidate information */
   _ntp_jet = new TNtuple("ntp_jet","all jet information from LQ events",
@@ -254,6 +279,9 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
 
   /* Add information about tau candidats to output tree */
   WriteTauCandidatesToTree( tauCandidateMap );
+
+  /* Add global event information to separate tree */
+  AddGlobalEventInformation( tauCandidateMap, &map_calotower );
 
   /* count up event number */
   _ievent ++;
@@ -936,12 +964,122 @@ LeptoquarksReco::CalculateDeltaR( float eta1, float phi1, float eta2, float phi2
 
 
 int
+LeptoquarksReco::AddGlobalEventInformation( type_map_tcan& tauCandidateMap, type_map_cdata* map_towers )
+{
+  /* missing transverse momentum */
+  //float pt_miss = 0;
+
+  /* direction of missing transverse momentum */
+  //float pt_miss_phi = 0;
+
+  /* Missing transverse energy, transverse energy direction, and Energy sums, x and y components separately */
+  float Et_miss = 0;
+  float Et_miss_phi = 0;
+  float Ex_sum = 0;
+  float Ey_sum = 0;
+
+  /* energy threshold for considering tower */
+  float tower_emin = 0.0;
+
+  /* Loop over all tower (and geometry) collections */
+  for (type_map_cdata::iterator iter_calo = map_towers->begin();
+       iter_calo != map_towers->end();
+       ++iter_calo)
+    {
+      /* define tower iterator */
+      RawTowerContainer::ConstRange begin_end = ((iter_calo->second).first)->getTowers();
+      RawTowerContainer::ConstIterator rtiter;
+
+      /* loop over all tower in CEMC calorimeter */
+      for (rtiter = begin_end.first; rtiter !=  begin_end.second; ++rtiter)
+        {
+          /* get tower energy */
+          RawTower *tower = rtiter->second;
+          float tower_energy = tower->get_energy();
+
+          /* check if tower above energy treshold */
+          if ( tower_energy < tower_emin )
+            continue;
+
+          /* get eta and phi of tower and check angle delta_R w.r.t. jet axis */
+          RawTowerGeom * tower_geom = ((iter_calo->second).second)->get_tower_geometry(tower -> get_key());
+	  float tower_eta = tower_geom->get_eta();
+	  float tower_phi = tower_geom->get_phi();
+
+	  /* from https://en.wikipedia.org/wiki/Pseudorapidity:
+	     p_x = p_T * cos( phi )
+	     p_y = p_T * sin( phi )
+	     p_z = p_T * sinh( eta )
+	     |p| = p_T * cosh( eta )
+	  */
+
+	  /* calculate 'transverse' tower energy */
+	  float tower_energy_t = tower_energy / cosh( tower_eta );
+
+          /* add energy components of this tower to total energy components */
+	  Ex_sum += tower_energy_t * cos( tower_phi );
+	  Ey_sum += tower_energy_t * sin( tower_phi );
+        }
+    }
+
+  /* calculate Et_miss */
+  Et_miss = sqrt( Ex_sum * Ex_sum + Ey_sum * Ey_sum );
+  Et_miss_phi = atan( Ey_sum / Ex_sum );
+
+  /* Loop over tau candidates and find tau jet*/
+  TauCandidate* the_tau = NULL;
+  for (type_map_tcan::iterator iter = tauCandidateMap.begin();
+       iter != tauCandidateMap.end();
+       ++iter)
+    {
+      if ( ( iter->second)->get_property_uint( TauCandidate::evtgen_is_tau ) == 1 )
+        the_tau = iter->second;
+    }
+
+  /* update event information tree variables */
+  /* @TODO make this better protected against errors- if 'find' returns NULL pointer,
+     this will lead to a SEGMENTATION FAULT */
+  ( _map_eventbranches.find( "Et_miss" ) )->second = Et_miss;
+  ( _map_eventbranches.find( "Et_miss_phi" ) )->second = Et_miss_phi;
+
+  if ( the_tau )
+    {
+      ( _map_eventbranches.find( "reco_tau_found" ) )->second = 1;
+      ( _map_eventbranches.find( "reco_tau_is_tau" ) )->second =
+	the_tau->get_property_uint( TauCandidate::evtgen_is_tau );
+      ( _map_eventbranches.find( "reco_tau_eta" ) )->second =
+	the_tau->get_property_float( TauCandidate::jet_eta );
+      ( _map_eventbranches.find( "reco_tau_phi" ) )->second =
+	the_tau->get_property_float( TauCandidate::jet_phi );
+      ( _map_eventbranches.find( "reco_tau_ptotal" ) )->second =
+	the_tau->get_property_float( TauCandidate::jet_ptotal );
+    }
+  else
+    {
+      ( _map_eventbranches.find( "reco_tau_found" ) )->second = 0;
+      ( _map_eventbranches.find( "reco_tau_is_tau" ) )->second = NAN;
+      ( _map_eventbranches.find( "reco_tau_eta" ) )->second = NAN;
+      ( _map_eventbranches.find( "reco_tau_phi" ) )->second = NAN;
+      ( _map_eventbranches.find( "reco_tau_ptotal" ) )->second = NAN;
+    }
+
+  /* fill event information tree */
+  _t_event->Fill();
+
+  return 0;
+}
+
+
+int
 LeptoquarksReco::End(PHCompositeNode *topNode)
 {
   _tfile->cd();
 
   if ( _t_candidate )
     _t_candidate->Write();
+
+  if ( _t_event )
+    _t_event->Write();
 
   _ntp_jet->Write();
   _ntp_jet2->Write();

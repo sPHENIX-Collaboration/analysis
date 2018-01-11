@@ -89,6 +89,7 @@ private:
 
   /* output tree and variables */
   TTree* _t_candidate;
+  TTree* _t_event;
   TNtuple* _ntp_jet;
   TNtuple* _ntp_jet2;
   TNtuple* _ntp_tower;
@@ -112,6 +113,10 @@ private:
    * output ROOT Tree */
   std::map< TauCandidate::PROPERTY , float > _map_treebranches;
 
+  /** Map of Event properties that will be written to
+   * output ROOT Tree */
+  std::map< std::string , float > _map_eventbranches;
+
   int AddTrueTauTag( type_map_tcan&, PHHepMCGenEventMap* );
 
   int AddJetInformation( type_map_tcan&, JetMap*, type_map_cdata* );
@@ -121,6 +126,8 @@ private:
   int AddTrackInformation( type_map_tcan&, SvtxTrackMap* );
 
   int WriteTauCandidatesToTree( type_map_tcan& );
+
+  int AddGlobalEventInformation( type_map_tcan& , type_map_cdata* );
 
   /** Find tau candidate in map that is closest to given eta, phi angle */
   TauCandidate* FindMinDeltaRCandidate( type_map_tcan*, const float, const float );
