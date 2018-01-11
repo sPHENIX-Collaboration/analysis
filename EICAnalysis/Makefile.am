@@ -26,6 +26,7 @@ pkginclude_HEADERS = \
   DISKinematics.h \
   Leptoquarks.h \
   LeptoquarksReco.h \
+  ElectronReco.h \
   Quarkonia2LeptonsMC.h\
   TauCandidate.h\
   TauCandidatev1.h\
@@ -38,6 +39,8 @@ libeicana_la_SOURCES = \
   Leptoquarks_Dict.C \
   LeptoquarksReco.C \
   LeptoquarksReco_Dict.C \
+  ElectronReco.C \
+  ElectronReco_Dict.C \
   Quarkonia2LeptonsMC.C \
   Quarkonia2LeptonsMC_Dict.C\
   TauCandidate.C\
