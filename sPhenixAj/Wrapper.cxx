@@ -74,7 +74,7 @@ int Wrapper(
   gSystem->Load("libphhepmc.so");
   gSystem->Load("libg4testbench.so");
   gSystem->Load("libg4hough.so");
-  gSystem->Load("libcemc.so");
+  gSystem->Load("libg4calo.so");
   gSystem->Load("libg4eval.so");
   gSystem->Load("libPHAJMaker.so");
 
