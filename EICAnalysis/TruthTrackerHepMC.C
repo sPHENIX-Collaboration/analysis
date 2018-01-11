@@ -86,6 +86,9 @@ TruthTrackerHepMC::UpdateFinalStateParticle( HepMC::GenParticle *&particle )
   bool final_state = false;
   while ( !final_state )
     {
+      /* if particle has no vertex it is final state */
+      if(!particle->end_vertex()) break;
+
       /* Loop over all children at the end vertex of this particle */
       for ( HepMC::GenVertex::particle_iterator child
               = particle->end_vertex()->particles_begin(HepMC::children);
