@@ -97,9 +97,9 @@ Leptoquarks::process_event(PHCompositeNode *topNode)
   double tau_p = 0;
   double tau_pt = 0;
 
-  int tau_decay_prong = 0;
-  int tau_decay_hcharged = 0;
-  int tau_decay_lcharged = 0;
+  uint tau_decay_prong = 0;
+  uint tau_decay_hcharged = 0;
+  uint tau_decay_lcharged = 0;
 
   double quark_eta = 0;
   double quark_phi = 0;
@@ -124,36 +124,9 @@ Leptoquarks::process_event(PHCompositeNode *topNode)
                     pow( particle_tau->momentum().pz(), 2 ) );
       tau_pt = particle_tau->momentum().perp();
 
-      /* Add information about tau decay */
-      /* Loop over all particle at end vertex */
-      if ( particle_tau->end_vertex() )
-        {
-          for ( HepMC::GenVertex::particle_iterator tau_decay
-                  = particle_tau->end_vertex()->
-                  particles_begin(HepMC::children);
-                tau_decay != particle_tau->end_vertex()->
-                  particles_end(HepMC::children);
-                ++tau_decay )
-            {
-              /* Get entry from TParticlePDG because HepMC::GenPArticle does not provide charge or class of particle */
-              TParticlePDG * pdg_p = TDatabasePDG::Instance()->GetParticle( (*tau_decay)->pdg_id() );
+      /* Count how many charged particles (hadrons and leptons) the tau particle decays into. */
+      truth.FindDecayParticles( particle_tau, tau_decay_prong, tau_decay_hcharged, tau_decay_lcharged );
 
-              /* Check if particle is charged */
-              if ( pdg_p->Charge() != 0 )
-                {
-                  tau_decay_prong += 1;
-
-                  /* Check if particle is lepton */
-                  if ( string( pdg_p->ParticleClass() ) == "Lepton" )
-                    tau_decay_lcharged += 1;
-
-                  /* Check if particle is hadron, i.e. Meson or Baryon */
-                  else if ( ( string( pdg_p->ParticleClass() ) == "Meson"  ) ||
-                            ( string( pdg_p->ParticleClass() ) == "Baryon" ) )
-                    tau_decay_hcharged += 1;
-                }
-            }
-        }
     }
 
   /* If QUARK (->jet) in event: Tag the tau candidate (i.e. jet) with smalles delta_R from this quark */
