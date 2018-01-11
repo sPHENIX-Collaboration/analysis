@@ -46,6 +46,9 @@ public:
   /** Function to find final decay products of given particle */
   void FindDecayParticles(HepMC::GenParticle *, uint&, uint&, uint&);
 
+  /** Function to calculate missing transverse momentum (pT_miss) and azimuthal angle of missing pT (pT_miss_phi) */
+  void FindMissingPt( float & , float & );
+
 private:
 
   /** The PHHepMCGenEvent map with all HepMC information for this event */

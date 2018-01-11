@@ -41,7 +41,7 @@ Leptoquarks::Init(PHCompositeNode *topNode)
   _fout_root = new TFile(_foutname.c_str(), "RECREATE");
 
   _tree_event = new TNtuple("ntp_event","event information from LQ events",
-                            "ievent:has_tau:has_uds:tau_eta:tau_phi:tau_e:tau_p:tau_pt:tau_decay_prong:tau_decay_hcharged:tau_decay_lcharged:uds_eta:uds_phi:uds_e:uds_p:uds_pt");
+                            "ievent:pt_miss:pt_miss_phi:has_tau:has_uds:tau_eta:tau_phi:tau_e:tau_p:tau_pt:tau_decay_prong:tau_decay_hcharged:tau_decay_lcharged:uds_eta:uds_phi:uds_e:uds_p:uds_pt");
 
 
   return 0;
@@ -107,6 +107,12 @@ Leptoquarks::process_event(PHCompositeNode *topNode)
   double quark_p = 0;
   double quark_pt = 0;
 
+  float pt_miss = 0;
+  float pt_miss_phi = 0;
+
+  /* Calculate missing transverse momentum in event */
+  truth.FindMissingPt( pt_miss, pt_miss_phi );
+
   /* If TAU in event: update tau information */
   if( particle_tau )
     {
@@ -151,7 +157,9 @@ Leptoquarks::process_event(PHCompositeNode *topNode)
     }
 
   /* Fill event information to ntupple */
-  float event_data[16] = { (float) _ievent,
+  float event_data[18] = { (float) _ievent,
+                           (float) pt_miss,
+                           (float) pt_miss_phi,
                            (float) tau_found,
                            (float) quark_found,
                            (float) tau_eta,

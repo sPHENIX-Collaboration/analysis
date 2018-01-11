@@ -218,3 +218,57 @@ TruthTrackerHepMC::FindDecayParticles( HepMC::GenParticle *particle_mother, uint
 
 }
 
+
+void
+TruthTrackerHepMC::FindMissingPt( float &pt_miss, float &pt_miss_phi )
+{
+  /* set output values to '0' */
+  pt_miss = 0;
+  pt_miss_phi = 0;
+
+  /* variables to keep track of components */
+  float px_sum = 0;
+  float py_sum = 0;
+
+  /* --> Loop over all truth events in event generator collection */
+  for (PHHepMCGenEventMap::ReverseIter iter = _genevtmap->rbegin(); iter != _genevtmap->rend(); ++iter)
+    {
+      PHHepMCGenEvent *genevt = iter->second;
+      HepMC::GenEvent *theEvent = genevt->getEvent();
+
+      /* check if GenEvent object found */
+      if ( !theEvent )
+        {
+          cout << "ERROR: Missing GenEvent!" << endl;
+          return;
+        }
+
+      /* Loop over all truth particles in event generator collection */
+      for ( HepMC::GenEvent::particle_iterator p = theEvent->particles_begin();
+            p != theEvent->particles_end(); ++p ) {
+
+	/* skip particles that are not stable final state particles */
+	if ( (*p)->status() != 1 )
+	  continue;
+
+        /* Get entry from TParticlePDG because HepMC::GenPArticle does not provide charge or class of particle */
+        TParticlePDG * pdg_p = TDatabasePDG::Instance()->GetParticle( (*p)->pdg_id() );
+
+	/* skip neutral leptons = neutrinos (invisible to detector) */
+	if ( ( string( pdg_p->ParticleClass() ) == "Lepton" ) &&
+	     ( pdg_p->Charge() == 0 ) )
+	  continue;
+
+        /* update momentum component sum */
+        px_sum += (*p)->momentum().px();
+        py_sum += (*p)->momentum().py();
+
+      } // end loop over all particles in event //
+    }// end loop over genevtmap //
+
+  /* calculate pt_miss and phi */
+  pt_miss = sqrt( px_sum * px_sum + py_sum * py_sum );
+  pt_miss_phi = atan( py_sum / px_sum );
+
+  return;
+}
