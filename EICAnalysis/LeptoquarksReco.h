@@ -5,7 +5,7 @@
 
 /* Fun4All includes */
 #include <fun4all/SubsysReco.h>
-#include <g4cemc/RawTowerDefs.h>
+#include <calobase/RawTowerDefs.h>
 
 /* STL includes */
 #include <math.h>
