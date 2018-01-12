@@ -1,5 +1,5 @@
-#ifndef __ElectronReco_H__
-#define __ElectronReco_H__
+#ifndef __DISKinematicsReco_H__
+#define __DISKinematicsReco_H__
 
 #include "TauCandidate.h"
 
@@ -32,12 +32,12 @@ class TauCandidate;
 typedef std::map<float, TauCandidate*> type_map_tcan;
 typedef std::map< RawTowerDefs::CalorimeterId , std::pair< RawTowerContainer*, RawTowerGeomContainer* > > type_map_cdata;
 
-class ElectronReco : public SubsysReco
+class DISKinematicsReco : public SubsysReco
 {
 
 public:
 
-  ElectronReco(std::string filename);
+  DISKinematicsReco(std::string filename);
 
   int
   Init(PHCompositeNode*);
@@ -107,4 +107,4 @@ private:
 
 };
 
-#endif // __ElectronReco_H__
+#endif // __DISKinematicsReco_H__

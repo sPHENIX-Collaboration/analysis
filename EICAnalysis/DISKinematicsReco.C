@@ -1,4 +1,4 @@
-#include "ElectronReco.h"
+#include "DISKinematicsReco.h"
 #include "TauCandidatev1.h"
 #include "TruthTrackerHepMC.h"
 
@@ -35,8 +35,8 @@
 
 using namespace std;
 
-ElectronReco::ElectronReco(std::string filename) :
-  SubsysReco("ElectronReco" ),
+DISKinematicsReco::DISKinematicsReco(std::string filename) :
+  SubsysReco("DISKinematicsReco" ),
   _save_towers(false),
   _save_tracks(false),
   _ievent(0),
@@ -50,7 +50,7 @@ ElectronReco::ElectronReco(std::string filename) :
 }
 
 int
-ElectronReco::Init(PHCompositeNode *topNode)
+DISKinematicsReco::Init(PHCompositeNode *topNode)
 {
   _ievent = 0;
 
@@ -93,7 +93,7 @@ ElectronReco::Init(PHCompositeNode *topNode)
 }
 
 int
-ElectronReco::process_event(PHCompositeNode *topNode)
+DISKinematicsReco::process_event(PHCompositeNode *topNode)
 {
   /* Create map to collect electron candidates.
    * Use energy as 'key' to the map because energy is unique for each jet, while there are sometimes multiple jets (same energy,
@@ -219,28 +219,28 @@ ElectronReco::process_event(PHCompositeNode *topNode)
 
 
 int
-ElectronReco::AddTrueElectronTag( type_map_tcan& electronCandidateMap, PHHepMCGenEventMap *genevtmap )
+DISKinematicsReco::AddTrueElectronTag( type_map_tcan& electronCandidateMap, PHHepMCGenEventMap *genevtmap )
 {
   return 0;
 }
 
 
 int
-ElectronReco::AddCalorimeterInformation( type_map_tcan& electronCandidateMap, type_map_cdata* map_towers )
+DISKinematicsReco::AddCalorimeterInformation( type_map_tcan& electronCandidateMap, type_map_cdata* map_towers )
 {
   return 0;
 }
 
 
 int
-ElectronReco::AddTrackInformation( type_map_tcan& electronCandidateMap, SvtxTrackMap* trackmap )
+DISKinematicsReco::AddTrackInformation( type_map_tcan& electronCandidateMap, SvtxTrackMap* trackmap )
 {
   return 0;
 }
 
 
 int
-ElectronReco::WriteCandidatesToTree( type_map_tcan& electronCandidateMap )
+DISKinematicsReco::WriteCandidatesToTree( type_map_tcan& electronCandidateMap )
 {
   /* Loop over all tau candidates */
   for (type_map_tcan::iterator iter = electronCandidateMap.begin();
@@ -278,7 +278,7 @@ ElectronReco::WriteCandidatesToTree( type_map_tcan& electronCandidateMap )
 
 
 TauCandidate*
-ElectronReco::FindMinDeltaRCandidate( type_map_tcan *candidates, const float eta_ref, const float phi_ref )
+DISKinematicsReco::FindMinDeltaRCandidate( type_map_tcan *candidates, const float eta_ref, const float phi_ref )
 {
   /* TauCandidate with eta, phi closest to reference */
   TauCandidate* best_candidate = NULL;
@@ -288,7 +288,7 @@ ElectronReco::FindMinDeltaRCandidate( type_map_tcan *candidates, const float eta
 
 
 float
-ElectronReco::CalculateDeltaR( float eta1, float phi1, float eta2, float phi2 )
+DISKinematicsReco::CalculateDeltaR( float eta1, float phi1, float eta2, float phi2 )
 {
   /* Particles at phi = PI+x and phi = PI-x are actually close to each other in phi, but simply calculating
    * the difference in phi would give a large distance (because phi ranges from -PI to +PI in the convention
@@ -303,7 +303,7 @@ ElectronReco::CalculateDeltaR( float eta1, float phi1, float eta2, float phi2 )
 
 
 int
-ElectronReco::End(PHCompositeNode *topNode)
+DISKinematicsReco::End(PHCompositeNode *topNode)
 {
   _tfile->cd();
 
