@@ -59,7 +59,7 @@ float deltaR( float eta1, float eta2, float phi1, float phi2 ) {
 void draw_G4_bjet_truth_tagging(
 		const char* input = "MIE_1M/HFtag_jet.root",
 		const TString tag_method = "Parton", // Parton, Hadron
-		const char* tracking_option_name = "2014 proposal tracker",
+		const char* tracking_option_name = "MVTX+INTT+TPC",
 		const int dca_method = BJetDCA::DCA3d, // direct from g4hough, reco-vertex and strait line assumption, dca3d reco-vertex and strait line assumption
 		const int jet_method = BJetDCA::RecoJet,
 		const double max_track_quality_cut = 1.5,
@@ -1394,16 +1394,18 @@ void draw_G4_bjet_truth_tagging(
 	tg_bjetE_vs_bjetP_second_highest_S->SetName("tg_bjetE_vs_bjetP_second_highest_S");;
 	tg_bjetE_vs_bjetP_third_highest_S->SetName("tg_bjetE_vs_bjetP_third_highest_S");
 
-	tg_bjetE_vs_bjetP_highest_dca->Draw("L,same");
-	tg_bjetE_vs_bjetP_second_highest_dca->Draw("L,same");
-	tg_bjetE_vs_bjetP_third_highest_dca->Draw("L,same");
+	//tg_bjetE_vs_bjetP_highest_dca->Draw("L,same");
+	//tg_bjetE_vs_bjetP_second_highest_dca->Draw("L,same");
+	//tg_bjetE_vs_bjetP_third_highest_dca->Draw("L,same");
 
 	tg_bjetE_vs_bjetP_highest_S->Draw("L,same");
 	tg_bjetE_vs_bjetP_second_highest_S->Draw("L,same");
 	tg_bjetE_vs_bjetP_third_highest_S->Draw("L,same");
 
-	//gROOT->LoadMacro("add_purity_text.C");
-	add_purity_text(tracking_option_name);
+	TString jet_method_str("");
+	if(jet_method==BJetDCA::TruthJet) jet_method_str = "Truth";
+	if(jet_method==BJetDCA::RecoJet)  jet_method_str = "Tower";
+	add_purity_text(jet_method_str.Data(), tracking_option_name);
 
 
 	gPad->SetGrid(0,0);

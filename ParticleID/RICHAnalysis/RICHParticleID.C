@@ -177,6 +177,8 @@ RICHParticleID::process_event(PHCompositeNode *topNode)
         _mtrackid = parent->get_track_id();
 	_otrackid = _mtrackid;
 
+	_ptot = momv_norm;
+
         /* Set reconstructed emission angle and reconstructed mass for output tree */
         _theta_reco = calculate_emission_angle( m_emi, momv, hit_i );
 	_mass_reco = calculate_reco_mass( momv_norm, _theta_reco, _refractive_index );
@@ -219,16 +221,7 @@ double RICHParticleID::calculate_emission_angle( double m_emi[3], double momv[3]
   _analyzer->set_mirror(cx, cy, cz, R_mirror);
 
   /* Call algorithm to determine emission angle of photon i w.r.t. track j */
-  /* 
-  cout<<"V (momv):  " << vx <<"  "<< vy <<"  "<< vz <<endl;
-  cout<<"E (m_emi): " << Ex <<"  "<< Ey <<"  "<< Ez <<endl;
-  cout<<"D (d_hit): " << Dx <<"  "<< Dy <<"  "<< Dz <<endl;
-  cout<<"ctr:       " << cx <<"  "<< cy <<"  "<< cz <<endl;
-  */
   float theta_c = _analyzer->ind_ray(Ex, Ey, Ez, Dx, Dy, Dz, vx, vy, vz, select_radiator); //Indirect Ray Tracing
-
-  //cout<<"theta_c :  " << theta_c << endl;
-  //cout << "======" << endl;
 
   return theta_c;
 }
@@ -266,9 +259,13 @@ double RICHParticleID::calculate_reco_mass( double mom, double theta_reco, doubl
   double beta = 1/( index * cos(theta_reco) );
 
   /* Calculate mass from beta */
-  double mass = mom * sqrt( 1/( beta * beta ) - 1 );
-
-  return mass;
+  if (beta<1 && beta>0)
+    {
+      double mass = mom * sqrt( 1/beta - 1  );
+      return mass;
+    }
+  else
+    return 0;
 }
 
 
@@ -376,6 +373,8 @@ RICHParticleID::reset_tree_vars()
   _mtrackid = -999;
   _otrackid = -999;
 
+  _ptot = -999;
+
   _theta_true = -999;
   _theta_reco = -999;
   _mass_true = -999;
@@ -412,6 +411,7 @@ RICHParticleID::init_tree()
   _tree_rich->Branch("mtrackid", &_mtrackid, "Mother track ID /I");
   _tree_rich->Branch("otrackid", &_otrackid, "Original track ID /I");
 
+  _tree_rich->Branch("ptot", &_ptot, "Total momentum /D");
   _tree_rich->Branch("theta_true", &_theta_true, "True emission angle /F");
   _tree_rich->Branch("theta_reco", &_theta_reco, "Reconstructed emission angle /F");
   _tree_rich->Branch("mass_true", &_mass_true, "True particle mass /F");

@@ -417,19 +417,21 @@ int BJetModule::process_event(PHCompositeNode *topNode) {
 		jet_flavor = truth_jet->get_property(static_cast<Jet::PROPERTY>(prop_JetHadronFlavor));
 		if(abs(jet_flavor)<100)
 			_b_truthjet_hadron_flavor[_b_truthjet_n] = jet_flavor;
-		cout << "DEBUG: " << __LINE__ << endl;
+		//cout << "DEBUG: " << __LINE__ << endl;
 		//auto reco_jet = unique_ptr<Jet>(jet_reco_eval->best_jet_from(truth_jet));
 		Jet* reco_jet = jet_reco_eval->best_jet_from(truth_jet);
-		cout << "DEBUG: " << __LINE__ << endl;
-		if(!reco_jet) continue;
-
-		_b_recojet_valid[_b_truthjet_n] = 1;
-		_b_recojet_pt[_b_truthjet_n] = reco_jet->get_pt();
-		_b_recojet_phi[_b_truthjet_n] = reco_jet->get_phi();
-		_b_recojet_eta[_b_truthjet_n] = reco_jet->get_eta();
+		//cout << "DEBUG: " << __LINE__ << endl;
+		if(!reco_jet) {
+			_b_recojet_valid[_b_truthjet_n] = 0;
+		} else {
+			_b_recojet_valid[_b_truthjet_n] = 1;
+			_b_recojet_pt[_b_truthjet_n] = reco_jet->get_pt();
+			_b_recojet_phi[_b_truthjet_n] = reco_jet->get_phi();
+			_b_recojet_eta[_b_truthjet_n] = reco_jet->get_eta();
+		}
 
 		_b_truthjet_n++;
-		cout << "DEBUG: " << __LINE__ << endl;
+		//cout << "DEBUG: " << __LINE__ << endl;
 	}
 
 	PHG4TruthInfoContainer::Range range = truthinfo->GetPrimaryParticleRange();

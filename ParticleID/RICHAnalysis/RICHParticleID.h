@@ -120,6 +120,8 @@ private:
   int _mtrackid;
   int _otrackid;
 
+  double _ptot;
+
   float _theta_true;
   float _theta_reco;
   float _mass_true;
