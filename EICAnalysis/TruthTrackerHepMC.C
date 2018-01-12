@@ -56,8 +56,10 @@ HepMC::GenParticle* TruthTrackerHepMC::FindDaughterParticle( int pid, HepMC::Gen
 {
   HepMC::GenParticle* particle_daughter = NULL;
 
+  /*Check if particle mother is found*/
+  if(!particle_mother);
   /* Where does mother particle end (=decay)? */
-  if ( particle_mother->end_vertex() )
+  else if ( particle_mother->end_vertex() )
     {
       /* Loop over child particles at mother's end vertex */
       for ( HepMC::GenVertex::particle_iterator child
