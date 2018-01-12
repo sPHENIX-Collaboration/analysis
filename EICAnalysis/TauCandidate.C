@@ -195,6 +195,9 @@ TauCandidate::get_property_info(const PROPERTY prop_id)
     case  track_id:
       return make_pair("track_id",TauCandidate::type_uint);
 
+    case  track_quality:
+      return make_pair("track_quality",TauCandidate::type_float);
+
     case  track_eta:
       return make_pair("track_eta",TauCandidate::type_float);
 
@@ -209,6 +212,27 @@ TauCandidate::get_property_info(const PROPERTY prop_id)
 
     case  track_charge:
       return make_pair("track_charge",TauCandidate::type_int);
+
+    case  track_e3x3_cemc:
+      return make_pair("track_e3x3_cemc",TauCandidate::type_float);
+
+    case  track_e3x3_femc:
+      return make_pair("track_e3x3_femc",TauCandidate::type_float);
+
+    case  track_e3x3_eemc:
+      return make_pair("track_e3x3_eemc",TauCandidate::type_float);
+
+    case  track_e3x3_ihcal:
+      return make_pair("track_e3x3_ihcal",TauCandidate::type_float);
+
+    case  track_e3x3_ohcal:
+      return make_pair("track_e3x3_ohcal",TauCandidate::type_float);
+
+    case  track_e3x3_fhcal:
+      return make_pair("track_e3x3_fhcal",TauCandidate::type_float);
+
+    case  track_e3x3_ehcal:
+      return make_pair("track_e3x3_ehcal",TauCandidate::type_float);
 
       // ------
 

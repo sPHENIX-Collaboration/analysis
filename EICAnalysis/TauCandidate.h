@@ -95,11 +95,19 @@ public:
 
       //-- 1-track properties: 251 - 300  --
       track_id = 251,
-      track_eta = 252,
-      track_phi = 253,
-      track_ptotal = 256,
-      track_ptrans = 257,
-      track_charge = 258,
+      track_quality = 252,
+      track_eta = 253,
+      track_phi = 254,
+      track_ptotal = 255,
+      track_ptrans = 256,
+      track_charge = 257,
+      track_e3x3_cemc = 260,
+      track_e3x3_femc = 261,
+      track_e3x3_eemc = 262,
+      track_e3x3_ihcal = 263,
+      track_e3x3_ohcal = 264,
+      track_e3x3_fhcal = 265,
+      track_e3x3_ehcal = 266,
 
       //! max limit in order to fit into 8 bit unsigned number
       prop_MAX_NUMBER = UCHAR_MAX

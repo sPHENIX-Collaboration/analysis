@@ -58,22 +58,24 @@ ElectronReco::Init(PHCompositeNode *topNode)
 
   /* Add TauCandidate properties to map that defines output tree */
   float dummy = 0;
-  _map_treebranches.insert( make_pair( TauCandidate::track_id , dummy ) );
   _map_treebranches.insert( make_pair( TauCandidate::evtgen_is_ele , dummy ) );
   _map_treebranches.insert( make_pair( TauCandidate::evtgen_ele_etotal , dummy ) );
   _map_treebranches.insert( make_pair( TauCandidate::evtgen_ele_eta , dummy ) );
   _map_treebranches.insert( make_pair( TauCandidate::evtgen_ele_phi , dummy ) );
+  _map_treebranches.insert( make_pair( TauCandidate::track_id , dummy ) );
+  _map_treebranches.insert( make_pair( TauCandidate::track_quality , dummy ) );
   _map_treebranches.insert( make_pair( TauCandidate::track_eta , dummy ) );
   _map_treebranches.insert( make_pair( TauCandidate::track_phi , dummy ) );
   _map_treebranches.insert( make_pair( TauCandidate::track_ptotal , dummy ) );
   _map_treebranches.insert( make_pair( TauCandidate::track_ptrans , dummy ) );
   _map_treebranches.insert( make_pair( TauCandidate::track_charge , dummy ) );
-  // _map_treebranches.insert( make_pair( TauCandidate::tracks_count_r02 , dummy ) );
-  // _map_treebranches.insert( make_pair( TauCandidate::tracks_chargesum_r02 , dummy ) );
-  // _map_treebranches.insert( make_pair( TauCandidate::tracks_rmax_r02 , dummy ) );
-  // _map_treebranches.insert( make_pair( TauCandidate::tracks_count_r04 , dummy ) );
-  // _map_treebranches.insert( make_pair( TauCandidate::tracks_chargesum_r04 , dummy ) );
-  // _map_treebranches.insert( make_pair( TauCandidate::tracks_rmax_r04 , dummy ) );
+  _map_treebranches.insert( make_pair( TauCandidate::track_e3x3_cemc , dummy ) );
+  _map_treebranches.insert( make_pair( TauCandidate::track_e3x3_femc , dummy ) );
+  _map_treebranches.insert( make_pair( TauCandidate::track_e3x3_eemc , dummy ) );
+  _map_treebranches.insert( make_pair( TauCandidate::track_e3x3_ihcal , dummy ) );
+  _map_treebranches.insert( make_pair( TauCandidate::track_e3x3_ohcal , dummy ) );
+  _map_treebranches.insert( make_pair( TauCandidate::track_e3x3_fhcal , dummy ) );
+  _map_treebranches.insert( make_pair( TauCandidate::track_e3x3_ehcal , dummy ) );
 
   /* Create tree for information about electron candidates */
   _e_candidate = new TTree("candidates", "a Tree with electron candidates");
@@ -176,11 +178,15 @@ ElectronReco::process_event(PHCompositeNode *topNode)
 
     /* set some initial track properties */
     tc->set_property( TauCandidate::track_id, (uint)track->get_id() );
+    tc->set_property( TauCandidate::track_quality, track->get_quality() );
     tc->set_property( TauCandidate::track_eta, track->get_eta() );
     tc->set_property( TauCandidate::track_phi, track->get_phi() );
     tc->set_property( TauCandidate::track_ptotal, track->get_p() );
     tc->set_property( TauCandidate::track_ptrans, track->get_pt() );
     tc->set_property( TauCandidate::track_charge, track->get_charge() );
+    tc->set_property( TauCandidate::track_e3x3_cemc, track->get_cal_energy_3x3(SvtxTrack::CEMC) );
+    tc->set_property( TauCandidate::track_e3x3_ihcal, track->get_cal_energy_3x3(SvtxTrack::HCALIN) );
+    tc->set_property( TauCandidate::track_e3x3_ohcal, track->get_cal_energy_3x3(SvtxTrack::HCALOUT) );
 
     /* set tau candidate MC truth properties */
     tc->set_property( TauCandidate::evtgen_is_ele, (uint)0 );
