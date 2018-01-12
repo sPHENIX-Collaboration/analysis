@@ -1,15 +1,18 @@
 int Fun4All_G4_EICDetector_LQ_analysis_nf(
 					  string fileindex="1",
-                                          string n="0",
+                                          string n="100",
                                           string ebeam="20",
                                           string pbeam="250",
                                           //string inputFile,
                                           //string output="tau"
                                           )
 {
-  string inputFile="/gpfs/mnt/gpfs02/phenix/scratch/spjeffas/data/G4_Leptoquark_DST_p250_e20_"+fileindex+"events.root";
+  // string inputFile="/gpfs/mnt/gpfs02/phenix/scratch/spjeffas/data/G4_Leptoquark_DST_p250_e20_"+fileindex+"events.root";
   //string inputFile="/gpfs/mnt/gpfs02/phenix/scratch/spjeffas/data/G4_Leptoquark_DST_p250_e20_1000events_"+fileindex+".root";
   //    string inputFile="/gpfs/mnt/gpfs02/phenix/scratch/spjeffas/data/G4_Leptoquark_DST_p250_e20_1093events.root";
+
+  //  string inputFile = "/gpfs/mnt/gpfs02/phenix/scratch/spjeffas/g4sim/G4_Leptoquark_DST_p250_e20_1000events_"+fileindex+"seed_3pion.root";
+  string inputFile = "/gpfs/mnt/gpfs02/phenix/scratch/spjeffas/g4sim/G4_Leptoquark_DST_p250_e20_1000events_"+fileindex+"seed_ep.root";
 
   cout << "Using input file: " << inputFile << endl;
 
