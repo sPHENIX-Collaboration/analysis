@@ -18,6 +18,8 @@ class SvtxTrackMap;
 class JetMap;
 class JetEvalStack;
 class JetRecoEval;
+class GlobalVertex;
+
 class PhotonJet: public SubsysReco
 {
 
@@ -37,8 +39,8 @@ class PhotonJet: public SubsysReco
 
   void Set_Tree_Branches();
  
-  float ConeSum(RawCluster *cluster, RawClusterContainer *cluster_container, SvtxTrackMap *trackmap, float coneradius);
-  void GetRecoHadronsAndJets(RawCluster *trig, SvtxTrackMap *tracks, JetMap *jets, JetRecoEval *recoeval);
+  float ConeSum(RawCluster *cluster, RawClusterContainer *cluster_container, SvtxTrackMap *trackmap, float coneradius, GlobalVertex* vtx);
+  void GetRecoHadronsAndJets(RawCluster *trig, SvtxTrackMap *tracks, JetMap *jets, JetRecoEval *recoeval, GlobalVertex* vtx);
 
 
 

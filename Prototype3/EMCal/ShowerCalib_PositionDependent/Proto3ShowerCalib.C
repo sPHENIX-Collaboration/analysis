@@ -3,8 +3,8 @@
 
 #include <prototype3/RawTower_Temperature.h>
 #include <prototype3/RawTower_Prototype3.h>
-#include <g4cemc/RawTowerContainer.h>
-#include <g4cemc/RawTowerGeomContainer_Cylinderv1.h>
+#include <calobase/RawTowerContainer.h>
+#include <calobase/RawTowerGeomContainer_Cylinderv1.h>
 #include <pdbcalbase/PdbParameterMap.h>
 #include <g4detectors/PHG4Parameters.h>
 #include <ffaobjects/EventHeader.h>

@@ -8,8 +8,12 @@
 #include"PseudoJetPlus.h"
 //#include <fastjet/PseudoJet.hh>
 
-#include<g4cemc/RawCluster.h>
-#include<g4cemc/RawClusterContainer.h>
+#include<calobase/RawCluster.h>
+#include<calobase/RawClusterContainer.h>
+#include <calobase/RawClusterUtility.h>
+
+#include <g4vertex/GlobalVertexMap.h>
+#include <g4vertex/GlobalVertex.h>
 
 #include <g4hough/SvtxTrackMap.h>
 #include <g4hough/SvtxTrack.h>
@@ -106,6 +110,24 @@ int PJTranslator::process_event(PHCompositeNode* topNode)
 
   }
 
+  GlobalVertexMap* vertexmap = findNode::getClass<GlobalVertexMap>(topNode,"GlobalVertexMap");
+  if (!vertexmap) {
+
+    cout <<"PJTranslator::process_event - Fatal Error - GlobalVertexMap node is missing. Please turn on the do_global flag in the main macro in order to reconstruct the global vertex."<<endl;
+    assert(vertexmap); // force quit
+
+    return Fun4AllReturnCodes::ABORTRUN;
+  }
+
+  if (vertexmap->empty()) {
+    cout <<"PJTranslator::process_event - Fatal Error - GlobalVertexMap node is empty. Please turn on the do_bbc or tracking reco flags in the main macro in order to reconstruct the global vertex."<<endl;
+    return Fun4AllReturnCodes::ABORTRUN;
+  }
+
+  GlobalVertex* vtx = vertexmap->begin()->second;
+  CLHEP::Hep3Vector vertex ;
+  if (vtx) vertex . set(vtx->get_x(),vtx->get_y(),vtx->get_z());
+
 
   //  vector<fastjet::PseudoJet> particles;
   //-------------------------------------------------
@@ -117,11 +139,17 @@ int PJTranslator::process_event(PHCompositeNode* topNode)
  RawClusterContainer *emc_clusters = findNode::getClass<RawClusterContainer>(topNode,"CLUSTER_CEMC");
   for(unsigned int i=0; i<emc_clusters->size(); i++) {
     RawCluster* part = emc_clusters->getCluster(i);
-    double eta = part->get_eta();
-    double phi = part->get_phi();
-    double energy = part->get_energy()/sfEMCAL;
-    double eT = energy/cosh(eta);
-    double pz = eT*sinh(eta);
+//    double eta = part->get_eta();
+//    double phi = part->get_phi();
+//    double energy = part->get_energy()/sfEMCAL;
+//    double eT = energy/cosh(eta);
+//    double pz = eT*sinh(eta);
+
+    CLHEP::Hep3Vector E_vec_cluster = RawClusterUtility::GetEVec(*part, vertex);
+    E_vec_cluster = E_vec_cluster/sfEMCAL;
+    double eT = E_vec_cluster.perp();
+    double pz = E_vec_cluster.z();
+
      
     if(eT<0.000001) {
 	eT = 0.001;
@@ -140,11 +168,16 @@ int PJTranslator::process_event(PHCompositeNode* topNode)
   RawClusterContainer *hci_clusters = findNode::getClass<RawClusterContainer>(topNode,"CLUSTER_HCALIN");
   for(unsigned int i=0; i<hci_clusters->size(); i++) {
     RawCluster* part = hci_clusters->getCluster(i);
-    double eta = part->get_eta();
-    double phi = part->get_phi();
-    double energy = part->get_energy()/sfHCALIN;
-    double eT = energy/cosh(eta);
-    double pz = eT*sinh(eta);
+//    double eta = part->get_eta();
+//    double phi = part->get_phi();
+//    double energy = part->get_energy()/sfHCALIN;
+//    double eT = energy/cosh(eta);
+//    double pz = eT*sinh(eta);
+
+    CLHEP::Hep3Vector E_vec_cluster = RawClusterUtility::GetEVec(*part, vertex);
+    E_vec_cluster = E_vec_cluster/sfHCALIN;
+    double eT = E_vec_cluster.perp();
+    double pz = E_vec_cluster.z();
     
     if(eT<0.000001)  {
       eT = 0.001;
@@ -162,11 +195,16 @@ int PJTranslator::process_event(PHCompositeNode* topNode)
   RawClusterContainer *hco_clusters = findNode::getClass<RawClusterContainer>(topNode,"CLUSTER_HCALOUT");
   for(unsigned int i=0; i<hco_clusters->size(); i++) {
     RawCluster* part = hco_clusters->getCluster(i);
-    double eta = part->get_eta();
-    double phi = part->get_phi();
-    double energy = part->get_energy()/sfHCALOUT;
-    double eT = energy/cosh(eta);
-    double pz = eT*sinh(eta);
+//    double eta = part->get_eta();
+//    double phi = part->get_phi();
+//    double energy = part->get_energy()/sfHCALOUT;
+//    double eT = energy/cosh(eta);
+//    double pz = eT*sinh(eta);
+
+    CLHEP::Hep3Vector E_vec_cluster = RawClusterUtility::GetEVec(*part, vertex);
+    E_vec_cluster = E_vec_cluster/sfHCALOUT;
+    double eT = E_vec_cluster.perp();
+    double pz = E_vec_cluster.z();
     
     if(eT<0.000001) {
       eT = 0.001;
