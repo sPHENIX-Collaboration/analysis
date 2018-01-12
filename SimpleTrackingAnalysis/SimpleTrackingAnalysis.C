@@ -23,11 +23,11 @@
 #include <g4eval/SvtxTruthEval.h>
 
 // --- common to all calorimeters
-#include <g4cemc/RawTowerGeomContainer.h>
-#include <g4cemc/RawTowerContainer.h>
-#include <g4cemc/RawTower.h>
-#include <g4cemc/RawCluster.h>
-#include <g4cemc/RawClusterContainer.h>
+#include <calobase/RawTowerGeomContainer.h>
+#include <calobase/RawTowerContainer.h>
+#include <calobase/RawTower.h>
+#include <calobase/RawCluster.h>
+#include <calobase/RawClusterContainer.h>
 #include <g4eval/CaloEvalStack.h>
 #include <g4eval/CaloRawClusterEval.h>
 #include <g4eval/CaloRawTowerEval.h>

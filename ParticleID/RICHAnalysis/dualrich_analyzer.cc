@@ -76,14 +76,14 @@ double eic_dual_rich::ind_ray(double Ex, double Ey, double Ez, double Dx, double
   x = th/2.;  
   y = R*(a*sin(x)-d*sin(th-x))+a*d*sin(th-2*x);
   y1 = R*(a*cos(x)+d*cos(th-x))-2*a*d*cos(th-2*x);
-  dx = -y/y1;
+  dx = -1*y/y1;
 
   while(abs(dx)>eps && i<100){
 
     x+=dx;
     y = R*(a*sin(x)-d*sin(th-x))+a*d*sin(th-2*x);
     y1 = R*(a*cos(x)+d*cos(th-x))-2*a*d*cos(th-2*x);
-    dx = -y/y1;
+    dx = -1*y/y1;
     i++;
 
   }

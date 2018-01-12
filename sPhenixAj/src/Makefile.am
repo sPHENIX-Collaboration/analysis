@@ -29,7 +29,8 @@ nodist_libPHAJMaker_la_SOURCES = \
 libPHAJMaker_la_LDFLAGS = \
    -L$(libdir) \
    -L$(OFFLINE_MAIN)/lib \
-   -lcemc \
+   -lg4dst \
+   -lcalo_util \
    -lfun4all \
    -lphg4hit \
    -lg4detectors \

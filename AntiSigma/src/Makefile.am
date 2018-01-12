@@ -36,7 +36,7 @@ libantisigma_la_LDFLAGS = \
    -lphg4hit \
    -lgsl \
    -lgslcblas \
-   -lcemc
+   -lcalo_util
 
 
 ################################################

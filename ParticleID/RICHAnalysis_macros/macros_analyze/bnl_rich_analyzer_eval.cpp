@@ -66,7 +66,6 @@ Double_t eic_bnl_rich::ind_ray(double Ex, double Ey, double Ez, double Dx, doubl
 
   LongDouble_t th,a,d;
   LongDouble_t x,dx;
-
   LongDouble_t y,y1;
 
   LongDouble_t eps = 0.00000000001;
@@ -103,7 +102,7 @@ Double_t eic_bnl_rich::ind_ray(double Ex, double Ey, double Ez, double Dx, doubl
   y1 = R*(a*cos(x)+d*cos(th-x))-2*a*d*cos(th-2*x);
   cout<<"y, y1 is:  "<<y<<"  "<<y1<<endl;
   //dx = -(f->newp(x, th, a, d, R)/f->newpp(x, th, a, d, R));
-  dx = -y/y1;
+  dx = -1*y/y1;
 
   while(TMath::Abs(dx)>eps && i<100){
 
@@ -111,7 +110,7 @@ Double_t eic_bnl_rich::ind_ray(double Ex, double Ey, double Ez, double Dx, doubl
     y = R*(a*sin(x)-d*sin(th-x))+a*d*sin(th-2*x);
     y1 = R*(a*cos(x)+d*cos(th-x))-2*a*d*cos(th-2*x);
     //dx = -(f->newp(x, th, a, d, R)/f->newpp(x, th, a, d, R));
-    dx = -y/y1;
+    dx = -1*y/y1;
     i++;
 
     cout << "New dx: " << dx << endl;
@@ -160,7 +159,7 @@ void eic_bnl_rich::acq(string input_filename, int ind){
   }
   //else cout << "open file " << input_filename << endl;
 
-  TTree *eic_rich = (TTree*) file->Get("tree_rich");
+  TTree *eic_rich = (TTree*) file->Get("pid_rich");
   
   Int_t eic_rich_event=0,eic_rich_bankid=0,eic_rich_volumeid=0,eic_rich_hitid=0,*eic_rich_pid=0,eic_rich_mpid=0,eic_rich_trackid=0,eic_rich_mtrackid=0,eic_rich_otrackid=0;
   Double_t eic_rich_hit_x=0,eic_rich_hit_y=0,eic_rich_hit_z=0,eic_rich_lhit_x=0,eic_rich_lhit_y=0,eic_rich_lhit_z=0, eic_rich_emi_x=0, eic_rich_emi_y=0, eic_rich_emi_z=0,eic_rich_px=0,eic_rich_py=0,eic_rich_pz=0,eic_rich_mpx=0,eic_rich_mpy=0,eic_rich_mpz=0,eic_rich_e=0,eic_rich_me=0,eic_rich_edep=0;
@@ -169,9 +168,6 @@ void eic_bnl_rich::acq(string input_filename, int ind){
   eic_rich->SetBranchAddress("hit_x",&eic_rich_hit_x);
   eic_rich->SetBranchAddress("hit_y",&eic_rich_hit_y);
   eic_rich->SetBranchAddress("hit_z",&eic_rich_hit_z);
-  eic_rich->SetBranchAddress("lhit_x",&eic_rich_lhit_x);
-  eic_rich->SetBranchAddress("lhit_y",&eic_rich_lhit_y);
-  eic_rich->SetBranchAddress("lhit_z",&eic_rich_lhit_z);
   eic_rich->SetBranchAddress("emi_x",&eic_rich_emi_x);
   eic_rich->SetBranchAddress("emi_y",&eic_rich_emi_y);
   eic_rich->SetBranchAddress("emi_z",&eic_rich_emi_z);
@@ -317,7 +313,7 @@ void eic_bnl_rich::acq(string input_filename, int ind){
   c_mean = ch_ang->GetMean();
   c_rms = ch_ang->GetRMS();
 
-  delete ch_ang;
+  //delete ch_ang;
 }
   
 void eic_bnl_rich::run(){

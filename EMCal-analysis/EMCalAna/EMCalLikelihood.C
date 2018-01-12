@@ -17,11 +17,11 @@
 
 #include <g4hough/SvtxVertexMap.h>
 
-#include <g4cemc/RawTowerContainer.h>
-#include <g4cemc/RawTowerGeom.h>
-#include <g4cemc/RawTower.h>
-#include <g4cemc/RawClusterContainer.h>
-#include <g4cemc/RawCluster.h>
+#include <calobase/RawTowerContainer.h>
+#include <calobase/RawTowerGeom.h>
+#include <calobase/RawTower.h>
+#include <calobase/RawClusterContainer.h>
+#include <calobase/RawCluster.h>
 
 #include <g4eval/CaloEvalStack.h>
 #include <g4eval/CaloRawClusterEval.h>

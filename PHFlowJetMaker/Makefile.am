@@ -26,7 +26,7 @@ libPHFlowJetMaker_la_LDFLAGS = \
    -L$(libdir) \
    -L$(OFFLINE_MAIN)/lib \
    -L$(HOME)/work/install/lib \
-   -lcemc \
+   -lcalo_util \
    -lfun4all \
    -lg4jets \
    -lphg4hit \

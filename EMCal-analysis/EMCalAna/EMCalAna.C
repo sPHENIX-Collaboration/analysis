@@ -27,11 +27,11 @@
 #include <g4detectors/PHG4CylinderGeomContainer.h>
 #include <g4detectors/PHG4CylinderGeom_Spacalv3.h>
 
-#include <g4cemc/RawCluster.h>
-#include <g4cemc/RawClusterContainer.h>
-#include <g4cemc/RawTower.h>
-#include <g4cemc/RawTowerContainer.h>
-#include <g4cemc/RawTowerGeomContainer.h>
+#include <calobase/RawCluster.h>
+#include <calobase/RawClusterContainer.h>
+#include <calobase/RawTower.h>
+#include <calobase/RawTowerContainer.h>
+#include <calobase/RawTowerGeomContainer.h>
 
 #include <g4eval/CaloEvalStack.h>
 #include <g4eval/CaloRawClusterEval.h>
