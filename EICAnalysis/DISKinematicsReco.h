@@ -23,6 +23,7 @@ class CaloRawTowerEval;
 class RawTowerContainer;
 class RawTowerGeomContainer;
 //class JetMap;
+class SvtxTrack;
 class SvtxTrackMap;
 class PHHepMCGenEventMap;
 
@@ -67,6 +68,7 @@ private:
 
   /* output tree and variables */
   TTree* _e_candidate;
+  TTree* _tree_event;
 
   /* beam energies electron and proton */
   float _ebeam_E;
@@ -80,6 +82,12 @@ private:
    * output ROOT Tree */
   std::map< TauCandidate::PROPERTY , float > _map_treebranches;
 
+  /** Map of Event properties that will be written to
+   * output ROOT Tree */
+  std::map< std::string , float > _map_eventbranches;
+
+  int InsertCandidateFromTrack( type_map_tcan& , SvtxTrack* );
+
   int AddTrueElectronTag( type_map_tcan&, PHHepMCGenEventMap* );
 
   int AddCalorimeterInformation( type_map_tcan&, type_map_cdata* );
@@ -87,6 +95,8 @@ private:
   int AddTrackInformation( type_map_tcan&, SvtxTrackMap* );
 
   int WriteCandidatesToTree( type_map_tcan& );
+
+  int AddGlobalEventInformation( type_map_tcan& );
 
   /** Find tau candidate in map that is closest to given eta, phi angle */
   TauCandidate* FindMinDeltaRCandidate( type_map_tcan*, const float, const float );
