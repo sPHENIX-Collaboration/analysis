@@ -86,6 +86,9 @@ private:
    * output ROOT Tree */
   std::map< std::string , float > _map_eventbranches;
 
+  /** helper pointer to topNode */
+  PHCompositeNode *_topNode;
+
   int InsertCandidateFromTrack( type_map_tcan& , SvtxTrack* );
 
   int AddTrueElectronTag( type_map_tcan&, PHHepMCGenEventMap* );
@@ -103,6 +106,10 @@ private:
 
   /** Calculate Delta R ("distance in eta-phi space") between two sets of eta, phi angles */
   float CalculateDeltaR( float, float, float, float );
+
+  /** get energy in 3x3 calorimeter towers around track projection to calorimeter surface.
+   * Copied from FastTrackingEval.C */
+  float getE33( PHCompositeNode *, std::string, float, float );
 
   /** Enum to identify calorimeter types */
   enum CALOTYPE

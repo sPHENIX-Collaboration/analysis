@@ -53,6 +53,8 @@ DISKinematicsReco::DISKinematicsReco(std::string filename) :
 int
 DISKinematicsReco::Init(PHCompositeNode *topNode)
 {
+  _topNode = topNode;
+
   _ievent = 0;
 
   _tfile = new TFile(_filename.c_str(), "RECREATE");
@@ -106,8 +108,8 @@ DISKinematicsReco::Init(PHCompositeNode *topNode)
         ++iter)
     {
       _tree_event->Branch( (iter->first).c_str(),
-			    &(iter->second),
-			    (iter->first).c_str() );
+                           &(iter->second),
+                           (iter->first).c_str() );
     }
 
   return 0;
@@ -230,9 +232,35 @@ DISKinematicsReco::InsertCandidateFromTrack( type_map_tcan& candidateMap , SvtxT
   tc->set_property( TauCandidate::track_e3x3_cemc, track->get_cal_energy_3x3(SvtxTrack::CEMC) );
   tc->set_property( TauCandidate::track_e3x3_ihcal, track->get_cal_energy_3x3(SvtxTrack::HCALIN) );
   tc->set_property( TauCandidate::track_e3x3_ohcal, track->get_cal_energy_3x3(SvtxTrack::HCALOUT) );
-  tc->set_property( TauCandidate::track_e3x3_femc, (float)0 );
-  tc->set_property( TauCandidate::track_e3x3_fhcal, (float)0 );
-  tc->set_property( TauCandidate::track_e3x3_eemc, (float)0 );
+
+  // Use the track states to project to the FEMC / FHCAL / EEMC and generate
+  // energy sums.
+  float e3x3_femc = 0;
+  float e3x3_fhcal = 0;
+  float e3x3_eemc = 0;
+
+  for (SvtxTrack::ConstStateIter state_itr = track->begin_states();
+       state_itr != track->end_states(); state_itr++) {
+
+    SvtxTrackState *temp = dynamic_cast<SvtxTrackState*>(state_itr->second);
+    //std::cout << " State found at pathlength = " << temp->get_pathlength() << std::endl;
+    //getCluster(topNode, temp->get_name(), temp->get_eta(), temp->get_phi());
+
+    if( (temp->get_name()=="FHCAL") )
+      e3x3_fhcal = getE33( _topNode , "FHCAL" , temp->get_x() , temp->get_y() );
+
+    if( (temp->get_name()=="FEMC") )
+      e3x3_femc = getE33( _topNode , "FEMC" , temp->get_x() , temp->get_y() );
+
+    if( (temp->get_name()=="EEMC") )
+      e3x3_eemc = getE33( _topNode , "EEMC" , temp->get_x() , temp->get_y() );
+
+  }
+
+  /* set candidate properties */
+  tc->set_property( TauCandidate::track_e3x3_fhcal, e3x3_fhcal );
+  tc->set_property( TauCandidate::track_e3x3_femc, e3x3_femc );
+  tc->set_property( TauCandidate::track_e3x3_eemc, e3x3_eemc );
 
   /* set tau candidate MC truth properties */
   tc->set_property( TauCandidate::evtgen_is_ele, (uint)0 );
@@ -243,7 +271,7 @@ DISKinematicsReco::InsertCandidateFromTrack( type_map_tcan& candidateMap , SvtxT
   /* add tau candidate to collection */
   candidateMap.insert( make_pair( track->get_p(), tc ) );
 
-return 0;
+  return 0;
 }
 
 
@@ -338,6 +366,70 @@ DISKinematicsReco::AddGlobalEventInformation( type_map_tcan& electronCandidateMa
   _tree_event->Fill();
 
   return 0;
+}
+
+
+float
+DISKinematicsReco::getE33( PHCompositeNode *topNode, string detName, float tkx, float tky )
+{
+  float twr_sum = 0;
+
+  string towernodename = "TOWER_CALIB_" + detName;
+  // Grab the towers
+  RawTowerContainer* towers = findNode::getClass<RawTowerContainer>(topNode, towernodename.c_str());
+  if (!towers)
+    {
+      std::cout << PHWHERE << ": Could not find node " << towernodename.c_str() << std::endl;
+      return -1;
+    }
+  string towergeomnodename = "TOWERGEOM_" + detName;
+  RawTowerGeomContainer *towergeom = findNode::getClass<RawTowerGeomContainer>(topNode, towergeomnodename.c_str());
+  if (! towergeom)
+    {
+      cout << PHWHERE << ": Could not find node " << towergeomnodename.c_str() << endl;
+      return -1;
+    }
+
+  // Locate the central tower
+  float r_dist = 9999.0;
+  int twr_j = -1;
+  int twr_k = -1;
+  RawTowerDefs::CalorimeterId calo_id_ = RawTowerDefs::convert_name_to_caloid( detName );
+
+  RawTowerContainer::ConstRange begin_end  = towers->getTowers();
+  RawTowerContainer::ConstIterator itr = begin_end.first;
+  for (; itr != begin_end.second; ++itr)
+    {
+      RawTowerDefs::keytype towerid = itr->first;
+      RawTowerGeom *tgeo = towergeom->get_tower_geometry(towerid);
+
+      float x = tgeo->get_center_x();
+      float y = tgeo->get_center_y();
+
+      float temp_rdist = sqrt(pow(tkx-x,2) + pow(tky-y,2)) ;
+      if(temp_rdist< r_dist){
+        r_dist = temp_rdist;
+        twr_j = RawTowerDefs::decode_index1(towerid);
+        twr_k = RawTowerDefs::decode_index2(towerid);
+      }
+
+      if( (fabs(tkx-x)<(tgeo->get_size_x()/2.0)) &&
+          (fabs(tky-y)<(tgeo->get_size_y()/2.0)) ) break;
+
+    }
+
+  // Use the central tower to sum up the 3x3 energy
+  if(twr_j>=0 && twr_k>=0){
+    for(int ij = -1; ij <=1; ij++){
+      for(int ik = -1; ik <=1; ik++){
+        RawTowerDefs::keytype temp_towerid = RawTowerDefs::encode_towerid( calo_id_ , twr_j + ij , twr_k + ik );
+        RawTower *rawtower = towers->getTower(temp_towerid);
+        if(rawtower) twr_sum += rawtower->get_energy();
+      }
+    }
+  }
+
+  return twr_sum;
 }
 
 
