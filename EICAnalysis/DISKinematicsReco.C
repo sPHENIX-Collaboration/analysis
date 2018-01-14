@@ -76,6 +76,7 @@ DISKinematicsReco::Init(PHCompositeNode *topNode)
   _map_treebranches.insert( make_pair( TauCandidate::cluster_prob , dummy ) );
   _map_treebranches.insert( make_pair( TauCandidate::cluster_eta , dummy ) );
   _map_treebranches.insert( make_pair( TauCandidate::cluster_phi , dummy ) );
+  _map_treebranches.insert( make_pair( TauCandidate::cluster_ntower , dummy ) );
   _map_treebranches.insert( make_pair( TauCandidate::track_id , dummy ) );
   _map_treebranches.insert( make_pair( TauCandidate::track_quality , dummy ) );
   _map_treebranches.insert( make_pair( TauCandidate::track_eta , dummy ) );
@@ -276,6 +277,7 @@ DISKinematicsReco::InsertCandidateFromCluster( type_map_tcan& candidateMap , Raw
   tc->set_property( TauCandidate::cluster_prob, cluster->get_prob() );
   tc->set_property( TauCandidate::cluster_eta, eta );
   tc->set_property( TauCandidate::cluster_phi, cluster->get_phi() );
+  tc->set_property( TauCandidate::cluster_ntower, (unsigned)cluster->getNTowers() );
 
   /* set tau candidate MC truth properties */
   tc->set_property( TauCandidate::evtgen_pid, (int)0 );

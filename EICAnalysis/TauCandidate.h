@@ -121,6 +121,7 @@ public:
       //cluster_r = 409,
       cluster_eta = 410,
       cluster_phi = 411,
+      cluster_ntower = 412,
 
       //! max limit in order to fit into 8 bit unsigned number
       prop_MAX_NUMBER = UCHAR_MAX

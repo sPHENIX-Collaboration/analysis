@@ -277,6 +277,9 @@ TauCandidate::get_property_info(const PROPERTY prop_id)
     case  cluster_phi:
       return make_pair("cluster_phi",TauCandidate::type_float);
 
+    case  cluster_ntower:
+      return make_pair("cluster_ntower",TauCandidate::type_uint);
+
       // ------
 
     default:
