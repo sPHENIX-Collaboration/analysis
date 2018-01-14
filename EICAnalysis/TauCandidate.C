@@ -82,17 +82,17 @@ TauCandidate::get_property_info(const PROPERTY prop_id)
 
       // ------
 
-    case  evtgen_is_ele:
-      return make_pair("evtgen_is_ele",TauCandidate::type_uint);
+    case  evtgen_pid:
+      return make_pair("evtgen_pid",TauCandidate::type_int);
 
-    case  evtgen_ele_etotal:
-      return make_pair("evtgen_ele_etotal",TauCandidate::type_float);
+    case  evtgen_etotal:
+      return make_pair("evtgen_etotal",TauCandidate::type_float);
 
-    case  evtgen_ele_eta:
-      return make_pair("evtgen_ele_eta",TauCandidate::type_float);
+    case  evtgen_eta:
+      return make_pair("evtgen_eta",TauCandidate::type_float);
 
-    case  evtgen_ele_phi:
-      return make_pair("evtgen_ele_phi",TauCandidate::type_float);
+    case  evtgen_phi:
+      return make_pair("evtgen_phi",TauCandidate::type_float);
 
       // ------
 
@@ -253,6 +253,29 @@ TauCandidate::get_property_info(const PROPERTY prop_id)
 
     case  tracks_chargesum_r04:
       return make_pair("tracks_chargesum_r04",TauCandidate::type_int);
+
+      // ------
+
+    case  cluster_id:
+      return make_pair("cluster_id",TauCandidate::type_uint);
+
+    case  cluster_energy:
+      return make_pair("cluster_energy",TauCandidate::type_float);
+
+    case  cluster_ecore:
+      return make_pair("cluster_ecore",TauCandidate::type_float);
+
+    case  cluster_et_iso:
+      return make_pair("cluster_et_iso",TauCandidate::type_float);
+
+    case  cluster_prob:
+      return make_pair("cluster_prob",TauCandidate::type_float);
+
+    case  cluster_eta:
+      return make_pair("cluster_eta",TauCandidate::type_float);
+
+    case  cluster_phi:
+      return make_pair("cluster_phi",TauCandidate::type_float);
 
       // ------
 

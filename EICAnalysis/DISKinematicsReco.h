@@ -19,7 +19,9 @@ class TTree;
 class TFile;
 
 class PHCompositeNode;
+class CaloEvalStack;
 class CaloRawTowerEval;
+class RawCluster;
 class RawTowerContainer;
 class RawTowerGeomContainer;
 //class JetMap;
@@ -89,6 +91,8 @@ private:
   /** helper pointer to topNode */
   PHCompositeNode *_topNode;
 
+  int InsertCandidateFromCluster( type_map_tcan& , RawCluster* , CaloEvalStack* );
+
   int InsertCandidateFromTrack( type_map_tcan& , SvtxTrack* );
 
   int AddTrueElectronTag( type_map_tcan&, PHHepMCGenEventMap* );
@@ -99,7 +103,7 @@ private:
 
   int WriteCandidatesToTree( type_map_tcan& );
 
-  int AddGlobalEventInformation( type_map_tcan& );
+  int AddGlobalEventInformation( type_map_tcan& ,   PHHepMCGenEventMap* );
 
   /** Find tau candidate in map that is closest to given eta, phi angle */
   TauCandidate* FindMinDeltaRCandidate( type_map_tcan*, const float, const float );

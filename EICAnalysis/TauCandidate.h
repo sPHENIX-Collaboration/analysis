@@ -41,10 +41,10 @@ public:
       evtgen_uds_eta = 13,
       evtgen_uds_phi = 14,
 
-      evtgen_is_ele = 21,
-      evtgen_ele_etotal = 22,
-      evtgen_ele_eta = 23,
-      evtgen_ele_phi = 24,
+      evtgen_pid = 21,
+      evtgen_etotal = 22,
+      evtgen_eta = 23,
+      evtgen_phi = 24,
 
       //-- Jet properties: 101 - ?  --
       jet_id = 101,
@@ -108,6 +108,19 @@ public:
       track_e3x3_ohcal = 264,
       track_e3x3_fhcal = 265,
       track_e3x3_ehcal = 266,
+
+      //-- cluster properties: 401 - ? --
+      cluster_id = 401,
+      cluster_energy = 402,
+      cluster_ecore = 403,
+      cluster_et_iso = 404,
+      cluster_prob = 405,
+      //cluster_x = 406,
+      //cluster_y = 407,
+      //cluster_z = 408,
+      //cluster_r = 409,
+      cluster_eta = 410,
+      cluster_phi = 411,
 
       //! max limit in order to fit into 8 bit unsigned number
       prop_MAX_NUMBER = UCHAR_MAX
