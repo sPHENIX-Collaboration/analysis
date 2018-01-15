@@ -111,6 +111,10 @@ private:
   /** Calculate Delta R ("distance in eta-phi space") between two sets of eta, phi angles */
   float CalculateDeltaR( float, float, float, float );
 
+
+  /** Find track with minimum delta R from given cluster */
+  SvtxTrack* FindClosestTrack( RawCluster* );
+
   /** get energy in 3x3 calorimeter towers around track projection to calorimeter surface.
    * Copied from FastTrackingEval.C */
   float getE33( PHCompositeNode *, std::string, float, float );

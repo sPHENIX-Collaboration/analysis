@@ -208,44 +208,6 @@ DISKinematicsReco::process_event(PHCompositeNode *topNode)
         }
     }
 
-  /* Loop over all tracks to collect electron candidate objects */
-  /* Loop over tracks
-   * (float) track->get_eta(),     //eta of the track
-   * (float) track->get_phi(),     //phi of the track
-   * (float) track->get_pt(),      //transverse momentum of track
-   * (float) track->get_p(),       //total momentum of track
-   * (float) track->get_charge(),  //electric charge of track
-   * (float) track->get_quality()  //track quality */
-  /* barrel tracking */
-  //  for (SvtxTrackMap::ConstIter track_itr = trackmap->begin();
-  //       track_itr != trackmap->end(); track_itr++)
-  //    {
-  //      InsertCandidateFromTrack( electronCandidateMap , dynamic_cast<SvtxTrack*>(track_itr->second) );
-  //    } // end loop over reco tracks //
-  //
-  //  /* h-going tracking */
-  //  for (SvtxTrackMap::ConstIter track_itr = trackmap_eta_plus->begin();
-  //       track_itr != trackmap_eta_plus->end(); track_itr++)
-  //    {
-  //      InsertCandidateFromTrack( electronCandidateMap , dynamic_cast<SvtxTrack*>(track_itr->second) );
-  //    } // end loop over reco tracks //
-  //
-  //  /* e-going tracking */
-  //  for (SvtxTrackMap::ConstIter track_itr = trackmap_eta_minus->begin();
-  //       track_itr != trackmap_eta_minus->end(); track_itr++)
-  //    {
-  //      InsertCandidateFromTrack( electronCandidateMap , dynamic_cast<SvtxTrack*>(track_itr->second) );
-  //    } // end loop over reco tracks //
-
-  /* Add calorimeter information to tau candidates */
-  //  AddCalorimeterInformation( electronCandidateMap, &map_calotower );
-
-  /* Add track information to tau candidates */
-  //  AddTrackInformation( electronCandidateMap, trackmap );
-
-  /* Add tag for true Tau particle jet to tau candidates */
-  //  AddTrueElectronTag( electronCandidateMap, genevtmap );
-
   /* Add information about tau candidats to output tree */
   WriteCandidatesToTree( electronCandidateMap );
 
@@ -278,6 +240,52 @@ DISKinematicsReco::InsertCandidateFromCluster( type_map_tcan& candidateMap , Raw
   tc->set_property( TauCandidate::cluster_eta, eta );
   tc->set_property( TauCandidate::cluster_phi, cluster->get_phi() );
   tc->set_property( TauCandidate::cluster_ntower, (unsigned)cluster->getNTowers() );
+
+  /* find matching reco track */
+  SvtxTrack* best_track = FindClosestTrack( cluster );
+
+  /* IF matching track found: set track properties */
+  if ( best_track )
+    {
+      /* set some initial track properties */
+      tc->set_property( TauCandidate::track_id, (uint)best_track->get_id() );
+      tc->set_property( TauCandidate::track_quality, best_track->get_quality() );
+      tc->set_property( TauCandidate::track_eta, best_track->get_eta() );
+      tc->set_property( TauCandidate::track_phi, best_track->get_phi() );
+      tc->set_property( TauCandidate::track_ptotal, best_track->get_p() );
+      tc->set_property( TauCandidate::track_ptrans, best_track->get_pt() );
+      tc->set_property( TauCandidate::track_charge, best_track->get_charge() );
+      tc->set_property( TauCandidate::track_e3x3_cemc, best_track->get_cal_energy_3x3(SvtxTrack::CEMC) );
+      tc->set_property( TauCandidate::track_e3x3_ihcal, best_track->get_cal_energy_3x3(SvtxTrack::HCALIN) );
+      tc->set_property( TauCandidate::track_e3x3_ohcal, best_track->get_cal_energy_3x3(SvtxTrack::HCALOUT) );
+
+      // Use the track states to project to the FEMC / FHCAL / EEMC and generate
+      // energy sums.
+      float e3x3_femc = 0;
+      float e3x3_fhcal = 0;
+      float e3x3_eemc = 0;
+
+      for (SvtxTrack::ConstStateIter state_itr = best_track->begin_states();
+           state_itr != best_track->end_states(); state_itr++) {
+
+        SvtxTrackState *temp = dynamic_cast<SvtxTrackState*>(state_itr->second);
+
+        if( (temp->get_name()=="FHCAL") )
+          e3x3_fhcal = getE33( _topNode , "FHCAL" , temp->get_x() , temp->get_y() );
+
+        if( (temp->get_name()=="FEMC") )
+          e3x3_femc = getE33( _topNode , "FEMC" , temp->get_x() , temp->get_y() );
+
+        if( (temp->get_name()=="EEMC") )
+          e3x3_eemc = getE33( _topNode , "EEMC" , temp->get_x() , temp->get_y() );
+
+      }
+
+      /* set candidate properties */
+      tc->set_property( TauCandidate::track_e3x3_fhcal, e3x3_fhcal );
+      tc->set_property( TauCandidate::track_e3x3_femc, e3x3_femc );
+      tc->set_property( TauCandidate::track_e3x3_eemc, e3x3_eemc );
+    }
 
   /* set tau candidate MC truth properties */
   tc->set_property( TauCandidate::evtgen_pid, (int)0 );
@@ -486,13 +494,13 @@ DISKinematicsReco::AddGlobalEventInformation( type_map_tcan& electronCandidateMa
     {
       ( _map_eventbranches.find( "reco_electron_found" ) )->second = 1;
       ( _map_eventbranches.find( "reco_electron_is_electron" ) )->second =
-	( the_electron->get_property_int( TauCandidate::evtgen_pid ) == 11 );
+        ( the_electron->get_property_int( TauCandidate::evtgen_pid ) == 11 );
       ( _map_eventbranches.find( "reco_electron_eta" ) )->second =
-	the_electron->get_property_float( TauCandidate::cluster_eta );
+        the_electron->get_property_float( TauCandidate::cluster_eta );
       ( _map_eventbranches.find( "reco_electron_phi" ) )->second =
-	the_electron->get_property_float( TauCandidate::cluster_phi );
+        the_electron->get_property_float( TauCandidate::cluster_phi );
       ( _map_eventbranches.find( "reco_electron_ptotal" ) )->second =
-	the_electron->get_property_float( TauCandidate::cluster_energy );
+        the_electron->get_property_float( TauCandidate::cluster_energy );
     }
   else
     {
@@ -573,6 +581,60 @@ DISKinematicsReco::AddGlobalEventInformation( type_map_tcan& electronCandidateMa
   _tree_event->Fill();
 
   return 0;
+}
+
+
+SvtxTrack* DISKinematicsReco::FindClosestTrack( RawCluster* cluster )
+{
+
+  /* best matching track */
+  SvtxTrack* best_track = NULL;
+
+  /* find name of calorimeter for this cluster */
+  string caloname = "NONE";
+
+  /* C++11 range loop */
+  for (auto& towit : cluster->get_towermap() )
+    {
+      caloname = RawTowerDefs::convert_caloid_to_name( RawTowerDefs::decode_caloid(towit.first) );
+      break;
+    }
+
+  /* Get track collection with all tracks in this event */
+  SvtxTrackMap* trackmap =
+    findNode::getClass<SvtxTrackMap>(_topNode,"SvtxTrackMap");
+  if (!trackmap)
+    {
+      cout << PHWHERE << "SvtxTrackMap node not found on node tree"
+           << endl;
+    }
+
+  /* Loop over all tracks from BARREL tracking and see if one points to the same
+   * cluster as the reference clusters (i.e. matching ID in the same calorimeter) */
+  for (SvtxTrackMap::ConstIter track_itr = trackmap->begin();
+       track_itr != trackmap->end(); track_itr++)
+    {
+      SvtxTrack* track =  dynamic_cast<SvtxTrack*>(track_itr->second);
+      if ( caloname == "CEMC" &&
+           track->get_cal_cluster_id(SvtxTrack::CEMC) == cluster->get_id() )
+        {
+          best_track = track;
+        }
+    }
+
+  /* @TODO: Cluster / track matching for forward calormeters and tracking */
+  //  float max_dr = 10;
+  //  float best_track_dr = 100000 * max_dr;
+  //
+  //  /* cluster position for easy reference */
+  //  //  float cx = cluster->get_x();
+  //  //2  float cy = cluster->get_y();
+  //  //  float cz = cluster->get_z();
+  //  float ctheta = atan2( cluster->get_r() , cluster->get_z() );
+  //  float ceta =  -log(tan(ctheta/2.0));
+  //  float cphi = cluster->get_phi();
+
+  return best_track;
 }
 
 
