@@ -106,6 +106,8 @@ DISKinematicsReco::Init(PHCompositeNode *topNode)
 
 
   /* Add branches to map that defines output tree for event-wise properties */
+  _map_eventbranches.insert( make_pair( "Et_miss" , dummy ) );
+  _map_eventbranches.insert( make_pair( "Et_miss_phi" , dummy ) );
   _map_eventbranches.insert( make_pair( "reco_electron_found" , dummy ) );
   _map_eventbranches.insert( make_pair( "reco_electron_is_electron" , dummy ) );
   _map_eventbranches.insert( make_pair( "reco_electron_eta" , dummy ) );
@@ -476,6 +478,88 @@ DISKinematicsReco::CalculateDeltaR( float eta1, float phi1, float eta2, float ph
 int
 DISKinematicsReco::AddGlobalEventInformation( type_map_tcan& electronCandidateMap , PHHepMCGenEventMap* geneventmap )
 {
+
+  /* Missing transverse energy, transverse energy direction, and Energy sums, x and y components separately */
+  float Et_miss = 0;
+  float Et_miss_phi = 0;
+  float Ex_sum = 0;
+  float Ey_sum = 0;
+
+  /* energy threshold for considering tower */
+  float tower_emin = 0.0;
+
+  /* Loop over all tower (and geometry) collections */
+  vector < string > calo_names;
+  calo_names.push_back( "CEMC" );
+  calo_names.push_back( "HCALIN" );
+  calo_names.push_back( "HCALOUT" );
+  calo_names.push_back( "FEMC" );
+  calo_names.push_back( "FHCAL" );
+  calo_names.push_back( "EEMC" );
+
+  for ( unsigned i = 0; i < calo_names.size(); i++ )
+    {
+
+      string towernodename = "TOWER_CALIB_" + calo_names.at( i );
+      RawTowerContainer* towers = findNode::getClass<RawTowerContainer>(_topNode, towernodename.c_str());
+      if (!towers)
+        {
+          std::cout << PHWHERE << ": Could not find node " << towernodename.c_str() << std::endl;
+          return -1;
+        }
+
+      string towergeomnodename = "TOWERGEOM_" + calo_names.at( i );
+      RawTowerGeomContainer *towergeoms = findNode::getClass<RawTowerGeomContainer>(_topNode, towergeomnodename.c_str());
+      if (! towergeoms)
+        {
+          cout << PHWHERE << ": Could not find node " << towergeomnodename.c_str() << endl;
+          return -1;
+        }
+
+      /* define tower iterator */
+      RawTowerContainer::ConstRange begin_end = towers->getTowers();
+      RawTowerContainer::ConstIterator rtiter;
+
+      /* loop over all tower in CEMC calorimeter */
+      for (rtiter = begin_end.first; rtiter !=  begin_end.second; ++rtiter)
+        {
+          /* get tower energy */
+          RawTower *tower = rtiter->second;
+          float tower_energy = tower->get_energy();
+
+          /* check if tower above energy treshold */
+          if ( tower_energy < tower_emin )
+            continue;
+
+          /* get eta and phi of tower and check angle delta_R w.r.t. jet axis */
+          RawTowerGeom * tower_geom = towergeoms->get_tower_geometry(tower -> get_key());
+          float tower_eta = tower_geom->get_eta();
+          float tower_phi = tower_geom->get_phi();
+
+          /* from https://en.wikipedia.org/wiki/Pseudorapidity:
+             p_x = p_T * cos( phi )
+             p_y = p_T * sin( phi )
+             p_z = p_T * sinh( eta )
+             |p| = p_T * cosh( eta )
+          */
+
+          /* calculate 'transverse' tower energy */
+          float tower_energy_t = tower_energy / cosh( tower_eta );
+
+          /* add energy components of this tower to total energy components */
+          Ex_sum += tower_energy_t * cos( tower_phi );
+          Ey_sum += tower_energy_t * sin( tower_phi );
+        }
+    }
+
+  /* calculate Et_miss */
+  Et_miss = sqrt( Ex_sum * Ex_sum + Ey_sum * Ey_sum );
+  Et_miss_phi = atan( Ey_sum / Ex_sum );
+
+  /* set event branch paraemters */
+  ( _map_eventbranches.find( "Et_miss" ) )->second = Et_miss;
+  ( _map_eventbranches.find( "Et_miss_phi" ) )->second = Et_miss_phi;
+
   /* Loop over electron candidates and find electron */
   TauCandidate* the_electron = NULL;
   for (type_map_tcan::iterator iter = electronCandidateMap.begin();
@@ -642,54 +726,54 @@ SvtxTrack* DISKinematicsReco::FindClosestTrack( RawCluster* cluster )
     {
       trackmap_fwd = findNode::getClass<SvtxTrackMap>(_topNode,"SvtxTrackMap_FastSimEtaPlus");
       if (!trackmap_fwd)
-	{
-	  cout << PHWHERE << "SvtxTrackMap_FastSimEtaPlus node not found on node tree" << endl;
-	}
+        {
+          cout << PHWHERE << "SvtxTrackMap_FastSimEtaPlus node not found on node tree" << endl;
+        }
     }
   else if ( caloname == "EEMC" )
     {
       trackmap_fwd = findNode::getClass<SvtxTrackMap>(_topNode,"SvtxTrackMap_FastSimEtaMinus");
       if (!trackmap_fwd)
-	{
-	  cout << PHWHERE << "SvtxTrackMap_FastSimEtaMinus node not found on node tree" << endl;
-	}
+        {
+          cout << PHWHERE << "SvtxTrackMap_FastSimEtaMinus node not found on node tree" << endl;
+        }
     }
 
   /* If forward track map found: Loop over all tracks to find best match for cluster */
   if ( trackmap_fwd )
     {
       for (SvtxTrackMap::ConstIter track_itr = trackmap_fwd->begin();
-	   track_itr != trackmap_fwd->end(); track_itr++)
-	{
-	  /* get pointer to track */
-	  SvtxTrack* track =  dynamic_cast<SvtxTrack*>(track_itr->second);
+           track_itr != trackmap_fwd->end(); track_itr++)
+        {
+          /* get pointer to track */
+          SvtxTrack* track =  dynamic_cast<SvtxTrack*>(track_itr->second);
 
-	  /* distance between track and cluster */
-	  float dr = max_dr;
+          /* distance between track and cluster */
+          float dr = max_dr;
 
-	  /* loop over track states (projections) sotred for this track */
-	  for (SvtxTrack::ConstStateIter state_itr = track->begin_states();
-	       state_itr != track->end_states(); state_itr++)
-	    {
-	      /* get pointer to current track state */
-	      SvtxTrackState *temp = dynamic_cast<SvtxTrackState*>(state_itr->second);
+          /* loop over track states (projections) sotred for this track */
+          for (SvtxTrack::ConstStateIter state_itr = track->begin_states();
+               state_itr != track->end_states(); state_itr++)
+            {
+              /* get pointer to current track state */
+              SvtxTrackState *temp = dynamic_cast<SvtxTrackState*>(state_itr->second);
 
-	      /* check if track state projection name matches calorimeter where cluster was found */
-	      if( (temp->get_name()==caloname) )
-		{
-		  dr = sqrt( pow( cx - temp->get_x(), 2 ) + pow( cy - temp->get_y(), 2 ) );
-		  break;
-		}
-	    }
+              /* check if track state projection name matches calorimeter where cluster was found */
+              if( (temp->get_name()==caloname) )
+                {
+                  dr = sqrt( pow( cx - temp->get_x(), 2 ) + pow( cy - temp->get_y(), 2 ) );
+                  break;
+                }
+            }
 
-	  /* check dr and update best_track and best_track_dr if this track is closest to cluster */
-	  if ( dr < max_dr &&
-	       dr < best_track_dr )
-	    {
-	      best_track = track;
-	      best_track_dr = dr;
-	    }
-	}
+          /* check dr and update best_track and best_track_dr if this track is closest to cluster */
+          if ( dr < max_dr &&
+               dr < best_track_dr )
+            {
+              best_track = track;
+              best_track_dr = dr;
+            }
+        }
     }
   return best_track;
 }
