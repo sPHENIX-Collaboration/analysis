@@ -261,9 +261,9 @@ DISKinematicsReco::InsertCandidateFromCluster( type_map_tcan& candidateMap , Raw
 
       // Use the track states to project to the FEMC / FHCAL / EEMC and generate
       // energy sums.
-      float e3x3_femc = 0;
-      float e3x3_fhcal = 0;
-      float e3x3_eemc = 0;
+      float e3x3_femc = NAN;
+      float e3x3_fhcal = NAN;
+      float e3x3_eemc = NAN;
 
       for (SvtxTrack::ConstStateIter state_itr = best_track->begin_states();
            state_itr != best_track->end_states(); state_itr++) {
@@ -278,7 +278,6 @@ DISKinematicsReco::InsertCandidateFromCluster( type_map_tcan& candidateMap , Raw
 
         if( (temp->get_name()=="EEMC") )
           e3x3_eemc = getE33( _topNode , "EEMC" , temp->get_x() , temp->get_y() );
-
       }
 
       /* set candidate properties */
@@ -622,18 +621,76 @@ SvtxTrack* DISKinematicsReco::FindClosestTrack( RawCluster* cluster )
         }
     }
 
-  /* @TODO: Cluster / track matching for forward calormeters and tracking */
-  //  float max_dr = 10;
-  //  float best_track_dr = 100000 * max_dr;
-  //
-  //  /* cluster position for easy reference */
-  //  //  float cx = cluster->get_x();
-  //  //2  float cy = cluster->get_y();
-  //  //  float cz = cluster->get_z();
-  //  float ctheta = atan2( cluster->get_r() , cluster->get_z() );
-  //  float ceta =  -log(tan(ctheta/2.0));
-  //  float cphi = cluster->get_phi();
+  /* If track found with barrel tracking, return it here- if not, proceed with forward tracking below. */
+  if ( best_track )
+    return best_track;
 
+
+  /* Cluster / track matching for forward calormeters and tracking */
+  float max_dr = 5;
+  float best_track_dr = 100 * max_dr;
+
+  /* cluster position for easy reference */
+  float cx = cluster->get_x();
+  float cy = cluster->get_y();
+
+  /* Get track collection with all tracks in this event */
+  SvtxTrackMap* trackmap_fwd = NULL;
+
+  /* chose which forward tracking map to use based on calorimeter where cluster was found */
+  if ( caloname == "FEMC" )
+    {
+      trackmap_fwd = findNode::getClass<SvtxTrackMap>(_topNode,"SvtxTrackMap_FastSimEtaPlus");
+      if (!trackmap_fwd)
+	{
+	  cout << PHWHERE << "SvtxTrackMap_FastSimEtaPlus node not found on node tree" << endl;
+	}
+    }
+  else if ( caloname == "EEMC" )
+    {
+      trackmap_fwd = findNode::getClass<SvtxTrackMap>(_topNode,"SvtxTrackMap_FastSimEtaMinus");
+      if (!trackmap_fwd)
+	{
+	  cout << PHWHERE << "SvtxTrackMap_FastSimEtaMinus node not found on node tree" << endl;
+	}
+    }
+
+  /* If forward track map found: Loop over all tracks to find best match for cluster */
+  if ( trackmap_fwd )
+    {
+      for (SvtxTrackMap::ConstIter track_itr = trackmap_fwd->begin();
+	   track_itr != trackmap_fwd->end(); track_itr++)
+	{
+	  /* get pointer to track */
+	  SvtxTrack* track =  dynamic_cast<SvtxTrack*>(track_itr->second);
+
+	  /* distance between track and cluster */
+	  float dr = max_dr;
+
+	  /* loop over track states (projections) sotred for this track */
+	  for (SvtxTrack::ConstStateIter state_itr = track->begin_states();
+	       state_itr != track->end_states(); state_itr++)
+	    {
+	      /* get pointer to current track state */
+	      SvtxTrackState *temp = dynamic_cast<SvtxTrackState*>(state_itr->second);
+
+	      /* check if track state projection name matches calorimeter where cluster was found */
+	      if( (temp->get_name()==caloname) )
+		{
+		  dr = sqrt( pow( cx - temp->get_x(), 2 ) + pow( cy - temp->get_y(), 2 ) );
+		  break;
+		}
+	    }
+
+	  /* check dr and update best_track and best_track_dr if this track is closest to cluster */
+	  if ( dr < max_dr &&
+	       dr < best_track_dr )
+	    {
+	      best_track = track;
+	      best_track_dr = dr;
+	    }
+	}
+    }
   return best_track;
 }
 
