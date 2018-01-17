@@ -47,6 +47,7 @@ LeptoquarksReco::LeptoquarksReco(std::string filename) :
   _ntp_jet(nullptr),
   _ntp_jet2(nullptr),
   _ntp_tower(nullptr),
+  _ntp_track(nullptr),
   _ebeam_E(0),
   _pbeam_E(0),
   _tau_jet_emin(5.0),
@@ -175,6 +176,7 @@ LeptoquarksReco::Init(PHCompositeNode *topNode)
 int
 LeptoquarksReco::process_event(PHCompositeNode *topNode)
 {
+  
   /* Create map to collect tau candidates.
    * Use energy as 'key' to the map because energy is unique for each jet, while there are sometimes multiple jets (same energy,
    * different jet ID) in the input jet collection. Also, map automatically sorts entries by key, i.e. this gives list of tau candidates
@@ -264,7 +266,7 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
       /* add tau candidate to collection */
       tauCandidateMap.insert( make_pair( (iter->second)->get_e(), tc ) );
     }
-
+ 
   /* Add jet information to tau candidates */
   AddJetInformation( tauCandidateMap, recojets, &map_calotower );
 
@@ -279,10 +281,10 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
 
   /* Add information about tau candidats to output tree */
   WriteTauCandidatesToTree( tauCandidateMap );
-
+ 
   /* Add global event information to separate tree */
   AddGlobalEventInformation( tauCandidateMap, &map_calotower );
-
+ 
   /* count up event number */
   _ievent ++;
 
@@ -583,7 +585,7 @@ LeptoquarksReco::AddJetStructureInformation( type_map_tcan& tauCandidateMap, typ
                 {
                   er3 += tower_energy;
                   if ( (iter_calo->first) == RawTowerDefs::CEMC )
-                    emcal_er3 += tower_energy;
+		    emcal_er3 += tower_energy;
                 }
               if ( delta_R <= delta_R_cutoff_r4 )
                 {
@@ -763,7 +765,7 @@ LeptoquarksReco::AddTrackInformation( type_map_tcan& tauCandidateMap, SvtxTrackM
                                     (float) delta_R,
                                     (float) track->get_p()
             };
-
+	    
             _ntp_track->Fill(track_data);
           }
 
