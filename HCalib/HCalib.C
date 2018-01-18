@@ -12,7 +12,7 @@
 #include <phool/getClass.h>
 
 #include <g4detectors/PHG4HcalDefs.h>
-#include <g4detectors/PHParameters.h>
+#include <phparameter/PHParameters.h>
 #include <g4detectors/PHG4Cell.h>
 #include <g4detectors/PHG4CellContainer.h>
 #include <g4detectors/PHG4CellDefs.h>
