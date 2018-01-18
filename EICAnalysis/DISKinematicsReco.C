@@ -46,7 +46,6 @@ DISKinematicsReco::DISKinematicsReco(std::string filename) :
   _ievent(0),
   _filename(filename),
   _tfile(nullptr),
-  _e_candidate(nullptr),
   _tree_event(nullptr),
   _ebeam_E(10),
   _pbeam_E(250)
@@ -65,70 +64,110 @@ DISKinematicsReco::Init(PHCompositeNode *topNode)
 
   /* Add TauCandidate properties to map that defines output tree */
   float dummy = 0;
-  _map_treebranches.insert( make_pair( TauCandidate::evtgen_pid , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::evtgen_etotal , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::evtgen_eta , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::evtgen_phi , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::cluster_id , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::cluster_energy , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::cluster_ecore , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::cluster_et_iso , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::cluster_prob , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::cluster_eta , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::cluster_phi , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::cluster_ntower , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::track_id , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::track_quality , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::track_eta , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::track_phi , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::track_ptotal , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::track_ptrans , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::track_charge , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::track_e3x3_cemc , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::track_e3x3_femc , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::track_e3x3_eemc , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::track_e3x3_ihcal , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::track_e3x3_ohcal , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::track_e3x3_fhcal , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::track_e3x3_ehcal , dummy ) );
+  vector< float > vdummy;
 
-  /* Create tree for information about electron candidates */
-  _e_candidate = new TTree("candidates", "a Tree with electron candidates");
-  _e_candidate->Branch("event", &_ievent, "event/I");
-  for ( map< TauCandidate::PROPERTY , float >::iterator iter = _map_treebranches.begin();
-        iter != _map_treebranches.end();
-        ++iter)
-    {
-      _e_candidate->Branch(TauCandidate::get_property_info( (iter->first) ).first.c_str(),
-                           &(iter->second),
-                           TauCandidate::get_property_info( (iter->first) ).first.c_str());
-    }
-
+  _map_em_candidate_branches.insert( make_pair( TauCandidate::evtgen_pid , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( TauCandidate::evtgen_etotal , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( TauCandidate::evtgen_eta , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( TauCandidate::evtgen_phi , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( TauCandidate::cluster_id , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( TauCandidate::cluster_energy , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( TauCandidate::cluster_ecore , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( TauCandidate::cluster_et_iso , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( TauCandidate::cluster_prob , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( TauCandidate::cluster_eta , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( TauCandidate::cluster_phi , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( TauCandidate::cluster_ntower , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( TauCandidate::track_id , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( TauCandidate::track_quality , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( TauCandidate::track_eta , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( TauCandidate::track_phi , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( TauCandidate::track_ptotal , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( TauCandidate::track_ptrans , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( TauCandidate::track_charge , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( TauCandidate::track_e3x3_cemc , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( TauCandidate::track_e3x3_femc , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( TauCandidate::track_e3x3_eemc , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( TauCandidate::track_e3x3_ihcal , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( TauCandidate::track_e3x3_ohcal , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( TauCandidate::track_e3x3_fhcal , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( TauCandidate::track_e3x3_ehcal , vdummy ) );
 
   /* Add branches to map that defines output tree for event-wise properties */
-  _map_eventbranches.insert( make_pair( "Et_miss" , dummy ) );
-  _map_eventbranches.insert( make_pair( "Et_miss_phi" , dummy ) );
-  _map_eventbranches.insert( make_pair( "reco_electron_found" , dummy ) );
-  _map_eventbranches.insert( make_pair( "reco_electron_is_electron" , dummy ) );
-  _map_eventbranches.insert( make_pair( "reco_electron_eta" , dummy ) );
-  _map_eventbranches.insert( make_pair( "reco_electron_phi" , dummy ) );
-  _map_eventbranches.insert( make_pair( "reco_electron_ptotal" , dummy ) );
-  _map_eventbranches.insert( make_pair( "reco_electron_x" , dummy ) );
-  _map_eventbranches.insert( make_pair( "reco_electron_Q2" , dummy ) );
-  _map_eventbranches.insert( make_pair( "evtgen_process_id" , dummy ) );
-  _map_eventbranches.insert( make_pair( "evtgen_x" , dummy ) );
-  _map_eventbranches.insert( make_pair( "evtgen_Q2" , dummy ) );
+  /*
+    runnr
+    eventnr
+    eventweight
+    cal_px
+    cal_py
+    cal_pz
+    cal_etotal
+    cal_et
+    cal_empz
+    cal_pt --> "pt_miss" ?
+    cal_pt_phi = atan2(sum(py)/sum(px)) --> "pt_miss_angle" ?
+
+    EM candidates:
+    em_ncand --> number of candidates
+
+    em_truth_pid( em_ncand)
+    em_truth_ptotal
+    em_truth_eta
+    em_truth_phi
+    em_truth_charge
+
+    em_cal_prob( em_ncand) --> probability
+    em_cal_pos( 3 , em_ncand)
+    em_cal_etotal (em_ncand)
+    em_cal_cone1 (ncand)
+    em_cal_cone2 (ncand)
+    em_cal_eta
+    em_cal_phi
+    em_cal_hadronic? (behind EMCAL)
+
+    em_trk_nr (ncand) track number
+    em_trk_dca (ncand)
+    em_trk_ptotal (ncand)
+    em_trk_theta (ncand)
+    em_trk_phi (ncand)
+    em_trk_q (ncand)
+    em_trk_pos (3, ncand)  --> extrapolated position
+  */
+
+  _map_event_branches.insert( make_pair( "Et_miss" , dummy ) );
+  _map_event_branches.insert( make_pair( "n_cand" , dummy ) );
+  _map_event_branches.insert( make_pair( "Et_miss_phi" , dummy ) );
+  _map_event_branches.insert( make_pair( "reco_electron_found" , dummy ) );
+  _map_event_branches.insert( make_pair( "reco_electron_is_electron" , dummy ) );
+  _map_event_branches.insert( make_pair( "reco_electron_eta" , dummy ) );
+  _map_event_branches.insert( make_pair( "reco_electron_phi" , dummy ) );
+  _map_event_branches.insert( make_pair( "reco_electron_ptotal" , dummy ) );
+  _map_event_branches.insert( make_pair( "reco_electron_x" , dummy ) );
+  _map_event_branches.insert( make_pair( "reco_electron_Q2" , dummy ) );
+  _map_event_branches.insert( make_pair( "evtgen_process_id" , dummy ) );
+  _map_event_branches.insert( make_pair( "evtgen_x" , dummy ) );
+  _map_event_branches.insert( make_pair( "evtgen_Q2" , dummy ) );
 
   /* Create tree for information about full event */
-  _tree_event = new TTree("event", "a Tree with global event information");
+  _tree_event = new TTree("event", "a Tree with global event information and EM candidates");
   _tree_event->Branch("event", &_ievent, "event/I");
-  for ( map< string , float >::iterator iter = _map_eventbranches.begin();
-        iter != _map_eventbranches.end();
+
+  /* Add event branches */
+  for ( map< string , float >::iterator iter = _map_event_branches.begin();
+        iter != _map_event_branches.end();
         ++iter)
     {
       _tree_event->Branch( (iter->first).c_str(),
-                           &(iter->second),
-                           (iter->first).c_str() );
+                           &(iter->second) );
+    }
+
+  /* Add EM candidate branches */
+  for ( map< TauCandidate::PROPERTY , vector<float> >::iterator iter = _map_em_candidate_branches.begin();
+        iter != _map_em_candidate_branches.end();
+        ++iter)
+    {
+      _tree_event->Branch( TauCandidate::get_property_info( (iter->first) ).first.c_str(),
+                           &(iter->second) );
     }
 
   return 0;
@@ -137,6 +176,9 @@ DISKinematicsReco::Init(PHCompositeNode *topNode)
 int
 DISKinematicsReco::process_event(PHCompositeNode *topNode)
 {
+  /* Reset branch map */
+  ResetBranchMap();
+
   /* Create map to collect electron candidates.
    * Use energy as 'key' to the map because energy is unique for each jet, while there are sometimes multiple jets (same energy,
    * different jet ID) in the input jet collection. Also, map automatically sorts entries by key, i.e. this gives list of tau candidates
@@ -215,6 +257,9 @@ DISKinematicsReco::process_event(PHCompositeNode *topNode)
 
   /* Add global event information */
   AddGlobalEventInformation( electronCandidateMap, genevtmap );
+
+  /* fill event information tree */
+  _tree_event->Fill();
 
   /* count up event number */
   _ievent ++;
@@ -415,35 +460,37 @@ DISKinematicsReco::AddTrackInformation( type_map_tcan& electronCandidateMap, Svt
 int
 DISKinematicsReco::WriteCandidatesToTree( type_map_tcan& electronCandidateMap )
 {
-  /* Loop over all tau candidates */
+  /* Get number of electron candidates */
+  ( _map_event_branches.find( "n_cand" ) )->second = electronCandidateMap.size();
+
+  /* Loop over all EM candidates and add them to tree */
   for (type_map_tcan::iterator iter = electronCandidateMap.begin();
        iter != electronCandidateMap.end();
        ++iter)
     {
       /* update information in map and fill tree */
-      for ( map< TauCandidate::PROPERTY , float >::iterator iter_prop = _map_treebranches.begin();
-            iter_prop != _map_treebranches.end();
+      for ( map< TauCandidate::PROPERTY , vector<float> >::iterator iter_prop = _map_em_candidate_branches.begin();
+            iter_prop != _map_em_candidate_branches.end();
             ++iter_prop)
         {
           switch ( TauCandidate::get_property_info( (iter_prop->first) ).second ) {
 
           case TauCandidate::type_float :
-            (iter_prop->second) = (iter->second)->get_property_float( (iter_prop->first) );
+            (iter_prop->second).push_back( (iter->second)->get_property_float( (iter_prop->first) ) );
             break;
 
           case TauCandidate::type_int :
-            (iter_prop->second) = (iter->second)->get_property_int( (iter_prop->first) );
+            (iter_prop->second).push_back( (iter->second)->get_property_int( (iter_prop->first) ) );
             break;
 
           case TauCandidate::type_uint :
-            (iter_prop->second) = (iter->second)->get_property_uint( (iter_prop->first) );
+            (iter_prop->second).push_back( (iter->second)->get_property_uint( (iter_prop->first) ) );
             break;
 
           case TauCandidate::type_unknown :
             break;
           }
         }
-      _e_candidate->Fill();
     }
 
   return 0;
@@ -478,7 +525,6 @@ DISKinematicsReco::CalculateDeltaR( float eta1, float phi1, float eta2, float ph
 int
 DISKinematicsReco::AddGlobalEventInformation( type_map_tcan& electronCandidateMap , PHHepMCGenEventMap* geneventmap )
 {
-
   /* Missing transverse energy, transverse energy direction, and Energy sums, x and y components separately */
   float Et_miss = 0;
   float Et_miss_phi = 0;
@@ -557,8 +603,8 @@ DISKinematicsReco::AddGlobalEventInformation( type_map_tcan& electronCandidateMa
   Et_miss_phi = atan( Ey_sum / Ex_sum );
 
   /* set event branch paraemters */
-  ( _map_eventbranches.find( "Et_miss" ) )->second = Et_miss;
-  ( _map_eventbranches.find( "Et_miss_phi" ) )->second = Et_miss_phi;
+  ( _map_event_branches.find( "Et_miss" ) )->second = Et_miss;
+  ( _map_event_branches.find( "Et_miss_phi" ) )->second = Et_miss_phi;
 
   /* Loop over electron candidates and find electron */
   TauCandidate* the_electron = NULL;
@@ -575,23 +621,23 @@ DISKinematicsReco::AddGlobalEventInformation( type_map_tcan& electronCandidateMa
      this will lead to a SEGMENTATION FAULT */
   if ( the_electron )
     {
-      ( _map_eventbranches.find( "reco_electron_found" ) )->second = 1;
-      ( _map_eventbranches.find( "reco_electron_is_electron" ) )->second =
+      ( _map_event_branches.find( "reco_electron_found" ) )->second = 1;
+      ( _map_event_branches.find( "reco_electron_is_electron" ) )->second =
         ( the_electron->get_property_int( TauCandidate::evtgen_pid ) == 11 );
-      ( _map_eventbranches.find( "reco_electron_eta" ) )->second =
+      ( _map_event_branches.find( "reco_electron_eta" ) )->second =
         the_electron->get_property_float( TauCandidate::cluster_eta );
-      ( _map_eventbranches.find( "reco_electron_phi" ) )->second =
+      ( _map_event_branches.find( "reco_electron_phi" ) )->second =
         the_electron->get_property_float( TauCandidate::cluster_phi );
-      ( _map_eventbranches.find( "reco_electron_ptotal" ) )->second =
+      ( _map_event_branches.find( "reco_electron_ptotal" ) )->second =
         the_electron->get_property_float( TauCandidate::cluster_energy );
     }
   else
     {
-      ( _map_eventbranches.find( "reco_electron_found" ) )->second = 0;
-      ( _map_eventbranches.find( "reco_electron_is_electron" ) )->second = NAN;
-      ( _map_eventbranches.find( "reco_electron_eta" ) )->second = NAN;
-      ( _map_eventbranches.find( "reco_electron_phi" ) )->second = NAN;
-      ( _map_eventbranches.find( "reco_electron_ptotal" ) )->second = NAN;
+      ( _map_event_branches.find( "reco_electron_found" ) )->second = 0;
+      ( _map_event_branches.find( "reco_electron_is_electron" ) )->second = NAN;
+      ( _map_event_branches.find( "reco_electron_eta" ) )->second = NAN;
+      ( _map_event_branches.find( "reco_electron_phi" ) )->second = NAN;
+      ( _map_event_branches.find( "reco_electron_ptotal" ) )->second = NAN;
     }
 
   /* Add reco kinematics based on scattered electron data */
@@ -622,8 +668,8 @@ DISKinematicsReco::AddGlobalEventInformation( type_map_tcan& electronCandidateMa
 
   float dis_x = dis_Q2 / ( dis_s * dis_y );
 
-  ( _map_eventbranches.find( "reco_electron_x" ) )->second = dis_x;
-  ( _map_eventbranches.find( "reco_electron_Q2" ) )->second = dis_Q2;
+  ( _map_event_branches.find( "reco_electron_x" ) )->second = dis_x;
+  ( _map_event_branches.find( "reco_electron_Q2" ) )->second = dis_Q2;
 
   /* Add truth kinematics */
   int embedding_id = 1;
@@ -656,12 +702,9 @@ DISKinematicsReco::AddGlobalEventInformation( type_map_tcan& electronCandidateMa
       ev_Q2 = theEvent->pdf_info()->scalePDF();
     }
 
-  ( _map_eventbranches.find( "evtgen_process_id" ) )->second = true_process_id;
-  ( _map_eventbranches.find( "evtgen_x" ) )->second = ev_x2;
-  ( _map_eventbranches.find( "evtgen_Q2" ) )->second = ev_Q2;
-
-  /* fill event information tree */
-  _tree_event->Fill();
+  ( _map_event_branches.find( "evtgen_process_id" ) )->second = true_process_id;
+  ( _map_event_branches.find( "evtgen_x" ) )->second = ev_x2;
+  ( _map_event_branches.find( "evtgen_Q2" ) )->second = ev_Q2;
 
   return 0;
 }
@@ -842,14 +885,32 @@ DISKinematicsReco::getE33( PHCompositeNode *topNode, string detName, float tkx, 
   return twr_sum;
 }
 
+void
+DISKinematicsReco::ResetBranchMap()
+{
+  /* Event branches */
+  for ( map< string , float >::iterator iter = _map_event_branches.begin();
+        iter != _map_event_branches.end();
+        ++iter)
+    {
+      (iter->second) = NAN;
+    }
+
+  /* EM candidate branches */
+  for ( map< TauCandidate::PROPERTY , vector<float> >::iterator iter = _map_em_candidate_branches.begin();
+        iter != _map_em_candidate_branches.end();
+        ++iter)
+    {
+      (iter->second).clear();
+    }
+
+  return;
+}
 
 int
 DISKinematicsReco::End(PHCompositeNode *topNode)
 {
   _tfile->cd();
-
-  if ( _e_candidate )
-    _e_candidate->Write();
 
   if ( _tree_event )
     _tree_event->Write();

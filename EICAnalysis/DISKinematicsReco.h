@@ -69,7 +69,6 @@ private:
   TFile *_tfile;
 
   /* output tree and variables */
-  TTree* _e_candidate;
   TTree* _tree_event;
 
   /* beam energies electron and proton */
@@ -80,13 +79,17 @@ private:
    * given towers */
   std::map< std::string, CaloRawTowerEval* > _map_towereval;
 
-  /** Map of TauCandidate properties that will be written to
+  //  /** Map of TauCandidate properties that will be written to
+  //   * output ROOT Tree */
+  //  std::map< TauCandidate::PROPERTY , float > _map_treebranches;
+
+  /** Map of EM Candidates that will be written to
    * output ROOT Tree */
-  std::map< TauCandidate::PROPERTY , float > _map_treebranches;
+  std::map< TauCandidate::PROPERTY , std::vector< float > > _map_em_candidate_branches;
 
   /** Map of Event properties that will be written to
    * output ROOT Tree */
-  std::map< std::string , float > _map_eventbranches;
+  std::map< std::string , float > _map_event_branches;
 
   /** helper pointer to topNode */
   PHCompositeNode *_topNode;
@@ -118,6 +121,9 @@ private:
   /** get energy in 3x3 calorimeter towers around track projection to calorimeter surface.
    * Copied from FastTrackingEval.C */
   float getE33( PHCompositeNode *, std::string, float, float );
+
+  /** Reset branch maps for each event */
+  void ResetBranchMap();
 
   /** Enum to identify calorimeter types */
   enum CALOTYPE
