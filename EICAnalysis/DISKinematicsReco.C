@@ -66,32 +66,46 @@ DISKinematicsReco::Init(PHCompositeNode *topNode)
   float dummy = 0;
   vector< float > vdummy;
 
-  _map_em_candidate_branches.insert( make_pair( TauCandidate::evtgen_pid , vdummy ) );
-  _map_em_candidate_branches.insert( make_pair( TauCandidate::evtgen_etotal , vdummy ) );
-  _map_em_candidate_branches.insert( make_pair( TauCandidate::evtgen_eta , vdummy ) );
-  _map_em_candidate_branches.insert( make_pair( TauCandidate::evtgen_phi , vdummy ) );
-  _map_em_candidate_branches.insert( make_pair( TauCandidate::cluster_id , vdummy ) );
-  _map_em_candidate_branches.insert( make_pair( TauCandidate::cluster_energy , vdummy ) );
-  _map_em_candidate_branches.insert( make_pair( TauCandidate::cluster_ecore , vdummy ) );
-  _map_em_candidate_branches.insert( make_pair( TauCandidate::cluster_et_iso , vdummy ) );
-  _map_em_candidate_branches.insert( make_pair( TauCandidate::cluster_prob , vdummy ) );
-  _map_em_candidate_branches.insert( make_pair( TauCandidate::cluster_eta , vdummy ) );
-  _map_em_candidate_branches.insert( make_pair( TauCandidate::cluster_phi , vdummy ) );
-  _map_em_candidate_branches.insert( make_pair( TauCandidate::cluster_ntower , vdummy ) );
-  _map_em_candidate_branches.insert( make_pair( TauCandidate::track_id , vdummy ) );
-  _map_em_candidate_branches.insert( make_pair( TauCandidate::track_quality , vdummy ) );
-  _map_em_candidate_branches.insert( make_pair( TauCandidate::track_eta , vdummy ) );
-  _map_em_candidate_branches.insert( make_pair( TauCandidate::track_phi , vdummy ) );
-  _map_em_candidate_branches.insert( make_pair( TauCandidate::track_ptotal , vdummy ) );
-  _map_em_candidate_branches.insert( make_pair( TauCandidate::track_ptrans , vdummy ) );
-  _map_em_candidate_branches.insert( make_pair( TauCandidate::track_charge , vdummy ) );
-  _map_em_candidate_branches.insert( make_pair( TauCandidate::track_e3x3_cemc , vdummy ) );
-  _map_em_candidate_branches.insert( make_pair( TauCandidate::track_e3x3_femc , vdummy ) );
-  _map_em_candidate_branches.insert( make_pair( TauCandidate::track_e3x3_eemc , vdummy ) );
-  _map_em_candidate_branches.insert( make_pair( TauCandidate::track_e3x3_ihcal , vdummy ) );
-  _map_em_candidate_branches.insert( make_pair( TauCandidate::track_e3x3_ohcal , vdummy ) );
-  _map_em_candidate_branches.insert( make_pair( TauCandidate::track_e3x3_fhcal , vdummy ) );
-  _map_em_candidate_branches.insert( make_pair( TauCandidate::track_e3x3_ehcal , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( TauCandidate::em_cluster_id , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( TauCandidate::em_cluster_prob , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( TauCandidate::em_cluster_posx , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( TauCandidate::em_cluster_posy , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( TauCandidate::em_cluster_posz , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( TauCandidate::em_cluster_e , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( TauCandidate::em_cluster_ecore , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( TauCandidate::em_cluster_et_iso , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( TauCandidate::em_cluster_theta , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( TauCandidate::em_cluster_phi , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( TauCandidate::em_cluster_pt , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( TauCandidate::em_cluster_ntower , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( TauCandidate::em_cluster_caloid , vdummy ) );
+
+  _map_em_candidate_branches.insert( make_pair( TauCandidate::em_track_id , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( TauCandidate::em_track_quality , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( TauCandidate::em_track_theta , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( TauCandidate::em_track_phi , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( TauCandidate::em_track_ptotal , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( TauCandidate::em_track_ptrans , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( TauCandidate::em_track_charge , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( TauCandidate::em_track_dca , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( TauCandidate::em_track_section , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( TauCandidate::em_track_e3x3_cemc , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( TauCandidate::em_track_e3x3_femc , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( TauCandidate::em_track_e3x3_eemc , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( TauCandidate::em_track_e3x3_ihcal , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( TauCandidate::em_track_e3x3_ohcal , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( TauCandidate::em_track_e3x3_fhcal , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( TauCandidate::em_track_e3x3_ehcal , vdummy ) );
+
+  _map_em_candidate_branches.insert( make_pair( TauCandidate::em_evtgen_pid , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( TauCandidate::em_evtgen_ptotal , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( TauCandidate::em_evtgen_theta , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( TauCandidate::em_evtgen_phi , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( TauCandidate::em_evtgen_charge , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( TauCandidate::em_reco_x_e , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( TauCandidate::em_reco_y_e , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( TauCandidate::em_reco_q2_e , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( TauCandidate::em_reco_w_e , vdummy ) );
 
   /* Add branches to map that defines output tree for event-wise properties */
   /*
@@ -106,44 +120,12 @@ DISKinematicsReco::Init(PHCompositeNode *topNode)
     cal_empz
     cal_pt --> "pt_miss" ?
     cal_pt_phi = atan2(sum(py)/sum(px)) --> "pt_miss_angle" ?
-
-    EM candidates:
-    em_ncand --> number of candidates
-
-    em_truth_pid( em_ncand)
-    em_truth_ptotal
-    em_truth_eta
-    em_truth_phi
-    em_truth_charge
-
-    em_cal_prob( em_ncand) --> probability
-    em_cal_pos( 3 , em_ncand)
-    em_cal_etotal (em_ncand)
-    em_cal_cone1 (ncand)
-    em_cal_cone2 (ncand)
-    em_cal_eta
-    em_cal_phi
-    em_cal_hadronic? (behind EMCAL)
-
-    em_trk_nr (ncand) track number
-    em_trk_dca (ncand)
-    em_trk_ptotal (ncand)
-    em_trk_theta (ncand)
-    em_trk_phi (ncand)
-    em_trk_q (ncand)
-    em_trk_pos (3, ncand)  --> extrapolated position
   */
+  _map_event_branches.insert( make_pair( "em_ncandidates" , dummy ) );
 
   _map_event_branches.insert( make_pair( "Et_miss" , dummy ) );
-  _map_event_branches.insert( make_pair( "n_cand" , dummy ) );
   _map_event_branches.insert( make_pair( "Et_miss_phi" , dummy ) );
-  _map_event_branches.insert( make_pair( "reco_electron_found" , dummy ) );
-  _map_event_branches.insert( make_pair( "reco_electron_is_electron" , dummy ) );
-  _map_event_branches.insert( make_pair( "reco_electron_eta" , dummy ) );
-  _map_event_branches.insert( make_pair( "reco_electron_phi" , dummy ) );
-  _map_event_branches.insert( make_pair( "reco_electron_ptotal" , dummy ) );
-  _map_event_branches.insert( make_pair( "reco_electron_x" , dummy ) );
-  _map_event_branches.insert( make_pair( "reco_electron_Q2" , dummy ) );
+
   _map_event_branches.insert( make_pair( "evtgen_process_id" , dummy ) );
   _map_event_branches.insert( make_pair( "evtgen_x" , dummy ) );
   _map_event_branches.insert( make_pair( "evtgen_Q2" , dummy ) );
@@ -185,43 +167,31 @@ DISKinematicsReco::process_event(PHCompositeNode *topNode)
    * sorted by energy. */
   type_map_tcan electronCandidateMap;
 
-  /* Get track collection with all tracks in this event */
-  SvtxTrackMap* trackmap =
-    findNode::getClass<SvtxTrackMap>(topNode,"SvtxTrackMap");
-  if (!trackmap)
-    {
-      cout << PHWHERE << "SvtxTrackMap node not found on node tree"
-           << endl;
-      return Fun4AllReturnCodes::ABORTEVENT;
-    }
+  /* Collect EM candidates */
+  CollectEmCandidates( electronCandidateMap );
 
-  /* Get track collection with all h-going tracks in this event */
-  SvtxTrackMap* trackmap_eta_plus =
-    findNode::getClass<SvtxTrackMap>(topNode,"SvtxTrackMap_FastSimEtaPlus");
-  if (!trackmap_eta_plus)
-    {
-      cout << PHWHERE << "SvtxTrackMap_FastSimEtaPlus node not found on node tree"
-           << endl;
-      return Fun4AllReturnCodes::ABORTEVENT;
-    }
+  /* Calculate kinematics for each em candidate */
+  AddReconstructedKinematics( electronCandidateMap );
 
-  /* Get track collection with all e-going tracks in this event */
-  SvtxTrackMap* trackmap_eta_minus =
-    findNode::getClass<SvtxTrackMap>(topNode,"SvtxTrackMap_FastSimEtaMinus");
-  if (!trackmap_eta_minus)
-    {
-      cout << PHWHERE << "SvtxTrackMap_FastSimEtaMinus node not found on node tree"
-           << endl;
-      return Fun4AllReturnCodes::ABORTEVENT;
-    }
+  /* Add information about em candidats to output tree */
+  WriteCandidatesToTree( electronCandidateMap );
 
-  /* Get collection of truth particles from event generator */
-  PHHepMCGenEventMap *genevtmap = findNode::getClass<PHHepMCGenEventMap>(topNode,"PHHepMCGenEventMap");
-  if (!genevtmap) {
-    cerr << PHWHERE << " ERROR: Can't find PHHepMCGenEventMap" << endl;
-    return Fun4AllReturnCodes::ABORTEVENT;
-  }
+  /* Add global event information */
+  AddGlobalCalorimeterInformation();
+  AddTruthEventInformation();
 
+  /* fill event information tree */
+  _tree_event->Fill();
+
+  /* count up event number */
+  _ievent ++;
+
+  return 0;
+}
+
+int
+DISKinematicsReco::CollectEmCandidates( type_map_tcan& electronCandidateMap )
+{
   /* Loop over all clusters in EEMC, CEMC, and FEMC to find electron candidates */
   vector< string > v_ecals;
   v_ecals.push_back("EEMC");
@@ -230,10 +200,10 @@ DISKinematicsReco::process_event(PHCompositeNode *topNode)
 
   for ( unsigned idx = 0; idx < v_ecals.size(); idx++ )
     {
-      CaloEvalStack * caloevalstack = new CaloEvalStack(topNode, v_ecals.at( idx ) );
+      CaloEvalStack * caloevalstack = new CaloEvalStack(_topNode, v_ecals.at( idx ) );
 
       string clusternodename = "CLUSTER_" + v_ecals.at( idx );
-      RawClusterContainer *clusterList = findNode::getClass<RawClusterContainer>(topNode,clusternodename.c_str());
+      RawClusterContainer *clusterList = findNode::getClass<RawClusterContainer>(_topNode,clusternodename.c_str());
       if (!clusterList) {
         cerr << PHWHERE << " ERROR: Can't find node " << clusternodename << endl;
         return false;
@@ -251,22 +221,8 @@ DISKinematicsReco::process_event(PHCompositeNode *topNode)
           InsertCandidateFromCluster( electronCandidateMap , cluster , caloevalstack );
         }
     }
-
-  /* Add information about tau candidats to output tree */
-  WriteCandidatesToTree( electronCandidateMap );
-
-  /* Add global event information */
-  AddGlobalEventInformation( electronCandidateMap, genevtmap );
-
-  /* fill event information tree */
-  _tree_event->Fill();
-
-  /* count up event number */
-  _ievent ++;
-
   return 0;
 }
-
 
 int
 DISKinematicsReco::InsertCandidateFromCluster( type_map_tcan& candidateMap , RawCluster *cluster , CaloEvalStack *caloevalstack )
@@ -277,16 +233,22 @@ DISKinematicsReco::InsertCandidateFromCluster( type_map_tcan& candidateMap , Raw
 
   /* set some initial cluster properties */
   float theta = atan2( cluster->get_r() , cluster->get_z() );
-  float eta =  -log(tan(theta/2.0));
+  //float eta =  -log(tan(theta/2.0));
+  float pt = cluster->get_energy() * sin( theta );
 
-  tc->set_property( TauCandidate::cluster_id, cluster->get_id() );
-  tc->set_property( TauCandidate::cluster_energy, cluster->get_energy() );
-  tc->set_property( TauCandidate::cluster_ecore, cluster->get_ecore() );
-  tc->set_property( TauCandidate::cluster_et_iso, cluster->get_et_iso() );
-  tc->set_property( TauCandidate::cluster_prob, cluster->get_prob() );
-  tc->set_property( TauCandidate::cluster_eta, eta );
-  tc->set_property( TauCandidate::cluster_phi, cluster->get_phi() );
-  tc->set_property( TauCandidate::cluster_ntower, (unsigned)cluster->getNTowers() );
+  tc->set_property( TauCandidate::em_cluster_id, cluster->get_id() );
+  tc->set_property( TauCandidate::em_cluster_prob, cluster->get_prob() );
+  tc->set_property( TauCandidate::em_cluster_posx, cluster->get_x() );
+  tc->set_property( TauCandidate::em_cluster_posy, cluster->get_y() );
+  tc->set_property( TauCandidate::em_cluster_posz, cluster->get_z() );
+  tc->set_property( TauCandidate::em_cluster_e, cluster->get_energy() );
+  tc->set_property( TauCandidate::em_cluster_ecore, cluster->get_ecore() );
+  tc->set_property( TauCandidate::em_cluster_et_iso, cluster->get_et_iso() );
+  tc->set_property( TauCandidate::em_cluster_theta, theta );
+  tc->set_property( TauCandidate::em_cluster_phi, cluster->get_phi() );
+  tc->set_property( TauCandidate::em_cluster_pt, pt );
+  tc->set_property( TauCandidate::em_cluster_ntower, (unsigned)cluster->getNTowers() );
+  tc->set_property( TauCandidate::em_cluster_caloid, (unsigned)0 );
 
   /* find matching reco track */
   SvtxTrack* best_track = FindClosestTrack( cluster );
@@ -295,16 +257,20 @@ DISKinematicsReco::InsertCandidateFromCluster( type_map_tcan& candidateMap , Raw
   if ( best_track )
     {
       /* set some initial track properties */
-      tc->set_property( TauCandidate::track_id, (uint)best_track->get_id() );
-      tc->set_property( TauCandidate::track_quality, best_track->get_quality() );
-      tc->set_property( TauCandidate::track_eta, best_track->get_eta() );
-      tc->set_property( TauCandidate::track_phi, best_track->get_phi() );
-      tc->set_property( TauCandidate::track_ptotal, best_track->get_p() );
-      tc->set_property( TauCandidate::track_ptrans, best_track->get_pt() );
-      tc->set_property( TauCandidate::track_charge, best_track->get_charge() );
-      tc->set_property( TauCandidate::track_e3x3_cemc, best_track->get_cal_energy_3x3(SvtxTrack::CEMC) );
-      tc->set_property( TauCandidate::track_e3x3_ihcal, best_track->get_cal_energy_3x3(SvtxTrack::HCALIN) );
-      tc->set_property( TauCandidate::track_e3x3_ohcal, best_track->get_cal_energy_3x3(SvtxTrack::HCALOUT) );
+      float theta = 2.0 * atan( exp( -1 * best_track->get_eta() ) );
+
+      tc->set_property( TauCandidate::em_track_id, (uint)best_track->get_id() );
+      tc->set_property( TauCandidate::em_track_quality, best_track->get_quality() );
+      tc->set_property( TauCandidate::em_track_theta, theta );
+      tc->set_property( TauCandidate::em_track_phi, best_track->get_phi() );
+      tc->set_property( TauCandidate::em_track_ptotal, best_track->get_p() );
+      tc->set_property( TauCandidate::em_track_ptrans, best_track->get_pt() );
+      tc->set_property( TauCandidate::em_track_charge, best_track->get_charge() );
+      tc->set_property( TauCandidate::em_track_dca, best_track->get_dca() );
+      tc->set_property( TauCandidate::em_track_section, (uint)0 );
+      tc->set_property( TauCandidate::em_track_e3x3_cemc, best_track->get_cal_energy_3x3(SvtxTrack::CEMC) );
+      tc->set_property( TauCandidate::em_track_e3x3_ihcal, best_track->get_cal_energy_3x3(SvtxTrack::HCALIN) );
+      tc->set_property( TauCandidate::em_track_e3x3_ohcal, best_track->get_cal_energy_3x3(SvtxTrack::HCALOUT) );
 
       // Use the track states to project to the FEMC / FHCAL / EEMC and generate
       // energy sums.
@@ -318,26 +284,27 @@ DISKinematicsReco::InsertCandidateFromCluster( type_map_tcan& candidateMap , Raw
         SvtxTrackState *temp = dynamic_cast<SvtxTrackState*>(state_itr->second);
 
         if( (temp->get_name()=="FHCAL") )
-          e3x3_fhcal = getE33( _topNode , "FHCAL" , temp->get_x() , temp->get_y() );
+          e3x3_fhcal = getE33Forward( "FHCAL" , temp->get_x() , temp->get_y() );
 
         if( (temp->get_name()=="FEMC") )
-          e3x3_femc = getE33( _topNode , "FEMC" , temp->get_x() , temp->get_y() );
+          e3x3_femc = getE33Forward( "FEMC" , temp->get_x() , temp->get_y() );
 
         if( (temp->get_name()=="EEMC") )
-          e3x3_eemc = getE33( _topNode , "EEMC" , temp->get_x() , temp->get_y() );
+          e3x3_eemc = getE33Forward( "EEMC" , temp->get_x() , temp->get_y() );
       }
 
       /* set candidate properties */
-      tc->set_property( TauCandidate::track_e3x3_fhcal, e3x3_fhcal );
-      tc->set_property( TauCandidate::track_e3x3_femc, e3x3_femc );
-      tc->set_property( TauCandidate::track_e3x3_eemc, e3x3_eemc );
+      tc->set_property( TauCandidate::em_track_e3x3_fhcal, e3x3_fhcal );
+      tc->set_property( TauCandidate::em_track_e3x3_femc, e3x3_femc );
+      tc->set_property( TauCandidate::em_track_e3x3_eemc, e3x3_eemc );
     }
 
-  /* set tau candidate MC truth properties */
-  tc->set_property( TauCandidate::evtgen_pid, (int)0 );
-  tc->set_property( TauCandidate::evtgen_etotal, (float)NAN );
-  tc->set_property( TauCandidate::evtgen_eta, (float)NAN );
-  tc->set_property( TauCandidate::evtgen_phi, (float)NAN );
+  /* set em candidate MC truth properties */
+  tc->set_property( TauCandidate::em_evtgen_pid, (int)NAN );
+  tc->set_property( TauCandidate::em_evtgen_ptotal, (float)NAN );
+  tc->set_property( TauCandidate::em_evtgen_theta, (float)NAN );
+  tc->set_property( TauCandidate::em_evtgen_phi, (float)NAN );
+  tc->set_property( TauCandidate::em_evtgen_charge, (int)NAN );
 
   /* If matching truth primary particle found: update truth information */
   CaloRawClusterEval* clustereval = caloevalstack->get_rawcluster_eval();
@@ -352,15 +319,16 @@ DISKinematicsReco::InsertCandidateFromCluster( type_map_tcan& candidateMap , Raw
       float gpt = sqrt(gpx * gpx + gpy * gpy);
 
       float gphi = NAN;
-      float geta = NAN;
+      float gtheta = NAN;
 
-      if (gpt != 0.0) geta = asinh(gpz / gpt);
+      if (gpt != 0.0) gtheta = asinh(gpz / gpt);
       gphi = atan2(gpy, gpx);
 
-      tc->set_property( TauCandidate::evtgen_pid, primary->get_pid() );
-      tc->set_property( TauCandidate::evtgen_etotal, (float)primary->get_e() );
-      tc->set_property( TauCandidate::evtgen_eta, geta );
-      tc->set_property( TauCandidate::evtgen_phi, gphi );
+      tc->set_property( TauCandidate::em_evtgen_pid, primary->get_pid() );
+      tc->set_property( TauCandidate::em_evtgen_ptotal, (float)primary->get_e() );
+      tc->set_property( TauCandidate::em_evtgen_theta, gtheta );
+      tc->set_property( TauCandidate::em_evtgen_phi, gphi );
+      tc->set_property( TauCandidate::em_evtgen_charge, (int)NAN );
     }
 
   /* add tau candidate to collection */
@@ -371,159 +339,7 @@ DISKinematicsReco::InsertCandidateFromCluster( type_map_tcan& candidateMap , Raw
 
 
 int
-DISKinematicsReco::InsertCandidateFromTrack( type_map_tcan& candidateMap , SvtxTrack* track )
-{
-  //    /* skip tracks below momentum threshold */
-  //    /* also do a cut on track quality here? */
-  //    if ( track->get_p() < _ele_track_pmin )
-  //      continue;
-
-  /* create new electron candidate */
-  TauCandidatev1 *tc = new TauCandidatev1();
-  tc->set_candidate_id( track->get_id() );
-
-  /* set some initial track properties */
-  tc->set_property( TauCandidate::track_id, (uint)track->get_id() );
-  tc->set_property( TauCandidate::track_quality, track->get_quality() );
-  tc->set_property( TauCandidate::track_eta, track->get_eta() );
-  tc->set_property( TauCandidate::track_phi, track->get_phi() );
-  tc->set_property( TauCandidate::track_ptotal, track->get_p() );
-  tc->set_property( TauCandidate::track_ptrans, track->get_pt() );
-  tc->set_property( TauCandidate::track_charge, track->get_charge() );
-  tc->set_property( TauCandidate::track_e3x3_cemc, track->get_cal_energy_3x3(SvtxTrack::CEMC) );
-  tc->set_property( TauCandidate::track_e3x3_ihcal, track->get_cal_energy_3x3(SvtxTrack::HCALIN) );
-  tc->set_property( TauCandidate::track_e3x3_ohcal, track->get_cal_energy_3x3(SvtxTrack::HCALOUT) );
-
-  // Use the track states to project to the FEMC / FHCAL / EEMC and generate
-  // energy sums.
-  float e3x3_femc = 0;
-  float e3x3_fhcal = 0;
-  float e3x3_eemc = 0;
-
-  for (SvtxTrack::ConstStateIter state_itr = track->begin_states();
-       state_itr != track->end_states(); state_itr++) {
-
-    SvtxTrackState *temp = dynamic_cast<SvtxTrackState*>(state_itr->second);
-    //std::cout << " State found at pathlength = " << temp->get_pathlength() << std::endl;
-    //getCluster(topNode, temp->get_name(), temp->get_eta(), temp->get_phi());
-
-    if( (temp->get_name()=="FHCAL") )
-      e3x3_fhcal = getE33( _topNode , "FHCAL" , temp->get_x() , temp->get_y() );
-
-    if( (temp->get_name()=="FEMC") )
-      e3x3_femc = getE33( _topNode , "FEMC" , temp->get_x() , temp->get_y() );
-
-    if( (temp->get_name()=="EEMC") )
-      e3x3_eemc = getE33( _topNode , "EEMC" , temp->get_x() , temp->get_y() );
-
-  }
-
-  /* set candidate properties */
-  tc->set_property( TauCandidate::track_e3x3_fhcal, e3x3_fhcal );
-  tc->set_property( TauCandidate::track_e3x3_femc, e3x3_femc );
-  tc->set_property( TauCandidate::track_e3x3_eemc, e3x3_eemc );
-
-  /* set tau candidate MC truth properties */
-  tc->set_property( TauCandidate::evtgen_pid, (int)0 );
-  tc->set_property( TauCandidate::evtgen_etotal, (float)NAN );
-  tc->set_property( TauCandidate::evtgen_eta, (float)NAN );
-  tc->set_property( TauCandidate::evtgen_phi, (float)NAN );
-
-  /* add tau candidate to collection */
-  candidateMap.insert( make_pair( track->get_p(), tc ) );
-
-  return 0;
-}
-
-
-int
-DISKinematicsReco::AddTrueElectronTag( type_map_tcan& electronCandidateMap, PHHepMCGenEventMap *genevtmap )
-{
-  return 0;
-}
-
-
-int
-DISKinematicsReco::AddCalorimeterInformation( type_map_tcan& electronCandidateMap, type_map_cdata* map_towers )
-{
-  return 0;
-}
-
-
-int
-DISKinematicsReco::AddTrackInformation( type_map_tcan& electronCandidateMap, SvtxTrackMap* trackmap )
-{
-  return 0;
-}
-
-
-int
-DISKinematicsReco::WriteCandidatesToTree( type_map_tcan& electronCandidateMap )
-{
-  /* Get number of electron candidates */
-  ( _map_event_branches.find( "n_cand" ) )->second = electronCandidateMap.size();
-
-  /* Loop over all EM candidates and add them to tree */
-  for (type_map_tcan::iterator iter = electronCandidateMap.begin();
-       iter != electronCandidateMap.end();
-       ++iter)
-    {
-      /* update information in map and fill tree */
-      for ( map< TauCandidate::PROPERTY , vector<float> >::iterator iter_prop = _map_em_candidate_branches.begin();
-            iter_prop != _map_em_candidate_branches.end();
-            ++iter_prop)
-        {
-          switch ( TauCandidate::get_property_info( (iter_prop->first) ).second ) {
-
-          case TauCandidate::type_float :
-            (iter_prop->second).push_back( (iter->second)->get_property_float( (iter_prop->first) ) );
-            break;
-
-          case TauCandidate::type_int :
-            (iter_prop->second).push_back( (iter->second)->get_property_int( (iter_prop->first) ) );
-            break;
-
-          case TauCandidate::type_uint :
-            (iter_prop->second).push_back( (iter->second)->get_property_uint( (iter_prop->first) ) );
-            break;
-
-          case TauCandidate::type_unknown :
-            break;
-          }
-        }
-    }
-
-  return 0;
-}
-
-
-TauCandidate*
-DISKinematicsReco::FindMinDeltaRCandidate( type_map_tcan *candidates, const float eta_ref, const float phi_ref )
-{
-  /* TauCandidate with eta, phi closest to reference */
-  TauCandidate* best_candidate = NULL;
-
-  return best_candidate;
-}
-
-
-float
-DISKinematicsReco::CalculateDeltaR( float eta1, float phi1, float eta2, float phi2 )
-{
-  /* Particles at phi = PI+x and phi = PI-x are actually close to each other in phi, but simply calculating
-   * the difference in phi would give a large distance (because phi ranges from -PI to +PI in the convention
-   * used. Account for this by subtracting 2PI is particles fall within this border area. */
-  if( ( phi1 < -0.9*TMath::Pi()) && ( phi2 >  0.9*TMath::Pi() ) ) phi2 = phi2 - 2*TMath::Pi();
-  if( ( phi1 >  0.9*TMath::Pi()) && ( phi2 < -0.9*TMath::Pi() ) ) phi1 = phi1 - 2*TMath::Pi();
-
-  float delta_R = sqrt( pow( eta2 - eta1, 2 ) + pow( phi2 - phi1, 2 ) );
-
-  return delta_R;
-}
-
-
-int
-DISKinematicsReco::AddGlobalEventInformation( type_map_tcan& electronCandidateMap , PHHepMCGenEventMap* geneventmap )
+DISKinematicsReco::AddGlobalCalorimeterInformation()
 {
   /* Missing transverse energy, transverse energy direction, and Energy sums, x and y components separately */
   float Et_miss = 0;
@@ -606,70 +422,131 @@ DISKinematicsReco::AddGlobalEventInformation( type_map_tcan& electronCandidateMa
   ( _map_event_branches.find( "Et_miss" ) )->second = Et_miss;
   ( _map_event_branches.find( "Et_miss_phi" ) )->second = Et_miss_phi;
 
-  /* Loop over electron candidates and find electron */
-  TauCandidate* the_electron = NULL;
+  return 0;
+}
+
+int
+DISKinematicsReco::WriteCandidatesToTree( type_map_tcan& electronCandidateMap )
+{
+  /* Get number of electron candidates */
+  ( _map_event_branches.find( "em_ncandidates" ) )->second = electronCandidateMap.size();
+
+  /* Loop over all EM candidates and add them to tree */
   for (type_map_tcan::iterator iter = electronCandidateMap.begin();
        iter != electronCandidateMap.end();
        ++iter)
     {
-      if ( ( iter->second)->get_property_int( TauCandidate::evtgen_pid ) == 11 )
-        the_electron = iter->second;
+      /* update information in map and fill tree */
+      for ( map< TauCandidate::PROPERTY , vector<float> >::iterator iter_prop = _map_em_candidate_branches.begin();
+            iter_prop != _map_em_candidate_branches.end();
+            ++iter_prop)
+        {
+          switch ( TauCandidate::get_property_info( (iter_prop->first) ).second ) {
+
+          case TauCandidate::type_float :
+            (iter_prop->second).push_back( (iter->second)->get_property_float( (iter_prop->first) ) );
+            break;
+
+          case TauCandidate::type_int :
+            (iter_prop->second).push_back( (iter->second)->get_property_int( (iter_prop->first) ) );
+            break;
+
+          case TauCandidate::type_uint :
+            (iter_prop->second).push_back( (iter->second)->get_property_uint( (iter_prop->first) ) );
+            break;
+
+          case TauCandidate::type_unknown :
+            break;
+          }
+        }
     }
 
-  /* update event information tree variables */
-  /* @TODO make this better protected against errors- if 'find' returns NULL pointer,
-     this will lead to a SEGMENTATION FAULT */
-  if ( the_electron )
+  return 0;
+}
+
+
+TauCandidate*
+DISKinematicsReco::FindMinDeltaRCandidate( type_map_tcan *candidates, const float eta_ref, const float phi_ref )
+{
+  /* TauCandidate with eta, phi closest to reference */
+  TauCandidate* best_candidate = NULL;
+
+  return best_candidate;
+}
+
+
+float
+DISKinematicsReco::CalculateDeltaR( float eta1, float phi1, float eta2, float phi2 )
+{
+  /* Particles at phi = PI+x and phi = PI-x are actually close to each other in phi, but simply calculating
+   * the difference in phi would give a large distance (because phi ranges from -PI to +PI in the convention
+   * used. Account for this by subtracting 2PI is particles fall within this border area. */
+  if( ( phi1 < -0.9*TMath::Pi()) && ( phi2 >  0.9*TMath::Pi() ) ) phi2 = phi2 - 2*TMath::Pi();
+  if( ( phi1 >  0.9*TMath::Pi()) && ( phi2 < -0.9*TMath::Pi() ) ) phi1 = phi1 - 2*TMath::Pi();
+
+  float delta_R = sqrt( pow( eta2 - eta1, 2 ) + pow( phi2 - phi1, 2 ) );
+
+  return delta_R;
+}
+
+int
+DISKinematicsReco::AddReconstructedKinematics( type_map_tcan& em_candidates )
+{
+  /* Loop over all EM candidates */
+  for (type_map_tcan::iterator iter = em_candidates.begin();
+       iter != em_candidates.end();
+       ++iter)
     {
-      ( _map_event_branches.find( "reco_electron_found" ) )->second = 1;
-      ( _map_event_branches.find( "reco_electron_is_electron" ) )->second =
-        ( the_electron->get_property_int( TauCandidate::evtgen_pid ) == 11 );
-      ( _map_event_branches.find( "reco_electron_eta" ) )->second =
-        the_electron->get_property_float( TauCandidate::cluster_eta );
-      ( _map_event_branches.find( "reco_electron_phi" ) )->second =
-        the_electron->get_property_float( TauCandidate::cluster_phi );
-      ( _map_event_branches.find( "reco_electron_ptotal" ) )->second =
-        the_electron->get_property_float( TauCandidate::cluster_energy );
+      /* Add reco kinematics based on scattered electron data */
+      TauCandidate* the_electron = iter->second;
+
+      float e0_E = _ebeam_E;
+      float p0_E = _pbeam_E;
+      //float e1_px = particle_e1->momentum().px();
+      //float e1_py = particle_e1->momentum().py();
+      //float e1_pz = particle_e1->momentum().pz();
+      //float e1_p = sqrt(e1_px*e1_px + e1_py*e1_py + e1_pz*e1_pz);
+      float e1_E = the_electron->get_property_float( TauCandidate::em_cluster_e );
+      float e1_theta = the_electron->get_property_float( TauCandidate::em_cluster_theta );
+      //      float e1_theta = 2.0 * atan( exp( -1 * e1_eta ) );
+      //float e1_phi = the_electron->get_property_float( TauCandidate::cluster_phi );
+
+      /* for purpose of calculations, 'theta' angle of the scattered electron is defined as angle
+         between 'scattered electron' and 'direction of incoming electron'. Since initial electron
+         has 'theta = Pi' in coordinate system, we need to use 'theta_rel = Pi - theta' for calculations
+         of kinematics. */
+      float e1_theta_rel = M_PI - e1_theta;
+
+      /* event kinematics */
+      float dis_s = 4 * e0_E * p0_E;
+
+      //      float dis_y = 1 - ( e1_E / (2*e0_E) ) * ( 1 - cos( e1_theta_rel ) );
+      float dis_y = 1 - (e1_E/e0_E) * pow( cos( e1_theta_rel / 2. ), 2 );
+
+      float dis_Q2 = 2 * e0_E * e1_E * ( 1 - cos( e1_theta_rel ) );
+
+      float dis_x = dis_Q2 / ( dis_s * dis_y );
+
+      float dis_W = 0;
+
+      the_electron->set_property( TauCandidate::em_reco_x_e, dis_x );
+      the_electron->set_property( TauCandidate::em_reco_y_e, dis_y );
+      the_electron->set_property( TauCandidate::em_reco_q2_e, dis_Q2 );
+      the_electron->set_property( TauCandidate::em_reco_w_e, dis_W );
     }
-  else
-    {
-      ( _map_event_branches.find( "reco_electron_found" ) )->second = 0;
-      ( _map_event_branches.find( "reco_electron_is_electron" ) )->second = NAN;
-      ( _map_event_branches.find( "reco_electron_eta" ) )->second = NAN;
-      ( _map_event_branches.find( "reco_electron_phi" ) )->second = NAN;
-      ( _map_event_branches.find( "reco_electron_ptotal" ) )->second = NAN;
-    }
 
-  /* Add reco kinematics based on scattered electron data */
-  float e0_E = _ebeam_E;
-  float p0_E = _pbeam_E;
-  //float e1_px = particle_e1->momentum().px();
-  //float e1_py = particle_e1->momentum().py();
-  //float e1_pz = particle_e1->momentum().pz();
-  //float e1_p = sqrt(e1_px*e1_px + e1_py*e1_py + e1_pz*e1_pz);
-  float e1_E = the_electron->get_property_float( TauCandidate::cluster_energy );
-  float e1_eta = the_electron->get_property_float( TauCandidate::cluster_eta );
-  float e1_theta = 2.0 * atan( exp( -1 * e1_eta ) );
-  //float e1_phi = the_electron->get_property_float( TauCandidate::cluster_phi );
+  return 0;
+}
 
-  /* for purpose of calculations, 'theta' angle of the scattered electron is defined as angle
-     between 'scattered electron' and 'direction of incoming electron'. Since initial electron
-     has 'theta = Pi' in coordinate system, we need to use 'theta_rel = Pi - theta' for calculations
-     of kinematics. */
-  float e1_theta_rel = M_PI - e1_theta;
-
-  /* event kinematics */
-  float dis_s = 4 * e0_E * p0_E;
-
-  //      float dis_y = 1 - ( e1_E / (2*e0_E) ) * ( 1 - cos( e1_theta_rel ) );
-  float dis_y = 1 - (e1_E/e0_E) * pow( cos( e1_theta_rel / 2. ), 2 );
-
-  float dis_Q2 = 2 * e0_E * e1_E * ( 1 - cos( e1_theta_rel ) );
-
-  float dis_x = dis_Q2 / ( dis_s * dis_y );
-
-  ( _map_event_branches.find( "reco_electron_x" ) )->second = dis_x;
-  ( _map_event_branches.find( "reco_electron_Q2" ) )->second = dis_Q2;
+int
+DISKinematicsReco::AddTruthEventInformation()
+{
+  /* Get collection of truth particles from event generator */
+  PHHepMCGenEventMap *geneventmap = findNode::getClass<PHHepMCGenEventMap>(_topNode,"PHHepMCGenEventMap");
+  if (!geneventmap) {
+    cerr << PHWHERE << " ERROR: Can't find PHHepMCGenEventMap" << endl;
+    return Fun4AllReturnCodes::ABORTEVENT;
+  }
 
   /* Add truth kinematics */
   int embedding_id = 1;
@@ -728,7 +605,7 @@ SvtxTrack* DISKinematicsReco::FindClosestTrack( RawCluster* cluster )
 
   /* Get track collection with all tracks in this event */
   SvtxTrackMap* trackmap =
-    findNode::getClass<SvtxTrackMap>(_topNode,"SvtxTrackMap");
+    findNode::getClass<SvtxTrackMap>(_topNode,"SvtxTrackMap_FastSim");
   if (!trackmap)
     {
       cout << PHWHERE << "SvtxTrackMap node not found on node tree"
@@ -741,6 +618,7 @@ SvtxTrack* DISKinematicsReco::FindClosestTrack( RawCluster* cluster )
        track_itr != trackmap->end(); track_itr++)
     {
       SvtxTrack* track =  dynamic_cast<SvtxTrack*>(track_itr->second);
+
       if ( caloname == "CEMC" &&
            track->get_cal_cluster_id(SvtxTrack::CEMC) == cluster->get_id() )
         {
@@ -752,41 +630,20 @@ SvtxTrack* DISKinematicsReco::FindClosestTrack( RawCluster* cluster )
   if ( best_track )
     return best_track;
 
-
-  /* Cluster / track matching for forward calormeters and tracking */
-  float max_dr = 5;
+  /* Cluster / track matching for forward calorimeters and tracking */
+  float max_dr = 10;
   float best_track_dr = 100 * max_dr;
 
   /* cluster position for easy reference */
   float cx = cluster->get_x();
   float cy = cluster->get_y();
 
-  /* Get track collection with all tracks in this event */
-  SvtxTrackMap* trackmap_fwd = NULL;
-
-  /* chose which forward tracking map to use based on calorimeter where cluster was found */
-  if ( caloname == "FEMC" )
+  /* If track map found: Loop over all tracks to find best match for cluster (forward calorimeters)*/
+  if ( trackmap &&
+       ( caloname == "FEMC" || caloname == "EEMC" ) )
     {
-      trackmap_fwd = findNode::getClass<SvtxTrackMap>(_topNode,"SvtxTrackMap_FastSimEtaPlus");
-      if (!trackmap_fwd)
-        {
-          cout << PHWHERE << "SvtxTrackMap_FastSimEtaPlus node not found on node tree" << endl;
-        }
-    }
-  else if ( caloname == "EEMC" )
-    {
-      trackmap_fwd = findNode::getClass<SvtxTrackMap>(_topNode,"SvtxTrackMap_FastSimEtaMinus");
-      if (!trackmap_fwd)
-        {
-          cout << PHWHERE << "SvtxTrackMap_FastSimEtaMinus node not found on node tree" << endl;
-        }
-    }
-
-  /* If forward track map found: Loop over all tracks to find best match for cluster */
-  if ( trackmap_fwd )
-    {
-      for (SvtxTrackMap::ConstIter track_itr = trackmap_fwd->begin();
-           track_itr != trackmap_fwd->end(); track_itr++)
+      for (SvtxTrackMap::ConstIter track_itr = trackmap->begin();
+           track_itr != trackmap->end(); track_itr++)
         {
           /* get pointer to track */
           SvtxTrack* track =  dynamic_cast<SvtxTrack*>(track_itr->second);
@@ -818,25 +675,133 @@ SvtxTrack* DISKinematicsReco::FindClosestTrack( RawCluster* cluster )
             }
         }
     }
+
+
+  /* If track found with barrel tracking, return it here- if not, proceed with alternative barrel cluster-track matching below. */
+  if ( best_track )
+    return best_track;
+
+  /* Cluster / track matching for barrel calorimeters and tracking */
+  float max_dr_barrel = 10;
+  float best_track_dr_barrel = 100 * max_dr_barrel;
+
+  float ctheta = atan2( cluster->get_r() , cluster->get_z() );
+  float ceta =  -log( tan( ctheta / 2.0 ) );
+  float cphi = cluster->get_phi();
+
+  /* If track map found: Loop over all tracks to find best match for cluster (barrel calorimeters)*/
+  if ( trackmap &&
+       ( caloname == "CEMC" ) )
+    {
+      for (SvtxTrackMap::ConstIter track_itr = trackmap->begin();
+           track_itr != trackmap->end(); track_itr++)
+        {
+          /* get pointer to track */
+          SvtxTrack* track =  dynamic_cast<SvtxTrack*>(track_itr->second);
+
+          /* distance between track and cluster */
+          float dr = max_dr_barrel;
+
+          /* loop over track states (projections) sotred for this track */
+          for (SvtxTrack::ConstStateIter state_itr = track->begin_states();
+               state_itr != track->end_states(); state_itr++)
+            {
+              /* get pointer to current track state */
+              SvtxTrackState *temp = dynamic_cast<SvtxTrackState*>(state_itr->second);
+
+              /* check if track state projection name matches calorimeter where cluster was found */
+              if( (temp->get_name()==caloname) )
+                {
+		  dr = sqrt( pow( ceta - temp->get_eta(), 2 ) + pow( cphi - temp->get_phi(), 2 ) );
+                  break;
+                }
+            }
+
+          /* check dr and update best_track and best_track_dr if this track is closest to cluster */
+          if ( dr < max_dr_barrel &&
+               dr < best_track_dr_barrel )
+            {
+              best_track = track;
+              best_track_dr_barrel = dr;
+            }
+        }
+    }
+
   return best_track;
 }
 
 
 float
-DISKinematicsReco::getE33( PHCompositeNode *topNode, string detName, float tkx, float tky )
+DISKinematicsReco::getE33Barrel( string detName, float phi, float eta ){
+
+  string towernodename = "TOWER_CALIB_" + detName;
+  // Grab the towers
+  RawTowerContainer* towerList = findNode::getClass<RawTowerContainer>(_topNode, towernodename.c_str());
+  if (!towerList)
+    {
+      std::cout << PHWHERE << ": Could not find node " << towernodename.c_str() << std::endl;
+      return -1;
+    }
+  string towergeomnodename = "TOWERGEOM_" + detName;
+  RawTowerGeomContainer *towergeo = findNode::getClass<RawTowerGeomContainer>(_topNode, towergeomnodename.c_str());
+  if (! towergeo)
+    {
+      cout << PHWHERE << ": Could not find node " << towergeomnodename.c_str() << endl;
+      return -1;
+    }
+
+  // calculate 3x3 and 5x5 tower energies
+  int binphi = towergeo->get_phibin(phi);
+  int bineta = towergeo->get_etabin(eta);
+
+  float energy_3x3 = 0.0;
+  float energy_5x5 = 0.0;
+
+  for (int iphi = binphi-2; iphi <= binphi+2; ++iphi) {
+    for (int ieta = bineta-2; ieta <= bineta+2; ++ieta) {
+
+      // wrap around
+      int wrapphi = iphi;
+      if (wrapphi < 0) {
+        wrapphi = towergeo->get_phibins() + wrapphi;
+      }
+      if (wrapphi >= towergeo->get_phibins()) {
+        wrapphi = wrapphi - towergeo->get_phibins();
+      }
+
+      // edges
+      if (ieta < 0) continue;
+      if (ieta >= towergeo->get_etabins()) continue;
+
+      RawTower* tower = towerList->getTower(ieta,wrapphi);
+      if (tower) {
+        energy_5x5 += tower->get_energy();
+        if (abs(iphi - binphi)<=1 and abs(ieta - bineta)<=1 )
+          energy_3x3 += tower->get_energy();
+      }
+
+    }
+  }
+
+  return energy_3x3;
+}
+
+
+float
+DISKinematicsReco::getE33Forward( string detName, float tkx, float tky )
 {
   float twr_sum = 0;
 
   string towernodename = "TOWER_CALIB_" + detName;
   // Grab the towers
-  RawTowerContainer* towers = findNode::getClass<RawTowerContainer>(topNode, towernodename.c_str());
+  RawTowerContainer* towers = findNode::getClass<RawTowerContainer>(_topNode, towernodename.c_str());
   if (!towers)
     {
       std::cout << PHWHERE << ": Could not find node " << towernodename.c_str() << std::endl;
       return -1;
     }
   string towergeomnodename = "TOWERGEOM_" + detName;
-  RawTowerGeomContainer *towergeom = findNode::getClass<RawTowerGeomContainer>(topNode, towergeomnodename.c_str());
+  RawTowerGeomContainer *towergeom = findNode::getClass<RawTowerGeomContainer>(_topNode, towergeomnodename.c_str());
   if (! towergeom)
     {
       cout << PHWHERE << ": Could not find node " << towergeomnodename.c_str() << endl;

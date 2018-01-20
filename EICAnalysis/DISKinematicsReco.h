@@ -94,19 +94,17 @@ private:
   /** helper pointer to topNode */
   PHCompositeNode *_topNode;
 
+  int CollectEmCandidates( type_map_tcan& );
+
   int InsertCandidateFromCluster( type_map_tcan& , RawCluster* , CaloEvalStack* );
 
-  int InsertCandidateFromTrack( type_map_tcan& , SvtxTrack* );
+  int AddGlobalCalorimeterInformation();
 
-  int AddTrueElectronTag( type_map_tcan&, PHHepMCGenEventMap* );
-
-  int AddCalorimeterInformation( type_map_tcan&, type_map_cdata* );
-
-  int AddTrackInformation( type_map_tcan&, SvtxTrackMap* );
+  int AddReconstructedKinematics( type_map_tcan& );
 
   int WriteCandidatesToTree( type_map_tcan& );
 
-  int AddGlobalEventInformation( type_map_tcan& ,   PHHepMCGenEventMap* );
+  int AddTruthEventInformation();
 
   /** Find tau candidate in map that is closest to given eta, phi angle */
   TauCandidate* FindMinDeltaRCandidate( type_map_tcan*, const float, const float );
@@ -120,7 +118,11 @@ private:
 
   /** get energy in 3x3 calorimeter towers around track projection to calorimeter surface.
    * Copied from FastTrackingEval.C */
-  float getE33( PHCompositeNode *, std::string, float, float );
+  float getE33Barrel( std::string, float, float );
+
+  /** get energy in 3x3 calorimeter towers around track projection to calorimeter surface.
+   * Copied from FastTrackingEval.C */
+  float getE33Forward( std::string, float, float );
 
   /** Reset branch maps for each event */
   void ResetBranchMap();
