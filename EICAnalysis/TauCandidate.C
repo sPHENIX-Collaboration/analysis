@@ -82,20 +82,6 @@ TauCandidate::get_property_info(const PROPERTY prop_id)
 
       // ------
 
-    case  evtgen_pid:
-      return make_pair("evtgen_pid",TauCandidate::type_int);
-
-    case  evtgen_etotal:
-      return make_pair("evtgen_etotal",TauCandidate::type_float);
-
-    case  evtgen_eta:
-      return make_pair("evtgen_eta",TauCandidate::type_float);
-
-    case  evtgen_phi:
-      return make_pair("evtgen_phi",TauCandidate::type_float);
-
-      // ------
-
     case  jet_id:
       return make_pair("jet_id",TauCandidate::type_uint);
 
@@ -192,50 +178,6 @@ TauCandidate::get_property_info(const PROPERTY prop_id)
 
       // ------
 
-    case  track_id:
-      return make_pair("track_id",TauCandidate::type_uint);
-
-    case  track_quality:
-      return make_pair("track_quality",TauCandidate::type_float);
-
-    case  track_eta:
-      return make_pair("track_eta",TauCandidate::type_float);
-
-    case  track_phi:
-      return make_pair("track_phi",TauCandidate::type_float);
-
-    case  track_ptotal:
-      return make_pair("track_ptotal",TauCandidate::type_float);
-
-    case  track_ptrans:
-      return make_pair("track_ptrans",TauCandidate::type_float);
-
-    case  track_charge:
-      return make_pair("track_charge",TauCandidate::type_int);
-
-    case  track_e3x3_cemc:
-      return make_pair("track_e3x3_cemc",TauCandidate::type_float);
-
-    case  track_e3x3_femc:
-      return make_pair("track_e3x3_femc",TauCandidate::type_float);
-
-    case  track_e3x3_eemc:
-      return make_pair("track_e3x3_eemc",TauCandidate::type_float);
-
-    case  track_e3x3_ihcal:
-      return make_pair("track_e3x3_ihcal",TauCandidate::type_float);
-
-    case  track_e3x3_ohcal:
-      return make_pair("track_e3x3_ohcal",TauCandidate::type_float);
-
-    case  track_e3x3_fhcal:
-      return make_pair("track_e3x3_fhcal",TauCandidate::type_float);
-
-    case  track_e3x3_ehcal:
-      return make_pair("track_e3x3_ehcal",TauCandidate::type_float);
-
-      // ------
-
     case  tracks_count_r02:
       return make_pair("tracks_count_r02",TauCandidate::type_uint);
 
@@ -256,29 +198,127 @@ TauCandidate::get_property_info(const PROPERTY prop_id)
 
       // ------
 
-    case  cluster_id:
-      return make_pair("cluster_id",TauCandidate::type_uint);
+      // EM Candidates:
 
-    case  cluster_energy:
-      return make_pair("cluster_energy",TauCandidate::type_float);
+    case  em_cluster_id:
+      return make_pair("em_cluster_id",TauCandidate::type_uint);
 
-    case  cluster_ecore:
-      return make_pair("cluster_ecore",TauCandidate::type_float);
+    case  em_cluster_prob:
+      return make_pair("em_cluster_prob",TauCandidate::type_float);
 
-    case  cluster_et_iso:
-      return make_pair("cluster_et_iso",TauCandidate::type_float);
+    case  em_cluster_posx:
+      return make_pair("em_cluster_posx",TauCandidate::type_float);
 
-    case  cluster_prob:
-      return make_pair("cluster_prob",TauCandidate::type_float);
+    case  em_cluster_posy:
+      return make_pair("em_cluster_posy",TauCandidate::type_float);
 
-    case  cluster_eta:
-      return make_pair("cluster_eta",TauCandidate::type_float);
+    case  em_cluster_posz:
+      return make_pair("em_cluster_posz",TauCandidate::type_float);
 
-    case  cluster_phi:
-      return make_pair("cluster_phi",TauCandidate::type_float);
+    case  em_cluster_e:
+      return make_pair("em_cluster_e",TauCandidate::type_float);
 
-    case  cluster_ntower:
-      return make_pair("cluster_ntower",TauCandidate::type_uint);
+    case  em_cluster_ecore:
+      return make_pair("em_cluster_ecore",TauCandidate::type_float);
+
+    case  em_cluster_et_iso:
+      return make_pair("em_cluster_et_iso",TauCandidate::type_float);
+
+    case  em_cluster_theta:
+      return make_pair("em_cluster_theta",TauCandidate::type_float);
+
+    case  em_cluster_phi:
+      return make_pair("em_cluster_phi",TauCandidate::type_float);
+
+    case  em_cluster_pt:
+      return make_pair("em_cluster_pt",TauCandidate::type_float);
+
+    case  em_cluster_ntower:
+      return make_pair("em_cluster_ntower",TauCandidate::type_uint);
+
+    case  em_cluster_caloid:
+      return make_pair("em_cluster_caloid",TauCandidate::type_uint);
+
+      // ------
+
+    case  em_track_id:
+      return make_pair("em_track_id",TauCandidate::type_uint);
+
+    case  em_track_quality:
+      return make_pair("em_track_quality",TauCandidate::type_float);
+
+    case  em_track_theta:
+      return make_pair("em_track_theta",TauCandidate::type_float);
+
+    case  em_track_phi:
+      return make_pair("em_track_phi",TauCandidate::type_float);
+
+    case  em_track_ptotal:
+      return make_pair("em_track_ptotal",TauCandidate::type_float);
+
+    case  em_track_ptrans:
+      return make_pair("em_track_ptrans",TauCandidate::type_float);
+
+    case  em_track_charge:
+      return make_pair("em_track_charge",TauCandidate::type_int);
+
+    case  em_track_dca:
+      return make_pair("em_track_dca",TauCandidate::type_float);
+
+    case  em_track_section:
+      return make_pair("em_track_section",TauCandidate::type_uint);
+
+    case  em_track_e3x3_cemc:
+      return make_pair("em_track_e3x3_cemc",TauCandidate::type_float);
+
+    case  em_track_e3x3_femc:
+      return make_pair("em_track_e3x3_femc",TauCandidate::type_float);
+
+    case  em_track_e3x3_eemc:
+      return make_pair("em_track_e3x3_eemc",TauCandidate::type_float);
+
+    case  em_track_e3x3_ihcal:
+      return make_pair("em_track_e3x3_ihcal",TauCandidate::type_float);
+
+    case  em_track_e3x3_ohcal:
+      return make_pair("em_track_e3x3_ohcal",TauCandidate::type_float);
+
+    case  em_track_e3x3_fhcal:
+      return make_pair("em_track_e3x3_fhcal",TauCandidate::type_float);
+
+    case  em_track_e3x3_ehcal:
+      return make_pair("em_track_e3x3_ehcal",TauCandidate::type_float);
+
+      // ------
+
+    case  em_evtgen_pid:
+      return make_pair("em_evtgen_pid",TauCandidate::type_int);
+
+    case  em_evtgen_ptotal:
+      return make_pair("em_evtgen_ptotal",TauCandidate::type_float);
+
+    case  em_evtgen_theta:
+      return make_pair("em_evtgen_eta",TauCandidate::type_float);
+
+    case  em_evtgen_phi:
+      return make_pair("em_evtgen_phi",TauCandidate::type_float);
+
+    case  em_evtgen_charge:
+      return make_pair("em_evtgen_charge",TauCandidate::type_int);
+
+      // ------
+
+    case  em_reco_x_e:
+      return make_pair("em_reco_x_e",TauCandidate::type_float);
+
+    case  em_reco_y_e:
+      return make_pair("em_reco_y_e",TauCandidate::type_float);
+
+    case  em_reco_q2_e:
+      return make_pair("em_reco_q2_e",TauCandidate::type_float);
+
+    case  em_reco_w_e:
+      return make_pair("em_reco_w_e",TauCandidate::type_float);
 
       // ------
 

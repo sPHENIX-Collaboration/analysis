@@ -41,11 +41,6 @@ public:
       evtgen_uds_eta = 13,
       evtgen_uds_phi = 14,
 
-      evtgen_pid = 21,
-      evtgen_etotal = 22,
-      evtgen_eta = 23,
-      evtgen_phi = 24,
-
       //-- Jet properties: 101 - ?  --
       jet_id = 101,
       jet_eta = 102,
@@ -93,35 +88,51 @@ public:
       tracks_chargesum_r02 = 220,
       tracks_chargesum_r04 = 221,
 
-      //-- 1-track properties: 251 - 300  --
-      track_id = 251,
-      track_quality = 252,
-      track_eta = 253,
-      track_phi = 254,
-      track_ptotal = 255,
-      track_ptrans = 256,
-      track_charge = 257,
-      track_e3x3_cemc = 260,
-      track_e3x3_femc = 261,
-      track_e3x3_eemc = 262,
-      track_e3x3_ihcal = 263,
-      track_e3x3_ohcal = 264,
-      track_e3x3_fhcal = 265,
-      track_e3x3_ehcal = 266,
+      //-- EM Candidates Cluster
+      em_cluster_id = 301,
+      em_cluster_prob = 302,
+      em_cluster_posx = 303,
+      em_cluster_posy = 304,
+      em_cluster_posz = 305,
+      em_cluster_e = 306,
+      em_cluster_ecore = 307,
+      em_cluster_et_iso = 308,
+      em_cluster_theta = 309,
+      em_cluster_phi = 310,
+      em_cluster_pt = 311,
+      em_cluster_ntower = 312,
+      em_cluster_caloid = 313,
 
-      //-- cluster properties: 401 - ? --
-      cluster_id = 401,
-      cluster_energy = 402,
-      cluster_ecore = 403,
-      cluster_et_iso = 404,
-      cluster_prob = 405,
-      //cluster_x = 406,
-      //cluster_y = 407,
-      //cluster_z = 408,
-      //cluster_r = 409,
-      cluster_eta = 410,
-      cluster_phi = 411,
-      cluster_ntower = 412,
+      //-- EM Candidates Tracks
+      em_track_id = 351,
+      em_track_quality = 352,
+      em_track_theta = 353,
+      em_track_phi = 354,
+      em_track_ptotal = 355,
+      em_track_ptrans = 356,
+      em_track_charge = 357,
+      em_track_dca = 358,
+      em_track_section = 359,
+      em_track_e3x3_cemc = 360,
+      em_track_e3x3_femc = 361,
+      em_track_e3x3_eemc = 362,
+      em_track_e3x3_ihcal = 363,
+      em_track_e3x3_ohcal = 364,
+      em_track_e3x3_fhcal = 365,
+      em_track_e3x3_ehcal = 366,
+
+      //-- EM Candidates Truth
+      em_evtgen_pid = 401,
+      em_evtgen_ptotal = 402,
+      em_evtgen_theta = 403,
+      em_evtgen_phi = 404,
+      em_evtgen_charge = 405,
+
+      //-- Event kinematics reconstructed from candidate
+      em_reco_x_e = 410,
+      em_reco_y_e = 411,
+      em_reco_q2_e = 412,
+      em_reco_w_e = 413,
 
       //! max limit in order to fit into 8 bit unsigned number
       prop_MAX_NUMBER = UCHAR_MAX
