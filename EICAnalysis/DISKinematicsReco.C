@@ -544,8 +544,8 @@ DISKinematicsReco::AddTruthEventInformation()
   /* Get collection of truth particles from event generator */
   PHHepMCGenEventMap *geneventmap = findNode::getClass<PHHepMCGenEventMap>(_topNode,"PHHepMCGenEventMap");
   if (!geneventmap) {
-    cerr << PHWHERE << " ERROR: Can't find PHHepMCGenEventMap" << endl;
-    return Fun4AllReturnCodes::ABORTEVENT;
+    std::cout << PHWHERE << " WARNING: Can't find requested PHHepMCGenEventMap" << endl;
+    return -1;
   }
 
   /* Add truth kinematics */
@@ -553,18 +553,18 @@ DISKinematicsReco::AddTruthEventInformation()
   PHHepMCGenEvent *genevt = geneventmap->get(embedding_id);
   if (!genevt)
     {
-      std::cout <<PHWHERE<<" - Fatal error - node PHHepMCGenEventMap missing subevent with embedding ID "<< embedding_id;
+      std::cout << PHWHERE << "WARNING: Node PHHepMCGenEventMap missing subevent with embedding ID "<< embedding_id;
       std::cout <<". Print PHHepMCGenEventMap:";
       geneventmap->identify();
-      return Fun4AllReturnCodes::ABORTRUN;
+      return -1;
     }
 
   HepMC::GenEvent* theEvent = genevt->getEvent();
 
   if ( !theEvent )
     {
-      cout << "Missing GenEvent!" << endl;
-      return Fun4AllReturnCodes::ABORTRUN;
+      std::cout << PHWHERE << "WARNING: Missing requested GenEvent!" << endl;
+      return -1;
     }
 
   int true_process_id = theEvent->signal_process_id();
