@@ -31,6 +31,9 @@ public:
   /** Find track with minimum delta R from given cluster */
   SvtxTrack* FindClosestTrack( RawCluster*, float& );
 
+  /** Find closest cluster to track */
+  RawCluster* getCluster( SvtxTrack*, std::string );
+
   /** get energy in 3x3 calorimeter towers around track projection to calorimeter surface.
    * Copied from FastTrackingEval.C */
   float getE33Barrel( std::string, float, float );

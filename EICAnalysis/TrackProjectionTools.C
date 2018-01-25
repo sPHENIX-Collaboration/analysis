@@ -174,68 +174,73 @@ SvtxTrack* TrackProjectionTools::FindClosestTrack( RawCluster* cluster, float& b
   return best_track;
 }
 
-/*
 RawCluster*
-void FastTrackingEval:: getCluster( PHCompositeNode *topNode, string detName, float eta, float phi, int secondFlag){
+TrackProjectionTools::getCluster( SvtxTrack* track, string detName )
+{
+  /* track direction */
+  float eta = 0;
+  float phi = 0;
 
+  /* closest cluster */
   RawCluster* cluster_min_dr = NULL;
 
   // pull the clusters
   string clusternodename = "CLUSTER_" + detName;
-  RawClusterContainer *clusterList = findNode::getClass<RawClusterContainer>(topNode,clusternodename.c_str());
+  RawClusterContainer *clusterList = findNode::getClass<RawClusterContainer>(_topNode,clusternodename.c_str());
   if (!clusterList) {
     cerr << PHWHERE << " ERROR: Can't find node " << clusternodename << endl;
-    return;
+    return NULL;
   }
 
   // loop over all clusters and find nearest
-  double min_r = DBL_MAX;
-  double min_e = -9999.0;
-  int min_n = -1;
+  double min_r = NAN;
 
   for (unsigned int k = 0; k < clusterList->size(); ++k) {
 
     RawCluster *cluster = clusterList->getCluster(k);
 
     double dphi = atan2(sin(phi-cluster->get_phi()),cos(phi-cluster->get_phi()));
-    double deta = eta-cluster->get_eta();
+
+    double cluster_theta = atan2( cluster->get_r() , cluster->get_z() );
+    double cluster_eta =  -log(tan(cluster_theta/2.0));
+
+    double deta = eta-cluster_eta;
     double r = sqrt(pow(dphi,2)+pow(deta,2));
 
     if (r < min_r) {
       min_r = r;
-      min_e = cluster->get_energy();
-      min_n = cluster->getNTowers();
+      cluster_min_dr = cluster;
     }
   }
 
-  if(detName == "FEMC") {
-    if(!secondFlag){
-      femc_cldr = min_r;
-      femc_clE = min_e;
-      femc_clN = min_n;
-    }
-    else{
-      femc_cldr2 = min_r;
-      femc_clE2 = min_e;
-      femc_clN2 = min_n;
-    }
-  }
-  else{
-    if(!secondFlag){
-      fhcal_cldr = min_r;
-      fhcal_clE = min_e;
-      fhcal_clN = min_n;
-    }
-    else{
-      fhcal_cldr2 = min_r;
-      fhcal_clE2 = min_e;
-      fhcal_clN2 = min_n;
-    }
-  }
-
+//  if(detName == "FEMC") {
+//    if(!secondFlag){
+//      femc_cldr = min_r;
+//      femc_clE = min_e;
+//      femc_clN = min_n;
+//    }
+//    else{
+//      femc_cldr2 = min_r;
+//      femc_clE2 = min_e;
+//      femc_clN2 = min_n;
+//    }
+//  }
+//  else{
+//    if(!secondFlag){
+//      fhcal_cldr = min_r;
+//      fhcal_clE = min_e;
+//      fhcal_clN = min_n;
+//    }
+//    else{
+//      fhcal_cldr2 = min_r;
+//      fhcal_clE2 = min_e;
+//      fhcal_clN2 = min_n;
+//    }
+//  }
+//
   return cluster_min_dr;
 }
-*/
+
 
 
 float
