@@ -595,6 +595,7 @@ SvtxTrack* DISKinematicsReco::FindClosestTrack( RawCluster* cluster, float& best
 
   /* best matching track */
   SvtxTrack* best_track = NULL;
+  best_track_dr = NAN;
 
   /* find name of calorimeter for this cluster */
   string caloname = "NONE";
@@ -633,9 +634,8 @@ SvtxTrack* DISKinematicsReco::FindClosestTrack( RawCluster* cluster, float& best
   if ( best_track )
     return best_track;
 
-  /* Cluster / track matching for forward calorimeters and tracking */
+  /* Cluster / track matching for barrel calorimeters and tracking */
   float max_dr = 10;
-  best_track_dr = NAN;
 
   /* cluster position for easy reference */
   float cx = cluster->get_x();
@@ -652,7 +652,7 @@ SvtxTrack* DISKinematicsReco::FindClosestTrack( RawCluster* cluster, float& best
           SvtxTrack* track =  dynamic_cast<SvtxTrack*>(track_itr->second);
 
           /* distance between track and cluster */
-          float dr = max_dr;
+          float dr = NAN;
 
           /* loop over track states (projections) sotred for this track */
           for (SvtxTrack::ConstStateIter state_itr = track->begin_states();
@@ -688,7 +688,6 @@ SvtxTrack* DISKinematicsReco::FindClosestTrack( RawCluster* cluster, float& best
 
   /* Cluster / track matching for barrel calorimeters and tracking */
   float max_dr_barrel = 10;
-  float best_track_dr_barrel = 100 * max_dr_barrel;
 
   float ctheta = atan2( cluster->get_r() , cluster->get_z() );
   float ceta =  -log( tan( ctheta / 2.0 ) );
@@ -705,7 +704,7 @@ SvtxTrack* DISKinematicsReco::FindClosestTrack( RawCluster* cluster, float& best
           SvtxTrack* track =  dynamic_cast<SvtxTrack*>(track_itr->second);
 
           /* distance between track and cluster */
-          float dr = max_dr_barrel;
+          float dr = NAN;
 
           /* loop over track states (projections) sotred for this track */
           for (SvtxTrack::ConstStateIter state_itr = track->begin_states();
@@ -724,10 +723,10 @@ SvtxTrack* DISKinematicsReco::FindClosestTrack( RawCluster* cluster, float& best
 
           /* check dr and update best_track and best_track_dr if this track is closest to cluster */
           if ( dr < max_dr_barrel &&
-               dr < best_track_dr_barrel )
+               dr < best_track_dr )
             {
               best_track = track;
-              best_track_dr_barrel = dr;
+              best_track_dr = dr;
             }
         }
     }
