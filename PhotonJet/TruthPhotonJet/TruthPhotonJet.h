@@ -1,15 +1,14 @@
 #ifndef __TRUTHPHOTONJET_H__
 #define __TRUTHPHOTONJET_H__
 
-
 #include <fun4all/SubsysReco.h>
 #include <vector>
 
-#include <TTree.h>
-#include <TMath.h>
+#include <TFile.h>
 #include <TH1.h>
 #include <TH2.h>
-#include <TFile.h>
+#include <TMath.h>
+#include <TTree.h>
 
 class PHCompositeNode;
 class RawClusterContainer;
@@ -24,13 +23,11 @@ class PHHepMCGenEventMap;
 class PHHepMCGenEvent;
 class CaloTriggerInfo;
 class PHGenIntegral;
-class TruthPhotonJet: public SubsysReco
+class TruthPhotonJet : public SubsysReco
 {
-
  public:
-  
-  TruthPhotonJet(const std::string &name="truthphotonjet.root");
-  double isoconeradius,mincluspt;
+  TruthPhotonJet(const std::string &name = "truthphotonjet.root");
+  double isoconeradius, mincluspt;
   double minjetpt;
   int jet_cone_size;
   int use_isocone;
@@ -38,23 +35,21 @@ class TruthPhotonJet: public SubsysReco
   int etalow;
   int etahigh;
   int _is_dijet_process;
-  int Init(PHCompositeNode*);
-  int process_event(PHCompositeNode*);
-  int End(PHCompositeNode*);
-  void set_jetpt_mincut(double pt){minjetpt = pt;};
-
-  void set_cluspt_mincut(double pt){mincluspt = pt;};
- 
-  void set_jetcone_size(int size){jet_cone_size = size;}//float for jet cone size, i.e. 0.2,0.3,0.4, etc.
-  void SetFirstEventNum(int eventnum){nevents = eventnum;}//setting the first event based on job number so that each event has an individual eventnum
-  void use_tracked_jets(int useit){eval_tracked_jets=useit;};
-  void set_eta_lowhigh(float low, float high){etalow=low; etahigh=high;};
-  void set_dijet_process(int yesorno){_is_dijet_process = yesorno;};
-
-
-private:
-
- 
+  int Init(PHCompositeNode *);
+  int process_event(PHCompositeNode *);
+  int End(PHCompositeNode *);
+  void set_jetpt_mincut(double pt) { minjetpt = pt; };
+  void set_cluspt_mincut(double pt) { mincluspt = pt; };
+  void set_jetcone_size(int size) { jet_cone_size = size; }    //float for jet cone size, i.e. 0.2,0.3,0.4, etc.
+  void SetFirstEventNum(int eventnum) { nevents = eventnum; }  //setting the first event based on job number so that each event has an individual eventnum
+  void use_tracked_jets(int useit) { eval_tracked_jets = useit; };
+  void set_eta_lowhigh(float low, float high)
+  {
+    etalow = low;
+    etahigh = high;
+  };
+  void set_dijet_process(int yesorno) { _is_dijet_process = yesorno; };
+ private:
   TH1 *ntruthconstituents_h;
 
   TFile *file;
@@ -64,7 +59,7 @@ private:
   TTree *truthtree;
 
   TTree *truthjettree;
- 
+
   TTree *event_tree;
   TTree *runinfo;
 
@@ -78,7 +73,7 @@ private:
   float x2;
   int partid1;
   int partid2;
- 
+
   float hardest_jetpt;
   float hardest_jetphi;
   float hardest_jeteta;
@@ -93,10 +88,10 @@ private:
   float clus_py;
   float clus_pz;
   float clus_theta;
-  float clus_x,clus_y,clus_z,clus_t;
+  float clus_x, clus_y, clus_z, clus_t;
 
   //track info
-  float tr_px,tr_py,tr_pz;
+  float tr_px, tr_py, tr_pz;
   float tr_p;
   float tr_pt;
   float tr_phi;
@@ -105,8 +100,8 @@ private:
   float chisq;
   unsigned int ndf;
   float dca;
-  float tr_x,tr_y,tr_z;
-  float truthtrackpx,truthtrackpy,truthtrackpz;
+  float tr_x, tr_y, tr_z;
+  float truthtrackpx, truthtrackpy, truthtrackpz;
   float truthtrackp;
   float truthtracke;
   float truthtrackpt;
@@ -117,7 +112,7 @@ private:
 
   //all truth jets
   float truthjetpt;
-  float truthjetpx,truthjetpy,truthjetpz;
+  float truthjetpx, truthjetpy, truthjetpz;
   float truthjetphi;
   float truthjeteta;
   float truthjetmass;
@@ -127,7 +122,7 @@ private:
 
   //all reco jets
   float recojetpt;
-  float recojetpx,recojetpy,recojetpz;
+  float recojetpx, recojetpy, recojetpz;
   float recojetphi;
   float recojeteta;
   float recojetmass;
@@ -139,7 +134,7 @@ private:
   //isophot+reco jet
   float _recojetid;
   float _recojetpt;
-  float _recojetpx,_recojetpy,_recojetpz;
+  float _recojetpx, _recojetpy, _recojetpz;
   float _recojetphi;
   float _recojeteta;
   float _recojetmass;
@@ -150,18 +145,17 @@ private:
   float jetdeta;
   float _truthjetid;
   float _truthjetpt;
-  float _truthjetpx,_truthjetpy,_truthjetpz;
+  float _truthjetpx, _truthjetpy, _truthjetpz;
   float _truthjetphi;
   float _truthjeteta;
   float _truthjetmass;
   float _truthjetp;
   float _truthjetenergy;
 
-
   //isophot+reco track jet
   float _trecojetid;
   float _trecojetpt;
-  float _trecojetpx,_trecojetpy,_trecojetpz;
+  float _trecojetpx, _trecojetpy, _trecojetpz;
   float _trecojetphi;
   float _trecojeteta;
   float _trecojetmass;
@@ -172,16 +166,15 @@ private:
   float tjetdeta;
   float _ttruthjetid;
   float _ttruthjetpt;
-  float _ttruthjetpx,_ttruthjetpy,_ttruthjetpz;
+  float _ttruthjetpx, _ttruthjetpy, _ttruthjetpz;
   float _ttruthjetphi;
   float _ttruthjeteta;
   float _ttruthjetmass;
   float _ttruthjetp;
   float _ttruthjetenergy;
 
-
   //isophot+reco hadron
-  float _tr_px,_tr_py,_tr_pz;
+  float _tr_px, _tr_py, _tr_pz;
   float _tr_p;
   float _tr_pt;
   float _tr_phi;
@@ -190,7 +183,7 @@ private:
   float _chisq;
   unsigned int _ndf;
   float _dca;
-  float _tr_x,_tr_y,_tr_z;
+  float _tr_x, _tr_y, _tr_z;
   float haddphi;
   float hadpout;
   float haddeta;
@@ -205,9 +198,8 @@ private:
   float _truthtracketa;
   int _truthtrackpid;
 
-
   //all truth particles
-  float truthpx,truthpy,truthpz;
+  float truthpx, truthpy, truthpz;
   float truthp;
   float truthphi;
   float trutheta;
@@ -216,7 +208,6 @@ private:
   int truthpid;
   int numparticlesinevent;
   int process_id;
-
 
   //clust truth variables
   float clustruthpx;
@@ -235,13 +226,11 @@ private:
 
   float eventdphi;
 
-  
   float intlumi;
   float nprocessedevents;
   float nacceptedevents;
   float xsecprocessedevents;
   float xsecacceptedevents;
-
 
   //trigger emulator info (emcal trigger)
   float E_4x4;
@@ -251,17 +240,12 @@ private:
   float phi_2x2;
   float eta_2x2;
 
-   void Set_Tree_Branches();
-   void initialize_values();
- 
-
-
-
+  void Set_Tree_Branches();
+  void initialize_values();
 
   const float pi2 = -1.5707963;
   const float threepi2 = 4.71238898;
   const float pi = 3.1415926;
-
 };
 
-#endif // __PHOTONJET_H__
+#endif  // __PHOTONJET_H__
