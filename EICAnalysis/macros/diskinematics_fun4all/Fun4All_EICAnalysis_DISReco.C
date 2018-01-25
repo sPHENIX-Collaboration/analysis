@@ -1,8 +1,10 @@
 
 int Fun4All_EICAnalysis_DISReco(
-				const int nEvents = 20,
-				//const char * inputFile = "/gpfs/mnt/gpfs02/phenix/scratch/spjeffas/g4sim/G4_Leptoquark_DST_p250_e20_1000events_1seed_ep.root",
-				const char * inputFile = "G4EICDetector_DIS_10x250_20events.root",
+				const int nEvents = 1000,
+				const char * inputFile = "/gpfs/mnt/gpfs02/phenix/scratch/spjeffas/g4sim/G4_Leptoquark_DST_p250_e20_1000events_1seed_DISneutral.root",
+				//const char * inputFile = "G4EICDetector_DIS_10x250_20events.root",
+				//const char * inputFile = "G4EICDetector_DIS_SingleParticle_ele_10GeV_m05eta.root",
+				//const char * inputFile = "G4EICDetector_DIS_SingleParticle_ele_10GeV_m2eta.root",
 				const char * outputFile = "eicana_disreco_test.root"
 				)
 {
@@ -20,7 +22,7 @@ int Fun4All_EICAnalysis_DISReco(
   gSystem->Load("libphhepmc.so");
   //  gSystem->Load("libg4testbench.so");
   //  gSystem->Load("libg4hough.so");
-  gSystem->Load("libcemc.so");
+  //  gSystem->Load("libcemc.so");
   gSystem->Load("libg4bbc.so");
   gSystem->Load("libg4eval.so");
 

@@ -35,8 +35,9 @@ void FastSim_Reco_EIC(int verbosity = 0) {
   kalman->set_trackmap_out_name("SvtxTrackMap_FastSim");
 
   // Saved track states (projections)
-  std::string state_names[] = {"CEMC", "HCALIN", "HCALOUT", "FEMC", "FHCAL", "EEMC"};
-  kalman->set_state_names(state_names, 6);
+  //std::string state_names[] = {"CEMC", "HCALIN", "HCALOUT", "FEMC", "FHCAL", "EEMC"};
+  std::string state_names[] = {"CEMC", "FEMC", "FHCAL", "EEMC"};
+  kalman->set_state_names(state_names, 4);
 
   kalman->set_fit_alg_name("KalmanFitterRefTrack");//
   kalman->set_primary_assumption_pid(-211); // -211 = pi-
