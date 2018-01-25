@@ -114,7 +114,7 @@ private:
 
 
   /** Find track with minimum delta R from given cluster */
-  SvtxTrack* FindClosestTrack( RawCluster* );
+  SvtxTrack* FindClosestTrack( RawCluster*, float& );
 
   /** get energy in 3x3 calorimeter towers around track projection to calorimeter surface.
    * Copied from FastTrackingEval.C */

@@ -289,6 +289,9 @@ TauCandidate::get_property_info(const PROPERTY prop_id)
     case  em_track_e3x3_ehcal:
       return make_pair("em_track_e3x3_ehcal",TauCandidate::type_float);
 
+    case  em_track_cluster_dr:
+      return make_pair("em_track_cluster_dr",TauCandidate::type_float);
+
       // ------
 
     case  em_evtgen_pid:

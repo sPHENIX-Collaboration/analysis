@@ -120,6 +120,7 @@ public:
       em_track_e3x3_ohcal = 364,
       em_track_e3x3_fhcal = 365,
       em_track_e3x3_ehcal = 366,
+      em_track_cluster_dr = 367,
 
       //-- EM Candidates Truth
       em_evtgen_pid = 401,
