@@ -30,6 +30,7 @@ pkginclude_HEADERS = \
   Quarkonia2LeptonsMC.h\
   TauCandidate.h\
   TauCandidatev1.h\
+  TrackProjectionTools.h \
   TruthTrackerHepMC.h
 
 libeicana_la_SOURCES = \
@@ -47,6 +48,7 @@ libeicana_la_SOURCES = \
   TauCandidate_Dict.C\
   TauCandidatev1.C\
   TauCandidatev1_Dict.C\
+  TrackProjectionTools.C \
   TruthTrackerHepMC.C
 
 # Rule for generating table CINT dictionaries.
