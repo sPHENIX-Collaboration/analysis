@@ -1,15 +1,14 @@
 #ifndef __PHOTONS_H__
 #define __PHOTONS_H__
 
-
 #include <fun4all/SubsysReco.h>
 #include <vector>
 
-#include <TTree.h>
-#include <TMath.h>
+#include <TFile.h>
 #include <TH1.h>
 #include <TH2.h>
-#include <TFile.h>
+#include <TMath.h>
+#include <TTree.h>
 
 class PHCompositeNode;
 class RawClusterContainer;
@@ -24,29 +23,28 @@ class PHHepMCGenEvent;
 //class RawTowerGeom;
 //class RawTowerGeomContainer;
 class GlobalVertex;
-class Photons: public SubsysReco
+class Photons : public SubsysReco
 {
-
  public:
-  
-  Photons(const std::string &name="photonjet.root");
-  double isoconeradius,mincluspt;
+  Photons(const std::string &name = "photonjet.root");
+  double isoconeradius, mincluspt;
   float jet_cone_size;
   float _etalow, _etahi;
   int use_isocone;
   int _embed;
-  int Init(PHCompositeNode*);
-  int process_event(PHCompositeNode*);
-  int End(PHCompositeNode*);
- 
-  void set_cluspt_mincut(double pt){mincluspt = pt;};
-  void SetFirstEventNum(int eventnum){nevents=eventnum;};
-  void set_eta_lowhigh(float etalow, float etahi){_etalow=etalow; _etahi=etahi;};
-  void use_embedding(int yesorno){_embed = yesorno;};
+  int Init(PHCompositeNode *);
+  int process_event(PHCompositeNode *);
+  int End(PHCompositeNode *);
 
-
-private:
-
+  void set_cluspt_mincut(double pt) { mincluspt = pt; };
+  void SetFirstEventNum(int eventnum) { nevents = eventnum; };
+  void set_eta_lowhigh(float etalow, float etahi)
+  {
+    _etalow = etalow;
+    _etahi = etahi;
+  };
+  void use_embedding(int yesorno) { _embed = yesorno; };
+ private:
   void Set_Tree_Branches();
   void initialize_to_zero();
 
@@ -74,7 +72,6 @@ private:
   float hcal_theta;
   float hcal_x, hcal_y, hcal_z, hcal_t;
 
-
   //cluster info
   float clus_energy;
   float clus_eta;
@@ -84,13 +81,13 @@ private:
   float clus_py;
   float clus_pz;
   float clus_theta;
-  float clus_x,clus_y,clus_z,clus_t;
+  float clus_x, clus_y, clus_z, clus_t;
   float fmodphi, fmodeta;
   float clus_ecore;
   float clus_chi2;
   float clus_prob;
-  
-   //recal cluster info
+
+  //recal cluster info
   float rclus_energy;
   float rclus_eta;
   float rclus_phi;
@@ -99,12 +96,11 @@ private:
   float rclus_py;
   float rclus_pz;
   float rclus_theta;
-  float rclus_x,rclus_y,rclus_z,rclus_t;
+  float rclus_x, rclus_y, rclus_z, rclus_t;
   float rclus_ecore, rclus_chi2, rclus_prob;
 
-  
   //all truth particles
-  float truthpx,truthpy,truthpz;
+  float truthpx, truthpy, truthpz;
   float truthp;
   float truthphi;
   float trutheta;
@@ -113,7 +109,6 @@ private:
   int truthpid;
   int numparticlesinevent;
   int process_id;
-
 
   //clust truth variables
   float clustruthpx;
@@ -133,8 +128,6 @@ private:
   float hclustrutheta;
   int hclustruthpid;
 
-
-
   //forward clusters
   float fclusenergy;
   float fclus_eta;
@@ -153,11 +146,9 @@ private:
   float fclus_py;
   float fclus_pz;
 
-
   const float pi2 = -1.5707963;
   const float threepi2 = 4.71238898;
   const float pi = 3.1415926;
-
 };
 
-#endif // __PHOTONS_H__
+#endif  // __PHOTONS_H__

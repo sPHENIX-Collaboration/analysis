@@ -3,15 +3,14 @@
 #ifndef __FORWARD_PI0S_H__
 #define __FORWARD_PI0S_H__
 
-
 #include <fun4all/SubsysReco.h>
 #include <vector>
 
-#include <TTree.h>
-#include <TMath.h>
+#include <TFile.h>
 #include <TH1.h>
 #include <TH2.h>
-#include <TFile.h>
+#include <TMath.h>
+#include <TTree.h>
 
 class PHCompositeNode;
 class RawClusterContainer;
@@ -23,28 +22,27 @@ class JetRecoEval;
 class SvtxTrackEval;
 class PHG4TruthInfoContainer;
 class PHHepMCGenEvent;
-class Forward_pi0s: public SubsysReco
+class Forward_pi0s : public SubsysReco
 {
-
  public:
-  
-  Forward_pi0s(const std::string &name="photonjet.root");
-  double isoconeradius,mincluspt;
+  Forward_pi0s(const std::string &name = "photonjet.root");
+  double isoconeradius, mincluspt;
   float jet_cone_size;
   float _etalow, _etahi;
   int use_isocone;
-  int Init(PHCompositeNode*);
-  int process_event(PHCompositeNode*);
-  int End(PHCompositeNode*);
- 
-  void set_cluspt_mincut(double pt){mincluspt = pt;};
-  void SetFirstEventNum(int eventnum){nevents=eventnum;};
-  void set_eta_lowhigh(float etalow, float etahi){_etalow=etalow; _etahi=etahi;};
+  int Init(PHCompositeNode *);
+  int process_event(PHCompositeNode *);
+  int End(PHCompositeNode *);
 
+  void set_cluspt_mincut(double pt) { mincluspt = pt; };
+  void SetFirstEventNum(int eventnum) { nevents = eventnum; };
+  void set_eta_lowhigh(float etalow, float etahi)
+  {
+    _etalow = etalow;
+    _etahi = etahi;
+  };
 
-
-private:
-
+ private:
   void Set_Tree_Branches();
   void initialize_things();
 
@@ -54,12 +52,12 @@ private:
   TTree *truth_g4particles;
   TTree *inhcal_tree;
   TTree *fcluster_tree;
- 
+
   std::string outfilename;
 
   int nevents;
   TH1F *histo;
-  
+
   //hcalcluster info
   float hcal_energy;
   float hcal_eta;
@@ -71,7 +69,6 @@ private:
   float hcal_theta;
   float hcal_x, hcal_y, hcal_z, hcal_t;
 
-
   //cluster info
   float clus_energy;
   float clus_eta;
@@ -81,7 +78,7 @@ private:
   float clus_py;
   float clus_pz;
   float clus_theta;
-  float clus_x,clus_y,clus_z,clus_t;
+  float clus_x, clus_y, clus_z, clus_t;
 
   float fclusenergy2;
   float fclus_eta2;
@@ -94,7 +91,7 @@ private:
   float invmass;
 
   //all truth particles
-  float truthpx,truthpy,truthpz;
+  float truthpx, truthpy, truthpz;
   float truthp;
   float truthphi;
   float trutheta;
@@ -103,7 +100,6 @@ private:
   int truthpid;
   int numparticlesinevent;
   int process_id;
-
 
   //clust truth variables
   float clustruthpx;
@@ -122,8 +118,6 @@ private:
   float hclustruthphi;
   float hclustrutheta;
   int hclustruthpid;
-
-
 
   //forward clusters
   float fclusenergy;
@@ -161,7 +155,7 @@ private:
   float tphotpt1;
   float tphotphi1;
   float tphoteta1;
-  
+
   float tphote2;
   float tphotpx2;
   float tphotpy2;
@@ -172,12 +166,9 @@ private:
   float tphotphi2;
   float tphoteta2;
 
-
-
   const float pi2 = -1.5707963;
   const float threepi2 = 4.71238898;
   const float pi = 3.1415926;
-
 };
 
-#endif // __FORWARD_PI0S_H__
+#endif  // __FORWARD_PI0S_H__
