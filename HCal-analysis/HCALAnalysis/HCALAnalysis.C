@@ -4,7 +4,7 @@
 
 #include <calobase/RawTowerContainer.h>
 #include <pdbcalbase/PdbParameterMap.h>
-#include <g4detectors/PHG4Parameters.h>
+#include <phparameter/PHParameters.h>
 #include <ffaobjects/EventHeader.h>
 #include <g4detectors/PHG4ScintillatorSlat.h>
 #include <g4detectors/PHG4ScintillatorSlatContainer.h>
