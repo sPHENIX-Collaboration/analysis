@@ -11,14 +11,16 @@
 #include <iostream>
 #include <g4jets/JetMap.h>
 #include <g4jets/Jet.h>
-#include <g4cemc/RawTowerContainer.h>
-#include <g4cemc/RawTowerGeomContainer.h>
-#include <g4cemc/RawTower.h>
-#include <g4cemc/RawTowerGeom.h>
 
-#include <g4cemc/RawClusterContainer.h>
-#include <g4cemc/RawCluster.h>
-
+#include <calobase/RawTowerContainer.h>
+#include <calobase/RawTowerGeomContainer.h>
+#include <calobase/RawTower.h>
+#include <calobase/RawTowerGeom.h>
+#include <g4vertex/GlobalVertexMap.h>
+#include <g4vertex/GlobalVertex.h> 
+#include <calobase/RawClusterContainer.h>
+#include <calobase/RawCluster.h>
+#include <calobase/RawClusterUtility.h>
 #include <g4detectors/PHG4ScintillatorSlatContainer.h>
 #include <g4eval/JetEvalStack.h>
 #include <g4hough/SvtxTrackMap.h>
@@ -31,6 +33,9 @@
 #include <HepMC/GenEvent.h>
 #include <HepMC/GenVertex.h>
 using namespace std;
+
+#include <iostream>
+#include <cassert>
 
 
 
@@ -109,7 +114,25 @@ int Photons::process_event(PHCompositeNode *topnode)
   
   RawTowerContainer *_towers = findNode::getClass<RawTowerContainer>(topnode,"TOWER_CALIB_CEMC");
 
+  GlobalVertexMap* vertexmap = findNode::getClass<GlobalVertexMap>(topnode,"GlobalVertexMap");
+  if (!vertexmap) {
+    
+    cout <<"Photons::process_event - Fatal Error - GlobalVertexMap node is missing. Please turn on the do_global flag in the main macro in order to reconstruct the global vertex."<<endl;
+    assert(vertexmap); // force quit
+    
+    return 0;
+  }
   
+  if (vertexmap->empty()) {
+    cout <<"Photons::process_event - Fatal Error - GlobalVertexMap node is empty. Please turn on the do_global flag in the main macro in order to reconstruct the global vertex."<<endl;
+    return 0;
+  }
+  
+   GlobalVertex* vtx = vertexmap->begin()->second;
+   if (vtx == nullptr) return 0;
+   
+
+
   if(!recal_clusters){
     cout<<"no recalibrated cemc clusters, bailing"<<endl;
     return 0;
@@ -196,12 +219,13 @@ int Photons::process_event(PHCompositeNode *topnode)
 
   for(hcaliter = begin_end_hcal.first; hcaliter!=begin_end_hcal.second;++hcaliter){
     RawCluster *cluster = hcaliter->second;
-
-    hcal_energy = cluster->get_energy();
-    hcal_eta = cluster->get_eta();
-    hcal_theta = 2.*TMath::ATan((TMath::Exp(-1.*clus_eta)));
-    hcal_pt = hcal_energy*TMath::Sin(hcal_theta);
-    hcal_phi = cluster->get_phi();
+    CLHEP::Hep3Vector vertex(vtx->get_x(),vtx->get_y(),vtx->get_z());
+    CLHEP::Hep3Vector E_vec_cluster = RawClusterUtility::GetEVec(*cluster, vertex);
+    hcal_energy = E_vec_cluster.mag();
+    hcal_eta = E_vec_cluster.pseudoRapidity();
+    hcal_theta = E_vec_cluster.getTheta();
+    hcal_pt = E_vec_cluster.perp();
+    hcal_phi = E_vec_cluster.getPhi();
 
     if(hcal_pt<0.2)
       continue;
@@ -274,12 +298,15 @@ int Photons::process_event(PHCompositeNode *topnode)
     for(fclusiter = fclus.first; fclusiter!=fclus.second; ++fclusiter){
       RawCluster *cluster = fclusiter->second;
       
-      fclusenergy = cluster->get_energy();
-      fclus_eta = cluster->get_eta();
-      fclus_phi = cluster->get_phi();
-      fclus_theta =  2.*TMath::ATan((TMath::Exp(-1.*fclus_eta))); 
-      fclus_pt = fclusenergy*TMath::Sin(fclus_theta);
-      
+      CLHEP::Hep3Vector vertex(vtx->get_x(),vtx->get_y(),vtx->get_z());
+      CLHEP::Hep3Vector E_vec_cluster = RawClusterUtility::GetEVec(*cluster, vertex);
+      fclusenergy = E_vec_cluster.mag();
+      fclus_eta = E_vec_cluster.pseudoRapidity();
+      fclus_theta = E_vec_cluster.getTheta();
+      fclus_pt = E_vec_cluster.perp();
+      fclus_phi = E_vec_cluster.getPhi();
+
+
       fclus_px = fclus_pt*TMath::Cos(fclus_phi);
       fclus_py = fclus_pt*TMath::Sin(fclus_phi);
       fclus_pz = fclusenergy*TMath::Cos(fclus_theta);
@@ -326,75 +353,84 @@ int Photons::process_event(PHCompositeNode *topnode)
 
   if(verbosity>1)
     cout<<"Getting the position recalibrated clusters"<<endl; 
-
-  for(rclusiter = rbegin_end.first; rclusiter!=rbegin_end.second; ++rclusiter){
- 
-    RawCluster *cluster = rclusiter->second;
-
-    rclus_energy = cluster->get_energy();
-    rclus_eta = cluster->get_eta();
-    rclus_theta = 2.*TMath::ATan((TMath::Exp(-1.*rclus_eta)));
-    rclus_pt = rclus_energy*TMath::Sin(rclus_theta);
-    rclus_phi = cluster->get_phi();
-  
-    if(rclus_pt<0.2)
-      continue;
-   
-    
-    TLorentzVector *clus = new TLorentzVector();
-    clus->SetPtEtaPhiE(rclus_pt,rclus_eta,rclus_phi,rclus_energy);
-    
-    float dumarray[4];
-    clus->GetXYZT(dumarray);
-    rclus_x = dumarray[0];
-    rclus_y = dumarray[1];
-    rclus_z = dumarray[2];
-    rclus_t = dumarray[3];
-
-    rclus_px = rclus_pt*TMath::Cos(rclus_phi);
-    rclus_py = rclus_pt*TMath::Sin(rclus_phi);
-    rclus_pz = sqrt(rclus_energy*rclus_energy-rclus_px*rclus_px-rclus_py*rclus_py);
-    rclus_ecore = cluster->get_ecore();
-    rclus_prob = cluster->get_prob();
-    rclus_chi2 = cluster->get_chi2();
-   
-
-   
-    //find the associated truth high pT photon with this reconstructed photon
-  
-    for( PHG4TruthInfoContainer::ConstIterator iter = range.first; iter!=range.second; ++iter){
-    
-      PHG4Particle *truth = iter->second;
-      
-      clustruthpid = truth->get_pid();
-      const int this_embed_id = truthinfo->isEmbeded(truth->get_track_id());
-      if(this_embed_id != 1 && _embed)
-	continue;
-      
-      if(clustruthpid==22 || fabs(clustruthpid)==11){
-	clustruthpx = truth->get_px();
-	clustruthpy = truth->get_py();
-	clustruthpz = truth->get_pz();
-	clustruthenergy = truth->get_e();
-	clustruthpt = sqrt(clustruthpx*clustruthpx+clustruthpy*clustruthpy);
+  if(_etahi<1.1)
+    {
+      for(rclusiter = rbegin_end.first; rclusiter!=rbegin_end.second; ++rclusiter){
 	
-	if(clustruthpt<0.3)
+	RawCluster *cluster = rclusiter->second;
+	
+	//rclus_energy = cluster->get_energy();
+	//rclus_eta = cluster->get_eta();
+	//rclus_theta = 2.*TMath::ATan((TMath::Exp(-1.*rclus_eta)));
+	//rclus_pt = rclus_energy*TMath::Sin(rclus_theta);
+	//rclus_phi = cluster->get_phi();
+	
+	CLHEP::Hep3Vector vertex(vtx->get_x(),vtx->get_y(),vtx->get_z());
+	CLHEP::Hep3Vector E_vec_cluster = RawClusterUtility::GetEVec(*cluster, vertex);
+	clus_energy = E_vec_cluster.mag();
+	clus_eta = E_vec_cluster.pseudoRapidity();
+	clus_theta = E_vec_cluster.getTheta();
+	clus_pt = E_vec_cluster.perp();
+	clus_phi = E_vec_cluster.getPhi();
+	
+	if(rclus_pt<0.2)
 	  continue;
 	
-	TLorentzVector vec;
-	vec.SetPxPyPzE(clustruthpx,clustruthpy,clustruthpz,clustruthenergy);
-	clustruthphi = vec.Phi();
-	clustrutheta = vec.Eta();
-	//once found it break out
 	
-	break;
+	TLorentzVector *clus = new TLorentzVector();
+	clus->SetPtEtaPhiE(rclus_pt,rclus_eta,rclus_phi,rclus_energy);
+	
+	float dumarray[4];
+	clus->GetXYZT(dumarray);
+	rclus_x = dumarray[0];
+	rclus_y = dumarray[1];
+	rclus_z = dumarray[2];
+	rclus_t = dumarray[3];
+	
+	rclus_px = rclus_pt*TMath::Cos(rclus_phi);
+	rclus_py = rclus_pt*TMath::Sin(rclus_phi);
+	rclus_pz = sqrt(rclus_energy*rclus_energy-rclus_px*rclus_px-rclus_py*rclus_py);
+	rclus_ecore = cluster->get_ecore();
+	rclus_prob = cluster->get_prob();
+	rclus_chi2 = cluster->get_chi2();
+	
+	
+	
+	//find the associated truth high pT photon with this reconstructed photon
+	
+	for( PHG4TruthInfoContainer::ConstIterator iter = range.first; iter!=range.second; ++iter){
+	  
+	  PHG4Particle *truth = iter->second;
+	  
+	  clustruthpid = truth->get_pid();
+	  const int this_embed_id = truthinfo->isEmbeded(truth->get_track_id());
+	  if(this_embed_id != 1 && _embed)
+	    continue;
+	  
+	  if(clustruthpid==22 || fabs(clustruthpid)==11){
+	    clustruthpx = truth->get_px();
+	    clustruthpy = truth->get_py();
+	    clustruthpz = truth->get_pz();
+	    clustruthenergy = truth->get_e();
+	    clustruthpt = sqrt(clustruthpx*clustruthpx+clustruthpy*clustruthpy);
+	    
+	    if(clustruthpt<0.3)
+	      continue;
+	    
+	    TLorentzVector vec;
+	    vec.SetPxPyPzE(clustruthpx,clustruthpy,clustruthpz,clustruthenergy);
+	    clustruthphi = vec.Phi();
+	    clustrutheta = vec.Eta();
+	    //once found it break out
+	    
+	    break;
+	  }
+	}
+	
+	
+	recal_cluster_tree->Fill();
       }
     }
-    
- 
-    recal_cluster_tree->Fill();
-  }
- 
 
   /***********************************************
 
@@ -410,15 +446,19 @@ int Photons::process_event(PHCompositeNode *topnode)
     cout<<"Get the non-position recalibrated clusters"<<endl;
   
   for(clusiter = begin_end.first; clusiter!=begin_end.second; ++clusiter){
-  
-    RawCluster *cluster = clusiter->second;
-
-    clus_energy = cluster->get_energy();
-    clus_eta = cluster->get_eta();
-    clus_theta = 2.*TMath::ATan((TMath::Exp(-1.*clus_eta)));
-    clus_pt = clus_energy*TMath::Sin(clus_theta);
-    clus_phi = cluster->get_phi();
     
+    RawCluster *cluster = clusiter->second;
+    
+
+    CLHEP::Hep3Vector vertex(vtx->get_x(),vtx->get_y(),vtx->get_z());
+    CLHEP::Hep3Vector E_vec_cluster = RawClusterUtility::GetEVec(*cluster, vertex);
+    clus_energy = E_vec_cluster.mag();
+    clus_eta = E_vec_cluster.pseudoRapidity();
+    clus_theta = E_vec_cluster.getTheta();
+    clus_pt = E_vec_cluster.perp();
+    clus_phi = E_vec_cluster.getPhi();
+
+  
     clus_ecore = cluster->get_ecore();
     clus_chi2 = cluster->get_chi2();
     clus_prob = cluster->get_prob();
@@ -483,7 +523,7 @@ int Photons::process_event(PHCompositeNode *topnode)
    DO THE EMCAL RECALIBRATION (if need be, recals are in database)
 
   ************************************************/
-    
+    /*
     std::vector<float> toweretas;
     std::vector<float> towerphis;
     std::vector<float> towerenergies;
@@ -548,7 +588,7 @@ int Photons::process_event(PHCompositeNode *topnode)
 
   //TOWER GEOMETRY, if needed can use to check the actual limits of the towers
 
-  /*
+  
    RawTowerGeomContainer *_towergeoms = findNode::getClass<RawTowerGeomContainer>(topnode,"TOWERGEOM_CEMC");
 
    if(!_towergeoms){
@@ -579,11 +619,14 @@ int Photons::process_event(PHCompositeNode *topnode)
     
      cout<<eta<<"   "<<phi<<"   "<<center_x<<","<<center_y<<","<<center_z<<"     "<<size_x<<","<<size_y<<","<<size_z<<endl;
      
+    */
+  
 
-   }
-  */
 
 
+
+  }  
+  
   nevents++;
   tree->Fill();
   return 0;

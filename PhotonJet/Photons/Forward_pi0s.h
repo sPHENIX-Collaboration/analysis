@@ -1,5 +1,7 @@
-#ifndef __PHOTONS_H__
-#define __PHOTONS_H__
+
+
+#ifndef __FORWARD_PI0S_H__
+#define __FORWARD_PI0S_H__
 
 
 #include <fun4all/SubsysReco.h>
@@ -21,20 +23,16 @@ class JetRecoEval;
 class SvtxTrackEval;
 class PHG4TruthInfoContainer;
 class PHHepMCGenEvent;
-//class RawTowerGeom;
-//class RawTowerGeomContainer;
-class GlobalVertex;
-class Photons: public SubsysReco
+class Forward_pi0s: public SubsysReco
 {
 
  public:
   
-  Photons(const std::string &name="photonjet.root");
+  Forward_pi0s(const std::string &name="photonjet.root");
   double isoconeradius,mincluspt;
   float jet_cone_size;
   float _etalow, _etahi;
   int use_isocone;
-  int _embed;
   int Init(PHCompositeNode*);
   int process_event(PHCompositeNode*);
   int End(PHCompositeNode*);
@@ -42,13 +40,13 @@ class Photons: public SubsysReco
   void set_cluspt_mincut(double pt){mincluspt = pt;};
   void SetFirstEventNum(int eventnum){nevents=eventnum;};
   void set_eta_lowhigh(float etalow, float etahi){_etalow=etalow; _etahi=etahi;};
-  void use_embedding(int yesorno){_embed = yesorno;};
+
 
 
 private:
 
   void Set_Tree_Branches();
-  void initialize_to_zero();
+  void initialize_things();
 
   TFile *file;
   TTree *tree;
@@ -56,13 +54,12 @@ private:
   TTree *truth_g4particles;
   TTree *inhcal_tree;
   TTree *fcluster_tree;
-  TTree *recal_cluster_tree;
-
+ 
   std::string outfilename;
 
   int nevents;
   TH1F *histo;
-
+  
   //hcalcluster info
   float hcal_energy;
   float hcal_eta;
@@ -85,24 +82,17 @@ private:
   float clus_pz;
   float clus_theta;
   float clus_x,clus_y,clus_z,clus_t;
-  float fmodphi, fmodeta;
-  float clus_ecore;
-  float clus_chi2;
-  float clus_prob;
-  
-   //recal cluster info
-  float rclus_energy;
-  float rclus_eta;
-  float rclus_phi;
-  float rclus_pt;
-  float rclus_px;
-  float rclus_py;
-  float rclus_pz;
-  float rclus_theta;
-  float rclus_x,rclus_y,rclus_z,rclus_t;
-  float rclus_ecore, rclus_chi2, rclus_prob;
 
-  
+  float fclusenergy2;
+  float fclus_eta2;
+  float fclus_phi2;
+  float fclus_theta2;
+  float fclus_pt2;
+  float fclus_px2;
+  float fclus_py2;
+  float fclus_pz2;
+  float invmass;
+
   //all truth particles
   float truthpx,truthpy,truthpz;
   float truthp;
@@ -153,6 +143,36 @@ private:
   float fclus_py;
   float fclus_pz;
 
+  float tpi0e;
+  float tpi0px;
+  float tpi0py;
+  float tpi0pz;
+  float tpi0pid;
+  float tpi0pt;
+  float tpi0phi;
+  float tpi0eta;
+
+  float tphote1;
+  float tphotpx1;
+  float tphotpy1;
+  float tphotpz1;
+  int tphotpid1;
+  int tphotparentid1;
+  float tphotpt1;
+  float tphotphi1;
+  float tphoteta1;
+  
+  float tphote2;
+  float tphotpx2;
+  float tphotpy2;
+  float tphotpz2;
+  int tphotpid2;
+  int tphotparentid2;
+  float tphotpt2;
+  float tphotphi2;
+  float tphoteta2;
+
+
 
   const float pi2 = -1.5707963;
   const float threepi2 = 4.71238898;
@@ -160,4 +180,4 @@ private:
 
 };
 
-#endif // __PHOTONS_H__
+#endif // __FORWARD_PI0S_H__
