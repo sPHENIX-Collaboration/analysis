@@ -96,6 +96,7 @@ DISKinematicsReco::Init(PHCompositeNode *topNode)
   _map_em_candidate_branches.insert( make_pair( TauCandidate::em_track_e3x3_ohcal , vdummy ) );
   _map_em_candidate_branches.insert( make_pair( TauCandidate::em_track_e3x3_fhcal , vdummy ) );
   _map_em_candidate_branches.insert( make_pair( TauCandidate::em_track_e3x3_ehcal , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( TauCandidate::em_track_cluster_dr , vdummy ) );
 
   _map_em_candidate_branches.insert( make_pair( TauCandidate::em_evtgen_pid , vdummy ) );
   _map_em_candidate_branches.insert( make_pair( TauCandidate::em_evtgen_ptotal , vdummy ) );
@@ -251,7 +252,8 @@ DISKinematicsReco::InsertCandidateFromCluster( type_map_tcan& candidateMap , Raw
   tc->set_property( TauCandidate::em_cluster_caloid, (unsigned)0 );
 
   /* find matching reco track */
-  SvtxTrack* best_track = FindClosestTrack( cluster );
+  float best_track_dr = NAN;
+  SvtxTrack* best_track = FindClosestTrack( cluster, best_track_dr );
 
   /* IF matching track found: set track properties */
   if ( best_track )
@@ -271,6 +273,7 @@ DISKinematicsReco::InsertCandidateFromCluster( type_map_tcan& candidateMap , Raw
       tc->set_property( TauCandidate::em_track_e3x3_cemc, best_track->get_cal_energy_3x3(SvtxTrack::CEMC) );
       tc->set_property( TauCandidate::em_track_e3x3_ihcal, best_track->get_cal_energy_3x3(SvtxTrack::HCALIN) );
       tc->set_property( TauCandidate::em_track_e3x3_ohcal, best_track->get_cal_energy_3x3(SvtxTrack::HCALOUT) );
+      tc->set_property( TauCandidate::em_track_cluster_dr, best_track_dr );
 
       // Use the track states to project to the FEMC / FHCAL / EEMC and generate
       // energy sums.
@@ -587,7 +590,7 @@ DISKinematicsReco::AddTruthEventInformation()
 }
 
 
-SvtxTrack* DISKinematicsReco::FindClosestTrack( RawCluster* cluster )
+SvtxTrack* DISKinematicsReco::FindClosestTrack( RawCluster* cluster, float& best_track_dr )
 {
 
   /* best matching track */
@@ -614,17 +617,17 @@ SvtxTrack* DISKinematicsReco::FindClosestTrack( RawCluster* cluster )
 
   /* Loop over all tracks from BARREL tracking and see if one points to the same
    * cluster as the reference clusters (i.e. matching ID in the same calorimeter) */
-  for (SvtxTrackMap::ConstIter track_itr = trackmap->begin();
-       track_itr != trackmap->end(); track_itr++)
-    {
-      SvtxTrack* track =  dynamic_cast<SvtxTrack*>(track_itr->second);
-
-      if ( caloname == "CEMC" &&
-           track->get_cal_cluster_id(SvtxTrack::CEMC) == cluster->get_id() )
-        {
-          best_track = track;
-        }
-    }
+  //for (SvtxTrackMap::ConstIter track_itr = trackmap->begin();
+  //     track_itr != trackmap->end(); track_itr++)
+  //  {
+  //    SvtxTrack* track =  dynamic_cast<SvtxTrack*>(track_itr->second);
+  //
+  //    if ( caloname == "CEMC" &&
+  //         track->get_cal_cluster_id(SvtxTrack::CEMC) == cluster->get_id() )
+  //      {
+  //        best_track = track;
+  //      }
+  //  }
 
   /* If track found with barrel tracking, return it here- if not, proceed with forward tracking below. */
   if ( best_track )
@@ -632,7 +635,7 @@ SvtxTrack* DISKinematicsReco::FindClosestTrack( RawCluster* cluster )
 
   /* Cluster / track matching for forward calorimeters and tracking */
   float max_dr = 10;
-  float best_track_dr = 100 * max_dr;
+  best_track_dr = NAN;
 
   /* cluster position for easy reference */
   float cx = cluster->get_x();
@@ -667,8 +670,10 @@ SvtxTrack* DISKinematicsReco::FindClosestTrack( RawCluster* cluster )
             }
 
           /* check dr and update best_track and best_track_dr if this track is closest to cluster */
-          if ( dr < max_dr &&
-               dr < best_track_dr )
+          if ( ( best_track_dr != best_track_dr ) ||
+	       ( dr < max_dr &&
+		 dr < best_track_dr )
+	       )
             {
               best_track = track;
               best_track_dr = dr;
@@ -712,7 +717,7 @@ SvtxTrack* DISKinematicsReco::FindClosestTrack( RawCluster* cluster )
               /* check if track state projection name matches calorimeter where cluster was found */
               if( (temp->get_name()==caloname) )
                 {
-		  dr = sqrt( pow( ceta - temp->get_eta(), 2 ) + pow( cphi - temp->get_phi(), 2 ) );
+                  dr = sqrt( pow( ceta - temp->get_eta(), 2 ) + pow( cphi - temp->get_phi(), 2 ) );
                   break;
                 }
             }
@@ -729,6 +734,69 @@ SvtxTrack* DISKinematicsReco::FindClosestTrack( RawCluster* cluster )
 
   return best_track;
 }
+
+/*
+RawCluster*
+void FastTrackingEval:: getCluster( PHCompositeNode *topNode, string detName, float eta, float phi, int secondFlag){
+
+  RawCluster* cluster_min_dr = NULL;
+
+  // pull the clusters
+  string clusternodename = "CLUSTER_" + detName;
+  RawClusterContainer *clusterList = findNode::getClass<RawClusterContainer>(topNode,clusternodename.c_str());
+  if (!clusterList) {
+    cerr << PHWHERE << " ERROR: Can't find node " << clusternodename << endl;
+    return;
+  }
+
+  // loop over all clusters and find nearest
+  double min_r = DBL_MAX;
+  double min_e = -9999.0;
+  int min_n = -1;
+
+  for (unsigned int k = 0; k < clusterList->size(); ++k) {
+
+    RawCluster *cluster = clusterList->getCluster(k);
+
+    double dphi = atan2(sin(phi-cluster->get_phi()),cos(phi-cluster->get_phi()));
+    double deta = eta-cluster->get_eta();
+    double r = sqrt(pow(dphi,2)+pow(deta,2));
+
+    if (r < min_r) {
+      min_r = r;
+      min_e = cluster->get_energy();
+      min_n = cluster->getNTowers();
+    }
+  }
+
+  if(detName == "FEMC") {
+    if(!secondFlag){
+      femc_cldr = min_r;
+      femc_clE = min_e;
+      femc_clN = min_n;
+    }
+    else{
+      femc_cldr2 = min_r;
+      femc_clE2 = min_e;
+      femc_clN2 = min_n;
+    }
+  }
+  else{
+    if(!secondFlag){
+      fhcal_cldr = min_r;
+      fhcal_clE = min_e;
+      fhcal_clN = min_n;
+    }
+    else{
+      fhcal_cldr2 = min_r;
+      fhcal_clE2 = min_e;
+      fhcal_clN2 = min_n;
+    }
+  }
+
+  return cluster_min_dr;
+}
+*/
 
 
 float
