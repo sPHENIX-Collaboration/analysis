@@ -614,7 +614,7 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
     //depending on the vertex position
     //this is important for e.g. eta determination and E_T determination
     CLHEP::Hep3Vector vertex(vtx->get_x(), vtx->get_y(), vtx->get_z());
-    CLHEP::Hep3Vector E_vec_cluster = RawClusterUtility::GetEVec(*cluster, vertex);
+    CLHEP::Hep3Vector E_vec_cluster = RawClusterUtility::GetECoreVec(*cluster, vertex);
     clus_energy = E_vec_cluster.mag();
     clus_eta = E_vec_cluster.pseudoRapidity();
     clus_theta = E_vec_cluster.getTheta();
@@ -984,7 +984,7 @@ void PhotonJet::GetRecoHadronsAndJetsAA(RawCluster *trig,
                                         GlobalVertex *vtx)
 {
   CLHEP::Hep3Vector vertex(vtx->get_x(), vtx->get_y(), vtx->get_z());
-  CLHEP::Hep3Vector E_vec_cluster = RawClusterUtility::GetEVec(*trig, vertex);
+  CLHEP::Hep3Vector E_vec_cluster = RawClusterUtility::GetECoreVec(*trig, vertex);
 
   float trig_phi = E_vec_cluster.getPhi();
   float trig_eta = E_vec_cluster.pseudoRapidity();
@@ -1132,7 +1132,7 @@ void PhotonJet::GetRecoHadronsAndJets(RawCluster *trig,
                                       GlobalVertex *vtx)
 {
   CLHEP::Hep3Vector vertex(vtx->get_x(), vtx->get_y(), vtx->get_z());
-  CLHEP::Hep3Vector E_vec_cluster = RawClusterUtility::GetEVec(*trig, vertex);
+  CLHEP::Hep3Vector E_vec_cluster = RawClusterUtility::GetECoreVec(*trig, vertex);
 
   float trig_phi = E_vec_cluster.getPhi();
   float trig_eta = E_vec_cluster.pseudoRapidity();
@@ -1461,7 +1461,7 @@ float PhotonJet::ConeSum(RawCluster *cluster,
   float energyptsum = 0;
 
   CLHEP::Hep3Vector vertex(vtx->get_x(), vtx->get_y(), vtx->get_z());
-  CLHEP::Hep3Vector E_vec_cluster = RawClusterUtility::GetEVec(*cluster, vertex);
+  CLHEP::Hep3Vector E_vec_cluster = RawClusterUtility::GetECoreVec(*cluster, vertex);
 
   RawClusterContainer::ConstRange begin_end = cluster_container->getClusters();
   RawClusterContainer::ConstIterator clusiter;
@@ -1478,7 +1478,7 @@ float PhotonJet::ConeSum(RawCluster *cluster,
         if (conecluster->get_z() == cluster->get_z())
           continue;
 
-    CLHEP::Hep3Vector E_vec_conecluster = RawClusterUtility::GetEVec(*conecluster, vertex);
+    CLHEP::Hep3Vector E_vec_conecluster = RawClusterUtility::GetECoreVec(*conecluster, vertex);
 
     float cone_pt = E_vec_conecluster.perp();
 
