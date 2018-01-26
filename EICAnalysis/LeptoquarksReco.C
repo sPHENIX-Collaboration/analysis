@@ -66,17 +66,15 @@ LeptoquarksReco::Init(PHCompositeNode *topNode)
   /* Add TauCandidate properties to map that defines output tree */
   float dummy = 0;
   _map_treebranches.insert( make_pair( TauCandidate::jet_id , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::evtgen_is_tau , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::evtgen_is_uds , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::evtgen_tau_etotal , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::evtgen_tau_eta , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::evtgen_tau_phi , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::evtgen_tau_decay_prong , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::evtgen_tau_decay_hcharged , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::evtgen_tau_decay_lcharged , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::evtgen_uds_etotal , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::evtgen_uds_eta , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::evtgen_uds_phi , dummy ) );
+  _map_treebranches.insert( make_pair( TauCandidate::evtgen_pid , dummy ) );
+  _map_treebranches.insert( make_pair( TauCandidate::evtgen_etotal , dummy ) );
+  _map_treebranches.insert( make_pair( TauCandidate::evtgen_ptotal , dummy ) );
+  _map_treebranches.insert( make_pair( TauCandidate::evtgen_theta , dummy ) );
+  _map_treebranches.insert( make_pair( TauCandidate::evtgen_eta , dummy ) );
+  _map_treebranches.insert( make_pair( TauCandidate::evtgen_phi , dummy ) );
+  _map_treebranches.insert( make_pair( TauCandidate::evtgen_decay_prong , dummy ) );
+  _map_treebranches.insert( make_pair( TauCandidate::evtgen_decay_hcharged , dummy ) );
+  _map_treebranches.insert( make_pair( TauCandidate::evtgen_decay_lcharged , dummy ) );
   _map_treebranches.insert( make_pair( TauCandidate::jet_eta , dummy ) );
   _map_treebranches.insert( make_pair( TauCandidate::jet_phi , dummy ) );
   _map_treebranches.insert( make_pair( TauCandidate::jet_etotal , dummy ) );
@@ -146,28 +144,20 @@ LeptoquarksReco::Init(PHCompositeNode *topNode)
         ++iter)
     {
       _t_event->Branch( (iter->first).c_str(),
-			    &(iter->second),
-			    (iter->first).c_str() );
+                        &(iter->second),
+                        (iter->first).c_str() );
     }
-
-
-  /* NTuple to store tau candidate information */
-  _ntp_jet = new TNtuple("ntp_jet","all jet information from LQ events",
-                         "event:jet_id:isMaxEnergyJet:isMinDeltaRJet:jet_eta:jet_phi:delta_R:jet_mass:jet_p:jet_pT:jet_eT:jet_e:jet_px:jet_py:jet_pz");
-
-  _ntp_jet2 = new TNtuple("ntp_jet2","all tau candidate (jet) information from LQ events",
-                          "ievent:jet_id:is_tau:is_uds:tau_etotal:tau_eta:tau_phi:tau_decay_prong:tau_decay_hcharged:tau_decay_lcharged:uds_etotal:uds_eta:uds_phi:jet_eta:jet_phi:jet_etotal:jet_etrans:jet_ptotal:jet_ptrans:jet_mass:jetshape_econe_r1:jetshape_econe_r2:jetshape_econe_r3:jetshape_econe_r4:jetshape_econe_r5:jetshape_econe_r6:jetshape_econe_r7:jetshape_econe_r8:jetshape_econe_r9:jetshape_econe_r10:jetshape_r90:jetshape_rms:jetshape_radius:tracks_count_r1:tracks_chargesum_r1:tracks_rmax_r1:tracks_count_r2:tracks_chargesum_r2:tracks_rmax_r2");
 
   if ( _save_towers )
     {
       _ntp_tower = new TNtuple("ntp_tower","towers from all all tau candidates",
-                               "ievent:jet_id:is_tau:is_uds:tau_etotal:tau_eta:tau_phi:tau_decay_prong:tau_decay_hcharged:tau_decay_lcharged:uds_etotal:uds_eta:uds_phi:jet_eta:jet_phi:jet_etotal:tower_calo_id:tower_eta:tower_phi:tower_delta_r:tower_e");
+                               "ievent:jet_id:evtgen_pid:evtgen_etotal:evtgen_eta:evtgen_phi:evtgen_decay_prong:evtgen_decay_hcharged:evtgen_decay_lcharged:jet_eta:jet_phi:jet_etotal:tower_calo_id:tower_eta:tower_phi:tower_delta_r:tower_e");
     }
 
   if ( _save_tracks )
     {
       _ntp_track = new TNtuple("ntp_track","tracks from all all tau candidates",
-                               "ievent:jet_id:is_tau:is_uds:tau_etotal:tau_eta:tau_phi:tau_decay_prong:tau_decay_hcharged:tau_decay_lcharged:uds_etotal:uds_eta:uds_phi:jet_eta:jet_phi:jet_etotal:track_quality:track_eta:track_phi:track_delta_r:track_p");
+                               "ievent:jet_id:evtgen_pid:evtgen_etotal:evtgen_eta:evtgen_phi:evtgen_decay_prong:evtgen_decay_hcharged:evtgen_decay_lcharged:jet_eta:jet_phi:jet_etotal:track_quality:track_eta:track_phi:track_delta_r:track_p");
     }
 
   return 0;
@@ -176,7 +166,7 @@ LeptoquarksReco::Init(PHCompositeNode *topNode)
 int
 LeptoquarksReco::process_event(PHCompositeNode *topNode)
 {
-  
+
   /* Create map to collect tau candidates.
    * Use energy as 'key' to the map because energy is unique for each jet, while there are sometimes multiple jets (same energy,
    * different jet ID) in the input jet collection. Also, map automatically sorts entries by key, i.e. this gives list of tau candidates
@@ -259,14 +249,12 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
       tc->set_candidate_id( (iter->second)->get_id() );
       tc->set_property( TauCandidate::jet_id , (iter->second)->get_id() );
 
-      /* set tau candidate MC truth properties */
-      tc->set_property( TauCandidate::evtgen_is_tau, (uint)0 );
-      tc->set_property( TauCandidate::evtgen_is_uds, (uint)0 );
+      tc->set_property( TauCandidate::evtgen_pid, (int)0 );
 
       /* add tau candidate to collection */
       tauCandidateMap.insert( make_pair( (iter->second)->get_e(), tc ) );
     }
- 
+
   /* Add jet information to tau candidates */
   AddJetInformation( tauCandidateMap, recojets, &map_calotower );
 
@@ -281,10 +269,10 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
 
   /* Add information about tau candidats to output tree */
   WriteTauCandidatesToTree( tauCandidateMap );
- 
+
   /* Add global event information to separate tree */
   AddGlobalEventInformation( tauCandidateMap, &map_calotower );
- 
+
   /* count up event number */
   _ievent ++;
 
@@ -300,6 +288,7 @@ LeptoquarksReco::AddTrueTauTag( type_map_tcan& tauCandidateMap, PHHepMCGenEventM
 
   int pdg_lq = 39; // leptoquark
   int pdg_tau = 15; // tau lepton
+  int pdg_parton = 0;
 
   /* Search for leptoquark in event */
   HepMC::GenParticle* particle_lq = truth.FindParticle( pdg_lq );
@@ -315,12 +304,18 @@ LeptoquarksReco::AddTrueTauTag( type_map_tcan& tauCandidateMap, PHHepMCGenEventM
       /* try quark */
       particle_quark = truth.FindDaughterParticle( pdg_quark, particle_lq );
       if (particle_quark)
-        break;
+        {
+          pdg_parton = pdg_quark;
+          break;
+        }
 
       /* try anti-quark */
       particle_quark = truth.FindDaughterParticle( -pdg_quark, particle_lq );
       if (particle_quark)
-        break;
+        {
+          pdg_parton = -pdg_quark;
+          break;
+        }
     }
 
   /* If TAU in event: Tag the tau candidate (i.e. jet) with smalles delta_R from this tau */
@@ -334,10 +329,10 @@ LeptoquarksReco::AddTrueTauTag( type_map_tcan& tauCandidateMap, PHHepMCGenEventM
       if ( best_match )
         {
           /* Update TauCandidate entry */
-          best_match->set_property( TauCandidate::evtgen_is_tau, (uint)1 );
-          best_match->set_property( TauCandidate::evtgen_tau_etotal, (float)particle_tau->momentum().e() );
-          best_match->set_property( TauCandidate::evtgen_tau_eta, (float)particle_tau->momentum().eta() );
-          best_match->set_property( TauCandidate::evtgen_tau_phi, (float)particle_tau->momentum().phi() );
+          best_match->set_property( TauCandidate::evtgen_pid, pdg_tau );
+          best_match->set_property( TauCandidate::evtgen_etotal, (float)particle_tau->momentum().e() );
+          best_match->set_property( TauCandidate::evtgen_eta, (float)particle_tau->momentum().eta() );
+          best_match->set_property( TauCandidate::evtgen_phi, (float)particle_tau->momentum().phi() );
 
           /* Check particle decay if end-vertex found */
           if ( particle_tau->end_vertex() )
@@ -351,11 +346,12 @@ LeptoquarksReco::AddTrueTauTag( type_map_tcan& tauCandidateMap, PHHepMCGenEventM
               truth.FindDecayParticles( particle_tau, tau_decay_prong, tau_decay_hcharged, tau_decay_lcharged );
 
               /* Update tau candidate entry */
-              best_match->set_property( TauCandidate::evtgen_tau_decay_prong, tau_decay_prong );
-              best_match->set_property( TauCandidate::evtgen_tau_decay_hcharged, tau_decay_hcharged );
-              best_match->set_property( TauCandidate::evtgen_tau_decay_lcharged, tau_decay_lcharged );
+              best_match->set_property( TauCandidate::evtgen_decay_prong, tau_decay_prong );
+              best_match->set_property( TauCandidate::evtgen_decay_hcharged, tau_decay_hcharged );
+              best_match->set_property( TauCandidate::evtgen_decay_lcharged, tau_decay_lcharged );
             }
         }
+      return 0;
     }
 
   /* If QUARK (->jet) in event: Tag the tau candidate (i.e. jet) with smalles delta_R from this quark */
@@ -368,11 +364,13 @@ LeptoquarksReco::AddTrueTauTag( type_map_tcan& tauCandidateMap, PHHepMCGenEventM
       /* set is_uds = TRUE for TauCandiate with smallest delta_R if found */
       if ( best_match )
         {
-          best_match->set_property( TauCandidate::evtgen_is_uds, (uint)1 );
-          best_match->set_property( TauCandidate::evtgen_uds_etotal, (float)particle_quark->momentum().e() );
-          best_match->set_property( TauCandidate::evtgen_uds_eta, (float)particle_quark->momentum().eta() );
-          best_match->set_property( TauCandidate::evtgen_uds_phi, (float)particle_quark->momentum().phi() );
+          best_match->set_property( TauCandidate::evtgen_pid, pdg_parton );
+          best_match->set_property( TauCandidate::evtgen_etotal, (float)particle_quark->momentum().e() );
+          best_match->set_property( TauCandidate::evtgen_eta, (float)particle_quark->momentum().eta() );
+          best_match->set_property( TauCandidate::evtgen_phi, (float)particle_quark->momentum().phi() );
         }
+
+      return 0;
     }
 
   return 0;
@@ -542,19 +540,15 @@ LeptoquarksReco::AddJetStructureInformation( type_map_tcan& tauCandidateMap, typ
               /* if save_towers set true: add tower to tree */
               if ( _save_towers )
                 {
-                  float tower_data[39] = {(float) _ievent,
+                  float tower_data[17] = {(float) _ievent,
                                           (float) (iter->second)->get_property_uint( TauCandidate::jet_id ),
-                                          (float) (iter->second)->get_property_uint( TauCandidate::evtgen_is_tau ),
-                                          (float) (iter->second)->get_property_uint( TauCandidate::evtgen_is_uds ),
-                                          (float) (iter->second)->get_property_float( TauCandidate::evtgen_tau_etotal ),
-                                          (float) (iter->second)->get_property_float( TauCandidate::evtgen_tau_eta ),
-                                          (float) (iter->second)->get_property_float( TauCandidate::evtgen_tau_phi ),
-                                          (float) (iter->second)->get_property_uint( TauCandidate::evtgen_tau_decay_prong ),
-                                          (float) (iter->second)->get_property_uint( TauCandidate::evtgen_tau_decay_hcharged ),
-                                          (float) (iter->second)->get_property_uint( TauCandidate::evtgen_tau_decay_lcharged ),
-                                          (float) (iter->second)->get_property_float( TauCandidate::evtgen_uds_etotal ),
-                                          (float) (iter->second)->get_property_float( TauCandidate::evtgen_uds_eta ),
-                                          (float) (iter->second)->get_property_float( TauCandidate::evtgen_uds_phi ),
+                                          (float) (iter->second)->get_property_int( TauCandidate::evtgen_pid ),
+                                          (float) (iter->second)->get_property_float( TauCandidate::evtgen_etotal ),
+                                          (float) (iter->second)->get_property_float( TauCandidate::evtgen_eta ),
+                                          (float) (iter->second)->get_property_float( TauCandidate::evtgen_phi ),
+                                          (float) (iter->second)->get_property_uint( TauCandidate::evtgen_decay_prong ),
+                                          (float) (iter->second)->get_property_uint( TauCandidate::evtgen_decay_hcharged ),
+                                          (float) (iter->second)->get_property_uint( TauCandidate::evtgen_decay_lcharged ),
                                           (float) (iter->second)->get_property_float( TauCandidate::jet_eta ),
                                           (float) (iter->second)->get_property_float( TauCandidate::jet_phi ),
                                           (float) (iter->second)->get_property_float( TauCandidate::jet_etotal ),
@@ -585,7 +579,7 @@ LeptoquarksReco::AddJetStructureInformation( type_map_tcan& tauCandidateMap, typ
                 {
                   er3 += tower_energy;
                   if ( (iter_calo->first) == RawTowerDefs::CEMC )
-		    emcal_er3 += tower_energy;
+                    emcal_er3 += tower_energy;
                 }
               if ( delta_R <= delta_R_cutoff_r4 )
                 {
@@ -743,19 +737,15 @@ LeptoquarksReco::AddTrackInformation( type_map_tcan& tauCandidateMap, SvtxTrackM
         /* if save_tracks set true: add track to tree */
         if ( _save_tracks )
           {
-            float track_data[39] = {(float) _ievent,
+            float track_data[17] = {(float) _ievent,
                                     (float) (iter->second)->get_property_uint( TauCandidate::jet_id ),
-                                    (float) (iter->second)->get_property_uint( TauCandidate::evtgen_is_tau ),
-                                    (float) (iter->second)->get_property_uint( TauCandidate::evtgen_is_uds ),
-                                    (float) (iter->second)->get_property_float( TauCandidate::evtgen_tau_etotal ),
-                                    (float) (iter->second)->get_property_float( TauCandidate::evtgen_tau_eta ),
-                                    (float) (iter->second)->get_property_float( TauCandidate::evtgen_tau_phi ),
-                                    (float) (iter->second)->get_property_uint( TauCandidate::evtgen_tau_decay_prong ),
-                                    (float) (iter->second)->get_property_uint( TauCandidate::evtgen_tau_decay_hcharged ),
-                                    (float) (iter->second)->get_property_uint( TauCandidate::evtgen_tau_decay_lcharged ),
-                                    (float) (iter->second)->get_property_float( TauCandidate::evtgen_uds_etotal ),
-                                    (float) (iter->second)->get_property_float( TauCandidate::evtgen_uds_eta ),
-                                    (float) (iter->second)->get_property_float( TauCandidate::evtgen_uds_phi ),
+                                    (float) (iter->second)->get_property_int( TauCandidate::evtgen_pid ),
+                                    (float) (iter->second)->get_property_float( TauCandidate::evtgen_etotal ),
+                                    (float) (iter->second)->get_property_float( TauCandidate::evtgen_eta ),
+                                    (float) (iter->second)->get_property_float( TauCandidate::evtgen_phi ),
+                                    (float) (iter->second)->get_property_uint( TauCandidate::evtgen_decay_prong ),
+                                    (float) (iter->second)->get_property_uint( TauCandidate::evtgen_decay_hcharged ),
+                                    (float) (iter->second)->get_property_uint( TauCandidate::evtgen_decay_lcharged ),
                                     (float) (iter->second)->get_property_float( TauCandidate::jet_eta ),
                                     (float) (iter->second)->get_property_float( TauCandidate::jet_phi ),
                                     (float) (iter->second)->get_property_float( TauCandidate::jet_etotal ),
@@ -765,7 +755,7 @@ LeptoquarksReco::AddTrackInformation( type_map_tcan& tauCandidateMap, SvtxTrackM
                                     (float) delta_R,
                                     (float) track->get_p()
             };
-	    
+
             _ntp_track->Fill(track_data);
           }
 
@@ -838,71 +828,6 @@ LeptoquarksReco::WriteTauCandidatesToTree( type_map_tcan& tauCandidateMap )
         }
       _t_candidate->Fill();
 
-      /* Old style: Fill ntuple manually */
-      /* @TODO: Phase out this ntuple */
-      float jet_data[18] = {(float) _ievent,  //event number
-                            (float) (iter->second)->get_property_uint( TauCandidate::jet_id ),       //jet id
-                            (float) 0, //is_max_energy_jet,                //is this the maximum energy jet?
-                            (float) (iter->second)->get_property_uint( TauCandidate::evtgen_is_tau ),              //is this the minimum R jet?
-                            (float) (iter->second)->get_property_float( TauCandidate::jet_eta ),                  //
-                            (float) (iter->second)->get_property_float( TauCandidate::jet_phi ),
-                            (float) 0, //delta_R,
-                            (float) (iter->second)->get_property_float( TauCandidate::jet_minv ),
-                            (float) (iter->second)->get_property_float( TauCandidate::jet_ptotal ),
-                            (float) (iter->second)->get_property_float( TauCandidate::jet_ptrans ),
-                            (float) (iter->second)->get_property_float( TauCandidate::jet_etrans ),
-                            (float) (iter->second)->get_property_float( TauCandidate::jet_etotal ),
-                            (float) 0, //jet_px,
-                            (float) 0, //jet_py,
-                            (float) 0  //jet_pz
-      };
-
-      _ntp_jet->Fill(jet_data);
-
-      /* Old style: Fill ntuple manually */
-      /* @TODO: Phase out this ntuple */
-      float jet2_data[39] = {(float) _ievent,
-                             (float) (iter->second)->get_property_uint( TauCandidate::jet_id ),
-                             (float) (iter->second)->get_property_uint( TauCandidate::evtgen_is_tau ),
-                             (float) (iter->second)->get_property_uint( TauCandidate::evtgen_is_uds ),
-                             (float) (iter->second)->get_property_float( TauCandidate::evtgen_tau_etotal ),
-                             (float) (iter->second)->get_property_float( TauCandidate::evtgen_tau_eta ),
-                             (float) (iter->second)->get_property_float( TauCandidate::evtgen_tau_phi ),
-                             (float) (iter->second)->get_property_uint( TauCandidate::evtgen_tau_decay_prong ),
-                             (float) (iter->second)->get_property_uint( TauCandidate::evtgen_tau_decay_hcharged ),
-                             (float) (iter->second)->get_property_uint( TauCandidate::evtgen_tau_decay_lcharged ),
-                             (float) (iter->second)->get_property_float( TauCandidate::evtgen_uds_etotal ),
-                             (float) (iter->second)->get_property_float( TauCandidate::evtgen_uds_eta ),
-                             (float) (iter->second)->get_property_float( TauCandidate::evtgen_uds_phi ),
-                             (float) (iter->second)->get_property_float( TauCandidate::jet_eta ),
-                             (float) (iter->second)->get_property_float( TauCandidate::jet_phi ),
-                             (float) (iter->second)->get_property_float( TauCandidate::jet_etotal ),
-                             (float) (iter->second)->get_property_float( TauCandidate::jet_etrans ),
-                             (float) (iter->second)->get_property_float( TauCandidate::jet_ptotal ),
-                             (float) (iter->second)->get_property_float( TauCandidate::jet_ptrans ),
-                             (float) (iter->second)->get_property_float( TauCandidate::jet_minv ),
-                             (float) (iter->second)->get_property_float( TauCandidate::jetshape_econe_r01 ),
-                             (float) (iter->second)->get_property_float( TauCandidate::jetshape_econe_r02 ),
-                             (float) (iter->second)->get_property_float( TauCandidate::jetshape_econe_r03 ),
-                             (float) (iter->second)->get_property_float( TauCandidate::jetshape_econe_r04 ),
-                             (float) (iter->second)->get_property_float( TauCandidate::jetshape_econe_r05 ),
-                             (float) 0, //jetshpae_econe_r6
-                             (float) 0, //jetshpae_econe_r7
-                             (float) 0, //jetshpae_econe_r8
-                             (float) 0, //jetshpae_econe_r9
-                             (float) 0, //jetshpae_econe_r10
-                             (float) (iter->second)->get_property_float( TauCandidate::jetshape_r90 ),
-                             (float) (iter->second)->get_property_float( TauCandidate::jetshape_rms ),
-                             (float) (iter->second)->get_property_float( TauCandidate::jetshape_radius ),
-                             (float) (iter->second)->get_property_uint( TauCandidate::tracks_count_r02 ),
-                             (float) (iter->second)->get_property_int( TauCandidate::tracks_chargesum_r02 ),
-                             (float) (iter->second)->get_property_float( TauCandidate::tracks_rmax_r02 ),
-                             (float) (iter->second)->get_property_uint( TauCandidate::tracks_count_r04 ),
-                             (float) (iter->second)->get_property_int( TauCandidate::tracks_chargesum_r04 ),
-                             (float) (iter->second)->get_property_float( TauCandidate::tracks_rmax_r04 )
-      };
-
-      _ntp_jet2->Fill(jet2_data);
     }
 
   return 0;
@@ -1005,22 +930,22 @@ LeptoquarksReco::AddGlobalEventInformation( type_map_tcan& tauCandidateMap, type
 
           /* get eta and phi of tower and check angle delta_R w.r.t. jet axis */
           RawTowerGeom * tower_geom = ((iter_calo->second).second)->get_tower_geometry(tower -> get_key());
-	  float tower_eta = tower_geom->get_eta();
-	  float tower_phi = tower_geom->get_phi();
+          float tower_eta = tower_geom->get_eta();
+          float tower_phi = tower_geom->get_phi();
 
-	  /* from https://en.wikipedia.org/wiki/Pseudorapidity:
-	     p_x = p_T * cos( phi )
-	     p_y = p_T * sin( phi )
-	     p_z = p_T * sinh( eta )
-	     |p| = p_T * cosh( eta )
-	  */
+          /* from https://en.wikipedia.org/wiki/Pseudorapidity:
+             p_x = p_T * cos( phi )
+             p_y = p_T * sin( phi )
+             p_z = p_T * sinh( eta )
+             |p| = p_T * cosh( eta )
+          */
 
-	  /* calculate 'transverse' tower energy */
-	  float tower_energy_t = tower_energy / cosh( tower_eta );
+          /* calculate 'transverse' tower energy */
+          float tower_energy_t = tower_energy / cosh( tower_eta );
 
           /* add energy components of this tower to total energy components */
-	  Ex_sum += tower_energy_t * cos( tower_phi );
-	  Ey_sum += tower_energy_t * sin( tower_phi );
+          Ex_sum += tower_energy_t * cos( tower_phi );
+          Ey_sum += tower_energy_t * sin( tower_phi );
         }
     }
 
@@ -1034,7 +959,7 @@ LeptoquarksReco::AddGlobalEventInformation( type_map_tcan& tauCandidateMap, type
        iter != tauCandidateMap.end();
        ++iter)
     {
-      if ( ( iter->second)->get_property_uint( TauCandidate::evtgen_is_tau ) == 1 )
+      if ( ( iter->second)->get_property_uint( TauCandidate::evtgen_pid ) == 15 )
         the_tau = iter->second;
     }
 
@@ -1048,13 +973,13 @@ LeptoquarksReco::AddGlobalEventInformation( type_map_tcan& tauCandidateMap, type
     {
       ( _map_eventbranches.find( "reco_tau_found" ) )->second = 1;
       ( _map_eventbranches.find( "reco_tau_is_tau" ) )->second =
-	the_tau->get_property_uint( TauCandidate::evtgen_is_tau );
+        the_tau->get_property_uint( TauCandidate::evtgen_pid );
       ( _map_eventbranches.find( "reco_tau_eta" ) )->second =
-	the_tau->get_property_float( TauCandidate::jet_eta );
+        the_tau->get_property_float( TauCandidate::jet_eta );
       ( _map_eventbranches.find( "reco_tau_phi" ) )->second =
-	the_tau->get_property_float( TauCandidate::jet_phi );
+        the_tau->get_property_float( TauCandidate::jet_phi );
       ( _map_eventbranches.find( "reco_tau_ptotal" ) )->second =
-	the_tau->get_property_float( TauCandidate::jet_ptotal );
+        the_tau->get_property_float( TauCandidate::jet_ptotal );
     }
   else
     {
@@ -1082,9 +1007,6 @@ LeptoquarksReco::End(PHCompositeNode *topNode)
 
   if ( _t_event )
     _t_event->Write();
-
-  _ntp_jet->Write();
-  _ntp_jet2->Write();
 
   if ( _ntp_tower )
     _ntp_tower->Write();

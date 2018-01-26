@@ -45,40 +45,35 @@ TauCandidate::get_property_info(const PROPERTY prop_id)
 {
   switch (prop_id)
     {
-    case  evtgen_is_tau:
-      return make_pair("evtgen_is_tau",TauCandidate::type_uint);
+    case  evtgen_pid:
+      return make_pair("evtgen_pid",TauCandidate::type_int);
 
-    case  evtgen_tau_etotal:
-      return make_pair("evtgen_tau_etotal",TauCandidate::type_float);
+    case  evtgen_ptotal:
+      return make_pair("evtgen_ptotal",TauCandidate::type_float);
 
-    case  evtgen_tau_eta:
-      return make_pair("evtgen_tau_eta",TauCandidate::type_float);
+    case  evtgen_etotal:
+      return make_pair("evtgen_etotal",TauCandidate::type_float);
 
-    case  evtgen_tau_phi:
-      return make_pair("evtgen_tau_phi",TauCandidate::type_float);
+    case  evtgen_theta:
+      return make_pair("evtgen_theta",TauCandidate::type_float);
 
-    case  evtgen_tau_decay_prong:
-      return make_pair("evtgen_tau_decay_prong",TauCandidate::type_uint);
+    case  evtgen_phi:
+      return make_pair("evtgen_phi",TauCandidate::type_float);
 
-    case  evtgen_tau_decay_hcharged:
-      return make_pair("evtgen_tau_decay_hcharged",TauCandidate::type_uint);
+    case  evtgen_eta:
+      return make_pair("evtgen_eta",TauCandidate::type_float);
 
-    case  evtgen_tau_decay_lcharged:
-      return make_pair("evtgen_tau_decay_lcharged",TauCandidate::type_uint);
+    case  evtgen_charge:
+      return make_pair("evtgen_charge",TauCandidate::type_int);
 
-      // ------
+    case  evtgen_decay_prong:
+      return make_pair("evtgen_decay_prong",TauCandidate::type_uint);
 
-    case  evtgen_is_uds:
-      return make_pair("evtgen_is_uds",TauCandidate::type_uint);
+    case  evtgen_decay_hcharged:
+      return make_pair("evtgen_decay_hcharged",TauCandidate::type_uint);
 
-    case  evtgen_uds_etotal:
-      return make_pair("evtgen_uds_etotal",TauCandidate::type_float);
-
-    case  evtgen_uds_eta:
-      return make_pair("evtgen_uds_eta",TauCandidate::type_float);
-
-    case  evtgen_uds_phi:
-      return make_pair("evtgen_uds_phi",TauCandidate::type_float);
+    case  evtgen_decay_lcharged:
+      return make_pair("evtgen_decay_lcharged",TauCandidate::type_uint);
 
       // ------
 
@@ -300,11 +295,17 @@ TauCandidate::get_property_info(const PROPERTY prop_id)
     case  em_evtgen_ptotal:
       return make_pair("em_evtgen_ptotal",TauCandidate::type_float);
 
+    case  em_evtgen_etotal:
+      return make_pair("em_evtgen_etotal",TauCandidate::type_float);
+
     case  em_evtgen_theta:
-      return make_pair("em_evtgen_eta",TauCandidate::type_float);
+      return make_pair("em_evtgen_theta",TauCandidate::type_float);
 
     case  em_evtgen_phi:
       return make_pair("em_evtgen_phi",TauCandidate::type_float);
+
+    case  em_evtgen_eta:
+      return make_pair("em_evtgen_eta",TauCandidate::type_float);
 
     case  em_evtgen_charge:
       return make_pair("em_evtgen_charge",TauCandidate::type_int);

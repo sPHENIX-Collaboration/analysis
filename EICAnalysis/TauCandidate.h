@@ -28,18 +28,16 @@ public:
     {//
 
       //-- Truth properties: 1 - 100  --
-      evtgen_is_tau = 1,
-      evtgen_tau_etotal = 2,
-      evtgen_tau_eta = 3,
-      evtgen_tau_phi = 4,
-      evtgen_tau_decay_prong = 5,
-      evtgen_tau_decay_hcharged = 6,
-      evtgen_tau_decay_lcharged = 7,
-
-      evtgen_is_uds = 11,
-      evtgen_uds_etotal = 12,
-      evtgen_uds_eta = 13,
-      evtgen_uds_phi = 14,
+      evtgen_pid = 1,
+      evtgen_ptotal = 2,
+      evtgen_etotal = 3,
+      evtgen_theta = 4,
+      evtgen_phi = 5,
+      evtgen_eta = 6,
+      evtgen_charge = 7,
+      evtgen_decay_prong = 8,
+      evtgen_decay_hcharged = 9,
+      evtgen_decay_lcharged = 10,
 
       //-- Jet properties: 101 - ?  --
       jet_id = 101,
@@ -125,9 +123,11 @@ public:
       //-- EM Candidates Truth
       em_evtgen_pid = 401,
       em_evtgen_ptotal = 402,
-      em_evtgen_theta = 403,
-      em_evtgen_phi = 404,
-      em_evtgen_charge = 405,
+      em_evtgen_etotal = 403,
+      em_evtgen_theta = 404,
+      em_evtgen_phi = 405,
+      em_evtgen_eta = 406,
+      em_evtgen_charge = 407,
 
       //-- Event kinematics reconstructed from candidate
       em_reco_x_e = 410,
