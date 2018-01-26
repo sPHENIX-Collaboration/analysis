@@ -959,7 +959,7 @@ LeptoquarksReco::AddGlobalEventInformation( type_map_tcan& tauCandidateMap, type
        iter != tauCandidateMap.end();
        ++iter)
     {
-      if ( ( iter->second)->get_property_uint( TauCandidate::evtgen_pid ) == 15 )
+      if ( ( iter->second)->get_property_int( TauCandidate::evtgen_pid ) == 15 )
         the_tau = iter->second;
     }
 
@@ -973,7 +973,7 @@ LeptoquarksReco::AddGlobalEventInformation( type_map_tcan& tauCandidateMap, type
     {
       ( _map_eventbranches.find( "reco_tau_found" ) )->second = 1;
       ( _map_eventbranches.find( "reco_tau_is_tau" ) )->second =
-        the_tau->get_property_uint( TauCandidate::evtgen_pid );
+        the_tau->get_property_int( TauCandidate::evtgen_pid );
       ( _map_eventbranches.find( "reco_tau_eta" ) )->second =
         the_tau->get_property_float( TauCandidate::jet_eta );
       ( _map_eventbranches.find( "reco_tau_phi" ) )->second =
