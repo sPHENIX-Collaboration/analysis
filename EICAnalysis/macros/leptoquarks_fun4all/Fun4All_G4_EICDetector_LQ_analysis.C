@@ -1,16 +1,16 @@
 int Fun4All_G4_EICDetector_LQ_analysis(
-			      string n="201",
+			      string n="1000",
 			      string ebeam="20",
 			      string pbeam="250",
-			      //string inputFile,
-			      string output="tau"
+			      string seed="1",
+			      string type="3pion"
 			   )
 {
   // Set the number of TPC layer
     
   //Get parameter variables from parameter file
   
-  string inputFile="/gpfs/mnt/gpfs02/phenix/scratch/spjeffas/data/G4_Leptoquark_DST_p250_e20_"+n+"events.root";
+  string inputFile="/gpfs/mnt/gpfs02/phenix/scratch/spjeffas/g4sim/G4_Leptoquark_DST_p"+pbeam+"_e"+ebeam+"_"+n+"events_"+seed+"seed_"+type+".root";
 
   int nEvents;
   stringstream geek(n);
@@ -18,7 +18,7 @@ int Fun4All_G4_EICDetector_LQ_analysis(
 
 
 
-  string directory = "/direct/phenix+u/spjeffas/leptoquark/output/"+output+"/";
+  string directory = "/gpfs/mnt/gpfs02/phenix/scratch/spjeffas/data/";
 
 
   //===============
@@ -113,13 +113,13 @@ int Fun4All_G4_EICDetector_LQ_analysis(
   //----------------------
   
   
-  if (do_jet_eval) Jet_Eval(directory+"g4jet_p"+pbeam+"_e"+ebeam+"_"+n+"events_eval.root");
+  if (do_jet_eval) Jet_Eval(directory+"g4jet_p"+pbeam+"_e"+ebeam+"_"+n+"events_"+seed+"seed_"+type+"_eval.root");
 
-  if (do_fwd_jet_eval) Jet_FwdEval(directory+"g4fwdjet_p"+pbeam+"_e"+ebeam+"_"+n+"events_eval.root");
+  if (do_fwd_jet_eval) Jet_FwdEval(directory+"g4fwdjet_p"+pbeam+"_e"+ebeam+"_"+n+"events_"+seed+"seed_"+type+"_eval.root");
   
   if(do_lepto_analysis){
     gROOT->LoadMacro("G4_Lepto.C");
-    G4_Lepto(directory+"LeptoAna_p"+pbeam+"_e"+ebeam+"_"+n+"events");
+    G4_Lepto(directory+"LeptoAna_p"+pbeam+"_e"+ebeam+"_"+n+"events_"+seed+"seed_"+type);
   }
   
 

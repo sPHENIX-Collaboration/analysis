@@ -1,9 +1,9 @@
 #include "Proto3ShowerCalib.h"
 
 #include <prototype3/RawTower_Prototype3.h>
-#include <g4cemc/RawTowerContainer.h>
+#include <calobase/RawTowerContainer.h>
 #include <pdbcalbase/PdbParameterMap.h>
-#include <g4detectors/PHG4Parameters.h>
+#include <phparameter/PHParameters.h>
 #include <ffaobjects/EventHeader.h>
 #include <g4detectors/PHG4ScintillatorSlat.h>
 #include <g4detectors/PHG4ScintillatorSlatContainer.h>
@@ -243,7 +243,7 @@ Proto3ShowerCalib::process_event(PHCompositeNode *topNode)
 
   if(info)
   {
-   PHG4Parameters run_info_copy("RunInfo");
+   PHParameters run_info_copy("RunInfo");
    run_info_copy.FillFrom(info);
 
    _eval_run.beam_mom = run_info_copy.get_double_param("beam_MTNRG_GeV");

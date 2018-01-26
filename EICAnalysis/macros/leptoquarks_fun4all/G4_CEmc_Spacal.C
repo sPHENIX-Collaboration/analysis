@@ -8,6 +8,18 @@ int Max_cemc_layer = 1;
 //   2D azimuthal projective SPACAL (slow)
 int Cemc_spacal_configuration = PHG4CylinderGeom_Spacalv1::k2DProjectiveSpacal;
 
+enum enu_Cemc_clusterizer
+{
+  kCemcGraphClusterizer,
+
+  kCemcTemplateClusterizer
+};
+
+//! template clusterizer, RawClusterBuilderTemplate, as developed by Sasha Bazilevsky
+enu_Cemc_clusterizer Cemc_clusterizer = kCemcTemplateClusterizer;
+//! graph clusterizer, RawClusterBuilderGraph
+//enu_Cemc_clusterizer Cemc_clusterizer = kCemcGraphClusterizer;
+
 #include <iostream>
 
 // just a dummy parameter used by the tilted plate geom
@@ -285,8 +297,8 @@ void CEMC_Cells(int verbosity = 0)
 
 void CEMC_Towers(int verbosity = 0)
 {
-  gSystem->Load("libfun4all.so");
-  gSystem->Load("libg4detectors.so");
+  gSystem->Load("libg4calo.so");
+  gSystem->Load("libcalo_reco.so");
   Fun4AllServer *se = Fun4AllServer::instance();
 
   RawTowerBuilder *TowerBuilder = new RawTowerBuilder("EmcRawTowerBuilder");
@@ -316,7 +328,7 @@ void CEMC_Towers(int verbosity = 0)
     return;
   }
 
-  static const double photoelectron_per_GeV = 500;  //500 photon per total GeV deposition
+  const double photoelectron_per_GeV = 500;  //500 photon per total GeV deposition
 
   RawTowerDigitizer *TowerDigitizer = new RawTowerDigitizer("EmcRawTowerDigitizer");
   TowerDigitizer->Detector("CEMC");
@@ -365,19 +377,39 @@ void CEMC_Towers(int verbosity = 0)
 
 void CEMC_Clusters(int verbosity = 0)
 {
-  gSystem->Load("libfun4all.so");
-  gSystem->Load("libg4detectors.so");
+  gSystem->Load("libcalo_reco.so");
   Fun4AllServer *se = Fun4AllServer::instance();
 
-  RawClusterBuilder *ClusterBuilder = new RawClusterBuilder("EmcRawClusterBuilder");
-  ClusterBuilder->Detector("CEMC");
-  ClusterBuilder->Verbosity(verbosity);
-  se->registerSubsystem(ClusterBuilder);
+  if (Cemc_clusterizer == kCemcTemplateClusterizer)
+  {
+    RawClusterBuilderTemplate *ClusterBuilder = new RawClusterBuilderTemplate("EmcRawClusterBuilderTemplate");
+    ClusterBuilder->Detector("CEMC");
+    ClusterBuilder->Verbosity(verbosity);
+    se->registerSubsystem(ClusterBuilder);
+  }
+  else if (Cemc_clusterizer == kCemcGraphClusterizer)
+  {
+    RawClusterBuilderGraph *ClusterBuilder = new RawClusterBuilderGraph("EmcRawClusterBuilderGraph");
+    ClusterBuilder->Detector("CEMC");
+    ClusterBuilder->Verbosity(verbosity);
+    se->registerSubsystem(ClusterBuilder);
+  }
+  else
+  {
+    cout <<"CEMC_Clusters - unknown clusterizer setting!"<<endl;
+    exit(1);
+  }
+
 
   RawClusterPositionCorrection *clusterCorrection = new RawClusterPositionCorrection("CEMC");
-  clusterCorrection->GetCalibrationParameters().ReadFromFile("CEMC_RECALIB","xml",0,0,
+
+    clusterCorrection->Get_eclus_CalibrationParameters().ReadFromFile("CEMC_RECALIB","xml",0,0,
 							//raw location
 							string(getenv("CALIBRATIONROOT"))+string("/CEMC/PositionRecalibration/"));
+  clusterCorrection->Get_ecore_CalibrationParameters().ReadFromFile("CEMC_ECORE_RECALIB","xml",0,0,
+						       //raw location
+						       string(getenv("CALIBRATIONROOT"))+string("/CEMC/PositionRecalibration"));
+
   clusterCorrection->Verbosity(verbosity);
   se->registerSubsystem(clusterCorrection);
 

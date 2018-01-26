@@ -26,7 +26,11 @@ pkginclude_HEADERS = \
   DISKinematics.h \
   Leptoquarks.h \
   LeptoquarksReco.h \
-  Quarkonia2LeptonsMC.h
+  DISKinematicsReco.h \
+  Quarkonia2LeptonsMC.h\
+  TauCandidate.h\
+  TauCandidatev1.h\
+  TruthTrackerHepMC.h
 
 libeicana_la_SOURCES = \
   DISKinematics.C \
@@ -35,8 +39,15 @@ libeicana_la_SOURCES = \
   Leptoquarks_Dict.C \
   LeptoquarksReco.C \
   LeptoquarksReco_Dict.C \
+  DISKinematicsReco.C \
+  DISKinematicsReco_Dict.C \
   Quarkonia2LeptonsMC.C \
-  Quarkonia2LeptonsMC_Dict.C
+  Quarkonia2LeptonsMC_Dict.C\
+  TauCandidate.C\
+  TauCandidate_Dict.C\
+  TauCandidatev1.C\
+  TauCandidatev1_Dict.C\
+  TruthTrackerHepMC.C
 
 # Rule for generating table CINT dictionaries.
 %_Dict.C: %.h %LinkDef.h

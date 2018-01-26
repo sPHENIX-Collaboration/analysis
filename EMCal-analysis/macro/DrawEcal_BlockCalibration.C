@@ -76,7 +76,7 @@ void DrawEcal_BlockCalibration(
   //Save result
   gSystem->Load("libg4detectors.so");
 
-  PHG4Parameters* param = new PHG4Parameters("CEMC");
+  PHParameters* param = new PHParameters("CEMC");
 
   param->set_string_param("description",
                           Form(

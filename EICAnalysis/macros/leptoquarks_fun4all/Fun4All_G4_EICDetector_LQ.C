@@ -2,15 +2,16 @@ int Fun4All_G4_EICDetector_LQ(
 			      string n,
 			      string ebeam,
 			      string pbeam,
-			      string inputFile
-			      //string inputFile="/direct/phenix+u/spjeffas/LQGENEP/TestOut.1093event.root"
+			      string seed,
+			      string type
 			   )
 {
   // Set the number of TPC layer
   const int n_TPC_layers = 40;  // use 60 for backward compatibility only
   
+  string inputFile = "/direct/phenix+u/spjeffas/LQGENEP/LQ_"+type+"_"+seed+"seed.1000event.root";
 
-  string outputFile = "/gpfs/mnt/gpfs02/phenix/scratch/spjeffas/data/G4_Leptoquark_DST_p"+pbeam+"_e"+ebeam+"_"+n+"events.root";
+  string outputFile = "/gpfs/mnt/gpfs02/phenix/scratch/spjeffas/g4sim/G4_Leptoquark_DST_p"+pbeam+"_e"+ebeam+"_"+n+"events_"+seed+"seed_"+type+".root";
   //Get parameter variables from parameter file
   
   int nEvents;
@@ -191,9 +192,10 @@ int Fun4All_G4_EICDetector_LQ(
   gSystem->Load("libphhepmc.so");
   gSystem->Load("libg4testbench.so");
   gSystem->Load("libg4hough.so");
-  gSystem->Load("libcemc.so");
+  gSystem->Load("libg4calo.so");
   gSystem->Load("libg4eval.so");
   gSystem->Load("libeicana.so");
+
 
   // establish the geometry and reconstruction setup
   gROOT->LoadMacro("G4Setup_EICDetector.C");
@@ -440,12 +442,12 @@ int Fun4All_G4_EICDetector_LQ(
       //---------------------
       // Detector description
       //---------------------
-
+ 
       G4Setup(absorberactive, magfield, TPythia6Decayer::kAll,
               do_svtx,do_cemc,do_hcalin,do_magnet,do_hcalout,do_pipe,
               do_FGEM,do_EGEM,do_FEMC,do_FHCAL,do_EEMC,do_DIRC,do_RICH,do_Aerogel,
               magfield_rescale);
-   
+ 
     }
 
   //---------
@@ -464,9 +466,9 @@ int Fun4All_G4_EICDetector_LQ(
   //------------------
 
   if (do_svtx_cell) Svtx_Cells();
-
+   
   if (do_cemc_cell) CEMC_Cells();
-
+   
   if (do_hcalin_cell) HCALInner_Cells();
 
   if (do_hcalout_cell) HCALOuter_Cells();

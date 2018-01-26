@@ -14,7 +14,7 @@ class TH1F;
 class RawTower;
 
 #include <g4detectors/PHG4ScintillatorSlatDefs.h>
-#include <g4cemc/RawTowerDefs.h>
+#include <calobase/RawTowerDefs.h>
 #include <map>
 
 class HCalib : public SubsysReco

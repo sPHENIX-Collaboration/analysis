@@ -80,8 +80,8 @@ void Jet_Eval(std::string outfilename = "g4jets_eval.root",
   Fun4AllServer *se = Fun4AllServer::instance();
 
   JetEvaluator* eval = new JetEvaluator("JETEVALUATOR",
-   					"AntiKt_Track_r05",
-   					"AntiKt_Truth_r05",
+   					"AntiKt_Tower_r03",
+   					"AntiKt_Truth_r03",
    					outfilename);
   eval->Verbosity(verbosity);
   se->registerSubsystem(eval);

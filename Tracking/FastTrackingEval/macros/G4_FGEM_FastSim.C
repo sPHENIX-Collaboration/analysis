@@ -277,8 +277,9 @@ void FGEM_FastSim_Reco(int verbosity = 0) {
 	kalman->set_phi_resolution(50E-4);
 	kalman->set_r_resolution(1.);
 
-	kalman->set_mag_field_file_name("fieldmap.root");
-	kalman->set_mag_field_re_scaling_factor(1.);
+	// now automatic loading magnetic field. See https://github.com/sPHENIX-Collaboration/coresoftware/pull/349
+//	kalman->set_mag_field_file_name("fieldmap.root");
+//	kalman->set_mag_field_re_scaling_factor(1.);
 
 	kalman->set_pat_rec_hit_finding_eff(1.);
 	kalman->set_pat_rec_noise_prob(0.);

@@ -17,7 +17,7 @@ libemcal_calib_la_LDFLAGS = \
 
 libemcal_calib_la_LIBADD = \
   -lfun4all \
-  -lcemc_io \
+  -lcalo_io -lcalo_util \
   -lg4eval
 
 pkginclude_HEADERS = 

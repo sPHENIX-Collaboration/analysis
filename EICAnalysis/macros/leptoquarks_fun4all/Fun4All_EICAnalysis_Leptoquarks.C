@@ -19,7 +19,7 @@ int Fun4All_EICAnalysis_Leptoquarks(
   gSystem->Load("libg4detectors.so");
   gSystem->Load("libg4testbench.so");
   gSystem->Load("libg4hough.so");
-  gSystem->Load("libcemc.so");
+  gSystem->Load("libg4calo.so");
   gSystem->Load("libg4eval.so");
   gSystem->Load("libeicana.so");
 
