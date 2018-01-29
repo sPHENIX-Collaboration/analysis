@@ -1,7 +1,7 @@
 int Fun4All_G4_EICDetector_RICH(
-                                const int nEvents = 1,
+                                const int nEvents = 1000,
                                 const char * inputFile = "/sphenix/data/data02/review_2017-08-02/single_particle/spacal2d/fieldmap/G4Hits_sPHENIX_e-_eta0_8GeV-0002.root",
-                                const char * outputFile = "G4EICDetector.root"
+                                const char * outputFile = "G4EICDetector"
                                 )
 {
   // Set the number of TPC layer
@@ -57,9 +57,9 @@ int Fun4All_G4_EICDetector_RICH(
 
   bool do_pipe = false;
 
-  bool do_svtx = false;
-  bool do_svtx_cell = do_svtx && false;
-  bool do_svtx_track = do_svtx_cell && false;
+  bool do_svtx = true;
+  bool do_svtx_cell = do_svtx && true;
+  bool do_svtx_track = do_svtx_cell && true;
   bool do_svtx_eval = do_svtx_track && false;
 
   bool do_pstof = false;
@@ -158,14 +158,14 @@ int Fun4All_G4_EICDetector_RICH(
   int absorberactive = 0; // set to 1 to make all absorbers active volumes
   //  const string magfield = "1.5"; // if like float -> solenoidal field in T, if string use as fieldmap name (including path)
   const string magfield = "/phenix/upgrades/decadal/fieldmaps/sPHENIX.2d.root"; // if like float -> solenoidal field in T, if string use as fieldmap name (including path)
-  const float magfield_rescale = 0.;//1.4/1.5; // scale the map to a 1.4 T field
+  const float magfield_rescale = 1.4/1.5.; //1.4/1.5; // scale the map to a 1.4 T field
 
   //---------------
   // Fun4All server
   //---------------
 
   Fun4AllServer *se = Fun4AllServer::instance();
-  se->Verbosity(0); // uncomment for batch production running with minimal output messages
+  se->Verbosity(1); // uncomment for batch production running with minimal output messages
   // se->Verbosity(Fun4AllServer::VERBOSITY_SOME); // uncomment for some info for interactive running
 
   // just if we set some flags somewhere in this macro
@@ -316,7 +316,7 @@ int Fun4All_G4_EICDetector_RICH(
       PHG4ParticleGenerator *pgen = new PHG4ParticleGenerator();
       pgen->set_name("pi-");
       pgen->set_z_range(0,0);
-      pgen->set_eta_range(2,2);
+      pgen->set_eta_range(1.5,3.0);
       pgen->set_mom_range(30,30);
       pgen->set_phi_range( -1.0 * TMath::Pi(), 1.0 * TMath::Pi());
       se->registerSubsystem(pgen);
@@ -591,9 +591,6 @@ int Fun4All_G4_EICDetector_RICH(
   /* Adding RICH analysis module here */
   gSystem->Load("librichana.so");
   gSystem->Load("libg4detectors.so");
-
-  RICHEvaluator *eval_rich = new RICHEvaluator("SvtxTrackMap", "G4HIT_RICH", "eval_RICH.root");
-  se->registerSubsystem(eval_rich);
 
   RICHParticleID *richpid = new RICHParticleID("SvtxTrackMap", "G4HIT_RICH", "eval_RICH_PID.root");
   richpid->set_refractive_index(1.000526);
