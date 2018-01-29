@@ -1,3 +1,8 @@
+//This is an analysis package designed to collect single photons
+//They can be embedded or not, and can be in either the central
+//or forward arms - there are trees for each
+
+
 #include "Photons.h"
 
 #include <fun4all/Fun4AllServer.h>
@@ -41,18 +46,18 @@ Photons::Photons(const std::string &name)
   : SubsysReco("PHOTONS")
 {
   outfilename = name;
+  //initialize global variables to -999 so that they have a spot in memory
   initialize_to_zero();
+
   //add other initializers here
-  //default use isocone algorithm
-  use_isocone = 1;
+
 
   //default central arm
   _etalow = -1;
   _etahi = 1;
 
   nevents = 0;
-  //default use 0.3 jet cone
-  jet_cone_size = 0.3;
+
 
   //default no hijing embedding
   _embed = 0;
@@ -67,6 +72,7 @@ int Photons::Init(PHCompositeNode *topnode)
   tree = new TTree("tree", "a tree");
   tree->Branch("nevents", &nevents, "nevents/I");
 
+  //set all the tree branches
   Set_Tree_Branches();
 
   return 0;
@@ -77,8 +83,9 @@ int Photons::process_event(PHCompositeNode *topnode)
   if (nevents % 10 == 0)
     cout << "at event number " << nevents << endl;
 
-  //get the nodes from the NodeTree
 
+
+  //get the nodes from the NodeTree
   PHG4TruthInfoContainer *truthinfo = findNode::getClass<PHG4TruthInfoContainer>(topnode, "G4TruthInfo");
   //Raw clusters
   RawClusterContainer *clusters = findNode::getClass<RawClusterContainer>(topnode, "CLUSTER_CEMC");
@@ -163,7 +170,6 @@ int Photons::process_event(PHCompositeNode *topnode)
     //check that the truth particle is from the event generator
     //and not from the hijing background.
     //if it is from the hijing background this_embed_id == 0
-
     if (this_embed_id != 1 && _embed)
       continue;
     truthpid = truth->get_pid();
@@ -172,8 +178,7 @@ int Photons::process_event(PHCompositeNode *topnode)
     truthpz = truth->get_pz();
     truthp = sqrt(truthpx * truthpx + truthpy * truthpy + truthpz * truthpz);
     truthenergy = truth->get_e();
-    if (truthenergy == 30)
-      cout << "this embed " << this_embed_id << " and " << truthpid << endl;
+ 
     TLorentzVector vec;
     vec.SetPxPyPzE(truthpx, truthpy, truthpz, truthenergy);
 
@@ -189,6 +194,8 @@ int Photons::process_event(PHCompositeNode *topnode)
 
   GET THE HCAL_INNER CLUSTERS
   (for looking for leakage between emcal towers and/or tunneling)
+  This map not be necessary in the future if we don't have an 
+  inner HCal :/
   ************************************************/
 
   RawClusterContainer::ConstRange begin_end_hcal = hcalin_clusters->getClusters();
@@ -199,7 +206,9 @@ int Photons::process_event(PHCompositeNode *topnode)
     cout << "Getting inner HCal clusters for energy leakage studies" << endl;
   }
 
-  for (hcaliter = begin_end_hcal.first; hcaliter != begin_end_hcal.second; ++hcaliter)
+  for (hcaliter = begin_end_hcal.first;
+       hcaliter != begin_end_hcal.second; 
+       ++hcaliter)
   {
     RawCluster *cluster = hcaliter->second;
     CLHEP::Hep3Vector vertex(vtx->get_x(), vtx->get_y(), vtx->get_z());
@@ -210,7 +219,7 @@ int Photons::process_event(PHCompositeNode *topnode)
     hcal_pt = E_vec_cluster.perp();
     hcal_phi = E_vec_cluster.getPhi();
 
-    if (hcal_pt < 0.2)
+    if (hcal_pt < 0.5)
       continue;
 
     TLorentzVector *clus = new TLorentzVector();
@@ -226,7 +235,8 @@ int Photons::process_event(PHCompositeNode *topnode)
     hcal_py = hcal_pt * TMath::Sin(hcal_phi);
     hcal_pz = sqrt(hcal_energy * hcal_energy - hcal_px * hcal_px * hcal_py * hcal_py);
 
-    //find the associated truth high pT photon with this reconstructed photon
+    //find the associated truth high pT photon with this reconstructed 
+    //hcal cluster
 
     for (PHG4TruthInfoContainer::ConstIterator iter = range.first; iter != range.second; ++iter)
     {
@@ -240,7 +250,7 @@ int Photons::process_event(PHCompositeNode *topnode)
         hclustruthpz = truth->get_pz();
         hclustruthenergy = truth->get_e();
         hclustruthpt = sqrt(clustruthpx * clustruthpx + clustruthpy * clustruthpy);
-        if (hclustruthpt < 0.3)
+        if (hclustruthpt < 0.5)
           continue;
 
         TLorentzVector vec;
@@ -271,7 +281,9 @@ int Photons::process_event(PHCompositeNode *topnode)
     RawClusterContainer::ConstRange fclus = fclusters->getClusters();
     RawClusterContainer::ConstIterator fclusiter;
 
-    for (fclusiter = fclus.first; fclusiter != fclus.second; ++fclusiter)
+    for (fclusiter = fclus.first; 
+	 fclusiter != fclus.second; 
+	 ++fclusiter)
     {
       RawCluster *cluster = fclusiter->second;
 
@@ -287,12 +299,18 @@ int Photons::process_event(PHCompositeNode *topnode)
       fclus_py = fclus_pt * TMath::Sin(fclus_phi);
       fclus_pz = fclusenergy * TMath::Cos(fclus_theta);
 
-      for (PHG4TruthInfoContainer::ConstIterator fiter = range.first; fiter != range.second; ++fiter)
+
+
+      //find the truth photon that corresponds to this event
+      for (PHG4TruthInfoContainer::ConstIterator fiter = range.first; 
+	   fiter != range.second; 
+	   ++fiter)
       {
         PHG4Particle *truth = fiter->second;
 
         fclustruthpid = truth->get_pid();
-        if (fclustruthpid == 22)
+	//can run for photons or electrons
+        if (fclustruthpid == 22 || abs(fclustruthpid) == 11)
         {
           fclustruthpx = truth->get_px();
           fclustruthpy = truth->get_py();
@@ -315,9 +333,14 @@ int Photons::process_event(PHCompositeNode *topnode)
     }
   }
 
+
+
+
+
+
   /***********************************************
 
-  GET THE RECAL EMCAL CLUSTERS
+  GET THE POSITION RECALIBRATED EMCAL CLUSTERS
 
   ************************************************/
 
@@ -326,29 +349,30 @@ int Photons::process_event(PHCompositeNode *topnode)
 
   if (verbosity > 1)
     cout << "Getting the position recalibrated clusters" << endl;
+
+  //check that we are analyzing central arms
+  //position correction doesn't exist for forward arms
   if (_etahi < 1.1)
   {
-    for (rclusiter = rbegin_end.first; rclusiter != rbegin_end.second; ++rclusiter)
-    {
-      RawCluster *cluster = rclusiter->second;
+    for (rclusiter = rbegin_end.first; 
+	 rclusiter != rbegin_end.second; 
+	 ++rclusiter)
+      {
 
-      //rclus_energy = cluster->get_energy();
-      //rclus_eta = cluster->get_eta();
-      //rclus_theta = 2.*TMath::ATan((TMath::Exp(-1.*rclus_eta)));
-      //rclus_pt = rclus_energy*TMath::Sin(rclus_theta);
-      //rclus_phi = cluster->get_phi();
+      RawCluster *cluster = rclusiter->second;
 
       CLHEP::Hep3Vector vertex(vtx->get_x(), vtx->get_y(), vtx->get_z());
       CLHEP::Hep3Vector E_vec_cluster = RawClusterUtility::GetEVec(*cluster, vertex);
-      clus_energy = E_vec_cluster.mag();
-      clus_eta = E_vec_cluster.pseudoRapidity();
-      clus_theta = E_vec_cluster.getTheta();
-      clus_pt = E_vec_cluster.perp();
-      clus_phi = E_vec_cluster.getPhi();
+      rclus_energy = E_vec_cluster.mag();
+      rclus_eta = E_vec_cluster.pseudoRapidity();
+      rclus_theta = E_vec_cluster.getTheta();
+      rclus_pt = E_vec_cluster.perp();
+      rclus_phi = E_vec_cluster.getPhi();
 
-      if (rclus_pt < 0.2)
+      if (rclus_pt < mincluspt)
         continue;
-
+      if(verbosity > 1)
+	cout<<"passed recal pt cut"<<endl;
       TLorentzVector *clus = new TLorentzVector();
       clus->SetPtEtaPhiE(rclus_pt, rclus_eta, rclus_phi, rclus_energy);
 
@@ -374,9 +398,13 @@ int Photons::process_event(PHCompositeNode *topnode)
 
         clustruthpid = truth->get_pid();
         const int this_embed_id = truthinfo->isEmbeded(truth->get_track_id());
-        if (this_embed_id != 1 && _embed)
+        
+	//if it is embedded make sure that it is from the event 
+	//generation and not the HIJING background
+	if (this_embed_id != 1 && _embed)
           continue;
 
+	//can run for photons or electrons in the EMCal
         if (clustruthpid == 22 || fabs(clustruthpid) == 11)
         {
           clustruthpx = truth->get_px();
@@ -385,7 +413,7 @@ int Photons::process_event(PHCompositeNode *topnode)
           clustruthenergy = truth->get_e();
           clustruthpt = sqrt(clustruthpx * clustruthpx + clustruthpy * clustruthpy);
 
-          if (clustruthpt < 0.3)
+          if (clustruthpt < mincluspt)
             continue;
 
           TLorentzVector vec;
@@ -393,18 +421,25 @@ int Photons::process_event(PHCompositeNode *topnode)
           clustruthphi = vec.Phi();
           clustrutheta = vec.Eta();
           //once found it break out
-
+	  if(verbosity > 1)
+	    cout<<"found recal truth photon"<<endl;
           break;
         }
       }
-
+      if(verbosity > 1)
+	cout<<"filling recal cluster tree"<<endl;
+      
       recal_cluster_tree->Fill();
-    }
+      }
   }
+
+
+
+
 
   /***********************************************
 
-  GET THE EMCAL CLUSTERS
+  GET THE REGULAR, NON POSITION CORRECTED EMCAL CLUSTERS
 
   ************************************************/
 
@@ -414,8 +449,11 @@ int Photons::process_event(PHCompositeNode *topnode)
   if (verbosity > 1)
     cout << "Get the non-position recalibrated clusters" << endl;
 
-  for (clusiter = begin_end.first; clusiter != begin_end.second; ++clusiter)
+  for (clusiter = begin_end.first; 
+       clusiter != begin_end.second;
+       ++clusiter)
   {
+   
     RawCluster *cluster = clusiter->second;
 
     CLHEP::Hep3Vector vertex(vtx->get_x(), vtx->get_y(), vtx->get_z());
@@ -430,8 +468,11 @@ int Photons::process_event(PHCompositeNode *topnode)
     clus_chi2 = cluster->get_chi2();
     clus_prob = cluster->get_prob();
 
-    if (clus_pt < 0.2)
+    if (clus_pt < mincluspt)
       continue;
+
+    if(verbosity > 1)
+      cout<<"passed cluster pt cut"<<endl;
 
     TLorentzVector *clus = new TLorentzVector();
     clus->SetPtEtaPhiE(clus_pt, clus_eta, clus_phi, clus_energy);
@@ -465,7 +506,7 @@ int Photons::process_event(PHCompositeNode *topnode)
         clustruthenergy = truth->get_e();
         clustruthpt = sqrt(clustruthpx * clustruthpx + clustruthpy * clustruthpy);
 
-        if (clustruthpt < 0.3)
+        if (clustruthpt < mincluspt)
           continue;
 
         TLorentzVector vec;
@@ -480,7 +521,9 @@ int Photons::process_event(PHCompositeNode *topnode)
 
     /***********************************************
 
-   DO THE EMCAL RECALIBRATION (if need be, recals are in database)
+   DO THE EMCAL RECALIBRATION (if need be, recals are in database as of January 2018)
+   I'm leaving the code here commented out in case it ever needs to be used
+   again for new recalibrations e.g. for a new clusterizer
 
   ************************************************/
     /*
@@ -580,7 +623,14 @@ int Photons::process_event(PHCompositeNode *topnode)
      cout<<eta<<"   "<<phi<<"   "<<center_x<<","<<center_y<<","<<center_z<<"     "<<size_x<<","<<size_y<<","<<size_z<<endl;
      
     */
+
+
+
+    cluster_tree->Fill();
   }
+
+  if(verbosity > 1)
+    cout<<"Finished event in Photons package"<<endl;
 
   nevents++;
   tree->Fill();
