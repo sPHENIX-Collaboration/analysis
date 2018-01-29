@@ -350,8 +350,9 @@ LeptoquarksReco::AddTrueTauTag( type_map_tcan& tauCandidateMap, PHHepMCGenEventM
               best_match->set_property( TauCandidate::evtgen_decay_hcharged, tau_decay_hcharged );
               best_match->set_property( TauCandidate::evtgen_decay_lcharged, tau_decay_lcharged );
             }
+
+	  return 0;
         }
-      return 0;
     }
 
   /* If QUARK (->jet) in event: Tag the tau candidate (i.e. jet) with smalles delta_R from this quark */
@@ -368,9 +369,8 @@ LeptoquarksReco::AddTrueTauTag( type_map_tcan& tauCandidateMap, PHHepMCGenEventM
           best_match->set_property( TauCandidate::evtgen_etotal, (float)particle_quark->momentum().e() );
           best_match->set_property( TauCandidate::evtgen_eta, (float)particle_quark->momentum().eta() );
           best_match->set_property( TauCandidate::evtgen_phi, (float)particle_quark->momentum().phi() );
+	  return 0;
         }
-
-      return 0;
     }
 
   return 0;
