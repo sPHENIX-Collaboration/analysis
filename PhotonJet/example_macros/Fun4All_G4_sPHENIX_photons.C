@@ -1,8 +1,7 @@
 #include <iostream>
 using namespace std;
-
 int Fun4All_G4_sPHENIX_photons(
-    const int nEvents = -1,
+    const int nEvents = 2,
     const int jobnum = 0,
     const float photenergy = 10,
     const int doembedding = 0,
@@ -27,7 +26,7 @@ int Fun4All_G4_sPHENIX_photons(
   const bool readhits = false;
   // Or:
   // read files in HepMC format (typically output from event generators like hijing or pythia)
-  const bool readhepmc = true && doembedding;  // read HepMC files
+  const bool readhepmc = false && doembedding;  // read HepMC files
   // Or:
   // Use pythia
   const bool runpythia8 = false;
@@ -37,7 +36,7 @@ int Fun4All_G4_sPHENIX_photons(
   // Further choose to embed newly simulated events to a previous simulation. Not compatible with `readhits = true`
   // In case embedding into a production output, please double check your G4Setup_sPHENIX.C and G4_*.C consistent with those in the production macro folder
   // E.g. /sphenix/data/data02/review_2017-08-02/
-  const bool do_embedding = false && doembedding;
+  const bool do_embedding = doembedding && false;
 
   // Besides the above flags. One can further choose to further put in following particles in Geant4 simulation
   // Use multi-particle generator (PHG4SimpleEventGenerator), see the code block below to choose particle species and kinematics
@@ -59,7 +58,7 @@ int Fun4All_G4_sPHENIX_photons(
   bool do_pipe = true;
 
   bool do_svtx = true;
-  bool do_svtx_cell = do_svtx && false;
+  bool do_svtx_cell = do_svtx && true;
   bool do_svtx_track = do_svtx_cell && false;
   bool do_svtx_eval = do_svtx_track && false;
 
@@ -85,6 +84,9 @@ int Fun4All_G4_sPHENIX_photons(
   bool do_hcalout_cluster = do_hcalout_twr && true;
   bool do_hcalout_eval = do_hcalout_cluster && false;
 
+  //! forward flux return plug door. Out of acceptance and off by default.
+  bool do_plugdoor = false;
+
   bool do_global = true;
   bool do_global_fastsim = true;
 
@@ -93,10 +95,10 @@ int Fun4All_G4_sPHENIX_photons(
   bool do_jet_reco = false;
   bool do_jet_eval = do_jet_reco && false;
 
-  // HI Jet Reco for jet simulations in Au+Au (default is false for
-  // single particle / p+p simulations, or for Au+Au simulations which
-  // don't care about jets)
-  bool do_HIjetreco = false && do_jet_reco && do_cemc_twr && do_hcalin_twr && do_hcalout_twr;
+  // HI Jet Reco for p+Au / Au+Au collisions (default is false for
+  // single particle / p+p-only simulations, or for p+Au / Au+Au
+  // simulations which don't particularly care about jets)
+  bool do_HIjetreco = false && do_cemc_twr && do_hcalin_twr && do_hcalout_twr;
 
   bool do_dst_compress = false;
 
@@ -111,12 +113,11 @@ int Fun4All_G4_sPHENIX_photons(
   gSystem->Load("libphhepmc.so");
   gSystem->Load("libg4testbench.so");
   gSystem->Load("libg4hough.so");
-  gSystem->Load("libcemc.so");
   gSystem->Load("libg4eval.so");
 
   // establish the geometry and reconstruction setup
   gROOT->LoadMacro("G4Setup_sPHENIX.C");
-  G4Init(do_svtx, do_pstof, do_cemc, do_hcalin, do_magnet, do_hcalout, do_pipe, n_TPC_layers);
+  G4Init(do_svtx, do_pstof, do_cemc, do_hcalin, do_magnet, do_hcalout, do_pipe, do_plugdoor, n_TPC_layers);
 
   int absorberactive = 1;  // set to 1 to make all absorbers active volumes
   //  const string magfield = "1.5"; // if like float -> solenoidal field in T, if string use as fieldmap name (including path)
@@ -208,13 +209,13 @@ int Fun4All_G4_sPHENIX_photons(
                                               PHG4SimpleEventGenerator::Uniform,
                                               PHG4SimpleEventGenerator::Uniform);
         gen->set_vertex_distribution_mean(0.0, 0.0, 0.0);
-        gen->set_vertex_distribution_width(0.0, 0.0, 0.0);
+        gen->set_vertex_distribution_width(0.0, 0.0, 5.0);
       }
       gen->set_vertex_size_function(PHG4SimpleEventGenerator::Uniform);
       gen->set_vertex_size_parameters(0.0, 0.0);
       gen->set_eta_range(0.5, 0.7);
       gen->set_phi_range(0.2,0.4);
-      //gen->set_pt_range(0.1, 50.0);
+ 
       gen->set_p_range(photenergy, photenergy);
       if(doembedding)
 	gen->Embed(1);
@@ -301,7 +302,7 @@ int Fun4All_G4_sPHENIX_photons(
     //---------------------
 
     G4Setup(absorberactive, magfield, TPythia6Decayer::kAll,
-            do_svtx, do_pstof, do_cemc, do_hcalin, do_magnet, do_hcalout, do_pipe, magfield_rescale);
+            do_svtx, do_pstof, do_cemc, do_hcalin, do_magnet, do_hcalout, do_pipe,do_plugdoor, magfield_rescale);
   }
 
   //---------
@@ -407,14 +408,12 @@ int Fun4All_G4_sPHENIX_photons(
 
   if (do_jet_eval) Jet_Eval(string(outputFile) + "_g4jet_eval.root");
 
-
-
   gSystem->Load("libPhotons.so");
   Photons *photons = new Photons(outputFile);
   photons->Verbosity(0);
 
   photons->set_cluspt_mincut(0.5);
-  photons->set_eta_lowhigh(-1.1,1.1);
+  photons->set_eta_lowhigh(-1.05,1.05);
   if(doembedding)
     photons->use_embedding(1);
   if(!doembedding)
@@ -422,8 +421,8 @@ int Fun4All_G4_sPHENIX_photons(
   se->registerSubsystem(photons);
 
 
-
   gSystem->ListLibraries();
+
 
 
   //--------------
@@ -453,8 +452,8 @@ int Fun4All_G4_sPHENIX_photons(
     gSystem->Load("libg4dst.so");
 
     Fun4AllDstInputManager *in1 = new Fun4AllNoSyncDstInputManager("DSTinEmbed");
-          in1->AddFile(embed_input_file); // if one use a single input file
-    //in1->AddListFile(embed_input_file);  // RecommendedL: if one use a text list of many input files
+    //      in1->AddFile(embed_input_file); // if one use a single input file
+    in1->AddListFile(embed_input_file);  // RecommendedL: if one use a text list of many input files
     se->registerInputManager(in1);
   }
 
@@ -466,8 +465,10 @@ int Fun4All_G4_sPHENIX_photons(
     Fun4AllHepMCInputManager *in = new Fun4AllHepMCInputManager("HepMCInput_1");
     se->registerInputManager(in);
     se->fileopen(in->Name().c_str(), inputFile);
-    //in->set_vertex_distribution_width(100e-4,100e-4,30,0);//optional collision smear in space time
-    //in->set_vertex_distribution_mean(0,0,1,0);//optional collision central position shift in space time
+    //in->set_vertex_distribution_width(100e-4,100e-4,30,0);//optional collision smear in space, time
+    //in->set_vertex_distribution_mean(0,0,1,0);//optional collision central position shift in space, time
+    // //optional choice of vertex distribution function in space, time
+    //in->set_vertex_distribution_function(PHHepMCGenHelper::Gaus,PHHepMCGenHelper::Gaus,PHHepMCGenHelper::Uniform,PHHepMCGenHelper::Gaus);
     //! embedding ID for the event
     //! positive ID is the embedded event of interest, e.g. jetty event from pythia
     //! negative IDs are backgrounds, .e.g out of time pile up collisions
