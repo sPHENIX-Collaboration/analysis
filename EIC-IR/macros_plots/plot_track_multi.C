@@ -3,13 +3,16 @@
 int
 plot_track_multi()
 {
+  /**** Chose input files ****/
+  /* File with IR mangets configuration*/
+  TString fname_irmag("example/updated-magnets-2017.dat");
 
   /* Select input files (output from Fun4All) for plotting
    */
   vector<string> v_filenames;
-  v_filenames.push_back( "data/eRHIC_updated-magnets-2017_proton_275GeV_22mrad.root" );
-  v_filenames.push_back( "data/eRHIC_updated-magnets-2017_proton_275GeV_27mrad.root" );
-  v_filenames.push_back( "data/eRHIC_updated-magnets-2017_proton_275GeV_17mrad.root" );
+  v_filenames.push_back( "example/eRHIC_updated-magnets-2017_proton_275GeV_22mrad.root" );
+  v_filenames.push_back( "example/eRHIC_updated-magnets-2017_proton_275GeV_27mrad.root" );
+  v_filenames.push_back( "example/eRHIC_updated-magnets-2017_proton_275GeV_17mrad.root" );
 
   TObjArray* graphs = new TObjArray();
 
@@ -52,8 +55,13 @@ plot_track_multi()
   h1->Draw("AXIS");
 
   /* Read IR configuration file- this needs to go somewhere else using parameters and a .root file to store them */
-  string irfile = "data/updated-magnets-2017.dat";
-  ifstream irstream(irfile.c_str());
+  ifstream irstream(fname_irmag);
+
+  if(!irstream.is_open())
+    {
+      cout << "ERROR: Could not open IR configuration file " << fname_irmag << endl;
+      return -1;
+    }
 
   while(!irstream.eof()){
     string str;

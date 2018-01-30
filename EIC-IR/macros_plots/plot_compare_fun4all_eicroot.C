@@ -3,10 +3,16 @@
 int
 plot_compare_fun4all_eicroot()
 {
+  /**** Chose input files ****/
+  /* File with IR mangets configuration*/
+  TString fname_irmag("example/proton-magnets-250GeV-opt2.dat");
+  /* File with Fun4All output*/
+  TString fname_fun4all("example/eRHIC_proton-magnets-250GeV-opt2_250GeV_0mrad.root");
+  /* File with EICROOT output*/
+  TString fname_eicroot("example/eicroot-track_proton-magnets-250GeV-opt2_250GeV_0mrad.txt");
+
   /* Open iput file with trajectories from GEANT4 */
-  TFile *fin = new TFile("data_fun4all/eRHIC_proton-magnets-250GeV-opt2_250GeV_0mrad.root");
-  //TFile *fin = new TFile("data_fun4all/eRHIC_test_dipole_250GeV.root");
-  //TFile *fin = new TFile("data_fun4all/eRHIC_test_quad_250GeV.root");
+  TFile *fin = new TFile(fname_fun4all);
 
   /* Get tree from file */
   TTree *tin = (TTree*)fin->Get("T");
@@ -28,9 +34,7 @@ plot_compare_fun4all_eicroot()
 
   /* Get tree from file */
   TTree *tin2 = new TTree();
-  tin2->ReadFile("data_eicroot/eicroot-track_proton-magnets-250GeV-opt2_250GeV_0mrad.txt","x/F:y:z");
-  //tin2->ReadFile("data_eicroot/eicroot-track_test_dipole_250GeV.txt","x/F:y:z");
-  //tin2->ReadFile("data_eicroot/eicroot-track_test_quad_250GeV.txt","x/F:y:z");
+  tin2->ReadFile(fname_eicroot,"x/F:y:z");
 
   int nhits = tin2->GetEntries();
   tin2->Draw("x:z","","");
@@ -52,12 +56,13 @@ plot_compare_fun4all_eicroot()
   h1->Draw("AXIS");
 
   /* Read IR configuration file- this needs to go somewhere else using parameters and a .root file to store them */
-  //string irfile = "../input_ir/magnet_dipole_test.dat";
-  //string irfile = "../input_ir/magnet_quad_test.dat";
-  //string irfile = "../input_ir/linac-ring-proton-magnets-Version3.01-21apr2016.dat";
-  string irfile = "../input_ir/proton-magnets-250GeV-opt2.dat";
-  //  string irfile = "../input_ir/updated-magnets-2017.dat";
-  ifstream irstream(irfile.c_str());
+  ifstream irstream(fname_irmag);
+
+  if(!irstream.is_open())
+    {
+      cout << "ERROR: Could not open IR configuration file " << fname_irmag << endl;
+      return -1;
+    }
 
   while(!irstream.eof()){
     string str;
