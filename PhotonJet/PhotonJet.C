@@ -1,3 +1,4 @@
+//general fun4all and subsysreco includes
 #include <fun4all/Fun4AllServer.h>
 #include <g4main/PHG4Hit.h>
 #include <g4main/PHG4Particle.h>
@@ -5,7 +6,7 @@
 #include <phool/PHCompositeNode.h>
 #include <phool/getClass.h>
 
-#include <TLorentzVector.h>
+//calorimeter includes
 #include <calobase/RawCluster.h>
 #include <calobase/RawClusterContainer.h>
 #include <calobase/RawClusterUtility.h>
@@ -20,37 +21,44 @@
 #include <g4jets/JetMap.h>
 #include <g4vertex/GlobalVertex.h>
 #include <g4vertex/GlobalVertexMap.h>
-#include <iostream>
 
+//evaluation includes
 #include <g4detectors/PHG4ScintillatorSlatContainer.h>
 #include <g4eval/JetEvalStack.h>
+#include <g4eval/SvtxEvalStack.h>
 #include <g4hough/SvtxTrack.h>
 #include <g4hough/SvtxTrackMap.h>
 
-#include <g4eval/SvtxEvalStack.h>
-#include <sstream>
-
+//hepmc includes
 #include <HepMC/GenEvent.h>
 #include <HepMC/GenVertex.h>
 #include <phhepmc/PHHepMCGenEvent.h>
 #include <phhepmc/PHHepMCGenEventMap.h>
+
+//general c++ includes
+#include <TLorentzVector.h>
 #include <cassert>
 #include <iostream>
+#include <sstream>
+
 #include "PhotonJet.h"
+
 using namespace std;
 
 PhotonJet::PhotonJet(const std::string &name)
   : SubsysReco("PHOTONJET")
 {
+  //just set all global values to -999 from the start so that they have a spot in memory
   initialize_values();
 
   outfilename = name;
 
-  //add other initializers here
-  //default use isocone algorithm
+  //initialize public member values
+
+  //default don't use isocone algorithm
   use_isocone = 0;
 
-  //default do not use tracked jets
+  //default do not use tracked jets (or tracks)
   eval_tracked_jets = 0;
 
   //default use 0.3 jet cone
@@ -60,41 +68,45 @@ PhotonJet::PhotonJet(const std::string &name)
   //this can be changed with one of the public functions if e.g. you want individual event number IDs for multiple MC blocks of events
   nevents = 0;
 
-  //default to barrel acceptance
+  //default to barrel sPHENIX acceptance
   etalow = -1;
   etahigh = 1;
 
   //default jetminptcut
-  minjetpt = 4.;
+  minjetpt = 5.;
 
   //default mincluscut
   mincluspt = 0.5;
 
-  //default mindp_pt
+  //default minimum direct photon p_T
   mindp_pt = 10;
 
-  //default to not use the trigger emulator
-  usetrigger = 0;
+  //default to use the trigger emulator
+  usetrigger = 1;
 
-  //default to using position corrected cemc
+  //default to using position corrected emcal clusters
   use_pos_cor_cemc = 1;
 
-  //default to not AA and not using background subtraction
+  //default to not AA and not using embedded background subtraction
   is_AA = 0;
 }
 
 int PhotonJet::Init(PHCompositeNode *topnode)
 {
-  cout << "GATHERING JETS: " << jet_cone_size << endl;
-  cout << "GATHERING IN ETA: [" << etalow
-       << "," << etahigh << "]" << endl;
-  cout << "EVALUATING TRACKED JETS: " << eval_tracked_jets << endl;
-  cout << "USING ISOLATION CONE: " << use_isocone << endl;
+  if (verbosity > 1)
+  {
+    cout << "COLLECTING PHOTON-JET PAIRS FOR THE FOLLOWING: " << endl;
+    cout << "GATHERING JETS: " << jet_cone_size << endl;
+    cout << "GATHERING IN ETA: [" << etalow
+         << "," << etahigh << "]" << endl;
+    cout << "EVALUATING TRACKED JETS: " << eval_tracked_jets << endl;
+    cout << "USING ISOLATION CONE: " << use_isocone << endl;
+  }
 
   //create output photonjet tfile which contains output TTrees
   file = new TFile(outfilename.c_str(), "RECREATE");
 
-  //create basic histograms
+  //create some basic histograms
   ntruthconstituents_h = new TH1F("ntruthconstituents", "", 200, 0, 200);
   percent_photon_h = new TH1F("percent_photon_h",
                               ";E_{photon}/E_{jet}; Counts", 200, 0, 2);
@@ -113,7 +125,8 @@ int PhotonJet::Init(PHCompositeNode *topnode)
 int PhotonJet::process_event(PHCompositeNode *topnode)
 {
   // event number tracker,
-  cout << "at event number " << nevents << endl;
+  if (nevents % 10 == 0)
+    cout << "at event number " << nevents << endl;
 
   //get the requested size jets
   ostringstream truthjetsize;
@@ -128,8 +141,6 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
   trackjetsize.str("");
   trackjetsize << "AntiKt_Track_r";
 
-  //cout<<"Gathering Jets:  "<<recojetsize.str().c_str()<<endl;
-  //cout<<"Gathering Jets:  "<<truthjetsize.str().c_str()<<endl;
   if (jet_cone_size == 2)
   {
     truthjetsize << "02";
@@ -175,21 +186,26 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
     recojetsize << "04";
   }
 
+  if (verbosity > 1)
+  {
+    cout << "Gathering RECO Jets:  " << recojetsize.str().c_str() << endl;
+    cout << "Gathering TRUTH Jets:  " << truthjetsize.str().c_str() << endl;
+  }
+
   //get the nodes from the NodeTree
 
   //JetMap nodes
   JetMap *truth_jets =
-      //findNode::getClass<JetMap>(topnode,"AntiKt_Truth_r04");
       findNode::getClass<JetMap>(topnode, truthjetsize.str().c_str());
+
   JetMap *reco_jets = 0;
   if (!is_AA)
   {
-    //findNode::getClass<JetMap>(topnode,"AntiKt_Tower_r04");
     reco_jets = findNode::getClass<JetMap>(topnode, recojetsize.str().c_str());
   }
+
   JetMap *tracked_jets =
       findNode::getClass<JetMap>(topnode, trackjetsize.str().c_str());
-  //findNode::getClass<JetMap>(topnode,"AntiKt_Track_r04");
 
   //G4 truth particle node
   PHG4TruthInfoContainer *truthinfo = findNode::getClass<PHG4TruthInfoContainer>(topnode, "G4TruthInfo");
@@ -204,7 +220,6 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
     clusters = findNode::getClass<RawClusterContainer>(topnode, "CLUSTER_POS_COR_CEMC");
 
   //SVTX tracks node
-
   SvtxTrackMap *trackmap = findNode::getClass<SvtxTrackMap>(topnode, "SvtxTrackMap");
 
   //trigger emulator
@@ -221,7 +236,6 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
     recojetsize << "_Sub1";
     reco_jets =
         findNode::getClass<JetMap>(topnode, recojetsize.str().c_str());
-    //findNode::getClass<JetMap>(topnode,"AntiKt_Tower_r04_Sub1");
   }
 
   //for truth jet matching
@@ -230,12 +244,13 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
     _jetevalstack =
         new JetEvalStack(topnode, recojetsize.str().c_str(),
                          truthjetsize.str().c_str());
-
+  //the jet eval stack doesn't work for AA - so this is useless
+  //in that case the code is setup to match reco and truth jets based on
+  //their difference in deltaphi and deltaeta
   else
     _jetevalstack = new JetEvalStack(topnode,
                                      "AntiKt_Tower_r04_Sub1",
                                      "AntiKt_Truth_r04");
-  //truthjetsize.str().c_str());
 
   GlobalVertexMap *vertexmap = findNode::getClass<GlobalVertexMap>(topnode, "GlobalVertexMap");
   if (!vertexmap)
@@ -302,6 +317,8 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
   SvtxTrackEval *trackeval = svtxevalstack->get_track_eval();
   JetTruthEval *trutheval = _jetevalstack->get_truth_eval();
 
+  //now we have all the nodes, so collect the data from the various nodes
+
   /***********************************************
 
   GET ALL THE HEPMC EVENT LEVEL TRUTH PARTICLES
@@ -314,6 +331,11 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
   {
     cout << "hepmc event map node is missing, BAILING" << endl;
     //return 0;
+  }
+
+  if (verbosity > 1)
+  {
+    cout << "Getting HEPMC truth particles " << endl;
   }
 
   //you can iterate over the number of events in a hepmc event
@@ -351,13 +373,18 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
       x1 = pdfinfo->x1();
       x2 = pdfinfo->x2();
 
+      //are there multiple partonic intercations in a p+p event
       mpi = truthevent->mpi();
 
       numparticlesinevent = 0;
 
       //Get the PYTHIA signal process id identifying the 2-to-2 hard process
       process_id = truthevent->signal_process_id();
-      for (HepMC::GenEvent::particle_const_iterator iter = truthevent->particles_begin(); iter != truthevent->particles_end(); ++iter)
+
+      //loop over all the truth particles and get their information
+      for (HepMC::GenEvent::particle_const_iterator iter = truthevent->particles_begin();
+           iter != truthevent->particles_end();
+           ++iter)
       {
         //get each pythia particle characteristics
         truthenergy = (*iter)->momentum().e();
@@ -377,15 +404,22 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
     }
   }
 
+  //these are global variables, i.e. the highest pt cluster in an event
   cluseventenergy = 0;
   cluseventphi = 0;
   cluseventpt = 0;
   cluseventeta = 0;
   float lastenergy = 0;
 
-  cout << "get G4 stable truth" << endl;
+  if (verbosity > 1)
+  {
+    cout << "get G4 stable truth particles" << endl;
+  }
+
   //loop over the G4 truth (stable) particles
-  for (PHG4TruthInfoContainer::ConstIterator iter = range.first; iter != range.second; ++iter)
+  for (PHG4TruthInfoContainer::ConstIterator iter = range.first;
+       iter != range.second;
+       ++iter)
   {
     //get this particle
     PHG4Particle *truth = iter->second;
@@ -428,11 +462,16 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
    TRUTH JETS
 
    ***************************************/
-  cout << "get truth jets" << endl;
+  if (verbosity > 1)
+  {
+    cout << "get the truth jets" << endl;
+  }
 
   //loop over the truth jets
   float hardest_jet = 0;
-  for (JetMap::Iter iter = truth_jets->begin(); iter != truth_jets->end(); ++iter)
+  for (JetMap::Iter iter = truth_jets->begin();
+       iter != truth_jets->end();
+       ++iter)
   {
     Jet *jet = iter->second;
 
@@ -444,7 +483,8 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
 
     truthjeteta = jet->get_eta();
 
-    //make the width extra just to be safe and collect truth jets that might be e.g. half in the sphenix acceptance
+    //make the width extra just to be safe and collect truth jets
+    //that might be e.g. half in the sphenix acceptance
     if (truthjeteta < (etalow - 1) || truthjeteta > (etahigh + 1))
       continue;
 
@@ -456,7 +496,7 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
     truthjetp = jet->get_p();
     truthjetenergy = jet->get_e();
 
-    //check that the jet isn't just a photon or something like this
+    //check that the jet isn't just a high pt photon
 
     //get the truth constituents of the jet
     std::set<PHG4Particle *> truthjetcomp =
@@ -496,10 +536,15 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
     //require that the number of constituents in the jet be larger than 3
     float percent_photon = truthjethighestphoton / truthjetenergy;
     percent_photon_h->Fill(percent_photon);
+
+    //if there is a high energy photon that is 80% of the jets energy, skip it
+    //it is likely the near-side direct photon
     if (percent_photon > 0.8)
     {
       continue;
     }
+
+    //we also want jets to have at least 3 constituents
     if (ntruthconstituents < 3)
       continue;
 
@@ -517,10 +562,14 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
     truthjettree->Fill();
   }
 
-  //fill the event tree with e.g. x1,x2 partonic momentum fractions, process id, highest energy photon, etc.
+  //fill the event tree with e.g. x1,x2 partonic momentum fractions,
+  //process id, highest energy photon, etc.
   event_tree->Fill();
 
-  cout << "get trigger info" << endl;
+  if (verbosity > 1)
+  {
+    cout << "get trigger emulator info" << endl;
+  }
   /***********************************************
 
    TRIGGER EMULATOR INFO
@@ -544,21 +593,28 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
   GET THE EMCAL CLUSTERS
 
   ************************************************/
+  if (verbosity > 1)
+  {
+    cout << "Get EMCal Cluster" << endl;
+  }
 
-  cout << "Get EMCal Cluster" << endl;
   RawClusterContainer::ConstRange begin_end = clusters->getClusters();
   RawClusterContainer::ConstIterator clusiter;
 
   //loop over the emcal clusters
-  for (clusiter = begin_end.first; clusiter != begin_end.second; ++clusiter)
+  for (clusiter = begin_end.first;
+       clusiter != begin_end.second;
+       ++clusiter)
   {
     //get this cluster
     RawCluster *cluster = clusiter->second;
 
     //get cluster characteristics
-
+    //this helper class determines the photon characteristics
+    //depending on the vertex position
+    //this is important for e.g. eta determination and E_T determination
     CLHEP::Hep3Vector vertex(vtx->get_x(), vtx->get_y(), vtx->get_z());
-    CLHEP::Hep3Vector E_vec_cluster = RawClusterUtility::GetEVec(*cluster, vertex);
+    CLHEP::Hep3Vector E_vec_cluster = RawClusterUtility::GetECoreVec(*cluster, vertex);
     clus_energy = E_vec_cluster.mag();
     clus_eta = E_vec_cluster.pseudoRapidity();
     clus_theta = E_vec_cluster.getTheta();
@@ -587,17 +643,20 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
     clus_py = clus_pt * TMath::Sin(clus_phi);
     clus_pz = sqrt(clus_energy * clus_energy - clus_px * clus_px - clus_py * clus_py);
 
+    //fill the cluster tree with all emcal clusters
     cluster_tree->Fill();
 
+    //now determine the direct photon
     //only interested in high pt photons to be isolated i.e. direct photons
     if (clus_pt < mindp_pt)
       continue;
+    //require that the entire isolation cone fall within sPHENIX acceptance
     if (fabs(clus_eta) > (1.0 - isoconeradius) && use_isocone)
       continue;
 
     if (use_isocone)
     {
-      //get the energy sum
+      //get the energy sum in the cone surrounding the photon
       float energysum = ConeSum(cluster, clusters, trackmap, isoconeradius, vtx);
 
       //check if energy sum is less than 10% of isolated photon energy
@@ -607,8 +666,9 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
     }
 
     //find the associated truth high pT photon with this reconstructed photon
-
-    for (PHG4TruthInfoContainer::ConstIterator iter = range.first; iter != range.second; ++iter)
+    for (PHG4TruthInfoContainer::ConstIterator iter = range.first;
+         iter != range.second;
+         ++iter)
     {
       //get this truth particle
       PHG4Particle *truth = iter->second;
@@ -636,6 +696,7 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
           clustrutheta = -9999;
 
         //check that the truth photon has similar eta/phi to reco photon
+        //the clustering has a resolution of about 0.005 rads so this is sufficient
         if (fabs(clustruthphi - clus_phi) > 0.02 || fabs(clustrutheta - clus_eta) > 0.02)
           continue;
 
@@ -644,10 +705,13 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
         break;
       }
     }
-    //fill isolated clusters tree
+    //fill isolated clusters tree, i.e. all isolated clusters regardless
+    //of if an away-side jet is found also
     isolated_clusters->Fill();
 
     //get back to back reconstructed hadrons/jets for photon-jet processes
+    //two different functions for Au+Au vs p+p due to the way truth jet matching
+    //is performed between the two systems
     if (!is_AA)
       GetRecoHadronsAndJets(cluster, trackmap,
                             reco_jets, tracked_jets,
@@ -674,8 +738,13 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
 
   if (eval_tracked_jets)
   {
-    cout << "Get the Tracks" << endl;
-    for (SvtxTrackMap::Iter iter = trackmap->begin(); iter != trackmap->end(); ++iter)
+    if (verbosity > 1)
+    {
+      cout << "Get the Tracks" << endl;
+    }
+    for (SvtxTrackMap::Iter iter = trackmap->begin();
+         iter != trackmap->end();
+         ++iter)
     {
       SvtxTrack *track = iter->second;
 
@@ -704,7 +773,7 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
       tr_y = track->get_y();
       tr_z = track->get_z();
 
-      //get truth info
+      //get truth track info
       PHG4Particle *truthtrack = trackeval->max_truth_particle_by_nclusters(track);
       truth_is_primary = truthinfo->is_primary(truthtrack);
 
@@ -732,9 +801,14 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
    RECONSTRUCTED JETS
 
    ***************************************/
+  if (verbosity > 1)
+  {
+    cout << "Get all Reco Jets" << endl;
+  }
 
-  cout << "Get Reco Jets" << endl;
-  for (JetMap::Iter iter = reco_jets->begin(); iter != reco_jets->end(); ++iter)
+  for (JetMap::Iter iter = reco_jets->begin();
+       iter != reco_jets->end();
+       ++iter)
   {
     Jet *jet = iter->second;
     Jet *truthjet = recoeval->max_truth_jet_by_energy(jet);
@@ -744,9 +818,11 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
 
     recojeteta = jet->get_eta();
 
+    //reco jet eta better not be outside of the sPHENIX acceptance....
     if (recojeteta < (etalow - 1) || recojeteta > (etahigh + 1))
       continue;
 
+    //get reco jet characteristics
     recojetid = jet->get_id();
     recojetpx = jet->get_px();
     recojetpy = jet->get_py();
@@ -756,6 +832,8 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
     recojetp = jet->get_p();
     recojetenergy = jet->get_e();
 
+    //if truthjet exists, then it is p+p and we can use the stackeval
+    //for truthjet matching
     if (truthjet)
     {
       truthjetid = truthjet->get_id();
@@ -770,7 +848,7 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
       truthjetmass = truthjet->get_mass();
 
       //check that the jet isn't just a photon or something like this
-      //needs at least 2 constituents and that 90% of jet isn't from one photon
+      //needs at least 2 constituents and that 80% of jet isn't from one photon
       std::set<PHG4Particle *> truthjetcomp =
           trutheval->all_truth_particles(truthjet);
       ntruthconstituents = 0;
@@ -800,9 +878,8 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
         }
       }
 
-      //if the highest energy photon in the jet is 90% of the jets energy
+      //if the highest energy photon in the jet is 80% of the jets energy
       //its probably an isolated photon and so we want to not include it in the tree
-      //if(truthjethighestphoton/truthjetenergysum>0.9 || ntruthconstituents<4)
       float percent_photon = truthjethighestphoton / truthjetenergy;
       if (percent_photon > 0.8)
       {
@@ -811,9 +888,16 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
       if (!is_AA && ntruthconstituents < 3)
         continue;
     }
+
+    //if truthjet was null then we just match the reco-truth jets by
+    //their distance in dphi deta space
     else
     {
-      cout << "matching by distance jet" << endl;
+      if (verbosity > 1)
+      {
+        cout << "matching by distance jet" << endl;
+      }
+
       truthjetid = 0;
       truthjetp = 0;
       truthjetphi = 0;
@@ -827,7 +911,9 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
       //if the jetevalstack can't find a good truth jet
       //try to match reco jet with closest truth jet
       float closestjet = 9999;
-      for (JetMap::Iter iter = truth_jets->begin(); iter != truth_jets->end(); ++iter)
+      for (JetMap::Iter iter = truth_jets->begin();
+           iter != truth_jets->end();
+           ++iter)
       {
         Jet *jet = iter->second;
 
@@ -850,7 +936,7 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
 
         if (dR < reco_jets->get_par() && dR < closestjet)
         {
-          truthjetid = -9999;  //indicates matched with distance, not evalstack
+          truthjetid = -9999;  //indicates matched with distance, not jetevalstack
           truthjetp = jet->get_p();
           truthjetphi = jet->get_phi();
           truthjeteta = jet->get_eta();
@@ -872,7 +958,10 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
     recojettree->Fill();
   }
 
-  cout << "finished event" << endl;
+  if (verbosity > 1)
+  {
+    cout << "finished event" << endl;
+  }
 
   nevents++;
   tree->Fill();
@@ -881,7 +970,7 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
 
 int PhotonJet::End(PHCompositeNode *topnode)
 {
-  std::cout << " DONE PROCESSING " << endl;
+  std::cout << " DONE PROCESSING PHOTONJET PACKAGE" << endl;
 
   file->Write();
   file->Close();
@@ -895,14 +984,18 @@ void PhotonJet::GetRecoHadronsAndJetsAA(RawCluster *trig,
                                         GlobalVertex *vtx)
 {
   CLHEP::Hep3Vector vertex(vtx->get_x(), vtx->get_y(), vtx->get_z());
-  CLHEP::Hep3Vector E_vec_cluster = RawClusterUtility::GetEVec(*trig, vertex);
+  CLHEP::Hep3Vector E_vec_cluster = RawClusterUtility::GetECoreVec(*trig, vertex);
 
   float trig_phi = E_vec_cluster.getPhi();
   float trig_eta = E_vec_cluster.pseudoRapidity();
 
   PHG4TruthInfoContainer::Range range = alltruth->GetPrimaryParticleRange();
 
-  for (PHG4TruthInfoContainer::ConstIterator iter = range.first; iter != range.second; ++iter)
+  //find the matching truth photon to the reco photon
+  //for the values in the photon-jet tree
+  for (PHG4TruthInfoContainer::ConstIterator iter = range.first;
+       iter != range.second;
+       ++iter)
   {
     PHG4Particle *truth = iter->second;
 
@@ -926,7 +1019,7 @@ void PhotonJet::GetRecoHadronsAndJetsAA(RawCluster *trig,
       if (clustrutheta != clustrutheta)
         clustrutheta = -9999;
 
-      if (fabs(clustruthphi - trig_phi) > 0.03 || fabs(clustrutheta - trig_eta) > 0.03)
+      if (fabs(clustruthphi - trig_phi) > 0.02 || fabs(clustrutheta - trig_eta) > 0.02)
         continue;
 
       //once the values are set, we've found the truth photon so just break out of this loop
@@ -934,7 +1027,10 @@ void PhotonJet::GetRecoHadronsAndJetsAA(RawCluster *trig,
     }
   }
 
-  for (JetMap::Iter iter = recojets->begin(); iter != recojets->end(); ++iter)
+  //find the away-side jets from the direct photon
+  for (JetMap::Iter iter = recojets->begin();
+       iter != recojets->end();
+       ++iter)
   {
     Jet *jet = iter->second;
 
@@ -966,6 +1062,8 @@ void PhotonJet::GetRecoHadronsAndJetsAA(RawCluster *trig,
     _truthjetpz = 0;
 
     //try to match reco jet with closest truth jet
+    //this is A+A so we know the jet eval stack doesn't work
+    //so just match the truth-reco jet pair by distance
     float closestjet = 9999;
     for (JetMap::Iter iter = truthjets->begin(); iter != truthjets->end(); ++iter)
     {
@@ -1012,8 +1110,8 @@ void PhotonJet::GetRecoHadronsAndJetsAA(RawCluster *trig,
     if (jetdphi > threepi2)
       jetdphi -= 2. * pi;
 
-    if (fabs(jetdphi) < 0.1)
-      //just pairedthe photon with itself instead of with a jet, so skip it
+    if (fabs(jetdphi) < 0.05)
+      //don't care about matching the reco photon with itself
       continue;
 
     jetdeta = trig_eta - _recojeteta;
@@ -1034,14 +1132,17 @@ void PhotonJet::GetRecoHadronsAndJets(RawCluster *trig,
                                       GlobalVertex *vtx)
 {
   CLHEP::Hep3Vector vertex(vtx->get_x(), vtx->get_y(), vtx->get_z());
-  CLHEP::Hep3Vector E_vec_cluster = RawClusterUtility::GetEVec(*trig, vertex);
+  CLHEP::Hep3Vector E_vec_cluster = RawClusterUtility::GetECoreVec(*trig, vertex);
 
   float trig_phi = E_vec_cluster.getPhi();
   float trig_eta = E_vec_cluster.pseudoRapidity();
 
   PHG4TruthInfoContainer::Range range = alltruth->GetPrimaryParticleRange();
 
-  for (PHG4TruthInfoContainer::ConstIterator iter = range.first; iter != range.second; ++iter)
+  //Match the reco photon with the truth photon
+  for (PHG4TruthInfoContainer::ConstIterator iter = range.first;
+       iter != range.second;
+       ++iter)
   {
     PHG4Particle *truth = iter->second;
 
@@ -1065,7 +1166,7 @@ void PhotonJet::GetRecoHadronsAndJets(RawCluster *trig,
       if (clustrutheta != clustrutheta)
         clustrutheta = -9999;
 
-      if (fabs(clustruthphi - trig_phi) > 0.03 || fabs(clustrutheta - trig_eta) > 0.03)
+      if (fabs(clustruthphi - trig_phi) > 0.02 || fabs(clustrutheta - trig_eta) > 0.02)
         continue;
 
       //once the values are set, we've found the truth photon so just break out of this loop
@@ -1075,7 +1176,13 @@ void PhotonJet::GetRecoHadronsAndJets(RawCluster *trig,
 
   if (eval_tracked_jets)
   {
-    for (SvtxTrackMap::Iter iter = tracks->begin(); iter != tracks->end(); ++iter)
+    if (verbosity > 1)
+    {
+      cout << "evaluating tracked hadrons opposite the direct photon" << endl;
+    }
+    for (SvtxTrackMap::Iter iter = tracks->begin();
+         iter != tracks->end();
+         ++iter)
     {
       SvtxTrack *track = iter->second;
 
@@ -1091,8 +1198,10 @@ void PhotonJet::GetRecoHadronsAndJets(RawCluster *trig,
       _tr_eta = track->get_eta();
       _charge = track->get_charge();
       _chisq = track->get_chisq();
+      //can find appropriate values to cut on for these later
       _ndf = track->get_ndf();
       _dca = track->get_dca();
+
       _tr_x = track->get_x();
       _tr_y = track->get_y();
       _tr_z = track->get_z();
@@ -1103,6 +1212,7 @@ void PhotonJet::GetRecoHadronsAndJets(RawCluster *trig,
       if (haddphi > threepi2)
         haddphi -= 2. * pi;
 
+      //get the truth track info
       PHG4Particle *truthtrack = trackeval->max_truth_particle_by_nclusters(track);
       _truth_is_primary = alltruth->is_primary(truthtrack);
 
@@ -1121,13 +1231,15 @@ void PhotonJet::GetRecoHadronsAndJets(RawCluster *trig,
 
       haddeta = trig_eta - _tr_eta;
 
-      hadpout = _tr_p * TMath::Sin(haddphi);
+      hadpout = _tr_pt * TMath::Sin(haddphi);
 
       isophot_had_tree->Fill();
     }
 
+    //now collect the away-sidet tracked jets from the direct photon
     for (JetMap::Iter iter = trackedjets->begin();
-         iter != trackedjets->end(); ++iter)
+         iter != trackedjets->end();
+         ++iter)
     {
       Jet *jet = iter->second;
       Jet *truthjet = recoeval->max_truth_jet_by_energy(jet);
@@ -1162,17 +1274,18 @@ void PhotonJet::GetRecoHadronsAndJets(RawCluster *trig,
         _ttruthjetpy = truthjet->get_py();
         _ttruthjetpz = truthjet->get_pz();
       }
+      //for some reason jeteval stack doesn't have matched jets, just set them to -999
       else
       {
-        _ttruthjetid = 0;
-        _ttruthjetp = 0;
-        _ttruthjetphi = 0;
-        _ttruthjeteta = 0;
-        _ttruthjetpt = 0;
-        _ttruthjetenergy = 0;
-        _ttruthjetpx = 0;
-        _ttruthjetpy = 0;
-        _ttruthjetpz = 0;
+        _ttruthjetid = -9999;
+        _ttruthjetp = -9999;
+        _ttruthjetphi = -9999;
+        _ttruthjeteta = -9999;
+        _ttruthjetpt = -9999;
+        _ttruthjetenergy = -9999;
+        _ttruthjetpx = -9999;
+        _ttruthjetpy = -9999;
+        _ttruthjetpz = -9999;
       }
 
       tjetdphi = trig_phi - _trecojetphi;
@@ -1181,7 +1294,7 @@ void PhotonJet::GetRecoHadronsAndJets(RawCluster *trig,
       if (tjetdphi > threepi2)
         tjetdphi -= 2. * pi;
 
-      if (fabs(tjetdphi) < 0.1)
+      if (fabs(tjetdphi) < 0.05)
         //just pairedthe photon with itself instead of with a jet, so skip it
         continue;
 
@@ -1192,7 +1305,11 @@ void PhotonJet::GetRecoHadronsAndJets(RawCluster *trig,
     }
   }
 
-  for (JetMap::Iter iter = jets->begin(); iter != jets->end(); ++iter)
+  //now collect awayside cluster jets
+
+  for (JetMap::Iter iter = jets->begin();
+       iter != jets->end();
+       ++iter)
   {
     Jet *jet = iter->second;
     Jet *truthjet = recoeval->max_truth_jet_by_energy(jet);
@@ -1314,6 +1431,7 @@ void PhotonJet::GetRecoHadronsAndJets(RawCluster *trig,
       }
     }
 
+    //make sure the jet has at least 3 constiutents
     if (!is_AA && pair_ntruthconstituents < 3)
       continue;
 
@@ -1324,7 +1442,7 @@ void PhotonJet::GetRecoHadronsAndJets(RawCluster *trig,
       jetdphi -= 2. * pi;
 
     //just pairedthe photon with itself instead of with a jet, so skip it
-    if (fabs(jetdphi) < 0.1)
+    if (fabs(jetdphi) < 0.05)
       continue;
 
     jetdeta = trig_eta - _recojeteta;
@@ -1343,12 +1461,14 @@ float PhotonJet::ConeSum(RawCluster *cluster,
   float energyptsum = 0;
 
   CLHEP::Hep3Vector vertex(vtx->get_x(), vtx->get_y(), vtx->get_z());
-  CLHEP::Hep3Vector E_vec_cluster = RawClusterUtility::GetEVec(*cluster, vertex);
+  CLHEP::Hep3Vector E_vec_cluster = RawClusterUtility::GetECoreVec(*cluster, vertex);
 
   RawClusterContainer::ConstRange begin_end = cluster_container->getClusters();
   RawClusterContainer::ConstIterator clusiter;
 
-  for (clusiter = begin_end.first; clusiter != begin_end.second; ++clusiter)
+  for (clusiter = begin_end.first;
+       clusiter != begin_end.second;
+       ++clusiter)
   {
     RawCluster *conecluster = clusiter->second;
 
@@ -1358,7 +1478,7 @@ float PhotonJet::ConeSum(RawCluster *cluster,
         if (conecluster->get_z() == cluster->get_z())
           continue;
 
-    CLHEP::Hep3Vector E_vec_conecluster = RawClusterUtility::GetEVec(*conecluster, vertex);
+    CLHEP::Hep3Vector E_vec_conecluster = RawClusterUtility::GetECoreVec(*conecluster, vertex);
 
     float cone_pt = E_vec_conecluster.perp();
 
