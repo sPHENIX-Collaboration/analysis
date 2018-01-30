@@ -1,6 +1,6 @@
 int Fun4All_G4_EICDetector_LQ_analysis_nf(
 					  string fileindex="1",
-                                          string n="100",
+                                          string n="10",
                                           string ebeam="20",
                                           string pbeam="250",
                                           //string inputFile,
@@ -12,7 +12,7 @@ int Fun4All_G4_EICDetector_LQ_analysis_nf(
   //    string inputFile="/gpfs/mnt/gpfs02/phenix/scratch/spjeffas/data/G4_Leptoquark_DST_p250_e20_1093events.root";
 
   //  string inputFile = "/gpfs/mnt/gpfs02/phenix/scratch/spjeffas/g4sim/G4_Leptoquark_DST_p250_e20_1000events_"+fileindex+"seed_3pion.root";
-  string inputFile = "/gpfs/mnt/gpfs02/phenix/scratch/spjeffas/g4sim/G4_Leptoquark_DST_p250_e20_1000events_"+fileindex+"seed_ep.root";
+  string inputFile = "/gpfs/mnt/gpfs02/phenix/scratch/spjeffas/g4sim/G4_Leptoquark_DST_p250_e20_1000events_"+fileindex+"seed_3pion.root";
 
   cout << "Using input file: " << inputFile << endl;
 
@@ -129,8 +129,7 @@ int Fun4All_G4_EICDetector_LQ_analysis_nf(
 
   if (do_jet_eval)
     {
-      Jet_Eval05(directory+"p"+pbeam+"_e"+ebeam+"_"+n+"events_file"+fileindex+"_jeteval_r05.root");
-      Jet_Eval10(directory+"p"+pbeam+"_e"+ebeam+"_"+n+"events_file"+fileindex+"_jeteval_r10.root");
+      Jet_Eval(directory+"p"+pbeam+"_e"+ebeam+"_"+n+"events_file"+fileindex+"_jeteval_r05.root");
     }
 
   if (do_fwd_jet_eval) Jet_FwdEval(directory+"p"+pbeam+"_e"+ebeam+"_"+n+"events_file"+fileindex+"_fwdjeteval.root");
