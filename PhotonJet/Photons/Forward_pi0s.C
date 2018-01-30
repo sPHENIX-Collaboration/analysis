@@ -105,7 +105,6 @@ int Forward_pi0s::process_event(PHCompositeNode *topnode)
   GlobalVertex *vtx = vertexmap->begin()->second;
   if (vtx == nullptr) return 0;
 
-  //RawClusterContainer *hcalin_clusters = findNode::getClass<RawClusterContainer>(topnode,"CLUSTER_HCALIN");
 
   if (!fclusters && _etalow > 1)
   {
@@ -123,12 +122,7 @@ int Forward_pi0s::process_event(PHCompositeNode *topnode)
     cout << "no cluster info" << endl;
     return 0;
   }
-  /*
-  if(!hcalin_clusters){
-    cout<<"no hcal in cluster info"<<endl;
-    return 0;
-  }
-  */
+
 
   for (PHG4TruthInfoContainer::ConstIterator iter = range.first; iter != range.second; ++iter)
   {
@@ -175,7 +169,7 @@ int Forward_pi0s::process_event(PHCompositeNode *topnode)
   int secondphotonflag = 0;
   int secondsecondphotonflag = 0;
   PHG4TruthInfoContainer::Range ranger = truthinfo->GetSecondaryParticleRange();
-  //This sets the global variables in the if statements to the pion first decay photon truth values of second decay photon truth values
+  //This sets the global variables in the if statements to the pion first decay photon truth values and second decay photon truth values
   for (PHG4TruthInfoContainer::ConstIterator iter = ranger.first; iter != ranger.second; ++iter)
   {
     PHG4Particle *truth = iter->second;
@@ -183,6 +177,8 @@ int Forward_pi0s::process_event(PHCompositeNode *topnode)
     int dumtruthpid = truth->get_pid();
     int dumparentid = truth->get_parent_id();
 
+
+    //if the parent is the pi0 and its a photon and we haven't marked one yet
     if (dumparentid == 1 && dumtruthpid == 22 && !firstphotonflag)
     {
       tphote1 = truth->get_e();
@@ -200,6 +196,9 @@ int Forward_pi0s::process_event(PHCompositeNode *topnode)
       tphoteta1 = vec.Eta();
       firstphotonflag = 1;
     }
+
+    //if the parent is the pi0 and its a photon and we have
+    //marked the first photon but not the second photon
     if (dumparentid == 1 &&
         dumtruthpid == 22 &&
         firstphotonflag && firstfirstphotonflag)
@@ -220,7 +219,7 @@ int Forward_pi0s::process_event(PHCompositeNode *topnode)
       secondphotonflag = 1;
     }
 
-    //this is a decay to photon + ee pair, lets just skip it
+    //this is a decay to photon + ee pair i.e. dalitz decay, lets just skip it
     if (dumparentid == 1 &&
         firstphotonflag && secondphotonflag && secondsecondphotonflag)
     {
@@ -247,71 +246,10 @@ int Forward_pi0s::process_event(PHCompositeNode *topnode)
          << "  |   " << tphotphi2 << "   |   " << tphoteta2 << endl;
   }
 
-  /***********************************************
-
-  GET THE HCAL_INNER CLUSTERS
-  (for looking for leakage between emcal towers and/or tunneling)
-  ************************************************/
-  /*
-  RawClusterContainer::ConstRange begin_end_hcal = hcalin_clusters->getClusters();
-  RawClusterContainer::ConstIterator hcaliter;
-
-  for(hcaliter = begin_end_hcal.first; hcaliter!=begin_end_hcal.second;++hcaliter){
-    RawCluster *cluster = hcaliter->second;
-
-    hcal_energy = cluster->get_energy();
-    hcal_eta = cluster->get_eta();
-    hcal_theta = 2.*TMath::ATan((TMath::Exp(-1.*clus_eta)));
-    hcal_pt = hcal_energy*TMath::Sin(hcal_theta);
-    hcal_phi = cluster->get_phi();
-
-    if(hcal_pt<0.2)
-      continue;
-
-    TLorentzVector *clus = new TLorentzVector();
-    clus->SetPtEtaPhiE(hcal_pt,hcal_eta,hcal_phi,hcal_energy);
-    float dumarray[4];
-    clus->GetXYZT(dumarray);
-    hcal_x = dumarray[0];
-    hcal_y = dumarray[1];
-    hcal_z = dumarray[2];
-    hcal_t = dumarray[3];
-
-    hcal_px = hcal_pt*TMath::Cos(hcal_phi);
-    hcal_py = hcal_pt*TMath::Sin(hcal_phi);
-    hcal_pz = sqrt(hcal_energy*hcal_energy-hcal_px*hcal_px*hcal_py*hcal_py);
-
-    //find the associated truth high pT photon with this reconstructed photon
-  
-    for( PHG4TruthInfoContainer::ConstIterator iter = range.first; iter!=range.second; ++iter){
-    
-      PHG4Particle *truth = iter->second;
-      
-      hclustruthpid = truth->get_pid();
-      if(hclustruthpid==22){
-	hclustruthpx = truth->get_px();
-	hclustruthpy = truth->get_py();
-	hclustruthpz = truth->get_pz();
-	hclustruthenergy = truth->get_e();
-	hclustruthpt = sqrt(clustruthpx*clustruthpx+clustruthpy*clustruthpy);
-	if(hclustruthpt<0.3)
-	  continue;
-	
-	TLorentzVector vec;
-	vec.SetPxPyPzE(hclustruthpx,hclustruthpy,hclustruthpz,hclustruthenergy);
-	hclustruthphi = vec.Phi();
-	hclustrutheta = vec.Eta();
-	//once found it break out
-	break;
-
-      }
-    }
-
-    inhcal_tree->Fill();
-  }
 
 
-  */
+
+
 
   /***********************************************
 
@@ -343,6 +281,8 @@ int Forward_pi0s::process_event(PHCompositeNode *topnode)
       fclus_py = fclus_pt * TMath::Sin(fclus_phi);
       fclus_pz = fclusenergy * TMath::Cos(fclus_theta);
 
+
+      //found a first good cluster, lets look for a second
       RawClusterContainer::ConstRange fclus2 = fclusters->getClusters();
       RawClusterContainer::ConstIterator fclusiter2;
       for (fclusiter2 = fclus2.first; fclusiter2 != fclus2.second; ++fclusiter2)
@@ -363,6 +303,7 @@ int Forward_pi0s::process_event(PHCompositeNode *topnode)
         if (fclusenergy2 < mincluspt)
           continue;
 
+	//avoid double counting, leading photon should always be highest energy
         if (fclusenergy < fclusenergy2)
           continue;
 
@@ -385,6 +326,7 @@ int Forward_pi0s::process_event(PHCompositeNode *topnode)
         TLorentzVector pi0;
         pi0 = phot1 + phot2;
 
+	//get the pi0 invmass
         invmass = pi0.M();
 
         if (verbosity > 1)
@@ -394,9 +336,15 @@ int Forward_pi0s::process_event(PHCompositeNode *topnode)
       fcluster_tree->Fill();
     }
   }
+
+
+
+
+
+
   /***********************************************
 
-  GET THE EMCAL CLUSTERS
+  GET THE CENTRAL ARM EMCAL CLUSTERS
 
   ************************************************/
 

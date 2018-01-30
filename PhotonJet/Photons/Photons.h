@@ -30,7 +30,7 @@ class Photons : public SubsysReco
   double isoconeradius, mincluspt;
   float jet_cone_size;
   float _etalow, _etahi;
-  int use_isocone;
+
   int _embed;
   int Init(PHCompositeNode *);
   int process_event(PHCompositeNode *);
