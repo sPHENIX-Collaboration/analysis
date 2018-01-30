@@ -1,0 +1,62 @@
+## 12/2/2017 forward hadrons at 275 GeV/c
+## using Palmer's file is beta82cf
+## For 'High Luminosity' parameters giving, with electron energy 10.1 GeV, Lum = 2.86 10^33
+## Plots and other parameters were distributed on 11/2/2017 in a file 1702-IR Design-v2.pdf
+##
+## The design reflects Sergei's shift of B3 to the right by 9.4 m
+## A new quad NQ was introduced to better control the betas at R3 and R4
+##
+## Warning: 
+## This design was simulated by a home made program and may not exactly agree with
+## madX and other codes
+## There are probably other errors
+## ----------------------------------------------------------
+## Initial conditions at IP
+##
+## beta*_x  beta*_y  g emit_x g emit_y  angle_x  angle_y
+##  [m]      [m]      [nm]     [nm]     [mrad]   [mrad]
+## 
+## 0.9440   0.0420   16.1000   6.1000      22      0  
+## -----------------------------------------------------------
+## magnet parameters
+##
+##name  center_z center_x center_y aperture_radius   length   angle      B      gradient
+##           [m]      [m]      [m]      [m]          [m]    [mrad]     [T]     [T/m]
+##
+  B0pf    5.100   0.0990    0.00   0.1700	      1.200    22.00   -1.700     0.00  
+  Q1pf    7.291   0.1320    0.00   0.0370  	      1.981    18.00    0.000   -91.54  
+  B1pf   13.201   0.2301    0.00   0.0890 	      4.800    24.80    3.516     0.00  
+  Q2pf   17.461   0.3830    0.00   0.1250      	      2.520    20.00    0.000    28.41  
+  Q3pf   37.201   1.1741    0.00   0.0500    	      1.200    38.20    0.000     0.89  
+  B2pf   44.101   1.2949    0.00   0.0500    	      7.800    20.20   -4.397     0.00  
+  Q4pf   54.001   1.4447    0.00   0.0500    	      1.200     0.00    0.000    28.96  
+  B3pf   66.201   1.2804    0.00   0.0500    	      8.800   -19.80   -4.400     0.00  
+  NQpf   73.001   1.1724    0.00   0.0600    	      1.200   -41.54    0.000   -52.52  
+  Q5pf   88.401   0.5361    0.00   0.0400    	      1.000   -41.47    0.000    55.00  
+##  H1pf   93.776   0.2280    0.00   0.0500    	      8.750   -41.45    0.000     0.00  
+##  Q6pf  104.651  -0.1487    0.00   0.0400    	      2.000   -41.45    0.000    27.50  
+ 
+## The apertures of B2 and B3 may be too large requiring changes in settings
+## H1 is the spin rotator assumed not to focus or bend
+## Q5 and Q6 are place holder for strengths to be set by matching
+## ------------------------------------------------------------------------------
+##
+## parameters at the Roman Pots
+##
+##loc     Z      beta_x   beta_y   adv_x    adv_y    Disp 
+##        [m]    [m]      [m]      rad/pi    rad/pi   {m}
+##
+##  R1      31.00   1197.6   195.70   0.476    0.52    0.205 
+##  R2      35.00   1208.2   164.58   0.477    0.53    0.253 
+##  R3      83.55     12.5    12.27   0.597    0.79   -2.051 
+##  R4      86.40      4.4     5.54   0.722    0.90   -2.404 
+ 
+## Phase advance x in R3 should be kept to approx 0.6 and may need tweeking
+## beta_y          in R3 should be 12 m or more
+##--------------------------------------------------------------------------------
+## my next iteration will/may: 
+## lower beta_x  at B2 and B3 to allow use of RHIC magnets 
+## require  a new quad between Current Q1 nd B1 for the VHL case
+## a lower beta_x at R3 and R4 to maintain acceptances
+## This will presumably be for after the March review
+
