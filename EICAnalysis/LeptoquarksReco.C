@@ -328,6 +328,13 @@ LeptoquarksReco::AddTrueTauTag( type_map_tcan& tauCandidateMap, PHHepMCGenEventM
       /* set is_tau = TRUE for TauCandiate with smallest delta_R within reasonable range*/
       if ( best_match )
         {
+	  /* Check: If TauCandidate::Evtgen_pid has already been set to a value != 0, exit function. */
+	  if( best_match->get_property_int( TauCandidate::evtgen_pid ) != 0 )
+	    {
+	      cout << "ERROR: Try to set TauCandidate::evtgen_pid for TauCandidate with evtgen_pid != 0" << endl;
+	      return -1;
+	    }
+
           /* Update TauCandidate entry */
           best_match->set_property( TauCandidate::evtgen_pid, pdg_tau );
           best_match->set_property( TauCandidate::evtgen_etotal, (float)particle_tau->momentum().e() );
@@ -363,6 +370,14 @@ LeptoquarksReco::AddTrueTauTag( type_map_tcan& tauCandidateMap, PHHepMCGenEventM
       /* set is_uds = TRUE for TauCandiate with smallest delta_R if found */
       if ( best_match )
         {
+	  /* Check: If TauCandidate::Evtgen_pid has already been set to a value != 0, exit function. */
+	  if( best_match->get_property_int( TauCandidate::evtgen_pid ) != 0 )
+	    {
+	      cout << "ERROR: Try to set TauCandidate::evtgen_pid for TauCandidate with evtgen_pid != 0" << endl;
+	      return -1;
+	    }
+
+	  /* Set properties of TauCandidate */
           best_match->set_property( TauCandidate::evtgen_pid, pdg_parton );
           best_match->set_property( TauCandidate::evtgen_etotal, (float)particle_quark->momentum().e() );
           best_match->set_property( TauCandidate::evtgen_eta, (float)particle_quark->momentum().eta() );
