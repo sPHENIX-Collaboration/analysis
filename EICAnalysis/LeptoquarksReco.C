@@ -42,10 +42,7 @@ LeptoquarksReco::LeptoquarksReco(std::string filename) :
   _ievent(0),
   _filename(filename),
   _tfile(nullptr),
-  _t_candidate(nullptr),
   _t_event(nullptr),
-  _ntp_jet(nullptr),
-  _ntp_jet2(nullptr),
   _ntp_tower(nullptr),
   _ntp_track(nullptr),
   _ebeam_E(0),
@@ -65,95 +62,96 @@ LeptoquarksReco::Init(PHCompositeNode *topNode)
 
   /* Add TauCandidate properties to map that defines output tree */
   float dummy = 0;
-  _map_treebranches.insert( make_pair( TauCandidate::jet_id , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::evtgen_pid , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::evtgen_etotal , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::evtgen_ptotal , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::evtgen_theta , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::evtgen_eta , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::evtgen_phi , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::evtgen_decay_prong , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::evtgen_decay_hcharged , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::evtgen_decay_lcharged , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::jet_eta , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::jet_phi , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::jet_etotal , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::jet_etrans , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::jet_ptotal , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::jet_ptrans , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::jet_minv , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::jet_mtrans , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::jet_ncomp , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::jet_ncomp_above_0p1 , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::jet_ncomp_above_1 , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::jet_ncomp_above_10 , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::jet_ncomp_emcal , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::jetshape_econe_r01 , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::jetshape_econe_r02 , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::jetshape_econe_r03 , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::jetshape_econe_r04 , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::jetshape_econe_r05 , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::jetshape_r90 , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::jetshape_rms , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::jetshape_radius , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::jetshape_emcal_econe_r01 , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::jetshape_emcal_econe_r02 , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::jetshape_emcal_econe_r03 , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::jetshape_emcal_econe_r04 , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::jetshape_emcal_econe_r05 , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::jetshape_emcal_r90 , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::jetshape_emcal_rms , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::jetshape_emcal_radius , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::tracks_count_r02 , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::tracks_chargesum_r02 , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::tracks_rmax_r02 , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::tracks_count_r04 , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::tracks_chargesum_r04 , dummy ) );
-  _map_treebranches.insert( make_pair( TauCandidate::tracks_rmax_r04 , dummy ) );
+  vector< float > vdummy;
 
-  /* Create tree for information about tau candidates */
-  _t_candidate = new TTree("candidates", "a Tree with tau candidates");
-  _t_candidate->Branch("event", &_ievent, "event/I");
-  for ( map< TauCandidate::PROPERTY , float >::iterator iter = _map_treebranches.begin();
-        iter != _map_treebranches.end();
-        ++iter)
-    {
-      //cout << "ADDING BRANCH " << TauCandidate::get_property_info( (iter->first) ).first << "\tOF TYPE\t" << TauCandidate::get_property_type( TauCandidate::get_property_info( (iter->first) ).second ) << endl;
-
-      _t_candidate->Branch(TauCandidate::get_property_info( (iter->first) ).first.c_str(),
-                           &(iter->second),
-                           TauCandidate::get_property_info( (iter->first) ).first.c_str());
-    }
+  _map_tau_candidate_branches.insert( make_pair( TauCandidate::jet_id , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( TauCandidate::evtgen_pid , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( TauCandidate::evtgen_etotal , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( TauCandidate::evtgen_ptotal , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( TauCandidate::evtgen_theta , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( TauCandidate::evtgen_eta , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( TauCandidate::evtgen_phi , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( TauCandidate::evtgen_decay_prong , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( TauCandidate::evtgen_decay_hcharged , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( TauCandidate::evtgen_decay_lcharged , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( TauCandidate::jet_eta , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( TauCandidate::jet_phi , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( TauCandidate::jet_etotal , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( TauCandidate::jet_etrans , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( TauCandidate::jet_ptotal , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( TauCandidate::jet_ptrans , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( TauCandidate::jet_minv , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( TauCandidate::jet_mtrans , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( TauCandidate::jet_ncomp , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( TauCandidate::jet_ncomp_above_0p1 , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( TauCandidate::jet_ncomp_above_1 , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( TauCandidate::jet_ncomp_above_10 , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( TauCandidate::jet_ncomp_emcal , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( TauCandidate::jetshape_econe_r01 , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( TauCandidate::jetshape_econe_r02 , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( TauCandidate::jetshape_econe_r03 , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( TauCandidate::jetshape_econe_r04 , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( TauCandidate::jetshape_econe_r05 , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( TauCandidate::jetshape_r90 , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( TauCandidate::jetshape_rms , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( TauCandidate::jetshape_radius , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( TauCandidate::jetshape_emcal_econe_r01 , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( TauCandidate::jetshape_emcal_econe_r02 , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( TauCandidate::jetshape_emcal_econe_r03 , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( TauCandidate::jetshape_emcal_econe_r04 , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( TauCandidate::jetshape_emcal_econe_r05 , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( TauCandidate::jetshape_emcal_r90 , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( TauCandidate::jetshape_emcal_rms , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( TauCandidate::jetshape_emcal_radius , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( TauCandidate::tracks_count_r02 , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( TauCandidate::tracks_chargesum_r02 , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( TauCandidate::tracks_rmax_r02 , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( TauCandidate::tracks_count_r04 , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( TauCandidate::tracks_chargesum_r04 , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( TauCandidate::tracks_rmax_r04 , vdummy ) );
 
 
   /* Add branches to map that defines output tree for event-wise properties */
-  _map_eventbranches.insert( make_pair( "Et_miss" , dummy ) );
-  _map_eventbranches.insert( make_pair( "Et_miss_phi" , dummy ) );
-  _map_eventbranches.insert( make_pair( "reco_tau_found" , dummy ) );
-  _map_eventbranches.insert( make_pair( "reco_tau_is_tau" , dummy ) );
-  _map_eventbranches.insert( make_pair( "reco_tau_eta" , dummy ) );
-  _map_eventbranches.insert( make_pair( "reco_tau_phi" , dummy ) );
-  _map_eventbranches.insert( make_pair( "reco_tau_ptotal" , dummy ) );
+  _map_event_branches.insert( make_pair( "Et_miss" , dummy ) );
+  _map_event_branches.insert( make_pair( "Et_miss_phi" , dummy ) );
+  _map_event_branches.insert( make_pair( "reco_tau_found" , dummy ) );
+  _map_event_branches.insert( make_pair( "reco_tau_is_tau" , dummy ) );
+  _map_event_branches.insert( make_pair( "reco_tau_eta" , dummy ) );
+  _map_event_branches.insert( make_pair( "reco_tau_phi" , dummy ) );
+  _map_event_branches.insert( make_pair( "reco_tau_ptotal" , dummy ) );
 
 
   /* Create tree for information about full event */
-  _t_event = new TTree("event", "a Tree with global event information");
+  _t_event = new TTree("event", "a Tree with global event information and tau candidates");
   _t_event->Branch("event", &_ievent, "event/I");
-  for ( map< string , float >::iterator iter = _map_eventbranches.begin();
-        iter != _map_eventbranches.end();
+
+  /* Add event branches */
+  for ( map< string , float >::iterator iter = _map_event_branches.begin();
+        iter != _map_event_branches.end();
         ++iter)
     {
       _t_event->Branch( (iter->first).c_str(),
-                        &(iter->second),
-                        (iter->first).c_str() );
+                        &(iter->second) );
     }
 
+  /* Add tau candidate branches */
+  for ( map< TauCandidate::PROPERTY , vector< float > >::iterator iter = _map_tau_candidate_branches.begin();
+        iter != _map_tau_candidate_branches.end();
+        ++iter)
+    {
+      _t_event->Branch(TauCandidate::get_property_info( (iter->first) ).first.c_str(),
+		       &(iter->second) );
+    }
+
+
+  /* Create additional tree for towers */
   if ( _save_towers )
     {
       _ntp_tower = new TNtuple("ntp_tower","towers from all all tau candidates",
                                "ievent:jet_id:evtgen_pid:evtgen_etotal:evtgen_eta:evtgen_phi:evtgen_decay_prong:evtgen_decay_hcharged:evtgen_decay_lcharged:jet_eta:jet_phi:jet_etotal:tower_calo_id:tower_eta:tower_phi:tower_delta_r:tower_e");
     }
 
+  /* Create additional tree for tracks */
   if ( _save_tracks )
     {
       _ntp_track = new TNtuple("ntp_track","tracks from all all tau candidates",
@@ -166,6 +164,8 @@ LeptoquarksReco::Init(PHCompositeNode *topNode)
 int
 LeptoquarksReco::process_event(PHCompositeNode *topNode)
 {
+  /* Reset branch map */
+  ResetBranchMap();
 
   /* Create map to collect tau candidates.
    * Use energy as 'key' to the map because energy is unique for each jet, while there are sometimes multiple jets (same energy,
@@ -272,6 +272,9 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
 
   /* Add global event information to separate tree */
   AddGlobalEventInformation( tauCandidateMap, &map_calotower );
+
+  /* fill event information tree */
+  _t_event->Fill();
 
   /* count up event number */
   _ievent ++;
@@ -809,37 +812,34 @@ LeptoquarksReco::AddTrackInformation( type_map_tcan& tauCandidateMap, SvtxTrackM
 int
 LeptoquarksReco::WriteTauCandidatesToTree( type_map_tcan& tauCandidateMap )
 {
-
-  /* Loop over all tau candidates */
+  /* Loop over all tau candidates and add them to tree*/
   for (type_map_tcan::iterator iter = tauCandidateMap.begin();
        iter != tauCandidateMap.end();
        ++iter)
     {
       /* update information in map and fill tree */
-      for ( map< TauCandidate::PROPERTY , float >::iterator iter_prop = _map_treebranches.begin();
-            iter_prop != _map_treebranches.end();
+      for ( map< TauCandidate::PROPERTY , vector<float> >::iterator iter_prop = _map_tau_candidate_branches.begin();
+            iter_prop != _map_tau_candidate_branches.end();
             ++iter_prop)
         {
           switch ( TauCandidate::get_property_info( (iter_prop->first) ).second ) {
 
           case TauCandidate::type_float :
-            (iter_prop->second) = (iter->second)->get_property_float( (iter_prop->first) );
+            (iter_prop->second).push_back( (iter->second)->get_property_float( (iter_prop->first) ) );
             break;
 
           case TauCandidate::type_int :
-            (iter_prop->second) = (iter->second)->get_property_int( (iter_prop->first) );
+            (iter_prop->second).push_back( (iter->second)->get_property_int( (iter_prop->first) ) );
             break;
 
           case TauCandidate::type_uint :
-            (iter_prop->second) = (iter->second)->get_property_uint( (iter_prop->first) );
+            (iter_prop->second).push_back( (iter->second)->get_property_uint( (iter_prop->first) ) );
             break;
 
           case TauCandidate::type_unknown :
             break;
           }
         }
-      _t_candidate->Fill();
-
     }
 
   return 0;
@@ -978,34 +978,54 @@ LeptoquarksReco::AddGlobalEventInformation( type_map_tcan& tauCandidateMap, type
   /* update event information tree variables */
   /* @TODO make this better protected against errors- if 'find' returns NULL pointer,
      this will lead to a SEGMENTATION FAULT */
-  ( _map_eventbranches.find( "Et_miss" ) )->second = Et_miss;
-  ( _map_eventbranches.find( "Et_miss_phi" ) )->second = Et_miss_phi;
+  ( _map_event_branches.find( "Et_miss" ) )->second = Et_miss;
+  ( _map_event_branches.find( "Et_miss_phi" ) )->second = Et_miss_phi;
 
   if ( the_tau )
     {
-      ( _map_eventbranches.find( "reco_tau_found" ) )->second = 1;
-      ( _map_eventbranches.find( "reco_tau_is_tau" ) )->second =
+      ( _map_event_branches.find( "reco_tau_found" ) )->second = 1;
+      ( _map_event_branches.find( "reco_tau_is_tau" ) )->second =
         the_tau->get_property_int( TauCandidate::evtgen_pid );
-      ( _map_eventbranches.find( "reco_tau_eta" ) )->second =
+      ( _map_event_branches.find( "reco_tau_eta" ) )->second =
         the_tau->get_property_float( TauCandidate::jet_eta );
-      ( _map_eventbranches.find( "reco_tau_phi" ) )->second =
+      ( _map_event_branches.find( "reco_tau_phi" ) )->second =
         the_tau->get_property_float( TauCandidate::jet_phi );
-      ( _map_eventbranches.find( "reco_tau_ptotal" ) )->second =
+      ( _map_event_branches.find( "reco_tau_ptotal" ) )->second =
         the_tau->get_property_float( TauCandidate::jet_ptotal );
     }
   else
     {
-      ( _map_eventbranches.find( "reco_tau_found" ) )->second = 0;
-      ( _map_eventbranches.find( "reco_tau_is_tau" ) )->second = NAN;
-      ( _map_eventbranches.find( "reco_tau_eta" ) )->second = NAN;
-      ( _map_eventbranches.find( "reco_tau_phi" ) )->second = NAN;
-      ( _map_eventbranches.find( "reco_tau_ptotal" ) )->second = NAN;
+      ( _map_event_branches.find( "reco_tau_found" ) )->second = 0;
+      ( _map_event_branches.find( "reco_tau_is_tau" ) )->second = NAN;
+      ( _map_event_branches.find( "reco_tau_eta" ) )->second = NAN;
+      ( _map_event_branches.find( "reco_tau_phi" ) )->second = NAN;
+      ( _map_event_branches.find( "reco_tau_ptotal" ) )->second = NAN;
     }
 
-  /* fill event information tree */
-  _t_event->Fill();
-
   return 0;
+}
+
+
+void
+LeptoquarksReco::ResetBranchMap()
+{
+  /* Event branches */
+  for ( map< string , float >::iterator iter = _map_event_branches.begin();
+        iter != _map_event_branches.end();
+        ++iter)
+    {
+      (iter->second) = NAN;
+    }
+
+  /* Tau candidate branches */
+  for ( map< TauCandidate::PROPERTY , vector<float> >::iterator iter = _map_tau_candidate_branches.begin();
+        iter != _map_tau_candidate_branches.end();
+        ++iter)
+    {
+      (iter->second).clear();
+    }
+
+  return;
 }
 
 
@@ -1013,9 +1033,6 @@ int
 LeptoquarksReco::End(PHCompositeNode *topNode)
 {
   _tfile->cd();
-
-  if ( _t_candidate )
-    _t_candidate->Write();
 
   if ( _t_event )
     _t_event->Write();

@@ -88,10 +88,7 @@ private:
   TFile *_tfile;
 
   /* output tree and variables */
-  TTree* _t_candidate;
   TTree* _t_event;
-  TNtuple* _ntp_jet;
-  TNtuple* _ntp_jet2;
   TNtuple* _ntp_tower;
   TNtuple* _ntp_track;
 
@@ -111,11 +108,11 @@ private:
 
   /** Map of TauCandidate properties that will be written to
    * output ROOT Tree */
-  std::map< TauCandidate::PROPERTY , float > _map_treebranches;
+  std::map< TauCandidate::PROPERTY , std::vector< float > > _map_tau_candidate_branches;
 
   /** Map of Event properties that will be written to
    * output ROOT Tree */
-  std::map< std::string , float > _map_eventbranches;
+  std::map< std::string , float > _map_event_branches;
 
   int AddTrueTauTag( type_map_tcan&, PHHepMCGenEventMap* );
 
@@ -134,6 +131,9 @@ private:
 
   /** Calculate Delta R ("distance in eta-phi space") between two sets of eta, phi angles */
   float CalculateDeltaR( float, float, float, float );
+
+  /** Reset branch maps for each event */
+  void ResetBranchMap();
 
   /** Enum to identify calorimeter types */
   enum CALOTYPE
