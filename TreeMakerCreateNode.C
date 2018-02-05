@@ -13,7 +13,7 @@
 #include <g4jets/JetMapV1.h>
 
 // --- calorimeter clusters
-#include <g4cemc/RawClusterContainer.h>
+#include <calobase/RawClusterContainer.h>
 
 using std::cout;
 using std::endl;
@@ -101,6 +101,14 @@ int TreeMaker::CreateNode(PHCompositeNode *topNode)
       cout << "TreeMaker::CreateNode : CLUSTER_CEMC_MOD already exists! " << endl;
     }
 
+  // --- Look for the HCALIN node (main node for us)
+  PHCompositeNode *hcalinNode = dynamic_cast<PHCompositeNode*>(iter.findFirst("PHCompositeNode", "HCALIN"));
+  if ( !hcalinNode )
+    {
+      cout << PHWHERE << "HCALIN node not found, doing nothing." << endl;
+      return -2;
+    }
+
   // --- Check if the new node exists (it should not) and then store the new cluster collection
   RawClusterContainer* check_hcalin_clusters = findNode::getClass<RawClusterContainer>(topNode,"CLUSTER_HCALIN_MOD");
   if ( !check_hcalin_clusters )
@@ -116,6 +124,14 @@ int TreeMaker::CreateNode(PHCompositeNode *topNode)
     {
       // --- If the new node already exists (bad) issue a warning and then do nothing
       cout << "TreeMaker::CreateNode : CLUSTER_HCALIN_MOD already exists! " << endl;
+    }
+
+  // --- Look for the HCALOUT node (main node for us)
+  PHCompositeNode *hcaloutNode = dynamic_cast<PHCompositeNode*>(iter.findFirst("PHCompositeNode", "HCALOUT"));
+  if ( !hcaloutNode )
+    {
+      cout << PHWHERE << "HCALOUT node not found, doing nothing." << endl;
+      return -2;
     }
 
   // --- Check if the new node exists (it should not) and then store the new cluster collection

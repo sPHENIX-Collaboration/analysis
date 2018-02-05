@@ -4,10 +4,10 @@
 #include <phool/PHCompositeNode.h>
 
 // --- calorimeter towers
-#include <g4cemc/RawTower.h>
-#include <g4cemc/RawTowerContainer.h>
-#include <g4cemc/RawTowerGeom.h>
-#include <g4cemc/RawTowerGeomContainer.h>
+#include <calobase/RawTower.h>
+#include <calobase/RawTowerContainer.h>
+#include <calobase/RawTowerGeom.h>
+#include <calobase/RawTowerGeomContainer.h>
 
 // --- jet specific stuff
 #include <g4jets/Jet.h>

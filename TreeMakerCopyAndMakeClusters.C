@@ -4,15 +4,15 @@
 #include <phool/PHCompositeNode.h>
 
 // --- calorimeter towers
-#include <g4cemc/RawTower.h>
-#include <g4cemc/RawTowerContainer.h>
-#include <g4cemc/RawTowerGeom.h>
-#include <g4cemc/RawTowerGeomContainer.h>
+#include <calobase/RawTower.h>
+#include <calobase/RawTowerContainer.h>
+#include <calobase/RawTowerGeom.h>
+#include <calobase/RawTowerGeomContainer.h>
 
 // --- calorimeter clusters
-#include <g4cemc/RawCluster.h>
-#include <g4cemc/RawClusterv1.h>
-#include <g4cemc/RawClusterContainer.h>
+#include <calobase/RawCluster.h>
+#include <calobase/RawClusterv1.h>
+#include <calobase/RawClusterContainer.h>
 
 using std::cout;
 using std::endl;
