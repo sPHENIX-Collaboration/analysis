@@ -85,13 +85,13 @@ int TreeMaker::CreateNode(PHCompositeNode *topNode)
     }
 
   // --- Check if the new node exists (it should not) and then store the new cluster collection
-  RawClusterContainer* check_clusters = findNode::getClass<RawClusterContainer>(topNode,"CLUSTER_CEMC_MOD");
-  if ( !check_clusters )
+  RawClusterContainer* check_cemc_clusters = findNode::getClass<RawClusterContainer>(topNode,"CLUSTER_CEMC_MOD");
+  if ( !check_cemc_clusters )
     {
       // --- If the new node doesn't already exist (good) then make it
       cout << "TreeMaker::CreateNode : creating CLUSTER_CEMC_MOD node " << endl;
-      RawClusterContainer *mod_clusters = new RawClusterContainer();
-      PHIODataNode<PHObject> *clusterNode = new PHIODataNode<PHObject>( mod_clusters, "CLUSTER_CEMC_MOD", "PHObject");
+      RawClusterContainer *mod_cemc_clusters = new RawClusterContainer();
+      PHIODataNode<PHObject> *clusterNode = new PHIODataNode<PHObject>( mod_cemc_clusters, "CLUSTER_CEMC_MOD", "PHObject");
       // --- node structure for clusters is CEMC -> CLUSTER_CEMC
       cemcNode->addNode(clusterNode);
     }
@@ -99,6 +99,40 @@ int TreeMaker::CreateNode(PHCompositeNode *topNode)
     {
       // --- If the new node already exists (bad) issue a warning and then do nothing
       cout << "TreeMaker::CreateNode : CLUSTER_CEMC_MOD already exists! " << endl;
+    }
+
+  // --- Check if the new node exists (it should not) and then store the new cluster collection
+  RawClusterContainer* check_hcalin_clusters = findNode::getClass<RawClusterContainer>(topNode,"CLUSTER_HCALIN_MOD");
+  if ( !check_hcalin_clusters )
+    {
+      // --- If the new node doesn't already exist (good) then make it
+      cout << "TreeMaker::CreateNode : creating CLUSTER_HCALIN_MOD node " << endl;
+      RawClusterContainer *mod_hcalin_clusters = new RawClusterContainer();
+      PHIODataNode<PHObject> *clusterNode = new PHIODataNode<PHObject>( mod_hcalin_clusters, "CLUSTER_HCALIN_MOD", "PHObject");
+      // --- node structure for clusters is HCALIN -> CLUSTER_HCALIN
+      hcalinNode->addNode(clusterNode);
+    }
+  else
+    {
+      // --- If the new node already exists (bad) issue a warning and then do nothing
+      cout << "TreeMaker::CreateNode : CLUSTER_HCALIN_MOD already exists! " << endl;
+    }
+
+  // --- Check if the new node exists (it should not) and then store the new cluster collection
+  RawClusterContainer* check_hcalout_clusters = findNode::getClass<RawClusterContainer>(topNode,"CLUSTER_HCALOUT_MOD");
+  if ( !check_hcalout_clusters )
+    {
+      // --- If the new node doesn't already exist (good) then make it
+      cout << "TreeMaker::CreateNode : creating CLUSTER_HCALOUT_MOD node " << endl;
+      RawClusterContainer *mod_hcalout_clusters = new RawClusterContainer();
+      PHIODataNode<PHObject> *clusterNode = new PHIODataNode<PHObject>( mod_hcalout_clusters, "CLUSTER_HCALOUT_MOD", "PHObject");
+      // --- node structure for clusters is HCALOUT -> CLUSTER_HCALOUT
+      hcaloutNode->addNode(clusterNode);
+    }
+  else
+    {
+      // --- If the new node already exists (bad) issue a warning and then do nothing
+      cout << "TreeMaker::CreateNode : CLUSTER_HCALOUT_MOD already exists! " << endl;
     }
 
   // ------------
