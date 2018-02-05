@@ -81,7 +81,9 @@ int TreeMaker::CopyAndMakeClusters(PHCompositeNode *topNode)
       // --- get the current cluster
       RawCluster* old_cluster = cemc_iter->second;
       double energy = old_cluster->get_energy();
-      double eta    = old_cluster->get_eta();
+      //double eta    = old_cluster->get_eta(); // no longer a member of RawCluster class. why?
+      double r      = old_cluster->get_r();
+      double z      = old_cluster->get_z();
       double phi    = old_cluster->get_phi();
       double ecore  = old_cluster->get_ecore();
       double chi2   = old_cluster->get_chi2();
@@ -90,7 +92,9 @@ int TreeMaker::CopyAndMakeClusters(PHCompositeNode *topNode)
         {
           cout << "for old cluster:"  << endl;
           cout << "energy " << energy << endl;
-          cout << "eta    " << eta    << endl;
+          //cout << "eta    " << eta    << endl;
+          cout << "r      " << r      << endl;
+          cout << "z      " << z      << endl;
           cout << "phi    " << phi    << endl;
           cout << "ecore  " << ecore  << endl;
           cout << "chi2   " << chi2   << endl;
@@ -101,7 +105,9 @@ int TreeMaker::CopyAndMakeClusters(PHCompositeNode *topNode)
       // --- set the cluster variables
       new_cluster->set_id(old_cluster->get_id());
       new_cluster->set_energy(energy);
-      new_cluster->set_eta(eta);
+      //new_cluster->set_eta(eta);
+      new_cluster->set_r(r);
+      new_cluster->set_z(z);
       new_cluster->set_phi(phi);
       new_cluster->set_ecore(ecore);
       new_cluster->set_chi2(chi2);
@@ -143,7 +149,9 @@ int TreeMaker::CopyAndMakeClusters(PHCompositeNode *topNode)
       // --- get the current cluster
       RawCluster* old_cluster = hcalin_iter->second;
       double energy = old_cluster->get_energy();
-      double eta    = old_cluster->get_eta();
+      //double eta    = old_cluster->get_eta();
+      double r      = old_cluster->get_r();
+      double z      = old_cluster->get_z();
       double phi    = old_cluster->get_phi();
       double ecore  = old_cluster->get_ecore();
       double chi2   = old_cluster->get_chi2();
@@ -152,7 +160,9 @@ int TreeMaker::CopyAndMakeClusters(PHCompositeNode *topNode)
         {
           cout << "for old cluster:"  << endl;
           cout << "energy " << energy << endl;
-          cout << "eta    " << eta    << endl;
+          //cout << "eta    " << eta    << endl;
+          cout << "r      " << r      << endl;
+          cout << "z      " << z      << endl;
           cout << "phi    " << phi    << endl;
           cout << "ecore  " << ecore  << endl;
           cout << "chi2   " << chi2   << endl;
@@ -163,7 +173,9 @@ int TreeMaker::CopyAndMakeClusters(PHCompositeNode *topNode)
       // --- set the cluster variables
       new_cluster->set_id(old_cluster->get_id());
       new_cluster->set_energy(energy);
-      new_cluster->set_eta(eta);
+      //new_cluster->set_eta(eta);
+      new_cluster->set_r(r);
+      new_cluster->set_z(z);
       new_cluster->set_phi(phi);
       new_cluster->set_ecore(ecore);
       new_cluster->set_chi2(chi2);
@@ -205,7 +217,9 @@ int TreeMaker::CopyAndMakeClusters(PHCompositeNode *topNode)
       // --- get the current cluster
       RawCluster* old_cluster = hcalout_iter->second;
       double energy = old_cluster->get_energy();
-      double eta    = old_cluster->get_eta();
+      //double eta    = old_cluster->get_eta();
+      double r      = old_cluster->get_r();
+      double z      = old_cluster->get_z();
       double phi    = old_cluster->get_phi();
       double ecore  = old_cluster->get_ecore();
       double chi2   = old_cluster->get_chi2();
@@ -214,7 +228,9 @@ int TreeMaker::CopyAndMakeClusters(PHCompositeNode *topNode)
         {
           cout << "for old cluster:"  << endl;
           cout << "energy " << energy << endl;
-          cout << "eta    " << eta    << endl;
+          //cout << "eta    " << eta    << endl;
+          cout << "r      " << r      << endl;
+          cout << "z      " << z      << endl;
           cout << "phi    " << phi    << endl;
           cout << "ecore  " << ecore  << endl;
           cout << "chi2   " << chi2   << endl;
@@ -225,7 +241,9 @@ int TreeMaker::CopyAndMakeClusters(PHCompositeNode *topNode)
       // --- set the cluster variables
       new_cluster->set_id(old_cluster->get_id());
       new_cluster->set_energy(energy);
-      new_cluster->set_eta(eta);
+      //new_cluster->set_eta(eta);
+      new_cluster->set_r(r);
+      new_cluster->set_z(z);
       new_cluster->set_phi(phi);
       new_cluster->set_ecore(ecore);
       new_cluster->set_chi2(chi2);
