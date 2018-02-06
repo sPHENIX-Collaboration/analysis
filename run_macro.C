@@ -9,7 +9,9 @@ int run_macro(
   gSystem->Load("libphhepmc.so");
   gSystem->Load("libg4testbench.so");
   gSystem->Load("libg4hough.so");
-  gSystem->Load("libcemc.so");
+  //gSystem->Load("libcemc.so");
+  gSystem->Load("libcalo_io.so");
+  gSystem->Load("libcalo_util.so");
   gSystem->Load("libg4eval.so");
   gSystem->Load("libcalotrigger.so");
   gSystem->Load("libjetbackground.so");
