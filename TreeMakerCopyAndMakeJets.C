@@ -90,8 +90,7 @@ int TreeMaker::CopyAndMakeJets(PHCompositeNode *topNode)
           int comp_ieta = 0;
           int comp_iphi = 0;
           //double comp_background = 0;
-          // --- need to understand what 5 means
-          // --- obviously something to do with inner hcal
+          // --- layer 5 is inner hcal
           if ( (*comp).first == 5 )
             {
               tower = towersIH3->getTower( (*comp).second );
@@ -99,8 +98,7 @@ int TreeMaker::CopyAndMakeJets(PHCompositeNode *topNode)
               comp_ieta = geomIH->get_etabin( tower_geom->get_eta() );
               comp_iphi = geomIH->get_phibin( tower_geom->get_phi() );
             }
-          // --- need to understand what 7 means
-          // --- obviously something to do with outer hcal
+          // --- layer 7 is outer hcal
           else if ( (*comp).first == 7 )
             {
               tower = towersOH3->getTower( (*comp).second );
@@ -108,9 +106,9 @@ int TreeMaker::CopyAndMakeJets(PHCompositeNode *topNode)
               comp_ieta = geomOH->get_etabin( tower_geom->get_eta() );
               comp_iphi = geomOH->get_phibin( tower_geom->get_phi() );
             }
-          // --- need to understand what 13 means
-          // --- obviously something to do with emcal
-          else if ( (*comp).first == 13 )
+          // --- layer 3 is EMCal
+          // --- layer 13 is re-towered emcal, which uses IHCal geom... not using for now
+          else if ( (*comp).first == 3 )
             {
               tower = towersEM3->getTower( (*comp).second );
               tower_geom = geomEM->get_tower_geometry(tower->get_key());
