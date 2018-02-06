@@ -4,18 +4,6 @@ int run_macro(
               )
 {
 
-  // --- need to check whether some of these are redundant, see e.g. the Makefile...
-  //gSystem->Load("libfun4all.so");
-  //gSystem->Load("libg4detectors.so");
-  //gSystem->Load("libphhepmc.so");
-  //gSystem->Load("libg4testbench.so");
-  //gSystem->Load("libg4hough.so");
-  gSystem->Load("libcalo_io.so");
-  gSystem->Load("libcalo_util.so");
-  //gSystem->Load("libg4eval.so");
-  //gSystem->Load("libcalotrigger.so");
-  //gSystem->Load("libjetbackground.so");
-
   gSystem->Load("libTreeMaker.so");
 
   Fun4AllServer *se = Fun4AllServer::instance();
