@@ -32,6 +32,12 @@ int TreeMaker::InitializeTree(void)
   tree->Branch("jet5_eta",b_jet5_eta,"jet5_eta[jet5_n]/F");
   tree->Branch("jet5_phi",b_jet5_phi,"jet5_phi[jet5_n]/F");
 
+  tree->Branch("modjet2_n", &b_modjet2_n,"modjet2_n/I");
+  tree->Branch("modjet2_e", b_modjet2_e,"modjet2_e[modjet2_n]/F");
+  tree->Branch("modjet2_pt", b_modjet2_pt,"modjet2_pt[modjet2_n]/F");
+  tree->Branch("modjet2_eta",b_modjet2_eta,"modjet2_eta[modjet2_n]/F");
+  tree->Branch("modjet2_phi",b_modjet2_phi,"modjet2_phi[modjet2_n]/F");
+
   tree->Branch("truthjet2_n", &b_truthjet2_n,"truthjet2_n/I");
   tree->Branch("truthjet2_e", b_truthjet2_e,"truthjet2_e[truthjet2_n]/F");
   tree->Branch("truthjet2_pt", b_truthjet2_pt,"truthjet2_pt[truthjet2_n]/F");
@@ -80,6 +86,8 @@ int TreeMaker::InitializeCounters()
   b_jet3_n = 0;
   b_jet4_n = 0;
   b_jet5_n = 0;
+
+  b_modjet2_n = 0;
 
   return 0;
 
