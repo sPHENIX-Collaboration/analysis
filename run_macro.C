@@ -8,8 +8,8 @@ int run_macro(
   //gSystem->Load("libfun4all.so");
   //gSystem->Load("libg4detectors.so");
   //gSystem->Load("libphhepmc.so");
-  gSystem->Load("libg4testbench.so");
-  gSystem->Load("libg4hough.so");
+  //gSystem->Load("libg4testbench.so");
+  //gSystem->Load("libg4hough.so");
   gSystem->Load("libcalo_io.so");
   gSystem->Load("libcalo_util.so");
   //gSystem->Load("libg4eval.so");
