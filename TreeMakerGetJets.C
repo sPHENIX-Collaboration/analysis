@@ -180,7 +180,7 @@ int TreeMaker::GetRecoJets(PHCompositeNode *topNode)
   // --- get reconstructed jet information (modified)
   // ------------------------------------------------------------------------------
 
-  JetMap* modnsreco2_jets = findNode::getClass<JetMap>(topNode,"AntiKt_Tower_r02");
+  JetMap* modnsreco2_jets = findNode::getClass<JetMap>(topNode,"AntiKt_Tower_Mod_r02");
   //cout << "reco jets R=0.2 has size " << modnsreco2_jets->size() << endl;
   for (JetMap::Iter iter = modnsreco2_jets->begin(); iter != modnsreco2_jets->end(); ++iter)
     {
@@ -190,10 +190,10 @@ int TreeMaker::GetRecoJets(PHCompositeNode *topNode)
       float this_phi = this_jet->get_phi();
       float this_eta = this_jet->get_eta();
       if (this_jet->get_pt() < 10 || fabs(this_eta) > 5) continue; // stricter pt cut for unsubtracted
-      b_modjet2_e[ b_jet2_n ] = this_e;
-      b_modjet2_pt[ b_jet2_n ] = this_pt;
-      b_modjet2_eta[ b_jet2_n ] = this_eta;
-      b_modjet2_phi[ b_jet2_n ] = this_phi;
+      b_modjet2_e[ b_modjet2_n ] = this_e;
+      b_modjet2_pt[ b_modjet2_n ] = this_pt;
+      b_modjet2_eta[ b_modjet2_n ] = this_eta;
+      b_modjet2_phi[ b_modjet2_n ] = this_phi;
       //cout << " pp reco R=0.2 jet #" << b_jet2_n << ", pt / eta / phi = " << this_pt << " / " << this_eta << " / " << this_phi << endl;
       b_modjet2_n++;
     } // loop over R=0.2 jets
