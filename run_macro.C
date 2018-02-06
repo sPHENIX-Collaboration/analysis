@@ -30,12 +30,6 @@ int run_macro(
   truthjetreco->Verbosity(0);
   se->registerSubsystem(truthjetreco);
 
-  // HI part
-
-  RetowerCEMC *rcemc = new RetowerCEMC();
-  rcemc->Verbosity( 0 );
-  se->registerSubsystem( rcemc );
-
   JetReco *towerjetreco = new JetReco();
   towerjetreco->add_input(new TowerJetInput(Jet::CEMC_TOWER_RETOWER));
   towerjetreco->add_input(new TowerJetInput(Jet::HCALIN_TOWER));
@@ -45,26 +39,6 @@ int run_macro(
   towerjetreco->set_input_node("TOWER");
   towerjetreco->Verbosity(0);
   se->registerSubsystem(towerjetreco);
-
-  // DetermineTowerBackground *dtb = new DetermineTowerBackground();
-  // dtb->SetBackgroundOutputName("TowerBackground_Sub1");
-  // dtb->SetSeedType( 0 );
-  // dtb->Verbosity( 0 );
-  // se->registerSubsystem( dtb );
-
-  // CopyAndSubtractJets *casj = new CopyAndSubtractJets();
-  // casj->Verbosity( 0 );
-  // se->registerSubsystem( casj );
-
-  // DetermineTowerBackground *dtb2 = new DetermineTowerBackground();
-  // dtb2->SetBackgroundOutputName("TowerBackground_Sub2");
-  // dtb2->SetSeedType( 1 );
-  // dtb2->Verbosity( 0 );
-  // se->registerSubsystem( dtb2 );
-
-  // SubtractTowers *st = new SubtractTowers();
-  // st->Verbosity( 0 );
-  // se->registerSubsystem( st );
 
   JetReco *towerjetreco = new JetReco();
   // --- added by Ron (is this right?)
@@ -76,13 +50,6 @@ int run_macro(
   towerjetreco->add_algo(new FastJetAlgo(Jet::ANTIKT,0.4),"AntiKt_Tower_r04");
   towerjetreco->add_algo(new FastJetAlgo(Jet::ANTIKT,0.5),"AntiKt_Tower_r05");
   // ---
-  // towerjetreco->add_input(new TowerJetInput(Jet::CEMC_TOWER_SUB1));
-  // towerjetreco->add_input(new TowerJetInput(Jet::HCALIN_TOWER_SUB1));
-  // towerjetreco->add_input(new TowerJetInput(Jet::HCALOUT_TOWER_SUB1));
-  // towerjetreco->add_algo(new FastJetAlgoSub(Jet::ANTIKT,0.2,0),"AntiKt_Tower_r02_Sub1");
-  // towerjetreco->add_algo(new FastJetAlgoSub(Jet::ANTIKT,0.3,0),"AntiKt_Tower_r03_Sub1");
-  // towerjetreco->add_algo(new FastJetAlgoSub(Jet::ANTIKT,0.4,1),"AntiKt_Tower_r04_Sub1");
-  // towerjetreco->add_algo(new FastJetAlgoSub(Jet::ANTIKT,0.5,1),"AntiKt_Tower_r05_Sub1");
   towerjetreco->set_algo_node("ANTIKT");
   towerjetreco->set_input_node("TOWER");
   towerjetreco->Verbosity( 0 );
