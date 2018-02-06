@@ -82,6 +82,24 @@ int TreeMaker::CopyAndMakeJets(PHCompositeNode *topNode)
       // --- now loop over individual constituents of this jet
       for ( Jet::ConstIter comp = this_jet->begin_comp(); comp != this_jet->end_comp(); ++comp )
         {
+          // --- (*.comp).first is the layer:
+          // ---  0 = void
+          // ---  1 = particle
+          // ---  2 = track
+          // ---  3 = emcal tower
+          // ---  4 = emcal cluster
+          // ---  5 = ihcal tower
+          // ---  6 = ihcal cluster
+          // ---  7 = ohcal tower
+          // ---  8 = ohcal cluster
+          // ---  9 = femc tower
+          // --- 10 = femc cluster
+          // --- 11 = fhcal tower
+          // --- 12 = fhcal cluster
+          // --- 13 = emcal retower (combined towers to match ihcal geometry)
+          // --- 14 = subtracted emcal tower
+          // --- 15 = subtracted ihcal tower
+          // --- 16 = subtracted ohcal tower
           RawTower *tower = 0;
           RawTowerGeom *tower_geom = 0;
           double comp_e = 0;
@@ -90,7 +108,7 @@ int TreeMaker::CopyAndMakeJets(PHCompositeNode *topNode)
           int comp_ieta = 0;
           int comp_iphi = 0;
           //double comp_background = 0;
-          // --- layer 5 is inner hcal
+          // --- layer 5 is inner hcal towers
           if ( (*comp).first == 5 )
             {
               tower = towersIH3->getTower( (*comp).second );
@@ -98,7 +116,7 @@ int TreeMaker::CopyAndMakeJets(PHCompositeNode *topNode)
               comp_ieta = geomIH->get_etabin( tower_geom->get_eta() );
               comp_iphi = geomIH->get_phibin( tower_geom->get_phi() );
             }
-          // --- layer 7 is outer hcal
+          // --- layer 7 is outer hcal towers
           else if ( (*comp).first == 7 )
             {
               tower = towersOH3->getTower( (*comp).second );
@@ -106,7 +124,7 @@ int TreeMaker::CopyAndMakeJets(PHCompositeNode *topNode)
               comp_ieta = geomOH->get_etabin( tower_geom->get_eta() );
               comp_iphi = geomOH->get_phibin( tower_geom->get_phi() );
             }
-          // --- layer 3 is EMCal
+          // --- layer 3 is EMCal towers
           // --- layer 13 is re-towered emcal, which uses IHCal geom... not using for now
           else if ( (*comp).first == 3 )
             {
@@ -116,11 +134,10 @@ int TreeMaker::CopyAndMakeJets(PHCompositeNode *topNode)
               comp_iphi = geomEM->get_phibin( tower_geom->get_phi() );
             }
 
-          // --- if tower is not null, get the energy for this consituent
-          if ( tower ) comp_e = tower->get_energy();
-          // --- if tower geometry is not null, get the eta and phi
-          if ( tower_geom )
+          // --- if tower and tower_geom exist, get energy from there
+          if ( tower && tower_geom )
             {
+              comp_e = tower->get_energy();
               comp_eta = tower_geom->get_eta();
               comp_phi = tower_geom->get_phi();
             }
