@@ -48,14 +48,16 @@ int TreeMaker::InitRun(PHCompositeNode *topNode)
 int TreeMaker::process_event(PHCompositeNode *topNode)
 {
 
-  // --- initialize the counters and get the jets
+  // --- initialize the counters
   InitializeCounters();
-  GetTruthJets(topNode);
-  GetRecoJets(topNode);
 
   // --- copy the old jets/clusters and make a new container for modified jets/clusters
   CopyAndMakeJets(topNode);
   CopyAndMakeClusters(topNode);
+
+  // --- get the jets and set the tree variables
+  GetTruthJets(topNode);
+  GetRecoJets(topNode);
 
   // --- fill the tree
   tree->Fill();
