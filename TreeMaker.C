@@ -59,6 +59,9 @@ int TreeMaker::process_event(PHCompositeNode *topNode)
   GetTruthJets(topNode);
   GetRecoJets(topNode);
 
+  // --- get the clusters and do some analysis
+  GetClusters(topNode);
+
   // --- fill the tree
   tree->Fill();
 

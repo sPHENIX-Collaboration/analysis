@@ -28,6 +28,7 @@ class TreeMaker: public SubsysReco
 
   int GetTruthJets(PHCompositeNode*);
   int GetRecoJets(PHCompositeNode*);
+  int GetClusters(PHCompositeNode*);
   int CopyAndMakeJets(PHCompositeNode*);
   int CopyAndMakeClusters(PHCompositeNode*);
 
