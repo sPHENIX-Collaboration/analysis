@@ -48,18 +48,12 @@ int TreeMaker::InitRun(PHCompositeNode *topNode)
 int TreeMaker::process_event(PHCompositeNode *topNode)
 {
 
-  // --- Dennis stuff
+  // --- initialize the counters and get the jets
   InitializeCounters();
   GetTruthJets(topNode);
-  GetSeedJets(topNode);
   GetRecoJets(topNode);
-  GetTowerBackgrounds(topNode);
 
-  // --- should clean up these variables
-  b_cluster_n = 0; // used only here
-  b_particle_n = 0; // used only here
-
-  // --- new stuff
+  // --- copy the old jets/clusters and make a new container for modified jets/clusters
   CopyAndMakeJets(topNode);
   CopyAndMakeClusters(topNode);
 
