@@ -168,3 +168,30 @@ text(mean(xlim)*1.2,0.75 ,'0.75 \Lambda_0','VerticalAlignment','top','FontSize',
 
 
 SaveCavas(file,gcf);
+
+
+%%
+
+
+figure('name','1D-Projections-RadiationLength','PaperPositionMode','auto', ...
+    'position',[100,0,800,600]) ;
+
+
+plot(mean(Eta,1),mean(x0,1), 'LineWidth',3);
+
+xlabel('\eta','FontSize',18);
+ylabel('Radiatiaon Length','FontSize',18);
+set(gca,'FontSize',16, 'XMinorTick','off', 'YMinorTick','off');
+line(get(gca,'XLim'),[18,18],'Color',[.5 .5 .5]);
+text(mean(get(gca,'XLim')),18,'18 X_0','VerticalAlignment','top','FontSize',18,'Color',[.5 .5 .5]);
+
+set(gca,'YLim',[0,30]);
+set(gca,'XLim',[0,1.2]);
+
+text(mean(get(gca,'XLim'))*.1,mean(get(gca,'YLim'))*.6,...
+    sprintf('sPHENIX simulation\n2-D projective SPACAL EMCal\nThickness scan from vertex of (0,0,0) & averaged in \\phi\n\nAverage thickness = %.1f X_0, %.2f \\Lambda_0\nMin thickness = %.1f X_0, %.2f \\Lambda_0',...
+    mean(mean(x0)),mean(mean(lambda0)),min(mean(x0,1)),min(mean(lambda0,1))),...
+    'HorizontalAlignment','left','FontSize',18);
+
+
+SaveCavas(file,gcf);
