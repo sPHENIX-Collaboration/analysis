@@ -1,7 +1,7 @@
 #ifndef __DISKinematicsReco_H__
 #define __DISKinematicsReco_H__
 
-#include "TauCandidate.h"
+#include "PidCandidate.h"
 
 /* Fun4All includes */
 #include <fun4all/SubsysReco.h>
@@ -30,9 +30,9 @@ class SvtxTrackMap;
 class PHHepMCGenEventMap;
 
 
-class TauCandidate;
+class PidCandidate;
 
-typedef std::map<float, TauCandidate*> type_map_tcan;
+typedef std::map<float, PidCandidate*> type_map_tcan;
 typedef std::map< RawTowerDefs::CalorimeterId , std::pair< RawTowerContainer*, RawTowerGeomContainer* > > type_map_cdata;
 
 class DISKinematicsReco : public SubsysReco
@@ -79,13 +79,13 @@ private:
    * given towers */
   std::map< std::string, CaloRawTowerEval* > _map_towereval;
 
-  //  /** Map of TauCandidate properties that will be written to
+  //  /** Map of PidCandidate properties that will be written to
   //   * output ROOT Tree */
-  //  std::map< TauCandidate::PROPERTY , float > _map_treebranches;
+  //  std::map< PidCandidate::PROPERTY , float > _map_treebranches;
 
   /** Map of EM Candidates that will be written to
    * output ROOT Tree */
-  std::map< TauCandidate::PROPERTY , std::vector< float > > _map_em_candidate_branches;
+  std::map< PidCandidate::PROPERTY , std::vector< float > > _map_em_candidate_branches;
 
   /** Map of Event properties that will be written to
    * output ROOT Tree */
@@ -107,7 +107,7 @@ private:
   int AddTruthEventInformation();
 
   /** Find tau candidate in map that is closest to given eta, phi angle */
-  TauCandidate* FindMinDeltaRCandidate( type_map_tcan*, const float, const float );
+  PidCandidate* FindMinDeltaRCandidate( type_map_tcan*, const float, const float );
 
   /** Calculate Delta R ("distance in eta-phi space") between two sets of eta, phi angles */
   float CalculateDeltaR( float, float, float, float );
