@@ -1,8 +1,8 @@
 
 int Fun4All_EICAnalysis_DIS(
-			    const int nEvents = 100000,
-			    const char * inputFile = "../data/phpythia6_e10p250_dis_100k_hepmc.root",
-			    const char * outputFile = "eicana_pythia6_e10p250_dis_100k.root"
+			    const int nEvents = 0,
+			    const char * inputFile = "../../data/Sample_MCEventGen_ep.root",
+			    const char * outputFile = "eicana_test.root"
 			    )
 {
 
@@ -70,7 +70,7 @@ int Fun4All_EICAnalysis_DIS(
       return;
     }
   // if we run the particle generator and use 0 it'll run forever
-  if (nEvents == 0 && !readhits && !readhepmc)
+  if (nEvents == 0 && !readdst && !readhepmc)
     {
       cout << "using 0 for number of events is a bad idea when using particle generators" << endl;
       cout << "it will run forever, so I just return without running anything" << endl;
