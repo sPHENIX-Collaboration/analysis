@@ -79,12 +79,15 @@ public:
       //-- Track information: 201 - 250  --
       tracks_count_r02 = 210,
       tracks_count_r04 = 211,
-
+      tracks_count_R = 212,
+      
       tracks_rmax_r02 = 215,
       tracks_rmax_r04 = 216,
+      tracks_rmax_R = 217,
 
       tracks_chargesum_r02 = 220,
       tracks_chargesum_r04 = 221,
+      tracks_chargesum_R = 222,
 
       //-- EM Candidates Cluster
       em_cluster_id = 301,

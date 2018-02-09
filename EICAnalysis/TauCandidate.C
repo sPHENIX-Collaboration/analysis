@@ -179,17 +179,26 @@ TauCandidate::get_property_info(const PROPERTY prop_id)
     case  tracks_count_r04:
       return make_pair("tracks_count_r04",TauCandidate::type_uint);
 
+    case  tracks_count_R:
+      return make_pair("tracks_count_R",TauCandidate::type_uint);
+
     case  tracks_rmax_r02:
       return make_pair("tracks_rmax_r02",TauCandidate::type_float);
 
     case  tracks_rmax_r04:
       return make_pair("tracks_rmax_r04",TauCandidate::type_float);
 
+    case  tracks_rmax_R:
+      return make_pair("tracks_rmax_R",TauCandidate::type_float);
+
     case  tracks_chargesum_r02:
       return make_pair("tracks_chargesum_r02",TauCandidate::type_int);
 
     case  tracks_chargesum_r04:
       return make_pair("tracks_chargesum_r04",TauCandidate::type_int);
+
+    case  tracks_chargesum_R:
+      return make_pair("tracks_chargesum_R",TauCandidate::type_int);
 
       // ------
 

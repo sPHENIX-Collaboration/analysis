@@ -109,7 +109,9 @@ LeptoquarksReco::Init(PHCompositeNode *topNode)
   _map_tau_candidate_branches.insert( make_pair( TauCandidate::tracks_count_r04 , vdummy ) );
   _map_tau_candidate_branches.insert( make_pair( TauCandidate::tracks_chargesum_r04 , vdummy ) );
   _map_tau_candidate_branches.insert( make_pair( TauCandidate::tracks_rmax_r04 , vdummy ) );
-
+  _map_tau_candidate_branches.insert( make_pair( TauCandidate::tracks_count_R , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( TauCandidate::tracks_chargesum_R , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( TauCandidate::tracks_rmax_R , vdummy ) );
 
   /* Add branches to map that defines output tree for event-wise properties */
   _map_event_branches.insert( make_pair( "Et_miss" , dummy ) );
@@ -206,6 +208,9 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
   v_caloids.push_back( RawTowerDefs::CEMC );
   v_caloids.push_back( RawTowerDefs::HCALIN );
   v_caloids.push_back( RawTowerDefs::HCALOUT );
+  v_caloids.push_back( RawTowerDefs::FEMC );
+  v_caloids.push_back( RawTowerDefs::FHCAL );
+  v_caloids.push_back( RawTowerDefs::EEMC );
 
   /* Fill map with calorimeter data */
   for ( unsigned i = 0; i < v_caloids.size(); i++ )
@@ -255,6 +260,7 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
       tauCandidateMap.insert( make_pair( (iter->second)->get_e(), tc ) );
     }
 
+  
   /* Add jet information to tau candidates */
   AddJetInformation( tauCandidateMap, recojets, &map_calotower );
 
@@ -262,7 +268,7 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
   AddJetStructureInformation( tauCandidateMap, &map_calotower );
 
   /* Add track information to tau candidates */
-  AddTrackInformation( tauCandidateMap, trackmap );
+  AddTrackInformation( tauCandidateMap, trackmap, recojets->get_par());
 
   /* Add tag for true Tau particle jet to tau candidates */
   AddTrueTauTag( tauCandidateMap, genevtmap );
@@ -713,7 +719,7 @@ LeptoquarksReco::AddJetStructureInformation( type_map_tcan& tauCandidateMap, typ
 }
 
 int
-LeptoquarksReco::AddTrackInformation( type_map_tcan& tauCandidateMap, SvtxTrackMap* trackmap )
+LeptoquarksReco::AddTrackInformation( type_map_tcan& tauCandidateMap, SvtxTrackMap* trackmap, double R_max )
 {
   /* Loop over tau candidates */
   for (type_map_tcan::iterator iter = tauCandidateMap.begin();
@@ -727,6 +733,10 @@ LeptoquarksReco::AddTrackInformation( type_map_tcan& tauCandidateMap, SvtxTrackM
       uint tracks_count_r04 = 0;
       int tracks_chargesum_r04 = 0;
       float tracks_rmax_r04 = 0;
+
+      uint tracks_count_R = 0;
+      int tracks_chargesum_R = 0;
+      float tracks_rmax_R = 0;
 
       float jet_eta = (iter->second)->get_property_float( TauCandidate::jet_eta );
       float jet_phi = (iter->second)->get_property_float( TauCandidate::jet_phi );
@@ -793,6 +803,16 @@ LeptoquarksReco::AddTrackInformation( type_map_tcan& tauCandidateMap, SvtxTrackM
               tracks_rmax_r04 = delta_R;
           }
 
+	if ( delta_R < R_max )
+          {
+            tracks_count_R++;
+            tracks_chargesum_R += track_charge;
+
+            if ( delta_R > tracks_rmax_R )
+              tracks_rmax_R = delta_R;
+          }
+
+
       } // end loop over reco tracks //
 
       /* Set track-based properties for tau candidate */
@@ -802,7 +822,9 @@ LeptoquarksReco::AddTrackInformation( type_map_tcan& tauCandidateMap, SvtxTrackM
       (iter->second)->set_property( TauCandidate::tracks_count_r04, tracks_count_r04 );
       (iter->second)->set_property( TauCandidate::tracks_chargesum_r04, tracks_chargesum_r04 );
       (iter->second)->set_property( TauCandidate::tracks_rmax_r04, tracks_rmax_r04 );
-
+      (iter->second)->set_property( TauCandidate::tracks_count_R, tracks_count_R );
+      (iter->second)->set_property( TauCandidate::tracks_chargesum_R, tracks_chargesum_R );
+      (iter->second)->set_property( TauCandidate::tracks_rmax_R, tracks_rmax_R );
     } // end loop over tau  candidates
 
   return 0;
