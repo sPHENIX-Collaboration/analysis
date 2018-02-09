@@ -1,29 +1,29 @@
-#ifndef TAUCANDIDATE_H__
-#define TAUCANDIDATE_H__
+#ifndef PIDCANDIDATE_H__
+#define PIDCANDIDATE_H__
 
 #include <phool/PHObject.h>
 #include <cmath>
 #include <climits>
 
-class TauCandidate: public PHObject
+class PidCandidate: public PHObject
 {
 public:
-  TauCandidate() {}
-  virtual ~TauCandidate() {}
+  PidCandidate() {}
+  virtual ~PidCandidate() {}
 
   virtual void identify(std::ostream& os = std::cout) const;
 
-  virtual void Copy(TauCandidate const &tc);
+  virtual void Copy(PidCandidate const &tc);
 
-  friend std::ostream &operator<<(std::ostream & stream, const TauCandidate * tc);
+  friend std::ostream &operator<<(std::ostream & stream, const PidCandidate * tc);
 
   virtual void Reset();
 
-  virtual void print() const {std::cout<<"TauCandidate base class - print() not implemented"<<std::endl;}
+  virtual void print() const {std::cout<<"PidCandidate base class - print() not implemented"<<std::endl;}
 
   //! Procedure to add a new PROPERTY tag:
   //! 1.add new tag below with unique value,
-  //! 2.add a short name to TauCandidate::get_property_info
+  //! 2.add a short name to PidCandidate::get_property_info
   enum PROPERTY
     {//
 
@@ -79,12 +79,15 @@ public:
       //-- Track information: 201 - 250  --
       tracks_count_r02 = 210,
       tracks_count_r04 = 211,
-
+      tracks_count_R = 212,
+      
       tracks_rmax_r02 = 215,
       tracks_rmax_r04 = 216,
+      tracks_rmax_R = 217,
 
       tracks_chargesum_r02 = 220,
       tracks_chargesum_r04 = 221,
+      tracks_chargesum_R = 222,
 
       //-- EM Candidates Cluster
       em_cluster_id = 301,
@@ -161,7 +164,7 @@ public:
 protected:
   virtual unsigned int get_property_nocheck(const PROPERTY prop_id) const {return UINT_MAX;}
   virtual void set_property_nocheck(const PROPERTY prop_id,const unsigned int) {return;}
-  //ClassDef(TauCandidate,1)
+  //ClassDef(PidCandidate,1)
 };
 
 #endif

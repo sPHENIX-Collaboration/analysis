@@ -28,8 +28,8 @@ pkginclude_HEADERS = \
   LeptoquarksReco.h \
   DISKinematicsReco.h \
   Quarkonia2LeptonsMC.h\
-  TauCandidate.h\
-  TauCandidatev1.h\
+  PidCandidate.h\
+  PidCandidatev1.h\
   TrackProjectionTools.h \
   TruthTrackerHepMC.h
 
@@ -44,10 +44,10 @@ libeicana_la_SOURCES = \
   DISKinematicsReco_Dict.C \
   Quarkonia2LeptonsMC.C \
   Quarkonia2LeptonsMC_Dict.C\
-  TauCandidate.C\
-  TauCandidate_Dict.C\
-  TauCandidatev1.C\
-  TauCandidatev1_Dict.C\
+  PidCandidate.C\
+  PidCandidate_Dict.C\
+  PidCandidatev1.C\
+  PidCandidatev1_Dict.C\
   TrackProjectionTools.C \
   TruthTrackerHepMC.C
 

@@ -1,5 +1,5 @@
 #include "LeptoquarksReco.h"
-#include "TauCandidatev1.h"
+#include "PidCandidatev1.h"
 #include "TruthTrackerHepMC.h"
 
 /* STL includes */
@@ -60,56 +60,58 @@ LeptoquarksReco::Init(PHCompositeNode *topNode)
 
   _tfile = new TFile(_filename.c_str(), "RECREATE");
 
-  /* Add TauCandidate properties to map that defines output tree */
+  /* Add PidCandidate properties to map that defines output tree */
   float dummy = 0;
   vector< float > vdummy;
 
-  _map_tau_candidate_branches.insert( make_pair( TauCandidate::jet_id , vdummy ) );
-  _map_tau_candidate_branches.insert( make_pair( TauCandidate::evtgen_pid , vdummy ) );
-  _map_tau_candidate_branches.insert( make_pair( TauCandidate::evtgen_etotal , vdummy ) );
-  _map_tau_candidate_branches.insert( make_pair( TauCandidate::evtgen_ptotal , vdummy ) );
-  _map_tau_candidate_branches.insert( make_pair( TauCandidate::evtgen_theta , vdummy ) );
-  _map_tau_candidate_branches.insert( make_pair( TauCandidate::evtgen_eta , vdummy ) );
-  _map_tau_candidate_branches.insert( make_pair( TauCandidate::evtgen_phi , vdummy ) );
-  _map_tau_candidate_branches.insert( make_pair( TauCandidate::evtgen_decay_prong , vdummy ) );
-  _map_tau_candidate_branches.insert( make_pair( TauCandidate::evtgen_decay_hcharged , vdummy ) );
-  _map_tau_candidate_branches.insert( make_pair( TauCandidate::evtgen_decay_lcharged , vdummy ) );
-  _map_tau_candidate_branches.insert( make_pair( TauCandidate::jet_eta , vdummy ) );
-  _map_tau_candidate_branches.insert( make_pair( TauCandidate::jet_phi , vdummy ) );
-  _map_tau_candidate_branches.insert( make_pair( TauCandidate::jet_etotal , vdummy ) );
-  _map_tau_candidate_branches.insert( make_pair( TauCandidate::jet_etrans , vdummy ) );
-  _map_tau_candidate_branches.insert( make_pair( TauCandidate::jet_ptotal , vdummy ) );
-  _map_tau_candidate_branches.insert( make_pair( TauCandidate::jet_ptrans , vdummy ) );
-  _map_tau_candidate_branches.insert( make_pair( TauCandidate::jet_minv , vdummy ) );
-  _map_tau_candidate_branches.insert( make_pair( TauCandidate::jet_mtrans , vdummy ) );
-  _map_tau_candidate_branches.insert( make_pair( TauCandidate::jet_ncomp , vdummy ) );
-  _map_tau_candidate_branches.insert( make_pair( TauCandidate::jet_ncomp_above_0p1 , vdummy ) );
-  _map_tau_candidate_branches.insert( make_pair( TauCandidate::jet_ncomp_above_1 , vdummy ) );
-  _map_tau_candidate_branches.insert( make_pair( TauCandidate::jet_ncomp_above_10 , vdummy ) );
-  _map_tau_candidate_branches.insert( make_pair( TauCandidate::jet_ncomp_emcal , vdummy ) );
-  _map_tau_candidate_branches.insert( make_pair( TauCandidate::jetshape_econe_r01 , vdummy ) );
-  _map_tau_candidate_branches.insert( make_pair( TauCandidate::jetshape_econe_r02 , vdummy ) );
-  _map_tau_candidate_branches.insert( make_pair( TauCandidate::jetshape_econe_r03 , vdummy ) );
-  _map_tau_candidate_branches.insert( make_pair( TauCandidate::jetshape_econe_r04 , vdummy ) );
-  _map_tau_candidate_branches.insert( make_pair( TauCandidate::jetshape_econe_r05 , vdummy ) );
-  _map_tau_candidate_branches.insert( make_pair( TauCandidate::jetshape_r90 , vdummy ) );
-  _map_tau_candidate_branches.insert( make_pair( TauCandidate::jetshape_rms , vdummy ) );
-  _map_tau_candidate_branches.insert( make_pair( TauCandidate::jetshape_radius , vdummy ) );
-  _map_tau_candidate_branches.insert( make_pair( TauCandidate::jetshape_emcal_econe_r01 , vdummy ) );
-  _map_tau_candidate_branches.insert( make_pair( TauCandidate::jetshape_emcal_econe_r02 , vdummy ) );
-  _map_tau_candidate_branches.insert( make_pair( TauCandidate::jetshape_emcal_econe_r03 , vdummy ) );
-  _map_tau_candidate_branches.insert( make_pair( TauCandidate::jetshape_emcal_econe_r04 , vdummy ) );
-  _map_tau_candidate_branches.insert( make_pair( TauCandidate::jetshape_emcal_econe_r05 , vdummy ) );
-  _map_tau_candidate_branches.insert( make_pair( TauCandidate::jetshape_emcal_r90 , vdummy ) );
-  _map_tau_candidate_branches.insert( make_pair( TauCandidate::jetshape_emcal_rms , vdummy ) );
-  _map_tau_candidate_branches.insert( make_pair( TauCandidate::jetshape_emcal_radius , vdummy ) );
-  _map_tau_candidate_branches.insert( make_pair( TauCandidate::tracks_count_r02 , vdummy ) );
-  _map_tau_candidate_branches.insert( make_pair( TauCandidate::tracks_chargesum_r02 , vdummy ) );
-  _map_tau_candidate_branches.insert( make_pair( TauCandidate::tracks_rmax_r02 , vdummy ) );
-  _map_tau_candidate_branches.insert( make_pair( TauCandidate::tracks_count_r04 , vdummy ) );
-  _map_tau_candidate_branches.insert( make_pair( TauCandidate::tracks_chargesum_r04 , vdummy ) );
-  _map_tau_candidate_branches.insert( make_pair( TauCandidate::tracks_rmax_r04 , vdummy ) );
-
+  _map_tau_candidate_branches.insert( make_pair( PidCandidate::jet_id , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( PidCandidate::evtgen_pid , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( PidCandidate::evtgen_etotal , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( PidCandidate::evtgen_ptotal , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( PidCandidate::evtgen_theta , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( PidCandidate::evtgen_eta , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( PidCandidate::evtgen_phi , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( PidCandidate::evtgen_decay_prong , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( PidCandidate::evtgen_decay_hcharged , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( PidCandidate::evtgen_decay_lcharged , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( PidCandidate::jet_eta , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( PidCandidate::jet_phi , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( PidCandidate::jet_etotal , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( PidCandidate::jet_etrans , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( PidCandidate::jet_ptotal , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( PidCandidate::jet_ptrans , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( PidCandidate::jet_minv , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( PidCandidate::jet_mtrans , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( PidCandidate::jet_ncomp , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( PidCandidate::jet_ncomp_above_0p1 , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( PidCandidate::jet_ncomp_above_1 , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( PidCandidate::jet_ncomp_above_10 , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( PidCandidate::jet_ncomp_emcal , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( PidCandidate::jetshape_econe_r01 , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( PidCandidate::jetshape_econe_r02 , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( PidCandidate::jetshape_econe_r03 , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( PidCandidate::jetshape_econe_r04 , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( PidCandidate::jetshape_econe_r05 , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( PidCandidate::jetshape_r90 , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( PidCandidate::jetshape_rms , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( PidCandidate::jetshape_radius , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( PidCandidate::jetshape_emcal_econe_r01 , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( PidCandidate::jetshape_emcal_econe_r02 , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( PidCandidate::jetshape_emcal_econe_r03 , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( PidCandidate::jetshape_emcal_econe_r04 , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( PidCandidate::jetshape_emcal_econe_r05 , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( PidCandidate::jetshape_emcal_r90 , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( PidCandidate::jetshape_emcal_rms , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( PidCandidate::jetshape_emcal_radius , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( PidCandidate::tracks_count_r02 , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( PidCandidate::tracks_chargesum_r02 , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( PidCandidate::tracks_rmax_r02 , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( PidCandidate::tracks_count_r04 , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( PidCandidate::tracks_chargesum_r04 , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( PidCandidate::tracks_rmax_r04 , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( PidCandidate::tracks_count_R , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( PidCandidate::tracks_chargesum_R , vdummy ) );
+  _map_tau_candidate_branches.insert( make_pair( PidCandidate::tracks_rmax_R , vdummy ) );
 
   /* Add branches to map that defines output tree for event-wise properties */
   _map_event_branches.insert( make_pair( "Et_miss" , dummy ) );
@@ -135,11 +137,11 @@ LeptoquarksReco::Init(PHCompositeNode *topNode)
     }
 
   /* Add tau candidate branches */
-  for ( map< TauCandidate::PROPERTY , vector< float > >::iterator iter = _map_tau_candidate_branches.begin();
+  for ( map< PidCandidate::PROPERTY , vector< float > >::iterator iter = _map_tau_candidate_branches.begin();
         iter != _map_tau_candidate_branches.end();
         ++iter)
     {
-      _t_event->Branch(TauCandidate::get_property_info( (iter->first) ).first.c_str(),
+      _t_event->Branch(PidCandidate::get_property_info( (iter->first) ).first.c_str(),
 		       &(iter->second) );
     }
 
@@ -206,6 +208,9 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
   v_caloids.push_back( RawTowerDefs::CEMC );
   v_caloids.push_back( RawTowerDefs::HCALIN );
   v_caloids.push_back( RawTowerDefs::HCALOUT );
+  v_caloids.push_back( RawTowerDefs::FEMC );
+  v_caloids.push_back( RawTowerDefs::FHCAL );
+  v_caloids.push_back( RawTowerDefs::EEMC );
 
   /* Fill map with calorimeter data */
   for ( unsigned i = 0; i < v_caloids.size(); i++ )
@@ -245,16 +250,17 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
         continue;
 
       /* create new tau candidate */
-      TauCandidatev1 *tc = new TauCandidatev1();
+      PidCandidatev1 *tc = new PidCandidatev1();
       tc->set_candidate_id( (iter->second)->get_id() );
-      tc->set_property( TauCandidate::jet_id , (iter->second)->get_id() );
+      tc->set_property( PidCandidate::jet_id , (iter->second)->get_id() );
 
-      tc->set_property( TauCandidate::evtgen_pid, (int)0 );
+      tc->set_property( PidCandidate::evtgen_pid, (int)0 );
 
       /* add tau candidate to collection */
       tauCandidateMap.insert( make_pair( (iter->second)->get_e(), tc ) );
     }
 
+  
   /* Add jet information to tau candidates */
   AddJetInformation( tauCandidateMap, recojets, &map_calotower );
 
@@ -262,13 +268,13 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
   AddJetStructureInformation( tauCandidateMap, &map_calotower );
 
   /* Add track information to tau candidates */
-  AddTrackInformation( tauCandidateMap, trackmap );
+  AddTrackInformation( tauCandidateMap, trackmap, recojets->get_par());
 
   /* Add tag for true Tau particle jet to tau candidates */
   AddTrueTauTag( tauCandidateMap, genevtmap );
 
   /* Add information about tau candidats to output tree */
-  WriteTauCandidatesToTree( tauCandidateMap );
+  WritePidCandidatesToTree( tauCandidateMap );
 
   /* Add global event information to separate tree */
   AddGlobalEventInformation( tauCandidateMap, &map_calotower );
@@ -324,25 +330,25 @@ LeptoquarksReco::AddTrueTauTag( type_map_tcan& tauCandidateMap, PHHepMCGenEventM
   /* If TAU in event: Tag the tau candidate (i.e. jet) with smalles delta_R from this tau */
   if( particle_tau )
     {
-      TauCandidate* best_match = FindMinDeltaRCandidate( &tauCandidateMap,
+      PidCandidate* best_match = FindMinDeltaRCandidate( &tauCandidateMap,
                                                          particle_tau->momentum().eta(),
                                                          particle_tau->momentum().phi() );
 
-      /* set is_tau = TRUE for TauCandiate with smallest delta_R within reasonable range*/
+      /* set is_tau = TRUE for PidCandiate with smallest delta_R within reasonable range*/
       if ( best_match )
         {
-	  /* Check: If TauCandidate::Evtgen_pid has already been set to a value != 0, exit function. */
-	  if( best_match->get_property_int( TauCandidate::evtgen_pid ) != 0 )
+	  /* Check: If PidCandidate::Evtgen_pid has already been set to a value != 0, exit function. */
+	  if( best_match->get_property_int( PidCandidate::evtgen_pid ) != 0 )
 	    {
-	      cout << "ERROR: Try to set TauCandidate::evtgen_pid for TauCandidate with evtgen_pid != 0" << endl;
+	      cout << "ERROR: Try to set PidCandidate::evtgen_pid for PidCandidate with evtgen_pid != 0" << endl;
 	      return -1;
 	    }
 
-          /* Update TauCandidate entry */
-          best_match->set_property( TauCandidate::evtgen_pid, pdg_tau );
-          best_match->set_property( TauCandidate::evtgen_etotal, (float)particle_tau->momentum().e() );
-          best_match->set_property( TauCandidate::evtgen_eta, (float)particle_tau->momentum().eta() );
-          best_match->set_property( TauCandidate::evtgen_phi, (float)particle_tau->momentum().phi() );
+          /* Update PidCandidate entry */
+          best_match->set_property( PidCandidate::evtgen_pid, pdg_tau );
+          best_match->set_property( PidCandidate::evtgen_etotal, (float)particle_tau->momentum().e() );
+          best_match->set_property( PidCandidate::evtgen_eta, (float)particle_tau->momentum().eta() );
+          best_match->set_property( PidCandidate::evtgen_phi, (float)particle_tau->momentum().phi() );
 
           /* Check particle decay if end-vertex found */
           if ( particle_tau->end_vertex() )
@@ -356,9 +362,9 @@ LeptoquarksReco::AddTrueTauTag( type_map_tcan& tauCandidateMap, PHHepMCGenEventM
               truth.FindDecayParticles( particle_tau, tau_decay_prong, tau_decay_hcharged, tau_decay_lcharged );
 
               /* Update tau candidate entry */
-              best_match->set_property( TauCandidate::evtgen_decay_prong, tau_decay_prong );
-              best_match->set_property( TauCandidate::evtgen_decay_hcharged, tau_decay_hcharged );
-              best_match->set_property( TauCandidate::evtgen_decay_lcharged, tau_decay_lcharged );
+              best_match->set_property( PidCandidate::evtgen_decay_prong, tau_decay_prong );
+              best_match->set_property( PidCandidate::evtgen_decay_hcharged, tau_decay_hcharged );
+              best_match->set_property( PidCandidate::evtgen_decay_lcharged, tau_decay_lcharged );
             }
         }
     }
@@ -366,25 +372,25 @@ LeptoquarksReco::AddTrueTauTag( type_map_tcan& tauCandidateMap, PHHepMCGenEventM
   /* If QUARK (->jet) in event: Tag the tau candidate (i.e. jet) with smalles delta_R from this quark */
   if( particle_quark )
     {
-      TauCandidate* best_match = FindMinDeltaRCandidate( &tauCandidateMap,
+      PidCandidate* best_match = FindMinDeltaRCandidate( &tauCandidateMap,
                                                          particle_quark->momentum().eta(),
                                                          particle_quark->momentum().phi() );
 
-      /* set is_uds = TRUE for TauCandiate with smallest delta_R if found */
+      /* set is_uds = TRUE for PidCandiate with smallest delta_R if found */
       if ( best_match )
         {
-	  /* Check: If TauCandidate::Evtgen_pid has already been set to a value != 0, exit function. */
-	  if( best_match->get_property_int( TauCandidate::evtgen_pid ) != 0 )
+	  /* Check: If PidCandidate::Evtgen_pid has already been set to a value != 0, exit function. */
+	  if( best_match->get_property_int( PidCandidate::evtgen_pid ) != 0 )
 	    {
-	      cout << "ERROR: Try to set TauCandidate::evtgen_pid for TauCandidate with evtgen_pid != 0" << endl;
+	      cout << "ERROR: Try to set PidCandidate::evtgen_pid for PidCandidate with evtgen_pid != 0" << endl;
 	      return -1;
 	    }
 
-	  /* Set properties of TauCandidate */
-          best_match->set_property( TauCandidate::evtgen_pid, pdg_parton );
-          best_match->set_property( TauCandidate::evtgen_etotal, (float)particle_quark->momentum().e() );
-          best_match->set_property( TauCandidate::evtgen_eta, (float)particle_quark->momentum().eta() );
-          best_match->set_property( TauCandidate::evtgen_phi, (float)particle_quark->momentum().phi() );
+	  /* Set properties of PidCandidate */
+          best_match->set_property( PidCandidate::evtgen_pid, pdg_parton );
+          best_match->set_property( PidCandidate::evtgen_etotal, (float)particle_quark->momentum().e() );
+          best_match->set_property( PidCandidate::evtgen_eta, (float)particle_quark->momentum().eta() );
+          best_match->set_property( PidCandidate::evtgen_phi, (float)particle_quark->momentum().phi() );
         }
     }
 
@@ -400,7 +406,7 @@ LeptoquarksReco::AddJetInformation( type_map_tcan& tauCandidateMap, JetMap* reco
        iter != tauCandidateMap.end();
        ++iter)
     {
-      Jet* jetx = recojets->get( (iter->second)->get_property_uint( TauCandidate::jet_id ) );
+      Jet* jetx = recojets->get( (iter->second)->get_property_uint( PidCandidate::jet_id ) );
 
       /* calculate transverse mass of jet */
       float jet_mtrans = sqrt( pow( jetx->get_mass(), 2 ) +
@@ -449,19 +455,19 @@ LeptoquarksReco::AddJetInformation( type_map_tcan& tauCandidateMap, JetMap* reco
         }
 
       /* set tau candidate jet properties */
-      (iter->second)->set_property( TauCandidate::jet_eta , jetx->get_eta() );
-      (iter->second)->set_property( TauCandidate::jet_phi , jetx->get_phi() );
-      (iter->second)->set_property( TauCandidate::jet_etotal , jetx->get_e() );
-      (iter->second)->set_property( TauCandidate::jet_etrans , jetx->get_et() );
-      (iter->second)->set_property( TauCandidate::jet_ptotal , jetx->get_p() );
-      (iter->second)->set_property( TauCandidate::jet_ptrans , jetx->get_pt() );
-      (iter->second)->set_property( TauCandidate::jet_minv , jetx->get_mass() );
-      (iter->second)->set_property( TauCandidate::jet_mtrans , jet_mtrans );
-      (iter->second)->set_property( TauCandidate::jet_ncomp , (uint)jetx->size_comp() );
-      (iter->second)->set_property( TauCandidate::jet_ncomp_above_0p1 , jet_ncomp_above_0p1 );
-      (iter->second)->set_property( TauCandidate::jet_ncomp_above_1 , jet_ncomp_above_1 );
-      (iter->second)->set_property( TauCandidate::jet_ncomp_above_10 , jet_ncomp_above_10 );
-      (iter->second)->set_property( TauCandidate::jet_ncomp_emcal , (uint)jetx->count_comp( Jet::CEMC_TOWER ) );
+      (iter->second)->set_property( PidCandidate::jet_eta , jetx->get_eta() );
+      (iter->second)->set_property( PidCandidate::jet_phi , jetx->get_phi() );
+      (iter->second)->set_property( PidCandidate::jet_etotal , jetx->get_e() );
+      (iter->second)->set_property( PidCandidate::jet_etrans , jetx->get_et() );
+      (iter->second)->set_property( PidCandidate::jet_ptotal , jetx->get_p() );
+      (iter->second)->set_property( PidCandidate::jet_ptrans , jetx->get_pt() );
+      (iter->second)->set_property( PidCandidate::jet_minv , jetx->get_mass() );
+      (iter->second)->set_property( PidCandidate::jet_mtrans , jet_mtrans );
+      (iter->second)->set_property( PidCandidate::jet_ncomp , (uint)jetx->size_comp() );
+      (iter->second)->set_property( PidCandidate::jet_ncomp_above_0p1 , jet_ncomp_above_0p1 );
+      (iter->second)->set_property( PidCandidate::jet_ncomp_above_1 , jet_ncomp_above_1 );
+      (iter->second)->set_property( PidCandidate::jet_ncomp_above_10 , jet_ncomp_above_10 );
+      (iter->second)->set_property( PidCandidate::jet_ncomp_emcal , (uint)jetx->count_comp( Jet::CEMC_TOWER ) );
     }
 
   return 0;
@@ -491,9 +497,9 @@ LeptoquarksReco::AddJetStructureInformation( type_map_tcan& tauCandidateMap, typ
        ++iter)
     {
       /* get jet axis */
-      float jet_eta = (iter->second)->get_property_float( TauCandidate::jet_eta );
-      float jet_phi = (iter->second)->get_property_float( TauCandidate::jet_phi );
-      float jet_e =   (iter->second)->get_property_float( TauCandidate::jet_etotal );
+      float jet_eta = (iter->second)->get_property_float( PidCandidate::jet_eta );
+      float jet_phi = (iter->second)->get_property_float( PidCandidate::jet_phi );
+      float jet_e =   (iter->second)->get_property_float( PidCandidate::jet_etotal );
 
       /* collect jet structure properties */
       float er1 = 0;
@@ -556,17 +562,17 @@ LeptoquarksReco::AddJetStructureInformation( type_map_tcan& tauCandidateMap, typ
               if ( _save_towers )
                 {
                   float tower_data[17] = {(float) _ievent,
-                                          (float) (iter->second)->get_property_uint( TauCandidate::jet_id ),
-                                          (float) (iter->second)->get_property_int( TauCandidate::evtgen_pid ),
-                                          (float) (iter->second)->get_property_float( TauCandidate::evtgen_etotal ),
-                                          (float) (iter->second)->get_property_float( TauCandidate::evtgen_eta ),
-                                          (float) (iter->second)->get_property_float( TauCandidate::evtgen_phi ),
-                                          (float) (iter->second)->get_property_uint( TauCandidate::evtgen_decay_prong ),
-                                          (float) (iter->second)->get_property_uint( TauCandidate::evtgen_decay_hcharged ),
-                                          (float) (iter->second)->get_property_uint( TauCandidate::evtgen_decay_lcharged ),
-                                          (float) (iter->second)->get_property_float( TauCandidate::jet_eta ),
-                                          (float) (iter->second)->get_property_float( TauCandidate::jet_phi ),
-                                          (float) (iter->second)->get_property_float( TauCandidate::jet_etotal ),
+                                          (float) (iter->second)->get_property_uint( PidCandidate::jet_id ),
+                                          (float) (iter->second)->get_property_int( PidCandidate::evtgen_pid ),
+                                          (float) (iter->second)->get_property_float( PidCandidate::evtgen_etotal ),
+                                          (float) (iter->second)->get_property_float( PidCandidate::evtgen_eta ),
+                                          (float) (iter->second)->get_property_float( PidCandidate::evtgen_phi ),
+                                          (float) (iter->second)->get_property_uint( PidCandidate::evtgen_decay_prong ),
+                                          (float) (iter->second)->get_property_uint( PidCandidate::evtgen_decay_hcharged ),
+                                          (float) (iter->second)->get_property_uint( PidCandidate::evtgen_decay_lcharged ),
+                                          (float) (iter->second)->get_property_float( PidCandidate::jet_eta ),
+                                          (float) (iter->second)->get_property_float( PidCandidate::jet_phi ),
+                                          (float) (iter->second)->get_property_float( PidCandidate::jet_etotal ),
                                           (float) (iter_calo->first),
                                           (float) tower_eta,
                                           (float) tower_phi,
@@ -691,29 +697,29 @@ LeptoquarksReco::AddJetStructureInformation( type_map_tcan& tauCandidateMap, typ
       }
 
       /* set tau candidate properties */
-      (iter->second)->set_property( TauCandidate::jetshape_econe_r01, er1 );
-      (iter->second)->set_property( TauCandidate::jetshape_econe_r02, er2 );
-      (iter->second)->set_property( TauCandidate::jetshape_econe_r03, er3 );
-      (iter->second)->set_property( TauCandidate::jetshape_econe_r04, er4 );
-      (iter->second)->set_property( TauCandidate::jetshape_econe_r05, er5 );
-      (iter->second)->set_property( TauCandidate::jetshape_r90, r90 );
-      (iter->second)->set_property( TauCandidate::jetshape_rms, rms );
-      (iter->second)->set_property( TauCandidate::jetshape_radius, radius );
-      (iter->second)->set_property( TauCandidate::jetshape_emcal_econe_r01, emcal_er1 );
-      (iter->second)->set_property( TauCandidate::jetshape_emcal_econe_r02, emcal_er2 );
-      (iter->second)->set_property( TauCandidate::jetshape_emcal_econe_r03, emcal_er3 );
-      (iter->second)->set_property( TauCandidate::jetshape_emcal_econe_r04, emcal_er4 );
-      (iter->second)->set_property( TauCandidate::jetshape_emcal_econe_r05, emcal_er5 );
-      (iter->second)->set_property( TauCandidate::jetshape_emcal_r90, emcal_r90 );
-      (iter->second)->set_property( TauCandidate::jetshape_emcal_rms, emcal_rms );
-      (iter->second)->set_property( TauCandidate::jetshape_emcal_radius, emcal_radius );
+      (iter->second)->set_property( PidCandidate::jetshape_econe_r01, er1 );
+      (iter->second)->set_property( PidCandidate::jetshape_econe_r02, er2 );
+      (iter->second)->set_property( PidCandidate::jetshape_econe_r03, er3 );
+      (iter->second)->set_property( PidCandidate::jetshape_econe_r04, er4 );
+      (iter->second)->set_property( PidCandidate::jetshape_econe_r05, er5 );
+      (iter->second)->set_property( PidCandidate::jetshape_r90, r90 );
+      (iter->second)->set_property( PidCandidate::jetshape_rms, rms );
+      (iter->second)->set_property( PidCandidate::jetshape_radius, radius );
+      (iter->second)->set_property( PidCandidate::jetshape_emcal_econe_r01, emcal_er1 );
+      (iter->second)->set_property( PidCandidate::jetshape_emcal_econe_r02, emcal_er2 );
+      (iter->second)->set_property( PidCandidate::jetshape_emcal_econe_r03, emcal_er3 );
+      (iter->second)->set_property( PidCandidate::jetshape_emcal_econe_r04, emcal_er4 );
+      (iter->second)->set_property( PidCandidate::jetshape_emcal_econe_r05, emcal_er5 );
+      (iter->second)->set_property( PidCandidate::jetshape_emcal_r90, emcal_r90 );
+      (iter->second)->set_property( PidCandidate::jetshape_emcal_rms, emcal_rms );
+      (iter->second)->set_property( PidCandidate::jetshape_emcal_radius, emcal_radius );
     }
 
   return 0;
 }
 
 int
-LeptoquarksReco::AddTrackInformation( type_map_tcan& tauCandidateMap, SvtxTrackMap* trackmap )
+LeptoquarksReco::AddTrackInformation( type_map_tcan& tauCandidateMap, SvtxTrackMap* trackmap, double R_max )
 {
   /* Loop over tau candidates */
   for (type_map_tcan::iterator iter = tauCandidateMap.begin();
@@ -728,8 +734,12 @@ LeptoquarksReco::AddTrackInformation( type_map_tcan& tauCandidateMap, SvtxTrackM
       int tracks_chargesum_r04 = 0;
       float tracks_rmax_r04 = 0;
 
-      float jet_eta = (iter->second)->get_property_float( TauCandidate::jet_eta );
-      float jet_phi = (iter->second)->get_property_float( TauCandidate::jet_phi );
+      uint tracks_count_R = 0;
+      int tracks_chargesum_R = 0;
+      float tracks_rmax_R = 0;
+
+      float jet_eta = (iter->second)->get_property_float( PidCandidate::jet_eta );
+      float jet_phi = (iter->second)->get_property_float( PidCandidate::jet_phi );
 
       /* Loop over tracks
        * (float) track->get_eta(),     //eta of the track
@@ -753,17 +763,17 @@ LeptoquarksReco::AddTrackInformation( type_map_tcan& tauCandidateMap, SvtxTrackM
         if ( _save_tracks )
           {
             float track_data[17] = {(float) _ievent,
-                                    (float) (iter->second)->get_property_uint( TauCandidate::jet_id ),
-                                    (float) (iter->second)->get_property_int( TauCandidate::evtgen_pid ),
-                                    (float) (iter->second)->get_property_float( TauCandidate::evtgen_etotal ),
-                                    (float) (iter->second)->get_property_float( TauCandidate::evtgen_eta ),
-                                    (float) (iter->second)->get_property_float( TauCandidate::evtgen_phi ),
-                                    (float) (iter->second)->get_property_uint( TauCandidate::evtgen_decay_prong ),
-                                    (float) (iter->second)->get_property_uint( TauCandidate::evtgen_decay_hcharged ),
-                                    (float) (iter->second)->get_property_uint( TauCandidate::evtgen_decay_lcharged ),
-                                    (float) (iter->second)->get_property_float( TauCandidate::jet_eta ),
-                                    (float) (iter->second)->get_property_float( TauCandidate::jet_phi ),
-                                    (float) (iter->second)->get_property_float( TauCandidate::jet_etotal ),
+                                    (float) (iter->second)->get_property_uint( PidCandidate::jet_id ),
+                                    (float) (iter->second)->get_property_int( PidCandidate::evtgen_pid ),
+                                    (float) (iter->second)->get_property_float( PidCandidate::evtgen_etotal ),
+                                    (float) (iter->second)->get_property_float( PidCandidate::evtgen_eta ),
+                                    (float) (iter->second)->get_property_float( PidCandidate::evtgen_phi ),
+                                    (float) (iter->second)->get_property_uint( PidCandidate::evtgen_decay_prong ),
+                                    (float) (iter->second)->get_property_uint( PidCandidate::evtgen_decay_hcharged ),
+                                    (float) (iter->second)->get_property_uint( PidCandidate::evtgen_decay_lcharged ),
+                                    (float) (iter->second)->get_property_float( PidCandidate::jet_eta ),
+                                    (float) (iter->second)->get_property_float( PidCandidate::jet_phi ),
+                                    (float) (iter->second)->get_property_float( PidCandidate::jet_etotal ),
                                     (float) track->get_quality(),
                                     (float) track_eta,
                                     (float) track_phi,
@@ -793,16 +803,28 @@ LeptoquarksReco::AddTrackInformation( type_map_tcan& tauCandidateMap, SvtxTrackM
               tracks_rmax_r04 = delta_R;
           }
 
+	if ( delta_R < R_max )
+          {
+            tracks_count_R++;
+            tracks_chargesum_R += track_charge;
+
+            if ( delta_R > tracks_rmax_R )
+              tracks_rmax_R = delta_R;
+          }
+
+
       } // end loop over reco tracks //
 
       /* Set track-based properties for tau candidate */
-      (iter->second)->set_property( TauCandidate::tracks_count_r02, tracks_count_r02 );
-      (iter->second)->set_property( TauCandidate::tracks_chargesum_r02, tracks_chargesum_r02 );
-      (iter->second)->set_property( TauCandidate::tracks_rmax_r02, tracks_rmax_r02 );
-      (iter->second)->set_property( TauCandidate::tracks_count_r04, tracks_count_r04 );
-      (iter->second)->set_property( TauCandidate::tracks_chargesum_r04, tracks_chargesum_r04 );
-      (iter->second)->set_property( TauCandidate::tracks_rmax_r04, tracks_rmax_r04 );
-
+      (iter->second)->set_property( PidCandidate::tracks_count_r02, tracks_count_r02 );
+      (iter->second)->set_property( PidCandidate::tracks_chargesum_r02, tracks_chargesum_r02 );
+      (iter->second)->set_property( PidCandidate::tracks_rmax_r02, tracks_rmax_r02 );
+      (iter->second)->set_property( PidCandidate::tracks_count_r04, tracks_count_r04 );
+      (iter->second)->set_property( PidCandidate::tracks_chargesum_r04, tracks_chargesum_r04 );
+      (iter->second)->set_property( PidCandidate::tracks_rmax_r04, tracks_rmax_r04 );
+      (iter->second)->set_property( PidCandidate::tracks_count_R, tracks_count_R );
+      (iter->second)->set_property( PidCandidate::tracks_chargesum_R, tracks_chargesum_R );
+      (iter->second)->set_property( PidCandidate::tracks_rmax_R, tracks_rmax_R );
     } // end loop over tau  candidates
 
   return 0;
@@ -810,7 +832,7 @@ LeptoquarksReco::AddTrackInformation( type_map_tcan& tauCandidateMap, SvtxTrackM
 
 
 int
-LeptoquarksReco::WriteTauCandidatesToTree( type_map_tcan& tauCandidateMap )
+LeptoquarksReco::WritePidCandidatesToTree( type_map_tcan& tauCandidateMap )
 {
   /* Loop over all tau candidates and add them to tree*/
   for (type_map_tcan::iterator iter = tauCandidateMap.begin();
@@ -818,25 +840,25 @@ LeptoquarksReco::WriteTauCandidatesToTree( type_map_tcan& tauCandidateMap )
        ++iter)
     {
       /* update information in map and fill tree */
-      for ( map< TauCandidate::PROPERTY , vector<float> >::iterator iter_prop = _map_tau_candidate_branches.begin();
+      for ( map< PidCandidate::PROPERTY , vector<float> >::iterator iter_prop = _map_tau_candidate_branches.begin();
             iter_prop != _map_tau_candidate_branches.end();
             ++iter_prop)
         {
-          switch ( TauCandidate::get_property_info( (iter_prop->first) ).second ) {
+          switch ( PidCandidate::get_property_info( (iter_prop->first) ).second ) {
 
-          case TauCandidate::type_float :
+          case PidCandidate::type_float :
             (iter_prop->second).push_back( (iter->second)->get_property_float( (iter_prop->first) ) );
             break;
 
-          case TauCandidate::type_int :
+          case PidCandidate::type_int :
             (iter_prop->second).push_back( (iter->second)->get_property_int( (iter_prop->first) ) );
             break;
 
-          case TauCandidate::type_uint :
+          case PidCandidate::type_uint :
             (iter_prop->second).push_back( (iter->second)->get_property_uint( (iter_prop->first) ) );
             break;
 
-          case TauCandidate::type_unknown :
+          case PidCandidate::type_unknown :
             break;
           }
         }
@@ -846,11 +868,11 @@ LeptoquarksReco::WriteTauCandidatesToTree( type_map_tcan& tauCandidateMap )
 }
 
 
-TauCandidate*
+PidCandidate*
 LeptoquarksReco::FindMinDeltaRCandidate( type_map_tcan *candidates, const float eta_ref, const float phi_ref )
 {
-  /* TauCandidate with eta, phi closest to reference */
-  TauCandidate* best_candidate = NULL;
+  /* PidCandidate with eta, phi closest to reference */
+  PidCandidate* best_candidate = NULL;
 
   float eta_ref_local = eta_ref;
   float phi_ref_local = phi_ref;
@@ -867,8 +889,8 @@ LeptoquarksReco::FindMinDeltaRCandidate( type_map_tcan *candidates, const float 
        iter != candidates->end();
        ++iter)
     {
-      float eta = (iter->second)->get_property_float( TauCandidate::jet_eta );
-      float phi = (iter->second)->get_property_float( TauCandidate::jet_phi );
+      float eta = (iter->second)->get_property_float( PidCandidate::jet_eta );
+      float phi = (iter->second)->get_property_float( PidCandidate::jet_phi );
 
       float delta_R = CalculateDeltaR( eta, phi, eta_ref_local, phi_ref_local );
 
@@ -879,7 +901,7 @@ LeptoquarksReco::FindMinDeltaRCandidate( type_map_tcan *candidates, const float 
         }
     }
 
-  /* set best_candidate to TauCandiate with smallest delta_R within reasonable range*/
+  /* set best_candidate to PidCandiate with smallest delta_R within reasonable range*/
   if ( min_delta_R_iter != candidates->end() && min_delta_R < 0.5 )
     best_candidate = min_delta_R_iter->second;
 
@@ -966,12 +988,12 @@ LeptoquarksReco::AddGlobalEventInformation( type_map_tcan& tauCandidateMap, type
   Et_miss_phi = atan( Ey_sum / Ex_sum );
 
   /* Loop over tau candidates and find tau jet*/
-  TauCandidate* the_tau = NULL;
+  PidCandidate* the_tau = NULL;
   for (type_map_tcan::iterator iter = tauCandidateMap.begin();
        iter != tauCandidateMap.end();
        ++iter)
     {
-      if ( ( iter->second)->get_property_int( TauCandidate::evtgen_pid ) == 15 )
+      if ( ( iter->second)->get_property_int( PidCandidate::evtgen_pid ) == 15 )
         the_tau = iter->second;
     }
 
@@ -985,13 +1007,13 @@ LeptoquarksReco::AddGlobalEventInformation( type_map_tcan& tauCandidateMap, type
     {
       ( _map_event_branches.find( "reco_tau_found" ) )->second = 1;
       ( _map_event_branches.find( "reco_tau_is_tau" ) )->second =
-        the_tau->get_property_int( TauCandidate::evtgen_pid );
+        the_tau->get_property_int( PidCandidate::evtgen_pid );
       ( _map_event_branches.find( "reco_tau_eta" ) )->second =
-        the_tau->get_property_float( TauCandidate::jet_eta );
+        the_tau->get_property_float( PidCandidate::jet_eta );
       ( _map_event_branches.find( "reco_tau_phi" ) )->second =
-        the_tau->get_property_float( TauCandidate::jet_phi );
+        the_tau->get_property_float( PidCandidate::jet_phi );
       ( _map_event_branches.find( "reco_tau_ptotal" ) )->second =
-        the_tau->get_property_float( TauCandidate::jet_ptotal );
+        the_tau->get_property_float( PidCandidate::jet_ptotal );
     }
   else
     {
@@ -1018,7 +1040,7 @@ LeptoquarksReco::ResetBranchMap()
     }
 
   /* Tau candidate branches */
-  for ( map< TauCandidate::PROPERTY , vector<float> >::iterator iter = _map_tau_candidate_branches.begin();
+  for ( map< PidCandidate::PROPERTY , vector<float> >::iterator iter = _map_tau_candidate_branches.begin();
         iter != _map_tau_candidate_branches.end();
         ++iter)
     {

@@ -1,4 +1,4 @@
-#include "TauCandidatev1.h"
+#include "PidCandidatev1.h"
 
 #include <phool/phool.h>
 
@@ -6,27 +6,27 @@
 
 using namespace std;
 
-ClassImp(TauCandidatev1)
+ClassImp(PidCandidatev1)
 
-TauCandidatev1::TauCandidatev1():
+PidCandidatev1::PidCandidatev1():
 _candidateid(INT_MAX)
 {
 }
 
-TauCandidatev1::TauCandidatev1(TauCandidate const &tc)
+PidCandidatev1::PidCandidatev1(PidCandidate const &tc)
 {
   Copy(tc);
 }
 
 void
-TauCandidatev1::Reset()
+PidCandidatev1::Reset()
 {
   prop_map.clear();
 }
 
 void
-TauCandidatev1::print() const {
-  std::cout << "New TauCandidate 0x" << hex << _candidateid << std::endl;
+PidCandidatev1::print() const {
+  std::cout << "New PidCandidate 0x" << hex << _candidateid << std::endl;
 
   for (prop_map_t::const_iterator i = prop_map.begin(); i!= prop_map.end(); ++i)
     {
@@ -52,14 +52,14 @@ TauCandidatev1::print() const {
 }
 
 bool
-TauCandidatev1::has_property(const PROPERTY prop_id) const
+PidCandidatev1::has_property(const PROPERTY prop_id) const
 {
   prop_map_t::const_iterator i = prop_map.find(prop_id);
   return i!=prop_map.end();
 }
 
 float
-TauCandidatev1::get_property_float(const PROPERTY prop_id) const
+PidCandidatev1::get_property_float(const PROPERTY prop_id) const
 {
   if (!check_property(prop_id,type_float))
     {
@@ -77,7 +77,7 @@ TauCandidatev1::get_property_float(const PROPERTY prop_id) const
 }
 
 int
-TauCandidatev1::get_property_int(const PROPERTY prop_id) const
+PidCandidatev1::get_property_int(const PROPERTY prop_id) const
 {
   if (!check_property(prop_id,type_int))
     {
@@ -95,7 +95,7 @@ TauCandidatev1::get_property_int(const PROPERTY prop_id) const
 }
 
 unsigned int
-TauCandidatev1::get_property_uint(const PROPERTY prop_id) const
+PidCandidatev1::get_property_uint(const PROPERTY prop_id) const
 {
   if (!check_property(prop_id,type_uint))
     {
@@ -113,7 +113,7 @@ TauCandidatev1::get_property_uint(const PROPERTY prop_id) const
 }
 
 void
-TauCandidatev1::set_property(const PROPERTY prop_id, const float value)
+PidCandidatev1::set_property(const PROPERTY prop_id, const float value)
 {
   if (!check_property(prop_id,type_float))
     {
@@ -127,7 +127,7 @@ TauCandidatev1::set_property(const PROPERTY prop_id, const float value)
 }
 
 void
-TauCandidatev1::set_property(const PROPERTY prop_id, const int value)
+PidCandidatev1::set_property(const PROPERTY prop_id, const int value)
 {
   if (!check_property(prop_id,type_int))
     {
@@ -141,7 +141,7 @@ TauCandidatev1::set_property(const PROPERTY prop_id, const int value)
 }
 
 void
-TauCandidatev1::set_property(const PROPERTY prop_id, const unsigned int value)
+PidCandidatev1::set_property(const PROPERTY prop_id, const unsigned int value)
 {
   if (!check_property(prop_id,type_uint))
     {
@@ -155,7 +155,7 @@ TauCandidatev1::set_property(const PROPERTY prop_id, const unsigned int value)
 }
 
 unsigned int
-TauCandidatev1::get_property_nocheck(const PROPERTY prop_id) const
+PidCandidatev1::get_property_nocheck(const PROPERTY prop_id) const
 {
   prop_map_t::const_iterator iter = prop_map.find(prop_id);
   if (iter != prop_map.end())
@@ -166,9 +166,9 @@ TauCandidatev1::get_property_nocheck(const PROPERTY prop_id) const
 }
 
 void
-TauCandidatev1::identify(ostream& os) const
+PidCandidatev1::identify(ostream& os) const
 {
-  cout << "TauCandidatev1 with candidate_id: 0x" << hex << _candidateid << dec << endl;
+  cout << "PidCandidatev1 with candidate_id: 0x" << hex << _candidateid << dec << endl;
   cout << "Class " << this->ClassName() << endl;
 
   for (prop_map_t::const_iterator i = prop_map.begin(); i!= prop_map.end(); ++i)

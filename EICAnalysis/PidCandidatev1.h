@@ -1,7 +1,7 @@
-#ifndef TAUCANDIDATEv1_H__
-#define TAUCANDIDATEv1_H__
+#ifndef PIDCANDIDATEv1_H__
+#define PIDCANDIDATEv1_H__
 
-#include "TauCandidate.h"
+#include "PidCandidate.h"
 
 #ifdef __CINT__
 #include <stdint.h>
@@ -11,12 +11,12 @@
 #include <iostream>
 #include <map>
 
-class TauCandidatev1 : public TauCandidate
+class PidCandidatev1 : public PidCandidate
 {
 public:
-  TauCandidatev1();
-  explicit TauCandidatev1(const TauCandidate &tc);
-  virtual ~TauCandidatev1() {}
+  PidCandidatev1();
+  explicit PidCandidatev1(const PidCandidate &tc);
+  virtual ~PidCandidatev1() {}
 
   void identify(std::ostream& os  = std::cout) const;
 
@@ -62,7 +62,7 @@ protected:
   //! container for additional property
   prop_map_t prop_map;
 
-  //ClassDef(TauCandidatev1,2)
+  //ClassDef(PidCandidatev1,2)
 };
 
 #endif
