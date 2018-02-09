@@ -1,6 +1,6 @@
 
 int Fun4All_MCEventGen(
-                       const int nEvents = 1000,
+                       const int nEvents = 100,
                        const char * outputFile = "G4MCEventGen.root"
                        )
 {
@@ -18,40 +18,43 @@ int Fun4All_MCEventGen(
   const bool runpythia8 = false;
 
   // Use particle generator Pythia 6
-  const bool runpythia6 = false;
+  const bool runpythia6 = true;
+  const char * pythia6configfile = "config_pythia6/phpythia6_ep.cfg";
 
   // Use particle generator HEPGen
-  const bool runhepgen = true;
+  const bool runhepgen = false;
 
   // Use particle generator Sartre
   const bool runsartre = false;
 
   // Other options
-  bool do_dst_compress = true;
+  const bool do_dst_compress = true;
+
+  // Option to save DST output file (for later use with Genat4 simulation)
+  const bool do_DSTOutput = true;
 
   // Option to convert DST to human command readable TTree for quick poke around the outputs
-  bool do_DSTReader = true;
+  const bool do_DSTReader = false;
 
-  // Option to run DIS analysis module- need to compile analysis library first!
-  bool do_analysis_DIS = false;
+  // Option to save events in ASCII HepMC format
+  const bool do_ASCIIOutput = false;
 
-  // Option to save DST output file
-  bool do_DSTOutput = false;
 
   //---------------
   // Load libraries
   //---------------
   gSystem->Load("libfun4all.so");
-  gSystem->Load("libg4detectors.so");
   gSystem->Load("libphhepmc.so");
+  gSystem->Load("libg4detectors.so");
   gSystem->Load("libg4eval.so");
 
   //---------------
   // Fun4All server
   //---------------
   Fun4AllServer *se = Fun4AllServer::instance();
-  //  se->Verbosity(0); // uncomment for batch production running with minimal output messages
-  se->Verbosity(Fun4AllServer::VERBOSITY_SOME); // uncomment for some info for interactive running
+  se->Verbosity(0); // uncomment for batch production running with minimal output messages
+  // se->Verbosity(Fun4AllServer::VERBOSITY_SOME); // uncomment for some info for interactive running
+
   // just if we set some flags somewhere in this macro
   recoConsts *rc = recoConsts::instance();
   // By default every random number generator uses
@@ -77,10 +80,6 @@ int Fun4All_MCEventGen(
 
   if (readhepmc)
     {
-      // this module is needed to read the HepMC records into our G4 sims
-      // but only if you read HepMC input files
-      HepMCNodeReader *hr = new HepMCNodeReader();
-      se->registerSubsystem(hr);
     }
   else if (readeictree)
     {
@@ -89,9 +88,6 @@ int Fun4All_MCEventGen(
       eicr->OpenInputFile("data/eictree_milou_dvcs_10x250.root");
 
       se->registerSubsystem(eicr);
-
-      HepMCNodeReader *hr = new HepMCNodeReader();
-      se->registerSubsystem(hr);
     }
   else if (runpythia8)
     {
@@ -101,20 +97,14 @@ int Fun4All_MCEventGen(
       // see coresoftware/generators/PHPythia8 for example config
       pythia8->set_config_file("phpythia8.cfg");
       se->registerSubsystem(pythia8);
-
-      HepMCNodeReader *hr = new HepMCNodeReader();
-      se->registerSubsystem(hr);
     }
   else if (runpythia6)
     {
       gSystem->Load("libPHPythia6.so");
 
       PHPythia6 *pythia6 = new PHPythia6();
-      pythia6->set_config_file("config/phpythia6_ep.cfg");
+      pythia6->set_config_file( pythia6configfile );
       se->registerSubsystem(pythia6);
-
-      HepMCNodeReader *hr = new HepMCNodeReader();
-      se->registerSubsystem(hr);
     }
   else if (runhepgen)
     {
@@ -125,9 +115,6 @@ int Fun4All_MCEventGen(
       hepgen->set_momentum_electron(-10);
       hepgen->set_momentum_hadron(250);
       se->registerSubsystem(hepgen);
-
-      HepMCNodeReader *hr = new HepMCNodeReader();
-      se->registerSubsystem(hr);
     }
   else if (runsartre)
     {
@@ -148,60 +135,28 @@ int Fun4All_MCEventGen(
       //pTrig->PrintConfig();
       //mysartre->register_trigger((PHSartreGenTrigger *)pTrig);
       se->registerSubsystem(mysartre);
-
-      HepMCNodeReader *hr = new HepMCNodeReader();
-      se->registerSubsystem(hr);
     }
-  else
+
+  /* Write DST output file */
+  if ( do_DSTOutput )
     {
-      // toss low multiplicity dummy events
-      PHG4SimpleEventGenerator *gen = new PHG4SimpleEventGenerator();
-      //gen->add_particles("e-",5); // mu+,e+,proton,pi+,Upsilon
-      //gen->add_particles("e+",5); // mu-,e-,anti_proton,pi-
-      gen->add_particles("pi-",1); // mu-,e-,anti_proton,pi-
-      if (readhepmc) {
-        gen->set_reuse_existing_vertex(true);
-        gen->set_existing_vertex_offset_vector(0.0,0.0,0.0);
-      } else {
-        gen->set_vertex_distribution_function(PHG4SimpleEventGenerator::Uniform,
-                                              PHG4SimpleEventGenerator::Uniform,
-                                              PHG4SimpleEventGenerator::Uniform);
-        gen->set_vertex_distribution_mean(0.0,0.0,0.0);
-        gen->set_vertex_distribution_width(0.0,0.0,5.0);
-      }
-      gen->set_vertex_size_function(PHG4SimpleEventGenerator::Uniform);
-      gen->set_vertex_size_parameters(0.0,0.0);
-      gen->set_eta_range(1.4, 3.0);
-      //gen->set_eta_range(3.0, 3.0); //EICDetector FWD
-      gen->set_phi_range(-1.0*TMath::Pi(), 1.0*TMath::Pi());
-      //gen->set_phi_range(TMath::Pi()/2-0.1, TMath::Pi()/2-0.1);
-      gen->set_p_range(30.0, 30.0);
-      gen->Embed(1);
-      gen->Verbosity(0);
-      se->registerSubsystem(gen);
+      Fun4AllDstOutputManager *out = new Fun4AllDstOutputManager("DSTOUT", outputFile);
+      se->registerOutputManager(out);
     }
-
-  /* register optional analysis module */
-  if (do_analysis_DIS)
-    {
-      gSystem->Load("libeicana.so");
-      DISKinematics *dis = new DISKinematics("dis_evalshep.root");
-      se->registerSubsystem(dis);
-    }
-
-
-  //-----------------
-  // Reco and Truth
-  //-----------------
-  PHG4Reco* g4Reco = new PHG4Reco();
-  PHG4TruthSubsystem *truth = new PHG4TruthSubsystem();
-  g4Reco->registerSubsystem(truth);
-  se->registerSubsystem( g4Reco );
-
 
   /* write DSTReader human readable output tree */
   if (do_DSTReader)
     {
+      // load HepMCNodeReader
+      HepMCNodeReader *hr = new HepMCNodeReader();
+      se->registerSubsystem(hr);
+
+      // load module to access truth particle information
+      PHG4Reco* g4Reco = new PHG4Reco();
+      PHG4TruthSubsystem *truth = new PHG4TruthSubsystem();
+      g4Reco->registerSubsystem(truth);
+      se->registerSubsystem( g4Reco );
+
       // save a comprehensive  evaluation file
       PHG4DSTReader* ana = new PHG4DSTReader(string(outputFile) + string("_DSTReader.root"));
       ana->set_save_particle(true);
@@ -212,14 +167,16 @@ int Fun4All_MCEventGen(
       se->registerSubsystem(ana);
     }
 
-
-  /* Write DST output file */
-  if ( do_DSTOutput )
+  /* Write HepMC ASCII output */
+  else if ( do_ASCIIOutput )
     {
-      Fun4AllDstOutputManager *out = new Fun4AllDstOutputManager("DSTOUT", outputFile);
-      se->registerOutputManager(out);
+      Fun4AllHepMCOutputManager *asciiout = new Fun4AllHepMCOutputManager("HEPMCOUT",outputFile);
+      se->registerOutputManager(asciiout);
     }
 
+  //-----------------
+  // Event processing
+  //-----------------
   if (nEvents <= 0 && !readhepmc)
     {
       cout << "using 0 for number of events is a bad idea when using particle generators" << endl;
