@@ -124,12 +124,12 @@ RICHParticleID::process_event(PHCompositeNode *topNode)
       //continue;
       
       /* Fill with truth momentum instead of reco */
-      if ( ! get_true_momentum( truthinfo, track_j, momv) )
-      continue;
+      //if ( ! get_true_momentum( truthinfo, track_j, momv) )
+      //continue;
       
       /* Fill with vector constructed from emission points (from truth) */
-      //if ( ! get_true_momentum_2( truthinfo, richhits, track_j, momv) )
-      //continue;
+      if ( ! get_true_momentum_2( truthinfo, richhits, track_j, momv) )
+      continue;
 
 
       double momv_norm = sqrt( momv[0]*momv[0] + momv[1]*momv[1] + momv[2]*momv[2] );
@@ -171,10 +171,7 @@ RICHParticleID::process_event(PHCompositeNode *topNode)
 	      parent = truthinfo->GetParticle( particle->get_parent_id() );
 	      vertex = truthinfo->GetVtx( particle->get_vtx_id() );
 	    }
-
-	  cout << "track_j->get_truth_track_id() gives:" << track_j->get_truth_track_id() << endl;
-	  cout << "parent->get_track_id() gives:" << parent->get_track_id() << endl;
-	  
+ 	  
 	  _hit_x0 =  hit_i->get_x(0);
 	  _hit_y0 =  hit_i->get_y(0);
 	  _hit_z0 =  hit_i->get_z(0);
@@ -391,7 +388,6 @@ RICHParticleID::get_true_momentum( PHG4TruthInfoContainer* truthinfo, SvtxTrack_
 bool
 RICHParticleID::get_true_momentum_2( PHG4TruthInfoContainer* truthinfo, PHG4HitContainer* richhits, SvtxTrack_FastSim * track, double arr_mom[3] )
 {
-  // THIS IS NOT COMPLETE
   arr_mom[0] = 0;
   arr_mom[1] = 0;
   arr_mom[2] = 0;
@@ -409,34 +405,37 @@ RICHParticleID::get_true_momentum_2( PHG4TruthInfoContainer* truthinfo, PHG4HitC
     {
       PHG4Hit *hit_i = rich_hits_iter->second;
       PHG4Particle *particle = truthinfo->GetParticle( hit_i->get_trkid() ); 
-      PHG4Particle *parent = truthinfo->GetParticle( particle->get_parent_id() );
       PHG4VtxPoint *vertex = truthinfo->GetVtx( particle->get_vtx_id() );
 
-      /* Have to fix this comparison! Don't use this function yet. */
-      if ( parent == truthinfo->GetParticle( track->get_truth_track_id() ) ){
-	emix.push_back( vertex->get_x() );
-	emiy.push_back( vertex->get_y() );
-	emiz.push_back( vertex->get_z() );
-      }
+      /* Should eventually compare that vertices are along the correct tracks, for now we run single tracks */
+      emix.push_back( vertex->get_x() );
+      emiy.push_back( vertex->get_y() );
+      emiz.push_back( vertex->get_z() );
     }
 
 
   vector<double>::iterator first;
   vector<double>::iterator last;
-  double dx, dy, dz;
+  double dx=0;
+  double dy=0;
+  double dz=0;
 
+  /* Use first-to-last, or first-to-11th */
   if (emiz.size() != 0){
     first = std::min_element(emiz.begin(),emiz.end());
     last = std::max_element(emiz.begin(),emiz.end());
     double p1 = std::distance(emiz.begin(),first);
-    double p2 = std::distance(emiz.begin(),last);
-    
-    dx = emix.at(p2) - emix.at(p1);
-    dy = emiy.at(p2) - emiy.at(p1);
-    dz = emiz.at(p2) - emiz.at(p1);
+    //double p2 = std::distance(emiz.begin(),last);
+  
+    dx = emix.at(p1+11) - emix.at(p1);
+    dy = emiy.at(p1+11) - emiy.at(p1);
+    dz = emiz.at(p1+11) - emiz.at(p1);
   }
 
-  cout << "DELTAS: " << dx << " " << dy << " " << dz << endl;
+  /* Fill "momentum" */
+  arr_mom[0] = dx;
+  arr_mom[1] = dy;
+  arr_mom[2] = dz;
 
   return true;
 }
