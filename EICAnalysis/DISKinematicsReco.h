@@ -115,17 +115,6 @@ private:
   /** Reset branch maps for each event */
   void ResetBranchMap();
 
-  /** Enum to identify calorimeter types */
-  enum CALOTYPE
-  {
-    calo_cemc,
-    calo_ihcal,
-    calo_ohcal,
-    calo_femc,
-    calo_fhcal,
-    calo_eemc
-  };
-
 };
 
 #endif // __DISKinematicsReco_H__
