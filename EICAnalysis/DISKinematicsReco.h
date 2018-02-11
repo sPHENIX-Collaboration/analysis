@@ -69,7 +69,10 @@ private:
   TFile *_tfile;
 
   /* output tree and variables */
-  TTree* _tree_event;
+  TTree* _tree_event_cluster;
+
+  /* output tree and variables from TRUTH particles */
+  TTree* _tree_event_truth;
 
   /* beam energies electron and proton */
   float _ebeam_E;
@@ -94,13 +97,15 @@ private:
   /** helper pointer to topNode */
   PHCompositeNode *_topNode;
 
-  int CollectEmCandidates( type_map_tcan& );
+  int CollectEmCandidatesFromCluster( type_map_tcan& );
+
+  int CollectEmCandidatesFromTruth( type_map_tcan& );
 
   int InsertCandidateFromCluster( type_map_tcan& , RawCluster* , CaloEvalStack* );
 
   int AddGlobalCalorimeterInformation();
 
-  int AddReconstructedKinematics( type_map_tcan& );
+  int AddReconstructedKinematics( type_map_tcan& , std::string );
 
   int WriteCandidatesToTree( type_map_tcan& );
 

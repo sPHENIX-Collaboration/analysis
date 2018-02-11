@@ -37,6 +37,7 @@
 #include <TNtuple.h>
 #include <TTree.h>
 #include <TFile.h>
+#include <TDatabasePDG.h>
 
 using namespace std;
 
@@ -47,7 +48,8 @@ DISKinematicsReco::DISKinematicsReco(std::string filename) :
   _ievent(0),
   _filename(filename),
   _tfile(nullptr),
-  _tree_event(nullptr),
+  _tree_event_cluster(nullptr),
+  _tree_event_truth(nullptr),
   _ebeam_E(10),
   _pbeam_E(250)
 {
@@ -133,16 +135,16 @@ DISKinematicsReco::Init(PHCompositeNode *topNode)
   _map_event_branches.insert( make_pair( "evtgen_Q2" , dummy ) );
 
   /* Create tree for information about full event */
-  _tree_event = new TTree("event", "a Tree with global event information and EM candidates");
-  _tree_event->Branch("event", &_ievent, "event/I");
+  _tree_event_cluster = new TTree("event_cluster", "a Tree with global event information and EM candidates");
+  _tree_event_cluster->Branch("event", &_ievent, "event/I");
 
   /* Add event branches */
   for ( map< string , float >::iterator iter = _map_event_branches.begin();
         iter != _map_event_branches.end();
         ++iter)
     {
-      _tree_event->Branch( (iter->first).c_str(),
-                           &(iter->second) );
+      _tree_event_cluster->Branch( (iter->first).c_str(),
+				   &(iter->second) );
     }
 
   /* Add EM candidate branches */
@@ -150,9 +152,14 @@ DISKinematicsReco::Init(PHCompositeNode *topNode)
         iter != _map_em_candidate_branches.end();
         ++iter)
     {
-      _tree_event->Branch( PidCandidate::get_property_info( (iter->first) ).first.c_str(),
-                           &(iter->second) );
+      _tree_event_cluster->Branch( PidCandidate::get_property_info( (iter->first) ).first.c_str(),
+				   &(iter->second) );
     }
+
+  /* create clone of tree for truth particle candidates */
+  _tree_event_truth = _tree_event_cluster->CloneTree();
+  _tree_event_truth->SetName("event_truth");
+  _tree_event_truth->SetTitle("a Tree with global event information and truth particle candidates");
 
   return 0;
 }
@@ -169,11 +176,11 @@ DISKinematicsReco::process_event(PHCompositeNode *topNode)
    * sorted by energy. */
   type_map_tcan electronCandidateMap;
 
-  /* Collect EM candidates */
-  CollectEmCandidates( electronCandidateMap );
+  /* Collect EM candidates from calorimeter cluster */
+  CollectEmCandidatesFromCluster( electronCandidateMap );
 
   /* Calculate kinematics for each em candidate */
-  AddReconstructedKinematics( electronCandidateMap );
+  AddReconstructedKinematics( electronCandidateMap, "cluster" );
 
   /* Add information about em candidats to output tree */
   WriteCandidatesToTree( electronCandidateMap );
@@ -183,7 +190,23 @@ DISKinematicsReco::process_event(PHCompositeNode *topNode)
   AddTruthEventInformation();
 
   /* fill event information tree */
-  _tree_event->Fill();
+  _tree_event_cluster->Fill();
+
+  /* TRUTH based tree: */
+
+  /* reset branches, fill with truth particle candidates, and fill different tree */
+  ResetBranchMap();
+
+  /* Collect electron candidates based on TRUTH information */
+  type_map_tcan electronTruthCandidateMap;
+
+  CollectEmCandidatesFromTruth( electronTruthCandidateMap );
+  AddReconstructedKinematics( electronTruthCandidateMap, "truth" );
+  WriteCandidatesToTree( electronTruthCandidateMap );
+  AddTruthEventInformation();
+
+  /* fill event information tree */
+  _tree_event_truth->Fill();
 
   /* count up event number */
   _ievent ++;
@@ -192,7 +215,7 @@ DISKinematicsReco::process_event(PHCompositeNode *topNode)
 }
 
 int
-DISKinematicsReco::CollectEmCandidates( type_map_tcan& electronCandidateMap )
+DISKinematicsReco::CollectEmCandidatesFromCluster( type_map_tcan& electronCandidateMap )
 {
   /* Loop over all clusters in EEMC, CEMC, and FEMC to find electron candidates */
   vector< string > v_ecals;
@@ -225,6 +248,85 @@ DISKinematicsReco::CollectEmCandidates( type_map_tcan& electronCandidateMap )
     }
   return 0;
 }
+
+
+int
+DISKinematicsReco::CollectEmCandidatesFromTruth( type_map_tcan& candidateMap )
+{
+  /* Get collection of truth particles from event generator */
+  PHHepMCGenEventMap *geneventmap = findNode::getClass<PHHepMCGenEventMap>(_topNode,"PHHepMCGenEventMap");
+  if (!geneventmap) {
+    std::cout << PHWHERE << " WARNING: Can't find requested PHHepMCGenEventMap" << endl;
+    return -1;
+  }
+
+  /* Add truth kinematics */
+  int embedding_id = 1;
+  PHHepMCGenEvent *genevt = geneventmap->get(embedding_id);
+  if (!genevt)
+    {
+      std::cout << PHWHERE << "WARNING: Node PHHepMCGenEventMap missing subevent with embedding ID "<< embedding_id;
+      std::cout <<". Print PHHepMCGenEventMap:";
+      geneventmap->identify();
+      return -1;
+    }
+
+  HepMC::GenEvent* theEvent = genevt->getEvent();
+
+  if ( !theEvent )
+    {
+      std::cout << PHWHERE << "WARNING: Missing requested GenEvent!" << endl;
+      return -1;
+    }
+
+  for (HepMC::GenEvent::particle_const_iterator p = theEvent->particles_begin();
+       p != theEvent->particles_end(); ++p)
+    {
+      TParticlePDG * pdg_p = TDatabasePDG::Instance()->GetParticle( (*p)->pdg_id() );
+      int charge = (int)pdg_p->Charge();
+
+      /* beam electron found */
+      //if ( particle_e0 == NULL && TString(pdg_p->GetName()) == "e-" && (*p)->status() == 3 && (*p)->production_vertex() == NULL )
+      //particle_e0 = (*p);
+
+      /* beam proton found */
+      //if (  particle_p0 == NULL && TString(pdg_p->GetName()) == "proton" && (*p)->status() == 3 && (*p)->production_vertex() == NULL )
+      //particle_p0 = (*p);
+
+      /* final state electron found */
+      //if ( particle_e1 == NULL && TString(pdg_p->GetName()) == "e-" && (*p)->status() == 1 )
+      //particle_e1 = (*p);
+      //if ( (*p)->production_vertex() != NULL )
+      //{
+      //  if ( particle_e1 == NULL && TString(pdg_p->GetName()) == "e-" && (*p)->status() == 3 &&
+      //       (*p)->production_vertex()->particles_out_size() == 2 && (*p)->production_vertex()->particles_in_size() == 2 )
+      //    {
+      //      particle_e1 = (*p);
+      //    }
+      //}
+
+      /* skip particles that are not stable final state particles (status 1) */
+      if ( (*p)->status() != 1 )
+	continue;
+
+
+      /* create new pid candidate */
+      PidCandidatev1 *tc = new PidCandidatev1();
+      tc->set_candidate_id( candidateMap.size()+1 );
+
+      tc->set_property( PidCandidate::em_evtgen_pid, (*p)->pdg_id() );
+      tc->set_property( PidCandidate::em_evtgen_ptotal, (float) (*p)->momentum().e() );
+      tc->set_property( PidCandidate::em_evtgen_theta, (float) (*p)->momentum().theta() );
+      tc->set_property( PidCandidate::em_evtgen_phi, (float) (*p)->momentum().phi() );
+      tc->set_property( PidCandidate::em_evtgen_charge, charge );
+
+      /* add pid candidate to collection */
+      candidateMap.insert( make_pair( tc->get_candidate_id(), tc ) );
+    }
+
+  return 0;
+}
+
 
 int
 DISKinematicsReco::InsertCandidateFromCluster( type_map_tcan& candidateMap , RawCluster *cluster , CaloEvalStack *caloevalstack )
@@ -497,7 +599,7 @@ DISKinematicsReco::CalculateDeltaR( float eta1, float phi1, float eta2, float ph
 }
 
 int
-DISKinematicsReco::AddReconstructedKinematics( type_map_tcan& em_candidates )
+DISKinematicsReco::AddReconstructedKinematics( type_map_tcan& em_candidates , string mode )
 {
   /* Loop over all EM candidates */
   for (type_map_tcan::iterator iter = em_candidates.begin();
@@ -509,14 +611,26 @@ DISKinematicsReco::AddReconstructedKinematics( type_map_tcan& em_candidates )
 
       float e0_E = _ebeam_E;
       float p0_E = _pbeam_E;
-      //float e1_px = particle_e1->momentum().px();
-      //float e1_py = particle_e1->momentum().py();
-      //float e1_pz = particle_e1->momentum().pz();
-      //float e1_p = sqrt(e1_px*e1_px + e1_py*e1_py + e1_pz*e1_pz);
-      float e1_E = the_electron->get_property_float( PidCandidate::em_cluster_e );
-      float e1_theta = the_electron->get_property_float( PidCandidate::em_cluster_theta );
-      //      float e1_theta = 2.0 * atan( exp( -1 * e1_eta ) );
-      //float e1_phi = the_electron->get_property_float( PidCandidate::cluster_phi );
+
+      /* get scattered particle kinematicsbased on chosen mode */
+      float e1_E = NAN;
+      float e1_theta = NAN;
+
+      if ( mode == "cluster" )
+	{
+	  e1_E = the_electron->get_property_float( PidCandidate::em_cluster_e );
+	  e1_theta = the_electron->get_property_float( PidCandidate::em_cluster_theta );
+	}
+      else if ( mode == "truth" )
+	{
+	  e1_E = the_electron->get_property_float( PidCandidate::em_evtgen_ptotal );
+	  e1_theta = the_electron->get_property_float( PidCandidate::em_evtgen_theta );
+	}
+      else
+	{
+	  cout << "WARNING: Unknown mode " << mode << " selected." << endl;
+	  return -1;
+	}
 
       /* for purpose of calculations, 'theta' angle of the scattered electron is defined as angle
          between 'scattered electron' and 'direction of incoming electron'. Since initial electron
@@ -621,8 +735,11 @@ DISKinematicsReco::End(PHCompositeNode *topNode)
 {
   _tfile->cd();
 
-  if ( _tree_event )
-    _tree_event->Write();
+  if ( _tree_event_cluster )
+    _tree_event_cluster->Write();
+
+  if ( _tree_event_truth )
+    _tree_event_truth->Write();
 
   _tfile->Close();
 
