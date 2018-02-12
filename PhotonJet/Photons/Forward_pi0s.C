@@ -49,6 +49,9 @@ Forward_pi0s::Forward_pi0s(const std::string &name)
   _etalow = -1;
   _etahi = 1;
 
+  //default to only central arm
+  _useforwardarm = 0;
+
   mincluspt = 0.3;
 
   nevents = 0;
@@ -81,7 +84,7 @@ int Forward_pi0s::process_event(PHCompositeNode *topnode)
   PHG4TruthInfoContainer *truthinfo = findNode::getClass<PHG4TruthInfoContainer>(topnode, "G4TruthInfo");
   RawClusterContainer *clusters = findNode::getClass<RawClusterContainer>(topnode, "CLUSTER_CEMC");
   RawClusterContainer *fclusters = 0;
-  if (_etalow > 1)
+  if (_useforwardarm)
   {
     fclusters = findNode::getClass<RawClusterContainer>(topnode, "CLUSTER_FEMC");
   }
@@ -106,7 +109,7 @@ int Forward_pi0s::process_event(PHCompositeNode *topnode)
   if (vtx == nullptr) return 0;
 
 
-  if (!fclusters && _etalow > 1)
+  if (!fclusters && _useforwardarm)
   {
     cout << "not forward cluster info" << endl;
     return 0;
@@ -257,7 +260,7 @@ int Forward_pi0s::process_event(PHCompositeNode *topnode)
 
   ************************************************/
 
-  if (_etalow > 1)
+  if (_useforwardarm)
   {
     RawClusterContainer::ConstRange fclus = fclusters->getClusters();
     RawClusterContainer::ConstIterator fclusiter;
@@ -273,9 +276,11 @@ int Forward_pi0s::process_event(PHCompositeNode *topnode)
       fclus_theta = E_vec_cluster.getTheta();
       fclus_pt = E_vec_cluster.perp();
       fclus_phi = E_vec_cluster.getPhi();
-
+     
+   
       if (fclusenergy < mincluspt)
         continue;
+    
 
       fclus_px = fclus_pt * TMath::Cos(fclus_phi);
       fclus_py = fclus_pt * TMath::Sin(fclus_phi);
@@ -356,14 +361,14 @@ int Forward_pi0s::process_event(PHCompositeNode *topnode)
     RawCluster *cluster = clusiter->second;
 
     CLHEP::Hep3Vector vertex(vtx->get_x(), vtx->get_y(), vtx->get_z());
-    CLHEP::Hep3Vector E_vec_cluster = RawClusterUtility::GetEVec(*cluster, vertex);
+    CLHEP::Hep3Vector E_vec_cluster = RawClusterUtility::GetECoreVec(*cluster, vertex);
     clus_energy = E_vec_cluster.mag();
     clus_eta = E_vec_cluster.pseudoRapidity();
     clus_theta = E_vec_cluster.getTheta();
     clus_pt = E_vec_cluster.perp();
     clus_phi = E_vec_cluster.getPhi();
 
-    if (clus_pt < 0.2)
+    if (clus_pt < mincluspt)
       continue;
 
     TLorentzVector *clus = new TLorentzVector();
@@ -380,33 +385,62 @@ int Forward_pi0s::process_event(PHCompositeNode *topnode)
     clus_py = clus_pt * TMath::Sin(clus_phi);
     clus_pz = sqrt(clus_energy * clus_energy - clus_px * clus_px - clus_py * clus_py);
 
-    //find the associated truth high pT photon with this reconstructed photon
+    //found a first good cluster, lets look for a second
+    RawClusterContainer::ConstRange begin_end2 = clusters->getClusters();
+    RawClusterContainer::ConstIterator clusiter2;
 
-    for (PHG4TruthInfoContainer::ConstIterator iter = range.first; iter != range.second; ++iter)
-    {
-      PHG4Particle *truth = iter->second;
-
-      clustruthpid = truth->get_pid();
-      if (clustruthpid == 22)
+    for (clusiter2 = begin_end2.first; clusiter2 != begin_end2.second; ++clusiter2)
       {
-        clustruthpx = truth->get_px();
-        clustruthpy = truth->get_py();
-        clustruthpz = truth->get_pz();
-        clustruthenergy = truth->get_e();
-        clustruthpt = sqrt(clustruthpx * clustruthpx + clustruthpy * clustruthpy);
-        if (clustruthpt < 0.3)
-          continue;
+	RawCluster *cluster2 = clusiter2->second;
+	CLHEP::Hep3Vector vertex(vtx->get_x(), vtx->get_y(), vtx->get_z());
+	CLHEP::Hep3Vector E_vec_cluster = RawClusterUtility::GetECoreVec(*cluster2, vertex);
+	clus_energy2 = E_vec_cluster.mag();
+	clus_eta2 = E_vec_cluster.pseudoRapidity();
+	clus_theta2 = E_vec_cluster.getTheta();
+	clus_pt2 = E_vec_cluster.perp();
+	clus_phi2 = E_vec_cluster.getPhi();
+	
+	if(clus_energy == clus_energy2 and clus_eta == clus_eta2 and clus_phi == clus_phi2)
+	  continue;
+	
+	if(clus_energy2 < mincluspt)
+	  continue;
+	
+	//avoid double counting
+	if(clus_energy < clus_energy2)
+	  continue;
+	
+	if (verbosity > 1)
+        {
+	  cout << "CENTRAL ARM ID: "<<endl;
+          cout << "identified reco photon 1 energy | phi | eta:  "
+               << clus_energy << "  |  " << clus_phi << "  |  " << clus_eta << endl;
+          cout << "identified reco photon 2 energy | phi | eta:  "
+               << clus_energy2 << "  |  " << clus_phi2 << "  |  " << clus_eta2 << endl;
+        }
+ 
+	clus_px2 = clus_pt2 * TMath::Cos(clus_phi2);
+	clus_py2 = clus_pt2 * TMath::Sin(clus_phi2);
+	clus_pz2 = sqrt(clus_energy2 * clus_energy2 - clus_px2 * clus_px2 - clus_py2 * clus_py2);
 
-        TLorentzVector vec;
-        vec.SetPxPyPzE(clustruthpx, clustruthpy, clustruthpz, clustruthenergy);
-        clustruthphi = vec.Phi();
-        clustrutheta = vec.Eta();
-        //once found it break out
-        break;
+	
+	TLorentzVector phot1, phot2;
+        phot1.SetPtEtaPhiE(clus_pt, clus_eta, clus_phi, clus_energy);
+        phot2.SetPtEtaPhiE(clus_pt2, clus_eta2, clus_phi2, clus_energy2);
+
+        TLorentzVector pi0;
+        pi0 = phot1 + phot2;
+
+	//get the pi0 invmass
+        cent_invmass = pi0.M();
+
+        if (verbosity > 1)
+          cout << "Central pi0 reco invmass is " << cent_invmass << endl;
+      
+
+	cluster_tree->Fill();
       }
-    }
-
-    cluster_tree->Fill();
+    
   }
 
   tree->Fill();
@@ -510,22 +544,46 @@ void Forward_pi0s::Set_Tree_Branches()
   cluster_tree->Branch("clus_py", &clus_py, "clus_py/F");
   cluster_tree->Branch("clus_pz", &clus_pz, "clus_pz/F");
   cluster_tree->Branch("nevents", &nevents, "nevents/I");
-  cluster_tree->Branch("clustruthpx", &clustruthpx, "clustruthpx/F");
-  cluster_tree->Branch("clustruthpy", &clustruthpy, "clustruthpy/F");
-  cluster_tree->Branch("clustruthpz", &clustruthpz, "clustruthpz/F");
-  cluster_tree->Branch("clustruthenergy", &clustruthenergy, "clustruthenergy/F");
-  cluster_tree->Branch("clustruthpt", &clustruthpt, "clustruthpt/F");
-  cluster_tree->Branch("clustruthphi", &clustruthphi, "clustruthphi/F");
-  cluster_tree->Branch("clustrutheta", &clustrutheta, "clustrutheta/F");
-  cluster_tree->Branch("truthpx", &truthpx, "truthpx/F");
-  cluster_tree->Branch("truthpy", &truthpy, "truthpy/F");
-  cluster_tree->Branch("truthpz", &truthpz, "truthpz/F");
-  cluster_tree->Branch("truthp", &truthp, "truthp/F");
-  cluster_tree->Branch("truthenergy", &truthenergy, "truthenergy/F");
-  cluster_tree->Branch("truthphi", &truthphi, "truthphi/F");
-  cluster_tree->Branch("trutheta", &trutheta, "trutheta/F");
-  cluster_tree->Branch("truthpt", &truthpt, "truthpt/F");
-  cluster_tree->Branch("truthpid", &truthpid, "truthpid/I");
+
+  cluster_tree->Branch("clus_px2", &clus_px2, "clus_px2/F");
+  cluster_tree->Branch("clus_py2", &clus_py2, "clus_py2/F");
+  cluster_tree->Branch("clus_pz2", &clus_pz2, "clus_pz2/F");
+  cluster_tree->Branch("clus_energy2", &clus_energy2, "clus_energy2/F");
+  cluster_tree->Branch("clus_eta2", &clus_eta2, "clus_eta2/F");
+  cluster_tree->Branch("clus_phi2", &clus_phi2, "clus_phi2/F");
+  cluster_tree->Branch("clus_pt2", &clus_pt2, "clus_pt2/F");
+  cluster_tree->Branch("clus_theta2", &clus_theta2, "clus_theta2/F");
+  cluster_tree->Branch("Cent_invmass", &cent_invmass,"cent_invmass/F");
+
+  cluster_tree->Branch("tpi0e", &tpi0e, "tpi0e/F");
+  cluster_tree->Branch("tpi0px", &tpi0px, "tpi0px/F");
+  cluster_tree->Branch("tpi0py", &tpi0py, "tpi0py/F");
+  cluster_tree->Branch("tpi0pz", &tpi0pz, "tpi0pz/F");
+  cluster_tree->Branch("tpi0pid", &tpi0pid, "tpi0pid/F");
+  cluster_tree->Branch("tpi0pt", &tpi0pt, "tpi0pt/F");
+  cluster_tree->Branch("tpi0phi", &tpi0phi, "tpi0phi/F");
+  cluster_tree->Branch("tpi0eta", &tpi0eta, "tpi0eta/F");
+  cluster_tree->Branch("tphote1", &tphote1, "tphote1/F");
+  cluster_tree->Branch("tphotpx1", &tphotpx1, "tphotpx1/F");
+  cluster_tree->Branch("tphotpy1", &tphotpy1, "tphotpy1/F");
+  cluster_tree->Branch("tphotpz1", &tphotpz1, "tphotpz1/F");
+  cluster_tree->Branch("tphotpt1", &tphotpt1, "tphotpt1/F");
+  cluster_tree->Branch("tphotpid1", &tphotpid1, "tphotpid1/I");
+  cluster_tree->Branch("tphotparentid1", &tphotparentid1, "tphotparentid1/I");
+  cluster_tree->Branch("tphotphi1", &tphotphi1, "tphotphi1/F");
+  cluster_tree->Branch("tphoteta1", &tphoteta1, "tphoteta1/F");
+
+  cluster_tree->Branch("tphote2", &tphote2, "tphote2/F");
+  cluster_tree->Branch("tphotpx2", &tphotpx2, "tphotpx2/F");
+  cluster_tree->Branch("tphotpy2", &tphotpy2, "tphotpy2/F");
+  cluster_tree->Branch("tphotpz2", &tphotpz2, "tphotpz2/F");
+  cluster_tree->Branch("tphotpt2", &tphotpt2, "tphotpt2/F");
+  cluster_tree->Branch("tphotpid2", &tphotpid2, "tphotpid2/I");
+  cluster_tree->Branch("tphotparentid2", &tphotparentid2, "tphotparentid2/I");
+  cluster_tree->Branch("tphotphi2", &tphotphi2, "tphotphi2/F");
+  cluster_tree->Branch("tphoteta2", &tphoteta2, "tphoteta2/F");
+
+
 
   fcluster_tree = new TTree("fclustertree", "A tree with FEMCal cluster information");
   fcluster_tree->Branch("invmass", &invmass, "invmass/F");
