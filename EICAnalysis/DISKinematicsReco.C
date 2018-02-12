@@ -45,6 +45,8 @@ DISKinematicsReco::DISKinematicsReco(std::string filename) :
   SubsysReco("DISKinematicsReco" ),
   _save_towers(false),
   _save_tracks(false),
+  _do_process_geant4_cluster(false),
+  _do_process_truth(false),
   _ievent(0),
   _filename(filename),
   _tfile(nullptr),
@@ -144,7 +146,7 @@ DISKinematicsReco::Init(PHCompositeNode *topNode)
         ++iter)
     {
       _tree_event_cluster->Branch( (iter->first).c_str(),
-				   &(iter->second) );
+                                   &(iter->second) );
     }
 
   /* Add EM candidate branches */
@@ -153,7 +155,7 @@ DISKinematicsReco::Init(PHCompositeNode *topNode)
         ++iter)
     {
       _tree_event_cluster->Branch( PidCandidate::get_property_info( (iter->first) ).first.c_str(),
-				   &(iter->second) );
+                                   &(iter->second) );
     }
 
   /* create clone of tree for truth particle candidates */
@@ -167,46 +169,52 @@ DISKinematicsReco::Init(PHCompositeNode *topNode)
 int
 DISKinematicsReco::process_event(PHCompositeNode *topNode)
 {
-  /* Reset branch map */
-  ResetBranchMap();
+  /* Find electron candidates based on calorimeter cluster from full Geant4 detector simulation */
+  if ( _do_process_geant4_cluster )
+    {
+      /* Reset branch map */
+      ResetBranchMap();
 
-  /* Create map to collect electron candidates.
-   * Use energy as 'key' to the map because energy is unique for each jet, while there are sometimes multiple jets (same energy,
-   * different jet ID) in the input jet collection. Also, map automatically sorts entries by key, i.e. this gives list of tau candidates
-   * sorted by energy. */
-  type_map_tcan electronCandidateMap;
+      /* Create map to collect electron candidates.
+       * Use energy as 'key' to the map because energy is unique for each jet, while there are sometimes multiple jets (same energy,
+       * different jet ID) in the input jet collection. Also, map automatically sorts entries by key, i.e. this gives list of tau candidates
+       * sorted by energy. */
+      type_map_tcan electronCandidateMap;
 
-  /* Collect EM candidates from calorimeter cluster */
-  CollectEmCandidatesFromCluster( electronCandidateMap );
+      /* Collect EM candidates from calorimeter cluster */
+      CollectEmCandidatesFromCluster( electronCandidateMap );
 
-  /* Calculate kinematics for each em candidate */
-  AddReconstructedKinematics( electronCandidateMap, "cluster" );
+      /* Calculate kinematics for each em candidate */
+      AddReconstructedKinematics( electronCandidateMap, "cluster" );
 
-  /* Add information about em candidats to output tree */
-  WriteCandidatesToTree( electronCandidateMap );
+      /* Add information about em candidats to output tree */
+      WriteCandidatesToTree( electronCandidateMap );
 
-  /* Add global event information */
-  AddGlobalCalorimeterInformation();
-  AddTruthEventInformation();
+      /* Add global event information */
+      AddGlobalCalorimeterInformation();
+      AddTruthEventInformation();
 
-  /* fill event information tree */
-  _tree_event_cluster->Fill();
+      /* fill event information tree */
+      _tree_event_cluster->Fill();
+    }
 
-  /* TRUTH based tree: */
+  /* Find electron candidates based on truth particle inforamtion */
+  if ( _do_process_truth )
+    {
+      /* reset branches, fill with truth particle candidates, and fill different tree */
+      ResetBranchMap();
 
-  /* reset branches, fill with truth particle candidates, and fill different tree */
-  ResetBranchMap();
+      /* Collect electron candidates based on TRUTH information */
+      type_map_tcan electronTruthCandidateMap;
 
-  /* Collect electron candidates based on TRUTH information */
-  type_map_tcan electronTruthCandidateMap;
+      CollectEmCandidatesFromTruth( electronTruthCandidateMap );
+      AddReconstructedKinematics( electronTruthCandidateMap, "truth" );
+      WriteCandidatesToTree( electronTruthCandidateMap );
+      AddTruthEventInformation();
 
-  CollectEmCandidatesFromTruth( electronTruthCandidateMap );
-  AddReconstructedKinematics( electronTruthCandidateMap, "truth" );
-  WriteCandidatesToTree( electronTruthCandidateMap );
-  AddTruthEventInformation();
-
-  /* fill event information tree */
-  _tree_event_truth->Fill();
+      /* fill event information tree */
+      _tree_event_truth->Fill();
+    }
 
   /* count up event number */
   _ievent ++;
@@ -307,7 +315,7 @@ DISKinematicsReco::CollectEmCandidatesFromTruth( type_map_tcan& candidateMap )
 
       /* skip particles that are not stable final state particles (status 1) */
       if ( (*p)->status() != 1 )
-	continue;
+        continue;
 
 
       /* create new pid candidate */
@@ -617,20 +625,20 @@ DISKinematicsReco::AddReconstructedKinematics( type_map_tcan& em_candidates , st
       float e1_theta = NAN;
 
       if ( mode == "cluster" )
-	{
-	  e1_E = the_electron->get_property_float( PidCandidate::em_cluster_e );
-	  e1_theta = the_electron->get_property_float( PidCandidate::em_cluster_theta );
-	}
+        {
+          e1_E = the_electron->get_property_float( PidCandidate::em_cluster_e );
+          e1_theta = the_electron->get_property_float( PidCandidate::em_cluster_theta );
+        }
       else if ( mode == "truth" )
-	{
-	  e1_E = the_electron->get_property_float( PidCandidate::em_evtgen_ptotal );
-	  e1_theta = the_electron->get_property_float( PidCandidate::em_evtgen_theta );
-	}
+        {
+          e1_E = the_electron->get_property_float( PidCandidate::em_evtgen_ptotal );
+          e1_theta = the_electron->get_property_float( PidCandidate::em_evtgen_theta );
+        }
       else
-	{
-	  cout << "WARNING: Unknown mode " << mode << " selected." << endl;
-	  return -1;
-	}
+        {
+          cout << "WARNING: Unknown mode " << mode << " selected." << endl;
+          return -1;
+        }
 
       /* for purpose of calculations, 'theta' angle of the scattered electron is defined as angle
          between 'scattered electron' and 'direction of incoming electron'. Since initial electron
