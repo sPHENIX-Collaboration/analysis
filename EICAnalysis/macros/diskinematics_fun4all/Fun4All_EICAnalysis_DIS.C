@@ -26,21 +26,14 @@ int Fun4All_EICAnalysis_DIS(
   // just if we set some flags somewhere in this macro
   recoConsts *rc = recoConsts::instance();
 
-  //  rc->set_FloatFlag("WorldSizex",1000);
-  //  rc->set_FloatFlag("WorldSizey",1000);
-  //  rc->set_FloatFlag("WorldSizez",1000);
-  //  rc->set_CharFlag("WorldShape","G4Tubs");
-
-
   //--------------
   // Analysis modules
   //--------------
 
-  //  DISKinematics *disana = new DISKinematics("testdis.root");
-  //  se->registerSubsystem( disana );
-
-  DISKinematics *mcana = new DISKinematics(outputFile);
-  se->registerSubsystem( mcana );
+  DISKinematicsReco *ana = new DISKinematicsReco(outputFile);
+  ana->set_do_process_truth( true );
+  ana->set_do_process_geant4_cluster( false );
+  se->registerSubsystem( ana );
 
   //--------------
   // IO management
