@@ -133,8 +133,11 @@ DISKinematicsReco::Init(PHCompositeNode *topNode)
   _map_event_branches.insert( make_pair( "Et_miss_phi" , dummy ) );
 
   _map_event_branches.insert( make_pair( "evtgen_process_id" , dummy ) );
+  _map_event_branches.insert( make_pair( "evtgen_s" , dummy ) );
   _map_event_branches.insert( make_pair( "evtgen_x" , dummy ) );
   _map_event_branches.insert( make_pair( "evtgen_Q2" , dummy ) );
+  _map_event_branches.insert( make_pair( "evtgen_y" , dummy ) );
+  _map_event_branches.insert( make_pair( "evtgen_W" , dummy ) );
 
   /* Create tree for information about full event */
   _tree_event_cluster = new TTree("event_cluster", "a Tree with global event information and EM candidates");
@@ -697,20 +700,29 @@ DISKinematicsReco::AddTruthEventInformation()
     }
 
   int true_process_id = theEvent->signal_process_id();
-  //float ev_x1 = -999;
-  float ev_x2 = -999;
-  float ev_Q2 = -999;
+  float ev_x = -NAN;
+  float ev_Q2 = -NAN;
+  float ev_W = -NAN;
+  float ev_y = -NAN;
+
+  float ev_s = 4 * _ebeam_E * _pbeam_E;
+
 
   if ( theEvent->pdf_info() )
     {
-      //ev_x1 = theEvent->pdf_info()->x1();
-      ev_x2 = theEvent->pdf_info()->x2();
+      //ev_x = theEvent->pdf_info()->x1();
+      ev_x = theEvent->pdf_info()->x2();
       ev_Q2 = theEvent->pdf_info()->scalePDF();
+      ev_y = ev_Q2 / ( ev_x * ev_s );
+      ev_W = sqrt( ev_Q2 * ( 1 - 1 / ev_x ) );
     }
 
   ( _map_event_branches.find( "evtgen_process_id" ) )->second = true_process_id;
-  ( _map_event_branches.find( "evtgen_x" ) )->second = ev_x2;
+  ( _map_event_branches.find( "evtgen_s" ) )->second = ev_s;
+  ( _map_event_branches.find( "evtgen_x" ) )->second = ev_x;
   ( _map_event_branches.find( "evtgen_Q2" ) )->second = ev_Q2;
+  ( _map_event_branches.find( "evtgen_y" ) )->second = ev_y;
+  ( _map_event_branches.find( "evtgen_W" ) )->second = ev_W;
 
   return 0;
 }
