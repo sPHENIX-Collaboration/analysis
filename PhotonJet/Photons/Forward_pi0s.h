@@ -25,10 +25,11 @@ class PHHepMCGenEvent;
 class Forward_pi0s : public SubsysReco
 {
  public:
-  Forward_pi0s(const std::string &name = "photonjet.root");
+  Forward_pi0s(const std::string &name = "pi0_eval.root");
   double isoconeradius, mincluspt;
   float jet_cone_size;
   float _etalow, _etahi;
+  int _useforwardarm;
   int use_isocone;
   int Init(PHCompositeNode *);
   int process_event(PHCompositeNode *);
@@ -41,6 +42,7 @@ class Forward_pi0s : public SubsysReco
     _etalow = etalow;
     _etahi = etahi;
   };
+  void useforwardarm(int yesorno) { _useforwardarm = yesorno;};
 
  private:
   void Set_Tree_Branches();
@@ -77,6 +79,15 @@ class Forward_pi0s : public SubsysReco
   float clus_px;
   float clus_py;
   float clus_pz;
+  float clus_energy2;
+  float clus_eta2;
+  float clus_phi2;
+  float clus_pt2;
+  float clus_px2;
+  float clus_py2;
+  float clus_pz2;
+  float clus_theta2;
+  float cent_invmass;
   float clus_theta;
   float clus_x, clus_y, clus_z, clus_t;
 
@@ -110,6 +121,9 @@ class Forward_pi0s : public SubsysReco
   float clustruthphi;
   float clustrutheta;
   int clustruthpid;
+
+
+
   float hclustruthpx;
   float hclustruthpy;
   float hclustruthpz;
