@@ -23,7 +23,6 @@ libeicana_la_LIBADD = \
 
 
 pkginclude_HEADERS = \
-  DISKinematics.h \
   Leptoquarks.h \
   LeptoquarksReco.h \
   DISKinematicsReco.h \
@@ -34,8 +33,6 @@ pkginclude_HEADERS = \
   TruthTrackerHepMC.h
 
 libeicana_la_SOURCES = \
-  DISKinematics.C \
-  DISKinematics_Dict.C \
   Leptoquarks.C \
   Leptoquarks_Dict.C \
   LeptoquarksReco.C \
