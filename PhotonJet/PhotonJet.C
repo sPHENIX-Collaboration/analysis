@@ -15,8 +15,7 @@
 #include <calobase/RawTowerGeom.h>
 #include <calobase/RawTowerGeomContainer.h>
 #include <calotrigger/CaloTriggerInfo.h>
-#include <g4cemc/RawCluster.h>
-#include <g4cemc/RawClusterContainer.h>
+
 #include <g4jets/Jet.h>
 #include <g4jets/JetMap.h>
 #include <g4vertex/GlobalVertex.h>
