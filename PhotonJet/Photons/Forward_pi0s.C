@@ -494,6 +494,24 @@ int Forward_pi0s::process_event(PHCompositeNode *topnode)
   fclus_py2 = -999;
   fclus_pz2 = -999;
 
+  clus_energy = -999;
+  clus_eta = -999;
+  clus_theta = -999;
+  clus_pt = -999;
+  clus_phi = -999;
+  clus_px = -999;
+  clus_py = -999;
+  clus_pz = -999;
+
+  clus_energy2 = -999;
+  clus_eta2 = -999;
+  clus_theta2 = -999;
+  clus_pt2 = -999;
+  clus_phi2 = -999;
+  clus_px2 = -999;
+  clus_py2 = -999;
+  clus_pz2 = -999;
+
   return 0;
 }
 
