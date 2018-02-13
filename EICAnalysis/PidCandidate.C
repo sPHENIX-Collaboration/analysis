@@ -298,6 +298,20 @@ PidCandidate::get_property_info(const PROPERTY prop_id)
 
       // ------
 
+    case  em_rich_prob_electron:
+      return make_pair("em_rich_prob_electron",PidCandidate::type_float);
+
+    case  em_rich_prob_pion:
+      return make_pair("em_rich_prob_pion",PidCandidate::type_float);
+
+    case  em_rich_prob_kaon:
+      return make_pair("em_rich_prob_kaon",PidCandidate::type_float);
+
+    case  em_rich_prob_proton:
+      return make_pair("em_rich_prob_proton",PidCandidate::type_float);
+
+      // ------
+
     case  em_evtgen_pid:
       return make_pair("em_evtgen_pid",PidCandidate::type_int);
 
