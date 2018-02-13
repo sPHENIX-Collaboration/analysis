@@ -444,7 +444,7 @@ DISKinematicsReco::InsertCandidateFromCluster( type_map_tcan& candidateMap , Raw
       float gphi = NAN;
       float gtheta = NAN;
 
-      if (gpt != 0.0) gtheta = asinh(gpz / gpt);
+      if (gpt != 0.0) gtheta = atan2( gpt, gpz );
       gphi = atan2(gpy, gpx);
 
       /* get charge based on PDG code of particle */
