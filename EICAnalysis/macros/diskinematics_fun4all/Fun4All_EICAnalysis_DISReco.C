@@ -1,6 +1,6 @@
 
 int Fun4All_EICAnalysis_DISReco(
-				const int nEvents = 1000,
+				const int nEvents = 10,
 				const char * inputFile = "/gpfs/mnt/gpfs02/phenix/scratch/spjeffas/g4sim/G4_Leptoquark_DST_p250_e20_1000events_1seed_DISneutral.root",
 				//const char * inputFile = "G4EICDetector_DIS_10x250_20events.root",
 				//const char * inputFile = "G4EICDetector_DIS_SingleParticle_ele_10GeV_m05eta.root",
@@ -35,12 +35,6 @@ int Fun4All_EICAnalysis_DISReco(
   // just if we set some flags somewhere in this macro
   recoConsts *rc = recoConsts::instance();
 
-  //  rc->set_FloatFlag("WorldSizex",1000);
-  //  rc->set_FloatFlag("WorldSizey",1000);
-  //  rc->set_FloatFlag("WorldSizez",1000);
-  //  rc->set_CharFlag("WorldShape","G4Tubs");
-
-
   //--------------
   // Analysis modules
   //--------------
@@ -49,6 +43,8 @@ int Fun4All_EICAnalysis_DISReco(
   FastSim_Reco_EIC();
 
   DISKinematicsReco *ana = new DISKinematicsReco(outputFile);
+  ana->set_do_process_truth( true );
+  ana->set_do_process_geant4_cluster( true );
   se->registerSubsystem( ana );
 
   //--------------

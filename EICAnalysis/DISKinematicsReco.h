@@ -56,11 +56,25 @@ public:
     _pbeam_E = fabs( beam_proton );
   }
 
+  void
+  set_do_process_geant4_cluster( bool select )
+  {
+    _do_process_geant4_cluster = select;
+  }
+
+  void
+  set_do_process_truth( bool select )
+  {
+    _do_process_truth = select;
+  }
+
 private:
 
   bool _verbose;
   bool _save_towers;
   bool _save_tracks;
+  bool _do_process_geant4_cluster;
+  bool _do_process_truth;
 
   int _ievent;
   int _total_pass;
