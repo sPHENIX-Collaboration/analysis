@@ -370,7 +370,7 @@ DISKinematicsReco::InsertCandidateFromCluster( type_map_tcan& candidateMap , Raw
 
   /* find matching reco track */
   float best_track_dr = NAN;
-  SvtxTrack* best_track = tpt.FindClosestTrack( cluster, best_track_dr );
+  SvtxTrack* best_track = NULL; //tpt.FindClosestTrack( cluster, best_track_dr ); /* @TODO switch track finding back on as soon as we understand it better */
 
   /* IF matching track found: set track properties */
   if ( best_track )
@@ -433,10 +433,13 @@ DISKinematicsReco::InsertCandidateFromCluster( type_map_tcan& candidateMap , Raw
 
   if ( primary )
     {
+      /* get particle momenta and theta, phi angles */
       float gpx = primary->get_px();
       float gpy = primary->get_py();
       float gpz = primary->get_pz();
       float gpt = sqrt(gpx * gpx + gpy * gpy);
+      float gptotal = sqrt(gpx * gpx + gpy * gpy + gpz * gpz);
+      //float ge = (float)primary->get_e();
 
       float gphi = NAN;
       float gtheta = NAN;
@@ -444,11 +447,36 @@ DISKinematicsReco::InsertCandidateFromCluster( type_map_tcan& candidateMap , Raw
       if (gpt != 0.0) gtheta = asinh(gpz / gpt);
       gphi = atan2(gpy, gpx);
 
+      /* get charge based on PDG code of particle */
+      TParticlePDG * pdg_p = TDatabasePDG::Instance()->GetParticle( primary->get_pid() );
+      int gcharge = -999;
+      if ( pdg_p )
+	{
+	  /* NOTE: TParticlePDG::Charge() returns charge in units of |e|/3 (see ROOT documentation) */
+	  gcharge = pdg_p->Charge() / 3;
+	}
+
       tc->set_property( PidCandidate::em_evtgen_pid, primary->get_pid() );
-      tc->set_property( PidCandidate::em_evtgen_ptotal, (float)primary->get_e() );
+      tc->set_property( PidCandidate::em_evtgen_ptotal, gptotal );
       tc->set_property( PidCandidate::em_evtgen_theta, gtheta );
       tc->set_property( PidCandidate::em_evtgen_phi, gphi );
-      tc->set_property( PidCandidate::em_evtgen_charge, (int)NAN );
+      tc->set_property( PidCandidate::em_evtgen_charge, gcharge );
+
+      /* @TODO: This is a workaround until we figure out the tracking business... until then:
+       * use truth track information instead of reco track information */
+      tc->set_property( PidCandidate::em_track_id, (uint)primary->get_track_id() );
+      tc->set_property( PidCandidate::em_track_quality, (float)100.0 );
+      tc->set_property( PidCandidate::em_track_theta, gtheta );
+      tc->set_property( PidCandidate::em_track_phi, gphi );
+      tc->set_property( PidCandidate::em_track_ptotal, gptotal );
+      tc->set_property( PidCandidate::em_track_ptrans, gpt );
+      tc->set_property( PidCandidate::em_track_charge, gcharge );
+      tc->set_property( PidCandidate::em_track_dca, NAN );
+      tc->set_property( PidCandidate::em_track_section, (uint)0 );
+      tc->set_property( PidCandidate::em_track_e3x3_cemc, NAN );
+      tc->set_property( PidCandidate::em_track_e3x3_ihcal, NAN );
+      tc->set_property( PidCandidate::em_track_e3x3_ohcal, NAN );
+      tc->set_property( PidCandidate::em_track_cluster_dr, (float)0.0 );
     }
 
   /* add tau candidate to collection */
