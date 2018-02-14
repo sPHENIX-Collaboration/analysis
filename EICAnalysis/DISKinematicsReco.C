@@ -43,6 +43,7 @@ using namespace std;
 
 DISKinematicsReco::DISKinematicsReco(std::string filename) :
   SubsysReco("DISKinematicsReco" ),
+  _mproton( 0.938272 ),
   _save_towers(false),
   _save_tracks(false),
   _do_process_geant4_cluster(false),
@@ -721,13 +722,13 @@ DISKinematicsReco::AddReconstructedKinematics( type_map_tcan& em_candidates , st
       /* ePHENIX LOI definition of y: */
       float dis_y = 1 - ( e1_E / e0_E ) + ( dis_Q2 / ( 4 * pow( e0_E, 2 ) ) );
 
-      /* other definitions of y: */
+      /* G. Wolf Hera Physics definitions of y: */
       //float dis_y = 1 - ( e1_E / (2*e0_E) ) * ( 1 - cos( e1_theta_rel ) );
-      //float dis_y = 1 - (e1_E/e0_E) * pow( cos( e1_theta_rel / 2. ), 2 );
 
       float dis_x = dis_Q2 / ( dis_s * dis_y );
 
-      float dis_W = NAN;
+      float dis_W2 = _mproton*_mproton + dis_Q2 * ( ( 1 / dis_x ) - 1 );
+      float dis_W = sqrt( dis_W2 );
 
       the_electron->set_property( PidCandidate::em_reco_x_e, dis_x );
       the_electron->set_property( PidCandidate::em_reco_y_e, dis_y );
@@ -782,7 +783,7 @@ DISKinematicsReco::AddTruthEventInformation()
       ev_x = theEvent->pdf_info()->x2();
       ev_Q2 = theEvent->pdf_info()->scalePDF();
       ev_y = ev_Q2 / ( ev_x * ev_s );
-      ev_W = sqrt( ev_Q2 * ( 1 - 1 / ev_x ) );
+      ev_W = sqrt( _mproton*_mproton + ev_Q2 * ( 1 / ev_x - 1 ) );
     }
 
   ( _map_event_branches.find( "evtgen_process_id" ) )->second = true_process_id;
