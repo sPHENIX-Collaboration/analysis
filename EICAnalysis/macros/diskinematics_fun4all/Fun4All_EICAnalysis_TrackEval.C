@@ -2,11 +2,12 @@
 
 int Fun4All_EICAnalysis_TrackEval(
 				  const int nEvents = 10,
-				  const char * inputFile = "/gpfs/mnt/gpfs04/sphenix/user/nfeege/sphenixsw/devel/analysis/EICAnalysis/data/G4EICDetector_DIS_SingleParticle_ele_10GeV_m3eta.root"
-//				  const char * inputFile = "/gpfs/mnt/gpfs04/sphenix/user/nfeege/sphenixsw/devel/analysis/EICAnalysis/data/G4EICDetector_DIS_SingleParticle_ele_10GeV_m2eta.root"
-//				  const char * inputFile = "/gpfs/mnt/gpfs04/sphenix/user/nfeege/sphenixsw/devel/analysis/EICAnalysis/data/G4EICDetector_DIS_SingleParticle_ele_10GeV_m05eta.root"
-//				  const char * inputFile = "/gpfs/mnt/gpfs04/sphenix/user/nfeege/sphenixsw/devel/analysis/EICAnalysis/data/G4EICDetector_DIS_SingleParticle_ele_10GeV_p05eta.root"
-//				  const char * inputFile = "/gpfs/mnt/gpfs04/sphenix/user/nfeege/sphenixsw/devel/analysis/EICAnalysis/data/G4EICDetector_DIS_SingleParticle_ele_10GeV_p2eta.root"
+				  const char * inputFile = "/gpfs/mnt/gpfs04/sphenix/user/nfeege/sphenixsw/devel/analysis/EICAnalysis/data/G4EICDetector_DIS_SingleParticle_ele_10GeV_m3eta.root",
+//				  const char * inputFile = "/gpfs/mnt/gpfs04/sphenix/user/nfeege/sphenixsw/devel/analysis/EICAnalysis/data/G4EICDetector_DIS_SingleParticle_ele_10GeV_m2eta.root",
+//				  const char * inputFile = "/gpfs/mnt/gpfs04/sphenix/user/nfeege/sphenixsw/devel/analysis/EICAnalysis/data/G4EICDetector_DIS_SingleParticle_ele_10GeV_m05eta.root",
+//				  const char * inputFile = "/gpfs/mnt/gpfs04/sphenix/user/nfeege/sphenixsw/devel/analysis/EICAnalysis/data/G4EICDetector_DIS_SingleParticle_ele_10GeV_p05eta.root",
+//				  const char * inputFile = "/gpfs/mnt/gpfs04/sphenix/user/nfeege/sphenixsw/devel/analysis/EICAnalysis/data/G4EICDetector_DIS_SingleParticle_ele_10GeV_p2eta.root",
+				  const char* evalFile = "eval_track_fastsim.root"
 				  )
 {
 
@@ -43,7 +44,7 @@ int Fun4All_EICAnalysis_TrackEval(
 
   gSystem->Load("libFastTrackingEval.so");
   FastTrackingEval* eval_fasttrack;
-  eval_fasttrack = new FastTrackingEval("FASTTRACKEVALUATOR", "track_eval.root", "SvtxTrackMap_FastSim");
+  eval_fasttrack = new FastTrackingEval("FASTTRACKEVALUATOR", evalFile, "SvtxTrackMap_FastSim");
   se->registerSubsystem( eval_fasttrack );
 
   //SvtxEvaluator* eval;
