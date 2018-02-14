@@ -686,14 +686,18 @@ DISKinematicsReco::AddReconstructedKinematics( type_map_tcan& em_candidates , st
       /* event kinematics */
       float dis_s = 4 * e0_E * p0_E;
 
-      //      float dis_y = 1 - ( e1_E / (2*e0_E) ) * ( 1 - cos( e1_theta_rel ) );
-      float dis_y = 1 - (e1_E/e0_E) * pow( cos( e1_theta_rel / 2. ), 2 );
-
       float dis_Q2 = 2 * e0_E * e1_E * ( 1 - cos( e1_theta_rel ) );
+
+      /* ePHENIX LOI definition of y: */
+      float dis_y = 1 - ( e1_E / e0_E ) + ( dis_Q2 / ( 4 * pow( e0_E, 2 ) ) );
+
+      /* other definitions of y: */
+      //float dis_y = 1 - ( e1_E / (2*e0_E) ) * ( 1 - cos( e1_theta_rel ) );
+      //float dis_y = 1 - (e1_E/e0_E) * pow( cos( e1_theta_rel / 2. ), 2 );
 
       float dis_x = dis_Q2 / ( dis_s * dis_y );
 
-      float dis_W = 0;
+      float dis_W = NAN;
 
       the_electron->set_property( PidCandidate::em_reco_x_e, dis_x );
       the_electron->set_property( PidCandidate::em_reco_y_e, dis_y );
