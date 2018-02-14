@@ -123,11 +123,11 @@ public:
       em_track_e3x3_ehcal = 366,
       em_track_cluster_dr = 367,
 
-      //-- EM RICH PID probabilities
-      em_rich_prob_electron = 391,
-      em_rich_prob_pion = 392,
-      em_rich_prob_kaon = 393,
-      em_rich_prob_proton = 394,
+      //-- EM PID probabilities
+      em_pid_prob_electron = 391,
+      em_pid_prob_pion = 392,
+      em_pid_prob_kaon = 393,
+      em_pid_prob_proton = 394,
 
       //-- EM Candidates Truth
       em_evtgen_pid = 401,

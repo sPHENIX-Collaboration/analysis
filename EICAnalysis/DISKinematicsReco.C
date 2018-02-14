@@ -103,11 +103,17 @@ DISKinematicsReco::Init(PHCompositeNode *topNode)
   _map_em_candidate_branches.insert( make_pair( PidCandidate::em_track_e3x3_ehcal , vdummy ) );
   _map_em_candidate_branches.insert( make_pair( PidCandidate::em_track_cluster_dr , vdummy ) );
 
+  _map_em_candidate_branches.insert( make_pair( PidCandidate::em_pid_prob_electron , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( PidCandidate::em_pid_prob_pion , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( PidCandidate::em_pid_prob_kaon , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( PidCandidate::em_pid_prob_proton , vdummy ) );
+
   _map_em_candidate_branches.insert( make_pair( PidCandidate::em_evtgen_pid , vdummy ) );
   _map_em_candidate_branches.insert( make_pair( PidCandidate::em_evtgen_ptotal , vdummy ) );
   _map_em_candidate_branches.insert( make_pair( PidCandidate::em_evtgen_theta , vdummy ) );
   _map_em_candidate_branches.insert( make_pair( PidCandidate::em_evtgen_phi , vdummy ) );
   _map_em_candidate_branches.insert( make_pair( PidCandidate::em_evtgen_charge , vdummy ) );
+
   _map_em_candidate_branches.insert( make_pair( PidCandidate::em_reco_x_e , vdummy ) );
   _map_em_candidate_branches.insert( make_pair( PidCandidate::em_reco_y_e , vdummy ) );
   _map_em_candidate_branches.insert( make_pair( PidCandidate::em_reco_q2_e , vdummy ) );
@@ -423,6 +429,12 @@ DISKinematicsReco::InsertCandidateFromCluster( type_map_tcan& candidateMap , Raw
       tc->set_property( PidCandidate::em_track_e3x3_fhcal, e3x3_fhcal );
       tc->set_property( PidCandidate::em_track_e3x3_femc, e3x3_femc );
       tc->set_property( PidCandidate::em_track_e3x3_eemc, e3x3_eemc );
+
+      /* Get information on track from PID detectors */
+      tc->set_property( PidCandidate::em_pid_prob_electron, (float)0.0 );
+      tc->set_property( PidCandidate::em_pid_prob_pion, (float)0.0 );
+      tc->set_property( PidCandidate::em_pid_prob_kaon, (float)0.0 );
+      tc->set_property( PidCandidate::em_pid_prob_proton, (float)0.0 );
     }
 
   /* set em candidate MC truth properties */
@@ -483,6 +495,24 @@ DISKinematicsReco::InsertCandidateFromCluster( type_map_tcan& candidateMap , Raw
       tc->set_property( PidCandidate::em_track_e3x3_ihcal, NAN );
       tc->set_property( PidCandidate::em_track_e3x3_ohcal, NAN );
       tc->set_property( PidCandidate::em_track_cluster_dr, (float)0.0 );
+
+      /* Get information on track from PID detectors */
+      tc->set_property( PidCandidate::em_pid_prob_electron, (float)0.0 );
+      tc->set_property( PidCandidate::em_pid_prob_pion, (float)0.0 );
+      tc->set_property( PidCandidate::em_pid_prob_kaon, (float)0.0 );
+      tc->set_property( PidCandidate::em_pid_prob_proton, (float)0.0 );
+
+      if ( abs( primary->get_pid() ) == 11 )
+	tc->set_property( PidCandidate::em_pid_prob_electron, (float)1.0 );
+
+      if ( abs( primary->get_pid() ) == 211 )
+	tc->set_property( PidCandidate::em_pid_prob_pion, (float)1.0 );
+
+      if ( abs( primary->get_pid() ) == 321 )
+	tc->set_property( PidCandidate::em_pid_prob_kaon, (float)1.0 );
+
+      if ( abs( primary->get_pid() ) == 2212 )
+	tc->set_property( PidCandidate::em_pid_prob_proton, (float)1.0 );
     }
 
   /* add tau candidate to collection */
