@@ -351,6 +351,12 @@ DISKinematicsReco::InsertCandidateFromCluster( type_map_tcan& candidateMap , Raw
   //float eta =  -log(tan(theta/2.0));
   float pt = cluster->get_energy() * sin( theta );
 
+  /* get calorimeter ID where towers of cluster are found */
+  unsigned caloid = 0;
+  RawCluster::TowerConstIterator rtiter = cluster->get_towers().first;
+  caloid = RawTowerDefs::decode_caloid( rtiter->first );
+  //cout << "Calo ID: " << caloid << " -> " << RawTowerDefs::convert_caloid_to_name( RawTowerDefs::decode_caloid( rtiter->first ) ) << endl;
+
   tc->set_property( PidCandidate::em_cluster_id, cluster->get_id() );
   tc->set_property( PidCandidate::em_cluster_prob, cluster->get_prob() );
   tc->set_property( PidCandidate::em_cluster_posx, cluster->get_x() );
@@ -363,7 +369,7 @@ DISKinematicsReco::InsertCandidateFromCluster( type_map_tcan& candidateMap , Raw
   tc->set_property( PidCandidate::em_cluster_phi, cluster->get_phi() );
   tc->set_property( PidCandidate::em_cluster_pt, pt );
   tc->set_property( PidCandidate::em_cluster_ntower, (unsigned)cluster->getNTowers() );
-  tc->set_property( PidCandidate::em_cluster_caloid, (unsigned)0 );
+  tc->set_property( PidCandidate::em_cluster_caloid, caloid );
 
   /* get track projection helper class */
   TrackProjectionTools tpt( _topNode );
