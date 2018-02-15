@@ -12,11 +12,9 @@ makePlot_reco_xQ2()
   gStyle->SetOptStat(0);
 
   TFile *fin = new TFile("../../data/Sample_DISReco_ep.root", "OPEN");
-  //TFile *fin = new TFile("../../data/eicana_disreco_nc_20x250_1k.root", "OPEN");
-  //TFile *fin = new TFile("../../data/eicana_Pythia6_DIS_10x250_1M.root", "OPEN");
+  //TFile *fin = new TFile("../../data/DISReco_Pythia6_DIS_20x250_1k.root", "OPEN");
 
-  //TTree *t_reco = (TTree*)fin->Get("event_cluster");
-  TTree *t_reco = (TTree*)fin->Get("event_truth");
+  TTree *t_reco = (TTree*)fin->Get("event_cluster");
 
   /* Q2: Create histogram */
   TH2F* hQ2_reco_truth = make_TH2D_xylog( 60, 0, 3, 60, 0, 3 );
@@ -30,7 +28,7 @@ makePlot_reco_xQ2()
   c1->SetLogy(1);
   c1->SetLogz(1);
   t_reco->Draw("em_reco_q2_e:evtgen_Q2 >> hQ2_reco_truth","em_evtgen_pid==11", "colz");
-
+  c1->Print("plots/reco_xQ2_1.eps");
 
   /* x: Create histogram */
   TH2F* hx_reco_truth = make_TH2D_xylog( 40, -4, 0, 40, -4, 0 );
@@ -44,10 +42,10 @@ makePlot_reco_xQ2()
   c2->SetLogy(1);
   c2->SetLogz(1);
   t_reco->Draw("em_reco_q2_e:evtgen_x >> hx_reco_truth","em_evtgen_pid==11", "colz");
-
+  c2->Print("plots/reco_xQ2_2.eps");
 
   /* W: Create histogram */
-  TH2F* hW_reco_truth = new TH2F("hW_reco_truth","",50,0,100,50,0,100);
+  TH2F* hW_reco_truth = new TH2F("hW_reco_truth","W_{truth};W_{reco}",50,0,100,50,0,100);
   hW_reco_truth->SetName("hW_reco_truth");
   hW_reco_truth->GetXaxis()->SetTitle("W_{truth}");
   hW_reco_truth->GetYaxis()->SetTitle("W_{reco}");
@@ -58,20 +56,21 @@ makePlot_reco_xQ2()
   //c3->SetLogy(1);
   c3->SetLogz(1);
   t_reco->Draw("em_reco_w_e:evtgen_W >> hW_reco_truth","em_evtgen_pid==11", "colz");
-
+  c3->Print("plots/reco_xQ2_3.eps");
 
   /* y: Create histogram */
-  TH2F* hy_reco_truth = new TH2F("hy_reco_truth","",100,0,1,100,0,1);
+  TH2F* hy_reco_truth = new TH2F("hy_reco_truth","y_{truth};y_{reco}",100,0,1,100,0,1);
   hy_reco_truth->SetName("hy_reco_truth");
   hy_reco_truth->GetXaxis()->SetTitle("y_{truth}");
   hy_reco_truth->GetYaxis()->SetTitle("y_{reco}");
 
   /* y: Fill histogram */
-  TCanvas *c3 = new TCanvas();
-  //c3->SetLogx(1);
-  //c3->SetLogy(1);
+  TCanvas *c4 = new TCanvas();
+  //c4->SetLogx(1);
+  //c4->SetLogy(1);
   c3->SetLogz(1);
   t_reco->Draw("em_reco_y_e:evtgen_y >> hy_reco_truth","em_evtgen_pid==11", "colz");
+  c4->Print("plots/reco_xQ2_4.eps");
 
   return 1;
 }
