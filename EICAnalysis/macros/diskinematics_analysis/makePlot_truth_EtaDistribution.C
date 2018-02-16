@@ -1,5 +1,7 @@
 int makePlot_truth_EtaDistribution(
-                                   const TString infile = "../../data/Sample_DISReco_ep.root"
+				   const TString infile = "../../data/Sample_DISReco_ep.root",
+				   //const TString infile = "../../data/EventGenAna_Pythia6_DIS_10x250_100k.root",
+				   const bool save_figures = true
                                    )
 {
   gStyle->SetOptStat(kFALSE);
@@ -28,8 +30,11 @@ int makePlot_truth_EtaDistribution(
   leg_eta->AddEntry(h_eta_e, "Electrons", "L");
   leg_eta->Draw();
 
-  c_eta->Print("plots/truth_EtaDistribution.eps");
-  c_eta->Print("plots/truth_EtaDistribution.png");
+  if ( save_figures )
+    {
+      c_eta->Print("plots/truth_EtaDistribution.eps");
+      c_eta->Print("plots/truth_EtaDistribution.png");
+    }
 
   return 0;
 }

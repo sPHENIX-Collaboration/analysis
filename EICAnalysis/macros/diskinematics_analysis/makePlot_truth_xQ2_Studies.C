@@ -8,7 +8,8 @@
 
 int makePlot_truth_xQ2_Studies(
 			       const TString infile = "../../data/Sample_DISReco_ep.root",
-			       const bool save_figures = false
+			       //const TString infile = "../../data/EventGenAna_Pythia6_DIS_10x250_100k.root",
+			       const bool save_figures = true
 			       )
 
 {
@@ -272,12 +273,12 @@ int makePlot_truth_xQ2_Studies(
 
   if ( save_figures )
     {
-      cQ2x_e1->Print("plots/Pythia_Q2x_LepA_e_10k_250x010.eps");
-      cQ2x_e2->Print("plots/Pythia_Q2x_LepE_e_10k_250x010.eps");
-      cQ2x_e3->Print("plots/Pythia_Q2x_JetA_e_10k_250x010.eps");
-      cQ2x_e4->Print("plots/Pythia_Q2x_JetE_e_10k_250x010.eps");
-      cQ2x_e5->Print("plots/Pythia_Q2x_y_e_10k_250x010.eps");
-      cQ2x_e6->Print("plots/Pythia_Q2x_W_e_10k_250x010.eps");
+      cQ2x_e1->Print("plots/Pythia_Q2x_LepA_e.eps");
+      cQ2x_e2->Print("plots/Pythia_Q2x_LepE_e.eps");
+      cQ2x_e3->Print("plots/Pythia_Q2x_JetA_e.eps");
+      cQ2x_e4->Print("plots/Pythia_Q2x_JetE_e.eps");
+      cQ2x_e5->Print("plots/Pythia_Q2x_y_e.eps");
+      cQ2x_e6->Print("plots/Pythia_Q2x_W_e.eps");
     }
 
   return 0;
