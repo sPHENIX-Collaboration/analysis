@@ -78,6 +78,61 @@ int Forward_pi0s::process_event(PHCompositeNode *topnode)
 {
   nevents++;
   cout << "at event number " << nevents << endl;
+  
+  //reset the truth variables
+  tphote2 = -999;
+  tphotpx2 = -999;
+  tphotpy2 = -999;
+  tphotpz2 = -999;
+  tphotpid2 = -999;
+  tphotparentid2 = -999;
+  tphotpt2 = -999;
+  tphotphi2 = -999;
+  tphoteta2 = -999;
+
+  tphote1 = -999;
+  tphotpx1 = -999;
+  tphotpy1 = -999;
+  tphotpz1 = -999;
+  tphotpid1 = -999;
+  tphotparentid1 = -999;
+  tphotpt1 = -999;
+  tphotphi1 = -999;
+  tphoteta1 = -999;
+
+  tpi0e = -999;
+  tpi0px = -999;
+  tpi0py = -999;
+  tpi0pz = -999;
+  tpi0pid = -999;
+  tpi0pt = -999;
+  tpi0phi = -999;
+  tpi0eta = -999;
+
+  //reset cluster variables
+  fclusenergy = -999;
+  fclus_eta = -999;
+  fclus_phi = -999;
+  fclus_theta = -999;
+  fclus_pt = -999;
+  fclus_px = -999;
+  fclus_py = -999;
+  fclus_pz = -999;
+
+
+  clus_energy = -999;
+  clus_eta = -999;
+  clus_theta = -999;
+  clus_pt = -999;
+  clus_phi = -999;
+  clus_px = -999;
+  clus_py = -999;
+  clus_pz = -999;
+
+ 
+
+
+
 
   //get the nodes from the NodeTree
 
@@ -286,6 +341,22 @@ int Forward_pi0s::process_event(PHCompositeNode *topnode)
       fclus_py = fclus_pt * TMath::Sin(fclus_phi);
       fclus_pz = fclusenergy * TMath::Cos(fclus_theta);
 
+      //reset second cluster variables
+      fclusenergy2 = -999;
+      fclus_eta2 = -999;
+      fclus_phi2 = -999;
+      fclus_theta2 = -999;
+      fclus_pt2 = -999;
+      fclus_px2 = -999;
+      fclus_py2 = -999;
+      fclus_pz2 = -999;
+
+
+      if(verbosity > 1)
+	{
+	  cout<<"Found one good cluster"<<endl;
+	  cout<<"energy | phi | eta: "<<fclusenergy<<" | "<<fclus_phi<<" | "<<fclus_eta<<endl;
+	}
 
       //found a first good cluster, lets look for a second
       RawClusterContainer::ConstRange fclus2 = fclusters->getClusters();
@@ -296,14 +367,20 @@ int Forward_pi0s::process_event(PHCompositeNode *topnode)
 
         CLHEP::Hep3Vector E_vec_cluster2 = RawClusterUtility::GetEVec(*cluster2, vertex);
         fclusenergy2 = E_vec_cluster2.mag();
+	//just got the same photon, skip
+        if (fclusenergy == fclusenergy2)
+	  {
+	    //reset it
+	    fclusenergy2 = -999;
+	    continue;
+	  }
+
         fclus_eta2 = E_vec_cluster2.pseudoRapidity();
         fclus_theta2 = E_vec_cluster2.getTheta();
         fclus_pt2 = E_vec_cluster2.perp();
         fclus_phi2 = E_vec_cluster2.getPhi();
 
-        //just got the same photon, skip
-        if (fclusenergy == fclusenergy2 and fclus_eta == fclus_eta2 and fclus_phi == fclus_phi2)
-          continue;
+	  
 
         if (fclusenergy2 < mincluspt)
           continue;
@@ -338,6 +415,16 @@ int Forward_pi0s::process_event(PHCompositeNode *topnode)
           cout << "pi0 reco invmass is " << invmass << endl;
       }
 
+
+      if(verbosity > 1)
+	{
+	  cout<<"Final clusters found and writing to tree"<<endl;
+	  cout<<"clus 1 - energy | phi | eta: "<<fclusenergy<<" | "<<fclus_phi
+	      <<" | "<<fclus_eta<<endl;
+	  cout<<"clus 2 - energy | phi | eta: "<<fclusenergy2<<" | "<<fclus_phi2
+	      <<" | "<<fclus_eta2<<endl;
+
+	}
       fcluster_tree->Fill();
     }
   }
@@ -385,6 +472,23 @@ int Forward_pi0s::process_event(PHCompositeNode *topnode)
     clus_py = clus_pt * TMath::Sin(clus_phi);
     clus_pz = sqrt(clus_energy * clus_energy - clus_px * clus_px - clus_py * clus_py);
 
+
+
+
+    //reset second cluster variables
+    clus_energy2 = -999;
+    clus_eta2 = -999;
+    clus_theta2 = -999;
+    clus_pt2 = -999;
+    clus_phi2 = -999;
+    clus_px2 = -999;
+    clus_py2 = -999;
+    clus_pz2 = -999;
+
+
+
+
+
     //found a first good cluster, lets look for a second
     RawClusterContainer::ConstRange begin_end2 = clusters->getClusters();
     RawClusterContainer::ConstIterator clusiter2;
@@ -395,6 +499,12 @@ int Forward_pi0s::process_event(PHCompositeNode *topnode)
 	CLHEP::Hep3Vector vertex(vtx->get_x(), vtx->get_y(), vtx->get_z());
 	CLHEP::Hep3Vector E_vec_cluster = RawClusterUtility::GetECoreVec(*cluster2, vertex);
 	clus_energy2 = E_vec_cluster.mag();
+	if(clus_energy == clus_energy2)
+	  {
+	    //reset it
+	    clus_energy2 = -999;
+	    continue;
+	  }
 	clus_eta2 = E_vec_cluster.pseudoRapidity();
 	clus_theta2 = E_vec_cluster.getTheta();
 	clus_pt2 = E_vec_cluster.perp();
@@ -445,72 +555,7 @@ int Forward_pi0s::process_event(PHCompositeNode *topnode)
 
   tree->Fill();
 
-  //reset the truth variables
-  tphote2 = -999;
-  tphotpx2 = -999;
-  tphotpy2 = -999;
-  tphotpz2 = -999;
-  tphotpid2 = -999;
-  tphotparentid2 = -999;
-  tphotpt2 = -999;
-  tphotphi2 = -999;
-  tphoteta2 = -999;
-
-  tphote1 = -999;
-  tphotpx1 = -999;
-  tphotpy1 = -999;
-  tphotpz1 = -999;
-  tphotpid1 = -999;
-  tphotparentid1 = -999;
-  tphotpt1 = -999;
-  tphotphi1 = -999;
-  tphoteta1 = -999;
-
-  tpi0e = -999;
-  tpi0px = -999;
-  tpi0py = -999;
-  tpi0pz = -999;
-  tpi0pid = -999;
-  tpi0pt = -999;
-  tpi0phi = -999;
-  tpi0eta = -999;
-
-  //reset cluster variables
-  fclusenergy = -999;
-  fclus_eta = -999;
-  fclus_phi = -999;
-  fclus_theta = -999;
-  fclus_pt = -999;
-  fclus_px = -999;
-  fclus_py = -999;
-  fclus_pz = -999;
-
-  fclusenergy2 = -999;
-  fclus_eta2 = -999;
-  fclus_phi2 = -999;
-  fclus_theta2 = -999;
-  fclus_pt2 = -999;
-  fclus_px2 = -999;
-  fclus_py2 = -999;
-  fclus_pz2 = -999;
-
-  clus_energy = -999;
-  clus_eta = -999;
-  clus_theta = -999;
-  clus_pt = -999;
-  clus_phi = -999;
-  clus_px = -999;
-  clus_py = -999;
-  clus_pz = -999;
-
-  clus_energy2 = -999;
-  clus_eta2 = -999;
-  clus_theta2 = -999;
-  clus_pt2 = -999;
-  clus_phi2 = -999;
-  clus_px2 = -999;
-  clus_py2 = -999;
-  clus_pz2 = -999;
+ 
 
   return 0;
 }

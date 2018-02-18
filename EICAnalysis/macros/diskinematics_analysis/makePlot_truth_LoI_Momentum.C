@@ -7,7 +7,8 @@
 
 int makePlot_truth_LoI_Momentum(
 				const TString infile = "../../data/Sample_DISReco_ep.root",
-				const bool save_figures = false
+				//const TString infile = "../../data/EventGenAna_Pythia6_DIS_10x250_100k.root",
+				const bool save_figures = true
 				)
 {
   gStyle->SetOptStat(kFALSE);
@@ -58,8 +59,8 @@ int makePlot_truth_LoI_Momentum(
 
   if ( save_figures )
     {
-      c_peta_e->Print("plots/Pythia_peta_e_10M_250x010.eps");
-      c_peta_e->Print("plots/Pythia_peta_e_10M_250x010.png");
+      c_peta_e->Print("plots/Pythia_peta_e.eps");
+      c_peta_e->Print("plots/Pythia_peta_e.png");
     }
 
   /*------------------------------------------*/
@@ -76,8 +77,8 @@ int makePlot_truth_LoI_Momentum(
 
   if ( save_figures )
     {
-      c_p_eta_h->Print("plots/Pythia_peta_h_10M_250x010.eps");
-      c_p_eta_h->Print("plots/Pythia_peta_h_10M_250x010.png");
+      c_p_eta_h->Print("plots/Pythia_peta_h.eps");
+      c_p_eta_h->Print("plots/Pythia_peta_h.png");
     }
 
   /*------------Momentum Spectra (Figure 2.2)--------------*/
@@ -121,8 +122,8 @@ int makePlot_truth_LoI_Momentum(
 
   if ( save_figures )
     {
-      cp_e_n3n2->Print("plots/Pythia_MomSpec_n3n2_10M_250x010.eps");
-      cp_e_n3n2->Print("plots/Pythia_MomSpec_n3n2_10M_250x010.png");
+      cp_e_n3n2->Print("plots/Pythia_MomSpec_n3n2.eps");
+      cp_e_n3n2->Print("plots/Pythia_MomSpec_n3n2.png");
     }
 
   /*Temporary Electron Purity Test*/
@@ -166,8 +167,8 @@ int makePlot_truth_LoI_Momentum(
 
   if ( save_figures )
     {
-      cp_e_n2n1->Print("plots/Pythia_MomSpec_n2n1_10M_250x010.eps");
-      cp_e_n2n1->Print("plots/Pythia_MomSpec_n2n1_10M_250x010.png");
+      cp_e_n2n1->Print("plots/Pythia_MomSpec_n2n1.eps");
+      cp_e_n2n1->Print("plots/Pythia_MomSpec_n2n1.png");
     }
 
   /*-------- -1 < Eta < 0 ---------*/
@@ -208,8 +209,8 @@ int makePlot_truth_LoI_Momentum(
 
   if ( save_figures )
     {
-      cp_e_n1z0->Print("plots/Pythia_MomSpec_n1z0_10M_250x010.eps");
-      cp_e_n1z0->Print("plots/Pythia_MomSpec_n1z0_10M_250x010.png");
+      cp_e_n1z0->Print("plots/Pythia_MomSpec_n1z0.eps");
+      cp_e_n1z0->Print("plots/Pythia_MomSpec_n1z0.png");
     }
 
   return 0 ;

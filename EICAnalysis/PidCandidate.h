@@ -100,15 +100,17 @@ public:
       em_cluster_et_iso = 308,
       em_cluster_theta = 309,
       em_cluster_phi = 310,
-      em_cluster_pt = 311,
-      em_cluster_ntower = 312,
-      em_cluster_caloid = 313,
+      em_cluster_eta = 311,
+      em_cluster_pt = 312,
+      em_cluster_ntower = 313,
+      em_cluster_caloid = 314,
 
       //-- EM Candidates Tracks
-      em_track_id = 351,
-      em_track_quality = 352,
-      em_track_theta = 353,
-      em_track_phi = 354,
+      em_track_id = 350,
+      em_track_quality = 351,
+      em_track_theta = 352,
+      em_track_phi = 353,
+      em_track_eta = 354,
       em_track_ptotal = 355,
       em_track_ptrans = 356,
       em_track_charge = 357,
@@ -122,6 +124,12 @@ public:
       em_track_e3x3_fhcal = 365,
       em_track_e3x3_ehcal = 366,
       em_track_cluster_dr = 367,
+
+      //-- EM PID probabilities
+      em_pid_prob_electron = 391,
+      em_pid_prob_pion = 392,
+      em_pid_prob_kaon = 393,
+      em_pid_prob_proton = 394,
 
       //-- EM Candidates Truth
       em_evtgen_pid = 401,

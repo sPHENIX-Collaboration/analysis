@@ -70,6 +70,9 @@ public:
 
 private:
 
+  /* proton rest mass */
+  const float _mproton;
+
   bool _verbose;
   bool _save_towers;
   bool _save_tracks;

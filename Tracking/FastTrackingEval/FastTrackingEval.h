@@ -26,7 +26,9 @@ class FastTrackingEval: public SubsysReco
 {
  public: 
   //Default constructor
-  FastTrackingEval(const std::string &name="FastTrackingEval");
+  FastTrackingEval(const std::string &name="FastTrackingEval",
+		   const std::string &filename = "g4eval.root",
+		   const std::string &trackmapname = "SvtxTrackMap");
 
   //Initialization, called for initialization
   int Init(PHCompositeNode *);
@@ -63,6 +65,9 @@ class FastTrackingEval: public SubsysReco
  private:
   //output filename
   std::string _outfile_name;
+
+  //name of SvtxTrackMap collection
+  std::string _trackmapname;
    
   //Event counter
   int _event;

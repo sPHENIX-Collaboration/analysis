@@ -234,6 +234,9 @@ PidCandidate::get_property_info(const PROPERTY prop_id)
     case  em_cluster_phi:
       return make_pair("em_cluster_phi",PidCandidate::type_float);
 
+    case  em_cluster_eta:
+      return make_pair("em_cluster_eta",PidCandidate::type_float);
+
     case  em_cluster_pt:
       return make_pair("em_cluster_pt",PidCandidate::type_float);
 
@@ -256,6 +259,9 @@ PidCandidate::get_property_info(const PROPERTY prop_id)
 
     case  em_track_phi:
       return make_pair("em_track_phi",PidCandidate::type_float);
+
+    case  em_track_eta:
+      return make_pair("em_track_eta",PidCandidate::type_float);
 
     case  em_track_ptotal:
       return make_pair("em_track_ptotal",PidCandidate::type_float);
@@ -295,6 +301,20 @@ PidCandidate::get_property_info(const PROPERTY prop_id)
 
     case  em_track_cluster_dr:
       return make_pair("em_track_cluster_dr",PidCandidate::type_float);
+
+      // ------
+
+    case  em_pid_prob_electron:
+      return make_pair("em_pid_prob_electron",PidCandidate::type_float);
+
+    case  em_pid_prob_pion:
+      return make_pair("em_pid_prob_pion",PidCandidate::type_float);
+
+    case  em_pid_prob_kaon:
+      return make_pair("em_pid_prob_kaon",PidCandidate::type_float);
+
+    case  em_pid_prob_proton:
+      return make_pair("em_pid_prob_proton",PidCandidate::type_float);
 
       // ------
 

@@ -43,6 +43,7 @@ using namespace std;
 
 DISKinematicsReco::DISKinematicsReco(std::string filename) :
   SubsysReco("DISKinematicsReco" ),
+  _mproton( 0.938272 ),
   _save_towers(false),
   _save_tracks(false),
   _do_process_geant4_cluster(false),
@@ -81,6 +82,7 @@ DISKinematicsReco::Init(PHCompositeNode *topNode)
   _map_em_candidate_branches.insert( make_pair( PidCandidate::em_cluster_et_iso , vdummy ) );
   _map_em_candidate_branches.insert( make_pair( PidCandidate::em_cluster_theta , vdummy ) );
   _map_em_candidate_branches.insert( make_pair( PidCandidate::em_cluster_phi , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( PidCandidate::em_cluster_eta , vdummy ) );
   _map_em_candidate_branches.insert( make_pair( PidCandidate::em_cluster_pt , vdummy ) );
   _map_em_candidate_branches.insert( make_pair( PidCandidate::em_cluster_ntower , vdummy ) );
   _map_em_candidate_branches.insert( make_pair( PidCandidate::em_cluster_caloid , vdummy ) );
@@ -89,6 +91,7 @@ DISKinematicsReco::Init(PHCompositeNode *topNode)
   _map_em_candidate_branches.insert( make_pair( PidCandidate::em_track_quality , vdummy ) );
   _map_em_candidate_branches.insert( make_pair( PidCandidate::em_track_theta , vdummy ) );
   _map_em_candidate_branches.insert( make_pair( PidCandidate::em_track_phi , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( PidCandidate::em_track_eta , vdummy ) );
   _map_em_candidate_branches.insert( make_pair( PidCandidate::em_track_ptotal , vdummy ) );
   _map_em_candidate_branches.insert( make_pair( PidCandidate::em_track_ptrans , vdummy ) );
   _map_em_candidate_branches.insert( make_pair( PidCandidate::em_track_charge , vdummy ) );
@@ -103,11 +106,18 @@ DISKinematicsReco::Init(PHCompositeNode *topNode)
   _map_em_candidate_branches.insert( make_pair( PidCandidate::em_track_e3x3_ehcal , vdummy ) );
   _map_em_candidate_branches.insert( make_pair( PidCandidate::em_track_cluster_dr , vdummy ) );
 
+  _map_em_candidate_branches.insert( make_pair( PidCandidate::em_pid_prob_electron , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( PidCandidate::em_pid_prob_pion , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( PidCandidate::em_pid_prob_kaon , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( PidCandidate::em_pid_prob_proton , vdummy ) );
+
   _map_em_candidate_branches.insert( make_pair( PidCandidate::em_evtgen_pid , vdummy ) );
   _map_em_candidate_branches.insert( make_pair( PidCandidate::em_evtgen_ptotal , vdummy ) );
   _map_em_candidate_branches.insert( make_pair( PidCandidate::em_evtgen_theta , vdummy ) );
   _map_em_candidate_branches.insert( make_pair( PidCandidate::em_evtgen_phi , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( PidCandidate::em_evtgen_eta , vdummy ) );
   _map_em_candidate_branches.insert( make_pair( PidCandidate::em_evtgen_charge , vdummy ) );
+
   _map_em_candidate_branches.insert( make_pair( PidCandidate::em_reco_x_e , vdummy ) );
   _map_em_candidate_branches.insert( make_pair( PidCandidate::em_reco_y_e , vdummy ) );
   _map_em_candidate_branches.insert( make_pair( PidCandidate::em_reco_q2_e , vdummy ) );
@@ -325,10 +335,13 @@ DISKinematicsReco::CollectEmCandidatesFromTruth( type_map_tcan& candidateMap )
       PidCandidatev1 *tc = new PidCandidatev1();
       tc->set_candidate_id( candidateMap.size()+1 );
 
+      float mom_eta = -1 * log ( tan( (*p)->momentum().theta() / 2.0 ) );
+
       tc->set_property( PidCandidate::em_evtgen_pid, (*p)->pdg_id() );
       tc->set_property( PidCandidate::em_evtgen_ptotal, (float) (*p)->momentum().e() );
       tc->set_property( PidCandidate::em_evtgen_theta, (float) (*p)->momentum().theta() );
       tc->set_property( PidCandidate::em_evtgen_phi, (float) (*p)->momentum().phi() );
+      tc->set_property( PidCandidate::em_evtgen_eta, mom_eta );
       tc->set_property( PidCandidate::em_evtgen_charge, charge );
 
       /* add pid candidate to collection */
@@ -348,8 +361,14 @@ DISKinematicsReco::InsertCandidateFromCluster( type_map_tcan& candidateMap , Raw
 
   /* set some initial cluster properties */
   float theta = atan2( cluster->get_r() , cluster->get_z() );
-  //float eta =  -log(tan(theta/2.0));
+  float eta =  -1 * log( tan( theta / 2.0 ) );
   float pt = cluster->get_energy() * sin( theta );
+
+  /* get calorimeter ID where towers of cluster are found */
+  unsigned caloid = 0;
+  RawCluster::TowerConstIterator rtiter = cluster->get_towers().first;
+  caloid = RawTowerDefs::decode_caloid( rtiter->first );
+  //cout << "Calo ID: " << caloid << " -> " << RawTowerDefs::convert_caloid_to_name( RawTowerDefs::decode_caloid( rtiter->first ) ) << endl;
 
   tc->set_property( PidCandidate::em_cluster_id, cluster->get_id() );
   tc->set_property( PidCandidate::em_cluster_prob, cluster->get_prob() );
@@ -361,16 +380,17 @@ DISKinematicsReco::InsertCandidateFromCluster( type_map_tcan& candidateMap , Raw
   tc->set_property( PidCandidate::em_cluster_et_iso, cluster->get_et_iso() );
   tc->set_property( PidCandidate::em_cluster_theta, theta );
   tc->set_property( PidCandidate::em_cluster_phi, cluster->get_phi() );
+  tc->set_property( PidCandidate::em_cluster_eta, eta );
   tc->set_property( PidCandidate::em_cluster_pt, pt );
   tc->set_property( PidCandidate::em_cluster_ntower, (unsigned)cluster->getNTowers() );
-  tc->set_property( PidCandidate::em_cluster_caloid, (unsigned)0 );
+  tc->set_property( PidCandidate::em_cluster_caloid, caloid );
 
   /* get track projection helper class */
   TrackProjectionTools tpt( _topNode );
 
   /* find matching reco track */
   float best_track_dr = NAN;
-  SvtxTrack* best_track = tpt.FindClosestTrack( cluster, best_track_dr );
+  SvtxTrack* best_track = NULL; //tpt.FindClosestTrack( cluster, best_track_dr ); /* @TODO switch track finding back on as soon as we understand it better */
 
   /* IF matching track found: set track properties */
   if ( best_track )
@@ -382,6 +402,7 @@ DISKinematicsReco::InsertCandidateFromCluster( type_map_tcan& candidateMap , Raw
       tc->set_property( PidCandidate::em_track_quality, best_track->get_quality() );
       tc->set_property( PidCandidate::em_track_theta, theta );
       tc->set_property( PidCandidate::em_track_phi, best_track->get_phi() );
+      tc->set_property( PidCandidate::em_track_eta, best_track->get_eta() );
       tc->set_property( PidCandidate::em_track_ptotal, best_track->get_p() );
       tc->set_property( PidCandidate::em_track_ptrans, best_track->get_pt() );
       tc->set_property( PidCandidate::em_track_charge, best_track->get_charge() );
@@ -417,6 +438,12 @@ DISKinematicsReco::InsertCandidateFromCluster( type_map_tcan& candidateMap , Raw
       tc->set_property( PidCandidate::em_track_e3x3_fhcal, e3x3_fhcal );
       tc->set_property( PidCandidate::em_track_e3x3_femc, e3x3_femc );
       tc->set_property( PidCandidate::em_track_e3x3_eemc, e3x3_eemc );
+
+      /* Get information on track from PID detectors */
+      tc->set_property( PidCandidate::em_pid_prob_electron, (float)0.0 );
+      tc->set_property( PidCandidate::em_pid_prob_pion, (float)0.0 );
+      tc->set_property( PidCandidate::em_pid_prob_kaon, (float)0.0 );
+      tc->set_property( PidCandidate::em_pid_prob_proton, (float)0.0 );
     }
 
   /* set em candidate MC truth properties */
@@ -424,6 +451,7 @@ DISKinematicsReco::InsertCandidateFromCluster( type_map_tcan& candidateMap , Raw
   tc->set_property( PidCandidate::em_evtgen_ptotal, (float)NAN );
   tc->set_property( PidCandidate::em_evtgen_theta, (float)NAN );
   tc->set_property( PidCandidate::em_evtgen_phi, (float)NAN );
+  tc->set_property( PidCandidate::em_evtgen_eta, (float)NAN );
   tc->set_property( PidCandidate::em_evtgen_charge, (int)NAN );
 
   /* If matching truth primary particle found: update truth information */
@@ -433,22 +461,76 @@ DISKinematicsReco::InsertCandidateFromCluster( type_map_tcan& candidateMap , Raw
 
   if ( primary )
     {
+      /* get particle momenta and theta, phi angles */
       float gpx = primary->get_px();
       float gpy = primary->get_py();
       float gpz = primary->get_pz();
       float gpt = sqrt(gpx * gpx + gpy * gpy);
+      float gptotal = sqrt(gpx * gpx + gpy * gpy + gpz * gpz);
+      //float ge = (float)primary->get_e();
 
       float gphi = NAN;
       float gtheta = NAN;
+      float geta = NAN;
 
-      if (gpt != 0.0) gtheta = asinh(gpz / gpt);
+      if (gpt != 0.0)
+	{
+	  gtheta = atan2( gpt, gpz );
+	  geta = -1 * log( tan( gtheta / 2.0 ) );
+	}
+
       gphi = atan2(gpy, gpx);
 
+      /* get charge based on PDG code of particle */
+      TParticlePDG * pdg_p = TDatabasePDG::Instance()->GetParticle( primary->get_pid() );
+      int gcharge = -999;
+      if ( pdg_p )
+	{
+	  /* NOTE: TParticlePDG::Charge() returns charge in units of |e|/3 (see ROOT documentation) */
+	  gcharge = pdg_p->Charge() / 3;
+	}
+
       tc->set_property( PidCandidate::em_evtgen_pid, primary->get_pid() );
-      tc->set_property( PidCandidate::em_evtgen_ptotal, (float)primary->get_e() );
+      tc->set_property( PidCandidate::em_evtgen_ptotal, gptotal );
       tc->set_property( PidCandidate::em_evtgen_theta, gtheta );
       tc->set_property( PidCandidate::em_evtgen_phi, gphi );
-      tc->set_property( PidCandidate::em_evtgen_charge, (int)NAN );
+      tc->set_property( PidCandidate::em_evtgen_eta, geta );
+      tc->set_property( PidCandidate::em_evtgen_charge, gcharge );
+
+      /* @TODO: This is a workaround until we figure out the tracking business... until then:
+       * use truth track information instead of reco track information */
+      tc->set_property( PidCandidate::em_track_id, (uint)primary->get_track_id() );
+      tc->set_property( PidCandidate::em_track_quality, (float)100.0 );
+      tc->set_property( PidCandidate::em_track_theta, gtheta );
+      tc->set_property( PidCandidate::em_track_phi, gphi );
+      tc->set_property( PidCandidate::em_track_eta, geta );
+      tc->set_property( PidCandidate::em_track_ptotal, gptotal );
+      tc->set_property( PidCandidate::em_track_ptrans, gpt );
+      tc->set_property( PidCandidate::em_track_charge, gcharge );
+      tc->set_property( PidCandidate::em_track_dca, NAN );
+      tc->set_property( PidCandidate::em_track_section, (uint)0 );
+      tc->set_property( PidCandidate::em_track_e3x3_cemc, NAN );
+      tc->set_property( PidCandidate::em_track_e3x3_ihcal, NAN );
+      tc->set_property( PidCandidate::em_track_e3x3_ohcal, NAN );
+      tc->set_property( PidCandidate::em_track_cluster_dr, (float)0.0 );
+
+      /* Get information on track from PID detectors */
+      tc->set_property( PidCandidate::em_pid_prob_electron, (float)0.0 );
+      tc->set_property( PidCandidate::em_pid_prob_pion, (float)0.0 );
+      tc->set_property( PidCandidate::em_pid_prob_kaon, (float)0.0 );
+      tc->set_property( PidCandidate::em_pid_prob_proton, (float)0.0 );
+
+      if ( abs( primary->get_pid() ) == 11 )
+	tc->set_property( PidCandidate::em_pid_prob_electron, (float)1.0 );
+
+      if ( abs( primary->get_pid() ) == 211 )
+	tc->set_property( PidCandidate::em_pid_prob_pion, (float)1.0 );
+
+      if ( abs( primary->get_pid() ) == 321 )
+	tc->set_property( PidCandidate::em_pid_prob_kaon, (float)1.0 );
+
+      if ( abs( primary->get_pid() ) == 2212 )
+	tc->set_property( PidCandidate::em_pid_prob_proton, (float)1.0 );
     }
 
   /* add tau candidate to collection */
@@ -652,14 +734,18 @@ DISKinematicsReco::AddReconstructedKinematics( type_map_tcan& em_candidates , st
       /* event kinematics */
       float dis_s = 4 * e0_E * p0_E;
 
-      //      float dis_y = 1 - ( e1_E / (2*e0_E) ) * ( 1 - cos( e1_theta_rel ) );
-      float dis_y = 1 - (e1_E/e0_E) * pow( cos( e1_theta_rel / 2. ), 2 );
-
       float dis_Q2 = 2 * e0_E * e1_E * ( 1 - cos( e1_theta_rel ) );
+
+      /* ePHENIX LOI definition of y: */
+      float dis_y = 1 - ( e1_E / e0_E ) + ( dis_Q2 / ( 4 * pow( e0_E, 2 ) ) );
+
+      /* G. Wolf Hera Physics definitions of y: */
+      //float dis_y = 1 - ( e1_E / (2*e0_E) ) * ( 1 - cos( e1_theta_rel ) );
 
       float dis_x = dis_Q2 / ( dis_s * dis_y );
 
-      float dis_W = 0;
+      float dis_W2 = _mproton*_mproton + dis_Q2 * ( ( 1 / dis_x ) - 1 );
+      float dis_W = sqrt( dis_W2 );
 
       the_electron->set_property( PidCandidate::em_reco_x_e, dis_x );
       the_electron->set_property( PidCandidate::em_reco_y_e, dis_y );
@@ -714,7 +800,7 @@ DISKinematicsReco::AddTruthEventInformation()
       ev_x = theEvent->pdf_info()->x2();
       ev_Q2 = theEvent->pdf_info()->scalePDF();
       ev_y = ev_Q2 / ( ev_x * ev_s );
-      ev_W = sqrt( ev_Q2 * ( 1 - 1 / ev_x ) );
+      ev_W = sqrt( _mproton*_mproton + ev_Q2 * ( 1 / ev_x - 1 ) );
     }
 
   ( _map_event_branches.find( "evtgen_process_id" ) )->second = true_process_id;
