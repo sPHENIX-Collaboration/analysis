@@ -304,7 +304,12 @@ DISKinematicsReco::CollectEmCandidatesFromTruth( type_map_tcan& candidateMap )
        p != theEvent->particles_end(); ++p)
     {
       TParticlePDG * pdg_p = TDatabasePDG::Instance()->GetParticle( (*p)->pdg_id() );
-      int charge = (int)pdg_p->Charge();
+      int charge = -999;
+      if ( pdg_p )
+	{
+	  /* NOTE: TParticlePDG::Charge() returns charge in units of |e|/3 (see ROOT documentation) */
+	  charge = pdg_p->Charge() / 3;
+	}
 
       /* beam electron found */
       //if ( particle_e0 == NULL && TString(pdg_p->GetName()) == "e-" && (*p)->status() == 3 && (*p)->production_vertex() == NULL )
