@@ -339,6 +339,9 @@ PidCandidate::get_property_info(const PROPERTY prop_id)
     case  em_evtgen_charge:
       return make_pair("em_evtgen_charge",PidCandidate::type_int);
 
+    case  em_evtgen_is_scattered_lepton:
+      return make_pair("em_evtgen_is_scattered_lepton",PidCandidate::type_uint);
+
       // ------
 
     case  em_reco_x_e:
