@@ -1,7 +1,7 @@
 #ifndef __DISKinematicsReco_H__
 #define __DISKinematicsReco_H__
 
-#include "TauCandidate.h"
+#include "PidCandidate.h"
 
 /* Fun4All includes */
 #include <fun4all/SubsysReco.h>
@@ -30,9 +30,9 @@ class SvtxTrackMap;
 class PHHepMCGenEventMap;
 
 
-class TauCandidate;
+class PidCandidate;
 
-typedef std::map<float, TauCandidate*> type_map_tcan;
+typedef std::map<float, PidCandidate*> type_map_tcan;
 typedef std::map< RawTowerDefs::CalorimeterId , std::pair< RawTowerContainer*, RawTowerGeomContainer* > > type_map_cdata;
 
 class DISKinematicsReco : public SubsysReco
@@ -56,11 +56,28 @@ public:
     _pbeam_E = fabs( beam_proton );
   }
 
+  void
+  set_do_process_geant4_cluster( bool select )
+  {
+    _do_process_geant4_cluster = select;
+  }
+
+  void
+  set_do_process_truth( bool select )
+  {
+    _do_process_truth = select;
+  }
+
 private:
+
+  /* proton rest mass */
+  const float _mproton;
 
   bool _verbose;
   bool _save_towers;
   bool _save_tracks;
+  bool _do_process_geant4_cluster;
+  bool _do_process_truth;
 
   int _ievent;
   int _total_pass;
@@ -69,8 +86,10 @@ private:
   TFile *_tfile;
 
   /* output tree and variables */
-  TTree* _e_candidate;
-  TTree* _tree_event;
+  TTree* _tree_event_cluster;
+
+  /* output tree and variables from TRUTH particles */
+  TTree* _tree_event_truth;
 
   /* beam energies electron and proton */
   float _ebeam_E;
@@ -80,55 +99,43 @@ private:
    * given towers */
   std::map< std::string, CaloRawTowerEval* > _map_towereval;
 
-  /** Map of TauCandidate properties that will be written to
+  //  /** Map of PidCandidate properties that will be written to
+  //   * output ROOT Tree */
+  //  std::map< PidCandidate::PROPERTY , float > _map_treebranches;
+
+  /** Map of EM Candidates that will be written to
    * output ROOT Tree */
-  std::map< TauCandidate::PROPERTY , float > _map_treebranches;
+  std::map< PidCandidate::PROPERTY , std::vector< float > > _map_em_candidate_branches;
 
   /** Map of Event properties that will be written to
    * output ROOT Tree */
-  std::map< std::string , float > _map_eventbranches;
+  std::map< std::string , float > _map_event_branches;
 
   /** helper pointer to topNode */
   PHCompositeNode *_topNode;
 
+  int CollectEmCandidatesFromCluster( type_map_tcan& );
+
+  int CollectEmCandidatesFromTruth( type_map_tcan& );
+
   int InsertCandidateFromCluster( type_map_tcan& , RawCluster* , CaloEvalStack* );
 
-  int InsertCandidateFromTrack( type_map_tcan& , SvtxTrack* );
+  int AddGlobalCalorimeterInformation();
 
-  int AddTrueElectronTag( type_map_tcan&, PHHepMCGenEventMap* );
-
-  int AddCalorimeterInformation( type_map_tcan&, type_map_cdata* );
-
-  int AddTrackInformation( type_map_tcan&, SvtxTrackMap* );
+  int AddReconstructedKinematics( type_map_tcan& , std::string );
 
   int WriteCandidatesToTree( type_map_tcan& );
 
-  int AddGlobalEventInformation( type_map_tcan& ,   PHHepMCGenEventMap* );
+  int AddTruthEventInformation();
 
   /** Find tau candidate in map that is closest to given eta, phi angle */
-  TauCandidate* FindMinDeltaRCandidate( type_map_tcan*, const float, const float );
+  PidCandidate* FindMinDeltaRCandidate( type_map_tcan*, const float, const float );
 
   /** Calculate Delta R ("distance in eta-phi space") between two sets of eta, phi angles */
   float CalculateDeltaR( float, float, float, float );
 
-
-  /** Find track with minimum delta R from given cluster */
-  SvtxTrack* FindClosestTrack( RawCluster* );
-
-  /** get energy in 3x3 calorimeter towers around track projection to calorimeter surface.
-   * Copied from FastTrackingEval.C */
-  float getE33( PHCompositeNode *, std::string, float, float );
-
-  /** Enum to identify calorimeter types */
-  enum CALOTYPE
-  {
-    calo_cemc,
-    calo_ihcal,
-    calo_ohcal,
-    calo_femc,
-    calo_fhcal,
-    calo_eemc
-  };
+  /** Reset branch maps for each event */
+  void ResetBranchMap();
 
 };
 

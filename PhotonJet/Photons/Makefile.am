@@ -13,17 +13,22 @@ libPhotons_la_LDFLAGS = \
 
 lib_LTLIBRARIES = \
   libPhotons.la
+noinst_HEADERS = \
+  PhotonsLinkDef.h
 
 include_HEADERS = \
   Photons.h \
-  PhotonsLinkDef.h
+  Forward_pi0s.h
+
 libPhotons_la_SOURCES = \
   Photons.C \
+  Forward_pi0s.C \
   Photons_Dict.C
+
 libPhotons_la_LIBADD = \
   -lg4dst \
   -lg4eval \
-  -lcemc \
+  -lcalo_util \
   -lphool
 
 BUILT_SOURCES = \
@@ -45,7 +50,7 @@ testexternals.C:
 ##############################################                                                                             
 # please add new classes in alphabetical order                                                                             
 # Rule for generating CINT dictionaries from class headers.                                                                
-%_Dict.C: %.h %LinkDef.h
+Photons_Dict.C: Photons.h Forward_pi0s.h PhotonsLinkDef.h
 	rootcint -f $@ -c $(CINTFLAGS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $^
 
 clean-local:

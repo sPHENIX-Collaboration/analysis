@@ -1,7 +1,7 @@
 #ifndef __LeptoquarksReco_H__
 #define __LeptoquarksReco_H__
 
-#include "TauCandidate.h"
+#include "PidCandidate.h"
 
 /* Fun4All includes */
 #include <fun4all/SubsysReco.h>
@@ -28,9 +28,9 @@ class SvtxTrackMap;
 class PHHepMCGenEventMap;
 
 
-class TauCandidate;
+class PidCandidate;
 
-typedef std::map<float, TauCandidate*> type_map_tcan;
+typedef std::map<float, PidCandidate*> type_map_tcan;
 typedef std::map< RawTowerDefs::CalorimeterId , std::pair< RawTowerContainer*, RawTowerGeomContainer* > > type_map_cdata;
 
 class LeptoquarksReco : public SubsysReco
@@ -88,10 +88,7 @@ private:
   TFile *_tfile;
 
   /* output tree and variables */
-  TTree* _t_candidate;
   TTree* _t_event;
-  TNtuple* _ntp_jet;
-  TNtuple* _ntp_jet2;
   TNtuple* _ntp_tower;
   TNtuple* _ntp_track;
 
@@ -109,13 +106,13 @@ private:
    * given towers */
   std::map< std::string, CaloRawTowerEval* > _map_towereval;
 
-  /** Map of TauCandidate properties that will be written to
+  /** Map of PidCandidate properties that will be written to
    * output ROOT Tree */
-  std::map< TauCandidate::PROPERTY , float > _map_treebranches;
+  std::map< PidCandidate::PROPERTY , std::vector< float > > _map_tau_candidate_branches;
 
   /** Map of Event properties that will be written to
    * output ROOT Tree */
-  std::map< std::string , float > _map_eventbranches;
+  std::map< std::string , float > _map_event_branches;
 
   int AddTrueTauTag( type_map_tcan&, PHHepMCGenEventMap* );
 
@@ -123,17 +120,20 @@ private:
 
   int AddJetStructureInformation( type_map_tcan&, type_map_cdata* );
 
-  int AddTrackInformation( type_map_tcan&, SvtxTrackMap* );
+  int AddTrackInformation( type_map_tcan&, SvtxTrackMap*, double );
 
-  int WriteTauCandidatesToTree( type_map_tcan& );
+  int WritePidCandidatesToTree( type_map_tcan& );
 
   int AddGlobalEventInformation( type_map_tcan& , type_map_cdata* );
 
   /** Find tau candidate in map that is closest to given eta, phi angle */
-  TauCandidate* FindMinDeltaRCandidate( type_map_tcan*, const float, const float );
+  PidCandidate* FindMinDeltaRCandidate( type_map_tcan*, const float, const float );
 
   /** Calculate Delta R ("distance in eta-phi space") between two sets of eta, phi angles */
   float CalculateDeltaR( float, float, float, float );
+
+  /** Reset branch maps for each event */
+  void ResetBranchMap();
 
   /** Enum to identify calorimeter types */
   enum CALOTYPE

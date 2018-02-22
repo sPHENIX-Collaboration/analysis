@@ -86,21 +86,21 @@ Double_t eic_bnl_rich::ind_ray(double Ex, double Ey, double Ez, double Dx, doubl
   cdy = -cy+Dy;
   cdz = -cz+Dz;
 
-  cout<<"ce is: "<<cex<<"  "<<cey<<"  "<<cez<<endl;
-  cout<<"cd is: "<<cdx<<"  "<<cdy<<"  "<<cdz<<endl;
+  //cout<<"ce is: "<<cex<<"  "<<cey<<"  "<<cez<<endl;
+  //cout<<"cd is: "<<cdx<<"  "<<cdy<<"  "<<cdz<<endl;
 
   a = TMath::Sqrt(cex*cex+cey*cey+cez*cez);
   d = TMath::Sqrt(cdx*cdx+cdy*cdy+cdz*cdz);
   th = TMath::ACos((cdx*cex+cdy*cey+cdz*cez)/a/d);
   
-  cout<<"a,d,th is: "<<a<<"  "<<d<<"  "<<th<<endl;
+  //cout<<"a,d,th is: "<<a<<"  "<<d<<"  "<<th<<endl;
 
   i = 0;
   x = th/2.;  
-  cout<<"x, sinx, sin(th-x) is:  "<<x<<"  "<<sin(x)<<"  "<<sin(th-x)<<endl;
+  //cout<<"x, sinx, sin(th-x) is:  "<<x<<"  "<<sin(x)<<"  "<<sin(th-x)<<endl;
   y = R*(a*sin(x)-d*sin(th-x))+a*d*sin(th-2*x);
   y1 = R*(a*cos(x)+d*cos(th-x))-2*a*d*cos(th-2*x);
-  cout<<"y, y1 is:  "<<y<<"  "<<y1<<endl;
+  //cout<<"y, y1 is:  "<<y<<"  "<<y1<<endl;
   //dx = -(f->newp(x, th, a, d, R)/f->newpp(x, th, a, d, R));
   dx = -1*y/y1;
 
@@ -112,8 +112,6 @@ Double_t eic_bnl_rich::ind_ray(double Ex, double Ey, double Ez, double Dx, doubl
     //dx = -(f->newp(x, th, a, d, R)/f->newpp(x, th, a, d, R));
     dx = -1*y/y1;
     i++;
-
-    cout << "New dx: " << dx << endl;
 
   }
 
@@ -130,7 +128,7 @@ Double_t eic_bnl_rich::ind_ray(double Ex, double Ey, double Ez, double Dx, doubl
   esy = sy - Ey;
   esz = sz - Ez;
 
-  cout<<"S: "<<sx<<"  "<<sy<<"  "<<sz<<endl;
+  //cout<<"S: "<<sx<<"  "<<sy<<"  "<<sz<<endl;
 
   es = sqrt(esx*esx+esy*esy+esz*esz);
 
@@ -159,7 +157,7 @@ void eic_bnl_rich::acq(string input_filename, int ind){
   }
   //else cout << "open file " << input_filename << endl;
 
-  TTree *eic_rich = (TTree*) file->Get("pid_rich");
+  TTree *eic_rich = (TTree*) file->Get("tree_rich");
   
   Int_t eic_rich_event=0,eic_rich_bankid=0,eic_rich_volumeid=0,eic_rich_hitid=0,*eic_rich_pid=0,eic_rich_mpid=0,eic_rich_trackid=0,eic_rich_mtrackid=0,eic_rich_otrackid=0;
   Double_t eic_rich_hit_x=0,eic_rich_hit_y=0,eic_rich_hit_z=0,eic_rich_lhit_x=0,eic_rich_lhit_y=0,eic_rich_lhit_z=0, eic_rich_emi_x=0, eic_rich_emi_y=0, eic_rich_emi_z=0,eic_rich_px=0,eic_rich_py=0,eic_rich_pz=0,eic_rich_mpx=0,eic_rich_mpy=0,eic_rich_mpz=0,eic_rich_e=0,eic_rich_me=0,eic_rich_edep=0;
@@ -287,9 +285,9 @@ void eic_bnl_rich::acq(string input_filename, int ind){
       d_hit[2] = eic_rich_hit_z;
       
       //cout<<theta*rtd<<"  "<<phi*rtd<<endl;
-      cout<<"V: "<<momv[0]<<"  "<<momv[1]<<"  "<<momv[2]<<endl;
-      cout<<"E: "<<m_emi[0]<<"  "<<m_emi[1]<<"  "<<m_emi[2]<<endl;
-      cout<<"D: "<<d_hit[0]<<"  "<<d_hit[1]<<"  "<<d_hit[2]<<endl;
+      //cout<<"V: "<<momv[0]<<"  "<<momv[1]<<"  "<<momv[2]<<endl;
+      //cout<<"E: "<<m_emi[0]<<"  "<<m_emi[1]<<"  "<<m_emi[2]<<endl;
+      //cout<<"D: "<<d_hit[0]<<"  "<<d_hit[1]<<"  "<<d_hit[2]<<endl;
       //cout<<eic_rich_volumeid<<endl;
 
       rr[0] = -18.5*TMath::Sin(eic_rich_volumeid*TMath::Pi()/4.);
@@ -297,7 +295,7 @@ void eic_bnl_rich::acq(string input_filename, int ind){
       rr[2] = 75.;
       sec = eic_rich_volumeid;
 
-      cout<<"R: "<<rr[0]<<"  "<<rr[1]<<"  "<<rr[2]<<endl;
+      //cout<<"R: "<<rr[0]<<"  "<<rr[1]<<"  "<<rr[2]<<endl;
 
       ch = ind_ray(m_emi[0], m_emi[1], m_emi[2], d_hit[0], d_hit[1], d_hit[2], rr[0], rr[1], rr[2], momv[0], momv[1], momv[2]);
       cout<<"Theta: "<<ch<<endl;
@@ -324,7 +322,7 @@ void eic_bnl_rich::run(){
   Int_t ii = 0;
   
   for(Int_t i=1;i<=100;i++){
-    acq("../macros_fun4all/eval_OG.root",i);
+    acq("../macros_fun4all/evals/eval_OG.root",i);
     if(i<=100 && c_rms!=0){
       sigma[ii] = c_rms;
       pang[ii] = p_ang;
@@ -336,7 +334,7 @@ void eic_bnl_rich::run(){
   }
 
   TGraph *gr = new TGraph(ii,pang,sigma);
-  gr->SetTitle("Spread vs. Polar Angle (Rourke)");
+  gr->SetTitle("Spread vs. Polar Angle");
   gr->Draw("AP*");
   gr->GetXaxis()->SetTitle("Polar Angle [deg]");
   gr->GetYaxis()->SetTitle("Spread [rad]");
