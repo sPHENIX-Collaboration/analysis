@@ -52,8 +52,8 @@ public:
   void
   set_beam_energies( float beam_electron , float beam_proton )
   {
-    _ebeam_E = fabs( beam_electron );
-    _pbeam_E = fabs( beam_proton );
+    _beam_electron_ptotal = fabs( beam_electron );
+    _beam_hadron_ptotal = fabs( beam_proton );
   }
 
   void
@@ -92,8 +92,8 @@ private:
   TTree* _tree_event_truth;
 
   /* beam energies electron and proton */
-  float _ebeam_E;
-  float _pbeam_E;
+  float _beam_electron_ptotal;
+  float _beam_hadron_ptotal;
 
   /** CaloRawTowerEvaluators to access tru particle info for
    * given towers */

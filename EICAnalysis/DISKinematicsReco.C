@@ -53,8 +53,8 @@ DISKinematicsReco::DISKinematicsReco(std::string filename) :
   _tfile(nullptr),
   _tree_event_cluster(nullptr),
   _tree_event_truth(nullptr),
-  _ebeam_E(10),
-  _pbeam_E(250)
+  _beam_electron_ptotal(10),
+  _beam_hadron_ptotal(250)
 {
 
 }
@@ -702,8 +702,8 @@ DISKinematicsReco::AddReconstructedKinematics( type_map_tcan& em_candidates , st
       /* Add reco kinematics based on scattered electron data */
       PidCandidate* the_electron = iter->second;
 
-      float e0_E = _ebeam_E;
-      float p0_E = _pbeam_E;
+      float e0_E = _beam_electron_ptotal;
+      float p0_E = _beam_hadron_ptotal;
 
       /* get scattered particle kinematicsbased on chosen mode */
       float e1_E = NAN;
@@ -791,7 +791,7 @@ DISKinematicsReco::AddTruthEventInformation()
   float ev_W = -NAN;
   float ev_y = -NAN;
 
-  float ev_s = 4 * _ebeam_E * _pbeam_E;
+  float ev_s = 4 * _beam_electron_ptotal * _beam_hadron_ptotal;
 
 
   if ( theEvent->pdf_info() )
