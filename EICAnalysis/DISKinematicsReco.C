@@ -732,12 +732,12 @@ DISKinematicsReco::AddReconstructedKinematics( type_map_tcan& em_candidates , st
       float e1_theta_rel = M_PI - e1_theta;
 
       /* event kinematics */
-      float dis_s = 4 * e0_E * p0_E;
+      float dis_s = 4.0 * e0_E * p0_E;
 
-      float dis_Q2 = 2 * e0_E * e1_E * ( 1 - cos( e1_theta_rel ) );
+      float dis_Q2 = 2.0 * e0_E * e1_E * ( 1 - cos( e1_theta_rel ) );
 
       /* ePHENIX LOI definition of y: */
-      float dis_y = 1 - ( e1_E / e0_E ) + ( dis_Q2 / ( 4 * pow( e0_E, 2 ) ) );
+      float dis_y = 1.0 - ( e1_E / e0_E ) + ( dis_Q2 / ( 4.0 * e0_E * e0_E ) );
 
       /* G. Wolf Hera Physics definitions of y: */
       //float dis_y = 1 - ( e1_E / (2*e0_E) ) * ( 1 - cos( e1_theta_rel ) );
