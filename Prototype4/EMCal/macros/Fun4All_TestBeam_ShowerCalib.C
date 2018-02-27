@@ -1,7 +1,10 @@
 #include <string>
 
-int Fun4All_TestBeam_ShowerCalib(const int nEvents = 10000000, const char *inputFile =
-                                                                   "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2017/ShowerCalib/2nd_tower45.lst")
+using namespace std;
+
+void Fun4All_TestBeam_ShowerCalib(  //
+    const int nEvents = 10000000, const char *inputFile =
+                                      "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2018/ShowerCalib/dst.lst")
 {
   TString s_outputFile = inputFile;
   s_outputFile += "_Ana.root";
@@ -29,7 +32,7 @@ int Fun4All_TestBeam_ShowerCalib(const int nEvents = 10000000, const char *input
   hitsin->AddListFile(inputFile);
   se->registerInputManager(hitsin);
 
-  Proto3ShowerCalib *emcal_ana = new Proto3ShowerCalib(
+  Proto4ShowerCalib *emcal_ana = new Proto4ShowerCalib(
       string(inputFile) + string("_EMCalCalib.root"));
 
   emcal_ana->Verbosity(1);
