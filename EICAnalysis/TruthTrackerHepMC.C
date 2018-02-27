@@ -82,6 +82,87 @@ HepMC::GenParticle* TruthTrackerHepMC::FindDaughterParticle( int pid, HepMC::Gen
 }
 
 
+HepMC::GenParticle* TruthTrackerHepMC::FindBeamLepton( )
+{
+  HepMC::GenParticle *particle = NULL;
+
+  int embedding_id = 1;
+  PHHepMCGenEvent *theEvent = _genevtmap->get(embedding_id);
+
+  /* check if GenEvent object found */
+  if ( !theEvent )
+    {
+      cout << "ERROR: Missing GenEvent!" << endl;
+      return NULL;
+    }
+
+  HepMC::GenEvent* genEvent = theEvent->getEvent();
+
+  particle = genEvent->beam_particles().first;
+
+  return particle;
+}
+
+
+HepMC::GenParticle* TruthTrackerHepMC::FindBeamHadron( )
+{
+  HepMC::GenParticle *particle = NULL;
+
+  int embedding_id = 1;
+  PHHepMCGenEvent *theEvent = _genevtmap->get(embedding_id);
+
+  /* check if GenEvent object found */
+  if ( !theEvent )
+    {
+      cout << "ERROR: Missing GenEvent!" << endl;
+      return NULL;
+    }
+
+  HepMC::GenEvent* genEvent = theEvent->getEvent();
+
+  particle = genEvent->beam_particles().second;
+
+  return particle;
+}
+
+
+HepMC::GenParticle* TruthTrackerHepMC::FindScatteredLepton( )
+{
+  HepMC::GenParticle *particle = NULL;
+
+  int pid_beam_lepton = FindBeamLepton()->pdg_id();
+
+  int embedding_id = 1;
+
+  PHHepMCGenEvent *genevt = _genevtmap->get(embedding_id);
+  HepMC::GenEvent *theEvent = genevt->getEvent();
+
+  /* check if GenEvent object found */
+  if ( !theEvent )
+    {
+      cout << "ERROR: Missing GenEvent!" << endl;
+      return NULL;
+    }
+
+  /* Loop over all truth particles in event generator collection */
+  for ( HepMC::GenEvent::particle_iterator p = theEvent->particles_begin();
+	p != theEvent->particles_end(); ++p ) {
+
+    /* check particle status and ID */
+    if ( (*p)->status() == 1 &&
+	 (*p)->pdg_id()  == pid_beam_lepton )
+      {
+	particle = (*p);
+
+	/* end loop if matching particle found */
+	break;
+      } // end if matching status and PID //
+  } // end loop over all particles in event //
+
+  return particle;
+}
+
+
 void
 TruthTrackerHepMC::UpdateFinalStateParticle( HepMC::GenParticle *&particle )
 {
@@ -249,17 +330,17 @@ TruthTrackerHepMC::FindMissingPt( float &pt_miss, float &pt_miss_phi )
       for ( HepMC::GenEvent::particle_iterator p = theEvent->particles_begin();
             p != theEvent->particles_end(); ++p ) {
 
-	/* skip particles that are not stable final state particles */
-	if ( (*p)->status() != 1 )
-	  continue;
+        /* skip particles that are not stable final state particles */
+        if ( (*p)->status() != 1 )
+          continue;
 
         /* Get entry from TParticlePDG because HepMC::GenPArticle does not provide charge or class of particle */
         TParticlePDG * pdg_p = TDatabasePDG::Instance()->GetParticle( (*p)->pdg_id() );
 
-	/* skip neutral leptons = neutrinos (invisible to detector) */
-	if ( ( string( pdg_p->ParticleClass() ) == "Lepton" ) &&
-	     ( pdg_p->Charge() == 0 ) )
-	  continue;
+        /* skip neutral leptons = neutrinos (invisible to detector) */
+        if ( ( string( pdg_p->ParticleClass() ) == "Lepton" ) &&
+             ( pdg_p->Charge() == 0 ) )
+          continue;
 
         /* update momentum component sum */
         px_sum += (*p)->momentum().px();

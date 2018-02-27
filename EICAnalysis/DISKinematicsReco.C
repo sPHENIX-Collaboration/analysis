@@ -53,8 +53,8 @@ DISKinematicsReco::DISKinematicsReco(std::string filename) :
   _tfile(nullptr),
   _tree_event_cluster(nullptr),
   _tree_event_truth(nullptr),
-  _ebeam_E(10),
-  _pbeam_E(250)
+  _beam_electron_ptotal(10),
+  _beam_hadron_ptotal(250)
 {
 
 }
@@ -117,6 +117,7 @@ DISKinematicsReco::Init(PHCompositeNode *topNode)
   _map_em_candidate_branches.insert( make_pair( PidCandidate::em_evtgen_phi , vdummy ) );
   _map_em_candidate_branches.insert( make_pair( PidCandidate::em_evtgen_eta , vdummy ) );
   _map_em_candidate_branches.insert( make_pair( PidCandidate::em_evtgen_charge , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( PidCandidate::em_evtgen_is_scattered_lepton , vdummy ) );
 
   _map_em_candidate_branches.insert( make_pair( PidCandidate::em_reco_x_e , vdummy ) );
   _map_em_candidate_branches.insert( make_pair( PidCandidate::em_reco_y_e , vdummy ) );
@@ -300,31 +301,24 @@ DISKinematicsReco::CollectEmCandidatesFromTruth( type_map_tcan& candidateMap )
       return -1;
     }
 
+  /* Look for beam particles and scattered lepton */
+  TruthTrackerHepMC truth;
+  truth.set_hepmc_geneventmap( geneventmap );
+  //HepMC::GenParticle* particle_beam_l = truth.FindBeamLepton();
+  //HepMC::GenParticle* particle_beam_h = truth.FindBeamHadron();
+  HepMC::GenParticle* particle_scattered_l = truth.FindScatteredLepton();
+
+  /* loop over all particles */
   for (HepMC::GenEvent::particle_const_iterator p = theEvent->particles_begin();
        p != theEvent->particles_end(); ++p)
     {
       TParticlePDG * pdg_p = TDatabasePDG::Instance()->GetParticle( (*p)->pdg_id() );
-      int charge = (int)pdg_p->Charge();
-
-      /* beam electron found */
-      //if ( particle_e0 == NULL && TString(pdg_p->GetName()) == "e-" && (*p)->status() == 3 && (*p)->production_vertex() == NULL )
-      //particle_e0 = (*p);
-
-      /* beam proton found */
-      //if (  particle_p0 == NULL && TString(pdg_p->GetName()) == "proton" && (*p)->status() == 3 && (*p)->production_vertex() == NULL )
-      //particle_p0 = (*p);
-
-      /* final state electron found */
-      //if ( particle_e1 == NULL && TString(pdg_p->GetName()) == "e-" && (*p)->status() == 1 )
-      //particle_e1 = (*p);
-      //if ( (*p)->production_vertex() != NULL )
-      //{
-      //  if ( particle_e1 == NULL && TString(pdg_p->GetName()) == "e-" && (*p)->status() == 3 &&
-      //       (*p)->production_vertex()->particles_out_size() == 2 && (*p)->production_vertex()->particles_in_size() == 2 )
-      //    {
-      //      particle_e1 = (*p);
-      //    }
-      //}
+      int charge = -999;
+      if ( pdg_p )
+	{
+	  /* NOTE: TParticlePDG::Charge() returns charge in units of |e|/3 (see ROOT documentation) */
+	  charge = pdg_p->Charge() / 3;
+	}
 
       /* skip particles that are not stable final state particles (status 1) */
       if ( (*p)->status() != 1 )
@@ -343,6 +337,12 @@ DISKinematicsReco::CollectEmCandidatesFromTruth( type_map_tcan& candidateMap )
       tc->set_property( PidCandidate::em_evtgen_phi, (float) (*p)->momentum().phi() );
       tc->set_property( PidCandidate::em_evtgen_eta, mom_eta );
       tc->set_property( PidCandidate::em_evtgen_charge, charge );
+      tc->set_property( PidCandidate::em_evtgen_is_scattered_lepton, (uint)0 );
+
+      /* is scattered lepton? */
+      if ( particle_scattered_l &&
+	   (*p) == particle_scattered_l )
+	tc->set_property( PidCandidate::em_evtgen_is_scattered_lepton, (uint)1 );
 
       /* add pid candidate to collection */
       candidateMap.insert( make_pair( tc->get_candidate_id(), tc ) );
@@ -702,8 +702,8 @@ DISKinematicsReco::AddReconstructedKinematics( type_map_tcan& em_candidates , st
       /* Add reco kinematics based on scattered electron data */
       PidCandidate* the_electron = iter->second;
 
-      float e0_E = _ebeam_E;
-      float p0_E = _pbeam_E;
+      float e0_E = _beam_electron_ptotal;
+      float p0_E = _beam_hadron_ptotal;
 
       /* get scattered particle kinematicsbased on chosen mode */
       float e1_E = NAN;
@@ -732,12 +732,12 @@ DISKinematicsReco::AddReconstructedKinematics( type_map_tcan& em_candidates , st
       float e1_theta_rel = M_PI - e1_theta;
 
       /* event kinematics */
-      float dis_s = 4 * e0_E * p0_E;
+      float dis_s = 4.0 * e0_E * p0_E;
 
-      float dis_Q2 = 2 * e0_E * e1_E * ( 1 - cos( e1_theta_rel ) );
+      float dis_Q2 = 2.0 * e0_E * e1_E * ( 1 - cos( e1_theta_rel ) );
 
       /* ePHENIX LOI definition of y: */
-      float dis_y = 1 - ( e1_E / e0_E ) + ( dis_Q2 / ( 4 * pow( e0_E, 2 ) ) );
+      float dis_y = 1.0 - ( e1_E / e0_E ) + ( dis_Q2 / ( 4.0 * e0_E * e0_E ) );
 
       /* G. Wolf Hera Physics definitions of y: */
       //float dis_y = 1 - ( e1_E / (2*e0_E) ) * ( 1 - cos( e1_theta_rel ) );
@@ -791,7 +791,7 @@ DISKinematicsReco::AddTruthEventInformation()
   float ev_W = -NAN;
   float ev_y = -NAN;
 
-  float ev_s = 4 * _ebeam_E * _pbeam_E;
+  float ev_s = 4 * _beam_electron_ptotal * _beam_hadron_ptotal;
 
 
   if ( theEvent->pdf_info() )

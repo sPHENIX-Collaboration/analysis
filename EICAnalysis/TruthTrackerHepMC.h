@@ -43,6 +43,16 @@ public:
       Return pointer to first daughter particle with matching ID found. */
   HepMC::GenParticle* FindDaughterParticle( int , HepMC::GenParticle* );
 
+  /** Locate beam lepton; the incident lepton is assumed to be the first particle in the particle list. */
+  HepMC::GenParticle* FindBeamLepton();
+
+  /** Locate beam hadron; the incident hadron is assumed to be the second particle in the particle list. */
+  HepMC::GenParticle* FindBeamHadron();
+
+  /** Locate scattered lepton; the scattered lepton beam is assumed to be the first final-state particle in the particle list with the same PDG code as the incident lepton beam. */
+  HepMC::GenParticle* FindScatteredLepton( );
+
+
   /** Function to find final decay products of given particle */
   void FindDecayParticles(HepMC::GenParticle *, uint&, uint&, uint&);
 

@@ -139,6 +139,7 @@ public:
       em_evtgen_phi = 405,
       em_evtgen_eta = 406,
       em_evtgen_charge = 407,
+      em_evtgen_is_scattered_lepton = 408,
 
       //-- Event kinematics reconstructed from candidate
       em_reco_x_e = 410,
