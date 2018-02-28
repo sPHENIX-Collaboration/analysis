@@ -28,8 +28,8 @@ TString cuts = "";
 double beam_momentum_selection = -16;
 
 void DrawPrototype4EMCalTower(                                        //
-    const TString infile = "data/beam_00000406.root_DSTReader.root",  //
-    bool plot_all = true, const double momentum = -16)
+    const TString infile = "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2018/ShowerCalib/src/beam_00000332-0000_DSTReader.root",  //
+    bool plot_all = false, const double momentum = -16)
 {
   beam_momentum_selection = momentum;
 
@@ -177,8 +177,9 @@ void DrawPrototype4EMCalTower(                                        //
       T->SetEventList(elist);
     }
 
-    //      event_sel = "1*1";
-    //      cuts = "_all_event";
+//          event_sel = "1*1";
+//          cuts = "_all_event";
+
     //      event_sel = "Valid_HODO_HORIZONTAL && Valid_HODO_VERTICAL";
     //      cuts = "_Valid_HODO";
     event_sel =
@@ -235,7 +236,7 @@ void DrawPrototype4EMCalTower(                                        //
   int rnd = rand();
   gDirectory->mkdir(Form("dir_%d", rnd));
   gDirectory->cd(Form("dir_%d", rnd));
-  if (plot_all)
+//  if (plot_all)
     EMCDistribution_SUM("Energy_Sum_CEMC", "C2_Sum_e");
   int rnd = rand();
   gDirectory->mkdir(Form("dir_%d", rnd));

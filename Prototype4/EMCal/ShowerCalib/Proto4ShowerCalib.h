@@ -1,12 +1,12 @@
 #ifndef __Proto4ShowerCalib_H__
 #define __Proto4ShowerCalib_H__
 
-#include <fun4all/SubsysReco.h>
-#include <TNtuple.h>
 #include <TFile.h>
-#include <string>
+#include <TNtuple.h>
+#include <fun4all/SubsysReco.h>
 #include <stdint.h>
 #include <fstream>
+#include <string>
 
 class PHCompositeNode;
 class PHG4HitContainer;
@@ -22,37 +22,27 @@ class SvtxTrack;
 /// \class Proto4ShowerCalib
 class Proto4ShowerCalib : public SubsysReco
 {
-
-public:
-
+ public:
   Proto4ShowerCalib(const std::string &filename = "cemc_ana.root");
-  virtual
-  ~Proto4ShowerCalib();
+  virtual ~Proto4ShowerCalib();
 
-  int
-  Init(PHCompositeNode *topNode);
-  int
-  InitRun(PHCompositeNode *topNode);
-  int
-  process_event(PHCompositeNode *topNode);
-  int
-  End(PHCompositeNode *topNode);
+  int Init(PHCompositeNode *topNode);
+  int InitRun(PHCompositeNode *topNode);
+  int process_event(PHCompositeNode *topNode);
+  int End(PHCompositeNode *topNode);
 
-  int
-  LoadRecalibMap(const std::string & file);
+  int LoadRecalibMap(const std::string &file);
 
   void
-  is_sim(bool b) {_is_sim = b;}
-
+  is_sim(bool b) { _is_sim = b; }
   class Eval_Run : public TObject
   {
-  public:
+   public:
     Eval_Run()
     {
       reset();
     }
-    virtual
-    ~Eval_Run()
+    virtual ~Eval_Run()
     {
     }
 
@@ -107,19 +97,18 @@ public:
     float beam_2CH_mm;
     float beam_2CV_mm;
 
-  ClassDef(Eval_Run,4)
+    ClassDef(Eval_Run, 4)
   };
 
   class Eval_Cluster : public TObject
   {
-  public:
+   public:
     Eval_Cluster()
     {
       reset();
     }
 
-    virtual
-    ~Eval_Cluster()
+    virtual ~Eval_Cluster()
     {
     }
 
@@ -138,16 +127,15 @@ public:
     reweight_clus_pol()
     {
       if (sum_E > 0)
-        {
-          average_col /= sum_E;
-          average_row /= sum_E;
-        }
+      {
+        average_col /= sum_E;
+        average_row /= sum_E;
+      }
       else
-        {
-          average_col = -31454;
-          average_row = -31454;
-
-        }
+      {
+        average_col = -31454;
+        average_row = -31454;
+      }
     }
 
     int max_col;
@@ -157,11 +145,10 @@ public:
     float average_row;
     float sum_E;
 
-  ClassDef(Eval_Cluster,2)
+    ClassDef(Eval_Cluster, 2)
   };
 
-private:
-
+ private:
   // calorimeter size
   enum
   {
@@ -174,7 +161,7 @@ private:
   get_HistoManager();
 
   std::pair<int, int>
-  find_max(RawTowerContainer* towers, int cluster_size);
+  find_max(RawTowerContainer *towers, int cluster_size);
 
   std::string _filename;
 
@@ -199,4 +186,4 @@ private:
   std::map<std::pair<int, int>, double> _recalib_const;
 };
 
-#endif // __Proto4ShowerCalib_H__
+#endif  // __Proto4ShowerCalib_H__
