@@ -27,8 +27,8 @@ TTree *T = NULL;
 TString cuts = "";
 double beam_momentum_selection = -16;
 
-void DrawPrototype4EMCalTower(                                        //
-    const TString infile = "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2018/ShowerCalib/src/beam_00000332-0000_DSTReader.root",  //
+void DrawPrototype4EMCalTower(                                                                                                           //
+    const TString infile = "/gpfs/mnt/gpfs04/sphenix/user/jinhuang/Prototype_2018/test_production_4/beam_00000567-0000_DSTReader.root",  //
     bool plot_all = false, const double momentum = -16)
 {
   beam_momentum_selection = momentum;
@@ -86,17 +86,15 @@ void DrawPrototype4EMCalTower(                                        //
               "Sum$(TOWER_CALIB_CEMC.get_row() * TOWER_CALIB_CEMC.get_energy())/Sum$(TOWER_CALIB_CEMC.get_energy())");
 
   T->SetAlias("Average_HODO_VERTICAL",
-              "Sum$(TOWER_CALIB_HODO_VERTICAL.towerid * (abs(TOWER_CALIB_HODO_VERTICAL.energy)>1.2) * abs(TOWER_CALIB_HODO_VERTICAL.energy))/Sum$((abs(TOWER_CALIB_HODO_VERTICAL.energy)>1.2) * abs(TOWER_CALIB_HODO_VERTICAL.energy))");
-  T->SetAlias("Valid_HODO_VERTICAL",
-              "Sum$(abs(TOWER_CALIB_HODO_VERTICAL.energy)>1.2) > 0");
+              "Sum$(TOWER_CALIB_HODO_VERTICAL.towerid * (abs(TOWER_CALIB_HODO_VERTICAL.energy)>0.5) * abs(TOWER_CALIB_HODO_VERTICAL.energy))/Sum$((abs(TOWER_CALIB_HODO_VERTICAL.energy)>0.5) * abs(TOWER_CALIB_HODO_VERTICAL.energy))");
+  T->SetAlias("Valid_HODO_VERTICAL", "Sum$((TOWER_CALIB_HODO_VERTICAL.energy)>0.5) > 0");
 
   T->SetAlias("Average_HODO_HORIZONTAL",
-              "Sum$(TOWER_CALIB_HODO_HORIZONTAL.towerid * (abs(TOWER_CALIB_HODO_HORIZONTAL.energy)>1.2) * abs(TOWER_CALIB_HODO_HORIZONTAL.energy))/Sum$((abs(TOWER_CALIB_HODO_HORIZONTAL.energy)>1.2) * abs(TOWER_CALIB_HODO_HORIZONTAL.energy))");
-  T->SetAlias("Valid_HODO_HORIZONTAL",
-              "Sum$(abs(TOWER_CALIB_HODO_HORIZONTAL.energy)>1.2) > 0");
+              "Sum$(TOWER_CALIB_HODO_HORIZONTAL.towerid * (abs(TOWER_CALIB_HODO_HORIZONTAL.energy)>0.5) * abs(TOWER_CALIB_HODO_HORIZONTAL.energy))/Sum$((abs(TOWER_CALIB_HODO_HORIZONTAL.energy)>0.5) * abs(TOWER_CALIB_HODO_HORIZONTAL.energy))");
+  T->SetAlias("Valid_HODO_HORIZONTAL", "Sum$((TOWER_CALIB_HODO_HORIZONTAL.energy)>0.5) > 0");
 
   T->SetAlias("No_Triger_VETO",
-              "Sum$(abs(TOWER_CALIB_TRIGGER_VETO.energy)>0.5)==0");
+              "Sum$((TOWER_CALIB_TRIGGER_VETO.energy)>0.2)==0");
 
   T->SetAlias("Energy_Sum_col1_row2_3x3",
               "Sum$( (abs(TOWER_CALIB_CEMC.get_column()-1)<=1 && abs(TOWER_CALIB_CEMC.get_row()-2)<=1 ) * TOWER_CALIB_CEMC.get_energy())");
@@ -177,14 +175,15 @@ void DrawPrototype4EMCalTower(                                        //
       T->SetEventList(elist);
     }
 
-//          event_sel = "1*1";
-//          cuts = "_all_event";
+//    event_sel = "1*1";
+//    cuts = "_all_event";
 
     //      event_sel = "Valid_HODO_HORIZONTAL && Valid_HODO_VERTICAL";
     //      cuts = "_Valid_HODO";
-    event_sel =
-        "Valid_HODO_HORIZONTAL && Valid_HODO_VERTICAL && No_Triger_VETO";
-    cuts = "_Valid_HODO_Trigger_VETO";
+
+        event_sel =
+            "Valid_HODO_HORIZONTAL && Valid_HODO_VERTICAL && No_Triger_VETO";
+        cuts = "_Valid_HODO_Trigger_VETO";
 
     //      event_sel =
     //          event_sel
@@ -236,8 +235,8 @@ void DrawPrototype4EMCalTower(                                        //
   int rnd = rand();
   gDirectory->mkdir(Form("dir_%d", rnd));
   gDirectory->cd(Form("dir_%d", rnd));
-//  if (plot_all)
-    EMCDistribution_SUM("Energy_Sum_CEMC", "C2_Sum_e");
+  //  if (plot_all)
+  EMCDistribution_SUM("Energy_Sum_CEMC", "C2_Sum_e");
   int rnd = rand();
   gDirectory->mkdir(Form("dir_%d", rnd));
   gDirectory->cd(Form("dir_%d", rnd));

@@ -4,7 +4,9 @@ using namespace std;
 
 void Fun4All_TestBeam_ShowerCalib(  //
     const int nEvents = 10000000, const char *inputFile =
-                                      "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2018/ShowerCalib/dst.lst")
+                                                                            "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2018/ShowerCalib/dst.lst"//
+//                                  "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2018/ShowerCalib_tilted/dst.lst"  //
+    )
 {
   TString s_outputFile = inputFile;
   s_outputFile += "_Ana.root";

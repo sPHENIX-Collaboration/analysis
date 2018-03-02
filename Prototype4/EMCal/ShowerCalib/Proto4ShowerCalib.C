@@ -380,7 +380,7 @@ int Proto4ShowerCalib::process_event(PHCompositeNode *topNode)
 
       hCheck_Veto->Fill(tower->get_energy());
 
-      if (abs(tower->get_energy()) > 0.5)
+      if (abs(tower->get_energy()) > 0.2)
         trigger_veto_pass = false;
     }
   }
@@ -401,7 +401,7 @@ int Proto4ShowerCalib::process_event(PHCompositeNode *topNode)
 
       hCheck_Hodo_H->Fill(tower->get_energy());
 
-      if (abs(tower->get_energy()) > 1.2)
+      if (abs(tower->get_energy()) > 0.5)
       {
         hodo_h_count++;
         _eval_run.hodo_h = tower->get_id();
@@ -425,7 +425,7 @@ int Proto4ShowerCalib::process_event(PHCompositeNode *topNode)
 
       hCheck_Hodo_V->Fill(tower->get_energy());
 
-      if (abs(tower->get_energy()) > 1.2)
+      if (abs(tower->get_energy()) > 0.5)
       {
         hodo_v_count++;
         _eval_run.hodo_v = tower->get_id();
@@ -522,18 +522,6 @@ int Proto4ShowerCalib::process_event(PHCompositeNode *topNode)
       // energy sums
       sum_energy_T += energy_T;
 
-      // calibration file
-      //          sdata << tower->get_energy() << "\t";
-      // calibration file - only output 5x5 towers
-      if (col >= max_5x5.first - 1 and col <= max_5x5.first + 1 and row >= max_5x5.second - 1 and row <= max_5x5.second + 1)
-      {
-        sdata << tower->get_energy() << "\t";
-      }
-      else
-      {
-        sdata << 0 << "\t";
-      }
-
       // cluster 3x3
       if (col >= max_3x3.first - 1 and col <= max_3x3.first + 1)
         if (row >= max_3x3.second - 1 and row <= max_3x3.second + 1)
@@ -619,9 +607,39 @@ int Proto4ShowerCalib::process_event(PHCompositeNode *topNode)
   }
 
   // calibration file
-  if (good_data and abs(_eval_run.beam_mom) >= 4 and abs(_eval_run.beam_mom) <= 8 and abs(_eval_3x3_raw.average_col - round(_eval_3x3_raw.average_col)) < 0.1 and abs(_eval_3x3_raw.average_row - round(_eval_3x3_raw.average_row)) < 0.1)
+  if (good_data and abs(_eval_run.beam_mom) >= 4 and abs(_eval_run.beam_mom) <= 8  //
+      and abs(_eval_3x3_raw.average_col - round(_eval_3x3_raw.average_col)) < 0.1  //
+      and abs(_eval_3x3_raw.average_row - round(_eval_3x3_raw.average_row)) < 0.1)
   {
     assert(fdata.is_open());
+
+    auto range = TOWER_CALIB_CEMC->getTowers();
+    for (auto it = range.first; it != range.second; ++it)
+    {
+      RawTower *tower = it->second;
+      assert(tower);
+
+      const int col = tower->get_bineta();
+      const int row = tower->get_binphi();
+
+      if (col < 0 or col >= 8)
+        continue;
+      if (row < 0 or row >= 8)
+        continue;
+
+      // calibration file
+      //          sdata << tower->get_energy() << "\t";
+      // calibration file - only output 5x5 towers
+      if (col >= _eval_5x5_prod.average_col - 1.5 and col <= _eval_5x5_prod.average_col + 1.5  //
+          and row >= _eval_5x5_prod.average_row - 1.5 and row <= _eval_5x5_prod.average_row + 1.5)
+      {
+        sdata << tower->get_energy() << "\t";
+      }
+      else
+      {
+        sdata << 0 << "\t";
+      }
+    }
 
     fdata << sdata.str();
 
