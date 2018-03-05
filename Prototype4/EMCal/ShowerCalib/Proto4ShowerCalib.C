@@ -439,9 +439,13 @@ int Proto4ShowerCalib::process_event(PHCompositeNode *topNode)
   const bool good_e = (valid_hodo_v and valid_hodo_h and cherekov_e and trigger_veto_pass) and (not _is_sim);
   hNormalization->Fill("good_e", good_e);
 
-  // simple clustering
-  pair<int, int> max_3x3 = find_max(TOWER_CALIB_CEMC, 3);
-  pair<int, int> max_5x5 = find_max(TOWER_CALIB_CEMC, 5);
+  // simple clustering didn't work this year
+//  pair<int, int> max_3x3 = find_max(TOWER_CALIB_CEMC, 3);
+//  pair<int, int> max_5x5 = find_max(TOWER_CALIB_CEMC, 5);
+
+  // try simple peak tower finding instead
+  pair<int, int> max_3x3 = find_max(TOWER_CALIB_CEMC, 1);
+  pair<int, int> max_5x5 = find_max(TOWER_CALIB_CEMC, 1);
 
   _eval_3x3_raw.max_col = max_3x3.first;
   _eval_3x3_raw.max_row = max_3x3.second;

@@ -160,6 +160,7 @@ class Proto4ShowerCalib : public SubsysReco
   Fun4AllHistoManager *
   get_HistoManager();
 
+  static
   std::pair<int, int>
   find_max(RawTowerContainer *towers, int cluster_size);
 

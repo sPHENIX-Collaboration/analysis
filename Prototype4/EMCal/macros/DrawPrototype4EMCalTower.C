@@ -28,7 +28,8 @@ TString cuts = "";
 double beam_momentum_selection = -16;
 
 void DrawPrototype4EMCalTower(                                                                                                           //
-    const TString infile = "/gpfs/mnt/gpfs04/sphenix/user/jinhuang/Prototype_2018/test_production_4/beam_00000567-0000_DSTReader.root",  //
+    const TString infile = "/gpfs/mnt/gpfs04/sphenix/user/jinhuang/Prototype_2018/test_production_4/beam_00000402-0000_DSTReader.root",  //
+//    const TString infile = "data/beam_00000656.root_DSTReader.root",  //
     bool plot_all = false, const double momentum = -16)
 {
   beam_momentum_selection = momentum;
@@ -103,7 +104,7 @@ void DrawPrototype4EMCalTower(                                                  
   T->SetAlias("Energy_Sum_col2_row2_5x5",
               "Sum$( (abs(TOWER_CALIB_CEMC.get_column()-2)<=2 && abs(TOWER_CALIB_CEMC.get_row()-2)<=2 ) * TOWER_CALIB_CEMC.get_energy())");
   T->SetAlias("Energy_Sum_CEMC", "1*Sum$(TOWER_CALIB_CEMC.get_energy())");
-  T->SetAlias("Energy_Sum_RAW_CEMC", ".01*4/6*Sum$(TOWER_RAW_CEMC.get_energy())");
+  T->SetAlias("Energy_Sum_RAW_CEMC", "8/2000.*Sum$(TOWER_RAW_CEMC.get_energy())");
 
   // 12 GeV calibration
   //  EDM=9.83335e-18    STRATEGY= 1      ERROR MATRIX ACCURATE
@@ -181,9 +182,9 @@ void DrawPrototype4EMCalTower(                                                  
     //      event_sel = "Valid_HODO_HORIZONTAL && Valid_HODO_VERTICAL";
     //      cuts = "_Valid_HODO";
 
-        event_sel =
-            "Valid_HODO_HORIZONTAL && Valid_HODO_VERTICAL && No_Triger_VETO";
-        cuts = "_Valid_HODO_Trigger_VETO";
+            event_sel =
+                "Valid_HODO_HORIZONTAL && Valid_HODO_VERTICAL && No_Triger_VETO";
+            cuts = "_Valid_HODO_Trigger_VETO";
 
     //      event_sel =
     //          event_sel
@@ -235,19 +236,14 @@ void DrawPrototype4EMCalTower(                                                  
   int rnd = rand();
   gDirectory->mkdir(Form("dir_%d", rnd));
   gDirectory->cd(Form("dir_%d", rnd));
-  //  if (plot_all)
-  EMCDistribution_SUM("Energy_Sum_CEMC", "C2_Sum_e");
-  int rnd = rand();
-  gDirectory->mkdir(Form("dir_%d", rnd));
-  gDirectory->cd(Form("dir_%d", rnd));
-  if (plot_all)
-    EMCDistribution_SUM("Energy_Sum_RAW_CEMC", "C2_Sum_e");
+//  if (plot_all)
+    EMCDistribution_SUM("Energy_Sum_CEMC", "C2_Sum_e");
 
   int rnd = rand();
   gDirectory->mkdir(Form("dir_%d", rnd));
   gDirectory->cd(Form("dir_%d", rnd));
-  if (plot_all)
-    EMCDistribution_SUM("Energy_Sum_col2_row2_5x5", "C2_Sum_e");
+//  if (plot_all)
+    EMCDistribution_SUM("Energy_Sum_RAW_CEMC", "C2_Sum_e");
 
   int rnd = rand();
   gDirectory->mkdir(Form("dir_%d", rnd));
@@ -562,6 +558,7 @@ void EMCDistribution_SUM(TString sTOWER = "Energy_Sum_col1_row2_5x5",
   p->SetGridy(0);
 
   TH1 *h_full = (TH1 *) EnergySum_LG_full->DrawClone();
+//  h_full->GetXaxis()->SetRangeUser(0.5,32);
   TH1 *h = (TH1 *) EnergySum_LG->DrawClone("same");
 
   TF1 *fgaus_g = new TF1("fgaus_LG_g", "gaus", h->GetMean() - 1 * h->GetRMS(),
@@ -581,6 +578,8 @@ void EMCDistribution_SUM(TString sTOWER = "Energy_Sum_col1_row2_5x5",
   h_full->Sumw2();
   h_full->GetXaxis()->SetRangeUser(h->GetMean() - 4 * h->GetRMS(),
                                    h->GetMean() + 4 * h->GetRMS());
+  h_full->GetYaxis()->SetRangeUser(0,
+      fgaus_g->GetParameter(0)*4);
 
   h->SetLineWidth(2);
   h->SetMarkerStyle(kFullCircle);
