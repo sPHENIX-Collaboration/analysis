@@ -440,8 +440,8 @@ int Proto4ShowerCalib::process_event(PHCompositeNode *topNode)
   hNormalization->Fill("good_e", good_e);
 
   // simple clustering didn't work this year
-//  pair<int, int> max_3x3 = find_max(TOWER_CALIB_CEMC, 3);
-//  pair<int, int> max_5x5 = find_max(TOWER_CALIB_CEMC, 5);
+  //  pair<int, int> max_3x3 = find_max(TOWER_CALIB_CEMC, 3);
+  //  pair<int, int> max_5x5 = find_max(TOWER_CALIB_CEMC, 5);
 
   // try simple peak tower finding instead
   pair<int, int> max_3x3 = find_max(TOWER_CALIB_CEMC, 1);
@@ -587,7 +587,8 @@ int Proto4ShowerCalib::process_event(PHCompositeNode *topNode)
   hNormalization->Fill("good_temp", good_temp);
 
   //  bool good_data = good_e and good_temp;
-  bool good_data = good_e;
+  bool good_data = good_e and abs(_eval_5x5_prod.average_col - round(_eval_5x5_prod.average_col)) < 0.15  //
+                   and abs(_eval_5x5_prod.average_row - round(_eval_5x5_prod.average_row)) < 0.15;
   hNormalization->Fill("good_data", good_data);
 
   _eval_run.good_temp = good_temp;
@@ -611,9 +612,8 @@ int Proto4ShowerCalib::process_event(PHCompositeNode *topNode)
   }
 
   // calibration file
-  if (good_data and abs(_eval_run.beam_mom) >= 4 and abs(_eval_run.beam_mom) <= 8  //
-      and abs(_eval_3x3_raw.average_col - round(_eval_3x3_raw.average_col)) < 0.1  //
-      and abs(_eval_3x3_raw.average_row - round(_eval_3x3_raw.average_row)) < 0.1)
+  //  if (good_data and abs(_eval_run.beam_mom) >= 4 and abs(_eval_run.beam_mom) <= 8  //
+  //      )
   {
     assert(fdata.is_open());
 
@@ -623,17 +623,14 @@ int Proto4ShowerCalib::process_event(PHCompositeNode *topNode)
       RawTower *tower = it->second;
       assert(tower);
 
-      const int col = tower->get_bineta();
-      const int row = tower->get_binphi();
+      const int col = tower->get_column();
+      const int row = tower->get_row();
 
       if (col < 0 or col >= 8)
         continue;
       if (row < 0 or row >= 8)
         continue;
 
-      // calibration file
-      //          sdata << tower->get_energy() << "\t";
-      // calibration file - only output 5x5 towers
       if (col >= _eval_5x5_prod.average_col - 1.5 and col <= _eval_5x5_prod.average_col + 1.5  //
           and row >= _eval_5x5_prod.average_row - 1.5 and row <= _eval_5x5_prod.average_row + 1.5)
       {

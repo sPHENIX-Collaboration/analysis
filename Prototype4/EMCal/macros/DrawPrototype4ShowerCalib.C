@@ -38,11 +38,10 @@ class lin_res
 
 void DrawPrototype4ShowerCalib(  //
     const TString infile =
-        //                "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2018/ShowerCalib/dst.lst_EMCalCalib.root"//
+        "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2018/ShowerCalib/dst.lst_EMCalCalib.root"  //
     //        "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2018/ShowerCalib_tilted/dst.lst_EMCalCalib.root"//
     //    "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2018/Scan1Block36/dst.lst_EMCalCalib.root"  //
-    "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2018/Scan2Block34/dst.lst_EMCalCalib.root"  //
-
+    //    "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2018/Scan2Block34/dst.lst_EMCalCalib.root"  //
     )
 {
   SetOKStyle();
@@ -78,8 +77,8 @@ void DrawPrototype4ShowerCalib(  //
 
   //  event_sel = "1";
   //  cuts = "_all_data";
-//  event_sel = "good_e";
-//  cuts = "_good_e";
+  event_sel = "good_e";
+  cuts = "_good_e";
 
   //  event_sel = "info.beam_mom == -8 && good_e";
   //  cuts = "_8GeV_good_e";
@@ -101,10 +100,10 @@ void DrawPrototype4ShowerCalib(  //
   //    event_sel = "info.beam_mom == -2 && valid_hodo_v && valid_hodo_h&& trigger_veto_pass && info.hodo_h>=2 && info.hodo_h<=4 && info.hodo_v>=4 && info.hodo_v<=6";  // Tower 36
   //    cuts = "_valid_data_h234_v456_2GeV";  // Tower 36
 
-//  event_sel = "good_e  && info.hodo_h==3 && info.hodo_v==4";  // Tower 34
-//  cuts = "_good_e_h3_v4";
-  event_sel = "valid_hodo_v && valid_hodo_h&& trigger_veto_pass && info.hodo_h>=2 && info.hodo_h<=4 && info.hodo_v>=3 && info.hodo_v<=5";  // Tower 34
-  cuts = "_valid_data_h234_v345";
+  //  event_sel = "good_e  && info.hodo_h==3 && info.hodo_v==4";  // Tower 34
+  //  cuts = "_good_e_h3_v4";
+  //  event_sel = "valid_hodo_v && valid_hodo_h&& trigger_veto_pass && info.hodo_h>=2 && info.hodo_h<=4 && info.hodo_v>=3 && info.hodo_v<=5";  // Tower 34
+  //  cuts = "_valid_data_h234_v345";
 
   T->SetAlias("SimEnergyScale", "1*1");
   //    // based on /phenix/u/jinhuang/links/sPHENIX_work/Prototype_2016/ShowerCalib/UIUC21.lst_EMCalCalib.root_DrawPrototype3ShowerCalib_LineShapeData_Neg8GeV_good_data_h5_v3.svg
