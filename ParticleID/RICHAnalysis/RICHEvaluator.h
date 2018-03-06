@@ -9,13 +9,15 @@ class TFile;
 class TH1D;
 
 class PHCompositeNode;
+class SvtxTrack_FastSim;
+class SvtxTrackMap;
 
 class RICHEvaluator : public SubsysReco
 {
 
 public:
 
-  RICHEvaluator(std::string filename, std::string richname);
+  RICHEvaluator(std::string tracksname, std::string richname, std::string filename);
 
   int
   Init(PHCompositeNode*);
@@ -33,12 +35,24 @@ private:
   /* initialize output tree */
   int init_tree();
 
+  /** get position from track state */
+  bool get_position_from_track_state(  SvtxTrack_FastSim * track, std::string statename, double arr_pos[3] );
+
+  /** get track momentum from track state */
+  bool get_momentum_from_track_state( SvtxTrack_FastSim * track, std::string statename, double arr_mom[3] );
+  
   bool _verbose;
 
   int _ievent;
 
+  /* Track collection */
+  std::string _trackmap_name;
+
   /* Hit collection storing RICH photon hits */
   std::string _richhits_name;
+
+  /* Name of the track state inside the RICH radiator volume */
+  std::string _trackstate_name;
 
   /* ROOT file to store output ROOT tree */
   std::string _foutname;
@@ -46,6 +60,7 @@ private:
 
   /* output tree and variables */
   TTree* _tree_rich;
+  TTree* _tree_irt;
 
   double _hit_x0;
   double _hit_y0;
@@ -54,6 +69,10 @@ private:
   double _hit_lx0;
   double _hit_ly0;
   double _hit_lz0;
+
+  double _emi_x;
+  double _emi_y;
+  double _emi_z;
 
   double _track_px;
   double _track_py;
@@ -75,6 +94,20 @@ private:
   int _trackid;
   int _mtrackid;
   int _otrackid;
+
+  double _Ex;
+  double _Ey;
+  double _Ez;
+  double _Dx;
+  double _Dy;
+  double _Dz;
+  double _Vx;
+  double _Vy;
+  double _Vz;
+  double _Cx;
+  double _Cy;
+  double _Cz;
+
 
 };
 

@@ -51,11 +51,14 @@ using namespace std;
 //-- Constructor:
 //--  simple initialization
 //----------------------------------------------------------------------------//
-FastTrackingEval::FastTrackingEval(const string &name) :
-		SubsysReco(name), _flags(NONE), _eval_tree_tracks( NULL) {
-	//initialize
-	_event = 0;
-	_outfile_name = "FastTrackingEval.root";
+FastTrackingEval::FastTrackingEval(const string &name, const string &filename, const string &trackmapname) :
+  SubsysReco(name),
+  _outfile_name(filename),
+  _trackmapname(trackmapname),
+  _event(0),
+  _flags(NONE),
+  _eval_tree_tracks( NULL)
+{
 }
 
 //----------------------------------------------------------------------------//
@@ -252,10 +255,12 @@ int FastTrackingEval::GetNodes(PHCompositeNode * topNode) {
 	}
 
 	_trackmap = findNode::getClass<SvtxTrackMap>(topNode,
-			"SvtxTrackMap");
+			_trackmapname);
 	if (!_trackmap && _event < 2) {
-		cout << PHWHERE << "SvtxTrackMap node not found on node tree"
-				<< endl;
+		cout << PHWHERE << "SvtxTrackMap node with name "
+		     << _trackmapname
+		     <<" not found on node tree"
+		     << endl;
 		return Fun4AllReturnCodes::ABORTEVENT;
 	}
 

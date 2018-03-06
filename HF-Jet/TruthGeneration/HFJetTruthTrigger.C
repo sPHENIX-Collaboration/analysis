@@ -22,6 +22,7 @@
 #include <g4jets/Jet.h>
 
 #include <phhepmc/PHHepMCGenEvent.h>
+#include <phhepmc/PHHepMCGenEventMap.h>
 #include <HepMC/GenEvent.h>
 #include <HepMC/GenVertex.h>
 
@@ -40,7 +41,8 @@ HFJetTruthTrigger::HFJetTruthTrigger(std::string filename, int flavor,
      _h2(nullptr),
      _h2all(nullptr),
      _h2_b(nullptr),
-     _h2_c(nullptr)
+     _h2_c(nullptr),
+     _embedding_id(1)
 {
 
   _foutname = filename;
@@ -84,12 +86,31 @@ HFJetTruthTrigger::Init(PHCompositeNode *topNode)
 int
 HFJetTruthTrigger::process_event(PHCompositeNode *topNode)
 {
-  PHHepMCGenEvent *genevt = findNode::getClass<PHHepMCGenEvent>(topNode,
-      "PHHepMCGenEvent");
+  PHHepMCGenEventMap * geneventmap = findNode::getClass<PHHepMCGenEventMap>(topNode, "PHHepMCGenEventMap");
+  if (!geneventmap)
+  {
+    std::cout <<PHWHERE<<" - Fatal error - missing node PHHepMCGenEventMap"<<std::endl;
+    return Fun4AllReturnCodes::ABORTRUN;
+  }
+
+  PHHepMCGenEvent *genevt = geneventmap->get(_embedding_id);
+  if (!genevt)
+  {
+    std::cout <<PHWHERE<<" - Fatal error - node PHHepMCGenEventMap missing subevent with embedding ID "<<_embedding_id;
+    std::cout <<". Print PHHepMCGenEventMap:";
+    geneventmap->identify();
+    return Fun4AllReturnCodes::ABORTRUN;
+  }
+
   HepMC::GenEvent* theEvent = genevt->getEvent();
   //theEvent->print();
 
   JetMap* truth_jets = findNode::getClass<JetMap>(topNode, _jet_name);
+  if (!truth_jets)
+  {
+    std::cout <<PHWHERE<<" - Fatal error - node " << _jet_name << " JetMap missing."<< std::endl;
+    return Fun4AllReturnCodes::ABORTRUN;
+  }
   const double jet_radius = truth_jets->get_par();
 
   if (verbosity >= HFJetTruthTrigger::VERBOSITY_MORE)

@@ -97,7 +97,7 @@ int Fun4All_single_particle (
 	gSystem->Load("libphhepmc.so");
 	gSystem->Load("libg4testbench.so");
 	gSystem->Load("libg4hough.so");
-	gSystem->Load("libcemc.so");
+  gSystem->Load("libg4calo.so");
 	gSystem->Load("libg4eval.so");
 
 	// establish the geometry and reconstruction setup

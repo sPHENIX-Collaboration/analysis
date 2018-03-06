@@ -2,10 +2,10 @@
 void MagnetInit() {}
 
 double Magnet(PHG4Reco* g4Reco,
-	      double radius,
-	      const int crossings = 0,
-	      const int absorberactive = 0,
-	      int verbosity = 0) {
+              double radius,
+              const int crossings = 0,
+              const int absorberactive = 0,
+              int verbosity = 0) {
 
   double magnet_inner_cryostat_wall_radius = 142;
   double magnet_inner_cryostat_wall_thickness = 1;
@@ -16,11 +16,11 @@ double Magnet(PHG4Reco* g4Reco,
   double magnet_length = 379.;
   double coil_length = 361.5;
   if (radius > magnet_inner_cryostat_wall_radius) {
-    cout << "inconsistency: radius: " << radius 
-	 << " larger than Magnet inner radius: " << magnet_inner_cryostat_wall_radius << endl;
+    cout << "inconsistency: radius: " << radius
+         << " larger than Magnet inner radius: " << magnet_inner_cryostat_wall_radius << endl;
     gSystem->Exit(-1);
   }
-  
+
   gSystem->Load("libg4detectors.so");
   gSystem->Load("libg4testbench.so");
 
@@ -29,8 +29,8 @@ double Magnet(PHG4Reco* g4Reco,
   cyl->set_double_param("radius",magnet_inner_cryostat_wall_radius);
   cyl->set_int_param("lengthviarapidity",0);
   cyl->set_double_param("length",magnet_length);
-cyl->set_double_param("thickness",magnet_inner_cryostat_wall_thickness);
-cyl->set_string_param("material","Al5083"); // use 1 radiation length Al for magnet thickness
+  cyl->set_double_param("thickness",magnet_inner_cryostat_wall_thickness);
+  cyl->set_string_param("material","Al5083"); // use 1 radiation length Al for magnet thickness
   cyl->SuperDetector("MAGNET");
   if (absorberactive)  cyl->SetActive();
   g4Reco->registerSubsystem( cyl );
@@ -56,7 +56,7 @@ cyl->set_string_param("material","Al5083"); // use 1 radiation length Al for mag
   g4Reco->registerSubsystem( cyl );
 
   radius = magnet_outer_cryostat_wall_radius + magnet_outer_cryostat_wall_thickness; // outside of magnet
-  
+
   if (verbosity > 0) {
     cout << "========================= G4_Magnet.C::Magnet() ===========================" << endl;
     cout << " MAGNET Material Description:" << endl;
@@ -67,6 +67,6 @@ cyl->set_string_param("material","Al5083"); // use 1 radiation length Al for mag
   }
 
   radius += no_overlapp;
-  
-  return radius; 
+
+  return radius;
 }

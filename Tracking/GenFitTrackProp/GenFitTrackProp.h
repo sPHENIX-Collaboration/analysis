@@ -98,10 +98,6 @@ class GenFitTrackProp: public SubsysReco
   //! Needed to initialize genfit::FieldManager and genfit::MaterialEffect
   PHGenFit::Fitter* _fitter;
 
-  std::string _mag_field_file_name;
-  bool _reverse_mag_field;
-  float _mag_field_re_scaling_factor;
-
   std::string _track_fitting_alg_name;
 
   bool _do_evt_display;
