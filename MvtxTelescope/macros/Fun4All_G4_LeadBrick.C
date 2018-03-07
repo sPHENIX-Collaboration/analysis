@@ -19,8 +19,8 @@ int Fun4All_G4_LeadBrick(const int nEvents = 10, const char *outfile = NULL)
   // particle gun
   PHG4ParticleGun *gun = new PHG4ParticleGun("PGUN");
   //  gun->set_name("anti_proton");
-  //  gun->set_name("proton");
-  gun->set_name("mu-");
+  gun->set_name("proton");
+  //  gun->set_name("mu-");
   //  gun->set_name("proton");
   gun->set_vtx(0, 0, -100);
   gun->set_mom(0, 0, 120);
