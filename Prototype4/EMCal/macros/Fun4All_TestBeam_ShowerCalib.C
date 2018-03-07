@@ -4,12 +4,12 @@ using namespace std;
 
 void Fun4All_TestBeam_ShowerCalib(  //
     const int nEvents = 10000000, const char *inputFile =
-                                       "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2018/ShowerCalib/dst.lst"//
+//                                       "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2018/ShowerCalib/dst.lst"//
 //                                   "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2018/ShowerCalib_tilted/dst.lst"  //
 //        "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2018/Scan1Block36/dst.lst"
         //"/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2018/Scan1Block27/dst.lst"
-//                "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2018/Scan2Block18/dst.lst"
-        //        "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2018/Scan2Block34/dst.lst"
+                "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2018/Scan2Block18/dst.lst"
+//                "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2018/Scan2Block34/dst.lst"
         )
 {
   TString s_outputFile = inputFile;
@@ -42,7 +42,7 @@ void Fun4All_TestBeam_ShowerCalib(  //
       string(inputFile) + string("_EMCalCalib.root"));
 
   emcal_ana->Verbosity(1);
-  emcal_ana->LoadRecalibMap("/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2017/ShowerCalib/ShowerCalibFit_CablibConst.dat");
+  emcal_ana->LoadRecalibMap("/gpfs/mnt/gpfs04/sphenix/user/jinhuang/Prototype_2018/ShowerCalibFit_CablibConst.dat");
   se->registerSubsystem(emcal_ana);
 
   cout << "nEVENTS :" << nEvents << endl;
