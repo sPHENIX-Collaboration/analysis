@@ -27,9 +27,10 @@ TTree *T = NULL;
 TString cuts = "";
 double beam_momentum_selection = -16;
 
-void DrawPrototype4EMCalTower(                                                                                                           //
-    const TString infile = "/gpfs/mnt/gpfs04/sphenix/user/jinhuang/Prototype_2018/test_production_4/beam_00000402-0000_DSTReader.root",  //
-//    const TString infile = "data/beam_00000656.root_DSTReader.root",  //
+void DrawPrototype4EMCalTower(                                                                                                        //
+                                                                                                                                      //    const TString infile = "/gpfs/mnt/gpfs04/sphenix/user/jinhuang/Prototype_2018/test_production_5/beam_00000683-0000_DSTReader.root",  //
+    const TString infile = "/gpfs/mnt/gpfs04/sphenix/user/jinhuang/Prototype_2018/Scan2Block34/beam_0000068ALL-0000_DSTReader.root",  //
+                                                                                                                                      //    const TString infile = "data/beam_00000683.root_DSTReader.root",  //
     bool plot_all = false, const double momentum = -16)
 {
   beam_momentum_selection = momentum;
@@ -176,15 +177,15 @@ void DrawPrototype4EMCalTower(                                                  
       T->SetEventList(elist);
     }
 
-//    event_sel = "1*1";
-//    cuts = "_all_event";
+    //    event_sel = "1*1";
+    //    cuts = "_all_event";
 
     //      event_sel = "Valid_HODO_HORIZONTAL && Valid_HODO_VERTICAL";
     //      cuts = "_Valid_HODO";
 
-            event_sel =
-                "Valid_HODO_HORIZONTAL && Valid_HODO_VERTICAL && No_Triger_VETO";
-            cuts = "_Valid_HODO_Trigger_VETO";
+    event_sel =
+        "Valid_HODO_HORIZONTAL && Valid_HODO_VERTICAL && No_Triger_VETO";
+    cuts = "_Valid_HODO_Trigger_VETO";
 
     //      event_sel =
     //          event_sel
@@ -230,19 +231,25 @@ void DrawPrototype4EMCalTower(                                                  
   int rnd = rand();
   gDirectory->mkdir(Form("dir_%d", rnd));
   gDirectory->cd(Form("dir_%d", rnd));
+  //  if (plot_all)
+  EMC_HodoScope_Calibration("C2_Sum_e");
+
+  int rnd = rand();
+  gDirectory->mkdir(Form("dir_%d", rnd));
+  gDirectory->cd(Form("dir_%d", rnd));
   if (plot_all)
     EMCDistribution_ShowShape("C2_Sum_e");
 
   int rnd = rand();
   gDirectory->mkdir(Form("dir_%d", rnd));
   gDirectory->cd(Form("dir_%d", rnd));
-//  if (plot_all)
+  if (plot_all)
     EMCDistribution_SUM("Energy_Sum_CEMC", "C2_Sum_e");
 
   int rnd = rand();
   gDirectory->mkdir(Form("dir_%d", rnd));
   gDirectory->cd(Form("dir_%d", rnd));
-//  if (plot_all)
+  if (plot_all)
     EMCDistribution_SUM("Energy_Sum_RAW_CEMC", "C2_Sum_e");
 
   int rnd = rand();
@@ -262,6 +269,12 @@ void DrawPrototype4EMCalTower(                                                  
   gDirectory->cd(Form("dir_%d", rnd));
   if (plot_all)
     EMCDistribution_Fast("RAW");
+
+  int rnd = rand();
+  gDirectory->mkdir(Form("dir_%d", rnd));
+  gDirectory->cd(Form("dir_%d", rnd));
+  if (plot_all)
+    EMCDistribution_Fast("RAW", true);
   //
   //  int rnd = rand();
   //  gDirectory->mkdir(Form("dir_%d", rnd));
@@ -286,6 +299,96 @@ void DrawPrototype4EMCalTower(                                                  
   //        TString(_file0->GetName())
   //            + TString("_DrawPrototype4EMCalTower_Prototype4_DSTReader") + cuts
   //            + TString(".dat"));
+}
+
+void EMC_HodoScope_Calibration(TString Cherenkov_Choice)
+{
+  TString cut_C(Cherenkov_Choice + " > 1000");
+  TString cuts = Cherenkov_Choice;
+
+  gStyle->SetOptStat(0);
+  gStyle->SetOptFit(1111);
+
+  TH1F *h1_HCalOut = new TH1F("h1_HCalOut",
+                              "(CEMC MIP && HCal_{IN} MIP);EMCal + HCal_{IN} + HCal_{OUT} (GeV)", 100,
+                              0, abs(beam_momentum_selection) * 2.);
+
+  TH2 *h2_hodo_v_h =
+      new TH2F("h2_hodo_v_h",
+               "Hodoscope hit distribution;Average Horizontal Hodoscope Idx;Average Vertical Hodoscope Idx",
+               8, -.5, 7.5, 8, -.5, 7.5);
+
+  TH2 *h2_hodoE_v_h =
+      new TH2F("h2_hodoE_v_h",
+               "Event-Averaged Tower-Summed EMCal Energy [A.U.];Average Horizontal Hodoscope Idx;Average Vertical Hodoscope Idx",
+               8, -.5, 7.5, 8, -.5, 7.5);
+  TH2 *h2_hodoE_v_h_norm =
+      new TH2F("h2_hodoE_v_h_norm",
+               "Event-Averaged Tower-Summed EMCal Energy [A.U.];Average Horizontal Hodoscope Idx;Average Vertical Hodoscope Idx",
+               8, -.5, 7.5, 8, -.5, 7.5);
+
+  TH2 *h2_hodo_c_h =
+      new TH2F("h2_hodo_c_h",
+               "Column VS Horizontal Hodoscope;Average Horizontal Hodoscope Idx;Average EMCal Column",
+               24, -.5, 7.5, 24, -.5, 7.5);
+  TH2 *h2_hodo_r_v =
+      new TH2F("h2_hodo_r_v",
+               "Row VS Vertical Hodoscope;Average Vertical Hodoscope Idx;Average EMCal Row",
+               24, -.5, 7.5, 24, -.5, 7.5);
+
+  TH2 *h2_hodoE_h =
+      new TH2F("h2_hodoE_h",
+               "Total EMCal Energy VS Horizontal Hodoscope;Average Horizontal Hodoscope Idx;Total EMCal Energy [A.U.]",
+               8, -.5, 7.5, 80, -.5, 70);
+  TH2 *h2_hodoE_v =
+      new TH2F("h2_hodoE_v",
+               "Total EMCal Energy VS Vertical Hodoscope;Average Vertical Hodoscope Idx;Total EMCal Energy [A.U.]",
+               8, -.5, 7.5, 80, -.5, 70);
+
+  TText *t;
+  TCanvas *c1 = new TCanvas("EMC_HodoScope_Calibration" + cuts,
+                            "EMC_HodoScope_Calibration" + cuts, 1800, 1100);
+  c1->Divide(3, 2);
+  int idx = 1;
+  TPad *p;
+
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+
+  T->Draw("Average_HODO_VERTICAL:Average_HODO_HORIZONTAL>>h2_hodo_v_h", cut_C, "colz");
+
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+  p->SetLogz();
+
+  T->Draw("Average_column:Average_HODO_HORIZONTAL>>h2_hodo_c_h", cut_C, "colz");
+
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+
+  T->Draw("Energy_Sum_RAW_CEMC:Average_HODO_HORIZONTAL>>h2_hodoE_h", cut_C, "colz");
+
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+
+  T->Draw("Average_HODO_VERTICAL:Average_HODO_HORIZONTAL>>h2_hodoE_v_h", "(" + cut_C + ")*(Energy_Sum_RAW_CEMC) * (Energy_Sum_RAW_CEMC>0.1)", "goff");
+  T->Draw("Average_HODO_VERTICAL:Average_HODO_HORIZONTAL>>h2_hodoE_v_h_norm", "(" + cut_C + " ) && (Energy_Sum_RAW_CEMC>0.1)", "goff");
+  h2_hodoE_v_h->Divide(h2_hodoE_v_h_norm);
+  h2_hodoE_v_h->Draw("colz");
+
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+  p->SetLogz();
+
+  T->Draw("Average_row:Average_HODO_VERTICAL>>h2_hodo_r_v", cut_C, "colz");
+
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+
+  T->Draw("Energy_Sum_RAW_CEMC:Average_HODO_VERTICAL>>h2_hodoE_v", cut_C, "colz");
+
+  SaveCanvas(c1,
+             TString(_file0->GetName()) + TString("_DrawPrototype4EMCalTower_") + TString(c1->GetName()), false);
 }
 
 void EMCDistribution_HCalCalibration()
@@ -558,7 +661,7 @@ void EMCDistribution_SUM(TString sTOWER = "Energy_Sum_col1_row2_5x5",
   p->SetGridy(0);
 
   TH1 *h_full = (TH1 *) EnergySum_LG_full->DrawClone();
-//  h_full->GetXaxis()->SetRangeUser(0.5,32);
+  //  h_full->GetXaxis()->SetRangeUser(0.5,32);
   TH1 *h = (TH1 *) EnergySum_LG->DrawClone("same");
 
   TF1 *fgaus_g = new TF1("fgaus_LG_g", "gaus", h->GetMean() - 1 * h->GetRMS(),
@@ -579,7 +682,7 @@ void EMCDistribution_SUM(TString sTOWER = "Energy_Sum_col1_row2_5x5",
   h_full->GetXaxis()->SetRangeUser(h->GetMean() - 4 * h->GetRMS(),
                                    h->GetMean() + 4 * h->GetRMS());
   h_full->GetYaxis()->SetRangeUser(0,
-      fgaus_g->GetParameter(0)*4);
+                                   fgaus_g->GetParameter(0) * 4);
 
   h->SetLineWidth(2);
   h->SetMarkerStyle(kFullCircle);
@@ -640,9 +743,9 @@ void EMCDistribution_Fast(TString gain = "CALIB", bool full_gain = false)
     if (full_gain)
     {
       h2 = new TH2F(hname,
-                    Form(";Calibrated Tower Energy Sum (GeV);Count / bin"), 100, .05,
-                    25, 64, -.5, 63.5);
-      QAHistManagerDef::useLogBins(h2->GetXaxis());
+                    Form(";Calibrated Tower Energy Sum (GeV);Count / bin"), 100, -1,
+                    30, 64, -.5, 63.5);
+      //      QAHistManagerDef::useLogBins(h2->GetXaxis());
     }
     else
     {
@@ -659,8 +762,8 @@ void EMCDistribution_Fast(TString gain = "CALIB", bool full_gain = false)
     {
       h2 = new TH2F(hname,
                     Form(";Tower Peak Amp (ADC);Count / bin"), 1 << 8,
-                    0, 1 << 14, 64, -.5, 63.5);
-      QAHistManagerDef::useLogBins(h2->GetXaxis());
+                    -3000, 17000, 64, -.5, 63.5);
+      //      QAHistManagerDef::useLogBins(h2->GetXaxis());
     }
     else
     {
@@ -689,10 +792,10 @@ void EMCDistribution_Fast(TString gain = "CALIB", bool full_gain = false)
       c1->Update();
 
       p->SetLogy();
-      if (full_gain)
-      {
-        p->SetLogx();
-      }
+      //      if (full_gain)
+      //      {
+      //        p->SetLogx();
+      //      }
       p->SetGridx(0);
       p->SetGridy(0);
 

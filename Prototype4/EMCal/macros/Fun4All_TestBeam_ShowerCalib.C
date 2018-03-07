@@ -4,8 +4,8 @@ using namespace std;
 
 void Fun4All_TestBeam_ShowerCalib(  //
     const int nEvents = 10000000, const char *inputFile =
-//                                       "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2018/ShowerCalib/dst.lst"//
-                                   "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2018/ShowerCalib_tilted/dst.lst"  //
+                                       "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2018/ShowerCalib/dst.lst"//
+//                                   "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2018/ShowerCalib_tilted/dst.lst"  //
 //        "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2018/Scan1Block36/dst.lst"
         //"/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2018/Scan1Block27/dst.lst"
 //                "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2018/Scan2Block18/dst.lst"
