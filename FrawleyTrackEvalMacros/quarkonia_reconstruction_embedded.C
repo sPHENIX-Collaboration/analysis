@@ -492,7 +492,7 @@ void quarkonia_reconstruction_embedded()
 
   char fname[500];
 
-  sprintf(fname,"ups%is_qual%.2f_dca2d%.2f.root",ups_state,quality_cut,dca_cut);
+  sprintf(fname,"root_files/ups%is_qual%.2f_dca2d%.2f.root",ups_state,quality_cut,dca_cut);
 
   cout << "Create output file " << fname << endl;
 
