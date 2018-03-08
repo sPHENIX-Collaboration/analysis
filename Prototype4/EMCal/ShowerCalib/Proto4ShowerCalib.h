@@ -175,6 +175,7 @@ class Proto4ShowerCalib : public SubsysReco
   Eval_Cluster _eval_3x3_raw;
   Eval_Cluster _eval_5x5_raw;
 
+  Eval_Cluster _eval_1x1_prod;
   Eval_Cluster _eval_3x3_prod;
   Eval_Cluster _eval_5x5_prod;
 

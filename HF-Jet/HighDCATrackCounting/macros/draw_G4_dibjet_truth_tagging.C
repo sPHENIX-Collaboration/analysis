@@ -360,7 +360,7 @@ void draw_G4_dibjet_truth_tagging(
 
 
 	int nentries = ttree->GetEntries();
-	//nentries = TMath::Min(1000,nentries);
+	nentries = TMath::Min(1000,nentries);
 
 	for (int e = 0 ; e < nentries; e++) {
 
