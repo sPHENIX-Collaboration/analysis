@@ -57,6 +57,7 @@ Proto4ShowerCalib::Proto4ShowerCalib(const std::string &filename)
   _eval_run.reset();
   _eval_3x3_raw.reset();
   _eval_5x5_raw.reset();
+  _eval_1x1_prod.reset();
   _eval_3x3_prod.reset();
   _eval_5x5_prod.reset();
   _eval_3x3_temp.reset();
@@ -185,6 +186,7 @@ int Proto4ShowerCalib::Init(PHCompositeNode *topNode)
   T->Branch("info", &_eval_run);
   T->Branch("clus_3x3_raw", &_eval_3x3_raw);
   T->Branch("clus_5x5_raw", &_eval_5x5_raw);
+  T->Branch("clus_1x1_prod", &_eval_1x1_prod);
   T->Branch("clus_3x3_prod", &_eval_3x3_prod);
   T->Branch("clus_5x5_prod", &_eval_5x5_prod);
   T->Branch("clus_3x3_temp", &_eval_3x3_temp);
@@ -204,6 +206,7 @@ int Proto4ShowerCalib::process_event(PHCompositeNode *topNode)
   _eval_run.reset();
   _eval_3x3_raw.reset();
   _eval_5x5_raw.reset();
+  _eval_1x1_prod.reset();
   _eval_3x3_prod.reset();
   _eval_5x5_prod.reset();
   _eval_3x3_temp.reset();
@@ -444,8 +447,12 @@ int Proto4ShowerCalib::process_event(PHCompositeNode *topNode)
   //  pair<int, int> max_5x5 = find_max(TOWER_CALIB_CEMC, 5);
 
   // try simple peak tower finding instead
+  pair<int, int> max_1x1 = find_max(TOWER_CALIB_CEMC, 1);
   pair<int, int> max_3x3 = find_max(TOWER_CALIB_CEMC, 1);
   pair<int, int> max_5x5 = find_max(TOWER_CALIB_CEMC, 1);
+
+  _eval_1x1_prod.max_col = max_1x1.first;
+  _eval_1x1_prod.max_row = max_1x1.second;
 
   _eval_3x3_raw.max_col = max_3x3.first;
   _eval_3x3_raw.max_row = max_3x3.second;
@@ -525,6 +532,14 @@ int Proto4ShowerCalib::process_event(PHCompositeNode *topNode)
 
       // energy sums
       sum_energy_T += energy_T;
+
+      if (col == max_1x1.first)
+        if (row == max_1x1.second)
+        {
+          _eval_1x1_prod.average_col =  col;
+          _eval_1x1_prod.average_row =  row;
+          _eval_1x1_prod.sum_E = energy_calib;
+        }
 
       // cluster 3x3
       if (col >= max_3x3.first - 1 and col <= max_3x3.first + 1)
