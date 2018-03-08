@@ -1,0 +1,75 @@
+-------------------------------------------------------------------------------------------------------------------------
+Reference
+-------------------------------------------------------------------------------------------------------------------------
+id2: Output ON, readbacks 1.799018 V 0.193578 A, OVP OK OCP OK
+id3: Output ON, readbacks 1.799018 V 0.190579 A, OVP OK OCP OK
+id1: Output ON, readbacks 4.998905 V 1.945789 A, OVP OK OCP OK
+
+-------------------------------------------------------------------------------------------------------------------------
+System power on:
+-------------------------------------------------------------------------------------------------------------------------
+1)Turn on RU fan (top most terminal)
+./e363xa_on.py /dev/ttyUSB_id7
+Output ON, readbacks 12.01289 V 2.777201 A, OVP OK OCP OK
+
+2)Turn on RU second )terminal below the fan)
+./e363xa_on.py /dev/ttyUSB_id1
+Output ON, readbacks 4.998905 V 1.345789 A, OVP OK OCP OK
+
+3)program RU using Vivado (Vivado is open on the right hand side
+Output ON, readbacks 4.998905 V 1.945789 A, OVP OK OCP OK
+
+4)once the proram is complete initlize GBT link using python script
+../../modules/board_support_software/software/py/initGBTx_v1.py ../../modules/gbt/software/GBTx_configs/GBTx0_Config.xml
+Output ON, readbacks 4.998905 V 1.945789 A, OVP OK OCP OK
+
+5)Reprogram RU using Vivado
+Output ON, readbacks 4.998905 V 1.945789 A, OVP OK OCP OK
+
+6)Initialize readout unit
+./testbench_JS_AT_SU_nopulse.py initialize_boards
+Output ON, readbacks 4.998905 V 1.945789 A, OVP OK OCP OK
+
+7)Turn on ALPIDE power supplies
+./e363xa_on.py /dev/ttyUSB_id2
+./e363xa_on.py /dev/ttyUSB_id3
+Aproximate current draw
+id2: Output ON, readbacks 1.799018 V 0.059578 A, OVP OK OCP OK
+id3: Output ON, readbacks 1.799018 V 0.053579 A, OVP OK OCP OK
+
+8)Initialize/configure sensors Readout Unit gt interface
+./testbench_JS_AT_SU_nopulse.py setup_sensors
+./testbench_JS_AT_SU_nopulse.py setup_readout
+id2: Output ON, readbacks 1.799018 V 0.193578 A, OVP OK OCP OK
+id3: Output ON, readbacks 1.799018 V 0.190579 A, OVP OK OCP OK
+Output ON, readbacks 4.998905 V 1.945789 A, OVP OK OCP OK
+
+9) Configure RU arbiter
+../../modules/board_support_software/software/py/wrreg.py 8 29 0xF
+Output ON, readbacks 4.998905 V 1.945789 A, OVP OK OCP OK
+
+-------------------------------------------------------------------------------------------------------------------------
+Reconfigure ALPIDEs:
+-------------------------------------------------------------------------------------------------------------------------
+1) Power down ALPIDEs
+./e363xa_off.py /dev/ttyUSB_id2
+./e363xa_off.py /dev/ttyUSB_id3
+
+2)Disable clock from ALPIDE
+./testbench_JS_AT_SU_nopulse.py disable_clock
+id2: Output ON, readbacks 1.799018 V 0.059578 A, OVP OK OCP OK
+id3: Output ON, readbacks 1.799018 V 0.053579 A, OVP OK OCP OK
+
+3)Initialize/configure sensors Readout Unit gt interface
+./testbench_JS_AT_SU_nopulse.py setup_sensors
+./testbench_JS_AT_SU_nopulse.py setup_readout
+id2: Output ON, readbacks 1.799018 V 0.193578 A, OVP OK OCP OK
+id3: Output ON, readbacks 1.799018 V 0.190579 A, OVP OK OCP OK
+
+-------------------------------------------------------------------------------------------------------------------------
+Periodically run
+-------------------------------------------------------------------------------------------------------------------------
+./testbench_JS_AT_SU_nopulse.py refresh_pixels
+-------------------------------------------------------------------------------------------------------------------------
+                                                                                                              49,1          41%
+

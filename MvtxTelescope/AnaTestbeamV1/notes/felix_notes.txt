@@ -1,0 +1,77 @@
+# program FELIX
+source /opt/Xilinx/Vivado/2015.4/settings64.sh
+vivado
+open hardware manager
+connect: always fails the first time after server boot
+program with bitstream /home/maps/felix_firmware/bitstreams/FLX711_RM0304_6CH_LOCALCLK_SVNBLAHHHH_180124_16_53.bit
+
+#configure FELIX after programming (if any step fails, reprogram; if server freezes and crashes, power cycle after it reboots itself):
+su
+cd /home/maps/meeg/felix/daq/felix_rcdaq/build/
+source /home/maps/meeg/rcdaq/setup.sh;source /home/maps/meeg/felix/setup.sh
+/home/maps/meeg/felix/software/pcie_hotplug/pcie_hotplug_remove.sh
+/home/maps/meeg/felix/software/pcie_hotplug/pcie_hotplug_rescan.sh
+/home/maps/felix_firmware/Si5345_40p8mhz_BNL-711v1p5_EXTERNAL_IN02.sh
+flx-init
+flx-config setraw -r 0x5890 -w 64 -v 0x1
+
+raw data dump: ddump -g -n 100 rcdaq-00000001-0000.evt|less
+
+
+# running online monitoring
+cd /home/maps/meeg/felix/daq/felix_rcdaq/online_monitoring
+source /home/maps/meeg/rcdaq/setup.sh;source /home/maps/meeg/felix/setup.sh
+root -l ./scripts/run_om.C
+
+## offline
+root -l './scripts/open_file.C(15)'
+
+list pixels with more than 100 hits (noisy pixels): process_histos(100)
+
+# DAQ
+## start timestamp script
+cd /home/maps/meeg/felix/daq/felix_rcdaq
+./make_timestampfile.sh
+
+## start and configure rcdaq
+su
+cd /home/maps/meeg/felix/daq/felix_rcdaq
+source /home/maps/meeg/rcdaq/setup.sh;source /home/maps/meeg/felix/setup.sh
+./setup_felix_rcdaq_felixTrigger.sh
+daq_set_runtype beam
+(runtypes: beam junk calib)
+
+## take a run
+daq_begin
+daq_end
+
+## other useful stuff
+event count: daq_status
+kill rcdaq: daq_shutdown
+
+# control PC:
+nmcli connection down "Wired connection 1"
+nmcli connection up "Wired connection 2"
+ssh -p 222 root@192.168.168.2
+
+ssh -Y 192.168.168.2
+vncserver -geometry 1600x1200
+vncviewer :1
+
+source /home/maps/setup_anaconda.sh 
+(RU power on, program)
+../../modules/board_support_software/software/py/initGBTx_v1.py ../../modules/gbt/software/GBTx_configs/GBTx0_Config.xml 
+(program again)
+./testbench_JS_AT_SU_nopulse.py initialize_boards
+(ALPIDE power on)
+./testbench_JS_AT_SU_nopulse.py setup_sensors
+./testbench_JS_AT_SU_nopulse.py setup_readout
+../../modules/board_support_software/software/py/wrreg.py 8 29 0x3
+
+
+# troubleshooting crap
+watch -n 0.5 flx-i2c r 2:0:0x68 0x000D
+
+
+#filename convention
+cp -p rcdaq-00000001-0000.evt beamtest_rcdaq_bias0_clusteroff_strobewidth160clks_strobedelay0_triggerdelay12us_IBIAS64_VCASP86_VCLIP0_VRESETD147_ITHR40_IDB64_VCASN57_VCASN264_pulsed_reference
