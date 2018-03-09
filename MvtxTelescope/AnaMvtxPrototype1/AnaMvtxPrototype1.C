@@ -10,6 +10,8 @@
 #include <trackbase/TrkrCluster.h>
 #include <trackbase/TrkrClusterContainer.h>
 
+#include <mvtxprototype1/MvtxStandaloneTracking.h>
+
 #include <phool/getClass.h>
 #include <phool/phool.h>
 #include <phool/PHCompositeNode.h>
@@ -47,7 +49,8 @@ AnaMvtxPrototype1::AnaMvtxPrototype1(const std::string &name,
   SubsysReco(name),
   clusters_(NULL),
   _foutname(ofName),
-  _f(NULL)
+  _f(NULL),
+  _ievent(0)
 {
 
   hlayer = NULL;
@@ -60,6 +63,11 @@ AnaMvtxPrototype1::AnaMvtxPrototype1(const std::string &name,
     hdx[il] = NULL;
     hdz[il] = NULL;
   }
+
+  mvtxtracking_ = new MvtxStandaloneTracking();
+  mvtxtracking_->SetWindowX(10);
+  mvtxtracking_->SetWindowZ(10);
+  mvtxtracking_->Verbosity(0);
 }
 
 int AnaMvtxPrototype1::Init(PHCompositeNode *topNode)
@@ -91,15 +99,34 @@ int AnaMvtxPrototype1::Init(PHCompositeNode *topNode)
                        512, -0.5, 511.5);
 
     hdx[il] = new TH1D(Form("hdx_l%i", il),
-                         "; dx [pixels]",
-                         2000, -500, 500);
+                       "; dx [pixels]",
+                       2000, -500, 500);
 
     hdz[il] = new TH1D(Form("hdz_l%i", il),
                        "; dz [pixels]",
                        2000, -500, 500);
   } // il
 
+  //-- results from tracking
+  htrk = new TH1D("htrk", ";trks / event", 16, -0.5, 15.5);
 
+  for (int il = 0; il < 4; il++)
+  {
+    htrk_dx[il] = new TH1D(Form("htrk_dx_l%i", il),
+                           ";track dx [pixels]",
+                           500, -25, 25);
+
+    htrk_dz[il] = new TH1D(Form("htrk_dz_l%i", il),
+                           ";track dz [pixels]",
+                           500, -25, 25);
+
+  }
+  htrk_chi2xy = new TH1D("htrk_chi2xy",
+                         ";track chi2/ndf in x vs y",
+                         500, 0, 100);
+  htrk_chi2zy = new TH1D("htrk_chi2zy_l%i",
+                         ";track chi2/ndf in z vs y",
+                         500, 0, 100);
 
   return 0;
 
@@ -160,6 +187,7 @@ int AnaMvtxPrototype1::process_event(PHCompositeNode *topNode)
        ++iter)
   {
     TrkrCluster *clus = iter->second;
+    // clus->identify();
 
     TrkrDefs::cluskey ckey = clus->GetClusKey();
 
@@ -329,6 +357,58 @@ int AnaMvtxPrototype1::process_event(PHCompositeNode *topNode)
   // }
 
 
+  //------
+  // Try full tracking
+  //------
+  MvtxStandaloneTracking::MvtxTrackList tracklist;
+  mvtxtracking_->RunTracking(topNode, tracklist);
+
+  htrk->Fill(tracklist.size());
+
+  for ( unsigned int i = 0; i < tracklist.size(); i++)
+  {
+    std::cout << "== " << i << std::endl;
+    for ( unsigned int j = 0; j < tracklist.at(i).ClusterList.size(); j++)
+    {
+      // std::cout << "    clus " << j
+      //           << " key:0x" << std::hex << tracklist.at(i).ClusterList.at(j)->GetClusKey() << std::dec
+      //           << " (" << tracklist.at(i).ClusterList.at(j)->GetX()
+      //           << ", " << tracklist.at(i).ClusterList.at(j)->GetY()
+      //           << ", " << tracklist.at(i).ClusterList.at(j)->GetZ()
+      //           << ")"
+      //           << " dx:" << tracklist.at(i).dx.at(j)
+      //           << " dz:" << tracklist.at(i).dz.at(j)
+      //           << std::endl;
+
+      TrkrDefs::cluskey ckey = tracklist.at(i).ClusterList.at(j)->GetClusKey();
+
+      int lyr = trkrutil.GetLayer(ckey);
+
+      if ( lyr < 0 || lyr >= 4 )
+      {
+        std::cout << PHWHERE << " WARNING: bad layer from track cluster. lyr:" << lyr << std::endl;
+        continue;
+      }
+
+      htrk_dx[lyr]->Fill(tracklist.at(i).dx.at(j));
+      htrk_dz[lyr]->Fill(tracklist.at(i).dz.at(j));
+
+    }
+    // std::cout << "    xy"
+    //           << " m:" << tracklist.at(i).m_xy
+    //           << " b:" << tracklist.at(i).b_xy
+    //           << " chi2:" << tracklist.at(i).chi2_xy
+    //           << std::endl;
+    // std::cout << "    zy"
+    //           << " m:" << tracklist.at(i).m_zy
+    //           << " b:" << tracklist.at(i).b_zy
+    //           << " chi2:" << tracklist.at(i).chi2_zy
+    //           << std::endl;
+
+    htrk_chi2xy->Fill(tracklist.at(i).chi2_xy);
+    htrk_chi2zy->Fill(tracklist.at(i).chi2_zy);
+
+  } // i
   //-- Cleanup
 
 

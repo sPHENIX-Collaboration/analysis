@@ -22,6 +22,8 @@ class PHCompositeNode;
 class TrkrClusterContainer;
 class TrkrCluster;
 
+class MvtxStandaloneTracking;
+
 class TFile;
 class TTree;
 class TH1D;
@@ -86,10 +88,17 @@ private:
   TH1D* hdx[4];
   TH1D* hdz[4];
 
+  TH1D* htrk;
+  TH1D* htrk_dx[4];
+  TH1D* htrk_dz[4];
+  TH1D* htrk_chi2xy;
+  TH1D* htrk_chi2zy;
+
 
   //-- internal variables
   int _ievent;
   std::map<int, mis> _misalign; /// map for misaligning clusters
+  MvtxStandaloneTracking* mvtxtracking_;
 
 };
 
