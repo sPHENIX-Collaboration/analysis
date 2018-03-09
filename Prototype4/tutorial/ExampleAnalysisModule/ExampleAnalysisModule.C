@@ -7,6 +7,7 @@
 #include <prototype4/RawTower_Prototype4.h>
 #include <prototype4/RawTower_Temperature.h>
 
+#include <Event/EventTypes.h>
 #include <fun4all/Fun4AllHistoManager.h>
 #include <fun4all/Fun4AllReturnCodes.h>
 #include <fun4all/Fun4AllServer.h>
@@ -206,6 +207,17 @@ int ExampleAnalysisModule::process_event(PHCompositeNode *topNode)
 
   EventHeader *eventheader = findNode::getClass<EventHeader>(topNode,
                                                              "EventHeader");
+
+  if (eventheader->get_EvtType() != DATAEVENT)
+  {
+    cout << __PRETTY_FUNCTION__
+         << " disgard this event: " << endl;
+
+    eventheader->identify();
+
+    return Fun4AllReturnCodes::DISCARDEVENT;
+  }
+
   if (not _is_sim)
   {
     assert(eventheader);

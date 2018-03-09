@@ -24,7 +24,7 @@ ExampleAnalysisModulePlot(
 )
 {
   // assuming you compiled the analysis module defined in ../ExampleAnalysisModule/
-  gSystem->Load("libProto3_ExampleAnalysisModule.so");
+  gSystem->Load("libProto4_ExampleAnalysisModule.so");
 
   // assuming you already run Fun4All_TestBeam_ExampleAnalysisModule.C
   TFile * file = TFile::Open("ExampleAnalysis.root");
@@ -68,9 +68,9 @@ ExampleAnalysisModulePlot(
   p = (TPad *) c1->cd(idx++);
   p->SetLogy();
 
-  T->Draw("clus_5x5_CEMC.sum_E>>hEnergy_Sum_CEMC(400,0,20)", "info.good_anti_e",
+  T->Draw("clus_5x5_CEMC.sum_E>>hEnergy_Sum_CEMC(400,0,40)", "info.good_anti_e",
       "");
-  T->Draw("clus_5x5_CEMC.sum_E>>hEnergy_Sum_CEMC_C(400,0,20)", "info.good_e",
+  T->Draw("clus_5x5_CEMC.sum_E>>hEnergy_Sum_CEMC_C(400,0,40)", "info.good_e",
       "same");
   hEnergy_Sum_CEMC->SetTitle(
       "EMCal 5x5 cluster, anti-e cut (blue) and electron cut (green);EMCal 5x5 cluster Energy (GeV)");

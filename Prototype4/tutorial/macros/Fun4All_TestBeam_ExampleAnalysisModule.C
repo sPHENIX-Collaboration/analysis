@@ -10,15 +10,15 @@
 int
 Fun4All_TestBeam_ExampleAnalysisModule(const int nEvents = 10000,
     const char * inputFile =
-    // Let's take a look at run 3533, which is -8 GeV/c secondary beam centered on EMCal tower 45.
-    // More runs are produced in data production: https://wiki.bnl.gov/sPHENIX/index.php/2017_calorimeter_beam_test/Data_Production_and_Analysis#Production_Information
-        "/gpfs/mnt/gpfs02/sphenix/data/data01/t1044-2016a/production.2017/Production_0203_init/beam_00003533-0000.root")
+        // Let's take a look at run 668, which is -24 GeV/c secondary beam centered on EMCal tower 18.
+        // More runs are produced in data production: https://wiki.bnl.gov/sPHENIX/index.php/2018_calorimeter_beam_test/Data_Production_and_Analysis#Production_output
+        "/sphenix/data/data03/phnxreco/sphenix/t1044/production/production_0306/beam_00000668-0000.root")
 {
 
   //---------------
   // Load libraries
   //---------------
-  gSystem->Load("libPrototype3.so");
+  gSystem->Load("libPrototype4.so");
 
   //---------------
   // Fun4All server
@@ -38,7 +38,7 @@ Fun4All_TestBeam_ExampleAnalysisModule(const int nEvents = 10000,
   se->registerInputManager(hitsin);
 
   //load your analysis module's lib
-  gSystem->Load("libProto3_ExampleAnalysisModule.so");
+  gSystem->Load("libProto4_ExampleAnalysisModule.so");
 
   //load your analysis module.
   // This one is an example defined in ../ExampleAnalysisModule/

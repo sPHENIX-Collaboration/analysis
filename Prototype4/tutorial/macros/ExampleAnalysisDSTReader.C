@@ -27,7 +27,7 @@ ExampleAnalysisDSTReader(
   gSystem->Load("libPrototype4.so");
 
   // Let's take a look at run 668, which is -24 GeV/c secondary beam centered on EMCal tower 18.
-  // More runs are produced in data production: https://wiki.bnl.gov/sPHENIX/index.php/2017_calorimeter_beam_test/Data_Production_and_Analysis#Production_Information
+  // More runs are produced in data production: https://wiki.bnl.gov/sPHENIX/index.php/2018_calorimeter_beam_test/Data_Production_and_Analysis#Production_output
   // This tutorial focuses on the *_DSTReader.root, which is interctive TTree file containing all tower and channels.
   TFile * file =
       TFile::Open(
