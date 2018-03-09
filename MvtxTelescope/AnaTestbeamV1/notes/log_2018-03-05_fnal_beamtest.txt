@@ -1,0 +1,98 @@
+Power Supplies:
+ALPIDE0 contains ALPIDE 0 and ALPIDE 2
+ALPIDE1 contains ALPIDE 1 and ALPIDE 3
+
+Power on current
+ALPIDE0 60mA
+ALPIDE1 53mA
+RU 1.9mA
+Fan 2.7A
+
+Configure current
+ALPIDE0 197mA
+ALPIDE1 195mA
+
+Trigger finilized with VIO Core for dynamic delay
+0x190 = # of clock of the 40 Mhz clock 1/40Mhz * 400= 10ms 
+
+80*25ns=2ms 
+
+2018-03-06
+
+chip ID 0 and 1 are old ALPIDEs, 2 and 3 are new from CERN
+5m firefly cables, PLLDAC=8, DriverDAC=8, PreDAC=8
+
+0013: we're getting beam, 120 GeV protons and 50k counts, run 13
+0023: 100k counts, run 14, about 20k triggers/spill
+0240: 300k counts, run 26, about 30k triggers/spill
+0304: 100k counts, run 27, about 20k triggers/spill
+run 28: trigger delay=0 (IN THIS AND SUBSEQUENT RUNS, IGNORE TRIGGERDELAY IN ALPIDEPARAMETERS.DAT)
+run 29: trigger delay=0, strobe width=80 clocks (DID NOT UPDATE ALPIDEPARAMETERS.DAT FOR THIS RUN)
+run 30: trigger delay=0, strobe width=40 clocks
+run 31: trigger delay=0, strobe width=20 clocks
+run 32: trigger delay=0x28 clocks, strobe width=20 clocks
+run 33: trigger delay=0x50 clocks, strobe width=20 clocks
+run 34: trigger delay=0x68 clocks, strobe width=20 clocks
+run 35: trigger delay=0xA0 clocks, strobe width=20 clocks
+run 36: trigger delay=0xF0 clocks, strobe width=20 clocks
+run 37: trigger delay=0xF0 clocks, strobe width=80 clocks, confirm Xuan's study
+run 38: trigger delay=0xC8 clocks, strobe width=20 clocks
+run 39: trigger delay=0xC8 clocks, strobe width=20 clocks, ITHR=25, possibly junk (events failing decoding)
+run 40: trigger delay=0xC8 clocks, strobe width=20 clocks, ITHR=25, possibly junk (events failing decoding)
+run 41: trigger delay=0xC8 clocks, strobe width=20 clocks, ITHR=35
+run 42: trigger delay=0xC8 clocks, strobe width=20 clocks, ITHR=40, IDB=54
+run 43: trigger delay=0xC8 clocks, strobe width=20 clocks, ITHR=40, IDB=64
+run 44: trigger delay=0xC8 clocks, strobe width=20 clocks, ITHR=40, IDB=54, VCASN=50
+run 46: trigger delay=0xC8 clocks, strobe width=20 clocks, ITHR=38, IDB=64, VCASN=57
+run 47: trigger delay=0xC8 clocks, strobe width=20 clocks, ITHR=36, IDB=64, VCASN=57
+run 48: trigger delay=0xC8 clocks, strobe width=20 clocks, ITHR=34, IDB=64, VCASN=57
+run 49: trigger delay=0xC8 clocks, strobe width=20 clocks, ITHR=34, IDB=64, VCASN=55, events failing decoding
+run 50: trigger delay=0xC8 clocks, strobe width=20 clocks, ITHR=34, IDB=64, VCASN=56
+run 51: trigger delay=0xC8 clocks, strobe width=20 clocks, ITHR=34, IDB=62, VCASN=56
+run 52: trigger delay=0xC8 clocks, strobe width=20 clocks, ITHR=34, IDB=60, VCASN=56
+run 53: trigger delay=0xC8 clocks, strobe width=20 clocks, ITHR=34, IDB=56, VCASN=56
+run 54: trigger delay=0xC8 clocks, strobe width=20 clocks, ITHR=32, IDB=56, VCASN=56
+ignoring chip 0 for now, focusing on increasing hit counts on chips 1-3
+run 55: trigger delay=0xC8 clocks, strobe width=20 clocks, ITHR=28, IDB=56, VCASN=56, events failing decoding
+run 56: trigger delay=0xC8 clocks, strobe width=20 clocks, ITHR=28, IDB=40, VCASN=56
+run 57: trigger delay=0xC8 clocks, strobe width=20 clocks, ITHR=28, IDB=35, VCASN=56
+run 58: trigger delay=0xC8 clocks, strobe width=20 clocks, ITHR=25, IDB=35, VCASN=56
+run 59: trigger delay=0xC8 clocks, strobe width=20 clocks, ITHR=20, IDB=35, VCASN=56
+run 60: trigger delay=0x50 clocks, strobe width=20 clocks, ITHR=25, IDB=35, VCASN=56
+run 61: trigger delay=0x50 clocks, strobe width=20 clocks, ITHR=30, IDB=35, VCASN=56
+run 62: trigger delay=0x50 clocks, strobe width=20 clocks, ITHR=51, IDB=29, VCASN=57, VCASN2=62, IBIAS=64, VCASP=86, VCLIP=0, VRESETD=147 (defaults we use with MOSAIC) (WAS NOT SAVED TO ALPIDEPARAMETERS.DAT)
+run 63: trigger delay=0x50 clocks, strobe width=20 clocks, ITHR=50, IDB=29, VCASN=50, VCASN2=57, IBIAS=64, VCASP=86, VCLIP=0, VRESETD=147 (defaults from git, new-alpide-software ConfigTemplate.cfg)
+run 64: trigger delay=0x50 clocks, strobe width=20 clocks, ITHR=40, IDB=64, VCASN=57, VCASN2=64, IBIAS=64, VCASP=86, VCLIP=0, VRESETD=147 (starting parameters from yesterday and today)
+power cycle ALPIDEs
+run 65: trigger delay=0x50 clocks, strobe width=20 clocks, same ALPIDE frontend settings as above
+
+requests for OM improvements:
+
+* change the idx diff plots to use chip 3 as a reference, so the plots still make sense when chip 0 has noisy pixels
+
+evening 2018-03-06: INTT is taking 120 GeV protons at ~14k counts on the SC123 scintillators, ~8k triggers/spill
+run 66 is empty, run 67 has arbiter=0x3 (only chips 0 and 3)
+run 68: same settings as run 65, data looks good
+run 69: same settings as above, calibration run
+run 70: calibration run, trigger delay=0x50 clocks, strobe width=20 clocks, ITHR=50, IDB=29, VCASN=50, VCASN2=57, IBIAS=64, VCASP=86, VCLIP=0, VRESETD=147 (defaults from git, new-alpide-software ConfigTemplate.cfg)
+run 71: same settings, calib run
+run 72-75: masked noisy pixels on chip 0
+run 76: pulser was left on, junk
+run 77: normal run, we notice the beam spot is in the corner row=0 col=1024
+run 79: moved box down ~1cm to bring beam closer to the center of the chip. Beam now centered off right edge of chip ~(474,268)
+run 82: good run with large statistics
+
+2018-03-07
+during the day, the telescope was moved from the 80-20 stand to a platform
+run 83:empty run, did not get beam
+1702: replaced chip ID 0 with the new ALPIDE bonded by SiDet
+run 84, 85: calib with new chip, chip does not seem to work
+run 86: revert to old chip 0, works
+run 87: waiting for beam
+run 88: we see a beamspot
+run 89: Placed single lead brick in front of the box oriented with its face normal to the beam axis. 2 in thick or ~0.3 interaction lengths
+Added three more bricks: 8 in, 1.2 interaction lengths
+swapped in the SiDet ALPIDE again
+run 90: calib, pulser, still looks bad (chip ID 2 is unplugged)
+swapped back
+run 91: beam with four bricks: primary beam is reduced, background is increased, looks like the high-multiplicity events are being attenuated

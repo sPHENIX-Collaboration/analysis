@@ -41,8 +41,8 @@ void DrawPrototype4ShowerCalib(  //
         //        "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2018/ShowerCalib/dst.lst_EMCalCalib.root"  //
     //        "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2018/ShowerCalib_tilted/dst.lst_EMCalCalib.root"//
     //    "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2018/Scan1Block36/dst.lst_EMCalCalib.root"  //
-    "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2018/Scan2Block34/dst.lst_EMCalCalib.root"  //
-                                                                                                 //    "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2018/Scan2Block18/dst.lst_EMCalCalib.root"  //
+//        "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2018/Scan2Block34/dst.lst_EMCalCalib.root"  //
+    "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2018/Scan2Block18/dst.lst_EMCalCalib.root"  //
     )
 {
   SetOKStyle();
@@ -105,6 +105,9 @@ void DrawPrototype4ShowerCalib(  //
   cuts = "_good_e_h3_v4";
   //    event_sel = "valid_hodo_v && valid_hodo_h&& trigger_veto_pass && info.hodo_h>=2 && info.hodo_h<=4 && info.hodo_v>=3 && info.hodo_v<=5";  // Tower 34/18
   //    cuts = "_valid_data_h234_v345";
+
+//  event_sel = "good_e  && info.hodo_h==5 && info.hodo_v==2";  // Tower 34/18 between towers
+//  cuts = "_good_e_h5_v2";
 
   T->SetAlias("SimEnergyScale", "1*1");
   //    // based on /phenix/u/jinhuang/links/sPHENIX_work/Prototype_2016/ShowerCalib/UIUC21.lst_EMCalCalib.root_DrawPrototype3ShowerCalib_LineShapeData_Neg8GeV_good_data_h5_v3.svg
@@ -556,11 +559,11 @@ void Get_Res_linear_Summmary(TString e_sum = "sum_E")
 
   //  return;
 
-  lin_res ges_clus_5x5_prod = GetResolution("clus_5x5_prod", beam_mom, kBlue, e_sum);
+  lin_res ges_clus_5x5_prod = GetResolution("clus_5x5_prod", beam_mom, kMagenta + 2, e_sum);
   lin_res ges_clus_3x3_prod = GetResolution("clus_3x3_prod", beam_mom,
                                             kBlue + 3, e_sum);
   lin_res ges_clus_1x1_prod = GetResolution("clus_1x1_prod", beam_mom,
-                                            kRed - 2, e_sum);
+                                            kGreen + 3, e_sum);
   lin_res ges_clus_5x5_recalib = GetResolution("clus_5x5_recalib", beam_mom,
                                                kRed + 3, e_sum + "*.7");
 
@@ -576,7 +579,7 @@ void Get_Res_linear_Summmary(TString e_sum = "sum_E")
 
   TLegend *leg = new TLegend(.15, .7, .6, .85);
 
-  p->DrawFrame(0, 0, 32, 32,
+  p->DrawFrame(0, 0, 32, 40,
                Form("Electron Linearity;Input energy (GeV);Measured Energy (GeV)"));
 
   TF1 *f_calo_l_sim = new TF1("f_calo_l", "pol2", 0.5, 32);
@@ -889,16 +892,19 @@ GetResolution(TString cluster_name, vector<double> beam_mom, Color_t col, TStrin
                       0.5, 30);
   ge_res->Fit(ret.f_res, "RM0QN");
 
+  static int MarkerStyle = kOpenCircle - 1;
+  ++MarkerStyle;
+
   ge_linear->SetLineColor(col);
   ge_linear->SetMarkerColor(col);
   ge_linear->SetLineWidth(2);
-  ge_linear->SetMarkerStyle(kFullCircle);
+  ge_linear->SetMarkerStyle(MarkerStyle);
   ge_linear->SetMarkerSize(1.5);
 
   ge_res->SetLineColor(col);
   ge_res->SetMarkerColor(col);
   ge_res->SetLineWidth(2);
-  ge_res->SetMarkerStyle(kFullCircle);
+  ge_res->SetMarkerStyle(MarkerStyle);
   ge_res->SetMarkerSize(1.5);
 
   ge_res->GetHistogram()->SetStats(0);
