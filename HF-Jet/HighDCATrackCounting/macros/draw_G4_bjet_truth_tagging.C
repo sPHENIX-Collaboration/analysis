@@ -808,7 +808,7 @@ void draw_G4_bjet_truth_tagging(
 	h1_jet_pt[2]->SetLineColor( kBlue );
 
 
-	TCanvas *tc = new TCanvas();
+	TCanvas *tc = new TCanvas("tc","tc",1100,1000);
 	h1_jet_pt[2]->SetTitle(";#it{p}_{T} [GeV];counts / 2 GeV");
 	h1_jet_pt[2]->SetMaximum( h1_jet_pt[2]->GetMaximum() * 1.3 );
 	h1_jet_pt[2]->Draw();

@@ -1,34 +1,26 @@
 /*!
- *  \file     AnaMvtxTelescopeHits.h
+ *  \file     AnaMvtxPrototype1.h
  *  \brief    Analyze Mvtx 4 ladder cosmic telescope in simulations
  *  \details  Analyze simulations of hits in the 4 ladder
  *            Mvtx cosimic ray telescope
  *  \author   Darren McGlinchey
  */
 
-#ifndef __AnaMvtxTelescopeHits_H__
-#define __AnaMvtxTelescopeHits_H__
+#ifndef __AnaMvtxPrototype1_H__
+#define __AnaMvtxPrototype1_H__
 
 // --- need to check all these includes...
 #include <fun4all/SubsysReco.h>
-// #include <GenFit/GFRaveVertex.h>
-// #include <GenFit/Track.h>
 #include <string>
 #include <vector>
 #include <map>
 
 #include "TMath.h"
 
-class SvtxTrack;
-class SvtxTrackMap;
-class SvtxVertexMap;
-class SvtxVertex;
 class PHCompositeNode;
-class PHG4TruthInfoContainer;
-class SvtxClusterMap;
-class SvtxCluster;
-class SvtxEvalStack;
-class JetMap;
+
+class TrkrClusterContainer;
+class TrkrCluster;
 
 class TFile;
 class TTree;
@@ -36,16 +28,21 @@ class TH1D;
 class TH2D;
 
 
-typedef std::vector<SvtxCluster*> ClusVec;
+typedef std::vector<TrkrCluster*> ClusVec;
 typedef std::vector<ClusVec> TrkVec;
-typedef std::multimap<unsigned int, SvtxCluster*> LyrClusMap;
+typedef std::multimap<unsigned int, TrkrCluster*> LyrClusMap;
 
+struct mis {
+  double dx;
+  double dy;
+  double dz;
+};
 
-class AnaMvtxTelescopeHits: public SubsysReco {
+class AnaMvtxPrototype1: public SubsysReco {
 
 public:
 
-  AnaMvtxTelescopeHits(const std::string &name = "AnaMvtxTelescopeHits",
+  AnaMvtxPrototype1(const std::string &name = "AnaMvtxPrototype1",
                const std::string &ofName = "out.root");
 
   int Init(PHCompositeNode*);
@@ -53,28 +50,26 @@ public:
   int process_event(PHCompositeNode*);
   int End(PHCompositeNode*);
 
+  /**
+   * Misalign chip in x, y, z (pixel index)
+   */
+  void MisalignLayer(int lyr, double dx, double dy, double dz);
+
 private:
 
   //-- Functions
   int GetNodes(PHCompositeNode *);   //! Get all nodes
 
-  // PHGenFit::Track* MakeGenFitTrack(PHCompositeNode *, 
-  //                                  const SvtxTrack* intrack, 
-  //                                  const SvtxVertex* vertex);
-
-  // int GetTrackCandidates(LyrClusMap* clusmap, TrkVec* trkvec);
-
-  // void LinkClusters(ClusVec* trk, unsigned int next_lyr, LyrClusMap* clusmap, TrkVec* trkvec);
-
-  // ClusVec ChooseBestTrk(TrkVec* trkcnd);
-
-  // double FitTrk(ClusVec* trk);
 
   double CalcSlope(double x0, double y0, double x1, double y1);
   double CalcIntecept(double x0, double y0, double m);
   double CalcProjection(double x, double m, double b);
+
+  void Misalign();
+  void PrintMisalign();
+
   //-- Nodes
-  SvtxClusterMap* _clustermap;
+  TrkrClusterContainer* clusters_;
 
   //-- Flags
 
@@ -84,17 +79,18 @@ private:
   TFile *_f;
 
   TH1D* hlayer;
+  TH1D* hsize[4];
   TH1D* hsize_phi[4];
   TH1D* hsize_z[4]; 
-  TH2D* hphiz[4];
-  TH1D* hdphi[4];
+  TH2D* hxz[4];
+  TH1D* hdx[4];
   TH1D* hdz[4];
 
 
   //-- internal variables
   int _ievent;
-
+  std::map<int, mis> _misalign; /// map for misaligning clusters
 
 };
 
-#endif // __AnaMvtxTelescopeHits_H__
+#endif // __AnaMvtxPrototype1_H__
