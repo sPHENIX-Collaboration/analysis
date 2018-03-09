@@ -27,10 +27,11 @@ TTree *T = NULL;
 TString cuts = "";
 double beam_momentum_selection = -16;
 
-void DrawPrototype4EMCalTower(                                                                                                        //
-                                                                                                                                      //    const TString infile = "/gpfs/mnt/gpfs04/sphenix/user/jinhuang/Prototype_2018/test_production_5/beam_00000683-0000_DSTReader.root",  //
-    const TString infile = "/gpfs/mnt/gpfs04/sphenix/user/jinhuang/Prototype_2018/Scan2Block34/beam_0000068ALL-0000_DSTReader.root",  //
-                                                                                                                                      //    const TString infile = "data/beam_00000683.root_DSTReader.root",  //
+void DrawPrototype4EMCalTower(                                                                                                            //
+                                                                                                                                          //    const TString infile = "/gpfs/mnt/gpfs04/sphenix/user/jinhuang/Prototype_2018/test_production_5/beam_00000683-0000_DSTReader.root",  //
+                                                                                                                                          //    const TString infile = "/gpfs/mnt/gpfs04/sphenix/user/jinhuang/Prototype_2018/Scan2Block18/beam_0000068ALL-0000_DSTReader.root",  //
+    const TString infile = "/gpfs/mnt/gpfs04/sphenix/user/jinhuang/Prototype_2018/Scan2Block18/24GeV/beam_00000ALL-0000_DSTReader.root",  //
+                                                                                                                                          //    const TString infile = "data/beam_00000683.root_DSTReader.root",  //
     bool plot_all = false, const double momentum = -16)
 {
   beam_momentum_selection = momentum;
@@ -105,7 +106,7 @@ void DrawPrototype4EMCalTower(                                                  
   T->SetAlias("Energy_Sum_col2_row2_5x5",
               "Sum$( (abs(TOWER_CALIB_CEMC.get_column()-2)<=2 && abs(TOWER_CALIB_CEMC.get_row()-2)<=2 ) * TOWER_CALIB_CEMC.get_energy())");
   T->SetAlias("Energy_Sum_CEMC", "1*Sum$(TOWER_CALIB_CEMC.get_energy())");
-  T->SetAlias("Energy_Sum_RAW_CEMC", "8/2000.*Sum$(TOWER_RAW_CEMC.get_energy())");
+  T->SetAlias("Energy_Sum_RAW_CEMC", "8/3000.*Sum$(TOWER_RAW_CEMC.get_energy())");
 
   // 12 GeV calibration
   //  EDM=9.83335e-18    STRATEGY= 1      ERROR MATRIX ACCURATE
@@ -183,34 +184,19 @@ void DrawPrototype4EMCalTower(                                                  
     //      event_sel = "Valid_HODO_HORIZONTAL && Valid_HODO_VERTICAL";
     //      cuts = "_Valid_HODO";
 
+    //    event_sel =
+    //        "Valid_HODO_HORIZONTAL && Valid_HODO_VERTICAL && No_Triger_VETO";
+    //    cuts = "_Valid_HODO_Trigger_VETO";
+
     event_sel =
-        "Valid_HODO_HORIZONTAL && Valid_HODO_VERTICAL && No_Triger_VETO";
-    cuts = "_Valid_HODO_Trigger_VETO";
-
-    //      event_sel =
-    //          event_sel
-    //              + "Valid_HODO_HORIZONTAL && Valid_HODO_VERTICAL && No_Triger_VETO  && (C2_Sum_e<50)";
-    //      cuts = cuts + "_Valid_HODO_Trigger_VETO_C2_Sum_Hadron";
-
-    //      event_sel =
-    //          event_sel
-    //              + "Valid_HODO_HORIZONTAL && Valid_HODO_VERTICAL && No_Triger_VETO && CEMC_MIP && (C2_Sum_e<100)";
-    //      cuts = cuts + "_Valid_HODO_Trigger_VETO_CEMC_MIP_C2_Sum_Hadron";
-
-    //      event_sel = "Valid_HODO_HORIZONTAL && Valid_HODO_VERTICAL && (MIP_Count_Col2 == 8) && (Pedestal_Count_AllCEMC >= 64 - 8)";
-    //      cuts = "_Valid_HODO_MIP_Col2_PedestalOther";
-
-    //      event_sel = "Valid_HODO_HORIZONTAL && Valid_HODO_VERTICAL && Average_HODO_VERTICAL>1.5 && Average_HODO_VERTICAL<4.5 && Average_HODO_HORIZONTAL>3.5 && Average_HODO_HORIZONTAL<6.5";
-    //      cuts = "_Valid_HODO_center_col1_row2";
-
-    //      event_sel =
-    //          "C2_Inner_e>100 && Valid_HODO_HORIZONTAL && Valid_HODO_VERTICAL && Average_HODO_HORIZONTAL>1.5 && Average_HODO_HORIZONTAL<4.5 && Average_HODO_VERTICAL>3.5 && Average_HODO_VERTICAL<6.5";
-    //      cuts = "_Valid_HODO_center_col1_row2_C2";
-
-    //      event_sel = "abs(Average_column - 1)<.5 && abs(Average_row - 2) < .5";
-    //      cuts = "_tower_center_col1_row2";
-    //      event_sel = "Valid_HODO_HORIZONTAL && Valid_HODO_VERTICAL && abs(C2_Inner_e)<10";
-    //      cuts = "_Valid_HODO_VetoC2";
+        "Valid_HODO_HORIZONTAL && Valid_HODO_VERTICAL && No_Triger_VETO && abs(Average_HODO_HORIZONTAL - 3)<.2 && abs(Average_HODO_VERTICAL - 4)<.2 ";
+    cuts = "_Valid_HODO_Trigger_VETO_h3_v4";
+    //    event_sel =
+    //        "Valid_HODO_HORIZONTAL && Valid_HODO_VERTICAL && No_Triger_VETO && abs(Average_HODO_HORIZONTAL - 3)<.2 && abs(Average_HODO_VERTICAL - 4)<.2 && (C2_Outer_e>2000 || C2_Inner_e>1000)";
+    //    cuts = "_Valid_HODO_Trigger_VETO_good_e_h3_v4";
+    //    event_sel =
+    //        "Entry$==1643 && Valid_HODO_HORIZONTAL && Valid_HODO_VERTICAL && No_Triger_VETO && abs(Average_HODO_HORIZONTAL - 5)<.2 && abs(Average_HODO_VERTICAL - 2)<.2 && (C2_Outer_e>2000 || C2_Inner_e>1000)";
+    //    cuts = "_Valid_HODO_Trigger_VETO_good_e_h5_v2_ev1643";
   }
 
   cout << "Build event selection of " << (const char *) event_sel << endl;
@@ -231,8 +217,8 @@ void DrawPrototype4EMCalTower(                                                  
   int rnd = rand();
   gDirectory->mkdir(Form("dir_%d", rnd));
   gDirectory->cd(Form("dir_%d", rnd));
-  //  if (plot_all)
-  EMC_HodoScope_Calibration("C2_Sum_e");
+  if (plot_all)
+    EMC_HodoScope_Calibration("C2_Sum_e");
 
   int rnd = rand();
   gDirectory->mkdir(Form("dir_%d", rnd));
@@ -243,14 +229,14 @@ void DrawPrototype4EMCalTower(                                                  
   int rnd = rand();
   gDirectory->mkdir(Form("dir_%d", rnd));
   gDirectory->cd(Form("dir_%d", rnd));
-  if (plot_all)
-    EMCDistribution_SUM("Energy_Sum_CEMC", "C2_Sum_e");
+  //  if (plot_all)
+  EMCDistribution_SUM("Energy_Sum_CEMC", "C2_Sum_e");
 
   int rnd = rand();
   gDirectory->mkdir(Form("dir_%d", rnd));
   gDirectory->cd(Form("dir_%d", rnd));
-  if (plot_all)
-    EMCDistribution_SUM("Energy_Sum_RAW_CEMC", "C2_Sum_e");
+  //  if (plot_all)
+  EMCDistribution_SUM("Energy_Sum_RAW_CEMC", "C2_Sum_e");
 
   int rnd = rand();
   gDirectory->mkdir(Form("dir_%d", rnd));
@@ -593,16 +579,16 @@ void EMCDistribution_SUM(TString sTOWER = "Energy_Sum_col1_row2_5x5",
                          TString CherenkovSignal = "C2_Inner")
 {
   TH1 *EnergySum_LG_full = new TH1F("EnergySum_LG_full",
-                                    ";Full range Tower Energy Sum (GeV);Count / bin", 900, 0, 120);
+                                    ";Full range Tower Energy Sum (GeV);Count / bin", 900, -5, 120);
   TH1 *EnergySum_LG = new TH1F("EnergySum_LG",
-                               ";Full range Tower Energy Sum (GeV);Count / bin", 900, 0, 120);
+                               ";Full range Tower Energy Sum (GeV);Count / bin", 900, -5, 120);
   //  TH1 * EnergySum_HG = new TH1F("EnergySum_HG",
   //      ";Low range Tower Energy Sum (ADC);Count / bin", 50, 0, 500);
 
   TH1 *C2_Inner_full = new TH1F("C2_Inner_full",
-                                CherenkovSignal + ";Cherenkov Signal (ADC);Count / bin", 1000, 0, 17000);
+                                CherenkovSignal + ";Cherenkov Signal (ADC);Count / bin", 180, -1000, 17000);
   TH1 *C2_Inner = new TH1F("C2_Inner",
-                           CherenkovSignal + ";Cherenkov Inner Signal (ADC);Count / bin", 200, 0,
+                           CherenkovSignal + ";Cherenkov Inner Signal (ADC);Count / bin", 180, -1000,
                            17000);
 
   EnergySum_LG_full->SetLineColor(kBlue + 3);
@@ -651,7 +637,7 @@ void EMCDistribution_SUM(TString sTOWER = "Energy_Sum_col1_row2_5x5",
   p->SetGridy(0);
 
   TH1 *h = (TH1 *) EnergySum_LG_full->DrawClone();
-  h->GetXaxis()->SetRangeUser(0, h->GetMean() + 5 * h->GetRMS());
+  h->GetXaxis()->SetRangeUser(-1, h->GetMean() + 5 * h->GetRMS());
   (TH1 *) EnergySum_LG->DrawClone("same");
 
   p = (TPad *) c1->cd(idx++);
