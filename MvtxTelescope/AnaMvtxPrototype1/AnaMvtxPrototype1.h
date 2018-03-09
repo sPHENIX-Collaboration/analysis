@@ -94,6 +94,12 @@ private:
   TH1D* htrk_chi2xy;
   TH1D* htrk_chi2zy;
 
+  TH1D* htrk_cut;
+  TH1D* htrk_cut_dx[4];
+  TH1D* htrk_cut_dz[4];
+  TH1D* htrk_cut_chi2xy;
+  TH1D* htrk_cut_chi2zy;
+
 
   //-- internal variables
   int _ievent;
