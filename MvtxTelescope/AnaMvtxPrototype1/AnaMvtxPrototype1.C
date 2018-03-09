@@ -124,7 +124,7 @@ int AnaMvtxPrototype1::Init(PHCompositeNode *topNode)
   htrk_chi2xy = new TH1D("htrk_chi2xy",
                          ";track chi2/ndf in x vs y",
                          500, 0, 100);
-  htrk_chi2zy = new TH1D("htrk_chi2zy_l%i",
+  htrk_chi2zy = new TH1D("htrk_chi2zy",
                          ";track chi2/ndf in z vs y",
                          500, 0, 100);
 
@@ -361,13 +361,20 @@ int AnaMvtxPrototype1::process_event(PHCompositeNode *topNode)
   // Try full tracking
   //------
   MvtxStandaloneTracking::MvtxTrackList tracklist;
-  mvtxtracking_->RunTracking(topNode, tracklist);
+
+  std::vector<int> uselayers;
+  uselayers.push_back(0);
+  uselayers.push_back(1);
+  uselayers.push_back(2);
+  uselayers.push_back(3);
+
+  mvtxtracking_->RunTracking(topNode, tracklist, uselayers);
 
   htrk->Fill(tracklist.size());
 
   for ( unsigned int i = 0; i < tracklist.size(); i++)
   {
-    std::cout << "== " << i << std::endl;
+    // std::cout << "== " << i << std::endl;
     for ( unsigned int j = 0; j < tracklist.at(i).ClusterList.size(); j++)
     {
       // std::cout << "    clus " << j

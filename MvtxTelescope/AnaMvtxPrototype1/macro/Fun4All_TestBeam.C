@@ -2,7 +2,7 @@
 
 using namespace std;
 
-void Fun4All_TestBeam(int nEvents = 10,
+void Fun4All_TestBeam(int nEvents = 250000,
                       const char *input_file = "./beamtest2018/beam/beam_00000088-0000.prdf",
                       const char *output_file = "beam_00000088.root"
                      )
