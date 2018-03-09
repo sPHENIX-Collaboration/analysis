@@ -1,6 +1,6 @@
 AC_INIT(configure.in)
 
-AM_INIT_AUTOMAKE(Proto3_ExampleAnalysisModule, 1.00)
+AM_INIT_AUTOMAKE(Proto4_ExampleAnalysisModule, 1.00)
 
 AC_PROG_CXX(g++)
 AC_ENABLE_STATIC(no)

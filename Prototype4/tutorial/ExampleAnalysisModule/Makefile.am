@@ -9,24 +9,24 @@ INCLUDES = \
   -I`root-config --incdir`
 
 lib_LTLIBRARIES = \
-   libProto3_ExampleAnalysisModule.la
+   libProto4_ExampleAnalysisModule.la
 
 AM_CXXFLAGS = -Wall -Werror -msse2
 
-libProto3_ExampleAnalysisModule_la_LDFLAGS = \
+libProto4_ExampleAnalysisModule_la_LDFLAGS = \
   -L$(libdir) \
   -L$(OFFLINE_MAIN)/lib
 
-libProto3_ExampleAnalysisModule_la_LIBADD = \
+libProto4_ExampleAnalysisModule_la_LIBADD = \
   -lfun4all \
   -lg4dst \
-  -lPrototype3
+  -lPrototype4
 
 pkginclude_HEADERS = 
 
 #pkginclude_HEADERS = $(include_HEADERS)
 
-libProto3_ExampleAnalysisModule_la_SOURCES = \
+libProto4_ExampleAnalysisModule_la_SOURCES = \
   ExampleAnalysisModule.C \
   ExampleAnalysisModule_Dict.C 
 
@@ -46,7 +46,7 @@ BUILT_SOURCES = \
   testexternals.C
 
 testexternals_LDADD = \
-  libProto3_ExampleAnalysisModule.la
+  libProto4_ExampleAnalysisModule.la
 
 testexternals.C:
 	echo "//*** this is a generated file. Do not commit, do not edit" > $@

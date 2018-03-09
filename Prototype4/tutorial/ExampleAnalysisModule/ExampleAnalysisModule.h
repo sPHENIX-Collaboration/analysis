@@ -1,12 +1,12 @@
 #ifndef __ExampleAnalysisModule_H__
 #define __ExampleAnalysisModule_H__
 
-#include <fun4all/SubsysReco.h>
-#include <TNtuple.h>
 #include <TFile.h>
-#include <string>
+#include <TNtuple.h>
+#include <fun4all/SubsysReco.h>
 #include <stdint.h>
 #include <fstream>
+#include <string>
 
 class PHCompositeNode;
 class PHG4HitContainer;
@@ -22,31 +22,24 @@ class SvtxTrack;
 /// \class ExampleAnalysisModule to help you get started
 class ExampleAnalysisModule : public SubsysReco
 {
-
-public:
-
+ public:
   //! constructor
   ExampleAnalysisModule(const std::string &filename = "ExampleAnalysis.root");
 
   //! destructor
-  virtual
-  ~ExampleAnalysisModule();
+  virtual ~ExampleAnalysisModule();
 
   //! Standard function called at initialization
-  int
-  Init(PHCompositeNode *topNode);
+  int Init(PHCompositeNode *topNode);
 
   //! Standard function called when a new run is processed
-  int
-  InitRun(PHCompositeNode *topNode);
+  int InitRun(PHCompositeNode *topNode);
 
   //! Standard function called at each event
-  int
-  process_event(PHCompositeNode *topNode);
+  int process_event(PHCompositeNode *topNode);
 
   //! Standard function called at the end of processing. Save your stuff here.
-  int
-  End(PHCompositeNode *topNode);
+  int End(PHCompositeNode *topNode);
 
   //! Is processing simulation files?
   void
@@ -57,13 +50,12 @@ public:
 
   class Eval_Run : public TObject
   {
-  public:
+   public:
     Eval_Run()
     {
       reset();
     }
-    virtual
-    ~Eval_Run()
+    virtual ~Eval_Run()
     {
     }
 
@@ -135,19 +127,18 @@ public:
     double sum_E_HCAL_OUT;
     double sum_E_HCAL_IN;
 
-  ClassDef(Eval_Run,10)
+    ClassDef(Eval_Run, 10)
   };
 
   class Eval_Cluster : public TObject
   {
-  public:
+   public:
     Eval_Cluster()
     {
       reset();
     }
 
-    virtual
-    ~Eval_Cluster()
+    virtual ~Eval_Cluster()
     {
     }
 
@@ -166,16 +157,15 @@ public:
     reweight_clus_pol()
     {
       if (sum_E > 0)
-        {
-          average_col /= sum_E;
-          average_row /= sum_E;
-        }
+      {
+        average_col /= sum_E;
+        average_row /= sum_E;
+      }
       else
-        {
-          average_col = -31454;
-          average_row = -31454;
-
-        }
+      {
+        average_col = -31454;
+        average_row = -31454;
+      }
     }
 
     //!max hit col
@@ -191,11 +181,10 @@ public:
     //!sum cluster energy
     float sum_E;
 
-  ClassDef(Eval_Cluster,10)
+    ClassDef(Eval_Cluster, 10)
   };
 
-private:
-
+ private:
   // calorimeter size
   enum
   {
@@ -210,7 +199,7 @@ private:
   get_HistoManager();
 
   std::pair<int, int>
-  find_max(RawTowerContainer* towers, int cluster_size);
+  find_max(RawTowerContainer *towers, int cluster_size);
 
   //! output root file name
   std::string _filename;
@@ -223,7 +212,6 @@ private:
 
   //! clusters of max 5x5 EMCal cluster. To be copied to output TTree T
   Eval_Cluster _eval_5x5_CEMC;
-
 };
 
-#endif // __ExampleAnalysisModule_H__
+#endif  // __ExampleAnalysisModule_H__
