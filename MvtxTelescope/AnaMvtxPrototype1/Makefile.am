@@ -29,7 +29,8 @@ libAnaMvtxPrototype1_la_SOURCES = \
 libAnaMvtxPrototype1_la_LIBADD = \
   -lfun4all \
   -ltrack_io \
-  -ltrack_util
+  -ltrack_util \
+  -lMvtxPrototype1
 
 #pkginclude_HEADERS = $(include_HEADERS)
 
