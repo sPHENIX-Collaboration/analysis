@@ -10,6 +10,8 @@
 #include <trackbase/TrkrCluster.h>
 #include <trackbase/TrkrClusterContainer.h>
 
+#include <mvtxprototype1/MvtxStandaloneTracking.h>
+
 #include <phool/getClass.h>
 #include <phool/phool.h>
 #include <phool/PHCompositeNode.h>
@@ -47,7 +49,8 @@ AnaMvtxPrototype1::AnaMvtxPrototype1(const std::string &name,
   SubsysReco(name),
   clusters_(NULL),
   _foutname(ofName),
-  _f(NULL)
+  _f(NULL),
+  _ievent(0)
 {
 
   hlayer = NULL;
@@ -60,6 +63,11 @@ AnaMvtxPrototype1::AnaMvtxPrototype1(const std::string &name,
     hdx[il] = NULL;
     hdz[il] = NULL;
   }
+
+  mvtxtracking_ = new MvtxStandaloneTracking();
+  mvtxtracking_->SetWindowX(10);
+  mvtxtracking_->SetWindowZ(10);
+  mvtxtracking_->Verbosity(0);
 }
 
 int AnaMvtxPrototype1::Init(PHCompositeNode *topNode)
@@ -91,15 +99,50 @@ int AnaMvtxPrototype1::Init(PHCompositeNode *topNode)
                        512, -0.5, 511.5);
 
     hdx[il] = new TH1D(Form("hdx_l%i", il),
-                         "; dx [pixels]",
-                         2000, -500, 500);
+                       "; dx [pixels]",
+                       2000, -500, 500);
 
     hdz[il] = new TH1D(Form("hdz_l%i", il),
                        "; dz [pixels]",
                        2000, -500, 500);
   } // il
 
+  //-- results from tracking
+  htrk = new TH1D("htrk", ";trks / event", 16, -0.5, 15.5);
+  htrk_cut = new TH1D("htrk_cut", ";trks / event", 16, -0.5, 15.5);
 
+  for (int il = 0; il < 4; il++)
+  {
+    htrk_dx[il] = new TH1D(Form("htrk_dx_l%i", il),
+                           ";track dx [pixels]",
+                           500, -25, 25);
+
+    htrk_dz[il] = new TH1D(Form("htrk_dz_l%i", il),
+                           ";track dz [pixels]",
+                           500, -25, 25);
+
+    htrk_cut_dx[il] = new TH1D(Form("htrk_cut_dx_l%i", il),
+                               ";track dx [pixels]",
+                               500, -25, 25);
+
+    htrk_cut_dz[il] = new TH1D(Form("htrk_cut_dz_l%i", il),
+                               ";track dz [pixels]",
+                               500, -25, 25);
+
+  }
+  htrk_chi2xy = new TH1D("htrk_chi2xy",
+                         ";track chi2/ndf in x vs y",
+                         500, 0, 100);
+  htrk_chi2zy = new TH1D("htrk_chi2zy",
+                         ";track chi2/ndf in z vs y",
+                         500, 0, 100);
+
+  htrk_cut_chi2xy = new TH1D("htrk_cut_chi2xy",
+                             ";track chi2/ndf in x vs y",
+                             500, 0, 100);
+  htrk_cut_chi2zy = new TH1D("htrk_cut_chi2zy",
+                             ";track chi2/ndf in z vs y",
+                             500, 0, 100);
 
   return 0;
 
@@ -160,6 +203,7 @@ int AnaMvtxPrototype1::process_event(PHCompositeNode *topNode)
        ++iter)
   {
     TrkrCluster *clus = iter->second;
+    // clus->identify();
 
     TrkrDefs::cluskey ckey = clus->GetClusKey();
 
@@ -188,12 +232,30 @@ int AnaMvtxPrototype1::process_event(PHCompositeNode *topNode)
   if ( verbosity > VERBOSITY_MORE )
     std::cout << "-- Performing simple tracking" << std::endl;
 
+  static bool check_range = true;
+  if ( check_range )
+  {
+    TrkrDefs::cluskey mvtxl = trkrutil.GetClusKeyLo(TrkrDefs::TRKRID::mvtx_id);
+    TrkrDefs::cluskey mvtxh = trkrutil.GetClusKeyHi(TrkrDefs::TRKRID::mvtx_id);
+
+    std::cout << PHWHERE << " Mvtx key range: 0x" << std::hex << mvtxl << " - 0x" << mvtxh << std::dec << std::endl;
+
+    for (int i = 0; i < 4; i++)
+    {
+      TrkrDefs::cluskey lyrl = trkrutil.GetClusKeyLo(TrkrDefs::TRKRID::mvtx_id, i);
+      TrkrDefs::cluskey lyrh = trkrutil.GetClusKeyHi(TrkrDefs::TRKRID::mvtx_id, i);
+
+      std::cout << PHWHERE << " Mvtx key range lyr " << i << ": 0x" << std::hex << lyrl << " - 0x" << lyrh << std::dec << std::endl;
+    }
+
+    check_range = false;
+  }
+
+
   // loop over clusters in layer 0
-  LyrClusMap::iterator lyr0_itr;
-  LyrClusMap::iterator lyr_itr;
-  LyrClusMap::iterator lyr3_itr;
-  for ( lyr0_itr = _mmap_lyr_clus.lower_bound(0);
-        lyr0_itr != _mmap_lyr_clus.upper_bound(0);
+  TrkrClusterContainer::ConstRange lyr0range = clusters_->GetClusters(TrkrDefs::TRKRID::mvtx_id, 0);
+  for ( TrkrClusterContainer::ConstIterator lyr0_itr = lyr0range.first;
+        lyr0_itr != lyr0range.second;
         ++lyr0_itr)
   {
     TrkrCluster* clus0 = lyr0_itr->second;
@@ -203,6 +265,17 @@ int AnaMvtxPrototype1::process_event(PHCompositeNode *topNode)
       std::cout << "WARNING: clus0 not found" << std::endl;
       continue;
     }
+
+    // check layer
+    int lyr = trkrutil.GetLayer(clus0->GetClusKey());
+    if ( lyr != 0 )
+    {
+      std::cout << PHWHERE << "ERRORL: Expected clusters from layer 0 only. Found lyr=" << lyr << std::endl;
+      continue;
+    }
+
+
+
     auto misiter = _misalign.find(0);
     // get (x, y, z)
     double x0 = misiter != _misalign.end() ? clus0->GetX() + (misiter->second).dx : clus0->GetX();
@@ -215,8 +288,9 @@ int AnaMvtxPrototype1::process_event(PHCompositeNode *topNode)
     }
 
     // loop over all clusters in the outer layer
-    for ( lyr3_itr = _mmap_lyr_clus.lower_bound(3);
-          lyr3_itr != _mmap_lyr_clus.upper_bound(3);
+    TrkrClusterContainer::ConstRange lyr3range = clusters_->GetClusters(TrkrDefs::TRKRID::mvtx_id, 3);
+    for ( TrkrClusterContainer::ConstIterator lyr3_itr = lyr3range.first;
+          lyr3_itr != lyr3range.second;
           ++lyr3_itr)
     {
       TrkrCluster* clus3 = lyr3_itr->second;
@@ -255,8 +329,9 @@ int AnaMvtxPrototype1::process_event(PHCompositeNode *topNode)
       // loop over all clusters in layer 1 & 2 and calc displacement
       for (int ilyr = 1; ilyr <= 2; ilyr++)
       {
-        for ( lyr_itr = _mmap_lyr_clus.lower_bound(ilyr);
-              lyr_itr != _mmap_lyr_clus.upper_bound(ilyr);
+        TrkrClusterContainer::ConstRange lyrrange = clusters_->GetClusters(TrkrDefs::TRKRID::mvtx_id, ilyr);
+        for ( TrkrClusterContainer::ConstIterator lyr_itr = lyrrange.first;
+              lyr_itr != lyrrange.second;
               ++lyr_itr)
         {
           TrkrCluster* clus = lyr_itr->second;
@@ -306,6 +381,124 @@ int AnaMvtxPrototype1::process_event(PHCompositeNode *topNode)
 
   } //lyr0_itr
 
+  // // loop over clusters in layer 0
+  // LyrClusMap::iterator lyr0_itr;
+  // LyrClusMap::iterator lyr_itr;
+  // LyrClusMap::iterator lyr3_itr;
+  // for ( lyr0_itr = _mmap_lyr_clus.lower_bound(0);
+  //       lyr0_itr != _mmap_lyr_clus.upper_bound(0);
+  //       ++lyr0_itr)
+  // {
+  //   TrkrCluster* clus0 = lyr0_itr->second;
+
+  //   if ( !clus0 )
+  //   {
+  //     std::cout << "WARNING: clus0 not found" << std::endl;
+  //     continue;
+  //   }
+  //   auto misiter = _misalign.find(0);
+  //   // get (x, y, z)
+  //   double x0 = misiter != _misalign.end() ? clus0->GetX() + (misiter->second).dx : clus0->GetX();
+  //   double y0 = misiter != _misalign.end() ? clus0->GetY() + (misiter->second).dy : clus0->GetY();
+  //   double z0 = misiter != _misalign.end() ? clus0->GetZ() + (misiter->second).dz : clus0->GetZ();
+
+  //   if ( verbosity > VERBOSITY_MORE )
+  //   {
+  //     std::cout << "-- clus0:(" << x0 << ", " << y0 << ", " << z0 << ")" << std::endl;
+  //   }
+
+  //   // loop over all clusters in the outer layer
+  //   for ( lyr3_itr = _mmap_lyr_clus.lower_bound(3);
+  //         lyr3_itr != _mmap_lyr_clus.upper_bound(3);
+  //         ++lyr3_itr)
+  //   {
+  //     TrkrCluster* clus3 = lyr3_itr->second;
+
+  //     if ( !clus3 )
+  //     {
+  //       std::cout << "WARNING: clus3 not found" << std::endl;
+  //       continue;
+  //     }
+
+  //     auto misiter = _misalign.find(3);
+  //     // get (x, y, z)
+  //     double x3 = misiter != _misalign.end() ? clus3->GetX() + (misiter->second).dx : clus3->GetX();
+  //     double y3 = misiter != _misalign.end() ? clus3->GetY() + (misiter->second).dy : clus3->GetY();
+  //     double z3 = misiter != _misalign.end() ? clus3->GetZ() + (misiter->second).dz : clus3->GetZ();
+
+
+  //     // calc m, b in (phi, r) space
+  //     double mpr = CalcSlope(y0, x0, y3, x3);
+  //     double bpr = CalcIntecept(y0, x0, mpr);
+
+  //     // calc m, b in (z, r) space
+  //     double mzr = CalcSlope(y0, z0, y3, z3);
+  //     double bzr = CalcIntecept(y0, z0, mzr);
+
+
+  //     if ( verbosity > VERBOSITY_MORE )
+  //     {
+  //       std::cout << "-- clus3:(" << x3 << ", " << y3 << ", " << z3 << ")" << std::endl;
+  //       std::cout << "-- mpr:" << mpr << " bpr:" << bpr << std::endl;
+  //       std::cout << "-- mzr:" << mzr << " bzr:" << bzr << std::endl;
+  //     }
+
+
+
+  //     // loop over all clusters in layer 1 & 2 and calc displacement
+  //     for (int ilyr = 1; ilyr <= 2; ilyr++)
+  //     {
+  //       for ( lyr_itr = _mmap_lyr_clus.lower_bound(ilyr);
+  //             lyr_itr != _mmap_lyr_clus.upper_bound(ilyr);
+  //             ++lyr_itr)
+  //       {
+  //         TrkrCluster* clus = lyr_itr->second;
+
+  //         if ( !clus )
+  //           continue;
+
+  //         auto misiter = _misalign.find(ilyr);
+  //         // get (x, y, z)
+  //         double x = misiter != _misalign.end() ? clus->GetX() + (misiter->second).dx : clus->GetX();
+  //         double y = misiter != _misalign.end() ? clus->GetY() + (misiter->second).dy : clus->GetY();
+  //         double z = misiter != _misalign.end() ? clus->GetZ() + (misiter->second).dz : clus->GetZ();
+
+
+  //         // calc track projection in phi, z
+  //         double x_proj = CalcProjection(y, mpr, bpr);
+  //         double z_proj = CalcProjection(y, mzr, bzr);
+
+  //         // calc proj - true
+  //         double dx = (x_proj - x);
+  //         double dz = (z_proj - z);
+
+  //         if ( !hdx[ilyr] || !hdz[ilyr] )
+  //         {
+  //           std::cout << "WARNING!! can't find hdphi or hdz for lyr:" << ilyr << std::endl;
+  //         }
+  //         else
+  //         {
+  //           hdx[ilyr]->Fill(dx);
+  //           hdz[ilyr]->Fill(dz);
+  //         }
+
+  //         if ( verbosity > VERBOSITY_MORE )
+  //         {
+  //           std::cout << "------------------" << std::endl;
+  //           std::cout << "-- clus" << trkrutil.GetLayer(clus->GetClusKey()) << ":(" << x3 << ", " << y3 << ", " << z3 << ")" << std::endl;
+  //           std::cout << "-- proj:(" << x_proj << ", " << z_proj << ")" << std::endl;
+  //           std::cout << "-- dx [pixels]: " << dx << std::endl;
+  //           std::cout << "-- dz [pixels]: " << dz << std::endl;
+  //           std::cout << "------------------" << std::endl;
+  //         }
+
+  //       } // lyr1_itr
+  //     } // ilyr;
+
+  //   } // lyr3_itr
+
+  // } //lyr0_itr
+
 
   if ( verbosity > VERBOSITY_MORE )
     std::cout << "-- Done simple tracking" << std::endl;
@@ -329,6 +522,62 @@ int AnaMvtxPrototype1::process_event(PHCompositeNode *topNode)
   // }
 
 
+  //------
+  // Try full tracking
+  //------
+  MvtxStandaloneTracking::MvtxTrackList tracklist;
+
+  std::vector<int> uselayers;
+  uselayers.push_back(0);
+  uselayers.push_back(1);
+  uselayers.push_back(2);
+  uselayers.push_back(3);
+
+  mvtxtracking_->RunTracking(topNode, tracklist, uselayers);
+
+  htrk->Fill(tracklist.size());
+
+  int ncut = 0;
+  for ( unsigned int i = 0; i < tracklist.size(); i++)
+  {
+
+    htrk_chi2xy->Fill(tracklist.at(i).chi2_xy);
+    htrk_chi2zy->Fill(tracklist.at(i).chi2_zy);
+
+    if ( tracklist.at(i).chi2_xy < 5 && tracklist.at(i).chi2_zy < 5)
+    {
+      ncut++;
+      htrk_cut_chi2xy->Fill(tracklist.at(i).chi2_xy);
+      htrk_cut_chi2zy->Fill(tracklist.at(i).chi2_zy);
+    }
+
+    for ( unsigned int j = 0; j < tracklist.at(i).ClusterList.size(); j++)
+    {
+      TrkrDefs::cluskey ckey = tracklist.at(i).ClusterList.at(j)->GetClusKey();
+
+      int lyr = trkrutil.GetLayer(ckey);
+
+      if ( lyr < 0 || lyr >= 4 )
+      {
+        std::cout << PHWHERE << " WARNING: bad layer from track cluster. lyr:" << lyr << std::endl;
+        continue;
+      }
+
+      htrk_dx[lyr]->Fill(tracklist.at(i).dx.at(j));
+      htrk_dz[lyr]->Fill(tracklist.at(i).dz.at(j));
+
+      if ( tracklist.at(i).chi2_xy < 5 && tracklist.at(i).chi2_zy < 5)
+      {
+        htrk_cut_dx[lyr]->Fill(tracklist.at(i).dx.at(j));
+        htrk_cut_dz[lyr]->Fill(tracklist.at(i).dz.at(j));
+      }
+    } // j
+
+
+  } // i
+
+  htrk_cut->Fill(ncut);
+  
   //-- Cleanup
 
 
