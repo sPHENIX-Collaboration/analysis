@@ -101,10 +101,10 @@ void DrawPrototype4ShowerCalib(  //
   //    event_sel = "info.beam_mom == -2 && valid_hodo_v && valid_hodo_h&& trigger_veto_pass && info.hodo_h>=2 && info.hodo_h<=4 && info.hodo_v>=4 && info.hodo_v<=6";  // Tower 36
   //    cuts = "_valid_data_h234_v456_2GeV";  // Tower 36
 
-  event_sel = "good_e  && info.hodo_h==3 && info.hodo_v==4";  // Tower 34/18
-  cuts = "_good_e_h3_v4";
-  //    event_sel = "valid_hodo_v && valid_hodo_h&& trigger_veto_pass && info.hodo_h>=2 && info.hodo_h<=4 && info.hodo_v>=3 && info.hodo_v<=5";  // Tower 34/18
-  //    cuts = "_valid_data_h234_v345";
+//  event_sel = "good_e  && info.hodo_h==3 && info.hodo_v==4";  // Tower 34/18
+//  cuts = "_good_e_h3_v4";
+      event_sel = "valid_hodo_v && valid_hodo_h&& trigger_veto_pass && info.hodo_h>=2 && info.hodo_h<=4 && info.hodo_v>=3 && info.hodo_v<=5";  // Tower 34/18
+      cuts = "_valid_data_h234_v345";
 
 //  event_sel = "good_e  && info.hodo_h==5 && info.hodo_v==2";  // Tower 34/18 between towers
 //  cuts = "_good_e_h5_v2";
