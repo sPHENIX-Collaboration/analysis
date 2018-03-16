@@ -4,7 +4,7 @@ hera_dis_fillbins()
   gSystem->Load("libeicsmear");
 
   /* Open input files. */
-  TFile *file_mc = new TFile("data/TEST/pythia_hera_820x27.5.root");
+  TFile *file_mc = new TFile("/gpfs/mnt/gpfs04/sphenix/user/nfeege/data/TEST/pythia.ep.27.5x820.1Mevents.RadCor=0.Q2gt1.root");
 
   /* Get trees from files. */
   TTree *tree = (TTree*)file_mc->Get("EICTree");

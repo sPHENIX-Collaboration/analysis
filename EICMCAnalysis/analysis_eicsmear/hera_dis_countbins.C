@@ -11,8 +11,8 @@ hera_dis_countbins()
   float ebeam_p = 820;
 
   /* Pythia generated events, cross section, and luminosity */
-  float pythia_ngen = 100000;
-  float pythia_xsec = 1.0947616857898912; // in microbarn
+  float pythia_ngen = 999999;
+  float pythia_xsec = 0.80120995103272474; // in microbarn
   float convert_microbarn_to_femtobarn = 1e9;
   float pythia_lumi = pythia_ngen / ( pythia_xsec * convert_microbarn_to_femtobarn );
 
@@ -41,6 +41,9 @@ hera_dis_countbins()
   tcount->Branch("N", &t_N, "N/F");
   tcount->Branch("dN", &t_dN, "dN/F");
 
+  /* center of mass energy */
+  t_s = 4 * ebeam_e * ebeam_p;
+
   /* loop over all bins */
   for ( int bin_x = 1; bin_x <= hxQ2->GetNbinsX(); bin_x++ )
     {
@@ -55,6 +58,7 @@ hera_dis_countbins()
 	  t_Q2 = TMath::Power(10, 0.5 * ( ( TMath::Log10( hxQ2->GetYaxis()->GetBinLowEdge(bin_y) ) )
 					  + ( TMath::Log10( hxQ2->GetYaxis()->GetBinLowEdge(bin_y) + hxQ2->GetYaxis()->GetBinWidth(bin_y) ) ) ) );
 
+	  t_y = t_Q2 / ( t_x * t_s );
 
 	  t_N = hxQ2->GetBinContent( bin_x, bin_y ) * lumi_scaling;
 	  if ( t_N < 1 )
