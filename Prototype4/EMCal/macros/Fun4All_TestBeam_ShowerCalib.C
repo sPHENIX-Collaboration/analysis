@@ -8,7 +8,7 @@ void Fun4All_TestBeam_ShowerCalib(  //
 //                                   "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2018/ShowerCalib_tilted/dst.lst"  //
 //        "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2018/Scan1Block36/dst.lst"
         //"/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2018/Scan1Block27/dst.lst"
-                "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2018/Scan2Block18/dst.lst"
+                "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2018/Scan64.28V/dst.lst"
 //                "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2018/Scan2Block34/dst.lst"
         )
 {

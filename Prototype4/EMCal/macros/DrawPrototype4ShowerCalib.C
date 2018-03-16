@@ -41,8 +41,9 @@ void DrawPrototype4ShowerCalib(  //
         //        "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2018/ShowerCalib/dst.lst_EMCalCalib.root"  //
     //        "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2018/ShowerCalib_tilted/dst.lst_EMCalCalib.root"//
     //    "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2018/Scan1Block36/dst.lst_EMCalCalib.root"  //
-//        "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2018/Scan2Block34/dst.lst_EMCalCalib.root"  //
-    "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2018/Scan2Block18/dst.lst_EMCalCalib.root"  //
+    //        "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2018/Scan2Block34/dst.lst_EMCalCalib.root"  //
+    //    "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2018/Scan2Block18/dst.lst_EMCalCalib.root"  //
+    "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2018/Scan64.28V/dst.lst_EMCalCalib.root"  //
     )
 {
   SetOKStyle();
@@ -78,8 +79,8 @@ void DrawPrototype4ShowerCalib(  //
 
   //  event_sel = "1";
   //  cuts = "_all_data";
-  //  event_sel = "good_e";
-  //  cuts = "_good_e";
+//  event_sel = "good_e";
+//  cuts = "_good_e";
 
   //  event_sel = "info.beam_mom == -8 && good_e";
   //  cuts = "_8GeV_good_e";
@@ -101,13 +102,13 @@ void DrawPrototype4ShowerCalib(  //
   //    event_sel = "info.beam_mom == -2 && valid_hodo_v && valid_hodo_h&& trigger_veto_pass && info.hodo_h>=2 && info.hodo_h<=4 && info.hodo_v>=4 && info.hodo_v<=6";  // Tower 36
   //    cuts = "_valid_data_h234_v456_2GeV";  // Tower 36
 
-//  event_sel = "good_e  && info.hodo_h==3 && info.hodo_v==4";  // Tower 34/18
-//  cuts = "_good_e_h3_v4";
-      event_sel = "valid_hodo_v && valid_hodo_h&& trigger_veto_pass && info.hodo_h>=2 && info.hodo_h<=4 && info.hodo_v>=3 && info.hodo_v<=5";  // Tower 34/18
-      cuts = "_valid_data_h234_v345";
+    event_sel = "good_e  && info.hodo_h==3 && info.hodo_v==4";  // Tower 34/18
+    cuts = "_good_e_h3_v4";
+  //      event_sel = "valid_hodo_v && valid_hodo_h&& trigger_veto_pass && info.hodo_h>=2 && info.hodo_h<=4 && info.hodo_v>=3 && info.hodo_v<=5";  // Tower 34/18
+  //      cuts = "_valid_data_h234_v345";
 
-//  event_sel = "good_e  && info.hodo_h==5 && info.hodo_v==2";  // Tower 34/18 between towers
-//  cuts = "_good_e_h5_v2";
+  //  event_sel = "good_e  && info.hodo_h==5 && info.hodo_v==2";  // Tower 34/18 between towers
+  //  cuts = "_good_e_h5_v2";
 
   T->SetAlias("SimEnergyScale", "1*1");
   //    // based on /phenix/u/jinhuang/links/sPHENIX_work/Prototype_2016/ShowerCalib/UIUC21.lst_EMCalCalib.root_DrawPrototype3ShowerCalib_LineShapeData_Neg8GeV_good_data_h5_v3.svg
@@ -138,8 +139,8 @@ void DrawPrototype4ShowerCalib(  //
 
   //  LineShapeData("abs(info.C2_sum)<200", "(info.C2_sum)>2000");
 
-  Get_Res_linear_Summmary("sum_E");
-  //  Get_Res_linear_Summmary("sum_E*2");
+  //  Get_Res_linear_Summmary("sum_E");
+  Get_Res_linear_Summmary("sum_E*.13",10);
 
   // simulation stuff
   //  SimPositionCheck(-0); // 0 degree tilted
@@ -553,7 +554,7 @@ void SimPositionCheck(const double shift_z = 0)
   return;
 }
 
-void Get_Res_linear_Summmary(TString e_sum = "sum_E")
+void Get_Res_linear_Summmary(TString e_sum = "sum_E", const double max_E = 32)
 {
   vector<double> beam_mom(GetBeamMom());
 
@@ -579,10 +580,10 @@ void Get_Res_linear_Summmary(TString e_sum = "sum_E")
 
   TLegend *leg = new TLegend(.15, .7, .6, .85);
 
-  p->DrawFrame(0, 0, 32, 40,
+  p->DrawFrame(0, 0, max_E, max_E,
                Form("Electron Linearity;Input energy (GeV);Measured Energy (GeV)"));
 
-  TF1 *f_calo_l_sim = new TF1("f_calo_l", "pol2", 0.5, 32);
+  TF1 *f_calo_l_sim = new TF1("f_calo_l", "pol2", 0.5, max_E);
   //  f_calo_l_sim->SetParameters(-0.03389, 0.9666, -0.0002822);
   f_calo_l_sim->SetParameters(-0., 1, -0.);
   //  f_calo_l_sim->SetLineWidth(1);
@@ -616,7 +617,7 @@ void Get_Res_linear_Summmary(TString e_sum = "sum_E")
   f_calo_sim->SetLineWidth(3);
   f_calo_sim->SetLineColor(kGreen + 2);
 
-  TH1 *hframe = p->DrawFrame(0, 0, 30, 0.3,
+  TH1 *hframe = p->DrawFrame(0, 0, max_E, 0.3,
                              Form("Resolution;Input energy (GeV);#DeltaE/<E>"));
 
   TLegend *leg = new TLegend(.2, .6, .85, .9);
