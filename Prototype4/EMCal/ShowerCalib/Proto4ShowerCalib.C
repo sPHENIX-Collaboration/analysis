@@ -536,8 +536,8 @@ int Proto4ShowerCalib::process_event(PHCompositeNode *topNode)
       if (col == max_1x1.first)
         if (row == max_1x1.second)
         {
-          _eval_1x1_prod.average_col =  col;
-          _eval_1x1_prod.average_row =  row;
+          _eval_1x1_prod.average_col = col;
+          _eval_1x1_prod.average_row = row;
           _eval_1x1_prod.sum_E = energy_calib;
         }
 
@@ -602,8 +602,8 @@ int Proto4ShowerCalib::process_event(PHCompositeNode *topNode)
   hNormalization->Fill("good_temp", good_temp);
 
   //  bool good_data = good_e and good_temp;
-  bool good_data = good_e and abs(_eval_5x5_prod.average_col - round(_eval_5x5_prod.average_col)) < 0.15  //
-                   and abs(_eval_5x5_prod.average_row - round(_eval_5x5_prod.average_row)) < 0.15;
+  bool good_data = good_e and abs(_eval_5x5_prod.average_col - round(_eval_5x5_prod.average_col)) < 0.1  //
+                   and abs(_eval_5x5_prod.average_row - round(_eval_5x5_prod.average_row)) < 0.1;
   hNormalization->Fill("good_data", good_data);
 
   _eval_run.good_temp = good_temp;
@@ -629,6 +629,7 @@ int Proto4ShowerCalib::process_event(PHCompositeNode *topNode)
   // calibration file
   //  if (good_data and abs(_eval_run.beam_mom) >= 4 and abs(_eval_run.beam_mom) <= 8  //
   //      )
+  if (good_data)
   {
     assert(fdata.is_open());
 
