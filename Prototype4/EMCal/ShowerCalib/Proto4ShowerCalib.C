@@ -222,20 +222,21 @@ int Proto4ShowerCalib::process_event(PHCompositeNode *topNode)
     PdbParameterMap *info = findNode::getClass<PdbParameterMap>(topNode,
                                                                 "RUN_INFO");
 
-    assert(info);
+    if (info)
+    {
+      PHParameters run_info_copy("RunInfo");
+      run_info_copy.FillFrom(info);
 
-    PHParameters run_info_copy("RunInfo");
-    run_info_copy.FillFrom(info);
+      _eval_run.beam_mom = run_info_copy.get_double_param("beam_MTNRG_GeV");
 
-    _eval_run.beam_mom = run_info_copy.get_double_param("beam_MTNRG_GeV");
+      TH1F *hBeam_Mom = dynamic_cast<TH1F *>(hm->getHisto("hBeam_Mom"));
+      assert(hBeam_Mom);
 
-    TH1F *hBeam_Mom = dynamic_cast<TH1F *>(hm->getHisto("hBeam_Mom"));
-    assert(hBeam_Mom);
+      hBeam_Mom->Fill(_eval_run.beam_mom);
 
-    hBeam_Mom->Fill(_eval_run.beam_mom);
-
-    _eval_run.beam_2CH_mm = run_info_copy.get_double_param("beam_2CH_mm");
-    _eval_run.beam_2CV_mm = run_info_copy.get_double_param("beam_2CV_mm");
+      _eval_run.beam_2CH_mm = run_info_copy.get_double_param("beam_2CH_mm");
+      _eval_run.beam_2CV_mm = run_info_copy.get_double_param("beam_2CV_mm");
+    }
   }
 
   EventHeader *eventheader = findNode::getClass<EventHeader>(topNode,
@@ -259,6 +260,16 @@ int Proto4ShowerCalib::process_event(PHCompositeNode *topNode)
 
       return Fun4AllReturnCodes::DISCARDEVENT;
     }
+  }
+
+  if (isnan(_eval_run.beam_mom))
+  {
+    if (_eval_run.run >= 1209 and _eval_run.run <= 1213)
+      _eval_run.beam_mom = -4;
+    else if (_eval_run.run >= 1214 and _eval_run.run <= 1220)
+      _eval_run.beam_mom = -2;
+    else if (_eval_run.run >= 1221 and _eval_run.run <= 1225)
+      _eval_run.beam_mom = -6;
   }
 
   if (_is_sim)
