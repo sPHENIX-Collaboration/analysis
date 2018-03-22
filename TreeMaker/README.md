@@ -1,5 +1,5 @@
-# This is TreeMaker (needs a new name), an sPHENIX analysis module that copies cluster and jet objects
-and makes new ones for the purpose of eventually applying different energy scales based on constituents
+# This is TreeMaker (needs a new name), an sPHENIX analysis module
+# It copies cluster and jet objects and makes new ones for the purpose of eventually applying different energy scales based on constituents
 
 ## These are the main analysis files
 
