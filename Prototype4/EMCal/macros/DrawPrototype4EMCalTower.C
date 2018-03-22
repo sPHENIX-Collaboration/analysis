@@ -27,11 +27,11 @@ TTree *T = NULL;
 TString cuts = "";
 double beam_momentum_selection = -16;
 
-void DrawPrototype4EMCalTower(                                                                                                           //
-                                                                                                                                         //    const TString infile = "/gpfs/mnt/gpfs04/sphenix/user/jinhuang/Prototype_2018/test_production_5/beam_00000683-0000_DSTReader.root",  //
-                                                                                                                                         //    const TString infile = "/gpfs/mnt/gpfs04/sphenix/user/jinhuang/Prototype_2018/Scan2Block18/beam_0000068ALL-0000_DSTReader.root",  //
-    const TString infile = "/gpfs/mnt/gpfs04/sphenix/user/jinhuang/Prototype_2018/Scan1Block36/2GeV/beam_00000ALL-0000_DSTReader.root",  //
-                                                                                                                                         //    const TString infile = "data/beam_00000683.root_DSTReader.root",  //
+void DrawPrototype4EMCalTower(                                        //
+                                                                      //    const TString infile = "/gpfs/mnt/gpfs04/sphenix/user/jinhuang/Prototype_2018/test_production_5/beam_00000683-0000_DSTReader.root",  //
+                                                                      //    const TString infile = "/gpfs/mnt/gpfs04/sphenix/user/jinhuang/Prototype_2018/Scan2Block18/beam_0000068ALL-0000_DSTReader.root",  //
+                                                                      //    const TString infile = "/gpfs/mnt/gpfs04/sphenix/user/jinhuang/Prototype_2018/Scan1Block36/2GeV/beam_00000ALL-0000_DSTReader.root",  //
+    const TString infile = "data/beam_00001214.root_DSTReader.root",  //
     bool plot_all = false, const double momentum = -16)
 {
   beam_momentum_selection = momentum;
@@ -184,13 +184,13 @@ void DrawPrototype4EMCalTower(                                                  
     //      event_sel = "Valid_HODO_HORIZONTAL && Valid_HODO_VERTICAL";
     //      cuts = "_Valid_HODO";
 
-//    event_sel =
-//        "Valid_HODO_HORIZONTAL && Valid_HODO_VERTICAL && No_Triger_VETO";
-//    cuts = "_Valid_HODO_Trigger_VETO";
-
         event_sel =
-            "Valid_HODO_HORIZONTAL && Valid_HODO_VERTICAL && No_Triger_VETO && abs(Average_HODO_HORIZONTAL - 3)<.2 && abs(Average_HODO_VERTICAL - 4)<.2 ";
-        cuts = "_Valid_HODO_Trigger_VETO_h3_v4";
+            "Valid_HODO_HORIZONTAL && Valid_HODO_VERTICAL && No_Triger_VETO";
+        cuts = "_Valid_HODO_Trigger_VETO";
+
+//    event_sel =
+//        "Valid_HODO_HORIZONTAL && Valid_HODO_VERTICAL && No_Triger_VETO && abs(Average_HODO_HORIZONTAL - 3)<.2 && abs(Average_HODO_VERTICAL - 4)<.2 ";
+//    cuts = "_Valid_HODO_Trigger_VETO_h3_v4";
     //    event_sel =
     //        "Valid_HODO_HORIZONTAL && Valid_HODO_VERTICAL && No_Triger_VETO && abs(Average_HODO_HORIZONTAL - 3)<.2 && abs(Average_HODO_VERTICAL - 4)<.2 ";
     //    cuts = "_Valid_HODO_Trigger_VETO_h3_v4";
@@ -220,7 +220,7 @@ void DrawPrototype4EMCalTower(                                                  
   int rnd = rand();
   gDirectory->mkdir(Form("dir_%d", rnd));
   gDirectory->cd(Form("dir_%d", rnd));
-  if (plot_all)
+//  if (plot_all)
     EMC_HodoScope_Calibration("C2_Sum_e");
 
   int rnd = rand();
@@ -280,7 +280,7 @@ void DrawPrototype4EMCalTower(                                                  
   int rnd = rand();
   gDirectory->mkdir(Form("dir_%d", rnd));
   gDirectory->cd(Form("dir_%d", rnd));
-  if (plot_all)
+//  if (plot_all)
     EMCDistribution_ADC();
 
   //  if (!plot_all)
@@ -726,9 +726,9 @@ void EMCDistribution_SUM_RawADC(TString sTOWER = "Energy_Sum_col1_row2_5x5",
                                 TString CherenkovSignal = "C2_Inner")
 {
   TH1 *EnergySum_LG_full = new TH1F("EnergySum_LG_full",
-                                    ";Tower Energy Sum (ADC);Count / bin", 2100, -1000, 20000);
+                                    ";Tower Energy Sum (ADC);Count / bin", 210, -1000, 20000);
   TH1 *EnergySum_LG = new TH1F("EnergySum_LG",
-                               ";Tower Energy Sum (ADC);Count / bin", 2100, -1000, 20000);
+                               ";Tower Energy Sum (ADC);Count / bin", 210, -1000, 20000);
   //  TH1 * EnergySum_HG = new TH1F("EnergySum_HG",
   //      ";Low range Tower Energy Sum (ADC);Count / bin", 50, 0, 500);
 
