@@ -14,6 +14,7 @@ TreeMakerCreateNode.C | creates new nodes for CopyAndMake functions to fill
 TreeMakerGetJets.C | gets jets and sets class variables (for tree output)
 TreeMakerInitializations.C | initializes the tree and class variables
 TreeMakerLinkDef.h | standard LinkDef (ROOT)
+TreeMakerUseFastJet.C | applies fast jet algorithm to list of clusters, regular and modified
 
 ## Additional basic PHENIX universe files
 
