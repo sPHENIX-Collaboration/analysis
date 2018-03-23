@@ -9,8 +9,14 @@ class TFile;
 class TH1D;
 
 class PHCompositeNode;
-class SvtxTrack_FastSim;
+class PHG4TruthInfoContainer;
+class PHG4Hit;
+class PHG4HitContainer;
 class SvtxTrackMap;
+class SvtxTrack_FastSim;
+class TDatabasePDG;
+
+class SetupDualRICHAnalyzer;
 
 class RICHEvaluator : public SubsysReco
 {
@@ -26,26 +32,43 @@ public:
   int
   End(PHCompositeNode*);
 
+  /* set name of the track state inside the RICH radiator volume */
+  void set_trackstate_name( std::string newname )
+  {
+    _trackstate_name = newname;
+    return;
+  }
+
+  /* set refractive index of RICH radiator */
+  void set_refractive_index( float newidx )
+  {
+    _refractive_index = newidx;
+    return;
+  }
 
 private:
 
-  /* reset all output tree variables */
+  /** reset all output tree variables */
   void reset_tree_vars();
 
-  /* initialize output tree */
+  /** initialize output tree(s) */
   int init_tree();
+  int init_tree_small();
 
-  /** get position from track state */
-  bool get_position_from_track_state(  SvtxTrack_FastSim * track, std::string statename, double arr_pos[3] );
+  /** calculate true Cerenkov light emission angle from truth particle information */
+  double calculate_true_emission_angle( PHG4TruthInfoContainer* truthinfo, SvtxTrack_FastSim * track, double index );
 
-  /** get track momentum from track state */
-  bool get_momentum_from_track_state( SvtxTrack_FastSim * track, std::string statename, double arr_mom[3] );
-  
+  /** calculate mass for single track and photon */
+  double calculate_reco_mass( double mom, double theta_reco, double index );
+
+  /** calculate true particle mass from truth particle information */
+  double calculate_true_mass( PHG4TruthInfoContainer* truthinfo, SvtxTrack_FastSim * track);
+
   bool _verbose;
 
   int _ievent;
 
-  /* Track collection */
+  /* Collection sotring track information */
   std::string _trackmap_name;
 
   /* Hit collection storing RICH photon hits */
@@ -54,21 +77,20 @@ private:
   /* Name of the track state inside the RICH radiator volume */
   std::string _trackstate_name;
 
+  /* Refractive index of RICH radiator */
+  float _refractive_index;
+
   /* ROOT file to store output ROOT tree */
   std::string _foutname;
   TFile *_fout_root;
 
   /* output tree and variables */
   TTree* _tree_rich;
-  TTree* _tree_irt;
+  TTree* _tree_rich_small;
 
   double _hit_x0;
   double _hit_y0;
   double _hit_z0;
-
-  double _hit_lx0;
-  double _hit_ly0;
-  double _hit_lz0;
 
   double _emi_x;
   double _emi_y;
@@ -81,6 +103,7 @@ private:
   double _mtrack_px;
   double _mtrack_py;
   double _mtrack_pz;
+  double _mtrack_ptot;
 
   double _track_e;
   double _mtrack_e;
@@ -95,19 +118,19 @@ private:
   int _mtrackid;
   int _otrackid;
 
-  double _Ex;
-  double _Ey;
-  double _Ez;
-  double _Dx;
-  double _Dy;
-  double _Dz;
-  double _Vx;
-  double _Vy;
-  double _Vz;
-  double _Cx;
-  double _Cy;
-  double _Cz;
+  float _theta_true;
+  float _theta_reco;
+  double _theta_mean;
+  double _theta_rms;
 
+  float _mass_true;
+  float _mass_reco;
+
+  /* acquire object */
+  SetupDualRICHAnalyzer *_acquire;
+
+  /* PDG databse access object */
+  TDatabasePDG *_pdg;
 
 };
 
