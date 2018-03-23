@@ -116,6 +116,10 @@ RICHEvaluator::process_event(PHCompositeNode *topNode)
       
       SvtxTrack_FastSim* track_j = dynamic_cast<SvtxTrack_FastSim*>(track_itr->second);
 
+      /* Check if track_j is a null pointer- this can happen if returned track object is NOT of
+	 type SvtxTrack_FastSim for dynamic_cast. */
+      if (track_j == NULL)
+        continue;
 
       /* Fill momv object which is the normalized momentum vector of the track in the RICH (i.e. its direction) */
       double momv[3] = {0.,0.,0.};
