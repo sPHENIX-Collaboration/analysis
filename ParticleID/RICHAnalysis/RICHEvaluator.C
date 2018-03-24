@@ -233,8 +233,7 @@ RICHEvaluator::process_event(PHCompositeNode *topNode)
 	  _mpid = parent->get_pid();
 	  _trackid = particle->get_track_id();
 	  _mtrackid = parent->get_track_id();
-	  _otrackid = _mtrackid;
-	  
+	  _otrackid = track_j->get_id();
 	  
 	  /* Set reconstructed emission angle and reconstructed mass for output tree */
 	  _theta_reco = _acquire->calculate_emission_angle( m_emi, momv, hit_i );
@@ -407,7 +406,7 @@ RICHEvaluator::init_tree()
   _tree_rich->Branch("mpid", &_mpid, "Mother ID /I");
   _tree_rich->Branch("trackid", &_trackid, "Track ID /I");
   _tree_rich->Branch("mtrackid", &_mtrackid, "Mother track ID /I");
-  _tree_rich->Branch("otrackid", &_otrackid, "Original track ID /I");
+  _tree_rich->Branch("otrackid", &_otrackid, "Ordered track ID /I");
 
   _tree_rich->Branch("theta_true", &_theta_true, "True emission angle /F");
   _tree_rich->Branch("theta_reco", &_theta_reco, "Reconstructed emission angle /F");
@@ -421,10 +420,11 @@ RICHEvaluator::init_tree()
 int
 RICHEvaluator::init_tree_small()
 {
-  /* Condensed ROOT tree, 1 entry per event */
+  /* Condensed ROOT tree, 1 entry per track */
   _tree_rich_small = new TTree("eval_rich_small","RICH Evaluator info condensed");
 
   _tree_rich_small->Branch("event", &_ievent, "Event number /I");
+  _tree_rich_small->Branch("otrackid", &_otrackid, "Ordered track ID /I");
   _tree_rich_small->Branch("mptot", &_mtrack_ptot, "Total momentum /D");
   _tree_rich_small->Branch("theta_mean", &_theta_mean, "Reconstructed angle mean /D");
   _tree_rich_small->Branch("theta_rms", &_theta_rms, "Reconstructed angle spread /D");
