@@ -113,6 +113,14 @@ eic_sphenix_dis_countbins()
   pt_ebeam_lumi_ll->AddText(str_ebeam);
   pt_ebeam_lumi_ll->AddText(str_lumin);
 
+  /* Prepare inelasticity (y) cut lines for plots */
+  TF1 *f_y095 = new TF1("f_y095", "4*x*[0]*[1]*[2]", 1e-5, 1);
+  f_y095->SetParameter( 0, ebeam_e);
+  f_y095->SetParameter( 1, ebeam_p);
+  f_y095->SetParameter( 2, 0.95);
+  TF1 *f_y001 = (TF1*)f_y095->Clone("f_y01");
+  f_y001->SetParameter(2 , 0.01);
+
   /* make x-Q2 plot */
   TCanvas *c1 = new TCanvas();
   c1->SetRightMargin(0.12);
@@ -120,6 +128,9 @@ eic_sphenix_dis_countbins()
   c1->SetLogx(1);
   c1->SetLogy(1);
   c1->SetLogz(1);
+
+  f_y095->Draw("same");
+  f_y001->Draw("same");
 
   pt_ebeam_lumi_ul->Draw();
   gPad->RedrawAxis();
@@ -131,6 +142,9 @@ eic_sphenix_dis_countbins()
   c4->SetLogx(1);
   c4->SetLogy(1);
   c4->SetLogz(1);
+
+  f_y095->Draw("same");
+  f_y001->Draw("same");
 
   pt_ebeam_lumi_ul->Draw();
   gPad->RedrawAxis();
@@ -144,6 +158,9 @@ eic_sphenix_dis_countbins()
   hxQ2_acceptance_ratio->Draw("colz");
   c3->SetLogx(1);
   c3->SetLogy(1);
+
+  f_y095->Draw("same");
+  f_y001->Draw("same");
 
   pt_ebeam_lumi_ul->Draw();
   gPad->RedrawAxis();
