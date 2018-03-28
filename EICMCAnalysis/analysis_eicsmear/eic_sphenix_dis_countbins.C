@@ -17,26 +17,37 @@ eic_sphenix_dis_countbins()
   float pythia_lumi = pythia_ngen / ( pythia_xsec * convert_microbarn_to_femtobarn );
 
   /* target luminosity and scaling factor */
-  float target_lumi = 10; // in inverse femtobarn
+  float target_lumi = pythia_lumi; // in inverse femtobarn
   float lumi_scaling = target_lumi / pythia_lumi;
 
   cout << "Pythia luminosity:  " << pythia_lumi << " fb^-1" << endl;
   cout << "Target luminosity:  " << target_lumi << " fb^-1" << endl;
   cout << "Luminosity scaling: " << lumi_scaling << endl;
 
+  /* create tree to store information */
   TTree *tcount = new TTree("tcount", "A tree with counts in kinematics bins");
+  float t_pbeam_lepton = 0;
+  float t_pbeam_proton = 0;
   float t_s = 0;
   float t_x = 0;
   float t_Q2 = 0;
   float t_y = 0;
+  float t_z = 0;
   float t_N = 0;
-  float t_dN = 0;
+  float t_stdev_N = 0;
+  tcount->Branch("pbeam_lepton", &t_pbeam_lepton, "pbeam_lepton/F");
+  tcount->Branch("pbeam_proton", &t_pbeam_proton, "pbeam_proton/F");
   tcount->Branch("s", &t_s, "s/F");
   tcount->Branch("x", &t_x, "x/F");
   tcount->Branch("Q2", &t_Q2, "Q2/F");
   tcount->Branch("y", &t_y, "y/F");
+  tcount->Branch("z", &t_z, "z/F");
   tcount->Branch("N", &t_N, "N/F");
-  tcount->Branch("dN", &t_dN, "dN/F");
+  tcount->Branch("stdev_N", &t_stdev_N, "stdev_N/F");
+
+  /* copy beam parameters */
+  t_pbeam_lepton = ebeam_e;
+  t_pbeam_proton = ebeam_p;
 
   /* center of mass energy */
   t_s = 4 * ebeam_e * ebeam_p;
@@ -58,17 +69,30 @@ eic_sphenix_dis_countbins()
 	  t_y = t_Q2 / ( t_x * t_s );
 
 	  t_N = hxQ2->GetBinContent( bin_x, bin_y ) * lumi_scaling;
+
+	  /* skip kinematics bins wth y > 0.95 and y < 1e-2 */
+	  if ( t_y > 0.95 || t_y < 1e-2 )
+	    continue;
+
+	  /* skip bins with no entries */
 	  if ( t_N < 1 )
 	    continue;
 
-	  t_dN = 1./(sqrt(t_N));
+	  t_stdev_N = 1./(sqrt(t_N));
 
 	  tcount->Fill();
 	  s_binc_x.insert(t_x);
 
-	  cout << "x = " << t_x
-	       << " , Q2 = " << t_Q2
-	       << " , N = " << t_N
+	  /* print values */
+	  std::cout.precision(2);
+
+	  cout << "lepton = " << std::fixed << t_pbeam_lepton
+	       << " x proton = " << std::fixed << t_pbeam_proton
+	       << " , sqrt(s) = " << std::fixed << sqrt( t_s )
+	       << " , x = " << std::scientific << t_x
+	       << " , Q2 = " << std::scientific << t_Q2
+	       << " , y = " << std::fixed << t_y
+	       << " , N = " << std::scientific << t_N
 	       << endl;
 	}
     }
@@ -105,7 +129,7 @@ eic_sphenix_dis_countbins()
       ctmp->cd();
 
       unsigned npoints = tcount->GetEntries( TString::Format("x > 0.99*%f && x < 1.01*%f", *itx, *itx ) );
-      tcount->Draw( TString::Format("%f:Q2:dN", offset),
+      tcount->Draw( TString::Format("%f:Q2:stdev_N", offset),
 		    TString::Format("x > 0.99*%f && x < 1.01*%f", *itx, *itx ) );
 
       TGraphErrors* gnew = new TGraphErrors( npoints, tcount->GetV2(), tcount->GetV1(), 0, tcount->GetV3() );
