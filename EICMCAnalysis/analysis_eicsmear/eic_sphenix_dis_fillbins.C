@@ -1,63 +1,42 @@
-bool accept_electron( float eta, float p )
-{
-  float Emin = 2;
+/* Local includes */
+#include "eic_sphenix_geomacceptance.h"
 
-  if ( p > Emin )
-    {
-      if ( ( eta > -3 && eta < 1.1 ) ||
-           ( eta > 1.45 && eta < 3.5 ) )
-        {
-          return true;
-        }
-    }
+/* STL includes */
+#include <iostream>
 
-  return false;
-}
+/* ROOT includes */
+#include <TROOT.h>
+//#include <gSystem.h>
+#include <TFile.h>
+#include <TTree.h>
+#include <TH2F.h>
+#include <THnSparse.h>
 
+/* eicsmear includes */
+#include <eicsmear/erhic/EventPythia.h>
+#include <eicsmear/erhic/ParticleMC.h>
 
-bool accept_pid( float eta, float p, int pid )
-{
-  float pmin = 2;
-  bool accept = false;
-
-  if ( p > pmin )
-    {
-      if ( pid == 211 || pid == -211 || pid == 321 || pid == -321 )
-	{
-	  /* Particle found within PID acceptance for Gas-RICH? */
-	  if ( ( eta > 1.45 && eta < 3.5 && p > 3 && p < 50 ) )
-	    accept = true;
-
-	  /* Particle found within PID acceptance for mRICH? */
-	  else if ( ( eta > 1.45 && eta < 2 && p < 6 ) )
-	    accept = true;
-
-	  /* Particle found within PID acceptance for DIRC? */
-	  else if ( ( eta > -1.1 && eta < 1.1 && p < 3.5 ) )
-	    accept = true;
-	}
-    }
-
-  return accept;
-}
-
+using namespace std;
 
 int
-eic_sphenix_dis_fillbins()
+eic_sphenix_dis_fillbins( TString filename_output,
+			  TString filename_mc,
+			  TString filename_mc_smeared = "",
+			  bool debug = false )
 {
-  gSystem->Load("libeicsmear");
+  /* Uncomment this line when running without compilation */
+  //  gSystem->Load("libeicsmear");
 
   /* Open input files. */
-  //TFile *file_mc = new TFile("data/pythiaeRHIC/TREES/pythia.ep.20x250.RadCor=0.Q2gt1.50kevts.root");
-  TFile *file_mc = new TFile("data/TEST/pythia.ep.20x250.1Mevents.1.RadCor=0.Q2gt1.root");
-  //TFile *file_mc_smeared = new TFile("data/pythiaeRHIC/TREES/pythia.ep.20x250.RadCor=0.Q2gt1.50kevts.smear.root");
+  TFile *file_mc = new TFile(filename_mc, "OPEN");
+  //TFile *file_mc_smeared = new TFile(filename_mc_smeared, "OPEN");
 
   /* Get trees from files. */
   TTree *tree = (TTree*)file_mc->Get("EICTree");
   //TTree *tree_smeared = (TTree*)file_mc_smeared->Get("Smeared");
 
   /* Output file. */
-  TFile *fout = new TFile("eic_sphenix_dis_histo.root", "RECREATE");
+  TFile *file_out = new TFile(filename_output, "RECREATE");
 
   /* Add friend to match branches in trees. */
   //tree->AddFriend(tree_smeared);
@@ -95,7 +74,7 @@ eic_sphenix_dis_fillbins()
   double bins_x[nbins_x+1];
   for( int i =0; i <= nbins_x; i++)
     {
-      cout << TMath::Power( 10, min_x + i*width_x) << endl;
+      //cout << TMath::Power( 10, min_x + i*width_x) << endl;
       bins_x[i] = TMath::Power( 10, min_x + i*width_x);
     }
 
@@ -118,7 +97,7 @@ eic_sphenix_dis_fillbins()
   double bins_z[nbins_z+1];
   for( int i =0; i <= nbins_z; i++)
     {
-      cout << min_z + i*width_z << endl;
+      //cout << min_z + i*width_z << endl;
       bins_z[i] = min_z + i*width_z;
     }
 
@@ -134,12 +113,12 @@ eic_sphenix_dis_fillbins()
   double bins_pT[nbins_pT+1];
   for( int i =0; i <= nbins_pT1; i++)
     {
-      cout << min_pT + i*width_pT1 << endl;
+      //cout << min_pT + i*width_pT1 << endl;
       bins_pT[i] = min_pT + i*width_pT1;
     }
   for( int i =1; i <= nbins_pT2; i++)
     {
-      cout << min_pT + nbins_pT1*width_pT1 + i*width_pT2<< endl;
+      //cout << min_pT + nbins_pT1*width_pT1 + i*width_pT2<< endl;
       bins_pT[nbins_pT1 + i] = min_pT + nbins_pT1*width_pT1 + i*width_pT2;
     }
 
@@ -163,6 +142,10 @@ eic_sphenix_dis_fillbins()
 
   hn_dis->SetBinEdges(0,bins_x);
   hn_dis->SetBinEdges(1,bins_Q2);
+
+  /* clone histogram for ACCEPTED events */
+  THnSparse* hn_dis_accept = (THnSparse*)hn_dis->Clone("hn_dis_accept");
+  hn_dis_accept->SetTitle("DIS Kinematis Per Event (Accepted)");
 
   /* Create SIDIS histogram- one entry per particle */
   const int hn_sidis_ndim = 4;
@@ -201,6 +184,19 @@ eic_sphenix_dis_fillbins()
   THnSparse* hn_sidis_kaon_minus = (THnSparseF*)hn_sidis_pion_plus->Clone("hn_sidis_kaon_minus");
   hn_sidis_kaon_minus->SetTitle("SIDIS Kinematis Per Particle (Negatively Charged Kaon)");
 
+  /* clone histogram for ACCEPTED events */
+  THnSparse* hn_sidis_pion_plus_accept  = (THnSparse*)hn_sidis_pion_plus->Clone("hn_sidis_pion_plus_accept");
+  hn_sidis_pion_plus_accept->SetTitle("SIDIS Kinematis Per Particle (Positively Charged Pion, Accepted)");
+
+  THnSparse* hn_sidis_pion_minus_accept = (THnSparseF*)hn_sidis_pion_plus->Clone("hn_sidis_pion_minus_accept");
+  hn_sidis_pion_minus_accept->SetTitle("SIDIS Kinematis Per Particle (Negatively Charged Pion, Accepted)");
+
+  THnSparse* hn_sidis_kaon_plus_accept  = (THnSparseF*)hn_sidis_pion_plus->Clone("hn_sidis_kaon_plus_accept");
+  hn_sidis_kaon_plus_accept->SetTitle("SIDIS Kinematis Per Particle (Positively Charged Kaon, Accepted)");
+
+  THnSparse* hn_sidis_kaon_minus_accept = (THnSparseF*)hn_sidis_pion_plus->Clone("hn_sidis_kaon_minus_accept");
+  hn_sidis_kaon_minus_accept->SetTitle("SIDIS Kinematis Per Particle (Negatively Charged Kaon, Accepted)");
+
   /* print all bin centers for x bins */
   TH2F* hxQ2 = (TH2F*)hn_dis->Projection(1,0);
 
@@ -213,25 +209,34 @@ eic_sphenix_dis_fillbins()
   //  }
 
   /* Option 2 matches HERA table */
-  for ( int bin_x = 1; bin_x <= hxQ2->GetNbinsX(); bin_x++ )
+  if ( debug )
     {
-      fprintf( stdout, "x = %.2e\n",
-               TMath::Power(10, 0.5 * ( ( TMath::Log10( hxQ2->GetXaxis()->GetBinLowEdge(bin_x) ) )
-                                        + ( TMath::Log10( hxQ2->GetXaxis()->GetBinLowEdge(bin_x) + hxQ2->GetXaxis()->GetBinWidth(bin_x) ) ) ) ) );
+      for ( int bin_x = 1; bin_x <= hxQ2->GetNbinsX(); bin_x++ )
+	{
+	  fprintf( stdout, "x = %.2e\n",
+		   TMath::Power(10, 0.5 * ( ( TMath::Log10( hxQ2->GetXaxis()->GetBinLowEdge(bin_x) ) )
+					    + ( TMath::Log10( hxQ2->GetXaxis()->GetBinLowEdge(bin_x) + hxQ2->GetXaxis()->GetBinWidth(bin_x) ) ) ) ) );
+	}
     }
 
   /* print bin centers for Q2 bins */
-  for ( int bin_Q2 = 1; bin_Q2 <= hxQ2->GetNbinsY(); bin_Q2++ )
+  if ( debug )
     {
+      for ( int bin_Q2 = 1; bin_Q2 <= hxQ2->GetNbinsY(); bin_Q2++ )
+	{
 
-      fprintf( stdout, "Q2 = %.2e\n",
-               TMath::Power(10, 0.5 * ( ( TMath::Log10( hxQ2->GetYaxis()->GetBinLowEdge(bin_Q2) ) )
-                                        + ( TMath::Log10( hxQ2->GetYaxis()->GetBinLowEdge(bin_Q2) + hxQ2->GetYaxis()->GetBinWidth(bin_Q2) ) ) ) ) );
+	  fprintf( stdout, "Q2 = %.2e\n",
+		   TMath::Power(10, 0.5 * ( ( TMath::Log10( hxQ2->GetYaxis()->GetBinLowEdge(bin_Q2) ) )
+					    + ( TMath::Log10( hxQ2->GetYaxis()->GetBinLowEdge(bin_Q2) + hxQ2->GetYaxis()->GetBinWidth(bin_Q2) ) ) ) ) );
+	}
     }
 
   /* Loop over all events in tree. */
   unsigned max_event = tree->GetEntries();
-  //unsigned max_event = 1000;
+
+  if ( debug )
+    max_event = 10000;
+
   for ( unsigned ievent = 0; ievent < max_event; ievent++ )
     {
       if ( ievent%1000 == 0 )
@@ -240,15 +245,7 @@ eic_sphenix_dis_fillbins()
       /* load event */
       tree->GetEntry(ievent);
 
-      /* Scattered lepton found within acceptance? If not, continue to next event. */
-      if (! accept_electron( event->ScatteredLepton()->GetEta(), event->ScatteredLepton()->GetE() ) )
-        continue;
-
-      /* Check that scattered lepton is within detector acceptance */
-      //if ( ! eventS->ScatteredLepton() )
-      //  continue;
-
-      /* Cut on kinematics */
+      /* Cut on EVENT kinematics */
       float y = event->GetTrueY();
       if ( y > 0.95 || y < 0.01 )
         continue;
@@ -258,6 +255,14 @@ eic_sphenix_dis_fillbins()
 
       double fill_hn_dis[] = {x, Q2};
       hn_dis->Fill( fill_hn_dis );
+
+      /* Scattered lepton found within acceptance? */
+      if ( accept_electron( event->ScatteredLepton()->GetEta(), event->ScatteredLepton()->GetE() ) )
+	hn_dis_accept->Fill( fill_hn_dis );
+
+      /* Check that scattered lepton is within detector acceptance */
+      //if ( eventS->ScatteredLepton() )
+      //  hn_dis_accept->Fill( fill_hn_dis );
 
       /* For SIDIS: Loop over all final state particles in this event */
       unsigned ntracks = event->GetNTracks();
@@ -270,14 +275,6 @@ eic_sphenix_dis_fillbins()
           if ( iparticle->GetStatus() != 1 )
             continue;
 
-          /* get TRUE pid */
-          int pid = iparticle->Id().Code();
-          //TParticlePDG *pid_pdg =  iparticle->Id().Info();
-
-          /* Check if within PID acceptance */
-          if ( ! accept_pid( iparticle->GetEta(), iparticle->GetP(), pid ) )
-            continue;
-
           /* Get z of particle */
           float z = iparticle->GetZ();
 
@@ -285,29 +282,56 @@ eic_sphenix_dis_fillbins()
           if ( z <= 0.15 )
             continue;
 
+	  /* skip particles outside +/- 4 pseudorapidity */
+	  if ( iparticle->GetEta() < -4 || iparticle->GetEta() > 4 )
+	    continue;
+
 	  /* Get pT of particle w.r.t. exchange boson of interaction */
 	  float pT = iparticle->GetPtVsGamma();
 
           /* Prepare array to fill histogram */
           double fill_hn_sidis[] = {x, Q2, z, pT};
 
+          /* get TRUE pid */
+          int pid = iparticle->Id().Code();
+          //TParticlePDG *pid_pdg =  iparticle->Id().Info();
+
           /* Use true PID to choose which histogram to fill */
           /* Pi+ */
           if ( pid == 211 )
-            hn_sidis_pion_plus->Fill( fill_hn_sidis );
+	    {
+	      hn_sidis_pion_plus->Fill( fill_hn_sidis );
+
+	      if ( accept_pion( iparticle->GetEta(), iparticle->GetP() ) )
+		hn_sidis_pion_plus_accept->Fill( fill_hn_sidis );
+	    }
 
           /* Pi - */
           else if ( pid == -211 )
-            hn_sidis_pion_minus->Fill( fill_hn_sidis );
+	    {
+	      hn_sidis_pion_minus->Fill( fill_hn_sidis );
+
+	      if ( accept_pion( iparticle->GetEta(), iparticle->GetP() ) )
+		hn_sidis_pion_minus_accept->Fill( fill_hn_sidis );
+	    }
 
           /* K+ */
           else if ( pid == 321 )
-            hn_sidis_kaon_plus->Fill( fill_hn_sidis );
+	    {
+	      hn_sidis_kaon_plus->Fill( fill_hn_sidis );
+
+	      if ( accept_kaon( iparticle->GetEta(), iparticle->GetP() ) )
+		hn_sidis_kaon_plus_accept->Fill( fill_hn_sidis );
+	    }
 
           /* K- */
           else if ( pid == -321 )
-            hn_sidis_kaon_minus->Fill( fill_hn_sidis );
+	    {
+	      hn_sidis_kaon_minus->Fill( fill_hn_sidis );
 
+	      if ( accept_kaon( iparticle->GetEta(), iparticle->GetP() ) )
+		hn_sidis_kaon_minus_accept->Fill( fill_hn_sidis );
+	    }
 	} // end loop over particles
 
     } // end loop over events
@@ -315,16 +339,57 @@ eic_sphenix_dis_fillbins()
   /* Write histogram. */
   hn_dis->Write();
 
+  hn_dis_accept->Write();
+
   hn_sidis_pion_plus->Write();
   hn_sidis_pion_minus->Write();
   hn_sidis_kaon_plus->Write();
   hn_sidis_kaon_minus->Write();
 
+  hn_sidis_pion_plus_accept->Write();
+  hn_sidis_pion_minus_accept->Write();
+  hn_sidis_kaon_plus_accept->Write();
+  hn_sidis_kaon_minus_accept->Write();
+
   h_eta->Write();
   h_eta_accept->Write();
 
   /* Close output file. */
-  fout->Close();
+  file_out->Close();
+
+  return 0;
+}
+
+
+/* MAIN function */
+int main( int argc , char* argv[] )
+{
+  if ( argc < 3 || argc > 5 )
+    {
+      cout << "Usage: " << argv[0] << " <filename_output> <filename_EICTree> <optional: filename_EICTree_smeared> <optional: 'debug' for debug mode" << endl;
+      return 1;
+    }
+
+  cout << "Running eic_sphenix_dis_fillbins with: \n" << endl;
+  cout << " - Output file:            " << argv[1] << endl;
+  cout << " - EICTree input file:     " << argv[2] << endl;
+
+  if ( argc == 3 )
+    {
+      cout << " - EICTree (smeared) file: (none)" << endl;
+      eic_sphenix_dis_fillbins( argv[1], argv[2] );
+    }
+  else if ( argc == 4 )
+    {
+      cout << " - EICTree (smeared) file: " << argv[3] << endl;
+      eic_sphenix_dis_fillbins( argv[1], argv[2], argv[3] );
+    }
+  else if ( argc == 5 )
+    {
+      cout << " - EICTree (smeared) file: " << argv[3] << endl;
+      cout << " ==== DEBUG MODE ==== " << endl;
+      eic_sphenix_dis_fillbins( argv[1], argv[2], "", true );
+    }
 
   return 0;
 }
