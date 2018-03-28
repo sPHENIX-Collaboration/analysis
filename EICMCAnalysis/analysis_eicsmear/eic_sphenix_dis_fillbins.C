@@ -144,7 +144,7 @@ eic_sphenix_dis_fillbins( TString filename_output,
   hn_dis->SetBinEdges(1,bins_Q2);
 
   /* clone histogram for ACCEPTED events */
-  THnSparse* hn_dis_accept = (THnSparse*)hn_dis->Clone("hn_dis_accept");
+  THnSparse* hn_dis_accept = (THnSparse*)hn_dis->Clone("hn_dis_event_accept");
   hn_dis_accept->SetTitle("DIS Kinematis Per Event (Accepted)");
 
   /* Create SIDIS histogram- one entry per particle */
