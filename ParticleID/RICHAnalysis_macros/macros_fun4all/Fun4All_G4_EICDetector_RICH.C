@@ -2,7 +2,7 @@ int Fun4All_G4_EICDetector_RICH(
                                 const int nEvents = 1,
 				const double set_momentum = 50.0,
                                 const char * inputFile = "/gpfs/mnt/gpfs04/sphenix/user/nfeege/data/pythiaeRHIC/TREES/pythia.ep.20x250.RadCor=0.Q2gt1.5kevts.root",
-                                const char * outputFile = "G4EICDetector"
+                                const char * outputFile = "G4EICDetector.root"
                                 )
 {
   // Set the number of TPC layer
@@ -588,22 +588,10 @@ int Fun4All_G4_EICDetector_RICH(
                                );
     }
 
-  //Fun4AllDstOutputManager *out = new Fun4AllDstOutputManager("DSTOUT", outputFile);
-  //if (do_dst_compress) DstCompress(out);
-  //se->registerOutputManager(out);
+  Fun4AllDstOutputManager *out = new Fun4AllDstOutputManager("DSTOUT", outputFile);
+  if (do_dst_compress) DstCompress(out);
+  se->registerOutputManager(out);
 
-  /* Adding RICH analysis module here */
-  gSystem->Load("librichana.so");
-  gSystem->Load("libg4detectors.so");
-
-  RICHEvaluator *richeval = new RICHEvaluator("SvtxTrackMap", "G4HIT_RICH", "eval_RICH.root");
-  richeval->set_refractive_index(1.000526);
-  se->registerSubsystem(richeval);
-
-  RICHParticleID *richpid = new RICHParticleID("SvtxTrackMap", "G4HIT_RICH");
-  richpid->set_refractive_index(1.000526);
-  se->registerSubsystem(richpid);
-  
 
   //-----------------
   // Event processing
