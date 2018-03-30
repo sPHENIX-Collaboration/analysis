@@ -2,7 +2,7 @@ int
 plot_sidis_proj_uncertainty()
 {
   /* Get tree with projected pseudodata and uncertainties */
-  TFile *fin = new TFile("output/eic_sphenix_sidis_tree.root","OPEN");
+  TFile *fin = new TFile("output/eic_sphenix_sidis_piplus_tree.root","OPEN");
   TTree *tcount = (TTree*)fin->Get("tcount");
 
   /* select cuts for plots */
@@ -69,6 +69,8 @@ plot_sidis_proj_uncertainty()
       gnew->Draw("PSame");
 
       gPad->RedrawAxis();
+
+      c2->Print( TString::Format("plots/sidis_proj_uncertainty_c%d.eps", i ) );
 
       delete ctmp;
     }
