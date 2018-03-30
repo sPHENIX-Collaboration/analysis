@@ -2,8 +2,8 @@ int
 eic_sphenix_sidis_countbins()
 {
   TFile *fin = new TFile("output/eic_sphenix_dis_histo_1M.root","OPEN");
-  THnSparse *hfull = (THnSparse*)fin->Get("hn_sidis_kaon_plus_accept");
-  THnSparse *hfull_fullaccept = (THnSparse*)fin->Get("hn_sidis_kaon_plus");
+  THnSparse *hfull = (THnSparse*)fin->Get("hn_sidis_pion_plus_accept");
+  THnSparse *hfull_fullaccept = (THnSparse*)fin->Get("hn_sidis_pion_plus");
 
   TH2F* hxQ2 = (TH2F*)hfull->Projection(1,0);
   TH2F* hxQ2_fullaccept = (TH2F*)hfull_fullaccept->Projection(1,0);
@@ -25,6 +25,9 @@ eic_sphenix_sidis_countbins()
   cout << "Pythia luminosity:  " << pythia_lumi << " fb^-1" << endl;
   cout << "Target luminosity:  " << target_lumi << " fb^-1" << endl;
   cout << "Luminosity scaling: " << lumi_scaling << endl;
+
+  /* Minimum number of bin entries to accept bin */
+  int Nmin = 1;
 
   /* create tree to store information */
   TTree *tcount = new TTree("tcount", "A tree with counts in kinematics bins");
@@ -56,49 +59,82 @@ eic_sphenix_sidis_countbins()
   /* center of mass energy */
   t_s = 4 * ebeam_e * ebeam_p;
 
+
+  /* Get all axis to loop over */
+  TAxis *ax_x = hfull->GetAxis(0);
+  TAxis *ax_Q2 = hfull->GetAxis(1);
+  TAxis *ax_z = hfull->GetAxis(2);
+  TAxis *ax_pT = hfull->GetAxis(3);
+
+  ax_x->Print();
+  ax_Q2->Print();
+  ax_z->Print();
+  ax_pT->Print();
+
   /* collect all x-bins */
-  set<float> s_binc_x;
+  //  set<float> s_binc_x;
 
   /* loop over all bins */
-  for ( int bin_x = 1; bin_x <= hxQ2->GetNbinsX(); bin_x++ )
+  for ( int bin_x = 1; bin_x <= ax_x->GetNbins(); bin_x++ )
     {
-      for ( int bin_y = 1; bin_y <= hxQ2->GetNbinsY(); bin_y++ )
-	{
-	  t_x = TMath::Power(10, 0.5 * ( ( TMath::Log10( hxQ2->GetXaxis()->GetBinLowEdge(bin_x) ) )
-					 + ( TMath::Log10( hxQ2->GetXaxis()->GetBinLowEdge(bin_x) + hxQ2->GetXaxis()->GetBinWidth(bin_x) ) ) ) );
+      for ( int bin_Q2 = 1; bin_Q2 <= ax_Q2->GetNbins(); bin_Q2++ )
+        {
+          t_x = TMath::Power(10, 0.5 * ( ( TMath::Log10( ax_x->GetBinLowEdge(bin_x) ) )
+                                         + ( TMath::Log10( ax_x->GetBinLowEdge(bin_x) + ax_x->GetBinWidth(bin_x) ) ) ) );
 
-	  t_Q2 = TMath::Power(10, 0.5 * ( ( TMath::Log10( hxQ2->GetYaxis()->GetBinLowEdge(bin_y) ) )
-					  + ( TMath::Log10( hxQ2->GetYaxis()->GetBinLowEdge(bin_y) + hxQ2->GetYaxis()->GetBinWidth(bin_y) ) ) ) );
+          t_Q2 = TMath::Power(10, 0.5 * ( ( TMath::Log10( ax_Q2->GetBinLowEdge(bin_Q2) ) )
+                                          + ( TMath::Log10( ax_Q2->GetBinLowEdge(bin_Q2) + ax_Q2->GetBinWidth(bin_Q2) ) ) ) );
 
-	  t_y = t_Q2 / ( t_x * t_s );
+          /* Calculate inelasticity y */
+          t_y = t_Q2 / ( t_x * t_s );
 
-	  t_N = hxQ2->GetBinContent( bin_x, bin_y ) * lumi_scaling;
+          /* skip kinematics bins wth y > 0.95 and y < 1e-2 */
+          if ( t_y > 0.95 || t_y < 1e-2 )
+            continue;
 
-	  /* skip kinematics bins wth y > 0.95 and y < 1e-2 */
-	  if ( t_y > 0.95 || t_y < 1e-2 )
-	    continue;
+          for ( int bin_z = 1; bin_z <= ax_z->GetNbins(); bin_z++ )
+            {
 
-	  /* skip bins with no entries */
-	  if ( t_N < 1 )
-	    continue;
+              t_z = ax_z->GetBinCenter( bin_z );
 
-	  t_stdev_N = 1./(sqrt(t_N));
+              for ( int bin_pT = 1; bin_pT <= ax_pT->GetNbins(); bin_pT++ )
+                {
 
-	  tcount->Fill();
-	  s_binc_x.insert(t_x);
+                  t_pT = ax_pT->GetBinCenter( bin_pT );
 
-	  /* print values */
-	  std::cout.precision(2);
+                  /* Get bin entries */
+		  int binloc[4] = { bin_x, bin_Q2, bin_z, bin_pT };
+                  t_N = hfull->GetBinContent( binloc ) * lumi_scaling;
 
-	  cout << "lepton = " << std::fixed << t_pbeam_lepton
-	       << " x proton = " << std::fixed << t_pbeam_proton
-	       << " , sqrt(s) = " << std::fixed << sqrt( t_s )
-	       << " , x = " << std::scientific << t_x
-	       << " , Q2 = " << std::scientific << t_Q2
-	       << " , y = " << std::fixed << t_y
-	       << " , N = " << std::scientific << t_N
-	       << endl;
-	}
+                  /* skip bins with small number of entries */
+                  if ( t_N < Nmin )
+                    continue;
+
+                  t_stdev_N = 1./(sqrt(t_N));
+
+                  tcount->Fill();
+                  //s_binc_x.insert(t_x);
+
+                  /* print values */
+                  std::cout.precision(2);
+
+		  bool toscreen = false;
+		  if ( toscreen )
+		    {
+		      cout    //     <<"lepton = " << std::fixed << t_pbeam_lepton
+			//     << " x proton = " << std::fixed << t_pbeam_proton
+			//     << " , sqrt(s) = " << std::fixed << sqrt( t_s )
+			<< " , x = " << std::scientific << t_x
+			<< " , Q2 = " << std::scientific << t_Q2
+			<< " , y = " << std::fixed << t_y
+			<< " , z = " << std::fixed << t_z
+			<< " , pT = " << std::fixed << t_pT
+			<< " , N = " << std::scientific << t_N
+			<< endl;
+		    }
+                }
+            }
+        }
     }
 
   /* Prepare TPaveText for plots */
@@ -168,49 +204,6 @@ eic_sphenix_sidis_countbins()
 
   pt_ebeam_lumi_ul->Draw();
   gPad->RedrawAxis();
-
-//  /* plot g1 vs Q2 for various x */
-//  TCanvas *c2 = new TCanvas("g1","",700,800);
-//  c2->SetLogx();
-//
-//  TH1F* hframe_g1 = (TH1F*)hfull->Projection(1)->Clone("h1_g1");
-//  hframe_g1->Reset();
-//  hframe_g1->GetXaxis()->CenterTitle();
-//  hframe_g1->GetYaxis()->CenterTitle();
-//  hframe_g1->GetXaxis()->SetTitle("Q^{2} (GeV^{2})");
-//  //hframe_g1->GetYaxis()->SetTitle("g_{1}(x,Q^{2}) + const(x)");
-//  hframe_g1->GetYaxis()->SetTitle("const(x)");
-//  hframe_g1->GetXaxis()->SetRangeUser(0.99,1500);
-//  hframe_g1->GetYaxis()->SetRangeUser(2,50);
-//  hframe_g1->GetYaxis()->SetNdivisions(505);
-//
-//  hframe_g1->Draw("");
-//
-//  /* draw graphs */
-//  TCanvas *ctmp = new TCanvas();
-//  float offset = 48;
-//  for ( set<float>::iterator itx = s_binc_x.begin();
-//	itx != s_binc_x.end(); itx++ )
-//    {
-//      ctmp->cd();
-//
-//      unsigned npoints = tcount->GetEntries( TString::Format("x > 0.99*%f && x < 1.01*%f", *itx, *itx ) );
-//      tcount->Draw( TString::Format("%f:Q2:stdev_N", offset),
-//		    TString::Format("x > 0.99*%f && x < 1.01*%f", *itx, *itx ) );
-//
-//      TGraphErrors* gnew = new TGraphErrors( npoints, tcount->GetV2(), tcount->GetV1(), 0, tcount->GetV3() );
-//      gnew->SetMarkerColor(kRed);
-//
-//      c2->cd();
-//      gnew->Draw("PLsame");
-//
-//      offset -= 2;
-//    }
-//
-//  pt_ebeam_lumi_ll->Draw();
-//  gPad->RedrawAxis();
-//
-//  delete ctmp;
 
   /* create tree to store information */
   TFile *fout = new TFile("output/eic_sphenix_sidis_tree.root", "RECREATE");
