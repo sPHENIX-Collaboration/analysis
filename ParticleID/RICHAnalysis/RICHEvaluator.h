@@ -16,6 +16,7 @@ class SvtxTrackMap;
 class SvtxTrack_FastSim;
 class TDatabasePDG;
 
+class TrackProjectorRICH;
 class SetupDualRICHAnalyzer;
 
 class RICHEvaluator : public SubsysReco
@@ -27,6 +28,8 @@ public:
 
   int
   Init(PHCompositeNode*);
+  int
+  InitRun(PHCompositeNode*);
   int
   process_event(PHCompositeNode*);
   int
@@ -125,6 +128,9 @@ private:
 
   float _mass_true;
   float _mass_reco;
+
+  /* track projector object */
+  TrackProjectorRICH *_trackproj;
 
   /* acquire object */
   SetupDualRICHAnalyzer *_acquire;

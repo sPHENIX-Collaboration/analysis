@@ -15,6 +15,7 @@ class PHG4HitContainer;
 class SvtxTrackMap;
 class SvtxTrack_FastSim;
 
+class TrackProjectorRICH;
 class SetupDualRICHAnalyzer;
 class PIDProbabilities;
 
@@ -28,16 +29,11 @@ public:
   int
   Init(PHCompositeNode*);
   int
+  InitRun(PHCompositeNode*);
+  int
   process_event(PHCompositeNode*);
   int
   End(PHCompositeNode*);
-
-  /* set name of the track state inside the RICH radiator volume */
-  void set_trackstate_name( std::string newname )
-  {
-    _trackstate_name = newname;
-    return;
-  }
 
   /* set refractive index of RICH radiator */
   void set_refractive_index( float newidx )
@@ -58,11 +54,11 @@ private:
   /* Hit collection storing RICH photon hits */
   std::string _richhits_name;
 
-  /* Name of the track state inside the RICH radiator volume */
-  std::string _trackstate_name;
-
   /* Refractive index of RICH radiator */
   float _refractive_index;
+
+  /* track projector object */
+  TrackProjectorRICH *_trackproj;
 
   /* acquire object */
   SetupDualRICHAnalyzer *_acquire;

@@ -47,54 +47,6 @@ SetupDualRICHAnalyzer::calculate_emission_angle( double m_emi[3], double momv[3]
 }
 
 bool
-SetupDualRICHAnalyzer::get_position_from_track_state(  SvtxTrack_FastSim * track, string statename, double arr_pos[3] )
-{
-  arr_pos[0] = 0;
-  arr_pos[1] = 0;
-  arr_pos[2] = 0;
-
-  /* Use the track states to project to the RICH */
-  for (SvtxTrack::ConstStateIter state_itr = track->begin_states();
-       state_itr != track->end_states(); state_itr++) {
-
-    SvtxTrackState *temp = dynamic_cast<SvtxTrackState*>(state_itr->second);
-
-    if( (temp->get_name()==statename) ){
-      arr_pos[0] = temp->get_x();
-      arr_pos[1] = temp->get_y();
-      arr_pos[2] = temp->get_z();
-      return true;
-    }
-  }
-
-  return false;
-}
-
-bool
-SetupDualRICHAnalyzer::get_momentum_from_track_state(  SvtxTrack_FastSim * track, string statename, double arr_mom[3] )
-{
-  arr_mom[0] = 0;
-  arr_mom[1] = 0;
-  arr_mom[2] = 0;
-
-  /* Use the track states to project to the RICH */
-  for (SvtxTrack::ConstStateIter state_itr = track->begin_states();
-       state_itr != track->end_states(); state_itr++) {
-
-    SvtxTrackState *temp = dynamic_cast<SvtxTrackState*>(state_itr->second);
-
-    if( (temp->get_name()==statename) ){
-      arr_mom[0] = temp->get_px();
-      arr_mom[1] = temp->get_py();
-      arr_mom[2] = temp->get_pz();
-      return true;
-    }
-  }
-
-  return false;
-}
-
-bool
 SetupDualRICHAnalyzer::get_true_momentum( PHG4TruthInfoContainer* truthinfo, SvtxTrack_FastSim * track, double arr_mom[3] )
 {
   arr_mom[0] = 0;

@@ -1,4 +1,5 @@
 #include "RICHParticleID.h"
+#include "TrackProjectorRICH.h"
 #include "SetupDualRICHAnalyzer.h"
 #include "PIDProbabilities.h"
 
@@ -37,8 +38,8 @@ RICHParticleID::RICHParticleID(std::string tracksname, std::string richname) :
   _ievent(0),
   _trackmap_name(tracksname),
   _richhits_name(richname),
-  _trackstate_name("RICH"),
   _refractive_index(1),
+  _trackproj(nullptr),
   _acquire(nullptr),
   _particleid(nullptr)
 {
@@ -52,15 +53,25 @@ RICHParticleID::Init(PHCompositeNode *topNode)
   _verbose = false;
   _ievent = 0;
 
-  /* create acquire object */
-  _acquire = new SetupDualRICHAnalyzer();
-
   /* create particleid object */
   _particleid = new PIDProbabilities();
 
   /* Throw warning if refractive index is not greater than 1 */
   if ( _refractive_index <= 1 )
     cout << PHWHERE << " WARNING: Refractive index for radiator volume is " << _refractive_index << endl;
+
+  return 0;
+}
+
+
+int
+RICHParticleID::InitRun(PHCompositeNode *topNode)
+{
+  /* create track projector object */
+  _trackproj = new TrackProjectorRICH( topNode );
+
+  /* create acquire object */
+  _acquire = new SetupDualRICHAnalyzer();
 
   return 0;
 }
@@ -113,10 +124,10 @@ RICHParticleID::process_event(PHCompositeNode *topNode)
       bool use_emission_momentum = false;
 
       if (use_reconstructed_momentum) {
-	/* 'Continue' with next track if RICH not found in state list for this track */
-	if ( ! _acquire->get_momentum_from_track_state( track_j, _trackstate_name, momv ) )
+	/* 'Continue' with next track if RICH projection not found for this track */
+	if ( ! _trackproj->get_projected_momentum( track_j, momv ) )
 	  {
-	    cout << "RICH state found in state list for momentum; next iteration" << endl;
+	    cout << "RICH track projection momentum NOT FOUND; next iteration" << endl;
 	    continue;
 	  }
       }
@@ -151,10 +162,10 @@ RICHParticleID::process_event(PHCompositeNode *topNode)
       bool use_approximate_point = false;
       
       if (use_reconstructed_point) {
-	/* 'Continue' with next track if RICH not found in state list for this track */
-	if ( ! _acquire->get_position_from_track_state( track_j, _trackstate_name, m_emi ) )
+	/* 'Continue' with next track if RICH projection not found for this track */
+	if ( ! _trackproj->get_projected_position( track_j, m_emi ) )
 	  {
-	    cout << "RICH state found in state list for position; next iteration" << endl;
+	    cout << "RICH track projection position NOT FOUND; next iteration" << endl;
 	    continue;
 	  }
       }

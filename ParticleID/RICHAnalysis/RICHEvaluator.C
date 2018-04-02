@@ -1,5 +1,6 @@
 #include "RICHEvaluator.h"
 #include "dualrich_analyzer.h"
+#include "TrackProjectorRICH.h"
 #include "SetupDualRICHAnalyzer.h"
 
 // Fun4All includes
@@ -42,6 +43,7 @@ RICHEvaluator::RICHEvaluator(std::string tracksname, std::string richname, std::
   _refractive_index(1),
   _foutname(filename),
   _fout_root(nullptr),
+  _trackproj(nullptr),
   _acquire(nullptr),
   _pdg(nullptr)
 {
@@ -63,15 +65,25 @@ RICHEvaluator::Init(PHCompositeNode *topNode)
   init_tree();
   init_tree_small();
 
-  /* create acquire object */
-  _acquire = new SetupDualRICHAnalyzer();
-
   /* access to PDG databse information */
   _pdg = new TDatabasePDG();
 
   /* Throw warning if refractive index is not greater than 1 */
   if ( _refractive_index <= 1 )
     cout << PHWHERE << " WARNING: Refractive index for radiator volume is " << _refractive_index << endl;
+
+  return 0;
+}
+
+
+int
+RICHEvaluator::InitRun(PHCompositeNode *topNode)
+{
+  /* create track projector object */
+  _trackproj = new TrackProjectorRICH( topNode );
+
+  /* create acquire object */
+  _acquire = new SetupDualRICHAnalyzer();
 
   return 0;
 }
@@ -129,12 +141,12 @@ RICHEvaluator::process_event(PHCompositeNode *topNode)
       bool use_emission_momentum = false;
 
       if (use_reconstructed_momentum) {
-        /* 'Continue' with next track if RICH not found in state list for this track */
-        if ( ! _acquire->get_momentum_from_track_state( track_j, _trackstate_name, momv ) )
-          {
-            cout << "RICH state found in state list for momentum; next iteration" << endl;
-            continue;
-          }
+	/* 'Continue' with next track if RICH projection not found for this track */
+	if ( ! _trackproj->get_projected_momentum( track_j, momv ) )
+	  {
+	    cout << "RICH track projection momentum NOT FOUND; next iteration" << endl;
+	    continue;
+	  }
       }
       if (use_truth_momentum) {
 	/* Fill with truth momentum instead of reco */
@@ -166,12 +178,12 @@ RICHEvaluator::process_event(PHCompositeNode *topNode)
       bool use_approximate_point = false;
 
       if (use_reconstructed_point) {
-        /* 'Continue' with next track if RICH not found in state list for this track */
-        if ( ! _acquire->get_position_from_track_state( track_j, _trackstate_name, m_emi ) )
-          {
-            cout << "RICH state found in state list for position; next iteration" << endl;
-            continue;
-          }
+	/* 'Continue' with next track if RICH projection not found for this track */
+	if ( ! _trackproj->get_projected_position( track_j, m_emi ) )
+	  {
+	    cout << "RICH track projection position NOT FOUND; next iteration" << endl;
+	    continue;
+	  }
       }
       if (use_approximate_point) {
         m_emi[0] = ((220.)/momv[2])*momv[0];

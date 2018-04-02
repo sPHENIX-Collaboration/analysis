@@ -19,13 +19,19 @@ librichana_la_LIBADD = \
 	-lfun4all \
 	-lg4dst \
 	-lg4eval \
-	-lphhepmc
+	-lphhepmc \
+	-lg4detectors \
+	-lgenfit2 \
+	-lphfield \
+	-lgenfit2exp \
+	-lPHGenFit
 
 pkginclude_HEADERS = \
 	RICHEvaluator.h \
 	RICHParticleID.h \
 	dualrich_analyzer.h \
 	SetupDualRICHAnalyzer.h \
+	TrackProjectorRICH.h \
 	PIDProbabilities.h
 
 librichana_la_SOURCES = \
@@ -35,6 +41,7 @@ librichana_la_SOURCES = \
 	RICHParticleID_Dict.C \
 	dualrich_analyzer.cc \
 	SetupDualRICHAnalyzer.cc \
+	TrackProjectorRICH.cc \
 	PIDProbabilities.cc
 
 # Rule for generating table CINT dictionaries.
