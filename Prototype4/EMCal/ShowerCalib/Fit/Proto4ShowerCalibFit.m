@@ -11,8 +11,16 @@ global low_tower_IDs;
 DataFolder = 'E:/tmp/Transfer Buffer/ShowerCalib/';
 
 % FileID = {'Rot45','THP','UIUC18','UpTilt5', 'ShowerDepth'};
-FileID = {'3rd_positionscan'};
+% FileID = {'dst'};
+% FileID = {'ShowerCalib','ShowerCalib_tilted'};
+
+
+FileID = {'4thPositionScan_dst'};
 FileList = FileID;
+
+energy_scale = 0.13;
+fixed_energy = 5;
+
 
 sim_const = 3/100;
 sim_stat = 12/100;
@@ -46,9 +54,13 @@ for i = 1:size(FileList,2)
     data = textread(filename);
     %     disp(size(data));
     
+    data(:,1) = ones(size(data(:,1))) * fixed_energy; % force fix beam energy settings.
+    
     energys = data(:,1);
     energy = unique(energys);
     data = data(:,2:(1+Ndata));
+    
+    data = data * energy_scale;
     
     energy = energy(energy<=8 & energy>2);
     
@@ -62,11 +74,11 @@ for i = 1:size(FileList,2)
         DataSet(N_Runs).DE = sqrt( sim_const.^2 + sim_stat.^2./DataSet(i).E  )  ;
         
         DataSet(N_Runs).data = data(energys == energy(j),:);
-        DataSet(N_Runs).data = DataSet(N_Runs).data .* (DataSet(N_Runs).data>zero_sup);
+        % DataSet(N_Runs).data = DataSet(N_Runs).data .* (DataSet(N_Runs).data>zero_sup);
         
         total_E = sum( DataSet(N_Runs).data* InitConst', 2) ;
         
-        DataSet(N_Runs).data = DataSet(N_Runs).data(total_E > DataSet(N_Runs).E/2, :);
+        DataSet(N_Runs).data = DataSet(N_Runs).data(total_E > 1, :);
         DataSet(N_Runs).accept = ones(size(data, 1), 1);
         
     end
@@ -80,15 +92,17 @@ SaveCanvas([DataFolder 'EnergyCalibFIt'],gcf);
 
 
 
+
 %%
 
 figure('name',['DrawDataSet_EnergyFraction'],'PaperPositionMode','auto', ...
-    'position',[100,0,1800,1000]) ;
+    'position',[100,0,1800,900]) ;
 
 SumFraction = [];
 
+
 for i = 1:N_Runs
-    subplot(1,1,i);
+    subplot(1,2,i);
     total_E = ones(size(DataSet(i).data)) .*DataSet(i).E;
     Fraction = DataSet(i).data ./ total_E;
     MeanFraction = mean(Fraction, 1);
@@ -103,9 +117,32 @@ for i = 1:N_Runs
     title(sprintf('%s, E = %.1f GeV', DataSet(i).FileID, DataSet(i).E));
     xlabel('Column ID');
     ylabel('Row ID');
+    
 end
 
 SaveCanvas([DataFolder 'EnergyCalibFIt'],gcf);
+%%
+
+
+
+figure('name',['DrawDataSet_EnergyDistribution'],'PaperPositionMode','auto', ...
+    'position',[100,0,1900,1400]) ;
+
+for col = 1:8
+    for row = 1:8
+        idx = col + (row - 1)*8;
+        
+        subplot(8,8,idx);
+        
+        histogram( DataSet(i).data(:,idx),[0.:.1:16]);
+        
+        set(gca,'XLim',[0,16])
+        set(gca,'YScale','log')
+        title(sprintf('Row%d Col%d', row-1, col-1));
+        
+    end
+end
+
 %%
 
 figure('name',['DrawDataSet_EnergyFractionSum'],'PaperPositionMode','auto', ...
@@ -132,7 +169,7 @@ xlabel('MeanFraction');
 
 subplot(1,3,3);
 
-low_tower_IDs =reshape( MeanFraction<0.01, 1, Ndata);
+low_tower_IDs =reshape( MeanFraction<0.001, 1, Ndata);
 % low_tower_IDs =reshape( MeanFraction<0.0001, 1, Ndata);
 
 imagesc(0:7, 0:7, reshape(low_tower_IDs, 8, 8));
@@ -235,7 +272,7 @@ SaveCanvas([DataFolder 'EnergyCalibFIt'],gcf);
 
 % figure('name',['CalibConstVSModuleDensity'],'PaperPositionMode','auto', ...
 %     'position',[100,0,1300,1000]) ;
-% 
+%
 % ModuleDensity =[
 % 10.19	8.47	8.96	9.77
 % 9.74	9.96	10.00	9.87
@@ -246,63 +283,63 @@ SaveCanvas([DataFolder 'EnergyCalibFIt'],gcf);
 % 9.21	9.55	9.3	9.3
 % 9.5	9.6	9.3	9.24
 % ];
-% 
+%
 % ModuleDensity = ModuleDensity(8:-1:1,:);
-% 
+%
 % ModuleDensity = [ModuleDensity(:,1) ModuleDensity(:,1) ModuleDensity(:,2) ModuleDensity(:,2) ModuleDensity(:,3) ModuleDensity(:,3) ModuleDensity(:,4) ModuleDensity(:,4)];
-% 
+%
 % subplot(2,2,1);
 % imagesc(0:7, 0:7,ModuleDensity);
 % colorbar
 % set(gca,'YDir','normal')
-% 
+%
 % title(sprintf('Module Density (g/cm^3)'));
 % xlabel('Column ID');
 % ylabel('Row ID');
-% 
-% 
+%
+%
 % subplot(2,2,2);
-% 
+%
 % imagesc(0:7, 0:7, reshape(calib_const, 8, 8));
 % colorbar
 % set(gca,'YDir','normal');
-% 
+%
 % title(sprintf('Calibration constant, New / Old'));
 % xlabel('Column ID');
 % ylabel('Row ID');
-% 
-% 
+%
+%
 % subplot(2,2,3);
-% 
+%
 % [calib_const_col, calib_const_row]= meshgrid(0:7,0:7);
-% 
+%
 % calib_const_col = reshape(calib_const_col,1,64);
 % calib_const_row = reshape(calib_const_row,1,64);
 % % IDs = ~low_tower_IDs;
 % IDs = (calib_const_col >=3 & calib_const_col<=5 & calib_const_row>=4 & calib_const_row<=6);
-% 
+%
 % dens = reshape(ModuleDensity,1, 8* 8);
 % dens = dens(IDs);
-% 
+%
 % plot(calib_const(IDs),dens, 'o');
 % title(sprintf('THP 3x3, Calibration adjustment VS density'));
 % xlabel('Calibration constant, New / Old');
 % ylabel('Module Density');
-% 
+%
 % subplot(2,2,4);
-% 
-% 
+%
+%
 % IDs = ~low_tower_IDs;
 % % IDs = (calib_const_col >=3 & calib_const_col<=5 & calib_const_row>=4 & calib_const_row<=6);
-% 
+%
 % dens = reshape(ModuleDensity,1, 8* 8);
 % dens = dens(IDs);
-% 
+%
 % plot(calib_const(IDs),dens, 'o');
 % title(sprintf('All calibrated modules, Calibration adjustment VS density'));
 % xlabel('Calibration constant, New / Old');
 % ylabel('Module Density');
-% 
+%
 % SaveCanvas([DataFolder 'EnergyCalibFIt'],gcf);
 
 
@@ -333,6 +370,7 @@ save([DataFolder 'fit.mat']);
 
 A = [reshape(calib_const_col,1,64); reshape(calib_const_row,1,64); calib_const];
 
+
 fileID = fopen([DataFolder 'ShowerCalibFit_CablibConst.dat'],'w');
 % fprintf(fileID,'%d - %d \n',);
 
@@ -341,6 +379,25 @@ fprintf(fileID,'%d\t%d\t%f\n',A);
 
 fclose(fileID);
 
+disp([DataFolder 'ShowerCalibFit_CablibConst.dat'])
 
+%%
 
+figure('name',['DrawDataSet_EnergyDistribution_AfterCalibration'],'PaperPositionMode','auto', ...
+    'position',[100,0,1900,1400]) ;
+
+for col = 1:8
+    for row = 1:8
+        idx = col + (row - 1)*8;
+        
+        subplot(8,8,idx);
+        
+        histogram( DataSet(i).data(:,idx) * calib_const(idx),[0.:.1:16]);
+        
+        set(gca,'XLim',[0,16]);
+        set(gca,'YScale','log');
+        title(sprintf('Row%d Col%d', row-1, col-1));
+        
+    end
+end
 

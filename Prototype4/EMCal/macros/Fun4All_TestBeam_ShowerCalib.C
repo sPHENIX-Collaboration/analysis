@@ -8,9 +8,10 @@ void Fun4All_TestBeam_ShowerCalib(  //
                                   //                                   "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2018/ShowerCalib_tilted/dst.lst"  //
                                   //        "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2018/Scan1Block36/dst.lst"
                                   //"/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2018/Scan1Block27/dst.lst"
-//                                          "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2018/3rdPositionScan/dst.lst"
-//                                  "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2018/4thPositionScan/dst.lst"
-            "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2018/Scan64.28V/dst.lst"
+                                  //                                          "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2018/3rdPositionScan/dst.lst"
+                                  "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2018/4thPositionScan/dst.lst"
+    //        "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2018/Scan4Block45/dst.lst"
+    //            "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2018/Scan64.28V/dst.lst"
     //                "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2018/Scan2Block34/dst.lst"
     )
 {
@@ -44,7 +45,7 @@ void Fun4All_TestBeam_ShowerCalib(  //
       string(inputFile) + string("_EMCalCalib.root"));
 
   emcal_ana->Verbosity(1);
-//  emcal_ana->LoadRecalibMap("/gpfs/mnt/gpfs04/sphenix/user/jinhuang/Prototype_2018/ShowerCalibFit_CablibConst.dat");
+  //  emcal_ana->LoadRecalibMap("/gpfs/mnt/gpfs04/sphenix/user/jinhuang/Prototype_2018/ShowerCalibFit_CablibConst.dat");
   emcal_ana->LoadRecalibMap("/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2018/4thPositionScan/4thPositionScan_ShowerCalibFit_CablibConst.dat");
   se->registerSubsystem(emcal_ana);
 
