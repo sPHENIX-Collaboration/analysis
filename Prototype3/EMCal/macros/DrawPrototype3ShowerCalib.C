@@ -39,13 +39,13 @@ public:
 void
 DrawPrototype3ShowerCalib( //
     const TString infile =
-//        "/sphenix/user/jinhuang/Prototype_2017/ShowerCalib/JointEnergyScan1.lst_EMCalCalib.root"//
+        "/sphenix/user/jinhuang/Prototype_2017/ShowerCalib/JointEnergyScan1_Neg.lst_EMCalCalib.root"//
 //        "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2017/ShowerCalib/2nd_tower21.lst_EMCalCalib.root"//
 //        "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2017/ShowerCalib/2nd_tower45.lst_EMCalCalib.root"//
 //        "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2017/ShowerCalib/test.lst_EMCalCalib.root"//
 //        "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2017/ShowerCalib/JointEnergyScan2_tower45_Neg.lst_EMCalCalib.root"//
 //        "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2017/ShowerCalib/JointEnergyScan3_tower21_NormBias.lst_EMCalCalib.root"//
-        "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2017/ShowerCalib/JointEnergyScan3_tower21_LowBias.lst_EMCalCalib.root"//
+//        "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2017/ShowerCalib/JointEnergyScan3_tower21_LowBias.lst_EMCalCalib.root"//
     )
 {
 
@@ -118,6 +118,8 @@ DrawPrototype3ShowerCalib( //
       //  cuts = "_good_data_h23_v123";
       //  event_sel = "good_e && info.hodo_h>=1 && info.hodo_h<=5 && info.hodo_v>=1 && info.hodo_v<=5 && abs(info.beam_mom)<16"; // Tower 45
       //  cuts = "_good_data_h12345_v12345";
+                event_sel = "good_e  && info.hodo_h==3 && info.hodo_v==6"; // JointEnergyScan2_tower45_Neg
+                cuts = "_good_data_h3_v6";
 //            event_sel = "good_e  && info.hodo_h==2 && info.hodo_v==2"; // JointEnergyScan2_tower45_Neg
 //            cuts = "_good_data_h2_v2";
 //        event_sel = "good_e && info.hodo_h>=1 && info.hodo_h<=2 && info.hodo_v>=1 && info.hodo_v<=3"; // JointEnergyScan2_tower45_Neg
@@ -132,8 +134,8 @@ DrawPrototype3ShowerCalib( //
 //                                cuts = "_good_data_h45_v34";
 //  event_sel = "good_e && info.hodo_h>=2 && info.hodo_h<=6 && info.hodo_v>=2 && info.hodo_v<=6"; // JointEnergyScan3_tower21_LowBias
 //  cuts = "_good_data_h23456_v23456";
-  event_sel = "good_e && info.hodo_h>=1 && info.hodo_h<=5 && info.hodo_v>=1 && info.hodo_v<=5"; // JointEnergyScan3_tower21_LowBias
-  cuts = "_good_data_h12345_v12345_InBlock";
+//  event_sel = "good_e && info.hodo_h>=1 && info.hodo_h<=5 && info.hodo_v>=1 && info.hodo_v<=5"; // JointEnergyScan3_tower21_LowBias
+//  cuts = "_good_data_h12345_v12345_InBlock";
 //  event_sel = "good_data && info.hodo_h>=2 && info.hodo_h<=4 && info.hodo_v>=4 && info.hodo_v<=6";
 //  cuts = "_good_data_h234_v456";
 //  event_sel = "good_data && info.hodo_h>=3 && info.hodo_h<=3 && info.hodo_v>=5 && info.hodo_v<=5";
@@ -208,8 +210,8 @@ DrawPrototype3ShowerCalib( //
 //    LineShapeData("abs(info.C2_sum)<100",  "(info.C2_sum)>500 && (info.C2_sum)<1300"); // 8 GeV
 //  LineShapeData("abs(info.C2_sum)<100",  "(info.C2_sum)>200 && (info.C2_sum)<1300"); // 12 GeV
 
-//  Get_Res_linear_Summmary("sum_E");
-  Get_Res_linear_Summmary("sum_E*2");
+  Get_Res_linear_Summmary("sum_E");
+//  Get_Res_linear_Summmary("sum_E*2");
 
   // simulation stuff
 //  SimPositionCheck(-0); // 0 degree tilted
@@ -928,7 +930,7 @@ GetResolution(TString cluster_name, vector<double> beam_mom, Color_t col,TString
           + cluster_name;
 
       TH1F * h = new TH1F(histname, histname + ";Observed energy (GeV)",
-          (momemtum <= 6 ? 25 : 50), momemtum / 2, momemtum * 1.5);
+          (momemtum <= 8 ? 25 : 50), momemtum / 2, momemtum * 1.5);
       T->Draw(cluster_name + "."+e_sum+">>" + histname,
           Form("abs(abs(info.beam_mom)-%f)/%f<.06", momemtum, momemtum));
 
