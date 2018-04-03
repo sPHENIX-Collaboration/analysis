@@ -577,7 +577,7 @@ int Proto4ShowerCalib::process_event(PHCompositeNode *topNode)
     TH1F *h_hcal_total_calib = dynamic_cast<TH1F *>(hm->getHisto("h_hcal_total_calib"));
     assert(h_hcal_total_calib);
 
-    if(good_anti_e && hcalin_sum_lg_e_calib > 0.2)
+    if(good_anti_e && hcalin_sum_lg_e_calib > 0.8 && hcalout_sum_lg_e_calib > 0.8)
     {
       h_hcal_total_calib->Fill(_shower.hcal_total_calib);
     }

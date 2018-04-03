@@ -21,6 +21,7 @@ Fun4All_TestBeam_HCAL_ShowerCalib(const int nEvents = 200000,
   // Load libraries
   //---------------
   gSystem->Load("libPrototype4.so");
+  gSystem->Load("libProto4_HCalShowerCalib.so");
 
   //---------------
   // Fun4All server
@@ -45,7 +46,8 @@ Fun4All_TestBeam_HCAL_ShowerCalib(const int nEvents = 200000,
   //load your analysis module.
   // This one is an example defined in ../ExampleAnalysisModule/
   Proto4ShowerCalib* hcal_ana = new Proto4ShowerCalib(
-      "Proto4ShowerCalib.root");
+      // "OutPut/Proto4ShowerCalib_422.root");
+      "OutPut/Proto4ShowerCalib_571.root");
   se->registerSubsystem(hcal_ana);
 
   se->run(nEvents);
