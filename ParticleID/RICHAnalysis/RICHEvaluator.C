@@ -1,6 +1,6 @@
 #include "RICHEvaluator.h"
 #include "dualrich_analyzer.h"
-#include "TrackProjectorRICH.h"
+#include "TrackProjectorPid.h"
 #include "SetupDualRICHAnalyzer.h"
 
 // Fun4All includes
@@ -80,7 +80,7 @@ int
 RICHEvaluator::InitRun(PHCompositeNode *topNode)
 {
   /* create track projector object */
-  _trackproj = new TrackProjectorRICH( topNode );
+  _trackproj = new TrackProjectorPid( topNode );
 
   /* create acquire object */
   _acquire = new SetupDualRICHAnalyzer();

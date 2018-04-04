@@ -1,5 +1,5 @@
 #include "RICHParticleID.h"
-#include "TrackProjectorRICH.h"
+#include "TrackProjectorPid.h"
 #include "SetupDualRICHAnalyzer.h"
 #include "PIDProbabilities.h"
 
@@ -68,7 +68,7 @@ int
 RICHParticleID::InitRun(PHCompositeNode *topNode)
 {
   /* create track projector object */
-  _trackproj = new TrackProjectorRICH( topNode );
+  _trackproj = new TrackProjectorPid( topNode );
 
   /* create acquire object */
   _acquire = new SetupDualRICHAnalyzer();

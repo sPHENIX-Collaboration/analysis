@@ -15,7 +15,7 @@ class PHG4HitContainer;
 class SvtxTrackMap;
 class SvtxTrack_FastSim;
 
-class TrackProjectorRICH;
+class TrackProjectorPid;
 class SetupDualRICHAnalyzer;
 class PIDProbabilities;
 
@@ -58,7 +58,7 @@ private:
   float _refractive_index;
 
   /* track projector object */
-  TrackProjectorRICH *_trackproj;
+  TrackProjectorPid *_trackproj;
 
   /* acquire object */
   SetupDualRICHAnalyzer *_acquire;

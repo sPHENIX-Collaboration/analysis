@@ -1,4 +1,4 @@
-#include "TrackProjectorRICH.h"
+#include "TrackProjectorPid.h"
 
 /* Fun4All includes */
 #include <phool/PHCompositeNode.h>
@@ -23,10 +23,9 @@
 
 using namespace std;
 
-TrackProjectorRICH::TrackProjectorRICH( PHCompositeNode *topNode ) :
+TrackProjectorPid::TrackProjectorPid( PHCompositeNode *topNode ) :
   _fitter(nullptr)
 {
-  /* @TODO: Fix this- find the TGeo manager! */
   TGeoManager* tgeo_manager = PHGeomUtility::GetTGeoManager(topNode);
 
   PHField * field = PHFieldUtility::GetFieldMapNode(nullptr, topNode);
@@ -44,40 +43,58 @@ TrackProjectorRICH::TrackProjectorRICH( PHCompositeNode *topNode ) :
 }
 
 bool
-TrackProjectorRICH::get_projected_position(  SvtxTrack * track, double arr_pos[3] )
+TrackProjectorPid::get_projected_position(  SvtxTrack * track, double arr_pos[3] )
 {
-
-  double arr_dummy[3] = {0,0,0};
-  project_track( track, arr_pos, arr_dummy );
-
-  return false;
-}
-
-bool
-TrackProjectorRICH::get_projected_momentum(  SvtxTrack * track, double arr_mom[3] )
-{
-
-  double arr_dummy[3] = {0,0,0};
-  project_track( track, arr_dummy, arr_mom );
-
-  return false;
-}
-
-bool
-TrackProjectorRICH::project_track(  SvtxTrack * track, double arr_pos[3], double arr_mom[3] )
-{
-  /* @TODO: Hard coded extrapolation radius- make it dependent on geometry input for example. */
-  float radius = 220;
-
   /* set position components to 0 */
   arr_pos[0] = 0;
   arr_pos[1] = 0;
   arr_pos[2] = 0;
 
+  /* project track */
+  genfit::MeasuredStateOnPlane* state = project_track( track );
+
+  /* Set position at extrapolate position */
+  if ( state )
+    {
+      arr_pos[0] = state->getPos().X();
+      arr_pos[1] = state->getPos().Y();
+      arr_pos[2] = state->getPos().Z();
+      delete state;
+      return true;
+    }
+
+  return false;
+}
+
+bool
+TrackProjectorPid::get_projected_momentum(  SvtxTrack * track, double arr_mom[3] )
+{
   /* set momentum components to 0 */
   arr_mom[0] = 0;
   arr_mom[1] = 0;
   arr_mom[2] = 0;
+
+  /* project track */
+  genfit::MeasuredStateOnPlane* state = project_track( track );
+
+  /* Set momentum at extrapolate position */
+  if ( state )
+    {
+      arr_mom[0] = state->getMom().x();
+      arr_mom[1] = state->getMom().y();
+      arr_mom[2] = state->getMom().z();
+      delete state;
+      return true;
+    }
+
+  return false;
+}
+
+genfit::MeasuredStateOnPlane*
+TrackProjectorPid::project_track(  SvtxTrack * track )
+{
+  /* @TODO: Hard coded extrapolation radius- make it dependent on geometry input for example. */
+  float radius = 220;
 
   /* Do projection */
   std::vector<double> point;
@@ -89,7 +106,7 @@ TrackProjectorRICH::project_track(  SvtxTrack * track, double arr_pos[3], double
 
   if(!trackstate) {
     cout << "No state found here!" << endl;
-    return false;
+    return NULL;
   }
 
   int _pid_guess = -211;
@@ -119,18 +136,9 @@ TrackProjectorRICH::project_track(  SvtxTrack * track, double arr_pos[3], double
     rep->extrapolateToSphere(*msop80, radius, TVector3(0,0,0), false, false);
   } catch (...) {
     cout << "track extrapolateToXX failed" << endl;
-    return false;
+    return NULL;
   }
 
-  /* Set position at extrapolate position */
-  arr_pos[0] = msop80->getPos().X();
-  arr_pos[1] = msop80->getPos().Y();
-  arr_pos[2] = msop80->getPos().Z();
-
-  /* Set momentum at extrapolate position */
-  arr_mom[0] = msop80->getMom().x();
-  arr_mom[1] = msop80->getMom().y();
-  arr_mom[2] = msop80->getMom().z();
-
-  return true;
+  msop80.release();
+  return &*msop80;
 }

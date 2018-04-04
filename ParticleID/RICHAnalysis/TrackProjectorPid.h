@@ -1,5 +1,5 @@
-#ifndef __TRACKPROJECTORRICH_H_
-#define __TRACKPROJECTORRICH_H_
+#ifndef __TRACKPROJECTORPID_H_
+#define __TRACKPROJECTORPID_H_
 
 /* STL includes */
 #include <string>
@@ -13,21 +13,25 @@ namespace PHGenFit{
   class Fitter;
 }
 
+namespace genfit{
+  class MeasuredStateOnPlane;
+}
+
 /**
  * Class to project tracks to RICH volumes.
  * Based on clas coresoftware/simulation/g4simulation/g4hough/PHG4GenFitTrackProjection
  */
-class TrackProjectorRICH {
+class TrackProjectorPid {
 
 public:
 
-  TrackProjectorRICH( PHCompositeNode* topNode );
+  TrackProjectorPid( PHCompositeNode* topNode );
 
   bool get_projected_position( SvtxTrack * track, double arr_pos[3] ); // Get mean track position
 
   bool get_projected_momentum( SvtxTrack * track, double arr_mom[3] ); // Get momentum of track
 
-  bool project_track( SvtxTrack * track, double arr_pos[3], double arr_mom[3] );
+  genfit::MeasuredStateOnPlane* project_track( SvtxTrack * track );
 
 private:
 
