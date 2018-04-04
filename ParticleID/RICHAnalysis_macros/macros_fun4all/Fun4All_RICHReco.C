@@ -36,6 +36,9 @@ int Fun4All_RICHReco(
   //--------------
 
   /* Adding RICH analysis module here */
+  FastPid_RICH *fastpid_rich = new FastPid_RICH("SvtxTrackMap", "RICH");
+  se->registerSubsystem(fastpid_rich);
+
   RICHParticleID *richpid = new RICHParticleID("SvtxTrackMap", "G4HIT_RICH");
   richpid->set_refractive_index(1.000526);
   se->registerSubsystem(richpid);
