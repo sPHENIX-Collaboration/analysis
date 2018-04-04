@@ -27,6 +27,9 @@ librichana_la_LIBADD = \
 	-lPHGenFit
 
 pkginclude_HEADERS = \
+        PidInfo.h \
+        PidInfo_RICH_v1.h \
+        PidInfoContainer.h \
 	FastPid_RICH.h \
 	RICHEvaluator.h \
 	RICHParticleID.h \
@@ -36,6 +39,11 @@ pkginclude_HEADERS = \
 	PIDProbabilities.h
 
 librichana_la_SOURCES = \
+        PidInfo_Dict.cc \
+        PidInfo_RICH_v1.cc \
+        PidInfo_RICH_v1_Dict.cc \
+        PidInfoContainer.cc \
+        PidInfoContainer_Dict.cc \
 	FastPid_RICH.C \
 	FastPid_RICH_Dict.C \
 	RICHEvaluator.C \
