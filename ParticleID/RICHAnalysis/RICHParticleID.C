@@ -1,4 +1,6 @@
 #include "RICHParticleID.h"
+#include "PidInfo_RICH_v1.h"
+#include "PidInfoContainer.h"
 #include "TrackProjectorPid.h"
 #include "SetupDualRICHAnalyzer.h"
 #include "PIDProbabilities.h"
@@ -67,6 +69,17 @@ RICHParticleID::Init(PHCompositeNode *topNode)
 int
 RICHParticleID::InitRun(PHCompositeNode *topNode)
 {
+  /* Create nodes for ParticleID */
+  try
+    {
+      CreateNodes(topNode);
+    }
+  catch (std::exception &e)
+    {
+      std::cout << PHWHERE << ": " << e.what() << std::endl;
+      throw;
+    }
+
   /* create track projector object */
   _trackproj = new TrackProjectorPid( topNode );
 
@@ -233,4 +246,29 @@ int
 RICHParticleID::End(PHCompositeNode *topNode)
 {
   return 0;
+}
+
+void RICHParticleID::CreateNodes(PHCompositeNode *topNode)
+{
+  PHNodeIterator iter(topNode);
+
+  PHCompositeNode *dstNode = static_cast<PHCompositeNode*>(iter.findFirst("PHCompositeNode", "DST"));
+  if (!dstNode)
+    {
+      std::cerr << PHWHERE << "DST Node missing, doing nothing." << std::endl;
+      throw std::runtime_error("Failed to find DST node in RICHParticleID::CreateNodes");
+    }
+
+  PHNodeIterator dstiter(dstNode);
+  string detector("RICH");
+  PHCompositeNode *DetNode = dynamic_cast<PHCompositeNode*>(dstiter.findFirst("PHCompositeNode",detector ));
+  if(!DetNode){
+    DetNode = new PHCompositeNode(detector);
+    dstNode->addNode(DetNode);
+  }
+
+  PidInfoContainer* _pidinfos = new PidInfoContainer();
+  string _pidinfo_node_name("PIDINFO_RICH");// + detector;
+  PHIODataNode<PHObject> *pidInfoNode = new PHIODataNode<PHObject>(_pidinfos, _pidinfo_node_name.c_str(), "PHObject");
+  DetNode->addNode(pidInfoNode);
 }

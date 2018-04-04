@@ -43,6 +43,7 @@ public:
   }
 
 private:
+  void CreateNodes(PHCompositeNode *topNode);
 
   bool _verbose;
 
