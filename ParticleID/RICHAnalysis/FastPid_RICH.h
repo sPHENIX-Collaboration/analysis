@@ -9,6 +9,7 @@ class PHG4TruthInfoContainer;
 class SvtxTrackMap;
 class SvtxTrack;
 
+class PidInfoContainer;
 class TrackProjectorPid;
 class SetupDualRICHAnalyzer;
 
@@ -17,7 +18,7 @@ class FastPid_RICH : public SubsysReco
 
 public:
 
-  FastPid_RICH(std::string tracksname, std::string richname);
+  FastPid_RICH(std::string richname, std::string tracksname);
 
   int
   Init(PHCompositeNode*);
@@ -29,13 +30,23 @@ public:
   End(PHCompositeNode*);
 
 private:
+  void CreateNodes(PHCompositeNode *topNode);
 
   bool _verbose;
 
   int _ievent;
 
+  /* RICH detecto name */
+  std::string _detector;
+
   /* Collection storing track information */
   std::string _trackmap_name;
+
+  /* Node name for node to store PID infos */
+  std::string _pidinfo_node_name;
+
+  /* Collection to store PidInfos for each track on node tree */
+  PidInfoContainer* _pidinfos;
 
   /* track projector object */
   TrackProjectorPid *_trackproj;

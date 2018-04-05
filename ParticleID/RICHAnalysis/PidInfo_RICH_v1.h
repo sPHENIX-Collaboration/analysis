@@ -25,7 +25,7 @@ public:
 
   void set_track_id(const int id) { _trackid = id;}
 
-  virtual void set_probability(const PID_CANDIDATE candidate, const float candidate_prob) { PHOOL_VIRTUAL_WARN("set_probability(const PID_CANDIDATE, const float)");}
+  void  set_probability(const PID_CANDIDATE candidate, const float candidate_prob) { _pid_candidate_prob[candidate] = candidate_prob; }
 
 private:
   float _trackid;
