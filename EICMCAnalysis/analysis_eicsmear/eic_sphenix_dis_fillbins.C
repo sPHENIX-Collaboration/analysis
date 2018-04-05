@@ -60,7 +60,7 @@ eic_sphenix_dis_fillbins( TString filename_output,
    *
    * Particle properties:
    * - z
-   *
+   * - pT
    */
 
   /* Define bin ranges for DIS and SIDIS histograms */
@@ -89,10 +89,10 @@ eic_sphenix_dis_fillbins( TString filename_output,
     bins_Q2[i] = TMath::Power( 10, min_Q2 + i*width_Q2);
 
   /* z */
-  const int nbins_z  = 9;
+  const int nbins_z  = 20;
 
-  double min_z = 0.05;
-  double max_z = 0.95;
+  double min_z = 0.0;
+  double max_z = 1.0;
   double width_z = (max_z - min_z) / nbins_z;
   double bins_z[nbins_z+1];
   for( int i =0; i <= nbins_z; i++)
@@ -102,12 +102,12 @@ eic_sphenix_dis_fillbins( TString filename_output,
     }
 
   /* pT */
-  const int nbins_pT1 = 10;
-  const int nbins_pT2 = 9;
+  const int nbins_pT1 = 5;
+  const int nbins_pT2 = 4;
   const int nbins_pT = nbins_pT1 + nbins_pT2;
 
   double min_pT = 0.0;
-  double width_pT1 = 0.1;
+  double width_pT1 = 0.2;
   double width_pT2 = 1.0;
 
   double bins_pT[nbins_pT+1];
@@ -257,8 +257,12 @@ eic_sphenix_dis_fillbins( TString filename_output,
       hn_dis->Fill( fill_hn_dis );
 
       /* Scattered lepton found within acceptance? */
-      if ( accept_electron( event->ScatteredLepton()->GetEta(), event->ScatteredLepton()->GetE() ) )
-	hn_dis_accept->Fill( fill_hn_dis );
+      bool electron_detected = accept_electron( event->ScatteredLepton()->GetEta(), event->ScatteredLepton()->GetE() );
+      if ( !electron_detected )
+	continue;
+
+      /* execute the part below only if scattered electron within acceptance */
+      hn_dis_accept->Fill( fill_hn_dis );
 
       /* Check that scattered lepton is within detector acceptance */
       //if ( eventS->ScatteredLepton() )

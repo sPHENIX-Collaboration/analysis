@@ -1,4 +1,7 @@
 #include "RICHParticleID.h"
+#include "PidInfo_RICH_v1.h"
+#include "PidInfoContainer.h"
+#include "TrackProjectorPid.h"
 #include "SetupDualRICHAnalyzer.h"
 #include "PIDProbabilities.h"
 
@@ -15,8 +18,8 @@
 #include <g4main/PHG4VtxPoint.h>
 #include <g4main/PHG4TruthInfoContainer.h>
 
-#include <g4hough/SvtxTrackMap_v1.h>
-#include <g4hough/SvtxTrack_FastSim.h>
+#include <g4hough/SvtxTrackMap.h>
+#include <g4hough/SvtxTrack.h>
 #include <g4hough/SvtxTrackState.h>
 
 // ROOT includes
@@ -35,14 +38,16 @@ using namespace std;
 RICHParticleID::RICHParticleID(std::string tracksname, std::string richname) :
   SubsysReco("RICHParticleID" ),
   _ievent(0),
+  _detector(richname),
   _trackmap_name(tracksname),
-  _richhits_name(richname),
-  _trackstate_name("RICH"),
   _refractive_index(1),
+  _pidinfos(nullptr),
+  _trackproj(nullptr),
   _acquire(nullptr),
   _particleid(nullptr)
 {
-
+  _richhits_name = "G4HIT_" + _detector;
+  _pidinfo_node_name = "PIDINFO_" + _detector;
 }
 
 
@@ -52,15 +57,36 @@ RICHParticleID::Init(PHCompositeNode *topNode)
   _verbose = false;
   _ievent = 0;
 
-  /* create acquire object */
-  _acquire = new SetupDualRICHAnalyzer();
-
   /* create particleid object */
   _particleid = new PIDProbabilities();
 
   /* Throw warning if refractive index is not greater than 1 */
   if ( _refractive_index <= 1 )
     cout << PHWHERE << " WARNING: Refractive index for radiator volume is " << _refractive_index << endl;
+
+  return 0;
+}
+
+
+int
+RICHParticleID::InitRun(PHCompositeNode *topNode)
+{
+  /* Create nodes for ParticleID */
+  try
+    {
+      CreateNodes(topNode);
+    }
+  catch (std::exception &e)
+    {
+      std::cout << PHWHERE << ": " << e.what() << std::endl;
+      throw;
+    }
+
+  /* create track projector object */
+  _trackproj = new TrackProjectorPid( topNode );
+
+  /* create acquire object */
+  _acquire = new SetupDualRICHAnalyzer();
 
   return 0;
 }
@@ -98,12 +124,19 @@ RICHParticleID::process_event(PHCompositeNode *topNode)
   /* Loop over tracks */
   for (SvtxTrackMap::ConstIter track_itr = trackmap->begin(); track_itr != trackmap->end(); track_itr++)
     {
-      SvtxTrack_FastSim* track_j = dynamic_cast<SvtxTrack_FastSim*>(track_itr->second);
+      SvtxTrack* track_j = dynamic_cast<SvtxTrack*>(track_itr->second);
 
-      /* Check if track_j is a null pointer- this can happen if returned track object is NOT of
-	 type SvtxTrack_FastSim for dynamic_cast. */
+      /* Check if track_j is a null pointer. */
       if (track_j == NULL)
         continue;
+
+      /* See if there's already a PidInfo object for this track. If yes, retrieve it- if not, create a new one. */
+      PidInfo *pidinfo_j = _pidinfos->getPidInfo( track_j->get_id() );
+      if (!pidinfo_j)
+        {
+          pidinfo_j = new PidInfo_RICH_v1( track_j->get_id() );
+          _pidinfos->AddPidInfo( pidinfo_j );
+	}
 
       /* Fill momv object which is the normalized momentum vector of the track in the RICH (i.e. its direction) */
       double momv[3] = {0.,0.,0.};
@@ -113,10 +146,10 @@ RICHParticleID::process_event(PHCompositeNode *topNode)
       bool use_emission_momentum = false;
 
       if (use_reconstructed_momentum) {
-	/* 'Continue' with next track if RICH not found in state list for this track */
-	if ( ! _acquire->get_momentum_from_track_state( track_j, _trackstate_name, momv ) )
+	/* 'Continue' with next track if RICH projection not found for this track */
+	if ( ! _trackproj->get_projected_momentum( track_j, momv ) )
 	  {
-	    cout << "RICH state found in state list for momentum; next iteration" << endl;
+	    cout << "RICH track projection momentum NOT FOUND; next iteration" << endl;
 	    continue;
 	  }
       }
@@ -151,10 +184,10 @@ RICHParticleID::process_event(PHCompositeNode *topNode)
       bool use_approximate_point = false;
       
       if (use_reconstructed_point) {
-	/* 'Continue' with next track if RICH not found in state list for this track */
-	if ( ! _acquire->get_position_from_track_state( track_j, _trackstate_name, m_emi ) )
+	/* 'Continue' with next track if RICH projection not found for this track */
+	if ( ! _trackproj->get_projected_position( track_j, m_emi ) )
 	  {
-	    cout << "RICH state found in state list for position; next iteration" << endl;
+	    cout << "RICH track projection position NOT FOUND; next iteration" << endl;
 	    continue;
 	  }
       }
@@ -197,24 +230,23 @@ RICHParticleID::process_event(PHCompositeNode *topNode)
 	}
 
       /* Set particle probabilities */
-      /*      track_j->set_pid_probability(SvtxTrack::ELECTRON, probs[0]);
-      track_j->set_pid_probability(SvtxTrack::CHARGEDPION, probs[1]);
-      track_j->set_pid_probability(SvtxTrack::CHARGEDKAON, probs[2]);
-      track_j->set_pid_probability(SvtxTrack::PROTON, probs[3]);
-      
-      cout << track_j->get_pid_probability(SvtxTrack::ELECTRON) << endl;
-      cout << track_j->get_pid_probability(SvtxTrack::CHARGEDPION) << endl;
-      cout << track_j->get_pid_probability(SvtxTrack::CHARGEDKAON) << endl;
-      cout << track_j->get_pid_probability(SvtxTrack::PROTON) << endl;
-      cout << "PARTICLE PROBS DONE" << endl;
-      */
-      
-      for (int m=0;m<4;m++)
-	cout << probs[m] << endl;
+      pidinfo_j->set_probability(PidInfo::ELECTRON, probs[0]);
+      pidinfo_j->set_probability(PidInfo::CHARGEDPION, probs[1]);
+      pidinfo_j->set_probability(PidInfo::CHARGEDKAON, probs[2]);
+      pidinfo_j->set_probability(PidInfo::PROTON, probs[3]);
+
+      //cout << pidinfo_j->get_probability(PidInfo::ELECTRON) << endl;
+      //cout << pidinfo_j->get_probability(PidInfo::CHARGEDPION) << endl;
+      //cout << pidinfo_j->get_probability(PidInfo::CHARGEDKAON) << endl;
+      //cout << pidinfo_j->get_probability(PidInfo::PROTON) << endl;
+      //cout << "PARTICLE PROBS DONE" << endl;
+
+      //for (int m=0;m<4;m++)
+      //	cout << probs[m] << endl;
 
 
     } // END loop over tracks
-  
+
   return 0;
 }
 
@@ -222,4 +254,27 @@ int
 RICHParticleID::End(PHCompositeNode *topNode)
 {
   return 0;
+}
+
+void RICHParticleID::CreateNodes(PHCompositeNode *topNode)
+{
+  PHNodeIterator iter(topNode);
+
+  PHCompositeNode *dstNode = static_cast<PHCompositeNode*>(iter.findFirst("PHCompositeNode", "DST"));
+  if (!dstNode)
+    {
+      std::cerr << PHWHERE << "DST Node missing, doing nothing." << std::endl;
+      throw std::runtime_error("Failed to find DST node in RICHParticleID::CreateNodes");
+    }
+
+  PHNodeIterator dstiter(dstNode);
+  PHCompositeNode *DetNode = dynamic_cast<PHCompositeNode*>(dstiter.findFirst("PHCompositeNode",_detector ));
+  if(!DetNode){
+    DetNode = new PHCompositeNode(_detector);
+    dstNode->addNode(DetNode);
+  }
+
+  _pidinfos = new PidInfoContainer();
+  PHIODataNode<PHObject> *pidInfoNode = new PHIODataNode<PHObject>(_pidinfos, _pidinfo_node_name.c_str(), "PHObject");
+  DetNode->addNode(pidInfoNode);
 }

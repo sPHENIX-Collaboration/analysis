@@ -13,9 +13,10 @@ class PHG4TruthInfoContainer;
 class PHG4Hit;
 class PHG4HitContainer;
 class SvtxTrackMap;
-class SvtxTrack_FastSim;
+class SvtxTrack;
 class TDatabasePDG;
 
+class TrackProjectorPid;
 class SetupDualRICHAnalyzer;
 
 class RICHEvaluator : public SubsysReco
@@ -23,21 +24,16 @@ class RICHEvaluator : public SubsysReco
 
 public:
 
-  RICHEvaluator(std::string tracksname, std::string richname, std::string filename);
+  RICHEvaluator(std::string richname, std::string tracksname, std::string filename);
 
   int
   Init(PHCompositeNode*);
   int
+  InitRun(PHCompositeNode*);
+  int
   process_event(PHCompositeNode*);
   int
   End(PHCompositeNode*);
-
-  /* set name of the track state inside the RICH radiator volume */
-  void set_trackstate_name( std::string newname )
-  {
-    _trackstate_name = newname;
-    return;
-  }
 
   /* set refractive index of RICH radiator */
   void set_refractive_index( float newidx )
@@ -56,26 +52,26 @@ private:
   int init_tree_small();
 
   /** calculate true Cerenkov light emission angle from truth particle information */
-  double calculate_true_emission_angle( PHG4TruthInfoContainer* truthinfo, SvtxTrack_FastSim * track, double index );
+  double calculate_true_emission_angle( PHG4TruthInfoContainer* truthinfo, SvtxTrack * track, double index );
 
   /** calculate mass for single track and photon */
   double calculate_reco_mass( double mom, double theta_reco, double index );
 
   /** calculate true particle mass from truth particle information */
-  double calculate_true_mass( PHG4TruthInfoContainer* truthinfo, SvtxTrack_FastSim * track);
+  double calculate_true_mass( PHG4TruthInfoContainer* truthinfo, SvtxTrack * track);
 
   bool _verbose;
 
   int _ievent;
+
+  /* RICH detecto name */
+  std::string _detector;
 
   /* Collection sotring track information */
   std::string _trackmap_name;
 
   /* Hit collection storing RICH photon hits */
   std::string _richhits_name;
-
-  /* Name of the track state inside the RICH radiator volume */
-  std::string _trackstate_name;
 
   /* Refractive index of RICH radiator */
   float _refractive_index;
@@ -125,6 +121,9 @@ private:
 
   float _mass_true;
   float _mass_reco;
+
+  /* track projector object */
+  TrackProjectorPid *_trackproj;
 
   /* acquire object */
   SetupDualRICHAnalyzer *_acquire;

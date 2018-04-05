@@ -1,5 +1,6 @@
 #include "RICHEvaluator.h"
 #include "dualrich_analyzer.h"
+#include "TrackProjectorPid.h"
 #include "SetupDualRICHAnalyzer.h"
 
 // Fun4All includes
@@ -15,8 +16,8 @@
 #include <g4main/PHG4VtxPoint.h>
 #include <g4main/PHG4TruthInfoContainer.h>
 
-#include <g4hough/SvtxTrackMap_v1.h>
-#include <g4hough/SvtxTrack_FastSim.h>
+#include <g4hough/SvtxTrackMap.h>
+#include <g4hough/SvtxTrack.h>
 #include <g4hough/SvtxTrackState.h>
 
 // ROOT includes
@@ -36,16 +37,16 @@ using namespace std;
 RICHEvaluator::RICHEvaluator(std::string tracksname, std::string richname, std::string filename) :
   SubsysReco("RICHEvaluator" ),
   _ievent(0),
+  _detector(richname),
   _trackmap_name(tracksname),
-  _richhits_name(richname),
-  _trackstate_name("RICH"),
   _refractive_index(1),
   _foutname(filename),
   _fout_root(nullptr),
+  _trackproj(nullptr),
   _acquire(nullptr),
   _pdg(nullptr)
 {
-
+  _richhits_name = "G4HIT_" + _detector;
 }
 
 
@@ -63,15 +64,25 @@ RICHEvaluator::Init(PHCompositeNode *topNode)
   init_tree();
   init_tree_small();
 
-  /* create acquire object */
-  _acquire = new SetupDualRICHAnalyzer();
-
   /* access to PDG databse information */
   _pdg = new TDatabasePDG();
 
   /* Throw warning if refractive index is not greater than 1 */
   if ( _refractive_index <= 1 )
     cout << PHWHERE << " WARNING: Refractive index for radiator volume is " << _refractive_index << endl;
+
+  return 0;
+}
+
+
+int
+RICHEvaluator::InitRun(PHCompositeNode *topNode)
+{
+  /* create track projector object */
+  _trackproj = new TrackProjectorPid( topNode );
+
+  /* create acquire object */
+  _acquire = new SetupDualRICHAnalyzer();
 
   return 0;
 }
@@ -114,10 +125,9 @@ RICHEvaluator::process_event(PHCompositeNode *topNode)
       /* Store angles to get RMS value */
       TH1F *ch_ang = new TH1F("","",1000,0.0,0.04);
       
-      SvtxTrack_FastSim* track_j = dynamic_cast<SvtxTrack_FastSim*>(track_itr->second);
+      SvtxTrack* track_j = dynamic_cast<SvtxTrack*>(track_itr->second);
 
-      /* Check if track_j is a null pointer- this can happen if returned track object is NOT of
-	 type SvtxTrack_FastSim for dynamic_cast. */
+      /* Check if track_j is a null pointer. */
       if (track_j == NULL)
         continue;
 
@@ -129,12 +139,12 @@ RICHEvaluator::process_event(PHCompositeNode *topNode)
       bool use_emission_momentum = false;
 
       if (use_reconstructed_momentum) {
-        /* 'Continue' with next track if RICH not found in state list for this track */
-        if ( ! _acquire->get_momentum_from_track_state( track_j, _trackstate_name, momv ) )
-          {
-            cout << "RICH state found in state list for momentum; next iteration" << endl;
-            continue;
-          }
+	/* 'Continue' with next track if RICH projection not found for this track */
+	if ( ! _trackproj->get_projected_momentum( track_j, momv ) )
+	  {
+	    cout << "RICH track projection momentum NOT FOUND; next iteration" << endl;
+	    continue;
+	  }
       }
       if (use_truth_momentum) {
 	/* Fill with truth momentum instead of reco */
@@ -166,12 +176,12 @@ RICHEvaluator::process_event(PHCompositeNode *topNode)
       bool use_approximate_point = false;
 
       if (use_reconstructed_point) {
-        /* 'Continue' with next track if RICH not found in state list for this track */
-        if ( ! _acquire->get_position_from_track_state( track_j, _trackstate_name, m_emi ) )
-          {
-            cout << "RICH state found in state list for position; next iteration" << endl;
-            continue;
-          }
+	/* 'Continue' with next track if RICH projection not found for this track */
+	if ( ! _trackproj->get_projected_position( track_j, m_emi ) )
+	  {
+	    cout << "RICH track projection position NOT FOUND; next iteration" << endl;
+	    continue;
+	  }
       }
       if (use_approximate_point) {
         m_emi[0] = ((220.)/momv[2])*momv[0];
@@ -263,7 +273,7 @@ RICHEvaluator::process_event(PHCompositeNode *topNode)
 }
 
 
-double RICHEvaluator::calculate_true_emission_angle( PHG4TruthInfoContainer* truthinfo, SvtxTrack_FastSim * track, double index )
+double RICHEvaluator::calculate_true_emission_angle( PHG4TruthInfoContainer* truthinfo, SvtxTrack * track, double index )
 {
   /* Get truth particle associated with track */
   PHG4Particle* particle = truthinfo->GetParticle( track->get_truth_track_id() );
@@ -305,7 +315,7 @@ double RICHEvaluator::calculate_reco_mass( double mom, double theta_reco, double
 }
 
 
-double RICHEvaluator::calculate_true_mass( PHG4TruthInfoContainer* truthinfo, SvtxTrack_FastSim * track )
+double RICHEvaluator::calculate_true_mass( PHG4TruthInfoContainer* truthinfo, SvtxTrack * track )
 {
   /* Get truth particle associated with track */
   PHG4Particle* particle = truthinfo->GetParticle( track->get_truth_track_id() );
