@@ -12,6 +12,7 @@
 #include <cmath>
 
 class TDatabasePDG;
+class Poisson;
 
 using namespace std;
 
@@ -30,6 +31,7 @@ class PIDProbabilities {
 
   /* PDG database access object */
   TDatabasePDG *_pdg;
+  Poisson *_poisson;
 
 };
 

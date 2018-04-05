@@ -1,8 +1,8 @@
 // Some documentation //
 
 #include "PIDProbabilities.h"
+#include "Poisson.h"
 
-#include <TH1.h>
 #include <TDatabasePDG.h>
 
 using namespace std;
@@ -11,6 +11,7 @@ using namespace std;
 PIDProbabilities::PIDProbabilities()
 {
   _pdg = new TDatabasePDG();
+  _poisson = new Poisson();
 }
 
 bool 
@@ -24,46 +25,49 @@ PIDProbabilities::particle_probs( vector<float> angles, double momentum, double 
     _pdg->GetParticle(pid[2])->Mass(),
     _pdg->GetParticle(pid[3])->Mass()
   };
-  double mass_diff[4];
+
+  /* Set angle window by taking smallest difference at high momentum in question (70 GeV) */
+  double test_p = 70;
+  double window = acos( sqrt( 1 + test_p*test_p/( mass[0]*mass[0] * 9e16 ) ) / index ) - acos( sqrt( 1 + test_p*test_p/( mass[1]*mass[1] * 9e16 ) ) / index );
+
+  /* Determine expectation value for each particle */
+  double beta[4] = {
+    momentum/( mass[0] * 3e8 * sqrt( 1 + momentum*momentum/( mass[0]*mass[0] * 9e16 ) ) ),
+    momentum/( mass[1] * 3e8 * sqrt( 1 + momentum*momentum/( mass[1]*mass[1] * 9e16 ) ) ),
+    momentum/( mass[2] * 3e8 * sqrt( 1 + momentum*momentum/( mass[2]*mass[2] * 9e16 ) ) ),
+    momentum/( mass[3] * 3e8 * sqrt( 1 + momentum*momentum/( mass[3]*mass[3] * 9e16 ) ) )
+  };
+
+  double theta_expect[4] = {
+    acos( 1/( index * beta[0] ) ),
+    acos( 1/( index * beta[1] ) ),
+    acos( 1/( index * beta[2] ) ),
+    acos( 1/( index * beta[3] ) )
+  };
 
 
-  /* Fill histogram for track, cut out (most) non-physical angles */
-  TH1F* hist = new TH1F("hist","hist",1000,0.0,0.04);
+  /* Calculate average counts based on sims */
+  // Needs to be implemented after sims are finished //
+  double counts_cal[4] = {
+    20,
+    20,
+    20,
+    20
+  };
 
-  for (int i=0; i<300; i++)
-    hist->Fill(angles[i]);
-
-  /* Get mean from histogram, can refine with peak finding later; may work with just theta <= 2 deg (0.035 rad) */
-  double theta_mean = hist->GetMean();
-
-  /* Calculate beta from reco angle */
-  double beta = 1/( index * cos(theta_mean) );
-
-  /* Calculate mass from beta */
-  double mass_reco;
-  if (beta<1 && beta>0)
-    mass_reco = momentum * sqrt( 1/beta - 1  );
-  else
-    mass_reco = 0;
-
-
-  /* Fill mass differences */
-  /* Will eventually need to determine how to characterize the probabilities */
-  for (int i=0; i<4; i++)
-    {
-      mass_diff[i] = abs(mass_reco - mass[i]);
+  /* Count hits within window */
+  int counts[4] = {0,0,0,0};
+  for (int i=0; i<300; i++){
+    for (int j=0; j<4; j++){
+      if ( angles[i] > theta_expect[j] - window || angles[i] < theta_expect[j] + window )
+	counts[j]++;
     }
-
-  double total_diff = mass_diff[0] + mass_diff[1] + mass_diff[2] + mass_diff[3];
-
-  for (int j=0; j<4; j++)
-    {
-      probs[j] = 1.0/3.0*( 1 - (mass_diff[j]/total_diff) );
-    }
+  }
 
 
-  /* Delete histogram */
-  delete hist;
+  /* Determine particle probabilities, Poisson probability mass function */
+  for (int k=0; k<4; k++)
+    probs[k] = _poisson->poisson_prob( counts_cal[k], counts[k] );
 
 
   return true;

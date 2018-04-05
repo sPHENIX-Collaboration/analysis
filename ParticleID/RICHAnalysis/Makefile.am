@@ -36,7 +36,8 @@ pkginclude_HEADERS = \
 	dualrich_analyzer.h \
 	SetupDualRICHAnalyzer.h \
 	TrackProjectorPid.h \
-	PIDProbabilities.h
+	PIDProbabilities.h \
+	Poisson.h
 
 librichana_la_SOURCES = \
         PidInfo_Dict.cc \
@@ -53,7 +54,8 @@ librichana_la_SOURCES = \
 	dualrich_analyzer.cc \
 	SetupDualRICHAnalyzer.cc \
 	TrackProjectorPid.cc \
-	PIDProbabilities.cc
+	PIDProbabilities.cc \
+	Poisson.cc
 
 # Rule for generating table CINT dictionaries.
 %_Dict.C: %.h %LinkDef.h
