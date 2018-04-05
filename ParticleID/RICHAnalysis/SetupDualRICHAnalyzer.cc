@@ -47,7 +47,7 @@ SetupDualRICHAnalyzer::calculate_emission_angle( double m_emi[3], double momv[3]
 }
 
 bool
-SetupDualRICHAnalyzer::get_true_momentum( PHG4TruthInfoContainer* truthinfo, SvtxTrack_FastSim * track, double arr_mom[3] )
+SetupDualRICHAnalyzer::get_true_momentum( PHG4TruthInfoContainer* truthinfo, SvtxTrack * track, double arr_mom[3] )
 {
   arr_mom[0] = 0;
   arr_mom[1] = 0;
@@ -66,7 +66,7 @@ SetupDualRICHAnalyzer::get_true_momentum( PHG4TruthInfoContainer* truthinfo, Svt
 }
 
 bool
-SetupDualRICHAnalyzer::get_emission_momentum( PHG4TruthInfoContainer* truthinfo, PHG4HitContainer* richhits, SvtxTrack_FastSim * track, double arr_mom[3] )
+SetupDualRICHAnalyzer::get_emission_momentum( PHG4TruthInfoContainer* truthinfo, PHG4HitContainer* richhits, SvtxTrack * track, double arr_mom[3] )
 {
   arr_mom[0] = 0;
   arr_mom[1] = 0;

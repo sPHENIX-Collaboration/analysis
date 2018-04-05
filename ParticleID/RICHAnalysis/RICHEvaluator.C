@@ -16,8 +16,8 @@
 #include <g4main/PHG4VtxPoint.h>
 #include <g4main/PHG4TruthInfoContainer.h>
 
-#include <g4hough/SvtxTrackMap_v1.h>
-#include <g4hough/SvtxTrack_FastSim.h>
+#include <g4hough/SvtxTrackMap.h>
+#include <g4hough/SvtxTrack.h>
 #include <g4hough/SvtxTrackState.h>
 
 // ROOT includes
@@ -37,9 +37,8 @@ using namespace std;
 RICHEvaluator::RICHEvaluator(std::string tracksname, std::string richname, std::string filename) :
   SubsysReco("RICHEvaluator" ),
   _ievent(0),
+  _detector(richname),
   _trackmap_name(tracksname),
-  _richhits_name(richname),
-  _trackstate_name("RICH"),
   _refractive_index(1),
   _foutname(filename),
   _fout_root(nullptr),
@@ -47,7 +46,7 @@ RICHEvaluator::RICHEvaluator(std::string tracksname, std::string richname, std::
   _acquire(nullptr),
   _pdg(nullptr)
 {
-
+  _richhits_name = "G4HIT_" + _detector;
 }
 
 
@@ -126,10 +125,9 @@ RICHEvaluator::process_event(PHCompositeNode *topNode)
       /* Store angles to get RMS value */
       TH1F *ch_ang = new TH1F("","",1000,0.0,0.04);
       
-      SvtxTrack_FastSim* track_j = dynamic_cast<SvtxTrack_FastSim*>(track_itr->second);
+      SvtxTrack* track_j = dynamic_cast<SvtxTrack*>(track_itr->second);
 
-      /* Check if track_j is a null pointer- this can happen if returned track object is NOT of
-	 type SvtxTrack_FastSim for dynamic_cast. */
+      /* Check if track_j is a null pointer. */
       if (track_j == NULL)
         continue;
 
@@ -275,7 +273,7 @@ RICHEvaluator::process_event(PHCompositeNode *topNode)
 }
 
 
-double RICHEvaluator::calculate_true_emission_angle( PHG4TruthInfoContainer* truthinfo, SvtxTrack_FastSim * track, double index )
+double RICHEvaluator::calculate_true_emission_angle( PHG4TruthInfoContainer* truthinfo, SvtxTrack * track, double index )
 {
   /* Get truth particle associated with track */
   PHG4Particle* particle = truthinfo->GetParticle( track->get_truth_track_id() );
@@ -317,7 +315,7 @@ double RICHEvaluator::calculate_reco_mass( double mom, double theta_reco, double
 }
 
 
-double RICHEvaluator::calculate_true_mass( PHG4TruthInfoContainer* truthinfo, SvtxTrack_FastSim * track )
+double RICHEvaluator::calculate_true_mass( PHG4TruthInfoContainer* truthinfo, SvtxTrack * track )
 {
   /* Get truth particle associated with track */
   PHG4Particle* particle = truthinfo->GetParticle( track->get_truth_track_id() );
