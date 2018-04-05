@@ -9,6 +9,7 @@
 #include <phgeom/PHGeomUtility.h>
 
 #include <g4hough/SvtxTrack.h>
+#include <g4hough/SvtxTrackState_v1.h>
 #include <g4hough/PHG4HoughTransform.h>
 
 #include <phfield/PHFieldUtility.h>
@@ -56,9 +57,9 @@ TrackProjectorPid::get_projected_position(  SvtxTrack * track, double arr_pos[3]
   /* Set position at extrapolate position */
   if ( state )
     {
-      arr_pos[0] = state->getPos().X();
-      arr_pos[1] = state->getPos().Y();
-      arr_pos[2] = state->getPos().Z();
+      arr_pos[0] = state->get_x();
+      arr_pos[1] = state->get_y();
+      arr_pos[2] = state->get_z();
       return true;
     }
 
@@ -79,16 +80,18 @@ TrackProjectorPid::get_projected_momentum(  SvtxTrack * track, double arr_mom[3]
   /* Set momentum at extrapolate position */
   if ( state )
     {
-      arr_mom[0] = state->getMom().x();
-      arr_mom[1] = state->getMom().y();
-      arr_mom[2] = state->getMom().z();
+      arr_mom[0] = state->get_px();
+      arr_mom[1] = state->get_py();
+      arr_mom[2] = state->get_pz();
       return true;
     }
 
   return false;
 }
 
-unique_ptr<genfit::MeasuredStateOnPlane>
+//unique_ptr<genfit::MeasuredStateOnPlane>
+//genfit::MeasuredStateOnPlane*
+SvtxTrackState*
 TrackProjectorPid::project_track(  SvtxTrack * track )
 {
   /* @TODO: Hard coded extrapolation radius- make it dependent on geometry input for example. */
@@ -137,5 +140,16 @@ TrackProjectorPid::project_track(  SvtxTrack * track )
     return NULL;
   }
 
-  return msop80;
+  /* Having trouble returning unique_ptr msop80 object and using it in other member functions.
+   * Workaround: Create SvtxTrackState object to pass projected track state information to
+   * other member functions. */
+  SvtxTrackState_v1 *svtx_state = new SvtxTrackState_v1();
+  svtx_state->set_x( msop80->getPos().X() );
+  svtx_state->set_y( msop80->getPos().Y() );
+  svtx_state->set_z( msop80->getPos().Z() );
+  svtx_state->set_px( msop80->getMom().x() );
+  svtx_state->set_py( msop80->getMom().y() );
+  svtx_state->set_pz( msop80->getMom().z() );
+
+  return svtx_state;
 }
