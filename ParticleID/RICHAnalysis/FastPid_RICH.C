@@ -138,11 +138,10 @@ FastPid_RICH::process_event(PHCompositeNode *topNode)
       else if ( abs( pid ) == 2212 )
         pidinfo_j->set_probability(PidInfo::PROTON, 1);
 
-      cout << "Probability (electron):     " << pidinfo_j->get_probability(PidInfo::ELECTRON) << endl;
-      cout << "Probability (charged pion): " << pidinfo_j->get_probability(PidInfo::CHARGEDPION) << endl;
-      cout << "Probability (charged kaon): " << pidinfo_j->get_probability(PidInfo::CHARGEDKAON) << endl;
-      cout << "Probability (proton):       " << pidinfo_j->get_probability(PidInfo::PROTON) << endl;
-      cout << "PARTICLE PROBS DONE" << endl;
+      //cout << "Probability (electron):     " << pidinfo_j->get_probability(PidInfo::ELECTRON) << endl;
+      //cout << "Probability (charged pion): " << pidinfo_j->get_probability(PidInfo::CHARGEDPION) << endl;
+      //cout << "Probability (charged kaon): " << pidinfo_j->get_probability(PidInfo::CHARGEDKAON) << endl;
+      //cout << "Probability (proton):       " << pidinfo_j->get_probability(PidInfo::PROTON) << endl;
 
     } // END loop over tracks
 

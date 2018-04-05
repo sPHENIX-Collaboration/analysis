@@ -222,7 +222,7 @@ RICHParticleID::process_event(PHCompositeNode *topNode)
 
       /* Calculate particle probabilities */
       double probs[4] = {0.,0.,0.,0.};
-      cout << "PARTICLE PROBS" << endl;
+      //cout << "PARTICLE PROBS" << endl;
       if ( !_particleid->particle_probs( angles, momv_norm, _refractive_index, probs ) )
 	{
 	  cout << "No particle ID: ParticleID::particle_probs gives no output" << endl;
