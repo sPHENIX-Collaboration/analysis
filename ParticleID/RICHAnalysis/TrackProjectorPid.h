@@ -37,6 +37,8 @@ public:
   //genfit::MeasuredStateOnPlane*
   SvtxTrackState* project_track( SvtxTrack * track );
 
+  bool is_in_RICH( double momv[3] ); // Check if track pass through RICH
+
 private:
 
   PHGenFit::Fitter * _fitter;

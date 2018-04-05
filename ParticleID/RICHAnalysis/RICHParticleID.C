@@ -175,7 +175,6 @@ RICHParticleID::process_event(PHCompositeNode *topNode)
       momv[1] /= momv_norm;
       momv[2] /= momv_norm;
 
-      cout << "Momentum vector: " << momv[0] << " " << momv[1] << " " << momv[2] << endl;
 
       /* Get mean emission point from track in RICH */
       double m_emi[3] = {0.,0.,0.};
@@ -197,8 +196,14 @@ RICHParticleID::process_event(PHCompositeNode *topNode)
 	m_emi[2] = ((220.)/momv[2])*momv[2];	
       }
 
-      cout << "Emission point: " << m_emi[0] << " " << m_emi[1] << " " << m_emi[2] << endl;
 
+      /* 'Continue' with next track if track doesn't pass through RICH */
+      if ( ! _trackproj->is_in_RICH( momv ) )
+	continue;
+
+      
+      cout << "Emission point: " << m_emi[0] << " " << m_emi[1] << " " << m_emi[2] << endl;
+      cout << "Momentum vector: " << momv[0] << " " << momv[1] << " " << momv[2] << endl;
       
       /* Vector of reconstructed angles to pass to PID */
       vector<float> angles;

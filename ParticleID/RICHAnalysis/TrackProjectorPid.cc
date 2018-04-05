@@ -153,3 +153,15 @@ TrackProjectorPid::project_track(  SvtxTrack * track )
 
   return svtx_state;
 }
+
+bool
+TrackProjectorPid::is_in_RICH( double momv[3] )
+{
+  double eta = atanh( momv[2] );
+
+  // rough pseudorapidity cut
+  if (eta > 1.45 && eta < 7.5)
+    return true;
+
+  return false;
+}
