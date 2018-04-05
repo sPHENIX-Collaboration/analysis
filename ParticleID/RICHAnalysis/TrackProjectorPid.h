@@ -3,6 +3,7 @@
 
 /* STL includes */
 #include <string>
+#include <memory>
 
 /* Forward declarations */
 class PHCompositeNode;
@@ -31,7 +32,7 @@ public:
 
   bool get_projected_momentum( SvtxTrack * track, double arr_mom[3] ); // Get momentum of track
 
-  genfit::MeasuredStateOnPlane* project_track( SvtxTrack * track );
+  std::unique_ptr<genfit::MeasuredStateOnPlane> project_track( SvtxTrack * track );
 
 private:
 

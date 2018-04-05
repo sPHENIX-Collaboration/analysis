@@ -51,7 +51,7 @@ TrackProjectorPid::get_projected_position(  SvtxTrack * track, double arr_pos[3]
   arr_pos[2] = 0;
 
   /* project track */
-  genfit::MeasuredStateOnPlane* state = project_track( track );
+  auto state = project_track( track );
 
   /* Set position at extrapolate position */
   if ( state )
@@ -59,7 +59,6 @@ TrackProjectorPid::get_projected_position(  SvtxTrack * track, double arr_pos[3]
       arr_pos[0] = state->getPos().X();
       arr_pos[1] = state->getPos().Y();
       arr_pos[2] = state->getPos().Z();
-      delete state;
       return true;
     }
 
@@ -75,7 +74,7 @@ TrackProjectorPid::get_projected_momentum(  SvtxTrack * track, double arr_mom[3]
   arr_mom[2] = 0;
 
   /* project track */
-  genfit::MeasuredStateOnPlane* state = project_track( track );
+  auto state = project_track( track );
 
   /* Set momentum at extrapolate position */
   if ( state )
@@ -83,14 +82,13 @@ TrackProjectorPid::get_projected_momentum(  SvtxTrack * track, double arr_mom[3]
       arr_mom[0] = state->getMom().x();
       arr_mom[1] = state->getMom().y();
       arr_mom[2] = state->getMom().z();
-      delete state;
       return true;
     }
 
   return false;
 }
 
-genfit::MeasuredStateOnPlane*
+unique_ptr<genfit::MeasuredStateOnPlane>
 TrackProjectorPid::project_track(  SvtxTrack * track )
 {
   /* @TODO: Hard coded extrapolation radius- make it dependent on geometry input for example. */
@@ -139,6 +137,5 @@ TrackProjectorPid::project_track(  SvtxTrack * track )
     return NULL;
   }
 
-  msop80.release();
-  return &*msop80;
+  return msop80;
 }
