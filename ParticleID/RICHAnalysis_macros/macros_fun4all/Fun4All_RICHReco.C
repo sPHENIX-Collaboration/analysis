@@ -8,6 +8,10 @@ int Fun4All_RICHReco(
 
   bool readdst = true;
 
+  /* switch: do_fastpid = 'true' uses FastPid module based on parametrization of RICH response; if
+     set to 'false', use full reconstructed based on detected photon hits. */
+  bool do_fastpid = false;
+
   //---------------
   // Load libraries
   //---------------
@@ -15,12 +19,6 @@ int Fun4All_RICHReco(
   gSystem->Load("librichana.so");
   gSystem->Load("libfun4all.so");
   gSystem->Load("libg4detectors.so");
-  //  gSystem->Load("libphhepmc.so");
-  //  gSystem->Load("libg4testbench.so");
-  //  gSystem->Load("libg4hough.so");
-  //  gSystem->Load("libcemc.so");
-  //  gSystem->Load("libg4bbc.so");
-  //  gSystem->Load("libg4eval.so");
 
   //---------------
   // Fun4All server
@@ -35,18 +33,22 @@ int Fun4All_RICHReco(
   // Analysis modules
   //--------------
 
-  /* Adding RICH analysis module here */
-  FastPid_RICH *fastpid_rich = new FastPid_RICH("SvtxTrackMap", "RICH");
-  se->registerSubsystem(fastpid_rich);
+  /* Adding RICH analysis modules */
+  if ( do_fastpid )
+    {
+      FastPid_RICH *fastpid_rich = new FastPid_RICH("SvtxTrackMap", "RICH");
+      se->registerSubsystem(fastpid_rich);
+    }
+  else
+    {
+      RICHParticleID *richpid = new RICHParticleID("SvtxTrackMap", "RICH");
+      richpid->set_refractive_index(1.000526);
+      se->registerSubsystem(richpid);
 
-  RICHParticleID *richpid = new RICHParticleID("SvtxTrackMap", "G4HIT_RICH");
-  richpid->set_refractive_index(1.000526);
-  se->registerSubsystem(richpid);
-
-  RICHEvaluator *richeval = new RICHEvaluator("SvtxTrackMap", "G4HIT_RICH", evalFile);
-  richeval->set_refractive_index(1.000526);
-  se->registerSubsystem(richeval);
-
+      RICHEvaluator *richeval = new RICHEvaluator("SvtxTrackMap", "RICH", evalFile);
+      richeval->set_refractive_index(1.000526);
+      se->registerSubsystem(richeval);
+    }
 
   //--------------
   // IO management
