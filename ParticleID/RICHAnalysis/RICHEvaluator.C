@@ -189,7 +189,12 @@ RICHEvaluator::process_event(PHCompositeNode *topNode)
         m_emi[2] = ((220.)/momv[2])*momv[2];
       }
 
+
+      /* 'Continue' with next track if track doesn't pass through RICH */
+      if ( ! _trackproj->is_in_RICH( momv ) )
+	continue;
       
+
       /* Calculate truth emission angle and truth mass */
       if (truthinfo)
 	{
