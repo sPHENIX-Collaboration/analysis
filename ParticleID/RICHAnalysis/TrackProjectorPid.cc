@@ -130,9 +130,18 @@ TrackProjectorPid::project_track(  SvtxTrack * track, const PROJECTION_SURFACE s
 
   /* This is where the actual extrapolation of the track to a surface (cylinder, plane, cone, sphere) happens. */
   try {
+
     /* 'rep 'is of type AbsTrackRep (see documentation or header for extrapolation function options ) */
-    if ( surf == CYLINDER )
+    if ( surf == SPHERE )
       rep->extrapolateToSphere(*msop80, surface_par, TVector3(0,0,0), false, false);
+
+    else if ( surf == CYLINDER )
+      rep->extrapolateToCylinder(*msop80, surface_par, TVector3(0,0,0),  TVector3(0,0,1));
+
+
+    else if ( surf == PLANEXY )
+      rep->extrapolateToPlane(*msop80, genfit::SharedPlanePtr( new genfit::DetPlane( TVector3(0, 0, surface_par), TVector3(0, 0, 1) ) ), false, false);
+
   } catch (...) {
     cout << "track extrapolateToXX failed" << endl;
     return NULL;
