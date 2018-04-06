@@ -148,7 +148,7 @@ RICHParticleID::process_event(PHCompositeNode *topNode)
 
       if (use_reconstructed_momentum) {
 	/* 'Continue' with next track if RICH projection not found for this track */
-	if ( ! _trackproj->get_projected_momentum( track_j, momv, TrackProjectorPid::CYLINDER, _radius ) )
+	if ( ! _trackproj->get_projected_momentum( track_j, momv, TrackProjectorPid::SPHERE, _radius ) )
 	  {
 	    cout << "RICH track projection momentum NOT FOUND; next iteration" << endl;
 	    continue;
@@ -185,7 +185,7 @@ RICHParticleID::process_event(PHCompositeNode *topNode)
       
       if (use_reconstructed_point) {
 	/* 'Continue' with next track if RICH projection not found for this track */
-	if ( ! _trackproj->get_projected_position( track_j, m_emi, TrackProjectorPid::CYLINDER, _radius ) )
+	if ( ! _trackproj->get_projected_position( track_j, m_emi, TrackProjectorPid::SPHERE, _radius ) )
 	  {
 	    cout << "RICH track projection position NOT FOUND; next iteration" << endl;
 	    continue;

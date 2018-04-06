@@ -112,7 +112,7 @@ FastPid_RICH::process_event(PHCompositeNode *topNode)
       /* Get mean emission point from track in RICH */
       double m_emi[3] = {0.,0.,0.};
 
-      if ( ! _trackproj->get_projected_position( track_j, m_emi, TrackProjectorPid::CYLINDER, _radius ) )
+      if ( ! _trackproj->get_projected_position( track_j, m_emi, TrackProjectorPid::SPHERE, _radius ) )
         {
           cout << "RICH track projection position NOT FOUND; next iteration" << endl;
 	  continue;
