@@ -15,6 +15,7 @@
 
 #include <g4hough/SvtxTrackMap.h>
 #include <g4hough/SvtxTrack.h>
+#include <g4hough/SvtxTrackState.h>
 
 // ROOT includes
 
@@ -107,12 +108,9 @@ FastPid_RICH::process_event(PHCompositeNode *topNode)
 	}
 
       /* project track to RICH volume and calculate parametrized particle ID response */
-      /* @TODO: Implement parametrization */
-
-      /* Get mean emission point from track in RICH */
-      double m_emi[3] = {0.,0.,0.};
-
-      if ( ! _trackproj->get_projected_position( track_j, m_emi, TrackProjectorPid::SPHERE, _radius ) )
+      /* Get mean emission point from track in RICH volume */
+      SvtxTrackState *state_j_at_rich = _trackproj->project_track( track_j, TrackProjectorPid::SPHERE, _radius );
+      if ( ! state_j_at_rich )
         {
           cout << "RICH track projection position NOT FOUND; next iteration" << endl;
 	  continue;
@@ -124,25 +122,43 @@ FastPid_RICH::process_event(PHCompositeNode *topNode)
       /* Get particle ID */
       int pid = particle->get_pid();
 
-      cout << "FOUND PARTICLE with true PID = " << pid << endl;
+      /* Use parametrized particle ID based on position and momentum at point of track projection */
+      /* @TODO: Implement parametrized particle ID */
+      { // beginning of parametrized RICH response
 
-      /* Set particle probabilities */
-      pidinfo_j->set_probability(PidInfo::ELECTRON, 0);
-      pidinfo_j->set_probability(PidInfo::CHARGEDPION, 0);
-      pidinfo_j->set_probability(PidInfo::CHARGEDKAON, 0);
-      pidinfo_j->set_probability(PidInfo::PROTON, 0);
+	/* approximate RICH acceptance */
+	float eta_min = 1.45;
+	float eta_max = 3.5;
 
-      if ( abs( pid ) == 11 )
-        pidinfo_j->set_probability(PidInfo::ELECTRON, 1);
-      else if ( abs( pid ) == 211 )
-        pidinfo_j->set_probability(PidInfo::CHARGEDPION, 1);
-      else if ( abs( pid ) == 2212 )
-        pidinfo_j->set_probability(PidInfo::PROTON, 1);
+	/* approximate momentum range for pion / kaon separation */
+	float p_min = 3.;
+	float p_max = 50.;
 
-      //cout << "Probability (electron):     " << pidinfo_j->get_probability(PidInfo::ELECTRON) << endl;
-      //cout << "Probability (charged pion): " << pidinfo_j->get_probability(PidInfo::CHARGEDPION) << endl;
-      //cout << "Probability (charged kaon): " << pidinfo_j->get_probability(PidInfo::CHARGEDKAON) << endl;
-      //cout << "Probability (proton):       " << pidinfo_j->get_probability(PidInfo::PROTON) << endl;
+	/* check if track projected state in RICH acceptance */
+	if ( state_j_at_rich->get_eta() > eta_min && state_j_at_rich->get_eta() < eta_max )
+	  {
+	    if ( state_j_at_rich->get_p() > p_min && state_j_at_rich->get_p() < p_max )
+	      {
+		/* identified kaon */
+		if ( abs( pid ) == 211 )
+		  pidinfo_j->set_probability(PidInfo::CHARGEDPION, 1);
+
+		/* identified kaon */
+		else if ( abs( pid ) == 321 )
+		  pidinfo_j->set_probability(PidInfo::CHARGEDKAON, 1);
+	      }
+	  }
+      } // end of parametrized RICH response
+
+      /* print some information to screen */
+      cout << "True PID: " << pid << endl;
+      cout << "Position: " << state_j_at_rich->get_x() << ", " << state_j_at_rich->get_y() << ", " << state_j_at_rich->get_z() << endl;
+      cout << "Momentum: " << state_j_at_rich->get_px() << ", " << state_j_at_rich->get_py() << ", " << state_j_at_rich->get_pz() << endl;
+      cout << "Eta, |p|: " << state_j_at_rich->get_eta() << ", " << state_j_at_rich->get_p() << endl;
+      cout << "Probability (electron):     " << pidinfo_j->get_probability(PidInfo::ELECTRON) << endl;
+      cout << "Probability (charged pion): " << pidinfo_j->get_probability(PidInfo::CHARGEDPION) << endl;
+      cout << "Probability (charged kaon): " << pidinfo_j->get_probability(PidInfo::CHARGEDKAON) << endl;
+      cout << "Probability (proton):       " << pidinfo_j->get_probability(PidInfo::PROTON) << endl;
 
     } // END loop over tracks
 
