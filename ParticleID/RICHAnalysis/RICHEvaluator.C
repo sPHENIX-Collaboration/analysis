@@ -44,7 +44,8 @@ RICHEvaluator::RICHEvaluator(std::string tracksname, std::string richname, std::
   _fout_root(nullptr),
   _trackproj(nullptr),
   _acquire(nullptr),
-  _pdg(nullptr)
+  _pdg(nullptr),
+  _radius(220.)
 {
   _richhits_name = "G4HIT_" + _detector;
 }
@@ -140,7 +141,7 @@ RICHEvaluator::process_event(PHCompositeNode *topNode)
 
       if (use_reconstructed_momentum) {
 	/* 'Continue' with next track if RICH projection not found for this track */
-	if ( ! _trackproj->get_projected_momentum( track_j, momv ) )
+	if ( ! _trackproj->get_projected_momentum( track_j, momv, TrackProjectorPid::CYLINDER, _radius ) )
 	  {
 	    cout << "RICH track projection momentum NOT FOUND; next iteration" << endl;
 	    continue;
@@ -177,16 +178,16 @@ RICHEvaluator::process_event(PHCompositeNode *topNode)
 
       if (use_reconstructed_point) {
 	/* 'Continue' with next track if RICH projection not found for this track */
-	if ( ! _trackproj->get_projected_position( track_j, m_emi ) )
+	if ( ! _trackproj->get_projected_position( track_j, m_emi, TrackProjectorPid::CYLINDER, _radius  ) )
 	  {
 	    cout << "RICH track projection position NOT FOUND; next iteration" << endl;
 	    continue;
 	  }
       }
       if (use_approximate_point) {
-        m_emi[0] = ((220.)/momv[2])*momv[0];
-        m_emi[1] = ((220.)/momv[2])*momv[1];
-        m_emi[2] = ((220.)/momv[2])*momv[2];
+        m_emi[0] = ((_radius)/momv[2])*momv[0];
+        m_emi[1] = ((_radius)/momv[2])*momv[1];
+        m_emi[2] = ((_radius)/momv[2])*momv[2];
       }
 
 

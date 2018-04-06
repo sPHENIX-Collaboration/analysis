@@ -44,7 +44,7 @@ TrackProjectorPid::TrackProjectorPid( PHCompositeNode *topNode ) :
 }
 
 bool
-TrackProjectorPid::get_projected_position(  SvtxTrack * track, double arr_pos[3] )
+TrackProjectorPid::get_projected_position(  SvtxTrack * track, double arr_pos[3], const PROJECTION_SURFACE surf, const float surface_par )
 {
   /* set position components to 0 */
   arr_pos[0] = 0;
@@ -52,7 +52,7 @@ TrackProjectorPid::get_projected_position(  SvtxTrack * track, double arr_pos[3]
   arr_pos[2] = 0;
 
   /* project track */
-  auto state = project_track( track );
+  auto state = project_track( track, surf, surface_par );
 
   /* Set position at extrapolate position */
   if ( state )
@@ -67,7 +67,7 @@ TrackProjectorPid::get_projected_position(  SvtxTrack * track, double arr_pos[3]
 }
 
 bool
-TrackProjectorPid::get_projected_momentum(  SvtxTrack * track, double arr_mom[3] )
+TrackProjectorPid::get_projected_momentum(  SvtxTrack * track, double arr_mom[3], const PROJECTION_SURFACE surf, const float surface_par )
 {
   /* set momentum components to 0 */
   arr_mom[0] = 0;
@@ -75,7 +75,7 @@ TrackProjectorPid::get_projected_momentum(  SvtxTrack * track, double arr_mom[3]
   arr_mom[2] = 0;
 
   /* project track */
-  auto state = project_track( track );
+  auto state = project_track( track, surf, surface_par );
 
   /* Set momentum at extrapolate position */
   if ( state )
@@ -92,11 +92,8 @@ TrackProjectorPid::get_projected_momentum(  SvtxTrack * track, double arr_mom[3]
 //unique_ptr<genfit::MeasuredStateOnPlane>
 //genfit::MeasuredStateOnPlane*
 SvtxTrackState*
-TrackProjectorPid::project_track(  SvtxTrack * track )
+TrackProjectorPid::project_track(  SvtxTrack * track, const PROJECTION_SURFACE surf, const float surface_par )
 {
-  /* @TODO: Hard coded extrapolation radius- make it dependent on geometry input for example. */
-  float radius = 220;
-
   /* Do projection */
   std::vector<double> point;
   point.assign(3, -9999.);
@@ -134,7 +131,8 @@ TrackProjectorPid::project_track(  SvtxTrack * track )
   /* This is where the actual extrapolation of the track to a surface (cylinder, plane, cone, sphere) happens. */
   try {
     /* 'rep 'is of type AbsTrackRep (see documentation or header for extrapolation function options ) */
-    rep->extrapolateToSphere(*msop80, radius, TVector3(0,0,0), false, false);
+    if ( surf == CYLINDER )
+      rep->extrapolateToSphere(*msop80, surface_par, TVector3(0,0,0), false, false);
   } catch (...) {
     cout << "track extrapolateToXX failed" << endl;
     return NULL;

@@ -30,7 +30,8 @@ FastPid_RICH::FastPid_RICH(std::string tracksname, std::string richname) :
   _detector(richname),
   _trackmap_name(tracksname),
   _pidinfos(nullptr),
-  _trackproj(nullptr)
+  _trackproj(nullptr),
+  _radius(220.)
 {
   _pidinfo_node_name = "PIDINFO_" + _detector;
 }
@@ -111,7 +112,7 @@ FastPid_RICH::process_event(PHCompositeNode *topNode)
       /* Get mean emission point from track in RICH */
       double m_emi[3] = {0.,0.,0.};
 
-      if ( ! _trackproj->get_projected_position( track_j, m_emi ) )
+      if ( ! _trackproj->get_projected_position( track_j, m_emi, TrackProjectorPid::CYLINDER, _radius ) )
         {
           cout << "RICH track projection position NOT FOUND; next iteration" << endl;
 	  continue;

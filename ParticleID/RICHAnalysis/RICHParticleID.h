@@ -77,6 +77,9 @@ private:
   /* particleid object */
   PIDProbabilities *_particleid;
 
+  /* Radius for track extrapolation */
+  float _radius;
+
 };
 
 #endif // __RICHParticleID_H__
