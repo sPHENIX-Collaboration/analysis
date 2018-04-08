@@ -155,7 +155,7 @@ void purity()
   //============================================================
 
   // The condor job output files
-  for(int i=0;i<1000;i++)
+  for(int i=0;i<2000;i++)
     {
       // Open the evaluator output file 
       
@@ -175,8 +175,10 @@ void purity()
       //sprintf(name,"/sphenix/user/frawley/fresh_mar2/macros/macros/g4simulations/eval_output/g4svtx_eval_%i.root_g4svtx_eval.root_primary_eval.root ",i);
 
       //sprintf(name,"/sphenix/user/frawley/fresh_mar2/macros/macros/g4simulations/eval_output/g4svtx_eval_%i.root_g4svtx_eval.root",i);
-      sprintf(name,"/sphenix/user/frawley/fresh_mar2/macros/macros/g4simulations/eval_output/g4svtx_eval_%i.root_g4svtx_eval.root_primary_eval.root",i);
-
+      //sprintf(name,"/sphenix/user/frawley/fresh_mar2/macros/macros/g4simulations/eval_output/g4svtx_eval_%i.root_g4svtx_eval.root_primary_eval.root",i);
+      //sprintf(name,"/sphenix/user/frawley/fresh_mar8_testing/macros/macros/g4simulations/eval_output/g4svtx_eval_%i.root_g4svtx_eval.root_primary_eval.root",i);
+      //sprintf(name,"/sphenix/user/frawley/fresh_mar8_testing/macros/macros/g4simulations/eval_output/g4svtx_eval_%i.root",i);
+      sprintf(name,"/sphenix/user/frawley/fresh_mar8_testing/macros/macros/g4simulations/mar20_100pions_80ns_eval_output/g4svtx_eval_%i.root",i);
 
       bool checkfiles = false;
       int mintracks = 10;

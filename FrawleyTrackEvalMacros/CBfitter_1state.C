@@ -108,11 +108,8 @@ void CBfitter_1state()
 
   //bool do_subtracted = true;
 
-  //file1S = new TFile("ups1s_qual3.00_dca2d0.10.root");
-  //file1S = new TFile("mar3_ups1smass_100pions_1ups_nomvtx_primvtxfit.root");
-  file1S = new TFile("upsmass_central_200khz_2combined.root");
-  //file1S = new TFile("mar6_upsmass_noMVTX_central_200khz.root");
-
+  //file1S = new TFile("root_files/ups1s_qual3.00_dca2d0.10.root");
+  file1S = new TFile("root_files/upsmass_central_200khz_2dfit_1-3.root");
 
 
   recomass1S = (TH1 *)file1S->Get("recomass");
@@ -120,8 +117,8 @@ void CBfitter_1state()
   TH1 *recomass = (TH1*)recomass1S->Clone("recomass");
   recomass->Sumw2();
 
-  int nrebin = 1;  // set to 2 to match background histo binning, but this worsens resolution slightly. Use 1 for signal fit
-  //int nrebin = 2;  // set to 2 to match background histo binning, but this worsens resolution slightly. Use 1 for signal fit
+  //int nrebin = 1;  // set to 2 to match background histo binning, but this worsens resolution slightly. Use 1 for signal fit
+  int nrebin = 2;  // set to 2 to match background histo binning, but this worsens resolution slightly. Use 1 for signal fit
   recomass->Rebin(nrebin);
   
   TCanvas *cups = new TCanvas("cups","cups",5,5,800,800);

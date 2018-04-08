@@ -33,10 +33,11 @@ void look_purity()
   int n_tpc_layer = 48;
     
   double ptmax = 40.0;
-  double hptmax = 39.0;
+  double hptmax = 40.0;
   //double ptstep = 0.25;
-  double ptstep = 1.0;
+  //double ptstep = 1.0;
   //double ptstep = 0.5;
+  double ptstep = 0.4;
 
   // set to false only to generate pT resolution plots without fits
   // BEWARE: false means that the 4 sigma cuts are meaningless - they are not done with fitted parameters
@@ -182,7 +183,8 @@ void look_purity()
   ldca->SetFillColor(0);
   ldca->SetFillStyle(0);
   char lstr1[500];
-  sprintf(lstr1,"MVTX+INTT+TPC",n_maps_layer,n_intt_layer,n_tpc_layer);
+  //sprintf(lstr1,"MVTX+INTT+TPC",n_maps_layer,n_intt_layer,n_tpc_layer);
+  sprintf(lstr1,"INTT+TPC",n_maps_layer,n_intt_layer,n_tpc_layer);
   ldca->AddEntry(grdca2d, lstr1, "p");
   ldca->Draw();
 
@@ -273,7 +275,8 @@ void look_purity()
   ldcaZ->SetFillColor(0);
   ldcaZ->SetFillStyle(0);
   //char lstr1[500];
-  sprintf(lstr1,"MVTX+INTT+TPC",n_maps_layer,n_intt_layer,n_tpc_layer);
+  //sprintf(lstr1,"MVTX+INTT+TPC",n_maps_layer,n_intt_layer,n_tpc_layer);
+  sprintf(lstr1,"INTT+TPC",n_maps_layer,n_intt_layer,n_tpc_layer);
   ldcaZ->AddEntry(grdcaZ, lstr1, "p");
   ldcaZ->Draw();
 
@@ -302,7 +305,7 @@ void look_purity()
       hpt_compare->ProjectionY("hpt",binlo,binhi);
       hpt->GetXaxis()->SetTitle("#Delta p_{T}/p_{T}");
       hpt->GetXaxis()->SetTitleOffset(1.0);
-      //if(i>30) hpt->Rebin(4);
+      if(i>30) hpt->Rebin(4);
       hpt->DrawCopy();
 
       std::cout << "ptlo " << ptlo << " binlo " << binlo << " pthi " << pthi << " binhi " << binhi << " integral " << hpt->Integral() << std::endl;
@@ -330,7 +333,7 @@ void look_purity()
   TH1D *hdummy2 = new TH1D("hdummy2","#Delta p_{T} vs p_{T}",100,0.0,hptmax);
   hdummy2->SetMinimum(0);
   //hdummy2->SetMaximum(0.05);
-  hdummy2->SetMaximum(0.08);
+  hdummy2->SetMaximum(0.10);
   hdummy2->GetXaxis()->SetTitle("p_{T}");
   hdummy2->GetYaxis()->SetTitle("#Delta p_{T}/p_{T}");
   hdummy2->GetYaxis()->SetTitleOffset(1.4);
@@ -342,7 +345,8 @@ void look_purity()
   ldpt->SetFillColor(0);
   ldpt->SetFillStyle(0);
   //char lstr1[500];
-  sprintf(lstr1,"MVTX+INTT+TPC",n_maps_layer,n_intt_layer,n_tpc_layer);
+  //sprintf(lstr1,"MVTX+INTT+TPC",n_maps_layer,n_intt_layer,n_tpc_layer);
+  sprintf(lstr1,"INTT+TPC",n_maps_layer,n_intt_layer,n_tpc_layer);
   ldpt->AddEntry(grdpt, lstr1, "p");
   ldpt->Draw();
 
@@ -476,7 +480,8 @@ void look_purity()
   leff->SetFillColor(0);
   leff->SetFillStyle(0);
   char lstr[500];
-  sprintf(lstr,"MVTX+INTT+TPC",n_maps_layer,n_intt_layer,n_tpc_layer);
+  //sprintf(lstr,"MVTX+INTT+TPC",n_maps_layer,n_intt_layer,n_tpc_layer);
+  sprintf(lstr,"INTT+TPC",n_maps_layer,n_intt_layer,n_tpc_layer);
   leff->AddEntry(gr_eff, lstr, "p");
   //leff->AddEntry(lmax, "max possible efficiency", "l");
   leff->Draw();

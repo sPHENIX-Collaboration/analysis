@@ -110,7 +110,7 @@ void cluster_resolution()
   double nclusters = 0;
 
   // The condor job output files
-  for(int i=0;i <60; i++)
+  for(int i=12;i <13; i++)
     {
       TChain *ntp_vertex = new TChain("ntp_vertex","clusters");
       TChain *ntp_cluster = new TChain("ntp_cluster","clusters");
@@ -123,7 +123,12 @@ void cluster_resolution()
       // latest files 
       //sprintf(name,"/sphenix/user/frawley/fresh_jan25/macros/macros/g4simulations/eval_output/g4svtx_eval_%i.root_g4svtx_eval.root",i);
       //sprintf(name,"/sphenix/user/frawley/fresh_jan25/macros/macros/g4simulations/eval_output_lm/g4svtx_eval_%i.root_g4svtx_eval.root",i);
-      sprintf(name,"/sphenix/user/frawley/fresh_mar2/macros/macros/g4simulations/eval_output/g4svtx_eval_%i.root_g4svtx_eval.root",i);
+
+      //sprintf(name,"/sphenix/user/frawley/fresh_mar8_testing/macros/macros/g4simulations/mar9_noMVTX_100pions_eval_output/g4svtx_eval_%i.root_g4svtx_eval.root",i);
+      //sprintf(name,"/sphenix/user/frawley/fresh_mar8_testing/macros/macros/g4simulations/eval_output/g4svtx_eval_%i.root",i);
+      //sprintf(name,"/sphenix/user/frawley/fresh_mar2/macros/macros/g4simulations/mar6_nomvtx_central_200khz_eval_output_1/g4svtx_eval_%i.root_g4svtx_eval.root",i);
+      sprintf(name,"/sphenix/user/frawley/fresh_mar8_testing/macros/macros/g4simulations/eval_output/g4svtx_eval_%i.root",i);
+      //sprintf(name,"/sphenix/user/frawley/fresh_mar8_testing/macros/macros/g4simulations/mar20_100pions_80ns_eval_output/g4svtx_eval_%i.root",i);
       
       cout << "Enter file loop with name = " << name << endl;
 
@@ -139,8 +144,20 @@ void cluster_resolution()
 	{
 	  ntp_cluster->GetEntry(p);
 
-	  if(cgembed != embed_flag)
-	    continue;
+	  //============
+	  // temporary re-mapping workaround for bug in evaluator!
+	  cgembed = gvt; 
+	  gx = zsize;
+	  gy=trackID;
+	  gz = g4hitID;
+	  r = sqrt(gx*gx+gy*gy);
+	  tphi = atan(gy/gx);
+	  trphi = atan(y/x);
+	  layer = ephi;
+	    //===========
+
+	  //if(cgembed != embed_flag)
+	  //  continue;
 
 	  double dphi = trphi - tphi;
 	  double drphi = r * dphi;
@@ -148,20 +165,22 @@ void cluster_resolution()
 	  // Extract the cluster Z resolution
 	  double dz = z - gz;
 	  
+	  /*
 	  double clus_pT = sqrt(gpx*gpx+gpy*gpy);
 	  double eta = asinh(gpz/sqrt(gpx*gpx+gpy*gpy));
 	  
 	  if(fabs(gz) < 5.0)  // optional cut 
 	    if(clus_pT > 0.5)  // optional cut 
-	      {			
-		if(drphi > -0.1 && drphi < 0.1)
-		  {
-		    delta_rphi->Fill( (double) layer, drphi); 
-		    delta_phi->Fill( (double) layer, dphi); 
-		    delta_z->Fill( (double) layer, dz);
-		    if(layer > 38) delta_phi_gphi->Fill(tphi,dphi);
-		  }
+	  */
+	  {			
+	    if(drphi > -0.1 && drphi < 0.1)
+	      {
+		delta_rphi->Fill( (double) layer, drphi); 
+		delta_phi->Fill( (double) layer, dphi); 
+		delta_z->Fill( (double) layer, dz);
+		if(layer > 38) delta_phi_gphi->Fill(tphi,dphi);
 	      }
+	  }
 	}
       
 	  // Note on zsize:
@@ -184,9 +203,9 @@ void cluster_resolution()
       
     }// for i
 
-  TCanvas *c7 = new TCanvas("c7","c7",50,50,1200,800); 
-  c7->Divide(3,2);
-  c7->cd(1);
+  TCanvas *c6 = new TCanvas("c6","c6",50,50,1200,800); 
+  c6->Divide(2,1);
+  c6->cd(1);
   gPad->SetLeftMargin(0.12);
   gPad->SetRightMargin(0.01);
   TH1D *hpy1 = new TH1D("hpy1","MVTX clusters",2000, -0.05, 0.05);
@@ -208,7 +227,7 @@ void cluster_resolution()
   l1->SetNDC(1);
   l1->Draw();
 
-  c7->cd(2);
+  c6->cd(2);
   gPad->SetLeftMargin(0.12);
   gPad->SetRightMargin(0.01);
   TH1D *hpy2 = new TH1D("hpy2","INTT clusters",2000, -0.05, 0.05);
@@ -228,7 +247,17 @@ void cluster_resolution()
   l2->SetNDC(1);
   l2->Draw();
 
-  c7->cd(3);
+  TF1 *fg = new TF1("fg","gaus(0)",-0.05,0.05);
+  fg->SetLineColor(kRed);
+  fg->SetParameter(0, 100.0);
+  fg->SetParameter(1, 0.0);
+  fg->SetParameter(2, 2e-02);
+  fg->SetParLimits(2, 0.0, 5e-02);
+
+  TCanvas *c7 = new TCanvas("c7","c7",50,50,1200,800); 
+  c7->Divide(3,1);
+  int rebin = 1;
+  c7->cd(1);
   gPad->SetLeftMargin(0.12);
   gPad->SetRightMargin(0.01);
   TH1D *hpy3 = new TH1D("hpy3","TPC inner clusters",2000,-0.010, 0.010);
@@ -240,14 +269,18 @@ void cluster_resolution()
   hpy3->GetXaxis()->SetTitleSize(0.05);
   hpy3->GetXaxis()->SetLabelSize(0.06);
   hpy3->GetYaxis()->SetLabelSize(0.06);
+  hpy3->Rebin(rebin);
   hpy3->Draw();
-  double rms3 = 10000 * hpy3->GetRMS();
-  sprintf(label,"RMS %.1f #mu m",rms3);
-  TLatex *l3 = new TLatex(0.55,0.92,label);
+  hpy3->Fit(fg);
+  //double rms3 = 10000 * hpy3->GetRMS();
+  double rms3 = fg->GetParameter(2) * 10000.0;
+  double rms3_err = fg->GetParError(2) * 10000.0;
+  sprintf(label,"RMS %.1f #pm %.1f #mu m",rms3, rms3_err);
+  TLatex *l3 = new TLatex(0.45,0.92,label);
   l3->SetNDC(1);
   l3->Draw();
 
-  c7->cd(4);
+  c7->cd(2);
   gPad->SetLeftMargin(0.12);
   gPad->SetRightMargin(0.01);
   TH1D *hpy4 = new TH1D("hpy4","TPC mid clusters",2000,-0.010, 0.010);
@@ -259,14 +292,18 @@ void cluster_resolution()
   hpy4->GetXaxis()->SetTitleSize(0.05);
   hpy4->GetXaxis()->SetLabelSize(0.06);
   hpy4->GetYaxis()->SetLabelSize(0.06);
+  hpy4->Rebin(rebin);
   hpy4->Draw();
-  double rms4 = 10000 * hpy4->GetRMS();
-  sprintf(label,"RMS %.1f #mu m",rms4);
-  TLatex *l4 = new TLatex(0.55,0.92,label);
+  hpy4->Fit(fg);
+  //double rms4 = 10000 * hpy4->GetRMS();
+  double rms4 = fg->GetParameter(2) * 10000.0;
+  double rms4_err = fg->GetParError(2) * 10000.0;
+  sprintf(label,"RMS %.1f #pm %.1f #mu m",rms4, rms4_err);
+  TLatex *l4 = new TLatex(0.45,0.92,label);
   l4->SetNDC(1);
   l4->Draw();
 
-  c7->cd(5);
+  c7->cd(3);
   gPad->SetLeftMargin(0.12);
   gPad->SetRightMargin(0.01);
   TH1D *hpy5 = new TH1D("hpy5","TPC outer clusters",2000,-0.010, 0.010);
@@ -278,12 +315,17 @@ void cluster_resolution()
   hpy5->GetXaxis()->SetTitleSize(0.05);
   hpy5->GetXaxis()->SetLabelSize(0.06);
   hpy5->GetYaxis()->SetLabelSize(0.06);
+  hpy5->Rebin(rebin);
   hpy5->Draw();
-  double rms5 = 10000 * hpy5->GetRMS();
-  sprintf(label,"RMS %.1f #mu m",rms5);
-  TLatex *l5 = new TLatex(0.55,0.92,label);
+  hpy5->Fit(fg);
+  //double rms5 = 10000 * hpy5->GetRMS();
+  double rms5 = fg->GetParameter(2) * 10000.0;
+  double rms5_err = fg->GetParError(2) * 10000.0;
+  sprintf(label,"RMS %.1f #pm %.1f #mu m",rms5, rms5_err);
+  TLatex *l5 = new TLatex(0.45,0.92,label);
   l5->SetNDC(1);
   l5->Draw();
+
 
   TCanvas *c27 = new TCanvas("c27","c27",50,50,1200,800); 
   c27->Divide(3,2);

@@ -91,7 +91,16 @@ void quarkonia_reconstruction_embedded()
       //sprintf(name,"/sphenix/user/frawley/fresh_jan25/macros/macros/g4simulations/feb28_central_nopileup_eval_output/g4svtx_eval_%i.root_g4svtx_eval.root",i);
      //sprintf(name,"/sphenix/user/frawley/fresh_jan25/macros/macros/g4simulations/mar4_central_200khz_eval_output/g4svtx_eval_%i.root_g4svtx_eval.root",i);
 
-       sprintf(name,"/sphenix/user/frawley/fresh_mar2/macros/macros/g4simulations/eval_output/g4svtx_eval_%i.root_g4svtx_eval.root_primary_eval.root",i);
+      //sprintf(name,"/sphenix/user/frawley/fresh_mar2/macros/macros/g4simulations/eval_output/g4svtx_eval_%i.root_g4svtx_eval.root_primary_eval.root",i);
+      //sprintf(name,"/sphenix/user/frawley/fresh_mar8_testing/macros/macros/g4simulations/eval_output/g4svtx_eval_%i.root_g4svtx_eval.root_primary_eval.root",i);
+
+      //sprintf(name,"/sphenix/user/frawley/fresh_mar8_testing/macros/macros/g4simulations/eval_output/g4svtx_eval_%i.root",i);
+
+      //sprintf(name,"/sphenix/user/frawley/fresh_mar8_testing/macros/macros/g4simulations/mar15_noMVTX_central_200khz_d2fit_eval_output_1/g4svtx_eval_%i.root",i);
+      //sprintf(name,"/sphenix/user/frawley/fresh_mar8_testing/macros/macros/g4simulations/mar17_noMVTX_central_200khz_d2fit_eval_output_2/g4svtx_eval_%i.root",i);
+      //sprintf(name,"/sphenix/user/frawley/fresh_mar8_testing/macros/macros/g4simulations/mar18_noMVTX_central_200khz_d2fit_eval_output_3/g4svtx_eval_%i.root",i);
+
+      sprintf(name,"/sphenix/user/frawley/fresh_mar8_testing/macros/macros/g4simulations//g4svtx_eval_%i.root",i);
  
 
 
