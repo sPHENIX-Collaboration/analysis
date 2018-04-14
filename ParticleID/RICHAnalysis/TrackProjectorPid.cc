@@ -89,8 +89,6 @@ TrackProjectorPid::get_projected_momentum(  SvtxTrack * track, double arr_mom[3]
   return false;
 }
 
-//unique_ptr<genfit::MeasuredStateOnPlane>
-//genfit::MeasuredStateOnPlane*
 SvtxTrackState*
 TrackProjectorPid::project_track(  SvtxTrack * track, const PROJECTION_SURFACE surf, const float surface_par )
 {
@@ -147,16 +145,23 @@ TrackProjectorPid::project_track(  SvtxTrack * track, const PROJECTION_SURFACE s
     return NULL;
   }
 
-  /* Having trouble returning unique_ptr msop80 object and using it in other member functions.
-   * Workaround: Create SvtxTrackState object to pass projected track state information to
-   * other member functions. */
+  /* Create SvtxTrackState object as storage version of the track state
+   * to pass projected track state information to other member functions. */
   SvtxTrackState_v1 *svtx_state = new SvtxTrackState_v1();
+
   svtx_state->set_x( msop80->getPos().X() );
   svtx_state->set_y( msop80->getPos().Y() );
   svtx_state->set_z( msop80->getPos().Z() );
+
   svtx_state->set_px( msop80->getMom().x() );
   svtx_state->set_py( msop80->getMom().y() );
   svtx_state->set_pz( msop80->getMom().z() );
+
+  for (int i = 0; i < 6; i++) {
+    for (int j = i; j < 6; j++) {
+      svtx_state->set_error(i, j, msop80->get6DCov()[i][j]);
+    }
+  }
 
   return svtx_state;
 }
