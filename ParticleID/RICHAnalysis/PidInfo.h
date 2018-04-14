@@ -21,11 +21,11 @@ public:
 
   virtual int get_track_id() const { PHOOL_VIRTUAL_WARN("get_track_id()"); return 0; }
 
-  virtual float get_probability(const PID_CANDIDATE candidate) { PHOOL_VIRTUAL_WARN("get_probability(const PID_CANDIDATE)"); return 0;};
+  virtual float get_likelihood(const PID_CANDIDATE candidate) { PHOOL_VIRTUAL_WARN("get_likelihood(const PID_CANDIDATE)"); return 0;};
 
   virtual void set_track_id(const int id) { PHOOL_VIRTUAL_WARN("set_track_id(const int id)");}
 
-  virtual void set_probability(const PID_CANDIDATE candidate, const float candidate_prob) { PHOOL_VIRTUAL_WARN("set_probability(const PID_CANDIDATE, const float)");}
+  virtual void set_likelihood(const PID_CANDIDATE candidate, const float candidate_prob) { PHOOL_VIRTUAL_WARN("set_likelihood(const PID_CANDIDATE, const float)");}
 
 
 protected:

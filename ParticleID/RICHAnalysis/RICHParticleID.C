@@ -236,15 +236,15 @@ RICHParticleID::process_event(PHCompositeNode *topNode)
 	}
 
       /* Set particle probabilities */
-      pidinfo_j->set_probability(PidInfo::ELECTRON, probs[0]);
-      pidinfo_j->set_probability(PidInfo::CHARGEDPION, probs[1]);
-      pidinfo_j->set_probability(PidInfo::CHARGEDKAON, probs[2]);
-      pidinfo_j->set_probability(PidInfo::PROTON, probs[3]);
+      pidinfo_j->set_likelihood(PidInfo::ELECTRON, probs[0]);
+      pidinfo_j->set_likelihood(PidInfo::CHARGEDPION, probs[1]);
+      pidinfo_j->set_likelihood(PidInfo::CHARGEDKAON, probs[2]);
+      pidinfo_j->set_likelihood(PidInfo::PROTON, probs[3]);
 
-      //cout << pidinfo_j->get_probability(PidInfo::ELECTRON) << endl;
-      //cout << pidinfo_j->get_probability(PidInfo::CHARGEDPION) << endl;
-      //cout << pidinfo_j->get_probability(PidInfo::CHARGEDKAON) << endl;
-      //cout << pidinfo_j->get_probability(PidInfo::PROTON) << endl;
+      //cout << pidinfo_j->get_likelihood(PidInfo::ELECTRON) << endl;
+      //cout << pidinfo_j->get_likelihood(PidInfo::CHARGEDPION) << endl;
+      //cout << pidinfo_j->get_likelihood(PidInfo::CHARGEDKAON) << endl;
+      //cout << pidinfo_j->get_likelihood(PidInfo::PROTON) << endl;
       //cout << "PARTICLE PROBS DONE" << endl;
 
       //for (int m=0;m<4;m++)

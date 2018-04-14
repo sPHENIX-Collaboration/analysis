@@ -141,11 +141,11 @@ FastPid_RICH::process_event(PHCompositeNode *topNode)
 	      {
 		/* identified kaon */
 		if ( abs( pid ) == 211 )
-		  pidinfo_j->set_probability(PidInfo::CHARGEDPION, 1);
+		  pidinfo_j->set_likelihood(PidInfo::CHARGEDPION, 1);
 
 		/* identified kaon */
 		else if ( abs( pid ) == 321 )
-		  pidinfo_j->set_probability(PidInfo::CHARGEDKAON, 1);
+		  pidinfo_j->set_likelihood(PidInfo::CHARGEDKAON, 1);
 	      }
 	  }
       } // end of parametrized RICH response
@@ -155,10 +155,10 @@ FastPid_RICH::process_event(PHCompositeNode *topNode)
       cout << "Position: " << state_j_at_rich->get_x() << ", " << state_j_at_rich->get_y() << ", " << state_j_at_rich->get_z() << endl;
       cout << "Momentum: " << state_j_at_rich->get_px() << ", " << state_j_at_rich->get_py() << ", " << state_j_at_rich->get_pz() << endl;
       cout << "Eta, |p|: " << state_j_at_rich->get_eta() << ", " << state_j_at_rich->get_p() << endl;
-      cout << "Probability (electron):     " << pidinfo_j->get_probability(PidInfo::ELECTRON) << endl;
-      cout << "Probability (charged pion): " << pidinfo_j->get_probability(PidInfo::CHARGEDPION) << endl;
-      cout << "Probability (charged kaon): " << pidinfo_j->get_probability(PidInfo::CHARGEDKAON) << endl;
-      cout << "Probability (proton):       " << pidinfo_j->get_probability(PidInfo::PROTON) << endl;
+      cout << "Likelihood (electron):     " << pidinfo_j->get_likelihood(PidInfo::ELECTRON) << endl;
+      cout << "Likelihood (charged pion): " << pidinfo_j->get_likelihood(PidInfo::CHARGEDPION) << endl;
+      cout << "Likelihood (charged kaon): " << pidinfo_j->get_likelihood(PidInfo::CHARGEDKAON) << endl;
+      cout << "Likelihood (proton):       " << pidinfo_j->get_likelihood(PidInfo::PROTON) << endl;
 
     } // END loop over tracks
 
