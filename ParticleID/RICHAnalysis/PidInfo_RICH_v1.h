@@ -21,14 +21,20 @@ public:
 
   int get_track_id() const { return _trackid; }
 
+  SvtxTrackState* get_track_state() const { return _track_state; }
+
   float get_likelihood(const PidInfo::PID_CANDIDATE candidate);
 
   void set_track_id(const int id) { _trackid = id;}
+
+  void set_track_state(SvtxTrackState* state) { _track_state = state;}
 
   void  set_likelihood(const PID_CANDIDATE candidate, const float candidate_loglikelihood) { _pid_candidate_loglikelihood[candidate] = candidate_loglikelihood; }
 
 private:
   float _trackid;
+
+  SvtxTrackState* _track_state;
 
   std::map<PID_CANDIDATE,float> _pid_candidate_loglikelihood;
 

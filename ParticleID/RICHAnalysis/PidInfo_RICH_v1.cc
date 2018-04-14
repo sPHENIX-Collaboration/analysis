@@ -5,6 +5,7 @@ using namespace std;
 PidInfo_RICH_v1::PidInfo_RICH_v1( const int id ):
   PidInfo( id ),
   _trackid( id ),
+  _track_state( nullptr ),
   _pid_candidate_loglikelihood()
 {}
 

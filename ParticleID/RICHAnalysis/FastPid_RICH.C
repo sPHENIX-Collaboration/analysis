@@ -116,6 +116,9 @@ FastPid_RICH::process_event(PHCompositeNode *topNode)
 	  continue;
         }
 
+      /* Attach track state to PidInfo object */
+      pidinfo_j->set_track_state( state_j_at_rich );
+
       /* Get truth particle associated with track */
       PHG4Particle* particle = truthinfo->GetParticle( track_j->get_truth_track_id() );
 
@@ -135,9 +138,9 @@ FastPid_RICH::process_event(PHCompositeNode *topNode)
 	float p_max = 50.;
 
 	/* check if track projected state in RICH acceptance */
-	if ( state_j_at_rich->get_eta() > eta_min && state_j_at_rich->get_eta() < eta_max )
+	if ( pidinfo_j->get_track_state()->get_eta() > eta_min && pidinfo_j->get_track_state()->get_eta() < eta_max )
 	  {
-	    if ( state_j_at_rich->get_p() > p_min && state_j_at_rich->get_p() < p_max )
+	    if ( pidinfo_j->get_track_state()->get_p() > p_min && pidinfo_j->get_track_state()->get_p() < p_max )
 	      {
 		/* identified kaon */
 		if ( abs( pid ) == 211 )
@@ -152,9 +155,9 @@ FastPid_RICH::process_event(PHCompositeNode *topNode)
 
       /* print some information to screen */
       cout << "True PID: " << pid << endl;
-      cout << "Position: " << state_j_at_rich->get_x() << ", " << state_j_at_rich->get_y() << ", " << state_j_at_rich->get_z() << endl;
-      cout << "Momentum: " << state_j_at_rich->get_px() << ", " << state_j_at_rich->get_py() << ", " << state_j_at_rich->get_pz() << endl;
-      cout << "Eta, |p|: " << state_j_at_rich->get_eta() << ", " << state_j_at_rich->get_p() << endl;
+      cout << "Position: " << pidinfo_j->get_track_state()->get_x() << ", " << pidinfo_j->get_track_state()->get_y() << ", " << pidinfo_j->get_track_state()->get_z() << endl;
+      cout << "Momentum: " << pidinfo_j->get_track_state()->get_px() << ", " << pidinfo_j->get_track_state()->get_py() << ", " << pidinfo_j->get_track_state()->get_pz() << endl;
+      cout << "Eta, |p|: " << pidinfo_j->get_track_state()->get_eta() << ", " << pidinfo_j->get_track_state()->get_p() << endl;
       cout << "Likelihood (electron):     " << pidinfo_j->get_likelihood(PidInfo::ELECTRON) << endl;
       cout << "Likelihood (charged pion): " << pidinfo_j->get_likelihood(PidInfo::CHARGEDPION) << endl;
       cout << "Likelihood (charged kaon): " << pidinfo_j->get_likelihood(PidInfo::CHARGEDKAON) << endl;
