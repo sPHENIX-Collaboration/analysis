@@ -13,6 +13,10 @@ class PidInfoContainer;
 class TrackProjectorPid;
 class SetupDualRICHAnalyzer;
 
+/**
+ * Class that allows to use a parametrized response of a RICH detector based on the
+ * information of the reconstructed incoming charged track for particle ID.
+ */
 class FastPid_RICH : public SubsysReco
 {
 
@@ -30,13 +34,14 @@ public:
   End(PHCompositeNode*);
 
 private:
+
   void CreateNodes(PHCompositeNode *topNode);
 
   bool _verbose;
 
   int _ievent;
 
-  /* RICH detecto name */
+  /* RICH detector name */
   std::string _detector;
 
   /* Collection storing track information */
@@ -51,6 +56,8 @@ private:
   /* track projector object */
   TrackProjectorPid *_trackproj;
 
+  /* Radius for track extrapolation */
+  float _radius;
 };
 
 #endif // __FastPid_RICH_H__

@@ -131,6 +131,9 @@ private:
   /* PDG databse access object */
   TDatabasePDG *_pdg;
 
+  /* Radius for track extrapolation */
+  float _radius;
+
 };
 
 #endif // __RICHEvaluator_H__
