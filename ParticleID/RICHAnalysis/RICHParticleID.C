@@ -202,8 +202,8 @@ RICHParticleID::process_event(PHCompositeNode *topNode)
 	continue;
 
       
-      cout << "Emission point: " << m_emi[0] << " " << m_emi[1] << " " << m_emi[2] << endl;
-      cout << "Momentum vector: " << momv[0] << " " << momv[1] << " " << momv[2] << endl;
+      //cout << "Emission point: " << m_emi[0] << " " << m_emi[1] << " " << m_emi[2] << endl;
+      //cout << "Momentum vector: " << momv[0] << " " << momv[1] << " " << momv[2] << endl;
       
       /* Vector of reconstructed angles to pass to PID */
       vector<float> angles;
