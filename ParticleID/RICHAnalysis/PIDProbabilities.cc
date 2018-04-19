@@ -19,7 +19,7 @@ PIDProbabilities::particle_probs( vector<float> angles, double momentum, double 
 
   /* Initialize particle masses, probably want to use pdg database */
   int pid[4] = { 11, 211, 321, 2212 };
-  double mass[4] = {
+  double m[4] = {
     _pdg->GetParticle(pid[0])->Mass(),
     _pdg->GetParticle(pid[1])->Mass(),
     _pdg->GetParticle(pid[2])->Mass(),
@@ -28,14 +28,15 @@ PIDProbabilities::particle_probs( vector<float> angles, double momentum, double 
 
   /* Set angle window by taking smallest difference at high momentum in question (70 GeV) */
   double test_p = 70;
-  double window = acos( sqrt( 1 + test_p*test_p/( mass[0]*mass[0] * 9e16 ) ) / index ) - acos( sqrt( 1 + test_p*test_p/( mass[1]*mass[1] * 9e16 ) ) / index );
+  double windowx2 = acos( sqrt( m[1]*m[1] + test_p*test_p ) / index / test_p ) - acos( sqrt( m[1]*m[1] + test_p*test_p ) / index / test_p );
+  double window = windowx2/2;
 
   /* Determine expectation value for each particle */
   double beta[4] = {
-    momentum/( mass[0] * 3e8 * sqrt( 1 + momentum*momentum/( mass[0]*mass[0] * 9e16 ) ) ),
-    momentum/( mass[1] * 3e8 * sqrt( 1 + momentum*momentum/( mass[1]*mass[1] * 9e16 ) ) ),
-    momentum/( mass[2] * 3e8 * sqrt( 1 + momentum*momentum/( mass[2]*mass[2] * 9e16 ) ) ),
-    momentum/( mass[3] * 3e8 * sqrt( 1 + momentum*momentum/( mass[3]*mass[3] * 9e16 ) ) )
+    momentum/sqrt( m[0]*m[0] + momentum*momentum ),
+    momentum/sqrt( m[1]*m[1] + momentum*momentum ),
+    momentum/sqrt( m[2]*m[2] + momentum*momentum ),
+    momentum/sqrt( m[3]*m[3] + momentum*momentum )
   };
 
   double theta_expect[4] = {
@@ -59,7 +60,7 @@ PIDProbabilities::particle_probs( vector<float> angles, double momentum, double 
   int counts[4] = {0,0,0,0};
   for (int i=0; i<300; i++){
     for (int j=0; j<4; j++){
-      if ( angles[i] > theta_expect[j] - window || angles[i] < theta_expect[j] + window )
+      if ( angles[i] > theta_expect[j] - window && angles[i] < theta_expect[j] + window )
 	counts[j]++;
     }
   }
