@@ -21,10 +21,10 @@ class Poisson {
 
  public:
 
-  double poisson_prob( double mean, int value );
-  double exp1( double mean, int value );
-  double exp2( double mean );
-  int fact( int value );
+  long double poisson_prob( double mean, int value );
+  long double exp1( double mean, int value );
+  long double exp2( double mean );
+  long double fact( int value );
   
 };
 
