@@ -123,6 +123,14 @@ RICHEvaluator::process_event(PHCompositeNode *topNode)
   for (SvtxTrackMap::ConstIter track_itr = trackmap->begin(); track_itr != trackmap->end(); track_itr++)
     {
 
+      bool use_reconstructed_momentum = true;
+      bool use_truth_momentum = false;
+      bool use_emission_momentum = false;
+
+      bool use_reconstructed_point = true;
+      bool use_approximate_point = false;
+
+
       /* Store angles to get RMS value */
       TH1F *ch_ang = new TH1F("","",1000,0.0,0.04);
       
@@ -132,12 +140,9 @@ RICHEvaluator::process_event(PHCompositeNode *topNode)
       if (track_j == NULL)
         continue;
 
+
       /* Fill momv object which is the normalized momentum vector of the track in the RICH (i.e. its direction) */
       double momv[3] = {0.,0.,0.};
-
-      bool use_reconstructed_momentum = true;
-      bool use_truth_momentum = false;
-      bool use_emission_momentum = false;
 
       if (use_reconstructed_momentum) {
 	/* 'Continue' with next track if RICH projection not found for this track */
@@ -172,9 +177,6 @@ RICHEvaluator::process_event(PHCompositeNode *topNode)
 
       /* Get mean emission point from track in RICH */
       double m_emi[3] = {0.,0.,0.};
-
-      bool use_reconstructed_point = true;
-      bool use_approximate_point = false;
 
       if (use_reconstructed_point) {
 	/* 'Continue' with next track if RICH projection not found for this track */
