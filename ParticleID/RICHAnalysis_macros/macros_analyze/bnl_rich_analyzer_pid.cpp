@@ -1,3 +1,10 @@
+// Adjustments made to original:
+// Fixed a |= somewhere that should have been !=
+// Increased size of em[][] array
+// Added if statement to make sure imom != 0
+// Changed the i/o to append to existing output file
+// Changed read() to read(string input_filename)
+
 #include <Riostream.h>
 #include <stdio.h>
 #include <fstream>
@@ -234,7 +241,7 @@ void eic_bnl_rich::acq(string input_filename, int ind, int pix_lab, int part){
   Double_t rr[3] = {0.,0.,0.};
   Double_t theta_cc = 0.;
   Double_t m[4]={0.000511, 0.13957018, 0.493677, 0.938272};
-  Double_t em[3][500];
+  Double_t em[3][10000];
   Double_t vv = 0.;
   Int_t imom = 0;
   Double_t mom_check = 999.;
@@ -290,7 +297,7 @@ void eic_bnl_rich::acq(string input_filename, int ind, int pix_lab, int part){
     //if(eic_rich_event==1){
     //h->Fill(eic_rich_mpz);
     //}
-
+    
     ang_cut = TMath::ACos(eic_rich_mpz/sqrt(eic_rich_mpx*eic_rich_mpx+eic_rich_mpy*eic_rich_mpy+eic_rich_mpz*eic_rich_mpz))*rtd;
     
 
@@ -300,6 +307,8 @@ void eic_bnl_rich::acq(string input_filename, int ind, int pix_lab, int part){
 
       momentum = sqrt(eic_rich_mpx*eic_rich_mpx+eic_rich_mpy*eic_rich_mpy+eic_rich_mpz*eic_rich_mpz);
       imom = momentum;
+      if (imom == 0)
+	continue;
       theta_cc = acos(sqrt(imom*imom+m[part]*m[part])/imom/1.00054);
 
 
@@ -343,7 +352,7 @@ void eic_bnl_rich::acq(string input_filename, int ind, int pix_lab, int part){
       ybin = ph_det->GetYaxis()->FindBin(eic_rich_hit_y);
 
       if(pix_lab!=0)d_hit[0] = ph_det->GetXaxis()->GetBinCenter(xbin);
-      if(pix_lab|=0)d_hit[1] = ph_det->GetYaxis()->GetBinCenter(ybin);
+      if(pix_lab!=0)d_hit[1] = ph_det->GetYaxis()->GetBinCenter(ybin);
       
       ph_det->Fill(d_hit[0],d_hit[1]);
       
@@ -406,9 +415,9 @@ void eic_bnl_rich::acq(string input_filename, int ind, int pix_lab, int part){
 
   Int_t summm=0;
 
-  /*ofstream out("out.txt");
-    streambuf *coutbuf = cout.rdbuf(); 
-    cout.rdbuf(out.rdbuf());*/
+  ofstream out("pid.txt", ios::app);
+  streambuf *coutbuf = cout.rdbuf(); 
+  cout.rdbuf(out.rdbuf());
   
   for(Int_t i=0;i<61;i++){
     if(ch_pi_h[i]->GetEntries()!=0)cout<<ch_pi_h[i]->GetMean()<<"  "<<ch_pi_h[i]->GetRMS()<<"  "<<(int)(ch_pi_h[i]->GetEntries()/ev_count[i])<<"  "<<i<<"  "<<part<<endl;
@@ -427,10 +436,10 @@ void eic_bnl_rich::acq(string input_filename, int ind, int pix_lab, int part){
 }
   
 
-void eic_bnl_rich::read(){
+void eic_bnl_rich::read(string input_filename){
 
   ifstream inputFile;
-  inputFile.open("../pid.txt");
+  inputFile.open(input_filename);
   if (!inputFile) {
     cerr << "Error in opening the file";
     exit(1);
