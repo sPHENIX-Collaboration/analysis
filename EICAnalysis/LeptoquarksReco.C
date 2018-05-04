@@ -209,18 +209,7 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
           << endl;
       return Fun4AllReturnCodes::ABORTEVENT;
     }
-  
-
-  /* Get vertex collection with all vertices in this event */
-  SvtxClusterMap* clustermap =
-    findNode::getClass<SvtxClusterMap>(topNode,"SvtxClusterMap");
-  if (!clustermap)
-    {
-      cout<< PHWHERE << "SvtxVertexMap node not found on node tree"
-	  << endl;
-      return Fun4AllReturnCodes::ABORTEVENT;
-    }
-  
+    
   
     /* Get collection of truth particles from event generator */
   PHHepMCGenEventMap *genevtmap = findNode::getClass<PHHepMCGenEventMap>(topNode,"PHHepMCGenEventMap");
@@ -299,7 +288,7 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
   AddJetStructureInformation( tauCandidateMap, &map_calotower );
 
   /* Add track information to tau candidates */
-  AddTrackInformation( tauCandidateMap, trackmap, vertexmap, clustermap, svtxevalstack, recojets->get_par());  
+  AddTrackInformation( tauCandidateMap, trackmap, vertexmap, svtxevalstack, recojets->get_par());  
 
   /* Add tag for true Tau particle jet to tau candidates */
   AddTrueTauTag( tauCandidateMap, genevtmap );
@@ -816,7 +805,7 @@ LeptoquarksReco::AddJetStructureInformation( type_map_tcan& tauCandidateMap, typ
 }
 
 int
-LeptoquarksReco::AddTrackInformation( type_map_tcan& tauCandidateMap, SvtxTrackMap* trackmap, SvtxVertexMap* vertexmap, SvtxClusterMap* clustermap, SvtxEvalStack *svtxevalstack, double R_max )
+LeptoquarksReco::AddTrackInformation( type_map_tcan& tauCandidateMap, SvtxTrackMap* trackmap, SvtxVertexMap* vertexmap, SvtxEvalStack *svtxevalstack, double R_max )
 {
   
   // Pointers for tracks //
