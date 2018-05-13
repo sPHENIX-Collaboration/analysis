@@ -1,11 +1,11 @@
 
 int Fun4All_EICAnalysis_DISReco(
 				const int nEvents = 1000,
-				const char * inputFile = "/gpfs/mnt/gpfs02/phenix/scratch/spjeffas/g4sim/G4_Leptoquark_DST_p250_e20_1000events_1seed_DISneutral.root",
+				const char * inputFile = "/gpfs/mnt/gpfs02/phenix/scratch/spjeffas/g4sim/G4_Leptoquark_DST_p250_e20_1000events_1seed_DIScharged.root",
 				//const char * inputFile = "G4EICDetector_DIS_10x250_20events.root",
 				//const char * inputFile = "G4EICDetector_DIS_SingleParticle_ele_10GeV_m05eta.root",
 				//const char * inputFile = "G4EICDetector_DIS_SingleParticle_ele_10GeV_m2eta.root",
-				const char * outputFile = "eicana_disreco_test.root"
+				const char * outputFile = "eicana_disreco_test2.root"
 				)
 {
 

@@ -1,7 +1,7 @@
 
 int Fun4All_EICAnalysis_DIS(
-			    const int nEvents = 100000,
-			    const char * inputFile = "../data/phpythia6_e10p250_dis_100k_hepmc.root",
+			    const int nEvents = 1000,
+			    const char * inputFile = "/gpfs/mnt/gpfs02/phenix/scratch/spjeffas/g4sim/G4_Leptoquark_DST_p250_e20_1000events_1seed_DISneutral.root",
 			    const char * outputFile = "eicana_pythia6_e10p250_dis_100k.root"
 			    )
 {

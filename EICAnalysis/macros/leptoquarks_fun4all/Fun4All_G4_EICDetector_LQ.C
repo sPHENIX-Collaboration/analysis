@@ -13,7 +13,7 @@ int Fun4All_G4_EICDetector_LQ(
   
   //string inputFile = "/direct/phenix+u/spjeffas/analysis/EICAnalysis/eventgen/DST_p250_e20_"+seed+"seed_"+type+".root";
 
-  string outputFile = "/gpfs/mnt/gpfs02/phenix/scratch/spjeffas/g4sim/G4_Leptoquark_DST_p"+pbeam+"_e"+ebeam+"_"+n+"events_"+seed+"seed_"+type+"_tau.root";
+  string outputFile = "/gpfs/mnt/gpfs02/phenix/scratch/spjeffas/g4sim/G4_Leptoquark_DST_p"+pbeam+"_e"+ebeam+"_"+n+"events_"+seed+"seed_SM.root";
     
   //Get parameter variables from parameter file
   
@@ -271,10 +271,10 @@ int Fun4All_G4_EICDetector_LQ(
 
       PHPythia6 *pythia6 = new PHPythia6();
       // see coresoftware/generators/PHPythia6 for example config
-      pythia6->set_config_file("../../eventgen/config/phpythia6_ep_"+type+".cfg");
+      pythia6->set_config_file("../../eventgen/config/phpythia6_ep.cfg");
 
       PHPy6ParticleTrigger *trigger = new PHPy6ParticleTrigger();
-      trigger->SetParticleType(15);
+      //trigger->SetParticleType(15);
       trigger->SetQ2Min(1000);
 
       pythia6->register_trigger(trigger);

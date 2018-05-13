@@ -41,7 +41,7 @@ HepMC::GenParticle* TruthTrackerHepMC::FindParticle( int pid )
         if ( (*p)->pdg_id() == pid )
           {
             particle = (*p);
-
+	    
             /* end loop if matching particle found */
             break;
           } // end if matching PID //
@@ -69,12 +69,13 @@ HepMC::GenParticle* TruthTrackerHepMC::FindDaughterParticle( int pid, HepMC::Gen
               particles_end(HepMC::children);
             ++child )
         {
+	  
           /* Has child correct PDG code? */
           if ( (*child)->pdg_id() == pid )
             {
               particle_daughter = (*child);
               UpdateFinalStateParticle( particle_daughter );
-            }
+	    }
         }
     }
 
@@ -97,7 +98,8 @@ TruthTrackerHepMC::UpdateFinalStateParticle( HepMC::GenParticle *&particle )
             child != particle->end_vertex()->particles_end(HepMC::children);
             ++child )
         {
-          /* If there is a child of same particle ID, this was not the final state particle- update pointer to particle and repeat */
+        
+	  /* If there is a child of same particle ID, this was not the final state particle- update pointer to particle and repeat */
           if ( (*child)->pdg_id() == particle->pdg_id() )
             {
               particle = (*child);
@@ -128,7 +130,7 @@ TruthTrackerHepMC::FindDecayParticles( HepMC::GenParticle *particle_mother, uint
     {
       /* check if particle decays further */
       if(!(*decay)->end_vertex()){
-
+ 
         /* Get entry from TParticlePDG because HepMC::GenPArticle does not provide charge or class of particle */
         TParticlePDG * pdg_p = TDatabasePDG::Instance()->GetParticle( (*decay)->pdg_id() );
 

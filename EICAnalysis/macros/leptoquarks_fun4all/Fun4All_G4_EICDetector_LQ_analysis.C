@@ -16,7 +16,6 @@ int Fun4All_G4_EICDetector_LQ_analysis(
   stringstream geek(n);
   geek>>nEvents;
 
-  //nEvents = 150;
   
   string directory = "/gpfs/mnt/gpfs02/phenix/scratch/spjeffas/data/";
 
@@ -35,11 +34,11 @@ int Fun4All_G4_EICDetector_LQ_analysis(
   const bool readhits = true;
   
   //do leptoquark analysis modules
-  bool do_lepto_analysis = false;
+  bool do_lepto_analysis = true;
 
   // Other options
   bool do_jet_reco = true;
-  bool do_jet_eval = do_jet_reco && true;
+  bool do_jet_eval = do_jet_reco && false;
 
   bool do_fwd_jet_reco = true;
   bool do_fwd_jet_eval = do_fwd_jet_reco && false;

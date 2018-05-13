@@ -2,12 +2,12 @@ namespace tau_commons
 {
   /* particle selection */
   TCut select_true_uds("evtgen_pid!=15 && evtgen_pid!=11");
-  //TCut select_true_uds("abs(evtgen_pid) == 1");
+  //TCut select_true_uds("evtgen_pid == 11");
 
   //TCut select_true_tau("evtgen_pid==15 && sqrt( (evtgen_eta-jet_eta)*(evtgen_eta-jet_eta) + (evtgen_phi-jet_phi)*(evtgen_phi-jet_phi) ) < 0.1");
   TCut select_true_tau("evtgen_pid==15");
   
-  TCut select_accept_jet("abs(jet_eta)<1.0 && jet_ptrans > 5");
+  TCut select_accept_jet("jet_ptrans > 5");
 
   //&& tracks_rmax_r04 < 0.12
 

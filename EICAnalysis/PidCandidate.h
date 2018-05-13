@@ -88,6 +88,7 @@ public:
       tracks_chargesum_r02 = 220,
       tracks_chargesum_r04 = 221,
       tracks_chargesum_R = 222,
+      tracks_vertex = 223,
 
       //-- EM Candidates Cluster
       em_cluster_id = 301,

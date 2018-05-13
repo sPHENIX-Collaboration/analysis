@@ -3,103 +3,246 @@
 /**
  * Plot missing trasnverse energy and other event-wise observables
  *
- * Written by nils.feege@stonybrook.edu
+ * Written by nils.feege@stonybrook.edu & sean.jeffas@stonybrook.edu
  */
+
+
+double Average(vector<double> v)
+{
+  double sum=0;
+  for(int i=0;(unsigned)i<v.size();i++)
+    sum+=v[i];
+  return sum/v.size();
+}
+
+
 int event_topology_reco()
 {
+  
   gStyle->SetOptStat(0);
 
   unsigned col1 = kOrange+7;
   unsigned col2 = kBlue+2;
+  unsigned col3 = kGreen+2;
 
-  string type = "DISneutral";
-  string nevents = "100";
-  string seed[9] = {"1","2","3","4","5","6","7","8","9"};
-  //string seed[1] = {"1"};
+  // labels for geant files //
+  string type[3] = {"3pion","DIScharged","DISneutral"};
+  string seed[10] = {"1","2","3","4","5","6","7","8","9","10"};
   string R_max = "5";
-  /* open inout files and merge trees */
-  TChain chain("event");
-  
-  for (int g = 0; g<9;g++){
-    //if(g==0) continue;
-    string file = "/gpfs/mnt/gpfs02/phenix/scratch/spjeffas/data/LeptoAna_p250_e20_"+nevents+"events_"+seed[g]+"seed_"+type+"_tau_r0"+R_max+".root";
-    chain.Add(file.c_str());
-  }
-  
-  //  chain.Add("/gpfs/mnt/gpfs02/phenix/scratch/spjeffas/data/LeptoAna_p250_e20_100events_1seed_DIScharged_tau_r05.root");
- 
-  TH2F *h1 = new TH2F("h1","",100,0,40,100,0,80);
+  string nevents;
+  string file;
 
-  /* Create temporary canvas */
+  /* open inout files and merge trees */
+  TChain chain_CC("event");
+  TChain chain_NC("event");
+  TChain chain_tau("event");
+
+  
+  for (int b = 0; b<3; b++){
+    for (int g = 0; g<10; g++){
+      // Skip file that is used to test identification //
+      if(b==0 & g==0) continue;
+      // Set some labels //
+      if(b==0) nevents = "1000";
+      if(b==1 || b==2) nevents = "100";
+
+      if(b==0) file = "/gpfs/mnt/gpfs02/phenix/scratch/spjeffas/data/LeptoAna_p250_e20_"+nevents+"events_"+seed[g]+"seed_"+type[b]+"_r0"+R_max+".root";
+      if(b==1 || b==2) file = "/gpfs/mnt/gpfs02/phenix/scratch/spjeffas/data/LeptoAna_p250_e20_"+nevents+"events_"+seed[g]+"seed_"+type[b]+"_tau_r0"+R_max+".root";
+
+      if(b==0) chain_tau.Add(file.c_str());
+      if(b==1) chain_CC.Add(file.c_str());
+      if(b==2) chain_NC.Add(file.c_str());
+    }
+  }
+
+  // Add file that will be used to test //  
+  string inputFile = "/gpfs/mnt/gpfs02/phenix/scratch/spjeffas/data/LeptoAna_p250_e20_1000events_1seed_"+type[0]+"_r0"+R_max+".root";
+
+  TFile *f = TFile::Open(inputFile.c_str());
+  TTree *t = (TTree*)f->Get("event");
+
+  // Create temporary canvas 
   TCanvas* ctemp = new TCanvas();
 
-  TH1F* h_ptmiss =  new TH1F( "h_ptmiss", ";p_{T}^{miss} (GeV);# entries / #Sigma entries",  25, 0, 50 );
-  int n = chain.Draw( "Et_miss >> h_ptmiss" , "","");
-  h_ptmiss->Scale(1./h_ptmiss->Integral());
-  //h_ptmiss->GetYaxis()->SetRangeUser(0, 1);
-  h_ptmiss->SetLineColor(col2);
-  h_ptmiss->SetFillColor(col2);
-  h_ptmiss->SetFillStyle(1001);
-  h_ptmiss->GetYaxis()->SetTitleOffset(1.6);
+  vector< TString > observables;
+  vector< TString > observables_name;
 
-  TH1F* h_acoplan = new TH1F( "h_acoplan", ";#Delta#phi_{miss - #tau jet};# entries / #Sigma entries", 45, 0, 180 );
-  //TH1F* h_acoplan = new TH1F( "h_acoplan", ";#Delta#phi_{miss};# entries / #Sigma entries", 45, -2, 2 );
-  //chain.Draw( "abs(Et_miss_phi - reco_tau_phi) / TMath::Pi() * 180.  >> h_acoplan" ,"Et_miss_phi*reco_tau_phi > 0" , "");
-  //chain.Draw( "Et_miss_phi >> h_acoplan" ,"" , "");
-  
-  float Et_miss_phi, Et_miss;
-  float tau_phi, tau_eta, tau_ptotal, nu_pt;
-  
-  chain.SetBranchAddress("Et_miss",&Et_miss);
-  chain.SetBranchAddress("Et_miss_phi",&Et_miss_phi);
-  chain.SetBranchAddress("reco_tau_phi",&tau_phi);
-  chain.SetBranchAddress("reco_tau_eta",&tau_eta);
-  chain.SetBranchAddress("reco_tau_ptotal",&tau_ptotal);
-  chain.SetBranchAddress("neutrino_pt",&nu_pt);
+  vector< float > plots_xmin;
+  vector< float > plots_xmax;
 
-  for(int i = 0; i<n;i++){
-    double delta_phi;
-    
-    chain.GetEntry(i);
-    delta_phi = fabs(Et_miss_phi - tau_phi) * 180 / TMath::Pi();
-    if(delta_phi > 180) delta_phi = 360 - delta_phi; 
-    if(delta_phi < 10)  
-    h1->Fill(nu_pt,tau_ptotal);
-    h_acoplan->Fill(delta_phi);
+  // Missing energy
+  observables.push_back( "Et_miss" );
+  observables_name.push_back( "p_{T}^{miss} (GeV)" );
+  plots_xmin.push_back(0);
+  plots_xmax.push_back(50);
+
+  // Acoplanarity 
+  observables.push_back( "Et_miss_phi" );
+  observables_name.push_back( "#Delta#phi_{miss - #tau jet}" );
+  plots_xmin.push_back(0);
+  plots_xmax.push_back(180);
+
+  TString name_CC_base("h_CC_");
+  TString name_NC_base("h_NC_");
+  TString name_tau_base("h_tau_");
+
+  const int nvar = observables.size();
+
+  TH1F* h_CC[nvar];
+  TH1F* h_NC[nvar];
+  TH1F* h_tau[nvar];
+
+  TString name_CC_i = name_CC_base;
+  TString name_NC_i = name_NC_base;
+  TString name_tau_i = name_tau_base;
+
+  // create histograms 
+  for ( int l = 0; l < observables.size(); l++ ){
+    name_CC_i = name_CC_base;
+    name_NC_i = name_NC_base;
+    name_tau_i = name_tau_base;
+
+    name_CC_i.Append(l);
+    name_NC_i.Append(l);
+    name_tau_i.Append(l);
+
+    h_CC[l] = new TH1F( name_CC_i, "", 50, plots_xmin.at(l), plots_xmax.at(l));
+    h_NC[l] = new TH1F( name_NC_i, "", 50, plots_xmin.at(l), plots_xmax.at(l));
+    h_tau[l] = new TH1F( name_tau_i, "", 50, plots_xmin.at(l), plots_xmax.at(l));
   }
 
-  h_acoplan->Scale(1./h_acoplan->Integral());
-  //h_acoplan->GetYaxis()->SetRangeUser(0, 1);
-  h_acoplan->SetLineColor(col2);
-  h_acoplan->SetFillColor(col2);
-  h_acoplan->SetFillStyle(1001);
-  h_acoplan->GetYaxis()->SetTitleOffset(1.6);
-  h_acoplan->SetTitle("Neutral Current Tau");
+  // Fill Histograms //
+  for(int i = 0;i < observables.size(); i++){
 
-  /* create Canvas and draw histograms for pt_miss */
-  TCanvas *c1 = new TCanvas();
+    ctemp->cd();
 
-  h_ptmiss->Draw("");
-  h_ptmiss->SetTitle("Neutral Current Tau");
-  gPad->RedrawAxis();
+    name_CC_i = name_CC_base;
+    name_NC_i = name_NC_base;
+    name_tau_i = name_tau_base;
 
-  //c1->Print( "plots/event_topology_reco_ptmiss.eps" );
-  //c1->Print( "plots/event_topology_reco_ptmiss.png" );
+    name_CC_i.Append(i);
+    name_NC_i.Append(i);
+    name_tau_i.Append(i);
 
-  /* create Canvas and draw histograms for acoplanarity */
-  TCanvas *c2 = new TCanvas();
+    // Fill Et_miss straight from tree //
+    if(i==0){
+      // Fill CC histogram //
+      int n_CC = chain_CC.Draw( observables.at(i) + " >> " + name_CC_i, "", "goff");
+      h_CC[i]->Scale(1./h_CC[i]->Integral());
+      h_CC[i]->GetXaxis()->SetTitle( observables_name.at(i) );
+      h_CC[i]->GetYaxis()->SetRangeUser(0, .13 );
+      h_CC[i]->SetLineColor(col1);
+      h_CC[i]->SetFillColor(col1);
+      h_CC[i]->SetFillStyle(0);
+      h_CC[i]->GetYaxis()->SetTitle("# entries / #Sigma entries");
+      h_CC[i]->GetYaxis()->SetTitleOffset(1.5);
 
-  h_acoplan->Draw("");
-  gPad->RedrawAxis();
+      // Fill NC histogram //	
+      int n_NC = chain_NC.Draw( observables.at(i) + " >> " + name_NC_i, "", "goff");
+      h_NC[i]->Scale(1./h_NC[i]->Integral());
+      h_NC[i]->SetLineColor(col3);
+      h_NC[i]->SetFillColor(col3);
+      h_NC[i]->SetFillStyle(0);
+      
+      // Fill LQ histogram //
+      int n_tau = chain_tau.Draw( observables.at(i) + " >> " + name_tau_i, "", "goff");
+      h_tau[i]->Scale(1./h_tau[i]->Integral());
+      h_tau[i]->SetLineColor(col2);
+      h_tau[i]->SetFillColor(col2);
+      h_tau[i]->SetFillStyle(0);
+      
+      TCanvas *c1 = new TCanvas();
+      
+      h_CC[i]->DrawClone("");
+      h_NC[i]->DrawClone("sames");
+      h_tau[i]->DrawClone("sames");
+      gPad->RedrawAxis();
+      
+      TLegend *legend = new TLegend(0.4,0.6,0.7,0.89);
+      legend->AddEntry(h_CC[i],"Neutral Current","l");
+      legend->AddEntry(h_NC[i],"Charged Current","l");
+      legend->AddEntry(h_tau[i],"Leptoquark","l");
+      legend->Draw();
+    }
 
-  TCanvas *c3 = new TCanvas();
-  //chain.Draw("jet_eta","","");
-  //h1->Draw("colz");
-  //h1->GetXaxis()->SetTitle("#Delta#phi_{miss - #tau jet}");
-  //h1->GetYaxis()->SetTitle("p_{T}^{Jet}");
-  
-  //c2->Print( "plots/event_topology_reco_acoplanarity.eps" );
-  //c2->Print( "plots/event_topology_reco_acoplanarity.png" );
+    // Calculate acoplanarity and then fill histogram //
+    if(i==1){
+      
+      float Et_miss_phi_tau, Et_miss_phi_CC, Et_miss_phi_NC;
+      float tau_phi_tau, tau_phi_CC, tau_phi_NC;
+      
+      // Read tau phi and missing momentum phi from tree //
+      chain_CC.SetBranchAddress("Et_miss_phi",&Et_miss_phi_CC);
+      chain_CC.SetBranchAddress("reco_tau_phi",&tau_phi_CC);
+          
+      chain_NC.SetBranchAddress("Et_miss_phi",&Et_miss_phi_NC);
+      chain_NC.SetBranchAddress("reco_tau_phi",&tau_phi_NC);
+
+      chain_tau.SetBranchAddress("Et_miss_phi",&Et_miss_phi_tau);
+      chain_tau.SetBranchAddress("reco_tau_phi",&tau_phi_tau);
+
+      // Phi angle between reco tau and miss mom   //     
+      double delta_phi;
+
+      // Calculate delta phi for each event type //
+      for(int j = 0; j<n_CC;j++){
+	chain_CC.GetEntry(j);
+	delta_phi = fabs(Et_miss_phi_CC - tau_phi_CC) * 180 / TMath::Pi();
+	if(delta_phi > 180) delta_phi = 360 - delta_phi; 
+	h_CC[i]->Fill(delta_phi);
+      }
+
+      for(int l = 0; l<n_NC;l++){
+        chain_NC.GetEntry(l);
+        delta_phi = fabs(Et_miss_phi_NC - tau_phi_NC) * 180 / TMath::Pi();
+        if(delta_phi > 180) delta_phi = 360 - delta_phi;
+        h_NC[i]->Fill(delta_phi);
+      }
+      
+      for(int k = 0; k<n_tau;k++){
+        chain_tau.GetEntry(k);
+        delta_phi = fabs(Et_miss_phi_tau - tau_phi_tau) * 180 / TMath::Pi();
+        if(delta_phi > 180) delta_phi = 360 - delta_phi;
+        h_tau[i]->Fill(delta_phi);
+      }
+
+      //Fill histograms //
+      h_CC[i]->Scale(1./h_CC[i]->Integral());
+      h_CC[i]->GetXaxis()->SetTitle( observables_name.at(i) );
+      h_CC[i]->GetYaxis()->SetRangeUser(0, 0.27 );
+      h_CC[i]->SetLineColor(col1);
+      h_CC[i]->SetFillColor(col1);
+      h_CC[i]->SetFillStyle(0);
+      h_CC[i]->GetYaxis()->SetTitle("# entries / #Sigma entries");
+      h_CC[i]->GetYaxis()->SetTitleOffset(1.5);
+
+      h_NC[i]->Scale(1./h_NC[i]->Integral());
+      h_NC[i]->SetLineColor(col3);
+      h_NC[i]->SetFillColor(col3);
+      h_NC[i]->SetFillStyle(0);
+
+
+      h_tau[i]->Scale(1./h_tau[i]->Integral());
+      h_tau[i]->SetLineColor(col2);
+      h_tau[i]->SetFillColor(col2);
+      h_tau[i]->SetFillStyle(0);
+
+      TCanvas *c1 = new TCanvas();
+
+      h_CC[i]->DrawClone("");
+      h_NC[i]->DrawClone("sames");
+      h_tau[i]->DrawClone("sames");
+      gPad->RedrawAxis();
+
+      TLegend *legend = new TLegend(0.4,0.6,0.7,0.89);
+      legend->AddEntry(h_NC[i],"Neutral Current","l");
+      legend->AddEntry(h_CC[i],"Charged Current","l");
+      legend->AddEntry(h_tau[i],"Leptoquark","l");
+      legend->Draw();
+            
+    }
+
+  }
 
   return 0;
 }

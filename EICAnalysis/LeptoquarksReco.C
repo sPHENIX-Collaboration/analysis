@@ -334,7 +334,6 @@ LeptoquarksReco::AddTrueTauTag( type_map_tcan& tauCandidateMap, PHHepMCGenEventM
   int pdg_parton = 0;
   int pdg_electron = 11; // electron
 
-
   // Check if electron exists  //                                                                                                                                                                
   HepMC::GenParticle* particle_electron = NULL;
   
@@ -394,6 +393,7 @@ LeptoquarksReco::AddTrueTauTag( type_map_tcan& tauCandidateMap, PHHepMCGenEventM
                                                          particle_tau->momentum().eta(),
                                                          particle_tau->momentum().phi() );
 
+      
       /* set is_tau = TRUE for PidCandiate with smallest delta_R within reasonable range*/
       if ( best_match )
         {
@@ -436,7 +436,7 @@ LeptoquarksReco::AddTrueTauTag( type_map_tcan& tauCandidateMap, PHHepMCGenEventM
       PidCandidate* best_match = FindMinDeltaRCandidate( &tauCandidateMap,
                                                          particle_quark->momentum().eta(),
                                                          particle_quark->momentum().phi() );
-
+      
       /* set is_uds = TRUE for PidCandiate with smallest delta_R if found */
       if ( best_match )
         {

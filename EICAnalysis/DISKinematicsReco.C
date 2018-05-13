@@ -331,6 +331,7 @@ DISKinematicsReco::InsertCandidateFromCluster( type_map_tcan& candidateMap , Raw
       if (gpt != 0.0) gtheta = asinh(gpz / gpt);
       gphi = atan2(gpy, gpx);
 
+
       tc->set_property( PidCandidate::em_evtgen_pid, primary->get_pid() );
       tc->set_property( PidCandidate::em_evtgen_ptotal, (float)primary->get_e() );
       tc->set_property( PidCandidate::em_evtgen_theta, gtheta );
