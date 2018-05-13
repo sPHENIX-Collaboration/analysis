@@ -12,16 +12,19 @@ int compare_observables()
   unsigned col1 = kOrange+7;
   unsigned col2 = kBlue+2;
 
+
+  string type = "DIScharged";
+  string seed[7] = {"1","2","3","6","7","8","9","10"};
+  string R_max = "5";
   /* open inout files and merge trees */
-  TChain chain("candidates");
-  chain.Add("data_3pions/p250_e20_0events_file1093_LeptoAna_r05.root");
-  chain.Add("data_3pions/p250_e20_0events_file1096_LeptoAna_r05.root");
-  chain.Add("data_3pions/p250_e20_0events_file1101_LeptoAna_r05.root");
-  chain.Add("data_3pions/p250_e20_0events_file1115_LeptoAna_r05.root");
-  chain.Add("data_3pions/p250_e20_0events_file1122_LeptoAna_r05.root");
-  chain.Add("data_3pions/p250_e20_0events_file1127_LeptoAna_r05.root");
-  chain.Add("data_3pions/p250_e20_0events_file1131_LeptoAna_r05.root");
-  chain.Add("data_3pions/p250_e20_0events_file1164_LeptoAna_r05.root");
+  TChain chain("event");
+
+  for (int g = 0; g<seed->size();g++){
+    if(g==4 || g==5) continue;
+    string file = "/gpfs/mnt/gpfs02/phenix/scratch/spjeffas/data/LeptoAna_p250_e20_100events_"+seed[g]+"seed_"+type+"_tau_r0"+R_max+".root";
+    chain.Add(file.c_str());
+  }
+
 
   /* particle selection */
   //TCut select_prong("tracks_count_r02 == 3 && tracks_chargesum_r02 == -1");
@@ -104,7 +107,7 @@ int compare_observables()
   /* Plot distributions */
   TString name_uds_base("h_uds_");
   TString name_tau_base("h_tau_");
-
+  /*
   for ( unsigned i = 0; i < observables.size(); i++ )
     {
       cout << "Plotting " << observables.at(i) << endl;
@@ -134,17 +137,22 @@ int compare_observables()
       h_tau->SetFillColor(col2);
       h_tau->SetFillStyle(0);
 
-      /* create Canvas and draw histograms */
+      // create Canvas and draw histograms 
       TCanvas *c1 = new TCanvas();
 
       h_uds->DrawClone("");
       h_tau->DrawClone("sames");
 
+      TLegend *legend = new TLegend(0.3,0.7,0.48,0.9);
+      legend->AddEntry(h_uds,"quark jet","l");
+      legend->AddEntry(h_tau,"#tau jet","l");
+      legend->Draw();
+
       gPad->RedrawAxis();
 
-      c1->Print( Form( "plots/compare_observables_%d.eps", i ) );
-      c1->Print( Form( "plots/compare_observables_%d.png", i ) );
+      //c1->Print( Form( "plots/compare_observables_%d.eps", i ) );
+      //c1->Print( Form( "plots/compare_observables_%d.png", i ) );
     }
-
+*/
   return 0;
 }
