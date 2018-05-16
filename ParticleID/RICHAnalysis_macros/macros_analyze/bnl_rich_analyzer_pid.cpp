@@ -1,9 +1,14 @@
-// Adjustments made to original:
-// Fixed a |= somewhere that should have been !=
-// Increased size of em[][] array
-// Added if statement to make sure imom != 0
-// Changed the i/o to append to existing output file
-// Changed read() to read(string input_filename)
+/*
+  Adjustments made to original:
+  Fixed a |= somewhere that should have been !=
+  Increased size of em[][] array
+  Added if statement to make sure imom != 0
+  Changed the i/o to append to existing output file
+  Changed read() to read(string input_filename)
+  Changed "tree_rich" to updated "eval_rich"
+  
+  Personal preference: Changed the bounds on polar angle to [15,16] instead of [12,13]
+*/
 
 #include <Riostream.h>
 #include <stdio.h>
@@ -57,7 +62,7 @@ class eic_bnl_rich {
 
   double qe(double energy);
   
-  void read();
+  void read(string input_filename);
 
 };
 
@@ -179,7 +184,7 @@ void eic_bnl_rich::acq(string input_filename, int ind, int pix_lab, int part){
   }
   //else cout << "open file " << input_filename << endl;
 
-  TTree *eic_rich = (TTree*) file->Get("tree_rich");
+  TTree *eic_rich = (TTree*) file->Get("eval_rich");
   
   Int_t eic_rich_event=0,eic_rich_bankid=0,eic_rich_volumeid=0,eic_rich_hitid=0,*eic_rich_pid=0,eic_rich_mpid=0,eic_rich_trackid=0,eic_rich_mtrackid=0,eic_rich_otrackid=0;
   Double_t eic_rich_hit_x=0,eic_rich_hit_y=0,eic_rich_hit_z=0, eic_rich_emi_x=0, eic_rich_emi_y=0, eic_rich_emi_z=0,eic_rich_px=0,eic_rich_py=0,eic_rich_pz=0,eic_rich_mpx=0,eic_rich_mpy=0,eic_rich_mpz=0,eic_rich_e=0,eic_rich_me=0,eic_rich_edep=0;
@@ -287,7 +292,6 @@ void eic_bnl_rich::acq(string input_filename, int ind, int pix_lab, int part){
     }
   }
 
-  
   for(Int_t i=0;(i<eic_rich->GetEntries());i++){
     
     eic_rich->GetEntry(i);
@@ -299,15 +303,14 @@ void eic_bnl_rich::acq(string input_filename, int ind, int pix_lab, int part){
     
 
     
-    if(eic_rich_event<=ind && rran.Uniform(0,100)<qe(eic_rich_edep*1000000000.)){
-    //if(eic_rich_event<=ind){
+    //if(eic_rich_event<=ind && rran.Uniform(0,100)<qe(eic_rich_edep*1000000000.)){
+    if(eic_rich_event<=ind){
 
       momentum = sqrt(eic_rich_mpx*eic_rich_mpx+eic_rich_mpy*eic_rich_mpy+eic_rich_mpz*eic_rich_mpz);
       imom = momentum;
       if (imom == 0)
 	continue;
       theta_cc = acos(sqrt(imom*imom+m[part]*m[part])/imom/1.00054);
-
 
       momv[0] = momvv_x[eic_rich_event-1];
       momv[1] = momvv_y[eic_rich_event-1];
@@ -371,8 +374,10 @@ void eic_bnl_rich::acq(string input_filename, int ind, int pix_lab, int part){
       ph_ch_count++;
       //cout<<ch<<endl;
       //if(ch<(theta_cc+0.01) && ch>(theta_cc-0.01))ch_ang->Fill(ch);
-      if(ch<(theta_cc+0.008) && ch>(theta_cc-0.008) && theta*rtd>12. && theta*rtd<13. && (ph_det->GetBinContent(xbin,ybin) == 1)){ //here are the cuts: central polar angle [12,13] and the cuts on theta_cc are about 5 sigma (assuming the measured 1 p.e. resulution) interval around the central value of theta_cc, the last cut takes just 1 p.e. per pixel  ####################################################
+      
+      //if(ch<(theta_cc+0.008) && ch>(theta_cc-0.008) && theta*rtd>15. && theta*rtd<16. && (ph_det->GetBinContent(xbin,ybin) == 1)){ //here are the cuts: central polar angle [12,13] (changed to [15,16]) and the cuts on theta_cc are about 5 sigma (assuming the measured 1 p.e. resulution) interval around the central value of theta_cc, the last cut takes just 1 p.e. per pixel  ####################################################
 	//if(rran.Uniform(0,100)<qe(eic_rich_edep*1000000000.))ch_pi_h[imom]->Fill(ch);
+      if(ch<(theta_cc+0.008) && ch>(theta_cc-0.008) && theta*rtd>15. && theta*rtd<16.){
 
 	ch_pi_h[imom]->Fill(ch);
 	spectrum_nm->Fill(1240./(eic_rich_edep*1000000000.));
@@ -412,7 +417,7 @@ void eic_bnl_rich::acq(string input_filename, int ind, int pix_lab, int part){
 
   Int_t summm=0;
 
-  ofstream out("pid.txt", ios::app);
+  ofstream out("pid_test.txt", ios::app);
   streambuf *coutbuf = cout.rdbuf(); 
   cout.rdbuf(out.rdbuf());
   
@@ -425,6 +430,7 @@ void eic_bnl_rich::acq(string input_filename, int ind, int pix_lab, int part){
   //cout<<nph_count<<endl;
   
   ph_det1->Draw("colz");
+  ch_pi_h[45]->Draw();
   
   //c_mean = ch_ang->GetMean();
   //c_rms = ch_ang->GetRMS();
@@ -548,6 +554,7 @@ void eic_bnl_rich::read(string input_filename){
   gr_pi_k->SetMarkerColor(kBlue);
   gr_k_p->SetTitle("");
   gr_k_p->Draw("C*");
+  c1->Print("test1.pdf","pdf");
   
   for(Int_t j=0;j<iiii;j++) cout<<n_sig_k_p[j]<<"  "<<mm_k_p[j]<<endl;
 
@@ -558,6 +565,7 @@ void eic_bnl_rich::read(string input_filename){
   sig_pi->GetXaxis()->SetTitle("Momentum [Gev/c]");
   sig_pi->GetYaxis()->SetTitle("#sigma_{#theta_{C}}");
   sig_pi->Draw("AP*");
+  c2->Print("test2.pdf","pdf");
 
   TCanvas *c3 = new TCanvas("c3","",1000,600);
   c3->Divide(1,1);
@@ -566,5 +574,6 @@ void eic_bnl_rich::read(string input_filename){
   nph_pi->GetXaxis()->SetTitle("Momentum [Gev/c]");
   nph_pi->GetYaxis()->SetTitle("N_{p.e.}");
   nph_pi->Draw("AP*");
+  c3->Print("test3.pdf","pdf");
   
 }
