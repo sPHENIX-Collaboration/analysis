@@ -14,30 +14,38 @@ Smear::Detector BuildEicSphenix() {
 
   gSystem->Load("libeicsmear");
 
-  // Create barrel electromagnetic calorimeter with sigma(E) = 20% * sqrt(E)
-  // Genre == 1 (third argument) means only photons and electrons are smeared
-  Smear::Device cemc(Smear::kE,  "0.2*sqrt(E)", 1);
+  /* Create calorimeters.
+   * Genre == 1 (third argument) means only photons and electrons are smeared */
 
-  // Create hadron-going EMCal
-  Smear::Device femc(Smear::kE,  "0.2*sqrt(E)", 1);
-
-  // Create electron-going EMCal
+  /* Create electron-going EMCal */
   Smear::Device eemc(Smear::kE,  "0.02*sqrt(E)", 1);
 
+  /* Create barrel electromagnetic calorimeter with sigma(E) = 20% * sqrt(E) */
+  Smear::Device cemc(Smear::kE,  "0.2*sqrt(E)", 1);
 
-  // Create our tracking capabilities, by a combination of mometum, theta and phi Devices.
+  /* Create barrel HCAL (inner+outer) */
+  Smear::Device chcal(Smear::kE,  "1.0*sqrt(E)", 1);
 
-  // Create a smearer for momentum - central arm
+  /* Create hadron-going EMCal */
+  Smear::Device femc(Smear::kE,  "0.2*sqrt(E)", 1);
+
+  /* Create hadron-going HCal */
+  Smear::Device fhcal(Smear::kE,  "1.0*sqrt(E)", 1);
+
+
+  /* Create our tracking capabilities, by a combination of mometum, theta and phi Devices. */
+
+  /* Create a smearer for momentum - central arm */
   Smear::Device c_momentum(Smear::kP, "0.01 * P");
   Smear::Device c_theta(Smear::kTheta, "0.05 * P");
   Smear::Device c_phi(Smear::kPhi, "0"); // "0" indicates perfect performance i.e. sigma(phi) = 0
 
-  // Create a smearer for momentum - hadron going direction
+  /* Create a smearer for momentum - hadron going direction */
   Smear::Device h_momentum(Smear::kP, "0.01 * P");
   Smear::Device h_theta(Smear::kTheta, "0.05 * P");
   Smear::Device h_phi(Smear::kPhi, "0"); // "0" indicates perfect performance i.e. sigma(phi) = 0
 
-  // Create a smearer for momentum - electron going direction
+  /* Create a smearer for momentum - electron going direction */
   Smear::Device e_momentum(Smear::kP, "0.01 * P");
   Smear::Device e_theta(Smear::kTheta, "0.05 * P");
   Smear::Device e_phi(Smear::kPhi, "0"); // "0" indicates perfect performance i.e. sigma(phi) = 0
@@ -49,41 +57,59 @@ Smear::Detector BuildEicSphenix() {
   float thetamax_central = eta2theta( -1.1 );
   float thetamin_central = eta2theta(  1.1 );
   cout << "Theta acceptance central from " << thetamin_central << " to " << thetamax_central << endl;
-  Smear::Acceptance::Zone central( thetamin_central, thetamax_central );
+  Smear::Acceptance::Zone zone_central( thetamin_central, thetamax_central );
+
+  float thetamax_central_cemc = eta2theta( -1.55 );
+  float thetamin_central_cemc = eta2theta(  1.242 );
+  cout << "Theta acceptance CEMC central from " << thetamin_central_cemc << " to " << thetamax_central_cemc << endl;
+  Smear::Acceptance::Zone zone_cemc( thetamin_central_cemc, thetamax_central_cemc );
 
   // hadron-going region
-  float thetamax_hforward = eta2theta(  1.3 );
-  float thetamin_hforward = eta2theta(  4.0 );
-  cout << "Theta acceptance hforward from " << thetamin_hforward << " to " << thetamax_hforward << endl;
-  Smear::Acceptance::Zone hforward( thetamin_hforward, thetamax_hforward );
+  float thetamax_hside = eta2theta(  1.1 );
+  float thetamin_hside = eta2theta(  4.0 );
+  cout << "Theta acceptance hside from " << thetamin_hside << " to " << thetamax_hside << endl;
+  Smear::Acceptance::Zone zone_hside( thetamin_hside, thetamax_hside );
+
+  float thetamax_femc = eta2theta(  1.242 );
+  float thetamin_femc = eta2theta(  4.0 );
+  cout << "Theta acceptance femc from " << thetamin_femc << " to " << thetamax_femc << endl;
+  Smear::Acceptance::Zone zone_femc( thetamin_femc, thetamax_femc );
 
   // electron-going region
-  float thetamax_eforward = eta2theta( -4.0 );
-  float thetamin_eforward = eta2theta( -1.2 );
-  cout << "Theta acceptance eforward from " << thetamin_eforward << " to " << thetamax_eforward << endl;
-  Smear::Acceptance::Zone eforward( thetamin_eforward, thetamax_eforward );
+  float thetamax_eside = eta2theta(  -4.0 );
+  float thetamin_eside = eta2theta(  -1.1 );
+  cout << "Theta acceptance eside from " << thetamin_eside << " to " << thetamax_eside << endl;
+  Smear::Acceptance::Zone zone_eside( thetamin_eside, thetamax_eside );
+
+  float thetamax_eemc = eta2theta( -4.0 );
+  float thetamin_eemc = eta2theta( -1.55 );
+  cout << "Theta acceptance eemc from " << thetamin_eemc << " to " << thetamax_eemc << endl;
+  Smear::Acceptance::Zone zone_eemc( thetamin_eemc, thetamax_eemc );
 
   // set acceptances for detectors
-  cemc.Accept.AddZone(central);
-  c_momentum.Accept.AddZone(central);
-  c_theta.Accept.AddZone(central);
-  c_phi.Accept.AddZone(central);
+  cemc.Accept.AddZone(zone_eemc);
+  chcal.Accept.AddZone(zone_central);
+  c_momentum.Accept.AddZone(zone_central);
+  c_theta.Accept.AddZone(zone_central);
+  c_phi.Accept.AddZone(zone_central);
   //  rich.Accept.AddZone(central);
 
-  femc.Accept.AddZone(hforward);
-  h_momentum.Accept.AddZone(hforward);
-  h_theta.Accept.AddZone(hforward);
-  h_phi.Accept.AddZone(hforward);
+  femc.Accept.AddZone(zone_femc);
+  fhcal.Accept.AddZone(zone_femc);
+  h_momentum.Accept.AddZone(zone_hside);
+  h_theta.Accept.AddZone(zone_hside);
+  h_phi.Accept.AddZone(zone_hside);
 
-  eemc.Accept.AddZone(eforward);
-  e_momentum.Accept.AddZone(eforward);
-  e_theta.Accept.AddZone(eforward);
-  e_phi.Accept.AddZone(eforward);
+  eemc.Accept.AddZone(zone_eemc);
+  e_momentum.Accept.AddZone(zone_eside);
+  e_theta.Accept.AddZone(zone_eside);
+  e_phi.Accept.AddZone(zone_eside);
 
   // Create a detector and add the devices
   Smear::Detector det;
 
   det.AddDevice(cemc);
+  det.AddDevice(chcal);
   det.AddDevice(c_momentum);
   det.AddDevice(c_theta);
   det.AddDevice(c_phi);
@@ -91,6 +117,7 @@ Smear::Detector BuildEicSphenix() {
   //  det.AddDevice(rich);
 
   det.AddDevice(femc);
+  det.AddDevice(fhcal);
   det.AddDevice(h_momentum);
   det.AddDevice(h_theta);
   det.AddDevice(h_phi);
