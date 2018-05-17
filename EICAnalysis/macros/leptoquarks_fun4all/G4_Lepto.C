@@ -6,7 +6,7 @@ int G4_Lepto(string filename)
   Fun4AllServer *se = Fun4AllServer::instance();
 
   Leptoquarks *truthana = new Leptoquarks(filename+"_TruthEvent.root");
-  se->registerSubsystem( truthana );
+  //  se->registerSubsystem( truthana );
 
   LeptoquarksReco *mcana_r05 = new LeptoquarksReco(filename+"_r05.root");
   LeptoquarksReco *mcana_r10 = new LeptoquarksReco(filename+"_r10.root");

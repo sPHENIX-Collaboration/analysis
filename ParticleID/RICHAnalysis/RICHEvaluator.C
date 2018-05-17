@@ -123,16 +123,16 @@ RICHEvaluator::process_event(PHCompositeNode *topNode)
   for (SvtxTrackMap::ConstIter track_itr = trackmap->begin(); track_itr != trackmap->end(); track_itr++)
     {
 
-      bool use_reconstructed_momentum = true;
+      bool use_reconstructed_momentum = false;
       bool use_truth_momentum = false;
-      bool use_emission_momentum = false;
+      bool use_emission_momentum = true;
 
-      bool use_reconstructed_point = true;
-      bool use_approximate_point = false;
+      bool use_reconstructed_point = false;
+      bool use_approximate_point = true;
 
 
       /* Store angles to get RMS value */
-      TH1F *ch_ang = new TH1F("","",1000,0.0,0.04);
+      TH1F *ch_ang = new TH1F("","",1000,0.0,1.0);
       
       SvtxTrack* track_j = dynamic_cast<SvtxTrack*>(track_itr->second);
 
@@ -201,8 +201,7 @@ RICHEvaluator::process_event(PHCompositeNode *topNode)
       /* Calculate truth emission angle and truth mass */
       if (truthinfo)
 	{
-	  //_theta_true = calculate_true_emission_angle( truthinfo , track_j , _refractive_index );
-	  //_mass_true = calculate_true_mass( truthinfo, track_j );
+	  _theta_true = calculate_true_emission_angle( truthinfo , track_j , _refractive_index );
 	}
       
       /* Loop over all G4Hits in container (i.e. RICH photons in event) */
@@ -255,10 +254,7 @@ RICHEvaluator::process_event(PHCompositeNode *topNode)
 	  
 	  /* Set reconstructed emission angle and reconstructed mass for output tree */
 	  _theta_reco = _acquire->calculate_emission_angle( m_emi, momv, hit_i );
-	  _mass_reco = calculate_reco_mass( momv_norm, _theta_reco, _refractive_index );
-
-	  if( _theta_reco < (_theta_true+0.01) && _theta_reco > (_theta_true-0.01) )
-	    ch_ang->Fill(_theta_reco);
+	  ch_ang->Fill(_theta_reco);
 	  
 	  /* Fill tree */
 	  _tree_rich->Fill();
@@ -305,38 +301,6 @@ double RICHEvaluator::calculate_true_emission_angle( PHG4TruthInfoContainer* tru
 
   return theta_c;
 }
-
-
-double RICHEvaluator::calculate_reco_mass( double mom, double theta_reco, double index )
-{
-  /* Calculate beta from reco angle */
-  double beta = 1/( index * cos(theta_reco) );
-
-  /* Calculate mass from beta */
-  if (beta<1 && beta>0)
-    {
-      double mass = mom * sqrt( 1/beta - 1  );
-      return mass;
-    }
-  else
-    return 0;
-}
-
-
-double RICHEvaluator::calculate_true_mass( PHG4TruthInfoContainer* truthinfo, SvtxTrack * track )
-{
-  /* Get truth particle associated with track */
-  PHG4Particle* particle = truthinfo->GetParticle( track->get_truth_track_id() );
-
-  /* Get particle ID */
-  int pid = particle->get_pid();
-
-  /* Get particle mass */
-  double mass = _pdg->GetParticle(pid)->Mass();
-
-  return mass;
-}
-
 
 int
 RICHEvaluator::End(PHCompositeNode *topNode)
@@ -387,9 +351,6 @@ RICHEvaluator::reset_tree_vars()
   _theta_reco = -999;
   _theta_mean = -999;
   _theta_rms = -999;
-  
-  _mass_true = -999;
-  _mass_reco = -999;
 
   return;
 }
@@ -426,10 +387,8 @@ RICHEvaluator::init_tree()
   _tree_rich->Branch("mtrackid", &_mtrackid, "Mother track ID /I");
   _tree_rich->Branch("otrackid", &_otrackid, "Ordered track ID /I");
 
-  _tree_rich->Branch("theta_true", &_theta_true, "True emission angle /F");
-  _tree_rich->Branch("theta_reco", &_theta_reco, "Reconstructed emission angle /F");
-  _tree_rich->Branch("mass_true", &_mass_true, "True particle mass /F");
-  _tree_rich->Branch("mass_reco", &_mass_reco, "Reconstructed particle mass /F");
+  _tree_rich->Branch("theta_true", &_theta_true, "True emission angle /D");
+  _tree_rich->Branch("theta_reco", &_theta_reco, "Reconstructed emission angle /D");
 
   return 0;
 }
@@ -444,6 +403,7 @@ RICHEvaluator::init_tree_small()
   _tree_rich_small->Branch("event", &_ievent, "Event number /I");
   _tree_rich_small->Branch("otrackid", &_otrackid, "Ordered track ID /I");
   _tree_rich_small->Branch("mptot", &_mtrack_ptot, "Total momentum /D");
+  _tree_rich_small->Branch("theta_true", &_theta_true, "True emission angle /D");
   _tree_rich_small->Branch("theta_mean", &_theta_mean, "Reconstructed angle mean /D");
   _tree_rich_small->Branch("theta_rms", &_theta_rms, "Reconstructed angle spread /D");
 
