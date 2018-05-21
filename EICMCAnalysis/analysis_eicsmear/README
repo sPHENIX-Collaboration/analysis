@@ -1,5 +1,5 @@
 To compile macro on RCF (with sPHENIX environment initialized) run:
 
-g++ `root-config --cflags --glibs` -L$OFFLINE_MAIN/lib -I$OFFLINE_MAIN/include -leicsmear eic_sphenix_dis_fillbins.C -o eic_sphenix_dis_filbins
+g++ `root-config --cflags --glibs` -L$OFFLINE_MAIN/lib -I$OFFLINE_MAIN/include -leicsmear eic_sphenix_fill_xq2.C -o eic_sphenix_fill_xq2
 
 This daves a lot of time when running the code!

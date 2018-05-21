@@ -19,7 +19,7 @@
 using namespace std;
 
 int
-eic_sphenix_dis_fillbins( TString filename_output,
+eic_sphenix_fill_xq2( TString filename_output,
 			  TString filename_mc,
 			  TString filename_mc_smeared = "",
 			  bool debug = false )
@@ -374,25 +374,25 @@ int main( int argc , char* argv[] )
       return 1;
     }
 
-  cout << "Running eic_sphenix_dis_fillbins with: \n" << endl;
+  cout << "Running eic_sphenix_fill_xq2 with: \n" << endl;
   cout << " - Output file:            " << argv[1] << endl;
   cout << " - EICTree input file:     " << argv[2] << endl;
 
   if ( argc == 3 )
     {
       cout << " - EICTree (smeared) file: (none)" << endl;
-      eic_sphenix_dis_fillbins( argv[1], argv[2] );
+      eic_sphenix_fill_xq2( argv[1], argv[2] );
     }
   else if ( argc == 4 )
     {
       cout << " - EICTree (smeared) file: " << argv[3] << endl;
-      eic_sphenix_dis_fillbins( argv[1], argv[2], argv[3] );
+      eic_sphenix_fill_xq2( argv[1], argv[2], argv[3] );
     }
   else if ( argc == 5 )
     {
       cout << " - EICTree (smeared) file: " << argv[3] << endl;
       cout << " ==== DEBUG MODE ==== " << endl;
-      eic_sphenix_dis_fillbins( argv[1], argv[2], "", true );
+      eic_sphenix_fill_xq2( argv[1], argv[2], "", true );
     }
 
   return 0;
