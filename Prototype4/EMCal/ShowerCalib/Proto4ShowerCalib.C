@@ -644,7 +644,7 @@ int Proto4ShowerCalib::process_event(PHCompositeNode *topNode)
   {
     assert(fdata.is_open());
 
-    auto range = TOWER_CALIB_CEMC->getTowers();
+    auto range = TOWER_RAW_CEMC->getTowers();
     for (auto it = range.first; it != range.second; ++it)
     {
       RawTower *tower = it->second;
@@ -674,9 +674,17 @@ int Proto4ShowerCalib::process_event(PHCompositeNode *topNode)
     fdata << endl;
   }
 
+  if (good_data)
+  {
+  PHTFileServer::get().cd(_filename);
+
   TTree *T = dynamic_cast<TTree *>(hm->getHisto("T"));
   assert(T);
   T->Fill();
+
+  PHTFileServer::get().flush(_filename);
+//  PHTFileServer::get().write(_filename);
+  }
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
