@@ -58,22 +58,24 @@ SvtxTrack* TrackProjectionTools::FindClosestTrack( RawCluster* cluster, float& b
 
   /* Loop over all tracks from BARREL tracking and see if one points to the same
    * cluster as the reference clusters (i.e. matching ID in the same calorimeter) */
-  //for (SvtxTrackMap::ConstIter track_itr = trackmap->begin();
-  //     track_itr != trackmap->end(); track_itr++)
-  //  {
-  //    SvtxTrack* track =  dynamic_cast<SvtxTrack*>(track_itr->second);
-  //
-  //    if ( caloname == "CEMC" &&
-  //         track->get_cal_cluster_id(SvtxTrack::CEMC) == cluster->get_id() )
-  //      {
-  //        best_track = track;
-  //      }
-  //  }
+  /*
+  for (SvtxTrackMap::ConstIter track_itr = trackmap->begin();
+       track_itr != trackmap->end(); track_itr++)
+    {
+      SvtxTrack* track =  dynamic_cast<SvtxTrack*>(track_itr->second);
+  
+      if ( caloname == "CEMC" &&
+           track->get_cal_cluster_id(SvtxTrack::CEMC) == cluster->get_id() )
+        {
+          best_track = track;
+        }
+    }
+  */
 
   /* If track found with barrel tracking, return it here- if not, proceed with forward tracking below. */
   if ( best_track )
     return best_track;
-
+  
   /* Cluster / track matching for barrel calorimeters and tracking */
   float max_dr = 10;
 
@@ -105,10 +107,10 @@ SvtxTrack* TrackProjectionTools::FindClosestTrack( RawCluster* cluster, float& b
               if( (temp->get_name()==caloname) )
                 {
                   dr = sqrt( pow( cx - temp->get_x(), 2 ) + pow( cy - temp->get_y(), 2 ) );
-                  break;
+		  break;
                 }
             }
-
+	  
           /* check dr and update best_track and best_track_dr if this track is closest to cluster */
           if ( ( best_track_dr != best_track_dr ) ||
 	       ( dr < max_dr &&
@@ -125,6 +127,7 @@ SvtxTrack* TrackProjectionTools::FindClosestTrack( RawCluster* cluster, float& b
   /* If track found with barrel tracking, return it here- if not, proceed with alternative barrel cluster-track matching below. */
   if ( best_track )
     return best_track;
+  
 
   /* Cluster / track matching for barrel calorimeters and tracking */
   float max_dr_barrel = 10;
@@ -162,8 +165,9 @@ SvtxTrack* TrackProjectionTools::FindClosestTrack( RawCluster* cluster, float& b
             }
 
           /* check dr and update best_track and best_track_dr if this track is closest to cluster */
-          if ( dr < max_dr_barrel &&
-               dr < best_track_dr )
+	  if ( ( best_track_dr != best_track_dr ) || 
+	       (dr < max_dr_barrel &&
+               dr < best_track_dr) )
             {
               best_track = track;
               best_track_dr = dr;

@@ -27,22 +27,35 @@ librichana_la_LIBADD = \
 	-lPHGenFit
 
 pkginclude_HEADERS = \
+        PidInfo.h \
+        PidInfo_RICH_v1.h \
+        PidInfoContainer.h \
+	FastPid_RICH.h \
 	RICHEvaluator.h \
 	RICHParticleID.h \
 	dualrich_analyzer.h \
 	SetupDualRICHAnalyzer.h \
-	TrackProjectorRICH.h \
-	PIDProbabilities.h
+	TrackProjectorPid.h \
+	PIDProbabilities.h \
+	Poisson.h
 
 librichana_la_SOURCES = \
+        PidInfo_Dict.cc \
+        PidInfo_RICH_v1.cc \
+        PidInfo_RICH_v1_Dict.cc \
+        PidInfoContainer.cc \
+        PidInfoContainer_Dict.cc \
+	FastPid_RICH.C \
+	FastPid_RICH_Dict.C \
 	RICHEvaluator.C \
 	RICHEvaluator_Dict.C \
 	RICHParticleID.C \
 	RICHParticleID_Dict.C \
 	dualrich_analyzer.cc \
 	SetupDualRICHAnalyzer.cc \
-	TrackProjectorRICH.cc \
-	PIDProbabilities.cc
+	TrackProjectorPid.cc \
+	PIDProbabilities.cc \
+	Poisson.cc
 
 # Rule for generating table CINT dictionaries.
 %_Dict.C: %.h %LinkDef.h

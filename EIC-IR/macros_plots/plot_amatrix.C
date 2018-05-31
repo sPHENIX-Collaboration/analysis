@@ -1,5 +1,5 @@
 #include "TraceBox.h"
-
+#include <cmath>
 int
 plot_amatrix()
 {
@@ -20,10 +20,10 @@ plot_amatrix()
   TTree *tin_a22 = (TTree*)fin_a22->Get("T");
 
   /* define initial values for read-in trajectories */
-  float tin_a11_vy = 1.;
-  float tin_a21_theta = 10.;
-  float tin_a12_vy = 1.;
-  float tin_a22_theta = 10.;
+  float tin_a11_vy = 1.0; // this is y_0
+  float tin_a21_theta = 10.0; // this is theta_y*
+  float tin_a12_vy = 1.0; // this is y_0
+  float tin_a22_theta = 10.0; // theta_y*
 
   /* get number of hits */
   int nhits = 0;
@@ -36,28 +36,40 @@ plot_amatrix()
   TGraph* g_0 = new TGraph(nhits, &(tin_0->GetV2()[0]), &(tin_0->GetV1()[0]));
 
   /* create graph of a11(z) */
-  tin_a11->Draw(TString::Format( "0.5*(G4HIT_FWDDISC.y[][0]+G4HIT_FWDDISC.y[][1]) / %f : 0.5*(G4HIT_FWDDISC.z[][0]+G4HIT_FWDDISC.z[][1])", tin_a11_vy ),"Entry$==0","");
+  //   tin_a11->Draw(TString::Format( "0.5*(G4HIT_FWDDISC.y[][0]+G4HIT_FWDDISC.y[][1]) / %f : 0.5*(G4HIT_FWDDISC.z[][0]+G4HIT_FWDDISC.z[][1])", tin_a11_vy ),"Entry$==0","");
+  
+  /* a11 = y/y_0 */
+  tin_a11->Draw("0.5*(G4HIT_FWDDISC.y[][0]+G4HIT_FWDDISC.y[][1]) / 1 : 0.5*(G4HIT_FWDDISC.z[][0]+G4HIT_FWDDISC.z[][1])","Entry$==0","" );
   TGraph* g_a11 = new TGraph(nhits, &(tin_a11->GetV2()[0]), &(tin_a11->GetV1()[0]));
   g_a11->SetMarkerStyle(7);
   g_a11->SetMarkerSize(1);
   g_a11->SetMarkerColor(kRed);
 
  /* create graph of a21(z) */
-  tin_a21->Draw(TString::Format( "0.5*(G4HIT_FWDDISC.y[][0]+G4HIT_FWDDISC.y[][1]) / %f : 0.5*(G4HIT_FWDDISC.z[][0]+G4HIT_FWDDISC.z[][1])", tin_a21_theta ),"Entry$==0","");
+  //tin_a21->Draw(TString::Format( "0.5*(G4HIT_FWDDISC.y[][0]+G4HIT_FWDDISC.y[][1]) / %f : 0.5*(G4HIT_FWDDISC.z[][0]+G4HIT_FWDDISC.z[][1])", tin_a21_theta ),"Entry$==0","");
+  
+/* a21 = y/theta* */
+  tin_a21->Draw( "0.5*(G4HIT_FWDDISC.y[][0]+G4HIT_FWDDISC.y[][1]) / 10 : 0.5*(G4HIT_FWDDISC.z[][0]+G4HIT_FWDDISC.z[][1])","Entry$==0","");
   TGraph* g_a21 = new TGraph(nhits, &(tin_a21->GetV2()[0]), &(tin_a21->GetV1()[0]));
   g_a21->SetMarkerStyle(7);
   g_a21->SetMarkerSize(1);
   g_a21->SetMarkerColor(kBlue);
 
   /* create graph of a12(z) */
-  tin_a12->Draw(TString::Format( "0.5*(G4HIT_FWDDISC.y[][0]+G4HIT_FWDDISC.y[][1]) / %f : 0.5*(G4HIT_FWDDISC.z[][0]+G4HIT_FWDDISC.z[][1])", tin_a12_vy ),"Entry$==0","");
+  //  tin_a12->Draw(TString::Format( "0.5*(G4HIT_FWDDISC.y[][0]+G4HIT_FWDDISC.y[][1]) / %f : 0.5*(G4HIT_FWDDISC.z[][0]+G4HIT_FWDDISC.z[][1])", tin_a12_vy ),"Entry$==0","");
+  
+  /* a12 = theta_y/y_0, theta*=atan( |exit-entry| / thickness ), here thickness = 1  */
+  tin_a12->Draw("atan( abs(G4HIT_FWDDISC.y[][0]-G4HIT_FWDDISC.y[][1]) ) / 1 : 0.5*(G4HIT_FWDDISC.z[][0]+G4HIT_FWDDISC.z[][1])","Entry$==0","");
   TGraph* g_a12 = new TGraph(nhits, &(tin_a12->GetV2()[0]), &(tin_a12->GetV1()[0]));
   g_a12->SetMarkerStyle(7);
   g_a12->SetMarkerSize(1);
   g_a12->SetMarkerColor(kGreen);
 
  /* create graph of a22(z) */
-  tin_a22->Draw(TString::Format( "0.5*(G4HIT_FWDDISC.y[][0]+G4HIT_FWDDISC.y[][1]) / %f : 0.5*(G4HIT_FWDDISC.z[][0]+G4HIT_FWDDISC.z[][1])", tin_a22_theta ),"Entry$==0","");
+  //  tin_a22->Draw(TString::Format( "0.5*(G4HIT_FWDDISC.y[][0]+G4HIT_FWDDISC.y[][1]) / %f : 0.5*(G4HIT_FWDDISC.z[][0]+G4HIT_FWDDISC.z[][1])", tin_a22_theta ),"Entry$==0","");
+  
+  /* a22 = thetay/thetay*, theta*=atan( |exit-entry| / thickness ), here thickness = 1 */
+  tin_a22->Draw("atan( abs(G4HIT_FWDDISC.y[][0]-G4HIT_FWDDISC.y[][1]) ) / 10 : 0.5*(G4HIT_FWDDISC.z[][0]+G4HIT_FWDDISC.z[][1])","Entry$==0","");
   TGraph* g_a22 = new TGraph(nhits, &(tin_a22->GetV2()[0]), &(tin_a22->GetV1()[0]));
   g_a22->SetMarkerStyle(7);
   g_a22->SetMarkerSize(1);
@@ -85,11 +97,11 @@ plot_amatrix()
 
   leg->Draw();
 
-  g_0->Draw("Lsame");
-  g_a11->Draw("Psame");
-  g_a21->Draw("Psame");
-  g_a12->Draw("Psame");
-  g_a22->Draw("Psame");
+   g_0->Draw("Lsame");
+   g_a11->Draw("Psame");
+   g_a21->Draw("Psame");
+   g_a12->Draw("Psame");
+   g_a22->Draw("Psame");
 
   c1->Print("amatrix_new.eps");
 

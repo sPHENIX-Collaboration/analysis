@@ -17,7 +17,7 @@
 #include <g4main/PHG4HitContainer.h>
 #include <g4main/PHG4TruthInfoContainer.h>
 
-#include <g4hough/SvtxTrack_FastSim.h>
+#include <g4hough/SvtxTrack.h>
 
 class eic_dual_rich;
 
@@ -36,8 +36,8 @@ class SetupDualRICHAnalyzer {
 
   double calculate_emission_angle( double m_emi[3], double momv[3], PHG4Hit * hit ); // Calculate emission angle from IRT
 
-  bool get_true_momentum( PHG4TruthInfoContainer * truthinfo, SvtxTrack_FastSim * track, double arr_mom[3] ); // Get truth momentum of track
-  bool get_emission_momentum( PHG4TruthInfoContainer * truthinfo, PHG4HitContainer * richhits, SvtxTrack_FastSim * track, double arr_mom[3] ); // Get momentum from emission points
+  bool get_true_momentum( PHG4TruthInfoContainer * truthinfo, SvtxTrack * track, double arr_mom[3] ); // Get truth momentum of track
+  bool get_emission_momentum( PHG4TruthInfoContainer * truthinfo, PHG4HitContainer * richhits, SvtxTrack * track, double arr_mom[3] ); // Get momentum from emission points
 
   /* analyzer object */
   eic_dual_rich *_analyzer;

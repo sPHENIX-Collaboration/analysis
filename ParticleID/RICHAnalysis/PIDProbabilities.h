@@ -12,6 +12,7 @@
 #include <cmath>
 
 class TDatabasePDG;
+class Poisson;
 
 using namespace std;
 
@@ -26,10 +27,11 @@ class PIDProbabilities {
 
   PIDProbabilities();
 
-  bool particle_probs( vector<float> angles, double momentum, double index, double probs[4] );
+  bool particle_probs( vector<float> angles, double momentum, double index, long double probs[4] );
 
   /* PDG database access object */
   TDatabasePDG *_pdg;
+  Poisson *_poisson;
 
 };
 

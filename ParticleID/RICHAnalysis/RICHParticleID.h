@@ -13,9 +13,10 @@ class PHG4TruthInfoContainer;
 class PHG4Hit;
 class PHG4HitContainer;
 class SvtxTrackMap;
-class SvtxTrack_FastSim;
+class SvtxTrack;
 
-class TrackProjectorRICH;
+class PidInfoContainer;
+class TrackProjectorPid;
 class SetupDualRICHAnalyzer;
 class PIDProbabilities;
 
@@ -24,7 +25,7 @@ class RICHParticleID : public SubsysReco
 
 public:
 
-  RICHParticleID(std::string tracksname, std::string richname);
+  RICHParticleID(std::string richname, std::string tracksname);
 
   int
   Init(PHCompositeNode*);
@@ -43,10 +44,14 @@ public:
   }
 
 private:
+  void CreateNodes(PHCompositeNode *topNode);
 
   bool _verbose;
 
   int _ievent;
+
+  /* RICH detecto name */
+  std::string _detector;
 
   /* Collection storing track information */
   std::string _trackmap_name;
@@ -54,17 +59,26 @@ private:
   /* Hit collection storing RICH photon hits */
   std::string _richhits_name;
 
+  /* Node name for node to store PID infos */
+  std::string _pidinfo_node_name;
+
   /* Refractive index of RICH radiator */
   float _refractive_index;
 
+  /* Collection to store PidInfos for each track on node tree */
+  PidInfoContainer* _pidinfos;
+
   /* track projector object */
-  TrackProjectorRICH *_trackproj;
+  TrackProjectorPid *_trackproj;
 
   /* acquire object */
   SetupDualRICHAnalyzer *_acquire;
 
   /* particleid object */
   PIDProbabilities *_particleid;
+
+  /* Radius for track extrapolation */
+  float _radius;
 
 };
 
