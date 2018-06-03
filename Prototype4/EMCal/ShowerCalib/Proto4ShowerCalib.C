@@ -674,7 +674,7 @@ int Proto4ShowerCalib::process_event(PHCompositeNode *topNode)
     fdata << endl;
   }
 
-  if (good_data)
+  if (valid_hodo_v and valid_hodo_h and cherekov_e and trigger_veto_pass)
   {
   PHTFileServer::get().cd(_filename);
 
