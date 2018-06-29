@@ -131,34 +131,37 @@ HepMC::GenParticle* TruthTrackerHepMC::FindScatteredLepton( )
 {
   HepMC::GenParticle *particle = NULL;
 
-  int pid_beam_lepton = FindBeamLepton()->pdg_id();
-
-  int embedding_id = 1;
-
-  PHHepMCGenEvent *genevt = _genevtmap->get(embedding_id);
-  HepMC::GenEvent *theEvent = genevt->getEvent();
-
-  /* check if GenEvent object found */
-  if ( !theEvent )
-    {
-      cout << "ERROR: Missing GenEvent!" << endl;
-      return NULL;
-    }
-
-  /* Loop over all truth particles in event generator collection */
-  for ( HepMC::GenEvent::particle_iterator p = theEvent->particles_begin();
-	p != theEvent->particles_end(); ++p ) {
-
-    /* check particle status and ID */
-    if ( (*p)->status() == 1 &&
-	 (*p)->pdg_id()  == pid_beam_lepton )
-      {
-	particle = (*p);
-
-	/* end loop if matching particle found */
-	break;
-      } // end if matching status and PID //
-  } // end loop over all particles in event //
+  /* @TODO How to select scattered lepton in an unambiguous way for
+     DIS and Exclusive Processes? (Pythia, Sartre, ...)
+     Return NULL pointer for now. */
+  //int pid_beam_lepton = FindBeamLepton()->pdg_id();
+  //
+  //int embedding_id = 1;
+  //
+  //PHHepMCGenEvent *genevt = _genevtmap->get(embedding_id);
+  //HepMC::GenEvent *theEvent = genevt->getEvent();
+  //
+  ///* check if GenEvent object found */
+  //if ( !theEvent )
+  //  {
+  //    cout << "ERROR: Missing GenEvent!" << endl;
+  //    return NULL;
+  //  }
+  //
+  ///* Loop over all truth particles in event generator collection */
+  //for ( HepMC::GenEvent::particle_iterator p = theEvent->particles_begin();
+  //	p != theEvent->particles_end(); ++p ) {
+  //
+  //  /* check particle status and ID */
+  //  if ( (*p)->status() == 1 &&
+  //	 (*p)->pdg_id()  == pid_beam_lepton )
+  //    {
+  //	particle = (*p);
+  //
+  //	/* end loop if matching particle found */
+  //	break;
+  //    } // end if matching status and PID //
+  //} // end loop over all particles in event //
 
   return particle;
 }
