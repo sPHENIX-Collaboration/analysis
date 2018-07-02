@@ -1,3 +1,5 @@
+/** Parametrization for F2(x,Q2)
+ */
 double
 get_parametrization_F2(double x, double Q2)
 {
@@ -36,6 +38,8 @@ get_parametrization_F2(double x, double Q2)
   return F2_fit;
 }
 
+/** Parametrization for R(x,Q2)
+ */
 double
 get_parametrization_R(double x, double Q2)
 {
@@ -63,34 +67,58 @@ get_parametrization_R(double x, double Q2)
   return R_tmp;
 }
 
+/** Calculate depolarization factor D(x,Q2,y,m_lepton)
+ */
+double
+get_depolarization_factor(double x, double Q2, double y, double mlepton=0.000511)
+{
+  /* Parameters needed */
+  double M = 0.938; // nucleon mass in GeV
+  double ml = mlepton; // lepton mass in GeV
 
-int
-calculate_g1( double x_val, double Q2_val, double y_val, double N_val, double mlepton=0.000511 )
+  double gamma2 = pow(( 2 * M * x ), 2) / Q2; // ?
+
+  double R = get_parametrization_R(x, Q2); // ratio of longitudinal and transverse photoabsorption cross section, R = simga_L / sigma_T
+
+  //double D_num = (
+  //                y * ( 2 - y ) * ( 1 + gamma2 * y / 2. )
+  //                );
+  double D_num = (
+                  y * ( 2 - y ) * ( 1 + gamma2 * y / 2. ) - 2 * pow(y, 3) * pow(ml, 2) / Q2
+                  ); // Ernst's thesis has the extra y^3 term
+  double D_denom = (
+                    pow(y, 2) * ( 1 + gamma2 ) * (1 - 2 * pow(ml, 2) / Q2 )
+                    + 2 * (1 - y - gamma2 * pow(y, 2) / 4 ) * (1 + R )
+                    );
+  double D = D_num / D_denom; // Depolarization factor
+
+  return D;
+}
+
+/** Calculate beam polarization
+ */
+double
+get_beam_polarization()
 {
   /* assumed beam polarizarion factors */
   double pol_electron = 0.7;
   double pol_proton = 0.7;
   double pol_prod = pol_electron * pol_proton;
 
+  return pol_prod;
+}
+
+/** Calculate value of g1
+ */
+double
+get_g1_value( double x_val, double Q2_val, double y_val, double mlepton=0.000511 )
+{
   /* F2 and R parametrizations (evaluated at kinmatics of given data point) */
   double F2 = get_parametrization_F2(x_val, Q2_val);
   double R = get_parametrization_R(x_val, Q2_val); // ratio of longitudinal and transverse photoabsorption cross section, R = simga_L / sigma_T
 
-  /* Parameters needed */
-  double M = 0.938; // nucleon mass in GeV
-  double ml = mlepton; // lepton mass in GeV
-  double gamma2 = pow(( 2 * M * x_val ), 2) / Q2_val; // ?
-  //double D_num = (
-  //                y_val * ( 2 - y_val ) * ( 1 + gamma2 * y_val / 2. )
-  //                );
-  double D_num = (
-                  y_val * ( 2 - y_val ) * ( 1 + gamma2 * y_val / 2. ) - 2 * pow(y_val, 3) * pow(ml, 2) / Q2_val
-                  ); // Ernst's thesis has the extra y^3 term
-  double D_denom = (
-                    pow(y_val, 2) * ( 1 + gamma2 ) * (1 - 2 * pow(ml, 2) / Q2_val )
-                    + 2 * (1 - y_val - gamma2 * pow(y_val, 2) / 4 ) * (1 + R )
-                    );
-  double D = D_num / D_denom; // Depolarization factor
+  /* Depolarization factor */
+  double D = get_depolarization_factor( x_val, Q2_val, y_val, mlepton );
 
   /* Asymmetry measured in parallel spin configuration */
   // double A_parralel = D * A1; // assuming A2 = 0  // Ernst's thesis Eq. 3.41
@@ -102,18 +130,50 @@ calculate_g1( double x_val, double Q2_val, double y_val, double N_val, double ml
   double A1_Ernst = 0.033;
   double A_parallel = D * A1_Ernst;
 
-  /* Calculate g1 */
   double g1_val = 1. / (2 * x_val * (1 + R)) * F2 * A_parallel / D;
 
-  /* Calculate uncertainty of g1 */
+  //  return g1_val;
+  return 0;
+}
+
+/** Caluclate g1 tatistical uncertainty
+ */
+double
+get_g1_sigma( double x_val, double Q2_val, double y_val, double N_val, double mlepton=0.000511 )
+{
+  /* F2 and R parametrizations (evaluated at kinmatics of given data point) */
+  double F2 = get_parametrization_F2(x_val, Q2_val);
+  double R = get_parametrization_R(x_val, Q2_val); // ratio of longitudinal and transverse photoabsorption cross section, R = simga_L / sigma_T
+
+  /* Depolarization factor */
+  double D = get_depolarization_factor( x_val, Q2_val, y_val, mlepton );
+
+  /* Beam polarization */
+  double pol_prod = get_beam_polarization();
+
   double A_parallel_sig = (sqrt(N_val) / N_val) * (1. / pol_prod);
   double g1_sig =  1. / (2 * x_val * (1 + R)) * F2 * A_parallel_sig / D;
 
+  return g1_sig;
+}
+
+/** Printing values on screen
+ */
+void
+calculate_g1( double x_val, double Q2_val, double y_val, double N_val, double mlepton=0.000511 )
+{
+  double g1_val = get_g1_value(x_val, Q2_val, y_val, mlepton);
+  double g1_sig = get_g1_sigma(x_val, Q2_val, y_val, N_val, mlepton);
+  double F2 = get_parametrization_F2(x_val, Q2_val);
+  double R = get_parametrization_R(x_val, Q2_val);
+  double D = get_depolarization_factor( x_val, Q2_val, y_val, mlepton );
+
   /* print parameters */
+  cout << "-----------------------------------------------------------------------" << endl;
   cout << "x = " << x_val << " , Q2 = " << Q2_val << " , y = " << y_val << " , N = " << N_val << endl;
   cout << "F2 = " << F2 << ", R = " << R << ", D = " << D << endl;
-  cout << "A_parallel = " << A_parallel << " +- " << A_parallel_sig << endl;
   cout << "==> g1 = " << g1_val << " +/- " << g1_sig << endl;
+  cout << "-----------------------------------------------------------------------" << endl;
 
-  return 0;
+  return;
 }
