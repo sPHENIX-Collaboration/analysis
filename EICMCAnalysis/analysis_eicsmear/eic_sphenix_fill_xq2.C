@@ -35,6 +35,11 @@ eic_sphenix_fill_xq2( TString filename_output,
   TTree *tree = (TTree*)file_mc->Get("EICTree");
   //TTree *tree_smeared = (TTree*)file_mc_smeared->Get("Smeared");
 
+  /* Get event generator parameters (cross section, number of trials, ...) from file. */
+  TObjString* gen_crossSection = (TObjString*)file_mc->Get("crossSection");
+  TObjString* gen_nEvents = (TObjString*)file_mc->Get("nEvents");
+  TObjString* gen_nTrials = (TObjString*)file_mc->Get("nTrials");
+
   /* Output file. */
   TFile *file_out = new TFile(filename_output, "RECREATE");
 
@@ -357,6 +362,10 @@ eic_sphenix_fill_xq2( TString filename_output,
 
   h_eta->Write();
   h_eta_accept->Write();
+
+  gen_crossSection->Write("crossSection");
+  gen_nEvents->Write("nEvents");
+  gen_nTrials->Write("nTrials");
 
   /* Close output file. */
   file_out->Close();
