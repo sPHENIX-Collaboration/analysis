@@ -40,7 +40,7 @@ TH1F* fillHist(TH1F *THE_HIST, TTree *THE_TREE)
 	    THE_HIST->Fill(shower_probability[i]);
 	}
     }
-  THE_HIST->SetXTitle("Shower Probability");
+  THE_HIST->SetXTitle("P_{EM}");
   THE_HIST->SetYTitle("Counts");
   
   return THE_HIST;
