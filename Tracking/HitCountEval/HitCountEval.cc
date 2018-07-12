@@ -1,10 +1,19 @@
 /*!
  *  \file		HitCountEval.cc
  *  \brief		Evaluation module for PHG4TrackFastSim output
- *  \details	input: PHG4TruthInfoContainer, SvtxTrackMap with SvtxTrack_FastSim inside
- *  \author		Haiwang Yu <yuhw@nmsu.edu>
+ *  \details	 input: PHG4TruthInfoContainer G4TruthInfo
+ *  			PHG4HitContainer G4HIT_EGEM_0
+ *  			PHG4HitContainer G4HIT_EGEM_1 
+ *  			PHG4HitContainer G4HIT_EGEM_3
+ *			PHG4HitContainer G4HIT_FGEM_0
+ *			PHG4HitContainer G4HIT_FGEM_1
+ *			PHG4HitContainer G4HIT_FGEM_2
+ *		        PHG4HitContainer G4HIT_FGEM_3
+ *			PHG4HitContainer G4HIT_FGEM_4
+ *			PHG4HitContainer G4HIT_MAPS
+ *			PHG4HitContainer G4HIT_SVTX
+ *  \author		Giorgian Borca-Tasciuc <giorgian.borca-tasciuc@stonybrook.edu>
  */
-
 #include "HitCountEval.h"
 
 #include <phool/getClass.h>
