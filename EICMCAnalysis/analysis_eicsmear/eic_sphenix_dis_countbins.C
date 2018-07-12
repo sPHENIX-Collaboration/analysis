@@ -14,19 +14,10 @@ eic_sphenix_dis_countbins()
   float ebeam_e = 20;
   float ebeam_p = 250;
 
-  /* Pythia generated events, cross section, and luminosity */
-  float pythia_ngen = 1e6;
-  float pythia_xsec = 0.60785660255324614; // in microbarn
-  float convert_microbarn_to_femtobarn = 1e9;
-  float pythia_lumi = pythia_ngen / ( pythia_xsec * convert_microbarn_to_femtobarn );
-
-  /* target luminosity and scaling factor */
-  float target_lumi = 10; // in inverse femtobarn
-  float lumi_scaling = target_lumi / pythia_lumi;
-
-  cout << "Pythia luminosity:  " << pythia_lumi << " fb^-1" << endl;
-  cout << "Target luminosity:  " << target_lumi << " fb^-1" << endl;
-  cout << "Luminosity scaling: " << lumi_scaling << endl;
+  /* Retrieve Pythia generated events luminosity information */
+  /* @TODO: Get this from string in file */
+  float target_lumi = -1; // in inverse femtobarn
+  cout << "Pythia luminosity:  " << target_lumi << " fb^-1" << endl;
 
   /* create tree to store information */
   TTree *tcount = new TTree("tcount", "A tree with counts in kinematics bins");
@@ -72,7 +63,7 @@ eic_sphenix_dis_countbins()
 
 	  t_y = t_Q2 / ( t_x * t_s );
 
-	  t_N = hxQ2->GetBinContent( bin_x, bin_y ) * lumi_scaling;
+	  t_N = hxQ2->GetBinContent( bin_x, bin_y );
 
 	  /* skip kinematics bins wth y > 0.95 and y < 1e-2 */
 	  if ( t_y > 0.95 || t_y < 1e-2 )

@@ -35,6 +35,11 @@ eic_sphenix_fill_xq2( TString filename_output,
   TTree *tree = (TTree*)file_mc->Get("EICTree");
   //TTree *tree_smeared = (TTree*)file_mc_smeared->Get("Smeared");
 
+  /* Get event generator parameters (cross section, number of trials, ...) from file. */
+  TObjString* gen_crossSection = (TObjString*)file_mc->Get("crossSection");
+  TObjString* gen_nEvents = (TObjString*)file_mc->Get("nEvents");
+  TObjString* gen_nTrials = (TObjString*)file_mc->Get("nTrials");
+
   /* Output file. */
   TFile *file_out = new TFile(filename_output, "RECREATE");
 
@@ -130,8 +135,8 @@ eic_sphenix_fill_xq2( TString filename_output,
   double hn_dis_xmin[] = {0., 0. };
   double hn_dis_xmax[] = {0., 0. };
 
-  THnSparse* hn_dis = new THnSparseF("hn_dis_event",
-                                     "DIS Kinematis Per Event; x; Q2;",
+  THnSparse* hn_dis = new THnSparseF("hn_dis_electron",
+                                     "DIS Kinematis Per Event (Electron); x; Q2;",
                                      hn_dis_ndim,
                                      hn_dis_nbins,
                                      hn_dis_xmin,
@@ -144,7 +149,7 @@ eic_sphenix_fill_xq2( TString filename_output,
   hn_dis->SetBinEdges(1,bins_Q2);
 
   /* clone histogram for ACCEPTED events */
-  THnSparse* hn_dis_accept = (THnSparse*)hn_dis->Clone("hn_dis_event_accept");
+  THnSparse* hn_dis_accept = (THnSparse*)hn_dis->Clone("hn_dis_electron_accept");
   hn_dis_accept->SetTitle("DIS Kinematis Per Event (Accepted)");
 
   /* Create SIDIS histogram- one entry per particle */
@@ -357,6 +362,10 @@ eic_sphenix_fill_xq2( TString filename_output,
 
   h_eta->Write();
   h_eta_accept->Write();
+
+  gen_crossSection->Write("crossSection");
+  gen_nEvents->Write("nEvents");
+  gen_nTrials->Write("nTrials");
 
   /* Close output file. */
   file_out->Close();
