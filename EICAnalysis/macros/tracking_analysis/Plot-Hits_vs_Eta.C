@@ -32,8 +32,8 @@ const char *const svtx_file_path {"/sphenix/user/giorgian/hits-per-eta/hitcount.
 const char *const hit_containers[] {"G4HIT_EGEM_0", "G4HIT_EGEM_1", "G4HIT_EGEM_3", 
 	"G4HIT_FGEM_0", "G4HIT_FGEM_1", "G4HIT_FGEM_2", "G4HIT_FGEM_3","G4HIT_FGEM_4", "G4HIT_MAPS",
 	"G4HIT_SVTX"};
-const static Color_t plot_colors[] = { kBlue, kSpring, kBlack, kYellow, kPink, kGray, kMagenta, kOrange,
-	kRed, kCyan, kViolet};
+const static Color_t plot_colors[] = { kBlue, kSpring, kBlack, kYellow, kCyan, kGray, kMagenta, kOrange,
+	kRed, kGreen + 3, kPink};
 
 
 void Plot_Hit_Count() {
@@ -42,7 +42,7 @@ void Plot_Hit_Count() {
 	gROOT->SetBatch(true);
 
 	TCanvas *const c {new TCanvas {"hits", "Hits", gStyle->GetCanvasDefW(), gStyle->GetCanvasDefH()}};
-	TLegend *const l {new TLegend {0.7, 0.9, 0.95, 0.6, "Detector"}};
+	TLegend *const l {new TLegend {0.7, 0.9, 0.95, 0.61, "Detector"}};
 	l->SetTextSize(0.03);
 	Double_t max {0};
 	std::vector<TH1F*> hists {};
@@ -57,11 +57,16 @@ void Plot_Hit_Count() {
 
 		Long64_t nentries {hits->GetEntries()};
 		TH1F *const h {new TH1F {hit_containers[i], "Hit Count", 100, -4.5, 4.5}};
+		h->SetXTitle("#eta");
+		h->SetYTitle("Normalized Hit Count");
 		h->SetLineColor(plot_colors[i]);
-		for (Long64_t i {0}; i < nentries; ++i) {
-			if (hits->LoadTree(i) < 0)
+		for (Long64_t j {0}; j < nentries; ++j) {
+			if (hits->LoadTree(j) < 0)
 				break;
-			hits->GetEntry(i);
+			hits->GetEntry(j);
+			if (strcmp("G4HIT_SVTX", hit_containers[i]) == 0)
+				hit_count /= 10;
+
 			h->Fill(eta, hit_count);
 		}
 
@@ -73,12 +78,16 @@ void Plot_Hit_Count() {
 
 
 		hists.push_back(h);
-		l->AddEntry(h, hit_containers[i], "l");
+		if (strcmp("G4HIT_SVTX", hit_containers[i]) == 0)
+			l->AddEntry(h, "G4HIT_SVTX / 10", "l");
+		else
+			l->AddEntry(h, hit_containers[i], "l");
 	}
-	
+
+	c->cd();
+//	c->SetLogy();
 	for (const auto& h: hists) {
-		c->cd();
-		h->GetYaxis()->SetRangeUser(0, max * 1.1);
+		h->GetYaxis()->SetRangeUser(0.000001, max * 1.1);
 		h->Draw("SAME");
 
 	}
