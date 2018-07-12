@@ -135,8 +135,8 @@ eic_sphenix_fill_xq2( TString filename_output,
   double hn_dis_xmin[] = {0., 0. };
   double hn_dis_xmax[] = {0., 0. };
 
-  THnSparse* hn_dis = new THnSparseF("hn_dis_event",
-                                     "DIS Kinematis Per Event; x; Q2;",
+  THnSparse* hn_dis = new THnSparseF("hn_dis_electron",
+                                     "DIS Kinematis Per Event (Electron); x; Q2;",
                                      hn_dis_ndim,
                                      hn_dis_nbins,
                                      hn_dis_xmin,
@@ -149,7 +149,7 @@ eic_sphenix_fill_xq2( TString filename_output,
   hn_dis->SetBinEdges(1,bins_Q2);
 
   /* clone histogram for ACCEPTED events */
-  THnSparse* hn_dis_accept = (THnSparse*)hn_dis->Clone("hn_dis_event_accept");
+  THnSparse* hn_dis_accept = (THnSparse*)hn_dis->Clone("hn_dis_electron_accept");
   hn_dis_accept->SetTitle("DIS Kinematis Per Event (Accepted)");
 
   /* Create SIDIS histogram- one entry per particle */
