@@ -44,10 +44,14 @@ eic_sphenix_test_smearing( TString filename_output,
   tree->SetBranchAddress("event", &event);
   tree->SetBranchAddress("eventS", &eventS);
 
-  /* Create histogram for eta of particles to check acceptance of detectors. */
-  TH1F* h_eta = new TH1F("h_eta", ";#eta;dN/d#eta", 100, -5, 5);
-  TH1F* h_eta_accept = (TH1F*)h_eta->Clone("h_eta_accept");
-  h_eta_accept->SetLineColor(kGreen);
+  /* Create histogram */
+  TH2F* h_eta = new TH2F("h_eta","Energy Smeared vs Unsmeared",60,0,30,70,0,35);
+  
+  h_eta->GetXaxis()->SetTitle("Unsmeared Energy [GeV]");
+  h_eta->GetYaxis()->SetTitle("Smeared Energy [GeV]");
+
+  TCanvas *c1 = new TCanvas;
+  h_eta->Draw("AXIS");
 
   /* Loop over all events in tree. */
   unsigned max_event = tree->GetEntries();
@@ -63,27 +67,29 @@ eic_sphenix_test_smearing( TString filename_output,
       /* Cut on EVENT kinematics */
       float y = event->GetTrueY();
       if ( y > 0.99 || y < 0.01 )
-        continue;
+       continue;
 
-      float x = event->GetTrueX();
-      float Q2 = event->GetTrueQ2();
+      float energy = event->ScatteredLepton()->GetE();
+      float energy_smeared = eventS->ScatteredLepton()->GetE();
 
-      float eta = event->ScatteredLepton()->GetEta();
-      float p = event->ScatteredLepton()->GetP();
-
-      /* Check that scattered lepton is within detector acceptance */
-      //if ( eventS->ScatteredLepton() )
-      //  hn_dis_accept->Fill( fill_hn_dis );
-
-      h_eta->Fill(eta);
-      //h_eta->Fill(p);
+      h_eta->Fill(energy,energy_smeared);
 
     } // end loop over events
 
-  /* Write histogram. */
+  float underflow = tree->GetEntry(0);
+  float overflow = tree->GetEntry(max_event + 1);
+  cout << "underflow: " << underflow << endl;
+  cout << "overflow: " << overflow << endl;
+
+  /* Write histograms. */
 
   h_eta->Write();
-  h_eta_accept->Write();
+
+  /*draw histograms */
+
+  h_eta->Draw("COLZ");
+  h_eta->Draw("sameaxis");
+  return c1;
 
   /* Close output file. */
   file_out->Close();
