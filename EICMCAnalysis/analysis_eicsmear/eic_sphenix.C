@@ -87,7 +87,7 @@ Smear::Detector BuildEicSphenix() {
   Smear::Acceptance::Zone zone_eemc( thetamin_eemc, thetamax_eemc );
 
   // set acceptances for detectors
-  cemc.Accept.AddZone(zone_eemc);
+  cemc.Accept.AddZone(zone_cemc);
   chcal.Accept.AddZone(zone_central);
   c_momentum.Accept.AddZone(zone_central);
   c_theta.Accept.AddZone(zone_central);
