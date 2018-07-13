@@ -53,6 +53,16 @@ eic_sphenix_test_smearing( TString filename_output,
   h_e_smeared_vs_true->GetXaxis()->SetTitle("E_{true} (GeV)");
   h_e_smeared_vs_true->GetYaxis()->SetTitle("E_{smeared} (GeV)");
 
+  TH1F* h_e_eref_true = new TH1F("h_e_eref_true","True reference energy",300,0,30);
+  h_e_eref_true->GetXaxis()->SetTitle("E_{true} (GeV)");
+  h_e_eref_true->GetYaxis()->SetTitle("# entries");
+  h_e_eref_true->SetLineColor(kRed);
+
+  TH1F* h_e_eref_smeared = new TH1F("h_e_eref_smeared","Smeared reference energy",300,0,30);
+  h_e_eref_smeared->GetXaxis()->SetTitle("E_{smeared} (GeV)");
+  h_e_eref_smeared->GetYaxis()->SetTitle("# entries");
+  h_e_eref_smeared->SetLineColor(kBlue);
+
   /* Loop over all events in tree. */
   unsigned max_event = tree->GetEntries();
 
@@ -78,6 +88,15 @@ eic_sphenix_test_smearing( TString filename_output,
       h_e_smeared_vs_eta->Fill(eta,energy_smeared);
       h_e_smeared_vs_true->Fill(energy,energy_smeared);
 
+      /* Fill histograms if truth energy within range around reference energy */
+      float eref = 19.05;
+      float erange = 0.1;
+      if ( energy > (eref-erange/2.) && energy < (eref+erange/2.) )
+	{
+	  h_e_eref_true->Fill(energy);
+	  h_e_eref_smeared->Fill(energy_smeared);
+	}
+
     } // end loop over events
 
   float underflow = tree->GetEntry(0);
@@ -96,6 +115,12 @@ eic_sphenix_test_smearing( TString filename_output,
 
   TCanvas *c2 = new TCanvas();
   h_e_smeared_vs_eta->DrawClone("COLZ");
+  gPad->RedrawAxis();
+
+  TCanvas *c3 = new TCanvas();
+  h_e_eref_smeared->Draw();
+  h_e_eref_smeared->Fit("gaus");
+  h_e_eref_true->Draw("sames");
   gPad->RedrawAxis();
 
   /* Close output file. */
