@@ -33,7 +33,7 @@ eic_sphenix_test_smearing( TString filename_output,
   TTree *tree_smeared = (TTree*)file_mc_smeared->Get("Smeared");
 
   /* Output file. */
-  TFile *file_out = new TFile(filename_output, "RECREATE");
+  //TFile *file_out = new TFile(filename_output, "RECREATE");
 
   /* Add friend to match branches in trees. */
   tree->AddFriend(tree_smeared);
@@ -45,13 +45,13 @@ eic_sphenix_test_smearing( TString filename_output,
   tree->SetBranchAddress("eventS", &eventS);
 
   /* Create histogram */
-  TH2F* h_eta = new TH2F("h_eta","Energy Smeared vs Unsmeared",60,0,30,70,0,35);
-  
-  h_eta->GetXaxis()->SetTitle("Unsmeared Energy [GeV]");
-  h_eta->GetYaxis()->SetTitle("Smeared Energy [GeV]");
+  TH2F* h_e_smeared_vs_eta = new TH2F("h_e_smeared_vs_eta","Energy Smeared vs True Pseudorapidity",100,-5,5,70,0,35);
+  h_e_smeared_vs_eta->GetXaxis()->SetTitle("#eta_{true}");
+  h_e_smeared_vs_eta->GetYaxis()->SetTitle("E_{smeared} (GeV)");
 
-  TCanvas *c1 = new TCanvas;
-  h_eta->Draw("AXIS");
+  TH2F* h_e_smeared_vs_true = new TH2F("h_e_smeared_vs_true","Energy Smeared vs True",60,0,30,70,0,35);
+  h_e_smeared_vs_true->GetXaxis()->SetTitle("E_{true} (GeV)");
+  h_e_smeared_vs_true->GetYaxis()->SetTitle("E_{smeared} (GeV)");
 
   /* Loop over all events in tree. */
   unsigned max_event = tree->GetEntries();
@@ -72,7 +72,11 @@ eic_sphenix_test_smearing( TString filename_output,
       float energy = event->ScatteredLepton()->GetE();
       float energy_smeared = eventS->ScatteredLepton()->GetE();
 
-      h_eta->Fill(energy,energy_smeared);
+      float eta = event->ScatteredLepton()->GetEta();
+
+      /* Fill histograms */
+      h_e_smeared_vs_eta->Fill(eta,energy_smeared);
+      h_e_smeared_vs_true->Fill(energy,energy_smeared);
 
     } // end loop over events
 
@@ -82,17 +86,20 @@ eic_sphenix_test_smearing( TString filename_output,
   cout << "overflow: " << overflow << endl;
 
   /* Write histograms. */
-
-  h_eta->Write();
+  //h_e_smeared_vs_true->Write();
+  //h_e_smeared_vs_eta->Write();
 
   /*draw histograms */
+  TCanvas *c1 = new TCanvas();
+  h_e_smeared_vs_true->DrawClone("COLZ");
+  gPad->RedrawAxis();
 
-  h_eta->Draw("COLZ");
-  h_eta->Draw("sameaxis");
-  return c1;
+  TCanvas *c2 = new TCanvas();
+  h_e_smeared_vs_eta->DrawClone("COLZ");
+  gPad->RedrawAxis();
 
   /* Close output file. */
-  file_out->Close();
+  //file_out->Close();
 
   return 0;
 }
