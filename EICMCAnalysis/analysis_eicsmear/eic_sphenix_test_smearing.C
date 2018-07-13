@@ -53,6 +53,10 @@ eic_sphenix_test_smearing( TString filename_output,
   h_e_smeared_vs_true->GetXaxis()->SetTitle("E_{true} (GeV)");
   h_e_smeared_vs_true->GetYaxis()->SetTitle("E_{smeared} (GeV)");
 
+  TH1F* h_eta = new TH1F("h_eta", ";#eta;dN/d#eta", 100, -5, 5);
+  TH1F* h_eta_accept = (TH1F*)h_eta->Clone("h_eta_accept");
+  h_eta_accept->SetLineColor(kGreen+4);
+
   TH1F* h_e_eref_true = new TH1F("h_e_eref_true","True reference energy",300,0,30);
   h_e_eref_true->GetXaxis()->SetTitle("E_{true} (GeV)");
   h_e_eref_true->GetYaxis()->SetTitle("# entries");
@@ -88,6 +92,10 @@ eic_sphenix_test_smearing( TString filename_output,
       h_e_smeared_vs_eta->Fill(eta,energy_smeared);
       h_e_smeared_vs_true->Fill(energy,energy_smeared);
 
+      h_eta->Fill(eta);
+      if ( energy_smeared > 0 )
+	h_eta_accept->Fill( eta );
+
       /* Fill histograms if truth energy within range around reference energy */
       float eref = 19.05;
       float erange = 0.1;
@@ -121,6 +129,11 @@ eic_sphenix_test_smearing( TString filename_output,
   h_e_eref_smeared->Draw();
   h_e_eref_smeared->Fit("gaus");
   h_e_eref_true->Draw("sames");
+  gPad->RedrawAxis();
+
+  TCanvas *c4 = new TCanvas();
+  h_eta_accept->Divide(h_eta);
+  h_eta_accept->Draw();
   gPad->RedrawAxis();
 
   /* Close output file. */
