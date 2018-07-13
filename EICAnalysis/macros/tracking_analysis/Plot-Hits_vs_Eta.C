@@ -27,7 +27,8 @@
 
 
 TTree *load_tree(const char *const file_name, const char *const tree_name);
-const char *const svtx_file_path {"/sphenix/user/giorgian/hits-per-eta/hitcount.root"};
+const char *const hitcount_file_path 
+		{"/sphenix/user/gregtom3/data/Summer2018/SVTX_studies/hits-per-eta/hitcount.root"};
 
 const char *const hit_containers[] {"G4HIT_EGEM_0", "G4HIT_EGEM_1", "G4HIT_EGEM_3", 
 	"G4HIT_FGEM_0", "G4HIT_FGEM_1", "G4HIT_FGEM_2", "G4HIT_FGEM_3","G4HIT_FGEM_4", "G4HIT_MAPS",
@@ -48,7 +49,7 @@ void Plot_Hit_Count() {
 	std::vector<TH1F*> hists {};
 	for (size_t i {0}; i < NELEMS(hit_containers); ++i) {
 		const std::string tree_name {std::string(hit_containers[i]) + "_normalized"};
-		TTree *const hits {load_tree(svtx_file_path, tree_name.c_str())};
+		TTree *const hits {load_tree(hitcount_file_path, tree_name.c_str())};
 
 
 		Double_t eta, hit_count;
@@ -85,7 +86,6 @@ void Plot_Hit_Count() {
 	}
 
 	c->cd();
-//	c->SetLogy();
 	for (const auto& h: hists) {
 		h->GetYaxis()->SetRangeUser(0.000001, max * 1.1);
 		h->Draw("SAME");
