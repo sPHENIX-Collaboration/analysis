@@ -42,6 +42,10 @@ Smear::Detector BuildEicSphenix() {
   /* Create "hadron-going" (forward) HCal (Fe Scint) */
   Smear::Device fhcal(Smear::kE,  "sqrt(0.0*0.0*E*E + 0.70*0.70*E)");
 
+  /* Create Forward/Backward Hadron Calorimeter to Measure Charged Hadrons after the Tracker */
+  Smear::Device chcalTrack(Smear::kE, "sqrt(0.12*0.12*E*E + 0.81*0.81*E)");
+  Smear::Device fhcalTrack(Smear::kE, "sqrt(0.00*0.00*E*E + 0.70*0.70*E)");
+
 
   /* Create our tracking capabilities, by a combination of mometum, theta and phi Devices.
    * The momentum parametrization (a*p + b) gives sigma_P/P in percent.
@@ -61,29 +65,30 @@ Smear::Detector BuildEicSphenix() {
 
   /* Momentum for EM
    */
-   Smear::Device trackMomentumEM(Smear::kP, "0");
-   Smear::Device trackThetaEM(Smear::kTheta, "0");
-   Smear::Device trackPhiEM(Smear::kPhi, "0");
+  Smear::Device emTrackMomentum(Smear::kP, "0");
+  Smear::Device emTrackTheta(Smear::kTheta, "0");
+  Smear::Device emTrackPhi(Smear::kPhi, "0");
 
-   /* Momentum for Neutral Hadrons
-    */
-   Smear::Device trackMomentumHad(Smear::kP, "0");
-   Smear::Device trackThetaHad(Smear::kTheta, "0");
-   Smear::Device trackPhiHad(Smear::kPhi, "0");
+  /* Momentum for Neutral Hadrons
+   */
+  Smear::Device hadTrackMomentum(Smear::kP, "0");
+  Smear::Device hadTrackTheta(Smear::kTheta, "0");
+  Smear::Device hadTrackPhi(Smear::kPhi, "0");
 
-   /* Momentum for Charged Hadrons After the Tracker
-    */
-   Smear::Device trackMomentumHadTrkBck(Smear::kP, "0");
-   Smear::Device trackThetaHadTrkBck(Smear::kTheta, "0");
-   Smear::Device trackPhiHadTrkBck(Smear::kPhi, "0");
+  /* Momentum for Charged Hadrons After the Tracker
+   */
+  Smear::Device chcalTrackMomentum(Smear::kP, "0");
+  Smear::Device chcalTrackTheta(Smear::kTheta, "0");
+  Smear::Device chcalTrackPhi(Smear::kPhi, "0");
 
-   Smear::Device trackMomentumHadTrkFwd(Smear::kP, "0");
-   Smear::Device trackThetaHadTrkFwd(Smear::kTheta, "0");
-   Smear::Device trackPhiHadTrkFwd(Smear::kPhi, "0");
+  Smear::Device fhcalTrackMomentum(Smear::kP, "0");
+  Smear::Device fhcalTrackTheta(Smear::kTheta, "0");
+  Smear::Device fhcalTrackPhi(Smear::kPhi, "0");
 
-   /* Energy for Tracks
-    */
-   Smear::Device trackEnergy(Smear::kE, "0");
+
+  /* Energy for Tracks
+   */
+  Smear::Device trackEnergy(Smear::kE, "0");
 
 
   /* Create PID systems.
@@ -100,12 +105,19 @@ Smear::Detector BuildEicSphenix() {
    Smear::Acceptance::Zone zone_cemc( eta2theta(  1.24 ), eta2theta( -1.55 ) );
    Smear::Acceptance::Zone zone_femc( eta2theta(  4.00 ), eta2theta(  1.24 ) );
 
+   Smear::Acceptance::Zone zone_emTotal( eta2theta(  4.00 ), eta2theta(  -4.00 ) );
+
    /* HCal zones */
    Smear::Acceptance::Zone zone_chcal( eta2theta(  1.10 ), eta2theta( -1.10 ) );
    Smear::Acceptance::Zone zone_fhcal( eta2theta(  4.00 ), eta2theta(  1.24 ) );
 
+   Smear::Acceptance::Zone zone_hadTotal( eta2theta(  4.00 ), eta2theta(  -4.00 ) );
+
    /* Hcal After Tracker Zone */
-   /* @TODO add these */
+   /* @TODO Do we need these? What's the acceptance? */
+   Smear::Acceptance::Zone zone_chcalTrack( 0, 0 );
+   Smear::Acceptance::Zone zone_fhcalTrack( 0, 0 );
+
 
    /* Tracking zones */
    Smear::Acceptance::Zone zone_track( eta2theta(  4.00 ), eta2theta( -4.00 ) );
@@ -134,15 +146,15 @@ Smear::Detector BuildEicSphenix() {
    fhcal.Accept.AddZone(zone_fhcal);
 
    /* Assign acceptance to calorimeters for charged hadrons past tracker */
-   /* @TODO: Implement this properly */
-   //hcalTrkBck.Accept.SetGenre(Smear::kHadronic);
-   //hcalTrkFwd.Accept.SetGenre(Smear::kHadronic);
+   /* @TODO: Do we need these? */
+   //chcalTrack.Accept.SetGenre(Smear::kHadronic);
+   //fhcalTrack.Accept.SetGenre(Smear::kHadronic);
    //
-   //hcalTrkBck.Accept.SetCharge(Smear::kCharged);
-   //hcalTrkFwd.Accept.SetCharge(Smear::kCharged);
+   //chcalTrack.Accept.SetCharge(Smear::kCharged);
+   //fhcalTrack.Accept.SetCharge(Smear::kCharged);
    //
-   //hcalTrkBck.Accept.AddZone(hTrkBck);
-   //hcalTrkFwd.Accept.AddZone(hTrkFwd);
+   //chcalTrack.Accept.AddZone(zone_chcalTrack);
+   //fhcalTrack.Accept.AddZone(zone_fhcalTrack);
 
    /* Acceptance for tracker */
    trackMomentum.Accept.SetGenre(Smear::kHadronic);
@@ -158,7 +170,54 @@ Smear::Detector BuildEicSphenix() {
    trackPhi.Accept.AddZone(zone_track);
 
    /* Acceptance for "calorimeter momentum" */
-   /* @TODO Implement this properly */
+   emTrackMomentum.Accept.SetGenre(Smear::kElectromagnetic);
+   emTrackTheta.Accept.SetGenre(Smear::kElectromagnetic);
+   emTrackPhi.Accept.SetGenre(Smear::kElectromagnetic);
+
+   emTrackMomentum.Accept.AddZone(zone_emTotal);
+   emTrackTheta.Accept.AddZone(zone_emTotal);
+   emTrackPhi.Accept.AddZone(zone_emTotal);
+
+   hadTrackMomentum.Accept.AddParticle(2112);
+   hadTrackTheta.Accept.AddParticle(2112);
+   hadTrackPhi.Accept.AddParticle(2112);
+
+   hadTrackMomentum.Accept.AddParticle(-2112);
+   hadTrackTheta.Accept.AddParticle(-2112);
+   hadTrackPhi.Accept.AddParticle(-2112);
+
+   hadTrackMomentum.Accept.AddParticle(130);
+   hadTrackTheta.Accept.AddParticle(130);
+   hadTrackPhi.Accept.AddParticle(130);
+
+   hadTrackMomentum.Accept.AddZone(zone_hadTotal);
+   hadTrackTheta.Accept.AddZone(zone_hadTotal);
+   hadTrackPhi.Accept.AddZone(zone_hadTotal);
+
+   /* Assign acceptance for calorimeter momentum for charged hadrons past tracker */
+   chcalTrackMomentum.Accept.SetGenre(Smear::kHadronic);
+   chcalTrackTheta.Accept.SetGenre(Smear::kHadronic);
+   chcalTrackPhi.Accept.SetGenre(Smear::kHadronic);
+
+   chcalTrackMomentum.Accept.SetCharge(Smear::kCharged);
+   chcalTrackTheta.Accept.SetCharge(Smear::kCharged);
+   chcalTrackPhi.Accept.SetCharge(Smear::kCharged);
+
+   fhcalTrackMomentum.Accept.SetGenre(Smear::kHadronic);
+   fhcalTrackTheta.Accept.SetGenre(Smear::kHadronic);
+   fhcalTrackPhi.Accept.SetGenre(Smear::kHadronic);
+
+   fhcalTrackMomentum.Accept.SetCharge(Smear::kCharged);
+   fhcalTrackTheta.Accept.SetCharge(Smear::kCharged);
+   fhcalTrackPhi.Accept.SetCharge(Smear::kCharged);
+
+   chcalTrackMomentum.Accept.AddZone(zone_chcal);
+   chcalTrackTheta.Accept.AddZone(zone_chcal);
+   chcalTrackPhi.Accept.AddZone(zone_chcal);
+
+   fhcalTrackMomentum.Accept.AddZone(zone_fhcal);
+   fhcalTrackTheta.Accept.AddZone(zone_fhcal);
+   fhcalTrackPhi.Accept.AddZone(zone_fhcal);
 
    /* Acceptance for "track energy" */
    trackEnergy.Accept.SetGenre(Smear::kHadronic);
@@ -177,9 +236,27 @@ Smear::Detector BuildEicSphenix() {
    det.AddDevice(chcal);
    det.AddDevice(fhcal);
 
+   /* @TODO Do we need these? */
+   //det.AddDevice(chcalTrack);
+   //det.AddDevice(fhcalTrack);
+
    det.AddDevice(trackMomentum);
    det.AddDevice(trackTheta);
    det.AddDevice(trackPhi);
+
+   det.AddDevice(emTrackMomentum);
+   det.AddDevice(emTrackTheta);
+   det.AddDevice(emTrackPhi);
+   det.AddDevice(hadTrackMomentum);
+   det.AddDevice(hadTrackTheta);
+   det.AddDevice(hadTrackPhi);
+
+   det.AddDevice(chcalTrackMomentum);
+   det.AddDevice(chcalTrackTheta);
+   det.AddDevice(chcalTrackPhi);
+   det.AddDevice(fhcalTrackMomentum);
+   det.AddDevice(fhcalTrackTheta);
+   det.AddDevice(fhcalTrackPhi);
 
    det.AddDevice(trackEnergy);
 
