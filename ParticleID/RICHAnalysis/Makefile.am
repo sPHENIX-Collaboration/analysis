@@ -40,11 +40,11 @@ pkginclude_HEADERS = \
 	Poisson.h
 
 librichana_la_SOURCES = \
-        PidInfo_Dict.cc \
+        PidInfo_Dict.C \
         PidInfo_RICH_v1.cc \
-        PidInfo_RICH_v1_Dict.cc \
+        PidInfo_RICH_v1_Dict.C \
         PidInfoContainer.cc \
-        PidInfoContainer_Dict.cc \
+        PidInfoContainer_Dict.C \
 	FastPid_RICH.C \
 	FastPid_RICH_Dict.C \
 	RICHEvaluator.C \
