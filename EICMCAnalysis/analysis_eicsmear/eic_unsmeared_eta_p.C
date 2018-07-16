@@ -1,4 +1,6 @@
-// a quick look at the momentum vs pseudorapidity of the unsmeared particles
+// A quick look at the momentum vs pseudorapidity of the unsmeared particles
+// Currently loads both smeared and unsmeared input files for later use
+// Only unsmeared input file used right now
 
 // --------------------------
 
@@ -20,7 +22,7 @@
 using namespace std;
 
 int
-eic_sphenix_test_smearing( TString filename_output,
+eic_unsmeared_eta_p( TString filename_output,
 			  TString filename_mc,
 			  TString filename_mc_smeared = "",
 			  bool debug = false )
@@ -49,7 +51,7 @@ eic_sphenix_test_smearing( TString filename_output,
   tree->SetBranchAddress("eventS", &eventS);
 
   /* Create histogram for eta versus momentum. */
-  TH2F* h_eta = new TH2F("h_eta","Momentum vs. Pseudorapidity",40,-4,4,40,-5,40 );
+  TH2F* h_eta = new TH2F("h_eta","Momentum vs. Pseudorapidity",80,-4,4,45,-5,40 );
   TH2F* h_eta_accept = (TH2F*)h_eta->Clone("h_eta_accept");
   h_eta->GetXaxis()->SetTitle("#eta");
   h_eta->GetYaxis()->SetTitle("Momentum (GeV)");
