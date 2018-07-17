@@ -11,6 +11,9 @@
 #include <g4hough/SvtxTrack.h>
 #include <g4hough/SvtxTrackState_v1.h>
 #include <g4hough/PHG4HoughTransform.h>
+#include <g4hough/SvtxTrackMap_v1.h>
+
+#include <calobase/RawCluster.h>
 
 #include <phfield/PHFieldUtility.h>
 
@@ -29,7 +32,7 @@ TrackProjectorPid::TrackProjectorPid( PHCompositeNode *topNode ) :
 {
 
   TGeoManager* tgeo_manager = PHGeomUtility::GetTGeoManager(topNode);
-PHField * field = PHFieldUtility::GetFieldMapNode(nullptr, topNode);
+  PHField * field = PHFieldUtility::GetFieldMapNode(nullptr, topNode);
 
   _fitter = PHGenFit::Fitter::getInstance(tgeo_manager,field,
                                           "DafRef",
@@ -89,6 +92,74 @@ TrackProjectorPid::get_projected_momentum(  SvtxTrack * track, double arr_mom[3]
   return false;
 }
 
+SvtxTrack*
+TrackProjectorPid::get_best_track( SvtxTrackMap* trackmap, RawCluster* cluster, const float deltaR = -1 )
+{
+  std::vector< float > distance_from_track_to_cluster;
+  bool there_is_a_track=false;
+  
+  // Go through the entire track map and find the track closest to deltaR
+  // If deltaR < 0, get closest track
+
+  for(SvtxTrackMap::ConstIter track_itr = trackmap->begin(); track_itr != trackmap->end(); track_itr++)
+    {
+      SvtxTrack* the_track = dynamic_cast<SvtxTrack*>(track_itr->second);
+      
+      /* Check if the_track is null ptr */
+      if(the_track == NULL)
+	{
+	  distance_from_track_to_cluster.push_back(NAN);
+	  continue;
+	}
+      
+      /* Position vector of extrapolated track */
+      double posv[3] = {0.,0.,0.};
+      
+      /* Radius of Central ECAL, extrapolated from cluster reco info */
+      float cemc_radius = sqrt(cluster->get_x()*cluster->get_x()+cluster->get_y()*cluster->get_y());
+ 
+      if(!get_projected_position( the_track, posv, TrackProjectorPid::CYLINDER, cemc_radius))
+	{
+	  std::cout << "CEMC Track Projection Position NOT FOUND; next iteration" << std::endl;
+	  distance_from_track_to_cluster.push_back(NAN);
+	  continue;
+	}
+      else
+	{
+	  distance_from_track_to_cluster.push_back(  sqrt( (cluster->get_x()-posv[0])*(cluster->get_x()-posv[0]) + 
+							   (cluster->get_y()-posv[1])*(cluster->get_y()-posv[1]) + 
+							   (cluster->get_z()-posv[2])*(cluster->get_z()-posv[2]) )  );
+	  there_is_a_track = true;
+	}
+    }
+  
+  /* If no track was found, return NULL */
+  if(distance_from_track_to_cluster.size()==0)
+    return NULL;
+  else if(there_is_a_track==false)
+    return NULL;
+
+  /* Find the track with minimum distance */
+  /* TODO: What if two tracks are within deltaR */
+  float min_distance = distance_from_track_to_cluster.at(0);
+  int min_distance_index = 0;
+  for(unsigned i = 0; i<distance_from_track_to_cluster.size(); i++)
+    {
+      if(distance_from_track_to_cluster.at(i)<min_distance)
+	{
+	  min_distance = distance_from_track_to_cluster.at(i);
+	  min_distance_index = i;
+	}
+    }
+
+  /* Test min_distance with deltaR */
+  if(deltaR<0) 
+    return trackmap->get(min_distance_index);
+  else if(min_distance<deltaR) 
+    return trackmap->get(min_distance_index);
+  else 
+    return NULL;
+}
 SvtxTrackState*
 TrackProjectorPid::project_track(  SvtxTrack * track, const PROJECTION_SURFACE surf, const float surface_par )
 {
@@ -134,7 +205,7 @@ TrackProjectorPid::project_track(  SvtxTrack * track, const PROJECTION_SURFACE s
       rep->extrapolateToSphere(*msop80, surface_par, TVector3(0,0,0), false, false);
 
     else if ( surf == CYLINDER )
-      rep->extrapolateToCylinder(*msop80, surface_par, TVector3(0,0,0),  TVector3(0,0,1));
+      rep->extrapolateToCylinder(*msop80, surface_par, TVector3(0,0,0),  TVector3(0,0,-1));
 
 
     else if ( surf == PLANEXY )

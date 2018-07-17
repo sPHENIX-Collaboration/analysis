@@ -515,78 +515,12 @@ DISKinematicsReco::InsertCandidateFromCluster( type_map_tcan& candidateMap , Raw
       tc->set_property( PidCandidate::em_evtgen_charge, gcharge );
 
       // -------------------------------------------------------------------------------------------------------------------------------------
-      /* Each event has multiple tracks. We are currently analyzing a single cluster triggered in the event. We will extrapolate each track of the event to the radius of the cluster (from (0,0,0)) and select the track whose distance is a minimum to the cluster */
-
-      std::vector< float > distance_from_track_to_cluster;
-      std::vector< float > track_ptotal;
       
-      for(SvtxTrackMap::ConstIter track_itr = trackmap->begin(); track_itr != trackmap->end(); track_itr++)
-	{
-	  SvtxTrack* the_track = dynamic_cast<SvtxTrack*>(track_itr->second);
-	  
-	  /* Check if the_track is null ptr */
-	  if(the_track == NULL)
-	    {
-	      distance_from_track_to_cluster.push_back(NAN);
-	      track_ptotal.push_back(NAN);
-	      continue;
-	    }
-	  
-	  /* Momentum and Position vector of extrapolated track */
-	  double momv[3] = {0.,0.,0.};
-	  double posv[3] = {0.,0.,0.};
-
-	  /* Radius of Central ECAL, extrapolated from cluster reco info */
-	  float cemc_radius = sqrt(cluster->get_x()*cluster->get_x()+cluster->get_y()*cluster->get_y());
-	  //cemc_radius=80;
-	  /* Project the track object's momentum and position to spot on ECAL */
-	  if(!_trackproj->get_projected_momentum( the_track, momv, TrackProjectorPid::CYLINDER , cemc_radius))
-	    {
-	      //std::cout << "CEMC Track Projection Momentum NOT FOUND; next iteration" << std::endl;
-	      distance_from_track_to_cluster.push_back(NAN);
-	      track_ptotal.push_back(NAN);
-	      continue;
-	    }
-	  if(!_trackproj->get_projected_position( the_track, posv, TrackProjectorPid::CYLINDER, cemc_radius))
-	    {
-	      //std::cout << "CEMC Track Projection Position NOT FOUND; next iteration" << std::endl;
-	      distance_from_track_to_cluster.push_back(NAN);
-	      track_ptotal.push_back(NAN);
-	      continue;
-	    }
-
-	  /* As of now, momv and posv should be properly filled */
-	  /* How far is this track extrapolation to the cluster ? */
-	  distance_from_track_to_cluster.push_back(sqrt( (cluster->get_x()-posv[0])*(cluster->get_x()-posv[0]) + (cluster->get_y()-posv[1])*(cluster->get_y()-posv[1]) + (cluster->get_z()-posv[2])*(cluster->get_z()-posv[2]) ));
-	  
-	  track_ptotal.push_back(sqrt(momv[0]*momv[0]+momv[1]*momv[1]+momv[2]*momv[2]));
-	  
-	  cout << "Track Projection Successful!" << endl;
-	  cout << "Cluster X: " << cluster->get_x() << " | Track X: " << posv[0] << endl;
-	  cout << "Cluster Y: " << cluster->get_y() << " | Track Y: " << posv[1] << endl;
-	  cout << "Cluster Z: " << cluster->get_z() << " | Track Z: " << posv[2] << endl;
-	}
-
-      /* We now know how far each track is from the cluster, find the SvtxTrackMap index of least distance */
-      float temp_min_distance = -1.0;
-      int temp_min_idx=0;
-      for(unsigned my_idx = 0; my_idx<distance_from_track_to_cluster.size(); my_idx++)
-	{
-	  if(distance_from_track_to_cluster.at(my_idx)==NAN)
-	    continue;
-	  if(distance_from_track_to_cluster.at(my_idx)<temp_min_distance)
-	    {
-	      temp_min_distance=distance_from_track_to_cluster.at(my_idx);
-	      temp_min_idx=my_idx;
-	    }
-	}
-
-      /* We now have the minimum distance and index of the track corresponding to that minimum distance */
-
-      const float min_delta_r = 0;
-
-      // If a track is not found within 'min_delta_r', fill in truth
-      if(temp_min_distance < min_delta_r) 
+      double posv[3] = {0.,0.,0.};
+      double momv[3] = {0.,0.,0.};
+     
+      SvtxTrack* the_track = _trackproj->get_best_track(trackmap, cluster, 10);
+      if(the_track==NULL) //Fill in truth
 	{
 	  tc->set_property( PidCandidate::em_track_id, (uint)primary->get_track_id() );
 	  tc->set_property( PidCandidate::em_track_quality, (float)100.0 );
@@ -623,8 +557,19 @@ DISKinematicsReco::InsertCandidateFromCluster( type_map_tcan& candidateMap , Raw
 	}
       else // We have a matching track, fill in track info
 	{
-	  tc->set_property( PidCandidate::em_track_ptotal, track_ptotal.at(temp_min_idx) );
-	  tc->set_property( PidCandidate::em_track_ptrans, gptotal );
+	  // Extrapolate radius of central calorimeter using cluster info
+	  float cemc_radius = sqrt( cluster->get_x() * cluster->get_x() +
+				    cluster->get_y() * cluster->get_y() );
+	  
+	  // Get projected values
+	  _trackproj->get_projected_momentum(the_track, momv, TrackProjectorPid::CYLINDER, cemc_radius);
+	  _trackproj->get_projected_position(the_track, posv, TrackProjectorPid::CYLINDER, cemc_radius);
+
+	  cout << "Track Projection Successful!" << endl;
+	  cout << "Cluster X: " << cluster->get_x() << " | Track X: " << posv[0] << endl;
+	  cout << "Cluster Y: " << cluster->get_y() << " | Track Y: " << posv[1] << endl;
+	  cout << "Cluster Z: " << cluster->get_z() << " | Track Z: " << posv[2] << endl;
+	  
 	}
     }
  
