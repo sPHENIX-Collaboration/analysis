@@ -19,7 +19,12 @@ libeicana_la_LIBADD = \
   -lfun4all \
   -lg4dst \
   -lg4eval \
-  -lphhepmc
+  -lphhepmc \
+  -lg4detectors \
+  -lgenfit2 \
+  -lphfield \
+  -lgenfit2exp \
+  -lPHGenFit
 
 
 pkginclude_HEADERS = \
@@ -30,6 +35,7 @@ pkginclude_HEADERS = \
   PidCandidate.h\
   PidCandidatev1.h\
   TrackProjectionTools.h \
+  TrackProjectorPid.h \
   TruthTrackerHepMC.h
 
 libeicana_la_SOURCES = \
@@ -46,6 +52,7 @@ libeicana_la_SOURCES = \
   PidCandidatev1.C\
   PidCandidatev1_Dict.C\
   TrackProjectionTools.C \
+  TrackProjectorPid.cc \
   TruthTrackerHepMC.C
 
 # Rule for generating table CINT dictionaries.

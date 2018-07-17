@@ -2,7 +2,7 @@
 #define __DISKinematicsReco_H__
 
 #include "PidCandidate.h"
-
+#include "TrackProjectorPid.h"
 /* Fun4All includes */
 #include <fun4all/SubsysReco.h>
 #include <calobase/RawTowerDefs.h>
@@ -44,6 +44,8 @@ public:
 
   int
   Init(PHCompositeNode*);
+  int
+  InitRun(PHCompositeNode*);
   int
   process_event(PHCompositeNode*);
   int
@@ -98,7 +100,9 @@ private:
   /** CaloRawTowerEvaluators to access tru particle info for
    * given towers */
   std::map< std::string, CaloRawTowerEval* > _map_towereval;
-
+  
+  /* Track Projector object */
+  TrackProjectorPid* _trackproj;
   //  /** Map of PidCandidate properties that will be written to
   //   * output ROOT Tree */
   //  std::map< PidCandidate::PROPERTY , float > _map_treebranches;
@@ -118,7 +122,7 @@ private:
 
   int CollectEmCandidatesFromTruth( type_map_tcan& );
 
-  int InsertCandidateFromCluster( type_map_tcan& , RawCluster* , CaloEvalStack* );
+  int InsertCandidateFromCluster( type_map_tcan& , RawCluster* , CaloEvalStack* , SvtxTrackMap*);
 
   int AddGlobalCalorimeterInformation();
 
