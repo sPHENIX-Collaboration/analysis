@@ -16,8 +16,10 @@ TFile *_file0 = NULL;
 TString description;
 
 void DrawTPCIntegratedCharge(
-    const TString infile = "data/TPCIntegratedCharge_AuAu0-4fm_200kHz.root",
-    const TString disc = "Au+Au 0-7%C Triggered + 200 kHz collision"  //
+//        const TString infile = "data/TPCIntegratedCharge_AuAu0-4fm_200kHz.root",
+//        const TString disc = "Au+Au 0-7%C Triggered + 200 kHz collision"  //
+    const TString infile = "data/TPCIntegratedCharge_AuAu0-12fm_170kHz.root",
+    const TString disc = "Au+Au MB Triggered + 170 kHz collision"  //
 )
 {
   SetsPhenixStyle();
@@ -37,7 +39,7 @@ void DrawTPCIntegratedCharge(
   layers.push_back(33);
   layers.push_back(48);
 
-  //  Check();
+  Check();
 
   ChargePerLayer(layers);
 }
@@ -125,12 +127,12 @@ void ChargePerLayer(vector<int> layers)
   leg->AddEntry("", "TPC charge CCDF per FEE chan. over 13 us drift window", "");
   leg->Draw();
 
-  leg = new TLegend(.2, .2, .7, .4);
+  leg = new TLegend(.2, .2, .65, .4);
   for (int i = 0; i < layers.size(); ++i)
   {
     chargeCDFs[i]->Draw("same");
 
-    TString cdf_desk = Form("Layer #%d: P[Q > 30 fC] = %.1f%%",
+    TString cdf_desk = Form("Layer #%d: P[Q>300fC] = %.1f%%",
                             layers[i],
                             100 * chargeCDFs[i]->GetBinContent(chargeCDFs[i]->FindBin(300)));
     cout << "ChargePerLayer : " << cdf_desk << endl;
