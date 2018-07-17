@@ -1,4 +1,4 @@
-#include "TrackProjectorPid.h"
+#include "TrackProjectorPlaneECAL.h"
 
 /* Fun4All includes */
 #include <phool/PHCompositeNode.h>
@@ -27,7 +27,7 @@
 
 using namespace std;
 
-TrackProjectorPid::TrackProjectorPid( PHCompositeNode *topNode ) :
+TrackProjectorPlaneECAL::TrackProjectorPlaneECAL( PHCompositeNode *topNode ) :
   _fitter(nullptr)
 {
 
@@ -35,7 +35,7 @@ TrackProjectorPid::TrackProjectorPid( PHCompositeNode *topNode ) :
   PHField * field = PHFieldUtility::GetFieldMapNode(nullptr, topNode);
 
   _fitter = PHGenFit::Fitter::getInstance(tgeo_manager,field,
-                                          "DafRef",
+                                          "DafRep",
                                           "RKTrackRep", false);
 
   _fitter->set_verbosity(10);
@@ -47,7 +47,7 @@ TrackProjectorPid::TrackProjectorPid( PHCompositeNode *topNode ) :
 }
 
 bool
-TrackProjectorPid::get_projected_position(  SvtxTrack * track, double arr_pos[3], const PROJECTION_SURFACE surf, const float surface_par )
+TrackProjectorPlaneECAL::get_projected_position(  SvtxTrack * track, RawCluster* cluster, double arr_pos[3], const PROJECTION_SURFACE surf, const float surface_par )
 {
   /* set position components to 0 */
   arr_pos[0] = 0;
@@ -55,7 +55,7 @@ TrackProjectorPid::get_projected_position(  SvtxTrack * track, double arr_pos[3]
   arr_pos[2] = 0;
 
   /* project track */
-  auto state = project_track( track, surf, surface_par );
+  auto state = project_track( track, cluster, surf, surface_par );
 
   /* Set position at extrapolate position */
   if ( state )
@@ -70,7 +70,7 @@ TrackProjectorPid::get_projected_position(  SvtxTrack * track, double arr_pos[3]
 }
 
 bool
-TrackProjectorPid::get_projected_momentum(  SvtxTrack * track, double arr_mom[3], const PROJECTION_SURFACE surf, const float surface_par )
+TrackProjectorPlaneECAL::get_projected_momentum(  SvtxTrack * track, RawCluster *cluster, double arr_mom[3], const PROJECTION_SURFACE surf, const float surface_par )
 {
   /* set momentum components to 0 */
   arr_mom[0] = 0;
@@ -78,7 +78,7 @@ TrackProjectorPid::get_projected_momentum(  SvtxTrack * track, double arr_mom[3]
   arr_mom[2] = 0;
 
   /* project track */
-  auto state = project_track( track, surf, surface_par );
+  auto state = project_track( track, cluster, surf, surface_par );
 
   /* Set momentum at extrapolate position */
   if ( state )
@@ -93,7 +93,7 @@ TrackProjectorPid::get_projected_momentum(  SvtxTrack * track, double arr_mom[3]
 }
 
 SvtxTrack*
-TrackProjectorPid::get_best_track( SvtxTrackMap* trackmap, RawCluster* cluster, const float deltaR = -1 )
+TrackProjectorPlaneECAL::get_best_track( SvtxTrackMap* trackmap, RawCluster* cluster, const float deltaR = -1 )
 {
   std::vector< float > distance_from_track_to_cluster;
   bool there_is_a_track=false;
@@ -103,9 +103,9 @@ TrackProjectorPid::get_best_track( SvtxTrackMap* trackmap, RawCluster* cluster, 
   float cluster_y = cluster->get_y();
   float cluster_z = cluster->get_z();
   
-  float theta = atan( (cluster_z) / (sqrt(cluster_x*cluster_x+cluster_y*cluster_y)) );
-  float eta = -log(tan(theta/2));
+  float theta = atan( (sqrt(cluster_x*cluster_x+cluster_y*cluster_y)) / cluster_z );
   
+  float eta = -log(abs(tan(theta/2)));
   if(eta<-1) 
     detector = EEMC;
   else if(eta>-1&&eta<1) 
@@ -134,8 +134,9 @@ TrackProjectorPid::get_best_track( SvtxTrackMap* trackmap, RawCluster* cluster, 
 	{
 	  /* Radius of Central ECAL, extrapolated from cluster reco info */
 	  float cemc_radius = sqrt(cluster->get_x()*cluster->get_x()+cluster->get_y()*cluster->get_y());
+	  cemc_radius=95;
 	  
-	  if(!get_projected_position( the_track, posv, TrackProjectorPid::CYLINDER, cemc_radius))
+	  if(!get_projected_position( the_track,cluster, posv, TrackProjectorPlaneECAL::CYLINDER, cemc_radius))
 	    {
 	      std::cout << "CEMC Track Projection Position NOT FOUND; next iteration" << std::endl;
 	      distance_from_track_to_cluster.push_back(NAN);
@@ -187,22 +188,18 @@ TrackProjectorPid::get_best_track( SvtxTrackMap* trackmap, RawCluster* cluster, 
     return NULL;
 }
 SvtxTrackState*
-TrackProjectorPid::project_track(  SvtxTrack * track, const PROJECTION_SURFACE surf, const float surface_par )
+TrackProjectorPlaneECAL::project_track(  SvtxTrack * track, RawCluster* cluster, const PROJECTION_SURFACE surf, const float surface_par )
 {
-  /* Do projection */
-  std::vector<double> point;
-  point.assign(3, -9999.);
+
   
   auto last_state_iter = --track->end_states();
-  
   SvtxTrackState * trackstate = last_state_iter->second;
-  
+
   if(!trackstate) {
     cout << "No state found here!" << endl;
     return NULL;
   }
-  
-  int _pid_guess = -211;
+  int _pid_guess = 11;
   auto rep = unique_ptr<genfit::AbsTrackRep> (new genfit::RKTrackRep(_pid_guess));
   
   unique_ptr<genfit::MeasuredStateOnPlane> msop80 = nullptr;
@@ -210,7 +207,6 @@ TrackProjectorPid::project_track(  SvtxTrack * track, const PROJECTION_SURFACE s
   {
     TVector3 pos(trackstate->get_x(), trackstate->get_y(), trackstate->get_z());
     TVector3 mom(trackstate->get_px(), trackstate->get_py(), trackstate->get_pz());
-    
     TMatrixDSym cov(6);
     for (int i = 0; i < 6; ++i) {
       for (int j = 0; j < 6; ++j) {
@@ -221,8 +217,11 @@ TrackProjectorPid::project_track(  SvtxTrack * track, const PROJECTION_SURFACE s
     msop80 = unique_ptr<genfit::MeasuredStateOnPlane> (new genfit::MeasuredStateOnPlane(rep.get()));
     
     msop80->setPosMomCov(pos, mom, cov);
+  
   }
 
+
+  // -------------------------------------------------------------- //
   /* This is where the actual extrapolation of the track to a surface (cylinder, plane, cone, sphere) happens. */
   try {
 
@@ -231,7 +230,12 @@ TrackProjectorPid::project_track(  SvtxTrack * track, const PROJECTION_SURFACE s
       rep->extrapolateToSphere(*msop80, surface_par, TVector3(0,0,0), false, false);
 
     else if ( surf == CYLINDER )
-      rep->extrapolateToCylinder(*msop80, surface_par, TVector3(0,0,0),  TVector3(0,0,-1));
+      {
+	TVector3 cluster_pos(cluster->get_x(),cluster->get_y(),cluster->get_z());
+	TVector3 cluster_norm(cos(cluster->get_phi()),sin(cluster->get_phi()),0);
+	rep->extrapolateToPlane(*msop80, genfit::SharedPlanePtr( new genfit::DetPlane( cluster_pos, cluster_norm ) ), false, false);
+	//rep->extrapolateToCylinder(*msop80, surface_par, TVector3(0,0,0),  TVector3(0,0,1));
+      }
 
 
     else if ( surf == PLANEXY )
@@ -264,7 +268,7 @@ TrackProjectorPid::project_track(  SvtxTrack * track, const PROJECTION_SURFACE s
 }
 
 bool
-TrackProjectorPid::is_in_RICH( double momv[3] )
+TrackProjectorPlaneECAL::is_in_RICH( double momv[3] )
 {
   double eta = atanh( momv[2] );
 

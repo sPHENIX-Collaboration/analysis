@@ -3,7 +3,7 @@
 #include "TruthTrackerHepMC.h"
 #include "TrackProjectionTools.h"
 #include "TrackProjectorPid.h"
-
+#include "TrackProjectorPlaneECAL.h"
 /* STL includes */
 #include <cassert>
 
@@ -186,7 +186,7 @@ DISKinematicsReco::Init(PHCompositeNode *topNode)
 int
 DISKinematicsReco::InitRun(PHCompositeNode *topNode)
 {
-   _trackproj=new TrackProjectorPid( topNode );
+   _trackproj=new TrackProjectorPlaneECAL( topNode );
    return 0;
 }
 
@@ -515,12 +515,28 @@ DISKinematicsReco::InsertCandidateFromCluster( type_map_tcan& candidateMap , Raw
       tc->set_property( PidCandidate::em_evtgen_charge, gcharge );
 
       // -------------------------------------------------------------------------------------------------------------------------------------
-      
-      double posv[3] = {0.,0.,0.};
-      double momv[3] = {0.,0.,0.};
-     
-      SvtxTrack* the_track = _trackproj->get_best_track(trackmap, cluster, 10);
-      if(the_track==NULL) //Fill in truth
+
+      SvtxTrack* the_track = _trackproj->get_best_track(trackmap, cluster, -1);
+      if(the_track!=NULL) //Fill in reconstructed info
+	{
+	  // Position and Momentum Vectors
+	  double posv[3] = {0.,0.,0.};
+	  double momv[3] = {0.,0.,0.};
+	  
+	  
+	  float cemc_radius = sqrt( cluster->get_x() * cluster->get_x() +
+				    cluster->get_y() * cluster->get_y() );
+	  
+	  _trackproj->get_projected_position(the_track,cluster, posv, TrackProjectorPlaneECAL::CYLINDER, cemc_radius);
+	  _trackproj->get_projected_momentum(the_track,cluster, momv, TrackProjectorPlaneECAL::CYLINDER, cemc_radius);
+	  
+	  cout << "------------------------------------------" << endl;
+	  cout << "Track Projection Successful!" << endl;
+	  cout << "Cluster X: " << cluster->get_x() << " | Track X: " << posv[0] << endl;
+	  cout << "Cluster Y: " << cluster->get_y() << " | Track Y: " << posv[1] << endl;
+	  cout << "Cluster Z: " << cluster->get_z() << " | Track Z: " << posv[2] << endl;
+	}
+      else //Fill in truth
 	{
 	  tc->set_property( PidCandidate::em_track_id, (uint)primary->get_track_id() );
 	  tc->set_property( PidCandidate::em_track_quality, (float)100.0 );
@@ -554,22 +570,6 @@ DISKinematicsReco::InsertCandidateFromCluster( type_map_tcan& candidateMap , Raw
 	  
 	  if ( abs( primary->get_pid() ) == 2212 )
 	    tc->set_property( PidCandidate::em_pid_prob_proton, (float)1.0 );
-	}
-      else // We have a matching track, fill in track info
-	{
-	  // Extrapolate radius of central calorimeter using cluster info
-	  float cemc_radius = sqrt( cluster->get_x() * cluster->get_x() +
-				    cluster->get_y() * cluster->get_y() );
-	  
-	  // Get projected values
-	  _trackproj->get_projected_momentum(the_track, momv, TrackProjectorPid::CYLINDER, cemc_radius);
-	  _trackproj->get_projected_position(the_track, posv, TrackProjectorPid::CYLINDER, cemc_radius);
-
-	  cout << "Track Projection Successful!" << endl;
-	  cout << "Cluster X: " << cluster->get_x() << " | Track X: " << posv[0] << endl;
-	  cout << "Cluster Y: " << cluster->get_y() << " | Track Y: " << posv[1] << endl;
-	  cout << "Cluster Z: " << cluster->get_z() << " | Track Z: " << posv[2] << endl;
-	  
 	}
     }
  
