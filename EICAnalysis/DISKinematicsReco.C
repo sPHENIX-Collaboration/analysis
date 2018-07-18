@@ -300,7 +300,7 @@ DISKinematicsReco::CollectEmCandidatesFromTruth( type_map_tcan& candidateMap )
   /* Get collection of truth particles from event generator */
   PHHepMCGenEventMap *geneventmap = findNode::getClass<PHHepMCGenEventMap>(_topNode,"PHHepMCGenEventMap");
   if (!geneventmap) {
-    std::cout << PHWHERE << " WARNING: Can't find requested PHHepMCGenEventMap" << endl;
+    //std::cout << PHWHERE << " WARNING: Can't find requested PHHepMCGenEventMap" << endl;
     return -1;
   }
 
@@ -852,7 +852,7 @@ DISKinematicsReco::AddTruthEventInformation()
   /* Get collection of truth particles from event generator */
   PHHepMCGenEventMap *geneventmap = findNode::getClass<PHHepMCGenEventMap>(_topNode,"PHHepMCGenEventMap");
   if (!geneventmap) {
-    std::cout << PHWHERE << " WARNING: Can't find requested PHHepMCGenEventMap" << endl;
+    //std::cout << PHWHERE << " WARNING: Can't find requested PHHepMCGenEventMap" << endl;
     return -1;
   }
 
