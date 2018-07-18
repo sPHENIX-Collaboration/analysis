@@ -19,6 +19,7 @@
 #include <calobase/RawTowerContainer.h>
 #include <calobase/RawTowerGeom.h>
 #include <calobase/RawTowerv1.h>
+#include <calobase/RawTowerDefs.h>
 
 #include <calobase/RawClusterContainer.h>
 #include <calobase/RawCluster.h>
@@ -281,7 +282,6 @@ DISKinematicsReco::CollectEmCandidatesFromCluster( type_map_tcan& electronCandid
       for (unsigned int k = 0; k < clusterList->size(); ++k)
         {
           RawCluster *cluster = clusterList->getCluster(k);
-
           /* Check if cluster energy is below threshold */
           float e_cluster_threshold = 0.3;
           if ( cluster->get_energy() < e_cluster_threshold )
@@ -390,6 +390,15 @@ DISKinematicsReco::InsertCandidateFromCluster( type_map_tcan& candidateMap , Raw
   unsigned caloid = 0;
   RawCluster::TowerConstIterator rtiter = cluster->get_towers().first;
   caloid = RawTowerDefs::decode_caloid( rtiter->first );
+  char detector='C'; // C for CEMC, E for EEMC, F for FEMC
+  const char *caloid_to_name = RawTowerDefs::convert_caloid_to_name( RawTowerDefs::decode_caloid( rtiter->first ) ).c_str();
+  if(strcmp(caloid_to_name,"EEMC")==0) detector = 'E';
+  else if(strcmp(caloid_to_name,"CEMC")==0) detector = 'C';
+  else if(strcmp(caloid_to_name,"FEMC")==0) detector = 'F';
+  else cout << " Warning: Unclear as to what ECAL tower is in, using CEMC " << endl;
+  cout << detector << endl;
+  /* Tell the track projector what detector we will extrapolate to */
+  _trackproj->set_detector(detector);
   //cout << "Calo ID: " << caloid << " -> " << RawTowerDefs::convert_caloid_to_name( RawTowerDefs::decode_caloid( rtiter->first ) ) << endl;
 
   tc->set_property( PidCandidate::em_cluster_id, cluster->get_id() );

@@ -97,21 +97,6 @@ TrackProjectorPlaneECAL::get_best_track( SvtxTrackMap* trackmap, RawCluster* clu
 {
   std::vector< float > distance_from_track_to_cluster;
   bool there_is_a_track=false;
-  
-  // Get the eta of the cluster
-  float cluster_x = cluster->get_x();
-  float cluster_y = cluster->get_y();
-  float cluster_z = cluster->get_z();
-  
-  float theta = atan( (sqrt(cluster_x*cluster_x+cluster_y*cluster_y)) / cluster_z );
-  
-  float eta = -log(abs(tan(theta/2)));
-  if(eta<-1) 
-    detector = EEMC;
-  else if(eta>-1&&eta<1) 
-    detector = CEMC;
-  else 
-    detector = FEMC;
 
   // Go through the entire track map and find the track closest to deltaR
   // If deltaR < 0, get closest track
@@ -129,36 +114,18 @@ TrackProjectorPlaneECAL::get_best_track( SvtxTrackMap* trackmap, RawCluster* clu
       
       /* Position vector of extrapolated track */
       double posv[3] = {0.,0.,0.};
-      
-      if( detector == CEMC )
+      if(!get_projected_position( the_track,cluster, posv, TrackProjectorPlaneECAL::PLANE_CYLINDER, -1))
 	{
-	  /* Radius of Central ECAL, extrapolated from cluster reco info */
-	  float cemc_radius = sqrt(cluster->get_x()*cluster->get_x()+cluster->get_y()*cluster->get_y());
-	  cemc_radius=95;
-	  
-	  if(!get_projected_position( the_track,cluster, posv, TrackProjectorPlaneECAL::CYLINDER, cemc_radius))
-	    {
-	      std::cout << "CEMC Track Projection Position NOT FOUND; next iteration" << std::endl;
-	      distance_from_track_to_cluster.push_back(NAN);
-	      continue;
-	    }
-	  else
-	    {
-	      distance_from_track_to_cluster.push_back(  sqrt( (cluster->get_x()-posv[0])*(cluster->get_x()-posv[0]) + 
-							       (cluster->get_y()-posv[1])*(cluster->get_y()-posv[1]) + 
-							       (cluster->get_z()-posv[2])*(cluster->get_z()-posv[2]) )  );
-	      there_is_a_track = true;
-	    }
+	  std::cout << "Track Projection Position NOT FOUND; next iteration" << std::endl;
+	  distance_from_track_to_cluster.push_back(NAN);
+	  continue;
 	}
-      else if(detector == FEMC)
+      else
 	{
-	  // TODO : Implement
-	  return NULL;
-	}
-      else if(detector == EEMC)
-	{
-	  // TODO : Implement
-	  return NULL;
+	  distance_from_track_to_cluster.push_back(  sqrt( (cluster->get_x()-posv[0])*(cluster->get_x()-posv[0]) + 
+							   (cluster->get_y()-posv[1])*(cluster->get_y()-posv[1]) + 
+							   (cluster->get_z()-posv[2])*(cluster->get_z()-posv[2]) )  );
+	  there_is_a_track = true;
 	}
     }
   
@@ -189,11 +156,29 @@ TrackProjectorPlaneECAL::get_best_track( SvtxTrackMap* trackmap, RawCluster* clu
   else 
     return NULL;
 }
+
+char
+TrackProjectorPlaneECAL::get_detector()
+{
+  switch(detector){
+  case CEMC:
+    return 'C';
+    break;
+  case EEMC:
+    return 'E';
+    break;
+  case FEMC:
+    return 'F';
+    break;
+  default:
+    cout << "WARNING: get_detector was unable to find a defined detector" << endl;
+    return ' ';
+  }
+}
+
 SvtxTrackState*
 TrackProjectorPlaneECAL::project_track(  SvtxTrack * track, RawCluster* cluster, const PROJECTION_SURFACE surf, const float surface_par )
-{
-
-  
+{  
   auto last_state_iter = --track->end_states();
   SvtxTrackState * trackstate = last_state_iter->second;
 
@@ -201,9 +186,10 @@ TrackProjectorPlaneECAL::project_track(  SvtxTrack * track, RawCluster* cluster,
     cout << "No state found here!" << endl;
     return NULL;
   }
+
   int _pid_guess = 11;
   auto rep = unique_ptr<genfit::AbsTrackRep> (new genfit::RKTrackRep(_pid_guess));
-  
+
   unique_ptr<genfit::MeasuredStateOnPlane> msop80 = nullptr;
   
   {
@@ -214,16 +200,11 @@ TrackProjectorPlaneECAL::project_track(  SvtxTrack * track, RawCluster* cluster,
       for (int j = 0; j < 6; ++j) {
         cov[i][j] = trackstate->get_error(i, j);
       }
-    }
-    
-    msop80 = unique_ptr<genfit::MeasuredStateOnPlane> (new genfit::MeasuredStateOnPlane(rep.get()));
-    
+    } 
+    msop80 = unique_ptr<genfit::MeasuredStateOnPlane> (new genfit::MeasuredStateOnPlane(rep.get()));  
     msop80->setPosMomCov(pos, mom, cov);
-  
   }
 
-
-  // -------------------------------------------------------------- //
   /* This is where the actual extrapolation of the track to a surface (cylinder, plane, cone, sphere) happens. */
   try {
 
@@ -233,10 +214,41 @@ TrackProjectorPlaneECAL::project_track(  SvtxTrack * track, RawCluster* cluster,
 
     else if ( surf == CYLINDER )
       {
-	TVector3 cluster_pos(cluster->get_x(),cluster->get_y(),cluster->get_z());
-	TVector3 cluster_norm(cos(cluster->get_phi()),sin(cluster->get_phi()),0);
+	rep->extrapolateToCylinder(*msop80, surface_par, TVector3(0,0,0),  TVector3(0,0,1));
+      }
+    else if ( surf == PLANE_CYLINDER )
+      {
+	// Get position of cluster
+        TVector3 cluster_pos(cluster->get_x(),cluster->get_y(),cluster->get_z());
+	// Get detector normal vector
+	double xvect=0; double yvect = 0; double zvect = 0;
+	switch(detector){
+	case CEMC:
+	  xvect = cos(cluster->get_phi());
+	  yvect = sin(cluster->get_phi());
+	  break;
+	case EEMC:
+	  zvect = 1;
+	  break;
+	case FEMC:
+	  zvect = -1;
+	  break;
+	default:
+	  cout << "WARNING: detector variable native to TrackProjectorPlaneECAL not defined" << endl;
+	  break;
+	}
+	// Get normal vector to detector
+	TVector3 cluster_norm(xvect,yvect,zvect);
+	
+	// Case in which norm vector remained undefined 
+	if(xvect==0&&yvect==0&&zvect==0)
+	  {
+	    cout << "WARNING: Cluster normal vector uninitialized. Aborting track" << endl;
+	    return NULL;
+	  }
+
+	// Extrapolate to detector 
 	rep->extrapolateToPlane(*msop80, genfit::SharedPlanePtr( new genfit::DetPlane( cluster_pos, cluster_norm ) ), false, false);
-	//rep->extrapolateToCylinder(*msop80, surface_par, TVector3(0,0,0),  TVector3(0,0,1));
       }
     else if ( surf == PLANEXY )
       rep->extrapolateToPlane(*msop80, genfit::SharedPlanePtr( new genfit::DetPlane( TVector3(0, 0, surface_par), TVector3(0, 0, 1) ) ), false, false);
@@ -267,14 +279,25 @@ TrackProjectorPlaneECAL::project_track(  SvtxTrack * track, RawCluster* cluster,
   return svtx_state;
 }
 
-bool
-TrackProjectorPlaneECAL::is_in_RICH( double momv[3] )
+void
+TrackProjectorPlaneECAL::set_detector( char c )
 {
-  double eta = atanh( momv[2] );
-
-  // rough pseudorapidity cut
-  if (eta > 1.45 && eta < 7.5)
-    return true;
-
-  return false;
+  switch(c){
+  case 'C':
+  case 'c':
+    detector = CEMC;
+    break;
+  case 'E':
+  case 'e':
+    detector = EEMC;
+    break;
+  case 'F':
+  case 'f':
+    detector = FEMC;
+    break;
+  default:
+    cout << "WARNING: set_detector call received unrecognized char " << c << endl;
+    break;
+  }
 }
+

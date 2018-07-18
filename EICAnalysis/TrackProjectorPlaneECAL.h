@@ -21,15 +21,11 @@ namespace genfit{
   class MeasuredStateOnPlane;
 }
 
-/**
- * Class to project tracks to RICH volumes.
- * Based on clas coresoftware/simulation/g4simulation/g4hough/PHG4GenFitTrackProjection
- */
 class TrackProjectorPlaneECAL {
 
 public:
 
-  enum PROJECTION_SURFACE {SPHERE, CYLINDER, PLANEXY};
+  enum PROJECTION_SURFACE {SPHERE, CYLINDER, PLANEXY, PLANE_CYLINDER};
   enum PROJECTION_DETECTOR{EEMC, CEMC, FEMC};
   
   TrackProjectorPlaneECAL( PHCompositeNode* topNode );
@@ -40,9 +36,11 @@ public:
 
   SvtxTrack * get_best_track( SvtxTrackMap * trackmap, RawCluster* cluster, const float deltaR); // Get track closest to cluster (within deltaR)
 
+  char get_detector(); // Return capitalized letter of detector
+
   SvtxTrackState* project_track( SvtxTrack * track, RawCluster* cluster, const PROJECTION_SURFACE surf, const float surface_par );
 
-  bool is_in_RICH( double momv[3] ); // Check if track pass through RICH
+  void set_detector( char c ); //Sets the detector name
 
 private:
 
