@@ -35,7 +35,7 @@ pkginclude_HEADERS = \
   PidCandidate.h\
   PidCandidatev1.h\
   TrackProjectionTools.h \
-  TrackProjectorPid.h \
+  TrackProjectorPlaneECAL.h \
   TruthTrackerHepMC.h
 
 libeicana_la_SOURCES = \
@@ -52,7 +52,7 @@ libeicana_la_SOURCES = \
   PidCandidatev1.C\
   PidCandidatev1_Dict.C\
   TrackProjectionTools.C \
-  TrackProjectorPid.cc \
+  TrackProjectorPlaneECAL.cc \
   TruthTrackerHepMC.C
 
 # Rule for generating table CINT dictionaries.

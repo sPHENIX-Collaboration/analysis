@@ -2,7 +2,7 @@
 #define __DISKinematicsReco_H__
 
 #include "PidCandidate.h"
-#include "TrackProjectorPid.h"
+#include "TrackProjectorPlaneECAL.h"
 /* Fun4All includes */
 #include <fun4all/SubsysReco.h>
 #include <calobase/RawTowerDefs.h>
@@ -102,7 +102,7 @@ private:
   std::map< std::string, CaloRawTowerEval* > _map_towereval;
   
   /* Track Projector object */
-  TrackProjectorPid* _trackproj;
+  TrackProjectorPlaneECAL* _trackproj;
   //  /** Map of PidCandidate properties that will be written to
   //   * output ROOT Tree */
   //  std::map< PidCandidate::PROPERTY , float > _map_treebranches;
