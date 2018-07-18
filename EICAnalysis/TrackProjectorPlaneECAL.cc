@@ -236,8 +236,6 @@ TrackProjectorPlaneECAL::project_track(  SvtxTrack * track, RawCluster* cluster,
 	rep->extrapolateToPlane(*msop80, genfit::SharedPlanePtr( new genfit::DetPlane( cluster_pos, cluster_norm ) ), false, false);
 	//rep->extrapolateToCylinder(*msop80, surface_par, TVector3(0,0,0),  TVector3(0,0,1));
       }
-
-
     else if ( surf == PLANEXY )
       rep->extrapolateToPlane(*msop80, genfit::SharedPlanePtr( new genfit::DetPlane( TVector3(0, 0, surface_par), TVector3(0, 0, 1) ) ), false, false);
 
@@ -253,7 +251,7 @@ TrackProjectorPlaneECAL::project_track(  SvtxTrack * track, RawCluster* cluster,
   svtx_state->set_x( msop80->getPos().X() );
   svtx_state->set_y( msop80->getPos().Y() );
   svtx_state->set_z( msop80->getPos().Z() );
-
+  cout << msop80->getMom().x() << endl;
   svtx_state->set_px( msop80->getMom().x() );
   svtx_state->set_py( msop80->getMom().y() );
   svtx_state->set_pz( msop80->getMom().z() );

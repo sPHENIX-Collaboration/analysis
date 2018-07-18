@@ -2,7 +2,6 @@
 #define __DISKinematicsReco_H__
 
 #include "PidCandidate.h"
-#include "TrackProjectorPid.h"
 #include "TrackProjectorPlaneECAL.h"
 /* Fun4All includes */
 #include <fun4all/SubsysReco.h>
