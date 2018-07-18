@@ -153,10 +153,12 @@ TrackProjectorPlaneECAL::get_best_track( SvtxTrackMap* trackmap, RawCluster* clu
       else if(detector == FEMC)
 	{
 	  // TODO : Implement
+	  return NULL;
 	}
       else if(detector == EEMC)
 	{
 	  // TODO : Implement
+	  return NULL;
 	}
     }
   
@@ -251,7 +253,7 @@ TrackProjectorPlaneECAL::project_track(  SvtxTrack * track, RawCluster* cluster,
   svtx_state->set_x( msop80->getPos().X() );
   svtx_state->set_y( msop80->getPos().Y() );
   svtx_state->set_z( msop80->getPos().Z() );
-  cout << msop80->getMom().x() << endl;
+
   svtx_state->set_px( msop80->getMom().x() );
   svtx_state->set_py( msop80->getMom().y() );
   svtx_state->set_pz( msop80->getMom().z() );
