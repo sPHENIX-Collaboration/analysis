@@ -34,7 +34,7 @@ public:
 
   bool get_projected_momentum( SvtxTrack * track, RawCluster* cluster, double arr_mom[3], const PROJECTION_SURFACE surf, const float surface_par ); // Get momentum of track
 
-  SvtxTrack * get_best_track( SvtxTrackMap * trackmap, RawCluster* cluster, const float deltaR); // Get track closest to cluster (within deltaR)
+  SvtxTrack * get_best_track( SvtxTrackMap * trackmap, RawCluster* cluster); // Get track closest to cluster (within deltaR)
 
   char get_detector(); // Return capitalized letter of detector
 
