@@ -28,7 +28,7 @@ TString file_name;
 std::vector<std::vector<float> > jpsi_electron_vect;
 std::vector<std::vector<float> > jpsi_positron_vect;
 std::vector<std::vector<float> > scattered_electron_vect;
-// Has 8 vectors inside
+// Has 13 vectors inside
 // 1. theta
 // 2. eta
 // 3. phi
@@ -37,18 +37,37 @@ std::vector<std::vector<float> > scattered_electron_vect;
 // 6. ptotal
 // 7. charge
 // 8. found (0 if not found, 1 if found)
-
+// 9. pid
+// 10. true phi
+// 11. true eta
+// 12. true ptotal
+// 13. true theta
 std::vector<float> theta;
 std::vector<float> eta;
 std::vector<float> phi;
 std::vector<float> energy;
 std::vector<float> pt;
 std::vector<float> ptotal;
+std::vector<float> true_phi;
+std::vector<float> true_eta;
+std::vector<float> true_ptotal;
+std::vector<float> true_theta;
 std::vector<float> charge;
 std::vector<float> found;
-
+std::vector<float> pid;
+// Hold eta and phi overtime here
+std::vector<float> holdeta;
+std::vector<float> holdphi;
+std::vector<float> true_holdeta;
+std::vector<float> true_holdphi;
+// Invariant mass vector
 std::vector<float> invariant_mass_track;
-
+std::vector<float> invariant_mass_truth;
+int case_0_counter=0;
+int case_1_counter=0;
+int case_2_counter=0;
+int case_3_counter=0;
+//
 // Cuts //
 const float energy_cut = 0.3;
 const float ep_cut = 0.7;
@@ -70,13 +89,13 @@ std::vector<float> get_invariant_mass_vector();
 int jpsi_sartre_analysis()
 {
   pushify();
-  get_track_data("JPsi_sartre_studies/sample/20x250_100Events.root");
+  get_track_data(file_name);
   return 0;
 }
 
 void openFile(TString FILE_NAME)
 {
-   f = new TFile("/sphenix/user/gregtom3/data/Summer2018/" + FILE_NAME);
+   f = new TFile(FILE_NAME);
   t=(TTree*)f->Get("event_cluster");
 }
 
@@ -110,6 +129,11 @@ void get_track_data(TString file)
   std::vector<float>* pt_pointer=&pt;
   std::vector<float>* ptotal_pointer=&ptotal;
   std::vector<float>* charge_pointer=&charge;
+  std::vector<float>* pid_pointer=&pid;
+  std::vector<float>* true_phi_pointer=&true_phi;
+  std::vector<float>* true_eta_pointer=&true_eta;
+  std::vector<float>* true_ptotal_pointer=&true_ptotal;
+  std::vector<float>* true_theta_pointer=&true_theta;
 
   t->SetBranchAddress("em_cluster_theta",&theta_pointer);
   t->SetBranchAddress("em_track_eta",&eta_pointer);
@@ -118,31 +142,45 @@ void get_track_data(TString file)
   t->SetBranchAddress("em_track_ptrans",&pt_pointer);
   t->SetBranchAddress("em_track_ptotal",&ptotal_pointer);
   t->SetBranchAddress("em_track_charge",&charge_pointer);
-
-
-  
+  t->SetBranchAddress("em_evtgen_pid",&pid_pointer);
+  t->SetBranchAddress("em_evtgen_phi",&true_phi_pointer);
+  t->SetBranchAddress("em_evtgen_eta",&true_eta_pointer);
+  t->SetBranchAddress("em_evtgen_ptotal",&true_ptotal_pointer);
+  t->SetBranchAddress("em_evtgen_theta",&true_theta_pointer);
   Int_t nentries = Int_t(t->GetEntries());
   for(Int_t entryInChain=0; entryInChain<nentries; entryInChain++)
     {
       Int_t entryInTree = t->LoadTree(entryInChain);
       if (entryInTree < 0) break;
       t->GetEntry(entryInChain); // Now lets look at a single event
-     
       int number_em_showers=get_em_showers();
       switch(number_em_showers)
 	{
+	case 0:
+	  case_0_counter++;
+	  break;
 	case 1: 
+	  case_1_counter++;
 	  case_1_track();
 	  break;
 	case 2:
+	  case_2_counter++;
 	  case_2_track();
 	  break;
 	case 3:
+	  case_3_counter++;
 	  case_3_track();
 	  break;
 	}
     }
   closeFile();
+  cout << " Invariant Mass Calculator Results " << endl;
+  cout << "***********************************" << endl;
+  cout << " Cases with 0 tracks = " << case_0_counter << endl;
+  cout << " Cases with 1 track = " << case_1_counter << endl;
+  cout << " Cases with 2 tracks = " << case_2_counter << endl;
+  cout << " Cases with 3 tracks = " << case_3_counter << endl;
+  cout << " Cases with more than 3 tracks = " << nentries-(case_0_counter+case_1_counter+case_2_counter+case_3_counter) << endl;
 }
 
 int get_em_showers()
@@ -223,7 +261,19 @@ void case_2_track()
 		{
 		  if(charge.at(j)==-1)
 		    {
-		      fillify('E',j);
+		      float diff = phi.at(j)-true_phi.at(j);
+		      if(diff<0) diff=diff*-1;
+		      if(diff>0.01)
+			{
+			  voidify('S');
+			  voidify('E');
+			  voidify('P');
+			  return;
+			}
+		      else
+			{
+			  fillify('E',j);
+			}
 		    }
 		  else if(charge.at(j)==1)
 		    {
@@ -237,6 +287,33 @@ void case_2_track()
 }  
 void case_3_track()
 {
+  // Ensure 2 electrons and 1 positron
+  int num_electrons=0; int num_positrons=0;
+  for(unsigned i = 0; i<theta.size(); i++)
+    {
+      if(energy.at(i)>energy_cut && energy.at(i)/ptotal.at(i)>ep_cut)
+	{
+	  if(pid.at(i)==11) 
+	    {
+	      charge.at(i) = -1;
+	      num_electrons++;
+	    }
+	  if(pid.at(i)==-11) 
+	    {
+	      charge.at(i) = 1;
+	      num_positrons++;
+	    }
+
+	  
+	}
+    }
+  if(num_electrons!=2||num_positrons!=1)
+    {
+      voidify('S');
+      voidify('P');
+      voidify('E');
+      return;
+    }
   /* Possibilites */
   // 1. Scattered Electron - JPsi Electron - JPsi Positron
   unsigned index_positron;
@@ -288,6 +365,10 @@ void case_3_track()
 
 void fillify(char c, unsigned idx)
 {
+  holdeta.push_back(eta.at(idx));
+  holdphi.push_back(phi.at(idx));
+  true_holdeta.push_back(true_eta.at(idx));
+  true_holdphi.push_back(true_phi.at(idx));
   switch(c)
     {
     case 'S':
@@ -299,6 +380,10 @@ void fillify(char c, unsigned idx)
       scattered_electron_vect[5].push_back(ptotal.at(idx));
       scattered_electron_vect[6].push_back(charge.at(idx));
       scattered_electron_vect[7].push_back(1);
+      scattered_electron_vect[8].push_back(true_phi.at(idx));
+      scattered_electron_vect[9].push_back(true_eta.at(idx));
+      scattered_electron_vect[10].push_back(true_ptotal.at(idx));
+      scattered_electron_vect[11].push_back(true_theta.at(idx));
       break;
     case 'E':
       jpsi_electron_vect[0].push_back(theta.at(idx));
@@ -309,6 +394,10 @@ void fillify(char c, unsigned idx)
       jpsi_electron_vect[5].push_back(ptotal.at(idx));
       jpsi_electron_vect[6].push_back(charge.at(idx));
       jpsi_electron_vect[7].push_back(1);
+      jpsi_electron_vect[8].push_back(true_phi.at(idx));
+      jpsi_electron_vect[9].push_back(true_eta.at(idx));
+      jpsi_electron_vect[10].push_back(true_ptotal.at(idx));
+      jpsi_electron_vect[11].push_back(true_theta.at(idx));
       break;
     case 'P':
       jpsi_positron_vect[0].push_back(theta.at(idx));
@@ -319,6 +408,10 @@ void fillify(char c, unsigned idx)
       jpsi_positron_vect[5].push_back(ptotal.at(idx));
       jpsi_positron_vect[6].push_back(charge.at(idx));
       jpsi_positron_vect[7].push_back(1);
+      jpsi_positron_vect[8].push_back(true_phi.at(idx));
+      jpsi_positron_vect[9].push_back(true_eta.at(idx));
+      jpsi_positron_vect[10].push_back(true_ptotal.at(idx));
+      jpsi_positron_vect[11].push_back(true_theta.at(idx));
       break;
     }
 }
@@ -336,6 +429,10 @@ void voidify(char c)
       scattered_electron_vect[5].push_back(NULL);
       scattered_electron_vect[6].push_back(NULL);
       scattered_electron_vect[7].push_back(0);
+      scattered_electron_vect[8].push_back(NULL);
+      scattered_electron_vect[9].push_back(NULL);
+      scattered_electron_vect[10].push_back(NULL);
+      scattered_electron_vect[11].push_back(NULL);
       break;
     case 'E':
       jpsi_electron_vect[0].push_back(NULL);
@@ -346,6 +443,10 @@ void voidify(char c)
       jpsi_electron_vect[5].push_back(NULL);
       jpsi_electron_vect[6].push_back(NULL);
       jpsi_electron_vect[7].push_back(0);
+      jpsi_electron_vect[8].push_back(NULL);
+      jpsi_electron_vect[9].push_back(NULL);
+      jpsi_electron_vect[10].push_back(NULL);
+      jpsi_electron_vect[11].push_back(NULL);
       break;
     case 'P':
       jpsi_positron_vect[0].push_back(NULL);
@@ -356,13 +457,17 @@ void voidify(char c)
       jpsi_positron_vect[5].push_back(NULL);
       jpsi_positron_vect[6].push_back(NULL);
       jpsi_positron_vect[7].push_back(0);
+      jpsi_positron_vect[8].push_back(NULL);
+      jpsi_positron_vect[9].push_back(NULL);
+      jpsi_positron_vect[10].push_back(NULL);
+      jpsi_positron_vect[11].push_back(NULL);
       break;
     }
 }
 
 void pushify()
 {
-  for(int k = 0; k < 8; k++)
+  for(int k = 0; k < 12; k++)
     {
       jpsi_electron_vect.push_back(std::vector<float>());
       jpsi_positron_vect.push_back(std::vector<float>());
@@ -383,6 +488,11 @@ std::vector<float> get_invariant_mass_vector()
 	  float pt_1=jpsi_electron_vect.at(4).at(index);
 	  float ptotal_1=jpsi_electron_vect.at(5).at(index);
 	  float charge_1=jpsi_electron_vect.at(6).at(index);
+	  float true_phi_1=jpsi_electron_vect.at(8).at(index);
+	  float true_eta_1=jpsi_electron_vect.at(9).at(index);
+	  float true_ptotal_1=jpsi_electron_vect.at(10).at(index);
+	  float true_theta_1=jpsi_electron_vect.at(11).at(index);
+	  float true_ptrans_1 = true_ptotal_1*sin(true_theta_1);
 
 	  float theta_2=jpsi_positron_vect.at(0).at(index);
 	  float eta_2=jpsi_positron_vect.at(1).at(index);
@@ -391,8 +501,15 @@ std::vector<float> get_invariant_mass_vector()
 	  float pt_2=jpsi_positron_vect.at(4).at(index);
 	  float ptotal_2=jpsi_positron_vect.at(5).at(index);
 	  float charge_2=jpsi_positron_vect.at(6).at(index);
-
+	  float true_phi_2=jpsi_positron_vect.at(8).at(index);
+	  float true_eta_2=jpsi_positron_vect.at(9).at(index);
+	  float true_ptotal_2=jpsi_positron_vect.at(10).at(index);
+	  float true_theta_2=jpsi_positron_vect.at(11).at(index);
+	  float true_ptrans_2 = true_ptotal_2*sin(true_theta_2);
+	  
 	  invariant_mass_track.push_back(get_invariant_mass(pt_1,pt_2,phi_1,phi_2,eta_1,eta_2));
+
+	  invariant_mass_truth.push_back(get_invariant_mass(true_ptrans_1,true_ptrans_2,true_phi_1,true_phi_2,true_eta_1,true_eta_2));
 	  
 	  
 	}

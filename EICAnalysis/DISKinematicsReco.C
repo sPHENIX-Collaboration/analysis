@@ -3,7 +3,7 @@
 #include "TruthTrackerHepMC.h"
 #include "TrackProjectionTools.h"
 #include "TrackProjectorPlaneECAL.h"
-
+#include "DVMPHelper.h"
 /* STL includes */
 #include <cassert>
 
@@ -55,6 +55,7 @@ DISKinematicsReco::DISKinematicsReco(std::string filename) :
   _tfile(nullptr),
   _tree_event_cluster(nullptr),
   _tree_event_truth(nullptr),
+  _tree_invariant_mass(nullptr),
   _beam_electron_ptotal(10),
   _beam_hadron_ptotal(250),
   _trackproj(nullptr)
@@ -249,11 +250,18 @@ DISKinematicsReco::process_event(PHCompositeNode *topNode)
       _tree_event_truth->Fill();
     }
 
+  /* Calculate invariant mass of a DVMP event */
+  if ( _do_process_dvmp && (_do_process_truth && _do_process_geant4_cluster))
+    {
+      AddInvariantMassInformation();
+    }
   /* count up event number */
   _ievent ++;
 
   return 0;
 }
+
+
 
 int
 DISKinematicsReco::CollectEmCandidatesFromCluster( type_map_tcan& electronCandidateMap )
@@ -329,7 +337,6 @@ DISKinematicsReco::CollectEmCandidatesFromTruth( type_map_tcan& candidateMap )
   //HepMC::GenParticle* particle_beam_l = truth.FindBeamLepton();
   //HepMC::GenParticle* particle_beam_h = truth.FindBeamHadron();
   HepMC::GenParticle* particle_scattered_l = truth.FindScatteredLepton();
-
   /* loop over all particles */
   for (HepMC::GenEvent::particle_const_iterator p = theEvent->particles_begin();
        p != theEvent->particles_end(); ++p)
@@ -345,8 +352,6 @@ DISKinematicsReco::CollectEmCandidatesFromTruth( type_map_tcan& candidateMap )
       /* skip particles that are not stable final state particles (status 1) */
       if ( (*p)->status() != 1 )
         continue;
-      cout << "---------------------------------------" << endl;
-      cout << (*p)->parent_event()->particles_size() << endl;
       /* create new pid candidate */
       PidCandidatev1 *tc = new PidCandidatev1();
       tc->set_candidate_id( candidateMap.size()+1 );
@@ -390,14 +395,7 @@ DISKinematicsReco::InsertCandidateFromCluster( type_map_tcan& candidateMap , Raw
   unsigned caloid = 0;
   RawCluster::TowerConstIterator rtiter = cluster->get_towers().first;
   caloid = RawTowerDefs::decode_caloid( rtiter->first );
-  char detector='C'; // C for CEMC, E for EEMC, F for FEMC
-  const char *caloid_to_name = RawTowerDefs::convert_caloid_to_name( RawTowerDefs::decode_caloid( rtiter->first ) ).c_str();
-  if(strcmp(caloid_to_name,"EEMC")==0) detector = 'E';
-  else if(strcmp(caloid_to_name,"CEMC")==0) detector = 'C';
-  else if(strcmp(caloid_to_name,"FEMC")==0) detector = 'F';
-  else cout << " Warning: Unclear as to what ECAL tower is in, using CEMC " << endl;
-  /* Tell the track projector what detector we will extrapolate to */
-  _trackproj->set_detector(detector);
+  _trackproj->set_detector(_trackproj->get_detector_from_cluster(cluster));
   //cout << "Calo ID: " << caloid << " -> " << RawTowerDefs::convert_caloid_to_name( RawTowerDefs::decode_caloid( rtiter->first ) ) << endl;
 
   tc->set_property( PidCandidate::em_cluster_id, cluster->get_id() );
@@ -900,7 +898,7 @@ DISKinematicsReco::AddTruthEventInformation()
   /* Get collection of truth particles from event generator */
   PHHepMCGenEventMap *geneventmap = findNode::getClass<PHHepMCGenEventMap>(_topNode,"PHHepMCGenEventMap");
   if (!geneventmap) {
-    //std::cout << PHWHERE << " WARNING: Can't find requested PHHepMCGenEventMap" << endl;
+    std::cout << PHWHERE << " WARNING: Can't find requested PHHepMCGenEventMap" << endl;
     return -1;
   }
 
@@ -951,6 +949,126 @@ DISKinematicsReco::AddTruthEventInformation()
   return 0;
 }
 
+int
+DISKinematicsReco::AddInvariantMassInformation()
+{
+  /* First, add truth particle information */
+  // ------------------------------------------------------------------------//
+  std::vector<float> true_eta, true_phi, true_ptotal;
+  std::vector<int> true_pid;
+  std::vector<bool> is_scattered_lepton;
+  // -----------------------------------------------------------------------//
+  /* Get collection of truth particles from event generator */
+  PHHepMCGenEventMap *geneventmap = findNode::getClass<PHHepMCGenEventMap>(_topNode,"PHHepMCGenEventMap");
+  if (!geneventmap) {
+    std::cout << PHWHERE << " WARNING: Can't find requested PHHepMCGenEventMap" << endl;
+    return -1;
+  }
+
+  /* Add truth kinematics */
+  int embedding_id = 1;
+  PHHepMCGenEvent *genevt = geneventmap->get(embedding_id);
+  if (!genevt)
+    {
+      std::cout << PHWHERE << "WARNING: Node PHHepMCGenEventMap missing subevent with embedding ID "<< embedding_id;
+      std::cout <<". Print PHHepMCGenEventMap:";
+      geneventmap->identify();
+      return -1;
+    }
+
+  HepMC::GenEvent* theEvent = genevt->getEvent();
+
+  if ( !theEvent )
+    {
+      std::cout << PHWHERE << "WARNING: Missing requested GenEvent!" << endl;
+      return -1;
+    }
+
+  /* Look for scattered lepton */
+  TruthTrackerHepMC truth;
+  truth.set_hepmc_geneventmap( geneventmap );
+  HepMC::GenParticle* particle_scattered_l = truth.FindScatteredLepton();
+  /* loop over all particles */
+  for (HepMC::GenEvent::particle_const_iterator p = theEvent->particles_begin();
+       p != theEvent->particles_end(); ++p)
+    { 
+      /* skip particles that are not stable final state particles (status 1) */
+      if ( (*p)->status() != 1 )
+        continue;
+
+      float mom_eta = -1 * log ( tan( (*p)->momentum().theta() / 2.0 ) );
+
+      true_eta.push_back(mom_eta);
+      true_phi.push_back( (*p)->momentum().phi() );
+      true_ptotal.push_back( (*p)->momentum().e() );
+      true_pid.push_back( (*p)->pdg_id() );
+      
+      if ( particle_scattered_l &&
+	   (*p) == particle_scattered_l )
+	is_scattered_lepton.push_back(true);
+      else
+	is_scattered_lepton.push_back(false);
+    }
+  /* Second, add reconstructed particle information */
+  // --------------------------------------------------------------------------
+  std::vector<float> reco_eta, reco_phi, reco_ptotal, reco_cluster_e;
+  std::vector<int> reco_charge;
+  // --------------------------------------------------------------------------
+  vector< string > v_ecals;
+  v_ecals.push_back("EEMC");
+  v_ecals.push_back("CEMC");
+  v_ecals.push_back("FEMC");
+  for ( unsigned idx = 0; idx < v_ecals.size(); idx++ )
+    {
+      string clusternodename = "CLUSTER_" + v_ecals.at( idx );
+      RawClusterContainer *clusterList = findNode::getClass<RawClusterContainer>(_topNode,clusternodename.c_str());
+      SvtxTrackMap *trackmap = findNode::getClass<SvtxTrackMap>(_topNode,"SvtxTrackMap");
+      if (!clusterList) {
+        cerr << PHWHERE << " ERROR: Can't find node " << clusternodename << endl;
+        return false;
+      }
+      if(!trackmap) {
+	cerr << PHWHERE << " ERROR: Can't find node SvtxTrackMap" << endl;
+	return false;
+      }
+
+      for (unsigned int k = 0; k < clusterList->size(); ++k)
+        {
+          RawCluster *cluster = clusterList->getCluster(k);
+          /* Check if cluster energy is below threshold */
+          float e_cluster_threshold = 0.3;
+          if ( cluster->get_energy() < e_cluster_threshold )
+            continue;
+
+	  _trackproj->set_detector(_trackproj->get_detector_from_cluster(cluster));
+	  SvtxTrack *best_track = _trackproj->get_best_track(trackmap,cluster);
+	  if(best_track!=NULL)
+	    {
+	      reco_eta.push_back(best_track->get_eta());
+	      reco_phi.push_back(best_track->get_phi());
+	      reco_ptotal.push_back(best_track->get_p());
+	      reco_charge.push_back(best_track->get_charge());
+	      reco_cluster_e.push_back(cluster->get_energy());
+	    }
+	  else
+	    {
+	      reco_eta.push_back(NAN);
+	      reco_phi.push_back(NAN);
+	      reco_ptotal.push_back(NAN);
+	      reco_charge.push_back(NAN);
+	      reco_cluster_e.push_back(NAN);
+	    }
+	}
+    }
+
+  // At this point, we have all the truth and reco event information we need to fiddle around with measuring the invariant mass //
+  
+  DVMPHelper * dvmp = new DVMPHelper(reco_eta,reco_phi,reco_ptotal,reco_charge,reco_cluster_e,true_eta,true_phi,true_ptotal,true_pid,is_scattered_lepton);
+  
+  std::vector<float> inv_mass_1 = dvmp->calculateInvariantMass_1();
+  cout << inv_mass_1.at(0) << endl;
+  return 0;
+}
 
 void
 DISKinematicsReco::ResetBranchMap()

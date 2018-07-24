@@ -15,6 +15,7 @@
 #include <g4hough/SvtxTrackMap_v1.h>
 
 #include <calobase/RawCluster.h>
+#include <calobase/RawTowerDefs.h>
 
 #include <phfield/PHFieldUtility.h>
 
@@ -300,3 +301,17 @@ TrackProjectorPlaneECAL::set_detector( char c )
   }
 }
 
+char TrackProjectorPlaneECAL::get_detector_from_cluster(RawCluster* cluster)
+{
+  RawCluster::TowerConstIterator rtiter = cluster->get_towers().first;
+  //caloid = RawTowerDefs::decode_caloid( rtiter->first );
+  const char *caloid_to_name = RawTowerDefs::convert_caloid_to_name( RawTowerDefs::decode_caloid( rtiter->first ) ).c_str();
+  if(strcmp(caloid_to_name,"EEMC")==0) return 'E';
+  else if(strcmp(caloid_to_name,"CEMC")==0) return 'C';
+  else if(strcmp(caloid_to_name,"FEMC")==0) return 'F';
+  else 
+    {
+      cout << "Unrecognized calorimeter. Default to CEMC" << endl;
+      return 'C';
+    }
+}

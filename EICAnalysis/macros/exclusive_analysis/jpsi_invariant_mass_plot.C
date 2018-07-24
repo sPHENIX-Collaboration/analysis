@@ -10,8 +10,8 @@ std::vector<TString> save_names;
 int jpsi_invariant_mass_plot()
 {
   // Set sPHENIX style
-    gROOT->LoadMacro("/sphenix/user/gregtom3/SBU/research/macros/macros/sPHENIXStyle/sPhenixStyle.C");
-  SetsPhenixStyle();
+  //gROOT->LoadMacro("/sphenix/user/gregtom3/SBU/research/macros/macros/sPHENIXStyle/sPhenixStyle.C");
+  //SetsPhenixStyle();
 
   // ------------------- What to Plot -------------------- //
 
@@ -24,7 +24,7 @@ int jpsi_invariant_mass_plot()
   // Plotting Sartre DVMP generator Sample (*Slideshow*) //
   // Pathed from /sphenix/user/gregtom3/data/Summer2018 //
 
-  addSampleSartre();
+  addSartre();
 
 
   // ------------------- Plotting -------------------------//
@@ -42,37 +42,64 @@ int jpsi_invariant_mass_plot()
       file_name=file_names.at(file_idx);
       jpsi_sartre_analysis(); // creates vector 'invariant_mass'
       invariant_mass_track=get_invariant_mass_vector();
-
       // Histograms //
-      TH1F *h1 = new TH1F("h1","h1",120,0,5);
-      h1->SetLineColor(kRed);
-      h1->GetXaxis()->SetTitle("Invariant Mass (GeV)");
-      h1->GetYaxis()->SetTitle("Counts");
+      TH1F *h1_track = new TH1F("h1track","h1track",120,0,15);
+      TH1F *h1_truth = new TH1F("h1truth","h1truth",120,0,15);
+      TH2F *h2_eta = new TH2F("h2eta","Eta Comparison",120,-4,4,120,-4,4);
+      TH2F *h2_phi = new TH2F("h2phi","Phi Comparison",120,-4,4,120,-4,4);
+      h1_track->SetLineColor(kRed);
+      h1_truth->SetLineColor(kBlue);
+      h1_track->GetXaxis()->SetTitle("Invariant Mass (GeV)");
+      h1_track->GetYaxis()->SetTitle("Counts");
+
+      h2_eta->GetXaxis()->SetTitle("Reco eta");
+      h2_phi->GetXaxis()->SetTitle("Reco phi");
+      h2_eta->GetYaxis()->SetTitle("True eta");
+      h2_phi->GetYaxis()->SetTitle("True phi");
 
       // Fill Histograms //
       for(int i = 0; i<invariant_mass_track.size(); i++)
 	{
-	  h1->Fill(invariant_mass_track.at(i));
+	  h1_track->Fill(invariant_mass_track.at(i));
+	  h1_truth->Fill(invariant_mass_truth.at(i));
+	}
+      for(int i = 0; i<holdeta.size(); i++)
+	{
+	  h2_eta->Fill(holdeta.at(i),true_holdeta.at(i));
+	  h2_phi->Fill(holdphi.at(i),true_holdphi.at(i));
 	}
 
       // Save histogram as a .png //
-      histToPNG(h1,titles.at(file_idx),save_names.at(file_idx));
-
+      histToPNG(h1_track,h1_truth,titles.at(file_idx),save_names.at(file_idx));
+      histToPNG(h2_eta,"Eta vs. True Eta","reco2true_eta_20x250.png");
+      histToPNG(h2_phi,"Phi vs. True Phi","reco2true_phi_20x250.png");
+      // Cout out histogram characteristics //
+      cout << "Track Histogram Characteristics" << endl;
+      cout << "-------------------------------" << endl;
+      cout << " Mean = " << h1_track->GetMean() << endl;
+      cout << " STD  = " << h1_track->GetRMS() << endl;
+      
+      cout << "Truth Histogram Characteristics" << endl;
+      cout << "-------------------------------" << endl;
+      cout << " Mean = " << h1_truth->GetMean() << endl;
+      cout << " STD  = " << h1_truth->GetRMS() << endl;
+      
       // Cleaning //
-      delete h1;h1=NULL;
-      invariant_mass_track.clear();
+      invariant_mass_track.clear(); invariant_mass_truth.clear();
     }
       return 0;
 }
 
-void histToPNG(TH1F* h_track, TString title, TString saveFileName)
+void histToPNG(TH1F* h_track, TH1F* h_truth, TString title, TString saveFileName)
 {
   TCanvas *cPNG = new TCanvas("cPNG",title,600,400);
   TImage *img = TImage::Create();
-  cPNG->SetLogy();
+  //cPNG->SetLogy();
   h_track->Draw();
-  auto legend = new TLegend(0.2,0.7,0.5,0.9,title);
+  h_truth->Draw("SAME");
+  auto legend = new TLegend(0.7,0.7,0.9,0.9,title);
   legend->AddEntry(h_track,"Track","l");
+  legend->AddEntry(h_truth,"Truth","l");
   legend->SetTextSize(0.06);
   legend->Draw();
   gPad->RedrawAxis();
@@ -85,6 +112,22 @@ void histToPNG(TH1F* h_track, TString title, TString saveFileName)
 
 }
 
+void histToPNG(TH2F *h2, TString title, TString saveFileName)
+{
+  
+  TCanvas *cPNG = new TCanvas("cPNG",title,600,400);
+  TImage *img = TImage::Create();
+  h2->Draw("colz");
+  cPNG->SetLogz();
+  gPad->RedrawAxis();
+  gStyle->SetOptStat(0);
+  
+  img->FromPad(cPNG);
+  img->WriteImage(saveFileName);
+  
+  delete img;
+  delete cPNG;
+}
 void addPHG4ParticleGeneratorVectorMeson()
 {
   // Add DVMP output generated from PHG4ParticleGeneratorVectorMeson to plotting
@@ -147,6 +190,13 @@ void addSampleSartre()
 {
   // Plot Sartre Sample from slideshow 
   file_names.push_back("JPsi_sartre_studies/sample/20x250_100Events.root");
+  titles.push_back("20x250");
+  save_names.push_back("recoMass_JPsi_20x250.png");
+}
+
+void addSartre()
+{
+  file_names.push_back("/sphenix/user/gregtom3/data/Summer2018/track2cluster_studies/100k_DVMP_sartre.root");
   titles.push_back("20x250");
   save_names.push_back("recoMass_JPsi_20x250.png");
 }

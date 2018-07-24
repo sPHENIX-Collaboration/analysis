@@ -41,11 +41,13 @@ public:
   SvtxTrackState* project_track( SvtxTrack * track, RawCluster* cluster, const PROJECTION_SURFACE surf, const float surface_par );
 
   void set_detector( char c ); //Sets the detector name
-
+  
+  char get_detector_from_cluster( RawCluster* cluster);
 private:
 
   PHGenFit::Fitter * _fitter;
   enum PROJECTION_DETECTOR detector;
+  
 };
 
 #endif
