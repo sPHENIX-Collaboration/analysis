@@ -56,8 +56,8 @@ ExclusiveReco::Init(PHCompositeNode *topNode)
   _tree_invariant_mass = new TTree("event_exclusive", "A tree with exclusive event information");
   _tree_invariant_mass->Branch("event", &_ievent, "event/I");
 
-  _tree_invariant_mass->Branch("Reco_Inv_Mass", &_vect1, "Test");
-  _tree_invariant_mass->Branch("True_Inv_Mass", &_vect2, "Test");
+  _tree_invariant_mass->Branch("Reco_Inv_Mass", &_vect1);
+  _tree_invariant_mass->Branch("True_Inv_Mass", &_vect2);
   return 0;
 }
 
@@ -232,6 +232,7 @@ ExclusiveReco::AddInvariantMassInformation()
   _vect5 = dvmp->calculateInvariantMass_5();
   _vect6 = dvmp->calculateInvariantMass_6();
   
+  _tree_invariant_mass->Fill();
   return 0;
 }
 
