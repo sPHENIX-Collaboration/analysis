@@ -90,6 +90,14 @@ private:
 
   int AddInvariantMassInformation();
   
+  std::vector<float> true_eta, true_phi, true_ptotal;
+  std::vector<int> true_pid;
+  std::vector<bool> is_scattered_lepton;
+
+  std::vector<float> reco_eta, reco_phi, reco_ptotal, reco_cluster_e;
+  std::vector<int> reco_charge;
+  std::vector<bool> reco_is_scattered_lepton;
+  
   std::vector<float> _vect1;
   std::vector<float> _vect2;
   std::vector<float> _vect3;

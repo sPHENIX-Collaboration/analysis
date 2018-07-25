@@ -87,9 +87,7 @@ ExclusiveReco::AddInvariantMassInformation()
 {
   /* First, add truth particle information */
   // ------------------------------------------------------------------------//
-  std::vector<float> true_eta, true_phi, true_ptotal;
-  std::vector<int> true_pid;
-  std::vector<bool> is_scattered_lepton;
+  //true vectors are defined in header file
   // -----------------------------------------------------------------------//
   /* Get collection of truth particles from event generator */
   PHHepMCGenEventMap *geneventmap = findNode::getClass<PHHepMCGenEventMap>(_topNode,"PHHepMCGenEventMap");
@@ -144,9 +142,7 @@ ExclusiveReco::AddInvariantMassInformation()
     }
   /* Second, add reconstructed particle information */
   // --------------------------------------------------------------------------
-  std::vector<float> reco_eta, reco_phi, reco_ptotal, reco_cluster_e;
-  std::vector<int> reco_charge;
-  std::vector<bool> reco_is_scattered_lepton;
+  //reco vectors are defined in header file
   // --------------------------------------------------------------------------
   vector< string > v_ecals;
   v_ecals.push_back("EEMC");
@@ -224,21 +220,18 @@ ExclusiveReco::AddInvariantMassInformation()
 
   // 1) Invariant Mass of all reconstructed e- e+ pairs
   // 2) Invariant Mass of all truth e- e+ pairs
-  //std::vector<float> inv_mass_1 = dvmp->calculateInvariantMass_1();
-  // std::vector<float> inv_mass_2 = dvmp->calculateInvariantMass_2();
+  // 3) Invariant Mass of reco decay e- e+ pairs (**USES TRUTH INFO**)
+  // 4) Invariant Mass of reco scattered e- e+ pairs (**USES TRUTH INFO**)
+  // 5) Invariant Mass of truth decay e- e+ pairs
+  // 6) Invariant Mass of truth scattered e- e+ pairs
 
-
-  //_vect1 = dvmp->calculateInvariantMass_1();
-  //_vect2 = dvmp->calculateInvariantMass_2();
+  _vect1 = dvmp->calculateInvariantMass_1();
+  _vect2 = dvmp->calculateInvariantMass_2();
   _vect3 = dvmp->calculateInvariantMass_3();
-  //_vect4 = dvmp->calculateInvariantMass_4();
-  //_vect5 = dvmp->calculateInvariantMass_5();
-  //_vect6 = dvmp->calculateInvariantMass_6();
+  _vect4 = dvmp->calculateInvariantMass_4();
+  _vect5 = dvmp->calculateInvariantMass_5();
+  _vect6 = dvmp->calculateInvariantMass_6();
   
-  for(unsigned i = 0; i < _vect3.size() ; i++)
-    {
-      cout << _vect3.at(i) << endl;
-    }
   return 0;
 }
 
