@@ -1,3 +1,4 @@
+
 #include "TrackProjectorPlaneECAL.h"
 
 /* Fun4All includes */
@@ -14,6 +15,7 @@
 #include <g4hough/SvtxTrackMap_v1.h>
 
 #include <calobase/RawCluster.h>
+#include <calobase/RawTowerDefs.h>
 
 #include <phfield/PHFieldUtility.h>
 
@@ -35,7 +37,7 @@ TrackProjectorPlaneECAL::TrackProjectorPlaneECAL( PHCompositeNode *topNode ) :
   PHField * field = PHFieldUtility::GetFieldMapNode(nullptr, topNode);
 
   _fitter = PHGenFit::Fitter::getInstance(tgeo_manager,field,
-                                          "DafRep",
+                                          "DafRef",
                                           "RKTrackRep", false);
 
   _fitter->set_verbosity(10);
@@ -93,30 +95,27 @@ TrackProjectorPlaneECAL::get_projected_momentum(  SvtxTrack * track, RawCluster 
 }
 
 SvtxTrack*
-TrackProjectorPlaneECAL::get_best_track( SvtxTrackMap* trackmap, RawCluster* cluster, const float deltaR = -1 )
+TrackProjectorPlaneECAL::get_best_track( SvtxTrackMap* trackmap, RawCluster* cluster)
 {
   std::vector< float > distance_from_track_to_cluster;
   bool there_is_a_track=false;
 
-  // Go through the entire track map and find the track closest to deltaR
-  // If deltaR < 0, get closest track
+  float deltaR = 20;
 
   for(SvtxTrackMap::ConstIter track_itr = trackmap->begin(); track_itr != trackmap->end(); track_itr++)
     {
       SvtxTrack* the_track = dynamic_cast<SvtxTrack*>(track_itr->second);
-      
       /* Check if the_track is null ptr */
       if(the_track == NULL)
 	{
 	  distance_from_track_to_cluster.push_back(NAN);
 	  continue;
 	}
-      
       /* Position vector of extrapolated track */
       double posv[3] = {0.,0.,0.};
       if(!get_projected_position( the_track,cluster, posv, TrackProjectorPlaneECAL::PLANE_CYLINDER, -1))
 	{
-	  std::cout << "Track Projection Position NOT FOUND; next iteration" << std::endl;
+	  //std::cout << "Track Projection Position NOT FOUND; next iteration" << std::endl;
 	  distance_from_track_to_cluster.push_back(NAN);
 	  continue;
 	}
@@ -134,10 +133,9 @@ TrackProjectorPlaneECAL::get_best_track( SvtxTrackMap* trackmap, RawCluster* clu
     return NULL;
   else if(there_is_a_track==false)
     return NULL;
-
   /* Find the track with minimum distance */
   /* TODO: What if two tracks are within deltaR */
-  float min_distance = distance_from_track_to_cluster.at(0);
+  float min_distance = 9999;
   int min_distance_index = 0;
   for(unsigned i = 0; i<distance_from_track_to_cluster.size(); i++)
     {
@@ -147,7 +145,6 @@ TrackProjectorPlaneECAL::get_best_track( SvtxTrackMap* trackmap, RawCluster* clu
 	  min_distance_index = i;
 	}
     }
-
   /* Test min_distance with deltaR */
   if(deltaR<0) 
     return trackmap->get(min_distance_index);
@@ -231,6 +228,9 @@ TrackProjectorPlaneECAL::project_track(  SvtxTrack * track, RawCluster* cluster,
 	  zvect = 1;
 	  break;
 	case FEMC:
+	  cluster_pos(0)=0;
+	  cluster_pos(1)=0;
+	  cluster_pos(2)=295;
 	  zvect = -1;
 	  break;
 	default:
@@ -239,13 +239,13 @@ TrackProjectorPlaneECAL::project_track(  SvtxTrack * track, RawCluster* cluster,
 	}
 	// Get normal vector to detector
 	TVector3 cluster_norm(xvect,yvect,zvect);
-	
 	// Case in which norm vector remained undefined 
 	if(xvect==0&&yvect==0&&zvect==0)
 	  {
 	    cout << "WARNING: Cluster normal vector uninitialized. Aborting track" << endl;
 	    return NULL;
 	  }
+
 
 	// Extrapolate to detector 
 	rep->extrapolateToPlane(*msop80, genfit::SharedPlanePtr( new genfit::DetPlane( cluster_pos, cluster_norm ) ), false, false);
@@ -254,7 +254,7 @@ TrackProjectorPlaneECAL::project_track(  SvtxTrack * track, RawCluster* cluster,
       rep->extrapolateToPlane(*msop80, genfit::SharedPlanePtr( new genfit::DetPlane( TVector3(0, 0, surface_par), TVector3(0, 0, 1) ) ), false, false);
 
   } catch (...) {
-    cout << "track extrapolateToXX failed" << endl;
+    //cout << "track extrapolateToXX failed" << endl;
     return NULL;
   }
 
@@ -301,3 +301,17 @@ TrackProjectorPlaneECAL::set_detector( char c )
   }
 }
 
+char TrackProjectorPlaneECAL::get_detector_from_cluster(RawCluster* cluster)
+{
+  RawCluster::TowerConstIterator rtiter = cluster->get_towers().first;
+  //caloid = RawTowerDefs::decode_caloid( rtiter->first );
+  const char *caloid_to_name = RawTowerDefs::convert_caloid_to_name( RawTowerDefs::decode_caloid( rtiter->first ) ).c_str();
+  if(strcmp(caloid_to_name,"EEMC")==0) return 'E';
+  else if(strcmp(caloid_to_name,"CEMC")==0) return 'C';
+  else if(strcmp(caloid_to_name,"FEMC")==0) return 'F';
+  else 
+    {
+      cout << "Unrecognized calorimeter. Default to CEMC" << endl;
+      return 'C';
+    }
+}
