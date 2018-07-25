@@ -70,13 +70,6 @@ public:
     _do_process_truth = select;
   }
   
-  void
-  set_do_process_dvmp( bool select)
-  {
-    _do_process_dvmp = select;
-  }
-  
-  
 
 private:
 
@@ -88,7 +81,6 @@ private:
   bool _save_tracks;
   bool _do_process_geant4_cluster;
   bool _do_process_truth;
-  bool _do_process_dvmp;
 
   int _ievent;
   int _total_pass;
@@ -101,9 +93,6 @@ private:
 
   /* output tree and variables from TRUTH particles */
   TTree* _tree_event_truth;
-
-  /* output tree for invariant mass calculation */
-  TTree* _tree_invariant_mass;
 
   /* beam energies electron and proton */
   float _beam_electron_ptotal;
@@ -144,7 +133,6 @@ private:
 
   int AddTruthEventInformation();
 
-  int AddInvariantMassInformation();
   /** Find tau candidate in map that is closest to given eta, phi angle */
   PidCandidate* FindMinDeltaRCandidate( type_map_tcan*, const float, const float );
 

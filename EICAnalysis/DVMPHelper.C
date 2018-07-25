@@ -213,7 +213,7 @@ DVMPHelper::calculateInvariantMass_5()
     {
       if( tparticles[i].pid == -11 )
 	idx_positron=i;
-      else if( tparticles[i].pid == 11 && tparticles[i].is_scattered_lepton==true)
+      else if( tparticles[i].pid == 11 && tparticles[i].is_scattered_lepton==false)
 	idx_electron.push_back(i);
     }
   
@@ -237,7 +237,7 @@ DVMPHelper::calculateInvariantMass_6()
     {
       if( tparticles[i].pid == -11 )
 	idx_positron=i;
-      else if( tparticles[i].pid == 11 && tparticles[i].is_scattered_lepton==false)
+      else if( tparticles[i].pid == 11 && tparticles[i].is_scattered_lepton==true)
 	idx_electron.push_back(i);
     }
 
