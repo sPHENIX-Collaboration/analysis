@@ -125,6 +125,13 @@ public:
       em_track_e3x3_fhcal = 365,
       em_track_e3x3_ehcal = 366,
       em_track_cluster_dr = 367,
+      em_track_theta2cluster = 368,
+      em_track_eta2cluster = 369,
+      em_track_phi2cluster = 370,
+      em_track_p2cluster = 371,
+      em_track_x2cluster = 372,
+      em_track_y2cluster = 373,
+      em_track_z2cluster = 374,
 
       //-- EM PID probabilities
       em_pid_prob_electron = 391,
