@@ -78,6 +78,12 @@ private:
   /* output tree for invariant mass calculation */
   TTree* _tree_invariant_mass;
 
+  /* output tree for reco particles */
+  TTree* _tree_event_reco;
+
+  /* output tree for truth particles */
+  TTree* _tree_event_truth;
+
   /* beam energies electron and proton */
   float _beam_electron_ptotal;
   float _beam_hadron_ptotal;

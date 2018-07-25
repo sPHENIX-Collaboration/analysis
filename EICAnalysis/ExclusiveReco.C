@@ -36,6 +36,8 @@ ExclusiveReco::ExclusiveReco(std::string filename) :
   _filename(filename),
   _tfile(nullptr),
   _tree_invariant_mass(nullptr),
+  _tree_event_reco(nullptr),
+  _tree_event_truth(nullptr),
   _beam_electron_ptotal(10),
   _beam_hadron_ptotal(250),
   _trackproj(nullptr)
@@ -56,13 +58,34 @@ ExclusiveReco::Init(PHCompositeNode *topNode)
   _tree_invariant_mass = new TTree("event_exclusive", "A tree with exclusive event information");
   _tree_invariant_mass->Branch("event", &_ievent, "event/I");
 
-  _tree_invariant_mass->Branch("Reco_Inv_Mass", &_vect1);
-  _tree_invariant_mass->Branch("True_Inv_Mass", &_vect2);
-  _tree_invariant_mass->Branch("vec3", &_vect3);
-  _tree_invariant_mass->Branch("vec4", &_vect4);
-  _tree_invariant_mass->Branch("vec5", &_vect5);
-  _tree_invariant_mass->Branch("vec6", &_vect6);
+  _tree_invariant_mass->Branch("reco_inv", &_vect1);
+  _tree_invariant_mass->Branch("true_inv", &_vect2);
+  _tree_invariant_mass->Branch("reco_inv_decay", &_vect3);
+  _tree_invariant_mass->Branch("reco_inv_scatter", &_vect4);
+  _tree_invariant_mass->Branch("true_inv_decay", &_vect5);
+  _tree_invariant_mass->Branch("true_inv_scatter", &_vect6);
 
+
+  /* Create tree for information about reco event */
+  _tree_event_reco = new TTree("event_reco", "A tree with reco particle information");
+  _tree_event_reco->Branch("event", &_ievent, "event/I");
+  _tree_event_reco->Branch("eta", &reco_eta);
+  _tree_event_reco->Branch("phi", &reco_phi);
+  _tree_event_reco->Branch("ptotal", &reco_ptotal);
+  _tree_event_reco->Branch("charge", &reco_charge);
+  _tree_event_reco->Branch("cluster_e", &reco_cluster_e);
+  _tree_event_reco->Branch("is_scattered_lepton", &reco_is_scattered_lepton);
+  
+  
+  /* Create tree for information about reco event */
+  _tree_event_truth = new TTree("event_truth", "A tree with truth particle information");
+  _tree_event_truth->Branch("event", &_ievent, "event/I");
+  _tree_event_truth->Branch("geta", &true_eta);
+  _tree_event_truth->Branch("gphi", &true_phi);
+  _tree_event_truth->Branch("gptotal", &true_ptotal);
+  _tree_event_truth->Branch("pid",&true_pid);
+  _tree_event_truth->Branch("is_scattered_lepton",&is_scattered_lepton);
+  
   return 0;
 }
 
@@ -93,6 +116,7 @@ ExclusiveReco::AddInvariantMassInformation()
   /* First, add truth particle information */
   // ------------------------------------------------------------------------//
   //true vectors are defined in header file
+  true_eta.clear(); true_phi.clear(); true_ptotal.clear(); true_pid.clear(); is_scattered_lepton.clear();
   // -----------------------------------------------------------------------//
   /* Get collection of truth particles from event generator */
   PHHepMCGenEventMap *geneventmap = findNode::getClass<PHHepMCGenEventMap>(_topNode,"PHHepMCGenEventMap");
@@ -148,6 +172,7 @@ ExclusiveReco::AddInvariantMassInformation()
   /* Second, add reconstructed particle information */
   // --------------------------------------------------------------------------
   //reco vectors are defined in header file
+  reco_eta.clear(); reco_phi.clear(); reco_ptotal.clear(); reco_cluster_e.clear(); reco_charge.clear(); reco_is_scattered_lepton.clear();
   // --------------------------------------------------------------------------
   vector< string > v_ecals;
   v_ecals.push_back("EEMC");
@@ -191,7 +216,7 @@ ExclusiveReco::AddInvariantMassInformation()
 	      reco_eta.push_back(NAN);
 	      reco_phi.push_back(NAN);
 	      reco_ptotal.push_back(NAN);
-	      reco_charge.push_back(NAN);
+	      reco_charge.push_back(0);
 	      reco_cluster_e.push_back(NAN);
 	    }
 
@@ -236,7 +261,9 @@ ExclusiveReco::AddInvariantMassInformation()
   _vect4 = dvmp->calculateInvariantMass_4();
   _vect5 = dvmp->calculateInvariantMass_5();
   _vect6 = dvmp->calculateInvariantMass_6();
-  
+ 
+  _tree_event_reco->Fill();
+  _tree_event_truth->Fill();
   _tree_invariant_mass->Fill();
   return 0;
 }
@@ -247,7 +274,11 @@ ExclusiveReco::End(PHCompositeNode *topNode)
   _tfile->cd();
 
   if ( _tree_invariant_mass )
-    _tree_invariant_mass->Write();
+    {
+      _tree_event_reco->Write();
+      _tree_event_truth->Write();
+      _tree_invariant_mass->Write();
+    }
 
   _tfile->Close();
 
