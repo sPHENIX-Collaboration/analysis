@@ -251,7 +251,7 @@ DISKinematicsReco::process_event(PHCompositeNode *topNode)
     }
 
   /* Calculate invariant mass of a DVMP event */
-  if ( _do_process_dvmp && (_do_process_truth && _do_process_geant4_cluster))
+  if ( _do_process_dvmp && !(_do_process_truth && _do_process_geant4_cluster))
     {
       AddInvariantMassInformation();
     }
@@ -1062,11 +1062,17 @@ DISKinematicsReco::AddInvariantMassInformation()
     }
 
   // At this point, we have all the truth and reco event information we need to fiddle around with measuring the invariant mass //
-  
   DVMPHelper * dvmp = new DVMPHelper(reco_eta,reco_phi,reco_ptotal,reco_charge,reco_cluster_e,true_eta,true_phi,true_ptotal,true_pid,is_scattered_lepton);
-  
+
+  // 1) Invariant Mass of all reconstructed e- e+ pairs
+  // 2) Invariant Mass of all truth e- e+ pairs
   std::vector<float> inv_mass_1 = dvmp->calculateInvariantMass_1();
-  cout << inv_mass_1.at(0) << endl;
+  std::vector<float> inv_mass_2 = dvmp->calculateInvariantMass_2();
+
+  _tree_invariant_mass->Branch("Reco Inv. Mass",&inv_mass_1);
+  _tree_invariant_mass->Branch("True Inv. Mass",&inv_mass_2);
+  
+  _tree_invariant_mass->Fill();
   return 0;
 }
 
@@ -1102,6 +1108,9 @@ DISKinematicsReco::End(PHCompositeNode *topNode)
 
   if ( _tree_event_truth )
     _tree_event_truth->Write();
+
+  if ( _tree_invariant_mass )
+    _tree_invariant_mass->Write();
 
   _tfile->Close();
 

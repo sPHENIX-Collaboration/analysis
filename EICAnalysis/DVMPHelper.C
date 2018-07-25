@@ -1,7 +1,7 @@
 #include "DVMPHelper.h"
 
 #include <cmath>
-
+#include <iostream>
 DVMPHelper::DVMPHelper(std::vector<float> reco_eta, 
 		       std::vector<float> reco_phi,
 		       std::vector<float> reco_ptotal, 
@@ -13,18 +13,16 @@ DVMPHelper::DVMPHelper(std::vector<float> reco_eta,
 		       std::vector<int> pid,
 		       std::vector<bool> is_scattered_lepton)
 {
-  delete rparticles; rparticles=NULL;
-  delete tparticles; tparticles=NULL;
-
+  
   _size_reco = reco_eta.size();
   _size_truth = true_eta.size();
 
   rparticles = (DVMPHelper::particle_reco*)malloc(_size_reco * sizeof(DVMPHelper::particle_reco));
   tparticles = (DVMPHelper::particle_truth*)malloc(_size_truth * sizeof(DVMPHelper::particle_truth));
-
+  
   for(int i = 0 ; i < _size_reco ; i++)
     {
-      // rparticles[i]=GetParticleReco(reco_eta.at(i),reco_phi.at(i),reco_ptotal.at(i),reco_charge.at(i),reco_cluster_e.at(i));
+      rparticles[i]=GetParticleReco(reco_eta.at(i),reco_phi.at(i),reco_ptotal.at(i),reco_charge.at(i),reco_cluster_e.at(i));
     }
   for(int j = 0 ; j <_size_truth ; j++)
     {
@@ -138,7 +136,7 @@ DVMPHelper::calculateInvariantMass_1()
       else if( rparticles[i].charge == -1 )
 	idx_electron.push_back(i);
     }
-
+  std::cout << idx_positron << std::endl;
   // Ensure positron and electron(s) pass ep_cut
   if(!(pass_cut(idx_positron)))
     {
@@ -157,7 +155,6 @@ DVMPHelper::calculateInvariantMass_1()
       inv_mass.push_back(NAN);
       return inv_mass;
     }
-
   // Calculate invariant mass for all electron and positron pairs
   for(unsigned i = 0; i < idx_electron.size() ; i++)
     {
@@ -190,7 +187,64 @@ DVMPHelper::calculateInvariantMass_2()
   return inv_mass;
 }
 
-bool DVMPHelper::la_de_da()
+std::vector<float>
+DVMPHelper::calculateInvariantMass_3()
 {
-  return true;
+  std::vector<float> inv_mass;
+  return inv_mass;
+}
+
+std::vector<float>
+DVMPHelper::calculateInvariantMass_4()
+{
+  std::vector<float> inv_mass;
+  return inv_mass;
+}
+
+std::vector<float>
+DVMPHelper::calculateInvariantMass_5()
+{
+  std::vector<float> inv_mass;
+  
+  // Record index of positron and electrons
+  int idx_positron=-1;
+  std::vector<int> idx_electron;
+  for(int i = 0 ; i < _size_truth ; i++)
+    {
+      if( tparticles[i].pid == -11 )
+	idx_positron=i;
+      else if( tparticles[i].pid == 11 && tparticles[i].is_scattered_lepton==true)
+	idx_electron.push_back(i);
+    }
+  
+  // Calculate invariant mass for all electron positron pairs
+  for(unsigned i = 0; i < idx_electron.size() ; i++)
+    {
+      inv_mass.push_back(DVMPHelper::get_invariant_mass( tparticles[idx_electron.at(i)], tparticles[idx_positron]));
+    }
+  
+  return inv_mass;
+}
+
+std::vector<float>
+DVMPHelper::calculateInvariantMass_6()
+{
+  std::vector<float> inv_mass;
+  // Record index of positron and electrons
+  int idx_positron=-1;
+  std::vector<int> idx_electron;
+  for(int i = 0 ; i < _size_truth ; i++)
+    {
+      if( tparticles[i].pid == -11 )
+	idx_positron=i;
+      else if( tparticles[i].pid == 11 && tparticles[i].is_scattered_lepton==false)
+	idx_electron.push_back(i);
+    }
+
+  // Calculate invariant mass for all electron positron pairs
+  for(unsigned i = 0; i < idx_electron.size() ; i++)
+    {
+      inv_mass.push_back(DVMPHelper::get_invariant_mass( tparticles[idx_electron.at(i)], tparticles[idx_positron]));
+    }
+  return inv_mass;
 }

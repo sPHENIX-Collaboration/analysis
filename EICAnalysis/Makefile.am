@@ -36,7 +36,9 @@ pkginclude_HEADERS = \
   PidCandidatev1.h\
   TrackProjectionTools.h \
   TrackProjectorPlaneECAL.h \
-  TruthTrackerHepMC.h
+  TruthTrackerHepMC.h \
+  DVMPHelper.h \
+  ExclusiveReco.h
 
 libeicana_la_SOURCES = \
   Leptoquarks.C \
@@ -53,7 +55,10 @@ libeicana_la_SOURCES = \
   PidCandidatev1_Dict.C\
   TrackProjectionTools.C \
   TrackProjectorPlaneECAL.cc \
-  TruthTrackerHepMC.C
+  TruthTrackerHepMC.C \
+  DVMPHelper.C \
+  ExclusiveReco.C \
+  ExclusiveReco_Dict.C
 
 # Rule for generating table CINT dictionaries.
 %_Dict.C: %.h %LinkDef.h

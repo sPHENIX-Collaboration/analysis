@@ -42,6 +42,18 @@ class DVMPHelper
   /* Return invariant mass float from truth particles */
   std::vector<float> calculateInvariantMass_2();
 
+  /* Return invariant mass float from reco particles (decay particles) */
+  std::vector<float> calculateInvariantMass_3();
+
+  /* Return invariant mass float from reco particles (positron+scattered electron */
+  std::vector<float> calculateInvariantMass_4();
+
+  /* Return invariant mass float from truth particles (decay particles) */
+  std::vector<float> calculateInvariantMass_5();
+  
+  /* Return invariant mass float from truth particles (positron+scattered e-) */
+  std::vector<float> calculateInvariantMass_6();
+
   /* Size of reco/truth */
   int _size_reco;
   int _size_truth;
