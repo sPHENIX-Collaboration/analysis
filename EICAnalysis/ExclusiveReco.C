@@ -58,6 +58,11 @@ ExclusiveReco::Init(PHCompositeNode *topNode)
 
   _tree_invariant_mass->Branch("Reco_Inv_Mass", &_vect1);
   _tree_invariant_mass->Branch("True_Inv_Mass", &_vect2);
+  _tree_invariant_mass->Branch("vec3", &_vect3);
+  _tree_invariant_mass->Branch("vec4", &_vect4);
+  _tree_invariant_mass->Branch("vec5", &_vect5);
+  _tree_invariant_mass->Branch("vec6", &_vect6);
+
   return 0;
 }
 
