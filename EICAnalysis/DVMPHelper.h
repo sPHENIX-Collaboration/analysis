@@ -11,6 +11,7 @@ class DVMPHelper
   DVMPHelper(std::vector<float> reco_eta, std::vector<float> reco_phi,
 	     std::vector<float> reco_ptotal, std::vector<int> reco_charge,
 	     std::vector<float> reco_cluster_e,
+	     std::vector<bool> reco_is_scattered_lepton,
 	     std::vector<float> true_eta, std::vector<float> true_phi,
 	     std::vector<float> true_ptotal, std::vector<int> pid,
 	     std::vector<bool> is_scattered_lepton);
@@ -25,6 +26,7 @@ class DVMPHelper
     float ptotal;
     int charge;
     float e;
+    bool is_scattered_lepton;
   };
 
   /* True Particle Struct */ 
@@ -63,7 +65,7 @@ class DVMPHelper
   DVMPHelper::particle_truth * tparticles;
 
   /* Return reco particle */
-  particle_reco GetParticleReco(float eta, float phi, float ptotal, int charge, float e);
+  particle_reco GetParticleReco(float eta, float phi, float ptotal, int charge, float e,bool is_scattered_lepton);
 
   /* Return truth particle */
   particle_truth GetParticleTruth(float eta, float phi, float ptotal, int pid, bool is_scattered_lepton);

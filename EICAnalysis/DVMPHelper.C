@@ -7,6 +7,7 @@ DVMPHelper::DVMPHelper(std::vector<float> reco_eta,
 		       std::vector<float> reco_ptotal, 
 		       std::vector<int> reco_charge, 
 		       std::vector<float> reco_cluster_e,
+		       std::vector<bool> reco_is_scattered_lepton,
 		       std::vector<float> true_eta, 
 		       std::vector<float> true_phi,
 		       std::vector<float> true_ptotal, 
@@ -22,7 +23,7 @@ DVMPHelper::DVMPHelper(std::vector<float> reco_eta,
   
   for(int i = 0 ; i < _size_reco ; i++)
     {
-      rparticles[i]=GetParticleReco(reco_eta.at(i),reco_phi.at(i),reco_ptotal.at(i),reco_charge.at(i),reco_cluster_e.at(i));
+      rparticles[i]=GetParticleReco(reco_eta.at(i),reco_phi.at(i),reco_ptotal.at(i),reco_charge.at(i),reco_cluster_e.at(i),reco_is_scattered_lepton.at(i));
     }
   for(int j = 0 ; j <_size_truth ; j++)
     {
@@ -31,9 +32,9 @@ DVMPHelper::DVMPHelper(std::vector<float> reco_eta,
 }
 
 DVMPHelper::particle_reco 
-DVMPHelper::GetParticleReco(float eta, float phi, float ptotal, int charge,float e)
+DVMPHelper::GetParticleReco(float eta, float phi, float ptotal, int charge,float e,bool is_scattered_lepton)
 {
-  DVMPHelper::particle_reco particle = {eta,phi,ptotal,charge,e};
+  DVMPHelper::particle_reco particle = {eta,phi,ptotal,charge,e,is_scattered_lepton};
   return particle;
 }
 
@@ -136,7 +137,6 @@ DVMPHelper::calculateInvariantMass_1()
       else if( rparticles[i].charge == -1 )
 	idx_electron.push_back(i);
     }
-  std::cout << idx_positron << std::endl;
   // Ensure positron and electron(s) pass ep_cut
   if(!(pass_cut(idx_positron)))
     {
@@ -191,6 +191,54 @@ std::vector<float>
 DVMPHelper::calculateInvariantMass_3()
 {
   std::vector<float> inv_mass;
+
+  // Assert number of particles in event is greater than 1
+  if(_size_reco<=1)
+    {
+      inv_mass.push_back(NAN);
+      return inv_mass;
+    }
+  
+  // Assert a positron exists
+  if(!DVMPHelper::find_positron())
+    {
+      inv_mass.push_back(NAN);
+      return inv_mass;
+    }
+  
+  // Record index of positron and electrons
+  int idx_positron=-1;
+  std::vector<int> idx_electron;
+  for(int i = 0 ; i < _size_reco ; i++)
+    {
+      if( rparticles[i].charge == 1 )
+	idx_positron=i;
+      else if( rparticles[i].charge == -1 && rparticles[i].is_scattered_lepton==false )
+	idx_electron.push_back(i);
+    }
+  // Ensure positron and electron(s) pass ep_cut
+  if(!(pass_cut(idx_positron)))
+    {
+      inv_mass.push_back(NAN);
+      return inv_mass;
+    }
+  
+  for(unsigned i = 0 ; i < idx_electron.size() ; i++)
+    {
+      if( !pass_cut(idx_electron.at(i)) )
+	idx_electron.erase(idx_electron.begin()+i);
+    }
+
+  if(idx_electron.size()==0) // all found electrons fail cut
+    {
+      inv_mass.push_back(NAN);
+      return inv_mass;
+    }
+  // Calculate invariant mass for all electron and positron pairs
+  for(unsigned i = 0; i < idx_electron.size() ; i++)
+    {
+      inv_mass.push_back(DVMPHelper::get_invariant_mass( rparticles[idx_electron.at(i)], rparticles[idx_positron]));
+    }
   return inv_mass;
 }
 
@@ -198,6 +246,54 @@ std::vector<float>
 DVMPHelper::calculateInvariantMass_4()
 {
   std::vector<float> inv_mass;
+
+  // Assert number of particles in event is greater than 1
+  if(_size_reco<=1)
+    {
+      inv_mass.push_back(NAN);
+      return inv_mass;
+    }
+  
+  // Assert a positron exists
+  if(!DVMPHelper::find_positron())
+    {
+      inv_mass.push_back(NAN);
+      return inv_mass;
+    }
+  
+  // Record index of positron and electrons
+  int idx_positron=-1;
+  std::vector<int> idx_electron;
+  for(int i = 0 ; i < _size_reco ; i++)
+    {
+      if( rparticles[i].charge == 1 )
+	idx_positron=i;
+      else if( rparticles[i].charge == -1 && rparticles[i].is_scattered_lepton==true )
+	idx_electron.push_back(i);
+    }
+  // Ensure positron and electron(s) pass ep_cut
+  if(!(pass_cut(idx_positron)))
+    {
+      inv_mass.push_back(NAN);
+      return inv_mass;
+    }
+  
+  for(unsigned i = 0 ; i < idx_electron.size() ; i++)
+    {
+      if( !pass_cut(idx_electron.at(i)) )
+	idx_electron.erase(idx_electron.begin()+i);
+    }
+
+  if(idx_electron.size()==0) // all found electrons fail cut
+    {
+      inv_mass.push_back(NAN);
+      return inv_mass;
+    }
+  // Calculate invariant mass for all electron and positron pairs
+  for(unsigned i = 0; i < idx_electron.size() ; i++)
+    {
+      inv_mass.push_back(DVMPHelper::get_invariant_mass( rparticles[idx_electron.at(i)], rparticles[idx_positron]));
+    }
   return inv_mass;
 }
 

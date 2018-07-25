@@ -15,6 +15,8 @@
 #include <calobase/RawClusterContainer.h>
 #include <calobase/RawCluster.h>
 
+#include <g4eval/CaloEvalStack.h>
+
 #include <g4main/PHG4Particle.h>
 
 
@@ -144,6 +146,7 @@ ExclusiveReco::AddInvariantMassInformation()
   // --------------------------------------------------------------------------
   std::vector<float> reco_eta, reco_phi, reco_ptotal, reco_cluster_e;
   std::vector<int> reco_charge;
+  std::vector<bool> reco_is_scattered_lepton;
   // --------------------------------------------------------------------------
   vector< string > v_ecals;
   v_ecals.push_back("EEMC");
@@ -151,6 +154,7 @@ ExclusiveReco::AddInvariantMassInformation()
   v_ecals.push_back("FEMC");
   for ( unsigned idx = 0; idx < v_ecals.size(); idx++ )
     {
+      CaloEvalStack * caloevalstack = new CaloEvalStack(_topNode, v_ecals.at( idx ) );
       string clusternodename = "CLUSTER_" + v_ecals.at( idx );
       RawClusterContainer *clusterList = findNode::getClass<RawClusterContainer>(_topNode,clusternodename.c_str());
       SvtxTrackMap *trackmap = findNode::getClass<SvtxTrackMap>(_topNode,"SvtxTrackMap");
@@ -189,11 +193,34 @@ ExclusiveReco::AddInvariantMassInformation()
 	      reco_charge.push_back(NAN);
 	      reco_cluster_e.push_back(NAN);
 	    }
+
+	  // Try to find scattered lepton
+	  // Match reco particle with truth particle (primary)
+	  // See if primary is a scattered electron in the truth vector
+	  CaloRawClusterEval* clustereval = caloevalstack->get_rawcluster_eval();
+	  PHG4Particle* primary = clustereval->max_truth_primary_particle_by_energy(cluster);
+	  float compare_ptotal = sqrt( primary->get_px()*primary->get_px()
+				                        +
+				       primary->get_py()*primary->get_py()
+				                        +
+				       primary->get_pz()*primary->get_pz());
+	  bool primary_is_scattered_electron = false;
+	  for(unsigned idx_truth = 0 ; idx_truth < true_ptotal.size() ; idx_truth++)
+	    {
+	      if(is_scattered_lepton.at(idx_truth)==true)
+		{
+		  if(compare_ptotal==true_ptotal.at(idx_truth))
+		    {
+		      primary_is_scattered_electron = true;
+		    }
+		}
+	    }
+	  reco_is_scattered_lepton.push_back(primary_is_scattered_electron);
 	}
     }
 
   // At this point, we have all the truth and reco event information we need to fiddle around with measuring the invariant mass //
-  DVMPHelper * dvmp = new DVMPHelper(reco_eta,reco_phi,reco_ptotal,reco_charge,reco_cluster_e,true_eta,true_phi,true_ptotal,true_pid,is_scattered_lepton);
+  DVMPHelper * dvmp = new DVMPHelper(reco_eta,reco_phi,reco_ptotal,reco_charge,reco_cluster_e,reco_is_scattered_lepton,true_eta,true_phi,true_ptotal,true_pid,is_scattered_lepton);
 
   // 1) Invariant Mass of all reconstructed e- e+ pairs
   // 2) Invariant Mass of all truth e- e+ pairs
@@ -203,12 +230,14 @@ ExclusiveReco::AddInvariantMassInformation()
 
   //_vect1 = dvmp->calculateInvariantMass_1();
   //_vect2 = dvmp->calculateInvariantMass_2();
-  _vect5 = dvmp->calculateInvariantMass_5();
+  _vect3 = dvmp->calculateInvariantMass_3();
+  //_vect4 = dvmp->calculateInvariantMass_4();
+  //_vect5 = dvmp->calculateInvariantMass_5();
   //_vect6 = dvmp->calculateInvariantMass_6();
   
-  for(unsigned i = 0; i < _vect5.size() ; i++)
+  for(unsigned i = 0; i < _vect3.size() ; i++)
     {
-      cout << _vect5.at(i) << endl;
+      cout << _vect3.at(i) << endl;
     }
   return 0;
 }
