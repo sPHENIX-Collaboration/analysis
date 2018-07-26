@@ -63,77 +63,81 @@ PseudoJet* find_matching_jet( const PseudoJet* refjet, vector<PseudoJet>* vjets 
  */
 int main(int argc, char* argv[]) {
 
-  const char* inFileName = argv[1];
-  const char* inFileSName = argv[2];
+  const char* truthFileName = argv[1];
+  const char* smearFileName = argv[2];
   const char* outFileName = argv[3];
 
-  cout << "inFileName = " << inFileName << endl;
-  cout << "inFileSName = " << inFileSName << endl;
+  cout << "truthFileName = " << truthFileName << endl;
+  cout << "smearFileName = " << smearFileName << endl;
   cout << "outFileName = " << outFileName << endl;
 
-  // Chain for Simu Tree
-  TFile *file_mc = new TFile(inFileName, "OPEN");
-  TFile *file_mc_smeared = new TFile(inFileSName, "OPEN");
+  /* Open files and retrieve trees */
+  TFile *file_mc_truth = new TFile(truthFileName, "OPEN");
+  TFile *file_mc_smeared = new TFile(smearFileName, "OPEN");
 
-  TTree* tree = (TTree*)file_mc->Get("EICTree");
+  TTree* tree_truth = (TTree*)file_mc_truth->Get("EICTree");
   TTree *tree_smeared = (TTree*)file_mc_smeared->Get("Smeared");
 
-  tree->AddFriend(tree_smeared);
+  tree_truth->AddFriend(tree_smeared);
 
-  // Setup Input Event Buffer
-  erhic::EventPythia* inEvent(NULL);
-  Smear::Event* eventS(NULL);
+  /* Setup Input Event Buffer */
+  erhic::EventPythia* event_truth(NULL);
+  Smear::Event* event_smear(NULL);
 
-  tree->SetBranchAddress("event",&inEvent);
-  tree->SetBranchAddress("eventS", &eventS);
+  tree_truth->SetBranchAddress("event",&event_truth);
+  tree_truth->SetBranchAddress("eventS", &event_smear);
 
-  // Open Output File
+  /* Set more buffers */
+  Double_t event_x = NAN;
+  Double_t event_q2 = NAN;
+
+  tree_truth->SetBranchAddress("trueX",&event_x);
+  tree_truth->SetBranchAddress("trueQ2",&event_q2);
+
+  /* Open Output File */
   TFile *ofile = TFile::Open(outFileName,"recreate");
   assert(ofile);
 
-  // Create Jet Tree
-  int   _event_id    = -999;
-  int   _event_njets = -999;
-  float _event_x     = NAN;
-  float _event_q2    = NAN;
+  /* Create Jet Tree */
+  Int_t   _event_id    = -999;
+  Int_t   _event_njets = -999;
+  Double_t _event_truth_x     = NAN;
+  Double_t _event_truth_q2    = NAN;
 
-  int   _jet_truth_id          = -999;
-  int   _jet_truth_is_electron = -999;
-  int   _jet_truth_is_fromtau  = -999;
-  int   _jet_truth_ncomp       = -999;
-  int   _jet_truth_ncharged    = -999;
-  float _jet_truth_e           = NAN;
-  float _jet_truth_et          = NAN;
-  float _jet_truth_eta         = NAN;
-  float _jet_truth_phi         = NAN;
-  float _jet_truth_minv        = NAN;
-  float _jet_truth_eem         = NAN;
-  float _jet_truth_rvtx        = NAN;
-  float _jet_truth_rmean       = NAN;
-  float _jet_truth_rstdev      = NAN;
+  Int_t   _jet_truth_id          = -999;
+  Int_t   _jet_truth_ncomp       = -999;
+  Int_t   _jet_truth_ncharged    = -999;
+  Double_t _jet_truth_e           = NAN;
+  Double_t _jet_truth_et          = NAN;
+  Double_t _jet_truth_eta         = NAN;
+  Double_t _jet_truth_phi         = NAN;
+  Double_t _jet_truth_minv        = NAN;
+  Double_t _jet_truth_eem         = NAN;
+  Double_t _jet_truth_rvtx        = NAN;
+  Double_t _jet_truth_rmean       = NAN;
+  Double_t _jet_truth_rstdev      = NAN;
 
-  int   _jet_smear_id          = -999;
-  int   _jet_smear_ncomp       = -999;
-  int   _jet_smear_ncharged    = -999;
-  float _jet_smear_e           = NAN;
-  float _jet_smear_et          = NAN;
-  float _jet_smear_eta         = NAN;
-  float _jet_smear_phi         = NAN;
-  float _jet_smear_minv        = NAN;
-  float _jet_smear_eem         = NAN;
-  float _jet_smear_rvtx        = NAN;
-  float _jet_smear_rmean       = NAN;
-  float _jet_smear_rstdev      = NAN;
+  Int_t   _jet_smear_id          = -999;
+  Int_t   _jet_smear_ncomp       = -999;
+  Int_t   _jet_smear_ncharged    = -999;
+  Double_t _jet_smear_e           = NAN;
+  Double_t _jet_smear_et          = NAN;
+  Double_t _jet_smear_eta         = NAN;
+  Double_t _jet_smear_phi         = NAN;
+  Double_t _jet_smear_minv        = NAN;
+  Double_t _jet_smear_eem         = NAN;
+  Double_t _jet_smear_rvtx        = NAN;
+  Double_t _jet_smear_rmean       = NAN;
+  Double_t _jet_smear_rstdev      = NAN;
 
+  /* Create jet tree */
   TTree *mTree = new TTree("jets","Jet Tree");
   mTree->Branch("event_id", &_event_id);
   mTree->Branch("event_njets", &_event_njets);
-  mTree->Branch("event_x", &_event_x);
-  mTree->Branch("event_q2", &_event_q2);
+  mTree->Branch("event_truth_x", &_event_truth_x);
+  mTree->Branch("event_truth_q2", &_event_truth_q2);
 
   mTree->Branch("jet_truth_id", &_jet_truth_id);
-  mTree->Branch("jet_truth_is_electron", &_jet_truth_is_electron);
-  mTree->Branch("jet_truth_is_fromtau", &_jet_truth_is_fromtau);
   mTree->Branch("jet_truth_ncomp", &_jet_truth_ncomp);
   mTree->Branch("jet_truth_ncharged", &_jet_truth_ncharged);
   mTree->Branch("jet_truth_e", &_jet_truth_e);
@@ -159,115 +163,117 @@ int main(int argc, char* argv[]) {
   mTree->Branch("jet_smear_rmean", &_jet_smear_rmean);
   mTree->Branch("jet_smear_rstdev", &_jet_smear_rstdev);
 
-  // Loop Over Events in Simu Trees
-  for(int iEvent=0; iEvent<tree->GetEntries(); iEvent++)
+  /* Loop Over Events in Simu Trees */
+  for(Int_t iEvent=0; iEvent<tree_truth->GetEntries(); iEvent++)
     {
-      //Read Next Event
-      if(tree->GetEntry(iEvent) <=0) break;
+      /* Read Next Event */
+      if(tree_truth->GetEntry(iEvent) <=0) break;
 
       if(iEvent%10000 == 0) cout << "Event " << iEvent << endl;
 
       /* reset tree variables */
       _event_id = iEvent;
       _event_njets = 0;
-      _event_x     = NAN;
-      _event_q2    = NAN;
+      _event_truth_x = event_x;
+      _event_truth_q2 = event_q2;
 
-      // Create laboratory frame jet vectors
-      vector<PseudoJet> particlesPtS;
-      vector<PseudoJet> particlesPt;
-      vector<bool> isElectron;
-      vector<bool> isFromTau;
+      /* Create laboratory frame jet vectors */
+      vector<PseudoJet> jetcomponent_truth;
+      vector<PseudoJet> jetcomponent_smear;
 
-      // Loop over truth Particles
-      for(int j=0; j<inEvent->GetNTracks(); j++)
+      /* Loop over truth Particles, fill jet component vector */
+      for(Int_t j=0; j<event_truth->GetNTracks(); j++)
 	{
-	  const Particle* inParticle = inEvent->GetTrack(j);
-
-	  Double_t px = inParticle->GetPx();
-	  Double_t py = inParticle->GetPy();
-	  Double_t pz = inParticle->GetPz();
-	  Double_t E = inParticle->GetE();
-
-	  // Select Particles for Jets
-	  if(j>10 && inParticle->GetStatus() == 1 && inParticle->GetParentIndex() != 3)
-	    {
-	      if( abs(inParticle->GetEta()) <= 4 && inParticle->GetPt() >= 0.250)
-		{
-		  fastjet::PseudoJet pPt(px,py,pz,E);
-		  pPt.set_user_index(inParticle->GetIndex());
-		  particlesPt.push_back(pPt);
-
-		  /* is particle electron? */
-		  isElectron.push_back( inParticle->GetPdgCode() == 11 );
-
-		  /* is particle child of TAU? */
-		  if ( inParticle->GetParent() )
-		    {
-		      isFromTau.push_back( inParticle->GetParent()->GetPdgCode() == 15 );
-		    }
-		  /* if prticle has no parent, parent can't be tau */
-		  else
-		    isFromTau.push_back( false );
-		}
-	    }
-	}
-
-      // Loop over SMEARED Particles
-      for(int js=0; js<eventS->GetNTracks(); js++)
-	{
-	  const Smear::ParticleMCS* inParticle = eventS->GetTrack(js);
+	  const Particle* inParticle = event_truth->GetTrack(j);
 
 	  if ( !inParticle)
 	    continue;
 
-	  Double_t px = inParticle->GetPx();
-	  Double_t py = inParticle->GetPy();
-	  Double_t pz = inParticle->GetPz();
-	  Double_t E = inParticle->GetE();
+	  /* Select Particles for Jets */
+	  if(j>10 && inParticle->GetStatus() == 1 && inParticle->GetParentIndex() != 3)
+	    {
+	      if( abs(inParticle->GetEta()) <= 4 && inParticle->GetPt() >= 0.250)
+		{
+		  /* Truth particle: Get all information directly from particle */
+		  Double_t px = inParticle->GetPx();
+		  Double_t py = inParticle->GetPy();
+		  Double_t pz = inParticle->GetPz();
+		  Double_t E = inParticle->GetE();
 
-	  // Select Particles for Jets
+		  fastjet::PseudoJet pPt(px,py,pz,E);
+		  pPt.set_user_index(inParticle->GetIndex());
+		  jetcomponent_truth.push_back(pPt);
+		}
+	    }
+	}
+
+      /* Loop over SMEARED jet components: Energy in Calorimeter (like 'tower jets'). Fill jet component vector. */
+      for(Int_t js=0; js<event_smear->GetNTracks(); js++)
+	{
+	  const Smear::ParticleMCS* inParticle = event_smear->GetTrack(js);
+
+	  if ( !inParticle)
+	    continue;
+
+	  /* Select Particles for Jets */
 	  if(js>10 && inParticle->GetStatus() == 1 && inParticle->GetParentIndex() != 3)
 	    {
 	      if( abs(inParticle->GetEta()) <= 4 && inParticle->GetPt() >= 0.250)
 	  	{
+		  /* Calorimeter: Get energy from smeared particle, and ... */
+		  Double_t E = inParticle->GetE();
+
+		  if ( E == 0 )
+		    cout << "E == 0 found! PID = " << event_truth->GetTrack(js)->GetPdgCode() << " , E_true = " <<  event_truth->GetTrack(js)->GetE() << " , Eta_true = " <<  event_truth->GetTrack(js)->GetEta() << endl;
+
+		  /* ... get theta, phi from truth particle */
+		  Double_t phi = event_truth->GetTrack(js)->GetPhi();
+		  Double_t eta = event_truth->GetTrack(js)->GetEta();
+
+		  /* Recalculate px, py, pz based on calorimeter enrgy and truth direction */
+		  Double_t pT = E / cosh( eta );
+		  Double_t px = pT * cos( phi );
+		  Double_t py = pT * sin( phi );
+		  Double_t pz = pT * sinh( eta );
+
 	  	  fastjet::PseudoJet pPt(px,py,pz,E);
-	  	  //pPt.set_user_index(j);
-	  	  particlesPtS.push_back(pPt);
+		  pPt.set_user_index(event_truth->GetTrack(js)->GetIndex());
+		  jetcomponent_smear.push_back(pPt);
 	  	}
 	    }
 	}
 
-      // Set Jet Definitions
-      double R_10 = 1.0;
-      JetDefinition jet_def_akt_10(antikt_algorithm,R_10);
+      /* Set Jet Definitions */
+      //double R_10 = 1.0;
+      double R_5 = 0.5;
+      JetDefinition jet_def_akt_5(antikt_algorithm,R_5);
 
-      // Run Clustering and Extract the Jets
+      /* Run Clustering and Extract the Jets */
       double ptmin = 1.0;
 
-      // Cluster in Lab Frame
-      ClusterSequence csPt_akt_10(particlesPt, jet_def_akt_10);
-      ClusterSequence csPtS_akt_10(particlesPtS, jet_def_akt_10);
+      /* Lab Frame Cluster */
+      ClusterSequence cluster_truth_akt_5(jetcomponent_truth, jet_def_akt_5);
+      ClusterSequence cluster_smear_akt_5(jetcomponent_smear, jet_def_akt_5);
 
-      // Lab Frame Jets
-      vector<PseudoJet> jetsPt_akt_10 = sorted_by_pt(csPt_akt_10.inclusive_jets(ptmin));
-      vector<PseudoJet> jetsPtS_akt_10 = sorted_by_pt(csPtS_akt_10.inclusive_jets(ptmin));
+      /* Lab Frame Jets*/
+      vector<PseudoJet> jets_truth_akt_5 = sorted_by_pt(cluster_truth_akt_5.inclusive_jets(ptmin));
+      vector<PseudoJet> jets_smear_akt_5 = sorted_by_pt(cluster_smear_akt_5.inclusive_jets(ptmin));
 
-      // loop over SMEARED jets
-      _event_njets =  jetsPtS_akt_10.size();
+      /* loop over SMEARED jets */
+      _event_njets =  jets_smear_akt_5.size();
       for ( unsigned ijet = 0; ijet < _event_njets; ijet++ )
 	{
-	  PseudoJet* jetMatch = find_matching_jet( &(jetsPtS_akt_10.at(ijet)), &jetsPt_akt_10 );
+	  PseudoJet* jetMatch = find_matching_jet( &(jets_smear_akt_5.at(ijet)), &jets_truth_akt_5 );
 
 	  /* Set SMEARED jet variables */
 	  _jet_smear_id          = ijet;
 	  _jet_smear_ncomp       = -999;
 	  _jet_smear_ncharged    = -999;
-	  _jet_smear_e           = jetsPtS_akt_10.at(ijet).E();
-	  _jet_smear_et          = jetsPtS_akt_10.at(ijet).Et();
-	  _jet_smear_eta         = jetsPtS_akt_10.at(ijet).eta();
-	  _jet_smear_phi         = jetsPtS_akt_10.at(ijet).phi_std();
-	  _jet_smear_minv        = jetsPtS_akt_10.at(ijet).m();
+	  _jet_smear_e           = jets_smear_akt_5.at(ijet).E();
+	  _jet_smear_et          = jets_smear_akt_5.at(ijet).Et();
+	  _jet_smear_eta         = jets_smear_akt_5.at(ijet).eta();
+	  _jet_smear_phi         = jets_smear_akt_5.at(ijet).phi_std();
+	  _jet_smear_minv        = jets_smear_akt_5.at(ijet).m();
 	  _jet_smear_eem         = NAN;
 	  _jet_smear_rvtx        = NAN;
 	  _jet_smear_rmean       = NAN;
@@ -275,8 +281,6 @@ int main(int argc, char* argv[]) {
 
 	  /* Set TRUTH jet variables */
 	  _jet_truth_id          = -999;
-	  _jet_truth_is_electron = -999;
-	  _jet_truth_is_fromtau  = -999;
 	  _jet_truth_ncomp       = -999;
 	  _jet_truth_ncharged    = -999;
 	  _jet_truth_e           = NAN;
@@ -292,8 +296,6 @@ int main(int argc, char* argv[]) {
 	  if ( jetMatch )
 	    {
 	      _jet_truth_id          = ijet;
-	      _jet_truth_is_electron = -999;
-	      _jet_truth_is_fromtau  = -999;
 	      _jet_truth_ncomp       = -999;
 	      _jet_truth_ncharged    = -999;
 	      _jet_truth_e           = jetMatch->E();
