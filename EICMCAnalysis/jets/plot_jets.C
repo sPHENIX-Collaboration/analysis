@@ -29,6 +29,12 @@ plot_jets(TString jetfilename)
   v_cuts_eta.push_back( TCut("(jet_truth_eta>-1&&jet_truth_eta<1)") );
   v_cuts_eta.push_back( TCut("(jet_truth_eta>2&&jet_truth_eta<4)") );
 
+  /* select different ranges in energy */
+  vector< TCut > v_cuts_energy;
+  v_cuts_energy.push_back( TCut("(jet_truth_e>0&&jet_truth_e<10)") );
+  v_cuts_energy.push_back( TCut("(jet_truth_e>10&&jet_truth_e<20)") );
+  v_cuts_energy.push_back( TCut("(jet_truth_e>20&&jet_truth_e<50)") );
+
   /* temporary cancas where objects that need to be drawn end up */
   TCanvas *ctemp = new TCanvas("**Scratch**");
 
@@ -170,7 +176,79 @@ plot_jets(TString jetfilename)
     }
 
   /* PLOT: Jet energy resolution vs pseudorapidity per energy range */
-  //...
+    ctemp->cd();
+
+  TH1F* h_frame_energycut_emean = new TH1F("h_frame_energycut_emean", "", 32,-4,4);
+  h_frame_energycut_emean->GetYaxis()->SetRangeUser(-0.4,0.4);
+  h_frame_energycut_emean->GetXaxis()->SetTitle("#eta_{jet}^{truth}");
+  h_frame_energycut_emean->GetYaxis()->SetTitle("(E_{jet}^{smear}-E_{jet}^{truth}) / E_{jet}^{truth}");
+
+  TH1F* h_frame_energycut_esigma = new TH1F("h_frame_energycut_esigma", "", 32,-4,4);
+  h_frame_energycut_esigma->GetYaxis()->SetRangeUser(0.1,0.4);
+  h_frame_energycut_esigma->GetXaxis()->SetTitle("#eta_{jet}^{truth}");
+  h_frame_energycut_esigma->GetYaxis()->SetTitle("#sigma ( (E_{jet}^{smear}-E_{jet}^{truth}) / E_{jet}^{truth} )");
+
+  for ( unsigned energyidx = 0; energyidx < v_cuts_energy.size(); energyidx++ )
+    {
+      TH2F* h_eres_energycut = new TH2F(TString::Format("h_eres_energycut%d",energyidx), ";E_{jet}^{truth};(E_{jet}^{smear}-E_{jet}^{truth}) / E_{jet}^{truth}",32,-4,4,20,-1,1);
+      Int_t nbins_x_energycut = h_eres_energycut->GetXaxis()->GetNbins();
+
+      TGraphErrors* g_emean_energycut = new TGraphErrors( nbins_x_energycut );
+      TGraphErrors* g_esigma_energycut = new TGraphErrors( nbins_x_energycut );
+
+      TCanvas *c_evseta_1 = new TCanvas(TString::Format( "energyrange_%d", energyidx ), (TString::Format( "Energy range: %s", v_cuts_energy.at(energyidx).GetTitle() )));
+      jets->Draw(TString::Format("(jet_smear_e-jet_truth_e)/jet_truth_e:jet_truth_eta >> h_eres_energycut%d",energyidx), cut_base && v_cuts_energy.at(energyidx) );
+      h_eres_energycut->Draw("COLZ");
+      c_evseta_1->Print(TString::Format( "plots/plot_%s.eps", c_evseta_1->GetName() ));
+
+      /* Loop over all x-bins in 2D histogram, create Y projections, and get standard deviation */
+      for ( Int_t i = 0; i < nbins_x_energycut; i++ )
+        {
+          ctemp->cd();
+
+          TH1D* h_proj = h_eres_energycut->ProjectionY("py",i+1,i+1);
+
+          /* skip projections with too few entries */
+          if ( h_proj->GetEntries() < 100 )
+            continue;
+
+	  /* Fit gaussian to projected histogram */
+          h_proj->Fit("gaus","Q");
+          TF1* fit = h_proj->GetFunction("gaus");
+
+          TCanvas *cstore = new TCanvas();
+
+          TString proj_name = TString::Format("Projection_energycut%d_bincenter_%.01fEta", energyidx, h_eres_energycut->GetXaxis()->GetBinCenter(i+1) );
+
+          cstore->SetName(proj_name);
+          cstore->SetTitle(proj_name);
+          h_proj->DrawClone("clone");
+	  cstore->Print(TString::Format( "plots/plot_%s.eps", cstore->GetName() ));
+
+          cout << "RMS: " << h_eres_energycut->GetXaxis()->GetBinCenter(i+1) << " --> " <<  h_proj->GetRMS() << endl;
+
+          if (fit)
+            {
+              cout << "FIT: " << h_eres_energycut->GetXaxis()->GetBinCenter(i+1) << " --> " <<  fit->GetParameter(2) << endl;
+              g_emean_energycut->SetPoint(i, h_eres_energycut->GetXaxis()->GetBinCenter(i+1), fit->GetParameter(1));
+              g_emean_energycut->SetPointError(i, 0, fit->GetParError(1));
+
+              g_esigma_energycut->SetPoint(i, h_eres_energycut->GetXaxis()->GetBinCenter(i+1), fit->GetParameter(2));
+              g_esigma_energycut->SetPointError(i, 0, fit->GetParError(2));
+            }
+        }
+
+      /* Draw resolution graph */
+      TCanvas *c_evseta_2 = new TCanvas(TString::Format( "mean_vs_e_energyrange%d", energyidx ), (TString::Format( "Energy range: %s", v_cuts_energy.at(energyidx).GetTitle() )));
+      h_frame_energycut_emean->Draw();
+      g_emean_energycut->Draw("Psame");
+      c_evseta_2->Print(TString::Format( "plots/plot_%s.eps", c_evseta_2->GetName() ));
+
+      TCanvas *c_evseta_3 = new TCanvas(TString::Format( "sigma_vs_e_energyrange%d", energyidx), (TString::Format( "Energy range: %s", v_cuts_energy.at(energyidx).GetTitle() )));
+      h_frame_energycut_esigma->Draw();
+      g_esigma_energycut->Draw("Psame");
+      c_evseta_3->Print(TString::Format( "plots/plot_%s.eps", c_evseta_3->GetName() ));
+    }
 
   return 0;
 }
