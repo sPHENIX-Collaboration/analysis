@@ -1,3 +1,17 @@
+/* ROOT includes */
+#include <TROOT.h>
+#include <TFile.h>
+#include <TTree.h>
+#include <TCut.h>
+#include <TF1.h>
+#include <TH1F.h>
+#include <TH2F.h>
+#include <TGraphErrors.h>
+#include <TProfile.h>
+#include <TCanvas.h>
+
+using namespace std;
+
 int
 plot_jets()
 {
@@ -54,7 +68,7 @@ plot_jets()
   /* jet energy resolution vs energy- all eta */
   ctemp->cd();
 
-  TH2F* h_eres_v_e = new TH2F("h_eres_vs_e",";E_{jet}^{truth};(E_{jet}^{smear}-E_{jet}^{truth}) / E_{jet}^{truth}",2*12,2.5,62.5,2*20,-2,4);
+  TH2F* h_eres_vs_e = new TH2F("h_eres_vs_e",";E_{jet}^{truth};(E_{jet}^{smear}-E_{jet}^{truth}) / E_{jet}^{truth}",2*12,2.5,62.5,2*20,-2,4);
   jets->Draw("(jet_smear_e-jet_truth_e)/jet_truth_e:jet_truth_e >> h_eres_vs_e", cut_base);
 
   TCanvas *c5 = new TCanvas();
@@ -64,10 +78,11 @@ plot_jets()
   /* jet energy resolution vs eta */
   ctemp->cd();
 
-  TH2F* h_eres_v_eta = new TH2F("h_eres_vs_eta",";#eta_{jet}^{truth};(E_{jet}^{smear}-E_{jet}^{truth}) / E_{jet}^{truth}",2*18,-4.5,4.5,2*20,-2,4);
+  TH2F* h_eres_vs_eta = new TH2F("h_eres_vs_eta",";#eta_{jet}^{truth};(E_{jet}^{smear}-E_{jet}^{truth}) / E_{jet}^{truth}",2*18,-4.5,4.5,2*20,-2,4);
   jets->Draw("(jet_smear_e-jet_truth_e)/jet_truth_e:jet_truth_eta >> h_eres_vs_eta", cut_base);
-  hprof_eres_vs_eta = h_eres_vs_eta->ProfileX();
-  hprof_eres_vs_eta->GetYaxis()->SetTitle( h_eres_v_eta->GetYaxis()->GetTitle() );
+
+  TProfile* hprof_eres_vs_eta = h_eres_vs_eta->ProfileX();
+  hprof_eres_vs_eta->GetYaxis()->SetTitle( h_eres_vs_eta->GetYaxis()->GetTitle() );
   TCanvas *c6 = new TCanvas();
   h_eres_vs_eta->Draw("colz");
 
@@ -107,7 +122,7 @@ plot_jets()
 
       /* skip projections with too few entries */
       if ( h_proj->GetEntries() < 100 )
-	continue;
+        continue;
 
       h_proj->Fit("gaus","Q");
       TF1* fit = h_proj->GetFunction("gaus");
@@ -123,14 +138,14 @@ plot_jets()
       cout << "RMS: " << h_eres_eta3->GetXaxis()->GetBinCenter(i+1) << " --> " <<  h_proj->GetRMS() << endl;
 
       if (fit)
-	{
-	  cout << "FIT: " << h_eres_eta3->GetXaxis()->GetBinCenter(i+1) << " --> " <<  fit->GetParameter(2) << endl;
-	  g_emean_eta3->SetPoint(i, h_eres_eta3->GetXaxis()->GetBinCenter(i+1), fit->GetParameter(1));
-	  g_emean_eta3->SetPointError(i, 0, fit->GetParError(1));
+        {
+          cout << "FIT: " << h_eres_eta3->GetXaxis()->GetBinCenter(i+1) << " --> " <<  fit->GetParameter(2) << endl;
+          g_emean_eta3->SetPoint(i, h_eres_eta3->GetXaxis()->GetBinCenter(i+1), fit->GetParameter(1));
+          g_emean_eta3->SetPointError(i, 0, fit->GetParError(1));
 
-	  g_esigma_eta3->SetPoint(i, h_eres_eta3->GetXaxis()->GetBinCenter(i+1), fit->GetParameter(2));
-	  g_esigma_eta3->SetPointError(i, 0, fit->GetParError(2));
-	}
+          g_esigma_eta3->SetPoint(i, h_eres_eta3->GetXaxis()->GetBinCenter(i+1), fit->GetParameter(2));
+          g_esigma_eta3->SetPointError(i, 0, fit->GetParError(2));
+        }
 
       //g_esigma_eta3->SetPoint(i, h_eres_eta3->GetXaxis()->GetBinCenter(i+1), h_proj->GetRMS());
     }
