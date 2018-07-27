@@ -192,7 +192,7 @@ int main(int argc, char* argv[]) {
 	  /* Select Particles for Jets */
 	  if(j>10 && inParticle->GetStatus() == 1 && inParticle->GetParentIndex() != 3)
 	    {
-	      if( abs(inParticle->GetEta()) <= 4 && inParticle->GetPt() >= 0.250)
+	      if( abs(inParticle->GetEta()) <= 5 && inParticle->GetE() >= 0.250)
 		{
 		  /* Truth particle: Get all information directly from particle */
 		  Double_t px = inParticle->GetPx();
@@ -218,13 +218,13 @@ int main(int argc, char* argv[]) {
 	  /* Select Particles for Jets */
 	  if(js>10 && inParticle->GetStatus() == 1 && inParticle->GetParentIndex() != 3)
 	    {
-	      if( abs(inParticle->GetEta()) <= 4 && inParticle->GetPt() >= 0.250)
+	      if( inParticle->GetE() >= 0.250 )
 	  	{
 		  /* Calorimeter: Get energy from smeared particle, and ... */
 		  Double_t E = inParticle->GetE();
 
-		  if ( E == 0 )
-		    cout << "E == 0 found! PID = " << event_truth->GetTrack(js)->GetPdgCode() << " , E_true = " <<  event_truth->GetTrack(js)->GetE() << " , Eta_true = " <<  event_truth->GetTrack(js)->GetEta() << endl;
+//		  if ( E == 0 )
+//		    cout << "E == 0 found! PID = " << event_truth->GetTrack(js)->GetPdgCode() << " , E_true = " <<  event_truth->GetTrack(js)->GetE() << " , Eta_true = " <<  event_truth->GetTrack(js)->GetEta() << endl;
 
 		  /* ... get theta, phi from truth particle */
 		  Double_t phi = event_truth->GetTrack(js)->GetPhi();
