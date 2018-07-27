@@ -23,7 +23,7 @@ plot_jets()
   /* jet energies */
   ctemp->cd();
 
-  TH2F* h_jets_energy_vs_eta = new TH2F("h_jets_energy_vs_eta","",36,-4.5,4.5,25,0,100);
+  TH2F* h_jets_energy_vs_eta = new TH2F("h_jets_energy_vs_eta",";#eta_{jet}^{truth};E_{jet}^{truth}",36,-4.5,4.5,25,0,100);
   jets->Draw("jet_truth_e : jet_truth_eta >> h_jets_energy_vs_eta","","colz");
 
   TCanvas *c4 = new TCanvas();
@@ -54,8 +54,8 @@ plot_jets()
   /* jet energy resolution vs energy- all eta */
   ctemp->cd();
 
-  TH2F* h_eres_v_e = new TH2F("h_eres_vs_e",";E^{smear};(E^{smear}-E^{truth}) / E^{truth}",2*12,2.5,62.5,2*20,-2,4);
-  jets->Draw("(jet_smear_e-jet_truth_e)/jet_truth_e:jet_smear_e >> h_eres_vs_e", cut_base);
+  TH2F* h_eres_v_e = new TH2F("h_eres_vs_e",";E_{jet}^{truth};(E_{jet}^{smear}-E_{jet}^{truth}) / E_{jet}^{truth}",2*12,2.5,62.5,2*20,-2,4);
+  jets->Draw("(jet_smear_e-jet_truth_e)/jet_truth_e:jet_truth_e >> h_eres_vs_e", cut_base);
 
   TCanvas *c5 = new TCanvas();
   h_eres_vs_e->Draw("colz");
@@ -64,8 +64,8 @@ plot_jets()
   /* jet energy resolution vs eta */
   ctemp->cd();
 
-  TH2F* h_eres_v_eta = new TH2F("h_eres_vs_eta",";#eta^{smear};(E^{smear}-E^{truth}) / E^{truth}",2*18,-4.5,4.5,2*20,-2,4);
-  jets->Draw("(jet_smear_e-jet_truth_e)/jet_truth_e:jet_smear_eta >> h_eres_vs_eta", cut_base);
+  TH2F* h_eres_v_eta = new TH2F("h_eres_vs_eta",";#eta_{jet}^{truth};(E_{jet}^{smear}-E_{jet}^{truth}) / E_{jet}^{truth}",2*18,-4.5,4.5,2*20,-2,4);
+  jets->Draw("(jet_smear_e-jet_truth_e)/jet_truth_e:jet_truth_eta >> h_eres_vs_eta", cut_base);
   hprof_eres_vs_eta = h_eres_vs_eta->ProfileX();
   hprof_eres_vs_eta->GetYaxis()->SetTitle( h_eres_v_eta->GetYaxis()->GetTitle() );
   TCanvas *c6 = new TCanvas();
@@ -75,19 +75,24 @@ plot_jets()
   hprof_eres_vs_eta->Draw();
 
 
-
   /* jet energy resolution per etaregion */
   ctemp->cd();
 
-  TH2F* h_eres_eta3 = new TH2F("h_eres_eta3",";E^{truth};(E^{smear}-E^{truth}) / E^{truth}",10,2.5,52.5,20,-1,1);
+  TH2F* h_eres_eta3 = new TH2F("h_eres_eta3",";E_{jet}^{truth};(E_{jet}^{smear}-E_{jet}^{truth}) / E_{jet}^{truth}",10,2.5,52.5,20,-1,1);
   Int_t nbins_x_eta3 = h_eres_eta3->GetXaxis()->GetNbins();
 
-  TGraphErrors* g_eres_eta3 = new TGraphErrors( nbins_x_eta3 );
+  TGraphErrors* g_emean_eta3 = new TGraphErrors( nbins_x_eta3 );
+  TGraphErrors* g_esigma_eta3 = new TGraphErrors( nbins_x_eta3 );
 
-  TH1F* h_frame_eres = new TH1F("h_frame_eres", "", 10,2.5,52.5);
-  h_frame_eres->GetYaxis()->SetRangeUser(0.1,0.25);
-  h_frame_eres->GetXaxis()->SetTitle("E^{truth} [GeV]");
-  h_frame_eres->GetYaxis()->SetTitle("(E^{smear}-E^{truth}) / E^{truth}");
+  TH1F* h_frame_emean = new TH1F("h_frame_emean", "", 10,2.5,52.5);
+  h_frame_emean->GetYaxis()->SetRangeUser(-0.15,0.15);
+  h_frame_emean->GetXaxis()->SetTitle("E_{jet}^{truth} [GeV]");
+  h_frame_emean->GetYaxis()->SetTitle("(E_{jet}^{smear}-E_{jet}^{truth}) / E_{jet}^{truth}");
+
+  TH1F* h_frame_esigma = new TH1F("h_frame_esigma", "", 10,2.5,52.5);
+  h_frame_esigma->GetYaxis()->SetRangeUser(0.1,0.25);
+  h_frame_esigma->GetXaxis()->SetTitle("E_{jet}^{truth} [GeV]");
+  h_frame_esigma->GetYaxis()->SetTitle("#sigma ( (E_{jet}^{smear}-E_{jet}^{truth}) / E_{jet}^{truth} )");
 
   TCanvas *c1 = new TCanvas("eta3");
   jets->Draw("(jet_smear_e-jet_truth_e)/jet_truth_e:jet_truth_e >> h_eres_eta3",cut_eta3);
@@ -120,17 +125,28 @@ plot_jets()
       if (fit)
 	{
 	  cout << "FIT: " << h_eres_eta3->GetXaxis()->GetBinCenter(i+1) << " --> " <<  fit->GetParameter(2) << endl;
-	  g_eres_eta3->SetPoint(i, h_eres_eta3->GetXaxis()->GetBinCenter(i+1), fit->GetParameter(2));
-	  g_eres_eta3->SetPointError(i, 0, fit->GetParError(2));
+	  g_emean_eta3->SetPoint(i, h_eres_eta3->GetXaxis()->GetBinCenter(i+1), fit->GetParameter(1));
+	  g_emean_eta3->SetPointError(i, 0, fit->GetParError(1));
+
+	  g_esigma_eta3->SetPoint(i, h_eres_eta3->GetXaxis()->GetBinCenter(i+1), fit->GetParameter(2));
+	  g_esigma_eta3->SetPointError(i, 0, fit->GetParError(2));
 	}
 
-      //g_eres_eta3->SetPoint(i, h_eres_eta3->GetXaxis()->GetBinCenter(i+1), h_proj->GetRMS());
+      //g_esigma_eta3->SetPoint(i, h_eres_eta3->GetXaxis()->GetBinCenter(i+1), h_proj->GetRMS());
     }
 
   /* Draw resolution graph */
+  TCanvas *c3m = new TCanvas();
+  h_frame_emean->Draw();
+  g_emean_eta3->Draw("Psame");
+
   TCanvas *c3 = new TCanvas();
-  h_frame_eres->Draw();
-  g_eres_eta3->Draw("Psame");
+  h_frame_esigma->Draw();
+  g_esigma_eta3->Draw("Psame");
+
+
+  /* jet energy resolution as function of pseudorapidity per energy range */
+  //...
 
   return 0;
 }
