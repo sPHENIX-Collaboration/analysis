@@ -1,7 +1,9 @@
 int
 plot_jets()
 {
-  TFile *fin = new TFile("jettest.root", "OPEN");
+  //  TFile *fin = new TFile("jets_20x250_Q2=10.0-100.0.root", "OPEN");
+  TFile *fin = new TFile("jets_20x250_Q2=10.0-100.0.root", "OPEN");
+  //  TFile *fin = new TFile("jets_20x250_Q2=100.0-1000.0.root", "OPEN");
 
   TTree* jets = (TTree*)fin->Get("jets");
 
@@ -49,10 +51,35 @@ plot_jets()
   h_jets_energy_eta3->Draw("same");
 
 
-  /* jet energy resolution */
+  /* jet energy resolution vs energy- all eta */
   ctemp->cd();
 
-  TH2F* h_eres_eta3 = new TH2F("h_eres_eta3","",10,2.5,52.5,20,-1,1);
+  TH2F* h_eres_v_e = new TH2F("h_eres_vs_e",";E^{smear};(E^{smear}-E^{truth}) / E^{truth}",2*12,2.5,62.5,2*20,-2,4);
+  jets->Draw("(jet_smear_e-jet_truth_e)/jet_truth_e:jet_smear_e >> h_eres_vs_e", cut_base);
+
+  TCanvas *c5 = new TCanvas();
+  h_eres_vs_e->Draw("colz");
+
+
+  /* jet energy resolution vs eta */
+  ctemp->cd();
+
+  TH2F* h_eres_v_eta = new TH2F("h_eres_vs_eta",";#eta^{smear};(E^{smear}-E^{truth}) / E^{truth}",2*18,-4.5,4.5,2*20,-2,4);
+  jets->Draw("(jet_smear_e-jet_truth_e)/jet_truth_e:jet_smear_eta >> h_eres_vs_eta", cut_base);
+  hprof_eres_vs_eta = h_eres_vs_eta->ProfileX();
+  hprof_eres_vs_eta->GetYaxis()->SetTitle( h_eres_v_eta->GetYaxis()->GetTitle() );
+  TCanvas *c6 = new TCanvas();
+  h_eres_vs_eta->Draw("colz");
+
+  TCanvas *c7 = new TCanvas();
+  hprof_eres_vs_eta->Draw();
+
+
+
+  /* jet energy resolution per etaregion */
+  ctemp->cd();
+
+  TH2F* h_eres_eta3 = new TH2F("h_eres_eta3",";E^{truth};(E^{smear}-E^{truth}) / E^{truth}",10,2.5,52.5,20,-1,1);
   Int_t nbins_x_eta3 = h_eres_eta3->GetXaxis()->GetNbins();
 
   TGraphErrors* g_eres_eta3 = new TGraphErrors( nbins_x_eta3 );
@@ -60,9 +87,9 @@ plot_jets()
   TH1F* h_frame_eres = new TH1F("h_frame_eres", "", 10,2.5,52.5);
   h_frame_eres->GetYaxis()->SetRangeUser(0.1,0.25);
   h_frame_eres->GetXaxis()->SetTitle("E^{truth} [GeV]");
-  h_frame_eres->GetYaxis()->SetTitle("#DeltaE / E^{truth}");
+  h_frame_eres->GetYaxis()->SetTitle("(E^{smear}-E^{truth}) / E^{truth}");
 
-  TCanvas *c1 = new TCanvas();
+  TCanvas *c1 = new TCanvas("eta3");
   jets->Draw("(jet_smear_e-jet_truth_e)/jet_truth_e:jet_truth_e >> h_eres_eta3",cut_eta3);
   h_eres_eta3->Draw("COLZ");
 
