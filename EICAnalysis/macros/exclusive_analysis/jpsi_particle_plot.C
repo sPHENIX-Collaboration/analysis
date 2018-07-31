@@ -18,11 +18,12 @@ int jpsi_particle_plot()
   // ----------------------------------------
   // Creating Histograms
   // ----------------------------------------
-  const int nbins = 60;
+  const int nbins = 100;
   TH2F * h2_eta_phi_em_base = new TH2F("","",nbins,-4,4,nbins,-3.5,3.5);
   TH2F * h2_eta_phi_pr_base = new TH2F("","",nbins,-20,20,nbins,-3.5,3.5);
   TH2F * h2_mom_eta_em_base = new TH2F("","",nbins,-4,4,nbins,0,20);
   TH2F * h2_mom_eta_pr_base = new TH2F("","",nbins,-20,20,nbins,0,150);
+  TH2F * h2_distance = new TH2F("","",nbins,-20,20,nbins,0,150);
   // ----------------------------------------
   // Setting Axes Titles
   // ----------------------------------------
@@ -196,6 +197,11 @@ void fillHist(TH2F * h, TTree *t_reco, TTree *t_truth, TString type_TString, boo
 		  else if(phi_diff<0.5&&eta_diff<0.2&&pid.at(temp)==-11)
 		    reco_charge.at(i)==1;
 		}
+
+	      // If the particle has an eta < -1.434, set the momentum of the particle to cluster energy
+	      if(reco_eta.at(i)<-1.434)
+		reco_ptotal.at(i) = reco_cluster_e.at(i);
+
 
 	      // Use char * type to select what we fill
 	      if(strcmp(type,"reco_decay_positron_eta_phi")==0)

@@ -56,6 +56,17 @@ class DVMPHelper
   /* Return invariant mass float from truth particles (positron+scattered e-) */
   std::vector<float> calculateInvariantMass_6();
 
+  /* Return invariant mass float from reco particles (EEMC) */
+  std::vector<float> calculateInvariantMass_7();
+
+  /* Return invariant mass float from reco particles (EEMC decay particles) */
+  std::vector<float> calculateInvariantMass_8();
+  
+  /* Return invariant mass float from reco particles (EEMC scattered particles) */
+  std::vector<float> calculateInvariantMass_9();
+
+
+  
   /* Size of reco/truth */
   int _size_reco;
   int _size_truth;
@@ -85,7 +96,6 @@ class DVMPHelper
   /* Test if particle passes E/p cut */
   bool pass_cut(int index);
 
-  bool la_de_da();
  private:
   
   
