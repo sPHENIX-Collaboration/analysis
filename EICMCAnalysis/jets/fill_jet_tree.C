@@ -63,13 +63,27 @@ PseudoJet* find_matching_jet( const PseudoJet* refjet, vector<PseudoJet>* vjets 
  */
 int main(int argc, char* argv[]) {
 
+  if ( argc != 6 )
+    {
+      cerr << "Wrong number of arguments! Exit." << endl;
+      return -1;
+    }
+
   const char* truthFileName = argv[1];
   const char* smearFileName = argv[2];
   const char* outFileName = argv[3];
 
+  /* R value for fastjet algorithm */
+  const float fastjetR = atof(argv[4]);
+
+  /* minimum pt for jets that are kept for analysis */
+  const float ptmin = atof(argv[5]);
+
   cout << "truthFileName = " << truthFileName << endl;
   cout << "smearFileName = " << smearFileName << endl;
   cout << "outFileName = " << outFileName << endl;
+  cout << "fastjetR      = " << fastjetR << endl;
+  cout << "ptmin         = " << ptmin << endl;
 
   /* Open files and retrieve trees */
   TFile *file_mc_truth = new TFile(truthFileName, "OPEN");
@@ -192,7 +206,7 @@ int main(int argc, char* argv[]) {
 	  /* Select Particles for Jets */
 	  if(j>10 && inParticle->GetStatus() == 1 && inParticle->GetParentIndex() != 3)
 	    {
-	      if( abs(inParticle->GetEta()) <= 4 && inParticle->GetPt() >= 0.250)
+	      if( abs(inParticle->GetEta()) <= 5 && inParticle->GetE() >= 0.250 )
 		{
 		  /* Truth particle: Get all information directly from particle */
 		  Double_t px = inParticle->GetPx();
@@ -218,13 +232,13 @@ int main(int argc, char* argv[]) {
 	  /* Select Particles for Jets */
 	  if(js>10 && inParticle->GetStatus() == 1 && inParticle->GetParentIndex() != 3)
 	    {
-	      if( abs(inParticle->GetEta()) <= 4 && inParticle->GetPt() >= 0.250)
+	      if( inParticle->GetE() >= 0.250 )
 	  	{
 		  /* Calorimeter: Get energy from smeared particle, and ... */
 		  Double_t E = inParticle->GetE();
 
-		  if ( E == 0 )
-		    cout << "E == 0 found! PID = " << event_truth->GetTrack(js)->GetPdgCode() << " , E_true = " <<  event_truth->GetTrack(js)->GetE() << " , Eta_true = " <<  event_truth->GetTrack(js)->GetEta() << endl;
+//		  if ( E == 0 )
+//		    cout << "E == 0 found! PID = " << event_truth->GetTrack(js)->GetPdgCode() << " , E_true = " <<  event_truth->GetTrack(js)->GetE() << " , Eta_true = " <<  event_truth->GetTrack(js)->GetEta() << endl;
 
 		  /* ... get theta, phi from truth particle */
 		  Double_t phi = event_truth->GetTrack(js)->GetPhi();
@@ -244,36 +258,33 @@ int main(int argc, char* argv[]) {
 	}
 
       /* Set Jet Definitions */
-      //double R_10 = 1.0;
-      double R_5 = 0.5;
-      JetDefinition jet_def_akt_5(antikt_algorithm,R_5);
+      JetDefinition jet_def_antikt(antikt_algorithm,fastjetR);
 
       /* Run Clustering and Extract the Jets */
-      double ptmin = 1.0;
 
       /* Lab Frame Cluster */
-      ClusterSequence cluster_truth_akt_5(jetcomponent_truth, jet_def_akt_5);
-      ClusterSequence cluster_smear_akt_5(jetcomponent_smear, jet_def_akt_5);
+      ClusterSequence cluster_truth_antikt(jetcomponent_truth, jet_def_antikt);
+      ClusterSequence cluster_smear_antikt(jetcomponent_smear, jet_def_antikt);
 
       /* Lab Frame Jets*/
-      vector<PseudoJet> jets_truth_akt_5 = sorted_by_pt(cluster_truth_akt_5.inclusive_jets(ptmin));
-      vector<PseudoJet> jets_smear_akt_5 = sorted_by_pt(cluster_smear_akt_5.inclusive_jets(ptmin));
+      vector<PseudoJet> jets_truth_antikt = sorted_by_pt(cluster_truth_antikt.inclusive_jets(ptmin));
+      vector<PseudoJet> jets_smear_antikt = sorted_by_pt(cluster_smear_antikt.inclusive_jets(ptmin));
 
       /* loop over SMEARED jets */
-      _event_njets =  jets_smear_akt_5.size();
+      _event_njets =  jets_smear_antikt.size();
       for ( unsigned ijet = 0; ijet < _event_njets; ijet++ )
 	{
-	  PseudoJet* jetMatch = find_matching_jet( &(jets_smear_akt_5.at(ijet)), &jets_truth_akt_5 );
+	  PseudoJet* jetMatch = find_matching_jet( &(jets_smear_antikt.at(ijet)), &jets_truth_antikt );
 
 	  /* Set SMEARED jet variables */
 	  _jet_smear_id          = ijet;
 	  _jet_smear_ncomp       = -999;
 	  _jet_smear_ncharged    = -999;
-	  _jet_smear_e           = jets_smear_akt_5.at(ijet).E();
-	  _jet_smear_et          = jets_smear_akt_5.at(ijet).Et();
-	  _jet_smear_eta         = jets_smear_akt_5.at(ijet).eta();
-	  _jet_smear_phi         = jets_smear_akt_5.at(ijet).phi_std();
-	  _jet_smear_minv        = jets_smear_akt_5.at(ijet).m();
+	  _jet_smear_e           = jets_smear_antikt.at(ijet).E();
+	  _jet_smear_et          = jets_smear_antikt.at(ijet).Et();
+	  _jet_smear_eta         = jets_smear_antikt.at(ijet).eta();
+	  _jet_smear_phi         = jets_smear_antikt.at(ijet).phi_std();
+	  _jet_smear_minv        = jets_smear_antikt.at(ijet).m();
 	  _jet_smear_eem         = NAN;
 	  _jet_smear_rvtx        = NAN;
 	  _jet_smear_rmean       = NAN;
@@ -315,6 +326,8 @@ int main(int argc, char* argv[]) {
     }
 
   /* Write output tree and close file */
-  ofile->Write();
+  mTree->Write();
   ofile->Close();
+
+  return 0;
 }
