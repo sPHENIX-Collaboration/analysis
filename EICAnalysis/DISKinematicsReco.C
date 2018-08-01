@@ -194,7 +194,8 @@ DISKinematicsReco::Init(PHCompositeNode *topNode)
 int
 DISKinematicsReco::InitRun(PHCompositeNode *topNode)
 {
-   _trackproj=new TrackProjectorPlaneECAL( topNode );
+  if(_do_process_geant4_cluster)
+    _trackproj=new TrackProjectorPlaneECAL( topNode );
    return 0;
 }
 
