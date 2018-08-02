@@ -110,9 +110,6 @@ private:
   std::vector<float> _vect4;
   std::vector<float> _vect5;
   std::vector<float> _vect6;
-  std::vector<float> _vect7;
-  std::vector<float> _vect8;
-  std::vector<float> _vect9;
 
 };
 

@@ -12,6 +12,12 @@
 
 #include <fun4all/Fun4AllReturnCodes.h>
 
+#include <calobase/RawTowerGeomContainer.h>
+#include <calobase/RawTowerContainer.h>
+#include <calobase/RawTowerGeom.h>
+#include <calobase/RawTowerv1.h>
+#include <calobase/RawTowerDefs.h>
+
 #include <calobase/RawClusterContainer.h>
 #include <calobase/RawCluster.h>
 
@@ -64,10 +70,6 @@ ExclusiveReco::Init(PHCompositeNode *topNode)
   _tree_invariant_mass->Branch("reco_inv_scatter", &_vect4);
   _tree_invariant_mass->Branch("true_inv_decay", &_vect5);
   _tree_invariant_mass->Branch("true_inv_scatter", &_vect6);
-  _tree_invariant_mass->Branch("reco_inv_EEMC", &_vect7);
-  _tree_invariant_mass->Branch("reco_inv_EEMC_decay", &_vect8);
-  _tree_invariant_mass->Branch("reco_inv_EEMC_scatter", &_vect9);
-
 
   /* Create tree for information about reco event */
   _tree_event_reco = new TTree("event_reco", "A tree with reco particle information");
@@ -204,12 +206,23 @@ ExclusiveReco::AddInvariantMassInformation()
             continue;
 
 	  _trackproj->set_detector(_trackproj->get_detector_from_cluster(cluster));
+	  
 	  SvtxTrack *best_track = _trackproj->get_best_track(trackmap,cluster);
 	  if(best_track!=NULL)
 	    {
 	      reco_eta.push_back(best_track->get_eta());
 	      reco_phi.push_back(best_track->get_phi());
-	      reco_ptotal.push_back(best_track->get_p());
+	      // See if particle is in EEMC, if so, swap ptotal with cluster e
+	      RawCluster::TowerConstIterator rtiter = cluster->get_towers().first;
+	      const char * cc = RawTowerDefs::convert_caloid_to_name( RawTowerDefs::decode_caloid( rtiter->first )).c_str();
+	      if(strcmp(cc,"EEMC")==0)
+		{
+		  reco_ptotal.push_back(cluster->get_energy());
+		}
+	      else
+		{
+		  reco_ptotal.push_back(best_track->get_p());
+		}
 	      reco_charge.push_back(best_track->get_charge());
 	      reco_cluster_e.push_back(cluster->get_energy());
 	   
@@ -223,7 +236,7 @@ ExclusiveReco::AddInvariantMassInformation()
 		  // If the differences in these values is very small
 		  if(eta_diff<0.1&&phi_diff<0.1)
 		    {
-		      bool b = is_scattered_lepton.at(i);
+		      bool b = is_scattered_lepton.at(i)&&best_track->get_charge()==-1;
 		      if(b)
 			reco_is_scattered_lepton.push_back(true);
 		      else
@@ -244,7 +257,7 @@ ExclusiveReco::AddInvariantMassInformation()
 	      reco_cluster_e.push_back(NAN);
 	      reco_is_scattered_lepton.push_back(false);
 	    }
-	  } 
+	} 
     }
 
   // At this point, we have all the truth and reco event information we need to fiddle around with measuring the invariant mass //
@@ -263,9 +276,6 @@ ExclusiveReco::AddInvariantMassInformation()
   _vect4 = dvmp->calculateInvariantMass_4();
   _vect5 = dvmp->calculateInvariantMass_5();
   _vect6 = dvmp->calculateInvariantMass_6();
-  _vect7 = dvmp->calculateInvariantMass_7();
-  _vect8 = dvmp->calculateInvariantMass_8();
-  _vect9 = dvmp->calculateInvariantMass_9();
 
   _tree_event_reco->Fill();
   _tree_event_truth->Fill();
