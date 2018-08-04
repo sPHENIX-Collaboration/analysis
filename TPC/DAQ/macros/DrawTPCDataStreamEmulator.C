@@ -20,10 +20,10 @@ void DrawTPCDataStreamEmulator(
     //        const TString disc = "Au+Au 0-7%C Triggered + 200 kHz collision"  //
     //    const TString infile = "data/TPCDataStreamEmulator_AuAu0-12fm_170kHz_2.root",
     //    const TString disc = "Au+Au 0-12fm Triggered + 170 kHz collision"  //
-            const TString infile = "data/TPCDataStreamEmulator_AuAu0-14.7fm_0kHz_1.root",
-            const TString disc = "Au+Au 0-14.7fm Triggered + No pileup collision"  //
-//    const TString infile = "data/TPCDataStreamEmulator_AuAu0-14.7fm_170kHz.root",
-//    const TString disc = "Au+Au 0-14.7fm Triggered + 170 kHz collision"  //
+//            const TString infile = "data/TPCDataStreamEmulator_AuAu0-14.7fm_0kHz_1.root",
+//            const TString disc = "Au+Au 0-14.7fm Triggered + No pileup collision"  //
+    const TString infile = "data/TPCDataStreamEmulator_AuAu0-14.7fm_170kHz_1.root",
+    const TString disc = "Au+Au 0-14.7fm Triggered + 170 kHz collision"  //
                                                                          //        const TString infile = "data/TPCDataStreamEmulator_AuAu0-12fm_0kHz.root",
                                                                          //        const TString disc = "Au+Au MB Triggered + 0 kHz collision"  //
 )
@@ -70,10 +70,10 @@ void DataRate()
   h->Scale(1. / hNormalization->GetBinContent(1));
   h->SetTitle(";TPC Event Size [Byte];Probability / bin");
 
-    h->Rebin(100);
-    h->GetXaxis()->SetRangeUser(0,5e6);
-//  h->Rebin(500);
-//  h->GetXaxis()->SetRangeUser(0, 12e6);
+//    h->Rebin(100);
+//    h->GetXaxis()->SetRangeUser(0,5e6);
+  h->Rebin(500);
+  h->GetXaxis()->SetRangeUser(0, 12e6);
 
   h->GetYaxis()->SetRangeUser(0, .5);
 
