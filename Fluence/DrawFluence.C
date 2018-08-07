@@ -36,9 +36,9 @@ void DrawFluence(
   const double normalization = 1.5e12 / nEvent;  // 1.5 Trillion event from 5-year projection, sPH-GEN-2017-001
   const TString projection_desc = "5-year accumulated (1.5 Trillion Collisions)";
 
-  //  Check();
+  Check();
 
-  //  FullCylRProj(normalization, projection_desc, 100);
+  FullCylRProj(normalization, projection_desc, 100);
   FullCylRProj(normalization, projection_desc, 30);
   //  VertexCyl(normalization, projection_desc);
   FullCyl(normalization, projection_desc);
@@ -321,7 +321,7 @@ void FullCylRProj(const double normalization, const TString projection_desc, con
   leg->AddEntry("", "#it{#bf{sPHENIX}} Simulation, Uncalibrated", "");
   leg->AddEntry("", description, "");
   leg->AddEntry("", projection_desc, "");
-  leg->AddEntry("", Form("Averaged over |z|<%.0f cm", z_range), "");
+  leg->AddEntry("", Form("Averaged over |z|<%.0f cm, R>4 cm", z_range), "");
   leg->AddEntry(hScore_FullCylinder_dose_z, "Radiation dose", "l");
   leg->Draw();
 
@@ -359,11 +359,11 @@ void FullCylRProj(const double normalization, const TString projection_desc, con
   hScore_FullCylinder_flux_charged_EkMin1MeV_z->Draw("same");
   hScore_FullCylinder_flux_charged_z->Draw("same");
   //
-  TLegend *leg = new TLegend(.3, .6, .9, .9);
+  TLegend *leg = new TLegend(.3, .55, .9, .9);
   leg->AddEntry("", "#it{#bf{sPHENIX}} Simulation, Uncalibrated", "");
   leg->AddEntry("", description, "");
   leg->AddEntry("", projection_desc, "");
-  leg->AddEntry("", Form("Averaged over |z|<%.0f cm", z_range), "");
+  leg->AddEntry("", Form("Averaged over |z|<%.0f cm, R>2 cm", z_range), "");
 
   leg->AddEntry(hScore_FullCylinder_flux_charged_z, "All charged particle", "l");
   leg->AddEntry(hScore_FullCylinder_flux_charged_EkMin1MeV_z, "Min-1-MeV Charged particle", "l");
@@ -410,6 +410,7 @@ double Check()
   hNChEta->Sumw2();
   hNChEta->Rebin(10);
   hNChEta->Scale(1. / hNChEta->GetBinWidth(1) / nEvent);
+  hNChEta->GetYaxis()->SetTitle("dN_{Ch}/d#eta");
 
   p = (TPad *) c1->cd(idx++);
   c1->Update();
