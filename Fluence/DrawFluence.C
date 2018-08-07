@@ -38,6 +38,8 @@ void DrawFluence(
 
   Check();
 
+  dNchdEta();
+
   FullCylRProj(normalization, projection_desc, 100);
   FullCylRProj(normalization, projection_desc, 30);
   //  VertexCyl(normalization, projection_desc);
@@ -376,6 +378,34 @@ void FullCylRProj(const double normalization, const TString projection_desc, con
   leg->Draw();
 
   SaveCanvas(c1, TString(_file0->GetName()) + TString(c1->GetName()), kTRUE);
+}
+
+void dNchdEta()
+{
+
+  assert(_file0);
+
+  TCanvas *c1 = new TCanvas("dNchdEta", "dNchdEta", 1000, 960);
+  int idx = 1;
+  TPad *p;
+
+  double nEvent = hNormalization->GetBinContent(1);
+
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+  //  p->SetLogy();
+
+  TH1 *hNChEta = (TH1 *) _file0->GetObjectChecked("hNChEta", "TH1");
+  assert(hNChEta);
+
+  hNChEta = (TH1 *) (hNChEta->DrawClone());
+
+  hNChEta->Sumw2();
+  hNChEta->Rebin(10);
+  hNChEta->Scale(1. / hNChEta->GetBinWidth(1) / nEvent);
+  hNChEta->GetYaxis()->SetTitle("dN_{Ch}/d#eta");
+  SaveCanvas(c1, TString(_file0->GetName()) + TString(c1->GetName()), kTRUE);
+
 }
 
 double Check()
