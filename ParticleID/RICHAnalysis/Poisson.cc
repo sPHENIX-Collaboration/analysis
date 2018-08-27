@@ -5,7 +5,7 @@
 using namespace std;
 
 
-double
+long double
 Poisson::poisson_prob( double mean, int value ){
   
   double prob = exp1( mean, value ) * exp2(mean) / fact(value);
@@ -13,25 +13,27 @@ Poisson::poisson_prob( double mean, int value ){
 
 }
 
-double
+long double
 Poisson::exp1( double mean, int value ){
 
-  double output = pow( mean, value );
+  long double output = pow( mean, value );
   return output;
 
 }
 
-double
+long double
 Poisson::exp2( double mean ){
   
-  double output = pow( 2.718, mean );
+  long double output = pow( 2.718, -1*mean );
   return output;
+
 }
 
-int
+long double
 Poisson::fact( int value ){
 
-  int output = 0;
+  long double output = 1;
+
   for( int i = 1; i <= value; ++i)
     output *= i;
   

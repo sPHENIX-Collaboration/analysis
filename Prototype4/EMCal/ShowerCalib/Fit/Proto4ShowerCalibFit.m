@@ -15,11 +15,11 @@ DataFolder = 'E:/tmp/Transfer Buffer/ShowerCalib/';
 % FileID = {'ShowerCalib','ShowerCalib_tilted'};
 
 
-FileID = {'4thPositionScan_dst'};
+FileID = {'5thPositionScan_dst','6thPositionScan_dst'};
 FileList = FileID;
 
-energy_scale = 0.13;
-fixed_energy = 5;
+energy_scale = 0.55*8/3000;
+fixed_energy = 8;
 
 
 sim_const = 3/100;

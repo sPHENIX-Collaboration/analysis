@@ -1,5 +1,6 @@
 # analysis
-Analysis repository hosting user modules that analyze the sPHENIX simulation and data.
+
+Analysis repository hosting [user modules that analyze the sPHENIX simulation and data](https://wiki.bnl.gov/sPHENIX/index.php/Example_of_using_DST_nodes).
 
 This repository is read/writabled to the "Collaborator" team. It is equivalent to the PHENIX CVS path of 
 * offline/analysis/

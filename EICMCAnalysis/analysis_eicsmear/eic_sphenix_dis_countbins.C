@@ -1,3 +1,5 @@
+#include "calculate_g1.C"
+
 int
 eic_sphenix_dis_countbins()
 {
@@ -12,19 +14,10 @@ eic_sphenix_dis_countbins()
   float ebeam_e = 20;
   float ebeam_p = 250;
 
-  /* Pythia generated events, cross section, and luminosity */
-  float pythia_ngen = 1e6;
-  float pythia_xsec = 0.60785660255324614; // in microbarn
-  float convert_microbarn_to_femtobarn = 1e9;
-  float pythia_lumi = pythia_ngen / ( pythia_xsec * convert_microbarn_to_femtobarn );
-
-  /* target luminosity and scaling factor */
-  float target_lumi = pythia_lumi; // in inverse femtobarn
-  float lumi_scaling = target_lumi / pythia_lumi;
-
-  cout << "Pythia luminosity:  " << pythia_lumi << " fb^-1" << endl;
-  cout << "Target luminosity:  " << target_lumi << " fb^-1" << endl;
-  cout << "Luminosity scaling: " << lumi_scaling << endl;
+  /* Retrieve Pythia generated events luminosity information */
+  /* @TODO: Get this from string in file */
+  float target_lumi = -1; // in inverse femtobarn
+  cout << "Pythia luminosity:  " << target_lumi << " fb^-1" << endl;
 
   /* create tree to store information */
   TTree *tcount = new TTree("tcount", "A tree with counts in kinematics bins");
@@ -36,6 +29,7 @@ eic_sphenix_dis_countbins()
   float t_y = 0;
   float t_N = 0;
   float t_stdev_N = 0;
+  float t_stdev_g1 = 0;
   tcount->Branch("pbeam_lepton", &t_pbeam_lepton, "pbeam_lepton/F");
   tcount->Branch("pbeam_proton", &t_pbeam_proton, "pbeam_proton/F");
   tcount->Branch("s", &t_s, "s/F");
@@ -44,6 +38,7 @@ eic_sphenix_dis_countbins()
   tcount->Branch("y", &t_y, "y/F");
   tcount->Branch("N", &t_N, "N/F");
   tcount->Branch("stdev_N", &t_stdev_N, "stdev_N/F");
+  tcount->Branch("stdev_g1", &t_stdev_g1, "stdev_g1/F");
 
   /* copy beam parameters */
   t_pbeam_lepton = ebeam_e;
@@ -68,7 +63,7 @@ eic_sphenix_dis_countbins()
 
 	  t_y = t_Q2 / ( t_x * t_s );
 
-	  t_N = hxQ2->GetBinContent( bin_x, bin_y ) * lumi_scaling;
+	  t_N = hxQ2->GetBinContent( bin_x, bin_y );
 
 	  /* skip kinematics bins wth y > 0.95 and y < 1e-2 */
 	  if ( t_y > 0.95 || t_y < 1e-2 )
@@ -79,6 +74,7 @@ eic_sphenix_dis_countbins()
 	    continue;
 
 	  t_stdev_N = 1./(sqrt(t_N));
+	  t_stdev_g1 = get_g1_sigma( t_x, t_Q2, t_y, t_N, 0.000511 );
 
 	  tcount->Fill();
 	  s_binc_x.insert(t_x);
@@ -185,13 +181,21 @@ eic_sphenix_dis_countbins()
   /* draw graphs */
   TCanvas *ctmp = new TCanvas();
   float offset = 48;
+
+  cout << "+++++++++++++++++++++++++++++++++++++++++++" << endl;
+  cout << "Plot offsets: " << endl;
+
   for ( set<float>::iterator itx = s_binc_x.begin();
 	itx != s_binc_x.end(); itx++ )
     {
+      /* print values */
+      cout << "offset = " << (int)offset << " for x = " << *itx << endl;
+
+      /* Create graph */
       ctmp->cd();
 
       unsigned npoints = tcount->GetEntries( TString::Format("x > 0.99*%f && x < 1.01*%f", *itx, *itx ) );
-      tcount->Draw( TString::Format("%f:Q2:stdev_N", offset),
+      tcount->Draw( TString::Format("%f:Q2:stdev_g1", offset),
 		    TString::Format("x > 0.99*%f && x < 1.01*%f", *itx, *itx ) );
 
       TGraphErrors* gnew = new TGraphErrors( npoints, tcount->GetV2(), tcount->GetV1(), 0, tcount->GetV3() );

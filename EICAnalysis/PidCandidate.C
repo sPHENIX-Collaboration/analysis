@@ -302,6 +302,27 @@ PidCandidate::get_property_info(const PROPERTY prop_id)
     case  em_track_cluster_dr:
       return make_pair("em_track_cluster_dr",PidCandidate::type_float);
 
+    case  em_track_theta2cluster:
+      return make_pair("em_track_theta2cluster",PidCandidate::type_float);
+    
+    case  em_track_eta2cluster:
+      return make_pair("em_track_eta2cluster",PidCandidate::type_float);
+      
+    case  em_track_phi2cluster:
+      return make_pair("em_track_phi2cluster",PidCandidate::type_float);
+
+    case  em_track_p2cluster:
+      return make_pair("em_track_p2cluster",PidCandidate::type_float);
+      
+    case  em_track_x2cluster:
+      return make_pair("em_track_x2cluster",PidCandidate::type_float);
+
+    case  em_track_y2cluster:
+      return make_pair("em_track_y2cluster",PidCandidate::type_float);
+
+    case  em_track_z2cluster:
+      return make_pair("em_track_z2cluster",PidCandidate::type_float);
+
       // ------
 
     case  em_pid_prob_electron:

@@ -125,6 +125,15 @@ RICHParticleID::process_event(PHCompositeNode *topNode)
   /* Loop over tracks */
   for (SvtxTrackMap::ConstIter track_itr = trackmap->begin(); track_itr != trackmap->end(); track_itr++)
     {
+
+      bool use_reconstructed_momentum = true;
+      bool use_truth_momentum = false;
+      bool use_emission_momentum = false;
+
+      bool use_reconstructed_point = true;
+      bool use_approximate_point = false;
+
+
       SvtxTrack* track_j = dynamic_cast<SvtxTrack*>(track_itr->second);
 
       /* Check if track_j is a null pointer. */
@@ -142,17 +151,13 @@ RICHParticleID::process_event(PHCompositeNode *topNode)
       /* Fill momv object which is the normalized momentum vector of the track in the RICH (i.e. its direction) */
       double momv[3] = {0.,0.,0.};
 
-      bool use_reconstructed_momentum = true;
-      bool use_truth_momentum = false;
-      bool use_emission_momentum = false;
-
       if (use_reconstructed_momentum) {
 	/* 'Continue' with next track if RICH projection not found for this track */
 	if ( ! _trackproj->get_projected_momentum( track_j, momv, TrackProjectorPid::SPHERE, _radius ) )
 	  {
 	    cout << "RICH track projection momentum NOT FOUND; next iteration" << endl;
 	    continue;
-	  }
+	  }	
       }
       if (use_truth_momentum) {
 	/* Fill with truth momentum instead of reco */
@@ -179,9 +184,6 @@ RICHParticleID::process_event(PHCompositeNode *topNode)
 
       /* Get mean emission point from track in RICH */
       double m_emi[3] = {0.,0.,0.};
-
-      bool use_reconstructed_point = true;
-      bool use_approximate_point = false;
       
       if (use_reconstructed_point) {
 	/* 'Continue' with next track if RICH projection not found for this track */
@@ -227,9 +229,24 @@ RICHParticleID::process_event(PHCompositeNode *topNode)
       
 
       /* Calculate particle probabilities */
-      double probs[4] = {0.,0.,0.,0.};
-      //cout << "PARTICLE PROBS" << endl;
-      if ( !_particleid->particle_probs( angles, momv_norm, _refractive_index, probs ) )
+      long double probs[4] = {0.,0.,0.,0.};
+      double momv_magnitude = 0;
+
+      /* Emission point momentum only gives a valid unit vector, not magnitude */
+      if ( use_reconstructed_momentum )
+	momv_magnitude = momv_norm;
+      if ( use_truth_momentum )
+	momv_magnitude = momv_norm;
+      if ( use_emission_momentum )
+	{
+	  PHG4Particle* particle = truthinfo->GetParticle( track_j->get_truth_track_id() );
+	  double px = particle->get_px();
+	  double py = particle->get_py();
+	  double pz = particle->get_pz();
+	  momv_magnitude = sqrt( px*px + py*py + pz*pz );
+	}
+
+      if ( !_particleid->particle_probs( angles, momv_magnitude, _refractive_index, probs ) )
 	{
 	  cout << "No particle ID: ParticleID::particle_probs gives no output" << endl;
 	  continue;
@@ -240,17 +257,7 @@ RICHParticleID::process_event(PHCompositeNode *topNode)
       pidinfo_j->set_likelihood(PidInfo::CHARGEDPION, probs[1]);
       pidinfo_j->set_likelihood(PidInfo::CHARGEDKAON, probs[2]);
       pidinfo_j->set_likelihood(PidInfo::PROTON, probs[3]);
-
-      //cout << pidinfo_j->get_likelihood(PidInfo::ELECTRON) << endl;
-      //cout << pidinfo_j->get_likelihood(PidInfo::CHARGEDPION) << endl;
-      //cout << pidinfo_j->get_likelihood(PidInfo::CHARGEDKAON) << endl;
-      //cout << pidinfo_j->get_likelihood(PidInfo::PROTON) << endl;
-      //cout << "PARTICLE PROBS DONE" << endl;
-
-      //for (int m=0;m<4;m++)
-      //	cout << probs[m] << endl;
-
-
+      
     } // END loop over tracks
 
   return 0;

@@ -2,7 +2,7 @@
 #include "PidCandidatev1.h"
 #include "TruthTrackerHepMC.h"
 #include "TrackProjectionTools.h"
-
+#include "TrackProjectorPlaneECAL.h"
 /* STL includes */
 #include <cassert>
 
@@ -19,6 +19,7 @@
 #include <calobase/RawTowerContainer.h>
 #include <calobase/RawTowerGeom.h>
 #include <calobase/RawTowerv1.h>
+#include <calobase/RawTowerDefs.h>
 
 #include <calobase/RawClusterContainer.h>
 #include <calobase/RawCluster.h>
@@ -54,7 +55,8 @@ DISKinematicsReco::DISKinematicsReco(std::string filename) :
   _tree_event_cluster(nullptr),
   _tree_event_truth(nullptr),
   _beam_electron_ptotal(10),
-  _beam_hadron_ptotal(250)
+  _beam_hadron_ptotal(250),
+  _trackproj(nullptr)
 {
 
 }
@@ -105,6 +107,14 @@ DISKinematicsReco::Init(PHCompositeNode *topNode)
   _map_em_candidate_branches.insert( make_pair( PidCandidate::em_track_e3x3_fhcal , vdummy ) );
   _map_em_candidate_branches.insert( make_pair( PidCandidate::em_track_e3x3_ehcal , vdummy ) );
   _map_em_candidate_branches.insert( make_pair( PidCandidate::em_track_cluster_dr , vdummy ) );
+  
+   _map_em_candidate_branches.insert( make_pair( PidCandidate::em_track_theta2cluster , vdummy ) );
+   _map_em_candidate_branches.insert( make_pair( PidCandidate::em_track_eta2cluster , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( PidCandidate::em_track_phi2cluster , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( PidCandidate::em_track_p2cluster , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( PidCandidate::em_track_x2cluster , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( PidCandidate::em_track_y2cluster , vdummy ) );
+  _map_em_candidate_branches.insert( make_pair( PidCandidate::em_track_z2cluster , vdummy ) );
 
   _map_em_candidate_branches.insert( make_pair( PidCandidate::em_pid_prob_electron , vdummy ) );
   _map_em_candidate_branches.insert( make_pair( PidCandidate::em_pid_prob_pion , vdummy ) );
@@ -176,8 +186,17 @@ DISKinematicsReco::Init(PHCompositeNode *topNode)
   _tree_event_truth = _tree_event_cluster->CloneTree();
   _tree_event_truth->SetName("event_truth");
   _tree_event_truth->SetTitle("a Tree with global event information and truth particle candidates");
-
+  
+ 
   return 0;
+}
+
+int
+DISKinematicsReco::InitRun(PHCompositeNode *topNode)
+{
+  if(_do_process_geant4_cluster)
+    _trackproj=new TrackProjectorPlaneECAL( topNode );
+   return 0;
 }
 
 int
@@ -236,6 +255,8 @@ DISKinematicsReco::process_event(PHCompositeNode *topNode)
   return 0;
 }
 
+
+
 int
 DISKinematicsReco::CollectEmCandidatesFromCluster( type_map_tcan& electronCandidateMap )
 {
@@ -244,28 +265,31 @@ DISKinematicsReco::CollectEmCandidatesFromCluster( type_map_tcan& electronCandid
   v_ecals.push_back("EEMC");
   v_ecals.push_back("CEMC");
   v_ecals.push_back("FEMC");
-
   for ( unsigned idx = 0; idx < v_ecals.size(); idx++ )
     {
       CaloEvalStack * caloevalstack = new CaloEvalStack(_topNode, v_ecals.at( idx ) );
 
       string clusternodename = "CLUSTER_" + v_ecals.at( idx );
       RawClusterContainer *clusterList = findNode::getClass<RawClusterContainer>(_topNode,clusternodename.c_str());
+      SvtxTrackMap *trackmap = findNode::getClass<SvtxTrackMap>(_topNode,"SvtxTrackMap");
       if (!clusterList) {
         cerr << PHWHERE << " ERROR: Can't find node " << clusternodename << endl;
         return false;
+      }
+      if(!trackmap) {
+	cerr << PHWHERE << " ERROR: Can't find node SvtxTrackMap" << endl;
+	return false;
       }
 
       for (unsigned int k = 0; k < clusterList->size(); ++k)
         {
           RawCluster *cluster = clusterList->getCluster(k);
-
           /* Check if cluster energy is below threshold */
-          float e_cluster_threshold = 0.1;
+          float e_cluster_threshold = 0.3;
           if ( cluster->get_energy() < e_cluster_threshold )
             continue;
-
-          InsertCandidateFromCluster( electronCandidateMap , cluster , caloevalstack );
+	  
+          InsertCandidateFromCluster( electronCandidateMap , cluster , caloevalstack , trackmap);
         }
     }
   return 0;
@@ -278,7 +302,7 @@ DISKinematicsReco::CollectEmCandidatesFromTruth( type_map_tcan& candidateMap )
   /* Get collection of truth particles from event generator */
   PHHepMCGenEventMap *geneventmap = findNode::getClass<PHHepMCGenEventMap>(_topNode,"PHHepMCGenEventMap");
   if (!geneventmap) {
-    std::cout << PHWHERE << " WARNING: Can't find requested PHHepMCGenEventMap" << endl;
+    //std::cout << PHWHERE << " WARNING: Can't find requested PHHepMCGenEventMap" << endl;
     return -1;
   }
 
@@ -307,7 +331,6 @@ DISKinematicsReco::CollectEmCandidatesFromTruth( type_map_tcan& candidateMap )
   //HepMC::GenParticle* particle_beam_l = truth.FindBeamLepton();
   //HepMC::GenParticle* particle_beam_h = truth.FindBeamHadron();
   HepMC::GenParticle* particle_scattered_l = truth.FindScatteredLepton();
-
   /* loop over all particles */
   for (HepMC::GenEvent::particle_const_iterator p = theEvent->particles_begin();
        p != theEvent->particles_end(); ++p)
@@ -323,8 +346,6 @@ DISKinematicsReco::CollectEmCandidatesFromTruth( type_map_tcan& candidateMap )
       /* skip particles that are not stable final state particles (status 1) */
       if ( (*p)->status() != 1 )
         continue;
-
-
       /* create new pid candidate */
       PidCandidatev1 *tc = new PidCandidatev1();
       tc->set_candidate_id( candidateMap.size()+1 );
@@ -353,7 +374,7 @@ DISKinematicsReco::CollectEmCandidatesFromTruth( type_map_tcan& candidateMap )
 
 
 int
-DISKinematicsReco::InsertCandidateFromCluster( type_map_tcan& candidateMap , RawCluster *cluster , CaloEvalStack *caloevalstack )
+DISKinematicsReco::InsertCandidateFromCluster( type_map_tcan& candidateMap , RawCluster *cluster , CaloEvalStack *caloevalstack, SvtxTrackMap *trackmap )
 {
   /* create new electron candidate */
   PidCandidatev1 *tc = new PidCandidatev1();
@@ -368,6 +389,7 @@ DISKinematicsReco::InsertCandidateFromCluster( type_map_tcan& candidateMap , Raw
   unsigned caloid = 0;
   RawCluster::TowerConstIterator rtiter = cluster->get_towers().first;
   caloid = RawTowerDefs::decode_caloid( rtiter->first );
+  _trackproj->set_detector(_trackproj->get_detector_from_cluster(cluster));
   //cout << "Calo ID: " << caloid << " -> " << RawTowerDefs::convert_caloid_to_name( RawTowerDefs::decode_caloid( rtiter->first ) ) << endl;
 
   tc->set_property( PidCandidate::em_cluster_id, cluster->get_id() );
@@ -384,7 +406,7 @@ DISKinematicsReco::InsertCandidateFromCluster( type_map_tcan& candidateMap , Raw
   tc->set_property( PidCandidate::em_cluster_pt, pt );
   tc->set_property( PidCandidate::em_cluster_ntower, (unsigned)cluster->getNTowers() );
   tc->set_property( PidCandidate::em_cluster_caloid, caloid );
-
+  
   /* get track projection helper class */
   TrackProjectionTools tpt( _topNode );
 
@@ -456,9 +478,7 @@ DISKinematicsReco::InsertCandidateFromCluster( type_map_tcan& candidateMap , Raw
 
   /* If matching truth primary particle found: update truth information */
   CaloRawClusterEval* clustereval = caloevalstack->get_rawcluster_eval();
-
   PHG4Particle* primary = clustereval->max_truth_primary_particle_by_energy(cluster);
-
   if ( primary )
     {
       /* get particle momenta and theta, phi angles */
@@ -497,45 +517,155 @@ DISKinematicsReco::InsertCandidateFromCluster( type_map_tcan& candidateMap , Raw
       tc->set_property( PidCandidate::em_evtgen_eta, geta );
       tc->set_property( PidCandidate::em_evtgen_charge, gcharge );
 
-      /* @TODO: This is a workaround until we figure out the tracking business... until then:
-       * use truth track information instead of reco track information */
-      tc->set_property( PidCandidate::em_track_id, (uint)primary->get_track_id() );
-      tc->set_property( PidCandidate::em_track_quality, (float)100.0 );
-      tc->set_property( PidCandidate::em_track_theta, gtheta );
-      tc->set_property( PidCandidate::em_track_phi, gphi );
-      tc->set_property( PidCandidate::em_track_eta, geta );
-      tc->set_property( PidCandidate::em_track_ptotal, gptotal );
-      tc->set_property( PidCandidate::em_track_ptrans, gpt );
-      tc->set_property( PidCandidate::em_track_charge, gcharge );
-      tc->set_property( PidCandidate::em_track_dca, NAN );
-      tc->set_property( PidCandidate::em_track_section, (uint)0 );
-      tc->set_property( PidCandidate::em_track_e3x3_cemc, NAN );
-      tc->set_property( PidCandidate::em_track_e3x3_ihcal, NAN );
-      tc->set_property( PidCandidate::em_track_e3x3_ohcal, NAN );
-      tc->set_property( PidCandidate::em_track_cluster_dr, (float)0.0 );
 
-      /* Get information on track from PID detectors */
-      tc->set_property( PidCandidate::em_pid_prob_electron, (float)0.0 );
-      tc->set_property( PidCandidate::em_pid_prob_pion, (float)0.0 );
-      tc->set_property( PidCandidate::em_pid_prob_kaon, (float)0.0 );
-      tc->set_property( PidCandidate::em_pid_prob_proton, (float)0.0 );
+      /* Track pointing to cluster */
 
-      if ( abs( primary->get_pid() ) == 11 )
-	tc->set_property( PidCandidate::em_pid_prob_electron, (float)1.0 );
+      bool fill_in_truth = false;
 
-      if ( abs( primary->get_pid() ) == 211 )
-	tc->set_property( PidCandidate::em_pid_prob_pion, (float)1.0 );
+      /* Try to find a track which best points to the current cluster */ 
+      /* TODO: Depending on cluster theta, deltaR changes (currently -1) */
 
-      if ( abs( primary->get_pid() ) == 321 )
-	tc->set_property( PidCandidate::em_pid_prob_kaon, (float)1.0 );
+      SvtxTrack* the_track = _trackproj->get_best_track(trackmap, cluster);
 
-      if ( abs( primary->get_pid() ) == 2212 )
-	tc->set_property( PidCandidate::em_pid_prob_proton, (float)1.0 );
+      /* Test if a best track was found */
+      if(the_track!=NULL) //Fill in reconstructed info
+	{
+	  /* Get track position and momentum */
+	  double posv[3] = {0.,0.,0.};
+	  _trackproj->get_projected_position(the_track,cluster,posv,TrackProjectorPlaneECAL::PLANE_CYLINDER, 1);
+	  /* Extrapolate track2cluster values */
+	  float track2cluster_theta = atan(sqrt(posv[0]*posv[0]+
+						posv[1]*posv[1]) / posv[2]);
+	  float track2cluster_eta = -log(abs(tan(track2cluster_theta/2)));
+	  if(tan(track2cluster_theta/2)<0)
+	    track2cluster_eta*=-1;
+	  float track2cluster_phi = atan(posv[1]/posv[0]);
+	  float track2cluster_x = posv[0];
+	  float track2cluster_y = posv[1];
+	  float track2cluster_z = posv[2];
+
+	  /* Fills in weird values right now */
+	  float track2cluster_p = 0;
+
+
+	  tc->set_property( PidCandidate::em_track_theta2cluster, track2cluster_theta );
+	  tc->set_property( PidCandidate::em_track_eta2cluster, track2cluster_eta );
+	  tc->set_property( PidCandidate::em_track_phi2cluster, track2cluster_phi );
+	  tc->set_property( PidCandidate::em_track_p2cluster, track2cluster_p );
+	  tc->set_property( PidCandidate::em_track_x2cluster, track2cluster_x );
+	  tc->set_property( PidCandidate::em_track_y2cluster, track2cluster_y);
+	  tc->set_property( PidCandidate::em_track_z2cluster, track2cluster_z);
+	  
+	  
+	  tc->set_property( PidCandidate::em_track_id, (uint)primary->get_track_id() );
+	  tc->set_property( PidCandidate::em_track_quality, (float)100.0 );
+	  tc->set_property( PidCandidate::em_track_theta,2*atan( exp(-the_track->get_eta()) ));
+	  tc->set_property( PidCandidate::em_track_phi, the_track->get_phi() );
+	  tc->set_property( PidCandidate::em_track_eta, the_track->get_eta() );
+	  tc->set_property( PidCandidate::em_track_ptotal, the_track->get_p() );
+	  tc->set_property( PidCandidate::em_track_ptrans, the_track->get_pt() );
+	  tc->set_property( PidCandidate::em_track_charge, the_track->get_charge() );
+	  tc->set_property( PidCandidate::em_track_dca, NAN );
+	  tc->set_property( PidCandidate::em_track_section, (uint)0 );
+	  tc->set_property( PidCandidate::em_track_e3x3_cemc, NAN );
+	  tc->set_property( PidCandidate::em_track_e3x3_ihcal, NAN );
+	  tc->set_property( PidCandidate::em_track_e3x3_ohcal, NAN );
+	  tc->set_property( PidCandidate::em_track_cluster_dr, (float)0.0 );
+
+	  tc->set_property( PidCandidate::em_pid_prob_electron, (float)0.0 );
+	  tc->set_property( PidCandidate::em_pid_prob_pion, (float)0.0 );
+	  tc->set_property( PidCandidate::em_pid_prob_kaon, (float)0.0 );
+	  tc->set_property( PidCandidate::em_pid_prob_proton, (float)0.0 );
+	  
+	  
+	  /*
+	     cout << "------------------------------------------" << endl;
+	     cout << "Track Projection Successful!" << endl;
+	     cout << "Cluster Detector = " << _trackproj->get_detector() << "EMC" << endl;
+	     cout << "Cluster X: " << cluster->get_x() << " | Track X: " << posv[0] << endl;
+	     cout << "Cluster Y: " << cluster->get_y() << " | Track Y: " << posv[1] << endl;
+	     cout << "Cluster Z: " << cluster->get_z() << " | Track Z: " << posv[2] << endl;
+	  */
+	  
+	  
+	}
+      else if(fill_in_truth) //Fill in truth
+	{
+	  tc->set_property( PidCandidate::em_track_theta2cluster, NAN);
+	  tc->set_property( PidCandidate::em_track_eta2cluster, NAN);
+	  tc->set_property( PidCandidate::em_track_phi2cluster, NAN );
+	  tc->set_property( PidCandidate::em_track_p2cluster, NAN);
+	  tc->set_property( PidCandidate::em_track_x2cluster, NAN );
+	  tc->set_property( PidCandidate::em_track_y2cluster, NAN);
+	  tc->set_property( PidCandidate::em_track_z2cluster, NAN);
+	  tc->set_property( PidCandidate::em_track_id, (uint)primary->get_track_id() );
+	  tc->set_property( PidCandidate::em_track_quality, (float)100.0 );
+	  tc->set_property( PidCandidate::em_track_theta, gtheta );
+	  tc->set_property( PidCandidate::em_track_phi, gphi );
+	  tc->set_property( PidCandidate::em_track_eta, geta );
+	  tc->set_property( PidCandidate::em_track_ptotal, gptotal );
+	  tc->set_property( PidCandidate::em_track_ptrans, gpt );
+	  tc->set_property( PidCandidate::em_track_charge, gcharge );
+	  tc->set_property( PidCandidate::em_track_dca, NAN );
+	  tc->set_property( PidCandidate::em_track_section, (uint)0 );
+	  tc->set_property( PidCandidate::em_track_e3x3_cemc, NAN );
+	  tc->set_property( PidCandidate::em_track_e3x3_ihcal, NAN );
+	  tc->set_property( PidCandidate::em_track_e3x3_ohcal, NAN );
+	  tc->set_property( PidCandidate::em_track_cluster_dr, (float)0.0 );
+	  
+	  /* Get information on track from PID detectors */
+	  tc->set_property( PidCandidate::em_pid_prob_electron, (float)0.0 );
+	  tc->set_property( PidCandidate::em_pid_prob_pion, (float)0.0 );
+	  tc->set_property( PidCandidate::em_pid_prob_kaon, (float)0.0 );
+	  tc->set_property( PidCandidate::em_pid_prob_proton, (float)0.0 );
+	  
+	  if ( abs( primary->get_pid() ) == 11 )
+	    tc->set_property( PidCandidate::em_pid_prob_electron, (float)1.0 );
+	  
+	  if ( abs( primary->get_pid() ) == 211 )
+	    tc->set_property( PidCandidate::em_pid_prob_pion, (float)1.0 );
+	  
+	  if ( abs( primary->get_pid() ) == 321 )
+	    tc->set_property( PidCandidate::em_pid_prob_kaon, (float)1.0 );
+	  
+	  if ( abs( primary->get_pid() ) == 2212 )
+	    tc->set_property( PidCandidate::em_pid_prob_proton, (float)1.0 );
+	}
+      else
+	{
+	  tc->set_property( PidCandidate::em_track_theta2cluster, NAN);
+	  tc->set_property( PidCandidate::em_track_eta2cluster, NAN);
+	  tc->set_property( PidCandidate::em_track_phi2cluster, NAN );
+	  tc->set_property( PidCandidate::em_track_p2cluster, NAN);
+	  tc->set_property( PidCandidate::em_track_x2cluster, NAN );
+	  tc->set_property( PidCandidate::em_track_y2cluster, NAN);
+	  tc->set_property( PidCandidate::em_track_z2cluster, NAN);
+	  tc->set_property( PidCandidate::em_track_id,(uint)0);
+	  tc->set_property( PidCandidate::em_track_quality, (float)0.0 );
+	  tc->set_property( PidCandidate::em_track_theta, NAN );
+	  tc->set_property( PidCandidate::em_track_phi, NAN );
+	  tc->set_property( PidCandidate::em_track_eta, NAN );
+	  tc->set_property( PidCandidate::em_track_ptotal, NAN );
+	  tc->set_property( PidCandidate::em_track_ptrans, NAN );
+	  tc->set_property( PidCandidate::em_track_charge, 0 );
+	  tc->set_property( PidCandidate::em_track_dca, NAN );
+	  tc->set_property( PidCandidate::em_track_section, (uint)0 );
+	  tc->set_property( PidCandidate::em_track_e3x3_cemc, NAN );
+	  tc->set_property( PidCandidate::em_track_e3x3_ihcal, NAN );
+	  tc->set_property( PidCandidate::em_track_e3x3_ohcal, NAN );
+	  tc->set_property( PidCandidate::em_track_cluster_dr, (float)0.0 );
+	  
+	  /* Get information on track from PID detectors */
+	  tc->set_property( PidCandidate::em_pid_prob_electron, (float)0.0 );
+	  tc->set_property( PidCandidate::em_pid_prob_pion, (float)0.0 );
+	  tc->set_property( PidCandidate::em_pid_prob_kaon, (float)0.0 );
+	  tc->set_property( PidCandidate::em_pid_prob_proton, (float)0.0 );
+	  
+	}
     }
-
+ 
   /* add tau candidate to collection */
   candidateMap.insert( make_pair( tc->get_candidate_id(), tc ) );
-
   return 0;
 }
 
@@ -812,7 +942,6 @@ DISKinematicsReco::AddTruthEventInformation()
 
   return 0;
 }
-
 
 void
 DISKinematicsReco::ResetBranchMap()

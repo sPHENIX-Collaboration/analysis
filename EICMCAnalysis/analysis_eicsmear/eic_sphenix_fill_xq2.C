@@ -19,7 +19,7 @@
 using namespace std;
 
 int
-eic_sphenix_dis_fillbins( TString filename_output,
+eic_sphenix_fill_xq2( TString filename_output,
 			  TString filename_mc,
 			  TString filename_mc_smeared = "",
 			  bool debug = false )
@@ -34,6 +34,11 @@ eic_sphenix_dis_fillbins( TString filename_output,
   /* Get trees from files. */
   TTree *tree = (TTree*)file_mc->Get("EICTree");
   //TTree *tree_smeared = (TTree*)file_mc_smeared->Get("Smeared");
+
+  /* Get event generator parameters (cross section, number of trials, ...) from file. */
+  TObjString* gen_crossSection = (TObjString*)file_mc->Get("crossSection");
+  TObjString* gen_nEvents = (TObjString*)file_mc->Get("nEvents");
+  TObjString* gen_nTrials = (TObjString*)file_mc->Get("nTrials");
 
   /* Output file. */
   TFile *file_out = new TFile(filename_output, "RECREATE");
@@ -130,8 +135,8 @@ eic_sphenix_dis_fillbins( TString filename_output,
   double hn_dis_xmin[] = {0., 0. };
   double hn_dis_xmax[] = {0., 0. };
 
-  THnSparse* hn_dis = new THnSparseF("hn_dis_event",
-                                     "DIS Kinematis Per Event; x; Q2;",
+  THnSparse* hn_dis = new THnSparseF("hn_dis_electron",
+                                     "DIS Kinematis Per Event (Electron); x; Q2;",
                                      hn_dis_ndim,
                                      hn_dis_nbins,
                                      hn_dis_xmin,
@@ -144,7 +149,7 @@ eic_sphenix_dis_fillbins( TString filename_output,
   hn_dis->SetBinEdges(1,bins_Q2);
 
   /* clone histogram for ACCEPTED events */
-  THnSparse* hn_dis_accept = (THnSparse*)hn_dis->Clone("hn_dis_event_accept");
+  THnSparse* hn_dis_accept = (THnSparse*)hn_dis->Clone("hn_dis_electron_accept");
   hn_dis_accept->SetTitle("DIS Kinematis Per Event (Accepted)");
 
   /* Create SIDIS histogram- one entry per particle */
@@ -358,6 +363,10 @@ eic_sphenix_dis_fillbins( TString filename_output,
   h_eta->Write();
   h_eta_accept->Write();
 
+  gen_crossSection->Write("crossSection");
+  gen_nEvents->Write("nEvents");
+  gen_nTrials->Write("nTrials");
+
   /* Close output file. */
   file_out->Close();
 
@@ -374,25 +383,25 @@ int main( int argc , char* argv[] )
       return 1;
     }
 
-  cout << "Running eic_sphenix_dis_fillbins with: \n" << endl;
+  cout << "Running eic_sphenix_fill_xq2 with: \n" << endl;
   cout << " - Output file:            " << argv[1] << endl;
   cout << " - EICTree input file:     " << argv[2] << endl;
 
   if ( argc == 3 )
     {
       cout << " - EICTree (smeared) file: (none)" << endl;
-      eic_sphenix_dis_fillbins( argv[1], argv[2] );
+      eic_sphenix_fill_xq2( argv[1], argv[2] );
     }
   else if ( argc == 4 )
     {
       cout << " - EICTree (smeared) file: " << argv[3] << endl;
-      eic_sphenix_dis_fillbins( argv[1], argv[2], argv[3] );
+      eic_sphenix_fill_xq2( argv[1], argv[2], argv[3] );
     }
   else if ( argc == 5 )
     {
       cout << " - EICTree (smeared) file: " << argv[3] << endl;
       cout << " ==== DEBUG MODE ==== " << endl;
-      eic_sphenix_dis_fillbins( argv[1], argv[2], "", true );
+      eic_sphenix_fill_xq2( argv[1], argv[2], "", true );
     }
 
   return 0;

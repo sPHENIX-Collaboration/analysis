@@ -114,13 +114,10 @@ private:
   int _mtrackid;
   int _otrackid;
 
-  float _theta_true;
-  float _theta_reco;
+  double _theta_true;
+  double _theta_reco;
   double _theta_mean;
   double _theta_rms;
-
-  float _mass_true;
-  float _mass_reco;
 
   /* track projector object */
   TrackProjectorPid *_trackproj;

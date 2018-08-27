@@ -100,13 +100,12 @@ SetupDualRICHAnalyzer::get_emission_momentum( PHG4TruthInfoContainer* truthinfo,
   double dy=0;
   double dz=0;
 
-  /* Use first-to-last, or first-to-11th */
-  if (emiz.size() != 0){
-    first = std::min_element(emiz.begin(),emiz.end());
-    last = std::max_element(emiz.begin(),emiz.end());
-    double p1 = std::distance(emiz.begin(),first);
-    //double p2 = std::distance(emiz.begin(),last);
-
+  /* Use first-to-last (or first-to-11th) */
+  first = std::min_element(emiz.begin(),emiz.end());
+  //last = std::max_element(emiz.begin(),emiz.end());
+  double p1 = std::distance(emiz.begin(),first);
+  //double p2 = std::distance(emiz.begin(),last);
+  if (emiz.size() > p1+11){
     dx = emix.at(p1+11) - emix.at(p1);
     dy = emiy.at(p1+11) - emiy.at(p1);
     dz = emiz.at(p1+11) - emiz.at(p1);

@@ -89,7 +89,7 @@ int FastTrackingEval::Init(PHCompositeNode *topNode) {
 	_eval_tree_tracks->Branch("dca2d", &dca2d, "dca2d/F");
 
 	_h2d_Delta_mom_vs_truth_eta = new TH2D("_h2d_Delta_mom_vs_truth_eta",
-			"#frac{#Delta p}{truth p} vs. truth #eta", 9, -0.25, 4.25, 1000, -1,
+			"#frac{#Delta p}{truth p} vs. truth #eta", 54, -4.5, +4.5, 1000, -1,
 			1);
 
 	_h2d_Delta_mom_vs_truth_mom = new TH2D("_h2d_Delta_mom_vs_truth_mom",
@@ -108,10 +108,13 @@ int FastTrackingEval::process_event(PHCompositeNode *topNode) {
 	_event++;
 	if (verbosity >= 2 and _event % 1000 == 0)
 		cout << PHWHERE << "Events processed: " << _event << endl;
-
+	
+	//std::cout << "Opening nodes" << std::endl;
 	GetNodes(topNode);
 
+	//std::cout << "Filling trees" << std::endl;
 	fill_tree(topNode);
+	//std::cout << "DONE" << std::endl;
 
 	return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -142,7 +145,7 @@ void FastTrackingEval::fill_tree(PHCompositeNode *topNode) {
 
 	// Make sure to reset all the TTree variables before trying to set them.
 	reset_variables();
-
+	//std::cout << "A1" << std::endl;
 	event = _event;
 
 	if (!_truth_container) {
@@ -157,27 +160,37 @@ void FastTrackingEval::fill_tree(PHCompositeNode *topNode) {
 
 	PHG4TruthInfoContainer::ConstRange range =
 			_truth_container->GetPrimaryParticleRange();
+	//std::cout << "A2" << std::endl;
 	for (PHG4TruthInfoContainer::ConstIterator truth_itr = range.first;
-			truth_itr != range.second; ++truth_itr) {
+	     truth_itr != range.second; ++truth_itr) {
 
 		PHG4Particle* g4particle = truth_itr->second;
 		if(!g4particle) {
 			LogDebug("");
 			continue;
 		}
+		//std::cout << "B1" << std::endl;
 
 		SvtxTrack_FastSim* track = NULL;
 
+		//std::cout << "TRACKmap size " << _trackmap->size() << std::endl;
 		for (SvtxTrackMap::ConstIter track_itr = _trackmap->begin();
-				track_itr != _trackmap->end(); track_itr++) {
-
-			SvtxTrack_FastSim* temp = dynamic_cast<SvtxTrack_FastSim*>(track_itr->second);
+		     track_itr != _trackmap->end();
+		     track_itr++) {
+		  //std::cout << "TRACK * " << track_itr->first << std::endl;
+		  SvtxTrack_FastSim* temp = dynamic_cast<SvtxTrack_FastSim*>(track_itr->second);
+		if(!temp) {
+		  std::cout << "ERROR CASTING PARTICLE!" << std::endl;
+		  continue;
+		}
+		//std::cout << " PARTICLE!" << std::endl;
 
 			if ((temp->get_truth_track_id() - g4particle->get_track_id()) == 0) {
 				track = temp;
 			}
 		}
 
+		//std::cout << "B2" << std::endl;
 		gtrackID = g4particle->get_track_id();
 		gflavor = g4particle->get_pid();
 
@@ -187,6 +200,7 @@ void FastTrackingEval::fill_tree(PHCompositeNode *topNode) {
 
 
 		if (track) {
+		  //std::cout << "C1" << std::endl;
 			trackID = track->get_id();
 			charge = track->get_charge();
 			nhits = track->size_clusters();
@@ -198,14 +212,17 @@ void FastTrackingEval::fill_tree(PHCompositeNode *topNode) {
 
 			TVector3 truth_mom(gpx,gpy,gpz);
 			TVector3 reco_mom(px, py, pz);
+			//std::cout << "C2" << std::endl;
 
 			_h2d_Delta_mom_vs_truth_mom->Fill(truth_mom.Mag(), (reco_mom.Mag()-truth_mom.Mag())/truth_mom.Mag());
 			_h2d_Delta_mom_vs_truth_eta->Fill(truth_mom.Eta(), (reco_mom.Mag()-truth_mom.Mag())/truth_mom.Mag());
 		}
+		//std::cout << "B3" << std::endl;
 
 		_eval_tree_tracks->Fill();
 
 	}
+	//std::cout << "A3" << std::endl;
 
 	return;
 
@@ -256,6 +273,7 @@ int FastTrackingEval::GetNodes(PHCompositeNode * topNode) {
 
 	_trackmap = findNode::getClass<SvtxTrackMap>(topNode,
 			_trackmapname);
+	//std::cout << _trackmapname.c_str() << std::endl;
 	if (!_trackmap && _event < 2) {
 		cout << PHWHERE << "SvtxTrackMap node with name "
 		     << _trackmapname

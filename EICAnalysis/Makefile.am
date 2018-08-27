@@ -19,7 +19,12 @@ libeicana_la_LIBADD = \
   -lfun4all \
   -lg4dst \
   -lg4eval \
-  -lphhepmc
+  -lphhepmc \
+  -lg4detectors \
+  -lgenfit2 \
+  -lphfield \
+  -lgenfit2exp \
+  -lPHGenFit
 
 
 pkginclude_HEADERS = \
@@ -30,7 +35,10 @@ pkginclude_HEADERS = \
   PidCandidate.h\
   PidCandidatev1.h\
   TrackProjectionTools.h \
-  TruthTrackerHepMC.h
+  TrackProjectorPlaneECAL.h \
+  TruthTrackerHepMC.h \
+  DVMPHelper.h \
+  ExclusiveReco.h
 
 libeicana_la_SOURCES = \
   Leptoquarks.C \
@@ -46,7 +54,11 @@ libeicana_la_SOURCES = \
   PidCandidatev1.C\
   PidCandidatev1_Dict.C\
   TrackProjectionTools.C \
-  TruthTrackerHepMC.C
+  TrackProjectorPlaneECAL.cc \
+  TruthTrackerHepMC.C \
+  DVMPHelper.C \
+  ExclusiveReco.C \
+  ExclusiveReco_Dict.C
 
 # Rule for generating table CINT dictionaries.
 %_Dict.C: %.h %LinkDef.h

@@ -129,7 +129,7 @@ void TrackerRate()
   double meanhit = h->GetMean();
 
   TLegend *leg = new TLegend(.2, .70, .95, .93);
-  leg->AddEntry("", "#it{#bf{sPHENIX}} EIC Simualtion", "");
+  leg->AddEntry("", "#it{#bf{sPHENIX}} Simulation CD-1 Ref.", "");
   leg->AddEntry("", "e+p, 20+250 GeV/c, #sqrt{s_{ep}}=140 GeV", "");
   leg->AddEntry(h, Form("Average TPC cluster / event = %.1f", meanhit), "l");
   leg->Draw();
