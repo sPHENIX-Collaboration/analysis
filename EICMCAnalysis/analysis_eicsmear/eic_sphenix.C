@@ -92,6 +92,11 @@ Smear::Detector BuildEicSphenix() {
   trackingPhi.Accept.SetCharge(Smear::kCharged);
   trackingPhi.Accept.AddZone(zone_tracking);
 
+  /* Create mRICH detector parameterization */
+  Smear::Acceptance::Zone zone_mRICH( eta2theta( 1.85 ), eta2theta( 1.242 ));
+
+  Smear::ParticleID mRICH("mRICHPIDMatrix.dat");
+  mRICH.Accept.AddZone(zone_mRICH);
 
   /* Create a DETECTOR and add the devices
    */
@@ -107,6 +112,8 @@ Smear::Detector BuildEicSphenix() {
   det.AddDevice(trackingMomentum);
   det.AddDevice(trackingTheta);
   det.AddDevice(trackingPhi);
+
+  det.AddDevice(mRICH);
 
   det.SetEventKinematicsCalculator("NM JB DA"); // The detector will calculate event kinematics from smeared values
 
