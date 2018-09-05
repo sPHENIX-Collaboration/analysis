@@ -40,8 +40,8 @@ void purity()
   // these should match the values used when the files were created
   //int n_maps_layer = 3;
   int n_maps_layer = 0;
-  int n_intt_layer = 4;
-  //int n_tpc_layer = 40;  // 8 inner
+  //int n_intt_layer = 4;
+  int n_intt_layer = 0;
   int n_tpc_layer = 48; // 16 inner
   int nlayers = n_maps_layer+n_intt_layer+n_tpc_layer;  // maximum number of tracking layers for tpc+intt+maps
 
@@ -73,7 +73,10 @@ void purity()
   TH2D *hpt_nmissed_tpc_layers = new TH2D("hpt_nmissed_tpc_layers","hpt_nmissed_tpc_layers",200,0,hptmax, 53, -5, 48.0);
   TH2D *hcorr_nfake_nmaps = new TH2D("hcorr_nfake_nmaps","hcorr_nfake_nmaps",40, -1, 5, 40, -1, 4);
   TH1D *hzevt = new TH1D("hzevt","hzevt",200,-35.0, 35.0);    
-  TH1D *hzvtx_res = new TH1D("hzvtx_res","hzvtx_res", 200, -0.002,  0.002); 
+  TH1D *hzvtx_res = new TH1D("hzvtx_res","hzvtx_res", 1000, -0.1,  0.1); 
+  TH1D *hxvtx_res = new TH1D("hxvtx_res","hxvtx_res", 1000, -0.04,  0.04); 
+  TH1D *hyvtx_res = new TH1D("hyvtx_res","hyvtx_res", 1000, -0.04,  0.04); 
+  TH1D *hdcavtx_res = new TH1D("hdcavtx_res","hdcavtx_res", 1000, -0.04,  0.04); 
 
   static const int NPTDCA = 3;
 
@@ -155,7 +158,7 @@ void purity()
   //============================================================
 
   // The condor job output files
-  for(int i=0;i<2000;i++)
+  for(int i=0;i<1200;i++)
     {
       // Open the evaluator output file 
       
@@ -168,17 +171,16 @@ void purity()
       // This include file contains the definitions of the ntuple variables, and the chain definitions
 #include "ntuple_variables.C"
 
-      char name[500];
+      char name[1000];
       // latest files
-      //sprintf(name,"/sphenix/user/frawley/fresh_jan25/macros/macros/g4simulations/eval_output/g4svtx_eval_%i.root_g4svtx_eval.root",i);
-      //sprintf(name,"/sphenix/user/frawley/fresh_jan25/macros/macros/g4simulations/eval_output_lm/g4svtx_eval_%i.root_g4svtx_eval.root",i);
-      //sprintf(name,"/sphenix/user/frawley/fresh_mar2/macros/macros/g4simulations/eval_output/g4svtx_eval_%i.root_g4svtx_eval.root_primary_eval.root ",i);
+      sprintf(name,"/sphenix/user/frawley/fresh_mar8_testing/macros/macros/g4simulations/eval_output/g4svtx_eval_%i.root_g4svtx_eval.root_primary_eval.root",i);
 
-      //sprintf(name,"/sphenix/user/frawley/fresh_mar2/macros/macros/g4simulations/eval_output/g4svtx_eval_%i.root_g4svtx_eval.root",i);
-      //sprintf(name,"/sphenix/user/frawley/fresh_mar2/macros/macros/g4simulations/eval_output/g4svtx_eval_%i.root_g4svtx_eval.root_primary_eval.root",i);
-      //sprintf(name,"/sphenix/user/frawley/fresh_mar8_testing/macros/macros/g4simulations/eval_output/g4svtx_eval_%i.root_g4svtx_eval.root_primary_eval.root",i);
-      //sprintf(name,"/sphenix/user/frawley/fresh_mar8_testing/macros/macros/g4simulations/eval_output/g4svtx_eval_%i.root",i);
-      sprintf(name,"/sphenix/user/frawley/fresh_mar8_testing/macros/macros/g4simulations/mar20_100pions_80ns_eval_output/g4svtx_eval_%i.root",i);
+      // for CD1 plots with no MVTX
+      //sprintf(name,"/sphenix/user/frawley/fresh_mar8_testing/macros/macros/g4simulations/eval_output_noINTT_80ns_100pions_clusterizer_fixed/g4svtx_eval_%i.root_g4svtx_eval.root_primary_eval.root",i);
+      //sprintf(name,"/sphenix/user/frawley/fresh_mar8_testing/macros/macros/g4simulations/eval_output_noINTT_80ns_100pions_clusterizer_fixed/g4svtx_eval_%i.root_g4svtx_eval.root",i);
+
+      //sprintf(name,"/sphenix/user/frawley/fresh_mar8_testing/macros/macros/g4simulations/eval_output_ups1s_100pions_80ns/g4svtx_eval_%i.root_g4svtx_eval.root_primary_eval.root",i);
+
 
       bool checkfiles = false;
       int mintracks = 10;
@@ -206,11 +208,7 @@ void purity()
       ntp_track->Add(name);
       ntp_gtrack->Add(name);
 
-      /*
-      // skip this file if there are no tracks 
-      if(!ntp_vertex->GetEntry() || !ntp_gtrack->GetEntries() || !ntp_track->GetEntries())
-	continue;
-      */
+
 
       // Use the number of g4 tracks (with some cuts) as a measure of centrality
       // Examination of the output file shows that the 10% most central events have 1700 or more g4 tracks with these cuts
@@ -226,8 +224,8 @@ void purity()
       for(int ir = 0;ir < ntp_gtrack->GetEntries();ir++)
 	{
 	  int recoget = ntp_track->GetEntry(ir);
-	  double reta = asinh(rpz/sqrt(rpx*rpx+rpy*rpy));
-	  if(rgembed == 0 && rprimary == 1 && fabs(reta) < 1.0 && sqrt(rgpx*rgpx+rgpy*rgpy) > 0.2)
+	  double reta = asinh(rpz/rpt);
+	  if(rgembed == 0 && rprimary == 1 && fabs(reta) < 1.0 && rpt > 0.2)
 	    nrtr++;
 	}
       hg4ntrack->Fill(ng4tr, nrtr);
@@ -243,7 +241,8 @@ void purity()
 	  continue;
 	}
       if(verbose> -1)  
-	cout <<  " ntp_vertex entries: " << ntp_vertex->GetEntries()
+	cout 
+	  <<  " ntp_vertex entries: " << ntp_vertex->GetEntries()
 	     << " ntp_gtrack entries: " << ntp_gtrack->GetEntries()
 	     << " ntp_track entries: " << ntp_track->GetEntries()
 	     << endl;
@@ -255,8 +254,10 @@ void purity()
       // These keep track of the starting position in the track ntuples for each event
       int nr = 0;
       int ng = 0;
+      int nev = ntp_vertex->GetEntries();
+      //int nev = 1;
 
-      for(int iev=0;iev<ntp_vertex->GetEntries();iev++)
+      for(int iev=0;iev<nev;iev++)
 	{
 
 	  if(verbose > 0) cout << " iev = " << iev << " ng " << ng << " nr " << nr << endl;  
@@ -265,9 +266,10 @@ void purity()
 	  if(!recoget)
 	    {
 	      cout << "Failed to get ntp_vertex entry " << iev << endl;
-	      exit(1);
+	      continue;
 	    }	    
 
+	  /*
 	  if(egvt != 0)
 	    {
 	      // this is a pileup event, we want only the triggered event, so skip it
@@ -284,6 +286,7 @@ void purity()
 
 	      continue;
 	    }
+	  */
 
 	  if(iev%1 == 0)	   
 	    if(verbose>0) 
@@ -301,6 +304,7 @@ void purity()
 	      continue;
 	    }
 
+
 	  // do not consider events that are not within the full acceptance
 	  if(fabs(egvz) > 10.0)
 	    {
@@ -314,6 +318,9 @@ void purity()
 
 	  hzevt->Fill(evz);
 	  hzvtx_res->Fill(evz-egvz);
+	  hxvtx_res->Fill(evx-egvx);
+	  hyvtx_res->Fill(evy-egvy);
+	  hdcavtx_res->Fill(sqrt(evx*evx+evy*evy) - sqrt(egvx*egvx+egvy*egvy));
 	 	 
 	  //====================================================
 	  // ntp_gtracks
@@ -335,9 +342,10 @@ void purity()
 		  break;
 		}
 
-	      if(tembed != embed_flag)
-		continue;
+	      //if(tembed != embed_flag)
+	      //	continue;
 
+	      /*
 	      // if the scan_for_embedded flag is set to true, the number of reco tracks recorded in ntp_vertex will be all reco'd tracks, but only embedded tracks will be present
 	      // check for change of event number to detect this
 	      if(tevent != iev)
@@ -349,6 +357,7 @@ void purity()
 	     	     
 	      if(verbose > 0) cout << " ig = " << ig << " tevent " << tevent << " tgtrackid " << tgtrackid 
 				   << " ttrackid " << ttrackid << " tgnhits " << tgnhits << " tnhits " << tnhits << " tnfromtruth " << tnfromtruth << " tembed " << tembed  << endl;
+	      */
 
 	      // ntp_gtrack track cuts
 	      //===================
@@ -439,6 +448,7 @@ void purity()
 	      if(rgembed != embed_flag)
 		continue;
 
+	      /*
 	      // if the scan_for_embedded flag is set to true, the number of reco tracks recorded in ntp_vertex will be all reco'd tracks, but only embedded tracks will be present
 	      // check for change of event number to detect this
 	      if(revent != iev)
@@ -451,6 +461,7 @@ void purity()
 	      if(verbose > 0) cout << " ir = " << ir << " rtrackid " << rtrackid << " revent " << revent 
 				   << " rquality " << rquality << "  rgtrackid = " << rgtrackid << " rgnhits " << rgnhits 
 				   << " rnhits " << rnhits << " rnfromtruth " << rnfromtruth << " rgembed " << rgembed << endl;
+	      */
 
 	      //  ntp_track track cuts 
 	      //================================
@@ -500,9 +511,6 @@ void purity()
 
 	      //=============================
 
-	      double rgpT = sqrt(rgpx*rgpx+rgpy*rgpy);	  	  
-	      double rpT = sqrt(rpx*rpx+rpy*rpy);
-	      
 	      double rdcaZ = rpcaz - rvz;
 
 	      if(rgembed == embed_flag)  // take only embedded pions
@@ -511,38 +519,38 @@ void purity()
 		  hquality->Fill(rquality);		 
 		  hZdca->Fill(rpcaz - rvz);
 		  
-		  if(verbose > 0) cout << "   accepted: rgembed = " << rgembed << " rgpT = " << rgpT << endl;
+		  if(verbose > 0) cout << "   accepted: rgembed = " << rgembed << " rgpt = " << rgpt << endl;
 		  
 		  naccept++;
 
 		  if(verbose > 0) cout << " rdca2d = " << rdca2d << " rdcaZ = " << rdcaZ << endl;
 
-		  double reta = asinh(rpz/sqrt(rpx*rpx+rpy*rpy));
+		  double reta = asinh(rpz/rpt);
 		  hreta->Fill(reta);
 		  if(fabs(reta) < 1.0)  // optional cut
 		    {
 		      n_embed_rtrack++;
-		      //hpt_compare->Fill(rgpT,rpT/rgpT);
+		      //hpt_compare->Fill(rgpt,rpt/rgpt);
 		      if(rnmaps == n_maps_layer)  // require all maps layers
 			{
-			  //hpt_dca2d->Fill(rgpT, rdca2d);
-			  //hpt_dcaZ->Fill(rgpT,  rdcaZ);
+			  //hpt_dca2d->Fill(rgpt, rdca2d);
+			  //hpt_dcaZ->Fill(rgpt,  rdcaZ);
 			}
 		    }
 		  hnhits->Fill(rnhits);
 		  
 		  double nfake = rnhits - rnfromtruth;
-		  hpt_nfake->Fill(rgpT, nfake);
+		  hpt_nfake->Fill(rgpt, nfake);
 
 		  double nmissed_maps_layers = rgnlmaps - rnlmaps;
-		  hpt_nmissed_maps_layers->Fill(rgpT,nmissed_maps_layers);
+		  hpt_nmissed_maps_layers->Fill(rgpt,nmissed_maps_layers);
 
 		  double nmissed_intt_layers = rgnlintt - rnlintt;
-		  hpt_nmissed_intt_layers->Fill(rgpT,nmissed_intt_layers);
+		  hpt_nmissed_intt_layers->Fill(rgpt,nmissed_intt_layers);
 
 
 		  double nmissed_tpc_layers = rgnltpc - rnltpc;
-		  hpt_nmissed_tpc_layers->Fill(rgpT,nmissed_tpc_layers);
+		  hpt_nmissed_tpc_layers->Fill(rgpt,nmissed_tpc_layers);
 
 		  hcorr_nfake_nmaps->Fill(nfake,nmissed_maps_layers);
 		} 
@@ -550,23 +558,23 @@ void purity()
 	      if(rgembed == 1)
 		{
 		  // for the non-embedded tracks from Hijing, we want to be able to do pt_sigma cuts later	  
-		  hpt_hijing_compare->Fill(rgpT,rpT/rgpT);
+		  hpt_hijing_compare->Fill(rgpt,rpt/rgpt);
 		  if(rnmaps == n_maps_layer) // require all maps layers
 		    {
-		      hpt_hijing_dca2d->Fill(rgpT,rdca2d);
-		      hpt_hijing_dcaZ->Fill(rgpT,rdcaZ);
+		      hpt_hijing_dca2d->Fill(rgpt,rdca2d);
+		      hpt_hijing_dcaZ->Fill(rgpt,rdcaZ);
 		    }
 
 		  for(int ipt=0;ipt<NVARBINS-1;ipt++)
 		    {
-		      if(rpT > xbins[ipt] && rpT < xbins[ipt+1])
-			hptreco[ipt]->Fill(rpT);
+		      if(rpt > xbins[ipt] && rpt < xbins[ipt+1])
+			hptreco[ipt]->Fill(rpt);
 		    }
 		  
 		  // Add to the 3 panel  dca2d histos
-		  if(rgpT > 0.5 && rgpT <= 1.0)  hdca2d[0]->Fill(rdca2d);
-		  if(rgpT > 1.0 && rgpT <= 2.0)   hdca2d[1]->Fill(rdca2d);
-		  if(rgpT > 2.0)  hdca2d[2]->Fill(rdca2d);
+		  if(rgpt > 0.5 && rgpt <= 1.0)  hdca2d[0]->Fill(rdca2d);
+		  if(rgpt > 1.0 && rgpt <= 2.0)   hdca2d[1]->Fill(rdca2d);
+		  if(rgpt > 2.0)  hdca2d[2]->Fill(rdca2d);
 		}
 	      
 	    }  // end loop over reco'd tracks
@@ -586,90 +594,6 @@ void purity()
       delete ntp_vertex;
       
     } // end loop over files
-
-  /*  
-  TCanvas *cc=new TCanvas("cc","cc",5,5,700,500);  
-  cc->Divide(1,2);
-  cc->cd(1);
-  //gPad->SetLogy(1);
-  hdca2dsigma->Draw();
-  cc->cd(2);
-  hquality->Draw();
-  cc->cd(3);
-
-  TCanvas *cdca = new TCanvas("cdca","cdca",5,20,1200,800);
-  cdca->Divide(3,1);
-
-  cdca->cd(1);
-  gPad->SetLogy(1);
-  //gPad->SetRightMargin(0.1);
-  hdca2d[0]->GetXaxis()->SetNdivisions(505);
-
-  hdca2d[0]->Draw();
-
-  cdca->cd(2);
-  gPad->SetLogy(1);
-  hdca2d[1]->GetXaxis()->SetNdivisions(505);
-  hdca2d[1]->Draw();
-
-  cdca->cd(3);
-  gPad->SetLogy(1);
-  hdca2d[2]->GetXaxis()->SetNdivisions(505);
-  hdca2d[2]->Draw();
-
-  TF1 *fdca = new TF1("fdca","gaus",-0.1,0.1);
-  fdca->SetLineColor(kRed);
-  cdca->cd(1);
-  hdca2d[0]->Fit(fdca);
-  char fitr[500];
-  sprintf(fitr,"#splitline{p_{T} = 0.5-1.0 GeV/c}{#sigma = %.1f #mum}",fdca->GetParameter(2)*10000);
-  TLatex *l1 = new TLatex(0.2,0.927,fitr);
-  l1->SetNDC();
-  l1->SetTextSize(0.07);
-  l1->Draw();
-
-  cdca->cd(2);
-  hdca2d[1]->Fit(fdca);
-  sprintf(fitr,"#splitline{p_{T} = 1.0-2.0 GeV/c}{#sigma = %.1f #mum}",fdca->GetParameter(2)*10000);
-  TLatex *l2 = new TLatex(0.2,0.927,fitr);
-  l2->SetNDC();
-  l2->SetTextSize(0.07);
-  l2->Draw();
-
-
-  cdca->cd(3);
-  hdca2d[2]->Fit(fdca);
-  sprintf(fitr,"#splitline{p_{T} > 2.0 GeV/c}{#sigma = %.1f #mum}",fdca->GetParameter(2)*10000);
-  TLatex *l3 = new TLatex(0.2,0.927,fitr);
-  l3->SetNDC();
-  l3->SetTextSize(0.07);
-  l3->Draw();
-
-
-  TCanvas *cZdca = new TCanvas("cZdca","cZdca",30,10,600,600);
-  hZdca->SetMinimum(0.5);
-  gPad->SetLogy(1);
-  hZdca->Draw();
-
-  TCanvas *ceta = new TCanvas("ceta","ceta",30,10,600,600);
-  //hgeta->SetMinimum(0.0);
-  //gPad->SetLogy(1);
-  hgeta->Draw();
-  hreta->SetLineColor(kRed);
-  hreta->Draw("same");
-
-  cout << " hgeta integral = " << hgeta->Integral()  << " hreta integral = "  << hreta->Integral() << endl;
-
-
-  TCanvas *cptreco = new TCanvas("cptreco","cptreco",5,5,600,600);
-  cptreco->Divide(2,1);
-
-  cptreco->cd(1);
-  hpt_compare->Draw();
-
-  cptreco->cd(2);
-  hpt_dca2d->Draw();
-  */
 
   //==============
   // Output the results
@@ -709,19 +633,13 @@ void purity()
     }
   
   hquality->Write();
-
-  /*
-  for(int i=0;i<npurity;i++)
-    {
-      hpurity[i]->Write();
-      hpurity_dca[i]->Write();
-      hpurity_quality[i]->Write();
-    }
-  */
   hZdca->Write();
 
   hzevt->Write();
   hzvtx_res->Write();
+  hxvtx_res->Write();
+  hyvtx_res->Write();
+  hdcavtx_res->Write();
 
   hreta->Write();
   hgeta->Write();

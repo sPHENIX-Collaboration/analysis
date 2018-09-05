@@ -47,8 +47,7 @@ void cluster_resolution()
   //=================
   
   // These should match the setup that was simulated!
-  //int n_maps_layers = 3;
-  int n_maps_layers = 0;
+  int n_maps_layers = 3;
   int n_intt_layers = 4;
 
   int n_tpc_layers_inner = 16;
@@ -77,7 +76,7 @@ void cluster_resolution()
   zphi->GetYaxis()->SetTitle("#phi");
   zphi->GetXaxis()->SetTitle("Z (cm)");
 
-  TH2D *delta_rphi = new TH2D("delta_rphi","cluster r#phi errors by layer",60.0, 0.0, 60.0, 2000, -0.10, 0.10); 
+  TH2D *delta_rphi = new TH2D("delta_rphi","cluster r#phi errors by layer",60.0, 0.0, 60.0, 2000, -0.1, 0.1); 
   delta_rphi->GetYaxis()->SetTitle("Cluster r#phi Error (cm)");
   delta_rphi->GetXaxis()->SetTitle("Tracking Layer");
 
@@ -110,8 +109,9 @@ void cluster_resolution()
   double nclusters = 0;
 
   // The condor job output files
-  for(int i=12;i <13; i++)
+  for(int i=0;i <100; i++)
     {
+      // Declare all these so that the include file does not cause complaints
       TChain *ntp_vertex = new TChain("ntp_vertex","clusters");
       TChain *ntp_cluster = new TChain("ntp_cluster","clusters");
       TChain *ntp_gtrack = new TChain("ntp_gtrack","clusters");
@@ -120,16 +120,17 @@ void cluster_resolution()
       
       char name[500];
 
-      // latest files 
-      //sprintf(name,"/sphenix/user/frawley/fresh_jan25/macros/macros/g4simulations/eval_output/g4svtx_eval_%i.root_g4svtx_eval.root",i);
-      //sprintf(name,"/sphenix/user/frawley/fresh_jan25/macros/macros/g4simulations/eval_output_lm/g4svtx_eval_%i.root_g4svtx_eval.root",i);
+      // input files 
+      //sprintf(name,"/sphenix/user/frawley/fresh_macros_june26/macros/macros/g4simulations/eval_output/g4svtx_eval_%i.root_g4svtx_eval.root",i);
 
-      //sprintf(name,"/sphenix/user/frawley/fresh_mar8_testing/macros/macros/g4simulations/mar9_noMVTX_100pions_eval_output/g4svtx_eval_%i.root_g4svtx_eval.root",i);
-      //sprintf(name,"/sphenix/user/frawley/fresh_mar8_testing/macros/macros/g4simulations/eval_output/g4svtx_eval_%i.root",i);
-      //sprintf(name,"/sphenix/user/frawley/fresh_mar2/macros/macros/g4simulations/mar6_nomvtx_central_200khz_eval_output_1/g4svtx_eval_%i.root_g4svtx_eval.root",i);
-      sprintf(name,"/sphenix/user/frawley/fresh_mar8_testing/macros/macros/g4simulations/eval_output/g4svtx_eval_%i.root",i);
-      //sprintf(name,"/sphenix/user/frawley/fresh_mar8_testing/macros/macros/g4simulations/mar20_100pions_80ns_eval_output/g4svtx_eval_%i.root",i);
-      
+      //sprintf(name,"/sphenix/user/frawley/macros_newINTT_newMVTX_aug13/macros/macros/g4simulations/eval_output_100pions_0111_default/g4svtx_eval_%i.root_g4svtx_eval.root",i);
+
+      //sprintf(name,"/sphenix/user/frawley/INTT_fixit_fix_aug24/macros/macros/g4simulations/G4sPHENIX.root_g4svtx_eval_%i.root",i);
+
+      //sprintf(name,"/sphenix/user/frawley/INTT_fixit_fix_aug24/macros/macros/g4simulations/eval_output/g4svtx_eval_%i.root_g4svtx_eval.root",i);
+
+      sprintf(name,"/sphenix/user/frawley/INTT_strips_placement/macros/macros/g4simulations/eval_output/g4svtx_eval_%i.root_g4svtx_eval.root",i);
+
       cout << "Enter file loop with name = " << name << endl;
 
       ntp_cluster->Add(name);
@@ -144,20 +145,11 @@ void cluster_resolution()
 	{
 	  ntp_cluster->GetEntry(p);
 
-	  //============
-	  // temporary re-mapping workaround for bug in evaluator!
-	  cgembed = gvt; 
-	  gx = zsize;
-	  gy=trackID;
-	  gz = g4hitID;
-	  r = sqrt(gx*gx+gy*gy);
-	  tphi = atan(gy/gx);
-	  trphi = atan(y/x);
-	  layer = ephi;
-	    //===========
+	  if(cgembed != embed_flag)
+	    continue;
 
-	  //if(cgembed != embed_flag)
-	  //  continue;
+	  tphi = atan(gy/gx);
+	  r = sqrt(gx*gx+gy*gy);
 
 	  double dphi = trphi - tphi;
 	  double drphi = r * dphi;
@@ -165,94 +157,28 @@ void cluster_resolution()
 	  // Extract the cluster Z resolution
 	  double dz = z - gz;
 	  
-	  /*
-	  double clus_pT = sqrt(gpx*gpx+gpy*gpy);
-	  double eta = asinh(gpz/sqrt(gpx*gpx+gpy*gpy));
-	  
-	  if(fabs(gz) < 5.0)  // optional cut 
-	    if(clus_pT > 0.5)  // optional cut 
-	  */
-	  {			
-	    if(drphi > -0.1 && drphi < 0.1)
-	      {
-		delta_rphi->Fill( (double) layer, drphi); 
-		delta_phi->Fill( (double) layer, dphi); 
-		delta_z->Fill( (double) layer, dz);
-		if(layer > 38) delta_phi_gphi->Fill(tphi,dphi);
-	      }
-	  }
+	  //if(drphi > -0.1 && drphi < 0.1)
+	    {
+	      delta_rphi->Fill( (double) layer, drphi); 
+	      delta_phi->Fill( (double) layer, dphi); 
+	      delta_z->Fill( (double) layer, dz);
+	      if(layer > 38) delta_phi_gphi->Fill(tphi,dphi);
+	    }
 	}
-      
-	  // Note on zsize:
-	  // PHG4TPCClusteriser stores the cluster z size using SvtxCluster_v1::set_size(2,2,  (fFitSizeZ*fGeoLayer->get_zstep())^2)
-	  // SvtxCluster_v1::get_z_size() returns 2.0*sqrt(get_size(2,2))
-	  // SvtxEvaluator gets the cluster zsize using  zsize    = cluster->get_z_size()
-	  // Therefore the cluster "zsize" returned by the evaluator is a factor of 2 larger than the z size found in PHG4TPCClusteriser
-	  // That is why it is reduced below by a factor of 2
-
-	  // Note on phisize:
-	  // PHG4TPCClusteriser calculates the cluster phi size as:  pp_size = radius*fFitSizeP*fGeoLayer->get_phistep()
-	  // It is stored in SvtxCluster_v1 using SvtxCluster_v1::set_size(1,1,  (pp_size/radius*pp_size/radius)^2) - i.e. as an angle width
-	  // SvtxCluster_v1::get_phi_size returns 2.0*sqrt(TRANS[1][1]) where TRANS[1][1] is essentially the pp_size from the clusterizer (I think)
-	  // SvtxEvaluator gets the cluster phisize using  phisize  = cluster->get_phi_size()
-	  // So again, the cluster "phisize" returned by the evaluator is a factor of 2 larger than the phi size found in PHG4TPCClusteriser
-	  // and phisize is in radians, so it has to be multiplied by the radius and divided by 2 to get the r-phi size
  
-
       delete ntp_cluster;
       
     }// for i
 
-  TCanvas *c6 = new TCanvas("c6","c6",50,50,1200,800); 
-  c6->Divide(2,1);
-  c6->cd(1);
-  gPad->SetLeftMargin(0.12);
-  gPad->SetRightMargin(0.01);
-  TH1D *hpy1 = new TH1D("hpy1","MVTX clusters",2000, -0.05, 0.05);
-  delta_rphi->ProjectionY("hpy1",1,n_maps_layers);
-  hpy1->GetXaxis()->SetRangeUser(-0.0016, 0.0016);
-  //hpy1->GetXaxis()->SetRangeUser(-0.011, 0.011);
-  hpy1->GetXaxis()->SetTitle("r#phi cluster error (cm)");
-  hpy1->SetTitleOffset(0.1,"X");
-  hpy1->GetXaxis()->SetTitleSize(0.05);
-  hpy1->GetXaxis()->SetLabelSize(0.06);
-  hpy1->GetYaxis()->SetLabelSize(0.06);
-  hpy1->GetXaxis()->SetNdivisions(506);
-  hpy1->GetXaxis()->SetTitleOffset(1.1);
-  hpy1->Draw();
-  double rms1 = 10000.0 * hpy1->GetRMS();
   char label[500];
-  sprintf(label,"RMS %.1f #mu m",rms1);
-  TLatex *l1 = new TLatex(0.55,0.92,label);
-  l1->SetNDC(1);
-  l1->Draw();
 
-  c6->cd(2);
-  gPad->SetLeftMargin(0.12);
-  gPad->SetRightMargin(0.01);
-  TH1D *hpy2 = new TH1D("hpy2","INTT clusters",2000, -0.05, 0.05);
-  delta_rphi->ProjectionY("hpy2",n_maps_layers+1,n_maps_layers + n_intt_layers); 
-  hpy2->GetXaxis()->SetRangeUser(-0.011, 0.011);
-  hpy2->GetXaxis()->SetTitle("r#phi cluster error (cm)");
-  hpy2->GetXaxis()->SetTitleOffset(0.6);
-  hpy2->GetXaxis()->SetTitleSize(0.05);
-  hpy2->GetXaxis()->SetLabelSize(0.06);
-  hpy2->GetYaxis()->SetLabelSize(0.06);
-  hpy2->GetXaxis()->SetNdivisions(506);
-  hpy2->GetXaxis()->SetTitleOffset(1.1);
-  hpy2->Draw();
-  double rms2 = 10000 * hpy2->GetRMS();
-  sprintf(label,"RMS %.1f #mu m",rms2);
-  TLatex *l2 = new TLatex(0.55,0.92,label);
-  l2->SetNDC(1);
-  l2->Draw();
-
-  TF1 *fg = new TF1("fg","gaus(0)",-0.05,0.05);
+  // for fitting the r-phi cluster distributions
+  TF1 *fg = new TF1("fg","gaus(0)",-0.05,0.05);  // restrict range of fit to this
   fg->SetLineColor(kRed);
   fg->SetParameter(0, 100.0);
   fg->SetParameter(1, 0.0);
   fg->SetParameter(2, 2e-02);
-  fg->SetParLimits(2, 0.0, 5e-02);
+  //fg->SetParLimits(2, 0.0, 5e-02);
 
   TCanvas *c7 = new TCanvas("c7","c7",50,50,1200,800); 
   c7->Divide(3,1);
@@ -260,9 +186,9 @@ void cluster_resolution()
   c7->cd(1);
   gPad->SetLeftMargin(0.12);
   gPad->SetRightMargin(0.01);
-  TH1D *hpy3 = new TH1D("hpy3","TPC inner clusters",2000,-0.010, 0.010);
+  TH1D *hpy3 = new TH1D("hpy3","TPC inner clusters",2000,-0.10, 0.10);
   delta_rphi->ProjectionY("hpy3",n_maps_layers+n_intt_layers+1,n_maps_layers+n_intt_layers+n_tpc_layers_inner);
-  hpy3->GetXaxis()->SetRangeUser(-0.10, 10);
+  hpy3->GetXaxis()->SetRangeUser(-0.10, 0.10);
   hpy3->GetXaxis()->SetNdivisions(506);
   hpy3->GetXaxis()->SetTitle("r#phi cluster error (cm)");
   hpy3->GetXaxis()->SetTitleOffset(1.1);
@@ -271,7 +197,7 @@ void cluster_resolution()
   hpy3->GetYaxis()->SetLabelSize(0.06);
   hpy3->Rebin(rebin);
   hpy3->Draw();
-  hpy3->Fit(fg);
+  hpy3->Fit(fg,"R");
   //double rms3 = 10000 * hpy3->GetRMS();
   double rms3 = fg->GetParameter(2) * 10000.0;
   double rms3_err = fg->GetParError(2) * 10000.0;
@@ -283,7 +209,7 @@ void cluster_resolution()
   c7->cd(2);
   gPad->SetLeftMargin(0.12);
   gPad->SetRightMargin(0.01);
-  TH1D *hpy4 = new TH1D("hpy4","TPC mid clusters",2000,-0.010, 0.010);
+  TH1D *hpy4 = new TH1D("hpy4","TPC mid clusters",2000,-0.10, 0.10);
   delta_rphi->ProjectionY("hpy4",n_maps_layers+n_intt_layers+n_tpc_layers_inner+1,n_maps_layers+n_intt_layers+n_tpc_layers_inner+n_tpc_layers_mid);
   hpy4->GetXaxis()->SetRangeUser(-0.10, 10);
   hpy4->GetXaxis()->SetNdivisions(506);
@@ -294,7 +220,7 @@ void cluster_resolution()
   hpy4->GetYaxis()->SetLabelSize(0.06);
   hpy4->Rebin(rebin);
   hpy4->Draw();
-  hpy4->Fit(fg);
+  hpy4->Fit(fg,"R");
   //double rms4 = 10000 * hpy4->GetRMS();
   double rms4 = fg->GetParameter(2) * 10000.0;
   double rms4_err = fg->GetParError(2) * 10000.0;
@@ -306,7 +232,7 @@ void cluster_resolution()
   c7->cd(3);
   gPad->SetLeftMargin(0.12);
   gPad->SetRightMargin(0.01);
-  TH1D *hpy5 = new TH1D("hpy5","TPC outer clusters",2000,-0.010, 0.010);
+  TH1D *hpy5 = new TH1D("hpy5","TPC outer clusters",2000,-0.10, 0.10);
   delta_rphi->ProjectionY("hpy5",n_maps_layers+n_intt_layers+n_tpc_layers_inner+n_tpc_layers_mid+1,n_maps_layers+n_intt_layers+n_tpc_layers_inner+n_tpc_layers_mid+n_tpc_layers_outer);
   hpy5->GetXaxis()->SetRangeUser(-0.10, 10);
   hpy5->GetXaxis()->SetNdivisions(506);
@@ -317,7 +243,7 @@ void cluster_resolution()
   hpy5->GetYaxis()->SetLabelSize(0.06);
   hpy5->Rebin(rebin);
   hpy5->Draw();
-  hpy5->Fit(fg);
+  hpy5->Fit(fg,"R");
   //double rms5 = 10000 * hpy5->GetRMS();
   double rms5 = fg->GetParameter(2) * 10000.0;
   double rms5_err = fg->GetParError(2) * 10000.0;
@@ -354,9 +280,10 @@ void cluster_resolution()
   c27->cd(2);
   gPad->SetLeftMargin(0.12);
   gPad->SetRightMargin(0.01);
-  TH1D *hpz2 = new TH1D("hpz2","INTT clusters Z",500, -1.0, 1.0);
-  delta_z->ProjectionY("hpz2",n_maps_layers+1,n_maps_layers+n_intt_layers); 
-  //hpz2->GetXaxis()->SetRangeUser(-0.6, 0.6);
+  //TH1D *hpz2 = new TH1D("hpz2","INTT clusters Z",500, -1.0, 1.0);
+  TH1D *hpz2 = new TH1D("hpz2","INTT clusters Z",500, -0.010, 0.010);
+  delta_z->ProjectionY("hpz2",n_maps_layers+1,n_maps_layers+1); 
+  hpz2->GetXaxis()->SetRangeUser(-0.01, 0.01);
   hpz2->GetXaxis()->SetTitle("Z cluster error (cm)");
   hpz2->GetXaxis()->SetTitleOffset(0.6);
   hpz2->GetXaxis()->SetTitleSize(0.05);
@@ -374,7 +301,7 @@ void cluster_resolution()
   c27->cd(3);
   gPad->SetLeftMargin(0.12);
   gPad->SetRightMargin(0.01);
-  TH1D *hpz3 = new TH1D("hpz3","TPC inner clusters Z",500,-0.2, 0.2);
+  TH1D *hpz3 = new TH1D("hpz3","TPC inner clusters Z",500,-0.3, 0.3);
   delta_z->ProjectionY("hpz3",n_maps_layers+n_intt_layers+1, n_maps_layers+n_intt_layers+n_tpc_layers_inner);
   hpz3->GetXaxis()->SetNdivisions(506);
   hpz3->GetXaxis()->SetTitle("Z cluster error (cm)");
@@ -382,7 +309,7 @@ void cluster_resolution()
   hpz3->GetXaxis()->SetTitleSize(0.05);
   hpz3->GetXaxis()->SetLabelSize(0.06);
   hpz3->GetYaxis()->SetLabelSize(0.06);
-  hpz3->GetXaxis()->SetRangeUser(-0.20, 0.20);
+  hpz3->GetXaxis()->SetRangeUser(-0.30, 0.30);
   hpz3->Draw();
   double zrms3 = 10000 * hpz3->GetRMS();
   sprintf(label,"RMS %.1f #mu m",zrms3);
@@ -393,7 +320,7 @@ void cluster_resolution()
   c27->cd(4);
   gPad->SetLeftMargin(0.12);
   gPad->SetRightMargin(0.01);
-  TH1D *hpz4 = new TH1D("hpz4","TPC mid clusters Z",500,-0.2, 0.2);
+  TH1D *hpz4 = new TH1D("hpz4","TPC mid clusters Z",500,-0.5, 0.5);
   delta_z->ProjectionY("hpz4",n_maps_layers+n_intt_layers+n_tpc_layers_inner+1, n_maps_layers+n_intt_layers+n_tpc_layers_inner+n_tpc_layers_mid);
   hpz4->GetXaxis()->SetNdivisions(506);
   hpz4->GetXaxis()->SetTitle("Z cluster error (cm)");
@@ -401,7 +328,7 @@ void cluster_resolution()
   hpz4->GetXaxis()->SetTitleSize(0.05);
   hpz4->GetXaxis()->SetLabelSize(0.06);
   hpz4->GetYaxis()->SetLabelSize(0.06);
-  hpz4->GetXaxis()->SetRangeUser(-0.20, 0.20);
+  hpz4->GetXaxis()->SetRangeUser(-0.50, 0.50);
   hpz4->Draw();
   double zrms4 = 10000 * hpz4->GetRMS();
   sprintf(label,"RMS %.1f #mu m",zrms4);
@@ -412,7 +339,7 @@ void cluster_resolution()
   c27->cd(5);
   gPad->SetLeftMargin(0.12);
   gPad->SetRightMargin(0.01);
-  TH1D *hpz5 = new TH1D("hpz5","TPC outer clusters Z",500,-0.2, 0.2);
+  TH1D *hpz5 = new TH1D("hpz5","TPC outer clusters Z",500,-0.5, 0.5);
   delta_z->ProjectionY("hpz5",n_maps_layers+n_intt_layers+n_tpc_layers_inner+n_tpc_layers_mid+1, n_maps_layers+n_intt_layers+n_tpc_layers_inner+n_tpc_layers_mid+n_tpc_layers_outer);
   hpz5->GetXaxis()->SetNdivisions(506);
   hpz5->GetXaxis()->SetTitle("Z cluster error (cm)");
@@ -420,7 +347,7 @@ void cluster_resolution()
   hpz5->GetXaxis()->SetTitleSize(0.05);
   hpz5->GetXaxis()->SetLabelSize(0.06);
   hpz5->GetYaxis()->SetLabelSize(0.06);
-  hpz5->GetXaxis()->SetRangeUser(-0.20, 0.20);
+  hpz5->GetXaxis()->SetRangeUser(-0.50, 0.50);
   hpz5->Draw();
   double zrms5 = 10000 * hpz5->GetRMS();
   sprintf(label,"RMS %.1f #mu m",zrms5);
@@ -430,6 +357,74 @@ void cluster_resolution()
 
 
 
+  TCanvas *c6 = new TCanvas("c6","c6",50,50,1200,800); 
+  c6->Divide(2,1);
+  c6->cd(1);
+  gPad->SetLeftMargin(0.12);
+  gPad->SetRightMargin(0.01);
+  TH1D *hpy1 = new TH1D("hpy1","MVTX clusters",2000, -0.05, 0.05);
+  delta_rphi->ProjectionY("hpy1",1,n_maps_layers);
+  //hpy1->GetXaxis()->SetRangeUser(-0.0016, 0.0016);
+  //hpy1->GetXaxis()->SetRangeUser(-0.011, 0.011);
+  hpy1->GetXaxis()->SetRangeUser(-0.002, 0.002);
+  hpy1->GetXaxis()->SetTitle("r#phi cluster error (cm)");
+  hpy1->SetTitleOffset(0.1,"X");
+  hpy1->GetXaxis()->SetTitleSize(0.05);
+  hpy1->GetXaxis()->SetLabelSize(0.06);
+  hpy1->GetYaxis()->SetLabelSize(0.06);
+  hpy1->GetXaxis()->SetNdivisions(506);
+  hpy1->GetXaxis()->SetTitleOffset(1.1);
+  hpy1->Draw();
+  double rms1 = 10000.0 * hpy1->GetRMS();
+  sprintf(label,"RMS %.1f #mu m",rms1);
+  TLatex *l1 = new TLatex(0.55,0.92,label);
+  l1->SetNDC(1);
+  l1->Draw();
+
+  //delta_rphi->Draw();
+
+  c6->cd(2);
+  gPad->SetLeftMargin(0.12);
+  gPad->SetRightMargin(0.01);
+  TH1D *hpy2 = new TH1D("hpy2","INTT clusters (type 1)",2000, -0.05, 0.05);
+  delta_rphi->ProjectionY("hpy2",n_maps_layers+2,n_maps_layers + n_intt_layers); 
+  hpy2->GetXaxis()->SetRangeUser(-0.011, 0.011);
+  hpy2->GetXaxis()->SetTitle("r#phi cluster error (cm)");
+  hpy2->GetXaxis()->SetTitleOffset(0.6);
+  hpy2->GetXaxis()->SetTitleSize(0.05);
+  hpy2->GetXaxis()->SetLabelSize(0.06);
+  hpy2->GetYaxis()->SetLabelSize(0.06);
+  hpy2->GetXaxis()->SetNdivisions(506);
+  hpy2->GetXaxis()->SetTitleOffset(1.1);
+  hpy2->Draw();
+  double rms2 = 10000 * hpy2->GetRMS();
+  sprintf(label,"RMS %.1f #mu m",rms2);
+  TLatex *l2 = new TLatex(0.55,0.92,label);
+  l2->SetNDC(1);
+  l2->Draw();
+
+  /*
+  c6->cd(3);
+  gPad->SetLeftMargin(0.12);
+  gPad->SetRightMargin(0.01);
+  TH1D *hpy9 = new TH1D("hpy9","INTT clusters",200, -1.0, 1.0);
+  delta_rphi->ProjectionY("hpy9",n_maps_layers+1,n_maps_layers + n_intt_layers-3); 
+  hpy9->GetXaxis()->SetRangeUser(-0.011, 0.011);
+  hpy9->GetXaxis()->SetTitle("r#phi cluster error (cm)");
+  hpy9->GetXaxis()->SetTitleOffset(0.6);
+  hpy9->GetXaxis()->SetTitleSize(0.05);
+  hpy9->GetXaxis()->SetLabelSize(0.06);
+  hpy9->GetYaxis()->SetLabelSize(0.06);
+  hpy9->GetXaxis()->SetNdivisions(506);
+  hpy9->GetXaxis()->SetTitleOffset(1.1);
+  hpy9->Draw();
+  double rms9 = 10000 * hpy9->GetRMS();
+  sprintf(label,"RMS %.1f #mu m",rms9);
+  TLatex *l9 = new TLatex(0.55,0.92,label);
+  l9->SetNDC(1);
+  l9->Draw();
+  */
+  /*
   TCanvas *c8 = new TCanvas("C8","C8",50,50,1200,700); 
   c8->Divide(2,1);
   c8->cd(1);
@@ -451,5 +446,6 @@ void cluster_resolution()
 
   TCanvas *c9 = new TCanvas("c9","c9",5,5,800,600);
   delta_phi_gphi->Draw();
+  */
 
 }

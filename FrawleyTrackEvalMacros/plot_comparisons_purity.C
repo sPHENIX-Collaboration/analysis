@@ -40,9 +40,6 @@ void plot_comparisons_purity()
 
 
 
-  //fin[0] = new TFile("root_files/mar5_central_200khz_nomvtx_noprimvtxfit_look_purity_out.root");  
-  //fin[1] = new TFile("root_files/mar3_100pions_nomvtx_noprimvtxfit_look_purity_out.root");  
-
   /*
   fin[0] = new TFile("root_files/mar1_100pions_1ups_look_purity_out.root");  
   fin[1] = new TFile("root_files/mar3_100pions_nomvtx_primvtxfit_look_purity_out.root");  
@@ -50,10 +47,10 @@ void plot_comparisons_purity()
   sprintf(label[1], "100 pions only, no MVTX");
   */
 
-  fin[0] = new TFile("root_files/mar2_central_200khz_look_purity_out.root");  
-  fin[1] = new TFile("root_files/mar5_central_200khz_nomvtx_primvtxfit_look_purity_out.root");  
-  sprintf(label[0], "Central+200 kHz pileup+100pions");
-  sprintf(label[1], "Central+200 kHz pileup+100pions, no MVTX");
+  fin[0] = new TFile("root_files/look_purity_out_100pions_80ns_baseline_noMVTX.root");  
+  fin[1] = new TFile("root_files/look_purity_out_central_167khz_80ns_1-5");  
+  sprintf(label[0], "100pions");
+  sprintf(label[1], "Central+store average lumi+100pions");
 
 
 
@@ -109,12 +106,12 @@ void plot_comparisons_purity()
   sprintf(lab,"100 pion events");
   
   
-  TCanvas *ceff = new TCanvas("ceff","ceff",50,50,800,600);
+  TCanvas *ceff = new TCanvas("ceff","ceff",50,50,800,800);
   //ceff->SetLeftMargin(0.12);
   
   TH1F *hd = new TH1F("hd","hd",100, 0.0, hptmax);
   hd->SetMinimum(0.0);
-  hd->SetMaximum(1.05);
+  hd->SetMaximum(1.1);
   hd->GetXaxis()->SetTitle("p_{T} (GeV/c)");
   hd->GetXaxis()->SetTitleOffset(1.15);
   hd->GetYaxis()->SetTitle("Single track efficiency");
@@ -141,10 +138,15 @@ void plot_comparisons_purity()
     }
   lpd->Draw();
 
+  TLine *unit = new TLine(0,1.0,40,1.0);
+  unit->SetLineStyle(3);
+  unit->SetLineWidth(1);
+  unit->Draw();
+
   //for(int i=0;i<2;i++)
   //lmax[i]->Draw();
   
-  TCanvas *cdca = new TCanvas("cdca","cdca",50,50,800,600);
+  TCanvas *cdca = new TCanvas("cdca","cdca",50,50,800,800);
   //cdca->SetLeftMargin(0.15);
   
   
@@ -180,7 +182,7 @@ void plot_comparisons_purity()
 
   lpd1->Draw();
   
-  TCanvas *cdcaz = new TCanvas("cdcaz","cdcaz",50,50,800,600);
+  TCanvas *cdcaz = new TCanvas("cdcaz","cdcaz",50,50,800,800);
   //cdcaz->SetLeftMargin(0.15);
   
   TH1F *hdcaz = new TH1F("hdcaz","hdcaz",100, 0.0, hptmax);
@@ -213,15 +215,15 @@ void plot_comparisons_purity()
   lpd1z->Draw();
 
 
-  //double hdptmax = 40.0;
-  double hdptmax = 39.0;
+  double hdptmax = 40.0;
+  //double hdptmax = 39.0;
    
-  TCanvas *crdpt = new TCanvas("crdpt","crdpt",50,50,800,600);
+  TCanvas *crdpt = new TCanvas("crdpt","crdpt",50,50,800,800);
   //crdpt->SetLeftMargin(0.15);
   
   TH1F *hrdpt = new TH1F("hrdpt","hrdpt",100, 0.0, hdptmax);
   hrdpt->SetMinimum(0.0);
-  hrdpt->SetMaximum(0.08);
+  hrdpt->SetMaximum(0.11);
   hrdpt->GetXaxis()->SetTitle("p_{T} (GeV/c)");
   hrdpt->GetXaxis()->SetTitleOffset(1.25);
   hrdpt->GetYaxis()->SetTitle("#Delta p_{T} / p_{T}");
