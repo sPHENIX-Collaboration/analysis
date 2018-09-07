@@ -93,10 +93,33 @@ Smear::Detector BuildEicSphenix() {
   trackingPhi.Accept.AddZone(zone_tracking);
 
   /* Create mRICH detector parameterization */
-  Smear::Acceptance::Zone zone_mRICH( eta2theta( 1.85 ), eta2theta( 1.242 ));
 
-  Smear::ParticleID mRICH("mRICHPIDMatrix.dat");
-  mRICH.Accept.AddZone(zone_mRICH);
+  Smear::Acceptance::Zone zone_dRICH( eta2theta( 3.95 ), eta2theta( 1.24 ));
+  Smear::ParticleID dRICH_KPi("dRICH_KPiPIDMatrix.dat");
+  Smear::ParticleID dRICH_ePi("dRICH_ePiPIDMatrix.dat");
+  dRICH_KPi.Accept.AddZone(zone_dRICH);
+  dRICH_ePi.Accept.AddZone(zone_dRICH);
+
+  //only implement gas RICH for e/pi separation, since the dRICH already covers the momentum and pseudorapidity range for K/pi separation
+  Smear::Acceptance::Zone zone_gasRICH( eta2theta( 3.95 ), eta2theta( 1.24 ));
+  Smear::ParticleID gasRICH("gasRICH_PIDMatrix.dat");
+  gasRICH.Accept.AddZone(zone_gasRICH);
+
+  Smear::Acceptance::Zone zone_hside_mRICH( eta2theta( 1.24 ), eta2theta( 1.10 ));
+  Smear::ParticleID hside_mRICH_KPi("hside_mRICH_KPiPIDMatrix.dat");
+  Smear::ParticleID hside_mRICH_ePi("mRICH_ePiPIDMatrix.dat");
+  hside_mRICH_KPi.Accept.AddZone(zone_hside_mRICH);
+  hside_mRICH_ePi.Accept.AddZone(zone_hside_mRICH);
+
+  Smear::Acceptance::Zone zone_DIRC( eta2theta( 1.24 ), eta2theta( -1.24 ));
+  Smear::ParticleID DIRC("DIRCPIDMatrix.dat");
+  DIRC.Accept.AddZone(zone_DIRC);
+
+  Smear::Acceptance::Zone zone_eside_mRICH( eta2theta( -1.4 ), eta2theta( -3.9 ));
+  Smear::ParticleID eside_mRICH_KPi("eside_mRICH_PIDMatrix.dat");
+  Smear::ParticleID eside_mRICH_ePi("mRICH_ePiPIDMatrix.dat");
+  eside_mRICH_KPi.Accept.AddZone(zone_eside_mRICH);
+  eside_mRICH_ePi.Accept.AddZone(zone_eside_mRICH);
 
   /* Create a DETECTOR and add the devices
    */
@@ -113,7 +136,14 @@ Smear::Detector BuildEicSphenix() {
   det.AddDevice(trackingTheta);
   det.AddDevice(trackingPhi);
 
-  det.AddDevice(mRICH);
+  det.AddDevice(dRICH_KPi);
+  det.AddDevice(dRICH_ePi);
+  det.AddDevice(gasRICH);
+  det.AddDevice(hside_mRICH_KPi);
+  det.AddDevice(hside_mRICH_ePi);
+  det.AddDevice(DIRC);
+  det.AddDevice(eside_mRICH_KPi);
+  det.AddDevice(eside_mRICH_ePi);
 
   det.SetEventKinematicsCalculator("NM JB DA"); // The detector will calculate event kinematics from smeared values
 
