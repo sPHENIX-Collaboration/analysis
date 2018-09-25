@@ -5,13 +5,14 @@
 // Scattered proton (KS=1)
 // Decay electron and positron (KS=1)
 
-int convert_sartre2eictree() 
+int convert_sartre2eictree(TString inputFile("18x275_sartre.txt"),
+			   TString outputFile("18x275_sartre.out")) 
 { 
-    std::ifstream file("18x275_sartre.txt");
+    std::ifstream file(inputFile);
 
 
    
-    std::ofstream output("18x275_sartre.out");
+    std::ofstream output(outputFile);
     output << "MILOU\n============================================\nI, ievent, linesnum, weight, genprocess, radcorr,        truex, trueQ2, truey, truet, treuphi, phibelgen, phibelres,       phibelrec\n============================================\nI, K(I,1)  K(I,2)  K(I,3)  K(I,4)  K(I,5)             P(I,1)  P(I,2)  P(I,3)  P(I,4)  P(I,5) V(I,1)  V(I,2)  V(I,3)\n============================================\n";
     std::string str; 
     std::string file_contents;
@@ -82,7 +83,7 @@ int convert_sartre2eictree()
     output.close();
     gSystem->Load("$OPT_SPHENIX/eic-smear_root-5.34.36/lib/libeicsmear.so");
 
-    BuildTree("sartre_ascii.out");
+    BuildTree(outputFile);
 
   return 0;
 }
