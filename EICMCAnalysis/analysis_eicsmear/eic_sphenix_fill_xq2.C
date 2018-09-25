@@ -1,6 +1,3 @@
-/* Local includes */
-#include "eic_sphenix_geomacceptance.h"
-
 /* STL includes */
 #include <iostream>
 
@@ -13,6 +10,7 @@
 #include <THnSparse.h>
 
 /* eicsmear includes */
+#include <eicsmear/smear/EventSmear.h>
 #include <eicsmear/erhic/EventPythia.h>
 #include <eicsmear/erhic/ParticleMC.h>
 
@@ -21,7 +19,7 @@ using namespace std;
 int
 eic_sphenix_fill_xq2( TString filename_output,
 			  TString filename_mc,
-			  TString filename_mc_smeared = "",
+			  TString filename_mc_smeared,
 			  bool debug = false )
 {
   /* Uncomment this line when running without compilation */
@@ -29,11 +27,11 @@ eic_sphenix_fill_xq2( TString filename_output,
 
   /* Open input files. */
   TFile *file_mc = new TFile(filename_mc, "OPEN");
-  //TFile *file_mc_smeared = new TFile(filename_mc_smeared, "OPEN");
+  TFile *file_mc_smeared = new TFile(filename_mc_smeared, "OPEN");
 
   /* Get trees from files. */
   TTree *tree = (TTree*)file_mc->Get("EICTree");
-  //TTree *tree_smeared = (TTree*)file_mc_smeared->Get("Smeared");
+  TTree *tree_smeared = (TTree*)file_mc_smeared->Get("Smeared");
 
   /* Get event generator parameters (cross section, number of trials, ...) from file. */
   TObjString* gen_crossSection = (TObjString*)file_mc->Get("crossSection");
@@ -44,13 +42,13 @@ eic_sphenix_fill_xq2( TString filename_output,
   TFile *file_out = new TFile(filename_output, "RECREATE");
 
   /* Add friend to match branches in trees. */
-  //tree->AddFriend(tree_smeared);
+  tree->AddFriend(tree_smeared);
 
   erhic::EventPythia *event  = NULL;
-  //Smear::Event       *eventS = NULL;
+  Smear::Event       *eventS = NULL;
 
   tree->SetBranchAddress("event", &event);
-  //tree->SetBranchAddress("eventS", &eventS);
+  tree->SetBranchAddress("eventS", &eventS);
 
   /* Create histogram for eta of particles to check acceptance of detectors. */
   TH1F* h_eta = new TH1F("h_eta", ";#eta;dN/d#eta", 100, -5, 5);
@@ -261,24 +259,26 @@ eic_sphenix_fill_xq2( TString filename_output,
       double fill_hn_dis[] = {x, Q2};
       hn_dis->Fill( fill_hn_dis );
 
-      /* Scattered lepton found within acceptance? */
-      bool electron_detected = accept_electron( event->ScatteredLepton()->GetEta(), event->ScatteredLepton()->GetE() );
+      /* Scattered lepton found within acceptance of traacking system (= valid smeared momentum P)? */
+      bool electron_detected = false;
+      if ( eventS->ScatteredLepton() && eventS->ScatteredLepton()->GetP() > 0.1 )
+	electron_detected = true;
+
+      /* Continue if electron not detected */
       if ( !electron_detected )
 	continue;
 
       /* execute the part below only if scattered electron within acceptance */
       hn_dis_accept->Fill( fill_hn_dis );
 
-      /* Check that scattered lepton is within detector acceptance */
-      //if ( eventS->ScatteredLepton() )
-      //  hn_dis_accept->Fill( fill_hn_dis );
 
       /* For SIDIS: Loop over all final state particles in this event */
       unsigned ntracks = event->GetNTracks();
 
       for ( unsigned itrack = 0; itrack < ntracks; itrack++ )
         {
-          erhic::ParticleMC * iparticle = event->GetTrack( itrack );
+          erhic::ParticleMC  * iparticle = event->GetTrack( itrack );
+          Smear::ParticleMCS * ismeared  = eventS->GetTrack( itrack );
 
           /* Check status */
           if ( iparticle->GetStatus() != 1 )
@@ -311,7 +311,7 @@ eic_sphenix_fill_xq2( TString filename_output,
 	    {
 	      hn_sidis_pion_plus->Fill( fill_hn_sidis );
 
-	      if ( accept_pion( iparticle->GetEta(), iparticle->GetP() ) )
+	      if ( ismeared->GetP() > 0.1 && ismeared->Id().Code() == 211 )
 		hn_sidis_pion_plus_accept->Fill( fill_hn_sidis );
 	    }
 
@@ -320,7 +320,7 @@ eic_sphenix_fill_xq2( TString filename_output,
 	    {
 	      hn_sidis_pion_minus->Fill( fill_hn_sidis );
 
-	      if ( accept_pion( iparticle->GetEta(), iparticle->GetP() ) )
+	      if ( ismeared->GetP() > 0.1 && ismeared->Id().Code() == -211 )
 		hn_sidis_pion_minus_accept->Fill( fill_hn_sidis );
 	    }
 
@@ -329,7 +329,7 @@ eic_sphenix_fill_xq2( TString filename_output,
 	    {
 	      hn_sidis_kaon_plus->Fill( fill_hn_sidis );
 
-	      if ( accept_kaon( iparticle->GetEta(), iparticle->GetP() ) )
+	      if ( ismeared->GetP() > 0.1 && ismeared->Id().Code() == 321 )
 		hn_sidis_kaon_plus_accept->Fill( fill_hn_sidis );
 	    }
 
@@ -338,7 +338,7 @@ eic_sphenix_fill_xq2( TString filename_output,
 	    {
 	      hn_sidis_kaon_minus->Fill( fill_hn_sidis );
 
-	      if ( accept_kaon( iparticle->GetEta(), iparticle->GetP() ) )
+	      if ( ismeared->GetP() > 0.1 && ismeared->Id().Code() == -321 )
 		hn_sidis_kaon_minus_accept->Fill( fill_hn_sidis );
 	    }
 	} // end loop over particles
@@ -377,9 +377,9 @@ eic_sphenix_fill_xq2( TString filename_output,
 /* MAIN function */
 int main( int argc , char* argv[] )
 {
-  if ( argc < 3 || argc > 5 )
+  if ( argc < 4 || argc > 5 )
     {
-      cout << "Usage: " << argv[0] << " <filename_output> <filename_EICTree> <optional: filename_EICTree_smeared> <optional: 'debug' for debug mode" << endl;
+      cout << "Usage: " << argv[0] << " <filename_output> <filename_EICTree> <filename_EICTree_smeared> <optional: 'debug' for debug mode" << endl;
       return 1;
     }
 
@@ -387,12 +387,7 @@ int main( int argc , char* argv[] )
   cout << " - Output file:            " << argv[1] << endl;
   cout << " - EICTree input file:     " << argv[2] << endl;
 
-  if ( argc == 3 )
-    {
-      cout << " - EICTree (smeared) file: (none)" << endl;
-      eic_sphenix_fill_xq2( argv[1], argv[2] );
-    }
-  else if ( argc == 4 )
+  if ( argc == 4 )
     {
       cout << " - EICTree (smeared) file: " << argv[3] << endl;
       eic_sphenix_fill_xq2( argv[1], argv[2], argv[3] );
@@ -401,7 +396,7 @@ int main( int argc , char* argv[] )
     {
       cout << " - EICTree (smeared) file: " << argv[3] << endl;
       cout << " ==== DEBUG MODE ==== " << endl;
-      eic_sphenix_fill_xq2( argv[1], argv[2], "", true );
+      eic_sphenix_fill_xq2( argv[1], argv[2], argv[3], true );
     }
 
   return 0;
