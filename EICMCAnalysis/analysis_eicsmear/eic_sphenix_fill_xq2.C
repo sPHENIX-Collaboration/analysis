@@ -5,6 +5,7 @@
 #include <TROOT.h>
 //#include <gSystem.h>
 #include <TFile.h>
+#include <TKey.h>
 #include <TTree.h>
 #include <TH2F.h>
 #include <THnSparse.h>
@@ -34,9 +35,52 @@ eic_sphenix_fill_xq2( TString filename_output,
   TTree *tree_smeared = (TTree*)file_mc_smeared->Get("Smeared");
 
   /* Get event generator parameters (cross section, number of trials, ...) from file. */
+  /* Input file may include multiple cross sections because it was merged from multiple files, so loop over all crossSection
+     objects and calculate average; same for sum of nEvents and nTrials. */
+  double xsec = 0;
+  unsigned nxsec = 0;
+  int nevent = 0;
+  int ntrial = 0;
+  TIter next(file_mc->GetListOfKeys());
+  TKey *key;
+  while ((key = (TKey*)next()))
+    {
+      if ( TString(key->GetName()) == "crossSection" )
+	{
+	  xsec += (TString(((TObjString*)key->ReadObj())->GetName())).Atof();
+	  nxsec++;
+	  continue;
+	}
+
+      if ( TString(key->GetName()) == "nTrials" )
+	{
+	  ntrial += (TString(((TObjString*)key->ReadObj())->GetName())).Atof();
+	  continue;
+	}
+
+      if ( TString(key->GetName()) == "nEvents" )
+	{
+	  nevent += (TString(((TObjString*)key->ReadObj())->GetName())).Atof();
+	  continue;
+	}
+    }
+
+  /* Get average cross section per file */
+  if ( nxsec > 0 )
+    xsec /= nxsec;
+
   TObjString* gen_crossSection = (TObjString*)file_mc->Get("crossSection");
   TObjString* gen_nEvents = (TObjString*)file_mc->Get("nEvents");
   TObjString* gen_nTrials = (TObjString*)file_mc->Get("nTrials");
+
+  /* Update strings with total values */
+  gen_crossSection->SetString( TString::Format("%f", xsec) );
+  gen_nEvents->SetString( TString::Format("%d", nevent) );
+  gen_nTrials->SetString( TString::Format("%d", ntrial) );
+
+  cout << "crossSection: " << gen_crossSection->GetName() << endl;
+  cout << "nEvents: " << gen_nEvents->GetName() << endl;
+  cout << "nTrials: " << gen_nTrials->GetName() << endl;
 
   /* Output file. */
   TFile *file_out = new TFile(filename_output, "RECREATE");
