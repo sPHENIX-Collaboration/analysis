@@ -9,8 +9,8 @@ plot_g1_projection()
   TTree *tin = (TTree*)fin->Get("tcount");
 
   /* beam energies */
-  float ebeam_e = 20;
-  float ebeam_p = 250;
+  float ebeam_e = 18;
+  float ebeam_p = 275;
 
   /* Retrieve Pythia generated events luminosity information */
   /* @TODO: Get this from string in file */
@@ -64,36 +64,6 @@ plot_g1_projection()
   pt_ebeam_lumi_ul->Draw();
   gPad->RedrawAxis();
 
-  ///* make x-Q2 plot for 'perfect' acceptance */
-  //TCanvas *c4 = new TCanvas();
-  //c4->SetRightMargin(0.12);
-  //hxQ2_fullaccept->Draw("colz");
-  //c4->SetLogx(1);
-  //c4->SetLogy(1);
-  //c4->SetLogz(1);
-  //
-  //f_y095->Draw("same");
-  //f_y001->Draw("same");
-  //
-  //pt_ebeam_lumi_ul->Draw();
-  //gPad->RedrawAxis();
-  //
-  ///* make x-Q2 acceptance fraction pot */
-  //TCanvas *c3 = new TCanvas();
-  //c3->SetRightMargin(0.12);
-  //TH2F* hxQ2_acceptance_ratio = hxQ2->Clone("x_Q2_acceptance_ratio");
-  //hxQ2_acceptance_ratio->GetZaxis()->SetNdivisions(505);
-  //hxQ2_acceptance_ratio->Divide(hxQ2_fullaccept);
-  //hxQ2_acceptance_ratio->Draw("colz");
-  //c3->SetLogx(1);
-  //c3->SetLogy(1);
-  //
-  //f_y095->Draw("same");
-  //f_y001->Draw("same");
-  //
-  //pt_ebeam_lumi_ul->Draw();
-  //gPad->RedrawAxis();
-
 
   /* plot g1 statistical uncertainty for different x-Q2 bins */
   TCanvas *c5 = new TCanvas();
@@ -104,6 +74,9 @@ plot_g1_projection()
   hxQ2_g1_sigma->Reset();
 
   tcount->Draw("Q2:x >> x_Q2_g1_sigma","stdev_g1");
+
+  /* normalize to number of entries in each bin */
+  hxQ2_g1_sigma->Divide(hxQ2);
 
   hxQ2_g1_sigma->Draw("colz");
   c5->SetLogx(1);

@@ -3,20 +3,40 @@
 int
 calculate_g1_projection_per_bin()
 {
-  TFile *fin = new TFile("output/eic_sphenix_dis_histo_1M.root","OPEN");
-  THnSparse *hfull = (THnSparse*)fin->Get("hn_dis_event_accept");
+  //TFile *fin = new TFile("output/eic_sphenix_dis_histo_1M.root","OPEN");
+  TFile *fin = new TFile("output/x_q2_pythia_ep_18x275_10M.root","OPEN");
+  THnSparse *hfull = (THnSparse*)fin->Get("hn_dis_electron_accept");
 
   TH2F* hxQ2 = (TH2F*)hfull->Projection(1,0);
   hxQ2->SetName("hxQ2");
 
   /* beam energies */
-  float ebeam_e = 20;
-  float ebeam_p = 250;
+  float ebeam_e = 18;
+  float ebeam_p = 275;
 
   /* Retrieve Pythia generated events luminosity information */
   /* @TODO: Get this from string in file */
-  float target_lumi = 10; // in inverse femtobarn
-  cout << "Pythia luminosity:  " << target_lumi << " fb^-1" << endl;
+  float gen_crossSection_mb = (TString(((TObjString*)fin->Get("crossSection"))->GetName())).Atof(); // microbarn (10^-6) from pythiaeRHIC
+  float gen_nEvents = (TString(((TObjString*)fin->Get("nEvents"))->GetName())).Atof();
+  float gen_nTrials = (TString(((TObjString*)fin->Get("nTrials"))->GetName())).Atof();
+
+  /* Convert cross section from microbarn (10^-6) to femtobarn (10^-15) */
+  float gen_crossSection_fb = gen_crossSection_mb * 1e9;
+
+  /* Calculate integrated luminosity (inverse femtobarn) */
+  float gen_lumi = gen_nTrials / gen_crossSection_fb;
+
+  /* Select target luminosity for uncertainty projections */
+  float target_lumi = 10.0; // in inverse femtobarn
+
+  /* Scale factor to scale up number of entries per bin based on generated and target integrated luminosity */
+  float scale_lumi = target_lumi / gen_lumi;
+
+  cout << "Pythia cross section (microbarn):  " << gen_crossSection_mb << " mb" << endl;
+  cout << "Pythia cross section (femtobarn):  " << gen_crossSection_fb << " fb" << endl;
+  cout << "Pythia generated luminosity:  " << gen_lumi << " fb^-1" << endl;
+  cout << "Target luminosity:            " << target_lumi << " fb^-1" << endl;
+  cout << "Luminosity scale factor:      " << scale_lumi << endl;
 
   /* create tree to store information */
   TTree *tcount = new TTree("tcount", "A tree with counts in kinematics bins");
@@ -62,7 +82,7 @@ calculate_g1_projection_per_bin()
 
 	  t_y = t_Q2 / ( t_x * t_s );
 
-	  t_N = hxQ2->GetBinContent( bin_x, bin_y );
+	  t_N = (float)hxQ2->GetBinContent( bin_x, bin_y ) * scale_lumi;
 
 	  /* skip kinematics bins wth y > 0.95 and y < 1e-2 */
 	  if ( t_y > 0.95 || t_y < 1e-2 )

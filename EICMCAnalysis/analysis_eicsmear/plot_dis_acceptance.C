@@ -1,10 +1,11 @@
 int
 plot_dis_acceptance()
 {
-  TFile *fin = new TFile("output/eic_sphenix_dis_histo_1M.root","OPEN");
+  // TFile *fin = new TFile("output/eic_sphenix_dis_histo_1M.root","OPEN");
+ TFile *fin = new TFile("output/x_q2_pythia_ep_18x275_10M.root","OPEN");
 
-  THnSparse *hfull = (THnSparse*)fin->Get("hn_dis_event");
-  THnSparse *hfull_accept = (THnSparse*)fin->Get("hn_dis_event_accept");
+  THnSparse *hfull = (THnSparse*)fin->Get("hn_dis_electron");
+  THnSparse *hfull_accept = (THnSparse*)fin->Get("hn_dis_electron_accept");
 
   TH2F* hxQ2 = (TH2F*)hfull->Projection(1,0);
   hxQ2->SetName("hxQ2");
