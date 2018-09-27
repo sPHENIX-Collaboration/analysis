@@ -26,6 +26,13 @@ eic_sphenix_fill_xq2( TString filename_output,
   /* Uncomment this line when running without compilation */
   //  gSystem->Load("libeicsmear");
 
+  /* Selection cuts for scattered electron (after smearing) */
+  /* Minimum momentum:  this makes sure the momentum was smeared, i.e. is within tracking acceptance */
+  double electron_pmin = 0.01; // GeV
+
+  /* Minimumenergy: Acceptance cut for good electron/pion separation */
+  double electron_emin = 3.0; // GeV
+
   /* Open input files. */
   TFile *file_mc = new TFile(filename_mc, "OPEN");
   TFile *file_mc_smeared = new TFile(filename_mc_smeared, "OPEN");
@@ -305,7 +312,7 @@ eic_sphenix_fill_xq2( TString filename_output,
 
       /* Scattered lepton found within acceptance of traacking system (= valid smeared momentum P)? */
       bool electron_detected = false;
-      if ( eventS->ScatteredLepton() && eventS->ScatteredLepton()->GetP() > 0.1 )
+      if ( eventS->ScatteredLepton() && eventS->ScatteredLepton()->GetP() > electron_pmin && eventS->ScatteredLepton()->GetE() > electron_emin )
 	electron_detected = true;
 
       /* Continue if electron not detected */
