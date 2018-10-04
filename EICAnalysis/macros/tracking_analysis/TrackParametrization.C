@@ -10,7 +10,7 @@ TrackParametrization( TString csvfile="fitslices_out.csv" )
   tres->Print();
 
   /* colors array */
-  unsigned colors[7] = {1,2,3,4,6,7,14};
+  unsigned colors[8] = {1,2,3,4,6,7,14,16};
 
   /* Create vector of theta values to include for visualization*/
   vector< double > etas_vis;
@@ -22,13 +22,21 @@ TrackParametrization( TString csvfile="fitslices_out.csv" )
   etas_vis.push_back( 1.75);
   etas_vis.push_back( 2.25);
 
+//  etas_vis.push_back(-3.25);
+//  etas_vis.push_back(-2.25);
+//  etas_vis.push_back(-1.25);
+//  etas_vis.push_back(-0.25);
+//  etas_vis.push_back( 0.25);
+//  etas_vis.push_back( 1.25);
+//  etas_vis.push_back( 2.25);
+//  etas_vis.push_back( 3.25);
+
   /* Create vector of theta values to include for fitting*/
   vector< double > etas_fit;
   for ( double eta = -4.45; eta < 4.5; eta += 0.1 )
     etas_fit.push_back( eta );
 
   /* Create fit function */
-  //TF1* f_momres = new TF1("f_momres", "[0]*x + [1]*x*x" );
   TF1* f_momres = new TF1("f_momres", "sqrt( [0]*[0] + [1]*[1]*x*x )" );
 
   cout << "\nFit function: " << f_momres->GetTitle() << "\n" << endl;
@@ -78,7 +86,6 @@ TrackParametrization( TString csvfile="fitslices_out.csv" )
       TCut cutx( Form("ptrue > 1 && ( (etatrue > 0 && (etatrue > %f && etatrue < %f)) || (etatrue < 0 && (etatrue < %f && etatrue > %f)) )", eta_min, eta_max, eta_min, eta_max) );
 
       /* "Draw" tree on scratch canvas to fill V1...V4 arrays */
-      //tres->Draw("psig/pmean:ptrue:psig_err/pmean:0", cutx );
       tres->Draw("psig:ptrue:psig_err:0", cutx );
 
       /* Create TGraphErrors with selected data from tree */
@@ -87,6 +94,10 @@ TrackParametrization( TString csvfile="fitslices_out.csv" )
 					     &(tres->GetV1())[0],
 					     &(tres->GetV4())[0],
 					     &(tres->GetV3())[0] );
+
+      /* reset function parameters before fit */
+      f_momres->SetParameter(0,0.1);
+      f_momres->SetParameter(1,0.1);
 
       /* Only plot pseudorapidities listed on etas_vis; if not plotting, still do the fit */
       bool vis = false;

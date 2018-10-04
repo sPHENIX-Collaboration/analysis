@@ -10,6 +10,19 @@ TrackParamEtaDependence( TString csvfile="track_momres_new.csv" )
   /* Print read-in tree */
   tres->Print();
 
+  /* create frame histograms */
+  TH1F *hframe_par1 = new TH1F("hframe_par1","",10,-4.1,4.1);
+  hframe_par1->GetXaxis()->SetTitle("#eta");
+  hframe_par1->GetYaxis()->SetTitle("Parameter 1");
+  hframe_par1->GetYaxis()->SetRangeUser(0,0.1);
+  hframe_par1->GetYaxis()->SetNdivisions(505);
+
+  TH1F *hframe_par2 = new TH1F("hframe_par2","",10,-4.1,4.1);
+  hframe_par2->GetXaxis()->SetTitle("#eta");
+  hframe_par2->GetYaxis()->SetTitle("Parameter 2");
+  hframe_par2->GetYaxis()->SetRangeUser(0,0.01);
+  hframe_par2->GetYaxis()->SetNdivisions(505);
+
   /* Parameter 1 */
   TCanvas *c1 = new TCanvas();
   tres->Draw("par1:eta:par1err:0");
@@ -21,9 +34,8 @@ TrackParamEtaDependence( TString csvfile="track_momres_new.csv" )
 					  &(tres->GetV4())[0],
 					  &(tres->GetV3())[0] );
 
-  gpar1->GetXaxis()->SetTitle("#eta");
-  gpar1->GetYaxis()->SetTitle("Parameter 1");
-  gpar1->Draw("AP");
+  hframe_par1->Draw();
+  gpar1->Draw("Psame");
 
   TF1* fpar1 = new TF1("fpar1", "[0] + [1] * x**2 + [2] * x**4");
   fpar1->SetLineColor(kBlue);
@@ -44,9 +56,8 @@ TrackParamEtaDependence( TString csvfile="track_momres_new.csv" )
 					  &(tres->GetV4())[0],
 					  &(tres->GetV3())[0] );
 
-  gpar2->GetXaxis()->SetTitle("#eta");
-  gpar2->GetYaxis()->SetTitle("Parameter 2");
-  gpar2->Draw("AP");
+  hframe_par2->Draw();
+  gpar2->Draw("Psame");
 
   TF1* fpar2 = new TF1("fpar2", "[0] + [1] * x**2 + [2] * x**3 + [3] * x**4");
   fpar2->SetLineColor(kBlue);
