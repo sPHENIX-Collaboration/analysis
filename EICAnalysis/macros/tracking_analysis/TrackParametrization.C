@@ -12,23 +12,20 @@ TrackParametrization( TString csvfile="fitslices_out.csv" )
   /* colors array */
   unsigned colors[7] = {1,2,3,4,6,7,14};
 
-  /* select how many eta settings to plot */
-  unsigned etas_plotmax = 7;
+  /* Create vector of theta values to include for visualization*/
+  vector< double > etas_vis;
+  etas_vis.push_back(-2.75);
+  etas_vis.push_back(-2.25);
+  etas_vis.push_back(-1.75);
+  etas_vis.push_back(-0.25);
+  etas_vis.push_back( 0.25);
+  etas_vis.push_back( 1.75);
+  etas_vis.push_back( 2.25);
 
-  /* Create vector of theta values to include */
-  vector< double > etas;
-  etas.push_back(-2.75);
-  etas.push_back(-2.25);
-  etas.push_back(-1.75);
-  etas.push_back(-0.25);
-  etas.push_back( 0.25);
-  etas.push_back( 1.75);
-  etas.push_back( 2.25);
-
-  etas.push_back(-1.25);
-  etas.push_back(-0.75);
-  etas.push_back( 0.75);
-  etas.push_back( 1.25);
+  /* Create vector of theta values to include for fitting*/
+  vector< double > etas_fit;
+  for ( double eta = -4.45; eta < 4.5; eta += 0.1 )
+    etas_fit.push_back( eta );
 
   /* Create fit function */
   //TF1* f_momres = new TF1("f_momres", "[0]*x + [1]*x*x" );
@@ -42,6 +39,7 @@ TrackParametrization( TString csvfile="fitslices_out.csv" )
   /* Create framehistogram */
   TH1F* hframe = new TH1F("hframe","",100,0,40);
   hframe->GetYaxis()->SetRangeUser(0,0.15);
+  hframe->GetYaxis()->SetNdivisions(505);
   hframe->GetXaxis()->SetTitle("Momentum (GeV/c)");
   hframe->GetYaxis()->SetTitle("#sigma_{p}/p");
 
@@ -50,22 +48,24 @@ TrackParametrization( TString csvfile="fitslices_out.csv" )
   hframe->Draw();
 
   /* Create legend */
-  TLegend* leg_eta = new TLegend( 0.25, 0.40, 0.45, 0.90);
+  TLegend* leg_eta = new TLegend( 0.2, 0.6, 0.5, 0.9);
+  leg_eta->SetNColumns(2);
 
   /* Create ofstream to write fit parameter results */
   ofstream ofsfit("track_momres_new.csv");
   ofsfit<<"eta,par1,par1err,par2,par2err"<<endl;
 
   /* Create resolution-vs-momentum plot with fits for each selected theta value */
-  for ( int i = 0; i < etas.size(); i++ )
+  for ( int i = 0; i < etas_fit.size(); i++ )
     {
       /* Switch to scratch canvas */
       cscratch->cd();
 
-      double eta = etas.at(i);
+      double eta = etas_fit.at(i);
 
-      /* Calculate pseudorapidity eta */
-      //double eta = -1 * log( tan( thetas.at(i) / 2. ) );
+      /* No tracking outside -4 < eta < 4 */
+      if ( eta < -4 || eta > 4 )
+	continue;
 
       cout << "\n***Eta = " << eta << endl;
 
@@ -88,18 +88,29 @@ TrackParametrization( TString csvfile="fitslices_out.csv" )
 					     &(tres->GetV4())[0],
 					     &(tres->GetV3())[0] );
 
-      gres->SetMarkerColor(colors[i]);
+      /* Only plot pseudorapidities listed on etas_vis; if not plotting, still do the fit */
+      bool vis = false;
+      int vi = 0;
 
-      /* Only plot first few lines; if not plotting, still do the fit */
-      if ( i < etas_plotmax )
+      for ( vi = 0; vi < etas_vis.size(); vi++ )
+	{
+	  if ( abs( etas_vis.at(vi) - eta ) < 0.001 )
+	    {
+	      vis = true;
+	      break;
+	    }
+	}
+
+      if ( vis )
 	{
 	  /* Add graph to legend */
 	  leg_eta->AddEntry(gres, Form("#eta = %.1f", eta), "P");
 
 	  /* Add graph to plot */
 	  c1->cd();
+	  gres->SetMarkerColor(colors[vi]);
 	  gres->Draw("Psame");
-	  f_momres->SetLineColor(colors[i]);
+	  f_momres->SetLineColor(colors[vi]);
 	  gres->Fit(f_momres);
 	}
       else
@@ -117,14 +128,14 @@ TrackParametrization( TString csvfile="fitslices_out.csv" )
     }
 
   /* Draw legend */
-  //  c1->cd();
-  TCanvas *c2 = new TCanvas();
+  c1->cd();
+  //TCanvas *c2 = new TCanvas();
   //hframe->Draw();
   leg_eta->Draw();
 
   /* Print plots */
   c1->Print("track_momres_vareta.eps");
-  c2->Print("track_momres_vareta_legend.eps");
+  //c2->Print("track_momres_vareta_legend.eps");
 
   /* Close output stream */
   ofsfit.close();
