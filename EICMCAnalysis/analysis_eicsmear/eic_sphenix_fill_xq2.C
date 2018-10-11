@@ -41,13 +41,13 @@ eic_sphenix_fill_xq2( TString filename_output,
   TTree *tree = (TTree*)file_mc->Get("EICTree");
   TTree *tree_smeared = (TTree*)file_mc_smeared->Get("Smeared");
 
-  /* Get event generator parameters (cross section, number of trials, ...) from file. */
+
+  /* Get event generator parameters (cross section, number of events, ...) from file. */
   /* Input file may include multiple cross sections because it was merged from multiple files, so loop over all crossSection
-     objects and calculate average; same for sum of nEvents and nTrials. */
+     objects and calculate average; same for sum of nEvents. */
   double xsec = 0;
   unsigned nxsec = 0;
   int nevent = 0;
-  int ntrial = 0;
   TIter next(file_mc->GetListOfKeys());
   TKey *key;
   while ((key = (TKey*)next()))
@@ -56,12 +56,6 @@ eic_sphenix_fill_xq2( TString filename_output,
 	{
 	  xsec += (TString(((TObjString*)key->ReadObj())->GetName())).Atof();
 	  nxsec++;
-	  continue;
-	}
-
-      if ( TString(key->GetName()) == "nTrials" )
-	{
-	  ntrial += (TString(((TObjString*)key->ReadObj())->GetName())).Atof();
 	  continue;
 	}
 
@@ -78,16 +72,25 @@ eic_sphenix_fill_xq2( TString filename_output,
 
   TObjString* gen_crossSection = (TObjString*)file_mc->Get("crossSection");
   TObjString* gen_nEvents = (TObjString*)file_mc->Get("nEvents");
-  TObjString* gen_nTrials = (TObjString*)file_mc->Get("nTrials");
 
   /* Update strings with total values */
   gen_crossSection->SetString( TString::Format("%f", xsec) );
   gen_nEvents->SetString( TString::Format("%d", nevent) );
-  gen_nTrials->SetString( TString::Format("%d", ntrial) );
 
+  /* Convert cross section from microbarn (10^-6) to femtobarn (10^-15) */
+  float xsec_fb = xsec * 1e9;
+
+  /* Calculate integrated luminosity (inverse femtobarn) */
+  float lumi_ifb = (float)nevent / (float)xsec_fb;
+
+  /* Add Luminosity strings */
+  TObjString* gen_lumi_ifb = new TObjString();
+  gen_lumi_ifb->SetString( TString::Format("%f", lumi_ifb) );
+
+  /* Print parameters */
   cout << "crossSection: " << gen_crossSection->GetName() << endl;
   cout << "nEvents: " << gen_nEvents->GetName() << endl;
-  cout << "nTrials: " << gen_nTrials->GetName() << endl;
+  cout << "luminosity: " << gen_lumi_ifb->GetName() << endl;
 
   /* Output file. */
   TFile *file_out = new TFile(filename_output, "RECREATE");
@@ -416,7 +419,8 @@ eic_sphenix_fill_xq2( TString filename_output,
 
   gen_crossSection->Write("crossSection");
   gen_nEvents->Write("nEvents");
-  gen_nTrials->Write("nTrials");
+  //gen_nTrials->Write("nTrials");
+  gen_lumi_ifb->Write("luminosity");
 
   /* Close output file. */
   file_out->Close();
