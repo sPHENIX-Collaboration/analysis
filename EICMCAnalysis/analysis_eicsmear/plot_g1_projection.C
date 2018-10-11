@@ -121,6 +121,15 @@ plot_g1_projection()
       s_binc_x.insert(t_x);
     }
 
+  /* Prepare legend to record offsets */
+  TPaveText *leg_offset_x = new TPaveText(0,0,1,1,"none");
+  leg_offset_x->SetFillStyle(0);
+  leg_offset_x->SetLineColor(0);
+  //  leg_offset_x->SetMargin(0);
+  leg_offset_x->SetTextSize(0.1);
+
+
+
   /* draw graphs */
   TCanvas *ctmp = new TCanvas();
   float offset = 48;
@@ -131,8 +140,16 @@ plot_g1_projection()
   for ( set<float>::iterator itx = s_binc_x.begin();
 	itx != s_binc_x.end(); itx++ )
     {
+      /* Skip x < 5e-5 */
+      if ( *itx < 5e-5 )
+	continue;
+
       /* print values */
       cout << "offset = " << (int)offset << " for x = " << *itx << endl;
+
+      /* Add to legend */
+      TString str_offset = TString::Format("const(x = %.2g) = %d", *itx, (int)offset );
+      leg_offset_x->AddText(str_offset);
 
       /* Create graph */
       ctmp->cd();
@@ -152,6 +169,12 @@ plot_g1_projection()
 
   pt_ebeam_lumi_ll->Draw();
   gPad->RedrawAxis();
+
+  c2->Print("plots/g1_projection_eic_sphenix.eps");
+
+  TCanvas *c2_legend = new TCanvas("g1_legend","",200,800);
+  leg_offset_x->Draw();
+  c2_legend->Print("plots/g1_projection_eic_sphenix_legend.eps");
 
   delete ctmp;
 
