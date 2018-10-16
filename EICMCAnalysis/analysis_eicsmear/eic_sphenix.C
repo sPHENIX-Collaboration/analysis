@@ -77,21 +77,65 @@ Smear::Detector BuildEicSphenix() {
    */
 
   /* Create tracking system. */
-  /* @TODO Below numbers are for tracking with BeAST. We need to get the parametrization for EIC-sPHENIX!!! */
   Smear::Acceptance::Zone zone_tracking( eta2theta( 4 ), eta2theta( -4.00 ) );
 
-  Smear::Device trackingMomentum(Smear::kP, "(P*P*(0.0182031 + 0.00921047*pow((-log(tan(theta/2.0))), 2) - 0.00291243*pow((-log(tan(theta/2.0))), 4) + 0.000264353*pow((-log(tan(theta/2.0))), 6)) + P*(0.209681 + 0.275144*pow((-log(tan(theta/2.0))), 2) - 0.0436536*pow((-log(tan(theta/2.0))), 4) + 0.00367412*pow((-log(tan(theta/2.0))), 6)))*0.01");
+  /* Try parametrization based on sPHENIX Geant4 simulation. The fit to the simulations only covers pseudorapidity -2.5 to + 2.5, so be extra careful with the parametrization outside that range. */
+  Smear::Device trackingMomentum(Smear::kP, "P * sqrt( (7.82e-3 + 4.39e-4*(-log(tan(theta/2.0)))**2 + 7.55e-4*(-log(tan(theta/2.0)))**4)**2 + ( (1.44e-3 + -5.35e-4*(-log(tan(theta/2.0)))**2 + -6.73e-5*(-log(tan(theta/2.0)))**3 + 1.37e-4*(-log(tan(theta/2.0)))**4) * P )**2 )");
+  trackingMomentum.Accept.SetGenre(Smear::kAll);
   trackingMomentum.Accept.SetCharge(Smear::kCharged);
   trackingMomentum.Accept.AddZone(zone_tracking);
 
-  Smear::Device trackingTheta(Smear::kTheta, "((1.0/(1.0*P))*(0.752935 + 0.280370*pow((-log(tan(theta/2.0))), 2) - 0.0359713*pow((-log(tan(theta/2.0))), 4) + 0.00200623*pow((-log(tan(theta/2.0))), 6)) + 0.0282315 - 0.00998623*pow((-log(tan(theta/2.0))), 2) + 0.00117487*pow((-log(tan(theta/2.0))), 4) - 0.0000443918*pow((-log(tan(theta/2.0))), 6))*0.001");
+  Smear::Device trackingTheta(Smear::kTheta, "0");
+  trackingTheta.Accept.SetGenre(Smear::kAll);
   trackingTheta.Accept.SetCharge(Smear::kCharged);
   trackingTheta.Accept.AddZone(zone_tracking);
 
-  Smear::Device trackingPhi(Smear::kPhi, "((1.0/(1.0*P))*(0.743977 + 0.753393*pow((-log(tan(theta/2.0))), 2) + 0.0634184*pow((-log(tan(theta/2.0))), 4) + 0.0128001*pow((-log(tan(theta/2.0))), 6)) + 0.0308753 + 0.0480770*pow((-log(tan(theta/2.0))), 2) - 0.0129859*pow((-log(tan(theta/2.0))), 4) + 0.00109374*pow((-log(tan(theta/2.0))), 6))*0.001");
+  Smear::Device trackingPhi(Smear::kPhi, "0");
+  trackingPhi.Accept.SetGenre(Smear::kAll);
   trackingPhi.Accept.SetCharge(Smear::kCharged);
   trackingPhi.Accept.AddZone(zone_tracking);
 
+  /* @TODO Below numbers are for tracking with BeAST. We need to get the parametrization for EIC-sPHENIX!!! */
+  //  Smear::Device trackingMomentum(Smear::kP, "(P*P*(0.0182031 + 0.00921047*pow((-log(tan(theta/2.0))), 2) - 0.00291243*pow((-log(tan(theta/2.0))), 4) + 0.000264353*pow((-log(tan(theta/2.0))), 6)) + P*(0.209681 + 0.275144*pow((-log(tan(theta/2.0))), 2) - 0.0436536*pow((-log(tan(theta/2.0))), 4) + 0.00367412*pow((-log(tan(theta/2.0))), 6)))*0.01");
+  //  trackingMomentum.Accept.SetCharge(Smear::kCharged);
+  //  trackingMomentum.Accept.AddZone(zone_tracking);
+
+  //  Smear::Device trackingTheta(Smear::kTheta, "((1.0/(1.0*P))*(0.752935 + 0.280370*pow((-log(tan(theta/2.0))), 2) - 0.0359713*pow((-log(tan(theta/2.0))), 4) + 0.00200623*pow((-log(tan(theta/2.0))), 6)) + 0.0282315 - 0.00998623*pow((-log(tan(theta/2.0))), 2) + 0.00117487*pow((-log(tan(theta/2.0))), 4) - 0.0000443918*pow((-log(tan(theta/2.0))), 6))*0.001");
+  //  trackingTheta.Accept.SetCharge(Smear::kCharged);
+  //  trackingTheta.Accept.AddZone(zone_tracking);
+
+  //  Smear::Device trackingPhi(Smear::kPhi, "((1.0/(1.0*P))*(0.743977 + 0.753393*pow((-log(tan(theta/2.0))), 2) + 0.0634184*pow((-log(tan(theta/2.0))), 4) + 0.0128001*pow((-log(tan(theta/2.0))), 6)) + 0.0308753 + 0.0480770*pow((-log(tan(theta/2.0))), 2) - 0.0129859*pow((-log(tan(theta/2.0))), 4) + 0.00109374*pow((-log(tan(theta/2.0))), 6))*0.001");
+  //  trackingPhi.Accept.SetCharge(Smear::kCharged);
+  //  trackingPhi.Accept.AddZone(zone_tracking);
+
+  /* Create mRICH detector parameterization */
+
+  Smear::Acceptance::Zone zone_dRICH( eta2theta( 3.95 ), eta2theta( 1.24 ));
+  Smear::ParticleID dRICH_KPi("PIDMatrixFiles/dRICH_KPiPIDMatrix.dat");
+  Smear::ParticleID dRICH_ePi("PIDMatrixFiles/dRICH_ePiPIDMatrix.dat");
+  dRICH_KPi.Accept.AddZone(zone_dRICH);
+  dRICH_ePi.Accept.AddZone(zone_dRICH);
+
+  //only implement gas RICH for e/pi separation, since the dRICH already covers the momentum and pseudorapidity range for K/pi separation
+  Smear::Acceptance::Zone zone_gasRICH( eta2theta( 3.95 ), eta2theta( 1.24 ));
+  Smear::ParticleID gasRICH("PIDMatrixFiles/gasRICH_PIDMatrix.dat");
+  gasRICH.Accept.AddZone(zone_gasRICH);
+
+  Smear::Acceptance::Zone zone_hside_mRICH( eta2theta( 1.24 ), eta2theta( 1.10 ));
+  Smear::ParticleID hside_mRICH_KPi("PIDMatrixFiles/hside_mRICH_KPiPIDMatrix.dat");
+  Smear::ParticleID hside_mRICH_ePi("PIDMatrixFiles/mRICH_ePiPIDMatrix.dat");
+  hside_mRICH_KPi.Accept.AddZone(zone_hside_mRICH);
+  hside_mRICH_ePi.Accept.AddZone(zone_hside_mRICH);
+
+  Smear::Acceptance::Zone zone_DIRC( eta2theta( 1.24 ), eta2theta( -1.24 ));
+  Smear::ParticleID DIRC("PIDMatrixFiles/DIRCPIDMatrix.dat");
+  DIRC.Accept.AddZone(zone_DIRC);
+
+  Smear::Acceptance::Zone zone_eside_mRICH( eta2theta( -1.4 ), eta2theta( -3.9 ));
+  Smear::ParticleID eside_mRICH_KPi("PIDMatrixFiles/eside_mRICH_PIDMatrix.dat");
+  Smear::ParticleID eside_mRICH_ePi("PIDMatrixFiles/mRICH_ePiPIDMatrix.dat");
+  eside_mRICH_KPi.Accept.AddZone(zone_eside_mRICH);
+  eside_mRICH_ePi.Accept.AddZone(zone_eside_mRICH);
 
   /* Create a DETECTOR and add the devices
    */
@@ -107,6 +151,15 @@ Smear::Detector BuildEicSphenix() {
   det.AddDevice(trackingMomentum);
   det.AddDevice(trackingTheta);
   det.AddDevice(trackingPhi);
+
+  det.AddDevice(dRICH_KPi);
+  det.AddDevice(dRICH_ePi);
+  det.AddDevice(gasRICH);
+  det.AddDevice(hside_mRICH_KPi);
+  det.AddDevice(hside_mRICH_ePi);
+  det.AddDevice(DIRC);
+  det.AddDevice(eside_mRICH_KPi);
+  det.AddDevice(eside_mRICH_ePi);
 
   det.SetEventKinematicsCalculator("NM JB DA"); // The detector will calculate event kinematics from smeared values
 
