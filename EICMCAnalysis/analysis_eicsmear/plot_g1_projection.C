@@ -1,9 +1,9 @@
 #include "calculate_g1.C"
 
 int
-plot_g1_projection()
+plot_g1_projection(TString fin_name)
 {
-  TFile *fin = new TFile("output/eic_sphenix_dis_tree.root","OPEN");
+  TFile *fin = new TFile(fin_name,"OPEN");
 
   TH2F *hxQ2 = (TH2F*)fin->Get("hxQ2");
   TTree *tin = (TTree*)fin->Get("tcount");
@@ -13,16 +13,17 @@ plot_g1_projection()
   float ebeam_p = 275;
 
   /* Retrieve Pythia generated events luminosity information */
-  /* @TODO: Get this from string in file */
-  float target_lumi = 10; // in inverse femtobarn
-  cout << "Pythia luminosity:  " << target_lumi << " fb^-1" << endl;
+  TObjString* gen_lumi_ifb_s = (TObjString*)fin->Get("luminosity");
+  float gen_lumi_ifb = (TString((gen_lumi_ifb_s)->GetName())).Atof();
+
+  cout << "Pythia luminosity:  " << gen_lumi_ifb << " fb^-1" << endl;
 
   /* collect all x-bins */
   //set<float> s_binc_x;
 
   /* Prepare TPaveText for plots */
   TString str_ebeam = TString::Format("%.0f GeV x %.0f GeV", ebeam_e, ebeam_p );
-  TString str_lumin = TString::Format("L = %.4f fb^{-1}", target_lumi );
+  TString str_lumin = TString::Format("L = %.4f fb^{-1}", gen_lumi_ifb );
 
   TPaveText *pt_ebeam_lumi_ul = new TPaveText(1e-5,1e3,1e-3,1e4,"none");
   pt_ebeam_lumi_ul->SetFillStyle(0);
@@ -66,33 +67,19 @@ plot_g1_projection()
 
 
   /* plot g1 statistical uncertainty for different x-Q2 bins */
-  TCanvas *c5 = new TCanvas();
-  c5->SetRightMargin(0.12);
-
   TH2F* hxQ2_g1_sigma = hxQ2->Clone("x_Q2_g1_sigma");
   hxQ2_g1_sigma->GetZaxis()->SetNdivisions(505);
   hxQ2_g1_sigma->Reset();
 
-  tcount->Draw("Q2:x >> x_Q2_g1_sigma","stdev_g1");
+  hxQ2_g1_sigma->GetXaxis()->SetTitle("x");
+  hxQ2_g1_sigma->GetYaxis()->SetTitle("Q^{2} (GeV^{2})");
+
+  /* Filling happens in the step below- draw afterwards */
+
+  //  tcount->Draw("Q2:x >> x_Q2_g1_sigma","stdev_g1 * (N > 0 && x >= 5e-5 && stdev_g1<1)");
 
   /* normalize to number of entries in each bin */
-  hxQ2_g1_sigma->Divide(hxQ2);
-
-  hxQ2_g1_sigma->Draw("colz");
-  c5->SetLogx(1);
-  c5->SetLogy(1);
-
-  f_y095->Draw("same");
-  f_y001->Draw("same");
-
-  TPaveText *pt_g1_stdev = new TPaveText(1e-5,1e2,1e-3,3e2,"none");
-  pt_g1_stdev->SetFillStyle(0);
-  pt_g1_stdev->SetLineColor(0);
-  pt_g1_stdev->AddText("z = #sigma_{g_{1}}");
-
-  pt_g1_stdev->Draw();
-  pt_ebeam_lumi_ul->Draw();
-  gPad->RedrawAxis();
+  // hxQ2_g1_sigma->Divide(hxQ2);
 
 
   /* plot g1 vs Q2 for various x */
@@ -165,6 +152,19 @@ plot_g1_projection()
       gnew->Draw("PLsame");
 
       offset -= 2;
+
+      /* Fill TH2 histogram */
+      double x_j = 0;
+      double Q2_j = 0;
+      double g1sig_j = 0;
+      double dummy_j = 0;
+      for ( unsigned j = 0; j < gnew->GetN(); j++ )
+	{
+	  gnew->GetPoint(j, Q2_j, dummy_j);
+	  g1sig_j = gnew->GetErrorY(j);
+	  x_j = *itx;
+	  hxQ2_g1_sigma->Fill(x_j, Q2_j, g1sig_j);
+	}
     }
 
   pt_ebeam_lumi_ll->Draw();
@@ -177,6 +177,31 @@ plot_g1_projection()
   c2_legend->Print("plots/g1_projection_eic_sphenix_legend.eps");
 
   delete ctmp;
+
+
+  /* Draw TH2 with g1 uncertainty defined above */
+  TCanvas *c5 = new TCanvas();
+  c5->SetRightMargin(0.12);
+
+  hxQ2_g1_sigma->Draw("colz");
+  hxQ2_g1_sigma->GetZaxis()->SetRangeUser(1e-3,2e1);
+  c5->SetLogx(1);
+  c5->SetLogy(1);
+  c5->SetLogz(1);
+
+  f_y095->Draw("same");
+  f_y001->Draw("same");
+
+  TPaveText *pt_g1_stdev = new TPaveText(1e-5,1e2,1e-3,3e2,"none");
+  pt_g1_stdev->SetFillStyle(0);
+  pt_g1_stdev->SetLineColor(0);
+  pt_g1_stdev->AddText("z = #sigma_{g_{1}}");
+
+  pt_g1_stdev->Draw();
+  pt_ebeam_lumi_ul->Draw();
+  gPad->RedrawAxis();
+
+  c5->Print("plots/g1_projection_eic_sphenix_2D.eps");
 
   return 0;
 }
