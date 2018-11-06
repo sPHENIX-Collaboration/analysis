@@ -8,11 +8,8 @@
  */
 
 int
-Fun4All_TestBeam_HCAL_SampleFrac(const int nEvents = 1000,
-    const char * inputFile =
-        // Let's take a look at run 668, which is -24 GeV/c secondary beam centered on EMCal tower 18.
-        // More runs are produced in data production: https://wiki.bnl.gov/sPHENIX/index.php/2018_calorimeter_beam_test/Data_Production_and_Analysis#Production_output
-        "/sphenix/user/xusun/software/macros/macros/prototype4/G4Prototype4New.root")
+// Fun4All_TestBeam_HCAL_SampleFrac(const int nEvents = 1000, const int posID = 0, const int addID = 0, const string det = "HCALOUT")
+Fun4All_TestBeam_HCAL_SampleFrac(const int nEvents = 1000, const int runID = 0, const string det = "HCALIN")
 {
 
   //---------------
@@ -40,7 +37,9 @@ Fun4All_TestBeam_HCAL_SampleFrac(const int nEvents = 1000,
 
   // Hits file
   Fun4AllInputManager *hitsin = new Fun4AllDstInputManager("DSTin");
-  hitsin->fileopen(inputFile);
+  // std::string inputFile = Form("/sphenix/user/xusun/software/macros/macros/prototype4/data/Simulation/Cosmic_%s_%d%d.root",det.c_str(),posID,addID);
+  std::string inputFile = Form("/sphenix/user/xusun/software/macros/macros/prototype4/data/Simulation/BeamTest_SF_%d.root",runID);
+  hitsin->fileopen(inputFile.c_str());
 //  hitsin->AddListFile(inputFile); // you can also choose this and give a list of DST file names in the file.
   se->registerInputManager(hitsin);
 
@@ -48,9 +47,9 @@ Fun4All_TestBeam_HCAL_SampleFrac(const int nEvents = 1000,
   gSystem->Load("libProto4_HCalSampleFrac.so");
 
   //load your analysis module.
-  // This one is an example defined in ../ExampleAnalysisModule/
-  Proto4SampleFrac* hcal_ana = new Proto4SampleFrac(
-      "OutPut/Proto4SampleFrac.root");
+  // std::string outputFile = Form("OutPut/SampleFrac/Proto4SampleFrac_%s_%d%d.root",det.c_str(),posID,addID);
+  std::string outputFile = Form("OutPut/SampleFrac/Proto4SampleFrac_%s_%d.root",det.c_str(),runID);
+  Proto4SampleFrac* hcal_ana = new Proto4SampleFrac(det.c_str(),outputFile.c_str());
   se->registerSubsystem(hcal_ana);
 
   se->run(nEvents);
