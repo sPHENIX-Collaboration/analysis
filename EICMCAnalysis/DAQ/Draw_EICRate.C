@@ -36,8 +36,9 @@ void Draw_EICRate(const TString infile =
                   //    "/phenix/u/jinhuang/links/sPHENIX_work/EIC/DAQ/DIS20x250/DIS20x250_ALL.cfg_DSTReader.root",
                   //    double xsection = 1.15E-03  // mb for all subprocesses
                   "/phenix/u/jinhuang/links/sPHENIX_work/EIC/DAQ/pythiaEIC_MB/ALL_DSTReader.root",
+                  //                  "/phenix/u/jinhuang/links/sPHENIX_work/EIC/DAQ/pythiaEIC_MB/49610_DSTReader.root",
                   double xsection = 5.488E-02  //  I   0 All included subprocesses    I      1000000      30948998 I  5.488D-02 I
-                  )
+)
 {
   SetsPhenixStyle();
   gStyle->SetOptStat(0);
@@ -84,7 +85,7 @@ void Draw_EICRate(const TString infile =
   T->SetAlias("SVTXHitLength",
               "1*sqrt((G4HIT_SVTX.get_x(0) - G4HIT_SVTX.get_x(1))**2 + (G4HIT_SVTX.get_y(0) - G4HIT_SVTX.get_y(1))**2 + (G4HIT_SVTX.get_z(0) - G4HIT_SVTX.get_z(1))**2)");
 
-  KinematicsChecks();
+  //  KinematicsChecks();
   TrackerRate();
 
   CentralCalorimeterRate();
@@ -95,9 +96,9 @@ void TrackerRate()
 {
   TText *t;
   TCanvas *c1 = new TCanvas("TrackerRate",
-                            "TrackerRate", 1900, 800);
+                            "TrackerRate", 1900, 600);
 
-  c1->Divide(3, 1);
+  c1->Divide(3, 1, 0, 0);
   int idx = 1;
   TPad *p;
 
@@ -108,12 +109,14 @@ void TrackerRate()
   T->Draw("Sum$(G4HIT_MAPS.edep>0)>>hMAPSHit(200,-.5,199.5)");
   TH1 *h = (TH1 *) gDirectory->Get("hMAPSHit");
   assert(h);
-  h->SetTitle(";# of MAPS vertex tracker hit per event");
+  h->SetTitle(";# of MAPS vertex tracker hit per event;Count [A.U.]");
+  h->SetMaximum(h->GetMaximum() * 10);
   h->GetXaxis()->SetRangeUser(0, 100);
+  h->GetXaxis()->SetRangeUser(0, 1000);
   double meanhit = h->GetMean();
 
   TLegend *leg = new TLegend(.2, .70, .95, .93);
-  leg->AddEntry("", "#it{#bf{sPHENIX}} EIC Simualtion", "");
+  leg->AddEntry("", "#it{#bf{EIC-sPHENIX}} Simualtion", "");
   leg->AddEntry("", "e+p, 20+250 GeV/c, #sqrt{s_{ep}}=140 GeV", "");
   leg->AddEntry(h, Form("Average MAPS hit / event = %.1f", meanhit), "l");
   leg->Draw();
@@ -124,13 +127,14 @@ void TrackerRate()
 
   T->Draw("Sum$(G4HIT_SVTX.edep>1e-7 && SVTXHitLength>1)>>hSVTXHit(2000,-.5,1999.5)");
   TH1 *h = (TH1 *) gDirectory->Get("hSVTXHit");
-  h->SetTitle(";# of TPC hit per event");
+  h->SetTitle(";# of TPC hit per event;Count [A.U.]");
+  h->SetMaximum(h->GetMaximum() * 10);
   h->GetXaxis()->SetRangeUser(0, 1000);
   double meanhit = h->GetMean();
 
-  TLegend *leg = new TLegend(.2, .70, .95, .93);
-  leg->AddEntry("", "#it{#bf{sPHENIX}} Simulation CD-1 Ref.", "");
-  leg->AddEntry("", "e+p, 20+250 GeV/c, #sqrt{s_{ep}}=140 GeV", "");
+  TLegend *leg = new TLegend(.1, .80, .95, .93);
+  //  leg->AddEntry("", "#it{#bf{EIC-sPHENIX}} Simualtion", "");
+  //  leg->AddEntry("", "e+p, 20+250 GeV/c, #sqrt{s_{ep}}=140 GeV", "");
   leg->AddEntry(h, Form("Average TPC cluster / event = %.1f", meanhit), "l");
   leg->Draw();
 
@@ -138,17 +142,19 @@ void TrackerRate()
   p = (TPad *) c1->cd(idx++);
   c1->Update();
   p->SetLogy();
+  p->SetRightMargin(.05);
 
   T->Draw("Sum$(G4HIT_EGEM_1.edep>1e-7)+Sum$(G4HIT_FGEM_1.edep>1e-7)+Sum$(G4HIT_FGEM_2.edep>1e-7)+Sum$(G4HIT_FGEM_3.edep>1e-7)+Sum$(G4HIT_FGEM_4.edep>1e-7)>>hGEMHit(1000,-.5,999.5)");
 
   TH1 *h = (TH1 *) gDirectory->Get("hGEMHit");
-  h->SetTitle(";Total GEM hit per event (E>0.1 keV)");
+  h->SetTitle(";Total GEM hit per event (E>0.1 keV);Count [A.U.]");
+  h->SetMaximum(h->GetMaximum() * 10);
   h->GetXaxis()->SetRangeUser(0, 400);
   double meanhit = h->GetMean();
 
-  TLegend *leg = new TLegend(.2, .70, .95, .93);
-  leg->AddEntry("", "#it{#bf{sPHENIX}} EIC Simualtion", "");
-  leg->AddEntry("", "e+p, 20+250 GeV/c, #sqrt{s_{ep}}=140 GeV", "");
+  TLegend *leg = new TLegend(.1, .80, .95, .93);
+  //  leg->AddEntry("", "#it{#bf{EIC-sPHENIX}} Simualtion", "");
+  //  leg->AddEntry("", "e+p, 20+250 GeV/c, #sqrt{s_{ep}}=140 GeV", "");
   leg->AddEntry(h, Form("Average GEM hit / event = %.1f", meanhit), "l");
   leg->Draw();
 
@@ -159,10 +165,10 @@ void TrackerRate()
 void CentralCalorimeterRate()
 {
   TText *t;
-  TCanvas *c1 = new TCanvas("CentralCalorimeterRate",
-                            "CentralCalorimeterRate", 1900, 1100);
+  TCanvas *c1 = new TCanvas("CentralCalorimeterRate_Energy",
+                            "CentralCalorimeterRate_Energy", 1900, 425);
 
-  c1->Divide(3, 2);
+  c1->Divide(3, 1, 0, 0);
   int idx = 1;
   TPad *p;
 
@@ -173,10 +179,11 @@ void CentralCalorimeterRate()
   T->Draw("TOWER_SIM_CEMC.energy/0.026>>hEMCalADC(210,0,20)");
   TH1 *h = (TH1 *) gDirectory->Get("hEMCalADC");
   assert(h);
-  h->SetTitle(";Central EMCal Tower Energy [GeV]");
+  h->SetTitle(";Central EMCal Tower Energy [GeV];Count [A.U.]");
+  h->SetMaximum(h->GetMaximum() * 10);
 
   TLegend *leg = new TLegend(.2, .70, .95, .93);
-  leg->AddEntry("", "#it{#bf{sPHENIX}} EIC Simualtion", "");
+  leg->AddEntry("", "#it{#bf{EIC-sPHENIX}} Simualtion", "");
   leg->AddEntry("", "e+p, 20+250 GeV/c, #sqrt{s_{ep}}=140 GeV", "");
   leg->AddEntry(h, Form("Central EMCal Energy/Tower"), "l");
   leg->Draw();
@@ -188,28 +195,41 @@ void CentralCalorimeterRate()
   T->Draw("TOWER_SIM_HCALIN.energy/ 0.162166>>hHCalInADC(210,0,20)");
   TH1 *h = (TH1 *) gDirectory->Get("hHCalInADC");
   assert(h);
-  h->SetTitle(";Central Inner HCal Tower Energy [GeV]");
+  h->SetTitle(";Central Inner HCal Tower Energy [GeV];Count [A.U.]");
+  h->SetMaximum(h->GetMaximum() * 10);
 
-  TLegend *leg = new TLegend(.2, .70, .95, .93);
-  leg->AddEntry("", "#it{#bf{sPHENIX}} EIC Simualtion", "");
-  leg->AddEntry("", "e+p, 20+250 GeV/c, #sqrt{s_{ep}}=140 GeV", "");
+  TLegend *leg = new TLegend(.1, .80, .95, .93);
+  //  leg->AddEntry("", "#it{#bf{EIC-sPHENIX}} Simualtion", "");
+  //  leg->AddEntry("", "e+p, 20+250 GeV/c, #sqrt{s_{ep}}=140 GeV", "");
   leg->AddEntry(h, Form("Central Inner HCal Energy/Tower"), "l");
   leg->Draw();
 
   p = (TPad *) c1->cd(idx++);
   c1->Update();
+  p->SetRightMargin(.05);
 
   p->SetLogy();
   T->Draw("TOWER_SIM_HCALOUT.energy/3.38021e-02>>hHCalOutADC(210,0,20)");
   TH1 *h = (TH1 *) gDirectory->Get("hHCalOutADC");
   assert(h);
-  h->SetTitle(";Central Outer HCal Tower Energy [GeV]");
+  h->SetTitle(";Central Outer HCal Tower Energy [GeV];Count [A.U.]");
+  h->SetMaximum(h->GetMaximum() * 10);
 
-  TLegend *leg = new TLegend(.2, .70, .95, .93);
-  leg->AddEntry("", "#it{#bf{sPHENIX}} EIC Simualtion", "");
-  leg->AddEntry("", "e+p, 20+250 GeV/c, #sqrt{s_{ep}}=140 GeV", "");
+  TLegend *leg = new TLegend(.1, .80, .95, .93);
+  //  leg->AddEntry("", "#it{#bf{EIC-sPHENIX}} Simualtion", "");
+  //  leg->AddEntry("", "e+p, 20+250 GeV/c, #sqrt{s_{ep}}=140 GeV", "");
   leg->AddEntry(h, Form("Central Outer HCal Energy/Tower"), "l");
   leg->Draw();
+
+  SaveCanvas(c1,
+             TString(_file0->GetName()) + TString("_Draw_EICRate_") + TString(c1->GetName()), true);
+
+  c1 = new TCanvas("CentralCalorimeterRate_Multiplicity",
+                   "CentralCalorimeterRate_Multiplicity", 1900, 425);
+
+  c1->Divide(3, 1, 0, 0);
+  int idx = 1;
+  TPad *p;
 
   p = (TPad *) c1->cd(idx++);
   c1->Update();
@@ -218,12 +238,13 @@ void CentralCalorimeterRate()
   T->Draw("Sum$(TOWER_SIM_CEMC.energy/0.026>0.03)>>hCEMCHit(200,-.5,199.5)");
   TH1 *h = (TH1 *) gDirectory->Get("hCEMCHit");
   assert(h);
-  h->SetTitle(";# of CEMC tower per event (30 MeV z.s.)");
+  h->SetTitle(";# of CEMC tower per event (E>30 MeV);Count [A.U.]");
+  h->SetMaximum(h->GetMaximum() * 10);
   h->GetXaxis()->SetRangeUser(0, 100);
   double meanhit = h->GetMean();
 
   TLegend *leg = new TLegend(.2, .70, .95, .93);
-  leg->AddEntry("", "#it{#bf{sPHENIX}} EIC Simualtion", "");
+  leg->AddEntry("", "#it{#bf{EIC-sPHENIX}} Simualtion", "");
   leg->AddEntry("", "e+p, 20+250 GeV/c, #sqrt{s_{ep}}=140 GeV", "");
   leg->AddEntry(h, Form("Average CEMC tower / event = %.1f", meanhit), "l");
   leg->Draw();
@@ -234,29 +255,33 @@ void CentralCalorimeterRate()
   T->Draw("Sum$(TOWER_SIM_HCALIN.energy/ 0.162166>0.03)>>hHCALINHit(200,-.5,199.5)");
   TH1 *h = (TH1 *) gDirectory->Get("hHCALINHit");
   assert(h);
-  h->SetTitle(";# of Inner HCal tower per event (30 MeV z.s.)");
+  h->SetTitle(";# of Inner HCal tower per event (E>30 MeV);Count [A.U.]");
+  h->SetMaximum(h->GetMaximum() * 10);
   h->GetXaxis()->SetRangeUser(0, 100);
   double meanhit = h->GetMean();
 
-  TLegend *leg = new TLegend(.2, .70, .95, .93);
-  leg->AddEntry("", "#it{#bf{sPHENIX}} EIC Simualtion", "");
-  leg->AddEntry("", "e+p, 20+250 GeV/c, #sqrt{s_{ep}}=140 GeV", "");
+  TLegend *leg = new TLegend(.1, .80, .95, .93);
+  //  leg->AddEntry("", "#it{#bf{EIC-sPHENIX}} Simualtion", "");
+  //  leg->AddEntry("", "e+p, 20+250 GeV/c, #sqrt{s_{ep}}=140 GeV", "");
   leg->AddEntry(h, Form("Average Inner HCal tower / event = %.1f", meanhit), "l");
   leg->Draw();
 
   p = (TPad *) c1->cd(idx++);
   c1->Update();
   p->SetLogy();
+  p->SetRightMargin(.05);
+
   T->Draw("Sum$(TOWER_SIM_HCALOUT.energy/3.38021e-02>0.03)>>hHCALOUTHit(200,-.5,199.5)");
   TH1 *h = (TH1 *) gDirectory->Get("hHCALOUTHit");
   assert(h);
-  h->SetTitle(";# of Outer HCal tower per event (30 MeV z.s.)");
+  h->SetTitle(";# of Outer HCal tower per event (E>30 MeV);Count [A.U.]");
+  h->SetMaximum(h->GetMaximum() * 10);
   h->GetXaxis()->SetRangeUser(0, 100);
   double meanhit = h->GetMean();
 
-  TLegend *leg = new TLegend(.2, .70, .95, .93);
-  leg->AddEntry("", "#it{#bf{sPHENIX}} EIC Simualtion", "");
-  leg->AddEntry("", "e+p, 20+250 GeV/c, #sqrt{s_{ep}}=140 GeV", "");
+  TLegend *leg = new TLegend(.1, .80, .95, .93);
+  //  leg->AddEntry("", "#it{#bf{EIC-sPHENIX}} Simualtion", "");
+  //  leg->AddEntry("", "e+p, 20+250 GeV/c, #sqrt{s_{ep}}=140 GeV", "");
   leg->AddEntry(h, Form("Average Outer HCal tower / event = %.1f", meanhit), "l");
   leg->Draw();
 
@@ -267,10 +292,10 @@ void CentralCalorimeterRate()
 void ForwardCalorimeterRate()
 {
   TText *t;
-  TCanvas *c1 = new TCanvas("ForwardCalorimeterRate",
-                            "ForwardCalorimeterRate", 1900, 1100);
+  TCanvas *c1 = new TCanvas("ForwardCalorimeterRate_Energy",
+                            "ForwardCalorimeterRate_Energy", 1900, 425);
 
-  c1->Divide(3, 2);
+  c1->Divide(3, 1, 0, 0);
   int idx = 1;
   TPad *p;
 
@@ -281,10 +306,11 @@ void ForwardCalorimeterRate()
   T->Draw("TOWER_SIM_EEMC.energy>>hEEMCal(801,0,20)");
   TH1 *h = (TH1 *) gDirectory->Get("hEEMCal");
   assert(h);
-  h->SetTitle(";e-going EMCal Tower Energy [GeV]");
+  h->SetTitle(";e-going EMCal Tower Energy [GeV];Count [A.U.]");
+  h->SetMaximum(h->GetMaximum() * 10);
 
   TLegend *leg = new TLegend(.2, .70, .95, .93);
-  leg->AddEntry("", "#it{#bf{sPHENIX}} EIC Simualtion", "");
+  leg->AddEntry("", "#it{#bf{EIC-sPHENIX}} Simualtion", "");
   leg->AddEntry("", "e+p, 20+250 GeV/c, #sqrt{s_{ep}}=140 GeV", "");
   leg->AddEntry(h, Form("e-going EMCal Energy/Tower"), "l");
   leg->Draw();
@@ -296,28 +322,41 @@ void ForwardCalorimeterRate()
   T->Draw("TOWER_SIM_FEMC.energy/0.249>>hFEMCal(801,0,200)");
   TH1 *h = (TH1 *) gDirectory->Get("hFEMCal");
   assert(h);
-  h->SetTitle(";h-going EMCal Tower Energy [GeV]");
+  h->SetTitle(";h-going EMCal Tower Energy [GeV];Count [A.U.]");
+  h->SetMaximum(h->GetMaximum() * 10);
 
-  TLegend *leg = new TLegend(.2, .70, .95, .93);
-  leg->AddEntry("", "#it{#bf{sPHENIX}} EIC Simualtion", "");
-  leg->AddEntry("", "e+p, 20+250 GeV/c, #sqrt{s_{ep}}=140 GeV", "");
+  TLegend *leg = new TLegend(.1, .80, .95, .93);
+  //  leg->AddEntry("", "#it{#bf{EIC-sPHENIX}} Simualtion", "");
+  //  leg->AddEntry("", "e+p, 20+250 GeV/c, #sqrt{s_{ep}}=140 GeV", "");
   leg->AddEntry(h, Form("h-going EMCal Energy/Tower"), "l");
   leg->Draw();
 
   p = (TPad *) c1->cd(idx++);
   c1->Update();
+  p->SetRightMargin(.05);
 
   p->SetLogy();
   T->Draw("TOWER_SIM_FHCAL.energy/0.03898>>hFHCAL(801,0,200)");
   TH1 *h = (TH1 *) gDirectory->Get("hFHCAL");
   assert(h);
-  h->SetTitle(";h-going HCal Tower Energy [GeV]");
+  h->SetTitle(";h-going HCal Tower Energy [GeV];Count [A.U.]");
+  h->SetMaximum(h->GetMaximum() * 10);
 
-  TLegend *leg = new TLegend(.2, .70, .95, .93);
-  leg->AddEntry("", "#it{#bf{sPHENIX}} EIC Simualtion", "");
-  leg->AddEntry("", "e+p, 20+250 GeV/c, #sqrt{s_{ep}}=140 GeV", "");
+  TLegend *leg = new TLegend(.1, .80, .95, .93);
+  //  leg->AddEntry("", "#it{#bf{EIC-sPHENIX}} Simualtion", "");
+  //  leg->AddEntry("", "e+p, 20+250 GeV/c, #sqrt{s_{ep}}=140 GeV", "");
   leg->AddEntry(h, Form("h-going HCal Energy/Tower"), "l");
   leg->Draw();
+
+  SaveCanvas(c1,
+             TString(_file0->GetName()) + TString("_Draw_EICRate_") + TString(c1->GetName()), true);
+
+  c1 = new TCanvas("ForwardCalorimeterRate_Multiplicity",
+                   "ForwardCalorimeterRate_Multiplicity", 1900, 425);
+
+  c1->Divide(3, 1, 0, 0);
+  int idx = 1;
+  TPad *p;
 
   p = (TPad *) c1->cd(idx++);
   c1->Update();
@@ -326,12 +365,13 @@ void ForwardCalorimeterRate()
   T->Draw("Sum$(TOWER_SIM_EEMC.energy>0.03)>>hEEMCHit(400,-.5,399.5)");
   TH1 *h = (TH1 *) gDirectory->Get("hEEMCHit");
   assert(h);
-  h->SetTitle(";# of e-going EMCal tower per event (30 MeV z.s.)");
+  h->SetTitle(";# of e-going EMCal tower per event (E>30 MeV);Count [A.U.]");
+  h->SetMaximum(h->GetMaximum() * 10);
   h->GetXaxis()->SetRangeUser(0, 100);
   double meanhit = h->GetMean();
 
   TLegend *leg = new TLegend(.2, .70, .95, .93);
-  leg->AddEntry("", "#it{#bf{sPHENIX}} EIC Simualtion", "");
+  leg->AddEntry("", "#it{#bf{EIC-sPHENIX}} Simualtion", "");
   leg->AddEntry("", "e+p, 20+250 GeV/c, #sqrt{s_{ep}}=140 GeV", "");
   leg->AddEntry(h, Form("Average e-going EMCal tower / event = %.1f", meanhit), "l");
   leg->Draw();
@@ -343,30 +383,33 @@ void ForwardCalorimeterRate()
   T->Draw("Sum$(TOWER_SIM_FEMC.energy/0.249>0.03)>>hHEMCHit(800,-.5,799.5)");
   TH1 *h = (TH1 *) gDirectory->Get("hHEMCHit");
   assert(h);
-  h->SetTitle(";# of h-going EMCal tower per event (30 MeV z.s.)");
+  h->SetTitle(";# of h-going EMCal tower per event (E>30 MeV);Count [A.U.]");
+  h->SetMaximum(h->GetMaximum() * 10);
   h->GetXaxis()->SetRangeUser(0, 300);
   double meanhit = h->GetMean();
 
-  TLegend *leg = new TLegend(.2, .70, .95, .93);
-  leg->AddEntry("", "#it{#bf{sPHENIX}} EIC Simualtion", "");
-  leg->AddEntry("", "e+p, 20+250 GeV/c, #sqrt{s_{ep}}=140 GeV", "");
+  TLegend *leg = new TLegend(.1, .80, .95, .93);
+  //  leg->AddEntry("", "#it{#bf{EIC-sPHENIX}} Simualtion", "");
+  //  leg->AddEntry("", "e+p, 20+250 GeV/c, #sqrt{s_{ep}}=140 GeV", "");
   leg->AddEntry(h, Form("Average h-going EMCal tower / event = %.1f", meanhit), "l");
   leg->Draw();
 
   p = (TPad *) c1->cd(idx++);
   c1->Update();
+  p->SetRightMargin(.05);
   p->SetLogy();
 
   T->Draw("Sum$(TOWER_SIM_FHCAL.energy/0.03898>0.03)>>hHHCalHit(400,-.5,399.5)");
   TH1 *h = (TH1 *) gDirectory->Get("hHHCalHit");
   assert(h);
-  h->SetTitle(";# of h-going HCal tower per event (30 MeV z.s.)");
+  h->SetTitle(";# of h-going HCal tower per event (E>30 MeV);Count [A.U.]");
+  h->SetMaximum(h->GetMaximum() * 10);
   h->GetXaxis()->SetRangeUser(0, 100);
   double meanhit = h->GetMean();
 
-  TLegend *leg = new TLegend(.2, .70, .95, .93);
-  leg->AddEntry("", "#it{#bf{sPHENIX}} EIC Simualtion", "");
-  leg->AddEntry("", "e+p, 20+250 GeV/c, #sqrt{s_{ep}}=140 GeV", "");
+  TLegend *leg = new TLegend(.1, .80, .95, .93);
+  //  leg->AddEntry("", "#it{#bf{EIC-sPHENIX}} Simualtion", "");
+  //  leg->AddEntry("", "e+p, 20+250 GeV/c, #sqrt{s_{ep}}=140 GeV", "");
   leg->AddEntry(h, Form("Average h-going EMCal tower / event = %.1f", meanhit), "l");
   leg->Draw();
 
