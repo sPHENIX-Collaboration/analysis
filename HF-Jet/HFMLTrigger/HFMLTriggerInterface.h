@@ -14,7 +14,8 @@ class TFile;
 class TH2D;
 
 class PHCompositeNode;
-class PHG4CylinderCellGeomContainer;
+class PHG4CylinderGeomContainer;
+class PHG4TruthInfoContainer;
 class SvtxHitMap;
 class SvtxEvalStack;
 
@@ -88,10 +89,13 @@ class HFMLTriggerInterface : public SubsysReco
   //! Usually, ID = 0 means the primary Au+Au collision background
   int _embedding_id;
 
+  unsigned int _nlayers_maps;
+
   // eval stack
   SvtxEvalStack *_svtxevalstack;
   SvtxHitMap *m_hitMap;
-  PHG4CylinderCellGeomContainer *m_cellGeoms;
+  PHG4CylinderGeomContainer *m_Geoms;
+  PHG4TruthInfoContainer * m_truthInfo;
 };
 
 #endif  // __HFMLTriggerInterface_H__
