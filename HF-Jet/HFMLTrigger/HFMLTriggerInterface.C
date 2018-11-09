@@ -234,7 +234,7 @@ int HFMLTriggerInterface::process_event(PHCompositeNode* topNode)
       hitIDTree.put("Module", cell->get_module_index());
       hitIDTree.put("Chip", cell->get_chip_index());
       hitIDTree.put("Pixel", cell->get_pixel_index());
-      rawHitTree.add_child("ID", hitIDTree);
+      hitTree.add_child("ID", hitIDTree);
 
       hitTree.add_child("Coordinate",
                         loadCoordinate(world_coords.x(),
