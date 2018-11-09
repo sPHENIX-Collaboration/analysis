@@ -302,7 +302,9 @@ int HFMLTriggerInterface::process_event(PHCompositeNode* topNode)
 //      trackTree.put("TrackDCA3DXY", track->get_dca3d_xy());
 //      trackTree.put("TrackDCA3DZ", track->get_dca3d_z());
 
-      trackTree.add_child("TruthHit", trackHitTree);
+//      trackTree.add_child("TruthHit", trackHitTree);
+
+      truthHitTree.add_child("TruthHit", trackTree);
     }  //      if (nMAPS > 1)
 
 
