@@ -7,6 +7,7 @@
 #include <cmath>
 #include <string>
 #include <vector>
+#include <fstream>      // std::fstream
 
 class TTree;
 class TFile;
@@ -70,6 +71,7 @@ class HFMLTriggerInterface : public SubsysReco
   int _ievent;
 
   TFile *_f;
+  std::fstream m_jsonOut;
 
   std::string _foutname;
 

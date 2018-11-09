@@ -22,8 +22,7 @@ libHFMLTrigger_la_LIBADD = \
   -lphhepmc
 
 pkginclude_HEADERS = \
-	HFJetDefs.h
-
+	HFMLTriggerInterface.h
 #pkginclude_HEADERS = $(include_HEADERS)
 
 libHFMLTrigger_la_SOURCES = \

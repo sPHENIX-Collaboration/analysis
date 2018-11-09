@@ -24,10 +24,18 @@
 #include <phhepmc/PHHepMCGenEvent.h>
 #include <phhepmc/PHHepMCGenEventMap.h>
 
+#include <boost/property_tree/json_parser.hpp>
+#include <boost/property_tree/ptree.hpp>
+
+// Short alias for this namespace
+namespace pt = boost::property_tree;
+
 #include <cassert>
 #include <cmath>
 #include <cstddef>
 #include <iostream>
+
+using namespace std;
 
 HFMLTriggerInterface::HFMLTriggerInterface(std::string filename)
   : SubsysReco("HFMLTriggerInterface")
@@ -44,7 +52,9 @@ int HFMLTriggerInterface::Init(PHCompositeNode* topNode)
 {
   _ievent = 0;
 
-  _f = new TFile(_foutname.c_str(), "RECREATE");
+  _f = new TFile((_foutname + string(".root")).c_str(), "RECREATE");
+
+  m_jsonOut.open((_foutname + string(".json")).c_str(), fstream::out);
 
   //  _h2 = new TH2D("h2", "", 100, 0, 100.0, 40, -2, +2);
   //  _h2_b = new TH2D("h2_b", "", 100, 0, 100.0, 40, -2, +2);
@@ -77,14 +87,32 @@ int HFMLTriggerInterface::process_event(PHCompositeNode* topNode)
   if (Verbosity())
     theEvent->print();
 
+  // Create a root
+  pt::ptree json;
+
+  json.put("EventID", _ievent);
+
+  assert(m_jsonOut.is_open());
+  pt::write_json(m_jsonOut, json);
+
+  ++_ievent;
+
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
 int HFMLTriggerInterface::End(PHCompositeNode* topNode)
 {
-  _f->cd();
-  _f->Write();
-  //_f->Close();
+  if (_f)
+  {
+    _f->cd();
+    _f->Write();
+    //_f->Close();
+  }
 
-  return 0;
+  if (m_jsonOut.is_open())
+    m_jsonOut.close();
+
+  cout << "HFMLTriggerInterface::End - output to " << _foutname << ".*" << endl;
+
+  return Fun4AllReturnCodes::EVENT_OK;
 }
