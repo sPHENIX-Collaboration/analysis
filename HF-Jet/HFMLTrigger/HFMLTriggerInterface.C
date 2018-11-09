@@ -301,9 +301,10 @@ int HFMLTriggerInterface::process_event(PHCompositeNode* topNode)
                                          g4particle->get_pz()));
 //      trackTree.put("TrackDCA3DXY", track->get_dca3d_xy());
 //      trackTree.put("TrackDCA3DZ", track->get_dca3d_z());
+
+      trackTree.add_child("TruthHit", trackHitTree);
     }  //      if (nMAPS > 1)
 
-    truthHitTree.add_child("TruthHit", trackTree);
 
   }  //  for (PHG4TruthInfoContainer::ConstIterator iter = range.first;
 
