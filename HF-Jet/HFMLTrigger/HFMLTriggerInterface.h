@@ -5,16 +5,19 @@
 #include <fun4all/SubsysReco.h>
 #include <limits.h>
 #include <cmath>
+#include <fstream>  // std::fstream
 #include <string>
 #include <vector>
-#include <fstream>      // std::fstream
 
 class TTree;
 class TFile;
 class TH2D;
 
 class PHCompositeNode;
-class Jet;
+class PHG4CylinderCellGeomContainer;
+class SvtxHitMap;
+class SvtxEvalStack;
+
 namespace HepMC
 {
 class GenEvent;
@@ -26,6 +29,7 @@ class HFMLTriggerInterface : public SubsysReco
   HFMLTriggerInterface(std::string filename);
 
   int Init(PHCompositeNode *);
+  int InitRun(PHCompositeNode *);
   int process_event(PHCompositeNode *);
   int End(PHCompositeNode *);
 
@@ -83,6 +87,11 @@ class HFMLTriggerInterface : public SubsysReco
   //! negative IDs are backgrounds, .e.g out of time pile up collisions
   //! Usually, ID = 0 means the primary Au+Au collision background
   int _embedding_id;
+
+  // eval stack
+  SvtxEvalStack *_svtxevalstack;
+  SvtxHitMap *m_hitMap;
+  PHG4CylinderCellGeomContainer *m_cellGeoms;
 };
 
 #endif  // __HFMLTriggerInterface_H__
