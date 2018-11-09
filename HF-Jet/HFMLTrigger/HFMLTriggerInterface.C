@@ -304,7 +304,7 @@ int HFMLTriggerInterface::process_event(PHCompositeNode* topNode)
 
 //      trackTree.add_child("TruthHit", trackHitTree);
 
-      truthHitTree.add_child("TruthHit", trackTree);
+      truthHitTree.add_child("TruthTrack", trackTree);
     }  //      if (nMAPS > 1)
 
 
