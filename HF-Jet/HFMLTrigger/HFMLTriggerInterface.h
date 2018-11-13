@@ -11,7 +11,7 @@
 
 class TTree;
 class TFile;
-class TH2D;
+class TH2F;
 class TH3F;
 
 class PHCompositeNode;
@@ -99,6 +99,7 @@ class HFMLTriggerInterface : public SubsysReco
   PHG4TruthInfoContainer * m_truthInfo;
 
   TH3F * m_hitLayerMap;
+  TH3F * m_hitPixelPhiMap;
 };
 
 #endif  // __HFMLTriggerInterface_H__

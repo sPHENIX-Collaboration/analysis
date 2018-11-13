@@ -39,7 +39,7 @@
 
 #include <TDatabasePDG.h>
 #include <TFile.h>
-#include <TH2D.h>
+#include <TH2F.h>
 #include <TH3F.h>
 #include <TLorentzVector.h>
 #include <TString.h>
@@ -87,6 +87,9 @@ int HFMLTriggerInterface::Init(PHCompositeNode* topNode)
 
   m_hitLayerMap = new TH3F("hitLayerMap", "hitLayerMap", 600, -10, 10, 600, -10, 10, 10, -.5, 9.5);
   m_hitLayerMap->SetTitle("hitLayerMap;x [mm];y [mm];Half Layers");
+
+  m_hitPixelPhiMap = new TH3F("hitPixelPhiMap", "hitPixelPhiMap", 6000, -.5, 6000 - .5, 600, -M_PI, M_PI, 10, -.5, 9.5);
+  m_hitLayerMap->SetTitle("hitPixelPhiMap;PixelPhiIndex;phi [rad];Half Layers");
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -229,12 +232,21 @@ int HFMLTriggerInterface::process_event(PHCompositeNode* topNode)
 
       ptree hitTree;
 
+      unsigned int halfLayerIndex(layer * 2 + halflayer);
+      unsigned int pixelPhiIndex;
+      unsigned int pixelZIndex;
+
       ptree hitIDTree;
       hitIDTree.put("HitSequenceInEvent", hitID);
+
+      hitIDTree.put("PixelHalfLayerIndex", halfLayerIndex);
+      hitIDTree.put("PixelPhiIndex", pixelPhiIndex);
+      hitIDTree.put("PixelZIndex", pixelZIndex);
+
       hitIDTree.put("Layer", layer);
       hitIDTree.put("HalfLayer", halflayer);
       hitIDTree.put("Stave", cell->get_stave_index());
-      hitIDTree.put("Halfstave", cell->get_half_stave_index());
+      hitIDTree.put("HalfStave", cell->get_half_stave_index());
       hitIDTree.put("Module", cell->get_module_index());
       hitIDTree.put("Chip", cell->get_chip_index());
       hitIDTree.put("Pixel", cell->get_pixel_index());
@@ -248,6 +260,7 @@ int HFMLTriggerInterface::process_event(PHCompositeNode* topNode)
       rawHitTree.add_child("MVTXHit", hitTree);
 
       m_hitLayerMap->Fill(world_coords.x(), world_coords.y(), layer * 2 + halflayer);
+      m_hitPixelPhiMap->Fill(pixelPhiIndex, atan2(world_coords.y(), world_coords.x()), layer * 2 + halflayer);
     }
   }
 
