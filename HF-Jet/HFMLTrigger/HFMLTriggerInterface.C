@@ -40,6 +40,7 @@
 #include <TDatabasePDG.h>
 #include <TFile.h>
 #include <TH2D.h>
+#include <TH3F.h>
 #include <TLorentzVector.h>
 #include <TString.h>
 #include <TTree.h>
@@ -83,6 +84,9 @@ int HFMLTriggerInterface::Init(PHCompositeNode* topNode)
   //  _h2_b = new TH2D("h2_b", "", 100, 0, 100.0, 40, -2, +2);
   //  _h2_c = new TH2D("h2_c", "", 100, 0, 100.0, 40, -2, +2);
   //  _h2all = new TH2D("h2all", "", 100, 0, 100.0, 40, -2, +2);
+
+  m_hitLayerMap = new TH3F("hitLayerMap", "hitLayerMap", 600, -10, 10, 600, -10, 10, 10, -.5, 9.5);
+  m_hitLayerMap->SetTitle("hitLayerMap;x [mm];y [mm];Half Layers");
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -221,7 +225,7 @@ int HFMLTriggerInterface::process_event(PHCompositeNode* topNode)
 
       TVector3 local_coords = geom->get_local_coords_from_pixel(cell->get_pixel_index());
       TVector3 world_coords = geom->get_world_from_local_coords(cell->get_stave_index(), cell->get_half_stave_index(), cell->get_module_index(), cell->get_chip_index(), local_coords);
-      int halflayer = (cell->get_pixel_index() % geom->get_NX()) >= geom->get_NX() / 2;
+      int halflayer = (cell->get_pixel_index() % geom->get_NX()) >= geom->get_NX() / 2 ? 0 : 1;
 
       ptree hitTree;
 
@@ -242,6 +246,8 @@ int HFMLTriggerInterface::process_event(PHCompositeNode* topNode)
                                        world_coords.z()));
 
       rawHitTree.add_child("MVTXHit", hitTree);
+
+      m_hitLayerMap->Fill(world_coords.x(), world_coords.y(), layer * 2 + halflayer);
     }
   }
 
@@ -299,14 +305,13 @@ int HFMLTriggerInterface::process_event(PHCompositeNode* topNode)
                           loadCoordinate(g4particle->get_px(),
                                          g4particle->get_py(),
                                          g4particle->get_pz()));
-//      trackTree.put("TrackDCA3DXY", track->get_dca3d_xy());
-//      trackTree.put("TrackDCA3DZ", track->get_dca3d_z());
+      //      trackTree.put("TrackDCA3DXY", track->get_dca3d_xy());
+      //      trackTree.put("TrackDCA3DZ", track->get_dca3d_z());
 
-//      trackTree.add_child("TruthHit", trackHitTree);
+      //      trackTree.add_child("TruthHit", trackHitTree);
 
       truthHitTree.add_child("TruthTrack", trackTree);
     }  //      if (nMAPS > 1)
-
 
   }  //  for (PHG4TruthInfoContainer::ConstIterator iter = range.first;
 
@@ -332,6 +337,8 @@ int HFMLTriggerInterface::End(PHCompositeNode* topNode)
     _f->cd();
     _f->Write();
     //_f->Close();
+
+    //    m_hitLayerMap->Write();
   }
 
   if (m_jsonOut.is_open())
