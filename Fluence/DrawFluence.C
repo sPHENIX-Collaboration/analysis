@@ -18,25 +18,21 @@ TFile *_file0 = NULL;
 TString description;
 
 void DrawFluence(
-    //    const TString infile = "/phenix/u/jinhuang/links/sPHENIX_work/Fluence/AuAu200_10k_Iter3/AuAu200_10k_Iter3_Sum.xml_g4score.root",
-    //    const TString disc = "Au+Au #sqrt{s_{NN}}=200 GeV, sHIJING 0-20fm" , //
-    //    const double nTarget = 1.5e12 , // 1.5 Trillion event from 5-year projection, sPH-GEN-2017-001
-    //    const TString projection_desc = "5-year run plan (1.5 Trillion Collisions)"
+        const TString infile = "/phenix/u/jinhuang/links/sPHENIX_work/Fluence/AuAu200_25k_Iter4/AuAu200_25k_Iter4_SUM.xml_g4score.root",
+        const TString disc = "Au+Au #sqrt{s_{NN}}=200 GeV, sHIJING 0-20fm" , //
+        const double nTarget = 1.5e12 , // 1.5 Trillion event from 5-year projection, sPH-GEN-2017-001
+        const TString projection_desc = "5-year run plan (1.5 Trillion Collisions)"
     //    const TString infile = "/phenix/u/jinhuang/links/sPHENIX_work/Fluence/AuAu200_PHENIX_Iter2/AuAu200_PHENIX_Iter2_Sum.xml_g4score.root",
-//    const TString infile = "/phenix/u/jinhuang/links/sPHENIX_work/Fluence/AuAu200_PHENIX_Iter4/AuAu200_PHENIX_Iter4_Sum.xml_g4score.root",
-//    const TString disc = "Au+Au #sqrt{s_{NN}}=200 GeV, sHIJING 0-20fm",  //
-//    const double nTarget = 23.1e9 * 6.8 * 1.8,                           // 23.1 nb-1 delivered http://www.rhichome.bnl.gov/RHIC/Runs/index.html#Run-14. NOTE: fudge factur 1.8 to deal with crashed runs
-//    const TString projection_desc = "PHENIX Run14, 23.1 nb-1"
 //    const TString infile = "/phenix/u/jinhuang/links/sPHENIX_work/Fluence/AuAu200_PHENIX_Iter5/AuAu200_PHENIX_Iter5_SUM.xml_g4score.root",
 //    const TString infile = "/phenix/u/jinhuang/links/sPHENIX_work/Fluence/AuAu200_PHENIX_Iter6/AuAu200_PHENIX_Iter6_SUM.xml_g4score.root",
     //    const TString infile = "/phenix/u/jinhuang/links/sPHENIX_work/Fluence/AuAu200_PHENIX_Iter7/AuAu200_PHENIX_Iter7_SUM.xml_g4score.root",
     //    const TString infile = "/phenix/u/jinhuang/links/sPHENIX_work/Fluence/AuAu200_PHENIX_Iter7_FTFP_BERT/AuAu200_PHENIX_Iter7_FTFP_BERT_SUM.xml_g4score.root",
 //        const TString infile = "/phenix/u/jinhuang/links/sPHENIX_work/Fluence/AuAu200_PHENIX_Iter9/AuAu200_PHENIX_Iter9_SUM.xml_g4score.root",
-            const TString infile = "/phenix/u/jinhuang/links/sPHENIX_work/Fluence/AuAu200_PHENIX_Iter9_FTFP/AuAu200_PHENIX_Iter9_FTFP_SUM.xml_g4score.root",
+//            const TString infile = "/phenix/u/jinhuang/links/sPHENIX_work/Fluence/AuAu200_PHENIX_Iter9_FTFP/AuAu200_PHENIX_Iter9_FTFP_SUM.xml_g4score.root",
 //    const TString infile = "/phenix/u/jinhuang/links/sPHENIX_work/Fluence/AuAu200_PHENIX_SingleTrack_Iter2/AuAu200_PHENIX_SingleTrack_Iter2_SUM.xml_g4score.root",
-        const TString disc = "Au+Au #sqrt{s_{NN}}=200 GeV, sHIJING 0-20fm",  //
-        const double nTarget = 23.1e9 * 6.8,                           // 23.1 nb-1 delivered http://www.rhichome.bnl.gov/RHIC/Runs/index.html#Run-14.
-        const TString projection_desc = "PHENIX Run14, 23.1 nb-1"
+//        const TString disc = "Au+Au #sqrt{s_{NN}}=200 GeV, sHIJING 0-20fm",  //
+//        const double nTarget = 23.1e9 * 6.8,                           // 23.1 nb-1 delivered http://www.rhichome.bnl.gov/RHIC/Runs/index.html#Run-14.
+//        const TString projection_desc = "PHENIX Run14, 23.1 nb-1"
     //    const TString infile = "/phenix/u/jinhuang/links/sPHENIX_work/Fluence/pp200_MB_Iter1/pp200_MB_Iter1_Sum.cfg_g4score.root",
     //    const TString disc = "p+p #sqrt{s_{NN}}=200 GeV, PYTHIA8",          //
     //    const TString infile = "/phenix/u/jinhuang/links/sPHENIX_work/Fluence/EIC_20x250_MB_Iter1/Sum_g4score.root",
@@ -67,16 +63,16 @@ void DrawFluence(
   dNchdEta();
   FullCyl(normalization, projection_desc);
 
-  FullCylRProjPHENIXComparison(normalization, projection_desc);
+//  FullCylRProjPHENIXComparison(normalization, projection_desc);
 
   FullCylRProj(normalization, projection_desc, 100);
   FullCylRProj(normalization, projection_desc, 30);
   //  VertexCyl(normalization, projection_desc);
   //  FullCylEIC(normalization, projection_desc);
   //  FullCylZProj(normalization, projection_desc, 2);
-  //  FullCylZProj(normalization, projection_desc, 3);
+    FullCylZProj(normalization, projection_desc, 3);
     FullCylZProj(normalization, projection_desc, 5);
-  //  FullCylZProj(normalization, projection_desc, 8);
+    FullCylZProj(normalization, projection_desc, 8);
 }
 
 void VertexCyl(const double normalization, const TString projection_desc)
