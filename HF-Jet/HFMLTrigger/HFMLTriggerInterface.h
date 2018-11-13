@@ -12,6 +12,7 @@
 class TTree;
 class TFile;
 class TH2F;
+class TH2F;
 class TH3F;
 
 class PHCompositeNode;
@@ -96,10 +97,15 @@ class HFMLTriggerInterface : public SubsysReco
   SvtxEvalStack *_svtxevalstack;
   SvtxHitMap *m_hitMap;
   PHG4CylinderGeomContainer *m_Geoms;
-  PHG4TruthInfoContainer * m_truthInfo;
+  PHG4TruthInfoContainer *m_truthInfo;
 
-  TH3F * m_hitLayerMap;
-  TH3F * m_hitPixelPhiMap;
+  TH2F *m_hitStaveLayer;
+  TH2F *m_hitModuleHalfStave;
+  TH2F *m_hitChipModule;
+
+  TH3F *m_hitLayerMap;
+  TH3F *m_hitPixelPhiMap;
+  TH3F *m_hitPixelZMap;
 };
 
 #endif  // __HFMLTriggerInterface_H__

@@ -45,6 +45,7 @@
 #include <TString.h>
 #include <TTree.h>
 
+#include <boost/format.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
@@ -68,6 +69,12 @@ HFMLTriggerInterface::HFMLTriggerInterface(std::string filename)
   , m_hitMap(nullptr)
   , m_Geoms(nullptr)
   , m_truthInfo(nullptr)
+  , m_hitStaveLayer(nullptr)
+  , m_hitModuleHalfStave(nullptr)
+  , m_hitChipModule(nullptr)
+  , m_hitLayerMap(nullptr)
+  , m_hitPixelPhiMap(nullptr)
+  , m_hitPixelZMap(nullptr)
 {
   _foutname = filename;
 }
@@ -88,8 +95,17 @@ int HFMLTriggerInterface::Init(PHCompositeNode* topNode)
   m_hitLayerMap = new TH3F("hitLayerMap", "hitLayerMap", 600, -10, 10, 600, -10, 10, 10, -.5, 9.5);
   m_hitLayerMap->SetTitle("hitLayerMap;x [mm];y [mm];Half Layers");
 
-  m_hitPixelPhiMap = new TH3F("hitPixelPhiMap", "hitPixelPhiMap", 6000, -.5, 6000 - .5, 600, -M_PI, M_PI, 10, -.5, 9.5);
-  m_hitLayerMap->SetTitle("hitPixelPhiMap;PixelPhiIndex;phi [rad];Half Layers");
+  m_hitPixelPhiMap = new TH3F("hitPixelPhiMap", "hitPixelPhiMap", 16000, -.5, 16000 - .5, 600, -M_PI, M_PI, 10, -.5, 9.5);
+  m_hitPixelPhiMap->SetTitle("hitPixelPhiMap;PixelPhiIndex;phi [rad];Half Layers Index");
+  m_hitPixelZMap = new TH3F("hitPixelZMap", "hitPixelZMap", 16000, -.5, 16000 - .5, 600, 15, 15, 10, -.5, 9.5);
+  m_hitPixelZMap->SetTitle("hitPixelZMap;hitPixelZMap;z [cm];Half Layers");
+
+  m_hitStaveLayer = new TH2F("hitStaveLayer", "hitStaveLayer", 100, -.5, 100 - .5, 10, -.5, 9.5);
+  m_hitStaveLayer->SetTitle("hitStaveLayer;Stave index;Half Layers");
+  m_hitModuleHalfStave = new TH2F("hitModuleHalfStave", "hitModuleHalfStave", 100, -.5, 100 - .5, 10, -.5, 9.5);
+  m_hitModuleHalfStave->SetTitle("hitModuleHalfStave;Module index;Half Stave");
+  m_hitChipModule = new TH2F("hitChipModule", "hitChipModule", 100, -.5, 100 - .5, 10, -.5, 9.5);
+  m_hitChipModule->SetTitle("hitChipModule;Chip;Module");
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -157,7 +173,17 @@ int HFMLTriggerInterface::process_event(PHCompositeNode* topNode)
   HepMC::GenEvent* theEvent = genevt->getEvent();
   assert(theEvent);
   if (Verbosity())
+  {
+    cout << "HFMLTriggerInterface::process_event - process HepMC::GenEvent with signal_process_id = "
+         << theEvent->signal_process_id();
+    if (theEvent->signal_process_vertex())
+    {
+      cout << " and signal_process_vertex : ";
+      theEvent->signal_process_vertex()->print();
+    }
+    cout << "  - Event record:" << endl;
     theEvent->print();
+  }
 
   // property tree preparation
   using boost::property_tree::ptree;
@@ -195,6 +221,39 @@ int HFMLTriggerInterface::process_event(PHCompositeNode* topNode)
                                     genevt->get_collision_vertex().y(),
                                     genevt->get_collision_vertex().z()));
 
+  metaTree.put("Layer_Count", _nlayers_maps);
+  metaTree.put("PixelHalfLayerIndex_Count", _nlayers_maps * 2);
+
+  //  hitIDTree.put("PixelPhiIndex", pixelPhiIndex);
+  //  hitIDTree.put("PixelZIndex", pixelZIndex);
+  //
+  //  hitIDTree.put("Layer", layer);
+  //  hitIDTree.put("HalfLayer", halflayer);
+  //  hitIDTree.put("Stave", cell->get_stave_index());
+  //  hitIDTree.put("HalfStave", cell->get_half_stave_index());
+  //  hitIDTree.put("Module", cell->get_module_index());
+  //  hitIDTree.put("Chip", cell->get_chip_index());
+  //  hitIDTree.put("Pixel", cell->get_pixel_index());
+
+  for (unsigned int layer = 0; layer < _nlayers_maps; ++layer)
+  {
+    PHG4CylinderGeom_MAPS* geom = dynamic_cast<PHG4CylinderGeom_MAPS*>(m_Geoms->GetLayerGeom(layer));
+    assert(geom);
+
+    ptree layerDescTree;
+
+    static const unsigned int nChip(9);
+
+    layerDescTree.put("PixelPhiIndex_Count", geom->get_N_staves() * geom->get_NX());
+    layerDescTree.put("PixelZIndex_Count", nChip * geom->get_NZ());
+    layerDescTree.put("HalfLayer_Count", 2);
+    layerDescTree.put("Stave_Count", geom->get_N_staves());
+    layerDescTree.put("Chip_Count", nChip);
+    layerDescTree.put("Pixel_Count", geom->get_NX() * geom->get_NZ());
+
+    metaTree.add_child(str(boost::format{"Layer%1%"} % layer), layerDescTree);
+  }
+
   ptree truthTriggerFlagTree;
   truthTriggerFlagTree.put("Description", "These are categorical true/false MonteCalo truth tags for the event. These are only known in training sample. This would be trigger output in real data processing.");
   truthTriggerFlagTree.put("ExampleSignal1", true);
@@ -228,13 +287,20 @@ int HFMLTriggerInterface::process_event(PHCompositeNode* topNode)
 
       TVector3 local_coords = geom->get_local_coords_from_pixel(cell->get_pixel_index());
       TVector3 world_coords = geom->get_world_from_local_coords(cell->get_stave_index(), cell->get_half_stave_index(), cell->get_module_index(), cell->get_chip_index(), local_coords);
-      int halflayer = (cell->get_pixel_index() % geom->get_NX()) >= geom->get_NX() / 2 ? 0 : 1;
 
-      ptree hitTree;
+      unsigned int pixel_x(cell->get_pixel_index() % geom->get_NX());
+      unsigned int pixel_z(cell->get_pixel_index() / geom->get_NX());
+      unsigned int halflayer = (int) pixel_x >= geom->get_NX() / 2 ? 0 : 1;
+
+      assert((int) pixel_x < geom->get_NX());
+      assert((int) pixel_z < geom->get_NZ());
 
       unsigned int halfLayerIndex(layer * 2 + halflayer);
-      unsigned int pixelPhiIndex;
-      unsigned int pixelZIndex;
+      unsigned int pixelPhiIndex(
+          cell->get_stave_index() * geom->get_NX() + pixel_x);
+      unsigned int pixelZIndex(cell->get_chip_index() * geom->get_NZ() + pixel_z);
+
+      ptree hitTree;
 
       ptree hitIDTree;
       hitIDTree.put("HitSequenceInEvent", hitID);
@@ -246,8 +312,8 @@ int HFMLTriggerInterface::process_event(PHCompositeNode* topNode)
       hitIDTree.put("Layer", layer);
       hitIDTree.put("HalfLayer", halflayer);
       hitIDTree.put("Stave", cell->get_stave_index());
-      hitIDTree.put("HalfStave", cell->get_half_stave_index());
-      hitIDTree.put("Module", cell->get_module_index());
+      //      hitIDTree.put("HalfStave", cell->get_half_stave_index());
+      //      hitIDTree.put("Module", cell->get_module_index());
       hitIDTree.put("Chip", cell->get_chip_index());
       hitIDTree.put("Pixel", cell->get_pixel_index());
       hitTree.add_child("ID", hitIDTree);
@@ -259,8 +325,13 @@ int HFMLTriggerInterface::process_event(PHCompositeNode* topNode)
 
       rawHitTree.add_child("MVTXHit", hitTree);
 
-      m_hitLayerMap->Fill(world_coords.x(), world_coords.y(), layer * 2 + halflayer);
-      m_hitPixelPhiMap->Fill(pixelPhiIndex, atan2(world_coords.y(), world_coords.x()), layer * 2 + halflayer);
+      m_hitStaveLayer->Fill(cell->get_stave_index(), halfLayerIndex);
+      m_hitModuleHalfStave->Fill(cell->get_module_index(), cell->get_half_stave_index());
+      m_hitChipModule->Fill(cell->get_chip_index(), cell->get_module_index());
+
+      m_hitLayerMap->Fill(world_coords.x(), world_coords.y(), halfLayerIndex);
+      m_hitPixelPhiMap->Fill(pixelPhiIndex, atan2(world_coords.y(), world_coords.x()), halfLayerIndex);
+      m_hitPixelZMap->Fill(pixelZIndex, world_coords.z(), halfLayerIndex);
     }
   }
 
