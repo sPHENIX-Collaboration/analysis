@@ -88,6 +88,9 @@ int HFMLTriggerInterface::Init(PHCompositeNode* topNode)
 
   m_jsonOut.open((_foutname + string(".json")).c_str(), fstream::out);
 
+  m_jsonOut << "{" << endl;
+  m_jsonOut << "\"Events\" : [" << endl;
+
   //  _h2 = new TH2D("h2", "", 100, 0, 100.0, 40, -2, +2);
   //  _h2_b = new TH2D("h2_b", "", 100, 0, 100.0, 40, -2, +2);
   //  _h2_c = new TH2D("h2_c", "", 100, 0, 100.0, 40, -2, +2);
@@ -112,6 +115,7 @@ int HFMLTriggerInterface::Init(PHCompositeNode* topNode)
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
+
 int HFMLTriggerInterface::InitRun(PHCompositeNode* topNode)
 {
   m_hitMap = findNode::getClass<SvtxHitMap>(topNode, "SvtxHitMap");
@@ -434,7 +438,12 @@ int HFMLTriggerInterface::End(PHCompositeNode* topNode)
   }
 
   if (m_jsonOut.is_open())
+  {
+    m_jsonOut << "]" << endl;
+    m_jsonOut << "}" << endl;
+
     m_jsonOut.close();
+  }
 
   cout << "HFMLTriggerInterface::End - output to " << _foutname << ".*" << endl;
 
