@@ -105,6 +105,7 @@ class HFMLTriggerInterface : public SubsysReco
 
   TH3F *m_hitLayerMap;
   TH3F *m_hitPixelPhiMap;
+  TH3F *m_hitPixelPhiMapHL;
   TH3F *m_hitPixelZMap;
 };
 

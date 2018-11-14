@@ -74,6 +74,7 @@ HFMLTriggerInterface::HFMLTriggerInterface(std::string filename)
   , m_hitChipModule(nullptr)
   , m_hitLayerMap(nullptr)
   , m_hitPixelPhiMap(nullptr)
+  , m_hitPixelPhiMapHL(nullptr)
   , m_hitPixelZMap(nullptr)
 {
   _foutname = filename;
@@ -96,7 +97,9 @@ int HFMLTriggerInterface::Init(PHCompositeNode* topNode)
   m_hitLayerMap->SetTitle("hitLayerMap;x [mm];y [mm];Half Layers");
 
   m_hitPixelPhiMap = new TH3F("hitPixelPhiMap", "hitPixelPhiMap", 16000, -.5, 16000 - .5, 600, -M_PI, M_PI, 10, -.5, 9.5);
-  m_hitPixelPhiMap->SetTitle("hitPixelPhiMap;PixelPhiIndex;phi [rad];Half Layers Index");
+  m_hitPixelPhiMap->SetTitle("hitPixelPhiMap;PixelPhiIndex in layer;phi [rad];Half Layers Index");
+  m_hitPixelPhiMapHL = new TH3F("hitPixelPhiMapHL", "hitPixelPhiMapHL", 16000, -.5, 16000 - .5, 600, -M_PI, M_PI, 10, -.5, 9.5);
+  m_hitPixelPhiMapHL->SetTitle("hitPixelPhiMap;PixelPhiIndex in half layer;phi [rad];Half Layers Index");
   m_hitPixelZMap = new TH3F("hitPixelZMap", "hitPixelZMap", 16000, -.5, 16000 - .5, 600, 15, 15, 10, -.5, 9.5);
   m_hitPixelZMap->SetTitle("hitPixelZMap;hitPixelZMap;z [cm];Half Layers");
 
@@ -244,7 +247,8 @@ int HFMLTriggerInterface::process_event(PHCompositeNode* topNode)
 
     static const unsigned int nChip(9);
 
-    layerDescTree.put("PixelPhiIndex_Count", geom->get_N_staves() * geom->get_NX());
+    layerDescTree.put("PixelPhiIndexInLayer_Count", geom->get_N_staves() * geom->get_NX());
+    layerDescTree.put("PixelPhiIndexInHalfLayer_Count", geom->get_N_staves() * geom->get_NX() / 2);
     layerDescTree.put("PixelZIndex_Count", nChip * geom->get_NZ());
     layerDescTree.put("HalfLayer_Count", 2);
     layerDescTree.put("Stave_Count", geom->get_N_staves());
@@ -298,6 +302,8 @@ int HFMLTriggerInterface::process_event(PHCompositeNode* topNode)
       unsigned int halfLayerIndex(layer * 2 + halflayer);
       unsigned int pixelPhiIndex(
           cell->get_stave_index() * geom->get_NX() + pixel_x);
+      unsigned int pixelPhiIndexHL(
+          cell->get_stave_index() * geom->get_NX() / 2 + pixel_x % (geom->get_NX() / 2));
       unsigned int pixelZIndex(cell->get_chip_index() * geom->get_NZ() + pixel_z);
 
       ptree hitTree;
@@ -306,7 +312,8 @@ int HFMLTriggerInterface::process_event(PHCompositeNode* topNode)
       hitIDTree.put("HitSequenceInEvent", hitID);
 
       hitIDTree.put("PixelHalfLayerIndex", halfLayerIndex);
-      hitIDTree.put("PixelPhiIndex", pixelPhiIndex);
+      hitIDTree.put("PixelPhiIndexInLayer", pixelPhiIndex);
+      hitIDTree.put("PixelPhiIndexInHalfLayer", pixelPhiIndexHL);
       hitIDTree.put("PixelZIndex", pixelZIndex);
 
       hitIDTree.put("Layer", layer);
@@ -331,6 +338,7 @@ int HFMLTriggerInterface::process_event(PHCompositeNode* topNode)
 
       m_hitLayerMap->Fill(world_coords.x(), world_coords.y(), halfLayerIndex);
       m_hitPixelPhiMap->Fill(pixelPhiIndex, atan2(world_coords.y(), world_coords.x()), halfLayerIndex);
+      m_hitPixelPhiMapHL->Fill(pixelPhiIndexHL, atan2(world_coords.y(), world_coords.x()), halfLayerIndex);
       m_hitPixelZMap->Fill(pixelZIndex, world_coords.z(), halfLayerIndex);
     }
   }
