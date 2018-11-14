@@ -274,6 +274,8 @@ int HFMLTriggerInterface::process_event(PHCompositeNode* topNode)
 
   //  rawHitTree.put("LayerRage", "0-2");
 
+  ptree rawHitsTree;
+
   set<unsigned int> mapsHits;
   assert(m_hitMap);
   for (SvtxHitMap::Iter iter = m_hitMap->begin();
@@ -334,7 +336,8 @@ int HFMLTriggerInterface::process_event(PHCompositeNode* topNode)
                                        world_coords.y(),
                                        world_coords.z()));
 
-      rawHitTree.add_child("MVTXHit", hitTree);
+//      rawHitsTree.add_child("MVTXHit", hitTree);
+      rawHitsTree.push_back(make_pair("", hitTree));
 
       m_hitStaveLayer->Fill(cell->get_stave_index(), halfLayerIndex);
       m_hitModuleHalfStave->Fill(cell->get_module_index(), cell->get_half_stave_index());
@@ -344,14 +347,18 @@ int HFMLTriggerInterface::process_event(PHCompositeNode* topNode)
       m_hitPixelPhiMap->Fill(pixelPhiIndex, atan2(world_coords.y(), world_coords.x()), halfLayerIndex);
       m_hitPixelPhiMapHL->Fill(pixelPhiIndexHL, atan2(world_coords.y(), world_coords.x()), halfLayerIndex);
       m_hitPixelZMap->Fill(pixelZIndex, world_coords.z(), halfLayerIndex);
-    }
-  }
+    }  //    if (layer < _nlayers_maps)
+
+  }  //   for (SvtxHitMap::Iter iter = m_hitMap->begin();
+  rawHitTree.add_child("MVTXHits", rawHitsTree);
 
   // Truth hits
   ptree truthHitTree;
   truthHitTree.put("Description", "From the MonteCalo truth information, pairs of track ID and subset of RawHit that belong to the track. These are not presented in real data. The track ID is arbitary.");
 
   assert(m_truthInfo);
+
+  ptree truthTracksTree;
 
   PHG4TruthInfoContainer::ConstRange range = m_truthInfo->GetPrimaryParticleRange();
   for (PHG4TruthInfoContainer::ConstIterator iter = range.first;
@@ -406,10 +413,12 @@ int HFMLTriggerInterface::process_event(PHCompositeNode* topNode)
 
       //      trackTree.add_child("TruthHit", trackHitTree);
 
-      truthHitTree.add_child("TruthTrack", trackTree);
+//      truthTracksTree.add_child("TruthTrack", trackTree);
+      truthTracksTree.push_back(make_pair("", trackTree));
     }  //      if (nMAPS > 1)
 
   }  //  for (PHG4TruthInfoContainer::ConstIterator iter = range.first;
+  truthHitTree.add_child("TruthTracks", truthTracksTree);
 
   //output
   pTree.add_child("MetaData", metaTree);
