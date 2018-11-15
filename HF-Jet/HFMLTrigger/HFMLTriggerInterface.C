@@ -429,6 +429,7 @@ int HFMLTriggerInterface::process_event(PHCompositeNode* topNode)
   assert(m_jsonOut.is_open());
   write_json(m_jsonOut, pTree);
   //  write_xml(m_jsonOut, jsonTree);
+  m_jsonOut << "," << endl;
 
   ++_ievent;
 
