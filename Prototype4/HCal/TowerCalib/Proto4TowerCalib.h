@@ -13,6 +13,7 @@ class PHG4HitContainer;
 class Fun4AllHistoManager;
 class TH1F;
 class TTree;
+class TChain;
 class SvtxEvalStack;
 class PHG4Particle;
 class RawTowerGeom;
@@ -42,93 +43,28 @@ class Proto4TowerCalib : public SubsysReco
   int End(PHCompositeNode *topNode);
 
   //! Is processing simulation files?
-  void
-  is_sim(bool b)
+  void is_sim(bool b)
   {
     _is_sim = b;
   }
 
-  class Eval_Run : public TObject
+  // TowerCalib Analysis
+  int InitAna();
+
+  int MakeAna();
+
+  int FinishAna();
+
+  void set_det(std::string detector)
   {
-   public:
-    Eval_Run()
-    {
-      reset();
-    }
-    virtual ~Eval_Run()
-    {
-    }
+    _mDet = detector;
+  }
 
-    void
-    reset()
-    {
-      run = -31454;
-      event = -31454;
-      beam_mom = -0;
-      hodo_h = -31454;
-      hodo_v = -31454;
-      C2_sum = -31454;
-      C1 = -31454;
+  void set_colID(int colID)
+  {
+    _mCol = colID;
+  }
 
-      valid_hodo_v = false;
-      valid_hodo_h = false;
-      trigger_veto_pass = false;
-      good_e = false;
-      good_anti_e = false;
-
-      beam_2CH_mm = -31454;
-      beam_2CV_mm = -31454;
-
-      truth_y = -31454;
-      truth_z = -31454;
-
-      sum_E_CEMC = -31454;
-      sum_E_HCAL_OUT = -31454;
-      sum_E_HCAL_IN = -31454;
-    }
-
-    int run;
-    int event;
-
-    //! beam momentum with beam charge
-    float beam_mom;
-
-    //! hodoscope index
-    int hodo_h;
-    int hodo_v;
-
-    //! Cherenkov sums
-    float C2_sum;
-    float C1;
-
-    //! has valid hodoscope?
-    bool valid_hodo_v;
-    bool valid_hodo_h;
-
-    //! has valid veto counter?
-    bool trigger_veto_pass;
-
-    //! Good electrons?
-    bool good_e;
-
-    //! Good hadron and muons?
-    bool good_anti_e;
-
-    //! 2C motion table positions
-    float beam_2CH_mm;
-    float beam_2CV_mm;
-
-    //! Turth beam position. Simulation only.
-    float truth_y;
-    float truth_z;
-
-    //! Sum energy of all towers
-    double sum_E_CEMC;
-    double sum_E_HCAL_OUT;
-    double sum_E_HCAL_IN;
-
-    ClassDef(Eval_Run, 10)
-  };
 
   class HCAL_Tower : public TObject
   {
@@ -247,11 +183,29 @@ class Proto4TowerCalib : public SubsysReco
   //! simple event counter
   unsigned long _ievent;
 
-  //! run infomation. To be copied to output TTree T
-  Eval_Run _eval_run;
-
   //! hcal infromation. To be copied to output TTree T
   HCAL_Tower _tower;
+
+  // TowerCalib Analysis
+  TFile *mFile_OutPut;
+  TChain *mChainInPut;
+  unsigned long _mStartEvent;
+  unsigned long _mStopEvent;
+  int _mInPut_flag;
+  std::string _mList;
+  std::string _mDet;
+  int _mCol;
+  float _mPedestal;
+
+  HCAL_Tower *_mTower;
+
+  TH1F *h_mHCAL[16];
+  float hcal_twr[16];
+  bool _is_sig[16];
+
+  bool is_sig(int colID);
+  int fill_sig(int colID);
+  int reset_pedestal();
 };
 
 #endif  // __Proto4TowerCalib_H__
