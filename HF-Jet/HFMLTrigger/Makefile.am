@@ -24,12 +24,15 @@ libHFMLTrigger_la_LIBADD = \
   -lphhepmc
 
 pkginclude_HEADERS = \
-	HFMLTriggerInterface.h
+	HFMLTriggerInterface.h\
+	HFMLTriggerHepMCTrigger.h
 #pkginclude_HEADERS = $(include_HEADERS)
 
 libHFMLTrigger_la_SOURCES = \
   HFMLTriggerInterface.C \
-  HFMLTriggerInterface_Dict.C 
+  HFMLTriggerInterface_Dict.C \
+  HFMLTriggerHepMCTrigger.C \
+  HFMLTriggerHepMCTrigger_Dict.C 
 
 # Rule for generating table CINT dictionaries.
 %_Dict.C: %.h %LinkDef.h
