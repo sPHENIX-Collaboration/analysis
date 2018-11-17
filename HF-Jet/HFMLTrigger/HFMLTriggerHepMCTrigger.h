@@ -17,6 +17,7 @@ class TH3F;
 
 class PHCompositeNode;
 class PHHepMCGenEventMap;
+class PdbParameterMap;
 
 namespace HepMC
 {
@@ -26,7 +27,7 @@ class GenEvent;
 class HFMLTriggerHepMCTrigger : public SubsysReco
 {
  public:
-  HFMLTriggerHepMCTrigger(std::string filename);
+  HFMLTriggerHepMCTrigger(const std::string &moduleName, const std::string &filename);
 
   int Init(PHCompositeNode *);
   int InitRun(PHCompositeNode *);
@@ -92,8 +93,10 @@ class HFMLTriggerHepMCTrigger : public SubsysReco
   int _embedding_id;
 
   PHHepMCGenEventMap *m_Geneventmap;
+  PdbParameterMap *m_Flags;
 
   TH1D *m_hNorm;
+  TH2F *m_DRapidity;
 };
 
 #endif  // __HFMLTriggerHepMCTrigger_H__

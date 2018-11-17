@@ -8,6 +8,8 @@
 
 #include <phool/PHCompositeNode.h>
 
+#include <pdbcalbase/PdbParameterMap.h>
+
 #include <g4main/PHG4Hit.h>
 #include <g4main/PHG4Particle.h>
 #include <g4main/PHG4TruthInfoContainer.h>
@@ -35,6 +37,7 @@
 #include <HepMC/GenEvent.h>
 #include <HepMC/GenRanges.h>
 #include <HepMC/GenVertex.h>
+#include <ffaobjects/FlagSavev1.h>
 #include <phhepmc/PHHepMCGenEvent.h>
 #include <phhepmc/PHHepMCGenEventMap.h>
 
@@ -61,8 +64,9 @@
 
 using namespace std;
 
-HFMLTriggerHepMCTrigger::HFMLTriggerHepMCTrigger(std::string filename)
-  : SubsysReco("HFMLTriggerHepMCTrigger")
+HFMLTriggerHepMCTrigger::HFMLTriggerHepMCTrigger(const std::string& moduleName,
+                                                 const std::string& filename)
+  : SubsysReco(moduleName)
   , _ievent(0)
   , m_RejectReturnCode(Fun4AllReturnCodes::ABORTEVENT)
   , _f(nullptr)
@@ -70,7 +74,9 @@ HFMLTriggerHepMCTrigger::HFMLTriggerHepMCTrigger(std::string filename)
   , _eta_max(1)
   , _embedding_id(1)
   , m_Geneventmap(nullptr)
+  , m_Flags(nullptr)
   , m_hNorm(nullptr)
+  , m_DRapidity(nullptr)
 {
   _foutname = filename;
 }
@@ -91,6 +97,9 @@ int HFMLTriggerHepMCTrigger::Init(PHCompositeNode* topNode)
 
   m_hNorm->GetXaxis()->LabelsOption("v");
 
+  m_DRapidity = new TH2F("hDRapidity",  //
+                         "hDRapidity;Rapidity of D0 meson;Accepted", 1000, -5, 5, 2, -.5, 1.5);
+
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
@@ -101,6 +110,24 @@ int HFMLTriggerHepMCTrigger::InitRun(PHCompositeNode* topNode)
   {
     std::cout << PHWHERE << " - Fatal error - missing node PHHepMCGenEventMap" << std::endl;
     return Fun4AllReturnCodes::ABORTRUN;
+  }
+
+  PHNodeIterator iter(topNode);
+
+  PHCompositeNode* dstNode = dynamic_cast<PHCompositeNode*>(iter.findFirst("PHCompositeNode", "DST"));
+  if (!dstNode)
+  {
+    cout << PHWHERE << "DST Node missing, doing nothing." << std::endl;
+    throw std::runtime_error(
+        "Failed to find DST node in RawTowerBuilder::CreateNodes");
+  }
+
+  m_Flags = findNode::getClass<PdbParameterMap>(dstNode, "HFMLTrigger_HepMCTriggerFlags");
+  if (m_Flags == nullptr)
+  {
+    m_Flags = new PdbParameterMap();
+
+    dstNode->addNode(new PHDataNode<PHObject>(m_Flags, "HFMLTrigger_HepMCTriggerFlags", "PHObject"));
   }
 
   return Fun4AllReturnCodes::EVENT_OK;
@@ -121,7 +148,7 @@ int HFMLTriggerHepMCTrigger::process_event(PHCompositeNode* topNode)
 
   HepMC::GenEvent* theEvent = genevt->getEvent();
   assert(theEvent);
-  if (Verbosity())
+  if (Verbosity() >= VERBOSITY_MORE)
   {
     cout << "HFMLTriggerHepMCTrigger::process_event - process HepMC::GenEvent with signal_process_id = "
          << theEvent->signal_process_id();
@@ -162,6 +189,12 @@ int HFMLTriggerHepMCTrigger::process_event(PHCompositeNode* topNode)
 
       m_hNorm->Fill("D0", 1);
 
+      assert(m_DRapidity);
+      const double rapidity = 0.5 * log((p->momentum().e() + p->momentum().z()) /
+                                        (p->momentum().e() - p->momentum().z()));
+
+      m_DRapidity->Fill(rapidity, 0);
+
       const HepMC::GenVertex* decayVertex = p->end_vertex();
 
       int hasDecay1(0);
@@ -175,32 +208,26 @@ int HFMLTriggerHepMCTrigger::process_event(PHCompositeNode* topNode)
              ++diter)
 
         {
-          const HepMC::GenParticle* p = *piter;
-          assert(p);
+          const HepMC::GenParticle* pd = *diter;
+          assert(pd);
 
-          if (std::abs(p->pdg_id()) == daughter1PID)
+          if (Verbosity())
           {
-            if (Verbosity())
-            {
-              cout << "HFMLTriggerHepMCTrigger::process_event - Testing daughter particle 1: ";
-              p->print();
-              cout << endl;
-            }
+            cout << "HFMLTriggerHepMCTrigger::process_event - Testing daughter particle: ";
+            pd->print();
+            cout << endl;
+          }
 
-            const double eta = p->momentum().eta();
+          if (std::abs(pd->pdg_id()) == daughter1PID)
+          {
+            const double eta = pd->momentum().eta();
 
             if (eta > _eta_min and eta < _eta_max)
               ++hasDecay1;
           }
-          else if (std::abs(p->pdg_id()) == daughter2PID)
+          else if (std::abs(pd->pdg_id()) == daughter2PID)
           {
-            if (Verbosity())
-            {
-              cout << "HFMLTriggerHepMCTrigger::process_event - Testing daughter particle 2: ";
-              p->print();
-              cout << endl;
-            }
-            const double eta = p->momentum().eta();
+            const double eta = pd->momentum().eta();
 
             if (eta > _eta_min and eta < _eta_max)
               ++hasDecay2;
@@ -214,6 +241,8 @@ int HFMLTriggerHepMCTrigger::process_event(PHCompositeNode* topNode)
           m_hNorm->Fill("D0->PiK", 1);
 
           acceptEvent = true;
+
+          m_DRapidity->Fill(rapidity, 1);
         }
 
       }  //      if (decayVertex)
@@ -233,9 +262,29 @@ int HFMLTriggerHepMCTrigger::process_event(PHCompositeNode* topNode)
   {
     cout << "HFMLTriggerHepMCTrigger::process_event - acceptEvent = " << acceptEvent;
     cout << endl;
+
+    if (acceptEvent)
+    {
+      cout << "HFMLTriggerHepMCTrigger::process_event - processed HepMC::GenEvent with signal_process_id = "
+           << theEvent->signal_process_id();
+      if (theEvent->signal_process_vertex())
+      {
+        cout << " and signal_process_vertex : ";
+        theEvent->signal_process_vertex()->print();
+      }
+      cout << "  - Event record:" << endl;
+      theEvent->print();
+    }
   }
+
+  assert(m_Flags);
+  m_Flags->set_int_param(Name(), acceptEvent);
+
   if (acceptEvent)
+  {
+    m_hNorm->Fill("Accepted", 1);
     return Fun4AllReturnCodes::EVENT_OK;
+  }
   else
     return m_RejectReturnCode;
 }
