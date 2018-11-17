@@ -45,6 +45,10 @@
 #include <TString.h>
 #include <TTree.h>
 
+#include <rapidjson/document.h>
+#include <rapidjson/ostreamwrapper.h>
+#include <rapidjson/prettywriter.h>
+
 #include <boost/format.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
@@ -193,90 +197,101 @@ int HFMLTriggerInterface::process_event(PHCompositeNode* topNode)
   }
 
   // property tree preparation
-  using boost::property_tree::ptree;
-  ptree pt;
+  //  using boost::property_tree::ptree;
+  //  ptree pt;
 
-  auto loadCoordinate = [](double x, double y, double z) {
-    ptree vertexTree;
+  rapidjson::Document d;
+  d.SetObject();
+  rapidjson::Document::AllocatorType& alloc = d.GetAllocator();
 
-    ptree vertexX;
-    vertexX.put("", x);
-    vertexTree.push_back(make_pair("", vertexX));
+  auto loadCoordinate = [&](double x, double y, double z) {
+    //    ptree vertexTree;
+    rapidjson::Value vertexTree(rapidjson::kObjectType);
 
-    ptree vertexY;
-    vertexY.put("", y);
-    vertexTree.push_back(make_pair("", vertexY));
+    //    ptree vertexX;
+    //    vertexX.put("", x);
+    //    vertexTree.push_back(make_pair("", vertexX));
 
-    ptree vertexZ;
-    vertexZ.put("", z);
-    vertexTree.push_back(make_pair("", vertexZ));
+    //    ptree vertexY;
+    //    vertexY.put("", y);
+    //    vertexTree.push_back(make_pair("", vertexY));
+
+    //    ptree vertexZ;
+    //    vertexZ.put("", z);
+    //    vertexTree.push_back(make_pair("", vertexZ));
+
+    vertexTree.PushBack(x, alloc).PushBack(y, alloc).PushBack(z, alloc);
 
     return vertexTree;
   };
 
   // Create a root
-  ptree pTree;
+  //  ptree pTree;
 
   // meta data
-  ptree metaTree;
+  //  ptree metaTree;
+  rapidjson::Value metaTree(rapidjson::kObjectType);
 
-  metaTree.put("Description", "These are meta data for this event. Not intended to use in ML algorithm");
-  metaTree.put("EventID", _ievent);
-  metaTree.put("Unit", "cm");
-  metaTree.add_child("CollisionVertex",
+  metaTree.AddMember("Description", "These are meta data for this event. Not intended to use in ML algorithm", alloc);
+  metaTree.AddMember("EventID", _ievent, alloc);
+  metaTree.AddMember("Unit", "cm", alloc);
+  metaTree.AddMember("CollisionVertex",
                      loadCoordinate(genevt->get_collision_vertex().x(),
                                     genevt->get_collision_vertex().y(),
-                                    genevt->get_collision_vertex().z()));
+                                    genevt->get_collision_vertex().z()),
+                     alloc);
 
-  metaTree.put("Layer_Count", _nlayers_maps);
-  metaTree.put("PixelHalfLayerIndex_Count", _nlayers_maps * 2);
-
-  //  hitIDTree.put("PixelPhiIndex", pixelPhiIndex);
-  //  hitIDTree.put("PixelZIndex", pixelZIndex);
-  //
-  //  hitIDTree.put("Layer", layer);
-  //  hitIDTree.put("HalfLayer", halflayer);
-  //  hitIDTree.put("Stave", cell->get_stave_index());
-  //  hitIDTree.put("HalfStave", cell->get_half_stave_index());
-  //  hitIDTree.put("Module", cell->get_module_index());
-  //  hitIDTree.put("Chip", cell->get_chip_index());
-  //  hitIDTree.put("Pixel", cell->get_pixel_index());
+  metaTree.AddMember("Layer_Count", _nlayers_maps, alloc);
+  metaTree.AddMember("PixelHalfLayerIndex_Count", _nlayers_maps * 2, alloc);
 
   for (unsigned int layer = 0; layer < _nlayers_maps; ++layer)
   {
     PHG4CylinderGeom_MAPS* geom = dynamic_cast<PHG4CylinderGeom_MAPS*>(m_Geoms->GetLayerGeom(layer));
     assert(geom);
 
-    ptree layerDescTree;
+    //    ptree layerDescTree;
+    rapidjson::Value layerDescTree(rapidjson::kObjectType);
 
     static const unsigned int nChip(9);
 
-    layerDescTree.put("PixelPhiIndexInLayer_Count", geom->get_N_staves() * geom->get_NX());
-    layerDescTree.put("PixelPhiIndexInHalfLayer_Count", geom->get_N_staves() * geom->get_NX() / 2);
-    layerDescTree.put("PixelZIndex_Count", nChip * geom->get_NZ());
-    layerDescTree.put("HalfLayer_Count", 2);
-    layerDescTree.put("Stave_Count", geom->get_N_staves());
-    layerDescTree.put("Chip_Count", nChip);
-    layerDescTree.put("Pixel_Count", geom->get_NX() * geom->get_NZ());
+    layerDescTree.AddMember("PixelPhiIndexInLayer_Count", geom->get_N_staves() * geom->get_NX(), alloc);
+    layerDescTree.AddMember("PixelPhiIndexInHalfLayer_Count", geom->get_N_staves() * geom->get_NX() / 2, alloc);
+    layerDescTree.AddMember("PixelZIndex_Count", nChip * geom->get_NZ(), alloc);
+    layerDescTree.AddMember("HalfLayer_Count", 2, alloc);
+    layerDescTree.AddMember("Stave_Count", geom->get_N_staves(), alloc);
+    layerDescTree.AddMember("Chip_Count", nChip, alloc);
+    layerDescTree.AddMember("Pixel_Count", geom->get_NX() * geom->get_NZ(), alloc);
 
-    metaTree.add_child(str(boost::format{"Layer%1%"} % layer), layerDescTree);
+//    metaTree.AddMember(
+//        str(boost::format{"Layer%1%"} % layer).c_str(),
+//        layerDescTree, alloc);
+    rapidjson::Value keyName(str(boost::format{"Layer%1%"} % layer).c_str(),alloc);
+    metaTree.AddMember(keyName,
+        layerDescTree, alloc);
   }
 
-  ptree truthTriggerFlagTree;
-  truthTriggerFlagTree.put("Description", "These are categorical true/false MonteCalo truth tags for the event. These are only known in training sample. This would be trigger output in real data processing.");
-  truthTriggerFlagTree.put("ExampleSignal1", true);
-  truthTriggerFlagTree.put("ExampleSignal2", false);
+  //  ptree truthTriggerFlagTree;
+  rapidjson::Value truthTriggerFlagTree(rapidjson::kObjectType);
+
+  truthTriggerFlagTree.AddMember("Description",
+                                 "These are categorical true/false MonteCalo truth tags for the event. These are only known in training sample. This would be trigger output in real data processing.",
+                                 alloc);
+  truthTriggerFlagTree.AddMember("ExampleSignal1", true, alloc);
+  truthTriggerFlagTree.AddMember("ExampleSignal2", false, alloc);
 
   // Raw hits
-  ptree rawHitTree;
-  rawHitTree.put("Description",
-                 "Raw data in the event in an unordered set of hit ID. To help in visualization stage, the coordinate of the hit is also appended. These would be input in real data.");
+  //  ptree rawHitTree;
+  rapidjson::Value rawHitTree(rapidjson::kObjectType);
+  rawHitTree.AddMember("Description",
+                       "Raw data in the event in an unordered set of hit ID. To help in visualization stage, the coordinate of the hit is also appended. These would be input in real data.",
+                       alloc);
 
   //  rawHitTree.put("LayerRage", "0-2");
 
-  ptree rawHitsTree;
+  //  ptree rawHitsTree;
+  rapidjson::Value rawHitsTree(rapidjson::kArrayType);
 
-  set<unsigned int> mapsHits;
+  set<unsigned int> mapsHits;  //internal consistency check for later stages of truth tracks
   assert(m_hitMap);
   for (SvtxHitMap::Iter iter = m_hitMap->begin();
        iter != m_hitMap->end();
@@ -312,32 +327,35 @@ int HFMLTriggerInterface::process_event(PHCompositeNode* topNode)
           cell->get_stave_index() * geom->get_NX() / 2 + pixel_x % (geom->get_NX() / 2));
       unsigned int pixelZIndex(cell->get_chip_index() * geom->get_NZ() + pixel_z);
 
-      ptree hitTree;
+      //      ptree hitTree;
+      rapidjson::Value hitTree(rapidjson::kObjectType);
 
-      ptree hitIDTree;
-      hitIDTree.put("HitSequenceInEvent", hitID);
+      //      ptree hitIDTree;
+      rapidjson::Value hitIDTree(rapidjson::kObjectType);
+      hitIDTree.AddMember("HitSequenceInEvent", hitID, alloc);
 
-      hitIDTree.put("PixelHalfLayerIndex", halfLayerIndex);
-      hitIDTree.put("PixelPhiIndexInLayer", pixelPhiIndex);
-      hitIDTree.put("PixelPhiIndexInHalfLayer", pixelPhiIndexHL);
-      hitIDTree.put("PixelZIndex", pixelZIndex);
+      hitIDTree.AddMember("PixelHalfLayerIndex", halfLayerIndex, alloc);
+      hitIDTree.AddMember("PixelPhiIndexInLayer", pixelPhiIndex, alloc);
+      hitIDTree.AddMember("PixelPhiIndexInHalfLayer", pixelPhiIndexHL, alloc);
+      hitIDTree.AddMember("PixelZIndex", pixelZIndex, alloc);
 
-      hitIDTree.put("Layer", layer);
-      hitIDTree.put("HalfLayer", halflayer);
-      hitIDTree.put("Stave", cell->get_stave_index());
+      hitIDTree.AddMember("Layer", layer, alloc);
+      hitIDTree.AddMember("HalfLayer", halflayer, alloc);
+      hitIDTree.AddMember("Stave", cell->get_stave_index(), alloc);
       //      hitIDTree.put("HalfStave", cell->get_half_stave_index());
       //      hitIDTree.put("Module", cell->get_module_index());
-      hitIDTree.put("Chip", cell->get_chip_index());
-      hitIDTree.put("Pixel", cell->get_pixel_index());
-      hitTree.add_child("ID", hitIDTree);
+      hitIDTree.AddMember("Chip", cell->get_chip_index(), alloc);
+      hitIDTree.AddMember("Pixel", cell->get_pixel_index(), alloc);
+      hitTree.AddMember("ID", hitIDTree, alloc);
 
-      hitTree.add_child("Coordinate",
+      hitTree.AddMember("Coordinate",
                         loadCoordinate(world_coords.x(),
                                        world_coords.y(),
-                                       world_coords.z()));
+                                       world_coords.z()),
+                        alloc);
 
-//      rawHitsTree.add_child("MVTXHit", hitTree);
-      rawHitsTree.push_back(make_pair("", hitTree));
+      //      rawHitsTree.add_child("MVTXHit", hitTree);
+      rawHitsTree.PushBack(hitTree, alloc);
 
       m_hitStaveLayer->Fill(cell->get_stave_index(), halfLayerIndex);
       m_hitModuleHalfStave->Fill(cell->get_module_index(), cell->get_half_stave_index());
@@ -350,15 +368,18 @@ int HFMLTriggerInterface::process_event(PHCompositeNode* topNode)
     }  //    if (layer < _nlayers_maps)
 
   }  //   for (SvtxHitMap::Iter iter = m_hitMap->begin();
-  rawHitTree.add_child("MVTXHits", rawHitsTree);
+  rawHitTree.AddMember("MVTXHits", rawHitsTree, alloc);
 
   // Truth hits
-  ptree truthHitTree;
-  truthHitTree.put("Description", "From the MonteCalo truth information, pairs of track ID and subset of RawHit that belong to the track. These are not presented in real data. The track ID is arbitary.");
+  //  ptree truthHitTree;
+  rapidjson::Value truthHitTree(rapidjson::kObjectType);
+  truthHitTree.AddMember("Description", "From the MonteCalo truth information, pairs of track ID and subset of RawHit that belong to the track. These are not presented in real data. The track ID is arbitary.",
+                         alloc);
 
   assert(m_truthInfo);
 
-  ptree truthTracksTree;
+  //  ptree truthTracksTree;
+  rapidjson::Value truthTracksTree(rapidjson::kArrayType);
 
   PHG4TruthInfoContainer::ConstRange range = m_truthInfo->GetPrimaryParticleRange();
   for (PHG4TruthInfoContainer::ConstIterator iter = range.first;
@@ -370,7 +391,8 @@ int HFMLTriggerInterface::process_event(PHCompositeNode* topNode)
 
     std::set<SvtxCluster*> g4clusters = clustereval->all_clusters_from(g4particle);
 
-    ptree trackHitTree;
+    //    ptree trackHitTree;
+    rapidjson::Value trackHitTree(rapidjson::kArrayType);
     unsigned int nMAPS(0);
 
     for (const SvtxCluster* cluster : g4clusters)
@@ -389,9 +411,9 @@ int HFMLTriggerInterface::process_event(PHCompositeNode* topNode)
           unsigned int hitID = *hiter;
           assert(mapsHits.find(hitID) != mapsHits.end());
 
-          ptree hitIDTree;
-          hitIDTree.put("", hitID);
-          trackHitTree.push_back(make_pair("", hitIDTree));
+          //          ptree hitIDTree;
+          //          hitIDTree.put("", hitID);
+          trackHitTree.PushBack(hitID, alloc);
         }
       }
 
@@ -399,37 +421,51 @@ int HFMLTriggerInterface::process_event(PHCompositeNode* topNode)
 
     if (nMAPS > 1)
     {
-      ptree trackTree;
-      trackTree.put("TrackSequenceInEvent", g4particle->get_track_id());
-      trackTree.add_child("HitSequenceInEvent", trackHitTree);
+      //      ptree trackTree;
+      rapidjson::Value trackTree(rapidjson::kObjectType);
+      trackTree.AddMember("TrackSequenceInEvent", g4particle->get_track_id(), alloc);
+      trackTree.AddMember("HitSequenceInEvent", trackHitTree, alloc);
 
-      trackTree.put("ParticleTypeID", g4particle->get_pid());
-      trackTree.add_child("TrackMomentum",
+      trackTree.AddMember("ParticleTypeID", g4particle->get_pid(), alloc);
+      trackTree.AddMember("TrackMomentum",
                           loadCoordinate(g4particle->get_px(),
                                          g4particle->get_py(),
-                                         g4particle->get_pz()));
+                                         g4particle->get_pz()),
+                          alloc);
       //      trackTree.put("TrackDCA3DXY", track->get_dca3d_xy());
       //      trackTree.put("TrackDCA3DZ", track->get_dca3d_z());
 
       //      trackTree.add_child("TruthHit", trackHitTree);
 
-//      truthTracksTree.add_child("TruthTrack", trackTree);
-      truthTracksTree.push_back(make_pair("", trackTree));
+      //      truthTracksTree.add_child("TruthTrack", trackTree);
+      truthTracksTree.PushBack(trackTree, alloc);
     }  //      if (nMAPS > 1)
 
   }  //  for (PHG4TruthInfoContainer::ConstIterator iter = range.first;
-  truthHitTree.add_child("TruthTracks", truthTracksTree);
+  truthHitTree.AddMember("TruthTracks", truthTracksTree, alloc);
 
   //output
-  pTree.add_child("MetaData", metaTree);
-  pTree.add_child("TruthTriggerFlag", truthTriggerFlagTree);
-  pTree.add_child("RawHit", rawHitTree);
-  pTree.add_child("TruthHit", truthHitTree);
+  d.AddMember("MetaData", metaTree, alloc);
+  d.AddMember("TruthTriggerFlag", truthTriggerFlagTree, alloc);
+  d.AddMember("RawHit", rawHitTree, alloc);
+  d.AddMember("TruthHit", truthHitTree, alloc);
 
   assert(m_jsonOut.is_open());
-  write_json(m_jsonOut, pTree);
+
+  if (_ievent > 0)
+  {
+    m_jsonOut << "," << endl;
+  }
+
+  //  write_json(m_jsonOut, pTree);
   //  write_xml(m_jsonOut, jsonTree);
-  m_jsonOut << "," << endl;
+
+  //  d.AddMember("Test", 1, d.GetAllocator());
+
+  rapidjson::OStreamWrapper osw(m_jsonOut);
+  rapidjson::PrettyWriter<rapidjson::OStreamWrapper> writer(osw);
+
+  d.Accept(writer);
 
   ++_ievent;
 

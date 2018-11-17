@@ -4,7 +4,8 @@ INCLUDES = \
   -I$(includedir) \
   -I$(OFFLINE_MAIN)/include \
   -I$(OFFLINE_MAIN)/include/eigen3 \
-  -I`root-config --incdir`
+  -I`root-config --incdir` \
+  -I/opt/sphenix/core/rapidjson/include
 
 lib_LTLIBRARIES = \
    libHFMLTrigger.la
@@ -13,7 +14,8 @@ AM_CXXFLAGS = -Wall -Werror -msse2
 
 libHFMLTrigger_la_LDFLAGS = \
   -L$(libdir) \
-  -L$(OFFLINE_MAIN)/lib
+  -L$(OFFLINE_MAIN)/lib \
+  -L/opt/sphenix/core/rapidjson/lib
 
 libHFMLTrigger_la_LIBADD = \
   -lfun4all \
