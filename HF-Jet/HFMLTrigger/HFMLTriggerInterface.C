@@ -206,7 +206,7 @@ int HFMLTriggerInterface::process_event(PHCompositeNode* topNode)
 
   auto loadCoordinate = [&](double x, double y, double z) {
     //    ptree vertexTree;
-    rapidjson::Value vertexTree(rapidjson::kObjectType);
+    rapidjson::Value vertexTree(rapidjson::kArrayType);
 
     //    ptree vertexX;
     //    vertexX.put("", x);
