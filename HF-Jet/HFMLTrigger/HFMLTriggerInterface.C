@@ -5,6 +5,7 @@
 #include <phool/PHTimeServer.h>
 #include <phool/PHTimer.h>
 #include <phool/getClass.h>
+#include <pdbcalbase/PdbParameterMap.h>
 
 #include <phool/PHCompositeNode.h>
 
@@ -73,6 +74,7 @@ HFMLTriggerInterface::HFMLTriggerInterface(std::string filename)
   , m_hitMap(nullptr)
   , m_Geoms(nullptr)
   , m_truthInfo(nullptr)
+  , m_Flags(nullptr)
   , m_hitStaveLayer(nullptr)
   , m_hitModuleHalfStave(nullptr)
   , m_hitChipModule(nullptr)
@@ -141,6 +143,12 @@ int HFMLTriggerInterface::InitRun(PHCompositeNode* topNode)
   {
     std::cout << PHWHERE << "ERROR: Can't find node G4TruthInfo" << std::endl;
     return Fun4AllReturnCodes::ABORTRUN;
+  }
+
+  m_Flags = findNode::getClass<PdbParameterMap>(topNode, "HFMLTrigger_HepMCTriggerFlags");
+  if (!m_Flags)
+  {
+    cout << "HFMLTriggerInterface::InitRun - WARNING - missing HFMLTrigger_HepMCTriggerFlags" << endl;
   }
 
   return Fun4AllReturnCodes::EVENT_OK;
@@ -262,12 +270,12 @@ int HFMLTriggerInterface::process_event(PHCompositeNode* topNode)
     layerDescTree.AddMember("Chip_Count", nChip, alloc);
     layerDescTree.AddMember("Pixel_Count", geom->get_NX() * geom->get_NZ(), alloc);
 
-//    metaTree.AddMember(
-//        str(boost::format{"Layer%1%"} % layer).c_str(),
-//        layerDescTree, alloc);
-    rapidjson::Value keyName(str(boost::format{"Layer%1%"} % layer).c_str(),alloc);
+    //    metaTree.AddMember(
+    //        str(boost::format{"Layer%1%"} % layer).c_str(),
+    //        layerDescTree, alloc);
+    rapidjson::Value keyName(str(boost::format{"Layer%1%"} % layer).c_str(), alloc);
     metaTree.AddMember(keyName,
-        layerDescTree, alloc);
+                       layerDescTree, alloc);
   }
 
   //  ptree truthTriggerFlagTree;
@@ -276,8 +284,22 @@ int HFMLTriggerInterface::process_event(PHCompositeNode* topNode)
   truthTriggerFlagTree.AddMember("Description",
                                  "These are categorical true/false MonteCalo truth tags for the event. These are only known in training sample. This would be trigger output in real data processing.",
                                  alloc);
-  truthTriggerFlagTree.AddMember("ExampleSignal1", true, alloc);
-  truthTriggerFlagTree.AddMember("ExampleSignal2", false, alloc);
+  //    truthTriggerFlagTree.AddMember("ExampleSignal1", true, alloc);
+  //    truthTriggerFlagTree.AddMember("ExampleSignal2", false, alloc);
+
+  if (m_Flags)
+  {
+    auto range = m_Flags->get_iparam_iters();
+
+    for (auto flagIter = range.first; flagIter != range.second; ++flagIter)
+    {
+      const string& name = flagIter->first;
+      rapidjson::Value keyName(name.c_str(), alloc);
+      const bool flag = flagIter->second > 0 ? true : false;
+
+      truthTriggerFlagTree.AddMember(keyName, flag, alloc);
+    }
+  }
 
   // Raw hits
   //  ptree rawHitTree;

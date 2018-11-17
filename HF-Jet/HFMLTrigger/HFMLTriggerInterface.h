@@ -20,6 +20,7 @@ class PHG4CylinderGeomContainer;
 class PHG4TruthInfoContainer;
 class SvtxHitMap;
 class SvtxEvalStack;
+class PdbParameterMap;
 
 namespace HepMC
 {
@@ -98,6 +99,7 @@ class HFMLTriggerInterface : public SubsysReco
   SvtxHitMap *m_hitMap;
   PHG4CylinderGeomContainer *m_Geoms;
   PHG4TruthInfoContainer *m_truthInfo;
+  PdbParameterMap *m_Flags;
 
   TH2F *m_hitStaveLayer;
   TH2F *m_hitModuleHalfStave;
@@ -107,6 +109,7 @@ class HFMLTriggerInterface : public SubsysReco
   TH3F *m_hitPixelPhiMap;
   TH3F *m_hitPixelPhiMapHL;
   TH3F *m_hitPixelZMap;
+
 };
 
 #endif  // __HFMLTriggerInterface_H__
