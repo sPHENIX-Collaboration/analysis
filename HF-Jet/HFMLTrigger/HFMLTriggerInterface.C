@@ -286,21 +286,21 @@ int HFMLTriggerInterface::process_event(PHCompositeNode* topNode)
                                  alloc);
   //    truthTriggerFlagTree.AddMember("ExampleSignal1", true, alloc);
   //    truthTriggerFlagTree.AddMember("ExampleSignal2", false, alloc);
-  rapidjson::Value flagsTree(rapidjson::kArrayType);
+  rapidjson::Value flagsTree(rapidjson::kObjectType);
   if (m_Flags)
   {
     auto range = m_Flags->get_iparam_iters();
 
     for (auto flagIter = range.first; flagIter != range.second; ++flagIter)
     {
-      rapidjson::Value aFlag(rapidjson::kObjectType);
+//      rapidjson::Value aFlag(rapidjson::kObjectType);
 
       const string& name = flagIter->first;
       rapidjson::Value keyName(name.c_str(), alloc);
       const bool flag = flagIter->second > 0 ? true : false;
 
-      aFlag.AddMember(keyName, flag, alloc);
-      flagsTree.PushBack(aFlag, alloc);
+      flagsTree.AddMember(keyName, flag, alloc);
+//      flagsTree.PushBack(aFlag, alloc);
     }
   }
   truthTriggerFlagTree.AddMember("Flags", flagsTree, alloc);
