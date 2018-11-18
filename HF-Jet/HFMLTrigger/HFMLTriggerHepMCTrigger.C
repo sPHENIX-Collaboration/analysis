@@ -1,6 +1,7 @@
 #include "HFMLTriggerHepMCTrigger.h"
 
 #include <fun4all/Fun4AllReturnCodes.h>
+#include <phhepmc/PHGenIntegral.h>
 #include <phool/PHCompositeNode.h>
 #include <phool/PHTimeServer.h>
 #include <phool/PHTimer.h>
@@ -90,6 +91,7 @@ int HFMLTriggerHepMCTrigger::Init(PHCompositeNode* topNode)
   m_hNorm = new TH1D("hNormalization",  //
                      "Normalization;Items;Summed quantity", 10, .5, 10.5);
   int i = 1;
+  m_hNorm->GetXaxis()->SetBinLabel(i++, "IntegratedLumi");
   m_hNorm->GetXaxis()->SetBinLabel(i++, "Event");
   m_hNorm->GetXaxis()->SetBinLabel(i++, "D0");
   m_hNorm->GetXaxis()->SetBinLabel(i++, "D0->PiK");
@@ -291,6 +293,13 @@ int HFMLTriggerHepMCTrigger::process_event(PHCompositeNode* topNode)
 
 int HFMLTriggerHepMCTrigger::End(PHCompositeNode* topNode)
 {
+  PHGenIntegral* integral_node = findNode::getClass<PHGenIntegral>(topNode, "PHGenIntegral");
+  if (integral_node)
+  {
+    assert(m_hNorm);
+    m_hNorm->Fill("IntegratedLumi", integral_node->get_Integrated_Lumi());
+  }
+
   if (_f)
   {
     _f->cd();
