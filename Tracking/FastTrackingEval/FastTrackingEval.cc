@@ -106,7 +106,7 @@ int FastTrackingEval::Init(PHCompositeNode *topNode) {
 //----------------------------------------------------------------------------//
 int FastTrackingEval::process_event(PHCompositeNode *topNode) {
 	_event++;
-	if (verbosity >= 2 and _event % 1000 == 0)
+	if (Verbosity() >= 2 and _event % 1000 == 0)
 		cout << PHWHERE << "Events processed: " << _event << endl;
 	
 	//std::cout << "Opening nodes" << std::endl;

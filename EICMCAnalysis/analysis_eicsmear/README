@@ -20,3 +20,14 @@ Macros in this repository:
 * eic_sphenix_dis_countbins.C	:	Count entries in each x-Q2 bin and plot x-Q2 acceptance, as well as g1 uncertainty in each bin.
 
 * eic_sphenix_sidis_countbins.C	:	Count entries in each kinematics bin for SIDIS events.
+
+
+++++++++++++++++++++++++++++++
+
+Steps to calculate projected uncertainties on g1 and A1:
+
+./eic_sphenix_fill_xq2 output/x_q2_pythia_ep.root data/pythia_ep.root data/pythia_ep.smear.root
+
+root -b -q calculate_g1_projection_per_bin.C\(\"output/x_q2_pythia_ep.root\"\)
+
+root -l plot_g1_projection.C\(\"output/eic_sphenix_dis_tree.root\"\)

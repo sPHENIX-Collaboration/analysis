@@ -50,7 +50,7 @@ Proto4ShowerCalib::Proto4ShowerCalib(const std::string &filename)
   , _filename(filename)
   , _ievent(0)
 {
-  verbosity = 1;
+  Verbosity(1);
 
   _eval_run.reset();
   _shower.reset();
@@ -82,7 +82,7 @@ Proto4ShowerCalib::get_HistoManager()
 
 int Proto4ShowerCalib::InitRun(PHCompositeNode *topNode)
 {
-  if (verbosity)
+  if (Verbosity())
     cout << "Proto4ShowerCalib::InitRun" << endl;
 
   _ievent = 0;
@@ -178,7 +178,7 @@ int Proto4ShowerCalib::Init(PHCompositeNode *topNode)
 
 int Proto4ShowerCalib::process_event(PHCompositeNode *topNode)
 {
-  if (verbosity > 2)
+  if (Verbosity() > 2)
     cout << "Proto4ShowerCalib::process_event() entered" << endl;
 
   // init eval objects
@@ -227,7 +227,7 @@ int Proto4ShowerCalib::process_event(PHCompositeNode *topNode)
     assert(eventheader);
 
     _eval_run.run = eventheader->get_RunNumber();
-    if (verbosity > 4)
+    if (Verbosity() > 4)
       cout << __PRETTY_FUNCTION__ << _eval_run.run << endl;
 
     _eval_run.event = eventheader->get_EvtSequence();
@@ -577,7 +577,9 @@ int Proto4ShowerCalib::process_event(PHCompositeNode *topNode)
     TH1F *h_hcal_total_calib = dynamic_cast<TH1F *>(hm->getHisto("h_hcal_total_calib"));
     assert(h_hcal_total_calib);
 
-    if(good_anti_e && hcalin_sum_lg_e_calib > 0.8 && hcalout_sum_lg_e_calib > 0.8)
+    // if(good_anti_e && hcalin_sum_lg_e_calib > 0.8 && hcalout_sum_lg_e_calib > 0.8)
+    if(good_anti_e && hcalin_sum_lg_e_calib < 0.8 && hcalout_sum_lg_e_calib > 0.8)
+    // if(hcalin_sum_lg_e_calib > 0.8 && hcalout_sum_lg_e_calib > 0.8)
     {
       h_hcal_total_calib->Fill(_shower.hcal_total_calib);
     }

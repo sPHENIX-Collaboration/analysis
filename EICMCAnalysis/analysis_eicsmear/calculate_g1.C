@@ -136,7 +136,7 @@ get_g1_value( double x_val, double Q2_val, double y_val, double mlepton=0.000511
   return 0;
 }
 
-/** Caluclate g1 tatistical uncertainty
+/** Caluclate g1 statistical uncertainty
  */
 double
 get_g1_sigma( double x_val, double Q2_val, double y_val, double N_val, double mlepton=0.000511 )
@@ -155,6 +155,28 @@ get_g1_sigma( double x_val, double Q2_val, double y_val, double N_val, double ml
   double g1_sig =  1. / (2 * x_val * (1 + R)) * F2 * A_parallel_sig / D;
 
   return g1_sig;
+}
+
+/** Caluclate A1 statistical uncertainty
+ */
+double
+get_A1_sigma( double x_val, double Q2_val, double y_val, double N_val, double mlepton=0.000511 )
+{
+  /* Calculate F1 */
+  double M = 0.938; // nucleon mass in GeV
+
+  double gamma2 = pow(( 2 * M * x_val ), 2) / Q2_val; // ?
+
+  double F2 = get_parametrization_F2(x_val, Q2_val);
+  double R = get_parametrization_R(x_val, Q2_val); // ratio of longitudinal and transverse photoabsorption cross section, R = simga_L / sigma_T
+
+  double F1 = ( ( 1 + gamma2 ) / ( 2 * x_val * ( 1 + R ) ) ) * F2;
+
+  /* Calculate A1 sigma (note: A1 = g1 / F1) */
+  double g1_sig = get_g1_sigma( x_val, Q2_val, y_val, N_val, mlepton );
+  double A1_sig = g1_sig / F1;
+
+  return A1_sig;
 }
 
 /** Printing values on screen
