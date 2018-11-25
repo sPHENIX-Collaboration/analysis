@@ -1,10 +1,9 @@
 #include <vector>
-int eicsmear_dvmp_tree(TString filename_mc = "/sphenix/user/gregtom3/data/Fall2018/JPsi_reco_studies/18x275_JPsi_reco.root",
-		       TString filename_mc_smeared = "/sphenix/user/gregtom3/data/Fall2018/JPsi_reco_studies/18x275_JPsi_reco.smear.root")
+int eicsmear_dvmp_tree(TString filename_mc = "/sphenix/user/gregtom3/data/Fall2018/JPsi_reco_studies/reconstructedQ2/18x275_DVMP_1M_ascii_converted.root",
+		       TString filename_mc_smeared = "/sphenix/user/gregtom3/data/Fall2018/JPsi_reco_studies/reconstructedQ2/18x275_DVMP_1M_ascii_converted.smear.root")
 {
 
   /* PRELIMINARY ROOT STUFF */
-  return 0;
 
   /* Loading libraries and setting sphenix style */
   gSystem->Load("libeicsmear");
@@ -23,10 +22,12 @@ int eicsmear_dvmp_tree(TString filename_mc = "/sphenix/user/gregtom3/data/Fall20
   
   /* Trees */
   TTree *tree = (TTree*)file_mc->Get("EICTree");
+  Double32_t Q2fromEICTree;
+  tree->SetBranchAddress("trueQ2",&Q2fromEICTree);
   TTree *tree_smeared= (TTree*)file_mc_smeared->Get("Smeared");
 
   /* Output File */
-  TFile *myfile = new TFile("/sphenix/user/gregtom3/data/Fall2018/JPsi_reco_studies/theEvents.root","RECREATE");
+  TFile *myfile = new TFile("/sphenix/user/gregtom3/data/Fall2018/JPsi_reco_studies/reconstructedQ2/analysisTree.root","RECREATE");
   /* Add friend */
   tree->AddFriend(tree_smeared);
 
@@ -47,7 +48,9 @@ int eicsmear_dvmp_tree(TString filename_mc = "/sphenix/user/gregtom3/data/Fall20
   Float_t invariant_reco_scatter;
   Float_t jpsi_px_truth, jpsi_py_truth, jpsi_pz_truth;
   Float_t jpsi_px_reco, jpsi_py_reco, jpsi_pz_reco;
-  Float_t Q2, t;
+  Double_t Q2;
+  
+  Float_t t;
   theTree->Branch("Q2",&Q2,"Event QSquared");
   theTree->Branch("t",&t,"Event t");
   theTree->Branch("de_phi_truth",&de_phi_truth,"Decay Electron Truth Phi");
@@ -123,7 +126,7 @@ int eicsmear_dvmp_tree(TString filename_mc = "/sphenix/user/gregtom3/data/Fall20
 
   tree->SetBranchAddress("event",&event);
   tree_smeared->SetBranchAddress("eventS", &eventS);
-
+  
   unsigned max_event = tree_smeared->GetEntries();
   std::vector<float> particle_eta;
       particle_eta.push_back(0);
@@ -186,7 +189,7 @@ int eicsmear_dvmp_tree(TString filename_mc = "/sphenix/user/gregtom3/data/Fall20
       true_particle_pt.push_back(0);
       true_particle_pt.push_back(0);
       true_particle_pt.push_back(0);
-  for ( unsigned ievent = 0; ievent < max_event; ievent++ )
+  for ( unsigned ievent = 0; ievent < max_event/1000; ievent++ )
     {
       if ( ievent%1000 == 0 )
         cout << "Processing event " << ievent << endl;
@@ -194,7 +197,7 @@ int eicsmear_dvmp_tree(TString filename_mc = "/sphenix/user/gregtom3/data/Fall20
       /* load event */
       tree->GetEntry(ievent);
       tree_smeared->GetEntry(ievent);
-
+      cout << Q2fromEICTree << endl;
      
       unsigned ntracks = eventS->GetNTracks();
       
@@ -364,10 +367,11 @@ int eicsmear_dvmp_tree(TString filename_mc = "/sphenix/user/gregtom3/data/Fall20
 	  
 
 	  // Event Kinematics
-	  Q2 = 2*18*true_particle_p.at(1)*(1-cos(3.14159265-2*atan(exp(-true_particle_eta.at(1)))));
-
+	  
+	  
 	  t = 2*275*true_particle_p.at(3)*(1-cos(2*atan(exp(-true_particle_eta.at(3)))));
 	}
+      
       de_phi_truth=true_particle_phi.at(0);
       de_eta_truth=true_particle_eta.at(0);
       de_pt_truth=true_particle_pt.at(0);
