@@ -4,11 +4,12 @@
 // Scattered electron (KS=2)
 // Scattered proton (KS=1)
 // Decay electron and positron (KS=1)
-
-int convert_sartre2eictree(TString inputFile("18x275_sartre.txt"),
-			   TString outputFile("18x275_sartre.out")) 
-{ 
-    std::ifstream file(inputFile);
+// JPsi (KS=1)
+int convert_sartre2eictree()
+{
+  TString inputFile("18x275_DVMP_1M_ascii.out");
+  TString outputFile("18x275_DVMP_1M_ascii_converted.out");
+  std::ifstream file(inputFile);
 
 
    
@@ -23,11 +24,24 @@ int convert_sartre2eictree(TString inputFile("18x275_sartre.txt"),
       file_contents = str;
       if(file_contents.size()==0)
 	continue;
-      if(file_contents.at(0)=='U')
+      if(file_contents.at(0)=='F')
         {
-	  // New event
-	  // 1) Add the arbitrary event info
-	  output << get_arbitrary_event(event_count++);
+	  // Search for the Q2
+	  string tmp;            // A string to store the word on each iteration.
+	  stringstream str_strm(file_contents);
+	  vector<string> words;     // Create vector to hold our words
+	  
+	  int counter = 0;
+	  while (str_strm >> tmp) {
+	    if(counter==5)
+	      {
+		if(tmp.find("e")<tmp.length())
+		  tmp=tmp.replace(tmp.find("e"),1,"E");
+		break;
+	      }
+	    counter++;
+	  }
+	  output << get_arbitrary_event(event_count++,tmp);
 	  particle_count = 0;
 	  if(event_count%100==0)
 	    {
@@ -38,8 +52,9 @@ int convert_sartre2eictree(TString inputFile("18x275_sartre.txt"),
 	{
 	  // Found a particle
 	  // See if it is final state
-	  int index = file_contents.find(" 1 0 0 ");
-	  if(index>0)
+	  int index_jpsi = file_contents.find(" 443 ");
+	  int index_other = file_contents.find(" 1 0 0 ");
+	  if(index_jpsi>0||index_other>0)
 	    {
 	      output << ++particle_count;
 	      output << "\t";
@@ -64,7 +79,8 @@ int convert_sartre2eictree(TString inputFile("18x275_sartre.txt"),
 		  }
 		if(counter>=3&&counter<=7)
 		  {
-		    tmp=tmp.replace(tmp.find("e"),1,"E");
+		    if(tmp.find("e")<tmp.length())
+		      tmp=tmp.replace(tmp.find("e"),1,"E");
 		    output << tmp;
 		    output << "\t";
 		  }
@@ -74,7 +90,7 @@ int convert_sartre2eictree(TString inputFile("18x275_sartre.txt"),
 	      output << "0 \t 0 \t 0\n";
 	    }
 	}
-      if(particle_count==4)
+      if(particle_count==5)
 	{
 	  output<<" =============== Event finished =============== \n";
 	  particle_count=0;
@@ -88,11 +104,11 @@ int convert_sartre2eictree(TString inputFile("18x275_sartre.txt"),
   return 0;
 }
 
-std::string get_arbitrary_event(int x)
+std::string get_arbitrary_event(int x,string Q)
 {
   std::string alpha;
   stringstream ss;
-  ss << "0" << "\t" << x << "           5   1.00000000               0           0   7.56711757E-04   1.13123262      0.373815268      0.177931070       0.00000000       2.9 2728496       110.619263     -0.310856074\n ============================================\n";
+  ss << "0" << "\t" << x << "           5   1.00000000               0           0   7.56711757E-04   " << Q << "      0.373815268      0.177931070       0.00000000       2.9 2728496       110.619263     -0.310856074\n ============================================\n";
   alpha = ss.str();
   return alpha;
 }
