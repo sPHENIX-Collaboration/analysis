@@ -7,25 +7,21 @@
  * \date $Date: $
  */
 
-int
-Fun4All_TestBeam_HCAL_ShowerCalib(const int nEvents = 200000,
-    const char * inputFile =
-        // Let's take a look at run 668, which is -24 GeV/c secondary beam centered on EMCal tower 18.
-        // More runs are produced in data production: https://wiki.bnl.gov/sPHENIX/index.php/2018_calorimeter_beam_test/Data_Production_and_Analysis#Production_output
-        // "/sphenix/data/data02/sphenix/t1044/production/production_0322/beam_00000422-0000.root")
-        // "/sphenix/data/data02/sphenix/t1044/production/production_0322/beam_00000571-0000.root")
-        // "/sphenix/data/data02/sphenix/t1044/production/production_0322/beam_00001683-0000.root")
-        // "/sphenix/data/data02/sphenix/t1044/production/production_0322/beam_00001666-0000.root")
-        // "/sphenix/data/data02/sphenix/t1044/production/production_0322/beam_00001684-0000.root")
-        // "/sphenix/user/xusun/software/macros/macros/prototype4/data/beam_00000422.root")
-        "/sphenix/user/xusun/software/macros/macros/prototype4/data/beam_00001684.root")
+int Fun4All_TestBeam_HCAL_ShowerCalib(const int nEvents = 200000, const string runID = "0422")
+// int Fun4All_TestBeam_HCAL_ShowerCalib(const int nEvents = 1000, const string runID = "0422")
 {
 
   //---------------
   // Load libraries
   //---------------
   gSystem->Load("libPrototype4.so");
-  gSystem->Load("libProto4_HCalShowerCalib.so");
+  gSystem->Load("libfun4all.so");                                                                        
+  gSystem->Load("libg4detectors.so");
+  gSystem->Load("libphhepmc.so");
+  gSystem->Load("libg4testbench.so");
+  gSystem->Load("libg4hough.so");
+  gSystem->Load("libg4eval.so");
+
 
   //---------------
   // Fun4All server
@@ -38,25 +34,26 @@ Fun4All_TestBeam_HCAL_ShowerCalib(const int nEvents = 200000,
   // IO management
   //--------------
 
+  bool _is_sim = false;
+  // bool _is_sim = true;
   // Hits file
   Fun4AllInputManager *hitsin = new Fun4AllDstInputManager("DSTin");
-  hitsin->fileopen(inputFile);
+  std::string inputfile;
+  if(_is_sim) inputfile = Form("/sphenix/user/xusun/software/data/beam/beamsim/BeamTest_8GeV_%s.root",runID.c_str());
+  if(!_is_sim) inputfile= Form("/sphenix/data/data02/sphenix/t1044/production/production_0322/beam_0000%s-0000.root",runID.c_str());
+  hitsin->fileopen(inputfile);
 //  hitsin->AddListFile(inputFile); // you can also choose this and give a list of DST file names in the file.
   se->registerInputManager(hitsin);
 
-  //load your analysis module's lib
-  gSystem->Load("libProto4_HCalShowerCalib.so");
-
   //load your analysis module.
+  gSystem->Load("libProto4_HCalShowerCalib.so");
+  std::string outputfile;
+  if(_is_sim) outputfile = Form("/sphenix/user/xusun/software/data/beam/ShowerCalib/Proto4ShowerInfoSIM_%s.root",runID.c_str());
+  if(!_is_sim) outputfile = Form("/sphenix/user/xusun/software/data/beam/ShowerCalib/Proto4ShowerInfoRAW_%s.root",runID.c_str());
+
   // This one is an example defined in ../ExampleAnalysisModule/
-  Proto4ShowerCalib* hcal_ana = new Proto4ShowerCalib(
-      // "OutPut/Proto4ShowerCalib_422.root");
-      // "OutPut/Proto4ShowerCalib_571.root");
-      // "OutPut/Proto4ShowerCalib_1683.root");
-      // "OutPut/Proto4ShowerCalib_1666.root");
-      // "OutPut/Proto4ShowerCalib_1684.root");
-      // "OutPut/Proto4ShowerCalib_422_newCF.root");
-      "OutPut/Proto4ShowerCalib_1684_newCF.root");
+  Proto4ShowerCalib* hcal_ana = new Proto4ShowerCalib(outputfile.c_str());
+  hcal_ana->is_sim(_is_sim);
   se->registerSubsystem(hcal_ana);
 
   se->run(nEvents);

@@ -8,8 +8,9 @@
  */
 
 int
-Fun4All_TestBeam_HCAL_SampleFrac(const int nEvents = 1000, const int posID = 0, const int addID = 0, const string det = "HCALOUT")
+// Fun4All_TestBeam_HCAL_SampleFrac(const int nEvents = 1000, const int posID = 0, const int addID = 0, const string det = "HCALOUT")
 // Fun4All_TestBeam_HCAL_SampleFrac(const int nEvents = 1000, const int runID = 0, const string det = "HCALIN")
+Fun4All_TestBeam_HCAL_SampleFrac(const int nEvents = 100000, const string det = "HCALOUT")
 {
 
   //---------------
@@ -37,20 +38,22 @@ Fun4All_TestBeam_HCAL_SampleFrac(const int nEvents = 1000, const int posID = 0, 
 
   // Hits file
   Fun4AllInputManager *hitsin = new Fun4AllDstInputManager("DSTin");
-  std::string inputFile = Form("/sphenix/user/xusun/software/macros/macros/prototype4/data/Simulation/Cosmic_orig/Cosmic_%s_%d%d.root",det.c_str(),posID,addID);
+  // std::string inputFile = Form("/sphenix/user/xusun/software/macros/macros/prototype4/data/Simulation/Cosmic_orig/Cosmic_%s_%d%d.root",det.c_str(),posID,addID);
   // std::string inputFile = Form("/sphenix/user/xusun/software/macros/macros/prototype4/data/Simulation/Cosmic_Scint/Cosmic_%s_%d%d.root",det.c_str(),posID,addID);
   // std::string inputFile = Form("/sphenix/user/xusun/software/macros/macros/prototype4/data/Simulation/BeamTest_SF_orig/BeamTest_SF_%d.root",runID);
   // std::string inputFile = Form("/sphenix/user/xusun/software/macros/macros/prototype4/data/Simulation/BeamTest_SF_Scint/BeamTest_SF_%d.root",runID);
-  hitsin->fileopen(inputFile.c_str());
-//  hitsin->AddListFile(inputFile); // you can also choose this and give a list of DST file names in the file.
+  // hitsin->fileopen(inputFile.c_str());
+  std::string inputlist = "list/HCAL_Prototype4_SIM_SampleFrac.list";
+  hitsin->AddListFile(inputlist); // you can also choose this and give a list of DST file names in the file.
   se->registerInputManager(hitsin);
 
   //load your analysis module's lib
   gSystem->Load("libProto4_HCalSampleFrac.so");
 
   //load your analysis module.
-  std::string outputFile = Form("OutPut/SampleFrac/Proto4SampleFrac_%s_%d%d.root",det.c_str(),posID,addID);
-  // std::string outputFile = Form("OutPut/SampleFrac/Proto4SampleFrac_%s_%d.root",det.c_str(),runID);
+  // std::string outputFile = Form("/sphenix/user/xusun/software/data/beam/SampleFrac/Proto4SampleFrac_%s_%d%d.root",det.c_str(),posID,addID);
+  // std::string outputFile = Form("/sphenix/user/xusun/software/data/beam/SampleFrac/Proto4SampleFrac_%s_%d.root",det.c_str(),runID);
+  std::string outputFile = Form("/sphenix/user/xusun/software/data/beam/SampleFrac/Proto4SampleFrac_%s.root",det.c_str());
   Proto4SampleFrac* hcal_ana = new Proto4SampleFrac(det.c_str(),outputFile.c_str());
   se->registerSubsystem(hcal_ana);
 

@@ -712,7 +712,7 @@ int Proto4TowerCalib::MakeAna()
       }
       if( is_sig(_mCol) ) 
       {
-	cout << "i_event = " << i_event << ", is_sig " << is_sig(_mCol) << endl;
+	// cout << "i_event = " << i_event << ", is_sig " << is_sig(_mCol) << endl;
 	fill_sig(_mCol);
       }
       reset_pedestal();
