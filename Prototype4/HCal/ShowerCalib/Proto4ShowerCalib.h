@@ -57,6 +57,12 @@ class Proto4ShowerCalib : public SubsysReco
 
   int FinishAna();
 
+  void set_runID(std::string runID)
+  {
+    _mRunID = runID;
+  }
+
+
   class Eval_Run : public TObject
   {
    public:
@@ -243,12 +249,6 @@ class Proto4ShowerCalib : public SubsysReco
   //! is processing simulation files?
   bool _is_sim;
 
-  float samplefrac_in; // used by SIM
-  float samplefrac_out;
-
-  float towercalib_in[16]; // used by RAW
-  float towercalib_out[16];
-
   //! get manager of histograms
   Fun4AllHistoManager *
   get_HistoManager();
@@ -275,6 +275,7 @@ class Proto4ShowerCalib : public SubsysReco
   unsigned long _mStopEvent;
   int _mInPut_flag;
   std::string _mList;
+  std::string _mRunID;
 
   Eval_Run *_mInfo;
   HCAL_Tower *_mTower;
@@ -284,6 +285,22 @@ class Proto4ShowerCalib : public SubsysReco
   TH2F *h_mAsymmEnergy_pion_leveling;
   TH2F *h_mAsymmEnergy_pion_scaling;
   TH2F *h_mAsymmEnergy_pion_ShowerCalib;
+
+  int getChannelNumber(int column, int row);
+  int setTowerCalibParas();
+
+  // correction factors
+  // const double samplefrac_in = 0.09267; // used by SIM and RAW
+  // const double samplefrac_out = 0.02862;
+  const double samplefrac_in = 0.0631283; // used by SIM and RAW
+  const double samplefrac_out = 0.0338021;
+
+  double towercalib_lg_in[16];
+  double towercalib_lg_out[16];
+  double towercalib_hg_out[16];
+
+
+  // used by RAW
 };
 
 #endif  // __Proto4ShowerCalib_H__
