@@ -110,29 +110,31 @@ Smear::Detector BuildEicSphenix() {
 
   /* Create mRICH detector parameterization */
 
-  Smear::Acceptance::Zone zone_dRICH( eta2theta( 3.95 ), eta2theta( 1.24 ));
+  //dRICH parameterization is available for studies, but the current design in the 2018 Detector Design Study only used h-side mRICH, e-side mRICH, DIRC and gas RICH, so the dRICH is commented out here
+  /*Smear::Acceptance::Zone zone_dRICH( eta2theta( 3.95 ), eta2theta( 1.24 ));
   Smear::ParticleID dRICH_KPi("PIDMatrixFiles/dRICH_KPiPIDMatrix.dat");
   Smear::ParticleID dRICH_ePi("PIDMatrixFiles/dRICH_ePiPIDMatrix.dat");
   dRICH_KPi.Accept.AddZone(zone_dRICH);
-  dRICH_ePi.Accept.AddZone(zone_dRICH);
+  dRICH_ePi.Accept.AddZone(zone_dRICH);*/
 
-  //only implement gas RICH for e/pi separation, since the dRICH already covers the momentum and pseudorapidity range for K/pi separation
   Smear::Acceptance::Zone zone_gasRICH( eta2theta( 3.95 ), eta2theta( 1.24 ));
-  Smear::ParticleID gasRICH("PIDMatrixFiles/gasRICH_PIDMatrix.dat");
-  gasRICH.Accept.AddZone(zone_gasRICH);
+  Smear::ParticleID gasRICH_KPi("PIDMatrixFiles/gasRICH_KPiPIDMatrix.dat");
+  Smear::ParticleID gasRICH_ePi("PIDMatrixFiles/gasRICH_ePiPIDMatrix.dat");
+  gasRICH_KPi.Accept.AddZone(zone_gasRICH);
+  gasRICH_ePi.Accept.AddZone(zone_gasRICH);
 
-  Smear::Acceptance::Zone zone_hside_mRICH( eta2theta( 1.24 ), eta2theta( 1.10 ));
-  Smear::ParticleID hside_mRICH_KPi("PIDMatrixFiles/hside_mRICH_KPiPIDMatrix.dat");
+  Smear::Acceptance::Zone zone_hside_mRICH( eta2theta( 1.85 ), eta2theta( 1.10 ));
+  Smear::ParticleID hside_mRICH_KPi("PIDMatrixFiles/mRICH_KPiPIDMatrix.dat");
   Smear::ParticleID hside_mRICH_ePi("PIDMatrixFiles/mRICH_ePiPIDMatrix.dat");
   hside_mRICH_KPi.Accept.AddZone(zone_hside_mRICH);
   hside_mRICH_ePi.Accept.AddZone(zone_hside_mRICH);
 
-  Smear::Acceptance::Zone zone_DIRC( eta2theta( 1.24 ), eta2theta( -1.24 ));
+  Smear::Acceptance::Zone zone_DIRC( eta2theta( 1.24 ), eta2theta( -1.4 ));
   Smear::ParticleID DIRC("PIDMatrixFiles/DIRCPIDMatrix.dat");
   DIRC.Accept.AddZone(zone_DIRC);
 
   Smear::Acceptance::Zone zone_eside_mRICH( eta2theta( -1.4 ), eta2theta( -3.9 ));
-  Smear::ParticleID eside_mRICH_KPi("PIDMatrixFiles/eside_mRICH_PIDMatrix.dat");
+  Smear::ParticleID eside_mRICH_KPi("PIDMatrixFiles/mRICH_KPiPIDMatrix.dat");
   Smear::ParticleID eside_mRICH_ePi("PIDMatrixFiles/mRICH_ePiPIDMatrix.dat");
   eside_mRICH_KPi.Accept.AddZone(zone_eside_mRICH);
   eside_mRICH_ePi.Accept.AddZone(zone_eside_mRICH);
@@ -152,9 +154,10 @@ Smear::Detector BuildEicSphenix() {
   det.AddDevice(trackingTheta);
   det.AddDevice(trackingPhi);
 
-  det.AddDevice(dRICH_KPi);
-  det.AddDevice(dRICH_ePi);
-  det.AddDevice(gasRICH);
+  //det.AddDevice(dRICH_KPi);
+  //det.AddDevice(dRICH_ePi);
+  det.AddDevice(gasRICH_KPi);
+  det.AddDevice(gasRICH_ePi);
   det.AddDevice(hside_mRICH_KPi);
   det.AddDevice(hside_mRICH_ePi);
   det.AddDevice(DIRC);
