@@ -177,6 +177,8 @@ class Proto4TowerCalib : public SubsysReco
   std::pair<int, int>
   find_max(RawTowerContainer *towers, int cluster_size);
 
+  int getChannelNumber(int column, int row);
+
   //! output root file name
   std::string _filename;
 

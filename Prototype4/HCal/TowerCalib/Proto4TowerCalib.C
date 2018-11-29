@@ -60,7 +60,7 @@ Proto4TowerCalib::Proto4TowerCalib(const std::string &filename)
   _mStopEvent = -1;
   _mDet = "HCALIN";
   _mCol = 0;
-  _mPedestal = 50.0;
+  _mPedestal = 100.0;
   reset_pedestal();
 }
 
@@ -166,7 +166,7 @@ int Proto4TowerCalib::Init(PHCompositeNode *topNode)
   for(int i_tower = 0; i_tower < 16; ++i_tower)
   {
     string HistName_raw = Form("h_hcalin_lg_tower_%d_raw",i_tower);
-    h_hcalin_lg_tower_raw[i_tower] = new TH1F(HistName_raw.c_str(),HistName_raw.c_str(),40,0.5,8000.5);
+    h_hcalin_lg_tower_raw[i_tower] = new TH1F(HistName_raw.c_str(),HistName_raw.c_str(),40,0.5,16000.5);
     hm->registerHisto(h_hcalin_lg_tower_raw[i_tower]);
 
     string HistName_calib = Form("h_hcalin_lg_tower_%d_calib",i_tower);
@@ -180,7 +180,7 @@ int Proto4TowerCalib::Init(PHCompositeNode *topNode)
   for(int i_tower = 0; i_tower < 16; ++i_tower)
   {
     string HistName_raw = Form("h_hcalout_lg_tower_%d_raw",i_tower);
-    h_hcalout_lg_tower_raw[i_tower] = new TH1F(HistName_raw.c_str(),HistName_raw.c_str(),40,0.5,8000.5);
+    h_hcalout_lg_tower_raw[i_tower] = new TH1F(HistName_raw.c_str(),HistName_raw.c_str(),40,0.5,16000.5);
     hm->registerHisto(h_hcalout_lg_tower_raw[i_tower]);
 
     string HistName_calib = Form("h_hcalout_lg_tower_%d_calib",i_tower);
@@ -194,7 +194,7 @@ int Proto4TowerCalib::Init(PHCompositeNode *topNode)
   for(int i_tower = 0; i_tower < 16; ++i_tower)
   {
     string HistName_raw = Form("h_hcalout_hg_tower_%d_raw",i_tower);
-    h_hcalout_hg_tower_raw[i_tower] = new TH1F(HistName_raw.c_str(),HistName_raw.c_str(),5000,0.5,5000.5);
+    h_hcalout_hg_tower_raw[i_tower] = new TH1F(HistName_raw.c_str(),HistName_raw.c_str(),40,0.5,16000.5);
     hm->registerHisto(h_hcalout_hg_tower_raw[i_tower]);
 
     string HistName_calib = Form("h_hcalout_hg_tower_%d_calib",i_tower);
@@ -317,11 +317,14 @@ int Proto4TowerCalib::process_event(PHCompositeNode *topNode)
       {
 	RawTower *tower = it->second;
 	assert(tower);
-	// cout << "HCALIN SIM: ";
-	// tower->identify();
 
 	const int col = tower->get_bineta();
 	const int row = tower->get_binphi();
+	const int chanNum = getChannelNumber(row,col);
+
+	// cout << "HCALIN SIM: ";
+	// tower->identify();
+	// cout << "getSimChannelNumber = " << chanNum << endl;
 
 	if (col < 0 or col >= 4)
 	  continue;
@@ -330,12 +333,12 @@ int Proto4TowerCalib::process_event(PHCompositeNode *topNode)
 
 	const double energy_sim = tower->get_energy();
 	hcalin_sum_e_sim += energy_sim;
-	_tower.hcalin_twr_sim[row+4*col] = energy_sim;
+	_tower.hcalin_twr_sim[chanNum] = energy_sim;
 
-	string HistName_sim = Form("h_hcalin_tower_%d_sim",row+4*col);
+	string HistName_sim = Form("h_hcalin_tower_%d_sim",chanNum);
 	TH1F *h_hcalin_sim = dynamic_cast<TH1F *>(hm->getHisto(HistName_sim.c_str()));
 	assert(h_hcalin_sim);
-	h_hcalin_sim->Fill(_tower.hcalin_twr_sim[row+4*col]*1000.0); // convert to MeV
+	h_hcalin_sim->Fill(_tower.hcalin_twr_sim[chanNum]*1000.0); // convert to MeV
       }
       _tower.hcalin_e_sim = hcalin_sum_e_sim;
 
@@ -349,6 +352,7 @@ int Proto4TowerCalib::process_event(PHCompositeNode *topNode)
 
 	const int col = tower->get_bineta();
 	const int row = tower->get_binphi();
+	const int chanNum = getChannelNumber(row,col);
 
 	if (col < 0 or col >= 4)
 	  continue;
@@ -357,12 +361,12 @@ int Proto4TowerCalib::process_event(PHCompositeNode *topNode)
 
 	const double energy_sim = tower->get_energy();
 	hcalout_sum_e_sim += energy_sim;
-	_tower.hcalout_twr_sim[row+4*col] = energy_sim;
+	_tower.hcalout_twr_sim[chanNum] = energy_sim;
 
-	string HistName_sim = Form("h_hcalout_tower_%d_sim",row+4*col);
+	string HistName_sim = Form("h_hcalout_tower_%d_sim",chanNum);
 	TH1F *h_hcalout_sim = dynamic_cast<TH1F *>(hm->getHisto(HistName_sim.c_str()));
 	assert(h_hcalout_sim);
-	h_hcalout_sim->Fill(_tower.hcalout_twr_sim[row+4*col]*1000.0); // convert to MeV
+	h_hcalout_sim->Fill(_tower.hcalout_twr_sim[chanNum]*1000.0); // convert to MeV
       }
       _tower.hcalout_e_sim = hcalout_sum_e_sim;
     }
@@ -379,11 +383,13 @@ int Proto4TowerCalib::process_event(PHCompositeNode *topNode)
     {
       RawTower *tower = it->second;
       assert(tower);
-      // cout << "HCALIN RAW: ";
-      // tower->identify();
-
       const int col = tower->get_bineta();
       const int row = tower->get_binphi();
+      const int chanNum = getChannelNumber(row,col);
+
+      // cout << "HCALIN RAW: ";
+      // tower->identify();
+      // cout << "getDataChannelNumber = " << chanNum << endl;
 
       if (col < 0 or col >= 4)
         continue;
@@ -392,12 +398,12 @@ int Proto4TowerCalib::process_event(PHCompositeNode *topNode)
 
       const double energy_raw = tower->get_energy();
       hcalin_sum_lg_e_raw += energy_raw;
-      _tower.hcalin_lg_twr_raw[row+4*col] = energy_raw;
+      _tower.hcalin_lg_twr_raw[chanNum] = energy_raw;
 
-      string HistName_raw = Form("h_hcalin_lg_tower_%d_raw",row+4*col);
+      string HistName_raw = Form("h_hcalin_lg_tower_%d_raw",chanNum);
       TH1F *h_hcalin_lg_raw = dynamic_cast<TH1F *>(hm->getHisto(HistName_raw.c_str()));
       assert(h_hcalin_lg_raw);
-      h_hcalin_lg_raw->Fill(_tower.hcalin_lg_twr_raw[row+4*col]);
+      h_hcalin_lg_raw->Fill(_tower.hcalin_lg_twr_raw[chanNum]);
     }
     _tower.hcalin_lg_e_raw = hcalin_sum_lg_e_raw;
 
@@ -409,6 +415,7 @@ int Proto4TowerCalib::process_event(PHCompositeNode *topNode)
 
       const int col = tower->get_bineta();
       const int row = tower->get_binphi();
+      const int chanNum = getChannelNumber(row,col);
 
       if (col < 0 or col >= 4)
         continue;
@@ -417,12 +424,12 @@ int Proto4TowerCalib::process_event(PHCompositeNode *topNode)
 
       const double energy_calib = tower->get_energy();
       hcalin_sum_lg_e_calib += energy_calib;
-      _tower.hcalin_lg_twr_calib[row+4*col] = energy_calib;
+      _tower.hcalin_lg_twr_calib[chanNum] = energy_calib;
 
-      string HistName_calib = Form("h_hcalin_lg_tower_%d_calib",row+4*col);
+      string HistName_calib = Form("h_hcalin_lg_tower_%d_calib",chanNum);
       TH1F *h_hcalin_lg_calib = dynamic_cast<TH1F *>(hm->getHisto(HistName_calib.c_str()));
       assert(h_hcalin_lg_calib);
-      h_hcalin_lg_calib->Fill(_tower.hcalin_lg_twr_calib[row+4*col]);
+      h_hcalin_lg_calib->Fill(_tower.hcalin_lg_twr_calib[chanNum]);
     }
     _tower.hcalin_lg_e_calib = hcalin_sum_lg_e_calib;
   }
@@ -436,11 +443,14 @@ int Proto4TowerCalib::process_event(PHCompositeNode *topNode)
     {
       RawTower *tower = it->second;
       assert(tower);
-      // cout << "HCALOUT RAM: ";
-      // tower->identify();
 
       const int col = tower->get_bineta();
       const int row = tower->get_binphi();
+      const int chanNum = getChannelNumber(row,col);
+
+      // cout << "HCALOUT LG RAW: ";
+      // tower->identify();
+      // cout << "getDataChannelNumber = " << chanNum << endl;
 
       if (col < 0 or col >= 4)
         continue;
@@ -449,12 +459,12 @@ int Proto4TowerCalib::process_event(PHCompositeNode *topNode)
 
       const double energy_raw = tower->get_energy();
       hcalout_sum_lg_e_raw += energy_raw;
-      _tower.hcalout_lg_twr_raw[row+4*col] = energy_raw;
+      _tower.hcalout_lg_twr_raw[chanNum] = energy_raw;
 
-      string HistName_raw = Form("h_hcalout_lg_tower_%d_raw",row+4*col);
+      string HistName_raw = Form("h_hcalout_lg_tower_%d_raw",chanNum);
       TH1F *h_hcalout_lg_raw = dynamic_cast<TH1F *>(hm->getHisto(HistName_raw.c_str()));
       assert(h_hcalout_lg_raw);
-      h_hcalout_lg_raw->Fill(_tower.hcalout_lg_twr_raw[row+4*col]);
+      h_hcalout_lg_raw->Fill(_tower.hcalout_lg_twr_raw[chanNum]);
     }
     _tower.hcalout_lg_e_raw = hcalout_sum_lg_e_raw;
 
@@ -466,6 +476,7 @@ int Proto4TowerCalib::process_event(PHCompositeNode *topNode)
 
       const int col = tower->get_bineta();
       const int row = tower->get_binphi();
+      const int chanNum = getChannelNumber(row,col);
 
       if (col < 0 or col >= 4)
         continue;
@@ -474,12 +485,12 @@ int Proto4TowerCalib::process_event(PHCompositeNode *topNode)
 
       const double energy_calib = tower->get_energy();
       hcalout_sum_lg_e_calib += energy_calib;
-      _tower.hcalout_lg_twr_calib[row+4*col] = energy_calib;
+      _tower.hcalout_lg_twr_calib[chanNum] = energy_calib;
 
-      string HistName_calib = Form("h_hcalout_lg_tower_%d_calib",row+4*col);
+      string HistName_calib = Form("h_hcalout_lg_tower_%d_calib",chanNum);
       TH1F *h_hcalout_lg_calib = dynamic_cast<TH1F *>(hm->getHisto(HistName_calib.c_str()));
       assert(h_hcalout_lg_calib);
-      h_hcalout_lg_calib->Fill(_tower.hcalout_lg_twr_calib[row+4*col]);
+      h_hcalout_lg_calib->Fill(_tower.hcalout_lg_twr_calib[chanNum]);
     }
     _tower.hcalout_lg_e_calib = hcalout_sum_lg_e_calib;
   }
@@ -496,6 +507,11 @@ int Proto4TowerCalib::process_event(PHCompositeNode *topNode)
 
       const int col = tower->get_bineta();
       const int row = tower->get_binphi();
+      const int chanNum = getChannelNumber(row,col);
+
+      // cout << "HCALOUT HG RAW: ";
+      // tower->identify();
+      // cout << "getDataChannelNumber = " << chanNum << endl;
 
       if (col < 0 or col >= 4)
         continue;
@@ -504,12 +520,12 @@ int Proto4TowerCalib::process_event(PHCompositeNode *topNode)
 
       const double energy_raw = tower->get_energy();
       hcalout_sum_hg_e_raw += energy_raw;
-      _tower.hcalout_hg_twr_raw[row+4*col] = energy_raw;
+      _tower.hcalout_hg_twr_raw[chanNum] = energy_raw;
 
-      string HistName_raw = Form("h_hcalout_hg_tower_%d_raw",row+4*col);
+      string HistName_raw = Form("h_hcalout_hg_tower_%d_raw",chanNum);
       TH1F *h_hcalout_hg_raw = dynamic_cast<TH1F *>(hm->getHisto(HistName_raw.c_str()));
       assert(h_hcalout_hg_raw);
-      h_hcalout_hg_raw->Fill(_tower.hcalout_hg_twr_raw[row+4*col]);
+      h_hcalout_hg_raw->Fill(_tower.hcalout_hg_twr_raw[chanNum]);
     }
     _tower.hcalout_hg_e_raw = hcalout_sum_hg_e_raw;
 
@@ -521,6 +537,7 @@ int Proto4TowerCalib::process_event(PHCompositeNode *topNode)
 
       const int col = tower->get_bineta();
       const int row = tower->get_binphi();
+      const int chanNum = getChannelNumber(row,col);
 
       if (col < 0 or col >= 4)
         continue;
@@ -529,12 +546,12 @@ int Proto4TowerCalib::process_event(PHCompositeNode *topNode)
 
       const double energy_calib = tower->get_energy();
       hcalout_sum_hg_e_calib += energy_calib;
-      _tower.hcalout_hg_twr_calib[row+4*col] = energy_calib;
+      _tower.hcalout_hg_twr_calib[chanNum] = energy_calib;
 
-      string HistName_calib = Form("h_hcalout_hg_tower_%d_calib",row+4*col);
+      string HistName_calib = Form("h_hcalout_hg_tower_%d_calib",chanNum);
       TH1F *h_hcalout_hg_calib = dynamic_cast<TH1F *>(hm->getHisto(HistName_calib.c_str()));
       assert(h_hcalout_hg_calib);
-      h_hcalout_hg_calib->Fill(_tower.hcalout_hg_twr_calib[row+4*col]);
+      h_hcalout_hg_calib->Fill(_tower.hcalout_hg_twr_calib[chanNum]);
     }
     _tower.hcalout_hg_e_calib = hcalout_sum_hg_e_calib;
   }
@@ -544,13 +561,6 @@ int Proto4TowerCalib::process_event(PHCompositeNode *topNode)
 
   _tower.hcal_asym_raw = (hcalin_sum_lg_e_raw - hcalout_sum_lg_e_raw)/(hcalin_sum_lg_e_raw + hcalout_sum_lg_e_raw);
   _tower.hcal_asym_calib = (hcalin_sum_lg_e_calib - hcalout_sum_lg_e_calib)/(hcalin_sum_lg_e_calib + hcalout_sum_lg_e_calib);
-
-
-  /*
-  TH1F *h_hcal_total_sim = dynamic_cast<TH1F *>(hm->getHisto("h_hcal_total_sim"));
-  assert(h_hcal_total_sim);
-  h_hcal_total_sim->Fill(_tower.hcal_total_sim*1000.0);
-  */
 
   TTree *T = dynamic_cast<TTree *>(hm->getHisto("HCAL_Info"));
   assert(T);
@@ -596,12 +606,37 @@ Proto4TowerCalib::find_max(RawTowerContainer *towers, int cluster_size)
   return max;
 }
 
+int Proto4TowerCalib::getChannelNumber(int row, int column)
+{
+  if(!_is_sim)
+  {
+    int hbdchanIHC[4][4] = {{4, 8, 12, 16},
+                            {3, 7, 11, 15},
+                            {2, 6, 10, 14},
+                            {1, 5,  9, 13}};
+
+    return hbdchanIHC[row][column] - 1;
+  }
+
+  if(_is_sim)
+  {
+    int hbdchanIHC[4][4] = {{13,  9, 5, 1},
+                            {14, 10, 6, 2},
+                            {15, 11, 7, 3},
+                            {16, 12, 8, 4}};
+
+    return hbdchanIHC[row][column] - 1;
+  }
+
+  return -1;
+}
+
 int Proto4TowerCalib::InitAna()
 {
   if(_is_sim) _mList = "SIM";
   if(!_is_sim) _mList = "RAW";
   string inputdir = "/sphenix/user/xusun/software/data/cosmic/TowerCalib/";
-  string InPutList = Form("/sphenix/user/xusun/software/data/list/cosmic/TowerCalib/%s/Proto4TowerInfo%s_%s.list",_mList.c_str(),_mList.c_str(),_mDet.c_str());
+  string InPutList = Form("/sphenix/user/xusun/software/data/list/cosmic/TowerCalib/%s/Proto4TowerInfo%s_%s_%d.list",_mList.c_str(),_mList.c_str(),_mDet.c_str(),_mCol);
 
   mChainInPut = new TChain("HCAL_Info");
 
@@ -686,12 +721,12 @@ int Proto4TowerCalib::MakeAna()
 	if(_mDet == "HCALIN")  // HCALIN
 	{
 	  hcal_twr[i_tower] = _mTower->hcalin_twr_sim[i_tower];
-	  h_mHCAL[i_tower]->Fill(hcal_twr[i_tower]*1000.0);
+	  h_mHCAL[i_tower]->Fill(hcal_twr[i_tower]*1000.0); // convert to MeV
 	}
 	if(_mDet == "HCALOUT")  // HCALOUT
 	{
 	  hcal_twr[i_tower] = _mTower->hcalout_twr_sim[i_tower];
-	  h_mHCAL[i_tower]->Fill(hcal_twr[i_tower]*1000.0);
+	  h_mHCAL[i_tower]->Fill(hcal_twr[i_tower]*1000.0); // convert to MeV
 	}
       }
     }
@@ -738,10 +773,10 @@ int Proto4TowerCalib::FinishAna()
 
 bool Proto4TowerCalib::is_sig(int colID)
 {
-  int twr_0 = 0 + 4*colID;
-  int twr_1 = 1 + 4*colID;
-  int twr_2 = 2 + 4*colID;
-  int twr_3 = 3 + 4*colID;
+  int twr_0 = getChannelNumber(0,colID);
+  int twr_1 = getChannelNumber(1,colID);
+  int twr_2 = getChannelNumber(2,colID);
+  int twr_3 = getChannelNumber(3,colID);
 
   if(_is_sig[twr_0] && _is_sig[twr_1] && _is_sig[twr_2]) return true;
   if(_is_sig[twr_0] && _is_sig[twr_1] && _is_sig[twr_3]) return true;
@@ -755,7 +790,7 @@ int Proto4TowerCalib::fill_sig(int colID)
 {
   for(int i_row = 0; i_row < 4; ++i_row)
   {
-    int i_tower = i_row + 4*colID;
+    int i_tower = getChannelNumber(i_row,colID);
     h_mHCAL[i_tower]->Fill(hcal_twr[i_tower]);
   }
 

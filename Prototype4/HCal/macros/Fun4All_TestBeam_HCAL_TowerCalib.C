@@ -8,7 +8,7 @@
  */
 
 int
-Fun4All_TestBeam_HCAL_TowerCalib(const int nEvents = 1000, const int colID = 0, const string det = "HCALIN")
+Fun4All_TestBeam_HCAL_TowerCalib(const int nEvents = 50000, const int colID = 0, const string det = "HCALIN")
 // Fun4All_TestBeam_HCAL_TowerCalib(const int nEvents = 1000, const int runID = 0)
 {
 
@@ -35,14 +35,13 @@ Fun4All_TestBeam_HCAL_TowerCalib(const int nEvents = 1000, const int colID = 0, 
   // IO management
   //--------------
 
-  bool _is_sim = false;
+  bool _is_sim = true;
   // Hits file
   Fun4AllInputManager *hitsin = new Fun4AllDstInputManager("DSTin");
-  std::string inputfile;
-  if(_is_sim) inputfile = Form("/sphenix/user/xusun/software/data/cosmic/simulation/Cosmic_%s_col_%d.root",det.c_str(),colID);
-  if(!_is_sim) inputfile= Form("/sphenix/user/xusun/software/data/cosmic/beamtest/Cosmic_%s_col_%d.root",det.c_str(),colID);
-  hitsin->fileopen(inputfile.c_str());
-//  hitsin->AddListFile(inputFile); // you can also choose this and give a list of DST file names in the file.
+  std::string inputlist;
+  if(_is_sim) inputlist = Form("list/Cosmic_SIM_%s_col_%d.list",det.c_str(),colID);
+  if(!_is_sim) inputlist = Form("list/Cosmic_RAW_%s_col_%d.list",det.c_str(),colID);
+  hitsin->AddListFile(inputlist); // you can also choose this and give a list of DST file names in the file.
   se->registerInputManager(hitsin);
 
   //load your analysis module's lib
