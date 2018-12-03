@@ -1,4 +1,4 @@
-int TestBeam_HCAL_ShowerCalibAna(const int nEvents = 1000000, const string runID = "0422")
+int TestBeam_HCAL_ShowerCalibAna(const int nEvents = 1000000, const string runID = "1241")
 {
   gSystem->Load("libProto4_HCalShowerCalib.so");
 

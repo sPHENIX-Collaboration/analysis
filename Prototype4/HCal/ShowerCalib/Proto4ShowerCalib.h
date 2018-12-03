@@ -280,24 +280,39 @@ class Proto4ShowerCalib : public SubsysReco
   Eval_Run *_mInfo;
   HCAL_Tower *_mTower;
 
-  TH2F *h_mAsymmEnergy_mixed;
-  TH2F *h_mAsymmEnergy_electron;
-  TH2F *h_mAsymmEnergy_pion_leveling;
-  TH2F *h_mAsymmEnergy_pion_scaling;
-  TH2F *h_mAsymmEnergy_pion_ShowerCalib;
+  // TH2F *h_mAsymmEnergy_mixed_sim_wo_cut; // sim
+  TH2F *h_mAsymmEnergy_pion_sim_wo_cut;
+
+  // TH2F *h_mAsymmEnergy_mixed_sim;
+  TH2F *h_mAsymmEnergy_pion_sim;
+
+  TH2F *h_mAsymmEnergy_mixed_raw; // production
+  TH2F *h_mAsymmEnergy_electron_raw;
+  TH2F *h_mAsymmEnergy_pion_raw;
+
+  TH2F *h_mAsymmEnergy_mixed_calib_wo_cut;
+  TH2F *h_mAsymmEnergy_electron_calib_wo_cut;
+  TH2F *h_mAsymmEnergy_pion_calib_wo_cut;
+
+  TH2F *h_mAsymmEnergy_mixed_calib;
+  TH2F *h_mAsymmEnergy_electron_calib;
+  TH2F *h_mAsymmEnergy_pion_calib;
 
   int getChannelNumber(int column, int row);
   int setTowerCalibParas();
 
   // correction factors
-  // const double samplefrac_in = 0.09267; // used by SIM and RAW
-  // const double samplefrac_out = 0.02862;
-  const double samplefrac_in = 0.0631283; // used by SIM and RAW
-  const double samplefrac_out = 0.0338021;
+  const double samplefrac_in = 0.09267; 
+  const double samplefrac_out = 0.02862;
+
+  // const double samplefrac_in = 0.0631283;  // from Songkyo
+  // const double samplefrac_out = 0.0338021;
 
   double towercalib_lg_in[16];
   double towercalib_lg_out[16];
   double towercalib_hg_out[16];
+
+  float find_range();
 
 
   // used by RAW

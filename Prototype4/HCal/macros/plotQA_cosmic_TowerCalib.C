@@ -6,7 +6,7 @@
 #include "TF1.h"
 #include <string>
 
-void plotQA_cosmic_TowerCalib(const string det = "HCALIN")
+void plotQA_cosmic_TowerCalib(const string det = "HCALOUT")
 {
   int hbdchanIHC[4][4] = {{16, 12, 8, 4},
                           {15, 11, 7, 3},
@@ -69,7 +69,8 @@ void plotQA_cosmic_TowerCalib(const string det = "HCALIN")
       }
     }
   }
-  // c_hcalin_sim->SaveAs("./figures/c_hcalin_sim_col_0.eps");
+  string fig_sim = Form("./figures/sPHENIX_CollMeeting/c_%s_sim.eps",det.c_str());
+  c_hcal_sim->SaveAs(fig_sim.c_str());
 
   string inputfile_raw = Form("/sphenix/user/xusun/software/data/cosmic/TowerCalibAna/Proto4TowerInfoRAW_%s.root",det.c_str()); 
   TFile *File_InPut_RAW = TFile::Open(inputfile_raw.c_str());
@@ -117,7 +118,8 @@ void plotQA_cosmic_TowerCalib(const string det = "HCALIN")
       }
     }
   }
-  // c_hcalin_raw->SaveAs("./figures/c_hcalin_raw_col_0.eps");
+  string fig_raw = Form("./figures/sPHENIX_CollMeeting/c_%s_raw.eps",det.c_str());
+  c_hcal_raw->SaveAs(fig_raw.c_str());
 
   string outputfile = Form("towercalib_%s.txt",det.c_str());
   ofstream File_OutPut(outputfile.c_str());

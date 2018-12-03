@@ -1,6 +1,7 @@
 #include "TString.h"
 #include "TFile.h"
 #include "TH1F.h"
+#include "TH2F.h"
 #include "TF1.h"
 #include "TLegend.h"
 #include "TCanvas.h"
@@ -11,8 +12,56 @@ void calSampleFrac()
 {
   TFile *File_InPut_HCALIN = TFile::Open("/sphenix/user/xusun/software/data/beam/SampleFrac/Proto4SampleFrac_HCALIN.root");
   TH1F *h_sf_in = (TH1F*)File_InPut_HCALIN->Get("h_QAG4Sim_HCALIN_G4Hit_SF");
+  TH2F *h_mCal_in = (TH2F*)File_InPut_HCALIN->Get("h_QAG4Sim_HCALIN_G4Hit_XY_cal");
+  TH2F *h_mAbs_in = (TH2F*)File_InPut_HCALIN->Get("h_QAG4Sim_HCALIN_G4Hit_XY_abs");
+
   TFile *File_InPut_HCALOUT = TFile::Open("/sphenix/user/xusun/software/data/beam/SampleFrac/Proto4SampleFrac_HCALOUT.root");
   TH1F *h_sf_out = (TH1F*)File_InPut_HCALOUT->Get("h_QAG4Sim_HCALOUT_G4Hit_SF");
+  TH2F *h_mCal_out = (TH2F*)File_InPut_HCALOUT->Get("h_QAG4Sim_HCALOUT_G4Hit_XY_cal");
+  TH2F *h_mAbs_out = (TH2F*)File_InPut_HCALOUT->Get("h_QAG4Sim_HCALOUT_G4Hit_XY_abs");
+
+  TH1F *h_play = new TH1F("h_play","h_play",500,0,500);
+  for(int i_bin = 0; i_bin < 500; ++i_bin)
+  {
+    h_play->SetBinContent(i_bin+1,-10000.0);
+    h_play->SetBinError(i_bin+1,1.0);
+  }
+  // h_play->SetTitle("G4Hit Display");
+  h_play->SetStats(0);
+  h_play->GetYaxis()->SetRangeUser(-100,100);
+  h_play->GetXaxis()->SetRangeUser(50,350);
+
+  TCanvas *c_cal_in = new TCanvas("c_cal","c_cal",10,10,1000,1000);
+  c_cal->Divide(2,2);
+  for(int i_pad = 0; i_pad < 4; ++i_pad)
+  {
+    c_cal->cd(i_pad+1)->SetLeftMargin(0.15);
+    c_cal->cd(i_pad+1)->SetBottomMargin(0.15);
+    c_cal->cd(i_pad+1)->SetGrid(0,0);
+    c_cal->cd(i_pad+1)->SetTicks(1,1);
+  }
+
+  c_cal->cd(1);
+  h_play->SetTitle("HCALIN Cal G4Hit Display");
+  h_play->DrawCopy("pE");
+  h_mCal_in->Draw("colz same");
+
+  c_cal->cd(2);
+  h_play->SetTitle("HCALOUT Cal G4Hit Display");
+  h_play->DrawCopy("pE");
+  h_mCal_out->Draw("colz same");
+
+  c_cal->cd(3);
+  h_play->SetTitle("HCALIN Abs G4Hit Display");
+  h_play->DrawCopy("pE");
+  h_mAbs_in->Draw("colz same");
+
+  c_cal->cd(4);
+  h_play->SetTitle("HCALOUT Abs G4Hit Display");
+  h_play->DrawCopy("pE");
+  h_mAbs_out->Draw("colz same");
+
+  c_cal->SaveAs("./figures/sPHENIX_CollMeeting/c_G4HitDisplay.eps");
 
   float nSigma = 1.5;
 
@@ -76,6 +125,8 @@ void calSampleFrac()
   leg_out->SetBorderSize(0);
   leg_out->AddEntry(f_sf_out,label_sf_out.c_str(),"L");
   leg_out->Draw("same");
+
+  c_play->SaveAs("./figures/sPHENIX_CollMeeting/c_sf.eps");
 
   ofstream File_OutPut("samplefrac.txt");
   File_OutPut << "inner sf = " << sf_in << endl;
