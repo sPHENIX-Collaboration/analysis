@@ -1129,23 +1129,27 @@ float Proto4ShowerCalib::find_range()
 {
   float range = 99.5;
 
-  std::string hcal_30GeV = "1684"; 
+  std::string hcal_30GeV[8] = {"1684","1686","1687","1688","1689","1691","1692","1693"};
   std::string hcal_24GeV[5] = {"1663","1665","1666","1667","1668"}; 
   std::string hcal_16GeV[10] = {"1671","1674","1675","1676","1678","1679","1680","1681","1682","1683"};
+  std::string hcal_8GeV = "1245";
   std::string hcal_4GeV[4] = {"1241","1242","1243","1244"};
 
   // cout << "_mRunID = " << _mRunID.c_str() << ", compare = " << _mRunID.compare(hcal_4GeV[0]) << endl;
 
-  if(_mRunID.compare(hcal_30GeV) == 0) 
+  for(int i_run = 0; i_run < 8; ++i_run)
   {
-    range = 39.5;
-    return range;
+    if(_mRunID.compare(hcal_30GeV[i_run]) == 0) 
+    {
+      range = 49.5;
+      return range;
+    }
   }
   for(int i_run = 0; i_run < 5; ++i_run)
   {
     if(_mRunID.compare(hcal_24GeV[i_run]) == 0) 
     {
-      range = 29.5;
+      range = 39.5;
       return range;
     }
   }
@@ -1153,9 +1157,14 @@ float Proto4ShowerCalib::find_range()
   {
     if(_mRunID.compare(hcal_16GeV[i_run]) == 0) 
     {
-      range = 19.5;
+      range = 29.5;
       return range;
     }
+  }
+  if(_mRunID.compare(hcal_8GeV) == 0) 
+  {
+    range = 19.5;
+    return range;
   }
   for(int i_run = 0; i_run < 4; ++i_run)
   {
