@@ -955,6 +955,10 @@ int Proto4ShowerCalib::InitAna()
     h_mAsymmEnergy_mixed_calib = new TH2F("h_mAsymmEnergy_mixed_calib","h_mAsymmEnergy_mixed_calib",100,-1.0,1.0,100,-0.5,histo_range);
     h_mAsymmEnergy_electron_calib = new TH2F("h_mAsymmEnergy_electron_calib","h_mAsymmEnergy_electron_calib",100,-1.0,1.0,100,-0.5,histo_range);
     h_mAsymmEnergy_pion_calib = new TH2F("h_mAsymmEnergy_pion_calib","h_mAsymmEnergy_pion_calib",100,-1.0,1.0,100,-0.5,histo_range);
+
+    h_mAsymmEnergy_mixed_calib_leveling = new TH2F("h_mAsymmEnergy_mixed_calib_leveling","h_mAsymmEnergy_mixed_calib_leveling",100,-1.0,1.0,100,-0.5,histo_range);
+    h_mAsymmEnergy_electron_calib_leveling= new TH2F("h_mAsymmEnergy_electron_calib_leveling","h_mAsymmEnergy_electron_calib_leveling",100,-1.0,1.0,100,-0.5,histo_range);
+    h_mAsymmEnergy_pion_calib_leveling = new TH2F("h_mAsymmEnergy_pion_calib_leveling","h_mAsymmEnergy_pion_calib_leveling",100,-1.0,1.0,100,-0.5,histo_range);
   }
 
   return 0;
@@ -963,6 +967,15 @@ int Proto4ShowerCalib::InitAna()
 int Proto4ShowerCalib::MakeAna()
 {
   cout << "Make()" << endl;
+
+  // const int mBeamEnergy[6] = {4, 8, 12, 16, 24, 30};
+  const float c_in[6]  = {0.986184, 0.833109, 0.859114, 0.9255, 1.06524, 1.15554};
+  const float c_out[6] = {1.01421, 1.25051, 1.19616, 1.08754, 0.942288, 0.881362};
+  const int mEnergyBin = find_energy();
+  const float c_in_leveling = c_in[mEnergyBin];
+  const float c_out_leveling = c_out[mEnergyBin];
+  // cout << "mEnergyBin = " << mEnergyBin << ", c_in = " << c_in[mEnergyBin] << ", c_out = " << c_out[mEnergyBin] << endl;
+
   unsigned long start_event_use = _mStartEvent;
   unsigned long stop_event_use = _mStopEvent;
 
@@ -1026,10 +1039,18 @@ int Proto4ShowerCalib::MakeAna()
       if(good_pion) h_mAsymmEnergy_pion_calib_wo_cut->Fill(asymm_calib,energy_calib);
 
       if(energy_hcalin_calib > 0.2 && energy_hcalout_calib > 0.2)
+      // if(energy_total_calib > 0.5)
       {
 	h_mAsymmEnergy_mixed_calib->Fill(asymm_calib,energy_calib);
 	if(good_electron) h_mAsymmEnergy_electron_calib->Fill(asymm_calib,energy_calib);
 	if(good_pion) h_mAsymmEnergy_pion_calib->Fill(asymm_calib,energy_calib);
+
+	// apply leveling
+	const float energy_leveling = c_in_leveling*energy_hcalin_calib + c_out_leveling*energy_hcalout_calib;
+	const float asymm_leveling = (c_in_leveling*energy_hcalin_calib - c_out_leveling*energy_hcalout_calib)/energy_leveling;
+	h_mAsymmEnergy_mixed_calib_leveling->Fill(asymm_leveling,energy_leveling);
+	if(good_electron) h_mAsymmEnergy_electron_calib_leveling->Fill(asymm_leveling,energy_leveling);
+	if(good_pion) h_mAsymmEnergy_pion_calib_leveling->Fill(asymm_leveling,energy_leveling);
       }
     }
   }
@@ -1066,6 +1087,10 @@ int Proto4ShowerCalib::FinishAna()
     h_mAsymmEnergy_mixed_calib->Write();
     h_mAsymmEnergy_electron_calib->Write();
     h_mAsymmEnergy_pion_calib->Write();
+
+    h_mAsymmEnergy_mixed_calib_leveling->Write();
+    h_mAsymmEnergy_electron_calib_leveling->Write();
+    h_mAsymmEnergy_pion_calib_leveling->Write();
   }
   mFile_OutPut->Close();
 
@@ -1130,14 +1155,15 @@ float Proto4ShowerCalib::find_range()
   float range = 99.5;
 
   std::string hcal_30GeV[8] = {"1684","1686","1687","1688","1689","1691","1692","1693"};
-  std::string hcal_24GeV[5] = {"1663","1665","1666","1667","1668"}; 
+  std::string hcal_24GeV[12] = {"1663","1665","1666","1667","1668","1765","1766","1767","1768","1770","1771","1773"};
   std::string hcal_16GeV[10] = {"1671","1674","1675","1676","1678","1679","1680","1681","1682","1683"};
-  std::string hcal_8GeV = "1245";
+  std::string hcal_12GeV[2] = {"0570","0571"};
+  std::string hcal_8GeV[3] = {"0421","0422","1245"};
   std::string hcal_4GeV[4] = {"1241","1242","1243","1244"};
 
   // cout << "_mRunID = " << _mRunID.c_str() << ", compare = " << _mRunID.compare(hcal_4GeV[0]) << endl;
 
-  for(int i_run = 0; i_run < 8; ++i_run)
+  for(int i_run = 0; i_run < 8; ++i_run) // 30 GeV
   {
     if(_mRunID.compare(hcal_30GeV[i_run]) == 0) 
     {
@@ -1145,7 +1171,7 @@ float Proto4ShowerCalib::find_range()
       return range;
     }
   }
-  for(int i_run = 0; i_run < 5; ++i_run)
+  for(int i_run = 0; i_run < 12; ++i_run) // 24 GeV
   {
     if(_mRunID.compare(hcal_24GeV[i_run]) == 0) 
     {
@@ -1153,7 +1179,7 @@ float Proto4ShowerCalib::find_range()
       return range;
     }
   }
-  for(int i_run = 0; i_run < 10; ++i_run)
+  for(int i_run = 0; i_run < 10; ++i_run) // 16 GeV
   {
     if(_mRunID.compare(hcal_16GeV[i_run]) == 0) 
     {
@@ -1161,12 +1187,23 @@ float Proto4ShowerCalib::find_range()
       return range;
     }
   }
-  if(_mRunID.compare(hcal_8GeV) == 0) 
+  for(int i_run = 0; i_run < 2; ++i_run) // 12 GeV
   {
-    range = 19.5;
-    return range;
+    if(_mRunID.compare(hcal_12GeV[i_run]) == 0)
+    {
+      range = 24.5;
+      return range;
+    }
   }
-  for(int i_run = 0; i_run < 4; ++i_run)
+  for(int i_run = 0; i_run < 3; ++i_run) // 8 GeV
+  {
+    if(_mRunID.compare(hcal_8GeV[i_run]) == 0)
+    {
+      range = 19.5;
+      return range;
+    }
+  }
+  for(int i_run = 0; i_run < 4; ++i_run) // 4 GeV
   {
     if(_mRunID.compare(hcal_4GeV[i_run]) == 0) 
     {
@@ -1176,4 +1213,69 @@ float Proto4ShowerCalib::find_range()
   }
 
   return range;
+}
+
+int Proto4ShowerCalib::find_energy()
+{
+  int energy = -1;
+
+  std::string hcal_30GeV[8] = {"1684","1686","1687","1688","1689","1691","1692","1693"};
+  std::string hcal_24GeV[12] = {"1663","1665","1666","1667","1668","1765","1766","1767","1768","1770","1771","1773"};
+  std::string hcal_16GeV[10] = {"1671","1674","1675","1676","1678","1679","1680","1681","1682","1683"};
+  std::string hcal_12GeV[2] = {"0570","0571"};
+  std::string hcal_8GeV[3] = {"0421","0422","1245"};
+  std::string hcal_4GeV[4] = {"1241","1242","1243","1244"};
+
+  // cout << "_mRunID = " << _mRunID.c_str() << ", compare = " << _mRunID.compare(hcal_4GeV[0]) << endl;
+
+  for(int i_run = 0; i_run < 8; ++i_run) // 30 GeV
+  {
+    if(_mRunID.compare(hcal_30GeV[i_run]) == 0) 
+    {
+      energy = 5;
+      return energy;
+    }
+  }
+  for(int i_run = 0; i_run < 12; ++i_run) // 24 GeV
+  {
+    if(_mRunID.compare(hcal_24GeV[i_run]) == 0) 
+    {
+      energy = 4;
+      return energy;
+    }
+  }
+  for(int i_run = 0; i_run < 10; ++i_run) // 16 GeV
+  {
+    if(_mRunID.compare(hcal_16GeV[i_run]) == 0) 
+    {
+      energy = 3;
+      return energy;
+    }
+  }
+  for(int i_run = 0; i_run < 2; ++i_run) // 12 GeV
+  {
+    if(_mRunID.compare(hcal_12GeV[i_run]) == 0)
+    {
+      energy = 2;
+      return energy;
+    }
+  }
+  for(int i_run = 0; i_run < 3; ++i_run) // 8 GeV
+  {
+    if(_mRunID.compare(hcal_8GeV[i_run]) == 0)
+    {
+      energy = 1;
+      return energy;
+    }
+  }
+  for(int i_run = 0; i_run < 4; ++i_run) // 4 GeV
+  {
+    if(_mRunID.compare(hcal_4GeV[i_run]) == 0) 
+    {
+      energy = 0;
+      return energy;
+    }
+  }
+
+  return energy;
 }

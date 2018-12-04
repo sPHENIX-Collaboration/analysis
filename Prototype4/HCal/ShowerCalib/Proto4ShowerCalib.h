@@ -298,6 +298,10 @@ class Proto4ShowerCalib : public SubsysReco
   TH2F *h_mAsymmEnergy_electron_calib;
   TH2F *h_mAsymmEnergy_pion_calib;
 
+  TH2F *h_mAsymmEnergy_mixed_calib_leveling;
+  TH2F *h_mAsymmEnergy_electron_calib_leveling;
+  TH2F *h_mAsymmEnergy_pion_calib_leveling;
+
   int getChannelNumber(int column, int row);
   int setTowerCalibParas();
 
@@ -313,7 +317,7 @@ class Proto4ShowerCalib : public SubsysReco
   double towercalib_hg_out[16];
 
   float find_range();
-
+  int find_energy();
 
   // used by RAW
 };
