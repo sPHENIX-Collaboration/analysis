@@ -223,6 +223,9 @@ void calLevelingCorr()
   leg_30GeV->AddEntry(f_pol_30GeV,formula_30GeV.c_str(),"l");
   leg_30GeV->Draw();
 
+  string fig_Name = "./figures/sPHENIX_CollMeeting/c_mAsymmEnergy_mixed.eps";
+  c_play->SaveAs(fig_Name.c_str());
+
   ofstream File_OutPut("leveling_corr.txt");
   File_OutPut << "4 GeV:  c_in = " << c_in_4GeV << ", c_out = " << c_out_4GeV << endl;
   File_OutPut << "8 GeV:  c_in = " << c_in_8GeV << ", c_out = " << c_out_8GeV << endl;

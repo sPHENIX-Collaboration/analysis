@@ -289,18 +289,26 @@ class Proto4ShowerCalib : public SubsysReco
   TH2F *h_mAsymmEnergy_mixed_raw; // production
   TH2F *h_mAsymmEnergy_electron_raw;
   TH2F *h_mAsymmEnergy_pion_raw;
+  TH1F *h_mEnergyOut_pion_raw;
 
   TH2F *h_mAsymmEnergy_mixed_calib_wo_cut;
   TH2F *h_mAsymmEnergy_electron_calib_wo_cut;
   TH2F *h_mAsymmEnergy_pion_calib_wo_cut;
+  TH1F *h_mEnergyOut_pion_calib_wo_cut;
 
   TH2F *h_mAsymmEnergy_mixed_calib;
   TH2F *h_mAsymmEnergy_electron_calib;
   TH2F *h_mAsymmEnergy_pion_calib;
+  TH1F *h_mEnergyOut_pion_calib;
 
   TH2F *h_mAsymmEnergy_mixed_calib_leveling;
   TH2F *h_mAsymmEnergy_electron_calib_leveling;
   TH2F *h_mAsymmEnergy_pion_calib_leveling;
+
+  TH2F *h_mAsymmEnergy_mixed_ShowerCalib;
+  TH2F *h_mAsymmEnergy_electron_ShowerCalib;
+  TH2F *h_mAsymmEnergy_pion_ShowerCalib;
+  TH1F *h_mEnergyOut_pion_ShowerCalib;
 
   int getChannelNumber(int column, int row);
   int setTowerCalibParas();
@@ -315,6 +323,9 @@ class Proto4ShowerCalib : public SubsysReco
   double towercalib_lg_in[16];
   double towercalib_lg_out[16];
   double towercalib_hg_out[16];
+
+  const double showercalib = 2.29898; // extracted with 16 GeV Test Beam Data
+  const double showercalib_out = 5.47298; // extracted with 16 GeV Test Beam Data
 
   float find_range();
   int find_energy();

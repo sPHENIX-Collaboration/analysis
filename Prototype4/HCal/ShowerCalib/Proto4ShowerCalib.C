@@ -947,18 +947,26 @@ int Proto4ShowerCalib::InitAna()
     h_mAsymmEnergy_mixed_raw = new TH2F("h_mAsymmEnergy_mixed_raw","h_mAsymmEnergy_mixed_raw",100,-1.0,1.0,1000,-0.5,15999.5);
     h_mAsymmEnergy_electron_raw = new TH2F("h_mAsymmEnergy_electron_raw","h_mAsymmEnergy_electron_raw",100,-1.0,1.0,1000,-0.5,15999.5);
     h_mAsymmEnergy_pion_raw = new TH2F("h_mAsymmEnergy_pion_raw","h_mAsymmEnergy_pion_raw",100,-1.0,1.0,1000,-0.5,15999.5);
+    h_mEnergyOut_pion_raw = new TH1F("h_mEnergyOut_pion_raw","h_mEnergyOut_pion_raw",1000,-0.5,15999.5);
 
     h_mAsymmEnergy_mixed_calib_wo_cut = new TH2F("h_mAsymmEnergy_mixed_calib_wo_cut","h_mAsymmEnergy_mixed_calib_wo_cut",100,-1.0,1.0,100,-0.5,histo_range);
     h_mAsymmEnergy_electron_calib_wo_cut = new TH2F("h_mAsymmEnergy_electron_calib_wo_cut","h_mAsymmEnergy_electron_calib_wo_cut",100,-1.0,1.0,100,-0.5,histo_range);
     h_mAsymmEnergy_pion_calib_wo_cut = new TH2F("h_mAsymmEnergy_pion_calib_wo_cut","h_mAsymmEnergy_pion_calib_wo_cut",100,-1.0,1.0,100,-0.5,histo_range);
+    h_mEnergyOut_pion_calib_wo_cut = new TH1F("h_mEnergyOut_pion_calib_wo_cut","h_mEnergyOut_pion_calib_wo_cut",100,-0.5,histo_range);
 
     h_mAsymmEnergy_mixed_calib = new TH2F("h_mAsymmEnergy_mixed_calib","h_mAsymmEnergy_mixed_calib",100,-1.0,1.0,100,-0.5,histo_range);
     h_mAsymmEnergy_electron_calib = new TH2F("h_mAsymmEnergy_electron_calib","h_mAsymmEnergy_electron_calib",100,-1.0,1.0,100,-0.5,histo_range);
     h_mAsymmEnergy_pion_calib = new TH2F("h_mAsymmEnergy_pion_calib","h_mAsymmEnergy_pion_calib",100,-1.0,1.0,100,-0.5,histo_range);
+    h_mEnergyOut_pion_calib = new TH1F("h_mEnergyOut_pion_calib","h_mEnergyOut_pion_calib",100,-0.5,histo_range);
 
     h_mAsymmEnergy_mixed_calib_leveling = new TH2F("h_mAsymmEnergy_mixed_calib_leveling","h_mAsymmEnergy_mixed_calib_leveling",100,-1.0,1.0,100,-0.5,histo_range);
     h_mAsymmEnergy_electron_calib_leveling= new TH2F("h_mAsymmEnergy_electron_calib_leveling","h_mAsymmEnergy_electron_calib_leveling",100,-1.0,1.0,100,-0.5,histo_range);
     h_mAsymmEnergy_pion_calib_leveling = new TH2F("h_mAsymmEnergy_pion_calib_leveling","h_mAsymmEnergy_pion_calib_leveling",100,-1.0,1.0,100,-0.5,histo_range);
+
+    h_mAsymmEnergy_mixed_ShowerCalib = new TH2F("h_mAsymmEnergy_mixed_ShowerCalib","h_mAsymmEnergy_mixed_ShowerCalib",100,-1.0,1.0,100,-0.5,histo_range+15.0);
+    h_mAsymmEnergy_electron_ShowerCalib = new TH2F("h_mAsymmEnergy_electron_ShowerCalib","h_mAsymmEnergy_electron_ShowerCalib",100,-1.0,1.0,100,-0.5,histo_range+15.0);
+    h_mAsymmEnergy_pion_ShowerCalib = new TH2F("h_mAsymmEnergy_pion_ShowerCalib","h_mAsymmEnergy_pion_ShowerCalib",100,-1.0,1.0,100,-0.5,histo_range+15.0);
+    h_mEnergyOut_pion_ShowerCalib = new TH1F("h_mEnergyOut_pion_ShowerCalib","h_mEnergyOut_pion_ShowerCalib",100,-0.5,histo_range+15.0);
   }
 
   return 0;
@@ -1023,7 +1031,7 @@ int Proto4ShowerCalib::MakeAna()
       float energy_raw = _mTower->hcal_total_raw; // raw
       float asymm_raw = _mTower->hcal_asym_raw;
       // const float energy_hcalin_raw = _mTower->hcalin_lg_e_raw;
-      // const float energy_hcalout_raw = _mTower->hcalout_lg_e_raw;
+      const float energy_hcalout_raw = _mTower->hcalout_lg_e_raw;
 
       float energy_calib = _mTower->hcal_total_calib; // calib
       float asymm_calib = _mTower->hcal_asym_calib;
@@ -1033,10 +1041,12 @@ int Proto4ShowerCalib::MakeAna()
       h_mAsymmEnergy_mixed_raw->Fill(asymm_raw,energy_raw);
       if(good_electron) h_mAsymmEnergy_electron_raw->Fill(asymm_raw,energy_raw);
       if(good_pion) h_mAsymmEnergy_pion_raw->Fill(asymm_raw,energy_raw);
+      if(good_pion) h_mEnergyOut_pion_raw->Fill(energy_hcalout_raw); // HCALOUT
 
       h_mAsymmEnergy_mixed_calib_wo_cut->Fill(asymm_calib,energy_calib);
       if(good_electron) h_mAsymmEnergy_electron_calib_wo_cut->Fill(asymm_calib,energy_calib);
       if(good_pion) h_mAsymmEnergy_pion_calib_wo_cut->Fill(asymm_calib,energy_calib);
+      if(good_pion) h_mEnergyOut_pion_calib_wo_cut->Fill(energy_hcalout_calib); // HCALOUT
 
       if(energy_hcalin_calib > 0.2 && energy_hcalout_calib > 0.2)
       // if(energy_total_calib > 0.5)
@@ -1044,6 +1054,7 @@ int Proto4ShowerCalib::MakeAna()
 	h_mAsymmEnergy_mixed_calib->Fill(asymm_calib,energy_calib);
 	if(good_electron) h_mAsymmEnergy_electron_calib->Fill(asymm_calib,energy_calib);
 	if(good_pion) h_mAsymmEnergy_pion_calib->Fill(asymm_calib,energy_calib);
+	if(good_pion) h_mEnergyOut_pion_calib->Fill(energy_hcalout_calib); // HCALOUT
 
 	// apply leveling
 	const float energy_leveling = c_in_leveling*energy_hcalin_calib + c_out_leveling*energy_hcalout_calib;
@@ -1051,6 +1062,16 @@ int Proto4ShowerCalib::MakeAna()
 	h_mAsymmEnergy_mixed_calib_leveling->Fill(asymm_leveling,energy_leveling);
 	if(good_electron) h_mAsymmEnergy_electron_calib_leveling->Fill(asymm_leveling,energy_leveling);
 	if(good_pion) h_mAsymmEnergy_pion_calib_leveling->Fill(asymm_leveling,energy_leveling);
+
+	// apply shower calibration
+	const float energy_showercalib = showercalib*c_in_leveling*energy_hcalin_calib + showercalib*c_out_leveling*energy_hcalout_calib;
+	const float asymm_showercalib = (showercalib*c_in_leveling*energy_hcalin_calib - showercalib*c_out_leveling*energy_hcalout_calib)/energy_leveling;
+	h_mAsymmEnergy_mixed_ShowerCalib->Fill(asymm_showercalib,energy_showercalib);
+	if(good_electron) h_mAsymmEnergy_electron_ShowerCalib->Fill(asymm_showercalib,energy_showercalib);
+	if(good_pion) h_mAsymmEnergy_pion_ShowerCalib->Fill(asymm_showercalib,energy_showercalib);
+
+	const float energy_hcalout_showercalib = showercalib_out*energy_hcalout_calib;
+	if(good_pion) h_mEnergyOut_pion_ShowerCalib->Fill(energy_hcalout_showercalib);
       }
     }
   }
@@ -1079,18 +1100,26 @@ int Proto4ShowerCalib::FinishAna()
     h_mAsymmEnergy_mixed_raw->Write();
     h_mAsymmEnergy_electron_raw->Write();
     h_mAsymmEnergy_pion_raw->Write();
+    h_mEnergyOut_pion_raw->Write();
 
     h_mAsymmEnergy_mixed_calib_wo_cut->Write();
     h_mAsymmEnergy_electron_calib_wo_cut->Write();
     h_mAsymmEnergy_pion_calib_wo_cut->Write();
+    h_mEnergyOut_pion_calib_wo_cut->Write();
 
     h_mAsymmEnergy_mixed_calib->Write();
     h_mAsymmEnergy_electron_calib->Write();
     h_mAsymmEnergy_pion_calib->Write();
+    h_mEnergyOut_pion_calib->Write();
 
     h_mAsymmEnergy_mixed_calib_leveling->Write();
     h_mAsymmEnergy_electron_calib_leveling->Write();
     h_mAsymmEnergy_pion_calib_leveling->Write();
+
+    h_mAsymmEnergy_mixed_ShowerCalib->Write();
+    h_mAsymmEnergy_electron_ShowerCalib->Write();
+    h_mAsymmEnergy_pion_ShowerCalib->Write();
+    h_mEnergyOut_pion_ShowerCalib->Write();
   }
   mFile_OutPut->Close();
 
