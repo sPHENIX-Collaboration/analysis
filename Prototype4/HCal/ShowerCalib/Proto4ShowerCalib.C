@@ -1065,7 +1065,9 @@ int Proto4ShowerCalib::MakeAna()
 
 	// apply shower calibration
 	const float energy_showercalib = showercalib*c_in_leveling*energy_hcalin_calib + showercalib*c_out_leveling*energy_hcalout_calib;
-	const float asymm_showercalib = (showercalib*c_in_leveling*energy_hcalin_calib - showercalib*c_out_leveling*energy_hcalout_calib)/energy_leveling;
+	const float asymm_showercalib = (showercalib*c_in_leveling*energy_hcalin_calib - showercalib*c_out_leveling*energy_hcalout_calib)/energy_showercalib;
+	// cout << "energy_leveling = " << energy_leveling << ", energy_showercalib = " << energy_showercalib << endl;
+	// cout << "asymm_leveling = " << asymm_leveling << ", asymm_showercalib = " << asymm_showercalib << endl;
 	h_mAsymmEnergy_mixed_ShowerCalib->Fill(asymm_showercalib,energy_showercalib);
 	if(good_electron) h_mAsymmEnergy_electron_ShowerCalib->Fill(asymm_showercalib,energy_showercalib);
 	if(good_pion) h_mAsymmEnergy_pion_ShowerCalib->Fill(asymm_showercalib,energy_showercalib);
