@@ -18,36 +18,40 @@
 #include <math.h>
 
 TruthConversionEval::TruthConversionEval(const std::string &name, unsigned int runnumber, 
-		int particleEmbed,  int pythiaEmbed) : SubsysReco("TruthConversionEval"),
-	_kRunNumber(runnumber),_kParticleEmbed(particleEmbed), _kPythiaEmbed(pythiaEmbed)
+		int particleEmbed,  int pythiaEmbed,bool makeTTree=true) : SubsysReco("TruthConversionEval"),
+	_kRunNumber(runnumber),_kParticleEmbed(particleEmbed), _kPythiaEmbed(pythiaEmbed), _kMakeTTree(makeTTree)
 {
 	_foutname = name;
 }
 
 TruthConversionEval::~TruthConversionEval(){
-	delete _f;
+	if (_f)
+	{
+		delete _f;
+	}
 }
 
 int TruthConversionEval::InitRun(PHCompositeNode *topNode)
 {
 	_b_event=0;
 	_runNumber=_kRunNumber;
-	_f = new TFile( _foutname.c_str(), "RECREATE");
-	_tree = new TTree("ttree","a succulent orange tree");
-	_tree->SetAutoSave(300);
-	_tree->Branch("runNumber",&_runNumber);
-	_tree->Branch("event",&_b_event); 
-	_tree->Branch("nVtx", &_b_nVtx);
-	_tree->Branch("nTpair", &_b_Tpair);
-	_tree->Branch("nRpair", &_b_Rpair);
-	_tree->Branch("rVtx", _b_rVtx,"rVtx[nVtx]/F");
-	_tree->Branch("pythia", _b_pythia,"pythia[nVtx]/B");
-	_tree->Branch("electron_pt", _b_electron_pt,"electron_pt[nVtx]/F");
-	_tree->Branch("positron_pt", _b_positron_pt,"positron_pt[nVtx]/F");
-	_tree->Branch("photon_pt",   _b_parent_pt    ,"photon_pt[nVtx]/F");
-	_tree->Branch("photon_eta",  _b_parent_eta  ,"photon_eta[nVtx]/F");
-	_tree->Branch("photon_phi",  _b_parent_phi  ,"photon_phi[nVtx]/F");
-
+	if(_kMakeTTree){
+		_f = new TFile( _foutname.c_str(), "RECREATE");
+		_tree = new TTree("ttree","a succulent orange tree");
+		_tree->SetAutoSave(300);
+		_tree->Branch("runNumber",&_runNumber);
+		_tree->Branch("event",&_b_event); 
+		_tree->Branch("nVtx", &_b_nVtx);
+		_tree->Branch("nTpair", &_b_Tpair);
+		_tree->Branch("nRpair", &_b_Rpair);
+		_tree->Branch("rVtx", _b_rVtx,"rVtx[nVtx]/F");
+		_tree->Branch("pythia", _b_pythia,"pythia[nVtx]/B");
+		_tree->Branch("electron_pt", _b_electron_pt,"electron_pt[nVtx]/F");
+		_tree->Branch("positron_pt", _b_positron_pt,"positron_pt[nVtx]/F");
+		_tree->Branch("photon_pt",   _b_parent_pt    ,"photon_pt[nVtx]/F");
+		_tree->Branch("photon_eta",  _b_parent_eta  ,"photon_eta[nVtx]/F");
+		_tree->Branch("photon_phi",  _b_parent_phi  ,"photon_phi[nVtx]/F");
+	}
 	return 0;
 }
 
@@ -100,8 +104,10 @@ int TruthConversionEval::process_event(PHCompositeNode *topNode)
 		cout<<Name()<<"# conversion clusters="<<_conversionClusters.size()<<'\n';
 	}
 	//findChildren(missingChildren,truthinfo);
-
-	_tree->Fill();
+	if (_tree)
+	{
+		_tree->Fill();
+	}
 	if (Verbosity()>=8)
 	{
 		std::cout<<Name()<<" found "<<_b_nVtx<<" truth conversions \n";
