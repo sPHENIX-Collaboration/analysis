@@ -163,12 +163,27 @@ public:
   inline int getEmbed() const {return embedID;}
 
   inline void setEmbed(int embedID) {this->embedID=embedID;}
-  /**finds the cluster associated with {@link reco1} 
+  /**Finds the cluster associated with {@link reco1} 
   * if the trackeval was not previously set it needs to be set now
   * if {@link reco1} not set will attempt to set
   * @return -1 if no cluster is found*/
   int get_cluster_id();
   int get_cluster_id(SvtxTrackEval *trackeval);
+
+  /** Finds the delta eta of the reco tracks.
+  * @return -1 if reco tracks are not set */
+  inline float trackDEta(){
+      if (recoCount()==2)
+      {
+        return fabs(reco1->get_eta()-reco2->get_eta());
+      }
+      else return -1;
+  }
+      /** Return the difference in layers of the first hits of the reco track 
+      * @return -1 if reco tracks are not set*/
+      int dLayer();
+      ///@return true if there are any silicon hits for the conversion
+      bool hasSilicon();
 private:
   PHG4Particle* e1=NULL;
   PHG4Particle* e2=NULL;
@@ -177,6 +192,7 @@ private:
   SvtxTrack* reco1=NULL;
   SvtxTrack* reco2=NULL;
   SvtxTrackEval* trackeval=NULL;
+  static const int _kNSiliconLayer =7; ///<hardcoded 
   int embedID=0;
   int verbosity;
 };
