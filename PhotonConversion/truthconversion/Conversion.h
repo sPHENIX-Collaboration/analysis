@@ -179,6 +179,11 @@ public:
       }
       else return -1;
   }
+  /** set the reco maps used for {@link trackDEta}, {@link trackDLayer},{@link hasSilicon}*/
+  inline void setRecoMaps(SvtxClusterMap* cmap,SvtxHitMap* hmap){
+    _svtxClusterMap=cmap;
+    _hitMap=hmap;
+  }
       /** Return the difference in layers of the first hits of the reco track 
       * @return -1 if reco tracks are not set*/
       int trackDLayer();
@@ -192,6 +197,8 @@ private:
   SvtxTrack* reco1=NULL;
   SvtxTrack* reco2=NULL;
   SvtxTrackEval* trackeval=NULL;
+  SvtxClusterMap* _svtxClusterMap;                                                                              
+  SvtxHitMap *_hitMap;
   static const int _kNSiliconLayer =7; ///<hardcoded 
   int embedID=0;
   int verbosity;
