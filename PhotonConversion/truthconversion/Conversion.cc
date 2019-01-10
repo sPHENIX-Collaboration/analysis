@@ -96,7 +96,7 @@ bool Conversion::hasSilicon(){
         }
 }
 
-int Conversion::dLayer(){
+int Conversion::trackDLayer(){
   if (recoCount()==2){
           SvtxCluster *c1 = _svtxClusterMap->get(*(reco1->begin_clusters()));
           SvtxCluster *c2 = _svtxClusterMap->get(*(reco2->begin_clusters()));

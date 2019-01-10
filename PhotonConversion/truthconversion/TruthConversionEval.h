@@ -82,7 +82,8 @@ class TruthConversionEval: public SubsysReco
 		const bool _kMakeTTree;
 		int _runNumber; ///<for the TTree do not change
 		TFile *_f=NULL;
-		TTree *_tree=NULL;
+		TTree *_tree=NULL; ///< stores most of the data about the conversions
+		TTree *_signalCutTree=NULL; //<signal data for making track pair cuts
 		std::string _foutname;
 		int _b_event;
 		int _b_nVtx;  ///<total conversions
@@ -95,6 +96,9 @@ class TruthConversionEval: public SubsysReco
 		float _b_parent_pt  [s_kMAXParticles];
 		float _b_parent_eta [s_kMAXParticles];
 		float _b_parent_phi [s_kMAXParticles];
+    float _b_track_deta [s_kMAXParticles];
+    bool _b_track_silicon [s_kMAXParticles];
+    int _b_track_dlayer [s_kMAXParticles];
 		/** RawClusters associated with truth conversions
 		* processed by other modules*/
 		RawClusterContainer _conversionClusters;

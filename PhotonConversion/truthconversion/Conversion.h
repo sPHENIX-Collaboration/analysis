@@ -181,7 +181,7 @@ public:
   }
       /** Return the difference in layers of the first hits of the reco track 
       * @return -1 if reco tracks are not set*/
-      int dLayer();
+      int trackDLayer();
       ///@return true if there are any silicon hits for the conversion
       bool hasSilicon();
 private:
