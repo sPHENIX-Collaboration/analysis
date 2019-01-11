@@ -135,20 +135,20 @@ std::queue<std::pair<int,int>> TruthConversionEval::numUnique(std::map<int,Conve
 		PHG4VtxPoint *vtx =i->second.getVtx(); //get the vtx
 		_b_rVtx[_b_nVtx] = sqrt(vtx->get_x()*vtx->get_x()+vtx->get_y()*vtx->get_y()); //find the radius
 		PHG4Particle *temp = i->second.getPhoton(); //set the photon
-		TLorentzVector photonTrack,electronTrack,positronTrack; //make tlv for each particle 
-		photonTrack.SetPxPyPzE(temp->get_px(),temp->get_py(),temp->get_pz(),temp->get_e()); //intialize
+		TLorentzVector tlv_photon,tlv_electron,tlv_positron; //make tlv for each particle 
+		tlv_photon.SetPxPyPzE(temp->get_px(),temp->get_py(),temp->get_pz(),temp->get_e()); //intialize
 		//fill tree values
-		_b_parent_pt[_b_nVtx] =photonTrack.Pt();
-		_b_parent_phi[_b_nVtx]=photonTrack.Phi();
-		_b_parent_eta[_b_nVtx]=photonTrack.Eta();
+		_b_parent_pt[_b_nVtx] =tlv_photon.Pt();
+		_b_parent_phi[_b_nVtx]=tlv_photon.Phi();
+		_b_parent_eta[_b_nVtx]=tlv_photon.Eta();
 		temp=i->second.getElectron(); //set the first child 
-		electronTrack.SetPxPyPzE(temp->get_px(),temp->get_py(),temp->get_pz(),temp->get_e());
-		_b_electron_pt[_b_nVtx]=electronTrack.Pt(); //fill tree
+		tlv_electron.SetPxPyPzE(temp->get_px(),temp->get_py(),temp->get_pz(),temp->get_e());
+		_b_electron_pt[_b_nVtx]=tlv_electron.Pt(); //fill tree
 		temp=i->second.getPositron();
 		if(temp){ //this will be false for conersions with 1 truth track
-			positronTrack.SetPxPyPzE(temp->get_px(),temp->get_py(),temp->get_pz(),temp->get_e()); //init the tlv
-			_b_positron_pt[_b_nVtx]=positronTrack.Pt(); //fill tree
-			if (TMath::Abs(electronTrack.Eta())<_kRAPIDITYACCEPT&&TMath::Abs(positronTrack.Eta())<_kRAPIDITYACCEPT)
+			tlv_positron.SetPxPyPzE(temp->get_px(),temp->get_py(),temp->get_pz(),temp->get_e()); //init the tlv
+			_b_positron_pt[_b_nVtx]=tlv_positron.Pt(); //fill tree
+			if (TMath::Abs(tlv_electron.Eta())<_kRAPIDITYACCEPT&&TMath::Abs(tlv_positron.Eta())<_kRAPIDITYACCEPT)
 			{
 				_b_Tpair++;
 				unsigned int nRecoTracks = i->second.setRecoTracks(trackeval); //find the reco tracks for this conversion
