@@ -11,6 +11,6 @@ Reco level analysis is not possible yet. I am implementing the cuts used in ATLA
 **Conversion Efficiency** 
 - I first studied the exiting efficiency of the sPHENIX simulation to recover converted photons. These two plots were made on 12/3/18 and describe the effiency relative to radius and pT for single photon events using SvtxTrack reconstruction with no calorimeter data. This is also known as the inside out method. 
 ![pT](https://github.com/FrancescoVassalli/SinglePhoton/files/2742038/4layerRecopT.pdf)
-![radius](https://github.com/FrancescoVassalli/SinglePhoton/files/2742038/4layerRecoR.pdf)
+![radius](https://github.com/FrancescoVassalli/SinglePhoton/files/2742039/4layerRecoR.pdf)
 It may be useful to compare this to the atlas paper.
 Note that my photons were 5-30 GeV uniform distribution while the ATLAS study was fixed 20GeV.
