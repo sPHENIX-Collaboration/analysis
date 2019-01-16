@@ -42,7 +42,6 @@ public:
     this->verbosity=verbosity;
   }
   //dtor at bottom of public methods
-  
   /** sets the daughters of the conversion
   * use this to set the electron and positron
   * initializes both points but does not determine charge*/
@@ -179,6 +178,10 @@ public:
   * @return -1 if no cluster is found*/
   int get_cluster_id();
   int get_cluster_id(SvtxTrackEval *trackeval);
+  /**@return the cluster ID for both tracks if both are set. 
+  *If one is set pair.first will be the id.
+  *the unset tracks get -1 as the cluster id*/
+  std::pair<int,int> get_cluster_ids();
 
   inline std::pair<SvtxTrack*,SvtxTrack*> getRecoTracks(){
     return std::pair<SvtxTrack*,SvtxTrack*>(reco1,reco2);
@@ -192,6 +195,27 @@ public:
         return fabs(reco1->get_eta()-reco2->get_eta());
       }
       else return -1.;
+  }
+  inline float minTrackpT(){
+    switch(recoCount()){
+      case 2:
+        if (reco1->get_pt()<reco2->get_pt())
+        {
+          return reco1->get_pt();
+        }
+        else return reco2->get_pt();
+        break;
+      case 1:
+        if (reco1)
+        {
+          return reco1->get_pt();
+        }
+        else return reco2->get_pt();
+        break;
+      default:
+        return -1;
+        break;
+    }
   }
   /** set the reco maps used for {@link trackDEta}, {@link trackDLayer},{@link hasSilicon}*/
   inline void setRecoMaps(SvtxClusterMap* cmap,SvtxHitMap* hmap){
@@ -245,7 +269,7 @@ public:
   inline SvtxVertex* getRecoVtx(){
     return recoVtx;
   }
-  float dist(PHG4VtxPoint* vtx, SvtxClusterMap* cmap);
+  double dist(PHG4VtxPoint* vtx, SvtxClusterMap* cmap);
   float setRecoVtx(SvtxVertex* recovtx,SvtxClusterMap* cmap);
   TLorentzVector* setRecoPhoton();
 

@@ -82,6 +82,24 @@ int Conversion::get_cluster_id(){
   return reco1->get_cal_cluster_id(SvtxTrack::CAL_LAYER(1));//id of the emcal
 }
 
+std::pair<int,int> Conversion::get_cluster_ids(){
+  switch(recoCount()){
+    case 2:
+      return std::pair<int,int>(reco1->get_cal_cluster_id(SvtxTrack::CAL_LAYER(1)),reco2->get_cal_cluster_id(SvtxTrack::CAL_LAYER(1)));
+      break;
+    case 1:
+      if (reco1)
+      {
+        return std::pair<int,int>(reco1->get_cal_cluster_id(SvtxTrack::CAL_LAYER(1)),-1);
+      }
+      else return std::pair<int,int>(reco2->get_cal_cluster_id(SvtxTrack::CAL_LAYER(1)),-1);
+      break;
+    default:
+      return std::pair<int,int>(-1,-1);
+      break;
+  }
+}
+
 int Conversion::get_cluster_id(SvtxTrackEval *trackeval){
   this->trackeval=trackeval;
   if (!reco1)
@@ -147,11 +165,11 @@ int Conversion::firstLayer(SvtxClusterMap* svtxClusterMap){
   else return -1;
 }
 
-float Conversion::dist(PHG4VtxPoint *recovtx,SvtxClusterMap* svtxClusterMap){
+double Conversion::dist(PHG4VtxPoint *recovtx,SvtxClusterMap* svtxClusterMap){
     SvtxCluster *c1 = svtxClusterMap->get(*(reco1->begin_clusters()));
     SvtxCluster *c2 = svtxClusterMap->get(*(reco2->begin_clusters()));
-    float r1 = sqrt(fabs(c1->get_x()-recovtx->get_x())+fabs(c1->get_y()-recovtx->get_y())+fabs(c1->get_z()-recovtx->get_z()));
-    float r2 = sqrt(fabs(c2->get_x()-recovtx->get_x())+fabs(c2->get_y()-recovtx->get_y())+fabs(c2->get_z()-recovtx->get_z()));
+    double r1 = sqrt(abs(c1->get_x()-recovtx->get_x())+abs(c1->get_y()-recovtx->get_y())+abs(c1->get_z()-recovtx->get_z()));
+    double r2 = sqrt(abs(c2->get_x()-recovtx->get_x())+abs(c2->get_y()-recovtx->get_y())+abs(c2->get_z()-recovtx->get_z()));
     if (r1>r2)
     {
       return r1;
@@ -163,8 +181,8 @@ float Conversion::setRecoVtx(SvtxVertex *recovtx,SvtxClusterMap* svtxClusterMap)
     recoVtx=recovtx;
     SvtxCluster *c1 = svtxClusterMap->get(*(reco1->begin_clusters()));
     SvtxCluster *c2 = svtxClusterMap->get(*(reco2->begin_clusters()));
-    float r1 = sqrt(fabs(c1->get_x()-recovtx->get_x())+fabs(c1->get_y()-recovtx->get_y())+fabs(c1->get_z()-recovtx->get_z()));
-    float r2 = sqrt(fabs(c2->get_x()-recovtx->get_x())+fabs(c2->get_y()-recovtx->get_y())+fabs(c2->get_z()-recovtx->get_z()));
+    float r1 = sqrt(abs(c1->get_x()-recovtx->get_x())+abs(c1->get_y()-recovtx->get_y())+abs(c1->get_z()-recovtx->get_z()));
+    float r2 = sqrt(abs(c2->get_x()-recovtx->get_x())+abs(c2->get_y()-recovtx->get_y())+abs(c2->get_z()-recovtx->get_z()));
     if (r1>r2)
     {
       return r1;
