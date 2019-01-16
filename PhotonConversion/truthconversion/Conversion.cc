@@ -1,25 +1,31 @@
 #include "Conversion.h"
+#include <phool/PHCompositeNode.h>
+#include <phool/getClass.h>
 #include <assert.h>
 
 int Conversion::setRecoTracks(SvtxTrackEval* trackeval){	
   this->trackeval=trackeval;
   if (e1)
   {
-  	reco1=trackeval->best_track_from(e1); // have not checked that these are in range 
+    reco1=trackeval->best_track_from(e1);  
   }
   if (e2)
   {
-  	reco2=trackeval->best_track_from(e1);
+    reco2=trackeval->best_track_from(e2);
+  }
+  if(reco2==reco1){
+    reco2=NULL;
   }
   int r=0;
   if (reco1)
   {
-  	r++;
+    r++;
   }
   if (reco2)
   {
-  	r++;
+    r++;
   }
+  setRecoPhoton();
   return r;
 }
 
@@ -31,7 +37,10 @@ int Conversion::setRecoTracks(){
   }
   if (e2)
   {
-    reco2=trackeval->best_track_from(e1);
+    reco2=trackeval->best_track_from(e2);
+  }
+  if(reco2==reco1){
+    reco2=NULL;
   }
   int r=0;
   if (reco1)
@@ -42,7 +51,21 @@ int Conversion::setRecoTracks(){
   {
     r++;
   }
+  setRecoPhoton();
   return r;
+}
+
+TLorentzVector* Conversion::setRecoPhoton(){
+  if (reco1&&reco2)
+  {
+    TLorentzVector tlv1(reco1->get_px(),reco1->get_py(),reco1->get_pz(),
+      sqrt(_kElectronRestM*_kElectronRestM+reco1->get_p()*reco1->get_p()));
+    TLorentzVector tlv2(reco2->get_px(),reco2->get_py(),reco2->get_pz(),
+      sqrt(_kElectronRestM*_kElectronRestM+reco2->get_p()*reco2->get_p()));
+    if (recoPhoton) delete recoPhoton;
+    recoPhoton= new TLorentzVector(tlv1+tlv2);
+  }
+  return recoPhoton;
 }
 
 
@@ -72,54 +95,79 @@ int Conversion::get_cluster_id(SvtxTrackEval *trackeval){
   return reco1->get_cal_cluster_id(SvtxTrack::CAL_LAYER(1));//id of the emcal
 }
 
-bool Conversion::hasSilicon(){
-  switch(recoCount){
-          case 2:
-            SvtxCluster *c1 = _svtxClusterMap->get(*(reco1->begin_clusters()));
-            SvtxCluster *c2 = _svtxClusterMap->get(*(reco2->begin_clusters()));
-            return c1->get_layer()<=_kNSiliconLayer||c2->get_layer()<=_kNSiliconLayer;
-            break;
-          case 1:
-            SvtxCluster *c1;
-            if (reco1)
-            {
-              c1 = _svtxClusterMap->get(*(reco1->begin_clusters()));
-            }
-            else{
-              c1 = _svtxClusterMap->get(*(reco2->begin_clusters()));
-            }
-            return c1->get_layer()<=_kNSiliconLayer;
-            break;
-          default:
-            return false;
-            break;
-        }
-}
-
-int Conversion::trackDLayer(){
-  if (recoCount()==2){
-          SvtxCluster *c1 = _svtxClusterMap->get(*(reco1->begin_clusters()));
-          SvtxCluster *c2 = _svtxClusterMap->get(*(reco2->begin_clusters()));
-          SvtxHit *h1 = _hitMap->get(*(c1->begin_hits()));
-          SvtxHit *h2 = _hitMap->get(*(c2->begin_hits()));
-          return abs(h1->get_layer()-h2->get_layer());
-        }
-        else return -1;
-        
-        //check that the first hits are close enough
-        if (c1->get_layer()>_kNSiliconLayer&&c2->get_layer()>_kNSiliconLayer)
+bool Conversion::hasSilicon(SvtxClusterMap* svtxClusterMap){
+  switch(recoCount()){
+    case 2:
+      {
+        SvtxCluster *c1 = svtxClusterMap->get(*(reco1->begin_clusters()));
+        SvtxCluster *c2 = svtxClusterMap->get(*(reco2->begin_clusters()));
+        return c1->get_layer()<=_kNSiliconLayer||c2->get_layer()<=_kNSiliconLayer;
+      }
+      break;
+    case 1:
+      {
+        SvtxCluster *c1;
+        if (reco1)
         {
-          if (abs(h1->get_layer()-h2->get_layer())>_kFirstHitStrict)
-          {
-            return false;
-          }
+          c1 = svtxClusterMap->get(*(reco1->begin_clusters()));
         }
         else{
-          if (abs(h1->get_layer()-h2->get_layer())>_kFirstHit)
-          {
-            return false;
-          }
+          c1 = svtxClusterMap->get(*(reco2->begin_clusters()));
         }
-        //check the approach distance
-        return true;
+        return c1->get_layer()<=_kNSiliconLayer;
+      }
+      break;
+    default:
+      return false;
+      break;
+  }
+}
+
+int Conversion::trackDLayer(SvtxClusterMap* svtxClusterMap,SvtxHitMap* hitMap){
+  if (recoCount()==2){
+    SvtxCluster *c1 = svtxClusterMap->get(*(reco1->begin_clusters()));
+    SvtxCluster *c2 = svtxClusterMap->get(*(reco2->begin_clusters()));
+    SvtxHit *h1 = hitMap->get(*(c1->begin_hits()));
+    SvtxHit *h2 = hitMap->get(*(c2->begin_hits()));
+    int l1 = h1->get_layer();
+    int l2 = h2->get_layer();
+    return abs(l1-l2);
+  }
+  else return -1;
+}
+int Conversion::firstLayer(SvtxClusterMap* svtxClusterMap){
+  if (recoCount()==2){
+    SvtxCluster *c1 = svtxClusterMap->get(*(reco1->begin_clusters()));
+    SvtxCluster *c2 = svtxClusterMap->get(*(reco2->begin_clusters()));
+    if(c1->get_layer()>c2->get_layer()){
+      return c2->get_layer();
+    }
+    else return c1->get_layer();
+  }
+  else return -1;
+}
+
+float Conversion::dist(PHG4VtxPoint *recovtx,SvtxClusterMap* svtxClusterMap){
+    SvtxCluster *c1 = svtxClusterMap->get(*(reco1->begin_clusters()));
+    SvtxCluster *c2 = svtxClusterMap->get(*(reco2->begin_clusters()));
+    float r1 = sqrt(fabs(c1->get_x()-recovtx->get_x())+fabs(c1->get_y()-recovtx->get_y())+fabs(c1->get_z()-recovtx->get_z()));
+    float r2 = sqrt(fabs(c2->get_x()-recovtx->get_x())+fabs(c2->get_y()-recovtx->get_y())+fabs(c2->get_z()-recovtx->get_z()));
+    if (r1>r2)
+    {
+      return r1;
+    }
+    else return r2;
+}
+
+float Conversion::setRecoVtx(SvtxVertex *recovtx,SvtxClusterMap* svtxClusterMap){
+    recoVtx=recovtx;
+    SvtxCluster *c1 = svtxClusterMap->get(*(reco1->begin_clusters()));
+    SvtxCluster *c2 = svtxClusterMap->get(*(reco2->begin_clusters()));
+    float r1 = sqrt(fabs(c1->get_x()-recovtx->get_x())+fabs(c1->get_y()-recovtx->get_y())+fabs(c1->get_z()-recovtx->get_z()));
+    float r2 = sqrt(fabs(c2->get_x()-recovtx->get_x())+fabs(c2->get_y()-recovtx->get_y())+fabs(c2->get_z()-recovtx->get_z()));
+    if (r1>r2)
+    {
+      return r1;
+    }
+    else return r2;
 }

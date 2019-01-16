@@ -35,6 +35,7 @@ libtruthconversion_la_LIBADD = \
   -lg4dst \
   -lg4eval \
   -lcalotrigger \
+	-lConvertedPhotonReconstructor\
   -lphool
 
 BUILT_SOURCES = \
