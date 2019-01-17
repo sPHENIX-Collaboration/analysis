@@ -17,3 +17,6 @@ It may be useful to compare this to the atlas paper.
 Note that my photons were 5-30 GeV uniform distribution while the ATLAS study was fixed 20GeV.
 
 - This package was presented to the simulations group in https://indico.bnl.gov/event/5447/
+
+**Macros**
+cluster2Plotter.C:example root macro for plotting some cluster information from the truth TTree

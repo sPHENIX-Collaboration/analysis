@@ -98,6 +98,7 @@ class TruthConversionEval: public SubsysReco
     void processBackground(std::map<int,Conversion>* map,SvtxTrackEval* trackEval);
 
     const static int s_kMAXParticles=200; //< increase this number if arrays go out of bounds
+    const static int s_kMAXRecoMatch=20; //< increase this number if arrays go out of bounds
     const unsigned int _kRunNumber;
     const int _kParticleEmbed;
     const int _kPythiaEmbed;
@@ -120,38 +121,51 @@ class TruthConversionEval: public SubsysReco
     int _b_nVtx;  ///<total conversions
     int _b_Tpair; ///<count acceptance e pairs in truth
     int _b_Rpair; ///<count acceptance e pairs in reco
-    float _b_rVtx[s_kMAXParticles];  ///<truth conversion radius used for the signal tree
+    double _b_rVtx[s_kMAXParticles];  ///<truth conversion radius used for the signal tree
     bool _b_pythia[s_kMAXParticles];  ///<record if the conversion is from pythia or G4 particle
     float _b_electron_pt[s_kMAXParticles];
     float _b_positron_pt[s_kMAXParticles];
+    float _b_e_deta[s_kMAXParticles];
+    float _b_e_dphi[s_kMAXParticles];
     float _b_parent_pt  [s_kMAXParticles];
     float _b_parent_eta [s_kMAXParticles];
     float _b_parent_phi [s_kMAXParticles];
-    int _b_grandparent_id [s_kMAXParticles];
+    int   _b_grandparent_id [s_kMAXParticles]; ///<pid of the source of the photon 0 for prompt
+    int   _b_nCluster [s_kMAXRecoMatch];
+    float _b_cluster_dphi [s_kMAXRecoMatch];
+    float _b_cluster_deta [s_kMAXRecoMatch];
+    float _b_Mcluster_prob[s_kMAXRecoMatch]; ///<cluster prob for merged clusters
+    float _b_Scluster_prob[s_kMAXRecoMatch]; ///<cluster prob for split clusters
     /**@}*/
     /** \defgroup signalTreeVars Variables for {@link _signalCutTree}
       @{*/
     float _b_track_deta ;
     bool _b_track_layer ;
     int _b_track_dlayer ;
-    double _b_approach ;
-    float _b_vtx_radius;
-    float _b_vtxTrack_dist;
+    float _b_track_pT;
+    double _b_approach  ;
+    double _b_vtx_radius ;
+    double _b_vtxTrack_dist;
     float _b_vtx_chi2;
     float _b_photon_m;
     float _b_photon_pT;
+    float _b_cluster_prob;
+    float _b_track_dphi;
     /**@}*/
     /** \defgroup backTreeVars Variables for {@link _signalCutTree}
       @{*/
     float _bb_track_deta ;
     int _bb_track_layer ;
     int _bb_track_dlayer ;
+    float _bb_track_pT;
     double _bb_approach ;
-    float _bb_vtx_radius;
-    float _bb_vtxTrack_dist;
+    double _bb_vtx_radius;
+    double _bb_vtxTrack_dist;
     float _bb_vtx_chi2;
     float _bb_photon_m;
     float _bb_photon_pT;
+    float _bb_cluster_prob;
+    float _bb_track_dphi;
     /**@}*/
     /** RawClusters associated with truth conversions
      * processed by other modules*/
