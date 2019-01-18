@@ -82,7 +82,7 @@ class TruthConversionEval: public SubsysReco
       _svtxClusterMap = findNode::getClass<SvtxClusterMap>(topNode,"SvtxClusterMap");
       _hitMap = findNode::getClass<SvtxHitMap>(topNode,"SvtxHitMap");
       _vertexer= new RaveVertexingAux(topNode);
-      _vertexer->Verbosity(10);
+      _vertexer->Verbosity(Verbosity());
       _topNode=topNode;
     }
     /** helper function for process_event
@@ -95,26 +95,27 @@ class TruthConversionEval: public SubsysReco
     void findChildren(std::queue<std::pair<int,int>> missing,PHG4TruthInfoContainer* truthinfo);
     /** @param map should contain Conversion objects which hold background events i.e. not conversions
      * fills the fields for {@link _backgroundCutTree*/
-    void processBackground(std::map<int,Conversion>* map,SvtxTrackEval* trackEval);
+    void processBackground(std::map<int,Conversion>* map,SvtxTrackEval* trackEval,TTree* tree);
 
-    const static int s_kMAXParticles=200; //< increase this number if arrays go out of bounds
-    const static int s_kMAXRecoMatch=20; //< increase this number if arrays go out of bounds
+    const static int s_kMAXParticles=200; ///< increase this number if arrays go out of bounds
+    const static int s_kMAXRecoMatch=20; ///< increase this number if arrays go out of bounds
     const unsigned int _kRunNumber;
-    const int _kParticleEmbed;
-    const int _kPythiaEmbed;
-    const bool _kMakeTTree;
+    const int _kParticleEmbed; ///< primary embedID
+    const int _kPythiaEmbed; ///< background event embedID i.e. pythia or AA
+    const bool _kMakeTTree;//< if false no TTrees are output
     int _runNumber; ///<for the TTree do not change
-    TFile *_f=NULL;
+    TFile *_f=NULL; ///< output file
     TTree *_tree=NULL; ///< stores most of the data about the conversions
-    TTree *_signalCutTree=NULL; //<signal data for making track pair cuts
-    TTree *_backgroundCutTree=NULL; //<background data for making track pair cuts
-    RawClusterContainer *_mainClusterContainer;
+    TTree *_signalCutTree=NULL; ///<signal data for making track pair cuts
+    TTree *_h_backgroundCutTree=NULL; ///<hadronic background data for making track pair cuts
+    TTree *_e_backgroundCutTree=NULL; ///<EM background data for making track pair cuts
+    RawClusterContainer *_mainClusterContainer; ///< contain 1 cluster associated with each conversion
     PHG4TruthInfoContainer *_truthinfo;
     SvtxClusterMap* _svtxClusterMap;
     SvtxHitMap *_hitMap;
-    std::string _foutname;
+    std::string _foutname; ///< name of the output file
     PHCompositeNode *_topNode=NULL;
-    RaveVertexingAux *_vertexer=NULL;
+    RaveVertexingAux *_vertexer=NULL; ///< for reco vertex finding currently does nothing
     /** \defgroup mainTreeVars Variables for {@link _tree}
       @{*/
     int _b_event;
@@ -131,7 +132,9 @@ class TruthConversionEval: public SubsysReco
     float _b_parent_eta [s_kMAXParticles];
     float _b_parent_phi [s_kMAXParticles];
     int   _b_grandparent_id [s_kMAXParticles]; ///<pid of the source of the photon 0 for prompt
-    int   _b_nCluster [s_kMAXRecoMatch];
+    /** # of clusters associated with each conversion that has 2 reco tracks
+    * 1 indicates the reco tracks go to the same cluster ~15% of conversions*/
+    int   _b_nCluster [s_kMAXRecoMatch]; 
     float _b_cluster_dphi [s_kMAXRecoMatch];
     float _b_cluster_deta [s_kMAXRecoMatch];
     float _b_Mcluster_prob[s_kMAXRecoMatch]; ///<cluster prob for merged clusters
@@ -154,6 +157,7 @@ class TruthConversionEval: public SubsysReco
     /**@}*/
     /** \defgroup backTreeVars Variables for {@link _signalCutTree}
       @{*/
+    //bb stands for background branch
     float _bb_track_deta ;
     int _bb_track_layer ;
     int _bb_track_dlayer ;
@@ -166,6 +170,7 @@ class TruthConversionEval: public SubsysReco
     float _bb_photon_pT;
     float _bb_cluster_prob;
     float _bb_track_dphi;
+    int _bb_pid;
     /**@}*/
     /** RawClusters associated with truth conversions
      * processed by other modules*/

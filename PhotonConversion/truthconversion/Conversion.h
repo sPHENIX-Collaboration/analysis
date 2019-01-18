@@ -198,8 +198,6 @@ class Conversion
 		 * will print warnings if something is wrong with the Conversion
 		 **/
 		bool setElectron();
-
-
 		/** Return the difference in layers of the first hits of the reco track 
 		 * @return -1 if reco tracks are not set*/
 		int trackDLayer(SvtxClusterMap* cmap,SvtxHitMap* hitMap);
