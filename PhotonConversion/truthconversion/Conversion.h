@@ -45,21 +45,7 @@ class Conversion
 		/** sets the daughters of the conversion
 		 * use this to set the electron and positron
 		 * initializes both points but does not determine charge*/
-		inline void setElectron(PHG4Particle* e){
-			if (e1)
-			{
-				if (e2&&verbosity>0)
-				{
-					std::cout<<"WARNING in Conversion oversetting conversion electrons"<<std::endl;
-				}
-				else{
-					e2=e;
-				}
-			}
-			else{
-				e1=e;
-			}
-		}
+		void setElectron(PHG4Particle* e);
 		inline void setTrackEval(SvtxTrackEval *trackeval){this->trackeval=trackeval;}
 		inline void setVtx(PHG4VtxPoint* vtx){this->vtx=vtx;}
 		inline PHG4VtxPoint* getVtx()const{return vtx;}
@@ -100,23 +86,13 @@ class Conversion
 			return r;
 		}
 		///calls {@link setElectron()} then returns {@link e1}
-		inline PHG4Particle* getElectron(){
-			setElectron();
-			return e1;
-		}
-    ///@return {@link e1}
-    inline PHG4Particle* getElectron()const{return e1;}
+		PHG4Particle* getElectron();
+		///@return {@link e1}
+		inline PHG4Particle* getElectron()const{return e1;}
 		///calls {@link setElectron()} if true returns {@link e2} else returns {@link e1}
-		inline PHG4Particle* getPositron(){
-			if(setElectron()){
-				return e2;
-			}
-			else{
-				return e1;
-			}
-		}
-    ///@return {@link e2}
-    inline PHG4Particle* getPositron()const{return e2;}
+		PHG4Particle* getPositron();
+		///@return {@link e2}
+		inline PHG4Particle* getPositron()const{return e2;}
 		inline PHG4Particle* getPhoton()const{return photon;}
 		inline int getEmbed() const {return embedID;}
 
@@ -126,15 +102,9 @@ class Conversion
 		inline SvtxVertex* getRecoVtx()const{return recoVtx;}
 		/** Finds the delta eta of the reco tracks.
 		 * @return -1 if reco tracks are not set */
-		inline float trackDEta()const{
-			if (recoCount()==2)
-			{
-				return fabs(reco1->get_eta()-reco2->get_eta());
-			}
-			else return -1.;
-		}
-    /** Finds the delta phi of the reco tracks.
-     * @return -1 if reco tracks are not set */
+		float trackDEta()const;
+		/** Finds the delta phi of the reco tracks.
+		 * @return -1 if reco tracks are not set */
 		inline float trackDPhi()const{
 			if (recoCount()==2)
 			{
@@ -142,28 +112,8 @@ class Conversion
 			}
 			else return -1.;
 		}
-    ///@return the minimun reco track pT
-		inline float minTrackpT(){
-			switch(recoCount()){
-				case 2:
-					if (reco1->get_pt()<reco2->get_pt())
-					{
-						return reco1->get_pt();
-					}
-					else return reco2->get_pt();
-					break;
-				case 1:
-					if (reco1)
-					{
-						return reco1->get_pt();
-					}
-					else return reco2->get_pt();
-					break;
-				default:
-					return -1;
-					break;
-			}
-		}
+		///@return the minimun reco track pT
+		float minTrackpT();
 		inline std::pair<SvtxTrack*,SvtxTrack*> getRecoTracks()const{
 			return std::pair<SvtxTrack*,SvtxTrack*>(reco1,reco2);
 		}
@@ -172,18 +122,22 @@ class Conversion
 			_svtxClusterMap=cmap;
 			_hitMap=hmap;
 		}
+		inline int setVerbosity(int v){
+			verbosity=v;
+			return verbosity;
+		}
 		/**Finds the cluster associated with {@link reco1} 
 		 * if the trackeval was not previously set it needs to be set now
 		 * if {@link reco1} not set will attempt to set
 		 * @return -1 if no cluster is found*/
-    int get_cluster_id();
-    /**Finds the cluster associated with {@link reco1} 
-     * @return -1 if no cluster is found*/
+		int get_cluster_id();
+		/**Finds the cluster associated with {@link reco1} 
+		 * @return -1 if no cluster is found*/
 		int get_cluster_id()const;
-    /**Finds the cluster associated with {@link reco1} 
-     * if {@link reco1} not set will attempt to set
-     * @return -1 if no cluster is found*/
-    int get_cluster_id(SvtxTrackEval *trackeval);
+		/**Finds the cluster associated with {@link reco1} 
+		 * if {@link reco1} not set will attempt to set
+		 * @return -1 if no cluster is found*/
+		int get_cluster_id(SvtxTrackEval *trackeval);
 		/**@return the cluster ID for both tracks if both are set. 
 		 *If one is set pair.first will be the id.
 		 *the unset tracks get -1 as the cluster id*/

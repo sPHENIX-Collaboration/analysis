@@ -1,11 +1,19 @@
+/**
+ * @ConversionClusterTreeMaker.h
+ * @author Francesco Vassalli <Francesco.Vassalli@colorado.edu>
+ * @author Chase Smith <Chase.Smith@colorado.edu>
+ * @version 1.0
+ *
+ * @brief Simple class to hold conversion information
+ */
 #ifndef ConversionClusterTreeMaker_h 
 #define ConversionClusterTreeMaker_h
-
-#include <fun4all/SubsysReco.h>
 
 #include "TTree.h"
 #include "TFile.h"
 #include "TruthConversionEval.h"
+
+#include <fun4all/SubsysReco.h>
 
 #include <string>
 #include <vector>

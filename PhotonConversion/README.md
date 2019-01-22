@@ -1,9 +1,10 @@
 **![My GitHub:](https://github.com/FrancescoVassalli/SinglePhoton/)**
 **Truth Level Analysis**
-The truthconversion package uses truth information to identify photon conversions and saves information about the conversion to a TTree. The conversions are then associated with RawClusters and the TreeMaker class makes a second TTree with cluster and tower information. The macro titled cluster_burner will run the package. It takes a DST input file and a title for the output trees. A run number can also be designated. If the user does not want both TTrees that can be edited in the macro. Most of the interface should be handled with the macro however if one wishes to change what it recored in the TTree this should be done in TruthConversionEval.C which is heavily commented. 
+The truthconversion package uses truth information to identify photon conversions and saves information about the conversion to a TTree. The conversions are then associated with RawClusters and the TreeMaker class makes a second TTree with cluster and tower information. The macro titled cluster_burner will run the package. It takes a DST input file and a title for the output file. A run number can also be designated. If the user does not want TTrees that can be edited in the macro. Most of the interface should be handled with the macro however if one wishes to change what it recored in the TTree this should be done in TruthConversionEval.C which is heavily commented. 
 
 **Reco Level Analysis**
-Reco level analysis is not possible yet. I am implementing the cuts used in ATLAS however not all the cuts are implented and none of them are tuned. To tune them I am making 2 additional TTrees with the truthconversion package. One of the trees has the cut info for all the truth conversion signal and the other has background data. I use TMVA to tune the cuts. However I am leaving in feburary 2019 and may not have time to tune the cuts, but I will make the Trees. The unfinished recoconversion package is not yet included here but [here is the WIP](https://github.com/FrancescoVassalli/SinglePhoton/tree/master/PhotonConversion). One of the main things that needs to be done for the reco package is making a vertexing algorithm for 2 tracks with photons as the initial guess.
+
+Reco level analysis is not possible yet. I am implementing the tracking cuts used in ATLAS  as well as additional calorimeter cuts. Not all the cuts are implented and none of them are tuned. To tune them I have made additional TTrees with the truthconversion package. The trees have the cut info for all the truth conversion signal and seperatly there are trees of background data. However I am leaving in feburary 2019 and will not have time to tune the cuts, but I will make the Trees. The unfinished recoconversion package is not yet included here but [here is the WIP](https://github.com/FrancescoVassalli/SinglePhoton/tree/master/PhotonConversion). One of the main things that needs to be done for the reco package is making a vertexing algorithm for 2 tracks with photons as the initial guess.
 
 
 **Background on Photon Conversion**
@@ -20,3 +21,7 @@ Note that my photons were 5-30 GeV uniform distribution while the ATLAS study wa
 
 **Macros**
 cluster2Plotter.C:example root macro for plotting some cluster information from the truth TTree
+backgroundPlotter.C:example root macro for plotting data from a background tree.
+
+**Reco Cuts**
+Here I present my findings thus far on the cuts to be used in reco. 
