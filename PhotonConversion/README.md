@@ -19,5 +19,6 @@ Note that my photons were 5-30 GeV uniform distribution while the ATLAS study wa
 - This package was presented to the simulations group in https://indico.bnl.gov/event/5447/
 
 **Macros**
-cluster2Plotter.C:example root macro for plotting some cluster information from the truth TTree
-backgroundPlotter.C:example root macro for plotting data from a background tree.
+ cluster2Plotter.C:example root macro for plotting some cluster information from the truth TTree
+ backgroundPlotter.C:example root macro for plotting data from a background tree.
+ cluster_burner.C: macro to run the truth package, needs to be linked to your G4 macros
