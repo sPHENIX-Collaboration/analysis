@@ -385,7 +385,7 @@ std::queue<std::pair<int,int>> TruthConversionEval::numUnique(std::map<int,Conve
                 RawCluster *clustemp =   dynamic_cast<RawCluster*>(mainClusterContainer->getCluster(clustidtemp)->Clone());
                 _conversionClusters.AddCluster(clustemp); //add the calo cluster to the container
               }
-              cout<<"Matched 1 reco with layer="<<i->second.firstLayer(_svtxClusterMap,_hitMap)<<"pTs:"<<tlv_electron.Pt()<<"-"<<tlv_positron.Pt()<<'\n';
+              //cout<<"Matched 1 reco with layer="<<i->second.firstLayer(_svtxClusterMap,_hitMap)<<"pTs:"<<tlv_electron.Pt()<<"-"<<tlv_positron.Pt()<<'\n';
               break;
             }
           case 0: //no reco tracks
