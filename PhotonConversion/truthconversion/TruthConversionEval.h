@@ -99,6 +99,8 @@ class TruthConversionEval: public SubsysReco
     bool _b_pythia[s_kMAXParticles];  ///<record if the conversion is from pythia or G4 particle
     float _b_electron_pt[s_kMAXParticles];
     float _b_positron_pt[s_kMAXParticles];
+    float _b_electron_reco_pt[s_kMAXParticles];
+    float _b_positron_reco_pt[s_kMAXParticles];
     float _b_e_deta[s_kMAXParticles];
     float _b_e_dphi[s_kMAXParticles];
     float _b_parent_pt  [s_kMAXParticles];
@@ -108,6 +110,7 @@ class TruthConversionEval: public SubsysReco
     /** # of clusters associated with each conversion that has 2 reco tracks
     * 1 indicates the reco tracks go to the same cluster ~15% of conversions*/
     int   _b_nCluster [s_kMAXRecoMatch]; 
+    int   _b_fLayer [s_kMAXRecoMatch]; 
     float _b_cluster_dphi [s_kMAXRecoMatch];
     float _b_cluster_deta [s_kMAXRecoMatch];
     float _b_Mcluster_prob[s_kMAXRecoMatch]; ///<cluster prob for merged clusters
@@ -116,7 +119,7 @@ class TruthConversionEval: public SubsysReco
     /** \defgroup signalTreeVars Variables for {@link _signalCutTree}
       @{*/
     float _b_track_deta ;
-    bool _b_track_layer ;
+    int _b_track_layer ;
     int _b_track_dlayer ;
     float _b_track_pT;
     double _b_approach  ;

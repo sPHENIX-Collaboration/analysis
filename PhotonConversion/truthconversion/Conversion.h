@@ -11,37 +11,25 @@
 #include <g4main/PHG4Particle.h>
 #include <g4main/PHG4VtxPoint.h>
 #include <trackbase_historic/SvtxTrack.h>
-#include <trackbase_historic/SvtxHitMap.h>
-#include <trackbase_historic/SvtxHit.h>
 #include <trackbase_historic/SvtxClusterMap.h>
-#include <trackbase_historic/SvtxCluster.h>
 #include <trackbase_historic/SvtxVertex.h>
 #include <g4eval/SvtxTrackEval.h>
-#include <TVector3.h>
 #include <TLorentzVector.h>
 #include <utility>
 
 class SvtxTrackEval;
 class PHCompositeNode;
+class TLorentzVector;
+class SvtxHitMap;
 
 class Conversion
 {
 	public:
 		Conversion(){verbosity=0;}
-		Conversion(SvtxTrackEval* trackeval,int verbosity=0){
-			this->trackeval=trackeval;
-			this->verbosity=verbosity;
-		}
-		Conversion(PHG4VtxPoint* vtx,int verbosity=0){
-			this->vtx=vtx;
-			this->verbosity=verbosity;
-		}
-		Conversion(PHG4VtxPoint* vtx,SvtxTrackEval *trackeval,int verbosity=0){
-			this->trackeval=trackeval;
-			this->vtx=vtx;
-			this->verbosity=verbosity;
-		}
-		//dtor at bottom of public methods
+		Conversion(SvtxTrackEval* trackeval,int verbosity=0);
+		Conversion(PHG4VtxPoint* vtx,int verbosity=0);
+		Conversion(PHG4VtxPoint* vtx,SvtxTrackEval *trackeval,int verbosity=0);
+		~Conversion();
 		/** sets the daughters of the conversion
 		 * use this to set the electron and positron
 		 * initializes both points but does not determine charge*/
@@ -114,13 +102,13 @@ class Conversion
 		}
 		///@return the minimun reco track pT
 		float minTrackpT();
+		std::pair<float,float> getTrackpTs();
 		inline std::pair<SvtxTrack*,SvtxTrack*> getRecoTracks()const{
 			return std::pair<SvtxTrack*,SvtxTrack*>(reco1,reco2);
 		}
 		/** set the reco maps used for {@link trackDEta}, {@link trackDLayer},{@link hasSilicon}*/
-		inline void setRecoMaps(SvtxClusterMap* cmap,SvtxHitMap* hmap){
+		inline void setClusterMap(SvtxClusterMap* cmap){
 			_svtxClusterMap=cmap;
-			_hitMap=hmap;
 		}
 		inline int setVerbosity(int v){
 			verbosity=v;
@@ -154,9 +142,9 @@ class Conversion
 		bool setElectron();
 		/** Return the difference in layers of the first hits of the reco track 
 		 * @return -1 if reco tracks are not set*/
-		int trackDLayer(SvtxClusterMap* cmap,SvtxHitMap* hitMap);
+		int trackDLayer(SvtxClusterMap* cmap,SvtxHitMap *hitmap);
 		///@return the first layer the associated reco clusters hit
-		int firstLayer(SvtxClusterMap* cmap);
+		int firstLayer(SvtxClusterMap* cmap,SvtxHitMap *hitmap);
 		///@return true if there are any silicon hits for the conversion
 		bool hasSilicon(SvtxClusterMap* cmap);
 		/** distance between two closest points on the reco tracks 
@@ -166,12 +154,6 @@ class Conversion
 		double dist(PHG4VtxPoint* vtx, SvtxClusterMap* cmap);
 		float setRecoVtx(SvtxVertex* recovtx,SvtxClusterMap* cmap);
 		TLorentzVector* setRecoPhoton();
-
-		~Conversion(){
-			if(recoVertex) delete recoVertex;
-			if(recoPhoton) delete recoPhoton;
-			//dont delete the points as you are not the owner and did not make your own copies
-		}
 
 	private:
 		PHG4Particle* e1=NULL;
@@ -183,7 +165,6 @@ class Conversion
 		SvtxTrack* reco2=NULL;
 		SvtxTrackEval* trackeval=NULL;
 		SvtxClusterMap* _svtxClusterMap=NULL;                                                                              
-		SvtxHitMap *_hitMap=NULL;
 		SvtxVertex *recoVertex=NULL;
 		TLorentzVector *recoPhoton=NULL;
 		static const int _kNSiliconLayer =7; ///<hardcoded 
