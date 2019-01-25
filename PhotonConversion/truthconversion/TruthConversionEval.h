@@ -27,7 +27,7 @@ class SvtxCluster;
 class RawClusterContainer;
 class TTree;
 class TFile;
-class RaveVertexingAux;
+//class RaveVertexingAux; //declaration for the 2 track vertexer which is not ready yet
 
 class TruthConversionEval: public SubsysReco
 {
@@ -88,7 +88,7 @@ class TruthConversionEval: public SubsysReco
     SvtxClusterMap* _svtxClusterMap;
     SvtxHitMap *_hitMap;
     std::string _foutname; ///< name of the output file
-    RaveVertexingAux *_vertexer=NULL; ///< for reco vertex finding currently does nothing
+    //RaveVertexingAux *_vertexer=NULL; // for reco vertex finding currently does nothing
     /** \defgroup mainTreeVars Variables for {@link _tree}
       @{*/
     int _b_event;
