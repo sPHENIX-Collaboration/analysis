@@ -15,23 +15,23 @@
 #include <g4main/PHG4Particle.h>
 #include <g4main/PHG4TruthInfoContainer.h>
 
+#include <g4mvtx/PHG4CylinderGeom_MVTX.h>
+
 #include <g4detectors/PHG4Cell.h>
 #include <g4detectors/PHG4CellContainer.h>
 #include <g4detectors/PHG4CylinderCellGeom.h>
 #include <g4detectors/PHG4CylinderCellGeomContainer.h>
 #include <g4detectors/PHG4CylinderGeom.h>
 #include <g4detectors/PHG4CylinderGeomContainer.h>
-#include <g4detectors/PHG4CylinderGeomSiLadders.h>
-#include <g4detectors/PHG4CylinderGeom_MAPS.h>
 
-#include <g4hough/SvtxCluster.h>
-#include <g4hough/SvtxClusterMap.h>
-#include <g4hough/SvtxHit.h>
-#include <g4hough/SvtxHitMap.h>
-#include <g4hough/SvtxTrack.h>
-#include <g4hough/SvtxTrackMap.h>
-#include <g4hough/SvtxVertex.h>
-#include <g4hough/SvtxVertexMap.h>
+#include <trackbase_historic/SvtxCluster.h>
+#include <trackbase_historic/SvtxClusterMap.h>
+#include <trackbase_historic/SvtxHit.h>
+#include <trackbase_historic/SvtxHitMap.h>
+#include <trackbase_historic/SvtxTrack.h>
+#include <trackbase_historic/SvtxTrackMap.h>
+#include <trackbase_historic/SvtxVertex.h>
+#include <trackbase_historic/SvtxVertexMap.h>
 
 #include <g4eval/SvtxEvalStack.h>
 

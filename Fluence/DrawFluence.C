@@ -16,9 +16,13 @@
 
 TFile *_file0 = NULL;
 TString description;
+TString configuration;
 
 void DrawFluence(
-        const TString infile = "/phenix/u/jinhuang/links/sPHENIX_work/Fluence/AuAu200_25k_Iter4/AuAu200_25k_Iter4_SUM.xml_g4score.root",
+//    const TString infile = "/phenix/u/jinhuang/links/sPHENIX_work/Fluence/AuAu200_25k_Iter4/AuAu200_25k_Iter4_SUM.xml_g4score.root",
+//    const TString config = "QGSP_BERT_HP",
+    const TString infile = "/phenix/u/jinhuang/links/sPHENIX_work/Fluence/AuAu200_25k_Iter4_FTFP/AuAu200_25k_Iter4_FTFP_SUM.xml_g4score.root",
+    const TString config = "FTFP_BERT_HP",
         const TString disc = "Au+Au #sqrt{s_{NN}}=200 GeV, sHIJING 0-20fm" , //
         const double nTarget = 1.5e12 , // 1.5 Trillion event from 5-year projection, sPH-GEN-2017-001
         const TString projection_desc = "5-year run plan (1.5 Trillion Collisions)"
@@ -49,7 +53,7 @@ void DrawFluence(
   _file0 = new TFile(infile);
   assert(_file0->IsOpen());
   description = disc;
-  //
+  configuration = config;
 
 //  //===================================================
 //  hNormalization->SetBinContent(1, 1815);
@@ -98,7 +102,7 @@ void VertexCyl(const double normalization, const TString projection_desc)
   hScore_VertexCylinder_edep_zy->GetZaxis()->SetRangeUser(1e4, 1e12);
 
   TLegend *leg = new TLegend(-.1, .85, .9, .99);
-  leg->AddEntry("", "#it{#bf{sPHENIX}} Simulation, Uncalibrated, " + description, "");
+  leg->AddEntry("", "#it{#bf{sPHENIX}} Simulation, "+configuration+", " + description, "");
   leg->AddEntry("", "Total energy deposition [MeV] for " + projection_desc, "");
   leg->Draw();
 
@@ -114,7 +118,7 @@ void VertexCyl(const double normalization, const TString projection_desc)
   hScore_VertexCylinder_dose_zy->GetYaxis()->SetRangeUser(20, 200);
 
   TLegend *leg = new TLegend(-.1, .85, .9, .99);
-  leg->AddEntry("", "#it{#bf{sPHENIX}} Simulation, Uncalibrated, " + description, "");
+  leg->AddEntry("", "#it{#bf{sPHENIX}} Simulation, "+configuration+", " + description, "");
   leg->AddEntry("", "Radiation dose [rad] for " + projection_desc, "");
   leg->Draw();
 
@@ -131,7 +135,7 @@ void VertexCyl(const double normalization, const TString projection_desc)
   hScore_VertexCylinder_dose_z->Scale(1. / hScore_VertexCylinder_dose_zy->GetNbinsX() / n_rebin_hScore_VertexCylinder_dose_z);
 
   TLegend *leg = new TLegend(.2, .6, .9, .9);
-  leg->AddEntry("", "#it{#bf{sPHENIX}} Simulation, Uncalibrated", "");
+  leg->AddEntry("", "#it{#bf{sPHENIX}} Simulation, "+configuration+"", "");
   leg->AddEntry("", description, "");
   leg->AddEntry("", projection_desc, "");
   leg->AddEntry(hScore_VertexCylinder_dose_z, "Radiation dose", "l");
@@ -152,7 +156,7 @@ void VertexCyl(const double normalization, const TString projection_desc)
   hScore_VertexCylinder_flux_charged_EkMin1MeV_zy->GetYaxis()->SetRangeUser(20, 200);
 
   TLegend *leg = new TLegend(-.1, .85, .9, .99);
-  leg->AddEntry("", "#it{#bf{sPHENIX}} Simulation, Uncalibrated, " + description, "");
+  leg->AddEntry("", "#it{#bf{sPHENIX}} Simulation, "+configuration+", " + description, "");
   leg->AddEntry("", "Min-1-MeV Charged particle fluence [N_{ch}/cm^{2}] for " + projection_desc, "");
   leg->Draw();
 
@@ -187,7 +191,7 @@ void VertexCyl(const double normalization, const TString projection_desc)
   hScore_VertexCylinder_flux_neutron_zy->Scale(normalization / hScore_VertexCylinder_flux_neutron->GetNbinsX());
 
   TLegend *leg = new TLegend(-.1, .85, .9, .99);
-  leg->AddEntry("", "#it{#bf{sPHENIX}} Simulation, Uncalibrated, " + description, "");
+  leg->AddEntry("", "#it{#bf{sPHENIX}} Simulation, "+configuration+", " + description, "");
   leg->AddEntry("", "Min-100-keV Neutron fluence [n/cm^{2}] for " + projection_desc, "");
   leg->Draw();
 
@@ -219,7 +223,7 @@ void VertexCyl(const double normalization, const TString projection_desc)
   hScore_VertexCylinder_flux_charged_z->SetLineColor(kCyan - 2);
 
   TLegend *leg = new TLegend(.3, .6, .9, .9);
-  leg->AddEntry("", "#it{#bf{sPHENIX}} Simulation, Uncalibrated", "");
+  leg->AddEntry("", "#it{#bf{sPHENIX}} Simulation, "+configuration+"", "");
   leg->AddEntry("", description, "");
   leg->AddEntry("", projection_desc, "");
   leg->AddEntry(hScore_VertexCylinder_flux_neutron_EkMin100keV_z, "Min-100-keV Neutron", "l");
@@ -252,7 +256,7 @@ void FullCyl(const double normalization, const TString projection_desc)
   hScore_FullCylinder_edep_zx->GetXaxis()->SetRangeUser(-380, 380);
 
   TLegend *leg = new TLegend(-.1, .85, .9, .99);
-  leg->AddEntry("", "#it{#bf{sPHENIX}} Simulation, Uncalibrated, " + description, "");
+  leg->AddEntry("", "#it{#bf{sPHENIX}} Simulation, "+configuration+", " + description, "");
   leg->AddEntry("", "Total energy deposition [MeV] for " + projection_desc, "");
   leg->Draw();
 
@@ -269,7 +273,7 @@ void FullCyl(const double normalization, const TString projection_desc)
   hScore_FullCylinder_flux_charged_EkMin1MeV_zx->GetXaxis()->SetRangeUser(-380, 380);
 
   TLegend *leg = new TLegend(-.1, .85, .9, .99);
-  leg->AddEntry("", "#it{#bf{sPHENIX}} Simulation, Uncalibrated, " + description, "");
+  leg->AddEntry("", "#it{#bf{sPHENIX}} Simulation, "+configuration+", " + description, "");
   leg->AddEntry("", "Min-1-MeV Charged particle fluence [N_{ch}/cm^{2}] for " + projection_desc, "");
   leg->Draw();
 
@@ -286,7 +290,7 @@ void FullCyl(const double normalization, const TString projection_desc)
   hScore_FullCylinder_dose_zx->GetXaxis()->SetRangeUser(-380, 380);
 
   TLegend *leg = new TLegend(-.1, .85, .9, .99);
-  leg->AddEntry("", "#it{#bf{sPHENIX}} Simulation, Uncalibrated, " + description, "");
+  leg->AddEntry("", "#it{#bf{sPHENIX}} Simulation, "+configuration+", " + description, "");
   leg->AddEntry("", "Radiation dose [rad] for " + projection_desc, "");
   leg->Draw();
 
@@ -319,7 +323,7 @@ void FullCyl(const double normalization, const TString projection_desc)
   hScore_FullCylinder_flux_neutron_EkMin100keV_zx->GetXaxis()->SetRangeUser(-380, 380);
 
   TLegend *leg = new TLegend(-.1, .85, .9, .99);
-  leg->AddEntry("", "#it{#bf{sPHENIX}} Simulation, Uncalibrated, " + description, "");
+  leg->AddEntry("", "#it{#bf{sPHENIX}} Simulation, "+configuration+", " + description, "");
   leg->AddEntry("", "Min-100-keV Neutron fluence [n/cm^{2}] for " + projection_desc, "");
   leg->Draw();
 
@@ -450,7 +454,7 @@ void FullCylRProj(const double normalization, const TString projection_desc, con
   hScore_FullCylinder_dose_z->Draw("same");
 
   TLegend *leg = new TLegend(.2, .7, .9, .9);
-  leg->AddEntry("", isEIC ? "#it{#bf{sPHENIX-EIC}} Simulation, Collision only" : "#it{#bf{sPHENIX}} Simulation, Uncalibrated", "");
+  leg->AddEntry("", isEIC ? "#it{#bf{sPHENIX-EIC}} Simulation, Collision only" : "#it{#bf{sPHENIX}} Simulation, "+configuration+"", "");
   leg->AddEntry("", description, "");
   leg->AddEntry("", projection_desc, "");
   leg->AddEntry("", Form("Averaged over |z|<%.0f cm, R>4 cm", z_range), "");
@@ -492,7 +496,7 @@ void FullCylRProj(const double normalization, const TString projection_desc, con
   hScore_FullCylinder_flux_charged_z->Draw("same");
   //
   TLegend *leg = new TLegend(.3, .55, .9, .9);
-  leg->AddEntry("", isEIC ? "#it{#bf{sPHENIX-EIC}} Simulation, Collision only" : "#it{#bf{sPHENIX}} Simulation, Uncalibrated", "");
+  leg->AddEntry("", isEIC ? "#it{#bf{sPHENIX-EIC}} Simulation, Collision only" : "#it{#bf{sPHENIX}} Simulation, "+configuration+"", "");
   leg->AddEntry("", description, "");
   leg->AddEntry("", projection_desc, "");
   leg->AddEntry("", Form("Averaged over |z|<%.0f cm, R>2 cm", z_range), "");
@@ -545,7 +549,7 @@ void FullCylRProjPHENIXComparison(const double normalization, const TString proj
   gPHENIXDose->Draw("p");
 
   TLegend *leg = new TLegend(.25, .7, .9, .9);
-  leg->AddEntry("", isEIC ? "#it{#bf{sPHENIX-EIC}} Simulation, Collision only" : "#it{#bf{sPHENIX}} Simulation, Uncalibrated", "");
+  leg->AddEntry("", isEIC ? "#it{#bf{sPHENIX-EIC}} Simulation, Collision only" : "#it{#bf{sPHENIX}} Simulation, "+configuration+"", "");
   leg->AddEntry("", description, "");
   leg->AddEntry("", projection_desc, "");
   leg->AddEntry("", Form("z around %.0f cm", z_range), "");
@@ -594,7 +598,7 @@ void FullCylRProjPHENIXComparison(const double normalization, const TString proj
   //  hScore_FullCylinder_flux_charged_z->Draw("same");
   //
   TLegend *leg = new TLegend(.3, .55, .9, .9);
-  leg->AddEntry("", isEIC ? "#it{#bf{sPHENIX-EIC}} Simulation, Collision only" : "#it{#bf{sPHENIX}} Simulation, Uncalibrated", "");
+  leg->AddEntry("", isEIC ? "#it{#bf{sPHENIX-EIC}} Simulation, Collision only" : "#it{#bf{sPHENIX}} Simulation, "+configuration+"", "");
   leg->AddEntry("", description, "");
   leg->AddEntry("", projection_desc, "");
   leg->AddEntry("", Form("z around %.0f cm", z_range), "");
@@ -737,7 +741,7 @@ void FullCylZProj(const double normalization, const TString projection_desc, con
   hScore_FullCylinder_dose_z->Draw("same");
 
   TLegend *leg = new TLegend(.2, .7, .9, .9);
-  leg->AddEntry("", isEIC ? "#it{#bf{sPHENIX-EIC}} Simulation, Collision only" : "#it{#bf{sPHENIX}} Simulation, Uncalibrated", "");
+  leg->AddEntry("", isEIC ? "#it{#bf{sPHENIX-EIC}} Simulation, Collision only" : "#it{#bf{sPHENIX}} Simulation, "+configuration+"", "");
   leg->AddEntry("", description, "");
   leg->AddEntry("", projection_desc, "");
   leg->AddEntry("", Form("Averaged over %.1f<R<%.1f cm", r_min, r_max), "");
@@ -779,7 +783,7 @@ void FullCylZProj(const double normalization, const TString projection_desc, con
   hScore_FullCylinder_flux_charged_z->Draw("same");
   //
   TLegend *leg = new TLegend(.3, .58, .9, .93);
-  leg->AddEntry("", isEIC ? "#it{#bf{sPHENIX-EIC}} Simulation, Collision only" : "#it{#bf{sPHENIX}} Simulation, Uncalibrated", "");
+  leg->AddEntry("", isEIC ? "#it{#bf{sPHENIX-EIC}} Simulation, Collision only" : "#it{#bf{sPHENIX}} Simulation, "+configuration+"", "");
   leg->AddEntry("", description, "");
   leg->AddEntry("", projection_desc, "");
   leg->AddEntry("", Form("Averaged over %.1f<R<%.1f cm", r_min, r_max), "");

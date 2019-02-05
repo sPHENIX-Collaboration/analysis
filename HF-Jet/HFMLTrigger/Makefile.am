@@ -20,6 +20,7 @@ libHFMLTrigger_la_LDFLAGS = \
 libHFMLTrigger_la_LIBADD = \
   -lfun4all \
   -lg4dst \
+  -lg4mvtx \
   -lg4eval \
   -lphhepmc
 

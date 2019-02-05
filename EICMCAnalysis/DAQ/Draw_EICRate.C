@@ -35,9 +35,11 @@ void Draw_EICRate(const TString infile =
                   //                  "/phenix/u/jinhuang/links/sPHENIX_work/EIC/DAQ/DIS20x250/DIS20x250_3179.cfg_DSTReader.root",
                   //    "/phenix/u/jinhuang/links/sPHENIX_work/EIC/DAQ/DIS20x250/DIS20x250_ALL.cfg_DSTReader.root",
                   //    double xsection = 1.15E-03  // mb for all subprocesses
-                  "/phenix/u/jinhuang/links/sPHENIX_work/EIC/DAQ/pythiaEIC_MB/ALL_DSTReader.root",
+                  //    "/phenix/u/jinhuang/links/sPHENIX_work/EIC/DAQ/pythiaEIC_MB/ALL_DSTReader.root", double xsection = 5.488E-02  //  I   0 All included subprocesses    I      1000000      30948998 I  5.488D-02 I
+
+                  "/phenix/u/jinhuang/links/sPHENIX_work/EIC/DAQ/pythia8_FixedTarget5/pythia8_FixedTarget5_3333.cfg_output/G4EICDetector.root_DSTReader.root",
+                  double xsection = 26
                   //                  "/phenix/u/jinhuang/links/sPHENIX_work/EIC/DAQ/pythiaEIC_MB/49610_DSTReader.root",
-                  double xsection = 5.488E-02  //  I   0 All included subprocesses    I      1000000      30948998 I  5.488D-02 I
 )
 {
   SetsPhenixStyle();
@@ -82,10 +84,15 @@ void Draw_EICRate(const TString infile =
               "1*sqrt(PHG4Particle.fpx**2+PHG4Particle.fpy**2)");
   T->SetAlias("p_eta",
               "0.5*log((PHG4Particle_p+PHG4Particle.fpz)/(PHG4Particle_p-PHG4Particle.fpz))");
+  T->SetAlias("p_rapidity",
+              "0.5*log((PHG4Particle.fe+PHG4Particle.fpz)/(PHG4Particle.fe - PHG4Particle.fpz))");
+  T->SetAlias("PrimVertex","Sum$(PHG4VtxPoint[].vz * (PHG4VtxPoint[].t0==0))/Sum$(PHG4VtxPoint[].t0==0)");
+
   T->SetAlias("SVTXHitLength",
               "1*sqrt((G4HIT_SVTX.get_x(0) - G4HIT_SVTX.get_x(1))**2 + (G4HIT_SVTX.get_y(0) - G4HIT_SVTX.get_y(1))**2 + (G4HIT_SVTX.get_z(0) - G4HIT_SVTX.get_z(1))**2)");
 
-  //  KinematicsChecks();
+  VertexChecks();
+  KinematicsChecks();
   TrackerRate();
 
   CentralCalorimeterRate();
@@ -106,13 +113,13 @@ void TrackerRate()
   c1->Update();
   p->SetLogy();
 
-  T->Draw("Sum$(G4HIT_MAPS.edep>0)>>hMAPSHit(200,-.5,199.5)");
+  T->Draw("Sum$(G4HIT_MAPS.edep>0)>>hMAPSHit(2000,-.5,1999.5)");
   TH1 *h = (TH1 *) gDirectory->Get("hMAPSHit");
   assert(h);
   h->SetTitle(";# of MAPS vertex tracker hit per event;Count [A.U.]");
   h->SetMaximum(h->GetMaximum() * 10);
-  h->GetXaxis()->SetRangeUser(0, 100);
-  h->GetXaxis()->SetRangeUser(0, 1000);
+  h->GetXaxis()->SetRangeUser(0, 200);
+  //  h->GetXaxis()->SetRangeUser(0, 1000);
   double meanhit = h->GetMean();
 
   TLegend *leg = new TLegend(.2, .70, .95, .93);
@@ -410,7 +417,7 @@ void ForwardCalorimeterRate()
   TLegend *leg = new TLegend(.1, .80, .95, .93);
   //  leg->AddEntry("", "#it{#bf{EIC-sPHENIX}} Simualtion", "");
   //  leg->AddEntry("", "e+p, 20+250 GeV/c, #sqrt{s_{ep}}=140 GeV", "");
-  leg->AddEntry(h, Form("Average h-going EMCal tower / event = %.1f", meanhit), "l");
+  leg->AddEntry(h, Form("Average h-going HCal tower / event = %.1f", meanhit), "l");
   leg->Draw();
 
   SaveCanvas(c1,
@@ -421,68 +428,83 @@ void KinematicsChecks()
 {
   TText *t;
   TCanvas *c1 = new TCanvas("KinematicsChecks",
-                            "KinematicsChecks", 1900, 1100);
+                            "KinematicsChecks", 1900, 500);
 
-  c1->Divide(4, 2);
+  c1->Divide(3, 1);
   int idx = 1;
   TPad *p;
 
   p = (TPad *) c1->cd(idx++);
   c1->Update();
   p->SetLogy();
-  T->Draw("p_Q2>>hQ2_inc(400,0,100)", "PHG4Particle.fpid==11");
+  T->Draw("p_Q2>>hQ2_inc(400,0,100)", "PHG4Particle.fpid==11 && PHG4Particle[].trkid>=0");
   hQ2_inc->SetTitle(";Q2 from truth electron [(GeV/c)^2];Count / bin");
 
   p = (TPad *) c1->cd(idx++);
   c1->Update();
 
-  T->Draw("p_eta>>hp_eta(100,-4,4)", "PHG4Particle_pT>0.01");
-  hp_eta->SetTitle(";#eta for any primary particle with p_{T}>10 MeV;dN/d#eta/Event");
-
-  hp_eta->Scale(1. / total_event / (8. / 100.));
-
-  p = (TPad *) c1->cd(idx++);
-  c1->Update();
-
-  T->Draw("(G4HIT_SVTX.edep*1e6)>>hSVTXEdep(1000,0,100)", "SVTXHitLength>1");
-  hSVTXEdep->SetTitle(";Total TPC hit energy deposition [keV]");
-
-  p->SetLogy();
+  T->Draw("p_eta>>hp_eta(100,-5,5)", "PHG4Particle_pT>0.01 && PHG4Particle[].trkid>=0");
+  TH1 *hp_eta = (TH1 *) gDirectory->GetObjectChecked("hp_eta", "TH1");
+  hp_eta->SetTitle(";#eta for primary particle with p_{T}>10 MeV;dN/d#eta/Event");
+  hp_eta->Scale(1. / total_event / hp_eta->GetXaxis()->GetBinWidth(1));
 
   p = (TPad *) c1->cd(idx++);
   c1->Update();
 
-  T->Draw("G4HIT_EGEM_1.edep*1e6>>hGEMEdep(1000,0,100)");
+  T->Draw("p_rapidity>>hp_rapidity(200,-10,10)", "PHG4Particle_pT>0.01 && PHG4Particle[].trkid>=0");
+  TH1 *hp_rapidity = (TH1 *) gDirectory->GetObjectChecked("hp_rapidity", "TH1");
+  hp_rapidity->SetTitle(";y for primary particle with p_{T}>10 MeV;dN/dy /Event");
+  hp_rapidity->Scale(1. / total_event / hp_rapidity->GetXaxis()->GetBinWidth(1));
 
-  hGEMEdep->SetTitle(";GEM hit energy deposition [keV]");
+  SaveCanvas(c1,
+             TString(_file0->GetName()) + TString("_Draw_EICRate_") + TString(c1->GetName()), true);
+}
 
-  p = (TPad *) c1->cd(idx++);
-  c1->Update();
+void VertexChecks()
+{
+  TText *t;
+  TCanvas *c1 = new TCanvas("VertexChecks",
+                            "VertexChecks", 1900, 1100);
 
-  p->SetLogy();
-  T->Draw("TOWER_SIM_CEMC.energy/0.026>>hEMCalADC(210,0,20)");
-  hEMCalADC->SetTitle(";Central EMCal Tower Energy [GeV]");
-
-  p = (TPad *) c1->cd(idx++);
-  c1->Update();
-
-  p->SetLogy();
-  T->Draw("TOWER_SIM_EEMC.energy>>hEEMCal(801,0,20)");
-  hEEMCal->SetTitle(";e-going EMCal Tower Energy [GeV]");
-
-  p = (TPad *) c1->cd(idx++);
-  c1->Update();
-
-  p->SetLogy();
-  T->Draw("TOWER_SIM_FEMC.energy/0.249>>hFEMCal(801,0,200)");
-  hFEMCal->SetTitle(";h-going EMCal Tower Energy [GeV]");
+  c1->Divide(3, 2);
+  int idx = 1;
+  TPad *p;
 
   p = (TPad *) c1->cd(idx++);
   c1->Update();
 
-  p->SetLogy();
-  T->Draw("TOWER_SIM_FHCAL.energy/0.03898>>hFHCAL(801,0,200)");
-  hFHCAL->SetTitle(";h-going HCal Tower Energy [GeV]");
+  T->Draw("PrimVertex>>hVertexPrim(900,-500,500)", "");
+  hVertexPrim->SetTitle(";Vertex position [cm]");
+
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+
+  T->Draw("PrimVertex>>hVertexPrimTPC(900,-500,500)", "Sum$(G4HIT_SVTX.edep>1e-7 && SVTXHitLength>1)");
+  hVertexPrimTPC->SetTitle(";TPC hit weighted vertex position [cm];Event * hit");
+
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+
+  T->Draw("PrimVertex>>hVertexPrimFGEM4(900,-500,500)", "Sum$(G4HIT_FGEM_4.edep>1e-7)");
+  hVertexPrimFGEM4->SetTitle(";Last-FGEM hit weighted vertex position [cm];Event * hit");
+
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+
+  T->Draw("PrimVertex>>hVertexPrimEEMC(900,-500,500)", "Sum$(TOWER_SIM_EEMC.energy>0.03)");
+  hVertexPrimEEMC->SetTitle(";EEMC hit weighted vertex position [cm];Event * Tower hit");
+
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+
+  T->Draw("PrimVertex>>hVertexPrimCEMC(900,-500,500)", "Sum$(TOWER_SIM_CEMC.energy>0.03)");
+  hVertexPrimCEMC->SetTitle(";CEMC hit weighted vertex position [cm];Event * Tower hit");
+
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+
+  T->Draw("PrimVertex>>hVertexPrimFEMC(900,-500,500)", "Sum$(TOWER_SIM_FEMC.energy>0.03)");
+  hVertexPrimFEMC->SetTitle(";FEMC hit weighted vertex position [cm];Event * Tower hit");
 
   SaveCanvas(c1,
              TString(_file0->GetName()) + TString("_Draw_EICRate_") + TString(c1->GetName()), true);

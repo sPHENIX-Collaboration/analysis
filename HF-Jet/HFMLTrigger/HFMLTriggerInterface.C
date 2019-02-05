@@ -13,23 +13,24 @@
 #include <g4main/PHG4Particle.h>
 #include <g4main/PHG4TruthInfoContainer.h>
 
+
+#include <g4mvtx/PHG4CylinderGeom_MVTX.h>
+
 #include <g4detectors/PHG4Cell.h>
 #include <g4detectors/PHG4CellContainer.h>
 #include <g4detectors/PHG4CylinderCellGeom.h>
 #include <g4detectors/PHG4CylinderCellGeomContainer.h>
 #include <g4detectors/PHG4CylinderGeom.h>
 #include <g4detectors/PHG4CylinderGeomContainer.h>
-#include <g4detectors/PHG4CylinderGeomSiLadders.h>
-#include <g4detectors/PHG4CylinderGeom_MAPS.h>
 
-#include <g4hough/SvtxCluster.h>
-#include <g4hough/SvtxClusterMap.h>
-#include <g4hough/SvtxHit.h>
-#include <g4hough/SvtxHitMap.h>
-#include <g4hough/SvtxTrack.h>
-#include <g4hough/SvtxTrackMap.h>
-#include <g4hough/SvtxVertex.h>
-#include <g4hough/SvtxVertexMap.h>
+#include <trackbase_historic/SvtxCluster.h>
+#include <trackbase_historic/SvtxClusterMap.h>
+#include <trackbase_historic/SvtxHit.h>
+#include <trackbase_historic/SvtxHitMap.h>
+#include <trackbase_historic/SvtxTrack.h>
+#include <trackbase_historic/SvtxTrackMap.h>
+#include <trackbase_historic/SvtxVertex.h>
+#include <trackbase_historic/SvtxVertexMap.h>
 
 #include <g4eval/SvtxEvalStack.h>
 
@@ -55,10 +56,12 @@
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 
+
 #include <cassert>
 #include <cmath>
 #include <cstddef>
 #include <iostream>
+
 
 using namespace std;
 
@@ -254,7 +257,7 @@ int HFMLTriggerInterface::process_event(PHCompositeNode* topNode)
 
   for (unsigned int layer = 0; layer < _nlayers_maps; ++layer)
   {
-    PHG4CylinderGeom_MAPS* geom = dynamic_cast<PHG4CylinderGeom_MAPS*>(m_Geoms->GetLayerGeom(layer));
+    PHG4CylinderGeom_MVTX* geom = dynamic_cast<PHG4CylinderGeom_MVTX*>(m_Geoms->GetLayerGeom(layer));
     assert(geom);
 
     //    ptree layerDescTree;
@@ -333,7 +336,7 @@ int HFMLTriggerInterface::process_event(PHCompositeNode* topNode)
 
       PHG4Cell* cell = hiteval->get_cell(hit);
       assert(cell);
-      PHG4CylinderGeom_MAPS* geom = dynamic_cast<PHG4CylinderGeom_MAPS*>(m_Geoms->GetLayerGeom(layer));
+      PHG4CylinderGeom_MVTX* geom = dynamic_cast<PHG4CylinderGeom_MVTX*>(m_Geoms->GetLayerGeom(layer));
       assert(geom);
 
       TVector3 local_coords = geom->get_local_coords_from_pixel(cell->get_pixel_index());
