@@ -30,6 +30,8 @@ pkginclude_HEADERS = \
 #pkginclude_HEADERS = $(include_HEADERS)
 
 libHFMLTrigger_la_SOURCES = \
+  HFMLTriggerOccupancy.C \
+  HFMLTriggerOccupancy_Dict.C \
   HFMLTriggerInterface.C \
   HFMLTriggerInterface_Dict.C \
   HFMLTriggerHepMCTrigger.C \
