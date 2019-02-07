@@ -196,36 +196,36 @@ int HFMLTriggerOccupancy::process_event(PHCompositeNode* topNode)
   SvtxHitEval* hiteval = _svtxevalstack->get_hit_eval();
   //    SvtxTruthEval* trutheval = _svtxevalstack->get_truth_eval();
 
-  PHHepMCGenEventMap* geneventmap = findNode::getClass<PHHepMCGenEventMap>(topNode, "PHHepMCGenEventMap");
-  if (!geneventmap)
-  {
-    std::cout << PHWHERE << " - Fatal error - missing node PHHepMCGenEventMap" << std::endl;
-    return Fun4AllReturnCodes::ABORTRUN;
-  }
-
-  PHHepMCGenEvent* genevt = geneventmap->get(_embedding_id);
-  if (!genevt)
-  {
-    std::cout << PHWHERE << " - Fatal error - node PHHepMCGenEventMap missing subevent with embedding ID " << _embedding_id;
-    std::cout << ". Print PHHepMCGenEventMap:";
-    geneventmap->identify();
-    return Fun4AllReturnCodes::ABORTRUN;
-  }
-
-  HepMC::GenEvent* theEvent = genevt->getEvent();
-  assert(theEvent);
-  if (Verbosity())
-  {
-    cout << "HFMLTriggerOccupancy::process_event - process HepMC::GenEvent with signal_process_id = "
-         << theEvent->signal_process_id();
-    if (theEvent->signal_process_vertex())
-    {
-      cout << " and signal_process_vertex : ";
-      theEvent->signal_process_vertex()->print();
-    }
-    cout << "  - Event record:" << endl;
-    theEvent->print();
-  }
+//  PHHepMCGenEventMap* geneventmap = findNode::getClass<PHHepMCGenEventMap>(topNode, "PHHepMCGenEventMap");
+//  if (!geneventmap)
+//  {
+//    std::cout << PHWHERE << " - Fatal error - missing node PHHepMCGenEventMap" << std::endl;
+//    return Fun4AllReturnCodes::ABORTRUN;
+//  }
+//
+//  PHHepMCGenEvent* genevt = geneventmap->get(_embedding_id);
+//  if (!genevt)
+//  {
+//    std::cout << PHWHERE << " - Fatal error - node PHHepMCGenEventMap missing subevent with embedding ID " << _embedding_id;
+//    std::cout << ". Print PHHepMCGenEventMap:";
+//    geneventmap->identify();
+//    return Fun4AllReturnCodes::ABORTRUN;
+//  }
+//
+//  HepMC::GenEvent* theEvent = genevt->getEvent();
+//  assert(theEvent);
+//  if (Verbosity())
+//  {
+//    cout << "HFMLTriggerOccupancy::process_event - process HepMC::GenEvent with signal_process_id = "
+//         << theEvent->signal_process_id();
+//    if (theEvent->signal_process_vertex())
+//    {
+//      cout << " and signal_process_vertex : ";
+//      theEvent->signal_process_vertex()->print();
+//    }
+//    cout << "  - Event record:" << endl;
+//    theEvent->print();
+//  }
 
   vector<vector<vector<int> > > multiplicity_vec(_nlayers_maps);
 
