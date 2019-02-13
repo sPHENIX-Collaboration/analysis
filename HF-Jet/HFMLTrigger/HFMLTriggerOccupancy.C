@@ -11,6 +11,7 @@
 
 #include <g4main/PHG4Hit.h>
 #include <g4main/PHG4Particle.h>
+#include <g4main/PHG4VtxPoint.h>
 #include <g4main/PHG4TruthInfoContainer.h>
 
 #include <g4mvtx/PHG4CylinderGeom_MVTX.h>
@@ -78,6 +79,8 @@ HFMLTriggerOccupancy::HFMLTriggerOccupancy(std::string filename)
   , m_truthInfo(nullptr)
   , m_Flags(nullptr)
   , m_hNorm(nullptr)
+  , m_hNChEta(nullptr)
+  , m_hVertexZ(nullptr)
   , m_hitStaveLayer(nullptr)
   , m_hitModuleHalfStave(nullptr)
   , m_hitChipModule(nullptr)
@@ -113,18 +116,24 @@ int HFMLTriggerOccupancy::Init(PHCompositeNode* topNode)
   int i = 1;
   m_hNorm->GetXaxis()->SetBinLabel(i++, "IntegratedLumi");
   m_hNorm->GetXaxis()->SetBinLabel(i++, "Event");
-
   m_hNorm->GetXaxis()->LabelsOption("v");
+
+  m_hNChEta = new TH1F("hNChEta",  //
+                       "Charged particle #eta distribution;#eta;Count",
+                       1000, -5, 5);
+  m_hVertexZ = new TH1F("hVertexZ",  //
+                        "Vertex z distribution;z [cm];Count",
+                        1000, -200, 200);
 
   m_hitLayerMap = new TH3F("hitLayerMap", "hitLayerMap", 600, -10, 10, 600, -10, 10, 10, -.5, 9.5);
   m_hitLayerMap->SetTitle("hitLayerMap;x [mm];y [mm];Half Layers");
 
-  m_hitPixelPhiMap = new TH3F("hitPixelPhiMap", "hitPixelPhiMap", 16000, -.5, 16000 - .5, 600, -M_PI, M_PI, 10, -.5, 9.5);
-  m_hitPixelPhiMap->SetTitle("hitPixelPhiMap;PixelPhiIndex in layer;phi [rad];Half Layers Index");
-  m_hitPixelPhiMapHL = new TH3F("hitPixelPhiMapHL", "hitPixelPhiMapHL", 16000, -.5, 16000 - .5, 600, -M_PI, M_PI, 10, -.5, 9.5);
-  m_hitPixelPhiMapHL->SetTitle("hitPixelPhiMap;PixelPhiIndex in half layer;phi [rad];Half Layers Index");
-  m_hitPixelZMap = new TH3F("hitPixelZMap", "hitPixelZMap", 16000, -.5, 16000 - .5, 600, 15, 15, 10, -.5, 9.5);
-  m_hitPixelZMap->SetTitle("hitPixelZMap;hitPixelZMap;z [cm];Half Layers");
+//  m_hitPixelPhiMap = new TH3F("hitPixelPhiMap", "hitPixelPhiMap", 16000, -.5, 16000 - .5, 600, -M_PI, M_PI, 10, -.5, 9.5);
+//  m_hitPixelPhiMap->SetTitle("hitPixelPhiMap;PixelPhiIndex in layer;phi [rad];Half Layers Index");
+//  m_hitPixelPhiMapHL = new TH3F("hitPixelPhiMapHL", "hitPixelPhiMapHL", 16000, -.5, 16000 - .5, 600, -M_PI, M_PI, 10, -.5, 9.5);
+//  m_hitPixelPhiMapHL->SetTitle("hitPixelPhiMap;PixelPhiIndex in half layer;phi [rad];Half Layers Index");
+//  m_hitPixelZMap = new TH3F("hitPixelZMap", "hitPixelZMap", 16000, -.5, 16000 - .5, 600, 15, 15, 10, -.5, 9.5);
+//  m_hitPixelZMap->SetTitle("hitPixelZMap;hitPixelZMap;z [cm];Half Layers");
 
   m_hitStaveLayer = new TH2F("hitStaveLayer", "hitStaveLayer", 100, -.5, 100 - .5, 10, -.5, 9.5);
   m_hitStaveLayer->SetTitle("hitStaveLayer;Stave index;Half Layers");
@@ -139,7 +148,7 @@ int HFMLTriggerOccupancy::Init(PHCompositeNode* topNode)
   m_LayerMultiplicity = new TH2F("LayerMultiplicity", "LayerMultiplicity", 3, -.5, 2.5, 1000, -.5, 1000 - .5);
   m_LayerMultiplicity->SetTitle("LayerMultiplicity;Layer;Chip Multiplicity");
 
-  m_LayerChipMultiplicity = new TH3F("LayerChipMultiplicity", "LayerChipMultiplicity", 3, -.5, 2.5, 9, -.5, 8.5, 1000, -.5, 1000 - .5);
+  m_LayerChipMultiplicity = new TH3F("LayerChipMultiplicity", "LayerChipMultiplicity", 3, -.5, 2.5, kNCHip, -.5, kNCHip - .5, 1000, -.5, 1000 - .5);
   m_LayerChipMultiplicity->SetTitle("LayerChipMultiplicity;Layer;Chip");
 
   return Fun4AllReturnCodes::EVENT_OK;
@@ -196,38 +205,78 @@ int HFMLTriggerOccupancy::process_event(PHCompositeNode* topNode)
   SvtxHitEval* hiteval = _svtxevalstack->get_hit_eval();
   //    SvtxTruthEval* trutheval = _svtxevalstack->get_truth_eval();
 
-//  PHHepMCGenEventMap* geneventmap = findNode::getClass<PHHepMCGenEventMap>(topNode, "PHHepMCGenEventMap");
-//  if (!geneventmap)
-//  {
-//    std::cout << PHWHERE << " - Fatal error - missing node PHHepMCGenEventMap" << std::endl;
-//    return Fun4AllReturnCodes::ABORTRUN;
-//  }
-//
-//  PHHepMCGenEvent* genevt = geneventmap->get(_embedding_id);
-//  if (!genevt)
-//  {
-//    std::cout << PHWHERE << " - Fatal error - node PHHepMCGenEventMap missing subevent with embedding ID " << _embedding_id;
-//    std::cout << ". Print PHHepMCGenEventMap:";
-//    geneventmap->identify();
-//    return Fun4AllReturnCodes::ABORTRUN;
-//  }
-//
-//  HepMC::GenEvent* theEvent = genevt->getEvent();
-//  assert(theEvent);
-//  if (Verbosity())
-//  {
-//    cout << "HFMLTriggerOccupancy::process_event - process HepMC::GenEvent with signal_process_id = "
-//         << theEvent->signal_process_id();
-//    if (theEvent->signal_process_vertex())
-//    {
-//      cout << " and signal_process_vertex : ";
-//      theEvent->signal_process_vertex()->print();
-//    }
-//    cout << "  - Event record:" << endl;
-//    theEvent->print();
-//  }
+  //  PHHepMCGenEventMap* geneventmap = findNode::getClass<PHHepMCGenEventMap>(topNode, "PHHepMCGenEventMap");
+  //  if (!geneventmap)
+  //  {
+  //    std::cout << PHWHERE << " - Fatal error - missing node PHHepMCGenEventMap" << std::endl;
+  //    return Fun4AllReturnCodes::ABORTRUN;
+  //  }
+  //
+  //  PHHepMCGenEvent* genevt = geneventmap->get(_embedding_id);
+  //  if (!genevt)
+  //  {
+  //    std::cout << PHWHERE << " - Fatal error - node PHHepMCGenEventMap missing subevent with embedding ID " << _embedding_id;
+  //    std::cout << ". Print PHHepMCGenEventMap:";
+  //    geneventmap->identify();
+  //    return Fun4AllReturnCodes::ABORTRUN;
+  //  }
+  //
+  //  HepMC::GenEvent* theEvent = genevt->getEvent();
+  //  assert(theEvent);
+  //  if (Verbosity())
+  //  {
+  //    cout << "HFMLTriggerOccupancy::process_event - process HepMC::GenEvent with signal_process_id = "
+  //         << theEvent->signal_process_id();
+  //    if (theEvent->signal_process_vertex())
+  //    {
+  //      cout << " and signal_process_vertex : ";
+  //      theEvent->signal_process_vertex()->print();
+  //    }
+  //    cout << "  - Event record:" << endl;
+  //    theEvent->print();
+  //  }
 
-  vector<vector<vector<int> > > multiplicity_vec(_nlayers_maps);
+  assert(m_hNorm);
+  m_hNorm->Fill("Event", 1.);
+
+  assert(m_truthInfo);
+  assert(m_hNChEta);
+  assert(m_hVertexZ);
+
+  const PHG4VtxPoint* vtx =
+  m_truthInfo->GetPrimaryVtx(m_truthInfo->GetPrimaryVertexIndex());
+  if (vtx)
+  {
+    m_hVertexZ -> Fill(vtx->get_z());
+  }
+
+  const auto primary_range =
+      m_truthInfo->GetPrimaryParticleRange();
+  for (auto particle_iter =
+           primary_range.first;
+       particle_iter != primary_range.second;
+       ++particle_iter)
+  {
+    const PHG4Particle *p = particle_iter->second;
+    assert(p);
+    TParticlePDG *pdg_p = TDatabasePDG::Instance()->GetParticle(
+        p->get_pid());
+    assert(pdg_p);
+    if (fabs(pdg_p->Charge()) > 0)
+    {
+      TVector3 pvec(p->get_px(), p->get_py(), p->get_pz());
+      if (pvec.Perp2() > 0)
+      {
+        assert(m_hNChEta);
+        m_hNChEta->Fill(pvec.PseudoRapidity());
+      }
+    }
+  }  //          if (_load_all_particle) else
+
+
+  // chip counting
+  vector<vector<vector<int> > >
+      multiplicity_vec(_nlayers_maps);
 
   //
   for (unsigned int layer = 0; layer < _nlayers_maps; ++layer)
@@ -238,7 +287,7 @@ int HFMLTriggerOccupancy::process_event(PHCompositeNode* topNode)
     const int n_stave = geom->get_N_staves();
 
     assert(multiplicity_vec[layer].empty());
-    multiplicity_vec[layer].resize(n_stave, vector<int>(n_stave, 0));
+    multiplicity_vec[layer].resize(n_stave, vector<int>(kNCHip, 0));
   }
 
   set<unsigned int> mapsHits;  //internal consistency check for later stages of truth tracks
@@ -271,11 +320,11 @@ int HFMLTriggerOccupancy::process_event(PHCompositeNode* topNode)
       assert((int) pixel_z < geom->get_NZ());
 
       unsigned int halfLayerIndex(layer * 2 + halflayer);
-      unsigned int pixelPhiIndex(
-          cell->get_stave_index() * geom->get_NX() + pixel_x);
-      unsigned int pixelPhiIndexHL(
-          cell->get_stave_index() * geom->get_NX() / 2 + pixel_x % (geom->get_NX() / 2));
-      unsigned int pixelZIndex(cell->get_chip_index() * geom->get_NZ() + pixel_z);
+//      unsigned int pixelPhiIndex(
+//          cell->get_stave_index() * geom->get_NX() + pixel_x);
+//      unsigned int pixelPhiIndexHL(
+//          cell->get_stave_index() * geom->get_NX() / 2 + pixel_x % (geom->get_NX() / 2));
+//      unsigned int pixelZIndex(cell->get_chip_index() * geom->get_NZ() + pixel_z);
 
       //      //      ptree hitTree;
       //      rapidjson::Value hitTree(rapidjson::kObjectType);
@@ -304,6 +353,15 @@ int HFMLTriggerOccupancy::process_event(PHCompositeNode* topNode)
       //                                       world_coords.z()),
       //                        alloc);
 
+      if (Verbosity() >= 2)
+        cout << "HFMLTriggerOccupancy::process_event - MVTX hit "
+             << "layer " << layer << "\t"
+             << "Stave " << cell->get_stave_index() << "\t"
+             << "Chip " << cell->get_chip_index() << "\t"
+             << "Pixel " << cell->get_pixel_index() << "\t"
+             << "Coordinate"
+             << "(" << world_coords.x() << "," << world_coords.y() << "," << world_coords.z() << ")" << endl;
+
       //      rawHitsTree.add_child("MVTXHit", hitTree);
       //      rawHitsTree.PushBack(hitTree, alloc);
 
@@ -312,9 +370,9 @@ int HFMLTriggerOccupancy::process_event(PHCompositeNode* topNode)
       m_hitChipModule->Fill(cell->get_chip_index(), cell->get_module_index());
 
       m_hitLayerMap->Fill(world_coords.x(), world_coords.y(), halfLayerIndex);
-      m_hitPixelPhiMap->Fill(pixelPhiIndex, atan2(world_coords.y(), world_coords.x()), halfLayerIndex);
-      m_hitPixelPhiMapHL->Fill(pixelPhiIndexHL, atan2(world_coords.y(), world_coords.x()), halfLayerIndex);
-      m_hitPixelZMap->Fill(pixelZIndex, world_coords.z(), halfLayerIndex);
+//      m_hitPixelPhiMap->Fill(pixelPhiIndex, atan2(world_coords.y(), world_coords.x()), halfLayerIndex);
+//      m_hitPixelPhiMapHL->Fill(pixelPhiIndexHL, atan2(world_coords.y(), world_coords.x()), halfLayerIndex);
+//      m_hitPixelZMap->Fill(pixelZIndex, world_coords.z(), halfLayerIndex);
 
       assert(layer < multiplicity_vec.size());
       auto& multiplicity_layer = multiplicity_vec[layer];
@@ -340,6 +398,7 @@ int HFMLTriggerOccupancy::process_event(PHCompositeNode* topNode)
   int layer = 0;
   for (auto& multiplicity_layer : multiplicity_vec)
   {
+    int stave = 0;
     for (auto& multiplicity_stave : multiplicity_layer)
     {
       int chip = 0;
@@ -351,12 +410,17 @@ int HFMLTriggerOccupancy::process_event(PHCompositeNode* topNode)
 
         chip++;
       }
+
+      if (Verbosity() >= 2)
+        cout << "HFMLTriggerOccupancy::process_event - fill layer " << layer << " stave. " << stave << "Accumulated chips = "
+             << m_Multiplicity->GetSum()
+             << endl;
+
+      stave++;
     }
     layer++;
   }
 
-  assert(m_hNorm);
-  m_hNorm->Fill("Event", 1.);
   ++_ievent;
 
   return Fun4AllReturnCodes::EVENT_OK;

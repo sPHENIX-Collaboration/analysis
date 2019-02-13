@@ -93,6 +93,7 @@ class HFMLTriggerOccupancy : public SubsysReco
   int _embedding_id;
 
   unsigned int _nlayers_maps;
+  enum {kNCHip = 9};
 
   // eval stack
   SvtxEvalStack *_svtxevalstack;
@@ -102,6 +103,8 @@ class HFMLTriggerOccupancy : public SubsysReco
   PdbParameterMap *m_Flags;
 
   TH1F *m_hNorm;
+  TH1F *m_hNChEta;
+  TH1F *m_hVertexZ;
 
   TH2F *m_hitStaveLayer;
   TH2F *m_hitModuleHalfStave;

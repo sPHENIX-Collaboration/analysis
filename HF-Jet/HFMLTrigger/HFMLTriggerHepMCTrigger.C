@@ -95,6 +95,8 @@ int HFMLTriggerHepMCTrigger::Init(PHCompositeNode* topNode)
   m_hNorm->GetXaxis()->SetBinLabel(i++, "Event");
   m_hNorm->GetXaxis()->SetBinLabel(i++, "D0");
   m_hNorm->GetXaxis()->SetBinLabel(i++, "D0->PiK");
+  m_hNorm->GetXaxis()->SetBinLabel(i++, "D0-Pair");
+  m_hNorm->GetXaxis()->SetBinLabel(i++, "D0->PiK-Pair");
   m_hNorm->GetXaxis()->SetBinLabel(i++, "Accepted");
 
   m_hNorm->GetXaxis()->LabelsOption("v");
@@ -174,6 +176,9 @@ int HFMLTriggerHepMCTrigger::process_event(PHCompositeNode* topNode)
   assert(m_hNorm);
   m_hNorm->Fill("Event", 1);
 
+  unsigned int nD0(0);
+  unsigned int nD0PiK(0);
+
   auto range = theEvent->particle_range();
   for (HepMC::GenEvent::particle_const_iterator piter = range.begin(); piter != range.end(); ++piter)
   {
@@ -190,6 +195,7 @@ int HFMLTriggerHepMCTrigger::process_event(PHCompositeNode* topNode)
       }
 
       m_hNorm->Fill("D0", 1);
+      ++nD0;
 
       assert(m_DRapidity);
       const double rapidity = 0.5 * log((p->momentum().e() + p->momentum().z()) /
@@ -241,6 +247,7 @@ int HFMLTriggerHepMCTrigger::process_event(PHCompositeNode* topNode)
         if (hasDecay1 == 1 and hasDecay2 == 1 and hasDecayOther == 0)
         {
           m_hNorm->Fill("D0->PiK", 1);
+          ++nD0PiK;
 
           acceptEvent = true;
 
@@ -256,6 +263,16 @@ int HFMLTriggerHepMCTrigger::process_event(PHCompositeNode* topNode)
       }
 
     }  //    if (std::abs(p-> pdg_id()) == targetPID)
+  }    //  for (HepMC::GenEvent::particle_const_iterator piter = range.begin(); piter != range.end(); ++piter)
+
+  if (nD0 >= 2)
+  {
+    cout <<"HFMLTriggerHepMCTrigger::process_event - D0-Pair with nD0 = "<<nD0<<endl;
+    m_hNorm->Fill("D0-Pair", nD0 * (nD0 - 1) / 2);
+  }
+  if (nD0PiK >= 2)
+  {
+    m_hNorm->Fill("D0->PiK-Pair", nD0PiK * (nD0PiK - 1) / 2);
   }
 
   ++_ievent;
