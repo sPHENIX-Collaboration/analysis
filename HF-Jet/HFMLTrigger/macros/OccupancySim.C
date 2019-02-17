@@ -384,16 +384,18 @@ void OccupancySim(                                                              
   Check(_file_trigger);
   chipMultiplicitySet_vec chipMultiplicityTrigger = MakeChipMultiplicitySet(_file_trigger);
 
+//  TriggerMultiplicity(chipMultiplicity, chipMultiplicityTrigger,
+//                      200e3 * 10e-6, 1, 1024 * 512 * 1e-4);
+//  TriggerMultiplicity(chipMultiplicity, chipMultiplicityTrigger,
+//                      200e3 * 10e-6, 0, 1024 * 512 * 1e-4);
+//  TriggerMultiplicity(chipMultiplicity, chipMultiplicityTrigger,
+//                      200e3 * 5e-6, 0, 1024 * 512 * 1e-4);
+//  TriggerMultiplicity(chipMultiplicity, chipMultiplicityTrigger,
+//                      50e3 * 5e-6, 0, 1024 * 512 * 1e-4);
   TriggerMultiplicity(chipMultiplicity, chipMultiplicityTrigger,
-                      200e3 * 10e-6, 1, 1024 * 512 * 1e-4);
-  TriggerMultiplicity(chipMultiplicity, chipMultiplicityTrigger,
-                      200e3 * 10e-6, 0, 1024 * 512 * 1e-4);
-  TriggerMultiplicity(chipMultiplicity, chipMultiplicityTrigger,
-                      200e3 * 5e-6, 0, 1024 * 512 * 1e-4);
-  TriggerMultiplicity(chipMultiplicity, chipMultiplicityTrigger,
-                      50e3 * 5e-6, 0, 1024 * 512 * 1e-4);
-  TriggerMultiplicity(chipMultiplicity, chipMultiplicityTrigger,
-                      50e3 * 5e-6, 0, 1024 * 512 * 1e-5);
+                      50e3 * 10e-6, 0, 1024 * 512 * 1e-5);
+//  TriggerMultiplicity(chipMultiplicity, chipMultiplicityTrigger,
+//                      50e3 * 5e-6, 0, 1024 * 512 * 1e-5);
 
   //  TriggerMultiplicity(chipMultiplicity, chipMultiplicityTrigger,
   //                      13e6 * 10e-6, 1, 1024 * 512 * 1e-4);
