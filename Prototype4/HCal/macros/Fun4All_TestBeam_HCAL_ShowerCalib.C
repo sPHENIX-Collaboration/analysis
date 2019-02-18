@@ -7,7 +7,7 @@
  * \date $Date: $
  */
 
-int Fun4All_TestBeam_HCAL_ShowerCalib(const int nEvents = 200000, const string runID = "1666")
+int Fun4All_TestBeam_HCAL_ShowerCalib(const int nEvents = 20000, const string runID = "1666")
 // int Fun4All_TestBeam_HCAL_ShowerCalib(const int nEvents = 10, const string runID = "0422")
 {
 
@@ -41,7 +41,8 @@ int Fun4All_TestBeam_HCAL_ShowerCalib(const int nEvents = 200000, const string r
   Fun4AllInputManager *hitsin = new Fun4AllDstInputManager("DSTin");
   std::string inputfile;
   if(_is_sim) inputfile = Form("/sphenix/user/xusun/Simulation/Production/BeamTest_24GeV_%s.root",runID.c_str());
-  if(!_is_sim) inputfile= Form("/sphenix/data/data02/sphenix/t1044/production/production_0322/beam_0000%s-0000.root",runID.c_str());
+  // if(!_is_sim) inputfile= Form("/sphenix/data/data02/sphenix/t1044/production/production_0322/beam_0000%s-0000.root",runID.c_str());
+  if(!_is_sim) inputfile= Form("/sphenix/user/xusun/TestBeam/Production/beam_0000%s.root",runID.c_str());
   hitsin->fileopen(inputfile);
 //  hitsin->AddListFile(inputFile); // you can also choose this and give a list of DST file names in the file.
   se->registerInputManager(hitsin);

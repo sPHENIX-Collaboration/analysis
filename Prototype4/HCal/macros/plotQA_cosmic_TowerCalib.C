@@ -15,13 +15,14 @@ void plotQA_cosmic_TowerCalib(const string det = "HCALOUT")
 
   float sim_out_start[4] = {6.1,5.9,5.5,5.5};
   float sim_out_stop[4] = {15.0,15.0,15.0,15.0};
-  float raw_out_start[4] = {1000.0,1000.0,1000.0,500.0};
-  float raw_out_stop[4] = {6000.0,5000.0,5000.0,2500.0};
+  float raw_out_start[4] = {1000.0,500.0,1000.0,1000.0};
+  float raw_out_stop[4] = {5000.0,2500.0,6000.0,5000.0};
 
   float energy[16] = {-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0};
   float adc[16] = {-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0};
   // float tower_calib[16] = {-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0};
 
+  /*
   string inputfile_sim = Form("/sphenix/user/xusun/software/data/cosmic/TowerCalibAna/Proto4TowerInfoSIM_%s.root",det.c_str()); 
   TFile *File_InPut_SIM = TFile::Open(inputfile_sim.c_str());
 
@@ -71,8 +72,9 @@ void plotQA_cosmic_TowerCalib(const string det = "HCALOUT")
   }
   string fig_sim = Form("./figures/sPHENIX_CollMeeting/c_%s_sim.eps",det.c_str());
   c_hcal_sim->SaveAs(fig_sim.c_str());
+  */
 
-  string inputfile_raw = Form("/sphenix/user/xusun/software/data/cosmic/TowerCalibAna/Proto4TowerInfoRAW_%s.root",det.c_str()); 
+  string inputfile_raw = Form("/sphenix/user/xusun/TestBeam/TowerCalibAna/Proto4TowerInfoRAW_%s.root",det.c_str()); 
   TFile *File_InPut_RAW = TFile::Open(inputfile_raw.c_str());
 
   TH1F *h_hcal_tower_raw[16];
@@ -118,9 +120,10 @@ void plotQA_cosmic_TowerCalib(const string det = "HCALOUT")
       }
     }
   }
-  string fig_raw = Form("./figures/sPHENIX_CollMeeting/c_%s_raw.eps",det.c_str());
+  string fig_raw = Form("./figures/HCAL_TowerMap/c_%s_raw.eps",det.c_str());
   c_hcal_raw->SaveAs(fig_raw.c_str());
 
+  /*
   string outputfile = Form("towercalib_%s.txt",det.c_str());
   ofstream File_OutPut(outputfile.c_str());
   for(int i_tower = 0; i_tower < 16; ++i_tower)
@@ -128,4 +131,5 @@ void plotQA_cosmic_TowerCalib(const string det = "HCALOUT")
     File_OutPut << det.c_str() << "_Tower_" << i_tower << ": energy = " << energy[i_tower] << ", adc = " << adc[i_tower]<< endl;
   }
   File_OutPut.close();
+  */
 }

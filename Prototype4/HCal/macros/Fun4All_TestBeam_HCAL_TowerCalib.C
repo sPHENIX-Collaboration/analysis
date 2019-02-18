@@ -8,14 +8,15 @@
  */
 
 int
-Fun4All_TestBeam_HCAL_TowerCalib(const int nEvents = 50000, const int colID = 0, const string det = "HCALIN")
+Fun4All_TestBeam_HCAL_TowerCalib(const int nEvents = 50000, const int colID = 0, const string det = "HCALOUT")
 // Fun4All_TestBeam_HCAL_TowerCalib(const int nEvents = 1000, const int runID = 0)
 {
 
   //---------------
   // Load libraries
   //---------------
-  gSystem->Load("libPrototype4.so");
+  gSystem->Load("/direct/phenix+u/xusun/WorkSpace/sPHENIX/install/lib/libPrototype4.so");
+  // gSystem->Load("libPrototype4.so");
   gSystem->Load("libProto4_HCalTowerCalib.so");
   gSystem->Load("libfun4all.so");                                                                        
   gSystem->Load("libg4detectors.so");
@@ -35,7 +36,7 @@ Fun4All_TestBeam_HCAL_TowerCalib(const int nEvents = 50000, const int colID = 0,
   // IO management
   //--------------
 
-  bool _is_sim = true;
+  bool _is_sim = false;
   // Hits file
   Fun4AllInputManager *hitsin = new Fun4AllDstInputManager("DSTin");
   std::string inputlist;
@@ -49,8 +50,8 @@ Fun4All_TestBeam_HCAL_TowerCalib(const int nEvents = 50000, const int colID = 0,
 
   //load your analysis module.
   std::string outputfile;
-  if(_is_sim) outputfile = Form("/sphenix/user/xusun/software/data/cosmic/TowerCalib/Proto4TowerInfoSIM_%s_%d.root",det.c_str(),colID);
-  if(!_is_sim) outputfile = Form("/sphenix/user/xusun/software/data/cosmic/TowerCalib/Proto4TowerInfoRAW_%s_%d.root",det.c_str(),colID);
+  if(_is_sim) outputfile = Form("/sphenix/user/xusun/TestBeam/TowerCalib/Proto4TowerInfoSIM_%s_%d.root",det.c_str(),colID);
+  if(!_is_sim) outputfile = Form("/sphenix/user/xusun/TestBeam/TowerCalib/Proto4TowerInfoRAW_%s_%d.root",det.c_str(),colID);
 
   Proto4TowerCalib* hcal_ana = new Proto4TowerCalib(outputfile.c_str());
   hcal_ana->is_sim(_is_sim);

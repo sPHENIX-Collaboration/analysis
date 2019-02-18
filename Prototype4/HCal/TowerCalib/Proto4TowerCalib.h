@@ -179,15 +179,6 @@ class Proto4TowerCalib : public SubsysReco
 
   int getChannelNumber(int column, int row);
 
-  int setTowerCalibParas();                                                                              
-  // apply correction factors
-  const double samplefrac_in = 0.09267;
-  const double samplefrac_out = 0.02862;
-
-  double towercalib_lg_in[16];
-  double towercalib_lg_out[16];
-  double towercalib_hg_out[16];
-
   //! output root file name
   std::string _filename;
 
@@ -212,7 +203,6 @@ class Proto4TowerCalib : public SubsysReco
 
   TH1F *h_mHCAL[16];
   float hcal_twr[16];
-  float hcal_twr_calib[16];
   bool _is_sig[16];
 
   bool is_sig(int colID);

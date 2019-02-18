@@ -1,12 +1,12 @@
-int TestBeam_HCAL_TowerCalibAna(const int nEvents = 50000, const int colID = 0, const string det = "HCALIN")
+int TestBeam_HCAL_TowerCalibAna(const int nEvents = 50000, const int colID = 0, const string det = "HCALOUT")
 {
   gSystem->Load("libProto4_HCalTowerCalib.so");
 
-  bool _is_sim = true;
+  bool _is_sim = false;
 
   std::string outputfile;
-  if(_is_sim) outputfile = Form("/sphenix/user/xusun/software/data/cosmic/TowerCalibAna/Proto4TowerInfoSIM_%s_%d.root",det.c_str(),colID);
-  if(!_is_sim) outputfile = Form("/sphenix/user/xusun/software/data/cosmic/TowerCalibAna/Proto4TowerInfoRAW_%s_%d.root",det.c_str(),colID);
+  if(_is_sim) outputfile = Form("/sphenix/user/xusun/Simulation/TowerCalibAna/Proto4TowerInfoSIM_%s_%d.root",det.c_str(),colID);
+  if(!_is_sim) outputfile = Form("/sphenix/user/xusun/TestBeam/TowerCalibAna/Proto4TowerInfoRAW_%s_%d.root",det.c_str(),colID);
 
   Proto4TowerCalib* hcal_ana = new Proto4TowerCalib(outputfile.c_str());
   hcal_ana->is_sim(_is_sim);
