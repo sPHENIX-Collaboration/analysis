@@ -14,16 +14,55 @@ void calTowerCalib()
   const double samplefrac_out = 0.02862;
 
   double towercalib_lg_in[16];
+  double towercalib_hg_in[16];
   double towercalib_lg_out[16];
   double towercalib_hg_out[16];
   for(int i_tower = 0; i_tower < 16; ++i_tower)
   {
     towercalib_lg_in[i_tower] = gain_factor_in*energy_in[i_tower]/(adc_in[i_tower]*samplefrac_in);
+    towercalib_hg_in[i_tower] = energy_in[i_tower]/(adc_in[i_tower]*samplefrac_in);
+
     towercalib_lg_out[i_tower] = gain_factor_out*energy_out[i_tower]/(adc_amp[i_tower]*adc_out[i_tower]*samplefrac_out);
     towercalib_hg_out[i_tower] = energy_out[i_tower]/(adc_amp[i_tower]*adc_out[i_tower]*samplefrac_out);
     // towercalib_lg_out[i_tower] = gain_factor_out*energy_out[i_tower]/(adc_out[i_tower]*samplefrac_out);
     // towercalib_hg_out[i_tower] = energy_out[i_tower]/(adc_out[i_tower]*samplefrac_out);
 
     cout << "i_tower = " << i_tower << ", towercalib_lg_in = " << towercalib_lg_in[i_tower] << ", towercalib_lg_out = " << towercalib_lg_out[i_tower] << endl;
+    cout << "i_tower = " << i_tower << ", towercalib_hg_in = " << towercalib_hg_in[i_tower] << ", towercalib_hg_out = " << towercalib_hg_out[i_tower] << endl;
+    cout << endl;
   }
+
+  // save high gain tower-by-tower calibration factors into calibration files
+  int hbdchanIHC[4][4] = { { 4, 8, 12, 16},
+                           { 3, 7, 11, 15},
+                           { 2, 6, 10, 14},
+                           { 1, 5,  9, 13}};
+
+  string output_hcalin = "calib_hcalin_hg.txt";
+  ofstream File_OutPut_hcalin(output_hcalin.c_str());
+  for(int i_col = 0; i_col < 4; ++i_col)
+  {
+    for(int i_row = 0; i_row < 4; ++i_row)
+    {
+      int i_tower = hbdchanIHC[i_row][i_col]-1;
+      cout << "i_col = " << i_col << ", i_row = " << i_row << ", i_tower = " << i_tower << ", towercalib_hg_in = " << towercalib_hg_in[i_tower] << endl;
+
+      File_OutPut_hcalin << i_col << "    " << i_row << "    " << towercalib_hg_in[i_tower] << endl;
+    }
+  }
+  File_OutPut_hcalin.close();
+
+  string output_hcalout = "calib_hcalout_hg.txt";
+  ofstream File_OutPut_hcalout(output_hcalout.c_str());
+  for(int i_col = 0; i_col < 4; ++i_col)
+  {
+    for(int i_row = 0; i_row < 4; ++i_row)
+    {
+      int i_tower = hbdchanIHC[i_row][i_col]-1;
+      cout << "i_col = " << i_col << ", i_row = " << i_row << ", i_tower = " << i_tower << ", towercalib_hg_out = " << towercalib_hg_out[i_tower] << endl;
+
+      File_OutPut_hcalout << i_col << "    " << i_row << "    " << towercalib_hg_out[i_tower] << endl;
+    }
+  }
+  File_OutPut_hcalout.close();
 }
