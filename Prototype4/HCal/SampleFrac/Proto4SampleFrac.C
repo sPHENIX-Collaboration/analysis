@@ -33,6 +33,7 @@
 #include <TH3F.h>
 #include <TVector3.h>
 #include <TLorentzVector.h>
+#include <TMath.h>
            
 #include <exception>
 #include <stdexcept>
@@ -173,18 +174,25 @@ int Proto4SampleFrac::Init(PHCompositeNode *topNode)
 
   hm->registerHisto(                           
       new TH2F(TString(get_histo_prefix()) + "_G4Hit_XY_cal", //
-	TString(_calo_name) + " XY projection;X (cm);Y (cm)", 1200, -300, 300,
-	1200, -300, 300));
+	TString(_calo_name) + " XY projection;X (cm);Y (cm)", 3000, 50, 350,
+	2000, -100, 100));
+	// TString(_calo_name) + " XY projection;X (cm);Y (cm)", 1200, -300, 300,
+	// 1200, -300, 300));
 
   hm->registerHisto(                           
       new TH2F(TString(get_histo_prefix()) + "_G4Hit_XY_abs", //
-	TString(_calo_name) + " XY projection;X (cm);Y (cm)", 1200, -300, 300,
-	1200, -300, 300));
+	TString(_calo_name) + " XY projection;X (cm);Y (cm)", 3000, 50, 350,
+	2000, -100, 100));
 
   hm->registerHisto(                           
-      new TH3F(TString(get_histo_prefix()) + "_G4Hit_XYZ", //
-	TString(_calo_name) + " ZXY projection;Z (cm);X (cm);Y (cm)", 200, 100, 300,
-	200, 100, 300, 200, -100, 100));
+      new TH2F(TString(get_histo_prefix()) + "_G4Hit_Mat_XY_cal", //
+	TString(_calo_name) + " XY projection;X (cm);Y (cm)", 3000, 50, 350,
+	2000, -100, 100));
+
+  hm->registerHisto(                           
+      new TH2F(TString(get_histo_prefix()) + "_G4Hit_Mat_XY_abs", //
+	TString(_calo_name) + " XY projection;X (cm);Y (cm)", 3000, 50, 350,
+	2000, -100, 100));
 
   hm->registerHisto(                           
       new TH2F(TString(get_histo_prefix()) + "_G4Hit_LateralTruthProjection", //
@@ -306,9 +314,9 @@ int Proto4SampleFrac::process_event(PHCompositeNode *topNode)
 	  get_histo_prefix() + "_G4Hit_XY_cal"));
     assert(hxy_cal);
 
-    TH3F * hxyz = dynamic_cast<TH3F*>(hm->getHisto(
-	  get_histo_prefix() + "_G4Hit_XYZ"));
-    assert(hxyz);
+    TH2F * hmat_xy_cal = dynamic_cast<TH2F*>(hm->getHisto(
+	  get_histo_prefix() + "_G4Hit_Mat_XY_cal"));
+    assert(hmat_xy_cal);
 
     TH1F * ht = dynamic_cast<TH1F*>(hm->getHisto(
 	  get_histo_prefix() + "_G4Hit_HitTime"));
@@ -347,12 +355,16 @@ int Proto4SampleFrac::process_event(PHCompositeNode *topNode)
 
       hrz->Fill(hit.Z(), hit.Perp(), this_hit->get_edep());
       hxy_cal->Fill(hit.X(), hit.Y(), this_hit->get_edep());
-      hxyz->Fill(hit.Z(), hit.X(), hit.Y(), this_hit->get_edep());
       ht->Fill(this_hit->get_avg_t() - t0, this_hit->get_edep());
 
       const double hit_azimuth = axis_azimuth.Dot(hit - vertex);
       const double hit_polar = axis_polar.Dot(hit - vertex);
       hlat->Fill(hit_polar, hit_azimuth, this_hit->get_edep());
+
+      const TVector3 hit_entry(this_hit->get_x(0), this_hit->get_y(0), this_hit->get_z(0));
+      const TVector3 hit_exit(this_hit->get_x(1), this_hit->get_y(1), this_hit->get_z(1));
+      hmat_xy_cal->Fill(hit_entry.X(),hit_entry.Y());
+      hmat_xy_cal->Fill(hit_exit.X(),hit_exit.Y());
     }
   }
 
@@ -363,6 +375,10 @@ int Proto4SampleFrac::process_event(PHCompositeNode *topNode)
     TH2F * hxy_abs = dynamic_cast<TH2F*>(hm->getHisto(
 	  get_histo_prefix() + "_G4Hit_XY_abs"));
     assert(hxy_abs);
+
+    TH2F * hmat_xy_abs = dynamic_cast<TH2F*>(hm->getHisto(
+	  get_histo_prefix() + "_G4Hit_Mat_XY_abs"));
+    assert(hmat_xy_abs);
 
     PHG4HitContainer::ConstRange calo_abs_hit_range =
       _calo_abs_hit_container->getHits();
@@ -379,6 +395,11 @@ int Proto4SampleFrac::process_event(PHCompositeNode *topNode)
 	  this_hit->get_avg_z());
 
       hxy_abs->Fill(hit.X(), hit.Y(), this_hit->get_edep());
+
+      const TVector3 hit_entry(this_hit->get_x(0), this_hit->get_y(0), this_hit->get_z(0));
+      const TVector3 hit_exit(this_hit->get_x(1), this_hit->get_y(1), this_hit->get_z(1));
+      hmat_xy_abs->Fill(hit_entry.X(),hit_entry.Y());
+      hmat_xy_abs->Fill(hit_exit.X(),hit_exit.Y());
     }
   }
 
