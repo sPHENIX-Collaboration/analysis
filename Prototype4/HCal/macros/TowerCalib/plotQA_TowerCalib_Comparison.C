@@ -37,7 +37,7 @@ void plotQA_TowerCalib_Comparison()
 
   TCanvas *c_hcal_in = new TCanvas("c_hcal_in","c_hcal_in",10,10,1600,1600);
   c_hcal_in->Divide(4,4);
-  TLegend *leg_in = new TLegend(0.5,0.5,0.7,0.7);
+  TLegend *leg_in = new TLegend(0.4,0.5,0.8,0.8);
   leg_in->SetFillColor(0);
   leg_in->AddEntry(h_hcalin_tower_calib_produced[0], "production", "l");
   leg_in->AddEntry(h_hcalin_tower_calib_manual[0], "manual", "p");
@@ -64,7 +64,7 @@ void plotQA_TowerCalib_Comparison()
 
   TCanvas *c_hcal_out = new TCanvas("c_hcal_out","c_hcal_out",10,10,1600,1600);
   c_hcal_out->Divide(4,4);
-  TLegend *leg_out = new TLegend(0.5,0.5,0.7,0.7);
+  TLegend *leg_out = new TLegend(0.4,0.5,0.8,0.8);
   leg_out->SetFillColor(0);
   leg_out->AddEntry(h_hcalout_tower_calib_produced[0], "production", "l");
   leg_out->AddEntry(h_hcalout_tower_calib_manual[0], "manual", "p");

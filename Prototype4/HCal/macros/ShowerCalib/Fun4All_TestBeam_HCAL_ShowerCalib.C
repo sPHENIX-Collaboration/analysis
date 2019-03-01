@@ -7,8 +7,11 @@
  * \date $Date: $
  */
 
-int Fun4All_TestBeam_HCAL_ShowerCalib(const int nEvents = 10000000, const string runID = "0422")
-// int Fun4All_TestBeam_HCAL_ShowerCalib(const int nEvents = 10, const string runID = "0422")
+// int Fun4All_TestBeam_HCAL_ShowerCalib(const int nEvents = 10000000, const string runID = "1087") // -5 GeV meson
+// int Fun4All_TestBeam_HCAL_ShowerCalib(const int nEvents = 10000000, const string runID = "0422") // -8 GeV meson
+// int Fun4All_TestBeam_HCAL_ShowerCalib(const int nEvents = 10000000, const string runID = "0571") // -12 GeV meson
+// int Fun4All_TestBeam_HCAL_ShowerCalib(const int nEvents = 10000000, const string runID = "0821") // 60 GeV proton
+int Fun4All_TestBeam_HCAL_ShowerCalib(const int nEvents = 10000000, const string runID = "0498") // 120 GeV proton
 {
 
   //---------------

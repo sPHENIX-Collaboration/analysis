@@ -5,7 +5,7 @@
 #include "TH1F.h"
 #include "TCanvas.h"
 
-void plotQA_EnergyAsmm_nocuts(string runID = "0422")
+void plotQA_EnergyAsmm_production(string runID = "0422")
 {
   string mom;
   if(runID == "0422") mom = "8GeV"; 
@@ -25,7 +25,7 @@ void plotQA_EnergyAsmm_nocuts(string runID = "0422")
     c_EnergyAsmm->cd(i_pad+1)->SetGrid(0,0);
   }
   c_EnergyAsmm->cd(1);
-  h_mAsymmEnergy_raw->SetStats(0);
+  // h_mAsymmEnergy_raw->SetStats(0);
   h_mAsymmEnergy_raw->SetTitle("ADC vs. Asymm");
 
   h_mAsymmEnergy_raw->GetYaxis()->SetTitle("ADC");
@@ -38,7 +38,7 @@ void plotQA_EnergyAsmm_nocuts(string runID = "0422")
   h_mAsymmEnergy_raw->Draw("colz");
 
   c_EnergyAsmm->cd(2);
-  h_mAsymmEnergy_calib->SetStats(0);
+  // h_mAsymmEnergy_calib->SetStats(0);
   h_mAsymmEnergy_calib->SetTitle("Energy vs. Asymm");
 
   h_mAsymmEnergy_calib->GetYaxis()->SetTitle("Energy (GeV)");

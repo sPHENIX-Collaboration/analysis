@@ -286,29 +286,25 @@ class Proto4ShowerCalib : public SubsysReco
   // TH2F *h_mAsymmEnergy_mixed_sim;
   TH2F *h_mAsymmEnergy_pion_sim;
 
-  TH2F *h_mAsymmEnergy_mixed_raw; // production
-  TH2F *h_mAsymmEnergy_electron_raw;
-  TH2F *h_mAsymmEnergy_pion_raw;
-  TH1F *h_mEnergyOut_pion_raw;
+  TH2F *h_mAsymmAdc_mixed; // production
+  TH2F *h_mAsymmAdc_electron;
+  TH2F *h_mAsymmAdc_pion;
 
-  TH2F *h_mAsymmEnergy_mixed_calib_wo_cut;
-  TH2F *h_mAsymmEnergy_electron_calib_wo_cut;
-  TH2F *h_mAsymmEnergy_pion_calib_wo_cut;
-  TH1F *h_mEnergyOut_pion_calib_wo_cut;
+  TH2F *h_mAsymmEnergy_mixed_wo_cut;
+  TH2F *h_mAsymmEnergy_electron_wo_cut;
+  TH2F *h_mAsymmEnergy_pion_wo_cut;
 
-  TH2F *h_mAsymmEnergy_mixed_calib;
-  TH2F *h_mAsymmEnergy_electron_calib;
-  TH2F *h_mAsymmEnergy_pion_calib;
-  TH1F *h_mEnergyOut_pion_calib;
+  TH2F *h_mAsymmEnergy_mixed;
+  TH2F *h_mAsymmEnergy_electron;
+  TH2F *h_mAsymmEnergy_pion;
 
-  TH2F *h_mAsymmEnergy_mixed_calib_leveling;
-  TH2F *h_mAsymmEnergy_electron_calib_leveling;
-  TH2F *h_mAsymmEnergy_pion_calib_leveling;
+  TH2F *h_mAsymmEnergy_mixed_leveling;
+  TH2F *h_mAsymmEnergy_electron_leveling;
+  TH2F *h_mAsymmEnergy_pion_leveling;
 
   TH2F *h_mAsymmEnergy_mixed_ShowerCalib;
   TH2F *h_mAsymmEnergy_electron_ShowerCalib;
   TH2F *h_mAsymmEnergy_pion_ShowerCalib;
-  TH1F *h_mEnergyOut_pion_ShowerCalib;
 
   int getChannelNumber(int column, int row);
   int setTowerCalibParas();
