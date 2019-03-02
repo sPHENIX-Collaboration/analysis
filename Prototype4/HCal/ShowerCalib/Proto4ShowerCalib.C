@@ -940,8 +940,8 @@ int Proto4ShowerCalib::MakeAna()
   cout << "Make()" << endl;
 
   // const int mBeamEnergy[6] = {4, 8, 12, 16, 24, 30};
-  const float c_in[5]  = {0.980692, 0.942535, 0.962649, 0.962649, 0.962649};
-  const float c_out[5] = {1.020080, 1.064930, 1.040370, 1.040370, 1.040370};
+  const float c_in[5]  = {0.980692, 0.942535, 0.962649, 1.0, 0.962649};
+  const float c_out[5] = {1.020080, 1.064930, 1.040370, 1.0, 1.040370};
   // const float c_in[5]  = {0.942372, 0.932490, 0.955448, 0.962649, 0.962649};
   // const float c_out[5] = {1.065140, 1.078050, 1.048910, 1.040370, 1.040370};
   const int mEnergyBin = find_energy();

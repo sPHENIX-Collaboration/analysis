@@ -320,8 +320,7 @@ class Proto4ShowerCalib : public SubsysReco
   double towercalib_lg_out[16];
   double towercalib_hg_out[16];
 
-  const double showercalib = 2.29898; // extracted with 16 GeV Test Beam Data
-  const double showercalib_out = 5.47298; // extracted with 16 GeV Test Beam Data
+  const double showercalib = 3.03185; // extracted with 12 GeV Test Beam Data
 
   float find_range();
   int find_energy();
