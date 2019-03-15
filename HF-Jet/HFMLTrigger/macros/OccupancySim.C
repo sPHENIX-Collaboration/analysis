@@ -182,7 +182,7 @@ TH1 *MakeCDF(TH1 *h)
 
   double integral = 0;
 
-  for (int bin = h->GetNbinsX(); bin >= 1; --bin)
+  for (int bin = h->GetNbinsX() + 1; bin >= 0; --bin)
   {
     integral += h->GetBinContent(bin);
     hCDF->SetBinContent(bin, integral);
@@ -359,11 +359,11 @@ chipMultiplicitySet_vec TriggerMultiplicity(chipMultiplicitySet_vec cm_MB, chipM
 }
 
 void OccupancySim(                                                                                                                                                     //
-                                                                                                                                                                       //    const TString infile = "/sphenix/user/jinhuang/HF-jet/MVTX_Multiplicity/pp200MB_30cmVZ_Iter3/pp200MB_30cmVZ_Iter3_SUM.cfg_HFMLTriggerOccupancy.root",          //
-                                                                                                                                                                       //    const TString infile_trigger = "/sphenix/user/jinhuang/HF-jet/MVTX_Multiplicity/pp200MB_30cmVZ_Iter3/pp200MB_30cmVZ_Iter3_SUM.cfg_HFMLTriggerOccupancy.root",  //
+                                                                                                                                                                       //    const TString infile = "/sphenix/user/jinhuang/HF-jet/MVTX_Multiplicity/pp200MB_30cmVZ_Iter5/pp200MB_30cmVZ_Iter5_SUM.cfg_HFMLTriggerOccupancy.root",          //
+                                                                                                                                                                       //    const TString infile_trigger = "/sphenix/user/jinhuang/HF-jet/MVTX_Multiplicity/pp200MB_30cmVZ_Iter5/pp200MB_30cmVZ_Iter5_SUM.cfg_HFMLTriggerOccupancy.root",  //
                                                                                                                                                                        //    const TString disc = "p+p MB, #sqrt{s} = 200 GeV"                                                                                                              //
-    const TString infile = "/sphenix/user/jinhuang/HF-jet/MVTX_Multiplicity/AuAu200MB_30cmVZ_Iter4/AuAu200MB_30cmVZ_Iter4_SUM.xml_HFMLTriggerOccupancy.root",          //
-    const TString infile_trigger = "/sphenix/user/jinhuang/HF-jet/MVTX_Multiplicity/AuAu200MB_10cmVZ_Iter4/AuAu200MB_10cmVZ_Iter4_SUM.xml_HFMLTriggerOccupancy.root",  //
+    const TString infile = "/sphenix/user/jinhuang/HF-jet/MVTX_Multiplicity/AuAu200MB_30cmVZ_Iter5/AuAu200MB_30cmVZ_Iter5_SUM.xml_HFMLTriggerOccupancy.root",          //
+    const TString infile_trigger = "/sphenix/user/jinhuang/HF-jet/MVTX_Multiplicity/AuAu200MB_10cmVZ_Iter5/AuAu200MB_10cmVZ_Iter5_SUM.xml_HFMLTriggerOccupancy.root",  //
     const TString disc = "Au+Au MB, #sqrt{s_{NN}} = 200 GeV"                                                                                                           //
 )
 {
@@ -384,28 +384,53 @@ void OccupancySim(                                                              
   Check(_file_trigger);
   chipMultiplicitySet_vec chipMultiplicityTrigger = MakeChipMultiplicitySet(_file_trigger);
 
-//  TriggerMultiplicity(chipMultiplicity, chipMultiplicityTrigger,
-//                      200e3 * 10e-6, 1, 1024 * 512 * 1e-4);
-//  TriggerMultiplicity(chipMultiplicity, chipMultiplicityTrigger,
-//                      200e3 * 10e-6, 0, 1024 * 512 * 1e-4);
-//  TriggerMultiplicity(chipMultiplicity, chipMultiplicityTrigger,
-//                      200e3 * 5e-6, 0, 1024 * 512 * 1e-4);
-//  TriggerMultiplicity(chipMultiplicity, chipMultiplicityTrigger,
-//                      50e3 * 5e-6, 0, 1024 * 512 * 1e-4);
+  // AuAu
   TriggerMultiplicity(chipMultiplicity, chipMultiplicityTrigger,
-                      50e3 * 10e-6, 0, 1024 * 512 * 1e-5);
-//  TriggerMultiplicity(chipMultiplicity, chipMultiplicityTrigger,
-//                      50e3 * 5e-6, 0, 1024 * 512 * 1e-5);
+                      200e3 * 10e-6, 1, 1024 * 512 * 1e-6 + 2);
 
+  TriggerMultiplicity(chipMultiplicity, chipMultiplicityTrigger,
+                      200e3 * 15e-6, 0, 1024 * 512 * 1e-6 + 2);
+
+  TriggerMultiplicity(chipMultiplicity, chipMultiplicityTrigger,
+                      200e3 * 10e-6, 0, 1024 * 512 * 1e-6 + 2);
+
+  TriggerMultiplicity(chipMultiplicity, chipMultiplicityTrigger,
+                      200e3 * 5e-6, 0, 1024 * 512 * 1e-6 + 2);
+
+  TriggerMultiplicity(chipMultiplicity, chipMultiplicityTrigger,
+                      100e3 * 5e-6, 0, 1024 * 512 * 1e-6 + 2);
+
+  TriggerMultiplicity(chipMultiplicity, chipMultiplicityTrigger,
+                      50e3 * 5e-6, 0, 1024 * 512 * 1e-6 + 2);
+
+  TriggerMultiplicity(chipMultiplicity, chipMultiplicityTrigger,
+                      200e3 * 15e-6, 0, 1024 * 512 * 1e-5 + 2);
+
+  TriggerMultiplicity(chipMultiplicity, chipMultiplicityTrigger,
+                      200e3 * 10e-6, 0, 1024 * 512 * 1e-5 + 2);
+
+  TriggerMultiplicity(chipMultiplicity, chipMultiplicityTrigger,
+                      200e3 * 5e-6, 0, 1024 * 512 * 1e-5 + 2);
+
+  //  //   pp
   //  TriggerMultiplicity(chipMultiplicity, chipMultiplicityTrigger,
-  //                      13e6 * 10e-6, 1, 1024 * 512 * 1e-4);
+  //                      13e6 * 10e-6, 1, 1024 * 512 * 1e-6);
+  //
   //  TriggerMultiplicity(chipMultiplicity, chipMultiplicityTrigger,
-  //                      13e6 * 10e-6, 0, 1024 * 512 * 1e-4);
+  //                      13e6 * 15e-6, 0, 1024 * 512 * 1e-6);
   //  TriggerMultiplicity(chipMultiplicity, chipMultiplicityTrigger,
-  //                      13e6 * 5e-6, 0, 1024 * 512 * 1e-4);
+  //                      13e6 * 10e-6, 0, 1024 * 512 * 1e-6);
+  //  TriggerMultiplicity(chipMultiplicity, chipMultiplicityTrigger,
+  //                      13e6 * 5e-6, 0, 1024 * 512 * 1e-6);
+  //
+  //  TriggerMultiplicity(chipMultiplicity, chipMultiplicityTrigger,
+  //                      13e6 * 15e-6, 0, 1024 * 512 * 1e-5);
+  //  TriggerMultiplicity(chipMultiplicity, chipMultiplicityTrigger,
+  //                      13e6 * 10e-6, 0, 1024 * 512 * 1e-5);
   //  TriggerMultiplicity(chipMultiplicity, chipMultiplicityTrigger,
   //                      13e6 * 5e-6, 0, 1024 * 512 * 1e-5);
   //  TriggerMultiplicity(chipMultiplicity, chipMultiplicityTrigger,
   //                      4e6 * 5e-6, 0, 1024 * 512 * 1e-5);
+
   //
 }

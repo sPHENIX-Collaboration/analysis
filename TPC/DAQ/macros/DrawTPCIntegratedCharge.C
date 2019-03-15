@@ -18,7 +18,8 @@ TString description;
 void DrawTPCIntegratedCharge(
 //        const TString infile = "data/TPCIntegratedCharge_AuAu0-4fm_200kHz.root",
 //        const TString disc = "Au+Au 0-7%C Triggered + 200 kHz collision"  //
-    const TString infile = "data/TPCIntegratedCharge_AuAu0-12fm_170kHz.root",
+//    const TString infile = "data/TPCIntegratedCharge_AuAu0-12fm_170kHz.root",
+    const TString infile = "/sphenix/user/jinhuang/TPC/Multiplicity/AuAu200MB_170kHz_Iter2/AuAu200MB_170kHz_Iter2_SUM.xml_TPCIntegratedCharge.root",
     const TString disc = "Au+Au MB Triggered + 170 kHz collision"  //
 )
 {
