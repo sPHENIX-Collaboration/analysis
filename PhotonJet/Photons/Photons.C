@@ -26,8 +26,7 @@
 #include <calobase/RawTowerGeomContainer.h>
 #include <g4detectors/PHG4ScintillatorSlatContainer.h>
 #include <g4eval/JetEvalStack.h>
-#include <g4hough/SvtxTrack.h>
-#include <g4hough/SvtxTrackMap.h>
+
 #include <g4vertex/GlobalVertex.h>
 #include <g4vertex/GlobalVertexMap.h>
 
@@ -58,6 +57,7 @@ Photons::Photons(const std::string &name)
 
   nevents = 0;
 
+  verbosity = 0;
 
   //default no hijing embedding
   _embed = 0;

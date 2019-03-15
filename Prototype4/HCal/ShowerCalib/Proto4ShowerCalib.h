@@ -12,7 +12,9 @@ class PHCompositeNode;
 class PHG4HitContainer;
 class Fun4AllHistoManager;
 class TH1F;
+class TH2F;
 class TTree;
+class TChain;
 class SvtxEvalStack;
 class PHG4Particle;
 class RawTowerGeom;
@@ -47,6 +49,19 @@ class Proto4ShowerCalib : public SubsysReco
   {
     _is_sim = b;
   }
+
+  // ShowerCalib Analysis
+  int InitAna();
+
+  int MakeAna();
+
+  int FinishAna();
+
+  void set_runID(std::string runID)
+  {
+    _mRunID = runID;
+  }
+
 
   class Eval_Run : public TObject
   {
@@ -130,60 +145,98 @@ class Proto4ShowerCalib : public SubsysReco
     ClassDef(Eval_Run, 10)
   };
 
-  class HCAL_Shower : public TObject
+  class HCAL_Tower : public TObject
   {
-   public:
-    HCAL_Shower()
-    {
-     reset();
-    }
+    public:
+      HCAL_Tower()
+      {
+	reset();
+      }
 
-    virtual ~HCAL_Shower(){}
+      virtual ~HCAL_Tower(){}
 
-    void reset()
-    {
-     for(int itwr=0; itwr<16; itwr++)
-     {
-      hcalin_lg_twr_raw[itwr] = 0.;
-      hcalout_lg_twr_raw[itwr] = 0.;
-      hcalout_hg_twr_raw[itwr] = 0.;
-      hcalin_lg_twr_calib[itwr] = 0.;
-      hcalout_lg_twr_calib[itwr] = 0.;
-      hcalout_hg_twr_calib[itwr] = 0.;
-     }
+      void reset()
+      {
+	// HCALIN
+	hcalin_e_sim = 0.;
 
-     hcalin_lg_e_raw = 0.;
-     hcalout_lg_e_raw = 0.;
-     hcalout_hg_e_raw = 0.;
-     hcal_total_raw = -999.;
-     hcal_asym_raw = -999.;
+	hcalin_lg_e_raw = 0.;
+	hcalin_lg_e_calib = 0.;
 
-     hcalin_lg_e_calib = 0.;
-     hcalout_lg_e_calib = 0.;
-     hcalout_hg_e_calib = 0.;
-     hcal_total_calib = -999.;
-     hcal_asym_calib = -999.;
-    }
+	for(int itwr=0; itwr<16; itwr++)
+	{
+	  hcalin_twr_sim[itwr] = 0.;
+	  hcalin_lg_twr_raw[itwr] = 0.;
+	  hcalin_lg_twr_calib[itwr] = 0.;
+	}
 
-   float hcalin_lg_e_raw;
-   float hcalin_lg_twr_raw[16];
-   float hcalout_lg_e_raw;
-   float hcalout_lg_twr_raw[16];
-   float hcalout_hg_e_raw;
-   float hcalout_hg_twr_raw[16];
-   float hcal_total_raw;
-   float hcal_asym_raw;
+	// HCALOUT
+	hcalout_e_sim = 0.;
 
-   float hcalin_lg_e_calib;
-   float hcalin_lg_twr_calib[16];
-   float hcalout_lg_e_calib;
-   float hcalout_lg_twr_calib[16];
-   float hcalout_hg_e_calib;
-   float hcalout_hg_twr_calib[16];
-   float hcal_total_calib;
-   float hcal_asym_calib;
+	hcalout_lg_e_raw = 0.;
+	hcalout_lg_e_calib = 0.;
 
-   ClassDef(HCAL_Shower, 10)
+	hcalout_hg_e_raw = 0.;
+	hcalout_hg_e_calib = 0.;
+
+	for(int itwr=0; itwr<16; itwr++)
+	{
+	  hcalout_twr_sim[itwr] = 0.;
+
+	  hcalout_lg_twr_raw[itwr] = 0.;
+	  hcalout_lg_twr_calib[itwr] = 0.;
+
+	  hcalout_hg_twr_raw[itwr] = 0.;
+	  hcalout_hg_twr_calib[itwr] = 0.;
+	}
+
+	// total energy and asymmetry
+	hcal_total_sim = -999.;
+	hcal_total_raw = -999.;
+	hcal_total_calib = -999.;
+
+	hcal_asym_sim = -999.;
+	hcal_asym_raw = -999.;
+	hcal_asym_calib = -999.;
+      }
+
+
+      // HCALIN
+      float hcalin_e_sim;
+      float hcalin_twr_sim[16];
+
+      float hcalin_lg_e_raw;
+      float hcalin_lg_twr_raw[16];
+
+      float hcalin_lg_e_calib;
+      float hcalin_lg_twr_calib[16];
+
+      // HCALOUT
+      float hcalout_e_sim;
+      float hcalout_twr_sim[16];
+
+      float hcalout_lg_e_raw;
+      float hcalout_lg_twr_raw[16];
+
+      float hcalout_lg_e_calib;
+      float hcalout_lg_twr_calib[16];
+
+      float hcalout_hg_e_raw;
+      float hcalout_hg_twr_raw[16];
+
+      float hcalout_hg_e_calib;
+      float hcalout_hg_twr_calib[16];
+
+      // total energy and asymmetry
+      float hcal_total_sim;
+      float hcal_total_raw;
+      float hcal_total_calib;
+
+      float hcal_asym_sim;
+      float hcal_asym_raw;
+      float hcal_asym_calib;
+
+      ClassDef(HCAL_Tower, 10)
   };
 
  private:
@@ -213,7 +266,71 @@ class Proto4ShowerCalib : public SubsysReco
   Eval_Run _eval_run;
 
   //! hcal infromation. To be copied to output TTree T
-  HCAL_Shower _shower;
+  HCAL_Tower _tower;
+
+  // TowerCalib Analysis
+  TFile *mFile_OutPut;
+  TChain *mChainInPut;
+  unsigned long _mStartEvent;
+  unsigned long _mStopEvent;
+  int _mInPut_flag;
+  std::string _mList;
+  std::string _mRunID;
+
+  Eval_Run *_mInfo;
+  HCAL_Tower *_mTower;
+
+  // TH2F *h_mAsymmEnergy_mixed_sim_wo_cut; // sim
+  TH2F *h_mAsymmEnergy_pion_sim_wo_cut;
+
+  // TH2F *h_mAsymmEnergy_mixed_sim;
+  TH2F *h_mAsymmEnergy_pion_sim;
+
+  TH2F *h_mAsymmEnergy_mixed_raw; // production
+  TH2F *h_mAsymmEnergy_electron_raw;
+  TH2F *h_mAsymmEnergy_pion_raw;
+  TH1F *h_mEnergyOut_pion_raw;
+
+  TH2F *h_mAsymmEnergy_mixed_calib_wo_cut;
+  TH2F *h_mAsymmEnergy_electron_calib_wo_cut;
+  TH2F *h_mAsymmEnergy_pion_calib_wo_cut;
+  TH1F *h_mEnergyOut_pion_calib_wo_cut;
+
+  TH2F *h_mAsymmEnergy_mixed_calib;
+  TH2F *h_mAsymmEnergy_electron_calib;
+  TH2F *h_mAsymmEnergy_pion_calib;
+  TH1F *h_mEnergyOut_pion_calib;
+
+  TH2F *h_mAsymmEnergy_mixed_calib_leveling;
+  TH2F *h_mAsymmEnergy_electron_calib_leveling;
+  TH2F *h_mAsymmEnergy_pion_calib_leveling;
+
+  TH2F *h_mAsymmEnergy_mixed_ShowerCalib;
+  TH2F *h_mAsymmEnergy_electron_ShowerCalib;
+  TH2F *h_mAsymmEnergy_pion_ShowerCalib;
+  TH1F *h_mEnergyOut_pion_ShowerCalib;
+
+  int getChannelNumber(int column, int row);
+  int setTowerCalibParas();
+
+  // correction factors
+  const double samplefrac_in = 0.09267; 
+  const double samplefrac_out = 0.02862;
+
+  // const double samplefrac_in = 0.0631283;  // from Songkyo
+  // const double samplefrac_out = 0.0338021;
+
+  double towercalib_lg_in[16];
+  double towercalib_lg_out[16];
+  double towercalib_hg_out[16];
+
+  const double showercalib = 2.29898; // extracted with 16 GeV Test Beam Data
+  const double showercalib_out = 5.47298; // extracted with 16 GeV Test Beam Data
+
+  float find_range();
+  int find_energy();
+
+  // used by RAW
 };
 
 #endif  // __Proto4ShowerCalib_H__

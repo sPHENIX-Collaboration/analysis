@@ -1,0 +1,16 @@
+HCALIN_Tower_0: energy = 0.00763174, adc = 2972.61
+HCALIN_Tower_1: energy = 0.00692298, adc = 2856.43
+HCALIN_Tower_2: energy = 0.00637355, adc = 2658.19
+HCALIN_Tower_3: energy = 0.0059323, adc = 2376.1
+HCALIN_Tower_4: energy = 0.00762296, adc = 3283.39
+HCALIN_Tower_5: energy = 0.00691832, adc = 2632.81
+HCALIN_Tower_6: energy = 0.00636611, adc = 2775.77
+HCALIN_Tower_7: energy = 0.0059203, adc = 2491.68
+HCALIN_Tower_8: energy = 0.00762873, adc = 2994.11
+HCALIN_Tower_9: energy = 0.00693594, adc = 3385.7
+HCALIN_Tower_10: energy = 0.00637791, adc = 3258.01
+HCALIN_Tower_11: energy = 0.00592433, adc = 2638.31
+HCALIN_Tower_12: energy = 0.00762898, adc = 3479.97
+HCALIN_Tower_13: energy = 0.00691679, adc = 3081.41
+HCALIN_Tower_14: energy = 0.00636373, adc = 2768.36
+HCALIN_Tower_15: energy = 0.00592433, adc = 2626.77

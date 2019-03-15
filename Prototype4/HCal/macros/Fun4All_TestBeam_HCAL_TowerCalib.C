@@ -7,8 +7,9 @@
  * \date $Date: $
  */
 
-int Fun4All_TestBeam_HCAL_ShowerCalib(const int nEvents = 20000, const string runID = "1666")
-// int Fun4All_TestBeam_HCAL_ShowerCalib(const int nEvents = 10, const string runID = "0422")
+int
+Fun4All_TestBeam_HCAL_TowerCalib(const int nEvents = 50000, const int colID = 0, const string det = "HCALOUT")
+// Fun4All_TestBeam_HCAL_TowerCalib(const int nEvents = 1000, const int runID = 0)
 {
 
   //---------------
@@ -16,13 +17,13 @@ int Fun4All_TestBeam_HCAL_ShowerCalib(const int nEvents = 20000, const string ru
   //---------------
   gSystem->Load("/direct/phenix+u/xusun/WorkSpace/sPHENIX/install/lib/libPrototype4.so");
   // gSystem->Load("libPrototype4.so");
+  gSystem->Load("libProto4_HCalTowerCalib.so");
   gSystem->Load("libfun4all.so");                                                                        
   gSystem->Load("libg4detectors.so");
   gSystem->Load("libphhepmc.so");
   gSystem->Load("libg4testbench.so");
   gSystem->Load("libg4hough.so");
   gSystem->Load("libg4eval.so");
-
 
   //---------------
   // Fun4All server
@@ -36,27 +37,24 @@ int Fun4All_TestBeam_HCAL_ShowerCalib(const int nEvents = 20000, const string ru
   //--------------
 
   bool _is_sim = false;
-  // bool _is_sim = true;
   // Hits file
   Fun4AllInputManager *hitsin = new Fun4AllDstInputManager("DSTin");
-  std::string inputfile;
-  if(_is_sim) inputfile = Form("/sphenix/user/xusun/Simulation/Production/BeamTest_24GeV_%s.root",runID.c_str());
-  // if(!_is_sim) inputfile= Form("/sphenix/data/data02/sphenix/t1044/production/production_0322/beam_0000%s-0000.root",runID.c_str());
-  if(!_is_sim) inputfile= Form("/sphenix/user/xusun/TestBeam/Production/beam_0000%s.root",runID.c_str());
-  hitsin->fileopen(inputfile);
-//  hitsin->AddListFile(inputFile); // you can also choose this and give a list of DST file names in the file.
+  std::string inputlist;
+  if(_is_sim) inputlist = Form("list/Cosmic_SIM_%s_col_%d.list",det.c_str(),colID);
+  if(!_is_sim) inputlist = Form("list/Cosmic_RAW_%s_col_%d.list",det.c_str(),colID);
+  hitsin->AddListFile(inputlist); // you can also choose this and give a list of DST file names in the file.
   se->registerInputManager(hitsin);
 
-  //load your analysis module.
-  gSystem->Load("libProto4_HCalShowerCalib.so");
-  std::string outputfile;
-  if(_is_sim) outputfile = Form("/sphenix/user/xusun/Simulation/ShowerCalib/Proto4ShowerInfoSIM_%s.root",runID.c_str());
-  if(!_is_sim) outputfile = Form("/sphenix/user/xusun/TestBeam/ShowerCalib/Proto4ShowerInfoRAW_%s.root",runID.c_str());
+  //load your analysis module's lib
+  gSystem->Load("libProto4_HCalTowerCalib.so");
 
-  // This one is an example defined in ../ExampleAnalysisModule/
-  Proto4ShowerCalib* hcal_ana = new Proto4ShowerCalib(outputfile.c_str());
+  //load your analysis module.
+  std::string outputfile;
+  if(_is_sim) outputfile = Form("/sphenix/user/xusun/TestBeam/TowerCalib/Proto4TowerInfoSIM_%s_%d.root",det.c_str(),colID);
+  if(!_is_sim) outputfile = Form("/sphenix/user/xusun/TestBeam/TowerCalib/Proto4TowerInfoRAW_%s_%d.root",det.c_str(),colID);
+
+  Proto4TowerCalib* hcal_ana = new Proto4TowerCalib(outputfile.c_str());
   hcal_ana->is_sim(_is_sim);
-  hcal_ana->set_runID(runID);
   se->registerSubsystem(hcal_ana);
 
   se->run(nEvents);
