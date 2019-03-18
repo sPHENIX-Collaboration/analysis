@@ -111,6 +111,8 @@ void extractLevelingPar()
   leg_12GeV->AddEntry(f_pol_12GeV,formula_12GeV.c_str(),"l");
   leg_12GeV->Draw();
 
+  c_AsymmEnergy->SaveAs("../figures/HCAL_ShowerCalib/c_AsymmEnergy_LevelingPar.eps");
+
   ofstream File_OutPut("leveling_corr.txt");
   File_OutPut << "5  GeV: c_in = " << c_in_5GeV << ", c_out = " << c_out_5GeV << endl;
   File_OutPut << "8  GeV: c_in = " << c_in_8GeV << ", c_out = " << c_out_8GeV << endl;

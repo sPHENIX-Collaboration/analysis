@@ -294,17 +294,25 @@ class Proto4ShowerCalib : public SubsysReco
   TH2F *h_mAsymmEnergy_electron_wo_cut;
   TH2F *h_mAsymmEnergy_pion_wo_cut;
 
-  TH2F *h_mAsymmEnergy_mixed;
+  TH2F *h_mAsymmEnergy_mixed; // MIP study
   TH2F *h_mAsymmEnergy_electron;
   TH2F *h_mAsymmEnergy_pion;
 
+  // balancing
   TH2F *h_mAsymmEnergy_mixed_leveling;
   TH2F *h_mAsymmEnergy_electron_leveling;
   TH2F *h_mAsymmEnergy_pion_leveling;
 
+  // shower calib
   TH2F *h_mAsymmEnergy_mixed_ShowerCalib;
   TH2F *h_mAsymmEnergy_electron_ShowerCalib;
   TH2F *h_mAsymmEnergy_pion_ShowerCalib;
+
+  // Outer HCal only study
+  TH1F *h_mEnergyOut_electron; // hadron MIP through inner HCal
+  TH1F *h_mEnergyOut_pion;
+  TH1F *h_mEnergyOut_electron_ShowerCalib;
+  TH1F *h_mEnergyOut_pion_ShowerCalib;
 
   int getChannelNumber(int column, int row);
   int setTowerCalibParas();

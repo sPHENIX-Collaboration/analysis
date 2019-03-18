@@ -189,6 +189,8 @@ void extractLevelingEnergyLinearity()
   f_gaus_60GeV->Draw("l same");
   val_mean[3]       = f_gaus_60GeV->GetParameter(1);
   err_mean[3]       = f_gaus_60GeV->GetParError(1);
+
+  c_Energy->SaveAs("../figures/HCAL_ShowerCalib/c_Energy_LevelingCorr.eps");
   
   TGraphAsymmErrors *g_lieanrity = new TGraphAsymmErrors();
   // TGraphAsymmErrors *g_resolution = new TGraphAsymmErrors();
@@ -243,6 +245,8 @@ void extractLevelingEnergyLinearity()
   f_pol->SetLineWidth(2);
   f_pol->Draw("l same");
 
+  c_Linearity->SaveAs("../figures/HCAL_ShowerCalib/c_Linearity_LevelingCorr.eps");
+  
   /*
   TLine *l_unity = new TLine(1.0,1.0,39.0,39.0);
   l_unity->SetLineColor(4);

@@ -915,13 +915,13 @@ int Proto4ShowerCalib::InitAna()
     h_mAsymmAdc_electron = new TH2F("h_mAsymmAdc_electron","h_mAsymmAdc_electron",110,-1.1,1.1,100,-0.5,histo_range*640.0);
     h_mAsymmAdc_pion = new TH2F("h_mAsymmAdc_pion","h_mAsymmAdc_pion",110,-1.1,1.1,100,-0.5,histo_range*640.0);
 
-    h_mAsymmEnergy_mixed_wo_cut = new TH2F("h_mAsymmEnergy_mixed_wo_cut","h_mAsymmEnergy_mixed_wo_cut",110,-1.1,1.1,100,-0.5,histo_range);
-    h_mAsymmEnergy_electron_wo_cut = new TH2F("h_mAsymmEnergy_electron_wo_cut","h_mAsymmEnergy_electron_wo_cut",110,-1.1,1.1,100,-0.5,histo_range);
-    h_mAsymmEnergy_pion_wo_cut = new TH2F("h_mAsymmEnergy_pion_wo_cut","h_mAsymmEnergy_pion_wo_cut",110,-1.1,1.1,100,-0.5,histo_range);
+    h_mAsymmEnergy_mixed_wo_cut = new TH2F("h_mAsymmEnergy_mixed_wo_cut","h_mAsymmEnergy_mixed_wo_cut",110,-1.1,1.1,100,-0.5,0.5*histo_range);
+    h_mAsymmEnergy_electron_wo_cut = new TH2F("h_mAsymmEnergy_electron_wo_cut","h_mAsymmEnergy_electron_wo_cut",110,-1.1,1.1,100,-0.5,0.5*histo_range);
+    h_mAsymmEnergy_pion_wo_cut = new TH2F("h_mAsymmEnergy_pion_wo_cut","h_mAsymmEnergy_pion_wo_cut",110,-1.1,1.1,100,-0.5,0.5*histo_range);
 
-    h_mAsymmEnergy_mixed = new TH2F("h_mAsymmEnergy_mixed","h_mAsymmEnergy_mixed",110,-1.1,1.1,100,-0.5,histo_range);
-    h_mAsymmEnergy_electron = new TH2F("h_mAsymmEnergy_electron","h_mAsymmEnergy_electron",110,-1.1,1.1,100,-0.5,histo_range);
-    h_mAsymmEnergy_pion = new TH2F("h_mAsymmEnergy_pion","h_mAsymmEnergy_pion",110,-1.1,1.1,100,-0.5,histo_range);
+    h_mAsymmEnergy_mixed = new TH2F("h_mAsymmEnergy_mixed","h_mAsymmEnergy_mixed",110,-1.1,1.1,100,-0.5,0.5*histo_range);
+    h_mAsymmEnergy_electron = new TH2F("h_mAsymmEnergy_electron","h_mAsymmEnergy_electron",110,-1.1,1.1,100,-0.5,0.5*histo_range);
+    h_mAsymmEnergy_pion = new TH2F("h_mAsymmEnergy_pion","h_mAsymmEnergy_pion",110,-1.1,1.1,100,-0.5,0.5*histo_range);
 
     h_mAsymmEnergy_mixed_leveling = new TH2F("h_mAsymmEnergy_mixed_leveling","h_mAsymmEnergy_mixed_leveling",110,-1.1,1.1,100,-0.5,histo_range);
     h_mAsymmEnergy_electron_leveling= new TH2F("h_mAsymmEnergy_electron_leveling","h_mAsymmEnergy_electron_leveling",110,-1.1,1.1,100,-0.5,histo_range);
@@ -930,6 +930,13 @@ int Proto4ShowerCalib::InitAna()
     h_mAsymmEnergy_mixed_ShowerCalib = new TH2F("h_mAsymmEnergy_mixed_ShowerCalib","h_mAsymmEnergy_mixed_ShowerCalib",110,-1.1,1.1,100,-0.5,histo_range+15.0);
     h_mAsymmEnergy_electron_ShowerCalib = new TH2F("h_mAsymmEnergy_electron_ShowerCalib","h_mAsymmEnergy_electron_ShowerCalib",110,-1.1,1.1,100,-0.5,histo_range+15.0);
     h_mAsymmEnergy_pion_ShowerCalib = new TH2F("h_mAsymmEnergy_pion_ShowerCalib","h_mAsymmEnergy_pion_ShowerCalib",110,-1.1,1.1,100,-0.5,histo_range+15.0);
+
+    // Outer HCal only study
+    h_mEnergyOut_electron = new TH1F("h_mEnergyOut_electron","h_mEnergyOut_electron",100,-0.5,0.5*histo_range);
+    h_mEnergyOut_pion = new TH1F("h_mEnergyOut_pion","h_mEnergyOut_pion",100,-0.5,0.5*histo_range);
+
+    h_mEnergyOut_electron_ShowerCalib = new TH1F("h_mEnergyOut_electron_ShowerCalib","h_mEnergyOut_electron_ShowerCalib",100,-0.5,histo_range);
+    h_mEnergyOut_pion_ShowerCalib = new TH1F("h_mEnergyOut_pion_ShowerCalib","h_mEnergyOut_pion_ShowerCalib",100,-0.5,histo_range);
   }
 
   return 0;
@@ -1009,13 +1016,16 @@ int Proto4ShowerCalib::MakeAna()
       if(good_electron) h_mAsymmEnergy_electron_wo_cut->Fill(asymm_calib,energy_calib);
       if(good_pion) h_mAsymmEnergy_pion_wo_cut->Fill(asymm_calib,energy_calib);
 
-      if(energy_hcalin_calib > 0.2 && energy_hcalout_calib > 0.2)
-      // if(energy_calib > 0.5)
-      {
+      if(energy_hcalin_calib > 0.001 && energy_hcalout_calib > 0.001) // remove ped
+      { // extract MIP
 	h_mAsymmEnergy_mixed->Fill(asymm_calib,energy_calib);
 	if(good_electron) h_mAsymmEnergy_electron->Fill(asymm_calib,energy_calib);
 	if(good_pion) h_mAsymmEnergy_pion->Fill(asymm_calib,energy_calib);
+      }
 
+      if(energy_hcalin_calib > 0.001 && energy_hcalout_calib > 0.001) // remove ped
+      // if(energy_hcalout_calib > 0.2) // only require minimium energy in HCALOUT
+      {
 	// apply leveling
 	const float energy_leveling = c_in_leveling*energy_hcalin_calib + c_out_leveling*energy_hcalout_calib;
 	const float asymm_leveling = (c_in_leveling*energy_hcalin_calib - c_out_leveling*energy_hcalout_calib)/energy_leveling;

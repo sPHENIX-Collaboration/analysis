@@ -62,7 +62,7 @@ void extractEnergyLinearity()
   p_mAsymmEnergy_pion_5GeV->SetMarkerStyle(20);
   p_mAsymmEnergy_pion_5GeV->SetMarkerColor(1);
   p_mAsymmEnergy_pion_5GeV->SetMarkerSize(1.0);
-  p_mAsymmEnergy_pion_5GeV->Draw("pE same");
+  // p_mAsymmEnergy_pion_5GeV->Draw("pE same");
   
   c_AsymmEnergy->cd(2);
   h_mAsymmEnergy_pion_8GeV->Draw("colz");
@@ -70,7 +70,7 @@ void extractEnergyLinearity()
   p_mAsymmEnergy_pion_8GeV->SetMarkerStyle(20);
   p_mAsymmEnergy_pion_8GeV->SetMarkerColor(1);
   p_mAsymmEnergy_pion_8GeV->SetMarkerSize(1.0);
-  p_mAsymmEnergy_pion_8GeV->Draw("pE same");
+  // p_mAsymmEnergy_pion_8GeV->Draw("pE same");
   
   c_AsymmEnergy->cd(3);
   h_mAsymmEnergy_pion_12GeV->Draw("colz");
@@ -78,7 +78,7 @@ void extractEnergyLinearity()
   p_mAsymmEnergy_pion_12GeV->SetMarkerStyle(20);
   p_mAsymmEnergy_pion_12GeV->SetMarkerColor(1);
   p_mAsymmEnergy_pion_12GeV->SetMarkerSize(1.0);
-  p_mAsymmEnergy_pion_12GeV->Draw("pE same");
+  // p_mAsymmEnergy_pion_12GeV->Draw("pE same");
   
   c_AsymmEnergy->cd(4);
   h_mAsymmEnergy_pion_60GeV->Draw("colz");
@@ -86,7 +86,9 @@ void extractEnergyLinearity()
   p_mAsymmEnergy_pion_60GeV->SetMarkerStyle(20);
   p_mAsymmEnergy_pion_60GeV->SetMarkerColor(1);
   p_mAsymmEnergy_pion_60GeV->SetMarkerSize(1.0);
-  p_mAsymmEnergy_pion_60GeV->Draw("pE same");
+  // p_mAsymmEnergy_pion_60GeV->Draw("pE same");
+
+  c_AsymmEnergy->SaveAs("../figures/HCAL_ShowerCalib/c_AsymmEnergy_ShowerCalib.eps");
   
   float mean_energy[4] = {5.0,8.0,12.0,60.0};
   float val_mean[4];
@@ -181,6 +183,8 @@ void extractEnergyLinearity()
   err_sigma[3]      = f_gaus_60GeV->GetParError(2);
   val_resolution[3] = val_sigma[3]/val_mean[3];
   err_resolution[3] = ErrDiv(val_sigma[3],val_mean[3],err_sigma[3],err_mean[3]);
+
+  c_Energy->SaveAs("../figures/HCAL_ShowerCalib/c_Energy_ShowerCalib.eps");
   
   //------------------------linearity------------------------
   TGraphAsymmErrors *g_linearity = new TGraphAsymmErrors();
@@ -272,6 +276,9 @@ void extractEnergyLinearity()
   leg_linear->AddEntry(g_linearity,"#pi- T1044-2018","p");
   leg_linear->AddEntry(l_unity,"unity","l");
   leg_linear->Draw("same");
+
+  c_Linearity->SaveAs("../figures/HCAL_ShowerCalib/c_Linearity_ShowerCalib.eps");
+
   //------------------------linearity------------------------
 
   //------------------------resolution-----------------------
@@ -331,5 +338,8 @@ void extractEnergyLinearity()
   leg_res->AddEntry(g_resolution_old,"#pi- T1044-2017","p");
   leg_res->AddEntry(g_resolution,"#pi- T1044-2018","p");
   leg_res->Draw("same");
+
+  c_Resolution->SaveAs("../figures/HCAL_ShowerCalib/c_Resolution_ShowerCalib.eps");
+
   //------------------------resolution-----------------------
 }
