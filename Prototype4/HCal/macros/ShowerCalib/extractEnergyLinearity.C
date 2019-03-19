@@ -28,17 +28,17 @@ void extractEnergyLinearity()
 {
   string input_5GeV = "/sphenix/user/xusun/TestBeam/ShowerCalibAna/Proto4ShowerInfoRAW_1087.root";
   TFile *File_5GeV = TFile::Open(input_5GeV.c_str());
-  TH2F *h_mAsymmEnergy_pion_5GeV = (TH2F*)File_5GeV->Get("h_mAsymmEnergy_pion_ShowerCalib");
+  TH2F *h_mAsymmEnergy_pion_5GeV = (TH2F*)File_5GeV->Get("h_mAsymmEnergy_electron_ShowerCalib");
   TH1F *h_mEnergy_pion_5GeV = (TH1F*)h_mAsymmEnergy_pion_5GeV->ProjectionY()->Clone();
 
   string input_8GeV = "/sphenix/user/xusun/TestBeam/ShowerCalibAna/Proto4ShowerInfoRAW_0422.root";
   TFile *File_8GeV = TFile::Open(input_8GeV.c_str());
-  TH2F *h_mAsymmEnergy_pion_8GeV = (TH2F*)File_8GeV->Get("h_mAsymmEnergy_pion_ShowerCalib");
+  TH2F *h_mAsymmEnergy_pion_8GeV = (TH2F*)File_8GeV->Get("h_mAsymmEnergy_electron_ShowerCalib");
   TH1F *h_mEnergy_pion_8GeV = (TH1F*)h_mAsymmEnergy_pion_8GeV->ProjectionY()->Clone();
 
   string input_12GeV = "/sphenix/user/xusun/TestBeam/ShowerCalibAna/Proto4ShowerInfoRAW_0571.root";
   TFile *File_12GeV = TFile::Open(input_12GeV.c_str());
-  TH2F *h_mAsymmEnergy_pion_12GeV = (TH2F*)File_12GeV->Get("h_mAsymmEnergy_pion_ShowerCalib");
+  TH2F *h_mAsymmEnergy_pion_12GeV = (TH2F*)File_12GeV->Get("h_mAsymmEnergy_electron_ShowerCalib");
   TH1F *h_mEnergy_pion_12GeV = (TH1F*)h_mAsymmEnergy_pion_12GeV->ProjectionY()->Clone();
 
   string input_60GeV = "/sphenix/user/xusun/TestBeam/ShowerCalibAna/Proto4ShowerInfoRAW_0821.root";
@@ -114,7 +114,7 @@ void extractEnergyLinearity()
   f_gaus_5GeV->SetParameter(0,1.0);
   f_gaus_5GeV->SetParameter(1,h_mEnergy_pion_5GeV->GetMean());
   f_gaus_5GeV->SetParameter(2,1.0);
-  f_gaus_5GeV->SetRange(0.8,10.0);
+  f_gaus_5GeV->SetRange(3.5,10.0);
   h_mEnergy_pion_5GeV->Fit(f_gaus_5GeV,"NR");
   f_gaus_5GeV->SetLineColor(2);
   f_gaus_5GeV->SetLineStyle(2);
@@ -133,7 +133,7 @@ void extractEnergyLinearity()
   f_gaus_8GeV->SetParameter(0,1.0);
   f_gaus_8GeV->SetParameter(1,h_mEnergy_pion_8GeV->GetMean());
   f_gaus_8GeV->SetParameter(2,1.0);
-  f_gaus_8GeV->SetRange(1.0,14.2);
+  f_gaus_8GeV->SetRange(3.0,14.2);
   h_mEnergy_pion_8GeV->Fit(f_gaus_8GeV,"NR");
   f_gaus_8GeV->SetLineColor(2);
   f_gaus_8GeV->SetLineStyle(2);
@@ -152,7 +152,7 @@ void extractEnergyLinearity()
   f_gaus_12GeV->SetParameter(0,1.0);
   f_gaus_12GeV->SetParameter(1,h_mEnergy_pion_12GeV->GetMean());
   f_gaus_12GeV->SetParameter(2,1.0);
-  f_gaus_12GeV->SetRange(1.5,27.0);
+  f_gaus_12GeV->SetRange(5.0,20.0);
   h_mEnergy_pion_12GeV->Fit(f_gaus_12GeV,"NR");
   f_gaus_12GeV->SetLineColor(2);
   f_gaus_12GeV->SetLineStyle(2);

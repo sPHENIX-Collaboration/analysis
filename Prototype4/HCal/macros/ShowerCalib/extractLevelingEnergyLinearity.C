@@ -95,12 +95,10 @@ void extractLevelingEnergyLinearity()
   float mean_energy[4] = {5.0,8.0,12.0,60.0};
   float val_mean[4];
   float err_mean[4];
-  /*
   float val_sigma[3];
   float err_sigma[3];
   float val_resolution[3];
   float err_resolution[3];
-  */
 
   TCanvas *c_Energy = new TCanvas("c_Energy","c_Energy",1600,400);
   c_Energy->Divide(4,1);
@@ -118,7 +116,7 @@ void extractLevelingEnergyLinearity()
   f_gaus_5GeV->SetParameter(0,1.0);
   f_gaus_5GeV->SetParameter(1,h_mEnergy_pion_5GeV->GetMean());
   f_gaus_5GeV->SetParameter(2,1.0);
-  f_gaus_5GeV->SetRange(0.8,3.0);
+  f_gaus_5GeV->SetRange(1.2,2.8);
   h_mEnergy_pion_5GeV->Fit(f_gaus_5GeV,"NR");
   f_gaus_5GeV->SetLineColor(2);
   f_gaus_5GeV->SetLineStyle(2);
@@ -126,12 +124,10 @@ void extractLevelingEnergyLinearity()
   f_gaus_5GeV->Draw("l same");
   val_mean[0]       = f_gaus_5GeV->GetParameter(1);
   err_mean[0]       = f_gaus_5GeV->GetParError(1);
-  /*
   val_sigma[0]      = f_gaus_5GeV->GetParameter(2); // extract calibrated energy
   err_sigma[0]      = f_gaus_5GeV->GetParError(2);
   val_resolution[0] = val_sigma[0]/val_mean[0];
   err_resolution[0] = ErrDiv(val_sigma[0],val_mean[0],err_sigma[0],err_mean[0]);
-  */
   
   c_Energy->cd(2);
   h_mEnergy_pion_8GeV->Draw("hE");
@@ -147,12 +143,10 @@ void extractLevelingEnergyLinearity()
   f_gaus_8GeV->Draw("l same");
   val_mean[1]       = f_gaus_8GeV->GetParameter(1);
   err_mean[1]       = f_gaus_8GeV->GetParError(1);
-  /*
   val_sigma[1]      = f_gaus_8GeV->GetParameter(2);
   err_sigma[1]      = f_gaus_8GeV->GetParError(2);
   val_resolution[1] = val_sigma[1]/val_mean[1];
   err_resolution[1] = ErrDiv(val_sigma[1],val_mean[1],err_sigma[1],err_mean[1]);
-  */
   
   c_Energy->cd(3);
   h_mEnergy_pion_12GeV->Draw("hE");
@@ -168,12 +162,10 @@ void extractLevelingEnergyLinearity()
   f_gaus_12GeV->Draw("l same");
   val_mean[2]       = f_gaus_12GeV->GetParameter(1);
   err_mean[2]       = f_gaus_12GeV->GetParError(1);
-  /*
   val_sigma[2]      = f_gaus_12GeV->GetParameter(2);
   err_sigma[2]      = f_gaus_12GeV->GetParError(2);
   val_resolution[2] = val_sigma[2]/val_mean[2];
   err_resolution[2] = ErrDiv(val_sigma[2],val_mean[2],err_sigma[2],err_mean[2]);
-  */
   
   c_Energy->cd(4);
   h_mEnergy_pion_60GeV->Draw("hE");
@@ -193,16 +185,14 @@ void extractLevelingEnergyLinearity()
   c_Energy->SaveAs("../figures/HCAL_ShowerCalib/c_Energy_LevelingCorr.eps");
   
   TGraphAsymmErrors *g_lieanrity = new TGraphAsymmErrors();
-  // TGraphAsymmErrors *g_resolution = new TGraphAsymmErrors();
+  TGraphAsymmErrors *g_resolution = new TGraphAsymmErrors();
   for(int i_point = 0; i_point < 4; ++i_point)
   {
     g_lieanrity->SetPoint(i_point,mean_energy[i_point],val_mean[i_point]);
     g_lieanrity->SetPointError(i_point,0.0,0.0,err_mean[i_point],err_mean[i_point]);
 
-    /*
     g_resolution->SetPoint(i_point,mean_energy[i_point],val_resolution[i_point]);
     g_resolution->SetPointError(i_point,0.0,0.0,err_resolution[i_point],err_resolution[i_point]);
-    */
   }
 
   TCanvas *c_Linearity = new TCanvas("c_Linearity","c_Linearity",10,10,800,800);
@@ -255,7 +245,6 @@ void extractLevelingEnergyLinearity()
   l_unity->Draw("l same");
   */
 
-  /*
   TCanvas *c_Resolution = new TCanvas("c_Resolution","c_Resolution",10,10,800,800);
   c_Resolution->cd();
   c_Resolution->cd()->SetLeftMargin(0.15);
@@ -272,5 +261,4 @@ void extractLevelingEnergyLinearity()
   g_resolution->SetMarkerColor(2);
   g_resolution->SetMarkerSize(1.2);
   g_resolution->Draw("PE same");
-  */
 }

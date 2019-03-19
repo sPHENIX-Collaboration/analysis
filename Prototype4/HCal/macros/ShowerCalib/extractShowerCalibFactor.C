@@ -9,9 +9,9 @@
 #include <iostream>
 #include <fstream>
 
-void extractShowerCalibFactor() // use 12 GeV & run 571 for shower calbrtion
+void extractShowerCalibFactor() // use 8 GeV & run 422 for shower calbrtion
 {
-  string inputfile = "/sphenix/user/xusun/TestBeam/ShowerCalibAna/Proto4ShowerInfoRAW_0571.root";
+  string inputfile = "/sphenix/user/xusun/TestBeam/ShowerCalibAna/Proto4ShowerInfoRAW_0422.root";
   TFile *File_InPut = TFile::Open(inputfile.c_str());
   TH2F *h_mAsymmEnergy_pion_levl = (TH2F*)File_InPut->Get("h_mAsymmEnergy_pion_leveling");
   TH1F *h_mEnergy_pion_levl = (TH1F*)h_mAsymmEnergy_pion_levl->ProjectionY()->Clone("h_mEnergy_pion_levl");
@@ -27,7 +27,7 @@ void extractShowerCalibFactor() // use 12 GeV & run 571 for shower calbrtion
     c_shower->cd(i_pad+1)->SetGrid(0,0);
   }
 
-  string energy_cut = "E_{in} > 0.2 GeV & E_{out} > 0.2 GeV";
+  string energy_cut = "E_{in} > 1 MeV & E_{out} > 1 MeV && E > MIP+3#sigma";
 
   c_shower->cd(1);
   h_mAsymmEnergy_pion_levl->SetStats(0);
@@ -42,12 +42,12 @@ void extractShowerCalibFactor() // use 12 GeV & run 571 for shower calbrtion
   TLegend *leg = new TLegend(0.35,0.7,0.75,0.85);
   leg->SetBorderSize(0);
   leg->SetFillColor(10);
-  leg->AddEntry(h_mAsymmEnergy_pion_levl,"12 GeV","h");
+  leg->AddEntry(h_mAsymmEnergy_pion_levl,"8 GeV","h");
   leg->Draw();
 
   c_shower->cd(2);
   h_mEnergy_pion_levl->SetStats(0);
-  h_mEnergy_pion_levl->SetTitle("12 GeV & #pi^{-}");
+  h_mEnergy_pion_levl->SetTitle("8 GeV & #pi^{-}");
   h_mEnergy_pion_levl->GetXaxis()->SetTitle("Energy (GeV)");
   h_mEnergy_pion_levl->GetXaxis()->CenterTitle();
   h_mEnergy_pion_levl->GetXaxis()->SetNdivisions(505);
@@ -76,10 +76,10 @@ void extractShowerCalibFactor() // use 12 GeV & run 571 for shower calbrtion
   f_gaus->SetLineWidth(2);
   f_gaus->Draw("l same");
 
-  const float showercalib = 12.0/energy_twrcalib;
+  const float showercalib = 8.0/energy_twrcalib;
   cout << "showercalib = " << showercalib << endl;
 
   ofstream File_OutPut("showercalib.txt");
-  File_OutPut << "12 GeV: showercalib = " << showercalib << endl;
+  File_OutPut << "8 GeV: showercalib = " << showercalib << endl;
   File_OutPut.close();
 }

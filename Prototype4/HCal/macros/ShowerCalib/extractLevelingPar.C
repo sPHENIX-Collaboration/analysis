@@ -13,7 +13,7 @@ void extractLevelingPar()
 {
   string input_5GeV = "/sphenix/user/xusun/TestBeam/ShowerCalibAna/Proto4ShowerInfoRAW_1087.root"; // 5 GeV
   TFile *File_5GeV = TFile::Open(input_5GeV.c_str());
-  TH2F *h_mAsymmEnergy_pion_5GeV = (TH2F*)File_5GeV->Get("h_mAsymmEnergy_pion");
+  TH2F *h_mAsymmEnergy_pion_5GeV = (TH2F*)File_5GeV->Get("h_mAsymmEnergy_pion_balancing");
   TProfile *p_mAsymmEnergy_pion_5GeV = h_mAsymmEnergy_pion_5GeV->ProfileX("p_mAsymmEnergy_pion_5GeV",1,-1,"i");
   p_mAsymmEnergy_pion_5GeV->SetMarkerStyle(20);
   p_mAsymmEnergy_pion_5GeV->SetMarkerColor(1);
@@ -21,7 +21,7 @@ void extractLevelingPar()
 
   string input_8GeV = "/sphenix/user/xusun/TestBeam/ShowerCalibAna/Proto4ShowerInfoRAW_0422.root"; // 8 GeV
   TFile *File_8GeV = TFile::Open(input_8GeV.c_str());
-  TH2F *h_mAsymmEnergy_pion_8GeV = (TH2F*)File_8GeV->Get("h_mAsymmEnergy_pion");
+  TH2F *h_mAsymmEnergy_pion_8GeV = (TH2F*)File_8GeV->Get("h_mAsymmEnergy_pion_balancing");
   TProfile *p_mAsymmEnergy_pion_8GeV = h_mAsymmEnergy_pion_8GeV->ProfileX("p_mAsymmEnergy_pion_8GeV",1,-1,"i");
   p_mAsymmEnergy_pion_8GeV->SetMarkerStyle(20);
   p_mAsymmEnergy_pion_8GeV->SetMarkerColor(1);
@@ -29,7 +29,7 @@ void extractLevelingPar()
 
   string input_12GeV = "/sphenix/user/xusun/TestBeam/ShowerCalibAna/Proto4ShowerInfoRAW_0571.root"; // 12 GeV
   TFile *File_12GeV = TFile::Open(input_12GeV.c_str());
-  TH2F *h_mAsymmEnergy_pion_12GeV = (TH2F*)File_12GeV->Get("h_mAsymmEnergy_pion");
+  TH2F *h_mAsymmEnergy_pion_12GeV = (TH2F*)File_12GeV->Get("h_mAsymmEnergy_pion_balancing");
   TProfile *p_mAsymmEnergy_pion_12GeV = h_mAsymmEnergy_pion_12GeV->ProfileX("p_mAsymmEnergy_pion_12GeV",1,-1,"i");
   p_mAsymmEnergy_pion_12GeV->SetMarkerStyle(20);
   p_mAsymmEnergy_pion_12GeV->SetMarkerColor(1);
