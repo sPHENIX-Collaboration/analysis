@@ -54,6 +54,8 @@ void extractMIPEnergy()
     c_MIPEnergy->cd(i_pad+1)->SetBottomMargin(0.15);
     c_MIPEnergy->cd(i_pad+1)->SetTicks(1,1);
     c_MIPEnergy->cd(i_pad+1)->SetGrid(0,0);
+    h_mMIPEnergy_pion[i_pad]->SetTitle(inputenergy[i_pad].c_str());
+    h_mMIPEnergy_pion[i_pad]->GetXaxis()->SetTitle("Tower Calibrated Energy (GeV)");
     h_mMIPEnergy_pion[i_pad]->Draw("hE");
     string FuncName = Form("f_gaus_MIP_%d",i_pad);
     f_gaus_MIP[i_pad] = new TF1(FuncName.c_str(),"gaus",0,5);
@@ -77,6 +79,8 @@ void extractMIPEnergy()
   ofstream File_OutPut("MIPEnergy.txt");
   File_OutPut << "default MIP at " << inputenergy[i_MIP] << " is: " << MIP_mean[i_MIP] << " +/- " << MIP_width[i_MIP] << endl;
   File_OutPut.close();
+
+  c_MIPEnergy->SaveAs("../figures/HCAL_ShowerCalib/c_MIPEnergy.eps");
 
 #if 0
   TF1 *f_gaus_Reco[4];

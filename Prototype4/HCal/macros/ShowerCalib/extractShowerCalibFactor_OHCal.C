@@ -28,7 +28,7 @@ float ErrDiv(float x, float y, float dx, float dy)
     return x/y*ErrorAdd(dx/x,dy/y);
 }
 
-void extractOHCalShowerCalibFactor()
+void extractShowerCalibFactor_OHCal()
 {
   string inputenergy[4] = {"5GeV","8GeV","12GeV","60GeV"};
   string runId[4] = {"1087","0422","0571","0821"};
@@ -92,6 +92,8 @@ void extractOHCalShowerCalibFactor()
   ofstream File_OutPut("showercalib_ohcal.txt");
   File_OutPut << "8 GeV: showercalib = " << showercalib << endl;
   File_OutPut.close();
+
+  c_RecoEnergy->SaveAs("../figures/HCAL_ShowerCalib/c_RecoEnergy_OHCal.eps");
 
 #if _plotQA_
   TGraphAsymmErrors *g_lieanrity = new TGraphAsymmErrors();
