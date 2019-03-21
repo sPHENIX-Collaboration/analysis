@@ -1,6 +1,6 @@
 AUTOMAKE_OPTIONS = foreign
 
-lib_LTLIBRARIES = libProto4_HCalShowerCalib.la
+lib_LTLIBRARIES = libProto4HCalShowerCalib.la
 
 AM_CPPFLAGS = \
     -DCGAL_DISABLE_ROUNDING_MATH_CHECK \
@@ -10,8 +10,7 @@ AM_CPPFLAGS = \
     -I$(ROOTSYS)/include \
     -I$(G4_MAIN)/include/Geant4 \
     -I$(G4_MAIN)/include \
-    -I$(OPT_SPHENIX)/include \
-    -I`root-config --incdir`
+    -I$(OPT_SPHENIX)/include
 
 AM_LDFLAGS = \
     -L$(libdir) \
@@ -19,11 +18,11 @@ AM_LDFLAGS = \
 
 AM_CXXFLAGS = -Wall -Werror -msse2
 
-libProto4_HCalShowerCalib_la_LDFLAGS = \
+libProto4HCalShowerCalib_la_LDFLAGS = \
   -L$(libdir) \
   -L$(OFFLINE_MAIN)/lib
 
-libProto4_HCalShowerCalib_la_LIBADD = \
+libProto4HCalShowerCalib_la_LIBADD = \
   -lfun4all \
   -lg4dst \
   -lPrototype4
@@ -50,7 +49,7 @@ else
   ROOT5TBDICTS = 
 endif
 
-libProto4_HCalShowerCalib_la_SOURCES = \
+libProto4HCalShowerCalib_la_SOURCES = \
   $(ROOTDICTS) \
   $(ROOT5TBDICTS) \
   Proto4ShowerCalib.C
@@ -63,11 +62,10 @@ pkginclude_HEADERS = \
 
 # Rule for generating table CINT dictionaries.
 %_Dict.C: %.h %LinkDef.h
-	rootcint -f $@ -c $(DEFAULT_INCLUDES) $(AM_CPPFLAGS) $^
+	rootcint -f $@ @CINTDEFS@ -c $(DEFAULT_INCLUDES) $(AM_CPPFLAGS) $^
 
 #just to get the dependency
 %_Dict_rdict.pcm: %_Dict.C ;
-
 
 ################################################
 # linking tests
@@ -78,7 +76,7 @@ BUILT_SOURCES = \
   testexternals.C
 
 testexternals_LDADD = \
-  libProto4_HCalShowerCalib.la
+  libProto4HCalShowerCalib.la
 
 testexternals.C:
 	echo "//*** this is a generated file. Do not commit, do not edit" > $@
