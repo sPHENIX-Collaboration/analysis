@@ -1,6 +1,12 @@
+#pragma once
+#if ROOT_VERSION_CODE >= ROOT_VERSION(6,00,0)
+#include <proto4showercalib/Proto4ShowerCalib.h>
+R__LOAD_LIBRARY(/direct/phenix+u/xusun/WorkSpace/sPHENIX/install/lib/libProto4HCalTowerCalib.so)
+#endif
+
 int TestBeam_HCAL_TowerCalibAna(const int nEvents = 50000, const int colID = 0, const string det = "HCALOUT")
 {
-  gSystem->Load("libProto4_HCalTowerCalib.so");
+  gSystem->Load("/direct/phenix+u/xusun/WorkSpace/sPHENIX/install/lib/libProto4HCalTowerCalib.so");
 
   bool _is_sim = false;
 
@@ -17,5 +23,6 @@ int TestBeam_HCAL_TowerCalibAna(const int nEvents = 50000, const int colID = 0, 
   hcal_ana->FinishAna();
 
   std::cout << "All done" << std::endl;
-  gSystem->Exit(0);
+
+  return 0;
 }

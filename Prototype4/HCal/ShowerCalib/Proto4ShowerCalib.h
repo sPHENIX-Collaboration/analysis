@@ -286,28 +286,38 @@ class Proto4ShowerCalib : public SubsysReco
   // TH2F *h_mAsymmEnergy_mixed_sim;
   TH2F *h_mAsymmEnergy_pion_sim;
 
-  TH2F *h_mAsymmEnergy_mixed_raw; // production
-  TH2F *h_mAsymmEnergy_electron_raw;
-  TH2F *h_mAsymmEnergy_pion_raw;
-  TH1F *h_mEnergyOut_pion_raw;
+  TH2F *h_mAsymmAdc_mixed; // production
+  TH2F *h_mAsymmAdc_electron;
+  TH2F *h_mAsymmAdc_pion;
 
-  TH2F *h_mAsymmEnergy_mixed_calib_wo_cut;
-  TH2F *h_mAsymmEnergy_electron_calib_wo_cut;
-  TH2F *h_mAsymmEnergy_pion_calib_wo_cut;
-  TH1F *h_mEnergyOut_pion_calib_wo_cut;
+  TH2F *h_mAsymmEnergy_mixed_wo_cut;
+  TH2F *h_mAsymmEnergy_electron_wo_cut;
+  TH2F *h_mAsymmEnergy_pion_wo_cut;
 
-  TH2F *h_mAsymmEnergy_mixed_calib;
-  TH2F *h_mAsymmEnergy_electron_calib;
-  TH2F *h_mAsymmEnergy_pion_calib;
-  TH1F *h_mEnergyOut_pion_calib;
+  TH2F *h_mAsymmEnergy_mixed; // MIP study
+  TH2F *h_mAsymmEnergy_electron;
+  TH2F *h_mAsymmEnergy_pion;
 
-  TH2F *h_mAsymmEnergy_mixed_calib_leveling;
-  TH2F *h_mAsymmEnergy_electron_calib_leveling;
-  TH2F *h_mAsymmEnergy_pion_calib_leveling;
+  // balancing
+  TH2F *h_mAsymmEnergy_mixed_balancing;
+  TH2F *h_mAsymmEnergy_electron_balancing;
+  TH2F *h_mAsymmEnergy_pion_balancing;
 
+  // leveling correction
+  TH2F *h_mAsymmEnergy_mixed_leveling;
+  TH2F *h_mAsymmEnergy_electron_leveling;
+  TH2F *h_mAsymmEnergy_pion_leveling;
+
+  // shower calib
   TH2F *h_mAsymmEnergy_mixed_ShowerCalib;
   TH2F *h_mAsymmEnergy_electron_ShowerCalib;
   TH2F *h_mAsymmEnergy_pion_ShowerCalib;
+
+  // Outer HCal only study
+  TH2F *h_mAsymmEnergy_mixed_MIP;
+  TH1F *h_mEnergyOut_electron; // hadron MIP through inner HCal
+  TH1F *h_mEnergyOut_pion;
+  TH1F *h_mEnergyOut_electron_ShowerCalib;
   TH1F *h_mEnergyOut_pion_ShowerCalib;
 
   int getChannelNumber(int column, int row);
@@ -317,6 +327,10 @@ class Proto4ShowerCalib : public SubsysReco
   const double samplefrac_in = 0.09267; 
   const double samplefrac_out = 0.02862;
 
+  // inner HCAL MIP energy extracted from muon
+  const double MIP_mean  = 0.654927;
+  const double MIP_width = 0.151484;
+
   // const double samplefrac_in = 0.0631283;  // from Songkyo
   // const double samplefrac_out = 0.0338021;
 
@@ -324,8 +338,9 @@ class Proto4ShowerCalib : public SubsysReco
   double towercalib_lg_out[16];
   double towercalib_hg_out[16];
 
-  const double showercalib = 2.29898; // extracted with 16 GeV Test Beam Data
-  const double showercalib_out = 5.47298; // extracted with 16 GeV Test Beam Data
+  // const double showercalib = 3.03185; // extracted with 12 GeV Test Beam Data
+  const double showercalib = 2.92243; // extracted with 8 GeV Test Beam Data
+  const double showercalib_ohcal = 3.37511; // extracted with 8 GeV Test Beam Data
 
   float find_range();
   int find_energy();
