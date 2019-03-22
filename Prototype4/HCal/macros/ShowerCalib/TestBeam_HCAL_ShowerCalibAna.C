@@ -1,10 +1,16 @@
-// int TestBeam_HCAL_ShowerCalibAna(const int nEvents = 10000000, const string runID = "1087") // -5 GeV meson
+#pragma once
+#if ROOT_VERSION_CODE >= ROOT_VERSION(6,00,0)
+#include <proto4showercalib/Proto4ShowerCalib.h>
+R__LOAD_LIBRARY(/direct/phenix+u/xusun/WorkSpace/sPHENIX/install/lib/libProto4HCalShowerCalib.so)
+#endif
+
+int TestBeam_HCAL_ShowerCalibAna(const int nEvents = 10000000, const string runID = "1087") // -5 GeV meson
 // int TestBeam_HCAL_ShowerCalibAna(const int nEvents = 10000000, const string runID = "0422") // -8 GeV meson
-int TestBeam_HCAL_ShowerCalibAna(const int nEvents = 10000000, const string runID = "0571") // -12 GeV meson
+// int TestBeam_HCAL_ShowerCalibAna(const int nEvents = 10000000, const string runID = "0571") // -12 GeV meson
 // int TestBeam_HCAL_ShowerCalibAna(const int nEvents = 10000000, const string runID = "0821") // 60 GeV proton
 // int TestBeam_HCAL_ShowerCalibAna(const int nEvents = 10000000, const string runID = "0498") // 120 GeV proton
 {
-  gSystem->Load("libProto4_HCalShowerCalib.so");
+  gSystem->Load("/direct/phenix+u/xusun/WorkSpace/sPHENIX/install/lib/libProto4HCalShowerCalib.so");
 
   bool _is_sim = false;
 
@@ -20,5 +26,6 @@ int TestBeam_HCAL_ShowerCalibAna(const int nEvents = 10000000, const string runI
   hcal_ana->FinishAna();
 
   std::cout << "All done" << std::endl;
-  gSystem->Exit(0);
+
+  return 0;
 }

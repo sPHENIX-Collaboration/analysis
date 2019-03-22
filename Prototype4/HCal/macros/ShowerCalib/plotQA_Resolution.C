@@ -1,11 +1,11 @@
 #include <string>
-#include "TString.h"
-#include "TFile.h"
-#include "TH2F.h"
-#include "TH1F.h"
-#include "TCanvas.h"
-#include "TGraphAsymmErrors.h"
-#include "TLegend.h"
+#include <TString.h>
+#include <TFile.h>
+#include <TH2F.h>
+#include <TH1F.h>
+#include <TCanvas.h>
+#include <TGraphAsymmErrors.h>
+#include <TLegend.h>
 
 void plotQA_Resolution()
 {
