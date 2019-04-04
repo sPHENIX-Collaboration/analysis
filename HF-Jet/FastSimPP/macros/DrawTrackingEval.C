@@ -1,3 +1,5 @@
+#include "SaveCanvas.C"
+#include "sPhenixStyle.C"
 
 #include <TChain.h>
 #include <TCut.h>
@@ -21,9 +23,9 @@
 #include <TVirtualFitter.h>
 
 #include <cmath>
+#include <iostream>
 
-#include "SaveCanvas.C"
-#include "sPhenixStyle.C"
+using namespace std;
 
 // ROOT6 disabled assert. Well....
 #ifdef assert
@@ -234,7 +236,7 @@ void RecoCheck(const TString &name = "pi", const TCut &cut = "abs(gflavor)==211"
   p->SetLogx();
   p->SetLogz();
 
-  TH2 *hDCA3DXYResolution = new TH2F("hDCA3DXYResolution", "hDCA3DXYResolution;Truth p_{T} [GeV/c];DCA_{xy}", nBins, pTMin, 20, 1000, -.2, .2);
+  TH2 *hDCA3DXYResolution = new TH2F("hDCA3DXYResolution", "hDCA3DXYResolution;Truth p_{T} [GeV/c];DCA_{xy} [cm]", nBins, pTMin, 20, 1000, -.2, .2);
   useLogBins(hDCA3DXYResolution->GetXaxis());
   hDCA3DXYResolution->GetYaxis()->SetRangeUser(-.02, .02);
 
@@ -251,7 +253,7 @@ void RecoCheck(const TString &name = "pi", const TCut &cut = "abs(gflavor)==211"
   p->SetLogx();
   p->SetLogz();
 
-  TH2 *hDCA3DZResolution = new TH2F("hDCA3DZResolution", "hDCA3DZResolution;Truth p_{T} [GeV/c];DCA_{z}", nBins, pTMin, 20, 1000, -.2, .2);
+  TH2 *hDCA3DZResolution = new TH2F("hDCA3DZResolution", "hDCA3DZResolution;Truth p_{T} [GeV/c];DCA_{z} [cm]", nBins, pTMin, 20, 1000, -.2, .2);
   useLogBins(hDCA3DZResolution->GetXaxis());
   hDCA3DZResolution->GetYaxis()->SetRangeUser(-.02, .02);
 
@@ -266,12 +268,45 @@ void RecoCheck(const TString &name = "pi", const TCut &cut = "abs(gflavor)==211"
   SaveCanvas(c1, TString(_file0->GetName()) + TString(c1->GetName()), false);
 }
 
-void DCACheck(const TString &name = "pi", const TCut &cut = "abs(gflavor)==211", const int nBins = 7)
+void DCACheck(const TString &name = "pi", const TCut &cut = "abs(gflavor)==211", const int nBins = 14)
 {
   assert(_file0);
 
+  const int nDCAbins = 2 * (100 / 1 * 2 + (1000 - 100) / 10 + (2000 - 1000) / 100);
+
+  TH3F *hDCA3Dpz = new TH3F("hDCA3Dpz", "hDCA3Dpz;DCA_{xy} [cm];DCA_{z} [cm];Truth p_{T} [GeV/c]",  //
+                            nDCAbins, -.2, .2,                                                      //
+                            nDCAbins, -.2, .2,                                                      //
+                            nBins, pTMin, 20);
+
+  vector<Axis_t> new_bins(nDCAbins + 1);
+  int binedge = -20000;
+  for (int i = 0; i <= nDCAbins; i++)
+  {
+    new_bins[i] = binedge * 1e-5;  // convert .1um to cm
+
+    double dedge = 1000;
+    if (abs(binedge + .5) <= 10000)
+      dedge = 100;
+    if (abs(binedge + .5) <= 1000)
+      dedge = 5;
+
+    //    cout << "new_bins[" << i << "] = " << binedge << "* 1e-4 = " << new_bins[i] << ", dedge = " << dedge << endl;
+
+    binedge += dedge;
+  }
+  assert(binedge == 21000);
+  hDCA3Dpz->GetXaxis()->Set(nDCAbins, new_bins.data());
+  hDCA3Dpz->GetYaxis()->Set(nDCAbins, new_bins.data());
+  //    cout << "hDCA3Dpz->GetXaxis()->GetBinCenter(nDCAbins) = " << hDCA3Dpz->GetXaxis()->GetBinCenter(nDCAbins) << endl;
+
+  //  ntp_gtrack->Draw("dca3dxy : dca3dz : gpt >> hDCA3Dpz", cut && primPartCut && recoCut, "goff");
+  ntp_gtrack->Draw("gpt : dca3dz : dca3dxy >> hDCA3Dpz", cut && primPartCut && recoCut, "goff");
+
+  // plot
   TCanvas *c1 = new TCanvas("DCACheck_" + name, "DCACheck_" + name, 1800, 960);
-  c1->Divide(4, 2);
+
+  c1->Divide(5, 3);
   int idx = 1;
   TPad *p;
 
@@ -280,30 +315,47 @@ void DCACheck(const TString &name = "pi", const TCut &cut = "abs(gflavor)==211",
   p->SetLogx();
   p->SetLogz();
 
-  TH2 *hDCA3DXYResolution = new TH2F("hDCA3DXYResolution", "hDCA3DXYResolution;Truth p_{T} [GeV/c];DCA_{xy}", nBins, pTMin, 20, 1000, -.2, .2);
-  useLogBins(hDCA3DXYResolution->GetXaxis());
-  hDCA3DXYResolution->GetYaxis()->SetRangeUser(-.02, .02);
+  TH2 *hDCA3DXYCheck = new TH2F("hDCA3DXYCheck", "hDCA3DXYCheck;Truth p_{T} [GeV/c];DCA_{xy}", nBins, pTMin, 20, 1000, -.2, .2);
+  useLogBins(hDCA3DXYCheck->GetXaxis());
+  hDCA3DXYCheck->GetYaxis()->SetRangeUser(-.02, .02);
 
-  ntp_gtrack->Draw("dca3dxy : gpt>>hDCA3DXYResolution", cut && primPartCut && recoCut, "goff");
+  ntp_gtrack->Draw("dca3dxy : gpt>>hDCA3DXYCheck", cut && primPartCut && recoCut, "goff");
 
-  TGraphErrors *geDCA3DXYResolution = FitProfile(hDCA3DXYResolution);
-  geDCA3DXYResolution->SetName("geDCA3DXYResolution");
+  TGraphErrors *geDCA3DXYCheck = FitProfile(hDCA3DXYCheck);
+  geDCA3DXYCheck->SetName("geDCA3DXYCheck");
 
-  hDCA3DXYResolution->Draw("colz");
-  geDCA3DXYResolution->Draw("p");
+  hDCA3DXYCheck->Draw("colz");
+  geDCA3DXYCheck->Draw("p");
+
+  for (int bin = 1; bin <= nBins; bin++)
+  {
+    p = (TPad *) c1->cd(idx++);
+    c1->Update();
+    //    p->SetLogx();
+    p->SetLogz();
+    p->SetRightMargin(.15);
+
+    hDCA3Dpz->GetZaxis()->SetRange(bin, bin);
+    TH1 *h2D = hDCA3Dpz->Project3D("yx");
+    h2D->SetName(Form("hDCA3Dpz%d", bin));
+    h2D->Draw("colz");
+  }
+
+  // ping the 3D histogram for saving
+  c1->GetListOfPrimitives()->Add(hDCA3Dpz);
 
   SaveCanvas(c1, TString(_file0->GetName()) + TString(c1->GetName()), false);
 }
 
 void DrawTrackingEval(
     const TString infile = "/gpfs/mnt/gpfs02/sphenix/user/jinhuang/HF-jet/HF-production-piKp-pp200-dataset1_333ALL.cfg_ALL_g4svtx_eval.root",
-    const TString disc = "Au+Au MB Triggered + 170 kHz collision"  //
+    const TString &name = "pi", const TCut &cut = "abs(gflavor)==211"  //
 )
 {
   SetsPhenixStyle();
   TVirtualFitter::SetDefaultFitter("Minuit2");
 
-  description = disc;
+//  description = disc;
   gSystem->Load("libg4eval.so");
 
   if (!_file0)
@@ -322,16 +374,18 @@ void DrawTrackingEval(
     _file0->SetName(infile);
   }
 
-  gDirectory->mkdir("/pi");
-  gDirectory->Cd("/pi");
-  //  RecoCheck("pi", "abs(gflavor)==211");
-  DCACheck("pi", "abs(gflavor)==211");
+//  gDirectory->mkdir("/pi");
+//  gDirectory->Cd("/pi");
+  RecoCheck(name, cut);
+  DCACheck(name, cut);
 
   //  gDirectory->mkdir("/kaon");
   //  gDirectory->Cd("/kaon");
   //  RecoCheck("kaon", "abs(gflavor)==321");
+  //  DCACheck("kaon", "abs(gflavor)==321");
   //
   //  gDirectory->mkdir("/proton");
   //  gDirectory->Cd("/proton");
   //  RecoCheck("proton", "abs(gflavor)==2212");
+  //  DCACheck("proton", "abs(gflavor)==2212");
 }
