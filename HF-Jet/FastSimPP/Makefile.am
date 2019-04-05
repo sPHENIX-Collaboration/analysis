@@ -37,10 +37,7 @@ libhffastsim_la_LDFLAGS = \
   `geant4-config --libs`
 
 libhffastsim_la_LIBADD = \
-  libphg4hit.la \
   -lboost_filesystem \
-  -lEICPhysicsList \
-  -leicsmear \
   -lg4decayer \
   -lgsl \
   -lgslcblas \
@@ -48,8 +45,7 @@ libhffastsim_la_LIBADD = \
   -lphfield \
   -lphgeom \
   -lphg4gdml \
-  -lphhepmc \
-  -lvararray
+  -lphhepmc
 
 
 # for root6 we need pcm and dictionaries but only for
@@ -67,14 +63,12 @@ else
   HFFastSim_Dict.cc
 endif
 
-
 libhffastsim_la_SOURCES = \
   $(ROOT5TBDICTS) \
-  HFFastSim_Dict.cc 
+  HFFastSim.cc 
 
 ##############################################
 # please add new classes in alphabetical order
-
 pkginclude_HEADERS = \
   HFFastSim.h 
 
