@@ -34,6 +34,7 @@ RINCLUDES = \
 libhffastsim_la_LDFLAGS = \
   -L$(libdir) \
   -L$(OFFLINE_MAIN)/lib \
+  `root-config --evelibs` \
   `geant4-config --libs`
 
 libhffastsim_la_LIBADD = \

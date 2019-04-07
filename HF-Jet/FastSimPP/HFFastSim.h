@@ -3,50 +3,32 @@
 
 // --- need to check all these includes...
 #include <fun4all/SubsysReco.h>
-#include <vector>
+#include <limits.h>
 #include <cmath>
 #include <string>
-#include <limits.h>
+#include <vector>
 
 class TTree;
 class TFile;
 class TH2D;
+class TH2F;
+class TH1D;
 
 class PHCompositeNode;
 class Jet;
 namespace HepMC
 {
-  class GenEvent;
+class GenEvent;
 }
 
 class HFFastSim : public SubsysReco
 {
+ public:
+  HFFastSim(std::string filename, int flavor = 5, int maxevent = INT_MAX);
 
-public:
-
-  HFFastSim(std::string filename, int flavor = 5, std::string jet_node = "AntiKt_Truth_r04", int maxevent = INT_MAX);
-
-  int
-  Init(PHCompositeNode*);
-  int
-  process_event(PHCompositeNode*);
-  int
-  End(PHCompositeNode*);
-
-  float
-  deltaR(float eta1, float eta2, float phi1, float phi2)
-  {
-
-    float deta = eta1 - eta2;
-    float dphi = phi1 - phi2;
-    if (dphi > +3.14159)
-      dphi -= 2 * 3.14159;
-    if (dphi < -3.14159)
-      dphi += 2 * 3.14159;
-
-    return sqrt(pow(deta, 2) + pow(dphi, 2));
-
-  }
+  int Init(PHCompositeNode *);
+  int process_event(PHCompositeNode *);
+  int End(PHCompositeNode *);
 
   double
   get_eta_max() const
@@ -117,16 +99,16 @@ public:
   //! negative IDs are backgrounds, .e.g out of time pile up collisions
   //! Usually, ID = 0 means the primary Au+Au collision background
   void set_embedding_id(int id) { _embedding_id = id; }
-private:
 
-  //! tag jet flavor by parton matching, like PRL 113, 132301 (2014)
-  int
-  parton_tagging(Jet * jet, HepMC::GenEvent*, const double match_radius);
+  bool process_D02PiK(HepMC::GenEvent* theEvent);
 
-  //! tag jet flavor by hadron matching, like MIE proposal
-  int
-  hadron_tagging(Jet * jet, HepMC::GenEvent*, const double match_radius);
+  struct D02PiK
+  {
+    int pid;
+    double y;
+  };
 
+ private:
   bool _verbose;
 
   int _ievent;
@@ -138,6 +120,12 @@ private:
   TH2D *_h2all;
   TH2D *_h2_b;
   TH2D *_h2_c;
+
+  TH1D *m_hNorm;
+  TH2F *m_DRapidity;
+
+  TTree *m_tSingleD;
+  D02PiK m_singleD;
 
   std::string _foutname;
 
@@ -160,7 +148,6 @@ private:
   //! negative IDs are backgrounds, .e.g out of time pile up collisions
   //! Usually, ID = 0 means the primary Au+Au collision background
   int _embedding_id;
-
 };
 
-#endif // __HFFastSim_H__
+#endif  // __HFFastSim_H__
