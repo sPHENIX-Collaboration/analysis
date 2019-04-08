@@ -66,6 +66,7 @@ endif
 
 libhffastsim_la_SOURCES = \
   $(ROOT5TBDICTS) \
+  HFFastSim_Dict.cc \
   HFFastSim.cc 
 
 ##############################################

@@ -3,10 +3,15 @@
 
 // --- need to check all these includes...
 #include <fun4all/SubsysReco.h>
+
+#include <TObject.h>
+#include <TString.h>
+
 #include <limits.h>
 #include <cmath>
 #include <string>
 #include <vector>
+#include <utility>
 
 class TTree;
 class TFile;
@@ -18,8 +23,9 @@ class PHCompositeNode;
 class Jet;
 namespace HepMC
 {
+class GenParticle;
 class GenEvent;
-}
+}  // namespace HepMC
 
 class HFFastSim : public SubsysReco
 {
@@ -100,12 +106,64 @@ class HFFastSim : public SubsysReco
   //! Usually, ID = 0 means the primary Au+Au collision background
   void set_embedding_id(int id) { _embedding_id = id; }
 
-  bool process_D02PiK(HepMC::GenEvent* theEvent);
+  static std::pair<int, TString> quark_trace(const HepMC::GenParticle *p, HepMC::GenEvent *theEvent);
 
-  struct D02PiK
+  bool process_D02PiK(HepMC::GenEvent *theEvent);
+
+  class D02PiK : public TObject
   {
+   public:
+    D02PiK() { Clear(); }
+
     int pid;
-    double y;
+    int hadron_origion_qpid;
+    float y;
+    float pt;
+    float prodL;
+    float decayL;
+    TString decayChain;
+
+    void Clear(Option_t * /*option*/ = "")
+    {
+      pid = 0;
+      hadron_origion_qpid = 0;
+      y = NAN;
+      pt = NAN;
+      prodL = NAN;
+      decayL = NAN;
+      decayChain = "";
+    }
+
+    ClassDef(HFFastSim::D02PiK, 1)  //Event structure
+  };
+
+  bool process_Lc2pPiK(HepMC::GenEvent *theEvent);
+
+  class Lc2pPiK : public TObject
+  {
+   public:
+    Lc2pPiK() { Clear(); }
+
+    int pid;
+    int hadron_origion_qpid;
+    float y;
+    float pt;
+    float prodL;
+    float decayL;
+    TString decayChain;
+
+    void Clear(Option_t * /*option*/ = "")
+    {
+      pid = 0;
+      hadron_origion_qpid = 0;
+      y = NAN;
+      pt = NAN;
+      prodL = NAN;
+      decayL = NAN;
+      decayChain = "";
+    }
+
+    ClassDef(HFFastSim::Lc2pPiK, 1)  //Event structure
   };
 
  private:
@@ -125,7 +183,10 @@ class HFFastSim : public SubsysReco
   TH2F *m_DRapidity;
 
   TTree *m_tSingleD;
-  D02PiK m_singleD;
+  D02PiK *m_singleD;
+
+  TTree *m_tSingleLc;
+  Lc2pPiK *m_singleLc;
 
   std::string _foutname;
 
