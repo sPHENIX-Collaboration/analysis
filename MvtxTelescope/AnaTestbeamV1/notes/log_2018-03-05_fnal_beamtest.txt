@@ -1,0 +1,145 @@
+Power Supplies:
+ALPIDE0 contains ALPIDE 0 and ALPIDE 2
+ALPIDE1 contains ALPIDE 1 and ALPIDE 3
+
+Power on current
+ALPIDE0 60mA
+ALPIDE1 53mA
+RU 1.9mA
+Fan 2.7A
+
+Configure current
+ALPIDE0 197mA
+ALPIDE1 195mA
+
+Trigger finilized with VIO Core for dynamic delay
+0x190 = # of clock of the 40 Mhz clock 1/40Mhz * 400= 10ms 
+
+80*25ns=2ms 
+
+2018-03-06
+
+chip ID 0 and 1 are old ALPIDEs, 2 and 3 are new from CERN
+ID 3: 14
+ID 2: 15 (CERN says this chip is not suitable for bias)
+ID 1: A4M1363R9
+ID 0: 608519W07R11 (CERN says could be operated with bias, but not optimal)
+
+5m firefly cables, PLLDAC=8, DriverDAC=8, PreDAC=8
+
+0013: we're getting beam, 120 GeV protons and 50k counts, run 13
+0023: 100k counts, run 14, about 20k triggers/spill
+0240: 300k counts, run 26, about 30k triggers/spill
+0304: 100k counts, run 27, about 20k triggers/spill
+run 28: trigger delay=0 (IN THIS AND SUBSEQUENT RUNS, IGNORE TRIGGERDELAY IN ALPIDEPARAMETERS.DAT)
+run 29: trigger delay=0, strobe width=80 clocks (DID NOT UPDATE ALPIDEPARAMETERS.DAT FOR THIS RUN, SHOULD SAY strobewidth=80)
+run 30: trigger delay=0, strobe width=40 clocks
+run 31: trigger delay=0, strobe width=20 clocks
+run 32: trigger delay=0x28 clocks, strobe width=20 clocks
+run 33: trigger delay=0x50 clocks, strobe width=20 clocks
+run 34: trigger delay=0x68 clocks, strobe width=20 clocks
+run 35: trigger delay=0xA0 clocks, strobe width=20 clocks
+run 36: trigger delay=0xF0 clocks, strobe width=20 clocks
+run 37: trigger delay=0xF0 clocks, strobe width=80 clocks, confirm Xuan's study
+run 38: trigger delay=0xC8 clocks, strobe width=20 clocks
+run 39: trigger delay=0xC8 clocks, strobe width=20 clocks, ITHR=25, possibly junk (events failing decoding)
+run 40: trigger delay=0xC8 clocks, strobe width=20 clocks, ITHR=25, possibly junk (events failing decoding)
+run 41: trigger delay=0xC8 clocks, strobe width=20 clocks, ITHR=35
+run 42: trigger delay=0xC8 clocks, strobe width=20 clocks, ITHR=40, IDB=54
+run 43: trigger delay=0xC8 clocks, strobe width=20 clocks, ITHR=40, IDB=64
+run 44: trigger delay=0xC8 clocks, strobe width=20 clocks, ITHR=40, IDB=54, VCASN=50
+run 46: trigger delay=0xC8 clocks, strobe width=20 clocks, ITHR=38, IDB=64, VCASN=57
+run 47: trigger delay=0xC8 clocks, strobe width=20 clocks, ITHR=36, IDB=64, VCASN=57
+run 48: trigger delay=0xC8 clocks, strobe width=20 clocks, ITHR=34, IDB=64, VCASN=57
+run 49: trigger delay=0xC8 clocks, strobe width=20 clocks, ITHR=34, IDB=64, VCASN=55, events failing decoding
+run 50: trigger delay=0xC8 clocks, strobe width=20 clocks, ITHR=34, IDB=64, VCASN=56
+run 51: trigger delay=0xC8 clocks, strobe width=20 clocks, ITHR=34, IDB=62, VCASN=56
+run 52: trigger delay=0xC8 clocks, strobe width=20 clocks, ITHR=34, IDB=60, VCASN=56
+run 53: trigger delay=0xC8 clocks, strobe width=20 clocks, ITHR=34, IDB=56, VCASN=56
+run 54: trigger delay=0xC8 clocks, strobe width=20 clocks, ITHR=32, IDB=56, VCASN=56
+ignoring chip 0 for now, focusing on increasing hit counts on chips 1-3
+run 55: trigger delay=0xC8 clocks, strobe width=20 clocks, ITHR=28, IDB=56, VCASN=56, events failing decoding
+run 56: trigger delay=0xC8 clocks, strobe width=20 clocks, ITHR=28, IDB=40, VCASN=56
+run 57: trigger delay=0xC8 clocks, strobe width=20 clocks, ITHR=28, IDB=35, VCASN=56
+run 58: trigger delay=0xC8 clocks, strobe width=20 clocks, ITHR=25, IDB=35, VCASN=56
+run 59: trigger delay=0xC8 clocks, strobe width=20 clocks, ITHR=20, IDB=35, VCASN=56
+run 60: trigger delay=0x50 clocks, strobe width=20 clocks, ITHR=25, IDB=35, VCASN=56
+run 61: trigger delay=0x50 clocks, strobe width=20 clocks, ITHR=30, IDB=35, VCASN=56
+run 62: trigger delay=0x50 clocks, strobe width=20 clocks, ITHR=51, IDB=29, VCASN=57, VCASN2=62, IBIAS=64, VCASP=86, VCLIP=0, VRESETD=147 (defaults we use with MOSAIC) (WAS NOT SAVED TO ALPIDEPARAMETERS.DAT)
+run 63: trigger delay=0x50 clocks, strobe width=20 clocks, ITHR=50, IDB=29, VCASN=50, VCASN2=57, IBIAS=64, VCASP=86, VCLIP=0, VRESETD=147 (defaults from git, new-alpide-software ConfigTemplate.cfg)
+run 64: trigger delay=0x50 clocks, strobe width=20 clocks, ITHR=40, IDB=64, VCASN=57, VCASN2=64, IBIAS=64, VCASP=86, VCLIP=0, VRESETD=147 (starting parameters from yesterday and today)
+power cycle ALPIDEs
+run 65: trigger delay=0x50 clocks, strobe width=20 clocks, same ALPIDE frontend settings as above
+
+requests for OM improvements:
+
+* change the idx diff plots to use chip 3 as a reference, so the plots still make sense when chip 0 has noisy pixels
+
+evening 2018-03-06: INTT is taking 120 GeV protons at ~14k counts on the SC123 scintillators, ~8k triggers/spill
+run 66 is empty, run 67 has arbiter=0x3 (only chips 0 and 3)
+run 68: same settings as run 65, data looks good
+run 69: same settings as above, calibration run
+run 70: calibration run, trigger delay=0x50 clocks, strobe width=20 clocks, ITHR=50, IDB=29, VCASN=50, VCASN2=57, IBIAS=64, VCASP=86, VCLIP=0, VRESETD=147 (defaults from git, new-alpide-software ConfigTemplate.cfg)
+run 71: same settings, calib run
+run 72-75: masked noisy pixels on chip 0
+run 76: pulser was left on, junk
+run 77: normal run, we notice the beam spot is in the corner row=0 col=1024
+run 79: moved box down ~1cm to bring beam closer to the center of the chip. Beam now centered off right edge of chip ~(474,268)
+run 82: good run with large statistics
+
+2018-03-07
+during the day, the telescope was moved from the 80-20 stand to a platform
+beam: 120 GeV protons, 10k triggers/spill
+run 83:empty run, did not get beam
+1702: replaced chip ID 0 with the new ALPIDE bonded by SiDet
+run 84, 85: calib with new chip, chip does not seem to work
+run 86: revert to old chip 0, works
+run 87: waiting for beam
+run 88: we see a beamspot
+run 89: Placed single lead brick in front of the box oriented with its face normal to the beam axis. 2 in thick or ~0.3 interaction lengths
+Added three more bricks: 8 in, 1.2 interaction lengths
+swapped in the SiDet ALPIDE again
+run 90: calib, pulser, still looks bad (chip ID 2 is unplugged)
+swapped back
+run 91: beam with four bricks: primary beam is reduced, background is increased, looks like the high-multiplicity events are being attenuated (runtype mistakenly left as calib for runs 91 and 92)
+run 95: two bricks in the beam
+run 96: at INTT request, MCR is tuning the beam to shrink the size
+run 97: tuning is done?
+run 98: bricks out, adjusted box 1/4" down and right, beamspot is centered (very short run)
+run 99: clustering enabled, weird checkerboard patterns (this was a problem with a decoder, now fixed) (DID NOT UPDATE ALPIDEPARAMETERS.DAT FOR THIS RUN, SHOULD SAY cluster = on)
+run 100: clustering disabled (DID NOT UPDATE ALPIDEPARAMETERS.DAT FOR THIS RUN, SHOULD SAY cluster = off)
+run 101: testing continuous mode, doesn't work
+run 102: back to normal settings
+
+120 GeV p+, about 15k triggers per spill
+run 103: calib run, baseline with same sensors as yesterday, we are now on the rotary table which reads 1.5 degrees on its GUI
+run 104: masked additional pixel on chip ID 0
+run 106: switch chip ID 0 to the sensor bonded at SiDet today (serial 15_03A), it works (couple of noisy pixels)
+run 107, 108: switch chip ID 0 to the sensor bonded at SiDet yesterday (serial 15_04A), and mask the bad pixel (column 133, row 208), now it works
+run 110: switched back to the original chip ID 0
+run 113: beam is here, it is centered vertically but about 1/8" left of us
+run 114: moved the box left 1/8", beam is centered
+run 115: rotate table to 6.0 degrees
+run 116: rotate table to 12.0 degrees, looks great
+run 117: table back to 1.5 degrees, INTT requested to remove the collimator so beam is changing during this run
+run 118: beam spot is now shifted to the right by about 1/4"
+run 119: moved the box right to get new baseline
+run 120: Beam profile reduced as requested by INTT
+run 121: rotate table to -18 degrees. looks like no correlation between chip 1+2+3. ~100k events
+run 122: quick junk run to check OM changes
+run 123: rotate table to -16 degrees. Still no correlation between chips 1/2/3.
+run 124: rotate table to -15 degrees. Chips 1 and 3 are correlated. >1.75M events
+run 125: rotate table back to 1.5 deg. INTT placed 2 lead bricks in front of their box.
+
+
+beam is -10 GeV "low energy pion"
+run 126: beamparameters.dat is not updated
+run 127: restart the run to pull in the correct beamparameters.dat
+run 128: mask four noisy pixels seen in the previous run (206,471 211,472 206,474 205,474). ~2M triggers. Good candidate for alignment studies.
+run 129: more of the same
+run 130: -3V bias is connected to chip ID 3 (power supply current ~0.5 mA), no hits on chip 3
+runs 130-134 are runtype junk (rcdaq crashed and the runtype was not set)
+run 131: restart run to pull in updated alpideparameters.dat, still no hits on chip 3
+run 132: changed ALPIDE parameters for chip 3 to VCASN=105 VCLIP=60 VCASN2=117, now we see hits on chip 3
+run 133: restart run to pull in updated alpideparameters.dat
+run 134: restart run, alpideparameters.dat had a typo in the previous run (VCASN2_ID3 twice instead of VCASN_ID3 and VCASN2_ID3), 3M events

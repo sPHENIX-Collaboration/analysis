@@ -1,0 +1,16 @@
+HCALOUT_Tower_0: energy = 0.00668176, adc = 666.378
+HCALOUT_Tower_1: energy = 0.00678014, adc = 1488.15
+HCALOUT_Tower_2: energy = 0.00687082, adc = 1493.36
+HCALOUT_Tower_3: energy = 0.00706854, adc = 1816.82
+HCALOUT_Tower_4: energy = 0.00668973, adc = -1
+HCALOUT_Tower_5: energy = 0.00678279, adc = -1
+HCALOUT_Tower_6: energy = 0.00684794, adc = -1
+HCALOUT_Tower_7: energy = 0.00705448, adc = -1
+HCALOUT_Tower_8: energy = 0.00668976, adc = -1
+HCALOUT_Tower_9: energy = 0.0068013, adc = -1
+HCALOUT_Tower_10: energy = 0.00685931, adc = -1
+HCALOUT_Tower_11: energy = 0.00704985, adc = -1
+HCALOUT_Tower_12: energy = 0.0066926, adc = -1
+HCALOUT_Tower_13: energy = 0.00678282, adc = -1
+HCALOUT_Tower_14: energy = 0.00684403, adc = -1
+HCALOUT_Tower_15: energy = 0.00704143, adc = -1

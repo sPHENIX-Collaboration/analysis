@@ -22,8 +22,7 @@
 #include <g4detectors/PHG4ScintillatorSlatContainer.h>
 #include <g4eval/JetEvalStack.h>
 #include <g4eval/SvtxEvalStack.h>
-#include <g4hough/SvtxTrack.h>
-#include <g4hough/SvtxTrackMap.h>
+
 #include <g4vertex/GlobalVertex.h>
 #include <g4vertex/GlobalVertexMap.h>
 #include <sstream>
@@ -57,6 +56,8 @@ Forward_pi0s::Forward_pi0s(const std::string &name)
   nevents = 0;
   //default use 0.3 jet cone
   jet_cone_size = 0.3;
+
+  verbosity = 0;
 }
 
 int Forward_pi0s::Init(PHCompositeNode *topnode)

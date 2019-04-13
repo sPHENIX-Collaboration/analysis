@@ -30,12 +30,14 @@ class Photons : public SubsysReco
   double isoconeradius, mincluspt;
   float jet_cone_size;
   float _etalow, _etahi;
+  int verbosity;
 
   int _embed;
   int Init(PHCompositeNode *);
   int process_event(PHCompositeNode *);
   int End(PHCompositeNode *);
 
+  void set_verbosity(int _verbosity) { verbosity = _verbosity;}
   void set_cluspt_mincut(double pt) { mincluspt = pt; };
   void SetFirstEventNum(int eventnum) { nevents = eventnum; };
   void set_eta_lowhigh(float etalow, float etahi)

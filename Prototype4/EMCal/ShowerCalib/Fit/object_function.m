@@ -45,8 +45,8 @@ for i = 1:N_Runs
     Chi2 = Chi2 + DChi2;
 end
 
-Chi2 =  Chi2 + ...
-    (sum(E_scale) - N_Runs)^2 * Nevent  * 10;
+% Chi2 =  Chi2 + ...
+%     (sum(E_scale) - N_Runs)^2 * Nevent  * 10;
 
 calibration_diff_lt = (calib_const - E_scale_low_tower).*low_tower_IDs;
 

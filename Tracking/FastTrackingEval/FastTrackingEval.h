@@ -87,6 +87,11 @@ class FastTrackingEval: public SubsysReco
   float gpx;
   float gpy;
   float gpz;
+  float gpt;
+  float gp;
+  float gtheta;
+  float geta;
+  float gphi;
   float gvx;
   float gvy;
   float gvz;
@@ -98,6 +103,11 @@ class FastTrackingEval: public SubsysReco
   float px;
   float py;
   float pz;
+  float pt;
+  float p;
+  float theta;
+  float eta;
+  float phi;
   float dca2d;
 
   //Histos

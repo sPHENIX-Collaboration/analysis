@@ -12,6 +12,7 @@
 
 class PHCompositeNode;
 class RawClusterContainer;
+class RawTowerContainer;
 class RawCluster;
 class SvtxTrackMap;
 class JetMap;
@@ -250,8 +251,13 @@ class PhotonJet : public SubsysReco
 
   void Set_Tree_Branches();
 
+
+  std::vector<float> constituent_dphis;
+  std::vector<float> constituent_detas;
+
+
   float ConeSum(RawCluster *cluster,
-                RawClusterContainer *cluster_container,
+		RawClusterContainer *cluster_container,
                 SvtxTrackMap *trackmap, float coneradius,
                 GlobalVertex *vtx);
   void GetRecoHadronsAndJets(RawCluster *trig,

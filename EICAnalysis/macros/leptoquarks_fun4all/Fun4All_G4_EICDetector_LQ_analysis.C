@@ -11,13 +11,12 @@ int Fun4All_G4_EICDetector_LQ_analysis(
   //Get parameter variables from parameter file
   
   string inputFile="/gpfs/mnt/gpfs02/phenix/scratch/spjeffas/g4sim/G4_Leptoquark_DST_p"+pbeam+"_e"+ebeam+"_"+n+"events_"+seed+"seed_"+type+".root";
-
+  //string inputFile="/gpfs/mnt/gpfs04/sphenix/user/nfeege/sphenixsw/devel/analysis/EICAnalysis/data/G4EICDetector_DIS_10x250_20events.root";
   int nEvents;
   stringstream geek(n);
   geek>>nEvents;
 
-
-
+  
   string directory = "/gpfs/mnt/gpfs02/phenix/scratch/spjeffas/data/";
 
 
@@ -39,10 +38,10 @@ int Fun4All_G4_EICDetector_LQ_analysis(
 
   // Other options
   bool do_jet_reco = true;
-  bool do_jet_eval = do_jet_reco && true;
+  bool do_jet_eval = do_jet_reco && false;
 
   bool do_fwd_jet_reco = true;
-  bool do_fwd_jet_eval = do_fwd_jet_reco && true;
+  bool do_fwd_jet_eval = do_fwd_jet_reco && false;
 
   // HI Jet Reco for jet simulations in Au+Au (default is false for
   // single particle / p+p simulations, or for Au+Au simulations which
@@ -55,13 +54,19 @@ int Fun4All_G4_EICDetector_LQ_analysis(
   //Option to convert DST to human command readable TTree for quick poke around the outputs
   bool do_DSTReader = false;
 
+  
   //---------------
   // Load libraries
   //---------------
 
   gSystem->Load("libfun4all.so");
+  //gSystem->Load("libg4detectors.so");
+  //gSystem->Load("libphhepmc.so");
+  //gSystem->Load("libg4testbench.so");
+  gSystem->Load("libg4hough.so");
   gSystem->Load("libg4eval.so");
   gSystem->Load("libeicana.so");
+
 
   //---------------
   // Fun4All server
@@ -108,10 +113,11 @@ int Fun4All_G4_EICDetector_LQ_analysis(
       Jet_FwdReco();
     }
 
+  
   //----------------------
   // Simulation evaluation
   //----------------------
-  
+ 
   
   if (do_jet_eval) Jet_Eval(directory+"g4jet_p"+pbeam+"_e"+ebeam+"_"+n+"events_"+seed+"seed_"+type+"_eval.root");
 
