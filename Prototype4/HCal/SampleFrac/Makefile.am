@@ -1,41 +1,71 @@
 AUTOMAKE_OPTIONS = foreign
 
-INCLUDES = \
-  -I$(includedir) \
-  -I$(OFFLINE_MAIN)/include/eigen3 \
-  -I$(OFFLINE_MAIN)/include \
-  -I$(G4_MAIN)/include \
-  -I$(G4_MAIN)/include/Geant4 \
-  -I`root-config --incdir`
+lib_LTLIBRARIES = libProto4HCalSampleFrac.la
 
-lib_LTLIBRARIES = \
-   libProto4_HCalSampleFrac.la
+AM_CPPFLAGS = \
+    -DCGAL_DISABLE_ROUNDING_MATH_CHECK \
+    -I$(includedir) \
+    -I$(OFFLINE_MAIN)/include/eigen3 \
+    -I$(OFFLINE_MAIN)/include \
+    -I$(ROOTSYS)/include \
+    -I$(G4_MAIN)/include/Geant4 \
+    -I$(G4_MAIN)/include \
+    -I$(OPT_SPHENIX)/include
+
+AM_LDFLAGS = \
+    -L$(libdir) \
+    -L$(OFFLINE_MAIN)/lib
 
 AM_CXXFLAGS = -Wall -Werror -msse2
 
-libProto4_HCalSampleFrac_la_LDFLAGS = \
+libProto4HCalSampleFrac_la_LDFLAGS = \
   -L$(libdir) \
   -L$(OFFLINE_MAIN)/lib
 
-libProto4_HCalSampleFrac_la_LIBADD = \
+libProto4HCalSampleFrac_la_LIBADD = \
   -lfun4all \
   -lg4dst \
   -lPrototype4
 
-pkginclude_HEADERS = 
+# I/O dictionaries have to exist for root5 and root6. For ROOT6 we need
+# pcm files in addition. If someone can figure out how to make a list
+# so this list of dictionaries is transformed into a list of pcm files
+# following a simple naming convention, please change this accordingly and
+# let me know
+ROOTDICTS = \
+    Proto4SampleFrac_Dict.C
 
-#pkginclude_HEADERS = $(include_HEADERS)
+# for root6 we need pcm and dictionaries but only for
+# i/o classes. For root5 we need only dictionaries but
+# those for i/o and classes available on the cmd line
+# MAKEROOT6 is set in the configure.ac, true for root6
+if MAKEROOT6
+# this is a tweak to install files in $(libdir), automake refuses
+# to install other files in libdir, this construct gets around this
+pcmdir = $(libdir)
+nobase_dist_pcm_DATA = \
+  Proto4SampleFrac_Dict_rdict.pcm
+else
+  ROOT5TBDICTS = 
+endif
 
-libProto4_HCalSampleFrac_la_SOURCES = \
-  Proto4SampleFrac.C \
-  Proto4SampleFrac_Dict.C 
+libProto4HCalSampleFrac_la_SOURCES = \
+  $(ROOTDICTS) \
+  $(ROOT5TBDICTS) \
+  Proto4SampleFrac.C
+
+##############################################
+# please add new classes in alphabetical order
+
+pkginclude_HEADERS = \
+  Proto4SampleFrac.h
 
 # Rule for generating table CINT dictionaries.
 %_Dict.C: %.h %LinkDef.h
-	rootcint -f $@ -c $(DEFAULT_INCLUDES) $(INCLUDES) $^
+	rootcint -f $@ @CINTDEFS@ -c $(DEFAULT_INCLUDES) $(AM_CPPFLAGS) $^
 
-%_Dict.cpp: %.h %LinkDef.h
-	rootcint -f $@ -c $(DEFAULT_INCLUDES) $(INCLUDES) $^
+#just to get the dependency
+%_Dict_rdict.pcm: %_Dict.C ;
 
 ################################################
 # linking tests
@@ -46,7 +76,7 @@ BUILT_SOURCES = \
   testexternals.C
 
 testexternals_LDADD = \
-  libProto4_HCalSampleFrac.la
+  libProto4HCalSampleFrac.la
 
 testexternals.C:
 	echo "//*** this is a generated file. Do not commit, do not edit" > $@

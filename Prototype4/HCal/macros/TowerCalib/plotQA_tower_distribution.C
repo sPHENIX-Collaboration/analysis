@@ -4,7 +4,7 @@
 #include "TH1F.h"
 #include "TLegend.h"
 
-void plotQA_tower_distribution(const string runId = "0498")
+void plotQA_tower_distribution(const string runId = "0571")
 {
   int hbdchanIHC[4][4] = {{16, 12, 8, 4},
                           {15, 11, 7, 3},
@@ -40,8 +40,8 @@ void plotQA_tower_distribution(const string runId = "0498")
       h_hcalin_tower_calib[i_tower]->Draw();
     }
   }
-  c_hcal_in->SaveAs("./figures/HCAL_TowerMap/c_hcal_in.eps");
-  c_hcal_in->SaveAs("./figures/HCAL_TowerMap/c_hcal_in.pdf");
+  c_hcal_in->SaveAs("../figures/HCAL_TowerMap/c_hcal_in_0571.eps");
+  // c_hcal_in->SaveAs("../figures/HCAL_TowerMap/c_hcal_in.pdf");
 
   TCanvas *c_hcal_out = new TCanvas("c_hcal_out","c_hcal_out",10,10,1600,1600);
   c_hcal_out->Divide(4,4);
@@ -56,6 +56,6 @@ void plotQA_tower_distribution(const string runId = "0498")
       h_hcalout_tower_calib[i_tower]->Draw();
     }
   }
-  c_hcal_out->SaveAs("./figures/HCAL_TowerMap/c_hcal_out.eps");
-  c_hcal_out->SaveAs("./figures/HCAL_TowerMap/c_hcal_out.pdf");
+  c_hcal_out->SaveAs("../figures/HCAL_TowerMap/c_hcal_out_0571.eps");
+  // c_hcal_out->SaveAs("../figures/HCAL_TowerMap/c_hcal_out.pdf");
 }
