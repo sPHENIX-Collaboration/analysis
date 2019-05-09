@@ -551,7 +551,7 @@ int HFFastSim::process_event(PHCompositeNode* topNode)
 int HFFastSim::End(PHCompositeNode* topNode)
 {
   if (Verbosity() >= HFFastSim::VERBOSITY_SOME)
-    std::cout << __PRETTY_FUNCTION__ << " DVP PASSED " << _total_pass
+    std::cout << __PRETTY_FUNCTION__ << " PASSED " << _total_pass
               << " events" << std::endl;
 
   PHGenIntegral* integral_node = findNode::getClass<PHGenIntegral>(topNode, "PHGenIntegral");

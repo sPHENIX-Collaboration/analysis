@@ -71,10 +71,10 @@ void Draw_HFJetTruth(const TString infile =
   const double acceptance1 = 2.* (1.1 - .4);
   CrossSection2RAA(infile, false, acceptance1);
 
-  const double acceptance2 = 2.* (0.85 - .4);
-  CrossSection2RAA(infile, false, acceptance2);
+//  const double acceptance2 = 2.* (0.85 - .4);
+//  CrossSection2RAA(infile, false, acceptance2);
 
-//  CrossSection2v2(infile, false, .7, acceptance);
+  CrossSection2v2(infile, false, .7, acceptance);
 //  CrossSection2v2(infile, false, .4, acceptance);
 }
 
