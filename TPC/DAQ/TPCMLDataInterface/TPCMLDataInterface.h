@@ -19,6 +19,10 @@ class PHCompositeNode;
 class Fun4AllHistoManager;
 class TH1;
 class TH2;
+namespace H5
+{
+class H5File;
+}
 
 /*!
  * \brief TPCMLDataInterface
@@ -66,6 +70,7 @@ class TPCMLDataInterface : public SubsysReco
   bool m_saveDataStreamFile;
 
   std::string m_outputFileNameBase;
+  H5::H5File *m_h5File;
 
   int m_minLayer;
   int m_maxLayer;

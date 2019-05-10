@@ -7,18 +7,18 @@ AM_CPPFLAGS = \
   -I`root-config --incdir`
 
 lib_LTLIBRARIES = \
-   libg4eval.la
+   libtpcmldatainterface.la
 
 AM_CXXFLAGS = -Werror
 
-libg4eval_la_LDFLAGS = \
+libtpcmldatainterface_la_LDFLAGS = \
   -L$(libdir) \
   -L$(OFFLINE_MAIN)/lib
 
-libg4eval_la_LIBADD = \
-  -lg4eval \
+libtpcmldatainterface_la_LIBADD = \
   -lg4dst \
-  -lhdf5_hl_cpp
+  -lfun4all \
+  -lhdf5_hl_cpp 
 
 pkginclude_HEADERS = \
   TPCMLDataInterface.h
@@ -28,7 +28,7 @@ if ! MAKEROOT6
   TPCMLDataInterface_Dict.cc 
 endif
 
-libg4eval_la_SOURCES = \
+libtpcmldatainterface_la_SOURCES = \
   $(ROOT5DICTS) \
   TPCMLDataInterface.cc
 
@@ -48,7 +48,7 @@ testexternals_SOURCES = \
   testexternals.cc
 
 testexternals_LDADD = \
-  libg4eval.la
+  libtpcmldatainterface.la
 
 testexternals.cc:
 	echo "//*** this is a generated file. Do not commit, do not edit" > $@

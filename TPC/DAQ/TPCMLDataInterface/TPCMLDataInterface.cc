@@ -10,16 +10,25 @@
 
 #include "TPCMLDataInterface.h"
 
+#include <tpc/TpcDefs.h>
+
 #include <g4detectors/PHG4Cell.h>
 #include <g4detectors/PHG4CellContainer.h>
 #include <g4detectors/PHG4CylinderCellGeom.h>
 #include <g4detectors/PHG4CylinderCellGeomContainer.h>
-#include <trackbase_historic/SvtxHit.h>
-#include <trackbase_historic/SvtxHitMap.h>
+//#include <trackbase_historic/SvtxHit.h>
+//#include <trackbase_historic/SvtxHitMap.h>
 #include <g4main/PHG4Hit.h>
 #include <g4main/PHG4HitContainer.h>
 #include <g4main/PHG4Particle.h>
 #include <g4main/PHG4TruthInfoContainer.h>
+
+#include <trackbase/TrkrClusterContainer.h>
+#include <trackbase/TrkrClusterHitAssoc.h>
+#include <trackbase/TrkrClusterv1.h>
+#include <trackbase/TrkrHit.h>
+#include <trackbase/TrkrHitSet.h>
+#include <trackbase/TrkrHitSetContainer.h>
 
 #include <fun4all/Fun4AllHistoManager.h>
 #include <fun4all/Fun4AllReturnCodes.h>
@@ -43,6 +52,8 @@
 
 #include <CLHEP/Units/SystemOfUnits.h>
 
+#include <H5Cpp.h>
+
 #include <boost/format.hpp>
 
 #include <algorithm>
@@ -55,6 +66,7 @@
 
 using namespace std;
 using namespace CLHEP;
+using namespace H5;
 
 TPCMLDataInterface::TPCMLDataInterface(
     unsigned int minLayer,
@@ -63,6 +75,7 @@ TPCMLDataInterface::TPCMLDataInterface(
   : SubsysReco("TPCMLDataInterface")
   , m_saveDataStreamFile(true)
   , m_outputFileNameBase(outputfilename)
+  , m_h5File(nullptr)
   , m_minLayer(minLayer)
   , m_maxLayer(m_maxLayer)
   , m_evtCounter(-1)
@@ -83,6 +96,7 @@ TPCMLDataInterface::TPCMLDataInterface(
 
 TPCMLDataInterface::~TPCMLDataInterface()
 {
+  if (m_h5File) delete m_h5File;
 }
 
 int TPCMLDataInterface::Init(PHCompositeNode* topNode)
@@ -105,6 +119,12 @@ int TPCMLDataInterface::End(PHCompositeNode* topNode)
   TTree* T_Index = new TTree("T_Index", "T_Index");
   assert(T_Index);
   T_Index->Write();
+
+  if (m_h5File)
+  {
+    delete m_h5File;
+    m_h5File = nullptr;
+  }
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -229,6 +249,14 @@ int TPCMLDataInterface::InitRun(PHCompositeNode* topNode)
                                  "Sum ADC per Time Bin;z bin ID;Layer ID",
                                  nZBins, -.5, nZBins - .5,
                                  m_maxLayer - m_minLayer + 1, m_minLayer - .5, m_maxLayer + .5));
+
+  // init HDF5 output
+
+  if (Verbosity() >= VERBOSITY_SOME)
+    cout << "TPCMLDataInterface::get_HistoManager - Making H5File " << m_outputFileNameBase + ".h5"
+         << endl;
+  m_h5File = new H5File(m_outputFileNameBase + ".h5", H5F_ACC_TRUNC);
+
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
@@ -242,27 +270,29 @@ int TPCMLDataInterface::process_event(PHCompositeNode* topNode)
   assert(h_norm);
   h_norm->Fill("Event count", 1);
 
-  PHG4HitContainer* g4hit = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_SVTX");
+  PHG4HitContainer* g4hit = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_TPC");
+  cout << "TPCMLDataInterface::process_event - g4 hit node G4HIT_TPC" << endl;
   if (!g4hit)
   {
-    cout << "TPCMLDataInterface::process_event - Could not locate g4 hit node G4HIT_SVTX" << endl;
+    cout << "TPCMLDataInterface::process_event - Could not locate g4 hit node G4HIT_TPC" << endl;
     return Fun4AllReturnCodes::ABORTRUN;
   }
 
-  SvtxHitMap* hits = findNode::getClass<SvtxHitMap>(topNode, "SvtxHitMap");
+  // get node containing the digitized hits
+  TrkrHitSetContainer* hits = findNode::getClass<TrkrHitSetContainer>(topNode, "TRKR_HITSET");
   if (!hits)
   {
-    cout << "PCDataStreamEmulator::process_event - ERROR: Can't find node SvtxHitMap" << endl;
+    cout << PHWHERE << "ERROR: Can't find node TRKR_HITSET" << endl;
     return Fun4AllReturnCodes::ABORTRUN;
   }
 
-  PHG4CellContainer* cells = findNode::getClass<PHG4CellContainer>(topNode, "G4CELL_SVTX");
-  if (!cells)
-  {
-    cout << "TPCMLDataInterface::process_event - could not locate cell node "
-         << "G4CELL_SVTX" << endl;
-    exit(1);
-  }
+  //  PHG4CellContainer* cells = findNode::getClass<PHG4CellContainer>(topNode, "G4CELL_SVTX");
+  //  if (!cells)
+  //  {
+  //    cout << "TPCMLDataInterface::process_event - could not locate cell node "
+  //         << "G4CELL_SVTX" << endl;
+  //    exit(1);
+  //  }
 
   PHG4CylinderCellGeomContainer* seggeo = findNode::getClass<PHG4CylinderCellGeomContainer>(topNode, "CYLINDERCELLGEOM_SVTX");
   if (!seggeo)
@@ -317,7 +347,7 @@ int TPCMLDataInterface::process_event(PHCompositeNode* topNode)
     {
       TVector3 pvec(p->get_px(), p->get_py(), p->get_pz());
 
-      if (pvec.Perp2()>0)
+      if (pvec.Perp2() > 0)
       {
         assert(m_hNChEta);
         m_hNChEta->Fill(pvec.PseudoRapidity());
@@ -389,114 +419,138 @@ int TPCMLDataInterface::process_event(PHCompositeNode* topNode)
   assert(nZBins > 0);
 
   // count hits and make wavelets
-  int last_layer = -1;
-  int last_side = -1;
-  int last_phibin = -1;
-  int last_zbin = -1;
-  vector<unsigned int> last_wavelet;
-  int last_wavelet_hittime = -1;
+  //  int last_layer = -1;
+  //  int last_side = -1;
+  //  int last_phibin = -1;
+  //  int last_zbin = -1;
+  //  vector<unsigned int> last_wavelet;
+  //  int last_wavelet_hittime = -1;
 
-  for (SvtxHitMap::Iter iter = hits->begin(); iter != hits->end(); ++iter)
+  //  for (SvtxHitMap::Iter iter = hits->begin(); iter != hits->end(); ++iter)
+  //  {
+  //    SvtxHit* hit = iter->second;
+  // loop over the TPC HitSet objects
+  TrkrHitSetContainer::ConstRange hitsetrange = hits->getHitSets(TrkrDefs::TrkrId::tpcId);
+  for (TrkrHitSetContainer::ConstIterator hitsetitr = hitsetrange.first;
+       hitsetitr != hitsetrange.second;
+       ++hitsetitr)
   {
-    SvtxHit* hit = iter->second;
+    TrkrHitSet* hitset = hitsetitr->second;
 
-    const int layer = hit->get_layer();
+    if (Verbosity() > 2) hitset->identify();
+
+    //    const int layer = hit->get_layer();
+    // we have a single hitset, get the info that identifies the module
+    const int layer = TrkrDefs::getLayer(hitsetitr->first);
+
+    if (Verbosity() >= 2)
+    {
+      cout << "TPCMLDataInterface::process_event - TrkrHitSet @ layer " << layer << " with " << hitset->size() << " hits" << endl;
+    }
 
     if (layer < m_minLayer or layer > m_maxLayer) continue;
 
-    PHG4Cell* cell = cells->findCell(hit->get_cellid());                           //not needed once geofixed
-    const int phibin = PHG4CellDefs::SizeBinning::get_phibin(cell->get_cellid());  //cell->get_binphi();
-    const int zbin = PHG4CellDefs::SizeBinning::get_zbin(cell->get_cellid());      //cell->get_binz();
-    const int side = (zbin < nZBins / 2) ? 0 : 1;
+    //    PHG4Cell* cell = cells->findCell(hit->get_cellid());                           //not needed once geofixed
 
-    // new wavelet?
-    if (last_layer != layer or last_phibin != phibin or last_side != side or abs(last_zbin - zbin) != 1)
+    TrkrHitSet::ConstRange hitrangei = hitset->getHits();
+    for (TrkrHitSet::ConstIterator hitr = hitrangei.first;
+         hitr != hitrangei.second;
+         ++hitr)
     {
-      // save last wavelet
-      if (last_wavelet.size() > 0)
-      {
-        const int datasize = writeWavelet(last_layer, last_side, last_phibin, last_wavelet_hittime, last_wavelet);
-        assert(datasize > 0);
+      //    const int phibin = PHG4CellDefs::SizeBinning::get_phibin(cell->get_cellid());  //cell->get_binphi();
+      //    const int zbin = PHG4CellDefs::SizeBinning::get_zbin(cell->get_cellid());      //cell->get_binz();
+      int phibin = TpcDefs::getPad(hitr->first);
+      int zbin = TpcDefs::getTBin(hitr->first);
+      const int side = (zbin < nZBins / 2) ? 0 : 1;
 
-        nWavelet += 1;
-        sumDataSize += datasize;
-        layerChanDataSize[last_layer][last_side][last_phibin] += datasize;
+      //    // new wavelet?
+      //    if (last_layer != layer or last_phibin != phibin or last_side != side or abs(last_zbin - zbin) != 1)
+      //    {
+      //      // save last wavelet
+      //      if (last_wavelet.size() > 0)
+      //      {
+      //        const int datasize = writeWavelet(last_layer, last_side, last_phibin, last_wavelet_hittime, last_wavelet);
+      //        assert(datasize > 0);
+      //
+      //        nWavelet += 1;
+      //        sumDataSize += datasize;
+      //        layerChanDataSize[last_layer][last_side][last_phibin] += datasize;
+      //
+      //        last_wavelet.clear();
+      //        last_zbin = -1;
+      //      }
+      //
+      //      // z-R cut on digitized wavelet
+      //      PHG4CylinderCellGeom* layerGeom =
+      //          seggeo->GetLayerCellGeom(layer);
+      //      assert(layerGeom);
+      //      const double z_abs = fabs(layerGeom->get_zcenter(zbin));
+      //      const double r = layerGeom->get_radius();
+      //      TVector3 acceptanceVec(r, 0, z_abs - m_vertexZAcceptanceCut);
+      //      const double eta = acceptanceVec.PseudoRapidity();
+      //
+      //      if (eta > m_etaAcceptanceCut) continue;
+      //
+      //      // make new wavelet
+      //      last_layer = layer;
+      //      last_side = side;
+      //      last_phibin = phibin;
+      //
+      //      // time check
+      //      last_wavelet_hittime = (side == 0) ? (zbin) : (nZBins - 1 - zbin);
+      //      assert(last_wavelet_hittime >= 0);
+      //      assert(last_wavelet_hittime <= nZBins / 2);
+      //    }  //     if (last_layer != layer or last_phibin != phibin)
+      //
+      //    if (Verbosity() >= VERBOSITY_A_LOT)
+      //    {
+      //      cout << "TPCMLDataInterface::process_event -  layer " << layer << " hit with "
+      //
+      //           << "phibin = " << phibin
+      //           << ",zbin = " << zbin
+      //           << ",side = " << side
+      //           << ",last_wavelet.size() = " << last_wavelet.size()
+      //           << ",last_zbin = " << last_zbin
+      //           << endl;
+      //    }
+      //
+      //    // more checks on signal continuity
+      //    if (last_wavelet.size() > 0)
+      //    {
+      //      if (side == 0)
+      //      {
+      //        assert(zbin - last_zbin == 1);
+      //      }
+      //      else
+      //      {
+      //        assert(last_zbin - zbin == 1);
+      //      }
+      //    }
 
-        last_wavelet.clear();
-        last_zbin = -1;
-      }
+      // record adc
+      unsigned int adc = hitr->second->getAdc();
+      //      last_wavelet.push_back(adc);
+      //      last_zbin = zbin;
 
-      // z-R cut on digitized wavelet
-      PHG4CylinderCellGeom* layerGeom =
-          seggeo->GetLayerCellGeom(layer);
-      assert(layerGeom);
-      const double z_abs = fabs(layerGeom->get_zcenter(zbin));
-      const double r = layerGeom->get_radius();
-      TVector3 acceptanceVec(r, 0, z_abs - m_vertexZAcceptanceCut);
-      const double eta = acceptanceVec.PseudoRapidity();
-
-      if (eta > m_etaAcceptanceCut) continue;
-
-      // make new wavelet
-      last_layer = layer;
-      last_side = side;
-      last_phibin = phibin;
-
-      // time check
-      last_wavelet_hittime = (side == 0) ? (zbin) : (nZBins - 1 - zbin);
-      assert(last_wavelet_hittime >= 0);
-      assert(last_wavelet_hittime <= nZBins / 2);
-    }  //     if (last_layer != layer or last_phibin != phibin)
-
-    if (Verbosity() >= VERBOSITY_A_LOT)
-    {
-      cout << "TPCMLDataInterface::process_event -  layer " << layer << " hit with "
-
-           << "phibin = " << phibin
-           << ",zbin = " << zbin
-           << ",side = " << side
-           << ",last_wavelet.size() = " << last_wavelet.size()
-           << ",last_zbin = " << last_zbin
-           << endl;
+      // statistics
+      layerChanHit[layer][side][phibin] += 1;
+      assert(m_hLayerZBinHit);
+      m_hLayerZBinHit->Fill(zbin, layer, 1);
+      assert(m_hLayerZBinADC);
+      m_hLayerZBinADC->Fill(zbin, layer, adc);
     }
-
-    // more checks on signal continuity
-    if (last_wavelet.size() > 0)
-    {
-      if (side == 0)
-      {
-        assert(zbin - last_zbin == 1);
-      }
-      else
-      {
-        assert(last_zbin - zbin == 1);
-      }
-    }
-
-    // record adc
-    unsigned int adc = hit->get_adc();
-    last_wavelet.push_back(adc);
-    last_zbin = zbin;
-
-    // statistics
-    layerChanHit[layer][side][phibin] += 1;
-    assert(m_hLayerZBinHit);
-    m_hLayerZBinHit->Fill(zbin, layer, 1);
-    assert(m_hLayerZBinADC);
-    m_hLayerZBinADC->Fill(zbin, layer, adc);
-
   }  //   for(SvtxHitMap::Iter iter = hits->begin(); iter != hits->end(); ++iter) {
 
-  // save last wavelet
-  if (last_wavelet.size() > 0)
-  {
-    const int datasize = writeWavelet(last_layer, last_side, last_phibin, last_wavelet_hittime, last_wavelet);
-    assert(datasize > 0);
-
-    nWavelet += 1;
-    sumDataSize += datasize;
-    layerChanDataSize[last_layer][last_side][last_phibin] += datasize;
-  }
+  //  // save last wavelet
+  //  if (last_wavelet.size() > 0)
+  //  {
+  //    const int datasize = writeWavelet(last_layer, last_side, last_phibin, last_wavelet_hittime, last_wavelet);
+  //    assert(datasize > 0);
+  //
+  //    nWavelet += 1;
+  //    sumDataSize += datasize;
+  //    layerChanDataSize[last_layer][last_side][last_phibin] += datasize;
+  //  }
 
   // statistics
   for (int layer = m_minLayer; layer <= m_maxLayer; ++layer)
