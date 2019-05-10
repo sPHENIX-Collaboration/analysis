@@ -264,6 +264,8 @@ int TPCMLDataInterface::process_event(PHCompositeNode* topNode)
 {
   m_evtCounter += 1;
 
+  assert(m_h5File);
+
   Fun4AllHistoManager* hm = getHistoManager();
   assert(hm);
   TH1D* h_norm = dynamic_cast<TH1D*>(hm->getHisto("hNormalization"));
@@ -369,10 +371,21 @@ int TPCMLDataInterface::process_event(PHCompositeNode* topNode)
 
   }  //   for (unsigned int layer = m_minLayer; layer <= m_maxLayer; ++layer)
 
+  //H5 init
+  string h5GroupName = boost::str(boost::format("TimeFrame_%1%") % m_evtCounter);
+  unique_ptr<Group> h5Group(new Group(m_h5File->createGroup("/" + h5GroupName)));
+  h5Group->setComment(boost::str(boost::format("Collection of ADC data matrixes in Time Frame #%1%") % m_evtCounter));
+  if (Verbosity())
+    cout << "TPCMLDataInterface::process_event - save to H5 group " << h5GroupName << endl;
+  map<int, shared_ptr<DataSet>> layerH5DataSetMap;
+  map<int, shared_ptr<DataSpace>> layerH5DataSpaceMap;
+
   // prepreare stat. storage
   int nZBins = 0;
-  vector<array<vector<int>, 2> > layerChanHit(m_maxLayer + 1);
-  vector<array<vector<int>, 2> > layerChanDataSize(m_maxLayer + 1);
+  vector<array<vector<int>, 2>> layerChanHit(m_maxLayer + 1);
+  vector<array<vector<int>, 2>> layerChanDataSize(m_maxLayer + 1);
+  vector<vector<uint16_t>> layerDataBuffer(m_maxLayer + 1);
+  vector<vector<hsize_t>> layerDataBufferSize(m_maxLayer + 1, vector<hsize_t>({0, 0}));
   int nWavelet = 0;
   int sumDataSize = 0;
   for (int layer = m_minLayer; layer <= m_maxLayer; ++layer)
@@ -413,6 +426,23 @@ int TPCMLDataInterface::process_event(PHCompositeNode* topNode)
 
       layerChanDataSize[layer][side].resize(nphibins, 0);
     }  //     for (unsigned int side = 0; side < 2; ++side)
+
+    // buffer init
+    layerDataBufferSize[layer][0] = nphibins;
+    layerDataBufferSize[layer][1] = layerGeom->get_zbins();
+    layerDataBuffer[layer].resize(layerDataBufferSize[layer][0] * layerDataBufferSize[layer][1], 0);
+
+    static const vector<hsize_t> cdims({32, 32});
+    DSetCreatPropList ds_creatplist;
+    ds_creatplist.setChunk(2, cdims.data());  // then modify it for compression
+    ds_creatplist.setDeflate(6);
+
+    layerH5DataSpaceMap[layer] = shared_ptr<DataSpace>(new DataSpace(2, layerDataBufferSize[layer].data()));
+    layerH5DataSetMap[layer] = shared_ptr<DataSet>(new DataSet(h5Group->createDataSet(
+        boost::str(boost::format("Data_Layer%1%") % (layer - m_minLayer)),
+        PredType::NATIVE_UINT16,
+        *(layerH5DataSpaceMap[layer]),
+        ds_creatplist)));
 
   }  //   for (int layer = m_minLayer; layer <= m_maxLayer; ++layer)
 
@@ -462,6 +492,15 @@ int TPCMLDataInterface::process_event(PHCompositeNode* topNode)
       int phibin = TpcDefs::getPad(hitr->first);
       int zbin = TpcDefs::getTBin(hitr->first);
       const int side = (zbin < nZBins / 2) ? 0 : 1;
+
+      if (Verbosity() >= 2)
+      {
+        cout << "TPCMLDataInterface::process_event - hit @ layer " << layer << " phibin = " << phibin << " zbin = " << zbin << " side = " << side << endl;
+      }
+
+      assert(phibin >= 0);
+      assert(zbin >= 0);
+      assert(side >= 0);
 
       //    // new wavelet?
       //    if (last_layer != layer or last_phibin != phibin or last_side != side or abs(last_zbin - zbin) != 1)
@@ -538,6 +577,20 @@ int TPCMLDataInterface::process_event(PHCompositeNode* topNode)
       m_hLayerZBinHit->Fill(zbin, layer, 1);
       assert(m_hLayerZBinADC);
       m_hLayerZBinADC->Fill(zbin, layer, adc);
+
+      assert(adc < (1 << 10));
+      assert((hsize_t) phibin < layerDataBufferSize[layer][0]);
+      assert((hsize_t) zbin < layerDataBufferSize[layer][1]);
+      const size_t hitindex(layerDataBufferSize[layer][1] * phibin + zbin);
+      assert(hitindex < layerDataBuffer[layer].size());
+      if (layerDataBuffer[layer][hitindex] != 0)
+      {
+        cout << "TPCMLDataInterface::process_event - WARNING - hit @ layer "
+             << layer << " phibin = " << phibin << " zbin = " << zbin << " side = " << side
+             << " overwriting previous hit with ADC = " << layerDataBuffer[layer][hitindex]
+             << endl;
+      }
+      layerDataBuffer[layer][hitindex] = adc;
     }
   }  //   for(SvtxHitMap::Iter iter = hits->begin(); iter != hits->end(); ++iter) {
 
@@ -568,7 +621,7 @@ int TPCMLDataInterface::process_event(PHCompositeNode* topNode)
 
         if (Verbosity() >= VERBOSITY_MORE)
         {
-          cout << "TPCMLDataInterface::process_event - hit: "
+          cout << "TPCMLDataInterface::process_event - layerChanHit: "
                << "hit = " << hit
                << "at layer = " << layer
                << ", side = " << side
@@ -594,6 +647,10 @@ int TPCMLDataInterface::process_event(PHCompositeNode* topNode)
       assert(m_hLayerSumDataSize);
       m_hLayerSumDataSize->Fill(layer, sumData);
     }  //    for (unsigned int side = 0; side < 2; ++side)
+
+    // store in H5
+    assert(layerH5DataSetMap[layer]);
+    layerH5DataSetMap[layer]->write(layerDataBuffer[layer].data(), PredType::NATIVE_UINT16);
 
   }  //  for (unsigned int layer = m_minLayer; layer <= m_maxLayer; ++layer)
 
