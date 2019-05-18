@@ -380,6 +380,16 @@ int TPCMLDataInterface::process_event(PHCompositeNode* topNode)
   map<int, shared_ptr<DataSet>> layerH5DataSetMap;
   map<int, shared_ptr<DataSpace>> layerH5DataSpaceMap;
 
+  //wavelet size stat.
+  vector<uint32_t> layerWaveletDataSize(m_maxLayer + 1, 0);
+  vector<hsize_t> layerSize(1);
+  layerSize[0] = static_cast<hsize_t>(m_maxLayer - m_minLayer + 1);
+  shared_ptr<DataSpace> H5DataSpaceLayerWaveletDataSize(new DataSpace(1, layerSize.data()));
+  shared_ptr<DataSet> H5DataSetLayerWaveletDataSize(new DataSet(h5Group->createDataSet(
+      "sPHENIXRawDataSizeBytePerLayer",
+      PredType::NATIVE_UINT32,
+      *(H5DataSpaceLayerWaveletDataSize))));
+
   // prepreare stat. storage
   int nZBins = 0;
   vector<array<vector<int>, 2>> layerChanHit(m_maxLayer + 1);
@@ -432,10 +442,10 @@ int TPCMLDataInterface::process_event(PHCompositeNode* topNode)
     layerDataBufferSize[layer][1] = layerGeom->get_zbins();
     layerDataBuffer[layer].resize(layerDataBufferSize[layer][0] * layerDataBufferSize[layer][1], 0);
 
-    static const vector<hsize_t> cdims({32, 32});
+    static const vector<hsize_t> cdims({64, 64});
     DSetCreatPropList ds_creatplist;
     ds_creatplist.setChunk(2, cdims.data());  // then modify it for compression
-    ds_creatplist.setDeflate(6);
+    ds_creatplist.setDeflate(8);
 
     layerH5DataSpaceMap[layer] = shared_ptr<DataSpace>(new DataSpace(2, layerDataBufferSize[layer].data()));
     layerH5DataSetMap[layer] = shared_ptr<DataSet>(new DataSet(h5Group->createDataSet(
@@ -449,12 +459,12 @@ int TPCMLDataInterface::process_event(PHCompositeNode* topNode)
   assert(nZBins > 0);
 
   // count hits and make wavelets
-  //  int last_layer = -1;
-  //  int last_side = -1;
-  //  int last_phibin = -1;
-  //  int last_zbin = -1;
-  //  vector<unsigned int> last_wavelet;
-  //  int last_wavelet_hittime = -1;
+  int last_layer = -1;
+  int last_side = -1;
+  int last_phibin = -1;
+  int last_zbin = -1;
+  vector<unsigned int> last_wavelet;
+  int last_wavelet_hittime = -1;
 
   //  for (SvtxHitMap::Iter iter = hits->begin(); iter != hits->end(); ++iter)
   //  {
@@ -502,74 +512,74 @@ int TPCMLDataInterface::process_event(PHCompositeNode* topNode)
       assert(zbin >= 0);
       assert(side >= 0);
 
-      //    // new wavelet?
-      //    if (last_layer != layer or last_phibin != phibin or last_side != side or abs(last_zbin - zbin) != 1)
-      //    {
-      //      // save last wavelet
-      //      if (last_wavelet.size() > 0)
-      //      {
-      //        const int datasize = writeWavelet(last_layer, last_side, last_phibin, last_wavelet_hittime, last_wavelet);
-      //        assert(datasize > 0);
-      //
-      //        nWavelet += 1;
-      //        sumDataSize += datasize;
-      //        layerChanDataSize[last_layer][last_side][last_phibin] += datasize;
-      //
-      //        last_wavelet.clear();
-      //        last_zbin = -1;
-      //      }
-      //
-      //      // z-R cut on digitized wavelet
-      //      PHG4CylinderCellGeom* layerGeom =
-      //          seggeo->GetLayerCellGeom(layer);
-      //      assert(layerGeom);
-      //      const double z_abs = fabs(layerGeom->get_zcenter(zbin));
-      //      const double r = layerGeom->get_radius();
-      //      TVector3 acceptanceVec(r, 0, z_abs - m_vertexZAcceptanceCut);
-      //      const double eta = acceptanceVec.PseudoRapidity();
-      //
-      //      if (eta > m_etaAcceptanceCut) continue;
-      //
-      //      // make new wavelet
-      //      last_layer = layer;
-      //      last_side = side;
-      //      last_phibin = phibin;
-      //
-      //      // time check
-      //      last_wavelet_hittime = (side == 0) ? (zbin) : (nZBins - 1 - zbin);
-      //      assert(last_wavelet_hittime >= 0);
-      //      assert(last_wavelet_hittime <= nZBins / 2);
-      //    }  //     if (last_layer != layer or last_phibin != phibin)
-      //
-      //    if (Verbosity() >= VERBOSITY_A_LOT)
-      //    {
-      //      cout << "TPCMLDataInterface::process_event -  layer " << layer << " hit with "
-      //
-      //           << "phibin = " << phibin
-      //           << ",zbin = " << zbin
-      //           << ",side = " << side
-      //           << ",last_wavelet.size() = " << last_wavelet.size()
-      //           << ",last_zbin = " << last_zbin
-      //           << endl;
-      //    }
-      //
-      //    // more checks on signal continuity
-      //    if (last_wavelet.size() > 0)
-      //    {
-      //      if (side == 0)
-      //      {
-      //        assert(zbin - last_zbin == 1);
-      //      }
-      //      else
-      //      {
-      //        assert(last_zbin - zbin == 1);
-      //      }
-      //    }
+      // new wavelet?
+      if (last_layer != layer or last_phibin != phibin or last_side != side or abs(last_zbin - zbin) != 1)
+      {
+        // save last wavelet
+        if (last_wavelet.size() > 0)
+        {
+          const int datasize = writeWavelet(last_layer, last_side, last_phibin, last_wavelet_hittime, last_wavelet);
+          assert(datasize > 0);
+
+          nWavelet += 1;
+          sumDataSize += datasize;
+          layerChanDataSize[last_layer][last_side][last_phibin] += datasize;
+
+          last_wavelet.clear();
+          last_zbin = -1;
+        }
+
+        // z-R cut on digitized wavelet
+        PHG4CylinderCellGeom* layerGeom =
+            seggeo->GetLayerCellGeom(layer);
+        assert(layerGeom);
+        const double z_abs = fabs(layerGeom->get_zcenter(zbin));
+        const double r = layerGeom->get_radius();
+        TVector3 acceptanceVec(r, 0, z_abs - m_vertexZAcceptanceCut);
+        const double eta = acceptanceVec.PseudoRapidity();
+
+        if (eta > m_etaAcceptanceCut) continue;
+
+        // make new wavelet
+        last_layer = layer;
+        last_side = side;
+        last_phibin = phibin;
+
+        // time check
+        last_wavelet_hittime = (side == 0) ? (zbin) : (nZBins - 1 - zbin);
+        assert(last_wavelet_hittime >= 0);
+        assert(last_wavelet_hittime <= nZBins / 2);
+      }  //     if (last_layer != layer or last_phibin != phibin)
+
+      if (Verbosity() >= VERBOSITY_A_LOT)
+      {
+        cout << "TPCMLDataInterface::process_event -  layer " << layer << " hit with "
+
+             << "phibin = " << phibin
+             << ",zbin = " << zbin
+             << ",side = " << side
+             << ",last_wavelet.size() = " << last_wavelet.size()
+             << ",last_zbin = " << last_zbin
+             << endl;
+      }
+
+      // more checks on signal continuity
+      if (last_wavelet.size() > 0)
+      {
+        //        if (side == 0)
+        //        {
+        assert(zbin - last_zbin == 1);
+        //        }
+        //        else
+        //        {
+        //          assert(last_zbin - zbin == 1);
+        //        }
+      }
 
       // record adc
       unsigned int adc = hitr->second->getAdc();
-      //      last_wavelet.push_back(adc);
-      //      last_zbin = zbin;
+      last_wavelet.push_back(adc);
+      last_zbin = zbin;
 
       // statistics
       layerChanHit[layer][side][phibin] += 1;
@@ -594,16 +604,16 @@ int TPCMLDataInterface::process_event(PHCompositeNode* topNode)
     }
   }  //   for(SvtxHitMap::Iter iter = hits->begin(); iter != hits->end(); ++iter) {
 
-  //  // save last wavelet
-  //  if (last_wavelet.size() > 0)
-  //  {
-  //    const int datasize = writeWavelet(last_layer, last_side, last_phibin, last_wavelet_hittime, last_wavelet);
-  //    assert(datasize > 0);
-  //
-  //    nWavelet += 1;
-  //    sumDataSize += datasize;
-  //    layerChanDataSize[last_layer][last_side][last_phibin] += datasize;
-  //  }
+  // save last wavelet
+  if (last_wavelet.size() > 0)
+  {
+    const int datasize = writeWavelet(last_layer, last_side, last_phibin, last_wavelet_hittime, last_wavelet);
+    assert(datasize > 0);
+
+    nWavelet += 1;
+    sumDataSize += datasize;
+    layerChanDataSize[last_layer][last_side][last_phibin] += datasize;
+  }
 
   // statistics
   for (int layer = m_minLayer; layer <= m_maxLayer; ++layer)
@@ -646,11 +656,13 @@ int TPCMLDataInterface::process_event(PHCompositeNode* topNode)
       }
       assert(m_hLayerSumDataSize);
       m_hLayerSumDataSize->Fill(layer, sumData);
+      layerWaveletDataSize[(layer - m_minLayer)] += sumData;
     }  //    for (unsigned int side = 0; side < 2; ++side)
 
     // store in H5
     assert(layerH5DataSetMap[layer]);
     layerH5DataSetMap[layer]->write(layerDataBuffer[layer].data(), PredType::NATIVE_UINT16);
+    H5DataSetLayerWaveletDataSize->write(layerWaveletDataSize.data(), PredType::NATIVE_UINT32);
 
   }  //  for (unsigned int layer = m_minLayer; layer <= m_maxLayer; ++layer)
 
