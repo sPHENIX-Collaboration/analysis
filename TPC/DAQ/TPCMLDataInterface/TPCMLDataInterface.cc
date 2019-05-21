@@ -442,10 +442,10 @@ int TPCMLDataInterface::process_event(PHCompositeNode* topNode)
     layerDataBufferSize[layer][1] = layerGeom->get_zbins();
     layerDataBuffer[layer].resize(layerDataBufferSize[layer][0] * layerDataBufferSize[layer][1], 0);
 
-    static const vector<hsize_t> cdims({64, 64});
+    static const vector<hsize_t> cdims({32, 32});
     DSetCreatPropList ds_creatplist;
     ds_creatplist.setChunk(2, cdims.data());  // then modify it for compression
-    ds_creatplist.setDeflate(8);
+    ds_creatplist.setDeflate(6);
 
     layerH5DataSpaceMap[layer] = shared_ptr<DataSpace>(new DataSpace(2, layerDataBufferSize[layer].data()));
     layerH5DataSetMap[layer] = shared_ptr<DataSet>(new DataSet(h5Group->createDataSet(
