@@ -4,6 +4,7 @@ AM_CPPFLAGS = \
   -I$(includedir) \
   -I$(OFFLINE_MAIN)/include/eigen3 \
   -I$(OFFLINE_MAIN)/include \
+  -I$(OPT_SPHENIX)/include \
   -I`root-config --incdir`
 
 lib_LTLIBRARIES = \
@@ -13,12 +14,13 @@ AM_CXXFLAGS = -Werror
 
 libtpcmldatainterface_la_LDFLAGS = \
   -L$(libdir) \
-  -L$(OFFLINE_MAIN)/lib
+  -L$(OFFLINE_MAIN)/lib \
+  -L$(OPT_SPHENIX)/lib
 
 libtpcmldatainterface_la_LIBADD = \
   -lg4dst \
   -lfun4all \
-  -lhdf5_hl_cpp 
+  -lhdf5_cpp 
 
 pkginclude_HEADERS = \
   TPCMLDataInterface.h
