@@ -61,6 +61,27 @@ class TPCMLDataInterface : public SubsysReco
     m_saveDataStreamFile = saveDataStreamFile;
   }
 
+  double getEtaAcceptanceCut() const
+  {
+    return m_etaAcceptanceCut;
+  }
+
+  void setEtaAcceptanceCut(double etaAcceptanceCut)
+  {
+    m_etaAcceptanceCut = etaAcceptanceCut;
+  }
+
+  double getVertexZAcceptanceCut() const
+  {
+    return m_vertexZAcceptanceCut;
+  }
+
+  void setVertexZAcceptanceCut(double vertexZAcceptanceCut)
+  {
+    m_vertexZAcceptanceCut = vertexZAcceptanceCut;
+  }
+
+
  private:
 #ifndef __CINT__
 
