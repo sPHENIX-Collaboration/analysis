@@ -500,8 +500,12 @@ void DrawTPCDataStreamEmulator(
     //    const TString infile = "/sphenix/user/jinhuang/TPC/Multiplicity/AuAu200MB_170kHz_Iter2/AuAu200MB_170kHz_Iter2_SUM.xml_TPCDataStreamEmulator.root",
     //    const TString disc = "Au+Au 0-20fm Triggered + 170 kHz collision"  //
     //    const TString infile = "/sphenix/user/jinhuang/TPC/Multiplicity/AuAu200MB_170kHz_Stream_Iter3/AuAu200MB_170kHz_Stream_Iter3_SUM.xml_TPCDataStreamEmulator.root",
-    const TString infile = "/sphenix/user/jinhuang/TPC/TPCMLDataInterface/AuAu200_170kHz_10C_Iter1/AuAu200_170kHz_10C_Iter1_SUM.xml_TPCMLDataInterface.root",
-    const TString disc = "Au+Au 0-20fm 170 kHz collision in 13#mus"  //
+//    const TString infile = "/sphenix/user/jinhuang/TPC/TPCMLDataInterface//170kHz_RandomTimeFrame_Iter2/170kHz_RandomTimeFrame_Iter2_SUM.xml_TPCMLDataInterface.root",
+//    const TString disc = "Au+Au 0-20fm 170 kHz collision in 13#mus"  //
+        const TString infile = "/sphenix/user/jinhuang/TPC/TPCMLDataInterface/AuAu200_170kHz_MB_Iter2/AuAu200_170kHz_MB_Iter2_SUM.xml_TPCMLDataInterface.root",
+        const TString disc = "Au+Au 170 kHz collision + M.B. in 13#mus"
+        //        const TString infile = "/sphenix/user/jinhuang/TPC/TPCMLDataInterface/AuAu200_170kHz_10C_Iter2/AuAu200_170kHz_10C_Iter2_SUM.xml_TPCMLDataInterface.root",
+//        const TString disc = "Au+Au 0-20fm 170 kHz + 10%C collision in 13#mus"  //
                                                                      //        const TString infile = "data/TPCDataStreamEmulator_AuAu0-12fm_0kHz.root",
                                                                      //        const TString disc = "Au+Au MB Triggered + 0 kHz collision"  //
 )
