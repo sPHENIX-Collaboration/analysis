@@ -13,6 +13,7 @@
 /*HepMC include */
 #include <phhepmc/PHHepMCGenEvent.h>
 #include <phhepmc/PHHepMCGenEventMap.h>
+#include <HepMC/GenEvent.h>
 class TTree;
 class TFile;
 
