@@ -2,6 +2,10 @@
 #include "TrackProjectorPlaneECAL.h"
 
 /* Fun4All includes */
+#include <trackbase_historic/SvtxTrack.h>
+#include <trackbase_historic/SvtxTrackMap.h>
+#include <trackbase_historic/SvtxTrack_FastSim.h> 
+
 #include <phool/PHCompositeNode.h>
 #include <phool/PHIODataNode.h>
 
@@ -27,6 +31,8 @@
 #include <GenFit/RKTrackRep.h>
 #include <GenFit/FieldManager.h>
 
+
+
 using namespace std;
 
 TrackProjectorPlaneECAL::TrackProjectorPlaneECAL( PHCompositeNode *topNode ) :
@@ -49,7 +55,7 @@ TrackProjectorPlaneECAL::TrackProjectorPlaneECAL( PHCompositeNode *topNode ) :
 }
 
 bool
-TrackProjectorPlaneECAL::get_projected_position(  SvtxTrack * track, RawCluster* cluster, double arr_pos[3], const PROJECTION_SURFACE surf, const float surface_par )
+TrackProjectorPlaneECAL::get_projected_position(  SvtxTrack_FastSim * track, RawCluster* cluster, double arr_pos[3], const PROJECTION_SURFACE surf, const float surface_par )
 {
   /* set position components to 0 */
   arr_pos[0] = 0;
@@ -72,7 +78,7 @@ TrackProjectorPlaneECAL::get_projected_position(  SvtxTrack * track, RawCluster*
 }
 
 bool
-TrackProjectorPlaneECAL::get_projected_momentum(  SvtxTrack * track, RawCluster *cluster, double arr_mom[3], const PROJECTION_SURFACE surf, const float surface_par )
+TrackProjectorPlaneECAL::get_projected_momentum(  SvtxTrack_FastSim * track, RawCluster *cluster, double arr_mom[3], const PROJECTION_SURFACE surf, const float surface_par )
 {
   /* set momentum components to 0 */
   arr_mom[0] = 0;
@@ -93,39 +99,75 @@ TrackProjectorPlaneECAL::get_projected_momentum(  SvtxTrack * track, RawCluster 
 
   return false;
 }
-
-SvtxTrack*
+// Iterate through all tracks in the SvtxTrackMap. For every track, we iterate among all of its TrackStates. Each
+// track state corresponds to a point in space where the track object has been extrapolated to. Currently, we 
+// extrapolate via coresoftware/simulation/g4simulation/g4trackfastsim/PHG4TrackFastSim.cc. There are four
+// detectors in which we perform extrapolation to, the CEMC, FEMC, EEMC, and FHCAL. For every track, we find
+// the best extrapolation to the inputted 'RawCluster' object. We then compare the best states and return the
+// best extrapolated track. 
+SvtxTrack_FastSim*
 TrackProjectorPlaneECAL::get_best_track( SvtxTrackMap* trackmap, RawCluster* cluster)
 {
   std::vector< float > distance_from_track_to_cluster;
   bool there_is_a_track=false;
-
-  float deltaR = 20;
-
+  
+  float deltaR = -1;
+  cout << trackmap->size() << endl;
+  // Iterate all tracks in the trackmap
   for(SvtxTrackMap::ConstIter track_itr = trackmap->begin(); track_itr != trackmap->end(); track_itr++)
     {
-      SvtxTrack* the_track = dynamic_cast<SvtxTrack*>(track_itr->second);
+      SvtxTrack_FastSim* the_track = dynamic_cast<SvtxTrack_FastSim*>(track_itr->second);
       /* Check if the_track is null ptr */
       if(the_track == NULL)
-	{
-	  distance_from_track_to_cluster.push_back(NAN);
-	  continue;
-	}
-      /* Position vector of extrapolated track */
-      double posv[3] = {0.,0.,0.};
-      if(!get_projected_position( the_track,cluster, posv, TrackProjectorPlaneECAL::PLANE_CYLINDER, -1))
-	{
-	  //std::cout << "Track Projection Position NOT FOUND; next iteration" << std::endl;
-	  distance_from_track_to_cluster.push_back(NAN);
-	  continue;
-	}
+	 {
+	   cout << "Track is NULL, skipping..." << endl;
+	   distance_from_track_to_cluster.push_back(NAN);
+	   continue;
+	 }
       else
 	{
-	  distance_from_track_to_cluster.push_back(  sqrt( (cluster->get_x()-posv[0])*(cluster->get_x()-posv[0]) + 
-							   (cluster->get_y()-posv[1])*(cluster->get_y()-posv[1]) + 
-							   (cluster->get_z()-posv[2])*(cluster->get_z()-posv[2]) )  );
 	  there_is_a_track = true;
 	}
+      float distance_from_state_to_cluster = 9990;
+      // Iterate all track states in the track object
+      for(SvtxTrack::ConstStateIter state_itr = the_track->begin_states(); state_itr != the_track->end_states(); state_itr++)
+	{
+	  float distance_from_state_to_cluster_temp = 9999;
+	 
+	  SvtxTrackState* the_state = dynamic_cast<SvtxTrackState*>(state_itr->second);
+	  /* Check if the_state is a NULL pointer */
+	  if(the_state==NULL)
+	    {
+	      cout << "State is NULL, skipping..." << endl;
+	      continue;
+	    }
+	  //cout<<the_state->get_x()<< " : " <<the_state->get_y() << " : " <<the_state->get_z() << endl;
+	  distance_from_state_to_cluster_temp = ( sqrt( (cluster->get_x()-the_state->get_x())*(cluster->get_x()-the_state->get_x()) + (cluster->get_y()-the_state->get_y())*(cluster->get_y()-the_state->get_y()) + (cluster->get_z()-the_state->get_z())*(cluster->get_z()-the_state->get_z())));
+	  if(distance_from_state_to_cluster_temp < distance_from_state_to_cluster)
+	    {
+	      distance_from_state_to_cluster = distance_from_state_to_cluster_temp;
+	    }
+	}
+      if(distance_from_state_to_cluster!=9990)
+	{
+	  distance_from_track_to_cluster.push_back(distance_from_state_to_cluster);
+	}
+     
+      /* Position vector of extrapolated track */
+      //double posv[3] = {0.,0.,0.};
+      //if(!get_projected_position( the_track,cluster, posv, TrackProjectorPlaneECAL::PLANE_CYLINDER, -1))
+      //	{
+	  //std::cout << "Track Projection Position NOT FOUND; next iteration" << std::endl;
+      //	  distance_from_track_to_cluster.push_back(NAN);
+      //	  continue;
+      //	}
+      // else
+	//{
+      // distance_from_track_to_cluster.push_back(  sqrt( (cluster->get_x()-posv[0])*(cluster->get_x()-posv[0]) + 
+      //						   (cluster->get_y()-posv[1])*(cluster->get_y()-posv[1]) + 
+      //						   (cluster->get_z()-posv[2])*(cluster->get_z()-posv[2]) )  );
+      //  
+      //}
     }
   
   /* If no track was found, return NULL */
@@ -147,12 +189,68 @@ TrackProjectorPlaneECAL::get_best_track( SvtxTrackMap* trackmap, RawCluster* clu
     }
   /* Test min_distance with deltaR */
   if(deltaR<0) 
-    return trackmap->get(min_distance_index);
+    return dynamic_cast<SvtxTrack_FastSim*>(trackmap->get(min_distance_index));
   else if(min_distance<deltaR) 
-    return trackmap->get(min_distance_index);
+    return dynamic_cast<SvtxTrack_FastSim*>(trackmap->get(min_distance_index));
   else 
     return NULL;
 }
+
+
+SvtxTrackState*
+TrackProjectorPlaneECAL::get_best_state( SvtxTrack_FastSim* the_track, RawCluster* cluster)
+{
+  /* Check if the_track is null ptr */
+  float distance_from_state_to_cluster = 9990;
+  int best_state_index = -1;
+  int count = 0; 
+  // Iterate all track states in the track object
+  for(SvtxTrack::ConstStateIter state_itr = the_track->begin_states(); state_itr != the_track->end_states(); state_itr++)
+    {
+      float distance_from_state_to_cluster_temp = 9999;
+      
+      SvtxTrackState* the_state = dynamic_cast<SvtxTrackState*>(state_itr->second);
+      /* Check if the_state is a NULL pointer */
+      if(the_state==NULL)
+	{
+	  cout << "State is NULL, skipping..." << endl;
+	  continue;
+	}
+      //cout<<the_state->get_x()<< " : " <<the_state->get_y() << " : " <<the_state->get_z() << endl;
+      distance_from_state_to_cluster_temp = ( sqrt( (cluster->get_x()-the_state->get_x())*(cluster->get_x()-the_state->get_x()) + (cluster->get_y()-the_state->get_y())*(cluster->get_y()-the_state->get_y()) + (cluster->get_z()-the_state->get_z())*(cluster->get_z()-the_state->get_z())));
+      if(distance_from_state_to_cluster_temp < distance_from_state_to_cluster)
+	{
+	  best_state_index = count;
+	  distance_from_state_to_cluster = distance_from_state_to_cluster_temp;
+	}
+      count++;
+    }
+  if(distance_from_state_to_cluster==-1||best_state_index==-1)
+    {
+      cout << "State Map issue, returning NULL" << endl;
+    }
+  count = 0;
+  for(SvtxTrack::ConstStateIter state_itr = the_track->begin_states(); state_itr != the_track->end_states(); state_itr++)
+    {
+      if(count!=best_state_index)
+	{
+	  count++;
+	  continue;
+	}
+      else
+	{
+	  SvtxTrackState* the_state = dynamic_cast<SvtxTrackState*>(state_itr->second);
+	  return the_state;
+	}
+    }
+
+  return NULL;
+}
+
+
+
+
+
 
 char
 TrackProjectorPlaneECAL::get_detector()
@@ -174,23 +272,28 @@ TrackProjectorPlaneECAL::get_detector()
 }
 
 SvtxTrackState*
-TrackProjectorPlaneECAL::project_track(  SvtxTrack * track, RawCluster* cluster, const PROJECTION_SURFACE surf, const float surface_par )
+TrackProjectorPlaneECAL::project_track(  SvtxTrack_FastSim * track, RawCluster* cluster, const PROJECTION_SURFACE surf, const float surface_par )
 {  
   auto last_state_iter = --track->end_states();
   SvtxTrackState * trackstate = last_state_iter->second;
-
+ 
   if(!trackstate) {
     cout << "No state found here!" << endl;
     return NULL;
   }
-
+  
   int _pid_guess = 11;
   auto rep = unique_ptr<genfit::AbsTrackRep> (new genfit::RKTrackRep(_pid_guess));
 
   unique_ptr<genfit::MeasuredStateOnPlane> msop80 = nullptr;
   
   {
+    cout << track->size_states() << endl;
     TVector3 pos(trackstate->get_x(), trackstate->get_y(), trackstate->get_z());
+    cout << pos(0) << " : " << pos(1) << " : " << pos(2) << endl;
+    //pos(0) = 0.0;
+    //pos(1) = 0.0;
+    //pos(2) = 0.0;
     TVector3 mom(trackstate->get_px(), trackstate->get_py(), trackstate->get_pz());
     TMatrixDSym cov(6);
     for (int i = 0; i < 6; ++i) {
@@ -248,13 +351,17 @@ TrackProjectorPlaneECAL::project_track(  SvtxTrack * track, RawCluster* cluster,
 
 
 	// Extrapolate to detector 
-	rep->extrapolateToPlane(*msop80, genfit::SharedPlanePtr( new genfit::DetPlane( cluster_pos, cluster_norm ) ), false, false);
+	rep->extrapolateToCylinder(*msop80, 95, TVector3(0,0,0),  TVector3(0,0,1));
+	//rep->extrapolateToPlane(*msop80, genfit::SharedPlanePtr( new genfit::DetPlane( cluster_pos, cluster_norm ) ), false, false);
+	
       }
     else if ( surf == PLANEXY )
-      rep->extrapolateToPlane(*msop80, genfit::SharedPlanePtr( new genfit::DetPlane( TVector3(0, 0, surface_par), TVector3(0, 0, 1) ) ), false, false);
-
+      {
+	rep->extrapolateToPlane(*msop80, genfit::SharedPlanePtr( new genfit::DetPlane( TVector3(0, 0, surface_par), TVector3(0, 0, 1) ) ), false, false);
+	
+      }
   } catch (...) {
-    //cout << "track extrapolateToXX failed" << endl;
+    cout << "track extrapolateToXX failed" << endl;
     return NULL;
   }
 
