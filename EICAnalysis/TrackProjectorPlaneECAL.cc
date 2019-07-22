@@ -112,7 +112,7 @@ TrackProjectorPlaneECAL::get_best_track( SvtxTrackMap* trackmap, RawCluster* clu
   bool there_is_a_track=false;
   
   float deltaR = -1;
-  cout << trackmap->size() << endl;
+
   // Iterate all tracks in the trackmap
   for(SvtxTrackMap::ConstIter track_itr = trackmap->begin(); track_itr != trackmap->end(); track_itr++)
     {

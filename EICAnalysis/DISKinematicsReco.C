@@ -487,7 +487,7 @@ DISKinematicsReco::InsertCandidateFromCluster( type_map_tcan& candidateMap , Raw
   /* If matching truth primary particle found: update truth information */
   CaloRawClusterEval* clustereval = caloevalstack->get_rawcluster_eval();
   PHG4Particle* primary = clustereval->max_truth_primary_particle_by_energy(cluster);
-  cout << "E new" << endl;
+
   if ( primary )
     {
       /* get particle momenta and theta, phi angles */
