@@ -11,7 +11,7 @@
 #include <trackbase_historic/SvtxTrackMap.h>
 #include <trackbase_historic/SvtxTrack_FastSim.h>
 
-#include <g4hough/SvtxTrackMap_v1.h>
+#include <trackbase_historic/SvtxTrackMap_v1.h>
 
 #include <phool/getClass.h>
 

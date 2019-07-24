@@ -13,10 +13,10 @@
 
 #include <phgeom/PHGeomUtility.h>
 
-#include <g4hough/SvtxTrack.h>
-#include <g4hough/SvtxTrackState_v1.h>
-#include <g4hough/PHG4HoughTransform.h>
-#include <g4hough/SvtxTrackMap_v1.h>
+#include <trackbase_historic/SvtxTrack.h>
+#include <trackbase_historic/SvtxTrackState_v1.h>
+//#include <g4hough/PHG4HoughTransform.h>
+#include <trackbase_historic/SvtxTrackMap_v1.h>
 
 #include <calobase/RawCluster.h>
 #include <calobase/RawTowerDefs.h>
