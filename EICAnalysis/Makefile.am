@@ -24,7 +24,8 @@ libeicana_la_LIBADD = \
   -lgenfit2 \
   -lphfield \
   -lgenfit2exp \
-  -lPHGenFit
+  -lPHGenFit \
+  -ltrackbase_historic_io
 
 
 pkginclude_HEADERS = \
