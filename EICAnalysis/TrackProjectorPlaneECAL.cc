@@ -132,6 +132,7 @@ TrackProjectorPlaneECAL::get_best_track( SvtxTrackMap* trackmap, RawCluster* clu
       // Iterate all track states in the track object
       for(SvtxTrack::ConstStateIter state_itr = the_track->begin_states(); state_itr != the_track->end_states(); state_itr++)
 	{
+	  
 	  float distance_from_state_to_cluster_temp = 9999;
 	 
 	  SvtxTrackState* the_state = dynamic_cast<SvtxTrackState*>(state_itr->second);
@@ -143,14 +144,20 @@ TrackProjectorPlaneECAL::get_best_track( SvtxTrackMap* trackmap, RawCluster* clu
 	    }
 	  //cout<<the_state->get_x()<< " : " <<the_state->get_y() << " : " <<the_state->get_z() << endl;
 	  distance_from_state_to_cluster_temp = ( sqrt( (cluster->get_x()-the_state->get_x())*(cluster->get_x()-the_state->get_x()) + (cluster->get_y()-the_state->get_y())*(cluster->get_y()-the_state->get_y()) + (cluster->get_z()-the_state->get_z())*(cluster->get_z()-the_state->get_z())));
+	  
+	  cout << "Cluster : " << cluster->get_x() << " " << cluster->get_y() << " " << cluster->get_z() << endl;
+	  cout << "State : " << the_state->get_x() << " " << the_state->get_y() << " " << the_state->get_z() << endl;
+	  cout << "Name : " << the_state->get_name() << endl;
+	  cout << " " << endl;
 	  if(distance_from_state_to_cluster_temp < distance_from_state_to_cluster)
 	    {
-	      distance_from_state_to_cluster = distance_from_state_to_cluster_temp;
+	      distance_from_state_to_cluster = distance_from_state_to_cluster_temp;	      
 	    }
 	}
       if(distance_from_state_to_cluster!=9990)
 	{
 	  distance_from_track_to_cluster.push_back(distance_from_state_to_cluster);
+	  
 	}
      
       /* Position vector of extrapolated track */
