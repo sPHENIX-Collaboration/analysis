@@ -112,7 +112,7 @@ TrackProjectorPlaneECAL::get_best_track( SvtxTrackMap* trackmap, RawCluster* clu
   bool there_is_a_track=false;
   
   float deltaR = -1;
-
+ 
   // Iterate all tracks in the trackmap
   for(SvtxTrackMap::ConstIter track_itr = trackmap->begin(); track_itr != trackmap->end(); track_itr++)
     {
@@ -120,7 +120,6 @@ TrackProjectorPlaneECAL::get_best_track( SvtxTrackMap* trackmap, RawCluster* clu
       /* Check if the_track is null ptr */
       if(the_track == NULL)
 	 {
-	   cout << "Track is NULL, skipping..." << endl;
 	   distance_from_track_to_cluster.push_back(NAN);
 	   continue;
 	 }
@@ -132,7 +131,6 @@ TrackProjectorPlaneECAL::get_best_track( SvtxTrackMap* trackmap, RawCluster* clu
       // Iterate all track states in the track object
       for(SvtxTrack::ConstStateIter state_itr = the_track->begin_states(); state_itr != the_track->end_states(); state_itr++)
 	{
-	  
 	  float distance_from_state_to_cluster_temp = 9999;
 	 
 	  SvtxTrackState* the_state = dynamic_cast<SvtxTrackState*>(state_itr->second);
@@ -145,10 +143,10 @@ TrackProjectorPlaneECAL::get_best_track( SvtxTrackMap* trackmap, RawCluster* clu
 	  //cout<<the_state->get_x()<< " : " <<the_state->get_y() << " : " <<the_state->get_z() << endl;
 	  distance_from_state_to_cluster_temp = ( sqrt( (cluster->get_x()-the_state->get_x())*(cluster->get_x()-the_state->get_x()) + (cluster->get_y()-the_state->get_y())*(cluster->get_y()-the_state->get_y()) + (cluster->get_z()-the_state->get_z())*(cluster->get_z()-the_state->get_z())));
 	  
-	  cout << "Cluster : " << cluster->get_x() << " " << cluster->get_y() << " " << cluster->get_z() << endl;
+	  /*cout << "Cluster : " << cluster->get_x() << " " << cluster->get_y() << " " << cluster->get_z() << endl;
 	  cout << "State : " << the_state->get_x() << " " << the_state->get_y() << " " << the_state->get_z() << endl;
 	  cout << "Name : " << the_state->get_name() << endl;
-	  cout << " " << endl;
+	  cout << " " << endl;*/
 	  if(distance_from_state_to_cluster_temp < distance_from_state_to_cluster)
 	    {
 	      distance_from_state_to_cluster = distance_from_state_to_cluster_temp;	      
