@@ -6,7 +6,7 @@ AC_ENABLE_STATIC(no)
 LT_INIT
 
 if test $ac_cv_prog_gxx = yes; then
-  CXXFLAGS="$CXXFLAGS -Wall -Werror"
+  CXXFLAGS="$CXXFLAGS -Wall -Werror -g"
 fi
 CXXFLAGS="$CXXFLAGS"
 ROOTLIBS=`root-config --libs`
