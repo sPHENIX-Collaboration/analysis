@@ -70,7 +70,7 @@ class Conversion
       }
     }
     ///sets the photon
-    inline void setParent(PHG4Particle* parent){photon=parent;}
+    void setParent(PHG4Particle* parent);
 
     /// @return the number of matched reco tracks
     inline int recoCount()const{

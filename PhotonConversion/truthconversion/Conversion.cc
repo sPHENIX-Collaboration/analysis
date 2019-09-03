@@ -37,6 +37,7 @@ Conversion::Conversion(PHG4VtxPoint* vtx,int verbosity){
   pairTruthReco1.first=0; 
   pairTruthReco2.first=0; 
 }
+
 Conversion::Conversion(PHG4VtxPoint* vtx,SvtxTrackEval *trackeval,int verbosity){
   this->trackeval=trackeval;
   this->vtx=vtx;
@@ -62,6 +63,7 @@ Conversion::~Conversion(){
   truthSvtxVtx=NULL;
   //dont delete the points as you are not the owner and did not make your own copies
 }
+
 void Conversion::setElectron(PHG4Particle* e){
   if (e1)
   {
@@ -124,6 +126,13 @@ PHG4Particle* Conversion::getPositron(){
   }
   else{
     return e1;
+  }
+}
+
+void Conversion::setParent(PHG4Particle* parent){
+  if(!photon) photon=parent;
+  else{
+    if(!(*photon==*parent)) cerr<<"Bad photon matching!"<<endl;
   }
 }
 
