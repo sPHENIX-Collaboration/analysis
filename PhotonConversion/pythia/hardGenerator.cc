@@ -14,10 +14,8 @@ void generator(std::string filename, long nEvents, bool signalOnly=false){
   /*pythia set up*/
   Pythia pythiaengine;
   pythiaengine.readString("Beams:eCM = 200.");
-  pythiaengine.readString("SoftQCD:nonDiffractive = on");
-  pythiaengine.readString("SoftQCD:singleDiffractive = on");
-  pythiaengine.readString("SoftQCD:doubleDiffractive = on");
-  pythiaengine.readString("PhaseSpace:pTHatMin = 0");
+  pythiaengine.readString("HardQCD:all = on");
+  pythiaengine.readString("PhaseSpace:pTHatMin = 4");
   pythiaengine.readString("Random::setSeed = on");
   pythiaengine.readString("Random::seed =0");
   //pythiaengine.readString("111:onMode = off"); ///pi0 won't decay
