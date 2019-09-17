@@ -129,10 +129,23 @@ PHG4Particle* Conversion::getPositron(){
   }
 }
 
-void Conversion::setParent(PHG4Particle* parent){
+bool Conversion::setParent(PHG4Particle* parent){
+  bool r =true;
   if(!photon) photon=parent;
   else{
     if(!(*photon==*parent)) cerr<<"Bad photon matching!"<<endl;
+    r=false;
+  }
+  return r;
+}
+
+void Conversion::setPrimaryPhoton(PHG4Particle* parent,PHG4TruthInfoContainer* truthinfo){
+  if(!setParent(parent)) cerr<<"Bad photon matching during primary photon set"<<endl;
+  if(photon->get_track_id()==parent->get_primary_id()){
+    primaryPhoton=photon;
+  }
+  else{
+    primaryPhoton=truthinfo->GetParticle(parent->get_primary_id());
   }
 }
 

@@ -79,7 +79,7 @@ int TruthConversionEval::InitRun(PHCompositeNode *topNode)
 		_observTree->Branch("truth_pT", &_b_truth_pT);
 		_observTree->Branch("reco_pT", &_b_reco_pT);
 		_observTree->Branch("track_pT",&_b_alltrack_pT) ;
-		_observTree->Branch("photon_pT",&_b_alltrack_pT) ;
+		_observTree->Branch("photon_pT",&_b_allphoton_pT) ;
 
 		_vtxingTree = new TTree("vtxingTree","data predicting vtx from track pair");
 		_vtxingTree->SetAutoSave(300);
@@ -233,10 +233,12 @@ int TruthConversionEval::process_event(PHCompositeNode *topNode)
 	_b_truth_pT.clear();
 	_b_reco_pT.clear();
 	_b_alltrack_pT.clear();
+  _b_allphoton_pT.clear();
 	cout<<"init truth loop"<<endl;
 
 	for ( PHG4TruthInfoContainer::ConstIterator iter = range.first; iter != range.second; ++iter ) {
 		PHG4Particle* g4particle = iter->second;
+    if(g4particle->get_pid()==22&&g4particle->get_track_id()==g4particle->get_primary_id())_b_allphoton_pT.push_back(sqrt(g4particle->get_px()*g4particle->get_px()+g4particle->get_py()*g4particle->get_py()));
 		PHG4Particle* parent =_truthinfo->GetParticle(g4particle->get_parent_id());
 		PHG4VtxPoint* vtx=_truthinfo->GetVtx(g4particle->get_vtx_id()); //get the vertex
 		if(!vtx){
@@ -261,7 +263,7 @@ int TruthConversionEval::process_event(PHCompositeNode *topNode)
 				//initialize the conversion object -don't use constructor b/c setters have error handling
 				(mapConversions[vtx->get_id()]).setElectron(g4particle);
 				(mapConversions[vtx->get_id()]).setVtx(vtx);
-				(mapConversions[vtx->get_id()]).setParent(parent);
+				(mapConversions[vtx->get_id()]).setPrimaryPhoton(parent,_truthinfo);
 				(mapConversions[vtx->get_id()]).setEmbed(embedID);
 				PHG4Particle* grand =_truthinfo->GetParticle(parent->get_parent_id()); //grandparent
 				if (grand) (mapConversions[vtx->get_id()]).setSourceId(grand->get_pid());//record pid of the photon's source
@@ -322,7 +324,7 @@ void TruthConversionEval::numUnique(std::map<int,Conversion> *mymap=NULL,SvtxTra
   cout<<"start conversion analysis loop"<<endl;
   for (std::map<int,Conversion>::iterator i = mymap->begin(); i != mymap->end(); ++i) {
     TLorentzVector tlv_photon,tlv_electron,tlv_positron; //make tlv for each particle 
-    PHG4Particle *photon = i->second.getPhoton(); //set the photon
+    PHG4Particle *photon = i->second.getPrimaryPhoton(); //set the photon
 
     if(photon)tlv_photon.SetPxPyPzE(photon->get_px(),photon->get_py(),photon->get_pz(),photon->get_e()); //intialize
     else cerr<<"No truth photon for conversion"<<endl;
