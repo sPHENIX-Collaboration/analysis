@@ -29,6 +29,9 @@ void generator(std::string filename, long nEvents, bool signalOnly=false){
   photonTree->SetAutoSave(300);
   vector<float> photon_pT;
   photonTree->Branch("photon_pT",&photon_pT);
+  TTree *nophotonTree = new TTree("nophotonTree","phat phirn tree");
+  unsigned long noPhotonEvents=0;
+  nophotonTree->Branch("n",&noPhotonEvents);
 
   for (int iEvent = 0; iEvent < nEvents; ++iEvent)
   {
@@ -44,8 +47,7 @@ void generator(std::string filename, long nEvents, bool signalOnly=false){
     }
     if (photon_pT.size()>0)photonTree->Fill();
     else{
-      photon_pT.push_back(0);
-      photonTree->Fill();
+      noPhotonEvents++;
     }
 /*    if(!signalOnly||photon_pT.size()>0){
       HepMC::GenEvent* hepmcevtfrag = new HepMC::GenEvent(); //create HepMC event
@@ -54,6 +56,7 @@ void generator(std::string filename, long nEvents, bool signalOnly=false){
       delete hepmcevtfrag; //delete event so it can be redeclared next time
     }*/
   }
+  nophotonTree->Fill();
   outFile->Write();
   outFile->Close();
   pythiaengine.stat();
