@@ -6,10 +6,10 @@ using namespace Pythia8;
 using namespace std;
 
 void generator(std::string filename, long nEvents, bool signalOnly=false){
-  using namespace HepMC;
+/*  using namespace HepMC;
   string hepName = filename+".dat";    //filenames
   HepMC::Pythia8ToHepMC ToHepMC;    // Interface for conversion from Pythia8::Event to HepMC event.
-  HepMC::IO_GenEvent ascii_io(hepName, std::ios::out); //file where HepMC events will be stored.
+  HepMC::IO_GenEvent ascii_io(hepName, std::ios::out);*/ //file where HepMC events will be stored.
 
   /*pythia set up*/
   Pythia pythiaengine;
@@ -26,6 +26,7 @@ void generator(std::string filename, long nEvents, bool signalOnly=false){
   string tfilename = filename+"_analysis.root";
   TFile *outFile = new TFile(tfilename.c_str(),"RECREATE");
   TTree *photonTree = new TTree("photonTree","phat phirn tree");
+  photonTree->SetAutoSave(300);
   vector<float> photon_pT;
   photonTree->Branch("photon_pT",&photon_pT);
 
@@ -42,14 +43,19 @@ void generator(std::string filename, long nEvents, bool signalOnly=false){
           &&TMath::Abs(pythiaengine.event[ipart].eta()))photon_pT.push_back(pythiaengine.event[ipart].pT());
     }
     if (photon_pT.size()>0)photonTree->Fill();
-    if(!signalOnly||photon_pT.size()>0){
+    else{
+      photon_pT.push_back(0);
+      photonTree->Fill();
+    }
+/*    if(!signalOnly||photon_pT.size()>0){
       HepMC::GenEvent* hepmcevtfrag = new HepMC::GenEvent(); //create HepMC event
       ToHepMC.fill_next_event( pythiaengine, hepmcevtfrag ); //convert event from pythia to HepMC
       ascii_io << hepmcevtfrag;//write event to file
       delete hepmcevtfrag; //delete event so it can be redeclared next time
-    }
+    }*/
   }
   outFile->Write();
+  outFile->Close();
   pythiaengine.stat();
 }
 
