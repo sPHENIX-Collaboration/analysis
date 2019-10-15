@@ -107,13 +107,22 @@ int EpFinderEval::Init(PHCompositeNode *topNode) {
 	_eval_tree_event->Branch("rplane_angle", &rplane_angle, "rplane_angle/F");
 	_eval_tree_event->Branch("bimpact", &bimpact, "bimpact/F");
 	_eval_tree_event->Branch("prim_rplane_angle", &prim_rplane_angle, "prim_rplane_angle/F");
+
 	_eval_tree_event->Branch("fprim_rplane_angle", &fprim_rplane_angle, "fprim_rplane_angle/F");
 	_eval_tree_event->Branch("fprim_phiweighted_rplane_angle", &fprim_phiweighted_rplane_angle, "fprim_phiweighted_rplane_angle/F");
 	_eval_tree_event->Branch("fprim_phiweightedandshifted_rplane_angle", &fprim_phiweightedandshifted_rplane_angle, "fprim_phiweightedandshifted_rplane_angle/F");
 
+	_eval_tree_event->Branch("rfprim_rplane_angle", &rfprim_rplane_angle, "rfprim_rplane_angle/F");
+	_eval_tree_event->Branch("rfprim_phiweighted_rplane_angle", &rfprim_phiweighted_rplane_angle, "rfprim_phiweighted_rplane_angle/F");
+	_eval_tree_event->Branch("rfprim_phiweightedandshifted_rplane_angle", &rfprim_phiweightedandshifted_rplane_angle, "rfprim_phiweightedandshifted_rplane_angle/F");
+
 	_eval_tree_event->Branch("femc_raw_rplane_angle", &femc_raw_rplane_angle, "femc_raw_rplane_angle/F");
 	_eval_tree_event->Branch("femc_phiweighted_rplane_angle", &femc_phiweighted_rplane_angle, "femc_phiweighted_rplane_angle/F");
 	_eval_tree_event->Branch("femc_phiweightedandshifted_rplane_angle", &femc_phiweightedandshifted_rplane_angle, "femc_phiweightedandshifted_rplane_angle/F");
+
+	_eval_tree_event->Branch("rfemc_raw_rplane_angle", &rfemc_raw_rplane_angle, "rfemc_raw_rplane_angle/F");
+	_eval_tree_event->Branch("rfemc_phiweighted_rplane_angle", &rfemc_phiweighted_rplane_angle, "rfemc_phiweighted_rplane_angle/F");
+	_eval_tree_event->Branch("rfemc_phiweightedandshifted_rplane_angle", &rfemc_phiweightedandshifted_rplane_angle, "rfemc_phiweightedandshifted_rplane_angle/F");
 
 	_eval_tree_event->Branch("femcL_raw_rplane_angle", &femcL_raw_rplane_angle, "femcL_raw_rplane_angle/F");
 	_eval_tree_event->Branch("femcL_phiweighted_rplane_angle", &femcL_phiweighted_rplane_angle, "femcL_phiweighted_rplane_angle/F");
@@ -123,17 +132,22 @@ int EpFinderEval::Init(PHCompositeNode *topNode) {
 	_eval_tree_event->Branch("femcR_phiweighted_rplane_angle", &femcR_phiweighted_rplane_angle, "femcR_phiweighted_rplane_angle/F");
 	_eval_tree_event->Branch("femcR_phiweightedandshifted_rplane_angle", &femcR_phiweightedandshifted_rplane_angle, "femcR_phiweightedandshifted_rplane_angle/F");
 
-	RpFinder = new EpFinder(3,"EpFinderCorrectionHistograms_OUTPUT.root", "EpFinderCorrectionHistograms_INPUT.root", 181, 181); 
+	RpFinder = new EpFinder(4,"EpFinderCorrectionHistograms_OUTPUT.root", "EpFinderCorrectionHistograms_INPUT.root", 181, 181); 
 	RpFinder->SetnMipThreshold(0.0); 
 	RpFinder->SetMaxTileWeight(100.0); 
 	cout << RpFinder->Report() << endl; 
 
-	RpFinderL = new EpFinder(3, "L_EpFinderCorrectionHistograms_OUTPUT.root", "L_EpFinderCorrectionHistograms_INPUT.root", 181, 181); 
+	rRpFinder = new EpFinder(4,"rEpFinderCorrectionHistograms_OUTPUT.root", "rEpFinderCorrectionHistograms_INPUT.root", 181, 181); 
+	rRpFinder->SetnMipThreshold(0.0); 
+	rRpFinder->SetMaxTileWeight(100.0); 
+	cout << rRpFinder->Report() << endl; 
+
+	RpFinderL = new EpFinder(4, "L_EpFinderCorrectionHistograms_OUTPUT.root", "L_EpFinderCorrectionHistograms_INPUT.root", 181, 181); 
 	RpFinderL->SetnMipThreshold(0.0); 
 	RpFinderL->SetMaxTileWeight(100.0); 
 	cout << RpFinderL->Report() << endl; 
 
-	RpFinderR = new EpFinder(3, "R_EpFinderCorrectionHistograms_OUTPUT.root", "R_EpFinderCorrectionHistograms_INPUT.root", 181, 181); 
+	RpFinderR = new EpFinder(4, "R_EpFinderCorrectionHistograms_OUTPUT.root", "R_EpFinderCorrectionHistograms_INPUT.root", 181, 181); 
 	RpFinderR->SetnMipThreshold(0.0); 
 	RpFinderR->SetMaxTileWeight(100.0); 
 	cout << RpFinderR->Report() << endl; 
@@ -144,6 +158,10 @@ int EpFinderEval::Init(PHCompositeNode *topNode) {
 	fprimRpFinder = new EpFinder(1, "fprimEpFinderCorrectionHistograms_OUTPUT.root", "fprimEpFinderCorrectionHistograms_INPUT.root",
 				     FPRIM_PHI_BINS, FPRIM_ETA_BINS); 
 	cout << fprimRpFinder->Report() << endl; 
+
+	rfprimRpFinder = new EpFinder(1, "rfprimEpFinderCorrectionHistograms_OUTPUT.root", "rfprimEpFinderCorrectionHistograms_INPUT.root",
+				     FPRIM_PHI_BINS, RFPRIM_ETA_BINS); 
+	cout << rfprimRpFinder->Report() << endl; 
 
 	return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -182,12 +200,14 @@ int EpFinderEval::End(PHCompositeNode *topNode) {
 	_eval_tree_event->Write();
 
 	RpFinder->Finish(); 
+	rRpFinder->Finish(); 
 	RpFinderL->Finish(); 
 	RpFinderR->Finish(); 
 	primRpFinder->Finish(); 
 	fprimRpFinder->Finish(); 
 	
 	delete RpFinder;
+	delete rRpFinder;
 	delete RpFinderL;
 	delete RpFinderR;
 	delete primRpFinder;	
@@ -241,6 +261,12 @@ void EpFinderEval::fill_tree(PHCompositeNode *topNode) {
 
     for(int i=0; i<PHI_BINS; i++){
       phi_list[i].clear(); 
+      rphi_list[i].clear(); 
+    }
+
+    for(int i=0; i<FPRIM_PHI_BINS; i++){
+      fprim_phi_list[i].clear(); 
+      rfprim_phi_list[i].clear(); 
     }
 
     // generate a list of all towers in the same phi range
@@ -257,6 +283,7 @@ void EpFinderEval::fill_tree(PHCompositeNode *topNode) {
 	  int idx = GetPhiBin(tgeo->get_phi(), PHI_BINS); 
 	  std::pair<int,int> newPair(tgeo->get_column()-500,tgeo->get_row()-500); 
 	  phi_list[idx].push_back(newPair); 
+	  if(tgeo->get_eta()<2.4) rphi_list[idx].push_back(newPair); 
 	}
       }
     }
@@ -267,6 +294,10 @@ void EpFinderEval::fill_tree(PHCompositeNode *topNode) {
       for(int j=0; j<FPRIM_ETA_BINS; j++){
         std::pair<int,int> newPair(i,j); 
 	fprim_phi_list[i].push_back(newPair); 	
+      }
+      for(int j=0; j<RFPRIM_ETA_BINS; j++){
+        std::pair<int,int> newPair(i,j); 
+	rfprim_phi_list[i].push_back(newPair); 	
       }
     }
 
@@ -299,6 +330,9 @@ void EpFinderEval::fill_tree(PHCompositeNode *topNode) {
 
   std::vector<EpHit> fphits; 
   fphits.clear(); 
+ 
+  std::vector<EpHit> rfphits; 
+  rfphits.clear(); 
  
   PHG4TruthInfoContainer::ConstRange range = _truth_container->GetPrimaryParticleRange();
 
@@ -348,6 +382,20 @@ void EpFinderEval::fill_tree(PHCompositeNode *topNode) {
       fphits.push_back(newHit); 
     }
 
+    if ( (partMom.Eta() >= 1.4) &&
+	 (partMom.Eta() < 2.4)) {
+
+      EpHit newHit; 
+
+      newHit.nMip = 1; 
+      newHit.phi = partMom.Phi();
+      newHit.ix = GetPhiBin(partMom.Phi(), FPRIM_PHI_BINS); 
+      newHit.iy = GetEtaBin(partMom.Eta(), 1.4, 2.4, RFPRIM_ETA_BINS);      
+      newHit.samePhi = &rfprim_phi_list[newHit.ix]; 
+
+      rfphits.push_back(newHit); 
+    }
+
 
   }
 
@@ -361,8 +409,15 @@ void EpFinderEval::fill_tree(PHCompositeNode *topNode) {
   fprim_phiweighted_rplane_angle = fprimRpResult.PhiWeightedPsi(2); 
   fprim_phiweightedandshifted_rplane_angle = fprimRpResult.PhiWeightedAndShiftedPsi(2); 
 
+  EpInfo rfprimRpResult = rfprimRpFinder->Results(&rfphits,0); 
+
+  rfprim_rplane_angle = rfprimRpResult.RawPsi(2); 
+  rfprim_phiweighted_rplane_angle = rfprimRpResult.PhiWeightedPsi(2); 
+  rfprim_phiweightedandshifted_rplane_angle = rfprimRpResult.PhiWeightedAndShiftedPsi(2); 
+
   phits.clear(); 
   fphits.clear(); 
+  rfphits.clear(); 
 
   // --------------------------------
   // Run the FEMC event plane finder
@@ -370,6 +425,9 @@ void EpFinderEval::fill_tree(PHCompositeNode *topNode) {
 
   std::vector<EpHit> hits; 
   hits.clear(); 
+
+  std::vector<EpHit> rhits; 
+  rhits.clear(); 
 
   std::vector<EpHit> hitsL; 
   hitsL.clear(); 
@@ -402,7 +460,12 @@ void EpFinderEval::fill_tree(PHCompositeNode *topNode) {
 	if((idx>=(PHI_BINS/4))&&(idx<(3*PHI_BINS/4))) 
 	  hitsL.push_back(newHit); 
 	else 
-	  hitsR.push_back(newHit); 
+	  hitsR.push_back(newHit);
+
+	if( tgeo->get_eta()<2.4 ) {
+	  newHit.samePhi = &rphi_list[idx]; 
+	  rhits.push_back(newHit); 
+	}
 	  
       }
     }
@@ -416,8 +479,10 @@ void EpFinderEval::fill_tree(PHCompositeNode *topNode) {
     ev_class = 0; 
   else if((bimpact>=4.0)&&(bimpact<8.0))
     ev_class = 1; 
+  else if((bimpact>=8.0)&&(bimpact<14.0))
+    ev_class = 2; 
   else
-    ev_class = 2;
+    ev_class = 3;
 
   // Run the event plane finder
 
@@ -426,6 +491,12 @@ void EpFinderEval::fill_tree(PHCompositeNode *topNode) {
   femc_raw_rplane_angle = RpResult.RawPsi(2); 
   femc_phiweighted_rplane_angle = RpResult.PhiWeightedPsi(2); 
   femc_phiweightedandshifted_rplane_angle = RpResult.PhiWeightedAndShiftedPsi(2); 
+
+  EpInfo rRpResult = rRpFinder->Results(&rhits,ev_class); 
+  
+  rfemc_raw_rplane_angle = rRpResult.RawPsi(2); 
+  rfemc_phiweighted_rplane_angle = rRpResult.PhiWeightedPsi(2); 
+  rfemc_phiweightedandshifted_rplane_angle = rRpResult.PhiWeightedAndShiftedPsi(2); 
 
   EpInfo RpResultL = RpFinderL->Results(&hitsL,ev_class); 
 

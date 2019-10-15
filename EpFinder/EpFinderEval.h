@@ -18,8 +18,9 @@ class RawTowerGeomContainer;
 
 #define PHI_BINS 20
 
-#define FPRIM_ETA_BINS 20
 #define FPRIM_PHI_BINS 20
+#define FPRIM_ETA_BINS 20
+#define RFPRIM_ETA_BINS 5
 
 //Brief: basic ntuple and histogram creation for sim evaluation
 class EpFinderEval: public SubsysReco
@@ -74,9 +75,17 @@ class EpFinderEval: public SubsysReco
   float fprim_phiweighted_rplane_angle; 
   float fprim_phiweightedandshifted_rplane_angle; 
 
+  float rfprim_rplane_angle; 
+  float rfprim_phiweighted_rplane_angle; 
+  float rfprim_phiweightedandshifted_rplane_angle; 
+
   float femc_raw_rplane_angle; 
   float femc_phiweighted_rplane_angle; 
   float femc_phiweightedandshifted_rplane_angle; 
+
+  float rfemc_raw_rplane_angle; 
+  float rfemc_phiweighted_rplane_angle; 
+  float rfemc_phiweightedandshifted_rplane_angle; 
 
   float femcL_raw_rplane_angle; 
   float femcL_phiweighted_rplane_angle; 
@@ -93,15 +102,19 @@ class EpFinderEval: public SubsysReco
   RawTowerGeomContainer *towergeom; 
 
   EpFinder *RpFinder; 
+  EpFinder *rRpFinder; 
   EpFinder *RpFinderL; 
   EpFinder *RpFinderR; 
   EpFinder *primRpFinder; 
   EpFinder *fprimRpFinder; 
+  EpFinder *rfprimRpFinder; 
 
   // phi binning
 
   std::vector<std::pair<int,int>> phi_list[PHI_BINS]; 
+  std::vector<std::pair<int,int>> rphi_list[PHI_BINS]; 
   std::vector<std::pair<int,int>> fprim_phi_list[FPRIM_PHI_BINS]; 
+  std::vector<std::pair<int,int>> rfprim_phi_list[FPRIM_PHI_BINS]; 
 
 };
 
