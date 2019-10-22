@@ -5,23 +5,24 @@
  *
  * @section Uses truth particle information to find photon conversions. 
  * Infomation about the conversions is recored in a TTree.
- * Finally they are associated with clusters for latter analysis
+ * Finally they are associated with clusters for later analysis
  */
 #ifndef TRUTHCONVERSIONEVAL_H__
 #define TRUTHCONVERSIONEVAL_H__
 
 #include <fun4all/SubsysReco.h>
 #include <calobase/RawClusterContainer.h>
+#include <g4main/PHG4Particle.h>
+#include <trackbase_historic/SvtxTrack.h>
+#include <TLorentzVector.h>
 #include <queue>
 
 class PHCompositeNode;
 class PHG4TruthInfoContainer;
-class PHG4Particle;
 class PHG4VtxPoint;
 class SvtxTrackEval;
 class SvtxTrackMap;
 class SvtxVertex;
-class SvtxTrack;
 class SvtxHitMap;
 class SvtxHit;
 class SvtxClusterMap;
@@ -33,7 +34,6 @@ class VtxRegressor;
 class Conversion;
 class TTree;
 class TFile;
-class TLorentzVector;
 
 class TruthConversionEval: public SubsysReco
 {
@@ -61,6 +61,16 @@ class TruthConversionEval: public SubsysReco
     const RawClusterContainer* getClusters()const;
 
   private:
+    //@return ownsership
+    inline TLorentzVector tracktoTLV(SvtxTrack* track){
+        TLorentzVector r;
+        r.SetPtEtaPhiM(track->get_pt(),track->get_eta(),track->get_phi(),.0005109989461);//assume electron
+        return r;
+    }
+    //@return ownsership
+    inline TLorentzVector particletoTLV(PHG4Particle* particle){
+        return TLorentzVector(particle->get_px(),particle->get_py(),particle->get_pz(),particle->get_e());
+    }
     bool doNodePointers(PHCompositeNode* topNode);
     SvtxVertex* get_primary_vertex(PHCompositeNode* topNode)const;
     /** helper function for process_event

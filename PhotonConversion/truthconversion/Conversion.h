@@ -232,6 +232,7 @@ class Conversion
     std::pair<PHG4Particle*,PHG4Particle*> getParticlesMissingTrack();
     ///Uses the specified TMVA method to update and @return {@link recoVertex} 
     genfit::GFRaveVertex* correctSecondaryVertex(VtxRegressor* regressor);
+    static genfit::GFRaveVertex* correctSecondaryVertex(VtxRegressor* regressor,genfit::GFRaveVertex*, SvtxTrack* reco1, SvtxTrack* reco2);
     /**
      * Returns the equivalent angle in the range 0 to 2pi.
      **/

@@ -803,6 +803,31 @@ genfit::GFRaveVertex* Conversion::correctSecondaryVertex(VtxRegressor* regressor
   return recoVertex;
 }
 
+genfit::GFRaveVertex* Conversion::correctSecondaryVertex(VtxRegressor* regressor,genfit::GFRaveVertex* recoVertex, SvtxTrack* reco1, SvtxTrack* reco2){
+  if(!recoVertex) {
+    cerr<<"WARNING: no vertex to correct"<<endl;
+    return NULL;
+  }
+  if (!(reco1&&reco2))
+  {
+    cerr<<"WARNING: no reco tracks to do vertex correction"<<endl;
+    return NULL;
+  }
+
+  TVector3 nextPos = recoVertex->getPos();
+  nextPos.SetMagThetaPhi(regressor->regress(reco1,reco2,recoVertex),nextPos.Theta(),nextPos.Phi());
+
+  using namespace genfit;
+  // GFRaveVertex* temp = recoVertex;
+  std::vector<GFRaveTrackParameters*> tracks;
+  for(unsigned i =0; i<recoVertex->getNTracks();i++){
+    tracks.push_back(recoVertex->getParameters(i));
+  }
+  recoVertex = new GFRaveVertex(nextPos,recoVertex->getCov(),tracks,recoVertex->getNdf(),recoVertex->getChi2(),recoVertex->getId());
+  //  delete temp; //this caused outside references to seg fault //TODO shared_ptr is better 
+  return recoVertex;
+}
+
 std::pair<PHGenFit::Track*,PHGenFit::Track*> Conversion::getPHGFTracks(SVReco* vertexer){
   std::pair<PHGenFit::Track*,PHGenFit::Track*> r;
   r.first = vertexer->getPHGFTrack(reco1);
