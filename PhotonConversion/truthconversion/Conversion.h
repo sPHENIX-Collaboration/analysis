@@ -69,8 +69,11 @@ class Conversion
         return false;
       }
     }
-    ///sets the photon
-    inline void setParent(PHG4Particle* parent){photon=parent;}
+    ///sets the photon @return true if there are no errors
+    bool setParent(PHG4Particle* parent);
+
+    ///calls @{link setParent} {@link photon} is set with @param parent and the {@link primaryPhoton} is set with the primary particle associated with @param parent
+    void setPrimaryPhoton(PHG4Particle* parent,PHG4TruthInfoContainer* truthinfo);
 
     /// @return the number of matched reco tracks
     inline int recoCount()const{
@@ -94,6 +97,7 @@ class Conversion
     ///@return {@link e2}
     inline PHG4Particle* getPositron()const{return e2;}
     inline PHG4Particle* getPhoton()const{return photon;}
+    inline PHG4Particle* getPrimaryPhoton()const{return primaryPhoton;}
     inline int getEmbed() const {return embedID;}
 
     inline void setEmbed(int embedID) {this->embedID=embedID;}
@@ -228,6 +232,7 @@ class Conversion
     std::pair<PHG4Particle*,PHG4Particle*> getParticlesMissingTrack();
     ///Uses the specified TMVA method to update and @return {@link recoVertex} 
     genfit::GFRaveVertex* correctSecondaryVertex(VtxRegressor* regressor);
+    static genfit::GFRaveVertex* correctSecondaryVertex(VtxRegressor* regressor,genfit::GFRaveVertex*, SvtxTrack* reco1, SvtxTrack* reco2);
     /**
      * Returns the equivalent angle in the range 0 to 2pi.
      **/
@@ -261,6 +266,7 @@ class Conversion
     PHG4Particle* e1=NULL;
     PHG4Particle* e2=NULL;
     PHG4Particle* photon=NULL;
+    PHG4Particle* primaryPhoton=NULL;
     PHG4VtxPoint* vtx=NULL;
     SvtxVertex* truthSvtxVtx=NULL;
     SvtxTrack* reco1=NULL;

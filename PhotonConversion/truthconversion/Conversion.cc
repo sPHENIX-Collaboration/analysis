@@ -37,6 +37,7 @@ Conversion::Conversion(PHG4VtxPoint* vtx,int verbosity){
   pairTruthReco1.first=0; 
   pairTruthReco2.first=0; 
 }
+
 Conversion::Conversion(PHG4VtxPoint* vtx,SvtxTrackEval *trackeval,int verbosity){
   this->trackeval=trackeval;
   this->vtx=vtx;
@@ -62,6 +63,7 @@ Conversion::~Conversion(){
   truthSvtxVtx=NULL;
   //dont delete the points as you are not the owner and did not make your own copies
 }
+
 void Conversion::setElectron(PHG4Particle* e){
   if (e1)
   {
@@ -124,6 +126,26 @@ PHG4Particle* Conversion::getPositron(){
   }
   else{
     return e1;
+  }
+}
+
+bool Conversion::setParent(PHG4Particle* parent){
+  bool r =true;
+  if(!photon) photon=parent;
+  else{
+    if(!(*photon==*parent)) cerr<<"Bad photon matching!"<<endl;
+    r=false;
+  }
+  return r;
+}
+
+void Conversion::setPrimaryPhoton(PHG4Particle* parent,PHG4TruthInfoContainer* truthinfo){
+  if(!setParent(parent)) cerr<<"Bad photon matching during primary photon set"<<endl;
+  if(photon->get_track_id()==parent->get_primary_id()){
+    primaryPhoton=photon;
+  }
+  else{
+    primaryPhoton=truthinfo->GetParticle(parent->get_primary_id());
   }
 }
 
@@ -762,6 +784,31 @@ genfit::GFRaveVertex* Conversion::correctSecondaryVertex(VtxRegressor* regressor
     return NULL;
   }
   if (recoCount()!=2)
+  {
+    cerr<<"WARNING: no reco tracks to do vertex correction"<<endl;
+    return NULL;
+  }
+
+  TVector3 nextPos = recoVertex->getPos();
+  nextPos.SetMagThetaPhi(regressor->regress(reco1,reco2,recoVertex),nextPos.Theta(),nextPos.Phi());
+
+  using namespace genfit;
+  // GFRaveVertex* temp = recoVertex;
+  std::vector<GFRaveTrackParameters*> tracks;
+  for(unsigned i =0; i<recoVertex->getNTracks();i++){
+    tracks.push_back(recoVertex->getParameters(i));
+  }
+  recoVertex = new GFRaveVertex(nextPos,recoVertex->getCov(),tracks,recoVertex->getNdf(),recoVertex->getChi2(),recoVertex->getId());
+  //  delete temp; //this caused outside references to seg fault //TODO shared_ptr is better 
+  return recoVertex;
+}
+
+genfit::GFRaveVertex* Conversion::correctSecondaryVertex(VtxRegressor* regressor,genfit::GFRaveVertex* recoVertex, SvtxTrack* reco1, SvtxTrack* reco2){
+  if(!recoVertex) {
+    cerr<<"WARNING: no vertex to correct"<<endl;
+    return NULL;
+  }
+  if (!(reco1&&reco2))
   {
     cerr<<"WARNING: no reco tracks to do vertex correction"<<endl;
     return NULL;
