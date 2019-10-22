@@ -6,18 +6,17 @@ using namespace Pythia8;
 using namespace std;
 
 void generator(std::string filename, long nEvents, bool signalOnly=false){
-/*  using namespace HepMC;
+  using namespace HepMC;
   string hepName = filename+".dat";    //filenames
   HepMC::Pythia8ToHepMC ToHepMC;    // Interface for conversion from Pythia8::Event to HepMC event.
-  HepMC::IO_GenEvent ascii_io(hepName, std::ios::out);*/ //file where HepMC events will be stored.
+  HepMC::IO_GenEvent ascii_io(hepName, std::ios::out); //file where HepMC events will be stored.
 
   /*pythia set up*/
   Pythia pythiaengine;
   pythiaengine.readString("Beams:eCM = 200.");
-  pythiaengine.readString("SoftQCD:nonDiffractive = on");
-  pythiaengine.readString("SoftQCD:singleDiffractive = on");
-  pythiaengine.readString("SoftQCD:doubleDiffractive = on");
-  pythiaengine.readString("PhaseSpace:pTHatMin = 0");
+  pythiaengine.readString("promptphoton:all = on");
+  pythiaengine.readString("HardQCD:all = on");
+  pythiaengine.readString("PhaseSpace:pTHatMin = 10.");
   pythiaengine.readString("Random::setSeed = on");
   pythiaengine.readString("Random::seed =0");
   //pythiaengine.readString("111:onMode = off"); ///pi0 won't decay
@@ -30,8 +29,8 @@ void generator(std::string filename, long nEvents, bool signalOnly=false){
   vector<float> photon_pT;
   photonTree->Branch("photon_pT",&photon_pT);
   TTree *nophotonTree = new TTree("nophotonTree","phat phirn tree");
-  unsigned noPhotonEvents=0;
-  nophotonTree->Branch("nNoPhoton",&noPhotonEvents);
+  unsigned long noPhotonEvents=0;
+  nophotonTree->Branch("n",&noPhotonEvents);
 
   for (int iEvent = 0; iEvent < nEvents; ++iEvent)
   {
@@ -49,12 +48,12 @@ void generator(std::string filename, long nEvents, bool signalOnly=false){
     else{
       noPhotonEvents++;
     }
-/*    if(!signalOnly||photon_pT.size()>0){
+    if(!signalOnly||photon_pT.size()>0){
       HepMC::GenEvent* hepmcevtfrag = new HepMC::GenEvent(); //create HepMC event
       ToHepMC.fill_next_event( pythiaengine, hepmcevtfrag ); //convert event from pythia to HepMC
       ascii_io << hepmcevtfrag;//write event to file
       delete hepmcevtfrag; //delete event so it can be redeclared next time
-    }*/
+    }
   }
   nophotonTree->Fill();
   outFile->Write();

@@ -6,11 +6,11 @@ using namespace Pythia8;
 using namespace std;
 
 void generator(std::string filename, long nEvents, bool signalOnly=false){
-  using namespace HepMC;
+  /*using namespace HepMC;
   string hepName = filename+".dat";    //filenames
   HepMC::Pythia8ToHepMC ToHepMC;    // Interface for conversion from Pythia8::Event to HepMC event.
   HepMC::IO_GenEvent ascii_io(hepName, std::ios::out); //file where HepMC events will be stored.
-
+  */
   /*pythia set up*/
   Pythia pythiaengine;
   pythiaengine.readString("Beams:eCM = 200.");
@@ -28,7 +28,7 @@ void generator(std::string filename, long nEvents, bool signalOnly=false){
   vector<float> photon_pT;
   photonTree->Branch("photon_pT",&photon_pT);
   TTree *nophotonTree = new TTree("nophotonTree","phat phirn tree");
-  unsigned long noPhotonEvents=0;
+  unsigned noPhotonEvents=0;
   nophotonTree->Branch("n",&noPhotonEvents);
 
   for (int iEvent = 0; iEvent < nEvents; ++iEvent)
@@ -40,7 +40,7 @@ void generator(std::string filename, long nEvents, bool signalOnly=false){
     } 
     photon_pT.clear();
     for(unsigned ipart=0; ipart!=pythiaengine.event.size(); ipart++){
-      if(pythiaengine.event[ipart].id()==22&&pythiaengine.event[ipart].isFinal()&&pythiaengine.event[ipart].pT()>5
+      if(pythiaengine.event[ipart].id()==22&&pythiaengine.event[ipart].isFinal()&&pythiaengine.event[ipart].pT()>10
           &&TMath::Abs(pythiaengine.event[ipart].eta()))photon_pT.push_back(pythiaengine.event[ipart].pT());
     }
     if (photon_pT.size()>0)photonTree->Fill();
