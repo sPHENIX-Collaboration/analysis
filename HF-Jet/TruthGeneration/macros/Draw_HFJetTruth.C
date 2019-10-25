@@ -9,6 +9,7 @@
  */
 
 #include <TFile.h>
+#include <TGraph.h>
 #include <TGraphAsymmErrors.h>
 #include <TGraphErrors.h>
 #include <TLatex.h>
@@ -74,7 +75,7 @@ void Draw_HFJetTruth(const TString infile =
 //  const double acceptance2 = 2.* (0.85 - .4);
 //  CrossSection2RAA(infile, false, acceptance2);
 
-  CrossSection2v2(infile, false, .7, acceptance);
+//  CrossSection2v2(infile, false, .7, acceptance);
 //  CrossSection2v2(infile, false, .4, acceptance);
 }
 
