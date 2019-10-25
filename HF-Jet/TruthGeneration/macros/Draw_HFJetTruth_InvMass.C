@@ -252,6 +252,7 @@ void Draw_HFJetTruth_InvMass_DrawCrossSection_PR(const TString infile)
   TH1 *hframe = p->DrawFrame(35, 1e-2, 140, 1e6);
   hframe->SetTitle(";m_{12} [GeV/c^{2}];d^{3}#sigma/(d#eta_{1}d#eta_{2}dm_{12}) [pb/(GeV/c^{2})]");
 
+
   gr_star->Draw("pe");
   hall->Draw("same");
   h_b->Draw("same");
@@ -265,7 +266,7 @@ void Draw_HFJetTruth_InvMass_DrawCrossSection_PR(const TString infile)
                 "");
   leg->AddEntry(hall, "Inclusive jet, PYTHIA8 + CTEQ6L, anti-k_{T} R=0.4",
                 "lpe");
-  leg->AddEntry(gr_star, "STAR, PRD95 (2017) no.7, 071103", "ple");
+  leg->AddEntry(gr_star, "STAR, PRD95 (2017) no.7, 071103, R=0.6", "ple");
   leg->AddEntry(h_b, "#it{b}-quark jet, PYTHIA8 + CTEQ6L, anti-k_{T} R=0.4", "lpe");
 
   leg->Draw();
@@ -435,6 +436,9 @@ void CrossSection2RAA(const TString infile, const bool use_AA_jet_trigger = true
   c1->Update();
 
   p->DrawFrame(35, 0, 75, 15)->SetTitle(";Di-jet invariant mass [GeV/#it{c}^{2}];#it{R}^{bb}_{AA}/#it{R}^{jj}_{AA}");
+  TLine * l = new TLine(35, 1, 75, 1);
+//  l->SetLineStyle(kDashed);
+  l->Draw();
 
   //
   TGraph *g18 = GetRAARatioKang2019(1, 1.8);
