@@ -1,7 +1,7 @@
 {
 //=========Macro generated from canvas: Draw_HFJetTruth_InvMass_CrossSection2RAA_Ratio_deta0.70/Draw_HFJetTruth_InvMass_CrossSection2RAA_Ratio_deta0.70
-//=========  (Fri Oct 25 00:07:27 2019) by ROOT version5.34/36
-   TCanvas *Draw_HFJetTruth_InvMass_CrossSection2RAA_Ratio_deta0.70 = new TCanvas("Draw_HFJetTruth_InvMass_CrossSection2RAA_Ratio_deta0.70", "Draw_HFJetTruth_InvMass_CrossSection2RAA_Ratio_deta0.70",1000,23,700,600);
+//=========  (Fri Nov  1 22:42:57 2019) by ROOT version5.34/36
+   TCanvas *Draw_HFJetTruth_InvMass_CrossSection2RAA_Ratio_deta0.70 = new TCanvas("Draw_HFJetTruth_InvMass_CrossSection2RAA_Ratio_deta0.70", "Draw_HFJetTruth_InvMass_CrossSection2RAA_Ratio_deta0.70",956,579,700,600);
    gStyle->SetOptFit(1);
    gStyle->SetOptStat(0);
    gStyle->SetOptTitle(0);

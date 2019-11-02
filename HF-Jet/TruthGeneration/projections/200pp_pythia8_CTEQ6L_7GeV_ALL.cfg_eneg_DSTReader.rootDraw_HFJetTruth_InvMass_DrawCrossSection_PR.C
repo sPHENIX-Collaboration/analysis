@@ -1,7 +1,7 @@
 {
 //=========Macro generated from canvas: Draw_HFJetTruth_InvMass_DrawCrossSection_PR/Draw_HFJetTruth_InvMass_DrawCrossSection_PR
-//=========  (Fri Oct 25 00:07:27 2019) by ROOT version5.34/36
-   TCanvas *Draw_HFJetTruth_InvMass_DrawCrossSection_PR = new TCanvas("Draw_HFJetTruth_InvMass_DrawCrossSection_PR", "Draw_HFJetTruth_InvMass_DrawCrossSection_PR",0,23,1000,860);
+//=========  (Fri Nov  1 22:42:54 2019) by ROOT version5.34/36
+   TCanvas *Draw_HFJetTruth_InvMass_DrawCrossSection_PR = new TCanvas("Draw_HFJetTruth_InvMass_DrawCrossSection_PR", "Draw_HFJetTruth_InvMass_DrawCrossSection_PR",227,23,1000,860);
    gStyle->SetOptFit(1);
    gStyle->SetOptStat(0);
    gStyle->SetOptTitle(0);

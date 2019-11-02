@@ -359,7 +359,7 @@ void CrossSection2RAA(const TString infile, const bool use_AA_jet_trigger = true
   p = (TPad *) c1->cd(idx++);
   c1->Update();
 
-  p->DrawFrame(30, 0, 75, 1.2)->SetTitle(";Di-jet invariant mass [GeV/#it{c}^{2}];#it{R}_{AA}");
+  p->DrawFrame(30, 0, 75, 1.2)->SetTitle(";Di-jet invariant mass [GeV/#it{c}^{2}];#it{R}^{bb}_{AA}");
 
   TGraphErrors *ge_RAA = GetRAA(g_pp, g_AA);
 
@@ -392,7 +392,7 @@ void CrossSection2RAA(const TString infile, const bool use_AA_jet_trigger = true
   p = (TPad *) c1->cd(idx++);
   c1->Update();
 
-  p->DrawFrame(35, 0, 75, 1.2)->SetTitle(";Di-jet invariant mass [GeV/#it{c}^{2}];#it{R}_{AA}");
+  p->DrawFrame(35, 0, 75, 1.2)->SetTitle(";Di-jet invariant mass [GeV/#it{c}^{2}];#it{R}^{bb}_{AA}");
 
   //
   TGraph *g18 = GetRAAKang2019(1, 1.8);

@@ -1,7 +1,7 @@
 {
 //=========Macro generated from canvas: Draw_HFJetTruth_InvMass_CrossSection2RAA_deta0.70/Draw_HFJetTruth_InvMass_CrossSection2RAA_deta0.70
-//=========  (Fri Oct 25 00:07:28 2019) by ROOT version5.34/36
-   TCanvas *Draw_HFJetTruth_InvMass_CrossSection2RAA_deta0.70 = new TCanvas("Draw_HFJetTruth_InvMass_CrossSection2RAA_deta0.70", "Draw_HFJetTruth_InvMass_CrossSection2RAA_deta0.70",1220,425,700,600);
+//=========  (Fri Nov  1 22:42:59 2019) by ROOT version5.34/36
+   TCanvas *Draw_HFJetTruth_InvMass_CrossSection2RAA_deta0.70 = new TCanvas("Draw_HFJetTruth_InvMass_CrossSection2RAA_deta0.70", "Draw_HFJetTruth_InvMass_CrossSection2RAA_deta0.70",1494,23,700,600);
    gStyle->SetOptFit(1);
    gStyle->SetOptStat(0);
    gStyle->SetOptTitle(0);
@@ -48,7 +48,7 @@
    hframe__2->GetXaxis()->SetTitleSize(0.05);
    hframe__2->GetXaxis()->SetTitleOffset(1.4);
    hframe__2->GetXaxis()->SetTitleFont(42);
-   hframe__2->GetYaxis()->SetTitle("#it{R}_{AA}");
+   hframe__2->GetYaxis()->SetTitle("#it{R}^{bb}_{AA}");
    hframe__2->GetYaxis()->SetLabelFont(42);
    hframe__2->GetYaxis()->SetLabelSize(0.05);
    hframe__2->GetYaxis()->SetTitleSize(0.05);
