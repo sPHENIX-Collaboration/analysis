@@ -15,8 +15,8 @@
 
 #include <g4detectors/PHG4ScintillatorSlatContainer.h>
 #include <g4eval/JetEvalStack.h>
-#include <g4hough/SvtxTrack.h>
-#include <g4hough/SvtxTrackMap.h>
+#include <trackbase_historic/SvtxTrack.h>
+#include <trackbase_historic/SvtxTrackMap.h>
 
 #include <g4eval/SvtxEvalStack.h>
 #include <sstream>
@@ -152,7 +152,7 @@ int TruthPhotonJet::process_event(PHCompositeNode *topnode)
   GET ALL THE HEPMC EVENT LEVEL TRUTH PARTICLES
 
   ************************************************/
-  if (verbosity > 1)
+  if (Verbosity() > 1)
     cout << "GETTING HEPMC" << endl;
 
   PHHepMCGenEventMap *hepmceventmap = findNode::getClass<PHHepMCGenEventMap>(topnode, "PHHepMCGenEventMap");
@@ -196,7 +196,7 @@ int TruthPhotonJet::process_event(PHCompositeNode *topnode)
   x1 = pdfinfo->x1();
   x2 = pdfinfo->x2();
 
-  if (verbosity > 1)
+  if (Verbosity() > 1)
     cout << "Looping over HEPMC particles" << endl;
 
   numparticlesinevent = 0;
@@ -216,7 +216,7 @@ int TruthPhotonJet::process_event(PHCompositeNode *topnode)
     numparticlesinevent++;
   }
 
-  if (verbosity > 1)
+  if (Verbosity() > 1)
     cout << "LOOPING OVER G4 TRUTH PARTICLES" << endl;
 
   cluseventenergy = 0;
@@ -254,7 +254,7 @@ int TruthPhotonJet::process_event(PHCompositeNode *topnode)
     truth_g4particles->Fill();
   }
 
-  if (verbosity > 1)
+  if (Verbosity() > 1)
     cout << "LOOPING OVER TRUTH JETS" << endl;
   /***************************************
 

@@ -57,7 +57,6 @@ Forward_pi0s::Forward_pi0s(const std::string &name)
   //default use 0.3 jet cone
   jet_cone_size = 0.3;
 
-  verbosity = 0;
 }
 
 int Forward_pi0s::Init(PHCompositeNode *topnode)
@@ -220,7 +219,7 @@ int Forward_pi0s::process_event(PHCompositeNode *topnode)
     truth_g4particles->Fill();
   }
 
-  if (verbosity > 1)
+  if (Verbosity() > 1)
     cout << "Truth pi0 energy is :" << tpi0e << endl;
 
   int firstphotonflag = 0;
@@ -297,7 +296,7 @@ int Forward_pi0s::process_event(PHCompositeNode *topnode)
     if (secondphotonflag)
       secondsecondphotonflag = 1;
   }
-  if (verbosity > 1)
+  if (Verbosity() > 1)
   {
     cout << "truth decay photon 1 energy | phi | eta " << tphote1
          << "  |   " << tphotphi1 << "   |   " << tphoteta1 << endl;
@@ -353,7 +352,7 @@ int Forward_pi0s::process_event(PHCompositeNode *topnode)
       fclus_pz2 = -999;
 
 
-      if(verbosity > 1)
+      if(Verbosity() > 1)
 	{
 	  cout<<"Found one good cluster"<<endl;
 	  cout<<"energy | phi | eta: "<<fclusenergy<<" | "<<fclus_phi<<" | "<<fclus_eta<<endl;
@@ -390,7 +389,7 @@ int Forward_pi0s::process_event(PHCompositeNode *topnode)
         if (fclusenergy < fclusenergy2)
           continue;
 
-        if (verbosity > 1)
+        if (Verbosity() > 1)
         {
           cout << "identified reco photon 1 energy | phi | eta:  "
                << fclusenergy << "  |  " << fclus_phi << "  |  " << fclus_eta << endl;
@@ -412,12 +411,12 @@ int Forward_pi0s::process_event(PHCompositeNode *topnode)
 	//get the pi0 invmass
         invmass = pi0.M();
 
-        if (verbosity > 1)
+        if (Verbosity() > 1)
           cout << "pi0 reco invmass is " << invmass << endl;
       }
 
 
-      if(verbosity > 1)
+      if(Verbosity() > 1)
 	{
 	  cout<<"Final clusters found and writing to tree"<<endl;
 	  cout<<"clus 1 - energy | phi | eta: "<<fclusenergy<<" | "<<fclus_phi
@@ -521,7 +520,7 @@ int Forward_pi0s::process_event(PHCompositeNode *topnode)
 	if(clus_energy < clus_energy2)
 	  continue;
 	
-	if (verbosity > 1)
+	if (Verbosity() > 1)
         {
 	  cout << "CENTRAL ARM ID: "<<endl;
           cout << "identified reco photon 1 energy | phi | eta:  "
@@ -545,7 +544,7 @@ int Forward_pi0s::process_event(PHCompositeNode *topnode)
 	//get the pi0 invmass
         cent_invmass = pi0.M();
 
-        if (verbosity > 1)
+        if (Verbosity() > 1)
           cout << "Central pi0 reco invmass is " << cent_invmass << endl;
       
 
