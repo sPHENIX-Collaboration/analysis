@@ -20,13 +20,15 @@
 #include <g4jets/JetMap.h>
 #include <g4vertex/GlobalVertex.h>
 #include <g4vertex/GlobalVertexMap.h>
+#include <trackbase_historic/SvtxTrack.h>
+#include <trackbase_historic/SvtxTrackMap.h>
+#include <trackbase_historic/SvtxVertex.h>
+#include <trackbase_historic/SvtxVertexMap.h>
 
 //evaluation includes
 #include <g4detectors/PHG4ScintillatorSlatContainer.h>
 #include <g4eval/JetEvalStack.h>
 #include <g4eval/SvtxEvalStack.h>
-#include <g4hough/SvtxTrack.h>
-#include <g4hough/SvtxTrackMap.h>
 
 //hepmc includes
 #include <HepMC/GenEvent.h>
@@ -92,7 +94,7 @@ PhotonJet::PhotonJet(const std::string &name)
 
 int PhotonJet::Init(PHCompositeNode *topnode)
 {
-  if (verbosity > 1)
+  if (Verbosity() > 1)
   {
     cout << "COLLECTING PHOTON-JET PAIRS FOR THE FOLLOWING: " << endl;
     cout << "GATHERING JETS: " << jet_cone_size << endl;
@@ -185,7 +187,7 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
     recojetsize << "04";
   }
 
-  if (verbosity > 1)
+  if (Verbosity() > 1)
   {
     cout << "Gathering RECO Jets:  " << recojetsize.str().c_str() << endl;
     cout << "Gathering TRUTH Jets:  " << truthjetsize.str().c_str() << endl;
@@ -350,7 +352,7 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
     //return 0;
   }
 
-  if (verbosity > 1)
+  if (Verbosity() > 1)
   {
     cout << "Getting HEPMC truth particles " << endl;
   }
@@ -428,7 +430,7 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
   cluseventeta = 0;
   float lastenergy = 0;
 
-  if (verbosity > 1)
+  if (Verbosity() > 1)
   {
     cout << "get G4 stable truth particles" << endl;
   }
@@ -479,7 +481,7 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
    TRUTH JETS
 
    ***************************************/
-  if (verbosity > 1)
+  if (Verbosity() > 1)
   {
     cout << "get the truth jets" << endl;
   }
@@ -583,7 +585,7 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
   //process id, highest energy photon, etc.
   event_tree->Fill();
 
-  if (verbosity > 1)
+  if (Verbosity() > 1)
   {
     cout << "get trigger emulator info" << endl;
   }
@@ -610,7 +612,7 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
   GET THE EMCAL CLUSTERS
 
   ************************************************/
-  if (verbosity > 1)
+  if (Verbosity() > 1)
   {
     cout << "Get EMCal Cluster" << endl;
   }
@@ -752,10 +754,9 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
   GET THE SVTX TRACKS
 
   ************************************************/
-
   if (eval_tracked_jets)
   {
-    if (verbosity > 1)
+    if (Verbosity() > 1)
     {
       cout << "Get the Tracks" << endl;
     }
@@ -812,13 +813,13 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
       tracktree->Fill();
     }
   }
-
+  
   /***************************************
 
    RECONSTRUCTED JETS
 
    ***************************************/
-  if (verbosity > 1)
+  if (Verbosity() > 1)
   {
     cout << "Get all Reco Jets" << endl;
   }
@@ -910,7 +911,7 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
     //their distance in dphi deta space
     else
     {
-      if (verbosity > 1)
+      if (Verbosity() > 1)
       {
         cout << "matching by distance jet" << endl;
       }
@@ -1039,7 +1040,7 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
 
   }
 
-  if (verbosity > 1)
+  if (Verbosity() > 1)
   {
     cout << "finished event" << endl;
   }
@@ -1257,7 +1258,7 @@ void PhotonJet::GetRecoHadronsAndJets(RawCluster *trig,
 
   if (eval_tracked_jets)
   {
-    if (verbosity > 1)
+    if (Verbosity() > 1)
     {
       cout << "evaluating tracked hadrons opposite the direct photon" << endl;
     }
