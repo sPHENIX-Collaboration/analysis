@@ -73,7 +73,7 @@ class TruthPhotonJet : public SubsysReco
   float x2;
   int partid1;
   int partid2;
-
+  int ntruthconstituents;
   float hardest_jetpt;
   float hardest_jetphi;
   float hardest_jeteta;

@@ -463,8 +463,9 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
       trutheta = -9999;
     truthpid = truth->get_pid();
 
-    //find the highest energy photon in the event at midrapidity
-    if (truthpid == 22 && truthenergy > lastenergy && fabs(trutheta) < 1.1)
+    //find the highest energy photon in the event in the eta range
+    if (truthpid == 22 && truthenergy > lastenergy 
+	&& trutheta > etalow && trutheta < etahigh)
     {
       lastenergy = truthenergy;
       cluseventenergy = truthenergy;
@@ -488,6 +489,12 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
 
   //loop over the truth jets
   float hardest_jet = 0;
+  // If not truth jet is found that satisfies the requirements,
+  // then the jet 4 vector will be (0,0,0,0)
+  hardest_jetpt = 0;
+  hardest_jetenergy = 0;
+  hardest_jeteta = 0;
+  hardest_jetphi = 0;
   for (JetMap::Iter iter = truth_jets->begin();
        iter != truth_jets->end();
        ++iter)

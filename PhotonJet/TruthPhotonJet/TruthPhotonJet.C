@@ -82,7 +82,8 @@ int TruthPhotonJet::Init(PHCompositeNode *topnode)
 
 int TruthPhotonJet::process_event(PHCompositeNode *topnode)
 {
-  cout << "at event number " << nevents << endl;
+  if(nevents % 50 == 0)
+    cout << "at event number " << nevents << endl;
 
   //get the nodes from the NodeTree
 
@@ -243,7 +244,7 @@ int TruthPhotonJet::process_event(PHCompositeNode *topnode)
     trutheta = vec.Eta();
     truthpid = truth->get_pid();
 
-    if (truthpid == 22 && truthenergy > lastenergy && fabs(trutheta) < 1.1)
+    if (truthpid == 22 && truthenergy > lastenergy && trutheta < etahigh && trutheta > etalow)
     {
       lastenergy = truthenergy;
       cluseventenergy = truthenergy;
@@ -253,6 +254,9 @@ int TruthPhotonJet::process_event(PHCompositeNode *topnode)
     }
     truth_g4particles->Fill();
   }
+
+  //cout<<"CLUSTER Properties : " << cluseventenergy<< " " <<cluseventphi<< 
+  //" " << cluseventeta<<endl;
 
   if (Verbosity() > 1)
     cout << "LOOPING OVER TRUTH JETS" << endl;
@@ -265,6 +269,11 @@ int TruthPhotonJet::process_event(PHCompositeNode *topnode)
   float hardest_jet = 0;
   float subleading_jet = 0;
   int numtruthjets = 0;
+
+  hardest_jetpt = 0;
+  hardest_jeteta = 0;
+  hardest_jetphi = 0;
+  hardest_jetenergy = 0;
   for (JetMap::Iter iter = truth_jets->begin(); iter != truth_jets->end(); ++iter)
   {
     Jet *jet = iter->second;
@@ -292,9 +301,8 @@ int TruthPhotonJet::process_event(PHCompositeNode *topnode)
     //needs at least 2 constituents and that 90% of jet isn't from one photon
     std::set<PHG4Particle *> truthjetcomp =
         trutheval->all_truth_particles(jet);
-    int ntruthconstituents = 0;
-    float truthjetenergysum = 0;
-    float truthjethighestphoton = 0;
+    int _ntruthconstituents = 0;
+    int photonflag = 0;
     for (std::set<PHG4Particle *>::iterator iter2 = truthjetcomp.begin();
          iter2 != truthjetcomp.end();
          ++iter2)
@@ -305,24 +313,32 @@ int TruthPhotonJet::process_event(PHCompositeNode *topnode)
         cout << "no truth particles in the jet??" << endl;
         break;
       }
-      ntruthconstituents++;
+      _ntruthconstituents++;
+
+      TLorentzVector constvec;
+      constvec.SetPxPyPzE(truthpart->get_px(), 
+			  truthpart->get_py(), 
+			  truthpart->get_pz(),
+			  truthpart->get_e());
 
       int constpid = truthpart->get_pid();
-      float conste = truthpart->get_e();
 
-      truthjetenergysum += conste;
-
-      if (constpid == 22)
+      // If this jet contains the truth prompt photon, skip it
+    if(fabs(cluseventphi - constvec.Phi()) < 0.02 && 
+       fabs(cluseventeta - constvec.Eta()) < 0.02 &&
+       constpid == 22)
       {
-        if (conste > truthjethighestphoton)
-          truthjethighestphoton = conste;
+	photonflag = 1;
+	break;
       }
     }
-    ntruthconstituents_h->Fill(ntruthconstituents);
+    ntruthconstituents_h->Fill(_ntruthconstituents);
 
-    //if the highest energy photon in the jet is 90% of the jets energy
-    //its probably an isolated photon and so we want to not include it in the tree
-    if (ntruthconstituents < 2)
+    // If it contains the truth direct photon, skip this jet
+    if(photonflag)
+      continue;
+
+    if (_ntruthconstituents < 3)
       continue;
 
     numtruthjets++;
@@ -337,6 +353,7 @@ int TruthPhotonJet::process_event(PHCompositeNode *topnode)
         hardest_jetenergy = truthjetenergy;
         hardest_jeteta = truthjeteta;
         hardest_jetphi = truthjetphi;
+	ntruthconstituents = _ntruthconstituents;
       }
     }
 
@@ -356,6 +373,10 @@ int TruthPhotonJet::process_event(PHCompositeNode *topnode)
 
     truthjettree->Fill();
   }
+
+
+  //cout<<"Jet properties : " << hardest_jetenergy << "  " << truthjetphi
+  //  << " " << truthjeteta << endl;
 
   if (_is_dijet_process && numtruthjets > 1)
   {
@@ -409,18 +430,15 @@ int TruthPhotonJet::process_event(PHCompositeNode *topnode)
   }
 
   eventdphi = cluseventphi - hardest_jetphi;
-
   event_tree->Fill();
-
-  hardest_jetpt = 0;
-  hardest_jeteta = 0;
-  hardest_jetphi = 0;
-  hardest_jetenergy = 0;
-
+    
   nevents++;
   tree->Fill();
+
+
+
   return 0;
-}
+  }
 
 int TruthPhotonJet::End(PHCompositeNode *topnode)
 {
@@ -429,19 +447,18 @@ int TruthPhotonJet::End(PHCompositeNode *topnode)
   //get the integrated luminosity
 
   PHGenIntegral *phgen = findNode::getClass<PHGenIntegral>(topnode, "PHGenIntegral");
-  if (!phgen)
+  if (phgen)
   {
-    cout << "No PHGenIntegral, so we bail" << endl;
-    return 0;
+    intlumi = phgen->get_Integrated_Lumi();
+    nprocessedevents = phgen->get_N_Processed_Event();
+    nacceptedevents = phgen->get_N_Generator_Accepted_Event();
+    xsecprocessedevents = phgen->get_CrossSection_Processed_Event();
+    xsecacceptedevents = phgen->get_CrossSection_Generator_Accepted_Event();
+    
+    runinfo->Fill();
   }
+  
 
-  intlumi = phgen->get_Integrated_Lumi();
-  nprocessedevents = phgen->get_N_Processed_Event();
-  nacceptedevents = phgen->get_N_Generator_Accepted_Event();
-  xsecprocessedevents = phgen->get_CrossSection_Processed_Event();
-  xsecacceptedevents = phgen->get_CrossSection_Generator_Accepted_Event();
-
-  runinfo->Fill();
 
   file->Write();
   file->Close();
@@ -537,6 +554,7 @@ void TruthPhotonJet::Set_Tree_Branches()
   event_tree->Branch("hardest_jetphi", &hardest_jetphi, "hardest_jetphi/F");
   event_tree->Branch("hardest_jeteta", &hardest_jeteta, "hardest_jeteta/F");
   event_tree->Branch("hardest_jetenergy", &hardest_jetenergy, "hardest_jetenergy/F");
+  event_tree->Branch("ntruthconstituents", &ntruthconstituents, "ntruthconstituents/I");
   event_tree->Branch("eventdphi", &eventdphi, "eventdphi/F");
   event_tree->Branch("E_4x4", &E_4x4, "E_4x4/F");
   event_tree->Branch("phi_4x4", &phi_4x4, "phi_4x4/F");
