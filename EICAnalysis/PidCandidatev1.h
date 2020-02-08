@@ -62,7 +62,7 @@ protected:
   //! container for additional property
   prop_map_t prop_map;
 
-  //ClassDef(PidCandidatev1,2)
+  ClassDef(PidCandidatev1,2)
 };
 
 #endif
