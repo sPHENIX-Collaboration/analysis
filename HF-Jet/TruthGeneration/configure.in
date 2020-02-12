@@ -1,6 +1,6 @@
 AC_INIT(configure.in)
 
-AM_INIT_AUTOMAKE(HFJetTruthGeneration, 1.00)
+AM_INIT_AUTOMAKE(hfjettruthgeneration, 1.00)
 
 AC_PROG_CXX(g++)
 AC_ENABLE_STATIC(no)
