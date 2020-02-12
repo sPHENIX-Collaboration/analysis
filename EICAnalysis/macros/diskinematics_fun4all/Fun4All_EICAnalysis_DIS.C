@@ -1,11 +1,30 @@
+#pragma once
+#if ROOT_VERSION_CODE >= ROOT_VERSION(6,00,0)
+#include <fun4all/SubsysReco.h>
+#include <fun4all/Fun4AllServer.h>
+#include <fun4all/Fun4AllInputManager.h>
+#include <fun4all/Fun4AllDummyInputManager.h>
+#include <fun4all/Fun4AllOutputManager.h>
+#include <fun4all/Fun4AllDstInputManager.h>
+#include <fun4all/Fun4AllNoSyncDstInputManager.h>
+#include <fun4all/Fun4AllDstOutputManager.h>
+#include <phhepmc/Fun4AllHepMCInputManager.h>
+#include <phool/recoConsts.h>
+#include <eicana/DISKinematicsReco.h>
+R__LOAD_LIBRARY(libfun4all.so)
+R__LOAD_LIBRARY(libphhepmc.so)
+R__LOAD_LIBRARY(libeicana.so)
+#endif
+
+using namespace std;
 
 int Fun4All_EICAnalysis_DIS(
-			    const int nEvents = 1000,
-			    const char * inputFile = "/gpfs/mnt/gpfs02/phenix/scratch/spjeffas/g4sim/G4_Leptoquark_DST_p250_e20_1000events_1seed_DISneutral.root",
-			    const char * outputFile = "eicana_pythia6_e10p250_dis_100k.root"
+			    const int nEvents = 100,
+			    const char * inputFile = "/sphenix/user/baschmoo/standard/macros/macros/g4simulations/G4EICDetector.root",
+			    const char * outputFile = "output.root"
 			    )
 {
-
+  
   bool readdst = true;
   bool readhepmc = false;
 
@@ -32,7 +51,7 @@ int Fun4All_EICAnalysis_DIS(
 
   DISKinematicsReco *ana = new DISKinematicsReco(outputFile);
   ana->set_do_process_truth( true );
-  ana->set_do_process_geant4_cluster( false );
+  ana->set_do_process_geant4_cluster( true );
   se->registerSubsystem( ana );
 
   //--------------
@@ -60,24 +79,25 @@ int Fun4All_EICAnalysis_DIS(
   //-----------------
   if (nEvents < 0)
     {
-      return;
+      return 0;
     }
   // if we run the particle generator and use 0 it'll run forever
   if (nEvents == 0 && !readdst && !readhepmc)
     {
       cout << "using 0 for number of events is a bad idea when using particle generators" << endl;
       cout << "it will run forever, so I just return without running anything" << endl;
-      return;
+      return 0;
     }
-
+  
   se->run(nEvents);
 
   //-----
   // Exit
   //-----
-
+  
   se->End();
   std::cout << "All done" << std::endl;
   delete se;
   gSystem->Exit(0);
+  return 0;
 }

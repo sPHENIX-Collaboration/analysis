@@ -181,7 +181,8 @@ public:
 protected:
   virtual unsigned int get_property_nocheck(const PROPERTY prop_id) const {return UINT_MAX;}
   virtual void set_property_nocheck(const PROPERTY prop_id,const unsigned int) {return;}
-  //ClassDef(PidCandidate,1)
+
+  ClassDef(PidCandidate,1)
 };
 
 #endif
