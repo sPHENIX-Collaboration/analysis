@@ -1,1 +1,1 @@
-Please add new folder here for modules used in HF hadron reconstruction.
+Please add new subfolder here for modules used in HF hadron reconstruction and analysis.
