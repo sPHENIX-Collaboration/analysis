@@ -35,10 +35,10 @@
 #include <trackbase_historic/SvtxTrackMap.h>
 #include <trackbase_historic/SvtxTrack.h>
 #include <trackbase_historic/SvtxTrack_FastSim.h>
-#include <trackbase_historic/SvtxClusterMap.h>
-#include <trackbase_historic/SvtxCluster.h>
-#include <trackbase_historic/SvtxHitMap.h>
-#include <trackbase_historic/SvtxHit.h>
+//#include <trackbase_historic/SvtxClusterMap.h>
+//#include <trackbase_historic/SvtxCluster.h>
+//#include <trackbase_historic/SvtxHitMap.h>
+//#include <trackbase_historic/SvtxHit.h>
 
 #include <g4eval/SvtxEvalStack.h>
 #include <g4eval/SvtxTrackEval.h>
