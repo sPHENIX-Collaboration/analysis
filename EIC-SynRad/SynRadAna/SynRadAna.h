@@ -8,6 +8,7 @@
 #include <string>
 
 class PHCompositeNode;
+class Fun4AllHistoManager;
 
 class SynRadAna : public SubsysReco
 {
@@ -50,7 +51,29 @@ class SynRadAna : public SubsysReco
 
   void Print(const std::string &what = "ALL") const override;
 
+  //! embedding ID for the event
+  //! positive ID is the embedded event of interest, e.g. jetty event from pythia
+  //! negative IDs are backgrounds, .e.g out of time pile up collisions
+  //! Usually, ID = 0 means the primary Au+Au collision background
+  int get_embedding_id() const { return _embedding_id; }
+  //
+  //! embedding ID for the event
+  //! positive ID is the embedded event of interest, e.g. jetty event from pythia
+  //! negative IDs are backgrounds, .e.g out of time pile up collisions
+  //! Usually, ID = 0 means the primary Au+Au collision background
+  void set_embedding_id(int id) { _embedding_id = id; }
  private:
+  //! positive ID is the embedded event of interest, e.g. jetty event from pythia
+  //! negative IDs are backgrounds, .e.g out of time pile up collisions
+  //! Usually, ID = 0 means the primary Au+Au collision background
+  int _embedding_id;
+
+  //! Get a pointer to the default hist manager for QA modules
+  Fun4AllHistoManager *
+  getHistoManager();
+
+  // common prefix for QA histograms
+  std::string get_histo_prefix();
 };
 
 #endif // SYNRADANA_H

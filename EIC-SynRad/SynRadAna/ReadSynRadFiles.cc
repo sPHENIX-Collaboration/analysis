@@ -102,7 +102,7 @@ int ReadSynRadFiles::process_event(PHCompositeNode *topNode)
 
   if (Verbosity())
   {
-    cout << "ReadSynRadFiles::process_event - reading " << nEntries << " lines from "<<filename << endl;
+    cout << "ReadSynRadFiles::process_event - reading " << nEntries << " lines from " << filename << endl;
   }
   for (int ii = 1; ii <= nEntries; ii++)
   {
@@ -165,7 +165,7 @@ int ReadSynRadFiles::process_event(PHCompositeNode *topNode)
     }
 
     const double E_GeV = Energy_eV / 1e9;
-//    const double E_GeV = Energy_eV / 1e3;
+    //    const double E_GeV = Energy_eV / 1e3;
     const double px = E_GeV * Dir_X;
     const double py = E_GeV * Dir_Y;
     const double pz = E_GeV * Dir_Z;
@@ -189,7 +189,7 @@ int ReadSynRadFiles::process_event(PHCompositeNode *topNode)
     hepmc_vertices.push_back(hepmcvtx);
     hepmcvtx->add_particle_out(hepmcpart);
 
-    ++ SumPhoton;
+    ++SumPhoton;
     SumFlux += Flux_photon_s;
   }
 
@@ -207,7 +207,7 @@ int ReadSynRadFiles::process_event(PHCompositeNode *topNode)
     evt->add_vertex(hepmc_vertices.at(v));
 
   // save weights
-  auto & weightcontainer = evt->weights();
+  auto &weightcontainer = evt->weights();
   weightcontainer.push_back(SumFlux);
   weightcontainer.push_back(SumPhoton);
 
