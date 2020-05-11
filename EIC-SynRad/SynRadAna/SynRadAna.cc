@@ -10,6 +10,30 @@
 #include <phhepmc/PHHepMCGenEvent.h>
 #include <phhepmc/PHHepMCGenEventMap.h>
 
+#include <g4eval/CaloEvalStack.h>
+#include <g4eval/CaloRawClusterEval.h>
+#include <g4eval/SvtxEvalStack.h>
+
+#include <g4main/PHG4Hit.h>
+#include <g4main/PHG4HitContainer.h>
+#include <g4main/PHG4Particle.h>
+#include <g4main/PHG4TruthInfoContainer.h>
+
+#include <calobase/RawCluster.h>
+#include <calobase/RawTower.h>
+#include <calobase/RawTowerContainer.h>
+#include <calobase/RawTowerGeomContainer.h>
+
+#include <trackbase/TrkrDefs.h>  // for cluskey, getLayer
+#include <trackbase_historic/SvtxTrack.h>
+
+#include <g4eval/SvtxTrackEval.h>  // for SvtxTrackEval
+#include <g4eval/SvtxTruthEval.h>  // for SvtxTruthEval
+
+#include <fun4all/Fun4AllHistoManager.h>
+#include <fun4all/Fun4AllReturnCodes.h>
+#include <fun4all/SubsysReco.h>
+
 #include <phool/PHCompositeNode.h>
 #include <phool/PHDataNode.h>
 #include <phool/PHNode.h>  // for PHNode
@@ -53,7 +77,8 @@ using namespace std;
 //____________________________________________________________________________..
 SynRadAna::SynRadAna(const std::string &name)
   : SubsysReco(name)
-  , _embedding_id(0)
+  , _embedding_id(1)
+  , m_eventWeight(0)
 {
   if (Verbosity())
     cout << "SynRadAna::SynRadAna(const std::string &name) Calling ctor" << endl;
@@ -78,7 +103,7 @@ int SynRadAna::Init(PHCompositeNode *topNode)
   TH1 *h(nullptr);
 
   // n events and n tracks histogram
-  h = new TH1F(TString(get_histo_prefix()) + "Normalization",
+  h = new TH1D(TString(get_histo_prefix()) + "Normalization",
                TString(get_histo_prefix()) + " Normalization;Items;Count", 10, .5, 10.5);
   int i = 1;
   h->GetXaxis()->SetBinLabel(i++, "Event");
@@ -86,6 +111,44 @@ int SynRadAna::Init(PHCompositeNode *topNode)
   h->GetXaxis()->SetBinLabel(i++, "Flux");
   h->GetXaxis()->LabelsOption("v");
   hm->registerHisto(h);
+
+  for (const auto &hitnode : _node_postfix)
+  {
+    TH2D *h2(nullptr);
+
+    h2 = new TH2D(TString(get_histo_prefix()) + hitnode + "_nHit",
+                  "Hit sum;Sum number of hits", 2000, -.5, 2000 - .5, 2, .5, 2.5);
+    //  QAHistManagerDef::useLogBins(h->GetXaxis());
+    h2->GetYaxis()->SetBinLabel(1, "Flux");
+    h2->GetYaxis()->SetBinLabel(2, "Photon");
+    hm->registerHisto(h2);
+
+    h2 = new TH2D(TString(get_histo_prefix()) + hitnode + "_sumEdep",
+                  "Hit sum energy distribution;Ionizing energy deposition [keV]", 2000, 0, 100, 2, .5, 2.5);
+    //  QAHistManagerDef::useLogBins(h->GetXaxis());
+    h2->GetYaxis()->SetBinLabel(1, "Flux");
+    h2->GetYaxis()->SetBinLabel(2, "Photon");
+    hm->registerHisto(h2);
+
+    h2 = new TH2D(TString(get_histo_prefix()) + hitnode + "_photonEnergy",
+                  "Hit source photon;Photon energy [keV]", 2000, 0, 100, 2, .5, 2.5);
+    //  QAHistManagerDef::useLogBins(h->GetXaxis());
+    h2->GetYaxis()->SetBinLabel(1, "Flux");
+    h2->GetYaxis()->SetBinLabel(2, "Photon");
+    hm->registerHisto(h2);
+  }
+
+  for (vector<string>::const_iterator it = _tower_postfix.begin();
+       it != _tower_postfix.end(); ++it)
+  {
+  }
+
+  TH2D *h2 = new TH2D(TString(get_histo_prefix()) + "_photonEnergy",
+                      "Source photon;Photon energy [keV]", 2000, 0, 100, 2, .5, 2.5);
+  //  QAHistManagerDef::useLogBins(h->GetXaxis());
+  h2->GetYaxis()->SetBinLabel(1, "Flux");
+  h2->GetYaxis()->SetBinLabel(2, "Photon");
+  hm->registerHisto(h2);
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -95,6 +158,7 @@ int SynRadAna::InitRun(PHCompositeNode *topNode)
 {
   if (Verbosity())
     cout << "SynRadAna::InitRun(PHCompositeNode *topNode) Initializing for Run XXX" << endl;
+
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
@@ -104,6 +168,8 @@ int SynRadAna::process_event(PHCompositeNode *topNode)
   if (Verbosity())
     cout << "SynRadAna::process_event(PHCompositeNode *topNode) Processing Event" << endl;
 
+  static const double GeV2keV = 1e6;
+
   // histogram manager
   Fun4AllHistoManager *hm = getHistoManager();
   assert(hm);
@@ -111,6 +177,10 @@ int SynRadAna::process_event(PHCompositeNode *topNode)
   TH1 *h_norm = dynamic_cast<TH1 *>(hm->getHisto(get_histo_prefix() + "Normalization"));
   assert(h_norm);
   h_norm->Fill("Event", 1);
+
+  PHG4TruthInfoContainer *truthInfoList = findNode::getClass<
+      PHG4TruthInfoContainer>(topNode, "G4TruthInfo");
+  assert(truthInfoList);
 
   // For pile-up simulation: define GenEventMap
   PHHepMCGenEventMap *genevtmap = findNode::getClass<PHHepMCGenEventMap>(topNode, "PHHepMCGenEventMap");
@@ -125,11 +195,114 @@ int SynRadAna::process_event(PHCompositeNode *topNode)
     hepmc_evt->print();
   }
 
+  //weight calculation/normalization
   const auto &weightcontainer = hepmc_evt->weights();
   assert(weightcontainer.size() >= 2);
-
   h_norm->Fill("Flux", weightcontainer[0]);
   h_norm->Fill("Photon", weightcontainer[1]);
+  if (weightcontainer[1] != 1)
+  {
+    cout << __PRETTY_FUNCTION__ << "- warning - weightcontainer[1] = " << weightcontainer[1]
+         << " != 1. Can not precisely pin point each photon's flux!"
+         << endl;
+  }
+  m_eventWeight = weightcontainer[0] / weightcontainer[1];
+
+  // initial photons
+  {
+    TH2 *h_photonEnergy = dynamic_cast<TH2 *>(hm->getHisto(string(get_histo_prefix()) + "_photonEnergy"));
+    assert(h_photonEnergy);
+
+    PHG4TruthInfoContainer::ConstRange primary_range =
+        truthInfoList->GetPrimaryParticleRange();
+
+    for (PHG4TruthInfoContainer::ConstIterator particle_iter =
+             primary_range.first;
+         particle_iter != primary_range.second;
+         ++particle_iter)
+    {
+      const auto particle = particle_iter->second;
+
+      assert(particle);
+      assert(particle->get_pid() == 22);
+      const double photon_e_keV = particle->get_e() * GeV2keV;
+      h_photonEnergy->Fill(photon_e_keV, "Flux", m_eventWeight);
+      h_photonEnergy->Fill(photon_e_keV, "Photon", 1);
+
+    }  //          if (_load_all_particle) else
+  }
+
+  for (const auto &hitnode : _node_postfix)
+  {
+    PHG4HitContainer *hits = findNode::getClass<PHG4HitContainer>(topNode,
+                                                                  string("G4HIT_" + hitnode));
+    assert(hits);
+    PHG4HitContainer::ConstRange hit_range = hits->getHits();
+
+    if (Verbosity() >= 2)
+      cout << "SynRadAna::process_event - processing "
+           << hitnode << " and received " << hits->size() << " hits"
+           << endl;
+
+    int nhit(0);
+    double sumEdep_keV(0);
+
+    map<PHG4Particle *, double> primary_photon_map;
+    for (PHG4HitContainer::ConstIterator hit_iter = hit_range.first;
+         hit_iter != hit_range.second; hit_iter++)
+    {
+      PHG4Hit *hit = hit_iter->second;
+      assert(hit);
+
+      ++nhit;
+
+      const double eion_keV = hit->get_eion() * GeV2keV;
+      sumEdep_keV += eion_keV;
+
+      PHG4Particle *hit_particle =
+          truthInfoList->GetParticle(hit->get_trkid());
+      assert(hit_particle);
+
+      PHG4Particle *primary_particle = truthInfoList->GetParticle(hit_particle->get_primary_id());
+      assert(primary_particle);
+      assert(primary_particle->get_pid() == 22);
+      const double photon_e_keV = primary_particle->get_e() * GeV2keV;
+
+      primary_photon_map.insert(make_pair(primary_particle, photon_e_keV));
+    }
+
+    TH2 *h_nHit = dynamic_cast<TH2 *>(hm->getHisto(string(get_histo_prefix()) + hitnode + "_nHit"));
+    assert(h_nHit);
+
+    TH2 *h_sumEdep = dynamic_cast<TH2 *>(hm->getHisto(string(get_histo_prefix()) + hitnode + "_sumEdep"));
+    assert(h_sumEdep);
+
+    TH2 *h_photonEnergy = dynamic_cast<TH2 *>(hm->getHisto(string(get_histo_prefix()) + hitnode + "_photonEnergy"));
+    assert(h_photonEnergy);
+
+    h_nHit->Fill(nhit, "Flux", m_eventWeight);
+    h_nHit->Fill(nhit, "Photon", 1);
+
+    if (nhit > 0)
+    {
+      assert(primary_photon_map.size() == 1);
+
+      for (auto &pair : primary_photon_map)
+      {
+        h_photonEnergy->Fill(pair.second, "Flux", m_eventWeight);
+        h_photonEnergy->Fill(pair.second, "Photon", 1);
+      }
+
+      h_sumEdep->Fill(sumEdep_keV, "Flux", m_eventWeight);
+      h_sumEdep->Fill(sumEdep_keV, "Photon", 1);
+    }
+
+  }  //  for (const auto &hitnode : _node_postfix)
+
+  for (vector<string>::const_iterator it = _tower_postfix.begin();
+       it != _tower_postfix.end(); ++it)
+  {
+  }
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
