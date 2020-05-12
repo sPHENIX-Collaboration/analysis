@@ -119,6 +119,9 @@ int SynRadAna::Init(PHCompositeNode *topNode)
     h->GetXaxis()->SetBinLabel(i++, "Event");
     h->GetXaxis()->SetBinLabel(i++, "Photon");
     h->GetXaxis()->SetBinLabel(i++, "Flux");
+    h->GetXaxis()->SetBinLabel(i++, "G4Particle");
+    h->GetXaxis()->SetBinLabel(i++, "G4PrimaryParticle");
+    h->GetXaxis()->SetBinLabel(i++, "G4Vertex");
     h->GetXaxis()->LabelsOption("v");
     hm->registerHisto(h);
   }
@@ -211,6 +214,9 @@ int SynRadAna::process_event(PHCompositeNode *topNode)
   PHG4TruthInfoContainer *truthInfoList = findNode::getClass<
       PHG4TruthInfoContainer>(topNode, "G4TruthInfo");
   assert(truthInfoList);
+  h_norm->Fill("G4Particle", truthInfoList->size());
+  h_norm->Fill("G4Vertex", truthInfoList->GetNumVertices());
+  h_norm->Fill("G4PrimaryParticle", truthInfoList->GetNumPrimaryVertexParticles());
 
   // For pile-up simulation: define GenEventMap
   PHHepMCGenEventMap *genevtmap = findNode::getClass<PHHepMCGenEventMap>(topNode, "PHHepMCGenEventMap");
@@ -352,7 +358,7 @@ int SynRadAna::process_event(PHCompositeNode *topNode)
     }
 
     int nhit(0);
-    map<int, int> layer_nhit;
+    map<int, int> layer_nhit{{0, 0}, {0, 0}, {0, 0}};
     // We want all hitsets for the Mvtx
     TrkrHitSetContainer::ConstRange hitset_range = trkrhitsetcontainer->getHitSets(TrkrDefs::TrkrId::mvtxId);
     for (TrkrHitSetContainer::ConstIterator hitset_iter = hitset_range.first;
@@ -363,11 +369,20 @@ int SynRadAna::process_event(PHCompositeNode *topNode)
       // get the hitset key so we can find the layer
       TrkrDefs::hitsetkey hitsetkey = hitset_iter->first;
       int layer = TrkrDefs::getLayer(hitsetkey);
-      if (Verbosity() >= 2) cout << "PHG4MvtxDigitizer: found hitset with key: " << hitsetkey << " in layer " << layer << endl;
+      if (Verbosity() >= 2) cout <<__PRETTY_FUNCTION__<< ": found hitset with key: " << hitsetkey << " in layer " << layer << endl;
 
-      ++nhit;
+      TrkrHitSet::ConstRange hit_range = hitset->getHits();
+      for (TrkrHitSet::ConstIterator hit_iter = hit_range.first;
+           hit_iter != hit_range.second;
+           ++hit_iter)
+      {
+        TrkrHit *hit = hit_iter->second;
+        if (Verbosity() >= 2) cout <<__PRETTY_FUNCTION__<< ": found hit with key: " << hit->getKey() << " in layer " << layer << endl;
 
-      layer_nhit[layer] += 1;
+        ++nhit;
+
+        layer_nhit[layer] += 1;
+      }
     }
 
     TH2 *h_nHit = dynamic_cast<TH2 *>(hm->getHisto(string(get_histo_prefix()) + "MVTXHit" + "_nHit"));
@@ -381,6 +396,9 @@ int SynRadAna::process_event(PHCompositeNode *topNode)
 
     for (auto &pair : layer_nhit)
     {
+      if (Verbosity() >= 2)
+        cout <<__PRETTY_FUNCTION__<< ": found " << pair.second << " hits in layer " << pair.first << endl;
+
       h_nHit->Fill(pair.second, pair.first, m_eventWeight);
     }
 
