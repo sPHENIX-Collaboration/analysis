@@ -75,10 +75,11 @@
 using namespace std;
 
 //____________________________________________________________________________..
-SynRadAna::SynRadAna(const std::string &name)
-  : SubsysReco(name)
+SynRadAna::SynRadAna(const std::string &fname)
+  : SubsysReco("SynRadAna")
   , _embedding_id(1)
   , m_eventWeight(0)
+  , m_outputFIle(fname)
 {
   if (Verbosity())
     cout << "SynRadAna::SynRadAna(const std::string &name) Calling ctor" << endl;
@@ -143,7 +144,7 @@ int SynRadAna::Init(PHCompositeNode *topNode)
   {
   }
 
-  TH2D *h2 = new TH2D(TString(get_histo_prefix()) + "_photonEnergy",
+  TH2D *h2 = new TH2D(TString(get_histo_prefix()) + "photonEnergy",
                       "Source photon;Photon energy [keV]", 2000, 0, 100, 2, .5, 2.5);
   //  QAHistManagerDef::useLogBins(h->GetXaxis());
   h2->GetYaxis()->SetBinLabel(1, "Flux");
@@ -210,7 +211,7 @@ int SynRadAna::process_event(PHCompositeNode *topNode)
 
   // initial photons
   {
-    TH2 *h_photonEnergy = dynamic_cast<TH2 *>(hm->getHisto(string(get_histo_prefix()) + "_photonEnergy"));
+    TH2 *h_photonEnergy = dynamic_cast<TH2 *>(hm->getHisto(string(get_histo_prefix()) + "photonEnergy"));
     assert(h_photonEnergy);
 
     PHG4TruthInfoContainer::ConstRange primary_range =
@@ -236,6 +237,11 @@ int SynRadAna::process_event(PHCompositeNode *topNode)
   {
     PHG4HitContainer *hits = findNode::getClass<PHG4HitContainer>(topNode,
                                                                   string("G4HIT_" + hitnode));
+    if (!hits)
+    {
+      cout << __PRETTY_FUNCTION__ << " - Fatal Error - missing " << string("G4HIT_" + hitnode) << endl;
+    }
+
     assert(hits);
     PHG4HitContainer::ConstRange hit_range = hits->getHits();
 
@@ -329,7 +335,7 @@ int SynRadAna::End(PHCompositeNode *topNode)
   if (Verbosity())
     cout << "SynRadAna::End(PHCompositeNode *topNode) This is the End..." << endl;
 
-  getHistoManager()->dumpHistos(string(Name()) + ".root");
+  getHistoManager()->dumpHistos(m_outputFIle);
 
   return Fun4AllReturnCodes::EVENT_OK;
 }

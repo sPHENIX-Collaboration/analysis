@@ -14,7 +14,7 @@ class Fun4AllHistoManager;
 class SynRadAna : public SubsysReco
 {
  public:
-  SynRadAna(const std::string &name = "SynRadAna");
+  SynRadAna(const std::string &filename = "SynRadAna.root");
 
   virtual ~SynRadAna();
 
@@ -88,6 +88,8 @@ class SynRadAna : public SubsysReco
   int _embedding_id;
 
   double m_eventWeight;
+
+  std::string m_outputFIle;
 
   std::vector<std::string> _node_postfix;
   std::vector<std::string> _tower_postfix;
