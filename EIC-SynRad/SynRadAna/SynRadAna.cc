@@ -369,15 +369,17 @@ int SynRadAna::process_event(PHCompositeNode *topNode)
       // get the hitset key so we can find the layer
       TrkrDefs::hitsetkey hitsetkey = hitset_iter->first;
       int layer = TrkrDefs::getLayer(hitsetkey);
-      if (Verbosity() >= 2) cout <<__PRETTY_FUNCTION__<< ": found hitset with key: " << hitsetkey << " in layer " << layer << endl;
+      if (Verbosity() >= 2) cout << __PRETTY_FUNCTION__ << ": found hitset with key: " << hitsetkey << " in layer " << layer << endl;
 
+      TrkrHitSet *hitset = hitset_iter->second;
       TrkrHitSet::ConstRange hit_range = hitset->getHits();
       for (TrkrHitSet::ConstIterator hit_iter = hit_range.first;
            hit_iter != hit_range.second;
            ++hit_iter)
       {
         TrkrHit *hit = hit_iter->second;
-        if (Verbosity() >= 2) cout <<__PRETTY_FUNCTION__<< ": found hit with key: " << hit->getKey() << " in layer " << layer << endl;
+        assert(hit);
+        if (Verbosity() >= 2) hit->identify();
 
         ++nhit;
 
@@ -397,9 +399,9 @@ int SynRadAna::process_event(PHCompositeNode *topNode)
     for (auto &pair : layer_nhit)
     {
       if (Verbosity() >= 2)
-        cout <<__PRETTY_FUNCTION__<< ": found " << pair.second << " hits in layer " << pair.first << endl;
+        cout << __PRETTY_FUNCTION__ << ": found " << pair.second << " hits in layer " << pair.first << endl;
 
-      h_nHit->Fill(pair.second, pair.first, m_eventWeight);
+      h_nHit_Layer->Fill(pair.second, pair.first, m_eventWeight);
     }
 
   }  //  if (do_MVTXHits)
