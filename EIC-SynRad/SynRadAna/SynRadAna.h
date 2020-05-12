@@ -81,6 +81,26 @@ class SynRadAna : public SubsysReco
     _tower_postfix.push_back(name);
   }
 
+  bool isDoMvtxHits() const
+  {
+    return do_MVTXHits;
+  }
+
+  void setDoMvtxHits(bool doMvtxHits)
+  {
+    do_MVTXHits = doMvtxHits;
+  }
+
+  bool isDoPhoton() const
+  {
+    return do_photon;
+  }
+
+  void setDoPhoton(bool doPhoton)
+  {
+    do_photon = doPhoton;
+  }
+
  private:
   //! positive ID is the embedded event of interest, e.g. jetty event from pythia
   //! negative IDs are backgrounds, .e.g out of time pile up collisions
@@ -88,6 +108,9 @@ class SynRadAna : public SubsysReco
   int _embedding_id;
 
   double m_eventWeight;
+
+  bool do_photon;
+  bool do_MVTXHits;
 
   std::string m_outputFIle;
 

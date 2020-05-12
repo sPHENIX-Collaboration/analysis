@@ -24,7 +24,14 @@
 #include <calobase/RawTowerContainer.h>
 #include <calobase/RawTowerGeomContainer.h>
 
-#include <trackbase/TrkrDefs.h>  // for cluskey, getLayer
+#include <mvtx/CylinderGeom_Mvtx.h>
+#include <mvtx/MvtxDefs.h>
+#include <mvtx/MvtxHit.h>
+#include <trackbase/TrkrDefs.h>
+#include <trackbase/TrkrHit.h>  // for TrkrHit
+#include <trackbase/TrkrHitSet.h>
+#include <trackbase/TrkrHitSetContainer.h>
+#include <trackbase/TrkrHitTruthAssoc.h>
 #include <trackbase_historic/SvtxTrack.h>
 
 #include <g4eval/SvtxTrackEval.h>  // for SvtxTrackEval
@@ -79,6 +86,8 @@ SynRadAna::SynRadAna(const std::string &fname)
   : SubsysReco("SynRadAna")
   , _embedding_id(1)
   , m_eventWeight(0)
+  , do_photon(true)
+  , do_MVTXHits(true)
   , m_outputFIle(fname)
 {
   if (Verbosity())
@@ -101,17 +110,18 @@ int SynRadAna::Init(PHCompositeNode *topNode)
   Fun4AllHistoManager *hm = getHistoManager();
   assert(hm);
 
-  TH1 *h(nullptr);
-
-  // n events and n tracks histogram
-  h = new TH1D(TString(get_histo_prefix()) + "Normalization",
-               TString(get_histo_prefix()) + " Normalization;Items;Count", 10, .5, 10.5);
-  int i = 1;
-  h->GetXaxis()->SetBinLabel(i++, "Event");
-  h->GetXaxis()->SetBinLabel(i++, "Photon");
-  h->GetXaxis()->SetBinLabel(i++, "Flux");
-  h->GetXaxis()->LabelsOption("v");
-  hm->registerHisto(h);
+  {
+    TH1 *h(nullptr);
+    // n events and n tracks histogram
+    h = new TH1D(TString(get_histo_prefix()) + "Normalization",
+                 TString(get_histo_prefix()) + " Normalization;Items;Count", 10, .5, 10.5);
+    int i = 1;
+    h->GetXaxis()->SetBinLabel(i++, "Event");
+    h->GetXaxis()->SetBinLabel(i++, "Photon");
+    h->GetXaxis()->SetBinLabel(i++, "Flux");
+    h->GetXaxis()->LabelsOption("v");
+    hm->registerHisto(h);
+  }
 
   for (const auto &hitnode : _node_postfix)
   {
@@ -144,12 +154,31 @@ int SynRadAna::Init(PHCompositeNode *topNode)
   {
   }
 
-  TH2D *h2 = new TH2D(TString(get_histo_prefix()) + "photonEnergy",
-                      "Source photon;Photon energy [keV]", 2000, 0, 100, 2, .5, 2.5);
-  //  QAHistManagerDef::useLogBins(h->GetXaxis());
-  h2->GetYaxis()->SetBinLabel(1, "Flux");
-  h2->GetYaxis()->SetBinLabel(2, "Photon");
-  hm->registerHisto(h2);
+  if (do_photon)
+  {
+    TH2D *h2 = new TH2D(TString(get_histo_prefix()) + "photonEnergy",
+                        "Source photon;Photon energy [keV]", 2000, 0, 100, 2, .5, 2.5);
+    //  QAHistManagerDef::useLogBins(h->GetXaxis());
+    h2->GetYaxis()->SetBinLabel(1, "Flux");
+    h2->GetYaxis()->SetBinLabel(2, "Photon");
+    hm->registerHisto(h2);
+  }
+
+  if (do_MVTXHits)
+  {
+    TH2D *h2(nullptr);
+
+    h2 = new TH2D(TString(get_histo_prefix()) + "MVTXHit" + "_nHit",
+                  "Hit sum;Sum number of hits", 2000, -.5, 2000 - .5, 2, .5, 2.5);
+    //  QAHistManagerDef::useLogBins(h->GetXaxis());
+    h2->GetYaxis()->SetBinLabel(1, "Flux");
+    h2->GetYaxis()->SetBinLabel(2, "Photon");
+    hm->registerHisto(h2);
+
+    h2 = new TH2D(TString(get_histo_prefix()) + "MVTXHit" + "_nHit_Layer",
+                  "Hit sum;Sum number of hits;layer", 2000, -.5, 2000 - .5, 3, -.5, 2.5);
+    hm->registerHisto(h2);
+  }
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -210,6 +239,7 @@ int SynRadAna::process_event(PHCompositeNode *topNode)
   m_eventWeight = weightcontainer[0] / weightcontainer[1];
 
   // initial photons
+  if (do_photon)
   {
     TH2 *h_photonEnergy = dynamic_cast<TH2 *>(hm->getHisto(string(get_histo_prefix()) + "photonEnergy"));
     assert(h_photonEnergy);
@@ -225,11 +255,17 @@ int SynRadAna::process_event(PHCompositeNode *topNode)
       const auto particle = particle_iter->second;
 
       assert(particle);
-      assert(particle->get_pid() == 22);
-      const double photon_e_keV = particle->get_e() * GeV2keV;
-      h_photonEnergy->Fill(photon_e_keV, "Flux", m_eventWeight);
-      h_photonEnergy->Fill(photon_e_keV, "Photon", 1);
-
+      if (particle->get_pid() == 22)
+      {
+        const double photon_e_keV = particle->get_e() * GeV2keV;
+        h_photonEnergy->Fill(photon_e_keV, "Flux", m_eventWeight);
+        h_photonEnergy->Fill(photon_e_keV, "Photon", 1);
+      }
+      else
+      {
+        cout << __PRETTY_FUNCTION__ << "- warning - non-photon source!";
+        particle->identify();
+      }
     }  //          if (_load_all_particle) else
   }
 
@@ -305,10 +341,50 @@ int SynRadAna::process_event(PHCompositeNode *topNode)
 
   }  //  for (const auto &hitnode : _node_postfix)
 
-  for (vector<string>::const_iterator it = _tower_postfix.begin();
-       it != _tower_postfix.end(); ++it)
+  if (do_MVTXHits)
   {
-  }
+    // Get the TrkrHitSetContainer node
+    TrkrHitSetContainer *trkrhitsetcontainer = findNode::getClass<TrkrHitSetContainer>(topNode, "TRKR_HITSET");
+    if (!trkrhitsetcontainer)
+    {
+      cout << "Could not locate TRKR_HITSET node, quit! " << endl;
+      exit(1);
+    }
+
+    int nhit(0);
+    map<int, int> layer_nhit;
+    // We want all hitsets for the Mvtx
+    TrkrHitSetContainer::ConstRange hitset_range = trkrhitsetcontainer->getHitSets(TrkrDefs::TrkrId::mvtxId);
+    for (TrkrHitSetContainer::ConstIterator hitset_iter = hitset_range.first;
+         hitset_iter != hitset_range.second;
+         ++hitset_iter)
+    {
+      // we have an itrator to one TrkrHitSet for the mvtx from the trkrHitSetContainer
+      // get the hitset key so we can find the layer
+      TrkrDefs::hitsetkey hitsetkey = hitset_iter->first;
+      int layer = TrkrDefs::getLayer(hitsetkey);
+      if (Verbosity() >= 2) cout << "PHG4MvtxDigitizer: found hitset with key: " << hitsetkey << " in layer " << layer << endl;
+
+      ++nhit;
+
+      layer_nhit[layer] += 1;
+    }
+
+    TH2 *h_nHit = dynamic_cast<TH2 *>(hm->getHisto(string(get_histo_prefix()) + "MVTXHit" + "_nHit"));
+    assert(h_nHit);
+
+    TH2 *h_nHit_Layer = dynamic_cast<TH2 *>(hm->getHisto(string(get_histo_prefix()) + "MVTXHit" + "_nHit_Layer"));
+    assert(h_nHit_Layer);
+
+    h_nHit->Fill(nhit, "Flux", m_eventWeight);
+    h_nHit->Fill(nhit, "Photon", 1);
+
+    for (auto &pair : layer_nhit)
+    {
+      h_nHit->Fill(pair.second, pair.first, m_eventWeight);
+    }
+
+  }  //  if (do_MVTXHits)
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
