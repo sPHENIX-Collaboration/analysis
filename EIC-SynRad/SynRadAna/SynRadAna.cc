@@ -379,11 +379,18 @@ int SynRadAna::process_event(PHCompositeNode *topNode)
       {
         TrkrHit *hit = hit_iter->second;
         assert(hit);
-        if (Verbosity() >= 2) hit->identify();
+        if (Verbosity() >= 2)
+        {
+          cout << hit->getAdc() << "ADC hit: ";
+          hit->identify();
+        }
 
-        ++nhit;
+        if (hit->getAdc())
+        {
+          ++nhit;
 
-        layer_nhit[layer] += 1;
+          layer_nhit[layer] += 1;
+        }
       }
     }
 
