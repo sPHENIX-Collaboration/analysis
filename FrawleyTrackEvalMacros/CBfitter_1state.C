@@ -35,6 +35,14 @@ Double_t CBcalc(Double_t *xx, Double_t *par)
       f = N * A * pow(B - (x-x_mean)/sigma, -n);
     }
 
+  double Nexp = par[5];
+  double slope = par[6];
+  
+  TF1 *fexp = new TF1("fexp","[0]*exp([1]*x)",7,11);
+  fexp->SetParameter(0,Nexp);
+  fexp->SetParameter(1,slope);
+
+  f = f + fexp->Eval(x);
   return f;
 }
 
@@ -94,11 +102,13 @@ void CBfitter_1state()
 {
   gROOT->SetStyle("Plain");
   gStyle->SetOptStat(0);
-  gStyle->SetOptFit(1);
+  gStyle->SetOptFit(0);
   gStyle->SetOptTitle(0);
 
   TFile *file1S, *file2S, *file3S;
   TH1 *recomass1S, *recomass2S, *recomass3S;
+
+  bool draw_gauss = false;
 
   // if all are false, do AuAu 0-10%
   bool pp = false;
@@ -107,28 +117,25 @@ void CBfitter_1state()
   bool AuAu_10pc = true;
 
   //bool do_subtracted = true;
+ 
+  file1S = new TFile("root_files/ntp_quarkonium_out.root");
 
-  //file1S = new TFile("root_files/ups1s_80ns_100pions_pp.root");
-  //file1S = new TFile("root_files/ups2s_80ns_100pions_pp.root");
-  //file1S = new TFile("root_files/ups3s_80ns_100pions_pp.root");
-  
-  //file1S = new TFile("root_files/ups1s_massres_121.root");
-  //file1S = new TFile("root_files/ups2s_massres_121.root");
-  //file1S = new TFile("root_files/ups3s_massres_121.root");
+  if(!file1S)
+    {
+      cout << "Failed to open file  " << endl;
+      exit(1); 
+    }
 
-  //file1S = new TFile("root_files/ntp_track_quarkonium_out.root");
-  file1S = new TFile("root_files/quarkonium_noINTT_aug19.root");
-  //file1S = new TFile("root_files/quarkonium_0111_default_aug18.root");
-  //file1S = new TFile("root_files/quarkonium_01_aug19.root");
-  //file1S = new TFile("root_files/quarkonium_101_aug19.root");
-  //file1S = new TFile("root_files/quarkonium_0111_default_aug18.root");
-  
-  //cout << "Reading file " << file1S << endl;
+  recomass1S = (TH1 *)file1S->Get("recomass0");
 
-  //recomass1S = (TH1 *)file1S->Get("recomass");
-  recomass1S = (TH1 *)file1S->Get("hmass");
+  TH1 *recomass = (TH1*)recomass1S->Clone("recomass1");
+  if(!recomass)
+    {
+      cout << "Failed to get recomass histogram  " << endl;
+      exit(1); 
+    }
 
-  TH1 *recomass = (TH1*)recomass1S->Clone("recomass");
+  recomass->GetXaxis()->SetTitle("invariant mass (GeV/c^{2})");
   recomass->Sumw2();
 
   int nrebin = 1;  // set to 2 to match background histo binning, but this worsens resolution slightly. Use 1 for signal fit
@@ -141,17 +148,20 @@ void CBfitter_1state()
   recomass->SetMarkerSize(1);
   recomass->SetLineStyle(kSolid);
   recomass->SetLineWidth(2);
-  recomass->SetMaximum(2500);
+  //  recomass->SetMaximum(700);
   recomass->DrawCopy("p");
 
 
-  TF1 *f1S = new TF1("f1S",CBcalc,7,11,5);
+  TF1 *f1S = new TF1("f1S",CBcalc,7,11,7);
   f1S->SetParameter(0, 1.0);     // alpha
   f1S->SetParameter(1, 1.0);      // n
   f1S->SetParameter(2, 9.46);      // xmean
   f1S->SetParameter(3, 0.08);     // sigma
-  f1S->SetParameter(4, 1000.0);    // N
-  //f1S->SetParameter(4, 50.0);    // N
+  f1S->SetParameter(4, 2000.0);    // N
+  //f1S->SetParameter(4, 200.0);    // N
+  f1S->SetParameter(5,3.5);
+  f1S->SetParameter(6,0.05);
+
   f1S->SetParNames("alpha1S","n1S","m1S","sigma1S","N1S");
   f1S->SetLineColor(kBlue);
   f1S->SetLineWidth(3);
@@ -182,7 +192,7 @@ void CBfitter_1state()
   fgauss->SetParameter(1, f1S->GetParameter(2));
   fgauss->SetParameter(2, f1S->GetParameter(3));
   fgauss->SetLineColor(kRed);
-  fgauss->Draw("same");
+  if(draw_gauss) fgauss->Draw("same");
 
   // calculate fraction of yield in gaussian
   double area_fgauss =  fgauss->Integral(7,11) * renorm;
@@ -197,7 +207,7 @@ void CBfitter_1state()
   TLatex *lab = new TLatex(0.13,0.75,labfrac);
   lab->SetNDC();
   lab->SetTextSize(0.05);
-  lab->Draw();
+  if(draw_gauss)  lab->Draw();
 
 
   /*

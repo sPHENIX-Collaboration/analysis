@@ -96,36 +96,13 @@ void quarkonia_reconstruction_embedded()
       
       char name[500];
 
-      // 80 ns SAMPA peaking time, 200 khz
-      sprintf(name,"/sphenix/user/frawley/fresh_mar8_testing/macros/macros/g4simulations/eval_output_80ns_central_200khz_1/g4svtx_eval_%i.root_g4svtx_eval.root_primary_eval.root",i);
-      //sprintf(name,"/sphenix/user/frawley/fresh_mar8_testing/macros/macros/g4simulations/eval_output_80ns_central_200khz_2/g4svtx_eval_%i.root_g4svtx_eval.root_primary_eval.root",i);
-      //sprintf(name,"/sphenix/user/frawley/fresh_mar8_testing/macros/macros/g4simulations/eval_output_80ns_central_200khz_3/g4svtx_eval_%i.root_g4svtx_eval.root_primary_eval.root",i);
-      //sprintf(name,"/sphenix/user/frawley/fresh_mar8_testing/macros/macros/g4simulations/eval_output_80ns_central_200khz_4/g4svtx_eval_%i.root_g4svtx_eval.root_primary_eval.root",i);
-      //sprintf(name,"/sphenix/user/frawley/fresh_mar8_testing/macros/macros/g4simulations/eval_output_80ns_central_200khz_5/g4svtx_eval_%i.root_g4svtx_eval.root_primary_eval.root",i);
-      
-      
-      // 80 ns, 0 khz
-      //sprintf(name,"/sphenix/user/frawley/fresh_mar8_testing/macros/macros/g4simulations/eval_output_80ns_central_0khz_1/g4svtx_eval_%i.root_g4svtx_eval.root_primary_eval.root",i);
-      //sprintf(name,"/sphenix/user/frawley/fresh_mar8_testing/macros/macros/g4simulations/eval_output_80ns_central_0khz_2/g4svtx_eval_%i.root_g4svtx_eval.root_primary_eval.root",i);
-      //sprintf(name,"/sphenix/user/frawley/fresh_mar8_testing/macros/macros/g4simulations/eval_output_80ns_central_0khz_3/g4svtx_eval_%i.root_g4svtx_eval.root_primary_eval.root",i);
-      //sprintf(name,"/sphenix/user/frawley/fresh_mar8_testing/macros/macros/g4simulations/eval_output_80ns_central_0khz_4/g4svtx_eval_%i.root_g4svtx_eval.root_primary_eval.root",i);
-      //sprintf(name,"/sphenix/user/frawley/fresh_mar8_testing/macros/macros/g4simulations/eval_output_80ns_central_0khz_5/g4svtx_eval_%i.root_g4svtx_eval.root_primary_eval.root",i);
-      
-      
-      // 160 ns
-      //sprintf(name,"/sphenix/user/frawley/fresh_mar8_testing/macros/macros/g4simulations/eval_output_160ns_central_200khz_1/g4svtx_eval_%i.root_g4svtx_eval.root_primary_eval.root",i);
-      //sprintf(name,"/sphenix/user/frawley/fresh_mar8_testing/macros/macros/g4simulations/eval_output_160ns_central_200khz_2/g4svtx_eval_%i.root_g4svtx_eval.root_primary_eval.root",i);
-      //sprintf(name,"/sphenix/user/frawley/fresh_mar8_testing/macros/macros/g4simulations/eval_output_160ns_central_200khz_3/g4svtx_eval_%i.root_g4svtx_eval.root_primary_eval.root",i);
-      //sprintf(name,"/sphenix/user/frawley/fresh_mar8_testing/macros/macros/g4simulations/eval_output_160ns_central_200khz_4/g4svtx_eval_%i.root_g4svtx_eval.root_primary_eval.root",i);
-      //sprintf(name,"/sphenix/user/frawley/fresh_mar8_testing/macros/macros/g4simulations/eval_output_160ns_central_200khz_5/g4svtx_eval_%i.root_g4svtx_eval.root_primary_eval.root",i);
-      
-      
-      //sprintf(name,"/sphenix/user/frawley/fresh_mar8_testing/macros/macros/g4simulations/eval_output_160ns_central_0khz_1/g4svtx_eval_%i.root_g4svtx_eval.root_primary_eval.root",i);
-      //sprintf(name,"/sphenix/user/frawley/fresh_mar8_testing/macros/macros/g4simulations/eval_output_160ns_central_0khz_2/g4svtx_eval_%i.root_g4svtx_eval.root_primary_eval.root",i);
-      //sprintf(name,"/sphenix/user/frawley/fresh_mar8_testing/macros/macros/g4simulations/eval_output_160ns_central_0khz_3/g4svtx_eval_%i.root_g4svtx_eval.root_primary_eval.root",i);
-      //sprintf(name,"/sphenix/user/frawley/fresh_mar8_testing/macros/macros/g4simulations/eval_output_160ns_central_0khz_4/g4svtx_eval_%i.root_g4svtx_eval.root_primary_eval.root",i);
-      //sprintf(name,"/sphenix/user/frawley/fresh_mar8_testing/macros/macros/g4simulations/eval_output_160ns_central_0khz_5/g4svtx_eval_%i.root_g4svtx_eval.root_primary_eval.root",i);
-      
+      //sprintf(name,"/sphenix/user/frawley/macros_newTPC_june6/macros/macros/g4simulations/intt_6layers_eval_output/g4svtx_eval_%i.root_g4svtx_eval.root",i);
+      //sprintf(name,"/sphenix/user/frawley/macros_newTPC_june6/macros/macros/g4simulations/intt_4layers_eval_output/g4svtx_eval_%i.root_g4svtx_eval.root",i);
+      //sprintf(name,"/sphenix/user/frawley/macros_newTPC_june6/macros/macros/g4simulations/intt_8layers_eval_output/g4svtx_eval_%i.root_g4svtx_eval.root",i);
+      sprintf(name,"/sphenix/user/frawley/macros_newTPC_june6/macros/macros/g4simulations/intt_0layers_eval_output/g4svtx_eval_%i.root_g4svtx_eval.root",i);
+
+
+      /*      
       // ups states, 100 poins, 80 ns
       if(ups_state == 1)
 	{
@@ -147,7 +124,7 @@ void quarkonia_reconstruction_embedded()
 	  cout << "Oops!" << endl;
 	  exit(1);
 	}
-      
+      */
 
 
       cout << "Adding file " << name << endl;
