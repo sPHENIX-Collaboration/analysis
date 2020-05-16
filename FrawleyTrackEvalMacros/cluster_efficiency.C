@@ -6,6 +6,7 @@
 #include "TROOT.h"
 #include "TStyle.h"
 #include "TLine.h"
+#include "TProfile.h"
 
 #include <iostream>
 
@@ -26,10 +27,11 @@ void cluster_efficiency()
 
   TChain* ntp_g4cluster = new TChain("ntp_g4cluster","truth clusters");
 
-  for(int ifile = 0; ifile < 30; ++ifile)
+  for(int ifile = 0; ifile < 300; ++ifile)
     {
       char name[500];
-      sprintf(name,"/sphenix/user/frawley/cluster_efficiency/macros/macros/g4simulations/fiducial.5_search2_eval_output/g4svtx_eval_%i.root_g4svtx_eval.root",ifile);
+      sprintf(name,"/sphenix/user/frawley/cluster_efficiency/macros/macros/g4simulations/eval_output/g4svtx_eval_%i.root_g4svtx_eval.root",ifile);
+      //sprintf(name,"/sphenix/user/frawley/cluster_efficiency/macros/macros/g4simulations/fiducial.5_search2_eval_output/g4svtx_eval_%i.root_g4svtx_eval.root",ifile);
       //sprintf(name,"/sphenix/user/frawley/cluster_efficiency/macros/macros/g4simulations/fiducial.0_search2_eval_output/g4svtx_eval_%i.root_g4svtx_eval.root",ifile);
       std::cout << "Open file " << name << std::endl;
 
@@ -80,7 +82,8 @@ void cluster_efficiency()
   TH1D* hreco = new TH1D("hreco","reco clusters per truth cluster",8, 0, 8);  
   ntp_g4cluster->Draw("nreco>>hreco",good_g4cluster_cut.Data());  
   double norm = hreco->Integral();
-  std::cout << " norm = " << norm << endl;
+  double ntrue = h3_den->GetEntries();
+  std::cout << " norm = " << norm << " ntrue = " << ntrue << endl;
   hreco->Scale(1/norm);
   hreco->SetMarkerStyle(20);
   hreco->SetMarkerSize(2);
@@ -89,6 +92,19 @@ void cluster_efficiency()
   hreco->Draw();  
 
   cout << " Mean nreco = " << hreco->GetMean() << endl;
+
+  TCanvas *crl = new TCanvas("crl","crl",5,5,800,800);
+  TH2D *hrecolayer = new TH2D("hrecolayer","nreco vs layer",54,0,54,300,0,8);  
+  ntp_g4cluster->Draw("nreco:layer>>hrecolayer",good_g4cluster_cut.Data() );
+  TProfile *hrl = hrecolayer->ProfileX();
+  
+  hrl->SetMarkerStyle(20);
+  hrl->SetMarkerSize(1);
+
+  //hrecolayer->Draw();
+  hrl->Draw("p");
+
+  unit->Draw();
 
   /*  
   // zsize
