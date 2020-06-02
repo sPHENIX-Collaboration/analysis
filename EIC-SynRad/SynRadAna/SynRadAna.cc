@@ -330,7 +330,13 @@ int SynRadAna::process_event(PHCompositeNode *topNode)
 
       PHG4Particle *primary_particle = truthInfoList->GetParticle(hit_particle->get_primary_id());
       assert(primary_particle);
-      assert(primary_particle->get_pid() == 22);
+      if(primary_particle->get_pid() != 22)
+      {
+        cout << "SynRadAna::process_event - WARNING - unexpected primary particle that is not photon: ";
+        primary_particle->identify();
+
+        continue;
+      }
       const double photon_e_keV = primary_particle->get_e() * GeV2keV;
 
       primary_photon_map.insert(make_pair(primary_particle, photon_e_keV));
@@ -350,7 +356,12 @@ int SynRadAna::process_event(PHCompositeNode *topNode)
 
     if (nhit > 0)
     {
-      assert(primary_photon_map.size() == 1);
+      if(primary_photon_map.size() != 1)
+      {
+        cout << "SynRadAna::process_event - WARNING - primary_photon_map.size() = "<<primary_photon_map.size()<<endl;
+
+        continue;
+      }
 
       for (auto &pair : primary_photon_map)
       {
@@ -386,7 +397,7 @@ int SynRadAna::process_event(PHCompositeNode *topNode)
       // get the hitset key so we can find the layer
       TrkrDefs::hitsetkey hitsetkey = hitset_iter->first;
       int layer = TrkrDefs::getLayer(hitsetkey);
-      if (Verbosity() >= 2) cout << __PRETTY_FUNCTION__ << ": found hitset with key: " << hitsetkey << " in layer " << layer << endl;
+      if (Verbosity() >= 2) cout << __PRETTY_FUNCTION__ << ": found MVTX hitset with key: " << hitsetkey << " in layer " << layer << endl;
 
       TrkrHitSet *hitset = hitset_iter->second;
       TrkrHitSet::ConstRange hit_range = hitset->getHits();
@@ -452,7 +463,7 @@ int SynRadAna::process_event(PHCompositeNode *topNode)
       // get the hitset key so we can find the layer
       TrkrDefs::hitsetkey hitsetkey = hitset_iter->first;
       int layer = TrkrDefs::getLayer(hitsetkey);
-      if (Verbosity() >= 2) cout << __PRETTY_FUNCTION__ << ": found hitset with key: " << hitsetkey << " in layer " << layer << endl;
+      if (Verbosity() >= 2) cout << __PRETTY_FUNCTION__ << ": found TPC hitset with key: " << hitsetkey << " in layer " << layer << endl;
 
       TrkrHitSet *hitset = hitset_iter->second;
       TrkrHitSet::ConstRange hit_range = hitset->getHits();
