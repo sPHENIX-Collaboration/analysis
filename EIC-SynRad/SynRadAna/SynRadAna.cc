@@ -434,7 +434,7 @@ int SynRadAna::process_event(PHCompositeNode *topNode)
     for (auto &pair : layer_nhit)
     {
       if (Verbosity() >= 2)
-        cout << __PRETTY_FUNCTION__ << ": found " << pair.second << " hits in layer " << pair.first << endl;
+        cout << __PRETTY_FUNCTION__ << ": MVTX Summary: found " << pair.second << " hits in layer " << pair.first << endl;
 
       h_nHit_Layer->Fill(pair.second, pair.first, m_eventWeight);
     }
@@ -475,8 +475,7 @@ int SynRadAna::process_event(PHCompositeNode *topNode)
         assert(hit);
         if (Verbosity() >= 2)
         {
-          cout << hit->getAdc() << "ADC hit: ";
-          hit->identify();
+          cout << hit->getAdc() << " ADC hit. "<<endl;
         }
 
         if (hit->getAdc())
@@ -503,7 +502,7 @@ int SynRadAna::process_event(PHCompositeNode *topNode)
     for (auto &pair : layer_nhit)
     {
       if (Verbosity() >= 2)
-        cout << __PRETTY_FUNCTION__ << ": found " << pair.second << " hits in layer " << pair.first << endl;
+        cout << __PRETTY_FUNCTION__ << ": TPC summary:  found " << pair.second << " hits in layer " << pair.first << endl;
 
       h_nHit_Layer->Fill(pair.second, pair.first, m_eventWeight);
     }
