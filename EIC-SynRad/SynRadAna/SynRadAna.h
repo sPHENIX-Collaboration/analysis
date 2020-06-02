@@ -91,6 +91,16 @@ class SynRadAna : public SubsysReco
     do_MVTXHits = doMvtxHits;
   }
 
+  bool isDoTPCHits() const
+  {
+    return do_TPCHits;
+  }
+
+  void setDoTPCHits(bool doTPCHits)
+  {
+    do_TPCHits = doTPCHits;
+  }
+
   bool isDoPhoton() const
   {
     return do_photon;
@@ -111,6 +121,7 @@ class SynRadAna : public SubsysReco
 
   bool do_photon;
   bool do_MVTXHits;
+  bool do_TPCHits;
 
   std::string m_outputFIle;
 

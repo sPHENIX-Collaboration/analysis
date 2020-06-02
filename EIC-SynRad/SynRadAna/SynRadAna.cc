@@ -88,6 +88,7 @@ SynRadAna::SynRadAna(const std::string &fname)
   , m_eventWeight(0)
   , do_photon(true)
   , do_MVTXHits(true)
+  , do_TPCHits(true)
   , m_outputFIle(fname)
 {
   if (Verbosity())
@@ -180,6 +181,22 @@ int SynRadAna::Init(PHCompositeNode *topNode)
 
     h2 = new TH2D(TString(get_histo_prefix()) + "MVTXHit" + "_nHit_Layer",
                   "Hit sum;Sum number of hits;layer", 2000, -.5, 2000 - .5, 3, -.5, 2.5);
+    hm->registerHisto(h2);
+  }
+
+  if (do_TPCHits)
+  {
+    TH2D *h2(nullptr);
+
+    h2 = new TH2D(TString(get_histo_prefix()) + "TPCHit" + "_nHit",
+                  "Hit sum;Sum number of hits", 2000, -.5, 2000 - .5, 2, .5, 2.5);
+    //  QAHistManagerDef::useLogBins(h->GetXaxis());
+    h2->GetYaxis()->SetBinLabel(1, "Flux");
+    h2->GetYaxis()->SetBinLabel(2, "Photon");
+    hm->registerHisto(h2);
+
+    h2 = new TH2D(TString(get_histo_prefix()) + "TPCHit" + "_nHit_Layer",
+                  "Hit sum;Sum number of hits;layer", 2000, -.5, 2000 - .5, 61, -.5, 60.5);
     hm->registerHisto(h2);
   }
 
@@ -412,6 +429,75 @@ int SynRadAna::process_event(PHCompositeNode *topNode)
     }
 
   }  //  if (do_MVTXHits)
+
+  if (do_TPCHits)
+  {
+    // Get the TrkrHitSetContainer node
+    TrkrHitSetContainer *trkrhitsetcontainer = findNode::getClass<TrkrHitSetContainer>(topNode, "TRKR_HITSET");
+    if (!trkrhitsetcontainer)
+    {
+      cout << "Could not locate TRKR_HITSET node, quit! " << endl;
+      exit(1);
+    }
+
+    int nhit(0);
+    map<int, int> layer_nhit{};
+    // We want all hitsets for the TPC
+    TrkrHitSetContainer::ConstRange hitset_range = trkrhitsetcontainer->getHitSets(TrkrDefs::TrkrId::tpcId);
+    for (TrkrHitSetContainer::ConstIterator hitset_iter = hitset_range.first;
+         hitset_iter != hitset_range.second;
+         ++hitset_iter)
+    {
+      // we have an itrator to one TrkrHitSet for the mvtx from the trkrHitSetContainer
+      // get the hitset key so we can find the layer
+      TrkrDefs::hitsetkey hitsetkey = hitset_iter->first;
+      int layer = TrkrDefs::getLayer(hitsetkey);
+      if (Verbosity() >= 2) cout << __PRETTY_FUNCTION__ << ": found hitset with key: " << hitsetkey << " in layer " << layer << endl;
+
+      TrkrHitSet *hitset = hitset_iter->second;
+      TrkrHitSet::ConstRange hit_range = hitset->getHits();
+      for (TrkrHitSet::ConstIterator hit_iter = hit_range.first;
+           hit_iter != hit_range.second;
+           ++hit_iter)
+      {
+        TrkrHit *hit = hit_iter->second;
+        assert(hit);
+        if (Verbosity() >= 2)
+        {
+          cout << hit->getAdc() << "ADC hit: ";
+          hit->identify();
+        }
+
+        if (hit->getAdc())
+        {
+          ++nhit;
+
+          if (layer_nhit.find(layer) == layer_nhit.end())
+            layer_nhit.insert(make_pair(layer, 0));
+
+          layer_nhit[layer] += 1;
+        }
+      }
+    }
+
+    TH2 *h_nHit = dynamic_cast<TH2 *>(hm->getHisto(string(get_histo_prefix()) + "TPCHit" + "_nHit"));
+    assert(h_nHit);
+
+    TH2 *h_nHit_Layer = dynamic_cast<TH2 *>(hm->getHisto(string(get_histo_prefix()) + "TPCHit" + "_nHit_Layer"));
+    assert(h_nHit_Layer);
+
+    h_nHit->Fill(nhit, "Flux", m_eventWeight);
+    h_nHit->Fill(nhit, "Photon", 1);
+
+    for (auto &pair : layer_nhit)
+    {
+      if (Verbosity() >= 2)
+        cout << __PRETTY_FUNCTION__ << ": found " << pair.second << " hits in layer " << pair.first << endl;
+
+      h_nHit_Layer->Fill(pair.second, pair.first, m_eventWeight);
+    }
+
+  }  //  if (do_TPCHits)
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
