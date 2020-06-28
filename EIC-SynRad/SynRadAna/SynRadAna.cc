@@ -18,6 +18,7 @@
 #include <g4main/PHG4HitContainer.h>
 #include <g4main/PHG4Particle.h>
 #include <g4main/PHG4TruthInfoContainer.h>
+#include <g4main/PHG4VtxPoint.h>
 
 #include <calobase/RawCluster.h>
 #include <calobase/RawTower.h>
@@ -151,6 +152,13 @@ int SynRadAna::Init(PHCompositeNode *topNode)
     h2->GetYaxis()->SetBinLabel(1, "Flux");
     h2->GetYaxis()->SetBinLabel(2, "Photon");
     hm->registerHisto(h2);
+
+    h2 = new TH2D(TString(get_histo_prefix()) + hitnode + "_photonZ",
+                  "#gamma z crossing interface facet [cm]", 800, -400, 400, 2, .5, 2.5);
+    //  QAHistManagerDef::useLogBins(h->GetXaxis());
+    h2->GetYaxis()->SetBinLabel(1, "Flux");
+    h2->GetYaxis()->SetBinLabel(2, "Photon");
+    hm->registerHisto(h2);
   }
 
   for (vector<string>::const_iterator it = _tower_postfix.begin();
@@ -162,6 +170,13 @@ int SynRadAna::Init(PHCompositeNode *topNode)
   {
     TH2D *h2 = new TH2D(TString(get_histo_prefix()) + "photonEnergy",
                         "Source photon;Photon energy [keV]", 2000, 0, 100, 2, .5, 2.5);
+    //  QAHistManagerDef::useLogBins(h->GetXaxis());
+    h2->GetYaxis()->SetBinLabel(1, "Flux");
+    h2->GetYaxis()->SetBinLabel(2, "Photon");
+    hm->registerHisto(h2);
+
+    h2 = new TH2D(TString(get_histo_prefix()) + "photonZ",
+                  "#gamma z crossing interface facet [cm]", 800, -400, 400, 2, .5, 2.5);
     //  QAHistManagerDef::useLogBins(h->GetXaxis());
     h2->GetYaxis()->SetBinLabel(1, "Flux");
     h2->GetYaxis()->SetBinLabel(2, "Photon");
@@ -266,6 +281,8 @@ int SynRadAna::process_event(PHCompositeNode *topNode)
   {
     TH2 *h_photonEnergy = dynamic_cast<TH2 *>(hm->getHisto(string(get_histo_prefix()) + "photonEnergy"));
     assert(h_photonEnergy);
+    TH2 *h_photonZ = dynamic_cast<TH2 *>(hm->getHisto(string(get_histo_prefix()) + "photonZ"));
+    assert(h_photonZ);
 
     PHG4TruthInfoContainer::ConstRange primary_range =
         truthInfoList->GetPrimaryParticleRange();
@@ -283,6 +300,13 @@ int SynRadAna::process_event(PHCompositeNode *topNode)
         const double photon_e_keV = particle->get_e() * GeV2keV;
         h_photonEnergy->Fill(photon_e_keV, "Flux", m_eventWeight);
         h_photonEnergy->Fill(photon_e_keV, "Photon", 1);
+
+        PHG4VtxPoint *vtx = truthInfoList->GetVtx(particle->get_vtx_id());
+        assert(vtx);
+
+        const double photon_z = vtx->get_z();
+        h_photonZ->Fill(photon_z, "Flux", m_eventWeight);
+        h_photonZ->Fill(photon_z, "Photon", 1);
       }
       else
       {
@@ -312,7 +336,7 @@ int SynRadAna::process_event(PHCompositeNode *topNode)
     int nhit(0);
     double sumEdep_keV(0);
 
-    map<PHG4Particle *, double> primary_photon_map;
+    map<PHG4Particle *, pair<double, double> > primary_photon_map;
     for (PHG4HitContainer::ConstIterator hit_iter = hit_range.first;
          hit_iter != hit_range.second; hit_iter++)
     {
@@ -330,7 +354,7 @@ int SynRadAna::process_event(PHCompositeNode *topNode)
 
       PHG4Particle *primary_particle = truthInfoList->GetParticle(hit_particle->get_primary_id());
       assert(primary_particle);
-      if(primary_particle->get_pid() != 22)
+      if (primary_particle->get_pid() != 22)
       {
         cout << "SynRadAna::process_event - WARNING - unexpected primary particle that is not photon: ";
         primary_particle->identify();
@@ -339,7 +363,13 @@ int SynRadAna::process_event(PHCompositeNode *topNode)
       }
       const double photon_e_keV = primary_particle->get_e() * GeV2keV;
 
-      primary_photon_map.insert(make_pair(primary_particle, photon_e_keV));
+      PHG4VtxPoint *vtx = truthInfoList->GetVtx(primary_particle->get_vtx_id());
+      assert(vtx);
+      const double photon_z = vtx->get_z();
+
+      primary_photon_map.insert(
+          make_pair(primary_particle,
+                    make_pair(photon_e_keV, photon_z)));
     }
 
     TH2 *h_nHit = dynamic_cast<TH2 *>(hm->getHisto(string(get_histo_prefix()) + hitnode + "_nHit"));
@@ -351,22 +381,30 @@ int SynRadAna::process_event(PHCompositeNode *topNode)
     TH2 *h_photonEnergy = dynamic_cast<TH2 *>(hm->getHisto(string(get_histo_prefix()) + hitnode + "_photonEnergy"));
     assert(h_photonEnergy);
 
+    TH2 *h_photonZ = dynamic_cast<TH2 *>(hm->getHisto(string(get_histo_prefix()) + hitnode + "_photonZ"));
+    assert(h_photonZ);
+
     h_nHit->Fill(nhit, "Flux", m_eventWeight);
     h_nHit->Fill(nhit, "Photon", 1);
 
     if (nhit > 0)
     {
-      if(primary_photon_map.size() != 1)
+      if (primary_photon_map.size() != 1)
       {
-        cout << "SynRadAna::process_event - WARNING - primary_photon_map.size() = "<<primary_photon_map.size()<<endl;
+        cout << "SynRadAna::process_event - WARNING - primary_photon_map.size() = " << primary_photon_map.size() << endl;
 
         continue;
       }
 
       for (auto &pair : primary_photon_map)
       {
-        h_photonEnergy->Fill(pair.second, "Flux", m_eventWeight);
-        h_photonEnergy->Fill(pair.second, "Photon", 1);
+        const std::pair<double, double> & e_z = pair.second;
+
+        h_photonEnergy->Fill(e_z.first, "Flux", m_eventWeight);
+        h_photonEnergy->Fill(e_z.first, "Photon", 1);
+
+        h_photonZ->Fill(e_z.second, "Flux", m_eventWeight);
+        h_photonZ->Fill(e_z.second, "Photon", 1);
       }
 
       h_sumEdep->Fill(sumEdep_keV, "Flux", m_eventWeight);
@@ -475,7 +513,7 @@ int SynRadAna::process_event(PHCompositeNode *topNode)
         assert(hit);
         if (Verbosity() >= 2)
         {
-          cout << hit->getAdc() << " ADC hit. "<<endl;
+          cout << hit->getAdc() << " ADC hit. " << endl;
         }
 
         if (hit->getAdc())
