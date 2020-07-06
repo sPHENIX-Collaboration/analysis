@@ -5,7 +5,7 @@
 #include "TROOT.h"
 #include "TStyle.h"
 #include "TLegend.h"
-
+#include <iostream>
 
 void plot_ntp_track_out()
 {
@@ -16,70 +16,152 @@ void plot_ntp_track_out()
 
   double ptmax;
 
-  TFile *fin = new TFile("root_files/fiducial0.0_search2_ntp_track_out.root"); 
+  TCanvas *ctemp0 = new TCanvas("ctemp0","ctemp0",5,5,800,800);
+  ctemp0->Divide(2,2);
 
-  TFile *fin2; 
-  bool add_2nd = true;
 
-  TFile *fin3; 
-  bool add_3rd = false;
-  
+  TFile *fin = new TFile("root_files/genfit_ntp_track_out.root"); 
   TH2D *hpt2d = 0;
   fin->GetObject("h1",hpt2d);
-
-  TCanvas *ctemp0 = new TCanvas("ctemp0","ctemp0",5,5,800,800);
-  hpt2d->Draw();
-
-
   hpt2d->FitSlicesY();
   TH1D*hptres = (TH1D*)gDirectory->Get("h1_2");
-  
-  TCanvas *cpt = new TCanvas("cpt","cpt",5,5,1200,800); 
-  cpt->SetLeftMargin(0.2);
+  TH1D*hptcent = (TH1D*)gDirectory->Get("h1_1");
+  ctemp0->cd(1);
+  hpt2d->Draw("colz");
 
+  TFile *fin2 = 0; 
+  TH2D *hpt2d_2 = 0;
+ TH1D *hptres2 = 0;
+ TH1D *hptcent2 = 0;
+  bool add_2nd = true;
+  if(add_2nd)
+    {
+      fin2 = new TFile("root_files/genfit_geantino_ntp_track_out.root");     
+ 
+      fin2->GetObject("h1",hpt2d_2);
+      hpt2d_2->FitSlicesY();
+      hptres2 = (TH1D*)gDirectory->Get("h1_2");
+      hptcent2 = (TH1D*)gDirectory->Get("h1_1");
+      ctemp0->cd(2);
+      hpt2d_2->Draw("colz");
+    }
+
+  TFile *fin3 = 0; 
+  TH2D *hpt2d_3 = 0;
+  TH1D *hptres3 = 0;
+  TH1D *hptcent3 = 0;
+  bool add_3rd = true;
+  if(add_3rd)
+    {
+      fin3 = new TFile("root_files/acts_pions_rerun_ntp_track_out.root");     
+      fin3->GetObject("h1",hpt2d_3);
+      hpt2d_3->FitSlicesY();
+      hptres3 = (TH1D*)gDirectory->Get("h1_2");
+      hptcent3 = (TH1D*)gDirectory->Get("h1_1");
+      ctemp0->cd(3);
+      hpt2d_3->Draw("colz");
+    }
+
+  TFile *fin4 = 0; 
+  TH2D *hpt2d_4 = 0;
+  TH1D *hptres4 = 0;
+  TH1D *hptcent4 = 0;
+  bool add_4th = true;
+  if(add_4th)
+    {
+      fin4 = new TFile("root_files/acts_geantino_rerun_ntp_track_out.root");   
+      //fin4 = new TFile("root_files/acts_geantinos_rerun_neg_ntp_track_out.root");   
+      fin4->GetObject("h1",hpt2d_4);
+      hpt2d_4->FitSlicesY();
+      hptres4 = (TH1D*)gDirectory->Get("h1_2");
+      hptcent4 = (TH1D*)gDirectory->Get("h1_1");
+      ctemp0->cd(4);
+      hpt2d_4->Draw("colz");
+    }
+
+  
+  TCanvas *cpt = new TCanvas("cpt","cpt",5,5,1500,800); 
+  cpt->Divide(2,1);
+
+  cpt->cd(1);
+  gPad->SetLeftMargin(0.2);
   hptres->GetYaxis()->SetTitleOffset(2.1);
   hptres->GetXaxis()->SetTitleOffset(1.2);
   hptres->SetMarkerStyle(20);
   hptres->SetMarkerSize(1.2);
   hptres->SetMarkerColor(kRed);
   hptres->GetXaxis()->SetRangeUser(0, 20.0);
-  hptres->GetYaxis()->SetRangeUser(0.0, 0.04);
-  hptres->SetTitle(";p_{T} [GeV/c];#frac{#Delta p_{T}}{p_{T}}");
-  hptres->Draw("p");
+  hptres->GetYaxis()->SetRangeUser(0.0, 0.20);
+  hptres->SetTitle(";p_{T} [GeV/c];#frac{#Delta p_{T}}{p_{T}} (resolution)");
+  hptres->DrawCopy("p");
 
-  TLegend *lpd = new TLegend(0.50, 0.5, 0.85, 0.7, "", "NDC");
+  cpt->cd(2);
+  gPad->SetLeftMargin(0.2);
+  hptcent->GetYaxis()->SetTitleOffset(2.1);
+  hptcent->GetXaxis()->SetTitleOffset(1.2);
+  hptcent->SetMarkerStyle(20);
+  hptcent->SetMarkerSize(1.2);
+  hptcent->SetMarkerColor(kRed);
+  hptcent->GetXaxis()->SetRangeUser(0, 20.0);
+  hptcent->GetYaxis()->SetRangeUser(-0.4, 0.4);
+  hptcent->SetTitle(";p_{T} [GeV/c];#frac{#Delta p_{T}}{p_{T}} (offset)");
+  hptcent->DrawCopy("p");
+
+  TLegend *lpd = new TLegend(0.5, 0.6, 0.7, 0.75, "", "NDC");
   lpd->SetBorderSize(1);
   lpd->SetFillColor(kWhite);
   lpd->SetFillStyle(1001);
-  lpd->AddEntry(hptres,"sector fiducial 0","p");
-  TH1D *hptres2 = 0;
+  lpd->AddEntry(hptres,"Genfit pions","p");
+
   if(add_2nd)
     {
-      fin2 = new TFile("root_files/fiducial0.5_search2_ntp_track_out.root"); 
-
-      TH2D *hpt2d_2 = 0;
-      fin2->GetObject("h1",hpt2d_2);
-      hpt2d_2->FitSlicesY();
-  
-      TH1D*hptres2 = (TH1D*)gDirectory->Get("h1_2");
-      
-      hptres2->SetMarkerStyle(25);
-      hptres2->SetMarkerSize(2);
+      cpt->cd(1);
+      hptres2->SetMarkerStyle(20);
+      hptres2->SetMarkerSize(1.2);
       hptres2->SetMarkerColor(kBlue);
-      hptres2->Draw("same p");
+      hptres2->DrawCopy("same p");
 
-      lpd->AddEntry(hptres2,"sector fiducial 0.5","p");
+      cpt->cd(2);
+      hptcent2->SetMarkerStyle(20);
+      hptcent2->SetMarkerSize(1.2);
+      hptcent2->SetMarkerColor(kBlue);
+      hptcent2->DrawCopy("same p");
+
+      lpd->AddEntry(hptres2,"Genfit geantino","p");
     }
 
-  TH1D *hptres3 = 0;
   if(add_3rd)
     {
-      fin3 = new TFile("root_files/track_out_0111.root"); 
-      fin3->GetObject("h1_2",hptres3);
-      lpd->AddEntry(hptres3,"0111","p");
+      cpt->cd(1);
       hptres3->SetMarkerSize(1.2);
+      hptres3->SetMarkerStyle(24);
       hptres3->SetMarkerColor(kMagenta);
-      hptres3->Draw("same p");
+      hptres3->DrawCopy("same p");
+
+      cpt->cd(2);
+      hptcent3->SetMarkerSize(1.2);
+      hptcent3->SetMarkerStyle(24);
+      hptcent3->SetMarkerColor(kMagenta);
+      hptcent3->DrawCopy("same p");
+
+      lpd->AddEntry(hptres3,"Acts pions","p");
+    }
+
+  if(add_4th)
+    {
+      cpt->cd(1);
+      hptres4->SetMarkerSize(1.2);
+      hptres4->SetMarkerStyle(24);
+      hptres4->SetMarkerColor(kBlue);
+      hptres4->DrawCopy("same p");
+
+      cpt->cd(2);
+      hptcent4->SetMarkerSize(1.2);
+      hptcent4->SetMarkerStyle(24);
+      hptcent4->SetMarkerColor(kBlue);
+      hptcent4->DrawCopy("same p");
+
+      lpd->AddEntry(hptres4,"Acts geantino","p");
     }
 
   lpd->Draw();
@@ -116,138 +198,212 @@ void plot_ntp_track_out()
   heff->SetMarkerColor(kRed);
   heff->GetXaxis()->SetRangeUser(0.0, 20.0);
   heff->GetYaxis()->SetRangeUser(0.0, 1.0);
-  heff->Draw("p");
+  heff->DrawCopy("p");
 
 
   TH1D *heff2 = 0;
   if(add_2nd)
     {
       fin2->GetObject("h3_eff",heff2);
-      heff2->SetMarkerStyle(25);
+      heff2->SetMarkerStyle(20);
       heff2->SetMarkerSize(1.2);
       heff2->SetMarkerColor(kBlue);
-      heff2->Draw("same p");
+      heff2->DrawCopy("same p");
     }
 
   TH1D *heff3 = 0;
   if(add_3rd)
     {
       fin3->GetObject("h3_eff",heff3);
+      heff3->SetMarkerStyle(24);
       heff3->SetMarkerSize(1.2);
       heff3->SetMarkerColor(kMagenta);
-      heff3->Draw("same p");
+      heff3->DrawCopy("same p");
+    }
+
+  TH1D *heff4 = 0;
+  if(add_4th)
+    {
+      fin4->GetObject("h3_eff",heff4);
+      heff4->SetMarkerStyle(24);
+      heff4->SetMarkerSize(1.2);
+      heff4->SetMarkerColor(kBlue);
+      heff4->DrawCopy("same p");
     }
   lpd->Draw();
 
+  TCanvas *ctemp1 = new TCanvas("ctemp1","ctemp1",5,5,800,800);
+  ctemp1->Divide(2,2);
 
   TH2D *hdca2d = 0;
   fin->GetObject("h2",hdca2d);
+  ctemp1->cd(1);
+  hdca2d->Draw("colz");
 
-  TCanvas *ctemp1 = new TCanvas("ctemp1","ctemp1",5,5,800,800);
-  hdca2d->Draw();
+  TH2D *hdca2d2 = 0;
+  if(add_2nd)
+    {
+      fin2->GetObject("h2",hdca2d2);
+      ctemp1->cd(2);
+      hdca2d2->Draw("colz");
+    }
 
-  hdca2d->FitSlicesY();
+  TH2D *hdca2d3 = 0;
+  if(add_3rd)
+    {
+      fin3->GetObject("h2",hdca2d3);
+      ctemp1->cd(3);
+      hdca2d3->Draw("colz");
+    }
 
-  TH1D*hdcares = (TH1D*)gDirectory->Get("h2_2");
-  hdcares->Scale(1.0e4);  // converts from cm to microns
+  TH2D *hdca2d4 = 0;
+  if(add_4th)
+    {
+      fin4->GetObject("h2",hdca2d4);
+      ctemp1->cd(4);
+      hdca2d4->Draw("colz");
+    }
 
   TCanvas *cdca = new TCanvas("cdca","cdca",5,5,1200,800); 
   cdca->SetLeftMargin(0.2);
-
-  //gPad->SetLogy(1);
   gPad->SetGrid();
 
+  hdca2d->FitSlicesY();
+  TH1D*hdcares = (TH1D*)gDirectory->Get("h2_2");
   hdcares->GetYaxis()->SetTitleOffset(2.1);
-  hdcares->GetYaxis()->SetTitle("DCA(r#phi) (#mu m)");
+  hdcares->GetYaxis()->SetTitle("DCA(r#phi) (cm)");
   hdcares->GetXaxis()->SetTitleOffset(1.2);
   hdcares->GetXaxis()->SetTitle("p_{T} (GeV/c)");
   hdcares->SetMarkerStyle(20);
   hdcares->SetMarkerSize(1.2);
   hdcares->SetMarkerColor(kRed);
-  //hdcares->GetXaxis()->SetRangeUser(0.0, 20.0);
-  //hdcares->GetYaxis()->SetRangeUser(1, 70);
-  //hdcares->GetYaxis()->SetNdivisions(505);
-
+  hdcares->GetYaxis()->SetRangeUser(0, 0.03);
   hdcares->DrawCopy("p");
 
 
   TH1D *hdcares2 = 0;
   if(add_2nd)
     {
-      fin2->GetObject("h2_2",hdcares2);
-      //hdcares2->Scale(1.0e4);  // converts from cm to microns
-     
-      hdcares2->SetMarkerStyle(25);
-      hdcares2->SetMarkerSize(2);
+      hdca2d2->FitSlicesY();
+      hdcares2 = (TH1D*)gDirectory->Get("h2_2");     
+      hdcares2->SetMarkerStyle(20);
+      hdcares2->SetMarkerSize(1.2);
       hdcares2->SetMarkerColor(kBlue);
-      hdcares2->Draw("same p");
-      //  hdcares2->Draw("p");
+      hdcares2->DrawCopy("same p");
     }
 
   TH1D *hdcares3 = 0;
   if(add_3rd)
     {
-      fin3->GetObject("h2_2",hdcares3);
-      hdcares3->Scale(1.0e4);  // converts from cm to microns
-     
-      hdcares3->SetMarkerSize(2);
+      hdca2d3->FitSlicesY();
+      hdcares3 = (TH1D*)gDirectory->Get("h2_2");
+      hdcares3->SetMarkerSize(1.2);
+      hdcares3->SetMarkerStyle(24);
       hdcares3->SetMarkerColor(kMagenta);
-      hdcares3->GetYaxis()->SetRangeUser(0.0004,0.10);
-      hdcares3->Draw("same p");
-    }
+      hdcares3->DrawCopy("same p");  
+   }
+
+  TH1D *hdcares4 = 0;
+  if(add_4th)
+    {
+      hdca2d4->FitSlicesY();
+      hdcares4 = (TH1D*)gDirectory->Get("h2_2");
+      hdcares4->SetMarkerSize(1.2);
+      hdcares4->SetMarkerStyle(24);
+      hdcares4->SetMarkerColor(kBlue);
+      hdcares4->DrawCopy("same p");      
+   }
 
   lpd->Draw();
 
-  TH2D *hdcaZ2d = 0;
-  fin->GetObject("h3",hdcaZ2d);
+  // 2D dcaZ plots
+  //===========
 
   TCanvas *ctemp2 = new TCanvas("ctemp2","ctemp2",5,5,800,800);
-  hdcaZ2d->Draw();
+  ctemp2->Divide(2,2);
+
+  TH2D *hdcaZ2d = 0;
+  fin->GetObject("h3",hdcaZ2d);
+  ctemp2->cd(1);
+  hdcaZ2d->Draw("colz");
+
+  TH2D *hdcaZ2d2 = 0;
+  if(add_2nd)
+    {
+      fin2->GetObject("h3",hdcaZ2d2);
+      ctemp2->cd(2);
+      hdcaZ2d2->Draw("colz");
+    }
+
+  TH2D *hdcaZ2d3 = 0;
+  if(add_3rd)
+    {
+      fin3->GetObject("h3",hdcaZ2d3);      
+      ctemp2->cd(3);
+      hdcaZ2d3->Draw("colz");
+    }
+
+  TH2D *hdcaZ2d4 = 0;
+  if(add_4th)
+    {
+      fin4->GetObject("h3",hdcaZ2d4);      
+      ctemp2->cd(4);
+      hdcaZ2d4->Draw("colz");
+    }
+
+  // 1D dcaZ plots
+  //===========
+
+  TCanvas *cdcaZ = new TCanvas("cdcaZ","cdcaZ",5,5,1200,800); 
+  cdcaZ->SetLeftMargin(0.2);
+  gPad->SetGrid();
 
   hdcaZ2d->FitSlicesY();
   TH1D*hdcaZres = (TH1D*)gDirectory->Get("h3_2");
-  hdcaZres->Scale(1.0e4);  // converts from cm to microns
-  TCanvas *cdcaZ = new TCanvas("cdcaZ","cdcaZ",5,5,1200,800); 
-  cdcaZ->SetLeftMargin(0.2);
-
-  //gPad->SetLogy();
-  gPad->SetGrid();
 
   hdcaZres->GetYaxis()->SetTitleOffset(2.1);
-  hdcaZres->GetYaxis()->SetTitle("DCA(Z) (#mu m)");
+  hdcaZres->GetYaxis()->SetTitle("DCA(Z) (cm)");
   hdcaZres->GetXaxis()->SetTitleOffset(1.2);
   hdcaZres->GetXaxis()->SetTitle("p_{T} (GeV/c");
   hdcaZres->SetMarkerStyle(20);
   hdcaZres->SetMarkerSize(1.2);
   hdcaZres->SetMarkerColor(kRed);
-  hdcaZres->GetXaxis()->SetRangeUser(0.1, 20);
-  hdcaZres->GetYaxis()->SetRangeUser(0, 70);
-  //hdcaZres->GetYaxis()->SetNdivisions(505);
+  hdcaZres->GetYaxis()->SetRangeUser(0, 0.02);
 
   hdcaZres->DrawCopy("p");
 
   TH1D *hdcaZres2 = 0;
   if(add_2nd)
     {
-      fin2->GetObject("h3_2",hdcaZres2);
-      //hdcaZres2->Scale(1.0e4);  // converts from cm to microns
-      hdcaZres2->SetMarkerStyle(25);
-      hdcaZres2->SetMarkerSize(2);
+      hdcaZ2d2->FitSlicesY();
+      hdcaZres2 = (TH1D*)gDirectory->Get("h3_2");
+      hdcaZres2->SetMarkerStyle(20);
+      hdcaZres2->SetMarkerSize(1.2);
       hdcaZres2->SetMarkerColor(kBlue);
-
       hdcaZres2->DrawCopy("same p");
-      
     }
 
   TH1D *hdcaZres3 = 0;
   if(add_3rd)
     {
-      fin3->GetObject("h3_2",hdcaZres3);
-      hdcaZres3->Scale(1.0e4);  // converts from cm to microns
+      hdcaZ2d3->FitSlicesY();
+      hdcaZres3 = (TH1D*)gDirectory->Get("h3_2");
+      hdcaZres3->SetMarkerStyle(24);
       hdcaZres3->SetMarkerSize(1.2);
       hdcaZres3->SetMarkerColor(kMagenta);
-      hdcaZres3->GetYaxis()->SetRangeUser(0.0002, 0.1);
-      hdcaZres3->Draw("same p");
+      hdcaZres3->DrawCopy("same p");
+    }
+
+  TH1D *hdcaZres4 = 0;
+  if(add_4th)
+    {
+      fin4->GetObject("h3",hdcaZ2d4);      
+      hdcaZ2d4->FitSlicesY();
+      hdcaZres4 = (TH1D*)gDirectory->Get("h3_2");
+      hdcaZres4->SetMarkerStyle(24);
+      hdcaZres4->SetMarkerSize(1.2);
+      hdcaZres4->SetMarkerColor(kBlue);
+      hdcaZres4->DrawCopy("same p");
     }
 
   lpd->Draw();

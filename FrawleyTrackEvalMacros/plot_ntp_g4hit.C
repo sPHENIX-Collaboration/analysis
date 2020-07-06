@@ -14,11 +14,26 @@ void plot_ntp_g4hit(
   gStyle->SetOptTitle(0);
 
 
-  TString good_gtrack_cut = Form("gtrackID>=0&&gnltpc>20&&gembed==2");
-  TString good_track_cut = Form("gtrackID>=0&&gnltpc>20&&gembed==2&&quality<3 && ntrutpc>20");
+  //TString good_gtrack_cut = Form("gtrackID>=0&&gnltpc>20&&gembed==2");
+  //TString good_track_cut = Form("gtrackID>=0&&gnltpc>20&&gembed==2&&quality<3 && ntrutpc>20");
   /*
   TString good_gtrack_cut = Form("gtrackID>=0&&gnltpc>20");
   TString good_track_cut = Form("gtrackID>=0&&gnltpc>20&&quality<3 && ntrutpc>20");
+  */
+
+  /*
+  // all
+  TString good_gtrack_cut = Form("gtrackID>=0 && gembed==2");
+  TString good_track_cut = Form("gtrackID>=0 && gembed==2");
+  */
+
+  // positive
+  TString good_gtrack_cut = Form("gtrackID>=0 && gembed==2 && charge > 0");
+  TString good_track_cut = Form("gtrackID>=0 && gembed==2 && charge > 0");
+  /*
+  // negative
+  TString good_gtrack_cut = Form("gtrackID>=0 && gembed==2 && charge < 0");
+  TString good_track_cut = Form("gtrackID>=0 && gembed==2 && charge < 0");
   */
 
   TFile *fout = new TFile("root_files/ntp_track_out.root","recreate");
@@ -52,8 +67,17 @@ void plot_ntp_g4hit(
       else
 	ifile = i;
 
-      //sprintf(name,"/sphenix/user/frawley/cluster_efficiency/macros/macros/g4simulations/fiducial.6_search2_eval_output/g4svtx_eval_%i.root_g4svtx_eval.root",ifile);
-      sprintf(name,"/sphenix/user/frawley/cluster_efficiency/macros/macros/g4simulations/eval_output/g4svtx_eval_%i.root_g4svtx_eval.root",ifile);
+     
+      // sprintf(name,"/sphenix/user/frawley/cluster_efficiency/macros/macros/g4simulations/eval_output/g4svtx_eval_%i.root_g4svtx_eval.root",ifile);
+      //sprintf(name,"/sphenix/user/frawley/current_repo/macros/macros/g4simulations/acts_tpccovar_10_eval_output/g4svtx_eval_%i.root_g4svtx_eval.root",ifile);
+      //sprintf(name,"/sphenix/user/frawley/current_repo/macros/macros/g4simulations/acts_tpccovar_20_eval_output/g4svtx_eval_%i.root_g4svtx_eval.root",ifile);
+      //sprintf(name,"/sphenix/user/frawley/current_repo/macros/macros/g4simulations/acts_tpccovar_4_eval_output/g4svtx_eval_%i.root_g4svtx_eval.root",ifile);
+      //sprintf(name,"/sphenix/user/frawley/current_repo/macros/macros/g4simulations/acts_rerun_geantino_eval_output/g4svtx_eval_%i.root_g4svtx_eval.root",ifile);
+
+      //sprintf(name,"/sphenix/user/frawley/current_repo/macros/macros/g4simulations/genfit_rerun_eval_output/g4svtx_eval_%i.root_g4svtx_eval.root",ifile);
+      //sprintf(name,"/sphenix/user/frawley/current_repo/macros/macros/g4simulations/genfit_geantino_eval_output/g4svtx_eval_%i.root_g4svtx_eval.root",ifile);
+      sprintf(name,"/sphenix/user/frawley/current_repo/macros/macros/g4simulations/acts_geantino_rerun_eval_output/g4svtx_eval_%i.root_g4svtx_eval.root",ifile);
+      //sprintf(name,"/sphenix/user/frawley/current_repo/macros/macros/g4simulations/acts_pions_rerun_eval_output/g4svtx_eval_%i.root_g4svtx_eval.root",ifile);
 
       // Skip any files where the event vertex was not reconstructed properly
       TChain* ntp_vertex = new TChain("ntp_vertex","events");
@@ -82,14 +106,18 @@ void plot_ntp_g4hit(
 
   //cout << " ntp_gtrack chain entries = " << ntp_gtrack->GetEntries() << endl;
   //cout << " ntp_track chain entries = " << ntp_track->GetEntries() << endl;
+
+  TH1D *hch = new TH1D("hch","hch",100,-2,+2);
+  TH1D *hgch = new TH1D("hgch","hgch",100,-2,+2);
+  ntp_track->Draw("charge>>hch",good_track_cut.Data());
+  ntp_gtrack->Draw("charge>>hgch",good_gtrack_cut.Data());
   
   int nbinptres = 80;  // number of bins in pT
   int nbinpteff = 120;  // number of bins in pT
   int nbinptdca = 40;  // number of bins in pT
   int nbin = 200;  // number of bins in Y slice
-  double range = 0.2;
-  //double ptmax = 20.0;
-  double ptmax = 5.0;
+  double range = 0.4;
+  double ptmax = 20.0;
 
   TH2D *h1 = new TH2D("h1","h1",nbinptres, 0.0 ,ptmax,nbin,-range,range);
   ntp_track->Draw("(pt-gpt)/gpt:gpt>>h1",good_track_cut.Data());
@@ -117,16 +145,12 @@ void plot_ntp_g4hit(
 
   TCanvas * c3 = new TCanvas("c3","c3");
   TH1D* h3_den = new TH1D("h3_den","; p_{T}; Efficiency",nbinpteff+2, -0.2, ptmax+0.2);
-  //TH1D* h3_den = new TH1D("h3_den","; p_{T}; eff.",41, -0.5, 40.5);
   TH1D* h3_num = (TH1D*)h3_den->Clone("h3_num");;
   TH1D* h3_eff = (TH1D*)h3_den->Clone("h3_eff");;
 
   cout<<__LINE__<<": "<< good_track_cut <<endl;
   ntp_gtrack->Draw("gpt>>h3_den",good_gtrack_cut.Data());
   ntp_track->Draw("gpt>>h3_num",good_track_cut.Data());
-  //ntp_gtrack->Draw("gpt>>h3_num",good_track_cut.Data());
-
-
 
   for(int i=1;i<=h3_den->GetNbinsX();++i){
     double pass = h3_num->GetBinContent(i);
@@ -159,7 +183,8 @@ void plot_ntp_g4hit(
 
 
   TH2D *h2 = new TH2D("h2","h2",nbinptdca, 0,ptmax,nbin,-0.02,0.02);
-  ntp_track->Draw("(dca2d):gpt>>h2",good_track_cut.Data());
+  //ntp_track->Draw("(dca2d):gpt>>h2",good_track_cut.Data());
+  ntp_track->Draw("(pcax-gvx):gpt>>h2",good_track_cut.Data());  // wrong
   //h2->FitSlicesY(0,0,-1,0,"qnrl");
   h2->FitSlicesY();
   TH1D*h2_1 = (TH1D*)gDirectory->Get("h2_1");
@@ -188,7 +213,6 @@ void plot_ntp_g4hit(
 
   TH2D *h3 = new TH2D("h3","h3",nbinptdca, 0, ptmax, nbin, -0.02, 0.02);
   ntp_track->Draw("(pcaz-gvz):gpt>>h3",good_track_cut.Data());
-  //ntp_gtrack->Draw("(dca3dz):gpt>>h3",good_track_cut.Data());
   h3->FitSlicesY();
   TH1D*h3_1 = (TH1D*)gDirectory->Get("h3_1");
   TH1D*h3_2 = (TH1D*)gDirectory->Get("h3_2");
@@ -215,7 +239,7 @@ void plot_ntp_g4hit(
 
   TH2D *h6 = new TH2D("h6","h6",nbinptdca, 0, 1.1, nbin, -1.0, 4.0);
   ntp_track->Draw("ntrumaps:gpt>>h6",good_track_cut.Data());
-  h6->Draw();
+    h6->Draw();
  
   TH1D *h6_1 = new TH1D("h6_1","h6_1",nbin, 0.0, 1.2);
   int binlo = h6->GetYaxis()->FindBin(2.5);
