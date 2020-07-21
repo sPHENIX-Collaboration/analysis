@@ -21,15 +21,17 @@ void plot_ntp_g4hit(
   TString good_track_cut = Form("gtrackID>=0&&gnltpc>20&&quality<3 && ntrutpc>20");
   */
 
-  /*
+
   // all
   TString good_gtrack_cut = Form("gtrackID>=0 && gembed==2");
   TString good_track_cut = Form("gtrackID>=0 && gembed==2");
-  */
 
+
+  /*
   // positive
   TString good_gtrack_cut = Form("gtrackID>=0 && gembed==2 && charge > 0");
   TString good_track_cut = Form("gtrackID>=0 && gembed==2 && charge > 0");
+  */
   /*
   // negative
   TString good_gtrack_cut = Form("gtrackID>=0 && gembed==2 && charge < 0");
@@ -67,17 +69,7 @@ void plot_ntp_g4hit(
       else
 	ifile = i;
 
-     
-      // sprintf(name,"/sphenix/user/frawley/cluster_efficiency/macros/macros/g4simulations/eval_output/g4svtx_eval_%i.root_g4svtx_eval.root",ifile);
-      //sprintf(name,"/sphenix/user/frawley/current_repo/macros/macros/g4simulations/acts_tpccovar_10_eval_output/g4svtx_eval_%i.root_g4svtx_eval.root",ifile);
-      //sprintf(name,"/sphenix/user/frawley/current_repo/macros/macros/g4simulations/acts_tpccovar_20_eval_output/g4svtx_eval_%i.root_g4svtx_eval.root",ifile);
-      //sprintf(name,"/sphenix/user/frawley/current_repo/macros/macros/g4simulations/acts_tpccovar_4_eval_output/g4svtx_eval_%i.root_g4svtx_eval.root",ifile);
-      //sprintf(name,"/sphenix/user/frawley/current_repo/macros/macros/g4simulations/acts_rerun_geantino_eval_output/g4svtx_eval_%i.root_g4svtx_eval.root",ifile);
-
-      //sprintf(name,"/sphenix/user/frawley/current_repo/macros/macros/g4simulations/genfit_rerun_eval_output/g4svtx_eval_%i.root_g4svtx_eval.root",ifile);
-      //sprintf(name,"/sphenix/user/frawley/current_repo/macros/macros/g4simulations/genfit_geantino_eval_output/g4svtx_eval_%i.root_g4svtx_eval.root",ifile);
-      sprintf(name,"/sphenix/user/frawley/current_repo/macros/macros/g4simulations/acts_geantino_rerun_eval_output/g4svtx_eval_%i.root_g4svtx_eval.root",ifile);
-      //sprintf(name,"/sphenix/user/frawley/current_repo/macros/macros/g4simulations/acts_pions_rerun_eval_output/g4svtx_eval_%i.root_g4svtx_eval.root",ifile);
+      sprintf(name,"/sphenix/user/frawley/tpc_cluster_qa/macros/macros/g4simulations/eval_output/g4svtx_eval_%i.root_g4svtx_eval.root",ifile);
 
       // Skip any files where the event vertex was not reconstructed properly
       TChain* ntp_vertex = new TChain("ntp_vertex","events");
@@ -86,7 +78,7 @@ void plot_ntp_g4hit(
       ntp_vertex->Draw("vz - gvz >>hzvtx");
       double meanzdiff =  hzvtx->GetMean() ;
       cout << "   file " << i << " has vertex mean Z difference = " << meanzdiff << endl;
-      if( fabs(meanzdiff) >  0.05 ) 
+      if( fabs(meanzdiff) >  0.1 ) 
 	{
 	  cout << "  --- Bad event vertex, skip file number " << i << " with name " << name << endl; 
 	  nbadvtx++;

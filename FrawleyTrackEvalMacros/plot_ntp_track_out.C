@@ -11,7 +11,7 @@ void plot_ntp_track_out()
 {
   gROOT->SetStyle("Plain");
   gStyle->SetOptStat(0);
-  gStyle->SetOptFit(0);
+  gStyle->SetOptFit(1);
   gStyle->SetOptTitle(0);
 
   double ptmax;
@@ -19,8 +19,10 @@ void plot_ntp_track_out()
   TCanvas *ctemp0 = new TCanvas("ctemp0","ctemp0",5,5,800,800);
   ctemp0->Divide(2,2);
 
+  double slice_low = 5.0;
+  double slice_high = 6.0;
 
-  TFile *fin = new TFile("root_files/genfit_ntp_track_out.root"); 
+  TFile *fin = new TFile("root_files/ntp_track_out.root"); 
   TH2D *hpt2d = 0;
   fin->GetObject("h1",hpt2d);
   hpt2d->FitSlicesY();
@@ -29,14 +31,19 @@ void plot_ntp_track_out()
   ctemp0->cd(1);
   hpt2d->Draw("colz");
 
+  int binlow = hpt2d->GetXaxis()->FindBin(slice_low);
+  int binhigh = hpt2d->GetXaxis()->FindBin(slice_high);
+  TH1D *hptslice = hpt2d->ProjectionY("hptslice",binlow, binhigh);
+
   TFile *fin2 = 0; 
   TH2D *hpt2d_2 = 0;
  TH1D *hptres2 = 0;
  TH1D *hptcent2 = 0;
-  bool add_2nd = true;
+ TH1D *hptslice_2 = 0;
+  bool add_2nd = false;
   if(add_2nd)
     {
-      fin2 = new TFile("root_files/genfit_geantino_ntp_track_out.root");     
+      fin2 = new TFile("root_files/genfit_electrons_ntp_track_out.root");     
  
       fin2->GetObject("h1",hpt2d_2);
       hpt2d_2->FitSlicesY();
@@ -44,29 +51,40 @@ void plot_ntp_track_out()
       hptcent2 = (TH1D*)gDirectory->Get("h1_1");
       ctemp0->cd(2);
       hpt2d_2->Draw("colz");
+	
+      int binlow = hpt2d_2->GetXaxis()->FindBin(slice_low);
+      int binhigh = hpt2d_2->GetXaxis()->FindBin(slice_high);
+      hptslice_2 = hpt2d_2->ProjectionY("hptslice_2",binlow, binhigh);
+      hptslice_2->SetLineColor(kRed);      
     }
 
   TFile *fin3 = 0; 
   TH2D *hpt2d_3 = 0;
   TH1D *hptres3 = 0;
   TH1D *hptcent3 = 0;
-  bool add_3rd = true;
+ TH1D *hptslice_3 = 0;
+  bool add_3rd = false;
   if(add_3rd)
     {
-      fin3 = new TFile("root_files/acts_pions_rerun_ntp_track_out.root");     
+      fin3 = new TFile("root_files/genfit_pions_ntp_track_out.root");     
       fin3->GetObject("h1",hpt2d_3);
       hpt2d_3->FitSlicesY();
       hptres3 = (TH1D*)gDirectory->Get("h1_2");
       hptcent3 = (TH1D*)gDirectory->Get("h1_1");
       ctemp0->cd(3);
       hpt2d_3->Draw("colz");
+
+      int binlow = hpt2d_3->GetXaxis()->FindBin(slice_low);
+      int binhigh = hpt2d_3->GetXaxis()->FindBin(slice_high);
+      hptslice_3 = hpt2d_3->ProjectionY("hptslice_2",binlow, binhigh);
+      hptslice_3->SetLineColor(kBlue);      
     }
 
   TFile *fin4 = 0; 
   TH2D *hpt2d_4 = 0;
   TH1D *hptres4 = 0;
   TH1D *hptcent4 = 0;
-  bool add_4th = true;
+  bool add_4th = false;
   if(add_4th)
     {
       fin4 = new TFile("root_files/acts_geantino_rerun_ntp_track_out.root");   
@@ -79,7 +97,25 @@ void plot_ntp_track_out()
       hpt2d_4->Draw("colz");
     }
 
-  
+  TCanvas *cslice = new TCanvas("cslice","cslice",5,5,1600,800);
+  cslice->Divide(3,1);
+  cslice->cd(1);
+  hptslice->Draw();
+  hptslice->Fit("gaus");
+
+  if(add_2nd)
+    {
+      cslice->cd(2);
+      hptslice_2->Draw("same");
+      hptslice_2->Fit("gaus","","", -0.03, 0.05);
+    }
+    if(add_3rd)
+      {
+	cslice->cd(3);
+	hptslice_3->Draw("same");
+	hptslice_3->Fit("gaus");
+      }
+
   TCanvas *cpt = new TCanvas("cpt","cpt",5,5,1500,800); 
   cpt->Divide(2,1);
 
@@ -91,7 +127,7 @@ void plot_ntp_track_out()
   hptres->SetMarkerSize(1.2);
   hptres->SetMarkerColor(kRed);
   hptres->GetXaxis()->SetRangeUser(0, 20.0);
-  hptres->GetYaxis()->SetRangeUser(0.0, 0.20);
+  hptres->GetYaxis()->SetRangeUser(0.0, 0.10);
   hptres->SetTitle(";p_{T} [GeV/c];#frac{#Delta p_{T}}{p_{T}} (resolution)");
   hptres->DrawCopy("p");
 
@@ -103,7 +139,7 @@ void plot_ntp_track_out()
   hptcent->SetMarkerSize(1.2);
   hptcent->SetMarkerColor(kRed);
   hptcent->GetXaxis()->SetRangeUser(0, 20.0);
-  hptcent->GetYaxis()->SetRangeUser(-0.4, 0.4);
+  hptcent->GetYaxis()->SetRangeUser(-0.1, 0.1);
   hptcent->SetTitle(";p_{T} [GeV/c];#frac{#Delta p_{T}}{p_{T}} (offset)");
   hptcent->DrawCopy("p");
 
@@ -111,7 +147,7 @@ void plot_ntp_track_out()
   lpd->SetBorderSize(1);
   lpd->SetFillColor(kWhite);
   lpd->SetFillStyle(1001);
-  lpd->AddEntry(hptres,"Genfit pions","p");
+  lpd->AddEntry(hptres,"Genfit geantino","p");
 
   if(add_2nd)
     {
@@ -127,7 +163,7 @@ void plot_ntp_track_out()
       hptcent2->SetMarkerColor(kBlue);
       hptcent2->DrawCopy("same p");
 
-      lpd->AddEntry(hptres2,"Genfit geantino","p");
+      lpd->AddEntry(hptres2,"Genfit electron","p");
     }
 
   if(add_3rd)
@@ -144,7 +180,7 @@ void plot_ntp_track_out()
       hptcent3->SetMarkerColor(kMagenta);
       hptcent3->DrawCopy("same p");
 
-      lpd->AddEntry(hptres3,"Acts pions","p");
+      lpd->AddEntry(hptres3,"Genfit pion","p");
     }
 
   if(add_4th)
@@ -277,7 +313,7 @@ void plot_ntp_track_out()
   hdcares->SetMarkerStyle(20);
   hdcares->SetMarkerSize(1.2);
   hdcares->SetMarkerColor(kRed);
-  hdcares->GetYaxis()->SetRangeUser(0, 0.03);
+  hdcares->GetYaxis()->SetRangeUser(0, 0.005);
   hdcares->DrawCopy("p");
 
 
@@ -368,7 +404,7 @@ void plot_ntp_track_out()
   hdcaZres->SetMarkerStyle(20);
   hdcaZres->SetMarkerSize(1.2);
   hdcaZres->SetMarkerColor(kRed);
-  hdcaZres->GetYaxis()->SetRangeUser(0, 0.02);
+  hdcaZres->GetYaxis()->SetRangeUser(0, 0.005);
 
   hdcaZres->DrawCopy("p");
 
