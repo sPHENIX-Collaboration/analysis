@@ -73,11 +73,12 @@ void Draw_HFJetTruth_InvMass(const TString infile =
 
   // step2: ploting
 
-  Draw_HFJetTruth_InvMass_DrawCrossSection_PR(infile);
+  // Draw_HFJetTruth_InvMass_DrawCrossSection_PR(infile);
   //  CrossSection2RAA_Proposal(infile);
   //      CrossSection2RAA(infile);
   const double acceptance1 = 2. * (1.1 - .4);
-  CrossSection2RAA(infile, false, acceptance1);
+  // CrossSection2RAA(infile, false, acceptance1);
+  CrossSection2RAA(infile, false, acceptance1, true);
 
   //  const double acceptance2 = 2.* (0.85 - .4);
   //  CrossSection2RAA(infile, false, acceptance2);
@@ -274,7 +275,7 @@ void Draw_HFJetTruth_InvMass_DrawCrossSection_PR(const TString infile)
   SaveCanvas(c1, TString(_file0->GetName()) + TString(c1->GetName()), kTRUE);
 }
 
-void CrossSection2RAA(const TString infile, const bool use_AA_jet_trigger = true, const double dy = .7 * 2)
+void CrossSection2RAA(const TString infile, const bool use_AA_jet_trigger = true, const double dy = .7 * 2, const bool b3yr = false)
 {
   TFile *f = TFile::Open(infile + "Draw_HFJetTruth_InvMass_DrawCrossSection.root");
   assert(f);
@@ -284,7 +285,8 @@ void CrossSection2RAA(const TString infile, const bool use_AA_jet_trigger = true
   TH1F *h_b = (TH1F *) f->GetObjectChecked("h_b", "TH1F");
   assert(h_b);
 
-  const TString s_suffix(use_AA_jet_trigger ? "_AAJetTriggered" : "");
+  TString s_suffix(use_AA_jet_trigger ? "_AAJetTriggered" : "");
+  s_suffix += b3yr ? "_3yr" : "";
   s_suffix += Form("_deta%.2f", dy / 2);
 
   const double b_jet_RAA = 0.4;
@@ -299,10 +301,10 @@ void CrossSection2RAA(const TString infile, const bool use_AA_jet_trigger = true
   // 5-year lumi in [sPH-TRG-000]
   ////////////////////////////
 
-  const double pp_lumi = 200;                          // pb^-1 [sPH-TRG-000], rounded up from 197 pb^-1
+  const double pp_lumi = b3yr ? 50 : 200;                          // pb^-1 [sPH-TRG-000], rounded up from 197 pb^-1
   const double pp_inelastic_crosssec = 42e-3 / 1e-12;  // 42 mb in pb [sPH-TRG-000]
 
-  const double AuAu_MB_Evt = use_AA_jet_trigger ? 550e9 : 240e9;  // [sPH-TRG-000], depending on whether jet trigger applied in AA collisions
+  const double AuAu_MB_Evt = use_AA_jet_trigger ? (b3yr ? 320e9 : 550e9) : (b3yr ? 140e9 : 240e9);  // [sPH-TRG-000], depending on whether jet trigger applied in AA collisions
   const double pAu_MB_Evt = 600e9;                                // [sPH-TRG-000]
 
   const double AuAu_Ncoll_C0_10 = 960.2;  // [DOI:?10.1103/PhysRevC.87.034911?]
