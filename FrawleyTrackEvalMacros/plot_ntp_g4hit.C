@@ -1,3 +1,11 @@
+#include "TCanvas.h"
+#include "TH1D.h"
+#include "TH2D.h"
+#include "TCut.h"
+#include "TChain.h"
+#include "TLegend.h"
+#include "TFile.h"
+
 //#include "sPhenixStyle.C"
 #include "/phenix/u/yuhw/RootMacros/sPHENIXStyle/sPhenixStyle.C"
 
@@ -11,8 +19,9 @@ void plot_ntp_g4hit(
   gROOT->SetStyle("Plain");
   gStyle->SetOptStat(0);
   gStyle->SetOptFit(0);
-  gStyle->SetOptTitle(0);
+  gStyle->SetOptTitle(1);
 
+  bool acts = true; // is this output from acts tracking?
 
   //TString good_gtrack_cut = Form("gtrackID>=0&&gnltpc>20&&gembed==2");
   //TString good_track_cut = Form("gtrackID>=0&&gnltpc>20&&gembed==2&&quality<3 && ntrutpc>20");
@@ -21,22 +30,14 @@ void plot_ntp_g4hit(
   TString good_track_cut = Form("gtrackID>=0&&gnltpc>20&&quality<3 && ntrutpc>20");
   */
 
-
   // all
-  TString good_gtrack_cut = Form("gtrackID>=0 && gembed==2");
-  TString good_track_cut = Form("gtrackID>=0 && gembed==2");
+  TCut good_gtrack_cut = Form("gtrackID>=0 && gembed==2");
+  //TCut good_track_cut = Form("gtrackID>=0 && gembed==2");
+  //TCut good_track_cut = Form("gtrackID>=0 && gembed==2 && nmaps > 1");
+  TCut good_track_cut = Form("gtrackID>=0 && gembed==2 && nmaps == 0");
 
-
-  /*
-  // positive
-  TString good_gtrack_cut = Form("gtrackID>=0 && gembed==2 && charge > 0");
-  TString good_track_cut = Form("gtrackID>=0 && gembed==2 && charge > 0");
-  */
-  /*
-  // negative
-  TString good_gtrack_cut = Form("gtrackID>=0 && gembed==2 && charge < 0");
-  TString good_track_cut = Form("gtrackID>=0 && gembed==2 && charge < 0");
-  */
+  // rough 4 sigma cut
+  //TCut pt_cut = Form("fabs((pt - gpt)/pt) < 4*(0.02+0.0012*gpt)");  // 4 times sigma (where sigma = 2.2% at 2 and 4.4% at 20
 
   TFile *fout = new TFile("root_files/ntp_track_out.root","recreate");
 
@@ -44,7 +45,7 @@ void plot_ntp_g4hit(
   TChain* ntp_gtrack = new TChain("ntp_gtrack","g4 tracks");
 
   bool use_list = false;
-  int n_list = 1000;
+  int n_list = 20;
 
   int proc_list[155] = {10,100,102,103,105,106,110,112,113,117,118,119,
 			12,120,121,123,125,126,128,
@@ -69,7 +70,7 @@ void plot_ntp_g4hit(
       else
 	ifile = i;
 
-      sprintf(name,"/sphenix/user/frawley/tpc_cluster_qa/macros/macros/g4simulations/eval_output/g4svtx_eval_%i.root_g4svtx_eval.root",ifile);
+      sprintf(name,"/sphenix/user/frawley/acts_qa/macros/macros/g4simulations/acts_2kevts_eval_output/g4svtx_eval_%i.root_g4svtx_eval.root",ifile);
 
       // Skip any files where the event vertex was not reconstructed properly
       TChain* ntp_vertex = new TChain("ntp_vertex","events");
@@ -96,23 +97,32 @@ void plot_ntp_g4hit(
     }
   cout << " Found " << nbadvtx << " events with badly reconstructed vertices, and skipped them" << endl << endl;
 
-  //cout << " ntp_gtrack chain entries = " << ntp_gtrack->GetEntries() << endl;
-  //cout << " ntp_track chain entries = " << ntp_track->GetEntries() << endl;
+  cout << " ntp_gtrack chain entries = " << ntp_gtrack->GetEntries() << endl;
+  cout << " ntp_track chain entries = " << ntp_track->GetEntries() << endl;
 
+  /*
   TH1D *hch = new TH1D("hch","hch",100,-2,+2);
   TH1D *hgch = new TH1D("hgch","hgch",100,-2,+2);
-  ntp_track->Draw("charge>>hch",good_track_cut.Data());
-  ntp_gtrack->Draw("charge>>hgch",good_gtrack_cut.Data());
-  
+  ntp_track->Draw("charge>>hch",good_track_cut);
+  ntp_gtrack->Draw("charge>>hgch",good_gtrack_cut);
+  */  
+
+  TCanvas *cmvtx = new TCanvas("cmvtx","cmvtx");
+  TH1D *hnmvtx = new TH1D("hnmvtx","hnmvtx", 100, -1, 4);
+  ntp_track->Draw("nmaps>>hnmvtx", good_track_cut);
+  hnmvtx->Draw();
+  hnmvtx->Write();
+
   int nbinptres = 80;  // number of bins in pT
   int nbinpteff = 120;  // number of bins in pT
   int nbinptdca = 40;  // number of bins in pT
-  int nbin = 200;  // number of bins in Y slice
+  int nbin = 400;  // number of bins in Y slice
   double range = 0.4;
-  double ptmax = 20.0;
+  double ptmax = 40.0;
 
+  TCanvas *cpt = new TCanvas("cpt","cpt");
   TH2D *h1 = new TH2D("h1","h1",nbinptres, 0.0 ,ptmax,nbin,-range,range);
-  ntp_track->Draw("(pt-gpt)/gpt:gpt>>h1",good_track_cut.Data());
+  ntp_track->Draw("(pt-gpt)/gpt:gpt>>h1",good_track_cut);
   //h1->FitSlicesY(0,0,-1,0,"qnrl");
   h1->FitSlicesY();
   TH1D*h1_1 = (TH1D*)gDirectory->Get("h1_1");
@@ -127,7 +137,7 @@ void plot_ntp_g4hit(
   h1_2->SetMarkerStyle(20);
   h1_2->SetMarkerColor(kBlack);
   h1_2->SetLineColor(kBlack);
-  h1_2->GetYaxis()->SetRangeUser(0, 0.05);
+  h1_2->GetYaxis()->SetRangeUser(0, 0.10);
   h1_2->GetYaxis()->SetTitleOffset(1.5);
   h1_2->SetStats(0);
   h1_2->SetTitle(";p_{T} [GeV/c];#frac{#Delta p_{T}}{p_{T}}");
@@ -141,8 +151,9 @@ void plot_ntp_g4hit(
   TH1D* h3_eff = (TH1D*)h3_den->Clone("h3_eff");;
 
   cout<<__LINE__<<": "<< good_track_cut <<endl;
-  ntp_gtrack->Draw("gpt>>h3_den",good_gtrack_cut.Data());
-  ntp_track->Draw("gpt>>h3_num",good_track_cut.Data());
+  ntp_gtrack->Draw("gpt>>h3_den",good_gtrack_cut);
+  //ntp_track->Draw("gpt>>h3_num",good_track_cut && pt_cut);
+  ntp_track->Draw("gpt>>h3_num",good_track_cut);
 
   for(int i=1;i<=h3_den->GetNbinsX();++i){
     double pass = h3_num->GetBinContent(i);
@@ -174,15 +185,12 @@ void plot_ntp_g4hit(
   TCanvas *c4 = new TCanvas("c4","c4",5,5,800,800);
 
 
-  TH2D *h2 = new TH2D("h2","h2",nbinptdca, 0,ptmax,nbin,-0.02,0.02);
-  //ntp_track->Draw("(dca2d):gpt>>h2",good_track_cut.Data());
-  ntp_track->Draw("(pcax-gvx):gpt>>h2",good_track_cut.Data());  // wrong
-  //h2->FitSlicesY(0,0,-1,0,"qnrl");
+  TH2D *h2 = new TH2D("h2","h2",nbinptdca, 0,ptmax,nbin,-0.06,0.06);
+  ntp_track->Draw("(dca3dxy):gpt>>h2",good_track_cut);
   h2->FitSlicesY();
   TH1D*h2_1 = (TH1D*)gDirectory->Get("h2_1");
   TH1D*h2_2 = (TH1D*)gDirectory->Get("h2_2");
   h2_2->Draw("e");
-  //h2_1->Draw("same");
 
   h2_1->SetMarkerStyle(4);
   h2_1->SetMarkerColor(kBlack);
@@ -203,8 +211,11 @@ void plot_ntp_g4hit(
 
   TCanvas *c5 = new TCanvas("c5","c5",5,5,800,800);
 
-  TH2D *h3 = new TH2D("h3","h3",nbinptdca, 0, ptmax, nbin, -0.02, 0.02);
-  ntp_track->Draw("(pcaz-gvz):gpt>>h3",good_track_cut.Data());
+  TH2D *h3 = new TH2D("h3","h3",nbinptdca, 0, ptmax, nbin, -0.1, 0.1);
+  if(acts)
+    ntp_track->Draw("(dca3dz-gvz):gpt>>h3",good_track_cut);
+  else
+    ntp_track->Draw("(dca3dz):gpt>>h3",good_track_cut);
   h3->FitSlicesY();
   TH1D*h3_1 = (TH1D*)gDirectory->Get("h3_1");
   TH1D*h3_2 = (TH1D*)gDirectory->Get("h3_2");
@@ -229,9 +240,9 @@ void plot_ntp_g4hit(
 
   TCanvas *c6 = new TCanvas("c6","c6", 5,5,1200, 800);
 
-  TH2D *h6 = new TH2D("h6","h6",nbinptdca, 0, 1.1, nbin, -1.0, 4.0);
-  ntp_track->Draw("ntrumaps:gpt>>h6",good_track_cut.Data());
-    h6->Draw();
+  TH2D *h6 = new TH2D("h6","h6",nbinptdca, 0, 20.0, nbin, -1.0, 4.0);
+  ntp_track->Draw("ntrumaps:gpt>>h6",good_track_cut);
+  h6->Draw();
  
   TH1D *h6_1 = new TH1D("h6_1","h6_1",nbin, 0.0, 1.2);
   int binlo = h6->GetYaxis()->FindBin(2.5);

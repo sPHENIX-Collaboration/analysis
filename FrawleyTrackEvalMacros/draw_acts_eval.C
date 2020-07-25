@@ -20,34 +20,36 @@ void draw_acts_eval()
   bool verbose2 = false;
 
   TChain *theTree = new TChain("tracktree");
-
-  for(int i=0;i<1000;++i)
+  theTree->Add("/sphenix/user/frawley/acts_qa/macros/macros/g4simulations/G4sPHENIX.root_g4svtx_eval.root_acts.root");
+  
+  /*
+  for(int i=0;i<100;++i)
     {
       char name[500];
       sprintf(name,"/sphenix/user/frawley/acts_qa/macros/macros/g4simulations/eval_output/g4svtx_eval_%i.root_g4svtx_eval.root_acts.root",i);
       theTree->Add(name);
       cout << "Added file " << name << endl;
     }
-  
+  */
   
   double maxtracks = 100;
   TH1D *hitr[2];
-  hitr[0] = new TH1D("hitr0","track number",10000,0,maxtracks);
-  hitr[1] = new TH1D("hitr1","track number",10000,0,maxtracks);
+  hitr[0] = new TH1D("hitr0","track number",100,1,maxtracks+1);
+  hitr[1] = new TH1D("hitr1","track number",100,1,maxtracks+1);
 
   TH1D *hpt = new TH1D("hpt","truth_pt",100,0,20);
   TH1D *hpt_fit_seed = new TH1D("hpt_fit_seed","fit p_{T} - seed p_{T}",100,-10.0, 10.0);
-  TH1D *hpt_fit_over_truth = new TH1D("hpt_fit_over_truth","flt p_{T} / truth pT",200,0, 2.0);
+  TH1D *hpt_flt_over_truth = new TH1D("hpt_flt_over_truth","flt p_{T} / truth pT",200,0, 2.0);
+  TH1D *hpt_actsfit_over_truth = new TH1D("hpt_actsfit_over_truth","actsfit p_{T} / truth pT",200,0, 2.0);
   TH2D *hpt_seed_truth = new TH2D("hpt_seed_truth","seed/fit p_{T} vs truth p_{T}",100, 0, 20, 100, 0, 20);
-  TH2D *hpt_fit_truth = new TH2D("hpt_fit_truth","fit p_{T}/truth p_{T} vs truth p_{T}",100,0,20, 500, 0.5, 1.5);
+  TH2D *hpt_flt_truth = new TH2D("hpt_flt_truth","flt p_{T}/truth p_{T} vs truth p_{T}",100,0,20, 500, 0.5, 1.5);
+  TH2D *hpt_actsfit_truth = new TH2D("hpt_actsfit_truth","acts fit p_{T}/truth p_{T} vs truth p_{T}",100,0,20, 500, 0.5, 1.5);
 
   TH2D *hxdiff_KF_truth_xlocal = new TH2D("hxdiff_KF_truth_xlocal","local KF x projection vs truth x (last layer, mm)",100, 0, 20, 100,-2.0,2.0);
   TH2D *hxdiff_KF_truth_ylocal = new TH2D("hxdiff_KF_truth_ylocal","local KF y projection vs truth y (last layer, mm)",100, 0, 20, 100,-2.0,2.0);
   TH2D *hxdiff_KF_truth_xglobal = new TH2D("hxdiff_KF_truth_xglobal","global KF x projection vs truth x (last layer, mm)",100, 0, 20, 100,-2.0,2.0);
   TH2D *hxdiff_KF_truth_yglobal = new TH2D("hxdiff_KF_truth_yglobal","global KF y projection vs truth y (last layer, mm)",100, 0, 20, 100,-2.0,2.0);
   TH2D *hxdiff_KF_truth_zglobal = new TH2D("hxdiff_KF_truth_zglobal","global KF z projection vs truth z (last_layer, mm)",100, 0, 20, 100,-2.0,2.0);
-
-  //hxdiff_KF_truth_xlocal->Fill(*t_pT, xdiff_local_last);
 
   TH1D *hxerr_KF = new TH1D("hxerr_KF"," err_eLOC0_flt", 100, -3, 3);
   TH1D *hxpull_KF = new TH1D("hxpull_KF"," pull_eLOC0_flt outermost", 100, -5, 5);
@@ -63,11 +65,11 @@ void draw_acts_eval()
 
   TH1D *hdcaxy[2];
   TH1D *hdcaz[2];
-  hdcaxy[0] = new TH1D("hdcaxy0","DCA xy", 100, -2.0, 2);
+  hdcaxy[0] = new TH1D("hdcaxy0","DCA xy", 500, -2.0, 2);
   hdcaxy[0]->GetXaxis()->SetTitle("DCA (mm)");
-  hdcaxy[1] = new TH1D("hdcaxy1","DCA xy", 100, -2.0, 2);
-  hdcaz[0] = new TH1D("hdcaz0","DCA z", 100, -2.0, 2.0);
-  hdcaz[1] = new TH1D("hdcaz1","DCA z", 100, -2.0, 2.0);
+  hdcaxy[1] = new TH1D("hdcaxy1","DCA xy", 500, -2.0, 2);
+  hdcaz[0] = new TH1D("hdcaz0","DCA z", 500, -2.0, 2.0);
+  hdcaz[1] = new TH1D("hdcaz1","DCA z", 500, -2.0, 2.0);
 
 
   TH1D *hprotox[2];
@@ -104,6 +106,7 @@ void draw_acts_eval()
   TTreeReaderValue<float> t_vx(theReader, "t_vx");
   TTreeReaderValue<float> t_vy(theReader, "t_vy");
   TTreeReaderValue<float> t_vz(theReader, "t_vz");
+  TTreeReaderValue<unsigned long long> t_barcode(theReader, "t_barcode");
   TTreeReaderArray<float> t_eLOC0(theReader, "t_eLOC0");
   TTreeReaderArray<float> t_eLOC1(theReader, "t_eLOC1");
   //TTreeReaderArray<float> layer(theReader, "layer_id");
@@ -194,7 +197,7 @@ void draw_acts_eval()
   int itr = 0;
    while(theReader.Next()){
 
-     //if(*event == 2) continue;
+     //if(*event != 0) continue;
      /*
      if((itr !=2)) 
        {
@@ -209,19 +212,32 @@ void draw_acts_eval()
 	 continue;
        }
      
-     if(pT_smt.GetSize() < minhits) continue;
+     if(pT_flt.GetSize() < minhits) continue;
      
-     double inner_radius = sqrt(pow(t_x[pT_flt.GetSize()-1], 2) + pow(t_y[pT_flt.GetSize()-1], 2));
+     //double inner_radius = sqrt(pow(t_x[pT_flt.GetSize()-1], 2) + pow(t_y[pT_flt.GetSize()-1], 2));
+     double inner_radius = sqrt(pow(t_x[pT_smt.GetSize()-1], 2) + pow(t_y[pT_smt.GetSize()-1], 2));
      //if(inner_radius < 80)   continue;
+
+     if(pT_smt.GetSize() != pT_flt.GetSize())
+       cout << " smt size " << pT_smt.GetSize() << " flt size " << pT_flt.GetSize() << endl;
+
+     // cout << " t_barcode " << *t_barcode << endl;
+     if(*t_barcode > maxtracks)
+       {
+	 //cout << "skip track with barcode " << *t_barcode << endl;
+	 continue;
+       }
 
      float pT_fit =sqrt(pow(*px_fit,2) + pow(*py_fit,2));
      float pT_proto =sqrt(pow(*px_proto,2) + pow(*py_proto,2));
+
 
      double xdiff_global_last = g_x_flt[0] - t_x[0];
      double ydiff_global_last = g_y_flt[0] - t_y[0];
      double zdiff_global_last = g_z_flt[0] - t_z[0];
      double xdiff_local_last = eLOC0_flt[0] - t_eLOC0[0];
      double ydiff_local_last = eLOC1_flt[0] - t_eLOC1[0];
+
 
      if(verbose1)
        {
@@ -242,13 +258,15 @@ void draw_acts_eval()
 
      double pT_truth = *t_pT;
      double pT_fitted = pT_flt[0];
-     //double pT_fitted = pT_fit;  // has problems 
+     double pT_actsfit = pT_fit;  // has problems 
      double pT_seed = pT_prt[pT_prt.GetSize() - 1];
 
      hpt_seed_truth->Fill(pT_truth, pT_fitted);
-     hpt_fit_truth->Fill(pT_truth, pT_fitted / pT_truth);
+     hpt_flt_truth->Fill(pT_truth, pT_fitted / pT_truth);
+     hpt_actsfit_truth->Fill(pT_truth, pT_actsfit / pT_truth);
      hpt_fit_seed->Fill(pT_fitted -  pT_seed);
-     hpt_fit_over_truth->Fill(pT_fitted /  pT_truth);
+     hpt_flt_over_truth->Fill(pT_fitted /  pT_truth);
+     hpt_actsfit_over_truth->Fill(pT_actsfit /  pT_truth);
      hxdiff_KF_truth_xlocal->Fill(pT_truth, xdiff_local_last);
      hxdiff_KF_truth_ylocal->Fill(pT_truth, ydiff_local_last);
      hxdiff_KF_truth_xglobal->Fill(pT_truth, xdiff_global_last);
@@ -265,7 +283,7 @@ void draw_acts_eval()
      hypull_KF->Fill( pull_eLOC1_flt[0]);
     if(inner_radius < 80) 
       {
-	hitr[0]->Fill(itr);
+	hitr[0]->Fill(*t_barcode);
 	hdcaxy[0]->Fill(*dcaxy_fit);
 	hdcaz[0]->Fill(*dcaz_fit-*t_vz);
 	
@@ -275,7 +293,7 @@ void draw_acts_eval()
       }
     else
       {
-	hitr[1]->Fill(itr);
+	hitr[1]->Fill(*t_barcode);
 	hdcaxy[1]->Fill(*dcaxy_fit);
 	hdcaz[1]->Fill(*dcaz_fit-*t_vz);
 	
@@ -435,55 +453,62 @@ void draw_acts_eval()
    //hpt_seed_truth->Draw();
 
    TLegend *trleg = new TLegend(0.2, 0.75, 0.55, 0.85, "", "NDC");
-   trleg->AddEntry(hpt_seed_truth,"seed", "p");
-   trleg->AddEntry(hpt_fit_truth, "fit ","p");
+   trleg->AddEntry(hpt_actsfit_truth,"seed", "p");
+   trleg->AddEntry(hpt_flt_truth, "fit ","p");
    trleg->SetTextSize(0.05);
    trleg->Draw();
 
    cout << "get truth plots" << endl;
 
-   hpt_fit_truth->SetMarkerStyle(20);
-   hpt_fit_truth->SetMarkerSize(0.4);
-   hpt_fit_truth->SetMarkerColor(kRed);
-   hpt_fit_truth->Draw("colz");
+   hpt_flt_truth->SetMarkerStyle(20);
+   hpt_flt_truth->SetMarkerSize(0.4);
+   hpt_flt_truth->SetMarkerColor(kRed);
+   hpt_flt_truth->Draw("colz");
 
    ctruth->cd(2);
-   hpt_fit_seed->GetXaxis()->SetTitle("fit p_{T} - seed p_{T}");
-   hpt_fit_seed->SetTitleSize(0.05);
-   hpt_fit_seed->GetYaxis()->SetLabelSize(0.05);
-   hpt_fit_seed->GetXaxis()->SetLabelSize(0.05);
-   hpt_fit_seed->GetXaxis()->SetNdivisions(505);
-   hpt_fit_seed->Draw();
+   hpt_actsfit_over_truth->GetXaxis()->SetTitle("actsfit p_{T}  / truth p_{T}");
+   hpt_actsfit_over_truth->SetTitleSize(0.05);
+   hpt_actsfit_over_truth->GetYaxis()->SetLabelSize(0.05);
+   hpt_actsfit_over_truth->GetXaxis()->SetLabelSize(0.05);
+   hpt_actsfit_over_truth->GetXaxis()->SetNdivisions(505);
+   hpt_actsfit_over_truth->Draw();
 
    TLegend *tkleg = new TLegend(0.15, 0.79, 0.45, 0.85, "", "NDC");
-   tkleg->AddEntry(hpt_fit_seed, "fit - seed","l");
+   tkleg->AddEntry(hpt_actsfit_over_truth, "actsflt/truth","l");
    tkleg->SetTextSize(0.05);
    tkleg->Draw();
 
    ctruth->cd(3);
-   hpt_fit_over_truth->SetMarkerStyle(20);
-   hpt_fit_over_truth->SetMarkerSize(0.2);
-   hpt_fit_over_truth->SetLineColor(kRed);
-   hpt_fit_over_truth->GetXaxis()->SetTitle("fit p_{T} / truth p_{T}");
-   hpt_fit_over_truth->GetYaxis()->SetTitleSize(0.05);
-   hpt_fit_over_truth->GetXaxis()->SetTitleSize(0.05);
-   hpt_fit_over_truth->GetYaxis()->SetLabelSize(0.05);
-   hpt_fit_over_truth->GetXaxis()->SetLabelSize(0.05);
-   hpt_fit_over_truth->GetXaxis()->SetNdivisions(505);
-   hpt_fit_over_truth->Draw();
+   hpt_flt_over_truth->SetMarkerStyle(20);
+   hpt_flt_over_truth->SetMarkerSize(0.2);
+   hpt_flt_over_truth->SetLineColor(kRed);
+   hpt_flt_over_truth->GetXaxis()->SetTitle("flt p_{T} / truth p_{T}");
+   hpt_flt_over_truth->GetYaxis()->SetTitleSize(0.05);
+   hpt_flt_over_truth->GetXaxis()->SetTitleSize(0.05);
+   hpt_flt_over_truth->GetYaxis()->SetLabelSize(0.05);
+   hpt_flt_over_truth->GetXaxis()->SetLabelSize(0.05);
+   hpt_flt_over_truth->GetXaxis()->SetNdivisions(505);
+   hpt_flt_over_truth->Draw();
+
+   int binlo =  hpt_flt_over_truth->GetXaxis()->FindBin(0.8);
+   int binhi =  hpt_flt_over_truth->GetXaxis()->FindBin(1.2);
+   cout << " binlo " << binlo << " binhi " << binhi << endl;
+   cout << " hpt_flt_over_truth integral 0.8 to 1.2 " << hpt_flt_over_truth->Integral(binlo, binhi) << endl;;
+   cout << " hpt_flt_over_truth integral 0 to 0.8  " << hpt_flt_over_truth->Integral(1, binlo) << endl;;
+   cout << " hpt_actsfit_over_truth integral 0.8 to 1.2 " << hpt_actsfit_over_truth->Integral(binlo, binhi) << endl;;
 
 
    TLegend *tfleg = new TLegend(0.15, 0.79, 0.45, 0.85, "", "NDC");
-   tfleg->AddEntry(hpt_fit_over_truth, "fit/truth p_{T}","l");
+   tfleg->AddEntry(hpt_flt_over_truth, "fit/truth p_{T}","l");
    tfleg->SetTextSize(0.05);
    tfleg->Draw();
 
    cout << "get pT res plots" << endl;
 
-   hpt_fit_truth->FitSlicesY();
-   TH1D*hptres = (TH1D*)gDirectory->Get("hpt_fit_truth_2");
+   hpt_flt_truth->FitSlicesY();
+   TH1D*hptres = (TH1D*)gDirectory->Get("hpt_flt_truth_2");
    hptres->GetYaxis()->SetRangeUser(0.0, 0.07);
-   TH1D*hptcent = (TH1D*)gDirectory->Get("hpt_fit_truth_1");
+   TH1D*hptcent = (TH1D*)gDirectory->Get("hpt_flt_truth_1");
    hptcent->GetYaxis()->SetRangeUser(0.8, 1.2);
 
    cout << "plot pT res plots" << endl;
@@ -605,8 +630,9 @@ void draw_acts_eval()
    dcaleg->Draw();
 
    TCanvas *citr = new TCanvas("citr","track number",5,5,1200,800);
-   hitr[0]->Draw();
-   hitr[1]->SetLineColor(kRed);
-   hitr[1]->Draw("same");
+   hitr[1]->SetMinimum(0);
+   hitr[1]->Draw();
+   hitr[0]->SetLineColor(kRed);
+   hitr[0]->Draw("same");
 
 }
