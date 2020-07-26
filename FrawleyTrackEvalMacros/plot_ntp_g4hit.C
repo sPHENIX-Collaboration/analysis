@@ -33,8 +33,8 @@ void plot_ntp_g4hit(
   // all
   TCut good_gtrack_cut = Form("gtrackID>=0 && gembed==2");
   //TCut good_track_cut = Form("gtrackID>=0 && gembed==2");
-  //TCut good_track_cut = Form("gtrackID>=0 && gembed==2 && nmaps > 1");
-  TCut good_track_cut = Form("gtrackID>=0 && gembed==2 && nmaps == 0");
+  TCut good_track_cut = Form("gtrackID>=0 && gembed==2 && nmaps > 1");
+  //TCut good_track_cut = Form("gtrackID>=0 && gembed==2 && nmaps == 0");
 
   // rough 4 sigma cut
   //TCut pt_cut = Form("fabs((pt - gpt)/pt) < 4*(0.02+0.0012*gpt)");  // 4 times sigma (where sigma = 2.2% at 2 and 4.4% at 20
@@ -45,7 +45,7 @@ void plot_ntp_g4hit(
   TChain* ntp_gtrack = new TChain("ntp_gtrack","g4 tracks");
 
   bool use_list = false;
-  int n_list = 20;
+  int n_list = 2000;
 
   int proc_list[155] = {10,100,102,103,105,106,110,112,113,117,118,119,
 			12,120,121,123,125,126,128,
@@ -70,7 +70,7 @@ void plot_ntp_g4hit(
       else
 	ifile = i;
 
-      sprintf(name,"/sphenix/user/frawley/acts_qa/macros/macros/g4simulations/acts_2kevts_eval_output/g4svtx_eval_%i.root_g4svtx_eval.root",ifile);
+      sprintf(name,"/sphenix/user/frawley/acts_qa/macros/macros/g4simulations/eval_output/g4svtx_eval_%i.root_g4svtx_eval.root",ifile);
 
       // Skip any files where the event vertex was not reconstructed properly
       TChain* ntp_vertex = new TChain("ntp_vertex","events");
@@ -240,7 +240,7 @@ void plot_ntp_g4hit(
 
   TCanvas *c6 = new TCanvas("c6","c6", 5,5,1200, 800);
 
-  TH2D *h6 = new TH2D("h6","h6",nbinptdca, 0, 20.0, nbin, -1.0, 4.0);
+  TH2D *h6 = new TH2D("h6","h6",nbinptdca, 0, ptmax, nbin, -1.0, 4.0);
   ntp_track->Draw("ntrumaps:gpt>>h6",good_track_cut);
   h6->Draw();
  
