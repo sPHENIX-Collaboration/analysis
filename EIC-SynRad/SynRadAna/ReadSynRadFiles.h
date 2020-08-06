@@ -7,21 +7,21 @@
 
 #include <phhepmc/PHHepMCGenHelper.h>
 
-#include <string>
 #include <fstream>
+#include <string>
 
 class PHCompositeNode;
 class TChain;
 
 namespace erhic
 {
-class EventMC;
+  class EventMC;
 }
 
 class ReadSynRadFiles : public SubsysReco
 {
  public:
-  ReadSynRadFiles(const std::string &name = "EICReader");
+  ReadSynRadFiles(const std::string &name = "ReadSynRadFiles");
   virtual ~ReadSynRadFiles();
 
   int Init(PHCompositeNode *topNode);
@@ -69,6 +69,10 @@ class ReadSynRadFiles : public SubsysReco
   //! negative IDs are backgrounds, .e.g out of time pile up collisions
   //! Usually, ID = 0 means the primary Au+Au collision background
   void set_embedding_id(int id) { hepmc_helper.set_embedding_id(id); }
+
+  //! whether to reverse x and z axis directions (rotate around y bay pi)
+  void set_reverseXZ(bool b = true) { m_reverseXZ = b; }
+
  protected:
   /** Get tree from input file */
   void GetTree();
@@ -98,6 +102,9 @@ class ReadSynRadFiles : public SubsysReco
 
   //! helper for insert HepMC event to DST node and add vertex smearing
   PHHepMCGenHelper hepmc_helper;
+
+  //! whether to reverse x and z axis directions (rotate around y bay pi)
+  bool m_reverseXZ = false;
 };
 
 #endif /* READEICFILES_H__ */

@@ -164,6 +164,21 @@ int ReadSynRadFiles::process_event(PHCompositeNode *topNode)
            << endl;
     }
 
+    double xz_sign = +1;
+    //assert(m_reverseXZ);
+    if (m_reverseXZ)
+    {
+      xz_sign = -1;
+
+      static bool once = true;
+
+      if (once)
+      {
+        cout << "ReadSynRadFiles::process_event - reverse x z axis direction for input photons" << endl;
+        once = false;
+      }
+    }
+
     const double E_GeV = Energy_eV / 1e9;
     //    const double E_GeV = Energy_eV / 1e3;
     const double px = E_GeV * Dir_X;
@@ -171,7 +186,7 @@ int ReadSynRadFiles::process_event(PHCompositeNode *topNode)
     const double pz = E_GeV * Dir_Z;
 
     /* Create HepMC particle record */
-    HepMC::GenParticle *hepmcpart = new HepMC::GenParticle(HepMC::FourVector(px, py, pz, E_GeV), 22);
+    HepMC::GenParticle *hepmcpart = new HepMC::GenParticle(HepMC::FourVector(px * xz_sign, py, pz * xz_sign, E_GeV), 22);
 
     hepmcpart->set_status(1);
 
@@ -182,9 +197,9 @@ int ReadSynRadFiles::process_event(PHCompositeNode *topNode)
     hepmc_particles.push_back(hepmcpart);
     origin_index.push_back(ii);
 
-    HepMC::GenVertex *hepmcvtx = new HepMC::GenVertex(HepMC::FourVector(Pos_X_cm,
+    HepMC::GenVertex *hepmcvtx = new HepMC::GenVertex(HepMC::FourVector(Pos_X_cm * xz_sign,
                                                                         Pos_Y_cm,
-                                                                        Pos_Z_cm,
+                                                                        Pos_Z_cm * xz_sign,
                                                                         0));
     hepmc_vertices.push_back(hepmcvtx);
     hepmcvtx->add_particle_out(hepmcpart);
