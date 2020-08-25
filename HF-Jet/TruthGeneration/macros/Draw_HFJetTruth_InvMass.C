@@ -301,10 +301,10 @@ void CrossSection2RAA(const TString infile, const bool use_AA_jet_trigger = true
   // 5-year lumi in [sPH-TRG-000]
   ////////////////////////////
 
-  const double pp_lumi = b3yr ? 50 : 200;                          // pb^-1 [sPH-TRG-000], rounded up from 197 pb^-1
+  const double pp_lumi = b3yr ? 101 : 200;                          // pb^-1 [sPH-TRG-000], rounded up from 197 pb^-1
   const double pp_inelastic_crosssec = 42e-3 / 1e-12;  // 42 mb in pb [sPH-TRG-000]
 
-  const double AuAu_MB_Evt = use_AA_jet_trigger ? (b3yr ? 320e9 : 550e9) : (b3yr ? 140e9 : 240e9);  // [sPH-TRG-000], depending on whether jet trigger applied in AA collisions
+  const double AuAu_MB_Evt = use_AA_jet_trigger ? (b3yr ? 320e9 : 550e9) : (b3yr ? 142e9 : 240e9);  // [sPH-TRG-000], depending on whether jet trigger applied in AA collisions
   const double pAu_MB_Evt = 600e9;                                // [sPH-TRG-000]
 
   const double AuAu_Ncoll_C0_10 = 960.2;  // [DOI:?10.1103/PhysRevC.87.034911?]
@@ -330,7 +330,7 @@ void CrossSection2RAA(const TString infile, const bool use_AA_jet_trigger = true
   cout << "\t"
        << "pAu_eq_lumi_C0_100 = " << pAu_eq_lumi_C0_100 << endl;
 
-  TCanvas *c1 = new TCanvas("Draw_HFJetTruth_InvMass_CrossSection2RAA_Ratio" + s_suffix, "Draw_HFJetTruth_InvMass_CrossSection2RAA_Ratio" + s_suffix, 700, 600);
+  TCanvas *c1 = new TCanvas("Draw_HFJetTruth_InvMass_CrossSection2RAA_Ratio" + s_suffix, "Draw_HFJetTruth_InvMass_CrossSection2RAA_Ratio" + s_suffix, 1100, 800);
   c1->Divide(1, 1);
   int idx = 1;
   TPad *p;
@@ -353,7 +353,7 @@ void CrossSection2RAA(const TString infile, const bool use_AA_jet_trigger = true
   g_AA->Draw("same");
   SaveCanvas(c1, infile + "_" + TString(c1->GetName()), kTRUE);
 
-  TCanvas *c1 = new TCanvas("Draw_HFJetTruth_InvMass_CrossSection2RAA" + s_suffix, "Draw_HFJetTruth_InvMass_CrossSection2RAA" + s_suffix, 700, 600);
+  TCanvas *c1 = new TCanvas("Draw_HFJetTruth_InvMass_CrossSection2RAA" + s_suffix, "Draw_HFJetTruth_InvMass_CrossSection2RAA" + s_suffix, 1100, 800);
   c1->Divide(1, 1);
   int idx = 1;
   TPad *p;
@@ -361,32 +361,32 @@ void CrossSection2RAA(const TString infile, const bool use_AA_jet_trigger = true
   p = (TPad *) c1->cd(idx++);
   c1->Update();
 
-  p->DrawFrame(30, 0, 75, 1.2)->SetTitle(";Di-jet invariant mass [GeV/#it{c}^{2}];#it{R}^{bb}_{AA}");
+  p->DrawFrame(30, 0, 75, 1.3)->SetTitle(";Di-jet invariant mass [GeV/#it{c}^{2}];#it{R}^{bb}_{AA}");
 
   TGraphErrors *ge_RAA = GetRAA(g_pp, g_AA);
 
-  ge_RAA->SetLineWidth(3);
+  ge_RAA->SetLineWidth(4);
   ge_RAA->SetMarkerStyle(kFullCircle);
-  ge_RAA->SetMarkerSize(2);
+  ge_RAA->SetMarkerSize(3);
 
   ge_RAA->Draw("pe");
   ge_RAA->Print();
 
-  TLegend *leg = new TLegend(.0, .76, .85, .93);
+  TLegend *leg = new TLegend(.0, .7, .85, .93);
   leg->SetFillStyle(0);
-  leg->AddEntry("", "#it{#bf{sPHENIX }} Simulation, PYTHIA-8 #it{b}-jet, Anti-k_{T} R=0.4", "");
+  leg->AddEntry("", "#it{#bf{sPHENIX}} Projection, #it{b}-jet, 0-10% Au+Au, Year 1-3", "");
   leg->AddEntry("", Form("|#eta_{1,2}|<%.1f, |#Delta#phi_{1,2}|>2#pi/3, p_{T,1}>15 GeV/c, p_{T,2}>10 GeV/c", dy / 2), "");
-  leg->AddEntry("", Form("#it{p}+#it{p}: %.0f pb^{-1}, %.0f%% Eff., %.0f%% Pur.", pp_lumi, pp_eff * 100, pp_purity * 100), "");
-  leg->AddEntry("", Form("Au+Au: %.0fB col., %.0f%% Eff., %.0f%% Pur.", '%', AuAu_MB_Evt / 1e9, AuAu_eff * 100, AuAu_purity * 100), "");
+  leg->AddEntry("", Form("#it{p}+#it{p}: %.0f pb^{-1} trig., %.0f%% Eff., %.0f%% Pur.", pp_lumi, pp_eff * 100, pp_purity * 100), "");
+  leg->AddEntry("", Form("Au+Au: %.0fB rec., %.0f%% Eff., %.0f%% Pur.", '%', AuAu_MB_Evt / 1e9, AuAu_eff * 100, AuAu_purity * 100), "");
   leg->Draw();
 
-  TLegend *leg2 = new TLegend(.17, .70, .88, .77);
-  leg2->AddEntry(ge_RAA, "#it{b}-jet #it{R}_{AA}, Au+Au 0-10%C, #sqrt{s_{NN}}=200 GeV", "pl");
-  leg2->Draw();
+//  TLegend *leg2 = new TLegend(.17, .70, .88, .77);
+//  leg2->AddEntry(ge_RAA, "#it{b}-jet #it{R}_{AA}, Au+Au 0-10%C, #sqrt{s_{NN}}=200 GeV", "pl");
+//  leg2->Draw();
 
   SaveCanvas(c1, infile + "_" + TString(c1->GetName()), kTRUE);
 
-  TCanvas *c1 = new TCanvas("Draw_HFJetTruth_InvMass_CrossSection2RAA_Theory" + s_suffix, "Draw_HFJetTruth_InvMass_CrossSection2RAA_Theory" + s_suffix, 700, 600);
+  TCanvas *c1 = new TCanvas("Draw_HFJetTruth_InvMass_CrossSection2RAA_Theory" + s_suffix, "Draw_HFJetTruth_InvMass_CrossSection2RAA_Theory" + s_suffix, 1100, 800);
   c1->Divide(1, 1);
   int idx = 1;
   TPad *p;
@@ -394,7 +394,7 @@ void CrossSection2RAA(const TString infile, const bool use_AA_jet_trigger = true
   p = (TPad *) c1->cd(idx++);
   c1->Update();
 
-  p->DrawFrame(35, 0, 75, 1.2)->SetTitle(";Di-jet invariant mass [GeV/#it{c}^{2}];#it{R}^{bb}_{AA}");
+  p->DrawFrame(35, 0, 75, 1.4)->SetTitle(";Di-jet invariant mass [GeV];#it{R}^{bb}_{AA}");
 
   //
   TGraph *g18 = GetRAAKang2019(1, 1.8);
@@ -414,9 +414,9 @@ void CrossSection2RAA(const TString infile, const bool use_AA_jet_trigger = true
   //
   ge_RAA->DrawClone("pe");
   leg->DrawClone();
-  leg2->DrawClone();
+//  leg2->DrawClone();
   //
-  TLegend *leg1 = new TLegend(.2, .6, .92, .70);
+  TLegend *leg1 = new TLegend(.19, .6, .92, .7);
 //  leg1->AddEntry("", "Kang et al, PRD #bf{99}, 034006 (2019), m=m_{b}, rad.+col.", "");
   leg1->SetHeader("Kang et al, PRD #bf{99}, 034006 (2019), m=m_{b}, rad.+col.");
   leg1->Draw();
@@ -429,7 +429,7 @@ void CrossSection2RAA(const TString infile, const bool use_AA_jet_trigger = true
   SaveCanvas(c1, infile + "_" + TString(c1->GetName()), kTRUE);
 
 
-  TCanvas *c1 = new TCanvas("Draw_HFJetTruth_InvMass_CrossSection2RAARatio_Theory" + s_suffix, "Draw_HFJetTruth_InvMass_CrossSection2RAARatio_Theory" + s_suffix, 700, 600);
+  TCanvas *c1 = new TCanvas("Draw_HFJetTruth_InvMass_CrossSection2RAARatio_Theory" + s_suffix, "Draw_HFJetTruth_InvMass_CrossSection2RAARatio_Theory" + s_suffix, 1100, 800);
   c1->Divide(1, 1);
   int idx = 1;
   TPad *p;
@@ -437,7 +437,7 @@ void CrossSection2RAA(const TString infile, const bool use_AA_jet_trigger = true
   p = (TPad *) c1->cd(idx++);
   c1->Update();
 
-  p->DrawFrame(35, 0, 75, 15)->SetTitle(";Di-jet invariant mass [GeV/#it{c}^{2}];#it{R}^{bb}_{AA}/#it{R}^{jj}_{AA}");
+  p->DrawFrame(35, 0, 75, 15)->SetTitle(";Di-jet invariant mass [GeV];#it{R}^{bb}_{AA}/#it{R}^{jj}_{AA}");
   TLine * l = new TLine(35, 1, 75, 1);
 //  l->SetLineStyle(kDashed);
   l->Draw();
@@ -467,7 +467,7 @@ void CrossSection2RAA(const TString infile, const bool use_AA_jet_trigger = true
   }
 
   leg->DrawClone();
-  leg2->DrawClone();
+//  leg2->DrawClone();
   //
   TLegend *leg1 = new TLegend(.2, .6, .92, .70);
 //  leg1->AddEntry("", "Kang et al, PRD #bf{99}, 034006 (2019), m=m_{b}, rad.+col.", "");
