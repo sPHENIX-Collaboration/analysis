@@ -21,19 +21,12 @@ void plot_ntp_g4hit(
   gStyle->SetOptFit(0);
   gStyle->SetOptTitle(1);
 
-  bool acts = true; // is this output from acts tracking?
-
-  //TString good_gtrack_cut = Form("gtrackID>=0&&gnltpc>20&&gembed==2");
-  //TString good_track_cut = Form("gtrackID>=0&&gnltpc>20&&gembed==2&&quality<3 && ntrutpc>20");
-  /*
-  TString good_gtrack_cut = Form("gtrackID>=0&&gnltpc>20");
-  TString good_track_cut = Form("gtrackID>=0&&gnltpc>20&&quality<3 && ntrutpc>20");
-  */
+  bool acts = false; // is this output from acts tracking?
 
   // all
   TCut good_gtrack_cut = Form("gtrackID>=0 && gembed==2");
-  //TCut good_track_cut = Form("gtrackID>=0 && gembed==2");
-  TCut good_track_cut = Form("gtrackID>=0 && gembed==2 && nmaps > 1");
+  TCut good_track_cut = Form("gtrackID>=0 && gembed==2 && abs(pt/gpt - 1) < 0.3");
+  //TCut good_track_cut = Form("gtrackID>=0 && gembed==2 && nmaps > 1");
   //TCut good_track_cut = Form("gtrackID>=0 && gembed==2 && nmaps == 0");
 
   // rough 4 sigma cut
@@ -45,30 +38,14 @@ void plot_ntp_g4hit(
   TChain* ntp_gtrack = new TChain("ntp_gtrack","g4 tracks");
 
   bool use_list = false;
-  int n_list = 2000;
-
-  int proc_list[155] = {10,100,102,103,105,106,110,112,113,117,118,119,
-			12,120,121,123,125,126,128,
-			13,130,131,132,133,134,135,138,14,142,143,144,145,147,148,149,
-		       151,154,155,156,157,158,159,160,161,
-			162,163,165,167,168,17,170,172,173,174,175,176,177,178,179,
-		       18,180,181,184,185,186,187,188,189,19,191,192,193,194,
-			196,197,199,2,20,201,203,204,206,207,208,209,211,213,214,216,217,
-			218,219,22,220,221,224,227,234,238,239,
-			24,26,27,28,30,31,32,34,36,37,38,39,4,40,41,46,47,48,49,
-		       50,51,54,55,56,57,60,62,63,65,66,67,68,69,7,70,74,75,77,78,79,8,80,81,
-			82,83,84,85,89,9,91,92,93,94,95,96};
+  int n_list = 1000;
 
   int ifile = 0; 
   int nbadvtx = 0;
   for(int i=0;i<n_list;i++)
     {
       char name[500];
-      // latest files
-      if(use_list)
-	ifile = proc_list[i];
-      else
-	ifile = i;
+      ifile = i;
 
       sprintf(name,"/sphenix/user/frawley/acts_qa/macros/macros/g4simulations/eval_output/g4svtx_eval_%i.root_g4svtx_eval.root",ifile);
 

@@ -17,29 +17,41 @@ void plot_ntp_track_out()
   gStyle->SetOptTitle(0);
 
   double ptmax = 40.0;
-  double slice_low = 20.0;
-  double slice_high = 21.0;
+  double slice_low = 30.0;
+  double slice_high = 31.0;
 
   std::vector<std::string> finvec;
   std::vector<std::string> legvec;
   std::vector<int> col;
 
-  finvec.push_back("root_files/acts_require2maps_ntp_track_out.root");
-  legvec.push_back( "acts MVTX match");
+  finvec.push_back("root_files/acts_PR890_1kfiles_ntp_track_out.root");
+  legvec.push_back( "acts PR890");
   col.push_back(kBlack);
 
+  finvec.push_back("root_files/ntp_track_out.root");
+  legvec.push_back( "Genfit");
+  col.push_back(kRed);
+
+  /*
   finvec.push_back("root_files/acts_require0maps_ntp_track_out.root");
   legvec.push_back("acts MVTX not matched");
   col.push_back(kBlue);
+  */
 
+  /*
   finvec.push_back("root_files/acts_genfit_compare_track_out.root");
   legvec.push_back("genfit all");
   col.push_back(kMagenta);
+  */
 
   /*
   finvec.push_back("root_files/acts_smoothed_require2maps_ntp_track_out.root");
   legvec.push_back("acts MVTX match smoothed");
   col.push_back(kRed);
+
+  finvec.push_back("root_files/acts_smoothed_require0maps_ntp_track_out.root");
+  legvec.push_back( "acts no MVTX match smoothed");
+  col.push_back(kMagenta);
   */
 
   unsigned int nfiles = finvec.size();
@@ -78,26 +90,6 @@ void plot_ntp_track_out()
   TF1 *fz = new TF1("fz","gaus");
   fz->SetRange(-0.02, 0.02);
 
-  /*
-  TFile *fin[nfiles];
-  std::string filename[nfiles]=
-    {
-      "root_files/acts_require2maps_ntp_track_out.root"
-      , "root_files/ntp_track_out.root"
-      //      , "root_files/acts_require0maps_ntp_track_out.root"     
-      , "root_files/acts_genfit_compare_track_out.root"
-    };
-
-  std::string lname[3] =
-    {
-      "acts MVTX match"
-      //      , "acts no MVTX match"
-      , "acts MVTX match smoothed"
-      , " genfit all"
-    };
-  */
-
-
   for(unsigned int i=0; i<finvec.size();++i)
     {
       TFile *fin = new TFile(finvec[i].c_str());
@@ -129,7 +121,7 @@ void plot_ntp_track_out()
       hptres->SetMarkerSize(1.2);
       hptres->SetMarkerColor(col[i]);
       hptres->GetXaxis()->SetRangeUser(0, ptmax);
-      hptres->GetYaxis()->SetRangeUser(0.0, 0.18);
+      hptres->GetYaxis()->SetRangeUser(0.0, 0.08);
       hptres->SetTitle(";p_{T} [GeV/c];#frac{#Delta p_{T}}{p_{T}} (resolution)");
       if(i == 0)
 	hptres->DrawCopy("p");
@@ -194,13 +186,12 @@ void plot_ntp_track_out()
       ctemp1->cd(i+1);
       hdca2d->Draw("colz");
 
-      cslicexy->cd(i+1);
       binlow = hdca2d->GetXaxis()->FindBin(slice_low);
       binhigh = hdca2d->GetXaxis()->FindBin(slice_high);
       TH1D* hdcaxyslice = hdca2d->ProjectionY("hdcaxyslice",binlow, binhigh);
       hdcaxyslice->SetLineColor(col[i]);      
       cslicexy->cd(i+1);
-      hdcaxyslice->DrawCopy();
+      hdcaxyslice->Draw();
       hdcaxyslice->Fit("gaus");
 
       cdcaxy->cd();  
@@ -213,7 +204,7 @@ void plot_ntp_track_out()
       hdcares->SetMarkerStyle(20);
       hdcares->SetMarkerSize(1.2);
       hdcares->SetMarkerColor(col[i]);
-      hdcares->GetYaxis()->SetRangeUser(0, 0.03);
+      hdcares->GetYaxis()->SetRangeUser(0, 0.008);
       if(i==0) 
 	hdcares->DrawCopy("p");
       else
@@ -244,7 +235,7 @@ void plot_ntp_track_out()
       hdcaZres->SetMarkerStyle(20);
       hdcaZres->SetMarkerSize(1.2);
       hdcaZres->SetMarkerColor(col[i]);
-      hdcaZres->GetYaxis()->SetRangeUser(0, 0.02);
+      hdcaZres->GetYaxis()->SetRangeUser(0, 0.015);
       if(i==0)      
 	hdcaZres->DrawCopy("p");
       else

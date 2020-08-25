@@ -16,40 +16,40 @@ void draw_acts_eval()
   gStyle->SetOptStat(1);
 
   unsigned int minhits = 1;
-  bool verbose1 = false;
-  bool verbose2 = false;
+  bool verbose1 = true;
+  bool verbose2 = true;
+  double ptmax = 40.0;
+  double maxtracks = 100;
 
   TChain *theTree = new TChain("tracktree");
   theTree->Add("/sphenix/user/frawley/acts_qa/macros/macros/g4simulations/G4sPHENIX.root_g4svtx_eval.root_acts.root");
-  
+ 
   /*
-  for(int i=0;i<100;++i)
+  for(int i=0;i<836;++i)
     {
       char name[500];
       sprintf(name,"/sphenix/user/frawley/acts_qa/macros/macros/g4simulations/eval_output/g4svtx_eval_%i.root_g4svtx_eval.root_acts.root",i);
       theTree->Add(name);
       cout << "Added file " << name << endl;
     }
-  */
-  
-  double maxtracks = 100;
+  */  
   TH1D *hitr[2];
   hitr[0] = new TH1D("hitr0","track number",100,1,maxtracks+1);
   hitr[1] = new TH1D("hitr1","track number",100,1,maxtracks+1);
 
-  TH1D *hpt = new TH1D("hpt","truth_pt",100,0,20);
+  TH1D *hpt = new TH1D("hpt","truth_pt",100,0,ptmax);
   TH1D *hpt_fit_seed = new TH1D("hpt_fit_seed","fit p_{T} - seed p_{T}",100,-10.0, 10.0);
   TH1D *hpt_flt_over_truth = new TH1D("hpt_flt_over_truth","flt p_{T} / truth pT",200,0, 2.0);
   TH1D *hpt_actsfit_over_truth = new TH1D("hpt_actsfit_over_truth","actsfit p_{T} / truth pT",200,0, 2.0);
-  TH2D *hpt_seed_truth = new TH2D("hpt_seed_truth","seed/fit p_{T} vs truth p_{T}",100, 0, 20, 100, 0, 20);
-  TH2D *hpt_flt_truth = new TH2D("hpt_flt_truth","flt p_{T}/truth p_{T} vs truth p_{T}",100,0,20, 500, 0.5, 1.5);
-  TH2D *hpt_actsfit_truth = new TH2D("hpt_actsfit_truth","acts fit p_{T}/truth p_{T} vs truth p_{T}",100,0,20, 500, 0.5, 1.5);
+  TH2D *hpt_seed_truth = new TH2D("hpt_seed_truth","seed/fit p_{T} vs truth p_{T}",100, 0, ptmax, 100, 0, ptmax);
+  TH2D *hpt_flt_truth = new TH2D("hpt_flt_truth","flt p_{T}/truth p_{T} vs truth p_{T}",100,0, ptmax, 500, 0.5, 1.5);
+  TH2D *hpt_actsfit_truth = new TH2D("hpt_actsfit_truth","acts fit p_{T}/truth p_{T} vs truth p_{T}",100,0, ptmax, 500, 0.5, 1.5);
 
-  TH2D *hxdiff_KF_truth_xlocal = new TH2D("hxdiff_KF_truth_xlocal","local KF x projection vs truth x (last layer, mm)",100, 0, 20, 100,-2.0,2.0);
-  TH2D *hxdiff_KF_truth_ylocal = new TH2D("hxdiff_KF_truth_ylocal","local KF y projection vs truth y (last layer, mm)",100, 0, 20, 100,-2.0,2.0);
-  TH2D *hxdiff_KF_truth_xglobal = new TH2D("hxdiff_KF_truth_xglobal","global KF x projection vs truth x (last layer, mm)",100, 0, 20, 100,-2.0,2.0);
-  TH2D *hxdiff_KF_truth_yglobal = new TH2D("hxdiff_KF_truth_yglobal","global KF y projection vs truth y (last layer, mm)",100, 0, 20, 100,-2.0,2.0);
-  TH2D *hxdiff_KF_truth_zglobal = new TH2D("hxdiff_KF_truth_zglobal","global KF z projection vs truth z (last_layer, mm)",100, 0, 20, 100,-2.0,2.0);
+  TH2D *hxdiff_KF_truth_xlocal = new TH2D("hxdiff_KF_truth_xlocal","local KF x projection vs truth x (last layer, mm)",100, 0, ptmax, 100,-2.0,2.0);
+  TH2D *hxdiff_KF_truth_ylocal = new TH2D("hxdiff_KF_truth_ylocal","local KF y projection vs truth y (last layer, mm)",100, 0, ptmax, 100,-2.0,2.0);
+  TH2D *hxdiff_KF_truth_xglobal = new TH2D("hxdiff_KF_truth_xglobal","global KF x projection vs truth x (last layer, mm)",100, 0, ptmax, 100,-2.0,2.0);
+  TH2D *hxdiff_KF_truth_yglobal = new TH2D("hxdiff_KF_truth_yglobal","global KF y projection vs truth y (last layer, mm)",100, 0, ptmax, 100,-2.0,2.0);
+  TH2D *hxdiff_KF_truth_zglobal = new TH2D("hxdiff_KF_truth_zglobal","global KF z projection vs truth z (last_layer, mm)",100, 0, ptmax, 100,-2.0,2.0);
 
   TH1D *hxerr_KF = new TH1D("hxerr_KF"," err_eLOC0_flt", 100, -3, 3);
   TH1D *hxpull_KF = new TH1D("hxpull_KF"," pull_eLOC0_flt outermost", 100, -5, 5);
@@ -57,7 +57,7 @@ void draw_acts_eval()
   TH2D *hxpull_KF_radius = new TH2D("hxpull_KF_radius"," pull_eLOC0_flt vs radius", 800, 0, 800, 100, -5, 5);
   TH2D *hzpull_KF_radius = new TH2D("hzpull_KF_radius"," pull_eLOC1_flt vs radius", 800, 0, 800, 100, -5, 5);
 
-  TH1D *hpt_smt = new TH1D("hpt_smt","state/truth p_{T}",100,0,20);
+  TH1D *hpt_smt = new TH1D("hpt_smt","state/truth p_{T}",100,0, ptmax);
   TH2D *htxy = new TH2D("htxy","y vs x truth",4000,-800,800,4000,-800,800);
   TH2D *hxy_flt = new TH2D("hxy_flt","hxy_flt",4000,-800,800,4000,-800,800);
   TH2D *hxy_smt = new TH2D("hxy_smt","hxy_smt",4000,-800,800,4000,-800,800);
@@ -197,14 +197,7 @@ void draw_acts_eval()
   int itr = 0;
    while(theReader.Next()){
 
-     //if(*event != 0) continue;
-     /*
-     if((itr !=2)) 
-       {
-	 itr++;
-	 continue;
-       }
-     */
+     //if(itr >20) continue;
 
      if(pT_flt.GetSize() < 1)
        {
@@ -216,10 +209,10 @@ void draw_acts_eval()
      
      //double inner_radius = sqrt(pow(t_x[pT_flt.GetSize()-1], 2) + pow(t_y[pT_flt.GetSize()-1], 2));
      double inner_radius = sqrt(pow(t_x[pT_smt.GetSize()-1], 2) + pow(t_y[pT_smt.GetSize()-1], 2));
-     //if(inner_radius < 80)   continue;
+     if(inner_radius > 80)   continue;
 
      if(pT_smt.GetSize() != pT_flt.GetSize())
-       cout << " smt size " << pT_smt.GetSize() << " flt size " << pT_flt.GetSize() << endl;
+       cout << " ***********   smt size " << pT_smt.GetSize() << " flt size " << pT_flt.GetSize() << endl;
 
      // cout << " t_barcode " << *t_barcode << endl;
      if(*t_barcode > maxtracks)
@@ -242,7 +235,7 @@ void draw_acts_eval()
      if(verbose1)
        {
 	 cout << " new track: " << itr << " truth Z vertex " <<  *t_vz  << " inner radius " << inner_radius <<  " nhits " << pT_flt.GetSize() << endl;   
-	 cout << "    Truth pT " << *t_pT << " seed pT " << pT_prt[pT_flt.GetSize() - 1] <<  " KF pT " << pT_flt[0] << " SM pT " << pT_smt[0] 
+	 cout << "    Truth pT " << *t_pT << " seed pT " << pT_prt[pT_flt.GetSize() - 1] <<  " KF pT " << pT_flt[0] << " SM pT " << pT_smt[pT_smt.GetSize()-1] 
 	   //<< " xdiff_last " << xdiff_last << endl;
 	      << endl;
 	 cout << "           px_proto " << *px_proto << " py_proto " << *py_proto << " pz_proto " << *pz_proto << " pT_proto " << pT_proto << endl;
@@ -285,7 +278,8 @@ void draw_acts_eval()
       {
 	hitr[0]->Fill(*t_barcode);
 	hdcaxy[0]->Fill(*dcaxy_fit);
-	hdcaz[0]->Fill(*dcaz_fit-*t_vz);
+	//hdcaz[0]->Fill(*dcaz_fit-*t_vz);
+	hdcaz[0]->Fill(*dcaz_fit);
 	
 	hprotox[0]->Fill(*x_proto - *t_vx);
 	hprotoy[0]->Fill(*y_proto - *t_vy);
@@ -295,7 +289,8 @@ void draw_acts_eval()
       {
 	hitr[1]->Fill(*t_barcode);
 	hdcaxy[1]->Fill(*dcaxy_fit);
-	hdcaz[1]->Fill(*dcaz_fit-*t_vz);
+	//hdcaz[1]->Fill(*dcaz_fit-*t_vz);
+	hdcaz[1]->Fill(*dcaz_fit);
 	
 	hprotox[1]->Fill(*x_proto - *t_vx);
 	hprotoy[1]->Fill(*y_proto - *t_vy);
@@ -321,9 +316,10 @@ void draw_acts_eval()
 	   {    
 	     // Identify the hit
 	     cout << " hit " << i << " rad " << radius
-		  << " pull " << pull_eLOC0_flt[i]
+		  << " flt rphi pull " << pull_eLOC0_flt[i]
+		  << " smt rphi pull " << pull_eLOC0_smt[i]
 		  << endl;
-	     cout << "    pT_prt " << pT_prt[i] << " pT_flt " << pT_flt[i] << endl;
+	     cout << "    pT_truth " << pT_truth << " pT_prt " << pT_prt[i] << " pT_flt " << pT_flt[i] << " pT_smt " << pT_smt[i] << endl;
 	     
 	     // global hit positions
 	     cout << "    truth global hit : "  << "t_x     " << t_x[i] << " t_y     " << t_y[i] << " t_z      " << t_z[i]  << endl;
@@ -342,6 +338,11 @@ void draw_acts_eval()
 		  << " dy " << g_y_flt[i] - t_y[i]
 		  << " dy " << g_z_flt[i] - t_z[i]
 		  << endl;
+	     cout << "    Global smoothed:   g_x_smt " << g_x_smt[i] << " g_y_smt " << g_y_smt[i]  << " g_z_smt " << g_z_smt[i]  
+		  << "     dx " << g_x_smt[i] - t_x[i] 
+		  << " dy " << g_y_smt[i] - t_y[i]
+		  << " dy " << g_z_smt[i] - t_z[i]
+		  << endl;
 	     
 	     // local hit positions
 	     cout << "    X:      local truth :       t_eLOC0 " << t_eLOC0[i] << endl;  
@@ -349,12 +350,13 @@ void draw_acts_eval()
 	     cout << "            Local hit:          l_x_hit " << l_x_hit[i] << "       err_x_hit " << err_x_hit[i] << "    res_x_hit " << res_x_hit[i] << " pull_x_hit " << pull_x_hit[i] << endl; 
 	     cout << "            Local predicted:  elOC0_prt " << eLOC0_prt[i] << " err_eLOC0_prt " << err_eLOC0_prt[i] << " res_eLOC0_prt " << res_eLOC0_prt[i] << " pull_eLOC0_prt " << pull_eLOC0_prt[i] << endl;
 	     cout << "            Local filter:     elOC0_flt " << eLOC0_flt[i] << " err_eLOC0_flt " << err_eLOC0_flt[i] << " res_eLOC0_flt " << res_eLOC0_flt[i] << " pull_eLOC0_flt " << pull_eLOC0_flt[i] << endl;
-	     
+	     cout << "            Local smoothed:   eLOC0_smt " << eLOC0_smt[i] << " err_eLOC0_smt " << err_eLOC0_smt[i] << " res_eLOC0_smt " << res_eLOC0_smt[i] << " pull_eLOC0_smt " << pull_eLOC0_smt[i] << endl;	     
 	     
 	     cout << "    Y:     local truth :        t_eLOC1 " << t_eLOC1[i] << endl;  
 	     cout << "            Local hit:          l_y_hit " << l_y_hit[i] <<  " err_y_hit " << err_y_hit[i] << " res_y_hit " << res_y_hit[i] << " pull_y_hit " << pull_y_hit[i] << endl; 
 	     cout << "            Local predicted:  eLOC1_prt " << eLOC1_prt[i] << " err_eLOC1_prt " << err_eLOC1_prt[i] << " res_eLOC1_prt " << res_eLOC1_prt[i] << " pull_eLOC1_prt " << pull_eLOC1_prt[i] << endl;
-	     cout << "            Local filter:     eLOC1_flt " << eLOC1_flt[i] << " err_eLOC1_flt " << err_eLOC1_flt[i] << " res_eLOC1_smt " << res_eLOC1_flt[i] << " pull_eLOC1_flt " << pull_eLOC1_flt[i] << endl;
+	     cout << "            Local filter:     eLOC1_flt " << eLOC1_flt[i] << " err_eLOC1_flt " << err_eLOC1_flt[i] << " res_eLOC1_flt " << res_eLOC1_flt[i] << " pull_eLOC1_flt " << pull_eLOC1_flt[i] << endl;
+	     cout << "            Local smoothed:   eLOC1_smt " << eLOC1_smt[i] << " err_eLOC1_smt " << err_eLOC1_smt[i] << " res_eLOC1_smt " << res_eLOC1_smt[i] << " pull_eLOC1_smt " << pull_eLOC1_smt[i] << endl;
 	     
 	     /*
 	     // Smoothed track projuections
@@ -440,7 +442,7 @@ void draw_acts_eval()
    ctruth->Divide(3,1);
 
    ctruth->cd(1);
-   gPad->SetLeftMargin(0.15);
+   gPad->SetLeftMargin(0.12);
    hpt_seed_truth->GetXaxis()->SetTitle("Truth p_{T}");
    hpt_seed_truth->GetYaxis()->SetTitle("Seed or fit p_{T}");
    hpt_seed_truth->SetMarkerStyle(20);
@@ -466,6 +468,7 @@ void draw_acts_eval()
    hpt_flt_truth->Draw("colz");
 
    ctruth->cd(2);
+   gPad->SetLeftMargin(0.12);
    hpt_actsfit_over_truth->GetXaxis()->SetTitle("actsfit p_{T}  / truth p_{T}");
    hpt_actsfit_over_truth->SetTitleSize(0.05);
    hpt_actsfit_over_truth->GetYaxis()->SetLabelSize(0.05);
@@ -473,12 +476,13 @@ void draw_acts_eval()
    hpt_actsfit_over_truth->GetXaxis()->SetNdivisions(505);
    hpt_actsfit_over_truth->Draw();
 
-   TLegend *tkleg = new TLegend(0.15, 0.79, 0.45, 0.85, "", "NDC");
-   tkleg->AddEntry(hpt_actsfit_over_truth, "actsflt/truth","l");
+   TLegend *tkleg = new TLegend(0.15, 0.79, 0.48, 0.85, "", "NDC");
+   tkleg->AddEntry(hpt_actsfit_over_truth, "actsfit/truth","l");
    tkleg->SetTextSize(0.05);
    tkleg->Draw();
 
    ctruth->cd(3);
+   gPad->SetLeftMargin(0.12);
    hpt_flt_over_truth->SetMarkerStyle(20);
    hpt_flt_over_truth->SetMarkerSize(0.2);
    hpt_flt_over_truth->SetLineColor(kRed);
@@ -498,8 +502,8 @@ void draw_acts_eval()
    cout << " hpt_actsfit_over_truth integral 0.8 to 1.2 " << hpt_actsfit_over_truth->Integral(binlo, binhi) << endl;;
 
 
-   TLegend *tfleg = new TLegend(0.15, 0.79, 0.45, 0.85, "", "NDC");
-   tfleg->AddEntry(hpt_flt_over_truth, "fit/truth p_{T}","l");
+   TLegend *tfleg = new TLegend(0.15, 0.79, 0.48, 0.85, "", "NDC");
+   tfleg->AddEntry(hpt_flt_over_truth, "flt/truth p_{T}","l");
    tfleg->SetTextSize(0.05);
    tfleg->Draw();
 
@@ -507,7 +511,7 @@ void draw_acts_eval()
 
    hpt_flt_truth->FitSlicesY();
    TH1D*hptres = (TH1D*)gDirectory->Get("hpt_flt_truth_2");
-   hptres->GetYaxis()->SetRangeUser(0.0, 0.07);
+   hptres->GetYaxis()->SetRangeUser(0.0, 0.15);
    TH1D*hptcent = (TH1D*)gDirectory->Get("hpt_flt_truth_1");
    hptcent->GetYaxis()->SetRangeUser(0.8, 1.2);
 
