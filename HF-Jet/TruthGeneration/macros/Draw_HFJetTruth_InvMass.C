@@ -301,7 +301,7 @@ void CrossSection2RAA(const TString infile, const bool use_AA_jet_trigger = true
   // 5-year lumi in [sPH-TRG-000]
   ////////////////////////////
 
-  const double pp_lumi = b3yr ? 101 : 200;                          // pb^-1 [sPH-TRG-000], rounded up from 197 pb^-1
+  const double pp_lumi = b3yr ? 62 : 200;                          // pb^-1 [sPH-TRG-000], rounded up from 197 pb^-1
   const double pp_inelastic_crosssec = 42e-3 / 1e-12;  // 42 mb in pb [sPH-TRG-000]
 
   const double AuAu_MB_Evt = use_AA_jet_trigger ? (b3yr ? 320e9 : 550e9) : (b3yr ? 142e9 : 240e9);  // [sPH-TRG-000], depending on whether jet trigger applied in AA collisions
