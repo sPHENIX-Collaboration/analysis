@@ -199,7 +199,7 @@ void DrawCrossSection(double int_lumi, const double dy)
   TLegend *leg = new TLegend(0.45, 0.6, 0.95, 0.93);
   leg->SetFillColor(kWhite);
   leg->SetFillStyle(1001);
-  leg->SetHeader("#splitline{#it{#bf{sPHENIX}} fast simulation, p+p #sqrt{s} = 200 GeV}{|#eta_{1,2}|<0.6, |#Delta#phi_{1,2}|>2#pi/3, p_{T,1}>15 GeV/c, p_{T,2}>10 GeV/c}");
+  leg->SetHeader("#splitline{#it{#bf{sPHENIX}} fast simulation, #it{p}+#it{p} #sqrt{s} = 200 GeV}{|#eta_{1,2}|<0.6, |#Delta#phi_{1,2}|>2#pi/3, p_{T,1}>15 GeV/c, p_{T,2}>10 GeV/c}");
   leg->AddEntry(hall, "Inclusive jet, PYTHIA8, Truth, anti-k_{t}, R=0.4",
                 "lpe");
   //  leg->AddEntry(h_c, "c-quark jet, Pythia8, Truth, anti-k_{t}, R=0.4", "lpe");
@@ -261,8 +261,8 @@ void Draw_HFJetTruth_InvMass_DrawCrossSection_PR(const TString infile)
   TLegend *leg = new TLegend(0.2, 0.7, 0.95, 0.92);
   leg->SetFillColor(kWhite);
   leg->SetFillStyle(1001);
-  //  leg->SetHeader("#splitline{#it{#bf{sPHENIX }} Simulation}{p+p, #sqrt{s} = 200 GeV, |#eta|<0.6}");
-  leg->SetHeader("#splitline{#it{#bf{sPHENIX}} fast simulation, p+p #sqrt{s} = 200 GeV}{|#eta_{1,2}|<0.6, |#Delta#phi_{1,2}|>2#pi/3, p_{T,1}>15 GeV/c, p_{T,2}>10 GeV/c}");
+  //  leg->SetHeader("#splitline{#it{#bf{sPHENIX }} Simulation}{#it{p}+#it{p}, #sqrt{s} = 200 GeV, |#eta|<0.6}");
+  leg->SetHeader("#splitline{#it{#bf{sPHENIX}} fast simulation, #it{p}+#it{p} #sqrt{s} = 200 GeV}{|#eta_{1,2}|<0.6, |#Delta#phi_{1,2}|>2#pi/3, p_{T,1}>15 GeV/c, p_{T,2}>10 GeV/c}");
   leg->AddEntry("", "",
                 "");
   leg->AddEntry(hall, "Inclusive jet, PYTHIA8 + CTEQ6L, anti-k_{T} R=0.4",
@@ -376,8 +376,8 @@ void CrossSection2RAA(const TString infile, const bool use_AA_jet_trigger = true
   leg->SetFillStyle(0);
   leg->AddEntry("", "#it{#bf{sPHENIX}} Projection, #it{b}-jet, 0-10% Au+Au, Year 1-3", "");
   leg->AddEntry("", Form("|#eta_{1,2}|<%.1f, |#Delta#phi_{1,2}|>2#pi/3, p_{T,1}>15 GeV/c, p_{T,2}>10 GeV/c", dy / 2), "");
-  leg->AddEntry("", Form("#it{p}+#it{p}: %.0f pb^{-1} trig., %.0f%% Eff., %.0f%% Pur.", pp_lumi, pp_eff * 100, pp_purity * 100), "");
-  leg->AddEntry("", Form("Au+Au: %.0fB rec., %.0f%% Eff., %.0f%% Pur.", '%', AuAu_MB_Evt / 1e9, AuAu_eff * 100, AuAu_purity * 100), "");
+  leg->AddEntry("", Form("#it{p}+#it{p}: %.0f pb^{-1} samp., %.0f%% Eff., %.0f%% Pur.", pp_lumi, pp_eff * 100, pp_purity * 100), "");
+  leg->AddEntry("", Form("Au+Au: %.0fnb^{-1} rec., %.0f%% Eff., %.0f%% Pur.", '%', AuAu_MB_Evt/6.8252 / 1e9, AuAu_eff * 100, AuAu_purity * 100), "");
   leg->Draw();
 
 //  TLegend *leg2 = new TLegend(.17, .70, .88, .77);
