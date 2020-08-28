@@ -1,3 +1,120 @@
+double factorial(int n)
+{
+  double result = 1;
+  for(int i = n; i>0; i--)
+    result*=i;
+  
+  return result;
+}
+
+double  integral(int nfg,int nbg,float lowerLimit, float upperLimit)
+{
+  // See AN 195 by Mike Tannenbaum, equation 9, for where this comes from
+  // x is the signal, ie. FG-BG
+  // lowerLimit and upperLimit are just the min and max signal to be considered
+
+  //double stepsize=0.5;
+
+  int steps = 200;
+  double intgrl = 0;
+  
+  double dx=(upperLimit-lowerLimit)/(double)steps;
+
+  for(int k = 0; k<=nfg; k++) {
+    double factorial_up = factorial(nfg+nbg-k);
+    double factorial_down = factorial(nbg)*factorial(nfg-k)*factorial(k);
+    double tmp = factorial_up/factorial_down*0.5*pow(0.5, nfg+nbg-k);
+    for(int itmp=0;itmp<=steps;itmp++)
+      {
+	double x=lowerLimit+dx*(float)itmp;
+	intgrl += tmp*pow(x,k)*exp(-x)*dx;
+      }
+  }
+  return intgrl;
+}
+
+void error_fg_bg_pair(int nfg, int nbg, double& err_up,double& err_down)
+{
+  //nfg: # of fg in the bin
+  //nbg: # of bg in the bin
+  //err_up: upside error
+  //err_down: downside error
+
+  if(nfg+nbg > 170)
+    {
+      cout << " error_fg_bg_pair: factorials too large, return symmetric error " << endl;
+      err_up = sqrt(nfg+nbg);
+      err_down = err_up;
+      return;
+    }
+
+  int nmax = 50;
+  if(nfg-nbg>nmax) 
+    {
+      //cout<<" error_fg_bg_pair: Signal > " << nmax << " counts - use symmetric errors "<<endl;
+      err_up = sqrt(nfg+nbg);
+      err_down = err_up;
+      return;
+    }
+
+  
+  if(nfg<=nbg) 
+    {
+      //cout<<" error_fg_bg_pair: This code does not work in the case of nfg<=nbg"<<endl;
+      cout << "nfg = " << nfg << " nbg = " << nbg << endl;
+      err_up=sqrt(nfg+nbg);
+      err_down = err_up;
+      return;
+    }
+  
+  // Establish the upper signal boundary for integration - Poisson distribution
+  // should be negligible by the time the signal reaches this number
+  // Used only for getting the total integral
+
+  float maxsignal=0;
+  if(nfg+nbg < 10)
+    maxsignal = (nfg+nbg)* 4;
+  else if(nfg+nbg < 30)
+    maxsignal = (nfg+nbg)* 3;
+  else
+    maxsignal = (nfg+nbg)* 2;
+
+  float total=integral(nfg,nbg,0,maxsignal);
+
+  float binSize=0.1;
+
+  float cl_up, cl_down;
+  int i = 0;
+  bool is_cl_down = false;
+  //.. calculate the lower error bars using 16% in lower tail
+  while(1) {
+    if(!is_cl_down) err_down = i*binSize;
+    if(err_down<0) err_down = 0;
+    cl_down = integral(nfg,nbg,0, err_down)/total;
+    if(cl_down>=0.159) {
+      is_cl_down = true;
+      break;
+    }
+    i++;
+  }
+  
+  i = 0;
+  while(1) {
+    err_up = err_down+i*binSize;
+    cl_up = cl_down+integral(nfg,nbg,err_down, err_up)/total;
+    if(cl_up>=0.841) break;
+    i++;
+  }
+
+  //cout<< " nfg = " << nfg << " n bg = " << nbg << " signal = " << nfg-nbg << " signal+err_up ="<<err_up
+  //    <<" signal-err_down = "<<err_down<<endl;
+  //cout<<" result =" << nfg-nbg << "+" << err_up-(nfg-nbg) << "-" << (nfg-nbg)-err_down << endl;
+
+  err_down = (nfg-nbg)-err_down;
+  err_up = err_up - (nfg-nbg); 
+}
+
+
 double CBFunction(double *x, double *p)
 {
   double norm = p[0];
@@ -117,14 +234,16 @@ char tlchar[999];
 //    AuAu year 1 25B (39B) MB events
 //    AuAu year 3 85B (103B) MB evemts
 //    Total AuAu 110B (142) MB events (i.e. 11B (14.2B) in 10% central) 
-//    pp year 2 73 /Pb (101 /Pb) or 3T (4T) sampled events
+//    old: pp year 2 73 /Pb (101 /Pb) or 3T (4T) sampled events
+//    updated: pp year (28 wks) 2 62 /Pb  or 2.6T  sampled events
 // 5 year run plan
 //    AuAu year 5 adds 206B MB events for a total of 316B (348B) (i.e. 31.6B (34.8B) in 10% central)
-//    pp year 4 adds 130 /Pb sampled or 5.5T sampled events for a total of 8.5T (9.6T)
+//    old: pp year 4 adds 130 /Pb sampled or 5.5T sampled events for a total of 8.5T (9.6T)
+//   updated:  pp year 4 adds 80 /Pb sampled or 3.4T sampled events for a total of 5.9T 
 
 // statscale factor is relative to 100B events for AuAu, and relative to 7.35T events in pp
  double set_statscale[4] = {3.48, 3.16, 1.42, 1.1};  
- double set_statscalepp[4] = {1.31, 1.16, 0.54, 0.41};
+ double set_statscalepp[4] = {0.8, 1.16, 0.35, 0.41};
  std::string run_plan[4] = {"5 years/28 cryo-weeks", "5 years/24 cryo-weeks","3 years/28 cryo-weeks","3 years/24 cryo-weeks"};
  int scenario = 0;  // scenario = {0,1,2,3} = {5yrs_28wks, 5yrs_24wks, 3yrs_28wks, 3yrs_24wks}  (BUP 2020 uses 2 and 0)
  double statscale = set_statscale[scenario]; 
@@ -154,21 +273,46 @@ char tlchar[999];
 
 // Need different raa at each centrality
 
+  // this is for the Y(2S) and Y(3S) centrality dependence binning
+  static const int NCENT = 7;
+  double centlow[NCENT] = {0,5,10,20,30,40,60};  
+  double centhigh[NCENT] = {5, 10,20,30,40,60,92};
+  double Ncoll[NCENT] = {1067, 858, 610, 378, 224, 94.2, 14.5};
+
+  double raacent_ups1s[NCENT] = {0.527483, 0.544815, 0.581766, 0.644214, 0.721109, 0.853888, 0.998349}; 
+  double raacent_ups2s[NCENT] = {0.165314, 0.179333, 0.210351, 0.26748, 0.34664, 0.510807, 0.979886}; 
+  double raacent_ups3s[NCENT] = {0.0302562, 0.0362929, 0.047993, 0.0706653, 0.108092, 0.231598, 0.961714};
+
+
 /*
+  // not used
+  static const int NCENT = 4;
+  double centlow[NCENT] = {0,20,40,60};
+  double centhigh[NCENT] = {20,40,60,92};
+  double Ncoll[NCENT] = {783, 301, 94.2, 14.5};
+  double raacent_ups3s[4] = {0.038949, 0.0838922, 0.220475, 0.924073};
+  double raacent_ups1s[NCENT] = {0.527483, 0.544815, 0.581766, 0.644214}; // dummy 
+  double raacent_ups2s[NCENT] = {0.165314, 0.179333, 0.210351, 0.26748};  // dummy 
+*/
+
+/*
+  // this is to get the 0-10% pT dependence 
   static const int NCENT = 6;
   double centlow[NCENT] = {0,10,20,30,40,60};
   double centhigh[NCENT] = {10,20,30,40,60,92};
   double Ncoll[NCENT] = {962, 610, 378, 224, 94.2, 14.5};
 */
 
-  static const int NCENT = 7;
-  double centlow[NCENT] = {0,5,10,20,30,40,60};  
-  double centhigh[NCENT] = {5, 10,20,30,40,60,92};
-  double Ncoll[NCENT] = {1067, 858, 610, 378, 224, 94.2, 14.5};
-  
-  double raacent_ups1s[NCENT] = {0.527483, 0.544815, 0.581766, 0.644214, 0.721109, 0.853888, 0.998349}; 
-  double raacent_ups2s[NCENT] = {0.165314, 0.179333, 0.210351, 0.26748, 0.34664, 0.510807, 0.979886}; 
-  double raacent_ups3s[NCENT] = {0.0302562, 0.0362929, 0.047993, 0.0706653, 0.108092, 0.231598, 0.961714};
+/*
+  // this is for the Y(3S) centrality dependence binning 
+  static const int NCENT = 3;
+  double centlow[NCENT] = {0,30,60};
+  double centhigh[NCENT] = {30,60,92};
+  double Ncoll[NCENT] = {648, 137, 14.5};
+  double raacent_ups1s[NCENT] = {0.527483, 0.544815, 0.644214}; // dummy 
+  double raacent_ups2s[NCENT] = {0.165314, 0.179333, 0.26748};  // dummy 
+  double raacent_ups3s[3] = {0.0458138, 0.167527, 0.924073};
+*/
 
   double centwidth[NCENT];
   for(int i=0; i<NCENT; ++i)
@@ -1143,7 +1287,7 @@ double u2stop  = 10.20;
 double u3start = 10.20;
 double u3stop  = 10.55;
 
-  double raa1[nbins+1],raa2[nbins+1],raa3[nbins+1],erraa1[nbins+1],erraa2[nbins+1],erraa3[nbins+1];
+ double raa1[nbins+1],raa2[nbins+1],raa3[nbins+1],erraa1[nbins+1],erraa2[nbins+1],erraa3[nbins+1], erraa3_up[nbins+1], erraa3_dn[nbins+1];
   for(int i=0; i<nbins; i++) { 
     //raa1[i] = supcor[0]; raa2[i] = supcor[1]; raa3[i] = supcor[2]; 
     raa1[i] = grRAA1S->Eval(0.5+i*1.0);
@@ -1167,19 +1311,6 @@ double u3stop  = 10.55;
   cout << "Y(3S) bin range: " << fbin3 << " - " << lbin3 << endl;
   cout << "Y(3S) inv. mass range: " << u3start << " - " << u3stop << endl;
 
-  double cumtruesum1 = 0;
-  double ercumtruesum1 = 0;
-  double cumtruesum2 = 0;
-  double ercumtruesum2 = 0;
-  double cumtruesum3 = 0;
-  double ercumtruesum3 = 0;
-  double cumtruesum1pp = 0;
-  double ercumtruesum1pp = 0;
-  double cumtruesum2pp = 0;
-  double ercumtruesum2pp = 0;
-  double cumtruesum3pp = 0;
-  double ercumtruesum3pp = 0;
-
   double sum1[99]   = {0.};
   double truesum1[99]   = {0.};
   double ersum1[99] = {0.};
@@ -1192,7 +1323,10 @@ double u3stop  = 10.55;
   double ersumpp2[99] = {0.};
   double sum3[99]   = {0.};
   double truesum3[99]   = {0.};
+  double allsum3[99]   = {0.};
   double ersum3[99] = {0.};
+  double ersum3_up[99] = {0.};
+  double ersum3_dn[99] = {0.};
   double sumpp3[99]   = {0.};
   double ersumpp3[99] = {0.};
 
@@ -1217,11 +1351,6 @@ double u3stop  = 10.55;
       sumsum1[i]     = truesum1[i];                   // direct count in mass range
       sumsum1pp[i]   = sumpp1[i];       
 
-      cumtruesum1 += truesum1[i];
-      ercumtruesum1 += ersum1[i];
-      cumtruesum1pp += sumpp1[i];
-      ercumtruesum1pp += ersumpp1[i];
-
       //sumsum1[i]     = hhups1[i]->GetEntries();       // total number of upsilons in pT bin (rounded up)
       //sumsum1pp[i]   = hhups1pp[i]->GetEntries();
       //sumsum1[i]     = Nups1*fUpsilonPt->Integral(s1,s2)/upsnorm;  // total number of upsilons in pT bin
@@ -1242,11 +1371,6 @@ double u3stop  = 10.55;
       sumsum2[i]     = truesum2[i];                   // direct count in mass range
       sumsum2pp[i]   = sumpp2[i];       
 
-      cumtruesum2 += sumsum2[i];
-      ercumtruesum2 += ersum2[i];
-      cumtruesum2pp += sumpp2[i];
-      ercumtruesum2pp += ersumpp2[i];
-
       //sumsum2[i]     = hhups2[i]->GetEntries();       // total number of upsilons in pT bin (rounded up)
       //sumsum2pp[i]   = hhups2pp[i]->GetEntries();
       //sumsum2[i]     = Nups2*fUpsilonPt->Integral(s1,s2)/upsnorm;  // total number of upsilons in pT bin
@@ -1261,26 +1385,28 @@ double u3stop  = 10.55;
       sum3[i]   += (hhall_scaled[i]->GetBinContent(j) - hhcombbg_scaled[i]->GetFunction("fbg")->Eval(hhall_scaled[i]->GetBinCenter(j)) - hhcorrbg_scaled[i]->GetFunction("expo")->Eval(hhall_scaled[i]->GetBinCenter(j)));
       truesum3[i] += hhups3[i]->GetBinContent(j);
       ersum3[i] += hhall_scaled[i]->GetBinError(j)*hhall_scaled[i]->GetBinError(j);
+      allsum3[i] +=  hhall_scaled[i]->GetBinContent(j);
       sumpp3[i]   += hhups3pp[i]->GetBinContent(j);
       ersumpp3[i] += hhupspp[i]->GetBinError(j)*hhupspp[i]->GetBinError(j);
     }
       sumsum3[i]     = truesum3[i];                   // direct count in mass range
       sumsum3pp[i]   = sumpp3[i];       
-
-      cumtruesum3 += sumsum3[i];
-      ercumtruesum3 += ersum3[i];
-      cumtruesum3pp += sumpp3[i];
-      ercumtruesum3pp += ersumpp3[i];
-
+      // get Poisson errors on truesum3
+      //double err3_up, err3_dn;
+      //error_fg_bg_pair((int) allsum3[i], (int) (allsum3[i]-truesum3[i]), err3_up, err3_dn);
+      //ersum3_up[i] = err3_up * err3_up;
+      //ersum3_dn[i] = err3_dn * err3_dn;
       //sumsum3[i]     = hhups3[i]->GetEntries();       // total number of upsilons in pT bin (rounded up)
       //sumsum3pp[i]   = hhups3pp[i]->GetEntries();
       //sumsum3[i]     = Nups3*fUpsilonPt->Integral(s1,s2)/upsnorm;   // total number of upsilons in pT bin
       //sumsum3pp[i]   = Nups3pp*fUpsilonPt->Integral(s1,s2)/upsnorm;
       
         if(truesum3[i]>0. && sumpp3[i]>0.) {
-          erraa3[i] = raa3[i]*sqrt(ersum3[i]/sumsum3[i]/sumsum3[i] + ersumpp3[i]/sumsum3pp[i]/sumsum3pp[i]);
-	  cout << "i " << i << " raa3 " << raa3[i] << " erraa3  " << erraa3[i] << endl;
-        } else {raa3[i]=-1.0; erraa3[i] = 999.; }
+	  erraa3[i] = raa3[i]*sqrt(ersum3[i]/sumsum3[i]/sumsum3[i] + ersumpp3[i]/sumsum3pp[i]/sumsum3pp[i]);
+          //erraa3_up[i] = raa3[i]*sqrt(ersum3_up[i]/sumsum3[i]/sumsum3[i] + ersumpp3[i]/sumsum3pp[i]/sumsum3pp[i]);
+          //erraa3_dn[i] = raa3[i]*sqrt(ersum3_dn[i]/sumsum3[i]/sumsum3[i] + ersumpp3[i]/sumsum3pp[i]/sumsum3pp[i]);
+	  cout << "i " << i << " raa3 " << raa3[i] << " erraa3_up  " << erraa3_up[i] << " erraa3_dn " << erraa3_dn[i] << endl;
+        } else {raa3[i]=-1.0; erraa3[i] = 999;}
   
   }
 
@@ -1300,8 +1426,9 @@ cout << "====== Y(3S):" << endl;
   for(int i=0; i<nbins+1; i++) {
 
     double s1 = double(i); double s2 = double(i+1); if(i==nbins) {s1 = 0.;}
-    cout << "   " << i << " " << truesum3[i] << "(" << Nups3*fUpsilonPt->Integral(s1,s2)/upsnorm << ")" << " +- " 
-         << sqrt(ersum3[i]) << " \t\t pp: " << sumpp3[i] << " +- " << sqrt(ersumpp3[i]) << " raa " << raa3[i] << " erraa " << erraa3[i] << endl;
+    cout << "   " << i << " " << truesum3[i] << "(" << Nups3*fUpsilonPt->Integral(s1,s2)/upsnorm << ")" << " (all " << allsum3[i] << ") "<< " +- " 
+      //	 << sqrt(ersum3_up[i]) << " - " << sqrt(ersum3_dn[i]) << " \t\t pp: " << sumpp3[i] << " +- " << sqrt(ersumpp3[i]) << " raa " << raa3[i] << " erraa " << erraa3[i] << endl;
+      << sqrt(ersum3[i]) << " \t\t pp: " << sumpp3[i] << " +- " << sqrt(ersumpp3[i]) << " raa " << raa3[i] << " erraa " << erraa3[i] << endl;
   }
 
 //-------------------------------------------------
@@ -1406,38 +1533,6 @@ TLine* lll = new TLine(0.6,0.64,1.3,0.64);
 lll->SetLineColor(kBlue);
 lll->SetLineWidth(2);
 //lll->Draw();
-
-//================================
-// plot RAA vs centrality for pT integrated case
-//================================
-
-// double erraacent1 = raacent_ups1S[icent]*sqrt(ercumsum1[i]/cumtruesum1[i]/cumtruesum1[i] + ercumtruesumpp1[i]/cumtruesum1pp[i]/cumtruesum1pp[i]);
-
- /*
- std::cout << " cumtruesum1 " << cumtruesum1
-	   << " ercumtruesum1 " << sqrt(ercumtruesum1) 
-	   << " cumtruesum1pp " << cumtruesum1pp
-	   << " ercumtruesum1pp " << sqrt(ercumtruesum1pp)
-	   << " raa " << raacent_ups1S << " error " << erraacent1
-	   << std::endl;
-
- std::cout << " cumtruesum2 " << cumtruesum2
-	   << " ercumtruesum2 " << sqrt(ercumtruesum2) 
-	   << " cumtruesum2pp " << cumtruesum2pp
-	   << " ercumtruesum2pp " << sqrt(ercumtruesum2pp)	   
-	   << std::endl;
-
- std::cout << " cumtruesum3 " << cumtruesum3
-	   << " ercumtruesum3 " << sqrt(ercumtruesum3) 
-	   << " cumtruesum3pp " << cumtruesum3pp
-	   << " ercumtruesum3pp " << sqrt(ercumtruesum3pp)
-	   << std::endl;
- */
-
-
-
-
-
 
 //==================================================================================
 

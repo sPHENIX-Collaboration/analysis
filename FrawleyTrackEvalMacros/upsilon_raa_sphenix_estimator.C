@@ -11,6 +11,7 @@ gStyle->SetOptFit(0);
 
  bool yrs13 = true;
  bool yrs15 = true;
+ bool ups3s = true;
 
  double offset = 0.0;
  if(yrs13 && yrs15)
@@ -105,6 +106,8 @@ gStyle->SetOptFit(0);
 
 
  static const int NCENT = 7;
+ // static const int NCENT3S = 4;
+ static const int NCENT3S = 3;
 
  double Ncoll[NCENT] = {1067, 858, 610, 378, 224, 94.2, 14.5};
  double Npart[NCENT] = {351, 302, 236, 168, 116, 61.6, 14.4};
@@ -114,17 +117,34 @@ gStyle->SetOptFit(0);
      Npart_plot[0][i] = Npart[i] + offset;
      Npart_plot[1][i] = Npart[i] - offset; 
    }
+
+ // separate binning for Y(3S)
+ //double Npart3S[NCENT3S] = {281, 142, 62, 14.4};
+ double Npart3S[NCENT3S] = {243, 80.0, 14.4};
+ double Npart3S_plot[2][NCENT3S];
+ for(int i=0;i<NCENT3S;++i)
+   {
+     Npart3S_plot[0][i] = Npart3S[i] + offset;
+     Npart3S_plot[1][i] = Npart3S[i] - offset; 
+   }
+
  
  double raa1[2][NCENT]; 
  double raa2[2][NCENT]; 
- double raa3[2][NCENT];
  for(int iset=0;iset<2;++iset) 
    for(int i=0; i<NCENT; ++i)
      {
        raa1[iset][i] = grth[0][1]->Eval(Npart_plot[iset][i]);
        raa2[iset][i] = grth[1][1]->Eval(Npart_plot[iset][i]);
-       raa3[iset][i] = grth[2][1]->Eval(Npart_plot[iset][i]);
-       cout << " icent " << " Npart " << Npart_plot[iset][i] << " raa1 " << raa1[iset][i] << " raa2 " << raa2[iset][i] << " raa3 " << raa3[iset][i] << endl; 
+       cout << " icent " << i << " Npart " << Npart_plot[iset][i] << " raa1 " << raa1[iset][i] << " raa2 " << raa2[iset][i] << endl; 
+  }
+
+ double raa3[2][NCENT3S];
+ for(int iset=0;iset<2;++iset) 
+   for(int i=0; i<NCENT3S; ++i)
+     {
+       raa3[iset][i] = grth[2][1]->Eval(Npart3S_plot[iset][i]);
+       cout << " 3S:  icent " << i << " Npart " << Npart3S_plot[iset][i] << " raa1 " << " raa3 " << raa3[iset][i] << endl; 
   }
 
  // output the RAA values to feed back into the previous macro
@@ -150,10 +170,10 @@ gStyle->SetOptFit(0);
  cout << endl;
 
  // output the RAA values to feed back into the previous macro
- cout << " double raa3[" << NCENT << "] = {";
- for(int i=0; i< NCENT; ++i)
+ cout << " double raa3[" << NCENT3S << "] = {";
+ for(int i=0; i< NCENT3S; ++i)
    {
-     if(i != NCENT-1)
+     if(i != NCENT3S-1)
        cout << raa3[0][i] << ", ";
      else
        cout << raa3[0][i] << "}; ";
@@ -161,25 +181,30 @@ gStyle->SetOptFit(0);
  cout << endl;
 
  // These errors are the only thing that change with different luminosity
-
- double yrs13_erraa1[NCENT] = {0.020, 0.021, 0.019, 0.023, 0.029, 0.034, 0.066};
- double yrs13_erraa2[NCENT] = {0.032, 0.039, 0.030, 0.044, 0.051, 0.060, 0.155};
- double yrs13_erraa3[NCENT] = {0.052, 0.044, 0.046, 0.058, 0.083, 0.082, 0.24};
+ // updated 8/26/20
+ double yrs13_erraa1[NCENT] = {0.021, 0.0227, 0.0211, 0.0251, 0.0315, 0.0365, 0.0665};
+ double yrs13_erraa2[NCENT] = {0.0327, 0.0424, 0.0335, 0.0401, 0.0537, 0.0662, 0.157};
+ double yrs13_erraa3[NCENT3S] = {0.042 ,0.094, 0.346};
  
- double  yrs15_erraa1[NCENT] = {0.012, 0.013, 0.012, 0.015, 0.019, 0.022, 0.042};
- double yrs15_erraa2[NCENT] = {0.022, 0.024, 0.021, 0.025, 0.034, 0.041, 0.097};
- double yrs15_erraa3[NCENT] = {0.034, 0.038, 0.025, 0.039, 0.052, 0.047, 0.14};
+ //double  yrs15_erraa1[NCENT] = {0.012, 0.013, 0.012, 0.015, 0.019, 0.022, 0.042};
+ double  yrs15_erraa1[NCENT] = {0.0136, 0.0147, 0.0137, 0.0163, 0.0203, 0.0235, 0.0435};
+ //double yrs15_erraa2[NCENT] = {0.022, 0.024, 0.021, 0.025, 0.034, 0.041, 0.097};
+ double yrs15_erraa2[NCENT] = {0.0235, 0.0233, 0.0207, 0.0277, 0.0364, 0.0424, 0.103};
+ double yrs15_erraa3[NCENT3S] = {0.034, 0.0547,  0.208};
 
  double erraa1[2][NCENT];
  double erraa2[2][NCENT];
- double erraa3[2][NCENT];
  for(int i=0; i<NCENT;++i)
    {
      erraa1[0][i] = yrs13_erraa1[i];
      erraa2[0][i] = yrs13_erraa2[i];
-     erraa3[0][i] = yrs13_erraa3[i];
      erraa1[1][i] = yrs15_erraa1[i];
      erraa2[1][i] = yrs15_erraa2[i];
+   }
+ double erraa3[2][NCENT3S];
+ for(int i=0; i<NCENT3S;++i)
+   {
+     erraa3[0][i] = yrs13_erraa3[i];
      erraa3[1][i] = yrs15_erraa3[i];
    }
 
@@ -208,7 +233,7 @@ gStyle->SetOptFit(0);
      gr2[i]->SetMarkerColor(kRed);
      gr2[i]->SetLineColor(kRed);
 
-     gr3[i] = new TGraphErrors(NCENT,Npart_plot[i], raa3[i], 0, erraa3[i]);
+     gr3[i] = new TGraphErrors(NCENT3S,Npart3S_plot[i], raa3[i], 0, erraa3[i]);
      gr3[i]->SetMarkerStyle(20);
      gr3[i]->SetMarkerSize(1.5);
      gr3[i]->SetMarkerColor(kBlue);
@@ -219,7 +244,7 @@ gStyle->SetOptFit(0);
    {
      gr1[0]->Draw("p");
      gr2[0]->Draw("p");
-     //gr3[0]->Draw("p");
+     if(ups3s) gr3[0]->Draw("p");
    }
 
  if(yrs15)
@@ -228,10 +253,11 @@ gStyle->SetOptFit(0);
      { 
        gr1[0]->SetMarkerStyle(24);
        gr2[0]->SetMarkerStyle(25);
+       gr3[0]->SetMarkerStyle(25);
      }
      gr1[1]->Draw("p");
      gr2[1]->Draw("p");
-     //gr3[1]->Draw("p");
+     if(ups3s) gr3[1]->Draw("p");
    }
 
 
@@ -243,11 +269,13 @@ gStyle->SetOptFit(0);
    {
      lups->AddEntry(gr1[1],"Y(1S)","p");
      lups->AddEntry(gr2[1],"Y(2S)","p");
+     if(ups3s) lups->AddEntry(gr3[1],"Y(3S)","p");
    }
  else 
    {
      lups->AddEntry(gr1[0],"Y(1S)","p");
      lups->AddEntry(gr2[0],"Y(2S)","p");
+     if(ups3s) lups->AddEntry(gr3[0],"Y(3S)","p");
    }
  lups->Draw();
  
@@ -265,10 +293,12 @@ gStyle->SetOptFit(0);
    lat1[1]->Draw();
 
  TLatex *lat2[2];
- lat2[0] = new TLatex(0.66, 0.763,"#font[42]{#splitline{101 pb^{-1} trig. p+p}{142B rec. Au+Au}}");
+ //lat2[0] = new TLatex(0.66, 0.763,"#font[42]{#splitline{62 pb^{-1} trig. p+p}{142B rec. Au+Au}}");
+ lat2[0] = new TLatex(0.65, 0.763,"#font[42]{#splitline{62 pb^{-1} trig. p+p}{21 nb^{-1} rec. Au+Au}}");
  lat2[0]->SetTextSize(0.038);
  lat2[0]->SetNDC(1);
- lat2[1] = new TLatex(0.66, 0.763,"#font[42]{#splitline{231 pb^{-1} trig. p+p}{348B rec. Au+Au}}");
+ //lat2[1] = new TLatex(0.66, 0.763,"#font[42]{#splitline{142 pb^{-1} trig. p+p}{348B rec. Au+Au}}");
+ lat2[1] = new TLatex(0.65, 0.763,"#font[42]{#splitline{142 pb^{-1} trig. p+p}{51 nb^{-1} rec. Au+Au}}");
  lat2[1]->SetTextSize(0.038);
  lat2[1]->SetNDC(1);
 
@@ -287,7 +317,9 @@ gStyle->SetOptFit(0);
   // Plot the theory curves also
   double col[3] = {kBlack, kRed, kBlue};
   int lstyle[3] = {kDotted, kSolid, kDashDotted};
-  for(int is = 0;is<2;is++)
+  int nstates = 2;
+  if(ups3s) nstates = 3;
+  for(int is = 0;is<nstates;is++)
     {
       for(int ieta =0; ieta < 3; ++ieta)
       {
