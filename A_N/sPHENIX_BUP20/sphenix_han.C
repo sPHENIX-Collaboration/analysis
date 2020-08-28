@@ -1,7 +1,7 @@
 void sphenix_han()
 {
 //=========Macro generated from canvas: sphenix_han/sphenix_han
-//=========  (Fri Aug 28 14:47:37 2020) by ROOT version 6.16/00
+//=========  (Fri Aug 28 14:59:02 2020) by ROOT version 6.16/00
    TCanvas *sphenix_han = new TCanvas("sphenix_han", "sphenix_han",621,585,1100,800);
    gStyle->SetOptStat(0);
    gStyle->SetOptTitle(0);
@@ -347,7 +347,7 @@ void sphenix_han()
    entry->SetMarkerStyle(21);
    entry->SetMarkerSize(1);
    entry->SetTextFont(42);
-   entry=leg->AddEntry("","62 pb^{-1} samp. #it{p}^{#uparrow}+#it{p}#rightarrow h^{+} + X, P=0.57","");
+   entry=leg->AddEntry("","6.2 pb^{-1} str. #it{p}^{#uparrow}+#it{p}#rightarrow h^{+} + X, P=0.57","");
    entry->SetLineColor(1);
    entry->SetLineStyle(1);
    entry->SetLineWidth(1);

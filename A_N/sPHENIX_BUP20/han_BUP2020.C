@@ -24,7 +24,7 @@
 #include "sPhenixStyle.C"
 
 const double pp_inelastic_crosssec = 42e-3;        // 42 mb [sPH-TRG-000]
-const double pp_rec_3year = 62e12;                 // BUP2020
+const double pp_rec_3year = 6.2e12;                 // BUP2020
 const double pp_rec_5year = pp_rec_3year + 80e12;  // BUP2020
 const double pp_beam_pol = 0.57;
 
@@ -102,7 +102,7 @@ void han_BUP2020()
 {
   SetsPhenixStyle();
 
-  const double ref_Lum = 100e12;
+  const double ref_Lum = 10e12;
   const double err_scale = sqrt(ref_Lum / pp_rec_3year);
 
   const int nxf = 20;
@@ -170,7 +170,7 @@ void han_BUP2020()
   leg->SetFillStyle(0);
   //     leg->AddEntry("", "#it{#bf{sPHENIX}} Projection", "");
   leg->AddEntry("", Form("#it{#bf{sPHENIX}} Projection, Years 1-3"), "");
-  leg->AddEntry("", Form("%.0f pb^{-1} samp. #it{p}^{#uparrow}+#it{p}#rightarrow h^{+} + X, P=%.2f", pp_rec_3year / 1e12, pp_beam_pol), "");
+  leg->AddEntry("", Form("%.1f pb^{-1} str. #it{p}^{#uparrow}+#it{p}#rightarrow h^{+} + X, P=%.2f", pp_rec_3year / 1e12, pp_beam_pol), "");
   leg->Draw();
 
   SaveCanvas(c1, TString(c1->GetName()), kTRUE);
