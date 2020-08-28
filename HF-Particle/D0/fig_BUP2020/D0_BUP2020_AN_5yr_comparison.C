@@ -1,7 +1,7 @@
 void D0_BUP2020_AN_5yr_comparison()
 {
 //=========Macro generated from canvas: D0_BUP2020_AN_5yr_comparison/D0_BUP2020OOArArO_AN_5yr_comparison
-//=========  (Fri Aug 28 10:29:58 2020) by ROOT version 6.16/00
+//=========  (Fri Aug 28 14:16:04 2020) by ROOT version 6.16/00
    TCanvas *D0_BUP2020_AN_5yr_comparison = new TCanvas("D0_BUP2020_AN_5yr_comparison", "D0_BUP2020OOArArO_AN_5yr_comparison",0,0,1100,800);
    gStyle->SetOptFit(1);
    gStyle->SetOptStat(0);
@@ -485,7 +485,7 @@ void D0_BUP2020_AN_5yr_comparison()
    leg->SetLineWidth(1);
    leg->SetFillColor(0);
    leg->SetFillStyle(0);
-   TLegendEntry *entry=leg->AddEntry("NULL","#it{#bf{sPHENIX}} Projection, #it{p}#uparrow+#it{p}#rightarrowD^{0}/#bar{D}^{0}+X, P=0.57","");
+   TLegendEntry *entry=leg->AddEntry("NULL","#it{#bf{sPHENIX}} Projection, #it{p}^{#uparrow}+#it{p}#rightarrowD^{0}/#bar{D}^{0}+X, P=0.57","");
    entry->SetLineColor(1);
    entry->SetLineStyle(1);
    entry->SetLineWidth(1);
@@ -502,7 +502,7 @@ void D0_BUP2020_AN_5yr_comparison()
    leg->SetLineWidth(1);
    leg->SetFillColor(0);
    leg->SetFillStyle(0);
-   entry=leg->AddEntry("Graph","6.2 pb^{-1} str. #it{p}+#it{p}, Year 1-3","pl");
+   entry=leg->AddEntry("Graph","6.2 pb^{-1} str. #it{p}+#it{p}, Years 1-3","pl");
 
    ci = TColor::GetColor("#999999");
    entry->SetLineColor(ci);
@@ -514,7 +514,7 @@ void D0_BUP2020_AN_5yr_comparison()
    entry->SetMarkerStyle(24);
    entry->SetMarkerSize(2);
    entry->SetTextFont(42);
-   entry=leg->AddEntry("Graph","86 pb^{-1} str. #it{p}+#it{p}, Year 1-5","lp");
+   entry=leg->AddEntry("Graph","86 pb^{-1} str. #it{p}+#it{p}, Years 1-5","lp");
 
    ci = TColor::GetColor("#000000");
    entry->SetLineColor(ci);

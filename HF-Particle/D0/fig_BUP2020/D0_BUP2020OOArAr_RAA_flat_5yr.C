@@ -1,7 +1,7 @@
 void D0_BUP2020OOArAr_RAA_flat_5yr()
 {
 //=========Macro generated from canvas: D0_BUP2020OOArAr_RAA_flat_5yr/D0_BUP2020OOArArO_RAA_flat_5yr
-//=========  (Fri Aug 28 10:29:57 2020) by ROOT version 6.16/00
+//=========  (Fri Aug 28 14:16:02 2020) by ROOT version 6.16/00
    TCanvas *D0_BUP2020OOArAr_RAA_flat_5yr = new TCanvas("D0_BUP2020OOArAr_RAA_flat_5yr", "D0_BUP2020OOArArO_RAA_flat_5yr",0,0,1100,800);
    gStyle->SetOptFit(1);
    gStyle->SetOptStat(0);
@@ -476,7 +476,7 @@ void D0_BUP2020OOArAr_RAA_flat_5yr()
    leg->SetLineWidth(1);
    leg->SetFillColor(0);
    leg->SetFillStyle(0);
-   TLegendEntry *entry=leg->AddEntry("NULL","#it{#bf{sPHENIX}} Projection, Year 1-5","");
+   TLegendEntry *entry=leg->AddEntry("NULL","#it{#bf{sPHENIX}} Projection, Years 1-5","");
    entry->SetLineColor(1);
    entry->SetLineStyle(1);
    entry->SetLineWidth(1);

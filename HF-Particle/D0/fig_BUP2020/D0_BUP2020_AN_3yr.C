@@ -1,7 +1,7 @@
 void D0_BUP2020_AN_3yr()
 {
 //=========Macro generated from canvas: D0_BUP2020_AN_3yr/D0_BUP2020OOArArO_AN_3yr
-//=========  (Fri Aug 28 10:29:58 2020) by ROOT version 6.16/00
+//=========  (Fri Aug 28 14:16:04 2020) by ROOT version 6.16/00
    TCanvas *D0_BUP2020_AN_3yr = new TCanvas("D0_BUP2020_AN_3yr", "D0_BUP2020OOArArO_AN_3yr",0,0,1100,800);
    gStyle->SetOptFit(1);
    gStyle->SetOptStat(0);
@@ -360,7 +360,7 @@ void D0_BUP2020_AN_3yr()
    leg->SetLineWidth(1);
    leg->SetFillColor(0);
    leg->SetFillStyle(0);
-   TLegendEntry *entry=leg->AddEntry("NULL","#it{#bf{sPHENIX}} Projection, #it{p}#uparrow+#it{p}#rightarrowD^{0}/#bar{D}^{0}+X, P=0.57","");
+   TLegendEntry *entry=leg->AddEntry("NULL","#it{#bf{sPHENIX}} Projection, #it{p}^{#uparrow}+#it{p}#rightarrowD^{0}/#bar{D}^{0}+X, P=0.57","");
    entry->SetLineColor(1);
    entry->SetLineStyle(1);
    entry->SetLineWidth(1);
@@ -377,7 +377,7 @@ void D0_BUP2020_AN_3yr()
    leg->SetLineWidth(1);
    leg->SetFillColor(0);
    leg->SetFillStyle(0);
-   entry=leg->AddEntry("Graph","6.2 pb^{-1} str. #it{p}+#it{p}, Year 1-3","pl");
+   entry=leg->AddEntry("Graph","6.2 pb^{-1} str. #it{p}+#it{p}, Years 1-3","pl");
 
    ci = TColor::GetColor("#000000");
    entry->SetLineColor(ci);
