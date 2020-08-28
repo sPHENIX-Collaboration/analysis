@@ -1,7 +1,7 @@
 void D0_BUP2020_AuAu_RAA_3yr()
 {
 //=========Macro generated from canvas: D0_BUP2020_AuAu_RAA_3yr/D0_BUP2020_AuAu_RAA_3yr
-//=========  (Fri Aug 28 00:10:48 2020) by ROOT version 6.16/00
+//=========  (Fri Aug 28 09:59:09 2020) by ROOT version 6.16/00
    TCanvas *D0_BUP2020_AuAu_RAA_3yr = new TCanvas("D0_BUP2020_AuAu_RAA_3yr", "D0_BUP2020_AuAu_RAA_3yr",0,0,1100,800);
    gStyle->SetOptFit(1);
    gStyle->SetOptStat(0);
