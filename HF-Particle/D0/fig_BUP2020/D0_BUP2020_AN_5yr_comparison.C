@@ -1,7 +1,7 @@
 void D0_BUP2020_AN_5yr_comparison()
 {
 //=========Macro generated from canvas: D0_BUP2020_AN_5yr_comparison/D0_BUP2020OOArArO_AN_5yr_comparison
-//=========  (Fri Aug 28 14:16:04 2020) by ROOT version 6.16/00
+//=========  (Fri Aug 28 23:39:56 2020) by ROOT version 6.16/00
    TCanvas *D0_BUP2020_AN_5yr_comparison = new TCanvas("D0_BUP2020_AN_5yr_comparison", "D0_BUP2020OOArArO_AN_5yr_comparison",0,0,1100,800);
    gStyle->SetOptFit(1);
    gStyle->SetOptStat(0);
@@ -36,36 +36,36 @@ void D0_BUP2020_AN_5yr_comparison()
    D0_BUP2020_AN_5yr_comparison_1->SetFrameBorderMode(0);
    D0_BUP2020_AN_5yr_comparison_1->SetFrameBorderMode(0);
    
-   TH1F *hframe__21 = new TH1F("hframe__21","",1000,0,5);
-   hframe__21->SetMinimum(-0.025);
-   hframe__21->SetMaximum(0.035);
-   hframe__21->SetDirectory(0);
-   hframe__21->SetStats(0);
-   hframe__21->SetLineWidth(2);
-   hframe__21->SetMarkerStyle(20);
-   hframe__21->SetMarkerSize(1.2);
-   hframe__21->GetXaxis()->SetTitle("#it{p}_{T} [GeV]");
-   hframe__21->GetXaxis()->SetLabelFont(42);
-   hframe__21->GetXaxis()->SetLabelSize(0.05);
-   hframe__21->GetXaxis()->SetTitleSize(0.05);
-   hframe__21->GetXaxis()->SetTitleOffset(1.4);
-   hframe__21->GetXaxis()->SetTitleFont(42);
-   hframe__21->GetYaxis()->SetTitle("A_{N}");
-   hframe__21->GetYaxis()->SetLabelFont(42);
-   hframe__21->GetYaxis()->SetLabelSize(0.05);
-   hframe__21->GetYaxis()->SetTitleSize(0.05);
-   hframe__21->GetYaxis()->SetTitleOffset(1.4);
-   hframe__21->GetYaxis()->SetTitleFont(42);
-   hframe__21->GetZaxis()->SetLabelFont(42);
-   hframe__21->GetZaxis()->SetLabelSize(0.05);
-   hframe__21->GetZaxis()->SetTitleSize(0.05);
-   hframe__21->GetZaxis()->SetTitleOffset(1);
-   hframe__21->GetZaxis()->SetTitleFont(42);
-   hframe__21->Draw(" ");
+   TH1F *hframe__25 = new TH1F("hframe__25","",1000,0,5);
+   hframe__25->SetMinimum(-0.025);
+   hframe__25->SetMaximum(0.035);
+   hframe__25->SetDirectory(0);
+   hframe__25->SetStats(0);
+   hframe__25->SetLineWidth(2);
+   hframe__25->SetMarkerStyle(20);
+   hframe__25->SetMarkerSize(1.2);
+   hframe__25->GetXaxis()->SetTitle("#it{p}_{T} [GeV]");
+   hframe__25->GetXaxis()->SetLabelFont(42);
+   hframe__25->GetXaxis()->SetLabelSize(0.05);
+   hframe__25->GetXaxis()->SetTitleSize(0.05);
+   hframe__25->GetXaxis()->SetTitleOffset(1.4);
+   hframe__25->GetXaxis()->SetTitleFont(42);
+   hframe__25->GetYaxis()->SetTitle("A_{N}");
+   hframe__25->GetYaxis()->SetLabelFont(42);
+   hframe__25->GetYaxis()->SetLabelSize(0.05);
+   hframe__25->GetYaxis()->SetTitleSize(0.05);
+   hframe__25->GetYaxis()->SetTitleOffset(1.4);
+   hframe__25->GetYaxis()->SetTitleFont(42);
+   hframe__25->GetZaxis()->SetLabelFont(42);
+   hframe__25->GetZaxis()->SetLabelSize(0.05);
+   hframe__25->GetZaxis()->SetTitleSize(0.05);
+   hframe__25->GetZaxis()->SetTitleOffset(1);
+   hframe__25->GetZaxis()->SetTitleFont(42);
+   hframe__25->Draw(" ");
    TLine *line = new TLine(0,-0,5,0);
    line->Draw();
    
-   Double_t Graph0_fx23[30] = {
+   Double_t Graph0_fx29[30] = {
    1,
    1.1,
    1.2,
@@ -96,7 +96,7 @@ void D0_BUP2020_AN_5yr_comparison()
    3.7,
    3.8,
    3.9};
-   Double_t Graph0_fy23[30] = {
+   Double_t Graph0_fy29[30] = {
    -0.0003416974,
    -0.0003446386,
    -0.0003737235,
@@ -127,7 +127,7 @@ void D0_BUP2020_AN_5yr_comparison()
    -0.0008001941,
    -0.0008463742,
    -0.0008649};
-   TGraph *graph = new TGraph(30,Graph0_fx23,Graph0_fy23);
+   TGraph *graph = new TGraph(30,Graph0_fx29,Graph0_fy29);
    graph->SetName("Graph0");
    graph->SetTitle("Graph");
    graph->SetFillStyle(1000);
@@ -140,34 +140,34 @@ void D0_BUP2020_AN_5yr_comparison()
    graph->SetMarkerStyle(20);
    graph->SetMarkerSize(1.2);
    
-   TH1F *Graph_Graph023 = new TH1F("Graph_Graph023","Graph",100,0.71,4.19);
-   Graph_Graph023->SetMinimum(-0.0009172203);
-   Graph_Graph023->SetMaximum(-0.0002893771);
-   Graph_Graph023->SetDirectory(0);
-   Graph_Graph023->SetStats(0);
-   Graph_Graph023->SetLineWidth(2);
-   Graph_Graph023->SetMarkerStyle(20);
-   Graph_Graph023->SetMarkerSize(1.2);
-   Graph_Graph023->GetXaxis()->SetLabelFont(42);
-   Graph_Graph023->GetXaxis()->SetLabelSize(0.05);
-   Graph_Graph023->GetXaxis()->SetTitleSize(0.05);
-   Graph_Graph023->GetXaxis()->SetTitleOffset(1.4);
-   Graph_Graph023->GetXaxis()->SetTitleFont(42);
-   Graph_Graph023->GetYaxis()->SetLabelFont(42);
-   Graph_Graph023->GetYaxis()->SetLabelSize(0.05);
-   Graph_Graph023->GetYaxis()->SetTitleSize(0.05);
-   Graph_Graph023->GetYaxis()->SetTitleOffset(1.4);
-   Graph_Graph023->GetYaxis()->SetTitleFont(42);
-   Graph_Graph023->GetZaxis()->SetLabelFont(42);
-   Graph_Graph023->GetZaxis()->SetLabelSize(0.05);
-   Graph_Graph023->GetZaxis()->SetTitleSize(0.05);
-   Graph_Graph023->GetZaxis()->SetTitleOffset(1);
-   Graph_Graph023->GetZaxis()->SetTitleFont(42);
-   graph->SetHistogram(Graph_Graph023);
+   TH1F *Graph_Graph029 = new TH1F("Graph_Graph029","Graph",100,0.71,4.19);
+   Graph_Graph029->SetMinimum(-0.0009172203);
+   Graph_Graph029->SetMaximum(-0.0002893771);
+   Graph_Graph029->SetDirectory(0);
+   Graph_Graph029->SetStats(0);
+   Graph_Graph029->SetLineWidth(2);
+   Graph_Graph029->SetMarkerStyle(20);
+   Graph_Graph029->SetMarkerSize(1.2);
+   Graph_Graph029->GetXaxis()->SetLabelFont(42);
+   Graph_Graph029->GetXaxis()->SetLabelSize(0.05);
+   Graph_Graph029->GetXaxis()->SetTitleSize(0.05);
+   Graph_Graph029->GetXaxis()->SetTitleOffset(1.4);
+   Graph_Graph029->GetXaxis()->SetTitleFont(42);
+   Graph_Graph029->GetYaxis()->SetLabelFont(42);
+   Graph_Graph029->GetYaxis()->SetLabelSize(0.05);
+   Graph_Graph029->GetYaxis()->SetTitleSize(0.05);
+   Graph_Graph029->GetYaxis()->SetTitleOffset(1.4);
+   Graph_Graph029->GetYaxis()->SetTitleFont(42);
+   Graph_Graph029->GetZaxis()->SetLabelFont(42);
+   Graph_Graph029->GetZaxis()->SetLabelSize(0.05);
+   Graph_Graph029->GetZaxis()->SetTitleSize(0.05);
+   Graph_Graph029->GetZaxis()->SetTitleOffset(1);
+   Graph_Graph029->GetZaxis()->SetTitleFont(42);
+   graph->SetHistogram(Graph_Graph029);
    
    graph->Draw("l");
    
-   Double_t Graph1_fx24[30] = {
+   Double_t Graph1_fx30[30] = {
    1,
    1.1,
    1.2,
@@ -198,7 +198,7 @@ void D0_BUP2020_AN_5yr_comparison()
    3.7,
    3.8,
    3.9};
-   Double_t Graph1_fy24[30] = {
+   Double_t Graph1_fy30[30] = {
    -0.01879963,
    -0.01869631,
    -0.0185394,
@@ -229,7 +229,7 @@ void D0_BUP2020_AN_5yr_comparison()
    -0.01058588,
    -0.01039728,
    -0.01018889};
-   graph = new TGraph(30,Graph1_fx24,Graph1_fy24);
+   graph = new TGraph(30,Graph1_fx30,Graph1_fy30);
    graph->SetName("Graph1");
    graph->SetTitle("Graph");
    graph->SetFillStyle(1000);
@@ -241,30 +241,30 @@ void D0_BUP2020_AN_5yr_comparison()
    graph->SetMarkerStyle(20);
    graph->SetMarkerSize(1.2);
    
-   TH1F *Graph_Graph124 = new TH1F("Graph_Graph124","Graph",100,0.71,4.19);
-   Graph_Graph124->SetMinimum(-0.0196607);
-   Graph_Graph124->SetMaximum(-0.009327811);
-   Graph_Graph124->SetDirectory(0);
-   Graph_Graph124->SetStats(0);
-   Graph_Graph124->SetLineWidth(2);
-   Graph_Graph124->SetMarkerStyle(20);
-   Graph_Graph124->SetMarkerSize(1.2);
-   Graph_Graph124->GetXaxis()->SetLabelFont(42);
-   Graph_Graph124->GetXaxis()->SetLabelSize(0.05);
-   Graph_Graph124->GetXaxis()->SetTitleSize(0.05);
-   Graph_Graph124->GetXaxis()->SetTitleOffset(1.4);
-   Graph_Graph124->GetXaxis()->SetTitleFont(42);
-   Graph_Graph124->GetYaxis()->SetLabelFont(42);
-   Graph_Graph124->GetYaxis()->SetLabelSize(0.05);
-   Graph_Graph124->GetYaxis()->SetTitleSize(0.05);
-   Graph_Graph124->GetYaxis()->SetTitleOffset(1.4);
-   Graph_Graph124->GetYaxis()->SetTitleFont(42);
-   Graph_Graph124->GetZaxis()->SetLabelFont(42);
-   Graph_Graph124->GetZaxis()->SetLabelSize(0.05);
-   Graph_Graph124->GetZaxis()->SetTitleSize(0.05);
-   Graph_Graph124->GetZaxis()->SetTitleOffset(1);
-   Graph_Graph124->GetZaxis()->SetTitleFont(42);
-   graph->SetHistogram(Graph_Graph124);
+   TH1F *Graph_Graph130 = new TH1F("Graph_Graph130","Graph",100,0.71,4.19);
+   Graph_Graph130->SetMinimum(-0.0196607);
+   Graph_Graph130->SetMaximum(-0.009327811);
+   Graph_Graph130->SetDirectory(0);
+   Graph_Graph130->SetStats(0);
+   Graph_Graph130->SetLineWidth(2);
+   Graph_Graph130->SetMarkerStyle(20);
+   Graph_Graph130->SetMarkerSize(1.2);
+   Graph_Graph130->GetXaxis()->SetLabelFont(42);
+   Graph_Graph130->GetXaxis()->SetLabelSize(0.05);
+   Graph_Graph130->GetXaxis()->SetTitleSize(0.05);
+   Graph_Graph130->GetXaxis()->SetTitleOffset(1.4);
+   Graph_Graph130->GetXaxis()->SetTitleFont(42);
+   Graph_Graph130->GetYaxis()->SetLabelFont(42);
+   Graph_Graph130->GetYaxis()->SetLabelSize(0.05);
+   Graph_Graph130->GetYaxis()->SetTitleSize(0.05);
+   Graph_Graph130->GetYaxis()->SetTitleOffset(1.4);
+   Graph_Graph130->GetYaxis()->SetTitleFont(42);
+   Graph_Graph130->GetZaxis()->SetLabelFont(42);
+   Graph_Graph130->GetZaxis()->SetLabelSize(0.05);
+   Graph_Graph130->GetZaxis()->SetTitleSize(0.05);
+   Graph_Graph130->GetZaxis()->SetTitleOffset(1);
+   Graph_Graph130->GetZaxis()->SetTitleFont(42);
+   graph->SetHistogram(Graph_Graph130);
    
    graph->Draw("l");
    

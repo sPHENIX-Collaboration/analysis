@@ -80,16 +80,25 @@ void makeLcD0_BUP2020()
   }
 
   // STAR Central data
+  // Updated with https://drupal.star.bnl.gov/STAR/files/starpublications/318/data.html
   double x_St[1] = {3.96};
-  double y_St[1] = {1.3935};
-  double ye_St[1] = {0.3112};
-  double yes_St[1] = {0.3446};
+  double y_St[1] = {1.0772};
+  double ye_St[1] = {0.1643};
+  double yes_St[1] = {0.2647};
+  double yesx_St[1] = {0.1};
   TGraphErrors *gr_St = new TGraphErrors(1, x_St, y_St, 0, ye_St);
   gr_St->SetMarkerStyle(29);
   gr_St->SetMarkerSize(2.5);
   gr_St->SetMarkerColor(kRed - 6);
   gr_St->SetLineWidth(4);
   gr_St->SetLineColor(kRed - 6);
+  TGraphAsymmErrors* grs_St = new TGraphAsymmErrors(1, x_St, y_St, yesx_St, yesx_St, yes_St, yes_St);
+  grs_St->SetFillColor(kRed - 10);
+  grs_St->SetMarkerStyle(29);
+  grs_St->SetMarkerSize(2.5);
+  grs_St->SetMarkerColor(kRed - 6);
+  grs_St->SetLineWidth(4);
+  grs_St->SetLineColor(kRed - 6);
 
   // Theory calculations
   // pythia6
@@ -462,6 +471,7 @@ void makeLcD0_BUP2020()
     gr[i]->Draw("p");
   }
   */
+  grs_St->Draw("2");
   gr_St->Draw("p");
   gr_sPH_noPID_AuAu_0_10->Draw("p");
   gr_sPH_noPID_pp->Draw("p");
@@ -479,7 +489,7 @@ void makeLcD0_BUP2020()
   TLegend *leg = new TLegend(0.1998067,0.688525,0.8001561,0.8282708);
   leg->AddEntry(gr_sPH_noPID_pp, Form("%.1f pb^{-1} str. #it{p}+#it{p}", pp_rec_3year/1e12), "pl");
   leg->AddEntry(gr_sPH_noPID_AuAu_0_10, Form("%.0f nb^{-1} rec. Au+Au, 0-10%%", AuAu_rec_3year/1e9), "pl");
-  leg->AddEntry(gr_St, "STAR, Au+Au, 0-20%, PRL#bf{124}", "pl");
+  leg->AddEntry(grs_St, "STAR, Au+Au, 0-20%, PRL#bf{124}", "plf");
   leg->Draw();
 
 

@@ -1,7 +1,7 @@
 void D0_BUP2020OOArAr_RAA_5yr()
 {
 //=========Macro generated from canvas: D0_BUP2020OOArAr_RAA_5yr/D0_BUP2020OOArArO_RAA_5yr
-//=========  (Fri Aug 28 14:16:02 2020) by ROOT version 6.16/00
+//=========  (Fri Aug 28 23:39:54 2020) by ROOT version 6.16/00
    TCanvas *D0_BUP2020OOArAr_RAA_5yr = new TCanvas("D0_BUP2020OOArAr_RAA_5yr", "D0_BUP2020OOArArO_RAA_5yr",0,0,1100,800);
    gStyle->SetOptFit(1);
    gStyle->SetOptStat(0);
@@ -36,32 +36,32 @@ void D0_BUP2020OOArAr_RAA_5yr()
    D0_BUP2020OOArAr_RAA_5yr_1->SetFrameBorderMode(0);
    D0_BUP2020OOArAr_RAA_5yr_1->SetFrameBorderMode(0);
    
-   TH1F *hframe__16 = new TH1F("hframe__16","",1000,0,11);
-   hframe__16->SetMinimum(0);
-   hframe__16->SetMaximum(1.2);
-   hframe__16->SetDirectory(0);
-   hframe__16->SetStats(0);
-   hframe__16->SetLineWidth(2);
-   hframe__16->SetMarkerStyle(20);
-   hframe__16->SetMarkerSize(1.2);
-   hframe__16->GetXaxis()->SetTitle("#it{p}_{T} [GeV]");
-   hframe__16->GetXaxis()->SetLabelFont(42);
-   hframe__16->GetXaxis()->SetLabelSize(0.05);
-   hframe__16->GetXaxis()->SetTitleSize(0.05);
-   hframe__16->GetXaxis()->SetTitleOffset(1.4);
-   hframe__16->GetXaxis()->SetTitleFont(42);
-   hframe__16->GetYaxis()->SetTitle("#it{R}_{AA}");
-   hframe__16->GetYaxis()->SetLabelFont(42);
-   hframe__16->GetYaxis()->SetLabelSize(0.05);
-   hframe__16->GetYaxis()->SetTitleSize(0.05);
-   hframe__16->GetYaxis()->SetTitleOffset(1.4);
-   hframe__16->GetYaxis()->SetTitleFont(42);
-   hframe__16->GetZaxis()->SetLabelFont(42);
-   hframe__16->GetZaxis()->SetLabelSize(0.05);
-   hframe__16->GetZaxis()->SetTitleSize(0.05);
-   hframe__16->GetZaxis()->SetTitleOffset(1);
-   hframe__16->GetZaxis()->SetTitleFont(42);
-   hframe__16->Draw(" ");
+   TH1F *hframe__20 = new TH1F("hframe__20","",1000,0,11);
+   hframe__20->SetMinimum(0);
+   hframe__20->SetMaximum(1.2);
+   hframe__20->SetDirectory(0);
+   hframe__20->SetStats(0);
+   hframe__20->SetLineWidth(2);
+   hframe__20->SetMarkerStyle(20);
+   hframe__20->SetMarkerSize(1.2);
+   hframe__20->GetXaxis()->SetTitle("#it{p}_{T} [GeV]");
+   hframe__20->GetXaxis()->SetLabelFont(42);
+   hframe__20->GetXaxis()->SetLabelSize(0.05);
+   hframe__20->GetXaxis()->SetTitleSize(0.05);
+   hframe__20->GetXaxis()->SetTitleOffset(1.4);
+   hframe__20->GetXaxis()->SetTitleFont(42);
+   hframe__20->GetYaxis()->SetTitle("#it{R}_{AA}");
+   hframe__20->GetYaxis()->SetLabelFont(42);
+   hframe__20->GetYaxis()->SetLabelSize(0.05);
+   hframe__20->GetYaxis()->SetTitleSize(0.05);
+   hframe__20->GetYaxis()->SetTitleOffset(1.4);
+   hframe__20->GetYaxis()->SetTitleFont(42);
+   hframe__20->GetZaxis()->SetLabelFont(42);
+   hframe__20->GetZaxis()->SetLabelSize(0.05);
+   hframe__20->GetZaxis()->SetTitleSize(0.05);
+   hframe__20->GetZaxis()->SetTitleOffset(1);
+   hframe__20->GetZaxis()->SetTitleFont(42);
+   hframe__20->Draw(" ");
    
    Double_t Graph0_fx1003[20] = {
    0.45,

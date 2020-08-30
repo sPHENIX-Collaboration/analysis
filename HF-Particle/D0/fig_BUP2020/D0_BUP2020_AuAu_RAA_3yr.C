@@ -1,7 +1,7 @@
 void D0_BUP2020_AuAu_RAA_3yr()
 {
 //=========Macro generated from canvas: D0_BUP2020_AuAu_RAA_3yr/D0_BUP2020_AuAu_RAA_3yr
-//=========  (Fri Aug 28 14:16:02 2020) by ROOT version 6.16/00
+//=========  (Fri Aug 28 23:39:53 2020) by ROOT version 6.16/00
    TCanvas *D0_BUP2020_AuAu_RAA_3yr = new TCanvas("D0_BUP2020_AuAu_RAA_3yr", "D0_BUP2020_AuAu_RAA_3yr",0,0,1100,800);
    gStyle->SetOptFit(1);
    gStyle->SetOptStat(0);
@@ -36,34 +36,34 @@ void D0_BUP2020_AuAu_RAA_3yr()
    D0_BUP2020_AuAu_RAA_3yr_1->SetFrameBorderMode(0);
    D0_BUP2020_AuAu_RAA_3yr_1->SetFrameBorderMode(0);
    
-   TH1F *hframe__15 = new TH1F("hframe__15","",1000,0,11);
-   hframe__15->SetMinimum(0);
-   hframe__15->SetMaximum(1.6);
-   hframe__15->SetDirectory(0);
-   hframe__15->SetStats(0);
-   hframe__15->SetLineWidth(2);
-   hframe__15->SetMarkerStyle(20);
-   hframe__15->SetMarkerSize(1.2);
-   hframe__15->GetXaxis()->SetTitle("#it{p}_{T} [GeV]");
-   hframe__15->GetXaxis()->SetLabelFont(42);
-   hframe__15->GetXaxis()->SetLabelSize(0.05);
-   hframe__15->GetXaxis()->SetTitleSize(0.05);
-   hframe__15->GetXaxis()->SetTitleOffset(1.4);
-   hframe__15->GetXaxis()->SetTitleFont(42);
-   hframe__15->GetYaxis()->SetTitle("#it{R}_{AA}");
-   hframe__15->GetYaxis()->SetLabelFont(42);
-   hframe__15->GetYaxis()->SetLabelSize(0.05);
-   hframe__15->GetYaxis()->SetTitleSize(0.05);
-   hframe__15->GetYaxis()->SetTitleOffset(1.4);
-   hframe__15->GetYaxis()->SetTitleFont(42);
-   hframe__15->GetZaxis()->SetLabelFont(42);
-   hframe__15->GetZaxis()->SetLabelSize(0.05);
-   hframe__15->GetZaxis()->SetTitleSize(0.05);
-   hframe__15->GetZaxis()->SetTitleOffset(1);
-   hframe__15->GetZaxis()->SetTitleFont(42);
-   hframe__15->Draw(" ");
+   TH1F *hframe__19 = new TH1F("hframe__19","",1000,0,11);
+   hframe__19->SetMinimum(0);
+   hframe__19->SetMaximum(1.6);
+   hframe__19->SetDirectory(0);
+   hframe__19->SetStats(0);
+   hframe__19->SetLineWidth(2);
+   hframe__19->SetMarkerStyle(20);
+   hframe__19->SetMarkerSize(1.2);
+   hframe__19->GetXaxis()->SetTitle("#it{p}_{T} [GeV]");
+   hframe__19->GetXaxis()->SetLabelFont(42);
+   hframe__19->GetXaxis()->SetLabelSize(0.05);
+   hframe__19->GetXaxis()->SetTitleSize(0.05);
+   hframe__19->GetXaxis()->SetTitleOffset(1.4);
+   hframe__19->GetXaxis()->SetTitleFont(42);
+   hframe__19->GetYaxis()->SetTitle("#it{R}_{AA}");
+   hframe__19->GetYaxis()->SetLabelFont(42);
+   hframe__19->GetYaxis()->SetLabelSize(0.05);
+   hframe__19->GetYaxis()->SetTitleSize(0.05);
+   hframe__19->GetYaxis()->SetTitleOffset(1.4);
+   hframe__19->GetYaxis()->SetTitleFont(42);
+   hframe__19->GetZaxis()->SetLabelFont(42);
+   hframe__19->GetZaxis()->SetLabelSize(0.05);
+   hframe__19->GetZaxis()->SetTitleSize(0.05);
+   hframe__19->GetZaxis()->SetTitleOffset(1);
+   hframe__19->GetZaxis()->SetTitleFont(42);
+   hframe__19->Draw(" ");
    
-   Double_t RAA_pi_fx15[21] = {
+   Double_t RAA_pi_fx21[21] = {
    1.25,
    1.75,
    2.25,
@@ -85,7 +85,7 @@ void D0_BUP2020_AuAu_RAA_3yr()
    37.5,
    42.5,
    47.5};
-   Double_t RAA_pi_fy15[21] = {
+   Double_t RAA_pi_fy21[21] = {
    0.364,
    0.4123,
    0.3958,
@@ -107,7 +107,7 @@ void D0_BUP2020_AuAu_RAA_3yr()
    0.4059054,
    0.4152112,
    0.4225492};
-   TGraph *graph = new TGraph(21,RAA_pi_fx15,RAA_pi_fy15);
+   TGraph *graph = new TGraph(21,RAA_pi_fx21,RAA_pi_fy21);
    graph->SetName("RAA_pi");
    graph->SetTitle("Graph");
 
@@ -119,33 +119,33 @@ void D0_BUP2020_AuAu_RAA_3yr()
    graph->SetMarkerStyle(20);
    graph->SetMarkerSize(1.2);
    
-   TH1F *Graph_RAA_pi15 = new TH1F("Graph_RAA_pi15","Graph",100,1.125,52.125);
-   Graph_RAA_pi15->SetMinimum(0.1616851);
-   Graph_RAA_pi15->SetMaximum(0.4462641);
-   Graph_RAA_pi15->SetDirectory(0);
-   Graph_RAA_pi15->SetLineWidth(2);
-   Graph_RAA_pi15->SetMarkerStyle(20);
-   Graph_RAA_pi15->SetMarkerSize(1.2);
-   Graph_RAA_pi15->GetXaxis()->SetLabelFont(42);
-   Graph_RAA_pi15->GetXaxis()->SetLabelSize(0.05);
-   Graph_RAA_pi15->GetXaxis()->SetTitleSize(0.05);
-   Graph_RAA_pi15->GetXaxis()->SetTitleOffset(1.4);
-   Graph_RAA_pi15->GetXaxis()->SetTitleFont(42);
-   Graph_RAA_pi15->GetYaxis()->SetLabelFont(42);
-   Graph_RAA_pi15->GetYaxis()->SetLabelSize(0.05);
-   Graph_RAA_pi15->GetYaxis()->SetTitleSize(0.05);
-   Graph_RAA_pi15->GetYaxis()->SetTitleOffset(1.4);
-   Graph_RAA_pi15->GetYaxis()->SetTitleFont(42);
-   Graph_RAA_pi15->GetZaxis()->SetLabelFont(42);
-   Graph_RAA_pi15->GetZaxis()->SetLabelSize(0.05);
-   Graph_RAA_pi15->GetZaxis()->SetTitleSize(0.05);
-   Graph_RAA_pi15->GetZaxis()->SetTitleOffset(1);
-   Graph_RAA_pi15->GetZaxis()->SetTitleFont(42);
-   graph->SetHistogram(Graph_RAA_pi15);
+   TH1F *Graph_RAA_pi21 = new TH1F("Graph_RAA_pi21","Graph",100,1.125,52.125);
+   Graph_RAA_pi21->SetMinimum(0.1616851);
+   Graph_RAA_pi21->SetMaximum(0.4462641);
+   Graph_RAA_pi21->SetDirectory(0);
+   Graph_RAA_pi21->SetLineWidth(2);
+   Graph_RAA_pi21->SetMarkerStyle(20);
+   Graph_RAA_pi21->SetMarkerSize(1.2);
+   Graph_RAA_pi21->GetXaxis()->SetLabelFont(42);
+   Graph_RAA_pi21->GetXaxis()->SetLabelSize(0.05);
+   Graph_RAA_pi21->GetXaxis()->SetTitleSize(0.05);
+   Graph_RAA_pi21->GetXaxis()->SetTitleOffset(1.4);
+   Graph_RAA_pi21->GetXaxis()->SetTitleFont(42);
+   Graph_RAA_pi21->GetYaxis()->SetLabelFont(42);
+   Graph_RAA_pi21->GetYaxis()->SetLabelSize(0.05);
+   Graph_RAA_pi21->GetYaxis()->SetTitleSize(0.05);
+   Graph_RAA_pi21->GetYaxis()->SetTitleOffset(1.4);
+   Graph_RAA_pi21->GetYaxis()->SetTitleFont(42);
+   Graph_RAA_pi21->GetZaxis()->SetLabelFont(42);
+   Graph_RAA_pi21->GetZaxis()->SetLabelSize(0.05);
+   Graph_RAA_pi21->GetZaxis()->SetTitleSize(0.05);
+   Graph_RAA_pi21->GetZaxis()->SetTitleOffset(1);
+   Graph_RAA_pi21->GetZaxis()->SetTitleFont(42);
+   graph->SetHistogram(Graph_RAA_pi21);
    
    graph->Draw("");
    
-   Double_t RAA_B_fx16[23] = {
+   Double_t RAA_B_fx22[23] = {
    0.25,
    0.75,
    1.25,
@@ -169,7 +169,7 @@ void D0_BUP2020_AuAu_RAA_3yr()
    37.5,
    42.5,
    47.5};
-   Double_t RAA_B_fy16[23] = {
+   Double_t RAA_B_fy22[23] = {
    0.7919363,
    0.8851137,
    0.9790749,
@@ -193,7 +193,7 @@ void D0_BUP2020_AuAu_RAA_3yr()
    0.3282991,
    0.332189,
    0.337686};
-   graph = new TGraph(23,RAA_B_fx16,RAA_B_fy16);
+   graph = new TGraph(23,RAA_B_fx22,RAA_B_fy22);
    graph->SetName("RAA_B");
    graph->SetTitle("Graph");
 
@@ -203,33 +203,33 @@ void D0_BUP2020_AuAu_RAA_3yr()
    graph->SetMarkerStyle(20);
    graph->SetMarkerSize(1.2);
    
-   TH1F *Graph_RAA_B16 = new TH1F("Graph_RAA_B16","Graph",100,0.225,52.225);
-   Graph_RAA_B16->SetMinimum(0.2514491);
-   Graph_RAA_B16->SetMaximum(1.160957);
-   Graph_RAA_B16->SetDirectory(0);
-   Graph_RAA_B16->SetLineWidth(2);
-   Graph_RAA_B16->SetMarkerStyle(20);
-   Graph_RAA_B16->SetMarkerSize(1.2);
-   Graph_RAA_B16->GetXaxis()->SetLabelFont(42);
-   Graph_RAA_B16->GetXaxis()->SetLabelSize(0.05);
-   Graph_RAA_B16->GetXaxis()->SetTitleSize(0.05);
-   Graph_RAA_B16->GetXaxis()->SetTitleOffset(1.4);
-   Graph_RAA_B16->GetXaxis()->SetTitleFont(42);
-   Graph_RAA_B16->GetYaxis()->SetLabelFont(42);
-   Graph_RAA_B16->GetYaxis()->SetLabelSize(0.05);
-   Graph_RAA_B16->GetYaxis()->SetTitleSize(0.05);
-   Graph_RAA_B16->GetYaxis()->SetTitleOffset(1.4);
-   Graph_RAA_B16->GetYaxis()->SetTitleFont(42);
-   Graph_RAA_B16->GetZaxis()->SetLabelFont(42);
-   Graph_RAA_B16->GetZaxis()->SetLabelSize(0.05);
-   Graph_RAA_B16->GetZaxis()->SetTitleSize(0.05);
-   Graph_RAA_B16->GetZaxis()->SetTitleOffset(1);
-   Graph_RAA_B16->GetZaxis()->SetTitleFont(42);
-   graph->SetHistogram(Graph_RAA_B16);
+   TH1F *Graph_RAA_B22 = new TH1F("Graph_RAA_B22","Graph",100,0.225,52.225);
+   Graph_RAA_B22->SetMinimum(0.2514491);
+   Graph_RAA_B22->SetMaximum(1.160957);
+   Graph_RAA_B22->SetDirectory(0);
+   Graph_RAA_B22->SetLineWidth(2);
+   Graph_RAA_B22->SetMarkerStyle(20);
+   Graph_RAA_B22->SetMarkerSize(1.2);
+   Graph_RAA_B22->GetXaxis()->SetLabelFont(42);
+   Graph_RAA_B22->GetXaxis()->SetLabelSize(0.05);
+   Graph_RAA_B22->GetXaxis()->SetTitleSize(0.05);
+   Graph_RAA_B22->GetXaxis()->SetTitleOffset(1.4);
+   Graph_RAA_B22->GetXaxis()->SetTitleFont(42);
+   Graph_RAA_B22->GetYaxis()->SetLabelFont(42);
+   Graph_RAA_B22->GetYaxis()->SetLabelSize(0.05);
+   Graph_RAA_B22->GetYaxis()->SetTitleSize(0.05);
+   Graph_RAA_B22->GetYaxis()->SetTitleOffset(1.4);
+   Graph_RAA_B22->GetYaxis()->SetTitleFont(42);
+   Graph_RAA_B22->GetZaxis()->SetLabelFont(42);
+   Graph_RAA_B22->GetZaxis()->SetLabelSize(0.05);
+   Graph_RAA_B22->GetZaxis()->SetTitleSize(0.05);
+   Graph_RAA_B22->GetZaxis()->SetTitleOffset(1);
+   Graph_RAA_B22->GetZaxis()->SetTitleFont(42);
+   graph->SetHistogram(Graph_RAA_B22);
    
    graph->Draw("");
    
-   Double_t RAA_D_fx17[23] = {
+   Double_t RAA_D_fx23[23] = {
    0.25,
    0.75,
    1.25,
@@ -253,7 +253,7 @@ void D0_BUP2020_AuAu_RAA_3yr()
    37.5,
    42.5,
    47.5};
-   Double_t RAA_D_fy17[23] = {
+   Double_t RAA_D_fy23[23] = {
    0.5375912,
    0.7987257,
    1.078158,
@@ -277,7 +277,7 @@ void D0_BUP2020_AuAu_RAA_3yr()
    0.3253756,
    0.3323967,
    0.3385319};
-   graph = new TGraph(23,RAA_D_fx17,RAA_D_fy17);
+   graph = new TGraph(23,RAA_D_fx23,RAA_D_fy23);
    graph->SetName("RAA_D");
    graph->SetTitle("Graph");
 
@@ -288,33 +288,33 @@ void D0_BUP2020_AuAu_RAA_3yr()
    graph->SetMarkerStyle(20);
    graph->SetMarkerSize(1.2);
    
-   TH1F *Graph_RAA_D17 = new TH1F("Graph_RAA_D17","Graph",100,0.225,52.225);
-   Graph_RAA_D17->SetMinimum(0.1341963);
-   Graph_RAA_D17->SetMaximum(1.255948);
-   Graph_RAA_D17->SetDirectory(0);
-   Graph_RAA_D17->SetLineWidth(2);
-   Graph_RAA_D17->SetMarkerStyle(20);
-   Graph_RAA_D17->SetMarkerSize(1.2);
-   Graph_RAA_D17->GetXaxis()->SetLabelFont(42);
-   Graph_RAA_D17->GetXaxis()->SetLabelSize(0.05);
-   Graph_RAA_D17->GetXaxis()->SetTitleSize(0.05);
-   Graph_RAA_D17->GetXaxis()->SetTitleOffset(1.4);
-   Graph_RAA_D17->GetXaxis()->SetTitleFont(42);
-   Graph_RAA_D17->GetYaxis()->SetLabelFont(42);
-   Graph_RAA_D17->GetYaxis()->SetLabelSize(0.05);
-   Graph_RAA_D17->GetYaxis()->SetTitleSize(0.05);
-   Graph_RAA_D17->GetYaxis()->SetTitleOffset(1.4);
-   Graph_RAA_D17->GetYaxis()->SetTitleFont(42);
-   Graph_RAA_D17->GetZaxis()->SetLabelFont(42);
-   Graph_RAA_D17->GetZaxis()->SetLabelSize(0.05);
-   Graph_RAA_D17->GetZaxis()->SetTitleSize(0.05);
-   Graph_RAA_D17->GetZaxis()->SetTitleOffset(1);
-   Graph_RAA_D17->GetZaxis()->SetTitleFont(42);
-   graph->SetHistogram(Graph_RAA_D17);
+   TH1F *Graph_RAA_D23 = new TH1F("Graph_RAA_D23","Graph",100,0.225,52.225);
+   Graph_RAA_D23->SetMinimum(0.1341963);
+   Graph_RAA_D23->SetMaximum(1.255948);
+   Graph_RAA_D23->SetDirectory(0);
+   Graph_RAA_D23->SetLineWidth(2);
+   Graph_RAA_D23->SetMarkerStyle(20);
+   Graph_RAA_D23->SetMarkerSize(1.2);
+   Graph_RAA_D23->GetXaxis()->SetLabelFont(42);
+   Graph_RAA_D23->GetXaxis()->SetLabelSize(0.05);
+   Graph_RAA_D23->GetXaxis()->SetTitleSize(0.05);
+   Graph_RAA_D23->GetXaxis()->SetTitleOffset(1.4);
+   Graph_RAA_D23->GetXaxis()->SetTitleFont(42);
+   Graph_RAA_D23->GetYaxis()->SetLabelFont(42);
+   Graph_RAA_D23->GetYaxis()->SetLabelSize(0.05);
+   Graph_RAA_D23->GetYaxis()->SetTitleSize(0.05);
+   Graph_RAA_D23->GetYaxis()->SetTitleOffset(1.4);
+   Graph_RAA_D23->GetYaxis()->SetTitleFont(42);
+   Graph_RAA_D23->GetZaxis()->SetLabelFont(42);
+   Graph_RAA_D23->GetZaxis()->SetLabelSize(0.05);
+   Graph_RAA_D23->GetZaxis()->SetTitleSize(0.05);
+   Graph_RAA_D23->GetZaxis()->SetTitleOffset(1);
+   Graph_RAA_D23->GetZaxis()->SetTitleFont(42);
+   graph->SetHistogram(Graph_RAA_D23);
    
    graph->Draw("");
    
-   Double_t RAA_D0_B_fx18[27] = {
+   Double_t RAA_D0_B_fx24[27] = {
    0.25,
    0.75,
    1.25,
@@ -342,7 +342,7 @@ void D0_BUP2020_AuAu_RAA_3yr()
    14.5,
    15.5,
    30};
-   Double_t RAA_D0_B_fy18[27] = {
+   Double_t RAA_D0_B_fy24[27] = {
    0.9838097,
    1.002943,
    0.9880626,
@@ -370,7 +370,7 @@ void D0_BUP2020_AuAu_RAA_3yr()
    0.3550752,
    0.3492906,
    0.3288992};
-   graph = new TGraph(27,RAA_D0_B_fx18,RAA_D0_B_fy18);
+   graph = new TGraph(27,RAA_D0_B_fx24,RAA_D0_B_fy24);
    graph->SetName("RAA_D0_B");
    graph->SetTitle("Graph");
 
@@ -381,29 +381,29 @@ void D0_BUP2020_AuAu_RAA_3yr()
    graph->SetMarkerStyle(20);
    graph->SetMarkerSize(1.2);
    
-   TH1F *Graph_RAA_D0_B18 = new TH1F("Graph_RAA_D0_B18","Graph",100,0,32.975);
-   Graph_RAA_D0_B18->SetMinimum(0.2614948);
-   Graph_RAA_D0_B18->SetMaximum(1.070347);
-   Graph_RAA_D0_B18->SetDirectory(0);
-   Graph_RAA_D0_B18->SetLineWidth(2);
-   Graph_RAA_D0_B18->SetMarkerStyle(20);
-   Graph_RAA_D0_B18->SetMarkerSize(1.2);
-   Graph_RAA_D0_B18->GetXaxis()->SetLabelFont(42);
-   Graph_RAA_D0_B18->GetXaxis()->SetLabelSize(0.05);
-   Graph_RAA_D0_B18->GetXaxis()->SetTitleSize(0.05);
-   Graph_RAA_D0_B18->GetXaxis()->SetTitleOffset(1.4);
-   Graph_RAA_D0_B18->GetXaxis()->SetTitleFont(42);
-   Graph_RAA_D0_B18->GetYaxis()->SetLabelFont(42);
-   Graph_RAA_D0_B18->GetYaxis()->SetLabelSize(0.05);
-   Graph_RAA_D0_B18->GetYaxis()->SetTitleSize(0.05);
-   Graph_RAA_D0_B18->GetYaxis()->SetTitleOffset(1.4);
-   Graph_RAA_D0_B18->GetYaxis()->SetTitleFont(42);
-   Graph_RAA_D0_B18->GetZaxis()->SetLabelFont(42);
-   Graph_RAA_D0_B18->GetZaxis()->SetLabelSize(0.05);
-   Graph_RAA_D0_B18->GetZaxis()->SetTitleSize(0.05);
-   Graph_RAA_D0_B18->GetZaxis()->SetTitleOffset(1);
-   Graph_RAA_D0_B18->GetZaxis()->SetTitleFont(42);
-   graph->SetHistogram(Graph_RAA_D0_B18);
+   TH1F *Graph_RAA_D0_B24 = new TH1F("Graph_RAA_D0_B24","Graph",100,0,32.975);
+   Graph_RAA_D0_B24->SetMinimum(0.2614948);
+   Graph_RAA_D0_B24->SetMaximum(1.070347);
+   Graph_RAA_D0_B24->SetDirectory(0);
+   Graph_RAA_D0_B24->SetLineWidth(2);
+   Graph_RAA_D0_B24->SetMarkerStyle(20);
+   Graph_RAA_D0_B24->SetMarkerSize(1.2);
+   Graph_RAA_D0_B24->GetXaxis()->SetLabelFont(42);
+   Graph_RAA_D0_B24->GetXaxis()->SetLabelSize(0.05);
+   Graph_RAA_D0_B24->GetXaxis()->SetTitleSize(0.05);
+   Graph_RAA_D0_B24->GetXaxis()->SetTitleOffset(1.4);
+   Graph_RAA_D0_B24->GetXaxis()->SetTitleFont(42);
+   Graph_RAA_D0_B24->GetYaxis()->SetLabelFont(42);
+   Graph_RAA_D0_B24->GetYaxis()->SetLabelSize(0.05);
+   Graph_RAA_D0_B24->GetYaxis()->SetTitleSize(0.05);
+   Graph_RAA_D0_B24->GetYaxis()->SetTitleOffset(1.4);
+   Graph_RAA_D0_B24->GetYaxis()->SetTitleFont(42);
+   Graph_RAA_D0_B24->GetZaxis()->SetLabelFont(42);
+   Graph_RAA_D0_B24->GetZaxis()->SetLabelSize(0.05);
+   Graph_RAA_D0_B24->GetZaxis()->SetTitleSize(0.05);
+   Graph_RAA_D0_B24->GetZaxis()->SetTitleOffset(1);
+   Graph_RAA_D0_B24->GetZaxis()->SetTitleFont(42);
+   graph->SetHistogram(Graph_RAA_D0_B24);
    
    graph->Draw("");
    
