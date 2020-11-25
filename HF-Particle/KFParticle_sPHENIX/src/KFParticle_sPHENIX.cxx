@@ -19,34 +19,16 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-/** Mass Hypothesis Codes
- ** These are the codes used in the PDG to identify different particles
- ** that have also been coded into KFParticle
- ** PDG Code | Mass Index | Particle
- **         11 |  0 | Electron
- **         13 |  1 | Muon
- **         19 |  1 | Muon
- **        211 |  2 | Pion ( Charged )
- **        321 |  3 | Kaon ( Charged )
- **       2212 |  4 | Proton
- ** 1000010020 |  5 | Deuteron
- ** 1000010030 |  6 | Triton
- ** 1000020030 |  7 | Helium-3
- ** 1000020040 |  8 | Helium-4
- **       3112 |  9 | Sigma ( - )
- **       3222 | 10 | Sigma ( + )
- **       3312 | 11 | Xi
- **       3334 | 12 | Omega
- ** Use PDG codes in your analysis
- ** All other codes return a pion
- **/
-
 #include "KFParticle_sPHENIX.h"
+
+typedef std::pair<int, float> particle_pair;
+KFParticle_particleList kfp_list;
+std::map<std::string, particle_pair> particleList = kfp_list.getParticleList(); 
 
 /// KFParticle constructor
 KFParticle_sPHENIX::KFParticle_sPHENIX():
     SubsysReco( "KFPARTICLE" ),
-    m_require_mva( false ),
+    m_require_mva(false),
     m_save_output(1),
     m_outfile_name("outputData.root")
 {}
@@ -58,7 +40,7 @@ int KFParticle_sPHENIX::Init( PHCompositeNode *topNode )
   if ( m_save_output )
   {
      m_outfile = new TFile(m_outfile_name.c_str(), "RECREATE");
-     initializeBranches( m_num_tracks );
+     initializeBranches();
   }
 
   if ( m_require_mva ) 
@@ -68,26 +50,31 @@ int KFParticle_sPHENIX::Init( PHCompositeNode *topNode )
     std::tie( reader, MVA_parValues ) = initMVA();
   }
 
+  for ( int i = 0; i < m_num_tracks; ++i )
+    if ( !particleList.count( m_daughter_name[i] ) )
+    {
+      printf("Your track PID, %s, is not in the particle list\n Check KFParticle_particleList.cxx for a list of available particles\n", m_daughter_name[i].c_str());
+      exit(0);
+    }
   return 0;
 }
 
 int KFParticle_sPHENIX::process_event( PHCompositeNode *topNode )
 { 
-    std::vector<KFParticle> mother, vertex, daughters_1, daughters_2, daughters_3, daughters_4;
+    std::vector<KFParticle> mother, vertex;
+    std::vector<std::vector<KFParticle>> daughters, intermediates;
     int nPVs, multiplicity;
 
-    createDecay( topNode, mother, vertex, daughters_1, daughters_2, daughters_3, daughters_4, nPVs, multiplicity );
+    createDecay( topNode, mother, vertex, daughters, intermediates, nPVs, multiplicity );
 
-    KFParticle *dummyParticle = new KFParticle();
-    for (unsigned int i = 0; i < mother.size(); ++i)
-    {
-      if (m_num_tracks < 3) daughters_3.push_back(*dummyParticle);
-      if (m_num_tracks < 4) daughters_4.push_back(*dummyParticle);
-    }
+    if ( !m_has_intermediates_sPHENIX )   intermediates = daughters;
+    if ( !m_constrain_to_vertex_sPHENIX ) vertex = mother;
 
     if (mother.size() != 0 ) for (unsigned int i = 0; i < mother.size(); ++i) 
     { 
-      if ( m_save_output ) fillBranch( mother[i], vertex[i], m_num_tracks, daughters_1[i], daughters_2[i], daughters_3[i], daughters_4[i], nPVs, multiplicity );
+      //if ( !m_has_intermediates_sPHENIX ) intermediates.push_back( daughters[i] ); //This is done to avoid a crash, nothing is written to files 
+      //if ( vertex.size() != mother.size()) vertex.push_back(mother[i]);
+      if ( m_save_output ) fillBranch( topNode, mother[i], vertex[i], daughters[i], intermediates[i], nPVs, multiplicity );
     }
     return Fun4AllReturnCodes::EVENT_OK;
 }

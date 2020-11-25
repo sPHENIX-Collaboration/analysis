@@ -50,37 +50,69 @@ class KFParticle_sPHENIX : public SubsysReco, public KFParticle_nTuple, protecte
   int End(PHCompositeNode *topNode);
 
   ///Parameters for the user to vary
-  void setNumberOfTracks( int num_tracks ) { m_num_tracks = num_tracks; }
+  void setMotherName( const std::string mother_name ) { m_mother_name = mother_name; m_mother_name_Tools = mother_name; }
+  void useIntermediateName( bool use_intermediate_name ) { m_use_intermediate_name = use_intermediate_name; }
+  void hasIntermediateStates( bool has_intermediates ) { m_has_intermediates = has_intermediates; m_has_intermediates_nTuple = has_intermediates; m_has_intermediates_sPHENIX = has_intermediates; }
+  void setNumberOfTracks( int num_tracks ) { m_num_tracks = num_tracks; m_num_tracks_nTuple = num_tracks; }
+  void setNumberTracksFromIntermeditateState( int num_tracks[99]) { for ( int i = 0; i < 99; ++i) m_num_tracks_from_intermediate[i] = num_tracks[i]; }
+  void setNumberOfIntermediateStates( int n_intermediates ) { m_num_intermediate_states = n_intermediates; m_num_intermediate_states_nTuple = n_intermediates;  }
+  void getChargeConjugate( bool get_charge_conjugate ) { m_get_charge_conjugate_nTuple = get_charge_conjugate; m_get_charge_conjugate = get_charge_conjugate; }
+  void setDaughters( std::pair<std::string, int> daughter_list[99] ) 
+  {
+    for ( int i = 0; i < 99; ++i)
+    {
+      m_daughter_name[i] = daughter_list[i].first;
+      m_daughter_charge[i] = daughter_list[i].second;
+    }
+  }
+
+  void setIntermediateStates( std::pair<std::string, int> intermediate_list[99] ) 
+  {
+    for ( int i = 0; i < 99; ++i)
+    {
+      m_intermediate_name_ntuple[i] = intermediate_list[i].first;
+      m_intermediate_name[i] = intermediate_list[i].first;
+      m_intermediate_charge[i] = intermediate_list[i].second;
+    }
+  }
+
   void setMinimumMass( float min_mass ) { m_min_mass = min_mass; }
   void setMaximumMass( float max_mass ) { m_max_mass = max_mass; }
   void setMinimumLifetime( float min_lifetime ) { m_min_lifetime = min_lifetime; }
   void setMaximumLifetime( float max_lifetime ) { m_max_lifetime = max_lifetime; }
-  void setMinimumTrackPT( float pt)  { m_track_pt = pt; }
+  void setMinimumTrackPT( float pt )  { m_track_pt = pt; }
+  void setMaximumTrackPTchi2( float ptchi2 )  { m_track_ptchi2 = ptchi2; }
   void setMinimumTrackIPchi2( float ipchi2 ) { m_track_ipchi2 = ipchi2; }
+  void setMaximumTrackchi2nDOF( float trackchi2ndof ) { m_track_chi2ndof = trackchi2ndof; }
   void setMaximumDaughterDCA( float dca ) { m_comb_DCA = dca; }
+  void setMaximumVertexchi2nDOF( float vertexchi2nDOF ) { m_vertex_chi2ndof = vertexchi2nDOF; }
   void setFlightDistancechi2( float fdchi2 ) { m_fdchi2 = fdchi2; }
   void setMinDIRA( float dira_min ) { m_dira_min = dira_min; }
   void setMaxDIRA( float dira_max ) { m_dira_max = dira_max; }
   void setMotherPT( float mother_pt ) { m_mother_pt = mother_pt; }
-  void setMotherCharge( int mother_charge ) { m_mother_charge = mother_charge; }
+  void setMotherIPchi2( float mother_ipchi2 ) { m_mother_ipchi2 = mother_ipchi2; }
+  void constrainToPrimaryVertex( bool constrain_to_vertex ) { m_constrain_to_vertex = constrain_to_vertex; m_constrain_to_vertex_nTuple = constrain_to_vertex; m_constrain_to_vertex_sPHENIX = constrain_to_vertex; }
+  void constrainIntermediateMasses( bool constrain_int_mass ) { m_constrain_int_mass = constrain_int_mass; }
+  void setIntermediateMassRange( std::pair<float, float> intermediate_mass_range[99] ) 
+  { for ( int i = 0; i < 99; ++i) m_intermediate_mass_range[i] = intermediate_mass_range[i]; }
+  void setIntermediateMinPT ( float intermediate_min_pt[99] ) { for ( int i = 0; i < 99; ++i) m_intermediate_min_pt[i] = intermediate_min_pt[i]; }
 
   void useMVA( bool require_mva) { m_require_mva = require_mva; }
   void setNumMVAPars( unsigned int nPars ) { m_nPars = nPars; }
   void setMVAVarList( std::string mva_variable_list[ 99 ] ) { for ( int i = 0; i < 99; ++i) m_mva_variable_list[i] = mva_variable_list[i]; }
-  void setMVAType( std::string mva_type ) { m_mva_type = mva_type; }
-  void setMVAWeightsPath( std::string mva_weights_path ) { m_mva_path = mva_weights_path; }
+  void setMVAType( const std::string mva_type ) { m_mva_type = mva_type; }
+  void setMVAWeightsPath( const std::string mva_weights_path ) { m_mva_path = mva_weights_path; }
   void setMVACutValue( float cut_value ) { m_mva_cut_value = cut_value; }
 
-  void setFirstDaughter( std::string name )  { m_daughter_one = name; }
-  void setSecondDaughter( std::string name ) { m_daughter_two = name; }
-  void setThirdDaughter( std::string name )  { m_daughter_three = name; }
-  void setForthDaughter( std::string name ) { m_daughter_four = name; }
-
   void saveOutput ( bool save ) { m_save_output = save; }
-  void setOutputName( std::string name ) { m_outfile_name = name; }
+  void setOutputName( const std::string name ) { m_outfile_name = name; }
+  void doTruthMatching( bool truth ) { m_truth_matching = truth; }
+  void getDetectorInfo( bool detinfo ) { m_detector_info = detinfo; }
 
  protected:
- 
+
+  bool m_has_intermediates_sPHENIX;
+  bool m_constrain_to_vertex_sPHENIX;
   bool m_require_mva; 
   bool m_save_output;
   std::string m_outfile_name;
