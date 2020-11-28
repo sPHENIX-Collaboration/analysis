@@ -17,6 +17,15 @@ sPHElectronv1::sPHElectronv1()
   _deta = 99999.;
   _e3x3 = 0.;
   _e5x5 = 0.;
+
+  _chi2 = 99999.;
+  _ndf = 0;
+  _zvtx = 99999.;
+  _dca2d = 99999.;
+  _dca2d_error = 99999.;
+  _dca3d_xy = 99999.;
+  _dca3d_z = 99999.;
+
 }
 
 sPHElectronv1::sPHElectronv1(const SvtxTrack* trk) {
@@ -30,6 +39,15 @@ sPHElectronv1::sPHElectronv1(const SvtxTrack* trk) {
   _emce = trk->get_cal_cluster_e(SvtxTrack::CAL_LAYER::CEMC);
   _e3x3 = trk->get_cal_energy_3x3(SvtxTrack::CAL_LAYER::CEMC);
   _e5x5 = trk->get_cal_energy_5x5(SvtxTrack::CAL_LAYER::CEMC);
+
+  _chi2 = trk->get_chisq();
+  _ndf = trk->get_ndf();
+  _zvtx = trk->get_z();
+  _dca2d = trk->get_dca2d();
+  _dca2d_error = trk->get_dca2d_error();
+  _dca3d_xy = trk->get_dca3d_xy();
+  _dca3d_z = trk->get_dca3d_z();
+
 }
 
 sPHElectronv1::sPHElectronv1(const sPHElectronv1& electron)
@@ -51,6 +69,15 @@ sPHElectronv1& sPHElectronv1::operator=(const sPHElectronv1& electron)
   _e3x3 = electron.get_e3x3();
   _e5x5 = electron.get_e5x5();
 
+  _chi2 = electron.get_chi2();
+  _ndf = electron.get_ndf();
+  _zvtx = electron.get_zvtx();
+  _dca2d = electron.get_dca2d();
+  _dca2d_error = electron.get_dca2d_error();
+  _dca3d_xy = electron.get_dca3d_xy();
+  _dca3d_z = electron.get_dca3d_z();
+
+
   return *this;
 }
 
@@ -62,6 +89,6 @@ void sPHElectronv1::identify(std::ostream& os) const
 
 int sPHElectronv1::isValid() const
 {
-  return 1;
+  if(_charge!=0) {return 1;} else {return 0;}
 }
 

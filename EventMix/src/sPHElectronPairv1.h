@@ -11,6 +11,7 @@
 class sPHElectronPairv1 : public sPHElectronPair
 {
  public:
+  sPHElectronPairv1();
   sPHElectronPairv1(sPHElectronv1* e1, sPHElectronv1* e2);
   virtual ~sPHElectronPairv1() {}
 
@@ -18,6 +19,7 @@ class sPHElectronPairv1 : public sPHElectronPair
      { os << "sPHElectronPairv1 object class" << std::endl; }
   virtual void Reset() {}
   virtual int isValid() const { return 1; }
+  virtual PHObject* CloneMe() const { return new sPHElectronPairv1(*this); }
 
   virtual sPHElectron* get_first()  { return &_e1; }
   virtual sPHElectron* get_second() { return &_e2; }
@@ -27,18 +29,21 @@ class sPHElectronPairv1 : public sPHElectronPair
   virtual double get_mass() const;
   virtual double get_pt()   const;
   virtual double get_eta()  const;
+  virtual double get_phiv() const;
+  virtual double get_min_mass() const { return _min_mass; }
  
   virtual void set_id(int id) { _id = id;}
   virtual void set_type(int type) { _type = type;}
+  virtual void set_min_mass(double mm) { _min_mass = mm;}
 
  protected:
 
   int _id;
   int _type;
+  double _min_mass;
   sPHElectronv1 _e1;
   sPHElectronv1 _e2;
 
-  sPHElectronPairv1() {}
   ClassDef(sPHElectronPairv1, 1)
 };
 

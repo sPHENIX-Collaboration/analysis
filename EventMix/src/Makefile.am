@@ -36,6 +36,7 @@ ROOTDICTS = \
 
 pcmdir = $(libdir)
 nobase_dist_pcm_DATA = \
+  PairMaker_Dict_rdict.pcm \
   sPHElectron_Dict_rdict.pcm \
   sPHElectronv1_Dict_rdict.pcm \
   sPHElectronPair_Dict_rdict.pcm \

@@ -2,6 +2,7 @@
 #define SPHELECTRONPAIRCONTAINER_V1_H
 
 #include "sPHElectronPair.h"
+#include "sPHElectronPairv1.h"
 #include "sPHElectronPairContainer.h"
 
 #include <cstddef>        // for size_t
@@ -10,6 +11,11 @@
 class sPHElectronPairContainerv1 : public sPHElectronPairContainer
 {
 public:
+
+  typedef std::map<unsigned int, sPHElectronPairv1*> PairMap;
+  typedef std::map<unsigned int, sPHElectronPairv1*>::const_iterator ConstIter;
+  typedef std::map<unsigned int, sPHElectronPairv1*>::iterator Iter;
+
   sPHElectronPairContainerv1();
   sPHElectronPairContainerv1(const sPHElectronPairContainerv1& container);
   sPHElectronPairContainerv1& operator=(const sPHElectronPairContainerv1& container);
@@ -24,9 +30,9 @@ public:
   bool empty() const { return _map.empty(); }
   PHObject* CloneMe() const { return new sPHElectronPairContainerv1(*this); }
 
-  const sPHElectronPair* get(unsigned int idkey) const;
-  sPHElectronPair* get(unsigned int idkey);
-  sPHElectronPair* insert(const sPHElectronPair* pair);
+  const sPHElectronPairv1* get(unsigned int idkey) const;
+  sPHElectronPairv1* get(unsigned int idkey);
+  void insert(const sPHElectronPairv1* pair);
   size_t erase(unsigned int idkey)
   {
     delete _map[idkey];

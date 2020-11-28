@@ -4,8 +4,12 @@
 
 #include <fun4all/SubsysReco.h>
 
+#include <vector>
+
 class TFile;
 class TH1D;
+
+class SvtxTrack;
 
 class PairMaker: public SubsysReco {
 
@@ -23,10 +27,19 @@ protected:
 
   int process_event_test(PHCompositeNode *topNode);
 
-  TFile* OutputNtupleFile;
-  std::string OutputFileName;
+  bool isElectron(SvtxTrack*);
 
-  TH1D* htest;
+//  TFile* OutputNtupleFile;
+//  std::string OutputFileName;
+//  TH1D* htest;
+
+  std::string outnodename;
+
+
+//  const int NZ = 5;
+//  const int NCENT = 1;
+//  vector<sPHElectronv1> buffer1[NZ][NCENT];
+//  vector<sPHElectronv1> buffer2[NZ][NCENT];
 
   int EventNumber;
 

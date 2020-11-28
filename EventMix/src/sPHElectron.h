@@ -16,17 +16,27 @@ class sPHElectron : public PHObject
      { os << "sPHElectron base class" << std::endl; }
   virtual void Reset() {}
   virtual int isValid() const { return 0; }
+  virtual PHObject* CloneMe() const { return nullptr; }
 
   virtual unsigned int get_id()  const { return 99999; }
   virtual int get_charge()       const { return 0; }
-  virtual double get_px()        const { return 0.;}
-  virtual double get_py()        const { return 0.;}
-  virtual double get_pz()        const { return 0.;}
-  virtual double get_dphi()      const { return 0.;}
-  virtual double get_deta()      const { return 0.;}
-  virtual double get_emce()      const { return 0.;}
-  virtual double get_e3x3()      const { return 0.;}
-  virtual double get_e5x5()      const { return 0.;}
+  virtual double get_px()        const { return NAN;}
+  virtual double get_py()        const { return NAN;}
+  virtual double get_pz()        const { return NAN;}
+  virtual double get_dphi()      const { return NAN;}
+  virtual double get_deta()      const { return NAN;}
+  virtual double get_emce()      const { return NAN;}
+  virtual double get_e3x3()      const { return NAN;}
+  virtual double get_e5x5()      const { return NAN;}
+
+  virtual double get_chi2()      const { return NAN;}
+  virtual unsigned int get_ndf() const { return 99999;}
+  virtual double get_zvtx()      const { return NAN;}
+  virtual double get_dca2d()     const { return NAN;}
+  virtual double get_dca2d_error()      const { return NAN;}
+  virtual double get_dca3d_xy()  const { return NAN;}
+  virtual double get_dca3d_z()   const { return NAN;}
+
 
   virtual void set_id(unsigned int id) { }
   virtual void set_charge(int charge)  { }
@@ -38,6 +48,15 @@ class sPHElectron : public PHObject
   virtual void set_emce(double emce)   { }
   virtual void set_e3x3(double e3x3)   { }
   virtual void set_e5x5(double e5x5)   { }
+
+  virtual void set_chi2(double a)      { }
+  virtual void set_ndf(unsigned int a) { }
+  virtual void set_zvtx(double a)      { }
+  virtual void set_dca2d(double a)     { }
+  virtual void set_dca2d_error(double a)   { }
+  virtual void set_dca3d_xy(double a)  { }
+  virtual void set_dca3d_z(double a)   { }
+
 
  protected:
   sPHElectron() {}

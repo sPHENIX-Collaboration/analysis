@@ -20,7 +20,7 @@ sPHElectronPairContainerv1::sPHElectronPairContainerv1(const sPHElectronPairCont
        iter != container.end();
        ++iter)
   {
-    sPHElectronPair* epair = dynamic_cast<sPHElectronPair*> (iter->second->CloneMe());
+    sPHElectronPairv1* epair = dynamic_cast<sPHElectronPairv1*> (iter->second->CloneMe());
     _map.insert(make_pair(epair->get_id(), epair));
   }
 }
@@ -32,7 +32,7 @@ sPHElectronPairContainerv1& sPHElectronPairContainerv1::operator=(const sPHElect
        iter != container.end();
        ++iter)
   {
-    sPHElectronPair* epair = dynamic_cast<sPHElectronPair*> (iter->second->CloneMe());
+    sPHElectronPairv1* epair = dynamic_cast<sPHElectronPairv1*> (iter->second->CloneMe());
     _map.insert(make_pair(epair->get_id(), epair));
   }
   return *this;
@@ -49,7 +49,7 @@ void sPHElectronPairContainerv1::Reset()
        iter != _map.end();
        ++iter)
   {
-    sPHElectronPair* epair = iter->second;
+    sPHElectronPairv1* epair = iter->second;
     delete epair;
   }
   _map.clear();
@@ -61,26 +61,25 @@ void sPHElectronPairContainerv1::identify(ostream& os) const
   return;
 }
 
-const sPHElectronPair* sPHElectronPairContainerv1::get(unsigned int id) const
+const sPHElectronPairv1* sPHElectronPairContainerv1::get(unsigned int id) const
 {
   ConstIter iter = _map.find(id);
   if (iter == _map.end()) return nullptr;
   return iter->second;
 }
 
-sPHElectronPair* sPHElectronPairContainerv1::get(unsigned int id)
+sPHElectronPairv1* sPHElectronPairContainerv1::get(unsigned int id)
 {
   Iter iter = _map.find(id);
   if (iter == _map.end()) return nullptr;
   return iter->second;
 }
 
-sPHElectronPair* sPHElectronPairContainerv1::insert(const sPHElectronPair* epair)
+void sPHElectronPairContainerv1::insert(const sPHElectronPairv1* epair)
 {
   unsigned int index = 0;
   if (!_map.empty()) index = _map.rbegin()->first + 1;
-  _map.insert(make_pair(index, dynamic_cast<sPHElectronPair*> (epair->CloneMe())));
+  _map.insert(make_pair(index, dynamic_cast<sPHElectronPairv1*> (epair->CloneMe())));
   _map[index]->set_id(index);
-  return _map[index];
 }
 

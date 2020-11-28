@@ -18,6 +18,7 @@ class sPHElectronPair : public PHObject
      { os << "sPHElectronPair base class" << std::endl; }
   virtual void Reset() {}
   virtual int isValid() const { return 0; }
+  virtual PHObject* CloneMe() const { return nullptr; }
 
   virtual sPHElectron* get_first()  { return nullptr; }
   virtual sPHElectron* get_second() { return nullptr; }
@@ -27,9 +28,13 @@ class sPHElectronPair : public PHObject
   virtual double get_mass() const { return NAN; }
   virtual double get_pt()   const { return NAN; }
   virtual double get_eta()  const { return NAN; }
+  virtual double get_phiv() const { return NAN; }
+  virtual double get_min_mass() const { return NAN; }
 
- virtual void set_id(int id) { }
- virtual void set_type(int type) { }
+
+  virtual void set_id(int id) { }
+  virtual void set_type(int type) { }
+  virtual void set_min_mass(double mm) { }
 
  protected:
   sPHElectronPair() {}
