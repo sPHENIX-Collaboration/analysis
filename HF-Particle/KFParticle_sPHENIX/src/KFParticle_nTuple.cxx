@@ -4,6 +4,9 @@
 #include "KFPVertex.h"
 #include "KFVertex.h"
 #include <KFParticle_Tools.h>
+#include <ffaobjects/EventHeaderv1.h>
+
+using namespace std;
 
 KFParticle_Tools kfpTupleTools;
 KFParticle_truthAndDetTools kfpTruthAndDetTools;
@@ -29,9 +32,12 @@ void KFParticle_nTuple::initializeBranches()
   m_tree->OptimizeBaskets();
   m_tree->SetAutoSave(-5e6); //Save the output file every 5MB
   
-  std::string mother_name;
+  string mother_name;
   if (m_mother_name.empty()) mother_name = "mother";
   else mother_name = m_mother_name;
+  
+  string fwd_slsh = "/", undrscr = "_"; size_t pos;
+  while ((pos = mother_name.find(fwd_slsh)) != string::npos) mother_name.replace(pos, 1, undrscr);
 
   m_tree->Branch( TString(mother_name) + "_mass",           &m_calculated_mother_mass,            TString(mother_name) + "_mass/F" );
   m_tree->Branch( TString(mother_name) + "_massErr",        &m_calculated_mother_mass_err,        TString(mother_name) + "_massErr/F" );
@@ -73,13 +79,13 @@ void KFParticle_nTuple::initializeBranches()
   {
     for (int i = 0; i < m_num_intermediate_states_nTuple; ++i)
     {
-      std::string intermediate_name;
-      if (!m_use_intermediate_name) intermediate_name = "intermediate_" + std::to_string(i + 1);
+      string intermediate_name;
+      if (!m_use_intermediate_name) intermediate_name = "intermediate_" + to_string(i + 1);
       else intermediate_name = m_intermediate_name_ntuple[i];
 
       //Note, TBranch will not allow the leaf to contain a forward slash as it is used to define the branch type. Causes problems with J/psi
-      std::string fwd_slsh = "/", undrscr = "_"; size_t pos;
-      while ((pos = intermediate_name.find(fwd_slsh)) != std::string::npos) intermediate_name.replace(pos, 1, undrscr);
+      string fwd_slsh = "/", undrscr = "_"; size_t pos;
+      while ((pos = intermediate_name.find(fwd_slsh)) != string::npos) intermediate_name.replace(pos, 1, undrscr);
      
       m_tree->Branch( TString(intermediate_name) + "_mass",           &m_calculated_intermediate_mass[i],            TString(intermediate_name) + "_mass/F" );
       m_tree->Branch( TString(intermediate_name) + "_massErr",        &m_calculated_intermediate_mass_err[i],        TString(intermediate_name) + "_massErr/F" );
@@ -116,7 +122,7 @@ void KFParticle_nTuple::initializeBranches()
 
  for (int i = 0; i < m_num_tracks_nTuple; ++i)
  {
-    std::string daughter_number = "track_" + std::to_string(i + 1);
+    string daughter_number = "track_" + to_string(i + 1);
 
     m_tree->Branch( TString(daughter_number) + "_mass",           &m_calculated_daughter_mass[i],     TString(daughter_number) + "_mass/F" );
     m_tree->Branch( TString(daughter_number) + "_IP",             &m_calculated_daughter_ip[i],       TString(daughter_number) + "_IP/F" );
@@ -144,8 +150,8 @@ void KFParticle_nTuple::initializeBranches()
     m_tree->Branch( TString(daughter_number) + "_PDG_ID",         &m_calculated_daughter_pdgID[i],    TString(daughter_number) + "_PDG_ID/I" );
     m_tree->Branch( TString(daughter_number) + "_Covariance",     &m_calculated_daughter_cov[i],      TString(daughter_number) + "_Covariance[21]/F", 21 );
 
-    if ( m_truth_matching ) kfpTruthAndDetTools.initializeTruthBranches(  m_tree,i ); 
-    if ( m_detector_info )  kfpTruthAndDetTools.initializeDetectorBranches(  m_tree,i );
+    if ( m_truth_matching ) kfpTruthAndDetTools.initializeTruthBranches(  m_tree, i ); 
+    if ( m_detector_info )  kfpTruthAndDetTools.initializeDetectorBranches(  m_tree, i );
  }
 
   int iter = 0;
@@ -155,8 +161,8 @@ void KFParticle_nTuple::initializeBranches()
     {
       if( i < j )
       {
-        std::string dca_branch_name = "track_" + std::to_string(i + 1) + "_track_" + std::to_string(j + 1) + "_DCA";
-        std::string dca_leaf_name = dca_branch_name + "/F";
+        string dca_branch_name = "track_" + to_string(i + 1) + "_track_" + to_string(j + 1) + "_DCA";
+        string dca_leaf_name = dca_branch_name + "/F";
         m_tree->Branch( dca_branch_name.c_str(), &m_daughter_dca[iter], dca_leaf_name.c_str() );
         ++iter;
       }
@@ -165,14 +171,15 @@ void KFParticle_nTuple::initializeBranches()
   
   if ( m_constrain_to_vertex_nTuple )
   {
-    m_tree->Branch( "primary_vertex_x",           &m_calculated_vertex_x,    "primary_vertex_x/F" );
-    m_tree->Branch( "primary_vertex_y",           &m_calculated_vertex_y,    "primary_vertex_y/F" );
-    m_tree->Branch( "primary_vertex_z",           &m_calculated_vertex_z,    "primary_vertex_z/F" );
-    m_tree->Branch( "primary_vertex_volume",      &m_calculated_vertex_v,    "primary_vertex_volume/F" );
-    m_tree->Branch( "primary_vertex_chi2",        &m_calculated_vertex_chi2, "primary_vertex_chi2/F");
-    m_tree->Branch( "primary_vertex_nDoF",        &m_calculated_vertex_ndof, "primary_vertex_nDoF/I");
+    m_tree->Branch( "primary_vertex_x",           &m_calculated_vertex_x,       "primary_vertex_x/F" );
+    m_tree->Branch( "primary_vertex_y",           &m_calculated_vertex_y,       "primary_vertex_y/F" );
+    m_tree->Branch( "primary_vertex_z",           &m_calculated_vertex_z,       "primary_vertex_z/F" );
+    m_tree->Branch( "primary_vertex_nTracks",     &m_calculated_vertex_nTracks, "primary_vertex_nTracks/I" );
+    m_tree->Branch( "primary_vertex_volume",      &m_calculated_vertex_v,       "primary_vertex_volume/F" );
+    m_tree->Branch( "primary_vertex_chi2",        &m_calculated_vertex_chi2,    "primary_vertex_chi2/F");
+    m_tree->Branch( "primary_vertex_nDoF",        &m_calculated_vertex_ndof,    "primary_vertex_nDoF/I");
     //m_tree->Branch( "primary_vertex_Covariance",   m_calculated_vertex_cov, "primary_vertex_Covariance[6]/F", 6 );
-    m_tree->Branch( "primary_vertex_Covariance",  &m_calculated_vertex_cov, "primary_vertex_Covariance[6]/F", 6 );
+    m_tree->Branch( "primary_vertex_Covariance",  &m_calculated_vertex_cov,     "primary_vertex_Covariance[6]/F", 6 );
   }
 
   m_tree->Branch( "secondary_vertex_mass_pionPID", &m_sv_mass, "secondary_vertex_mass_pionPID/F" );
@@ -180,14 +187,16 @@ void KFParticle_nTuple::initializeBranches()
   m_tree->Branch( "nPrimaryVertices", &m_nPVs,         "nPrimaryVertices/I" );
   m_tree->Branch( "nEventTracks",     &m_multiplicity, "nEventTracks/I" );
 
+  m_tree->Branch( "runNumber",   &m_runNumber, "runNumber/I");
+  m_tree->Branch( "eventNumber", &m_evtNumber, "eventNumber/I");
 }
 
 
 void KFParticle_nTuple::fillBranch( PHCompositeNode *topNode,
                                     KFParticle motherParticle, 
                                     KFParticle vertex,
-                                    std::vector<KFParticle> daughters,
-                                    std::vector<KFParticle> intermediates,
+                                    vector<KFParticle> daughters,
+                                    vector<KFParticle> intermediates,
                                     int nPVs, int multiplicity )
 {
   KFPVertex *kfpVertex = new KFPVertex; 
@@ -282,7 +291,6 @@ void KFParticle_nTuple::fillBranch( PHCompositeNode *topNode,
       bool switchTrackPosition;
       if ( m_get_charge_conjugate_nTuple ) switchTrackPosition = daughterArray[i].GetMass() > daughterArray[j].GetMass();
       else switchTrackPosition = daughterArray[i].GetPDG() > daughterArray[j].GetPDG();
-      //if( daughterArray[i].GetMass() > daughterArray[j].GetMass() )
       if ( switchTrackPosition )
       {
           temp = daughterArray[i];
@@ -340,6 +348,7 @@ void KFParticle_nTuple::fillBranch( PHCompositeNode *topNode,
     m_calculated_vertex_ndof         = vertex.GetNDF();
     //m_calculated_vertex_cov          = &vertex.CovarianceMatrix()[0];
     for (int j = 0; j < 6; ++j) m_calculated_vertex_cov[j] = vertex.GetCovariance(j);
+    m_calculated_vertex_nTracks = kfpTupleTools.getTracksFromVertex( topNode, vertex );
   }
 
   m_sv_mass = calc_secondary_vertex_mass_noPID( daughters );
@@ -347,10 +356,22 @@ void KFParticle_nTuple::fillBranch( PHCompositeNode *topNode,
   m_nPVs         = nPVs;
   m_multiplicity = multiplicity;
 
+  PHNodeIterator nodeIter(topNode);
+
+  PHNode* evtNode = dynamic_cast<PHNode*>(nodeIter.findFirst("EventHeader"));
+
+  if (evtNode)
+  {
+    EventHeaderv1 *evtHeader = findNode::getClass<EventHeaderv1>(topNode, "EventHeader");
+    m_runNumber = evtHeader->get_RunNumber();
+    m_evtNumber = evtHeader->get_EvtSequence();
+  }
+  else m_runNumber = m_evtNumber = -1;
+
   m_tree->Fill();
 }
 
-float KFParticle_nTuple::calc_secondary_vertex_mass_noPID( std::vector<KFParticle> kfp_daughters )
+float KFParticle_nTuple::calc_secondary_vertex_mass_noPID( vector<KFParticle> kfp_daughters )
 {
   KFParticle mother_noPID; 
   KFParticle* daughterArray = &kfp_daughters[0];

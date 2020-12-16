@@ -15,30 +15,39 @@ AM_CPPFLAGS = \
   
 
 pkginclude_HEADERS = \
+  KFParticle_Container.h \
+  KFParticle_DST.h \
   KFParticle_truthAndDetTools.h \
   KFParticle_nTuple.h \
   KFParticle_Tools.h \
   KFParticle_particleList.h \
   KFParticle_MVA.h \
+  KFParticle_eventReconstruction.h \
   KFParticle_sPHENIX.h
 
 if ! MAKEROOT6
   ROOT5_DICTS = \
+    KFParticle_Container_DICT.cc \
+    KFParticle_DST_DICT.cc \
     KFParticle_truthAndDetTools_Dict.cc \
     KFParticle_nTuple_Dict.cc \
     KFParticle_Tools_Dict.cc \
     KFParticle_particleList_Dict.cc \
     KFParticle_MVA_Dict.cc \
+    KFParticle_eventReconstruction_Dict.cc \
     KFParticle_sPHENIX_Dict.cc
 endif
 
 libkfparticle_sphenix_la_SOURCES = \
   $(ROOT5_DICTS) \
+  KFParticle_Container.cxx \
+  KFParticle_DST.cxx \
   KFParticle_truthAndDetTools.cxx \
   KFParticle_nTuple.cxx \
   KFParticle_Tools.cxx \
   KFParticle_particleList.cxx \
   KFParticle_MVA.cxx \
+  KFParticle_eventReconstruction.cxx \
   KFParticle_sPHENIX.cxx
 
 libkfparticle_sphenix_la_LDFLAGS = \

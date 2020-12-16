@@ -1,9 +1,9 @@
 // $Id: $
 
 /*!
- * \file Fun4All_G4_Readback.C
+ * \file Fun4All_KFParticle_advanced.C
  * \brief 
- * \author Jin Huang <jhuang@bnl.gov>
+ * \author Cameron Dean <cdean@bnl.gov>
  * \version $Revision:   $
  * \date $Date: $
  */
@@ -23,35 +23,58 @@
 #include <phhepmc/Fun4AllHepMCInputManager.h>
 #include <kfparticle_sphenix/KFParticle_sPHENIX.h>
 #include <numeric>
+#include <trackreco/PHRaveVertexing.h>
 
 R__LOAD_LIBRARY(libkfparticle_sphenix.so)
 R__LOAD_LIBRARY(libfun4all.so)
 R__LOAD_LIBRARY(libg4dst.so)
+R__LOAD_LIBRARY(libg4eval.so)
+R__LOAD_LIBRARY(libtrack_reco.so)
+R__LOAD_LIBRARY(libPHTpcTracker.so)
+
+#endif
+
+#if __cplusplus >= 201703L
+
+#include <G4_Magnet.C>
+//#include <trackreco/ActsEvaluator.h>
+#include <trackreco/MakeActsGeometry.h>
+#include <trackreco/PHActsSourceLinks.h>
+#include <trackreco/PHActsTracks.h>
+#include <trackreco/PHActsTrkFitter.h>
+//#include <trackreco/PHActsTrkProp.h>
+////#include <trackreco/PHActsVertexFinder.h>
+////#include <trackreco/PHActsVertexFitter.h>
+#include <trackreco/PHTpcResiduals.h>
 
 #endif
 
 using namespace std;
 
-int Fun4All_G4_Readback(){
+int Fun4All_KFParticle_advanced(){
+
+  int verbosity = 4;
   //---------------
   // Load libraries
   //---------------
   gSystem->Load("libfun4all.so");
   gSystem->Load("libg4dst.so");
-
   //---------------
   // Fun4All server
   //---------------
   Fun4AllServer *se = Fun4AllServer::instance();
-  se->Verbosity(0);
+  se->Verbosity(verbosity);
 
   //---------------
   // Choose reco
   //---------------
+  bool use_act_tracking = true;
+  bool use_rave_vertexing = true;
+
   map<string, int> reconstructionChannel;
-  reconstructionChannel["D02K-pi+"] = 0;
+  reconstructionChannel["D02K-pi+"] = 1;
   reconstructionChannel["D02K+pi-"] = 0;
-  reconstructionChannel["Bs2Jpsiphi"] = 1;
+  reconstructionChannel["Bs2Jpsiphi"] = 0;
   reconstructionChannel["Bd2D-pi+"] = 0;
   reconstructionChannel["Upsilon"] = 0;
   reconstructionChannel["testSpace"] = 0;
@@ -83,15 +106,76 @@ int Fun4All_G4_Readback(){
   string fileList;
   if (reconstructionChannel["D02K-pi+"] or reconstructionChannel["D02K+pi-"] or reconstructionChannel["testSpace"]) fileList = "fileList_d2kpi.txt";
   if (reconstructionChannel["Bs2Jpsiphi"]) fileList = "fileList_bs2jpsiphi.txt";
-  if (reconstructionChannel["Bd2D-pi+"] or reconstructionChannel["Upsilon"]) fileList = "fileList_bbbar.txt"; 
+  if (reconstructionChannel["Bd2D-pi+"] or reconstructionChannel["Upsilon"]) fileList = "fileList_bbbar.txt";
   hitsin->AddListFile(fileList.c_str());
   se->registerInputManager(hitsin);
 
-  KFParticle_sPHENIX *kfparticle = new KFParticle_sPHENIX();
+
+  if (use_act_tracking)
+  {
+    #if __cplusplus >= 201703L
+    bool SC_CALIBMODE = true;
+    /// Geometry must be built before any Acts modules
+    MakeActsGeometry* geom = new MakeActsGeometry();
+    geom->Verbosity(verbosity);
+    //geom->setMagField(G4MAGNET::magfield);
+    //geom->setMagFieldRescale(G4MAGNET::magfield_rescale);
+    se->registerSubsystem(geom);
+
+    /// Always run PHActsSourceLinks and PHActsTracks first, to convert TrkRClusters and SvtxTracks to the Acts equivalent
+    PHActsSourceLinks* sl = new PHActsSourceLinks();
+    sl->Verbosity(verbosity);
+    sl->setMagField(G4MAGNET::magfield);
+    sl->setMagFieldRescale(G4MAGNET::magfield_rescale);
+    se->registerSubsystem(sl);
+
+    PHActsTracks* actsTracks = new PHActsTracks();
+    actsTracks->Verbosity(verbosity);
+    se->registerSubsystem(actsTracks);
+
+    PHActsTrkFitter* actsFit = new PHActsTrkFitter();
+    actsFit->Verbosity(verbosity);
+    actsFit->doTimeAnalysis(false);
+    /// If running with distortions, fit only the silicon+MMs first
+    actsFit->fitSiliconMMs(SC_CALIBMODE);
+    se->registerSubsystem(actsFit);
+  
+    if (SC_CALIBMODE)
+    {
+       /// run tpc residual determination with silicon+MM track fit
+       PHTpcResiduals* residuals = new PHTpcResiduals();
+       residuals->Verbosity(verbosity);
+       se->registerSubsystem(residuals);
+    }
+   /*
+    PHActsVertexFinder* vtxer = new PHActsVertexFinder();
+    vtxer->Verbosity(verbosity);
+    se->registerSubsystem(vtxer);
+    */
+    #endif
+  }
+
+
+  string raveVertexName = "SvtxVertexMapRave";
+  if (use_rave_vertexing)
+  {
+    PHRaveVertexing* rave = new PHRaveVertexing();
+    //https://rave.hepforge.org/trac/wiki/RaveMethods
+    rave->set_vertexing_method("kalman-smoothing:1");
+    rave->set_over_write_svtxvertexmap(false);
+    rave->set_svtxvertexmaprefit_node_name(raveVertexName.c_str());
+    rave->Verbosity(verbosity);
+    se->registerSubsystem(rave);
+  }
 
   //General configurations
+  KFParticle_sPHENIX *kfparticle = new KFParticle_sPHENIX();
+  kfparticle->Verbosity(verbosity);
 
   const int nEvents = 1e3;
+
+  //Use rave vertexing to construct PV
+  if (use_rave_vertexing) kfparticle->setVertexMapNodeName(raveVertexName.c_str());
 
   kfparticle->setMinimumTrackPT(0.1);
   kfparticle->setMinimumTrackIPchi2(10);
@@ -102,6 +186,7 @@ int Fun4All_G4_Readback(){
   kfparticle->setMinDIRA(0.8);
   kfparticle->setMotherPT(0);
 
+  kfparticle->saveDST(0);
   kfparticle->saveOutput(1);
   kfparticle->doTruthMatching(1);
   kfparticle->getDetectorInfo(0);
@@ -125,6 +210,7 @@ int Fun4All_G4_Readback(){
       kfparticle->setNumberOfTracks(2);
       kfparticle->setMotherIPchi2(50);
     
+      kfparticle->constrainToPrimaryVertex(true);
       kfparticle->hasIntermediateStates(false);
       kfparticle->getChargeConjugate(false);
 
@@ -140,6 +226,8 @@ int Fun4All_G4_Readback(){
         daughterList[1] = make_pair("pion", -1);
         kfparticle->setOutputName("outputData_D0bar2Kppim_example.root");
       }
+
+      kfparticle->setContainerName("D2Kpi_reco");
   }
 
 
@@ -170,6 +258,7 @@ int Fun4All_G4_Readback(){
       nIntTracks[1] = 2;
       intPt[1] = 0;
 
+      kfparticle->setContainerName("Bs2Jpsiphi_reco");
       kfparticle->setOutputName("outputData_Bs2Jpsiphi_example.root");
   }
 
@@ -238,9 +327,9 @@ int Fun4All_G4_Readback(){
       kfparticle->constrainToPrimaryVertex(false);
       kfparticle->getChargeConjugate(false);
 
-      kfparticle->setMotherName("Upsilon");  
-      kfparticle->setMinimumMass(0);
-      kfparticle->setMaximumMass(11);
+      kfparticle->setMotherName("J/psi");  
+      kfparticle->setMinimumMass(2.8);
+      kfparticle->setMaximumMass(3.4);
 
       kfparticle->setMinimumTrackIPchi2(0.); //Tracks should point back to the PV
       kfparticle->setMaximumDaughterDCA(0.02);
@@ -249,6 +338,7 @@ int Fun4All_G4_Readback(){
       daughterList[0] = make_pair("electron", +1);
       daughterList[1] = make_pair("electron", -1);
 
+      kfparticle->setContainerName("J/psi_reco");
       kfparticle->setOutputName("testSpace.root");
   }
 
