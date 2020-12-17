@@ -30,10 +30,9 @@ typedef pair<int, float> particle_pair;
 
 class KFParticleDatabase;
 
-class KFParticle_particleList  
+class KFParticle_particleList
 {
  public:
-  
   KFParticle_particleList();
 
   ~KFParticle_particleList();
@@ -41,7 +40,7 @@ class KFParticle_particleList
   //map<string, float> getParticleList();
   map<string, particle_pair> getParticleList();
 
-  float returnPDGMass( const int pdgIndex);
+  float returnPDGMass(const int pdgIndex);
 };
 
-#endif //KFParticle_particleList_H
+#endif  //KFParticle_particleList_H

@@ -22,6 +22,8 @@
 #ifndef KFParticle_eventReconstruction_H
 #define KFParticle_eventReconstruction_H
 
+#include "KFParticle_Tools.h"
+
 //sPHENIX stuff
 #include <phool/getClass.h>
 #include <trackbase_historic/SvtxTrack.h>
@@ -39,32 +41,28 @@
 #include <map>
 #include <vector>
 
-#include "KFParticle_Tools.h"
-
 using namespace std;
-
 
 class PHCompositeNode;
 class KFParticle;
 
-class KFParticle_eventReconstruction : public KFParticle_Tools 
+class KFParticle_eventReconstruction : public KFParticle_Tools
 {
  public:
-  
   KFParticle_eventReconstruction();
 
   ~KFParticle_eventReconstruction();
 
-  void createDecay(PHCompositeNode *topNode, vector<KFParticle>& selectedMother, vector<KFParticle>& selectedVertex,
-                                             vector<vector<KFParticle>>& selectedDaughters,
-                                             vector<vector<KFParticle>>& selectedIntermediates,
-                                             int& nPVs, int& multiplicity);
+  void createDecay(PHCompositeNode* topNode, vector<KFParticle>& selectedMother, vector<KFParticle>& selectedVertex,
+                   vector<vector<KFParticle>>& selectedDaughters,
+                   vector<vector<KFParticle>>& selectedIntermediates,
+                   int& nPVs, int& multiplicity);
 
-  void buildBasicChain(vector<KFParticle>& selectedMother, 
+  void buildBasicChain(vector<KFParticle>& selectedMother,
                        vector<KFParticle>& selectedVertex,
-                       vector<vector<KFParticle>>& selectedDaughters, 
+                       vector<vector<KFParticle>>& selectedDaughters,
                        vector<KFParticle> daughterParticles,
-                       vector<int>  goodTrackIndex,
+                       vector<int> goodTrackIndex,
                        vector<KFParticle> primaryVertices);
 
   void buildChain(vector<KFParticle>& selectedMother,
@@ -85,16 +83,14 @@ class KFParticle_eventReconstruction : public KFParticle_Tools
                          bool isIntermediate, int intermediateNumber, bool constrainMass);
 
  protected:
-   
+  static const int max_tracks = 99;
   bool m_has_intermediates;
   int m_num_tracks;
-  string m_daughter_name_evt[99];
-  int m_daughter_charge_evt[99];
-  int m_intermediate_charge[99];
+  string m_daughter_name_evt[max_tracks];
+  int m_daughter_charge_evt[max_tracks];
+  int m_intermediate_charge[max_tracks];
   bool m_constrain_to_vertex;
   bool m_constrain_int_mass;
-
 };
 
-#endif //KFParticle_eventReconstruction_H
-
+#endif  //KFParticle_eventReconstruction_H

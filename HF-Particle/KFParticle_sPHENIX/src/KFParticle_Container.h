@@ -1,12 +1,12 @@
 #ifndef KFParticle_Container_H
 #define KFParticle_Container_H
 
-#include <phool/PHObject.h>
-
-#include <cstddef>        // for size_t
-#include <iostream>       // for cout, ostream
+#include <cstddef>   // for size_t
+#include <iostream>  // for cout, ostream
 #include <map>
-#include <utility>        // for pair
+#include <utility>  // for pair
+
+#include <phool/PHObject.h>
 
 #include <KFParticle.h>
 
@@ -23,7 +23,6 @@ class KFParticle;
 class KFParticle_Container : public PHObject
 {
  public:
-
   typedef map<unsigned int, KFParticle*> Map;
   typedef map<unsigned int, KFParticle*>::const_iterator ConstIter;
   typedef map<unsigned int, KFParticle*>::iterator Iter;
@@ -54,11 +53,11 @@ class KFParticle_Container : public PHObject
   Iter find(unsigned int key) { return m_kfpmap.find(key); }
   Iter end() { return m_kfpmap.end(); }
 
-  KFParticle* insert(const KFParticle *particle);
-  ConstIter addParticle(KFParticle *particle);
-  ConstIter addParticleSpecifyKey(unsigned int key, KFParticle *particle);
+  KFParticle* insert(const KFParticle* particle);
+  ConstIter addParticle(KFParticle* particle);
+  ConstIter addParticleSpecifyKey(unsigned int key, KFParticle* particle);
 
-  Map returnParticlesByPDGid( int PDGid );
+  Map returnParticlesByPDGid(int PDGid);
 
   size_t erase(unsigned int key)
   {
@@ -66,11 +65,9 @@ class KFParticle_Container : public PHObject
     return m_kfpmap.erase(key);
   }
 
- protected:
-
+ private:
   Map m_kfpmap;
   //ClassDef(KFParticle_Container, 1)
-
 };
 
-#endif //KFParticle_Container_H
+#endif  //KFParticle_Container_H
