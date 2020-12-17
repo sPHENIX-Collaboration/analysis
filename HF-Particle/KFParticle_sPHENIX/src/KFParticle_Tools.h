@@ -24,23 +24,24 @@
 
 //sPHENIX stuff
 #include <fun4all/Fun4AllReturnCodes.h>
-#include <trackbase_historic/SvtxTrackMap.h>
-#include <trackbase_historic/SvtxTrack.h>
-#include <trackbase_historic/SvtxVertexMap.h>
-#include <trackbase_historic/SvtxVertex.h>
 #include <phool/getClass.h>
-#include <KFParticle_MVA.h>
-#include <KFParticle_particleList.h>
+#include <trackbase_historic/SvtxTrack.h>
+#include <trackbase_historic/SvtxTrackMap.h>
+#include <trackbase_historic/SvtxVertex.h>
+#include <trackbase_historic/SvtxVertexMap.h>
 
 //ROOT stuff
-#include "TMatrixD.h"
+#include <TMatrixD.h>
 
 //C++ stuff
+#include <cmath>
+#include <iomanip>
 #include <iostream>
 #include <map>
 #include <vector>
-#include <iomanip>
-#include <cmath>
+
+#include "KFParticle_MVA.h"
+#include "KFParticle_particleList.h"
 
 using namespace std;
 

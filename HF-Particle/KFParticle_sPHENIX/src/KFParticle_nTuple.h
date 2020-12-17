@@ -1,11 +1,10 @@
 #ifndef KFParticle_nTuple_H__
 #define KFParticle_nTuple_H__
 
-//#include <phool/PHCompositeNode.h>
-//#include <phool/PHIODataNode.h>
 #include <phool/PHNode.h>                   
 #include <phool/PHNodeIterator.h>
-#include <KFParticle_truthAndDetTools.h>
+
+#include "KFParticle_truthAndDetTools.h"
 
 using namespace std;
 

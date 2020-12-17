@@ -1,19 +1,21 @@
 #ifndef KFParticle_DST_H__
 #define KFParticle_DST_H__
 
-#include "KFParticle.h"
-#include "KFParticle_Container.h"
-#include <trackbase_historic/SvtxTrackMap.h>
-#include <trackbase_historic/SvtxTrackMap_v1.h>
-#include <trackbase_historic/SvtxTrack.h>
-#include <trackbase_historic/SvtxTrack_v1.h>
 #include <fun4all/Fun4AllDstInputManager.h>
+#include <phool/getClass.h>
 #include <phool/PHCompositeNode.h>
 #include <phool/PHIODataNode.h>
 #include <phool/PHNode.h>                   
 #include <phool/PHNodeIterator.h>
 #include <phool/PHObject.h>                  
-#include <phool/getClass.h>
+#include <trackbase_historic/SvtxTrack.h>
+#include <trackbase_historic/SvtxTrack_v1.h>
+#include <trackbase_historic/SvtxTrackMap.h>
+#include <trackbase_historic/SvtxTrackMap_v1.h>
+
+#include <KFParticle.h>
+
+#include "KFParticle_Container.h"
 
 using namespace std;
 

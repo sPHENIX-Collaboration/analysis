@@ -1,15 +1,14 @@
 #ifndef KFParticle_Container_H
 #define KFParticle_Container_H
 
-#include "KFParticle.h"
-
 #include <phool/PHObject.h>
-
-#include <map>
 
 #include <cstddef>        // for size_t
 #include <iostream>       // for cout, ostream
+#include <map>
 #include <utility>        // for pair
+
+#include <KFParticle.h>
 
 using namespace std;
 

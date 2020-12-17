@@ -6,15 +6,16 @@
 
 //Ideas taken from SvtxTrackMap_v1 & TrkrClusterContainer 
 
-#include <KFParticle_Container.h>
-#include "KFParticle.h"
-
 #include <phool/PHObject.h>  // for PHObject
 
 #include <iterator>     // for reverse_iterator
 #include <map>          // for _Rb_tree_const_iterator, _Rb_tree_iterator
 #include <ostream>      // for operator<<, endl, ostream, basic_ostream, bas...
 #include <utility>      // for pair, make_pair
+
+#include <KFParticle.h>
+
+#include "KFParticle_Container.h"
 
 using namespace std;
 

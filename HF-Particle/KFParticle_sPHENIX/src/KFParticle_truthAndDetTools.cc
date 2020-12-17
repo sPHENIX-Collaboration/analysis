@@ -1,12 +1,15 @@
 #include <g4main/PHG4TruthInfoContainer.h>
-#include <trackbase/TrkrDefs.h>
-#include <mvtx/MvtxDefs.h>
 #include <intt/InttDefs.h>
+#include <mvtx/MvtxDefs.h>
 #include <tpc/TpcDefs.h>
-#include <KFParticle_truthAndDetTools.h>
+#include <trackbase/TrkrDefs.h>
 #include <phool/getClass.h>
+
 #include <TTree.h>
-#include "KFParticle.h"
+
+#include <KFParticle.h>
+
+#include "KFParticle_truthAndDetTools.h"
 
 using namespace std;
 

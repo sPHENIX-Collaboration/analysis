@@ -3,11 +3,11 @@
   /*   and calc an MVA response     */
  /*   Cameron Dean, LANL, 06/15/20 */
 /**********************************/
+#include <KFParticle.h>
+#include <KFPVertex.h>
 
-#include <KFParticle_MVA.h>
-#include <KFParticle_Tools.h>
-#include "KFParticle.h"
-#include "KFPVertex.h"
+#include "KFParticle_MVA.h"
+#include "KFParticle_Tools.h"
 
 using namespace std;
 

@@ -3,15 +3,15 @@
 
 #include <g4main/PHG4Particle.h>
 #include <g4main/PHG4VtxPoint.h>
-#include <g4eval/SvtxTrackEval.h>
 #include <g4eval/SvtxClusterEval.h>
+#include <g4eval/SvtxEvalStack.h>
+#include <g4eval/SvtxTrackEval.h>
 #include <g4eval/SvtxTruthEval.h>
 #include <g4eval/SvtxVertexEval.h>
-#include <g4eval/SvtxEvalStack.h>
-#include <trackbase/TrkrClusterContainer.h>
 #include <trackbase/TrkrCluster.h>
-#include <trackbase_historic/SvtxTrackMap.h>
+#include <trackbase/TrkrClusterContainer.h>
 #include <trackbase_historic/SvtxTrack.h>
+#include <trackbase_historic/SvtxTrackMap.h>
 #include <trackbase_historic/SvtxVertex.h>
 
 using namespace std;

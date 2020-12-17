@@ -25,18 +25,19 @@
 /* cdean@bnl.gov */ 
 /*****************/
 
-#include "KFParticle_Tools.h"
-
-//KFParticle stuff
-#include "KFPTrack.h"
-#include "KFParticle.h"
-#include "KFVertex.h"
-#include "KFParticleDatabase.h"
-
-#include <g4main/PHG4Particle.h>
-#include <g4eval/SvtxTrackEval.h>
+//sPHENIX stuff
 #include <g4eval/SvtxClusterEval.h>
 #include <g4eval/SvtxEvalStack.h>
+#include <g4eval/SvtxTrackEval.h>
+#include <g4main/PHG4Particle.h>
+
+//KFParticle stuff
+#include <KFParticle.h>
+#include <KFParticleDatabase.h>
+#include <KFPTrack.h>
+#include <KFVertex.h>
+
+#include "KFParticle_Tools.h"
 
 using namespace std;
 

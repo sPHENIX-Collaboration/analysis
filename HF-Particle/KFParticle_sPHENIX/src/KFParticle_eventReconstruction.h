@@ -23,22 +23,23 @@
 #define KFParticle_eventReconstruction_H
 
 //sPHENIX stuff
-#include <trackbase_historic/SvtxTrackMap.h>
-#include <trackbase_historic/SvtxTrack.h>
-#include <trackbase_historic/SvtxVertexMap.h>
-#include <trackbase_historic/SvtxVertex.h>
 #include <phool/getClass.h>
-#include <KFParticle_Tools.h>
+#include <trackbase_historic/SvtxTrack.h>
+#include <trackbase_historic/SvtxTrackMap.h>
+#include <trackbase_historic/SvtxVertex.h>
+#include <trackbase_historic/SvtxVertexMap.h>
 
 //ROOT stuff
-#include "TMatrixD.h"
+#include <TMatrixD.h>
 
 //C++ stuff
+#include <cmath>
+#include <iomanip>
 #include <iostream>
 #include <map>
 #include <vector>
-#include <iomanip>
-#include <cmath>
+
+#include "KFParticle_Tools.h"
 
 using namespace std;
 

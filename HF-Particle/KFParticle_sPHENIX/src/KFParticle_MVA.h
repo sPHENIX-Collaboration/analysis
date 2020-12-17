@@ -8,8 +8,8 @@
 #define KFParticle_MVA_H
 
 //ROOT stuff
-#include "TMVA/Tools.h"
 #include "TMVA/Reader.h"
+#include "TMVA/Tools.h"
 
 using namespace std;
 

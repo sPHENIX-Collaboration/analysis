@@ -40,15 +40,15 @@ endif
 
 libkfparticle_sphenix_la_SOURCES = \
   $(ROOT5_DICTS) \
-  KFParticle_Container.cxx \
-  KFParticle_DST.cxx \
-  KFParticle_truthAndDetTools.cxx \
-  KFParticle_nTuple.cxx \
-  KFParticle_Tools.cxx \
-  KFParticle_particleList.cxx \
-  KFParticle_MVA.cxx \
-  KFParticle_eventReconstruction.cxx \
-  KFParticle_sPHENIX.cxx
+  KFParticle_Container.cc \
+  KFParticle_DST.cc \
+  KFParticle_truthAndDetTools.cc \
+  KFParticle_nTuple.cc \
+  KFParticle_Tools.cc \
+  KFParticle_particleList.cc \
+  KFParticle_MVA.cc \
+  KFParticle_eventReconstruction.cc \
+  KFParticle_sPHENIX.cc
 
 libkfparticle_sphenix_la_LDFLAGS = \
   -L$(libdir) \

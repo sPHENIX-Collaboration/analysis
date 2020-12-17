@@ -49,10 +49,10 @@
  ** https://pdg.lbl.gov/2019/reviews/rpp2019-rev-monte-carlo-numbering.pdf
  **/
 
-#include "KFParticle_particleList.h"
-
 //KFParticle stuff
-#include "KFParticleDatabase.h"
+#include <KFParticleDatabase.h>
+
+#include "KFParticle_particleList.h"
 
 using namespace std;
 
