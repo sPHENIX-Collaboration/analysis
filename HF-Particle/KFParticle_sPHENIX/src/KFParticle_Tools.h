@@ -81,6 +81,7 @@ class KFParticle_Tools : public KFParticle_particleList, protected KFParticle_MV
 
   vector<vector<int>> appendTracksToIntermediates(KFParticle intermediateResonances[], vector<KFParticle> daughterParticles, vector<int> goodTrackIndex, int num_remaining_tracks);
 
+  ///Calculates the cosine of the angle betweent the flight direction and momentum
   float eventDIRA(KFParticle particle, KFParticle vertex);
 
   float flightDistanceChi2(KFParticle particle, KFParticle vertex);

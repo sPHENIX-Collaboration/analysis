@@ -16,12 +16,19 @@ class KFPVertex;
 class KFParticle_nTuple : public KFParticle_truthAndDetTools
 {
  public:
-  KFParticle_nTuple();  //Constructor
+  ///Constructor
+  KFParticle_nTuple();
 
-  ~KFParticle_nTuple();  //Destructor
+  ///Destructor
+  ~KFParticle_nTuple();
 
+  ///Unused for now, variables are initialised in the header
   void initializeVariables();
+
+  ///Initialises required branches based off the user selection (number of tracks, PV constraints etc ) and sets branch names if specified
   void initializeBranches();
+
+  ///Fills required information for your selection, also requests truth and detector information if needed
   void fillBranch(PHCompositeNode *topNode,
                   KFParticle motherParticle,
                   KFParticle vertex,

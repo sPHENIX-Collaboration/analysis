@@ -17,7 +17,7 @@ class KFParticle;
 /**
  * @brief KFParticle container object
  *
- * Container for KFParticle objects
+ * Container for KFParticle objects, based off SvtxTrackMap
  */
 
 class KFParticle_Container : public PHObject
@@ -57,6 +57,7 @@ class KFParticle_Container : public PHObject
   ConstIter addParticle(KFParticle* particle);
   ConstIter addParticleSpecifyKey(unsigned int key, KFParticle* particle);
 
+  ///Use the PDG MC ID to return a subset of the KFParticle container, if those particle exist in the container
   Map returnParticlesByPDGid(int PDGid);
 
   size_t erase(unsigned int key)

@@ -54,11 +54,16 @@ class KFParticle_sPHENIX : public SubsysReco, public KFParticle_nTuple, public K
 
   int End(PHCompositeNode *topNode);
 
+  /**
+   * If verbosity is > 0, this will print out all candidate information:
+   * masses, momenta and positions for mothers, intermediates and final state tracks,
+   * PV position, number of vertices and number of tracks in the event (multiplicity)
+   */
   void printParticles(KFParticle motherParticle,
                       KFParticle chosenVertex,
                       vector<KFParticle> daughterParticles,
                       vector<KFParticle> intermediateParticles,
-                      int nPVs, int multiplicity);
+                      int numPVs, int numTracks);
 
   ///Parameters for the user to vary
   static const int max_particles = 99;
@@ -207,9 +212,10 @@ class KFParticle_sPHENIX : public SubsysReco, public KFParticle_nTuple, public K
 
   void getDetectorInfo(bool detinfo) { m_detector_info = detinfo; }
 
-  //Use alternate vertex and track fitters
+  ///Use alternate vertex and track fitters
   void setVertexMapNodeName(string vtx_map_node_name) { m_vtx_map_node_name = vtx_map_node_name; }
 
+  ///Use alternate vertex and track fitters
   void setTrackMapNodeName(string trk_map_node_name) { m_trk_map_node_name = trk_map_node_name; }
 
   //protected:

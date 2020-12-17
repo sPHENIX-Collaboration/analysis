@@ -1,4 +1,4 @@
-/*
+/**
  * This file is part of KFParticle package
  * Copyright (C) 2007-2019 FIAS Frankfurt Institute for Advanced Studies
  *               2007-2019 Goethe University of Frankfurt
@@ -53,32 +53,43 @@ class KFParticle_eventReconstruction : public KFParticle_Tools
 
   ~KFParticle_eventReconstruction();
 
+  /**
+   * Starts the reconstruction chain
+   *
+   * @param selectedMother Input a vector and it will be filled with any mother candidates
+   * @param selectedVertex Input a vector and it will be filled with the production vertex associated to your mother
+   * @param selectedDaughters Input a vector and it will be filled with any tracks associated to your mother
+   * @param selectedIntermediates Input a vector and it will be filled with any intermediate states associated to your mother
+   */
   void createDecay(PHCompositeNode* topNode, vector<KFParticle>& selectedMother, vector<KFParticle>& selectedVertex,
                    vector<vector<KFParticle>>& selectedDaughters,
                    vector<vector<KFParticle>>& selectedIntermediates,
                    int& nPVs, int& multiplicity);
+ 
+  ///Used to reconstruct simple decays with no intermediate states
+  void buildBasicChain(vector<KFParticle>& selectedMotherBasic,
+                       vector<KFParticle>& selectedVertexBasic,
+                       vector<vector<KFParticle>>& selectedDaughtersBasic,
+                       const vector<KFParticle> daughterParticlesBasic,
+                       const vector<int> goodTrackIndexBasic,
+                       const vector<KFParticle> primaryVerticesBasic);
 
-  void buildBasicChain(vector<KFParticle>& selectedMother,
-                       vector<KFParticle>& selectedVertex,
-                       vector<vector<KFParticle>>& selectedDaughters,
-                       vector<KFParticle> daughterParticles,
-                       vector<int> goodTrackIndex,
-                       vector<KFParticle> primaryVertices);
+  ///Used to reconstruct more complicated decays with up to four intermediate states
+  void buildChain(vector<KFParticle>& selectedMotherAdv,
+                  vector<KFParticle>& selectedVertexAdv,
+                  vector<vector<KFParticle>>& selectedDaughtersAdv,
+                  vector<vector<KFParticle>>& selectedIntermediatesAdv,
+                  vector<KFParticle> daughterParticlesAdv,
+                  const vector<int> goodTrackIndexAdv,
+                  vector<KFParticle> primaryVerticesAdv);
 
-  void buildChain(vector<KFParticle>& selectedMother,
-                  vector<KFParticle>& selectedVertex,
-                  vector<vector<KFParticle>>& selectedDaughters,
-                  vector<vector<KFParticle>>& selectedIntermediates,
-                  vector<KFParticle> daughterParticles,
-                  vector<int> goodTrackIndex,
-                  vector<KFParticle> primaryVertices);
-
-  void getCandidateDecay(vector<KFParticle>& selectedMother,
-                         vector<KFParticle>& selectedVertex,
-                         vector<vector<KFParticle>>& selectedDaughters,
-                         vector<KFParticle> daughterParticles,
-                         vector<vector<int>> goodTracksThatMeet,
-                         vector<KFParticle> primaryVertices,
+  ///Basic building block for event reconstruction and selection
+  void getCandidateDecay(vector<KFParticle>& selectedMotherCand,
+                         vector<KFParticle>& selectedVertexCand,
+                         vector<vector<KFParticle>>& selectedDaughtersCand,
+                         vector<KFParticle> daughterParticlesCand,
+                         vector<vector<int>> goodTracksThatMeetCand,
+                         vector<KFParticle> primaryVerticesCand,
                          int n_track_start, int n_track_stop,
                          bool isIntermediate, int intermediateNumber, bool constrainMass);
 

@@ -135,7 +135,7 @@ void KFParticle_sPHENIX::printParticles(KFParticle motherParticle,
                                         KFParticle chosenVertex,
                                         vector<KFParticle> daughterParticles,
                                         vector<KFParticle> intermediateParticles,
-                                        int nPVs, int multiplicity)
+                                        int numPVs, int numTracks)
 {
   cout << "\n---------------KFParticle candidate information---------------" << endl;
 
@@ -166,8 +166,8 @@ void KFParticle_sPHENIX::printParticles(KFParticle motherParticle,
          << endl;
   }
 
-  cout << "The number of primary vertices is: " << nPVs << endl;
-  cout << "The number of tracks in the event is: " << multiplicity << endl;
+  cout << "The number of primary vertices is: " << numPVs << endl;
+  cout << "The number of tracks in the event is: " << numTracks << endl;
 
   cout << "------------------------------------------------------------\n"
        << endl;

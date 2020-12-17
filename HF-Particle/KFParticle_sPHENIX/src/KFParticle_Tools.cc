@@ -226,12 +226,19 @@ vector<vector<int>> KFParticle_Tools::findTwoProngs(vector<KFParticle> daughterP
           twoParticleVertex += daughterParticles[*j_it];
           float vertexchi2ndof = twoParticleVertex.GetChi2() / twoParticleVertex.GetNDF();
           vector<int> combination = {*i_it, *j_it};
+
           if (nTracks == 2 && vertexchi2ndof <= m_vertex_chi2ndof)
+          {
             goodTracksThatMeet.push_back(combination);
+          }
           else if (nTracks == 2 && vertexchi2ndof > m_vertex_chi2ndof)
+          {
             continue;
+          }
           else
+          {
             goodTracksThatMeet.push_back(combination);
+          }
         }
       }
     }
@@ -277,12 +284,19 @@ vector<vector<int>> KFParticle_Tools::findNProngs(vector<KFParticle> daughterPar
             combination.push_back(goodTracksThatMeet[i_prongs][i]);
           }
           float vertexchi2ndof = particleVertex.GetChi2() / particleVertex.GetNDF();
+
           if ((unsigned int) nRequiredTracks == nProngs && vertexchi2ndof <= m_vertex_chi2ndof)
+          {
             goodTracksThatMeet.push_back(combination);
+          }
           else if ((unsigned int) nRequiredTracks == nProngs && vertexchi2ndof > m_vertex_chi2ndof)
+          {
             continue;
+          }
           else
+          {
             goodTracksThatMeet.push_back(combination);
+          }
         }
       }
     }
@@ -306,7 +320,10 @@ vector<vector<int>> KFParticle_Tools::appendTracksToIntermediates(KFParticle int
       vector<vector<int>> dummyTrackList;
       vector<int> dummyTrackID;  //I already have the track ids stored in goodTracksThatMeet[i]
       v_intermediateResonances.insert(end(v_intermediateResonances), daughterParticles[*i_it]);
-      for (unsigned int k = 0; k < v_intermediateResonances.size(); ++k) dummyTrackID.push_back(k);
+      for (unsigned int k = 0; k < v_intermediateResonances.size(); ++k) 
+      {
+        dummyTrackID.push_back(k);
+      }
       dummyTrackList = findTwoProngs(v_intermediateResonances, dummyTrackID, (int) v_intermediateResonances.size());
       if (v_intermediateResonances.size() > 2)
       {
@@ -325,21 +342,30 @@ vector<vector<int>> KFParticle_Tools::appendTracksToIntermediates(KFParticle int
   else
   {
     goodTracksThatMeet = findTwoProngs(daughterParticles, goodTrackIndex, num_remaining_tracks);
-    for (int p = 3; p <= num_remaining_tracks; ++p) goodTracksThatMeet = findNProngs(daughterParticles,
-                                                                                     goodTrackIndex,
-                                                                                     goodTracksThatMeet,
-                                                                                     num_remaining_tracks, p);
+
+    for (int p = 3; p <= num_remaining_tracks; ++p) 
+    {
+      goodTracksThatMeet = findNProngs(daughterParticles, goodTrackIndex, goodTracksThatMeet, num_remaining_tracks, p);
+    }
+
     for (unsigned int i = 0; i < goodTracksThatMeet.size(); ++i)
     {
       vector<KFParticle> v_intermediateResonances(intermediateResonances, intermediateResonances + m_num_intermediate_states);
       vector<vector<int>> dummyTrackList;
       vector<int> dummyTrackID;  //I already have the track ids stored in goodTracksThatMeet[i]
-      for (unsigned int j = 0; j < goodTracksThatMeet[i].size(); ++j) v_intermediateResonances.push_back(daughterParticles[goodTracksThatMeet[i][j]]);
-      for (unsigned int k = 0; k < v_intermediateResonances.size(); ++k) dummyTrackID.push_back(k);
+      for (unsigned int j = 0; j < goodTracksThatMeet[i].size(); ++j) 
+      {
+        v_intermediateResonances.push_back(daughterParticles[goodTracksThatMeet[i][j]]);
+      }
+      for (unsigned int k = 0; k < v_intermediateResonances.size(); ++k) 
+      {
+        dummyTrackID.push_back(k);
+      }
       dummyTrackList = findTwoProngs(v_intermediateResonances, dummyTrackID, (int) v_intermediateResonances.size());
-      for (unsigned int p = 3; p <= v_intermediateResonances.size(); ++p) dummyTrackList = findNProngs(v_intermediateResonances,
-                                                                                                       dummyTrackID, dummyTrackList,
-                                                                                                       (int) v_intermediateResonances.size(), (int) p);
+      for (unsigned int p = 3; p <= v_intermediateResonances.size(); ++p) 
+      {
+        dummyTrackList = findNProngs(v_intermediateResonances, dummyTrackID, dummyTrackList, (int) v_intermediateResonances.size(), (int) p);
+      }
 
       if (dummyTrackList.size() != 0) goodTracksThatMeetIntermediates.push_back(goodTracksThatMeet[i]);
     }
@@ -350,7 +376,8 @@ vector<vector<int>> KFParticle_Tools::appendTracksToIntermediates(KFParticle int
 
 float KFParticle_Tools::eventDIRA(KFParticle particle, KFParticle vertex)
 {
-  TMatrixD flightVector(3, 1), momVector(3, 1);
+  TMatrixD flightVector(3, 1);
+  TMatrixD momVector(3, 1);
   flightVector(0, 0) = particle.GetX() - vertex.GetX();
   flightVector(1, 0) = particle.GetY() - vertex.GetY();
   flightVector(2, 0) = particle.GetZ() - vertex.GetZ();
@@ -376,7 +403,8 @@ float KFParticle_Tools::eventDIRA(KFParticle particle, KFParticle vertex)
 
 float KFParticle_Tools::flightDistanceChi2(KFParticle particle, KFParticle vertex)
 {
-  TMatrixD flightVector(3, 1), flightDistanceCovariance(3, 3);
+  TMatrixD flightVector(3, 1);
+  TMatrixD flightDistanceCovariance(3, 3);
 
   KFParticle kfp_vertex(vertex);
 
@@ -401,7 +429,8 @@ float KFParticle_Tools::flightDistanceChi2(KFParticle particle, KFParticle verte
 
 tuple<KFParticle, bool> KFParticle_Tools::buildMother(KFParticle vDaughters[], string daughterOrder[], bool isIntermediate, int intermediateNumber, int nTracks, bool constrainMass, float required_vertexID)
 {
-  KFParticle mother, inputTracks[nTracks];
+  KFParticle mother;
+  KFParticle inputTracks[nTracks];
 
   mother.SetConstructMethod(2);
 

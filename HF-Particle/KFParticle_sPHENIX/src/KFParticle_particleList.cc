@@ -64,7 +64,6 @@ KFParticle_particleList::KFParticle_particleList() {}
 /// KFParticle destructor
 KFParticle_particleList::~KFParticle_particleList() {}
 
-//map<string, float> KFParticle_particleList::getParticleList()
 map<string, particle_pair> KFParticle_particleList::getParticleList()
 {
   //There is a scope issue here and kfpDatabase must be declared in function unlike in KFPTools

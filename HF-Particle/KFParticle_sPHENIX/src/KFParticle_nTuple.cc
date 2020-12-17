@@ -375,7 +375,9 @@ void KFParticle_nTuple::fillBranch(PHCompositeNode* topNode,
     m_evtNumber = evtHeader->get_EvtSequence();
   }
   else
+  {
     m_runNumber = m_evtNumber = -1;
+  }
 
   m_tree->Fill();
 }

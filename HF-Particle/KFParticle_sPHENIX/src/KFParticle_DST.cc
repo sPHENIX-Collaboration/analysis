@@ -30,7 +30,6 @@ int KFParticle_DST::createParticleNode(PHCompositeNode* topNode)
   PHNodeIterator iter(topNode);
 
   PHCompositeNode* lowerNode = dynamic_cast<PHCompositeNode*>(iter.findFirst("PHCompositeNode", "DST"));
-  //PHCompositeNode* lowerNode = dynamic_cast<PHCompositeNode*>(iter.findFirst("PHCompositeNode", "Particles"));
   if (!lowerNode)
   {
     lowerNode = new PHCompositeNode("DST");
@@ -39,11 +38,15 @@ int KFParticle_DST::createParticleNode(PHCompositeNode* topNode)
     cout << "Particles node added" << endl;
   }
 
-  string baseName, trackNodeName, particleNodeName;
+  string baseName;
+  string trackNodeName;
+  string particleNodeName;
+
   if (m_container_name.empty())
     baseName = "reconstructedParticles";
   else
     baseName = m_container_name;
+
   //Cant have forward slashes in DST or else you make a subdirectory on save!!!
   string fwd_slsh = "/", undrscr = "_";
   size_t pos;
@@ -82,26 +85,35 @@ void KFParticle_DST::fillParticleNode(PHCompositeNode* topNode, KFParticle mothe
                                       vector<KFParticle> daughters,
                                       vector<KFParticle> intermediates)
 {
-  if (m_write_track_container) fillParticleNode_Track(topNode, motherParticle,
-                                                      daughters, intermediates);
-
-  if (m_write_particle_container) fillParticleNode_Particle(topNode, motherParticle,
-                                                            daughters, intermediates);
+  if (m_write_track_container)
+  {
+    fillParticleNode_Track(topNode, motherParticle, daughters, intermediates);
+  }
+  if (m_write_particle_container) 
+  {
+    fillParticleNode_Particle(topNode, motherParticle, daughters, intermediates);
+  }
 }
 
 void KFParticle_DST::fillParticleNode_Track(PHCompositeNode* topNode, KFParticle motherParticle,
                                             vector<KFParticle> daughters,
                                             vector<KFParticle> intermediates)
 {
-  string baseName, trackNodeName;
+  string baseName;
+  string trackNodeName;
+
   if (m_container_name.empty())
     baseName = "reconstructedParticles";
   else
     baseName = m_container_name;
+
   //Cant have forward slashes in DST or else you make a subdirectory on save!!!
   string fwd_slsh = "/", undrscr = "_";
   size_t pos;
-  while ((pos = baseName.find(fwd_slsh)) != string::npos) baseName.replace(pos, 1, undrscr);
+  while ((pos = baseName.find(fwd_slsh)) != string::npos)
+  {
+   baseName.replace(pos, 1, undrscr);
+  }
 
   trackNodeName = baseName + "_SvtxTrackMap";
 
@@ -137,7 +149,9 @@ void KFParticle_DST::fillParticleNode_Track(PHCompositeNode* topNode, KFParticle
       m_recoTrack = buildSvtxTrack(daughterArray[k]);
     }
     else
+    {
       m_recoTrack = kfpTruthTools_DST.getTrack(daughterArray[k].Id(), originalTrackMap_copy);
+    }
 
     m_recoTrackMap->insert(m_recoTrack);
     m_recoTrack->Reset();
@@ -148,11 +162,14 @@ void KFParticle_DST::fillParticleNode_Particle(PHCompositeNode* topNode, KFParti
                                                vector<KFParticle> daughters,
                                                vector<KFParticle> intermediates)
 {
-  string baseName, particleNodeName;
+  string baseName;
+  string particleNodeName;
+
   if (m_container_name.empty())
     baseName = "reconstructedParticles";
   else
     baseName = m_container_name;
+
   //Cant have forward slashes in DST or else you make a subdirectory on save!!!
   string fwd_slsh = "/", undrscr = "_";
   size_t pos;
@@ -167,6 +184,7 @@ void KFParticle_DST::fillParticleNode_Particle(PHCompositeNode* topNode, KFParti
   if (m_has_intermediates_DST)
   {
     KFParticle* intermediateArray = &intermediates[0];
+
     for (unsigned int k = 0; k < intermediates.size(); ++k)
       m_recoParticleMap->insert(&intermediateArray[k]);
   }
@@ -202,11 +220,15 @@ SvtxTrack* KFParticle_DST::buildSvtxTrack(KFParticle particle)
 
 void KFParticle_DST::printNode(PHCompositeNode* topNode)
 {
-  string baseName, trackNodeName, particleNodeName;
+  string baseName;
+  string trackNodeName;
+  strign particleNodeName;
+
   if (m_container_name.empty())
     baseName = "reconstructedParticles";
   else
     baseName = m_container_name;
+
   //Cant have forward slashes in DST or else you make a subdirectory on save!!!
   string fwd_slsh = "/", undrscr = "_";
   size_t pos;

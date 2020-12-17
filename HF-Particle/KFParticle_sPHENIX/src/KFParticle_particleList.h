@@ -1,4 +1,4 @@
-/*
+/**
  * This file is part of KFParticle package
  * Copyright (C) 2007-2019 FIAS Frankfurt Institute for Advanced Studies
  *               2007-2019 Goethe University of Frankfurt
@@ -28,6 +28,13 @@ using namespace std;
 
 typedef pair<int, float> particle_pair;
 
+/**
+ *  This class contains the information for each type of particle
+ *  A map is created with the particle name as the key. 
+ *  This will then return the PDG ID and mass in GeV.
+ *  The map element format is, for example:
+ *  particleMasses["Bs0"] = make_pair(531, 5.366);
+ */
 class KFParticleDatabase;
 
 class KFParticle_particleList
@@ -37,7 +44,6 @@ class KFParticle_particleList
 
   ~KFParticle_particleList();
 
-  //map<string, float> getParticleList();
   map<string, particle_pair> getParticleList();
 
   float returnPDGMass(const int pdgIndex);

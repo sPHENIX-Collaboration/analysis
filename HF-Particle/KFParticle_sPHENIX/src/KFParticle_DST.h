@@ -29,24 +29,31 @@ class SvtxTrackMap;
 class KFParticle_DST
 {
  public:
-  KFParticle_DST();  //Constructor
+  ///Constructor
+  KFParticle_DST();
 
-  ~KFParticle_DST();  //Destructor
+  ///Destructor
+  ~KFParticle_DST();
 
+  ///Places a KFParticle_Container and SvtxTrackMap on the node tree if they don't exist
   int createParticleNode(PHCompositeNode* topNode);
 
+  ///Simultaneously fills a KFParticle_Container and SvtxTrackMap if they are enabled
   void fillParticleNode(PHCompositeNode* topNode, KFParticle motherParticle,
                         vector<KFParticle> daughters,
                         vector<KFParticle> intermediates);
 
+  ///Called by fillParticleNode, fills an SvtxTrackMap
   void fillParticleNode_Track(PHCompositeNode* topNode, KFParticle motherParticle,
                               vector<KFParticle> daughters,
                               vector<KFParticle> intermediates);
 
+  ///Called by fillParticleNode, fills a KFParitcle_Container
   void fillParticleNode_Particle(PHCompositeNode* topNode, KFParticle motherParticle,
                                  vector<KFParticle> daughters,
                                  vector<KFParticle> intermediates);
 
+  ///Prints contents of KFParticle_Containers and SvtxTrackMaps for an event if they are enabled
   void printNode(PHCompositeNode* topNode);
 
  protected:

@@ -70,10 +70,8 @@ class KFParticle_truthAndDetTools
 
  protected:
   SvtxEvalStack *m_svtx_evalstack;
-  //SvtxTrackEval *trackeval;
   SvtxClusterEval *clustereval;
   SvtxTruthEval *trutheval;
-  //SvtxVertexEval *vertexeval;
 
   SvtxTrackMap *dst_trackmap;
   SvtxTrack *track;
