@@ -32,14 +32,14 @@ void project_quarkonium_mass()
   Float_t dca2d;
   Float_t pcaz;
   Float_t gvz;
+  Float_t ntpc;
+  Float_t nmaps;
 
   Float_t decaymass=0.000511;
 
   // what do we have in the file?
-  //int events_per_file = 1;
-  //int num_ups_per_event = 10;
-  int events_per_file = 3;
-  int num_ups_per_event = 5;
+  int events_per_file = 1;
+  int num_ups_per_event = 20;
  
  // what maximum yields do we want?
   // These are pp yields for 197 /nb of pp running, with 
@@ -56,6 +56,8 @@ void project_quarkonium_mass()
   double suppr_state[3] = {0.535, 0.17, 0.035}; // suppression factor from Strickland paper 
   double eID_eff = 0.9;
   double tracking_eff = 0.95;
+
+  double quality_cut = 10;
 
   bool no_suppression = true;
 
@@ -75,14 +77,16 @@ void project_quarkonium_mass()
 
   cout << "Upsilons requested = " << nupsmax << endl;
 
-  for(int ifile=0;ifile<650;ifile++)
+  for(int ifile=0;ifile<1000;ifile++)
     {
       if(nups[0] > nupsmax[0])
 	break;
       
       char name[2000];
 
-      sprintf(name,"/sphenix/user/frawley/cluster_efficiency/macros/macros/g4simulations/eval_output/g4svtx_eval_%i.root_g4svtx_eval.root",ifile);
+      //sprintf(name,"/sphenix/user/frawley/cluster_efficiency/macros/macros/g4simulations/eval_output/g4svtx_eval_%i.root_g4svtx_eval.root",ifile);
+      //sprintf(name,"/sphenix/user/frawley/acts_qa/macros/macros/g4simulations/eval_output_3/g4svtx_eval_%i.root_g4svtx_eval.root",ifile);
+      sprintf(name,"/sphenix/user/frawley/acts_qa/macros/macros/g4simulations/eval_output_2/g4svtx_eval_%i.root_g4svtx_eval.root",ifile);
       
       cout << "Adding file number " << ifile << " with name " << name << endl;     
 
@@ -103,6 +107,8 @@ void project_quarkonium_mass()
       ntp_track->SetBranchAddress("gvz",&gvz);
       ntp_track->SetBranchAddress("gembed",&gembed);
       ntp_track->SetBranchAddress("quality",&quality);
+      ntp_track->SetBranchAddress("ntpc",&ntpc);
+      ntp_track->SetBranchAddress("nmaps",&nmaps);
 
       int ntracks=ntp_track->GetEntries();
 
@@ -118,7 +124,7 @@ void project_quarkonium_mass()
 	  hpcaz->Fill(pt, pcaz-gvz);
 	}
 
-      events_per_file = ntp_vertex->GetEntries();
+      //events_per_file = ntp_vertex->GetEntries();
       cout << " events in this file = " << events_per_file << endl;
 
       for(int iev = 0;iev<events_per_file;iev++)
@@ -154,13 +160,19 @@ void project_quarkonium_mass()
 		  if(gembed != iups+3)
 		    continue;
 
-		  if(quality > 3)
+		  if(quality > quality_cut)
+		    continue;
+
+		  if(ntpc < 20)
+		    continue;
+
+		  if(nmaps <= 1)
 		    continue;
 
 		  if(sqrt(px*px + py*py + pz*pz) < 1.0)
 		    continue;
 
-		  // cout << "event = " << event << " iups " << iups << " charge " << charge << " px " << px << " py " << py << " pz " << pz << " gembed " << gembed << " quality " << quality << endl;
+		  //		   cout << "event = " << event << " iups " << iups << " charge " << charge << " px " << px << " py " << py << " pz " << pz << " gembed " << gembed << " quality " << quality << endl;
 
 
 		  if(charge == 1)
@@ -199,9 +211,10 @@ void project_quarkonium_mass()
 		  tsum = t1+t2;
 		  recomass[istate]->Fill(tsum.M());
 		  recomass[3]->Fill(tsum.M()); // total spectrum
-		  nups[istate]++;
+		  if(tsum.M() > 7 && tsum.M() < 11)
+		    nups[istate]++;
 		  //cout << " event " << event << " gembed " << gembed << endl;	  
-		  //cout << " reco mass " << tsum.M() << endl;
+		  //cout << " istate " << " nups[istate] " << nups[istate] << " reco mass " << tsum.M() << endl;
 		}
 	    }
 	}

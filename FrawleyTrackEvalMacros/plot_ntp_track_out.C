@@ -4,6 +4,7 @@
 #include "TCanvas.h"
 #include "TROOT.h"
 #include "TStyle.h"
+#include "TLine.h"
 #include "TLegend.h"
 #include "TF1.h"
 
@@ -24,35 +25,88 @@ void plot_ntp_track_out()
   std::vector<std::string> legvec;
   std::vector<int> col;
 
-  finvec.push_back("root_files/acts_PR890_1kfiles_ntp_track_out.root");
-  legvec.push_back( "acts PR890");
-  col.push_back(kBlack);
+  //============
 
-  finvec.push_back("root_files/ntp_track_out.root");
-  legvec.push_back( "Genfit");
+
+  finvec.push_back("root_files/ntp_track_out_acts_MB_50khz_nomapscut.root");
+  legvec.push_back( "TpcTracker+stub matcher+ActsTrkFit (MB+50, nomapscut)");
   col.push_back(kRed);
 
+  finvec.push_back("root_files/ntp_track_out_acts_MB_50khz_withmapscut.root");
+  legvec.push_back( "TpcTracker+stub matcher+ActsTrkFit (MB+50, nmaps>1)");
+  col.push_back(kBlue);
+
+
+
   /*
-  finvec.push_back("root_files/acts_require0maps_ntp_track_out.root");
-  legvec.push_back("acts MVTX not matched");
+  finvec.push_back("root_files/ntp_track_out_lo_hough_genfitprop_genfit.root");
+  legvec.push_back( "Hough+GenfitTrkProp+GenfitTrkFitter (LO)");
+  col.push_back(kBlue);
+  */
+
+
+
+  /*
+  finvec.push_back("root_files/ntp_track_out_stub_matcher_lo_4kevts.root");
+  legvec.push_back( "TpcTracker+stub matcher+ActsTrkFit (lo)");
+  col.push_back(kRed);
+
+  finvec.push_back("root_files/ntp_track_out_truth_assoc_lo_4kevts.root");
+  legvec.push_back( "TpcTracker+truthassoc+ActsTrkFit (lo)");
+  col.push_back(kBlack);
+  */
+
+  /*
+  //  repeat after merge with repo of finvec.push_back("root_files/ntp_track_out_4k_tune8_fixed_mag24_both_stub_matcher.root");
+  finvec.push_back("root_files/ntp_track_out.root");
+  legvec.push_back( "TpcTracker+stub matcher+ActsTrkFit (0.02,0.015) (4K)");
+  col.push_back(kBlack);
+  */
+
+  /*
+  finvec.push_back("root_files/ntp_track_out_4k_tune8_fixed_mag24_both_stub_matcher.root");
+  legvec.push_back( "TpcTracker+stub matcher+ActsTrkFit (0.02,0.015) (4K)");
+  col.push_back(kBlack);
+  */
+
+  /*  
+  finvec.push_back("root_files/ntp_track_out_4k_tune7_fixed_mag24_both_stub_matcher.root");
+  legvec.push_back( "TpcTracker+stub matcher+ActsTrkFit (0.02,0.02) (4K)");
+  col.push_back(kMagenta);
+  */
+
+  /*
+  finvec.push_back("root_files/ntp_track_out_4k_tune1_fixed_mag24_both_stub_matcher.root");
+  legvec.push_back( "TpcTracker+stub matcher+ActsTrkFit (0.03,0.02) (4K)");
+  col.push_back(kBlack);
+  */
+
+  /*  
+  finvec.push_back("root_files/ntp_track_out_4k_truth_assoc.root");
+  legvec.push_back( "TPCTracker+TruthSiliconAssoc+ActsTrkFit (4K)");
+  col.push_back(kRed);
+  */
+
+  /*
+  finvec.push_back("root_files/ntp_track_out_4k_tune5_fixed_mag24_both_stub_matcher.root");
+  legvec.push_back( "TpcTracker+stub matcher+ActsTrkFit (0.06,0.03) (4K)");
+  col.push_back(kBlack);
+  */
+
+  /*
+ finvec.push_back("root_files/ntp_track_out_4k_hough_genfitprop_genfit.root");
+  legvec.push_back( "Hough+GenfitTrkProp+Genfit (4K)");
   col.push_back(kBlue);
   */
 
   /*
-  finvec.push_back("root_files/acts_genfit_compare_track_out.root");
-  legvec.push_back("genfit all");
+  finvec.push_back("root_files/ntp_track_out_4k_tune2_fixed_mag24_both_stub_matcher.root");
+  legvec.push_back( "TpcTracker+stub matcher+ActsTrkFit (0.02,0.01) (4K)");
   col.push_back(kMagenta);
   */
 
-  /*
-  finvec.push_back("root_files/acts_smoothed_require2maps_ntp_track_out.root");
-  legvec.push_back("acts MVTX match smoothed");
-  col.push_back(kRed);
+  //==========
 
-  finvec.push_back("root_files/acts_smoothed_require0maps_ntp_track_out.root");
-  legvec.push_back( "acts no MVTX match smoothed");
-  col.push_back(kMagenta);
-  */
 
   unsigned int nfiles = finvec.size();
 
@@ -80,9 +134,12 @@ void plot_ntp_track_out()
   TCanvas *cdcaZ = new TCanvas("cdcaZ","cdcaZ",5,5,1200,800); 
   cdcaZ->SetLeftMargin(0.2);
   gPad->SetGrid();
+  TCanvas *cmvtx= new TCanvas("cmvtx","cmvtx",5,5,1200,800);
+  cmvtx->SetLeftMargin(0.2);
+  TCanvas *ccomb= new TCanvas("ccomb","ccomb",5,5,1200,800);
+  ccomb->SetLeftMargin(0.2);
 
-
-  TLegend *lpd = new TLegend(0.5, 0.6, 0.8, 0.75, "", "NDC");
+  TLegend *lpd = new TLegend(0.25, 0.6, 0.85, 0.75, "", "NDC");
   lpd->SetBorderSize(1);
   lpd->SetFillColor(kWhite);
   lpd->SetFillStyle(1001);
@@ -173,11 +230,14 @@ void plot_ntp_track_out()
       heff->SetMarkerSize(1.2);
       heff->SetMarkerColor(col[i]);
       heff->GetXaxis()->SetRangeUser(0.0, ptmax);
-      heff->GetYaxis()->SetRangeUser(0.0, 1.0);
+      heff->GetYaxis()->SetRangeUser(0.0, 1.05);
       if(i==0)
 	heff->DrawCopy("p");
       else
 	heff->DrawCopy("p same");
+
+      TLine *unit = new TLine(0,1.0,40,1.0);
+      unit->Draw();
 
       // dca xy resolution
       cdcaxy->cd();
@@ -240,8 +300,90 @@ void plot_ntp_track_out()
 	hdcaZres->DrawCopy("p");
       else
 	hdcaZres->DrawCopy("p same");
-    }
 
+      // Plot the fraction of tracks matched to the MVTX
+      cmvtx->cd();
+      TH2D *hnmvtx = 0;
+      fin->GetObject("h6",hnmvtx);
+      if(!hnmvtx) cout << " Did not get hnmvtx" << endl;
+
+      //hnmvtx->DrawCopy("p");
+
+      binlow = hnmvtx->GetYaxis()->FindBin(0.5);
+      binhigh = hnmvtx->GetYaxis()->FindBin(3.5);
+      cout << "binlow " << binlow << " binhigh " << binhigh << endl;
+      TH1D *hnmaps_hit = hnmvtx->ProjectionX("hnmaps_hit",binlow, binhigh);;
+
+      binlow = hnmvtx->GetYaxis()->FindBin(-0.5);
+      binhigh = hnmvtx->GetYaxis()->FindBin(3.5);
+      cout << "binlow " << binlow << " binhigh " << binhigh << endl;
+      TH1D *hnmaps_all = hnmvtx->ProjectionX("hnmaps_all",binlow, binhigh);;
+
+      TH1D *hnmaps = (TH1D*) hnmaps_all->Clone();
+      for(int i=1;i<=hnmaps_hit->GetNbinsX();++i)
+	{
+	  double hit = hnmaps_hit->GetBinContent(i);
+	  double all = hnmaps_all->GetBinContent(i);
+	  double eff = 0;
+	  if(all > hit)
+	    eff = hit/all;
+	  else if(all > 0)
+	    eff = 1.;
+	  hnmaps->SetBinContent(i, eff);
+	}  
+
+      hnmaps->GetXaxis()->SetTitle("p_{T} (GeV/c)");
+      hnmaps->GetYaxis()->SetTitle("MVTX association efficiency");
+      hnmaps->GetYaxis()->SetTitleOffset(1.5);
+      hnmaps->GetXaxis()->SetTitleOffset(1.2);
+      hnmaps->SetMinimum(0);
+      hnmaps->SetMaximum(1.1);
+      hnmaps->SetMarkerStyle(20);
+      hnmaps->SetMarkerSize(1.5);
+      hnmaps->SetMarkerColor(col[i]);
+
+      if(i==0)
+	{
+	  hnmaps->DrawCopy("p");
+	  unit->Draw();
+	}
+      else
+      hnmaps->DrawCopy("p same");
+
+      // Combine track efficiency and MVTX association efficiency
+
+      ccomb->cd();
+
+      cout << " hnmaps bins " << hnmaps->GetNbinsX() << " heff bins " << heff->GetNbinsX() << endl;
+      heff->Rebin(3);
+      cout << heff->GetNbinsX() << endl;
+
+      TH1D *hcomb = (TH1D*) hnmaps->Clone();
+      for(int icomb=1; icomb< hnmaps->GetNbinsX(); ++icomb)
+	{
+	  double vmaps = hnmaps->GetBinContent(icomb);
+	  double vtrack = heff->GetBinContent(icomb) / 3;
+	  double eff = 0;
+	  eff = vmaps * vtrack;
+	  //cout << " icomb " << icomb << " vmaps " << vmaps << " vtrack " << vtrack << " comb " << eff << endl;
+	  hcomb->SetBinContent(icomb, eff);
+	}  
+
+      hcomb->GetXaxis()->SetRangeUser(0,39);	  
+      hcomb->GetYaxis()->SetTitle("Efficincy of MVTX associated tracks");
+
+      TLine *unit2 = new TLine(0,1.0,39,1.0);
+
+      if(i==0)
+	{
+	  hcomb->DrawCopy("p");
+	  unit2->Draw();
+	}
+      else
+      hcomb->DrawCopy("p same");
+
+    }
+  
   cpt->cd(2);  lpd->Draw();
 
   cdcaxy->cd();  lpd->Draw();
@@ -249,5 +391,12 @@ void plot_ntp_track_out()
   cdcaZ->cd();  lpd->Draw();
 
   ceff->cd();  lpd->Draw();
+
+  cmvtx->cd();  lpd->Draw();
+
+  ccomb->cd();  lpd->Draw();
+
+
+
 }
 

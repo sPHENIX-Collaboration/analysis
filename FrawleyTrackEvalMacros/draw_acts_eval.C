@@ -13,16 +13,18 @@
 
 void draw_acts_eval()
 {
-  gStyle->SetOptStat(1);
+  gStyle->SetOptStat(0);
 
-  unsigned int minhits = 1;
-  bool verbose1 = true;
-  bool verbose2 = true;
+
+  unsigned int minhits = 20;
+  bool verbose1 = false;
+  bool verbose2 = false;
   double ptmax = 40.0;
-  double maxtracks = 100;
+  double maxtracks = 200;
 
   TChain *theTree = new TChain("tracktree");
-  theTree->Add("/sphenix/user/frawley/acts_qa/macros/macros/g4simulations/G4sPHENIX.root_g4svtx_eval.root_acts.root");
+  //theTree->Add("/sphenix/user/frawley/acts_qa/macros/detectors/sPHENIX/G4sPHENIX_g4svtx_eval.root_acts.root");
+  theTree->Add("/sphenix/user/frawley/new_oct23/macros/detectors/sPHENIX/G4sPHENIX_g4svtx_eval.root_acts.root");
  
   /*
   for(int i=0;i<836;++i)
@@ -54,14 +56,14 @@ void draw_acts_eval()
   TH1D *hxerr_KF = new TH1D("hxerr_KF"," err_eLOC0_flt", 100, -3, 3);
   TH1D *hxpull_KF = new TH1D("hxpull_KF"," pull_eLOC0_flt outermost", 100, -5, 5);
   TH1D *hypull_KF = new TH1D("hypull_KF"," pull_eLOC1_flt outermost", 100, -5, 5);
-  TH2D *hxpull_KF_radius = new TH2D("hxpull_KF_radius"," pull_eLOC0_flt vs radius", 800, 0, 800, 100, -5, 5);
-  TH2D *hzpull_KF_radius = new TH2D("hzpull_KF_radius"," pull_eLOC1_flt vs radius", 800, 0, 800, 100, -5, 5);
+  TH2D *hxpull_KF_radius = new TH2D("hxpull_KF_radius"," pull_eLOC0_flt vs radius", 860, 0, 860, 100, -5, 5);
+  TH2D *hzpull_KF_radius = new TH2D("hzpull_KF_radius"," pull_eLOC1_flt vs radius", 860, 0, 860, 100, -5, 5);
 
   TH1D *hpt_smt = new TH1D("hpt_smt","state/truth p_{T}",100,0, ptmax);
-  TH2D *htxy = new TH2D("htxy","y vs x truth",4000,-800,800,4000,-800,800);
-  TH2D *hxy_flt = new TH2D("hxy_flt","hxy_flt",4000,-800,800,4000,-800,800);
-  TH2D *hxy_smt = new TH2D("hxy_smt","hxy_smt",4000,-800,800,4000,-800,800);
-  TH2D *hxy_prt = new TH2D("hxy_prt","hxy_prt",4000,-800,800,4000,-800,800);
+  TH2D *htxy = new TH2D("htxy","y vs x truth",4000,-860,860,4000,-860,860);
+  TH2D *hxy_flt = new TH2D("hxy_flt","hxy_flt",4000,-860,860,4000,-860,860);
+  TH2D *hxy_smt = new TH2D("hxy_smt","hxy_smt",4000,-860,860,4000,-860,860);
+  TH2D *hxy_prt = new TH2D("hxy_prt","hxy_prt",4000,-860,860,4000,-860,860);
 
   TH1D *hdcaxy[2];
   TH1D *hdcaz[2];
@@ -197,7 +199,7 @@ void draw_acts_eval()
   int itr = 0;
    while(theReader.Next()){
 
-     //if(itr >20) continue;
+     //if( !( (*t_barcode == 1) || (*t_barcode == 23) ) ) continue;
 
      if(pT_flt.GetSize() < 1)
        {
@@ -207,19 +209,18 @@ void draw_acts_eval()
      
      if(pT_flt.GetSize() < minhits) continue;
      
-     //double inner_radius = sqrt(pow(t_x[pT_flt.GetSize()-1], 2) + pow(t_y[pT_flt.GetSize()-1], 2));
      double inner_radius = sqrt(pow(t_x[pT_smt.GetSize()-1], 2) + pow(t_y[pT_smt.GetSize()-1], 2));
-     if(inner_radius > 80)   continue;
+     //if(inner_radius > 80)   continue;
 
      if(pT_smt.GetSize() != pT_flt.GetSize())
        cout << " ***********   smt size " << pT_smt.GetSize() << " flt size " << pT_flt.GetSize() << endl;
 
      // cout << " t_barcode " << *t_barcode << endl;
-     if(*t_barcode > maxtracks)
-       {
+     //if(*t_barcode > maxtracks)
+     //{
 	 //cout << "skip track with barcode " << *t_barcode << endl;
-	 continue;
-       }
+	 //continue;
+     //}
 
      float pT_fit =sqrt(pow(*px_fit,2) + pow(*py_fit,2));
      float pT_proto =sqrt(pow(*px_proto,2) + pow(*py_proto,2));
@@ -235,15 +236,19 @@ void draw_acts_eval()
      if(verbose1)
        {
 	 cout << " new track: " << itr << " truth Z vertex " <<  *t_vz  << " inner radius " << inner_radius <<  " nhits " << pT_flt.GetSize() << endl;   
-	 cout << "    Truth pT " << *t_pT << " seed pT " << pT_prt[pT_flt.GetSize() - 1] <<  " KF pT " << pT_flt[0] << " SM pT " << pT_smt[pT_smt.GetSize()-1] 
-	   //<< " xdiff_last " << xdiff_last << endl;
-	      << endl;
+	 //cout << "    Truth pT " << *t_pT << " seed pT " << pT_prt[pT_flt.GetSize() - 1] <<  " KF pT " << pT_flt[0] << " SM pT " << pT_smt[pT_smt.GetSize()-1] 
+	 cout << "       track " << itr <<  " truth barcode " << *t_barcode<< " Truth pT " << *t_pT << " seed pT " << pT_prt[pT_flt.GetSize() - 1] <<  " fit pT " << pT_fit << " inner radius " << inner_radius << " nhits " << pT_smt.GetSize();   
+	 if(pT_fit / *t_pT < 0.8 || pT_fit/ *t_pT > 1.2) 
+	   cout << "    ---- bad pT " << endl;
+	 else
+	   cout << "    ---- good pT " << endl;
+
 	 cout << "           px_proto " << *px_proto << " py_proto " << *py_proto << " pz_proto " << *pz_proto << " pT_proto " << pT_proto << endl;
-	 cout << "           px_prt " << px_prt[pT_prt.GetSize() - 1] << "  py_prt " << py_prt[pT_prt.GetSize() - 1]  << " pz_prt " << pz_prt[pT_prt.GetSize() - 1] 
-	      << " pT_prt " << pT_prt[pT_prt.GetSize() - 1] << endl;
-	 cout << "           px_flt " << px_flt[0] << "  py_flt " << py_flt[0]  << " pz_flt " << pz_flt[0] << " pT_flt " << pT_flt[0] << endl;
+	 //cout << "           px_prt " << px_prt[pT_prt.GetSize() - 1] << "  py_prt " << py_prt[pT_prt.GetSize() - 1]  << " pz_prt " << pz_prt[pT_prt.GetSize() - 1] 
+	 //      << " pT_prt " << pT_prt[pT_prt.GetSize() - 1] << endl;
+	 //cout << "           px_flt " << px_flt[0] << "  py_flt " << py_flt[0]  << " pz_flt " << pz_flt[0] << " pT_flt " << pT_flt[0] << endl;
 	 //cout << "           px_smt " << px_smt[0] << "  py_smt " << py_smt[0]  << " pz_smt " << pz_smt[0] << " pT_smt " << pT_smt[0] << endl;
-	 cout << "           px_smt " << px_smt[pT_smt.GetSize() - 1] << "  py_smt " << py_smt[pT_smt.GetSize() - 1]  << " pz_smt " << pz_smt[pT_smt.GetSize() - 1] << " pT_smt " << pT_smt[pT_smt.GetSize() - 1] << endl;
+	 //cout << "           px_smt " << px_smt[pT_smt.GetSize() - 1] << "  py_smt " << py_smt[pT_smt.GetSize() - 1]  << " pz_smt " << pz_smt[pT_smt.GetSize() - 1] << " pT_smt " << pT_smt[pT_smt.GetSize() - 1] << endl;
 	 cout << "           px_fit " << *px_fit << "  py_fit " << *py_fit  << " pz_fit " << *pz_fit << " pT_fit " << pT_fit << endl;
 	 cout << "           x_proto " << *x_proto << " y_proto " << *y_proto << " z_proto " << *z_proto << endl;
 	 cout << "           x_fit   " << *x_fit << " y_fit   " << *y_fit << " z_fit   " << *z_fit << endl;
@@ -328,6 +333,7 @@ void draw_acts_eval()
 		  << " dy " << g_y_hit[i] - t_y[i]
 		  << " dz " << g_z_hit[i] - t_z[i]
 		  << endl;	 
+	     /*
 	     cout << "    Global predicted:  g_x_prt " << g_x_prt[i] << " g_y_prt " << g_y_prt[i] << " g_z_prt " << g_z_prt[i]
 		  << "     dx " << g_x_prt[i] - t_x[i] 
 		  << " dy " << g_y_prt[i] - t_y[i]
@@ -338,12 +344,14 @@ void draw_acts_eval()
 		  << " dy " << g_y_flt[i] - t_y[i]
 		  << " dy " << g_z_flt[i] - t_z[i]
 		  << endl;
+	     */
 	     cout << "    Global smoothed:   g_x_smt " << g_x_smt[i] << " g_y_smt " << g_y_smt[i]  << " g_z_smt " << g_z_smt[i]  
 		  << "     dx " << g_x_smt[i] - t_x[i] 
 		  << " dy " << g_y_smt[i] - t_y[i]
 		  << " dy " << g_z_smt[i] - t_z[i]
 		  << endl;
-	     
+
+	     /*	     
 	     // local hit positions
 	     cout << "    X:      local truth :       t_eLOC0 " << t_eLOC0[i] << endl;  
 	     
@@ -357,7 +365,7 @@ void draw_acts_eval()
 	     cout << "            Local predicted:  eLOC1_prt " << eLOC1_prt[i] << " err_eLOC1_prt " << err_eLOC1_prt[i] << " res_eLOC1_prt " << res_eLOC1_prt[i] << " pull_eLOC1_prt " << pull_eLOC1_prt[i] << endl;
 	     cout << "            Local filter:     eLOC1_flt " << eLOC1_flt[i] << " err_eLOC1_flt " << err_eLOC1_flt[i] << " res_eLOC1_flt " << res_eLOC1_flt[i] << " pull_eLOC1_flt " << pull_eLOC1_flt[i] << endl;
 	     cout << "            Local smoothed:   eLOC1_smt " << eLOC1_smt[i] << " err_eLOC1_smt " << err_eLOC1_smt[i] << " res_eLOC1_smt " << res_eLOC1_smt[i] << " pull_eLOC1_smt " << pull_eLOC1_smt[i] << endl;
-	     
+	     */
 	     /*
 	     // Smoothed track projuections
 	     cout << "    Global smoothed: g_x_smt " << g_x_smt[i] << " g_y_smt " << g_y_smt[i] << " g_z_smt " << g_z_smt[i]
@@ -390,7 +398,7 @@ void draw_acts_eval()
 
    TCanvas *c = new TCanvas("c","c",5,5,800,800);
    
-  TH2D *hvxy = new TH2D("hvxy","y vs x track vertex",4000,-800,800,4000,-800,800);
+  TH2D *hvxy = new TH2D("hvxy","y vs x track vertex",4000,-860,860,4000,-860,860);
   hvxy->Fill(*t_vx, *t_vy);
 
   /*

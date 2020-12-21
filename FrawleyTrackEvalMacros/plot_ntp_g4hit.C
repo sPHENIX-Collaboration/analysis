@@ -23,11 +23,17 @@ void plot_ntp_g4hit(
 
   bool acts = false; // is this output from acts tracking?
 
-  // all
-  TCut good_gtrack_cut = Form("gtrackID>=0 && gembed==2");
-  TCut good_track_cut = Form("gtrackID>=0 && gembed==2 && abs(pt/gpt - 1) < 0.3");
-  //TCut good_track_cut = Form("gtrackID>=0 && gembed==2 && nmaps > 1");
-  //TCut good_track_cut = Form("gtrackID>=0 && gembed==2 && nmaps == 0");
+  // OK for embedded particles only
+  //TCut good_gtrack_cut = Form("gtrackID>=0 && gntpc > 20");
+  //TCut good_track_cut = Form("gtrackID>=0 && ntpc > 20 && quality < 10");
+
+  // For Hijing events with embedded particles
+  TCut good_gtrack_cut = Form("gtrackID>=0 && gembed >= 2 && gntpc > 20 && gnmaps > 1");
+  TCut good_track_cut = Form("gtrackID>=0 && gembed >= 2 && ntpc > 20 && quality < 10 && nmaps > 1");
+
+  //TCut good_gtrack_cut = Form("gtrackID>=0 && gembed == 2 && gntpc > 20");
+  //TCut good_track_cut = Form("gtrackID>=0 && gembed == 2 && ntpc > 20 && quality < 10");
+
 
   // rough 4 sigma cut
   //TCut pt_cut = Form("fabs((pt - gpt)/pt) < 4*(0.02+0.0012*gpt)");  // 4 times sigma (where sigma = 2.2% at 2 and 4.4% at 20
@@ -47,7 +53,9 @@ void plot_ntp_g4hit(
       char name[500];
       ifile = i;
 
-      sprintf(name,"/sphenix/user/frawley/acts_qa/macros/macros/g4simulations/eval_output/g4svtx_eval_%i.root_g4svtx_eval.root",ifile);
+      //sprintf(name,"/sphenix/user/frawley/acts_qa/macros/macros/g4simulations/eval_output/g4svtx_eval_%i.root_g4svtx_eval.root",ifile);
+      sprintf(name,"/sphenix/user/frawley/acts_qa/macros/macros/g4simulations/eval_output_2/g4svtx_eval_%i.root_g4svtx_eval.root",ifile);
+      //sprintf(name,"/sphenix/user/frawley/acts_qa/macros/macros/g4simulations/eval_output_3/g4svtx_eval_%i.root_g4svtx_eval.root",ifile);
 
       // Skip any files where the event vertex was not reconstructed properly
       TChain* ntp_vertex = new TChain("ntp_vertex","events");
@@ -123,7 +131,7 @@ void plot_ntp_g4hit(
   h1_2->Write();
 
   TCanvas * c3 = new TCanvas("c3","c3");
-  TH1D* h3_den = new TH1D("h3_den","; p_{T}; Efficiency",nbinpteff+2, -0.2, ptmax+0.2);
+  TH1D* h3_den = new TH1D("h3_den","; p_{T}; Efficiency",nbinpteff, 0, ptmax);
   TH1D* h3_num = (TH1D*)h3_den->Clone("h3_num");;
   TH1D* h3_eff = (TH1D*)h3_den->Clone("h3_eff");;
 
@@ -153,7 +161,7 @@ void plot_ntp_g4hit(
   h3_eff->SetMarkerStyle(20);
   h3_eff->SetMarkerColor(kBlack);
   h3_eff->SetLineColor(kBlack);
-  h3_eff->GetYaxis()->SetRangeUser(0.0, 1.);
+  h3_eff->GetYaxis()->SetRangeUser(0.0, 1.1);
 
   h3_den->Write();
   h3_num->Write();
