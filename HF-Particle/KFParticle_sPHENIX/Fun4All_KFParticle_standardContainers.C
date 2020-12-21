@@ -13,6 +13,7 @@
 #include "GlobalVariables.C"
 //#include "G4Setup_sPHENIX.C"
 #include <fun4all/Fun4AllInputManager.h>
+#include <fun4all/Fun4AllDstInputManager.h>
 #include <fun4all/Fun4AllDstOutputManager.h>
 #include <fun4all/Fun4AllServer.h>
 #include <kfparticle_sphenix/KFParticle_sPHENIX.h>

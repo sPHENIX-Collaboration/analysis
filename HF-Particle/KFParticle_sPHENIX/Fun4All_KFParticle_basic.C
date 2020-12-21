@@ -11,6 +11,7 @@
 #if ROOT_VERSION_CODE >= ROOT_VERSION(6, 00, 0)
 
 #include <fun4all/Fun4AllInputManager.h>
+#include <fun4all/Fun4AllDstInputManager.h>
 #include <fun4all/Fun4AllServer.h>
 #include <kfparticle_sphenix/KFParticle_sPHENIX.h>
 
@@ -45,7 +46,7 @@ int Fun4All_KFParticle_basic(){
   reconstructionChannel["Bd2D-pi+"] = 0;
   reconstructionChannel["Upsilon"] = 0;
   reconstructionChannel["testSpace"] = 0;
-  bool test_mockDataChallenge = true;
+  bool test_mockDataChallenge = false;
 
   const int numberOfActiveRecos = accumulate( begin(reconstructionChannel), end(reconstructionChannel), 0, 
                                               [](const int previous, const pair<const string, int>& element) 
@@ -96,7 +97,7 @@ int Fun4All_KFParticle_basic(){
 
   kfparticle->saveDST(0);
   kfparticle->saveOutput(1);
-  kfparticle->doTruthMatching(0);
+  kfparticle->doTruthMatching(1);
   kfparticle->getDetectorInfo(0);
 
   std::pair<std::string, int> daughterList[99];

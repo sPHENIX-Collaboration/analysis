@@ -53,7 +53,7 @@ using namespace std;
 
 int Fun4All_KFParticle_advanced(){
 
-  int verbosity = 4;
+  int verbosity = 1;
   //---------------
   // Load libraries
   //---------------
@@ -186,7 +186,7 @@ int Fun4All_KFParticle_advanced(){
   kfparticle->setMinDIRA(0.8);
   kfparticle->setMotherPT(0);
 
-  kfparticle->saveDST(0);
+  kfparticle->saveDST(1);
   kfparticle->saveOutput(1);
   kfparticle->doTruthMatching(1);
   kfparticle->getDetectorInfo(0);
