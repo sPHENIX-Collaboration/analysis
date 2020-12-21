@@ -15,44 +15,6 @@
 TFile *_file0 = NULL;
 TString description;
 
-void DrawTPCDataStreamEmulator(
-    //        const TString infile = "data/TPCIntegratedCharge_AuAu0-4fm_200kHz.root",
-    //        const TString disc = "Au+Au 0-7%C Triggered + 200 kHz collision"  //
-    //    const TString infile = "data/TPCDataStreamEmulator_AuAu0-12fm_170kHz_2.root",
-    //    const TString disc = "Au+Au 0-12fm Triggered + 170 kHz collision"  //
-    //            const TString infile = "data/TPCDataStreamEmulator_AuAu0-14.7fm_0kHz_1.root",
-    //            const TString disc = "Au+Au 0-14.7fm Triggered + No pileup collision"  //
-    //    const TString infile = "data/TPCDataStreamEmulator_AuAu0-14.7fm_170kHz_1.root",
-    //    const TString infile = "/sphenix/user/jinhuang/TPC/Multiplicity/AuAu200MB_170kHz_Iter2/AuAu200MB_170kHz_Iter2_SUM.xml_TPCDataStreamEmulator.root",
-    //    const TString disc = "Au+Au 0-20fm Triggered + 170 kHz collision"  //
-    const TString infile = "/sphenix/user/jinhuang/TPC/Multiplicity/AuAu200MB_170kHz_Stream_Iter3/AuAu200MB_170kHz_Stream_Iter3_SUM.xml_TPCDataStreamEmulator.root",
-    const TString disc = "Au+Au 0-20fm 170 kHz collision in 13#mus"  //
-                                                                     //        const TString infile = "data/TPCDataStreamEmulator_AuAu0-12fm_0kHz.root",
-                                                                     //        const TString disc = "Au+Au MB Triggered + 0 kHz collision"  //
-)
-{
-  SetsPhenixStyle();
-  gStyle->SetOptStat(0);
-  gStyle->SetOptFit(1111);
-  TVirtualFitter::SetDefaultFitter("Minuit2");
-
-  _file0 = new TFile(infile);
-  assert(_file0->IsOpen());
-  description = disc;
-
-  //  WaveletCheck();
-  //  DataRate();
-  SectorDataSize();
-  FEEDataSize();
-  //  Occupancy();
-  //
-  //  dNdeta();
-  //  ChargeCheck();
-  //
-  //  Check1();
-  //  Check2();
-}
-
 void DataRate()
 {
   assert(_file0);
@@ -94,6 +56,30 @@ void DataRate()
   SaveCanvas(c1, TString(_file0->GetName()) + TString(c1->GetName()), kTRUE);
 }
 
+TH1 *MakeCDF(TH1 *h)
+{
+  assert(h);
+
+  TH1 *hCDF = (TH1 *) h->Clone(TString("CDF") + h->GetName());
+  hCDF->SetDirectory(NULL);
+
+  double integral = 0;
+
+  for (int bin = h->GetNbinsX() + 1; bin >= 0; --bin)
+  {
+    integral += h->GetBinContent(bin);
+    hCDF->SetBinContent(bin, integral);
+  }
+
+  for (int bin = h->GetNbinsX() + 1; bin >= 0; --bin)
+  {
+    hCDF->SetBinContent(bin, hCDF->GetBinContent(bin) / integral);
+    hCDF->SetBinError(bin, 0);
+  }
+
+  return hCDF;
+}
+
 void FEEDataSize()
 {
   assert(_file0);
@@ -125,8 +111,7 @@ void FEEDataSize()
   // Plot
   TCanvas *c1 = new TCanvas("FEEDataSize", "FEEDataSize", 1900, 760);
   c1->Divide(2, 1);
-  int idx = 1;
-  TPad *p;
+  idx = 1;
 
   p = (TPad *) c1->cd(idx++);
   c1->Update();
@@ -143,7 +128,7 @@ void FEEDataSize()
   p = (TPad *) c1->cd(idx++);
   c1->Update();
   p->SetRightMargin(.15);
-  TH1 *frame = p->DrawFrame(0, 1e-5, 50e3, 1);
+  frame = p->DrawFrame(0, 1e-5, 50e3, 1);
   frame->SetTitle(";TPC FELIX Per-Drift Data Size [Byte];CCDF");
   frame->GetXaxis()->SetNdivisions(15, 5, 1, true);
   p->SetLogy();
@@ -156,7 +141,7 @@ void FEEDataSize()
     TString name = Form("hFEEDataSize_module%d", module);
 
     TH1 *h_FEE_raw = (TH1 *) hFEEDataSize->ProjectionX(name, module, module);
-    TH1 *h_FEE = h_FEE_raw->DrawClone("same");
+    TH1 *h_FEE = (TH1 *) h_FEE_raw->DrawClone("same");
     h_FEE->Sumw2();
     h_FEE->Rebin(100);
 
@@ -205,7 +190,7 @@ void SectorDataSize()
   p->SetRightMargin(.15);
   //    p->SetLogy();
 
-  TH1 *h = (TH1 *) hSectorDataSize->DrawClone();
+  h = (TH1 *) hSectorDataSize->DrawClone();
   h->Sumw2();
   //  h->Scale(1. / hNormalization->GetBinContent(1) / 24);
   h->SetTitle(";TPC FELIX Per-DriftWindow Data Size [Byte];Count");
@@ -244,30 +229,6 @@ void SectorDataSize()
   //  leg->Draw();
 
   SaveCanvas(c1, TString(_file0->GetName()) + TString(c1->GetName()), kTRUE);
-}
-
-TH1 *MakeCDF(TH1 *h)
-{
-  assert(h);
-
-  TH1 *hCDF = (TH1 *) h->Clone(TString("CDF") + h->GetName());
-  hCDF->SetDirectory(NULL);
-
-  double integral = 0;
-
-  for (int bin = h->GetNbinsX() + 1; bin >= 0; --bin)
-  {
-    integral += h->GetBinContent(bin);
-    hCDF->SetBinContent(bin, integral);
-  }
-
-  for (int bin = h->GetNbinsX() + 1; bin >= 0; --bin)
-  {
-    hCDF->SetBinContent(bin, hCDF->GetBinContent(bin) / integral);
-    hCDF->SetBinError(bin, 0);
-  }
-
-  return hCDF;
 }
 
 void dNdeta()
@@ -420,10 +381,10 @@ void Check1()
   c1->Update();
   //  p->SetLogy();
 
-  TH1 *hNChEta = (TH1 *) _file0->GetObjectChecked("hNChEta", "TH1");
+  hNChEta = (TH1 *) _file0->GetObjectChecked("hNChEta", "TH1");
   assert(hNChEta);
 
-  TH1 *h = (TH1 *) hNChEta->DrawClone();
+  h = (TH1 *) hNChEta->DrawClone();
   h->Sumw2();
   h->Rebin(100);
   h->Scale(1. / hNormalization->GetBinContent(1));
@@ -526,4 +487,47 @@ void Check2()
 
   hLayerZBinADC->Draw("colz");
   SaveCanvas(c1, TString(_file0->GetName()) + TString(c1->GetName()), kTRUE);
+}
+
+void DrawTPCDataStreamEmulator(
+    //        const TString infile = "data/TPCIntegratedCharge_AuAu0-4fm_200kHz.root",
+    //        const TString disc = "Au+Au 0-7%C Triggered + 200 kHz collision"  //
+    //    const TString infile = "data/TPCDataStreamEmulator_AuAu0-12fm_170kHz_2.root",
+    //    const TString disc = "Au+Au 0-12fm Triggered + 170 kHz collision"  //
+    //            const TString infile = "data/TPCDataStreamEmulator_AuAu0-14.7fm_0kHz_1.root",
+    //            const TString disc = "Au+Au 0-14.7fm Triggered + No pileup collision"  //
+    //    const TString infile = "data/TPCDataStreamEmulator_AuAu0-14.7fm_170kHz_1.root",
+    //    const TString infile = "/sphenix/user/jinhuang/TPC/Multiplicity/AuAu200MB_170kHz_Iter2/AuAu200MB_170kHz_Iter2_SUM.xml_TPCDataStreamEmulator.root",
+    //    const TString disc = "Au+Au 0-20fm Triggered + 170 kHz collision"  //
+    //    const TString infile = "/sphenix/user/jinhuang/TPC/Multiplicity/AuAu200MB_170kHz_Stream_Iter3/AuAu200MB_170kHz_Stream_Iter3_SUM.xml_TPCDataStreamEmulator.root",
+//    const TString infile = "/sphenix/user/jinhuang/TPC/TPCMLDataInterface//170kHz_RandomTimeFrame_Iter2/170kHz_RandomTimeFrame_Iter2_SUM.xml_TPCMLDataInterface.root",
+//    const TString disc = "Au+Au 0-20fm 170 kHz collision in 13#mus"  //
+        const TString infile = "/sphenix/user/jinhuang/TPC/TPCMLDataInterface/AuAu200_170kHz_MB_Iter2/AuAu200_170kHz_MB_Iter2_SUM.xml_TPCMLDataInterface.root",
+        const TString disc = "Au+Au 170 kHz collision + M.B. in 13#mus"
+        //        const TString infile = "/sphenix/user/jinhuang/TPC/TPCMLDataInterface/AuAu200_170kHz_10C_Iter2/AuAu200_170kHz_10C_Iter2_SUM.xml_TPCMLDataInterface.root",
+//        const TString disc = "Au+Au 0-20fm 170 kHz + 10%C collision in 13#mus"  //
+                                                                     //        const TString infile = "data/TPCDataStreamEmulator_AuAu0-12fm_0kHz.root",
+                                                                     //        const TString disc = "Au+Au MB Triggered + 0 kHz collision"  //
+)
+{
+  SetsPhenixStyle();
+  gStyle->SetOptStat(0);
+  gStyle->SetOptFit(1111);
+  TVirtualFitter::SetDefaultFitter("Minuit2");
+
+  _file0 = new TFile(infile);
+  assert(_file0->IsOpen());
+  description = disc;
+
+  WaveletCheck();
+  DataRate();
+//  SectorDataSize();
+//  FEEDataSize();
+  Occupancy();
+  //
+  dNdeta();
+  ChargeCheck();
+  //
+  Check1();
+  Check2();
 }

@@ -1,0 +1,11 @@
+AC_INIT(configure.in)
+
+AM_INIT_AUTOMAKE(ccbb, 1.00)
+
+AC_PROG_CXX(CC g++)
+AM_ENABLE_STATIC(no)
+AC_PROG_LIBTOOL
+
+AC_OUTPUT(Makefile)
+
+

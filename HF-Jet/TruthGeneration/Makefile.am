@@ -1,59 +1,62 @@
+
 AUTOMAKE_OPTIONS = foreign
 
-INCLUDES = \
+AM_CPPFLAGS = \
   -I$(includedir) \
   -I$(OFFLINE_MAIN)/include \
   -I$(OFFLINE_MAIN)/include/eigen3 \
   -I`root-config --incdir`
 
-lib_LTLIBRARIES = \
-   libHFJetTruthGeneration.la
+lib_LTLIBRARIES = libHFJetTruthGeneration.la 
 
-AM_CXXFLAGS = -Wall -Werror -msse2
+pkginclude_HEADERS = \
+	HFJetDefs.h \
+	HFJetTruthTrigger.h
 
 libHFJetTruthGeneration_la_LDFLAGS = \
   -L$(libdir) \
-  -L$(OFFLINE_MAIN)/lib
+  -L$(OFFLINE_MAIN)/lib \
+  `root-config --libs` \
+  `fastjet-config --libs`
 
-libHFJetTruthGeneration_la_LIBADD = \
+libHFJetTruthGeneration_la_LIBADD =  \
   -lfun4all \
   -lg4dst \
   -lg4eval \
   -lphhepmc
 
-pkginclude_HEADERS = \
-	HFJetDefs.h
-
-#pkginclude_HEADERS = $(include_HEADERS)
+if ! MAKEROOT6
+ROOT5_DICTS = \
+  HFJetTruthTrigger_Dict.cc 
+endif
 
 libHFJetTruthGeneration_la_SOURCES = \
-  HFJetTruthTrigger.C \
-  HFJetTruthTrigger_Dict.C 
-
-# Rule for generating table CINT dictionaries.
-%_Dict.C: %.h %LinkDef.h
-	rootcint -f $@ -c $(DEFAULT_INCLUDES) $(INCLUDES) $^
-
-%_Dict.cpp: %.h %LinkDef.h
-	rootcint -f $@ -c $(DEFAULT_INCLUDES) $(INCLUDES) $^
-
-################################################
-# linking tests
-
-noinst_PROGRAMS = testexternals
+  $(ROOT5_DICTS) \
+  HFJetTruthTrigger.cc 
 
 BUILT_SOURCES = \
-  testexternals.C
+  testexternals.cc
+
+testexternals_SOURCES = \
+  testexternals.cc
+
+noinst_PROGRAMS = \
+  testexternals
 
 testexternals_LDADD = \
   libHFJetTruthGeneration.la
 
-testexternals.C:
+testexternals.cc:
 	echo "//*** this is a generated file. Do not commit, do not edit" > $@
 	echo "int main()" >> $@
 	echo "{" >> $@
 	echo "  return 0;" >> $@
 	echo "}" >> $@
 
+%_Dict.cc: %.h %LinkDef.h
+	rootcint -f $@ @CINTDEFS@ -c $(DEFAULT_INCLUDES) $(AM_CPPFLAGS) $^
+
+
 clean-local:
-	rm -f *Dict* testexternals.C
+	rm -f *Dict* $(BUILT_SOURCES)
+	

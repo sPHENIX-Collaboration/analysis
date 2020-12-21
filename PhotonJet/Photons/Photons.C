@@ -57,8 +57,6 @@ Photons::Photons(const std::string &name)
 
   nevents = 0;
 
-  verbosity = 0;
-
   //default no hijing embedding
   _embed = 0;
 }
@@ -154,7 +152,7 @@ int Photons::process_event(PHCompositeNode *topnode)
     return 0;
   }
 
-  if (verbosity > 1)
+  if (Verbosity() > 1)
   {
     cout << "Getting truth particles" << endl;
   }
@@ -201,7 +199,7 @@ int Photons::process_event(PHCompositeNode *topnode)
   RawClusterContainer::ConstRange begin_end_hcal = hcalin_clusters->getClusters();
   RawClusterContainer::ConstIterator hcaliter;
 
-  if (verbosity > 1)
+  if (Verbosity() > 1)
   {
     cout << "Getting inner HCal clusters for energy leakage studies" << endl;
   }
@@ -273,7 +271,7 @@ int Photons::process_event(PHCompositeNode *topnode)
 
   if (_etalow > 1)
   {
-    if (verbosity > 1)
+    if (Verbosity() > 1)
     {
       cout << "getting forward EMCal clusters" << endl;
     }
@@ -347,7 +345,7 @@ int Photons::process_event(PHCompositeNode *topnode)
   RawClusterContainer::ConstRange rbegin_end = recal_clusters->getClusters();
   RawClusterContainer::ConstIterator rclusiter;
 
-  if (verbosity > 1)
+  if (Verbosity() > 1)
     cout << "Getting the position recalibrated clusters" << endl;
 
   //check that we are analyzing central arms
@@ -371,7 +369,7 @@ int Photons::process_event(PHCompositeNode *topnode)
 
       if (rclus_pt < mincluspt)
         continue;
-      if(verbosity > 1)
+      if(Verbosity() > 1)
 	cout<<"passed recal pt cut"<<endl;
       TLorentzVector *clus = new TLorentzVector();
       clus->SetPtEtaPhiE(rclus_pt, rclus_eta, rclus_phi, rclus_energy);
@@ -421,12 +419,12 @@ int Photons::process_event(PHCompositeNode *topnode)
           clustruthphi = vec.Phi();
           clustrutheta = vec.Eta();
           //once found it break out
-	  if(verbosity > 1)
+	  if(Verbosity() > 1)
 	    cout<<"found recal truth photon"<<endl;
           break;
         }
       }
-      if(verbosity > 1)
+      if(Verbosity() > 1)
 	cout<<"filling recal cluster tree"<<endl;
       
       recal_cluster_tree->Fill();
@@ -446,7 +444,7 @@ int Photons::process_event(PHCompositeNode *topnode)
   RawClusterContainer::ConstRange begin_end = clusters->getClusters();
   RawClusterContainer::ConstIterator clusiter;
 
-  if (verbosity > 1)
+  if (Verbosity() > 1)
     cout << "Get the non-position recalibrated clusters" << endl;
 
   for (clusiter = begin_end.first; 
@@ -471,7 +469,7 @@ int Photons::process_event(PHCompositeNode *topnode)
     if (clus_pt < mincluspt)
       continue;
 
-    if(verbosity > 1)
+    if(Verbosity() > 1)
       cout<<"passed cluster pt cut"<<endl;
 
     TLorentzVector *clus = new TLorentzVector();
@@ -629,7 +627,7 @@ int Photons::process_event(PHCompositeNode *topnode)
     cluster_tree->Fill();
   }
 
-  if(verbosity > 1)
+  if(Verbosity() > 1)
     cout<<"Finished event in Photons package"<<endl;
 
   nevents++;

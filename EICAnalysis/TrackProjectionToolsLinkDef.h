@@ -1,3 +1,3 @@
 #ifdef __CINT__
-#pragma link C++ class TrackProjectionTools-;
+#pragma link C++ class TrackProjectionTools-!;
 #endif

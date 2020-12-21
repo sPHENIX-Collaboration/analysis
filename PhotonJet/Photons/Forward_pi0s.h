@@ -1,5 +1,3 @@
-
-
 #ifndef __FORWARD_PI0S_H__
 #define __FORWARD_PI0S_H__
 
@@ -31,13 +29,11 @@ class Forward_pi0s : public SubsysReco
   float _etalow, _etahi;
   int _useforwardarm;
   int use_isocone;
-  int verbosity;
 
   int Init(PHCompositeNode *);
   int process_event(PHCompositeNode *);
   int End(PHCompositeNode *);
 
-  void set_verbosity(int _verbosity){verbosity = _verbosity;};
   void set_cluspt_mincut(double pt) { mincluspt = pt; };
   void SetFirstEventNum(int eventnum) { nevents = eventnum; };
   void set_eta_lowhigh(float etalow, float etahi)

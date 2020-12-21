@@ -14,7 +14,7 @@
 /*HepMC include */
 #include <phhepmc/PHHepMCGenEvent.h>
 #include <phhepmc/PHHepMCGenEventMap.h>
-
+#include <HepMC/GenEvent.h>
 class TNtuple;
 class TTree;
 class TFile;

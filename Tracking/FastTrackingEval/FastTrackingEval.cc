@@ -18,6 +18,7 @@
 #include <fun4all/PHTFileServer.h>
 #include <fun4all/Fun4AllServer.h>
 
+/*
 #include <g4hough/SvtxVertexMap.h>
 #include <g4hough/SvtxVertex.h>
 #include <g4hough/SvtxTrackMap.h>
@@ -27,6 +28,17 @@
 #include <g4hough/SvtxCluster.h>
 #include <g4hough/SvtxHitMap.h>
 #include <g4hough/SvtxHit.h>
+*/
+
+#include <trackbase_historic/SvtxVertexMap.h>
+#include <trackbase_historic/SvtxVertex.h>
+#include <trackbase_historic/SvtxTrackMap.h>
+#include <trackbase_historic/SvtxTrack.h>
+#include <trackbase_historic/SvtxTrack_FastSim.h>
+//#include <trackbase_historic/SvtxClusterMap.h>
+//#include <trackbase_historic/SvtxCluster.h>
+//#include <trackbase_historic/SvtxHitMap.h>
+//#include <trackbase_historic/SvtxHit.h>
 
 #include <g4eval/SvtxEvalStack.h>
 #include <g4eval/SvtxTrackEval.h>
@@ -211,15 +223,8 @@ void FastTrackingEval::fill_tree(PHCompositeNode *topNode) {
 		gpz = g4particle->get_pz();
 		gpt = sqrt(gpx*gpx+gpy*gpy);
 		gp = sqrt(gpx*gpx+gpy*gpy+gpz*gpz);
-		gtheta = atan(gpt/gpz);
-		if(gtheta<0)
-		  {
-		    geta=log(-gtheta/2);
-		  }
-		else
-		  {
-		    geta=-log(gtheta/2);
-		  }
+		gtheta = atan2(gpt,gpz);
+		geta=-1.*log(tan(gtheta/2.));
 		gphi = atan(gpy/gpx);
 
 		if (track) {
@@ -233,15 +238,8 @@ void FastTrackingEval::fill_tree(PHCompositeNode *topNode) {
 			pz = track->get_pz();
 			pt = sqrt(px*px+py*py);
 			p = sqrt(px*px+py*py+pz*pz);
-			theta = atan(pt/pz);
-			if(theta<0)
-			  {
-			    eta=log(-theta/2);
-			  }
-			else
-			  {		   
-			    eta=-log(theta/2);
-			  }
+			theta = atan2(pt,pz);
+			eta=-1.*log(tan(theta/2.));
 			phi = atan(py/px);
 			dca2d = track->get_dca2d();
 

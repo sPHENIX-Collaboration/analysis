@@ -7,7 +7,11 @@
 #include <cassert>
 
 /* Fun4All includes */
-#include <g4hough/SvtxTrackMap_v1.h>
+#include <trackbase_historic/SvtxTrack.h>
+#include <trackbase_historic/SvtxTrackMap.h>
+#include <trackbase_historic/SvtxTrack_FastSim.h>
+
+#include <trackbase_historic/SvtxTrackMap_v1.h>
 
 #include <phool/getClass.h>
 
@@ -260,6 +264,7 @@ DISKinematicsReco::process_event(PHCompositeNode *topNode)
 int
 DISKinematicsReco::CollectEmCandidatesFromCluster( type_map_tcan& electronCandidateMap )
 {
+ 
   /* Loop over all clusters in EEMC, CEMC, and FEMC to find electron candidates */
   vector< string > v_ecals;
   v_ecals.push_back("EEMC");
@@ -272,6 +277,7 @@ DISKinematicsReco::CollectEmCandidatesFromCluster( type_map_tcan& electronCandid
       string clusternodename = "CLUSTER_" + v_ecals.at( idx );
       RawClusterContainer *clusterList = findNode::getClass<RawClusterContainer>(_topNode,clusternodename.c_str());
       SvtxTrackMap *trackmap = findNode::getClass<SvtxTrackMap>(_topNode,"SvtxTrackMap");
+
       if (!clusterList) {
         cerr << PHWHERE << " ERROR: Can't find node " << clusternodename << endl;
         return false;
@@ -288,10 +294,11 @@ DISKinematicsReco::CollectEmCandidatesFromCluster( type_map_tcan& electronCandid
           float e_cluster_threshold = 0.3;
           if ( cluster->get_energy() < e_cluster_threshold )
             continue;
-	  
+
           InsertCandidateFromCluster( electronCandidateMap , cluster , caloevalstack , trackmap);
         }
     }
+        
   return 0;
 }
 
@@ -376,6 +383,7 @@ DISKinematicsReco::CollectEmCandidatesFromTruth( type_map_tcan& candidateMap )
 int
 DISKinematicsReco::InsertCandidateFromCluster( type_map_tcan& candidateMap , RawCluster *cluster , CaloEvalStack *caloevalstack, SvtxTrackMap *trackmap )
 {
+
   /* create new electron candidate */
   PidCandidatev1 *tc = new PidCandidatev1();
   tc->set_candidate_id( candidateMap.size()+1 );
@@ -479,6 +487,7 @@ DISKinematicsReco::InsertCandidateFromCluster( type_map_tcan& candidateMap , Raw
   /* If matching truth primary particle found: update truth information */
   CaloRawClusterEval* clustereval = caloevalstack->get_rawcluster_eval();
   PHG4Particle* primary = clustereval->max_truth_primary_particle_by_energy(cluster);
+
   if ( primary )
     {
       /* get particle momenta and theta, phi angles */
@@ -525,14 +534,18 @@ DISKinematicsReco::InsertCandidateFromCluster( type_map_tcan& candidateMap , Raw
       /* Try to find a track which best points to the current cluster */ 
       /* TODO: Depending on cluster theta, deltaR changes (currently -1) */
 
-      SvtxTrack* the_track = _trackproj->get_best_track(trackmap, cluster);
-
+      SvtxTrack_FastSim* the_track = _trackproj->get_best_track(trackmap, cluster);
+      
       /* Test if a best track was found */
       if(the_track!=NULL) //Fill in reconstructed info
 	{
 	  /* Get track position and momentum */
+	  
+	  SvtxTrackState *the_state = _trackproj->get_best_state(the_track, cluster);
 	  double posv[3] = {0.,0.,0.};
-	  _trackproj->get_projected_position(the_track,cluster,posv,TrackProjectorPlaneECAL::PLANE_CYLINDER, 1);
+	  posv[0] = the_state->get_x();
+	  posv[1] = the_state->get_y();
+	  posv[2] = the_state->get_z();
 	  /* Extrapolate track2cluster values */
 	  float track2cluster_theta = atan(sqrt(posv[0]*posv[0]+
 						posv[1]*posv[1]) / posv[2]);

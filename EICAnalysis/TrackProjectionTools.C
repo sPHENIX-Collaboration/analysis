@@ -4,7 +4,7 @@
 #include <cassert>
 
 /* Fun4All includes */
-#include <g4hough/SvtxTrackMap_v1.h>
+#include <trackbase_historic/SvtxTrackMap_v1.h>
 
 #include <phool/getClass.h>
 
