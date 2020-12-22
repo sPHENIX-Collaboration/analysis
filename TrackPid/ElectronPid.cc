@@ -52,30 +52,32 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
   // get the tracks
   for(SvtxTrackMap::Iter it = _track_map->begin(); it != _track_map->end(); ++it)
     {
-      std::cout << " Track " << it->first << endl;
 
       SvtxTrack *track = it->second;
       double mom = track->get_p();
       double e_cemc = track->get_cal_energy_3x3(SvtxTrack::CAL_LAYER(1));
-	//      double e_hcal_in = track->get_cal_energy_3x3(2)
-	//      double e_hcal_out = track->get_cal_energy_3x3(3)
+      double e_hcal_in = track->get_cal_energy_3x3(SvtxTrack::CAL_LAYER(2));
+      double e_hcal_out = track->get_cal_energy_3x3(SvtxTrack::CAL_LAYER(3));
 
 	// CEMC E/p cut
       double eoverp = e_cemc / mom;
-      std::cout << "    mom " << mom << " e_cemc " << e_cemc << " eoverp " << eoverp << std::endl;
+      std::cout << "   track " << it->first << "  mom " << mom  
+		<< " CAL_LAYER " << SvtxTrack::CAL_LAYER(1) << " e_cemc " << e_cemc << " eoverp " << eoverp 
+		<< " CAL_LAYER " << SvtxTrack::CAL_LAYER(2)  << " e_hcal_in " << e_hcal_in  
+		<< " CAL_LAYER " << SvtxTrack::CAL_LAYER(3) << " e_hcal_out " << e_hcal_out 
+		<< std::endl;
       if(eoverp > 0.5)
 	{
+	  std::cout << " Track " << it->first << endl;
+	  std::cout << "    mom " << mom << " e_cemc " << e_cemc  << " eoverp " << eoverp << " e_hcal_in " << e_hcal_in << " e_hcal_out " << e_hcal_out << std::endl;
 	  std::cout << "      identified as an electron " << std::endl;
 	  // add to the association map
 	  _track_pid_assoc->addAssoc(TrackPidAssoc::electron, it->second->get_id());
 	}
-      else
-	{
-	  std::cout << "      not an electron " << std::endl;
-	}
     }
   
   // Read back the association map
+  std::cout << "Read back the association map electron entries" << std::endl;
   auto electrons = _track_pid_assoc->getTracks(TrackPidAssoc::electron);
   for(auto it = electrons.first; it != electrons.second; ++it)
     {

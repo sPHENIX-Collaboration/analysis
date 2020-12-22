@@ -1,7 +1,7 @@
 /**                                                                                                                                                                                                       
- * @file trackbase/TrackPidAssoc.cc
- * @author D. McGlinchey
- * @date June 2018
+ * @file TrackPidAssoc/TrackPidAssoc.cc
+ * @author Tony Frawley
+ * @date December 2020
  * @brief TrackPidAssoc implementation
  */
 
