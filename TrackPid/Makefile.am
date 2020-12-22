@@ -5,7 +5,7 @@ AUTOMAKE_OPTIONS = foreign
 
 # list of shared libraries to produce
 lib_LTLIBRARIES = \
-  libtrack_io.la
+  libtrackpid.la
 
 AM_CPPFLAGS = \
   -I$(includedir) \
@@ -17,7 +17,8 @@ AM_LDFLAGS = \
   -L$(OFFLINE_MAIN)/lib
 
 pkginclude_HEADERS = \
-  TrackPidAssoc.h 
+  TrackPidAssoc.h \
+  ElectronPid.h
 
 ROOTDICTS = \
   TrackPidAssoc_Dict.cc 
@@ -27,12 +28,15 @@ nobase_dist_pcm_DATA = \
   TrackPidAssoc_Dict_rdict.pcm
 
 # sources for io library
-libtrack_io_la_SOURCES = \
+libtrackpid_la_SOURCES = \
   $(ROOTDICTS) \
-  TrackPidAssoc.cc
+  TrackPidAssoc.cc \
+  ElectronPid.cc
 
-libtrack_io_la_LIBADD = \
-  -lphool
+libtrackpid_la_LIBADD = \
+  -lphool \
+  -lSubsysReco \
+  -ltrackbase_historic_io
 
 
 # Rule for generating table CINT dictionaries.
@@ -48,13 +52,13 @@ libtrack_io_la_LIBADD = \
 BUILT_SOURCES = testexternals.cc
 
 noinst_PROGRAMS = \
-  testexternals_track_io
+  testexternals_trackpid
 
 #testexternals_track_util_SOURCES = testexternals.cc
 #testexternals_track_util_LDADD = libtrack_util.la
 
-testexternals_track_io_SOURCES = testexternals.cc
-testexternals_track_io_LDADD = libtrack_io.la
+testexternals_trackpid_SOURCES = testexternals.cc
+testexternals_trackpid_LDADD = libtrackpid.la
 
 testexternals.cc:
 	echo "//*** this is a generated file. Do not commit, do not edit" > $@

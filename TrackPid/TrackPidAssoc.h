@@ -50,6 +50,10 @@ public:
    */
   ConstRange getTracks(unsigned int pid);
 
+  static const unsigned int electron = 1;
+  static const unsigned int hadron = 2;
+
+
 private:
   MMap m_map;
   ClassDef(TrackPidAssoc, 1);
