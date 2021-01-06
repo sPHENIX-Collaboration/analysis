@@ -1,7 +1,7 @@
 // $Id: $
 
 /*!
- * \file Fun4All_KFParticle_basic.C
+ * \file Fun4All_KFParticle_singleFile.C
  * \brief 
  * \author Cameron Dean <cdean@bnl.gov>
  * \version $Revision:   $
@@ -15,6 +15,8 @@
 #include <fun4all/Fun4AllServer.h>
 #include <kfparticle_sphenix/KFParticle_sPHENIX.h>
 
+#include <stdlib.h>
+
 R__LOAD_LIBRARY(libkfparticle_sphenix.so)
 R__LOAD_LIBRARY(libfun4all.so)
 
@@ -22,7 +24,7 @@ R__LOAD_LIBRARY(libfun4all.so)
 
 using namespace std;
 
-int Fun4All_KFParticle_basic(){
+int Fun4All_KFParticle_singleFile(string filePath = "/sphenix/user/cdean/MDC1/pythia8/HeavyFlavorTG/data/", string fileName = "G4sPHENIX_HeavyFlavor_Charm_production-0000000001-00001.root"){
 
   int verbosity = 1;
   //---------------
@@ -54,6 +56,7 @@ int Fun4All_KFParticle_basic(){
                                               [](const int previous, const pair<const string, int>& element) 
                                               { return previous + element.second; });
 
+  string reconstructionName = "blank";
   if (numberOfActiveRecos != 1)
   {
     if (numberOfActiveRecos == 0) printf("*\n*\n*\n* You have not enabled any reconstruction, exiting!\n*\n*\n*\n");
@@ -68,31 +71,31 @@ int Fun4All_KFParticle_basic(){
     gSystem->Exit(0);
     return 1;
   }
+  else
+  {
+    std::map<string, int>::iterator it;
+    for ( it = reconstructionChannel.begin(); it != reconstructionChannel.end(); it++ )
+      if (it->second == 1) reconstructionName = it->first;
+  }
+
+  string makeDirectory = "mkdir " + reconstructionName;
+  system(makeDirectory.c_str());
 
   //--------------
   // IO management
   //--------------
   // Hits file
   Fun4AllInputManager *hitsin = new Fun4AllDstInputManager("DSTin");
-  string fileList;
-  if (reconstructionChannel["D02K-pi+"] or reconstructionChannel["D02K+pi-"] or reconstructionChannel["testSpace"]) fileList = "fileList_d2kpi.txt";
-  if (reconstructionChannel["Bs2Jpsiphi"]) fileList = "fileList_bs2jpsiphi.txt";
-  if (reconstructionChannel["Bd2D-pi+"] or reconstructionChannel["Upsilon"]) fileList = "fileList_bbbar.txt";
-
-  //MDC files
-  if ((reconstructionChannel["D02K-pi+"] or reconstructionChannel["D02K+pi-"] or reconstructionChannel["Lc2pK-pi+"]) 
-      and testMDC) fileList = "fileList_MDC_Charm.txt";
-  if ((reconstructionChannel["Bs2Jpsiphi"] or reconstructionChannel["Bd2D-pi+"] or reconstructionChannel["Upsilon"] or reconstructionChannel["Bs2Ds-pi+"]) 
-      and testMDC) fileList = "fileList_MDC_Bottom.txt";
-
-  hitsin->AddListFile(fileList.c_str());
+  hitsin->AddFile(filePath + "/" + fileName);
   se->registerInputManager(hitsin);
+
+  string fileNumber = fileName.substr(fileName.size() - 10, 5);
 
   //General configurations
   KFParticle_sPHENIX *kfparticle = new KFParticle_sPHENIX();
   kfparticle->Verbosity(verbosity);
 
-  const int nEvents = 6e4;
+  const int nEvents = 300;
   
   float minTrackIPchi2 = testMDC ? 0 : 10;
   float maxTrackchi2nDOF = testMDC ? 10 : 2; 
@@ -118,15 +121,11 @@ int Fun4All_KFParticle_basic(){
   int nIntTracks[99];
   float intPt[99];
 
-  if (fileList == "fileList_bbbar.txt") 
-    kfparticle->doTruthMatching(0); //I don't think these events have truth variables
-
   //D2Kpi reco
   if (reconstructionChannel["D02K-pi+"]
   or  reconstructionChannel["D02K+pi-"])
   {
       kfparticle->setMotherName("D0");  
-      kfparticle->setTrackMapNodeName("D0_SvtxTrackMap"); 
       kfparticle->setMinimumMass(1.7);
       kfparticle->setMaximumMass(2.0);
       kfparticle->setNumberOfTracks(2);
@@ -140,13 +139,11 @@ int Fun4All_KFParticle_basic(){
       {
         daughterList[0] = make_pair("kaon", -1);
         daughterList[1] = make_pair("pion", +1);
-        kfparticle->setOutputName("outputData_D02Kmpip_example.root");
       }
       else
       {
         daughterList[0] = make_pair("kaon", +1);
         daughterList[1] = make_pair("pion", -1);
-        kfparticle->setOutputName("outputData_D0bar2Kppim_example.root");
       }
   }
 
@@ -166,7 +163,6 @@ int Fun4All_KFParticle_basic(){
       daughterList[0] = make_pair("proton", +1);
       daughterList[1] = make_pair("kaon", -1);
       daughterList[2] = make_pair("pion", +1);
-      kfparticle->setOutputName("outputData_Lc2pKpi_example.root");
   }
 
   //Bs2Jpsiphi reco
@@ -195,8 +191,6 @@ int Fun4All_KFParticle_basic(){
       intermediateMassRange[1] = make_pair(0.9, 1.2);
       nIntTracks[1] = 2;
       intPt[1] = 0;
-
-      kfparticle->setOutputName("outputData_Bs2Jpsiphi_example.root");
   }
 
 
@@ -219,8 +213,6 @@ int Fun4All_KFParticle_basic(){
       intPt[0] = 0.;
 
       daughterList[3] = make_pair("pion", +1);
-
-      kfparticle->setOutputName("outputData_Bd2Dmpip_example.root");
   }
 
   //Bs2Ds-pi+ reco
@@ -242,8 +234,6 @@ int Fun4All_KFParticle_basic(){
       intPt[0] = 0.;
 
       daughterList[3] = make_pair("pion", +1);
-
-      kfparticle->setOutputName("outputData_Bs2Dsmpip_example.root");
   }
 
   //Upsilon reco
@@ -274,8 +264,6 @@ int Fun4All_KFParticle_basic(){
       intermediateMassRange[1] = make_pair(4.8, 6);
       nIntTracks[1] = 4;
       intPt[1] = 0;
-
-      kfparticle->setOutputName("outputData_Upsilon_example.root");
   }
 
 
@@ -296,8 +284,6 @@ int Fun4All_KFParticle_basic(){
       kfparticle->setNumberOfTracks(2);
       daughterList[0] = make_pair("electron", +1);
       daughterList[1] = make_pair("electron", -1);
-
-      kfparticle->setOutputName("testSpace.root");
   }
 
 
@@ -307,6 +293,8 @@ int Fun4All_KFParticle_basic(){
   kfparticle->setIntermediateMassRange( intermediateMassRange );
   kfparticle->setNumberTracksFromIntermeditateState( nIntTracks );
   kfparticle->setIntermediateMinPT( intPt );
+
+  kfparticle->setOutputName(reconstructionName + "/outputData_" + reconstructionName + "_" + fileNumber + ".root");
 
   se->registerSubsystem(kfparticle);
   //-----------------
