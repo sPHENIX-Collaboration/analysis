@@ -61,53 +61,54 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
 
 	// CEMC E/p cut
       double eoverp = e_cemc / mom;
-      /*
-      std::cout << "   track " << it->first << "  mom " << mom  
-		<< " CAL_LAYER " << SvtxTrack::CAL_LAYER::CEMC << " e_cemc " << e_cemc << " eoverp " << eoverp 
-		<< " CAL_LAYER " << SvtxTrack::CAL_LAYER::HCALIN  << " e_hcal_in " << e_hcal_in  
-		<< " CAL_LAYER " << SvtxTrack::CAL_LAYER::HCALOUT << " e_hcal_out " << e_hcal_out 
-		<< std::endl;
-      */
       if(eoverp > 0.5)
 	{
-	  std::cout << " Track " << it->first  << " identified as electron " << "    mom " << mom << " e_cemc " << e_cemc  << " eoverp " << eoverp 
-		    << " e_hcal_in " << e_hcal_in << " e_hcal_out " << e_hcal_out << std::endl;
+	  if(Verbosity() > 0)
+	    std::cout << " Track " << it->first  << " identified as electron " << "    mom " << mom << " e_cemc " << e_cemc  << " eoverp " << eoverp 
+		      << " e_hcal_in " << e_hcal_in << " e_hcal_out " << e_hcal_out << std::endl;
 	  // add to the association map
 	  _track_pid_assoc->addAssoc(TrackPidAssoc::electron, it->second->get_id());
 	}
-
+      
       // HCal E/p cut
       eoverp = (e_hcal_in + e_hcal_out) / mom;
       if(eoverp > 0.5)
 	{
-	  std::cout << " Track " << it->first  << " identified as hadron " << "    mom " << mom << " e_cemc " << e_cemc  << " eoverp " << eoverp 
-		    << " e_hcal_in " << e_hcal_in << " e_hcal_out " << e_hcal_out << std::endl;
+	  if(Verbosity() > 0)
+	    std::cout << " Track " << it->first  << " identified as hadron " << "    mom " << mom << " e_cemc " << e_cemc  << " eoverp " << eoverp 
+		      << " e_hcal_in " << e_hcal_in << " e_hcal_out " << e_hcal_out << std::endl;
+
 	  // add to the association map
 	  _track_pid_assoc->addAssoc(TrackPidAssoc::hadron, it->second->get_id());
      	}
-
+      
 
     }
   
   // Read back the association map
-  std::cout << "Read back the association map electron entries" << std::endl;
+
+  if(Verbosity() > 0)
+    std::cout << "Read back the association map electron entries" << std::endl;
   auto electrons = _track_pid_assoc->getTracks(TrackPidAssoc::electron);
   for(auto it = electrons.first; it != electrons.second; ++it)
     {
       SvtxTrack *tr = _track_map->get(it->second);
       double p = tr->get_p();
 
-      std::cout << " pid " << it->first << " track ID " << it->second << " mom " << p << std::endl;
+      if(Verbosity() > 0)
+	std::cout << " pid " << it->first << " track ID " << it->second << " mom " << p << std::endl;
     }
 
-  std::cout << "Read back the association map hadron entries" << std::endl;
+  if(Verbosity() > 0)
+    std::cout << "Read back the association map hadron entries" << std::endl;
   auto hadrons = _track_pid_assoc->getTracks(TrackPidAssoc::hadron);
   for(auto it = hadrons.first; it != hadrons.second; ++it)
     {
       SvtxTrack *tr = _track_map->get(it->second);
       double p = tr->get_p();
 
-      std::cout << " pid " << it->first << " track ID " << it->second << " mom " << p << std::endl;
+      if(Verbosity() > 0)
+	std::cout << " pid " << it->first << " track ID " << it->second << " mom " << p << std::endl;
     }
 
   
