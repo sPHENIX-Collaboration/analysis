@@ -10,7 +10,7 @@ def makeCondorJob(quarkFilter):
     os.makedirs("{}/log".format(condorDir), exist_ok=True)
     submitScriptName = "{}/submitJobs.sh".format(condorDir)
     submitScript = open("{}".format(submitScriptName), "w")
-    submitScript.write("#!/bin.bash\n")
+    submitScript.write("#!/bin/bash\n")
     while line:
         splitLine = line.split("/")
         fileName = splitLine[-1]
@@ -48,4 +48,4 @@ elif sys.argv[1].upper() == "BOTTOM":
     os.system("CreateFileList.pl -type 8 DST_HF_BOTTOM")
     makeCondorJob("BOTTOM")
 else:
-    print("The argument, {}, was not known".format(sys.argv[1]))
+    print("The argument, {}, was not known. Use CHARM or BOTTOM instead".format(sys.argv[1]))
