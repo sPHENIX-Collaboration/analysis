@@ -9,7 +9,7 @@ def makeCondorJob(quarkFilter):
     condorDir = "{}/condorJobs".format(myOutputPath)
     os.makedirs("{}/log".format(condorDir), exist_ok=True)
     submitScriptName = "{}/submitJobs.sh".format(condorDir)
-    submitScript = open("{}".format(submitScriptName), "a")
+    submitScript = open("{}".format(submitScriptName), "w")
     submitScript.write("#!/bin.bash\n")
     while line:
         splitLine = line.split("/")
