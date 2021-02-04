@@ -22,10 +22,12 @@
 #include <fun4all/SubsysReco.h>
 #include <phhepmc/Fun4AllHepMCInputManager.h>
 #include <kfparticle_sphenix/KFParticle_sPHENIX.h>
+#include <hftrigger/HFTrigger.h>
 #include <numeric>
 #include <trackreco/PHRaveVertexing.h>
 
 R__LOAD_LIBRARY(libkfparticle_sphenix.so)
+R__LOAD_LIBRARY(libhftrigger.so)
 R__LOAD_LIBRARY(libfun4all.so)
 R__LOAD_LIBRARY(libg4dst.so)
 R__LOAD_LIBRARY(libg4eval.so)
@@ -68,8 +70,9 @@ int Fun4All_KFParticle_advanced(){
   //---------------
   // Choose reco
   //---------------
-  bool use_act_tracking = true;
-  bool use_rave_vertexing = true;
+  bool use_act_tracking = false;
+  bool use_rave_vertexing = false;
+  bool use_trigger = true;
 
   map<string, int> reconstructionChannel;
   reconstructionChannel["D02K-pi+"] = 1;
@@ -108,8 +111,20 @@ int Fun4All_KFParticle_advanced(){
   if (reconstructionChannel["Bs2Jpsiphi"]) fileList = "fileList_bs2jpsiphi.txt";
   if (reconstructionChannel["Bd2D-pi+"] or reconstructionChannel["Upsilon"]) fileList = "fileList_bbbar.txt";
   hitsin->AddListFile(fileList.c_str());
+  //hitsin->AddFile("/sphenix/user/cdean/MDC1/pythia8/HeavyFlavorTG/data/fullProduction/DST_HF_CHARM_pythia8-0000000001-00000.root");
+  //hitsin->AddFile("/sphenix/sim/sim01/sphnxpro/MDC1/sHijing_HepMC/DST/DST_sHijing_0_12fm-0000000001-00000.root");
   se->registerInputManager(hitsin);
 
+  if (use_trigger)
+  {
+    HFTrigger* myTrigger = new HFTrigger("myTestTrigger");
+    myTrigger->Verbosity(verbosity);
+    myTrigger->requireOneTrackTrigger(true);
+    myTrigger->requireTwoTrackTrigger(true);
+    myTrigger->requireLowMultiplicityTrigger(true);
+    se->registerSubsystem(myTrigger);
+  }
+ 
 
   if (use_act_tracking)
   {
