@@ -58,8 +58,6 @@ class HFTrigger : public SubsysReco
 
   bool runTwoTrackTrigger(std::vector<Track> Tracks, std::vector<Vertex> Vertices);
 
-  bool runMultiplicityTrigger(PHCompositeNode *topNode);
-
   void calculateMultiplicity(PHCompositeNode *topNode, float& meanMultiplicity, float& asymmetryMultiplicity);
 
   bool runHighMultiplicityTrigger(float meanMultiplicity, float asymmetryMultiplicity);
