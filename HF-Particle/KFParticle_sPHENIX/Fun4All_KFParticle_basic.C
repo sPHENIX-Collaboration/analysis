@@ -43,12 +43,13 @@ int Fun4All_KFParticle_basic(){
   reconstructionChannel["D02K-pi+"] = 1;
   reconstructionChannel["D02K+pi-"] = 0;
   reconstructionChannel["Lc2pK-pi+"] = 0;
+  reconstructionChannel["Jpsi2ll"] = 0;
   reconstructionChannel["Bs2Jpsiphi"] = 0;
   reconstructionChannel["Bd2D-pi+"] = 0;
   reconstructionChannel["Bs2Ds-pi+"] = 0;
   reconstructionChannel["Upsilon"] = 0;
   reconstructionChannel["testSpace"] = 0;
-  bool testMDC = true;
+  bool testMDC = false;
 
   const int numberOfActiveRecos = accumulate( begin(reconstructionChannel), end(reconstructionChannel), 0, 
                                               [](const int previous, const pair<const string, int>& element) 
@@ -92,7 +93,7 @@ int Fun4All_KFParticle_basic(){
   KFParticle_sPHENIX *kfparticle = new KFParticle_sPHENIX();
   kfparticle->Verbosity(verbosity);
 
-  const int nEvents = 6e4;
+  const int nEvents = 3e2;
   
   float minTrackIPchi2 = testMDC ? 0 : 10;
   float maxTrackchi2nDOF = testMDC ? 10 : 2; 
@@ -101,16 +102,16 @@ int Fun4All_KFParticle_basic(){
   kfparticle->setMinimumTrackPT(0.1);
   kfparticle->setMinimumTrackIPchi2(minTrackIPchi2);
   kfparticle->setMaximumTrackchi2nDOF(maxTrackchi2nDOF);
-  kfparticle->setMaximumVertexchi2nDOF(2);
-  kfparticle->setMaximumDaughterDCA(0.03);
+  kfparticle->setMaximumVertexchi2nDOF(20);
+  kfparticle->setMaximumDaughterDCA(0.3);
   kfparticle->setFlightDistancechi2(80);
   kfparticle->setMinDIRA(0.8);
   kfparticle->setMotherPT(0);
 
   kfparticle->saveDST(0);
   kfparticle->saveOutput(1);
-  kfparticle->doTruthMatching(0);
-  kfparticle->getDetectorInfo(0);
+  kfparticle->doTruthMatching(1);
+  kfparticle->getDetectorInfo(1);
 
   std::pair<std::string, int> daughterList[99];
   std::pair<std::string, int> intermediateList[99];
@@ -118,7 +119,7 @@ int Fun4All_KFParticle_basic(){
   int nIntTracks[99];
   float intPt[99];
 
-  if (fileList == "fileList_bbbar.txt") 
+  if (fileList == "fileList_bs2jpsiphi.txt") 
     kfparticle->doTruthMatching(0); //I don't think these events have truth variables
 
   //D2Kpi reco
@@ -126,7 +127,6 @@ int Fun4All_KFParticle_basic(){
   or  reconstructionChannel["D02K+pi-"])
   {
       kfparticle->setMotherName("D0");  
-      kfparticle->setTrackMapNodeName("D0_SvtxTrackMap"); 
       kfparticle->setMinimumMass(1.7);
       kfparticle->setMaximumMass(2.0);
       kfparticle->setNumberOfTracks(2);
@@ -169,6 +169,23 @@ int Fun4All_KFParticle_basic(){
       kfparticle->setOutputName("outputData_Lc2pKpi_example.root");
   }
 
+  //Jpsi2ll
+  if (reconstructionChannel["Jpsi2ll"])
+  {
+     kfparticle->setMotherName("J/psi");
+     kfparticle->setMinimumMass(3);
+     kfparticle->setMaximumMass(3.2);
+     kfparticle->setNumberOfTracks(2);
+
+     kfparticle->constrainToPrimaryVertex(false);
+     kfparticle->hasIntermediateStates(false);
+
+     daughterList[0]     = make_pair("electron", -1);
+     daughterList[1]     = make_pair("electron", +1);
+
+     kfparticle->setOutputName("outputData_Jpsi_example.root");
+  }
+
   //Bs2Jpsiphi reco
   if (reconstructionChannel["Bs2Jpsiphi"])
   {
@@ -177,7 +194,7 @@ int Fun4All_KFParticle_basic(){
       kfparticle->setMaximumMass(6.0);
       kfparticle->setNumberOfTracks(4);
      
-      kfparticle->constrainToPrimaryVertex(true);
+      kfparticle->constrainToPrimaryVertex(false);
       kfparticle->hasIntermediateStates(true);
       kfparticle->constrainIntermediateMasses(true);
       kfparticle->setNumberOfIntermediateStates(2);

@@ -52,34 +52,36 @@ int HFTrigger::process_event(PHCompositeNode *topNode)
 {
   bool successfulTrigger = runTrigger(topNode);
   
-  if (Verbosity() >= VERBOSITY_SOME) 
+  if (Verbosity() >= VERBOSITY_MORE) 
   {
     if (successfulTrigger) std::cout << "One of the heavy flavor triggers fired" << std::endl;
     else std::cout << "No heavy flavor triggers fired" << std::endl;
   }
 
+  int failedTriggerDecisions = 0;
   if (m_useOneTrackTrigger && !triggerDecisions.find("oneTrack")->second)
   {
     if (Verbosity() >= VERBOSITY_SOME) std::cout << "The oneTrackTrigger did not fire for this event, skipping." << std::endl;
-    return Fun4AllReturnCodes::ABORTEVENT;
+    failedTriggerDecisions += 1;
   }
   if (m_useTwoTrackTrigger && !triggerDecisions.find("twoTrack")->second)
   {
     if (Verbosity() >= VERBOSITY_SOME) std::cout << "The twoTrackTrigger did not fire for this event, skipping." << std::endl;
-    return Fun4AllReturnCodes::ABORTEVENT;
+    failedTriggerDecisions += 1;
   }
   if (m_useLowMultiplicityTrigger && !triggerDecisions.find("lowMultiplicity")->second)
   {
     if (Verbosity() >= VERBOSITY_SOME) std::cout << "The lowMultiplicityTrigger did not fire for this event, skipping." << std::endl;
-    return Fun4AllReturnCodes::ABORTEVENT;
+    failedTriggerDecisions += 1;
   }
   if (m_useHighMultiplicityTrigger && !triggerDecisions.find("highMultiplicity")->second)
   {
     if (Verbosity() >= VERBOSITY_SOME) std::cout << "The highMultiplicityTrigger did not fire for this event, skipping." << std::endl;
-    return Fun4AllReturnCodes::ABORTEVENT;
+    failedTriggerDecisions += 1;
   }
-
-  return Fun4AllReturnCodes::EVENT_OK;
+   
+  if (failedTriggerDecisions > 0) return Fun4AllReturnCodes::ABORTEVENT;
+  else return Fun4AllReturnCodes::EVENT_OK;
 }
 
 int HFTrigger::End(PHCompositeNode *topNode)
@@ -179,7 +181,6 @@ void HFTrigger::calculateMultiplicity(PHCompositeNode *topNode, float& meanMulti
       inttHits[i] += hitset->size();
     }
   }
-
 
   meanMultiplicity = (inttHits[0] + inttHits[1])/2;
   asymmetryMultiplicity = (inttHits[0] - inttHits[1])/(inttHits[0] + inttHits[1]);

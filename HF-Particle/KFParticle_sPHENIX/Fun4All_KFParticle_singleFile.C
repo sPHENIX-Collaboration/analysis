@@ -24,7 +24,9 @@ R__LOAD_LIBRARY(libfun4all.so)
 
 using namespace std;
 
-int Fun4All_KFParticle_singleFile(string filePath = "/sphenix/user/cdean/MDC1/pythia8/HeavyFlavorTG/data/", string fileName = "G4sPHENIX_HeavyFlavor_Charm_production-0000000001-00001.root"){
+int Fun4All_KFParticle_singleFile(string filePath = "/sphenix/user/cdean/MDC1/pythia8/HeavyFlavorTG/data/", 
+                                  string fileName = "G4sPHENIX_HeavyFlavor_Charm_production-0000000001-00001.root", 
+                                  const int nEvents = 0){
 
   int verbosity = 1;
   //---------------
@@ -45,6 +47,7 @@ int Fun4All_KFParticle_singleFile(string filePath = "/sphenix/user/cdean/MDC1/py
   reconstructionChannel["D02K-pi+"] = 1;
   reconstructionChannel["D02K+pi-"] = 0;
   reconstructionChannel["Lc2pK-pi+"] = 0;
+  reconstructionChannel["Jpsi2ll"] = 0;
   reconstructionChannel["Bs2Jpsiphi"] = 0;
   reconstructionChannel["Bd2D-pi+"] = 0;
   reconstructionChannel["Bs2Ds-pi+"] = 0;
@@ -78,7 +81,8 @@ int Fun4All_KFParticle_singleFile(string filePath = "/sphenix/user/cdean/MDC1/py
       if (it->second == 1) reconstructionName = it->first;
   }
 
-  string makeDirectory = "mkdir " + reconstructionName;
+  string outputDirectory = "";
+  string makeDirectory = "mkdir " + outputDirectory + reconstructionName;
   system(makeDirectory.c_str());
 
   //--------------
@@ -95,8 +99,6 @@ int Fun4All_KFParticle_singleFile(string filePath = "/sphenix/user/cdean/MDC1/py
   KFParticle_sPHENIX *kfparticle = new KFParticle_sPHENIX();
   kfparticle->Verbosity(verbosity);
 
-  const int nEvents = 300;
-  
   float minTrackIPchi2 = testMDC ? 0 : 10;
   float maxTrackchi2nDOF = testMDC ? 10 : 2; 
   bool fixToPV = testMDC ? false : true;
@@ -109,6 +111,7 @@ int Fun4All_KFParticle_singleFile(string filePath = "/sphenix/user/cdean/MDC1/py
   kfparticle->setFlightDistancechi2(80);
   kfparticle->setMinDIRA(0.8);
   kfparticle->setMotherPT(0);
+  kfparticle->setMotherIPchi2(1e5); 
 
   kfparticle->saveDST(0);
   kfparticle->saveOutput(1);
@@ -126,10 +129,10 @@ int Fun4All_KFParticle_singleFile(string filePath = "/sphenix/user/cdean/MDC1/py
   or  reconstructionChannel["D02K+pi-"])
   {
       kfparticle->setMotherName("D0");  
+      //kfparticle->setTrackMapNodeName("D0_SvtxTrackMap"); 
       kfparticle->setMinimumMass(1.7);
       kfparticle->setMaximumMass(2.0);
       kfparticle->setNumberOfTracks(2);
-      kfparticle->setMotherIPchi2(20);
     
       kfparticle->constrainToPrimaryVertex(fixToPV);
       kfparticle->hasIntermediateStates(false);
@@ -165,6 +168,21 @@ int Fun4All_KFParticle_singleFile(string filePath = "/sphenix/user/cdean/MDC1/py
       daughterList[2] = make_pair("pion", +1);
   }
 
+  //Jpsi2ll
+  if (reconstructionChannel["Jpsi2ll"])
+  {
+     kfparticle->setMotherName("J/psi");
+     kfparticle->setMinimumMass(3);
+     kfparticle->setMaximumMass(3.2);
+     kfparticle->setNumberOfTracks(2);
+
+     kfparticle->constrainToPrimaryVertex(false);
+     kfparticle->hasIntermediateStates(false);
+
+     daughterList[0] = make_pair("muon", -1);
+     daughterList[1] = make_pair("muon", +1);
+  }
+
   //Bs2Jpsiphi reco
   if (reconstructionChannel["Bs2Jpsiphi"])
   {
@@ -181,7 +199,7 @@ int Fun4All_KFParticle_singleFile(string filePath = "/sphenix/user/cdean/MDC1/py
       intermediateList[0] = make_pair("J/psi", 0);
       daughterList[0]     = make_pair("electron", -1);
       daughterList[1]     = make_pair("electron", +1);
-      intermediateMassRange[0] = make_pair(2.5, 3.2);
+      intermediateMassRange[0] = make_pair(2.9, 3.2);
       nIntTracks[0] = 2;
       intPt[0] = 0;
     
@@ -218,10 +236,13 @@ int Fun4All_KFParticle_singleFile(string filePath = "/sphenix/user/cdean/MDC1/py
   //Bs2Ds-pi+ reco
   if (reconstructionChannel["Bs2Ds-pi+"])
   {
+      kfparticle->setMotherName("Bs0");  
       kfparticle->setMinimumMass(4.8);
       kfparticle->setMaximumMass(6.0);
       kfparticle->setNumberOfTracks(4);
 
+      kfparticle->constrainToPrimaryVertex(fixToPV);
+      kfparticle->getChargeConjugate(false);
       kfparticle->hasIntermediateStates(true);
       kfparticle->setNumberOfIntermediateStates(1);
 
@@ -294,7 +315,7 @@ int Fun4All_KFParticle_singleFile(string filePath = "/sphenix/user/cdean/MDC1/py
   kfparticle->setNumberTracksFromIntermeditateState( nIntTracks );
   kfparticle->setIntermediateMinPT( intPt );
 
-  kfparticle->setOutputName(reconstructionName + "/outputData_" + reconstructionName + "_" + fileNumber + ".root");
+  kfparticle->setOutputName(outputDirectory + reconstructionName + "/outputData_" + reconstructionName + "_" + fileNumber + ".root");
 
   se->registerSubsystem(kfparticle);
   //-----------------

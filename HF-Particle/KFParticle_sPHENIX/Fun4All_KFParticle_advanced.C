@@ -111,8 +111,6 @@ int Fun4All_KFParticle_advanced(){
   if (reconstructionChannel["Bs2Jpsiphi"]) fileList = "fileList_bs2jpsiphi.txt";
   if (reconstructionChannel["Bd2D-pi+"] or reconstructionChannel["Upsilon"]) fileList = "fileList_bbbar.txt";
   hitsin->AddListFile(fileList.c_str());
-  //hitsin->AddFile("/sphenix/user/cdean/MDC1/pythia8/HeavyFlavorTG/data/fullProduction/DST_HF_CHARM_pythia8-0000000001-00000.root");
-  //hitsin->AddFile("/sphenix/sim/sim01/sphnxpro/MDC1/sHijing_HepMC/DST/DST_sHijing_0_12fm-0000000001-00000.root");
   se->registerInputManager(hitsin);
 
   if (use_trigger)
