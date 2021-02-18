@@ -11,7 +11,8 @@
 #include <cassert>
 
 void
-Fun4All_EMCalLikelihood(const int nEvents = 100000000,
+Fun4All_EMCalLikelihood(const int nEvents = 1000,
+//Fun4All_EMCalLikelihood(const int nEvents = 100000000, // original
     TString base_dir =
         "../..//sPHENIX_work/production_analysis_cemc2x2/emcstudies/pidstudies/spacal2d/fieldmap/",
     TString pid = "e-", TString kine_config = "eta0_8GeV", TString ll_config =
