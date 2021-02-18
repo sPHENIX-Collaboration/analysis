@@ -33,7 +33,7 @@ void run(const char *fname = "/sphenix/sim/sim01/sphnxpro/MDC1/embed/embedDST_sH
   Fun4AllServer *se = Fun4AllServer::instance();
   ElectronPid *ePid = new ElectronPid("ElectronPid");
   //  PairMaker *pmaker = new PairMaker("PairMaker","test.root");
-  //    se->registerSubsystem(ePid);
+   se->registerSubsystem(ePid);
 
   Fun4AllOutputManager *outePid = new Fun4AllDstOutputManager("outePid","test2.root");
   outePid->AddNode("TrackPidAssoc");
