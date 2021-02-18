@@ -20,17 +20,22 @@ void run(const char *fname = "/sphenix/sim/sim01/sphnxpro/MDC1/embed/embedDST_sH
   gSystem->Load("libtrackpid");
   //  gSystem->Load("libeventmix");
 
-  Fun4AllServer *se = Fun4AllServer::instance();
-  ElectronPid *ePid = new ElectronPid("ElectronPid");
+//  Fun4AllServer *se = Fun4AllServer::instance();
+//  ElectronPid *ePid = new ElectronPid("ElectronPid");
   //  PairMaker *pmaker = new PairMaker("PairMaker","test.root");
-  se->registerSubsystem(ePid);
+//  se->registerSubsystem(ePid);
 
   Fun4AllInputManager *in = new Fun4AllDstInputManager("in");
   in->fileopen(fname);
   se->registerInputManager(in);
   //in->AddListFile("filelist.txt");
 
-  Fun4AllOutputManager *outePid = new Fun4AllDstOutputManager("outePid","test.root");
+  Fun4AllServer *se = Fun4AllServer::instance();
+  ElectronPid *ePid = new ElectronPid("ElectronPid");
+  //  PairMaker *pmaker = new PairMaker("PairMaker","test.root");
+  //    se->registerSubsystem(ePid);
+
+  Fun4AllOutputManager *outePid = new Fun4AllDstOutputManager("outePid","test2.root");
   outePid->AddNode("TrackPidAssoc");
   //  outePid->AddNode("ElectronPairs");
   se->registerOutputManager(outePid);
