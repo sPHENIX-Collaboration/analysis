@@ -5,8 +5,8 @@
 #include <fun4all/Fun4AllDstInputManager.h>
 #include <fun4all/Fun4AllDstOutputManager.h>
 
-#include </home/maweihu/install/include/trackpidassoc/ElectronPid.h>
-#include </home/maweihu/install/include/trackpidassoc/TrackPidAssoc.h>
+#include </sphenix/u/weihuma/install/include/trackpidassoc/ElectronPid.h>
+#include </sphenix/u/weihuma/install/include/trackpidassoc/TrackPidAssoc.h>
 //#include </direct/phenix+u/workarea/lebedev/sPHENIX_new/analysis/EventMix/install/include/eventmix/sPHElectronPair.h>
 
 R__LOAD_LIBRARY(libfun4all.so)
