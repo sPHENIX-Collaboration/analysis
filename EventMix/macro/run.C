@@ -39,4 +39,3 @@ void run(const char *fname = "/sphenix/user/lebedev/mdc/sPHENIX_pythiaupsilons_1
 
   se->End();
 }
-
