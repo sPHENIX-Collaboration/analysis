@@ -26,9 +26,10 @@ void run(const char *fname = "/sphenix/sim/sim01/sphnxpro/MDC1/embed/embedDST_sH
   se->registerSubsystem(ePid);
 
   Fun4AllInputManager *in = new Fun4AllDstInputManager("in");
-  in->fileopen(fname);
+ // in->fileopen(fname);
+  in->AddListFile("filelist.txt");
   se->registerInputManager(in);
-  //in->AddListFile("filelist.txt");
+//  in->AddListFile("filelist.txt");
 
  // Fun4AllServer *se = Fun4AllServer::instance();
  // ElectronPid *ePid = new ElectronPid("ElectronPid");
