@@ -61,7 +61,7 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
 
 	// CEMC E/p cut
       double eoverp = e_cemc / mom;
-      if(eoverp > 0.7)
+      if(eoverp > 0.5)
 	{
 	  if(Verbosity() > 0)
 	    std::cout << " Track " << it->first  << " identified as electron " << "    mom " << mom << " e_cemc " << e_cemc  << " eoverp " << eoverp 
