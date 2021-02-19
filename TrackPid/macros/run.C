@@ -35,7 +35,7 @@ void run(const char *fname = "/sphenix/sim/sim01/sphnxpro/MDC1/embed/embedDST_sH
   //  PairMaker *pmaker = new PairMaker("PairMaker","test.root");
    //se->registerSubsystem(ePid);
 
-  Fun4AllOutputManager *outePid = new Fun4AllDstOutputManager("outePid","test3.root");
+  Fun4AllOutputManager *outePid = new Fun4AllDstOutputManager("outePid","test4.root");
   outePid->AddNode("TrackPidAssoc");
   //  outePid->AddNode("ElectronPairs");
   se->registerOutputManager(outePid);
@@ -43,7 +43,7 @@ void run(const char *fname = "/sphenix/sim/sim01/sphnxpro/MDC1/embed/embedDST_sH
 
   se->run();
 
-  outePid->Print();
+//  outePid->Print();
 
   se->End();
 
