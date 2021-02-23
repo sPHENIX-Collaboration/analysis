@@ -65,7 +65,7 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
 
 	// CEMC E/p cut
       double eoverp = e_cemc / mom;
-
+/*
       PID_tr_p = mom;
       PID_tr_pt = tr_pt;
       PID_cemcdphi = track->get_cal_dphi(SvtxTrack::CEMC);
@@ -79,10 +79,10 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
       PID_hcaloute3x3 = e_hcal_out;
 
       PID_EcemcOP = PID_cemce3x3 / PID_tr_p;
-
+*/
       if(eoverp > 0.7 && eoverp < 1.5)
 	{
-	  PID_EcemcOP_cut = PID_cemce3x3 / PID_tr_p;
+	 // PID_EcemcOP_cut = PID_cemce3x3 / PID_tr_p;
 
 	  if(Verbosity() > 0)
 	    std::cout << " Track " << it->first  << " identified as electron " << "    mom " << mom << " e_cemc " << e_cemc  << " eoverp " << eoverp 
@@ -94,11 +94,11 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
       // HCal E/p cut
       eoverp = (e_hcal_in + e_hcal_out) / mom;
      
-      PID_EhcalOP = (PID_hcaline3x3 + PID_hcaloute3x3) / PID_tr_p;
+     // PID_EhcalOP = (PID_hcaline3x3 + PID_hcaloute3x3) / PID_tr_p;
 
       if(eoverp > 0.5)
 	{
-          PID_EhcalOP_cut = (PID_hcaline3x3 + PID_hcaloute3x3) / PID_tr_p;
+        //  PID_EhcalOP_cut = (PID_hcaline3x3 + PID_hcaloute3x3) / PID_tr_p;
 
 	  if(Verbosity() > 0)
 	    std::cout << " Track " << it->first  << " identified as hadron " << "    mom " << mom << " e_cemc " << e_cemc  << " eoverp " << eoverp 
@@ -186,7 +186,7 @@ int ElectronPid::End(PHCompositeNode * /*topNode*/)
 {
   return Fun4AllReturnCodes::EVENT_OK;
 }
-
+/*
 void ElectronPid::initializeTrees()
 {
   PID_tracktree = new TTree("tracktree", "A tree with svtx tracks for particle identification");
@@ -233,3 +233,6 @@ void ElectronPid::initializeVariables()
   PID_EhcalOP = -99;
   PID_EhcalOP_cut = -99;
 }
+*/
+
+
