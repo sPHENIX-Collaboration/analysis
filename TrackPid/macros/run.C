@@ -1,4 +1,22 @@
 #if ROOT_VERSION_CODE >= ROOT_VERSION(6,00,0)
+
+#include <GlobalVariables.C>
+
+#include <DisplayOn.C>
+#include <G4Setup_sPHENIX.C>
+#include <G4_Bbc.C>
+#include <G4_CaloTrigger.C>
+#include <G4_DSTReader.C>
+#include <G4_Global.C>
+#include <G4_HIJetReco.C>
+#include <G4_Input.C>
+#include <G4_Jets.C>
+#include <G4_ParticleFlow.C>
+#include <G4_Production.C>
+#include <G4_TopoClusterReco.C>
+#include <G4_Tracking.C>
+#include <G4_User.C>
+
 #include <fun4all/SubsysReco.h>
 #include <fun4all/Fun4AllServer.h>
 #include <fun4all/Fun4AllInputManager.h>
@@ -38,7 +56,7 @@ void run(
   anaTutorial->analyzeClusters(false);
   anaTutorial->analyzeJets(false);
   anaTutorial->analyzeTruth(false);
- // se->registerSubsystem(anaTutorial);
+  se->registerSubsystem(anaTutorial);
 
   Fun4AllInputManager *in = new Fun4AllDstInputManager("in");
   in->fileopen(fname);
