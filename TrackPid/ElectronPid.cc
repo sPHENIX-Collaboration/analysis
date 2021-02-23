@@ -54,11 +54,11 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
     {
 
       SvtxTrack *track = it->second;
-      double tr_px = track->get_px();
-      double tr_py = track->get_py();
-      double tr_pz = track->get_pz();
+      //double tr_px = track->get_px();
+     // double tr_py = track->get_py();
+     // double tr_pz = track->get_pz();
       double mom = track->get_p();
-      double tr_pt = sqrt(tr_px * tr_px + tr_py * tr_py);
+     // double tr_pt = sqrt(tr_px * tr_px + tr_py * tr_py);
       double e_cemc = track->get_cal_energy_3x3(SvtxTrack::CAL_LAYER::CEMC);
       double e_hcal_in = track->get_cal_energy_3x3(SvtxTrack::CAL_LAYER::HCALIN);
       double e_hcal_out = track->get_cal_energy_3x3(SvtxTrack::CAL_LAYER::HCALOUT);
