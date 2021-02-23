@@ -38,7 +38,7 @@ void run(
   anaTutorial->analyzeClusters(false);
   anaTutorial->analyzeJets(false);
   anaTutorial->analyzeTruth(false);
-  se->registerSubsystem(anaTutorial);
+ // se->registerSubsystem(anaTutorial);
 
   Fun4AllInputManager *in = new Fun4AllDstInputManager("in");
   in->fileopen(fname);
