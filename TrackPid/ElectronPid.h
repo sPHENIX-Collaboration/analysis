@@ -42,6 +42,7 @@ int GetNodes(PHCompositeNode *topNode);
  TrackPidAssoc *_track_pid_assoc;
  SvtxTrackMap *_track_map;
 
+/*
  TTree *PID_tracktree;
  
  void initializeVariables();
@@ -65,7 +66,7 @@ int GetNodes(PHCompositeNode *topNode);
  
  double PID_EhcalOP;
  double PID_EhcalOP_cut;
-
+*/
 
 };
 
