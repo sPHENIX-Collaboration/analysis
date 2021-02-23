@@ -26,6 +26,7 @@ void run(
   //  gSystem->Load("libeventmix");
 
   Fun4AllServer *se = Fun4AllServer::instance();
+  se->Verbosity(1);
   ElectronPid *ePid = new ElectronPid("ElectronPid");
   //  PairMaker *pmaker = new PairMaker("PairMaker","test.root");
   se->registerSubsystem(ePid);
@@ -37,7 +38,7 @@ void run(
   anaTutorial->analyzeClusters(false);
   anaTutorial->analyzeJets(false);
   anaTutorial->analyzeTruth(false);
- // se->registerSubsystem(anaTutorial);
+  se->registerSubsystem(anaTutorial);
 
   Fun4AllInputManager *in = new Fun4AllDstInputManager("in");
   in->fileopen(fname);
