@@ -40,7 +40,7 @@ ElectronPid::ElectronPid(const std::string& name, const std::string &filename) :
   OutputNtupleFile=nullptr;
   OutputFileName=filename;
   EventNumber=0;
-  output_ntuple = false;
+  output_ntuple = true;
 }
 
 ElectronPid::~ElectronPid() 
