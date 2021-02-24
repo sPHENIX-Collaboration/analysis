@@ -44,34 +44,38 @@ void run(
 
   Fun4AllServer *se = Fun4AllServer::instance();
   se->Verbosity(1);
+
   ElectronPid *ePid = new ElectronPid("ElectronPid");
+  ePid->Verbosity(1);
   ePid->setEOPcutlimits(0.7,1.5);
   ePid->setHOPcutlimit(0.5);
   se->registerSubsystem(ePid);
 
   AnaTutorial *anaTutorial = new AnaTutorial("anaTutorial", outputroot + "_anaTutorial.root");
   anaTutorial->setMinJetPt(10.);
-  anaTutorial->Verbosity(0);
+  anaTutorial->Verbosity(1);
   anaTutorial->analyzeTracks(true);
   anaTutorial->analyzeClusters(false);
   anaTutorial->analyzeJets(false);
   anaTutorial->analyzeTruth(false);
+  //se->registerSubsystem(anaTutorial);
 
-  Fun4AllInputManager *in = new Fun4AllDstInputManager("in");
+  Fun4AllInputManager *in = new Fun4AllDstInputManager("DST_TRACKS");
+  in->Verbosity(1);
   in->fileopen(fname);
  // in->AddListFile("filelist.txt");
   se->registerInputManager(in);
 
 
-
-  Fun4AllOutputManager *outePid = new Fun4AllDstOutputManager("outePid","embedDST_sHijing_upsilon_0_12fm_EOP_0.7_1.5.root");
-  outePid->AddNode("TrackPidAssoc");
-  se->registerOutputManager(outePid);
-  outePid->Print();
+ // if(!write_ntuple) {
+  	Fun4AllOutputManager *outePid = new Fun4AllDstOutputManager("outePid","embedDST_sHijing_upsilon_0_12fm_EOP_0.7_1.5.root");
+  	outePid->AddNode("TrackPidAssoc");
+  	se->registerOutputManager(outePid);
+	outePid->Verbosity(1);
+ 	outePid->Print();
+  //}
 
   se->run();
-  
-  ePid->Print();
   outePid->Print();
 
   se->End();
