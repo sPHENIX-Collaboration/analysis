@@ -21,9 +21,9 @@
 #include <set>
 #include <memory>
 
-#include <TFile>
-#include <TNtuple>
-#include <SvtxTrack>
+#include <TFile.h>
+#include <TNtuple.h>
+#include <SvtxTrack.h>
 
 // forward declarations
 class PHCompositeNode;
