@@ -36,7 +36,8 @@ R__LOAD_LIBRARY(libtrackpid.so)
 
 void run(
   const char *fname = "/sphenix/sim/sim01/sphnxpro/MDC1/embed/embedDST_sHijing_0_12fm_50kHz_bkg_0_12fm-0000000001-01998.root",
-  const string &outputroot = "embedDST_sHijing_upsilon_0_12fm_EOP_0.7_1.5"
+  const string &outputroot = "embedDST_sHijing_upsilon_0_12fm_EOP_0.7_1.5",
+  bool output_ntuple = false
 )
 {
   gSystem->Load("libg4dst");
@@ -45,12 +46,13 @@ void run(
   Fun4AllServer *se = Fun4AllServer::instance();
   se->Verbosity(1);
 
-  ElectronPid *ePid = new ElectronPid("ElectronPid");
+  ElectronPid *ePid = new ElectronPid("ElectronPid",outputroot);
+  ePid->set_output_ntuple(output_ntuple);
   ePid->Verbosity(1);
   ePid->setEOPcutlimits(0.7,1.5);
   ePid->setHOPcutlimit(0.5);
   se->registerSubsystem(ePid);
-
+/*
   AnaTutorial *anaTutorial = new AnaTutorial("anaTutorial", outputroot + "_anaTutorial.root");
   anaTutorial->setMinJetPt(10.);
   anaTutorial->Verbosity(1);
@@ -58,7 +60,8 @@ void run(
   anaTutorial->analyzeClusters(false);
   anaTutorial->analyzeJets(false);
   anaTutorial->analyzeTruth(false);
-  //se->registerSubsystem(anaTutorial);
+  se->registerSubsystem(anaTutorial);
+*/
 
   Fun4AllInputManager *in = new Fun4AllDstInputManager("DST_TRACKS");
   in->Verbosity(1);
@@ -67,13 +70,13 @@ void run(
   se->registerInputManager(in);
 
 
- // if(!write_ntuple) {
+  if(!output_ntuple) {
   	Fun4AllOutputManager *outePid = new Fun4AllDstOutputManager("outePid","embedDST_sHijing_upsilon_0_12fm_EOP_0.7_1.5.root");
   	outePid->AddNode("TrackPidAssoc");
   	se->registerOutputManager(outePid);
 	outePid->Verbosity(1);
  	outePid->Print();
-  //}
+  }
 
   se->run();
   outePid->Print();
