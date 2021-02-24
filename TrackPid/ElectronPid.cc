@@ -96,7 +96,7 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
      
      // PID_EhcalOP = (PID_hcaline3x3 + PID_hcaloute3x3) / PID_tr_p;
 
-      if(eoverp > HOP_higherlimit)// eoverp>0.5
+      if(eoverp > HOP_lowerlimit)// eoverp>0.5
 	{
         //  PID_EhcalOP_cut = (PID_hcaline3x3 + PID_hcaloute3x3) / PID_tr_p;
 
