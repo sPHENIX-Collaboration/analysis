@@ -1,5 +1,10 @@
 #include "ElectronPid.h"
 
+#include <cstdlib>
+#include <cstdio>
+#include <iomanip>
+#include <fstream>
+
 #include <phool/PHCompositeNode.h>
 #include <phool/PHIODataNode.h>                         // for PHIODataNode
 #include <phool/PHNode.h>                               // for PHNode
@@ -47,7 +52,7 @@ int ElectronPid::Init(PHCompositeNode* topNode)
 
   if(output_ntuple) {
 
-	OutputNtupleFile = new TFile(OutputFileName.c_str(),"RECREATE");
+	OutputNtupleFile=new TFile(OutputFileName.c_str(),"RECREATE");
   	std::cout << "PairMaker::Init: output file " << OutputFileName.c_str() << " opened." << endl;
 
 	ntp2 = new TNtuple("ntp2","","p:pt:cemce3x3overp:hcale3x3overp:charge:pid");
@@ -89,15 +94,15 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
 
       double px = track->get_px();
       double py = track->get_py();
-      double pz = track->get_pz();
+     // double pz = track->get_pz();
       double mom = track->get_p();
       double pt = sqrt(px*px + py*py);
       int charge = track->get_charge();
       int pid = it->first;
 
-      double x = track->get_x();
-      double y = track->get_y();
-      double z = track->get_z();
+     // double x = track->get_x();
+     // double y = track->get_y();
+     // double z = track->get_z();
 
       double e_cemc = track->get_cal_energy_3x3(SvtxTrack::CAL_LAYER::CEMC);
       double e_hcal_in = track->get_cal_energy_3x3(SvtxTrack::CAL_LAYER::HCALIN);
@@ -114,7 +119,7 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
       ntp[3] = hcaleoverp;
       ntp[4] = charge;
       ntp[5] = pid;
-      if(output_ntuple) { ntp2->Fill(ntp); }
+      if(output_ntuple) { ntp2 -> Fill(ntp); }
 /*
       PID_tr_p = mom;
       PID_tr_pt = tr_pt;
@@ -135,7 +140,7 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
 	 // PID_EcemcOP_cut = PID_cemce3x3 / PID_tr_p;
 
 	  if(Verbosity() > 0)
-	    std::cout << " Track " << it->first  << " identified as electron " << "    mom " << mom << " e_cemc " << e_cemc  << " eoverp " << eoverp 
+	    std::cout << " Track " << it->first  << " identified as electron " << "    mom " << mom << " e_cemc " << e_cemc  << " cemceoverp " << cemceoverp 
 		      << " e_hcal_in " << e_hcal_in << " e_hcal_out " << e_hcal_out << std::endl;
 	  // add to the association map
 	  _track_pid_assoc->addAssoc(TrackPidAssoc::electron, it->second->get_id());
@@ -150,7 +155,7 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
         //  PID_EhcalOP_cut = (PID_hcaline3x3 + PID_hcaloute3x3) / PID_tr_p;
 
 	  if(Verbosity() > 0)
-	    std::cout << " Track " << it->first  << " identified as hadron " << "    mom " << mom << " e_cemc " << e_cemc  << " eoverp " << eoverp 
+	    std::cout << " Track " << it->first  << " identified as hadron " << "    mom " << mom << " e_cemc " << e_cemc  << " hcaleoverp " << hcaleoverp 
 		      << " e_hcal_in " << e_hcal_in << " e_hcal_out " << e_hcal_out << std::endl;
 
 	  // add to the association map
@@ -234,9 +239,9 @@ int ElectronPid::GetNodes(PHCompositeNode* topNode)
 int ElectronPid::End(PHCompositeNode * /*topNode*/)
 {
 if(output_ntuple) {
-  OutputNtupleFile->cd();
-  OutputNtupleFile->Write();
-  OutputNtupleFile->Close();
+  OutputNtupleFile -> cd();
+  OutputNtupleFile -> Write();
+  OutputNtupleFile -> Close();
 }
 
   cout << "************END************" << endl;
