@@ -10,19 +10,16 @@
 
 #if ROOT_VERSION_CODE >= ROOT_VERSION(6, 00, 0)
 
-//#include <anatutorial/AnaTutorial.h>
+#include "ACTS_tracking/G4Setup_sPHENIX.C"
+#include "ACTS_tracking/G4_Tracking.C"
 
 #include <fun4all/Fun4AllDstInputManager.h>
 #include <fun4all/Fun4AllDstOutputManager.h>
-#include <fun4all/Fun4AllDummyInputManager.h>
-#include <fun4all/Fun4AllInputManager.h>
-#include <fun4all/Fun4AllNoSyncDstInputManager.h>
 #include <fun4all/Fun4AllOutputManager.h>
 #include <fun4all/Fun4AllServer.h>
 #include <fun4all/SubsysReco.h>
-#include <phhepmc/Fun4AllHepMCInputManager.h>
-#include <kfparticle_sphenix/KFParticle_sPHENIX.h>
 #include <hftrigger/HFTrigger.h>
+#include <kfparticle_sphenix/KFParticle_sPHENIX.h>
 #include <numeric>
 #include <trackreco/PHRaveVertexing.h>
 
@@ -33,21 +30,6 @@ R__LOAD_LIBRARY(libg4dst.so)
 R__LOAD_LIBRARY(libg4eval.so)
 R__LOAD_LIBRARY(libtrack_reco.so)
 R__LOAD_LIBRARY(libPHTpcTracker.so)
-
-#endif
-
-#if __cplusplus >= 201703L
-
-#include <G4_Magnet.C>
-//#include <trackreco/ActsEvaluator.h>
-#include <trackreco/MakeActsGeometry.h>
-#include <trackreco/PHActsSourceLinks.h>
-#include <trackreco/PHActsTracks.h>
-#include <trackreco/PHActsTrkFitter.h>
-//#include <trackreco/PHActsTrkProp.h>
-////#include <trackreco/PHActsVertexFinder.h>
-////#include <trackreco/PHActsVertexFitter.h>
-#include <trackreco/PHTpcResiduals.h>
 
 #endif
 
@@ -70,9 +52,10 @@ int Fun4All_KFParticle_advanced(){
   //---------------
   // Choose reco
   //---------------
-  bool use_act_tracking = false;
+  bool use_acts_tracking = false;
+  bool use_acts_vertexing = true;
   bool use_rave_vertexing = false;
-  bool use_trigger = true;
+  bool use_trigger = false;
 
   map<string, int> reconstructionChannel;
   reconstructionChannel["D02K-pi+"] = 1;
@@ -101,6 +84,11 @@ int Fun4All_KFParticle_advanced(){
     return 1;
   }
 
+  if (use_acts_vertexing && use_rave_vertexing)
+  {
+    cout << "*\n*\n*\n* This macro doesn't allow you to run ACTS and RAVE vertexing at the same time, exiting!\n*\n*\n*\n" << endl;
+  }
+
   //--------------
   // IO management
   //--------------
@@ -122,55 +110,37 @@ int Fun4All_KFParticle_advanced(){
     myTrigger->requireLowMultiplicityTrigger(true);
     se->registerSubsystem(myTrigger);
   }
- 
 
-  if (use_act_tracking)
+  string actsVertexName = "SvtxVertexMap_recoOnly";
+  if (use_acts_vertexing && !use_rave_vertexing)
   {
-    #if __cplusplus >= 201703L
-    bool SC_CALIBMODE = true;
-    /// Geometry must be built before any Acts modules
+    use_acts_tracking = false;
+    G4Init();
+
     MakeActsGeometry* geom = new MakeActsGeometry();
     geom->Verbosity(verbosity);
-    //geom->setMagField(G4MAGNET::magfield);
-    //geom->setMagFieldRescale(G4MAGNET::magfield_rescale);
+    geom->setMagField(G4MAGNET::magfield);
+    geom->setMagFieldRescale(G4MAGNET::magfield_rescale);
     se->registerSubsystem(geom);
 
-    /// Always run PHActsSourceLinks and PHActsTracks first, to convert TrkRClusters and SvtxTracks to the Acts equivalent
-    PHActsSourceLinks* sl = new PHActsSourceLinks();
-    sl->Verbosity(verbosity);
-    sl->setMagField(G4MAGNET::magfield);
-    sl->setMagFieldRescale(G4MAGNET::magfield_rescale);
-    se->registerSubsystem(sl);
+    PHActsInitialVertexFinder *f = new PHActsInitialVertexFinder("MyVertexFinder");
+    f->setSvtxTrackMapName("SvtxTrackMap");
+    f->setSvtxVertexMapName(actsVertexName.c_str());
+    f->setInitialVertexer(false);
+    f->Verbosity(0);
+    se->registerSubsystem(f);
 
-    PHActsTracks* actsTracks = new PHActsTracks();
-    actsTracks->Verbosity(verbosity);
-    se->registerSubsystem(actsTracks);
-
-    PHActsTrkFitter* actsFit = new PHActsTrkFitter();
-    actsFit->Verbosity(verbosity);
-    actsFit->doTimeAnalysis(false);
-    /// If running with distortions, fit only the silicon+MMs first
-    actsFit->fitSiliconMMs(SC_CALIBMODE);
-    se->registerSubsystem(actsFit);
-  
-    if (SC_CALIBMODE)
-    {
-       /// run tpc residual determination with silicon+MM track fit
-       PHTpcResiduals* residuals = new PHTpcResiduals();
-       residuals->Verbosity(verbosity);
-       se->registerSubsystem(residuals);
-    }
-   /*
-    PHActsVertexFinder* vtxer = new PHActsVertexFinder();
-    vtxer->Verbosity(verbosity);
-    se->registerSubsystem(vtxer);
-    */
-    #endif
   }
 
+  if (use_acts_tracking)
+  {
+    G4Init();
+    TrackingInit();
+    Tracking_Reco();
+  }
 
   string raveVertexName = "SvtxVertexMapRave";
-  if (use_rave_vertexing)
+  if (use_rave_vertexing && !use_acts_vertexing)
   {
     PHRaveVertexing* rave = new PHRaveVertexing();
     //https://rave.hepforge.org/trac/wiki/RaveMethods
@@ -189,6 +159,7 @@ int Fun4All_KFParticle_advanced(){
 
   //Use rave vertexing to construct PV
   if (use_rave_vertexing) kfparticle->setVertexMapNodeName(raveVertexName.c_str());
+  if (use_acts_vertexing) kfparticle->setVertexMapNodeName(actsVertexName.c_str());
 
   kfparticle->setMinimumTrackPT(0.1);
   kfparticle->setMinimumTrackIPchi2(10);
@@ -199,7 +170,7 @@ int Fun4All_KFParticle_advanced(){
   kfparticle->setMinDIRA(0.8);
   kfparticle->setMotherPT(0);
 
-  kfparticle->saveDST(1);
+  kfparticle->saveDST(0);
   kfparticle->saveOutput(1);
   kfparticle->doTruthMatching(1);
   kfparticle->getDetectorInfo(0);

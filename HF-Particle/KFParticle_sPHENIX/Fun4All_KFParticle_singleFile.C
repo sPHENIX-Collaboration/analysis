@@ -44,13 +44,14 @@ int Fun4All_KFParticle_singleFile(string filePath = "/sphenix/user/cdean/MDC1/py
   // Choose reco
   //---------------
   map<string, int> reconstructionChannel;
-  reconstructionChannel["D02K-pi+"] = 1;
+  reconstructionChannel["D02K-pi+"] = 0;
   reconstructionChannel["D02K+pi-"] = 0;
   reconstructionChannel["Lc2pK-pi+"] = 0;
   reconstructionChannel["Jpsi2ll"] = 0;
   reconstructionChannel["Bs2Jpsiphi"] = 0;
   reconstructionChannel["Bd2D-pi+"] = 0;
   reconstructionChannel["Bs2Ds-pi+"] = 0;
+  reconstructionChannel["B+2D0pi+"] = 1;
   reconstructionChannel["Upsilon"] = 0;
   reconstructionChannel["testSpace"] = 0;
   bool testMDC = true;
@@ -81,7 +82,7 @@ int Fun4All_KFParticle_singleFile(string filePath = "/sphenix/user/cdean/MDC1/py
       if (it->second == 1) reconstructionName = it->first;
   }
 
-  string outputDirectory = "";
+  string outputDirectory = "/sphenix/user/cdean/testArea/";
   string makeDirectory = "mkdir " + outputDirectory + reconstructionName;
   system(makeDirectory.c_str());
 
@@ -115,7 +116,7 @@ int Fun4All_KFParticle_singleFile(string filePath = "/sphenix/user/cdean/MDC1/py
 
   kfparticle->saveDST(0);
   kfparticle->saveOutput(1);
-  kfparticle->doTruthMatching(0);
+  kfparticle->doTruthMatching(1);
   kfparticle->getDetectorInfo(0);
 
   std::pair<std::string, int> daughterList[99];
@@ -173,10 +174,10 @@ int Fun4All_KFParticle_singleFile(string filePath = "/sphenix/user/cdean/MDC1/py
   {
      kfparticle->setMotherName("J/psi");
      kfparticle->setMinimumMass(3);
-     kfparticle->setMaximumMass(3.2);
+     kfparticle->setMaximumMass(4);
      kfparticle->setNumberOfTracks(2);
 
-     kfparticle->constrainToPrimaryVertex(false);
+     kfparticle->constrainToPrimaryVertex(true);
      kfparticle->hasIntermediateStates(false);
 
      daughterList[0] = make_pair("muon", -1);
@@ -255,6 +256,40 @@ int Fun4All_KFParticle_singleFile(string filePath = "/sphenix/user/cdean/MDC1/py
       intPt[0] = 0.;
 
       daughterList[3] = make_pair("pion", +1);
+  }
+
+    //B+2D0pi+ reco
+   if (reconstructionChannel["B+2D0pi+"])
+   {
+      kfparticle->setMotherName("B+");  
+      kfparticle->setMinimumMass(4.5);
+      kfparticle->setMaximumMass(6.0);
+      kfparticle->setNumberOfTracks(3);
+
+      kfparticle->constrainToPrimaryVertex(true);
+      kfparticle->getChargeConjugate(true);
+
+      kfparticle->setMinimumTrackPT(0.1);
+      kfparticle->setMinimumTrackIPchi2(10); 
+      kfparticle->setMaximumTrackchi2nDOF(2);
+      kfparticle->setMaximumVertexchi2nDOF(2);
+      kfparticle->setMaximumDaughterDCA(0.03);
+      kfparticle->setFlightDistancechi2(80);
+      kfparticle->setMinDIRA(0.8);
+      kfparticle->setMotherPT(0);
+      kfparticle->setMotherIPchi2(50); 
+
+      kfparticle->hasIntermediateStates(true);
+      kfparticle->setNumberOfIntermediateStates(1);
+
+      intermediateList[0] = make_pair("D0", 0);
+      daughterList[0]     = make_pair("kaon", -1);
+      daughterList[1]     = make_pair("pion", +1);
+      intermediateMassRange[0] = make_pair(1.7, 2.0);
+      nIntTracks[0] = 2;
+      intPt[0] = 0.;
+
+      daughterList[2] = make_pair("pion", +1);
   }
 
   //Upsilon reco
