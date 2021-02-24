@@ -79,8 +79,6 @@ void run(
   }
 
   se->run();
-  outePid->Print();
-
   se->End();
 
 }
