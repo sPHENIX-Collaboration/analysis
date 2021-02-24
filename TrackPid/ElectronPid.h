@@ -21,6 +21,10 @@
 #include <set>
 #include <memory>
 
+#include "TFile"
+#include "TNtuple"
+#include "SvtxTrack"
+
 // forward declarations
 class PHCompositeNode;
 class SvtxTrackMap;
