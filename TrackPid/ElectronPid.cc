@@ -45,7 +45,7 @@ ElectronPid::~ElectronPid()
 int ElectronPid::InitRun(PHCompositeNode* topNode)
 {
 
-  if(write_ntuple) {
+  if(output_ntuple) {
 
 	OutputNtupleFile = new TFile(OutputFileName.c_str(),"RECREATE");
   	std::cout << "PairMaker::Init: output file " << OutputFileName.c_str() << " opened." << endl;
