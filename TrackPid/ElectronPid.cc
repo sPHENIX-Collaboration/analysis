@@ -47,7 +47,7 @@ ElectronPid::~ElectronPid()
 {
 }
 
-int ElectronPid::Init(PHCompositeNode* topNode)
+int ElectronPid::Init(PHCompositeNode *topNode)
 {
 
   if(output_ntuple) {
@@ -67,7 +67,8 @@ int ElectronPid::Init(PHCompositeNode* topNode)
     	  return Fun4AllReturnCodes::ABORTEVENT;
 	}
   }
-
+  
+  return Fun4AllReturnCodes::EVENT_OK;
   
 }
 
