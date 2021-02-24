@@ -87,6 +87,9 @@ int Fun4All_KFParticle_advanced(){
   if (use_acts_vertexing && use_rave_vertexing)
   {
     cout << "*\n*\n*\n* This macro doesn't allow you to run ACTS and RAVE vertexing at the same time, exiting!\n*\n*\n*\n" << endl;
+    delete se;
+    gSystem->Exit(0);
+    return 1;
   }
 
   //--------------
