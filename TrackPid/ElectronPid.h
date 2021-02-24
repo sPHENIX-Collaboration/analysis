@@ -25,12 +25,20 @@
 class PHCompositeNode;
 class SvtxTrackMap;
 
+class TFile;
+class TH1D;
+class TNtuple;
+class TRandom;
+
+class SvtxTrack;
+
 class ElectronPid  : public SubsysReco
 {
 public:
-  ElectronPid(const std::string &name = "ElectronPid");
+  ElectronPid(const std::string &name = "ElectronPid", const std::string &filename = "_ElectronPid.root");
   virtual ~ElectronPid();
 
+  int Init(PHCompositeNode *topNode);
   int InitRun(PHCompositeNode *topNode);
   int process_event(PHCompositeNode *topNode);
   int End(PHCompositeNode *topNode);
@@ -39,6 +47,8 @@ public:
   void setEOPcutlimits(float EOPlowerlimit, float EOPhigherlimit) { EOP_lowerlimit = EOPlowerlimit;EOP_higherlimit = EOPhigherlimit; }
   /// Set the (hcaline3x3+hcaloute3x3)/p cut lower limit
   void setHOPcutlimit(float HOPlowerlimit) { HOP_lowerlimit = HOPlowerlimit; }
+
+  void set_output_ntuple(bool outputntuple) {output_ntuple = outputntuple;}
 
 private:
 /// fetch node pointers
@@ -55,6 +65,14 @@ int GetNodes(PHCompositeNode *topNode);
 
 /// A float lower limit for cutting on (hcaline3x3+hcaloute3x3)/p
   float HOP_lowerlimit;
+
+  bool output_ntuple;
+
+  TFile* OutputNtupleFile;
+  std::string OutputFileName;
+  TNtuple* ntp2;
+
+  int EventNumber;
 
 /*
  TTree *PID_tracktree;
