@@ -50,6 +50,15 @@ public:
 
   void set_output_ntuple(bool outputntuple) {output_ntuple = outputntuple;}
 
+protected
+  bool output_ntuple;
+
+  TFile* OutputNtupleFile;
+  std::string OutputFileName;
+  TNtuple* ntp2;
+
+  int EventNumber;
+
 private:
 /// fetch node pointers
 int GetNodes(PHCompositeNode *topNode);
@@ -66,13 +75,13 @@ int GetNodes(PHCompositeNode *topNode);
 /// A float lower limit for cutting on (hcaline3x3+hcaloute3x3)/p
   float HOP_lowerlimit;
 
-  bool output_ntuple;
+ // bool output_ntuple;
 
-  TFile* OutputNtupleFile;
-  std::string OutputFileName;
-  TNtuple* ntp2;
+ // TFile* OutputNtupleFile;
+ // std::string OutputFileName;
+ // TNtuple* ntp2;
 
-  int EventNumber;
+ // int EventNumber;
 
 /*
  TTree *PID_tracktree;
