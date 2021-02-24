@@ -41,12 +41,12 @@ void run(
 {
   gSystem->Load("libg4dst");
   gSystem->Load("libtrackpid");
-  //  gSystem->Load("libeventmix");
 
   Fun4AllServer *se = Fun4AllServer::instance();
   se->Verbosity(1);
   ElectronPid *ePid = new ElectronPid("ElectronPid");
-  //  PairMaker *pmaker = new PairMaker("PairMaker","test.root");
+  ePid->setEOPcutlimits(0.7,1.5);
+  ePid->setHOPcutlimit(0.5);
   se->registerSubsystem(ePid);
 
   AnaTutorial *anaTutorial = new AnaTutorial("anaTutorial", outputroot + "_anaTutorial.root");
@@ -56,7 +56,6 @@ void run(
   anaTutorial->analyzeClusters(false);
   anaTutorial->analyzeJets(false);
   anaTutorial->analyzeTruth(false);
-  se->registerSubsystem(anaTutorial);
 
   Fun4AllInputManager *in = new Fun4AllDstInputManager("in");
   in->fileopen(fname);
@@ -67,7 +66,6 @@ void run(
 
   Fun4AllOutputManager *outePid = new Fun4AllDstOutputManager("outePid","embedDST_sHijing_upsilon_0_12fm_EOP_0.7_1.5.root");
   outePid->AddNode("TrackPidAssoc");
-  //  outePid->AddNode("ElectronPairs");
   se->registerOutputManager(outePid);
   outePid->Print();
 
