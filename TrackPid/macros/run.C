@@ -50,7 +50,7 @@ void run(
   ePid->set_output_ntuple(output_ntuple);
   ePid->Verbosity(1);
   ePid->setEOPcutlimits(0.7,1.5);
-  ePid->setHOPcutlimit(0.5);
+  ePid->setHOPcutlimit(0.3);
   se->registerSubsystem(ePid);
 /*
   AnaTutorial *anaTutorial = new AnaTutorial("anaTutorial", outputroot + "_anaTutorial.root");
