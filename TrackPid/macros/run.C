@@ -65,8 +65,8 @@ void run(
 
   Fun4AllInputManager *in = new Fun4AllDstInputManager("DST_TRACKS");
   in->Verbosity(1);
-  in->fileopen(inputFile);
- // in->AddListFile("filelist.txt");
+  //in->fileopen(inputFile);
+  in->AddListFile("filelist.txt");
   se->registerInputManager(in);
 
 
