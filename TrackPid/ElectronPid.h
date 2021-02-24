@@ -54,7 +54,7 @@ int GetNodes(PHCompositeNode *topNode);
   float EOP_higherlimit;
 
 /// A float lower limit for cutting on (hcaline3x3+hcaloute3x3)/p
-  float HOP_higherlimit;
+  float HOP_lowerlimit;
 
 /*
  TTree *PID_tracktree;
