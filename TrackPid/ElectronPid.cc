@@ -42,7 +42,7 @@ ElectronPid::~ElectronPid()
 {
 }
 
-int ElectronPid::InitRun(PHCompositeNode* topNode)
+int ElectronPid::Init(PHCompositeNode* topNode)
 {
 
   if(output_ntuple) {
