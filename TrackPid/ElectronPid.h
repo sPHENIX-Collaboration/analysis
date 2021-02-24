@@ -23,15 +23,12 @@
 
 #include <TFile.h>
 #include <TNtuple.h>
-#include <SvtxTrack.h>
 
 // forward declarations
 class PHCompositeNode;
 class SvtxTrackMap;
 
-//class TFile;
-//class TNtuple;
-//class SvtxTrack;
+class SvtxTrack;
 
 class ElectronPid  : public SubsysReco
 {
