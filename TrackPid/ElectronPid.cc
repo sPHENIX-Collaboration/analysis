@@ -30,13 +30,40 @@ class PHCompositeNode;
 
 using namespace std;
 
-ElectronPid::ElectronPid(const std::string& name)
-  : SubsysReco(name)
+ElectronPid::ElectronPid(const std::string& name, const std::string &filename): SubsysReco(name)
 {
+  OutputNtupleFile=nullptr;
+  OutputFileName=filename;
+  EventNumber=0;
+  output_ntuple = false;
 }
 
 ElectronPid::~ElectronPid() 
 {
+}
+
+int ElectronPid::InitRun(PHCompositeNode* topNode)
+{
+
+  if(write_ntuple) {
+
+	OutputNtupleFile = new TFile(OutputFileName.c_str(),"RECREATE");
+  	std::cout << "PairMaker::Init: output file " << OutputFileName.c_str() << " opened." << endl;
+
+	ntp2 = new TNtuple("ntp2","","p:pt:cemce3x3overp:hcale3x3overp:charge:pid");
+
+  }
+  else {
+	PHNodeIterator iter(topNode);
+	PHCompositeNode *dstNode = dynamic_cast<PHCompositeNode *>(iter.findFirst("PHCompositeNode", "DST"));
+	if (!dstNode)
+	{
+  	  cerr << PHWHERE << " ERROR: Can not find DST node." << endl;
+    	  return Fun4AllReturnCodes::ABORTEVENT;
+	}
+  }
+
+  
 }
 
 int ElectronPid::InitRun(PHCompositeNode* topNode)
@@ -49,22 +76,45 @@ int ElectronPid::InitRun(PHCompositeNode* topNode)
 
 int ElectronPid::process_event(PHCompositeNode* topNode)
 {
+  EventNumber++;
+  float ntp[99];
+  cout<<"EventNumber ===================== " << EventNumber-1 << endl;
+  if(EventNumber==1) topNode->print();
+
   // get the tracks
   for(SvtxTrackMap::Iter it = _track_map->begin(); it != _track_map->end(); ++it)
     {
 
       SvtxTrack *track = it->second;
-      //double tr_px = track->get_px();
-     // double tr_py = track->get_py();
-     // double tr_pz = track->get_pz();
+
+      double px = track->get_px();
+      double py = track->get_py();
+      double pz = track->get_pz();
       double mom = track->get_p();
-     // double tr_pt = sqrt(tr_px * tr_px + tr_py * tr_py);
+      double pt = sqrt(px*px + py*py);
+      int charge = track->get_charge();
+      int pid = it->first;
+
+      double x = track->get_x();
+      double y = track->get_y();
+      double z = track->get_z();
+
       double e_cemc = track->get_cal_energy_3x3(SvtxTrack::CAL_LAYER::CEMC);
       double e_hcal_in = track->get_cal_energy_3x3(SvtxTrack::CAL_LAYER::HCALIN);
       double e_hcal_out = track->get_cal_energy_3x3(SvtxTrack::CAL_LAYER::HCALOUT);
 
-	// CEMC E/p cut
-      double eoverp = e_cemc / mom;
+      // CEMC E/p cut
+      double cemceoverp = e_cemc / mom;
+      // HCal E/p cut
+      double hcaleoverp = (e_hcal_in + e_hcal_out) / mom;
+
+      ntp[0] = mom;
+      ntp[1] = pt;
+      ntp[2] = cemceoverp;
+      ntp[3] = hcaleoverp;
+      ntp[4] = charge;
+      ntp[5] = pid;
+      if(output_ntuple) { ntp2->Fill(ntp); }
 /*
       PID_tr_p = mom;
       PID_tr_pt = tr_pt;
@@ -80,7 +130,7 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
 
       PID_EcemcOP = PID_cemce3x3 / PID_tr_p;
 */
-      if(eoverp > EOP_lowerlimit && eoverp < EOP_higherlimit)// 0.7<eoverp<1.5
+      if(cemceoverp > EOP_lowerlimit && cemceoverp < EOP_higherlimit)// 0.7<cemceoverp<1.5
 	{
 	 // PID_EcemcOP_cut = PID_cemce3x3 / PID_tr_p;
 
@@ -91,12 +141,11 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
 	  _track_pid_assoc->addAssoc(TrackPidAssoc::electron, it->second->get_id());
 	}
       
-      // HCal E/p cut
-      eoverp = (e_hcal_in + e_hcal_out) / mom;
+      ///////////////////////////////////////////////////////////////////////////////////////////////////
      
      // PID_EhcalOP = (PID_hcaline3x3 + PID_hcaloute3x3) / PID_tr_p;
 
-      if(eoverp > HOP_lowerlimit)// eoverp>0.5
+      if(hcaleoverp > HOP_lowerlimit)// hcaleoverp>0.5
 	{
         //  PID_EhcalOP_cut = (PID_hcaline3x3 + PID_hcaloute3x3) / PID_tr_p;
 
@@ -184,8 +233,17 @@ int ElectronPid::GetNodes(PHCompositeNode* topNode)
 
 int ElectronPid::End(PHCompositeNode * /*topNode*/)
 {
+if(output_ntuple) {
+  OutputNtupleFile->cd();
+  OutputNtupleFile->Write();
+  OutputNtupleFile->Close();
+}
+
+  cout << "************END************" << endl;
   return Fun4AllReturnCodes::EVENT_OK;
 }
+
+
 /*
 void ElectronPid::initializeTrees()
 {
