@@ -48,7 +48,7 @@ public:
 
   void set_output_ntuple(bool outputntuple) {output_ntuple = outputntuple;}
 
-protected
+protected:
   bool output_ntuple;
 
   TFile* OutputNtupleFile;
