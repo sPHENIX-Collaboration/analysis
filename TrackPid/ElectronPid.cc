@@ -55,7 +55,7 @@ int ElectronPid::Init(PHCompositeNode *topNode)
 	OutputNtupleFile = new TFile(OutputFileName.c_str(),"RECREATE");
   	std::cout << "PairMaker::Init: output file " << OutputFileName.c_str() << " opened." << endl;
 
-	ntp2 = new TNtuple("ntp2","","p:pt:cemce3x3overp:hcale3x3overp:charge:pid");
+	ntp2 = new TNtuple("ntp2","","p:pt::cemce3x3:hcaline3x3:hcaloute3x3:cemce3x3overp:hcale3x3overp:charge:pid:p_EOP:pt_EOP:cemce3x3_EOP:hcaline3x3_EOP:hcaloute3x3_EOP:p_HOP:pt_HOP:cemce3x3_HOP:hcaline3x3_HOP:hcaloute3x3_HOP");
 
   }
   else {
@@ -112,16 +112,25 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
 
       ntp[0] = mom;
       ntp[1] = pt;
-      ntp[2] = cemceoverp;
-      ntp[3] = hcaleoverp;
-      ntp[4] = charge;
-      ntp[5] = pid;
+      ntp[2] = e_cemc;
+      ntp[3] = e_hcal_in;
+      ntp[4] = e_hcal_out;
+      ntp[5] = cemceoverp;
+      ntp[6] = hcaleoverp;
+      ntp[7] = charge;
+      ntp[8] = pid;
       if(output_ntuple) { ntp2 -> Fill(ntp); }
 
       if(cemceoverp > EOP_lowerlimit && cemceoverp < EOP_higherlimit)// 0.7<cemceoverp<1.5
 	{
 	 // PID_EcemcOP_cut = PID_cemce3x3 / PID_tr_p;
 
+	  ntp[9] = mom;
+    	  ntp[10] = pt;
+    	  ntp[11] = e_cemc;
+   	  ntp[12] = e_hcal_in;
+   	  ntp[13] = e_hcal_out;
+   	 
 	  if(Verbosity() > 0)
 	    std::cout << " Track " << it->first  << " identified as electron " << "    mom " << mom << " e_cemc " << e_cemc  << " cemceoverp " << cemceoverp 
 		      << " e_hcal_in " << e_hcal_in << " e_hcal_out " << e_hcal_out << std::endl;
@@ -136,6 +145,12 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
       if(hcaleoverp > HOP_lowerlimit)// hcaleoverp>0.5
 	{
         //  PID_EhcalOP_cut = (PID_hcaline3x3 + PID_hcaloute3x3) / PID_tr_p;
+
+	  ntp[14] = mom;
+    	  ntp[15] = pt;
+    	  ntp[16] = e_cemc;
+   	  ntp[17] = e_hcal_in;
+   	  ntp[18] = e_hcal_out;
 
 	  if(Verbosity() > 0)
 	    std::cout << " Track " << it->first  << " identified as hadron " << "    mom " << mom << " e_cemc " << e_cemc  << " hcaleoverp " << hcaleoverp 
