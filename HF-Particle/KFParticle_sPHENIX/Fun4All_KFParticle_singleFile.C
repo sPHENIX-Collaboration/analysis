@@ -82,7 +82,7 @@ int Fun4All_KFParticle_singleFile(string filePath = "/sphenix/user/cdean/MDC1/py
       if (it->second == 1) reconstructionName = it->first;
   }
 
-  string outputDirectory = "/sphenix/user/cdean/testArea/";
+  string outputDirectory = "";
   string makeDirectory = "mkdir " + outputDirectory + reconstructionName;
   system(makeDirectory.c_str());
 
