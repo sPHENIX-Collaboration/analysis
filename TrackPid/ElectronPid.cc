@@ -35,7 +35,7 @@ class PHCompositeNode;
 
 using namespace std;
 
-ElectronPid::ElectronPid(const std::string& name, const std::string &filename): SubsysReco(name)
+ElectronPid::ElectronPid(const std::string& name, const std::string &filename) : SubsysReco(name)
 {
   OutputNtupleFile=nullptr;
   OutputFileName=filename;
@@ -94,15 +94,11 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
 
       double px = track->get_px();
       double py = track->get_py();
-     // double pz = track->get_pz();
+
       double mom = track->get_p();
       double pt = sqrt(px*px + py*py);
       int charge = track->get_charge();
       int pid = it->first;
-
-     // double x = track->get_x();
-     // double y = track->get_y();
-     // double z = track->get_z();
 
       double e_cemc = track->get_cal_energy_3x3(SvtxTrack::CAL_LAYER::CEMC);
       double e_hcal_in = track->get_cal_energy_3x3(SvtxTrack::CAL_LAYER::HCALIN);
@@ -120,21 +116,7 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
       ntp[4] = charge;
       ntp[5] = pid;
       if(output_ntuple) { ntp2 -> Fill(ntp); }
-/*
-      PID_tr_p = mom;
-      PID_tr_pt = tr_pt;
-      PID_cemcdphi = track->get_cal_dphi(SvtxTrack::CEMC);
-      PID_cemcdeta = track->get_cal_deta(SvtxTrack::CEMC); 
-      PID_cemce3x3 = e_cemc;
-      
-      PID_hcalindphi = track->get_cal_dphi(SvtxTrack::HCALIN);
-      PID_hcalindeta = track->get_cal_deta(SvtxTrack::HCALIN);
-      PID_hcaline3x3 = e_hcal_in;
-      
-      PID_hcaloute3x3 = e_hcal_out;
 
-      PID_EcemcOP = PID_cemce3x3 / PID_tr_p;
-*/
       if(cemceoverp > EOP_lowerlimit && cemceoverp < EOP_higherlimit)// 0.7<cemceoverp<1.5
 	{
 	 // PID_EcemcOP_cut = PID_cemce3x3 / PID_tr_p;
