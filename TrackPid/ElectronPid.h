@@ -35,12 +35,26 @@ public:
   int process_event(PHCompositeNode *topNode);
   int End(PHCompositeNode *topNode);
 
+  /// Set the cemce3x3/p cut limits
+  void setEOPcutlimits(float EOPlowerlimit, float EOPhigherlimit) { EOP_lowerlimit = EOPlowerlimit;EOP_higherlimit = EOPhigherlimit; }
+  /// Set the (hcaline3x3+hcaloute3x3)/p cut lower limit
+  void setHOPcutlimit(float HOPlowerlimit) { HOP_lowerlimit = HOPlowerlimit; }
+
 private:
 /// fetch node pointers
 int GetNodes(PHCompositeNode *topNode);
 
  TrackPidAssoc *_track_pid_assoc;
  SvtxTrackMap *_track_map;
+
+/// A float lower limit for cutting on cemce3x3/p
+  float EOP_lowerlimit;
+
+/// A float higher limit for cutting on cemce3x3/p
+  float EOP_higherlimit;
+
+/// A float lower limit for cutting on (hcaline3x3+hcaloute3x3)/p
+  float HOP_higherlimit;
 
 /*
  TTree *PID_tracktree;
