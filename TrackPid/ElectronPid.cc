@@ -162,7 +162,6 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
     		  ntp[4] = e_hcal_out;
     		  ntp[5] = charge;
     		  ntp[6] = pid;
-    		  
   		  if(output_ntuple) { ntpcutEMOP_HinOEM -> Fill(ntp); }
 
 		  if( pt > Pt_lowerlimit && pt < Pt_higherlimit)
@@ -175,14 +174,13 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
     			  ntp[4] = e_hcal_out;
     			  ntp[5] = charge;
     			  ntp[6] = pid;
-    			  
   			  if(output_ntuple) { ntpcutEMOP_HinOEM -> Fill(ntp); }
    	 	
-	 		  if(Verbosity() > 0)
-	 	 	   std::cout << " Track " << it->first  << " identified as electron " << "    mom " << mom << " e_cemc " << e_cemc  << " cemceoverp " << cemceoverp << " e_hcal_in " << e_hcal_in << " e_hcal_out " << e_hcal_out << std::endl;
+	 		  if(Verbosity() > 0) {
+	 	 	   std::cout << " Track " << it->first  << " identified as electron " << "    mom " << mom << " e_cemc " << e_cemc  << " cemceoverp " << cemceoverp << " e_hcal_in " << e_hcal_in << " e_hcal_out " << e_hcal_out << std::endl; }
 		  
-			   // add to the association map
-	 		   _track_pid_assoc->addAssoc(TrackPidAssoc::electron, it->second->get_id());
+			  // add to the association map
+	 		  _track_pid_assoc->addAssoc(TrackPidAssoc::electron, it->second->get_id());
 		   }
    	    }
 	}
@@ -202,8 +200,8 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
     	  
   	  if(output_ntuple) { ntpcutHOP -> Fill(ntp); }
 
-	  if(Verbosity() > 0)
-	    std::cout << " Track " << it->first  << " identified as hadron " << "    mom " << mom << " e_cemc " << e_cemc  << " hcaleoverp " << hcaleoverp << " e_hcal_in " << e_hcal_in << " e_hcal_out " << e_hcal_out << std::endl;
+	  if(Verbosity() > 0) {
+	    std::cout << " Track " << it->first  << " identified as hadron " << "    mom " << mom << " e_cemc " << e_cemc  << " hcaleoverp " << hcaleoverp << " e_hcal_in " << e_hcal_in << " e_hcal_out " << e_hcal_out << std::endl; }
 
 	  // add to the association map
 	  _track_pid_assoc->addAssoc(TrackPidAssoc::hadron, it->second->get_id());
