@@ -36,8 +36,8 @@ void run(
   ePid->Verbosity(1);
   ePid->setEMOPcutlimits(0.7,1.5);
   ePid->setHinOEMcutlimit(0.2);
-  ePid->setPtcutlimit(2.0,30.0);
-  ePid->setHOPcutlimit(0.3);
+  //ePid->setPtcutlimit(2.0,30.0);
+  //ePid->setHOPcutlimit(0.3);
   se->registerSubsystem(ePid);
 
   Fun4AllInputManager *in = new Fun4AllDstInputManager("DST_TRACKS");
