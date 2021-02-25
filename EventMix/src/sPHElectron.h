@@ -37,6 +37,9 @@ class sPHElectron : public PHObject
   virtual double get_dca3d_xy()  const { return NAN;}
   virtual double get_dca3d_z()   const { return NAN;}
 
+  virtual int get_nmvtx()   const { return -1;}
+  virtual int get_ntpc()   const { return -1;}
+
 
   virtual void set_id(unsigned int id) { }
   virtual void set_charge(int charge)  { }
@@ -56,6 +59,9 @@ class sPHElectron : public PHObject
   virtual void set_dca2d_error(double a)   { }
   virtual void set_dca3d_xy(double a)  { }
   virtual void set_dca3d_z(double a)   { }
+
+  virtual void set_nmvtx(int i)   { }
+  virtual void set_ntpc(int i)   { }
 
 
  protected:
