@@ -187,7 +187,7 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
   			  if(output_ntuple) { ntpcutEMOP_HinOEM -> Fill(ntp); }
    	 	
 	 		  if(Verbosity() > 0) {
-	 	 	   	std::cout << " Track " << it->first  << " identified as electron " << "    mom " << mom << " e_cemc " << e_cemc  << " cemceoverp " << cemceoverp << " e_hcal_in " << e_hcal_in << " e_hcal_out " << e_hcal_out << std::endl; 
+	 	 	   	std::cout << " Track " << it->first  << " identified as electron " << "    mom " << mom << " e_cemc_3x3 " << e_cemc_3x3  << " cemceoverp " << cemceoverp << " e_hcal_in_3x3 " << e_hcal_in_3x3 << " e_hcal_out_3x3 " << e_hcal_out_3x3 << std::endl; 
 			   }
 		  
 			  // add to the association map
@@ -213,7 +213,7 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
   	  if(output_ntuple) { ntpcutHOP -> Fill(ntp); }
 
 	  if(Verbosity() > 0) {
-		std::cout << " Track " << it->first  << " identified as hadron " << "    mom " << mom << " e_cemc " << e_cemc  << " hcaleoverp " << hcaleoverp << " e_hcal_in " << e_hcal_in << " e_hcal_out " << e_hcal_out << std::endl; 
+		std::cout << " Track " << it->first  << " identified as hadron " << "    mom " << mom << " e_cemc_3x3 " << e_cemc_3x3  << " hcaleoverp " << hcaleoverp << " e_hcal_in_3x3 " << e_hcal_in_3x3 << " e_hcal_out_3x3 " << e_hcal_out_3x3 << std::endl; 
 	    }
 
 	  // add to the association map
