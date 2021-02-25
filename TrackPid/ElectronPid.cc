@@ -201,7 +201,7 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
   	  if(output_ntuple) { ntpcutHOP -> Fill(ntp); }
 
 	  if(Verbosity() > 0) {
-		std::cout << " HOP_lowerlimit " << HOP_lowerlimit <<std::endl;
+		//std::cout << " HOP_lowerlimit " << HOP_lowerlimit <<std::endl;
 		//std::cout << " Track " << it->first  << " identified as hadron " << "    mom " << mom << " e_cemc " << e_cemc  << " hcaleoverp " << hcaleoverp << " e_hcal_in " << e_hcal_in << " e_hcal_out " << e_hcal_out << std::endl; 
 	    }
 
