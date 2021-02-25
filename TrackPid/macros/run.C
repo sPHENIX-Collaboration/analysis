@@ -21,7 +21,7 @@ R__LOAD_LIBRARY(libtrackpid.so)
 
 void run(
   const char *inputFile = "/sphenix/sim/sim01/sphnxpro/MDC1/embed/embedDST_sHijing_0_12fm_50kHz_bkg_0_12fm-0000000001-01998.root",
-  const string &outputroot = "embedDST_sHijing_upsilon_0_12fm_EOP_0.7_1.5",
+  const string &outputroot = "/sphenix/u/weihuma/RunOutput/embedDST_sHijing_upsilon_0_12fm_EOP_0.7_1.5",
   bool output_ntuple = true
 )
 {
