@@ -31,9 +31,9 @@ void run(
   Fun4AllServer *se = Fun4AllServer::instance();
   se->Verbosity(1);
 
-  ElectronPid *ePid = new ElectronPid("ElectronPid",outputroot+"_ElectronPid_test.root");
+  ElectronPid *ePid = new ElectronPid("ElectronPid",outputroot+"_ElectronPid.root");
   ePid->set_output_ntuple(output_ntuple);
-  ePid->Verbosity(1);
+ // ePid->Verbosity(1);
   ePid->setEMOPcutlimits(0.7,1.5);
   ePid->setHinOEMcutlimit(0.2);
   ePid->setPtcutlimit(2.0,30.0);
@@ -42,8 +42,8 @@ void run(
 
   Fun4AllInputManager *in = new Fun4AllDstInputManager("DST_TRACKS");
   in->Verbosity(1);
-  in->fileopen(inputFile);
-  //in->AddListFile("filelist.txt");
+ // in->fileopen(inputFile);
+  in->AddListFile("filelist.txt");
   se->registerInputManager(in);
 
 
