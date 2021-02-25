@@ -41,6 +41,14 @@ ElectronPid::ElectronPid(const std::string& name, const std::string &filename) :
   OutputFileName=filename;
   EventNumber=0;
   output_ntuple = true;
+
+  /// default limits 
+  EMOP_lowerlimit = 0.0;
+  EMOP_higherlimit = 100.0;
+  HOP_lowerlimit = 0.0;
+  HinOEM_higherlimit = 100.0;
+  Pt_lowerlimit = 0.0;
+  Pt_lowerlimit = 100.0;
 }
 
 ElectronPid::~ElectronPid() 
@@ -49,16 +57,6 @@ ElectronPid::~ElectronPid()
 
 int ElectronPid::Init(PHCompositeNode *topNode)
 {
-  /// default limits 
-  EMOP_lowerlimit = 0.0;
-  EMOP_higherlimit = 100.0;
-
-  HOP_lowerlimit = 0.0;
-
-  HinOEM_higherlimit = 100.0;
-
-  Pt_lowerlimit = 0.0;
-  Pt_lowerlimit = 100.0;
 
   if(output_ntuple) {
 
@@ -224,8 +222,8 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
       SvtxTrack *tr = _track_map->get(it->second);
       double p = tr->get_p();
 
-      if(Verbosity() > 0)
-	std::cout << " pid " << it->first << " track ID " << it->second << " mom " << p << std::endl;
+      //if(Verbosity() > 0)
+	//std::cout << " pid " << it->first << " track ID " << it->second << " mom " << p << std::endl;
     }
 
   if(Verbosity() > 0)
@@ -236,8 +234,8 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
       SvtxTrack *tr = _track_map->get(it->second);
       double p = tr->get_p();
 
-      if(Verbosity() > 0)
-	std::cout << " pid " << it->first << " track ID " << it->second << " mom " << p << std::endl;
+      //if(Verbosity() > 0)
+	//std::cout << " pid " << it->first << " track ID " << it->second << " mom " << p << std::endl;
     }
 
   
