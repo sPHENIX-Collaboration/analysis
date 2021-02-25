@@ -49,14 +49,27 @@ ElectronPid::~ElectronPid()
 
 int ElectronPid::Init(PHCompositeNode *topNode)
 {
+  /// default limits 
+  EMOP_lowerlimit = 0.0;
+  EMOP_higherlimit = 100.0;
+
+  HOP_lowerlimit = 0.0;
+
+  HinOEM_higherlimit = 100.0;
+
+  Pt_lowerlimit = 0.0;
+  Pt_lowerlimit = 100.0;
 
   if(output_ntuple) {
 
 	OutputNtupleFile = new TFile(OutputFileName.c_str(),"RECREATE");
   	std::cout << "PairMaker::Init: output file " << OutputFileName.c_str() << " opened." << endl;
 
-	ntp2 = new TNtuple("ntp2","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:cemce3x3overp:hcale3x3overp:charge:pid:p_EOP:pt_EOP:cemce3x3_EOP:hcaline3x3_EOP:hcaloute3x3_EOP:p_HOP:pt_HOP:cemce3x3_HOP:hcaline3x3_HOP:hcaloute3x3_HOP");
-
+	ntpbeforecut = new TNtuple("ntpbeforecut","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:cemce3x3overp:hcale3x3overp:charge:pid");
+        ntpcutEMOP = new TNtuple("ntpcutEMOP","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:charge:pid");
+	ntpcutHOP = new TNtuple("ntpcutHOP","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:charge:pid");
+	ntpcutEMOP_HinOEM = new TNtuple("ntpcutEMOP_HinOEM","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:charge:pid");
+	ntpcutEMOP_HinOEM_Pt = new TNtuple("ntpcutEMOP_HinOEM_Pt","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:charge:pid");
   }
   else {
 	PHNodeIterator iter(topNode);
@@ -83,7 +96,8 @@ int ElectronPid::InitRun(PHCompositeNode* topNode)
 int ElectronPid::process_event(PHCompositeNode* topNode)
 {
   EventNumber++;
-  float ntp[99];
+  float ntp[30];
+
   cout<<"EventNumber ===================== " << EventNumber-1 << endl;
   if(EventNumber==1) topNode->print();
 
@@ -107,6 +121,8 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
 
       // CEMC E/p cut
       double cemceoverp = e_cemc / mom;
+      // HCaline/CEMCe cut
+      double hcalineovercemce = e_hcal_in / e_cemc;
       // HCal E/p cut
       double hcaleoverp = (e_hcal_in + e_hcal_out) / mom;
 
@@ -119,42 +135,75 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
       ntp[6] = hcaleoverp;
       ntp[7] = charge;
       ntp[8] = pid;
-      if(output_ntuple) { ntp2 -> Fill(ntp); }
+      if(output_ntuple) { ntpbeforecut -> Fill(ntp); }
 
-      if(cemceoverp > EOP_lowerlimit && cemceoverp < EOP_higherlimit)// 0.7<cemceoverp<1.5
+      /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////electrons
+      if(cemceoverp > EMOP_lowerlimit && cemceoverp < EMOP_higherlimit)
 	{
-	 // PID_EcemcOP_cut = PID_cemce3x3 / PID_tr_p;
+	
+	  ntp[0] = mom;
+    	  ntp[1] = pt;
+    	  ntp[2] = e_cemc;
+    	  ntp[3] = e_hcal_in;
+    	  ntp[4] = e_hcal_out;
+    	  ntp[5] = charge;
+    	  ntp[6] = pid;
+	  ntp[7] = cemceoverp;
+    	  ntp[8] = hcaleoverp;
+  	  if(output_ntuple) { ntpcutEMOP -> Fill(ntp); }
 
-	  ntp[9] = mom;
-    	  ntp[10] = pt;
-    	  ntp[11] = e_cemc;
-   	  ntp[12] = e_hcal_in;
-   	  ntp[13] = e_hcal_out;
-   	 
-	  if(Verbosity() > 0)
-	    std::cout << " Track " << it->first  << " identified as electron " << "    mom " << mom << " e_cemc " << e_cemc  << " cemceoverp " << cemceoverp 
-		      << " e_hcal_in " << e_hcal_in << " e_hcal_out " << e_hcal_out << std::endl;
-	  // add to the association map
-	  _track_pid_assoc->addAssoc(TrackPidAssoc::electron, it->second->get_id());
+	  if(hcalineovercemce < HinOEM_higherlimit)
+	     {
+
+		  ntp[0] = mom;
+    		  ntp[1] = pt;
+    		  ntp[2] = e_cemc;
+    		  ntp[3] = e_hcal_in;
+    		  ntp[4] = e_hcal_out;
+    		  ntp[5] = charge;
+    		  ntp[6] = pid;
+    		  
+  		  if(output_ntuple) { ntpcutEMOP_HinOEM -> Fill(ntp); }
+
+		  if( pt > Pt_lowerlimit && pt < Pt_higherlimit)
+	  	    {
+
+			  ntp[0] = mom;
+    			  ntp[1] = pt;
+    			  ntp[2] = e_cemc;
+    			  ntp[3] = e_hcal_in;
+    			  ntp[4] = e_hcal_out;
+    			  ntp[5] = charge;
+    			  ntp[6] = pid;
+    			  
+  			  if(output_ntuple) { ntpcutEMOP_HinOEM -> Fill(ntp); }
+   	 	
+	 		  if(Verbosity() > 0)
+	 	 	   std::cout << " Track " << it->first  << " identified as electron " << "    mom " << mom << " e_cemc " << e_cemc  << " cemceoverp " << cemceoverp << " e_hcal_in " << e_hcal_in << " e_hcal_out " << e_hcal_out << std::endl;
+		  
+			   // add to the association map
+	 		   _track_pid_assoc->addAssoc(TrackPidAssoc::electron, it->second->get_id());
+		   }
+   	    }
 	}
       
-      ///////////////////////////////////////////////////////////////////////////////////////////////////
+      /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////hadrons
      
-     // PID_EhcalOP = (PID_hcaline3x3 + PID_hcaloute3x3) / PID_tr_p;
-
       if(hcaleoverp > HOP_lowerlimit)// hcaleoverp>0.5
 	{
-        //  PID_EhcalOP_cut = (PID_hcaline3x3 + PID_hcaloute3x3) / PID_tr_p;
-
-	  ntp[14] = mom;
-    	  ntp[15] = pt;
-    	  ntp[16] = e_cemc;
-   	  ntp[17] = e_hcal_in;
-   	  ntp[18] = e_hcal_out;
+      
+	  ntp[0] = mom;
+    	  ntp[1] = pt;
+    	  ntp[2] = e_cemc;
+    	  ntp[3] = e_hcal_in;
+    	  ntp[4] = e_hcal_out;
+    	  ntp[5] = charge;
+    	  ntp[6] = pid;
+    	  
+  	  if(output_ntuple) { ntpcutHOP -> Fill(ntp); }
 
 	  if(Verbosity() > 0)
-	    std::cout << " Track " << it->first  << " identified as hadron " << "    mom " << mom << " e_cemc " << e_cemc  << " hcaleoverp " << hcaleoverp 
-		      << " e_hcal_in " << e_hcal_in << " e_hcal_out " << e_hcal_out << std::endl;
+	    std::cout << " Track " << it->first  << " identified as hadron " << "    mom " << mom << " e_cemc " << e_cemc  << " hcaleoverp " << hcaleoverp << " e_hcal_in " << e_hcal_in << " e_hcal_out " << e_hcal_out << std::endl;
 
 	  // add to the association map
 	  _track_pid_assoc->addAssoc(TrackPidAssoc::hadron, it->second->get_id());
