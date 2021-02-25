@@ -220,7 +220,7 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
   for(auto it = electrons.first; it != electrons.second; ++it)
     {
       SvtxTrack *tr = _track_map->get(it->second);
-      double p = tr->get_p();
+     // double p = tr->get_p();
 
       //if(Verbosity() > 0)
 	//std::cout << " pid " << it->first << " track ID " << it->second << " mom " << p << std::endl;
@@ -232,7 +232,7 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
   for(auto it = hadrons.first; it != hadrons.second; ++it)
     {
       SvtxTrack *tr = _track_map->get(it->second);
-      double p = tr->get_p();
+      //double p = tr->get_p();
 
       //if(Verbosity() > 0)
 	//std::cout << " pid " << it->first << " track ID " << it->second << " mom " << p << std::endl;
