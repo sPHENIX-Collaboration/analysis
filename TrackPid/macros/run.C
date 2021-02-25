@@ -33,7 +33,7 @@ void run(
 
   ElectronPid *ePid = new ElectronPid("ElectronPid",outputroot+"_ElectronPid.root");
   ePid->set_output_ntuple(output_ntuple);
-  ePid->Verbosity(1);
+  ePid->Verbosity(0);
   ePid->setEMOPcutlimits(0.7,1.5);
   ePid->setHinOEMcutlimit(0.2);
   //ePid->setPtcutlimit(2.0,30.0);
