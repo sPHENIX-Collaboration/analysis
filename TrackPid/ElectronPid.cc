@@ -48,7 +48,7 @@ ElectronPid::ElectronPid(const std::string& name, const std::string &filename) :
   HOP_lowerlimit = 0.0;
   HinOEM_higherlimit = 100.0;
   Pt_lowerlimit = 0.0;
-  Pt_lowerlimit = 100.0;
+  Pt_higherlimit = 100.0;
 }
 
 ElectronPid::~ElectronPid() 
@@ -114,30 +114,34 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
       int pid = it->first;
       int quality = track->get_quality();
 
-      double e_cemc = track->get_cal_energy_3x3(SvtxTrack::CAL_LAYER::CEMC);
-      double e_hcal_in = track->get_cal_energy_3x3(SvtxTrack::CAL_LAYER::HCALIN);
-      double e_hcal_out = track->get_cal_energy_3x3(SvtxTrack::CAL_LAYER::HCALOUT);
+      double e_cluster = track->get_cal_cluster_e(SvtxTrack::CAL_LAYER::CEMC);
+
+      double e_cemc_3x3 = track->get_cal_energy_3x3(SvtxTrack::CAL_LAYER::CEMC);
+      double e_hcal_in_3x3 = track->get_cal_energy_3x3(SvtxTrack::CAL_LAYER::HCALIN);
+      double e_hcal_out_3x3 = track->get_cal_energy_3x3(SvtxTrack::CAL_LAYER::HCALOUT);
 
       // CEMC E/p cut
-      double cemceoverp = e_cemc / mom;
+      double cemceoverp = e_cemc_3x3 / mom;
       // HCaline/CEMCe cut
-      double hcalineovercemce = e_hcal_in / e_cemc;
+      double hcalineovercemce = e_hcal_in_3x3 / e_cemc_3x3;
       // HCal E/p cut
-      double hcaleoverp = (e_hcal_in + e_hcal_out) / mom;
+      double hcaleoverp = (e_hcal_in_3x3 + e_hcal_out_3x3) / mom;
 
       ntp[0] = mom;
       ntp[1] = pt;
-      ntp[2] = e_cemc;
-      ntp[3] = e_hcal_in;
-      ntp[4] = e_hcal_out;
+      ntp[2] = e_cemc_3x3;
+      ntp[3] = e_hcal_in_3x3;
+      ntp[4] = e_hcal_out_3x3;
       ntp[5] = cemceoverp;
       ntp[6] = hcaleoverp;
       ntp[7] = charge;
       ntp[8] = pid;
       ntp[9] = quality;
+      ntp[10] = e_cluster;
       if(output_ntuple) { ntpbeforecut -> Fill(ntp); }
 
 	std::cout << " Pt_lowerlimit " << Pt_lowerlimit << " Pt_higherlimit " << Pt_higherlimit << " HOP_lowerlimit " << HOP_lowerlimit <<std::endl;
+        std::cout << " EMOP_lowerlimit " << EMOP_lowerlimit << " EMOP_higherlimit " << EMOP_higherlimit << " HinOEM_higherlimit " << HinOEM_higherlimit <<std::endl;
 
       /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////electrons
       if(cemceoverp > EMOP_lowerlimit && cemceoverp < EMOP_higherlimit && quality < 10)
@@ -145,12 +149,13 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
 	
 	  ntp[0] = mom;
     	  ntp[1] = pt;
-    	  ntp[2] = e_cemc;
-    	  ntp[3] = e_hcal_in;
-    	  ntp[4] = e_hcal_out;
+    	  ntp[2] = e_cemc_3x3;
+    	  ntp[3] = e_hcal_in_3x3;
+    	  ntp[4] = e_hcal_out_3x3;
     	  ntp[5] = charge;
     	  ntp[6] = pid;
 	  ntp[7] = quality;
+	  ntp[8] = e_cluster;
   	  if(output_ntuple) { ntpcutEMOP -> Fill(ntp); }
 
 	  if(hcalineovercemce < HinOEM_higherlimit)
@@ -158,12 +163,13 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
 
 		  ntp[0] = mom;
     		  ntp[1] = pt;
-    		  ntp[2] = e_cemc;
-    		  ntp[3] = e_hcal_in;
-    		  ntp[4] = e_hcal_out;
+    		  ntp[2] = e_cemc_3x3;
+    		  ntp[3] = e_hcal_in_3x3;
+    		  ntp[4] = e_hcal_out_3x3;
     		  ntp[5] = charge;
     		  ntp[6] = pid;
 		  ntp[7] = quality;
+		  ntp[8] = e_cluster;
   		  if(output_ntuple) { ntpcutEMOP_HinOEM -> Fill(ntp); }
 
 		  if( pt > Pt_lowerlimit && pt < Pt_higherlimit)
@@ -171,12 +177,13 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
 
 			  ntp[0] = mom;
     			  ntp[1] = pt;
-    			  ntp[2] = e_cemc;
-    			  ntp[3] = e_hcal_in;
-    			  ntp[4] = e_hcal_out;
+    			  ntp[2] = e_cemc_3x3;
+    			  ntp[3] = e_hcal_in_3x3;
+    			  ntp[4] = e_hcal_out_3x3;
     			  ntp[5] = charge;
     			  ntp[6] = pid;
 			  ntp[7] = quality;
+			  ntp[8] = e_cluster;
   			  if(output_ntuple) { ntpcutEMOP_HinOEM -> Fill(ntp); }
    	 	
 	 		  if(Verbosity() > 0) {
@@ -196,13 +203,13 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
       
 	  ntp[0] = mom;
     	  ntp[1] = pt;
-    	  ntp[2] = e_cemc;
-    	  ntp[3] = e_hcal_in;
-    	  ntp[4] = e_hcal_out;
+    	  ntp[2] = e_cemc_3x3;
+    	  ntp[3] = e_hcal_in_3x3;
+    	  ntp[4] = e_hcal_out_3x3;
     	  ntp[5] = charge;
     	  ntp[6] = pid;
 	  ntp[7] = quality;
-    	  
+    	  ntp[8] = e_cluster;
   	  if(output_ntuple) { ntpcutHOP -> Fill(ntp); }
 
 	  if(Verbosity() > 0) {
