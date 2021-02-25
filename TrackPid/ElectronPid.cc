@@ -112,6 +112,7 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
       double pt = sqrt(px*px + py*py);
       int charge = track->get_charge();
       int pid = it->first;
+      int quality = track->get_quality();
 
       double e_cemc = track->get_cal_energy_3x3(SvtxTrack::CAL_LAYER::CEMC);
       double e_hcal_in = track->get_cal_energy_3x3(SvtxTrack::CAL_LAYER::HCALIN);
@@ -133,10 +134,13 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
       ntp[6] = hcaleoverp;
       ntp[7] = charge;
       ntp[8] = pid;
+      ntp[9] = quality;
       if(output_ntuple) { ntpbeforecut -> Fill(ntp); }
 
+	std::cout << " Pt_lowerlimit " << Pt_lowerlimit << " Pt_higherlimit " << Pt_higherlimit << " HOP_lowerlimit " << HOP_lowerlimit <<std::endl;
+
       /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////electrons
-      if(cemceoverp > EMOP_lowerlimit && cemceoverp < EMOP_higherlimit)
+      if(cemceoverp > EMOP_lowerlimit && cemceoverp < EMOP_higherlimit && quality < 10)
 	{
 	
 	  ntp[0] = mom;
@@ -146,8 +150,7 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
     	  ntp[4] = e_hcal_out;
     	  ntp[5] = charge;
     	  ntp[6] = pid;
-	  ntp[7] = cemceoverp;
-    	  ntp[8] = hcaleoverp;
+	  ntp[7] = quality;
   	  if(output_ntuple) { ntpcutEMOP -> Fill(ntp); }
 
 	  if(hcalineovercemce < HinOEM_higherlimit)
@@ -160,6 +163,7 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
     		  ntp[4] = e_hcal_out;
     		  ntp[5] = charge;
     		  ntp[6] = pid;
+		  ntp[7] = quality;
   		  if(output_ntuple) { ntpcutEMOP_HinOEM -> Fill(ntp); }
 
 		  if( pt > Pt_lowerlimit && pt < Pt_higherlimit)
@@ -172,11 +176,11 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
     			  ntp[4] = e_hcal_out;
     			  ntp[5] = charge;
     			  ntp[6] = pid;
+			  ntp[7] = quality;
   			  if(output_ntuple) { ntpcutEMOP_HinOEM -> Fill(ntp); }
    	 	
 	 		  if(Verbosity() > 0) {
-			   	std::cout << " Pt_lowerlimit " << Pt_lowerlimit << " Pt_higherlimit " << Pt_higherlimit <<std::endl;
-	 	 	   	//std::cout << " Track " << it->first  << " identified as electron " << "    mom " << mom << " e_cemc " << e_cemc  << " cemceoverp " << cemceoverp << " e_hcal_in " << e_hcal_in << " e_hcal_out " << e_hcal_out << std::endl; 
+	 	 	   	std::cout << " Track " << it->first  << " identified as electron " << "    mom " << mom << " e_cemc " << e_cemc  << " cemceoverp " << cemceoverp << " e_hcal_in " << e_hcal_in << " e_hcal_out " << e_hcal_out << std::endl; 
 			   }
 		  
 			  // add to the association map
@@ -187,7 +191,7 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
       
       /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////hadrons
      
-      if(hcaleoverp > HOP_lowerlimit)// hcaleoverp>0.5
+      if(hcaleoverp > HOP_lowerlimit && quality < 10)
 	{
       
 	  ntp[0] = mom;
@@ -197,12 +201,12 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
     	  ntp[4] = e_hcal_out;
     	  ntp[5] = charge;
     	  ntp[6] = pid;
+	  ntp[7] = quality;
     	  
   	  if(output_ntuple) { ntpcutHOP -> Fill(ntp); }
 
 	  if(Verbosity() > 0) {
-		//std::cout << " HOP_lowerlimit " << HOP_lowerlimit <<std::endl;
-		//std::cout << " Track " << it->first  << " identified as hadron " << "    mom " << mom << " e_cemc " << e_cemc  << " hcaleoverp " << hcaleoverp << " e_hcal_in " << e_hcal_in << " e_hcal_out " << e_hcal_out << std::endl; 
+		std::cout << " Track " << it->first  << " identified as hadron " << "    mom " << mom << " e_cemc " << e_cemc  << " hcaleoverp " << hcaleoverp << " e_hcal_in " << e_hcal_in << " e_hcal_out " << e_hcal_out << std::endl; 
 	    }
 
 	  // add to the association map
