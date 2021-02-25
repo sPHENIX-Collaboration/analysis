@@ -47,7 +47,7 @@ void run(
   se->registerInputManager(in);
 
 
-  if(!output_ntuple) {
+  if(output_ntuple) {
   	Fun4AllOutputManager *outePid = new Fun4AllDstOutputManager("outePid",outputroot+"_ElectronPid_DST.root");
   	outePid->AddNode("TrackPidAssoc");
   	se->registerOutputManager(outePid);
