@@ -214,7 +214,7 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
   
   // Read back the association map
 
-  if(Verbosity() > 0)
+  if(Verbosity() > 1)
     std::cout << "Read back the association map electron entries" << std::endl;
   auto electrons = _track_pid_assoc->getTracks(TrackPidAssoc::electron);
   for(auto it = electrons.first; it != electrons.second; ++it)
@@ -222,11 +222,11 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
       SvtxTrack *tr = _track_map->get(it->second);
       double p = tr->get_p();
 
-      if(Verbosity() > 0)
+      if(Verbosity() > 1)
 	std::cout << " pid " << it->first << " track ID " << it->second << " mom " << p << std::endl;
     }
 
-  if(Verbosity() > 0)
+  if(Verbosity() > 1)
     std::cout << "Read back the association map hadron entries" << std::endl;
   auto hadrons = _track_pid_assoc->getTracks(TrackPidAssoc::hadron);
   for(auto it = hadrons.first; it != hadrons.second; ++it)
@@ -234,7 +234,7 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
       SvtxTrack *tr = _track_map->get(it->second);
       double p = tr->get_p();
 
-      if(Verbosity() > 0)
+      if(Verbosity() > 1)
 	std::cout << " pid " << it->first << " track ID " << it->second << " mom " << p << std::endl;
     }
 
@@ -294,55 +294,4 @@ if(output_ntuple) {
   cout << "************END************" << endl;
   return Fun4AllReturnCodes::EVENT_OK;
 }
-
-
-/*
-void ElectronPid::initializeTrees()
-{
-  PID_tracktree = new TTree("tracktree", "A tree with svtx tracks for particle identification");
-  
-  PID_tracktree->Branch("PID_tr_p", &PID_tr_p, "PID_tr_p/D");
-  PID_tracktree->Branch("PID_tr_pt", &PID_tr_pt, "PID_tr_pt/D");
-  
-  PID_tracktree->Branch("PID_cemcdphi", &PID_cemcdphi, "PID_cemcdphi/D");
-  PID_tracktree->Branch("PID_cemcdeta", &PID_cemcdeta, "PID_cemcdeta/D");
-  PID_tracktree->Branch("PID_cemce3x3", &PID_cemce3x3, "PID_cemce3x3/D");
-   
-  PID_tracktree->Branch("PID_hcalindphi", &PID_hcalindphi, "PID_hcalindphi/D");
-  PID_tracktree->Branch("PID_hcalindeta", &PID_hcalindeta, "PID_hcalindeta/D");
-  PID_tracktree->Branch("PID_hcaline3x3", &PID_hcaline3x3, "PID_hcaline3x3/D");
-
-  PID_tracktree->Branch("PID_hcaloute3x3", &PID_hcaloute3x3, "PID_hcaloute3x3/D");
-
-  PID_tracktree->Branch("PID_EcemcOP", &PID_EcemcOP, "PID_EcemcOP/D");
-  PID_tracktree->Branch("PID_EcemcOP_cut", &PID_EcemcOP_cut, "PID_EcemcOP_cut/D");
-    
-  PID_tracktree->Branch("PID_EhcalOP", &PID_EhcalOP, "PID_EhcalOP/D");
-  PID_tracktree->Branch("PID_EhcalOP_cut", &PID_EhcalOP_cut, "PID_EhcalOP_cut/D");
-
-}
-
-void ElectronPid::initializeVariables()
-{
-  PID_tr_p = -99;
-  PID_tr_pt = -99;
-
-  PID_cemcdphi = -99;
-  PID_cemcdeta = -99;
-  PID_cemce3x3 = -99;
-
-  PID_hcalindphi = -99;
-  PID_hcalindeta = -99;
-  PID_hcaline3x3 = -99;
-
-  PID_hcaloute3x3 = -99;
-  
-  PID_EcemcOP = -99;
-  PID_EcemcOP_cut = -99;
-
-  PID_EhcalOP = -99;
-  PID_EhcalOP_cut = -99;
-}
-*/
-
 
