@@ -43,10 +43,12 @@ public:
 
   /// Set the cemce3x3/p cut limits for electrons; default: 0.0<cemce3x3/p<100.0, means without cuts
   void setEMOPcutlimits(float EMOPlowerlimit, float EMOPhigherlimit) { EMOP_lowerlimit = EMOPlowerlimit; EMOP_higherlimit = EMOPhigherlimit; }
+
   /// Set the hcaline3x3/cemce3x3 cut limit for electrons; default: hcaline3x3/cemce3x3<100.0, means without cut
   void setHinOEMcutlimit(float HinOEMhigherlimit) { HinOEM_higherlimit = HinOEMhigherlimit; }
+
   /// Set the pt cut limit for Upsilon decay electrons: 0.0<pt<100.0 GeV, means without cut
-  void setPtcutlimit(float Ptlowerlimit, float Pthigherlimit) { Pt_higherlimit = Pthigherlimit; }
+  void setPtcutlimit(float Ptlowerlimit, float Pthigherlimit) { Pt_lowerlimit = Ptlowerlimit; Pt_higherlimit = Pthigherlimit; }
 
   /// Set the (hcaline3x3+hcaloute3x3)/p cut lower limit for hadrons; default: 0.0<(hcaline3x3+hcaloute3x3)/p, means without cut
   void setHOPcutlimit(float HOPlowerlimit) { HOP_lowerlimit = HOPlowerlimit; }
