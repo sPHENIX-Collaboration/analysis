@@ -49,9 +49,9 @@ void run(
   in->AddListFile("filelist_0_12fm.txt"); //sHijing with Upsilon embeded;
   //in->AddListFile("filelist_0_20fm.txt"); //sHijing with Upsilon embeded;
 
- //in->AddListFile("filelist_0_4d88fm_HepMC.txt"); //sHijing without Upsilon embeded;
-// in->AddListFile("filelist_0_12fm_HepMC.txt"); //sHijing without Upsilon embeded;
- // in->AddListFile("filelist_0_20fm_HepMC.txt"); //sHijing without Upsilon embeded;
+ //in->AddListFile("filelist_0_4d88fm_sHijing.txt"); //sHijing without Upsilon embeded;
+// in->AddListFile("filelist_0_12fm_sHijing.txt"); //sHijing without Upsilon embeded;
+ // in->AddListFile("filelist_0_20fm_sHijing.txt"); //sHijing without Upsilon embeded;
   
   se->registerInputManager(in);
 
