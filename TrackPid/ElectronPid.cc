@@ -63,11 +63,11 @@ int ElectronPid::Init(PHCompositeNode *topNode)
 	OutputNtupleFile = new TFile(OutputFileName.c_str(),"RECREATE");
   	std::cout << "PairMaker::Init: output file " << OutputFileName.c_str() << " opened." << endl;
 
-	ntpbeforecut = new TNtuple("ntpbeforecut","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:cemce3x3overp:hcaline3x3overcemce3x3:hcale3x3overp:charge:pid:quality:e_cluster");
-        ntpcutEMOP = new TNtuple("ntpcutEMOP","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:charge:pid:quality:e_cluster");
-	ntpcutHOP = new TNtuple("ntpcutHOP","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:charge:pid:quality:e_cluster");
-	ntpcutEMOP_HinOEM = new TNtuple("ntpcutEMOP_HinOEM","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:charge:pid:quality:e_cluster");
-	ntpcutEMOP_HinOEM_Pt = new TNtuple("ntpcutEMOP_HinOEM_Pt","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:charge:pid:quality:e_cluster");
+	ntpbeforecut = new TNtuple("ntpbeforecut","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:cemce3x3overp:hcaline3x3overcemce3x3:hcale3x3overp:charge:pid:quality:e_cluster:EventNumber:z:vtxid");
+        ntpcutEMOP = new TNtuple("ntpcutEMOP","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:charge:pid:quality:e_cluster:EventNumber:z:vtxid");
+	ntpcutHOP = new TNtuple("ntpcutHOP","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:charge:pid:quality:e_cluster:EventNumber:z:vtxid");
+	ntpcutEMOP_HinOEM = new TNtuple("ntpcutEMOP_HinOEM","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:charge:pid:quality:e_cluster:EventNumber:z:vtxid");
+	ntpcutEMOP_HinOEM_Pt = new TNtuple("ntpcutEMOP_HinOEM_Pt","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:charge:pid:quality:e_cluster:EventNumber:z:vtxid");
   }
   else {
 	PHNodeIterator iter(topNode);
@@ -108,6 +108,10 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
       double px = track->get_px();
       double py = track->get_py();
 
+      double z = track->get_z();
+
+      unsigned int vtxid = track->get_vertex_id();
+
       double mom = track->get_p();
       double pt = sqrt(px*px + py*py);
       int charge = track->get_charge();
@@ -139,10 +143,13 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
       ntp[9] = pid;
       ntp[10] = quality;
       ntp[11] = e_cluster;
+      ntp[12] = EventNumber;
+      ntp[13] = z;
+      ntp[14] = vtxid;
       if(output_ntuple) { ntpbeforecut -> Fill(ntp); }
 
-	std::cout << " Pt_lowerlimit " << Pt_lowerlimit << " Pt_higherlimit " << Pt_higherlimit << " HOP_lowerlimit " << HOP_lowerlimit <<std::endl;
-        std::cout << " EMOP_lowerlimit " << EMOP_lowerlimit << " EMOP_higherlimit " << EMOP_higherlimit << " HinOEM_higherlimit " << HinOEM_higherlimit <<std::endl;
+	//std::cout << " Pt_lowerlimit " << Pt_lowerlimit << " Pt_higherlimit " << Pt_higherlimit << " HOP_lowerlimit " << HOP_lowerlimit <<std::endl;
+        //std::cout << " EMOP_lowerlimit " << EMOP_lowerlimit << " EMOP_higherlimit " << EMOP_higherlimit << " HinOEM_higherlimit " << HinOEM_higherlimit <<std::endl;
 
       /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////electrons
       if(cemceoverp > EMOP_lowerlimit && cemceoverp < EMOP_higherlimit && quality < 10)
@@ -157,6 +164,9 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
     	  ntp[6] = pid;
 	  ntp[7] = quality;
 	  ntp[8] = e_cluster;
+	  ntp[9] = EventNumber;
+	  ntp[10] = z;
+  	  ntp[11] = vtxid;
   	  if(output_ntuple) { ntpcutEMOP -> Fill(ntp); }
 
 	  if(hcalineovercemce < HinOEM_higherlimit)
@@ -171,6 +181,9 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
     		  ntp[6] = pid;
 		  ntp[7] = quality;
 		  ntp[8] = e_cluster;
+		  ntp[9] = EventNumber;
+	  	  ntp[10] = z;
+  		  ntp[11] = vtxid;
   		  if(output_ntuple) { ntpcutEMOP_HinOEM -> Fill(ntp); }
 
 		  if( pt > Pt_lowerlimit && pt < Pt_higherlimit)
@@ -185,6 +198,9 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
     			  ntp[6] = pid;
 			  ntp[7] = quality;
 			  ntp[8] = e_cluster;
+			  ntp[9] = EventNumber;
+			  ntp[10] = z;
+  			  ntp[11] = vtxid;
   			  if(output_ntuple) { ntpcutEMOP_HinOEM_Pt -> Fill(ntp); }
    	 	
 	 		  if(Verbosity() > 0) {
@@ -211,6 +227,9 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
     	  ntp[6] = pid;
 	  ntp[7] = quality;
     	  ntp[8] = e_cluster;
+	  ntp[9] = EventNumber;
+	  ntp[10] = z;
+  	  ntp[11] = vtxid;
   	  if(output_ntuple) { ntpcutHOP -> Fill(ntp); }
 
 	  if(Verbosity() > 0) {
