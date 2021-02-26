@@ -31,7 +31,7 @@ void run(
   Fun4AllServer *se = Fun4AllServer::instance();
   se->Verbosity(1);
 
-  ElectronPid *ePid = new ElectronPid("ElectronPid",outputroot+"_ElectronPid.root");
+  ElectronPid *ePid = new ElectronPid("ElectronPid",outputroot+"_ElectronPid_0000.root");
   ePid->set_output_ntuple(output_ntuple);
   ePid->Verbosity(0);
   ePid->setEMOPcutlimits(0.7,1.5);
@@ -49,7 +49,7 @@ void run(
   se->registerInputManager(in);
 
   if(output_ntuple) {
-  	Fun4AllOutputManager *outePid = new Fun4AllDstOutputManager("outePid",outputroot+"_ElectronPid_DST.root");
+  	Fun4AllOutputManager *outePid = new Fun4AllDstOutputManager("outePid",outputroot+"_ElectronPid_DST_0000.root");
   	outePid->AddNode("TrackPidAssoc");
   	se->registerOutputManager(outePid);
 	outePid->Verbosity(1);
