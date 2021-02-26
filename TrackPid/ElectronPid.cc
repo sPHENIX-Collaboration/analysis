@@ -63,7 +63,7 @@ int ElectronPid::Init(PHCompositeNode *topNode)
 	OutputNtupleFile = new TFile(OutputFileName.c_str(),"RECREATE");
   	std::cout << "PairMaker::Init: output file " << OutputFileName.c_str() << " opened." << endl;
 
-	ntpbeforecut = new TNtuple("ntpbeforecut","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:cemce3x3overp:hcale3x3overp:charge:pid:quality:e_cluster");
+	ntpbeforecut = new TNtuple("ntpbeforecut","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:cemce3x3overp:hcale3x3overp:hcaline3x3overcemce3x3:charge:pid:quality:e_cluster");
         ntpcutEMOP = new TNtuple("ntpcutEMOP","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:charge:pid:quality:e_cluster");
 	ntpcutHOP = new TNtuple("ntpcutHOP","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:charge:pid:quality:e_cluster");
 	ntpcutEMOP_HinOEM = new TNtuple("ntpcutEMOP_HinOEM","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:charge:pid:quality:e_cluster");
@@ -133,11 +133,12 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
       ntp[3] = e_hcal_in_3x3;
       ntp[4] = e_hcal_out_3x3;
       ntp[5] = cemceoverp;
-      ntp[6] = hcaleoverp;
-      ntp[7] = charge;
-      ntp[8] = pid;
-      ntp[9] = quality;
-      ntp[10] = e_cluster;
+      ntp[6] = hcalineovercemce;
+      ntp[7] = hcaleoverp;
+      ntp[8] = charge;
+      ntp[9] = pid;
+      ntp[10] = quality;
+      ntp[11] = e_cluster;
       if(output_ntuple) { ntpbeforecut -> Fill(ntp); }
 
 	std::cout << " Pt_lowerlimit " << Pt_lowerlimit << " Pt_higherlimit " << Pt_higherlimit << " HOP_lowerlimit " << HOP_lowerlimit <<std::endl;
