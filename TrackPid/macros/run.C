@@ -22,7 +22,8 @@ R__LOAD_LIBRARY(libtrackpid.so)
 void run(
 //const char *inputFile = "/sphenix/sim/sim01/sphnxpro/MDC1/embed/embedDST_sHijing_0_12fm_50kHz_bkg_0_12fm-0000000001-01998.root",
   const char *inputFile = "/sphenix/sim/sim01/sphnxpro/MDC1/embed/embedDST_sHijing_0_20fm_50kHz_bkg_0_20fm-0000000001-04594.root",
-  const string &outputroot = "/sphenix/u/weihuma/RunOutput/embedDST_sHijing_upsilon_0_4d88fm",
+//const string &outputroot = "/sphenix/u/weihuma/RunOutput/embedDST_sHijing_upsilon_0_4d88fm",
+  const string &outputroot = "/sphenix/u/weihuma/RunOutput/sHijing_0_20fm_HepMC",
   bool output_ntuple = true
 )
 {
@@ -44,9 +45,14 @@ void run(
   Fun4AllInputManager *in = new Fun4AllDstInputManager("DST_TRACKS");
   in->Verbosity(1);
   //in->fileopen(inputFile);
- // in->AddListFile("filelist_0_12fm.txt");
-  //in->AddListFile("filelist_0_20fm.txt");
-  in->AddListFile("filelist_0_4d88fm.txt");
+ //in->AddListFile("filelist_0_4d88fm.txt"); //sHijing with Upsilon embeded;
+ // in->AddListFile("filelist_0_12fm.txt"); //sHijing with Upsilon embeded;
+  //in->AddListFile("filelist_0_20fm.txt"); //sHijing with Upsilon embeded;
+
+ //in->AddListFile("filelist_0_4d88fm_HepMC.txt"); //sHijing without Upsilon embeded;
+// in->AddListFile("filelist_0_12fm_HepMC.txt"); //sHijing without Upsilon embeded;
+  in->AddListFile("filelist_0_20fm_HepMC.txt"); //sHijing without Upsilon embeded;
+  
   se->registerInputManager(in);
 
   if(output_ntuple) {
