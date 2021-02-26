@@ -63,11 +63,11 @@ int ElectronPid::Init(PHCompositeNode *topNode)
 	OutputNtupleFile = new TFile(OutputFileName.c_str(),"RECREATE");
   	std::cout << "PairMaker::Init: output file " << OutputFileName.c_str() << " opened." << endl;
 
-	ntpbeforecut = new TNtuple("ntpbeforecut","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:cemce3x3overp:hcale3x3overp:charge:pid");
-        ntpcutEMOP = new TNtuple("ntpcutEMOP","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:charge:pid");
-	ntpcutHOP = new TNtuple("ntpcutHOP","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:charge:pid");
-	ntpcutEMOP_HinOEM = new TNtuple("ntpcutEMOP_HinOEM","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:charge:pid");
-	ntpcutEMOP_HinOEM_Pt = new TNtuple("ntpcutEMOP_HinOEM_Pt","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:charge:pid");
+	ntpbeforecut = new TNtuple("ntpbeforecut","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:cemce3x3overp:hcale3x3overp:charge:pid:quality:e_cluster");
+        ntpcutEMOP = new TNtuple("ntpcutEMOP","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:charge:pid:quality:e_cluster");
+	ntpcutHOP = new TNtuple("ntpcutHOP","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:charge:pid:quality:e_cluster");
+	ntpcutEMOP_HinOEM = new TNtuple("ntpcutEMOP_HinOEM","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:charge:pid:quality:e_cluster");
+	ntpcutEMOP_HinOEM_Pt = new TNtuple("ntpcutEMOP_HinOEM_Pt","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:charge:pid:quality:e_cluster");
   }
   else {
 	PHNodeIterator iter(topNode);
@@ -184,7 +184,7 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
     			  ntp[6] = pid;
 			  ntp[7] = quality;
 			  ntp[8] = e_cluster;
-  			  if(output_ntuple) { ntpcutEMOP_HinOEM -> Fill(ntp); }
+  			  if(output_ntuple) { ntpcutEMOP_HinOEM_Pt -> Fill(ntp); }
    	 	
 	 		  if(Verbosity() > 0) {
 	 	 	   	std::cout << " Track " << it->first  << " identified as electron " << "    mom " << mom << " e_cemc_3x3 " << e_cemc_3x3  << " cemceoverp " << cemceoverp << " e_hcal_in_3x3 " << e_hcal_in_3x3 << " e_hcal_out_3x3 " << e_hcal_out_3x3 << std::endl; 
