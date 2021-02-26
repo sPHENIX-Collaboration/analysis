@@ -21,7 +21,7 @@ R__LOAD_LIBRARY(libtrackpid.so)
 
 void run(
   const char *inputFile = "/sphenix/sim/sim01/sphnxpro/MDC1/embed/embedDST_sHijing_0_12fm_50kHz_bkg_0_12fm-0000000001-01998.root",
-  const string &outputroot = "/sphenix/u/weihuma/RunOutput/embedDST_sHijing_upsilon_0_20fm",
+  const string &outputroot = "/sphenix/u/weihuma/RunOutput/embedDST_sHijing_upsilon_0_4d88fm",
   bool output_ntuple = true
 )
 {
@@ -44,8 +44,8 @@ void run(
   in->Verbosity(1);
   //in->fileopen(inputFile);
   //in->AddListFile("filelist_0_12fm.txt");
-  in->AddListFile("filelist_0_20fm.txt");
-  //in->AddListFile("filelist_0_4d88fm.txt");
+  //in->AddListFile("filelist_0_20fm.txt");
+  in->AddListFile("filelist_0_4d88fm.txt");
   se->registerInputManager(in);
 
   if(output_ntuple) {
