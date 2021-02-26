@@ -120,8 +120,8 @@ int Fun4All_KFParticle_condorJob(string fileList = "dst_hf_charm.list", const in
     f->setInitialVertexer(false);
     f->Verbosity(0);
     se->registerSubsystem(f);
-
   }
+
   //General configurations
   KFParticle_sPHENIX *kfparticle = new KFParticle_sPHENIX();
   kfparticle->Verbosity(verbosity);
