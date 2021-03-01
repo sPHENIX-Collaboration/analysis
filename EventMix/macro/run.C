@@ -14,9 +14,14 @@
 #include </sphenix/u/weihuma/install/include/eventmix/sPHElectronPair.h>
 #include </sphenix/u/weihuma/install/include/eventmix/sPHElectronPairv1.h>
 
+#include </sphenix/u/weihuma/install/include/trackpidassoc/ElectronPid.h>
+#include </sphenix/u/weihuma/install/include/trackpidassoc/TrackPidAssoc.h>
 
 R__LOAD_LIBRARY(libfun4all.so)
 R__LOAD_LIBRARY(libeventmix.so)
+
+R__LOAD_LIBRARY(libtrackpid.so)
+
 #endif
 
 //void run(const char *fname = "/sphenix/user/lebedev/mdc/pythiaupsilons/sPHENIX_pythiaupsilons_10.root")
