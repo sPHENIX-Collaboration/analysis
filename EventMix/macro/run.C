@@ -6,34 +6,38 @@
 #include <fun4all/Fun4AllDstInputManager.h>
 #include <fun4all/Fun4AllDstOutputManager.h>
 
-#include </direct/phenix+u/workarea/lebedev/sPHENIX_new/analysis/EventMix/install/include/eventmix/PairMaker.h>
-#include </direct/phenix+u/workarea/lebedev/sPHENIX_new/analysis/EventMix/install/include/eventmix/sPHElectronPair.h>
-#include </direct/phenix+u/workarea/lebedev/sPHENIX_new/analysis/EventMix/install/include/eventmix/sPHElectronPairv1.h>
+#include </gpfs/mnt/gpfs02/sphenix/user/lebedev/mdc/test/analysis/EventMix/install/include/eventmix/PairMaker.h>
+#include </gpfs/mnt/gpfs02/sphenix/user/lebedev/mdc/test/analysis/EventMix/install/include/eventmix/sPHElectronPair.h>
+#include </gpfs/mnt/gpfs02/sphenix/user/lebedev/mdc/test/analysis/EventMix/install/include/eventmix/sPHElectronPairv1.h>
 
 R__LOAD_LIBRARY(libfun4all.so)
 R__LOAD_LIBRARY(libeventmix.so)
 #endif
 
-void run(const char *fname = "/sphenix/user/lebedev/mdc/sPHENIX_pythiaupsilons_10.root")
+//void run(const char *fname = "/sphenix/user/lebedev/mdc/pythiaupsilons/sPHENIX_pythiaupsilons_10.root")
+void run(const char *fname = "/sphenix/sim/sim01/sphnxpro/MDC1/embed/embedDST_sHijing_0_20fm_50kHz_bkg_0_20fm-0000000001-02990.root")
 {
   gSystem->Load("libg4dst");
   gSystem->Load("libeventmix");
 
   Fun4AllServer *se = Fun4AllServer::instance();
+  se->Verbosity(1);
   PairMaker *pmaker = new PairMaker("PairMaker","test.root");
   se->registerSubsystem(pmaker);
 
   Fun4AllInputManager *in = new Fun4AllDstInputManager("in");
-  in->fileopen(fname);
+  in->Verbosity(1);
   se->registerInputManager(in);
+  in->AddFile(fname);
   //in->AddListFile("filelist.txt");
 
   Fun4AllOutputManager *outee = new Fun4AllDstOutputManager("outee","test.root");
+  outee->Verbosity(1);
   outee->AddNode("ElectronPairs");
   se->registerOutputManager(outee);
   outee->Print();
 
-  se->run();
+  se->run(10);
 
   outee->Print();
 

@@ -8,13 +8,14 @@
 #include <fstream>
 
 #include "TFile.h"
-#include "TH1D.h"
 #include "TLorentzVector.h"
+#include "TRandom2.h"
 
 #include <trackbase_historic/SvtxTrack.h>
 #include <trackbase_historic/SvtxTrackMap.h>
 #include <trackbase_historic/SvtxVertex.h>
 #include <trackbase_historic/SvtxVertexMap.h>
+#include <trackbase/TrkrDefs.h>
 
 #include <g4vertex/GlobalVertexMap.h>
 #include <g4vertex/GlobalVertex.h>
@@ -47,7 +48,7 @@
 #include "sPHElectronPairContainer.h"
 #include "sPHElectronPairContainerv1.h"
 
-#include <gsl/gsl_rng.h>
+//#include <gsl/gsl_rng.h>
 
 typedef PHIODataNode<PHObject> PHObjectNode_t;
 
@@ -57,10 +58,18 @@ using namespace std;
 
 PairMaker::PairMaker(const std::string &name, const std::string &filename) : SubsysReco(name)
 {
-//  OutputNtupleFile=NULL;
-//  htest=NULL;
-//  OutputFileName=filename;
+  _ZMIN = -15.;
+  _ZMAX = 15.;
+  _multbins.push_back(0.);
+  _multbins.push_back(90.);
+  _multbins.push_back(400.);
+  _multbins.push_back(1000.);
+  _multbins.push_back(2000.);
+  _multbins.push_back(9999.);
+  _min_buffer_depth = 10;
+  _max_buffer_depth = 50;
   outnodename = "ElectronPairs";
+  _rng = nullptr;
   EventNumber=0;
 }
 
@@ -69,9 +78,8 @@ PairMaker::PairMaker(const std::string &name, const std::string &filename) : Sub
 int PairMaker::Init(PHCompositeNode *topNode) 
 {
 
-//  OutputNtupleFile = new TFile(OutputFileName.c_str(),"RECREATE");
-//  std::cout << "PairMaker::Init: output file " << OutputFileName.c_str() << " opened." << endl;
-//  htest =  new TH1D("htest","",160,4.,12.);
+  _rng = new TRandom2();
+  _rng->SetSeed(0);
 
   PHNodeIterator iter(topNode);
   PHCompositeNode *dstNode = dynamic_cast<PHCompositeNode *>(iter.findFirst("PHCompositeNode", "DST"));
@@ -88,6 +96,7 @@ int PairMaker::Init(PHCompositeNode *topNode)
   {
     PHObjectNode_t *PairNode = new PHIODataNode<PHObject>(eePairs,outnodename.c_str(),"PHObject");
     dstNode->addNode(PairNode);
+    cout << PHWHERE << " INFO: added " << outnodename << endl;
   }
   else { cout << PHWHERE << " INFO: " << outnodename << " already exists." << endl; }
 
@@ -125,26 +134,39 @@ int PairMaker::process_event_test(PHCompositeNode *topNode) {
   if(!eePairs) { cerr << outnodename << " not found!" << endl; } 
     else { cout << "Found " << outnodename << " node." << endl; }
 
-  vector<sPHElectronv1> electrons;
-  vector<sPHElectronv1> positrons;
-
   GlobalVertexMap *global_vtxmap = findNode::getClass<GlobalVertexMap>(topNode, "GlobalVertexMap");
   if(!global_vtxmap) { 
     cerr << PHWHERE << " ERROR: Can not find GlobalVertexMap node." << endl;
     return Fun4AllReturnCodes::ABORTEVENT;
   }
-  cout << "Number of GlobalVertexMap entries = " << global_vtxmap->size() << endl;
+  //cout << "Number of GlobalVertexMap entries = " << global_vtxmap->size() << endl;
 
   SvtxVertexMap *vtxmap = findNode::getClass<SvtxVertexMap>(topNode, "SvtxVertexMap");
-  if(vtxmap) {cout << "Number of SvtxVertexMap entries = " << vtxmap->size() << endl;}
-    else {cout << "SvtxVertexMap node not found!" << endl;}
+  if(!vtxmap) {
+      cout << "SvtxVertexMap node not found!" << endl;
+      return Fun4AllReturnCodes::ABORTEVENT;
+  }
+  //cout << "Number of SvtxVertexMap entries = " << vtxmap->size() << endl;
 
   SvtxTrackMap *trackmap = findNode::getClass<SvtxTrackMap>(topNode, "SvtxTrackMap");
   if(!trackmap) {
     cerr << PHWHERE << " ERROR: Can not find SvtxTrackMap node." << endl;
     return Fun4AllReturnCodes::ABORTEVENT;
   }
+
+  double mult = (double)trackmap->size();
   cout << "   Number of tracks = " << trackmap->size() << endl;
+  unsigned int centbin = 99999;
+  for(unsigned int i=0; i<NCENT; i++) { if(mult>_multbins[i] && mult <=_multbins[i+1]) { centbin = i; } }
+  if(centbin<0 || centbin>=NCENT) {cout << "BAD MULTIPLICITY = " << mult << endl; return Fun4AllReturnCodes::ABORTEVENT; }
+  cout << "Centrality bin = " << centbin << endl;
+
+  double _vtxbinsize  = (_ZMAX - _ZMIN)/double(NZ);
+  //cout << " _vtxbinsize = " << _vtxbinsize << endl;
+
+  vector<sPHElectronv1> elepos;
+//  vector<sPHElectronv1> electrons;
+//  vector<sPHElectronv1> positrons;
 
   for (SvtxTrackMap::Iter iter = trackmap->begin(); iter != trackmap->end(); ++iter)
   {
@@ -157,17 +179,41 @@ int PairMaker::process_event_test(PHCompositeNode *topNode) {
     double x = track->get_x();
     double y = track->get_y();
     double z = track->get_z();
+    unsigned int vtxbin = (z - _ZMIN)/_vtxbinsize;
+    if(vtxbin<0 || vtxbin>=NZ) continue;
     unsigned int vtxid = track->get_vertex_id();
-    cout << "   track: " << pt << " " << x << " " << y << " " << z << " " << vtxid << endl;
-    GlobalVertex* gvtx = global_vtxmap->get(vtxid); 
-    cout << "   global vertex: " << gvtx->get_x() << " " << gvtx->get_y() << " " << gvtx->get_z() << endl;    
+    if(vtxid<0 || vtxid>=global_vtxmap->size()) continue;
+    cout << "electron: "<<charge<<" "<<pt<<" "<<x<<" "<<y<<" "<<z<<" "<<vtxid<<" "<<vtxbin<< endl;
+    GlobalVertex* gvtx = global_vtxmap->get(vtxid);
+    cout << "global vertex: "<<gvtx->get_x()<<" "<<gvtx->get_y()<<" "<<gvtx->get_z()<<endl;
     sPHElectronv1 tmpel = sPHElectronv1(track);
-    if(charge==-1) electrons.push_back(tmpel);
-    if(charge==1)  positrons.push_back(tmpel);
-    //double emce = track->get_cal_cluster_e(SvtxTrack::CAL_LAYER::CEMC);
-    //double e3x3 = track->get_cal_energy_3x3(SvtxTrack::CAL_LAYER::CEMC);
+    tmpel.set_zvtx(gvtx->get_z());
+    elepos.push_back(tmpel);
+    (_buffer[vtxbin][centbin]).push_back(tmpel);
+  } // end loop over tracks
+
+  cout << "# of electrons/positrons = " << elepos.size() << endl;
+
+  if(elepos.size()>1) {
+    for(long unsigned int i=0; i<elepos.size()-1; i++) {
+      for(long unsigned int j=i+1; j<elepos.size(); j++) {
+        sPHElectronPairv1 pair = sPHElectronPairv1(&elepos[i],&elepos[j]);
+        double mass = pair.get_mass();
+        int charge1 = (elepos[i]).get_charge();
+        int charge2 = (elepos[j]).get_charge();
+        int type = 0;
+        if(charge1*charge2<0) {type = 1;}
+          else if (charge1>0 && charge2>0) {type=2;}
+            else if (charge1<0 && charge2<0) {type=3;}
+              else {cout << "ERROR: wrong charge!" << endl;}
+        cout << "MASS = " << type << " " << mass << endl;
+        pair.set_type(type);
+        eePairs->insert(&pair);
+      }
+    }
   }
 
+/*
   for(long unsigned int i=0; i<electrons.size(); i++) {
   for(long unsigned int j=0; j<positrons.size(); j++) {
     sPHElectronPairv1 pair = sPHElectronPairv1(&electrons[i],&positrons[j]);
@@ -176,9 +222,58 @@ int PairMaker::process_event_test(PHCompositeNode *topNode) {
     cout << "MASS = " << mass << endl;
     eePairs->insert(&pair);
   }}
+*/
+
+  int nmix = MakeMixedPairs(elepos, centbin);
+  cout << "number of mixed pairs = " << nmix << endl;
 
   return Fun4AllReturnCodes::EVENT_OK;
 } 
+
+//======================================================================
+
+int PairMaker::MakeMixedPairs(std::vector<sPHElectronv1> elepos, unsigned int centbin) {
+  int count=0;
+  double _vtxbinsize  = (_ZMAX - _ZMIN)/double(NZ);
+
+  for(unsigned int k=0; k<elepos.size(); k++) {
+
+    sPHElectronv1 thisel = elepos[k];
+    double z = thisel.get_zvtx();
+    unsigned int vtxbin = (z - _ZMIN)/_vtxbinsize;
+    if(vtxbin<0 || vtxbin>=NZ) continue;
+
+    unsigned int _num_mixes = 3;
+    unsigned int buffsize = (_buffer[vtxbin][centbin]).size();
+
+    if(buffsize >= _min_buffer_depth) {
+      for(unsigned int i=0; i<_num_mixes; i++) {
+        double rnd = _rng->Uniform();
+        unsigned int irnd = rnd * buffsize;
+        sPHElectronv1 mixel = (_buffer[vtxbin][centbin]).at(irnd);
+
+        sPHElectronPairv1 pair = sPHElectronPairv1(&thisel,&mixel);
+        int charge1 = thisel.get_charge();
+        int charge2 = mixel.get_charge();
+        int type = 0;
+        if(charge1*charge2<0) {type = 4;}
+          else if (charge1>0 && charge2>0) {type=5;}
+            else if (charge1<0 && charge2<0) {type=6;}
+              else {cout << "ERROR: wrong charge!" << endl;}
+        pair.set_type(type);
+        cout << "MIXED pair mass = " << type << " " << pair.get_mass() << endl;
+        count++;
+      } // end i loop
+      (_buffer[vtxbin][centbin]).push_back(elepos[k]);  // keep filling buffer
+    }
+    else {
+      (_buffer[vtxbin][centbin]).push_back(elepos[k]);  // keep filling buffer
+    }
+
+  } //end k loop over elepos entries
+
+  return count;
+}
 
 //======================================================================
 
@@ -190,19 +285,44 @@ bool PairMaker::isElectron(SvtxTrack* trk)
   double pt = sqrt(px*px+py*py);
   double pp = sqrt(pt*pt+pz*pz);
   double e3x3 = trk->get_cal_energy_3x3(SvtxTrack::CAL_LAYER::CEMC);
+  if(pt<2.0) return false;
   if(pp==0.) return false;
-  if(pt<2.0 || e3x3/pp<0.5) return false;
+  if(isnan(e3x3)) return false;
+  if(e3x3/pp<0.7) return false;
+  double chisq = trk->get_chisq();
+  double ndf = trk->get_ndf();
+  if((chisq/ndf)>10.) return false;
+  int nmvtx = 0;
+  int ntpc = 0;
+  for (SvtxTrack::ConstClusterKeyIter iter = trk->begin_cluster_keys();
+     iter != trk->end_cluster_keys();
+     ++iter)
+  {
+    TrkrDefs::cluskey cluster_key = *iter;
+    int trackerid = TrkrDefs::getTrkrId(cluster_key);
+    if(trackerid==0) nmvtx++;
+    if(trackerid==2) ntpc++;
+  }
+  if(nmvtx<1) return false;
+  if(ntpc<20) return false;
+
   return true;
 }
 
+//==============================================================================
+
 int PairMaker::End(PHCompositeNode *topNode) 
 {
-//  OutputNtupleFile->Write();
-//  OutputNtupleFile->Close();
   cout << "END: ====================================" << endl;
-  sPHElectronPairContainerv1 *eePairs = findNode::getClass<sPHElectronPairContainerv1>(topNode,outnodename.c_str());
-  cout << "Total number of pairs = " << eePairs->size() << endl;
-  topNode->print();
+  cout << "mixing buffers: " << endl;
+  for(unsigned int i=0; i<NZ; i++) {
+    for(unsigned int j=0; j<NCENT; j++) {
+      cout << i << " " << j << "    " << (_buffer[i][j]).size() << endl;
+      (_buffer[i][j]).clear();
+    }
+  }
+  cout << "=========================================" << endl;
+
   return Fun4AllReturnCodes::EVENT_OK;
 }
 

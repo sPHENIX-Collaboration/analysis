@@ -1,41 +1,35 @@
 // $Id: $
 
 /*!
- * \file Fun4All_KFParticle_advanced.C
+ * \file Fun4All_KFParticle_condorJob.C
  * \brief 
  * \author Cameron Dean <cdean@bnl.gov>
  * \version $Revision:   $
  * \date $Date: $
  */
 
+#include "FROG.h"
+
 #if ROOT_VERSION_CODE >= ROOT_VERSION(6, 00, 0)
 
 #include "ACTS_tracking/G4Setup_sPHENIX.C"
 #include "ACTS_tracking/G4_Tracking.C"
 
+#include <fun4all/Fun4AllInputManager.h>
 #include <fun4all/Fun4AllDstInputManager.h>
-#include <fun4all/Fun4AllDstOutputManager.h>
-#include <fun4all/Fun4AllOutputManager.h>
 #include <fun4all/Fun4AllServer.h>
-#include <fun4all/SubsysReco.h>
-#include <hftrigger/HFTrigger.h>
 #include <kfparticle_sphenix/KFParticle_sPHENIX.h>
-#include <numeric>
-#include <trackreco/PHRaveVertexing.h>
+
+#include <stdlib.h>
 
 R__LOAD_LIBRARY(libkfparticle_sphenix.so)
-R__LOAD_LIBRARY(libhftrigger.so)
 R__LOAD_LIBRARY(libfun4all.so)
-R__LOAD_LIBRARY(libg4dst.so)
-R__LOAD_LIBRARY(libg4eval.so)
-R__LOAD_LIBRARY(libtrack_reco.so)
-R__LOAD_LIBRARY(libPHTpcTracker.so)
 
 #endif
 
 using namespace std;
 
-int Fun4All_KFParticle_advanced(){
+int Fun4All_KFParticle_condorJob(string fileList = "dst_hf_charm.list", const int nEvents = 0){
 
   int verbosity = 1;
   //---------------
@@ -43,6 +37,10 @@ int Fun4All_KFParticle_advanced(){
   //---------------
   gSystem->Load("libfun4all.so");
   gSystem->Load("libg4dst.so");
+
+  // Enabling file finding in dCache
+  FROG *fr = new FROG();
+
   //---------------
   // Fun4All server
   //---------------
@@ -52,23 +50,25 @@ int Fun4All_KFParticle_advanced(){
   //---------------
   // Choose reco
   //---------------
-  bool use_acts_tracking = false;
-  bool use_acts_vertexing = true;
-  bool use_rave_vertexing = false;
-  bool use_trigger = false;
-
   map<string, int> reconstructionChannel;
   reconstructionChannel["D02K-pi+"] = 1;
   reconstructionChannel["D02K+pi-"] = 0;
+  reconstructionChannel["Lc2pK-pi+"] = 0;
+  reconstructionChannel["Jpsi2ll"] = 0;
   reconstructionChannel["Bs2Jpsiphi"] = 0;
   reconstructionChannel["Bd2D-pi+"] = 0;
+  reconstructionChannel["Bs2Ds-pi+"] = 0;
+  reconstructionChannel["B+2D0pi+"] = 0;
   reconstructionChannel["Upsilon"] = 0;
   reconstructionChannel["testSpace"] = 0;
+  bool testMDC = true;
+  bool use_acts_vertexing = true;
 
   const int numberOfActiveRecos = accumulate( begin(reconstructionChannel), end(reconstructionChannel), 0, 
                                               [](const int previous, const pair<const string, int>& element) 
                                               { return previous + element.second; });
 
+  string reconstructionName = "blank";
   if (numberOfActiveRecos != 1)
   {
     if (numberOfActiveRecos == 0) printf("*\n*\n*\n* You have not enabled any reconstruction, exiting!\n*\n*\n*\n");
@@ -83,41 +83,29 @@ int Fun4All_KFParticle_advanced(){
     gSystem->Exit(0);
     return 1;
   }
-
-  if (use_acts_vertexing && use_rave_vertexing)
+  else
   {
-    cout << "*\n*\n*\n* This macro doesn't allow you to run ACTS and RAVE vertexing at the same time, exiting!\n*\n*\n*\n" << endl;
-    delete se;
-    gSystem->Exit(0);
-    return 1;
+    std::map<string, int>::iterator it;
+    for ( it = reconstructionChannel.begin(); it != reconstructionChannel.end(); it++ )
+      if (it->second == 1) reconstructionName = it->first;
   }
+
+  string outputDirectory = "";
+  string makeDirectory = "mkdir " + outputDirectory + reconstructionName;
+  system(makeDirectory.c_str());
 
   //--------------
   // IO management
   //--------------
-  // Hits file
   Fun4AllInputManager *hitsin = new Fun4AllDstInputManager("DSTin");
-  string fileList;
-  if (reconstructionChannel["D02K-pi+"] or reconstructionChannel["D02K+pi-"] or reconstructionChannel["testSpace"]) fileList = "fileList_d2kpi.txt";
-  if (reconstructionChannel["Bs2Jpsiphi"]) fileList = "fileList_bs2jpsiphi.txt";
-  if (reconstructionChannel["Bd2D-pi+"] or reconstructionChannel["Upsilon"]) fileList = "fileList_bbbar.txt";
-  hitsin->AddListFile(fileList.c_str());
+  hitsin->AddListFile(fileList);
   se->registerInputManager(hitsin);
 
-  if (use_trigger)
-  {
-    HFTrigger* myTrigger = new HFTrigger("myTestTrigger");
-    myTrigger->Verbosity(verbosity);
-    myTrigger->requireOneTrackTrigger(true);
-    myTrigger->requireTwoTrackTrigger(true);
-    myTrigger->requireLowMultiplicityTrigger(true);
-    se->registerSubsystem(myTrigger);
-  }
+  string fileNumber = fileList.substr(fileList.size() - 10, 5);
 
   string actsVertexName = "SvtxVertexMap_recoOnly";
-  if (use_acts_vertexing && !use_rave_vertexing)
+  if (use_acts_vertexing)
   {
-    use_acts_tracking = false;
     G4Init();
 
     MakeActsGeometry* geom = new MakeActsGeometry();
@@ -134,44 +122,24 @@ int Fun4All_KFParticle_advanced(){
     se->registerSubsystem(f);
 
   }
-
-  if (use_acts_tracking)
-  {
-    G4Init();
-    TrackingInit();
-    Tracking_Reco();
-  }
-
-  string raveVertexName = "SvtxVertexMapRave";
-  if (use_rave_vertexing && !use_acts_vertexing)
-  {
-    PHRaveVertexing* rave = new PHRaveVertexing();
-    //https://rave.hepforge.org/trac/wiki/RaveMethods
-    rave->set_vertexing_method("kalman-smoothing:1");
-    rave->set_over_write_svtxvertexmap(false);
-    rave->set_svtxvertexmaprefit_node_name(raveVertexName.c_str());
-    rave->Verbosity(verbosity);
-    se->registerSubsystem(rave);
-  }
-
   //General configurations
   KFParticle_sPHENIX *kfparticle = new KFParticle_sPHENIX();
   kfparticle->Verbosity(verbosity);
-
-  const int nEvents = 1e3;
-
-  //Use rave vertexing to construct PV
-  if (use_rave_vertexing) kfparticle->setVertexMapNodeName(raveVertexName.c_str());
   if (use_acts_vertexing) kfparticle->setVertexMapNodeName(actsVertexName.c_str());
 
+  float minTrackIPchi2 = testMDC ? -1 : 10;
+  float maxTrackchi2nDOF = testMDC ? 4 : 2; 
+  bool fixToPV = true;
+  
   kfparticle->setMinimumTrackPT(0.1);
-  kfparticle->setMinimumTrackIPchi2(10);
-  kfparticle->setMaximumTrackchi2nDOF(1.5);
+  kfparticle->setMinimumTrackIPchi2(minTrackIPchi2);
+  kfparticle->setMaximumTrackchi2nDOF(maxTrackchi2nDOF);
   kfparticle->setMaximumVertexchi2nDOF(2);
   kfparticle->setMaximumDaughterDCA(0.03);
   kfparticle->setFlightDistancechi2(80);
   kfparticle->setMinDIRA(0.8);
   kfparticle->setMotherPT(0);
+  kfparticle->setMotherIPchi2(1e5); 
 
   kfparticle->saveDST(0);
   kfparticle->saveOutput(1);
@@ -184,20 +152,17 @@ int Fun4All_KFParticle_advanced(){
   int nIntTracks[99];
   float intPt[99];
 
-  if (fileList == "fileList_bbbar.txt") 
-    kfparticle->doTruthMatching(0); //I don't think these events have truth variables
-
   //D2Kpi reco
   if (reconstructionChannel["D02K-pi+"]
   or  reconstructionChannel["D02K+pi-"])
   {
       kfparticle->setMotherName("D0");  
+      //kfparticle->setTrackMapNodeName("D0_SvtxTrackMap"); 
       kfparticle->setMinimumMass(1.7);
       kfparticle->setMaximumMass(2.0);
       kfparticle->setNumberOfTracks(2);
-      kfparticle->setMotherIPchi2(50);
     
-      kfparticle->constrainToPrimaryVertex(true);
+      kfparticle->constrainToPrimaryVertex(fixToPV);
       kfparticle->hasIntermediateStates(false);
       kfparticle->getChargeConjugate(false);
 
@@ -205,18 +170,57 @@ int Fun4All_KFParticle_advanced(){
       {
         daughterList[0] = make_pair("kaon", -1);
         daughterList[1] = make_pair("pion", +1);
-        kfparticle->setOutputName("outputData_D02Kmpip_example.root");
       }
       else
       {
         daughterList[0] = make_pair("kaon", +1);
         daughterList[1] = make_pair("pion", -1);
-        kfparticle->setOutputName("outputData_D0bar2Kppim_example.root");
       }
-
-      kfparticle->setContainerName("D2Kpi_reco");
   }
 
+  //Lambdac Reco
+  if (reconstructionChannel["Lc2pK-pi+"])
+  {
+      kfparticle->setMotherName("Lambdac");
+      kfparticle->setMinimumMass(2.0);
+      kfparticle->setMaximumMass(2.4);
+      kfparticle->setNumberOfTracks(3);
+      kfparticle->setMotherIPchi2(20);
+
+      kfparticle->constrainToPrimaryVertex(fixToPV);
+      kfparticle->hasIntermediateStates(false);
+      kfparticle->getChargeConjugate(true);
+
+      daughterList[0] = make_pair("proton", +1);
+      daughterList[1] = make_pair("kaon", -1);
+      daughterList[2] = make_pair("pion", +1);
+  }
+
+  //Jpsi2ll
+  if (reconstructionChannel["Jpsi2ll"])
+  {
+     kfparticle->setMotherName("J/psi");
+     kfparticle->setMinimumMass(2.5);
+     kfparticle->setMaximumMass(4);
+     kfparticle->setNumberOfTracks(2);
+
+     kfparticle->constrainToPrimaryVertex(true);
+     kfparticle->hasIntermediateStates(false);
+      kfparticle->getChargeConjugate(false);
+  
+     kfparticle->setMinimumTrackPT(0.5);
+     kfparticle->setMinimumTrackIPchi2(10);
+     kfparticle->setMaximumTrackchi2nDOF(3);
+     kfparticle->setMaximumVertexchi2nDOF(2);
+     kfparticle->setMaximumDaughterDCA(0.03);
+     kfparticle->setFlightDistancechi2(0);
+     kfparticle->setMinDIRA(-1);
+     kfparticle->setMotherPT(1);
+     kfparticle->setMotherIPchi2(1e5); 
+
+     daughterList[0] = make_pair("muon", -1);
+     daughterList[1] = make_pair("muon", +1);
+  }
 
   //Bs2Jpsiphi reco
   if (reconstructionChannel["Bs2Jpsiphi"])
@@ -234,7 +238,7 @@ int Fun4All_KFParticle_advanced(){
       intermediateList[0] = make_pair("J/psi", 0);
       daughterList[0]     = make_pair("electron", -1);
       daughterList[1]     = make_pair("electron", +1);
-      intermediateMassRange[0] = make_pair(2.5, 3.2);
+      intermediateMassRange[0] = make_pair(2.9, 3.2);
       nIntTracks[0] = 2;
       intPt[0] = 0;
     
@@ -244,9 +248,6 @@ int Fun4All_KFParticle_advanced(){
       intermediateMassRange[1] = make_pair(0.9, 1.2);
       nIntTracks[1] = 2;
       intPt[1] = 0;
-
-      kfparticle->setContainerName("Bs2Jpsiphi_reco");
-      kfparticle->setOutputName("outputData_Bs2Jpsiphi_example.root");
   }
 
 
@@ -269,10 +270,65 @@ int Fun4All_KFParticle_advanced(){
       intPt[0] = 0.;
 
       daughterList[3] = make_pair("pion", +1);
-
-      kfparticle->setOutputName("outputData_Bd2Dmpip_example.root");
   }
 
+  //Bs2Ds-pi+ reco
+  if (reconstructionChannel["Bs2Ds-pi+"])
+  {
+      kfparticle->setMotherName("Bs0");  
+      kfparticle->setMinimumMass(4.8);
+      kfparticle->setMaximumMass(6.0);
+      kfparticle->setNumberOfTracks(4);
+
+      kfparticle->constrainToPrimaryVertex(fixToPV);
+      kfparticle->getChargeConjugate(false);
+      kfparticle->hasIntermediateStates(true);
+      kfparticle->setNumberOfIntermediateStates(1);
+
+      intermediateList[0] = make_pair("Ds-", -1);
+      daughterList[0]     = make_pair("kaon", +1);
+      daughterList[1]     = make_pair("kaon", -1);
+      daughterList[2]     = make_pair("pion", -1);
+      intermediateMassRange[0] = make_pair(1.0, 3.0);
+      nIntTracks[0] = 3;
+      intPt[0] = 0.;
+
+      daughterList[3] = make_pair("pion", +1);
+  }
+
+    //B+2D0pi+ reco
+   if (reconstructionChannel["B+2D0pi+"])
+   {
+      kfparticle->setMotherName("B+");  
+      kfparticle->setMinimumMass(4.5);
+      kfparticle->setMaximumMass(6.0);
+      kfparticle->setNumberOfTracks(3);
+
+      kfparticle->constrainToPrimaryVertex(true);
+      kfparticle->getChargeConjugate(true);
+
+      kfparticle->setMinimumTrackPT(0.1);
+      kfparticle->setMinimumTrackIPchi2(10); 
+      kfparticle->setMaximumTrackchi2nDOF(2);
+      kfparticle->setMaximumVertexchi2nDOF(2);
+      kfparticle->setMaximumDaughterDCA(0.03);
+      kfparticle->setFlightDistancechi2(80);
+      kfparticle->setMinDIRA(0.8);
+      kfparticle->setMotherPT(0);
+      kfparticle->setMotherIPchi2(50); 
+
+      kfparticle->hasIntermediateStates(true);
+      kfparticle->setNumberOfIntermediateStates(1);
+
+      intermediateList[0] = make_pair("D0", 0);
+      daughterList[0]     = make_pair("kaon", -1);
+      daughterList[1]     = make_pair("pion", +1);
+      intermediateMassRange[0] = make_pair(1.7, 2.0);
+      nIntTracks[0] = 2;
+      intPt[0] = 0.;
+
+      daughterList[2] = make_pair("pion", +1);
+  }
 
   //Upsilon reco
   if (reconstructionChannel["Upsilon"])
@@ -302,8 +358,6 @@ int Fun4All_KFParticle_advanced(){
       intermediateMassRange[1] = make_pair(4.8, 6);
       nIntTracks[1] = 4;
       intPt[1] = 0;
-
-      kfparticle->setOutputName("outputData_Upsilon_example.root");
   }
 
 
@@ -324,9 +378,6 @@ int Fun4All_KFParticle_advanced(){
       kfparticle->setNumberOfTracks(2);
       daughterList[0] = make_pair("electron", +1);
       daughterList[1] = make_pair("electron", -1);
-
-      kfparticle->setContainerName("J/psi_reco");
-      kfparticle->setOutputName("testSpace.root");
   }
 
 
@@ -336,6 +387,8 @@ int Fun4All_KFParticle_advanced(){
   kfparticle->setIntermediateMassRange( intermediateMassRange );
   kfparticle->setNumberTracksFromIntermeditateState( nIntTracks );
   kfparticle->setIntermediateMinPT( intPt );
+
+  kfparticle->setOutputName(outputDirectory + reconstructionName + "/outputData_" + reconstructionName + "_" + fileNumber + ".root");
 
   se->registerSubsystem(kfparticle);
   //-----------------
