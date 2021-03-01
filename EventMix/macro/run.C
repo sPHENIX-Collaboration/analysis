@@ -39,7 +39,7 @@ void run(
 
   PairMaker *pmaker = new PairMaker("PairMaker","test_ntuple.root");
   pmaker->Verbosity(1);
-  pmaker->set_write_ntuple(write_ntuple);
+  //pmaker->set_write_ntuple(write_ntuple);
   se->registerSubsystem(pmaker);
 
   Fun4AllInputManager *in = new Fun4AllDstInputManager("in");
