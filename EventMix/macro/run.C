@@ -28,7 +28,9 @@ void run(const char *fname = "/sphenix/u/weihuma/RunOutput/embedDST_sHijing_upsi
 
   Fun4AllServer *se = Fun4AllServer::instance();
   se->Verbosity(1);
-  PairMaker *pmaker = new PairMaker("PairMaker","test.root");
+
+  PairMaker *pmaker = new PairMaker("PairMaker","test_ntuple.root");
+  pmaker->Verbosity(1);
   se->registerSubsystem(pmaker);
 
   Fun4AllInputManager *in = new Fun4AllDstInputManager("in");
@@ -37,7 +39,7 @@ void run(const char *fname = "/sphenix/u/weihuma/RunOutput/embedDST_sHijing_upsi
   in->AddFile(fname);
   //in->AddListFile("filelist.txt");
 
-  Fun4AllOutputManager *outee = new Fun4AllDstOutputManager("outee","test.root");
+  Fun4AllOutputManager *outee = new Fun4AllDstOutputManager("outee","test_DST.root");
   outee->Verbosity(1);
   outee->AddNode("ElectronPairs");
   se->registerOutputManager(outee);
