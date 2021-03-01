@@ -6,16 +6,22 @@
 #include <fun4all/Fun4AllDstInputManager.h>
 #include <fun4all/Fun4AllDstOutputManager.h>
 
-#include </gpfs/mnt/gpfs02/sphenix/user/lebedev/mdc/test/analysis/EventMix/install/include/eventmix/PairMaker.h>
-#include </gpfs/mnt/gpfs02/sphenix/user/lebedev/mdc/test/analysis/EventMix/install/include/eventmix/sPHElectronPair.h>
-#include </gpfs/mnt/gpfs02/sphenix/user/lebedev/mdc/test/analysis/EventMix/install/include/eventmix/sPHElectronPairv1.h>
+//#include </gpfs/mnt/gpfs02/sphenix/user/lebedev/mdc/test/analysis/EventMix/install/include/eventmix/PairMaker.h>
+//#include </gpfs/mnt/gpfs02/sphenix/user/lebedev/mdc/test/analysis/EventMix/install/include/eventmix/sPHElectronPair.h>
+//#include </gpfs/mnt/gpfs02/sphenix/user/lebedev/mdc/test/analysis/EventMix/install/include/eventmix/sPHElectronPairv1.h>
+
+#include </sphenix/u/weihuma/install/include/eventmix/PairMaker.h>
+#include </sphenix/u/weihuma/install/include/eventmix/sPHElectronPair.h>
+#include </sphenix/u/weihuma/install/include/eventmix/sPHElectronPairv1.h>
+
 
 R__LOAD_LIBRARY(libfun4all.so)
 R__LOAD_LIBRARY(libeventmix.so)
 #endif
 
 //void run(const char *fname = "/sphenix/user/lebedev/mdc/pythiaupsilons/sPHENIX_pythiaupsilons_10.root")
-void run(const char *fname = "/sphenix/sim/sim01/sphnxpro/MDC1/embed/embedDST_sHijing_0_20fm_50kHz_bkg_0_20fm-0000000001-02990.root")
+//void run(const char *fname = "/sphenix/sim/sim01/sphnxpro/MDC1/embed/embedDST_sHijing_0_20fm_50kHz_bkg_0_20fm-0000000001-02990.root")
+void run(const char *fname = "/sphenix/u/weihuma/RunOutput/embedDST_sHijing_upsilon_0_12fm_ElectronPid_DST_0000.root")
 {
   gSystem->Load("libg4dst");
   gSystem->Load("libeventmix");
@@ -37,8 +43,8 @@ void run(const char *fname = "/sphenix/sim/sim01/sphnxpro/MDC1/embed/embedDST_sH
   se->registerOutputManager(outee);
   outee->Print();
 
-  se->run(10);
-
+  //se->run(10);
+  se->run();
   outee->Print();
 
   se->End();
