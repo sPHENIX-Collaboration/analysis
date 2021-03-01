@@ -26,7 +26,10 @@ R__LOAD_LIBRARY(libtrackpid.so)
 
 //void run(const char *fname = "/sphenix/user/lebedev/mdc/pythiaupsilons/sPHENIX_pythiaupsilons_10.root")
 //void run(const char *fname = "/sphenix/sim/sim01/sphnxpro/MDC1/embed/embedDST_sHijing_0_20fm_50kHz_bkg_0_20fm-0000000001-02990.root")
-void run(const char *fname = "/sphenix/u/weihuma/RunOutput/embedDST_sHijing_upsilon_0_12fm_ElectronPid_DST_0000.root")
+void run(
+  const char *fname = "/sphenix/u/weihuma/RunOutput/embedDST_sHijing_upsilon_0_12fm_ElectronPid_DST_0000.root",
+  bool write_ntuple = false
+)
 {
   gSystem->Load("libg4dst");
   gSystem->Load("libeventmix");
@@ -36,6 +39,7 @@ void run(const char *fname = "/sphenix/u/weihuma/RunOutput/embedDST_sHijing_upsi
 
   PairMaker *pmaker = new PairMaker("PairMaker","test_ntuple.root");
   pmaker->Verbosity(1);
+  pmaker->set_write_ntuple(write_ntuple);
   se->registerSubsystem(pmaker);
 
   Fun4AllInputManager *in = new Fun4AllDstInputManager("in");
