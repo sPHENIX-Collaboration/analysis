@@ -1,4 +1,11 @@
 import sys, os
+from os import environ
+
+myShell = str(environ['SHELL'])
+goodShells = ['/bin/bash', '/bin/tcsh']
+if myShell not in goodShells:
+    print("Your shell {} was not recognised".format(myShell))
+    sys.exit()
 
 def makeCondorJob(quarkFilter):
     print("Creating condor submission files for {} production".format(quarkFilter))
@@ -29,7 +36,8 @@ def makeCondorJob(quarkFilter):
         condorFileName = "condorJob_{}_{:05d}.job".format(quarkFilter, nJob)
         condorFile = open("{0}/{1}".format(condorDir, condorFileName), "w")
         condorFile.write("Universe        = vanilla\n")
-        condorFile.write("Executable      = {}/run_KFParticle.sh\n".format(myOutputPath))
+        if myShell == '/bin/bash': condorFile.write("Executable      = {}/run_KFParticle.sh\n".format(myOutputPath))
+        if myShell == '/bin/tcsh': condorFile.write("Executable      = {}/run_KFParticle.csh\n".format(myOutputPath))
         condorFile.write("Arguments       = \"{}\"\n".format(listFile))
         condorFile.write("Output          = {0}.out\n".format(condorOutputInfo))
         condorFile.write("Error           = {0}.err\n".format(condorOutputInfo))
