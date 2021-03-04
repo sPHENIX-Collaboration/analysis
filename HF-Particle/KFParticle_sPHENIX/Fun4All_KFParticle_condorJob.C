@@ -29,7 +29,7 @@ R__LOAD_LIBRARY(libfun4all.so)
 
 using namespace std;
 
-int Fun4All_KFParticle_condorJob(string fileList = "dst_hf_charm.list", const int nEvents = 0){
+int Fun4All_KFParticle_condorJob(string fileList = "dst_hf_bottom_test.list", const int nEvents = 0){
 
   int verbosity = 1;
   //---------------
@@ -120,14 +120,14 @@ int Fun4All_KFParticle_condorJob(string fileList = "dst_hf_charm.list", const in
     f->setInitialVertexer(false);
     f->Verbosity(0);
     se->registerSubsystem(f);
-
   }
+
   //General configurations
   KFParticle_sPHENIX *kfparticle = new KFParticle_sPHENIX();
   kfparticle->Verbosity(verbosity);
   if (use_acts_vertexing) kfparticle->setVertexMapNodeName(actsVertexName.c_str());
 
-  float minTrackIPchi2 = testMDC ? -1 : 10;
+  float minTrackIPchi2 = testMDC ? 1 : 10;
   float maxTrackchi2nDOF = testMDC ? 4 : 2; 
   bool fixToPV = true;
   
@@ -137,9 +137,9 @@ int Fun4All_KFParticle_condorJob(string fileList = "dst_hf_charm.list", const in
   kfparticle->setMaximumVertexchi2nDOF(2);
   kfparticle->setMaximumDaughterDCA(0.03);
   kfparticle->setFlightDistancechi2(80);
-  kfparticle->setMinDIRA(0.8);
+  kfparticle->setMinDIRA(0.9);
   kfparticle->setMotherPT(0);
-  kfparticle->setMotherIPchi2(1e5); 
+  kfparticle->setMotherIPchi2(1e3); 
 
   kfparticle->saveDST(0);
   kfparticle->saveOutput(1);
@@ -150,7 +150,7 @@ int Fun4All_KFParticle_condorJob(string fileList = "dst_hf_charm.list", const in
   std::pair<std::string, int> intermediateList[99];
   std::pair<float, float> intermediateMassRange[99];
   int nIntTracks[99];
-  float intPt[99];
+  float intPt[99], intIP[99], intIPchi2[99], intDIRA[99], intFDchi2[99];
 
   //D2Kpi reco
   if (reconstructionChannel["D02K-pi+"]
@@ -210,12 +210,12 @@ int Fun4All_KFParticle_condorJob(string fileList = "dst_hf_charm.list", const in
   
      kfparticle->setMinimumTrackPT(0.5);
      kfparticle->setMinimumTrackIPchi2(10);
-     kfparticle->setMaximumTrackchi2nDOF(3);
+     kfparticle->setMaximumTrackchi2nDOF(10);
      kfparticle->setMaximumVertexchi2nDOF(2);
      kfparticle->setMaximumDaughterDCA(0.03);
      kfparticle->setFlightDistancechi2(0);
      kfparticle->setMinDIRA(-1);
-     kfparticle->setMotherPT(1);
+     kfparticle->setMotherPT(0);
      kfparticle->setMotherIPchi2(1e5); 
 
      daughterList[0] = make_pair("muon", -1);
@@ -241,6 +241,10 @@ int Fun4All_KFParticle_condorJob(string fileList = "dst_hf_charm.list", const in
       intermediateMassRange[0] = make_pair(2.9, 3.2);
       nIntTracks[0] = 2;
       intPt[0] = 0;
+      intIP[0] = 0.01;
+      intIPchi2[0] = 1;
+      intDIRA[0] = 0.90;
+      intFDchi2[0] = 0.;
     
       intermediateList[1] = make_pair("phi", 0);
       daughterList[2]     = make_pair("kaon", -1);
@@ -248,15 +252,22 @@ int Fun4All_KFParticle_condorJob(string fileList = "dst_hf_charm.list", const in
       intermediateMassRange[1] = make_pair(0.9, 1.2);
       nIntTracks[1] = 2;
       intPt[1] = 0;
+      intIP[1] = 0.03;
+      intIPchi2[1] = 5;
+      intDIRA[1] = 0.90;
+      intFDchi2[1] = 1;
   }
 
 
   //Bd2D-pi+ reco
   if (reconstructionChannel["Bd2D-pi+"])
   {
+      kfparticle->setMotherName("B0");  
+      kfparticle->constrainToPrimaryVertex(true);
       kfparticle->setMinimumMass(4.8);
       kfparticle->setMaximumMass(6.0);
       kfparticle->setNumberOfTracks(4);
+      kfparticle->getChargeConjugate(true);
 
       kfparticle->hasIntermediateStates(true);
       kfparticle->setNumberOfIntermediateStates(1);
@@ -265,9 +276,13 @@ int Fun4All_KFParticle_condorJob(string fileList = "dst_hf_charm.list", const in
       daughterList[0]     = make_pair("kaon", +1);
       daughterList[1]     = make_pair("pion", -1);
       daughterList[2]     = make_pair("pion", -1);
-      intermediateMassRange[0] = make_pair(1.0, 3.0);
+      intermediateMassRange[0] = make_pair(1.7, 2.1);
       nIntTracks[0] = 3;
-      intPt[0] = 0.;
+      intPt[0] = 0.5;
+      intIP[0] = 0.01;
+      intIPchi2[0] = 10;
+      intDIRA[0] = 0.95;
+      intFDchi2[0] = 2;
 
       daughterList[3] = make_pair("pion", +1);
   }
@@ -387,6 +402,10 @@ int Fun4All_KFParticle_condorJob(string fileList = "dst_hf_charm.list", const in
   kfparticle->setIntermediateMassRange( intermediateMassRange );
   kfparticle->setNumberTracksFromIntermeditateState( nIntTracks );
   kfparticle->setIntermediateMinPT( intPt );
+  kfparticle->setIntermediateMinIP( intIP );
+  kfparticle->setIntermediateMinIPchi2( intIPchi2 );
+  kfparticle->setIntermediateMinDIRA( intDIRA );
+  kfparticle->setIntermediateMinFDchi2( intFDchi2 );
 
   kfparticle->setOutputName(outputDirectory + reconstructionName + "/outputData_" + reconstructionName + "_" + fileNumber + ".root");
 
