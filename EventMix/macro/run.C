@@ -6,6 +6,11 @@
 #include <fun4all/Fun4AllDstInputManager.h>
 #include <fun4all/Fun4AllDstOutputManager.h>
 
+<<<<<<< HEAD
+#include </gpfs/mnt/gpfs02/sphenix/user/lebedev/mdc/test/analysis/EventMix/install/include/eventmix/PairMaker.h>
+//#include </gpfs/mnt/gpfs02/sphenix/user/lebedev/mdc/test/analysis/EventMix/install/include/eventmix/sPHElectronPair.h>
+//#include </gpfs/mnt/gpfs02/sphenix/user/lebedev/mdc/test/analysis/EventMix/install/include/eventmix/sPHElectronPairv1.h>
+=======
 //#include </gpfs/mnt/gpfs02/sphenix/user/lebedev/mdc/test/analysis/EventMix/install/include/eventmix/PairMaker.h>
 //#include </gpfs/mnt/gpfs02/sphenix/user/lebedev/mdc/test/analysis/EventMix/install/include/eventmix/sPHElectronPair.h>
 //#include </gpfs/mnt/gpfs02/sphenix/user/lebedev/mdc/test/analysis/EventMix/install/include/eventmix/sPHElectronPairv1.h>
@@ -16,6 +21,7 @@
 
 #include </sphenix/u/weihuma/install/include/trackpidassoc/ElectronPid.h>
 #include </sphenix/u/weihuma/install/include/trackpidassoc/TrackPidAssoc.h>
+>>>>>>> 903e41dc0b5f9027aff1bba58907bc6f101e570e
 
 R__LOAD_LIBRARY(libfun4all.so)
 R__LOAD_LIBRARY(libeventmix.so)
@@ -24,29 +30,37 @@ R__LOAD_LIBRARY(libtrackpid.so)
 
 #endif
 
+<<<<<<< HEAD
+void run()
+=======
 //void run(const char *fname = "/sphenix/user/lebedev/mdc/pythiaupsilons/sPHENIX_pythiaupsilons_10.root")
 //void run(const char *fname = "/sphenix/sim/sim01/sphnxpro/MDC1/embed/embedDST_sHijing_0_20fm_50kHz_bkg_0_20fm-0000000001-02990.root")
 void run(
   const char *fname = "/sphenix/u/weihuma/RunOutput/embedDST_sHijing_upsilon_0_12fm_ElectronPid_DST_0000.root",
   bool write_ntuple = false
 )
+>>>>>>> 903e41dc0b5f9027aff1bba58907bc6f101e570e
 {
   gSystem->Load("libg4dst");
   gSystem->Load("libeventmix");
 
   Fun4AllServer *se = Fun4AllServer::instance();
   se->Verbosity(1);
+<<<<<<< HEAD
+  PairMaker *pmaker = new PairMaker("PairMaker","dummy.root");
+=======
 
   PairMaker *pmaker = new PairMaker("PairMaker","test_ntuple.root");
   pmaker->Verbosity(1);
   //pmaker->set_write_ntuple(write_ntuple);
+>>>>>>> 903e41dc0b5f9027aff1bba58907bc6f101e570e
   se->registerSubsystem(pmaker);
 
   Fun4AllInputManager *in = new Fun4AllDstInputManager("in");
   in->Verbosity(1);
   se->registerInputManager(in);
-  in->AddFile(fname);
-  //in->AddListFile("filelist.txt");
+  //in->AddFile("/sphenix/sim/sim01/sphnxpro/MDC1/embed/embedDST_sHijing_0_20fm_50kHz_bkg_0_20fm-0000000001-02990.root");
+  in->AddListFile("listmb2.txt");
 
   Fun4AllOutputManager *outee = new Fun4AllDstOutputManager("outee","test_DST.root");
   outee->Verbosity(1);
@@ -54,8 +68,13 @@ void run(
   se->registerOutputManager(outee);
   outee->Print();
 
+<<<<<<< HEAD
+  se->run();
+
+=======
   //se->run(10);
   se->run();
+>>>>>>> 903e41dc0b5f9027aff1bba58907bc6f101e570e
   outee->Print();
 
   se->End();
