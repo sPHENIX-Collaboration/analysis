@@ -12,6 +12,7 @@ class TFile;
 class TH1D;
 class TRandom;
 class SvtxTrack;
+class sPHElectronPairContainerv1;
 
 class PairMaker: public SubsysReco {
 
@@ -28,13 +29,13 @@ public:
 protected:
 
   int process_event_test(PHCompositeNode *topNode);
-  int MakeMixedPairs(std::vector<sPHElectronv1> elepos, unsigned int centbin);
+  int MakeMixedPairs(std::vector<sPHElectronv1> elepos, sPHElectronPairContainerv1* eePairs, unsigned int centbin);
 
   bool isElectron(SvtxTrack*);
 
   std::string outnodename;
-  static const int NZ = 3;
-  static const int NCENT = 5;
+  static const int NZ = 2;
+  static const int NCENT = 2;
   std::vector<sPHElectronv1> _buffer[NZ][NCENT];
   unsigned int _min_buffer_depth;
   unsigned int _max_buffer_depth;

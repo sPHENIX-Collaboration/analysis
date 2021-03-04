@@ -34,19 +34,14 @@
 #include <phool/PHRandomSeed.h>
 #include <fun4all/Fun4AllReturnCodes.h>
 
-//#include <g4main/PHG4TruthInfoContainer.h>
-//#include <g4main/PHG4Particle.h>
-//#include <g4main/PHG4VtxPoint.h>
-
-//#include <Geant4/G4ParticleTable.hh>
-//#include <Geant4/G4ParticleDefinition.hh>
-
 #include "sPHElectron.h"
 #include "sPHElectronv1.h"
 #include "sPHElectronPair.h"
 #include "sPHElectronPairv1.h"
 #include "sPHElectronPairContainer.h"
 #include "sPHElectronPairContainerv1.h"
+
+#include "trackpidassoc/TrackPidAssoc.h"
 
 //#include <gsl/gsl_rng.h>
 
@@ -61,10 +56,10 @@ PairMaker::PairMaker(const std::string &name, const std::string &filename) : Sub
   _ZMIN = -15.;
   _ZMAX = 15.;
   _multbins.push_back(0.);
-  _multbins.push_back(90.);
-  _multbins.push_back(400.);
-  _multbins.push_back(1000.);
-  _multbins.push_back(2000.);
+//  _multbins.push_back(75.);
+//  _multbins.push_back(250.);
+//  _multbins.push_back(900.);
+  _multbins.push_back(3000.);
   _multbins.push_back(9999.);
   _min_buffer_depth = 10;
   _max_buffer_depth = 50;
@@ -154,6 +149,19 @@ int PairMaker::process_event_test(PHCompositeNode *topNode) {
     return Fun4AllReturnCodes::ABORTEVENT;
   }
 
+  TrackPidAssoc *track_pid_assoc =  findNode::getClass<TrackPidAssoc>(topNode, "TrackPidAssoc");
+  if(track_pid_assoc) {
+    auto electrons = track_pid_assoc->getTracks(TrackPidAssoc::electron);
+    for(auto it = electrons.first; it != electrons.second; ++it)
+    {
+      SvtxTrack *tr = trackmap->get(it->second);
+      double p = tr->get_p();
+      std::cout << " pid " << it->first << " track ID " << it->second << " mom " << p << std::endl;
+    }
+  }
+
+
+
   double mult = (double)trackmap->size();
   cout << "   Number of tracks = " << trackmap->size() << endl;
   unsigned int centbin = 99999;
@@ -224,7 +232,7 @@ int PairMaker::process_event_test(PHCompositeNode *topNode) {
   }}
 */
 
-  int nmix = MakeMixedPairs(elepos, centbin);
+  int nmix = MakeMixedPairs(elepos, eePairs, centbin);
   cout << "number of mixed pairs = " << nmix << endl;
 
   return Fun4AllReturnCodes::EVENT_OK;
@@ -232,7 +240,7 @@ int PairMaker::process_event_test(PHCompositeNode *topNode) {
 
 //======================================================================
 
-int PairMaker::MakeMixedPairs(std::vector<sPHElectronv1> elepos, unsigned int centbin) {
+int PairMaker::MakeMixedPairs(std::vector<sPHElectronv1> elepos, sPHElectronPairContainerv1* eePairs, unsigned int centbin) {
   int count=0;
   double _vtxbinsize  = (_ZMAX - _ZMIN)/double(NZ);
 
@@ -261,7 +269,8 @@ int PairMaker::MakeMixedPairs(std::vector<sPHElectronv1> elepos, unsigned int ce
             else if (charge1<0 && charge2<0) {type=6;}
               else {cout << "ERROR: wrong charge!" << endl;}
         pair.set_type(type);
-        cout << "MIXED pair mass = " << type << " " << pair.get_mass() << endl;
+        eePairs->insert(&pair);
+        cout << "Inserted MIXED pair with mass = " << type << " " << pair.get_mass() << endl;
         count++;
       } // end i loop
       (_buffer[vtxbin][centbin]).push_back(elepos[k]);  // keep filling buffer
