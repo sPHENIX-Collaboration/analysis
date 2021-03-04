@@ -23,6 +23,8 @@ public:
   int process_event(PHCompositeNode *topNode);
   int End(PHCompositeNode *topNode);
 
+  void set_whattodo(int what) { _whattodo = what; }
+
 protected:
 
   int process_event_hepmc(PHCompositeNode *topNode);
@@ -62,6 +64,8 @@ protected:
 
   TRandom* _rng;
   TF1 *fsin = nullptr;
+
+  int _whattodo;
 
 };
 

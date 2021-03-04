@@ -50,12 +50,12 @@
 
 #include <gsl/gsl_rng.h>
 
-#include "/direct/phenix+u/workarea/lebedev/sPHENIX_new/analysis/EventMix/install/include/eventmix/sPHElectron.h"
-#include "/direct/phenix+u/workarea/lebedev/sPHENIX_new/analysis/EventMix/install/include/eventmix/sPHElectronv1.h"
-#include "/direct/phenix+u/workarea/lebedev/sPHENIX_new/analysis/EventMix/install/include/eventmix/sPHElectronPair.h"
-#include "/direct/phenix+u/workarea/lebedev/sPHENIX_new/analysis/EventMix/install/include/eventmix/sPHElectronPairv1.h"
-#include "/direct/phenix+u/workarea/lebedev/sPHENIX_new/analysis/EventMix/install/include/eventmix/sPHElectronPairContainer.h"
-#include "/direct/phenix+u/workarea/lebedev/sPHENIX_new/analysis/EventMix/install/include/eventmix/sPHElectronPairContainerv1.h"
+#include "/gpfs/mnt/gpfs02/sphenix/user/lebedev/mdc/test/analysis/EventMix/install/include/eventmix/sPHElectron.h"
+#include "/gpfs/mnt/gpfs02/sphenix/user/lebedev/mdc/test/analysis/EventMix/install/include/eventmix/sPHElectronv1.h"
+#include "/gpfs/mnt/gpfs02/sphenix/user/lebedev/mdc/test/analysis/EventMix/install/include/eventmix/sPHElectronPair.h"
+#include "/gpfs/mnt/gpfs02/sphenix/user/lebedev/mdc/test/analysis/EventMix/install/include/eventmix/sPHElectronPairv1.h"
+#include "/gpfs/mnt/gpfs02/sphenix/user/lebedev/mdc/test/analysis/EventMix/install/include/eventmix/sPHElectronPairContainer.h"
+#include "/gpfs/mnt/gpfs02/sphenix/user/lebedev/mdc/test/analysis/EventMix/install/include/eventmix/sPHElectronPairContainerv1.h"
 
 using namespace std;
 //using namespace HepMC;
@@ -87,6 +87,7 @@ sPHAnalysis::sPHAnalysis(const std::string &name, const std::string &filename) :
   hndf=NULL;
   hquality=NULL;
 
+  _whattodo = 0;
   _rng = nullptr;
 }
 
@@ -101,7 +102,7 @@ int sPHAnalysis::Init(PHCompositeNode *topNode)
   OutputNtupleFile = new TFile(OutputFileName.c_str(),"RECREATE");
   std::cout << "sPHAnalysis::Init: output file " << OutputFileName.c_str() << " opened." << endl;
 
-  ntp1 = new  TNtuple("ntp1","","type:mass:pt:eta:pt1:pt2:e3x31:e3x32:emce1:emce2:p1:p2:chisq1:chisq2:dca2d1:dca2d2:dca3dxy1:dca3dxy2:dca3dz1:dcz3dz2:mult:rap");
+  ntp1 = new  TNtuple("ntp1","","type:mass:pt:eta:pt1:pt2:e3x31:e3x32:emce1:emce2:p1:p2:chisq1:chisq2:dca2d1:dca2d2:dca3dxy1:dca3dxy2:dca3dz1:dcz3dz2:mult:rap:nmvtx1:nmvtx2:ntpc1:ntpc2");
 
   ntpmc1 = new TNtuple("ntpmc1","","charge:pt:eta");
   ntpmc2 = new TNtuple("ntpmc2","","type:mass:pt:eta:rap:pt1:pt2:eta1:eta2");
@@ -153,9 +154,14 @@ int sPHAnalysis::InitRun(PHCompositeNode *topNode)
 int sPHAnalysis::process_event(PHCompositeNode *topNode) 
 {
   //return process_event_bimp(topNode);
-  //return process_event_test(topNode);
   //return process_event_hepmc(topNode);
-  return process_event_pairs(topNode);
+  if(_whattodo==0) {
+    cout << "MAKING PAIRS." << endl;
+    return process_event_pairs(topNode);
+  } else if(_whattodo==1) {
+    cout << "DOING ANALYSIS." << endl;
+    return process_event_test(topNode);
+  } else { cerr << "ERROR: wrong choice of what to do." << endl; return Fun4AllReturnCodes::ABORTRUN; }
 }
 
 //======================================================================
@@ -317,6 +323,12 @@ int sPHAnalysis::process_event_pairs(PHCompositeNode *topNode) {
     tmp[18] = electron->get_dca3d_z();
     tmp[19] = positron->get_dca3d_z();
     tmp[20] = mult;
+    tmp[21] = 0.; // rapidity
+    tmp[22] = positron->get_nmvtx();
+    tmp[23] = electron->get_nmvtx();
+    tmp[24] = positron->get_ntpc();
+    tmp[25] = electron->get_ntpc();
+
        ntp1->Fill(tmp);
   }
 
@@ -365,7 +377,7 @@ int sPHAnalysis::process_event_test(PHCompositeNode *topNode) {
   if(EventNumber==1) topNode->print();
   
   float impact_parameter = 0.;
-/*
+
   PHHepMCGenEventMap *genevtmap = findNode::getClass<PHHepMCGenEventMap>(topNode, "PHHepMCGenEventMap");
   PHHepMCGenEvent *genevt = nullptr;
 
@@ -384,7 +396,6 @@ int sPHAnalysis::process_event_test(PHCompositeNode *topNode) {
     HepMC::HeavyIon* hi = event->heavy_ion();
     impact_parameter = hi->impact_parameter(); 
     cout << "HepMC::GenEvent: impact parameter = " << impact_parameter << endl;
-*/
 
   float tmp1[99];
 //  float tmp2[99];

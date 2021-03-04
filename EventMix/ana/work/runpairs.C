@@ -5,7 +5,7 @@
 #include <fun4all/Fun4AllInputManager.h>
 #include <fun4all/Fun4AllDstInputManager.h>
 
-#include </direct/phenix+u/workarea/lebedev/sPHENIX_new/analysis/EventMix/install/include/sphanalysis/sPHAnalysis.h>
+#include </gpfs/mnt/gpfs02/sphenix/user/lebedev/mdc/test/analysis/EventMix/install/include/sphanalysis/sPHAnalysis.h>
 #include </gpfs/mnt/gpfs02/sphenix/user/lebedev/mdc/test/analysis/EventMix/install/include/eventmix/PairMaker.h>
 #include </gpfs/mnt/gpfs02/sphenix/user/lebedev/mdc/test/analysis/EventMix/install/include/eventmix/sPHElectronPair.h>
 #include </gpfs/mnt/gpfs02/sphenix/user/lebedev/mdc/test/analysis/EventMix/install/include/eventmix/sPHElectronPairv1.h>
@@ -16,7 +16,8 @@ R__LOAD_LIBRARY(libsphanalysis.so)
 #endif
 
 //void run(const char *fname = "/direct/phenix+u/workarea/lebedev/sPHENIX_new/analysis/EventMix/macro/hijing.root")
-void runpairs(const char *fname = "/sphenix/user/lebedev/mdc/test.root")
+//void runpairs(const char *fname = "/sphenix/user/lebedev/mdc/test.root")
+void runpairs(const char *fname = "test.root")
 {
   gSystem->Load("libg4dst");
   gSystem->Load("libeventmix");
@@ -30,7 +31,16 @@ void runpairs(const char *fname = "/sphenix/user/lebedev/mdc/test.root")
   se->registerInputManager(in);
   //in->AddListFile("pythiaupsilons.txt");
   //in->AddFile("/sphenix/user/lebedev/mdc/eePairs_test.root");
-  in->AddFile("/gpfs/mnt/gpfs02/sphenix/user/lebedev/mdc/test/analysis/EventMix/macro/mb1000_v2_c2.root");
+  in->AddFile("/sphenix/sim/sim01/sphnxpro/MDC1/embed/eePairs_mb2010.root");
+  in->AddFile("/sphenix/sim/sim01/sphnxpro/MDC1/embed/eePairs_mb2020.root");
+  in->AddFile("/sphenix/sim/sim01/sphnxpro/MDC1/embed/eePairs_mb2030.root");
+  in->AddFile("/sphenix/sim/sim01/sphnxpro/MDC1/embed/eePairs_mb2040.root");
+  in->AddFile("/sphenix/sim/sim01/sphnxpro/MDC1/embed/eePairs_mb2050.root");
+  in->AddFile("/sphenix/sim/sim01/sphnxpro/MDC1/embed/eePairs_mb2060.root");
+  in->AddFile("/sphenix/sim/sim01/sphnxpro/MDC1/embed/eePairs_mb2070.root");
+  in->AddFile("/sphenix/sim/sim01/sphnxpro/MDC1/embed/eePairs_mb2080.root");
+  in->AddFile("/sphenix/sim/sim01/sphnxpro/MDC1/embed/eePairs_mb2090.root");
+  in->AddFile("/sphenix/sim/sim01/sphnxpro/MDC1/embed/eePairs_mb2100.root");
 
 /*
   in->AddFile("/sphenix/user/lebedev/mdc/embed/DST_sHijing_0_488fm-0000000001-04960.root");
