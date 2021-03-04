@@ -38,7 +38,7 @@
 namespace std {} using namespace std;
 
 // Header files passed as explicit arguments
-#include "/sphenix/u/weihuma/analysis/TrackPid/TrackPidAssoc.h"
+#include "/sphenix/u/weihuma/analysis/TrackPid/src/TrackPidAssoc.h"
 
 // Header files passed via #pragma extra_include
 

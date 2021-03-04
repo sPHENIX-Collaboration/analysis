@@ -20,7 +20,7 @@
 
 
 
-VPATH = /sphenix/u/weihuma/analysis/TrackPid
+VPATH = /sphenix/u/weihuma/analysis/TrackPid/src
 am__is_gnu_make = test -n '$(MAKEFILE_LIST)' && test -n '$(MAKELEVEL)'
 am__make_running_with_option = \
   case $${target_option-} in \
@@ -224,13 +224,13 @@ distuninstallcheck_listfiles = find . -type f -print
 am__distuninstallcheck_listfiles = $(distuninstallcheck_listfiles) \
   | sed 's|^\./|$(prefix)/|' | grep -v '$(infodir)/dir$$'
 distcleancheck_listfiles = find . -type f -print
-ACLOCAL = ${SHELL} /sphenix/u/weihuma/analysis/TrackPid/missing aclocal-1.13
+ACLOCAL = ${SHELL} /sphenix/u/weihuma/analysis/TrackPid/src/missing aclocal-1.13
 AMTAR = $${TAR-tar}
 AM_DEFAULT_VERBOSITY = 1
 AR = ar
-AUTOCONF = ${SHELL} /sphenix/u/weihuma/analysis/TrackPid/missing autoconf
-AUTOHEADER = ${SHELL} /sphenix/u/weihuma/analysis/TrackPid/missing autoheader
-AUTOMAKE = ${SHELL} /sphenix/u/weihuma/analysis/TrackPid/missing automake-1.13
+AUTOCONF = ${SHELL} /sphenix/u/weihuma/analysis/TrackPid/src/missing autoconf
+AUTOHEADER = ${SHELL} /sphenix/u/weihuma/analysis/TrackPid/src/missing autoheader
+AUTOMAKE = ${SHELL} /sphenix/u/weihuma/analysis/TrackPid/src/missing automake-1.13
 AWK = gawk
 CC = /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/opt/sphenix/core/gcc/8.3.0.1-0a5ad/x86_64-centos7/bin/gcc
 CCDEPMODE = depmode=gcc3
@@ -268,7 +268,7 @@ LIBTOOL = $(SHELL) $(top_builddir)/libtool
 LIPO = 
 LN_S = ln -s
 LTLIBOBJS = 
-MAKEINFO = ${SHELL} /sphenix/u/weihuma/analysis/TrackPid/missing makeinfo
+MAKEINFO = ${SHELL} /sphenix/u/weihuma/analysis/TrackPid/src/missing makeinfo
 MANIFEST_TOOL = :
 MKDIR_P = /usr/bin/mkdir -p
 NM = /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/opt/sphenix/core/binutils/2.30-e5b21/x86_64-centos7/bin/nm -B
@@ -292,9 +292,9 @@ SHELL = /bin/sh
 STRIP = strip
 VERSION = 1.00
 abs_builddir = /sphenix/u/weihuma/analysis/TrackPid/build
-abs_srcdir = /sphenix/u/weihuma/analysis/TrackPid
+abs_srcdir = /sphenix/u/weihuma/analysis/TrackPid/src
 abs_top_builddir = /sphenix/u/weihuma/analysis/TrackPid/build
-abs_top_srcdir = /sphenix/u/weihuma/analysis/TrackPid
+abs_top_srcdir = /sphenix/u/weihuma/analysis/TrackPid/src
 ac_ct_AR = ar
 ac_ct_CC = /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/opt/sphenix/core/gcc/8.3.0.1-0a5ad/x86_64-centos7/bin/gcc
 ac_ct_CXX = 
@@ -324,7 +324,7 @@ host_vendor = unknown
 htmldir = ${docdir}
 includedir = ${prefix}/include
 infodir = ${datarootdir}/info
-install_sh = ${SHELL} /sphenix/u/weihuma/analysis/TrackPid/install-sh
+install_sh = ${SHELL} /sphenix/u/weihuma/analysis/TrackPid/src/install-sh
 libdir = ${exec_prefix}/lib
 libexecdir = ${exec_prefix}/libexec
 localedir = ${datarootdir}/locale
@@ -338,12 +338,12 @@ program_transform_name = s,x,x,
 psdir = ${docdir}
 sbindir = ${exec_prefix}/sbin
 sharedstatedir = ${prefix}/com
-srcdir = /sphenix/u/weihuma/analysis/TrackPid
+srcdir = /sphenix/u/weihuma/analysis/TrackPid/src
 sysconfdir = ${prefix}/etc
 target_alias = 
 top_build_prefix = 
 top_builddir = .
-top_srcdir = /sphenix/u/weihuma/analysis/TrackPid
+top_srcdir = /sphenix/u/weihuma/analysis/TrackPid/src
 AUTOMAKE_OPTIONS = foreign
 
 # list of shared libraries to produce
