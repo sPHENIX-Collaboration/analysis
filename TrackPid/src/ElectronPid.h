@@ -63,7 +63,7 @@ protected:
   std::string OutputFileName;
   TNtuple* ntpbeforecut; //write ntuple before any cuts
   TNtuple* ntpcutEMOP; //write ntuple with only EMOP cut
-  TNtuple* ntpcutEMOP_HinOEM; //write ntuple with EMOP & HinOM cuts
+  TNtuple* ntpcutEMOP_HinOEM; //write ntuple with EMOP & HinOEM cuts
   TNtuple* ntpcutEMOP_HinOEM_Pt; //write ntuple with EMOP & HinOEM & Pt cuts
 
   TNtuple* ntpcutHOP; //write ntuple with only HOP cut
