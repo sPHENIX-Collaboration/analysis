@@ -49,14 +49,14 @@ void runpairs(const char *fname = "test.root")
   //in->AddFile("/sphenix/user/lebedev/mdc/eePairs_test.root");
   in->AddFile("/sphenix/sim/sim01/sphnxpro/MDC1/embed/eePairs_mb2010.root");
   in->AddFile("/sphenix/sim/sim01/sphnxpro/MDC1/embed/eePairs_mb2020.root");
-  in->AddFile("/sphenix/sim/sim01/sphnxpro/MDC1/embed/eePairs_mb2030.root");
-  in->AddFile("/sphenix/sim/sim01/sphnxpro/MDC1/embed/eePairs_mb2040.root");
-  in->AddFile("/sphenix/sim/sim01/sphnxpro/MDC1/embed/eePairs_mb2050.root");
-  in->AddFile("/sphenix/sim/sim01/sphnxpro/MDC1/embed/eePairs_mb2060.root");
-  in->AddFile("/sphenix/sim/sim01/sphnxpro/MDC1/embed/eePairs_mb2070.root");
-  in->AddFile("/sphenix/sim/sim01/sphnxpro/MDC1/embed/eePairs_mb2080.root");
-  in->AddFile("/sphenix/sim/sim01/sphnxpro/MDC1/embed/eePairs_mb2090.root");
-  in->AddFile("/sphenix/sim/sim01/sphnxpro/MDC1/embed/eePairs_mb2100.root");
+  //in->AddFile("/sphenix/sim/sim01/sphnxpro/MDC1/embed/eePairs_mb2030.root");
+  //in->AddFile("/sphenix/sim/sim01/sphnxpro/MDC1/embed/eePairs_mb2040.root");
+  //in->AddFile("/sphenix/sim/sim01/sphnxpro/MDC1/embed/eePairs_mb2050.root");
+  //in->AddFile("/sphenix/sim/sim01/sphnxpro/MDC1/embed/eePairs_mb2060.root");
+  //in->AddFile("/sphenix/sim/sim01/sphnxpro/MDC1/embed/eePairs_mb2070.root");
+  //in->AddFile("/sphenix/sim/sim01/sphnxpro/MDC1/embed/eePairs_mb2080.root");
+  //in->AddFile("/sphenix/sim/sim01/sphnxpro/MDC1/embed/eePairs_mb2090.root");
+  //in->AddFile("/sphenix/sim/sim01/sphnxpro/MDC1/embed/eePairs_mb2100.root");
 
 /*
   in->AddFile("/sphenix/user/lebedev/mdc/embed/DST_sHijing_0_488fm-0000000001-04960.root");
