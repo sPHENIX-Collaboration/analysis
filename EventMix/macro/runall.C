@@ -30,7 +30,7 @@ void runall()
   eid->setHOPcutlimit(0.3);
   se->registerSubsystem(eid);
 
-  PairMaker *pmaker = new PairMaker("PairMaker","dummy.root");
+  PairMaker *pmaker = new PairMaker("PairMaker","Upsilon_electrons_cutting_dummy.root");
   se->registerSubsystem(pmaker);
 
   Fun4AllInputManager *in = new Fun4AllDstInputManager("in");
@@ -39,13 +39,13 @@ void runall()
   in->AddFile("/sphenix/sim/sim01/sphnxpro/MDC1/embed/embedDST_sHijing_0_20fm_50kHz_bkg_0_20fm-0000000001-02990.root");
   //in->AddListFile("listmb2.txt");
 
-  Fun4AllOutputManager *outee = new Fun4AllDstOutputManager("outee","test.root");
+  Fun4AllOutputManager *outee = new Fun4AllDstOutputManager("outee","Upsilon_electrons_cutting_test.root");
   outee->Verbosity(1);
   outee->AddNode("ElectronPairs");
   se->registerOutputManager(outee);
   outee->Print();
 
-  se->run(30);
+  se->run(35);
 
   outee->Print();
 
