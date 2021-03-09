@@ -8,12 +8,10 @@
 #include <fun4all/Fun4AllDstInputManager.h>
 #include <fun4all/Fun4AllDstOutputManager.h>
 
-#include <anatutorial/AnaTutorial.h>
 #include </sphenix/u/weihuma/install/include/trackpidassoc/ElectronPid.h>
 #include </sphenix/u/weihuma/install/include/trackpidassoc/TrackPidAssoc.h>
 
 
-R__LOAD_LIBRARY(libanatutorial.so)
 R__LOAD_LIBRARY(libfun4all.so)
 R__LOAD_LIBRARY(libtrackpid.so)
 
