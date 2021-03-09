@@ -60,6 +60,8 @@ void runpairs(const char *fname = "Ana_Upsilon_test.root")
   //in->AddFile("/sphenix/sim/sim01/sphnxpro/MDC1/embed/eePairs_mb2100.root");
 
   in->AddFile("/sphenix/sim/sim01/sphnxpro/MDC1/embed/embedDST_sHijing_0_20fm_50kHz_bkg_0_20fm-0000000001-02990.root");
+  in->AddFile("/sphenix/sim/sim01/sphnxpro/MDC1/embed/embedDST_sHijing_0_20fm_50kHz_bkg_0_20fm-0000000001-02991.root");
+
 
 /*
   in->AddFile("/sphenix/user/lebedev/mdc/embed/DST_sHijing_0_488fm-0000000001-04960.root");
@@ -143,7 +145,7 @@ void runpairs(const char *fname = "Ana_Upsilon_test.root")
   in->AddFile("/sphenix/user/lebedev/mdc/G4sPHENIX_19.root");
 */
 
-  se->run(30);
+  se->run();
   se->End();
 }
 
