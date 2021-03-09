@@ -6,8 +6,8 @@
 #include <fun4all/Fun4AllDstInputManager.h>
 #include <fun4all/Fun4AllDstOutputManager.h>
 
-#include </gpfs/mnt/gpfs02/sphenix/user/lebedev/mdc/test/analysis/EventMix/install/include/eventmix/PairMaker.h>
-#include </gpfs/mnt/gpfs02/sphenix/user/lebedev/mdc/test/analysis/EventMix/install/include/trackpidassoc/ElectronPid.h>
+#include </sphenix/u/weihuma/install/include/eventmix/PairMaker.h>
+#include </sphenix/u/weihuma/install/include/trackpidassoc/ElectronPid.h>
 
 R__LOAD_LIBRARY(libfun4all.so)
 R__LOAD_LIBRARY(libeventmix.so)
@@ -23,7 +23,11 @@ void runall()
   Fun4AllServer *se = Fun4AllServer::instance();
   se->Verbosity(1);
 
-  ElectronPid* eid = new ElectronPid("ElectronPid");
+  ElectronPid* eid = new ElectronPid("ElectronPid","Upsilon_electrons_cutting_ntuple.root");
+  eid->setEMOPcutlimits(0.7,1.5);
+  eid->setHinOEMcutlimit(0.2);
+  eid->setPtcutlimit(2.0,30.0);
+  eid->setHOPcutlimit(0.3);
   se->registerSubsystem(eid);
 
   PairMaker *pmaker = new PairMaker("PairMaker","dummy.root");
