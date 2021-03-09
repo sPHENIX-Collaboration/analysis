@@ -5,14 +5,17 @@
 #include <fun4all/Fun4AllInputManager.h>
 #include <fun4all/Fun4AllDstInputManager.h>
 
-#include </gpfs/mnt/gpfs02/sphenix/user/lebedev/mdc/test/analysis/EventMix/install/include/sphanalysis/sPHAnalysis.h>
-#include </gpfs/mnt/gpfs02/sphenix/user/lebedev/mdc/test/analysis/EventMix/install/include/eventmix/PairMaker.h>
-#include </gpfs/mnt/gpfs02/sphenix/user/lebedev/mdc/test/analysis/EventMix/install/include/eventmix/sPHElectronPair.h>
-#include </gpfs/mnt/gpfs02/sphenix/user/lebedev/mdc/test/analysis/EventMix/install/include/eventmix/sPHElectronPairv1.h>
+#include </sphenix/u/weihuma/install/include/sphanalysis/sPHAnalysis.h>
+#include </sphenix/u/weihuma/install/include/eventmix/PairMaker.h>
+#include </sphenix/u/weihuma/install/include/eventmix/sPHElectronPair.h>
+#include </sphenix/u/weihuma/install/include/eventmix/sPHElectronPairv1.h>
+#include </sphenix/u/weihuma/install/include/trackpidassoc/ElectronPid.h>
+#include </sphenix/u/weihuma/install/include/trackpidassoc/TrackPidAssoc.h>
 
 R__LOAD_LIBRARY(libfun4all.so)
 R__LOAD_LIBRARY(libeventmix.so)
 R__LOAD_LIBRARY(libsphanalysis.so)
+R__LOAD_LIBRARY(libtrackpid.so)
 #endif
 
 //void run(const char *fname = "/direct/phenix+u/workarea/lebedev/sPHENIX_new/analysis/EventMix/macro/hijing.root")
@@ -22,8 +25,21 @@ void runpairs(const char *fname = "test.root")
   gSystem->Load("libg4dst");
   gSystem->Load("libeventmix");
   gSystem->Load("libsphanalysis");
+  gSystem->Load("libtrackpid");
 
   Fun4AllServer *se = Fun4AllServer::instance();
+  se->Verbosity(1);
+
+  ElectronPid* eid = new ElectronPid("ElectronPid","Upsilon_electrons_cutting_ntuple.root");
+  eid->setEMOPcutlimits(0.7,1.5);
+  eid->setHinOEMcutlimit(0.2);
+  eid->setPtcutlimit(2.0,30.0);
+  eid->setHOPcutlimit(0.3);
+  se->registerSubsystem(eid);
+
+  PairMaker *pmaker = new PairMaker("PairMaker","dummy.root");
+  se->registerSubsystem(pmaker);
+
   sPHAnalysis *ana = new sPHAnalysis("sPHAnalysis",fname);
   se->registerSubsystem(ana);
 
