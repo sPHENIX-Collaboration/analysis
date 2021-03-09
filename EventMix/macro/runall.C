@@ -45,7 +45,7 @@ void runall()
   se->registerOutputManager(outee);
   outee->Print();
 
-  se->run();
+  se->run(30);
 
   outee->Print();
 
