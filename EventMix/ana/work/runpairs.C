@@ -20,7 +20,7 @@ R__LOAD_LIBRARY(libtrackpid.so)
 
 //void run(const char *fname = "/direct/phenix+u/workarea/lebedev/sPHENIX_new/analysis/EventMix/macro/hijing.root")
 //void runpairs(const char *fname = "/sphenix/user/lebedev/mdc/test.root")
-void runpairs(const char *fname = "test.root")
+void runpairs(const char *fname = "Ana_Upsilon_electrons_cutting_test.root")
 {
   gSystem->Load("libg4dst");
   gSystem->Load("libeventmix");
@@ -30,14 +30,14 @@ void runpairs(const char *fname = "test.root")
   Fun4AllServer *se = Fun4AllServer::instance();
   se->Verbosity(1);
 
-  ElectronPid* eid = new ElectronPid("ElectronPid","Upsilon_electrons_cutting_ntuple.root");
+  ElectronPid* eid = new ElectronPid("ElectronPid","Ana_Upsilon_electrons_cutting_ntuple.root");
   eid->setEMOPcutlimits(0.7,1.5);
   eid->setHinOEMcutlimit(0.2);
   eid->setPtcutlimit(2.0,30.0);
   eid->setHOPcutlimit(0.3);
   se->registerSubsystem(eid);
 
-  PairMaker *pmaker = new PairMaker("PairMaker","dummy.root");
+  PairMaker *pmaker = new PairMaker("PairMaker","Ana_Upsilon_electrons_cutting_dummy.root");
   se->registerSubsystem(pmaker);
 
   sPHAnalysis *ana = new sPHAnalysis("sPHAnalysis",fname);
@@ -47,8 +47,8 @@ void runpairs(const char *fname = "test.root")
   se->registerInputManager(in);
   //in->AddListFile("pythiaupsilons.txt");
   //in->AddFile("/sphenix/user/lebedev/mdc/eePairs_test.root");
-  in->AddFile("/sphenix/sim/sim01/sphnxpro/MDC1/embed/eePairs_mb2010.root");
-  in->AddFile("/sphenix/sim/sim01/sphnxpro/MDC1/embed/eePairs_mb2020.root");
+//  in->AddFile("/sphenix/sim/sim01/sphnxpro/MDC1/embed/eePairs_mb2010.root");
+//  in->AddFile("/sphenix/sim/sim01/sphnxpro/MDC1/embed/eePairs_mb2020.root");
   //in->AddFile("/sphenix/sim/sim01/sphnxpro/MDC1/embed/eePairs_mb2030.root");
   //in->AddFile("/sphenix/sim/sim01/sphnxpro/MDC1/embed/eePairs_mb2040.root");
   //in->AddFile("/sphenix/sim/sim01/sphnxpro/MDC1/embed/eePairs_mb2050.root");
@@ -57,6 +57,8 @@ void runpairs(const char *fname = "test.root")
   //in->AddFile("/sphenix/sim/sim01/sphnxpro/MDC1/embed/eePairs_mb2080.root");
   //in->AddFile("/sphenix/sim/sim01/sphnxpro/MDC1/embed/eePairs_mb2090.root");
   //in->AddFile("/sphenix/sim/sim01/sphnxpro/MDC1/embed/eePairs_mb2100.root");
+
+  in->AddFile("/sphenix/sim/sim01/sphnxpro/MDC1/embed/embedDST_sHijing_0_20fm_50kHz_bkg_0_20fm-0000000001-02990.root");
 
 /*
   in->AddFile("/sphenix/user/lebedev/mdc/embed/DST_sHijing_0_488fm-0000000001-04960.root");
@@ -140,7 +142,7 @@ void runpairs(const char *fname = "test.root")
   in->AddFile("/sphenix/user/lebedev/mdc/G4sPHENIX_19.root");
 */
 
-  se->run();
+  se->run(30);
   se->End();
 }
 
