@@ -21,7 +21,7 @@ R__LOAD_LIBRARY(libtrackpid.so)
 //void run(const char *fname = "/direct/phenix+u/workarea/lebedev/sPHENIX_new/analysis/EventMix/macro/hijing.root")
 //void runpairs(const char *fname = "/sphenix/user/lebedev/mdc/test.root")
 //void runpairs(const char *fname = "Ana_Upsilon_electrons_cutting_test.root")
-void runpairs(const char *fname = "Ana_Upsilon_test.root")
+void runpairs(const char *fname = "Ana_test.root")
 {
   gSystem->Load("libg4dst");
   gSystem->Load("libeventmix");
@@ -39,7 +39,7 @@ void runpairs(const char *fname = "Ana_Upsilon_test.root")
 //  se->registerSubsystem(eid);
 
   PairMaker *pmaker = new PairMaker("PairMaker","Ana_Upsilon_dummy.root");
-  se->registerSubsystem(pmaker);
+ // se->registerSubsystem(pmaker);
 
   sPHAnalysis *ana = new sPHAnalysis("sPHAnalysis",fname);
   se->registerSubsystem(ana);
