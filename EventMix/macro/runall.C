@@ -36,7 +36,8 @@ void runall()
   Fun4AllInputManager *in = new Fun4AllDstInputManager("in");
   in->Verbosity(1);
   se->registerInputManager(in);
-  in->AddFile("/sphenix/sim/sim01/sphnxpro/MDC1/embed/embedDST_sHijing_0_20fm_50kHz_bkg_0_20fm-0000000001-02990.root");
+  in->AddFile("/sphenix/sim/sim01/sphnxpro/MDC1/embed/embedDST_sHijing_0_20fm_50kHz_bkg_0_20fm-0000000001-02990.root");  
+  in->AddFile("/sphenix/sim/sim01/sphnxpro/MDC1/embed/embedDST_sHijing_0_20fm_50kHz_bkg_0_20fm-0000000001-02991.root");
   //in->AddListFile("listmb2.txt");
 
   Fun4AllOutputManager *outee = new Fun4AllDstOutputManager("outee","Upsilon_electrons_cutting_test.root");
@@ -45,7 +46,7 @@ void runall()
   se->registerOutputManager(outee);
   outee->Print();
 
-  se->run(35);
+  se->run();
 
   outee->Print();
 
