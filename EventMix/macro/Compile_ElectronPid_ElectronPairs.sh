@@ -9,3 +9,4 @@ cd /sphenix/u/weihuma/analysis/EventMix/src/build
 make
 make install
 echo "finished EventMix make install"
+cd /sphenix/u/weihuma/analysis/EventMix/macro
