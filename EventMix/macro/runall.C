@@ -22,14 +22,14 @@ void runall()
 
   Fun4AllServer *se = Fun4AllServer::instance();
   se->Verbosity(1);
-/*
+
   ElectronPid* eid = new ElectronPid("ElectronPid","/sphenix/u/weihuma/RunOutput/EVENTMIX/Upsilon_electrons_cutting_ntuple.root");
   eid->setEMOPcutlimits(0.7,1.5);
   eid->setHinOEMcutlimit(0.2);
   eid->setPtcutlimit(2.0,30.0);
   eid->setHOPcutlimit(0.3);
   se->registerSubsystem(eid);
-*/
+
   PairMaker *pmaker = new PairMaker("PairMaker","/sphenix/u/weihuma/RunOutput/EVENTMIX/Upsilon_electrons_cutting_dummy.root");
   se->registerSubsystem(pmaker);
 
