@@ -20,8 +20,8 @@ R__LOAD_LIBRARY(libtrackpid.so)
 
 //void run(const char *fname = "/direct/phenix+u/workarea/lebedev/sPHENIX_new/analysis/EventMix/macro/hijing.root")
 //void runpairs(const char *fname = "/sphenix/user/lebedev/mdc/test.root")
-void runpairs(const char *fname = "/sphenix/u/weihuma/RunOutput/EVENTMIX/ana/Ana_Upsilon_electrons_cutting_0_20fm.root")
-//void runpairs(const char *fname = "/sphenix/u/weihuma/RunOutput/EVENTMIX/ana/Ana_Upsilon_0_20fm.root")
+//void runpairs(const char *fname = "/sphenix/u/weihuma/RunOutput/EVENTMIX/ana/Ana_Upsilon_electrons_cutting_0_20fm.root")
+void runpairs(const char *fname = "/sphenix/u/weihuma/RunOutput/EVENTMIX/ana/Ana_Upsilon_0_20fm.root")
 {
   gSystem->Load("libg4dst");
   gSystem->Load("libeventmix");
@@ -30,14 +30,14 @@ void runpairs(const char *fname = "/sphenix/u/weihuma/RunOutput/EVENTMIX/ana/Ana
 
   Fun4AllServer *se = Fun4AllServer::instance();
   se->Verbosity(1);
-
-  ElectronPid* eid = new ElectronPid("ElectronPid","/sphenix/u/weihuma/RunOutput/EVENTMIX/ana/Ana_Upsilon_electrons_cutting_ntuple_0_20fm.root");
+/*
+  ElectronPid* eid = new ElectronPid("ElectronPid","/sphenix/u/weihuma/RunOutput/EVENTMIX/ana/Ana_Upsilon_ntuple_0_20fm.root");
   eid->setEMOPcutlimits(0.7,1.5);
   eid->setHinOEMcutlimit(0.2);
   eid->setPtcutlimit(2.0,30.0);
   eid->setHOPcutlimit(0.3);
   se->registerSubsystem(eid);
-
+*/
   PairMaker *pmaker = new PairMaker("PairMaker","Ana_Upsilon_electrons_cutting_dummy.root");
   se->registerSubsystem(pmaker);
 
