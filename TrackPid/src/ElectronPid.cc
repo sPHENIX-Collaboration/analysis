@@ -152,7 +152,8 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
         //std::cout << " EMOP_lowerlimit " << EMOP_lowerlimit << " EMOP_higherlimit " << EMOP_higherlimit << " HinOEM_higherlimit " << HinOEM_higherlimit <<std::endl;
 
       /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////electrons
-      if(cemceoverp > EMOP_lowerlimit && cemceoverp < EMOP_higherlimit && quality < 10)
+     // if(cemceoverp > EMOP_lowerlimit && cemceoverp < EMOP_higherlimit && quality < 10)
+     if(cemceoverp > EMOP_lowerlimit && cemceoverp < EMOP_higherlimit && quality < 5)
 	{
 	
 	  ntp[0] = mom;
@@ -215,7 +216,8 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
       
       /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////hadrons
      
-      if(hcaleoverp > HOP_lowerlimit && quality < 10)
+     // if(hcaleoverp > HOP_lowerlimit && quality < 10)
+      if(hcaleoverp > HOP_lowerlimit && quality < 5)
 	{
       
 	  ntp[0] = mom;
