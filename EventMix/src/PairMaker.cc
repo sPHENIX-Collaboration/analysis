@@ -298,12 +298,12 @@ bool PairMaker::isElectron(SvtxTrack* trk)
   double pt = sqrt(px*px+py*py);
   double pp = sqrt(pt*pt+pz*pz);
   double e3x3 = trk->get_cal_energy_3x3(SvtxTrack::CAL_LAYER::CEMC);
- // if(pt<2.0) return false;
-  if(pt<0.1) return false;
+  if(pt<2.0) return false;
+ // if(pt<0.1) return false;
   if(pp==0.) return false;
   if(isnan(e3x3)) return false;
- // if(e3x3/pp<0.7) return false;
-  if(e3x3/pp<0.1) return false;
+  if(e3x3/pp<0.7) return false;
+ // if(e3x3/pp<0.1) return false;
   double chisq = trk->get_chisq();
   double ndf = trk->get_ndf();
   if((chisq/ndf)>10.) return false;
