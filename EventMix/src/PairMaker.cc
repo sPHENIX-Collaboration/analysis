@@ -215,7 +215,7 @@ int PairMaker::process_event_test(PHCompositeNode *topNode) {
             else if (charge1<0 && charge2<0) {type=3;}
               else {cout << "ERROR: wrong charge!" << endl;}
         cout << "MASS = " << type << " " << mass << endl;
-        if(type == 1) {
+        if(type == 2 or type == 3) {
            pair.set_type(type);
            eePairs->insert(&pair);
         }
@@ -270,7 +270,7 @@ int PairMaker::MakeMixedPairs(std::vector<sPHElectronv1> elepos, sPHElectronPair
           else if (charge1>0 && charge2>0) {type=5;}
             else if (charge1<0 && charge2<0) {type=6;}
               else {cout << "ERROR: wrong charge!" << endl;}
-        if(type == 1) {
+        if(type == 2 or type == 3) {
             pair.set_type(type);
             eePairs->insert(&pair);
             cout << "Inserted MIXED pair with mass = " << type << " " << pair.get_mass() << endl;
