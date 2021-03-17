@@ -688,12 +688,12 @@ bool sPHAnalysis::isElectron(SvtxTrack* trk)
   double e3x3 = trk->get_cal_energy_3x3(SvtxTrack::CAL_LAYER::CEMC);
   //double eclus = trk->get_cal_cluster_e(SvtxTrack::CAL_LAYER::CEMC);
   if(pp==0.) return false;
-  if(pt<2.0) return false;
-  //if(pt<0.1) return false;
+  //if(pt<2.0) return false;
+  if(pt<0.1) return false;
   //cout << e3x3 << " " << eclus << endl;
   if(isnan(e3x3)) return false;
-  if(e3x3/pp<0.70) return false;
-  //if(e3x3/pp<0.1) return false;
+  //if(e3x3/pp<0.70) return false;
+  if(e3x3/pp<0.1) return false;
   return true;
 }
 
