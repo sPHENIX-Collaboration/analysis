@@ -43,7 +43,7 @@ void run(
   in->fileopen(inputFile);
  //in->AddListFile("filelist_0_4d88fm.txt"); //sHijing with Upsilon embeded;
  // in->AddListFile("filelist_0_12fm.txt"); //sHijing with Upsilon embeded;
-  //in->AddListFile("filelist_0_20fm.txt"); //sHijing with Upsilon embeded;
+ in->AddListFile("filelist_0_20fm.txt"); //sHijing with Upsilon embeded;
   
   se->registerInputManager(in);
 
