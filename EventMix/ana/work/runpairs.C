@@ -24,7 +24,7 @@ R__LOAD_LIBRARY(libtrackpid.so)
 //void runpairs(const char *fname = "/sphenix/u/weihuma/RunOutput/EVENTMIX/ana/Ana_Upsilon_0_20fm.root")
 //void runpairs(const char *fname = "/sphenix/u/weihuma/RunOutput/EVENTMIX/ana/Ana_Upsilon_0_20fm_change_Eop_pt_cut.root")
 //void runpairs(const char *fname = "/sphenix/u/weihuma/RunOutput/EVENTMIX/ana/Ana_Upsilon_electrons_cutting_0_20fm_change_Eop_pt_cut.root")
-void runpairs(const char *fname = "/sphenix/u/weihuma/RunOutput/EVENTMIX/ana/Ana_Upsilon_embed_sHijing_0_20fm_type1_without_eID_pteop.root")
+void runpairs(const char *fname = "/sphenix/u/weihuma/RunOutput/EVENTMIX/ana/Ana_Upsilon_embed_sHijing_0_20fm_type1_input_eID.root")
 {
   gSystem->Load("libg4dst");
   gSystem->Load("libeventmix");
@@ -49,6 +49,7 @@ void runpairs(const char *fname = "/sphenix/u/weihuma/RunOutput/EVENTMIX/ana/Ana
 
   Fun4AllInputManager *in = new Fun4AllDstInputManager("in");
   se->registerInputManager(in);
+  in->AddFile("/sphenix/u/weihuma/RunOutput/embedDST_sHijing_upsilon_0_20fm_ElectronPid_DST.root");
   //in->AddFile("/sphenix/u/weihuma/RunOutput/EVENTMIX/macro/Upsilon_cutting_0_20fm.root");
   
 //in->AddListFile("pythiaupsilons.txt");
