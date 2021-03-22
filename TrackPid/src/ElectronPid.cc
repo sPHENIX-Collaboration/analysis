@@ -68,6 +68,7 @@ int ElectronPid::Init(PHCompositeNode *topNode)
 	ntpcutHOP = new TNtuple("ntpcutHOP","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:charge:pid:quality:e_cluster:EventNumber:z:vtxid");
 	ntpcutEMOP_HinOEM = new TNtuple("ntpcutEMOP_HinOEM","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:charge:pid:quality:e_cluster:EventNumber:z:vtxid");
 	ntpcutEMOP_HinOEM_Pt = new TNtuple("ntpcutEMOP_HinOEM_Pt","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:charge:pid:quality:e_cluster:EventNumber:z:vtxid");
+        ntpcutEMOP_HinOEM_Pt_read = new TNtuple("ntpcutEMOP_HinOEM_Pt_read","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:charge:pid:quality:e_cluster:EventNumber:z:vtxid:trackid");
   }
   else {
 	PHNodeIterator iter(topNode);
@@ -246,15 +247,46 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
     }
   
   // Read back the association map
-
   if(Verbosity() > 1)
     std::cout << "Read back the association map electron entries" << std::endl;
   auto electrons = _track_pid_assoc->getTracks(TrackPidAssoc::electron);
   for(auto it = electrons.first; it != electrons.second; ++it)
     {
       SvtxTrack *tr = _track_map->get(it->second);
-      double p = tr->get_p();
 
+      double z = tr->get_z();
+      unsigned int vtxid = tr->get_vertex_id();
+      double mom = tr->get_p();
+      double px = tr->get_px();
+      double py = tr->get_py();
+      double pt = sqrt(px*px + py*py);
+      int charge = tr->get_charge();
+      int pid = it->first;
+      int tr_id = it->second;
+      int quality = tr->get_quality();
+
+      double e_cluster = tr->get_cal_cluster_e(SvtxTrack::CAL_LAYER::CEMC);
+
+      double e_cemc_3x3 = tr->get_cal_energy_3x3(SvtxTrack::CAL_LAYER::CEMC);
+      double e_hcal_in_3x3 = tr->get_cal_energy_3x3(SvtxTrack::CAL_LAYER::HCALIN);
+      double e_hcal_out_3x3 = tr->get_cal_energy_3x3(SvtxTrack::CAL_LAYER::HCALOUT);
+ 
+     
+      ntp[0] = mom;
+      ntp[1] = pt;
+      ntp[2] = e_cemc_3x3;
+      ntp[3] = e_hcal_in_3x3;
+      ntp[4] = e_hcal_out_3x3;
+      ntp[5] = charge;
+      ntp[6] = pid;
+      ntp[7] = quality;
+      ntp[8] = e_cluster;
+      ntp[9] = EventNumber;
+      ntp[10] = z;
+      ntp[11] = vtxid;
+      ntp[12] = tr_id;
+      if(output_ntuple) { ntpcutEMOP_HinOEM_Pt_read -> Fill(ntp); }
+      
       if(Verbosity() > 1)
 	std::cout << " pid " << it->first << " track ID " << it->second << " mom " << p << std::endl;
     }

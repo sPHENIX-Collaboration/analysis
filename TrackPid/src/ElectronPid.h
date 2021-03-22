@@ -65,6 +65,7 @@ protected:
   TNtuple* ntpcutEMOP; //write ntuple with only EMOP cut
   TNtuple* ntpcutEMOP_HinOEM; //write ntuple with EMOP & HinOEM cuts
   TNtuple* ntpcutEMOP_HinOEM_Pt; //write ntuple with EMOP & HinOEM & Pt cuts
+  TNtuple* ntpcutEMOP_HinOEM_Pt_read; //write ntuple with EMOP & HinOEM & Pt cuts in the situation of reading back the association map.
 
   TNtuple* ntpcutHOP; //write ntuple with only HOP cut
 
