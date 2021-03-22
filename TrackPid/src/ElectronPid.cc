@@ -288,7 +288,7 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
       if(output_ntuple) { ntpcutEMOP_HinOEM_Pt_read -> Fill(ntp); }
       
       if(Verbosity() > 1)
-	std::cout << " pid " << it->first << " track ID " << it->second << " mom " << p << std::endl;
+	std::cout << " pid " << it->first << " track ID " << it->second << " mom " << mom << std::endl;
     }
 
   if(Verbosity() > 1)
