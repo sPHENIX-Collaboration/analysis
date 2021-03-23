@@ -7,7 +7,10 @@
 #include <fun4all/Fun4AllDstOutputManager.h>
 
 #include </sphenix/u/weihuma/install/include/trackpidassoc/ElectronPid.h>
+#include </sphenix/u/weihuma/install/include/trackpidassoc/TrackPidAssoc.h>
 #include </sphenix/u/weihuma/install/include/eventmix/PairMaker.h>
+#include </sphenix/u/weihuma/install/include/eventmix/sPHElectronPair.h>
+#include </sphenix/u/weihuma/install/include/eventmix/sPHElectronPairv1.h>
 
 R__LOAD_LIBRARY(libfun4all.so)
 R__LOAD_LIBRARY(libtrackpid.so)
