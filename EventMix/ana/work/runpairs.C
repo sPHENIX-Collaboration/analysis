@@ -40,7 +40,7 @@ void runpairs(const char *fname = "/sphenix/u/weihuma/RunOutput/EVENTMIX/Ana_Ups
   eid->setHinOEMcutlimit(0.2);
   eid->setPtcutlimit(2.0,30.0);
   eid->setHOPcutlimit(0.3);
-  se->registerSubsystem(eid);
+  //se->registerSubsystem(eid);
 
   PairMaker *pmaker = new PairMaker("PairMaker","dummy.root");
   pmaker->Verbosity(1);
