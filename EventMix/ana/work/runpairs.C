@@ -5,17 +5,17 @@
 #include <fun4all/Fun4AllInputManager.h>
 #include <fun4all/Fun4AllDstInputManager.h>
 
+#include </sphenix/u/weihuma/install/include/trackpidassoc/ElectronPid.h>
+#include </sphenix/u/weihuma/install/include/trackpidassoc/TrackPidAssoc.h>
 #include </sphenix/u/weihuma/install/include/sphanalysis/sPHAnalysis.h>
 #include </sphenix/u/weihuma/install/include/eventmix/PairMaker.h>
 #include </sphenix/u/weihuma/install/include/eventmix/sPHElectronPair.h>
 #include </sphenix/u/weihuma/install/include/eventmix/sPHElectronPairv1.h>
-#include </sphenix/u/weihuma/install/include/trackpidassoc/ElectronPid.h>
-#include </sphenix/u/weihuma/install/include/trackpidassoc/TrackPidAssoc.h>
 
 R__LOAD_LIBRARY(libfun4all.so)
+R__LOAD_LIBRARY(libtrackpid.so)
 R__LOAD_LIBRARY(libeventmix.so)
 R__LOAD_LIBRARY(libsphanalysis.so)
-R__LOAD_LIBRARY(libtrackpid.so)
 #endif
 
 //void run(const char *fname = "/direct/phenix+u/workarea/lebedev/sPHENIX_new/analysis/EventMix/macro/hijing.root")
@@ -24,7 +24,7 @@ R__LOAD_LIBRARY(libtrackpid.so)
 //void runpairs(const char *fname = "/sphenix/u/weihuma/RunOutput/EVENTMIX/ana/Ana_Upsilon_0_20fm.root")
 //void runpairs(const char *fname = "/sphenix/u/weihuma/RunOutput/EVENTMIX/ana/Ana_Upsilon_0_20fm_change_Eop_pt_cut.root")
 //void runpairs(const char *fname = "/sphenix/u/weihuma/RunOutput/EVENTMIX/ana/Ana_Upsilon_electrons_cutting_0_20fm_change_Eop_pt_cut.root")
-void runpairs(const char *fname = "/sphenix/u/weihuma/RunOutput/EVENTMIX/ana/Ana_Upsilon_embed_sHijing_0_20fm_type1_input_eID.root")
+void runpairs(const char *fname = "/sphenix/u/weihuma/RunOutput/EVENTMIX/Ana_Upsilon_embed_sHijing_0_20fm_type1_eID_pteop.root")
 {
   gSystem->Load("libg4dst");
   gSystem->Load("libeventmix");
@@ -33,23 +33,27 @@ void runpairs(const char *fname = "/sphenix/u/weihuma/RunOutput/EVENTMIX/ana/Ana
 
   Fun4AllServer *se = Fun4AllServer::instance();
   se->Verbosity(1);
-/*
-  ElectronPid* eid = new ElectronPid("ElectronPid","/sphenix/u/weihuma/RunOutput/EVENTMIX/ana/Ana_Upsilon_embed_sHijing_0_20fm_type1_with_eID_pteop_ntuple.root");
+
+  ElectronPid* eid = new ElectronPid("ElectronPid","/sphenix/u/weihuma/RunOutput/EVENTMIX/Ana_Upsilon_embed_sHijing_0_20fm_type1_with_eID_pteop_ntuple.root");
+  eid->Verbosity(1);
   eid->setEMOPcutlimits(0.7,1.5);
   eid->setHinOEMcutlimit(0.2);
   eid->setPtcutlimit(2.0,30.0);
   eid->setHOPcutlimit(0.3);
   se->registerSubsystem(eid);
-*/
+
   PairMaker *pmaker = new PairMaker("PairMaker","dummy.root");
+  pmaker->Verbosity(1);
   se->registerSubsystem(pmaker);
 
   sPHAnalysis *ana = new sPHAnalysis("sPHAnalysis",fname);
+  ana->Verbosity(1);
   se->registerSubsystem(ana);
 
   Fun4AllInputManager *in = new Fun4AllDstInputManager("in");
+  in->Verbosity(1);
   se->registerInputManager(in);
-  in->AddFile("/sphenix/u/weihuma/RunOutput/embedDST_sHijing_upsilon_0_20fm_ElectronPid_DST.root");
+  //in->AddFile("/sphenix/u/weihuma/RunOutput/embedDST_sHijing_upsilon_0_20fm_ElectronPid_DST.root");
   //in->AddFile("/sphenix/u/weihuma/RunOutput/EVENTMIX/macro/Upsilon_cutting_0_20fm.root");
   
 //in->AddListFile("pythiaupsilons.txt");
