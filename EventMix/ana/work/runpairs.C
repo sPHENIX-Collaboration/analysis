@@ -53,8 +53,8 @@ void runpairs(const char *fname = "/sphenix/u/weihuma/RunOutput/EVENTMIX/Ana_Ups
   Fun4AllInputManager *in = new Fun4AllDstInputManager("in");
   in->Verbosity(1);
   se->registerInputManager(in);
+  in->AddFile("/sphenix/u/weihuma/RunOutput/embedDST_sHijing_upsilon_0_20fm_ElectronPid_DST_0000.root");
   //in->AddFile("/sphenix/u/weihuma/RunOutput/embedDST_sHijing_upsilon_0_20fm_ElectronPid_DST.root");
-  in->AddFile("/sphenix/u/weihuma/RunOutput/embedDST_sHijing_upsilon_0_20fm_ElectronPid_DST.root");
   
 //in->AddListFile("pythiaupsilons.txt");
   //in->AddFile("/sphenix/user/lebedev/mdc/eePairs_test.root");
