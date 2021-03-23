@@ -132,7 +132,7 @@ int PairMaker::process_event_test(PHCompositeNode *topNode) {
   GlobalVertexMap *global_vtxmap = findNode::getClass<GlobalVertexMap>(topNode, "GlobalVertexMap");
   if(!global_vtxmap) { 
     cerr << PHWHERE << " ERROR: Can not find GlobalVertexMap node." << endl;
-  //  return Fun4AllReturnCodes::ABORTEVENT;
+    return Fun4AllReturnCodes::ABORTEVENT;
   }
   //cout << "Number of GlobalVertexMap entries = " << global_vtxmap->size() << endl;
 
