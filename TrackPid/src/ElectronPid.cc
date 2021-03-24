@@ -20,6 +20,14 @@
 #include <trackbase_historic/SvtxTrackMap.h>
 #include <trackbase_historic/SvtxTrack.h>
 
+#include <trackbase_historic/SvtxVertex.h>
+#include <trackbase_historic/SvtxVertexMap.h>
+#include <trackbase/TrkrDefs.h>
+
+#include <g4vertex/GlobalVertexMap.h>
+#include <g4vertex/GlobalVertex.h>
+
+
 // gsl
 #include <gsl/gsl_randist.h>
 #include <gsl/gsl_rng.h>
