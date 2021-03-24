@@ -317,6 +317,7 @@ ElectronPid.lo: /sphenix/u/weihuma/analysis/TrackPid/src/ElectronPid.cc \
  /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/release/release_new/new.2/include/trackbase_historic/SvtxTrack.h \
  /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/release/release_new/new.2/include/trackbase_historic/SvtxTrackState.h \
  /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/release/release_new/new.2/include/trackbase/TrkrDefs.h \
+ /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/release/release_new/new.2/include/g4main/PHG4HitDefs.h \
  /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/release/release_new/new.2/include/trackbase_historic/SvtxTrack.h \
  /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/release/release_new/new.2/include/gsl/gsl_randist.h \
  /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/release/release_new/new.2/include/gsl/gsl_vector.h \
@@ -1083,6 +1084,8 @@ ElectronPid.lo: /sphenix/u/weihuma/analysis/TrackPid/src/ElectronPid.cc \
 /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/release/release_new/new.2/include/trackbase_historic/SvtxTrackState.h:
 
 /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/release/release_new/new.2/include/trackbase/TrkrDefs.h:
+
+/cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/release/release_new/new.2/include/g4main/PHG4HitDefs.h:
 
 /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/release/release_new/new.2/include/trackbase_historic/SvtxTrack.h:
 

@@ -337,6 +337,7 @@ sPHAnalysis.lo: /sphenix/u/weihuma/analysis/EventMix/ana/sPHAnalysis.cc \
  /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/release/release_new/new.2/include/phool/PHObject.h \
  /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/opt/sphenix/core/root-6.22.02/include/TObject.h \
  /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/release/release_new/new.2/include/trackbase/TrkrDefs.h \
+ /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/release/release_new/new.2/include/g4main/PHG4HitDefs.h \
  /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/opt/sphenix/core/gcc/8.3.0.1-0a5ad/x86_64-centos7/include/c++/8.3.0/set \
  /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/opt/sphenix/core/gcc/8.3.0.1-0a5ad/x86_64-centos7/include/c++/8.3.0/bits/stl_set.h \
  /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/opt/sphenix/core/gcc/8.3.0.1-0a5ad/x86_64-centos7/include/c++/8.3.0/bits/stl_multiset.h \
@@ -1171,6 +1172,8 @@ sPHAnalysis.lo: /sphenix/u/weihuma/analysis/EventMix/ana/sPHAnalysis.cc \
 /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/opt/sphenix/core/root-6.22.02/include/TObject.h:
 
 /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/release/release_new/new.2/include/trackbase/TrkrDefs.h:
+
+/cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/release/release_new/new.2/include/g4main/PHG4HitDefs.h:
 
 /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/opt/sphenix/core/gcc/8.3.0.1-0a5ad/x86_64-centos7/include/c++/8.3.0/set:
 
