@@ -226,7 +226,8 @@ int PairMaker::process_event_test(PHCompositeNode *topNode) {
             else if (charge1<0 && charge2<0) {type=3;}
               else {cout << "ERROR: wrong charge!" << endl;}
         cout << "MASS = " << type << " " << mass << endl;
-        if(type == 2 or type == 3) {
+     //   if(type == 2 or type == 3) {
+        if(type == 1){
            pair.set_type(type);
            eePairs->insert(&pair);
         }
