@@ -24,7 +24,7 @@ R__LOAD_LIBRARY(libsphanalysis.so)
 //void runpairs(const char *fname = "/sphenix/u/weihuma/RunOutput/EVENTMIX/ana/Ana_Upsilon_0_20fm.root")
 //void runpairs(const char *fname = "/sphenix/u/weihuma/RunOutput/EVENTMIX/ana/Ana_Upsilon_0_20fm_change_Eop_pt_cut.root")
 //void runpairs(const char *fname = "/sphenix/u/weihuma/RunOutput/EVENTMIX/ana/Ana_Upsilon_electrons_cutting_0_20fm_change_Eop_pt_cut.root")
-void runpairs(const char *fname = "/sphenix/u/weihuma/RunOutput/EVENTMIX/Ana_Upsilon_embed_sHijing_0_20fm_type1_defaulteid_TrackPidAssoc.root",
+void runpairs(const char *fname = "/sphenix/u/weihuma/RunOutput/EVENTMIX/Ana_Upsilon_embed_sHijing_0_20fm_type1_read_TrackPidAssoc.root",
 bool output_ntuple = true)
 {
   gSystem->Load("libg4dst");
@@ -38,11 +38,11 @@ bool output_ntuple = true)
   ElectronPid* eid = new ElectronPid("ElectronPid","/sphenix/u/weihuma/RunOutput/EVENTMIX/Ana_Upsilon_embed_sHijing_0_20fm_type1_with_defaulteID_TrackPidAssoc_ntuple.root");
   eid->Verbosity(1);
   eid->set_output_ntuple(output_ntuple);
-  //eid->setEMOPcutlimits(0.7,1.5);
-  //eid->setHinOEMcutlimit(0.2);
-  //eid->setPtcutlimit(2.0,30.0);
-  //eid->setHOPcutlimit(0.3);
-  se->registerSubsystem(eid);
+  eid->setEMOPcutlimits(0.7,1.5);
+  eid->setHinOEMcutlimit(0.2);
+  eid->setPtcutlimit(2.0,30.0);
+  eid->setHOPcutlimit(0.3);
+ // se->registerSubsystem(eid);
 
   PairMaker *pmaker = new PairMaker("PairMaker","dummy.root");
   pmaker->Verbosity(1);
@@ -56,7 +56,7 @@ bool output_ntuple = true)
   in->Verbosity(1);
   se->registerInputManager(in);
 //  in->AddFile("/sphenix/u/weihuma/RunOutput/embedDST_sHijing_upsilon_0_20fm_ElectronPid_DST_0000.root");
-  //in->AddFile("/sphenix/u/weihuma/RunOutput/embedDST_sHijing_upsilon_0_20fm_ElectronPid_DST.root");
+  in->AddFile("/sphenix/u/weihuma/RunOutput/embedDST_sHijing_upsilon_0_20fm_ElectronPid_DST.root");
   
 //in->AddListFile("pythiaupsilons.txt");
   //in->AddFile("/sphenix/user/lebedev/mdc/eePairs_test.root");
@@ -73,14 +73,14 @@ bool output_ntuple = true)
 
   //in->AddFile("/sphenix/sim/sim01/sphnxpro/MDC1/embed/embedDST_sHijing_0_20fm_50kHz_bkg_0_20fm-0000000001-02990.root");
   //in->AddFile("/sphenix/sim/sim01/sphnxpro/MDC1/embed/embedDST_sHijing_0_20fm_50kHz_bkg_0_20fm-0000000001-02991.root");
-
+/*
   in->AddFile("/sphenix/sim/sim01/sphnxpro/MDC1/embed/embedDST_sHijing_0_20fm_50kHz_bkg_0_20fm-0000000001-04594.root"); 
   in->AddFile("/sphenix/sim/sim01/sphnxpro/MDC1/embed/embedDST_sHijing_0_20fm_50kHz_bkg_0_20fm-0000000001-04595.root");
   in->AddFile("/sphenix/sim/sim01/sphnxpro/MDC1/embed/embedDST_sHijing_0_20fm_50kHz_bkg_0_20fm-0000000001-04596.root");
   in->AddFile("/sphenix/sim/sim01/sphnxpro/MDC1/embed/embedDST_sHijing_0_20fm_50kHz_bkg_0_20fm-0000000001-04597.root");
   in->AddFile("/sphenix/sim/sim01/sphnxpro/MDC1/embed/embedDST_sHijing_0_20fm_50kHz_bkg_0_20fm-0000000001-04598.root");
   in->AddFile("/sphenix/sim/sim01/sphnxpro/MDC1/embed/embedDST_sHijing_0_20fm_50kHz_bkg_0_20fm-0000000001-04599.root");
-
+*/
 /*
   in->AddFile("/sphenix/user/lebedev/mdc/embed/DST_sHijing_0_488fm-0000000001-04960.root");
   in->AddFile("/sphenix/user/lebedev/mdc/embed/DST_sHijing_0_488fm-0000000001-04961.root");
