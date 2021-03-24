@@ -110,7 +110,7 @@ int PairMaker::InitRun(PHCompositeNode *topNode)
 
 int PairMaker::process_event(PHCompositeNode *topNode) 
 {
-  return process_event_test(topNode);
+   return process_event_test(topNode);
 }
 
 //======================================================================
@@ -283,7 +283,7 @@ int PairMaker::MakeMixedPairs(std::vector<sPHElectronv1> elepos, sPHElectronPair
           else if (charge1>0 && charge2>0) {type=5;}
             else if (charge1<0 && charge2<0) {type=6;}
               else {cout << "ERROR: wrong charge!" << endl;}
-        if(type == 4444) {
+        if(type == 4) {
             pair.set_type(type);
             eePairs->insert(&pair);
             cout << "Inserted MIXED pair with mass = " << type << " " << pair.get_mass() << endl;
