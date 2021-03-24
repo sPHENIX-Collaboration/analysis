@@ -317,8 +317,7 @@ int ElectronPid::GetNodes(PHCompositeNode* topNode)
   if(!_track_pid_assoc)
     {
       PHNodeIterator iter(topNode);      
-      PHCompositeNode* dstNode = static_cast<PHCompositeNode*>(iter.findFirst(
-									      "PHCompositeNode", "DST"));
+      PHCompositeNode* dstNode = static_cast<PHCompositeNode*>(iter.findFirst("PHCompositeNode", "DST"));
       if (!dstNode)
 	{
 	  cerr << PHWHERE << "DST Node missing, quit!" << endl;
@@ -328,8 +327,7 @@ int ElectronPid::GetNodes(PHCompositeNode* topNode)
      // Get the SVTX node
       PHNodeIterator iter_dst(dstNode);
       PHCompositeNode* tb_node =
-	dynamic_cast<PHCompositeNode*>(iter_dst.findFirst("PHCompositeNode",
-							  "SVTX"));
+	dynamic_cast<PHCompositeNode*>(iter_dst.findFirst("PHCompositeNode", "SVTX"));
       if (!tb_node)
 	{
 	  cout << PHWHERE << "SVTX node missing, quit!" << endl;
@@ -338,8 +336,7 @@ int ElectronPid::GetNodes(PHCompositeNode* topNode)
 
       // now add the new node  
       _track_pid_assoc = new TrackPidAssoc;
-      PHIODataNode<PHObject>* assoc_node = new PHIODataNode<PHObject>(
-								      _track_pid_assoc, "TrackPidAssoc", "PHObject");
+      PHIODataNode<PHObject>* assoc_node = new PHIODataNode<PHObject>(_track_pid_assoc, "TrackPidAssoc", "PHObject");
       tb_node->addNode(assoc_node);
       if (Verbosity() > 0)
 	cout << PHWHERE << "Svtx/TrackPidAssoc node added" << endl;
