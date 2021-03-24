@@ -176,28 +176,39 @@ int PairMaker::process_event_test(PHCompositeNode *topNode) {
 //  vector<sPHElectronv1> electrons;
 //  vector<sPHElectronv1> positrons;
 
-  for (SvtxTrackMap::Iter iter = trackmap->begin(); iter != trackmap->end(); ++iter)
-  {
-    SvtxTrack *track = iter->second;
-    if(!isElectron(track)) continue;
-    double px = track->get_px();
-    double py = track->get_py();
-    double pt = sqrt(px*px + py*py);
-    int charge = track->get_charge();
-    double x = track->get_x();
-    double y = track->get_y();
-    double z = track->get_z();
-    unsigned int vtxbin = (z - _ZMIN)/_vtxbinsize;
-    if(vtxbin<0 || vtxbin>=NZ) continue;
-    unsigned int vtxid = track->get_vertex_id();
-    if(vtxid<0 || vtxid>=global_vtxmap->size()) continue;
-    cout << "electron: "<<charge<<" "<<pt<<" "<<x<<" "<<y<<" "<<z<<" "<<vtxid<<" "<<vtxbin<< endl;
-    GlobalVertex* gvtx = global_vtxmap->get(vtxid);
-    cout << "global vertex: "<<gvtx->get_x()<<" "<<gvtx->get_y()<<" "<<gvtx->get_z()<<endl;
-    sPHElectronv1 tmpel = sPHElectronv1(track);
-    tmpel.set_zvtx(gvtx->get_z());
-    elepos.push_back(tmpel);
-    (_buffer[vtxbin][centbin]).push_back(tmpel);
+ // for (SvtxTrackMap::Iter iter = trackmap->begin(); iter != trackmap->end(); ++iter)
+ // {
+   // SvtxTrack *track = iter->second;
+    //if(!isElectron(track)) continue;
+    
+  if(track_pid_assoc) {
+    auto electrons = track_pid_assoc->getTracks(TrackPidAssoc::electron);
+    for(auto it = electrons.first; it != electrons.second; ++it)
+    {
+      SvtxTrack *track = trackmap->get(it->second);
+      double p = track->get_p();
+      std::cout << " pid " << it->first << " track ID " << it->second << " mom " << p << std::endl;
+    
+     double px = track->get_px();
+     double py = track->get_py();
+     double pt = sqrt(px*px + py*py);
+     int charge = track->get_charge();
+     double x = track->get_x();
+     double y = track->get_y();
+     double z = track->get_z();
+     unsigned int vtxbin = (z - _ZMIN)/_vtxbinsize;
+     if(vtxbin<0 || vtxbin>=NZ) continue;
+     unsigned int vtxid = track->get_vertex_id();
+  
+     if(vtxid<0 || vtxid>=global_vtxmap->size()) continue;
+     cout << "electron: "<<charge<<" "<<pt<<" "<<x<<" "<<y<<" "<<z<<" "<<vtxid<<" "<<vtxbin<< endl;
+     GlobalVertex* gvtx = global_vtxmap->get(vtxid);
+     cout << "global vertex: "<<gvtx->get_x()<<" "<<gvtx->get_y()<<" "<<gvtx->get_z()<<endl;
+     sPHElectronv1 tmpel = sPHElectronv1(track);
+     tmpel.set_zvtx(gvtx->get_z());
+     elepos.push_back(tmpel);
+     (_buffer[vtxbin][centbin]).push_back(tmpel);
+    }
   } // end loop over tracks
 
   cout << "# of electrons/positrons = " << elepos.size() << endl;
