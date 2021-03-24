@@ -128,8 +128,9 @@ int PairMaker::process_event_test(PHCompositeNode *topNode) {
   sPHElectronPairContainerv1 *eePairs = findNode::getClass<sPHElectronPairContainerv1>(topNode,outnodename.c_str());
   if(!eePairs) { cerr << outnodename << " not found!" << endl; } 
     else { cout << "Found " << outnodename << " node." << endl; }
-/*
+
   GlobalVertexMap *global_vtxmap = findNode::getClass<GlobalVertexMap>(topNode, "GlobalVertexMap");
+/*
   if(!global_vtxmap) { 
     cerr << PHWHERE << " ERROR: Can not find GlobalVertexMap node." << endl;
     return Fun4AllReturnCodes::ABORTEVENT;
