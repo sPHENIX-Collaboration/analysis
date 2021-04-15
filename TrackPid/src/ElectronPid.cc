@@ -134,11 +134,11 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
         ++iter)
       {
         TrkrDefs::cluskey cluser_key = *iter;
-
-     //   int trackerid = TrkrDefs::getTrkrId(cluser_key);
-     //   if(trackerid==0) nmvtx++;
-     //   if(trackerid==1) nintt++;
-     //   if(trackerid==2) ntpc++;
+        int trackerid = TrkrDefs::getTrkrId(cluser_key);
+        cout << "trackerid= " << trackerid << endl; 
+        if(trackerid==0) nmvtx++;
+        if(trackerid==1) nintt++;
+        if(trackerid==2) ntpc++;
       }
       
 
