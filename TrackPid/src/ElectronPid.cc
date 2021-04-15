@@ -6,6 +6,7 @@
 #include <fstream>
 
 #include <phool/PHCompositeNode.h>
+#include <phool/recoConsts.h>
 #include <phool/PHIODataNode.h>                         // for PHIODataNode
 #include <phool/PHNode.h>                               // for PHNode
 #include <phool/PHNodeIterator.h>
@@ -22,10 +23,15 @@
 
 #include <trackbase_historic/SvtxVertex.h>
 #include <trackbase_historic/SvtxVertexMap.h>
+
 #include <trackbase/TrkrDefs.h>
 
 #include <g4vertex/GlobalVertexMap.h>
 #include <g4vertex/GlobalVertex.h>
+
+#include <g4main/PHG4TruthInfoContainer.h>
+#include <g4main/PHG4Particle.h>
+#include <g4main/PHG4VtxPoint.h>
 
 
 // gsl
@@ -127,8 +133,8 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
         iter != track->end_cluster_keys();
         ++iter)
       {
-        TrkrDefs::cluskey clus_key = *iter;
-        int trackerid = TrkrDefs::getTrkrId(clus_key);
+        TrkrDefs::cluskey cluser_key = *iter;
+        int trackerid = TrkrDefs::getTrkrId(cluser_key);
         if(trackerid==0) nmvtx++;
         if(trackerid==1) nintt++;
         if(trackerid==2) ntpc++;
