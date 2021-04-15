@@ -71,7 +71,7 @@ int ElectronPid::Init(PHCompositeNode *topNode)
 	OutputNtupleFile = new TFile(OutputFileName.c_str(),"RECREATE");
   	std::cout << "PairMaker::Init: output file " << OutputFileName.c_str() << " opened." << endl;
 
-	ntpbeforecut = new TNtuple("ntpbeforecut","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:cemce3x3overp:hcaline3x3overcemce3x3:hcale3x3overp:charge:pid:quality:e_cluster:EventNumber:z:vtxid");
+	ntpbeforecut = new TNtuple("ntpbeforecut","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:cemce3x3overp:hcaline3x3overcemce3x3:hcale3x3overp:charge:pid:quality:e_cluster:EventNumber:z:vtxid:nmvtx:nintt:ntpc");
         ntpcutEMOP = new TNtuple("ntpcutEMOP","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:charge:pid:quality:e_cluster:EventNumber:z:vtxid");
 	ntpcutHOP = new TNtuple("ntpcutHOP","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:charge:pid:quality:e_cluster:EventNumber:z:vtxid");
 	ntpcutEMOP_HinOEM = new TNtuple("ntpcutEMOP_HinOEM","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:charge:pid:quality:e_cluster:EventNumber:z:vtxid");
@@ -108,11 +108,28 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
   cout<<"EventNumber ===================== " << EventNumber-1 << endl;
   if(EventNumber==1) topNode->print();
 
+  int nmvtx = 0;
+  int nintt = 0;
+  int ntpc = 0;
   // get the tracks
   for(SvtxTrackMap::Iter it = _track_map->begin(); it != _track_map->end(); ++it)
     {
-
       SvtxTrack *track = it->second;
+
+      nmvtx = 0;
+      nintt = 0;
+      ntpc = 0;
+      for (SvtxTrack::ConstClusterKeyIter iter = track->begin_cluster_keys();
+        iter != track->end_cluster_keys();
+        ++iter)
+      {
+        TrkrDefs::cluskey clus_key = *iter;
+        int trackerid = TrkrDefs::getTrkrId(clus_key);
+        if(trackerid==0) nmvtx++;
+        if(trackerid==1) nintt++;
+        if(trackerid==2) ntpc++;
+      }
+      
 
       double px = track->get_px();
       double py = track->get_py();
@@ -155,14 +172,16 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
       ntp[12] = EventNumber;
       ntp[13] = z;
       ntp[14] = vtxid;
+      ntp[15] = nmvtx;
+      ntp[16] = nintt;
+      ntp[17] = ntpc;
       if(output_ntuple) { ntpbeforecut -> Fill(ntp); }
 
 	//std::cout << " Pt_lowerlimit " << Pt_lowerlimit << " Pt_higherlimit " << Pt_higherlimit << " HOP_lowerlimit " << HOP_lowerlimit <<std::endl;
         //std::cout << " EMOP_lowerlimit " << EMOP_lowerlimit << " EMOP_higherlimit " << EMOP_higherlimit << " HinOEM_higherlimit " << HinOEM_higherlimit <<std::endl;
 
       /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////electrons
-     // if(cemceoverp > EMOP_lowerlimit && cemceoverp < EMOP_higherlimit && quality < 10)
-     if(cemceoverp > EMOP_lowerlimit && cemceoverp < EMOP_higherlimit && quality < 5)
+     if(cemceoverp > EMOP_lowerlimit && cemceoverp < EMOP_higherlimit && quality < Nquality_higherlimit && nmvtx > Nmvtx_lowerlimit && nintt > Nintt_lowerlimit && ntpc > Ntpc_lowerlimit)
 	{
 	
 	  ntp[0] = mom;

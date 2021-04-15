@@ -47,12 +47,19 @@ public:
   /// Set the hcaline3x3/cemce3x3 cut limit for electrons; default: hcaline3x3/cemce3x3<100.0, means without cut
   void setHinOEMcutlimit(float HinOEMhigherlimit) { HinOEM_higherlimit = HinOEMhigherlimit; }
 
-  /// Set the pt cut limit for Upsilon decay electrons: 0.0<pt<100.0 GeV, means without cut
+  /// Set the pt cut limit for Upsilon decay electrons; default: 0.0<pt<100.0 GeV, means without cut
   void setPtcutlimit(float Ptlowerlimit, float Pthigherlimit) { Pt_lowerlimit = Ptlowerlimit; Pt_higherlimit = Pthigherlimit; }
 
   /// Set the (hcaline3x3+hcaloute3x3)/p cut lower limit for hadrons; default: 0.0<(hcaline3x3+hcaloute3x3)/p, means without cut
   void setHOPcutlimit(float HOPlowerlimit) { HOP_lowerlimit = HOPlowerlimit; }
 
+  /// Set the track cut limits; default: nmvtx>=0, nintt>=0, ntpc>=0; quality<100
+  void setTrackcutlimits(int Nmvtxlowerlimit, int Ninttlowerlimit, int Ntpclowerlimit, int Nqualityhigherlimit) { 
+     Nmvtx_lowerlimit = Nmvtxlowerlimit; 
+     Nintt_lowerlimit = Ninttlowerlimit; 
+     Ntpc_lowerlimit = Ntpc_lowerlimit;
+     Nquality_higherlimit = Nqualityhigherlimit;
+  }
 
   void set_output_ntuple(bool outputntuple) {output_ntuple = outputntuple;}
 
@@ -94,7 +101,17 @@ int GetNodes(PHCompositeNode *topNode);
 /// A float lower limit for cutting on (hcaline3x3+hcaloute3x3)/p
   float HOP_lowerlimit;
 
+/// A float lower limit for cutting on nmvtx
+  int Nmvtx_lowerlimit;
 
+/// A float lower limit for cutting on nintt
+  int Nintt_lowerlimit;
+
+/// A float lower limit for cutting on ntpc
+  int Ntpc_lowerlimit;
+
+/// A float higher limit for cutting on quality
+  int Nquality_higherlimit;
 
 };
 
