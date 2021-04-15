@@ -57,6 +57,10 @@ ElectronPid::ElectronPid(const std::string& name, const std::string &filename) :
   HinOEM_higherlimit = 100.0;
   Pt_lowerlimit = 0.0;
   Pt_higherlimit = 100.0;
+  Nmvtx_lowerlimit = 0;
+  Nintt_lowerlimit = 0;
+  Ntpc_lowerlimit = 0;
+  Nquality_higherlimit = 100;
 }
 
 ElectronPid::~ElectronPid() 
@@ -181,7 +185,7 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
         //std::cout << " EMOP_lowerlimit " << EMOP_lowerlimit << " EMOP_higherlimit " << EMOP_higherlimit << " HinOEM_higherlimit " << HinOEM_higherlimit <<std::endl;
 
       /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////electrons
-     if(cemceoverp > EMOP_lowerlimit && cemceoverp < EMOP_higherlimit && quality < Nquality_higherlimit && nmvtx > Nmvtx_lowerlimit && nintt > Nintt_lowerlimit && ntpc > Ntpc_lowerlimit)
+     if(cemceoverp > EMOP_lowerlimit && cemceoverp < EMOP_higherlimit && quality < Nquality_higherlimit && nmvtx >= Nmvtx_lowerlimit && nintt >= Nintt_lowerlimit && ntpc >= Ntpc_lowerlimit)
 	{
 	
 	  ntp[0] = mom;
