@@ -115,6 +115,12 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
   EventNumber++;
   float ntp[30];
 
+  SvtxTrackMap *trackmap = findNode::getClass<SvtxTrackMap>(topNode, "SvtxTrackMap");
+  if(!trackmap) {
+    cerr << PHWHERE << " ERROR: Can not find SvtxTrackMap node." << endl;
+    return Fun4AllReturnCodes::ABORTEVENT;
+  }
+
   cout<<"EventNumber ===================== " << EventNumber-1 << endl;
   if(EventNumber==1) topNode->print();
 
