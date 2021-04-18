@@ -67,6 +67,10 @@ ElectronPid::ElectronPid(const std::string& name, const std::string &filename) :
   Nintt_lowerlimit = 0;
   Ntpc_lowerlimit = 0;
   Nquality_higherlimit = 100;
+
+  unsigned int _nlayers_maps = 3;
+  unsigned int _nlayers_intt = 4;
+  unsigned int _nlayers_tpc = 48;
 }
 
 ElectronPid::~ElectronPid() 
@@ -140,11 +144,15 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
         ++iter)
       {
         TrkrDefs::cluskey cluser_key = *iter;
-        int trackerid = TrkrDefs::getTrkrId(cluser_key);
-        cout << "trackerid= " << trackerid << endl; 
-        if(trackerid==0) nmvtx++;
-        if(trackerid==1) nintt++;
-        if(trackerid==2) ntpc++;
+       // int trackerid = TrkrDefs::getTrkrId(cluser_key);
+       // cout << "trackerid= " << trackerid << endl; 
+       // if(trackerid==0) nmvtx++;
+       // if(trackerid==1) nintt++;
+       // if(trackerid==2) ntpc++;
+        unsigned int layer = TrkrDefs::getLayer(cluster_key);
+        if (_nlayers_maps > 0 && layer < _nlayers_maps) nmvtx++;
+        if (_nlayers_intt > 0 && layer >= _nlayers_maps && layer < _nlayers_maps + _nlayers_intt) nintt++;
+        if (_nlayers_tpc > 0 && layer >= (_nlayers_maps + _nlayers_intt) && layer < (_nlayers_maps + _nlayers_intt + _nlayers_tpc)) ntpc++;
       }
       
 
