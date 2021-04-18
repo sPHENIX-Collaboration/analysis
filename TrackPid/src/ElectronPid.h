@@ -52,7 +52,7 @@ public:
 
   /// Set the (hcaline3x3+hcaloute3x3)/p cut lower limit for hadrons; default: 0.0<(hcaline3x3+hcaloute3x3)/p, means without cut
   void setHOPcutlimit(float HOPlowerlimit) { HOP_lowerlimit = HOPlowerlimit; }
-
+/*
   /// Set the track cut limits; default: nmvtx>=0, nintt>=0, ntpc>=0; quality<100
   void setTrackcutlimits(int Nmvtxlowerlimit, int Ninttlowerlimit, int Ntpclowerlimit, int Nqualityhigherlimit) { 
      Nmvtx_lowerlimit = Nmvtxlowerlimit; 
@@ -60,6 +60,7 @@ public:
      Ntpc_lowerlimit = Ntpc_lowerlimit;
      Nquality_higherlimit = Nqualityhigherlimit;
   }
+*/
 
   void set_output_ntuple(bool outputntuple) {output_ntuple = outputntuple;}
 
@@ -100,7 +101,7 @@ int GetNodes(PHCompositeNode *topNode);
 
 /// A float lower limit for cutting on (hcaline3x3+hcaloute3x3)/p
   float HOP_lowerlimit;
-
+/*
 /// A float lower limit for cutting on nmvtx
   int Nmvtx_lowerlimit;
 
@@ -116,6 +117,7 @@ int GetNodes(PHCompositeNode *topNode);
   unsigned int _nlayers_maps = 3;
   unsigned int _nlayers_intt = 4;
   unsigned int _nlayers_tpc = 48;
+*/
 
 };
 
