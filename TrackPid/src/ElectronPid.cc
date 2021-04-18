@@ -127,6 +127,22 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
   cout<<"EventNumber ===================== " << EventNumber-1 << endl;
   if(EventNumber==1) topNode->print();
 
+  GlobalVertexMap *global_vtxmap = findNode::getClass<GlobalVertexMap>(topNode, "GlobalVertexMap");
+
+  if(!global_vtxmap) { 
+    cerr << PHWHERE << " ERROR: Can not find GlobalVertexMap node." << endl;
+    return Fun4AllReturnCodes::ABORTEVENT;
+  }
+  //cout << "Number of GlobalVertexMap entries = " << global_vtxmap->size() << endl;
+
+  SvtxVertexMap *vtxmap = findNode::getClass<SvtxVertexMap>(topNode, "SvtxVertexMap");
+  if(!vtxmap) {
+      cout << "SvtxVertexMap node not found!" << endl;
+      return Fun4AllReturnCodes::ABORTEVENT;
+  }
+  //cout << "Number of SvtxVertexMap entries = " << vtxmap->size() << endl;
+
+
   int nmvtx = 0;
   int nintt = 0;
   int ntpc = 0;
