@@ -113,6 +113,10 @@ int GetNodes(PHCompositeNode *topNode);
 /// A float higher limit for cutting on quality
   int Nquality_higherlimit;
 
+  unsigned int _nlayers_maps = 3;
+  unsigned int _nlayers_intt = 4;
+  unsigned int _nlayers_tpc = 48;
+
 };
 
 #endif

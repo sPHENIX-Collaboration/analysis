@@ -68,9 +68,9 @@ ElectronPid::ElectronPid(const std::string& name, const std::string &filename) :
   Ntpc_lowerlimit = 0;
   Nquality_higherlimit = 100;
 
-  unsigned int _nlayers_maps = 3;
-  unsigned int _nlayers_intt = 4;
-  unsigned int _nlayers_tpc = 48;
+ // unsigned int _nlayers_maps = 3;
+ // unsigned int _nlayers_intt = 4;
+ // unsigned int _nlayers_tpc = 48;
 }
 
 ElectronPid::~ElectronPid() 
