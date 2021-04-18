@@ -149,7 +149,7 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
        // if(trackerid==0) nmvtx++;
        // if(trackerid==1) nintt++;
        // if(trackerid==2) ntpc++;
-        unsigned int layer = TrkrDefs::getLayer(cluster_key);
+        unsigned int layer = TrkrDefs::getLayer(cluser_key);
         if (_nlayers_maps > 0 && layer < _nlayers_maps) nmvtx++;
         if (_nlayers_intt > 0 && layer >= _nlayers_maps && layer < _nlayers_maps + _nlayers_intt) nintt++;
         if (_nlayers_tpc > 0 && layer >= (_nlayers_maps + _nlayers_intt) && layer < (_nlayers_maps + _nlayers_intt + _nlayers_tpc)) ntpc++;
