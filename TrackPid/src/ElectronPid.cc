@@ -138,9 +138,9 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
     {
       SvtxTrack *track = it->second;
 
-      nmvtx = 1;
-      nintt = 1;
-      ntpc = 10;
+      nmvtx = 0;
+      nintt = 0;
+      ntpc = 0;
 /*
       for (SvtxTrack::ConstClusterKeyIter iter = track->begin_cluster_keys();
         iter != track->end_cluster_keys();
