@@ -133,6 +133,7 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
   int nmvtx = 0;
   int nintt = 0;
   int ntpc = 0;
+  cont<<_nlayers_maps<<" "<<_nlayers_intt<<" "<<_nlayers_tpc<<endl;
   // get the tracks
   for(SvtxTrackMap::Iter it = _track_map->begin(); it != _track_map->end(); ++it)
     {
