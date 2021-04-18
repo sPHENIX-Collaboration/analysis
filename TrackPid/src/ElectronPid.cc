@@ -25,7 +25,7 @@
 #include <trackbase_historic/SvtxVertexMap.h>
 
 #include <trackbase/TrkrDefs.h>
-//#include <trackbase/TrkrHit.h>
+#include <trackbase/TrkrHit.h>
 #include <trackbase/TrkrClusterHitAssoc.h>
 
 #include <g4vertex/GlobalVertexMap.h>
