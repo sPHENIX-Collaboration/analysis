@@ -20,7 +20,6 @@
 
 #include <trackbase_historic/SvtxTrackMap.h>
 #include <trackbase_historic/SvtxTrack.h>
-
 #include <trackbase_historic/SvtxVertex.h>
 #include <trackbase_historic/SvtxVertexMap.h>
 
@@ -140,14 +139,12 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
       nmvtx = 0;
       nintt = 0;
       ntpc = 0;
-/*
-      for (SvtxTrack::ConstClusterKeyIter iter = track->begin_cluster_keys();
-        iter != track->end_cluster_keys();
-        ++iter)
+
+      for (SvtxTrack::ConstClusterKeyIter iter = track->begin_cluster_keys(); iter != track->end_cluster_keys(); ++iter)
       {
         TrkrDefs::cluskey cluser_key = *iter;
-       // int trackerid = TrkrDefs::getTrkrId(cluser_key);
-       // cout << "trackerid= " << trackerid << endl; 
+        int trackerid = TrkrDefs::getTrkrId(cluser_key);
+        cout << "trackerid= " << trackerid << endl; 
        // if(trackerid==0) nmvtx++;
        // if(trackerid==1) nintt++;
        // if(trackerid==2) ntpc++;
@@ -156,7 +153,7 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
         if (_nlayers_intt > 0 && layer >= _nlayers_maps && layer < _nlayers_maps + _nlayers_intt) nintt++;
         if (_nlayers_tpc > 0 && layer >= (_nlayers_maps + _nlayers_intt) && layer < (_nlayers_maps + _nlayers_intt + _nlayers_tpc)) ntpc++;
       }
- */
+ 
 
       double px = track->get_px();
       double py = track->get_py();
