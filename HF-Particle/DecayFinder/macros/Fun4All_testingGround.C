@@ -27,8 +27,8 @@ using namespace std;
 
 int Fun4All_testingGround(){
 
-  const int nEvents = 1;
-  int verbosity = 1;
+  const int nEvents = 200;
+  int verbosity = INT_MAX - 10;
   //---------------
   // Load libraries
   //---------------
@@ -52,22 +52,40 @@ int Fun4All_testingGround(){
   DecayFinder* myFinder = new DecayFinder("myTestFinder");
   myFinder->Verbosity(verbosity);
   myFinder->setDecayDescriptor("[Bs0 -> K^+ Kaon^-]cc");
-  se->registerSubsystem(myFinder);
+  //se->registerSubsystem(myFinder);
+
+  DecayFinder* myFinder1 = new DecayFinder("myTestFinder1");
+  myFinder1->Verbosity(verbosity);
+  myFinder1->setDecayDescriptor("[D0 -> K^- pi^+]cc");
+  //se->registerSubsystem(myFinder1);
 
   DecayFinder* myFinder2 = new DecayFinder("myTestFinder2");
   myFinder2->Verbosity(verbosity);
-  myFinder2->setDecayDescriptor("[Bs0 -> (J/psi -> muon^+ mu^-) (phi -> K^+ K^-)]cc");
+  myFinder2->setDecayDescriptor("[D0 -> kaon^- pion^+]cc");
+  myFinder2->allowPi0(true);
+  myFinder2->allowPhotons(true);
+  myFinder2->triggerOnDecay(true);
   se->registerSubsystem(myFinder2);
 
   DecayFinder* myFinder3 = new DecayFinder("myTestFinder3");
   myFinder3->Verbosity(verbosity);
-  myFinder3->setDecayDescriptor("B- -> (D0->Kaon^+pion^-)pi^-");
-  se->registerSubsystem(myFinder3);
+  myFinder3->setDecayDescriptor("Bs0 -> (J/psi -> mu^+ mu^-) (phi -> K^+ K^-)");
+  //se->registerSubsystem(myFinder3);
 
   DecayFinder* myFinder4 = new DecayFinder("myTestFinder4");
   myFinder4->Verbosity(verbosity);
-  myFinder4->setDecayDescriptor("[B- -> proton^+ ( D0 -> K^+ pi^- ) ( D- -> K^+ pi^- pi^-) pi^-]CC");
-  se->registerSubsystem(myFinder4);
+  myFinder4->setDecayDescriptor("[B+ -> (D0 -> pi^+ K^-) pi^+]cc");
+  //se->registerSubsystem(myFinder4);
+
+  DecayFinder* myFinder5 = new DecayFinder("myTestFinder5");
+  myFinder5->Verbosity(verbosity);
+  myFinder5->setDecayDescriptor("Bs0 -> mu^+ (J/psi -> mu^+ mu^-) (D- -> K^- pi^+ K^-) (phi -> K^+ K^-)e^+ proton^-");
+  //se->registerSubsystem(myFinder5);
+
+  DecayFinder* myFinder6 = new DecayFinder("myTestFinder6");
+  myFinder6->Verbosity(verbosity);
+  myFinder6->setDecayDescriptor("[B0 -> (D+ -> pi^+ pi^+ K^-) pi^+]cc");
+  //se->registerSubsystem(myFinder6);
 
   //-----------------
   // Event processing

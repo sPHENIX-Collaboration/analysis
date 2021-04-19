@@ -1,7 +1,7 @@
 AUTOMAKE_OPTIONS = foreign
 
 lib_LTLIBRARIES = \
-    libdecayfinder.la
+    libantitrigger.la
 
 AM_LDFLAGS = \
   -L$(libdir) \
@@ -13,12 +13,12 @@ AM_CPPFLAGS = \
   -I$(OFFLINE_MAIN)/include 
 
 pkginclude_HEADERS = \
-  DecayFinder.h
+  AntiTrigger.h
 
-libdecayfinder_la_SOURCES = \
-  DecayFinder.cc
+libantitrigger_la_SOURCES = \
+  AntiTrigger.cc
 
-libdecayfinder_la_LDFLAGS = \
+libantitrigger_la_LDFLAGS = \
   -L$(libdir) \
   -L$(OFFLINE_MAIN)/lib \
   -I$(ROOTSYS)/include \
@@ -43,7 +43,7 @@ noinst_PROGRAMS = \
 BUILT_SOURCES = testexternals.cc
 
 testexternals_SOURCES = testexternals.cc
-testexternals_LDADD = libdecayfinder.la
+testexternals_LDADD = libantitrigger.la
 
 testexternals.cc:
 	echo "//*** this is a generated file. Do not commit, do not edit" > $@
