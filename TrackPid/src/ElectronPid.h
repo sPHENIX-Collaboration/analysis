@@ -57,7 +57,7 @@ public:
   void setTrackcutlimits(int Nmvtxlowerlimit, int Ninttlowerlimit, int Ntpclowerlimit, int Nqualityhigherlimit) { 
      Nmvtx_lowerlimit = Nmvtxlowerlimit; 
      Nintt_lowerlimit = Ninttlowerlimit; 
-     Ntpc_lowerlimit = Ntpc_lowerlimit;
+     Ntpc_lowerlimit = Ntpclowerlimit;
      Nquality_higherlimit = Nqualityhigherlimit;
   }
 
