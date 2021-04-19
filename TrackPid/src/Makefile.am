@@ -38,6 +38,17 @@ libtrackpid_la_LIBADD = \
   -lSubsysReco \
   -ltrackbase_historic_io
 
+##added on Apr. 19, 2021 by Weihu
+libtrackpid_la_LDFLAGS = \
+  -L$(libdir) \
+  -L$(OFFLINE_MAIN)/lib \
+  -lcalo_io \
+  -lfun4all \
+  -lg4detectors_io \
+  -lphg4hit \
+  -lg4dst \
+  -lg4eval \
+
 
 # Rule for generating table CINT dictionaries.
 %_Dict.cc: %.h %LinkDef.h
