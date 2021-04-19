@@ -19,15 +19,18 @@ def makeCondorJob(quarkFilter):
     submitScriptName = "{}/submitJobs.sh".format(condorDir)
     submitScript = open("{}".format(submitScriptName), "w")
     submitScript.write("#!/bin/bash\n")
-    nFilesPerJobs = 10;
+    nFilesPerJobs = 50;
     if len(sys.argv) == 3: nFilesPerJobs = int(sys.argv[2])
     nJob = 0;
     while line:
         listFile = "{0}/fileLists/productionFiles-{1}-{2:05d}.list".format(condorDir, quarkFilter, nJob)
         productionFilesToUse = open(listFile, "w")
         for i in range(0, nFilesPerJobs):
-            splitLine = line.split("/")
-            fileName = splitLine[-1]
+            if (quarkFilter.lower() == "minbias"):
+              fileName = line
+            else:
+              splitLine = line.split("/")
+              fileName = splitLine[-1]
             productionFilesToUse.write(fileName)
             line = infile.readline()
 
@@ -63,5 +66,7 @@ if nArgs == 1 or sys.argv[1].upper() == "CHARM":
 elif sys.argv[1].upper() == "BOTTOM":
     os.system("CreateFileList.pl -type 8 DST_HF_BOTTOM")
     makeCondorJob("BOTTOM")
+elif sys.argv[1].upper() == "MINBIAS":
+    makeCondorJob("MINBIAS")
 else:
     print("The argument, {}, was not known. Use CHARM or BOTTOM instead, followed by the number of files per job".format(sys.argv[1]))
