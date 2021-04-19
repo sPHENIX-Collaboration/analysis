@@ -144,10 +144,10 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
     {
       SvtxTrack *track = it->second;
 
-      nmvtx = 1;
-      nintt = 1;
-      ntpc = 20;
-/*
+      nmvtx = 0;
+      nintt = 0;
+      ntpc = 0;
+
       for (SvtxTrack::ConstClusterKeyIter iter = track->begin_cluster_keys(); iter != track->end_cluster_keys(); ++iter)
       {
         TrkrDefs::cluskey cluser_key = *iter;
@@ -161,7 +161,7 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
         if (_nlayers_intt > 0 && layer >= _nlayers_maps && layer < _nlayers_maps + _nlayers_intt) nintt++;
         if (_nlayers_tpc > 0 && layer >= (_nlayers_maps + _nlayers_intt) && layer < (_nlayers_maps + _nlayers_intt + _nlayers_tpc)) ntpc++;
       }
- */
+ 
 
       double px = track->get_px();
       double py = track->get_py();
