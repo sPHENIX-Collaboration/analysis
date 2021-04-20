@@ -2,11 +2,11 @@
 #  makefile for particle identification     #
 #  Created by Weihu Ma on 4/2021            #
 #############################################
-CXX             = g++
+CXX             = g++ 
 CXXFLAGS        = -g -O -Wall -Wextra -fPIC -fopenmp 
-LD		= g++
+LD		= g++ 
 LDFLAGS		= -g -fopenmp
-OutputOpt       = -o
+OutputOpt       = -o 
 
 CONTOUR		= PIDplots
 DENSPLT		= PIDplots_exe

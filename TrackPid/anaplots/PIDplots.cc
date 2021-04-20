@@ -44,7 +44,7 @@ void PIDplots::inputpars(){
   men=0.511*0.001;//Gev positron mass
   pi=TMath::Pi();
   
-  tag=2;
+  tag=3;
   //tag=1 for upsilon/embed run; 
   //tag=2 for electron,pion,antiproton/embed run; 
   //tag=3 for single particles identification and efficiency;
@@ -237,10 +237,10 @@ void PIDplots::eID(){
       for(int ientry=0;ientry<ntp_track->GetEntries();ientry++) {//ntp_track
          ntp_track->GetEntry(ientry);
          float *content2=ntp_track->GetArgs();  
-         int event2,trackID2;
-         float px2,py2,pz2,pt2,gpt2,eta2,phi2,charge2,quality2,nhits2,nmaps2,nintt2,ntpc2;
-         float cemcdphi2,cemcdeta2,cemce3x32,cemce2,hcalindphi2,hcalindeta2,hcaline3x32,hcaline2,hcaloutdphi2,hcaloutdeta2,hcaloute3x32,hcaloute2;
-         float gflavor2;
+         int event2=0,trackID2=0;
+         float px2=0.0,py2=0.0,pz2=0.0,pt2=0.0,gpt2=0.0,eta2=0.0,phi2=0.0,charge2=0.0,quality2=0.0,nhits2=0.0,nmaps2=0.0,nintt2=0.0,ntpc2=0.0;
+         float cemcdphi2=0.0,cemcdeta2=0.0,cemce3x32=0.0,cemce2=0.0,hcalindphi2=0.0,hcalindeta2=0.0,hcaline3x32=0.0,hcaline2=0.0,hcaloutdphi2=0.0,hcaloutdeta2=0.0,hcaloute3x32=0.0,hcaloute2=0.0;
+         float gflavor2=0;
 
          if(tag==2 or tag==3){
             event2=content2[0];
@@ -284,13 +284,13 @@ void PIDplots::eID(){
 
        if(nmaps2>0 && nintt2>0 && ntpc2>20 && quality2<10){
            
-         if(TMath::Abs(gflavor2)==11 & (TMath::Abs(eta2)>0.0 & TMath::Abs(eta2)<1.1) & (gpt2>0.0 & gpt2<20.0) & quality2<20) NEID_electron=NEID_electron+1;
-         if(TMath::Abs(gflavor2)==211 & (TMath::Abs(eta2)>0.0 & TMath::Abs(eta2)<1.1) & (gpt2>0.0 & gpt2<20.0) & quality2<20) NEID_pion=NEID_pion+1;
-         if(TMath::Abs(gflavor2)==321 & (TMath::Abs(eta2)>0.0 & TMath::Abs(eta2)<1.1) & (gpt2>0.0 & gpt2<20.0) & quality2<20) NEID_K=NEID_K+1;
-         if(TMath::Abs(gflavor2)==2212 & (TMath::Abs(eta2)>0.0 & TMath::Abs(eta2)<1.1) & (gpt2>0.0 & gpt2<20.0) & quality2<20) NEID_antiproton=NEID_antiproton+1;
+         if(TMath::Abs(gflavor2)==11 && (TMath::Abs(eta2)>0.0 && TMath::Abs(eta2)<1.1) && (gpt2>0.0 && gpt2<20.0) && quality2<20) NEID_electron=NEID_electron+1;
+         if(TMath::Abs(gflavor2)==211 && (TMath::Abs(eta2)>0.0 && TMath::Abs(eta2)<1.1) && (gpt2>0.0 && gpt2<20.0) && quality2<20) NEID_pion=NEID_pion+1;
+         if(TMath::Abs(gflavor2)==321 && (TMath::Abs(eta2)>0.0 && TMath::Abs(eta2)<1.1) && (gpt2>0.0 && gpt2<20.0) && quality2<20) NEID_K=NEID_K+1;
+         if(TMath::Abs(gflavor2)==2212 && (TMath::Abs(eta2)>0.0 && TMath::Abs(eta2)<1.1) && (gpt2>0.0 && gpt2<20.0) && quality2<20) NEID_antiproton=NEID_antiproton+1;
       
 
-         if((TMath::Abs(eta2)>0.0 & TMath::Abs(eta2)<1.1) & (gpt2>0.0 & gpt2<20.0)){
+         if((TMath::Abs(eta2)>0.0 && TMath::Abs(eta2)<1.1) && (gpt2>0.0 && gpt2<20.0)){
             if(TMath::Abs(gflavor2)==11)h1pt_e->Fill(pt2);
             h1dR->Fill(dR);
             h1EOP->Fill(EOP);
@@ -302,13 +302,13 @@ void PIDplots::eID(){
     
          for(int i=0;i<11;i++){
             eta_point[i]=i*1.0/10+0.05;
-            if((TMath::Abs(eta2)>(eta_point[i]-0.05))&(TMath::Abs(eta2)<(eta_point[i]+0.05)) & (gpt2>0.0 & gpt2<20.0)){
+            if((TMath::Abs(eta2)>(eta_point[i]-0.05)) && (TMath::Abs(eta2)<(eta_point[i]+0.05)) && (gpt2>0.0 & gpt2<20.0)){
                 if(TMath::Abs(gflavor2)==11) N_electron_eta[i]=N_electron_eta[i]+1;
                 if(TMath::Abs(gflavor2)==211) N_pion_eta[i]=N_pion_eta[i]+1;
                 if(TMath::Abs(gflavor2)==321) N_K_eta[i]=N_K_eta[i]+1;
                 if(TMath::Abs(gflavor2)==2212) N_antiproton_eta[i]=N_antiproton_eta[i]+1;
             
-                if(EOP>0.7 & EOP<1.5 & HOM<0.2 & pt>2.0 ){
+                if(EOP>0.7 && EOP<1.5 && HOM<0.2 && pt>2.0 ){
 				    if(TMath::Abs(gflavor2)==11) NEID_electron_eta[i]=NEID_electron_eta[i]+1;               
 				    if(TMath::Abs(gflavor2)==211) NEID_pion_eta[i]=NEID_pion_eta[i]+1;
 				    if(TMath::Abs(gflavor2)==321) NEID_K_eta[i]=NEID_K_eta[i]+1;
@@ -320,13 +320,13 @@ void PIDplots::eID(){
 
          for(int i=0;i<16;i++){
             pt_point[i]=i*10.0/10+0.5;
-            if(pt>(pt_point[i]-0.5)&pt<(pt_point[i]+0.5) & (TMath::Abs(eta2)>0.0 & TMath::Abs(eta2)<1.1) & (gpt2>0.0 & gpt2<20.0)){
+            if(pt>(pt_point[i]-0.5) && pt<(pt_point[i]+0.5) && (TMath::Abs(eta2)>0.0 && TMath::Abs(eta2)<1.1) && (gpt2>0.0 && gpt2<20.0)){
                 if(TMath::Abs(gflavor2)==11) N_electron_pt[i]=N_electron_pt[i]+1;
                 if(TMath::Abs(gflavor2)==211) N_pion_pt[i]=N_pion_pt[i]+1;
                 if(TMath::Abs(gflavor2)==321) N_K_pt[i]=N_K_pt[i]+1;
                 if(TMath::Abs(gflavor2)==2212) N_antiproton_pt[i]=N_antiproton_pt[i]+1;
 
-                if(EOP>0.7 & EOP<1.5 & HOM<0.2){
+                if(EOP>0.7 && EOP<1.5 && HOM<0.2){
                     if(TMath::Abs(gflavor2)==11) NEID_electron_pt[i]=NEID_electron_pt[i]+1;     
                     if(TMath::Abs(gflavor2)==211) NEID_pion_pt[i]=NEID_pion_pt[i]+1;
                     if(TMath::Abs(gflavor2)==321) NEID_K_pt[i]=NEID_K_pt[i]+1;
@@ -338,7 +338,7 @@ void PIDplots::eID(){
 
          for(int i=0;i<20;i++){
             HOM_point[i]=i*0.5/10+0.05;
-            if(HOM<HOM_point[i]& (TMath::Abs(eta2)>0.0 & TMath::Abs(eta2)<1.1) & (gpt2>0.0 & gpt2<20.0)){
+            if(HOM<HOM_point[i] && (TMath::Abs(eta2)>0.0 && TMath::Abs(eta2)<1.1) && (gpt2>0.0 && gpt2<20.0)){
                 if(TMath::Abs(gflavor2)==11) N_electron_HOM[i]=N_electron_HOM[i]+1;
                 if(TMath::Abs(gflavor2)==211) N_pion_HOM[i]=N_pion_HOM[i]+1;
                 if(TMath::Abs(gflavor2)==321) N_K_HOM[i]=N_K_HOM[i]+1;
@@ -348,7 +348,7 @@ void PIDplots::eID(){
         
          for(int i=0;i<20;i++){
             HOP_point[i]=i*0.5/10+0.05;
-            if(HOP>HOP_point[i] & (TMath::Abs(eta2)>0.0 & TMath::Abs(eta2)<1.1) & (gpt2>0.0 & gpt2<20.0)){
+            if(HOP>HOP_point[i] && (TMath::Abs(eta2)>0.0 && TMath::Abs(eta2)<1.1) && (gpt2>0.0 && gpt2<20.0)){
                 if(TMath::Abs(gflavor2)==11) N_electron_HOP[i]=N_electron_HOP[i]+1;
                 if(TMath::Abs(gflavor2)==211) N_pion_HOP[i]=N_pion_HOP[i]+1;
                 if(TMath::Abs(gflavor2)==321) N_K_HOP[i]=N_K_HOP[i]+1;
@@ -358,7 +358,7 @@ void PIDplots::eID(){
 	  
          for(int i=0;i<9;i++){
             EOP_point[i]=1.0-i*1.0/10;
-            if(EOP>EOP_point[i]&EOP<1.5 & (TMath::Abs(eta2)>0.0 & TMath::Abs(eta2)<1.1) & (gpt2>0.0 & gpt2<20.0)){
+            if(EOP>EOP_point[i] && EOP<1.5 && (TMath::Abs(eta2)>0.0 && TMath::Abs(eta2)<1.1) && (gpt2>0.0 && gpt2<20.0)){
                 if(TMath::Abs(gflavor2)==11) N_electron_EOP[i]=N_electron_EOP[i]+1;
                 if(TMath::Abs(gflavor2)==211) N_pion_EOP[i]=N_pion_EOP[i]+1;
                 if(TMath::Abs(gflavor2)==321) N_K_EOP[i]=N_K_EOP[i]+1;
