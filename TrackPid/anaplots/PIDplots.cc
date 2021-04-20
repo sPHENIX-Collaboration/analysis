@@ -50,7 +50,7 @@ void PIDplots::inputpars(){
   //tag=3 for single particles identification and efficiency;
  //////////////////////////////////////////////input and output
   if(tag==1){//tag=2 for upsilon run
-    Nfile=3; //input number of files
+    Nfile=1; //input number of files
     Nevent=2000; //event number of each Nfile (maximum number for ifiles)
     Nmpnbin=400;//bin number for plot; Nmpnbin=200 or 400; Nmpnbin<=400.
     
@@ -60,8 +60,8 @@ void PIDplots::inputpars(){
     
     //single-Upsilon decay electrons
     input_file[0] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_upsilon_1s_2000_POSCOR_g4svtx_eval.root";//2000 events
-    input_file[1] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_upsilon_2s_2000_POSCOR_g4svtx_eval.root";//2000 events
-    input_file[2] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_upsilon_3s_2000_POSCOR_g4svtx_eval.root";//2000 events
+    //input_file[1] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_upsilon_2s_2000_POSCOR_g4svtx_eval.root";//2000 events
+    //input_file[2] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_upsilon_3s_2000_POSCOR_g4svtx_eval.root";//2000 events
     
     //embed-Upsilon decay electrons
     
@@ -89,7 +89,7 @@ void PIDplots::inputpars(){
   }
   
   if(tag==3){//tag=3 for single particle identification and efficiency
-    Nfile=28; //input number of files
+    Nfile=16; //input number of files
     Nevent=1000; //event number of each Nfile (maximum number for ifiles)
     Nmpnbin=200;//bin number for plot; Nmpnbin=200 or 400; Nmpnbin<=400. 
   
@@ -97,41 +97,20 @@ void PIDplots::inputpars(){
     input_file[1] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_e-_1000_1_POSCOR_g4svtx_eval.root";//1000 events
     input_file[2] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_e-_1000_2_POSCOR_g4svtx_eval.root";//1000 events
     input_file[3] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_e-_1000_3_POSCOR_g4svtx_eval.root";//1000 events
-    input_file[4] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_e+_1000_0_POSCOR_g4svtx_eval.root";//1000 events
-    input_file[5] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_e+_1000_1_POSCOR_g4svtx_eval.root";//1000 events
-    input_file[6] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_e+_1000_2_POSCOR_g4svtx_eval.root";//1000 events
-    input_file[7] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_e+_1000_3_POSCOR_g4svtx_eval.root";//1000 events
-   
-    input_file[8] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_pi-_1000_0_POSCOR_g4svtx_eval.root";//1000 events
-    input_file[9] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_pi-_1000_1_POSCOR_g4svtx_eval.root";//1000 events
-    input_file[10] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_pi-_1000_2_POSCOR_g4svtx_eval.root";//1000 events
-    input_file[11] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_pi-_1000_3_POSCOR_g4svtx_eval.root";//1000 events
-    input_file[12] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_pi+_1000_0_POSCOR_g4svtx_eval.root";//1000 events
-    input_file[13] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_pi+_1000_1_POSCOR_g4svtx_eval.root";//1000 events
-    input_file[14] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_pi+_1000_2_POSCOR_g4svtx_eval.root";//1000 events
-    input_file[15] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_pi+_1000_3_POSCOR_g4svtx_eval.root";//1000 events
-    
-    input_file[16] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_K-_1000_0_POSCOR_g4svtx_eval.root";//1000 events
-    input_file[17] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_K-_1000_1_POSCOR_g4svtx_eval.root";//1000 events
-    input_file[18] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_K-_1000_2_POSCOR_g4svtx_eval.root";//1000 events
-    input_file[19] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_K-_1000_3_POSCOR_g4svtx_eval.root";//1000 events
-    input_file[20] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_K+_1000_0_POSCOR_g4svtx_eval.root";//1000 events
-    input_file[21] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_K+_1000_1_POSCOR_g4svtx_eval.root";//1000 events
-    input_file[22] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_K+_1000_2_POSCOR_g4svtx_eval.root";//1000 events
-    input_file[23] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_K+_1000_3_POSCOR_g4svtx_eval.root";//1000 events
-    
-    input_file[24] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_antiproton_0_1000_POSCOR_g4svtx_eval.root";//1000 events
-    input_file[25] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_antiproton_1000_1_POSCOR_g4svtx_eval.root";//1000 events
-    input_file[26] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_antiproton_1000_2_POSCOR_g4svtx_eval.root";//1000 events
-    input_file[27] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_antiproton_1000_3_POSCOR_g4svtx_eval.root";//1000 events
-  //  input_file[28] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_proton_1000_0_POSCOR_g4svtx_eval.root";//1000 events
-  //  input_file[29] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_proton_1000_1_POSCOR_g4svtx_eval.root";//1000 events
-  //  input_file[30] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_proton_1000_2_POSCOR_g4svtx_eval.root";//1000 events
-  //  input_file[31] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_proton_1000_3_POSCOR_g4svtx_eval.root";//1000 events
-       
+    input_file[4] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_pi-_1000_0_POSCOR_g4svtx_eval.root";//1000 events
+    input_file[5] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_pi-_1000_1_POSCOR_g4svtx_eval.root";//1000 events
+    input_file[6] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_pi-_1000_2_POSCOR_g4svtx_eval.root";//1000 events
+    input_file[7] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_pi-_1000_3_POSCOR_g4svtx_eval.root";//1000 events
+    input_file[8] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_K-_1000_0_POSCOR_g4svtx_eval.root";//1000 events
+    input_file[9] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_K-_1000_1_POSCOR_g4svtx_eval.root";//1000 events
+    input_file[10] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_K-_1000_2_POSCOR_g4svtx_eval.root";//1000 events
+    input_file[11] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_K-_1000_3_POSCOR_g4svtx_eval.root";//1000 events
+    input_file[12] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_antiproton_0_1000_POSCOR_g4svtx_eval.root";//1000 events
+    input_file[13] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_antiproton_1000_1_POSCOR_g4svtx_eval.root";//1000 events
+    input_file[14] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_antiproton_1000_2_POSCOR_g4svtx_eval.root";//1000 events
+    input_file[15] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_antiproton_1000_3_POSCOR_g4svtx_eval.root";//1000 events
     
     output_eID ="/sphenix/u/weihuma/analysis/TrackPid/anaplots/output/single/eID_single.root";
-  //  output_plot_eID ="/sphenix/u/weihuma/analysis/TrackPid/anaplots/output/single/eID_plot_single";
     output_plot_eID ="/sphenix/u/weihuma/analysis/TrackPid/anaplots/output/single/eID_plot_single_antiproton";
     output_plot_eID_eta ="/sphenix/u/weihuma/analysis/TrackPid/anaplots/output/single/efficiency_eta_single";
     output_plot_eID_pt ="/sphenix/u/weihuma/analysis/TrackPid/anaplots/output/single/efficiency_pt_single";
