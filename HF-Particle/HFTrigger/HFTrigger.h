@@ -13,6 +13,14 @@
 #include <trackbase_historic/SvtxVertex.h>
 #include <trackbase_historic/SvtxVertexMap.h>
 
+#include <g4main/PHG4Particle.h>
+#include <g4eval/SvtxClusterEval.h>
+#include <g4eval/SvtxEvalStack.h>
+#include <g4eval/SvtxHitEval.h>
+#include <g4eval/SvtxTrackEval.h>
+#include <g4eval/SvtxTruthEval.h>
+#include <g4eval/SvtxVertexEval.h>
+
 #include <Eigen/Core>
 #include <Eigen/Dense>
 
@@ -29,6 +37,17 @@ typedef Eigen::Matrix<float, 3, 1> TrackX;
 typedef Eigen::Matrix<float, 3, 1> TrackP;
 typedef Eigen::Matrix<float, 3, 1> DCA;
 
+class PHG4Particle;
+class SvtxClusterEval;
+class SvtxEvalStack;
+class SvtxHitEval;
+class SvtxTrack;
+class SvtxTrackEval;
+class SvtxTrackMap;
+class SvtxTruthEval;
+class SvtxVertexMap;
+class SvtxVertex;
+class SvtxVertexEval;
 /*
 class PHCompositeNode;
 
@@ -87,6 +106,12 @@ class HFTrigger : public SubsysReco
   void requireHighMultiplicityTrigger(bool useTrigger) { m_useHighMultiplicityTrigger = useTrigger; }
  
  protected:
+  SvtxEvalStack *m_svtx_evalstack = nullptr;
+  SvtxClusterEval *clustereval = nullptr;
+  SvtxHitEval *hiteval = nullptr;
+  SvtxTrackEval *trackeval = nullptr;
+  SvtxTruthEval *trutheval = nullptr;
+  SvtxVertexEval *vertexeval = nullptr;
 
  private:
 

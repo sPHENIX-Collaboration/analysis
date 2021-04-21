@@ -246,6 +246,33 @@ Track HFTrigger::makeTrack(PHCompositeNode *topNode)
   track(4,0) = m_dst_track->get_py();
   track(5,0) = m_dst_track->get_pz();
 
+  if (!m_svtx_evalstack)
+  {
+    m_svtx_evalstack = new SvtxEvalStack(topNode);
+    clustereval = m_svtx_evalstack->get_cluster_eval();
+    hiteval = m_svtx_evalstack->get_hit_eval();
+    trackeval = m_svtx_evalstack->get_track_eval();
+    trutheval = m_svtx_evalstack->get_truth_eval();
+    vertexeval = m_svtx_evalstack->get_vertex_eval();
+  }
+
+  m_dst_track->identify();
+
+  m_svtx_evalstack->next_event(topNode);
+
+  std::cout << "Trying max_truth_particle_by_cluster_energy" << std::endl;
+  TrkrDefs::cluskey clusKey = *m_dst_track->begin_cluster_keys();
+  PHG4Particle *particle = clustereval->max_truth_particle_by_cluster_energy(clusKey);
+  if (particle == nullptr) printf("max_truth_particle_by_cluster_energy returned nullptr\n");
+
+  if (particle == nullptr) {std::cout << "Trying max_truth_particle_by_energy" << std::endl; particle = clustereval->max_truth_particle_by_energy(clusKey);}
+  if (particle == nullptr) printf("max_truth_particle_by_energy returned nullptr\n");
+  if (particle == nullptr) {std::cout << "Trying max_truth_particle_by_nclusters" << std::endl; particle = trackeval->max_truth_particle_by_nclusters(m_dst_track);}
+  if (particle == nullptr) printf("max_truth_particle_by_nclusters returned nullptr\n");
+  if (particle == nullptr) {std::cout << "Trying get_particle" << std::endl; particle = trutheval->get_particle(m_dst_track->get_id());}
+  if (particle == nullptr) printf("get_particle returned nullptr\n");
+  if (particle != nullptr) particle->identify();
+
   return track;
 }
 
