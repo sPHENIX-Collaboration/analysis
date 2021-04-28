@@ -54,7 +54,7 @@ PHPythia6::PHPythia6(const std::string &name):
   _triggersOR(true),
   _triggersAND(false){
 
-  hepmc_helper.set_embedding_id(1); // default embedding ID to 1
+  PHHepMCGenHelper::set_embedding_id(1); // default embedding ID to 1
 }
 
 PHPythia6::~PHPythia6() {
@@ -438,7 +438,7 @@ int PHPythia6::process_event(PHCompositeNode *topNode) {
 
   /* pass HepMC to PHNode*/
 
-  PHHepMCGenEvent * success = hepmc_helper . insert_event(evt);
+  PHHepMCGenEvent * success = PHHepMCGenHelper::  insert_event(evt);
   if (!success) {
     cout << "PHPythia6::process_event - Failed to add event to HepMC record!" << endl;
     return Fun4AllReturnCodes::ABORTRUN;
@@ -450,12 +450,7 @@ int PHPythia6::process_event(PHCompositeNode *topNode) {
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
-int PHPythia6::CreateNodeTree(PHCompositeNode *topNode) {
 
-  hepmc_helper.create_node_tree(topNode);
-
-  return Fun4AllReturnCodes::EVENT_OK;
-}
 
 void PHPythia6::IntegerTest(double number ) {
 
