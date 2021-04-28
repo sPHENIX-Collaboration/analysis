@@ -1,6 +1,7 @@
 #include "sPHElectronv1.h"
 
 #include <trackbase_historic/SvtxTrack.h>
+#include <trackbase/TrkrDefs.h>
 
 #include <cmath>
 #include <utility>          // for swap
@@ -26,6 +27,9 @@ sPHElectronv1::sPHElectronv1()
   _dca3d_xy = 99999.;
   _dca3d_z = 99999.;
 
+  _nmvtx = 0;
+  _ntpc = 0;
+
 }
 
 sPHElectronv1::sPHElectronv1(const SvtxTrack* trk) {
@@ -48,6 +52,17 @@ sPHElectronv1::sPHElectronv1(const SvtxTrack* trk) {
   _dca3d_xy = trk->get_dca3d_xy();
   _dca3d_z = trk->get_dca3d_z();
 
+  _nmvtx = 0;
+  _ntpc = 0;
+  for (SvtxTrack::ConstClusterKeyIter iter = trk->begin_cluster_keys();
+     iter != trk->end_cluster_keys();
+     ++iter)
+  {
+    TrkrDefs::cluskey cluster_key = *iter;
+    int trackerid = TrkrDefs::getTrkrId(cluster_key);
+    if(trackerid==0) _nmvtx++;
+    if(trackerid==2) _ntpc++;
+  }
 }
 
 sPHElectronv1::sPHElectronv1(const sPHElectronv1& electron)
@@ -77,6 +92,8 @@ sPHElectronv1& sPHElectronv1::operator=(const sPHElectronv1& electron)
   _dca3d_xy = electron.get_dca3d_xy();
   _dca3d_z = electron.get_dca3d_z();
 
+  _nmvtx = electron.get_nmvtx();
+  _ntpc = electron.get_ntpc();
 
   return *this;
 }

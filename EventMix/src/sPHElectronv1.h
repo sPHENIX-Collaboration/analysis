@@ -43,6 +43,9 @@ class sPHElectronv1 : public sPHElectron
   virtual double get_dca3d_xy()  const {return _dca3d_xy;}
   virtual double get_dca3d_z()   const {return _dca3d_z;}
 
+  virtual int get_nmvtx()   const {return _nmvtx;}
+  virtual int get_ntpc()   const {return _ntpc;}
+
 
   virtual void set_id(unsigned int id) {_id = id;}
   virtual void set_charge(int charge)  {_charge = charge;}
@@ -62,6 +65,9 @@ class sPHElectronv1 : public sPHElectron
   virtual void set_dca2d_error(double a)   {_dca2d_error = a;}
   virtual void set_dca3d_xy(double a)  {_dca3d_xy = a;}
   virtual void set_dca3d_z(double a)   {_dca3d_z = a;}
+
+  virtual void set_nmvtx(int i)   {_nmvtx = i;}
+  virtual void set_ntpc(int i)   {_ntpc = i;}
 
 
  protected:
@@ -84,6 +90,9 @@ class sPHElectronv1 : public sPHElectron
   double _dca2d_error;
   double _dca3d_xy;
   double _dca3d_z;
+
+  int _nmvtx;
+  int _ntpc;
 
 
   ClassDef(sPHElectronv1, 1)

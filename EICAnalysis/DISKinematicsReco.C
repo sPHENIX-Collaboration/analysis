@@ -276,7 +276,7 @@ DISKinematicsReco::CollectEmCandidatesFromCluster( type_map_tcan& electronCandid
 
       string clusternodename = "CLUSTER_" + v_ecals.at( idx );
       RawClusterContainer *clusterList = findNode::getClass<RawClusterContainer>(_topNode,clusternodename.c_str());
-      SvtxTrackMap *trackmap = findNode::getClass<SvtxTrackMap>(_topNode,"SvtxTrackMap");
+      SvtxTrackMap *trackmap = findNode::getClass<SvtxTrackMap>(_topNode,"TrackMap");
 
       if (!clusterList) {
         cerr << PHWHERE << " ERROR: Can't find node " << clusternodename << endl;
