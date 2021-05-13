@@ -1,7 +1,7 @@
 void D0_BUP2020_AuAu_v2_3yr_20wk_comp()
 {
 //=========Macro generated from canvas: D0_BUP2020_AuAu_v2_3yr_20wk_comp/D0_BUP2020_AuAu_v2_3yr_20wk_comp
-//=========  (Thu Apr 29 23:27:09 2021) by ROOT version 6.22/02
+//=========  (Wed May 12 23:46:26 2021) by ROOT version 6.22/02
    TCanvas *D0_BUP2020_AuAu_v2_3yr_20wk_comp = new TCanvas("D0_BUP2020_AuAu_v2_3yr_20wk_comp", "D0_BUP2020_AuAu_v2_3yr_20wk_comp",0,0,1100,800);
    gStyle->SetOptFit(1);
    gStyle->SetOptStat(0);
@@ -329,14 +329,14 @@ void D0_BUP2020_AuAu_v2_3yr_20wk_comp()
    0,
    0};
    Double_t Graph1_fey1014[8] = {
-   0.0413002,
-   0.02507349,
-   0.02306816,
-   0.0270402,
-   0.03363855,
-   0.04858111,
-   0.0629333,
-   0.08639115};
+   0.03884449,
+   0.02358262,
+   0.02169652,
+   0.02543239,
+   0.0316384,
+   0.04569247,
+   0.05919128,
+   0.08125433};
    gre = new TGraphErrors(8,Graph1_fx1014,Graph1_fy1014,Graph1_fex1014,Graph1_fey1014);
    gre->SetName("Graph1");
    gre->SetTitle("Graph");
@@ -352,8 +352,8 @@ void D0_BUP2020_AuAu_v2_3yr_20wk_comp()
    gre->SetMarkerSize(2);
    
    TH1F *Graph_Graph11014 = new TH1F("Graph_Graph11014","Graph",100,2.05,10.45);
-   Graph_Graph11014->SetMinimum(-0.07866938);
-   Graph_Graph11014->SetMaximum(0.1286694);
+   Graph_Graph11014->SetMinimum(-0.07250519);
+   Graph_Graph11014->SetMaximum(0.1225052);
    Graph_Graph11014->SetDirectory(0);
    Graph_Graph11014->SetStats(0);
    Graph_Graph11014->SetLineWidth(2);
@@ -422,7 +422,7 @@ void D0_BUP2020_AuAu_v2_3yr_20wk_comp()
    entry->SetMarkerStyle(21);
    entry->SetMarkerSize(2);
    entry->SetTextFont(42);
-   entry=leg->AddEntry("Graph","20wk: 10 nb^{-1} rec.","lp");
+   entry=leg->AddEntry("Graph","20wk: 12 nb^{-1} rec.","lp");
 
    ci = TColor::GetColor("#00cccc");
    entry->SetLineColor(ci);
