@@ -69,7 +69,7 @@ int Fun4All_KFParticle_condorJob(string fileList = "dst_hf_bottom_test.list", co
   reconstructionChannel["Upsilon"] = 0;
   reconstructionChannel["testSpace"] = 0;
 
-  bool use_acts_vertexing = true;
+  bool use_acts_vertexing = false;
   bool use_decay_finder = false;
   bool use_anti_trigger = false;
   bool use_decay_descriptor = true && (reconstructionChannel["D02K-pi+"] || reconstructionChannel["D02K+pi-"] || reconstructionChannel["Dstar2D0pi"] || reconstructionChannel["Bs2Jpsiphi"]);
@@ -166,33 +166,34 @@ int Fun4All_KFParticle_condorJob(string fileList = "dst_hf_bottom_test.list", co
   kfparticle->setMinimumTrackPT(0.2);
   kfparticle->setMinimumTrackIPchi2(0);
   kfparticle->setMinimumTrackIP(0.00);
-  kfparticle->setMaximumTrackchi2nDOF(100);
-  kfparticle->setMaximumVertexchi2nDOF(100);
+  kfparticle->setMaximumTrackchi2nDOF(4);
+  kfparticle->setMaximumVertexchi2nDOF(4);
   kfparticle->setMaximumDaughterDCA(0.05);
-  kfparticle->setFlightDistancechi2(0);
-  kfparticle->setMinDIRA(0.);
+  kfparticle->setFlightDistancechi2(0.8);
+  kfparticle->setMinDIRA(0.9);
   kfparticle->setMotherPT(0.0);
-  kfparticle->setMotherIPchi2(200); 
+  kfparticle->setMotherIPchi2(50); 
 
   kfparticle->saveDST(0);
   kfparticle->saveOutput(1);
   kfparticle->doTruthMatching(1);
   kfparticle->getDetectorInfo(0);
-  kfparticle->getCaloInfo(0);
+  kfparticle->getCaloInfo(1);
   kfparticle->getAllPVInfo(0);
 
-  std::pair<std::string, int> daughterList[99];
-  std::pair<std::string, int> intermediateList[99];
-  std::pair<float, float> intermediateMassRange[99];
-  std::pair<float, float> intermediateIPchi2Range[99];
-  int nIntTracks[99];
-  float intPt[99], intIP[99], intIPchi2[99], intDIRA[99], intFDchi2[99];
+  std::vector<std::pair<std::string, int>> daughterList;
+  std::vector<std::pair<std::string, int>> intermediateList;
+  std::vector<std::pair<float, float>> intermediateMassRange;
+  std::vector<std::pair<float, float>> intermediateIPRange;
+  std::vector<std::pair<float, float>> intermediateIPchi2Range;
+  std::vector<int> nIntTracks;
+  std::vector<float> intPt, intIP, intIPchi2, intDIRA, intFDchi2;
 
   //D2Kpi reco
   if (reconstructionChannel["D02K-pi+"]
   or  reconstructionChannel["D02K+pi-"])
   {
-    kfparticle->setMinimumMass(1.5);
+    kfparticle->setMinimumMass(1.7);
     kfparticle->setMaximumMass(2.0);
     kfparticle->constrainToPrimaryVertex(fixToPV);
     //kfparticle->setTrackMapNodeName("D0_SvtxTrackMap"); 
@@ -211,13 +212,13 @@ int Fun4All_KFParticle_condorJob(string fileList = "dst_hf_bottom_test.list", co
 
       if (reconstructionChannel["D02K-pi+"])
       {
-        daughterList[0] = make_pair("kaon", -1);
-        daughterList[1] = make_pair("pion", +1);
+        daughterList.push_back(make_pair("kaon", -1));
+        daughterList.push_back(make_pair("pion", +1));
       }
       else
       {
-        daughterList[0] = make_pair("kaon", +1);
-        daughterList[1] = make_pair("pion", -1);
+        daughterList.push_back(make_pair("kaon", +1));
+        daughterList.push_back(make_pair("pion", -1));
       }
     }
   }
@@ -241,19 +242,20 @@ int Fun4All_KFParticle_condorJob(string fileList = "dst_hf_bottom_test.list", co
       kfparticle->getChargeConjugate(true);
 
       kfparticle->setNumberOfIntermediateStates(1);
-      intermediateList[0] = make_pair("D0", 0);
-      nIntTracks[0] = 2;
-      daughterList[0]     = make_pair("kaon", -1);
-      daughterList[1]     = make_pair("pion", +1);
-      daughterList[2] = make_pair("pion", +1);
+      intermediateList.push_back(make_pair("D0", 0));
+      nIntTracks.push_back(2);
+      daughterList.push_back(make_pair("kaon", -1));
+      daughterList.push_back(make_pair("pion", +1));
+      daughterList.push_back(make_pair("pion", +1));
     }
 
-    intermediateMassRange[0] = make_pair(1.75, 1.95);
-    intPt[0] = 0.2;
-    intIP[0] = 0;
-    intermediateIPchi2Range[0] = make_pair(0., 100.);
-    intDIRA[0] = 0.98;
-    intFDchi2[0] = 0;
+    intermediateMassRange.push_back(make_pair(1.75, 1.95));
+    intPt.push_back(0.2);
+    intIP.push_back(0);
+    intermediateIPRange.push_back(make_pair(0., 10.));
+    intermediateIPchi2Range.push_back(make_pair(0., 100.));
+    intDIRA.push_back(0.98);
+    intFDchi2.push_back(0);
   }
 
   //Lambdac Reco
@@ -269,34 +271,23 @@ int Fun4All_KFParticle_condorJob(string fileList = "dst_hf_bottom_test.list", co
       kfparticle->hasIntermediateStates(false);
       kfparticle->getChargeConjugate(true);
 
-      daughterList[0] = make_pair("proton", +1);
-      daughterList[1] = make_pair("kaon", -1);
-      daughterList[2] = make_pair("pion", +1);
+      daughterList.push_back(make_pair("proton", +1));
+      daughterList.push_back(make_pair("kaon", -1));
+      daughterList.push_back(make_pair("pion", +1));
   }
 
    //Low mass pipi
    if (reconstructionChannel["lowMassPiPi"])
   {
+     kfparticle->setDecayDescriptor("mother -> pi^+ pi^-");
      kfparticle->setMinimumMass(0.2);
      kfparticle->setMaximumMass(2);
-     kfparticle->setNumberOfTracks(2);
 
      kfparticle->constrainToPrimaryVertex(true);
-     kfparticle->hasIntermediateStates(false);
-     kfparticle->getChargeConjugate(false);
 
-     kfparticle->setMinimumTrackPT(0.5);
-     kfparticle->setMinimumTrackIPchi2(-1);
-     kfparticle->setMaximumTrackchi2nDOF(2);
-     kfparticle->setMaximumVertexchi2nDOF(1);
-     kfparticle->setMaximumDaughterDCA(0.02);
      kfparticle->setFlightDistancechi2(0);
-     kfparticle->setMinDIRA(0.8);
-     kfparticle->setMotherPT(0.0);
-     kfparticle->setMotherIPchi2(30);
-
-     daughterList[0] = make_pair("pion", -1);
-     daughterList[1] = make_pair("pion", +1);
+     kfparticle->setMinDIRA(0.0);
+     kfparticle->setMotherIPchi2(20);
   }
 
   //Jpsi2ll
@@ -321,8 +312,8 @@ int Fun4All_KFParticle_condorJob(string fileList = "dst_hf_bottom_test.list", co
      kfparticle->setMotherPT(0);
      kfparticle->setMotherIPchi2(1e5); 
 
-     daughterList[0] = make_pair("muon", -1);
-     daughterList[1] = make_pair("muon", +1);
+     daughterList.push_back(make_pair("muon", -1));
+     daughterList.push_back(make_pair("muon", +1));
   }
 
   //Bs2Jpsiphi reco
@@ -343,32 +334,32 @@ int Fun4All_KFParticle_condorJob(string fileList = "dst_hf_bottom_test.list", co
         kfparticle->hasIntermediateStates(true);
         kfparticle->setNumberOfIntermediateStates(2);
 
-        intermediateList[0] = make_pair("J/psi", 0);
-        nIntTracks[0] = 2;
-        daughterList[0]     = make_pair("electron", -1);
-        daughterList[1]     = make_pair("electron", +1);
+        intermediateList.push_back(make_pair("J/psi", 0));
+        nIntTracks.push_back(2);
+        daughterList.push_back(make_pair("electron", -1));
+        daughterList.push_back(make_pair("electron", +1));
 
-        intermediateList[1] = make_pair("phi", 0);
-        nIntTracks[1] = 2;
-        daughterList[2]     = make_pair("kaon", -1);
-        daughterList[3]     = make_pair("kaon", +1);
+        intermediateList.push_back(make_pair("phi", 0));
+        nIntTracks.push_back(2);
+        daughterList.push_back(make_pair("kaon", -1));
+        daughterList.push_back(make_pair("kaon", +1));
       }
 
       kfparticle->constrainIntermediateMasses(true);
     
-      intermediateMassRange[0] = make_pair(2.9, 3.2);
-      intPt[0] = 0;
-      intIP[0] = 0;
-      intIPchi2[0] = 0;
-      intDIRA[0] = 0;
-      intFDchi2[0] = 0.;
+      intermediateMassRange.push_back(make_pair(2.5, 3.2));
+      intPt.push_back(0);
+      intermediateIPRange.push_back(make_pair(0., 2000.));
+      intermediateIPchi2Range.push_back(make_pair(0., 1000.));
+      intDIRA.push_back(0);
+      intFDchi2.push_back(0.);
     
-      intermediateMassRange[1] = make_pair(0.9, 1.2);
-      intPt[1] = 0;
-      intIP[1] = 0;
-      intIPchi2[1] = 0;
-      intDIRA[1] = 0;
-      intFDchi2[1] = 0;
+      intermediateMassRange.push_back(make_pair(0.9, 1.1));
+      intPt.push_back(0);
+      intermediateIPRange.push_back(make_pair(0., 1000.));
+      intermediateIPchi2Range.push_back(make_pair(0., 1000.));
+      intDIRA.push_back(0);
+      intFDchi2.push_back(0);
   }
 
   //Bd2D-pi+ reco
@@ -384,19 +375,19 @@ int Fun4All_KFParticle_condorJob(string fileList = "dst_hf_bottom_test.list", co
       kfparticle->hasIntermediateStates(true);
       kfparticle->setNumberOfIntermediateStates(1);
 
-      intermediateList[0] = make_pair("D-", -1);
-      daughterList[0]     = make_pair("kaon", +1);
-      daughterList[1]     = make_pair("pion", -1);
-      daughterList[2]     = make_pair("pion", -1);
-      intermediateMassRange[0] = make_pair(1.7, 2.1);
-      nIntTracks[0] = 3;
-      intPt[0] = 0.5;
-      intIP[0] = 0.01;
-      intIPchi2[0] = 10;
-      intDIRA[0] = 0.95;
-      intFDchi2[0] = 2;
+      intermediateList.push_back(make_pair("D-", -1));
+      daughterList.push_back(make_pair("kaon", +1));
+      daughterList.push_back(make_pair("pion", -1));
+      daughterList.push_back(make_pair("pion", -1));
+      intermediateMassRange.push_back(make_pair(1.7, 2.1));
+      nIntTracks.push_back(3);
+      intPt.push_back(0.5);
+      intIP.push_back(0.01);
+      intIPchi2.push_back(10);
+      intDIRA.push_back(0.95);
+      intFDchi2.push_back(2);
 
-      daughterList[3] = make_pair("pion", +1);
+      daughterList.push_back(make_pair("pion", +1));
   }
 
   //Bs2Ds-pi+ reco
@@ -412,15 +403,15 @@ int Fun4All_KFParticle_condorJob(string fileList = "dst_hf_bottom_test.list", co
       kfparticle->hasIntermediateStates(true);
       kfparticle->setNumberOfIntermediateStates(1);
 
-      intermediateList[0] = make_pair("Ds-", -1);
-      daughterList[0]     = make_pair("kaon", +1);
-      daughterList[1]     = make_pair("kaon", -1);
-      daughterList[2]     = make_pair("pion", -1);
-      intermediateMassRange[0] = make_pair(1.0, 3.0);
-      nIntTracks[0] = 3;
-      intPt[0] = 0.;
+      intermediateList.push_back(make_pair("Ds-", -1));
+      daughterList.push_back(make_pair("kaon", +1));
+      daughterList.push_back(make_pair("kaon", -1));
+      daughterList.push_back(make_pair("pion", -1));
+      intermediateMassRange.push_back(make_pair(1.0, 3.0));
+      nIntTracks.push_back(3);
+      intPt.push_back(0.);
 
-      daughterList[3] = make_pair("pion", +1);
+      daughterList.push_back(make_pair("pion", +1));
   }
 
     //B+2D0pi+ reco
@@ -447,14 +438,14 @@ int Fun4All_KFParticle_condorJob(string fileList = "dst_hf_bottom_test.list", co
       kfparticle->hasIntermediateStates(true);
       kfparticle->setNumberOfIntermediateStates(1);
 
-      intermediateList[0] = make_pair("D0", 0);
-      daughterList[0]     = make_pair("kaon", -1);
-      daughterList[1]     = make_pair("pion", +1);
-      intermediateMassRange[0] = make_pair(1.7, 2.0);
-      nIntTracks[0] = 2;
-      intPt[0] = 0.;
+      intermediateList.push_back(make_pair("D0", 0));
+      daughterList.push_back(make_pair("kaon", -1));
+      daughterList.push_back(make_pair("pion", +1));
+      intermediateMassRange.push_back(make_pair(1.7, 2.0));
+      nIntTracks.push_back(2);
+      intPt.push_back(0.);
 
-      daughterList[2] = make_pair("pion", +1);
+      daughterList.push_back(make_pair("pion", +1));
   }
 
     //Lb2Lcpi reco
@@ -471,19 +462,19 @@ int Fun4All_KFParticle_condorJob(string fileList = "dst_hf_bottom_test.list", co
       kfparticle->hasIntermediateStates(true);
       kfparticle->setNumberOfIntermediateStates(1);
 
-      intermediateList[0] = make_pair("Lambdac", +1);
-      daughterList[0]     = make_pair("proton", +1);
-      daughterList[1]     = make_pair("kaon", -1);
-      daughterList[2]     = make_pair("pion", +1);
-      intermediateMassRange[0] = make_pair(2.15, 2.40);
-      nIntTracks[0] = 3;
-      intPt[0] = 0.5;
-      intIP[0] = 0.01;
-      intIPchi2[0] = -1;
-      intDIRA[0] = 0.95;
-      intFDchi2[0] = 2;
+      intermediateList.push_back(make_pair("Lambdac", +1));
+      daughterList.push_back(make_pair("proton", +1));
+      daughterList.push_back(make_pair("kaon", -1));
+      daughterList.push_back(make_pair("pion", +1));
+      intermediateMassRange.push_back(make_pair(2.15, 2.40));
+      nIntTracks.push_back(3);
+      intPt.push_back(0.5);
+      intIP.push_back(0.01);
+      intIPchi2.push_back(-1);
+      intDIRA.push_back(0.95);
+      intFDchi2.push_back(2);
 
-      daughterList[3] = make_pair("pion", -1);
+      daughterList.push_back(make_pair("pion", -1));
   }
 
   //Upsilon reco
@@ -497,23 +488,23 @@ int Fun4All_KFParticle_condorJob(string fileList = "dst_hf_bottom_test.list", co
       kfparticle->hasIntermediateStates(true);
       kfparticle->setNumberOfIntermediateStates(2);
      
-      intermediateList[0] = make_pair("B0", 0);
-      daughterList[0]     = make_pair("kaon", +1);
-      daughterList[1]     = make_pair("pion", -1);
-      daughterList[2]     = make_pair("pion", -1);
-      daughterList[3]     = make_pair("pion", +1);
-      intermediateMassRange[0] = make_pair(4.8, 6);
-      nIntTracks[0] = 4;
-      intPt[0] = 0;
+      intermediateList.push_back(make_pair("B0", 0));
+      daughterList.push_back(make_pair("kaon", +1));
+      daughterList.push_back(make_pair("pion", -1));
+      daughterList.push_back(make_pair("pion", -1));
+      daughterList.push_back(make_pair("pion", +1));
+      intermediateMassRange.push_back(make_pair(4.8, 6));
+      nIntTracks.push_back(4);
+      intPt.push_back(0);
      
-      intermediateList[1] = make_pair("B0", 0);
-      daughterList[4] = daughterList[0];
-      daughterList[5] = daughterList[1];
-      daughterList[6] = daughterList[2];
-      daughterList[7] = daughterList[3];
-      intermediateMassRange[1] = make_pair(4.8, 6);
-      nIntTracks[1] = 4;
-      intPt[1] = 0;
+      intermediateList.push_back(make_pair("B0", 0));
+      daughterList.push_back(daughterList[0]);
+      daughterList.push_back(daughterList[1]);
+      daughterList.push_back(daughterList[2]);
+      daughterList.push_back(daughterList[3]);
+      intermediateMassRange.push_back(make_pair(4.8, 6));
+      nIntTracks.push_back(4);
+      intPt.push_back(0);
   }
 
 
@@ -532,8 +523,8 @@ int Fun4All_KFParticle_condorJob(string fileList = "dst_hf_bottom_test.list", co
       kfparticle->setMaximumDaughterDCA(0.02);
 
       kfparticle->setNumberOfTracks(2);
-      daughterList[0] = make_pair("electron", +1);
-      daughterList[1] = make_pair("electron", -1);
+      daughterList.push_back(make_pair("electron", +1));
+      daughterList.push_back(make_pair("electron", -1));
   }
 
 
@@ -550,7 +541,11 @@ int Fun4All_KFParticle_condorJob(string fileList = "dst_hf_bottom_test.list", co
   kfparticle->setIntermediateMinIPchi2( intIPchi2 );
   kfparticle->setIntermediateMinDIRA( intDIRA );
   kfparticle->setIntermediateMinFDchi2( intFDchi2 );
-  if (reconstructionChannel["Dstar2D0pi"]) kfparticle->setIntermediateIPchi2Range(intermediateIPchi2Range);
+  if (reconstructionChannel["Dstar2D0pi"] || reconstructionChannel["Bs2Jpsiphi"]) 
+  {  
+    kfparticle->setIntermediateIPRange(intermediateIPRange);
+    kfparticle->setIntermediateIPchi2Range(intermediateIPchi2Range);
+  }
 
   kfparticle->setOutputName(outputDirectory + reconstructionName + "/outputData_" + reconstructionName + "_" + fileNumber + ".root");
 
