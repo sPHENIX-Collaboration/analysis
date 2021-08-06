@@ -5,10 +5,12 @@
 
 #include "TVector2.h"
 
+#include <phool/PHObject.h>
+
 /// the class EpInfo has only public members.
 /// No need to hide information.  Indeed, it's really only a struct,
 /// with the possibility to create some methods.
-class EpInfo{
+class EpInfo : public PHObject {
 
   // making EpFinder a "friend class" just gives it direct access to the arrays.
   // But the general User is required to use accessors, since the numbering/index convention can be confusing
@@ -17,6 +19,8 @@ class EpInfo{
  public:
   EpInfo();
   ~EpInfo(){/* no op */};
+
+  void Reset(); 
 
   // in the below, when it says "of order," then "order" begins at 1.  E.g. order=2 means second-order q vector
 
@@ -61,6 +65,8 @@ class EpInfo{
   /// \parameter order     order of the EP.  Begins at unity (order=1 means first-order EP)
   double SWPhiWeighted(int order);
 
+  double PsiRaw[_EpOrderMax];                   /// indices: [order]
+
  private:
 
   bool ArgumentOutOfBounds(int order);              /// protection against user selecting "order=0" or order that has not been defined
@@ -69,7 +75,6 @@ class EpInfo{
 
   double QrawOneSide[_EpOrderMax][2];           /// indices: [order][x,y]
   double QphiWeightedOneSide[_EpOrderMax][2];   /// indices: [order][x,y]
-  double PsiRaw[_EpOrderMax];                   /// indices: [order]
   double PsiPhiWeighted[_EpOrderMax];           /// indices: [order]
   double PsiPhiWeightedAndShifted[_EpOrderMax]; /// indices: [order]
   double WheelSumWeightsRaw[_EpOrderMax];       /// indices: [order]
