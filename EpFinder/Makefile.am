@@ -16,10 +16,10 @@ lib_LTLIBRARIES = \
   libEpFinder.la
 
 libEpFinder_la_SOURCES = \
-  EpFinderEval.cc \
-  EpFinderEvalDict.C \
   EpFinder.C \
-  EpInfo.C 
+  EpInfo.C \
+  EpFinderReco.cc \
+  EpFinderRecoDict.C 
 
 libEpFinder_la_LIBADD = \
   -lg4detectors \
@@ -28,13 +28,13 @@ libEpFinder_la_LIBADD = \
   -lphool 
 
 pkginclude_HEADERS = \
-  EpFinderEval.h \
   EpFinder.h \
-  EpInfo.h 	
+  EpInfo.h \
+  EpFinderReco.h
 
 pcmdir = $(libdir)
 nobase_dist_pcm_DATA = \
-  EpFinderEvalDict_rdict.pcm
+  EpFinderRecoDict_rdict.pcm
 
 install-exec-hook:
 	@[ $$OSTYPE = darwin ] && ln -sf $(DESTDIR)$(libdir)/libEpFinder.dylib $(DESTDIR)$(libdir)/libEpFinder.so || true
@@ -56,8 +56,11 @@ testexternals.C:
 	echo "}" >> $@
 
 # Rule for generating CINT dictionaries from class headers.
-%Dict.C: %.h %LinkDef.h
-	rootcint -f $@ -c $(CINTDEFS) -c $(DEFAULT_INCLUDES) $(AM_CPPFLAGS) $^
+%Dict.C: %.h
+# %LinkDef.h
+#	rootcint -f $@ -c $(CINTDEFS) -c $(DEFAULT_INCLUDES) $(AM_CPPFLAGS) $^
+	rootcint -f $@  -c $(DEFAULT_INCLUDES) $(AM_CPPFLAGS) $^
+
 
 #just to get the dependency
 %Dict_rdict.pcm: %Dict.cc ;
