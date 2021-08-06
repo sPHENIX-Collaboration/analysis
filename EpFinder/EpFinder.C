@@ -15,7 +15,7 @@
 using namespace std;
 
 
-EpFinder::EpFinder(int nEventTypeBins, char const* OutFileName, char const* CorrectionFile, int pbinsx, int pbinsy) : mThresh(0.0), mMax(100.0)
+EpFinder::EpFinder(int nEventTypeBins, char const* OutFileName, char const* CorrectionFile, int pbinsx, int pbinsy) : mThresh(0.3), mMax(2.0)
 {
 
   cout << "\n**********\n*  Welcome to the Event Plane finder.\n"
