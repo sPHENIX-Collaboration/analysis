@@ -10,10 +10,12 @@
 #include <iostream>
 #include <vector>
 
+#include <fun4all/PHTFileServer.h>
+
 using namespace std;
 
 
-EpFinder::EpFinder(int nEventTypeBins, char const* OutFileName, char const* CorrectionFile, int pbinsx, int pbinsy) : mThresh(0.3), mMax(2.0)
+EpFinder::EpFinder(int nEventTypeBins, char const* OutFileName, char const* CorrectionFile, int pbinsx, int pbinsy) : mThresh(0.0), mMax(100.0)
 {
 
   cout << "\n**********\n*  Welcome to the Event Plane finder.\n"
@@ -26,7 +28,8 @@ EpFinder::EpFinder(int nEventTypeBins, char const* OutFileName, char const* Corr
 
   // ----------------------------------- Stuff read from the "Correction File" -----------------------------------------                                                    
   // "Shift correction" histograms that we INPUT and apply here                                                                                                             
-  mCorrectionInputFile = new TFile(CorrectionFile,"READ");
+  TFile *mCorrectionInputFile = new TFile(CorrectionFile,"READ");
+
   if (mCorrectionInputFile->IsZombie()) {
     std::cout << "EPFinder: Error opening file with Correction Histograms" << std::endl;
     std::cout << "EPFinder: I will use no weighting at all." << std::endl;
@@ -43,9 +46,15 @@ EpFinder::EpFinder(int nEventTypeBins, char const* OutFileName, char const* Corr
     }
     mPhiWeightInput = (TH2D*)mCorrectionInputFile->Get(Form("PhiWeight"));
   }
+
+  //mCorrectionInputFile->Close();
+  //delete mCorrectionInputFile; 
+
   // ----------------------------------- Stuff written to the "Correction File" -----------------------------------------                                                   
   // "Shift correction" histograms that we produce and OUTPUT                                                                                                               
-  mCorrectionOutputFile = new TFile(OutFileName,"RECREATE");
+  OutFileNameString = OutFileName;  
+  PHTFileServer::get().open(OutFileName, "RECREATE");
+
   for (int order=1; order<_EpOrderMax+1; order++){
     mEpShiftOutput_sin[order-1] = new TProfile2D(Form("EpShiftPsi%d_sin",order),Form("EpShiftPsi%d_sin",order),
 						  _EpTermsMax,0.5,1.0*_EpTermsMax+.5,nEventTypeBins,-0.5,(double)nEventTypeBins-0.5,-1.0,1.0);
@@ -66,13 +75,11 @@ EpFinder::EpFinder(int nEventTypeBins, char const* OutFileName, char const* Corr
 
 void EpFinder::Finish(){
 
-  mCorrectionInputFile->Close();
-
   mPhiWeightOutput->Divide(mPhiAveraged);
   delete mPhiAveraged;
 
-  mCorrectionOutputFile->Write();
-  mCorrectionOutputFile->Close();
+  PHTFileServer::get().cd(OutFileNameString.data());
+  PHTFileServer::get().write(OutFileNameString.data());
 
   cout << "EpFinder is finished!\n\n";
 }
