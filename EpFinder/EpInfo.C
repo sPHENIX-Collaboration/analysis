@@ -3,6 +3,11 @@
 #include <iostream>
 
 EpInfo::EpInfo(){
+  Reset(); 
+}
+
+void EpInfo::Reset()
+{
   for (int iorder=0; iorder<_EpOrderMax; iorder++){
     for (int xy=0; xy<2; xy++){
       QrawOneSide[iorder][xy] = 0.0;
@@ -16,7 +21,6 @@ EpInfo::EpInfo(){
     PsiPhiWeightedAndShifted[iorder] = -999.0;
   }
 }
-
 
 // ===================== Access to Q-vectors ==========================
 
@@ -97,4 +101,3 @@ bool EpInfo::ArgumentOutOfBounds(int order){
   }
   return false;
 }
-
