@@ -2,7 +2,6 @@
 #define _EpFinder
 
 class TVector3;
-class TFile;
 class TProfile;
 class TProfile2D;
 
@@ -103,7 +102,7 @@ typedef struct{
 } EpHit; 
 
 
-class EpFinder{
+class EpFinder {
  public:
 
   /// Constructor.  Initializes values and reads correction file, if it exists.
@@ -143,7 +142,6 @@ class EpFinder{
   /// "autodocument" what were the settings for a given run
   TString Report();
 
-
  private:
 
   bool OrderOutsideRange(int order);         // just makes sure order is between 1 and _EpOrderMax
@@ -158,8 +156,7 @@ class EpFinder{
 
   TProfile* mAveCosDeltaPsi[_EpOrderMax];        // average of cos(Psi_{East,n}-Psi_{West,n}) using phi-weighted and shifted EPs
 
-  TFile* mCorrectionInputFile;
-  TFile* mCorrectionOutputFile;
+  std::string OutFileNameString; 
 
   //  these are shift correction factors that we MAKE now and write out
   TProfile2D* mEpShiftOutput_sin[_EpOrderMax];   
@@ -175,3 +172,4 @@ class EpFinder{
 };
 
 #endif
+
