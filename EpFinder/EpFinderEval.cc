@@ -1,5 +1,5 @@
-//testing 2
-#include "EpFinderEval.h"
+
+#include "EpFinderReco.h"
 
 #include <phool/phool.h>
 #include <phool/getClass.h>
@@ -13,6 +13,10 @@
 #include <g4main/PHG4TruthInfoContainer.h>
 #include <g4main/PHG4VtxPoint.h>
 #include <g4main/PHG4Particle.h>
+
+#include <phool/PHCompositeNode.h>
+#include <phool/PHIODataNode.h>
+#include <phool/PHNode.h>                // for PHNode
 
 #include <calobase/RawTowerDefs.h>
 #include <calobase/RawTowerContainer.h>
@@ -61,7 +65,7 @@ double XYtoPhi_02PI(double x, double y)
   return phi;
 }
 
-double getEta(double pt, double pz){
+  double getEta(double pt, double pz){
   float theta = XYtoPhi(pz,pt);
   float eta = -log(tan(theta/2.0));
   return eta; 
@@ -80,97 +84,97 @@ double DeltaPhi(double phi1, double phi2){
 //--  simple initialization
 //----------------------------------------------------------------------------//
 
-EpFinderEval::EpFinderEval(const string &name) :
-  SubsysReco(name), _eval_tree_event(NULL) {
-	//initialize
-	_event = 0;
-	_outfile_name = "EpFinder_Eval.root";
-	RpFinder = NULL; 
-	RpFinderL = NULL; 
-	RpFinderR = NULL; 
-	primRpFinder = NULL; 
-	fprimRpFinder = NULL; 
-
+EpFinderReco::EpFinderReco(const string &name) :
+  SubsysReco(name)
+  , _algonode("EVENT_PLANE")
+{
+  //initialize
+  prim_EpFinder = NULL;
+  fprim_EpFinder = NULL;
 }
 
 //----------------------------------------------------------------------------//
 //-- Init():
 //--   Intialize all histograms, trees, and ntuples
 //----------------------------------------------------------------------------//
-int EpFinderEval::Init(PHCompositeNode *topNode) {
+int EpFinderReco::Init(PHCompositeNode *topNode) {
 
-	cout << PHWHERE << " Opening file " << _outfile_name << endl;
-	PHTFileServer::get().open(_outfile_name, "RECREATE");
 
-	_eval_tree_event = new TTree("event", "FastSim Eval => event parameters");
-	_eval_tree_event->Branch("event", &_event, "_event/I");
-	_eval_tree_event->Branch("rplane_angle", &rplane_angle, "rplane_angle/F");
-	_eval_tree_event->Branch("bimpact", &bimpact, "bimpact/F");
-	_eval_tree_event->Branch("prim_rplane_angle", &prim_rplane_angle, "prim_rplane_angle/F");
+  // binning (phi,eta): cemc (96,256)
+  CEMC_EpFinder = new EpFinder(1,"CEMC_EpFinderCorrectionHistograms_OUTPUT.root", "CEMC_EpFinderCorrectionHistograms_INPUT.root", 96, 256); 
+  CEMC_EpFinder->SetnMipThreshold(0.0); 
+  CEMC_EpFinder->SetMaxTileWeight(100.0); 
+  cout << CEMC_EpFinder->Report() << endl; 
 
-	_eval_tree_event->Branch("fprim_rplane_angle", &fprim_rplane_angle, "fprim_rplane_angle/F");
-	_eval_tree_event->Branch("fprim_phiweighted_rplane_angle", &fprim_phiweighted_rplane_angle, "fprim_phiweighted_rplane_angle/F");
-	_eval_tree_event->Branch("fprim_phiweightedandshifted_rplane_angle", &fprim_phiweightedandshifted_rplane_angle, "fprim_phiweightedandshifted_rplane_angle/F");
+  // binning (phi,eta): cemc (96,256) +  hcalout (24,64) + hcalin (24,64)
+  CEMC_HCAL_EpFinder = new EpFinder(1,"CEMC_HCAL_EpFinderCorrectionHistograms_OUTPUT.root", "CEMC_HCAL_EpFinderCorrectionHistograms_INPUT.root", 96+24+24, 256+64+64); 
+  CEMC_HCAL_EpFinder->SetnMipThreshold(0.0); 
+  CEMC_HCAL_EpFinder->SetMaxTileWeight(100.0); 
+  cout << CEMC_HCAL_EpFinder->Report() << endl; 
 
-	_eval_tree_event->Branch("rfprim_rplane_angle", &rfprim_rplane_angle, "rfprim_rplane_angle/F");
-	_eval_tree_event->Branch("rfprim_phiweighted_rplane_angle", &rfprim_phiweighted_rplane_angle, "rfprim_phiweighted_rplane_angle/F");
-	_eval_tree_event->Branch("rfprim_phiweightedandshifted_rplane_angle", &rfprim_phiweightedandshifted_rplane_angle, "rfprim_phiweightedandshifted_rplane_angle/F");
+  prim_EpFinder = new EpFinder(1, "prim_EpFinderCorrectionHistograms_OUTPUT.root", "prim_EpFinderCorrectionHistograms_INPUT.root"); 
+  cout << prim_EpFinder->Report() << endl; 
 
-	_eval_tree_event->Branch("femc_raw_rplane_angle", &femc_raw_rplane_angle, "femc_raw_rplane_angle/F");
-	_eval_tree_event->Branch("femc_phiweighted_rplane_angle", &femc_phiweighted_rplane_angle, "femc_phiweighted_rplane_angle/F");
-	_eval_tree_event->Branch("femc_phiweightedandshifted_rplane_angle", &femc_phiweightedandshifted_rplane_angle, "femc_phiweightedandshifted_rplane_angle/F");
+  fprim_EpFinder = new EpFinder(1, "fprim_EpFinderCorrectionHistograms_OUTPUT.root", "fprim_EpFinderCorrectionHistograms_INPUT.root",
+				FPRIM_PHI_BINS, FPRIM_ETA_BINS); 
+  cout << fprim_EpFinder->Report() << endl; 
 
-	_eval_tree_event->Branch("rfemc_raw_rplane_angle", &rfemc_raw_rplane_angle, "rfemc_raw_rplane_angle/F");
-	_eval_tree_event->Branch("rfemc_phiweighted_rplane_angle", &rfemc_phiweighted_rplane_angle, "rfemc_phiweighted_rplane_angle/F");
-	_eval_tree_event->Branch("rfemc_phiweightedandshifted_rplane_angle", &rfemc_phiweightedandshifted_rplane_angle, "rfemc_phiweightedandshifted_rplane_angle/F");
 
-	_eval_tree_event->Branch("femcL_raw_rplane_angle", &femcL_raw_rplane_angle, "femcL_raw_rplane_angle/F");
-	_eval_tree_event->Branch("femcL_phiweighted_rplane_angle", &femcL_phiweighted_rplane_angle, "femcL_phiweighted_rplane_angle/F");
-	_eval_tree_event->Branch("femcL_phiweightedandshifted_rplane_angle", &femcL_phiweightedandshifted_rplane_angle, "femcL_phiweightedandshifted_rplane_angle/F");
-
-	_eval_tree_event->Branch("femcR_raw_rplane_angle", &femcR_raw_rplane_angle, "femcR_raw_rplane_angle/F");
-	_eval_tree_event->Branch("femcR_phiweighted_rplane_angle", &femcR_phiweighted_rplane_angle, "femcR_phiweighted_rplane_angle/F");
-	_eval_tree_event->Branch("femcR_phiweightedandshifted_rplane_angle", &femcR_phiweightedandshifted_rplane_angle, "femcR_phiweightedandshifted_rplane_angle/F");
-
-	RpFinder = new EpFinder(4,"EpFinderCorrectionHistograms_OUTPUT.root", "EpFinderCorrectionHistograms_INPUT.root", 181, 181); 
-	RpFinder->SetnMipThreshold(0.0); 
-	RpFinder->SetMaxTileWeight(100.0); 
-	cout << RpFinder->Report() << endl; 
-
-	rRpFinder = new EpFinder(4,"rEpFinderCorrectionHistograms_OUTPUT.root", "rEpFinderCorrectionHistograms_INPUT.root", 181, 181); 
-	rRpFinder->SetnMipThreshold(0.0); 
-	rRpFinder->SetMaxTileWeight(100.0); 
-	cout << rRpFinder->Report() << endl; 
-
-	RpFinderL = new EpFinder(4, "L_EpFinderCorrectionHistograms_OUTPUT.root", "L_EpFinderCorrectionHistograms_INPUT.root", 181, 181); 
-	RpFinderL->SetnMipThreshold(0.0); 
-	RpFinderL->SetMaxTileWeight(100.0); 
-	cout << RpFinderL->Report() << endl; 
-
-	RpFinderR = new EpFinder(4, "R_EpFinderCorrectionHistograms_OUTPUT.root", "R_EpFinderCorrectionHistograms_INPUT.root", 181, 181); 
-	RpFinderR->SetnMipThreshold(0.0); 
-	RpFinderR->SetMaxTileWeight(100.0); 
-	cout << RpFinderR->Report() << endl; 
-
-	primRpFinder = new EpFinder(1, "primEpFinderCorrectionHistograms_OUTPUT.root", "primEpFinderCorrectionHistograms_INPUT.root"); 
-	cout << primRpFinder->Report() << endl; 
-
-	fprimRpFinder = new EpFinder(1, "fprimEpFinderCorrectionHistograms_OUTPUT.root", "fprimEpFinderCorrectionHistograms_INPUT.root",
-				     FPRIM_PHI_BINS, FPRIM_ETA_BINS); 
-	cout << fprimRpFinder->Report() << endl; 
-
-	rfprimRpFinder = new EpFinder(1, "rfprimEpFinderCorrectionHistograms_OUTPUT.root", "rfprimEpFinderCorrectionHistograms_INPUT.root",
-				     FPRIM_PHI_BINS, RFPRIM_ETA_BINS); 
-	cout << rfprimRpFinder->Report() << endl; 
-
-	return Fun4AllReturnCodes::EVENT_OK;
+  return CreateNodes(topNode);
 }
 
-int EpFinderEval::InitRun(PHCompositeNode *topNode) {
+int EpFinderReco::InitRun(PHCompositeNode *topNode) {
 
 
 	return Fun4AllReturnCodes::EVENT_OK;
 
+}
+
+int EpFinderReco::CreateNodes(PHCompositeNode *topNode)
+{
+  PHNodeIterator iter(topNode);
+
+  // Looking for the DST node
+  PHCompositeNode *dstNode = static_cast<PHCompositeNode *>(iter.findFirst("PHCompositeNode", "DST"));
+  if (!dstNode)
+  {
+    cout << PHWHERE << "DST Node missing, doing nothing." << endl;
+    return Fun4AllReturnCodes::ABORTRUN;
+  }
+
+  // Create the algorithm node if required
+  PHCompositeNode *AlgoNode = dynamic_cast<PHCompositeNode *>(iter.findFirst("PHCompositeNode",  _algonode.c_str()));
+  if (!AlgoNode)
+  {
+    AlgoNode = new PHCompositeNode( _algonode.c_str());
+    dstNode->addNode(AlgoNode);
+  }
+    
+    
+  
+  // Create the output objects
+  EpInfo *prim_EpInfo = new EpInfo(); 
+  PHIODataNode<PHObject> *prim_EpInfo_node = new PHIODataNode<PHObject>(prim_EpInfo, "primary_EpInfo", "PHObject");
+  AlgoNode->addNode(prim_EpInfo_node);
+
+  EpInfo *fprim_EpInfo = new EpInfo(); 
+  PHIODataNode<PHObject> *fprim_EpInfo_node = new PHIODataNode<PHObject>(fprim_EpInfo, "forward_primary_EpInfo", "PHObject");
+  AlgoNode->addNode(fprim_EpInfo_node);
+
+  EpInfo *HIJetReco_EpInfo = new EpInfo(); 
+  PHIODataNode<PHObject> *HIJetReco_EpInfo_node = new PHIODataNode<PHObject>(HIJetReco_EpInfo, "HIJetReco_EpInfo", "PHObject");
+  AlgoNode->addNode(HIJetReco_EpInfo_node);
+
+  EpInfo *CEMC_EpInfo = new EpInfo();
+  PHIODataNode<PHObject> *CEMC_EpInfo_node = new PHIODataNode<PHObject>(CEMC_EpInfo,"CEMC_EpInfo", "PHObject");
+  AlgoNode->addNode(CEMC_EpInfo_node);
+  
+  EpInfo *CEMCHCAL_EpInfo = new EpInfo();
+  PHIODataNode<PHObject> *CEMCHCAL_EpInfo_node = new PHIODataNode<PHObject>(CEMCHCAL_EpInfo,"CEMCHCAL_EpInfo", "PHObject");
+  AlgoNode->addNode(CEMCHCAL_EpInfo_node);
+
+  return Fun4AllReturnCodes::EVENT_OK;
+    
 }
 
 //----------------------------------------------------------------------------//
@@ -179,12 +183,11 @@ int EpFinderEval::InitRun(PHCompositeNode *topNode) {
 //--   This function contains the analysis structure.
 //----------------------------------------------------------------------------//
 
-int EpFinderEval::process_event(PHCompositeNode *topNode) {
-	_event++;
+int EpFinderReco::process_event(PHCompositeNode *topNode) {
 
 	GetNodes(topNode);
 
-	fill_tree(topNode);
+	GetEventPlanes(topNode);
 
 	return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -193,30 +196,28 @@ int EpFinderEval::process_event(PHCompositeNode *topNode) {
 //-- End():
 //--   End method, wrap everything up
 //----------------------------------------------------------------------------//
-int EpFinderEval::End(PHCompositeNode *topNode) {
-
-	PHTFileServer::get().cd(_outfile_name);
-
-	_eval_tree_event->Write();
-
-	RpFinder->Finish(); 
-	rRpFinder->Finish(); 
-	RpFinderL->Finish(); 
-	RpFinderR->Finish(); 
-	primRpFinder->Finish(); 
-	fprimRpFinder->Finish(); 
-	
-	delete RpFinder;
-	delete rRpFinder;
-	delete RpFinderL;
-	delete RpFinderR;
-	delete primRpFinder;	
-	delete fprimRpFinder;
+int EpFinderReco::EndRun(PHCompositeNode *topNode) {
 
 	return Fun4AllReturnCodes::EVENT_OK;
 }
 
-int EpFinderEval::GetPhiBin(float tphi, float numPhiDivisions)
+int EpFinderReco::End(PHCompositeNode *topNode) {
+
+	prim_EpFinder->Finish();
+	fprim_EpFinder->Finish(); 
+
+	CEMC_EpFinder->Finish(); 
+	CEMC_HCAL_EpFinder->Finish(); 
+	
+	delete prim_EpFinder;
+	delete fprim_EpFinder; 
+	delete CEMC_EpFinder; 
+	delete CEMC_HCAL_EpFinder; 
+
+	return Fun4AllReturnCodes::EVENT_OK;
+}
+
+int EpFinderReco::GetPhiBin(float tphi, float numPhiDivisions)
 {
 
   // determine the phi bin
@@ -234,7 +235,7 @@ int EpFinderEval::GetPhiBin(float tphi, float numPhiDivisions)
 
 }
 
-int EpFinderEval::GetEtaBin(float teta, float eta_low, float eta_high, float numEtaDivisions)
+int EpFinderReco::GetEtaBin(float teta, float eta_low, float eta_high, float numEtaDivisions)
 {
 
   // determine the eta bin
@@ -251,9 +252,9 @@ int EpFinderEval::GetEtaBin(float teta, float eta_low, float eta_high, float num
 //--   Fill the various trees...
 //----------------------------------------------------------------------------//
 
-void EpFinderEval::fill_tree(PHCompositeNode *topNode) {
+void EpFinderReco::GetEventPlanes(PHCompositeNode *topNode) {
 	  
-  // Read the FEMC geometry and set up the arrays for phi weighting.
+  // Read the detector geometry and set up the arrays for phi weighting.
 
   static bool first = true;
 
@@ -261,32 +262,21 @@ void EpFinderEval::fill_tree(PHCompositeNode *topNode) {
 
     for(int i=0; i<PHI_BINS; i++){
       phi_list[i].clear(); 
-      rphi_list[i].clear(); 
     }
 
     for(int i=0; i<FPRIM_PHI_BINS; i++){
       fprim_phi_list[i].clear(); 
-      rfprim_phi_list[i].clear(); 
     }
 
-    // generate a list of all towers in the same phi range
-    // the phi grouping is determined by dividing phi into 
-    // PHI_BINS even slices in phi
-
-    RawTowerDefs::CalorimeterId calo_id_ = RawTowerDefs::convert_name_to_caloid( "FEMC" );   
-
-    for (int twr_j = 0; twr_j< 181; twr_j++){
-      for (int twr_k = 0; twr_k< 181; twr_k++){
-	RawTowerDefs::keytype towerid = RawTowerDefs::encode_towerid( calo_id_, twr_j+500, twr_k+500 ); 
-	RawTowerGeom *tgeo = towergeom->get_tower_geometry(towerid); 
-	if(tgeo){
-	  int idx = GetPhiBin(tgeo->get_phi(), PHI_BINS); 
-	  std::pair<int,int> newPair(tgeo->get_column()-500,tgeo->get_row()-500); 
-	  phi_list[idx].push_back(newPair); 
-	  if(tgeo->get_eta()<2.4) rphi_list[idx].push_back(newPair); 
-	}
-      }
+    for(int i=0; i<256; i++){
+      cemc_phi_list[i].clear(); 
     }
+
+    for(int i=0; i<64; i++){
+      hcalout_phi_list[i].clear(); 
+      hcalin_phi_list[i].clear(); 
+    }
+
 
     // For the forward primary weighting, all the eta bins are at the same phi
 
@@ -295,30 +285,42 @@ void EpFinderEval::fill_tree(PHCompositeNode *topNode) {
         std::pair<int,int> newPair(i,j); 
 	fprim_phi_list[i].push_back(newPair); 	
       }
-      for(int j=0; j<RFPRIM_ETA_BINS; j++){
-        std::pair<int,int> newPair(i,j); 
-	rfprim_phi_list[i].push_back(newPair); 	
+    }
+
+    // For central barrel the phi bin segmentation is by detector element
+
+    // CEMC
+
+    for (int twr_k = 0; twr_k< 256; twr_k++){
+      for (int twr_j = 0; twr_j< 96; twr_j++){
+	std::pair<int,int> newPair(twr_j,twr_k); 
+	cemc_phi_list[twr_k].push_back(newPair); 
       }
     }
 
-    first = false; 
-  }
 
-  // get the event properties
-  
-  rplane_angle = -9999.0; 
 
-  PHNodeIterator iter(topNode);
-  PHHepMCGenEventMap *genevent_map = findNode::getClass<PHHepMCGenEventMap>(topNode,"PHHepMCGenEventMap");
-  if(genevent_map){
-    // For now just take the first HEPMC event 
-    PHHepMCGenEvent *genevent = (genevent_map->begin())->second; 
-    if(genevent){
-      HepMC::GenEvent *event = genevent->getEvent();
-      HepMC::HeavyIon *hi = event->heavy_ion();
-      rplane_angle = hi->event_plane_angle();
-      bimpact =  hi->impact_parameter(); 
+    // oHCAL 
+
+    for (int twr_k = 0; twr_k< 64; twr_k++){
+      for (int twr_j = 0; twr_j< 24; twr_j++){
+	std::pair<int,int> newPair(twr_j+96,twr_k+256); 
+	hcalout_phi_list[twr_k].push_back(newPair); 
+      }
     }
+      
+
+    // iHCAL 
+
+    for (int twr_k = 0; twr_k< 64; twr_k++){
+      for (int twr_j = 0; twr_j< 24; twr_j++){
+	std::pair<int,int> newPair(twr_j+96+24,twr_k+256+64); 
+	hcalin_phi_list[twr_k].push_back(newPair); 
+      }
+    }
+
+
+    first = false; 
   }
 
   // -------------------------------------
@@ -330,10 +332,7 @@ void EpFinderEval::fill_tree(PHCompositeNode *topNode) {
 
   std::vector<EpHit> fphits; 
   fphits.clear(); 
- 
-  std::vector<EpHit> rfphits; 
-  rfphits.clear(); 
- 
+  
   PHG4TruthInfoContainer::ConstRange range = _truth_container->GetPrimaryParticleRange();
 
   for (PHG4TruthInfoContainer::ConstIterator truth_itr = range.first;
@@ -382,139 +381,117 @@ void EpFinderEval::fill_tree(PHCompositeNode *topNode) {
       fphits.push_back(newHit); 
     }
 
-    if ( (partMom.Eta() >= 1.4) &&
-	 (partMom.Eta() < 2.4)) {
-
-      EpHit newHit; 
-
-      newHit.nMip = 1; 
-      newHit.phi = partMom.Phi();
-      newHit.ix = GetPhiBin(partMom.Phi(), FPRIM_PHI_BINS); 
-      newHit.iy = GetEtaBin(partMom.Eta(), 1.4, 2.4, RFPRIM_ETA_BINS);      
-      newHit.samePhi = &rfprim_phi_list[newHit.ix]; 
-
-      rfphits.push_back(newHit); 
-    }
-
-
   }
 
-  EpInfo primRpResult = primRpFinder->Results(&phits,0); 
+  EpInfo prim_EpResult = prim_EpFinder->Results(&phits,0);
+  *_prim_EpInfo = prim_EpResult; 
 
-  prim_rplane_angle = primRpResult.RawPsi(2); 
-
-  EpInfo fprimRpResult = fprimRpFinder->Results(&fphits,0); 
-
-  fprim_rplane_angle = fprimRpResult.RawPsi(2); 
-  fprim_phiweighted_rplane_angle = fprimRpResult.PhiWeightedPsi(2); 
-  fprim_phiweightedandshifted_rplane_angle = fprimRpResult.PhiWeightedAndShiftedPsi(2); 
-
-  EpInfo rfprimRpResult = rfprimRpFinder->Results(&rfphits,0); 
-
-  rfprim_rplane_angle = rfprimRpResult.RawPsi(2); 
-  rfprim_phiweighted_rplane_angle = rfprimRpResult.PhiWeightedPsi(2); 
-  rfprim_phiweightedandshifted_rplane_angle = rfprimRpResult.PhiWeightedAndShiftedPsi(2); 
+  EpInfo fprim_EpResult = fprim_EpFinder->Results(&fphits,0); 
+  *_fprim_EpInfo = fprim_EpResult; 
 
   phits.clear(); 
   fphits.clear(); 
-  rfphits.clear(); 
 
-  // --------------------------------
-  // Run the FEMC event plane finder
-  // --------------------------------
+  
+  // ----------------------------------------------
+  // Run the CEMC and CEMC+HCAL event plane finders
+  // ----------------------------------------------
 
-  std::vector<EpHit> hits; 
-  hits.clear(); 
+  //---CEMC INFO---//
 
-  std::vector<EpHit> rhits; 
-  rhits.clear(); 
+  std::vector <EpHit> cemchits;
+  cemchits.clear();
+  std::vector <EpHit> cemchcalhits;
+  cemchcalhits.clear();
 
-  std::vector<EpHit> hitsL; 
-  hitsL.clear(); 
 
-  std::vector<EpHit> hitsR; 
-  hitsR.clear(); 
+  
+  RawTowerContainer::ConstRange cemc_begin_end = cemctowers->getTowers();
+  RawTowerContainer::ConstIterator cemc_itr = cemc_begin_end.first;
+  for(; cemc_itr != cemc_begin_end.second; ++cemc_itr) {
+    RawTowerDefs::keytype cemctowerid = cemc_itr->first;
+    RawTower *cemcrawtower = cemctowers->getTower(cemctowerid);
+    if(cemcrawtower) {
 
-  RawTowerContainer::ConstRange begin_end  = towers->getTowers();
-  RawTowerContainer::ConstIterator itr = begin_end.first;
-  for (; itr != begin_end.second; ++itr) {
-    RawTowerDefs::keytype towerid = itr->first;
-    RawTower *rawtower = towers->getTower(towerid);
-    if(rawtower) {
-      if(rawtower->get_energy()>TOWER_E_CUT) {
+       if(cemcrawtower->get_energy()>TOWER_E_CUT) {
+       
+         EpHit newHit;
 
-	RawTowerGeom *tgeo = towergeom->get_tower_geometry(towerid); 
+	 RawTowerGeom *cemctgeo = cemctowergeom->get_tower_geometry(cemctowerid);
 
-	EpHit newHit; 
+	 newHit.nMip = cemcrawtower->get_energy();
+	 newHit.phi  = cemctgeo->get_phi();
+	 newHit.ix = cemctgeo->get_column();  // eta index
+	 newHit.iy = cemctgeo->get_row();     // phi index
+	 newHit.samePhi = &cemc_phi_list[cemctgeo->get_row()]; 
 
-	//newHit.nMip = 1; 
-	newHit.nMip = rawtower->get_energy(); 
-	newHit.phi = tgeo->get_phi(); 
-	newHit.ix = tgeo->get_column() - 500; 
-	newHit.iy = tgeo->get_row() - 500;
-
-	int idx = GetPhiBin(tgeo->get_phi(), PHI_BINS); 
-	newHit.samePhi = &phi_list[idx]; 
-
-	hits.push_back(newHit); 
-	if((idx>=(PHI_BINS/4))&&(idx<(3*PHI_BINS/4))) 
-	  hitsL.push_back(newHit); 
-	else 
-	  hitsR.push_back(newHit);
-
-	if( tgeo->get_eta()<2.4 ) {
-	  newHit.samePhi = &rphi_list[idx]; 
-	  rhits.push_back(newHit); 
-	}
-	  
-      }
+     cemchits.push_back(newHit);
+     cemchcalhits.push_back(newHit);
+	
+       }
     }
-
   }
 
-  // Select the event class based on the impact parameter
+  //---HCALOUT INFO---//
   
-  int ev_class = 0; 
-  if((bimpact>=0.0) && (bimpact<4.0))
-    ev_class = 0; 
-  else if((bimpact>=4.0)&&(bimpact<8.0))
-    ev_class = 1; 
-  else if((bimpact>=8.0)&&(bimpact<14.0))
-    ev_class = 2; 
-  else
-    ev_class = 3;
+  RawTowerContainer::ConstRange hcalo_begin_end = hcalotowers->getTowers();
+  RawTowerContainer::ConstIterator hcalo_itr = hcalo_begin_end.first;
+  for(; hcalo_itr != hcalo_begin_end.second; ++hcalo_itr) {
+    RawTowerDefs::keytype hcalotowerid = hcalo_itr->first;
+    RawTower *hcalorawtower = hcalotowers->getTower(hcalotowerid);
+    if(hcalorawtower) {
+      if(hcalorawtower->get_energy()>TOWER_E_CUT) {
+ 	
+	RawTowerGeom *hcalotgeo = hcalotowergeom->get_tower_geometry(hcalotowerid);
 
-  // Run the event plane finder
+	EpHit newHit;
+   
+	newHit.nMip = hcalorawtower->get_energy();
+	newHit.phi  = hcalotgeo->get_phi();
+	newHit.ix = hcalotgeo->get_column() + 96;
+	newHit.iy = hcalotgeo->get_row() + 256;
+	newHit.samePhi = &hcalin_phi_list[hcalotgeo->get_row()]; 
 
-  EpInfo RpResult = RpFinder->Results(&hits,ev_class); 
+	cemchcalhits.push_back(newHit);
+
+      }
+    }   
+  }
+
+  //---HCALIN INFO---//
   
-  femc_raw_rplane_angle = RpResult.RawPsi(2); 
-  femc_phiweighted_rplane_angle = RpResult.PhiWeightedPsi(2); 
-  femc_phiweightedandshifted_rplane_angle = RpResult.PhiWeightedAndShiftedPsi(2); 
+  RawTowerContainer::ConstRange hcali_begin_end = hcalitowers->getTowers();
+  RawTowerContainer::ConstIterator hcali_itr = hcali_begin_end.first;
+  for(; hcali_itr != hcali_begin_end.second; ++hcali_itr) {
+    RawTowerDefs::keytype hcalitowerid = hcali_itr->first;
+    RawTower *hcalirawtower = hcalitowers->getTower(hcalitowerid);
+    if(hcalirawtower) {
+      if(hcalirawtower->get_energy()>TOWER_E_CUT) {
+ 	
+	RawTowerGeom *hcalitgeo = hcalitowergeom->get_tower_geometry(hcalitowerid);
 
-  EpInfo rRpResult = rRpFinder->Results(&rhits,ev_class); 
+	EpHit newHit;
+   
+	newHit.nMip = hcalirawtower->get_energy();
+	newHit.phi  = hcalitgeo->get_phi();
+	newHit.ix = hcalitgeo->get_column() + 96 + 24;
+	newHit.iy = hcalitgeo->get_row() + 256 + 64;
+	newHit.samePhi = &hcalin_phi_list[hcalitgeo->get_row()]; 
+
+	cemchcalhits.push_back(newHit);
+
+      }
+    }   
+  }
+
+  EpInfo CEMC_EpResult = CEMC_EpFinder->Results(&cemchits,0);
+  *_CEMC_EpInfo = CEMC_EpResult;
   
-  rfemc_raw_rplane_angle = rRpResult.RawPsi(2); 
-  rfemc_phiweighted_rplane_angle = rRpResult.PhiWeightedPsi(2); 
-  rfemc_phiweightedandshifted_rplane_angle = rRpResult.PhiWeightedAndShiftedPsi(2); 
+  EpInfo CEMCHCAL_EpResult = CEMC_HCAL_EpFinder->Results(&cemchcalhits,0);
+  *_CEMCHCAL_EpInfo = CEMCHCAL_EpResult;
 
-  EpInfo RpResultL = RpFinderL->Results(&hitsL,ev_class); 
-
-  femcL_raw_rplane_angle = RpResultL.RawPsi(2); 
-  femcL_phiweighted_rplane_angle = RpResultL.PhiWeightedPsi(2); 
-  femcL_phiweightedandshifted_rplane_angle = RpResultL.PhiWeightedAndShiftedPsi(2); 
-
-  EpInfo RpResultR = RpFinderR->Results(&hitsR,ev_class); 
-
-  femcR_raw_rplane_angle = RpResultR.RawPsi(2); 
-  femcR_phiweighted_rplane_angle = RpResultR.PhiWeightedPsi(2); 
-  femcR_phiweightedandshifted_rplane_angle = RpResultR.PhiWeightedAndShiftedPsi(2); 
-
-  _eval_tree_event->Fill();
-
-  hits.clear(); 
-  hitsL.clear(); 
-  hitsR.clear(); 
+  cemchits.clear();
+  cemchcalhits.clear();
 
   return;
 
@@ -524,7 +501,40 @@ void EpFinderEval::fill_tree(PHCompositeNode *topNode) {
 //-- GetNodes():
 //--   Get all the all the required nodes off the node tree
 //----------------------------------------------------------------------------//
-int EpFinderEval::GetNodes(PHCompositeNode * topNode) {
+int EpFinderReco::GetNodes(PHCompositeNode * topNode) {
+
+  // EpInfo nodes
+
+
+  _prim_EpInfo = findNode::getClass<EpInfo>(topNode,"primary_EpInfo");
+  if (!_prim_EpInfo) {
+    cout << PHWHERE << " _prim_EpInfo node not found on node tree"
+	 << endl;
+    return Fun4AllReturnCodes::ABORTEVENT;
+  }
+
+  _fprim_EpInfo = findNode::getClass<EpInfo>(topNode,"forward_primary_EpInfo");
+  if (!_fprim_EpInfo) {
+    cout << PHWHERE << " _fprim_EpInfo node not found on node tree"
+	 << endl;
+    return Fun4AllReturnCodes::ABORTEVENT;
+  }
+  
+  _CEMC_EpInfo = findNode::getClass<EpInfo>(topNode,"CEMC_EpInfo");
+  if (!_CEMC_EpInfo) {
+    cout << PHWHERE << " _CEMC_EpInfo node not found on node tree"
+	 << endl;
+    return Fun4AllReturnCodes::ABORTEVENT;
+  }
+
+  _CEMCHCAL_EpInfo = findNode::getClass<EpInfo>(topNode,"CEMCHCAL_EpInfo");
+  if (!_CEMCHCAL_EpInfo) {
+    cout << PHWHERE << " _CEMCHCAL_EpInfo node not found on node tree"
+	 << endl;
+    return Fun4AllReturnCodes::ABORTEVENT;
+  }
+  
+
 
   //Truth container
   _truth_container = findNode::getClass<PHG4TruthInfoContainer>(topNode,
@@ -535,22 +545,57 @@ int EpFinderEval::GetNodes(PHCompositeNode * topNode) {
     return Fun4AllReturnCodes::ABORTEVENT;
   }
 
-  string towernodename = "TOWER_CALIB_FEMC";
   // Grab the towers
-  towers = findNode::getClass<RawTowerContainer>(topNode, towernodename.c_str());
-  if (!towers)
-    {
-      std::cout << PHWHERE << ": Could not find node " << towernodename.c_str() << std::endl;
-      return Fun4AllReturnCodes::ABORTEVENT;
-    }
+
+  string cemctowernodename = "TOWER_CALIB_CEMC";
+  cemctowers = findNode::getClass<RawTowerContainer>(topNode, cemctowernodename.c_str());
+  if (!cemctowers)
+   {
+      std::cout << PHWHERE << ": Could not find node " << cemctowernodename.c_str() << std::endl;
+      return Fun4AllReturnCodes::ABORTEVENT; 
+   }
+
+  string hcalotowernodename = "TOWER_CALIB_HCALOUT";
+  hcalotowers = findNode::getClass<RawTowerContainer>(topNode, hcalotowernodename.c_str());
+  if (!hcalotowers)
+   {
+      std::cout << PHWHERE << ": Could not find node " << hcalotowernodename.c_str() << std::endl;
+      return Fun4AllReturnCodes::ABORTEVENT; 
+   }
+  
+  string hcalitowernodename = "TOWER_CALIB_HCALIN";
+  hcalitowers = findNode::getClass<RawTowerContainer>(topNode, hcalitowernodename.c_str());
+  if (!hcalitowers)
+   {
+      std::cout << PHWHERE << ": Could not find node " << hcalitowernodename.c_str() << std::endl;
+      return Fun4AllReturnCodes::ABORTEVENT; 
+   }
+
+    
   // Grab the geometry
-  string towergeomnodename = "TOWERGEOM_FEMC";
-  towergeom = findNode::getClass<RawTowerGeomContainer>(topNode, towergeomnodename.c_str());
-  if (!towergeom)
-    {
-      cout << PHWHERE << ": Could not find node " << towergeomnodename.c_str() << endl;
-      return Fun4AllReturnCodes::ABORTEVENT;
-    }
+  string cemctowergeomnodename = "TOWERGEOM_CEMC";
+  cemctowergeom = findNode::getClass<RawTowerGeomContainer>(topNode, cemctowergeomnodename.c_str());
+  if (! cemctowergeom)
+  {
+    cout << PHWHERE << ": Could not find node " << cemctowergeomnodename.c_str() << endl;
+    return Fun4AllReturnCodes::ABORTEVENT;
+  }
+
+  string hcalotowergeomnodename = "TOWERGEOM_HCALOUT";
+  hcalotowergeom = findNode::getClass<RawTowerGeomContainer>(topNode, hcalotowergeomnodename.c_str());
+  if (! hcalotowergeom)
+  {
+    cout << PHWHERE << ": Could not find node " << hcalotowergeomnodename.c_str() << endl;
+    return Fun4AllReturnCodes::ABORTEVENT;
+  }
+  
+  string hcalitowergeomnodename = "TOWERGEOM_HCALIN";
+  hcalitowergeom = findNode::getClass<RawTowerGeomContainer>(topNode, hcalitowergeomnodename.c_str());
+  if (! hcalitowergeom)
+  {
+    cout << PHWHERE << ": Could not find node " << hcalitowergeomnodename.c_str() << endl;
+    return Fun4AllReturnCodes::ABORTEVENT;
+  }
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
