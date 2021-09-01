@@ -274,6 +274,21 @@ int HFTrigger::decomposeTrack(Track track, TrackX& trackPosition, TrackP& trackM
   return 0;
 }
 
+float HFTrigger::calcualteTrackVertex2DDCA(Track track, Vertex vertex)
+{
+  TrackX pos;
+  TrackP mom;
+  DCA dcaVertex;
+
+  decomposeTrack(track, pos, mom);
+
+  dcaVertex = pos - vertex - mom.dot(pos - vertex)*mom/(mom.dot(mom));
+
+  float twoD_DCA = std::sqrt(std::pow(dcaVertex(0,0), 2) + std::pow(dcaVertex(1,0), 2));
+
+  return twoD_DCA;
+}
+
 float HFTrigger::calcualteTrackVertexDCA(Track track, Vertex vertex)
 {
   TrackX pos;

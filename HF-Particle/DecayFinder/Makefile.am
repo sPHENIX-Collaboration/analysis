@@ -1,33 +1,31 @@
 AUTOMAKE_OPTIONS = foreign
 
 lib_LTLIBRARIES = \
-    libhftrigger.la
+    libdecayfinder.la
 
 AM_LDFLAGS = \
   -L$(libdir) \
-  -L$(OFFLINE_MAIN)/lib \
   `root-config --libs`
 
 AM_CPPFLAGS = \
   -I$(includedir) \
-  -I$(OFFLINE_MAIN)/include \
   -I$(ROOTSYS)/include \
-  -I$(OFFLINE_MAIN)/include/eigen3
+  -I$(OFFLINE_MAIN)/include 
 
 pkginclude_HEADERS = \
-  HFTriggerMVA.h \
-  HFTrigger.h
+  DecayFinder.h
 
-libhftrigger_la_SOURCES = \
-  HFTriggerMVA.cc \
-  HFTrigger.cc
+libdecayfinder_la_SOURCES = \
+  DecayFinder.cc
 
-libhftrigger_la_LIBADD = \
+libdecayfinder_la_LDFLAGS = \
   -L$(libdir) \
   -L$(OFFLINE_MAIN)/lib \
+  -I$(ROOTSYS)/include \
   -lfun4all \
   -lg4eval \
-  -lTMVA
+  -lkfparticle_sphenix \
+  -lphhepmc
 
 # Rule for generating table CINT dictionaries.
 %_Dict.cc: %.h %LinkDef.h
@@ -45,7 +43,7 @@ noinst_PROGRAMS = \
 BUILT_SOURCES = testexternals.cc
 
 testexternals_SOURCES = testexternals.cc
-testexternals_LDADD = libhftrigger.la
+testexternals_LDADD = libdecayfinder.la
 
 testexternals.cc:
 	echo "//*** this is a generated file. Do not commit, do not edit" > $@
