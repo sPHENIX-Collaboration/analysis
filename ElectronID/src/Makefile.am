@@ -34,7 +34,7 @@ libelectronid_la_SOURCES = \
 libelectronid_la_LIBADD = \
   -lphool \
   -lSubsysReco \
-  -ltrackbase_historic_io
+  -ltrackbase_historic_io 
 
 ##added on Apr. 19, 2021 by Weihu
 libelectronid_la_LDFLAGS = \
@@ -46,7 +46,7 @@ libelectronid_la_LDFLAGS = \
   -lphg4hit \
   -lg4dst \
   -lg4eval \
-  -leventmix
+  -ltrackpid
 
 # Rule for generating table CINT dictionaries.
 %_Dict.cc: %.h %LinkDef.h
@@ -61,7 +61,7 @@ libelectronid_la_LDFLAGS = \
 BUILT_SOURCES = testexternals.cc
 
 noinst_PROGRAMS = \
-  testexternals_trackpid
+  testexternals_electronid
 
 testexternals_electronid_SOURCES = testexternals.cc
 testexternals_electronid_LDADD = libelectronid.la
