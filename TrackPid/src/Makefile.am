@@ -47,8 +47,7 @@ libtrackpid_la_LDFLAGS = \
   -lg4detectors_io \
   -lphg4hit \
   -lg4dst \
-  -lg4eval \
-  -leventmix
+  -lg4eval 
 
 # Rule for generating table CINT dictionaries.
 %_Dict.cc: %.h %LinkDef.h
