@@ -9,7 +9,7 @@
 
 #include <fun4all/SubsysReco.h>
 
-#include "TrackPid/TrackPidAssoc.h"
+#include "trackpidassoc/TrackPidAssoc.h"
 
 // rootcint barfs with this header so we need to hide it
 #include <gsl/gsl_rng.h>
