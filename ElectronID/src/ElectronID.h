@@ -9,7 +9,7 @@
 
 #include <fun4all/SubsysReco.h>
 
-#include "TrackPidAssoc.h"
+#include "trackpidassoc/TrackPidAssoc.h"
 
 // rootcint barfs with this header so we need to hide it
 #include <gsl/gsl_rng.h>
@@ -30,11 +30,11 @@ class SvtxTrackMap;
 
 class SvtxTrack;
 
-class ElectronPid  : public SubsysReco
+class ElectronID  : public SubsysReco
 {
 public:
-  ElectronPid(const std::string &name = "ElectronPid", const std::string &filename = "_ElectronPid.root");
-  virtual ~ElectronPid();
+  ElectronID(const std::string &name = "ElectronID", const std::string &filename = "_ElectronID.root");
+  virtual ~ElectronID();
 
   int Init(PHCompositeNode *topNode);
   int InitRun(PHCompositeNode *topNode);

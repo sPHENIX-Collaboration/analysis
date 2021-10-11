@@ -1,4 +1,4 @@
-#include "ElectronPid.h"
+#include "ElectronID.h"
 
 #include <cstdlib>
 #include <cstdio>
@@ -48,7 +48,7 @@ class PHCompositeNode;
 
 using namespace std;
 
-ElectronPid::ElectronPid(const std::string& name, const std::string &filename) : SubsysReco(name)
+ElectronID::ElectronID(const std::string& name, const std::string &filename) : SubsysReco(name)
 {
   OutputNtupleFile=nullptr;
   OutputFileName=filename;
@@ -68,11 +68,11 @@ ElectronPid::ElectronPid(const std::string& name, const std::string &filename) :
   Nquality_higherlimit = 100;
 }
 
-ElectronPid::~ElectronPid() 
+ElectronID::~ElectronID() 
 {
 }
 
-int ElectronPid::Init(PHCompositeNode *topNode)
+int ElectronID::Init(PHCompositeNode *topNode)
 {
 
   if(output_ntuple) {
@@ -101,7 +101,7 @@ int ElectronPid::Init(PHCompositeNode *topNode)
   
 }
 
-int ElectronPid::InitRun(PHCompositeNode* topNode)
+int ElectronID::InitRun(PHCompositeNode* topNode)
 {
   int ret = GetNodes(topNode);
   if (ret != Fun4AllReturnCodes::EVENT_OK) return ret;
@@ -109,7 +109,7 @@ int ElectronPid::InitRun(PHCompositeNode* topNode)
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
-int ElectronPid::process_event(PHCompositeNode* topNode)
+int ElectronID::process_event(PHCompositeNode* topNode)
 {
   EventNumber++;
   float ntp[30];
@@ -363,7 +363,7 @@ int ElectronPid::process_event(PHCompositeNode* topNode)
 }
 
 
-int ElectronPid::GetNodes(PHCompositeNode* topNode)
+int ElectronID::GetNodes(PHCompositeNode* topNode)
 {
   _track_map = findNode::getClass<SvtxTrackMap>(topNode, "SvtxTrackMap");
 
@@ -400,7 +400,7 @@ int ElectronPid::GetNodes(PHCompositeNode* topNode)
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
-int ElectronPid::End(PHCompositeNode * /*topNode*/)
+int ElectronID::End(PHCompositeNode * /*topNode*/)
 {
 if(output_ntuple) {
   OutputNtupleFile -> cd();

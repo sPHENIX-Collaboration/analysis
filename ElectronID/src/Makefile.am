@@ -5,7 +5,7 @@ AUTOMAKE_OPTIONS = foreign
 
 # list of shared libraries to produce
 lib_LTLIBRARIES = \
-  libtrackpid.la
+  libelectronid.la
 
 AM_CPPFLAGS = \
   -I$(includedir) \
@@ -17,29 +17,27 @@ AM_LDFLAGS = \
   -L$(OFFLINE_MAIN)/lib
 
 pkginclude_HEADERS = \
-  TrackPidAssoc.h \
-  ElectronPid.h
+  ElectronID.h
 
 ROOTDICTS = \
-  TrackPidAssoc_Dict.cc 
+  ElectronID_Dict.cc 
 
 pcmdir = $(libdir)
 nobase_dist_pcm_DATA = \
-  TrackPidAssoc_Dict_rdict.pcm
+  ElectronID_Dict_rdict.pcm
 
 # sources for io library
-libtrackpid_la_SOURCES = \
+libelectronid_la_SOURCES = \
   $(ROOTDICTS) \
-  TrackPidAssoc.cc \
-  ElectronPid.cc
+  ElectronID.cc
 
-libtrackpid_la_LIBADD = \
+libelectronid_la_LIBADD = \
   -lphool \
   -lSubsysReco \
-  -ltrackbase_historic_io
+  -ltrackbase_historic_io 
 
 ##added on Apr. 19, 2021 by Weihu
-libtrackpid_la_LDFLAGS = \
+libelectronid_la_LDFLAGS = \
   -L$(libdir) \
   -L$(OFFLINE_MAIN)/lib \
   -lcalo_io \
@@ -47,7 +45,8 @@ libtrackpid_la_LDFLAGS = \
   -lg4detectors_io \
   -lphg4hit \
   -lg4dst \
-  -lg4eval 
+  -lg4eval \
+  -ltrackpid
 
 # Rule for generating table CINT dictionaries.
 %_Dict.cc: %.h %LinkDef.h
@@ -62,13 +61,10 @@ libtrackpid_la_LDFLAGS = \
 BUILT_SOURCES = testexternals.cc
 
 noinst_PROGRAMS = \
-  testexternals_trackpid
+  testexternals_electronid
 
-#testexternals_track_util_SOURCES = testexternals.cc
-#testexternals_track_util_LDADD = libtrack_util.la
-
-testexternals_trackpid_SOURCES = testexternals.cc
-testexternals_trackpid_LDADD = libtrackpid.la
+testexternals_electronid_SOURCES = testexternals.cc
+testexternals_electronid_LDADD = libelectronid.la
 
 testexternals.cc:
 	echo "//*** this is a generated file. Do not commit, do not edit" > $@
