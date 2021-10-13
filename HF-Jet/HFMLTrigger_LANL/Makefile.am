@@ -55,7 +55,7 @@ libHFMLTrigger_la_LIBADD = \
 	rootcint -f $@ @CINTDEFS@ $(DEFAULT_INCLUDES) $(AM_CPPFLAGS) $^
 
 #just to get the dependency
-%_Dict_rdict.pcm: %_Dict.cc ;
+%_Dict_rdict.pcm: %_Dict.C ;
 
 
 
@@ -65,6 +65,9 @@ libHFMLTrigger_la_LIBADD = \
 noinst_PROGRAMS = testexternals
 
 BUILT_SOURCES = testexternals.C
+
+testexternals_SOURCES = \
+	testexternals.C
 
 testexternals_LDADD = \
   libHFMLTrigger.la
