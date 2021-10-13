@@ -123,12 +123,6 @@ int HFMLTriggerInterface::Init(PHCompositeNode* topNode)
 
 int HFMLTriggerInterface::InitRun(PHCompositeNode* topNode)
 {
-  m_hitSetContainer = findNode::getClass<TrkrHitSetContainerv1>(topNode, "TRKR_HITSET");
-  if (!m_hitSetContainer)
-  {
-    std::cout << PHWHERE << "ERROR: Can't find node TRKR_HITSET" << std::endl;
-    return Fun4AllReturnCodes::ABORTRUN;
-  }
   m_Geoms =
       findNode::getClass<PHG4CylinderGeomContainer>(topNode, "CYLINDERGEOM_MVTX");
   if (!m_Geoms)
@@ -155,6 +149,13 @@ int HFMLTriggerInterface::InitRun(PHCompositeNode* topNode)
 
 int HFMLTriggerInterface::process_event(PHCompositeNode* topNode)
 {
+  m_hitSetContainer = findNode::getClass<TrkrHitSetContainerv1>(topNode, "TRKR_HITSET");
+  if (!m_hitSetContainer)
+  {
+    std::cout << PHWHERE << "ERROR: Can't find node TRKR_HITSET" << std::endl;
+    return Fun4AllReturnCodes::ABORTRUN;
+  }
+
   if (!_svtxevalstack)
   {
     _svtxevalstack = new SvtxEvalStack(topNode);
@@ -440,13 +441,13 @@ int HFMLTriggerInterface::process_event(PHCompositeNode* topNode)
     rapidjson::Value trackHitTree(rapidjson::kArrayType);
     unsigned int nMAPS(0);
 
-    for (const TrkrDefs::cluskey clusterKey : clusterKeys)
-    {
-      assert(clusterKey);
-      unsigned int layer = TrkrDefs::getLayer(clusterKey);
-      if (layer < _nlayers_maps)
-      {
-        ++nMAPS;
+    //for (const TrkrDefs::cluskey clusterKey : clusterKeys)
+    //{
+    //  assert(clusterKey);
+    //  unsigned int layer = TrkrDefs::getLayer(clusterKey);
+    //  if (layer < _nlayers_maps)
+     // {
+     //   ++nMAPS;
 
         //for (SvtxCluster::ConstHitIter hiter = cluster->begin_hits();
         //     hiter != cluster->end_hits();
@@ -460,9 +461,9 @@ int HFMLTriggerInterface::process_event(PHCompositeNode* topNode)
           //          hitIDTree.put("", hitID);
          // trackHitTree.PushBack(hitID, alloc);
        // }
-      }
+     // }
 
-    }  //    for (const SvtxCluster* cluster : g4clusters)
+    //}  //    for (const SvtxCluster* cluster : g4clusters)
 
     if (nMAPS > 1)
     {
