@@ -4,7 +4,7 @@
 AUTOMAKE_OPTIONS = foreign
 
 lib_LTLIBRARIES = \
-   libHFMLTrigger.la
+   libhfmltrigger.la
 
 AM_CPPFLAGS = \
   -I$(includedir) \
@@ -37,13 +37,13 @@ nobase_dist_pcm_DATA = \
   HFMLTriggerOccupancy_Dict_rdict.pcm
 
 
-libHFMLTrigger_la_SOURCES = \
+libhfmltrigger_la_SOURCES = \
   $(ROOTDICTS) \
   HFMLTriggerInterface.C \
   HFMLTriggerHepMCTrigger.C \
   HFMLTriggerOccupancy.C
 
-libHFMLTrigger_la_LIBADD = \
+libhfmltrigger_la_LIBADD = \
   -lfun4all \
   -lg4dst \
   -lg4mvtx \
@@ -70,7 +70,7 @@ testexternals_SOURCES = \
 	testexternals.C
 
 testexternals_LDADD = \
-  libHFMLTrigger.la
+  libhfmltrigger.la
 
 testexternals.C:
 	echo "//*** this is a generated file. Do not commit, do not edit" > $@
