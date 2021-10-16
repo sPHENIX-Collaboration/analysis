@@ -11,12 +11,15 @@
 
 #include <g4main/PHG4Hit.h>
 #include <g4main/PHG4Particle.h>
+#include <g4main/PHG4HitContainer.h>
 #include <g4main/PHG4TruthInfoContainer.h>
 
-#include <trackbase/TrkrHitSetContainerv1.h>
-#include <trackbase/TrkrHitSetv1.h>
-#include <trackbase/TrkrHitv1.h>
-#include <trackbase/TrkrClusterv2.h>
+//#include <trackbase/TrkrHitTruthAssoc.h>
+#include <trackbase/TrkrHitSetContainer.h>
+//#include <trackbase/TrkrClusterHitAssoc.h>
+#include <trackbase/TrkrHitSet.h>
+#include <trackbase/TrkrHit.h>
+//#include <trackbase/TrkrCluster.h>
 
 #include <mvtx/MvtxDefs.h>
 #include <mvtx/CylinderGeom_Mvtx.h>
@@ -28,7 +31,7 @@
 #include <g4detectors/PHG4CylinderGeom.h>
 #include <g4detectors/PHG4CylinderGeomContainer.h>
 
-#include <g4eval/SvtxEvalStack.h>
+//#include <g4eval/SvtxEvalStack.h>
 
 #include <HepMC/GenEvent.h>
 #include <HepMC/GenVertex.h>
@@ -58,7 +61,6 @@
 #include <cstddef>
 #include <iostream>
 
-
 using namespace std;
 
 HFMLTriggerInterface::HFMLTriggerInterface(std::string filename)
@@ -69,11 +71,14 @@ HFMLTriggerInterface::HFMLTriggerInterface(std::string filename)
   , _eta_max(1)
   , _embedding_id(1)
   , _nlayers_maps(3)
-  , _svtxevalstack(nullptr)
-  , m_hitSetContainer(nullptr)
-  , m_Geoms(nullptr)
+  , m_hitsets(nullptr)
+  , m_GenEventMap(nullptr)
   , m_truthInfo(nullptr)
+  , m_g4hits_mvtx(nullptr)
+ // , _svtxevalstack(nullptr)
+ // , m_hit_truth_map(nullptr)
   , m_Flags(nullptr)
+  , m_Geoms(nullptr)
   , m_hitStaveLayer(nullptr)
   , m_hitModuleHalfStave(nullptr)
   , m_hitChipModule(nullptr)
@@ -149,44 +154,38 @@ int HFMLTriggerInterface::InitRun(PHCompositeNode* topNode)
 
 int HFMLTriggerInterface::process_event(PHCompositeNode* topNode)
 {
-  m_hitSetContainer = findNode::getClass<TrkrHitSetContainerv1>(topNode, "TRKR_HITSET");
-  if (!m_hitSetContainer)
-  {
-    std::cout << PHWHERE << "ERROR: Can't find node TRKR_HITSET" << std::endl;
-    return Fun4AllReturnCodes::ABORTRUN;
-  }
+  // load nodes
+  auto res = load_nodes(topNode);
+  if (res != Fun4AllReturnCodes::EVENT_OK)
+    return res;
 
-  if (!_svtxevalstack)
-  {
-    _svtxevalstack = new SvtxEvalStack(topNode);
-    _svtxevalstack->set_strict(0);
-    _svtxevalstack->set_verbosity(Verbosity() + 1);
-  }
-  else
-  {
-    _svtxevalstack->next_event(topNode);
-  }
+
+ // if (!_svtxevalstack)
+ // {
+ //   _svtxevalstack = new SvtxEvalStack(topNode);
+ //   _svtxevalstack->set_strict(0);
+ //   _svtxevalstack->set_verbosity(Verbosity() + 1);
+ // }
+ // else
+ // {
+ //   _svtxevalstack->next_event(topNode);
+ // }
 
   //  SvtxVertexEval* vertexeval = _svtxevalstack->get_vertex_eval();
   //  SvtxTrackEval* trackeval = _svtxevalstack->get_track_eval();
-  SvtxClusterEval* clustereval = _svtxevalstack->get_cluster_eval();
+ // SvtxClusterEval* clustereval = _svtxevalstack->get_cluster_eval();
   //SvtxHitEval* hiteval = _svtxevalstack->get_hit_eval();
   //    SvtxTruthEval* trutheval = _svtxevalstack->get_truth_eval();
 
-  PHHepMCGenEventMap* geneventmap = findNode::getClass<PHHepMCGenEventMap>(topNode, "PHHepMCGenEventMap");
-  if (!geneventmap)
-  {
-    std::cout << PHWHERE << " - Fatal error - missing node PHHepMCGenEventMap" << std::endl;
-    return Fun4AllReturnCodes::ABORTRUN;
-  }
+  assert(m_GenEventMap);
 
-  PHHepMCGenEvent* genevt = geneventmap->get(_embedding_id);
+  PHHepMCGenEvent* genevt = m_GenEventMap->get(_embedding_id);
   if (!genevt)
   {
     std::cout << PHWHERE << " - Fatal error - node PHHepMCGenEventMap missing subevent with embedding ID " << _embedding_id;
     std::cout << ". Print PHHepMCGenEventMap:";
-    geneventmap->identify();
-    return Fun4AllReturnCodes::ABORTRUN;
+    m_GenEventMap->identify();
+    return Fun4AllReturnCodes::ABORTEVENT;
   }
 
   HepMC::GenEvent* theEvent = genevt->getEvent();
@@ -317,40 +316,32 @@ int HFMLTriggerInterface::process_event(PHCompositeNode* topNode)
   //  ptree rawHitsTree;
   rapidjson::Value rawHitsTree(rapidjson::kArrayType);
 
-  //set<unsigned int> mapsHits;  //internal consistency check for later stages of truth tracks
-  assert(m_hitSetContainer);
-
-  TrkrHitSetContainer::ConstRange hitset_range = m_hitSetContainer->getHitSets(TrkrDefs::TrkrId::mvtxId);
-  for (TrkrHitSetContainer::ConstIterator hitset_iter = hitset_range.first;
-       hitset_iter != hitset_range.second;
-       ++hitset_iter)
+  assert(m_hitsets);
+  unsigned int hitID(0);
+  auto hitset_range = m_hitsets->getHitSets(TrkrDefs::TrkrId::mvtxId);
+  for (auto hitset_iter =  hitset_range.first; hitset_iter != hitset_range.second; ++hitset_iter)
   {
-    TrkrDefs::hitsetkey hitSetKey = hitset_iter->first;
-    TrkrHitSet::ConstRange hit_range = hitset_iter->second->getHits();
-    for (TrkrHitSet::ConstIterator hit_iter = hit_range.first;
+    auto hitsetkey = hitset_iter->first;
+    auto hit_range = hitset_iter->second->getHits();
+    for (auto hit_iter = hit_range.first;
          hit_iter != hit_range.second;
          ++hit_iter)
     {
-      TrkrDefs::hitkey hitKey = hit_iter->first;
-      TrkrHit* hit = hit_iter->second;
+      auto hitkey = hit_iter->first;
+      auto hit = hit_iter->second;
       assert(hit);
       unsigned int layer = TrkrDefs::getLayer(hitset_iter->first);
       if (layer < _nlayers_maps)
       {
-        //unsigned int hitID = hit->get_id();
-        //mapsHits.insert(hitID);
-
-        //PHG4Cell* cell = hiteval->get_cell(hit);
-        //assert(cell);
         CylinderGeom_Mvtx* geom = dynamic_cast<CylinderGeom_Mvtx*>(m_Geoms->GetLayerGeom(layer));
         assert(geom);
 
-        unsigned int pixel_x = MvtxDefs::getRow(hitKey);
-        unsigned int pixel_z = MvtxDefs::getCol(hitKey);
+        unsigned int pixel_x = MvtxDefs::getRow(hitkey);
+        unsigned int pixel_z = MvtxDefs::getCol(hitkey);
         assert((int)pixel_x < geom->get_NX());
         assert((int)pixel_z < geom->get_NZ());
-        unsigned int chip = MvtxDefs::getChipId(hitSetKey);
-        unsigned int stave = MvtxDefs::getStaveId(hitSetKey);
+        unsigned int chip = MvtxDefs::getChipId(hitsetkey);
+        unsigned int stave = MvtxDefs::getStaveId(hitsetkey);
         TVector3 local_coords = geom->get_local_coords_from_pixel(pixel_x, pixel_z);
         TVector3 world_coords = geom->get_world_from_local_coords(stave,
                                                                   0,
@@ -358,12 +349,7 @@ int HFMLTriggerInterface::process_event(PHCompositeNode* topNode)
                                                                   chip,
                                                                   local_coords);
 
-        //unsigned int pixel_x(cell->get_pixel_index() % geom->get_NX());
-        //unsigned int pixel_z(cell->get_pixel_index() / geom->get_NX());
         //unsigned int halflayer = (int) pixel_x >= geom->get_NX() / 2 ? 0 : 1;
-
-        //assert((int) pixel_x < geom->get_NX());
-        //assert((int) pixel_z < geom->get_NZ());
 
         //unsigned int halfLayerIndex(layer * 2 + halflayer);
         //unsigned int pixelPhiIndex(
@@ -377,7 +363,7 @@ int HFMLTriggerInterface::process_event(PHCompositeNode* topNode)
 
         //      ptree hitIDTree;
         rapidjson::Value hitIDTree(rapidjson::kObjectType);
-        //hitIDTree.AddMember("HitSequenceInEvent", hitID, alloc);
+        hitIDTree.AddMember("HitSequenceInEvent", hitID, alloc);
 
         //hitIDTree.AddMember("PixelHalfLayerIndex", halfLayerIndex, alloc);
         //hitIDTree.AddMember("PixelPhiIndexInLayer", pixelPhiIndex, alloc);
@@ -411,6 +397,7 @@ int HFMLTriggerInterface::process_event(PHCompositeNode* topNode)
         //m_hitPixelPhiMap->Fill(pixelPhiIndex, atan2(world_coords.y(), world_coords.x()), layer);
         //m_hitPixelPhiMapHL->Fill(pixelPhiIndexHL, atan2(world_coords.y(), world_coords.x()), layer);
         //m_hitPixelZMap->Fill(pixelZIndex, world_coords.z(), halfLayerIndex);
+        ++hitID;
       }  //    if (layer < _nlayers_maps)
     }  //   for (TrkrHitSetContainer::ConstIterator hitset_iter = hitset_range.first;
   }  //   for (TrkrHitSet::ConstIterator hit_iter = hit_range.first;
@@ -422,72 +409,69 @@ int HFMLTriggerInterface::process_event(PHCompositeNode* topNode)
   truthHitTree.AddMember("Description", "From the MonteCalo truth information, pairs of track ID and subset of RawHit that belong to the track. These are not presented in real data. The track ID is arbitary.",
                          alloc);
 
-  assert(m_truthInfo);
+    assert(m_g4hits_mvtx);
+    std::multimap<const int, const unsigned long long> m_track_g4hits_map;
+    for (auto g4hit_iter = m_g4hits_mvtx->getHits().first;
+        g4hit_iter != m_g4hits_mvtx->getHits().second;
+        ++g4hit_iter)
+    {
+      PHG4Hit *g4hit = g4hit_iter->second;
+      m_track_g4hits_map.insert(make_pair(g4hit->get_trkid(), g4hit_iter->first));
+    }
 
   //  ptree truthTracksTree;
   rapidjson::Value truthTracksTree(rapidjson::kArrayType);
 
-  PHG4TruthInfoContainer::ConstRange range = m_truthInfo->GetPrimaryParticleRange();
-  for (PHG4TruthInfoContainer::ConstIterator iter = range.first;
-       iter != range.second;
-       ++iter)
+  // get set of primary particle
+  assert(m_truthInfo);
+  auto pp_range = m_truthInfo->GetPrimaryParticleRange();
+  for (auto pp_iter = pp_range.first;
+       pp_iter != pp_range.second;
+       ++pp_iter)
   {
-    PHG4Particle* g4particle = iter->second;
+    PHG4Particle *g4particle = pp_iter->second;
     assert(g4particle);
 
-    std::set<TrkrDefs::cluskey> clusterKeys = clustereval->all_clusters_from(g4particle);
+    if (! m_track_g4hits_map.count(g4particle->get_track_id()))
+    {
+      if (Verbosity() >= VERBOSITY_MORE)
+        std::cout << "WARNING: G4 particle " << g4particle->get_track_id() \
+                  << " does not hit any MVTX layer." << std::endl;
+      continue;
+    }
 
     //    ptree trackHitTree;
     rapidjson::Value trackHitTree(rapidjson::kArrayType);
-    unsigned int nMAPS(0);
-
-    //for (const TrkrDefs::cluskey clusterKey : clusterKeys)
-    //{
-    //  assert(clusterKey);
-    //  unsigned int layer = TrkrDefs::getLayer(clusterKey);
-    //  if (layer < _nlayers_maps)
-     // {
-     //   ++nMAPS;
-
-        //for (SvtxCluster::ConstHitIter hiter = cluster->begin_hits();
-        //     hiter != cluster->end_hits();
-        //     ++hiter)
-        //{
-          //        SvtxHit* hit = _hitmap->get(*hiter);
-        //  unsigned int hitID = *hiter;
-        //  assert(mapsHits.find(hitID) != mapsHits.end());
-
-          //          ptree hitIDTree;
-          //          hitIDTree.put("", hitID);
-         // trackHitTree.PushBack(hitID, alloc);
-       // }
-     // }
-
-    //}  //    for (const SvtxCluster* cluster : g4clusters)
-
-    if (nMAPS > 1)
+    //unsigned int nMAPS(0);
+    auto g4hits_iter = m_track_g4hits_map.equal_range(g4particle->get_track_id());
+    for (auto& g4hit_iter = g4hits_iter.first;
+        g4hit_iter != g4hits_iter.second; ++g4hit_iter)
     {
-      //      ptree trackTree;
-      rapidjson::Value trackTree(rapidjson::kObjectType);
-      trackTree.AddMember("TrackSequenceInEvent", g4particle->get_track_id(), alloc);
-      trackTree.AddMember("HitSequenceInEvent", trackHitTree, alloc);
+      //          ptree hitIDTree;
+      //          hitIDTree.put("", g4hit_key);
+      trackHitTree.PushBack(static_cast<uint64_t>(g4hit_iter->second), alloc);
+    }  //   for (auto& clus_key : clus_keys)
 
-      trackTree.AddMember("ParticleTypeID", g4particle->get_pid(), alloc);
-      trackTree.AddMember("TrackMomentum",
-                          loadCoordinate(g4particle->get_px(),
-                                         g4particle->get_py(),
-                                         g4particle->get_pz()),
-                          alloc);
+    //      ptree trackTree;
+    rapidjson::Value trackTree(rapidjson::kObjectType);
+    trackTree.AddMember("TrackSequenceInEvent", g4particle->get_track_id(), alloc);
+    trackTree.AddMember("HitSequenceInEvent", trackHitTree, alloc);
+
+    trackTree.AddMember("ParticleTypeID", g4particle->get_pid(), alloc);
+    trackTree.AddMember("TrackMomentum",
+                        loadCoordinate(g4particle->get_px(),
+                                       g4particle->get_py(),
+                                       g4particle->get_pz()),
+                        alloc);
       //      trackTree.put("TrackDCA3DXY", track->get_dca3d_xy());
       //      trackTree.put("TrackDCA3DZ", track->get_dca3d_z());
 
       //      trackTree.add_child("TruthHit", trackHitTree);
 
       //      truthTracksTree.add_child("TruthTrack", trackTree);
-      truthTracksTree.PushBack(trackTree, alloc);
-    }  //      if (nMAPS > 1)
-
+    truthTracksTree.PushBack(trackTree, alloc);
   }  //  for (PHG4TruthInfoContainer::ConstIterator iter = range.first;
+
   truthHitTree.AddMember("TruthTracks", truthTracksTree, alloc);
 
   //output
@@ -524,9 +508,6 @@ int HFMLTriggerInterface::End(PHCompositeNode* topNode)
   {
     _f->cd();
     _f->Write();
-    //_f->Close();
-
-    //    m_hitLayerMap->Write();
   }
 
   if (m_jsonOut.is_open())
@@ -538,6 +519,47 @@ int HFMLTriggerInterface::End(PHCompositeNode* topNode)
   }
 
   cout << "HFMLTriggerInterface::End - output to " << _foutname << ".*" << endl;
+
+  return Fun4AllReturnCodes::EVENT_OK;
+}
+
+int HFMLTriggerInterface::load_nodes(PHCompositeNode* topNode)
+{
+
+  m_hitsets = findNode::getClass<TrkrHitSetContainer>(topNode, "TRKR_HITSET");
+  if (!m_hitsets)
+  {
+    std::cout << PHWHERE << "ERROR: Can't find node TRKR_HITSET" << std::endl;
+    return Fun4AllReturnCodes::ABORTEVENT;
+  }
+
+  //m_hit_truth_map = findNode::getClass<TrkrHitTruthAssoc>(topNode, "TRKR_HITTRUTHASSOC");
+  //if (!m_hit_truth_map)
+  //{
+  //  std::cout << PHWHERE << " unable to find DST node TRKR_HITTRUTHASSOC" << std::endl;
+  //  return Fun4AllReturnCodes::ABORTEVENT;
+  //}
+
+  //m_cluster_hit_map = findNode::getClass<TrkrClusterHitAssoc>(topNode, "TRKR_CLUSTERHITASSOC");
+  //if (!m_cluster_hit_map)
+  //{
+  //  std::cout << PHWHERE << " unable to find DST node TRKR_CLUSTERHITASSOC" << std::endl;
+  //  return Fun4AllReturnCodes::ABORTEVENT;
+  //}
+
+  m_g4hits_mvtx = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_MVTX");
+  if (!m_g4hits_mvtx)
+  {
+    std::cout << PHWHERE << " unable to find DST node G4HIT_MVTX" << std::endl;
+    return Fun4AllReturnCodes::ABORTEVENT;
+  }
+
+  m_GenEventMap = findNode::getClass<PHHepMCGenEventMap>(topNode, "PHHepMCGenEventMap");
+  if (!m_GenEventMap)
+  {
+    std::cout << PHWHERE << " - Fatal error - missing node PHHepMCGenEventMap" << std::endl;
+    return Fun4AllReturnCodes::ABORTEVENT;
+  }
 
   return Fun4AllReturnCodes::EVENT_OK;
 }

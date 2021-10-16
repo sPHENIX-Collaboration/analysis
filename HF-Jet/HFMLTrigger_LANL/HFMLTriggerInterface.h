@@ -8,19 +8,24 @@
 #include <fstream>  // std::fstream
 #include <string>
 #include <vector>
+#include <map>
 
 class TTree;
 class TFile;
 class TH2F;
-class TH2F;
 class TH3F;
 
+class PdbParameterMap;
 class PHCompositeNode;
 class PHG4CylinderGeomContainer;
+class PHG4HitContainer;
+class PHHepMCGenEventMap;
 class PHG4TruthInfoContainer;
+class PHG4Hit;
+//class SvtxEvalStack;
+//class TrkrClusterHitAssoc;
 class TrkrHitSetContainer;
-class SvtxEvalStack;
-class PdbParameterMap;
+//class TrkrHitTruthAssoc;
 
 namespace HepMC
 {
@@ -75,6 +80,8 @@ class HFMLTriggerInterface : public SubsysReco
   //! Usually, ID = 0 means the primary Au+Au collision background
   void set_embedding_id(int id) { _embedding_id = id; }
 
+  int load_nodes(PHCompositeNode* topNode);
+
  private:
   int _ievent;
 
@@ -95,11 +102,20 @@ class HFMLTriggerInterface : public SubsysReco
   unsigned int _nlayers_maps;
 
   // eval stack
-  SvtxEvalStack *_svtxevalstack;
-  TrkrHitSetContainer *m_hitSetContainer;
-  PHG4CylinderGeomContainer *m_Geoms;
+  //SvtxEvalStack *_svtxevalstack;
+
+  TrkrHitSetContainer *m_hitsets;
+
+  PHHepMCGenEventMap *m_GenEventMap;
   PHG4TruthInfoContainer *m_truthInfo;
+  PHG4HitContainer *m_g4hits_mvtx;
+
+  //TrkrHitTruthAssoc   *m_hit_truth_map;
+  //TrkrClusterHitAssoc *m_cluster_hit_map;
+
   PdbParameterMap *m_Flags;
+
+  PHG4CylinderGeomContainer *m_Geoms;
 
   TH2F *m_hitStaveLayer;
   TH2F *m_hitModuleHalfStave;
