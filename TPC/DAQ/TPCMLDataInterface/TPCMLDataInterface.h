@@ -86,7 +86,7 @@ class TPCMLDataInterface : public SubsysReco
 #ifndef __CINT__
 
   Fun4AllHistoManager *getHistoManager();
-  int writeWavelet(int layer, int side, int phibin, int hittime, const std::vector<unsigned int> &wavelet);
+  int writeWavelet(int layer, int side, int phibin, int hittime, const std::vector<unsigned int> &wavelet, const std::vector<unsigned int> &wavelet_e);
 
   bool m_saveDataStreamFile;
 
@@ -100,11 +100,14 @@ class TPCMLDataInterface : public SubsysReco
 
   double m_vertexZAcceptanceCut;
   double m_etaAcceptanceCut;
+  double m_energyCut;
+
 
   // histograms
   TH1 *m_hDataSize;
   TH1 *m_hWavelet;
   TH1 *m_hNChEta;
+  TH1 *m_hEnergyCut;
   TH2 *m_hLayerWaveletSize;
   TH2 *m_hLayerHit;
   TH2 *m_hLayerZBinHit;

@@ -81,6 +81,7 @@ TPCMLDataInterface::TPCMLDataInterface(
   , m_evtCounter(-1)
   , m_vertexZAcceptanceCut(10)
   , m_etaAcceptanceCut(1.1)
+  , m_energyCut(.1)
   , m_hDataSize(nullptr)
   , m_hWavelet(nullptr)
   , m_hNChEta(nullptr)
@@ -208,6 +209,11 @@ int TPCMLDataInterface::InitRun(PHCompositeNode* topNode)
                                  "Charged particle #eta distribution;#eta;Count",
                                  1000, -5, 5));
 
+  hm->registerHisto(m_hEnergyCut =
+                        new TH1D("hEnergyCut",  //
+                                 "Hits passing (1) and failing (0) the energy cut;Fail/Pass;Count",
+                                 2, -0.5, 1.5));
+  
   hm->registerHisto(m_hLayerWaveletSize =
                         new TH2D("hLayerWaveletSize",  //
                                  "Number of Recorded ADC sample per Wavelet;Layer ID;ADC Sample Count per Wavelet",
@@ -464,6 +470,7 @@ int TPCMLDataInterface::process_event(PHCompositeNode* topNode)
   int last_phibin = -1;
   int last_zbin = -1;
   vector<unsigned int> last_wavelet;
+  vector<unsigned int> last_wavelet_e_cut;
   int last_wavelet_hittime = -1;
 
   //  for (SvtxHitMap::Iter iter = hits->begin(); iter != hits->end(); ++iter)
@@ -518,7 +525,7 @@ int TPCMLDataInterface::process_event(PHCompositeNode* topNode)
         // save last wavelet
         if (last_wavelet.size() > 0)
         {
-          const int datasize = writeWavelet(last_layer, last_side, last_phibin, last_wavelet_hittime, last_wavelet);
+          const int datasize = writeWavelet(last_layer, last_side, last_phibin, last_wavelet_hittime, last_wavelet, last_wavelet_e_cut);
           assert(datasize > 0);
 
           nWavelet += 1;
@@ -526,6 +533,7 @@ int TPCMLDataInterface::process_event(PHCompositeNode* topNode)
           layerChanDataSize[last_layer][last_side][last_phibin] += datasize;
 
           last_wavelet.clear();
+	  last_wavelet_e_cut.clear();
           last_zbin = -1;
         }
 
@@ -539,6 +547,20 @@ int TPCMLDataInterface::process_event(PHCompositeNode* topNode)
         const double eta = acceptanceVec.PseudoRapidity();
 
         if (eta > m_etaAcceptanceCut) continue;
+
+	// energy cut
+        float e = hitr->second->getEnergy();
+	
+	if (e < m_energyCut)
+	{
+	  m_hEnergyCut->Fill(0);
+	  last_wavelet_e_cut.push_back(0);
+	}
+	else
+	{
+	  m_hEnergyCut->Fill(1);
+	  last_wavelet_e_cut.push_back(1);
+	}
 
         // make new wavelet
         last_layer = layer;
@@ -607,7 +629,7 @@ int TPCMLDataInterface::process_event(PHCompositeNode* topNode)
   // save last wavelet
   if (last_wavelet.size() > 0)
   {
-    const int datasize = writeWavelet(last_layer, last_side, last_phibin, last_wavelet_hittime, last_wavelet);
+    const int datasize = writeWavelet(last_layer, last_side, last_phibin, last_wavelet_hittime, last_wavelet, last_wavelet_e_cut);
     assert(datasize > 0);
 
     nWavelet += 1;
@@ -676,7 +698,7 @@ int TPCMLDataInterface::process_event(PHCompositeNode* topNode)
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
-int TPCMLDataInterface::writeWavelet(int layer, int side, int phibin, int hittime, const vector<unsigned int>& wavelet)
+int TPCMLDataInterface::writeWavelet(int layer, int side, int phibin, int hittime, const vector<unsigned int>& wavelet, const vector<unsigned int>& wavelet_e)
 {
   static const int headersize = 2;  // 2-byte header per wavelet
 
