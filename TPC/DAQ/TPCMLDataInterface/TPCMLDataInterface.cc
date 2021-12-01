@@ -23,6 +23,11 @@
 #include <g4main/PHG4Particle.h>
 #include <g4main/PHG4TruthInfoContainer.h>
 
+#include <g4eval/SvtxEvaluator.h>
+#include <g4eval/SvtxEvalStack.h>
+#include <g4eval/SvtxHitEval.h>
+#include <g4eval/SvtxTruthEval.h>
+
 #include <trackbase/TrkrClusterContainer.h>
 #include <trackbase/TrkrClusterHitAssoc.h>
 #include <trackbase/TrkrClusterv1.h>
@@ -73,6 +78,8 @@ TPCMLDataInterface::TPCMLDataInterface(
     unsigned int m_maxLayer,
     const std::string& outputfilename)
   : SubsysReco("TPCMLDataInterface")
+  , m_svtxevalstack(nullptr)
+  , m_strict(false)
   , m_saveDataStreamFile(true)
   , m_outputFileNameBase(outputfilename)
   , m_h5File(nullptr)
@@ -208,11 +215,6 @@ int TPCMLDataInterface::InitRun(PHCompositeNode* topNode)
                         new TH1D("hNChEta",  //
                                  "Charged particle #eta distribution;#eta;Count",
                                  1000, -5, 5));
-
-  hm->registerHisto(m_hEnergyCut =
-                        new TH1D("hEnergyCut",  //
-                                 "Hits passing (1) and failing (0) the energy cut;Fail/Pass;Count",
-                                 2, -0.5, 1.5));
   
   hm->registerHisto(m_hLayerWaveletSize =
                         new TH2D("hLayerWaveletSize",  //
@@ -277,6 +279,27 @@ int TPCMLDataInterface::process_event(PHCompositeNode* topNode)
   TH1D* h_norm = dynamic_cast<TH1D*>(hm->getHisto("hNormalization"));
   assert(h_norm);
   h_norm->Fill("Event count", 1);
+
+  if (!m_svtxevalstack)
+  {
+    m_svtxevalstack = new SvtxEvalStack(topNode);
+    m_svtxevalstack->set_strict(m_strict);
+    m_svtxevalstack->set_verbosity(Verbosity());
+    m_svtxevalstack->set_use_initial_vertex(m_use_initial_vertex);
+    m_svtxevalstack->set_use_genfit_vertex(m_use_genfit_vertex);
+    m_svtxevalstack->next_event(topNode);
+  }
+  else
+  {
+    m_svtxevalstack->next_event(topNode);
+  }
+
+  SvtxHitEval* hiteval = m_svtxevalstack->get_hit_eval();
+  SvtxTruthEval* trutheval = m_svtxevalstack->get_truth_eval();
+
+  float gpx = 0;
+  float gpy = 0;
+  float gpz = 0;
 
   PHG4HitContainer* g4hit = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_TPC");
   cout << "TPCMLDataInterface::process_event - g4 hit node G4HIT_TPC" << endl;
@@ -384,6 +407,7 @@ int TPCMLDataInterface::process_event(PHCompositeNode* topNode)
   if (Verbosity())
     cout << "TPCMLDataInterface::process_event - save to H5 group " << h5GroupName << endl;
   map<int, shared_ptr<DataSet>> layerH5DataSetMap;
+  map<int, shared_ptr<DataSet>> layerH5SignalBackgroundMap;
   map<int, shared_ptr<DataSpace>> layerH5DataSpaceMap;
 
   //wavelet size stat.
@@ -401,6 +425,7 @@ int TPCMLDataInterface::process_event(PHCompositeNode* topNode)
   vector<array<vector<int>, 2>> layerChanHit(m_maxLayer + 1);
   vector<array<vector<int>, 2>> layerChanDataSize(m_maxLayer + 1);
   vector<vector<uint16_t>> layerDataBuffer(m_maxLayer + 1);
+  vector<vector<uint16_t>> layerSignalBackgroundBuffer(m_maxLayer + 1);
   vector<vector<hsize_t>> layerDataBufferSize(m_maxLayer + 1, vector<hsize_t>({0, 0}));
   int nWavelet = 0;
   int sumDataSize = 0;
@@ -447,6 +472,7 @@ int TPCMLDataInterface::process_event(PHCompositeNode* topNode)
     layerDataBufferSize[layer][0] = nphibins;
     layerDataBufferSize[layer][1] = layerGeom->get_zbins();
     layerDataBuffer[layer].resize(layerDataBufferSize[layer][0] * layerDataBufferSize[layer][1], 0);
+    layerSignalBackgroundBuffer[layer].resize(layerDataBufferSize[layer][0] * layerDataBufferSize[layer][1], 0);
 
     static const vector<hsize_t> cdims({32, 32});
     DSetCreatPropList ds_creatplist;
@@ -455,6 +481,12 @@ int TPCMLDataInterface::process_event(PHCompositeNode* topNode)
 
     layerH5DataSpaceMap[layer] = shared_ptr<DataSpace>(new DataSpace(2, layerDataBufferSize[layer].data()));
     layerH5DataSetMap[layer] = shared_ptr<DataSet>(new DataSet(h5Group->createDataSet(
+        boost::str(boost::format("Data_Layer%1%") % (layer - m_minLayer)),
+        PredType::NATIVE_UINT16,
+        *(layerH5DataSpaceMap[layer]),
+        ds_creatplist)));
+
+    layerH5SignalBackgroundMap[layer] = shared_ptr<DataSet>(new DataSet(h5Group->createDataSet(
         boost::str(boost::format("Data_Layer%1%") % (layer - m_minLayer)),
         PredType::NATIVE_UINT16,
         *(layerH5DataSpaceMap[layer]),
@@ -470,7 +502,6 @@ int TPCMLDataInterface::process_event(PHCompositeNode* topNode)
   int last_phibin = -1;
   int last_zbin = -1;
   vector<unsigned int> last_wavelet;
-  vector<unsigned int> last_wavelet_e_cut;
   int last_wavelet_hittime = -1;
 
   //  for (SvtxHitMap::Iter iter = hits->begin(); iter != hits->end(); ++iter)
@@ -525,7 +556,7 @@ int TPCMLDataInterface::process_event(PHCompositeNode* topNode)
         // save last wavelet
         if (last_wavelet.size() > 0)
         {
-          const int datasize = writeWavelet(last_layer, last_side, last_phibin, last_wavelet_hittime, last_wavelet, last_wavelet_e_cut);
+          const int datasize = writeWavelet(last_layer, last_side, last_phibin, last_wavelet_hittime, last_wavelet);
           assert(datasize > 0);
 
           nWavelet += 1;
@@ -533,7 +564,6 @@ int TPCMLDataInterface::process_event(PHCompositeNode* topNode)
           layerChanDataSize[last_layer][last_side][last_phibin] += datasize;
 
           last_wavelet.clear();
-	  last_wavelet_e_cut.clear();
           last_zbin = -1;
         }
 
@@ -548,19 +578,13 @@ int TPCMLDataInterface::process_event(PHCompositeNode* topNode)
 
         if (eta > m_etaAcceptanceCut) continue;
 
-	// energy cut
-        float e = hitr->second->getEnergy();
-	
-	if (e < m_energyCut)
-	{
-	  m_hEnergyCut->Fill(0);
-	  last_wavelet_e_cut.push_back(0);
-	}
-	else
-	{
-	  m_hEnergyCut->Fill(1);
-	  last_wavelet_e_cut.push_back(1);
-	}
+	// momentum cut
+        TrkrDefs::hitkey hit_key = hitr->first; 
+        PHG4Hit* g4hit = hiteval->max_truth_hit_by_energy(hit_key);
+        PHG4Particle* g4particle = trutheval->get_particle(g4hit);
+        gpx = g4particle->get_px();
+        gpy = g4particle->get_py();
+	gpz = g4particle->get_pz();
 
         // make new wavelet
         last_layer = layer;
@@ -615,6 +639,7 @@ int TPCMLDataInterface::process_event(PHCompositeNode* topNode)
       assert((hsize_t) zbin < layerDataBufferSize[layer][1]);
       const size_t hitindex(layerDataBufferSize[layer][1] * phibin + zbin);
       assert(hitindex < layerDataBuffer[layer].size());
+      assert(hitindex < layerSignalBackgroundBuffer[layer].size());
       if (layerDataBuffer[layer][hitindex] != 0)
       {
         cout << "TPCMLDataInterface::process_event - WARNING - hit @ layer "
@@ -623,13 +648,22 @@ int TPCMLDataInterface::process_event(PHCompositeNode* topNode)
              << endl;
       }
       layerDataBuffer[layer][hitindex] = adc;
+      
+      if (layerSignalBackgroundBuffer[layer][hitindex] != 0)
+      {
+        cout << "TPCMLDataInterface::process_event - WARNING - signal/background @ layer "
+             << layer << " phibin = " << phibin << " zbin = " << zbin << " side = " << side
+             << " overwriting previous hit with = " << layerSignalBackgroundBuffer[layer][hitindex]
+             << endl;
+      }
+      layerSignalBackgroundBuffer[layer][hitindex] = sqrt(gpx*gpx + gpy*gpy + gpz*gpz) > m_energyCut;
     }
   }  //   for(SvtxHitMap::Iter iter = hits->begin(); iter != hits->end(); ++iter) {
 
   // save last wavelet
   if (last_wavelet.size() > 0)
   {
-    const int datasize = writeWavelet(last_layer, last_side, last_phibin, last_wavelet_hittime, last_wavelet, last_wavelet_e_cut);
+    const int datasize = writeWavelet(last_layer, last_side, last_phibin, last_wavelet_hittime, last_wavelet);
     assert(datasize > 0);
 
     nWavelet += 1;
@@ -683,7 +717,9 @@ int TPCMLDataInterface::process_event(PHCompositeNode* topNode)
 
     // store in H5
     assert(layerH5DataSetMap[layer]);
+    assert(layerH5SignalBackgroundMap[layer]);
     layerH5DataSetMap[layer]->write(layerDataBuffer[layer].data(), PredType::NATIVE_UINT16);
+    layerH5SignalBackgroundMap[layer]->write(layerSignalBackgroundBuffer[layer].data(), PredType::NATIVE_UINT16);
     H5DataSetLayerWaveletDataSize->write(layerWaveletDataSize.data(), PredType::NATIVE_UINT32);
 
   }  //  for (unsigned int layer = m_minLayer; layer <= m_maxLayer; ++layer)
@@ -698,7 +734,7 @@ int TPCMLDataInterface::process_event(PHCompositeNode* topNode)
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
-int TPCMLDataInterface::writeWavelet(int layer, int side, int phibin, int hittime, const vector<unsigned int>& wavelet, const vector<unsigned int>& wavelet_e)
+int TPCMLDataInterface::writeWavelet(int layer, int side, int phibin, int hittime, const vector<unsigned int>& wavelet)
 {
   static const int headersize = 2;  // 2-byte header per wavelet
 

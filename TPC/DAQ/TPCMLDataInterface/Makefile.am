@@ -20,6 +20,7 @@ libtpcmldatainterface_la_LDFLAGS = \
 libtpcmldatainterface_la_LIBADD = \
   -lg4dst \
   -lfun4all \
+  -lg4eval \
   -lhdf5_cpp 
 
 pkginclude_HEADERS = \
