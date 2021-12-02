@@ -17,8 +17,7 @@ AM_LDFLAGS = \
   -L$(OFFLINE_MAIN)/lib
 
 pkginclude_HEADERS = \
-  TrackPidAssoc.h \
-  ElectronPid.h
+  TrackPidAssoc.h 
 
 ROOTDICTS = \
   TrackPidAssoc_Dict.cc 
@@ -30,8 +29,7 @@ nobase_dist_pcm_DATA = \
 # sources for io library
 libtrackpid_la_SOURCES = \
   $(ROOTDICTS) \
-  TrackPidAssoc.cc \
-  ElectronPid.cc
+  TrackPidAssoc.cc 
 
 libtrackpid_la_LIBADD = \
   -lphool \
