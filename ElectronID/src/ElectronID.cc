@@ -32,6 +32,8 @@
 #include <g4main/PHG4Particle.h>
 #include <g4main/PHG4VtxPoint.h>
 
+#include "trackpidassoc/TrackPidAssoc.h"
+
 
 // gsl
 #include <gsl/gsl_randist.h>
@@ -56,16 +58,16 @@ ElectronID::ElectronID(const std::string& name, const std::string &filename) : S
   output_ntuple = true;
 
   /// default limits 
-  EMOP_lowerlimit = 0.0;
+  EMOP_lowerlimit = 0.7;
   EMOP_higherlimit = 100.0;
   HOP_lowerlimit = 0.0;
   HinOEM_higherlimit = 100.0;
   Pt_lowerlimit = 0.0;
   Pt_higherlimit = 100.0;
-  Nmvtx_lowerlimit = 0;
+  Nmvtx_lowerlimit = 2;
   Nintt_lowerlimit = 0;
-  Ntpc_lowerlimit = 0;
-  Nquality_higherlimit = 100;
+  Ntpc_lowerlimit = 20;
+  Nquality_higherlimit = 5.;
 
  // unsigned int _nlayers_maps = 3;
  // unsigned int _nlayers_intt = 4;
@@ -174,7 +176,7 @@ int ElectronID::process_event(PHCompositeNode* topNode)
       double pt = sqrt(px*px + py*py);
       int charge = track->get_charge();
       int pid = it->first;
-      int quality = track->get_quality();
+      float quality = track->get_quality();
 
       double e_cluster = track->get_cal_cluster_e(SvtxTrack::CAL_LAYER::CEMC);
 
