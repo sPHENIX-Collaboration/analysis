@@ -60,7 +60,8 @@ int TrackClusterEvaluator::InitRun(PHCompositeNode *topNode)
 {
 
   int returnval = getNodes(topNode);
-
+  event = 0;
+  
   m_outfile = new TFile(m_outfilename.c_str(), "RECREATE");
   setupTrees();
 
@@ -88,6 +89,7 @@ int TrackClusterEvaluator::process_event(PHCompositeNode *topNode)
   if(m_trackMap)
     { processRecoTracks(topNode); }
 
+  event++;
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -166,7 +168,6 @@ void TrackClusterEvaluator::processTruthTracks(PHCompositeNode* topNode)
       gembed = trutheval->get_embed(g4particle);
       gprimary = trutheval->is_primary(g4particle);
 
-
       auto track = trackeval->best_track_from(g4particle);
       if(track)
 	{
@@ -224,6 +225,117 @@ void TrackClusterEvaluator::processTruthTracks(PHCompositeNode* topNode)
 
 void TrackClusterEvaluator::processRecoTracks(PHCompositeNode *topNode)
 {
+  SvtxTruthEval* trutheval = m_svtxevalstack->get_truth_eval();
+  SvtxClusterEval* clustereval = m_svtxevalstack->get_cluster_eval();
+  SvtxTrackEval *trackeval = m_svtxevalstack->get_track_eval();
+  auto surfmaps = findNode::getClass<ActsSurfaceMaps>(topNode, "ActsSurfaceMaps");
+  auto tgeometry = findNode::getClass<ActsTrackingGeometry>(topNode, "ActsTrackingGeometry");
+
+  ActsTransformations actsTransformer;
+
+  for(const auto& [key, track] : *m_trackMap)
+    {
+      resetTreeValues();
+      
+      trackID = track->get_id();
+      px = track->get_px();
+      py = track->get_py();
+      pz = track->get_pz();
+      quality = track->get_quality();
+      TVector3 v(px,py,pz);
+      pt = v.Pt();
+      phi = v.Phi();
+      eta = v.Eta();
+      charge = track->get_charge();
+      dca3dxy = track->get_dca3d_xy();
+      dca3dz = track->get_dca3d_z();
+      nmaps = 0;
+      nintt = 0;
+      ntpc = 0;
+      nmms = 0;
+      
+      for (SvtxTrack::ConstClusterKeyIter iter = track->begin_cluster_keys();
+	   iter != track->end_cluster_keys();
+	   ++iter)
+	{
+	  TrkrDefs::cluskey ckey = *iter;
+	  auto tcluster = m_clusterContainer->findCluster(ckey);
+	  switch(TrkrDefs::getTrkrId(ckey)) {
+	  case TrkrDefs::TrkrId::mvtxId: nmaps++;
+	  case TrkrDefs::TrkrId::inttId: nintt++;
+	  case TrkrDefs::TrkrId::tpcId: ntpc++; 
+	  case TrkrDefs::TrkrId::micromegasId: nmms++; 
+	  }
+	  clusterkeys.push_back(ckey);
+	  auto glob = actsTransformer.getGlobalPosition(tcluster,surfmaps,tgeometry);
+	  clusterx.push_back(glob(0));
+	  clustery.push_back(glob(1));
+	  clusterz.push_back(glob(2));
+	  clusterrphierr.push_back(tcluster->getRPhiError());
+	  clusterzerr.push_back(tcluster->getZError());
+	    
+	}
+
+      pcax = track->get_x();
+      pcay = track->get_y();
+      pcaz = track->get_z();
+
+      if(m_trackMatch)
+	{
+	  PHG4Particle* g4particle = trackeval->max_truth_particle_by_nclusters(track);
+	  if (m_scanForEmbedded)
+            {
+              if (trutheval->get_embed(g4particle) <= 0) continue;
+            }
+	  
+	  gtrackID = g4particle->get_track_id();
+	  gflavor = g4particle->get_pid();
+	  
+	  std::set<TrkrDefs::cluskey> g4clusters = clustereval->all_clusters_from(g4particle);
+
+	  gnmaps = 0;
+	  gnintt = 0;
+	  gntpc = 0;
+	  gnmms = 0;
+	  for(const auto& g4cluster : g4clusters)
+	    {
+	      auto cluster = m_clusterContainer->findCluster(g4cluster);
+	      gclusterkeys.push_back(g4cluster);
+	      auto global = actsTransformer.getGlobalPosition(cluster, surfmaps, tgeometry);
+	      gclusterx.push_back(global(0));
+	      gclustery.push_back(global(1));
+	      gclusterz.push_back(global(2));
+	      gclusterrphierr.push_back(cluster->getRPhiError());
+	      gclusterzerr.push_back(cluster->getZError());
+	      switch(TrkrDefs::getTrkrId(g4cluster)) {
+	      case TrkrDefs::TrkrId::mvtxId: gnmaps++;
+	      case TrkrDefs::TrkrId::inttId: gnintt++;
+	      case TrkrDefs::TrkrId::tpcId: gntpc++; 
+	      case TrkrDefs::TrkrId::micromegasId: gnmms++; 
+	      }
+	    }
+	  
+	  gpx = g4particle->get_px();
+	  gpy = g4particle->get_py();
+	  gpz = g4particle->get_pz();
+
+	  TVector3 tpart(gpx,gpy,gpz);
+	  gpt = tpart.Pt();
+	  geta = tpart.Eta();
+	  gphi = tpart.Phi();
+
+	  PHG4VtxPoint *vtx = trutheval->get_vertex(g4particle);
+	  gvx = vtx->get_x();
+	  gvy = vtx->get_y();
+	  gvz = vtx->get_z();
+	  gvt = vtx->get_t();
+	
+	  gembed = trutheval->get_embed(g4particle);
+	  gprimary = trutheval->is_primary(g4particle);
+		
+	}
+
+    }
 
 }
 
@@ -258,6 +370,12 @@ int TrackClusterEvaluator::EndRun(const int runnumber)
 //____________________________________________________________________________..
 int TrackClusterEvaluator::End(PHCompositeNode *topNode)
 {
+  m_outfile->cd();
+  m_truthtree->Write();
+  m_recotree->Write();
+  m_outfile->Write();
+  m_outfile->Close();
+
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
@@ -416,7 +534,6 @@ void TrackClusterEvaluator::setupTrees()
 void TrackClusterEvaluator::resetTreeValues()
 {
   clearVectors();
-  event = -9999;
   gflavor = -9999;
   gntracks = -9999;
   gtrackID = -9999;

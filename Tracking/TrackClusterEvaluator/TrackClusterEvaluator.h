@@ -33,10 +33,11 @@ class TrackClusterEvaluator : public SubsysReco
   int End(PHCompositeNode *topNode) override;
   int Reset(PHCompositeNode * /*topNode*/) override;
 
-  void trackMapName(std::string& name) { m_trackMapName = name; }
-  void outfileName(std::string& name) { m_outfilename = name; }
+  void trackMapName(std::string name) { m_trackMapName = name; }
+  void outfileName(std::string name) { m_outfilename = name; }
   void scanForPrimaries(bool scan) { m_scanForPrimaries = scan; }
   void scanForEmbedded(bool scan) { m_scanForEmbedded = scan; }
+  void trackMatch(bool match) { m_trackMatch = match; }
   void Print(const std::string &what = "ALL") const override;
 
  private:
@@ -55,6 +56,7 @@ class TrackClusterEvaluator : public SubsysReco
 
   bool m_scanForEmbedded = true;
   bool m_scanForPrimaries = true;
+  bool m_trackMatch = true;
 
   TFile *m_outfile = nullptr;
   std::string m_outfilename = "TrackClusterEvaluator.root";
