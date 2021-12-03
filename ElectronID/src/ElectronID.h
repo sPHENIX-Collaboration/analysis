@@ -9,8 +9,6 @@
 
 #include <fun4all/SubsysReco.h>
 
-#include "trackpidassoc/TrackPidAssoc.h"
-
 // rootcint barfs with this header so we need to hide it
 #include <gsl/gsl_rng.h>
 
@@ -27,6 +25,8 @@
 // forward declarations
 class PHCompositeNode;
 class SvtxTrackMap;
+class TrackPidAssoc;
+
 
 class SvtxTrack;
 
@@ -41,7 +41,7 @@ public:
   int process_event(PHCompositeNode *topNode);
   int End(PHCompositeNode *topNode);
 
-  /// Set the cemce3x3/p cut limits for electrons; default: 0.0<cemce3x3/p<100.0, means without cuts
+  /// Set the cemce3x3/p cut limits for electrons; default: 0.7<cemce3x3/p<100.0, means without cuts
   void setEMOPcutlimits(float EMOPlowerlimit, float EMOPhigherlimit) { EMOP_lowerlimit = EMOPlowerlimit; EMOP_higherlimit = EMOPhigherlimit; }
 
   /// Set the hcaline3x3/cemce3x3 cut limit for electrons; default: hcaline3x3/cemce3x3<100.0, means without cut
@@ -53,8 +53,8 @@ public:
   /// Set the (hcaline3x3+hcaloute3x3)/p cut lower limit for hadrons; default: 0.0<(hcaline3x3+hcaloute3x3)/p, means without cut
   void setHOPcutlimit(float HOPlowerlimit) { HOP_lowerlimit = HOPlowerlimit; }
 
-  /// Set the track cut limits; default: nmvtx>=0, nintt>=0, ntpc>=0; quality<100
-  void setTrackcutlimits(int Nmvtxlowerlimit, int Ninttlowerlimit, int Ntpclowerlimit, int Nqualityhigherlimit) { 
+  /// Set the track cut limits; default: nmvtx>=2, nintt>=0, ntpc>=20; quality<5.
+  void setTrackcutlimits(int Nmvtxlowerlimit, int Ninttlowerlimit, int Ntpclowerlimit, float Nqualityhigherlimit) { 
      Nmvtx_lowerlimit = Nmvtxlowerlimit; 
      Nintt_lowerlimit = Ninttlowerlimit; 
      Ntpc_lowerlimit = Ntpclowerlimit;
@@ -112,7 +112,7 @@ int GetNodes(PHCompositeNode *topNode);
   int Ntpc_lowerlimit;
 
 /// A float higher limit for cutting on quality
-  int Nquality_higherlimit;
+  float Nquality_higherlimit;
 
   unsigned int _nlayers_maps = 3;
   unsigned int _nlayers_intt = 4;
