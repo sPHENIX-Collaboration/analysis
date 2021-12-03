@@ -104,7 +104,7 @@ class TPCMLDataInterface : public SubsysReco
 
   double m_vertexZAcceptanceCut;
   double m_etaAcceptanceCut;
-  double m_energyCut;
+  double m_momentumCut;
   bool m_use_initial_vertex = true;
   bool m_use_genfit_vertex = false;
 

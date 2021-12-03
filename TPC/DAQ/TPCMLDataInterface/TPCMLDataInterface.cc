@@ -88,7 +88,7 @@ TPCMLDataInterface::TPCMLDataInterface(
   , m_evtCounter(-1)
   , m_vertexZAcceptanceCut(10)
   , m_etaAcceptanceCut(1.1)
-  , m_energyCut(.1)
+  , m_momentumCut(.1)
   , m_hDataSize(nullptr)
   , m_hWavelet(nullptr)
   , m_hNChEta(nullptr)
@@ -409,6 +409,7 @@ int TPCMLDataInterface::process_event(PHCompositeNode* topNode)
   map<int, shared_ptr<DataSet>> layerH5DataSetMap;
   map<int, shared_ptr<DataSet>> layerH5SignalBackgroundMap;
   map<int, shared_ptr<DataSpace>> layerH5DataSpaceMap;
+  map<int, shared_ptr<DataSpace>> layerH5SignalBackgroundDataSpaceMap;
 
   //wavelet size stat.
   vector<uint32_t> layerWaveletDataSize(m_maxLayer + 1, 0);
@@ -425,8 +426,10 @@ int TPCMLDataInterface::process_event(PHCompositeNode* topNode)
   vector<array<vector<int>, 2>> layerChanHit(m_maxLayer + 1);
   vector<array<vector<int>, 2>> layerChanDataSize(m_maxLayer + 1);
   vector<vector<uint16_t>> layerDataBuffer(m_maxLayer + 1);
-  vector<vector<uint16_t>> layerSignalBackgroundBuffer(m_maxLayer + 1);
+  vector<vector<uint8_t>> layerSignalBackgroundBuffer(m_maxLayer + 1);
   vector<vector<hsize_t>> layerDataBufferSize(m_maxLayer + 1, vector<hsize_t>({0, 0}));
+  vector<vector<hsize_t>> layerSignalBackgroundDataBufferSize(m_maxLayer + 1, vector<hsize_t>({0, 0}));
+
   int nWavelet = 0;
   int sumDataSize = 0;
   for (int layer = m_minLayer; layer <= m_maxLayer; ++layer)
@@ -471,8 +474,10 @@ int TPCMLDataInterface::process_event(PHCompositeNode* topNode)
     // buffer init
     layerDataBufferSize[layer][0] = nphibins;
     layerDataBufferSize[layer][1] = layerGeom->get_zbins();
+    layerSignalBackgroundDataBufferSize[layer][0] = nphibins;
+    layerSignalBackgroundDataBufferSize[layer][1] = layerGeom->get_zbins();
     layerDataBuffer[layer].resize(layerDataBufferSize[layer][0] * layerDataBufferSize[layer][1], 0);
-    layerSignalBackgroundBuffer[layer].resize(layerDataBufferSize[layer][0] * layerDataBufferSize[layer][1], 0);
+    layerSignalBackgroundBuffer[layer].resize(layerSignalBackgroundDataBufferSize[layer][0] * layerSignalBackgroundDataBufferSize[layer][1], 0);
 
     static const vector<hsize_t> cdims({32, 32});
     DSetCreatPropList ds_creatplist;
@@ -480,6 +485,8 @@ int TPCMLDataInterface::process_event(PHCompositeNode* topNode)
     ds_creatplist.setDeflate(6);
 
     layerH5DataSpaceMap[layer] = shared_ptr<DataSpace>(new DataSpace(2, layerDataBufferSize[layer].data()));
+    layerH5SignalBackgroundDataSpaceMap[layer] = shared_ptr<DataSpace>(new DataSpace(2, layerSignalBackgroundDataBufferSize[layer].data()));
+
     layerH5DataSetMap[layer] = shared_ptr<DataSet>(new DataSet(h5Group->createDataSet(
         boost::str(boost::format("Data_Layer%1%") % (layer - m_minLayer)),
         PredType::NATIVE_UINT16,
@@ -487,10 +494,10 @@ int TPCMLDataInterface::process_event(PHCompositeNode* topNode)
         ds_creatplist)));
 
     layerH5SignalBackgroundMap[layer] = shared_ptr<DataSet>(new DataSet(h5Group->createDataSet(
-        boost::str(boost::format("Data_Layer%1%") % (layer - m_minLayer)),
-        PredType::NATIVE_UINT16,
-        *(layerH5DataSpaceMap[layer]),
-        ds_creatplist)));
+        boost::str(boost::format("Data_Layer_SignalBackground%1%") % (layer - m_minLayer)),
+        PredType::NATIVE_UINT8,
+        *(layerH5SignalBackgroundDataSpaceMap[layer]),
+        ds_creatplist)));    
 
   }  //   for (int layer = m_minLayer; layer <= m_maxLayer; ++layer)
 
@@ -571,6 +578,7 @@ int TPCMLDataInterface::process_event(PHCompositeNode* topNode)
         PHG4CylinderCellGeom* layerGeom =
             seggeo->GetLayerCellGeom(layer);
         assert(layerGeom);
+
         const double z_abs = fabs(layerGeom->get_zcenter(zbin));
         const double r = layerGeom->get_radius();
         TVector3 acceptanceVec(r, 0, z_abs - m_vertexZAcceptanceCut);
@@ -579,12 +587,16 @@ int TPCMLDataInterface::process_event(PHCompositeNode* topNode)
         if (eta > m_etaAcceptanceCut) continue;
 
 	// momentum cut
-        TrkrDefs::hitkey hit_key = hitr->first; 
+        TrkrDefs::hitkey hit_key = hitr->first;
         PHG4Hit* g4hit = hiteval->max_truth_hit_by_energy(hit_key);
         PHG4Particle* g4particle = trutheval->get_particle(g4hit);
-        gpx = g4particle->get_px();
-        gpy = g4particle->get_py();
-	gpz = g4particle->get_pz();
+
+        if (g4particle != nullptr)
+	{
+          gpx = g4particle->get_px();
+          gpy = g4particle->get_py();
+	  gpz = g4particle->get_pz();
+	}
 
         // make new wavelet
         last_layer = layer;
@@ -595,6 +607,7 @@ int TPCMLDataInterface::process_event(PHCompositeNode* topNode)
         last_wavelet_hittime = (side == 0) ? (zbin) : (nZBins - 1 - zbin);
         assert(last_wavelet_hittime >= 0);
         assert(last_wavelet_hittime <= nZBins / 2);
+
       }  //     if (last_layer != layer or last_phibin != phibin)
 
       if (Verbosity() >= VERBOSITY_A_LOT)
@@ -633,13 +646,16 @@ int TPCMLDataInterface::process_event(PHCompositeNode* topNode)
       m_hLayerZBinHit->Fill(zbin, layer, 1);
       assert(m_hLayerZBinADC);
       m_hLayerZBinADC->Fill(zbin, layer, adc);
-
       assert(adc < (1 << 10));
       assert((hsize_t) phibin < layerDataBufferSize[layer][0]);
       assert((hsize_t) zbin < layerDataBufferSize[layer][1]);
       const size_t hitindex(layerDataBufferSize[layer][1] * phibin + zbin);
+      assert((hsize_t) phibin < layerSignalBackgroundDataBufferSize[layer][0]);
+      assert((hsize_t) zbin < layerSignalBackgroundDataBufferSize[layer][1]);
+      const size_t hitindexSB(layerSignalBackgroundDataBufferSize[layer][1] * phibin + zbin);
       assert(hitindex < layerDataBuffer[layer].size());
-      assert(hitindex < layerSignalBackgroundBuffer[layer].size());
+      assert(hitindexSB < layerSignalBackgroundBuffer[layer].size());
+
       if (layerDataBuffer[layer][hitindex] != 0)
       {
         cout << "TPCMLDataInterface::process_event - WARNING - hit @ layer "
@@ -649,14 +665,14 @@ int TPCMLDataInterface::process_event(PHCompositeNode* topNode)
       }
       layerDataBuffer[layer][hitindex] = adc;
       
-      if (layerSignalBackgroundBuffer[layer][hitindex] != 0)
+      if (layerSignalBackgroundBuffer[layer][hitindexSB] != 0)
       {
         cout << "TPCMLDataInterface::process_event - WARNING - signal/background @ layer "
              << layer << " phibin = " << phibin << " zbin = " << zbin << " side = " << side
-             << " overwriting previous hit with = " << layerSignalBackgroundBuffer[layer][hitindex]
+             << " overwriting previous hit with = " << layerSignalBackgroundBuffer[layer][hitindexSB]
              << endl;
       }
-      layerSignalBackgroundBuffer[layer][hitindex] = sqrt(gpx*gpx + gpy*gpy + gpz*gpz) > m_energyCut;
+      layerSignalBackgroundBuffer[layer][hitindexSB] = sqrt(gpx*gpx + gpy*gpy + gpz*gpz) > m_momentumCut;
     }
   }  //   for(SvtxHitMap::Iter iter = hits->begin(); iter != hits->end(); ++iter) {
 
@@ -680,7 +696,7 @@ int TPCMLDataInterface::process_event(PHCompositeNode* topNode)
       for (const int& hit : layerChanHit[layer][side])
       {
         sumHit += hit;
-
+    
         assert(m_hLayerHit);
         m_hLayerHit->Fill(layer, hit);
         h_norm->Fill("TPC Hit", hit);
@@ -710,16 +726,18 @@ int TPCMLDataInterface::process_event(PHCompositeNode* topNode)
         assert(m_hLayerDataSize);
         m_hLayerDataSize->Fill(layer, data);
       }
+
       assert(m_hLayerSumDataSize);
       m_hLayerSumDataSize->Fill(layer, sumData);
       layerWaveletDataSize[(layer - m_minLayer)] += sumData;
     }  //    for (unsigned int side = 0; side < 2; ++side)
 
     // store in H5
+  
     assert(layerH5DataSetMap[layer]);
     assert(layerH5SignalBackgroundMap[layer]);
     layerH5DataSetMap[layer]->write(layerDataBuffer[layer].data(), PredType::NATIVE_UINT16);
-    layerH5SignalBackgroundMap[layer]->write(layerSignalBackgroundBuffer[layer].data(), PredType::NATIVE_UINT16);
+    layerH5SignalBackgroundMap[layer]->write(layerSignalBackgroundBuffer[layer].data(), PredType::NATIVE_UINT8);
     H5DataSetLayerWaveletDataSize->write(layerWaveletDataSize.data(), PredType::NATIVE_UINT32);
 
   }  //  for (unsigned int layer = m_minLayer; layer <= m_maxLayer; ++layer)
