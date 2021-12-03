@@ -83,9 +83,13 @@ int TrackClusterEvaluator::process_event(PHCompositeNode *topNode)
   else {
     m_svtxevalstack->next_event(topNode);
   }
-
+  
+  if(Verbosity() > 0)
+    { std::cout << "Analyzing truth " << std::endl; }
   if(m_truthContainer)
     { processTruthTracks(topNode); }
+  if(Verbosity() > 0)
+    { std::cout << "Analyzing reco " << std::endl; }
   if(m_trackMap)
     { processRecoTracks(topNode); }
 
@@ -113,7 +117,7 @@ void TrackClusterEvaluator::processTruthTracks(PHCompositeNode* topNode)
   gntracks = m_truthContainer->GetNumPrimaryVertexParticles();
 
   ActsTransformations actsTransformer;
-
+  
   for(PHG4TruthInfoContainer::ConstIterator iter = range.first;
       iter != range.second; ++iter)
     {
@@ -133,6 +137,7 @@ void TrackClusterEvaluator::processTruthTracks(PHCompositeNode* topNode)
       gnintt = 0;
       gntpc = 0;
       gnmms = 0;
+
       for(const auto& g4cluster : g4clusters)
 	{
 	  auto cluster = m_clusterContainer->findCluster(g4cluster);
@@ -141,8 +146,8 @@ void TrackClusterEvaluator::processTruthTracks(PHCompositeNode* topNode)
 	  gclusterx.push_back(global(0));
 	  gclustery.push_back(global(1));
 	  gclusterz.push_back(global(2));
-	  gclusterrphierr.push_back(cluster->getRPhiError());
-	  gclusterzerr.push_back(cluster->getZError());
+	  gclusterrphierr.push_back(cluster->getActsLocalError(0,0));
+	  gclusterzerr.push_back(cluster->getActsLocalError(1,1));
 	  switch(TrkrDefs::getTrkrId(g4cluster)) {
 	  case TrkrDefs::TrkrId::mvtxId: gnmaps++;
 	  case TrkrDefs::TrkrId::inttId: gnintt++;
@@ -150,7 +155,7 @@ void TrackClusterEvaluator::processTruthTracks(PHCompositeNode* topNode)
 	  case TrkrDefs::TrkrId::micromegasId: gnmms++; 
 	  }
 	}
-      
+  
       gpx = g4particle->get_px();
       gpy = g4particle->get_py();
       gpz = g4particle->get_pz();
@@ -171,6 +176,7 @@ void TrackClusterEvaluator::processTruthTracks(PHCompositeNode* topNode)
       auto track = trackeval->best_track_from(g4particle);
       if(track)
 	{
+	 
 	  trackID = track->get_id();
 	  px = track->get_px();
 	  py = track->get_py();
@@ -187,6 +193,7 @@ void TrackClusterEvaluator::processTruthTracks(PHCompositeNode* topNode)
 	  nintt = 0;
 	  ntpc = 0;
 	  nmms = 0;
+        
 	  for (SvtxTrack::ConstClusterKeyIter iter = track->begin_cluster_keys();
 	       iter != track->end_cluster_keys();
 	       ++iter)
@@ -204,11 +211,11 @@ void TrackClusterEvaluator::processTruthTracks(PHCompositeNode* topNode)
 	      clusterx.push_back(glob(0));
 	      clustery.push_back(glob(1));
 	      clusterz.push_back(glob(2));
-	      clusterrphierr.push_back(tcluster->getRPhiError());
-	      clusterzerr.push_back(tcluster->getZError());
+	      clusterrphierr.push_back(tcluster->getActsLocalError(0,0));
+	      clusterzerr.push_back(tcluster->getActsLocalError(1,1));
 	    
 	    }
-
+        
 	  pcax = track->get_x();
 	  pcay = track->get_y();
 	  pcaz = track->get_z();
@@ -271,8 +278,8 @@ void TrackClusterEvaluator::processRecoTracks(PHCompositeNode *topNode)
 	  clusterx.push_back(glob(0));
 	  clustery.push_back(glob(1));
 	  clusterz.push_back(glob(2));
-	  clusterrphierr.push_back(tcluster->getRPhiError());
-	  clusterzerr.push_back(tcluster->getZError());
+	  clusterrphierr.push_back(tcluster->getActsLocalError(0,0));
+	  clusterzerr.push_back(tcluster->getActsLocalError(1,1));
 	    
 	}
 
@@ -305,8 +312,8 @@ void TrackClusterEvaluator::processRecoTracks(PHCompositeNode *topNode)
 	      gclusterx.push_back(global(0));
 	      gclustery.push_back(global(1));
 	      gclusterz.push_back(global(2));
-	      gclusterrphierr.push_back(cluster->getRPhiError());
-	      gclusterzerr.push_back(cluster->getZError());
+	      gclusterrphierr.push_back(cluster->getActsLocalError(0,0));
+	      gclusterzerr.push_back(cluster->getActsLocalError(1,1));
 	      switch(TrkrDefs::getTrkrId(g4cluster)) {
 	      case TrkrDefs::TrkrId::mvtxId: gnmaps++;
 	      case TrkrDefs::TrkrId::inttId: gnintt++;
