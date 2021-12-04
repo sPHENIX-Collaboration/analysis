@@ -61,6 +61,8 @@ public:
      Nquality_higherlimit = Nqualityhigherlimit;
   }
 
+  /// set "prob" variable cut
+  void setPROBcut(float tmp) {PROB_cut = tmp;}
 
   void set_output_ntuple(bool outputntuple) {output_ntuple = outputntuple;}
 
@@ -90,6 +92,9 @@ int GetNodes(PHCompositeNode *topNode);
   float EMOP_lowerlimit;
 /// A float higher limit for cutting on cemce3x3/p
   float EMOP_higherlimit;
+
+/// "prob" variable cut
+  float PROB_cut;
 
 /// A float higher limit for cutting on hcaline3x3/cemce3x3
   float HinOEM_higherlimit;

@@ -20,11 +20,9 @@
 #include <g4vertex/GlobalVertexMap.h>
 #include <g4vertex/GlobalVertex.h>
 
-//#include <g4cemc/RawClusterContainer.h>
-//#include <g4cemc/RawCluster.h>
-//#include <g4cemc/RawTowerContainer.h>
-//#include <g4cemc/RawTower.h>
-//#include "g4cemc/RawTowerGeomContainer_Cylinderv1.h"
+#include <calobase/RawClusterContainer.h>
+#include <calobase/RawCluster.h>
+#include <calobase/RawClusterv1.h>
 
 #include <phool/getClass.h>
 #include <phool/recoConsts.h>
@@ -149,6 +147,27 @@ int PairMaker::process_event_test(PHCompositeNode *topNode) {
     return Fun4AllReturnCodes::ABORTEVENT;
   }
 
+  RawClusterContainer* cemc_clusters = findNode::getClass<RawClusterContainer>(topNode, "CLUSTER_CEMC");
+  if(!cemc_clusters) {
+    cerr << PHWHERE << " ERROR: Can not find CLUSTER_CEMC node." << endl;
+    return Fun4AllReturnCodes::ABORTEVENT;
+  }
+  else { cout << "FOUND CLUSTER_CEMC node." << endl; }
+
+  int mycount = 0;
+  RawClusterContainer::ConstRange cluster_range = cemc_clusters->getClusters();
+  for (RawClusterContainer::ConstIterator cluster_iter = cluster_range.first; cluster_iter != cluster_range.second; cluster_iter++)
+  {
+    //RawCluster *cluster = cluster_iter->second;
+    //double phi = cluster->get_phi();
+    //double z = cluster->get_z();
+    //double ee = cluster->get_energy();
+    //int ntowers = cluster->getNTowers();
+    //if(ee>2.) cout << "cluster: " << ee << " " << ntowers << " " << phi << " " << z << endl;
+    mycount++;
+  }
+  cout << "Number of CEMC clusters = " << mycount << endl;
+
   TrackPidAssoc *track_pid_assoc =  findNode::getClass<TrackPidAssoc>(topNode, "TrackPidAssoc");
   if(!track_pid_assoc) {
     cerr << PHWHERE << "ERROR: CAN NOT FIND TrackPidAssoc Node!" << endl; 
@@ -207,6 +226,16 @@ int PairMaker::process_event_test(PHCompositeNode *topNode) {
     for(auto it = electrons.first; it != electrons.second; ++it)
     {
       SvtxTrack *track = trackmap->get(it->second);
+      unsigned int cemc_clusid = track->get_cal_cluster_id(SvtxTrack::CAL_LAYER::CEMC); 
+      TrkrDefs::cluskey cemc_cluskey = track->get_cal_cluster_key(SvtxTrack::CAL_LAYER::CEMC);
+      float cemc_cluse = track->get_cal_cluster_e(SvtxTrack::CAL_LAYER::CEMC);
+        cout << "CEMC match: " << cemc_clusid << " " << cemc_cluskey << " " << cemc_cluse << endl;
+        RawCluster* cluster = cemc_clusters->getCluster(cemc_clusid);
+        double ee = cluster->get_energy();
+        double ecore = cluster->get_ecore();
+        double prob = cluster->get_prob();
+        cout << "cluster: " << ee << " " << ecore << " " << prob << endl;
+
       double px = track->get_px();
       double py = track->get_py();
       double pt = sqrt(px*px + py*py);
