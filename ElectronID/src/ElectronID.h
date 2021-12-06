@@ -25,8 +25,10 @@
 // forward declarations
 class PHCompositeNode;
 class SvtxTrackMap;
+class SvtxTrack;
 class TrackPidAssoc;
-
+class PHG4TruthInfoContainer;
+class PHG4Particle;
 
 class SvtxTrack;
 
@@ -84,6 +86,8 @@ protected:
 private:
 /// fetch node pointers
 int GetNodes(PHCompositeNode *topNode);
+
+PHG4Particle* findMCmatch(SvtxTrack* track, PHG4TruthInfoContainer* truth_container);
 
  TrackPidAssoc *_track_pid_assoc;
  SvtxTrackMap *_track_map;
