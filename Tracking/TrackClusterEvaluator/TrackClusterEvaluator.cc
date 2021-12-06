@@ -137,7 +137,7 @@ void TrackClusterEvaluator::processTruthTracks(PHCompositeNode* topNode)
       gnintt = 0;
       gntpc = 0;
       gnmms = 0;
-
+  
       for(const auto& g4cluster : g4clusters)
 	{
 	  auto cluster = m_clusterContainer->findCluster(g4cluster);
@@ -148,14 +148,14 @@ void TrackClusterEvaluator::processTruthTracks(PHCompositeNode* topNode)
 	  gclusterz.push_back(global(2));
 	  gclusterrphierr.push_back(cluster->getActsLocalError(0,0));
 	  gclusterzerr.push_back(cluster->getActsLocalError(1,1));
-	  switch(TrkrDefs::getTrkrId(g4cluster)) {
-	  case TrkrDefs::TrkrId::mvtxId: gnmaps++;
-	  case TrkrDefs::TrkrId::inttId: gnintt++;
-	  case TrkrDefs::TrkrId::tpcId: gntpc++; 
-	  case TrkrDefs::TrkrId::micromegasId: gnmms++; 
-	  }
+
+	  unsigned int layer = TrkrDefs::getLayer(g4cluster);
+	  if (layer < 3) { gnmaps++; }
+	  else if (layer < 7) { gnintt++; }
+	  else if (layer < 55) { gntpc++; }
+	  else { gnmms++; }
 	}
-  
+   
       gpx = g4particle->get_px();
       gpy = g4particle->get_py();
       gpz = g4particle->get_pz();
@@ -200,12 +200,13 @@ void TrackClusterEvaluator::processTruthTracks(PHCompositeNode* topNode)
             {
 	      TrkrDefs::cluskey ckey = *iter;
 	      auto tcluster = m_clusterContainer->findCluster(ckey);
-	      switch(TrkrDefs::getTrkrId(ckey)) {
-	      case TrkrDefs::TrkrId::mvtxId: nmaps++;
-	      case TrkrDefs::TrkrId::inttId: nintt++;
-	      case TrkrDefs::TrkrId::tpcId: ntpc++; 
-	      case TrkrDefs::TrkrId::micromegasId: nmms++; 
-	      }
+
+	      unsigned int layer = TrkrDefs::getLayer(ckey);
+	      if (layer < 3) { nmaps++; }
+	      else if (layer < 7) { nintt++; }
+	      else if (layer < 55) { ntpc++; }
+	      else { nmms++; }
+
 	      clusterkeys.push_back(ckey);
 	      auto glob = actsTransformer.getGlobalPosition(tcluster,surfmaps,tgeometry);
 	      clusterx.push_back(glob(0));
@@ -222,10 +223,8 @@ void TrackClusterEvaluator::processTruthTracks(PHCompositeNode* topNode)
 	}
 
       m_truthtree->Fill();
-    
-
+   
     }
-
 
 }
 
@@ -267,12 +266,12 @@ void TrackClusterEvaluator::processRecoTracks(PHCompositeNode *topNode)
 	{
 	  TrkrDefs::cluskey ckey = *iter;
 	  auto tcluster = m_clusterContainer->findCluster(ckey);
-	  switch(TrkrDefs::getTrkrId(ckey)) {
-	  case TrkrDefs::TrkrId::mvtxId: nmaps++;
-	  case TrkrDefs::TrkrId::inttId: nintt++;
-	  case TrkrDefs::TrkrId::tpcId: ntpc++; 
-	  case TrkrDefs::TrkrId::micromegasId: nmms++; 
-	  }
+	  unsigned int layer = TrkrDefs::getLayer(ckey);
+	  if (layer < 3) { nmaps++; }
+	  else if (layer < 7) { nintt++; }
+	  else if (layer < 55) { ntpc++; }
+	  else { nmms++; }
+	  
 	  clusterkeys.push_back(ckey);
 	  auto glob = actsTransformer.getGlobalPosition(tcluster,surfmaps,tgeometry);
 	  clusterx.push_back(glob(0));
@@ -314,12 +313,12 @@ void TrackClusterEvaluator::processRecoTracks(PHCompositeNode *topNode)
 	      gclusterz.push_back(global(2));
 	      gclusterrphierr.push_back(cluster->getActsLocalError(0,0));
 	      gclusterzerr.push_back(cluster->getActsLocalError(1,1));
-	      switch(TrkrDefs::getTrkrId(g4cluster)) {
-	      case TrkrDefs::TrkrId::mvtxId: gnmaps++;
-	      case TrkrDefs::TrkrId::inttId: gnintt++;
-	      case TrkrDefs::TrkrId::tpcId: gntpc++; 
-	      case TrkrDefs::TrkrId::micromegasId: gnmms++; 
-	      }
+	 
+	      unsigned int layer = TrkrDefs::getLayer(g4cluster);
+	      if (layer < 3) { gnmaps++; }
+	      else if (layer < 7) { gnintt++; }
+	      else if (layer < 55) { gntpc++; }
+	      else { gnmms++; }
 	    }
 	  
 	  gpx = g4particle->get_px();
@@ -402,6 +401,7 @@ int TrackClusterEvaluator::getNodes(PHCompositeNode *topNode)
     }
 
   m_trackMap = findNode::getClass<SvtxTrackMap>(topNode, m_trackMapName);
+  std::cout << "Accessing map name " << m_trackMapName << std::endl;
   if(!m_trackMap)
     {
       std::cout << "No track map available, can't continue. " << std::endl;
