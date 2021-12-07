@@ -151,8 +151,22 @@ void TrackClusterEvaluator::processTruthTracks(PHCompositeNode *topNode)
     for (const auto &g4cluster : g4clusters)
     {
       auto cluster = m_clusterContainer->findCluster(g4cluster);
+      std::shared_ptr<TrkrCluster> truthCluster = clustereval->max_truth_cluster_by_energy(g4cluster);
+
       gclusterkeys.push_back(g4cluster);
       auto global = actsTransformer.getGlobalPosition(cluster, surfmaps, tgeometry);
+      if (truthCluster)
+      {
+        tgclusterx.push_back(truthCluster->getX());
+        tgclustery.push_back(truthCluster->getY());
+        tgclusterz.push_back(truthCluster->getZ());
+      }
+      else
+      {
+        tgclusterx.push_back(NAN);
+        tgclustery.push_back(NAN);
+        tgclusterz.push_back(NAN);
+      }
       gclusterx.push_back(global(0));
       gclustery.push_back(global(1));
       gclusterz.push_back(global(2));
@@ -221,7 +235,7 @@ void TrackClusterEvaluator::processTruthTracks(PHCompositeNode *topNode)
       {
         TrkrDefs::cluskey ckey = *iter;
         auto tcluster = m_clusterContainer->findCluster(ckey);
-
+        std::shared_ptr<TrkrCluster> truthCluster = clustereval->max_truth_cluster_by_energy(ckey);
         unsigned int layer = TrkrDefs::getLayer(ckey);
         if (layer < 3)
         {
@@ -242,6 +256,18 @@ void TrackClusterEvaluator::processTruthTracks(PHCompositeNode *topNode)
 
         clusterkeys.push_back(ckey);
         auto glob = actsTransformer.getGlobalPosition(tcluster, surfmaps, tgeometry);
+        if (truthCluster)
+        {
+          tclusterx.push_back(truthCluster->getX());
+          tclustery.push_back(truthCluster->getY());
+          tclusterz.push_back(truthCluster->getZ());
+        }
+        else
+        {
+          tclusterx.push_back(NAN);
+          tclustery.push_back(NAN);
+          tclusterz.push_back(NAN);
+        }
         clusterx.push_back(glob(0));
         clustery.push_back(glob(1));
         clusterz.push_back(glob(2));
@@ -295,6 +321,7 @@ void TrackClusterEvaluator::processRecoTracks(PHCompositeNode *topNode)
     {
       TrkrDefs::cluskey ckey = *iter;
       auto tcluster = m_clusterContainer->findCluster(ckey);
+      auto truthCluster = clustereval->max_truth_cluster_by_energy(ckey);
       unsigned int layer = TrkrDefs::getLayer(ckey);
       if (layer < 3)
       {
@@ -318,6 +345,18 @@ void TrackClusterEvaluator::processRecoTracks(PHCompositeNode *topNode)
       clusterx.push_back(glob(0));
       clustery.push_back(glob(1));
       clusterz.push_back(glob(2));
+      if (truthCluster)
+      {
+        tclusterx.push_back(truthCluster->getX());
+        tclustery.push_back(truthCluster->getY());
+        tclusterz.push_back(truthCluster->getZ());
+      }
+      else
+      {
+        tclusterx.push_back(NAN);
+        tclustery.push_back(NAN);
+        tclusterz.push_back(NAN);
+      }
       clusterrphierr.push_back(tcluster->getActsLocalError(0, 0));
       clusterzerr.push_back(tcluster->getActsLocalError(1, 1));
     }
@@ -347,10 +386,23 @@ void TrackClusterEvaluator::processRecoTracks(PHCompositeNode *topNode)
       {
         auto cluster = m_clusterContainer->findCluster(g4cluster);
         gclusterkeys.push_back(g4cluster);
+        auto truthCluster = clustereval->max_truth_cluster_by_energy(g4cluster);
         auto global = actsTransformer.getGlobalPosition(cluster, surfmaps, tgeometry);
         gclusterx.push_back(global(0));
         gclustery.push_back(global(1));
         gclusterz.push_back(global(2));
+        if (truthCluster)
+        {
+          tgclusterx.push_back(truthCluster->getX());
+          tgclustery.push_back(truthCluster->getY());
+          tgclusterz.push_back(truthCluster->getZ());
+        }
+        else
+        {
+          tgclusterx.push_back(NAN);
+          tgclustery.push_back(NAN);
+          tgclusterz.push_back(NAN);
+        }
         gclusterrphierr.push_back(cluster->getActsLocalError(0, 0));
         gclusterzerr.push_back(cluster->getActsLocalError(1, 1));
 
@@ -396,6 +448,12 @@ void TrackClusterEvaluator::processRecoTracks(PHCompositeNode *topNode)
 
 void TrackClusterEvaluator::clearVectors()
 {
+  tgclusterx.clear();
+  tgclustery.clear();
+  tgclusterz.clear();
+  tclusterx.clear();
+  tclustery.clear();
+  tclusterz.clear();
   gclusterkeys.clear();
   gclusterx.clear();
   gclustery.clear();
@@ -502,6 +560,9 @@ void TrackClusterEvaluator::setupTrees()
   m_truthtree->Branch("gclusterx", &gclusterx);
   m_truthtree->Branch("gclustery", &gclustery);
   m_truthtree->Branch("gclusterz", &gclusterz);
+  m_truthtree->Branch("tgclusterx", &tgclusterx);
+  m_truthtree->Branch("tgclustery", &tgclustery);
+  m_truthtree->Branch("tgclusterz", &tgclusterz);
   m_truthtree->Branch("gclusterrphierr", &gclusterrphierr);
   m_truthtree->Branch("gclusterzerr", &gclusterzerr);
   m_truthtree->Branch("trackID", &trackID, "trackID/I");
@@ -526,34 +587,13 @@ void TrackClusterEvaluator::setupTrees()
   m_truthtree->Branch("clusterx", &clusterx);
   m_truthtree->Branch("clustery", &clustery);
   m_truthtree->Branch("clusterz", &clusterz);
+  m_truthtree->Branch("tclusterx", &tclusterx);
+  m_truthtree->Branch("tclustery", &tclustery);
+  m_truthtree->Branch("tclusterz", &tclusterz);
   m_truthtree->Branch("clusterrphierr", &clusterrphierr);
   m_truthtree->Branch("clusterzerr", &clusterzerr);
 
   m_recotree->Branch("event", &event, "event/I");
-  m_recotree->Branch("gntracks", &gntracks, "gntracks/I");
-  m_recotree->Branch("gtrackID", &gtrackID, "gtrackID/I");
-  m_recotree->Branch("gnmaps", &gnmaps, "gnmaps/I");
-  m_recotree->Branch("gnintt", &gnintt, "gnintt/I");
-  m_recotree->Branch("gntpc", &gntpc, "gntpc/I");
-  m_recotree->Branch("gnmms", &gnmms, "gnmms/I");
-  m_recotree->Branch("gpx", &gpx, "gpx/F");
-  m_recotree->Branch("gpy", &gpy, "gpy/F");
-  m_recotree->Branch("gpz", &gpz, "gpz/F");
-  m_recotree->Branch("gpt", &gpt, "gpt/F");
-  m_recotree->Branch("geta", &geta, "geta/F");
-  m_recotree->Branch("gphi", &gphi, "gphi/F");
-  m_recotree->Branch("gvx", &gvx, "gvx/F");
-  m_recotree->Branch("gvy", &gvy, "gvy/F");
-  m_recotree->Branch("gvz", &gvz, "gvz/F");
-  m_recotree->Branch("gvt", &gvt, "gvt/F");
-  m_recotree->Branch("gembed", &gembed, "gembed/I");
-  m_recotree->Branch("gprimary", &gprimary, "gprimary/I");
-  m_recotree->Branch("gclusterkeys", &gclusterkeys);
-  m_recotree->Branch("gclusterx", &gclusterx);
-  m_recotree->Branch("gclustery", &gclustery);
-  m_recotree->Branch("gclusterz", &gclusterz);
-  m_recotree->Branch("gclusterrphierr", &gclusterrphierr);
-  m_recotree->Branch("gclusterzerr", &gclusterzerr);
   m_recotree->Branch("trackID", &trackID, "trackID/I");
   m_recotree->Branch("px", &px, "px/F");
   m_recotree->Branch("py", &py, "py/F");
@@ -576,8 +616,38 @@ void TrackClusterEvaluator::setupTrees()
   m_recotree->Branch("clusterx", &clusterx);
   m_recotree->Branch("clustery", &clustery);
   m_recotree->Branch("clusterz", &clusterz);
+  m_recotree->Branch("tclusterx", &tclusterx);
+  m_recotree->Branch("tclustery", &tclustery);
+  m_recotree->Branch("tclusterz", &tclusterz);
   m_recotree->Branch("clusterrphierr", &clusterrphierr);
   m_recotree->Branch("clusterzerr", &clusterzerr);
+  m_recotree->Branch("gntracks", &gntracks, "gntracks/I");
+  m_recotree->Branch("gtrackID", &gtrackID, "gtrackID/I");
+  m_recotree->Branch("gnmaps", &gnmaps, "gnmaps/I");
+  m_recotree->Branch("gnintt", &gnintt, "gnintt/I");
+  m_recotree->Branch("gntpc", &gntpc, "gntpc/I");
+  m_recotree->Branch("gnmms", &gnmms, "gnmms/I");
+  m_recotree->Branch("gpx", &gpx, "gpx/F");
+  m_recotree->Branch("gpy", &gpy, "gpy/F");
+  m_recotree->Branch("gpz", &gpz, "gpz/F");
+  m_recotree->Branch("gpt", &gpt, "gpt/F");
+  m_recotree->Branch("geta", &geta, "geta/F");
+  m_recotree->Branch("gphi", &gphi, "gphi/F");
+  m_recotree->Branch("gvx", &gvx, "gvx/F");
+  m_recotree->Branch("gvy", &gvy, "gvy/F");
+  m_recotree->Branch("gvz", &gvz, "gvz/F");
+  m_recotree->Branch("gvt", &gvt, "gvt/F");
+  m_recotree->Branch("gembed", &gembed, "gembed/I");
+  m_recotree->Branch("gprimary", &gprimary, "gprimary/I");
+  m_recotree->Branch("gclusterkeys", &gclusterkeys);
+  m_recotree->Branch("gclusterx", &gclusterx);
+  m_recotree->Branch("gclustery", &gclustery);
+  m_recotree->Branch("gclusterz", &gclusterz);
+  m_recotree->Branch("tgclusterx", &tgclusterx);
+  m_recotree->Branch("tgclustery", &tgclustery);
+  m_recotree->Branch("tgclusterz", &tgclusterz);
+  m_recotree->Branch("gclusterrphierr", &gclusterrphierr);
+  m_recotree->Branch("gclusterzerr", &gclusterzerr);
 }
 
 void TrackClusterEvaluator::resetTreeValues()

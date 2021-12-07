@@ -83,6 +83,7 @@ class TrackClusterEvaluator : public SubsysReco
   int gembed = -9999;
   int gprimary = -9999;
   std::vector<TrkrDefs::cluskey> gclusterkeys;
+  std::vector<float> tgclusterx, tgclustery, tgclusterz, tclusterx, tclustery, tclusterz;
   std::vector<float> gclusterx, gclustery, gclusterz, gclusterrphierr, gclusterzerr;
   int trackID = -9999;
   float px = -9999;
