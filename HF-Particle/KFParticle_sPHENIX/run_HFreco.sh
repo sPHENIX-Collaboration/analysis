@@ -10,7 +10,7 @@ export ROOT_INCLUDE_PATH=$MYINSTALL/include:$ROOT_INCLUDE_PATH
 
 source /opt/sphenix/core/bin/setup_local.sh $MYINSTALL
 '''
-nEvents=100
+nEvents=0
 echo running: run_HFreco.sh $*
 echo arg1 \(track inputFile\) : $1
 echo arg2 \(truth inputFile\) : $2
