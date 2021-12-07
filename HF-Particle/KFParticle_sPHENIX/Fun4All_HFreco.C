@@ -23,6 +23,7 @@ using namespace HeavyFlavorReco;
 /****************************/
 
 void Fun4All_HFreco(string trackList = "track.list"
+                  , string vertexList = "vtx.list"
                   , string truthList = "truth.list"
                   , string caloList = "calo.list"
                   , string pileupList = "pileup.list"
@@ -60,6 +61,10 @@ void Fun4All_HFreco(string trackList = "track.list"
   Fun4AllInputManager *tracks = new Fun4AllDstInputManager("tracks");
   tracks->AddListFile(trackList);
   se->registerInputManager(tracks);
+
+  Fun4AllInputManager *vertices = new Fun4AllDstInputManager("vertices");
+  vertices->AddListFile(vertexList);
+  se->registerInputManager(vertices);
 
   if (getTruthInfo)
   {
