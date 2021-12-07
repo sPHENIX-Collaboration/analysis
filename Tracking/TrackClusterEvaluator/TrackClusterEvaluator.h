@@ -4,10 +4,10 @@
 #define TRACKCLUSTEREVALUATOR_H
 
 #include <fun4all/SubsysReco.h>
-#include <trackbase/TrkrDefs.h> 
+#include <trackbase/TrkrDefs.h>
 
 #include <string>
-#include <vector> 
+#include <vector>
 
 class PHCompositeNode;
 class TrkrClusterContainer;
@@ -20,7 +20,6 @@ class TFile;
 class TrackClusterEvaluator : public SubsysReco
 {
  public:
-
   TrackClusterEvaluator(const std::string &name = "TrackClusterEvaluator");
 
   virtual ~TrackClusterEvaluator();
@@ -105,7 +104,6 @@ class TrackClusterEvaluator : public SubsysReco
   float pcaz = -9999;
   std::vector<TrkrDefs::cluskey> clusterkeys;
   std::vector<float> clusterx, clustery, clusterz, clusterrphierr, clusterzerr;
-
 };
 
-#endif // TRACKCLUSTEREVALUATOR_H
+#endif  // TRACKCLUSTEREVALUATOR_H
