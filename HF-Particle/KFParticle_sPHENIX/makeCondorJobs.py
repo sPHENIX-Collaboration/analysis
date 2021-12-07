@@ -2,17 +2,17 @@ import sys, os
 from os import environ
 import argparse
 
-parser = argparse.ArgumentParser(description='sPHENIX HF Reco Job Creator')
-parser.add_argument('-q', '--quarkFilter', default="CHARM", help='Input quark filter: charm or bottom')
+parser = argparse.ArgumentParser(description='sPHENIX MDC2 Reco Job Creator')
+parser.add_argument('-i', '--inputType', default="CHARM", help='Input type: PYTHIA8_PP_MB, HIJING_[0-20/0-4P88], CHARM[D0], BOTTOM[D0]')
 parser.add_argument('-f', '--nFilesPerJob', default=50, type=int, help='Number of input files to pass to each job')
 parser.add_argument('-t', '--nTotEvents', default=-1, type=int, help='Total number of events to run over')
 
 args = parser.parse_args()
 
-quarkFilter = args.quarkFilter.upper()
+inputType = args.inputType.upper()
 
-types = {'CHARM' : 7, 'BOTTOM' : 8, 'CHARMD0' : 9, 'BOTTOMD0' : 10}
-if quarkFilter not in types:
+types = {'PYTHIA8_PP_MB' : 3, 'HIJING_0-20' : 4, 'HIJING_0-4P88' : 6, 'CHARM' : 7, 'BOTTOM' : 8, 'CHARMD0' : 9, 'BOTTOMD0' : 10}
+if inputType not in types:
   print("The argument, {}, was not known. Use CHARM[D0] or BOTTOM[D0] instead.".format(args.type))
   sys.exit()
 
@@ -26,7 +26,7 @@ if myShell not in goodShells:
 
 
 def makeCondorJob():
-    print("Creating condor submission files for {} production".format(quarkFilter))
+    print("Creating condor submission files for {} production".format(inputType))
     inputFiles = []
     line = []
     for i in range(len(inputFileTypes)):
@@ -41,9 +41,9 @@ def makeCondorJob():
         listFile = []
         listFileGeneric = []
         for i in range(len(inputFileTypes)):
-          fileStart = "{0}/fileLists/productionFiles-{1}-{2}-".format(condorDir, quarkFilter, inputFileTypes[i].lower())
-          listFile.append("{0}{1:05d}.list".format(fileStart, nJob))
-          listFileGeneric.append("{0}$INT(Process,%05d).list".format(fileStart))
+          fileStart = "fileLists/productionFiles-{1}-{2}-".format(condorDir, inputType, inputFileTypes[i].lower())
+          listFile.append("{0}/{1}{2:05d}.list".format(condorDir, fileStart, nJob))
+          listFileGeneric.append("$(condorDir)/{0}$INT(Process,%05d).list".format(fileStart))
           productionFilesToUse = open(listFile[i], "w")
           for j in range(0, args.nFilesPerJob):
               splitLine = line[i].split("/")
@@ -51,17 +51,18 @@ def makeCondorJob():
               productionFilesToUse.write(fileName)
               line[i] = inputFiles[i].readline()
         nJob += 1
-    condorFileName = "{0}/my{1}.job".format(condorDir, quarkFilter)
+    condorFileName = "{0}/my{1}.job".format(condorDir, inputType)
     condorFile = open("{}".format(condorFileName), "w")
     condorFile.write("Universe           = vanilla\n")
-    if myShell == '/bin/bash': condorFile.write("Executable         = ./run_HFreco.sh\n")
-    if myShell == '/bin/tcsh': condorFile.write("Executable         = ./run_HFreco.csh\n")
-    condorFile.write("Initialdir         = {}\n".format(myOutputPath))
+    condorFile.write("initialDir         = {}\n".format(myOutputPath))
+    if myShell == '/bin/bash': condorFile.write("Executable         = $(initialDir)/run_HFreco.sh\n")
+    if myShell == '/bin/tcsh': condorFile.write("Executable         = $(initialDir)/run_HFreco.csh\n")
     condorFile.write("PeriodicHold       = (NumJobStarts>=1 && JobStatus == 1)\n")
     condorFile.write("request_memory     = 1.8GB\n")
     condorFile.write("Priority           = 20\n")
     condorFile.write("job_lease_duration = 3600\n")
-    condorOutputInfo = "{0}/log/condor-{1}-$INT(Process,%05d)".format(condorDir, quarkFilter)
+    condorFile.write("condorDir          = $(initialDir)/condorJob\n")
+    condorOutputInfo = "$(condorDir)/log/condor-{0}-$INT(Process,%05d)".format(inputType)
     condorFile.write("Output             = {0}.out\n".format(condorOutputInfo))
     condorFile.write("Error              = {0}.err\n".format(condorOutputInfo))
     condorFile.write("Log                = {0}.log\n".format(condorOutputInfo))
@@ -72,7 +73,7 @@ def makeCondorJob():
     print("You can submit your job with the script:\n{}".format(condorFileName))
         
 for inputFile in inputFileTypes:
-  catalogCommand = "CreateFileList.pl -type {0} {1}".format(types[quarkFilter], inputFile)
+  catalogCommand = "CreateFileList.pl -type {0} {1}".format(types[inputType], inputFile)
   if args.nTotEvents != -1: catalogCommand += " -n {}".format(args.nTotEvents)
   os.system(catalogCommand)
   os.system("mv {0}.list inputList_{0}.list".format(inputFile.lower()))
