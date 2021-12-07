@@ -22,8 +22,11 @@
 #include <trackbase_historic/SvtxTrack.h>
 #include <trackbase_historic/SvtxVertex.h>
 #include <trackbase_historic/SvtxVertexMap.h>
-
 #include <trackbase/TrkrDefs.h>
+
+#include <calobase/RawClusterContainer.h>
+#include <calobase/RawCluster.h>
+#include <calobase/RawClusterv1.h>
 
 #include <g4vertex/GlobalVertexMap.h>
 #include <g4vertex/GlobalVertex.h>
@@ -68,6 +71,7 @@ ElectronID::ElectronID(const std::string& name, const std::string &filename) : S
   Nintt_lowerlimit = 0;
   Ntpc_lowerlimit = 20;
   Nquality_higherlimit = 5.;
+  PROB_cut = 0.;
 
  // unsigned int _nlayers_maps = 3;
  // unsigned int _nlayers_intt = 4;
@@ -86,12 +90,12 @@ int ElectronID::Init(PHCompositeNode *topNode)
 	OutputNtupleFile = new TFile(OutputFileName.c_str(),"RECREATE");
   	std::cout << "PairMaker::Init: output file " << OutputFileName.c_str() << " opened." << endl;
 
-	ntpbeforecut = new TNtuple("ntpbeforecut","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:cemce3x3overp:hcaline3x3overcemce3x3:hcale3x3overp:charge:pid:quality:e_cluster:EventNumber:z:vtxid:nmvtx:nintt:ntpc");
-        ntpcutEMOP = new TNtuple("ntpcutEMOP","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:charge:pid:quality:e_cluster:EventNumber:z:vtxid");
-	ntpcutHOP = new TNtuple("ntpcutHOP","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:charge:pid:quality:e_cluster:EventNumber:z:vtxid");
-	ntpcutEMOP_HinOEM = new TNtuple("ntpcutEMOP_HinOEM","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:charge:pid:quality:e_cluster:EventNumber:z:vtxid");
-	ntpcutEMOP_HinOEM_Pt = new TNtuple("ntpcutEMOP_HinOEM_Pt","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:charge:pid:quality:e_cluster:EventNumber:z:vtxid");
-        ntpcutEMOP_HinOEM_Pt_read = new TNtuple("ntpcutEMOP_HinOEM_Pt_read","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:charge:pid:quality:e_cluster:EventNumber:z:vtxid:trackid");
+	ntpbeforecut = new TNtuple("ntpbeforecut","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:cemce3x3overp:hcaline3x3overcemce3x3:hcale3x3overp:charge:pid:quality:e_cluster:EventNumber:z:vtxid:nmvtx:nintt:ntpc:cemc_prob:cemc_ecore:cemc_chi2");
+        ntpcutEMOP = new TNtuple("ntpcutEMOP","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:charge:pid:quality:e_cluster:EventNumber:z:vtxid:cemc_prob:cemc_ecore");
+	ntpcutHOP = new TNtuple("ntpcutHOP","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:charge:pid:quality:e_cluster:EventNumber:z:vtxid:cemc_prob:cemc_ecore");
+	ntpcutEMOP_HinOEM = new TNtuple("ntpcutEMOP_HinOEM","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:charge:pid:quality:e_cluster:EventNumber:z:vtxid:cemc_prob:cemc_ecore");
+	ntpcutEMOP_HinOEM_Pt = new TNtuple("ntpcutEMOP_HinOEM_Pt","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:charge:pid:quality:e_cluster:EventNumber:z:vtxid:cemc_prob:cemc_ecore");
+        ntpcutEMOP_HinOEM_Pt_read = new TNtuple("ntpcutEMOP_HinOEM_Pt_read","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:charge:pid:quality:e_cluster:EventNumber:z:vtxid:trackid:cemc_prob:cemc_ecore");
   }
   else {
 	PHNodeIterator iter(topNode);
@@ -136,6 +140,43 @@ int ElectronID::process_event(PHCompositeNode* topNode)
   }
   //cout << "Number of SvtxVertexMap entries = " << vtxmap->size() << endl;
 
+  RawClusterContainer* cemc_cluster_container = findNode::getClass<RawClusterContainer>(topNode, "CLUSTER_CEMC");
+  if(!cemc_cluster_container) {
+    cerr << PHWHERE << " ERROR: Can not find CLUSTER_CEMC node." << endl;
+    return Fun4AllReturnCodes::ABORTEVENT;
+  }
+
+
+// Truth info
+  PHG4TruthInfoContainer* truth_container = findNode::getClass<PHG4TruthInfoContainer>(topNode, "G4TruthInfo");
+  if(!truth_container) {
+    cerr << PHWHERE << " ERROR: Can not find G4TruthInfo node." << endl;
+    return Fun4AllReturnCodes::ABORTEVENT;
+  }
+  PHG4TruthInfoContainer::ConstRange range = truth_container->GetPrimaryParticleRange();
+  cout << "number of MC particles = " << truth_container->size() << " " << truth_container->GetNumPrimaryVertexParticles() << endl;
+
+    int mycount = 0;
+    for (PHG4TruthInfoContainer::ConstIterator iter = range.first; iter != range.second; ++iter)
+    {
+      PHG4Particle* g4particle = iter->second;
+      mycount++;
+      int gflavor  = g4particle->get_pid();
+      double gpx = g4particle->get_px();
+      double gpy = g4particle->get_py();
+      double gpz= g4particle->get_pz();
+      double gpt = sqrt(gpx*gpx+gpy*gpy);
+      double phi = atan2(gpy,gpx);
+      double eta = asinh(gpz/gpt);
+      int primid =  g4particle->get_primary_id();
+      int parentid = g4particle->get_parent_id();
+      int trackid = g4particle->get_track_id();
+      if(trackid>truth_container->GetNumPrimaryVertexParticles()-50) cout << trackid << " " << parentid << " " << primid << " " << gflavor << " " << gpt << " " << phi << " " << eta << endl;
+    }
+    cout << "mycount = " << mycount << endl;
+// end Truth
+
+
 
   int nmvtx = 0;
   int nintt = 0;
@@ -145,6 +186,10 @@ int ElectronID::process_event(PHCompositeNode* topNode)
   for(SvtxTrackMap::Iter it = _track_map->begin(); it != _track_map->end(); ++it)
     {
       SvtxTrack *track = it->second;
+
+      PHG4Particle* g4particle = findMCmatch(track, truth_container);
+      int gflavor = g4particle->get_pid();
+      if(gflavor==0) continue;
 
       nmvtx = 0;
       nintt = 0;
@@ -184,8 +229,20 @@ int ElectronID::process_event(PHCompositeNode* topNode)
       double e_hcal_in_3x3 = track->get_cal_energy_3x3(SvtxTrack::CAL_LAYER::HCALIN);
       double e_hcal_out_3x3 = track->get_cal_energy_3x3(SvtxTrack::CAL_LAYER::HCALOUT);
 
+      unsigned int cemc_clusid = track->get_cal_cluster_id(SvtxTrack::CAL_LAYER::CEMC);
+      double cemc_prob = 0.;
+      double cemc_ecore = 0.;
+      double cemc_chi2 = 99999.;
+      if(cemc_clusid<99999) {
+        RawCluster* cemc_cluster = cemc_cluster_container->getCluster(cemc_clusid);
+        cemc_prob = cemc_cluster->get_prob();
+        cemc_ecore = cemc_cluster->get_ecore();
+        cemc_chi2 = cemc_cluster->get_chi2();
+      }
+
       // CEMC E/p cut
-      double cemceoverp = e_cemc_3x3 / mom;
+      //double cemceoverp = e_cemc_3x3 / mom;
+      double cemceoverp = cemc_ecore / mom;
       // HCaline/CEMCe cut
       double hcalineovercemce = e_hcal_in_3x3 / e_cemc_3x3;
       // HCal E/p cut
@@ -209,6 +266,9 @@ int ElectronID::process_event(PHCompositeNode* topNode)
       ntp[15] = nmvtx;
       ntp[16] = nintt;
       ntp[17] = ntpc;
+      ntp[18] = cemc_prob;
+      ntp[19] = cemc_ecore;
+      ntp[20] = cemc_chi2;
       if(output_ntuple) { ntpbeforecut -> Fill(ntp); }
 
 	//std::cout << " Pt_lowerlimit " << Pt_lowerlimit << " Pt_higherlimit " << Pt_higherlimit << " HOP_lowerlimit " << HOP_lowerlimit <<std::endl;
@@ -230,6 +290,8 @@ int ElectronID::process_event(PHCompositeNode* topNode)
 	  ntp[9] = EventNumber;
 	  ntp[10] = z;
   	  ntp[11] = vtxid;
+  	  ntp[12] = cemc_prob;
+  	  ntp[13] = cemc_ecore;
   	  if(output_ntuple) { ntpcutEMOP -> Fill(ntp); }
 
 	  if(hcalineovercemce < HinOEM_higherlimit)
@@ -247,6 +309,8 @@ int ElectronID::process_event(PHCompositeNode* topNode)
 		  ntp[9] = EventNumber;
 	  	  ntp[10] = z;
   		  ntp[11] = vtxid;
+  		  ntp[12] = cemc_prob;
+  		  ntp[13] = cemc_ecore;
   		  if(output_ntuple) { ntpcutEMOP_HinOEM -> Fill(ntp); }
 
 		  if( pt > Pt_lowerlimit && pt < Pt_higherlimit)
@@ -264,6 +328,8 @@ int ElectronID::process_event(PHCompositeNode* topNode)
 			  ntp[9] = EventNumber;
 			  ntp[10] = z;
   			  ntp[11] = vtxid;
+  			  ntp[12] = cemc_prob;
+  			  ntp[13] = cemc_ecore;
   			  if(output_ntuple) { ntpcutEMOP_HinOEM_Pt -> Fill(ntp); }
    	 	
 	 		  if(Verbosity() > 0) {
@@ -294,6 +360,8 @@ int ElectronID::process_event(PHCompositeNode* topNode)
 	  ntp[9] = EventNumber;
 	  ntp[10] = z;
   	  ntp[11] = vtxid;
+  	  ntp[12] = cemc_prob;
+  	  ntp[13] = cemc_ecore;
   	  if(output_ntuple) { ntpcutHOP -> Fill(ntp); }
 
 	  if(Verbosity() > 0) {
@@ -331,7 +399,17 @@ int ElectronID::process_event(PHCompositeNode* topNode)
       double e_cemc_3x3 = tr->get_cal_energy_3x3(SvtxTrack::CAL_LAYER::CEMC);
       double e_hcal_in_3x3 = tr->get_cal_energy_3x3(SvtxTrack::CAL_LAYER::HCALIN);
       double e_hcal_out_3x3 = tr->get_cal_energy_3x3(SvtxTrack::CAL_LAYER::HCALOUT);
+
  
+      unsigned int cemc_clusid = tr->get_cal_cluster_id(SvtxTrack::CAL_LAYER::CEMC);
+      double cemc_prob = 0.;
+      double cemc_ecore = 0.;
+      if(cemc_clusid<99999) {
+        RawCluster* cemc_cluster = cemc_cluster_container->getCluster(cemc_clusid);
+        cemc_prob = cemc_cluster->get_prob();
+        cemc_ecore = cemc_cluster->get_ecore();
+      }
+
      
       ntp[0] = mom;
       ntp[1] = pt;
@@ -346,6 +424,8 @@ int ElectronID::process_event(PHCompositeNode* topNode)
       ntp[10] = z;
       ntp[11] = vtxid;
       ntp[12] = tr_id;
+      ntp[13] = cemc_prob;
+      ntp[14] = cemc_ecore;
       if(output_ntuple) { ntpcutEMOP_HinOEM_Pt_read -> Fill(ntp); }
       
       if(Verbosity() > 1)
@@ -405,6 +485,45 @@ int ElectronID::GetNodes(PHCompositeNode* topNode)
   
   return Fun4AllReturnCodes::EVENT_OK;
 }
+
+
+PHG4Particle* ElectronID::findMCmatch(SvtxTrack* track, PHG4TruthInfoContainer* truth_container)
+{
+  double px = track->get_px();
+  double py = track->get_py();
+  double pz = track->get_pz();
+  double pt = sqrt(px*px+py*py);
+  double phi = atan2(py,px);
+  double eta = asinh(pz/pt);
+  PHG4TruthInfoContainer::ConstRange range = truth_container->GetPrimaryParticleRange();
+//  cout << "number of MC particles = " << truth_container->size() << " " << truth_container->GetNumPrimaryVertexParticles() << endl;
+
+  double thedistance = 9999.;
+  PHG4Particle* matchedMC = NULL;
+
+    for (PHG4TruthInfoContainer::ConstIterator iter = range.first; iter != range.second; ++iter)
+    {
+      PHG4Particle* g4particle = iter->second;
+      int trackid = g4particle->get_track_id();
+      if(trackid<=truth_container->GetNumPrimaryVertexParticles()-50) continue; // only embedded particles
+      //int gflavor  = g4particle->get_pid();
+      double gpx = g4particle->get_px();
+      double gpy = g4particle->get_py();
+      double gpz= g4particle->get_pz();
+      double gpt = sqrt(gpx*gpx+gpy*gpy);
+      double gphi = atan2(gpy,gpx);
+      double geta = asinh(gpz/gpt);
+      //int primid =  g4particle->get_primary_id();
+      //int parentid = g4particle->get_parent_id();
+      if(sqrt(pow(gphi-phi,2)+pow(geta-eta,2))<thedistance) {
+        thedistance = sqrt(pow(gphi-phi,2)+pow(geta-eta,2));
+        matchedMC = g4particle;
+      }     
+    }
+
+  return matchedMC;
+}
+
 
 int ElectronID::End(PHCompositeNode * /*topNode*/)
 {

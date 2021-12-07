@@ -30,7 +30,7 @@ R__LOAD_LIBRARY(libg4dst.so)
 //R__LOAD_LIBRARY(libg4dst.so)
 R__LOAD_LIBRARY(libtpcmldatainterface.so)
 
-int Fun4All_ReadDST_TPCML(const int nEvents = 5e6,
+int Fun4All_ReadDST_TPCML(const int nEvents = 5,
                           //                          const string &inputFile = "singleElectron.lst"  //
                           //        const string& inputFile = "singlePion.lst"//
                           const string &inputFile = "singlePionNeg.lst"  //

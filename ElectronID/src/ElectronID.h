@@ -25,8 +25,10 @@
 // forward declarations
 class PHCompositeNode;
 class SvtxTrackMap;
+class SvtxTrack;
 class TrackPidAssoc;
-
+class PHG4TruthInfoContainer;
+class PHG4Particle;
 
 class SvtxTrack;
 
@@ -61,6 +63,8 @@ public:
      Nquality_higherlimit = Nqualityhigherlimit;
   }
 
+  /// set "prob" variable cut
+  void setPROBcut(float tmp) {PROB_cut = tmp;}
 
   void set_output_ntuple(bool outputntuple) {output_ntuple = outputntuple;}
 
@@ -83,6 +87,8 @@ private:
 /// fetch node pointers
 int GetNodes(PHCompositeNode *topNode);
 
+PHG4Particle* findMCmatch(SvtxTrack* track, PHG4TruthInfoContainer* truth_container);
+
  TrackPidAssoc *_track_pid_assoc;
  SvtxTrackMap *_track_map;
 
@@ -90,6 +96,9 @@ int GetNodes(PHCompositeNode *topNode);
   float EMOP_lowerlimit;
 /// A float higher limit for cutting on cemce3x3/p
   float EMOP_higherlimit;
+
+/// "prob" variable cut
+  float PROB_cut;
 
 /// A float higher limit for cutting on hcaline3x3/cemce3x3
   float HinOEM_higherlimit;
