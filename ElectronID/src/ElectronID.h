@@ -9,8 +9,6 @@
 
 #include <fun4all/SubsysReco.h>
 
-#include "TrackPidAssoc.h"
-
 // rootcint barfs with this header so we need to hide it
 #include <gsl/gsl_rng.h>
 
@@ -27,32 +25,46 @@
 // forward declarations
 class PHCompositeNode;
 class SvtxTrackMap;
+class SvtxTrack;
+class TrackPidAssoc;
+class PHG4TruthInfoContainer;
+class PHG4Particle;
 
 class SvtxTrack;
 
-class ElectronPid  : public SubsysReco
+class ElectronID  : public SubsysReco
 {
 public:
-  ElectronPid(const std::string &name = "ElectronPid", const std::string &filename = "_ElectronPid.root");
-  virtual ~ElectronPid();
+  ElectronID(const std::string &name = "ElectronID", const std::string &filename = "_ElectronID.root");
+  virtual ~ElectronID();
 
   int Init(PHCompositeNode *topNode);
   int InitRun(PHCompositeNode *topNode);
   int process_event(PHCompositeNode *topNode);
   int End(PHCompositeNode *topNode);
 
-  /// Set the cemce3x3/p cut limits for electrons; default: 0.0<cemce3x3/p<100.0, means without cuts
+  /// Set the cemce3x3/p cut limits for electrons; default: 0.7<cemce3x3/p<100.0, means without cuts
   void setEMOPcutlimits(float EMOPlowerlimit, float EMOPhigherlimit) { EMOP_lowerlimit = EMOPlowerlimit; EMOP_higherlimit = EMOPhigherlimit; }
 
   /// Set the hcaline3x3/cemce3x3 cut limit for electrons; default: hcaline3x3/cemce3x3<100.0, means without cut
   void setHinOEMcutlimit(float HinOEMhigherlimit) { HinOEM_higherlimit = HinOEMhigherlimit; }
 
-  /// Set the pt cut limit for Upsilon decay electrons: 0.0<pt<100.0 GeV, means without cut
+  /// Set the pt cut limit for Upsilon decay electrons; default: 0.0<pt<100.0 GeV, means without cut
   void setPtcutlimit(float Ptlowerlimit, float Pthigherlimit) { Pt_lowerlimit = Ptlowerlimit; Pt_higherlimit = Pthigherlimit; }
 
   /// Set the (hcaline3x3+hcaloute3x3)/p cut lower limit for hadrons; default: 0.0<(hcaline3x3+hcaloute3x3)/p, means without cut
   void setHOPcutlimit(float HOPlowerlimit) { HOP_lowerlimit = HOPlowerlimit; }
 
+  /// Set the track cut limits; default: nmvtx>=2, nintt>=0, ntpc>=20; quality<5.
+  void setTrackcutlimits(int Nmvtxlowerlimit, int Ninttlowerlimit, int Ntpclowerlimit, float Nqualityhigherlimit) { 
+     Nmvtx_lowerlimit = Nmvtxlowerlimit; 
+     Nintt_lowerlimit = Ninttlowerlimit; 
+     Ntpc_lowerlimit = Ntpclowerlimit;
+     Nquality_higherlimit = Nqualityhigherlimit;
+  }
+
+  /// set "prob" variable cut
+  void setPROBcut(float tmp) {PROB_cut = tmp;}
 
   void set_output_ntuple(bool outputntuple) {output_ntuple = outputntuple;}
 
@@ -65,6 +77,7 @@ protected:
   TNtuple* ntpcutEMOP; //write ntuple with only EMOP cut
   TNtuple* ntpcutEMOP_HinOEM; //write ntuple with EMOP & HinOEM cuts
   TNtuple* ntpcutEMOP_HinOEM_Pt; //write ntuple with EMOP & HinOEM & Pt cuts
+  TNtuple* ntpcutEMOP_HinOEM_Pt_read; //write ntuple with EMOP & HinOEM & Pt cuts in the situation of reading back the association map.
 
   TNtuple* ntpcutHOP; //write ntuple with only HOP cut
 
@@ -74,6 +87,8 @@ private:
 /// fetch node pointers
 int GetNodes(PHCompositeNode *topNode);
 
+PHG4Particle* findMCmatch(SvtxTrack* track, PHG4TruthInfoContainer* truth_container);
+
  TrackPidAssoc *_track_pid_assoc;
  SvtxTrackMap *_track_map;
 
@@ -81,6 +96,9 @@ int GetNodes(PHCompositeNode *topNode);
   float EMOP_lowerlimit;
 /// A float higher limit for cutting on cemce3x3/p
   float EMOP_higherlimit;
+
+/// "prob" variable cut
+  float PROB_cut;
 
 /// A float higher limit for cutting on hcaline3x3/cemce3x3
   float HinOEM_higherlimit;
@@ -93,6 +111,21 @@ int GetNodes(PHCompositeNode *topNode);
 /// A float lower limit for cutting on (hcaline3x3+hcaloute3x3)/p
   float HOP_lowerlimit;
 
+/// A float lower limit for cutting on nmvtx
+  int Nmvtx_lowerlimit;
+
+/// A float lower limit for cutting on nintt
+  int Nintt_lowerlimit;
+
+/// A float lower limit for cutting on ntpc
+  int Ntpc_lowerlimit;
+
+/// A float higher limit for cutting on quality
+  float Nquality_higherlimit;
+
+  unsigned int _nlayers_maps = 3;
+  unsigned int _nlayers_intt = 4;
+  unsigned int _nlayers_tpc = 48;
 
 
 };

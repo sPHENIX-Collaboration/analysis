@@ -17,8 +17,7 @@ AM_LDFLAGS = \
   -L$(OFFLINE_MAIN)/lib
 
 pkginclude_HEADERS = \
-  TrackPidAssoc.h \
-  ElectronPid.h
+  TrackPidAssoc.h 
 
 ROOTDICTS = \
   TrackPidAssoc_Dict.cc 
@@ -30,14 +29,23 @@ nobase_dist_pcm_DATA = \
 # sources for io library
 libtrackpid_la_SOURCES = \
   $(ROOTDICTS) \
-  TrackPidAssoc.cc \
-  ElectronPid.cc
+  TrackPidAssoc.cc 
 
 libtrackpid_la_LIBADD = \
   -lphool \
   -lSubsysReco \
   -ltrackbase_historic_io
 
+##added on Apr. 19, 2021 by Weihu
+libtrackpid_la_LDFLAGS = \
+  -L$(libdir) \
+  -L$(OFFLINE_MAIN)/lib \
+  -lcalo_io \
+  -lfun4all \
+  -lg4detectors_io \
+  -lphg4hit \
+  -lg4dst \
+  -lg4eval 
 
 # Rule for generating table CINT dictionaries.
 %_Dict.cc: %.h %LinkDef.h

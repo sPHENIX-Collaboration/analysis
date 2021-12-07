@@ -32,6 +32,7 @@ void run(
   ElectronPid *ePid = new ElectronPid("ElectronPid",outputroot+"_ElectronPid.root");
   ePid->set_output_ntuple(output_ntuple);
   ePid->Verbosity(0);
+  ePid->setTrackcutlimits(1,1,20,10);//nmvtx, nintt, ntpc, quality
   ePid->setEMOPcutlimits(0.7,1.5);
   ePid->setHinOEMcutlimit(0.2);
   ePid->setPtcutlimit(2.0,30.0);
@@ -43,7 +44,7 @@ void run(
   in->fileopen(inputFile);
  //in->AddListFile("filelist_0_4d88fm.txt"); //sHijing with Upsilon embeded;
  // in->AddListFile("filelist_0_12fm.txt"); //sHijing with Upsilon embeded;
-  //in->AddListFile("filelist_0_20fm.txt"); //sHijing with Upsilon embeded;
+ // in->AddListFile("filelist_0_20fm.txt"); //sHijing with Upsilon embeded;
   
   se->registerInputManager(in);
 

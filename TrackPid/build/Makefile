@@ -138,6 +138,10 @@ AM_V_lt = $(am__v_lt_$(V))
 am__v_lt_ = $(am__v_lt_$(AM_DEFAULT_VERBOSITY))
 am__v_lt_0 = --silent
 am__v_lt_1 = 
+libtrackpid_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX \
+	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CXXLD) \
+	$(AM_CXXFLAGS) $(CXXFLAGS) $(libtrackpid_la_LDFLAGS) \
+	$(LDFLAGS) -o $@
 PROGRAMS = $(noinst_PROGRAMS)
 am_testexternals_trackpid_OBJECTS = testexternals.$(OBJEXT)
 testexternals_trackpid_OBJECTS = $(am_testexternals_trackpid_OBJECTS)
@@ -382,6 +386,17 @@ libtrackpid_la_LIBADD = \
   -lSubsysReco \
   -ltrackbase_historic_io
 
+libtrackpid_la_LDFLAGS = \
+  -L$(libdir) \
+  -L$(OFFLINE_MAIN)/lib \
+  -lcalo_io \
+  -lfun4all \
+  -lg4detectors_io \
+  -lphg4hit \
+  -lg4dst \
+  -lg4eval \
+  -leventmix
+
 
 ################################################
 # linking tests
@@ -467,7 +482,7 @@ clean-libLTLIBRARIES:
 	}
 
 libtrackpid.la: $(libtrackpid_la_OBJECTS) $(libtrackpid_la_DEPENDENCIES) $(EXTRA_libtrackpid_la_DEPENDENCIES) 
-	$(AM_V_CXXLD)$(CXXLINK) -rpath $(libdir) $(libtrackpid_la_OBJECTS) $(libtrackpid_la_LIBADD) $(LIBS)
+	$(AM_V_CXXLD)$(libtrackpid_la_LINK) -rpath $(libdir) $(libtrackpid_la_OBJECTS) $(libtrackpid_la_LIBADD) $(LIBS)
 
 clean-noinstPROGRAMS:
 	@list='$(noinst_PROGRAMS)'; test -n "$$list" || exit 0; \

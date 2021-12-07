@@ -2,7 +2,7 @@ TrackPidAssoc.lo: \
  /sphenix/u/weihuma/analysis/TrackPid/src/TrackPidAssoc.cc \
  /usr/include/stdc-predef.h \
  /sphenix/u/weihuma/analysis/TrackPid/src/TrackPidAssoc.h \
- /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/release/release_new/new.2/include/phool/PHObject.h \
+ /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/release/release_new/new.1/include/phool/PHObject.h \
  /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/opt/sphenix/core/root-6.22.02/include/TObject.h \
  /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/opt/sphenix/core/root-6.22.02/include/RConfigure.h \
  /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/opt/sphenix/core/root-6.22.02/include/Rtypes.h \
@@ -168,7 +168,7 @@ TrackPidAssoc.lo: \
 
 /sphenix/u/weihuma/analysis/TrackPid/src/TrackPidAssoc.h:
 
-/cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/release/release_new/new.2/include/phool/PHObject.h:
+/cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/release/release_new/new.1/include/phool/PHObject.h:
 
 /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/opt/sphenix/core/root-6.22.02/include/TObject.h:
 
