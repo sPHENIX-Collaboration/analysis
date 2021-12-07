@@ -175,12 +175,12 @@ int PairMaker::process_event_test(PHCompositeNode *topNode) {
   }
   auto electrons = track_pid_assoc->getTracks(TrackPidAssoc::electron);
 
-    for(auto it = electrons.first; it != electrons.second; ++it)
-    {
-      SvtxTrack *tr = trackmap->get(it->second);
-      double p = tr->get_p();
-      std::cout << " pid " << it->first << " track ID " << it->second << " mom " << p << std::endl;
-    }
+//    for(auto it = electrons.first; it != electrons.second; ++it)
+//    {
+//      SvtxTrack *tr = trackmap->get(it->second);
+//      double p = tr->get_p();
+//      std::cout << " pid " << it->first << " track ID " << it->second << " mom " << p << std::endl;
+//    }
 
   double mult = (double)trackmap->size();
   cout << "   Number of tracks = " << trackmap->size() << endl;
@@ -234,7 +234,8 @@ int PairMaker::process_event_test(PHCompositeNode *topNode) {
         double ee = cluster->get_energy();
         double ecore = cluster->get_ecore();
         double prob = cluster->get_prob();
-        cout << "cluster: " << ee << " " << ecore << " " << prob << endl;
+        double cemc_chi2 = cluster->get_chi2();
+        cout << "cluster: " << ee << " " << ecore << " " << prob << " " << cemc_chi2 << endl;
 
       double px = track->get_px();
       double py = track->get_py();
@@ -250,10 +251,16 @@ int PairMaker::process_event_test(PHCompositeNode *topNode) {
       cout << "electron: "<<charge<<" "<<pt<<" "<<x<<" "<<y<<" "<<z<<" "<<vtxid<<" "<<vtxbin<< endl;
       GlobalVertex* gvtx = global_vtxmap->get(vtxid);
       cout << "global vertex: "<<gvtx->get_x()<<" "<<gvtx->get_y()<<" "<<gvtx->get_z()<<endl;
+
       sPHElectronv1 tmpel = sPHElectronv1(track);
       tmpel.set_zvtx(gvtx->get_z());
+      tmpel.set_cemc_ecore(ecore);
+      tmpel.set_cemc_prob(prob);
+      tmpel.set_cemc_chi2(cemc_chi2);
+
       elepos.push_back(tmpel);
       (_buffer[vtxbin][centbin]).push_back(tmpel);
+
     }
 
   cout << "# of electrons/positrons = " << elepos.size() << endl;
