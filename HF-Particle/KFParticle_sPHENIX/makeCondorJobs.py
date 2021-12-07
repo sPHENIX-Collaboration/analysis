@@ -16,7 +16,7 @@ if inputType not in types:
   print("The argument, {}, was not known. Use CHARM[D0] or BOTTOM[D0] instead.".format(args.type))
   sys.exit()
 
-inputFileTypes = ['DST_TRACKS', 'DST_VERTEX', 'DST_TRUTH', 'DST_CALO_CLUSTER', 'DST_TRKR_HIT', 'DST_BBC_G4HIT', 'DST_TRKR_G4HIT']
+dstSets = ['DST_TRACKS', 'DST_VERTEX', 'DST_TRUTH', 'DST_CALO_CLUSTER', 'DST_TRKR_HIT', 'DST_BBC_G4HIT', 'DST_TRKR_G4HIT']
 
 myShell = str(environ['SHELL'])
 goodShells = ['/bin/bash', '/bin/tcsh']
@@ -29,8 +29,8 @@ def makeCondorJob():
     print("Creating condor submission files for {} production".format(inputType))
     inputFiles = []
     line = []
-    for i in range(len(inputFileTypes)):
-        inputFiles.append(open("inputList_{0}.list".format(inputFileTypes[i].lower()), "r"))
+    for i in range(len(dstSets)):
+        inputFiles.append(open("{0}.list".format(dstSets[i].lower()), "r"))
         line.append(inputFiles[i].readline())
     myOutputPath = os.getcwd()
     condorDir = "{}/condorJob".format(myOutputPath)
@@ -40,8 +40,8 @@ def makeCondorJob():
     while line[0]:
         listFile = []
         listFileGeneric = []
-        for i in range(len(inputFileTypes)):
-          fileStart = "fileLists/productionFiles-{1}-{2}-".format(condorDir, inputType, inputFileTypes[i].lower())
+        for i in range(len(dstSets)):
+          fileStart = "fileLists/productionFiles-{1}-{2}-".format(condorDir, inputType, dstSets[i].lower())
           listFile.append("{0}/{1}{2:05d}.list".format(condorDir, fileStart, nJob))
           listFileGeneric.append("$(condorDir)/{0}$INT(Process,%05d).list".format(fileStart))
           productionFilesToUse = open(listFile[i], "w")
@@ -72,9 +72,7 @@ def makeCondorJob():
     print("This setup will submit {} subjobs".format(nJob))
     print("You can submit your job with the script:\n{}".format(condorFileName))
         
-for inputFile in inputFileTypes:
-  catalogCommand = "CreateFileList.pl -type {0} {1}".format(types[inputType], inputFile)
-  if args.nTotEvents != -1: catalogCommand += " -n {}".format(args.nTotEvents)
-  os.system(catalogCommand)
-  os.system("mv {0}.list inputList_{0}.list".format(inputFile.lower()))
+catalogCommand = "CreateFileList.pl -type {0} {1}".format(types[inputType], ' '.join(dstSets))
+if args.nTotEvents != -1: catalogCommand += " -n {}".format(args.nTotEvents)
+os.system(catalogCommand)
 makeCondorJob()
