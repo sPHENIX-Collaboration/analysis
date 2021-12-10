@@ -17,17 +17,17 @@ using namespace std;
 using namespace HeavyFlavorReco;
 
 /****************************/
-/*     HF Reco for MDC2     */
+/*     MDC2 Reco for MDC2     */
 /* Cameron Dean, LANL, 2021 */
 /*      cdean@bnl.gov       */
 /****************************/
 
-void Fun4All_HFreco(string trackList = "track.list"
-                  , string vertexList = "vtx.list"
-                  , string truthList = "truth.list"
-                  , string caloList = "calo.list"
-                  , string pileupList = "pileup.list"
-                  , const int nEvents = 0)
+void Fun4All_MDC2reco(string trackList = "track.list"
+                    , string vertexList = "vtx.list"
+                    , string truthList = "truth.list"
+                    , string caloList = "calo.list"
+                    , string pileupList = "pileup.list"
+                    , const int nEvents = 0)
 {
   int verbosity = VERBOSITY;
 

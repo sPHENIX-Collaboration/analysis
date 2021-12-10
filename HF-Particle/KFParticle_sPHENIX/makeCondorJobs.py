@@ -6,6 +6,7 @@ parser = argparse.ArgumentParser(description='sPHENIX MDC2 Reco Job Creator')
 parser.add_argument('-i', '--inputType', default="CHARM", help='Input type: PYTHIA8_PP_MB, HIJING_[0-20/0-4P88], CHARM[D0], BOTTOM[D0]')
 parser.add_argument('-f', '--nFilesPerJob', default=50, type=int, help='Number of input files to pass to each job')
 parser.add_argument('-t', '--nTotEvents', default=-1, type=int, help='Total number of events to run over')
+parser.add_argument('-p', '--pileup', default=-"true", help='Get data with pileup, true or false (default = true)')
 
 args = parser.parse_args()
 
@@ -55,8 +56,8 @@ def makeCondorJob():
     condorFile = open("{}".format(condorFileName), "w")
     condorFile.write("Universe           = vanilla\n")
     condorFile.write("initialDir         = {}\n".format(myOutputPath))
-    if myShell == '/bin/bash': condorFile.write("Executable         = $(initialDir)/run_HFreco.sh\n")
-    if myShell == '/bin/tcsh': condorFile.write("Executable         = $(initialDir)/run_HFreco.csh\n")
+    if myShell == '/bin/bash': condorFile.write("Executable         = $(initialDir)/run_MDC2reco.sh\n")
+    if myShell == '/bin/tcsh': condorFile.write("Executable         = $(initialDir)/run_MDC2reco.csh\n")
     condorFile.write("PeriodicHold       = (NumJobStarts>=1 && JobStatus == 1)\n")
     condorFile.write("request_memory     = 1.8GB\n")
     condorFile.write("Priority           = 20\n")
@@ -74,5 +75,6 @@ def makeCondorJob():
         
 catalogCommand = "CreateFileList.pl -type {0} {1}".format(types[inputType], ' '.join(dstSets))
 if args.nTotEvents != -1: catalogCommand += " -n {}".format(args.nTotEvents)
+if args.pileup == 'false': catalogCommand += " -nopileup"
 os.system(catalogCommand)
 makeCondorJob()
