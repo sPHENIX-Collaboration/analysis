@@ -31,7 +31,6 @@ class sPHElectronPair : public PHObject
   virtual double get_phiv() const { return NAN; }
   virtual double get_min_mass() const { return NAN; }
 
-
   virtual void set_id(int id) { }
   virtual void set_type(int type) { }
   virtual void set_min_mass(double mm) { }

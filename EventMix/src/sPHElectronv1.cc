@@ -30,6 +30,15 @@ sPHElectronv1::sPHElectronv1()
   _nmvtx = 0;
   _ntpc = 0;
 
+  _cemc_ecore = 0.;
+  _cemc_chi2 = 99999.;
+  _cemc_prob = 99999.;
+  _cemc_dphi = 99999.;
+  _cemc_deta = 99999.;
+  _hcalin_e = 99999.;
+  _hcalin_dphi = 99999.;
+  _hcalin_deta = 99999.;
+
 }
 
 sPHElectronv1::sPHElectronv1(const SvtxTrack* trk) {
@@ -51,6 +60,15 @@ sPHElectronv1::sPHElectronv1(const SvtxTrack* trk) {
   _dca2d_error = trk->get_dca2d_error();
   _dca3d_xy = trk->get_dca3d_xy();
   _dca3d_z = trk->get_dca3d_z();
+
+  _cemc_ecore = 0.;
+  _cemc_chi2  = 99999.;
+  _cemc_prob  = 99999.;
+  _cemc_dphi  = trk->get_cal_dphi(SvtxTrack::CAL_LAYER::CEMC);
+  _cemc_deta  = trk->get_cal_deta(SvtxTrack::CAL_LAYER::CEMC);
+  _hcalin_e    = trk->get_cal_cluster_e(SvtxTrack::CAL_LAYER::HCALIN);
+  _hcalin_dphi = trk->get_cal_dphi(SvtxTrack::CAL_LAYER::HCALIN);
+  _hcalin_deta = trk->get_cal_deta(SvtxTrack::CAL_LAYER::HCALIN);
 
   _nmvtx = 0;
   _ntpc = 0;
@@ -94,6 +112,15 @@ sPHElectronv1& sPHElectronv1::operator=(const sPHElectronv1& electron)
 
   _nmvtx = electron.get_nmvtx();
   _ntpc = electron.get_ntpc();
+
+  _cemc_ecore = electron.get_cemc_ecore();
+  _cemc_chi2  = electron.get_cemc_chi2();
+  _cemc_prob  = electron.get_cemc_prob();
+  _cemc_dphi  = electron.get_cemc_dphi();
+  _cemc_deta  = electron.get_cemc_deta();
+  _hcalin_e    = electron.get_hcalin_e();
+  _hcalin_dphi = electron.get_hcalin_dphi();
+  _hcalin_deta = electron.get_hcalin_deta();
 
   return *this;
 }
