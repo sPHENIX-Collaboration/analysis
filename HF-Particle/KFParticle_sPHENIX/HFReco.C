@@ -7,8 +7,8 @@ namespace HeavyFlavorReco
   string reconstructionName = "myHeavyFlavorReco"; //Used for naming output folder, file and nodes
   string outputRecoFile;
   bool runTruthTrigger = false; //Decay Finder
-  bool getTruthInfo = false; //Add truth matching to output file
-  bool getCaloInfo = false;
+  bool getTruthInfo = true; //Add truth matching to output file
+  bool getCaloInfo = true;
   bool runTracking = false; //Run tracking on DSTs
   bool runPileUp = false; //Set true to have pile up added to reco
   bool runQA = false; //Run QA, needs set up
@@ -46,25 +46,25 @@ void myHeavyFlavorReco()
   if (fixToPV)
   {
     kfparticle->constrainToPrimaryVertex(true);
-    kfparticle->setMotherIPchi2(50);
+    kfparticle->setMotherIPchi2(40);
     kfparticle->setFlightDistancechi2(10.0);
-    kfparticle->setMinDIRA(-1.0);
+    kfparticle->setMinDIRA(0.5);
   }
 
   //Track parameters
   kfparticle->setMinimumTrackPT(0.2);
-  kfparticle->setMinimumTrackIPchi2(2);
+  kfparticle->setMinimumTrackIPchi2(5);
   kfparticle->setMinimumTrackIP(0.00);
   kfparticle->setMaximumTrackchi2nDOF(3);
 
   //Vertex parameters
   kfparticle->setMaximumVertexchi2nDOF(3);
-  kfparticle->setMaximumDaughterDCA(0.03);
+  kfparticle->setMaximumDaughterDCA(0.05);
 
   //Parent parameters
   kfparticle->setMotherPT(1);
   kfparticle->setMinimumMass(1.7);
-  kfparticle->setMaximumMass(2.0);
+  kfparticle->setMaximumMass(2.2);
 
   kfparticle->setOutputName(outputRecoFile);
 
