@@ -5,7 +5,7 @@
 #include <Fun4AllServer.h>
 #include <Fun4AllDstInputManager.h>
 #include <recoConsts.h>
-#include "BBCStudy.h"
+#include <BBCStudy.h>
 
 R__LOAD_LIBRARY(libBBCStudy.so)
 

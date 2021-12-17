@@ -80,7 +80,7 @@ int BBCStudy::process_event(PHCompositeNode *topNode)
   cout << "Num primaries = " << nprimaries << "\t" << _truth_container->GetNumPrimaryVertexParticles() << endl;
 
   // Get True Vertex
-  PHG4VtxPoint* vtxp = _truth_container->GetPrimaryVtx( 0 );   // vtxid 0 has the interaction vertex
+  PHG4VtxPoint *vtxp = _truth_container->GetPrimaryVtx( _truth_container->GetPrimaryVertexIndex() );
   if ( vtxp != 0 )
   {
     double vt = vtxp->get_t();
@@ -112,9 +112,11 @@ int BBCStudy::process_event(PHCompositeNode *topNode)
   }
 
   cout << "Num Vertices = " << nvtx << "\t" << _truth_container->GetNumVertices() << endl;
+  cout << "Primary Vertex = " << _truth_container->GetPrimaryVertexIndex() << endl;
 
 
-  double len = 0.;
+  float len[128] = {0.};
+  float edep[128] = {0.};
   unsigned int nhits = 0;
 
   PHG4HitContainer::ConstRange bbc_hit_range = _bbchits->getHits();
@@ -122,15 +124,33 @@ int BBCStudy::process_event(PHCompositeNode *topNode)
   {
     PHG4Hit *this_hit = hit_iter->second;
 
-    len += this_hit->get_edep();
-    len = this_hit->get_path_length();
-    
-    unsigned int layer = this_hit->get_layer();
-    float edep = this_hit->get_edep();
+    unsigned int ch = this_hit->get_layer();  // pmt channel
 
-    cout << "hit " << nhits << "\t" << layer << "\t"  << len << endl;
+    len[ch] += this_hit->get_path_length();
+
+    edep[ch] += this_hit->get_edep();
+
+    int trkid = this_hit->get_trkid();
+    if ( trkid>0 ) cout << "TRKID " << trkid << endl;
+
+    PHG4Particle *part = _truth_container->GetParticle( trkid );
+    cout << "hit " << ch << "\t" << trkid << "\t" << part->get_pid() << endl;
+
+    if ( part->get_track_id() != trkid )
+    {
+      cout << "ERROR " << endl;
+    }
 
     nhits++;
+  }
+
+  cout << "******** " << _evt << " **************" << endl;
+  for (int ich=0; ich<128; ich++)
+  {
+    if ( len[ich]>0. )
+    {
+      cout << "ich " << ich << "\t" << len[ich] << "\t" << edep[ich] << endl;
+    }
   }
 
   _tree->Fill();
