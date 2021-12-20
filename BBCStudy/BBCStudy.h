@@ -3,6 +3,7 @@
 
 #include <fun4all/SubsysReco.h>
 #include <string>
+#include <TFile.h>
 
 //Forward declerations
 class PHCompositeNode;
@@ -10,6 +11,7 @@ class PHG4HitContainer;
 class PHG4TruthInfoContainer;
 class TFile;
 class TTree;
+class TDatabasePDG;
 
 
 //Brief: basic ntuple and histogram creation for sim evaluation
@@ -43,7 +45,15 @@ private:
    
   //Output
   TTree* _tree;
-  int _evt;
+  Int_t    f_evt;
+  Short_t  f_bbcn[2]; // num hits
+  Float_t  f_bbcq[2]; // charge (currently npe)
+  Float_t  f_bbct[2]; // time
+  Float_t  f_bbcz;  // z-vertex
+  Float_t  f_bbct0; // start time
+
+
+  TDatabasePDG* _pdg;
 
   //Get all the nodes
   void GetNodes(PHCompositeNode *);
