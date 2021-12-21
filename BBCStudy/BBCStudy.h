@@ -12,6 +12,8 @@ class PHG4TruthInfoContainer;
 class TFile;
 class TTree;
 class TDatabasePDG;
+class TRandom3;
+class TH1;
 
 
 //Brief: basic ntuple and histogram creation for sim evaluation
@@ -46,14 +48,18 @@ private:
   //Output
   TTree* _tree;
   Int_t    f_evt;
-  Short_t  f_bbcn[2]; // num hits
-  Float_t  f_bbcq[2]; // charge (currently npe)
+  Short_t  f_bbcn[2]; // num hits for each arm (north and south)
+  Float_t  f_bbcq[2]; // total charge (currently npe)
   Float_t  f_bbct[2]; // time
   Float_t  f_bbcz;  // z-vertex
   Float_t  f_bbct0; // start time
 
+  TH1* h_bbcq[128];   // q in each tube
+  TH1* h_bbcqtot[2];  // total q in bbc arms
+  TH1* h_ztrue;       // true z-vertex
 
   TDatabasePDG* _pdg;
+  TRandom3*     _rndm;
 
   //Get all the nodes
   void GetNodes(PHCompositeNode *);

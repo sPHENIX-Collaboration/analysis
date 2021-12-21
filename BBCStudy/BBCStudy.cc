@@ -12,9 +12,12 @@
 
 #include <TFile.h>
 #include <TTree.h>
-#include <TH1.h>
+#include <TH1F.h>
+#include <TString.h>
 #include <TLorentzVector.h>
+//#include <TMath.h>
 #include <TDatabasePDG.h>
+#include <TRandom3.h>
 
 
 #include <iostream>
@@ -23,12 +26,86 @@ using namespace std;
 
 const Double_t index_refract = 1.4585;
 const Double_t v_ckov = 1.0/index_refract;  // velocity threshold for CKOV
+const Double_t C = 29.9792458; // cm/ns
+
+// kludge where we have the hardcoded positions of the tubes
+// These are the x,y for the south BBC.
+// The north inverts the x coordinate (x -> -x)
+const float TubeLoc[64][2] = {
+    { -12.2976,	4.26 },
+    { -12.2976,	1.42 },
+    { -9.83805,	8.52 },
+    { -9.83805,	5.68 },
+    { -9.83805,	2.84 },
+    { -7.37854,	9.94 },
+    { -7.37854,	7.1 },
+    { -7.37854,	4.26 },
+    { -7.37854,	1.42 },
+    { -4.91902,	11.36 },
+    { -4.91902,	8.52 },
+    { -4.91902,	5.68 },
+    { -2.45951,	12.78 },
+    { -2.45951,	9.94 },
+    { -2.45951,	7.1 },
+    { 0,	11.36 },
+    { 0,	8.52 },
+    { 2.45951,	12.78 },
+    { 2.45951,	9.94 },
+    { 2.45951,	7.1 },
+    { 4.91902,	11.36 },
+    { 4.91902,	8.52 },
+    { 4.91902,	5.68 },
+    { 7.37854,	9.94 },
+    { 7.37854,	7.1 },
+    { 7.37854,	4.26 },
+    { 7.37854,	1.42 },
+    { 9.83805,	8.52 },
+    { 9.83805,	5.68 },
+    { 9.83805,	2.84 },
+    { 12.2976,	4.26 },
+    { 12.2976,	1.42 },
+    { 12.2976,	-4.26 },
+    { 12.2976,	-1.42 },
+    { 9.83805,	-8.52 },
+    { 9.83805,	-5.68 },
+    { 9.83805,	-2.84 },
+    { 7.37854,	-9.94 },
+    { 7.37854,	-7.1 },
+    { 7.37854,	-4.26 },
+    { 7.37854,	-1.42 },
+    { 4.91902,	-11.36 },
+    { 4.91902,	-8.52 },
+    { 4.91902,	-5.68 },
+    { 2.45951,	-12.78 },
+    { 2.45951,	-9.94 },
+    { 2.45951,	-7.1 },
+    { 0,	-11.36 },
+    { 0,	-8.52 },
+    { -2.45951,	-12.78 },
+    { -2.45951,	-9.94 },
+    { -2.45951,	-7.1 },
+    { -4.91902,	-11.36 },
+    { -4.91902,	-8.52 },
+    { -4.91902,	-5.68 },
+    { -7.37854,	-9.94 },
+    { -7.37854,	-7.1 },
+    { -7.37854,	-4.26 },
+    { -7.37854,	-1.42 },
+    { -9.83805,	-8.52 },
+    { -9.83805,	-5.68 },
+    { -9.83805,	-2.84 },
+    { -12.2976,	-4.26 },
+    { -12.2976,	-1.42 }
+  };    
+
+
 
 //____________________________________
 BBCStudy::BBCStudy(const string &name) : SubsysReco(name),
     _tree( 0 ),
     f_evt( 0 ),
     _pdg( 0 ),
+    _rndm( 0 ),
     _savefname( "bbcstudy.root" ),
     _savefile( 0 )
 { 
@@ -42,6 +119,7 @@ int BBCStudy::Init(PHCompositeNode *topNode)
   //PHTFileServer::get().open( _outfile, "RECREATE");
   _savefile = new TFile( _savefname.c_str(), "RECREATE" );
 
+  // Global BBC variables
   _tree = new TTree("t","BBC Study");
   _tree->Branch("evt",&f_evt,"evt/I");
   _tree->Branch("bns",&f_bbcn[0],"bns/S");
@@ -54,7 +132,24 @@ int BBCStudy::Init(PHCompositeNode *topNode)
   _tree->Branch("bt0",&f_bbct0,"bt0/F");
 
   _pdg = new TDatabasePDG();
+  _rndm = new TRandom3(0);
 
+  TString name, title;
+  for (int ipmt=0; ipmt<128; ipmt++)
+  {
+    name = "h_bbcq"; name += ipmt;
+    title = "bbc charge, ch "; title += ipmt;
+    h_bbcq[ipmt] = new TH1F(name,title,1200,0,120*30);
+  }
+
+  for (int iarm=0; iarm<2; iarm++)
+  {
+    name = "h_bbcqtot"; name += iarm;
+    title = "bbc charge, arm "; title += iarm;
+    h_bbcqtot[iarm] = new TH1F(name,title,1200,0,120*30);
+  }
+
+  h_ztrue = new TH1F("h_ztrue","true z-vtx",600,-30,30);
   return 0;
 }
 
@@ -104,21 +199,27 @@ int BBCStudy::process_event(PHCompositeNode *topNode)
 
     nprimaries++;
   }
-  cout << "Num primaries = " << nprimaries << "\t" << _truth_container->GetNumPrimaryVertexParticles() << endl;
+  if ( f_evt < 20 )
+  {
+    cout << "Num primaries = " << nprimaries << "\t" << _truth_container->GetNumPrimaryVertexParticles() << endl;
+  }
 
   // Get True Vertex
   PHG4VtxPoint *vtxp = _truth_container->GetPrimaryVtx( _truth_container->GetPrimaryVertexIndex() );
   if ( vtxp != 0 )
   {
-    double vt = vtxp->get_t();
     double vx = vtxp->get_x();
     double vy = vtxp->get_y();
     double vz = vtxp->get_z();
+    double vt = vtxp->get_t();
 
     if ( f_evt<20 )
     {
-      cout << "VTXP " << "\t" << vt << "\t" << vx << "\t" << vy << "\t" << vz << endl;
+      cout << "VTXP " << "\t" << vx << "\t" << vy << "\t" << vz << "\t" << vt << endl;
     }
+
+    h_ztrue->Fill( vz );
+
   }
 
 
@@ -155,6 +256,7 @@ int BBCStudy::process_event(PHCompositeNode *topNode)
   unsigned int nhits = 0;
 
   TLorentzVector v4;
+  TLorentzVector hitpos;
 
   PHG4HitContainer::ConstRange bbc_hit_range = _bbchits->getHits();
   for (auto hit_iter = bbc_hit_range.first; hit_iter != bbc_hit_range.second; hit_iter++)
@@ -165,7 +267,7 @@ int BBCStudy::process_event(PHCompositeNode *topNode)
     int arm = ch/64;;          // south=0, north=1
 
     int trkid = this_hit->get_trkid();
-    if ( trkid>0 ) cout << "TRKID " << trkid << endl;
+    if ( trkid>0 && f_evt<20 ) cout << "TRKID " << trkid << endl;
 
     PHG4Particle *part = _truth_container->GetParticle( trkid );
     v4.SetPxPyPzE( part->get_px(), part->get_py(), part->get_pz(), part->get_e() );
@@ -184,28 +286,52 @@ int BBCStudy::process_event(PHCompositeNode *topNode)
 
     Double_t beta = v4.Beta();
 
+    // Determine time
+    //hitpos.SetXYZT( this_hit->get_x(), this_hit->get_y(), this_hit->get_z(), this_hit->get_t() );
+
+    float xsign = 1.;
+    float zsign = -1.;
+    if ( arm == 1 )
+    {
+      xsign = -1.;
+      zsign = 1.;
+    }
+
+    float tube_x = xsign*TubeLoc[ch%64][0];
+    float tube_y = TubeLoc[ch%64][1];
+    float tube_z = zsign*253.;
+    //float flight_z = fabs(tube_z - this_hit->get_z(1));
+    float flight_z = tube_z;
+
+    float flight_time = sqrt( tube_x*tube_x + tube_y*tube_y + flight_z*flight_z )/C;
+    float tdiff = flight_time - ( this_hit->get_t(1) - vtxp->get_t() );
+
     if ( f_evt<20 )
     {
       cout << "hit " << ch << "\t" << trkid << "\t" << pid
-        << "\t" << v4.M()
-        << "\t" << beta
-        << "\t" << charge
+        //<< "\t" << v4.M()
+        //<< "\t" << beta
         << "\t" << this_hit->get_path_length()
         << "\t" << this_hit->get_edep()
-        << "\t" << v4.Eta()
-        << "\t" << v4.Pt()
-        << "\t" << v4.P()
+        //<< "\t" << v4.Eta()
+        //<< "\t" << v4.Pt()
+        //<< "\t" << v4.P()
+        << "\t" << this_hit->get_x(1)
+        << "\t" << this_hit->get_y(1)
+        << "\t" << this_hit->get_z(1)
+        << "\t" << this_hit->get_t(1)
+        << "\t" << tdiff
         << endl;
     }
 
     edep[ch] += this_hit->get_edep();
-
+ 
     // get summed path length for particles that can create CKOV light
+    // n.p.e. is determined from path length
     if ( beta > v_ckov && charge != 0. )
     {
       len[ch] += this_hit->get_path_length();
 
-      f_bbcq[arm] += this_hit->get_path_length()*(120/3.0);  // we get 120 p.e. per 3 cm
     }
 
     // sanity check
@@ -223,7 +349,9 @@ int BBCStudy::process_event(PHCompositeNode *topNode)
   }
   for (int ich=0; ich<128; ich++)
   {
-    // threshold should be > 0.
+    int arm = ich/64;
+
+    // Fill charge and time info
     if ( len[ich]>0. )
     {
       if ( f_evt<20 )
@@ -231,7 +359,17 @@ int BBCStudy::process_event(PHCompositeNode *topNode)
         cout << "ich " << ich << "\t" << len[ich] << "\t" << edep[ich] << endl;
       }
 
-      int arm = ich/64;
+      float npe = len[ich]*(120/3.0);  // we get 120 p.e. per 3 cm
+      float dnpe = static_cast<float>( _rndm->Gaus( 0, sqrt(npe) ) ); // get fluctuation in npe
+
+      npe += dnpe;  // apply the fluctuations in npe
+
+      f_bbcq[arm] += npe;
+
+      h_bbcq[ich]->Fill( npe );
+      h_bbcqtot[arm]->Fill( npe );
+
+      // threshold should be > 0.
       ++f_bbcn[arm];
     }
   }
