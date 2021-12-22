@@ -3,6 +3,7 @@
 
 #include <fun4all/SubsysReco.h>
 #include <string>
+#include <map>
 #include <TFile.h>
 
 //Forward declerations
@@ -14,6 +15,7 @@ class TTree;
 class TDatabasePDG;
 class TRandom3;
 class TH1;
+class TH2;
 
 
 //Brief: basic ntuple and histogram creation for sim evaluation
@@ -57,7 +59,12 @@ private:
   TH1* h_bbcq[128];   // q in each tube
   TH1* h_bbcqtot[2];  // total q in bbc arms
   TH1* h_ztrue;       // true z-vertex
+  TH1* h_tdiff;       // time diff between estimated and real time
+  TH2* h2_tdiff_ch;    // time diff by channel
 
+  std::map<int,int> _pids;  // PIDs of tracks in the BBC
+
+  //
   TDatabasePDG* _pdg;
   TRandom3*     _rndm;
 

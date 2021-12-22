@@ -13,6 +13,7 @@
 #include <TFile.h>
 #include <TTree.h>
 #include <TH1F.h>
+#include <TH2F.h>
 #include <TString.h>
 #include <TLorentzVector.h>
 //#include <TMath.h>
@@ -140,6 +141,12 @@ int BBCStudy::Init(PHCompositeNode *topNode)
     name = "h_bbcq"; name += ipmt;
     title = "bbc charge, ch "; title += ipmt;
     h_bbcq[ipmt] = new TH1F(name,title,1200,0,120*30);
+
+    /*
+    name = "h_tdiff_ch"; name += ipmt;
+    title = "tdiff, ch "; title += ipmt;
+    h_tdiff_ch[ipmt] = new TH1F(name,title,600,-3,3);
+    */
   }
 
   for (int iarm=0; iarm<2; iarm++)
@@ -150,6 +157,9 @@ int BBCStudy::Init(PHCompositeNode *topNode)
   }
 
   h_ztrue = new TH1F("h_ztrue","true z-vtx",600,-30,30);
+  h_tdiff = new TH1F("h_tdiff","dt between measured and true time",6000,-3,3);
+  h2_tdiff_ch = new TH2F("h2_tdiff_ch","dt between measured and true time vs ch",128,-0.5,127.5,200,-2,2);
+
   return 0;
 }
 
@@ -300,8 +310,7 @@ int BBCStudy::process_event(PHCompositeNode *topNode)
     float tube_x = xsign*TubeLoc[ch%64][0];
     float tube_y = TubeLoc[ch%64][1];
     float tube_z = zsign*253.;
-    //float flight_z = fabs(tube_z - this_hit->get_z(1));
-    float flight_z = tube_z;
+    float flight_z = fabs(tube_z - vtxp->get_z());
 
     float flight_time = sqrt( tube_x*tube_x + tube_y*tube_y + flight_z*flight_z )/C;
     float tdiff = flight_time - ( this_hit->get_t(1) - vtxp->get_t() );
@@ -310,7 +319,7 @@ int BBCStudy::process_event(PHCompositeNode *topNode)
     {
       cout << "hit " << ch << "\t" << trkid << "\t" << pid
         //<< "\t" << v4.M()
-        //<< "\t" << beta
+        << "\t" << beta
         << "\t" << this_hit->get_path_length()
         << "\t" << this_hit->get_edep()
         //<< "\t" << v4.Eta()
@@ -332,6 +341,13 @@ int BBCStudy::process_event(PHCompositeNode *topNode)
     {
       len[ch] += this_hit->get_path_length();
 
+      if ( trkid>0 )
+      {
+        h_tdiff->Fill( tdiff );
+        h2_tdiff_ch->Fill( ch, tdiff );
+      }
+
+      _pids[pid] += 1;
     }
 
     // sanity check
@@ -399,6 +415,21 @@ int BBCStudy::End(PHCompositeNode *topNode)
 {
   _savefile->cd();
   _savefile->Write();
+
+  // print out list of pids that hit BBC
+  cout << "PIDs of Particles that hit BBC" << endl;
+  unsigned int ipid = 0;
+  double npart = 0;
+  for (auto & pid : _pids)
+  {
+    npart += pid.second;
+  }
+  for (auto & pid : _pids)
+  {
+    cout << pid.first << "\t" << pid.second << "\t" << pid.second/npart << endl;
+    ipid++;
+  }
+  cout << "There were " << ipid << " different particle types" << endl;
 
   return 0;
 }
