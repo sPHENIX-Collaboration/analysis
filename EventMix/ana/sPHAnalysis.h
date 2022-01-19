@@ -37,6 +37,7 @@ protected:
   TFile* OutputNtupleFile;
   std::string OutputFileName;
 
+  TNtuple* ntppid;
   TNtuple* ntpb;
   TNtuple* ntp1;
   TNtuple* ntp2;
