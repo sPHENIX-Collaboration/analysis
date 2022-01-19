@@ -132,7 +132,7 @@ int BBCStudy::Init(PHCompositeNode *topNode)
   _tree->Branch("bz",&f_bbcz,"bz/F");
   _tree->Branch("bt0",&f_bbct0,"bt0/F");
 
-  _pdg = new TDatabasePDG();
+  _pdg = new TDatabasePDG();  // database of PDG info on particles
   _rndm = new TRandom3(0);
 
   TString name, title;
@@ -153,8 +153,9 @@ int BBCStudy::Init(PHCompositeNode *topNode)
   {
     name = "h_bbcqtot"; name += iarm;
     title = "bbc charge, arm "; title += iarm;
-    h_bbcqtot[iarm] = new TH1F(name,title,1200,0,120*30);
+    h_bbcqtot[iarm] = new TH1F(name,title,1200,0,120*30); // npe for 1 mip = 120, and up to 30 mips are possible
   }
+  h2_bbcqtot = new TH2F("h2_bbcqtot","north BBCQ vs South BBCQ",300,0,120*30,300,0,120*30);
 
   h_ztrue = new TH1F("h_ztrue","true z-vtx",600,-30,30);
   h_tdiff = new TH1F("h_tdiff","dt between measured and true time",6000,-3,3);
@@ -191,7 +192,7 @@ int BBCStudy::process_event(PHCompositeNode *topNode)
   f_bbcz = -9999.;
   f_bbct0 = -9999.;
 
-  // Get Primaries
+  // Get Primaries AND Secondaries
   PHG4TruthInfoContainer::ConstRange primary_range = _truth_container->GetPrimaryParticleRange();
   int nprimaries = 0;
 
@@ -213,6 +214,7 @@ int BBCStudy::process_event(PHCompositeNode *topNode)
   {
     cout << "Num primaries = " << nprimaries << "\t" << _truth_container->GetNumPrimaryVertexParticles() << endl;
   }
+
 
   // Get True Vertex
   PHG4VtxPoint *vtxp = _truth_container->GetPrimaryVtx( _truth_container->GetPrimaryVertexIndex() );
@@ -259,7 +261,7 @@ int BBCStudy::process_event(PHCompositeNode *topNode)
     cout << "Primary Vertex = " << _truth_container->GetPrimaryVertexIndex() << endl;
   }
 
-  // Go through hits to see what they look like
+  // Go through BBC hits to see what they look like
 
   float len[128] = {0.};
   float edep[128] = {0.};
@@ -363,9 +365,12 @@ int BBCStudy::process_event(PHCompositeNode *topNode)
   {
     cout << "******** " << f_evt << " **************" << endl;
   }
+
+
+  // process the data from each channel
   for (int ich=0; ich<128; ich++)
   {
-    int arm = ich/64;
+    int arm = ich/64; // ch 0-63 = south, ch 64-127 = north
 
     // Fill charge and time info
     if ( len[ich]>0. )
@@ -389,6 +394,8 @@ int BBCStudy::process_event(PHCompositeNode *topNode)
       ++f_bbcn[arm];
     }
   }
+
+  h2_bbcqtot->Fill( f_bbcq[0], f_bbcq[1] );
 
   _tree->Fill();
 

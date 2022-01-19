@@ -29,7 +29,7 @@ public:
   //Initialization, called for initialization
   int Init(PHCompositeNode *);
 
-  //Initialization at start of Run
+  //Initialization at start of every run
   int InitRun(PHCompositeNode *);
 
   //Process Event, called for each event
@@ -41,6 +41,7 @@ public:
   //Change output filename
   void set_savefile(const char *f) { _savefname = f; }
 
+
 private:
 
   //output filename
@@ -51,16 +52,17 @@ private:
   TTree* _tree;
   Int_t    f_evt;
   Short_t  f_bbcn[2]; // num hits for each arm (north and south)
-  Float_t  f_bbcq[2]; // total charge (currently npe)
+  Float_t  f_bbcq[2]; // total charge (currently npe) in each arm
   Float_t  f_bbct[2]; // time
   Float_t  f_bbcz;  // z-vertex
   Float_t  f_bbct0; // start time
 
   TH1* h_bbcq[128];   // q in each tube
   TH1* h_bbcqtot[2];  // total q in bbc arms
+  TH2* h2_bbcqtot;    // north q vs south q
   TH1* h_ztrue;       // true z-vertex
   TH1* h_tdiff;       // time diff between estimated and real time
-  TH2* h2_tdiff_ch;    // time diff by channel
+  TH2* h2_tdiff_ch;   // time diff by channel
 
   std::map<int,int> _pids;  // PIDs of tracks in the BBC
 

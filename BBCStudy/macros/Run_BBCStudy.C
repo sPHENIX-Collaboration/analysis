@@ -1,5 +1,5 @@
 //
-// FunAll module for BBC study
+// Runs FunAll module for BBC study
 //
 #include <TSystem.h>
 #include <Fun4AllServer.h>
