@@ -586,18 +586,6 @@ int TPCMLDataInterface::process_event(PHCompositeNode* topNode)
 
         if (eta > m_etaAcceptanceCut) continue;
 
-        // momentum cut
-        TrkrDefs::hitkey hit_key = hitr->first;
-        PHG4Hit* g4hit = hiteval->max_truth_hit_by_energy(hit_key);
-        PHG4Particle* g4particle = trutheval->get_particle(g4hit);
-
-        if (g4particle != nullptr)
-        {
-          gpx = g4particle->get_px();
-          gpy = g4particle->get_py();
-          gpz = g4particle->get_pz();
-        }
-
         // make new wavelet
         last_layer = layer;
         last_side = side;
@@ -672,8 +660,34 @@ int TPCMLDataInterface::process_event(PHCompositeNode* topNode)
              << " overwriting previous hit with = " << layerSignalBackgroundBuffer[layer][hitindexSB]
              << endl;
       }
-      layerSignalBackgroundBuffer[layer][hitindexSB] = sqrt(gpx * gpx + gpy * gpy + gpz * gpz) > m_momentumCut;
-    }
+
+      // momentum cut
+
+      bool signal_or_bgd = false;
+
+      TrkrDefs::hitkey hit_key = hitr->first;
+      //        PHG4Hit* g4hit = hiteval->max_truth_hit_by_energy(hit_key);
+      std::set<PHG4Hit*> g4hit_set = hiteval->all_truth_hits(hit_key);
+
+      for (PHG4Hit* g4hit : g4hit_set)
+      {
+        PHG4Particle* g4particle = trutheval->get_particle(g4hit);
+
+        if (g4particle != nullptr)
+        {
+          gpx = g4particle->get_px();
+          gpy = g4particle->get_py();
+          gpz = g4particle->get_pz();
+        }
+
+        if (sqrt(gpx * gpx + gpy * gpy + gpz * gpz) > m_momentumCut) signal_or_bgd = true;
+
+      }  //        for (auto g4hit: g4hit_set)
+
+      layerSignalBackgroundBuffer[layer][hitindexSB] = signal_or_bgd;
+
+    }  //     for (TrkrHitSet::ConstIterator hitr = hitrangei.first;
+
   }  //   for(SvtxHitMap::Iter iter = hits->begin(); iter != hits->end(); ++iter) {
 
   // save last wavelet
