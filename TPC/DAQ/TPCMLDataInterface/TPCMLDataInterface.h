@@ -17,6 +17,7 @@
 
 class PHCompositeNode;
 class Fun4AllHistoManager;
+class SvtxEvalStack;
 class TH1;
 class TH2;
 namespace H5
@@ -88,6 +89,9 @@ class TPCMLDataInterface : public SubsysReco
   Fun4AllHistoManager *getHistoManager();
   int writeWavelet(int layer, int side, int phibin, int hittime, const std::vector<unsigned int> &wavelet);
 
+  SvtxEvalStack *m_svtxevalstack;
+
+  bool m_strict;
   bool m_saveDataStreamFile;
 
   std::string m_outputFileNameBase;
@@ -100,6 +104,10 @@ class TPCMLDataInterface : public SubsysReco
 
   double m_vertexZAcceptanceCut;
   double m_etaAcceptanceCut;
+  double m_momentumCut;
+  bool m_use_initial_vertex = true;
+  bool m_use_genfit_vertex = false;
+
 
   // histograms
   TH1 *m_hDataSize;
