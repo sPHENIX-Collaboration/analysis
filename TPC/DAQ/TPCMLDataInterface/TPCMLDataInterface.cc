@@ -23,8 +23,8 @@
 #include <g4main/PHG4Particle.h>
 #include <g4main/PHG4TruthInfoContainer.h>
 
-#include <g4eval/SvtxEvaluator.h>
 #include <g4eval/SvtxEvalStack.h>
+#include <g4eval/SvtxEvaluator.h>
 #include <g4eval/SvtxHitEval.h>
 #include <g4eval/SvtxTruthEval.h>
 
@@ -215,7 +215,7 @@ int TPCMLDataInterface::InitRun(PHCompositeNode* topNode)
                         new TH1D("hNChEta",  //
                                  "Charged particle #eta distribution;#eta;Count",
                                  1000, -5, 5));
-  
+
   hm->registerHisto(m_hLayerWaveletSize =
                         new TH2D("hLayerWaveletSize",  //
                                  "Number of Recorded ADC sample per Wavelet;Layer ID;ADC Sample Count per Wavelet",
@@ -497,7 +497,7 @@ int TPCMLDataInterface::process_event(PHCompositeNode* topNode)
         boost::str(boost::format("Data_Layer_SignalBackground%1%") % (layer - m_minLayer)),
         PredType::NATIVE_UINT8,
         *(layerH5SignalBackgroundDataSpaceMap[layer]),
-        ds_creatplist)));    
+        ds_creatplist)));
 
   }  //   for (int layer = m_minLayer; layer <= m_maxLayer; ++layer)
 
@@ -586,17 +586,17 @@ int TPCMLDataInterface::process_event(PHCompositeNode* topNode)
 
         if (eta > m_etaAcceptanceCut) continue;
 
-	// momentum cut
+        // momentum cut
         TrkrDefs::hitkey hit_key = hitr->first;
         PHG4Hit* g4hit = hiteval->max_truth_hit_by_energy(hit_key);
         PHG4Particle* g4particle = trutheval->get_particle(g4hit);
 
         if (g4particle != nullptr)
-	{
+        {
           gpx = g4particle->get_px();
           gpy = g4particle->get_py();
-	  gpz = g4particle->get_pz();
-	}
+          gpz = g4particle->get_pz();
+        }
 
         // make new wavelet
         last_layer = layer;
@@ -664,7 +664,7 @@ int TPCMLDataInterface::process_event(PHCompositeNode* topNode)
              << endl;
       }
       layerDataBuffer[layer][hitindex] = adc;
-      
+
       if (layerSignalBackgroundBuffer[layer][hitindexSB] != 0)
       {
         cout << "TPCMLDataInterface::process_event - WARNING - signal/background @ layer "
@@ -672,7 +672,7 @@ int TPCMLDataInterface::process_event(PHCompositeNode* topNode)
              << " overwriting previous hit with = " << layerSignalBackgroundBuffer[layer][hitindexSB]
              << endl;
       }
-      layerSignalBackgroundBuffer[layer][hitindexSB] = sqrt(gpx*gpx + gpy*gpy + gpz*gpz) > m_momentumCut;
+      layerSignalBackgroundBuffer[layer][hitindexSB] = sqrt(gpx * gpx + gpy * gpy + gpz * gpz) > m_momentumCut;
     }
   }  //   for(SvtxHitMap::Iter iter = hits->begin(); iter != hits->end(); ++iter) {
 
@@ -696,7 +696,7 @@ int TPCMLDataInterface::process_event(PHCompositeNode* topNode)
       for (const int& hit : layerChanHit[layer][side])
       {
         sumHit += hit;
-    
+
         assert(m_hLayerHit);
         m_hLayerHit->Fill(layer, hit);
         h_norm->Fill("TPC Hit", hit);
@@ -733,7 +733,7 @@ int TPCMLDataInterface::process_event(PHCompositeNode* topNode)
     }  //    for (unsigned int side = 0; side < 2; ++side)
 
     // store in H5
-  
+
     assert(layerH5DataSetMap[layer]);
     assert(layerH5SignalBackgroundMap[layer]);
     layerH5DataSetMap[layer]->write(layerDataBuffer[layer].data(), PredType::NATIVE_UINT16);
