@@ -22,8 +22,7 @@ using namespace HeavyFlavorReco;
 /*      cdean@bnl.gov       */
 /****************************/
 
-void Fun4All_MDC2reco(vector<string> myInputLists
-                    , const int nEvents = 0)
+void Fun4All_MDC2reco(vector<string> myInputLists = {"condorJob/fileLists/productionFiles-CHARM-dst_tracks-00000.list"}, const int nEvents = 10)
 {
   int verbosity = VERBOSITY;
 
@@ -111,9 +110,13 @@ void Fun4All_MDC2reco(vector<string> myInputLists
   se->run(nEvents);
   se->End();
 
-  string moveOutput = "mv " + outputRecoFile + " " + outDir;
-  system(moveOutput.c_str());
-  
+  ifstream file(outputRecoFile.c_str());
+  if (file.good())
+  {
+    string moveOutput = "mv " + outputRecoFile + " " + outDir;
+    system(moveOutput.c_str());
+  }
+
   std::cout << "All done" << std::endl;
   delete se;
   gSystem->Exit(0);
