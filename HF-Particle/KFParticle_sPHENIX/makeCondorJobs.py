@@ -85,7 +85,7 @@ def makeCondorJob():
     print("This setup will submit {} subjobs".format(nJob))
     print("You can submit your job with the script:\n{}".format(condorFileName))
         
-catalogCommand = "CreateFileList.pl -type {0} {1}".format(types[inputType], ' '.join(dstSets))
+catalogCommand = "CreateFileList.pl -run 3 -type {0} {1}".format(types[inputType], ' '.join(dstSets))
 if args.nTotEvents != -1: catalogCommand += " -n {}".format(args.nTotEvents)
 if args.nopileup: catalogCommand += " -nopileup"
 os.system(catalogCommand)
