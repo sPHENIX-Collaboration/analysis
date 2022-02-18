@@ -4,8 +4,15 @@ import argparse
 
 parser = argparse.ArgumentParser(description='sPHENIX MDC2 Reco Job Creator')
 parser.add_argument('-i', '--inputType', default="CHARM", help='Input type: PYTHIA8_PP_MB, HIJING_[0-20/0-4P88], CHARM[D0], BOTTOM[D0]')
-parser.add_argument('-f', '--nFilesPerJob', default=50, type=int, help='Number of input files to pass to each job')
+parser.add_argument('-f', '--nFilesPerJob', default=5, type=int, help='Number of input files to pass to each job')
 parser.add_argument('-t', '--nTotEvents', default=-1, type=int, help='Total number of events to run over')
+parser.add_argument('--nopileup', help='Get data without pileup', action="store_true")
+parser.add_argument('--truth', help='Enable truth DST reading', action="store_true")
+parser.add_argument('--truth_g4hit', help='Enable G4 hit truth DST reading', action="store_true")
+parser.add_argument('--calo', help='Enable calo DST reading', action="store_true")
+parser.add_argument('--trkr_hit', help='Enable tracker hit DST reading', action="store_true")
+parser.add_argument('--trkr_g4hit', help='Enable tracker G4 hit DST reading', action="store_true")
+parser.add_argument('--bbc_g4hit', help='Enable BBC G4 hit DST reading', action="store_true")
 
 args = parser.parse_args()
 
@@ -13,10 +20,16 @@ inputType = args.inputType.upper()
 
 types = {'PYTHIA8_PP_MB' : 3, 'HIJING_0-20' : 4, 'HIJING_0-4P88' : 6, 'CHARM' : 7, 'BOTTOM' : 8, 'CHARMD0' : 9, 'BOTTOMD0' : 10}
 if inputType not in types:
-  print("The argument, {}, was not known. Use CHARM[D0] or BOTTOM[D0] instead.".format(args.type))
+  print("The argument, {}, was not known. Use --help to see available types".format(args.type))
   sys.exit()
 
-dstSets = ['DST_TRACKS', 'DST_VERTEX', 'DST_TRUTH', 'DST_CALO_CLUSTER', 'DST_TRKR_HIT', 'DST_BBC_G4HIT', 'DST_TRKR_G4HIT']
+dstSets = ['DST_TRACKS', 'DST_VERTEX']
+if args.truth: dstSets.append('DST_TRUTH')
+if args.truth_g4hit: dstSets.append('DST_TRUTH_G4HIT')
+if args.calo: dstSets.append('DST_CALO_CLUSTER')
+if args.trkr_hit: dstSets.append('DST_TRKR_HIT')
+if args.trkr_g4hit: dstSets.append('DST_TRKR_G4HIT')
+if args.bbc_g4hit: dstSets.append('DST_BBC_G4HIT')
 
 myShell = str(environ['SHELL'])
 goodShells = ['/bin/bash', '/bin/tcsh']
@@ -55,10 +68,10 @@ def makeCondorJob():
     condorFile = open("{}".format(condorFileName), "w")
     condorFile.write("Universe           = vanilla\n")
     condorFile.write("initialDir         = {}\n".format(myOutputPath))
-    if myShell == '/bin/bash': condorFile.write("Executable         = $(initialDir)/run_HFreco.sh\n")
-    if myShell == '/bin/tcsh': condorFile.write("Executable         = $(initialDir)/run_HFreco.csh\n")
+    if myShell == '/bin/bash': condorFile.write("Executable         = $(initialDir)/run_MDC2reco.sh\n")
+    if myShell == '/bin/tcsh': condorFile.write("Executable         = $(initialDir)/run_MDC2reco.csh\n")
     condorFile.write("PeriodicHold       = (NumJobStarts>=1 && JobStatus == 1)\n")
-    condorFile.write("request_memory     = 1.8GB\n")
+    condorFile.write("request_memory     = 4GB\n")
     condorFile.write("Priority           = 20\n")
     condorFile.write("job_lease_duration = 3600\n")
     condorFile.write("condorDir          = $(initialDir)/condorJob\n")
@@ -72,7 +85,8 @@ def makeCondorJob():
     print("This setup will submit {} subjobs".format(nJob))
     print("You can submit your job with the script:\n{}".format(condorFileName))
         
-catalogCommand = "CreateFileList.pl -type {0} {1}".format(types[inputType], ' '.join(dstSets))
+catalogCommand = "CreateFileList.pl -run 3 -type {0} {1}".format(types[inputType], ' '.join(dstSets))
 if args.nTotEvents != -1: catalogCommand += " -n {}".format(args.nTotEvents)
+if args.nopileup: catalogCommand += " -nopileup"
 os.system(catalogCommand)
 makeCondorJob()

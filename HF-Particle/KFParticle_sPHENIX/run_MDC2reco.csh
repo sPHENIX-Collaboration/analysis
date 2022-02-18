@@ -21,5 +21,5 @@ echo "arg2 \(traker hit inputFile\) : $5"
 echo "arg2 \(BBC G4hit inputFile\) : $6"
 echo "arg2 \(tracker G4hit inputFile\) : $7"
 echo "Pileup is not implemented yet"
-root.exe -q -b Fun4All_HFreco.C\(\"$1\",\"$2\",\"$3\",\"$4\",\"\",$nEvents\)
+root.exe -q -b Fun4All_MDC2reco.C\(\"$1\",\"$2\",\"$3\",\"$4\",\"\",$nEvents\)
 echo "Script done"

@@ -17,17 +17,12 @@ using namespace std;
 using namespace HeavyFlavorReco;
 
 /****************************/
-/*     HF Reco for MDC2     */
+/*     MDC2 Reco for MDC2     */
 /* Cameron Dean, LANL, 2021 */
 /*      cdean@bnl.gov       */
 /****************************/
 
-void Fun4All_HFreco(string trackList = "track.list"
-                  , string vertexList = "vtx.list"
-                  , string truthList = "truth.list"
-                  , string caloList = "calo.list"
-                  , string pileupList = "pileup.list"
-                  , const int nEvents = 0)
+void Fun4All_MDC2reco(vector<string> myInputLists = {"condorJob/fileLists/productionFiles-CHARM-dst_tracks-00000.list"}, const int nEvents = 10)
 {
   int verbosity = VERBOSITY;
 
@@ -40,7 +35,7 @@ void Fun4All_HFreco(string trackList = "track.list"
   if (outDir.substr(outDir.size() - 1, 1) != "/") outDir += "/";
   outDir += reconstructionName + "/";
 
-  string fileNumber = trackList;
+  string fileNumber = myInputLists[0];
   size_t findLastDash = fileNumber.find_last_of("-");
   if (findLastDash != string::npos) fileNumber.erase(0, findLastDash + 1);
   string remove_this = ".list";
@@ -55,37 +50,15 @@ void Fun4All_HFreco(string trackList = "track.list"
 
   //Create the server
   Fun4AllServer* se = Fun4AllServer::instance();
-  se->Verbosity(verbosity);
+  se->Verbosity(1);
+  //se->Verbosity(verbosity);
 
   //Add all required input files
-  Fun4AllInputManager *tracks = new Fun4AllDstInputManager("tracks");
-  tracks->AddListFile(trackList);
-  se->registerInputManager(tracks);
-
-  Fun4AllInputManager *vertices = new Fun4AllDstInputManager("vertices");
-  vertices->AddListFile(vertexList);
-  se->registerInputManager(vertices);
-
-  if (getTruthInfo)
+  for (unsigned int i = 0; i < myInputLists.size(); ++i)
   {
-    Fun4AllInputManager *truth = new Fun4AllDstInputManager("truth");
-    truth->AddListFile(truthList);
-    se->registerInputManager(truth);
-  }
-
-  if (getCaloInfo)
-  {
-    Fun4AllInputManager *calo = new Fun4AllDstInputManager("calo");
-    calo->AddListFile(caloList);
-    se->registerInputManager(calo);
-  }
-  
-  if (runPileUp)
-  {
-    Fun4AllDstPileupInputManager *pileup = new Fun4AllDstPileupInputManager("pileup");
-    pileup->setCollisionRate(3e6); // 3MHz according to BUP
-    pileup->AddListFile(pileupList);
-    se->registerInputManager(pileup);
+    Fun4AllInputManager *infile = new Fun4AllDstInputManager("DSTin_" + to_string(i));
+    infile->AddListFile(myInputLists[i]);
+    se->registerInputManager(infile);
   }
 
   // Runs decay finder to trigger on your decay. Useful for signal cleaning
@@ -137,9 +110,13 @@ void Fun4All_HFreco(string trackList = "track.list"
   se->run(nEvents);
   se->End();
 
-  string moveOutput = "mv " + outputRecoFile + " " + outDir;
-  system(moveOutput.c_str());
-  
+  ifstream file(outputRecoFile.c_str());
+  if (file.good())
+  {
+    string moveOutput = "mv " + outputRecoFile + " " + outDir;
+    system(moveOutput.c_str());
+  }
+
   std::cout << "All done" << std::endl;
   delete se;
   gSystem->Exit(0);
