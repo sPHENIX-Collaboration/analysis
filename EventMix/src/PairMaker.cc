@@ -20,11 +20,9 @@
 #include <g4vertex/GlobalVertexMap.h>
 #include <g4vertex/GlobalVertex.h>
 
-//#include <g4cemc/RawClusterContainer.h>
-//#include <g4cemc/RawCluster.h>
-//#include <g4cemc/RawTowerContainer.h>
-//#include <g4cemc/RawTower.h>
-//#include "g4cemc/RawTowerGeomContainer_Cylinderv1.h"
+#include <calobase/RawClusterContainer.h>
+#include <calobase/RawCluster.h>
+#include <calobase/RawClusterv1.h>
 
 #include <phool/getClass.h>
 #include <phool/recoConsts.h>
@@ -110,7 +108,7 @@ int PairMaker::InitRun(PHCompositeNode *topNode)
 
 int PairMaker::process_event(PHCompositeNode *topNode) 
 {
-   return process_event_test(topNode);
+  return process_event_test(topNode);
 }
 
 //======================================================================
@@ -130,7 +128,6 @@ int PairMaker::process_event_test(PHCompositeNode *topNode) {
     else { cout << "Found " << outnodename << " node." << endl; }
 
   GlobalVertexMap *global_vtxmap = findNode::getClass<GlobalVertexMap>(topNode, "GlobalVertexMap");
-
   if(!global_vtxmap) { 
     cerr << PHWHERE << " ERROR: Can not find GlobalVertexMap node." << endl;
     return Fun4AllReturnCodes::ABORTEVENT;
@@ -150,18 +147,40 @@ int PairMaker::process_event_test(PHCompositeNode *topNode) {
     return Fun4AllReturnCodes::ABORTEVENT;
   }
 
-  TrackPidAssoc *track_pid_assoc =  findNode::getClass<TrackPidAssoc>(topNode, "TrackPidAssoc");
-  if(track_pid_assoc) {
-    auto electrons = track_pid_assoc->getTracks(TrackPidAssoc::electron);
-    for(auto it = electrons.first; it != electrons.second; ++it)
-    {
-      SvtxTrack *tr = trackmap->get(it->second);
-      double p = tr->get_p();
-      std::cout << " pid " << it->first << " track ID " << it->second << " mom " << p << std::endl;
-    }
+  RawClusterContainer* cemc_clusters = findNode::getClass<RawClusterContainer>(topNode, "CLUSTER_CEMC");
+  if(!cemc_clusters) {
+    cerr << PHWHERE << " ERROR: Can not find CLUSTER_CEMC node." << endl;
+    return Fun4AllReturnCodes::ABORTEVENT;
   }
+  else { cout << "FOUND CLUSTER_CEMC node." << endl; }
 
+  int mycount = 0;
+  RawClusterContainer::ConstRange cluster_range = cemc_clusters->getClusters();
+  for (RawClusterContainer::ConstIterator cluster_iter = cluster_range.first; cluster_iter != cluster_range.second; cluster_iter++)
+  {
+    //RawCluster *cluster = cluster_iter->second;
+    //double phi = cluster->get_phi();
+    //double z = cluster->get_z();
+    //double ee = cluster->get_energy();
+    //int ntowers = cluster->getNTowers();
+    //if(ee>2.) cout << "cluster: " << ee << " " << ntowers << " " << phi << " " << z << endl;
+    mycount++;
+  }
+  cout << "Number of CEMC clusters = " << mycount << endl;
 
+  TrackPidAssoc *track_pid_assoc =  findNode::getClass<TrackPidAssoc>(topNode, "TrackPidAssoc");
+  if(!track_pid_assoc) {
+    cerr << PHWHERE << "ERROR: CAN NOT FIND TrackPidAssoc Node!" << endl; 
+    return Fun4AllReturnCodes::ABORTEVENT;
+  }
+  auto electrons = track_pid_assoc->getTracks(TrackPidAssoc::electron);
+
+//    for(auto it = electrons.first; it != electrons.second; ++it)
+//    {
+//      SvtxTrack *tr = trackmap->get(it->second);
+//      double p = tr->get_p();
+//      std::cout << " pid " << it->first << " track ID " << it->second << " mom " << p << std::endl;
+//    }
 
   double mult = (double)trackmap->size();
   cout << "   Number of tracks = " << trackmap->size() << endl;
@@ -177,40 +196,72 @@ int PairMaker::process_event_test(PHCompositeNode *topNode) {
 //  vector<sPHElectronv1> electrons;
 //  vector<sPHElectronv1> positrons;
 
- // for (SvtxTrackMap::Iter iter = trackmap->begin(); iter != trackmap->end(); ++iter)
- // {
-   // SvtxTrack *track = iter->second;
-    //if(!isElectron(track)) continue;
-    
-  if(track_pid_assoc) {
-    auto electrons = track_pid_assoc->getTracks(TrackPidAssoc::electron);
+// My own electron ID
+/*
+  for (SvtxTrackMap::Iter iter = trackmap->begin(); iter != trackmap->end(); ++iter)
+  {
+    SvtxTrack *track = iter->second;
+    if(!isElectron(track)) continue;
+    double px = track->get_px();
+    double py = track->get_py();
+    double pt = sqrt(px*px + py*py);
+    int charge = track->get_charge();
+    double x = track->get_x();
+    double y = track->get_y();
+    double z = track->get_z();
+    unsigned int vtxbin = (z - _ZMIN)/_vtxbinsize;
+    if(vtxbin<0 || vtxbin>=NZ) continue;
+    unsigned int vtxid = track->get_vertex_id();
+    if(vtxid<0 || vtxid>=global_vtxmap->size()) continue;
+    cout << "electron: "<<charge<<" "<<pt<<" "<<x<<" "<<y<<" "<<z<<" "<<vtxid<<" "<<vtxbin<< endl;
+    GlobalVertex* gvtx = global_vtxmap->get(vtxid);
+    cout << "global vertex: "<<gvtx->get_x()<<" "<<gvtx->get_y()<<" "<<gvtx->get_z()<<endl;
+    sPHElectronv1 tmpel = sPHElectronv1(track);
+    tmpel.set_zvtx(gvtx->get_z());
+    elepos.push_back(tmpel);
+    (_buffer[vtxbin][centbin]).push_back(tmpel);
+  } // end loop over tracks
+*/
+
     for(auto it = electrons.first; it != electrons.second; ++it)
     {
       SvtxTrack *track = trackmap->get(it->second);
-      double p = track->get_p();
-      std::cout << " pid " << it->first << " track ID " << it->second << " mom " << p << std::endl;
-    
-     double px = track->get_px();
-     double py = track->get_py();
-     double pt = sqrt(px*px + py*py);
-     int charge = track->get_charge();
-     double x = track->get_x();
-     double y = track->get_y();
-     double z = track->get_z();
-     unsigned int vtxbin = (z - _ZMIN)/_vtxbinsize;
-     if(vtxbin<0 || vtxbin>=NZ) continue;
-     unsigned int vtxid = track->get_vertex_id();
-  
-     if(vtxid<0 || vtxid>=global_vtxmap->size()) continue;
-     cout << "electron: "<<charge<<" "<<pt<<" "<<x<<" "<<y<<" "<<z<<" "<<vtxid<<" "<<vtxbin<< endl;
-     GlobalVertex* gvtx = global_vtxmap->get(vtxid);
-     cout << "global vertex: "<<gvtx->get_x()<<" "<<gvtx->get_y()<<" "<<gvtx->get_z()<<endl;
-     sPHElectronv1 tmpel = sPHElectronv1(track);
-     tmpel.set_zvtx(gvtx->get_z());
-     elepos.push_back(tmpel);
-     (_buffer[vtxbin][centbin]).push_back(tmpel);
+      unsigned int cemc_clusid = track->get_cal_cluster_id(SvtxTrack::CAL_LAYER::CEMC); 
+      TrkrDefs::cluskey cemc_cluskey = track->get_cal_cluster_key(SvtxTrack::CAL_LAYER::CEMC);
+      float cemc_cluse = track->get_cal_cluster_e(SvtxTrack::CAL_LAYER::CEMC);
+        cout << "CEMC match: " << cemc_clusid << " " << cemc_cluskey << " " << cemc_cluse << endl;
+        RawCluster* cluster = cemc_clusters->getCluster(cemc_clusid);
+        double ee = cluster->get_energy();
+        double ecore = cluster->get_ecore();
+        double prob = cluster->get_prob();
+        double cemc_chi2 = cluster->get_chi2();
+        cout << "cluster: " << ee << " " << ecore << " " << prob << " " << cemc_chi2 << endl;
+
+      double px = track->get_px();
+      double py = track->get_py();
+      double pt = sqrt(px*px + py*py);
+      int charge = track->get_charge();
+      double x = track->get_x();
+      double y = track->get_y();
+      double z = track->get_z();
+      unsigned int vtxbin = (z - _ZMIN)/_vtxbinsize;
+      if(vtxbin<0 || vtxbin>=NZ) continue;
+      unsigned int vtxid = track->get_vertex_id();
+      if(vtxid<0 || vtxid>=global_vtxmap->size()) continue;
+      cout << "electron: "<<charge<<" "<<pt<<" "<<x<<" "<<y<<" "<<z<<" "<<vtxid<<" "<<vtxbin<< endl;
+      GlobalVertex* gvtx = global_vtxmap->get(vtxid);
+      cout << "global vertex: "<<gvtx->get_x()<<" "<<gvtx->get_y()<<" "<<gvtx->get_z()<<endl;
+
+      sPHElectronv1 tmpel = sPHElectronv1(track);
+      tmpel.set_zvtx(gvtx->get_z());
+      tmpel.set_cemc_ecore(ecore);
+      tmpel.set_cemc_prob(prob);
+      tmpel.set_cemc_chi2(cemc_chi2);
+
+      elepos.push_back(tmpel);
+      (_buffer[vtxbin][centbin]).push_back(tmpel);
+
     }
-  } // end loop over tracks
 
   cout << "# of electrons/positrons = " << elepos.size() << endl;
 
@@ -227,11 +278,8 @@ int PairMaker::process_event_test(PHCompositeNode *topNode) {
             else if (charge1<0 && charge2<0) {type=3;}
               else {cout << "ERROR: wrong charge!" << endl;}
         cout << "MASS = " << type << " " << mass << endl;
-     //   if(type == 2 or type == 3) {
-        if(type == 1){
-           pair.set_type(type);
-           eePairs->insert(&pair);
-        }
+        pair.set_type(type);
+        eePairs->insert(&pair);
       }
     }
   }
@@ -283,12 +331,10 @@ int PairMaker::MakeMixedPairs(std::vector<sPHElectronv1> elepos, sPHElectronPair
           else if (charge1>0 && charge2>0) {type=5;}
             else if (charge1<0 && charge2<0) {type=6;}
               else {cout << "ERROR: wrong charge!" << endl;}
-        if(type == 4) {
-            pair.set_type(type);
-            eePairs->insert(&pair);
-            cout << "Inserted MIXED pair with mass = " << type << " " << pair.get_mass() << endl;
-            count++;
-        }
+        pair.set_type(type);
+        eePairs->insert(&pair);
+        cout << "Inserted MIXED pair with mass = " << type << " " << pair.get_mass() << endl;
+        count++;
       } // end i loop
       (_buffer[vtxbin][centbin]).push_back(elepos[k]);  // keep filling buffer
     }
@@ -311,12 +357,10 @@ bool PairMaker::isElectron(SvtxTrack* trk)
   double pt = sqrt(px*px+py*py);
   double pp = sqrt(pt*pt+pz*pz);
   double e3x3 = trk->get_cal_energy_3x3(SvtxTrack::CAL_LAYER::CEMC);
-  //if(pt<2.0) return false;
-  if(pt<0.1) return false;
+  if(pt<2.0) return false;
   if(pp==0.) return false;
   if(isnan(e3x3)) return false;
-  //if(e3x3/pp<0.7) return false;
-  if(e3x3/pp<0.1) return false;
+  if(e3x3/pp<0.7) return false;
   double chisq = trk->get_chisq();
   double ndf = trk->get_ndf();
   if((chisq/ndf)>10.) return false;

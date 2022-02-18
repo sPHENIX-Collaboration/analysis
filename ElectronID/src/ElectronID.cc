@@ -22,8 +22,11 @@
 #include <trackbase_historic/SvtxTrack.h>
 #include <trackbase_historic/SvtxVertex.h>
 #include <trackbase_historic/SvtxVertexMap.h>
-
 #include <trackbase/TrkrDefs.h>
+
+#include <calobase/RawClusterContainer.h>
+#include <calobase/RawCluster.h>
+#include <calobase/RawClusterv1.h>
 
 #include <g4vertex/GlobalVertexMap.h>
 #include <g4vertex/GlobalVertex.h>
@@ -31,6 +34,17 @@
 #include <g4main/PHG4TruthInfoContainer.h>
 #include <g4main/PHG4Particle.h>
 #include <g4main/PHG4VtxPoint.h>
+
+#include "trackpidassoc/TrackPidAssoc.h"
+
+//TMVA class
+#include <vector>
+#include <iostream>
+#include <map>
+#include <string>
+#include "TMVA/Tools.h"
+#include "TMVA/Reader.h"
+#include "TMVA/MethodCuts.h"
 
 
 // gsl
@@ -47,6 +61,7 @@
 class PHCompositeNode;
 
 using namespace std;
+//using namespace TMVA;
 
 ElectronID::ElectronID(const std::string& name, const std::string &filename) : SubsysReco(name)
 {
@@ -56,16 +71,32 @@ ElectronID::ElectronID(const std::string& name, const std::string &filename) : S
   output_ntuple = true;
 
   /// default limits 
-  EMOP_lowerlimit = 0.0;
+  EMOP_lowerlimit = 0.7;
   EMOP_higherlimit = 100.0;
   HOP_lowerlimit = 0.0;
   HinOEM_higherlimit = 100.0;
   Pt_lowerlimit = 0.0;
   Pt_higherlimit = 100.0;
-  Nmvtx_lowerlimit = 0;
+  Nmvtx_lowerlimit = 2;
   Nintt_lowerlimit = 0;
   Ntpc_lowerlimit = 0;
   Nquality_higherlimit = 100;
+  Ntpc_lowerlimit = 20;
+  Nquality_higherlimit = 5.;
+  PROB_cut = 0.;
+  /// MVA
+  LD_cut = 0.0;
+  ISUSE_LD =0;
+  BDT_cut = 0.0;
+  ISUSE_BDT =0;
+  SVM_cut = 0.0;
+  ISUSE_SVM =0;
+  DNN_cut = 0.0;
+  ISUSE_DNN =0;
+
+ // unsigned int _nlayers_maps = 3;
+ // unsigned int _nlayers_intt = 4;
+ // unsigned int _nlayers_tpc = 48;
 }
 
 ElectronID::~ElectronID() 
@@ -80,12 +111,12 @@ int ElectronID::Init(PHCompositeNode *topNode)
 	OutputNtupleFile = new TFile(OutputFileName.c_str(),"RECREATE");
   	std::cout << "PairMaker::Init: output file " << OutputFileName.c_str() << " opened." << endl;
 
-	ntpbeforecut = new TNtuple("ntpbeforecut","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:cemce3x3overp:hcaline3x3overcemce3x3:hcale3x3overp:charge:pid:quality:e_cluster:EventNumber:z:vtxid:nmvtx:nintt:ntpc");
-        ntpcutEMOP = new TNtuple("ntpcutEMOP","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:charge:pid:quality:e_cluster:EventNumber:z:vtxid");
-	ntpcutHOP = new TNtuple("ntpcutHOP","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:charge:pid:quality:e_cluster:EventNumber:z:vtxid");
-	ntpcutEMOP_HinOEM = new TNtuple("ntpcutEMOP_HinOEM","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:charge:pid:quality:e_cluster:EventNumber:z:vtxid");
-	ntpcutEMOP_HinOEM_Pt = new TNtuple("ntpcutEMOP_HinOEM_Pt","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:charge:pid:quality:e_cluster:EventNumber:z:vtxid");
-        ntpcutEMOP_HinOEM_Pt_read = new TNtuple("ntpcutEMOP_HinOEM_Pt_read","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:charge:pid:quality:e_cluster:EventNumber:z:vtxid:trackid");
+	ntpbeforecut = new TNtuple("ntpbeforecut","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:cemce3x3overp:hcaline3x3overcemce3x3:hcale3x3overp:charge:pid:quality:e_cluster:EventNumber:z:vtxid:nmvtx:nintt:ntpc:cemc_prob:cemc_ecore:cemc_chi2");
+        ntpcutEMOP = new TNtuple("ntpcutEMOP","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:charge:pid:quality:e_cluster:EventNumber:z:vtxid:cemc_prob:cemc_ecore");
+	ntpcutHOP = new TNtuple("ntpcutHOP","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:charge:pid:quality:e_cluster:EventNumber:z:vtxid:cemc_prob:cemc_ecore");
+	ntpcutEMOP_HinOEM = new TNtuple("ntpcutEMOP_HinOEM","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:charge:pid:quality:e_cluster:EventNumber:z:vtxid:cemc_prob:cemc_ecore");
+	ntpcutEMOP_HinOEM_Pt = new TNtuple("ntpcutEMOP_HinOEM_Pt","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:charge:pid:quality:e_cluster:EventNumber:z:vtxid:cemc_prob:cemc_ecore");
+        ntpcutEMOP_HinOEM_Pt_read = new TNtuple("ntpcutEMOP_HinOEM_Pt_read","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:charge:pid:quality:e_cluster:EventNumber:z:vtxid:trackid:cemc_prob:cemc_ecore");
   }
   else {
 	PHNodeIterator iter(topNode);
@@ -130,6 +161,92 @@ int ElectronID::process_event(PHCompositeNode* topNode)
   }
   //cout << "Number of SvtxVertexMap entries = " << vtxmap->size() << endl;
 
+  RawClusterContainer* cemc_cluster_container = findNode::getClass<RawClusterContainer>(topNode, "CLUSTER_CEMC");
+  if(!cemc_cluster_container) {
+    cerr << PHWHERE << " ERROR: Can not find CLUSTER_CEMC node." << endl;
+    return Fun4AllReturnCodes::ABORTEVENT;
+  }
+
+
+// Truth info
+  PHG4TruthInfoContainer* truth_container = findNode::getClass<PHG4TruthInfoContainer>(topNode, "G4TruthInfo");
+  if(!truth_container) {
+    cerr << PHWHERE << " ERROR: Can not find G4TruthInfo node." << endl;
+    return Fun4AllReturnCodes::ABORTEVENT;
+  }
+  PHG4TruthInfoContainer::ConstRange range = truth_container->GetPrimaryParticleRange();
+  cout << "number of MC particles = " << truth_container->size() << " " << truth_container->GetNumPrimaryVertexParticles() << endl;
+
+    int mycount = 0;
+    for (PHG4TruthInfoContainer::ConstIterator iter = range.first; iter != range.second; ++iter)
+    {
+      PHG4Particle* g4particle = iter->second;
+      mycount++;
+      int gflavor  = g4particle->get_pid();
+      double gpx = g4particle->get_px();
+      double gpy = g4particle->get_py();
+      double gpz= g4particle->get_pz();
+      double gpt = sqrt(gpx*gpx+gpy*gpy);
+      double phi = atan2(gpy,gpx);
+      double eta = asinh(gpz/gpt);
+      int primid =  g4particle->get_primary_id();
+      int parentid = g4particle->get_parent_id();
+      int trackid = g4particle->get_track_id();
+      if(trackid>truth_container->GetNumPrimaryVertexParticles()-50) cout << trackid << " " << parentid << " " << primid << " " << gflavor << " " << gpt << " " << phi << " " << eta << endl;
+    }
+    cout << "mycount = " << mycount << endl;
+// end Truth
+
+
+//MVA method setup**********************
+
+  // This loads the library
+   TMVA::Tools::Instance();
+
+   // Default MVA methods to be trained + tested
+   std::map<std::string,int> Use;
+
+  // Linear Discriminant Analysis
+   Use["LD"] = ISUSE_LD; // Linear Discriminant identical to Fisher
+  // Neural Networks (all are feed-forward Multilayer Perceptrons)
+   Use["DNN_CPU"] = ISUSE_DNN; // Multi-core accelerated DNN.
+   // Support Vector Machine
+   Use["SVM"] = ISUSE_SVM;
+   // Boosted Decision Trees
+   Use["BDT"] = ISUSE_BDT; // uses Adaptive Boost
+
+  // Create the Reader object
+
+   TMVA::Reader *reader = new TMVA::Reader( "!Color:!Silent" );
+
+   // Create a set of variables and declare them to the reader
+   // - the variable names MUST corresponds in name and type to those given in the weight file(s) used
+   Float_t var1, var2;
+   Float_t var3, var4;
+   reader->AddVariable( "var1", &var1 );
+   reader->AddVariable( "var2", &var2 );
+   reader->AddVariable( "var3", &var3 );
+   reader->AddVariable( "var4", &var4 );
+
+  // Book the MVA methods
+   TString dir;
+   dir = "dataset/dataset_antiproton/weights/"; //if using the antiproton weights
+   //dir = "dataset/dataset_pion/weights/"; //if using the pion- weights
+   //dir = "dataset/dataset_Kion/weights/"; //if using the Kion- weights
+   //dir = "dataset/dataset_allN/weights/"; //if using the Kion-&pion-&antiproton weights
+   //dir = "dataset/dataset_allN/weights/"; //if using the Kion+/-&pion+/-&proton/antiproton weights
+   TString prefix = "TMVAClassification";
+
+   // Book method(s)
+   for (std::map<std::string,int>::iterator it = Use.begin(); it != Use.end(); it++) {
+      if (it->second) {
+         TString methodName = TString(it->first) + TString(" method");
+         TString weightfile = dir + prefix + TString("_") + TString(it->first) + TString(".weights.xml");
+         reader->BookMVA( methodName, weightfile );
+      }
+   }
+
+//end of MVA method setup*******************
 
   int nmvtx = 0;
   int nintt = 0;
@@ -139,6 +256,10 @@ int ElectronID::process_event(PHCompositeNode* topNode)
   for(SvtxTrackMap::Iter it = _track_map->begin(); it != _track_map->end(); ++it)
     {
       SvtxTrack *track = it->second;
+
+      PHG4Particle* g4particle = findMCmatch(track, truth_container);
+      int gflavor = g4particle->get_pid();
+      if(gflavor==0) continue;
 
       nmvtx = 0;
       nintt = 0;
@@ -170,7 +291,7 @@ int ElectronID::process_event(PHCompositeNode* topNode)
       double pt = sqrt(px*px + py*py);
       int charge = track->get_charge();
       int pid = it->first;
-      int quality = track->get_quality();
+      float quality = track->get_quality();
 
       double e_cluster = track->get_cal_cluster_e(SvtxTrack::CAL_LAYER::CEMC);
 
@@ -178,12 +299,40 @@ int ElectronID::process_event(PHCompositeNode* topNode)
       double e_hcal_in_3x3 = track->get_cal_energy_3x3(SvtxTrack::CAL_LAYER::HCALIN);
       double e_hcal_out_3x3 = track->get_cal_energy_3x3(SvtxTrack::CAL_LAYER::HCALOUT);
 
+      unsigned int cemc_clusid = track->get_cal_cluster_id(SvtxTrack::CAL_LAYER::CEMC);
+      double cemc_prob = 0.;
+      double cemc_ecore = 0.;
+      double cemc_chi2 = 99999.;
+      if(cemc_clusid<99999) {
+        RawCluster* cemc_cluster = cemc_cluster_container->getCluster(cemc_clusid);
+        cemc_prob = cemc_cluster->get_prob();
+        cemc_ecore = cemc_cluster->get_ecore();
+        cemc_chi2 = cemc_cluster->get_chi2();
+      }
+
       // CEMC E/p cut
-      double cemceoverp = e_cemc_3x3 / mom;
+      //double cemceoverp = e_cemc_3x3 / mom;
+      double cemceoverp = cemc_ecore / mom;
       // HCaline/CEMCe cut
       double hcalineovercemce = e_hcal_in_3x3 / e_cemc_3x3;
       // HCal E/p cut
       double hcaleoverp = (e_hcal_in_3x3 + e_hcal_out_3x3) / mom;
+
+    //MVA method
+    var1 = cemceoverp;//e_cemc_3x3 / mom
+    var2 = hcalineovercemce;
+    var3 = pt;
+    var4 = ntpc;
+
+    if (Use["SVM"] && quality < Nquality_higherlimit && nmvtx >= Nmvtx_lowerlimit && nintt >= Nintt_lowerlimit && ntpc >= Ntpc_lowerlimit && pt > Pt_lowerlimit && pt < Pt_higherlimit) {
+          float select=reader->EvaluateMVA("SVM method");
+          if(select>MVA_cut){
+              // add to the association map
+	      _track_pid_assoc->addAssoc(TrackPidAssoc::electron, it->second->get_id());
+          }
+
+    }// end of MVA cut
+    else{ // for traditional cuts
 
       ntp[0] = mom;
       ntp[1] = pt;
@@ -203,13 +352,16 @@ int ElectronID::process_event(PHCompositeNode* topNode)
       ntp[15] = nmvtx;
       ntp[16] = nintt;
       ntp[17] = ntpc;
+      ntp[18] = cemc_prob;
+      ntp[19] = cemc_ecore;
+      ntp[20] = cemc_chi2;
       if(output_ntuple) { ntpbeforecut -> Fill(ntp); }
 
 	//std::cout << " Pt_lowerlimit " << Pt_lowerlimit << " Pt_higherlimit " << Pt_higherlimit << " HOP_lowerlimit " << HOP_lowerlimit <<std::endl;
         //std::cout << " EMOP_lowerlimit " << EMOP_lowerlimit << " EMOP_higherlimit " << EMOP_higherlimit << " HinOEM_higherlimit " << HinOEM_higherlimit <<std::endl;
 
       /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////electrons
-     if(cemceoverp > EMOP_lowerlimit && cemceoverp < EMOP_higherlimit && quality < Nquality_higherlimit && nmvtx >= Nmvtx_lowerlimit && nintt >= Nintt_lowerlimit && ntpc >= Ntpc_lowerlimit)
+      if(cemceoverp > EMOP_lowerlimit && cemceoverp < EMOP_higherlimit && quality < Nquality_higherlimit && nmvtx >= Nmvtx_lowerlimit && nintt >= Nintt_lowerlimit && ntpc >= Ntpc_lowerlimit)
 	{
 	
 	  ntp[0] = mom;
@@ -224,6 +376,8 @@ int ElectronID::process_event(PHCompositeNode* topNode)
 	  ntp[9] = EventNumber;
 	  ntp[10] = z;
   	  ntp[11] = vtxid;
+  	  ntp[12] = cemc_prob;
+  	  ntp[13] = cemc_ecore;
   	  if(output_ntuple) { ntpcutEMOP -> Fill(ntp); }
 
 	  if(hcalineovercemce < HinOEM_higherlimit)
@@ -241,6 +395,8 @@ int ElectronID::process_event(PHCompositeNode* topNode)
 		  ntp[9] = EventNumber;
 	  	  ntp[10] = z;
   		  ntp[11] = vtxid;
+  		  ntp[12] = cemc_prob;
+  		  ntp[13] = cemc_ecore;
   		  if(output_ntuple) { ntpcutEMOP_HinOEM -> Fill(ntp); }
 
 		  if( pt > Pt_lowerlimit && pt < Pt_higherlimit)
@@ -258,6 +414,8 @@ int ElectronID::process_event(PHCompositeNode* topNode)
 			  ntp[9] = EventNumber;
 			  ntp[10] = z;
   			  ntp[11] = vtxid;
+  			  ntp[12] = cemc_prob;
+  			  ntp[13] = cemc_ecore;
   			  if(output_ntuple) { ntpcutEMOP_HinOEM_Pt -> Fill(ntp); }
    	 	
 	 		  if(Verbosity() > 0) {
@@ -267,8 +425,9 @@ int ElectronID::process_event(PHCompositeNode* topNode)
 			  // add to the association map
 	 		  _track_pid_assoc->addAssoc(TrackPidAssoc::electron, it->second->get_id());
 		   }
-   	    }
+   	     }
 	}
+     }//end of MVA else
       
       /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////hadrons
      
@@ -288,6 +447,8 @@ int ElectronID::process_event(PHCompositeNode* topNode)
 	  ntp[9] = EventNumber;
 	  ntp[10] = z;
   	  ntp[11] = vtxid;
+  	  ntp[12] = cemc_prob;
+  	  ntp[13] = cemc_ecore;
   	  if(output_ntuple) { ntpcutHOP -> Fill(ntp); }
 
 	  if(Verbosity() > 0) {
@@ -325,7 +486,17 @@ int ElectronID::process_event(PHCompositeNode* topNode)
       double e_cemc_3x3 = tr->get_cal_energy_3x3(SvtxTrack::CAL_LAYER::CEMC);
       double e_hcal_in_3x3 = tr->get_cal_energy_3x3(SvtxTrack::CAL_LAYER::HCALIN);
       double e_hcal_out_3x3 = tr->get_cal_energy_3x3(SvtxTrack::CAL_LAYER::HCALOUT);
+
  
+      unsigned int cemc_clusid = tr->get_cal_cluster_id(SvtxTrack::CAL_LAYER::CEMC);
+      double cemc_prob = 0.;
+      double cemc_ecore = 0.;
+      if(cemc_clusid<99999) {
+        RawCluster* cemc_cluster = cemc_cluster_container->getCluster(cemc_clusid);
+        cemc_prob = cemc_cluster->get_prob();
+        cemc_ecore = cemc_cluster->get_ecore();
+      }
+
      
       ntp[0] = mom;
       ntp[1] = pt;
@@ -340,6 +511,8 @@ int ElectronID::process_event(PHCompositeNode* topNode)
       ntp[10] = z;
       ntp[11] = vtxid;
       ntp[12] = tr_id;
+      ntp[13] = cemc_prob;
+      ntp[14] = cemc_ecore;
       if(output_ntuple) { ntpcutEMOP_HinOEM_Pt_read -> Fill(ntp); }
       
       if(Verbosity() > 1)
@@ -399,6 +572,45 @@ int ElectronID::GetNodes(PHCompositeNode* topNode)
   
   return Fun4AllReturnCodes::EVENT_OK;
 }
+
+
+PHG4Particle* ElectronID::findMCmatch(SvtxTrack* track, PHG4TruthInfoContainer* truth_container)
+{
+  double px = track->get_px();
+  double py = track->get_py();
+  double pz = track->get_pz();
+  double pt = sqrt(px*px+py*py);
+  double phi = atan2(py,px);
+  double eta = asinh(pz/pt);
+  PHG4TruthInfoContainer::ConstRange range = truth_container->GetPrimaryParticleRange();
+//  cout << "number of MC particles = " << truth_container->size() << " " << truth_container->GetNumPrimaryVertexParticles() << endl;
+
+  double thedistance = 9999.;
+  PHG4Particle* matchedMC = NULL;
+
+    for (PHG4TruthInfoContainer::ConstIterator iter = range.first; iter != range.second; ++iter)
+    {
+      PHG4Particle* g4particle = iter->second;
+      int trackid = g4particle->get_track_id();
+      if(trackid<=truth_container->GetNumPrimaryVertexParticles()-50) continue; // only embedded particles
+      //int gflavor  = g4particle->get_pid();
+      double gpx = g4particle->get_px();
+      double gpy = g4particle->get_py();
+      double gpz= g4particle->get_pz();
+      double gpt = sqrt(gpx*gpx+gpy*gpy);
+      double gphi = atan2(gpy,gpx);
+      double geta = asinh(gpz/gpt);
+      //int primid =  g4particle->get_primary_id();
+      //int parentid = g4particle->get_parent_id();
+      if(sqrt(pow(gphi-phi,2)+pow(geta-eta,2))<thedistance) {
+        thedistance = sqrt(pow(gphi-phi,2)+pow(geta-eta,2));
+        matchedMC = g4particle;
+      }     
+    }
+
+  return matchedMC;
+}
+
 
 int ElectronID::End(PHCompositeNode * /*topNode*/)
 {

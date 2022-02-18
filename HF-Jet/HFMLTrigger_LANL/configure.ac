@@ -1,18 +1,16 @@
-AC_INIT(decayfinder,[0.01])
+AC_INIT(hfmltrigger, [1.00])
 AC_CONFIG_SRCDIR([configure.ac])
 
 AM_INIT_AUTOMAKE
+
 AC_PROG_CXX(CC g++)
 LT_INIT([disable-static])
 
-case $CXX in
-  clang++)
-   CXXFLAGS="$CXXFLAGS -Wall -Werror -Wno-macro-redefined"
-  ;;
-  g++)
+dnl   no point in suppressing warnings people should
+dnl   at least see them, so here we go for g++: -Wall
+if test $ac_cv_prog_gxx = yes; then
    CXXFLAGS="$CXXFLAGS -Wall -Werror"
-  ;;
-esac
+fi
 
 CINTDEFS=" -noIncludePaths  -inlineInputHeader "
 AC_SUBST(CINTDEFS)
