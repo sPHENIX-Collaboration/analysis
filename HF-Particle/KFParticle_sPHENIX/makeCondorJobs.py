@@ -8,10 +8,8 @@ parser.add_argument('-f', '--nFilesPerJob', default=5, type=int, help='Number of
 parser.add_argument('-t', '--nTotEvents', default=-1, type=int, help='Total number of events to run over')
 parser.add_argument('--nopileup', help='Get data without pileup', action="store_true")
 parser.add_argument('--truth', help='Enable truth DST reading', action="store_true")
-parser.add_argument('--truth_g4hit', help='Enable G4 hit truth DST reading', action="store_true")
 parser.add_argument('--calo', help='Enable calo DST reading', action="store_true")
 parser.add_argument('--trkr_hit', help='Enable tracker hit DST reading', action="store_true")
-parser.add_argument('--trkr_g4hit', help='Enable tracker G4 hit DST reading', action="store_true")
 parser.add_argument('--bbc_g4hit', help='Enable BBC G4 hit DST reading', action="store_true")
 
 args = parser.parse_args()
@@ -24,11 +22,12 @@ if inputType not in types:
   sys.exit()
 
 dstSets = ['DST_TRACKS', 'DST_VERTEX']
-if args.truth: dstSets.append('DST_TRUTH')
-if args.truth_g4hit: dstSets.append('DST_TRUTH_G4HIT')
+if args.truth: 
+    dstSets.append('DST_TRUTH')
+    dstSets.append('DST_TRUTH_G4HIT')
+    dstSets.append('DST_TRKR_G4HIT')
 if args.calo: dstSets.append('DST_CALO_CLUSTER')
 if args.trkr_hit: dstSets.append('DST_TRKR_HIT')
-if args.trkr_g4hit: dstSets.append('DST_TRKR_G4HIT')
 if args.bbc_g4hit: dstSets.append('DST_BBC_G4HIT')
 
 myShell = str(environ['SHELL'])
