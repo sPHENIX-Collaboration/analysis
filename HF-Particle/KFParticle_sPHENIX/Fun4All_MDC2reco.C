@@ -1,17 +1,19 @@
-#include <fun4all/Fun4AllServer.h>
-#include <fun4all/Fun4AllDstInputManager.h>
+#include "HFReco.C"
+
 #include <g4main/Fun4AllDstPileupInputManager.h>
-#include <qa_modules/QAG4SimulationKFParticle.h>
-#include <decayfinder/DecayFinder.h>
+
 #include <G4_Magnet.C>
 #include <G4_Tracking.C>
 #include <QA.C>
+
 #include <FROG.h>
-#include "HFReco.C"
+#include <decayfinder/DecayFinder.h>
+#include <fun4all/Fun4AllDstInputManager.h>
+#include <fun4all/Fun4AllServer.h>
+#include <qa_modules/QAG4SimulationKFParticle.h>
 
 R__LOAD_LIBRARY(libqa_modules.so)
 R__LOAD_LIBRARY(libfun4all.so)
-R__LOAD_LIBRARY(libkfparticle_sphenix.so)
 
 using namespace std;
 using namespace HeavyFlavorReco;
@@ -26,7 +28,6 @@ void Fun4All_MDC2reco(vector<string> myInputLists = {"condorJob/fileLists/produc
 {
   int verbosity = VERBOSITY;
 
-  gSystem->Load("libfun4all.so");
   gSystem->Load("libg4dst.so");
   FROG *fr = new FROG();
 
@@ -49,9 +50,8 @@ void Fun4All_MDC2reco(vector<string> myInputLists = {"condorJob/fileLists/produc
   outputRecoFile = outputRecoDir + outputFileName;
 
   //Create the server
-  Fun4AllServer* se = Fun4AllServer::instance();
-  se->Verbosity(1);
-  //se->Verbosity(verbosity);
+  Fun4AllServer *se = Fun4AllServer::instance();
+  se->Verbosity(verbosity);
 
   //Add all required input files
   for (unsigned int i = 0; i < myInputLists.size(); ++i)
@@ -80,7 +80,7 @@ void Fun4All_MDC2reco(vector<string> myInputLists = {"condorJob/fileLists/produc
     G4MAGNET::magfield_rescale = 1.;
     MagnetInit();
     MagnetFieldInit();
-    
+
     Mvtx_Cells();
     Intt_Cells();
     TPC_Cells();
@@ -97,7 +97,7 @@ void Fun4All_MDC2reco(vector<string> myInputLists = {"condorJob/fileLists/produc
   }
 
   //Now run the actual reconstruction
-  myHeavyFlavorReco(); 
+  myHeavyFlavorReco();
 
   //We should set this up correctly
   if (runQA)

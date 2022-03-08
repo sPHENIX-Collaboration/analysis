@@ -1,19 +1,22 @@
 #include <kfparticle_sphenix/KFParticle_sPHENIX.h>
 
+R__LOAD_LIBRARY(libkfparticle_sphenix.so)
+
 namespace HeavyFlavorReco
 {
   // https://wiki.bnl.gov/sPHENIX/index.php/KFParticle
-  string decayDescriptor = "[D0 -> K^- pi^+]cc"; //See twiki on how to set this
-  string reconstructionName = "myHeavyFlavorReco"; //Used for naming output folder, file and nodes
+  //string decayDescriptor = "[D*+ -> {D0 -> K^- pi^+} pi^+]cc"; //See twiki on how to set this
+  //string decayDescriptor = "[B+ -> {D0 -> K^- pi^+} pi^+]cc"; //See twiki on how to set this
+  string decayDescriptor = "[D0 -> K^- pi^+]cc";  //See twiki on how to set this
+  string reconstructionName = "myD0Reco";         //Used for naming output folder, file and nodes
   string outputRecoFile;
-  bool runTruthTrigger = false; //Decay Finder
-  bool getTruthInfo = true; //Add truth matching to output file
-  bool getCaloInfo = true;
-  bool runTracking = false; //Run tracking on DSTs
-  bool runPileUp = false; //Set true to have pile up added to reco
-  bool runQA = false; //Run QA, needs set up
+  bool runTruthTrigger = false;  //Decay Finder
+  bool getTruthInfo = true;      //Add truth matching to output file
+  bool getCaloInfo = false;
+  bool runTracking = false;  //Run tracking on DSTs
+  bool runQA = false;        //Run QA, needs set up
   int VERBOSITY = INT_MAX;
-};
+};  // namespace HeavyFlavorReco
 
 using namespace HeavyFlavorReco;
 
@@ -39,32 +42,49 @@ void myHeavyFlavorReco()
 
   if (useFakePV)
   {
-    fixToPV = false; //Constraining to a fake PV results in some gibberish variables
+    fixToPV = false;  //Constraining to a fake PV results in some gibberish variables
     kfparticle->useFakePrimaryVertex(true);
   }
 
   if (fixToPV)
   {
     kfparticle->constrainToPrimaryVertex(true);
-    kfparticle->setMotherIPchi2(40);
-    kfparticle->setFlightDistancechi2(10.0);
-    kfparticle->setMinDIRA(0.5);
+    kfparticle->setMotherIPchi2(15);
+    kfparticle->setFlightDistancechi2(0.0);
+    kfparticle->setMinDIRA(0.98);
   }
 
   //Track parameters
   kfparticle->setMinimumTrackPT(0.2);
-  kfparticle->setMinimumTrackIPchi2(5);
+  kfparticle->setMinimumTrackIPchi2(9);
   kfparticle->setMinimumTrackIP(0.00);
   kfparticle->setMaximumTrackchi2nDOF(3);
 
   //Vertex parameters
   kfparticle->setMaximumVertexchi2nDOF(3);
-  kfparticle->setMaximumDaughterDCA(0.05);
+  kfparticle->setMaximumDaughterDCA(0.03);
 
   //Parent parameters
-  kfparticle->setMotherPT(1);
-  kfparticle->setMinimumMass(1.7);
-  kfparticle->setMaximumMass(2.2);
+  kfparticle->setMotherPT(0);
+  kfparticle->setMinimumMass(1.75);
+  kfparticle->setMaximumMass(1.95);
+
+  //Intermediate parameters
+  std::vector<std::pair<float, float>> intermediate_mass_range;
+  intermediate_mass_range.push_back(make_pair(1.75, 1.95));
+  kfparticle->setIntermediateMassRange(intermediate_mass_range);
+  std::vector<float> intermediate_min_pt = {0.0};
+  kfparticle->setIntermediateMinPT(intermediate_min_pt);
+  std::vector<std::pair<float, float>> intermediate_IP_range;
+  intermediate_IP_range.push_back(make_pair(0., 1.));
+  kfparticle->setIntermediateIPRange(intermediate_IP_range);
+  std::vector<std::pair<float, float>> intermediate_IPchi2_range;
+  intermediate_IPchi2_range.push_back(make_pair(5., 100.));
+  kfparticle->setIntermediateIPchi2Range(intermediate_IPchi2_range);
+  std::vector<float> intermediate_min_dira = {0.95};
+  kfparticle->setIntermediateMinDIRA(intermediate_min_dira);
+  std::vector<float> intermediate_min_FDchi2 = {0.};
+  kfparticle->setIntermediateMinFDchi2(intermediate_min_FDchi2);
 
   kfparticle->setOutputName(outputRecoFile);
 
