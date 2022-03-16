@@ -9,7 +9,6 @@
 #include <FROG.h>
 #include <decayfinder/DecayFinder.h>
 #include <fun4all/Fun4AllDstInputManager.h>
-#include <fun4all/Fun4AllServer.h>
 #include <qa_modules/QAG4SimulationKFParticle.h>
 
 R__LOAD_LIBRARY(libqa_modules.so)
@@ -26,9 +25,10 @@ using namespace HeavyFlavorReco;
 
 void Fun4All_MDC2reco(vector<string> myInputLists = {"condorJob/fileLists/productionFiles-CHARM-dst_tracks-00000.list"}, const int nEvents = 10)
 {
-  int verbosity = VERBOSITY;
+  int verbosity = 1;
 
   gSystem->Load("libg4dst.so");
+  gSystem->Load("libFROG.so");
   FROG *fr = new FROG();
 
   //The next set of lines figures out folder revisions, file numbers etc
