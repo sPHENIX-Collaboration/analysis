@@ -24,7 +24,6 @@ if inputType not in types:
 dstSets = ['DST_TRACKS', 'DST_VERTEX']
 if args.truth: 
     dstSets.append('DST_TRUTH')
-    dstSets.append('DST_TRUTH_G4HIT')
     dstSets.append('DST_TRKR_G4HIT')
 if args.calo: dstSets.append('DST_CALO_CLUSTER')
 if args.trkr_hit: dstSets.append('DST_TRKR_HIT')
