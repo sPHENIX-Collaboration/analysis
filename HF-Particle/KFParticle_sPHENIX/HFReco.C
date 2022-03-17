@@ -1,4 +1,12 @@
+#include <fun4all/Fun4AllServer.h>
+
+#pragma GCC diagnostic push
+
+#pragma GCC diagnostic ignored "-Wundefined-internal"
+
 #include <kfparticle_sphenix/KFParticle_sPHENIX.h>
+
+#pragma GCC diagnostic pop
 
 R__LOAD_LIBRARY(libkfparticle_sphenix.so)
 
@@ -8,7 +16,7 @@ namespace HeavyFlavorReco
   //string decayDescriptor = "[D*+ -> {D0 -> K^- pi^+} pi^+]cc"; //See twiki on how to set this
   //string decayDescriptor = "[B+ -> {D0 -> K^- pi^+} pi^+]cc"; //See twiki on how to set this
   string decayDescriptor = "[D0 -> K^- pi^+]cc";  //See twiki on how to set this
-  string reconstructionName = "myD0Reco";         //Used for naming output folder, file and nodes
+  string reconstructionName = "myTestReco";         //Used for naming output folder, file and nodes
   string outputRecoFile;
   bool runTruthTrigger = false;  //Decay Finder
   bool getTruthInfo = true;      //Add truth matching to output file
