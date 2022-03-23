@@ -103,6 +103,7 @@ class TrackClusterEvaluator : public SubsysReco
   float pcax = -9999;
   float pcay = -9999;
   float pcaz = -9999;
+  int matchedTrackID = -9999;
   std::vector<TrkrDefs::cluskey> clusterkeys;
   std::vector<float> clusterx, clustery, clusterz, clusterrphierr, clusterzerr;
 };

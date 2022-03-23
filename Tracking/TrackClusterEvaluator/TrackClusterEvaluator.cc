@@ -297,6 +297,8 @@ void TrackClusterEvaluator::processRecoTracks(PHCompositeNode *topNode)
   for (const auto &[key, track] : *m_trackMap)
   {
     resetTreeValues();
+    if(Verbosity() > 0)
+      track->identify();
 
     trackID = track->get_id();
     px = track->get_px();
@@ -364,10 +366,18 @@ void TrackClusterEvaluator::processRecoTracks(PHCompositeNode *topNode)
     pcax = track->get_x();
     pcay = track->get_y();
     pcaz = track->get_z();
-
+   
     if (m_trackMatch)
     {
       PHG4Particle *g4particle = trackeval->max_truth_particle_by_nclusters(track);
+
+      if(g4particle) {
+	auto matched_track = trackeval->best_track_from(g4particle);
+	if(matched_track)
+	  {
+	    matchedTrackID = matched_track->get_id();
+	  }
+      }
       if (m_scanForEmbedded)
       {
         if (trutheval->get_embed(g4particle) <= 0) continue;
@@ -424,7 +434,7 @@ void TrackClusterEvaluator::processRecoTracks(PHCompositeNode *topNode)
           gnmms++;
         }
       }
-
+   
       gpx = g4particle->get_px();
       gpy = g4particle->get_py();
       gpz = g4particle->get_pz();
@@ -443,6 +453,7 @@ void TrackClusterEvaluator::processRecoTracks(PHCompositeNode *topNode)
       gembed = trutheval->get_embed(g4particle);
       gprimary = trutheval->is_primary(g4particle);
     }
+    m_recotree->Fill();
   }
 }
 
@@ -621,6 +632,7 @@ void TrackClusterEvaluator::setupTrees()
   m_recotree->Branch("tclusterz", &tclusterz);
   m_recotree->Branch("clusterrphierr", &clusterrphierr);
   m_recotree->Branch("clusterzerr", &clusterzerr);
+  m_recotree->Branch("matchedTrackID",&matchedTrackID, "matchedTrackID/I");
   m_recotree->Branch("gntracks", &gntracks, "gntracks/I");
   m_recotree->Branch("gtrackID", &gtrackID, "gtrackID/I");
   m_recotree->Branch("gnmaps", &gnmaps, "gnmaps/I");
@@ -653,6 +665,7 @@ void TrackClusterEvaluator::setupTrees()
 void TrackClusterEvaluator::resetTreeValues()
 {
   clearVectors();
+  matchedTrackID = -9999;
   gflavor = -9999;
   gntracks = -9999;
   gtrackID = -9999;
