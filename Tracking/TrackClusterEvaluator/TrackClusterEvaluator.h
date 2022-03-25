@@ -8,12 +8,15 @@
 
 #include <string>
 #include <vector>
+#include <map>
+#include <set>
 
 class PHCompositeNode;
 class TrkrClusterContainer;
 class SvtxTrackMap;
 class PHG4TruthInfoContainer;
 class SvtxEvalStack;
+class SvtxTrack;
 class TTree;
 class TFile;
 
@@ -32,6 +35,8 @@ class TrackClusterEvaluator : public SubsysReco
   int End(PHCompositeNode *topNode) override;
   int Reset(PHCompositeNode * /*topNode*/) override;
 
+  void setProcess(const int proc) { m_proc = proc; }
+  void setnEvent(const int nevent) { m_nevent = nevent; }
   void trackMapName(std::string name) { m_trackMapName = name; }
   void outfileName(std::string name) { m_outfilename = name; }
   void scanForPrimaries(bool scan) { m_scanForPrimaries = scan; }
@@ -57,6 +62,8 @@ class TrackClusterEvaluator : public SubsysReco
   bool m_scanForPrimaries = true;
   bool m_trackMatch = true;
 
+  int m_proc = 0;
+  int m_nevent = 1;
   TFile *m_outfile = nullptr;
   std::string m_outfilename = "TrackClusterEvaluator.root";
   TTree *m_recotree = nullptr;
@@ -82,6 +89,9 @@ class TrackClusterEvaluator : public SubsysReco
   float gvt = -9999;
   int gembed = -9999;
   int gprimary = -9999;
+  int isDuplicate = -9999;
+  std::vector<unsigned int> matchedRecoTracks;
+  std::map<int, std::set<SvtxTrack*>> matchedTrackMap;
   std::vector<TrkrDefs::cluskey> gclusterkeys;
   std::vector<float> tgclusterx, tgclustery, tgclusterz, tclusterx, tclustery, tclusterz;
   std::vector<float> gclusterx, gclustery, gclusterz, gclusterrphierr, gclusterzerr;
