@@ -60,7 +60,6 @@ int TrackClusterEvaluator::InitRun(PHCompositeNode *topNode)
 {
   int returnval = getNodes(topNode);
   event = m_proc * m_nevent;
-
   m_outfile = new TFile(m_outfilename.c_str(), "RECREATE");
   setupTrees();
 
@@ -70,7 +69,6 @@ int TrackClusterEvaluator::InitRun(PHCompositeNode *topNode)
 //____________________________________________________________________________..
 int TrackClusterEvaluator::process_event(PHCompositeNode *topNode)
 {
-  matchedTrackMap.clear();
   if (!m_svtxevalstack)
   {
     m_svtxevalstack = new SvtxEvalStack(topNode);
@@ -168,6 +166,7 @@ void TrackClusterEvaluator::processTruthTracks(PHCompositeNode *topNode)
         tgclustery.push_back(NAN);
         tgclusterz.push_back(NAN);
 	}
+
       gclusterx.push_back(global(0));
       gclustery.push_back(global(1));
       gclusterz.push_back(global(2));
@@ -209,14 +208,6 @@ void TrackClusterEvaluator::processTruthTracks(PHCompositeNode *topNode)
 
     gembed = trutheval->get_embed(g4particle);
     gprimary = trutheval->is_primary(g4particle);
-
-    std::set<SvtxTrack*> alltracks = trackeval->all_tracks_from(g4particle);
- 
-    matchedTrackMap.insert(std::make_pair(gtrackID,alltracks));
-    for(const auto track : alltracks)
-      {
-	matchedRecoTracks.push_back(track->get_id());
-      }
 
     auto track = trackeval->best_track_from(g4particle);
     if (track)
@@ -290,7 +281,48 @@ void TrackClusterEvaluator::processTruthTracks(PHCompositeNode *topNode)
       pcaz = track->get_z();
     }
 
+    auto matchedTracks = trackeval->all_tracks_from(g4particle);
+    for(const auto& track : matchedTracks)
+      {
+	matchedRecoTracksID.push_back(track->get_id());
+	matchedMom.push_back(Acts::Vector3(track->get_px(), track->get_py(),
+					   track->get_pz()));
+	matchedPCA.push_back(Acts::Vector3(track->get_x(), track->get_y(),
+					   track->get_z()));
+	matchedQuality.push_back(track->get_quality());
+	matchedCharge.push_back(track->get_charge());
+	int nmmaps = 0, nmintt=0, nmtpc=0, nmmms=0;
+	for (SvtxTrack::ConstClusterKeyIter iter = track->begin_cluster_keys();
+         iter != track->end_cluster_keys();
+         ++iter)
+	  {
+	    TrkrDefs::cluskey ckey = *iter;
+	    auto tcluster = m_clusterContainer->findCluster(ckey);
+	    unsigned int layer = TrkrDefs::getLayer(ckey);
+	    matchedClusterKeys.push_back(ckey);
+	    auto glob = actsTransformer.getGlobalPosition(tcluster, surfmaps, tgeometry);
+	    matchedClusterPos.push_back(glob);
+	    if (layer < 3)
+	      { nmmaps++; }
+	    else if (layer < 7)
+	      { nmintt++; }
+	    else if (layer < 55)
+	      { nmtpc++; }
+	    else
+	      { nmmms++; }
+	    
+	  }
+
+	matchednClusters.push_back(nmmaps+nmintt+nmtpc+nmmms);
+	matchednMaps.push_back(nmmaps);
+	matchednIntt.push_back(nmintt);
+	matchednTpc.push_back(nmtpc);
+	matchednMMs.push_back(nmmms);
+
+      }
+
     m_truthtree->Fill();
+
   }
 }
 
@@ -391,7 +423,7 @@ void TrackClusterEvaluator::processRecoTracks(PHCompositeNode *topNode)
         auto matchedtracks = trackeval->all_tracks_from(g4particle);
 	for(const auto ttrack : matchedtracks)
 	  {
-	    matchedRecoTracks.push_back(ttrack->get_id());
+	    matchedRecoTracksID.push_back(ttrack->get_id());
 	  }
 	if(matchedtracks.size() > 1)
 	  { isDuplicate = 1; }
@@ -477,7 +509,18 @@ void TrackClusterEvaluator::processRecoTracks(PHCompositeNode *topNode)
 
 void TrackClusterEvaluator::clearVectors()
 {
-  matchedRecoTracks.clear();
+  matchednClusters.clear();
+  matchedMom.clear();
+  matchedPCA.clear();
+  matchedQuality.clear();
+  matchedCharge.clear();
+  matchednMaps.clear();
+  matchednIntt.clear();
+  matchednTpc.clear();
+  matchednMMs.clear();
+  matchedClusterPos.clear();
+  matchedClusterKeys.clear();
+  matchedRecoTracksID.clear();
   tgclusterx.clear();
   tgclustery.clear();
   tgclusterz.clear();
@@ -595,7 +638,6 @@ void TrackClusterEvaluator::setupTrees()
   m_truthtree->Branch("tgclusterz", &tgclusterz);
   m_truthtree->Branch("gclusterrphierr", &gclusterrphierr);
   m_truthtree->Branch("gclusterzerr", &gclusterzerr);
-  m_truthtree->Branch("matchedRecoTracks",&matchedRecoTracks);
   m_truthtree->Branch("trackID", &trackID, "trackID/I");
   m_truthtree->Branch("px", &px, "px/F");
   m_truthtree->Branch("py", &py, "py/F");
@@ -623,11 +665,23 @@ void TrackClusterEvaluator::setupTrees()
   m_truthtree->Branch("tclusterz", &tclusterz);
   m_truthtree->Branch("clusterrphierr", &clusterrphierr);
   m_truthtree->Branch("clusterzerr", &clusterzerr);
+  m_truthtree->Branch("matchedRecoTracksID",&matchedRecoTracksID);
+  m_truthtree->Branch("matchedMom",&matchedMom);
+  m_truthtree->Branch("matchedPCA",&matchedPCA);
+  m_truthtree->Branch("matchedQuality",&matchedQuality);
+  m_truthtree->Branch("matchedCharge",&matchedCharge);
+  m_truthtree->Branch("matchednMaps",&matchednMaps);
+  m_truthtree->Branch("matchednIntt",&matchednIntt);
+  m_truthtree->Branch("matchednTpc",&matchednTpc);
+  m_truthtree->Branch("matchednMMs",&matchednMMs);
+  m_truthtree->Branch("matchedClusterPos",&matchedClusterPos);
+  m_truthtree->Branch("matchedClusterKeys",&matchedClusterKeys);
+  m_truthtree->Branch("matchednClusters",&matchednClusters);
 
   m_recotree->Branch("event", &event, "event/I");
   m_recotree->Branch("trackID", &trackID, "trackID/I");
   m_recotree->Branch("isDuplicate",&isDuplicate, "isDuplicate/I");
-  m_recotree->Branch("matchedRecoTracks", &matchedRecoTracks);
+  m_recotree->Branch("matchedRecoTracksID", &matchedRecoTracksID);
   m_recotree->Branch("px", &px, "px/F");
   m_recotree->Branch("py", &py, "py/F");
   m_recotree->Branch("pz", &pz, "pz/F");

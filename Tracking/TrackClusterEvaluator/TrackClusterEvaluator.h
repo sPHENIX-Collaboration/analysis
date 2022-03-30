@@ -5,6 +5,7 @@
 
 #include <fun4all/SubsysReco.h>
 #include <trackbase/TrkrDefs.h>
+#include <Acts/Definitions/Algebra.hpp>
 
 #include <string>
 #include <vector>
@@ -90,8 +91,6 @@ class TrackClusterEvaluator : public SubsysReco
   int gembed = -9999;
   int gprimary = -9999;
   int isDuplicate = -9999;
-  std::vector<unsigned int> matchedRecoTracks;
-  std::map<int, std::set<SvtxTrack*>> matchedTrackMap;
   std::vector<TrkrDefs::cluskey> gclusterkeys;
   std::vector<float> tgclusterx, tgclustery, tgclusterz, tclusterx, tclustery, tclusterz;
   std::vector<float> gclusterx, gclustery, gclusterz, gclusterrphierr, gclusterzerr;
@@ -116,6 +115,18 @@ class TrackClusterEvaluator : public SubsysReco
   int matchedTrackID = -9999;
   std::vector<TrkrDefs::cluskey> clusterkeys;
   std::vector<float> clusterx, clustery, clusterz, clusterrphierr, clusterzerr;
+
+  /// Duplicated track quantities
+  std::vector<unsigned int> matchedRecoTracksID;
+  std::vector<Acts::Vector3> matchedMom;
+  std::vector<Acts::Vector3> matchedPCA;
+  std::vector<float> matchedQuality;
+  std::vector<int> matchedCharge;
+  std::vector<int> matchednMaps, matchednIntt, matchednTpc, matchednMMs;
+  std::vector<Acts::Vector3> matchedClusterPos;
+  std::vector<TrkrDefs::cluskey> matchedClusterKeys;
+  std::vector<int> matchednClusters;
+ 
 };
 
 #endif  // TRACKCLUSTEREVALUATOR_H
