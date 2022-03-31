@@ -285,10 +285,12 @@ void TrackClusterEvaluator::processTruthTracks(PHCompositeNode *topNode)
     for(const auto& track : matchedTracks)
       {
 	matchedRecoTracksID.push_back(track->get_id());
-	matchedMom.push_back(Acts::Vector3(track->get_px(), track->get_py(),
-					   track->get_pz()));
-	matchedPCA.push_back(Acts::Vector3(track->get_x(), track->get_y(),
-					   track->get_z()));
+	matchedPx.push_back(track->get_px());
+	matchedPy.push_back(track->get_py());
+	matchedPz.push_back(track->get_pz());
+	matchedX.push_back(track->get_x());
+	matchedY.push_back(track->get_y());
+	matchedZ.push_back(track->get_z());
 	matchedQuality.push_back(track->get_quality());
 	matchedCharge.push_back(track->get_charge());
 	int nmmaps = 0, nmintt=0, nmtpc=0, nmmms=0;
@@ -301,7 +303,9 @@ void TrackClusterEvaluator::processTruthTracks(PHCompositeNode *topNode)
 	    unsigned int layer = TrkrDefs::getLayer(ckey);
 	    matchedClusterKeys.push_back(ckey);
 	    auto glob = actsTransformer.getGlobalPosition(tcluster, surfmaps, tgeometry);
-	    matchedClusterPos.push_back(glob);
+	    matchedClusterX.push_back(glob(0));
+	    matchedClusterY.push_back(glob(1));
+	    matchedClusterZ.push_back(glob(2));
 	    if (layer < 3)
 	      { nmmaps++; }
 	    else if (layer < 7)
@@ -510,15 +514,21 @@ void TrackClusterEvaluator::processRecoTracks(PHCompositeNode *topNode)
 void TrackClusterEvaluator::clearVectors()
 {
   matchednClusters.clear();
-  matchedMom.clear();
-  matchedPCA.clear();
+  matchedPx.clear();
+  matchedPy.clear();
+  matchedPz.clear();
+  matchedClusterX.clear();
+  matchedClusterY.clear();
+  matchedClusterZ.clear();
+  matchedX.clear();
+  matchedY.clear();
+  matchedZ.clear();
   matchedQuality.clear();
   matchedCharge.clear();
   matchednMaps.clear();
   matchednIntt.clear();
   matchednTpc.clear();
   matchednMMs.clear();
-  matchedClusterPos.clear();
   matchedClusterKeys.clear();
   matchedRecoTracksID.clear();
   tgclusterx.clear();
@@ -666,15 +676,21 @@ void TrackClusterEvaluator::setupTrees()
   m_truthtree->Branch("clusterrphierr", &clusterrphierr);
   m_truthtree->Branch("clusterzerr", &clusterzerr);
   m_truthtree->Branch("matchedRecoTracksID",&matchedRecoTracksID);
-  m_truthtree->Branch("matchedMom",&matchedMom);
-  m_truthtree->Branch("matchedPCA",&matchedPCA);
+  m_truthtree->Branch("matchedPx",&matchedPx);
+  m_truthtree->Branch("matchedPy",&matchedPy);
+  m_truthtree->Branch("matchedPz",&matchedPz);
+  m_truthtree->Branch("matchedX",&matchedX);
+  m_truthtree->Branch("matchedY",&matchedY);
+  m_truthtree->Branch("matchedZ",&matchedZ);
   m_truthtree->Branch("matchedQuality",&matchedQuality);
   m_truthtree->Branch("matchedCharge",&matchedCharge);
   m_truthtree->Branch("matchednMaps",&matchednMaps);
   m_truthtree->Branch("matchednIntt",&matchednIntt);
   m_truthtree->Branch("matchednTpc",&matchednTpc);
   m_truthtree->Branch("matchednMMs",&matchednMMs);
-  m_truthtree->Branch("matchedClusterPos",&matchedClusterPos);
+  m_truthtree->Branch("matchedClusterX",&matchedClusterX);
+  m_truthtree->Branch("matchedClusterY",&matchedClusterY);
+  m_truthtree->Branch("matchedClusterZ",&matchedClusterZ);
   m_truthtree->Branch("matchedClusterKeys",&matchedClusterKeys);
   m_truthtree->Branch("matchednClusters",&matchednClusters);
 

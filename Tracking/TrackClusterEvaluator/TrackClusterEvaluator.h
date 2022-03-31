@@ -118,12 +118,12 @@ class TrackClusterEvaluator : public SubsysReco
 
   /// Duplicated track quantities
   std::vector<unsigned int> matchedRecoTracksID;
-  std::vector<Acts::Vector3> matchedMom;
-  std::vector<Acts::Vector3> matchedPCA;
+  std::vector<float> matchedPx, matchedPy, matchedPz;
+  std::vector<float> matchedX, matchedY, matchedZ;
   std::vector<float> matchedQuality;
   std::vector<int> matchedCharge;
   std::vector<int> matchednMaps, matchednIntt, matchednTpc, matchednMMs;
-  std::vector<Acts::Vector3> matchedClusterPos;
+  std::vector<float> matchedClusterX, matchedClusterY, matchedClusterZ;
   std::vector<TrkrDefs::cluskey> matchedClusterKeys;
   std::vector<int> matchednClusters;
  
