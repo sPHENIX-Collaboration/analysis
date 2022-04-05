@@ -282,9 +282,11 @@ void TrackClusterEvaluator::processTruthTracks(PHCompositeNode *topNode)
     }
 
     auto matchedTracks = trackeval->all_tracks_from(g4particle);
+  
     for(const auto& track : matchedTracks)
       {
 	dtrackID = track->get_id();
+
 	dpx = track->get_px();
 	dpy = track->get_py();
 	dpz = track->get_pz();
@@ -307,6 +309,7 @@ void TrackClusterEvaluator::processTruthTracks(PHCompositeNode *topNode)
          ++iter)
 	  {
 	    TrkrDefs::cluskey ckey = *iter;
+	   
 	    auto tcluster = m_clusterContainer->findCluster(ckey);
 	    unsigned int layer = TrkrDefs::getLayer(ckey);
 	    dclusterkeys.push_back(ckey);
@@ -330,6 +333,14 @@ void TrackClusterEvaluator::processTruthTracks(PHCompositeNode *topNode)
 	dntpc = nmtpc;
 	dnmms = nmmms;
 	m_duplicatetree->Fill();
+
+	/// Reset vectors
+	dclusterrphierr.clear();
+	dclusterzerr.clear();
+	dclusterkeys.clear();
+	dclusterx.clear();
+	dclustery.clear();
+	dclusterz.clear();
       }
 
     m_truthtree->Fill();
