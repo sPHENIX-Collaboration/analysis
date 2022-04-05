@@ -284,15 +284,23 @@ void TrackClusterEvaluator::processTruthTracks(PHCompositeNode *topNode)
     auto matchedTracks = trackeval->all_tracks_from(g4particle);
     for(const auto& track : matchedTracks)
       {
-	matchedRecoTracksID.push_back(track->get_id());
-	matchedPx.push_back(track->get_px());
-	matchedPy.push_back(track->get_py());
-	matchedPz.push_back(track->get_pz());
-	matchedX.push_back(track->get_x());
-	matchedY.push_back(track->get_y());
-	matchedZ.push_back(track->get_z());
-	matchedQuality.push_back(track->get_quality());
-	matchedCharge.push_back(track->get_charge());
+	dtrackID = track->get_id();
+	dpx = track->get_px();
+	dpy = track->get_py();
+	dpz = track->get_pz();
+	dpt = track->get_pt();
+	dpcax = track->get_x();
+	dpcay = track->get_y();
+	dpcaz = track->get_z();
+	ddca3dxy = track->get_dca3d_xy();
+	ddca3dz = track->get_dca3d_z();
+	TVector3 vec;
+	vec.SetXYZ(dpx,dpy,dpz);
+	deta = vec.Eta();
+	dphi = vec.Phi();
+	dcharge = track->get_charge();
+	dquality = track->get_quality();
+	
 	int nmmaps = 0, nmintt=0, nmtpc=0, nmmms=0;
 	for (SvtxTrack::ConstClusterKeyIter iter = track->begin_cluster_keys();
          iter != track->end_cluster_keys();
@@ -301,11 +309,11 @@ void TrackClusterEvaluator::processTruthTracks(PHCompositeNode *topNode)
 	    TrkrDefs::cluskey ckey = *iter;
 	    auto tcluster = m_clusterContainer->findCluster(ckey);
 	    unsigned int layer = TrkrDefs::getLayer(ckey);
-	    matchedClusterKeys.push_back(ckey);
+	    dclusterkeys.push_back(ckey);
 	    auto glob = actsTransformer.getGlobalPosition(tcluster, surfmaps, tgeometry);
-	    matchedClusterX.push_back(glob(0));
-	    matchedClusterY.push_back(glob(1));
-	    matchedClusterZ.push_back(glob(2));
+	    dclusterx.push_back(glob(0));
+	    dclustery.push_back(glob(1));
+	    dclusterz.push_back(glob(2));
 	    if (layer < 3)
 	      { nmmaps++; }
 	    else if (layer < 7)
@@ -317,12 +325,11 @@ void TrackClusterEvaluator::processTruthTracks(PHCompositeNode *topNode)
 	    
 	  }
 
-	matchednClusters.push_back(nmmaps+nmintt+nmtpc+nmmms);
-	matchednMaps.push_back(nmmaps);
-	matchednIntt.push_back(nmintt);
-	matchednTpc.push_back(nmtpc);
-	matchednMMs.push_back(nmmms);
-
+	dnmaps = nmmaps;
+	dnintt = nmintt;
+	dntpc = nmtpc;
+	dnmms = nmmms;
+	m_duplicatetree->Fill();
       }
 
     m_truthtree->Fill();
@@ -513,24 +520,13 @@ void TrackClusterEvaluator::processRecoTracks(PHCompositeNode *topNode)
 
 void TrackClusterEvaluator::clearVectors()
 {
-  matchednClusters.clear();
-  matchedPx.clear();
-  matchedPy.clear();
-  matchedPz.clear();
-  matchedClusterX.clear();
-  matchedClusterY.clear();
-  matchedClusterZ.clear();
-  matchedX.clear();
-  matchedY.clear();
-  matchedZ.clear();
-  matchedQuality.clear();
-  matchedCharge.clear();
-  matchednMaps.clear();
-  matchednIntt.clear();
-  matchednTpc.clear();
-  matchednMMs.clear();
-  matchedClusterKeys.clear();
   matchedRecoTracksID.clear();
+  dclusterkeys.clear();
+  dclusterx.clear();
+  dclustery.clear();
+  dclusterz.clear();
+  dclusterrphierr.clear();
+  dclusterzerr.clear();
   tgclusterx.clear();
   tgclustery.clear();
   tgclusterz.clear();
@@ -618,6 +614,62 @@ void TrackClusterEvaluator::setupTrees()
 {
   m_recotree = new TTree("recotracks", "a tree with reconstructed tracks");
   m_truthtree = new TTree("truthtracks", "a tree with truth tracks");
+  m_duplicatetree = new TTree("duplicatetracks","a tree with truth->reco-duplicates");
+  
+  m_duplicatetree->Branch("event", &event, "event/I");
+  m_duplicatetree->Branch("gntracks", &gntracks, "gntracks/I");
+  m_duplicatetree->Branch("gtrackID", &gtrackID, "gtrackID/I");
+  m_duplicatetree->Branch("gflavor", &gflavor, "gflavor/I");
+  m_duplicatetree->Branch("gnmaps", &gnmaps, "gnmaps/I");
+  m_duplicatetree->Branch("gnintt", &gnintt, "gnintt/I");
+  m_duplicatetree->Branch("gntpc", &gntpc, "gntpc/I");
+  m_duplicatetree->Branch("gnmms", &gnmms, "gnmms/I");
+  m_duplicatetree->Branch("gpx", &gpx, "gpx/F");
+  m_duplicatetree->Branch("gpy", &gpy, "gpy/F");
+  m_duplicatetree->Branch("gpz", &gpz, "gpz/F");
+  m_duplicatetree->Branch("gpt", &gpt, "gpt/F");
+  m_duplicatetree->Branch("geta", &geta, "geta/F");
+  m_duplicatetree->Branch("gphi", &gphi, "gphi/F");
+  m_duplicatetree->Branch("gvx", &gvx, "gvx/F");
+  m_duplicatetree->Branch("gvy", &gvy, "gvy/F");
+  m_duplicatetree->Branch("gvz", &gvz, "gvz/F");
+  m_duplicatetree->Branch("gvt", &gvt, "gvt/F");
+  m_duplicatetree->Branch("gembed", &gembed, "gembed/I");
+  m_duplicatetree->Branch("gprimary", &gprimary, "gprimary/I");
+  m_duplicatetree->Branch("gclusterkeys", &gclusterkeys);
+  m_duplicatetree->Branch("gclusterx", &gclusterx);
+  m_duplicatetree->Branch("gclustery", &gclustery);
+  m_duplicatetree->Branch("gclusterz", &gclusterz);
+  m_duplicatetree->Branch("tgclusterx", &tgclusterx);
+  m_duplicatetree->Branch("tgclustery", &tgclustery);
+  m_duplicatetree->Branch("tgclusterz", &tgclusterz);
+  m_duplicatetree->Branch("gclusterrphierr", &gclusterrphierr);
+  m_duplicatetree->Branch("gclusterzerr", &gclusterzerr);
+  m_duplicatetree->Branch("dtrackID", &dtrackID, "dtrackID/I");
+  m_duplicatetree->Branch("dpx", &dpx, "dpx/F");
+  m_duplicatetree->Branch("dpy", &dpy, "dpy/F");
+  m_duplicatetree->Branch("dpz", &dpz, "dpz/F");
+  m_duplicatetree->Branch("dpt", &dpt, "dpt/F");
+  m_duplicatetree->Branch("deta", &deta, "deta/F");
+  m_duplicatetree->Branch("dphi", &dphi, "dphi/F");
+  m_duplicatetree->Branch("dcharge", &dcharge, "dcharge/I");
+  m_duplicatetree->Branch("dquality", &dquality, "dquality/F");
+  m_duplicatetree->Branch("dnmaps", &dnmaps, "dnmaps/I");
+  m_duplicatetree->Branch("dnintt", &dnintt, "dnintt/I");
+  m_duplicatetree->Branch("dntpc", &dntpc, "dntpc/I");
+  m_duplicatetree->Branch("dnmms", &dnmms, "dnmms/I");
+  m_duplicatetree->Branch("ddca3dxy", &ddca3dxy, "ddca3dxy/F");
+  m_duplicatetree->Branch("ddca3dz", &ddca3dz, "ddca3dz/F");
+  m_duplicatetree->Branch("dpcax", &dpcax, "dpcax/F");
+  m_duplicatetree->Branch("dpcay", &dpcay, "dpcay/F");
+  m_duplicatetree->Branch("dpcaz", &dpcaz, "dpcaz/F");
+  m_duplicatetree->Branch("dclusterkeys", &dclusterkeys);
+  m_duplicatetree->Branch("dclusterx", &dclusterx);
+  m_duplicatetree->Branch("dclustery", &dclustery);
+  m_duplicatetree->Branch("dclusterz", &dclusterz);
+  m_duplicatetree->Branch("dclusterrphierr", &dclusterrphierr);
+  m_duplicatetree->Branch("dclusterzerr", &dclusterzerr);
+
 
   m_truthtree->Branch("event", &event, "event/I");
   m_truthtree->Branch("gntracks", &gntracks, "gntracks/I");
@@ -675,24 +727,6 @@ void TrackClusterEvaluator::setupTrees()
   m_truthtree->Branch("tclusterz", &tclusterz);
   m_truthtree->Branch("clusterrphierr", &clusterrphierr);
   m_truthtree->Branch("clusterzerr", &clusterzerr);
-  m_truthtree->Branch("matchedRecoTracksID",&matchedRecoTracksID);
-  m_truthtree->Branch("matchedPx",&matchedPx);
-  m_truthtree->Branch("matchedPy",&matchedPy);
-  m_truthtree->Branch("matchedPz",&matchedPz);
-  m_truthtree->Branch("matchedX",&matchedX);
-  m_truthtree->Branch("matchedY",&matchedY);
-  m_truthtree->Branch("matchedZ",&matchedZ);
-  m_truthtree->Branch("matchedQuality",&matchedQuality);
-  m_truthtree->Branch("matchedCharge",&matchedCharge);
-  m_truthtree->Branch("matchednMaps",&matchednMaps);
-  m_truthtree->Branch("matchednIntt",&matchednIntt);
-  m_truthtree->Branch("matchednTpc",&matchednTpc);
-  m_truthtree->Branch("matchednMMs",&matchednMMs);
-  m_truthtree->Branch("matchedClusterX",&matchedClusterX);
-  m_truthtree->Branch("matchedClusterY",&matchedClusterY);
-  m_truthtree->Branch("matchedClusterZ",&matchedClusterZ);
-  m_truthtree->Branch("matchedClusterKeys",&matchedClusterKeys);
-  m_truthtree->Branch("matchednClusters",&matchednClusters);
 
   m_recotree->Branch("event", &event, "event/I");
   m_recotree->Branch("trackID", &trackID, "trackID/I");
@@ -796,4 +830,22 @@ void TrackClusterEvaluator::resetTreeValues()
   pcax = -9999;
   pcay = -9999;
   pcaz = -9999;
+  dtrackID = -9999;
+  dpx = -9999;
+  dpy = -9999;
+  dpz = -9999;
+  dpt = -9999;
+  deta = -9999;
+  dphi = -9999;
+  dcharge = -9999;
+  dquality = -9999;
+  dnmaps = -9999;
+  dnintt = -9999;
+  dntpc = -9999;
+  dnmms = -9999;
+  ddca3dxy = -9999;
+  ddca3dz = -9999;
+  dpcax = -9999;
+  dpcay = -9999;
+  dpcaz = -9999;
 }

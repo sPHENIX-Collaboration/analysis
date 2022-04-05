@@ -69,6 +69,7 @@ class TrackClusterEvaluator : public SubsysReco
   std::string m_outfilename = "TrackClusterEvaluator.root";
   TTree *m_recotree = nullptr;
   TTree *m_truthtree = nullptr;
+  TTree *m_duplicatetree = nullptr;
 
   int event = -9999;
   int gflavor = -9999;
@@ -113,19 +114,33 @@ class TrackClusterEvaluator : public SubsysReco
   float pcay = -9999;
   float pcaz = -9999;
   int matchedTrackID = -9999;
+  
+  int dtrackID = -9999;
+  float dpx = -9999;
+  float dpy = -9999;
+  float dpz = -9999;
+  float dpt = -9999;
+  float deta = -9999;
+  float dphi = -9999;
+  int dcharge = -9999;
+  float dquality = -9999;
+  int dnmaps = -9999;
+  int dnintt = -9999;
+  int dntpc = -9999;
+  int dnmms = -9999;
+  float ddca3dxy = -9999;
+  float ddca3dz = -9999;
+  float dpcax = -9999;
+  float dpcay = -9999;
+  float dpcaz = -9999;
+  std::vector<TrkrDefs::cluskey> dclusterkeys;
+  std::vector<float> dclusterx, dclustery, dclusterz;
+  std::vector<float> dclusterrphierr, dclusterzerr;
+
   std::vector<TrkrDefs::cluskey> clusterkeys;
   std::vector<float> clusterx, clustery, clusterz, clusterrphierr, clusterzerr;
-
-  /// Duplicated track quantities
   std::vector<unsigned int> matchedRecoTracksID;
-  std::vector<float> matchedPx, matchedPy, matchedPz;
-  std::vector<float> matchedX, matchedY, matchedZ;
-  std::vector<float> matchedQuality;
-  std::vector<int> matchedCharge;
-  std::vector<int> matchednMaps, matchednIntt, matchednTpc, matchednMMs;
-  std::vector<float> matchedClusterX, matchedClusterY, matchedClusterZ;
-  std::vector<TrkrDefs::cluskey> matchedClusterKeys;
-  std::vector<int> matchednClusters;
+
  
 };
 
