@@ -39,19 +39,19 @@
 TrackClusterEvaluator::TrackClusterEvaluator(const std::string &name)
   : SubsysReco(name)
 {
-  std::cout << "TrackClusterEvaluator::TrackClusterEvaluator(const std::string &name) Calling ctor" << std::endl;
+
 }
 
 //____________________________________________________________________________..
 TrackClusterEvaluator::~TrackClusterEvaluator()
 {
-  std::cout << "TrackClusterEvaluator::~TrackClusterEvaluator() Calling dtor" << std::endl;
+
 }
 
 //____________________________________________________________________________..
-int TrackClusterEvaluator::Init(PHCompositeNode *topNode)
+int TrackClusterEvaluator::Init(PHCompositeNode*)
 {
-  std::cout << "TrackClusterEvaluator::Init(PHCompositeNode *topNode) Initializing" << std::endl;
+
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
@@ -139,6 +139,7 @@ void TrackClusterEvaluator::processTruthTracks(PHCompositeNode *topNode)
     }
 
     gtrackID = g4particle->get_track_id();
+  
     gflavor = g4particle->get_pid();
 
     std::set<TrkrDefs::cluskey> g4clusters = clustereval->all_clusters_from(g4particle);
@@ -213,6 +214,7 @@ void TrackClusterEvaluator::processTruthTracks(PHCompositeNode *topNode)
     if (track)
     {
       trackID = track->get_id();
+
       px = track->get_px();
       py = track->get_py();
       pz = track->get_pz();
@@ -364,7 +366,8 @@ void TrackClusterEvaluator::processRecoTracks(PHCompositeNode *topNode)
     if(Verbosity() > 0)
       track->identify();
 
-    trackID = track->get_id();    
+    trackID = track->get_id(); 
+   
     px = track->get_px();
     py = track->get_py();
     pz = track->get_pz();
@@ -433,13 +436,17 @@ void TrackClusterEvaluator::processRecoTracks(PHCompositeNode *topNode)
    
     if (m_trackMatch)
     {
+      auto allpart = trackeval->all_truth_particles(track);
+ 
       PHG4Particle *g4particle = trackeval->max_truth_particle_by_nclusters(track);
-
+   
       if(g4particle) {
 	auto matched_track = trackeval->best_track_from(g4particle);
+
 	if(matched_track)
 	  {
 	    matchedTrackID = matched_track->get_id();
+	 
 	  }
 	
         auto matchedtracks = trackeval->all_tracks_from(g4particle);
