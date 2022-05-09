@@ -5,6 +5,7 @@
 
 #include <fun4all/SubsysReco.h>
 #include <trackbase/TrkrDefs.h>
+#include <Acts/Definitions/Algebra.hpp>
 
 #include <string>
 #include <vector>
@@ -68,6 +69,7 @@ class TrackClusterEvaluator : public SubsysReco
   std::string m_outfilename = "TrackClusterEvaluator.root";
   TTree *m_recotree = nullptr;
   TTree *m_truthtree = nullptr;
+  TTree *m_duplicatetree = nullptr;
 
   int event = -9999;
   int gflavor = -9999;
@@ -90,8 +92,6 @@ class TrackClusterEvaluator : public SubsysReco
   int gembed = -9999;
   int gprimary = -9999;
   int isDuplicate = -9999;
-  std::vector<unsigned int> matchedRecoTracks;
-  std::map<int, std::set<SvtxTrack*>> matchedTrackMap;
   std::vector<TrkrDefs::cluskey> gclusterkeys;
   std::vector<float> tgclusterx, tgclustery, tgclusterz, tclusterx, tclustery, tclusterz;
   std::vector<float> gclusterx, gclustery, gclusterz, gclusterrphierr, gclusterzerr;
@@ -114,8 +114,34 @@ class TrackClusterEvaluator : public SubsysReco
   float pcay = -9999;
   float pcaz = -9999;
   int matchedTrackID = -9999;
+  
+  int dtrackID = -9999;
+  float dpx = -9999;
+  float dpy = -9999;
+  float dpz = -9999;
+  float dpt = -9999;
+  float deta = -9999;
+  float dphi = -9999;
+  int dcharge = -9999;
+  float dquality = -9999;
+  int dnmaps = -9999;
+  int dnintt = -9999;
+  int dntpc = -9999;
+  int dnmms = -9999;
+  float ddca3dxy = -9999;
+  float ddca3dz = -9999;
+  float dpcax = -9999;
+  float dpcay = -9999;
+  float dpcaz = -9999;
+  std::vector<TrkrDefs::cluskey> dclusterkeys;
+  std::vector<float> dclusterx, dclustery, dclusterz;
+  std::vector<float> dclusterrphierr, dclusterzerr;
+
   std::vector<TrkrDefs::cluskey> clusterkeys;
   std::vector<float> clusterx, clustery, clusterz, clusterrphierr, clusterzerr;
+  std::vector<unsigned int> matchedRecoTracksID;
+
+ 
 };
 
 #endif  // TRACKCLUSTEREVALUATOR_H
