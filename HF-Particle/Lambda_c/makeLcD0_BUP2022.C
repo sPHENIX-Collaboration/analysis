@@ -508,8 +508,8 @@ void makeLcD0_BUP2022()
 //  leg->Draw();
 
   leg = new TLegend(0.35, 0.5, 0.94, 0.65);
-  leg->AddEntry(gr_Tsinghua_2, "Tsinghua: seq. coal, 10-80%", "l");
-  leg->AddEntry(gr_Tsinghua_1, "Tsinghua: simul. coal, 10-80%", "l");
+  leg->AddEntry(gr_Tsinghua_2, "Tsinghua: simul. coal, 10-80%", "l");
+  leg->AddEntry(gr_Tsinghua_1, "Tsinghua: seq. coal, 10-80%", "l");
   leg->AddEntry(gr_Greco_2, "Catania: coal only, 0-20%", "l");
   leg->AddEntry(gr_Greco_1, "Catania: coal+frag, 0-20%", "l");
 //  leg->SetTextFont(6);
