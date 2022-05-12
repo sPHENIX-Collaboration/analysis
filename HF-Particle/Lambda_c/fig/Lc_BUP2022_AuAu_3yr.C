@@ -1,7 +1,7 @@
 void Lc_BUP2022_AuAu_3yr()
 {
 //=========Macro generated from canvas: Lc_BUP2022_AuAu_3yr/Lc_BUP2022_AuAu_3yr
-//=========  (Wed May 11 21:31:03 2022) by ROOT version 6.24/06
+//=========  (Thu May 12 08:26:25 2022) by ROOT version 6.24/06
    TCanvas *Lc_BUP2022_AuAu_3yr = new TCanvas("Lc_BUP2022_AuAu_3yr", "Lc_BUP2022_AuAu_3yr",0,23,1100,800);
    gStyle->SetOptStat(0);
    gStyle->SetOptTitle(0);
@@ -1253,7 +1253,7 @@ void Lc_BUP2022_AuAu_3yr()
    leg->SetLineWidth(1);
    leg->SetFillColor(0);
    leg->SetFillStyle(1001);
-   entry=leg->AddEntry("Graph5","Tsinghua: seq. coal, 10-80%","l");
+   entry=leg->AddEntry("Graph5","Tsinghua: simul. coal, 10-80%","l");
 
    ci = TColor::GetColor("#66cc66");
    entry->SetLineColor(ci);
@@ -1263,7 +1263,7 @@ void Lc_BUP2022_AuAu_3yr()
    entry->SetMarkerStyle(21);
    entry->SetMarkerSize(1);
    entry->SetTextFont(42);
-   entry=leg->AddEntry("Graph4","Tsinghua: simul. coal, 10-80%","l");
+   entry=leg->AddEntry("Graph4","Tsinghua: seq. coal, 10-80%","l");
 
    ci = TColor::GetColor("#66cc66");
    entry->SetLineColor(ci);
