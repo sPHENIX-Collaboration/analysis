@@ -415,11 +415,10 @@ int sPHAnalysis::process_event_test(PHCompositeNode *topNode) {
       PHG4Particle* g4particle = iter->second;
       int gflavor  = g4particle->get_pid();
       double gmass = 0.;
-      if(fabs(gflavor)==11) {
-        gmass = 0.000511;
-      } else if(fabs(gflavor)==211) {
-        gmass = 0.13957;
-      } else { continue; }
+      if(fabs(gflavor)==11)       { gmass = 0.000511; } 
+      else if(fabs(gflavor)==211) { gmass = 0.13957; } 
+      else if(fabs(gflavor)==321) { gmass = 0.49368; } 
+      else { continue; }
       int trackid = g4particle->get_track_id();
       if(trackid>truth_container->GetNumPrimaryVertexParticles()-50) {
         double gpx = g4particle->get_px();
