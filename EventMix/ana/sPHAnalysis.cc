@@ -29,8 +29,8 @@
 #include <phhepmc/PHHepMCGenEvent.h>
 #include <phhepmc/PHHepMCGenEventMap.h>
 
-#include <HepMC/GenEvent.h>              // for GenEvent::particle_const_ite...
-#include <HepMC/GenParticle.h>           // for GenParticle
+//#include <HepMC/GenEvent.h>              // for GenEvent::particle_const_ite...
+//#include <HepMC/GenParticle.h>           // for GenParticle
 #include <HepMC/GenVertex.h>             // for GenVertex, GenVertex::partic...
 #include <HepMC/IteratorRange.h>         // for ancestors, children, descend...
 #include <HepMC/SimpleVector.h>   // for FourVector
@@ -85,7 +85,7 @@ sPHAnalysis::sPHAnalysis(const std::string &name, const std::string &filename) :
   hndf=NULL;
   hquality=NULL;
 
-  _whattodo = 1;
+  _whattodo = 2;
   _rng = nullptr;
 }
 
@@ -156,11 +156,14 @@ int sPHAnalysis::process_event(PHCompositeNode *topNode)
   //return process_event_bimp(topNode);
   //return process_event_hepmc(topNode);
   if(_whattodo==0) {
-    cout << "MAKING PAIRS." << endl;
+//    cout << "MAKING PAIRS." << endl;
     return process_event_pairs(topNode);
   } else if(_whattodo==1) {
-    cout << "DOING ANALYSIS." << endl;
+//    cout << "DOING ANALYSIS." << endl;
     return process_event_test(topNode);
+  } else if(_whattodo==2) {
+//    cout << "PYTHIA UPSILONS." << endl;
+    return process_event_pythiaupsilon(topNode);
   } else { cerr << "ERROR: wrong choice of what to do." << endl; return Fun4AllReturnCodes::ABORTRUN; }
 }
 
@@ -366,6 +369,79 @@ int sPHAnalysis::process_event_bimp(PHCompositeNode *topNode) {
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
+//=============================================================================================
+
+HepMC::GenParticle*  sPHAnalysis::GetParent(HepMC::GenParticle* p, HepMC::GenEvent* event)
+{
+
+  HepMC::GenParticle* parent = NULL;
+//  if(!p->production_vertex()) return parent;
+
+  for ( HepMC::GenVertex::particle_iterator mother = p->production_vertex()-> particles_begin(HepMC::ancestors);
+        mother != p->production_vertex()-> particles_end(HepMC::ancestors);
+        ++mother )
+    {
+          //if(abs((*mother)->pdg_id()) == 23 || abs((*mother)->pdg_id()) == 21) // Z0 or gluon
+          //cout << "      mother pid = " << (*mother)->pdg_id() << endl;
+          if(abs((*mother)->pdg_id()) == 553) // Upsilon
+            {
+              parent = *mother;
+              break;
+            }
+      if(parent != NULL) break;
+    }
+
+  return parent;
+}
+
+
+//======================================================================
+
+int sPHAnalysis::process_event_pythiaupsilon(PHCompositeNode *topNode) {
+  EventNumber++;
+  int howoften = 1; 
+  if((EventNumber-1)%howoften==0) { cout<<"------------ EventNumber = " << EventNumber-1 << endl; }
+  if(EventNumber==1) topNode->print();
+
+  PHHepMCGenEventMap *genevtmap = findNode::getClass<PHHepMCGenEventMap>(topNode, "PHHepMCGenEventMap");
+  PHHepMCGenEvent *genevt = nullptr;
+
+  for (PHHepMCGenEventMap::ReverseIter iter = genevtmap->rbegin(); iter != genevtmap->rend(); ++iter)
+  {
+    genevt = iter->second;
+    if(!genevt) {cout<<"ERROR: no PHHepMCGenEvent!" << endl; return Fun4AllReturnCodes::ABORTEVENT;}
+    //cout << "got PHHepMCGenEvent... " << genevt << endl;
+  }
+    
+    HepMC::GenEvent *event = genevt->getEvent();
+    if (!event) { cout << PHWHERE << "ERROR: no HepMC::GenEvent!" << endl; return Fun4AllReturnCodes::ABORTEVENT;}
+    
+    int npart = event->particles_size();
+    int nvert = event->vertices_size();
+    cout << "HepMC::GenEvent: Number of particles, vertuces = " << npart << " " << nvert << endl;
+    
+    for (HepMC::GenEvent::particle_const_iterator p = event->particles_begin(); p != event->particles_end(); ++p)
+    {
+      int pid = (*p)->pdg_id();
+      int status = (*p)->status();
+      double pt = ((*p)->momentum()).perp();
+      double mass  = ((*p)->momentum()).m();
+      double eta  = ((*p)->momentum()).eta();
+      if(status==1 && pt>2.0) {cout << pid << " " << status << " " << pt << " " << mass << " " << eta << endl;}
+      if(abs(pid)==553 && status==2) cout << "Upsilon: " << pid << " " << status << " " << pt << " " << mass << " " << eta << endl;
+      if(abs(pid)==11  && status==1 && pt>2.0) {
+        cout << "electron: " << pid << " " << status << " " << pt << " " << mass << " " << eta << endl;
+        HepMC::GenParticle* parent = GetParent(*p, event);
+        int parentid = 0; if(parent) {parentid = parent->pdg_id();}
+        cout << "      parent id = " << parentid << endl;
+      }
+    }
+
+  return Fun4AllReturnCodes::EVENT_OK;
+}
+
+
+
 //======================================================================
 
 int sPHAnalysis::process_event_test(PHCompositeNode *topNode) {
@@ -420,7 +496,8 @@ int sPHAnalysis::process_event_test(PHCompositeNode *topNode) {
       else if(fabs(gflavor)==321) { gmass = 0.49368; } 
       else { continue; }
       int trackid = g4particle->get_track_id();
-      if(trackid>truth_container->GetNumPrimaryVertexParticles()-50) {
+      if(trackid>truth_container->GetNumPrimaryVertexParticles()-50) { //embedded particles are the last ones
+      //if(trackid>truth_container->GetNumPrimaryVertexParticles()-2) {
         double gpx = g4particle->get_px();
         double gpy = g4particle->get_py();
         double gpz= g4particle->get_pz();
@@ -432,28 +509,13 @@ int sPHAnalysis::process_event_test(PHCompositeNode *topNode) {
         //int parentid = g4particle->get_parent_id();
         TLorentzVector tmp = TLorentzVector(gpx,gpy,gpz,ge);
         gparticles.push_back(tmp);
+        //cout << "embedded: " << gflavor << " " << gpt << " " << gmass << endl;
       }
     }
+
     cout << "number of embedded particles = " << gparticles.size() << endl;
 
 //-------------------------------------------------------------------
-
-/*
-  vector<TLorentzVector> electrons;
-  vector<TLorentzVector> positrons;
-  vector<double> vpchi2;
-  vector<double> vmchi2;
-  vector<double> vpdca;
-  vector<double> vmdca;
-  vector<double> vpeop3x3;
-  vector<double> vmeop3x3;
-  vector<int> vpnmvtx;
-  vector<int> vpnintt;
-  vector<int> vpntpc;
-  vector<int> vmnmvtx;
-  vector<int> vmnintt;
-  vector<int> vmntpc;
-*/
 
   SvtxTrackMap *trackmap = findNode::getClass<SvtxTrackMap>(topNode, "SvtxTrackMap");
   if(!trackmap) {
@@ -479,6 +541,10 @@ int sPHAnalysis::process_event_test(PHCompositeNode *topNode) {
   for (SvtxTrackMap::Iter iter = trackmap->begin(); iter != trackmap->end(); ++iter)
   {
     SvtxTrack *track = iter->second;
+    if(!track) {
+      cout << "ERROR: bad track pointer = " << track << endl;
+      continue;
+    }
 
     double charge = track->get_charge();
       if(charge>0.) continue;
@@ -506,6 +572,10 @@ int sPHAnalysis::process_event_test(PHCompositeNode *topNode) {
     double cemc_chi2 = 99999.;
     if(cemc_clusid<99999) {
       RawCluster* cluster = cemc_clusters->getCluster(cemc_clusid);
+      if(!cluster) {
+        cout << "ERROR: bad cluster pointer = " << cluster << endl;
+        continue;
+      }
       //cemc_e = cluster->get_energy();
       cemc_ecore = cluster->get_ecore();
       cemc_prob = cluster->get_prob();
@@ -540,7 +610,6 @@ int sPHAnalysis::process_event_test(PHCompositeNode *topNode) {
     //double eop = 0.;
     //  if(mom!=0) eop = cemc_ecore/mom;
 
-//cout << "filling ntuple..." << endl;
     tmp1[0] = charge;
     tmp1[1] = pt;
     tmp1[2] = eta;
@@ -560,29 +629,128 @@ int sPHAnalysis::process_event_test(PHCompositeNode *topNode) {
     tmp1[16] = hcalin_e3x3;
     tmp1[17] = gdist;
       ntppid->Fill(tmp1);
-//cout << "done filling." << endl;
-
-//      if(charge<0) std::cout << "electron: " << pt << " " << eta << " " << charge << " " << cemc_e << " " << cemc_e3x3  << std::endl;
-//      if(charge>0) std::cout << "positron: " << pt << " " << eta << " " << charge << " " << cemc_e << " " << cemc_e3x3  << std::endl;
-//      hdphi->Fill(cemc_dphi);
-//      hdeta->Fill(cemc_deta);
-//      TLorentzVector tmp = TLorentzVector(px,py,pz,ee);
-//      if(charge>0) {
-//        positrons.push_back(tmp); 
-//        vpeop3x3.push_back(eop3x3); vpchi2.push_back(chi2); vpdca.push_back(dca3d_xy);
-//        vpnmvtx.push_back(nmvtx); vpnintt.push_back(nintt); vpntpc.push_back(ntpc);
-//      }
-//      if(charge<0) {
-//        electrons.push_back(tmp); 
-//        vmeop3x3.push_back(eop3x3); vmchi2.push_back(chi2); vmdca.push_back(dca3d_xy);
-//        vmnmvtx.push_back(nmvtx); vmnintt.push_back(nintt); vmntpc.push_back(ntpc);
-//      }
 
   } // end loop over tracks
 
-/*
+  return Fun4AllReturnCodes::EVENT_OK;
+}
+
+//=================================================================================
+//=================================================================================
+
+int sPHAnalysis::process_event_upsilons(PHCompositeNode *topNode) {
+  EventNumber++;
+  int howoften = 1;
+  if((EventNumber-1)%howoften==0) {
+    cout<<"--------------------------- EventNumber = " << EventNumber-1 << endl;
+  }
+  if(EventNumber==1) topNode->print();
+
+  SvtxTrackMap *trackmap = findNode::getClass<SvtxTrackMap>(topNode, "SvtxTrackMap");
+  if(!trackmap) {
+    cerr << PHWHERE << " ERROR: Can not find SvtxTrackMap node." << endl;
+    return Fun4AllReturnCodes::ABORTEVENT;
+  }
+  cout << "   Number of tracks = " << trackmap->size() << endl;
+
+  RawClusterContainer* cemc_clusters = findNode::getClass<RawClusterContainer>(topNode, "CLUSTER_CEMC");
+  if(!cemc_clusters) {
+    cerr << PHWHERE << " ERROR: Can not find CLUSTER_CEMC node." << endl;
+    return Fun4AllReturnCodes::ABORTEVENT;
+  }
+  else { cout << "FOUND CLUSTER_CEMC node." << endl; }
+
+  vector<TLorentzVector> electrons;
+  vector<TLorentzVector> positrons;
+  vector<double> vpchi2;
+  vector<double> vmchi2;
+  vector<double> vpdca;
+  vector<double> vmdca;
+  vector<double> vpeop3x3;
+  vector<double> vmeop3x3;
+  vector<int> vpnmvtx;
+  vector<int> vpnintt;
+  vector<int> vpntpc;
+  vector<int> vmnmvtx;
+  vector<int> vmnintt;
+  vector<int> vmntpc;
+
+  for (SvtxTrackMap::Iter iter = trackmap->begin(); iter != trackmap->end(); ++iter)
+  {
+    SvtxTrack *track = iter->second;
+    if(!track) {
+      cout << "ERROR: bad track pointer = " << track << endl;
+      continue;
+    }
+
+    double charge = track->get_charge();
+      if(charge>0.) continue;
+    double px = track->get_px();
+    double py = track->get_py();
+    double pz = track->get_pz();
+    double pt = sqrt(px * px + py * py);
+    double mom = sqrt(pt*pt+pz*pz);
+    double ee = sqrt(mom*mom+0.000511*0.000511);
+      if(pt<2.0) continue;
+    //double phi = track->get_phi();
+    double eta = track->get_eta();
+    double chisq = track->get_chisq();
+    double ndf = track->get_ndf();
+    double chi2 = 999.;
+    double dca3d_xy = track->get_dca3d_xy();
+      if(ndf!=0.) chi2 = chisq/ndf;
+    //double cemc_dphi = track->get_cal_dphi(SvtxTrack::CAL_LAYER::CEMC);
+    //double cemc_deta = track->get_cal_deta(SvtxTrack::CAL_LAYER::CEMC);
+    double cemc_e3x3 = track->get_cal_energy_3x3(SvtxTrack::CAL_LAYER::CEMC);
+    //double hcalin_e3x3 = track->get_cal_energy_3x3(SvtxTrack::CAL_LAYER::HCALIN);
+
+    unsigned int cemc_clusid = track->get_cal_cluster_id(SvtxTrack::CAL_LAYER::CEMC);
+    double cemc_ecore = 0.;
+    //double cemc_prob = 99999.;
+    //double cemc_chi2 = 99999.;
+    if(cemc_clusid<99999) {
+      RawCluster* cluster = cemc_clusters->getCluster(cemc_clusid);
+      if(!cluster) {
+        cout << "ERROR: bad cluster pointer = " << cluster << endl;
+        continue;
+      }
+      //cemc_e = cluster->get_energy();
+      cemc_ecore = cluster->get_ecore();
+      //cemc_prob = cluster->get_prob();
+      //cemc_chi2 = cluster->get_chi2();
+    }
+    if(cemc_ecore/mom<0.7) continue; // not an electron
+
+    int nmvtx = 0; int nintt = 0; int ntpc = 0;
+    for (SvtxTrack::ConstClusterKeyIter iter = track->begin_cluster_keys();
+                                        iter != track->end_cluster_keys(); ++iter)
+    {
+      TrkrDefs::cluskey cluster_key = *iter;
+      int trackerid = TrkrDefs::getTrkrId(cluster_key);
+      if(trackerid==0) nmvtx++;
+      if(trackerid==1) nintt++;
+      if(trackerid==2) ntpc++;
+    }
+
+      if(charge<0) std::cout << "electron: " << pt << " " << eta << " " << charge << " " << cemc_ecore << " " << cemc_e3x3  << std::endl;
+      if(charge>0) std::cout << "positron: " << pt << " " << eta << " " << charge << " " << cemc_ecore << " " << cemc_e3x3  << std::endl;
+      TLorentzVector tmp = TLorentzVector(px,py,pz,ee);
+      if(charge>0) {
+        positrons.push_back(tmp); 
+        vpeop3x3.push_back(cemc_ecore); vpchi2.push_back(chi2); vpdca.push_back(dca3d_xy);
+        vpnmvtx.push_back(nmvtx); vpnintt.push_back(nintt); vpntpc.push_back(ntpc);
+      }
+      if(charge<0) {
+        electrons.push_back(tmp); 
+        vmeop3x3.push_back(cemc_ecore); vmchi2.push_back(chi2); vmdca.push_back(dca3d_xy);
+        vmnmvtx.push_back(nmvtx); vmnintt.push_back(nintt); vmntpc.push_back(ntpc);
+      }
+
+  } // end loop over tracks
+
   double emult = electrons.size();
   double pmult = positrons.size();
+  float tmp1[99];
 
   for(long unsigned int i=0; i<electrons.size(); i++) {
   for(long unsigned int j=0; j<positrons.size(); j++) {
@@ -599,7 +767,7 @@ int sPHAnalysis::process_event_test(PHCompositeNode *topNode) {
       tmp1[6] = electrons[i].Pt();
       tmp1[7] = positrons[j].Eta();
       tmp1[8] = electrons[i].Eta();
-      tmp1[9] = mult;
+      tmp1[9] = trackmap->size();
       tmp1[10] = emult;
       tmp1[11] = pmult;
       tmp1[12] = vpchi2[j];
@@ -615,7 +783,7 @@ int sPHAnalysis::process_event_test(PHCompositeNode *topNode) {
       tmp1[22] = vmnintt[i];
       tmp1[23] = vpntpc[j];
       tmp1[24] = vmntpc[i];
-      tmp1[25] = impact_parameter;
+      tmp1[25] = 0.;
        ntp2->Fill(tmp1);
   }}
 
@@ -635,7 +803,7 @@ int sPHAnalysis::process_event_test(PHCompositeNode *topNode) {
       tmp1[6] = electrons[i].Pt();
       tmp1[7] = electrons[j].Eta();
       tmp1[8] = electrons[i].Eta();
-      tmp1[9] = mult;
+      tmp1[9] = trackmap->size();
       tmp1[10] = emult;
       tmp1[11] = pmult;
       tmp1[12] = vmchi2[j];
@@ -651,7 +819,7 @@ int sPHAnalysis::process_event_test(PHCompositeNode *topNode) {
       tmp1[22] = vmnintt[i];
       tmp1[23] = vmntpc[j];
       tmp1[24] = vmntpc[i];
-      tmp1[25] = impact_parameter;
+      tmp1[25] = 0.;
        ntp2->Fill(tmp1);
   }}}
 
@@ -671,7 +839,7 @@ int sPHAnalysis::process_event_test(PHCompositeNode *topNode) {
       tmp1[6] = positrons[i].Pt();
       tmp1[7] = positrons[j].Eta();
       tmp1[8] = positrons[i].Eta();
-      tmp1[9] = mult;
+      tmp1[9] = trackmap->size();
       tmp1[10] = emult;
       tmp1[11] = pmult;
       tmp1[12] = vpchi2[j];
@@ -687,10 +855,9 @@ int sPHAnalysis::process_event_test(PHCompositeNode *topNode) {
       tmp1[22] = vpnintt[i];
       tmp1[23] = vpntpc[j];
       tmp1[24] = vpntpc[i];
-      tmp1[25] = impact_parameter;
+      tmp1[25] = 0.;
        ntp2->Fill(tmp1);
   }}}
-*/
 
   return Fun4AllReturnCodes::EVENT_OK;
 } 

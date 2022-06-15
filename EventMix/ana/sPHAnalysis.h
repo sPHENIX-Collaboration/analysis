@@ -4,6 +4,11 @@
 
 #include <fun4all/SubsysReco.h>
 
+//#include "phhepmc/PHHepMCGenEvent.h"
+#include <HepMC/GenEvent.h>              // for GenEvent::particle_const_ite...
+#include <HepMC/GenParticle.h>           // for GenParticle
+
+
 class TFile;
 class TNtuple;
 class TH1D;
@@ -28,9 +33,13 @@ public:
 protected:
 
   int process_event_hepmc(PHCompositeNode *topNode);
+  int process_event_pythiaupsilon(PHCompositeNode *topNode);
+  int process_event_upsilons(PHCompositeNode *topNode);
   int process_event_test(PHCompositeNode *topNode);
   int process_event_bimp(PHCompositeNode *topNode);
   int process_event_pairs(PHCompositeNode *topNode);
+
+  HepMC::GenParticle* GetParent(HepMC::GenParticle*, HepMC::GenEvent*);
 
   bool isElectron(SvtxTrack* trk);
 
