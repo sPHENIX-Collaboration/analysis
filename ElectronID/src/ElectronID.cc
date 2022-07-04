@@ -115,8 +115,7 @@ int ElectronID::Init(PHCompositeNode *topNode)
 	ntpcutEMOP_HinOEM = new TNtuple("ntpcutEMOP_HinOEM","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:charge:pid:quality:e_cluster:EventNumber:z:vtxid:cemc_prob:cemc_ecore");
 	ntpcutEMOP_HinOEM_Pt = new TNtuple("ntpcutEMOP_HinOEM_Pt","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:charge:pid:quality:e_cluster:EventNumber:z:vtxid:cemc_prob:cemc_ecore");
         ntpcutEMOP_HinOEM_Pt_read = new TNtuple("ntpcutEMOP_HinOEM_Pt_read","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:charge:pid:quality:e_cluster:EventNumber:z:vtxid:trackid:cemc_prob:cemc_ecore");
-  }
-TNtuple("ntpcutBDT_read","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:charge:pid:quality:e_cluster:EventNumber:z:vtxid:trackid:cemc_prob:cemc_ecore:EOP:HOM:cemc_chi2");
+        ntpcutBDT_read = new TNtuple("ntpcutBDT_read","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:charge:pid:quality:e_cluster:EventNumber:z:vtxid:trackid:cemc_prob:cemc_ecore:EOP:HOM:cemc_chi2");
   }
   else {
 	PHNodeIterator iter(topNode);
@@ -347,7 +346,7 @@ int ElectronID::process_event(PHCompositeNode* topNode)
 	      _track_pid_assoc->addAssoc(TrackPidAssoc::electron, it->second->get_id());
           }
 
-    }// end of MVA cut
+    }// end of BDT cut
     else{ // for traditional cuts
 
       ntp[0] = mom;
@@ -443,7 +442,7 @@ int ElectronID::process_event(PHCompositeNode* topNode)
 		   }
    	     }
 	}
-     }//end of MVA else
+     }//end of BDT else
       
       /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////hadrons
      
