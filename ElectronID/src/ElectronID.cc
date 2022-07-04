@@ -107,6 +107,7 @@ int ElectronID::Init(PHCompositeNode *topNode)
 
 	OutputNtupleFile = new TFile(OutputFileName.c_str(),"RECREATE");
   	std::cout << "PairMaker::Init: output file " << OutputFileName.c_str() << " opened." << endl;
+        ntpBDTresponse = new TNtuple("ntpbeforecut","","select_p:select_n");
 
 	ntpbeforecut = new TNtuple("ntpbeforecut","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:cemce3x3overp:hcaline3x3overcemce3x3:hcale3x3overp:charge:pid:quality:e_cluster:EventNumber:z:vtxid:nmvtx:nintt:ntpc:cemc_prob:cemc_ecore:cemc_chi2");
         ntpcutEMOP = new TNtuple("ntpcutEMOP","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:charge:pid:quality:e_cluster:EventNumber:z:vtxid:cemc_prob:cemc_ecore");
@@ -114,6 +115,8 @@ int ElectronID::Init(PHCompositeNode *topNode)
 	ntpcutEMOP_HinOEM = new TNtuple("ntpcutEMOP_HinOEM","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:charge:pid:quality:e_cluster:EventNumber:z:vtxid:cemc_prob:cemc_ecore");
 	ntpcutEMOP_HinOEM_Pt = new TNtuple("ntpcutEMOP_HinOEM_Pt","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:charge:pid:quality:e_cluster:EventNumber:z:vtxid:cemc_prob:cemc_ecore");
         ntpcutEMOP_HinOEM_Pt_read = new TNtuple("ntpcutEMOP_HinOEM_Pt_read","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:charge:pid:quality:e_cluster:EventNumber:z:vtxid:trackid:cemc_prob:cemc_ecore");
+  }
+TNtuple("ntpcutBDT_read","","p:pt:cemce3x3:hcaline3x3:hcaloute3x3:charge:pid:quality:e_cluster:EventNumber:z:vtxid:trackid:cemc_prob:cemc_ecore:EOP:HOM:cemc_chi2");
   }
   else {
 	PHNodeIterator iter(topNode);
@@ -201,7 +204,8 @@ int ElectronID::process_event(PHCompositeNode* topNode)
    TMVA::Tools::Instance();
 
    // Default MVA methods with trained + tested
-   std::map<std::string,int> Use_p, Use_n;
+   std::map<std::string,int> Use_p;
+   std::map<std::string,int> Use_n;
    // Boosted Decision Trees
    Use_p["BDT"] = ISUSE_BDT_p; // uses Adaptive Boost; for positive particles
    Use_n["BDT"] = ISUSE_BDT_n; // uses Adaptive Boost; for negative particles
@@ -224,7 +228,7 @@ int ElectronID::process_event(PHCompositeNode* topNode)
    reader_negative->AddVariable( "var3_n", &var3_n );
 
   // Book the MVA methods
-   TString dir_positive, dir_negative;
+   TString dir_p, dir_n;
    dir_p = "dataset/Weights_positive/"; // weights for positive particles
    dir_n = "dataset/Weights_negative/"; // weights for negative particles
    TString prefix = "TMVAClassification";
@@ -232,17 +236,17 @@ int ElectronID::process_event(PHCompositeNode* topNode)
    // Book method(s)
    for (std::map<std::string,int>::iterator it = Use_p.begin(); it != Use_p.end(); it++) {
       if (it->second) {
-         TString methodName = TString(it->first) + TString(" method");
-         TString weightfile = dir_p + prefix + TString("_") + TString(it->first) + TString(".weights.xml");
-         reader_positive->BookMVA( methodName, weightfile );
+         TString methodName_p = TString(it->first) + TString(" method");
+         TString weightfile_p = dir_p + prefix + TString("_") + TString(it->first) + TString(".weights.xml");
+         reader_positive->BookMVA( methodName_p, weightfile_p );
       }
    }
    
    for (std::map<std::string,int>::iterator it = Use_n.begin(); it != Use_n.end(); it++) {
       if (it->second) {
-         TString methodName = TString(it->first) + TString(" method");
-         TString weightfile = dir_n + prefix + TString("_") + TString(it->first) + TString(".weights.xml");
-         reader_negative->BookMVA( methodName, weightfile );
+         TString methodName_n = TString(it->first) + TString(" method");
+         TString weightfile_n = dir_n + prefix + TString("_") + TString(it->first) + TString(".weights.xml");
+         reader_negative->BookMVA( methodName_n, weightfile_n );
       }
    }
 
@@ -318,8 +322,8 @@ int ElectronID::process_event(PHCompositeNode* topNode)
       // HCal E/p cut
       double hcaleoverp = (e_hcal_in_3x3 + e_hcal_out_3x3) / mom;
 
-    //MVA method
-      if(cemceoverp>0.0 && cemceoverp<10.0 && hcalineovercemce>0.0 && hcalineovercemce<10.0){
+    //MVA valuables
+     if(cemceoverp>0.0 && cemceoverp<10.0 && hcalineovercemce>0.0 && hcalineovercemce<10.0){
          if(charge>0){
              var1_p = cemceoverp;
              var2_p = hcalineovercemce;
@@ -332,10 +336,13 @@ int ElectronID::process_event(PHCompositeNode* topNode)
           }
       }
     
-    if (Use_p["BDT"] && Use_n["BDT"] && quality < Nquality_higherlimit && nmvtx >= Nmvtx_lowerlimit && nintt >= Nintt_lowerlimit && ntpc >= Ntpc_lowerlimit && pt > Pt_lowerlimit && pt < Pt_higherlimit) {
+    if (Use_p["BDT"] && Use_n["BDT"] && quality < Nquality_higherlimit && nmvtx >= Nmvtx_lowerlimit && nintt >= Nintt_lowerlimit && ntpc >= Ntpc_lowerlimit && pt > Pt_lowerlimit && pt < Pt_higherlimit &&cemceoverp>0.0 && cemceoverp<10.0 && hcalineovercemce>0.0 && hcalineovercemce<10.0) {
           float select_p=reader_positive->EvaluateMVA("BDT method");
 	  float select_n=reader_negative->EvaluateMVA("BDT method");
-          if(select_p>BDT_cut_p && select_n>BDT_cut_n &&cemceoverp>0.0 && cemceoverp<10.0 && hcalineovercemce>0.0 && hcalineovercemce<10.0){
+          ntp[0] = select_p;
+          ntp[1] = select_n;
+	  if(output_ntuple) { ntpBDTresponse -> Fill(ntp); }
+          if(select_p>BDT_cut_p && select_n>BDT_cut_n){
               // add to the association map
 	      _track_pid_assoc->addAssoc(TrackPidAssoc::electron, it->second->get_id());
           }
@@ -496,16 +503,20 @@ int ElectronID::process_event(PHCompositeNode* topNode)
       double e_hcal_in_3x3 = tr->get_cal_energy_3x3(SvtxTrack::CAL_LAYER::HCALIN);
       double e_hcal_out_3x3 = tr->get_cal_energy_3x3(SvtxTrack::CAL_LAYER::HCALOUT);
 
+      double EOP = e_cemc_3x3/mom;
+      double HOM = e_hcal_in_3x3/e_cemc_3x3;
+
  
       unsigned int cemc_clusid = tr->get_cal_cluster_id(SvtxTrack::CAL_LAYER::CEMC);
       double cemc_prob = 0.;
       double cemc_ecore = 0.;
+      double cemc_chi2 = 99999.;
       if(cemc_clusid<99999) {
         RawCluster* cemc_cluster = cemc_cluster_container->getCluster(cemc_clusid);
         cemc_prob = cemc_cluster->get_prob();
         cemc_ecore = cemc_cluster->get_ecore();
+        cemc_chi2 = cemc_cluster->get_chi2();
       }
-
      
       ntp[0] = mom;
       ntp[1] = pt;
@@ -522,7 +533,11 @@ int ElectronID::process_event(PHCompositeNode* topNode)
       ntp[12] = tr_id;
       ntp[13] = cemc_prob;
       ntp[14] = cemc_ecore;
-      if(output_ntuple) { ntpcutEMOP_HinOEM_Pt_read -> Fill(ntp); }
+      ntp[15] = EOP;
+      ntp[16] = HOM;
+      ntp[17] = cemc_chi2;
+      //if(output_ntuple) { ntpcutEMOP_HinOEM_Pt_read -> Fill(ntp); }
+      if(output_ntuple) { ntpcutBDT_read -> Fill(ntp); }
       
       if(Verbosity() > 1)
 	std::cout << " pid " << it->first << " track ID " << it->second << " mom " << mom << std::endl;

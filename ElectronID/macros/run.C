@@ -19,7 +19,7 @@ R__LOAD_LIBRARY(libtrackpid.so)
 
 void run(
   const char *inputFile = "/sphenix/sim/sim01/sphnxpro/MDC1/embed/embedDST_sHijing_0_20fm_50kHz_bkg_0_20fm-0000000001-04594.root",
-  const string &outputroot = "/sphenix/u/weihuma/RunOutput/embedDST_sHijing_upsilon_0_20fm",
+  const string &outputroot = "/sphenix/user/weihuma/RunOutput/embedDST_sHijing_upsilon_0_20fm",
   bool output_ntuple = true
 )
 {
@@ -37,7 +37,7 @@ void run(
   ePid->setHinOEMcutlimit(0.2);
   ePid->setPtcutlimit(2.0,30.0);
   ePid->setHOPcutlimit(0.3);
-  ePid->setSVMcut(1,0.5);// (ISUSE_SVM; depending on the SVM method is used)
+  ePid->setBDTcut(1,1,0.18,0.24);// (ISUSEBDT_p, ISUSEBDT_n, BDT_cut_p, BDT_cut_n)
   se->registerSubsystem(ePid);
 
   Fun4AllInputManager *in = new Fun4AllDstInputManager("DST_TRACKS");
