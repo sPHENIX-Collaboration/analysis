@@ -69,10 +69,7 @@ public:
   void set_output_ntuple(bool outputntuple) {output_ntuple = outputntuple;}
 
   /// set MVA cut
-  void setLDcut(int isuseLD, float ldcut) {ISUSE_LD= isuseLD; LD_cut = ldcut;}
-  void setBDTcut(int isuseBDT, float bdtcut) {ISUSE_BDT= isuseBDT; BDT_cut = bdtcut;}
-  void setSVMcut(int isuseSVM, float svmcut) {ISUSE_SVM= isuseSVM; SVM_cut = svmcut;}
-  void setDNNcut(int isuseDNN, float dnncut) {ISUSE_DNN= isuseDNN; DNN_cut = dnncut;}
+  void setBDTcut(int isuseBDT_p, int isuseBDT_n, float bdtcut_p, float bdtcut_n) {ISUSE_BDT_p= isuseBDT_p; ISUSE_BDT_n= isuseBDT_n; BDT_cut_p = bdtcut_p; BDT_cut_n = bdtcut_n;}
 
 protected:
   bool output_ntuple;
@@ -130,17 +127,8 @@ PHG4Particle* findMCmatch(SvtxTrack* track, PHG4TruthInfoContainer* truth_contai
   float Nquality_higherlimit;
 
 /// MVA cut 
-  float LD_cut;
-  int ISUSE_LD;//0 for no; 1 for yes
-
-  float BDT_cut;
-  int ISUSE_BDT;//0 for no; 1 for yes
-
-  float SVM_cut;
-  int ISUSE_SVM;//0 for no; 1 for yes
-
-  float DNN_cut;
-  int ISUSE_DNN;//0 for no; 1 for yes
+  float BDT_cut_p, BDT_cut_n;
+  int ISUSE_BDT_p, ISUSE_BDT_n;//0 for no; 1 for yes
 
   unsigned int _nlayers_maps = 3;
   unsigned int _nlayers_intt = 4;

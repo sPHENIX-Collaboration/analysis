@@ -84,15 +84,12 @@ ElectronID::ElectronID(const std::string& name, const std::string &filename) : S
   Ntpc_lowerlimit = 20;
   Nquality_higherlimit = 5.;
   PROB_cut = 0.;
+
   /// MVA
-  LD_cut = 0.0;
-  ISUSE_LD =0;
-  BDT_cut = 0.0;
-  ISUSE_BDT =0;
-  SVM_cut = 0.0;
-  ISUSE_SVM =0;
-  DNN_cut = 0.0;
-  ISUSE_DNN =0;
+  BDT_cut_p = 0.0;
+  BDT_cut_n = 0.0;
+  ISUSE_BDT_p =0;
+  ISUSE_BDT_n =0;
 
  // unsigned int _nlayers_maps = 3;
  // unsigned int _nlayers_intt = 4;
@@ -203,46 +200,49 @@ int ElectronID::process_event(PHCompositeNode* topNode)
   // This loads the library
    TMVA::Tools::Instance();
 
-   // Default MVA methods to be trained + tested
-   std::map<std::string,int> Use;
-
-  // Linear Discriminant Analysis
-   Use["LD"] = ISUSE_LD; // Linear Discriminant identical to Fisher
-  // Neural Networks (all are feed-forward Multilayer Perceptrons)
-   Use["DNN_CPU"] = ISUSE_DNN; // Multi-core accelerated DNN.
-   // Support Vector Machine
-   Use["SVM"] = ISUSE_SVM;
+   // Default MVA methods with trained + tested
+   std::map<std::string,int> Use_p, Use_n;
    // Boosted Decision Trees
-   Use["BDT"] = ISUSE_BDT; // uses Adaptive Boost
+   Use_p["BDT"] = ISUSE_BDT_p; // uses Adaptive Boost; for positive particles
+   Use_n["BDT"] = ISUSE_BDT_n; // uses Adaptive Boost; for negative particles
 
   // Create the Reader object
 
-   TMVA::Reader *reader = new TMVA::Reader( "!Color:!Silent" );
+   TMVA::Reader *reader_positive = new TMVA::Reader( "!Color:!Silent" );
+   TMVA::Reader *reader_negative = new TMVA::Reader( "!Color:!Silent" );
 
    // Create a set of variables and declare them to the reader
    // - the variable names MUST corresponds in name and type to those given in the weight file(s) used
-   Float_t var1, var2;
-   Float_t var3, var4;
-   reader->AddVariable( "var1", &var1 );
-   reader->AddVariable( "var2", &var2 );
-   reader->AddVariable( "var3", &var3 );
-   reader->AddVariable( "var4", &var4 );
+   Float_t var1_p, var2_p, var3_p;
+   Float_t var1_n, var2_n, var3_n;
+   reader_positive->AddVariable( "var1_p", &var1_p );
+   reader_positive->AddVariable( "var2_p", &var2_p );
+   reader_positive->AddVariable( "var3_p", &var3_p );
+
+   reader_negative->AddVariable( "var1_n", &var1_n );
+   reader_negative->AddVariable( "var2_n", &var2_n );
+   reader_negative->AddVariable( "var3_n", &var3_n );
 
   // Book the MVA methods
-   TString dir;
-   dir = "dataset/dataset_antiproton/weights/"; //if using the antiproton weights
-   //dir = "dataset/dataset_pion/weights/"; //if using the pion- weights
-   //dir = "dataset/dataset_Kion/weights/"; //if using the Kion- weights
-   //dir = "dataset/dataset_allN/weights/"; //if using the Kion-&pion-&antiproton weights
-   //dir = "dataset/dataset_allN/weights/"; //if using the Kion+/-&pion+/-&proton/antiproton weights
+   TString dir_positive, dir_negative;
+   dir_p = "dataset/Weights_positive/"; // weights for positive particles
+   dir_n = "dataset/Weights_negative/"; // weights for negative particles
    TString prefix = "TMVAClassification";
 
    // Book method(s)
-   for (std::map<std::string,int>::iterator it = Use.begin(); it != Use.end(); it++) {
+   for (std::map<std::string,int>::iterator it = Use_p.begin(); it != Use_p.end(); it++) {
       if (it->second) {
          TString methodName = TString(it->first) + TString(" method");
-         TString weightfile = dir + prefix + TString("_") + TString(it->first) + TString(".weights.xml");
-         reader->BookMVA( methodName, weightfile );
+         TString weightfile = dir_p + prefix + TString("_") + TString(it->first) + TString(".weights.xml");
+         reader_positive->BookMVA( methodName, weightfile );
+      }
+   }
+   
+   for (std::map<std::string,int>::iterator it = Use_n.begin(); it != Use_n.end(); it++) {
+      if (it->second) {
+         TString methodName = TString(it->first) + TString(" method");
+         TString weightfile = dir_n + prefix + TString("_") + TString(it->first) + TString(".weights.xml");
+         reader_negative->BookMVA( methodName, weightfile );
       }
    }
 
@@ -268,15 +268,15 @@ int ElectronID::process_event(PHCompositeNode* topNode)
       for (SvtxTrack::ConstClusterKeyIter iter = track->begin_cluster_keys(); iter != track->end_cluster_keys(); ++iter)
       {
         TrkrDefs::cluskey cluser_key = *iter;
-      //  int trackerid = TrkrDefs::getTrkrId(cluser_key);
+        int trackerid = TrkrDefs::getTrkrId(cluser_key);
       //  cout << "trackerid= " << trackerid << endl; 
-       // if(trackerid==0) nmvtx++;
-       // if(trackerid==1) nintt++;
-       // if(trackerid==2) ntpc++;
-        unsigned int layer = TrkrDefs::getLayer(cluser_key);
-        if (_nlayers_maps > 0 && layer < _nlayers_maps) nmvtx++;
-        if (_nlayers_intt > 0 && layer >= _nlayers_maps && layer < _nlayers_maps + _nlayers_intt) nintt++;
-        if (_nlayers_tpc > 0 && layer >= (_nlayers_maps + _nlayers_intt) && layer < (_nlayers_maps + _nlayers_intt + _nlayers_tpc)) ntpc++;
+        if(trackerid==0) nmvtx++;
+        if(trackerid==1) nintt++;
+        if(trackerid==2) ntpc++;
+        //unsigned int layer = TrkrDefs::getLayer(cluser_key);
+        //if (_nlayers_maps > 0 && layer < _nlayers_maps) nmvtx++;
+        //if (_nlayers_intt > 0 && layer >= _nlayers_maps && layer < _nlayers_maps + _nlayers_intt) nintt++;
+        //if (_nlayers_tpc > 0 && layer >= (_nlayers_maps + _nlayers_intt) && layer < (_nlayers_maps + _nlayers_intt + _nlayers_tpc)) ntpc++;
       }
  
 
@@ -311,22 +311,31 @@ int ElectronID::process_event(PHCompositeNode* topNode)
       }
 
       // CEMC E/p cut
-      //double cemceoverp = e_cemc_3x3 / mom;
-      double cemceoverp = cemc_ecore / mom;
+      double cemceoverp = e_cemc_3x3 / mom;
+      //double cemceoverp = cemc_ecore / mom;
       // HCaline/CEMCe cut
       double hcalineovercemce = e_hcal_in_3x3 / e_cemc_3x3;
       // HCal E/p cut
       double hcaleoverp = (e_hcal_in_3x3 + e_hcal_out_3x3) / mom;
 
     //MVA method
-    var1 = cemceoverp;//e_cemc_3x3 / mom
-    var2 = hcalineovercemce;
-    var3 = pt;
-    var4 = ntpc;
-
-    if (Use["SVM"] && quality < Nquality_higherlimit && nmvtx >= Nmvtx_lowerlimit && nintt >= Nintt_lowerlimit && ntpc >= Ntpc_lowerlimit && pt > Pt_lowerlimit && pt < Pt_higherlimit) {
-          float select=reader->EvaluateMVA("SVM method");
-          if(select>MVA_cut){
+      if(cemceoverp>0.0 && cemceoverp<10.0 && hcalineovercemce>0.0 && hcalineovercemce<10.0){
+         if(charge>0){
+             var1_p = cemceoverp;
+             var2_p = hcalineovercemce;
+             var3_p = cemc_chi2;
+          }
+         if(charge<0){
+             var1_n = cemceoverp;
+             var2_n = hcalineovercemce;
+             var3_n = cemc_chi2;
+          }
+      }
+    
+    if (Use_p["BDT"] && Use_n["BDT"] && quality < Nquality_higherlimit && nmvtx >= Nmvtx_lowerlimit && nintt >= Nintt_lowerlimit && ntpc >= Ntpc_lowerlimit && pt > Pt_lowerlimit && pt < Pt_higherlimit) {
+          float select_p=reader_positive->EvaluateMVA("BDT method");
+	  float select_n=reader_negative->EvaluateMVA("BDT method");
+          if(select_p>BDT_cut_p && select_n>BDT_cut_n &&cemceoverp>0.0 && cemceoverp<10.0 && hcalineovercemce>0.0 && hcalineovercemce<10.0){
               // add to the association map
 	      _track_pid_assoc->addAssoc(TrackPidAssoc::electron, it->second->get_id());
           }
@@ -360,7 +369,7 @@ int ElectronID::process_event(PHCompositeNode* topNode)
 	//std::cout << " Pt_lowerlimit " << Pt_lowerlimit << " Pt_higherlimit " << Pt_higherlimit << " HOP_lowerlimit " << HOP_lowerlimit <<std::endl;
         //std::cout << " EMOP_lowerlimit " << EMOP_lowerlimit << " EMOP_higherlimit " << EMOP_higherlimit << " HinOEM_higherlimit " << HinOEM_higherlimit <<std::endl;
 
-      /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////electrons
+     ///////////////////////////////////////////////////////////////electrons
       if(cemceoverp > EMOP_lowerlimit && cemceoverp < EMOP_higherlimit && quality < Nquality_higherlimit && nmvtx >= Nmvtx_lowerlimit && nintt >= Nintt_lowerlimit && ntpc >= Ntpc_lowerlimit)
 	{
 	
