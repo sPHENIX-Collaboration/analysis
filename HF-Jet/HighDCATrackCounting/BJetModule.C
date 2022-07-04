@@ -7,7 +7,7 @@
 
 #include "BJetModule.h"
 
-#include <HFJetTruthGeneration/HFJetDefs.h>
+#include <hfjettruthgeneration/HFJetDefs.h>
 
 
 #include <fun4all/Fun4AllServer.h>
@@ -25,11 +25,10 @@
 #include <g4jets/JetMap.h>
 #include <g4jets/Jet.h>
 
-#include <g4hough/SvtxTrackMap.h>
-#include <g4hough/SvtxTrack.h>
-#include <g4hough/SvtxClusterMap.h>
-#include <g4hough/SvtxVertexMap.h>
-#include <g4hough/SvtxVertex.h>
+#include <trackbase_historic/SvtxTrackMap.h>
+#include <trackbase_historic/SvtxTrack.h>
+#include <trackbase_historic/SvtxVertexMap.h>
+#include <trackbase_historic/SvtxVertex.h>
 
 #include <g4eval/SvtxEvalStack.h>
 #include <g4eval/JetEvalStack.h>
@@ -553,8 +552,6 @@ int BJetModule::process_event(PHCompositeNode *topNode) {
 
 	SvtxVertexMap* vertexmap = findNode::getClass<SvtxVertexMap>(topNode,_vertexmap_name.c_str());
 
-	SvtxClusterMap* clustermap = findNode::getClass<SvtxClusterMap>(topNode,"SvtxClusterMap");
-
 	//SvtxEvalStack *svtxevalstack = new SvtxEvalStack(topNode);
 	auto svtxevalstack = unique_ptr<SvtxEvalStack> (new SvtxEvalStack(topNode));
 	if(!svtxevalstack) {
@@ -613,15 +610,14 @@ int BJetModule::process_event(PHCompositeNode *topNode) {
 		//std::set<PHG4Hit*> assoc_hits = trackeval->all_truth_hits(track);//TODO
 
 		int nmaps = 0;
-		unsigned int nclusters = track->size_clusters();
+		unsigned int nclusters = track->size_cluster_keys();
 		unsigned int nclusters_by_layer = 0;
-		for (SvtxTrack::ConstClusterIter iter = track->begin_clusters();
-				iter != track->end_clusters(); ++iter) {
-			unsigned int cluster_id = *iter;
-			SvtxCluster* cluster = clustermap->get(cluster_id);
-			if(cluster) {
-				unsigned int cluster_layer = cluster->get_layer();
-				if(cluster_layer<3) ++nmaps;
+		for (SvtxTrack::ConstClusterKeyIter iter = track->begin_cluster_keys();
+				iter != track->end_cluster_keys(); ++iter) {
+                TrkrDefs::cluskey cluster_key = *iter;
+			if(cluster_key) {
+				unsigned int cluster_layer = TrkrDefs::getLayer(cluster_key);
+				if(TrkrDefs::getTrkrId(cluster_key) == TrkrDefs::TrkrId::mvtxId) ++nmaps;
 				nclusters_by_layer |= (0x3FFFFFFF & (0x1 << cluster_layer));
 			}
 		}
