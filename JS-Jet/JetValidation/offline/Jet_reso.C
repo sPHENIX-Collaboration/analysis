@@ -8,10 +8,13 @@ void Jet_reso()
   TH1::SetDefaultSumw2();
   TH2::SetDefaultSumw2();
 
-  TChain * ct = new TChain("T");  
-  for(int i = 1; i < 2; i++){
-    ct->Add(Form("/sphenix/user/vbailey/MDC2pythiajetsembed/TESToutput%i_r04.root",i));
-  }
+  TChain * ct = new TChain("T");
+  ct->Add("../macro/output.root");  
+
+  //if you want to combine multiple files use this
+  /*for(int i = 0; i < 100; i++){
+    ct->Add(Form("/PATH/TO/YOUR/OUTPUT/FILES/output%i_r04.root",i));
+    }*/
 
   vector<float> *eta = 0;
   vector<float> *phi = 0;
@@ -125,6 +128,8 @@ void Jet_reso()
       for(int rj = 0; rj < nrecojets; rj++){
 	float dEta = truthEta->at(tj) - eta->at(rj);
 	float dPhi = truthPhi->at(tj) - phi->at(rj);
+	while(dPhi > TMath::Pi()) dPhi -= 2*TMath::Pi();
+	while(dPhi < -TMath::Pi()) dPhi += 2*TMath::Pi();
 	dR = TMath::Sqrt(dEta*dEta + dPhi*dPhi);
 	if(dR < dRMax){
 	  matchEta = eta->at(rj);
