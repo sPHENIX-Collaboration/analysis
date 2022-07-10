@@ -57,7 +57,7 @@ namespace ROOT {
       ::ElectronID *ptr = 0;
       static ::TVirtualIsAProxy* isa_proxy = new ::TIsAProxy(typeid(::ElectronID));
       static ::ROOT::TGenericClassInfo 
-         instance("ElectronID", "", 37,
+         instance("ElectronID", "", 40,
                   typeid(::ElectronID), ::ROOT::Internal::DefineBehavior(ptr, ptr),
                   &ElectronID_Dictionary, isa_proxy, 3,
                   sizeof(::ElectronID) );
@@ -154,6 +154,9 @@ class ElectronID;
 
 #include <TFile.h>
 #include <TNtuple.h>
+#include "TMVA/Tools.h"
+#include "TMVA/Reader.h"
+#include <TMVA/MethodCuts.h>
 
 // forward declarations
 class PHCompositeNode;
@@ -203,6 +206,7 @@ public:
 
   /// set MVA cut
   void setBDTcut(int isuseBDT_p, int isuseBDT_n, float bdtcut_p, float bdtcut_n) {ISUSE_BDT_p= isuseBDT_p; ISUSE_BDT_n= isuseBDT_n; BDT_cut_p = bdtcut_p; BDT_cut_n = bdtcut_n;}
+
 
 protected:
   bool output_ntuple;

@@ -8,12 +8,13 @@
 #include <fun4all/Fun4AllDstInputManager.h>
 #include <fun4all/Fun4AllDstOutputManager.h>
 
-#include </sphenix/u/weihuma/install/include/trackpidassoc/ElectronPid.h>
+#include </sphenix/u/weihuma/install/include/electronid/ElectronID.h>
 #include </sphenix/u/weihuma/install/include/trackpidassoc/TrackPidAssoc.h>
 
 
 R__LOAD_LIBRARY(libfun4all.so)
 R__LOAD_LIBRARY(libtrackpid.so)
+R__LOAD_LIBRARY(libelectronid.so)
 
 #endif
 
@@ -25,20 +26,21 @@ void run(
 {
   gSystem->Load("libg4dst");
   gSystem->Load("libtrackpid");
+  gSystem->Load("libelectronid");
 
   Fun4AllServer *se = Fun4AllServer::instance();
   se->Verbosity(1);
 
-  ElectronPid *ePid = new ElectronPid("ElectronPid",outputroot+"_ElectronPid.root");
-  ePid->set_output_ntuple(output_ntuple);
-  ePid->Verbosity(0);
-  ePid->setTrackcutlimits(1,1,20,10);//nmvtx, nintt, ntpc, quality
-  ePid->setEMOPcutlimits(0.7,1.5);
-  ePid->setHinOEMcutlimit(0.2);
-  ePid->setPtcutlimit(2.0,30.0);
-  ePid->setHOPcutlimit(0.3);
-  ePid->setBDTcut(1,1,0.18,0.24);// (ISUSEBDT_p, ISUSEBDT_n, BDT_cut_p, BDT_cut_n)
-  se->registerSubsystem(ePid);
+  ElectronID *eid = new ElectronID("Electronid",outputroot+"_ElectronID.root");
+  eid->set_output_ntuple(output_ntuple);
+  eid->Verbosity(0);
+  eid->setTrackcutlimits(1,1,20,10);//nmvtx, nintt, ntpc, quality
+  eid->setEMOPcutlimits(0.7,1.5);
+  eid->setHinOEMcutlimit(0.2);
+  eid->setPtcutlimit(2.0,30.0);
+  eid->setHOPcutlimit(0.3);
+  eid->setBDTcut(1,1,0.18,0.24);// (ISUSEBDT_p, ISUSEBDT_n, BDT_cut_p, BDT_cut_n)
+  se->registerSubsystem(eid);
 
   Fun4AllInputManager *in = new Fun4AllDstInputManager("DST_TRACKS");
   in->Verbosity(1);

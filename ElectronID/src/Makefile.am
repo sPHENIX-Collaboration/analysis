@@ -40,13 +40,15 @@ libelectronid_la_LIBADD = \
 libelectronid_la_LDFLAGS = \
   -L$(libdir) \
   -L$(OFFLINE_MAIN)/lib \
+  -L$(ROOTSYS)/lib \
   -lcalo_io \
   -lfun4all \
   -lg4detectors_io \
   -lphg4hit \
   -lg4dst \
   -lg4eval \
-  -ltrackpid
+  -lTMVA \
+  -ltrackpid 
 
 # Rule for generating table CINT dictionaries.
 %_Dict.cc: %.h %LinkDef.h

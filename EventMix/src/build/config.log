@@ -28,17 +28,16 @@ uname -v = #1 SMP Tue May 14 15:23:27 CDT 2019
 /bin/universe          = unknown
 
 PATH: /sphenix/u/weihuma/install/bin
-PATH: /sphenix/u/weihuma/install/bin
 PATH: /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/opt/sphenix/core/gcc/8.3.0.1-0a5ad/x86_64-centos7/bin
 PATH: /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/opt/sphenix/core/binutils/2.30-e5b21/x86_64-centos7/bin
 PATH: .
-PATH: /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/release/release_new/new.1/bin
+PATH: /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/release/release_old/old.1/bin
 PATH: /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/opt/sphenix/utils/bin
 PATH: /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/opt/sphenix/core/bin
 PATH: /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/opt/sphenix/core/root-6.22.02/bin
 PATH: /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/opt/sphenix/core/geant4.10.06.p02/bin
 PATH: /afs/rhic.bnl.gov/app/insure-7.5.5/bin
-PATH: /afs/rhic.bnl.gov/app/coverity-2019.03/bin
+PATH: /afs/rhic.bnl.gov/app/coverity-2021.12/bin
 PATH: /usr/local/bin
 PATH: /usr/bin
 PATH: /usr/local/sbin

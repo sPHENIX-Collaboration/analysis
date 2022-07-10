@@ -45,6 +45,8 @@
 #include "TMVA/Tools.h"
 #include "TMVA/Reader.h"
 #include "TMVA/MethodCuts.h"
+#include "TMVA/Factory.h"
+#include "TMVA/DataLoader.h"
 
 
 // gsl
@@ -61,7 +63,6 @@
 class PHCompositeNode;
 
 using namespace std;
-//using namespace TMVA;
 
 ElectronID::ElectronID(const std::string& name, const std::string &filename) : SubsysReco(name)
 {
@@ -475,7 +476,10 @@ int ElectronID::process_event(PHCompositeNode* topNode)
      	}
       
 
-    }
+    }//end of evet loop.
+
+  delete reader_positive;
+  delete reader_negative;
   
   // Read back the association map
   if(Verbosity() > 1)
