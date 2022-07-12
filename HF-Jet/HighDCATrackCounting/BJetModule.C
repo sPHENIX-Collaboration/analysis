@@ -608,19 +608,31 @@ int BJetModule::process_event(PHCompositeNode *topNode) {
 			continue;
 
 		//std::set<PHG4Hit*> assoc_hits = trackeval->all_truth_hits(track);//TODO
-
 		int nmaps = 0;
+	
 		unsigned int nclusters = track->size_cluster_keys();
 		unsigned int nclusters_by_layer = 0;
-		for (SvtxTrack::ConstClusterKeyIter iter = track->begin_cluster_keys();
-				iter != track->end_cluster_keys(); ++iter) {
-                TrkrDefs::cluskey cluster_key = *iter;
-			if(cluster_key) {
-				unsigned int cluster_layer = TrkrDefs::getLayer(cluster_key);
-				if(TrkrDefs::getTrkrId(cluster_key) == TrkrDefs::TrkrId::mvtxId) ++nmaps;
-				nclusters_by_layer |= (0x3FFFFFFF & (0x1 << cluster_layer));
-			}
-		}
+
+		TrackSeed* siliconSeed = track->get_silicon_seed();
+		for(auto iter = siliconSeed->begin_cluster_keys();
+		    iter != siliconSeed->end_cluster_keys(); ++iter)
+		  {
+		    TrkrDefs::cluskey key = *iter;
+		    unsigned int cluster_layer = TrkrDefs::getLayer(key);
+						
+		    if(TrkrDefs::getTrkrId(key) == TrkrDefs::TrkrId::mvtxId)
+		      { ++nmaps; }
+		    nclusters_by_layer |= (0x3FFFFFFF & (0x1 << cluster_layer));
+		  }
+		
+		TrackSeed *tpcSeed = track->get_silicon_seed();
+		for(auto iter = tpcSeed->begin_cluster_keys();
+		    iter != tpcSeed->end_cluster_keys(); ++iter)
+		  {
+		    unsigned int cluster_layer = TrkrDefs::getLayer(*iter);
+		    nclusters_by_layer |= (0x3FFFFFFF & (0x1 << cluster_layer));
+
+		  }
 
 		PHG4Particle* g4particle = trackeval->max_truth_particle_by_nclusters(
 				track);
