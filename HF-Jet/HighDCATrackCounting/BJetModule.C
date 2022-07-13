@@ -404,34 +404,12 @@ int BJetModule::process_event(PHCompositeNode *topNode)
   svtxevalstack->next_event(topNode);
   SvtxTrackEval *trackeval = svtxevalstack->get_track_eval();
 
-  int ivertex = 0;
   float vertex_x = -99;
   float vertex_y = -99;
   float vertex_z = -99;
   //	float vertex_err_x = -99;
   //	float vertex_err_y = -99;
   //float vertex_err_z = -99;
-
-  for (SvtxVertexMap::Iter iter = vertexmap->begin();
-       iter != vertexmap->end(); ++iter)
-  {
-    SvtxVertex *vertex = iter->second;
-
-    //std::cout << " vertex #" << ivertex << ", x/y/z = " << vertex->get_x() << " / " << vertex->get_y() << " / " << vertex->get_z() << std::endl;
-
-    if (ivertex == 0)
-    {
-      vertex_x = vertex->get_x();
-      vertex_y = vertex->get_y();
-      vertex_z = vertex->get_z();
-
-      //			vertex_err_x = sqrt(vertex->get_error(0,0));
-      //			vertex_err_y = sqrt(vertex->get_error(1,1));
-      //			vertex_err_z = sqrt(vertex->get_error(2,2));
-    }
-
-    ivertex++;
-  }
 
   _b_track_n = 0;
 
@@ -498,6 +476,10 @@ int BJetModule::process_event(PHCompositeNode *topNode)
 
     TVector3 track_point(track->get_x(), track->get_y(), track->get_z());
     TVector3 track_direction(track->get_px(), track->get_py(), track->get_pz());
+    SvtxVertex* svertex = vertexmap->get(track->get_vertex_id());
+    vertex_x = svertex->get_x();
+    vertex_y = svertex->get_y();
+    vertex_z = svertex->get_z();
     TVector3 vertex(vertex_x, vertex_y, vertex_z);
 
     TVector3 track_point_2d(track->get_x(), track->get_y(), 0);
