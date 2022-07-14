@@ -1,5 +1,5 @@
 /*!
- *  \file		BJetModule.C
+ *  \file		BJetModule.cc
  *  \brief		Gether information from Truth Jet and Tracks, DST -> NTuple
  *  \details	Gether information from Truth Jet and Tracks, DST -> NTuple
  *  \author		Dennis V. Perepelitsa
