@@ -232,13 +232,13 @@ int BJetModule::process_event(PHCompositeNode *topNode)
   }
 
   JetMap *truth_jets = findNode::getClass<JetMap>(topNode, _truthjetmap_name);
-
+  JetMap *reco_jets = findNode::getClass<JetMap>(topNode, _recojetmap_name);
+ 
   _b_truthjet_n = 0;
   for (JetMap::Iter iter = truth_jets->begin(); iter != truth_jets->end();
        ++iter)
   {
     Jet *truth_jet = iter->second;
-
     if (truth_jet->get_pt() < 10 || fabs(truth_jet->get_eta()) > 2)
       continue;
 
@@ -258,10 +258,39 @@ int BJetModule::process_event(PHCompositeNode *topNode)
     //cout << "DEBUG: " << __LINE__ << endl;
     //auto reco_jet = unique_ptr<Jet>(jet_reco_eval->best_jet_from(truth_jet));
     Jet *reco_jet = jet_reco_eval->best_jet_from(truth_jet);
+    
     //cout << "DEBUG: " << __LINE__ << endl;
     if (!reco_jet)
     {
-      _b_recojet_valid[_b_truthjet_n] = 0;
+      //// match by radius
+      Jet* matchedjet = nullptr;
+      float mindr = std::numeric_limits<float>::max();
+      for (JetMap::Iter riter = reco_jets->begin(); riter != reco_jets->end();
+       ++riter)
+	{
+	  Jet* mjet = riter->second;
+	  if(mjet->get_pt() < 5)
+	    { continue; }
+	  float dr = dR(mjet->get_eta(), truth_jet->get_eta(),
+			mjet->get_phi(), truth_jet->get_phi());
+	  if(dr < mindr)
+	    {
+	      mindr = dr;
+	      matchedjet = mjet;
+	    }
+	}
+       
+      if(matchedjet)
+	{
+	  _b_recojet_valid[_b_truthjet_n] = 1;
+	  _b_recojet_pt[_b_truthjet_n] = matchedjet->get_pt();
+	  _b_recojet_phi[_b_truthjet_n] = matchedjet->get_phi();
+	  _b_recojet_eta[_b_truthjet_n] = matchedjet->get_eta();
+	}
+      else
+	{
+	  _b_recojet_valid[_b_truthjet_n] = 0;
+	}
     }
     else
     {
