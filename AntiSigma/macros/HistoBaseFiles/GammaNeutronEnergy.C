@@ -27,7 +27,7 @@ void EdepPercentSmall (/*TH1 *h1*/)//const char *part="e")//,int nevent = 1000)
       	{
 	  cout << "TEST VI" << endl;
 	  char ffile[100];
-	  sprintf(ffile,"%s_ThinBins.root", part[q]);
+	  sprintf(ffile,"/phenix/u/jpinkenburg/sPHENIX/analysis/AntiSigma/macros/HistoBaseFiles/%s_ThinBins.root", part[q]);
 	  TFile *f = TFile::Open(ffile);
 	  char hname[100];
 	  sprintf(hname,"%s%dd",part[q],pz[w]);
