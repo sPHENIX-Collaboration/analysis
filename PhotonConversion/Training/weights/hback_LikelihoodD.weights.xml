@@ -1,0 +1,173 @@
+<?xml version="1.0"?>
+<MethodSetup Method="Likelihood::LikelihoodD">
+  <GeneralInfo>
+    <Info name="TMVA Release" value="4.2.0 [262656]"/>
+    <Info name="ROOT Release" value="5.34/38 [336422]"/>
+    <Info name="Creator" value="vassalli"/>
+    <Info name="Date" value="Wed Jan 23 17:59:13 2019"/>
+    <Info name="Host" value="Linux cvmfswrite02.sdcc.bnl.gov 3.10.0-693.11.6.el7.x86_64 #1 SMP Wed Jan 3 18:09:42 CST 2018 x86_64 x86_64 x86_64 GNU/Linux"/>
+    <Info name="Dir" value="/direct/phenix+u/vassalli/sphenix/single/Training"/>
+    <Info name="Training events" value="2407"/>
+    <Info name="TrainingTime" value="4.40878868e-02"/>
+    <Info name="AnalysisType" value="Classification"/>
+  </GeneralInfo>
+  <Options>
+    <Option name="V" modified="Yes">False</Option>
+    <Option name="VerbosityLevel" modified="No">Default</Option>
+    <Option name="VarTransform" modified="Yes">Decorrelate</Option>
+    <Option name="H" modified="Yes">False</Option>
+    <Option name="CreateMVAPdfs" modified="No">False</Option>
+    <Option name="IgnoreNegWeightsInTraining" modified="No">False</Option>
+    <Option name="TransformOutput" modified="Yes">False</Option>
+  </Options>
+  <Variables NVar="7">
+    <Variable VarIndex="0" Expression="track_deta" Label="track_deta" Title="track_deta" Unit="" Internal="track_deta" Type="F" Min="1.05425715e-06" Max="1.83402312e+00"/>
+    <Variable VarIndex="1" Expression="track_dlayer" Label="track_dlayer" Title="track_dlayer" Unit="" Internal="track_dlayer" Type="I" Min="0.00000000e+00" Max="1.40000000e+01"/>
+    <Variable VarIndex="2" Expression="track_layer" Label="track_layer" Title="track_layer" Unit="" Internal="track_layer" Type="I" Min="0.00000000e+00" Max="2.30000000e+01"/>
+    <Variable VarIndex="3" Expression="track_pT" Label="track_pT" Title="track_pT" Unit="" Internal="track_pT" Type="F" Min="2.09833950e-01" Max="3.41584282e+01"/>
+    <Variable VarIndex="4" Expression="vtx_radius" Label="vtx_radius" Title="vtx_radius" Unit="" Internal="vtx_radius" Type="F" Min="3.39345192e-03" Max="2.09999390e+01"/>
+    <Variable VarIndex="5" Expression="vtxTrack_dist" Label="vtxTrack_dist" Title="vtxTrack_dist" Unit="" Internal="vtxTrack_dist" Type="F" Min="2.58899499e-02" Max="1.00588207e+01"/>
+    <Variable VarIndex="6" Expression="cluster_prob" Label="cluster_prob" Title="cluster_prob" Unit="" Internal="cluster_prob" Type="F" Min="0.00000000e+00" Max="9.99874175e-01"/>
+  </Variables>
+  <Spectators NSpec="1">
+    <Spectator SpecIndex="0" Expression="vtx_chi2" Label="vtx_chi2" Title="F" Unit="" Internal="vtx_chi2" Type="F" Min="0.00000000e+00" Max="3.33078735e-36"/>
+  </Spectators>
+  <Classes NClass="2">
+    <Class Name="Signal" Index="0"/>
+    <Class Name="Background" Index="1"/>
+  </Classes>
+  <Transformations NTransformations="1">
+    <Transform Name="Decorrelation">
+      <Selection>
+        <Input NInputs="7">
+          <Input Type="Variable" Label="track_deta" Expression="track_deta"/>
+          <Input Type="Variable" Label="track_dlayer" Expression="track_dlayer"/>
+          <Input Type="Variable" Label="track_layer" Expression="track_layer"/>
+          <Input Type="Variable" Label="track_pT" Expression="track_pT"/>
+          <Input Type="Variable" Label="vtx_radius" Expression="vtx_radius"/>
+          <Input Type="Variable" Label="vtxTrack_dist" Expression="vtxTrack_dist"/>
+          <Input Type="Variable" Label="cluster_prob" Expression="cluster_prob"/>
+        </Input>
+        <Output NOutputs="7">
+          <Output Type="Variable" Label="track_deta" Expression="track_deta"/>
+          <Output Type="Variable" Label="track_dlayer" Expression="track_dlayer"/>
+          <Output Type="Variable" Label="track_layer" Expression="track_layer"/>
+          <Output Type="Variable" Label="track_pT" Expression="track_pT"/>
+          <Output Type="Variable" Label="vtx_radius" Expression="vtx_radius"/>
+          <Output Type="Variable" Label="vtxTrack_dist" Expression="vtxTrack_dist"/>
+          <Output Type="Variable" Label="cluster_prob" Expression="cluster_prob"/>
+        </Output>
+      </Selection>
+      <Matrix Rows="7" Columns="7">
+        2.706685907231784e+01 -1.027045061236038e-01 8.905801313384024e-02 2.421594048935910e-02 -1.065338010817441e-02 -7.639790233586007e-02 -1.863464924047023e-01 -1.027045061236038e-01 8.475755572986954e-01 -2.425601780760835e-01 1.828912519377770e-02 8.210120996978200e-02 -5.385683949727309e-02 7.756897403978942e-03 8.905801313384022e-02 -2.425601780760836e-01 7.196840475400947e-01 -9.696927879417167e-03 -1.398327290835446e-01 -2.330629346438098e-01 -1.664522330025315e-03 2.421594048935909e-02 1.828912519377773e-02 -9.696927879417195e-03 3.219306158027618e-01 1.212350409403593e-02 -4.482307972992906e-02 1.090114346777770e-01 -1.065338010817441e-02 8.210120996978201e-02 -1.398327290835446e-01 1.212350409403593e-02 2.175520722096397e-01 -1.441844327966896e-02 6.552008540444846e-03 -7.639790233586002e-02 -5.385683949727316e-02 -2.330629346438098e-01 -4.482307972992908e-02 -1.441844327966898e-02 6.418491547573513e-01 -3.280909522143599e-02 -1.863464924047023e-01 7.756897403978955e-03 -1.664522330025321e-03 1.090114346777770e-01 6.552008540444848e-03 -3.280909522143600e-02 3.298968858112228e+00 
+      </Matrix>
+      <Matrix Rows="7" Columns="7">
+        2.272819880207092e+00 8.150539638487636e-02 -7.099765029815727e-02 2.005939214665206e-01 -9.664303141644186e-02 -6.212487680915412e-02 4.038549818859594e-01 8.150539638487642e-02 6.438955767764223e-01 -3.412488792124355e-01 -5.088639127301570e-02 -1.193971592920225e-02 -3.635141134614023e-02 5.669418216698637e-02 -7.099765029815733e-02 -3.412488792124355e-01 7.802755902672094e-01 8.288740824047663e-02 5.556523896804994e-02 -3.680137915256920e-01 -2.422335473800877e-02 2.005939214665204e-01 -5.088639127301574e-02 8.288740824047666e-02 3.316416807748025e+00 -1.450252452979002e-02 9.043319692187662e-02 7.485372994498436e-02 -9.664303141644186e-02 -1.193971592920222e-02 5.556523896804993e-02 -1.450252452979003e-02 2.462311156699937e-01 -1.007753342249554e-01 -2.362374662434298e-02 -6.212487680915409e-02 -3.635141134614012e-02 -3.680137915256920e-01 9.043319692187661e-02 -1.007753342249554e-01 8.803345727476570e-01 -1.861905061863615e-02 4.038549818859591e-01 5.669418216698634e-02 -2.422335473800874e-02 7.485372994498436e-02 -2.362374662434297e-02 -1.861905061863615e-02 2.823755882828112e+00 
+      </Matrix>
+      <Matrix Rows="7" Columns="7">
+        2.585018940382350e+00 -1.272545102179839e-01 2.116148644579374e-01 8.542530906283700e-02 -7.858937370418928e-03 -2.234904398578045e-01 2.089678460346151e-01 -1.272545102179839e-01 6.044959828882288e-01 -1.685037973572144e-01 5.440936946567256e-02 7.767315842903931e-02 -1.302914262871529e-01 -9.621525475299066e-03 2.116148644579374e-01 -1.685037973572144e-01 5.284545273810628e-01 -4.692382004884595e-02 -9.855630315427842e-02 -1.530639682727119e-01 6.520078319853734e-02 8.542530906283700e-02 5.440936946567256e-02 -4.692382004884595e-02 4.184656787920125e-01 -1.851109199792128e-02 -2.010986117568305e-03 1.138944963828808e-01 -7.858937370418928e-03 7.767315842903928e-02 -9.855630315427841e-02 -1.851109199792128e-02 1.830249758866282e-01 -9.755175391653974e-03 8.108996136118525e-03 -2.234904398578045e-01 -1.302914262871529e-01 -1.530639682727119e-01 -2.010986117568292e-03 -9.755175391653987e-03 6.347692056136929e-01 -7.917908323184801e-02 2.089678460346150e-01 -9.621525475299058e-03 6.520078319853734e-02 1.138944963828807e-01 8.108996136118525e-03 -7.917908323184802e-02 2.967292787087305e+00 
+      </Matrix>
+    </Transform>
+  </Transformations>
+  <MVAPdfs/>
+  <Weights NVariables="7" NClasses="2">
+    <PDFDescriptor VarIndex="0" ClassIndex="0">
+      <PDF Name="LikelihoodD PDF Sig[0]" MinNSmooth="20" MaxNSmooth="20" InterpolMethod="2" KDE_type="1" KDE_iter="1" KDE_border="1" KDE_finefactor="1.0000000000000000e+00">
+        <Histogram Name="track_deta_sig_original" NBins="4" XMin="-3.1293194293975830e+00" XMax="4.8677223205566406e+01" HasEquidistantBins="1">
+          2.19700000e+03 6.00000000e+00 0.00000000e+00 0.00000000e+00 
+        </Histogram>
+      </PDF>
+    </PDFDescriptor>
+    <PDFDescriptor VarIndex="0" ClassIndex="1">
+      <PDF Name="LikelihoodD PDF Bkg[0]" MinNSmooth="20" MaxNSmooth="20" InterpolMethod="2" KDE_type="1" KDE_iter="1" KDE_border="1" KDE_finefactor="1.0000000000000000e+00">
+        <Histogram Name="track_deta_bgd_original" NBins="4" XMin="-3.1293194293975830e+00" XMax="4.8677223205566406e+01" HasEquidistantBins="1">
+          2.20300513e+03 0.00000000e+00 0.00000000e+00 0.00000000e+00 
+        </Histogram>
+      </PDF>
+    </PDFDescriptor>
+    <PDFDescriptor VarIndex="1" ClassIndex="0">
+      <PDF Name="LikelihoodD PDF Sig[1]" MinNSmooth="5" MaxNSmooth="5" InterpolMethod="2" KDE_type="1" KDE_iter="1" KDE_border="1" KDE_finefactor="1.0000000000000000e+00">
+        <Histogram Name="track_dlayer_sig_original" NBins="15" XMin="-6.0000000000000000e+00" XMax="9.0000000000000000e+00" HasEquidistantBins="1">
+          0.00000000e+00 0.00000000e+00 0.00000000e+00 2.00000000e+00 2.24000000e+02 1.37800000e+03 3.55000000e+02 1.24000000e+02 6.60000000e+01 3.40000000e+01 1.40000000e+01 3.00000000e+00 1.00000000e+00 2.00000000e+00 0.00000000e+00 
+        </Histogram>
+      </PDF>
+    </PDFDescriptor>
+    <PDFDescriptor VarIndex="1" ClassIndex="1">
+      <PDF Name="LikelihoodD PDF Bkg[1]" MinNSmooth="5" MaxNSmooth="5" InterpolMethod="2" KDE_type="1" KDE_iter="1" KDE_border="1" KDE_finefactor="1.0000000000000000e+00">
+        <Histogram Name="track_dlayer_bgd_original" NBins="15" XMin="-6.0000000000000000e+00" XMax="9.0000000000000000e+00" HasEquidistantBins="1">
+          0.00000000e+00 0.00000000e+00 0.00000000e+00 5.39950981e+01 7.55931396e+01 8.09926147e+02 6.80338013e+02 5.61548889e+02 1.07990198e+01 1.07990198e+01 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00 
+        </Histogram>
+      </PDF>
+    </PDFDescriptor>
+    <PDFDescriptor VarIndex="2" ClassIndex="0">
+      <PDF Name="LikelihoodD PDF Sig[2]" MinNSmooth="5" MaxNSmooth="5" InterpolMethod="2" KDE_type="1" KDE_iter="1" KDE_border="1" KDE_finefactor="1.0000000000000000e+00">
+        <Histogram Name="track_layer_sig_original" NBins="21" XMin="-4.0000000000000000e+00" XMax="1.7000000000000000e+01" HasEquidistantBins="1">
+          0.00000000e+00 3.00000000e+00 2.00000000e+00 1.03000000e+02 3.25000000e+02 1.09300000e+03 5.99000000e+02 3.80000000e+01 2.10000000e+01 1.20000000e+01 3.00000000e+00 0.00000000e+00 2.00000000e+00 1.00000000e+00 0.00000000e+00 1.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00 
+        </Histogram>
+      </PDF>
+    </PDFDescriptor>
+    <PDFDescriptor VarIndex="2" ClassIndex="1">
+      <PDF Name="LikelihoodD PDF Bkg[2]" MinNSmooth="5" MaxNSmooth="5" InterpolMethod="2" KDE_type="1" KDE_iter="1" KDE_border="1" KDE_finefactor="1.0000000000000000e+00">
+        <Histogram Name="track_layer_bgd_original" NBins="21" XMin="-4.0000000000000000e+00" XMax="1.7000000000000000e+01" HasEquidistantBins="1">
+          1.07990198e+01 1.07990198e+01 7.55931396e+01 1.06910266e+03 6.80338013e+02 2.48377533e+02 5.39950981e+01 5.39950981e+01 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00 
+        </Histogram>
+      </PDF>
+    </PDFDescriptor>
+    <PDFDescriptor VarIndex="3" ClassIndex="0">
+      <PDF Name="LikelihoodD PDF Sig[3]" MinNSmooth="5" MaxNSmooth="5" InterpolMethod="2" KDE_type="1" KDE_iter="1" KDE_border="1" KDE_finefactor="1.0000000000000000e+00">
+        <Histogram Name="track_pT_sig_original" NBins="4" XMin="-2.2952619194984436e-01" XMax="1.1442167663574219e+02" HasEquidistantBins="1">
+          2.20300000e+03 0.00000000e+00 0.00000000e+00 0.00000000e+00 
+        </Histogram>
+      </PDF>
+    </PDFDescriptor>
+    <PDFDescriptor VarIndex="3" ClassIndex="1">
+      <PDF Name="LikelihoodD PDF Bkg[3]" MinNSmooth="5" MaxNSmooth="5" InterpolMethod="2" KDE_type="1" KDE_iter="1" KDE_border="1" KDE_finefactor="1.0000000000000000e+00">
+        <Histogram Name="track_pT_bgd_original" NBins="4" XMin="-2.2952619194984436e-01" XMax="1.1442167663574219e+02" HasEquidistantBins="1">
+          2.20300513e+03 0.00000000e+00 0.00000000e+00 0.00000000e+00 
+        </Histogram>
+      </PDF>
+    </PDFDescriptor>
+    <PDFDescriptor VarIndex="4" ClassIndex="0">
+      <PDF Name="LikelihoodD PDF Sig[4]" MinNSmooth="5" MaxNSmooth="5" InterpolMethod="2" KDE_type="1" KDE_iter="1" KDE_border="1" KDE_finefactor="1.0000000000000000e+00">
+        <Histogram Name="vtx_radius_sig_original" NBins="4" XMin="-1.0812598466873169e+00" XMax="5.8870911598205566e+00" HasEquidistantBins="1">
+          4.05000000e+02 1.31300000e+03 4.84000000e+02 1.00000000e+00 
+        </Histogram>
+      </PDF>
+    </PDFDescriptor>
+    <PDFDescriptor VarIndex="4" ClassIndex="1">
+      <PDF Name="LikelihoodD PDF Bkg[4]" MinNSmooth="5" MaxNSmooth="5" InterpolMethod="2" KDE_type="1" KDE_iter="1" KDE_border="1" KDE_finefactor="1.0000000000000000e+00">
+        <Histogram Name="vtx_radius_bgd_original" NBins="4" XMin="-1.0812598466873169e+00" XMax="5.8870911598205566e+00" HasEquidistantBins="1">
+          1.73864514e+03 3.67166656e+02 4.31960793e+01 5.39950981e+01 
+        </Histogram>
+      </PDF>
+    </PDFDescriptor>
+    <PDFDescriptor VarIndex="5" ClassIndex="0">
+      <PDF Name="LikelihoodD PDF Sig[5]" MinNSmooth="5" MaxNSmooth="5" InterpolMethod="2" KDE_type="1" KDE_iter="1" KDE_border="1" KDE_finefactor="1.0000000000000000e+00">
+        <Histogram Name="vtxTrack_dist_sig_original" NBins="4" XMin="-6.4321508407592773e+00" XMax="7.7398953437805176e+00" HasEquidistantBins="1">
+          0.00000000e+00 1.14500000e+03 1.05800000e+03 0.00000000e+00 
+        </Histogram>
+      </PDF>
+    </PDFDescriptor>
+    <PDFDescriptor VarIndex="5" ClassIndex="1">
+      <PDF Name="LikelihoodD PDF Bkg[5]" MinNSmooth="5" MaxNSmooth="5" InterpolMethod="2" KDE_type="1" KDE_iter="1" KDE_border="1" KDE_finefactor="1.0000000000000000e+00">
+        <Histogram Name="vtxTrack_dist_bgd_original" NBins="4" XMin="-6.4321508407592773e+00" XMax="7.7398953437805176e+00" HasEquidistantBins="1">
+          0.00000000e+00 1.07990198e+01 2.09501440e+03 9.71911774e+01 
+        </Histogram>
+      </PDF>
+    </PDFDescriptor>
+    <PDFDescriptor VarIndex="6" ClassIndex="0">
+      <PDF Name="LikelihoodD PDF Sig[6]" MinNSmooth="5" MaxNSmooth="5" InterpolMethod="2" KDE_type="1" KDE_iter="1" KDE_border="1" KDE_finefactor="1.0000000000000000e+00">
+        <Histogram Name="cluster_prob_sig_original" NBins="4" XMin="-6.9637268781661987e-01" XMax="4.5550131797790527e+00" HasEquidistantBins="1">
+          2.60000000e+02 8.06000000e+02 9.15000000e+02 2.22000000e+02 
+        </Histogram>
+      </PDF>
+    </PDFDescriptor>
+    <PDFDescriptor VarIndex="6" ClassIndex="1">
+      <PDF Name="LikelihoodD PDF Bkg[6]" MinNSmooth="5" MaxNSmooth="5" InterpolMethod="2" KDE_type="1" KDE_iter="1" KDE_border="1" KDE_finefactor="1.0000000000000000e+00">
+        <Histogram Name="cluster_prob_bgd_original" NBins="4" XMin="-6.9637268781661987e-01" XMax="4.5550131797790527e+00" HasEquidistantBins="1">
+          3.45568634e+02 2.37578506e+02 1.53346277e+03 8.63921585e+01 
+        </Histogram>
+      </PDF>
+    </PDFDescriptor>
+  </Weights>
+</MethodSetup>

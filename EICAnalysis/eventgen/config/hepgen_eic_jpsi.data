@@ -1,0 +1,66 @@
+LIST
+
+* number of events
+NGEV   1000000
+* Colliding particles: ELEPT, EHADR, ILEPT, AHADR, ZHADR - PARL(1), PARL(2)
+BEAM   160.0   0.9382723   11   1   1
+* Read beam external file:  0-nothing, 1-beam only, 2-halo only, 3-beam+halo 
+BMRD   0
+* Physics process: 1 gamma, 2 W ex., 3 Z, 4 full NC - LSTHFL(4), 5 HiExcProd
+PROC   5
+* LEPTO 'soft' cuts: x, y, Q2, W2, nu, E', phi (min/max) - CUT(1-14)
+CUTL   0.0001  1.0  0.0  1.0  1.0  1000000.0  0.00  1000000.0     0.0  1000000.0  0.0   1000000.0  0.00  6.28318
+
+* limits for tprim generation
+*TLIM   0.001  1.2
+TLIM   0.05  0.5
+* Scattered muon acceptance - theta_max(rad)
+MACC   0.050
+* Select produced particle and its decay mode (DVCS: ivecm=0)
+VMES   4     LL
+* Swich to turn diffractive dissociation ON (1) or OFF (0)
+DIFF   0
+* Target parameters (A, probc, bcoh, bin)
+TPAR   1.0   -0.1   52.2   5.0
+* A dependence of cross sections
+ALFA   0.75
+* lepton beam charge and polarisation
+BPAR   +1.0    -1.0
+* parameterisaton of x,t correlation, for DVCS only
+REGG   4.94116   0.042   0.8
+
+
+
+
+
+* ------------------------------------------------
+* additional parameters for hepgen-ng
+* do not use whitespace in the filenames!
+* the simple-parser will not recognize them
+* ------------------------------------------------
+
+*** Decay behaviour: 50% j/psi -> e+e- || 50%: j/psi->mu+mu-
+** To choose a single decay channel use AUX1 as below
+
+* For only electron decay:
+* AUX1 1
+
+* For only muon decay
+* AUX1 2
+
+* Path to beamfile
+BEAMFILE 		./beamfile.dat
+
+* Path to Pi0-Cross-Section Table
+PI0_FILE 		./pi0_input.dat
+
+* GFortran-Compat-Flag - produce files with extra-long headers, for COMGEANT in gfortran-compilation
+ENABLE_GFORTRAN		0
+
+ENABLE_DEBUG 0
+
+
+OUTFILE hepgen_omega_gammapi0
+
+
+END

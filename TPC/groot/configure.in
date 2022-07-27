@@ -1,0 +1,34 @@
+AC_INIT(configure.in)
+
+AC_PROG_CXX(CC g++)
+AC_PROG_CC(cc gcc)
+
+AC_CANONICAL_HOST
+
+case "$host" in
+  *-*-solaris*)
+    CFLAGS="$CFLAGS -mt -fast -xO5"
+    CPPFLAGS="$CPPFLAGS -D_REENTRANT -D_POSIX_PTHREAD_SEMANTICS"
+    LIBS="-lposix4 -lresolv -lsocket -lnsl -lresolv -ldl -lm"
+  ;;
+  *-*-linux*)
+    CPPFLAGS="$CPPFLAGS -D_REENTRANT -D_POSIX_PTHREAD_SEMANTICS -DMUTEX_NOSHARE"
+    LIBS="-lpthread -ldl" 
+    CXXFLAGS="-O0 -g -std=c++11"
+  ;;
+  *)
+    AC_MSG_ERROR([default compiler unknown for this system!])
+  ;;
+esac
+
+dnl init automake (package,version)
+AM_INIT_AUTOMAKE(groot,8.00)
+
+dnl no static libraries
+AC_ENABLE_STATIC(no)
+
+dnl Checks for programs.
+AC_PROG_LIBTOOL
+
+dnl finally we want the following makefiles written out
+AC_OUTPUT(Makefile)

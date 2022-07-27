@@ -9,6 +9,7 @@
  */
 
 #include <TFile.h>
+#include <TGraph.h>
 #include <TGraphAsymmErrors.h>
 #include <TGraphErrors.h>
 #include <TLatex.h>
@@ -64,11 +65,18 @@ void Draw_HFJetTruth(const TString infile =
     _file0->SetName(infile);
   }
 
-  //    DrawCrossSection(int_lumi, dy);
-  Draw_HFJetTruth_DrawCrossSection_PR(infile);
+//      DrawCrossSection(int_lumi, dy);
+  //  Draw_HFJetTruth_DrawCrossSection_PR(infile);
   //  CrossSection2RAA_Proposal(infile);
-  //  CrossSection2RAA(infile);
-  //  CrossSection2RAA(infile, false);
+  //    CrossSection2RAA(infile);
+  const double acceptance1 = 2.* (1.1 - .4);
+  CrossSection2RAA(infile, false, acceptance1);
+
+//  const double acceptance2 = 2.* (0.85 - .4);
+//  CrossSection2RAA(infile, false, acceptance2);
+
+//  CrossSection2v2(infile, false, .7, acceptance);
+//  CrossSection2v2(infile, false, .4, acceptance);
 }
 
 void DrawCrossSection(double int_lumi, const double dy)
@@ -233,7 +241,6 @@ void Draw_HFJetTruth_DrawCrossSection_PR(const TString infile)
   TH1 *hframe = p->DrawFrame(12, 0.1, 70, 1e8);
   hframe->SetTitle(";p_{T} [GeV/c];d^{2}#sigma/(dp_{T}d#eta) [pb/(GeV/c)]");
 
-
   gr_fonll_b->Draw("3");
   gr_phenix->Draw("pe");
 
@@ -243,7 +250,7 @@ void Draw_HFJetTruth_DrawCrossSection_PR(const TString infile)
   TLegend *leg = new TLegend(0.2, 0.7, 0.95, 0.92);
   leg->SetFillColor(kWhite);
   leg->SetFillStyle(1001);
-//  leg->SetHeader("#splitline{#it{#bf{sPHENIX }} Simulation}{p+p, #sqrt{s} = 200 GeV, |#eta|<0.6}");
+  //  leg->SetHeader("#splitline{#it{#bf{sPHENIX }} Simulation}{p+p, #sqrt{s} = 200 GeV, |#eta|<0.6}");
   leg->SetHeader("#it{#bf{sPHENIX }} Simulation, #it{p}+#it{p} #sqrt{s} = 200 GeV, |#eta|<0.6");
   leg->AddEntry(hall, "Inclusive jet, PYTHIA8 + CTEQ6L, anti-k_{T} R=0.4",
                 "lpe");
@@ -360,12 +367,20 @@ void CrossSection2RAA_Proposal(const TString infile)
   SaveCanvas(c1, infile + "_" + TString(c1->GetName()), kTRUE);
 }
 
-void CrossSection2RAA(const TString infile, const bool use_AA_jet_trigger = true)
+void CrossSection2RAA(const TString infile, const bool use_AA_jet_trigger = true, const double dy = .7 * 2)
 {
+  TFile *f = TFile::Open(infile + "Draw_HFJetTruth_DrawCrossSection.root");
+  assert(f);
+
+  TH1F *hall = (TH1F *) f->GetObjectChecked("hall", "TH1F");
+  assert(hall);
+  TH1F *h_b = (TH1F *) f->GetObjectChecked("h_b", "TH1F");
+  assert(h_b);
+
   const TString s_suffix(use_AA_jet_trigger ? "_AAJetTriggered" : "");
+  s_suffix += Form("_deta%.2f",dy/2);
 
   const double b_jet_RAA = 0.6;
-  const double dy = .7 * 2;
 
   const double pp_eff = 0.6;
   const double pp_purity = 0.4;
@@ -434,7 +449,7 @@ void CrossSection2RAA(const TString infile, const bool use_AA_jet_trigger = true
   p = (TPad *) c1->cd(idx++);
   c1->Update();
 
-  p->DrawFrame(15, 0, 50, 1.2)
+  p->DrawFrame(11, 0, 50, 1.2)
       ->SetTitle(";Transverse Momentum [GeV/#it{c}];#it{R}_{AA}");
 
   TGraphErrors *ge_RAA = GetRAA(g_pp, g_AA);
@@ -449,7 +464,7 @@ void CrossSection2RAA(const TString infile, const bool use_AA_jet_trigger = true
   TLegend *leg = new TLegend(.0, .76, .85, .93);
   leg->SetFillStyle(0);
   leg->AddEntry("", "#it{#bf{sPHENIX }} Simulation", "");
-  leg->AddEntry("", Form("PYTHIA-8 #it{b}-jet, Anti-k_{T} R=0.4, |#eta|<%.1f, CTEQ6L", dy / 2), "");
+  leg->AddEntry("", Form("PYTHIA-8 #it{b}-jet, Anti-k_{T} R=0.4, |#eta|<%.2f, CTEQ6L", dy / 2), "");
   leg->AddEntry("", Form("#it{p}+#it{p}: %.0f pb^{-1}, %.0f%% Eff., %.0f%% Pur.", pp_lumi, pp_eff * 100, pp_purity * 100), "");
   leg->AddEntry("", Form("Au+Au: %.0fB col., %.0f%% Eff., %.0f%% Pur.", '%', AuAu_MB_Evt / 1e9, AuAu_eff * 100, AuAu_purity * 100), "");
   leg->Draw();
@@ -468,7 +483,7 @@ void CrossSection2RAA(const TString infile, const bool use_AA_jet_trigger = true
   p = (TPad *) c1->cd(idx++);
   c1->Update();
 
-  p->DrawFrame(15, 0, 50, 1.2)
+  p->DrawFrame(11, 0, 50, 1.2)
       ->SetTitle(";Transverse Momentum [GeV/#it{c}];#it{R}_{AA}");
 
   TGraph *g20 = pQCDModel_HuangKangVitev(2.0);
@@ -486,12 +501,164 @@ void CrossSection2RAA(const TString infile, const bool use_AA_jet_trigger = true
   leg->DrawClone();
   leg2->DrawClone();
 
-  TLegend *leg1 = new TLegend(.2, .20, .85, .35);
+  TLegend *leg1 = new TLegend(.2, .20, .85, .37);
   leg1->SetHeader("#splitline{pQCD, Phys.Lett. B726 (2013) 251-256}{#sqrt{s_{NN}}=200 GeV, #it{b}-jet R=0.4}");
   leg1->AddEntry("", "", "");
   leg1->AddEntry(g20, "g^{med} = 2.0", "l");
   leg1->AddEntry(g22, "g^{med} = 2.2", "l");
   leg1->Draw();
+
+  SaveCanvas(c1, infile + "_" + TString(c1->GetName()), kTRUE);
+}
+
+void CrossSection2v2(const TString infile, const bool use_AA_jet_trigger = true,const double ep_resolution = 0.7, const double dy = .7 * 2)
+{
+  TFile *f = TFile::Open(infile + "Draw_HFJetTruth_DrawCrossSection.root");
+  assert(f);
+
+  TH1F *hall = (TH1F *) f->GetObjectChecked("hall", "TH1F");
+  assert(hall);
+  TH1F *h_b = (TH1F *) f->GetObjectChecked("h_b", "TH1F");
+  assert(h_b);
+
+  const double b_jet_RAA = 0.6;
+
+  const double pp_eff = 0.6;
+  const double pp_purity = 0.4;
+  const double AuAu_eff = 0.4;
+  const double AuAu_purity = 0.4;
+
+  ////////////////////////////
+  // 5-year lumi in [sPH-TRG-000]
+  ////////////////////////////
+
+  const double pp_lumi = 200;                          // pb^-1 [sPH-TRG-000], rounded up from 197 pb^-1
+  const double pp_inelastic_crosssec = 42e-3 / 1e-12;  // 42 mb in pb [sPH-TRG-000]
+
+  const double AuAu_MB_Evt = use_AA_jet_trigger ? 550e9 : 240e9;  // [sPH-TRG-000], depending on whether jet trigger applied in AA collisions
+  const double pAu_MB_Evt = 600e9;                                // [sPH-TRG-000]
+
+  const double AuAu_Ncoll_C0_10 = 960.2;  // [DOI:?10.1103/PhysRevC.87.034911?]
+  const double AuAu_Ncoll_C0_20 = 770.6;  // [DOI:?10.1103/PhysRevC.91.064904?]
+  const double AuAu_Ncoll_C10_20 = 603;   // [sPH-HF-2017-001-v1]
+  const double AuAu_Ncoll_C20_40 = 296;   // [sPH-HF-2017-001-v1]
+  const double AuAu_Ncoll_C10_40 =  (AuAu_Ncoll_C10_20*10 + AuAu_Ncoll_C20_40*20)/30;
+  const double AuAu_Ncoll_C40_60 = 94;    //  [sPH-HF-2017-001-v1]
+  const double AuAu_Ncoll_C60_92 = 15;    //  [sPH-HF-2017-001-v1]
+  const double AuAu_Ncoll_C0_100 = 250;   // pb^-1 [sPH-TRG-000]
+  const double pAu_Ncoll_C0_100 = 4.7;    // pb^-1 [sPH-TRG-000]
+
+  const double AuAu_eq_lumi_C0_10 = AuAu_MB_Evt * 0.1 * AuAu_Ncoll_C0_10 / pp_inelastic_crosssec;  //
+  const double AuAu_eq_lumi_C0_20 = AuAu_MB_Evt * 0.2 * AuAu_Ncoll_C0_20 / pp_inelastic_crosssec;  //
+  const double AuAu_eq_lumi_C0_100 = AuAu_MB_Evt * 1 * AuAu_Ncoll_C0_100 / pp_inelastic_crosssec;  //
+
+  const double AuAu_eq_lumi_C10_20 = AuAu_MB_Evt * .1 * AuAu_Ncoll_C10_20 / pp_inelastic_crosssec;          //
+  const double AuAu_eq_lumi_C20_40 = AuAu_MB_Evt * .2 * AuAu_Ncoll_C20_40 / pp_inelastic_crosssec;          //
+  const double AuAu_eq_lumi_C10_40 = AuAu_MB_Evt * .3 * AuAu_Ncoll_C10_40 / pp_inelastic_crosssec;          //
+  const double AuAu_eq_lumi_C40_60 = AuAu_MB_Evt * .2 * AuAu_Ncoll_C40_60 / pp_inelastic_crosssec;          //
+  const double AuAu_eq_lumi_C60_92 = AuAu_MB_Evt * (.92 - .6) * AuAu_Ncoll_C60_92 / pp_inelastic_crosssec;  //
+
+  const double pAu_eq_lumi_C0_100 = pAu_MB_Evt * 1 * pAu_Ncoll_C0_100 / pp_inelastic_crosssec;  //
+
+  ;
+
+
+  const TString s_suffix(use_AA_jet_trigger ? "_AAJetTriggered" : "");
+  s_suffix += Form("_EPR%.1f",ep_resolution);
+  s_suffix += Form("_deta%.2f",dy/2);
+
+  cout << "CrossSection2v2 integrated luminosity assumptions in pb^-1: " << endl;
+  cout << "\t"
+       << "pp_lumi = " << pp_lumi << endl;
+  cout << "\t"
+       << "AuAu_eq_lumi_C0_10 = " << AuAu_eq_lumi_C0_10 << endl;
+  cout << "\t"
+       << "AuAu_eq_lumi_C0_20 = " << AuAu_eq_lumi_C0_20 << endl;
+  cout << "\t"
+       << "AuAu_eq_lumi_C0_100 = " << AuAu_eq_lumi_C0_100 << endl;
+  cout << "\t"
+       << "AuAu_eq_lumi_C10_20 = " << AuAu_eq_lumi_C10_20 << endl;
+  cout << "\t"
+       << "AuAu_eq_lumi_C20_40 = " << AuAu_eq_lumi_C20_40 << endl;
+  cout << "\t"
+       << "AuAu_eq_lumi_C10_40 = " << AuAu_eq_lumi_C10_40 << endl;
+  cout << "\t"
+       << "AuAu_eq_lumi_C40_60 = " << AuAu_eq_lumi_C40_60 << endl;
+  cout << "\t"
+       << "AuAu_eq_lumi_C60_92 = " << AuAu_eq_lumi_C60_92 << endl;
+  cout << "\t"
+       << "pAu_eq_lumi_C0_100 = " << pAu_eq_lumi_C0_100 << endl;
+
+  TGraph *g_AA_C0_10 = CrossSection2v2Uncert(h_b, b_jet_RAA, dy, AuAu_eq_lumi_C0_10 * AuAu_eff * AuAu_purity, ep_resolution, -1*.7);
+  TGraph *g_AA_C0_20 = CrossSection2v2Uncert(h_b, b_jet_RAA, dy, AuAu_eq_lumi_C0_20 * AuAu_eff * AuAu_purity, ep_resolution, 0);
+  TGraph *g_AA_C10_20 = CrossSection2v2Uncert(h_b, b_jet_RAA, dy, AuAu_eq_lumi_C10_20 * AuAu_eff * AuAu_purity, ep_resolution, 0);
+  TGraph *g_AA_C20_40 = CrossSection2v2Uncert(h_b, b_jet_RAA, dy, AuAu_eq_lumi_C20_40 * AuAu_eff * AuAu_purity, ep_resolution, 1*.7);
+  TGraph *g_AA_C10_40 = CrossSection2v2Uncert(h_b, b_jet_RAA, dy, AuAu_eq_lumi_C10_40 * AuAu_eff * AuAu_purity, ep_resolution, 1*.7);
+  TGraph *g_AA_C40_60 = CrossSection2v2Uncert(h_b, b_jet_RAA, dy, AuAu_eq_lumi_C40_60 * AuAu_eff * AuAu_purity, ep_resolution, 2*.7);
+  TGraph *g_AA_C60_92 = CrossSection2v2Uncert(h_b, b_jet_RAA, dy, AuAu_eq_lumi_C60_92 * AuAu_eff * AuAu_purity, ep_resolution, 3*.7);
+  //
+  g_AA_C0_10->SetLineColor(kBlue+3);
+  g_AA_C10_20->SetLineColor(kAzure+3);
+  g_AA_C20_40->SetLineColor(kTeal+3);
+  g_AA_C10_40->SetLineColor(kTeal+3);
+  g_AA_C40_60->SetLineColor(kSpring+3);
+
+  g_AA_C0_10->SetMarkerColor(kBlue+3);
+  g_AA_C10_20->SetMarkerColor(kAzure+3);
+  g_AA_C20_40->SetMarkerColor(kTeal+3);
+  g_AA_C10_40->SetMarkerColor(kTeal+3);
+  g_AA_C40_60->SetMarkerColor(kSpring+3);
+
+  g_AA_C0_10->SetMarkerStyle(kFullCircle);
+  g_AA_C10_20->SetMarkerStyle(kFullSquare);
+  g_AA_C20_40->SetMarkerStyle(kFullDiamond);
+  g_AA_C10_40->SetMarkerStyle(kFullDiamond);
+  g_AA_C40_60->SetMarkerStyle(kFullCross);
+
+
+  //
+  TCanvas *c1 = new TCanvas("Draw_HFJetTruth_CrossSection2v2" + s_suffix, "Draw_HFJetTruth_CrossSection2v2" + s_suffix, 700, 600);
+  c1->Divide(1, 1);
+  int idx = 1;
+  TPad *p;
+
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+
+  p->DrawFrame(15, -.1, 40, .3)
+      ->SetTitle(";Transverse Momentum [GeV/#it{c}];v_{2}");
+  //
+  g_AA_C0_10->Draw("pe");
+//  g_AA_C10_20->Draw("pe");
+//  g_AA_C20_40->Draw("pe");
+  g_AA_C10_40->Draw("pe");
+//  g_AA_C40_60->Draw("pe");
+
+  //  g_AA_C20_40->Draw("same");
+  //
+  //  ge_RAA->SetLineWidth(3);
+  //  ge_RAA->SetMarkerStyle(kFullCircle);
+  //  ge_RAA->SetMarkerSize(2);
+  //
+  //  ge_RAA->Draw("pe");
+  //  ge_RAA->Print();
+  //
+    TLegend *leg = new TLegend(.0, .78, .85, .93);
+    leg->SetFillStyle(0);
+    leg->AddEntry("", "#it{#bf{sPHENIX }} Simulation", "");
+    leg->AddEntry("", Form("PYTHIA-8 #it{b}-jet, Anti-k_{T} R=0.4, |#eta|<%.2f, CTEQ6L", dy / 2), "");
+    leg->AddEntry("", Form("Au+Au: %.0fB col., %.0f%% Eff., %.0f%% Pur.", '%', AuAu_MB_Evt / 1e9, AuAu_eff * 100, AuAu_purity * 100), "");
+    leg->Draw();
+  //
+    TLegend *leg2 = new TLegend(.19, .55, 1, .78);
+    leg2->SetHeader( Form("#it{b}-jet v_{2} Projection, #it{R}_{AA, #it{b}-jet}=%.1f, Res(#Psi_{2})=%.1f", b_jet_RAA, ep_resolution));
+    leg2->AddEntry(g_AA_C0_10, "Au+Au 0-10%C", "pl");
+//    leg2->AddEntry(g_AA_C10_20, "Au+Au 10-20%C", "pl");
+//    leg2->AddEntry(g_AA_C20_40, "Au+Au 20-40%C", "pl");
+    leg2->AddEntry(g_AA_C10_40, "Au+Au 10-40%C", "pl");
+//    leg2->AddEntry(g_AA_C40_60, "Au+Au 40-60%C", "pl");
+    leg2->SetFillStyle(0);
+    leg2->Draw();
 
   SaveCanvas(c1, infile + "_" + TString(c1->GetName()), kTRUE);
 }
@@ -563,6 +730,61 @@ TH1 *CrossSection2RelUncert(const TH1F *h_cross,
   h_ratio->GetYaxis()->SetTitle("Relative Cross Section and Uncertainty");
 
   return h_ratio;
+}
+
+TGraph *CrossSection2v2Uncert(const TH1F *h_cross,
+                           const double suppression,
+                           const double deta,
+                           const double pp_quiv_int_lum,
+                           const double ep_resolution = 1,
+                           const double pt_shift = 0
+)
+{
+  assert(h_cross);
+  TH1 *
+      h_ratio = (TH1 *)
+                    h_cross->Clone(TString(h_cross->GetName()) + Form("_copyv2%d", rand()));
+
+  //convert to count per bin
+  h_ratio->Scale(deta * h_ratio->GetXaxis()->GetBinWidth(0) * pp_quiv_int_lum * suppression);
+  h_ratio->Rebin(5);
+
+  vector<double> pts;
+  vector<double> v2s;
+  vector<double> v2es;
+
+  for (int i = 1; i <= h_ratio->GetNbinsX(); ++i)
+  {
+    const double yield = h_ratio->GetBinContent(i);
+
+    if (yield > 100)
+    {
+      h_ratio->SetBinContent(i, 0);
+
+      h_ratio->SetBinError(i, 1. / sqrt(2 * yield) / ep_resolution);  // err(v2) = 1/ (sqrt(2) *Significance * Resolution)
+
+      pts.push_back(h_ratio->GetBinCenter(i) + pt_shift);
+      v2s.push_back(h_ratio->GetBinContent(i));
+      v2es.push_back(h_ratio->GetBinError(i));
+    }
+    else
+    {
+      h_ratio->SetBinContent(i, 0);
+
+      h_ratio->SetBinError(i, 0);
+    }
+  }
+
+  h_ratio->GetYaxis()->SetTitle("v2 and uncertainty");
+
+  TGraph *gr = new TGraphErrors(pts.size(), &pts[0], &v2s[0], 0, &v2es[0]);
+  gr->SetName(TString("ge_") + h_ratio->GetName());
+
+  gr->SetLineWidth(3);
+  gr->SetMarkerStyle(kFullCircle);
+  gr->SetMarkerSize(2);
+
+  return gr;
 }
 
 void Convert2CrossSection(TH1 *h, const double int_lumi, const double dy)

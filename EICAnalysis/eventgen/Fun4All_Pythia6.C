@@ -1,14 +1,14 @@
 int Fun4All_Pythia6(
-                    const int nEvents = 100000,
-                    const char * pythiaConfigFile = "phpythia6_ep.cfg",
-                    const char * outputFile = "phpythia6_e10p250_dis_1k_hepmc.root"
+                    const int nEvents = 30,
+                    const char * pythiaConfigFile = "./config/phpythia6_ep_DISneutral.cfg",
+                    const char * outputFile = "DST_p250_e20_1seed_DISneutral.root"
                     )
 {
 
   bool runpythia6 = true;
 
-  bool writedst = true;
-  bool writeascii = false;
+  bool writedst = false;
+  bool writeascii = true;
 
   //---------------
   // Load libraries
@@ -16,6 +16,7 @@ int Fun4All_Pythia6(
 
   gSystem->Load("libfun4all.so");
   gSystem->Load("libphhepmc.so");
+  gSystem->Load("libeicana.so");
 
   //---------------
   // Fun4All server
@@ -51,9 +52,20 @@ int Fun4All_Pythia6(
 
       PHPythia6 *pythia6 = new PHPythia6();
       pythia6->set_config_file(pythiaConfigFile);
-      //pythia6->save_ascii("testascii.txt");
+      
+      PHPy6ParticleTrigger *trigger = new PHPy6ParticleTrigger();
+      //trigger->SetParticleType(15);
+      trigger->SetQ2Min(1000.0);
+
+      pythia6->register_trigger(trigger);
+      
       se->registerSubsystem(pythia6);
     }
+
+
+  DISKinematics *mcana = new DISKinematics(outputFile);
+  se->registerSubsystem( mcana );
+
 
   //--------------
   // IO management

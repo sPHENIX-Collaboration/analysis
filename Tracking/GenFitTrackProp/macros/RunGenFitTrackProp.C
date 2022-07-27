@@ -24,7 +24,7 @@ void RunGenFitTrackProp (
 		//---------------------
 
 		PHG4KalmanPatRec* kalman_pat_rec = new PHG4KalmanPatRec("PHG4KalmanPatRec", 3, 4, 40);
-		kalman_pat_rec->set_primary_pid_guess(pid_guess);
+		//kalman_pat_rec->set_primary_pid_guess(pid_guess);
 		//kalman_pat_rec->Verbosity(100);
 
 		se->registerSubsystem(kalman_pat_rec);
@@ -42,7 +42,7 @@ void RunGenFitTrackProp (
 	// Kalman Filter
 	//---------------------
 	PHG4TrackKalmanFitter* kalman = new PHG4TrackKalmanFitter();
-	kalman->set_primary_pid_guess(pid_guess);
+	//kalman->set_primary_pid_guess(pid_guess);
 	//kalman->set_fit_primary_tracks(true);
 	//kalman->set_use_truth_vertex(true);
 	//kalman->Verbosity(100);

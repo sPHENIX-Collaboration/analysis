@@ -18,7 +18,7 @@
 #include "SetOKStyle.C"
 using namespace std;
 
-TFile * _file0 = NULL;
+TFile * _infile = NULL;
 TTree * T = NULL;
 TString cuts = "";
 
@@ -44,7 +44,7 @@ Draw_PHG4DSTReader( //
   TVirtualFitter::SetDefaultFitter("Minuit2");
   gSystem->Load("libg4eval.so");
 
-  if (!_file0)
+  if (!_infile)
     {
       TString chian_str = infile;
       chian_str.ReplaceAll("ALL", "*");
@@ -57,11 +57,11 @@ Draw_PHG4DSTReader( //
 
       T = t;
 
-      _file0 = new TFile;
-      _file0->SetName(infile);
+      _infile = new TFile;
+      _infile->SetName(infile);
     }
 
-  assert(_file0);
+  assert(_infile);
 
   T->SetAlias("CEMC_Sample",
       "Sum$(G4HIT_CEMC.light_yield)/(Sum$(G4HIT_CEMC.edep) + Sum$(G4HIT_ABSORBER_CEMC.edep))");
@@ -236,7 +236,7 @@ DrawCalibratedE(TString infile, const double SF = 0.021)
   T->Draw(Form("CEMC_E/%f>>hCEMC_E_SF(1000,0,15)", SF));
 
   SaveCanvas(c1,
-      TString(_file0->GetName()) + TString("_DrawJet_")
+      TString(_infile->GetName()) + TString("_DrawJet_")
           + TString(c1->GetName()), kFALSE);
 }
 
@@ -259,7 +259,7 @@ DrawCalibratedE_Tower(TString infile, const double SF = 0.021)
   T->Draw(Form("TOWER_CEMC_E/%f>>hCEMC_E_SF(1000,0,15)", SF));
 
   SaveCanvas(c1,
-      TString(_file0->GetName()) + TString("_DrawJet_")
+      TString(_infile->GetName()) + TString("_DrawJet_")
           + TString(c1->GetName()), kFALSE);
 }
 
@@ -291,7 +291,7 @@ DrawTower_Raw_E(TString infile)
   he->SetLineColor(kBlue + 1);
 
   SaveCanvas(c1,
-      TString(_file0->GetName()) + "_Draw_PHG4DSTReader_"
+      TString(_infile->GetName()) + "_Draw_PHG4DSTReader_"
           + TString(c1->GetName()), true);
 }
 
@@ -756,7 +756,7 @@ DrawTowerIDCheck(TString infile)
   T->Draw("TOWER_CEMC_phi_mean:G4HIT_CEMC_phi_mean", "", "*");
 
   SaveCanvas(c1,
-      TString(_file0->GetName()) + TString("_DrawJet_")
+      TString(_infile->GetName()) + TString("_DrawJet_")
           + TString(c1->GetName()), kFALSE);
 }
 
@@ -847,7 +847,7 @@ DrawDist(TString infile)
   lBaBar->Draw();
 
   SaveCanvas(c1,
-      TString(_file0->GetName()) + TString("_DrawJet_")
+      TString(_infile->GetName()) + TString("_DrawJet_")
           + TString(c1->GetName()), kFALSE);
 }
 
@@ -900,7 +900,7 @@ DrawLeakage(TString infile)
       "", "colz");
 
   SaveCanvas(c1,
-      TString(_file0->GetName()) + TString("_DrawJet_")
+      TString(_infile->GetName()) + TString("_DrawJet_")
           + TString(c1->GetName()), kFALSE);
 }
 void
@@ -926,7 +926,7 @@ DrawLeakage_LY(TString infile)
       "", "colz");
 
   SaveCanvas(c1,
-      TString(_file0->GetName()) + TString("_DrawJet_")
+      TString(_infile->GetName()) + TString("_DrawJet_")
           + TString(c1->GetName()), kFALSE);
 }
 
@@ -979,7 +979,7 @@ DrawLeakage_Wide(TString infile)
       "", "colz");
 
   SaveCanvas(c1,
-      TString(_file0->GetName()) + TString("_DrawJet_")
+      TString(_infile->GetName()) + TString("_DrawJet_")
           + TString(c1->GetName()), kFALSE);
 }
 
@@ -1007,7 +1007,7 @@ DrawLeakage_Phi(TString infile)
       "", "colz");
 
   SaveCanvas(c1,
-      TString(_file0->GetName()) + TString("_DrawJet_")
+      TString(_infile->GetName()) + TString("_DrawJet_")
           + TString(c1->GetName()), kFALSE);
 }
 
@@ -1090,6 +1090,6 @@ Sampling(TString infile)
   gh2D->Fit(fsampling, "MR");
 
   SaveCanvas(c1,
-      TString(_file0->GetName()) + TString("_DrawJet_")
+      TString(_infile->GetName()) + TString("_DrawJet_")
           + TString(c1->GetName()), kFALSE);
 }

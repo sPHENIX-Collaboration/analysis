@@ -12,7 +12,7 @@
 #include <phool/getClass.h>
 
 #include <g4detectors/PHG4HcalDefs.h>
-#include <g4detectors/PHG4Parameters.h>
+#include <phparameter/PHParameters.h>
 #include <g4detectors/PHG4Cell.h>
 #include <g4detectors/PHG4CellContainer.h>
 #include <g4detectors/PHG4CellDefs.h>
@@ -21,9 +21,9 @@
 #include <g4detectors/PHG4ScintillatorSlatContainer.h>
 #include <g4detectors/PHG4ScintillatorSlatDefs.h>
 
-#include <g4cemc/RawTowerContainer.h>
-#include <g4cemc/RawTowerGeomContainer.h>
-#include <g4cemc/RawTower.h>
+#include <calobase/RawTowerContainer.h>
+#include <calobase/RawTowerGeomContainer.h>
+#include <calobase/RawTower.h>
 #include <TH1F.h>
 
 using namespace std;

@@ -7,8 +7,8 @@
 #include"PHAJMaker.h"
 #include"PseudoJetPlus.h"
 
-#include<g4cemc/RawCluster.h>
-#include<g4cemc/RawClusterContainer.h>
+#include<calobase/RawCluster.h>
+#include<calobase/RawClusterContainer.h>
 
 #include <g4hough/SvtxTrackMap.h>
 #include <g4hough/SvtxTrack.h>

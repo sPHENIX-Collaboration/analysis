@@ -12,7 +12,7 @@ void EdepPercentSmall (/*TH1 *h1*/)//const char *part="e")//,int nevent = 1000)
   int var = 11;
   double intnum[1000]  = {0};
   double varnum[1000] = {0};
-  char *part[] = {"gamma","neutron","anti_neutron"};
+  char *part[] = {"anti_neutron"};
   int i = 0;
   int w =4;
   //TCanvas *c3 = new TCanvas("TresGraphitos","stupid graph",1);
@@ -21,7 +21,7 @@ void EdepPercentSmall (/*TH1 *h1*/)//const char *part="e")//,int nevent = 1000)
   // TMarker *grmark = new TMarker();
   //	  TCanvas *c19 = new TCanvas();
   // h3->Draw();
-  for (int q=0; q<2; q++) 
+  for (int q=0; q<1; q++) 
   {
       for (int w=0; w<9;w++)
       	{

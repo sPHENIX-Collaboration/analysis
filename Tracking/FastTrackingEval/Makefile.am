@@ -1,22 +1,12 @@
 AUTOMAKE_OPTIONS = foreign
 
-INCLUDES = \
-  -I$(includedir) \
-  -I$(OFFLINE_MAIN)/include \
-  -I`root-config --incdir`
+AM_CPPFLAGS = -I$(includedir) -I$(OFFLINE_MAIN)/include -I$(ROOTSYS)/include
 
-libFastTrackingEval_la_LDFLAGS = \
-  -nodefaultlibs \
+lib_LTLIBRARIES = libFastTrackingEval.la
+
+AM_LDFLAGS = \
   -L$(libdir) \
-  -L$(OFFLINE_MAIN)/lib \
-  `root-config --libs`
-
-lib_LTLIBRARIES = \
-  libFastTrackingEval.la
-
-libFastTrackingEval_la_SOURCES = \
-  FastTrackingEval.cc \
-  FastTrackingEvalDict.C
+  -L$(OFFLINE_MAIN)/lib
 
 libFastTrackingEval_la_LIBADD = \
   -lg4detectors \
@@ -24,11 +14,23 @@ libFastTrackingEval_la_LIBADD = \
   -lg4eval \
   -lphool
 
-install-exec-hook:
-	@[ $$OSTYPE = darwin ] && ln -sf $(DESTDIR)$(libdir)/libFastTrackingEval.dylib $(DESTDIR)$(libdir)/libFastTrackingEval.so || true
+if ! MAKEROOT6
+  ROOT5_DICTS = \
+    FastTrackingEval_Dict.cc
+endif
+
+libFastTrackingEval_la_SOURCES = \
+  $(ROOT5_DICTS) \
+  FastTrackingEval.cc
+
+pkginclude_HEADERS = \
+  FastTrackingEval.h
 
 BUILT_SOURCES = \
-  testexternals.C
+  testexternals.cc
+
+testexternals_SOURCES = \
+  testexternals.cc
 
 noinst_PROGRAMS = \
   testexternals
@@ -36,18 +38,18 @@ noinst_PROGRAMS = \
 testexternals_LDADD = \
   libFastTrackingEval.la
 
-testexternals.C:
+testexternals.cc:
 	echo "//*** this is a generated file. Do not commit, do not edit" > $@
 	echo "int main()" >> $@
 	echo "{" >> $@
 	echo "  return 0;" >> $@
 	echo "}" >> $@
 
-# Rule for generating CINT dictionaries from class headers.
-%Dict.C: %.h %LinkDef.h
-	rootcint -f $@ -c $(CINTFLAGS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $^
+%_Dict.cc: %.h %LinkDef.h
+	rootcint -f $@ @CINTDEFS@ -c $(DEFAULT_INCLUDES) $(AM_CPPFLAGS) $^
+
+#just to get the dependency
+%_Dict_rdict.pcm: %_Dict.cc ;
 
 clean-local:
-	rm -f *Dict*
-
-testexternals_SOURCES = testexternals.C
+	rm -f *Dict* $(BUILT_SOURCES) *.pcm

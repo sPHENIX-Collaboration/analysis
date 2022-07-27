@@ -1,6 +1,6 @@
 int
 Fun4All_TestBeam_ShowerCalib(const int nEvents = 10000000, const char * inputFile =
-    "/phenix/u/jinhuang/links/sPHENIX_work/Prototype_2017/ShowerCalib/2nd_tower45.lst")
+    "/sphenix/user/jinhuang/Prototype_2017/ShowerCalib/JointEnergyScan1_Neg.lst")
 {
   TString s_outputFile = inputFile;
   s_outputFile += "_Ana.root";

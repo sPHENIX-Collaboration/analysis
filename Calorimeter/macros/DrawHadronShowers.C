@@ -17,9 +17,13 @@ class lin_res
   TF1 *f_res;
 };
 
-TString base_dataset = "/phenix/u/jinhuang/links/sPHENIX_work/prod_analysis/hadron_shower_res_nightly/";
+
+
+//TString base_dataset = "/phenix/u/jinhuang/links/sPHENIX_work/prod_analysis/hadron_shower_res_nightly/";
 //TString base_dataset = "/phenix/u/jinhuang/links/sPHENIX_work/prod_analysis/hadron_shower_res_hcaldigi/";
 //TString base_dataset = "/phenix/u/jinhuang/links/sPHENIX_work/prod_analysis/hadron_shower_res_hcaldigi_sampling/";
+//TString base_dataset ="/phenix/u/jinhuang/links/ePHENIX_work/sPHENIX_work/production_analysis_updates/spacal1d/fieldmap";
+TString base_dataset = "/sphenix/u/weihuma/analysis/Calorimeter/macros/";
 
 void DrawHadronShowers(void)
 {
@@ -28,8 +32,8 @@ void DrawHadronShowers(void)
 
   ClusterSizeScan("eta0", "0<|#eta|<0.1");
   //  ClusterSizeScan("eta0.60","0.6<|#eta|<0.7");
-  PIDScan();
-  EtaScan();
+ // PIDScan();
+  //EtaScan();
 }
 
 void EtaScan(void)
@@ -539,8 +543,11 @@ GetResolution(TString PID = "pi-", TString eta = "eta0", TString qa_histo = "h_Q
   int idx = 1;
   TPad *p;
 
-  for (int i = 0; i < N; ++i)
+ // for (int i = 0; i < N; ++i)
+  for (int i = 2; i < 3; ++i) //for 16GeV
   {
+  // if(i==2){ //for 16GeV
+
     p = (TPad *) c1->cd(idx++);
     c1->Update();
 
@@ -550,10 +557,10 @@ GetResolution(TString PID = "pi-", TString eta = "eta0", TString qa_histo = "h_Q
 
     TH1 *h = NULL;
 
-    if (qa_histo.Length() == 0)
+    //if (qa_histo.Length() == 0)
       h = GetEvalHisto(PID, eta, sEnergy);
-    else
-      h = GetQAHisto(PID, eta, sEnergy, qa_histo);
+  //  else
+   //   h = GetQAHisto(PID, eta, sEnergy, qa_histo);
 
     TF1 *fgaus_g = new TF1("fgaus_LG_g_" + dataset_name, "gaus",
                            h->GetMean() - 4 * h->GetRMS(), h->GetMean() + 4 * h->GetRMS());
@@ -581,6 +588,9 @@ GetResolution(TString PID = "pi-", TString eta = "eta0", TString qa_histo = "h_Q
     mean_err.push_back(fgaus->GetParError(1) * scale);
     res.push_back(fgaus->GetParameter(2) / fgaus->GetParameter(1));
     res_err.push_back(fgaus->GetParError(2) / fgaus->GetParameter(1));
+
+
+  //}// for 16GeV
   }
 
   TGraphErrors *ge_linear = new TGraphErrors(N, Ps,
@@ -614,8 +624,8 @@ TH1 *GetEvalHisto(TString PID = "pi-", TString eta = "eta0", TString energy = "1
 {
   TString dataset_name = PID + "_" + eta + "_" + energy;
   TH1 *h_E = new TH1F("h_ESumOverp_" + dataset_name, dataset_name + " h_ESumOverp;E/p;Count per bin", 100, 0, 2);
-
-  TString infile = base_dataset + "G4Hits_sPHENIX_" + dataset_name + "-*.root_g4svtx_eval.root";
+  //TString infile = base_dataset + "G4Hits_sPHENIX_" + dataset_name + "_*.root_g4svtx_eval.root";
+  TString infile = base_dataset + "G4Hits_sPHENIX_" + dataset_name + ".root_g4svtx_eval.root";
 
   TChain *ntp_track = new TChain("ntp_track");
   const int n = ntp_track->Add(infile);
@@ -632,10 +642,12 @@ TH1 *GetEvalHisto(TString PID = "pi-", TString eta = "eta0", TString energy = "1
 
 TH1 *GetQAHisto(TString PID = "pi-", TString eta = "eta0", TString energy = "16GeV", TString qa_histo = "h_QAG4Sim_CalorimeterSum_TrackProj_5x5Tower_EP")
 {
+  cout << "Weihu Ma run test " << endl; 
+ 
   TString dataset_name = PID + "_" + eta + "_" + energy;
   TH1 *h = NULL;
-
-  TString infile = base_dataset + "G4Hits_sPHENIX_" + dataset_name + "-*.root_qa.root";
+  //TString infile = base_dataset + "G4Hits_sPHENIX_" + dataset_name + "_*.root_qa.root";
+  TString infile = base_dataset + "G4Hits_sPHENIX_" + dataset_name + ".root_qa.root";
   cout << "GetQAHisto - searching " << infile << endl;
 
   TChain *T = new TChain("T");
@@ -653,15 +665,18 @@ TH1 *GetQAHisto(TString PID = "pi-", TString eta = "eta0", TString energy = "16G
     if (f.IsOpen())
     {
       TH1 *hqa = (TH1 *) f.GetObjectChecked(qa_histo, "TH1");
-
+      cout << "Weihu Ma run test1 " << endl; 
       if (hqa)
       {
+        cout << "Weihu Ma run test4 " << endl; 
         if (h)
         {
+          cout << "Weihu Ma run test2 " << endl; 
           h->Add(hqa);
         }
         else
         {
+          cout << "Weihu Ma run test3 " << endl; 
           h = (TH1 *) (hqa->Clone(TString(hqa->GetName()) + "_" + dataset_name));
           h->SetDirectory(NULL);
           assert(h);
@@ -669,7 +684,7 @@ TH1 *GetQAHisto(TString PID = "pi-", TString eta = "eta0", TString energy = "16G
       }
     }
   }
-  assert(h);
+  //assert(h);
 
   return h;
 }

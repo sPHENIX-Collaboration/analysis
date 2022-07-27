@@ -82,3 +82,9 @@ tmtags
 
 # For rubinius:
 *.rbc
+
+# CVS
+/CVS/*
+**/CVS/*
+.cvsignore
+*/.cvsignore

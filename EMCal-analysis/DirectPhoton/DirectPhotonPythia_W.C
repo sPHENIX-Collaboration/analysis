@@ -24,12 +24,14 @@
 #include <g4jets/Jet.h>
 
 #include <phhepmc/PHHepMCGenEvent.h>
+#include <phhepmc/PHHepMCGenEventMap.h>
 #include <HepMC/GenEvent.h>
 #include <HepMC/GenVertex.h>
 using namespace std;
 
 DirectPhotonPythia::DirectPhotonPythia(std::string filename) :
-    SubsysReco("DirectPhoton" )
+    SubsysReco("DirectPhoton" ),
+    _embedding_id(1)
 {
 
   _foutname = filename;
@@ -72,8 +74,22 @@ DirectPhotonPythia::process_event(PHCompositeNode *topNode)
 {
   _ievent ++;
 
-  PHHepMCGenEvent *genevt = findNode::getClass<PHHepMCGenEvent>(topNode,
-      "PHHepMCGenEvent");
+  PHHepMCGenEventMap * geneventmap = findNode::getClass<PHHepMCGenEventMap>(topNode, "PHHepMCGenEventMap");
+  if (!geneventmap)
+  {
+    std::cout <<PHWHERE<<" - Fatal error - missing node PHHepMCGenEventMap"<<std::endl;
+    return Fun4AllReturnCodes::ABORTRUN;
+  }
+
+  PHHepMCGenEvent *genevt = geneventmap->get(_embedding_id);
+  if (!genevt)
+  {
+    std::cout <<PHWHERE<<" - Fatal error - node PHHepMCGenEventMap missing subevent with embedding ID "<<_embedding_id;
+    std::cout <<". Print PHHepMCGenEventMap:";
+    geneventmap->identify();
+    return Fun4AllReturnCodes::ABORTRUN;
+  }
+
   HepMC::GenEvent* theEvent = genevt->getEvent();
   
 

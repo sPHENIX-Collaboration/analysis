@@ -20,13 +20,15 @@
 //#include <iostream>
 
 #include <phhepmc/PHHepMCGenEvent.h>
+#include <phhepmc/PHHepMCGenEventMap.h>
 #include <HepMC/GenEvent.h>
 #include <HepMC/GenVertex.h>
 
 using namespace std;
 
 Quarkonia2LeptonsMC::Quarkonia2LeptonsMC(std::string filename) :
-  SubsysReco("Quarkonia2LeptonsMC" )
+  SubsysReco("Quarkonia2LeptonsMC" ),
+  _embedding_id(1)
 {
   _foutname = filename;
   _tree_quarkonia = NULL;
@@ -53,8 +55,22 @@ Quarkonia2LeptonsMC::process_event(PHCompositeNode *topNode)
 
   //  cout << "Process event # " << _ievent << endl;
 
-  PHHepMCGenEvent *genevt = findNode::getClass<PHHepMCGenEvent>(topNode,
-                                                                "PHHepMCGenEvent");
+  PHHepMCGenEventMap * geneventmap = findNode::getClass<PHHepMCGenEventMap>(topNode, "PHHepMCGenEventMap");
+  if (!geneventmap)
+  {
+    std::cout <<PHWHERE<<" - Fatal error - missing node PHHepMCGenEventMap"<<std::endl;
+    return Fun4AllReturnCodes::ABORTRUN;
+  }
+
+  PHHepMCGenEvent *genevt = geneventmap->get(_embedding_id);
+  if (!genevt)
+  {
+    std::cout <<PHWHERE<<" - Fatal error - node PHHepMCGenEventMap missing subevent with embedding ID "<<_embedding_id;
+    std::cout <<". Print PHHepMCGenEventMap:";
+    geneventmap->identify();
+    return Fun4AllReturnCodes::ABORTRUN;
+  }
+
   HepMC::GenEvent* theEvent = genevt->getEvent();
 
   for (HepMC::GenEvent::particle_const_iterator p = theEvent->particles_begin();

@@ -64,7 +64,7 @@ DrawEcal(void)
 void
 DrawEnergyDensity(
     const TString infile =
-        "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/sHijing/spacal2d/G4Hits_sPHENIX_sHijing-0-4.4fm_ALL.root_EMCalAna.root",
+      "/direct/phenix+sim02/phnxreco/ePHENIX/jinhuang/sPHENIX_work/production_analysis/sHijing/spacal2d/G4Hits_sPHENIX_sHijing-0-4.4fm_ALL.root_EMCalAna.root",
     const TString title = "HIJING Au+Au 0-10% C + Geant4")
 {
   TH1 * EMCalAna_h_CEMC_RZ = DrawTower_Load(infile, "EMCalAna_h_CEMC_RZ");

@@ -48,9 +48,10 @@ end
 foreach energy ($energys)
 	foreach pid ($pids)
 	
-		echo root -b -q "Fun4All_EMCalLikelihood.C(10000000, ${q}${base_dir}${q}, ${q}${pid}${q}, ${q}${kine_config}_${energy}${q})";
-		root -b -q "Fun4All_EMCalLikelihood.C(10000000, ${q}${base_dir}${q}, ${q}${pid}${q}, ${q}${kine_config}_${energy}${q})" & ;
-
+		echo root -b -q "Fun4All_EMCalLikelihood.C(1000, ${q}${base_dir}${q}, ${q}${pid}${q}, ${q}${kine_config}_${energy}${q})";
+		root -b -q "Fun4All_EMCalLikelihood.C(1000, ${q}${base_dir}${q}, ${q}${pid}${q}, ${q}${kine_config}_${energy}${q})" & ;
+# echo root -b -q "Fun4All_EMCalLikelihood.C(10000000, ${q}${base_dir}${q}, ${q}${pid}${q}, ${q}${kine_config}_${energy}${q})";
+#root -b -q "Fun4All_EMCalLikelihood.C(10000000, ${q}${base_dir}${q}, ${q}${pid}${q}, ${q}${kine_config}_${energy}${q})" & ;
 	end
 end
 		wait;
@@ -70,9 +71,9 @@ end
 foreach energy ($energys)
 	foreach pid ($pids)
 	
-		echo root -b -q "Fun4All_EMCalLikelihood.C(10000000, ${q}${base_dir}${q}, ${q}${pid}${q}, ${q}${kine_config}_${energy}${q})";
+		echo root -b -q "Fun4All_EMCalLikelihood.C(1000, ${q}${base_dir}${q}, ${q}${pid}${q}, ${q}${kine_config}_${energy}${q})";
 
-		root -b -q "Fun4All_EMCalLikelihood.C(10000000, ${q}${base_dir}${q}, ${q}${pid}${q}, ${q}${kine_config}_${energy}${q})" & ;
+		root -b -q "Fun4All_EMCalLikelihood.C(1000, ${q}${base_dir}${q}, ${q}${pid}${q}, ${q}${kine_config}_${energy}${q})" & ;
 
 	end
 end
