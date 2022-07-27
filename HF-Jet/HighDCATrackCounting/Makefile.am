@@ -11,13 +11,15 @@ AM_LDFLAGS = \
   -L$(OFFLINE_MAIN)/lib64
 
 pkginclude_HEADERS = \
-  BJetModule.h
+  BJetModule.h \
+  TracksInJets.h
 
 lib_LTLIBRARIES = \
   libBJetModule.la
 
 libBJetModule_la_SOURCES = \
-  BJetModule.cc
+  BJetModule.cc \
+  TracksInJets.cc
 
 libBJetModule_la_LIBADD = \
   -lphool \

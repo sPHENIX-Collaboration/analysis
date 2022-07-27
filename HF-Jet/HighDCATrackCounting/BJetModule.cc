@@ -453,7 +453,7 @@ int BJetModule::process_event(PHCompositeNode *topNode)
 
     if (track_pt < 0.5)
       continue;
-    if (fabs(track_eta) > 1)
+    if (fabs(track_eta) > 1.1)
       continue;
 
     //std::set<PHG4Hit*> assoc_hits = trackeval->all_truth_hits(track);//TODO
