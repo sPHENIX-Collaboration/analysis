@@ -42,7 +42,20 @@ void runall()
   Fun4AllInputManager *in = new Fun4AllDstInputManager("in");
   in->Verbosity(1);
   se->registerInputManager(in);
+<<<<<<< HEAD
+  //in->AddFile("/sphenix/u/weihuma/RunOutput/embedDST_sHijing_upsilon_0_20fm_ElectronPid_DST.root");
+
+  in->AddFile("/sphenix/sim/sim01/sphnxpro/MDC1/embed/embedDST_sHijing_0_20fm_50kHz_bkg_0_20fm-0000000001-04594.root");  
+  in->AddFile("/sphenix/sim/sim01/sphnxpro/MDC1/embed/embedDST_sHijing_0_20fm_50kHz_bkg_0_20fm-0000000001-04595.root");
+  in->AddFile("/sphenix/sim/sim01/sphnxpro/MDC1/embed/embedDST_sHijing_0_20fm_50kHz_bkg_0_20fm-0000000001-04596.root");
+  in->AddFile("/sphenix/sim/sim01/sphnxpro/MDC1/embed/embedDST_sHijing_0_20fm_50kHz_bkg_0_20fm-0000000001-04597.root");
+  in->AddFile("/sphenix/sim/sim01/sphnxpro/MDC1/embed/embedDST_sHijing_0_20fm_50kHz_bkg_0_20fm-0000000001-04598.root");
+  in->AddFile("/sphenix/sim/sim01/sphnxpro/MDC1/embed/embedDST_sHijing_0_20fm_50kHz_bkg_0_20fm-0000000001-04599.root");
+
+
+=======
   in->AddFile("/sphenix/sim/sim01/sphnxpro/MDC1/embedpion/embedpionsDST_sHijing_0_20fm_50kHz_bkg_0_20fm-0000000002-00096.root");
+>>>>>>> 6fa350a055cd11523f7e69e0d485d4cf2fa13969
   //in->AddListFile("listmb2.txt");
 
   Fun4AllOutputManager *outee = new Fun4AllDstOutputManager("outee","ElectronPid_PairMaker_DST.root");

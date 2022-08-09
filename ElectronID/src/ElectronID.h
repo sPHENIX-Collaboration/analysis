@@ -21,6 +21,9 @@
 
 #include <TFile.h>
 #include <TNtuple.h>
+#include "TMVA/Tools.h"
+#include "TMVA/Reader.h"
+#include <TMVA/MethodCuts.h>
 
 // forward declarations
 class PHCompositeNode;
@@ -68,16 +71,22 @@ public:
 
   void set_output_ntuple(bool outputntuple) {output_ntuple = outputntuple;}
 
+  /// set MVA cut
+  void setBDTcut(int isuseBDT_p, int isuseBDT_n, float bdtcut_p, float bdtcut_n) {ISUSE_BDT_p= isuseBDT_p; ISUSE_BDT_n= isuseBDT_n; BDT_cut_p = bdtcut_p; BDT_cut_n = bdtcut_n;}
+
+
 protected:
   bool output_ntuple;
 
   TFile* OutputNtupleFile;
   std::string OutputFileName;
+  TNtuple* ntpBDTresponse; //write ntuple for BDTresponse
   TNtuple* ntpbeforecut; //write ntuple before any cuts
   TNtuple* ntpcutEMOP; //write ntuple with only EMOP cut
   TNtuple* ntpcutEMOP_HinOEM; //write ntuple with EMOP & HinOEM cuts
   TNtuple* ntpcutEMOP_HinOEM_Pt; //write ntuple with EMOP & HinOEM & Pt cuts
   TNtuple* ntpcutEMOP_HinOEM_Pt_read; //write ntuple with EMOP & HinOEM & Pt cuts in the situation of reading back the association map.
+  TNtuple* ntpcutBDT_read; //write ntuple with BDT & Pt cuts in the situation of reading back the association map.
 
   TNtuple* ntpcutHOP; //write ntuple with only HOP cut
 
@@ -122,6 +131,10 @@ PHG4Particle* findMCmatch(SvtxTrack* track, PHG4TruthInfoContainer* truth_contai
 
 /// A float higher limit for cutting on quality
   float Nquality_higherlimit;
+
+/// MVA cut 
+  float BDT_cut_p, BDT_cut_n;
+  int ISUSE_BDT_p, ISUSE_BDT_n;//0 for no; 1 for yes
 
   unsigned int _nlayers_maps = 3;
   unsigned int _nlayers_intt = 4;

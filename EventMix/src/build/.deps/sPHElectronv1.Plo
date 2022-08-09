@@ -3,7 +3,7 @@ sPHElectronv1.lo: \
  /usr/include/stdc-predef.h \
  /sphenix/u/weihuma/analysis/EventMix/src/sPHElectronv1.h \
  /sphenix/u/weihuma/analysis/EventMix/src/sPHElectron.h \
- /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/release/release_new/new.1/include/phool/PHObject.h \
+ /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/release/release_old/old.1/include/phool/PHObject.h \
  /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/opt/sphenix/core/root-6.22.02/include/TObject.h \
  /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/opt/sphenix/core/root-6.22.02/include/RConfigure.h \
  /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/opt/sphenix/core/root-6.22.02/include/Rtypes.h \
@@ -178,10 +178,10 @@ sPHElectronv1.lo: \
  /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/opt/sphenix/core/gcc/8.3.0.1-0a5ad/x86_64-centos7/include/c++/8.3.0/tr1/poly_hermite.tcc \
  /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/opt/sphenix/core/gcc/8.3.0.1-0a5ad/x86_64-centos7/include/c++/8.3.0/tr1/poly_laguerre.tcc \
  /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/opt/sphenix/core/gcc/8.3.0.1-0a5ad/x86_64-centos7/include/c++/8.3.0/tr1/riemann_zeta.tcc \
- /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/release/release_new/new.1/include/trackbase_historic/SvtxTrack.h \
- /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/release/release_new/new.1/include/trackbase_historic/SvtxTrackState.h \
- /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/release/release_new/new.1/include/trackbase/TrkrDefs.h \
- /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/release/release_new/new.1/include/g4main/PHG4HitDefs.h \
+ /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/release/release_old/old.1/include/trackbase_historic/SvtxTrack.h \
+ /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/release/release_old/old.1/include/trackbase_historic/SvtxTrackState.h \
+ /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/release/release_old/old.1/include/trackbase/TrkrDefs.h \
+ /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/release/release_old/old.1/include/g4main/PHG4HitDefs.h \
  /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/opt/sphenix/core/gcc/8.3.0.1-0a5ad/x86_64-centos7/include/c++/8.3.0/map \
  /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/opt/sphenix/core/gcc/8.3.0.1-0a5ad/x86_64-centos7/include/c++/8.3.0/bits/stl_tree.h \
  /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/opt/sphenix/core/gcc/8.3.0.1-0a5ad/x86_64-centos7/include/c++/8.3.0/ext/aligned_buffer.h \
@@ -204,7 +204,7 @@ sPHElectronv1.lo: \
 
 /sphenix/u/weihuma/analysis/EventMix/src/sPHElectron.h:
 
-/cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/release/release_new/new.1/include/phool/PHObject.h:
+/cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/release/release_old/old.1/include/phool/PHObject.h:
 
 /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/opt/sphenix/core/root-6.22.02/include/TObject.h:
 
@@ -620,13 +620,13 @@ sPHElectronv1.lo: \
 
 /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/opt/sphenix/core/gcc/8.3.0.1-0a5ad/x86_64-centos7/include/c++/8.3.0/tr1/riemann_zeta.tcc:
 
-/cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/release/release_new/new.1/include/trackbase_historic/SvtxTrack.h:
+/cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/release/release_old/old.1/include/trackbase_historic/SvtxTrack.h:
 
-/cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/release/release_new/new.1/include/trackbase_historic/SvtxTrackState.h:
+/cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/release/release_old/old.1/include/trackbase_historic/SvtxTrackState.h:
 
-/cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/release/release_new/new.1/include/trackbase/TrkrDefs.h:
+/cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/release/release_old/old.1/include/trackbase/TrkrDefs.h:
 
-/cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/release/release_new/new.1/include/g4main/PHG4HitDefs.h:
+/cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/release/release_old/old.1/include/g4main/PHG4HitDefs.h:
 
 /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/opt/sphenix/core/gcc/8.3.0.1-0a5ad/x86_64-centos7/include/c++/8.3.0/map:
 
