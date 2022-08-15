@@ -1,0 +1,23 @@
+Universe        = vanilla
+
+Notification    = Never
+Priority        = 1
+
+nEvents         = 1
+filename        = MinBias50kHzHijing_dailybuild
+outfile         = $(filename)_$(Process)_.root
+njobs           = 1
+
+Executable      = Run50kHzMBHijing.csh
+Output          = logfiles/$(filename)_$(Process).out
+Error           = logfiles/$(filename)_$(Process).err
+Log             = logfiles/$(filename)_$(Process).log
+
+Arguments       = $(Process) $(nEvents) $(outfile) 
+
+PeriodicHold = (NumJobStarts>=1 && JobStatus == 1)
+request_memory = 12.0GB
+accounting_group = group_sphenix.mdc2
+accounting_group_user = jdosbo
+Requirements = (CPU_Type == "mdc2")
+Queue    $(njobs)
