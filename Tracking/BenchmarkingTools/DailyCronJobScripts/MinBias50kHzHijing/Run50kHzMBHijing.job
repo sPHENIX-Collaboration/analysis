@@ -5,13 +5,13 @@ Priority        = 500
 
 nEvents         = 1
 filename        = MinBias50kHzHijing_dailybuild
-outfile         = $(filename)_$(Process)_.root
+outfile         = $(filename)_$(Process)_
 njobs           = 3
 
 Executable      = Run50kHzMBHijing.sh
-Output          = logfiles/$(filename)_$(Process).out
-Error           = logfiles/$(filename)_$(Process).err
-Log             = logfiles/$(filename)_$(Process).log
+Output          = logfiles/$(filename)_$(Process)_.out
+Error           = logfiles/$(filename)_$(Process)_.err
+Log             = logfiles/$(filename)_$(Process)_.log
 
 Arguments       = $(Process) $(nEvents) $(outfile) 
 

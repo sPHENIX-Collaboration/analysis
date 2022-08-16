@@ -38,6 +38,6 @@ pwd
 
 root -b -q  'Fun4All_G4_sPHENIX.C('$nevents', '$runno', "'$strembed0'" ,  "'$strembed1'", "'$strembed2'", "'$strout'" )'
 
-mv $strout\_$runno\_*.root ../../../../../../../../
+mv $strout*.root ../../../../../../../../
 cd ../../../
-mv logfiles/$strout\_$runno.out ../../../../../
+mv logfiles/$strout.out ../../../../../
