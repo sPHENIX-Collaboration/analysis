@@ -18,6 +18,6 @@ Arguments       = $(Process) $(nEvents) $(outfile)
 PeriodicHold = (NumJobStarts>=1 && JobStatus == 1)
 request_memory = 12.0GB
 accounting_group = group_sphenix.mdc2
-accounting_group_user = jdosbo
+accounting_group_user = sphnxpro
 Requirements = (CPU_Type == "mdc2")
 Queue    $(njobs)
