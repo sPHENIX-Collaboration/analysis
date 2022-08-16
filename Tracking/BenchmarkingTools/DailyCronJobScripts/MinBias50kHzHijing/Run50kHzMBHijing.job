@@ -6,7 +6,7 @@ Priority        = 500
 nEvents         = 1
 filename        = MinBias50kHzHijing_dailybuild
 outfile         = $(filename)_$(Process)_.root
-njobs           = 1
+njobs           = 3
 
 Executable      = Run50kHzMBHijing.sh
 Output          = logfiles/$(filename)_$(Process).out

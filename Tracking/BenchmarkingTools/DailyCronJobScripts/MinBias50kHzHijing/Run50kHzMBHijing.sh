@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #setup default new environment for job
-source /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/opt/sphenix/core/bin/sphenix_setup.sh -n new.1
+source /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/opt/sphenix/core/bin/sphenix_setup.sh -n
 
 
 # input parameters
@@ -37,16 +37,7 @@ echo "pwd is: "
 pwd
 
 root -b -q  'Fun4All_G4_sPHENIX.C('$nevents', '$runno', "'$strembed0'" ,  "'$strembed1'", "'$strembed2'", "'$strout'" )'
-echo "PWD is " 
-pwd
-ls -lt
 
 mv *.root ../../../../../../../../
-echo "Check back directory"
-ls -lt ../../../../../../../../
 cd ../../../
-pwd
-ls -lt
 mv logfiles/*.out ../../../../../
-echo "Check logfile"
-ls -lt ../../../../../
