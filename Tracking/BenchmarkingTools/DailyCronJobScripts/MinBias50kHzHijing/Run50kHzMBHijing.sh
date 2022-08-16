@@ -1,15 +1,15 @@
-#!/bin/csh
+#!/bin/sh
 
 #setup default new environment for job
-source /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/opt/sphenix/core/bin/sphenix_setup.csh -n
+source /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/opt/sphenix/core/bin/sphenix_setup.sh -n new.1
 
 
 # input parameters
 echo "input process num: " $1
 echo "nEvents: " $2
-set runno = $1
-set nevents = $2
-set strout = $3
+runno=$1
+nevents=$2
+strout=$3
 
 echo "In directory: " 
 pwd
@@ -22,9 +22,9 @@ echo "Executing on date $(date +"%d-%m-%Y")"
 
 # Construct the G4Hits DST files to access. These are MinBias 50 kHz pile up AuAu
 # events
-set strembed0=`printf "DST_TRUTH_G4HIT_sHijing_0_20fm_50kHz_bkg_0_20fm-0000000004-0"`
-set strembed1=`printf "DST_TRKR_G4HIT_sHijing_0_20fm_50kHz_bkg_0_20fm-0000000004-0"`
-set strembed2=`printf "DST_CALO_G4HIT_sHijing_0_20fm_50kHz_bkg_0_20fm-0000000004-0"`
+strembed0="DST_TRUTH_G4HIT_sHijing_0_20fm_50kHz_bkg_0_20fm-0000000004-0"
+strembed1="DST_TRKR_G4HIT_sHijing_0_20fm_50kHz_bkg_0_20fm-0000000004-0"
+strembed2="DST_CALO_G4HIT_sHijing_0_20fm_50kHz_bkg_0_20fm-0000000004-0"
 
 echo $strembed0
 echo $strembed1

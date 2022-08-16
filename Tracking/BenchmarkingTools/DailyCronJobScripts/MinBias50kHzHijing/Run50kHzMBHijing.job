@@ -8,7 +8,7 @@ filename        = MinBias50kHzHijing_dailybuild
 outfile         = $(filename)_$(Process)_.root
 njobs           = 1
 
-Executable      = Run50kHzMBHijing.csh
+Executable      = Run50kHzMBHijing.sh
 Output          = logfiles/$(filename)_$(Process).out
 Error           = logfiles/$(filename)_$(Process).err
 Log             = logfiles/$(filename)_$(Process).log

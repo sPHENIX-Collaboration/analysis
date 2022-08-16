@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/opt/sphenix/core/bin/sphenix_setup.sh -n
+source /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/opt/sphenix/core/bin/sphenix_setup.sh -n new.1
 
 cd /sphenix/sim/sim01/sphnxpro/TrackingDailyBuild/
 if [ ! -d "$(date +"%Y")" ]; then
