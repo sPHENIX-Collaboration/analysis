@@ -16,7 +16,10 @@ cd "$(date +"%d-%m")"
 
 git clone git@github.com:sPHENIX-Collaboration/analysis.git
 
-cd analysis/Tracking/BenchMarkingTools/DailyCronJobScripts/MinBias50kHzHijing
+cd analysis/Tracking/BenchmarkingTools/DailyCronJobScripts/MinBias50kHzHijing
+
 mkdir logfiles
+
+git clone -b QA-tracking-mbhijing git@github.com:sPHENIX-Collaboration/macros.git
 
 condor_submit Run50kHzMBHijing.job

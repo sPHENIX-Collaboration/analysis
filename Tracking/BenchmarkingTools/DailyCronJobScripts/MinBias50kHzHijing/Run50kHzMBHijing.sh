@@ -30,10 +30,23 @@ echo $strembed0
 echo $strembed1
 echo $strembed2
 
-git clone -b QA-tracking-mbhijing git@github.com:sPHENIX-Collaboration/macros.git
+
 cd macros/detectors/sPHENIX
 
 echo "pwd is: "
 pwd
 
 root -b -q  'Fun4All_G4_sPHENIX.C('$nevents', '$runno', "'$strembed0'" ,  "'$strembed1'", "'$strembed2'", "'$strout'" )'
+echo "PWD is " 
+pwd
+ls -lt
+
+mv *.root ../../../../../../../../
+echo "Check back directory"
+ls -lt ../../../../../../../../
+cd ../../../
+pwd
+ls -lt
+mv logfiles/*.out ../../../../../
+echo "Check logfile"
+ls -lt ../../../../../

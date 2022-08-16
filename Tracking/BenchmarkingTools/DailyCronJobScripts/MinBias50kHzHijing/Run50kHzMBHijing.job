@@ -1,7 +1,7 @@
 Universe        = vanilla
 
 Notification    = Never
-Priority        = 1
+Priority        = 500
 
 nEvents         = 1
 filename        = MinBias50kHzHijing_dailybuild
