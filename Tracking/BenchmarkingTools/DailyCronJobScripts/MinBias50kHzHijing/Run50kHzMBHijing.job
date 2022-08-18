@@ -3,10 +3,10 @@ Universe        = vanilla
 Notification    = Never
 Priority        = 500
 
-nEvents         = 1
+nEvents         = 5
 filename        = MinBias50kHzHijing_dailybuild
 outfile         = $(filename)_$(Process)_
-njobs           = 3
+njobs           = 100
 
 Executable      = Run50kHzMBHijing.sh
 Output          = logfiles/$(filename)_$(Process)_.out
