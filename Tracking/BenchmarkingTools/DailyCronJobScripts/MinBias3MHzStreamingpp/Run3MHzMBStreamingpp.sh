@@ -18,7 +18,7 @@ echo "Run number: " $runno
 echo "events " $nevents
 echo "outputFile: " $strout
 echo "Executing with build contained in " $OFFLINE_MAIN
-echo "Executing on date $(date +"%d-%m-%Y")"
+echo "Executing on date and time $(date +"%d-%m-%Y-%T")"
 
 # Construct the G4Hits DST files to access. These are MinBias 50 kHz pile up AuAu
 # events
