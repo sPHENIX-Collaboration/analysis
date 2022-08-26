@@ -15,6 +15,8 @@ if [ ! -d "$(date +"%d-%m")" ]; then
 fi
 cd "$(date +"%d-%m")"
 
+mkdir MinBias50kHzHijingOutput
+
 git clone git@github.com:sPHENIX-Collaboration/analysis.git MinBias50kHzHijing
 
 cd MinBias50kHzHijing/Tracking/BenchmarkingTools/DailyCronJobScripts/MinBias50kHzHijing

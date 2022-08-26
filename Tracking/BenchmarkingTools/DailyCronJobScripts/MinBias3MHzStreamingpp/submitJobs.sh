@@ -15,6 +15,8 @@ if [ ! -d "$(date +"%d-%m")" ]; then
 fi
 cd "$(date +"%d-%m")"
 
+mkdir MinBias3MHzStreamingppOutput
+
 git clone git@github.com:sPHENIX-Collaboration/analysis.git MinBias3MHzStreamingpp
 
 cd MinBias3MHzStreamingpp/Tracking/BenchmarkingTools/DailyCronJobScripts/MinBias3MHzStreamingpp
