@@ -76,7 +76,7 @@ void plotTimes(std::map<std::string, std::vector<double>>& modules,
       histo->Write();
       myText(0.2,0.96,kBlack,moduleName.c_str());
       canname<<".png";
-      can->Print(canname.str().c_str());
+      //can->Print(canname.str().c_str());
     }
 
   TH1F *totalTimes = new TH1F("totalTime",";time [ms]",nbins,bins);
