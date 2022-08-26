@@ -17,12 +17,12 @@ cd "$(date +"%d-%m")"
 
 mkdir MinBias3MHzStreamingppOutput
 
-git clone git@github.com:sPHENIX-Collaboration/analysis.git MinBias3MHzStreamingpp
+git clone https://github.com/sPHENIX-Collaboration/analysis.git MinBias3MHzStreamingpp
 
 cd MinBias3MHzStreamingpp/Tracking/BenchmarkingTools/DailyCronJobScripts/MinBias3MHzStreamingpp
 
 mkdir logfiles
 
-git clone -b QA-tracking-streamingpp git@github.com:sPHENIX-Collaboration/macros.git
+git clone -b QA-tracking-streamingpp https://github.com/sPHENIX-Collaboration/macros.git
 
 condor_submit Run3MHzMBStreamingpp.job

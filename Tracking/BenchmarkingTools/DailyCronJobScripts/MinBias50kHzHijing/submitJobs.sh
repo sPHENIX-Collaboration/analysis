@@ -17,12 +17,12 @@ cd "$(date +"%d-%m")"
 
 mkdir MinBias50kHzHijingOutput
 
-git clone git@github.com:sPHENIX-Collaboration/analysis.git MinBias50kHzHijing
+git clone https://github.com/sPHENIX-Collaboration/analysis.git MinBias50kHzHijing
 
 cd MinBias50kHzHijing/Tracking/BenchmarkingTools/DailyCronJobScripts/MinBias50kHzHijing
 
 mkdir logfiles
 
-git clone -b QA-tracking-mbhijing git@github.com:sPHENIX-Collaboration/macros.git
+git clone -b QA-tracking-mbhijing https://github.com/sPHENIX-Collaboration/macros.git
 
 condor_submit Run50kHzMBHijing.job
