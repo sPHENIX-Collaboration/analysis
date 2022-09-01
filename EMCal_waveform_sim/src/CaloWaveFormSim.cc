@@ -78,7 +78,6 @@ int CaloWaveFormSim::Init(PHCompositeNode*)
     {
       noise->SetBranchAddress(Form("a%d",i+1),&noise_val[i]);
     }
-  int nentries = noise->GetEntries();
   
   hm = new Fun4AllHistoManager(Name());
   outfile = new TFile(outfilename.c_str(), "RECREATE");
