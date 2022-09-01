@@ -45,7 +45,7 @@ double CaloWaveFormSim::template_function(double *x, double *par)
 }
 CaloWaveFormSim::CaloWaveFormSim(const std::string& name, const std::string& filename)
   : SubsysReco(name)
-  , detector("HCALIN")
+  , detector("CEMC")
   , outfilename(filename)
   , hm(nullptr)
   , outfile(nullptr)
