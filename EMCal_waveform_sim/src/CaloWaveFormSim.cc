@@ -241,12 +241,13 @@ int CaloWaveFormSim::process_g4hits(PHCompositeNode* topNode)
       //Convert the G4hit into a waveform contribution
       //---------------------------------------------------------------------
       float t0 = 0.5*(hit_iter->second->get_t(0)+hit_iter->second->get_t(1)) / 16.66667;   //Average of g4hit time downscaled by 16.667 ns/time sample 
-      f_fit->SetParameters(hit_iter->second->get_edep()*673,_shiftval+t0,0);            //Set the waveform template to match the expected signal from such a hit
-      tedep[towernumber] += hit_iter->second->get_edep()*673;    // add g4hit adc deposition to the total deposition (scale 673 maps GeV to ADC from test beam data) 
+      
+      f_fit->SetParameters(hit_iter->second->get_edep()*673*50,_shiftval+t0,0);            //Set the waveform template to match the expected signal from such a hit
+      tedep[towernumber] += hit_iter->second->get_edep()*673*50;    // add g4hit adc deposition to the total deposition (scale 673 maps GeV to ADC from test beam data) 
       //-------------------------------------------------------------------------------------------------------------
       //For each tower add the new waveform contribution to the total waveform
        //-------------------------------------------------------------------------------------------------------------
-     if (hit_iter->second->get_edep()*673 > 1)
+     if (hit_iter->second->get_edep()*673*50 > 1)
 	{
 	  for (int j = 0; j < 16;j++) // 16 is the number of time samples
 	    {
@@ -265,16 +266,35 @@ int CaloWaveFormSim::process_g4hits(PHCompositeNode* topNode)
   }
   //----------------------------------------------------------------------------------------
   //For each tower loop over add a noise waveform 
-  //(from cosmic data, gain is too high but is a source of noise)
+  //from cosmic data, gain is too high but is corrected for
   //----------------------------------------------------------------------------------------
   for (int i = 0; i < 24576;i++)
     {
-      int noise_waveform  = (int)rnd->Uniform(0,383999);
-      noise->GetEntry(noise_waveform);
+      int maxbin = 0;
+      bool redraw = true;
+      // std::cout << i << std::endl;
+      while (redraw)
+	{
+	  int noise_waveform  = (int)rnd->Uniform(0,383999);
+	  noise->GetEntry(noise_waveform);
+	  float maxval = 0;
+	  for (int k = 0; k < 16;k++)
+	    {
+	      if (noise_val[k] > maxval)
+		{
+		  maxval = noise_val[k]; 
+		  maxbin = k;
+		}
+	    }
+	  // std::cout << maxbin << std::endl;
+	  if (maxbin < 10){redraw = false;}
+	}
       m_tedep[i] = tedep[i];
       for (int k = 0; k < 16;k++)
 	{
-	  m_waveform[i][k] = waveform[i][k]+noise_val[k];
+	  //m_waveform[i][k] = waveform[i][k];
+	  m_waveform[i][k] = waveform[i][k]+(noise_val[k]-1500)/16+1500;
+	  // m_waveform[i][k] = waveform[i][k]+(noise_val[k]);
 	}
     }
 
