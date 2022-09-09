@@ -3,10 +3,10 @@ from os import environ
 import argparse
 
 parser = argparse.ArgumentParser(description='sPHENIX MDC2 Reco Job Creator')
-parser.add_argument('-i', '--inputType', default="CHARM", help='Input type: PYTHIA8_PP_MB, HIJING_[0-20/0-4P88], HF_CHARM[D0], HF_BOTTOM[D0], JET_[10GEV/30GEV/PHOTON], SINGLE_PARTICLE')
+parser.add_argument('-i', '--inputType', default="HF_CHARM", help='Input type: PYTHIA8_PP_MB, HIJING_[0-20/0-4P88], HF_CHARM[D0], HF_BOTTOM[D0], JET_[10GEV/30GEV/PHOTON], SINGLE_PARTICLE')
 parser.add_argument('-f', '--nFilesPerJob', default=5, type=int, help='Number of input files to pass to each job')
 parser.add_argument('-t', '--nTotEvents', default=-1, type=int, help='Total number of events to run over')
-parser.add_argument('-r', '--run', default=-5, type=int, help='Production run to use')
+parser.add_argument('-r', '--run', default=40, type=int, help='Production run to use')
 parser.add_argument('--nopileup', help='Get data without pileup', action="store_true")
 parser.add_argument('--truth', help='Enable truth DST reading', action="store_true")
 parser.add_argument('--calo', help='Enable calo DST reading', action="store_true")
@@ -21,18 +21,22 @@ inputType = args.inputType.upper()
 types = {'PYTHIA8_PP_MB' : 3, 'HIJING_0-20' : 4, 'HIJING_0-4P88' : 6, 'HF_CHARM' : 7, 'HF_BOTTOM' : 8, 'HF_CHARMD0' : 9, 'HF_BOTTOMD0' : 10
         , 'JET_30GEV' : 11, 'JET_10GEV' : 12, 'JET_PHOTON' : 13, 'SINGLE_PARTICLE' : 14 }
 if inputType not in types:
-  print("The argument, {}, was not known. Use --help to see available types".format(args.type))
+  print("The argument, {}, was not known. Use --help to see available types".format(args.inputType))
   sys.exit()
+
 
 dstSets = ['DST_TRACKS', 'DST_VERTEX']
 if args.truth: 
+    args.g4hit = False
     dstSets.append('DST_TRUTH')
-    dstSets.append('DST_TRUTH_G4HIT')
     dstSets.append('DST_TRKR_G4HIT')
 if args.calo: dstSets.append('DST_CALO_CLUSTER')
 if args.trkr_hit: dstSets.append('DST_TRKR_HIT')
-if args.bbc_g4hit: dstSets.append('DST_BBC_G4HIT')
+if args.bbc_g4hit:
+    args.g4hit = False
+    dstSets.append('DST_BBC_G4HIT')
 if args.g4hit: dstSets.append('G4Hits')
+
 
 myShell = str(environ['SHELL'])
 goodShells = ['/bin/bash', '/bin/tcsh']
