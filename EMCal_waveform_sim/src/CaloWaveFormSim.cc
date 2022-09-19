@@ -15,13 +15,21 @@
 #include <calobase/RawTowerContainer.h>
 #include <calobase/RawTowerGeom.h>
 #include <calobase/RawTowerGeomContainer.h>
-
+#include <calobase/RawTowerDefs.h>
 // Cluster includes
 #include <calobase/RawCluster.h>
 #include <calobase/RawClusterContainer.h>
 
 #include <fun4all/Fun4AllHistoManager.h>
 #include <fun4all/Fun4AllReturnCodes.h>
+
+
+#include "g4detectors/PHG4CylinderGeomContainer.h"
+#include "g4detectors/PHG4CylinderGeom_Spacalv1.h"  // for PHG4CylinderGeom_Spaca...
+#include "g4detectors/PHG4CylinderGeom_Spacalv3.h"
+#include "g4detectors/PHG4CylinderCellGeomContainer.h"
+#include "g4detectors/PHG4CylinderCellGeom_Spacalv1.h"
+
 
 #include <phool/getClass.h>
 #include <TProfile.h>
@@ -32,9 +40,14 @@
 #include <sstream>
 #include <string>
 #include <TF1.h>
+#include <phool/onnxlib.h>
 
 using namespace std;
 TProfile* h_template = nullptr;
+
+
+
+
 
 
 double CaloWaveFormSim::template_function(double *x, double *par)
@@ -88,6 +101,8 @@ int CaloWaveFormSim::Init(PHCompositeNode*)
   g4hitntuple->Branch("z0",&m_z0);
   g4hitntuple->Branch("eta",&m_eta);
   g4hitntuple->Branch("phi",&m_phi);
+  g4hitntuple->Branch("etabin",&m_etabin);
+  g4hitntuple->Branch("phibin",&m_phibin);
   g4hitntuple->Branch("edep",&m_edep);
   g4hitntuple->Branch("g4primtrkid",&m_g4primtrkid);
   g4hitntuple->Branch("g4primpt",&m_g4primpt);
@@ -96,10 +111,13 @@ int CaloWaveFormSim::Init(PHCompositeNode*)
   g4hitntuple->Branch("primpt",&m_primpt);
   g4hitntuple->Branch("primeta",&m_primeta);
   g4hitntuple->Branch("waveform",&m_waveform,"waveform[24576][16]/I");
- g4hitntuple->Branch("ndep",&m_ndep,"ndep[24576]/I");
- g4hitntuple->Branch("tedep",&m_tedep,"tedep[24576]/I");
-
-
+  g4hitntuple->Branch("ndep",&m_ndep,"ndep[24576]/I");
+  g4hitntuple->Branch("tedep",&m_tedep,"tedep[24576]/I");
+  g4hitntuple->Branch("extractedadc",& m_extractedadc,"extractedadc[24576]/F");
+  g4hitntuple->Branch("toweradc",& m_toweradc,"toweradc[24576]/F");
+  g4hitntuple->Branch("geoetabin",&m_geoetabin);
+  g4hitntuple->Branch("geophibin",&m_geophibin);
+  
   g4cellntuple = new TNtuple("cellntup", "G4Cells", "phi:eta:edep");
   towerntuple = new TNtuple("towerntup", "Towers", "phi:eta:energy");
   clusterntuple = new TNtuple("clusterntup", "Clusters", "phi:z:energy:towers");
@@ -112,6 +130,19 @@ int CaloWaveFormSim::Init(PHCompositeNode*)
   assert(fin);
   assert(fin->IsOpen());
   h_template = static_cast<TProfile*>(fin->Get("hp_electrons_fine_emcal_36_8GeV"));
+
+
+  WaveformProcessing = new CaloWaveformProcessing();
+  std::cout << "init 1 " << std::endl;
+  WaveformProcessing->set_processing_type(CaloWaveformProcessing::TEMPLATE);
+  // WaveformProcessing->set_nthreads(4);
+  std::cout << "init 2 " << std::endl;
+  WaveformProcessing->initialize_processing();
+  std::cout << "init 3 " << std::endl;
+
+  light_collection_model.load_data_file(string(getenv("CALIBRATIONROOT")) + string("/CEMC/LightCollection/Prototype3Module.xml"),
+								   "data_grid_light_guide_efficiency", "data_grid_fiber_trans");
+
 
   return 0;
 }
@@ -126,6 +157,31 @@ int CaloWaveFormSim::process_event(PHCompositeNode* topNode)
 
 int CaloWaveFormSim::process_g4hits(PHCompositeNode* topNode)
 {
+  bool truth = false;
+
+
+ PHG4CylinderGeomContainer *layergeo = findNode::getClass<PHG4CylinderGeomContainer>(topNode, "CYLINDERGEOM_CEMC");
+  if (!layergeo)
+  {
+    std::cout << "PHG4FullProjSpacalCellReco::process_event - Fatal Error - Could not locate sim geometry node "
+              <<  std::endl;
+    exit(1);
+  }
+
+  const PHG4CylinderGeom *layergeom_raw = layergeo->GetFirstLayerGeom();
+  assert(layergeom_raw);
+
+  const PHG4CylinderGeom_Spacalv3 *layergeom =
+      dynamic_cast<const PHG4CylinderGeom_Spacalv3 *>(layergeom_raw);
+  assert(layergeom);
+
+
+  PHG4CylinderCellGeomContainer *seggeo = findNode::getClass<PHG4CylinderCellGeomContainer>(topNode, "CYLINDERCELLGEOM_CEMC");
+  PHG4CylinderCellGeom *geo_raw = seggeo->GetFirstLayerCellGeom();
+  PHG4CylinderCellGeom_Spacalv1 *geo = dynamic_cast<PHG4CylinderCellGeom_Spacalv1 *>(geo_raw);
+
+
+
   float waveform[24576][16];
   float tedep[24576];
   for (int i = 0; i < 24576;i++)
@@ -134,7 +190,9 @@ int CaloWaveFormSim::process_g4hits(PHCompositeNode* topNode)
 	{
 	  m_waveform[i][j] = 0.0;
 	  waveform[i][j] = 0.0;
-	}      
+	}     
+      m_extractedadc[i] = 0;
+      m_toweradc[i] = 0;
       m_ndep[i] = 0.0;
       m_tedep[i] = 0.0;
       tedep[i] = 0.0;
@@ -143,7 +201,7 @@ int CaloWaveFormSim::process_g4hits(PHCompositeNode* topNode)
   //Load in the template function as a TF1
   //for use in waveform generation
   //---------------------------------------------------------
-  
+
   TF1* f_fit = new TF1("f_fit",template_function,0,31,3);
   f_fit->SetParameters(1,0,0);
   //-----------------------------------------------------
@@ -154,40 +212,45 @@ int CaloWaveFormSim::process_g4hits(PHCompositeNode* topNode)
   float _shiftval = 4-f_fit->GetMaximumX();
   f_fit->SetParameters(1,_shiftval,0);
    
-  RawTowerGeomContainer *geomEM = findNode::getClass<RawTowerGeomContainer>(topNode, "TOWERGEOM_CEMC");
-  if (!geomEM)
-    {
-      std::cout << "hey no geometry node this is wrong!" << std::endl;
-    }
+  // RawTowerGeomContainer *geomEM = findNode::getClass<RawTowerGeomContainer>(topNode, "TOWERGEOM_CEMC");
+  // if (!geomEM)
+  //   {
+  //     std::cout << "hey no geometry node this is wrong!" << std::endl;
+  //   }
 
   ostringstream nodename;
   nodename.str("");
   nodename << "G4HIT_" << detector;
   PHG4HitContainer* hits = findNode::getClass<PHG4HitContainer>(topNode, nodename.str().c_str());
 
+
+
+
   //-----------------------------------------------------------------------------------------
   //Loop over truth primary particles and record their kinematics
   //-----------------------------------------------------------------------------------------
   PHG4TruthInfoContainer* truthinfo = findNode::getClass<PHG4TruthInfoContainer>(topNode, "G4TruthInfo");
-   PHG4TruthInfoContainer::ConstRange truth_range = truthinfo->GetPrimaryParticleRange();
-    for (PHG4TruthInfoContainer::ConstIterator truth_iter = truth_range.first; truth_iter != truth_range.second; truth_iter++)
+  if (truth)
     {
-      PHG4Particle*part = truth_iter->second;
-      m_primid.push_back(part->get_pid());  
-      float pt =TMath::Sqrt(TMath::Power(part->get_py(),2) +TMath::Power(part->get_px(),2));
-      float theta = TMath::ATan(pt/part->get_pz());
-
-      float eta = -1*TMath::Log(TMath::Tan(fabs(theta/2)));
-
-      if (part->get_pz() < 0 )
+      PHG4TruthInfoContainer::ConstRange truth_range = truthinfo->GetPrimaryParticleRange();
+      for (PHG4TruthInfoContainer::ConstIterator truth_iter = truth_range.first; truth_iter != truth_range.second; truth_iter++)
 	{
-	  eta = -1 * eta;
+	  PHG4Particle*part = truth_iter->second;
+	  m_primid.push_back(part->get_pid());  
+	  float pt =TMath::Sqrt(TMath::Power(part->get_py(),2) +TMath::Power(part->get_px(),2));
+	  float theta = TMath::ATan(pt/part->get_pz());
+	  
+	  float eta = -1*TMath::Log(TMath::Tan(fabs(theta/2)));
+	  
+	  if (part->get_pz() < 0 )
+	    {
+	      eta = -1 * eta;
+	    }
+	  m_primpt.push_back(pt);
+	  m_primeta.push_back(eta);
+	  m_primtrkid.push_back(part->get_track_id());  
 	}
-      m_primpt.push_back(pt);
-      m_primeta.push_back(eta);
-      m_primtrkid.push_back(part->get_track_id());  
-   }
-
+    }
 
   if (hits)
   {
@@ -220,30 +283,56 @@ int CaloWaveFormSim::process_g4hits(PHCompositeNode* topNode)
       //information for each G4hit in the calorimeter
       //-----------------------------------------------------------------
 
-      float x0 = hit_iter->second->get_x(0);
-      float y0 = hit_iter->second->get_y(0);
-      float z0 = hit_iter->second->get_z(0);
-      float r0 = TMath::Sqrt(x0*x0+y0*y0);
-      float phi = TMath::ATan2(y0,x0);
-      float theta = TMath::ATan(r0/z0);
-      float eta = -1*TMath::Log(TMath::Tan(fabs(theta/2)));
-      if (part->get_pz() < 0 )
-	{
-	  eta = -1 * eta;
-	}
+
+      int scint_id = hit_iter->second->get_scint_id();
+      PHG4CylinderGeom_Spacalv3::scint_id_coder decoder(scint_id);
+      std::pair<int, int> tower_z_phi_ID = layergeom->get_tower_z_phi_ID(decoder.tower_ID, decoder.sector_ID);
+      const int &tower_ID_z = tower_z_phi_ID.first;
+      const int &tower_ID_phi = tower_z_phi_ID.second;
+
+      PHG4CylinderGeom_Spacalv3::tower_map_t::const_iterator it_tower =
+        layergeom->get_sector_tower_map().find(decoder.tower_ID);
+      assert(it_tower != layergeom->get_sector_tower_map().end());
+
+
+
+      
+       const int etabin_cell = geo->get_etabin_block(tower_ID_z);  // block eta bin
+      const int sub_tower_ID_x = it_tower->second.get_sub_tower_ID_x(decoder.fiber_ID);
+      const int sub_tower_ID_y = it_tower->second.get_sub_tower_ID_y(decoder.fiber_ID);
+      unsigned short etabinshort = etabin_cell * layergeom->get_n_subtower_eta() + sub_tower_ID_y;
+      unsigned short phibin_cell = tower_ID_phi * layergeom->get_n_subtower_phi() + sub_tower_ID_x;
+
+      //----------------------------------------------------------------------------------------------------
+      //Extract light yield from g4hit and correct for light collection efficiency
+      //----------------------------------------------------------------------------------------------------
+
+      double light_yield = hit_iter->second->get_light_yield();
+      {
+	const double z = 0.5 * (hit_iter->second->get_local_z(0) + hit_iter->second->get_local_z(1));
+	assert(not std::isnan(z));
+	light_yield *= light_collection_model.get_fiber_transmission(z);
+      }
+
+      
       //-------------------------------------------------------------------------
       //Map the G4hits to the corresponding CEMC tower
       //-------------------------------------------------------------------------
-      int etabin = geomEM->get_etabin(eta);
-      int phibin = geomEM->get_phibin(phi);
+      int etabin = etabinshort;
+      int phibin = phibin_cell;
       int towernumber = etabin + 96*phibin;
+
+
       //---------------------------------------------------------------------
       //Convert the G4hit into a waveform contribution
       //---------------------------------------------------------------------
       float t0 = 0.5*(hit_iter->second->get_t(0)+hit_iter->second->get_t(1)) / 16.66667;   //Average of g4hit time downscaled by 16.667 ns/time sample 
-      
-      f_fit->SetParameters(hit_iter->second->get_edep()*673*50,_shiftval+t0,0);            //Set the waveform template to match the expected signal from such a hit
-      tedep[towernumber] += hit_iter->second->get_edep()*673*50;    // add g4hit adc deposition to the total deposition (scale 673 maps GeV to ADC from test beam data) 
+
+      // float tmax = 60;
+      // float tmin = -20;
+      // if (hit_iter->second->get_t(0) > tmax || hit_iter->second->get_t(1) < tmin) {continue;}
+      f_fit->SetParameters(light_yield*26000,_shiftval+t0,0);            //Set the waveform template to match the expected signal from such a hit
+      tedep[towernumber] += light_yield*26000;    // add g4hit adc deposition to the total deposition (scale 673 maps GeV to ADC from test beam data) 
       //-------------------------------------------------------------------------------------------------------------
       //For each tower add the new waveform contribution to the total waveform
        //-------------------------------------------------------------------------------------------------------------
@@ -255,8 +344,8 @@ int CaloWaveFormSim::process_g4hits(PHCompositeNode* topNode)
 	    }
 	  m_ndep[towernumber] +=1;
 	}
-      m_eta.push_back(eta);
-      m_phi.push_back(phi);
+      m_phibin.push_back(phibin);
+      m_etabin.push_back(etabin);
       m_t0.push_back(hit_iter->second->get_t(0));
       m_x0.push_back(hit_iter->second->get_x(0));
       m_y0.push_back(hit_iter->second->get_y(0));
@@ -268,6 +357,8 @@ int CaloWaveFormSim::process_g4hits(PHCompositeNode* topNode)
   //For each tower loop over add a noise waveform 
   //from cosmic data, gain is too high but is corrected for
   //----------------------------------------------------------------------------------------
+
+
   for (int i = 0; i < 24576;i++)
     {
       int maxbin = 0;
@@ -286,16 +377,50 @@ int CaloWaveFormSim::process_g4hits(PHCompositeNode* topNode)
 		  maxbin = k;
 		}
 	    }
-	  // std::cout << maxbin << std::endl;
 	  if (maxbin < 10){redraw = false;}
 	}
       m_tedep[i] = tedep[i];
       for (int k = 0; k < 16;k++)
 	{
-	  //m_waveform[i][k] = waveform[i][k];
-	  m_waveform[i][k] = waveform[i][k]+(noise_val[k]-1500)/16+1500;
+	  // m_waveform[i][k] = waveform[i][k]+(noise_val[k]-1500)/16+1500;
+	  m_waveform[i][k] = waveform[i][k]+1500;
 	  // m_waveform[i][k] = waveform[i][k]+(noise_val[k]);
 	}
+    }
+  std::vector<std::vector<float>> waveforms;
+  for (int i = 0; i < 24576;i++)
+    {
+      std::vector<float>tmp;
+      for (int j = 0; j < 16;j++)
+	{
+	  tmp.push_back(m_waveform[i][j]);
+	}
+      waveforms.push_back(tmp);
+      tmp.clear();
+    }
+
+
+ std::vector<std::vector<float>> fitresults =  WaveformProcessing->process_waveform(waveforms);
+
+  for (int i = 0; i < 24576;i++)
+    {
+      m_extractedadc[i] = fitresults.at(i).at(0);
+
+    }
+  std::cout << 4 << std::endl;
+
+
+
+  RawTowerContainer *towers = findNode::getClass<RawTowerContainer>(topNode, "TOWER_RAW_CEMC");
+
+  RawTowerContainer::ConstRange tower_range = towers->getTowers();
+  for (RawTowerContainer::ConstIterator tower_iter = tower_range.first; tower_iter != tower_range.second; tower_iter++)
+    {
+      int phibin = tower_iter->second->get_binphi();
+      int etabin = tower_iter->second->get_bineta();
+      float energy = tower_iter->second->get_energy();
+      int towernumber = etabin + 96*phibin;
+      m_toweradc[towernumber] =  energy;
     }
 
 
@@ -314,7 +439,12 @@ int CaloWaveFormSim::process_g4hits(PHCompositeNode* topNode)
   m_g4primpt.clear();
   m_primpt.clear();
   m_primeta.clear();
-
+  waveforms.clear();
+  fitresults.clear();
+  m_etabin.clear();
+  m_phibin.clear();
+  m_geoetabin.clear();
+  m_geophibin.clear();
   return Fun4AllReturnCodes::EVENT_OK;
 }
 

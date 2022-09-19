@@ -30,6 +30,9 @@ libcalowaveformsim_la_LDFLAGS = \
   -lcalo_io \
   -lfun4all \
   -lg4detectors_io \
+  -lg4detectors \
+  -lsph_onnx \
+  -lcalo_reco \
   -lphg4hit
 
 
