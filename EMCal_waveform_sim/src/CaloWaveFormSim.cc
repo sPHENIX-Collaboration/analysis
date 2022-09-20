@@ -314,6 +314,12 @@ int CaloWaveFormSim::process_g4hits(PHCompositeNode* topNode)
 	light_yield *= light_collection_model.get_fiber_transmission(z);
       }
 
+      {
+	const double x = it_tower->second.get_position_fraction_x_in_sub_tower(decoder.fiber_ID);
+	const double y = it_tower->second.get_position_fraction_y_in_sub_tower(decoder.fiber_ID);
+
+	light_yield *= light_collection_model.get_light_guide_efficiency(x, y);
+      }
       
       //-------------------------------------------------------------------------
       //Map the G4hits to the corresponding CEMC tower
@@ -328,11 +334,13 @@ int CaloWaveFormSim::process_g4hits(PHCompositeNode* topNode)
       //---------------------------------------------------------------------
       float t0 = 0.5*(hit_iter->second->get_t(0)+hit_iter->second->get_t(1)) / 16.66667;   //Average of g4hit time downscaled by 16.667 ns/time sample 
 
-      // float tmax = 60;
-      // float tmin = -20;
+      float tmax = 60;
+      float tmin = -20;
       // if (hit_iter->second->get_t(0) > tmax || hit_iter->second->get_t(1) < tmin) {continue;}
       f_fit->SetParameters(light_yield*26000,_shiftval+t0,0);            //Set the waveform template to match the expected signal from such a hit
-      tedep[towernumber] += light_yield*26000;    // add g4hit adc deposition to the total deposition (scale 673 maps GeV to ADC from test beam data) 
+      if (hit_iter->second->get_t(0) < tmax && hit_iter->second->get_t(1) > tmin) {
+	tedep[towernumber] += light_yield*26000;    // add g4hit adc deposition to the total deposition (scale 673 maps GeV to ADC from test beam data) 
+      }
       //-------------------------------------------------------------------------------------------------------------
       //For each tower add the new waveform contribution to the total waveform
        //-------------------------------------------------------------------------------------------------------------
