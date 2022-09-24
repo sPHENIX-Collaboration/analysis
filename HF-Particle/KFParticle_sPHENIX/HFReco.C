@@ -13,29 +13,27 @@ R__LOAD_LIBRARY(libkfparticle_sphenix.so)
 namespace HeavyFlavorReco
 {
   // https://wiki.bnl.gov/sPHENIX/index.php/KFParticle
-  //string decayDescriptor = "[D*+ -> {D0 -> K^- pi^+} pi^+]cc"; //See twiki on how to set this
-  //string decayDescriptor = "[B+ -> {D0 -> K^- pi^+} pi^+]cc"; //See twiki on how to set this
   string decayDescriptor = "[D0 -> K^- pi^+]cc";  //See twiki on how to set this
   string reconstructionName = "myTestReco";         //Used for naming output folder, file and nodes
   string outputRecoFile;
-  bool runTruthTrigger = false;  //Decay Finder
+  string outputEvalFile;
+  bool runTruthTrigger = true;  //Decay Finder
   bool getTruthInfo = true;      //Add truth matching to output file
   bool getCaloInfo = false;
-  bool runTracking = false;  //Run tracking on DSTs
+  bool runTracking = true;  //Run tracking on DSTs
+  bool buildTruthTable = true;
   bool runQA = false;        //Run QA, needs set up
-  int VERBOSITY = INT_MAX;
+  int VERBOSITY = 0;
 };  // namespace HeavyFlavorReco
 
 using namespace HeavyFlavorReco;
 
 void myHeavyFlavorReco()
 {
-  int verbosity = VERBOSITY;
-
   Fun4AllServer *se = Fun4AllServer::instance();
 
   KFParticle_sPHENIX *kfparticle = new KFParticle_sPHENIX(reconstructionName);
-  kfparticle->Verbosity(verbosity);
+  kfparticle->Verbosity(VERBOSITY);
 
   kfparticle->setDecayDescriptor(decayDescriptor);
 
@@ -57,14 +55,14 @@ void myHeavyFlavorReco()
   if (fixToPV)
   {
     kfparticle->constrainToPrimaryVertex(true);
-    kfparticle->setMotherIPchi2(15);
+    kfparticle->setMotherIPchi2(100);
     kfparticle->setFlightDistancechi2(0.0);
-    kfparticle->setMinDIRA(0.98);
+    kfparticle->setMinDIRA(0.5);
   }
 
   //Track parameters
   kfparticle->setMinimumTrackPT(0.2);
-  kfparticle->setMinimumTrackIPchi2(9);
+  kfparticle->setMinimumTrackIPchi2(0);
   kfparticle->setMinimumTrackIP(0.00);
   kfparticle->setMaximumTrackchi2nDOF(3);
 
@@ -97,4 +95,5 @@ void myHeavyFlavorReco()
   kfparticle->setOutputName(outputRecoFile);
 
   se->registerSubsystem(kfparticle);
+
 }
