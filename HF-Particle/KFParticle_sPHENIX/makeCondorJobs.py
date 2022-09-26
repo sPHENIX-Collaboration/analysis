@@ -13,6 +13,7 @@ parser.add_argument('--calo', help='Enable calo DST reading', action="store_true
 parser.add_argument('--trkr_hit', help='Enable tracker hit DST reading', action="store_true")
 parser.add_argument('--bbc_g4hit', help='Enable BBC G4 hit DST reading', action="store_true")
 parser.add_argument('--g4hit', help='Enable G4 hit DST reading', action="store_true")
+parser.add_argument('--truth_table', help='Use DSTs for running tracking and making the truth/reco table', action="store_true")
 
 args = parser.parse_args()
 
@@ -36,7 +37,7 @@ if args.bbc_g4hit:
     args.g4hit = False
     dstSets.append('DST_BBC_G4HIT')
 if args.g4hit: dstSets.append('G4Hits')
-
+if args.truth_table: dstSets = ['DST_VERTEX', 'DST_TRUTH', 'DST_TRKR_G4HIT']
 
 myShell = str(environ['SHELL'])
 goodShells = ['/bin/bash', '/bin/tcsh']

@@ -4,6 +4,9 @@
 #include <fun4all/SubsysReco.h>
 #include <TTree.h>
 #include <TRandom3.h>
+#include <caloreco/CaloWaveformProcessing.h>
+#include <g4detectors/PHG4CylinderGeomContainer.h>
+#include <g4detectors/PHG4FullProjSpacalCellReco.h>
 // Forward declarations
 class Fun4AllHistoManager;
 class PHCompositeNode;
@@ -57,16 +60,28 @@ class CaloWaveFormSim : public SubsysReco
   std::vector<float> m_primtrkid;
   std::vector<float> m_g4primtrkid; 
   std::vector<float> m_g4primpt;
+  std::vector<float> m_etabin;
+  std::vector<float> m_phibin;
+
+  std::vector<float> m_geoetabin;
+  std::vector<float> m_geophibin;
+
   int m_waveform[24576][16];
   /* int m_sub_waveform[24576][500][16]; */
   int m_ndep[24576];
   int m_tedep[24576];
+  float m_extractedadc[24576];
+  float m_toweradc[24576];
+  
 
   TTree *g4hitntuple;
   TNtuple *g4cellntuple;
   TNtuple *towerntuple;
   TNtuple *clusterntuple;
 
+  CaloWaveformProcessing* WaveformProcessing;
+
+  PHG4FullProjSpacalCellReco::LightCollectionModel light_collection_model;
   TTree* noise;
   float noise_val[31];
   TRandom3* rnd;
