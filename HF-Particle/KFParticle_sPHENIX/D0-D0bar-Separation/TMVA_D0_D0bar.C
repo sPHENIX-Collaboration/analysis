@@ -18,23 +18,13 @@
 
 int TMVA_D0_D0bar( TString myMethodList = "" )
 {
-   // The explicit loading of the shared libTMVA is done in TMVAlogon.C, defined in .rootrc
-   // if you use your private .rootrc, or run from a different directory, please copy the
-   // corresponding lines from .rootrc
-
-   // Methods to be processed can be given as an argument; use format:
-   //
-   //     mylinux~> root -l TMVAClassification.C\‍(\"myMethod1,myMethod2,myMethod3\"\‍)
-
-   //---------------------------------------------------------------
-   // This loads the library
    TMVA::Tools::Instance();
 
    // Default MVA methods to be trained + tested
    std::map<std::string,int> Use;
 
    // Cut optimisation
-   Use["Cuts"]            = 1;
+   Use["Cuts"]            = 0;
    Use["CutsD"]           = 0;
    Use["CutsPCA"]         = 0;
    Use["CutsGA"]          = 0;
@@ -89,7 +79,7 @@ int TMVA_D0_D0bar( TString myMethodList = "" )
 #endif
    //
    // Support Vector Machine
-   Use["SVM"]             = 1;
+   Use["SVM"]             = 0;
    //
    // Boosted Decision Trees
    Use["BDT"]             = 1; // uses Adaptive Boost
@@ -105,7 +95,7 @@ int TMVA_D0_D0bar( TString myMethodList = "" )
    std::cout << std::endl;
    std::cout << "==> Start TMVAClassification" << std::endl;
 
-   // Select methods (don't look at this code - not of interest)
+   // Select methods
    if (myMethodList != "") {
       for (std::map<std::string,int>::iterator it = Use.begin(); it != Use.end(); it++) it->second = 0;
 
@@ -123,14 +113,10 @@ int TMVA_D0_D0bar( TString myMethodList = "" )
       }
    }
 
-   // --------------------------------------------------------------------------------------------------
-
-   // Here the preparation phase begins
-
    // Read training and test data
    // (it is also possible to use ASCII format as input -> see TMVA Users Guide)
    TFile *input(0);
-   TString fname = "./pureD0.root";
+   TString fname = "/sphenix/user/rosstom/analysis/HF-Particle/KFParticle_sPHENIX/Run40Acceptance082922/Run40_D0_Separated_091922.root";
    if (!gSystem->AccessPathName( fname )) {
       input = TFile::Open( fname ); // check if file in local directory exists
    }
@@ -146,14 +132,12 @@ int TMVA_D0_D0bar( TString myMethodList = "" )
 
    // Register the training and test trees
 
-   TTree *signalTree     = (TTree*)input->Get("D0_tree");
-   TTree *background     = (TTree*)input->Get("D0bar_tree");
-
-   //TTree *signalTree    = (TTree*)input->Get("D0bar_tree");
-   //TTree *background    = (TTree*)input->Get("D0_tree");
+   TTree *D0_Tree = (TTree*)input->Get("D0_tree");
+   TTree *D0bar_Tree = (TTree*)input->Get("D0bar_tree");
+   TTree *Background_Tree = (TTree*)input->Get("Background_tree");
 
    // Create a ROOT output file where TMVA will store ntuples, histograms, etc.
-   TString outfileName( "TMVA_D0.root" );
+   TString outfileName( "TMVA_D0Sep_092122.root" );
    // TString outfileName("TMVA_D0bar.root");
    TFile* outputFile = TFile::Open( outfileName, "RECREATE" );
 
@@ -180,26 +164,29 @@ int TMVA_D0_D0bar( TString myMethodList = "" )
    // Define the input variables that shall be used for the MVA training
    // note that you may also use variable expressions, such as: "3*var1/var2*abs(var3)"
    // [all types of expressions that can also be parsed by TTree::Draw( "expression" )]
-   dataloader->AddVariable( "K_momentum", "K_p", "GeV", 'F' );
-   dataloader->AddVariable( "Pi_momentum", "Pi_p", "GeV", 'F' );
-   dataloader->AddVariable( "KpPm_invm", "KpPm_invm", "GeV", 'F' );
-   dataloader->AddVariable( "KmPp_invm", "KmPp_invm", "GeV", 'F' );
-   dataloader->AddVariable( "D0_rapidity", "Rapidity", "y", 'F' );
+   dataloader->AddVariable( "outKFP_positive_p", "P_p", "GeV/c", 'F' );
+   dataloader->AddVariable( "outKFP_negative_p", "N_p", "GeV/c", 'F' );
+   dataloader->AddVariable( "outKFP_KpPm_invm", "KpPm_invm", "GeV/c^{2}", 'F' );
+   dataloader->AddVariable( "outKFP_KmPp_invm", "KmPp_invm", "GeV/c^{2}", 'F' );
+   //dataloader->AddVariable( "outKFP_D0_DIRA", "DIRA", "DIRA", 'F' );
+   //dataloader->AddVariable( "outKFP_D0_IPchi2", "IPchi2", "IPchi2", 'F' );
+   //dataloader->AddVariable( "outKFP_D0_pseudorapidity", "pseudorapidity", "#eta", 'F' );
 
    // You can add so-called "Spectator variables", which are not used in the MVA training,
    // but will appear in the final "TestTree" produced by TMVA. This TestTree will contain the
    // input variables, the response values of all trained MVAs, and the spectator variables
 
-   dataloader->AddSpectator( "D0_pT_total",  "D0 pT", "GeV", 'F' );
+   //dataloader->AddSpectator( "",  "", "GeV", 'F' );
 
 
    // global event weights per tree (see below for setting event-wise weights)
-   Double_t signalWeight     = 1.0;
+   Double_t signalWeight     = 50.0; // increasing the signal weight should help to balance how few signal events there are compared to background
    Double_t backgroundWeight = 1.0;
 
    // You can add an arbitrary number of signal or background trees
-   dataloader->AddSignalTree    ( signalTree,     signalWeight );
-   dataloader->AddBackgroundTree( background, backgroundWeight );
+   dataloader->AddSignalTree    ( D0_Tree,     signalWeight );
+   dataloader->AddBackgroundTree( D0bar_Tree, signalWeight );
+   dataloader->AddBackgroundTree( Background_Tree, backgroundWeight );
 
    // To give different trees for training and testing, do as follows:
    //
@@ -262,7 +249,7 @@ int TMVA_D0_D0bar( TString myMethodList = "" )
    //    dataloader->PrepareTrainingAndTestTree( mycut,
    //         "NSigTrain=3000:NBkgTrain=3000:NSigTest=3000:NBkgTest=3000:SplitMode=Random:!V" );
    dataloader->PrepareTrainingAndTestTree( mycuts, mycutb,
-                                        "nTrain_Signal=25000:nTrain_Background=25000:SplitMode=Random:NormMode=NumEvents:!V" );
+                                        "nTrain_Signal=1500:nTrain_Background=75000:SplitMode=Random:NormMode=NumEvents:!V" );
 
    // ### Book MVA methods
    //
@@ -396,7 +383,7 @@ int TMVA_D0_D0bar( TString myMethodList = "" )
 
    // TMVA ANN: MLP (recommended ANN) -- all ANNs in TMVA are Multilayer Perceptrons
    if (Use["MLP"])
-      factory->BookMethod( dataloader, TMVA::Types::kMLP, "MLP", "H:!V:NeuronType=tanh:VarTransform=N:NCycles=600:HiddenLayers=N+5:TestRate=5:!UseRegulator" );
+      factory->BookMethod( dataloader, TMVA::Types::kMLP, "MLP", "H:!V:EstimatorType=MSE:NeuronType=sigmoid:VarTransform=N:NCycles=21:HiddenLayers=N-1:TestRate=1:UseRegulator" );
 
    if (Use["MLPBFGS"])
       factory->BookMethod( dataloader, TMVA::Types::kMLP, "MLPBFGS", "H:!V:NeuronType=tanh:VarTransform=N:NCycles=600:HiddenLayers=N+5:TestRate=5:TrainingMethod=BFGS:!UseRegulator" );
@@ -454,7 +441,7 @@ int TMVA_D0_D0bar( TString myMethodList = "" )
 
    if (Use["BDT"])  // Adaptive Boost
       factory->BookMethod( dataloader, TMVA::Types::kBDT, "BDT",
-                           "!H:!V:NTrees=850:MinNodeSize=2.5%:MaxDepth=3:BoostType=AdaBoost:AdaBoostBeta=0.5:UseBaggedBoost:BaggedSampleFraction=0.5:SeparationType=GiniIndex:nCuts=20" );
+                           "!H:!V:NTrees=80:MinNodeSize=2.5%:MaxDepth=3:BoostType=AdaBoost:AdaBoostBeta=0.5:UseBaggedBoost:BaggedSampleFraction=0.5:SeparationType=GiniIndex:nCuts=20:DoBoostMonitor" );
 
    if (Use["BDTB"]) // Bagging
       factory->BookMethod( dataloader, TMVA::Types::kBDT, "BDTB",
