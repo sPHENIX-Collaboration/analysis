@@ -37,6 +37,8 @@ class CaloWaveFormSim : public SubsysReco
   int process_towers(PHCompositeNode *);
   int process_clusters(PHCompositeNode *);
   static double template_function(double *x, double *par);
+  static double template_function_ihcal(double *x, double *par);
+  static double template_function_ohcal(double *x, double *par);
 
   void Detector(const std::string &name) { detector = name; }
 
@@ -57,6 +59,8 @@ class CaloWaveFormSim : public SubsysReco
   std::vector<float> m_primid;
   std::vector<float> m_primpt;
   std::vector<float> m_primeta;
+  std::vector<float> m_primphi;
+
   std::vector<float> m_primtrkid;
   std::vector<float> m_g4primtrkid; 
   std::vector<float> m_g4primpt;
@@ -67,23 +71,43 @@ class CaloWaveFormSim : public SubsysReco
   std::vector<float> m_geophibin;
 
   int m_waveform[24576][16];
-  /* int m_sub_waveform[24576][500][16]; */
+  int m_waveform_ihcal[1536][16];
+  int m_waveform_ohcal[1536][16];
   int m_ndep[24576];
   int m_tedep[24576];
+  int m_tedep_ihcal[1536];
+  int m_tedep_ohcal[1536];
+
   float m_extractedadc[24576];
+  float m_extractedtime[24576];
+
+  float m_extractedadc_ihcal[1536];
+  float m_extractedtime_ihcal[1536];
+
+  float m_extractedadc_ohcal[1536];
+  float m_extractedtime_ohcal[1536];
+
   float m_toweradc[24576];
-  
+  float m_toweradc_ihcal[1536];
+  float m_toweradc_ohcal[1536];
+
 
   TTree *g4hitntuple;
-  TNtuple *g4cellntuple;
-  TNtuple *towerntuple;
-  TNtuple *clusterntuple;
+  /* TNtuple *g4cellntuple; */
+  /* TNtuple *towerntuple; */
+  /* TNtuple *clusterntuple; */
 
   CaloWaveformProcessing* WaveformProcessing;
+  CaloWaveformProcessing* WaveformProcessing_ihcal;
+  CaloWaveformProcessing* WaveformProcessing_ohcal;
 
   PHG4FullProjSpacalCellReco::LightCollectionModel light_collection_model;
-  TTree* noise;
-  float noise_val[31];
+  TTree* noise_midrad;
+  TTree* noise_lowrad;
+  TTree* noise_norad;
+  float noise_val_midrad[31];
+  float noise_val_lowrad[31];
+  float noise_val_norad[31];
   TRandom3* rnd;
 
 };
