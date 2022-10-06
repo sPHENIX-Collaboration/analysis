@@ -14,14 +14,14 @@ namespace HeavyFlavorReco
 {
   // https://wiki.bnl.gov/sPHENIX/index.php/KFParticle
   string decayDescriptor = "[D0 -> K^- pi^+]cc";  //See twiki on how to set this
-  string reconstructionName = "myTestReco";         //Used for naming output folder, file and nodes
+  string reconstructionName = "myKpiReco";         //Used for naming output folder, file and nodes
   string outputRecoFile;
   string outputEvalFile;
-  bool runTruthTrigger = true;  //Decay Finder
+  bool runTruthTrigger = false;  //Decay Finder
   bool getTruthInfo = true;      //Add truth matching to output file
   bool getCaloInfo = false;
-  bool runTracking = true;  //Run tracking on DSTs
-  bool buildTruthTable = true;
+  bool runTracking = false;  //Run tracking on DSTs
+  bool buildTruthTable = false;
   bool runQA = false;        //Run QA, needs set up
   int VERBOSITY = 0;
 };  // namespace HeavyFlavorReco
@@ -72,22 +72,22 @@ void myHeavyFlavorReco()
 
   //Parent parameters
   kfparticle->setMotherPT(0);
-  kfparticle->setMinimumMass(1.75);
-  kfparticle->setMaximumMass(1.95);
+  kfparticle->setMinimumMass(1.7);
+  kfparticle->setMaximumMass(2.1);
 
   //Intermediate parameters
   std::vector<std::pair<float, float>> intermediate_mass_range;
-  intermediate_mass_range.push_back(make_pair(1.75, 1.95));
+  intermediate_mass_range.push_back(make_pair(0.95, 1.1));
   kfparticle->setIntermediateMassRange(intermediate_mass_range);
-  std::vector<float> intermediate_min_pt = {0.0};
+  std::vector<float> intermediate_min_pt = {0.5};
   kfparticle->setIntermediateMinPT(intermediate_min_pt);
   std::vector<std::pair<float, float>> intermediate_IP_range;
   intermediate_IP_range.push_back(make_pair(0., 1.));
   kfparticle->setIntermediateIPRange(intermediate_IP_range);
   std::vector<std::pair<float, float>> intermediate_IPchi2_range;
-  intermediate_IPchi2_range.push_back(make_pair(5., 100.));
+  intermediate_IPchi2_range.push_back(make_pair(0., 100.));
   kfparticle->setIntermediateIPchi2Range(intermediate_IPchi2_range);
-  std::vector<float> intermediate_min_dira = {0.95};
+  std::vector<float> intermediate_min_dira = {0.5};
   kfparticle->setIntermediateMinDIRA(intermediate_min_dira);
   std::vector<float> intermediate_min_FDchi2 = {0.};
   kfparticle->setIntermediateMinFDchi2(intermediate_min_FDchi2);

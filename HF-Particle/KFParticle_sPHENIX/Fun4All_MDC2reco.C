@@ -8,9 +8,9 @@
 
 #include <FROG.h>
 #include <decayfinder/DecayFinder.h>
-#include <qa_modules/QAG4SimulationTruthDecay.h>
 #include <fun4all/Fun4AllDstInputManager.h>
 //#include <qa_modules/QAG4SimulationKFParticle.h>
+//#include <qa_modules/QAG4SimulationTruthDecay.h>
 
 #include <g4eval/SvtxEvaluator.h>
 #include <g4eval/SvtxTruthRecoTableEval.h>
@@ -30,8 +30,6 @@ using namespace HeavyFlavorReco;
 
 void Fun4All_MDC2reco(vector<string> myInputLists = {"condorJob/fileLists/productionFiles-CHARM-dst_tracks-00000.list"}, const int nEvents = 10)
 {
-  int verbosity = VERBOSITY;
-
   gSystem->Load("libg4dst.so");
   gSystem->Load("libFROG.so");
   FROG *fr = new FROG();
@@ -58,7 +56,7 @@ void Fun4All_MDC2reco(vector<string> myInputLists = {"condorJob/fileLists/produc
 
   //Create the server
   Fun4AllServer *se = Fun4AllServer::instance();
-  se->Verbosity(verbosity);
+  se->Verbosity(VERBOSITY);
 
   //Add all required input files
   for (unsigned int i = 0; i < myInputLists.size(); ++i)
@@ -71,7 +69,6 @@ void Fun4All_MDC2reco(vector<string> myInputLists = {"condorJob/fileLists/produc
   //Run the tracking if not already done
   if (runTracking)
   {
-cout << __FILE__ << "::" << __func__ << "::" << __LINE__ << endl;
     Enable::MICROMEGAS=true;
 
     G4MAGNET::magfield_rescale = 1.;
@@ -97,7 +94,7 @@ cout << __FILE__ << "::" << __func__ << "::" << __LINE__ << endl;
   if (runTruthTrigger)
   {
     DecayFinder *myFinder = new DecayFinder("myFinder");
-    myFinder->Verbosity(2);
+    myFinder->Verbosity(VERBOSITY);
     myFinder->setDecayDescriptor(decayDescriptor);
     myFinder->saveDST(1);
     myFinder->allowPi0(0);
@@ -114,7 +111,7 @@ cout << __FILE__ << "::" << __func__ << "::" << __LINE__ << endl;
   if (buildTruthTable && runTracking)
   {
     SvtxTruthRecoTableEval *tables = new SvtxTruthRecoTableEval();
-    tables->Verbosity(0);
+    tables->Verbosity(VERBOSITY);
     se->registerSubsystem(tables);
   }
   else if (buildTruthTable && !runTracking)
@@ -140,7 +137,7 @@ cout << __FILE__ << "::" << __func__ << "::" << __LINE__ << endl;
   //}
 
   se->run(nEvents);
-  QA_Output(outputEvalFile);
+  //QA_Output(outputEvalFile);
   se->End();
 
   ifstream file(outputRecoFile.c_str());
@@ -150,12 +147,12 @@ cout << __FILE__ << "::" << __func__ << "::" << __LINE__ << endl;
     system(moveOutput.c_str());
   }
 
-  ifstream evalfile(outputEvalFile.c_str());
-  if (evalfile.good())
-  {
-    string moveOutput = "mv " + outputEvalFile + " " + outDir;
-    system(moveOutput.c_str());
-  }
+  //ifstream evalfile(outputEvalFile.c_str());
+  //if (evalfile.good())
+  //{
+  //  string moveOutput = "mv " + outputEvalFile + " " + outDir;
+  //  system(moveOutput.c_str());
+  //}
 
   std::cout << "All done" << std::endl;
   delete se;
