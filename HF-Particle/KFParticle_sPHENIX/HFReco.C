@@ -13,9 +13,8 @@ R__LOAD_LIBRARY(libkfparticle_sphenix.so)
 namespace HeavyFlavorReco
 {
   // https://wiki.bnl.gov/sPHENIX/index.php/KFParticle
-  string decayDescriptor = "[D+ -> {phi -> K^+ K^-} pi^+]cc";  //See twiki on how to set this
-  //string decayDescriptor = "[D0 -> K^- pi^+]cc";  //See twiki on how to set this
-  string reconstructionName = "myKKpiReco";         //Used for naming output folder, file and nodes
+  string decayDescriptor = "[D0 -> K^- pi^+]cc";  //See twiki on how to set this
+  string reconstructionName = "myKpiReco";         //Used for naming output folder, file and nodes
   string outputRecoFile;
   string outputEvalFile;
   bool runTruthTrigger = false;  //Decay Finder
