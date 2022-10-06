@@ -34,7 +34,7 @@ void myHeavyFlavorReco()
   Fun4AllServer *se = Fun4AllServer::instance();
 
   KFParticle_sPHENIX *kfparticle = new KFParticle_sPHENIX(reconstructionName);
-  kfparticle->Verbosity(1);
+  kfparticle->Verbosity(VERBOSITY);
 
   kfparticle->setDecayDescriptor(decayDescriptor);
 

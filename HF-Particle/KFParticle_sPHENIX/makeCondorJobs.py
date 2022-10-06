@@ -42,7 +42,6 @@ if args.g4hit: dstSets.append('G4Hits')
 if args.truth_table:
     dstSets.append('DST_TRUTH_RECO')
     if args.truth == False: dstSets.append('DST_TRUTH')
-#if args.truth_table: dstSets = ['DST_VERTEX', 'DST_TRACKS', 'DST_TRKR_HIT', 'DST_TRUTH', 'DST_TRKR_G4HIT', 'DST_TRKR_CLUSTER', 'DST_TRACKSEEDS']
 
 myShell = str(environ['SHELL'])
 goodShells = ['/bin/bash', '/bin/tcsh']

@@ -30,8 +30,6 @@ using namespace HeavyFlavorReco;
 
 void Fun4All_MDC2reco(vector<string> myInputLists = {"condorJob/fileLists/productionFiles-CHARM-dst_tracks-00000.list"}, const int nEvents = 10)
 {
-  int verbosity = INT_MAX;
-
   gSystem->Load("libg4dst.so");
   gSystem->Load("libFROG.so");
   FROG *fr = new FROG();
@@ -58,7 +56,7 @@ void Fun4All_MDC2reco(vector<string> myInputLists = {"condorJob/fileLists/produc
 
   //Create the server
   Fun4AllServer *se = Fun4AllServer::instance();
-  se->Verbosity(1);
+  se->Verbosity(VERBOSITY);
 
   //Add all required input files
   for (unsigned int i = 0; i < myInputLists.size(); ++i)
@@ -96,7 +94,7 @@ void Fun4All_MDC2reco(vector<string> myInputLists = {"condorJob/fileLists/produc
   if (runTruthTrigger)
   {
     DecayFinder *myFinder = new DecayFinder("myFinder");
-    myFinder->Verbosity(2);
+    myFinder->Verbosity(VERBOSITY);
     myFinder->setDecayDescriptor(decayDescriptor);
     myFinder->saveDST(1);
     myFinder->allowPi0(0);
@@ -113,7 +111,7 @@ void Fun4All_MDC2reco(vector<string> myInputLists = {"condorJob/fileLists/produc
   if (buildTruthTable && runTracking)
   {
     SvtxTruthRecoTableEval *tables = new SvtxTruthRecoTableEval();
-    tables->Verbosity(INT_MAX);
+    tables->Verbosity(VERBOSITY);
     se->registerSubsystem(tables);
   }
   else if (buildTruthTable && !runTracking)
