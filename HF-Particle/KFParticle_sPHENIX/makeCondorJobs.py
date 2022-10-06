@@ -31,13 +31,18 @@ if args.truth:
     args.g4hit = False
     dstSets.append('DST_TRUTH')
     dstSets.append('DST_TRKR_G4HIT')
+    dstSets.append('DST_TRACKSEEDS')
+    dstSets.append('DST_TRKR_CLUSTER')
 if args.calo: dstSets.append('DST_CALO_CLUSTER')
 if args.trkr_hit: dstSets.append('DST_TRKR_HIT')
 if args.bbc_g4hit:
     args.g4hit = False
     dstSets.append('DST_BBC_G4HIT')
 if args.g4hit: dstSets.append('G4Hits')
-if args.truth_table: dstSets = ['DST_VERTEX', 'DST_TRUTH', 'DST_TRKR_G4HIT']
+if args.truth_table:
+    dstSets.append('DST_TRUTH_RECO')
+    if args.truth == False: dstSets.append('DST_TRUTH')
+#if args.truth_table: dstSets = ['DST_VERTEX', 'DST_TRACKS', 'DST_TRKR_HIT', 'DST_TRUTH', 'DST_TRKR_G4HIT', 'DST_TRKR_CLUSTER', 'DST_TRACKSEEDS']
 
 myShell = str(environ['SHELL'])
 goodShells = ['/bin/bash', '/bin/tcsh']
