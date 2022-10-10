@@ -3,7 +3,7 @@
 export HOME=/sphenix/u/${LOGNAME}
 source /opt/sphenix/core/bin/sphenix_setup.sh -n ana.319
 
-#export SPHENIX=/sphenix/u/cdean/sPHENIX
+#export SPHENIX=/sphenix/u/${USER}/sPHENIX
 #export SPHENIX=$HOME/sPHENIX
 #export MYINSTALL=$SPHENIX/install
 #export LD_LIBRARY_PATH=$MYINSTALL/lib:$LD_LIBRARY_PATH
