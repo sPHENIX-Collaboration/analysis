@@ -157,9 +157,9 @@ int Fun4All_Pi0Gen_sPHENIX(
       INPUTGENERATOR::SimpleEventGenerator[0]->set_vertex_distribution_mean(0., 0., 0.);
       INPUTGENERATOR::SimpleEventGenerator[0]->set_vertex_distribution_width(0.01, 0.01, 5.);
     }
-    INPUTGENERATOR::SimpleEventGenerator[0]->set_eta_range(-0.7, 0.7);
+    INPUTGENERATOR::SimpleEventGenerator[0]->set_eta_range(-1.2, 1.2);
     INPUTGENERATOR::SimpleEventGenerator[0]->set_phi_range(-M_PI, M_PI);
-    INPUTGENERATOR::SimpleEventGenerator[0]->set_pt_range(0.5, 20.);
+    INPUTGENERATOR::SimpleEventGenerator[0]->set_pt_range(2, 20.);
   }
   // Upsilons
   // if you run more than one of these Input::UPSILON_NUMBER > 1
@@ -267,39 +267,39 @@ int Fun4All_Pi0Gen_sPHENIX(
 
   // Enable::BBC = true;
   // Enable::BBC_SUPPORT = true; // save hist in bbc support structure
-  Enable::BBCFAKE = true;  // Smeared vtx and t0, use if you don't want real BBC in simulation
+   Enable::BBCFAKE = true;  // Smeared vtx and t0, use if you don't want real BBC in simulation
 
   Enable::PIPE = true;
-  Enable::PIPE_ABSORBER = true;
+  //Enable::PIPE_ABSORBER = true;
 
   // central tracking
-  Enable::MVTX = false;
-  Enable::MVTX_CELL = Enable::MVTX && true;
+  Enable::MVTX = true;
+  //Enable::MVTX_CELL = Enable::MVTX && true;
   Enable::MVTX_CLUSTER = Enable::MVTX_CELL && true;
   Enable::MVTX_QA = Enable::MVTX_CLUSTER && Enable::QA && true;
   Enable::TrackingService = false;
 
-  Enable::INTT = false;
+  Enable::INTT = true;
 //  Enable::INTT_ABSORBER = true; // enables layerwise support structure readout
 //  Enable::INTT_SUPPORT = true; // enable global support structure readout
-  Enable::INTT_CELL = Enable::INTT && true;
+  //  Enable::INTT_CELL = Enable::INTT && true;
   Enable::INTT_CLUSTER = Enable::INTT_CELL && true;
   Enable::INTT_QA = Enable::INTT_CLUSTER && Enable::QA && true;
 
-  Enable::TPC = false;
-  Enable::TPC_ABSORBER = true;
-  Enable::TPC_CELL = Enable::TPC && true;
+  Enable::TPC = true;
+  // Enable::TPC_ABSORBER = true;
+  // Enable::TPC_CELL = Enable::TPC && true;
   Enable::TPC_CLUSTER = Enable::TPC_CELL && true;
   Enable::TPC_QA = Enable::TPC_CLUSTER && Enable::QA && true;
 
-  Enable::MICROMEGAS = false;
-  Enable::MICROMEGAS_CELL = Enable::MICROMEGAS && true;
+  Enable::MICROMEGAS = true;
+  //Enable::MICROMEGAS_CELL = fasle;// = Enable::MICROMEGAS && true;
   Enable::MICROMEGAS_CLUSTER = Enable::MICROMEGAS_CELL && true;
   Enable::MICROMEGAS_QA = Enable::MICROMEGAS_CLUSTER && Enable::QA && true;
 
-  Enable::TRACKING_TRACK = false;
-  Enable::TRACKING_EVAL = Enable::TRACKING_TRACK && true;
-  Enable::TRACKING_QA = Enable::TRACKING_TRACK && Enable::QA && true;
+  //Enable::TRACKING_TRACK = true;
+  Enable::TRACKING_EVAL = false;//= Enable::TRACKING_TRACK && true;
+  Enable::TRACKING_QA = false;//xs= Enable::TRACKING_TRACK && Enable::QA && true;
 
   //  cemc electronics + thin layer of W-epoxy to get albedo from cemc
   //  into the tracking, cannot run together with CEMC
@@ -334,9 +334,11 @@ int Fun4All_Pi0Gen_sPHENIX(
 
   Enable::EPD = false;
 
-  Enable::BEAMLINE = true;
+  //Enable::BEAMLINE = true;
 //  Enable::BEAMLINE_ABSORBER = true;  // makes the beam line magnets sensitive volumes
 //  Enable::BEAMLINE_BLACKHOLE = true; // turns the beamline magnets into black holes
+  G4BEAMLINE::skin_thickness = 0.5;
+
   Enable::ZDC = false;
 //  Enable::ZDC_ABSORBER = true;
 //  Enable::ZDC_SUPPORT = true;
@@ -345,7 +347,8 @@ int Fun4All_Pi0Gen_sPHENIX(
 
   //! forward flux return plug door. Out of acceptance and off by default.
   //Enable::PLUGDOOR = true;
-  Enable::PLUGDOOR_ABSORBER = true;
+  //Enable::PLUGDOOR_ABSORBER = true;
+  Enable::PLUGDOOR_BLACKHOLE = true;
 
   Enable::GLOBAL_RECO = true;
   //Enable::GLOBAL_FASTSIM = true;
