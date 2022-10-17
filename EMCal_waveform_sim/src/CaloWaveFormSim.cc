@@ -129,9 +129,9 @@ int CaloWaveFormSim::Init(PHCompositeNode*)
   g4hitntuple->Branch("primpt",&m_primpt);
   g4hitntuple->Branch("primeta",&m_primeta);
   g4hitntuple->Branch("primphi",&m_primphi);
-  g4hitntuple->Branch("tedep_emcal",&m_tedep,"tedep_emcal[24576]/I");
-  g4hitntuple->Branch("tedep_ihcal",&m_tedep_ihcal,"tedep_ihcal[1536]/I");
-  g4hitntuple->Branch("tedep_ohcal",&m_tedep_ihcal,"tedep_ohcal[1536]/I");
+  g4hitntuple->Branch("tedep_emcal",&m_tedep,"tedep_emcal[24576]/F");
+  g4hitntuple->Branch("tedep_ihcal",&m_tedep_ihcal,"tedep_ihcal[1536]/F");
+  g4hitntuple->Branch("tedep_ohcal",&m_tedep_ohcal,"tedep_ohcal[1536]/F");
   g4hitntuple->Branch("extractedadc_emcal",& m_extractedadc,"extractedadc_emcal[24576]/F");
   g4hitntuple->Branch("extractedtime_emcal",& m_extractedtime,"extractedtime_emcal[24576]/F");
   g4hitntuple->Branch("extractedadc_ihcal",& m_extractedadc_ihcal,"extractedadc_ihcal[1536]/F");
@@ -141,11 +141,11 @@ int CaloWaveFormSim::Init(PHCompositeNode*)
   g4hitntuple->Branch("toweradc_emcal",& m_toweradc,"toweradc_emcal[24576]/F");
   g4hitntuple->Branch("toweradc_ihcal",& m_toweradc_ihcal,"toweradc_ihcal[1536]/F");
   g4hitntuple->Branch("toweradc_ohcal",& m_toweradc_ohcal,"toweradc_ohcal[1536]/F");
+  // g4hitntuple->Branch("waveform_ohcal",& m_waveform_ohcal,"waveform_ohcal[1536][16]/I");
 
-  
-  // g4cellntuple = new TNtuple("cellntup", "G4Cells", "phi:eta:edep");
-  // towerntuple = new TNtuple("towerntup", "Towers", "phi:eta:energy");
-  // clusterntuple = new TNtuple("clusterntup", "Clusters", "phi:z:energy:towers");
+  g4hitntuple->Branch("npeaks_ihcal",& m_npeaks_ihcal,"npeaks_ihcall[1536]/I");
+  g4hitntuple->Branch("npeaks_ohcal",& m_npeaks_ohcal,"npeaks_ohcal[1536]/I");
+
   //----------------------------------------------------------------------------------------------------
   //Read in the template file, this currently points to a tim local area file, 
   //but a copy of this file is in the git repository.
@@ -266,10 +266,10 @@ int CaloWaveFormSim::process_g4hits(PHCompositeNode* topNode)
       m_toweradc_ohcal[i] = 0.0;
       for (int j = 0; j < 16;j++)
 	{
-	  m_waveform_ihcal[i][j] = 0.0;
-	  waveform_ihcal[i][j] = 0.0;
-	  m_waveform_ohcal[i][j] = 0.0;
-	  waveform_ohcal[i][j] = 0.0;
+	  m_waveform_ihcal[i][j] = 0;
+	  waveform_ihcal[i][j] = 0;
+	  m_waveform_ohcal[i][j] = 0;
+	  waveform_ohcal[i][j] = 0;
 	}
     }
 
@@ -387,16 +387,16 @@ int CaloWaveFormSim::process_g4hits(PHCompositeNode* topNode)
       //Convert the G4hit into a waveform contribution
       //---------------------------------------------------------------------
       float t0 = 0.5*(hit_iter->second->get_t(0)+hit_iter->second->get_t(1)) / 16.66667;   //Average of g4hit time downscaled by 16.667 ns/time sample 
-      float tmax = 60;
+      float tmax = 16.667*16;
       float tmin = -20;
       f_fit->SetParameters(light_yield*26000,_shiftval+t0,0);            //Set the waveform template to match the expected signal from such a hit
-      if (hit_iter->second->get_t(0) < tmax && hit_iter->second->get_t(1) > tmin) {
+      if (hit_iter->second->get_t(1) >= tmin && hit_iter->second->get_t(0) <= tmax) {
 	tedep[towernumber] += light_yield*26000;    // add g4hit adc deposition to the total deposition  
       }
       //-------------------------------------------------------------------------------------------------------------
       //For each tower add the new waveform contribution to the total waveform
        //-------------------------------------------------------------------------------------------------------------
-     if (hit_iter->second->get_edep()*26000 > 1)
+     if (hit_iter->second->get_edep()*26000 > 1 && hit_iter->second->get_t(1) >= tmin && hit_iter->second->get_t(0) <= tmax)
 	{
 	  for (int j = 0; j < 16;j++) // 16 is the number of time samples
 	    {
@@ -456,16 +456,16 @@ int CaloWaveFormSim::process_g4hits(PHCompositeNode* topNode)
       //Convert the G4hit into a waveform contribution
       //---------------------------------------------------------------------
       float t0 = 0.5*(hit_iter->second->get_t(0)+hit_iter->second->get_t(1)) / 16.66667;   //Average of g4hit time downscaled by 16.667 ns/time sample 
-      float tmax = 60;
+      float tmax = 16.667*16;
       float tmin = -20;
       f_fit_ihcal->SetParameters(light_yield*2600,_shiftval_ihcal+t0,0);            //Set the waveform template to match the expected signal from such a hit
-      if (hit_iter->second->get_t(0) < tmax && hit_iter->second->get_t(1) > tmin) {
+      if (hit_iter->second->get_t(1) >= tmin && hit_iter->second->get_t(0) <= tmax) {
 	tedep_ihcal[towernumber] += light_yield*2600;    // add g4hit adc deposition to the total deposition
       }
       //-------------------------------------------------------------------------------------------------------------
       //For each tower add the new waveform contribution to the total waveform
        //-------------------------------------------------------------------------------------------------------------
-     if (hit_iter->second->get_edep()*2600 > 1)
+     if (hit_iter->second->get_edep()*2600 > 1 &&hit_iter->second->get_t(1) >= tmin && hit_iter->second->get_t(0) <= tmax )
 	{
 	  for (int j = 0; j < 16;j++) // 16 is the number of time samples
 	    {
@@ -526,16 +526,20 @@ int CaloWaveFormSim::process_g4hits(PHCompositeNode* topNode)
       //Convert the G4hit into a waveform contribution
       //---------------------------------------------------------------------
       float t0 = 0.5*(hit_iter->second->get_t(0)+hit_iter->second->get_t(1)) / 16.66667;   //Average of g4hit time downscaled by 16.667 ns/time sample 
-      float tmax = 60;
+      // float t0 = (hit_iter->second->get_t(0)) / 16.66667;   //Average of g4hit time downscaled by 16.667 ns/time sample 
+     float tmax =16.667*16 ;
       float tmin = -20;
       f_fit_ohcal->SetParameters(light_yield*5000,_shiftval_ohcal+t0,0);            //Set the waveform template to match the expected signal from such a hit
       if (hit_iter->second->get_t(0) < tmax && hit_iter->second->get_t(1) > tmin) {
-	tedep_ohcal[towernumber] += light_yield*5000;    // add g4hit adc deposition to the total deposition 
+	  {
+	    tedep_ohcal[towernumber] += light_yield*5000;    // add g4hit adc deposition to the total deposition 
+	  }
       }
       //-------------------------------------------------------------------------------------------------------------
       //For each tower add the new waveform contribution to the total waveform
-       //-------------------------------------------------------------------------------------------------------------
-     if (hit_iter->second->get_edep()*5000 > 1)
+      //-------------------------------------------------------------------------------------------------------------
+
+     if (hit_iter->second->get_edep()*5000 > 1 && hit_iter->second->get_t(1) >= tmin && hit_iter->second->get_t(0) <= tmax)
 	{
 	  for (int j = 0; j < 16;j++) // 16 is the number of time samples
 	    {
@@ -562,6 +566,7 @@ int CaloWaveFormSim::process_g4hits(PHCompositeNode* topNode)
       for (int k = 0; k < 16;k++)
 	{
 	  m_waveform[i][k] = waveform[i][k]+(noise_val_midrad[k]-1500)/16.0+1500;
+	  // m_waveform[i][k] = waveform[i][k]+1500;
 	}
     }
   //---------------------------
@@ -574,11 +579,12 @@ int CaloWaveFormSim::process_g4hits(PHCompositeNode* topNode)
       m_tedep_ihcal[i] = tedep_ihcal[i];
       for (int k = 0; k < 16;k++)
 	{
-	  m_waveform_ihcal[i][k] = waveform_ihcal[i][k]+(noise_val_lowrad[k]-1500)/16.0+1500;
+	   m_waveform_ihcal[i][k] = waveform_ihcal[i][k]+(noise_val_lowrad[k]-1500)/16.0+1500;
+	  // m_waveform_ihcal[i][k] = waveform_ihcal[i][k]+1500;
 	}
     }
   //---------------------------
-  // do noise for ihcal:
+  // do noise for ohcal:
   //---------------------------
   for (int i = 0; i < 1536;i++)
     {
@@ -589,6 +595,7 @@ int CaloWaveFormSim::process_g4hits(PHCompositeNode* topNode)
       for (int k = 0; k < 16;k++)
 	{
 	  m_waveform_ohcal[i][k] = waveform_ohcal[i][k]+(noise_val_norad[k]-1500)/16.0+1500;
+	  // m_waveform_ohcal[i][k] = waveform_ohcal[i][k]+1500;
 	}
     }
   std::vector<std::vector<float>> fitresults;
@@ -633,6 +640,20 @@ int CaloWaveFormSim::process_g4hits(PHCompositeNode* topNode)
 	    tmp.push_back(m_waveform_ihcal[i][j]);
 	  }
 	waveforms.push_back(tmp);
+
+	int size2 = tmp.size();
+	int n_peak = 0;
+	for (int j = 2; j < size2-1;j++)
+	  {
+	    if (tmp.at(j) > 1.01*tmp.at(j-2) && tmp.at(j) > 1.01 * tmp.at(j+1))
+	      {
+		n_peak++;
+	      }
+	  }
+	m_npeaks_ihcal[i] = n_peak;
+
+
+
 	tmp.clear();
       }
     fitresults_ihcal =  WaveformProcessing_ihcal->process_waveform(waveforms);
@@ -659,8 +680,25 @@ int CaloWaveFormSim::process_g4hits(PHCompositeNode* topNode)
 	    tmp.push_back(m_waveform_ohcal[i][j]);
 	  }
 	waveforms.push_back(tmp);
+
+	
+	int size2 = tmp.size();
+	int n_peak = 0;
+	for (int j = 2; j < size2-1;j++)
+	  {
+	    if (tmp.at(j) - tmp.at(j-2) > 15 && tmp.at(j) - tmp.at(j+1) > 15)
+	      {
+		n_peak++;
+	      }
+	  }
+
+	m_npeaks_ohcal[i] = n_peak;
 	tmp.clear();
       }
+
+
+
+
     fitresults_ohcal =  WaveformProcessing_ohcal->process_waveform(waveforms);
     for (int i = 0; i < 1536;i++)
       {

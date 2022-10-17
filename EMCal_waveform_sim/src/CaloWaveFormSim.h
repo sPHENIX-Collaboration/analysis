@@ -74,9 +74,9 @@ class CaloWaveFormSim : public SubsysReco
   int m_waveform_ihcal[1536][16];
   int m_waveform_ohcal[1536][16];
   int m_ndep[24576];
-  int m_tedep[24576];
-  int m_tedep_ihcal[1536];
-  int m_tedep_ohcal[1536];
+  float m_tedep[24576];
+  float m_tedep_ihcal[1536];
+  float m_tedep_ohcal[1536];
 
   float m_extractedadc[24576];
   float m_extractedtime[24576];
@@ -90,6 +90,9 @@ class CaloWaveFormSim : public SubsysReco
   float m_toweradc[24576];
   float m_toweradc_ihcal[1536];
   float m_toweradc_ohcal[1536];
+
+  int m_npeaks_ihcal[1536];
+  int m_npeaks_ohcal[1536];
 
 
   TTree *g4hitntuple;
