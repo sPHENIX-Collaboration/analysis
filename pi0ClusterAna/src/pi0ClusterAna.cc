@@ -50,7 +50,7 @@
 
 //____________________________________________________________________________..
 pi0ClusterAna::pi0ClusterAna(const std::string &name, const std::string &outName = "pi0ClusterAnaOut"):
- SubsysReco(name)
+SubsysReco(name)
   , clusters_Towers(nullptr)
   , truth_photon(nullptr)
   , truth_pi0(nullptr)
@@ -58,23 +58,23 @@ pi0ClusterAna::pi0ClusterAna(const std::string &name, const std::string &outName
   , m_eta_center()
   , m_phi_center()
   , m_tower_energy()
-  , m_cluster_eta()
+, m_cluster_eta()
   , m_cluster_phi()
-  , m_cluster_e()
+, m_cluster_e()
   , m_cluster_chi2()
   , m_cluster_prob()
-  , m_cluster_nTowers()
+, m_cluster_nTowers()
   , m_asym()
   , m_deltaR()
   , m_lead_E()
-  , m_sublead_E()
-  , m_lead_phi()
-  , m_lead_eta()
+, m_sublead_E()
+, m_lead_phi()
+, m_lead_eta()
   , m_sublead_phi()
   , m_sublead_eta()
   , m_pi0_E()
-  , m_pi0_eta()
-  , m_pi0_phi()
+, m_pi0_eta()
+, m_pi0_phi()
   , Outfile(outName)
 
 {
@@ -149,8 +149,8 @@ int pi0ClusterAna::process_event(PHCompositeNode *topNode)
 {
 
   //Information on clusters
-  //RawClusterContainer *clusterContainer = findNode::getClass<RawClusterContainer>(topNode,"CLUSTER_POS_COR_CEMC");
-  RawClusterContainer *clusterContainer = findNode::getClass<RawClusterContainer>(topNode,"CLUSTER_CEMC");
+  RawClusterContainer *clusterContainer = findNode::getClass<RawClusterContainer>(topNode,"CLUSTER_POS_COR_CEMC");
+  //RawClusterContainer *clusterContainer = findNode::getClass<RawClusterContainer>(topNode,"CLUSTER_CEMC");
   if(!clusterContainer)
     {
       std::cout << PHWHERE << "pi0Efficiency::process_event - Fatal Error - CLUSTER_CEMC node is missing. " << std::endl;
@@ -208,10 +208,132 @@ int pi0ClusterAna::process_event(PHCompositeNode *topNode)
       return Fun4AllReturnCodes::ABORTEVENT;
     }
   
-  //to match clusters to primaries
-  //caloevalstack = new CaloEvalStack(topNode, "CEMC");
-  //CaloRawClusterEval *clustereval = caloevalstack -> get_rawcluster_eval();
+  
+  float pi0Eta = -99999;
+  float photonEtaMax = 1.1;
+  float mesonEtaMax = 0.3;
+  //Now we go and find our truth pi0s and just take its eta coordinate for now
+  PHG4TruthInfoContainer::Range truthRange = truthinfo->GetPrimaryParticleRange();
+  PHG4TruthInfoContainer::ConstIterator truthIter;
 
+  PHG4Particle *truthPar = NULL;
+
+  for(truthIter = truthRange.first; truthIter != truthRange.second; truthIter++)
+    {
+      truthPar = truthIter->second;
+      
+      if(truthPar -> get_pid() == 111 && truthPar -> get_parent_id() == 0) 
+	{
+	  pi0Eta = getEta(truthPar);
+	  if(abs(pi0Eta) >= mesonEtaMax) 
+	    {
+	      return 0;
+	    }
+	}
+    }
+
+  int firstphotonflag = 0;
+  int firstfirstphotonflag = 0;
+  int secondphotonflag = 0;
+ 
+  //int secondsecondphotonflag = 0;
+  
+  PHG4TruthInfoContainer::Range truthRangeDecay1 = truthinfo->GetSecondaryParticleRange();
+  PHG4TruthInfoContainer::ConstIterator truthIterDecay1;
+
+  
+  TLorentzVector photon1;
+  TLorentzVector photon2;
+  int nParticles = 0;
+  
+  //loop over all our decay photons. 
+  //Make sure they fall within the desired acceptance
+  //Toss Dalitz decays
+  //Retain photon kinematics to determine lead photon for eta binning
+  for(truthIterDecay1 = truthRangeDecay1.first; truthIterDecay1 != truthRangeDecay1.second; truthIterDecay1++)
+    {
+      PHG4Particle *decay = truthIterDecay1 -> second;
+      
+      int dumtruthpid = decay -> get_pid();
+      int dumparentid = decay -> get_parent_id();
+      
+      //if the parent is the pi0 and it's a photon and we haven't marked one yet
+      if(dumparentid == 1 && dumtruthpid == 22 && !firstphotonflag)
+	{
+	  if(abs(getEta(decay)) > photonEtaMax) 
+	    {
+	      return 0;
+	    }
+	  photon1.SetPxPyPzE(decay -> get_px(), decay -> get_py(), decay -> get_pz(), decay -> get_e());
+	  
+	  firstphotonflag = 1;
+	}
+      
+      if(dumparentid == 1 && dumtruthpid == 22 && firstphotonflag && firstfirstphotonflag)
+	{
+	  if(abs(getEta(decay)) > photonEtaMax) 
+	    {
+	      return 0;
+	    }
+	  photon2.SetPxPyPzE(decay -> get_px(), decay -> get_py(), decay -> get_pz(), decay -> get_e()) ;
+	  
+	  secondphotonflag = 1;
+	}
+
+      //Need this flag to make it skip the first photon slot
+      if(firstphotonflag) firstfirstphotonflag = 1;
+      if(dumparentid == 1)nParticles ++; 
+    }
+
+  if((!firstphotonflag || !secondphotonflag) && nParticles > 1) //Dalitz
+    {
+      return 0;
+    }
+  else if((!firstphotonflag || !secondphotonflag) && nParticles == 1) //One photon falls outside simulation acceptance
+    {
+      return 0;
+    }
+  else if((!firstphotonflag || !secondphotonflag) && nParticles == 0) //Both photons fall outside simulation acceptance
+    {
+      return 0;
+    }
+  
+  
+  TLorentzVector pi0;
+  pi0.SetPxPyPzE(truthPar -> get_px(), truthPar -> get_py(), truthPar -> get_pz(), truthPar -> get_e());
+  TLorentzVector leadPho, subLeadPho;
+  if(photon1.Energy() >= photon2.Energy())
+    {
+      leadPho = photon1;
+      subLeadPho = photon2;
+    }
+  else
+    {
+      leadPho = photon2;
+      subLeadPho = photon1;
+    }
+  
+  float asym = abs(photon1.Energy() - photon2.Energy())/(photon1.Energy() + photon2.Energy());
+
+  m_asym.push_back(asym);
+  
+  float deltaR = photon1.DeltaR(photon2);
+
+  m_deltaR.push_back(deltaR);
+
+  m_lead_phi.push_back(leadPho.Phi());
+  m_sublead_phi.push_back(subLeadPho.Phi());
+  
+  m_lead_eta.push_back(leadPho.PseudoRapidity());
+  m_sublead_eta.push_back(subLeadPho.PseudoRapidity());
+  
+  m_lead_E.push_back(leadPho.Energy());
+  m_sublead_E.push_back(subLeadPho.Energy());
+
+  m_pi0_E.push_back(pi0.Energy());
+  m_pi0_phi.push_back(pi0.Phi());
+  m_pi0_eta.push_back(pi0.PseudoRapidity());
+ 
   //grab all the towers and fill their energies. 
   RawTowerContainer::ConstRange tower_range = towerContainer -> getTowers();
   for(RawTowerContainer::ConstIterator tower_iter = tower_range.first; tower_iter!= tower_range.second; tower_iter++)
@@ -250,125 +372,7 @@ int pi0ClusterAna::process_event(PHCompositeNode *topNode)
       m_cluster_nTowers.push_back(recoCluster -> getNTowers());
     }
 
-  
-  PHG4TruthInfoContainer::Range truthRangeDecay1 = truthinfo->GetSecondaryParticleRange();
-  PHG4TruthInfoContainer::ConstIterator truthIterDecay1;
 
-  float photonEtaMax = 1.1;
-  float mesonEtaMax = 0.7;
-  TLorentzVector photon1;
-  TLorentzVector photon2;
-  //RawCluster *cluster1 = NULL;
-  //RawCluster *cluster2 = NULL;
-
-  //we're actually going to look for our decay products first. It they're outside 
-  //the acceptance, we're going to abandon the event. 
-  int firstphotonflag = 0;
-  int firstfirstphotonflag = 0;
-  int secondphotonflag = 0;
-  int secondsecondphotonflag = 0;
-  for(truthIterDecay1 = truthRangeDecay1.first; truthIterDecay1 != truthRangeDecay1.second; truthIterDecay1++)
-    {
-      
-      PHG4Particle *decay = truthIterDecay1 -> second;
-      
-      int dumtruthpid = decay -> get_pid();
-      int dumparentid = decay -> get_parent_id();
-      
-      //if the parent is the pi0 and it's a photon and we haven't marked one yet
-      if(dumparentid == 1 && dumtruthpid == 22 && !firstphotonflag)
-	{
-	  if(abs(getEta(decay)) > photonEtaMax) return 0; //decay product outside acceptance.
-	  
-	  photon1.SetPxPyPzE(decay -> get_px(), decay -> get_py(), decay -> get_pz(), decay -> get_e());
-	  //cluster1 = clustereval -> best_cluster_from(decay);
-	  
-	  firstphotonflag = 1;
-	}
-      
-      if(dumparentid == 1 && dumtruthpid == 22 && firstphotonflag && firstfirstphotonflag)
-	{
-	  if(abs(getEta(decay)) > photonEtaMax) return 0; //decay product outside acceptance
-
-	  photon2.SetPxPyPzE(decay -> get_px(), decay -> get_py(), decay -> get_pz(), decay -> get_e()) ;
-	  
-	  //cluster2 = clustereval -> best_cluster_from(decay);
-	  
-	  
-	  secondphotonflag = 1;
-	}
-
-      //deal with dalitz decays
-      if(dumparentid == 1 && firstphotonflag && secondphotonflag && secondsecondphotonflag)
-	{
-	  std::cout << "Dalitz decay, skipping event" << std::endl;
-	  return 0;
-	}
-      
-      
-
-      //Need these extra flags, otherwise the dalitz 
-      //check will always have first and second photon
-      //flags marked true, so this allows the dalitz check
-      //to occur after marking the second truth photon
-      //as a decay component
-      if(firstphotonflag) firstfirstphotonflag = 1;
-      if(secondphotonflag) secondsecondphotonflag = 1;
-    }
-  
-  float asym = abs(photon1.Energy() - photon2.Energy())/(photon1.Energy() + photon2.Energy());
-
-  m_asym.push_back(asym);
-  
-  float deltaR = photon1.DeltaR(photon2);
-  
-  m_deltaR.push_back(deltaR);
-
-  TLorentzVector leadPho, subLeadPho;
-  if(photon1.Energy() >= photon2.Energy())
-    {
-      leadPho = photon1;
-      subLeadPho = photon2;
-    }
-  else
-    {
-       leadPho = photon2;
-       subLeadPho = photon1;
-    }
-  
-  m_lead_phi.push_back(leadPho.Phi());
-  m_sublead_phi.push_back(subLeadPho.Phi());
-  
-  m_lead_eta.push_back(leadPho.PseudoRapidity());
-  m_sublead_eta.push_back(subLeadPho.PseudoRapidity());
-  
-  m_lead_E.push_back(leadPho.Energy());
-  m_sublead_E.push_back(subLeadPho.Energy());
-  
-  PHG4TruthInfoContainer::Range truthRange = truthinfo->GetPrimaryParticleRange();
-  PHG4TruthInfoContainer::ConstIterator truthIter;
- 
-  for(truthIter = truthRange.first; truthIter != truthRange.second; truthIter++)
-    {
-      PHG4Particle *truthPar = truthIter->second;
-      
-      if(truthPar -> get_pid() == 111 && truthPar -> get_parent_id() == 0)//it's a primary pi0, let's take a look
-	{
-	  if(getEta(truthPar) >= mesonEtaMax) return 0; 
-	    
-	  TLorentzVector pi0;
-	  pi0.SetPxPyPzE(truthPar -> get_px(), truthPar -> get_py(), truthPar -> get_pz(), truthPar -> get_e()); 
-	  
-	  m_pi0_E.push_back(pi0.Energy());
-	  m_pi0_phi.push_back(pi0.Phi());
-	  m_pi0_eta.push_back(pi0.PseudoRapidity());
-	    
-	}
-  
-    }
-  
-  //std::cout << "pi0_E.size(): " << m_pi0_E.size() << std::endl;
-  
   clusters_Towers -> Fill();
   truth_photon -> Fill();
   truth_pi0 -> Fill();
@@ -434,7 +438,7 @@ int pi0ClusterAna::End(PHCompositeNode *topNode)
 //____________________________________________________________________________..
 int pi0ClusterAna::Reset(PHCompositeNode *topNode)
 {
- std::cout << "pi0ClusterAna::Reset(PHCompositeNode *topNode) being Reset" << std::endl;
+  std::cout << "pi0ClusterAna::Reset(PHCompositeNode *topNode) being Reset" << std::endl;
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
