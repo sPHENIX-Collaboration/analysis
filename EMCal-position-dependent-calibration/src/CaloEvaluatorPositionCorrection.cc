@@ -330,9 +330,9 @@ void CaloEvaluatorPositionCorrection::printOutputInfo(PHCompositeNode* topNode)
       cout << ")" << endl;
 
       PHG4VtxPoint* vtx = trutheval->get_vertex(primary);
-      float gvx = vtx->get_x();
-      float gvy = vtx->get_y();
-      float gvz = vtx->get_z();
+      gvx = vtx->get_x();
+      gvy = vtx->get_y();
+      gvz = vtx->get_z();
 
       cout << " vtrue = (";
       cout.width(5);
