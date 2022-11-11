@@ -19,12 +19,19 @@
 #include <trackbase_historic/SvtxTrackMap.h>
 #include <trackbase_historic/SvtxVertex.h>
 #include <trackbase_historic/SvtxVertexMap.h>
-
 #include <trackbase/TrkrDefs.h>
+
+#include <g4vertex/GlobalVertexMap.h>
+#include <g4vertex/GlobalVertex.h>
 
 #include <calobase/RawClusterContainer.h>
 #include <calobase/RawCluster.h>
 #include <calobase/RawClusterv1.h>
+#include <calobase/RawTowerv2.h>
+#include <calobase/RawTowerGeom.h>
+#include <calobase/RawTowerContainer.h>
+#include <calobase/RawTowerGeomContainer_Cylinderv1.h>
+#include <calobase/RawTowerGeomContainer.h>
 
 #include <phhepmc/PHHepMCGenEvent.h>
 #include <phhepmc/PHHepMCGenEventMap.h>
@@ -100,7 +107,7 @@ int sPHAnalysis::Init(PHCompositeNode *topNode)
   OutputNtupleFile = new TFile(OutputFileName.c_str(),"RECREATE");
   std::cout << "sPHAnalysis::Init: output file " << OutputFileName.c_str() << " opened." << endl;
 
-  ntppid = new  TNtuple("ntppid","","charge:pt:eta:mom:nmvtx:ntpc:chi2:ndf:cemc_ecore:cemc_e3x3:cemc_prob:cemc_chi2:cemc_dphi:cemc_deta:quality:dca2d:hcalin_e3x3:gdist");
+  ntppid = new  TNtuple("ntppid","","charge:pt:eta:mom:nmvtx:ntpc:chi2:ndf:cemc_ecore:cemc_e3x3:cemc_prob:cemc_chi2:cemc_dphi:cemc_deta:quality:dca2d:hcalin_e3x3:hcalout_e3x3:gdist");
 
   ntp1 = new  TNtuple("ntp1","","type:mass:pt:eta:pt1:pt2:e3x31:e3x32:emce1:emce2:p1:p2:chisq1:chisq2:dca2d1:dca2d2:dca3dxy1:dca3dxy2:dca3dz1:dcz3dz2:mult:rap:nmvtx1:nmvtx2:ntpc1:ntpc2");
 
@@ -109,7 +116,16 @@ int sPHAnalysis::Init(PHCompositeNode *topNode)
 
   ntp2   = new TNtuple("ntp2","",  "type:mass:pt:eta:rap:pt1:pt2:eta1:eta2:mult:emult:pmult:chisq1:chisq2:dca2d1:dca2d2:eop3x3_1:eop3x3_2:dretaphi:nmvtx1:nmvtx2:nintt1:nintt2:ntpc1:ntpc2:b");
 
-  ntpb = new TNtuple("ntpb","","bimp");
+  ntpb = new TNtuple("ntpb","","bimp:mult:truemult:cemcmult:evtno:evtno5:ginacc:ngood");
+
+  ntp_notracking = new TNtuple("ntp_notracking","","mass:pt:pt1:pt2:hoe1:hoe2");
+  h_notracking_etabins_em =  new TH1D("h_notracking_etabins_em","",200,-0.5,199.5);
+  h_notracking_phibins_em =  new TH1D("h_notracking_phibins_em","",400,-0.5,399.5);
+  h_notracking_etabins =  new TH1D("h_notracking_etabins","",100,-0.5,99.5);
+  h_notracking_phibins =  new TH1D("h_notracking_phibins","",100,-0.5,99.5);
+  h_notracking_etabinsout =  new TH1D("h_notracking_etabinsout","",100,-0.5,99.5);
+  h_notracking_phibinsout =  new TH1D("h_notracking_phibinsout","",100,-0.5,99.5);
+  h_notracking_eoh =  new TH1D("h_notracking_eoh","",10000,0.0,1.0);
 
   hmult =  new TH1D("hmult","",100,0.,2000.);
   hmass =  new TH1D("hmass","",160,4.,12.);
@@ -128,6 +144,8 @@ int sPHAnalysis::Init(PHCompositeNode *topNode)
   hchi2 = new TH1D("hchi2","",1000,0.,50.);
   hndf = new TH1D("hndf","",1000,0.,50.);
   hquality = new TH1D("hquality","",1000,0.,50.);
+
+  test = new TH1D("test","",1000,0.,50.);
 
 //  HepMC::write_HepMC_IO_block_begin( ascii_io );
 
@@ -164,6 +182,10 @@ int sPHAnalysis::process_event(PHCompositeNode *topNode)
   } else if(_whattodo==2) {
 //    cout << "PYTHIA UPSILONS." << endl;
     return process_event_pythiaupsilon(topNode);
+  } else if(_whattodo==3) {
+        return process_event_upsilons(topNode);
+  } else if(_whattodo==4) {
+      return process_event_notracking(topNode);
   } else { cerr << "ERROR: wrong choice of what to do." << endl; return Fun4AllReturnCodes::ABORTRUN; }
 }
 
@@ -419,63 +441,440 @@ int sPHAnalysis::process_event_pythiaupsilon(PHCompositeNode *topNode) {
     int npart = event->particles_size();
     int nvert = event->vertices_size();
     cout << "HepMC::GenEvent: Number of particles, vertuces = " << npart << " " << nvert << endl;
+    test->Fill(npart);
     
+    bool einacc = false;
+    bool pinacc = false;
+    bool einacc2 = false;
+    bool pinacc2 = false;
+    double jpsipt = 0.;
+    double jpsieta = 0.;
+    //double jpsimass = 0.;
+    double jpsirap = 0.;
+    double pt1 = 0.;
+    double pt2 = 0.;
+    double eta1 = 0.;
+    double eta2 = 0.;
+    HepMC::GenVertex* jpsidecay_vtx = NULL;
+
+// Find Upsilon or J/psi
     for (HepMC::GenEvent::particle_const_iterator p = event->particles_begin(); p != event->particles_end(); ++p)
     {
       int pid = (*p)->pdg_id();
       int status = (*p)->status();
       double pt = ((*p)->momentum()).perp();
+      double pz = ((*p)->momentum()).pz();
       double mass  = ((*p)->momentum()).m();
       double eta  = ((*p)->momentum()).eta();
-      if(status==1 && pt>2.0) {cout << pid << " " << status << " " << pt << " " << mass << " " << eta << endl;}
-      if(abs(pid)==553 && status==2) cout << "Upsilon: " << pid << " " << status << " " << pt << " " << mass << " " << eta << endl;
-      if(abs(pid)==11  && status==1 && pt>2.0) {
-        cout << "electron: " << pid << " " << status << " " << pt << " " << mass << " " << eta << endl;
-        HepMC::GenParticle* parent = GetParent(*p, event);
-        int parentid = 0; if(parent) {parentid = parent->pdg_id();}
-        cout << "      parent id = " << parentid << endl;
+      double ee = ((*p)->momentum()).e();
+      double rap = 0.5*TMath::Log((ee+pz)/(ee-pz));
+      
+      if(abs(pid)==553 && status==2) {
+        cout << "Upsilon: " << pid << " " << status << " " << pt << " " << mass << " " << eta << endl;
+        HepMC::GenVertex* upsvtx = (*p)->production_vertex();
+        cout << "   Upsilon production Z vertex = " << upsvtx->point3d().z() << endl; 
+      }
+
+      if(abs(pid)==443 && status==2) {
+        cout << "J/psi: " << pid << " " << status << " " << pt << " " << mass << " " << eta << endl;
+        jpsidecay_vtx = (*p)->end_vertex();
+        jpsipt = pt;
+        jpsieta = eta;
+        jpsirap = rap;
+      }
+
+    }
+
+// Find decay electrons
+    for (HepMC::GenEvent::particle_const_iterator p = event->particles_begin(); p != event->particles_end(); ++p)
+    {
+      int pid = (*p)->pdg_id();
+      int status = (*p)->status();
+      double pt = ((*p)->momentum()).perp();
+//      double pz = ((*p)->momentum()).pz();
+      double mass  = ((*p)->momentum()).m();
+      double eta  = ((*p)->momentum()).eta();
+//      double ee = ((*p)->momentum()).e();
+//      double rap = 0.5*ln((ee+pz)/(ee-pz));
+
+      if(pid==-11  && status==1 && pt>0.0) {
+        //HepMC::GenParticle* parent = GetParent(*p, event);
+        //int parentid = 0; if(parent) {parentid = parent->pdg_id();}
+        //cout << "      parent id = " << parentid << endl;
+        HepMC::GenVertex* elevtx = (*p)->production_vertex();
+        if(elevtx == jpsidecay_vtx) {
+          cout << "electron from J/psi: " << pid << " " << status << " " << pt << " " << mass << " " << eta << endl;
+          if(fabs(eta)<1.0) einacc = true;
+          if(fabs(eta)<1.0 && pt>2.0) einacc2 = true;
+          pt1 = pt;
+          eta1 = eta;
+        }
+      }
+      if(pid==11  && status==1 && pt>0.0) {
+        HepMC::GenVertex* posvtx = (*p)->production_vertex();
+        if(posvtx == jpsidecay_vtx) {
+          cout << "positroni form J/psi: " << pid << " " << status << " " << pt << " " << mass << " " << eta << endl;
+          if(fabs(eta)<1.0) pinacc = true;
+          if(fabs(eta)<1.0 && pt>2.0) pinacc2 = true;
+          pt2 = pt;
+          eta2 = eta;
+        }
       }
     }
+
+    float type = 0.;
+    if(einacc && pinacc) { type = 1.; }
+    if(einacc2 && pinacc2) { type = 2.; }
+
+//  ntpmc2 = new TNtuple("ntpmc2","","type:mass:pt:eta:rap:pt1:pt2:eta1:eta2");
+    float tmp[99];
+    tmp[0] = type;
+    tmp[1] = 0.;
+    tmp[2] = jpsipt;
+    tmp[3] = jpsieta;
+    tmp[4] = jpsirap;
+    tmp[5] = pt1;
+    tmp[6] = pt2;
+    tmp[7] = eta1;
+    tmp[8] = eta2;
+       ntpmc2->Fill(tmp);
+
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
+//=====================================================================
 
+int sPHAnalysis::process_event_notracking(PHCompositeNode *topNode) {
+
+  EventNumber++;
+  int howoften = 1;
+  if((EventNumber-1)%howoften==0) {
+    cout<<"--------------------------- EventNumber = " << EventNumber-1 << endl;
+  }
+  float tmp1[99];
+
+  GlobalVertexMap *global_vtxmap = findNode::getClass<GlobalVertexMap>(topNode, "GlobalVertexMap");
+  //cout << "Number of GlobalVertexMap entries = " << global_vtxmap->size() << endl;
+  double Zvtx = 0.;
+  for (GlobalVertexMap::Iter iter = global_vtxmap->begin(); iter != global_vtxmap->end(); ++iter)
+  {
+    GlobalVertex *vtx = iter->second;
+    if(vtx->get_id()==1) Zvtx = vtx->get_z(); // BBC vertex
+    //cout << "Global vertex: " << vtx->get_id() << " " << vtx->get_z() << " " << vtx->get_t() << endl;
+  }
+  cout << "Global vertex Z = " << Zvtx << endl;
+
+  RawClusterContainer* cemc_clusters = findNode::getClass<RawClusterContainer>(topNode, "CLUSTER_CEMC");
+  if(!cemc_clusters) {
+    cerr << PHWHERE << " ERROR: Can not find CLUSTER_CEMC node." << endl;
+    return Fun4AllReturnCodes::ABORTEVENT;
+  }
+  cout << "   Number of CEMC clusters = " << cemc_clusters->size() << endl;
+
+  RawTowerGeomContainer* _geomEM = findNode::getClass<RawTowerGeomContainer>(topNode, "TOWERGEOM_CEMC");
+  if(!_geomEM) std::cerr<<"No TOWERGEOM_CEMC"<<std::endl;
+  RawTowerGeomContainer* _geomIH = findNode::getClass<RawTowerGeomContainer>(topNode, "TOWERGEOM_HCALIN");
+  if(!_geomIH) std::cerr<<"No TOWERGEOM_HCALIN"<<std::endl;
+  RawTowerGeomContainer* _geomOH = findNode::getClass<RawTowerGeomContainer>(topNode, "TOWERGEOM_HCALOUT");
+  if(!_geomIH) std::cerr<<"No TOWERGEOM_HCALIN"<<std::endl;
+
+  RawTowerContainer* _towersRawEM = findNode::getClass<RawTowerContainer>(topNode, "TOWER_CALIB_CEMC");
+  if (!_towersRawEM) std::cerr<<"No TOWER_CALIB_CEMC Node"<<std::endl;
+  RawTowerContainer* _towersRawIH = findNode::getClass<RawTowerContainer>(topNode, "TOWER_CALIB_HCALIN");
+  if (!_towersRawIH) std::cerr<<"No TOWER_CALIB_HCALIN Node"<<std::endl;
+  RawTowerContainer* _towersRawOH = findNode::getClass<RawTowerContainer>(topNode, "TOWER_CALIB_HCALOUT");
+  if (!_towersRawOH) std::cerr<<"No TOWER_CALIB_HCALOUT Node"<<std::endl;
+
+  vector<TLorentzVector> electrons;
+  vector<double> vhoe;
+
+    // loop over CEMC clusters with E > 2 GeV 
+    RawClusterContainer::Range begin_end = cemc_clusters->getClusters();
+    RawClusterContainer::Iterator iter;
+    for (iter = begin_end.first; iter != begin_end.second; ++iter)
+    {
+      RawCluster* cluster = iter->second;
+//      if(!cluster) { cout << "ERROR: bad cluster pointer = " << cluster << endl; continue; }
+//      else {
+        double cemc_ecore = cluster->get_ecore();
+        if(cemc_ecore<2.0) continue;
+        double cemc_x = cluster->get_x();
+        double cemc_y = cluster->get_y();
+        double cemc_z = cluster->get_z() - Zvtx; // correct for event vertex position
+        //double cemc_r = cluster->get_r();
+        double cemc_r = sqrt(pow(cemc_x,2)+pow(cemc_y,2));
+        double cemc_rr = sqrt(pow(cemc_r,2)+pow(cemc_z,2));
+        double cemc_eta = asinh( cemc_z / cemc_r );
+        double cemc_phi = atan2( cemc_y, cemc_x );
+        double cemc_px = cemc_ecore * (cemc_x/cemc_rr);
+        double cemc_py = cemc_ecore * (cemc_y/cemc_rr);
+        double cemc_pz = cemc_ecore * (cemc_z/cemc_rr);
+        //cout << "CEMC cluster: " << cemc_ecore << " " << cemc_eta << " " << cemc_phi << endl;
+
+        // find closest CEMC tower in eta-phi space
+          double distem = 99999.;
+          RawTower* thetowerem = nullptr;
+          RawTowerContainer::ConstRange begin_end_rawEM = _towersRawEM->getTowers();
+          for (RawTowerContainer::ConstIterator rtiter = begin_end_rawEM.first; rtiter != begin_end_rawEM.second; ++rtiter) {
+            RawTower *tower = rtiter->second;
+            RawTowerGeom *tower_geom = _geomEM->get_tower_geometry(tower->get_key());
+            double cemc_tower_phi  = tower_geom->get_phi();
+            double cemc_tower_x = tower_geom->get_center_x();
+            double cemc_tower_y = tower_geom->get_center_y();
+            double cemc_tower_z = tower_geom->get_center_z() - Zvtx; // correct for event vertex
+            double cemc_tower_r = sqrt(pow(cemc_tower_x,2)+pow(cemc_tower_y,2));
+            double cemc_tower_eta = asinh( cemc_tower_z / cemc_tower_r );
+            double tmpdist = sqrt(pow(cemc_eta-cemc_tower_eta,2)+pow(cemc_phi-cemc_tower_phi,2));
+            if(tmpdist<distem) { distem = tmpdist; thetowerem = tower; }
+          }
+          RawTowerGeom *thetower_geom_em = _geomEM->get_tower_geometry(thetowerem->get_key());
+          unsigned int ietaem = thetower_geom_em->get_bineta();
+          unsigned int jphiem = thetower_geom_em->get_binphi();
+          h_notracking_etabins_em->Fill(double(ietaem));
+          h_notracking_phibins_em->Fill(double(jphiem));
+
+
+
+          // find closest HCALIN tower in eta-phi space
+          double distin = 99999.;
+          RawTower* thetowerin = nullptr;
+          RawTowerContainer::ConstRange begin_end_rawIN = _towersRawIH->getTowers();
+          for (RawTowerContainer::ConstIterator rtiter = begin_end_rawIN.first; rtiter != begin_end_rawIN.second; ++rtiter) {
+            RawTower *tower = rtiter->second;
+            RawTowerGeom *tower_geom = _geomIH->get_tower_geometry(tower->get_key());
+            double hcalin_tower_phi  = tower_geom->get_phi();
+            double hcalin_tower_x = tower_geom->get_center_x();
+            double hcalin_tower_y = tower_geom->get_center_y();
+            double hcalin_tower_z = tower_geom->get_center_z() - Zvtx; // correct for event vertex
+            double hcalin_tower_r = sqrt(pow(hcalin_tower_x,2)+pow(hcalin_tower_y,2));
+            double hcalin_tower_eta = asinh( hcalin_tower_z / hcalin_tower_r );
+            double tmpdist = sqrt(pow(cemc_eta-hcalin_tower_eta,2)+pow(cemc_phi-hcalin_tower_phi,2));
+            if(tmpdist<distin) { distin = tmpdist; thetowerin = tower; }
+          }
+          RawTowerGeom *thetower_geom = _geomIH->get_tower_geometry(thetowerin->get_key());
+          unsigned int ieta = thetower_geom->get_bineta();
+          unsigned int jphi = thetower_geom->get_binphi();
+          h_notracking_etabins->Fill(double(ieta));
+          h_notracking_phibins->Fill(double(jphi));
+
+          // Calcuate 3x3 energy deposit in HCALIN. Inner HCAL has 24 bins in eta and 64 bins in phi
+          double e3x3in = 0.;
+          if(ieta<1 || ieta>22) continue; // ignore clusters in edge towers
+          for(unsigned int i=0; i<=2; i++) {
+            for(unsigned int j=0; j<=2; j++) {
+              unsigned int itmp = ieta-1+i;
+              unsigned int jtmp = 0;  
+              if(jphi==0 && j==0) { jtmp = 63; } // wrap around
+              else if(jphi==63 && j==2) { jtmp = 0; } // wrap around
+              else { jtmp = jphi-1+j; } 
+              RawTower* tmptower = _towersRawIH->getTower(itmp,jtmp);
+              if(tmptower) { e3x3in += tmptower->get_energy(); }
+            }
+          }
+          h_notracking_eoh->Fill(e3x3in/cemc_ecore);
+
+          // find closest HCALOUT tower in eta-phi space
+          double distout = 99999.;
+          RawTower* thetowerout = nullptr;
+          RawTowerContainer::ConstRange begin_end_rawON = _towersRawOH->getTowers();
+          for (RawTowerContainer::ConstIterator rtiter = begin_end_rawON.first; rtiter != begin_end_rawON.second; ++rtiter) {
+            RawTower *tower = rtiter->second;
+            RawTowerGeom *tower_geom = _geomOH->get_tower_geometry(tower->get_key());
+            double hcalout_tower_phi  = tower_geom->get_phi();
+            double hcalout_tower_x = tower_geom->get_center_x();
+            double hcalout_tower_y = tower_geom->get_center_y();
+            double hcalout_tower_z = tower_geom->get_center_z() - Zvtx; // correct for event vertex
+            double hcalout_tower_r = sqrt(pow(hcalout_tower_x,2)+pow(hcalout_tower_y,2));
+            double hcalout_tower_eta = asinh( hcalout_tower_z / hcalout_tower_r );
+            double tmpdist = sqrt(pow(cemc_eta-hcalout_tower_eta,2)+pow(cemc_phi-hcalout_tower_phi,2));
+            if(tmpdist<distout) { distout = tmpdist; thetowerout = tower; }
+          }
+          RawTowerGeom *thetower_geomout = _geomOH->get_tower_geometry(thetowerout->get_key());
+          unsigned int ietaout = thetower_geomout->get_bineta();
+          unsigned int jphiout = thetower_geomout->get_binphi();
+          h_notracking_etabinsout->Fill(double(ietaout));
+          h_notracking_phibinsout->Fill(double(jphiout));
+
+          double e3x3out = 0.;
+          if(ietaout<1 || ietaout>22) continue; // ignore clusters in edge towers
+          for(unsigned int i=0; i<=2; i++) {
+            for(unsigned int j=0; j<=2; j++) {
+              unsigned int itmp = ietaout-1+i;
+              unsigned int jtmp = 0;
+              if(jphiout==0 && j==0) { jtmp = 63; } // wrap around
+              else if(jphiout==63 && j==2) { jtmp = 0; } // wrap around
+              else { jtmp = jphiout-1+j; }
+              RawTower* tmptower = _towersRawOH->getTower(itmp,jtmp);
+              if(tmptower) { e3x3out += tmptower->get_energy(); }
+            }
+          }
+
+
+          if(e3x3in/cemc_ecore>0.06) continue; // reject hadrons, 90% eID efficiency is with 0.058 cut
+
+          TLorentzVector tmp = TLorentzVector(cemc_px,cemc_py,cemc_pz,cemc_ecore);
+          electrons.push_back(tmp);
+          vhoe.push_back(e3x3in/cemc_ecore);
+
+//      } // valid CEMC cluster
+    } // end loop over CEMC clusters
+    cout << "number of selected electrons = " << electrons.size() << " " << vhoe.size() << endl;
+
+// Make Upsilons
+
+  if(electrons.size()>=2) {
+    for(long unsigned int i=0; i<electrons.size()-1; i++) {
+      for(long unsigned int j=i+1; j<electrons.size(); j++) {
+        TLorentzVector pair = electrons[i]+electrons[j];
+        cout << i << " " << j << endl;
+        tmp1[0] = pair.M();
+        tmp1[1] = pair.Pt();
+        cout << pair.M() << " " << pair.Pt() << endl;
+        tmp1[2] = (electrons[i]).Pt();
+        tmp1[3] = (electrons[j]).Pt();
+        cout << vhoe[i] << " " << vhoe[j] << endl;
+        tmp1[4] = vhoe[i];
+        tmp1[5] = vhoe[j];
+        cout << "filling..." << endl;
+          ntp_notracking->Fill(tmp1);
+        cout << "done." << endl;
+      }
+    }
+  }
+
+  cout << "returning..." << endl;
+  return Fun4AllReturnCodes::EVENT_OK;
+
+}
+
+//======================================================================
+
+double sPHAnalysis::Get_CAL_e3x3(SvtxTrack* track, RawTowerContainer* _towersRawOH, RawTowerGeomContainer* _geomOH, int what, double Zvtx, double &dphi, double &deta) {
+
+double e3x3 = 0.;
+double pathlength = 999.;
+vector<double> proj;
+for (SvtxTrack::StateIter stateiter = track->begin_states(); stateiter != track->end_states(); ++stateiter)
+{
+  SvtxTrackState *trackstate = stateiter->second;
+  if(trackstate) { proj.push_back(trackstate->get_pathlength()); }
+}
+if(what==0)      { pathlength = proj[proj.size()-3]; } // CEMC
+else if(what==1) { pathlength = proj[proj.size()-2]; } // HCALIN
+else if(what==2) { pathlength = proj[proj.size()-1]; } // HCALOUT
+else { dphi = 9999.; deta = 9999.; return e3x3;}
+
+  double track_eta = 999.;
+  double track_phi = 999.;
+  SvtxTrackState* trackstate = track->get_state(pathlength);
+  if(trackstate) {
+    double track_x = trackstate->get_x();
+    double track_y = trackstate->get_y();
+    double track_z = trackstate->get_z();
+    double track_r = sqrt(track_x*track_x+track_y*track_y);
+    track_eta = asinh( track_z / track_r );
+    track_phi = atan2( track_y, track_x );
+  } else { cout << "track state not found!" << endl; dphi = 9999.; deta = 9999.; return e3x3; }
+
+  double dist = 9999.;
+  RawTower* thetower = nullptr;
+  RawTowerContainer::ConstRange begin_end_rawOH = _towersRawOH->getTowers();
+  for (RawTowerContainer::ConstIterator rtiter = begin_end_rawOH.first; rtiter != begin_end_rawOH.second; ++rtiter) {
+    RawTower *tower = rtiter->second;
+    RawTowerGeom *tower_geom = _geomOH->get_tower_geometry(tower->get_key());
+    //double tower_phi  = tower_geom->get_phi();
+    double tower_x = tower_geom->get_center_x();
+    double tower_y = tower_geom->get_center_y();
+    double tower_z = tower_geom->get_center_z() - Zvtx; // correct for event vertex
+    double tower_r = sqrt(pow(tower_x,2)+pow(tower_y,2));
+    double tower_eta = asinh( tower_z / tower_r );
+    double tower_phi = atan2( tower_y , tower_x );
+    double tmpdist = sqrt(pow(track_eta-tower_eta,2)+pow(track_phi-tower_phi,2));
+    if(tmpdist<dist) { dist = tmpdist; thetower = tower; deta = fabs(track_eta-tower_eta); dphi = fabs(track_phi-tower_phi); }
+  }
+  cout << "dist: " << dist << " " << deta << " " << dphi << endl;
+
+  if(!thetower) { dphi = 9999.; deta = 9999.; return e3x3; }
+  RawTowerGeom *thetower_geom = _geomOH->get_tower_geometry(thetower->get_key());
+  unsigned int ieta = thetower_geom->get_bineta();
+  unsigned int jphi = thetower_geom->get_binphi();
+
+  unsigned int maxbinphi = 63; if(what==0) maxbinphi = 255;
+  unsigned int maxbineta = 23; if(what==0) maxbineta = 93;
+    // calculate e3x3
+    for(unsigned int i=0; i<=2; i++) {
+      for(unsigned int j=0; j<=2; j++) {
+        unsigned int itmp = ieta-1+i;
+        unsigned int jtmp = 0;
+        if(jphi==0 && j==0) { jtmp = maxbinphi; }      // wrap around
+        else if(jphi==maxbinphi && j==2) { jtmp = 0; } // wrap around
+        else { jtmp = jphi-1+j; }
+        if(itmp>=0 && itmp<=maxbineta) { 
+          RawTower* tmptower = _towersRawOH->getTower(itmp,jtmp);
+          if(tmptower) { e3x3 += tmptower->get_energy(); }
+        }
+      }
+    }
+
+  return e3x3;
+}
 
 //======================================================================
 
 int sPHAnalysis::process_event_test(PHCompositeNode *topNode) {
+
+  int evtno = EventNumber;
+  int evtno5 = evtno%5;
+
   EventNumber++;
   int howoften = 1; 
   if((EventNumber-1)%howoften==0) { 
     cout<<"--------------------------- EventNumber = " << EventNumber-1 << endl;
   }
-  if(EventNumber==1) topNode->print();
+  //if(EventNumber==1) topNode->print();
+  float tmp1[99];
+  float tmpb[99];
 
+  GlobalVertexMap *global_vtxmap = findNode::getClass<GlobalVertexMap>(topNode, "GlobalVertexMap");
+  //cout << "Number of GlobalVertexMap entries = " << global_vtxmap->size() << endl;
+  double Zvtx = 0.;
+  for (GlobalVertexMap::Iter iter = global_vtxmap->begin(); iter != global_vtxmap->end(); ++iter)
+  {
+    GlobalVertex *vtx = iter->second;
+    if(vtx->get_id()==1) Zvtx = vtx->get_z(); // BBC vertex
+    //cout << "Global vertex: " << vtx->get_id() << " " << vtx->get_z() << " " << vtx->get_t() << endl;
+  }
+  cout << "Global BBC vertex Z = " << Zvtx << endl;
+
+// TRUTH ------------------------------------------------------------------------
+  float impact_parameter = 999.;
+  int npart = 0;
+  int ginacc = 0;
 /*
-  float impact_parameter = 0.;
 
   PHHepMCGenEventMap *genevtmap = findNode::getClass<PHHepMCGenEventMap>(topNode, "PHHepMCGenEventMap");
   PHHepMCGenEvent *genevt = nullptr;
+  if(!genevtmap) {cout << "NO PHHepMCGenEventMap node found!" << endl;
 
   for (PHHepMCGenEventMap::ReverseIter iter = genevtmap->rbegin(); iter != genevtmap->rend(); ++iter)
   {
     genevt = iter->second;
+    if(genevt->get_embedding_id()==0) break;
     if(!genevt) {cout<<"ERROR: no PHHepMCGenEvent!" << endl; return Fun4AllReturnCodes::ABORTEVENT;}
-    //cout << "got PHHepMCGenEvent... " << genevt << endl;
   }
 
-    HepMC::GenEvent *event = genevt->getEvent();
-    if (!event) { cout << PHWHERE << "ERROR: no HepMC::GenEvent!" << endl; return Fun4AllReturnCodes::ABORTEVENT;}
-    //int npart = event->particles_size();
-    //int nvert = event->vertices_size();
-    //cout << "HepMC::GenEvent: Number of particles, vertuces = " << npart << " " << nvert << endl;
-    HepMC::HeavyIon* hi = event->heavy_ion();
+  HepMC::GenEvent *event = genevt->getEvent();
+  if (!event) { cout << PHWHERE << "ERROR: no HepMC::GenEvent!" << endl; return Fun4AllReturnCodes::ABORTEVENT;}
+  npart = event->particles_size();
+  int nvert = event->vertices_size();
+  cout << "HepMC::GenEvent: Number of particles, vertuces = " << npart << " " << nvert << endl;
+
+  HepMC::HeavyIon* hi = event->heavy_ion();
+  if(hi) { 
     impact_parameter = hi->impact_parameter(); 
     cout << "HepMC::GenEvent: impact parameter = " << impact_parameter << endl;
-*/
-
-  float tmp1[99];
+  }
 
   PHG4TruthInfoContainer* truth_container = findNode::getClass<PHG4TruthInfoContainer>(topNode, "G4TruthInfo");
   if(!truth_container) {
@@ -486,6 +885,7 @@ int sPHAnalysis::process_event_test(PHCompositeNode *topNode) {
 
   vector<TLorentzVector> gparticles;
 
+
     for (PHG4TruthInfoContainer::ConstIterator iter = range.first; iter != range.second; ++iter)
     {
       PHG4Particle* g4particle = iter->second;
@@ -494,10 +894,19 @@ int sPHAnalysis::process_event_test(PHCompositeNode *topNode) {
       if(fabs(gflavor)==11)       { gmass = 0.000511; } 
       else if(fabs(gflavor)==211) { gmass = 0.13957; } 
       else if(fabs(gflavor)==321) { gmass = 0.49368; } 
+      else if(fabs(gflavor)==2212) { gmass = 0.93827; } 
       else { continue; }
+        double gpx = g4particle->get_px();
+        double gpy = g4particle->get_py();
+        double gpz= g4particle->get_pz();
+        double gpt = sqrt(gpx*gpx+gpy*gpy);
+        double ge = sqrt(gpt*gpt + gpz*gpz + gmass * gmass);
+        TLorentzVector tmp = TLorentzVector(gpx,gpy,gpz,ge);
+        if(gpt>0.5 && fabs(tmp.Eta())<1.0) { ginacc++; }
+
       int trackid = g4particle->get_track_id();
       if(trackid>truth_container->GetNumPrimaryVertexParticles()-50) { //embedded particles are the last ones
-      //if(trackid>truth_container->GetNumPrimaryVertexParticles()-2) {
+      //if(trackid>truth_container->GetNumPrimaryVertexParticles()-2) { // Quarkonia
         double gpx = g4particle->get_px();
         double gpy = g4particle->get_py();
         double gpz= g4particle->get_pz();
@@ -512,10 +921,15 @@ int sPHAnalysis::process_event_test(PHCompositeNode *topNode) {
         //cout << "embedded: " << gflavor << " " << gpt << " " << gmass << endl;
       }
     }
-
     cout << "number of embedded particles = " << gparticles.size() << endl;
 
-//-------------------------------------------------------------------
+//    TLorentzVector ele = gparticles[0];
+//    TLorentzVector pos = gparticles[1];
+//    TLorentzVector jpsi = ele + pos;;
+//    cout << "Embedded J/psi: " << jpsi.Pt() << " " << jpsi.Eta() << endl; 
+*/
+
+// RECO -------------------------------------------------------------------
 
   SvtxTrackMap *trackmap = findNode::getClass<SvtxTrackMap>(topNode, "SvtxTrackMap");
   if(!trackmap) {
@@ -531,84 +945,143 @@ int sPHAnalysis::process_event_test(PHCompositeNode *topNode) {
     cerr << PHWHERE << " ERROR: Can not find CLUSTER_CEMC node." << endl;
     return Fun4AllReturnCodes::ABORTEVENT;
   }
-  else { cout << "FOUND CLUSTER_CEMC node." << endl; }
+  cout << "   Number of CEMC clusters = " << cemc_clusters->size() << endl;
+  int cemcmult = cemc_clusters->size();
 
-  int nmvtx = 0; int nintt = 0; int ntpc = 0;
+  RawTowerGeomContainer* _geomEM = findNode::getClass<RawTowerGeomContainer>(topNode, "TOWERGEOM_CEMC");
+  if(!_geomEM) std::cerr<<"No TOWERGEOM_CEMC"<<std::endl;
+  RawTowerGeomContainer* _geomIH = findNode::getClass<RawTowerGeomContainer>(topNode, "TOWERGEOM_HCALIN");
+  if(!_geomIH) std::cerr<<"No TOWERGEOM_HCALIN"<<std::endl;
+  RawTowerGeomContainer* _geomOH = findNode::getClass<RawTowerGeomContainer>(topNode, "TOWERGEOM_HCALOUT");
+  if(!_geomOH) std::cerr<<"No TOWERGEOM_HCALIN"<<std::endl;
+
+  RawTowerContainer* _towersEM = findNode::getClass<RawTowerContainer>(topNode, "TOWER_CALIB_CEMC");
+  if (!_towersEM) std::cerr<<"No TOWER_CALIB_CEMC Node"<<std::endl;
+  RawTowerContainer* _towersIH = findNode::getClass<RawTowerContainer>(topNode, "TOWER_CALIB_HCALIN");
+  if (!_towersIH) std::cerr<<"No TOWER_CALIB_HCALIN Node"<<std::endl;
+  RawTowerContainer* _towersOH = findNode::getClass<RawTowerContainer>(topNode, "TOWER_CALIB_HCALOUT");
+  if (!_towersOH) std::cerr<<"No TOWER_CALIB_HCALOUT Node"<<std::endl;
+  
+//------------------------------------------------------------------------------------------
+/*
+    RawClusterContainer::Range begin_end = cemc_clusters->getClusters();
+    RawClusterContainer::Iterator iter;
+    for (iter = begin_end.first; iter != begin_end.second; ++iter)
+    {
+      RawCluster* cluster = iter->second;
+      if(!cluster) { cout << "ERROR: bad cluster pointer = " << cluster << endl; continue; }
+      else {
+        double cemc_ecore = cluster->get_ecore();
+        //double cemc_e = cluster->get_energy();
+        //double cemc_phi = cluster->get_phi();
+        double cemc_x = cluster->get_x();
+        double cemc_y = cluster->get_y();
+        double cemc_z = cluster->get_z();
+        double cemc_r = cluster->get_r();
+        double cemc_eta = asinh( cemc_z / cemc_r );
+        double cemc_phi = atan2( cemc_y, cemc_x );
+      }
+    }
+*/
 
 //------------------------------------------------------------------------------------------
 
-//cout << "starting loop over tracks..." << endl;
+int ngood = 0;
+cout << "starting loop over tracks..." << endl;
   for (SvtxTrackMap::Iter iter = trackmap->begin(); iter != trackmap->end(); ++iter)
   {
     SvtxTrack *track = iter->second;
-    if(!track) {
-      cout << "ERROR: bad track pointer = " << track << endl;
-      continue;
-    }
+    if(!track) { cout << "ERROR: bad track pointer = " << track << endl; continue; }
 
     double charge = track->get_charge();
-      if(charge>0.) continue;
     double px = track->get_px();
     double py = track->get_py();
+    double pz = track->get_pz();
     double pt = sqrt(px * px + py * py);
-      if(pt<2.0) continue;
-    double phi = track->get_phi();
+    double mom = sqrt(px * px + py * py + pz * pz);
     double eta = track->get_eta();
-    
+    //double phi = track->get_phi();
+    double chisq = track->get_chisq();
+    double ndf = track->get_ndf();
+    double chi2 = 999.;
+      if(ndf!=0.) chi2 = chisq/ndf;
+    double dca3d_xy = track->get_dca3d_xy();
+    if(pt>0.5 && chi2<5.) { ngood++; }
+      if(pt<2.0) continue;
+
+// Find matching CEMC cluster
+    double cemc_dphi = 99999.;
+    double cemc_deta = 99999.;
+    RawCluster* clus = MatchClusterCEMC(track,cemc_clusters, cemc_dphi, cemc_deta);
+    double cemc_ecore = 0.;
+    double cemc_prob = 0.;
+    double cemc_chi2 = 0.;
+    if(clus) {
+      cemc_ecore = clus->get_ecore();
+      cemc_prob = clus->get_prob();
+    }
+
+// Calculate e3x3 for calorimeters
+    double cemc_deta2 = 9999.;
+    double cemc_dphi2 = 9999.;
+    double cemc_e3x3 = Get_CAL_e3x3(track, _towersEM, _geomEM, 0, Zvtx, cemc_dphi2, cemc_deta2);
+    double hcalin_deta = 9999.;
+    double hcalin_dphi = 9999.;
+    double hcalin_e3x3 = Get_CAL_e3x3(track, _towersIH, _geomIH, 1, Zvtx, hcalin_dphi, hcalin_deta);
+    double hcalout_deta = 9999.;
+    double hcalout_dphi = 9999.;
+    double hcalout_e3x3 = Get_CAL_e3x3(track, _towersOH, _geomOH, 2, Zvtx, hcalout_dphi, hcalout_deta);
+
+    cout << "track: " << charge << " " << pt << "    " << cemc_ecore << " " << cemc_e3x3 << " " << hcalin_e3x3 << " " << hcalout_e3x3 << endl;
+
+// count hits
+    int nmvtx = 0; int nintt = 0; int ntpc = 0;
+    auto siseed = track->get_silicon_seed();
+    if(siseed) {
+      for (auto iter = siseed->begin_cluster_keys(); iter != siseed->end_cluster_keys(); ++iter) {
+        TrkrDefs::cluskey cluster_key = *iter;
+        auto trkrid = TrkrDefs::getTrkrId(cluster_key);
+        if(trkrid==TrkrDefs::mvtxId) nmvtx++;
+        if(trkrid==TrkrDefs::inttId) nintt++;
+        //int layer = TrkrDefs::getLayer(cluster_key);
+        //if(0<=layer && layer<=2) nmvtx++;
+        //if(3<=layer && layer<=6) nintt++;
+      }
+    }
+    auto tpcseed = track->get_tpc_seed();
+    if(tpcseed) {
+      for (auto iter = tpcseed->begin_cluster_keys(); iter != tpcseed->end_cluster_keys(); ++iter) {
+        TrkrDefs::cluskey cluster_key = *iter;
+        int layer = TrkrDefs::getLayer(cluster_key);
+        if(layer>6) ntpc++;
+      }
+    }
+    cout << "    ntpc, nmvtx, nitt= " << ntpc << " " << nmvtx << " " << nintt << endl;
+      
+// print all track states
+/*
+  vector<double> proj;
+  for (SvtxTrack::StateIter stateiter = track->begin_states(); stateiter != track->end_states(); ++stateiter)
+  {
+    SvtxTrackState *trackstate = stateiter->second;
+    if(trackstate) { 
+      cout << "state: " << trackstate->get_pathlength() << endl; 
+      proj.push_back(trackstate->get_pathlength());
+    } 
+  }
+  //cout << "projection radii = " << proj[proj.size()-3] << " " << proj[proj.size()-2] << " " << proj[proj.size()-1] << endl;
+*/
     double gdist = 999.;
+/*    
     for(unsigned int i=0; i<gparticles.size(); i++) {
       double gphi = gparticles[i].Phi();
       double geta = gparticles[i].Eta();
       double tmpdist = sqrt(pow(phi-gphi,2)+pow(eta-geta,2));
       if(tmpdist<gdist) { gdist = tmpdist; }
     }
-    if(gdist>0.001) continue;
-
-    //if(!isElectron(track)) continue;
-
-    unsigned int cemc_clusid = track->get_cal_cluster_id(SvtxTrack::CAL_LAYER::CEMC);
-    double cemc_ecore = 0.;
-    double cemc_prob = 99999.;
-    double cemc_chi2 = 99999.;
-    if(cemc_clusid<99999) {
-      RawCluster* cluster = cemc_clusters->getCluster(cemc_clusid);
-      if(!cluster) {
-        cout << "ERROR: bad cluster pointer = " << cluster << endl;
-        continue;
-      }
-      //cemc_e = cluster->get_energy();
-      cemc_ecore = cluster->get_ecore();
-      cemc_prob = cluster->get_prob();
-      cemc_chi2 = cluster->get_chi2();
-    }
-
-    nmvtx = 0; nintt = 0; ntpc = 0;
-    for (SvtxTrack::ConstClusterKeyIter iter = track->begin_cluster_keys();
-                                        iter != track->end_cluster_keys(); ++iter)
-    {
-      TrkrDefs::cluskey cluster_key = *iter;
-      int trackerid = TrkrDefs::getTrkrId(cluster_key);
-      if(trackerid==0) nmvtx++;
-      if(trackerid==1) nintt++;
-      if(trackerid==2) ntpc++;
-    }
-
-    double pz = track->get_pz();
-    double mom = sqrt(px * px + py * py + pz * pz);
-    double chisq = track->get_chisq();
-    double ndf = track->get_ndf();
-    double chi2 = 999.;
-      if(ndf!=0.) chi2 = chisq/ndf;
-    //double dca2d = track->get_dca2d();
-    double dca3d_xy = track->get_dca3d_xy();
-    //double emce = track->get_cal_cluster_e(SvtxTrack::CAL_LAYER::CEMC);
-    double cemc_dphi = track->get_cal_dphi(SvtxTrack::CAL_LAYER::CEMC);
-    double cemc_deta = track->get_cal_deta(SvtxTrack::CAL_LAYER::CEMC);
-    double cemc_e3x3 = track->get_cal_energy_3x3(SvtxTrack::CAL_LAYER::CEMC);
-    double hcalin_e3x3 = track->get_cal_energy_3x3(SvtxTrack::CAL_LAYER::HCALIN);
-    //double cemc_e5x5 = track->get_cal_energy_5x5(SvtxTrack::CAL_LAYER::CEMC);
-    //double eop = 0.;
-    //  if(mom!=0) eop = cemc_ecore/mom;
+    cout << "gdist: " << gdist << endl;
+//    if(gdist>0.001) continue;
+*/
 
     tmp1[0] = charge;
     tmp1[1] = pt;
@@ -627,15 +1100,83 @@ int sPHAnalysis::process_event_test(PHCompositeNode *topNode) {
     tmp1[14] = chi2;
     tmp1[15] = dca3d_xy;
     tmp1[16] = hcalin_e3x3;
-    tmp1[17] = gdist;
+    tmp1[17] = hcalout_e3x3;
+    tmp1[18] = gdist;
       ntppid->Fill(tmp1);
 
   } // end loop over tracks
+
+//  ntpb = new TNtuple("ntpb","","bimp:mult:truemult:cemcmult");
+  tmpb[0] = impact_parameter;
+  tmpb[1] = mult;
+  tmpb[2] = npart;
+  tmpb[3] = cemcmult;
+  tmpb[4] = float(evtno);
+  tmpb[5] = float(evtno5);
+  tmpb[6] = float(ginacc);
+  tmpb[7] = float(ngood);
+    ntpb->Fill(tmpb);
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
 //=================================================================================
+
+RawCluster* sPHAnalysis::MatchClusterCEMC(SvtxTrack* track, RawClusterContainer* cemc_clusters, double &dphi, double &deta) {
+
+  RawCluster* returnCluster = NULL;
+  double track_eta = 99999.;
+  double track_phi = 99999.;
+  dphi = 99999.;
+  deta = 99999.;
+
+  vector<double> proj;
+  for (SvtxTrack::StateIter stateiter = track->begin_states(); stateiter != track->end_states(); ++stateiter)
+  {
+    SvtxTrackState *trackstate = stateiter->second;
+    if(trackstate) { proj.push_back(trackstate->get_pathlength()); }
+  }
+  double pathlength = proj[proj.size()-3]; // CEMC is next next to last
+
+  SvtxTrackState* trackstate = track->get_state(pathlength); // at CEMC inner face
+  if(trackstate) {
+    double track_x = trackstate->get_x();
+    double track_y = trackstate->get_y();
+    double track_z = trackstate->get_z();
+    double track_r = sqrt(track_x*track_x+track_y*track_y);
+    track_eta = asinh( track_z / track_r );
+    track_phi = atan2( track_y, track_x );
+  } else { return returnCluster; }
+
+  if(track_eta == 99999. || track_phi == 99999.) { return returnCluster; }
+  double dist = 99999.;
+
+    RawClusterContainer::Range begin_end = cemc_clusters->getClusters();
+    RawClusterContainer::Iterator iter;
+    for (iter = begin_end.first; iter != begin_end.second; ++iter)
+    {
+      RawCluster* cluster = iter->second;
+      if(!cluster) continue;
+      else {
+        double cemc_ecore = cluster->get_ecore();
+        if(cemc_ecore<1.0) continue;
+        double cemc_x = cluster->get_x();
+        double cemc_y = cluster->get_y();
+        double cemc_z = cluster->get_z();
+        double cemc_r = cluster->get_r();
+        double cemc_eta = asinh( cemc_z / cemc_r );
+        double cemc_phi = atan2( cemc_y, cemc_x );
+        double tmpdist = sqrt(pow((cemc_eta-track_eta),2)+pow((cemc_phi-track_phi),2));
+        if(tmpdist<dist) {
+          dist = tmpdist; returnCluster = cluster; dphi = fabs(cemc_phi-track_phi); deta = fabs(cemc_eta-track_eta);
+        }
+      }
+    }
+
+  return returnCluster;
+}
+
+
 //=================================================================================
 
 int sPHAnalysis::process_event_upsilons(PHCompositeNode *topNode) {
@@ -652,6 +1193,20 @@ int sPHAnalysis::process_event_upsilons(PHCompositeNode *topNode) {
     return Fun4AllReturnCodes::ABORTEVENT;
   }
   cout << "   Number of tracks = " << trackmap->size() << endl;
+
+  SvtxVertexMap *vtxmap = findNode::getClass<SvtxVertexMap>(topNode, "SvtxVertexMap");
+  if(!vtxmap) {
+      cout << "SvtxVertexMap node not found!" << endl;
+      return Fun4AllReturnCodes::ABORTEVENT;
+  }
+  cout << "Number of SvtxVertexMap entries = " << vtxmap->size() << endl;
+
+  GlobalVertexMap *global_vtxmap = findNode::getClass<GlobalVertexMap>(topNode, "GlobalVertexMap");
+  if(!global_vtxmap) {
+    cerr << PHWHERE << " ERROR: Can not find GlobalVertexMap node." << endl;
+    return Fun4AllReturnCodes::ABORTEVENT;
+  }
+  cout << "Number of GlobalVertexMap entries = " << global_vtxmap->size() << endl;
 
   RawClusterContainer* cemc_clusters = findNode::getClass<RawClusterContainer>(topNode, "CLUSTER_CEMC");
   if(!cemc_clusters) {
@@ -684,56 +1239,52 @@ int sPHAnalysis::process_event_upsilons(PHCompositeNode *topNode) {
     }
 
     double charge = track->get_charge();
-      if(charge>0.) continue;
     double px = track->get_px();
     double py = track->get_py();
     double pz = track->get_pz();
     double pt = sqrt(px * px + py * py);
     double mom = sqrt(pt*pt+pz*pz);
     double ee = sqrt(mom*mom+0.000511*0.000511);
+      //if(pt<0.5) continue;
       if(pt<2.0) continue;
     //double phi = track->get_phi();
     double eta = track->get_eta();
     double chisq = track->get_chisq();
     double ndf = track->get_ndf();
     double chi2 = 999.;
-    double dca3d_xy = track->get_dca3d_xy();
-      if(ndf!=0.) chi2 = chisq/ndf;
-    //double cemc_dphi = track->get_cal_dphi(SvtxTrack::CAL_LAYER::CEMC);
-    //double cemc_deta = track->get_cal_deta(SvtxTrack::CAL_LAYER::CEMC);
-    double cemc_e3x3 = track->get_cal_energy_3x3(SvtxTrack::CAL_LAYER::CEMC);
-    //double hcalin_e3x3 = track->get_cal_energy_3x3(SvtxTrack::CAL_LAYER::HCALIN);
+    double dca3d_xy = track->get_dca3d_xy(); if(ndf!=0.) chi2 = chisq/ndf;
 
-    unsigned int cemc_clusid = track->get_cal_cluster_id(SvtxTrack::CAL_LAYER::CEMC);
+    double cemc_dphi = 99999.;
+    double cemc_deta = 99999.;
+    RawCluster* clus = MatchClusterCEMC(track, cemc_clusters, cemc_dphi, cemc_deta);
     double cemc_ecore = 0.;
-    //double cemc_prob = 99999.;
-    //double cemc_chi2 = 99999.;
-    if(cemc_clusid<99999) {
-      RawCluster* cluster = cemc_clusters->getCluster(cemc_clusid);
-      if(!cluster) {
-        cout << "ERROR: bad cluster pointer = " << cluster << endl;
-        continue;
-      }
-      //cemc_e = cluster->get_energy();
-      cemc_ecore = cluster->get_ecore();
-      //cemc_prob = cluster->get_prob();
-      //cemc_chi2 = cluster->get_chi2();
-    }
+    if(clus) cemc_ecore = clus->get_ecore();
     if(cemc_ecore/mom<0.7) continue; // not an electron
+    double trk_x = track->get_x();
+    double trk_y = track->get_y();
+    double trk_z = track->get_z();
+    cout << "track: " << charge << " " << pt << " " << cemc_ecore/mom << " " << trk_x << " " << trk_y << " " << trk_z << endl;
 
     int nmvtx = 0; int nintt = 0; int ntpc = 0;
-    for (SvtxTrack::ConstClusterKeyIter iter = track->begin_cluster_keys();
-                                        iter != track->end_cluster_keys(); ++iter)
-    {
+    auto siseed = track->get_silicon_seed();
+    for (auto iter = siseed->begin_cluster_keys(); iter != siseed->end_cluster_keys(); ++iter) {
       TrkrDefs::cluskey cluster_key = *iter;
-      int trackerid = TrkrDefs::getTrkrId(cluster_key);
-      if(trackerid==0) nmvtx++;
-      if(trackerid==1) nintt++;
-      if(trackerid==2) ntpc++;
+      //int layer = TrkrDefs::getLayer(cluster_key);
+      auto trkrid = TrkrDefs::getTrkrId(cluster_key);
+      if(trkrid==TrkrDefs::mvtxId) nmvtx++;
+      if(trkrid==TrkrDefs::inttId) nintt++;
+      //if(0<=layer && layer<=2) nmvtx++;
+      //if(3<=layer && layer<=6) nintt++;
+    }
+    auto tpcseed = track->get_tpc_seed();
+    for (auto iter = tpcseed->begin_cluster_keys(); iter != tpcseed->end_cluster_keys(); ++iter) {
+      TrkrDefs::cluskey cluster_key = *iter;
+      int layer = TrkrDefs::getLayer(cluster_key);
+      if(layer>6) ntpc++;
     }
 
-      if(charge<0) std::cout << "electron: " << pt << " " << eta << " " << charge << " " << cemc_ecore << " " << cemc_e3x3  << std::endl;
-      if(charge>0) std::cout << "positron: " << pt << " " << eta << " " << charge << " " << cemc_ecore << " " << cemc_e3x3  << std::endl;
+      if(charge<0) std::cout << "electron: " << pt << " " << eta << " " << nmvtx << " " << ntpc << " " << charge << " " << cemc_ecore << std::endl;
+      if(charge>0) std::cout << "positron: " << pt << " " << eta << " " << nmvtx << " " << ntpc << " " << charge << " " << cemc_ecore << std::endl;
       TLorentzVector tmp = TLorentzVector(px,py,pz,ee);
       if(charge>0) {
         positrons.push_back(tmp); 
@@ -752,12 +1303,15 @@ int sPHAnalysis::process_event_upsilons(PHCompositeNode *topNode) {
   double pmult = positrons.size();
   float tmp1[99];
 
+// make pairs ----------------------------------------------------------------------------------
+
   for(long unsigned int i=0; i<electrons.size(); i++) {
   for(long unsigned int j=0; j<positrons.size(); j++) {
     TLorentzVector pair = electrons[i]+positrons[j];
     double mass = pair.M();
     hmass->Fill(mass);
-    if(mass<5.0) continue;
+    cout << "Upsilon mass = " << pair.M() << endl; 
+    //if(mass<5.0) continue;
       tmp1[0] = 1.;
       tmp1[1] = pair.M();
       tmp1[2] = pair.Pt();
@@ -793,7 +1347,7 @@ int sPHAnalysis::process_event_upsilons(PHCompositeNode *topNode) {
     TLorentzVector pair = electrons[i]+electrons[j];
     double mass = pair.M();
     hmass->Fill(mass);
-    if(mass<5.0) continue;
+    //if(mass<5.0) continue;
       tmp1[0] = 3.;
       tmp1[1] = pair.M();
       tmp1[2] = pair.Pt();
@@ -829,7 +1383,7 @@ int sPHAnalysis::process_event_upsilons(PHCompositeNode *topNode) {
     TLorentzVector pair = positrons[i]+positrons[j];
     double mass = pair.M();
     hmass->Fill(mass);
-    if(mass<5.0) continue;
+    //if(mass<5.0) continue;
       tmp1[0] = 2.;
       tmp1[1] = pair.M();
       tmp1[2] = pair.Pt();
