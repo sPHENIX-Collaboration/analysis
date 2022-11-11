@@ -4,7 +4,14 @@
 
 #include <fun4all/SubsysReco.h>
 
-class PairMaker: public SubsysReco {
+class SvtxTrack;
+class SvtxTrackMap;
+class SvtxVertexMap;
+class GlobalVertexMap;
+class RawCluster;
+class RawClusterContainer;
+
+class FilterEventsUpsilon: public SubsysReco {
 
 public:
 
@@ -17,6 +24,17 @@ public:
   int End(PHCompositeNode *topNode);
 
 protected:
+
+  int GetNodes(PHCompositeNode *topNode);
+  RawCluster* MatchClusterCEMC(SvtxTrack* track, RawClusterContainer* cemc_clusters, double &dphi, double &deta);
+
+  PHCompositeNode*     _topNode;
+  SvtxTrackMap*        _trackmap;
+  SvtxVertexMap*       _vtxmap;
+  GlobalVertexMap*     _global_vtxmap;
+  RawClusterContainer* _cemc_clusters;
+
+  SvtxTrackMap*        _trackmap_ee;
 
   std::string outnodename;
   int EventNumber;
