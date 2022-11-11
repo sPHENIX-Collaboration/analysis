@@ -31,7 +31,7 @@ foreach infile ($2/*)
      grep -o 'PHSimpleKFProp_TOP: per event time (ms):[^"]*' $infile >> time.txt
      grep -o 'PHTpcTrackSeedCircleFit_TOP: per event time (ms):[^"]*' $infile >> time.txt
      grep -o 'PHSiliconTpcTrackMatching_TOP: per event time (ms):[^"]*' $infile >> time.txt
-     grep -o 'PHActsFirstTrkFitter_TOP: per event time (ms):[^"]*' $infile >> time.txt
+     grep -o 'PHActsTrkFitter_TOP: per event time (ms):[^"]*' $infile >> time.txt
      grep -o 'PHSimpleVertexFinder_TOP: per event time (ms):[^"]*' $infile >> time.txt
      grep -o 'PHActsVertexPropagator_TOP: per event time (ms):[^"]*' $infile >> time.txt
      grep -o 'PHTpcClusterMover_TOP: per event time (ms):[^"]*' $infile >> time.txt

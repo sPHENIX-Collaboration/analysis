@@ -27,7 +27,7 @@
 
 #include <mvtx/CylinderGeom_Mvtx.h>
 #include <mvtx/MvtxDefs.h>
-#include <mvtx/MvtxHit.h>
+//#include <mvtx/MvtxHit.h>
 #include <trackbase/TrkrDefs.h>
 #include <trackbase/TrkrHit.h>  // for TrkrHit
 #include <trackbase/TrkrHitSet.h>

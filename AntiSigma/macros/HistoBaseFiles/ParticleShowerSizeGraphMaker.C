@@ -82,3 +82,42 @@ h2a->Draw("surf same");
   //fout->Close();
   */
 }
+
+void DrawShowers()
+{
+  TCanvas *c1 = new TCanvas();
+  TFile *fin = TFile::Open("neutron_gamma_edep_4gev.root");
+  TH2 *gamma = (TH2F *) fin->Get("gamma");
+  TH2 *neutron = (TH2F *) fin->Get("neutron");
+  c1->SetLogz();
+  gamma->SetStats(0);
+  gamma->SetLineColor(3);
+  gamma->SetTitle("Shower Size");
+  gamma->GetXaxis()->SetTitle("#Delta#Theta [rad]");
+  gamma->GetXaxis()->SetNdivisions(505);
+  gamma->GetYaxis()->SetTitle("#Delta#Phi [rad]");
+  gamma->GetYaxis()->SetNdivisions(505);
+  gamma->GetZaxis()->SetTitle("Deposited Energy [GeV]");
+  gamma->GetZaxis()->SetTitleOffset(1.3);
+  neutron->SetLineColor(2);
+  neutron->SetStats(0);
+  c1->SetTheta(5.);
+  c1->SetPhi(22.);
+
+  gamma->DrawClone("surf");
+  neutron->DrawClone("surf same");
+TLegend *legrda = new TLegend(0.54,0.66,0.9,0.79,NULL,"brNDC");
+  legrda->SetLineColor(1);
+  legrda->SetLineStyle(1);
+  legrda->SetLineWidth(1);
+  legrda->SetFillColor(10);
+  legrda->SetFillStyle(1001);
+  legrda->SetBorderSize(0);
+  legrda->SetTextSize(0.039);
+  gamma->SetLineWidth(2);
+  neutron->SetLineWidth(2);
+  legrda->AddEntry(gamma,"4 GeV Photon Shower");
+  legrda->AddEntry(neutron,"4 GeV Neutron Shower");
+  legrda->Draw();
+  c1->Print("showers.png");
+}

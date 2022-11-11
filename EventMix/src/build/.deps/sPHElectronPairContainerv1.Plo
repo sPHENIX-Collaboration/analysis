@@ -3,7 +3,7 @@ sPHElectronPairContainerv1.lo: \
  /usr/include/stdc-predef.h \
  /sphenix/u/weihuma/analysis/EventMix/src/sPHElectronPairContainerv1.h \
  /sphenix/u/weihuma/analysis/EventMix/src/sPHElectronPair.h \
- /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/release/release_new/new.1/include/phool/PHObject.h \
+ /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/release/release_old/old.1/include/phool/PHObject.h \
  /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/opt/sphenix/core/root-6.22.02/include/TObject.h \
  /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/opt/sphenix/core/root-6.22.02/include/RConfigure.h \
  /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/opt/sphenix/core/root-6.22.02/include/Rtypes.h \
@@ -204,7 +204,7 @@ sPHElectronPairContainerv1.lo: \
 
 /sphenix/u/weihuma/analysis/EventMix/src/sPHElectronPair.h:
 
-/cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/release/release_new/new.1/include/phool/PHObject.h:
+/cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/release/release_old/old.1/include/phool/PHObject.h:
 
 /cvmfs/sphenix.sdcc.bnl.gov/gcc-8.3/opt/sphenix/core/root-6.22.02/include/TObject.h:
 

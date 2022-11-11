@@ -41,10 +41,10 @@ void run(
 
   Fun4AllInputManager *in = new Fun4AllDstInputManager("DST_TRACKS");
   in->Verbosity(1);
-  in->fileopen(inputFile);
+  //in->fileopen(inputFile);
  //in->AddListFile("filelist_0_4d88fm.txt"); //sHijing with Upsilon embeded;
  // in->AddListFile("filelist_0_12fm.txt"); //sHijing with Upsilon embeded;
- // in->AddListFile("filelist_0_20fm.txt"); //sHijing with Upsilon embeded;
+  in->AddListFile("filelist_0_20fm.txt"); //sHijing with Upsilon embeded;
   
   se->registerInputManager(in);
 

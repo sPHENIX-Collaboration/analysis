@@ -131,8 +131,7 @@ am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(pcmdir)" \
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libtrackpid_la_DEPENDENCIES =
 am__objects_1 = TrackPidAssoc_Dict.lo
-am_libtrackpid_la_OBJECTS = $(am__objects_1) TrackPidAssoc.lo \
-	ElectronPid.lo
+am_libtrackpid_la_OBJECTS = $(am__objects_1) TrackPidAssoc.lo
 libtrackpid_la_OBJECTS = $(am_libtrackpid_la_OBJECTS)
 AM_V_lt = $(am__v_lt_$(V))
 am__v_lt_ = $(am__v_lt_$(AM_DEFAULT_VERBOSITY))
@@ -364,8 +363,7 @@ AM_LDFLAGS = \
   -L$(OFFLINE_MAIN)/lib
 
 pkginclude_HEADERS = \
-  TrackPidAssoc.h \
-  ElectronPid.h
+  TrackPidAssoc.h 
 
 ROOTDICTS = \
   TrackPidAssoc_Dict.cc 
@@ -378,13 +376,12 @@ nobase_dist_pcm_DATA = \
 # sources for io library
 libtrackpid_la_SOURCES = \
   $(ROOTDICTS) \
-  TrackPidAssoc.cc \
-  ElectronPid.cc
+  TrackPidAssoc.cc 
 
 libtrackpid_la_LIBADD = \
   -lphool \
   -lSubsysReco \
-  -ltrackbase_historic_io
+  -ltrackbase_historic_io 
 
 libtrackpid_la_LDFLAGS = \
   -L$(libdir) \
@@ -394,8 +391,7 @@ libtrackpid_la_LDFLAGS = \
   -lg4detectors_io \
   -lphg4hit \
   -lg4dst \
-  -lg4eval \
-  -leventmix
+  -lg4eval 
 
 
 ################################################
@@ -503,7 +499,6 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-include ./$(DEPDIR)/ElectronPid.Plo
 include ./$(DEPDIR)/TrackPidAssoc.Plo
 include ./$(DEPDIR)/TrackPidAssoc_Dict.Plo
 include ./$(DEPDIR)/testexternals.Po

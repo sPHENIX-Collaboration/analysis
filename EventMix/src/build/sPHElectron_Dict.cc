@@ -196,6 +196,14 @@ class sPHElectron : public PHObject
   virtual int get_nmvtx()   const { return -1;}
   virtual int get_ntpc()   const { return -1;}
 
+  virtual double get_cemc_ecore()   const { return NAN;}
+  virtual double get_cemc_chi2()   const { return NAN;}
+  virtual double get_cemc_prob()   const { return NAN;}
+  virtual double get_cemc_dphi()   const { return NAN;}
+  virtual double get_cemc_deta()   const { return NAN;}
+  virtual double get_hcalin_e()   const { return NAN;}
+  virtual double get_hcalin_dphi()   const { return NAN;}
+  virtual double get_hcalin_deta()   const { return NAN;}
 
   virtual void set_id(unsigned int id) { }
   virtual void set_charge(int charge)  { }
@@ -219,6 +227,14 @@ class sPHElectron : public PHObject
   virtual void set_nmvtx(int i)   { }
   virtual void set_ntpc(int i)   { }
 
+  virtual void set_cemc_ecore(double a)   { }
+  virtual void set_cemc_chi2(double a)   { }
+  virtual void set_cemc_prob(double a)   { }
+  virtual void set_cemc_dphi(double a)   { }
+  virtual void set_cemc_deta(double a)   { }
+  virtual void set_hcalin_e(double a)   { }
+  virtual void set_hcalin_dphi(double a)   { }
+  virtual void set_hcalin_deta(double a)   { }
 
  protected:
   sPHElectron() {}

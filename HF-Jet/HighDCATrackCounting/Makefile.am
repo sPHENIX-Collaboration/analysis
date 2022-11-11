@@ -1,56 +1,46 @@
 AUTOMAKE_OPTIONS = foreign
 
-INCLUDES = \
+AM_CPPFLAGS = \
   -I$(includedir) \
-  -I$(MY_INSTALL)/include \
   -I$(OFFLINE_MAIN)/include \
-  -I`root-config --incdir`
+  -I$(ROOTSYS)/include
 
-libBJetModule_la_LDFLAGS = \
-  -nodefaultlibs \
+AM_LDFLAGS = \
   -L$(libdir) \
   -L$(OFFLINE_MAIN)/lib \
-  `root-config --libs`
+  -L$(OFFLINE_MAIN)/lib64
+
+pkginclude_HEADERS = \
+  BJetModule.h \
+  TracksInJets.h
 
 lib_LTLIBRARIES = \
   libBJetModule.la
 
-include_HEADERS = \
-  BJetModule.h \
-  BJetModuleLinkDef.h
-
 libBJetModule_la_SOURCES = \
-  BJetModule.C \
-  BJetModule_Dict.C
+  BJetModule.cc \
+  TracksInJets.cc
 
 libBJetModule_la_LIBADD = \
+  -lphool \
   -lg4dst \
   -lg4eval \
-  -lphool
+  -lSubsysReco
 
-BUILT_SOURCES = \
-  testexternals.C
+BUILT_SOURCES = testexternals.cc
 
 noinst_PROGRAMS = \
   testexternals
 
-testexternals_LDADD = \
-  libBJetModule.la
+testexternals_SOURCES = testexternals.cc
+testexternals_LDADD   = libBJetModule.la
 
-testexternals.C:
+testexternals.cc:
 	echo "//*** this is a generated file. Do not commit, do not edit" > $@
 	echo "int main()" >> $@
 	echo "{" >> $@
 	echo "  return 0;" >> $@
 	echo "}" >> $@
 
-##############################################
-# please add new classes in alphabetical order
-# Rule for generating CINT dictionaries from class headers.
-%_Dict.C: %.h %LinkDef.h
-	rootcint -f $@ -c $(CINTFLAGS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $^
-
 clean-local:
-	rm -f *Dict* testexternals.C
-
-testexternals_SOURCES = testexternals.C
+	rm -f $(BUILT_SOURCES)

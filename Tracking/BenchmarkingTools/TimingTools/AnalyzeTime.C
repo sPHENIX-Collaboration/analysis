@@ -3,7 +3,7 @@
 void initializeModules(std::map<std::string,std::vector<double>>& modules);
 void collectData(std::map<std::string,std::vector<double>>& modules, 
 		 std::string& filename);
-void plotTimes(std::map<std::string, std::vector<double>>& modules);
+void plotTimes(std::map<std::string, std::vector<double>>& modules, std::string& filename);
 
 
 
@@ -16,18 +16,19 @@ void plotTimes(std::map<std::string, std::vector<double>>& modules);
  * to the total time. The output rootfile has a total time graph which
  * sums the contributions
  */
-void AnalyzeTime(std::string filename)
+void AnalyzeTime(std::string infile, std::string outfile)
 {
 
   std::map<std::string,std::vector<double>> modules;
   initializeModules(modules);
  
-  collectData(modules,filename);
+  collectData(modules,infile);
     
-  plotTimes(modules);
+  plotTimes(modules, outfile);
 }
 
-void plotTimes(std::map<std::string, std::vector<double>>& modules)
+void plotTimes(std::map<std::string, std::vector<double>>& modules,
+	       std::string& filename)
 {
   ostringstream canname;
   int nbins = 200;
@@ -47,7 +48,7 @@ void plotTimes(std::map<std::string, std::vector<double>>& modules)
   for(int i=0; i<totentries; i++)
     { totalTime.push_back(0); }
 
-  TFile *outfile = new TFile("timeoutfile.root","recreate");
+  TFile *outfile = new TFile(filename.c_str(),"recreate");
   for(const auto& [moduleName, values] : modules)
     {
       canname.str("");
@@ -75,7 +76,7 @@ void plotTimes(std::map<std::string, std::vector<double>>& modules)
       histo->Write();
       myText(0.2,0.96,kBlack,moduleName.c_str());
       canname<<".png";
-      can->Print(canname.str().c_str());
+      //can->Print(canname.str().c_str());
     }
 
   TH1F *totalTimes = new TH1F("totalTime",";time [ms]",nbins,bins);

@@ -44,13 +44,13 @@ void PIDplots::inputpars(){
   men=0.511*0.001;//Gev positron mass
   pi=TMath::Pi();
   
-  tag=2;
+  tag=1;
   //tag=1 for upsilon/embed run; 
   //tag=2 for electron,pion,antiproton/embed run; 
   //tag=3 for single particles identification and efficiency;
  //////////////////////////////////////////////input and output
-  if(tag==1){//tag=2 for upsilon run
-    Nfile=3; //input number of files
+  if(tag==1){//tag=1 for upsilon run
+    Nfile=13; //input number of files
     Nevent=2000; //event number of each Nfile (maximum number for ifiles)
     Nmpnbin=400;//bin number for plot; Nmpnbin=200 or 400; Nmpnbin<=400.
     
@@ -60,8 +60,21 @@ void PIDplots::inputpars(){
     
     //single-Upsilon decay electrons
     input_file[0] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_upsilon_1s_2000_POSCOR_g4svtx_eval.root";//2000 events
-    input_file[1] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_upsilon_2s_2000_POSCOR_g4svtx_eval.root";//2000 events
-    input_file[2] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_upsilon_3s_2000_POSCOR_g4svtx_eval.root";//2000 events
+    //input_file[1] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_upsilon_2s_2000_POSCOR_g4svtx_eval.root";//2000 events
+    //input_file[2] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_upsilon_3s_2000_POSCOR_g4svtx_eval.root";//2000 events
+
+    input_file[1] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_pi-_1000_0_POSCOR_g4svtx_eval.root";//1000 events
+    input_file[2] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_pi-_1000_1_POSCOR_g4svtx_eval.root";//1000 events
+    input_file[3] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_pi-_1000_2_POSCOR_g4svtx_eval.root";//1000 events
+    input_file[4] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_pi-_1000_3_POSCOR_g4svtx_eval.root";//1000 events
+    input_file[5] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_K-_1000_0_POSCOR_g4svtx_eval.root";//1000 events
+    input_file[6] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_K-_1000_1_POSCOR_g4svtx_eval.root";//1000 events
+    input_file[7] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_K-_1000_2_POSCOR_g4svtx_eval.root";//1000 events
+    input_file[8] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_K-_1000_3_POSCOR_g4svtx_eval.root";//1000 events
+    input_file[9] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_antiproton_0_1000_POSCOR_g4svtx_eval.root";//1000 events
+    input_file[10] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_antiproton_1000_1_POSCOR_g4svtx_eval.root";//1000 events
+    input_file[11] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_antiproton_1000_2_POSCOR_g4svtx_eval.root";//1000 events
+    input_file[12] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_antiproton_1000_3_POSCOR_g4svtx_eval.root";//1000 events
     
     //embed-Upsilon decay electrons
     
@@ -89,7 +102,7 @@ void PIDplots::inputpars(){
   }
   
   if(tag==3){//tag=3 for single particle identification and efficiency
-    Nfile=28; //input number of files
+    Nfile=16; //input number of files
     Nevent=1000; //event number of each Nfile (maximum number for ifiles)
     Nmpnbin=200;//bin number for plot; Nmpnbin=200 or 400; Nmpnbin<=400. 
   
@@ -97,41 +110,20 @@ void PIDplots::inputpars(){
     input_file[1] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_e-_1000_1_POSCOR_g4svtx_eval.root";//1000 events
     input_file[2] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_e-_1000_2_POSCOR_g4svtx_eval.root";//1000 events
     input_file[3] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_e-_1000_3_POSCOR_g4svtx_eval.root";//1000 events
-    input_file[4] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_e+_1000_0_POSCOR_g4svtx_eval.root";//1000 events
-    input_file[5] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_e+_1000_1_POSCOR_g4svtx_eval.root";//1000 events
-    input_file[6] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_e+_1000_2_POSCOR_g4svtx_eval.root";//1000 events
-    input_file[7] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_e+_1000_3_POSCOR_g4svtx_eval.root";//1000 events
-   
-    input_file[8] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_pi-_1000_0_POSCOR_g4svtx_eval.root";//1000 events
-    input_file[9] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_pi-_1000_1_POSCOR_g4svtx_eval.root";//1000 events
-    input_file[10] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_pi-_1000_2_POSCOR_g4svtx_eval.root";//1000 events
-    input_file[11] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_pi-_1000_3_POSCOR_g4svtx_eval.root";//1000 events
-    input_file[12] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_pi+_1000_0_POSCOR_g4svtx_eval.root";//1000 events
-    input_file[13] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_pi+_1000_1_POSCOR_g4svtx_eval.root";//1000 events
-    input_file[14] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_pi+_1000_2_POSCOR_g4svtx_eval.root";//1000 events
-    input_file[15] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_pi+_1000_3_POSCOR_g4svtx_eval.root";//1000 events
-    
-    input_file[16] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_K-_1000_0_POSCOR_g4svtx_eval.root";//1000 events
-    input_file[17] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_K-_1000_1_POSCOR_g4svtx_eval.root";//1000 events
-    input_file[18] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_K-_1000_2_POSCOR_g4svtx_eval.root";//1000 events
-    input_file[19] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_K-_1000_3_POSCOR_g4svtx_eval.root";//1000 events
-    input_file[20] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_K+_1000_0_POSCOR_g4svtx_eval.root";//1000 events
-    input_file[21] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_K+_1000_1_POSCOR_g4svtx_eval.root";//1000 events
-    input_file[22] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_K+_1000_2_POSCOR_g4svtx_eval.root";//1000 events
-    input_file[23] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_K+_1000_3_POSCOR_g4svtx_eval.root";//1000 events
-    
-    input_file[24] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_antiproton_0_1000_POSCOR_g4svtx_eval.root";//1000 events
-    input_file[25] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_antiproton_1000_1_POSCOR_g4svtx_eval.root";//1000 events
-    input_file[26] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_antiproton_1000_2_POSCOR_g4svtx_eval.root";//1000 events
-    input_file[27] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_antiproton_1000_3_POSCOR_g4svtx_eval.root";//1000 events
-  //  input_file[28] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_proton_1000_0_POSCOR_g4svtx_eval.root";//1000 events
-  //  input_file[29] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_proton_1000_1_POSCOR_g4svtx_eval.root";//1000 events
-  //  input_file[30] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_proton_1000_2_POSCOR_g4svtx_eval.root";//1000 events
-  //  input_file[31] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_proton_1000_3_POSCOR_g4svtx_eval.root";//1000 events
-       
+    input_file[4] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_pi-_1000_0_POSCOR_g4svtx_eval.root";//1000 events
+    input_file[5] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_pi-_1000_1_POSCOR_g4svtx_eval.root";//1000 events
+    input_file[6] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_pi-_1000_2_POSCOR_g4svtx_eval.root";//1000 events
+    input_file[7] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_pi-_1000_3_POSCOR_g4svtx_eval.root";//1000 events
+    input_file[8] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_K-_1000_0_POSCOR_g4svtx_eval.root";//1000 events
+    input_file[9] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_K-_1000_1_POSCOR_g4svtx_eval.root";//1000 events
+    input_file[10] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_K-_1000_2_POSCOR_g4svtx_eval.root";//1000 events
+    input_file[11] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_K-_1000_3_POSCOR_g4svtx_eval.root";//1000 events
+    input_file[12] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_antiproton_0_1000_POSCOR_g4svtx_eval.root";//1000 events
+    input_file[13] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_antiproton_1000_1_POSCOR_g4svtx_eval.root";//1000 events
+    input_file[14] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_antiproton_1000_2_POSCOR_g4svtx_eval.root";//1000 events
+    input_file[15] ="/sphenix/u/weihuma/RunOutput/G4sPHENIX_antiproton_1000_3_POSCOR_g4svtx_eval.root";//1000 events
     
     output_eID ="/sphenix/u/weihuma/analysis/TrackPid/anaplots/output/single/eID_single.root";
-  //  output_plot_eID ="/sphenix/u/weihuma/analysis/TrackPid/anaplots/output/single/eID_plot_single";
     output_plot_eID ="/sphenix/u/weihuma/analysis/TrackPid/anaplots/output/single/eID_plot_single_antiproton";
     output_plot_eID_eta ="/sphenix/u/weihuma/analysis/TrackPid/anaplots/output/single/efficiency_eta_single";
     output_plot_eID_pt ="/sphenix/u/weihuma/analysis/TrackPid/anaplots/output/single/efficiency_pt_single";
@@ -221,7 +213,7 @@ void PIDplots::eID(){
       
       TFile *file3;
      // file3 = new TFile(input_file[ifile]);
-      if(tag==3){
+      if(tag==1 or 3){
         file3 = new TFile(input_file[ifile]);
         file3->GetObject("ntp_vertex",ntp_vertex);
         file3->GetObject("ntp_gtrack",ntp_gtrack);
@@ -252,18 +244,17 @@ void PIDplots::eID(){
       
       //cout<<"ntp_vertex->GetEntries=  "<<ntp_vertex->GetEntries()<<endl;
      // cout<<"ntp_gtrack->GetEntries=  "<<ntp_gtrack->GetEntries()<<endl;
-     // cout<<"ntp_track->GetEntries=  "<<ntp_track->GetEntries()<<endl;
+      cout<<"ntp_track->GetEntries=  "<<ntp_track->GetEntries()<<endl;
       
 	
       for(int ientry=0;ientry<ntp_track->GetEntries();ientry++) {//ntp_track
          ntp_track->GetEntry(ientry);
          float *content2=ntp_track->GetArgs();  
-         int event2,trackID2;
-         float px2,py2,pz2,pt2,gpt2,eta2,phi2,charge2,quality2,nhits2,nmaps2,nintt2,ntpc2;
-         float cemcdphi2,cemcdeta2,cemce3x32,cemce2,hcalindphi2,hcalindeta2,hcaline3x32,hcaline2,hcaloutdphi2,hcaloutdeta2,hcaloute3x32,hcaloute2;
-         float gflavor2;
+         int event2=0,trackID2=0;
+         float px2=0.0,py2=0.0,pz2=0.0,pt2=0.0,gpt2=0.0,eta2=0.0,phi2=0.0,charge2=0.0,quality2=0.0,nhits2=0.0,nmaps2=0.0,nintt2=0.0,ntpc2=0.0;
+         float cemcdphi2=0.0,cemcdeta2=0.0,cemce3x32=0.0,cemce2=0.0,hcalindphi2=0.0,hcalindeta2=0.0,hcaline3x32=0.0,hcaline2=0.0,hcaloutdphi2=0.0,hcaloutdeta2=0.0,hcaloute3x32=0.0,hcaloute2=0.0;
+         float gflavor2=0;
 
-         if(tag==2 or tag==3){
             event2=content2[0];
             trackID2=content2[2];
             px2=content2[3];
@@ -292,7 +283,7 @@ void PIDplots::eID(){
             hcaloute2=content2[54];
             gflavor2=content2[56];
             gpt2=content2[69];
-         }
+         
         
          float p2=TMath::Sqrt(px2*px2+py2*py2+pz2*pz2);
          float E2=TMath::Sqrt(me*me+p2*p2);
@@ -305,13 +296,13 @@ void PIDplots::eID(){
 
        if(nmaps2>0 && nintt2>0 && ntpc2>20 && quality2<10){
            
-         if(TMath::Abs(gflavor2)==11 & (TMath::Abs(eta2)>0.0 & TMath::Abs(eta2)<1.1) & (gpt2>0.0 & gpt2<20.0) & quality2<20) NEID_electron=NEID_electron+1;
-         if(TMath::Abs(gflavor2)==211 & (TMath::Abs(eta2)>0.0 & TMath::Abs(eta2)<1.1) & (gpt2>0.0 & gpt2<20.0) & quality2<20) NEID_pion=NEID_pion+1;
-         if(TMath::Abs(gflavor2)==321 & (TMath::Abs(eta2)>0.0 & TMath::Abs(eta2)<1.1) & (gpt2>0.0 & gpt2<20.0) & quality2<20) NEID_K=NEID_K+1;
-         if(TMath::Abs(gflavor2)==2212 & (TMath::Abs(eta2)>0.0 & TMath::Abs(eta2)<1.1) & (gpt2>0.0 & gpt2<20.0) & quality2<20) NEID_antiproton=NEID_antiproton+1;
-      
+         if(TMath::Abs(gflavor2)==11 && (TMath::Abs(eta2)>0.0 && TMath::Abs(eta2)<1.1) && (gpt2>0.0 && gpt2<20.0) && quality2<20) NEID_electron=NEID_electron+1;
+         if(TMath::Abs(gflavor2)==211 && (TMath::Abs(eta2)>0.0 && TMath::Abs(eta2)<1.1) && (gpt2>0.0 && gpt2<20.0) && quality2<20) NEID_pion=NEID_pion+1;
+         if(TMath::Abs(gflavor2)==321 && (TMath::Abs(eta2)>0.0 && TMath::Abs(eta2)<1.1) && (gpt2>0.0 && gpt2<20.0) && quality2<20) NEID_K=NEID_K+1;
+         if(TMath::Abs(gflavor2)==2212 && (TMath::Abs(eta2)>0.0 && TMath::Abs(eta2)<1.1) && (gpt2>0.0 && gpt2<20.0) && quality2<20) NEID_antiproton=NEID_antiproton+1;
+      	 cout<<"NEID_electron= "<<NEID_electron<<"NEID_pion= "<<NEID_pion<<"NEID_electron= "<<NEID_K<<"NEID_electron= "<<NEID_antiproton<<endl;
 
-         if((TMath::Abs(eta2)>0.0 & TMath::Abs(eta2)<1.1) & (gpt2>0.0 & gpt2<20.0)){
+         if((TMath::Abs(eta2)>0.0 && TMath::Abs(eta2)<1.1) && (gpt2>0.0 && gpt2<20.0)){
             if(TMath::Abs(gflavor2)==11)h1pt_e->Fill(pt2);
             h1dR->Fill(dR);
             h1EOP->Fill(EOP);
@@ -323,43 +314,43 @@ void PIDplots::eID(){
     
          for(int i=0;i<11;i++){
             eta_point[i]=i*1.0/10+0.05;
-            if((TMath::Abs(eta2)>(eta_point[i]-0.05))&(TMath::Abs(eta2)<(eta_point[i]+0.05)) & (gpt2>0.0 & gpt2<20.0)){
+            if((TMath::Abs(eta2)>(eta_point[i]-0.05)) && (TMath::Abs(eta2)<(eta_point[i]+0.05)) && (gpt2>0.0 & gpt2<20.0)){
                 if(TMath::Abs(gflavor2)==11) N_electron_eta[i]=N_electron_eta[i]+1;
                 if(TMath::Abs(gflavor2)==211) N_pion_eta[i]=N_pion_eta[i]+1;
                 if(TMath::Abs(gflavor2)==321) N_K_eta[i]=N_K_eta[i]+1;
                 if(TMath::Abs(gflavor2)==2212) N_antiproton_eta[i]=N_antiproton_eta[i]+1;
             
-                if(EOP>0.7 & EOP<1.5 & HOM<0.2 & pt>2.0 ){
+                if(EOP>0.7 && EOP<1.5 && HOM<0.2 && pt>2.0 ){
 				    if(TMath::Abs(gflavor2)==11) NEID_electron_eta[i]=NEID_electron_eta[i]+1;               
 				    if(TMath::Abs(gflavor2)==211) NEID_pion_eta[i]=NEID_pion_eta[i]+1;
 				    if(TMath::Abs(gflavor2)==321) NEID_K_eta[i]=NEID_K_eta[i]+1;
 				    if(TMath::Abs(gflavor2)==2212) NEID_antiproton_eta[i]=NEID_antiproton_eta[i]+1;
-				    //cout<<"NEID_pion_eta= "<<NEID_pion_eta[i]<<endl;
+				    cout<<"NEID_pion_eta= "<<NEID_pion_eta[i]<<endl;
                 }
             }
          }
 
          for(int i=0;i<16;i++){
             pt_point[i]=i*10.0/10+0.5;
-            if(pt>(pt_point[i]-0.5)&pt<(pt_point[i]+0.5) & (TMath::Abs(eta2)>0.0 & TMath::Abs(eta2)<1.1) & (gpt2>0.0 & gpt2<20.0)){
+            if(pt>(pt_point[i]-0.5) && pt<(pt_point[i]+0.5) && (TMath::Abs(eta2)>0.0 && TMath::Abs(eta2)<1.1) && (gpt2>0.0 && gpt2<20.0)){
                 if(TMath::Abs(gflavor2)==11) N_electron_pt[i]=N_electron_pt[i]+1;
                 if(TMath::Abs(gflavor2)==211) N_pion_pt[i]=N_pion_pt[i]+1;
                 if(TMath::Abs(gflavor2)==321) N_K_pt[i]=N_K_pt[i]+1;
                 if(TMath::Abs(gflavor2)==2212) N_antiproton_pt[i]=N_antiproton_pt[i]+1;
 
-                if(EOP>0.7 & EOP<1.5 & HOM<0.2){
+                if(EOP>0.7 && EOP<1.5 && HOM<0.2){
                     if(TMath::Abs(gflavor2)==11) NEID_electron_pt[i]=NEID_electron_pt[i]+1;     
                     if(TMath::Abs(gflavor2)==211) NEID_pion_pt[i]=NEID_pion_pt[i]+1;
                     if(TMath::Abs(gflavor2)==321) NEID_K_pt[i]=NEID_K_pt[i]+1;
                     if(TMath::Abs(gflavor2)==2212) NEID_antiproton_pt[i]=NEID_antiproton_pt[i]+1;
-                    //cout<<"NEID_pion_pt= "<<NEID_pion_pt[i]<<endl;
+                    cout<<"NEID_pion_pt= "<<NEID_pion_pt[i]<<endl;
                 }
             }
          }
 
          for(int i=0;i<20;i++){
             HOM_point[i]=i*0.5/10+0.05;
-            if(HOM<HOM_point[i]& (TMath::Abs(eta2)>0.0 & TMath::Abs(eta2)<1.1) & (gpt2>0.0 & gpt2<20.0)){
+            if(HOM<HOM_point[i] && (TMath::Abs(eta2)>0.0 && TMath::Abs(eta2)<1.1) && (gpt2>0.0 && gpt2<20.0)){
                 if(TMath::Abs(gflavor2)==11) N_electron_HOM[i]=N_electron_HOM[i]+1;
                 if(TMath::Abs(gflavor2)==211) N_pion_HOM[i]=N_pion_HOM[i]+1;
                 if(TMath::Abs(gflavor2)==321) N_K_HOM[i]=N_K_HOM[i]+1;
@@ -369,7 +360,7 @@ void PIDplots::eID(){
         
          for(int i=0;i<20;i++){
             HOP_point[i]=i*0.5/10+0.05;
-            if(HOP>HOP_point[i] & (TMath::Abs(eta2)>0.0 & TMath::Abs(eta2)<1.1) & (gpt2>0.0 & gpt2<20.0)){
+            if(HOP>HOP_point[i] && (TMath::Abs(eta2)>0.0 && TMath::Abs(eta2)<1.1) && (gpt2>0.0 && gpt2<20.0)){
                 if(TMath::Abs(gflavor2)==11) N_electron_HOP[i]=N_electron_HOP[i]+1;
                 if(TMath::Abs(gflavor2)==211) N_pion_HOP[i]=N_pion_HOP[i]+1;
                 if(TMath::Abs(gflavor2)==321) N_K_HOP[i]=N_K_HOP[i]+1;
@@ -379,7 +370,7 @@ void PIDplots::eID(){
 	  
          for(int i=0;i<9;i++){
             EOP_point[i]=1.0-i*1.0/10;
-            if(EOP>EOP_point[i]&EOP<1.5 & (TMath::Abs(eta2)>0.0 & TMath::Abs(eta2)<1.1) & (gpt2>0.0 & gpt2<20.0)){
+            if(EOP>EOP_point[i] && EOP<1.5 && (TMath::Abs(eta2)>0.0 && TMath::Abs(eta2)<1.1) && (gpt2>0.0 && gpt2<20.0)){
                 if(TMath::Abs(gflavor2)==11) N_electron_EOP[i]=N_electron_EOP[i]+1;
                 if(TMath::Abs(gflavor2)==211) N_pion_EOP[i]=N_pion_EOP[i]+1;
                 if(TMath::Abs(gflavor2)==321) N_K_EOP[i]=N_K_EOP[i]+1;
@@ -415,26 +406,26 @@ void PIDplots::eIDoutput(){
   
   for(int i=0;i<20;i++){
 	aa_eta[i]=0.0;
-    cc_eta[i]=0.0;
+    	cc_eta[i]=0.0;
 	ee_eta[i]=0.0;
 	ff_eta[i]=0.0;
 	hh_eta[i]=0.0;
-    ree_eta[i]=0.0;
+    	ree_eta[i]=0.0;
 	rff_eta[i]=0.0;
 	rhh_eta[i]=0.0;
-    err_ree_eta[i]=0.0;
+    	err_ree_eta[i]=0.0;
 	err_rff_eta[i]=0.0;
 	err_rhh_eta[i]=0.0;
     
 	aa_pt[i]=0.0;
-    cc_pt[i]=0.0;
+    	cc_pt[i]=0.0;
 	ee_pt[i]=0.0;
 	ff_pt[i]=0.0;
 	hh_pt[i]=0.0;
-    ree_pt[i]=0.0;
+    	ree_pt[i]=0.0;
 	rff_pt[i]=0.0;
 	rhh_pt[i]=0.0;
-    err_ree_pt[i]=0.0;
+    	err_ree_pt[i]=0.0;
 	err_rff_pt[i]=0.0;
 	err_rhh_pt[i]=0.0;
     
@@ -443,22 +434,22 @@ void PIDplots::eIDoutput(){
 	ee_HOM[i]=0.0;
 	ff_HOM[i]=0.0;
 	hh_HOM[i]=0.0;
-    ree_HOM[i]=0.0;
+    	ree_HOM[i]=0.0;
 	rff_HOM[i]=0.0;
 	rhh_HOM[i]=0.0;
-    err_ree_HOM[i]=0.0;
+    	err_ree_HOM[i]=0.0;
 	err_rff_HOM[i]=0.0;
 	err_rhh_HOM[i]=0.0;
     
-    aa_HOP[i]=0.0;
+    	aa_HOP[i]=0.0;
 	cc_HOP[i]=0.0;
 	ee_HOP[i]=0.0;
 	ff_HOP[i]=0.0;
 	hh_HOP[i]=0.0;
-    ree_HOP[i]=0.0;
+    	ree_HOP[i]=0.0;
 	rff_HOP[i]=0.0;
 	rhh_HOP[i]=0.0;
-    err_ree_HOP[i]=0.0;
+    	err_ree_HOP[i]=0.0;
 	err_rff_HOP[i]=0.0;
 	err_rhh_HOP[i]=0.0;
     
@@ -467,16 +458,16 @@ void PIDplots::eIDoutput(){
 	ee_EOP[i]=0.0;
 	ff_EOP[i]=0.0;
 	hh_EOP[i]=0.0;
-    ree_EOP[i]=0.0;
+    	ree_EOP[i]=0.0;
 	rff_EOP[i]=0.0;
 	rhh_EOP[i]=0.0;
-    err_ree_EOP[i]=0.0;
+    	err_ree_EOP[i]=0.0;
 	err_rff_EOP[i]=0.0;
 	err_rhh_EOP[i]=0.0;
 	
 	
 	err_aa_eta[i]=0.0;
-    err_cc_eta[i]=0.0;
+    	err_cc_eta[i]=0.0;
 	err_ee_eta[i]=0.0;
 	err_ff_eta[i]=0.0;
 	err_hh_eta[i]=0.0;
@@ -493,7 +484,7 @@ void PIDplots::eIDoutput(){
 	err_ff_HOM[i]=0.0;
 	err_hh_HOM[i]=0.0;
     
-    err_aa_HOP[i]=0.0;
+    	err_aa_HOP[i]=0.0;
 	err_cc_HOP[i]=0.0;
 	err_ee_HOP[i]=0.0;
 	err_ff_HOP[i]=0.0;
@@ -519,8 +510,8 @@ void PIDplots::eIDoutput(){
    // if(N_electron_eta[i]==0 or N_pion_eta[i]==0 or N_K_eta[i]==0 or N_antiproton_eta[i]==0)continue;
    // if(NEID_electron_eta[i]==0 or NEID_pion_eta[i]==0 or NEID_K_eta[i]==0 or NEID_antiproton_eta[i]==0)continue;
     
-	aa_eta[i]=eta_point[i];
-	err_aa_eta[i]=0.05;
+    aa_eta[i]=eta_point[i];
+    err_aa_eta[i]=0.05;
     if(N_electron_eta[i]>0 && NEID_electron_eta[i]>0){
         cc_eta[i]=1.0*NEID_electron_eta[i]/N_electron_eta[i];
         err_cc_eta[i]=1.0*TMath::Sqrt((1.0/NEID_electron_eta[i]+1.0/N_electron_eta[i]))*cc_eta[i];
@@ -663,7 +654,7 @@ void PIDplots::eIDoutput(){
         Nplot_antiproton_HOM=Nplot_antiproton_HOM+1;
     }
 		
-	float aa,cc,ee,ff,hh;
+    float aa,cc,ee,ff,hh;
     float err_aa,err_cc,err_ee,err_ff,err_hh;
 	aa=aa_HOM[i];
 	cc=cc_HOM[i];
@@ -685,7 +676,7 @@ void PIDplots::eIDoutput(){
     }
 	 
     
-    err_aa=err_aa_HOM[i];
+    	err_aa=err_aa_HOM[i];
 	err_cc=err_cc_HOM[i];
 	err_ee=err_ee_HOM[i];
 	err_ff=err_ff_HOM[i];
@@ -728,7 +719,7 @@ void PIDplots::eIDoutput(){
         Nplot_antiproton_EOP=Nplot_antiproton_EOP+1;
     }
 		
-	float aa,cc,ee,ff,hh;
+    float aa,cc,ee,ff,hh;
     float err_aa,err_cc,err_ee,err_ff,err_hh;
 	aa=aa_EOP[i];
 	cc=cc_EOP[i];
@@ -750,7 +741,7 @@ void PIDplots::eIDoutput(){
         err_rhh_EOP[i]=rhh_EOP[i]*rhh_EOP[i]*err_hh_EOP[i];
     }
     
-    err_aa=err_aa_EOP[i];
+   	err_aa=err_aa_EOP[i];
 	err_cc=err_cc_EOP[i];
 	err_ee=err_ee_EOP[i];
 	err_ff=err_ff_EOP[i];
@@ -792,13 +783,13 @@ void PIDplots::eIDoutput(){
         Nplot_antiproton_HOP=Nplot_antiproton_HOP+1;
     }
 		
-	float aa,cc,ee,ff,hh;
+    float aa,cc,ee,ff,hh;
     float err_aa,err_cc,err_ee,err_ff,err_hh;
-	aa=aa_HOP[i];
-	cc=cc_HOP[i];
-	ee=ee_HOP[i];
-	ff=ff_HOP[i];
-	hh=hh_HOP[i];
+    aa=aa_HOP[i];
+    cc=cc_HOP[i];
+    ee=ee_HOP[i];
+    ff=ff_HOP[i];
+    hh=hh_HOP[i];
     
     if(ee_HOP[i]>0.0){
         ree_HOP[i]=1.0/ee_HOP[i];
@@ -840,7 +831,7 @@ void PIDplots::eIDoutput(){
   Float_t Ymin,Ymax;
   Ymin=-0.05;
   if(tag==2)Ymax=2.0;
-  if(tag==3)Ymax=2.0;
+  if(tag==1 or 3)Ymax=2.0;
   Xmin=0.0;
   Xmax=1.1; 
   
@@ -877,7 +868,7 @@ void PIDplots::eIDoutput(){
   g12->SetLineStyle(1);
   g12->SetLineWidth(1.2);
   g12->SetMarkerSize(3.0);
-  if(tag==3) g12->Draw("p");
+  if(tag==1 or 3) g12->Draw("p");
   g13=new TGraphErrors(11,aa_eta,hh_eta,err_aa_eta,err_hh_eta);
   g13->SetMarkerStyle(26);
   g13->SetMarkerColor(4);
@@ -893,7 +884,7 @@ void PIDplots::eIDoutput(){
   
   TLegend *legtitle11;
   if(tag==2)legtitle11 =new TLegend(0.20,0.82,0.35,0.85,"Embed");
-  if(tag==3)legtitle11 =new TLegend(0.20,0.82,0.35,0.85,"Single particle");
+  if(tag==1 or 3)legtitle11 =new TLegend(0.20,0.82,0.35,0.85,"Single particle");
   legtitle11->SetTextSize(0.030);
   legtitle11->Draw();
   
@@ -908,7 +899,7 @@ void PIDplots::eIDoutput(){
   TLegend *leg1 =new TLegend(0.65,0.63,0.90,0.92);
   leg1->AddEntry(g1," e^{+} & e^{-}","lep");
   leg1->AddEntry(g11," #pi^{+} & #pi^{-}","lep");
-  if(tag==3)leg1->AddEntry(g12," K^{+} & K^{-}","lep");
+  if(tag==1 or 3)leg1->AddEntry(g12," K^{+} & K^{-}","lep");
   leg1->AddEntry(g13," p & #bar{p}","lep");
   leg1->Draw();
    
@@ -922,7 +913,7 @@ void PIDplots::eIDoutput(){
 
   Ymin=-0.05;
   if(tag==2)Ymax=2.0;
-  if(tag==3)Ymax=2.0;
+  if(tag==1 or 3)Ymax=2.0;
   Xmin=0.0;
   Xmax=16.0;  
  
@@ -958,7 +949,7 @@ void PIDplots::eIDoutput(){
   g22->SetLineStyle(1);
   g22->SetLineWidth(1.2);
   g22->SetMarkerSize(3.0);
-  if(tag==3) g22->Draw("p");
+  if(tag==1 or 3) g22->Draw("p");
   g23=new TGraphErrors(16,aa_pt,hh_pt,err_aa_pt,err_hh_pt);
   g23->SetMarkerStyle(26);
   g23->SetMarkerColor(4);
@@ -974,7 +965,7 @@ void PIDplots::eIDoutput(){
   
   TLegend *legtitle21;
   if(tag==2)legtitle21 =new TLegend(0.20,0.82,0.35,0.85,"Embed");
-  if(tag==3)legtitle21 =new TLegend(0.20,0.82,0.35,0.85,"Single particle");
+  if(tag==1 or 3)legtitle21 =new TLegend(0.20,0.82,0.35,0.85,"Single particle");
   legtitle21->SetTextSize(0.030);
   legtitle21->Draw();
   
@@ -985,7 +976,7 @@ void PIDplots::eIDoutput(){
   TLegend *leg2 =new TLegend(0.65,0.63,0.90,0.92);
   leg2->AddEntry(g2," e^{+} & e^{-}","lep");
   leg2->AddEntry(g21," #pi^{+} & #pi^{-}","lep");
-  if(tag==3) leg2->AddEntry(g22," K^{+} & K^{-}","lep");
+  if(tag==1 or 3) leg2->AddEntry(g22," K^{+} & K^{-}","lep");
   leg2->AddEntry(g23," p & #bar{p}","lep");
   leg2->Draw();
   
@@ -1031,7 +1022,7 @@ void PIDplots::eIDoutput(){
   g32->SetLineStyle(1);
   g32->SetLineWidth(1.2);
   g32->SetMarkerSize(3.0);
-  if(tag==3) g32->Draw("pc");
+  if(tag==1 or 3) g32->Draw("pc");
   g33=new TGraphErrors(20,aa_HOM,hh_HOM,err_aa_HOM,err_hh_HOM);
   g33->SetMarkerStyle(26);
   g33->SetMarkerColor(4);
@@ -1047,7 +1038,7 @@ void PIDplots::eIDoutput(){
   
   TLegend *legtitle31;
   if(tag==2)legtitle31 =new TLegend(0.20,0.82,0.35,0.85,"Embed");
-  if(tag==3)legtitle31 =new TLegend(0.20,0.82,0.35,0.85,"Single particle");
+  if(tag==1 or 3)legtitle31 =new TLegend(0.20,0.82,0.35,0.85,"Single particle");
   legtitle31->SetTextSize(0.030);
   legtitle31->Draw();
   
@@ -1056,7 +1047,7 @@ void PIDplots::eIDoutput(){
   if(tag==3 or 2) leg3 =new TLegend(0.70,0.28,0.78,0.58);
   leg3->AddEntry(g3," e^{+} & e^{-}","ep");
   leg3->AddEntry(g31," #pi^{+} & #pi^{-}","ep");
-  if(tag==3) leg3->AddEntry(g32," K^{+} & K^{-}","ep");
+  if(tag==1 or 3) leg3->AddEntry(g32," K^{+} & K^{-}","ep");
   leg3->AddEntry(g33," p & #bar{p}","ep");
   leg3->Draw();
 
@@ -1101,7 +1092,7 @@ void PIDplots::eIDoutput(){
   g42->SetLineStyle(1);
   g42->SetLineWidth(1.2);
   g42->SetMarkerSize(3.0);
-  if(tag==3) g42->Draw("pc");
+  if(tag==1 or 3) g42->Draw("pc");
   g43=new TGraphErrors(9,aa_EOP,hh_EOP,err_aa_EOP,err_hh_EOP);
   g43->SetMarkerStyle(26);
   g43->SetMarkerColor(4);
@@ -1117,14 +1108,14 @@ void PIDplots::eIDoutput(){
   
   TLegend *legtitle41;
   if(tag==2)legtitle41 =new TLegend(0.20,0.82,0.35,0.85,"Embed");
-  if(tag==3)legtitle41 =new TLegend(0.20,0.82,0.35,0.85,"Single particle");
+  if(tag==1 or 3)legtitle41 =new TLegend(0.20,0.82,0.35,0.85,"Single particle");
   legtitle41->SetTextSize(0.030);
   legtitle41->Draw();
   
   TLegend *leg4 =new TLegend(0.65,0.60,0.90,0.90);
   leg4->AddEntry(g4," e^{+} & e^{-}","ep");
   leg4->AddEntry(g41," #pi^{+} & #pi^{-}","ep");
-  if(tag==3) leg4->AddEntry(g42," K^{+} & K^{-}","ep");
+  if(tag==1 or 3) leg4->AddEntry(g42," K^{+} & K^{-}","ep");
   leg4->AddEntry(g43," p & #bar{p}","ep");
   leg4->Draw();
   
@@ -1171,7 +1162,7 @@ void PIDplots::eIDoutput(){
   g52->SetLineStyle(1);
   g52->SetLineWidth(1.2);
   g52->SetMarkerSize(3.0);
-  if(tag==3) g52->Draw("pc");
+  if(tag==1 or 3) g52->Draw("pc");
   g53=new TGraphErrors(20,aa_HOP,hh_HOP,err_aa_HOP,err_hh_HOP);
   g53->SetMarkerStyle(26);
   g53->SetMarkerColor(4);
@@ -1187,14 +1178,14 @@ void PIDplots::eIDoutput(){
   
   TLegend *legtitle51;
   if(tag==2)legtitle51 =new TLegend(0.20,0.82,0.35,0.85,"Embed");
-  if(tag==3)legtitle51 =new TLegend(0.20,0.82,0.35,0.85,"Single particle");
+  if(tag==1 or 3)legtitle51 =new TLegend(0.20,0.82,0.35,0.85,"Single particle");
   legtitle51->SetTextSize(0.030);
   legtitle51->Draw();
   
   TLegend *leg5 =new TLegend(0.65,0.60,0.90,0.90);
   leg5->AddEntry(g5," e^{+} & e^{-}","ep");
   leg5->AddEntry(g51," #pi^{+} & #pi^{-}","ep");
-  if(tag==3) leg5->AddEntry(g52," K^{+} & K^{-}","ep");
+  if(tag==1 or 3) leg5->AddEntry(g52," K^{+} & K^{-}","ep");
   leg5->AddEntry(g53," p & #bar{p}","ep");
   leg5->Draw();
   
@@ -1210,7 +1201,7 @@ void PIDplots::eIDoutput(){
     Xmin=0.6;
     Xmax=1.0;  
   }
-  if(tag==3){
+  if(tag==1 or 3){
     Ymin=1.0;
     Ymax=100000.0;
     Xmin=0.45;
@@ -1241,7 +1232,7 @@ void PIDplots::eIDoutput(){
   g62->SetLineStyle(1);
   g62->SetLineWidth(1.2);
   g62->SetMarkerSize(3.0);
-  if(tag==3) g62->Draw("pl");
+  if(tag==1 or 3) g62->Draw("pl");
   g63=new TGraphErrors(9,cc_EOP,rhh_EOP,err_cc_EOP,err_rhh_EOP);
   g63->SetMarkerStyle(26);
   g63->SetMarkerColor(4);
@@ -1257,13 +1248,13 @@ void PIDplots::eIDoutput(){
   
   TLegend *legtitle61;
   if(tag==2)legtitle61 =new TLegend(0.20,0.82,0.35,0.85,"Embed");
-  if(tag==3)legtitle61 =new TLegend(0.20,0.82,0.35,0.85,"Single particle");
+  if(tag==1 or 3)legtitle61 =new TLegend(0.20,0.82,0.35,0.85,"Single particle");
   legtitle61->SetTextSize(0.030);
   legtitle61->Draw();
   
   TLegend *leg6 =new TLegend(0.65,0.65,0.90,0.90);
   leg6->AddEntry(g61," #pi^{+} & #pi^{-}","lep");
-  if(tag==3) leg6->AddEntry(g62," K^{+} & K^{-}","lep");
+  if(tag==1 or 3) leg6->AddEntry(g62," K^{+} & K^{-}","lep");
   leg6->AddEntry(g63," p & #bar{p}","lep");
   leg6->Draw();
   
@@ -1272,6 +1263,12 @@ void PIDplots::eIDoutput(){
   TPad *pad7 = new TPad("pad7","pad7",0,0,0.99,0.99);
   pad7->Draw();    
   pad7->cd();
+  if(tag==1){
+    Ymin=1.0;
+    Ymax=50.0;
+    Xmin=0.88;
+    Xmax=1.0;  
+  }
   if(tag==2){
     Ymin=1.0;
     Ymax=50;
@@ -1309,7 +1306,7 @@ void PIDplots::eIDoutput(){
   g72->SetLineStyle(1);
   g72->SetLineWidth(1.2);
   g72->SetMarkerSize(3.0);
-  if(tag==3) g72->Draw("pl");
+  if(tag==1 or 3) g72->Draw("pl");
   g73=new TGraphErrors(20,cc_HOM,rhh_HOM,err_cc_HOM,err_rhh_HOM);
   g73->SetMarkerStyle(26);
   g73->SetMarkerColor(4);
@@ -1325,14 +1322,14 @@ void PIDplots::eIDoutput(){
   
   TLegend *legtitle71;
   if(tag==2)legtitle71 =new TLegend(0.20,0.82,0.35,0.85,"Embed");
-  if(tag==3)legtitle71 =new TLegend(0.20,0.82,0.35,0.85,"Single particle");
+  if(tag==1 or 3)legtitle71 =new TLegend(0.20,0.82,0.35,0.85,"Single particle");
   legtitle71->SetTextSize(0.030);
   legtitle71->Draw();
   
   TLegend *leg7 =new TLegend(0.65,0.65,0.90,0.90);
   leg7->SetBorderSize(0);
   leg7->AddEntry(g71," #pi^{+} & #pi^{-}","lep");
-  if(tag==3) leg7->AddEntry(g72," K^{+} & K^{-}","lep");
+  if(tag==1 or 3) leg7->AddEntry(g72," K^{+} & K^{-}","lep");
   leg7->AddEntry(g73," p & #bar{p}","lep");
   leg7->Draw();    
   
@@ -1347,7 +1344,7 @@ void PIDplots::eIDoutput(){
     Xmin=0.0;
     Xmax=0.4;  
   }
-  if(tag==3){
+  if(tag==1 or 3){
     Ymin=1.0;
     Ymax=500.0;
     Xmin=0.0;
@@ -1378,7 +1375,7 @@ void PIDplots::eIDoutput(){
   g82->SetLineStyle(1);
   g82->SetLineWidth(1.2);
   g82->SetMarkerSize(3.0);
-  if(tag==3) g82->Draw("pl");
+  if(tag==1 or 3) g82->Draw("pl");
   g83=new TGraphErrors(20,cc_HOP,rhh_HOP,err_cc_HOP,err_rhh_HOP);
   g83->SetMarkerStyle(26);
   g83->SetMarkerColor(4);
@@ -1394,13 +1391,13 @@ void PIDplots::eIDoutput(){
   
   TLegend *legtitle81;
   if(tag==2)legtitle81 =new TLegend(0.20,0.82,0.35,0.85,"Embed");
-  if(tag==3)legtitle81 =new TLegend(0.20,0.82,0.35,0.85,"Single particle");
+  if(tag==1 or 3)legtitle81 =new TLegend(0.20,0.82,0.35,0.85,"Single particle");
   legtitle81->SetTextSize(0.030);
   legtitle81->Draw();
   
   TLegend *leg8 =new TLegend(0.65,0.65,0.90,0.90);
   leg8->AddEntry(g81," #pi^{+} & #pi^{-}","lep");
-  if(tag==3) leg8->AddEntry(g82," K^{+} & K^{-}","lep");
+  if(tag==1 or 3) leg8->AddEntry(g82," K^{+} & K^{-}","lep");
   leg8->AddEntry(g83," p & #bar{p}","lep");
   leg8->Draw(); 
   
@@ -1415,7 +1412,7 @@ void PIDplots::eIDoutput(){
     Xmin=0.0;
     Xmax=1.0;  
   }
-  if(tag==3){
+  if(tag==1 or 3){
     Ymin=1.0;
     Ymax=30000.0;
     Xmin=0.0;
@@ -1431,7 +1428,7 @@ void PIDplots::eIDoutput(){
  
   
   TGraphErrors *g91,*g92,*g93;  
-  if(tag==3)g91=new TGraphErrors(11,cc_eta,ree_eta,err_cc_eta,err_ree_eta);
+  if(tag==1 or 3)g91=new TGraphErrors(11,cc_eta,ree_eta,err_cc_eta,err_ree_eta);
   if(tag==2)g91=new TGraphErrors(10,cc_eta,ree_eta,err_cc_eta,err_ree_eta);
   g91->SetMarkerStyle(26);
   g91->SetMarkerColor(2);
@@ -1447,8 +1444,8 @@ void PIDplots::eIDoutput(){
   g92->SetLineStyle(1);
   g92->SetLineWidth(1.2);
   g92->SetMarkerSize(3.0);
-  if(tag==3) g92->Draw("p");
-  if(tag==3)g93=new TGraphErrors(11,cc_eta,rhh_eta,err_cc_eta,err_rhh_eta);
+  if(tag==1 or 3) g92->Draw("p");
+  if(tag==1 or 3)g93=new TGraphErrors(11,cc_eta,rhh_eta,err_cc_eta,err_rhh_eta);
   if(tag==2)g93=new TGraphErrors(10,cc_eta,rhh_eta,err_cc_eta,err_rhh_eta);
   g93->SetMarkerStyle(26);
   g93->SetMarkerColor(4);
@@ -1464,7 +1461,7 @@ void PIDplots::eIDoutput(){
   
   TLegend *legtitle91;
   if(tag==2)legtitle91 =new TLegend(0.20,0.82,0.35,0.85,"Embed");
-  if(tag==3)legtitle91 =new TLegend(0.20,0.82,0.35,0.85,"Single particle");
+  if(tag==1 or 3)legtitle91 =new TLegend(0.20,0.82,0.35,0.85,"Single particle");
   legtitle91->SetTextSize(0.030);
   legtitle91->Draw();
   
@@ -1478,7 +1475,7 @@ void PIDplots::eIDoutput(){
   
   TLegend *leg9 =new TLegend(0.65,0.65,0.90,0.90);
   leg9->AddEntry(g91," #pi^{+} & #pi^{-}","lep");
-  if(tag==3) leg9->AddEntry(g92," K^{+} & K^{-}","lep");
+  if(tag==1 or 3) leg9->AddEntry(g92," K^{+} & K^{-}","lep");
   leg9->AddEntry(g93," p & #bar{p}","lep");
   leg9->Draw();
   
@@ -1493,7 +1490,7 @@ void PIDplots::eIDoutput(){
     Xmin=0.0;
     Xmax=1.0;  
   }
-  if(tag==3){
+  if(tag==1 or 3){
     Ymin=1.0;
     Ymax=30000.0;
     Xmin=0.3;
@@ -1509,7 +1506,7 @@ void PIDplots::eIDoutput(){
  
   
   TGraphErrors *g101,*g102,*g103;  
-  if(tag==3)g101=new TGraphErrors(16,cc_pt,ree_pt,err_cc_pt,err_ree_pt);
+  if(tag==1 or 3)g101=new TGraphErrors(16,cc_pt,ree_pt,err_cc_pt,err_ree_pt);
   if(tag==2)g101=new TGraphErrors(14,cc_pt,ree_pt,err_cc_pt,err_ree_pt);
   g101->SetMarkerStyle(26);
   g101->SetMarkerColor(2);
@@ -1525,8 +1522,8 @@ void PIDplots::eIDoutput(){
   g102->SetLineStyle(1);
   g102->SetLineWidth(1.2);
   g102->SetMarkerSize(3.0);
-  if(tag==3) g102->Draw("p");
-  if(tag==3)g103=new TGraphErrors(16,cc_pt,rhh_pt,err_cc_pt,err_rhh_pt);
+  if(tag==1 or 3) g102->Draw("p");
+  if(tag==1 or 3)g103=new TGraphErrors(16,cc_pt,rhh_pt,err_cc_pt,err_rhh_pt);
   if(tag==2)g103=new TGraphErrors(14,cc_pt,rhh_pt,err_cc_pt,err_rhh_pt);
   g103->SetMarkerStyle(26);
   g103->SetMarkerColor(4);
@@ -1542,7 +1539,7 @@ void PIDplots::eIDoutput(){
   
   TLegend *legtitle101;
   if(tag==2)legtitle101 =new TLegend(0.20,0.82,0.35,0.85,"Embed");
-  if(tag==3)legtitle101 =new TLegend(0.20,0.82,0.35,0.85,"Single particle");
+  if(tag==1 or 3)legtitle101 =new TLegend(0.20,0.82,0.35,0.85,"Single particle");
   legtitle101->SetTextSize(0.030);
   legtitle101->Draw();
   
@@ -1552,7 +1549,7 @@ void PIDplots::eIDoutput(){
   
   TLegend *leg10 =new TLegend(0.65,0.65,0.90,0.90);
   leg10->AddEntry(g101," #pi^{+} & #pi^{-}","lep");
-  if(tag==3) leg10->AddEntry(g102," K^{+} & K^{-}","lep");
+  if(tag==1 or 3) leg10->AddEntry(g102," K^{+} & K^{-}","lep");
   leg10->AddEntry(g103," p & #bar{p}","lep");
   leg10->Draw();
   
@@ -1581,7 +1578,7 @@ void PIDplots::eIDoutput(){
   
   g4->Draw("pc");
   g41->Draw("pc");
-  if(tag==3)g42->Draw("pc");
+  if(tag==1 or 3)g42->Draw("pc");
   g43->Draw("pc");
   
   legtitle4->Draw();
