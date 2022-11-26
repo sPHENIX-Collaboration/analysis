@@ -10,7 +10,7 @@ namespace Enable
     bool CEMC_EVAL_POSITION_CORRECTION = false;
 }  // namespace Enable
 
-void CEMC_Clusters_Full()
+void CEMC_Clusters_Full(const string &calib_path="CEMC/PositionRecalibrationFull/")
 {
     int verbosity = std::max(Enable::VERBOSITY, Enable::CEMC_VERBOSITY);
 
@@ -50,10 +50,10 @@ void CEMC_Clusters_Full()
     {
         clusterCorrection->Get_eclus_CalibrationParameters().ReadFromFile("CEMC_RECALIB", "xml", 0, 0,
                 //raw location
-                string(getenv("CALIBRATIONROOT")) + string("/CEMC/PositionRecalibrationFull/"));
+                string(getenv("CALIBRATIONROOT")) + string("/") + calib_path);
         clusterCorrection->Get_ecore_CalibrationParameters().ReadFromFile("CEMC_ECORE_RECALIB", "xml", 0, 0,
                 //raw location
-                string(getenv("CALIBRATIONROOT")) + string("/CEMC/PositionRecalibrationFull/"));
+                string(getenv("CALIBRATIONROOT")) + string("/") + calib_path);
     }
 
     clusterCorrection->Verbosity(verbosity);
