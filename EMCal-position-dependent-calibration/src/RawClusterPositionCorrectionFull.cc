@@ -64,16 +64,17 @@ int RawClusterPositionCorrectionFull::InitRun(PHCompositeNode *topNode)
 
   // set bin boundaries eta
   // there are 24 blocks in eta and each block is consists of 4 towers in 2x2 form which results in 24x2=48 bins in eta
+  // tower_eta_mid = 47.5 is here since toweretas range from 0 to 95 and 47.5 is the mid
   for (int j = 0; j < bins_eta; j++)
   {
-    binvals_eta.push_back(0. + j * 48. / (float) (bins_eta - 1));
+    binvals_eta.push_back(j * tower_eta_mid /(bins_eta - 1.));
   }
 
   // set bin boundaries phi
   // there are 4 blocks in phi and each block is consists of 4 towers in 2x2 form which results in 4x2=8 bins in phi
   for (int j = 0; j < bins_phi; j++)
   {
-    binvals_phi.push_back(0. + j * 8. / (float) (bins_phi - 1));
+    binvals_phi.push_back(j * 8. / (bins_phi - 1.));
   }
 
   for (int i = 0; i < bins_eta - 1; i++)
@@ -207,21 +208,28 @@ int RawClusterPositionCorrectionFull::process_event(PHCompositeNode *topNode)
 
     // this determines the position of the cluster in the 48x8 sector
     float fmodphi = fmod(avgphi, 8);
-    float fmodeta = fmod(avgeta, 48);
+    fmodphi = floorf(fmodphi*1e4)/1e4; // using only 4 decimal places of precision
+    float fmodeta = floorf(avgeta*1e4)/1e4; // using only 4 decimal places of precision
+
+    if(fmodeta < tower_eta_mid) fmodeta = tower_eta_mid-fmodeta;
+    else fmodeta -= tower_eta_mid;
 
     // determine the bin number
     // 8 is here since we divide the 48x8 sector into 64 bins in phi
-    // 48 is here since we divide the 48x8 sector into 384 bins in eta
+    // tower_eta_mid = 47.5 is here since toweretas range from 0 to 95 and 47.5 is the mid
 
     int etabin = -99;
     int phibin = -99;
+
     for (int j = 0; j < bins_phi - 1; j++) // TODO: Implement in binary search.
-      if (fmodphi >= binvals_phi.at(j) && fmodphi <= binvals_phi.at(j + 1))
+      if (fmodphi >= binvals_phi.at(j) && fmodphi < binvals_phi.at(j + 1))
         phibin = j;
 
     for (int j = 0; j < bins_eta - 1; j++)
-      if (fmodeta >= binvals_eta.at(j) && fmodeta <= binvals_eta.at(j + 1))
+      if (fmodeta >= binvals_eta.at(j) && fmodeta < binvals_eta.at(j + 1))
         etabin = j;
+
+    if(fmodeta == tower_eta_mid) etabin = bins_eta-2;
 
     if ((phibin < 0 || etabin < 0) && Verbosity())
     {
