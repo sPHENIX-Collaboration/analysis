@@ -56,6 +56,8 @@ class RawClusterPositionCorrectionFull : public SubsysReco
 
   std::string _det_name;
 
+  const float tower_eta_mid = 47.5;
+
   int bins_eta, bins_phi;
   std::vector<float> binvals_eta;
   std::vector<float> binvals_phi;

@@ -51,11 +51,12 @@ R__LOAD_LIBRARY(libEMCalPositionDependentCalibration.so)
 int Fun4All_G4_sPHENIX(
     const int nEvents = 1,
     const int seed = 0,
+    const string &calib_path="CEMC/PositionRecalibrationFull/",
+    const string &outdir = ".",
     const string &inputFile = "https://www.phenix.bnl.gov/WWW/publish/phnxbld/sPHENIX/files/sPHENIX_G4Hits_sHijing_9-11fm_00000_00010.root",
     const string &outputFile = "G4sPHENIX.root",
     const string &embed_input_file = "https://www.phenix.bnl.gov/WWW/publish/phnxbld/sPHENIX/files/sPHENIX_G4Hits_sHijing_9-11fm_00000_00010.root",
-    const int skip = 0,
-    const string &outdir = ".")
+    const int skip = 0)
 {
   Fun4AllServer *se = Fun4AllServer::instance();
   se->Verbosity(1);
@@ -475,7 +476,7 @@ int Fun4All_G4_sPHENIX(
 
   if (Enable::CEMC_TOWER) CEMC_Towers();
   if (Enable::CEMC_CLUSTER) CEMC_Clusters();
-  if (Enable::CEMC_CLUSTER_FULL) CEMC_Clusters_Full();
+  if (Enable::CEMC_CLUSTER_FULL) CEMC_Clusters_Full(calib_path);
 
   //-----------------------------
   // HCAL towering and clustering
