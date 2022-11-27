@@ -43,6 +43,7 @@ protected:
   int process_event_bimp(PHCompositeNode *topNode);
   int process_event_pairs(PHCompositeNode *topNode);
   int process_event_notracking(PHCompositeNode *topNode);
+  int process_event_filtered(PHCompositeNode *topNode);
 
   HepMC::GenParticle* GetParent(HepMC::GenParticle*, HepMC::GenEvent*);
 

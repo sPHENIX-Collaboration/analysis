@@ -19,6 +19,13 @@
 #include <trackbase_historic/SvtxTrackMap.h>
 #include <trackbase_historic/SvtxVertex.h>
 #include <trackbase_historic/SvtxVertexMap.h>
+#include <trackbase_historic/TrackSeed.h>
+#include <trackbase_historic/TrackSeed_v1.h>
+#include <trackbase_historic/SvtxTrackSeed_v1.h>
+#include <trackbase_historic/TrackSeedContainer.h>
+#include <trackbase/TrkrCluster.h>
+#include <trackbase/TrkrClusterv4.h>
+#include <trackbase/TrkrClusterContainer.h>
 #include <trackbase/TrkrDefs.h>
 
 #include <g4vertex/GlobalVertexMap.h>
@@ -186,6 +193,8 @@ int sPHAnalysis::process_event(PHCompositeNode *topNode)
         return process_event_upsilons(topNode);
   } else if(_whattodo==4) {
       return process_event_notracking(topNode);
+  } else if(_whattodo==5) {
+      return process_event_filtered(topNode);
   } else { cerr << "ERROR: wrong choice of what to do." << endl; return Fun4AllReturnCodes::ABORTRUN; }
 }
 
@@ -819,6 +828,46 @@ else { dphi = 9999.; deta = 9999.; return e3x3;}
 
   return e3x3;
 }
+
+//======================================================================
+
+int sPHAnalysis::process_event_filtered(PHCompositeNode *topNode) {
+EventNumber++;
+
+  cout << "Event # " << EventNumber << endl;
+
+  SvtxTrackMap* _trackmap = nullptr;
+  TrackSeedContainer* _trackseedcontainer_svtx = nullptr;
+  TrackSeedContainer* _trackseedcontainer_silicon = nullptr;
+  TrackSeedContainer* _trackseedcontainer_tpc = nullptr;
+  TrkrClusterContainer* _trkrclusters = nullptr;
+  RawClusterContainer* _cemc_clusters = nullptr;
+
+  _trackmap = findNode::getClass<SvtxTrackMap>(topNode, "SvtxTrackMap");
+  if(!_trackmap) { cerr << PHWHERE << "ERROR: SvtxTrackMap node not found." << endl; return Fun4AllReturnCodes::ABORTEVENT; }
+  cout << "   Number of tracks = " << _trackmap->size() << endl;
+
+  _trkrclusters  = findNode::getClass<TrkrClusterContainer>(topNode, "TRKR_CLUSTER");
+  if(!_trkrclusters) { cerr << PHWHERE << "ERROR: TRKR_CLUSTER node not found." << endl; return Fun4AllReturnCodes::ABORTEVENT; }
+  cout << "   Number of TRKR clusters = " << _trkrclusters->size() << endl;
+
+  _trackseedcontainer_svtx = findNode::getClass<TrackSeedContainer>(topNode, "SvtxTrackSeedContainer");
+  if(!_trackseedcontainer_svtx) { cerr << PHWHERE << "ERROR: SvtxTrackSeedContainer node not found." << endl; return Fun4AllReturnCodes::ABORTEVENT; }
+
+  _trackseedcontainer_silicon = findNode::getClass<TrackSeedContainer>(topNode, "SiliconTrackSeedContainer");
+  if(!_trackseedcontainer_silicon) { cerr << PHWHERE << "ERROR: SiliconTrackSeedContainer node not found." << endl; return Fun4AllReturnCodes::ABORTEVENT; }
+
+  _trackseedcontainer_tpc = findNode::getClass<TrackSeedContainer>(topNode, "TpcTrackSeedContainer");
+  if(!_trackseedcontainer_tpc) { cerr << PHWHERE << "ERROR: TpcTrackSeedContainer node not found." << endl; return Fun4AllReturnCodes::ABORTEVENT; }
+
+  _cemc_clusters = findNode::getClass<RawClusterContainer>(topNode, "CLUSTER_CEMC");
+  if(!_cemc_clusters) { cerr << PHWHERE << "ERROR: CLUSTER_CEMC node not found." << endl; return Fun4AllReturnCodes::ABORTEVENT; }
+  cout << "   Number of CEMC clusters = " << _cemc_clusters->size() << endl;
+
+  return 0;
+}
+
+
 
 //======================================================================
 
