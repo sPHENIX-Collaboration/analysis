@@ -9,12 +9,12 @@ void Jet_reso()
   TH2::SetDefaultSumw2();
 
   TChain * ct = new TChain("T");
-  ct->Add("../macro/output.root");  
+  ct->Add("");  
 
   //if you want to combine multiple files use this
-  /*for(int i = 0; i < 100; i++){
-    ct->Add(Form("/PATH/TO/YOUR/OUTPUT/FILES/output%i_r04.root",i));
-    }*/
+  for(int i = 0; i < 100; i++){
+    ct->Add(Form("../macro/condor/output_Run40_30GeV_UESubtracted/jetIso_%d/isoJetCalibOut_%d.root",i,i));
+    }
 
   vector<float> *eta = 0;
   vector<float> *phi = 0;
@@ -173,13 +173,23 @@ void Jet_reso()
       leg->AddEntry("",Form("%2.0f%%-%2.0f%%",h_MC_Reso_pt->GetZaxis()->GetBinLowEdge(icent+1),h_MC_Reso_pt->GetZaxis()->GetBinLowEdge(icent+2)),"");
       leg->AddEntry("",Form("%2.0f < p_T < %2.0f GeV",h_MC_Reso_pt->GetXaxis()->GetBinLowEdge(i+1),h_MC_Reso_pt->GetXaxis()->GetBinLowEdge(i+2)),"");
       leg->Draw("SAME");
+      /*-------for calculating the JER uncertainty----*/
+      float dsigma = func -> GetParError(2);
+      float denergy = func -> GetParError(1);
+      float sigma = func -> GetParameter(2);
+      float energy = func -> GetParameter(1);
+
+      float djer = dsigma/energy + sigma*denergy/pow(energy,2);//correct way to calculate jer
+                                                               //accounting for the fact that the 
+                                                               //mean response and width are correlated
       //c->Print("fits04.pdf");
       leg->Clear();
       g_jes[icent]->SetPoint(i,0.5*(pt_range[i]+pt_range[i+1]),func->GetParameter(1));
       g_jes[icent]->SetPointError(i,0.5*(pt_range[i+1]-pt_range[i]),func->GetParError(1));
       g_jer[icent]->SetPoint(i,0.5*(pt_range[i]+pt_range[i+1]),func->GetParameter(2)/func->GetParameter(1));
-      g_jer[icent]->SetPointError(i,0.5*(pt_range[i+1]-pt_range[i]),func->GetParError(2));
-
+      
+      //g_jer[icent]->SetPointError(i,0.5*(pt_range[i+1]-pt_range[i]),func->GetParError(2));
+      g_jer[icent]->SetPointError(i,0.5*(pt_range[i+1]-pt_range[i]),djer);
     }
   }
   //c->Print("fits04.pdf)");
