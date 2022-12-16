@@ -82,9 +82,7 @@ CaloWaveFormSim::CaloWaveFormSim(const std::string& name, const std::string& fil
   , hm(nullptr)
   , outfile(nullptr)
   , g4hitntuple(nullptr)
-  // , g4cellntuple(nullptr)
-  // , towerntuple(nullptr)
-  // , clusterntuple(nullptr)
+
 {
 }
 
@@ -92,9 +90,6 @@ CaloWaveFormSim::~CaloWaveFormSim()
 {
   delete hm;
   delete g4hitntuple;
-  // delete g4cellntuple;
-  // delete towerntuple;
-  // delete clusterntuple;
 }
 
 int CaloWaveFormSim::Init(PHCompositeNode*)
@@ -143,8 +138,8 @@ int CaloWaveFormSim::Init(PHCompositeNode*)
   g4hitntuple->Branch("toweradc_ohcal",& m_toweradc_ohcal,"toweradc_ohcal[1536]/F");
   // g4hitntuple->Branch("waveform_ohcal",& m_waveform_ohcal,"waveform_ohcal[1536][16]/I");
 
-  g4hitntuple->Branch("npeaks_ihcal",& m_npeaks_ihcal,"npeaks_ihcall[1536]/I");
-  g4hitntuple->Branch("npeaks_ohcal",& m_npeaks_ohcal,"npeaks_ohcal[1536]/I");
+  // g4hitntuple->Branch("npeaks_ihcal",& m_npeaks_ihcal,"npeaks_ihcall[1536]/I");
+  // g4hitntuple->Branch("npeaks_ohcal",& m_npeaks_ohcal,"npeaks_ohcal[1536]/I");
 
   //----------------------------------------------------------------------------------------------------
   //Read in the template file, this currently points to a tim local area file, 
@@ -386,7 +381,8 @@ int CaloWaveFormSim::process_g4hits(PHCompositeNode* topNode)
       //---------------------------------------------------------------------
       //Convert the G4hit into a waveform contribution
       //---------------------------------------------------------------------
-      float t0 = 0.5*(hit_iter->second->get_t(0)+hit_iter->second->get_t(1)) / 16.66667;   //Average of g4hit time downscaled by 16.667 ns/time sample 
+      // float t0 = 0.5*(hit_iter->second->get_t(0)+hit_iter->second->get_t(1)) / 16.66667;   //Average of g4hit time downscaled by 16.667 ns/time sample 
+      float t0 = (hit_iter->second->get_t(0)) / 16.66667;   //Place waveform at the starting time of the G4hit, avoids issues caused by excessively long lived g4hits
       float tmax = 16.667*16;
       float tmin = -20;
       f_fit->SetParameters(light_yield*26000,_shiftval+t0,0);            //Set the waveform template to match the expected signal from such a hit
@@ -455,7 +451,8 @@ int CaloWaveFormSim::process_g4hits(PHCompositeNode* topNode)
       //---------------------------------------------------------------------
       //Convert the G4hit into a waveform contribution
       //---------------------------------------------------------------------
-      float t0 = 0.5*(hit_iter->second->get_t(0)+hit_iter->second->get_t(1)) / 16.66667;   //Average of g4hit time downscaled by 16.667 ns/time sample 
+      // float t0 = 0.5*(hit_iter->second->get_t(0)+hit_iter->second->get_t(1)) / 16.66667;   //Average of g4hit time downscaled by 16.667 ns/time sample 
+      float t0 = (hit_iter->second->get_t(0)) / 16.66667;   //Place waveform at the starting time of the G4hit, avoids issues caused by excessively long lived g4hits
       float tmax = 16.667*16;
       float tmin = -20;
       f_fit_ihcal->SetParameters(light_yield*2600,_shiftval_ihcal+t0,0);            //Set the waveform template to match the expected signal from such a hit
@@ -525,9 +522,9 @@ int CaloWaveFormSim::process_g4hits(PHCompositeNode* topNode)
       //---------------------------------------------------------------------
       //Convert the G4hit into a waveform contribution
       //---------------------------------------------------------------------
-      float t0 = 0.5*(hit_iter->second->get_t(0)+hit_iter->second->get_t(1)) / 16.66667;   //Average of g4hit time downscaled by 16.667 ns/time sample 
-      // float t0 = (hit_iter->second->get_t(0)) / 16.66667;   //Average of g4hit time downscaled by 16.667 ns/time sample 
-     float tmax =16.667*16 ;
+      // float t0 = 0.5*(hit_iter->second->get_t(0)+hit_iter->second->get_t(1)) / 16.66667;   //Average of g4hit time downscaled by 16.667 ns/time sample 
+      float t0 = (hit_iter->second->get_t(0)) / 16.66667;   //Place waveform at the starting time of the G4hit, avoids issues caused by excessively long lived g4hits
+      float tmax =16.667*16 ;
       float tmin = -20;
       f_fit_ohcal->SetParameters(light_yield*5000,_shiftval_ohcal+t0,0);            //Set the waveform template to match the expected signal from such a hit
       if (hit_iter->second->get_t(0) < tmax && hit_iter->second->get_t(1) > tmin) {
@@ -641,16 +638,16 @@ int CaloWaveFormSim::process_g4hits(PHCompositeNode* topNode)
 	  }
 	waveforms.push_back(tmp);
 
-	int size2 = tmp.size();
-	int n_peak = 0;
-	for (int j = 2; j < size2-1;j++)
-	  {
-	    if (tmp.at(j) > 1.01*tmp.at(j-2) && tmp.at(j) > 1.01 * tmp.at(j+1))
-	      {
-		n_peak++;
-	      }
-	  }
-	m_npeaks_ihcal[i] = n_peak;
+	// int size2 = tmp.size();
+	// int n_peak = 0;
+	// for (int j = 2; j < size2-1;j++)
+	//   {
+	//     if (tmp.at(j) > 1.01*tmp.at(j-2) && tmp.at(j) > 1.01 * tmp.at(j+1))
+	//       {
+	// 	n_peak++;
+	//       }
+	//   }
+	// m_npeaks_ihcal[i] = n_peak;
 
 
 
@@ -682,17 +679,17 @@ int CaloWaveFormSim::process_g4hits(PHCompositeNode* topNode)
 	waveforms.push_back(tmp);
 
 	
-	int size2 = tmp.size();
-	int n_peak = 0;
-	for (int j = 2; j < size2-1;j++)
-	  {
-	    if (tmp.at(j) - tmp.at(j-2) > 15 && tmp.at(j) - tmp.at(j+1) > 15)
-	      {
-		n_peak++;
-	      }
-	  }
+	// int size2 = tmp.size();
+	// int n_peak = 0;
+	// for (int j = 2; j < size2-1;j++)
+	//   {
+	//     if (tmp.at(j) - tmp.at(j-2) > 15 && tmp.at(j) - tmp.at(j+1) > 15)
+	//       {
+	// 	n_peak++;
+	//       }
+	//   }
 
-	m_npeaks_ohcal[i] = n_peak;
+	// m_npeaks_ohcal[i] = n_peak;
 	tmp.clear();
       }
 
