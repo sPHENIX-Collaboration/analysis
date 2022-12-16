@@ -1,0 +1,16 @@
+Universe     = vanilla
+Executable   = run_JetPlusBackground.sh
+notification = Never
+Output       = condor-out/jet_bg/condor$(index).out
+Error        = condor-out/jet_bg/condor$(index).err
+Log          = condor-out/jet_bg/condor$(index).log
+Initialdir   = /sphenix/user/verkest/tutorials/myjetanalysis/
+
+Arguments = 0.2 -1 1000 \"AntiKt_Tower_r04\" \"_$(index)\"
+
+# Jobs by default use 1.5Gb of RAM, you need to ask for more if needed
+# with request_memory. Be mindful - if you request too little your jobs will be evicted, if you request way too much it will take longer for your job to start
+request_memory = 4000MB
+# the importance of this PeriodicHold will be explained in the next section
+PeriodicHold = (NumJobStarts>=1 && JobStatus == 1)
+Queue index from lists/jet_bg/index.txt
