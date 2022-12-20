@@ -1,6 +1,7 @@
 # BuildResonanceJetTaggingTree
 
-* Change the path of the variable $MYINSTALL in the file run_MDC2reco.sh
+* Change the path of the variable $MYINSTALL in the file run_MDC2reco.sh. It should point to your install directory
+* Don't forget to load sPHENIX software: source /opt/sphenix/core/bin/sphenix_setup.sh -n new
 * Run makeCondorJobs.py with parameters to get the files to run MDC2 simulations. My suggestion is:
   * python makeCondorJobs.py -i D0JETS --truth --calo --truth_table -t 100000 -f 1
   * -t: number of events
