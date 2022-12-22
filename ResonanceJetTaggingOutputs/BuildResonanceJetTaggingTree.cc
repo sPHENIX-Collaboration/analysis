@@ -41,6 +41,7 @@
 /// ROOT includes
 #include <TFile.h>
 #include <TTree.h>
+#include <TH1I.h>
 
 /// C++ includes
 #include <cassert>
@@ -67,6 +68,7 @@ BuildResonanceJetTaggingTree::BuildResonanceJetTaggingTree(const std::string &na
   , m_tag_particle(tag)
   , m_tag_pdg(0)
   , m_outfile(nullptr)
+  , m_eventcount_h(nullptr)
   , m_taggedjettree(nullptr)
 {
   /// Initialize variables and trees so we don't accidentally access
@@ -131,6 +133,8 @@ int BuildResonanceJetTaggingTree::process_event(PHCompositeNode *topNode)
     std::cout << "Beginning process_event in BuildResonanceJetTaggingTree" << std::endl;
   }
 
+  m_eventcount_h->Fill(0);
+
   switch (m_tag_particle) {
     case ResonanceJetTagging::TAG::D0:
       return loopD0(topNode);
@@ -167,9 +171,8 @@ int BuildResonanceJetTaggingTree::End(PHCompositeNode */*topNode*/)
   m_outfile->cd();
 
   m_taggedjettree->Write();
+  m_eventcount_h->Write();
 
-  /// Write and close the outfile
-  m_outfile->Write();
   m_outfile->Close();
 
   delete m_outfile;
@@ -206,7 +209,7 @@ int BuildResonanceJetTaggingTree::loopD0(PHCompositeNode *topNode)
     if(!hepMCGenEvent) return Fun4AllReturnCodes::ABORTEVENT;
   }
 
-  //*********
+  m_eventcount_h->Fill(1);
 
   Jet *recTagJet = nullptr;
   Jet *genTagJet = nullptr;
@@ -506,6 +509,11 @@ void BuildResonanceJetTaggingTree::initializeVariables()
 {
   delete m_outfile;
   m_outfile = new TFile(m_outfilename.c_str(), "RECREATE");
+
+  delete m_eventcount_h;
+  m_eventcount_h = new TH1I("eventcount_h", "Event Count", 2, -0.5, 1.5);
+  m_eventcount_h->GetXaxis()->SetBinLabel(1,"N raw ev anal");
+  m_eventcount_h->GetXaxis()->SetBinLabel(2,"N ev anal");
 }
 
 void BuildResonanceJetTaggingTree::resetTreeVariables()

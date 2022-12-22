@@ -18,6 +18,7 @@
 class PHCompositeNode;
 class TFile;
 class TTree;
+class TH1I;
 class PHG4Particle;
 class KFParticle_Container;
 
@@ -81,6 +82,7 @@ class BuildResonanceJetTaggingTree : public SubsysReco
 
   /// TFile to hold the following TTrees and histograms
   TFile *m_outfile = nullptr;
+  TH1I *m_eventcount_h = nullptr;
   TTree *m_taggedjettree = nullptr;
 
   // Tagged-Jet variables
