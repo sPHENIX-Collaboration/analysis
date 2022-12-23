@@ -4,14 +4,14 @@
 * Load sPHENIX newest software:
   * source /opt/sphenix/core/bin/sphenix_setup.sh -n new
 * Create the environmental variable MYINSTALL point to you installation directory
-  * Ex.: export MYINSTALL=/sphenix/u/antoniosilva/myInstall
+  * Ex.: export MYINSTALL=/sphenix/u/antoniosilva/myInstall (This is just an example, you have to change it accordingly to your directories)
 * Load some more setup:
   * source $OPT_SPHENIX/bin/setup_local.sh $MYINSTALL
 * Inside the ResonanceJetTaggingOutputs directory, create a build directory
   * mkdir build
   * cd build
 * Run autogen.sh from inside the build directory. Don't forget to use the entire path where it is located. Use the --prefix to pass the MYINSTALL variable
-  * Ex.: /sphenix/u/antoniosilva/analysis/ResonanceJetTaggingOutputs/autogen.sh --prefix=$MYINSTALL
+  * Ex.: /sphenix/u/antoniosilva/analysis/ResonanceJetTaggingOutputs/autogen.sh --prefix=$MYINSTALL (This is just an example, you have to change it accordingly to your directories)
 * Compile it:
   * make install
 
