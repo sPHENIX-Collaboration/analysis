@@ -1,6 +1,6 @@
-R__LOAD_LIBRARY(libdecayfinder.so)
 #include "HFReco.C"
-#include "resonancejettaggingoutputs/BuildResonanceJetTaggingTree.h"
+
+#include <resonancejettaggingoutputs/BuildResonanceJetTaggingTree.h>
 
 #include <resonancejettagging/ResonanceJetTagging.h>
 
@@ -20,10 +20,11 @@ R__LOAD_LIBRARY(libdecayfinder.so)
 #include <caloreco/RawClusterBuilderTopo.h>
 #include <particleflowreco/ParticleFlowReco.h>
 
+R__LOAD_LIBRARY(libdecayfinder.so)
 R__LOAD_LIBRARY(libcalo_reco.so)
 R__LOAD_LIBRARY(libfun4all.so)
 R__LOAD_LIBRARY(libparticleflow.so)
-R__LOAD_LIBRARY(resonancejettagging.so)
+R__LOAD_LIBRARY(libresonancejettaggingoutputs.so)
 
 using namespace std;
 using namespace HeavyFlavorReco;
