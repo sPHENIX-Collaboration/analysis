@@ -166,10 +166,14 @@ int Fun4All_G4_sPHENIX(
       INPUTGENERATOR::SimpleEventGenerator[0]->set_vertex_distribution_mean(0., 0., 0.);
       INPUTGENERATOR::SimpleEventGenerator[0]->set_vertex_distribution_width(0.01, 0.01, 5.);
     }
-    INPUTGENERATOR::SimpleEventGenerator[0]->set_eta_range(-1, 1);
-    INPUTGENERATOR::SimpleEventGenerator[0]->set_phi_range(-M_PI, M_PI);
-    // INPUTGENERATOR::SimpleEventGenerator[0]->set_pt_range(0.1, 20.);
-    INPUTGENERATOR::SimpleEventGenerator[0]->set_pt_range(5, 5);
+    INPUTGENERATOR::SimpleEventGenerator[0]->set_eta_range(0, 1.1);
+    INPUTGENERATOR::SimpleEventGenerator[0]->set_phi_range(-M_PI/32.0 - 0.02, M_PI/32.0 + 0.02);
+    INPUTGENERATOR::SimpleEventGenerator[0]->set_pt_range(20, 21.);
+
+    // for testing use full range
+    // INPUTGENERATOR::SimpleEventGenerator[0]->set_eta_range(-1, 1);
+    // INPUTGENERATOR::SimpleEventGenerator[0]->set_phi_range(-M_PI, M_PI);
+    // INPUTGENERATOR::SimpleEventGenerator[0]->set_pt_range(5, 5);
   }
   // Upsilons
   // if you run more than one of these Input::UPSILON_NUMBER > 1
@@ -284,7 +288,7 @@ int Fun4All_G4_sPHENIX(
   //======================
 
   // QA, main switch
-  Enable::QA = true;
+  Enable::QA = false;
 
   // Global options (enabled for all enables subsystems - if implemented)
   //  Enable::ABSORBER = true;
@@ -384,7 +388,7 @@ int Fun4All_G4_sPHENIX(
 
   Enable::CALOTRIGGER = Enable::CEMC_TOWER && Enable::HCALIN_TOWER && Enable::HCALOUT_TOWER && false;
 
-  Enable::JETS = (Enable::GLOBAL_RECO || Enable::GLOBAL_FASTSIM) && true;
+  Enable::JETS = (Enable::GLOBAL_RECO || Enable::GLOBAL_FASTSIM) && false;
   Enable::JETS_EVAL = Enable::JETS && true;
   Enable::JETS_QA = Enable::JETS && Enable::QA && true;
 
