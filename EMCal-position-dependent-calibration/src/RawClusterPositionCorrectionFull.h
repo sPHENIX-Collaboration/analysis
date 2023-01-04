@@ -7,6 +7,7 @@
 
 #include <string>
 #include <vector>
+#include <math.h>
 
 class PHCompositeNode;
 class RawClusterContainer;
@@ -56,11 +57,14 @@ class RawClusterPositionCorrectionFull : public SubsysReco
 
   std::string _det_name;
 
-  const float tower_eta_mid = 47.5;
+  const double cluster_eta_max           = 1.152;
+  const double sector_phi_boundary_low   = -M_PI / 32.;
+  const double sector_phi_boundary_high  = M_PI / 32.;
+  const double sector_phi_boundary_width = sector_phi_boundary_high - sector_phi_boundary_low;
 
   int bins_eta, bins_phi;
-  std::vector<float> binvals_eta;
-  std::vector<float> binvals_phi;
+  std::vector<double> binvals_eta;
+  std::vector<double> binvals_phi;
   std::vector<std::vector<double> > eclus_calib_constants;
   std::vector<std::vector<double> > ecore_calib_constants;
 };
