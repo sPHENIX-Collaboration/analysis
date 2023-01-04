@@ -17,30 +17,20 @@ int massRecoAnalysis::process_event(PHCompositeNode * /**topNode*/)
       if(tr1->get_quality() > _qual_cut) continue;
 
       // calculate number silicon tracks
-      TrackSeed *siliconseed = tr1->get_silicon_seed();
       double this_dca_cut    = track_dca_cut;
-      if(!siliconseed){ this_dca_cut *= 5;}
+      TrackSeed *siliconseed = tr1->get_silicon_seed();
+      if(!siliconseed)
+	{
+	  this_dca_cut *= 5;
+	  if(Verbosity()>2){std::cout << "silicon seed not found" << std::endl;}
+	  if(_require_mvtx){continue;}
+	}
       Acts::Vector3 pos1(tr1->get_x(), tr1->get_y(), tr1->get_z());
       Acts::Vector3 mom1(tr1->get_px(), tr1->get_py(), tr1->get_pz());
       Acts::Vector3 dcaVals1 = calculateDca(tr1, mom1, pos1);
       // first dca cut
       if(dcaVals1(0) < this_dca_cut or dcaVals1(1) < this_dca_cut) continue;
 
-      if(_require_mvtx)
-	{
-	  unsigned int nmvtx = 0;
-	  for(auto clusit = siliconseed->begin_cluster_keys(); clusit != siliconseed->end_cluster_keys(); ++clusit)
-	    {
-	      if(TrkrDefs::getTrkrId(*clusit) == TrkrDefs::mvtxId )
-		{
-		  nmvtx++;
-		}
-	      if(nmvtx >= _nmvtx_required) break;
-	    }
-	  if(nmvtx < _nmvtx_required) continue;
-	  if(Verbosity() > 3) std::cout << " tr1 has nmvtx at least " << nmvtx << std::endl;
-	}
-      
       // look for close DCA matches with all other such tracks
       for(auto tr2_it = std::next(tr1_it); tr2_it != m_svtxTrackMap->end(); ++tr2_it)
 	{
@@ -51,7 +41,12 @@ int massRecoAnalysis::process_event(PHCompositeNode * /**topNode*/)
           // calculate number silicon tracks
           TrackSeed *siliconseed2 = tr2->get_silicon_seed();
           double this_dca_cut2    = track_dca_cut;
-          if(!siliconseed2){ this_dca_cut2 *= 5;}
+          if(!siliconseed2)
+	    { 
+	      this_dca_cut2 *= 5;
+	      if(Verbosity()>2){std::cout << "silicon seed not found" << std::endl;}
+	      if(_require_mvtx){continue;}
+	    }
 
           // dca xy and dca z cut here compare to track dca cut
           Acts::Vector3 pos2(tr2->get_x(), tr2->get_y(), tr2->get_z());
@@ -59,24 +54,7 @@ int massRecoAnalysis::process_event(PHCompositeNode * /**topNode*/)
           Acts::Vector3 dcaVals2 = calculateDca(tr2, mom2, pos2);
 
           if(dcaVals2(0) < this_dca_cut2 or dcaVals2(1) < this_dca_cut2) continue;
-
-	  if(_require_mvtx)
-	    {
-	      unsigned int nmvtx = 0;
-	      siliconseed = tr2->get_silicon_seed();
-	      if(!siliconseed) continue; 
-	      
-	      for(auto clusit = siliconseed->begin_cluster_keys(); clusit != siliconseed->end_cluster_keys(); ++clusit)
-		{
-		  if(TrkrDefs::getTrkrId(*clusit) == TrkrDefs::mvtxId)
-		    {
-		      nmvtx++;
-		    }
-		  if(nmvtx >= _nmvtx_required) break;
-		}
-	      if(nmvtx < _nmvtx_required) continue;
-	      if(Verbosity() > 3)  std::cout << " tr2 has nmvtx at least " << nmvtx << std::endl;
-	    }	  
+	  
 	  // find DCA of these two tracks
 	  if(Verbosity() > 3) std::cout << "Check DCA for tracks " << id1 << " and  " << id2 << std::endl;
 
@@ -96,8 +74,8 @@ int massRecoAnalysis::process_event(PHCompositeNode * /**topNode*/)
 	      fillHistogram(tr1,tr2,recomass,invariantMass);
 	      fillNtp(tr1,tr2,dcaVals1,dcaVals2,pca_rel1,pca_rel2,pair_dca,invariantMass);
 
-	      if(Verbosity() > 2 )
-		{
+	       if(Verbosity() > 2 )
+	       	{
 		  std::cout << "Accepted Track Pair" << std::endl;
 		  std::cout << " invariant mass: " << invariantMass<<std::endl;
 		  std::cout << " track1 dca_cut: " << this_dca_cut<< " track2 dca_cut: " << this_dca_cut2 <<std::endl;
@@ -157,7 +135,6 @@ void massRecoAnalysis::fillHistogram(SvtxTrack *track1, SvtxTrack *track2, TH1D 
       std::cout << "tsum: " <<tsum(0)<<" "<<tsum(1)<<" " <<tsum(2)<< " " <<tsum(3) << std::endl;
       std::cout << "invariant mass: " << invariantMass << std::endl;
     }    
-
   massreco->Fill(invariantMass);
 }
 
@@ -275,7 +252,7 @@ Acts::Vector3 massRecoAnalysis::calculateDca(SvtxTrack *track, Acts::Vector3 mom
 int massRecoAnalysis::InitRun(PHCompositeNode *topNode)
 {
   char fileName[500];
-  sprintf(fileName, "ntp_mass_out_%i.root",process);
+  sprintf(fileName, "eval_output/ntp_mass_out_%i.root",process);
   fout = new TFile(fileName,"recreate");
   ntp_reco_info = new TNtuple("ntp_reco_info","decay_pairs","x1:y1:z1:px1:py1:pz1:dca3dxy1:dca3dz1:phi1:pca_relx_1:pca_rely_1:pca_relz_1:eta1:charge1:tpcClusters_1:x2:y2:z2:px2:py2:pz2:dca3dxy2:dca3dz2:phi2:pca_relx_2:pca_rely_2:pca_relz_2:eta2:charge2:tpcClusters_2:vertex_x:vertex_y:vertex_z:pair_dca:invariant_mass");
   getNodes(topNode);
