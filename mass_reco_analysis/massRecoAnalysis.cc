@@ -28,7 +28,7 @@ int massRecoAnalysis::process_event(PHCompositeNode * /**topNode*/)
       Acts::Vector3 pos1(tr1->get_x(), tr1->get_y(), tr1->get_z());
       Acts::Vector3 mom1(tr1->get_px(), tr1->get_py(), tr1->get_pz());
       Acts::Vector3 dcaVals1 = calculateDca(tr1, mom1, pos1);
-      // first dca cut
+      // first dca cuts
       if(dcaVals1(0) < this_dca_cut or dcaVals1(1) < this_dca_cut) continue;
 
       // look for close DCA matches with all other such tracks
@@ -65,14 +65,15 @@ int massRecoAnalysis::process_event(PHCompositeNode * /**topNode*/)
           Acts::Vector3 pca_rel1;
           Acts::Vector3 pca_rel2;
 	  double invariantMass;
+	  double invariantPt;
 
 	  findPcaTwoTracks(tr1, tr2, pca_rel1, pca_rel2, pair_dca);
 
 	  // tracks with small relative pca are k short candidates
           if(abs(pair_dca) < pair_dca_cut)
 	    {
-	      fillHistogram(tr1,tr2,recomass,invariantMass);
-	      fillNtp(tr1,tr2,dcaVals1,dcaVals2,pca_rel1,pca_rel2,pair_dca,invariantMass);
+	      fillHistogram(tr1,tr2,recomass,invariantMass,invariantPt);
+	      fillNtp(tr1,tr2,dcaVals1,dcaVals2,pca_rel1,pca_rel2,pair_dca,invariantMass,invariantPt);
 
 	       if(Verbosity() > 2 )
 	       	{
@@ -91,7 +92,7 @@ int massRecoAnalysis::process_event(PHCompositeNode * /**topNode*/)
 }
 
 void massRecoAnalysis::fillNtp(SvtxTrack *track1, SvtxTrack *track2, Acts::Vector3 dcavals1, Acts::Vector3 dcavals2,
-			       Acts::Vector3 pca_rel1, Acts::Vector3 pca_rel2, double pair_dca, double invariantMass)
+			       Acts::Vector3 pca_rel1, Acts::Vector3 pca_rel2, double pair_dca, double invariantMass, double invariantPt)
 {
   double px1          = track1->get_px();
   double py1          = track1->get_py();
@@ -111,12 +112,12 @@ void massRecoAnalysis::fillNtp(SvtxTrack *track1, SvtxTrack *track2, Acts::Vecto
   auto svtxVertex = m_vertexMap->get(vtxid);
   if(!svtxVertex){ return; }
   
-  float reco_info[] = {track1->get_x(), track1->get_y(), track1->get_z(), track1->get_px(), track1->get_py(), track1->get_pz(), (float) dcavals1(0), (float) dcavals1(1), (float) dcavals1(2), (float) pca_rel1(0), (float) pca_rel1(1), (float) pca_rel1(2), (float) eta1,  (float) track1->get_charge(), (float) tpcClusters1, track2->get_x(), track2->get_y(), track2->get_z(),  track2->get_px(), track2->get_py(), track2->get_pz(), (float) dcavals2(0), (float) dcavals2(1), (float) dcavals2(2), (float) pca_rel2(0), (float) pca_rel2(1), (float) pca_rel2(2), (float) eta2, (float) track2->get_charge(), (float) tpcClusters2, svtxVertex->get_x(), svtxVertex->get_y(), svtxVertex->get_z(), (float) pair_dca,(float) invariantMass};
+  float reco_info[] = {track1->get_x(), track1->get_y(), track1->get_z(), track1->get_px(), track1->get_py(), track1->get_pz(), (float) dcavals1(0), (float) dcavals1(1), (float) dcavals1(2), (float) pca_rel1(0), (float) pca_rel1(1), (float) pca_rel1(2), (float) eta1,  (float) track1->get_charge(), (float) tpcClusters1, track2->get_x(), track2->get_y(), track2->get_z(),  track2->get_px(), track2->get_py(), track2->get_pz(), (float) dcavals2(0), (float) dcavals2(1), (float) dcavals2(2), (float) pca_rel2(0), (float) pca_rel2(1), (float) pca_rel2(2), (float) eta2, (float) track2->get_charge(), (float) tpcClusters2, svtxVertex->get_x(), svtxVertex->get_y(), svtxVertex->get_z(), (float) pair_dca,(float) invariantMass, (float) invariantPt};
 
   ntp_reco_info->Fill(reco_info);
 }
 
-void massRecoAnalysis::fillHistogram(SvtxTrack *track1, SvtxTrack *track2, TH1D *massreco, double& invariantMass)
+void massRecoAnalysis::fillHistogram(SvtxTrack *track1, SvtxTrack *track2, TH1D *massreco, double& invariantMass, double& invariantPt)
 {
   double E1 = sqrt(pow(track1->get_px(),2) + pow(track1->get_py(),2) + pow(track1->get_pz(),2) + pow(decaymass,2));
   double E2 = sqrt(pow(track2->get_px(),2) + pow(track2->get_py(),2) + pow(track2->get_pz(),2) + pow(decaymass,2));
@@ -127,15 +128,22 @@ void massRecoAnalysis::fillHistogram(SvtxTrack *track1, SvtxTrack *track2, TH1D 
   TLorentzVector tsum;
   tsum = v1 + v2;
   invariantMass = tsum.M();
+  invariantPt   = tsum.Pt();
+
+  
 
   if(Verbosity() > 2)
     {
       std::cout << "px1: " << track1->get_px()<< " py1: "<<track1->get_py() << " pz1: "<< track1->get_pz()<< " E1: "<<E1 << std::endl;
       std::cout << "px2: " << track2->get_px()<< " py2: "<<track2->get_py() << " pz2: "<< track2->get_pz()<< " E2: "<<E2 << std::endl;
       std::cout << "tsum: " <<tsum(0)<<" "<<tsum(1)<<" " <<tsum(2)<< " " <<tsum(3) << std::endl;
-      std::cout << "invariant mass: " << invariantMass << std::endl;
-    }    
-  massreco->Fill(invariantMass);
+      std::cout << "invariant mass: " << invariantMass << " invariant Pt: "<< invariantPt<< std::endl;
+    }   
+
+  if(invariantPt<pt_cut)
+    {
+      massreco->Fill(invariantMass);
+    }
 }
 
 void massRecoAnalysis::findPcaTwoTracks(SvtxTrack *track1, SvtxTrack *track2, Acts::Vector3& pca1, Acts::Vector3& pca2, double& dca)
@@ -254,12 +262,12 @@ int massRecoAnalysis::InitRun(PHCompositeNode *topNode)
   char fileName[500];
   sprintf(fileName, "eval_output/ntp_mass_out_%i.root",process);
   fout = new TFile(fileName,"recreate");
-  ntp_reco_info = new TNtuple("ntp_reco_info","decay_pairs","x1:y1:z1:px1:py1:pz1:dca3dxy1:dca3dz1:phi1:pca_relx_1:pca_rely_1:pca_relz_1:eta1:charge1:tpcClusters_1:x2:y2:z2:px2:py2:pz2:dca3dxy2:dca3dz2:phi2:pca_relx_2:pca_rely_2:pca_relz_2:eta2:charge2:tpcClusters_2:vertex_x:vertex_y:vertex_z:pair_dca:invariant_mass");
+  ntp_reco_info = new TNtuple("ntp_reco_info","decay_pairs","x1:y1:z1:px1:py1:pz1:dca3dxy1:dca3dz1:phi1:pca_relx_1:pca_rely_1:pca_relz_1:eta1:charge1:tpcClusters_1:x2:y2:z2:px2:py2:pz2:dca3dxy2:dca3dz2:phi2:pca_relx_2:pca_rely_2:pca_relz_2:eta2:charge2:tpcClusters_2:vertex_x:vertex_y:vertex_z:pair_dca:invariant_mass:invariant_pt");
   getNodes(topNode);
   
   char name[500];
   sprintf(name, "recomass");
-  recomass = new TH1D(name,name,400,0.0,0.8);  //root histogram arguments: name,title,bins,minvalx,maxvalx
+  recomass = new TH1D(name,name,1000,0.0,1);  //root histogram arguments: name,title,bins,minvalx,maxvalx
 
   return 0;
 }
