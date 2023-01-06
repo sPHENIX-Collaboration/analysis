@@ -130,7 +130,6 @@ void massRecoAnalysis::fillHistogram(SvtxTrack *track1, SvtxTrack *track2, TH1D 
   invariantMass = tsum.M();
   invariantPt   = tsum.Pt();
 
-  
 
   if(Verbosity() > 2)
     {
@@ -140,7 +139,7 @@ void massRecoAnalysis::fillHistogram(SvtxTrack *track1, SvtxTrack *track2, TH1D 
       std::cout << "invariant mass: " << invariantMass << " invariant Pt: "<< invariantPt<< std::endl;
     }   
 
-  if(invariantPt<pt_cut)
+  if(invariantPt > invariant_pt_cut)
     {
       massreco->Fill(invariantMass);
     }

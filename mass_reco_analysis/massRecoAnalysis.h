@@ -27,7 +27,7 @@ class massRecoAnalysis : public SubsysReco
   int End(PHCompositeNode * /*topNode*/) override;
 
 
-  //void setTrackQualityCut(double cut) {_qual_cut = cut;}
+  void setPtCut(double ptcut) {invariant_pt_cut = ptcut;}
   void setTrackQualityCut(double cut) {_qual_cut = cut;}
   void setPairDCACut(double cut){pair_dca_cut = cut;}
   void setTrackDCACut(double cut){track_dca_cut = cut;}
@@ -54,7 +54,7 @@ class massRecoAnalysis : public SubsysReco
   double _qual_cut             = 5.0;
   double pair_dca_cut          = 0.05; // kshort relative cut 500 microns
   double track_dca_cut         = 0.01;
-  double pt_cut                = 0.1;
+  double invariant_pt_cut                = 0.1;
   TFile *fout;
   TH1D* recomass;
 };
