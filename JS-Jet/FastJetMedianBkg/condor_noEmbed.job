@@ -1,0 +1,16 @@
+Universe     = vanilla
+Executable   = run_CaloRho.sh
+notification = Never
+Output       = condor-out/no_embed/10GeV/condor$(index).out
+Error        = condor-out/no_embed/10GeV/condor$(index).err
+Log          = condor-out/no_embed/10GeV/condor$(index).log
+Initialdir   = /sphenix/user/verkest/tutorials/myjetanalysis/
+
+Arguments = -1 0.2 10. 1 \"_$(index)\" 0
+
+# Jobs by default use 1.5Gb of RAM, you need to ask for more if needed
+# with request_memory. Be mindful - if you request too little your jobs will be evicted, if you request way too much it will take longer for your job to start
+request_memory = 4000MB
+# the importance of this PeriodicHold will be explained in the next section
+PeriodicHold = (NumJobStarts>=1 && JobStatus == 1)
+Queue index from lists/no_embed/10GeV/index.txt

@@ -1,16 +1,10 @@
 #ifndef MACRO_FUN4ALLG4SPHENIX_C
 #define MACRO_FUN4ALLG4SPHENIX_C
 
-// -- c++ includes --
-#include <fstream>
-// c++ includes --
-// -- root includes --
-#include <TSystem.h>
-#include <TROOT.h>
-// -- root includes --
-
 #include <GlobalVariables.C>
+
 #include <DisplayOn.C>
+#include <G4Setup_sPHENIX.C>
 #include <G4_Bbc.C>
 #include <G4_CaloTrigger.C>
 #include <G4_Centrality.C>
@@ -39,30 +33,25 @@
 #include <phool/PHRandomSeed.h>
 #include <phool/recoConsts.h>
 
-#include "G4Setup_sPHENIX.C"
-#include "../../macro/CEmc_Spacal.C"
-
 R__LOAD_LIBRARY(libfun4all.so)
 R__LOAD_LIBRARY(libffamodules.so)
-R__LOAD_LIBRARY(libEMCalPositionDependentCalibration.so)
+
 // For HepMC Hijing
 // try inputFile = /sphenix/sim/sim01/sphnxpro/sHijing_HepMC/sHijing_0-12fm.dat
 
-int Fun4All_G4_sPHENIX(
-    const int nEvents = 1,
-    const int seed = 0,
-    const string &calib_path="CEMC/PositionRecalibrationFull/",
-    const string &outdir = ".",
-    const string &inputFile = "https://www.phenix.bnl.gov/WWW/publish/phnxbld/sPHENIX/files/sPHENIX_G4Hits_sHijing_9-11fm_00000_00010.root",
-    const string &outputFile = "G4sPHENIX.root",
-    const string &embed_input_file = "https://www.phenix.bnl.gov/WWW/publish/phnxbld/sPHENIX/files/sPHENIX_G4Hits_sHijing_9-11fm_00000_00010.root",
-    const int skip = 0)
+int Fun4All_G4_sPHENIX_ForTrackCutStudy_EmbedScanOff(
+    const int nEvents = 50,
+    const string &inputFile = "https://www.phenix.bnl.gov/WWW/publish/phnxbld/sPHENIX/files/G4Hits_sHijing_0_20fm-0000000040-00019.root",
+    const string &outputFile = "sPhenixG4_testEmbedOnly00019.root",
+    const string &embed_input_file = "https://www.phenix.bnl.gov/WWW/publish/phnxbld/sPHENIX/files/G4Hits_sHijing_0_20fm-0000000040-00019.root",
+    const int skip = 0,
+    const string &outdir = ".")
 {
   Fun4AllServer *se = Fun4AllServer::instance();
-  se->Verbosity(1);
+  se->Verbosity(0);
 
   //Opt to print all random seed used for debugging reproducibility. Comment out to reduce stdout prints.
-  PHRandomSeed::Verbosity(0);
+  PHRandomSeed::Verbosity(1);
 
   // just if we set some flags somewhere in this macro
   recoConsts *rc = recoConsts::instance();
@@ -76,9 +65,6 @@ int Fun4All_G4_sPHENIX(
   // or set it to a fixed value so you can debug your code
   //  rc->set_IntFlag("RANDOMSEED", 12345);
 
-  if(seed > 0) {
-    rc->set_IntFlag("RANDOMSEED", seed);
-  }
 
   //===============
   // Input options
@@ -100,7 +86,7 @@ int Fun4All_G4_sPHENIX(
   // Further choose to embed newly simulated events to a previous simulation. Not compatible with `readhits = true`
   // In case embedding into a production output, please double check your G4Setup_sPHENIX.C and G4_*.C consistent with those in the production macro folder
   // E.g. /sphenix/sim//sim01/production/2016-07-21/single_particle/spacal2d/
-  //  Input::EMBED = true;
+  Input::EMBED = true;
   INPUTEMBED::filename[0] = embed_input_file;
   // if you use a filelist
   //INPUTEMBED::listfile[0] = embed_input_file;
@@ -150,9 +136,7 @@ int Fun4All_G4_sPHENIX(
   // add the settings for other with [1], next with [2]...
   if (Input::SIMPLE)
   {
-    // particle id: https://pdg.lbl.gov/2020/reviews/rpp2020-rev-monte-carlo-numbering.pdf
-    // photon id: 22
-    INPUTGENERATOR::SimpleEventGenerator[0]->add_particles(22, 1);
+    INPUTGENERATOR::SimpleEventGenerator[0]->add_particles("pi-", 5);
     if (Input::HEPMC || Input::EMBED)
     {
       INPUTGENERATOR::SimpleEventGenerator[0]->set_reuse_existing_vertex(true);
@@ -166,14 +150,9 @@ int Fun4All_G4_sPHENIX(
       INPUTGENERATOR::SimpleEventGenerator[0]->set_vertex_distribution_mean(0., 0., 0.);
       INPUTGENERATOR::SimpleEventGenerator[0]->set_vertex_distribution_width(0.01, 0.01, 5.);
     }
-    INPUTGENERATOR::SimpleEventGenerator[0]->set_eta_range(0, 1.1);
-    INPUTGENERATOR::SimpleEventGenerator[0]->set_phi_range(-M_PI/32.0 - 0.02, M_PI/32.0 + 0.02);
-    INPUTGENERATOR::SimpleEventGenerator[0]->set_pt_range(20, 21.);
-
-    // for testing use full range
-    // INPUTGENERATOR::SimpleEventGenerator[0]->set_eta_range(-1, 1);
-    // INPUTGENERATOR::SimpleEventGenerator[0]->set_phi_range(-M_PI, M_PI);
-    // INPUTGENERATOR::SimpleEventGenerator[0]->set_pt_range(5, 5);
+    INPUTGENERATOR::SimpleEventGenerator[0]->set_eta_range(-1, 1);
+    INPUTGENERATOR::SimpleEventGenerator[0]->set_phi_range(-M_PI, M_PI);
+    INPUTGENERATOR::SimpleEventGenerator[0]->set_pt_range(0.1, 20.);
   }
   // Upsilons
   // if you run more than one of these Input::UPSILON_NUMBER > 1
@@ -288,7 +267,8 @@ int Fun4All_G4_sPHENIX(
   //======================
 
   // QA, main switch
-  Enable::QA = false;
+  //Enable::QA = false;
+  Enable::QA = false;  // No Need [Derek, 12.02.2022]
 
   // Global options (enabled for all enables subsystems - if implemented)
   //  Enable::ABSORBER = true;
@@ -303,25 +283,25 @@ int Fun4All_G4_sPHENIX(
   Enable::PIPE_ABSORBER = true;
 
   // central tracking
-  Enable::MVTX = false;
+  Enable::MVTX = true;
   Enable::MVTX_CELL = Enable::MVTX && true;
   Enable::MVTX_CLUSTER = Enable::MVTX_CELL && true;
   Enable::MVTX_QA = Enable::MVTX_CLUSTER && Enable::QA && true;
 
-  Enable::INTT = false;
+  Enable::INTT = true;
 //  Enable::INTT_ABSORBER = true; // enables layerwise support structure readout
 //  Enable::INTT_SUPPORT = true; // enable global support structure readout
   Enable::INTT_CELL = Enable::INTT && true;
   Enable::INTT_CLUSTER = Enable::INTT_CELL && true;
   Enable::INTT_QA = Enable::INTT_CLUSTER && Enable::QA && true;
 
-  Enable::TPC = false;
+  Enable::TPC = true;
   Enable::TPC_ABSORBER = true;
   Enable::TPC_CELL = Enable::TPC && true;
   Enable::TPC_CLUSTER = Enable::TPC_CELL && true;
   Enable::TPC_QA = Enable::TPC_CLUSTER && Enable::QA && true;
 
-  Enable::MICROMEGAS = false;
+  Enable::MICROMEGAS = true;
   Enable::MICROMEGAS_CELL = Enable::MICROMEGAS && true;
   Enable::MICROMEGAS_CLUSTER = Enable::MICROMEGAS_CELL && true;
   Enable::MICROMEGAS_QA = Enable::MICROMEGAS_CLUSTER && Enable::QA && true;
@@ -338,29 +318,30 @@ int Fun4All_G4_sPHENIX(
   Enable::CEMC_ABSORBER = true;
   Enable::CEMC_CELL = Enable::CEMC && true;
   Enable::CEMC_TOWER = Enable::CEMC_CELL && true;
-  Enable::CEMC_CLUSTER = Enable::CEMC_TOWER && false;
-  Enable::CEMC_CLUSTER_FULL = Enable::CEMC_TOWER && true;
-  Enable::CEMC_EVAL = Enable::CEMC_CLUSTER && false;
-  Enable::CEMC_EVAL_POSITION_CORRECTION = Enable::CEMC_CLUSTER_FULL && true;
-  Enable::CEMC_QA = (Enable::CEMC_CLUSTER || Enable::CEMC_CLUSTER_FULL) && Enable::QA && true;
+  Enable::CEMC_CLUSTER = Enable::CEMC_TOWER && true;
+  //Enable::CEMC_EVAL = Enable::CEMC_CLUSTER && true;
+  Enable::CEMC_EVAL = false;  // No Need [Derek, 12.02.2022]
+  Enable::CEMC_QA = Enable::CEMC_CLUSTER && Enable::QA && true;
 
-  Enable::HCALIN = false;
+  Enable::HCALIN = true;
   Enable::HCALIN_ABSORBER = true;
   Enable::HCALIN_CELL = Enable::HCALIN && true;
   Enable::HCALIN_TOWER = Enable::HCALIN_CELL && true;
   Enable::HCALIN_CLUSTER = Enable::HCALIN_TOWER && true;
-  Enable::HCALIN_EVAL = Enable::HCALIN_CLUSTER && true;
+  //Enable::HCALIN_EVAL = Enable::HCALIN_CLUSTER && true;
+  Enable::HCALIN_EVAL = false;  // No Need [Derek, 12.02.2022]
   Enable::HCALIN_QA = Enable::HCALIN_CLUSTER && Enable::QA && true;
 
   Enable::MAGNET = true;
   Enable::MAGNET_ABSORBER = true;
 
-  Enable::HCALOUT = false;
+  Enable::HCALOUT = true;
   Enable::HCALOUT_ABSORBER = true;
   Enable::HCALOUT_CELL = Enable::HCALOUT && true;
   Enable::HCALOUT_TOWER = Enable::HCALOUT_CELL && true;
   Enable::HCALOUT_CLUSTER = Enable::HCALOUT_TOWER && true;
-  Enable::HCALOUT_EVAL = Enable::HCALOUT_CLUSTER && true;
+  //Enable::HCALOUT_EVAL = Enable::HCALOUT_CLUSTER && true;
+  Enable::HCALOUT_EVAL = false;  // No Need [Derek, 12.02.2022]
   Enable::HCALOUT_QA = Enable::HCALOUT_CLUSTER && Enable::QA && true;
 
   Enable::EPD = true;
@@ -372,7 +353,8 @@ int Fun4All_G4_sPHENIX(
 //  Enable::ZDC_ABSORBER = true;
 //  Enable::ZDC_SUPPORT = true;
   Enable::ZDC_TOWER = Enable::ZDC && true;
-  Enable::ZDC_EVAL = Enable::ZDC_TOWER && true;
+  //Enable::ZDC_EVAL = Enable::ZDC_TOWER && true;
+  Enable::ZDC_EVAL = false;  // No Need [Derek, 12.02.2022]
 
   //! forward flux return plug door. Out of acceptance and off by default.
   //Enable::PLUGDOOR = true;
@@ -388,8 +370,9 @@ int Fun4All_G4_sPHENIX(
 
   Enable::CALOTRIGGER = Enable::CEMC_TOWER && Enable::HCALIN_TOWER && Enable::HCALOUT_TOWER && false;
 
-  Enable::JETS = (Enable::GLOBAL_RECO || Enable::GLOBAL_FASTSIM) && false;
-  Enable::JETS_EVAL = Enable::JETS && true;
+  Enable::JETS = (Enable::GLOBAL_RECO || Enable::GLOBAL_FASTSIM) && true;
+  //Enable::JETS_EVAL = Enable::JETS && true;
+  Enable::JETS_EVAL = false;  // No Need [Derek, 12.02.2022]
   Enable::JETS_QA = Enable::JETS && Enable::QA && true;
 
   // HI Jet Reco for p+Au / Au+Au collisions (default is false for
@@ -480,7 +463,6 @@ int Fun4All_G4_sPHENIX(
 
   if (Enable::CEMC_TOWER) CEMC_Towers();
   if (Enable::CEMC_CLUSTER) CEMC_Clusters();
-  if (Enable::CEMC_CLUSTER_FULL) CEMC_Clusters_Full(calib_path);
 
   //-----------------------------
   // HCAL towering and clustering
@@ -567,11 +549,49 @@ int Fun4All_G4_sPHENIX(
     outputroot.erase(pos, remove_this.length());
   }
 
-  if (Enable::TRACKING_EVAL) Tracking_Eval(outputroot + "_g4svtx_eval.root");
+  //if (Enable::TRACKING_EVAL) Tracking_Eval(outputroot + "_g4svtx_eval.root");
+
+  // Make embed_scan is OFF [Derek, 12.02.2022]
+  if (Enable::TRACKING_EVAL) {
+
+    // create output name
+    const std::string svtxOutput = outputroot + "_g4svtx_eval.root";
+
+    // instantiate tracking evaluator
+    SvtxEvaluator* eval;
+    eval = new SvtxEvaluator("SVTXEVALUATOR", svtxOutput, "SvtxTrackMap",
+                             G4MVTX::n_maps_layer,
+                             G4INTT::n_intt_layer,
+                             G4TPC::n_gas_layer,
+                             G4MICROMEGAS::n_micromegas_layer);
+
+    // turn on evaluations
+    eval -> do_cluster_eval(false);
+    eval -> do_g4hit_eval(false);
+    eval -> do_hit_eval(false);  // enable to see the hits that includes the chamber physics...
+    eval -> do_gpoint_eval(false);
+    eval -> do_vtx_eval_light(true);
+    eval -> do_eval_light(true);
+    eval -> set_use_initial_vertex(G4TRACKING::g4eval_use_initial_vertex);
+
+    // turn off embed scan
+    bool embed_scan = false;
+    if (TRACKING::pp_mode) {
+      embed_scan = false;
+    }
+    eval -> scan_for_embedded(embed_scan);   // take all tracks if false - take only embedded tracks if true
+    eval -> scan_for_primaries(embed_scan);  // defaults to only thrown particles for ntp_gtrack
+
+    // announce pp mode selection
+    std::cout << "SvtxEvaluator: pp_mode set to " << TRACKING::pp_mode << " and scan_for_embedded set to " << embed_scan << std::endl;
+    eval -> Verbosity(1);
+    eval -> set_cluster_version(G4TRACKING::cluster_version);
+
+    // register evaluator
+    se -> registerSubsystem(eval);
+  }
 
   if (Enable::CEMC_EVAL) CEMC_Eval(outputroot + "_g4cemc_eval.root");
-
-  if (Enable::CEMC_EVAL_POSITION_CORRECTION) CEMC_Eval_Position_Correction(outputroot + "_g4cemc_eval.root");
 
   if (Enable::HCALIN_EVAL) HCALInner_Eval(outputroot + "_g4hcalin_eval.root");
 
