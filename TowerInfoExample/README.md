@@ -13,7 +13,7 @@
   * mkdir build
   * cd build
 * Run autogen.sh from inside the build directory. Don't forget to use the entire path where it is located. Use the --prefix to pass the MYINSTALL variable
-  * Ex.: /sphenix/u/antoniosilva/analysis/ResonanceJetTaggingOutputs/autogen.sh --prefix=$MYINSTALL (This is just an example, you have to change it accordingly to your directories)
+  * Ex.: /sphenix/u/antoniosilva/analysis/TowerInfoExample/autogen.sh --prefix=$MYINSTALL (This is just an example, you have to change it accordingly to your directories)
 * Compile it:
   * make install
 
@@ -22,4 +22,4 @@
   * root Fun4All_TowerBuilder.C
 
 * The Fun4All_TowerBuilder.C is ready to run over a few events of the Pythia 8 simulation (MDC2). This is minimum bias pp events at 200 GeV
-* Information about energy and time of the tower should be printed when running the code
+* Information about energy and time of the towers should be printed when running the code
