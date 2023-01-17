@@ -31,8 +31,8 @@ RawClusterPositionCorrectionFull::RawClusterPositionCorrectionFull(const std::st
   , _eclus_calib_params(std::string("eclus_params_") + name)
   , _ecore_calib_params(std::string("ecore_params_") + name)
   , _det_name(name)
-  , bins_eta(385) // store bin edges
-  , bins_phi(65) // store bin edges
+  , bins_eta(384) // store calib location
+  , bins_phi(64) // store calib location
 {
   SetDefaultParameters(_eclus_calib_params);
   SetDefaultParameters(_ecore_calib_params);
@@ -57,37 +57,39 @@ int RawClusterPositionCorrectionFull::InitRun(PHCompositeNode *topNode)
 
   // +1 because I use bins as the total number of bin boundaries
   // i.e. 384 bins corresponds to 385 bin boundaries
-  bins_eta = _eclus_calib_params.get_int_param(paramname.str()) + 1;
+  // bins_eta = _eclus_calib_params.get_int_param(paramname.str()) + 1;
+  bins_eta = _eclus_calib_params.get_int_param(paramname.str());
 
   paramname.str("");
   paramname << "number_of_bins_phi";
 
   // +1 because I use bins as the total number of bin boundaries
   // i.e. 64 bins corresponds to 65 bin boundaries
-  bins_phi = _eclus_calib_params.get_int_param(paramname.str()) + 1;
+  // bins_phi = _eclus_calib_params.get_int_param(paramname.str()) + 1;
+  bins_phi = _eclus_calib_params.get_int_param(paramname.str());
 
   // set bin boundaries eta
   // there are 24 blocks in eta and each block is consists of 4 towers in 2x2 form which results in 24x2=48 towers in eta
   // we further subdivide each tower into 8x8 which results in 48x8=384 correction factors in eta
-  for (int j = 0; j < bins_eta; j++)
-  {
-    // binvals_eta.push_back(j * tower_eta_mid /(bins_eta - 1.));
-    binvals_eta.push_back(j * cluster_eta_max /(bins_eta - 1.));
-  }
+  // for (int j = 0; j < bins_eta; j++)
+  // {
+  //   // binvals_eta.push_back(j * tower_eta_mid /(bins_eta - 1.));
+  //   binvals_eta.push_back(j * cluster_eta_max /(bins_eta - 1.));
+  // }
 
   // set bin boundaries phi
   // there are 4 blocks in phi per sector and each block is consists of 4 towers in 2x2 form which results in 4x2=8 bins in phi
   // we further subdivide each tower into 8x8 which results in 8x8=64 correction factors in phi
-  for (int j = 0; j < bins_phi; j++)
-  {
-    binvals_phi.push_back(sector_phi_boundary_low + j * sector_phi_boundary_width / (bins_phi - 1.));
-  }
+  // for (int j = 0; j < bins_phi; j++)
+  // {
+  //   binvals_phi.push_back(sector_phi_boundary_low + j * sector_phi_boundary_width / (bins_phi - 1.));
+  // }
 
-  for (int i = 0; i < bins_eta - 1; i++)
+  for (int i = 0; i < bins_eta; i++)
   {
     std::vector<double> dumvec;
 
-    for (int j = 0; j < bins_phi - 1; j++)
+    for (int j = 0; j < bins_phi; j++)
     {
       std::ostringstream calib_const_name;
       calib_const_name.str("");
@@ -97,11 +99,11 @@ int RawClusterPositionCorrectionFull::InitRun(PHCompositeNode *topNode)
     eclus_calib_constants.push_back(dumvec);
   }
 
-  for (int i = 0; i < bins_eta - 1; i++)
+  for (int i = 0; i < bins_eta; i++)
   {
     std::vector<double> dumvec;
 
-    for (int j = 0; j < bins_phi - 1; j++)
+    for (int j = 0; j < bins_phi; j++)
     {
       std::ostringstream calib_const_name;
       calib_const_name.str("");
@@ -145,43 +147,132 @@ int RawClusterPositionCorrectionFull::process_event(PHCompositeNode *topNode)
 
   // loop over the clusters
   RawClusterContainer::ConstRange begin_end = rawclusters->getClusters();
-  RawClusterContainer::ConstIterator iter;
 
-  for (iter = begin_end.first; iter != begin_end.second; ++iter)
+  for (RawClusterContainer::ConstIterator iter = begin_end.first; iter != begin_end.second; ++iter)
   {
     RawCluster *cluster = iter->second;
 
-    double clus_energy = cluster->get_energy();
-    double phi = cluster->get_phi();
-    double eta = abs(RawClusterUtility::GetPseudorapidity(*cluster, CLHEP::Hep3Vector(0,0,0)));
-    // accounts for floating point error
-    if(phi >= M_PI || phi < -M_PI) phi = -M_PI;
-    if(eta >= cluster_eta_max) eta = cluster_eta_max;
+    double clus_energy  = cluster->get_energy();
+    double x            = 0;
+    double y            = 0;
 
-    // map phi [-pi, pi) -> [-pi/32, pi/32)
-    double fmodphi = phi + ceil((sector_phi_boundary_low - phi) / sector_phi_boundary_width) * sector_phi_boundary_width;
+    // loop over the towers in the cluster
+    RawCluster::TowerConstRange towers = cluster->get_towers();
 
-    // accounts for floating point error
-    if(fmodphi < sector_phi_boundary_low || fmodphi >= sector_phi_boundary_high) fmodphi = sector_phi_boundary_low;
-
-    int etabin = -99;
-    int phibin = -99;
-
-    for (int j = 0; j < bins_phi - 1; ++j) // TODO: Implement in binary search.
-      if (fmodphi >= binvals_phi.at(j) && fmodphi < binvals_phi.at(j + 1))
-        phibin = j;
-
-    for (int j = 0; j < bins_eta - 1; ++j)
-      if (eta >= binvals_eta.at(j) && eta < binvals_eta.at(j + 1))
-        etabin = j;
-
-    if(eta == cluster_eta_max) etabin = bins_eta-2;
-
-    if ((phibin < 0 || etabin < 0) && Verbosity())
+    for (RawCluster::TowerConstIterator toweriter = towers.first; toweriter != towers.second; ++toweriter)
     {
-      if (Verbosity())
-        std::cout << "couldn't recalibrate cluster, something went wrong??" << std::endl;
+      RawTower* tower = _towers->getTower(toweriter->first);
+
+      int towerphi = tower->get_binphi();
+      double towerenergy = tower->get_energy();
+      double alpha = towerphi*tower_length_rad + towerphi/8 * sector_boundary_phi_length;
+
+      x += cos(alpha)*towerenergy;
+      y += sin(alpha)*towerenergy;
+
+      // TODO
+      // int towereta = tower->get_bineta();
+      // int towerphi = tower->get_binphi();
+      // double towerenergy = tower->get_energy();
+
+      // // put the etabin, phibin, and energy into the corresponding vectors
+      // toweretas.push_back(towereta);
+      // towerphis.push_back(towerphi);
+      // towerenergies.push_back(towerenergy);
     }
+
+    double alpha = atan2(y,x); // returns angle in [-pi,pi]
+    if(alpha < -0.5*tower_length_rad) alpha += 2*M_PI;
+
+    int etabin = -1;
+    int phibin = -1;
+
+    // find sector that alpha is in
+    // check if alpha is in the first sector [2pi-0.5*tower_length_rad, 0] U [0, 7.5*tower_length_rad]
+    // TODO
+    // if(alpha >= 2*M_PI-0.5*tower_length_rad || alpha < 7.5*tower_length_rad) {
+    //     // use linear mapping to find the towerid which corresponds to alpha
+    //     double tl = 8*i-0.5;
+    //     double th = 8*i+7.5;
+    //     double towerphi = (th-tl)/(h-l)*(alpha-l)+tl;
+    //     for(int j = 0; j < bins_phi; ++j){
+    //       if(towerphi >= tl + j/8.0 && towerphi < tl + (j+1)/8.0) {
+    //        phibin = j;
+    //       }
+    //     }
+    //     if(towerphi == th) phibin = bins_phi-1;
+    // }
+
+    // calibration: phi
+    // search for alpha within each sector and obtain the correct recalibration factor
+    for(int i = 0; i < 32; ++i) {
+      double sl = (8*i-0.5)*tower_length_rad + i*sector_boundary_phi_length; // sector low edge, x0
+      double sh = (8*i+7.5)*tower_length_rad + i*sector_boundary_phi_length; // sector high edge, x1
+
+      if(alpha >= sl && alpha < sh) {
+        // use linear mapping to find the towerid which corresponds to alpha
+        double tl = 8*i-0.5; // y0
+        double th = 8*i+7.5; // y1
+        double towerphi = (th-tl)/(sh-sl)*(alpha-sl)+tl; // y = m(x-x0) + y0 where m = (y1-y0)/(x1-x0)
+        // find the calibration constant location
+        for(int j = 0; j < bins_phi; ++j) {
+          if(towerphi >= tl + j/8.0 && towerphi < tl + (j+1)/8.0) {
+           phibin = j;
+          }
+        }
+        break;
+      }
+    }
+
+    // calibration: phi
+    // alpha not found in sector
+    // must be in the sector boundary
+    if(phibin == -1) {
+      for(int i = 0; i < 32; ++i) {
+        double sbl = (8*i+7.5)*tower_length_rad + i*sector_boundary_phi_length; // sector boundary low edge
+        double sbm = sbl + sector_boundary_phi_length/2; // sector boundary middle
+        double sbh = sbl + sector_boundary_phi_length; // sector boundary high edge
+        if(alpha >= sbl && alpha < sbm) {
+          phibin = bins_phi-1;
+          break;
+        }
+        if(alpha >= sbm && alpha < sbh) {
+          phibin = 0;
+          break;
+        }
+      }
+    }
+
+    // double phi = cluster->get_phi();
+    // double eta = abs(RawClusterUtility::GetPseudorapidity(*cluster, CLHEP::Hep3Vector(0,0,0)));
+    // // accounts for floating point error
+    // if(phi >= M_PI || phi < -M_PI) phi = -M_PI;
+    // if(eta >= cluster_eta_max) eta = cluster_eta_max;
+
+    // // map phi [-pi, pi) -> [-pi/32, pi/32)
+    // double fmodphi = phi + ceil((sector_phi_boundary_low - phi) / sector_phi_boundary_width) * sector_phi_boundary_width;
+
+    // // accounts for floating point error
+    // if(fmodphi < sector_phi_boundary_low || fmodphi >= sector_phi_boundary_high) fmodphi = sector_phi_boundary_low;
+
+    // // int etabin = -99;
+    // // int phibin = -99;
+
+    // for (int j = 0; j < bins_phi - 1; ++j) // TODO: Implement in binary search.
+    //   if (fmodphi >= binvals_phi.at(j) && fmodphi < binvals_phi.at(j + 1))
+    //     phibin = j;
+
+    // for (int j = 0; j < bins_eta - 1; ++j)
+    //   if (eta >= binvals_eta.at(j) && eta < binvals_eta.at(j + 1))
+    //     etabin = j;
+
+    // if(eta == cluster_eta_max) etabin = bins_eta-2;
+
+    // if ((phibin < 0 || etabin < 0) && Verbosity())
+    // {
+    //   if (Verbosity())
+    //     std::cout << "couldn't recalibrate cluster, something went wrong??" << std::endl;
+    // }
 
     double eclus_recalib_val = 1;
     double ecore_recalib_val = 1;

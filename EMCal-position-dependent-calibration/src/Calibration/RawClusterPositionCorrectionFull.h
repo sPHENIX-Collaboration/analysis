@@ -57,10 +57,14 @@ class RawClusterPositionCorrectionFull : public SubsysReco
 
   std::string _det_name;
 
-  const double cluster_eta_max           = 1.152;
-  const double sector_phi_boundary_low   = -M_PI / 32.;
-  const double sector_phi_boundary_high  = M_PI / 32.;
-  const double sector_phi_boundary_width = sector_phi_boundary_high - sector_phi_boundary_low;
+  // const double cluster_eta_max           = 1.152;
+  // const double sector_phi_boundary_low   = -M_PI / 32.;
+  // const double sector_phi_boundary_high  = M_PI / 32.;
+  // const double sector_phi_boundary_width = sector_phi_boundary_high - sector_phi_boundary_low;
+
+  const double sector_boundary_phi_length = 1.52/25.3; // boundary length in mm divided by tower length in mm
+  const double tower_length_rad = 2*M_PI/(256+32*sector_boundary_phi_length);
+  const double sector_boundary_phi_length_rad = tower_length_rad*sector_boundary_phi_length;
 
   int bins_eta, bins_phi;
   std::vector<double> binvals_eta;
