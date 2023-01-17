@@ -33,6 +33,7 @@ void DoTrackCutStudy() {
 
   // study parameters
   const Bool_t   doIntNorm(true);
+  const Bool_t   useOnlyPrimary(false);
   const Double_t normalPtFracMin(0.20);
   const Double_t normalPtFracMax(1.20);
 
@@ -42,7 +43,7 @@ void DoTrackCutStudy() {
   STrackCutStudy *study = new STrackCutStudy();
   study -> SetInputOutputFiles(sInFileEO, sInFilePU, sOutFile);
   study -> SetInputTuples(sInTupleEO, sInTuplePU);
-  study -> SetStudyParameters(doIntNorm, normalPtFracMin, normalPtFracMax);
+  study -> SetStudyParameters(doIntNorm, useOnlyPrimary, normalPtFracMin, normalPtFracMax);
   study -> Init();
   study -> Analyze();
   study -> End();

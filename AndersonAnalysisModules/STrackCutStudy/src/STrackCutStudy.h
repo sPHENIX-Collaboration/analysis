@@ -96,7 +96,7 @@ class STrackCutStudy {
     // public methods
     void SetInputOutputFiles(const TString sEmbedOnlyInput, const TString sPileupInput, const TString sOutput);
     void SetInputTuples(const TString sEmbedOnlyTuple, const TString sPileupTuple);
-    void SetStudyParameters(const Bool_t intNorm, const Double_t weirdFracMin, const Double_t weirdFracMax);
+    void SetStudyParameters(const Bool_t intNorm, const Bool_t onlyPrim, const Double_t weirdFracMin, const Double_t weirdFracMax);
     void Init();
     void Analyze();
     void End();
@@ -421,6 +421,7 @@ class STrackCutStudy {
 
     // study parameters
     Bool_t   doIntNorm;
+    Bool_t   useOnlyPrimary;
     Double_t normalPtFracMin;
     Double_t normalPtFracMax;
 

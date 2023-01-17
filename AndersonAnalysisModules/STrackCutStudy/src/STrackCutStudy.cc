@@ -21,6 +21,7 @@ using namespace std;
 STrackCutStudy::STrackCutStudy() {
 
   doIntNorm       = false;
+  useOnlyPrimary  = false; 
   normalPtFracMin = 0.;
   normalPtFracMax = 9999.;
   cout << "\n  Beginning track cut study."  << endl;
@@ -74,9 +75,10 @@ void STrackCutStudy::SetInputTuples(const TString sEmbedOnlyTuple, const TString
 
 
 
-void STrackCutStudy::SetStudyParameters(const Bool_t intNorm, const Double_t normalFracMin, const Double_t normalFracMax) {
+void STrackCutStudy::SetStudyParameters(const Bool_t intNorm, const Bool_t onlyPrim, const Double_t normalFracMin, const Double_t normalFracMax) {
 
   doIntNorm       = intNorm;
+  useOnlyPrimary  = onlyPrim;
   normalPtFracMin = normalFracMin;
   normalPtFracMax = normalFracMax;
   cout << "    Set normal pT fraction:\n"
@@ -87,6 +89,12 @@ void STrackCutStudy::SetStudyParameters(const Bool_t intNorm, const Double_t nor
     cout << "    Normalizing by integral." << endl;
   } else {
     cout << "    No normalization." << endl;
+  }
+
+  if (useOnlyPrimary) {
+    cout << "    Considering only primary embed-only tracks." << endl;
+  } else {
+    cout << "    Considering all embed-only tracks." << endl;
   }
 
 }  // end 'SetStudyParameters(double, double)'
@@ -165,6 +173,10 @@ void STrackCutStudy::Analyze() {
     const Double_t vxDiff     = vx - gvx;
     const Double_t vyDiff     = vy - gvy;
     const Double_t vzDiff     = vz - gvz;
+
+    // select only primaries if need be
+    const Bool_t isPrimary = (gprimary == 1);
+    if (useOnlyPrimary && !isPrimary) continue;
 
     // fill embed-only track histograms
     hTrackNMms         -> Fill(nlmms);
@@ -330,11 +342,11 @@ void STrackCutStudy::Analyze() {
   }  // end embed-only entry loop
   cout << "      Finished embed-only entry loop." << endl;
 
-  // prepare for embed-only entry loop
+  // prepare for with-pileup entry loop
   Long64_t nEntriesPU = ntTrkPU -> GetEntries();
   cout << "      Beginning with-pileup entry loop: " << nEntriesPU << " entries to process..." << endl;
 
-  // loop over embed-only tuple entries
+  // loop over with-pileup tuple entries
   Long64_t nBytesPU(0);
   for (Long64_t iEntry = 0; iEntry < nEntriesPU; iEntry++) {
 
