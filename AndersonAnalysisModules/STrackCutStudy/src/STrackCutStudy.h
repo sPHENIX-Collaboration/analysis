@@ -34,7 +34,7 @@ using namespace std;
 // global constants
 static const Ssiz_t NVtx(4);
 static const Ssiz_t NTxt(3);
-static const Ssiz_t NTyp(6);
+static const Ssiz_t NTyp(7);
 static const Ssiz_t NVar(20);
 static const Ssiz_t NRange(2);
 static const Ssiz_t NPanel(2);
@@ -243,6 +243,37 @@ class STrackCutStudy {
     TH1D *hWeirdVxDiff;
     TH1D *hWeirdVyDiff;
     TH1D *hWeirdVzDiff;
+
+    // embed-only normal output histograms
+    TH1D *hNormalNMms;
+    TH1D *hNormalNMap;
+    TH1D *hNormalNInt;
+    TH1D *hNormalNTpc;
+    TH1D *hNormalNTot;
+    TH1D *hNormalPerMms;
+    TH1D *hNormalPerMap;
+    TH1D *hNormalPerInt;
+    TH1D *hNormalPerTpc;
+    TH1D *hNormalPerTot;
+    TH1D *hNormalChi2;
+    TH1D *hNormalNDF;
+    TH1D *hNormalQuality;
+    TH1D *hNormalDCAxy;
+    TH1D *hNormalDCAz;
+    TH1D *hNormalVx;
+    TH1D *hNormalVy;
+    TH1D *hNormalVz;
+    TH1D *hNormalEta;
+    TH1D *hNormalPhi;
+    TH1D *hNormalPt;
+    TH1D *hNormalDeltaDCAxy;
+    TH1D *hNormalDeltaDCAz;
+    TH1D *hNormalDeltaEta;
+    TH1D *hNormalDeltaPhi;
+    TH1D *hNormalDeltaPt;
+    TH1D *hNormalVxDiff;
+    TH1D *hNormalVyDiff;
+    TH1D *hNormalVzDiff;
 
     // with-pileup track histograms
     TH1D *hTrackNMms_PU;

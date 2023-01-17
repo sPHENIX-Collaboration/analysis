@@ -26,7 +26,7 @@ void DoTrackCutStudy() {
 
   // i/o parameters
   const TString sOutFile("trackCutStudy.embedOnly_withVtxDiffPlots.pt020n5pim.d19m12y2022.root");
-  const TString sInFileEO("input/merge/sPhenixG4_forTrackCutStudy_embedOnly0t599_g4svtxeval.pt020n5pim.d19m12y2022.root");
+  const TString sInFileEO("input/embed_only/final_merge/sPhenixG4_forTrackCutStudy_embedOnly0t1099_g4svtxeval.pt020n5pim.d12m1y2023.root");
   const TString sInFilePU("input/test/sPhenixG4_testWithPileup001_g4svtxEval.d18m12y2022.root");
   const TString sInTupleEO("ntp_track");
   const TString sInTuplePU("ntp_gtrack");
