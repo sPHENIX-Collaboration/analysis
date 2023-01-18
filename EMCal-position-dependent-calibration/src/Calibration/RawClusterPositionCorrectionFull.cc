@@ -31,6 +31,7 @@ RawClusterPositionCorrectionFull::RawClusterPositionCorrectionFull(const std::st
   , _eclus_calib_params(std::string("eclus_params_") + name)
   , _ecore_calib_params(std::string("ecore_params_") + name)
   , _det_name(name)
+  , _reco_e_threshold(1.0) // min energy for an accepted cluster
   , bins_eta(384) // store calib location
   , bins_phi(64) // store calib location
 {
@@ -132,7 +133,7 @@ int RawClusterPositionCorrectionFull::process_event(PHCompositeNode *topNode)
     double clus_energy      = cluster->get_energy();
 
     // ensure that we have at least a 1 GeV cluster
-    if(clus_energy < 1) continue;
+    if(clus_energy < _reco_e_threshold) continue;
 
     double x                = 0;
     double y                = 0;
@@ -150,7 +151,7 @@ int RawClusterPositionCorrectionFull::process_event(PHCompositeNode *topNode)
 
       // do phi calculations
       int towerphi = tower->get_binphi();
-      double alpha = towerphi*tower_length_rad + towerphi/8 * sector_boundary_phi_length;
+      double alpha = towerphi*tower_length_rad + towerphi/8 * sector_boundary_phi_length_rad;
 
       x += cos(alpha)*towerenergy;
       y += sin(alpha)*towerenergy;
@@ -208,8 +209,8 @@ int RawClusterPositionCorrectionFull::process_event(PHCompositeNode *topNode)
     for(int i = 0; i < 32; ++i) {
       double tl = 8*i-0.5; // y0
       double th = 8*i+7.5; // y1
-      double sl = tl*tower_length_rad + i*sector_boundary_phi_length; // sector low edge, x0
-      double sh = th*tower_length_rad + i*sector_boundary_phi_length; // sector high edge, x1
+      double sl = tl*tower_length_rad + i*sector_boundary_phi_length_rad; // sector low edge, x0
+      double sh = th*tower_length_rad + i*sector_boundary_phi_length_rad; // sector high edge, x1
 
       if(alpha >= sl && alpha < sh) {
         // use linear mapping to find the towerid which corresponds to alpha
@@ -230,9 +231,9 @@ int RawClusterPositionCorrectionFull::process_event(PHCompositeNode *topNode)
     // must be in the sector boundary
     if(phibin == -1) {
       for(int i = 0; i < 32; ++i) {
-        double sbl = (8*i+7.5)*tower_length_rad + i*sector_boundary_phi_length; // sector boundary low edge
-        double sbm = sbl + sector_boundary_phi_length/2; // sector boundary middle
-        double sbh = sbl + sector_boundary_phi_length; // sector boundary high edge
+        double sbl = (8*i+7.5)*tower_length_rad + i*sector_boundary_phi_length_rad; // sector boundary low edge
+        double sbm = sbl + sector_boundary_phi_length_rad/2; // sector boundary middle
+        double sbh = sbl + sector_boundary_phi_length_rad; // sector boundary high edge
         if(alpha >= sbl && alpha < sbm) {
           phibin = bins_phi-1;
           break;
