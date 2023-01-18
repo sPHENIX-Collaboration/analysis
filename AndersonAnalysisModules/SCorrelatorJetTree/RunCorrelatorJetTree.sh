@@ -8,22 +8,24 @@
 # over a (small) set of files.
 
 # declare i/o lists
-declare -a inTrkrFiles
+declare -a inHitsFiles
 declare -a inCaloFiles
+declare -a inSeedFiles
+declare -a inTrksFiles
 declare -a inTrueFiles
 declare -a outputFiles
 
-# input tracker files
-inTrkrFiles[0]="\"/sphenix/lustre01/sphnxpro/mdc2/pythia8_pp_mb/g4hits/G4Hits_pythia8_pp_mb-0000000050-00000.root\""
-inTrkrFiles[1]="\"/sphenix/lustre01/sphnxpro/mdc2/pythia8_pp_mb/g4hits/G4Hits_pythia8_pp_mb-0000000050-00001.root\""
-inTrkrFiles[2]="\"/sphenix/lustre01/sphnxpro/mdc2/pythia8_pp_mb/g4hits/G4Hits_pythia8_pp_mb-0000000050-00002.root\""
-inTrkrFiles[3]="\"/sphenix/lustre01/sphnxpro/mdc2/pythia8_pp_mb/g4hits/G4Hits_pythia8_pp_mb-0000000050-00003.root\""
-inTrkrFiles[4]="\"/sphenix/lustre01/sphnxpro/mdc2/pythia8_pp_mb/g4hits/G4Hits_pythia8_pp_mb-0000000050-00004.root\""
-inTrkrFiles[5]="\"/sphenix/lustre01/sphnxpro/mdc2/pythia8_pp_mb/g4hits/G4Hits_pythia8_pp_mb-0000000050-00005.root\""
-inTrkrFiles[6]="\"/sphenix/lustre01/sphnxpro/mdc2/pythia8_pp_mb/g4hits/G4Hits_pythia8_pp_mb-0000000050-00006.root\""
-inTrkrFiles[7]="\"/sphenix/lustre01/sphnxpro/mdc2/pythia8_pp_mb/g4hits/G4Hits_pythia8_pp_mb-0000000050-00007.root\""
-inTrkrFiles[8]="\"/sphenix/lustre01/sphnxpro/mdc2/pythia8_pp_mb/g4hits/G4Hits_pythia8_pp_mb-0000000050-00008.root\""
-inTrkrFiles[9]="\"/sphenix/lustre01/sphnxpro/mdc2/pythia8_pp_mb/g4hits/G4Hits_pythia8_pp_mb-0000000050-00009.root\""
+# input g4 hits files
+inHitsFiles[0]="\"/sphenix/lustre01/sphnxpro/mdc2/pythia8_pp_mb/g4hits/G4Hits_pythia8_pp_mb-0000000050-00000.root\""
+inHitsFiles[1]="\"/sphenix/lustre01/sphnxpro/mdc2/pythia8_pp_mb/g4hits/G4Hits_pythia8_pp_mb-0000000050-00001.root\""
+inHitsFiles[2]="\"/sphenix/lustre01/sphnxpro/mdc2/pythia8_pp_mb/g4hits/G4Hits_pythia8_pp_mb-0000000050-00002.root\""
+inHitsFiles[3]="\"/sphenix/lustre01/sphnxpro/mdc2/pythia8_pp_mb/g4hits/G4Hits_pythia8_pp_mb-0000000050-00003.root\""
+inHitsFiles[4]="\"/sphenix/lustre01/sphnxpro/mdc2/pythia8_pp_mb/g4hits/G4Hits_pythia8_pp_mb-0000000050-00004.root\""
+inHitsFiles[5]="\"/sphenix/lustre01/sphnxpro/mdc2/pythia8_pp_mb/g4hits/G4Hits_pythia8_pp_mb-0000000050-00005.root\""
+inHitsFiles[6]="\"/sphenix/lustre01/sphnxpro/mdc2/pythia8_pp_mb/g4hits/G4Hits_pythia8_pp_mb-0000000050-00006.root\""
+inHitsFiles[7]="\"/sphenix/lustre01/sphnxpro/mdc2/pythia8_pp_mb/g4hits/G4Hits_pythia8_pp_mb-0000000050-00007.root\""
+inHitsFiles[8]="\"/sphenix/lustre01/sphnxpro/mdc2/pythia8_pp_mb/g4hits/G4Hits_pythia8_pp_mb-0000000050-00008.root\""
+inHitsFiles[9]="\"/sphenix/lustre01/sphnxpro/mdc2/pythia8_pp_mb/g4hits/G4Hits_pythia8_pp_mb-0000000050-00009.root\""
 
 # input calorimeter files
 inCaloFiles[0]="\"/sphenix/lustre01/sphnxpro/mdc2/pythia8_pp_mb/calocluster/DST_CALO_CLUSTER_pythia8_pp_mb_3MHz-0000000050-00000.root\""
@@ -36,6 +38,30 @@ inCaloFiles[6]="\"/sphenix/lustre01/sphnxpro/mdc2/pythia8_pp_mb/calocluster/DST_
 inCaloFiles[7]="\"/sphenix/lustre01/sphnxpro/mdc2/pythia8_pp_mb/calocluster/DST_CALO_CLUSTER_pythia8_pp_mb_3MHz-0000000050-00007.root\""
 inCaloFiles[8]="\"/sphenix/lustre01/sphnxpro/mdc2/pythia8_pp_mb/calocluster/DST_CALO_CLUSTER_pythia8_pp_mb_3MHz-0000000050-00008.root\""
 inCaloFiles[9]="\"/sphenix/lustre01/sphnxpro/mdc2/pythia8_pp_mb/calocluster/DST_CALO_CLUSTER_pythia8_pp_mb_3MHz-0000000050-00009.root\""
+
+# input track seed files
+inSeedFiles[0]="\"/sphenix/lustre01/sphnxpro/mdc2/pythia8_pp_mb/trackseeds/DST_TRACKSEEDS_pythia8_pp_mb_3MHz-0000000050-00000.root\""
+inSeedFiles[1]="\"/sphenix/lustre01/sphnxpro/mdc2/pythia8_pp_mb/trackseeds/DST_TRACKSEEDS_pythia8_pp_mb_3MHz-0000000050-00001.root\""
+inSeedFiles[2]="\"/sphenix/lustre01/sphnxpro/mdc2/pythia8_pp_mb/trackseeds/DST_TRACKSEEDS_pythia8_pp_mb_3MHz-0000000050-00002.root\""
+inSeedFiles[3]="\"/sphenix/lustre01/sphnxpro/mdc2/pythia8_pp_mb/trackseeds/DST_TRACKSEEDS_pythia8_pp_mb_3MHz-0000000050-00003.root\""
+inSeedFiles[4]="\"/sphenix/lustre01/sphnxpro/mdc2/pythia8_pp_mb/trackseeds/DST_TRACKSEEDS_pythia8_pp_mb_3MHz-0000000050-00004.root\""
+inSeedFiles[5]="\"/sphenix/lustre01/sphnxpro/mdc2/pythia8_pp_mb/trackseeds/DST_TRACKSEEDS_pythia8_pp_mb_3MHz-0000000050-00005.root\""
+inSeedFiles[6]="\"/sphenix/lustre01/sphnxpro/mdc2/pythia8_pp_mb/trackseeds/DST_TRACKSEEDS_pythia8_pp_mb_3MHz-0000000050-00006.root\""
+inSeedFiles[7]="\"/sphenix/lustre01/sphnxpro/mdc2/pythia8_pp_mb/trackseeds/DST_TRACKSEEDS_pythia8_pp_mb_3MHz-0000000050-00007.root\""
+inSeedFiles[8]="\"/sphenix/lustre01/sphnxpro/mdc2/pythia8_pp_mb/trackseeds/DST_TRACKSEEDS_pythia8_pp_mb_3MHz-0000000050-00008.root\""
+inSeedFiles[9]="\"/sphenix/lustre01/sphnxpro/mdc2/pythia8_pp_mb/trackseeds/DST_TRACKSEEDS_pythia8_pp_mb_3MHz-0000000050-00009.root\""
+
+# input track files
+inTrksFiles[0]="\"/sphenix/lustre01/sphnxpro/mdc2/pythia8_pp_mb/tracks/DST_TRACKS_pythia8_pp_mb_3MHz-0000000050-00000.root\""
+inTrksFiles[1]="\"/sphenix/lustre01/sphnxpro/mdc2/pythia8_pp_mb/tracks/DST_TRACKS_pythia8_pp_mb_3MHz-0000000050-00001.root\""
+inTrksFiles[2]="\"/sphenix/lustre01/sphnxpro/mdc2/pythia8_pp_mb/tracks/DST_TRACKS_pythia8_pp_mb_3MHz-0000000050-00002.root\""
+inTrksFiles[3]="\"/sphenix/lustre01/sphnxpro/mdc2/pythia8_pp_mb/tracks/DST_TRACKS_pythia8_pp_mb_3MHz-0000000050-00003.root\""
+inTrksFiles[4]="\"/sphenix/lustre01/sphnxpro/mdc2/pythia8_pp_mb/tracks/DST_TRACKS_pythia8_pp_mb_3MHz-0000000050-00004.root\""
+inTrksFiles[5]="\"/sphenix/lustre01/sphnxpro/mdc2/pythia8_pp_mb/tracks/DST_TRACKS_pythia8_pp_mb_3MHz-0000000050-00005.root\""
+inTrksFiles[6]="\"/sphenix/lustre01/sphnxpro/mdc2/pythia8_pp_mb/tracks/DST_TRACKS_pythia8_pp_mb_3MHz-0000000050-00006.root\""
+inTrksFiles[7]="\"/sphenix/lustre01/sphnxpro/mdc2/pythia8_pp_mb/tracks/DST_TRACKS_pythia8_pp_mb_3MHz-0000000050-00007.root\""
+inTrksFiles[8]="\"/sphenix/lustre01/sphnxpro/mdc2/pythia8_pp_mb/tracks/DST_TRACKS_pythia8_pp_mb_3MHz-0000000050-00008.root\""
+inTrksFiles[9]="\"/sphenix/lustre01/sphnxpro/mdc2/pythia8_pp_mb/tracks/DST_TRACKS_pythia8_pp_mb_3MHz-0000000050-00009.root\""
 
 # input truth files
 inTrueFiles[0]="\"/sphenix/lustre01/sphnxpro/mdc2/pythia8_pp_mb/trkrhit/DST_TRUTH_pythia8_pp_mb_3MHz-0000000050-00000.root\""
@@ -67,14 +93,16 @@ verb=0
 
 # loop over files
 (( nFile=0 ))
-for input in ${inTrkrFiles[@]}; do
-  root -b -q "Fun4All_ForCorrelatorJetTree.C($input, ${inCaloFiles[$nFile]}, ${inTrueFiles[$nFile]}, ${outputFiles[$nFile]}, $nEvt, $verb)"
+for input in ${inHitsFiles[@]}; do
+  root -b -q "Fun4All_RunCorrelatorJetTree.C($input, ${inCaloFiles[$nFile]}, ${inSeedFiles[$nFile]}, ${inTrksFiles[$nFile]}, ${inTrueFiles[$nFile]}, ${outputFiles[$nFile]}, $nEvt, $verb)"
   (( nFile++ ))
 done
 
 # delete arrays
-unset inTrkrFiles
+unset inHitsFiles
 unset inCaloFiles
+unset inSeedFiles
+unset inTrksFiles
 unset inTrueFiles
 unset outputFiles
 
