@@ -6,10 +6,17 @@
 // jets from a specified set of
 // events.
 //
+// Methods relevant to i/o
+// operations are collected
+// here.
+//
 // Derived from code by Antonio
 // Silva (thanks!!)
 
 #pragma once
+
+using namespace std;
+using namespace findNode;
 
 
 

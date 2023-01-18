@@ -1,4 +1,4 @@
-// 'SCorrelatorJetTree.cc'
+// 'SCorrelatorJetTree.h'
 // Derek Anderson
 // 12.04.2022
 //
@@ -15,32 +15,72 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 
-// f4a include
-#include <fun4all/SubsysReco.h>
-// phool includes
-#include <calobase/RawCluster.h>
-#include <calobase/RawClusterContainer.h>
-#include <calobase/RawClusterUtility.h>
-#include <calobase/RawTower.h>
-#include <calobase/RawTowerContainer.h>
-#include <calobase/RawTowerGeom.h>
-#include <calobase/RawTowerGeomContainer.h>
-#include <calotrigger/CaloTriggerInfo.h>
-// fastjet includes
-#include <fastjet/ClusterSequence.hh>
-#include <fastjet/FunctionOfPseudoJet.hh>
-#include <fastjet/JetDefinition.hh>
-#include <fastjet/PseudoJet.hh>
-// misc includes
-#include <HepMC/GenEvent.h>
-#include <HepMC/GenParticle.h>
-#include <g4jets/Jetv1.h>
-#include <g4jets/JetMapv1.h>
 // standard c include
 #include <string>
 #include <vector>
+#include <cassert>
+#include <sstream>
+// f4a include
+#include <fun4all/SubsysReco.h>
+#include <fun4all/Fun4AllReturnCodes.h>
+#include <fun4all/Fun4AllHistoManager.h>
+// phool includes
+#include <phool/phool.h>
+#include <phool/getClass.h>
+#include <phool/PHIODataNode.h>
+#include <phool/PHNodeIterator.h>
+#include <phool/PHCompositeNode.h>
+// g4 includes
+#include <g4main/PHG4Hit.h>
+#include <g4main/PHG4Particle.h>
+#include <g4main/PHG4TruthInfoContainer.h>
+#include <g4jets/Jet.h>
+#include <g4jets/Jetv1.h>
+#include <g4jets/JetMap.h>
+#include <g4jets/JetMapv1.h>
+#include <g4jets/FastJetAlgo.h>
+#include <g4vertex/GlobalVertex.h>
+#include <g4vertex/GlobalVertexMap.h>
+// tracking includes
+#include <trackbase_historic/SvtxTrack.h>
+#include <trackbase_historic/SvtxVertex.h>
+#include <trackbase_historic/SvtxTrackMap.h>
+#include <trackbase_historic/SvtxVertexMap.h>
+// calo includes
+#include <calobase/RawCluster.h>
+#include <calobase/RawClusterUtility.h>
+#include <calobase/RawClusterContainer.h>
+#include <calobase/RawTower.h>
+#include <calobase/RawTowerGeom.h>
+#include <calobase/RawTowerContainer.h>
+#include <calobase/RawTowerGeomContainer.h>
+#include <calotrigger/CaloTriggerInfo.h>
+// particle flow includes
+#include <particleflowreco/ParticleFlowElement.h>
+#include <particleflowreco/ParticleFlowElementContainer.h>
+// fastjet includes
+#include <fastjet/PseudoJet.hh>
+#include <fastjet/JetDefinition.hh>
+#include <fastjet/ClusterSequence.hh>
+#include <fastjet/FunctionOfPseudoJet.hh>
+// hepmc includes
+#include <HepMC/GenEvent.h>
+#include <HepMC/GenVertex.h>
+#include <HepMC/GenParticle.h>
+#include <phhepmc/PHHepMCGenEvent.h>
+#include <phhepmc/PHHepMCGenEventMap.h>
+// root includes
+#include <TH1.h>
+#include <TFile.h>
+#include <TTree.h>
+#include <TMath.h>
+#include <TNtuple.h>
 
 #pragma GCC diagnostic pop
+
+using namespace std;
+using namespace fastjet;
+using namespace findNode;
 
 // forward declarations
 class TH1;
@@ -64,6 +104,7 @@ class ParticleFlowElement;
 // global constants
 static const unsigned long NPart(2);
 static const unsigned long NComp(3);
+static const unsigned long NRange(2);
 
 
 
