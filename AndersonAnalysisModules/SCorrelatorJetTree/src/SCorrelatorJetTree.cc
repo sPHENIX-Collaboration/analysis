@@ -939,7 +939,6 @@ void SCorrelatorJetTree::initializeVariables() {
   m_recomb_scheme        = pt_scheme;
   m_qualy_plots          = false;
   m_save_dst             = false;
-  m_ismc                 = false;
   m_recNumJets           = 0;
   m_recPartonID[0]       = -9999;
   m_recPartonID[1]       = -9999;
