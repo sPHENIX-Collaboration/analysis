@@ -114,7 +114,7 @@ int sPHAnalysis::Init(PHCompositeNode *topNode)
   OutputNtupleFile = new TFile(OutputFileName.c_str(),"RECREATE");
   std::cout << "sPHAnalysis::Init: output file " << OutputFileName.c_str() << " opened." << endl;
 
-  ntppid = new  TNtuple("ntppid","","charge:pt:eta:mom:nmvtx:ntpc:chi2:ndf:cemc_ecore:cemc_e3x3:cemc_prob:cemc_chi2:cemc_dphi:cemc_deta:quality:dca2d:hcalin_e3x3:hcalout_e3x3:gdist");
+  ntppid = new  TNtuple("ntppid","","charge:pt:eta:mom:nmvtx:ntpc:chi2:ndf:cemc_ecore:cemc_e3x3:cemc_prob:cemc_chi2:cemc_dphi:cemc_deta:quality:dca2d:hcalin_e3x3:hcalout_e3x3:gdist:cemc-dphi_3x3:cemc_deta_3x3:hcalin_dphi:hcalin_deta:hcalout_dphi:hcalout_deta:hcalin_clusdphi:hcalin_clusdeta:hcalin_cluse:hcalout_clusdphi:hcalout_clusdeta:hcalout_cluse");
 
   ntp1 = new  TNtuple("ntp1","","type:mass:pt:eta:pt1:pt2:e3x31:e3x32:emce1:emce2:p1:p2:chisq1:chisq2:dca2d1:dca2d2:dca3dxy1:dca3dxy2:dca3dz1:dcz3dz2:mult:rap:nmvtx1:nmvtx2:ntpc1:ntpc2");
 
@@ -780,7 +780,7 @@ else { dphi = 9999.; deta = 9999.; return e3x3;}
   if(trackstate) {
     double track_x = trackstate->get_x();
     double track_y = trackstate->get_y();
-    double track_z = trackstate->get_z();
+    double track_z = trackstate->get_z() - Zvtx;
     double track_r = sqrt(track_x*track_x+track_y*track_y);
     track_eta = asinh( track_z / track_r );
     track_phi = atan2( track_y, track_x );
@@ -997,6 +997,17 @@ int sPHAnalysis::process_event_test(PHCompositeNode *topNode) {
   cout << "   Number of CEMC clusters = " << cemc_clusters->size() << endl;
   int cemcmult = cemc_clusters->size();
 
+  RawClusterContainer* hcalin_clusters = findNode::getClass<RawClusterContainer>(topNode, "CLUSTER_HCALIN");
+  if(!hcalin_clusters) {
+    cerr << PHWHERE << " ERROR: Can not find CLUSTER_HCALIN node." << endl;
+    return Fun4AllReturnCodes::ABORTEVENT;
+  }
+  RawClusterContainer* hcalout_clusters = findNode::getClass<RawClusterContainer>(topNode, "CLUSTER_HCALOUT");
+  if(!hcalout_clusters) {
+    cerr << PHWHERE << " ERROR: Can not find CLUSTER_HCALOUT node." << endl;
+    return Fun4AllReturnCodes::ABORTEVENT;
+  }
+
   RawTowerGeomContainer* _geomEM = findNode::getClass<RawTowerGeomContainer>(topNode, "TOWERGEOM_CEMC");
   if(!_geomEM) std::cerr<<"No TOWERGEOM_CEMC"<<std::endl;
   RawTowerGeomContainer* _geomIH = findNode::getClass<RawTowerGeomContainer>(topNode, "TOWERGEOM_HCALIN");
@@ -1061,7 +1072,7 @@ cout << "starting loop over tracks..." << endl;
 // Find matching CEMC cluster
     double cemc_dphi = 99999.;
     double cemc_deta = 99999.;
-    RawCluster* clus = MatchClusterCEMC(track,cemc_clusters, cemc_dphi, cemc_deta);
+    RawCluster* clus = MatchClusterCEMC(track,cemc_clusters, cemc_dphi, cemc_deta, Zvtx, 1);
     double cemc_ecore = 0.;
     double cemc_prob = 0.;
     double cemc_chi2 = 0.;
@@ -1080,6 +1091,15 @@ cout << "starting loop over tracks..." << endl;
     double hcalout_deta = 9999.;
     double hcalout_dphi = 9999.;
     double hcalout_e3x3 = Get_CAL_e3x3(track, _towersOH, _geomOH, 2, Zvtx, hcalout_dphi, hcalout_deta);
+
+    double hcalin_clusdphi = 9999.;
+    double hcalin_clusdeta = 9999.;
+    double hcalout_clusdphi = 9999.;
+    double hcalout_clusdeta = 9999.;
+    RawCluster* clus_hcalin = MatchClusterCEMC(track, hcalin_clusters, hcalin_clusdphi, hcalin_clusdeta, Zvtx, 2);
+    RawCluster* clus_hcalout = MatchClusterCEMC(track, hcalout_clusters, hcalout_clusdphi, hcalout_clusdeta, Zvtx, 3);
+    double hcalin_cluse = clus_hcalin->get_energy();
+    double hcalout_cluse = clus_hcalout->get_energy();
 
     cout << "track: " << charge << " " << pt << "    " << cemc_ecore << " " << cemc_e3x3 << " " << hcalin_e3x3 << " " << hcalout_e3x3 << endl;
 
@@ -1151,6 +1171,18 @@ cout << "starting loop over tracks..." << endl;
     tmp1[16] = hcalin_e3x3;
     tmp1[17] = hcalout_e3x3;
     tmp1[18] = gdist;
+    tmp1[19] = cemc_dphi2;
+    tmp1[20] = cemc_dphi2;
+    tmp1[21] = hcalin_dphi;
+    tmp1[22] = hcalin_deta;
+    tmp1[23] = hcalout_deta;
+    tmp1[24] = hcalout_deta;
+    tmp1[25] = hcalin_clusdphi;
+    tmp1[26] = hcalin_clusdeta;
+    tmp1[27] = hcalin_cluse;
+    tmp1[28] = hcalout_clusdphi;
+    tmp1[29] = hcalout_clusdeta;
+    tmp1[30] = hcalout_cluse;
       ntppid->Fill(tmp1);
 
   } // end loop over tracks
@@ -1168,10 +1200,39 @@ cout << "starting loop over tracks..." << endl;
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
+//================================================================================
+
+TVector3 sPHAnalysis::GetProjectionToCalorimeter(SvtxTrack* track, int what) {
+// what = 1 CEMC
+// what = 2 HCALIN
+// what = 3 HCALOUT
+
+  TVector3 projection; // 0,0,0
+
+  vector<double> proj;
+  for (SvtxTrack::StateIter stateiter = track->begin_states(); stateiter != track->end_states(); ++stateiter)
+  {
+    SvtxTrackState *trackstate = stateiter->second;
+    if(trackstate) { proj.push_back(trackstate->get_pathlength()); }
+  }
+  double pathlength = proj[proj.size()+4-what]; // CEMC is next next to last, usually 93.5
+
+  SvtxTrackState* trackstate = track->get_state(pathlength); // at CEMC inner face
+  if(trackstate) {
+    double track_x = trackstate->get_x();
+    double track_y = trackstate->get_y();
+    double track_z = trackstate->get_z();
+    projection.SetX(track_x);
+    projection.SetY(track_y);
+    projection.SetZ(track_z);
+  }
+
+  return projection;
+}
 
 //=================================================================================
 
-RawCluster* sPHAnalysis::MatchClusterCEMC(SvtxTrack* track, RawClusterContainer* cemc_clusters, double &dphi, double &deta) {
+RawCluster* sPHAnalysis::MatchClusterCEMC(SvtxTrack* track, RawClusterContainer* cemc_clusters, double &dphi, double &deta, double Zvtx, int what) {
 
   RawCluster* returnCluster = NULL;
   double track_eta = 99999.;
@@ -1185,13 +1246,20 @@ RawCluster* sPHAnalysis::MatchClusterCEMC(SvtxTrack* track, RawClusterContainer*
     SvtxTrackState *trackstate = stateiter->second;
     if(trackstate) { proj.push_back(trackstate->get_pathlength()); }
   }
-  double pathlength = proj[proj.size()-3]; // CEMC is next next to last
+  double pathlength = 0.;
+  if(what==1) {
+    pathlength = proj[proj.size()-3]; // CEMC is next next to last
+  } else if(what==2) {
+    pathlength = proj[proj.size()-2]; // HCALIN is next to last
+  } else if(what==3) {
+    pathlength = proj[proj.size()-1]; // HCALOUT is the last
+  } else {return returnCluster; }
 
   SvtxTrackState* trackstate = track->get_state(pathlength); // at CEMC inner face
   if(trackstate) {
     double track_x = trackstate->get_x();
     double track_y = trackstate->get_y();
-    double track_z = trackstate->get_z();
+    double track_z = trackstate->get_z() - Zvtx;
     double track_r = sqrt(track_x*track_x+track_y*track_y);
     track_eta = asinh( track_z / track_r );
     track_phi = atan2( track_y, track_x );
@@ -1208,10 +1276,10 @@ RawCluster* sPHAnalysis::MatchClusterCEMC(SvtxTrack* track, RawClusterContainer*
       if(!cluster) continue;
       else {
         double cemc_ecore = cluster->get_ecore();
-        if(cemc_ecore<1.0) continue;
+        if(cemc_ecore<0.0) continue;
         double cemc_x = cluster->get_x();
         double cemc_y = cluster->get_y();
-        double cemc_z = cluster->get_z();
+        double cemc_z = cluster->get_z() - Zvtx;
         double cemc_r = cluster->get_r();
         double cemc_eta = asinh( cemc_z / cemc_r );
         double cemc_phi = atan2( cemc_y, cemc_x );
@@ -1236,6 +1304,7 @@ int sPHAnalysis::process_event_upsilons(PHCompositeNode *topNode) {
   }
   if(EventNumber==1) topNode->print();
 
+
   SvtxTrackMap *trackmap = findNode::getClass<SvtxTrackMap>(topNode, "SvtxTrackMap");
   if(!trackmap) {
     cerr << PHWHERE << " ERROR: Can not find SvtxTrackMap node." << endl;
@@ -1250,12 +1319,15 @@ int sPHAnalysis::process_event_upsilons(PHCompositeNode *topNode) {
   }
   cout << "Number of SvtxVertexMap entries = " << vtxmap->size() << endl;
 
+  double Zvtx = 0.;
   GlobalVertexMap *global_vtxmap = findNode::getClass<GlobalVertexMap>(topNode, "GlobalVertexMap");
   if(!global_vtxmap) {
     cerr << PHWHERE << " ERROR: Can not find GlobalVertexMap node." << endl;
     return Fun4AllReturnCodes::ABORTEVENT;
   }
-  cout << "Number of GlobalVertexMap entries = " << global_vtxmap->size() << endl;
+  for (GlobalVertexMap::Iter iter = global_vtxmap->begin(); iter != global_vtxmap->end(); ++iter)
+  { GlobalVertex *vtx = iter->second; if(vtx->get_id()==1) { Zvtx = vtx->get_z(); } }
+  cout << "Global BBC vertex Z = " << Zvtx << endl;
 
   RawClusterContainer* cemc_clusters = findNode::getClass<RawClusterContainer>(topNode, "CLUSTER_CEMC");
   if(!cemc_clusters) {
@@ -1305,7 +1377,7 @@ int sPHAnalysis::process_event_upsilons(PHCompositeNode *topNode) {
 
     double cemc_dphi = 99999.;
     double cemc_deta = 99999.;
-    RawCluster* clus = MatchClusterCEMC(track, cemc_clusters, cemc_dphi, cemc_deta);
+    RawCluster* clus = MatchClusterCEMC(track, cemc_clusters, cemc_dphi, cemc_deta, Zvtx, 1);
     double cemc_ecore = 0.;
     if(clus) cemc_ecore = clus->get_ecore();
     if(cemc_ecore/mom<0.7) continue; // not an electron
