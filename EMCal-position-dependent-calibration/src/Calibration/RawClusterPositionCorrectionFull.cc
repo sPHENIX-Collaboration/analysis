@@ -130,7 +130,7 @@ int RawClusterPositionCorrectionFull::process_event(PHCompositeNode *topNode)
   {
     RawCluster *cluster = iter->second;
 
-    double clus_energy      = cluster->get_energy();
+    double clus_energy  = cluster->get_energy();
 
     // ensure that we have at least a 1 GeV cluster
     if(clus_energy < _reco_e_threshold) continue;
@@ -148,6 +148,7 @@ int RawClusterPositionCorrectionFull::process_event(PHCompositeNode *topNode)
       RawTower* tower = _towers->getTower(toweriter->first);
 
       double towerenergy = tower->get_energy();
+      tower_energy_sum += towerenergy;
 
       // do phi calculations
       int towerphi = tower->get_binphi();
@@ -158,7 +159,6 @@ int RawClusterPositionCorrectionFull::process_event(PHCompositeNode *topNode)
 
       // do eta calculations
       int towereta = tower->get_bineta();
-      tower_energy_sum += towerenergy;
 
       // to account for the presence of the sector boundary, we must shift the towerid by the sector boundary width if the
       // tower ids are on the right sector.

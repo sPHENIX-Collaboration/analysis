@@ -116,7 +116,8 @@ int CaloEvaluatorPositionCorrection::Init(PHCompositeNode* /*topNode*/)
   }
 
   if (_do_cluster_eval) _ntp_cluster = new TNtuple("ntp_cluster", "cluster => max truth primary",
-                                                   "event:clusterID:ntowers:eta_bin:phi_bin:eta_detector:eta:x:y:z:phi:e:"
+                                                   // "event:clusterID:ntowers:eta_bin:phi_bin:eta_detector:eta:x:y:z:phi:e:"
+                                                   "event:clusterID:ntowers:eta_detector:eta:x:y:z:phi:e:"
                                                    "gparticleID:gflavor:gnhits:"
                                                    "geta:gphi:ge:gpt:gvx:gvy:gvz:"
                                                    "gembed:gedep:"
@@ -729,10 +730,10 @@ void CaloEvaluatorPositionCorrection::fillOutputNtuples(PHCompositeNode* topNode
     GlobalVertexMap* vertexmap = findNode::getClass<GlobalVertexMap>(topNode, "GlobalVertexMap");
 
     string clusternode = "CLUSTER_POS_COR_CEMC";
-    string towernode = "TOWER_CALIB_" + _caloname;
+    // string towernode = "TOWER_CALIB_" + _caloname;
 
     RawClusterContainer* clusters = findNode::getClass<RawClusterContainer>(topNode, clusternode.c_str());
-    RawTowerContainer* _towers = findNode::getClass<RawTowerContainer>(topNode, towernode.c_str());
+    // RawTowerContainer* _towers = findNode::getClass<RawTowerContainer>(topNode, towernode.c_str());
     if (!clusters)
     {
       cerr << PHWHERE << " ERROR: Can't find " << clusternode << endl;
@@ -745,27 +746,27 @@ void CaloEvaluatorPositionCorrection::fillOutputNtuples(PHCompositeNode* topNode
     {
       RawCluster* cluster = iterator.second;
 
-      std::vector<float> toweretas;
-      std::vector<float> towerphis;
-      std::vector<float> towerenergies;
+      // std::vector<float> toweretas;
+      // std::vector<float> towerphis;
+      // std::vector<float> towerenergies;
 
-      // loop over the towers in the cluster
-      RawCluster::TowerConstRange towers = cluster->get_towers();
-      RawCluster::TowerConstIterator toweriter;
+      // // loop over the towers in the cluster
+      // RawCluster::TowerConstRange towers = cluster->get_towers();
+      // RawCluster::TowerConstIterator toweriter;
 
-      for (toweriter = towers.first; toweriter != towers.second; ++toweriter)
-      {
-        RawTower *tower = _towers->getTower(toweriter->first);
+      // for (toweriter = towers.first; toweriter != towers.second; ++toweriter)
+      // {
+      //   RawTower *tower = _towers->getTower(toweriter->first);
 
-        int towereta = tower->get_bineta();
-        int towerphi = tower->get_binphi();
-        double towerenergy = tower->get_energy();
+      //   int towereta = tower->get_bineta();
+      //   int towerphi = tower->get_binphi();
+      //   double towerenergy = tower->get_energy();
 
-        // put the etabin, phibin, and energy into the corresponding vectors
-        toweretas.push_back(towereta);
-        towerphis.push_back(towerphi);
-        towerenergies.push_back(towerenergy);
-      }
+      //   // put the etabin, phibin, and energy into the corresponding vectors
+      //   toweretas.push_back(towereta);
+      //   towerphis.push_back(towerphi);
+      //   towerenergies.push_back(towerenergy);
+      // }
 
       //    for (unsigned int icluster = 0; icluster < clusters->size(); icluster++)
       //    {
@@ -779,31 +780,31 @@ void CaloEvaluatorPositionCorrection::fillOutputNtuples(PHCompositeNode* topNode
       float y = cluster->get_y();
       float z = cluster->get_z();
       float eta = NAN;
-      float eta_detector = NAN;
+      float eta_detector = RawClusterUtility::GetPseudorapidity(*cluster, CLHEP::Hep3Vector(0,0,0));
       float phi = cluster->get_phi();
       float e = cluster->get_energy();
 
       // loop over the towers to determine the energy
       // weighted eta and phi position of the cluster
 
-      float etamult = 0;
-      float etasum = 0;
-      float phimult = 0;
-      float phisum = 0;
+      // float etamult = 0;
+      // float etasum = 0;
+      // float phimult = 0;
+      // float phisum = 0;
 
-      for (int j = 0; j < ntowers; j++)
-      {
-        float energymult = towerenergies.at(j) * toweretas.at(j);
-        etamult += energymult;
-        etasum += towerenergies.at(j);
+      // for (int j = 0; j < ntowers; j++)
+      // {
+      //   float energymult = towerenergies.at(j) * toweretas.at(j);
+      //   etamult += energymult;
+      //   etasum += towerenergies.at(j);
 
-        energymult = towerenergies.at(j) * towerphis.at(j);
-        phimult += energymult;
-        phisum += towerenergies.at(j);
-      }
+      //   energymult = towerenergies.at(j) * towerphis.at(j);
+      //   phimult += energymult;
+      //   phisum += towerenergies.at(j);
+      // }
 
-      float avg_eta_bin = (etasum != 0) ? floorf(etamult / etasum * 1e4)/1e4 : NAN;
-      float avg_phi_bin = (phisum != 0) ? floorf(phimult / phisum * 1e4)/1e4 : NAN;
+      // float avg_eta_bin = (etasum != 0) ? floorf(etamult / etasum * 1e4)/1e4 : NAN;
+      // float avg_phi_bin = (phisum != 0) ? floorf(phimult / phisum * 1e4)/1e4 : NAN;
 
       // require vertex for cluster eta calculation
       if (vertexmap)
@@ -812,15 +813,7 @@ void CaloEvaluatorPositionCorrection::fillOutputNtuples(PHCompositeNode* topNode
         {
           GlobalVertex* vertex = (vertexmap->begin()->second);
 
-          eta =
-              RawClusterUtility::GetPseudorapidity(
-                  *cluster,
-                  CLHEP::Hep3Vector(vertex->get_x(), vertex->get_y(), vertex->get_z()));
-
-          eta_detector =
-            RawClusterUtility::GetPseudorapidity(
-              *cluster,
-              CLHEP::Hep3Vector(0,0,0));
+          eta = RawClusterUtility::GetPseudorapidity(*cluster, CLHEP::Hep3Vector(vertex->get_x(), vertex->get_y(), vertex->get_z()));
         }
       }
 
@@ -886,8 +879,8 @@ void CaloEvaluatorPositionCorrection::fillOutputNtuples(PHCompositeNode* topNode
       float cluster_data[] = {(float) _ievent,
                               clusterID,
                               ntowers,
-                              avg_eta_bin,
-                              avg_phi_bin,
+                              // avg_eta_bin,
+                              // avg_phi_bin,
                               eta_detector,
                               eta,
                               x,
