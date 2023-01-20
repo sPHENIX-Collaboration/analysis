@@ -84,9 +84,10 @@ class STrackCutStudy {
       TRACK   = 0,
       TRUTH   = 1,
       WEIRD   = 2,
-      PILEUP  = 3,
-      PRIMARY = 4,
-      NONPRIM = 5
+      NORMAL  = 3,
+      PILEUP  = 4,
+      PRIMARY = 5,
+      NONPRIM = 6
     };
 
     // ctor/dtor
@@ -240,9 +241,63 @@ class STrackCutStudy {
     TH1D *hWeirdDeltaEta;
     TH1D *hWeirdDeltaPhi;
     TH1D *hWeirdDeltaPt;
+    TH1D *hWeirdEtaFrac;
+    TH1D *hWeirdPhiFrac;
+    TH1D *hWeirdPtFrac;
+    TH1D *hWeirdEtaDiff;
+    TH1D *hWeirdPhiDiff;
+    TH1D *hWeirdPtDiff;
     TH1D *hWeirdVxDiff;
     TH1D *hWeirdVyDiff;
     TH1D *hWeirdVzDiff;
+    TH2D *hWeirdPtVsNMms;
+    TH2D *hWeirdPtVsNMap;
+    TH2D *hWeirdPtVsNInt;
+    TH2D *hWeirdPtVsNTpc;
+    TH2D *hWeirdPtVsNTot;
+    TH2D *hWeirdPtVsPerMms;
+    TH2D *hWeirdPtVsPerMap;
+    TH2D *hWeirdPtVsPerInt;
+    TH2D *hWeirdPtVsPerTpc;
+    TH2D *hWeirdPtVsPerTot;
+    TH2D *hWeirdPtVsChi2;
+    TH2D *hWeirdPtVsNDF;
+    TH2D *hWeirdPtVsQuality;
+    TH2D *hWeirdPtVsDCAxy;
+    TH2D *hWeirdPtVsDCAz;
+    TH2D *hDeltaDCAxyVsOddPt;
+    TH2D *hDeltaDCAzVsOddPt;
+    TH2D *hDeltaEtaVsOddPt;
+    TH2D *hDeltaPhiVsOddPt;
+    TH2D *hDeltaPtVsOddPt;
+    TH2D *hTruthVsWeirdEta;
+    TH2D *hTruthVsWeirdPhi;
+    TH2D *hTruthVsWeirdPt;
+    TH2D *hTruthVsWeirdVx;
+    TH2D *hTruthVsWeirdVy;
+    TH2D *hTruthVsWeirdVz;
+    TH2D *hOddFracVsTruEta;
+    TH2D *hOddFracVsTruPhi;
+    TH2D *hOddFracVsTruPt;
+    TH2D *hOddDiffVsTruEta;
+    TH2D *hOddDiffVsTruPhi;
+    TH2D *hOddDiffVsTruPt;
+    TH2D *hTruPtVsOddNMms;
+    TH2D *hTruPtVsOddNMap;
+    TH2D *hTruPtVsOddNInt;
+    TH2D *hTruPtVsOddNTpc;
+    TH2D *hTruPtVsOddNTot;
+    TH2D *hTruPtVsOddChi2;
+    TH2D *hTruPtVsOddNDF;
+    TH2D *hTruPtVsOddQuality;
+    TH2D *hFracPtVsOddQuality;
+    TH2D *hTruPtVsOddDCAxy;
+    TH2D *hTruPtVsOddDCAz;
+    TH2D *hOddDeltaDCAxyVsTruPt;
+    TH2D *hOddDeltaDCAzVsTruPt;
+    TH2D *hOddDeltaEtaVsTruPt;
+    TH2D *hOddDeltaPhiVsTruPt;
+    TH2D *hOddDeltaPtVsTruPt;
 
     // embed-only normal output histograms
     TH1D *hNormalNMms;
@@ -271,9 +326,63 @@ class STrackCutStudy {
     TH1D *hNormalDeltaEta;
     TH1D *hNormalDeltaPhi;
     TH1D *hNormalDeltaPt;
+    TH1D *hNormalEtaFrac;
+    TH1D *hNormalPhiFrac;
+    TH1D *hNormalPtFrac;
+    TH1D *hNormalEtaDiff;
+    TH1D *hNormalPhiDiff;
+    TH1D *hNormalPtDiff;
     TH1D *hNormalVxDiff;
     TH1D *hNormalVyDiff;
     TH1D *hNormalVzDiff;
+    TH2D *hNormalPtVsNMms;
+    TH2D *hNormalPtVsNMap;
+    TH2D *hNormalPtVsNInt;
+    TH2D *hNormalPtVsNTpc;
+    TH2D *hNormalPtVsNTot;
+    TH2D *hNormalPtVsPerMms;
+    TH2D *hNormalPtVsPerMap;
+    TH2D *hNormalPtVsPerInt;
+    TH2D *hNormalPtVsPerTpc;
+    TH2D *hNormalPtVsPerTot;
+    TH2D *hNormalPtVsChi2;
+    TH2D *hNormalPtVsNDF;
+    TH2D *hNormalPtVsQuality;
+    TH2D *hNormalPtVsDCAxy;
+    TH2D *hNormalPtVsDCAz;
+    TH2D *hDeltaDCAxyVsNormPt;
+    TH2D *hDeltaDCAzVsNormPt;
+    TH2D *hDeltaEtaVsNormPt;
+    TH2D *hDeltaPhiVsNormPt;
+    TH2D *hDeltaPtVsNormPt;
+    TH2D *hTruthVsNormalEta;
+    TH2D *hTruthVsNormalPhi;
+    TH2D *hTruthVsNormalPt;
+    TH2D *hTruthVsNormalVx;
+    TH2D *hTruthVsNormalVy;
+    TH2D *hTruthVsNormalVz;
+    TH2D *hNormFracVsTruEta;
+    TH2D *hNormFracVsTruPhi;
+    TH2D *hNormFracVsTruPt;
+    TH2D *hNormDiffVsTruEta;
+    TH2D *hNormDiffVsTruPhi;
+    TH2D *hNormDiffVsTruPt;
+    TH2D *hTruPtVsNormNMms;
+    TH2D *hTruPtVsNormNMap;
+    TH2D *hTruPtVsNormNInt;
+    TH2D *hTruPtVsNormNTpc;
+    TH2D *hTruPtVsNormNTot;
+    TH2D *hTruPtVsNormChi2;
+    TH2D *hTruPtVsNormNDF;
+    TH2D *hTruPtVsNormQuality;
+    TH2D *hFracPtVsNormQuality;
+    TH2D *hTruPtVsNormDCAxy;
+    TH2D *hTruPtVsNormDCAz;
+    TH2D *hNormDeltaDCAxyVsTruPt;
+    TH2D *hNormDeltaDCAzVsTruPt;
+    TH2D *hNormDeltaEtaVsTruPt;
+    TH2D *hNormDeltaPhiVsTruPt;
+    TH2D *hNormDeltaPtVsTruPt;
 
     // with-pileup track histograms
     TH1D *hTrackNMms_PU;
