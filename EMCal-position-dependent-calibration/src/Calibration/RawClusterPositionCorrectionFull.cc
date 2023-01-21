@@ -31,7 +31,6 @@ RawClusterPositionCorrectionFull::RawClusterPositionCorrectionFull(const std::st
   , _eclus_calib_params(std::string("eclus_params_") + name)
   , _ecore_calib_params(std::string("ecore_params_") + name)
   , _det_name(name)
-  , _reco_e_threshold(1.0) // min energy for an accepted cluster
   , bins_eta(384) // store calib location
   , bins_phi(64) // store calib location
 {
@@ -131,9 +130,6 @@ int RawClusterPositionCorrectionFull::process_event(PHCompositeNode *topNode)
     RawCluster *cluster = iter->second;
 
     double clus_energy  = cluster->get_energy();
-
-    // ensure that we have at least a 1 GeV cluster
-    if(clus_energy < _reco_e_threshold) continue;
 
     double x                = 0;
     double y                = 0;

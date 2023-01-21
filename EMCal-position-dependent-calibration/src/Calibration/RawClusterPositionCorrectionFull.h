@@ -61,7 +61,6 @@ class RawClusterPositionCorrectionFull : public SubsysReco
   const double sector_boundary_eta_length = 3.04/25.3; // boundary length in mm divided by tower length in mm
   const double tower_length_rad = 2*M_PI/(256+32*sector_boundary_phi_length);
   const double sector_boundary_phi_length_rad = tower_length_rad*sector_boundary_phi_length;
-  double _reco_e_threshold;
 
   int bins_eta, bins_phi;
   std::vector<std::vector<double> > eclus_calib_constants;
