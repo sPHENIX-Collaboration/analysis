@@ -166,13 +166,14 @@ int Fun4All_G4_sPHENIX(
       INPUTGENERATOR::SimpleEventGenerator[0]->set_vertex_distribution_mean(0., 0., 0.);
       INPUTGENERATOR::SimpleEventGenerator[0]->set_vertex_distribution_width(0.01, 0.01, 5.);
     }
-    // INPUTGENERATOR::SimpleEventGenerator[0]->set_eta_range(0, 1.1);
-    // INPUTGENERATOR::SimpleEventGenerator[0]->set_phi_range(-M_PI/32.0 - 0.02, M_PI/32.0 + 0.02);
-    // INPUTGENERATOR::SimpleEventGenerator[0]->set_pt_range(20, 21.);
+    // generation in one sector
+    INPUTGENERATOR::SimpleEventGenerator[0]->set_eta_range(0, 1.152);
+    INPUTGENERATOR::SimpleEventGenerator[0]->set_phi_range(-M_PI/32.0 - 0.02, M_PI/32.0 + 0.02);
 
-    // for testing use full range
-    INPUTGENERATOR::SimpleEventGenerator[0]->set_eta_range(-1, 1);
-    INPUTGENERATOR::SimpleEventGenerator[0]->set_phi_range(-M_PI, M_PI);
+    // for testing use full range, all sectors
+    // INPUTGENERATOR::SimpleEventGenerator[0]->set_eta_range(-1, 1);
+    // INPUTGENERATOR::SimpleEventGenerator[0]->set_phi_range(-M_PI, M_PI);
+
     INPUTGENERATOR::SimpleEventGenerator[0]->set_pt_range(20, 21.);
   }
   // Upsilons
