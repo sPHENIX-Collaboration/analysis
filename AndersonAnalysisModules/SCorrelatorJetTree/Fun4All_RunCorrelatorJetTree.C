@@ -76,9 +76,10 @@ void Fun4All_RunCorrelatorJetTree(const string sInHits = SInHitsDefault, const s
   const bool   isMC(true);
   const bool   doDebug(true);
   const bool   saveDst(true);
-  const bool   addTracks(false);
-  const bool   addEMClusters(false);
-  const bool   addHClusters(false);
+  const bool   doQuality(true);
+  const bool   addTracks(true);
+  const bool   addEMClusters(true);
+  const bool   addHClusters(true);
   const bool   addParticleFlow(true);
   const double ptTrackAccept[NAccept]     = {0.2,  9999.};
   const double ptEMClustAccept[NAccept]   = {0.3,  9999.};
@@ -191,6 +192,7 @@ void Fun4All_RunCorrelatorJetTree(const string sInHits = SInHitsDefault, const s
   // create correlator jet tree
   SCorrelatorJetTree *correlatorJetTree = new SCorrelatorJetTree("SCorrelatorJetTree", sOutput, isMC, doDebug);
   correlatorJetTree -> Verbosity(verbosity);
+  correlatorJetTree -> setDoQualityPlots(doQuality);
   correlatorJetTree -> setAddTracks(addTracks);
   correlatorJetTree -> setAddEMCalClusters(addEMClusters);
   correlatorJetTree -> setAddHCalClusters(addHClusters);

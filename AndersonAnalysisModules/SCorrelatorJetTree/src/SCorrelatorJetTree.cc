@@ -39,7 +39,6 @@ SCorrelatorJetTree::SCorrelatorJetTree(const string &name, const string &outfile
   }
   m_outfilename = outfile;
   initializeVariables();
-  initializeTrees();
 
 }  // end ctor(string, string)
 
@@ -80,8 +79,9 @@ int SCorrelatorJetTree::Init(PHCompositeNode *topNode) {
     createJetNode(topNode);
   }
 
-  // create QA histograms
-  /* TODO: QA histograms will go here */
+  // initialize QA histograms and output trees
+  initializeHists();
+  initializeTrees();
   return Fun4AllReturnCodes::EVENT_OK;
 
 }  // end 'Init(PHcompositeNode*)'
@@ -96,10 +96,10 @@ int SCorrelatorJetTree::process_event(PHCompositeNode *topNode) {
   }
 
   // find jets
-  findJets(topNode);
   if (m_ismc) {
     findMcJets(topNode);
   }
+  findJets(topNode);
   return Fun4AllReturnCodes::EVENT_OK;
 
 }  // end 'process_event(PHCompositeNode*)'
@@ -114,10 +114,8 @@ int SCorrelatorJetTree::End(PHCompositeNode *topNode) {
   }
 
   // save output and close
+  saveOutput();
   m_outFile -> cd();
-  m_recTree -> Write();
-  m_truTree -> Write();
-  m_outFile -> Write();
   m_outFile -> Close();
   return Fun4AllReturnCodes::EVENT_OK;
 
