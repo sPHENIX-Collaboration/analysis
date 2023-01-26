@@ -171,10 +171,10 @@ int Fun4All_G4_sPHENIX(
     INPUTGENERATOR::SimpleEventGenerator[0]->set_phi_range(-M_PI/32.0 - 0.02, M_PI/32.0 + 0.02);
 
     // for testing use full range, all sectors
-    // INPUTGENERATOR::SimpleEventGenerator[0]->set_eta_range(-1, 1);
+    // INPUTGENERATOR::SimpleEventGenerator[0]->set_eta_range(-1.152, 1.152);
     // INPUTGENERATOR::SimpleEventGenerator[0]->set_phi_range(-M_PI, M_PI);
 
-    INPUTGENERATOR::SimpleEventGenerator[0]->set_pt_range(20, 21.);
+    INPUTGENERATOR::SimpleEventGenerator[0]->set_pt_range(1, 21.);
   }
   // Upsilons
   // if you run more than one of these Input::UPSILON_NUMBER > 1
