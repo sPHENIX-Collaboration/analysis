@@ -19,11 +19,12 @@ files_to_copy[0]="scripts/copy-to-analysis.sh"
 files_to_copy[1]="src/SEnergyCorrelator.cc"
 files_to_copy[2]="src/SEnergyCorrelator.h"
 files_to_copy[3]="src/SEnergyCorrelator.io.h"
-files_to_copy[4]="src/SEnergyCorrelator.system.h"
+files_to_copy[4]="src/SEnergyCorrelator.sys.h"
 files_to_copy[5]="src/SEnergyCorrelatorLinkDef.h"
 files_to_copy[6]="src/autogen.sh"
 files_to_copy[7]="src/configure.ac"
 files_to_copy[8]="src/Makefile.am"
+files_to_copy[9]="DoStandaloneCorrelatorCalculation.C"
 
 # do copying
 # TODO: automate detection/creation of sub-directories

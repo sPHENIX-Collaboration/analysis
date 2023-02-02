@@ -11,7 +11,7 @@
 // user includes
 #include "SEnergyCorrelator.h"
 #include "SEnergyCorrelator.io.h"
-#include "SEnergyCorrelator.system.h"
+#include "SEnergyCorrelator.sys.h"
 
 using namespace std;
 using namespace findNode;
@@ -42,7 +42,7 @@ SEnergyCorrelator::SEnergyCorrelator(const string &name, const bool isComplex, c
   // print debug statement
   m_inDebugMode = doDebug;
   if (m_inDebugMode) {
-    cout << "SEnergyCorrelator::SEnergyCorrelator(string, bool, bool) calling ctor" << endl;
+    PrintMessage(1);
   }
 
 }  // end ctor(string, bool, bool)
@@ -53,7 +53,7 @@ SEnergyCorrelator::~SEnergyCorrelator() {
 
   // print debug statement
   if (m_inDebugMode) {
-    cout << "SEnergyCorrelator::~SEnergyCorrelator() calling dtor" << endl;
+    PrintMessage(14);
   }
   delete m_inFile;
   delete m_outFile;
@@ -68,10 +68,21 @@ int SEnergyCorrelator::Init(PHCompositeNode *topNode) {
 
   // print debug statement
   if (m_inDebugMode) {
-    cout << "SEnergyCorrelator::Init(PHCompositeNode*) initializing" << endl;
+    PrintMessage(2);
   }
 
+  // make sure complex mode is on & open input
+  if (m_inStandaloneMode) {
+    PrintError(0);
+    assert(m_inComplexMode);
+  } else {
+    GrabInputNode();
+  }
+
+  // initialize input, output, & correlators
+  InitializeTree();
   InitializeHists();
+  InitializeCorrs();
   return Fun4AllReturnCodes::EVENT_OK;
 
 }  // end 'Init(PHCompositeNode*)'
@@ -82,8 +93,16 @@ int SEnergyCorrelator::process_event(PHCompositeNode *topNode) {
 
   // print debug statement
   if (m_inDebugMode) {
-    cout << "SEnergyCorrelator::process_event(PHCompositeNode*) processing event" << endl;
+    PrintMessage(7);
   }
+
+  // make sure complex mode is on
+  if (m_inStandaloneMode) {
+    PrintError(3);
+    assert(m_inComplexMode);
+  }
+
+  /* TODO analysis goes here */
   return Fun4AllReturnCodes::EVENT_OK;
 
 }  // end 'process_event(PHCompositeNode*)'
@@ -94,7 +113,15 @@ int SEnergyCorrelator::End(PHCompositeNode *topNode) {
 
   // print debug statement
   if (m_inDebugMode) {
-    cout << "SEnergyCorrelator::End(PHCompositeNode*) this is the end..." << endl;
+    PrintMessage(8);
+  }
+
+  // make sure complex mode is on & save output
+  if (m_inStandaloneMode) {
+    PrintError(4);
+    assert(m_inComplexMode);
+  } else {
+    SaveOutput();
   }
   return Fun4AllReturnCodes::EVENT_OK;
 
@@ -104,22 +131,67 @@ int SEnergyCorrelator::End(PHCompositeNode *topNode) {
 
 // standalone-only methods ----------------------------------------------------
 
-int SEnergyCorrelator::Analyze() {
+void SEnergyCorrelator::Init() {
 
   // print debug statement
   if (m_inDebugMode) {
-    cout << "SEnergyCorrelator::Analyze() analyzing input" << endl;
+    PrintMessage(10);
   }
 
-  // make sure in standalone mode
+  // make sure standalone mode is on & open input
   if (m_inComplexMode) {
-    cerr << "SEnergyCorrelator::Analyze() PANIC: calling standalone method in complex mode!\n"
-         << "                             Ending program execution!"
-         << endl;
+    PrintError(5);
+    assert(m_inStandaloneMode);
+  } else {
+    OpenInputFile();
+  }
+
+  // initialize input, output, & correlators
+  InitializeTree();
+  InitializeHists();
+  InitializeCorrs();
+  return;
+
+}  // end 'Init()'
+
+
+
+void SEnergyCorrelator::Analyze() {
+
+  // print debug statement
+  if (m_inDebugMode) {
+    PrintMessage(12);
+  }
+
+  // make sure standalone mode is on
+  if (m_inComplexMode) {
+    PrintError(8);
     assert(m_inStandaloneMode);
   }
-  return Fun4AllReturnCodes::EVENT_OK;
+
+  /* TODO analysis goes here */
+  return;
 
 }  // end 'Analyze()'
+
+
+
+void SEnergyCorrelator::End() {
+
+  // print debug statement
+  if (m_inDebugMode) {
+    PrintMessage(13);
+  }
+
+  // make sure standalone mode is on & save output
+  if (m_inComplexMode) {
+    PrintError(9);
+    assert(m_inStandaloneMode);
+  } else {
+    SaveOutput();
+  }
+  return;
+
+}  // end 'End()'
 
 // end ------------------------------------------------------------------------

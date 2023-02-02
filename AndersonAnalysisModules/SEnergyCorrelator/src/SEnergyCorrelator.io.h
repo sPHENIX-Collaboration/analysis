@@ -13,23 +13,22 @@ using namespace findNode;
 
 
 
-void SEnergyCorrelator::OpenInputFile() {
-
-  // print debug statement
-  if (m_inDebugMode) {
-    cout << "SEnergyCorrelator::OpenInputFile() opening input file" << endl;
-  }
-  return;
-
-}  // end 'OpenInputFile()'
-
-
-
 void SEnergyCorrelator::GrabInputNode() {
 
   // print debug statement
   if (m_inDebugMode) {
-    cout << "SEnergyCorrelator::GrabInputNode() grabbing input node" << endl;
+    PrintMessage(3);
+  }
+
+  /* TODO grab input node here */
+  const bool placeholder = true;
+  if (placeholder) {
+    PrintError(1);
+    assert(!placeholder);
+  }
+  if (placeholder) {
+    PrintError(2);
+    assert(!placeholder);
   }
   return;
 
@@ -37,12 +36,39 @@ void SEnergyCorrelator::GrabInputNode() {
 
 
 
+void SEnergyCorrelator::OpenInputFile() {
+
+  // print debug statement
+  if (m_inDebugMode) {
+    PrintMessage(11);
+  }
+
+  // open file
+  m_inFile = new TFile(m_inFileName.data(), "read");
+  if (!m_inFile) {
+    PrintError(6);
+    assert(m_inFile);
+  }
+
+  // grab tree
+  m_inFile -> GetObject(m_inTreeName.data(), m_inTree);
+  if (!m_inTree) {
+    PrintError(7);
+  } 
+  return;
+
+}  // end 'OpenInputFile()'
+
+
+
 void SEnergyCorrelator::SaveOutput() {
 
   // print debug statement
   if (m_inDebugMode) {
-    cout << "SEnergyCorrelator::SaveOutput() saving output" << endl;
+    PrintMessage(9);
   }
+
+  /* TODO save output here */
   return;
 
 }  // end 'SaveOutput()'
