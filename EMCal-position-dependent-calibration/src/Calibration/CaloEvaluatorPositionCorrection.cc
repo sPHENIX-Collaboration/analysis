@@ -61,9 +61,9 @@ CaloEvaluatorPositionCorrection::CaloEvaluatorPositionCorrection(const string& n
   ,  // 0 GeV before reco is traced
   _caloevalstack(nullptr)
   , _strict(false)
-  , _do_gpoint_eval(true)
+  , _do_gpoint_eval(false)
   , _do_gshower_eval(true)
-  , _do_tower_eval(true)
+  , _do_tower_eval(false)
   , _do_cluster_eval(true)
   , _ntp_gpoint(nullptr)
   , _ntp_gshower(nullptr)
@@ -115,13 +115,19 @@ int CaloEvaluatorPositionCorrection::Init(PHCompositeNode* /*topNode*/)
     _tower_debug->Branch("z", &_z_debug, "z/F");
   }
 
-  if (_do_cluster_eval) _ntp_cluster = new TNtuple("ntp_cluster", "cluster => max truth primary",
-                                                   // "event:clusterID:ntowers:eta_bin:phi_bin:eta_detector:eta:x:y:z:phi:e:"
-                                                   "event:clusterID:ntowers:eta_detector:eta:x:y:z:phi:e:e_raw:"
+  if (_do_cluster_eval) {
+    _ntp_cluster = new TNtuple("ntp_cluster", "cluster => max truth primary",
+                                                   "event:clusterID:ntowers:eta_detector:eta:x:y:z:phi:e:"
                                                    "gparticleID:gflavor:gnhits:"
                                                    "geta:gphi:ge:gpt:gvx:gvy:gvz:"
                                                    "gembed:gedep:"
                                                    "efromtruth");
+
+    _cluster_tower_info = new TTree("cluster_tower_info", "Cluster Tower Info");
+    _cluster_tower_info->Branch("toweretas", &_toweretas);
+    _cluster_tower_info->Branch("towerphis", &_towerphis);
+    _cluster_tower_info->Branch("towerenergies", &_towerenergies);
+  }
 
   return Fun4AllReturnCodes::EVENT_OK;
 }

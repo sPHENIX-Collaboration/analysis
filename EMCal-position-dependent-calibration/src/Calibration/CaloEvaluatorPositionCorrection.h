@@ -99,6 +99,10 @@ class CaloEvaluatorPositionCorrection : public SubsysReco
 
   CaloEvalStack *_caloevalstack;
 
+  std::vector<Byte_t> _toweretas;
+  std::vector<Byte_t> _towerphis;
+  std::vector<Float_t> _towerenergies;
+
   //----------------------------------
   // evaluator output ntuples
 
@@ -113,6 +117,7 @@ class CaloEvaluatorPositionCorrection : public SubsysReco
   TNtuple *_ntp_gshower;
   TNtuple *_ntp_tower;
   TTree *_tower_debug;  //Added by Barak
+  TTree *_cluster_tower_info;
   TNtuple *_ntp_cluster;
 
   // evaluator output file
