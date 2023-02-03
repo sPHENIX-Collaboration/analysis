@@ -52,6 +52,7 @@
  * BuildResonanceJetTaggingTree is a class developed to reconstruct jets containing a D-meson
  * The class can be adapted to tag jets using any kind of particle
  * Author: Antonio Silva (antonio.sphenix@gmail.com)
+ * Contributor: Jakub Kvapil (jakub.kvapil@cern.ch)
  */
 
 /**
@@ -65,6 +66,7 @@ BuildResonanceJetTaggingTree::BuildResonanceJetTaggingTree(const std::string &na
   , m_truth_jetcontainer_name("")
   , m_dorec(true)
   , m_dotruth(false)
+  , m_nDaughters(0)
   , m_tag_particle(tag)
   , m_tag_pdg(0)
   , m_outfile(nullptr)
@@ -79,24 +81,39 @@ BuildResonanceJetTaggingTree::BuildResonanceJetTaggingTree(const std::string &na
   switch (m_tag_particle) {
     case ResonanceJetTagging::TAG::D0:
       m_tag_pdg = 421;
+      m_nDaughters = 2;
+      break;
+    case ResonanceJetTagging::TAG::D0TOK3PI:
+      m_tag_pdg = 421;
+      m_nDaughters = 4;
       break;
     case ResonanceJetTagging::TAG::DPLUS:
       m_tag_pdg = 411;
+      m_nDaughters = 3;
       break;
     case ResonanceJetTagging::TAG::DSTAR:
       m_tag_pdg = 413;
+      m_nDaughters = 0;
       break;
     case ResonanceJetTagging::TAG::JPSY:
       m_tag_pdg = 433;
+      m_nDaughters = 0;
       break;
     case ResonanceJetTagging::TAG::K0:
       m_tag_pdg = 311;
+      m_nDaughters = 0;
       break;
     case ResonanceJetTagging::TAG::GAMMA:
       m_tag_pdg = 22;
+      m_nDaughters = 0;
       break;
     case ResonanceJetTagging::TAG::ELECTRON:
       m_tag_pdg = 11;
+      m_nDaughters = 0;
+      break;
+    case ResonanceJetTagging::TAG::LAMBDAC:
+      m_tag_pdg = 4122;
+      m_nDaughters = 3;
       break;
   }
 }
@@ -106,7 +123,7 @@ BuildResonanceJetTaggingTree::BuildResonanceJetTaggingTree(const std::string &na
  */
 BuildResonanceJetTaggingTree::~BuildResonanceJetTaggingTree()
 {
-  delete m_taggedjettree;
+
 }
 
 /**
@@ -133,23 +150,27 @@ int BuildResonanceJetTaggingTree::process_event(PHCompositeNode *topNode)
     std::cout << "Beginning process_event in BuildResonanceJetTaggingTree" << std::endl;
   }
 
+  if(m_nDaughters == 0)
+  {
+    std::cout<<"ERROR: Number of Decay Daughters Not Set, ABORTING!";
+    return Fun4AllReturnCodes::ABORTRUN;
+  }
+
   m_eventcount_h->Fill(0);
 
   switch (m_tag_particle) {
     case ResonanceJetTagging::TAG::D0:
-      return loopD0(topNode);
-      break;
+      [[fallthrough]];
+    case ResonanceJetTagging::TAG::D0TOK3PI:
+      [[fallthrough]];
     case ResonanceJetTagging::TAG::DPLUS:
+      [[fallthrough]];
+    case ResonanceJetTagging::TAG::LAMBDAC:
+      return loopHFHadronic(topNode);
       break;
-    case ResonanceJetTagging::TAG::DSTAR:
-      break;
-    case ResonanceJetTagging::TAG::JPSY:
-      break;
-    case ResonanceJetTagging::TAG::K0:
-      break;
-    case ResonanceJetTagging::TAG::GAMMA:
-      break;
-    case ResonanceJetTagging::TAG::ELECTRON:
+    default:
+      std::cout<<"ERROR: Fill Tree Function Not Set, ABORTING!";
+      return Fun4AllReturnCodes::ABORTRUN;
       break;
   }
 
@@ -185,7 +206,7 @@ int BuildResonanceJetTaggingTree::End(PHCompositeNode */*topNode*/)
   return 0;
 }
 
-int BuildResonanceJetTaggingTree::loopD0(PHCompositeNode *topNode)
+int BuildResonanceJetTaggingTree::loopHFHadronic(PHCompositeNode *topNode)
 {
   KFParticle_Container* kfContainer = nullptr;
 
@@ -217,8 +238,7 @@ int BuildResonanceJetTaggingTree::loopD0(PHCompositeNode *topNode)
   KFParticle *recTag = nullptr;
   HepMC::GenParticle *genTag = nullptr;
 
-  int recDaughtersID[2];
-
+  std::vector<int> recDaughtersID(m_nDaughters);
   std::vector<int> recJetIndex;
 
   if(m_dorec)
@@ -236,25 +256,30 @@ int BuildResonanceJetTaggingTree::loopD0(PHCompositeNode *topNode)
       recTag = kfContainer->get(recTagIter->second);
 
       if(!recTag) continue;
-      recDaughtersID[0] = (kfContainer->get(recTagIter->second + 1))->Id();
-      recDaughtersID[1] = (kfContainer->get(recTagIter->second + 2))->Id();
+
+      for (int iDaughter = 0; iDaughter < m_nDaughters; iDaughter++){
+        recDaughtersID[iDaughter] = (kfContainer->get(recTagIter->second + iDaughter +1))->Id();
+      }
 
       resetTreeVariables();
 
-      m_tagpartpx = recTag->Px();
-      m_tagpartpy = recTag->Py();
-      m_tagpartpz = recTag->Pz();
-      m_tagpartpt = recTag->GetPt();
-      m_tagparteta = recTag->GetEta();
-      m_tagpartphi = recTag->GetPhi();
-      m_tagpartm = recTag->GetMass();
+      m_reco_tag_px = recTag->Px();
+      m_reco_tag_py = recTag->Py();
+      m_reco_tag_pz = recTag->Pz();
+      m_reco_tag_pt = recTag->GetPt();
+      m_reco_tag_eta = recTag->GetEta();
+      m_reco_tag_phi = recTag->GetPhi();
+      m_reco_tag_m = recTag->GetMass();
+      m_reco_tag_e = recTag->E();
 
-      m_tagjetpx = recTagJet->get_px();
-      m_tagjetpy = recTagJet->get_py();
-      m_tagjetpz = recTagJet->get_pz();
-      m_tagjetpt = recTagJet->get_pt();
-      m_tagjeteta = recTagJet->get_eta();
-      m_tagjetphi = recTagJet->get_phi();
+      m_reco_jet_px = recTagJet->get_px();
+      m_reco_jet_py = recTagJet->get_py();
+      m_reco_jet_pz = recTagJet->get_pz();
+      m_reco_jet_pt = recTagJet->get_pt();
+      m_reco_jet_eta = recTagJet->get_eta();
+      m_reco_jet_phi = recTagJet->get_phi();
+      m_reco_jet_m = recTagJet->get_mass();
+      m_reco_jet_e = recTagJet->get_e();
 
       genTagJet = nullptr;
       genTag = nullptr;
@@ -263,35 +288,32 @@ int BuildResonanceJetTaggingTree::loopD0(PHCompositeNode *topNode)
       {
         findMatchedTruthD0(topNode, genTagJet, genTag, recDaughtersID);
 
-        if((!genTagJet) || (!genTag))
-        {
-          m_taggedjettree->Fill();
-        }
-        else
+        if((genTagJet) && (genTag))
         {
           recJetIndex.push_back(genTagJet->get_id());
 
-          m_truth_tagpartpx = genTag->momentum().px();
-          m_truth_tagpartpy = genTag->momentum().py();
-          m_truth_tagpartpz = genTag->momentum().pz();
-          m_truth_tagpartpt = std::sqrt(m_truth_tagpartpx * m_truth_tagpartpx + m_truth_tagpartpy * m_truth_tagpartpy);
-          m_truth_tagparteta = atanh(m_truth_tagpartpz / genTag->momentum().e());
-          m_truth_tagpartphi = atan(m_truth_tagpartpy / m_truth_tagpartpx);
+          m_truth_tag_px = genTag->momentum().px();
+          m_truth_tag_py = genTag->momentum().py();
+          m_truth_tag_pz = genTag->momentum().pz();
+          m_truth_tag_pt = std::sqrt(m_truth_tag_px * m_truth_tag_px + m_truth_tag_py * m_truth_tag_py);
+          m_truth_tag_eta = atanh(m_truth_tag_pz / genTag->momentum().e());
+          m_truth_tag_phi = atan(m_truth_tag_py / m_truth_tag_px);
+	  m_truth_tag_m = genTag->momentum().m();
+	  m_truth_tag_e = genTag->momentum().e();
 
-          m_truth_tagjetpx = genTagJet->get_px();
-          m_truth_tagjetpy = genTagJet->get_py();
-          m_truth_tagjetpz = genTagJet->get_pz();
-          m_truth_tagjetpt = genTagJet->get_pt();
-          m_truth_tagjeteta = genTagJet->get_eta();
-          m_truth_tagjetphi = genTagJet->get_phi();
+          m_truth_jet_px = genTagJet->get_px();
+          m_truth_jet_py = genTagJet->get_py();
+          m_truth_jet_pz = genTagJet->get_pz();
+          m_truth_jet_pt = genTagJet->get_pt();
+          m_truth_jet_eta = genTagJet->get_eta();
+          m_truth_jet_phi = genTagJet->get_phi();
+          m_truth_jet_m = genTagJet->get_mass();
+          m_truth_jet_e = genTagJet->get_e();
 
-          m_taggedjettree->Fill();
         }
       }
-      else
-      {
-        m_taggedjettree->Fill();
-      }
+ 
+      m_taggedjettree->Fill();
     }
   }
 
@@ -306,25 +328,29 @@ int BuildResonanceJetTaggingTree::loopD0(PHCompositeNode *topNode)
       if(!genTagJet) continue;
 
       //Check if truth was matched to reconstructed
-      if(isReconstructed(genTagJet->get_id(), recJetIndex)) continue;
+      if(isReconstructed(genTagJet->get_id(), recJetIndex)) continue; 
 
       Jet::Iter genTagIter = genTagJet->find(Jet::SRC::VOID);
 
       genTag = hepMCGenEvent->barcode_to_particle(genTagIter->second);
 
-      m_truth_tagpartpx = genTag->momentum().px();
-      m_truth_tagpartpy = genTag->momentum().py();
-      m_truth_tagpartpz = genTag->momentum().pz();
-      m_truth_tagpartpt = std::sqrt(m_truth_tagpartpx * m_truth_tagpartpx + m_truth_tagpartpy * m_truth_tagpartpy);
-      m_truth_tagparteta = atanh(m_truth_tagpartpz / genTag->momentum().e());
-      m_truth_tagpartphi = atan(m_truth_tagpartpy / m_truth_tagpartpx);
+      m_truth_tag_px = genTag->momentum().px();
+      m_truth_tag_py = genTag->momentum().py();
+      m_truth_tag_pz = genTag->momentum().pz();
+      m_truth_tag_pt = std::sqrt(m_truth_tag_px * m_truth_tag_px + m_truth_tag_py * m_truth_tag_py);
+      m_truth_tag_eta = atanh(m_truth_tag_pz / genTag->momentum().e());
+      m_truth_tag_phi = atan(m_truth_tag_py / m_truth_tag_px);
+      m_truth_tag_m = genTag->momentum().m();
+      m_truth_tag_e = genTag->momentum().e();
 
-      m_truth_tagjetpx = genTagJet->get_px();
-      m_truth_tagjetpy = genTagJet->get_py();
-      m_truth_tagjetpz = genTagJet->get_pz();
-      m_truth_tagjetpt = genTagJet->get_pt();
-      m_truth_tagjeteta = genTagJet->get_eta();
-      m_truth_tagjetphi = genTagJet->get_phi();
+      m_truth_jet_px = genTagJet->get_px();
+      m_truth_jet_py = genTagJet->get_py();
+      m_truth_jet_pz = genTagJet->get_pz();
+      m_truth_jet_pt = genTagJet->get_pt();
+      m_truth_jet_eta = genTagJet->get_eta();
+      m_truth_jet_phi = genTagJet->get_phi();
+      m_truth_jet_m = genTagJet->get_mass();
+      m_truth_jet_e = genTagJet->get_e();
 
       m_taggedjettree->Fill();
     }
@@ -333,17 +359,16 @@ int BuildResonanceJetTaggingTree::loopD0(PHCompositeNode *topNode)
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
-void BuildResonanceJetTaggingTree::findMatchedTruthD0(PHCompositeNode *topNode, Jet *&mcTagJet, HepMC::GenParticle *&mcTag, int decays[])
+void BuildResonanceJetTaggingTree::findMatchedTruthD0(PHCompositeNode *topNode, Jet *&mcTagJet, HepMC::GenParticle *&mcTag, std::vector<int> decays)
 {
-  m_truth_taggedJetMap = getJetMapFromNode(topNode, "D0Jets_Truth_Jet_Container");
+  m_truth_taggedJetMap = getJetMapFromNode(topNode, m_truth_jetcontainer_name);
   if(!m_truth_taggedJetMap) return;
 
   HepMC::GenEvent *hepMCGenEvent = getGenEventFromNode(topNode, "PHHepMCGenEventMap");
   if(!hepMCGenEvent) return;
 
   PHG4Particle *g4particle = nullptr;
-  const int nDecays = 2;
-  HepMC::GenParticle *mcTags[nDecays];
+  std::vector<HepMC::GenParticle*> mcTags(m_nDaughters);
 
   PHNodeIterator nodeIter(topNode);
   PHNode *findNode = dynamic_cast<PHNode *>(nodeIter.findFirst("SvtxPHG4ParticleMap"));
@@ -370,22 +395,20 @@ void BuildResonanceJetTaggingTree::findMatchedTruthD0(PHCompositeNode *topNode, 
     return;
   }
 
-  for (int idecay = 0; idecay < nDecays; idecay++)
+  for (int idecay = 0; idecay < m_nDaughters; idecay++)
   {
     std::map<float, std::set<int>> truth_set = dst_reco_truth_map->get(decays[idecay]);
     const auto &best_weight = truth_set.rbegin();
     int best_truth_id = *best_weight->second.rbegin();
     g4particle = truthinfo->GetParticle(best_truth_id);
-
     mcTags[idecay] = getMother(topNode, g4particle);
-
     if (mcTags[idecay] == nullptr)
     {
       return;
     }
   }
   // check is decays are from the same mother, otherwise it is background
-  for (int idecay = 1; idecay < nDecays; idecay++)
+  for (int idecay = 1; idecay < m_nDaughters; idecay++)
   {
     if (mcTags[idecay]->barcode() != mcTags[idecay - 1]->barcode())
     {
@@ -410,9 +433,7 @@ void BuildResonanceJetTaggingTree::findMatchedTruthD0(PHCompositeNode *topNode, 
     {
       break;
     }
-
   }
-
   return;
 }
 
@@ -477,32 +498,39 @@ void BuildResonanceJetTaggingTree::initializeTrees()
 {
   delete m_taggedjettree;
   m_taggedjettree = new TTree("m_taggedjettree", "A tree with Tagged-Jet info");
-  m_taggedjettree->Branch("m_tagpartpx", &m_tagpartpx, "m_tagpartpx/D");
-  m_taggedjettree->Branch("m_tagpartpy", &m_tagpartpy, "m_tagpartpy/D");
-  m_taggedjettree->Branch("m_tagpartpz", &m_tagpartpz, "m_tagpartpz/D");
-  m_taggedjettree->Branch("m_tagpartpt", &m_tagpartpt, "m_tagpartpt/D");
-  m_taggedjettree->Branch("m_tagparteta", &m_tagparteta, "m_tagparteta/D");
-  m_taggedjettree->Branch("m_tagpartphi", &m_tagpartphi, "m_tagpartphi/D");
-  m_taggedjettree->Branch("m_tagpartm", &m_tagpartm, "m_tagpartm/D");
-  m_taggedjettree->Branch("m_tagjetpx", &m_tagjetpx, "m_tagjetpx/D");
-  m_taggedjettree->Branch("m_tagjetpy", &m_tagjetpy, "m_tagjetpy/D");
-  m_taggedjettree->Branch("m_tagjetpz", &m_tagjetpz, "m_tagjetpz/D");
-  m_taggedjettree->Branch("m_tagjetpt", &m_tagjetpt, "m_tagjetpt/D");
-  m_taggedjettree->Branch("m_tagjeteta", &m_tagjeteta, "m_tagjeteta/D");
-  m_taggedjettree->Branch("m_tagjetphi", &m_tagjetphi, "m_tagjetphi/D");
+  m_taggedjettree->Branch("m_reco_tag_px", &m_reco_tag_px, "m_reco_tag_px/F");
+  m_taggedjettree->Branch("m_reco_tag_py", &m_reco_tag_py, "m_reco_tag_py/F");
+  m_taggedjettree->Branch("m_reco_tag_pz", &m_reco_tag_pz, "m_reco_tag_pz/F");
+  m_taggedjettree->Branch("m_reco_tag_pt", &m_reco_tag_pt, "m_reco_tag_pt/F");
+  m_taggedjettree->Branch("m_reco_tag_eta", &m_reco_tag_eta, "m_reco_tag_eta/F");
+  m_taggedjettree->Branch("m_reco_tag_phi", &m_reco_tag_phi, "m_reco_tag_phi/F");
+  m_taggedjettree->Branch("m_reco_tag_m", &m_reco_tag_m, "m_reco_tag_m/F");
+  m_taggedjettree->Branch("m_reco_tag_e", &m_reco_tag_e, "m_reco_tag_e/F");
+  m_taggedjettree->Branch("m_reco_jet_px", &m_reco_jet_px, "m_reco_jet_px/F");
+  m_taggedjettree->Branch("m_reco_jet_py", &m_reco_jet_py, "m_reco_jet_py/F");
+  m_taggedjettree->Branch("m_reco_jet_pz", &m_reco_jet_pz, "m_reco_jet_pz/F");
+  m_taggedjettree->Branch("m_reco_jet_pt", &m_reco_jet_pt, "m_reco_jet_pt/F");
+  m_taggedjettree->Branch("m_reco_jet_eta", &m_reco_jet_eta, "m_reco_jet_eta/F");
+  m_taggedjettree->Branch("m_reco_jet_phi", &m_reco_jet_phi, "m_reco_jet_phi/F");
+  m_taggedjettree->Branch("m_reco_jet_m", &m_reco_jet_m, "m_reco_jet_m/F");
+  m_taggedjettree->Branch("m_reco_jet_e", &m_reco_jet_e, "m_reco_jet_e/F");
 
-  m_taggedjettree->Branch("m_truth_tagpartpx", &m_truth_tagpartpx, "m_truth_tagpartpx/D");
-  m_taggedjettree->Branch("m_truth_tagpartpy", &m_truth_tagpartpy, "m_truth_tagpartpy/D");
-  m_taggedjettree->Branch("m_truth_tagpartpz", &m_truth_tagpartpz, "m_truth_tagpartpz/D");
-  m_taggedjettree->Branch("m_truth_tagpartpt", &m_truth_tagpartpt, "m_truth_tagpartpt/D");
-  m_taggedjettree->Branch("m_truth_tagparteta", &m_truth_tagparteta, "m_truth_tagparteta/D");
-  m_taggedjettree->Branch("m_truth_tagpartphi", &m_truth_tagpartphi, "m_truth_tagpartphi/D");
-  m_taggedjettree->Branch("m_truth_tagjetpx", &m_truth_tagjetpx, "m_truth_tagjetpx/D");
-  m_taggedjettree->Branch("m_truth_tagjetpy", &m_truth_tagjetpy, "m_truth_tagjetpy/D");
-  m_taggedjettree->Branch("m_truth_tagjetpz", &m_truth_tagjetpz, "m_truth_tagjetpz/D");
-  m_taggedjettree->Branch("m_truth_tagjetpt", &m_truth_tagjetpt, "m_truth_tagjetpt/D");
-  m_taggedjettree->Branch("m_truth_tagjeteta", &m_truth_tagjeteta, "m_truth_tagjeteta/D");
-  m_taggedjettree->Branch("m_truth_tagjetphi", &m_truth_tagjetphi, "m_truth_tagjetphi/D");
+  m_taggedjettree->Branch("m_truth_tag_px", &m_truth_tag_px, "m_truth_tag_px/F");
+  m_taggedjettree->Branch("m_truth_tag_py", &m_truth_tag_py, "m_truth_tag_py/F");
+  m_taggedjettree->Branch("m_truth_tag_pz", &m_truth_tag_pz, "m_truth_tag_pz/F");
+  m_taggedjettree->Branch("m_truth_tag_pt", &m_truth_tag_pt, "m_truth_tag_pt/F");
+  m_taggedjettree->Branch("m_truth_tag_eta", &m_truth_tag_eta, "m_truth_tag_eta/F");
+  m_taggedjettree->Branch("m_truth_tag_phi", &m_truth_tag_phi, "m_truth_tag_phi/F");
+  m_taggedjettree->Branch("m_truth_tag_m", &m_truth_tag_m, "m_truth_tag_m/F");
+  m_taggedjettree->Branch("m_truth_tag_e", &m_truth_tag_e, "m_truth_tag_e/F");
+  m_taggedjettree->Branch("m_truth_jet_px", &m_truth_jet_px, "m_truth_jet_px/F");
+  m_taggedjettree->Branch("m_truth_jet_py", &m_truth_jet_py, "m_truth_jet_py/F");
+  m_taggedjettree->Branch("m_truth_jet_pz", &m_truth_jet_pz, "m_truth_jet_pz/F");
+  m_taggedjettree->Branch("m_truth_jet_pt", &m_truth_jet_pt, "m_truth_jet_pt/F");
+  m_taggedjettree->Branch("m_truth_jet_eta", &m_truth_jet_eta, "m_truth_jet_eta/F");
+  m_taggedjettree->Branch("m_truth_jet_phi", &m_truth_jet_phi, "m_truth_jet_phi/F");
+  m_taggedjettree->Branch("m_truth_jet_m", &m_truth_jet_m, "m_truth_jet_m/F");
+  m_taggedjettree->Branch("m_truth_jet_e", &m_truth_jet_e, "m_truth_jet_e/F");
 
 }
 void BuildResonanceJetTaggingTree::initializeVariables()
@@ -518,32 +546,40 @@ void BuildResonanceJetTaggingTree::initializeVariables()
 
 void BuildResonanceJetTaggingTree::resetTreeVariables()
 {
-  m_tagpartpx = NAN;
-  m_tagpartpy = NAN;
-  m_tagpartpz = NAN;
-  m_tagpartpt = NAN;
-  m_tagparteta = NAN;
-  m_tagpartphi = NAN;
-  m_tagpartm = NAN;
-  m_tagjetpx = NAN;
-  m_tagjetpy = NAN;
-  m_tagjetpz = NAN;
-  m_tagjetpt = NAN;
-  m_tagjeteta = NAN;
-  m_tagjetphi = NAN;
+  // Tagged-Jet reconstructed variables
+  m_reco_tag_px = NAN;
+  m_reco_tag_py = NAN;
+  m_reco_tag_pz = NAN;
+  m_reco_tag_pt = NAN;
+  m_reco_tag_eta = NAN;
+  m_reco_tag_phi = NAN;
+  m_reco_tag_m = NAN;
+  m_reco_tag_e = NAN;
+  m_reco_jet_px = NAN;
+  m_reco_jet_py = NAN;
+  m_reco_jet_pz = NAN;
+  m_reco_jet_pt = NAN;
+  m_reco_jet_eta = NAN;
+  m_reco_jet_phi = NAN;
+  m_reco_jet_m = NAN;
+  m_reco_jet_e = NAN;
   //Truth info
-  m_truth_tagpartpx = NAN;
-  m_truth_tagpartpy = NAN;
-  m_truth_tagpartpz = NAN;
-  m_truth_tagpartpt = NAN;
-  m_truth_tagparteta = NAN;
-  m_truth_tagpartphi = NAN;
-  m_truth_tagjetpx = NAN;
-  m_truth_tagjetpy = NAN;
-  m_truth_tagjetpz = NAN;
-  m_truth_tagjetpt = NAN;
-  m_truth_tagjeteta = NAN;
-  m_truth_tagjetphi = NAN;
+  m_truth_tag_px = NAN;
+  m_truth_tag_py = NAN;
+  m_truth_tag_pz = NAN;
+  m_truth_tag_pt = NAN;
+  m_truth_tag_eta = NAN;
+  m_truth_tag_phi = NAN;
+  m_truth_tag_m = NAN;
+  m_truth_tag_e = NAN;
+  m_truth_jet_px = NAN;
+  m_truth_jet_py = NAN;
+  m_truth_jet_pz = NAN;
+  m_truth_jet_pt = NAN;
+  m_truth_jet_eta = NAN;
+  m_truth_jet_phi = NAN;
+  m_truth_jet_m = NAN;
+  m_truth_jet_e = NAN;
 }
 
 JetMapv1* BuildResonanceJetTaggingTree::getJetMapFromNode(PHCompositeNode *topNode, const std::string &name)
