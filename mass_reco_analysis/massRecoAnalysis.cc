@@ -60,20 +60,24 @@ int massRecoAnalysis::process_event(PHCompositeNode * /**topNode*/)
 
           if(tr1->get_charge() == tr2->get_charge()) continue;
 	  
-	  // declare these variables to pass into findPCAtwoTracks by reference
+	  // declare these variables to pass into findPCAtwoTracks and fillHistogram by reference
           double pair_dca;
           Acts::Vector3 pca_rel1;
           Acts::Vector3 pca_rel2;
 	  double invariantMass;
 	  double invariantPt;
+	  float rapidity;
+	  float pseudorapidity;
+
+	  //add pseudorapidity and magnitude of path length
 
 	  findPcaTwoTracks(tr1, tr2, pca_rel1, pca_rel2, pair_dca);
 
 	  // tracks with small relative pca are k short candidates
           if(abs(pair_dca) < pair_dca_cut)
 	    {
-	      fillHistogram(tr1,tr2,recomass,invariantMass,invariantPt);
-	      fillNtp(tr1,tr2,dcaVals1,dcaVals2,pca_rel1,pca_rel2,pair_dca,invariantMass,invariantPt);
+	      fillHistogram(tr1,tr2,recomass,invariantMass,invariantPt,rapidity,pseudorapidity);
+	      fillNtp(tr1,tr2,dcaVals1,dcaVals2,pca_rel1,pca_rel2,pair_dca,invariantMass,invariantPt,rapidity,pseudorapidity);
 
 	       if(Verbosity() > 2 )
 	       	{
@@ -91,9 +95,10 @@ int massRecoAnalysis::process_event(PHCompositeNode * /**topNode*/)
   return 0;
 }
 
-void massRecoAnalysis::fillNtp(SvtxTrack *track1, SvtxTrack *track2, Acts::Vector3 dcavals1, Acts::Vector3 dcavals2,
-			       Acts::Vector3 pca_rel1, Acts::Vector3 pca_rel2, double pair_dca, double invariantMass, double invariantPt)
+void massRecoAnalysis::fillNtp(SvtxTrack *track1, SvtxTrack *track2, Acts::Vector3 dcavals1, Acts::Vector3 dcavals2, Acts::Vector3 pca_rel1, 
+			       Acts::Vector3 pca_rel2, double pair_dca, double invariantMass, double invariantPt, float rapidity, float pseudorapidity)
 {
+  
   double px1          = track1->get_px();
   double py1          = track1->get_py();
   double pz1          = track1->get_pz();
@@ -110,14 +115,21 @@ void massRecoAnalysis::fillNtp(SvtxTrack *track1, SvtxTrack *track2, Acts::Vecto
 
   auto vtxid      = track1->get_vertex_id();
   auto svtxVertex = m_vertexMap->get(vtxid);
+
+  Acts::Vector3 vertex (svtxVertex->get_x(),svtxVertex->get_y(), svtxVertex->get_z());
+
+  Acts::Vector3 pathLength = (pca_rel1 + pca_rel2)*0.5 - vertex;
+
+  float mag_pathLength =  sqrt(pow(pathLength(0),2)+ pow(pathLength(1),2)+pow(pathLength(2),2));
+
   if(!svtxVertex){ return; }
   
-  float reco_info[] = {track1->get_x(), track1->get_y(), track1->get_z(), track1->get_px(), track1->get_py(), track1->get_pz(), (float) dcavals1(0), (float) dcavals1(1), (float) dcavals1(2), (float) pca_rel1(0), (float) pca_rel1(1), (float) pca_rel1(2), (float) eta1,  (float) track1->get_charge(), (float) tpcClusters1, track2->get_x(), track2->get_y(), track2->get_z(),  track2->get_px(), track2->get_py(), track2->get_pz(), (float) dcavals2(0), (float) dcavals2(1), (float) dcavals2(2), (float) pca_rel2(0), (float) pca_rel2(1), (float) pca_rel2(2), (float) eta2, (float) track2->get_charge(), (float) tpcClusters2, svtxVertex->get_x(), svtxVertex->get_y(), svtxVertex->get_z(), (float) pair_dca,(float) invariantMass, (float) invariantPt};
+  float reco_info[] = {track1->get_x(), track1->get_y(), track1->get_z(), track1->get_px(), track1->get_py(), track1->get_pz(), (float) dcavals1(0), (float) dcavals1(1), (float) dcavals1(2), (float) pca_rel1(0), (float) pca_rel1(1), (float) pca_rel1(2), (float) eta1,  (float) track1->get_charge(), (float) tpcClusters1, track2->get_x(), track2->get_y(), track2->get_z(),  track2->get_px(), track2->get_py(), track2->get_pz(), (float) dcavals2(0), (float) dcavals2(1), (float) dcavals2(2), (float) pca_rel2(0), (float) pca_rel2(1), (float) pca_rel2(2), (float) eta2, (float) track2->get_charge(), (float) tpcClusters2, svtxVertex->get_x(), svtxVertex->get_y(), svtxVertex->get_z(), (float) pair_dca,(float) invariantMass, (float) invariantPt, (float) pathLength(0),(float) pathLength(1), (float) pathLength(2), mag_pathLength, rapidity, pseudorapidity};
 
   ntp_reco_info->Fill(reco_info);
 }
 
-void massRecoAnalysis::fillHistogram(SvtxTrack *track1, SvtxTrack *track2, TH1D *massreco, double& invariantMass, double& invariantPt)
+void massRecoAnalysis::fillHistogram(SvtxTrack *track1, SvtxTrack *track2, TH1D *massreco, double& invariantMass, double& invariantPt, float& rapidity, float& pseudorapidity)
 {
   double E1 = sqrt(pow(track1->get_px(),2) + pow(track1->get_py(),2) + pow(track1->get_pz(),2) + pow(decaymass,2));
   double E2 = sqrt(pow(track2->get_px(),2) + pow(track2->get_py(),2) + pow(track2->get_pz(),2) + pow(decaymass,2));
@@ -127,6 +139,9 @@ void massRecoAnalysis::fillHistogram(SvtxTrack *track1, SvtxTrack *track2, TH1D 
 
   TLorentzVector tsum;
   tsum = v1 + v2;
+
+  rapidity = tsum.Rapidity();
+  pseudorapidity = tsum.Eta();
   invariantMass = tsum.M();
   invariantPt   = tsum.Pt();
 
@@ -144,6 +159,130 @@ void massRecoAnalysis::fillHistogram(SvtxTrack *track1, SvtxTrack *track2, TH1D 
       massreco->Fill(invariantMass);
     }
 }
+
+
+
+bool massRecoAnalysis::projectTrackToCylinder(SvtxTrack* track, double Radius, Eigen::Vector3d& pos, Eigen::Vector3d& mom)
+{
+  // Make a cylinder surface at the radius and project the track to that
+  bool ret = true;
+
+  const double eta = 2.0;
+  const double theta = 2. * atan(exp(-eta));
+  const double halfZ = Radius / tan(theta) * Acts::UnitConstants::cm;
+  Radius *= Acts::UnitConstants::cm;  
+
+  /// Make a cylindrical surface at (0,0,0) aligned along the z axis
+  auto transform = Acts::Transform3::Identity();
+  
+  std::shared_ptr<Acts::CylinderSurface> cylSurf =
+    Acts::Surface::makeShared<Acts::CylinderSurface>(transform,
+						     Radius,
+						     halfZ);
+  
+  const auto params = makeTrackParams(track);
+  
+  auto result = propagateTrack(params, cylSurf);  
+  if(result.ok())
+    {
+      auto projectionPos = result.value().position(_tGeometry->geometry().getGeoContext());
+      const auto momentum = result.value().momentum();
+      pos(0) = projectionPos.x() / Acts::UnitConstants::cm;
+      pos(1) = projectionPos.y() / Acts::UnitConstants::cm;
+      pos(2) = projectionPos.z() / Acts::UnitConstants::cm;
+      
+      mom(0) = momentum.x();
+      mom(1) = momentum.y();
+      mom(2) = momentum.z();	      
+    }
+  else
+    ret = false;
+
+  return ret;
+}
+
+
+BoundTrackParamResult massRecoAnalysis::propagateTrack(
+    const Acts::BoundTrackParameters& params,
+    const SurfacePtr& targetSurf)
+{
+  if (Verbosity() > 1)
+  {
+    std::cout << "Propagating final track fit with momentum: "
+              << params.momentum() << " and position "
+              << params.position(_tGeometry->geometry().getGeoContext())
+              << std::endl
+              << "track fit phi/eta "
+              << atan2(params.momentum()(1),
+                       params.momentum()(0))
+              << " and "
+              << atanh(params.momentum()(2) / params.momentum().norm())
+              << std::endl;
+  }
+
+  using Stepper = Acts::EigenStepper<>;
+  using Propagator = Acts::Propagator<Stepper>;
+
+  auto field = _tGeometry->geometry().magField;
+
+  Stepper stepper(field);
+  Propagator propagator(stepper);
+
+  Acts::Logging::Level logLevel = Acts::Logging::INFO;
+  if (Verbosity() > 3)
+  {
+    logLevel = Acts::Logging::VERBOSE;
+  }
+
+  auto logger = Acts::getDefaultLogger("PHActsTrackProjection",
+                                       logLevel);
+
+  Acts::PropagatorOptions<> options(_tGeometry->geometry().getGeoContext(),
+                                    _tGeometry->geometry().magFieldContext,
+                                    Acts::LoggerWrapper{*logger});
+
+  auto result = propagator.propagate(params, *targetSurf,
+                                     options);
+  if(result.ok())
+    {
+      return Acts::Result<BoundTrackParam>::success(std::move((*result).endParameters.value()));
+    }
+
+  return result.error();
+  
+}
+
+
+Acts::BoundTrackParameters massRecoAnalysis::makeTrackParams(SvtxTrack* track)
+{
+  Acts::Vector3 momentum(track->get_px(),
+                         track->get_py(),
+                         track->get_pz());
+
+  auto actsVertex = getVertex(track);
+  auto perigee =
+      Acts::Surface::makeShared<Acts::PerigeeSurface>(actsVertex);
+  auto actsFourPos =
+      Acts::Vector4(track->get_x() * Acts::UnitConstants::cm,
+                    track->get_y() * Acts::UnitConstants::cm,
+                    track->get_z() * Acts::UnitConstants::cm,
+                    10 * Acts::UnitConstants::ns);
+
+  ActsTransformations transformer;
+
+  Acts::BoundSymMatrix cov = transformer.rotateSvtxTrackCovToActs(track);
+
+  return ActsExamples::TrackParameters::create(perigee, _tGeometry->geometry().getGeoContext(),
+                                               actsFourPos, momentum,
+                                               track->get_charge() / track->get_p(),
+                                               cov).value();
+}
+
+
+
+
+
+
 
 void massRecoAnalysis::findPcaTwoTracks(SvtxTrack *track1, SvtxTrack *track2, Acts::Vector3& pca1, Acts::Vector3& pca2, double& dca)
 {
@@ -261,7 +400,7 @@ int massRecoAnalysis::InitRun(PHCompositeNode *topNode)
   char fileName[500];
   sprintf(fileName, "eval_output/ntp_mass_out_%i.root",process);
   fout = new TFile(fileName,"recreate");
-  ntp_reco_info = new TNtuple("ntp_reco_info","decay_pairs","x1:y1:z1:px1:py1:pz1:dca3dxy1:dca3dz1:phi1:pca_relx_1:pca_rely_1:pca_relz_1:eta1:charge1:tpcClusters_1:x2:y2:z2:px2:py2:pz2:dca3dxy2:dca3dz2:phi2:pca_relx_2:pca_rely_2:pca_relz_2:eta2:charge2:tpcClusters_2:vertex_x:vertex_y:vertex_z:pair_dca:invariant_mass:invariant_pt");
+  ntp_reco_info = new TNtuple("ntp_reco_info","decay_pairs","x1:y1:z1:px1:py1:pz1:dca3dxy1:dca3dz1:phi1:pca_relx_1:pca_rely_1:pca_relz_1:eta1:charge1:tpcClusters_1:x2:y2:z2:px2:py2:pz2:dca3dxy2:dca3dz2:phi2:pca_relx_2:pca_rely_2:pca_relz_2:eta2:charge2:tpcClusters_2:vertex_x:vertex_y:vertex_z:pair_dca:invariant_mass:invariant_pt:pathlength_x:pathlength_y:pathlength_z:pathlength:rapidity:pseudorapidity");
   getNodes(topNode);
   
   char name[500];

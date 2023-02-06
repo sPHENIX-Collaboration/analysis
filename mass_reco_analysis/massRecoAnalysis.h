@@ -38,11 +38,17 @@ class massRecoAnalysis : public SubsysReco
  private:  
 
   void fillNtp(SvtxTrack *track1, SvtxTrack *track2, Acts::Vector3 dcavals1, Acts::Vector3 dcavals2, 
-	       Acts::Vector3 pca_rel1, Acts::Vector3 pca_rel2, double pair_dca, double invariantMass, double invariantPt);
-  void fillHistogram(SvtxTrack *track1, SvtxTrack *track2, TH1D *massreco, double& invariantMass, double& invariantPt);
+	       Acts::Vector3 pca_rel1, Acts::Vector3 pca_rel2, double pair_dca, double invariantMass, double invariantPt, float rapidity, float pseudorapidity);
+  void fillHistogram(SvtxTrack *track1, SvtxTrack *track2, TH1D *massreco, double& invariantMass, double& invariantPt, float& rapidity, float& pseudorapidity);
   void findPcaTwoTracks(SvtxTrack *track1, SvtxTrack *track2, Acts::Vector3& pca1, Acts::Vector3& pca2, double& dca);
   int getNodes(PHCompositeNode *topNode);
   Acts::Vector3 calculateDca(SvtxTrack *track, Acts::Vector3 momentum, Acts::Vector3 position);
+
+  bool massRecoAnalysis::projectTrackToCylinder(SvtxTrack* track, double Radius, Eigen::Vector3d& pos, Eigen::Vector3d& mom);
+  BoundTrackParamResult massRecoAnalysis::propagateTrack(const Acts::BoundTrackParameters& params, const SurfacePtr& targetSurf);
+  Acts::BoundTrackParameters massRecoAnalysis::makeTrackParams(SvtxTrack* track);
+
+
 
   TNtuple *ntp_reco_info;
   SvtxTrackMap *m_svtxTrackMap = nullptr; 
