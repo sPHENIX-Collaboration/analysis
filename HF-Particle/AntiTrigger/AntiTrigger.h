@@ -4,15 +4,20 @@
 //sPHENIX stuff
 #include <fun4all/Fun4AllReturnCodes.h>
 #include <fun4all/SubsysReco.h>
-#include <kfparticle_sphenix/KFParticle_particleList.h> 
 #include <phhepmc/PHHepMCGenEvent.h>
 #include <phhepmc/PHHepMCGenEventMap.h>
 #include <phool/getClass.h>
 
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #include <HepMC/GenEvent.h>
 #include <HepMC/GenParticle.h>
 #include <HepMC/IteratorRange.h> 
 #include <HepMC/SimpleVector.h>
+#pragma GCC diagnostic pop
+
+#include <TDatabasePDG.h>
 
 #include <algorithm>
 #include <iostream>
