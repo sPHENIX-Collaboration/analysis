@@ -1,0 +1,30 @@
+# 'RunTrackCutStudyWithPileupG4.job'
+# Derek Anderson
+# 12.03.2022
+#
+# Job file to run F4A macro for
+# track cut study (with pileup)
+# via Condor.
+
+# generic parameters
+Universe     = vanilla
+notification = Never
+
+# executable parameters
+Executable           = RunSingleTrackCutStudyWithPileupG4.sh
+Arguments            = $(nEvt) $(inFiles) $(embFiles) $(outFiles)
+PeriodicHold         = ((NumJobStarts >= 1) && (JobStatus == 1))
+Initialdir           = ./
+request_memory       = 4096MB
+transfer_input_files = DisplayOn.C,G4Setup_sPHENIX.C
+
+
+# output parameters
+Output = trackCutStudy_withPileup_danderson_$(process).out
+Error  = trackCutStudy_withPileup_danderson_$(process).err
+Log    = /tmp/condor_test_danderson_03dec2022.log
+
+# queue jobs
+Queue nEvt, inFiles, embFiles, outFiles from withPileup000to099.list
+
+# end -------------------------------------------------------------------------
