@@ -1,9 +1,9 @@
-// 'Fun4All_ForCorrelatorJetTree.C'
+// 'Fun4All_RunCorrelatorJetTreeOnCondor.C'
 // Derek Anderson
-// 12.11.2022
+// 01.06.2023
 //
 // Use this to run the SCorrelatorJetTree
-// class.
+// class via Condor.
 //
 // Derived from code by Cameron Dean and
 // Antonio Silva (thanks!!)
@@ -16,6 +16,7 @@
 
 // standard c includes
 #include <string>
+#include <cstdlib>
 // f4a/sphenix includes
 #include <QA.C>
 #include <FROG.h>
@@ -41,21 +42,18 @@ R__LOAD_LIBRARY(/sphenix/u/danderson/install/lib/libscorrelatorjettree.so)
 using namespace std;
 
 // global constants
-static const string       SInHitsDefault = "/sphenix/lustre01/sphnxpro/mdc2/pythia8_pp_mb/g4hits/G4Hits_pythia8_pp_mb-0000000050-03954.root";
-static const string       SInTrksDefault = "/sphenix/lustre01/sphnxpro/mdc2/pythia8_pp_mb/tracks/DST_TRACKS_pythia8_pp_mb_3MHz-0000000050-03954.root";
-static const string       SInSeedDefault = "/sphenix/lustre01/sphnxpro/mdc2/pythia8_pp_mb/trackseeds/DST_TRACKSEEDS_pythia8_pp_mb_3MHz-0000000050-03954.root";
-static const string       SInCaloDefault = "/sphenix/lustre01/sphnxpro/mdc2/pythia8_pp_mb/calocluster/DST_CALO_CLUSTER_pythia8_pp_mb_3MHz-0000000050-03954.root";
-static const string       SInTrueDefault = "/sphenix/lustre01/sphnxpro/mdc2/pythia8_pp_mb/trkrhit/DST_TRUTH_pythia8_pp_mb_3MHz-0000000050-03954.root";
-static const string       SOutDefault    = "oops.root";
-static const int          NEvtDefault    = 10;
-static const int          VerbDefault    = 2;
-static const unsigned int NTopoClusts    = 2;
-static const unsigned int NTopoPar       = 3;
-static const unsigned int NAccept        = 2;
+static const string       SInListDefault   = "test.list";
+static const string       SOutDirDefault   = "/sphenix/user/danderson/eec/output/condor/";
+static const string       SRecoNameDefault = "CorrelatorJetTree";
+static const int          NEvtDefault      = 10;
+static const int          VerbDefault      = 0;
+static const unsigned int NTopoClusts      = 2;
+static const unsigned int NTopoPar         = 3;
+static const unsigned int NAccept          = 2;
 
 
 
-void Fun4All_ForCorrelatorJetTree(const string sInHits = SInHitsDefault, const string sInTrks = SInTrksDefault, const string sInSeed = SInSeedDefault, const string sInCalo = SInCaloDefault, const string sInTrue = SInTrueDefault, const string sOutput = SOutDefault, const int nEvents = NEvtDefault, const int verbosity = VerbDefault) {
+void Fun4All_RunCorrelatorJetTreeOnCondor(vector<string> sInputLists = {SInListDefault}, const int nEvents = NEvtDefault, const int verbosity = VerbDefault) {
 
   // track & particle flow parameters
   const bool   runTracking(false);
@@ -72,8 +70,8 @@ void Fun4All_ForCorrelatorJetTree(const string sInHits = SInHitsDefault, const s
   const bool   allowCorners(true);
 
   // jet tree parameters
-  const bool   isMC(false);
-  const bool   doDebug(false);
+  const bool   isMC(true);
+  const bool   doDebug(true);
   const bool   saveDst(true);
   const bool   addTracks(false);
   const bool   addEMClusters(false);
@@ -98,24 +96,41 @@ void Fun4All_ForCorrelatorJetTree(const string sInHits = SInHitsDefault, const s
 
   FROG          *fr = new FROG();
   Fun4AllServer *se = Fun4AllServer::instance();
-  se -> Verbosity(verbosity);
 
-  // add input files
-  Fun4AllInputManager *inHitsMan = new Fun4AllDstInputManager("InputDstManager_G4Hits");
-  Fun4AllInputManager *inTrksMan = new Fun4AllDstInputManager("InputDstManager_Tracks");
-  Fun4AllInputManager *inSeedMan = new Fun4AllDstInputManager("InputDstManager_TrackSeeds");
-  Fun4AllInputManager *inCaloMan = new Fun4AllDstInputManager("InputDstManager_CaloClusts");
-  Fun4AllInputManager *inTrueMan = new Fun4AllDstInputManager("InputDstManager_TruthRecord");
-  inHitsMan -> AddFile(sInHits);
-  inTrksMan -> AddFile(sInTrks);
-  inSeedMan -> AddFile(sInSeed);
-  inCaloMan -> AddFile(sInCalo);
-  inTrueMan -> AddFile(sInTrue);
-  se        -> registerInputManager(inHitsMan);
-  se        -> registerInputManager(inTrksMan);
-  se        -> registerInputManager(inSeedMan);
-  se        -> registerInputManager(inCaloMan);
-  se        -> registerInputManager(inTrueMan);
+  // figure out folder revisions, file numbers, etc
+  string outDir   = SOutDirDefault;
+  string recoName = SRecoNameDefault;
+  if (outDir.substr(outDir.size() - 1, 1) != "/") {
+    outDir += "/";
+  }
+  outDir += recoName + "/";
+
+  string fileNumber   = sInputLists[0];
+  size_t findLastDash = fileNumber.find_last_of("-");
+  if (findLastDash != string::npos) {
+    fileNumber.erase(0, findLastDash + 1);
+  }
+  string remove_this = ".list";
+
+  size_t pos = fileNumber.find(remove_this);
+  if (pos != string::npos) {
+    fileNumber.erase(pos, remove_this.length());
+  }
+
+  // create output name
+  string outputFileName = "outputData_" + recoName + "_" + fileNumber + ".root";
+  string outputRecoDir  = outDir + "/inReconstruction/";
+  string makeDirectory  = "mkdir -p " + outputRecoDir;
+
+  system(makeDirectory.c_str());
+  string outputRecoFile = outputRecoDir + outputFileName;
+
+  // add all inputs to input managers
+  for (unsigned int iMan = 0; iMan < sInputLists.size(); ++iMan) {
+    Fun4AllInputManager *inFileMan = new Fun4AllDstInputManager("DSTin_" + to_string(iMan));
+    inFileMan -> AddListFile(sInputLists[iMan]);
+    se        -> registerInputManager(inFileMan);
+  }
 
   // run the tracking if not already done
   if (runTracking) {
@@ -148,7 +163,9 @@ void Fun4All_ForCorrelatorJetTree(const string sInHits = SInHitsDefault, const s
   // construct track/truth table
   SvtxTruthRecoTableEval *tables = new SvtxTruthRecoTableEval();
   tables -> Verbosity(verbosity);
-  se     -> registerSubsystem(tables);
+  if (runTracking) {
+    se -> registerSubsystem(tables);
+  }
 
   // build topo clusters
   RawClusterBuilderTopo* ClusterBuilder1 = new RawClusterBuilderTopo("EcalRawClusterBuilderTopo");
@@ -184,7 +201,7 @@ void Fun4All_ForCorrelatorJetTree(const string sInHits = SInHitsDefault, const s
   se  -> registerSubsystem(pfr);
 
   // create correlator jet tree
-  SCorrelatorJetTree *correlatorJetTree = new SCorrelatorJetTree("SCorrelatorJetTree", sOutput, isMC, doDebug);
+  SCorrelatorJetTree *correlatorJetTree = new SCorrelatorJetTree("SCorrelatorJetTree", outputRecoFile, isMC, doDebug);
   correlatorJetTree -> Verbosity(verbosity);
   correlatorJetTree -> setAddTracks(addTracks);
   correlatorJetTree -> setAddEMCalClusters(addEMClusters);
@@ -200,6 +217,18 @@ void Fun4All_ForCorrelatorJetTree(const string sInHits = SInHitsDefault, const s
   correlatorJetTree -> setJetParameters(jetRes, jetAlgo, jetReco);
   correlatorJetTree -> setSaveDST(saveDst);
   se                -> registerSubsystem(correlatorJetTree);
+
+  // move output and clean up logs
+  ifstream file(outputRecoFile.c_str());
+  if (file.good()) {
+    string moveOutput = "mv " + outputRecoFile + " " + outDir;
+    system(moveOutput.c_str());
+  } else {
+    string rmOutput = "rm " + outDir + "CorrelatorJetTree_" + fileNumber + ".root";
+    string rmLog    = "rm /sphenix/user/danderson/eec/submit/logs/" + fileNumber + ".*";
+    system(rmOutput.c_str());
+    system(rmLog.c_str());
+  }
 
   // run reconstruction & close f4a
   se -> run(nEvents);

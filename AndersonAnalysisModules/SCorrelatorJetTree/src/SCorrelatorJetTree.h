@@ -1,4 +1,4 @@
-// 'SCorrelatorJetTree.cc'
+// 'SCorrelatorJetTree.h'
 // Derek Anderson
 // 12.04.2022
 //
@@ -15,32 +15,73 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 
-// f4a include
-#include <fun4all/SubsysReco.h>
-// phool includes
-#include <calobase/RawCluster.h>
-#include <calobase/RawClusterContainer.h>
-#include <calobase/RawClusterUtility.h>
-#include <calobase/RawTower.h>
-#include <calobase/RawTowerContainer.h>
-#include <calobase/RawTowerGeom.h>
-#include <calobase/RawTowerGeomContainer.h>
-#include <calotrigger/CaloTriggerInfo.h>
-// fastjet includes
-#include <fastjet/ClusterSequence.hh>
-#include <fastjet/FunctionOfPseudoJet.hh>
-#include <fastjet/JetDefinition.hh>
-#include <fastjet/PseudoJet.hh>
-// misc includes
-#include <HepMC/GenEvent.h>
-#include <HepMC/GenParticle.h>
-#include <g4jets/Jetv1.h>
-#include <g4jets/JetMapv1.h>
 // standard c include
 #include <string>
 #include <vector>
+#include <cassert>
+#include <sstream>
+// f4a include
+#include <fun4all/SubsysReco.h>
+#include <fun4all/Fun4AllReturnCodes.h>
+#include <fun4all/Fun4AllHistoManager.h>
+// phool includes
+#include <phool/phool.h>
+#include <phool/getClass.h>
+#include <phool/PHIODataNode.h>
+#include <phool/PHNodeIterator.h>
+#include <phool/PHCompositeNode.h>
+// g4 includes
+#include <g4main/PHG4Hit.h>
+#include <g4main/PHG4Particle.h>
+#include <g4main/PHG4TruthInfoContainer.h>
+#include <g4jets/Jet.h>
+#include <g4jets/Jetv1.h>
+#include <g4jets/JetMap.h>
+#include <g4jets/JetMapv1.h>
+#include <g4jets/FastJetAlgo.h>
+#include <g4vertex/GlobalVertex.h>
+#include <g4vertex/GlobalVertexMap.h>
+// tracking includes
+#include <trackbase_historic/SvtxTrack.h>
+#include <trackbase_historic/SvtxVertex.h>
+#include <trackbase_historic/SvtxTrackMap.h>
+#include <trackbase_historic/SvtxVertexMap.h>
+// calo includes
+#include <calobase/RawCluster.h>
+#include <calobase/RawClusterUtility.h>
+#include <calobase/RawClusterContainer.h>
+#include <calobase/RawTower.h>
+#include <calobase/RawTowerGeom.h>
+#include <calobase/RawTowerContainer.h>
+#include <calobase/RawTowerGeomContainer.h>
+#include <calotrigger/CaloTriggerInfo.h>
+// particle flow includes
+#include <particleflowreco/ParticleFlowElement.h>
+#include <particleflowreco/ParticleFlowElementContainer.h>
+// fastjet includes
+#include <fastjet/PseudoJet.hh>
+#include <fastjet/JetDefinition.hh>
+#include <fastjet/ClusterSequence.hh>
+#include <fastjet/FunctionOfPseudoJet.hh>
+// hepmc includes
+#include <HepMC/GenEvent.h>
+#include <HepMC/GenVertex.h>
+#include <HepMC/GenParticle.h>
+#include <phhepmc/PHHepMCGenEvent.h>
+#include <phhepmc/PHHepMCGenEventMap.h>
+// root includes
+#include <TH1.h>
+#include <TFile.h>
+#include <TTree.h>
+#include <TMath.h>
+#include <TNtuple.h>
+#include <TDirectory.h>
 
 #pragma GCC diagnostic pop
+
+using namespace std;
+using namespace fastjet;
+using namespace findNode;
 
 // forward declarations
 class TH1;
@@ -62,8 +103,16 @@ class SvtxTrack;
 class ParticleFlowElement;
 
 // global constants
-static const unsigned long NPart(2);
-static const unsigned long NComp(3);
+static const size_t NPart(2);
+static const size_t NComp(3);
+static const size_t NRange(2);
+static const size_t NMoment(2);
+static const size_t NInfoQA(4);
+static const size_t NJetType(2);
+static const size_t NCstType(4);
+static const size_t NObjType(9);
+static const size_t NDirectory(NObjType - 3);
+static const double MassPion(0.140);
 
 
 
@@ -83,6 +132,29 @@ class SCorrelatorJetTree : public SubsysReco {
       PT2_SCHEME = 2,
       ET_SCHEME  = 3,
       ET2_SCHEME = 4
+    };
+    enum OBJECT {
+      TRACK  = 0,
+      ECLUST = 1,
+      HCLUST = 2,
+      FLOW   = 3,
+      PART   = 4,
+      TJET   = 5,
+      RJET   = 6,
+      TCST   = 7,
+      RCST   = 8
+    };
+    enum CST_TYPE {
+      TRACK_CST = 0,
+      CALO_CST  = 1,
+      FLOW_CST  = 2,
+      PART_CST  = 3
+    };
+    enum INFO {
+      PT  = 0,
+      ETA = 1,
+      PHI = 2,
+      ENE = 3
     };
 
     // ctor/dtor
@@ -171,13 +243,13 @@ class SCorrelatorJetTree : public SubsysReco {
     fastjet::RecombinationScheme getRecombScheme() {return m_recomb_scheme;}
 
     // i/o setters
-    void setMakeQualityPlots(bool q)        {m_qualy_plots = q;}
+    void setDoQualityPlots(bool q)          {m_doQualityPlots = q;}
     void setJetContainerName(std::string n) {m_jetcontainer_name = n;}
     void setSaveDST(bool s)                 {m_save_dst = s;}
     void setIsMC(bool b)                    {m_ismc = b;}
     void setSaveDSTMC(bool s)               {m_save_truth_dst = s;}
     // i/o getters
-    bool        getMakeQualityPlots() {return m_qualy_plots;}
+    bool        getDoQualityPlots()   {return m_doQualityPlots;}
     std::string getJetContainerName() {return m_jetcontainer_name;}
     bool        getSaveDST()          {return m_save_dst;}
     bool        getIsMC()             {return m_ismc;}
@@ -200,7 +272,9 @@ class SCorrelatorJetTree : public SubsysReco {
     bool isAcceptableParticle(HepMC::GenParticle *part);
     // i/o methods
     void initializeVariables();
+    void initializeHists();
     void initializeTrees();
+    void saveOutput();
     int  createJetNode(PHCompositeNode* topNode);
     void resetTreeVariables();
 
@@ -245,7 +319,7 @@ class SCorrelatorJetTree : public SubsysReco {
     // i/o parameters
     std::string  m_outfilename;
     std::string  m_jetcontainer_name;
-    bool         m_qualy_plots;
+    bool         m_doQualityPlots;
     bool         m_save_dst;
     bool         m_save_truth_dst;
     bool         m_ismc;
@@ -255,6 +329,14 @@ class SCorrelatorJetTree : public SubsysReco {
     TFile *m_outFile;
     TTree *m_recTree;
     TTree *m_truTree;
+
+    // QA histograms
+    TH1D *m_hJetArea[NJetType];
+    TH1D *m_hJetNumCst[NJetType];
+    TH1D *m_hNumObject[NObjType];
+    TH1D *m_hSumCstEne[NCstType];
+    TH1D *m_hObjectQA[NObjType][NInfoQA];
+    TH1D *m_hNumCstAccept[NCstType][NMoment];
 
     // output reco event variables
     unsigned long m_recNumJets           = 0;
@@ -270,6 +352,7 @@ class SCorrelatorJetTree : public SubsysReco {
     std::vector<double>        m_recJetPt;
     std::vector<double>        m_recJetEta;
     std::vector<double>        m_recJetPhi;
+    std::vector<double>        m_recJetArea;
     // output reco constituent variables
     std::vector<std::vector<double>> m_recCstZ;
     std::vector<std::vector<double>> m_recCstDr;
@@ -292,6 +375,7 @@ class SCorrelatorJetTree : public SubsysReco {
     std::vector<double>        m_truJetPt;
     std::vector<double>        m_truJetEta;
     std::vector<double>        m_truJetPhi;
+    std::vector<double>        m_truJetArea;
     // output truth constituent variables
     std::vector<std::vector<double>> m_truCstZ;
     std::vector<std::vector<double>> m_truCstDr;
