@@ -14,13 +14,14 @@
 #include "SEnergyCorrelator.sys.h"
 
 using namespace std;
-using namespace findNode;
+using namespace fastjet;
 
 
 
 // ctor/dtor ------------------------------------------------------------------
 
-SEnergyCorrelator::SEnergyCorrelator(const string &name, const bool isComplex, const bool doDebug) : SubsysReco(name) {
+//SEnergyCorrelator::SEnergyCorrelator(const string &name, const bool isComplex, const bool doDebug) : SubsysReco(name) {
+SEnergyCorrelator::SEnergyCorrelator(const string &name, const bool isComplex, const bool doDebug) {
 
   // initialize internal variables
   InitializeMembers();
@@ -35,15 +36,15 @@ SEnergyCorrelator::SEnergyCorrelator(const string &name, const bool isComplex, c
   }
 
   // set verbosity in complex mode
+/*
   if (m_inComplexMode) {
     m_verbosity = Verbosity();
   }
+*/
 
   // print debug statement
   m_inDebugMode = doDebug;
-  if (m_inDebugMode) {
-    PrintMessage(1);
-  }
+  if (m_inDebugMode) PrintDebug(1);
 
 }  // end ctor(string, bool, bool)
 
@@ -52,11 +53,20 @@ SEnergyCorrelator::SEnergyCorrelator(const string &name, const bool isComplex, c
 SEnergyCorrelator::~SEnergyCorrelator() {
 
   // print debug statement
-  if (m_inDebugMode) {
-    PrintMessage(14);
+  if (m_inDebugMode) PrintDebug(14);
+
+  // delete pointers to files
+  if (!m_inTree) {
+    delete m_inFile;
+    delete m_outFile;
   }
-  delete m_inFile;
-  delete m_outFile;
+
+  // delete pointers to correlators
+  for (size_t iPtBin = 0; iPtBin < m_nBinsJetPt; iPtBin++) {
+    delete m_eecLongSide.at(iPtBin);
+  }
+  m_eecLongSide.clear();
+  m_ptJetBins.clear();
 
 }  // end dtor
 
@@ -64,68 +74,7 @@ SEnergyCorrelator::~SEnergyCorrelator() {
 
 // F4A methods ----------------------------------------------------------------
 
-int SEnergyCorrelator::Init(PHCompositeNode *topNode) {
-
-  // print debug statement
-  if (m_inDebugMode) {
-    PrintMessage(2);
-  }
-
-  // make sure complex mode is on & open input
-  if (m_inStandaloneMode) {
-    PrintError(0);
-    assert(m_inComplexMode);
-  } else {
-    GrabInputNode();
-  }
-
-  // initialize input, output, & correlators
-  InitializeTree();
-  InitializeHists();
-  InitializeCorrs();
-  return Fun4AllReturnCodes::EVENT_OK;
-
-}  // end 'Init(PHCompositeNode*)'
-
-
-
-int SEnergyCorrelator::process_event(PHCompositeNode *topNode) {
-
-  // print debug statement
-  if (m_inDebugMode) {
-    PrintMessage(7);
-  }
-
-  // make sure complex mode is on
-  if (m_inStandaloneMode) {
-    PrintError(3);
-    assert(m_inComplexMode);
-  }
-
-  /* TODO analysis goes here */
-  return Fun4AllReturnCodes::EVENT_OK;
-
-}  // end 'process_event(PHCompositeNode*)'
-
-
-
-int SEnergyCorrelator::End(PHCompositeNode *topNode) {
-
-  // print debug statement
-  if (m_inDebugMode) {
-    PrintMessage(8);
-  }
-
-  // make sure complex mode is on & save output
-  if (m_inStandaloneMode) {
-    PrintError(4);
-    assert(m_inComplexMode);
-  } else {
-    SaveOutput();
-  }
-  return Fun4AllReturnCodes::EVENT_OK;
-
-}  // end 'End(PHCompositeNode*)'
+/* TODO F4A methods will go here */
 
 
 
@@ -134,17 +83,16 @@ int SEnergyCorrelator::End(PHCompositeNode *topNode) {
 void SEnergyCorrelator::Init() {
 
   // print debug statement
-  if (m_inDebugMode) {
-    PrintMessage(10);
-  }
+  if (m_inDebugMode) PrintDebug(10);
 
-  // make sure standalone mode is on & open input
+  // make sure standalone mode is on & open files
   if (m_inComplexMode) {
     PrintError(5);
     assert(m_inStandaloneMode);
   } else {
     OpenInputFile();
   }
+  OpenOutputFile();
 
   // initialize input, output, & correlators
   InitializeTree();
@@ -152,16 +100,14 @@ void SEnergyCorrelator::Init() {
   InitializeCorrs();
   return;
 
-}  // end 'Init()'
+}  // end 'StandaloneInit()'
 
 
 
 void SEnergyCorrelator::Analyze() {
 
   // print debug statement
-  if (m_inDebugMode) {
-    PrintMessage(12);
-  }
+  if (m_inDebugMode) PrintDebug(12);
 
   // make sure standalone mode is on
   if (m_inComplexMode) {
@@ -172,16 +118,14 @@ void SEnergyCorrelator::Analyze() {
   /* TODO analysis goes here */
   return;
 
-}  // end 'Analyze()'
+}  // end 'StandaloneAnalyze()'
 
 
 
 void SEnergyCorrelator::End() {
 
   // print debug statement
-  if (m_inDebugMode) {
-    PrintMessage(13);
-  }
+  if (m_inDebugMode) PrintDebug(13);
 
   // make sure standalone mode is on & save output
   if (m_inComplexMode) {
@@ -192,6 +136,6 @@ void SEnergyCorrelator::End() {
   }
   return;
 
-}  // end 'End()'
+}  // end 'StandaloneEnd()'
 
 // end ------------------------------------------------------------------------

@@ -6,7 +6,7 @@ AC_PROG_CXX(CC g++)
 LT_INIT([disable-static])
 
 if test $ac_cv_prog_gxx = yes; then
-  CXXFLAGS="$CXXFLAGS -Wall -Wno-unknown-pragmas -Werror"
+  CXXFLAGS="$CXXFLAGS -Wall -Werror -fopenmp"
 fi
 
 dnl test for root 6

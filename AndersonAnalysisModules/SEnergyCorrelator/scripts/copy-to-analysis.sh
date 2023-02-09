@@ -25,6 +25,7 @@ files_to_copy[6]="src/autogen.sh"
 files_to_copy[7]="src/configure.ac"
 files_to_copy[8]="src/Makefile.am"
 files_to_copy[9]="DoStandaloneCorrelatorCalculation.C"
+files_to_copy[10]="DoStandaloneCorrelatorCalculation.sh"
 
 # do copying
 # TODO: automate detection/creation of sub-directories
