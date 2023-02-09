@@ -41,8 +41,8 @@ class BuildResonanceJetTaggingTree : public SubsysReco
 
   /// SubsysReco end processing method
   int End(PHCompositeNode *);
-  int loopD0(PHCompositeNode *topNode);
-  void findMatchedTruthD0(PHCompositeNode *topNode, Jet *&mcTagJet, HepMC::GenParticle *&mcTag, int decays[]);
+  int loopHFHadronic(PHCompositeNode *topNode);
+  void findMatchedTruthD0(PHCompositeNode *topNode, Jet *&mcTagJet, HepMC::GenParticle *&mcTag, std::vector<int> decays);
   HepMC::GenParticle *getMother(PHCompositeNode *topNode, PHG4Particle *g4daughter);
   bool isReconstructed(int index, std::vector<int> indexRecVector);
 
@@ -76,6 +76,7 @@ class BuildResonanceJetTaggingTree : public SubsysReco
   JetMapv1* m_truth_taggedJetMap;
   bool m_dorec;
   bool m_dotruth;
+  int m_nDaughters;
 
   ResonanceJetTagging::TAG m_tag_particle;
   int m_tag_pdg;
@@ -84,34 +85,40 @@ class BuildResonanceJetTaggingTree : public SubsysReco
   TFile *m_outfile = nullptr;
   TH1I *m_eventcount_h = nullptr;
   TTree *m_taggedjettree = nullptr;
-
-  // Tagged-Jet variables
-  double m_tagpartpx = NAN;
-  double m_tagpartpy = NAN;
-  double m_tagpartpz = NAN;
-  double m_tagpartpt = NAN;
-  double m_tagparteta = NAN;
-  double m_tagpartphi = NAN;
-  double m_tagpartm = NAN;
-  double m_tagjetpx = NAN;
-  double m_tagjetpy = NAN;
-  double m_tagjetpz = NAN;
-  double m_tagjetpt = NAN;
-  double m_tagjeteta = NAN;
-  double m_tagjetphi = NAN;
+  // Tagged-Jet reconstructed variables
+  float m_reco_tag_px = NAN;
+  float m_reco_tag_py = NAN;
+  float m_reco_tag_pz = NAN;
+  float m_reco_tag_pt = NAN;
+  float m_reco_tag_eta = NAN;
+  float m_reco_tag_phi = NAN;
+  float m_reco_tag_m = NAN;
+  float m_reco_tag_e = NAN;
+  float m_reco_jet_px = NAN;
+  float m_reco_jet_py = NAN;
+  float m_reco_jet_pz = NAN;
+  float m_reco_jet_pt = NAN;
+  float m_reco_jet_eta = NAN;
+  float m_reco_jet_phi = NAN;
+  float m_reco_jet_m = NAN;
+  float m_reco_jet_e = NAN;
   //Truth info
-  double m_truth_tagpartpx = NAN;
-  double m_truth_tagpartpy = NAN;
-  double m_truth_tagpartpz = NAN;
-  double m_truth_tagpartpt = NAN;
-  double m_truth_tagparteta = NAN;
-  double m_truth_tagpartphi = NAN;
-  double m_truth_tagjetpx = NAN;
-  double m_truth_tagjetpy = NAN;
-  double m_truth_tagjetpz = NAN;
-  double m_truth_tagjetpt = NAN;
-  double m_truth_tagjeteta = NAN;
-  double m_truth_tagjetphi = NAN;
+  float m_truth_tag_px = NAN;
+  float m_truth_tag_py = NAN;
+  float m_truth_tag_pz = NAN;
+  float m_truth_tag_pt = NAN;
+  float m_truth_tag_eta = NAN;
+  float m_truth_tag_phi = NAN;
+  float m_truth_tag_m = NAN;
+  float m_truth_tag_e = NAN;
+  float m_truth_jet_px = NAN;
+  float m_truth_jet_py = NAN;
+  float m_truth_jet_pz = NAN;
+  float m_truth_jet_pt = NAN;
+  float m_truth_jet_eta = NAN;
+  float m_truth_jet_phi = NAN;
+  float m_truth_jet_m = NAN;
+  float m_truth_jet_e = NAN;
 };
 
 #endif
