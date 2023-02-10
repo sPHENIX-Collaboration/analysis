@@ -18,6 +18,7 @@
 #include <utility>
 // root includes
 #include <TH1.h>
+#include <TROOT.h>
 #include <TFile.h>
 #include <TTree.h>
 #include <TMath.h>
@@ -45,7 +46,7 @@ class SEnergyCorrelator {
   public:
 
     // ctor/dtor
-    SEnergyCorrelator(const string &name = "SEnergyCorrelator", const bool isComplex = false, const bool doDebug = false);
+    SEnergyCorrelator(const string &name = "SEnergyCorrelator", const bool isComplex = false, const bool doDebug = false, const bool inBatch = false);
     //~SEnergyCorrelator() override;
     ~SEnergyCorrelator();
 
@@ -99,7 +100,7 @@ class SEnergyCorrelator {
     void    InitializeHists();
     void    InitializeCorrs();
     void    InitializeTree();
-    void    PrintMessage(const uint32_t code);
+    void    PrintMessage(const uint32_t code, const uint64_t nEvts = 0, const uint64_t event = 0);
     void    PrintDebug(const uint32_t code);
     void    PrintError(const uint32_t code);
     bool    CheckCriticalParameters();
@@ -116,9 +117,11 @@ class SEnergyCorrelator {
     int    m_fCurrent;
     int    m_verbosity;
     bool   m_inDebugMode;
+    bool   m_inBatchMode;
     bool   m_inComplexMode;
     bool   m_inStandaloneMode;
     bool   m_isInputTreeTruth;
+    string m_moduleName;
     string m_inFileName;
     string m_inNodeName;
     string m_inTreeName;

@@ -24,9 +24,11 @@ void SEnergyCorrelator::InitializeMembers() {
   m_fCurrent          = 0;
   m_verbosity         = 0;
   m_inDebugMode       = false;
+  m_inBatchMode       = false;
   m_inComplexMode     = false;
   m_inStandaloneMode  = false;
   m_isInputTreeTruth  = false;
+  m_moduleName        = "";
   m_inFileName        = "";
   m_inNodeName        = "";
   m_inTreeName        = "";
@@ -106,33 +108,6 @@ void SEnergyCorrelator::InitializeMembers() {
 
 
 
-void SEnergyCorrelator::InitializeHists() {
-
-  // print debug statement
-  if (m_inDebugMode) PrintDebug(5);
-
-  /* TODO output histograms wil be initialized here */
-  return;
-
-}  // end 'InitializeHists()'
-
-
-
-void SEnergyCorrelator::InitializeCorrs() {
-
-  // print debug statement
-  if (m_inDebugMode) PrintDebug(6);
-
-  // initialize correlator for each jet pt bin
-  for (size_t iPtBin = 0; iPtBin < m_nBinsJetPt; iPtBin++) {
-    m_eecLongSide.push_back(new contrib::eec::EECLongestSide<contrib::eec::hist::axis::log>(m_nPointCorr, m_nBinsDr, {m_drBinRange[0], m_drBinRange[1]}));
-  }
-  return;
-
-}  // end 'InitializeCorrs()'
-
-
-
 void SEnergyCorrelator::InitializeTree() {
 
   // print debug statement
@@ -183,23 +158,112 @@ void SEnergyCorrelator::InitializeTree() {
   m_inTree -> SetBranchAddress("CstJt",      &m_cstJt,      &m_brCstJt);
   m_inTree -> SetBranchAddress("CstEta",     &m_cstEta,     &m_brCstEta);
   m_inTree -> SetBranchAddress("CstPhi",     &m_cstPhi,     &m_brCstPhi);
+
+  // announce tree setting
+  if (m_inStandaloneMode) PrintMessage(2);
   return;
 
 }  // end 'InitializeTree()'
 
 
 
-void SEnergyCorrelator::PrintMessage(const uint32_t code) {
+void SEnergyCorrelator::InitializeHists() {
 
   // print debug statement
-  if (m_inDebugMode && (m_verbosity > 5)) {
-    cout << "SEnergyCorrelator::PrintMessage() printing a message..." << endl;
+  if (m_inDebugMode) PrintDebug(5);
+
+  /* TODO output histograms wil be initialized here */
+
+  // announce histogram initialization
+  if (m_inStandaloneMode) PrintMessage(3);
+  return;
+
+}  // end 'InitializeHists()'
+
+
+
+void SEnergyCorrelator::InitializeCorrs() {
+
+  // print debug statement
+  if (m_inDebugMode) PrintDebug(6);
+
+  // initialize correlator for each jet pt bin
+  for (size_t iPtBin = 0; iPtBin < m_nBinsJetPt; iPtBin++) {
+    m_eecLongSide.push_back(new contrib::eec::EECLongestSide<contrib::eec::hist::axis::log>(m_nPointCorr, m_nBinsDr, {m_drBinRange[0], m_drBinRange[1]}));
   }
 
-  /* TODO add standalone running statements */
+  // announce correlator initialization
+  if (m_inStandaloneMode) PrintMessage(4);
+  return;
+
+}  // end 'InitializeCorrs()'
+
+
+
+void SEnergyCorrelator::PrintMessage(const uint32_t code, const uint64_t nEvts, const uint64_t event) {
+
+  // print debug statement
+  if (m_inDebugMode && (m_verbosity > 5)) PrintDebug(22);
+
   switch (code) {
-    default:
-      cout << "testing testing..." << endl;
+    case 0:
+      cout << "\n  Running standalone correlator calculation...\n"
+           << "    Set name & modes:\n"
+           << "      module name      = " << m_moduleName.data() << "\n"
+           << "      complex mode?    = " << m_inComplexMode     << "\n"
+           << "      standalone mode? = " << m_inStandaloneMode  << "\n"
+           << "      debug mode?      = " << m_inDebugMode       << "\n"
+           << "      batch mode?      = " << m_inBatchMode
+           << endl;
+      break;
+    case 1:
+      cout << "    Opened files:\n"
+           << "      input  = " << m_inFileName.data() << "\n"
+           << "      output = " << m_outFileName.data()
+           << endl;
+      break;
+    case 2:
+      cout << "    Initialized input tree:\n"
+           << "      tree name = " << m_inTreeName.data()
+           << endl;
+      break;
+    case 3:
+      cout << "    Initialized output histograms." << endl;
+      break;
+    case 4:
+      cout << "    Initialized correlators." << endl;
+      break;
+    case 5:
+      cout << "    Set correlator parameters:\n"
+           << "      n-point = "       << m_nPointCorr    << ", number of dR bins = " << m_nBinsDr       << "\n"
+           << "      dR bin range = (" << m_drBinRange[0] << ", "                     << m_drBinRange[1] << ")"
+           << endl;
+      break;
+    case 6:
+      cout << "    Set pTjet bins:" << endl;
+      for (uint32_t iJetBin = 0; iJetBin < m_nBinsJetPt; iJetBin++) {
+        cout << "      bin[" << iJetBin << "] = (" << m_ptJetBins.at(iJetBin).first << ", " << m_ptJetBins.at(iJetBin).second << ")" << endl;
+      }
+      break;
+    case 7:
+      cout << "    Beginning event loop: " << nEvts << " to process..." << endl;
+      break;
+    case 8:
+      if (m_inBatchMode) {
+        cout << "      processing event " << (event + 1) << "/" << nEvts << "..." << endl;
+      } else {
+        cout << "      processing event " << (event + 1) << "/" << nEvts << "...\r" << flush;
+        if ((event + 1) == nEvts) cout << endl;
+      }
+      break; 
+    case 9:
+      cout << "    Analysis finished!" << endl;
+      break;
+    case 10:
+      cout << "    Saved output histograms." << endl;
+      break;
+    case 11:
+      cout << "  Finished correlator calculation!\n" << endl;
       break;
   }
   return;
@@ -210,8 +274,8 @@ void SEnergyCorrelator::PrintMessage(const uint32_t code) {
 void SEnergyCorrelator::PrintDebug(const uint32_t code) {
 
   // print debug statement
-  if (m_inDebugMode && (m_verbosity > 5)) {
-    cout << "SEnergyCorrelator::PrintDebug() printing a debugging statement..." << endl;
+  if (m_inDebugMode && (m_verbosity > 7)) {
+    cout << "SEnergyCorrelator::PrintDebug(uint32_t) printing a debugging statement..." << endl;
   }
 
   switch (code) {
@@ -264,10 +328,28 @@ void SEnergyCorrelator::PrintDebug(const uint32_t code) {
       cout << "SEnergyCorrelator::OpenOutputFile() opening output file..." << endl;
       break;
     case 16:
-      cout << "SEnergyCorrelator::GetEntry() getting tree entry..." << endl;
+      cout << "SEnergyCorrelator::GetEntry(uint64_t) getting tree entry..." << endl;
       break;
     case 17:
-      cout << "SEnergyCorrelator::LoadTree() loading tree..." << endl;
+      cout << "SEnergyCorrelator::LoadTree(uint64_t) loading tree..." << endl;
+      break;
+    case 18:
+      cout << "SEnergyCorrelator::SetInputTree(string, bool) setting input tree name..." << endl;
+      break;
+    case 19:
+      cout << "SEnergyCorrelator::SetCorrelatorParameters(uint32_t, uint64_t, double, double) setting correlator parameters..." << endl;
+      break;
+    case 20:
+      cout << "SEnergyCorrelator::SetPtJetBins(vector<pair<double, double>>) setting pTjet bins..." << endl;
+      break;
+    case 21:
+      cout << "SEnergyCorrelators:CheckCriticalParameters() checking critical parameters..." << endl;
+      break;
+    case 22:
+      cout << "SEnergyCorrelator::PrintMessage(uint32_t, uint64_t, uint64_t) printing a message..." << endl;
+      break;
+    case 23:
+      cout << "SEnergyCorrelator::PrintError(uint32_t) printing an error..." << endl;
       break;
   }
   return;
@@ -279,9 +361,7 @@ void SEnergyCorrelator::PrintDebug(const uint32_t code) {
 void SEnergyCorrelator::PrintError(const uint32_t code) {
 
   // print debug statement
-  if (m_inDebugMode && (m_verbosity > 5)) {
-    cout << "SEnergyCorrelator::PrintError() printing an error..." << endl;
-  }
+  if (m_inDebugMode && (m_verbosity > 5)) PrintDebug(23);
 
   switch (code) {
     case 0:
@@ -378,7 +458,7 @@ void SEnergyCorrelator::PrintError(const uint32_t code) {
 bool SEnergyCorrelator::CheckCriticalParameters() {
 
   // print debugging statement
-  /* TODO add statement */
+  if (m_inDebugMode) PrintDebug(21); 
 
   /* TODO checking goes here */
   return true;
