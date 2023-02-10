@@ -78,6 +78,9 @@ class BuildResonanceJetTaggingTree : public SubsysReco
   bool m_dotruth;
   int m_nDaughters;
 
+  std::vector<float> m_truthjet_const_px, m_truthjet_const_py, 
+    m_truthjet_const_pz, m_truthjet_const_e;
+
   ResonanceJetTagging::TAG m_tag_particle;
   int m_tag_pdg;
 
