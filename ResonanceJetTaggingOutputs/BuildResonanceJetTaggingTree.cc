@@ -328,7 +328,9 @@ int BuildResonanceJetTaggingTree::loopHFHadronic(PHCompositeNode *topNode)
       if(!genTagJet) continue;
 
       //Check if truth was matched to reconstructed
-      if(isReconstructed(genTagJet->get_id(), recJetIndex)) continue; 
+      if(m_dorec) {
+	if(isReconstructed(genTagJet->get_id(), recJetIndex)) continue; 
+      }
 
       Jet::Iter genTagIter = genTagJet->find(Jet::SRC::VOID);
 
@@ -351,6 +353,24 @@ int BuildResonanceJetTaggingTree::loopHFHadronic(PHCompositeNode *topNode)
       m_truth_jet_phi = genTagJet->get_phi();
       m_truth_jet_m = genTagJet->get_mass();
       m_truth_jet_e = genTagJet->get_e();
+
+      /// iterate over all constituents and add them to the tree
+      for(auto citer = genTagJet->begin_comp(); citer != genTagJet->end_comp();
+	  ++citer)
+	{
+	  HepMC::GenParticle* constituent = hepMCGenEvent->barcode_to_particle(citer->second);
+	  /// Don't include the tagged particle
+	  if(constituent == genTag)
+	    {
+	      continue;
+	    } 
+        
+	  m_truthjet_const_px.push_back(constituent->momentum().px());
+	  m_truthjet_const_py.push_back(constituent->momentum().py());
+	  m_truthjet_const_pz.push_back(constituent->momentum().pz());
+	  m_truthjet_const_e.push_back(constituent->momentum().e());
+	  	  
+	}
 
       m_taggedjettree->Fill();
     }
@@ -531,6 +551,10 @@ void BuildResonanceJetTaggingTree::initializeTrees()
   m_taggedjettree->Branch("m_truth_jet_phi", &m_truth_jet_phi, "m_truth_jet_phi/F");
   m_taggedjettree->Branch("m_truth_jet_m", &m_truth_jet_m, "m_truth_jet_m/F");
   m_taggedjettree->Branch("m_truth_jet_e", &m_truth_jet_e, "m_truth_jet_e/F");
+  m_taggedjettree->Branch("m_truthjet_const_px", &m_truthjet_const_px);
+  m_taggedjettree->Branch("m_truthjet_const_py", &m_truthjet_const_py);
+  m_taggedjettree->Branch("m_truthjet_const_pz", &m_truthjet_const_pz);
+  m_taggedjettree->Branch("m_truthjet_const_e", &m_truthjet_const_e);
 
 }
 void BuildResonanceJetTaggingTree::initializeVariables()
@@ -580,6 +604,11 @@ void BuildResonanceJetTaggingTree::resetTreeVariables()
   m_truth_jet_phi = NAN;
   m_truth_jet_m = NAN;
   m_truth_jet_e = NAN;
+
+  m_truthjet_const_px.clear();
+  m_truthjet_const_py.clear();
+  m_truthjet_const_pz.clear();
+  m_truthjet_const_e.clear();
 }
 
 JetMapv1* BuildResonanceJetTaggingTree::getJetMapFromNode(PHCompositeNode *topNode, const std::string &name)
