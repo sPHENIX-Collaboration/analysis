@@ -604,6 +604,11 @@ void BuildResonanceJetTaggingTree::resetTreeVariables()
   m_truth_jet_phi = NAN;
   m_truth_jet_m = NAN;
   m_truth_jet_e = NAN;
+
+  m_truthjet_const_px.clear();
+  m_truthjet_const_py.clear();
+  m_truthjet_const_pz.clear();
+  m_truthjet_const_e.clear();
 }
 
 JetMapv1* BuildResonanceJetTaggingTree::getJetMapFromNode(PHCompositeNode *topNode, const std::string &name)
