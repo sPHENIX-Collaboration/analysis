@@ -22,6 +22,7 @@
 
 #include <phhepmc/PHHepMCGenEvent.h>
 #include <phhepmc/PHHepMCGenEventMap.h>
+#include <phhepmc/PHGenIntegral.h>
 
 /// Fun4All includes
 #include <fun4all/Fun4AllReturnCodes.h>
@@ -181,7 +182,7 @@ int BuildResonanceJetTaggingTree::process_event(PHCompositeNode *topNode)
  * End the module and finish any data collection. Clean up any remaining
  * loose ends
  */
-int BuildResonanceJetTaggingTree::End(PHCompositeNode */*topNode*/)
+int BuildResonanceJetTaggingTree::End(PHCompositeNode *topNode)
 {
   if (Verbosity() > 1)
   {
@@ -190,6 +191,20 @@ int BuildResonanceJetTaggingTree::End(PHCompositeNode */*topNode*/)
 
   /// Change to the outfile
   m_outfile->cd();
+
+  if(m_dotruth) {
+    PHGenIntegral *phgen = findNode::getClass<PHGenIntegral>(topNode, "PHGenIntegral");
+    if(phgen)
+      {
+	m_intlumi = phgen->get_Integrated_Lumi();
+	m_nprocessedevents = phgen->get_N_Processed_Event();
+	m_nacceptedevents = phgen->get_N_Generator_Accepted_Event();
+	m_xsecprocessedevents = phgen->get_CrossSection_Processed_Event();
+	m_xsecacceptedevents = phgen->get_CrossSection_Generator_Accepted_Event();
+	m_runinfo->Fill();
+      }
+    m_runinfo->Write();
+  }
 
   m_taggedjettree->Write();
   m_eventcount_h->Write();
@@ -228,6 +243,7 @@ int BuildResonanceJetTaggingTree::loopHFHadronic(PHCompositeNode *topNode)
 
     hepMCGenEvent = getGenEventFromNode(topNode, "PHHepMCGenEventMap");
     if(!hepMCGenEvent) return Fun4AllReturnCodes::ABORTEVENT;
+    
   }
 
   m_eventcount_h->Fill(1);
@@ -516,6 +532,14 @@ bool BuildResonanceJetTaggingTree::isReconstructed(int index, std::vector<int> i
 
 void BuildResonanceJetTaggingTree::initializeTrees()
 {
+  delete m_runinfo;
+  m_runinfo = new TTree("m_runinfo","A tree with the run information");
+  m_runinfo->Branch("m_intlumi",&m_intlumi, "m_intlumi/F");
+  m_runinfo->Branch("m_nprocessedevents", &m_nprocessedevents, "m_nprocessedevents/F");
+  m_runinfo->Branch("m_nacceptedevents", &m_nacceptedevents, "m_nacceptedevents/F");
+  m_runinfo->Branch("m_xsecprocessedevents", &m_xsecprocessedevents, "m_xsecprocessedevents/F");
+  m_runinfo->Branch("m_xsecacceptedevents", &m_xsecacceptedevents, "m_xsecacceptedevents/F");
+
   delete m_taggedjettree;
   m_taggedjettree = new TTree("m_taggedjettree", "A tree with Tagged-Jet info");
   m_taggedjettree->Branch("m_reco_tag_px", &m_reco_tag_px, "m_reco_tag_px/F");

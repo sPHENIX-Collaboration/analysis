@@ -88,6 +88,7 @@ class BuildResonanceJetTaggingTree : public SubsysReco
   TFile *m_outfile = nullptr;
   TH1I *m_eventcount_h = nullptr;
   TTree *m_taggedjettree = nullptr;
+  TTree *m_runinfo = nullptr;
   // Tagged-Jet reconstructed variables
   float m_reco_tag_px = NAN;
   float m_reco_tag_py = NAN;
@@ -122,6 +123,13 @@ class BuildResonanceJetTaggingTree : public SubsysReco
   float m_truth_jet_phi = NAN;
   float m_truth_jet_m = NAN;
   float m_truth_jet_e = NAN;
+
+  float m_intlumi = NAN;
+  float m_nprocessedevents = NAN;
+  float m_nacceptedevents = NAN;
+  float m_xsecprocessedevents = NAN;
+  float m_xsecacceptedevents = NAN;
+
 };
 
 #endif
