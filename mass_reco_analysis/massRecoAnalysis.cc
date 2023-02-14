@@ -1,10 +1,20 @@
 #include "massRecoAnalysis.h"
 
+#include <trackbase_historic/ActsTransformations.h>
+
 #include <fun4all/Fun4AllReturnCodes.h>
 #include <phool/getClass.h>
 #include <phool/PHCompositeNode.h>
 
+#include <Acts/Propagator/EigenStepper.hpp>
+#include <Acts/Surfaces/PerigeeSurface.hpp>
+
+
 #include <TLorentzVector.h>
+
+#include <TFile.h>
+#include <TH1D.h>
+#include <TNtuple.h>
 
 
 int massRecoAnalysis::process_event(PHCompositeNode * /**topNode*/)
@@ -69,15 +79,50 @@ int massRecoAnalysis::process_event(PHCompositeNode * /**topNode*/)
 	  float rapidity;
 	  float pseudorapidity;
 
-	  //add pseudorapidity and magnitude of path length
 
-	  findPcaTwoTracks(tr1, tr2, pca_rel1, pca_rel2, pair_dca);
+	  // give projcted momentum and position to this method on the second iterqtion 
+          findPcaTwoTracks(pos1, pos2, mom1, mom2, pca_rel1, pca_rel2, pair_dca);
+	  // with new pca recqalculate a more accuarte projcetd pos/mom
 
 	  // tracks with small relative pca are k short candidates
           if(abs(pair_dca) < pair_dca_cut)
 	    {
-	      fillHistogram(tr1,tr2,recomass,invariantMass,invariantPt,rapidity,pseudorapidity);
-	      fillNtp(tr1,tr2,dcaVals1,dcaVals2,pca_rel1,pca_rel2,pair_dca,invariantMass,invariantPt,rapidity,pseudorapidity);
+
+	      //Pair dca was calculated with nominal track parameters and is approximate
+
+	      Eigen::Vector3d average_pca = (pca_rel1 + pca_rel2)/2.0;
+	      double radius = sqrt(pow(average_pca(0),2)+ pow(average_pca(1),2));
+
+	      Eigen::Vector3d projected_pos1;
+	      Eigen::Vector3d projected_mom1;
+	      Eigen::Vector3d projected_pos2;
+	      Eigen::Vector3d projected_mom2;
+	      
+
+               //after original pca calculation project 
+	      bool ret1 = projectTrackToCylinder(tr1, radius, projected_pos1, projected_mom1);
+	      bool ret2 = projectTrackToCylinder(tr2, radius, projected_pos2, projected_mom2);
+
+	      double pair_dca_proj;
+	      Acts::Vector3 pca_rel1_proj;
+	      Acts::Vector3 pca_rel2_proj;
+
+       if (!ret1 or !ret2) continue;
+
+       if (Verbosity()>2)
+		{
+		  std::cout << "found viable projection";
+		  std::cout << "pos1: "<<  projected_pos1 << " pos2: " <<  projected_pos2 << " mom1: " << projected_mom1 << " mom2: "<< projected_mom2<< std::endl;
+		}
+
+	      // give projected momentum and position
+	      // does this need to be in above if statement?
+	      findPcaTwoTracks(projected_pos1, projected_pos2, projected_mom1, projected_mom2, pca_rel1_proj, pca_rel2_proj, pair_dca_proj);
+	      
+
+
+	      fillHistogram(projected_mom1,projected_mom2,recomass,invariantMass,invariantPt,rapidity,pseudorapidity); //invariant mass is calculated in this method
+              fillNtp(tr1,tr2,dcaVals1,dcaVals2,pca_rel1,pca_rel2,pair_dca,invariantMass,invariantPt,rapidity,pseudorapidity,projected_pos1,projected_pos2,projected_mom1,projected_mom2, pca_rel1_proj, pca_rel2_proj, pair_dca_proj);
 
 	       if(Verbosity() > 2 )
 	       	{
@@ -95,10 +140,11 @@ int massRecoAnalysis::process_event(PHCompositeNode * /**topNode*/)
   return 0;
 }
 
-void massRecoAnalysis::fillNtp(SvtxTrack *track1, SvtxTrack *track2, Acts::Vector3 dcavals1, Acts::Vector3 dcavals2, Acts::Vector3 pca_rel1, 
-			       Acts::Vector3 pca_rel2, double pair_dca, double invariantMass, double invariantPt, float rapidity, float pseudorapidity)
+void massRecoAnalysis::fillNtp(SvtxTrack *track1, SvtxTrack *track2, Acts::Vector3 dcavals1, Acts::Vector3 dcavals2, Acts::Vector3 pca_rel1, Acts::Vector3 pca_rel2, double pair_dca, double invariantMass, double invariantPt, float rapidity, float pseudorapidity, Eigen::Vector3d projected_pos1, Eigen::Vector3d projected_pos2,Eigen::Vector3d projected_mom1, Eigen::Vector3d projected_mom2, Acts::Vector3 pca_rel1_proj, Acts::Vector3 pca_rel2_proj, double pair_dca_proj)
 {
   
+
+  //change claucklatyion to get rid of tracks and calciulaye 
   double px1          = track1->get_px();
   double py1          = track1->get_py();
   double pz1          = track1->get_pz();
@@ -120,36 +166,36 @@ void massRecoAnalysis::fillNtp(SvtxTrack *track1, SvtxTrack *track2, Acts::Vecto
 
   Acts::Vector3 pathLength = (pca_rel1 + pca_rel2)*0.5 - vertex;
 
-  float mag_pathLength =  sqrt(pow(pathLength(0),2)+ pow(pathLength(1),2)+pow(pathLength(2),2));
+  float mag_pathLength =  sqrt(pow(pathLength(0),2) + pow(pathLength(1),2) + pow(pathLength(2),2));
 
   if(!svtxVertex){ return; }
   
-  float reco_info[] = {track1->get_x(), track1->get_y(), track1->get_z(), track1->get_px(), track1->get_py(), track1->get_pz(), (float) dcavals1(0), (float) dcavals1(1), (float) dcavals1(2), (float) pca_rel1(0), (float) pca_rel1(1), (float) pca_rel1(2), (float) eta1,  (float) track1->get_charge(), (float) tpcClusters1, track2->get_x(), track2->get_y(), track2->get_z(),  track2->get_px(), track2->get_py(), track2->get_pz(), (float) dcavals2(0), (float) dcavals2(1), (float) dcavals2(2), (float) pca_rel2(0), (float) pca_rel2(1), (float) pca_rel2(2), (float) eta2, (float) track2->get_charge(), (float) tpcClusters2, svtxVertex->get_x(), svtxVertex->get_y(), svtxVertex->get_z(), (float) pair_dca,(float) invariantMass, (float) invariantPt, (float) pathLength(0),(float) pathLength(1), (float) pathLength(2), mag_pathLength, rapidity, pseudorapidity};
+  float reco_info[] = {track1->get_x(), track1->get_y(), track1->get_z(), track1->get_px(), track1->get_py(), track1->get_pz(), (float) dcavals1(0), (float) dcavals1(1), (float) dcavals1(2), (float) pca_rel1(0), (float) pca_rel1(1), (float) pca_rel1(2), (float) eta1,  (float) track1->get_charge(), (float) tpcClusters1, track2->get_x(), track2->get_y(), track2->get_z(),  track2->get_px(), track2->get_py(), track2->get_pz(), (float) dcavals2(0), (float) dcavals2(1), (float) dcavals2(2), (float) pca_rel2(0), (float) pca_rel2(1), (float) pca_rel2(2), (float) eta2, (float) track2->get_charge(), (float) tpcClusters2, svtxVertex->get_x(), svtxVertex->get_y(), svtxVertex->get_z(), (float) pair_dca,(float) invariantMass, (float) invariantPt, (float) pathLength(0),(float) pathLength(1), (float) pathLength(2), mag_pathLength, rapidity, pseudorapidity, (float) projected_pos1(0),(float) projected_pos1(1),(float) projected_pos1(2), (float) projected_pos2(0),(float) projected_pos2(1),(float) projected_pos2(2), (float) projected_mom1(0),(float) projected_mom1(1),(float) projected_mom1(2), (float) projected_mom2(0), (float) projected_mom2(1), (float) projected_mom2(2),(float) pca_rel1_proj(0),(float) pca_rel1_proj(1),(float) pca_rel1_proj(2),(float) pca_rel2_proj(0),(float) pca_rel2_proj(1),(float) pca_rel2_proj(2),(float) pair_dca_proj};
 
   ntp_reco_info->Fill(reco_info);
 }
 
-void massRecoAnalysis::fillHistogram(SvtxTrack *track1, SvtxTrack *track2, TH1D *massreco, double& invariantMass, double& invariantPt, float& rapidity, float& pseudorapidity)
+void massRecoAnalysis::fillHistogram(Eigen::Vector3d mom1, Eigen::Vector3d mom2, TH1D *massreco, double& invariantMass, double& invariantPt, float& rapidity, float& pseudorapidity)
 {
-  double E1 = sqrt(pow(track1->get_px(),2) + pow(track1->get_py(),2) + pow(track1->get_pz(),2) + pow(decaymass,2));
-  double E2 = sqrt(pow(track2->get_px(),2) + pow(track2->get_py(),2) + pow(track2->get_pz(),2) + pow(decaymass,2));
+  double E1 = sqrt(pow(mom1(0),2) + pow(mom1(1),2) + pow(mom1(2),2) + pow(decaymass,2));
+  double E2 = sqrt(pow(mom2(0),2) + pow(mom2(1),2) + pow(mom2(2),2) + pow(decaymass,2));
 
-  TLorentzVector v1 (track1->get_px(),track1->get_py(),track1->get_pz(),E1);
-  TLorentzVector v2 (track2->get_px(),track2->get_py(),track2->get_pz(),E2);
+  TLorentzVector v1 (mom1(0), mom1(1), mom1(2), E1);
+  TLorentzVector v2 (mom2(0), mom2(1), mom2(2), E2);
 
   TLorentzVector tsum;
   tsum = v1 + v2;
 
-  rapidity = tsum.Rapidity();
+  rapidity       = tsum.Rapidity();
   pseudorapidity = tsum.Eta();
-  invariantMass = tsum.M();
-  invariantPt   = tsum.Pt();
+  invariantMass  = tsum.M();
+  invariantPt    = tsum.Pt();
 
 
   if(Verbosity() > 2)
     {
-      std::cout << "px1: " << track1->get_px()<< " py1: "<<track1->get_py() << " pz1: "<< track1->get_pz()<< " E1: "<<E1 << std::endl;
-      std::cout << "px2: " << track2->get_px()<< " py2: "<<track2->get_py() << " pz2: "<< track2->get_pz()<< " E2: "<<E2 << std::endl;
+      std::cout << "px1: " << mom1(0)<< " py1: "<<mom1(1) << " pz1: "<< mom1(2)<< " E1: "<<E1 << std::endl;
+      std::cout << "px2: " << mom2(0)<< " py2: "<<mom2(1) << " pz2: "<< mom2(2)<< " E2: "<<E2 << std::endl;
       std::cout << "tsum: " <<tsum(0)<<" "<<tsum(1)<<" " <<tsum(2)<< " " <<tsum(3) << std::endl;
       std::cout << "invariant mass: " << invariantMass << " invariant Pt: "<< invariantPt<< std::endl;
     }   
@@ -279,31 +325,45 @@ Acts::BoundTrackParameters massRecoAnalysis::makeTrackParams(SvtxTrack* track)
 }
 
 
+ Acts::Vector3 massRecoAnalysis::getVertex(SvtxTrack* track)
+{
+  auto vertexId = track->get_vertex_id();
+  const SvtxVertex* svtxVertex = m_vertexMap->get(vertexId);
+  Acts::Vector3 vertex = Acts::Vector3::Zero();
+  if (svtxVertex)
+  {
+    vertex(0) = svtxVertex->get_x() * Acts::UnitConstants::cm;
+    vertex(1) = svtxVertex->get_y() * Acts::UnitConstants::cm;
+    vertex(2) = svtxVertex->get_z() * Acts::UnitConstants::cm;
+  }
+
+  return vertex;
+}
 
 
 
 
-
-void massRecoAnalysis::findPcaTwoTracks(SvtxTrack *track1, SvtxTrack *track2, Acts::Vector3& pca1, Acts::Vector3& pca2, double& dca)
+void massRecoAnalysis::findPcaTwoTracks(Acts::Vector3 pos1, Acts::Vector3 pos2, Acts::Vector3 mom1, Acts::Vector3 mom2, Acts::Vector3& pca1, Acts::Vector3& pca2, double& dca)
 {
   TLorentzVector v1;
   TLorentzVector v2;
 
-  double px1 = track1->get_px();
-  double py1 = track1->get_py();
-  double pz1 = track1->get_pz();
-  double px2 = track2->get_px();
-  double py2 = track2->get_py();
-  double pz2 = track2->get_pz();
+  double px1 = mom1(0);
+  double py1 = mom1(1);
+  double pz1 = mom1(2);
+  double px2 = mom2(0);
+  double py2 = mom2(1);
+  double pz2 = mom2(2);
+
   Float_t E1 = sqrt(pow(px1,2) + pow(py1,2) + pow(pz1,2) + pow(decaymass,2));
   Float_t E2 = sqrt(pow(px2,2) + pow(py2,2) + pow(pz2,2) + pow(decaymass,2));
   
   v1.SetPxPyPzE(px1,py1,pz1,E1);
-  v2.SetPxPyPzE(px2,py2,pz2,E2);	
-  
-  //give method tracks and calculate lorentz vector here
-  Eigen::Vector3d a1 = Eigen::Vector3d(track1->get_x(),track1->get_y(),track1->get_z());
-  Eigen::Vector3d a2 = Eigen::Vector3d(track2->get_x(),track2->get_y(),track2->get_z());
+  v2.SetPxPyPzE(px2,py2,pz2,E2);
+
+  //calculate lorentz vector
+  Eigen::Vector3d a1 = pos1;
+  Eigen::Vector3d a2 = pos2;
 
   Eigen::Vector3d b1(v1.Px(), v1.Py(), v1.Pz());
   Eigen::Vector3d b2(v2.Px(), v2.Py(), v2.Pz());
@@ -400,7 +460,7 @@ int massRecoAnalysis::InitRun(PHCompositeNode *topNode)
   char fileName[500];
   sprintf(fileName, "eval_output/ntp_mass_out_%i.root",process);
   fout = new TFile(fileName,"recreate");
-  ntp_reco_info = new TNtuple("ntp_reco_info","decay_pairs","x1:y1:z1:px1:py1:pz1:dca3dxy1:dca3dz1:phi1:pca_relx_1:pca_rely_1:pca_relz_1:eta1:charge1:tpcClusters_1:x2:y2:z2:px2:py2:pz2:dca3dxy2:dca3dz2:phi2:pca_relx_2:pca_rely_2:pca_relz_2:eta2:charge2:tpcClusters_2:vertex_x:vertex_y:vertex_z:pair_dca:invariant_mass:invariant_pt:pathlength_x:pathlength_y:pathlength_z:pathlength:rapidity:pseudorapidity");
+  ntp_reco_info = new TNtuple("ntp_reco_info","decay_pairs","x1:y1:z1:px1:py1:pz1:dca3dxy1:dca3dz1:phi1:pca_relx_1:pca_rely_1:pca_relz_1:eta1:charge1:tpcClusters_1:x2:y2:z2:px2:py2:pz2:dca3dxy2:dca3dz2:phi2:pca_relx_2:pca_rely_2:pca_relz_2:eta2:charge2:tpcClusters_2:vertex_x:vertex_y:vertex_z:pair_dca:invariant_mass:invariant_pt:pathlength_x:pathlength_y:pathlength_z:pathlength:rapidity:pseudorapidity:projected_pos1_x:projected_pos1_y:projected_pos1_z:projected_pos2_x:projected_pos2_y:projected_pos2_z:projected_mom1_x:projected_mom1_y:projected_mom1_z:projected_mom2_x:projected_mom2_y:projected_mom2_z:pca_rel1_proj_x:pca_rel1_proj_y:pca_rel1_proj_z:pca_rel2_proj_x:pca_rel2_proj_y:pca_rel2_proj_z:pair_dca_proj");
   getNodes(topNode);
   
   char name[500];
@@ -435,5 +495,13 @@ int massRecoAnalysis::getNodes(PHCompositeNode *topNode)
       std::cout << PHWHERE << "No vertexMap on node tree, exiting." << std::endl;
       return Fun4AllReturnCodes::ABORTEVENT;
     }
+
+  _tGeometry = findNode::getClass<ActsGeometry>(topNode,"ActsGeometry");
+  if(!_tGeometry)
+    {
+      std::cout << PHWHERE << "Error, can't find acts tracking geometry" << std::endl;
+      return Fun4AllReturnCodes::ABORTEVENT;
+    }
+
   return Fun4AllReturnCodes::EVENT_OK;
 }
