@@ -1,3 +1,4 @@
+// ----------------------------------------------------------------------------
 // 'SEnergyCorrelator.h'
 // Derek Anderson
 // 01.20.2023
@@ -5,6 +6,7 @@
 // A module to implement Peter Komiske's
 // EEC library in the sPHENIX software
 // stack.
+// ----------------------------------------------------------------------------
 
 #ifndef SENERGYCORRELATOR_H
 #define SENERGYCORRELATOR_H
@@ -66,8 +68,9 @@ class SEnergyCorrelator {
 
     // setters (*.io.h)
     void SetInputTree(const string &iTreeName, const bool isTruthTree = false);
+    void SetJetParameters(const vector<pair<double, double>> &pTjetBins, const double minEta, const double maxEta);
+    void SetConstituentParameters(const double minMom, const double maxMom, const double minDr, const double maxDr);
     void SetCorrelatorParameters(const uint32_t nPointCorr, const uint64_t nBinsDr, const double minDr, const double maxDr);
-    void SetPtJetBins(const vector<pair<double, double>> &pTjetBins);
 
     // system getters
     int      GetVerbosity()        {return m_verbosity;}
@@ -82,6 +85,14 @@ class SEnergyCorrelator {
     // correlator getters
     double   GetMinDrBin()   {return m_drBinRange[0];}
     double   GetMaxDrBin()   {return m_drBinRange[1];}
+    double   GetMinJetPt()   {return m_ptJetRange[0];}
+    double   GetMaxJetPt()   {return m_ptJetRange[1];}
+    double   GetMinJetEta()  {return m_etaJetRange[0];}
+    double   GetMaxJetEta()  {return m_etaJetRange[1];}
+    double   GetMinCstMom()  {return m_momCstRange[0];}
+    double   GetMaxCstMom()  {return m_momCstRange[1];}
+    double   GetMinCstDr()   {return m_drCstRange[0];}
+    double   GetMaxCstDr()   {return m_drCstRange[1];}
     size_t   GetNBinsJetPt() {return m_nBinsJetPt;}
     uint32_t GetNPointCorr() {return m_nPointCorr;}
     uint64_t GetNBinsDr()    {return m_nBinsDr;}
@@ -107,6 +118,12 @@ class SEnergyCorrelator {
     int64_t LoadTree(const uint64_t entry);
     int64_t GetEntry(const uint64_t entry);
 
+    // analysis methods (*.ana.h)
+    void     ExtractHistsFromCorr();
+    bool     ApplyJetCuts(const double ptJet, const double etaJet);
+    bool     ApplyCstCuts(const double momCst, const double drCst);
+    uint32_t GetJetPtBin(const double ptJet);
+
     // io members
     TFile         *m_outFile;
     TFile         *m_inFile;
@@ -127,11 +144,16 @@ class SEnergyCorrelator {
     string m_inTreeName;
     string m_outFileName;
 
-    // correlator parameters
+    // jet, cst, correlator parameters
     uint32_t                     m_nPointCorr;
     uint64_t                     m_nBinsDr;
     size_t                       m_nBinsJetPt;
     double                       m_drBinRange[NRange];
+    double                       m_ptJetRange[NRange];
+    double                       m_etaJetRange[NRange];
+    double                       m_momCstRange[NRange];
+    double                       m_drCstRange[NRange];
+    vector<PseudoJet>            m_jetCstVector;
     vector<pair<double, double>> m_ptJetBins;
 
     // correlators

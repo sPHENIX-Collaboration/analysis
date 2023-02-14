@@ -23,6 +23,7 @@ using namespace std;
 
 // global constants
 static const size_t NHistRange   = 2;
+static const size_t NAcceptRange = 2;
 static const size_t NEnergyCorrs = 2;
 
 
@@ -41,7 +42,12 @@ void DoStandaloneCorrelatorCalculation() {
   const double    binRangeDr[NHistRange] = {1e-5, 1.};
   const bool      isTruth[NEnergyCorrs]  = {false, true};
 
-  // pTjet bins
+  // jet/cst parameters
+  const double etaJetRange[NAcceptRange] = {-1., 1.};
+  const double momCstRange[NAcceptRange] = {0.,  100.};
+  const double drCstRange[NAcceptRange]  = {0.,  5.};
+
+  // jet pT bins
   const vector<pair<double, double>> ptJetBins = {{5., 10.}, {10., 15.}, {15., 20.}, {20., 30.}, {30., 50.}};
 
   // misc parameters
@@ -56,8 +62,9 @@ void DoStandaloneCorrelatorCalculation() {
   recoCorrelator -> SetInputFile(inFile);
   recoCorrelator -> SetInputTree(inReco, isTruth[0]);
   recoCorrelator -> SetOutputFile(outFile);
+  recoCorrelator -> SetJetParameters(ptJetBins, etaJetRange[0], etaJetRange[1]);
+  recoCorrelator -> SetConstituentParameters(momCstRange[0], momCstRange[1], drCstRange[0], drCstRange[1]);
   recoCorrelator -> SetCorrelatorParameters(nPointCorr, nBinsDr, binRangeDr[0], binRangeDr[1]);
-  recoCorrelator -> SetPtJetBins(ptJetBins);
   recoCorrelator -> Init();
   recoCorrelator -> Analyze();
   recoCorrelator -> End();
@@ -68,8 +75,9 @@ void DoStandaloneCorrelatorCalculation() {
   trueCorrelator -> SetInputFile(inFile);
   trueCorrelator -> SetInputTree(inTrue, isTruth[1]);
   trueCorrelator -> SetOutputFile(outFile);
-  recoCorrelator -> SetCorrelatorParameters(nPointCorr, nBinsDr, binRangeDr[0], binRangeDr[1]);
-  recoCorrelator -> SetPtJetBins(ptJetBins);
+  trueCorrelator -> SetJetParameters(ptJetBins, etaJetRange[0], etaJetRange[1]);
+  trueCorrelator -> SetConstituentParameters(momCstRange[0], momCstRange[1], drCstRange[0], drCstRange[1]);
+  trueCorrelator -> SetCorrelatorParameters(nPointCorr, nBinsDr, binRangeDr[0], binRangeDr[1]);
   trueCorrelator -> Init();
   trueCorrelator -> Analyze();
   trueCorrelator -> End();

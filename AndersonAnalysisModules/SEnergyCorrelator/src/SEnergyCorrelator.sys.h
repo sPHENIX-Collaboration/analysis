@@ -1,3 +1,4 @@
+// ----------------------------------------------------------------------------
 // 'SEnergyCorrelator.sys.h'
 // Derek Anderson
 // 01.27.2023
@@ -5,6 +6,7 @@
 // A module to implement Peter Komiske's
 // EEC library in the sPHENIX software
 // stack.
+// ----------------------------------------------------------------------------
 
 #pragma once
 
@@ -38,6 +40,14 @@ void SEnergyCorrelator::InitializeMembers() {
   m_nBinsJetPt        = 0;
   m_drBinRange[0]     = 0.;
   m_drBinRange[1]     = 0.;
+  m_ptJetRange[0]     = 0.;
+  m_ptJetRange[1]     = 0.;
+  m_etaJetRange[0]    = 0.;
+  m_etaJetRange[1]    = 0.;
+  m_momCstRange[0]    = 0.;
+  m_momCstRange[1]    = 0.;
+  m_drCstRange[0]     = 0.;
+  m_drCstRange[1]     = 0.;
   m_truParton3_ID     = 0;
   m_truParton4_ID     = 0;
   m_truParton3_MomX   = 0.;
@@ -102,6 +112,7 @@ void SEnergyCorrelator::InitializeMembers() {
   m_brCstPhi          = 0x0;
   m_ptJetBins.clear();
   m_eecLongSide.clear();
+  m_jetCstVector.clear();
   return;
 
 }  // end 'InitializeMembers()'
@@ -240,7 +251,11 @@ void SEnergyCorrelator::PrintMessage(const uint32_t code, const uint64_t nEvts, 
            << endl;
       break;
     case 6:
-      cout << "    Set pTjet bins:" << endl;
+      cout << "    Set jet parameters:\n"
+           << "      eta range = (" << m_etaJetRange[0] << ", " << m_etaJetRange[1] << ")\n"
+           << "      pt range  = (" << m_ptJetRange[0]  << ", " << m_ptJetRange[1]  << ")\n"
+           << "    Set pTjet bins:"
+           << endl;
       for (uint32_t iJetBin = 0; iJetBin < m_nBinsJetPt; iJetBin++) {
         cout << "      bin[" << iJetBin << "] = (" << m_ptJetBins.at(iJetBin).first << ", " << m_ptJetBins.at(iJetBin).second << ")" << endl;
       }
@@ -264,6 +279,18 @@ void SEnergyCorrelator::PrintMessage(const uint32_t code, const uint64_t nEvts, 
       break;
     case 11:
       cout << "  Finished correlator calculation!\n" << endl;
+      break;
+    case 12:
+      cout << "    Set constituent parameters:\n"
+           << "      momentum range = (" << m_momCstRange[0] << ", " << m_momCstRange[1] << ")\n"
+           << "      dr range       = (" << m_drCstRange[0]  << ", " << m_drCstRange[1]  << ")"
+           << endl;
+      break;
+    case 13:
+      cout << "    Finished event loop!" << endl;
+      break;
+    case 14:
+      cout << "    Extracted output histograms from correlators." << endl;
       break;
   }
   return;
@@ -340,7 +367,7 @@ void SEnergyCorrelator::PrintDebug(const uint32_t code) {
       cout << "SEnergyCorrelator::SetCorrelatorParameters(uint32_t, uint64_t, double, double) setting correlator parameters..." << endl;
       break;
     case 20:
-      cout << "SEnergyCorrelator::SetPtJetBins(vector<pair<double, double>>) setting pTjet bins..." << endl;
+      cout << "SEnergyCorrelator::SetJetParameters(vector<pair<double, double>>, double, double) setting jet parameters..." << endl;
       break;
     case 21:
       cout << "SEnergyCorrelators:CheckCriticalParameters() checking critical parameters..." << endl;
@@ -350,6 +377,21 @@ void SEnergyCorrelator::PrintDebug(const uint32_t code) {
       break;
     case 23:
       cout << "SEnergyCorrelator::PrintError(uint32_t) printing an error..." << endl;
+      break;
+    case 24:
+      cout << "SEnergyCorrelator::SetConstituentParameters(double, double, double, double) setting constituent parameters..." << endl;
+      break;
+    case 25:
+      cout << "SEnergyCorrelator::ExtractHistsFromCorr() extracting output histograms..." << endl;
+      break;
+    case 26:
+      cout << "SEnergyCorrelator::ApplyJetCuts(double, double) applying jet cuts..." << endl;
+      break;
+    case 27:
+      cout << "SEnergyCorrelator::ApplyCstCuts(double, double) applying constituent cuts..." << endl;
+      break;
+    case 28:
+      cout << "SEnergyCorrelator::GetJetPtBin(double) getting jet pT bin..." << endl;
       break;
   }
   return;

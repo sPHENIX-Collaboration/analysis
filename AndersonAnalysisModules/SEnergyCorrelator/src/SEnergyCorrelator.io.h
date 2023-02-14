@@ -1,3 +1,4 @@
+// ----------------------------------------------------------------------------
 // 'SEnergyCorrelator.io.h'
 // Derek Anderson
 // 01.27.2023
@@ -5,6 +6,7 @@
 // A module to implement Peter Komiske's
 // EEC library in the sPHENIX software
 // stack.
+// ----------------------------------------------------------------------------
 
 #pragma once
 
@@ -25,6 +27,49 @@ void SEnergyCorrelator::SetInputTree(const string &iTreeName, const bool isTruth
 
 
 
+void SEnergyCorrelator::SetJetParameters(const vector<pair<double, double>> &pTjetBins, const double minEta, const double maxEta) {
+
+  // print debug statement
+  if (m_inDebugMode) PrintDebug(20);
+
+  m_etaJetRange[0] = minEta;
+  m_etaJetRange[1] = maxEta;
+  m_nBinsJetPt     = pTjetBins.size();
+  for (uint32_t iJetBin = 0; iJetBin < m_nBinsJetPt; iJetBin++) {
+    const double               minPt = pTjetBins.at(iJetBin).first;
+    const double               maxPt = pTjetBins.at(iJetBin).second;
+    const pair<double, double> ptBin = {minPt, maxPt};
+    m_ptJetBins.push_back(ptBin);
+  }
+  m_ptJetRange[0] = m_ptJetBins[0].first;
+  m_ptJetRange[1] = m_ptJetBins[m_nBinsJetPt - 1].second;
+
+  // announce jet parameters
+  if (m_inStandaloneMode) PrintMessage(6);
+  return;
+
+}  // end 'SetJetParameters(vector<pair<double, double>>&, double, double)'
+
+
+
+void SEnergyCorrelator::SetConstituentParameters(const double minMom, const double maxMom, const double minDr, const double maxDr) {
+
+  // print debug statement
+  if (m_inDebugMode) PrintDebug(24);
+
+  m_momCstRange[0] = minMom;
+  m_momCstRange[1] = maxMom;
+  m_drCstRange[0]  = minDr;
+  m_drCstRange[1]  = maxDr;
+
+  // announce cst parameters
+  if (m_inStandaloneMode) PrintMessage(12);
+  return;
+
+}  // end 'SetConstituentParameters(double, double, double, double)'
+
+
+
 void SEnergyCorrelator::SetCorrelatorParameters(const uint32_t nPointCorr, const uint64_t nBinsDr, const double minDr, const double maxDr) {
 
   // print debug statement
@@ -40,27 +85,6 @@ void SEnergyCorrelator::SetCorrelatorParameters(const uint32_t nPointCorr, const
   return;
 
 }  // end 'SetCorrelatorParameters(uint32_t, uint64_t, double, double)'
-
-
-
-void SEnergyCorrelator::SetPtJetBins(const vector<pair<double, double>> &pTjetBins) {
-
-  // print debug statement
-  if (m_inDebugMode) PrintDebug(20);
-
-  m_nBinsJetPt = pTjetBins.size();
-  for (uint32_t iJetBin = 0; iJetBin < m_nBinsJetPt; iJetBin++) {
-    const double               minPt = pTjetBins.at(iJetBin).first;
-    const double               maxPt = pTjetBins.at(iJetBin).second;
-    const pair<double, double> ptBin = {minPt, maxPt};
-    m_ptJetBins.push_back(ptBin);
-  }
-
-  // announce pTjet bins
-  if (m_inStandaloneMode) PrintMessage(6);
-  return;
-
-}  // end 'SetPtJetBins(vector<pair<double, double>>&)'
 
 
 

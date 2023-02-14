@@ -1,3 +1,4 @@
+// ----------------------------------------------------------------------------
 // 'SEnergyCorrelator.cc'
 // Derek Anderson
 // 01.20.2023
@@ -5,6 +6,7 @@
 // A module to implement Peter Komiske's
 // EEC library in the sPHENIX software
 // stack.
+// ----------------------------------------------------------------------------
 
 #define SENERGYCORRELATOR_CC
 
@@ -12,6 +14,7 @@
 #include "SEnergyCorrelator.h"
 #include "SEnergyCorrelator.io.h"
 #include "SEnergyCorrelator.sys.h"
+#include "SEnergyCorrelator.ana.h"
 
 using namespace std;
 using namespace fastjet;
@@ -140,10 +143,63 @@ void SEnergyCorrelator::Analyze() {
     } else {
       nBytes += bytes;
       PrintMessage(8, nEvts, iEvt);
-    } 
-  }  // end of event loop
+    }
 
-  // announce end of analysis
+    // jet loop
+    uint64_t nJets = (int) m_evtNumJets;
+    for (uint64_t iJet = 0; iJet < nJets; iJet++) {
+
+      // clear vector for correlator
+      m_jetCstVector.clear();
+
+      // get jet info
+      const uint64_t nCsts   = m_jetNumCst -> at(iJet);
+      const double   ptJet   = m_jetPt     -> at(iJet);
+      const double   etaJet  = m_jetEta    -> at(iJet);
+      const double   phiJet  = m_jetPhi    -> at(iJet);
+      const double   pxJet   = ptJet * cos(phiJet);
+      const double   pyJet   = ptJet * sin(phiJet);
+      const double   pzJet   = ptJet * sinh(etaJet);
+      const double   pTotJet = sqrt((pxJet * pxJet) + (pyJet * pyJet) + (pzJet * pzJet));
+
+      // select jet pt bin & apply jet cuts
+      const uint32_t  iPtJetBin = GetJetPtBin(ptJet);
+      const bool      isGoodJet = ApplyJetCuts(ptJet, etaJet);
+      if (!isGoodJet) continue;
+
+      // constituent loop
+      for (uint64_t iCst = 0; iCst < nCsts; iCst++) {
+
+        // get cst info
+        const double zCst    = (m_cstZ   -> at(iJet)).at(iCst);
+        const double drCst   = (m_cstDr  -> at(iJet)).at(iCst);
+        const double etaCst  = (m_cstEta -> at(iJet)).at(iCst);
+        const double phiCst  = (m_cstEta -> at(iJet)).at(iCst);
+        const double pTotCst = zCst * pTotJet;
+        const double pxCst   = pTotCst * cosh(etaCst) * cos(phiCst);
+        const double pyCst   = pTotCst * cosh(etaCst) * sin(phiCst);
+        const double pzCst   = pTotCst * sinh(etaCst);
+
+        // apply cst cuts
+        const bool isGoodCst = ApplyCstCuts(pTotCst, drCst);
+        if (!isGoodCst) continue;
+
+        // create pseudojet & add to list
+        PseudoJet constituent(pxCst, pyCst, pzCst, pTotCst);
+        constituent.set_user_index(iCst);
+        m_jetCstVector.push_back(constituent);
+
+      }  // end cst loop
+
+      // run eec computation
+      m_eecLongSide[iPtJetBin] -> compute(m_jetCstVector);
+
+    }  // end jet loop
+  }  // end event loop
+  PrintMessage(13);
+
+  // translate correlators into root hists
+  ExtractHistsFromCorr();
   PrintMessage(9);
   return;
 
