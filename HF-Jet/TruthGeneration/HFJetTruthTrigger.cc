@@ -20,12 +20,13 @@
 #include <TTree.h>
 #include <g4jets/Jet.h>
 #include <g4jets/JetMap.h>
-
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #include <HepMC/GenEvent.h>
 #include <HepMC/GenVertex.h>
 #include <phhepmc/PHHepMCGenEvent.h>
 #include <phhepmc/PHHepMCGenEventMap.h>
-
+#pragma GCC diagnostic pop
 #include <cmath>
 #include <cstddef>
 #include <iostream>
