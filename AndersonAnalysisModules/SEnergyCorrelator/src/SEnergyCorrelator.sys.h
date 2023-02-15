@@ -113,6 +113,8 @@ void SEnergyCorrelator::InitializeMembers() {
   m_ptJetBins.clear();
   m_eecLongSide.clear();
   m_jetCstVector.clear();
+  m_outHistDrAxis.clear();
+  m_outHistLnDrAxis.clear();
   return;
 
 }  // end 'InitializeMembers()'
@@ -183,7 +185,12 @@ void SEnergyCorrelator::InitializeHists() {
   // print debug statement
   if (m_inDebugMode) PrintDebug(5);
 
-  /* TODO output histograms wil be initialized here */
+  for (size_t iPtBin = 0; iPtBin < m_nBinsJetPt; iPtBin++) {
+    TH1D *hInitialDrAxis   = 0x0;
+    TH1D *hInitialLnDrAxis = 0x0;
+    m_outHistDrAxis.push_back(hInitialDrAxis);
+    m_outHistLnDrAxis.push_back(hInitialLnDrAxis);
+  }
 
   // announce histogram initialization
   if (m_inStandaloneMode) PrintMessage(3);
@@ -256,8 +263,8 @@ void SEnergyCorrelator::PrintMessage(const uint32_t code, const uint64_t nEvts, 
            << "      pt range  = (" << m_ptJetRange[0]  << ", " << m_ptJetRange[1]  << ")\n"
            << "    Set pTjet bins:"
            << endl;
-      for (uint32_t iJetBin = 0; iJetBin < m_nBinsJetPt; iJetBin++) {
-        cout << "      bin[" << iJetBin << "] = (" << m_ptJetBins.at(iJetBin).first << ", " << m_ptJetBins.at(iJetBin).second << ")" << endl;
+      for (uint32_t iPtBin = 0; iPtBin < m_nBinsJetPt; iPtBin++) {
+        cout << "      bin[" << iPtBin << "] = (" << m_ptJetBins.at(iPtBin).first << ", " << m_ptJetBins.at(iPtBin).second << ")" << endl;
       }
       break;
     case 7:
@@ -400,7 +407,7 @@ void SEnergyCorrelator::PrintDebug(const uint32_t code) {
 
 
 
-void SEnergyCorrelator::PrintError(const uint32_t code) {
+void SEnergyCorrelator::PrintError(const uint32_t code, const size_t nDrBinEdges, const size_t iDrBin) {
 
   // print debug statement
   if (m_inDebugMode && (m_verbosity > 5)) PrintDebug(23);
@@ -488,6 +495,20 @@ void SEnergyCorrelator::PrintError(const uint32_t code) {
         cerr << "SEnergyCorrelator::OpenOutputFile() PANIC: couldn't open output file! Aborting!" << endl;
       } else {
         cerr << "PANIC: couldn't open output file! Aborting!" << endl;
+      }
+      break;
+    case 12:
+      if (m_inComplexMode) {
+        cerr << "SEnergyCorrelator::ExtraHistsFromCorr() PANIC: number of dR bin edges is no good! Aborting!" << endl;
+      } else {
+        cerr << "PANIC: number of dR bin edges is no good! Aborting!\n"
+             << "       nDrBinEdges = " << nDrBinEdges << ", nDrBins = " << m_nBinsDr
+             << endl;
+      }
+      break;
+    case 13:
+      if (m_inStandaloneMode) {
+        cerr << "WARNING: dR bin #" << iDrBin << " has a NAN as content or error..." << endl;
       }
       break;
   }

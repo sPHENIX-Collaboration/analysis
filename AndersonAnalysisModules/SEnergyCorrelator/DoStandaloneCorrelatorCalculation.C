@@ -32,9 +32,8 @@ void DoStandaloneCorrelatorCalculation() {
 
   // io parameters
   const string inFile("/sphenix/user/danderson/eec/SCorrelatorJetTree/output/condor/final_merge/correlatorJetTree.pp200py8run50_tracks_withQAHists.d2m2y2023.root");
-  const string inReco("RecoJetTree");
-  const string inTrue("TruthJetTree");
-  const string outFile("test.root");
+  const string inTree[NEnergyCorrs]  = {"RecoJetTree",    "TruthJetTree"};
+  const string outFile[NEnergyCorrs] = {"test_reco.root", "test_true.root"};
 
   // correlator parameters
   const uint32_t  nPointCorr             = 2;
@@ -60,8 +59,8 @@ void DoStandaloneCorrelatorCalculation() {
   SEnergyCorrelator *recoCorrelator = new SEnergyCorrelator("SRecoEnergyCorrelator", isComplex, doDebug, inBatch);
   recoCorrelator -> SetVerbosity(verbosity);
   recoCorrelator -> SetInputFile(inFile);
-  recoCorrelator -> SetInputTree(inReco, isTruth[0]);
-  recoCorrelator -> SetOutputFile(outFile);
+  recoCorrelator -> SetInputTree(inTree[0], isTruth[0]);
+  recoCorrelator -> SetOutputFile(outFile[0]);
   recoCorrelator -> SetJetParameters(ptJetBins, etaJetRange[0], etaJetRange[1]);
   recoCorrelator -> SetConstituentParameters(momCstRange[0], momCstRange[1], drCstRange[0], drCstRange[1]);
   recoCorrelator -> SetCorrelatorParameters(nPointCorr, nBinsDr, binRangeDr[0], binRangeDr[1]);
@@ -73,8 +72,8 @@ void DoStandaloneCorrelatorCalculation() {
   SEnergyCorrelator *trueCorrelator = new SEnergyCorrelator("STrueEnergyCorrelator", isComplex, doDebug, inBatch);
   trueCorrelator -> SetVerbosity(verbosity);
   trueCorrelator -> SetInputFile(inFile);
-  trueCorrelator -> SetInputTree(inTrue, isTruth[1]);
-  trueCorrelator -> SetOutputFile(outFile);
+  trueCorrelator -> SetInputTree(inTree[1], isTruth[1]);
+  trueCorrelator -> SetOutputFile(outFile[1]);
   trueCorrelator -> SetJetParameters(ptJetBins, etaJetRange[0], etaJetRange[1]);
   trueCorrelator -> SetConstituentParameters(momCstRange[0], momCstRange[1], drCstRange[0], drCstRange[1]);
   trueCorrelator -> SetCorrelatorParameters(nPointCorr, nBinsDr, binRangeDr[0], binRangeDr[1]);

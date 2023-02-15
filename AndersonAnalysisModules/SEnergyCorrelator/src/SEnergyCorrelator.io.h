@@ -35,9 +35,9 @@ void SEnergyCorrelator::SetJetParameters(const vector<pair<double, double>> &pTj
   m_etaJetRange[0] = minEta;
   m_etaJetRange[1] = maxEta;
   m_nBinsJetPt     = pTjetBins.size();
-  for (uint32_t iJetBin = 0; iJetBin < m_nBinsJetPt; iJetBin++) {
-    const double               minPt = pTjetBins.at(iJetBin).first;
-    const double               maxPt = pTjetBins.at(iJetBin).second;
+  for (uint32_t iPtBin = 0; iPtBin < m_nBinsJetPt; iPtBin++) {
+    const double               minPt = pTjetBins.at(iPtBin).first;
+    const double               maxPt = pTjetBins.at(iPtBin).second;
     const pair<double, double> ptBin = {minPt, maxPt};
     m_ptJetBins.push_back(ptBin);
   }
@@ -154,7 +154,11 @@ void SEnergyCorrelator::SaveOutput() {
   // print debug statement
   if (m_inDebugMode) PrintDebug(9);
 
-  /* TODO saving goes here */
+  m_outFile -> cd();
+  for (size_t iPtBin = 0; iPtBin < m_nBinsJetPt; iPtBin++) {
+    m_outHistDrAxis[iPtBin]   -> Write();
+    m_outHistLnDrAxis[iPtBin] -> Write();
+  }
 
   // announce saving
   if (m_inStandaloneMode) PrintMessage(10);

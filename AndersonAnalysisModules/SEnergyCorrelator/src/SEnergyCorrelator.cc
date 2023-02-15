@@ -69,10 +69,14 @@ SEnergyCorrelator::~SEnergyCorrelator() {
     delete m_outFile;
   }
 
-  // delete pointers to correlators
+  // delete pointers to correlators/histograms
   for (size_t iPtBin = 0; iPtBin < m_nBinsJetPt; iPtBin++) {
     delete m_eecLongSide.at(iPtBin);
+    delete m_outHistDrAxis.at(iPtBin);
+    delete m_outHistLnDrAxis.at(iPtBin);
   }
+  m_outHistLnDrAxis.clear();
+  m_outHistDrAxis.clear();
   m_eecLongSide.clear();
   m_ptJetBins.clear();
 

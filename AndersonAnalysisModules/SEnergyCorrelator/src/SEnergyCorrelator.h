@@ -12,6 +12,7 @@
 #define SENERGYCORRELATOR_H
 
 // standard c includes
+#include <cmath>
 #include <string>
 #include <vector>
 #include <cassert>
@@ -24,7 +25,7 @@
 #include <TFile.h>
 #include <TTree.h>
 #include <TMath.h>
-#include <TNtuple.h>
+#include <TString.h>
 #include <TDirectory.h>
 // fastjet includes
 #include <fastjet/PseudoJet.hh>
@@ -113,7 +114,7 @@ class SEnergyCorrelator {
     void    InitializeTree();
     void    PrintMessage(const uint32_t code, const uint64_t nEvts = 0, const uint64_t event = 0);
     void    PrintDebug(const uint32_t code);
-    void    PrintError(const uint32_t code);
+    void    PrintError(const uint32_t code, const size_t nDrBinEdges = 0, const size_t iDrBin = 0);
     bool    CheckCriticalParameters();
     int64_t LoadTree(const uint64_t entry);
     int64_t GetEntry(const uint64_t entry);
@@ -128,7 +129,8 @@ class SEnergyCorrelator {
     TFile         *m_outFile;
     TFile         *m_inFile;
     TTree         *m_inTree;
-    vector<TH1D*>  m_outHist;
+    vector<TH1D*>  m_outHistDrAxis;
+    vector<TH1D*>  m_outHistLnDrAxis;
 
     // system members
     int    m_fCurrent;
