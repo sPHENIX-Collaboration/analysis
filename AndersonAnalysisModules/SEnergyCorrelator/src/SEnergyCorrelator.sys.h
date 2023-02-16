@@ -1,3 +1,4 @@
+// ----------------------------------------------------------------------------
 // 'SEnergyCorrelator.sys.h'
 // Derek Anderson
 // 01.27.2023
@@ -5,6 +6,7 @@
 // A module to implement Peter Komiske's
 // EEC library in the sPHENIX software
 // stack.
+// ----------------------------------------------------------------------------
 
 #pragma once
 
@@ -38,6 +40,14 @@ void SEnergyCorrelator::InitializeMembers() {
   m_nBinsJetPt        = 0;
   m_drBinRange[0]     = 0.;
   m_drBinRange[1]     = 0.;
+  m_ptJetRange[0]     = 0.;
+  m_ptJetRange[1]     = 0.;
+  m_etaJetRange[0]    = 0.;
+  m_etaJetRange[1]    = 0.;
+  m_momCstRange[0]    = 0.;
+  m_momCstRange[1]    = 0.;
+  m_drCstRange[0]     = 0.;
+  m_drCstRange[1]     = 0.;
   m_truParton3_ID     = 0;
   m_truParton4_ID     = 0;
   m_truParton3_MomX   = 0.;
@@ -102,6 +112,9 @@ void SEnergyCorrelator::InitializeMembers() {
   m_brCstPhi          = 0x0;
   m_ptJetBins.clear();
   m_eecLongSide.clear();
+  m_jetCstVector.clear();
+  m_outHistDrAxis.clear();
+  m_outHistLnDrAxis.clear();
   return;
 
 }  // end 'InitializeMembers()'
@@ -172,7 +185,12 @@ void SEnergyCorrelator::InitializeHists() {
   // print debug statement
   if (m_inDebugMode) PrintDebug(5);
 
-  /* TODO output histograms wil be initialized here */
+  for (size_t iPtBin = 0; iPtBin < m_nBinsJetPt; iPtBin++) {
+    TH1D *hInitialDrAxis   = 0x0;
+    TH1D *hInitialLnDrAxis = 0x0;
+    m_outHistDrAxis.push_back(hInitialDrAxis);
+    m_outHistLnDrAxis.push_back(hInitialLnDrAxis);
+  }
 
   // announce histogram initialization
   if (m_inStandaloneMode) PrintMessage(3);
@@ -240,9 +258,13 @@ void SEnergyCorrelator::PrintMessage(const uint32_t code, const uint64_t nEvts, 
            << endl;
       break;
     case 6:
-      cout << "    Set pTjet bins:" << endl;
-      for (uint32_t iJetBin = 0; iJetBin < m_nBinsJetPt; iJetBin++) {
-        cout << "      bin[" << iJetBin << "] = (" << m_ptJetBins.at(iJetBin).first << ", " << m_ptJetBins.at(iJetBin).second << ")" << endl;
+      cout << "    Set jet parameters:\n"
+           << "      eta range = (" << m_etaJetRange[0] << ", " << m_etaJetRange[1] << ")\n"
+           << "      pt range  = (" << m_ptJetRange[0]  << ", " << m_ptJetRange[1]  << ")\n"
+           << "    Set pTjet bins:"
+           << endl;
+      for (uint32_t iPtBin = 0; iPtBin < m_nBinsJetPt; iPtBin++) {
+        cout << "      bin[" << iPtBin << "] = (" << m_ptJetBins.at(iPtBin).first << ", " << m_ptJetBins.at(iPtBin).second << ")" << endl;
       }
       break;
     case 7:
@@ -264,6 +286,18 @@ void SEnergyCorrelator::PrintMessage(const uint32_t code, const uint64_t nEvts, 
       break;
     case 11:
       cout << "  Finished correlator calculation!\n" << endl;
+      break;
+    case 12:
+      cout << "    Set constituent parameters:\n"
+           << "      momentum range = (" << m_momCstRange[0] << ", " << m_momCstRange[1] << ")\n"
+           << "      dr range       = (" << m_drCstRange[0]  << ", " << m_drCstRange[1]  << ")"
+           << endl;
+      break;
+    case 13:
+      cout << "    Finished event loop!" << endl;
+      break;
+    case 14:
+      cout << "    Extracted output histograms from correlators." << endl;
       break;
   }
   return;
@@ -340,7 +374,7 @@ void SEnergyCorrelator::PrintDebug(const uint32_t code) {
       cout << "SEnergyCorrelator::SetCorrelatorParameters(uint32_t, uint64_t, double, double) setting correlator parameters..." << endl;
       break;
     case 20:
-      cout << "SEnergyCorrelator::SetPtJetBins(vector<pair<double, double>>) setting pTjet bins..." << endl;
+      cout << "SEnergyCorrelator::SetJetParameters(vector<pair<double, double>>, double, double) setting jet parameters..." << endl;
       break;
     case 21:
       cout << "SEnergyCorrelators:CheckCriticalParameters() checking critical parameters..." << endl;
@@ -351,6 +385,21 @@ void SEnergyCorrelator::PrintDebug(const uint32_t code) {
     case 23:
       cout << "SEnergyCorrelator::PrintError(uint32_t) printing an error..." << endl;
       break;
+    case 24:
+      cout << "SEnergyCorrelator::SetConstituentParameters(double, double, double, double) setting constituent parameters..." << endl;
+      break;
+    case 25:
+      cout << "SEnergyCorrelator::ExtractHistsFromCorr() extracting output histograms..." << endl;
+      break;
+    case 26:
+      cout << "SEnergyCorrelator::ApplyJetCuts(double, double) applying jet cuts..." << endl;
+      break;
+    case 27:
+      cout << "SEnergyCorrelator::ApplyCstCuts(double, double) applying constituent cuts..." << endl;
+      break;
+    case 28:
+      cout << "SEnergyCorrelator::GetJetPtBin(double) getting jet pT bin..." << endl;
+      break;
   }
   return;
 
@@ -358,7 +407,7 @@ void SEnergyCorrelator::PrintDebug(const uint32_t code) {
 
 
 
-void SEnergyCorrelator::PrintError(const uint32_t code) {
+void SEnergyCorrelator::PrintError(const uint32_t code, const size_t nDrBinEdges, const size_t iDrBin) {
 
   // print debug statement
   if (m_inDebugMode && (m_verbosity > 5)) PrintDebug(23);
@@ -446,6 +495,20 @@ void SEnergyCorrelator::PrintError(const uint32_t code) {
         cerr << "SEnergyCorrelator::OpenOutputFile() PANIC: couldn't open output file! Aborting!" << endl;
       } else {
         cerr << "PANIC: couldn't open output file! Aborting!" << endl;
+      }
+      break;
+    case 12:
+      if (m_inComplexMode) {
+        cerr << "SEnergyCorrelator::ExtraHistsFromCorr() PANIC: number of dR bin edges is no good! Aborting!" << endl;
+      } else {
+        cerr << "PANIC: number of dR bin edges is no good! Aborting!\n"
+             << "       nDrBinEdges = " << nDrBinEdges << ", nDrBins = " << m_nBinsDr
+             << endl;
+      }
+      break;
+    case 13:
+      if (m_inStandaloneMode) {
+        cerr << "WARNING: dR bin #" << iDrBin << " has a NAN as content or error..." << endl;
       }
       break;
   }
