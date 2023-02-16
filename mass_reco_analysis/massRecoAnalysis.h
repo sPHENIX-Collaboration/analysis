@@ -77,6 +77,8 @@ int getNodes(PHCompositeNode *topNode);
 Acts::Vector3 calculateDca(SvtxTrack *track, Acts::Vector3 momentum, Acts::Vector3 position);
 
 bool projectTrackToCylinder(SvtxTrack* track, double Radius, Eigen::Vector3d& pos, Eigen::Vector3d& mom);
+bool projectTrackToPoint(SvtxTrack* track, Eigen::Vector3d PCA, Eigen::Vector3d& pos, Eigen::Vector3d& mom);
+
 
 BoundTrackParamResult propagateTrack(const Acts::BoundTrackParameters& params, const SurfacePtr& targetSurf);
 
