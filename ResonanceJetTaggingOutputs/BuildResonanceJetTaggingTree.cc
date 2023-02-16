@@ -22,6 +22,7 @@
 
 #include <phhepmc/PHHepMCGenEvent.h>
 #include <phhepmc/PHHepMCGenEventMap.h>
+#include <phhepmc/PHGenIntegral.h>
 
 /// Fun4All includes
 #include <fun4all/Fun4AllReturnCodes.h>
@@ -181,7 +182,7 @@ int BuildResonanceJetTaggingTree::process_event(PHCompositeNode *topNode)
  * End the module and finish any data collection. Clean up any remaining
  * loose ends
  */
-int BuildResonanceJetTaggingTree::End(PHCompositeNode */*topNode*/)
+int BuildResonanceJetTaggingTree::End(PHCompositeNode *topNode)
 {
   if (Verbosity() > 1)
   {
@@ -190,6 +191,20 @@ int BuildResonanceJetTaggingTree::End(PHCompositeNode */*topNode*/)
 
   /// Change to the outfile
   m_outfile->cd();
+
+  if(m_dotruth) {
+    PHGenIntegral *phgen = findNode::getClass<PHGenIntegral>(topNode, "PHGenIntegral");
+    if(phgen)
+      {
+	m_intlumi = phgen->get_Integrated_Lumi();
+	m_nprocessedevents = phgen->get_N_Processed_Event();
+	m_nacceptedevents = phgen->get_N_Generator_Accepted_Event();
+	m_xsecprocessedevents = phgen->get_CrossSection_Processed_Event();
+	m_xsecacceptedevents = phgen->get_CrossSection_Generator_Accepted_Event();
+	m_runinfo->Fill();
+      }
+    m_runinfo->Write();
+  }
 
   m_taggedjettree->Write();
   m_eventcount_h->Write();
@@ -228,6 +243,7 @@ int BuildResonanceJetTaggingTree::loopHFHadronic(PHCompositeNode *topNode)
 
     hepMCGenEvent = getGenEventFromNode(topNode, "PHHepMCGenEventMap");
     if(!hepMCGenEvent) return Fun4AllReturnCodes::ABORTEVENT;
+    
   }
 
   m_eventcount_h->Fill(1);
@@ -328,7 +344,9 @@ int BuildResonanceJetTaggingTree::loopHFHadronic(PHCompositeNode *topNode)
       if(!genTagJet) continue;
 
       //Check if truth was matched to reconstructed
-      if(isReconstructed(genTagJet->get_id(), recJetIndex)) continue; 
+      if(m_dorec) {
+	if(isReconstructed(genTagJet->get_id(), recJetIndex)) continue; 
+      }
 
       Jet::Iter genTagIter = genTagJet->find(Jet::SRC::VOID);
 
@@ -351,6 +369,24 @@ int BuildResonanceJetTaggingTree::loopHFHadronic(PHCompositeNode *topNode)
       m_truth_jet_phi = genTagJet->get_phi();
       m_truth_jet_m = genTagJet->get_mass();
       m_truth_jet_e = genTagJet->get_e();
+
+      /// iterate over all constituents and add them to the tree
+      for(auto citer = genTagJet->begin_comp(); citer != genTagJet->end_comp();
+	  ++citer)
+	{
+	  HepMC::GenParticle* constituent = hepMCGenEvent->barcode_to_particle(citer->second);
+	  /// Don't include the tagged particle
+	  if(constituent == genTag)
+	    {
+	      continue;
+	    } 
+        
+	  m_truthjet_const_px.push_back(constituent->momentum().px());
+	  m_truthjet_const_py.push_back(constituent->momentum().py());
+	  m_truthjet_const_pz.push_back(constituent->momentum().pz());
+	  m_truthjet_const_e.push_back(constituent->momentum().e());
+	  	  
+	}
 
       m_taggedjettree->Fill();
     }
@@ -496,6 +532,14 @@ bool BuildResonanceJetTaggingTree::isReconstructed(int index, std::vector<int> i
 
 void BuildResonanceJetTaggingTree::initializeTrees()
 {
+  delete m_runinfo;
+  m_runinfo = new TTree("m_runinfo","A tree with the run information");
+  m_runinfo->Branch("m_intlumi",&m_intlumi, "m_intlumi/F");
+  m_runinfo->Branch("m_nprocessedevents", &m_nprocessedevents, "m_nprocessedevents/F");
+  m_runinfo->Branch("m_nacceptedevents", &m_nacceptedevents, "m_nacceptedevents/F");
+  m_runinfo->Branch("m_xsecprocessedevents", &m_xsecprocessedevents, "m_xsecprocessedevents/F");
+  m_runinfo->Branch("m_xsecacceptedevents", &m_xsecacceptedevents, "m_xsecacceptedevents/F");
+
   delete m_taggedjettree;
   m_taggedjettree = new TTree("m_taggedjettree", "A tree with Tagged-Jet info");
   m_taggedjettree->Branch("m_reco_tag_px", &m_reco_tag_px, "m_reco_tag_px/F");
@@ -531,6 +575,10 @@ void BuildResonanceJetTaggingTree::initializeTrees()
   m_taggedjettree->Branch("m_truth_jet_phi", &m_truth_jet_phi, "m_truth_jet_phi/F");
   m_taggedjettree->Branch("m_truth_jet_m", &m_truth_jet_m, "m_truth_jet_m/F");
   m_taggedjettree->Branch("m_truth_jet_e", &m_truth_jet_e, "m_truth_jet_e/F");
+  m_taggedjettree->Branch("m_truthjet_const_px", &m_truthjet_const_px);
+  m_taggedjettree->Branch("m_truthjet_const_py", &m_truthjet_const_py);
+  m_taggedjettree->Branch("m_truthjet_const_pz", &m_truthjet_const_pz);
+  m_taggedjettree->Branch("m_truthjet_const_e", &m_truthjet_const_e);
 
 }
 void BuildResonanceJetTaggingTree::initializeVariables()
@@ -580,6 +628,11 @@ void BuildResonanceJetTaggingTree::resetTreeVariables()
   m_truth_jet_phi = NAN;
   m_truth_jet_m = NAN;
   m_truth_jet_e = NAN;
+
+  m_truthjet_const_px.clear();
+  m_truthjet_const_py.clear();
+  m_truthjet_const_pz.clear();
+  m_truthjet_const_e.clear();
 }
 
 JetMapv1* BuildResonanceJetTaggingTree::getJetMapFromNode(PHCompositeNode *topNode, const std::string &name)
