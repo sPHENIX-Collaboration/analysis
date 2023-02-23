@@ -12,15 +12,16 @@
 # the same directory as you're
 # running this in!
 
+# parameters
+build="ana.344"
+nSkip=0
+
 # set up environment
 export USER="$(id -u -n)"
 export LOGNAME=${USER}
 export HOME=/sphenix/u/${LOGNAME}
-source /opt/sphenix/core/bin/sphenix_setup.sh -n
+source /opt/sphenix/core/bin/sphenix_setup.sh -n $build
 printenv
-
-# fixed parameters
-nSkip=0
 
 # run macro
 root -b -q "Fun4All_G4_sPHENIX_ForTrackCutStudy.C($1, \"$2\", \"$4\", \"$3\", $nSkip)"

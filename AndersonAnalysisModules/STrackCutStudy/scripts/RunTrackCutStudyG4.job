@@ -1,9 +1,11 @@
+# -----------------------------------------------------------------------------
 # 'RunTrackCutStudyG4.job'
 # Derek Anderson
 # 11.18.2022
 #
 # Job file to run F4A macro for
 # track cut study via Condor.
+# -----------------------------------------------------------------------------
 
 # generic parameters
 Universe     = vanilla

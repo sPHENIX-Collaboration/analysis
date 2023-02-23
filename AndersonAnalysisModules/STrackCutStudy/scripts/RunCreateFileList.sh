@@ -1,16 +1,18 @@
 #!/bin/bash
+# -----------------------------------------------------------------------------
 # 'RunCreateFileList.sh'
 # Derek Anderson
 # 11.10.2022
 #
 # Quick script to run CreateFileList.pl
 # with specified arguments.
+# -----------------------------------------------------------------------------
 
 # output parameter
-NAME="crossCheck_forTrackCutStudy"
+NAME="forTrackCutStudy_withPileup"
 
 # CreateFileList.pl args
-TYPE=4
+TYPE=6
 PILE=1
 FILE="G4Hits DST_TRUTH_G4HIT"
 SEG=300

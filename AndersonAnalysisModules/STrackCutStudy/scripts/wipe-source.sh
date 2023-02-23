@@ -1,9 +1,11 @@
 #!/bin/bash
+# -----------------------------------------------------------------------------
 # 'wipe-source.sh'
 # Derek Anderson
 # 12.06.2022
 #
 # Use this wipe your source directory!
+# -----------------------------------------------------------------------------
 
 # move key files out of directory
 mv ./src/*.{cc,h} ./
