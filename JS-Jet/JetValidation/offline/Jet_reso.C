@@ -64,22 +64,22 @@ void Jet_reso()
   const Float_t pt_range[] = {10,15,20,25,30,35,40,45,50,60,80};
   const int pt_N = sizeof(pt_range)/sizeof(float) - 1;
   const int resp_N = 60;
-  Float_t resp_bins[resp_N];
+  Float_t resp_bins[resp_N+1];
   for(int i = 0; i < resp_N+1; i++){
     resp_bins[i] = 1.2/resp_N * i;
   }
   const int eta_N = 40;
-  Float_t eta_bins[eta_N];
+  Float_t eta_bins[eta_N+1];
   for(int i = 0; i < eta_N+1; i++){
     eta_bins[i] = -1.1 + 2.2/eta_N * i;
   }
   const int phi_N = 40;
-  Float_t phi_bins[phi_N];
+  Float_t phi_bins[phi_N+1];
   for(int i = 0; i < phi_N+1; i++){
     phi_bins[i] = -TMath::Pi() + 2*TMath::Pi()/phi_N * i;
   }
   const int subet_N = 400;
-  Float_t subet_bins[subet_N];
+  Float_t subet_bins[subet_N+1];
   for(int i = 0; i < subet_N+1; i++){
     subet_bins[i] = i*0.5;
   }
