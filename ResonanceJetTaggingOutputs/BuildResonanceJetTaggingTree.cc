@@ -243,7 +243,7 @@ int BuildResonanceJetTaggingTree::loopHFHadronic(PHCompositeNode *topNode)
 
     hepMCGenEvent = getGenEventFromNode(topNode, "PHHepMCGenEventMap");
     if(!hepMCGenEvent) return Fun4AllReturnCodes::ABORTEVENT;
-    
+
   }
 
   m_eventcount_h->Fill(1);
@@ -313,7 +313,7 @@ int BuildResonanceJetTaggingTree::loopHFHadronic(PHCompositeNode *topNode)
           m_truth_tag_pz = genTag->momentum().pz();
           m_truth_tag_pt = std::sqrt(m_truth_tag_px * m_truth_tag_px + m_truth_tag_py * m_truth_tag_py);
           m_truth_tag_eta = atanh(m_truth_tag_pz / genTag->momentum().e());
-          m_truth_tag_phi = atan(m_truth_tag_py / m_truth_tag_px);
+          m_truth_tag_phi = atan2(m_truth_tag_py, m_truth_tag_px);
 	  m_truth_tag_m = genTag->momentum().m();
 	  m_truth_tag_e = genTag->momentum().e();
 
@@ -328,7 +328,7 @@ int BuildResonanceJetTaggingTree::loopHFHadronic(PHCompositeNode *topNode)
 
         }
       }
- 
+
       m_taggedjettree->Fill();
     }
   }
@@ -345,7 +345,7 @@ int BuildResonanceJetTaggingTree::loopHFHadronic(PHCompositeNode *topNode)
 
       //Check if truth was matched to reconstructed
       if(m_dorec) {
-	if(isReconstructed(genTagJet->get_id(), recJetIndex)) continue; 
+	if(isReconstructed(genTagJet->get_id(), recJetIndex)) continue;
       }
 
       Jet::Iter genTagIter = genTagJet->find(Jet::SRC::VOID);
@@ -357,7 +357,7 @@ int BuildResonanceJetTaggingTree::loopHFHadronic(PHCompositeNode *topNode)
       m_truth_tag_pz = genTag->momentum().pz();
       m_truth_tag_pt = std::sqrt(m_truth_tag_px * m_truth_tag_px + m_truth_tag_py * m_truth_tag_py);
       m_truth_tag_eta = atanh(m_truth_tag_pz / genTag->momentum().e());
-      m_truth_tag_phi = atan(m_truth_tag_py / m_truth_tag_px);
+      m_truth_tag_phi = atan2(m_truth_tag_py, m_truth_tag_px);
       m_truth_tag_m = genTag->momentum().m();
       m_truth_tag_e = genTag->momentum().e();
 
@@ -379,13 +379,13 @@ int BuildResonanceJetTaggingTree::loopHFHadronic(PHCompositeNode *topNode)
 	  if(constituent == genTag)
 	    {
 	      continue;
-	    } 
-        
+	    }
+
 	  m_truthjet_const_px.push_back(constituent->momentum().px());
 	  m_truthjet_const_py.push_back(constituent->momentum().py());
 	  m_truthjet_const_pz.push_back(constituent->momentum().pz());
 	  m_truthjet_const_e.push_back(constituent->momentum().e());
-	  	  
+
 	}
 
       m_taggedjettree->Fill();
