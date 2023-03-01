@@ -69,7 +69,7 @@ void Fun4All_JetVal(const char *filelisttruth = "dst_truth_jet.list",
   se->registerInputManager(in2);
 
   
-  se->run(10);
+  se->run(-1);
   se->End();
 
   gSystem->Exit(0);

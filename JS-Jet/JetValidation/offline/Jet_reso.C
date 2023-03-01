@@ -9,12 +9,13 @@ void Jet_reso()
   TH2::SetDefaultSumw2();
 
   TChain * ct = new TChain("T");
-  ct->Add("");  
+  //if you want to run one file use this
+  ct->Add("../macro/output.root");
 
   //if you want to combine multiple files use this
-  for(int i = 0; i < 100; i++){
-    ct->Add(Form("../macro/condor/output_Run40_30GeV_UESubtracted/jetIso_%d/isoJetCalibOut_%d.root",i,i));
-    }
+  /*for(int i = 0; i < 100; i++){
+    ct->Add(Form("../macro/condor/output_%i.root",i));
+    }*/
 
   vector<float> *eta = 0;
   vector<float> *phi = 0;
