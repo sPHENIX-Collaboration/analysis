@@ -21,6 +21,8 @@ class TTree;
 class TH1I;
 class PHG4Particle;
 class KFParticle_Container;
+class SvtxEvalStack;
+class SvtxTrackEval;
 
 /// Definition of this analysis module class
 class BuildResonanceJetTaggingTree : public SubsysReco
@@ -77,8 +79,10 @@ class BuildResonanceJetTaggingTree : public SubsysReco
   bool m_dorec;
   bool m_dotruth;
   int m_nDaughters;
+  SvtxEvalStack *m_svtx_evalstack = nullptr;
+  SvtxTrackEval *m_trackeval = nullptr;
 
-  std::vector<float> m_truthjet_const_px, m_truthjet_const_py, 
+  std::vector<float> m_truthjet_const_px, m_truthjet_const_py,
     m_truthjet_const_pz, m_truthjet_const_e;
 
   ResonanceJetTagging::TAG m_tag_particle;
