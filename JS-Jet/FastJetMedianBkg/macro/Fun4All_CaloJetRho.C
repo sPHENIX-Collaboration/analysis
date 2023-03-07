@@ -100,13 +100,13 @@ void GenerateIONames ( string &intrueList, string &incaloList, string &incaloclu
 
 
 
-void Fun4All_CaloJetRho_forCondor(
+void Fun4All_CaloJetRho(
     const int nevnt = 100,
     const double min_calo_pt=0.2,
     const double min_jet_pt = 10.,
     const int verbosity=1,
     const char *index = NULL,
-    const bool embed = false
+    const bool embed = true
   )
 {
     
@@ -132,10 +132,10 @@ void Fun4All_CaloJetRho_forCondor(
 //    se->registerSubsystem(towerjetreco);
 //  }
     
-  PHG4CentralityReco *cent = new PHG4CentralityReco();
-  cent->Verbosity(0);
-  cent->GetCalibrationParameters().ReadFromFile("centrality", "xml", 0, 0, string(getenv("CALIBRATIONROOT")) + string("/Centrality/"));
-  se->registerSubsystem( cent );
+    PHG4CentralityReco *cent = new PHG4CentralityReco();
+    cent->Verbosity(0);
+    if (embed) { cent->GetCalibrationParameters().ReadFromFile("centrality", "xml", 0, 0, string(getenv("CALIBRATIONROOT")) + string("/Centrality")); }
+      se->registerSubsystem( cent );
 
 //    const char *fout = fout_name.c_str();
   // change lower pt and eta cut to make them visible using the example

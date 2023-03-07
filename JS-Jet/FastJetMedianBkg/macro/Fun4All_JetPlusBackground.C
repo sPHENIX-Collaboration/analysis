@@ -26,9 +26,9 @@ R__LOAD_LIBRARY(libg4jets.so)
 R__LOAD_LIBRARY(libjetbackground.so)
 R__LOAD_LIBRARY(libjetplusbackground.so)
 
-void Fun4All_JetPlusBackground_forCondor(
+void Fun4All_JetPlusBackground(
     const double min_calo_pt=0.2,
-    const int nevnt = 10,
+    const int nevnt = 1000,
     const int n_print_freq            = 1,
     const std::string &recojetname    = "AntiKt_Tower_r04",
     const char *index = NULL
@@ -59,7 +59,7 @@ void Fun4All_JetPlusBackground_forCondor(
     
   PHG4CentralityReco *cent = new PHG4CentralityReco();
   cent->Verbosity(0);
-  cent->GetCalibrationParameters().ReadFromFile("centrality", "xml", 0, 0, string(getenv("CALIBRATIONROOT")) + string("/Centrality/"));
+  if (embed) { cent->GetCalibrationParameters().ReadFromFile("centrality", "xml", 0, 0, string(getenv("CALIBRATIONROOT")) + string("/Centrality")); }
   se->registerSubsystem( cent );
 
   // change lower pt and eta cut to make them visible using the example

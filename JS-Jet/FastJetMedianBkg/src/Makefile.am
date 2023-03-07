@@ -8,7 +8,6 @@ AM_CPPFLAGS = \
 lib_LTLIBRARIES = \
    libfastjetmedianbkg.la \
    libjetplusbackground.la
-#   libtracksandcalojets.la
 
 libfastjetmedianbkg_la_LDFLAGS = \
   -L$(libdir) \
@@ -29,8 +28,6 @@ pkginclude_HEADERS = \
   JetPlusBackground.h \
     MemTimeProgression.h
 
-#  TracksAndCaloJets.h
-
 libjetplusbackground_la_LDFLAGS = \
   -L$(libdir) \
   -L$(OFFLINE_MAIN)/lib \
@@ -45,20 +42,6 @@ libjetplusbackground_la_SOURCES = \
   JetPlusBackground.cc \
     MemTimeProgression.cc
  
-#libtracksandcalojets_la_LDFLAGS = \
-#  -L$(libdir) \
-#  -L$(OFFLINE_MAIN)/lib \
-#  `fastjet-config --libs`
-#
-#libtracksandcalojets_la_LIBADD = \
-#  -lfun4all \
-#  -lg4dst \
-#  -lg4eval
-#
-#libtracksandcalojets_la_SOURCES = \
-#  TracksAndCaloJets.cc \
-#    MemTimeProgression.cc
-    
 ################################################
 # linking tests
 
@@ -73,9 +56,6 @@ testexternals_SOURCES = \
 testexternals_LDADD = \
   libfastjetmedianbkg.la \
   libjetplusbackground.la
-
-#  libjetplusbackground.la
-#  libtracksandcalojets.la
 
 testexternals.cc:
 	echo "//*** this is a generated file. Do not commit, do not edit" > $@

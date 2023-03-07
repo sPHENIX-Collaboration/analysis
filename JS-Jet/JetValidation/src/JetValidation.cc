@@ -18,6 +18,8 @@
 #include <calobase/RawTowerContainer.h>
 #include <calobase/RawTowerGeom.h>
 #include <calobase/RawTowerGeomContainer.h>
+#include <calobase/TowerInfoContainer.h>
+#include <calobase/TowerInfo.h>
 
 #include <jetbackground/TowerBackground.h>
 
@@ -156,7 +158,7 @@ int JetValidation::process_event(PHCompositeNode *topNode)
     }
   
   // interface to jet seeds
-  JetMap* seedjetsraw = findNode::getClass<JetMap>(topNode, "AntiKt_Tower_HIRecoSeedsRaw_r02");
+  JetMap* seedjetsraw = findNode::getClass<JetMap>(topNode, "AntiKt_TowerInfo_HIRecoSeedsRaw_r02");
   if (!seedjetsraw && m_doSeeds)
     {
       std::cout
@@ -165,7 +167,7 @@ int JetValidation::process_event(PHCompositeNode *topNode)
       exit(-1);
     }
 
-  JetMap* seedjetssub = findNode::getClass<JetMap>(topNode, "AntiKt_Tower_HIRecoSeedsSub_r02");
+  JetMap* seedjetssub = findNode::getClass<JetMap>(topNode, "AntiKt_TowerInfo_HIRecoSeedsSub_r02");
   if (!seedjetssub && m_doSeeds)
     {
       std::cout
@@ -185,9 +187,9 @@ int JetValidation::process_event(PHCompositeNode *topNode)
     }
 
   //calorimeter towers
-  RawTowerContainer *towersEM3 = findNode::getClass<RawTowerContainer>(topNode, "TOWER_CALIB_CEMC_RETOWER");
-  RawTowerContainer *towersIH3 = findNode::getClass<RawTowerContainer>(topNode, "TOWER_CALIB_HCALIN");
-  RawTowerContainer *towersOH3 = findNode::getClass<RawTowerContainer>(topNode, "TOWER_CALIB_HCALOUT");
+  TowerInfoContainer *towersEM3 = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_CEMC_RETOWER");
+  TowerInfoContainer *towersIH3 = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALIN");
+  TowerInfoContainer *towersOH3 = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALOUT");
   RawTowerGeomContainer *tower_geom = findNode::getClass<RawTowerGeomContainer>(topNode, "TOWERGEOM_HCALIN");
   RawTowerGeomContainer *tower_geomOH = findNode::getClass<RawTowerGeomContainer>(topNode, "TOWERGEOM_HCALOUT");
   if(!towersEM3 || !towersIH3 || !towersOH3){
@@ -205,7 +207,7 @@ int JetValidation::process_event(PHCompositeNode *topNode)
   }
 
   //underlying event
-  TowerBackground *background = findNode::getClass<TowerBackground>(topNode, "TowerBackground_Sub2");
+  TowerBackground *background = findNode::getClass<TowerBackground>(topNode, "TowerInfoBackground_Sub2");
   if(!background){
     std::cout<<"Can't get background. Exiting"<<std::endl;
     return Fun4AllReturnCodes::EVENT_OK;
@@ -249,18 +251,24 @@ int JetValidation::process_event(PHCompositeNode *topNode)
 
 	  for (Jet::ConstIter comp = jet->begin_comp(); comp != jet->end_comp(); ++comp)
 	    {
-	      RawTower *tower;
+	      TowerInfo *tower;
 	      nconst++;
-
-	      if ((*comp).first == 15)
+	      unsigned int channel = (*comp).second;
+	      
+	      if ((*comp).first == 15 ||  (*comp).first == 30)
 		{
-		  tower = towersIH3->getTower((*comp).second);
+		  tower = towersIH3->get_tower_at_channel(channel);
 		  if(!tower || !tower_geom){
 		    continue;
 		  }
-		  float UE = background->get_UE(1).at(tower->get_bineta());
-		  float tower_phi = tower_geom->get_tower_geometry(tower->get_key())->get_phi();
-		  float tower_eta = tower_geom->get_tower_geometry(tower->get_key())->get_eta();
+		  unsigned int calokey = towersIH3->encode_key(channel);
+		  int ieta = towersIH3->getTowerEtaBin(calokey);
+		  int iphi = towersIH3->getTowerPhiBin(calokey);
+		  const RawTowerDefs::keytype key = RawTowerDefs::encode_towerid(RawTowerDefs::CalorimeterId::HCALIN, ieta, iphi);
+		  float UE = background->get_UE(1).at(ieta);
+		  float tower_phi = tower_geom->get_tower_geometry(key)->get_phi();
+		  float tower_eta = tower_geom->get_tower_geometry(key)->get_eta();
+
 		  UE = UE * (1 + 2 * background_v2 * cos(2 * (tower_phi - background_Psi2)));
 		  totalE += tower->get_energy() + UE;
 		  double pt = tower->get_energy() / cosh(tower_eta);
@@ -268,17 +276,22 @@ int JetValidation::process_event(PHCompositeNode *topNode)
 		  totalPy += pt * sin(tower_phi);
 		  totalPz += pt * sinh(tower_eta);
 		}
-	      else if ((*comp).first == 16)
+	      else if ((*comp).first == 16 || (*comp).first == 31)
 		{
-		  tower = towersOH3->getTower((*comp).second);
+		  tower = towersOH3->get_tower_at_channel(channel);
 		  if(!tower || !tower_geomOH)
 		    {
 		      continue;
 		    }
+		  
+		  unsigned int calokey = towersOH3->encode_key(channel);
+		  int ieta = towersOH3->getTowerEtaBin(calokey);
+		  int iphi = towersOH3->getTowerPhiBin(calokey);
+		  const RawTowerDefs::keytype key = RawTowerDefs::encode_towerid(RawTowerDefs::CalorimeterId::HCALOUT, ieta, iphi);
+		  float UE = background->get_UE(2).at(ieta);
+		  float tower_phi = tower_geomOH->get_tower_geometry(key)->get_phi();
+		  float tower_eta = tower_geomOH->get_tower_geometry(key)->get_eta();
 
-		  float UE = background->get_UE(2).at(tower->get_bineta());
-		  float tower_phi = tower_geomOH->get_tower_geometry(tower->get_key())->get_phi();
-		  float tower_eta = tower_geomOH->get_tower_geometry(tower->get_key())->get_eta();
 		  UE = UE * (1 + 2 * background_v2 * cos(2 * (tower_phi - background_Psi2)));
 		  totalE +=tower->get_energy() + UE;
 		  double pt = tower->get_energy() / cosh(tower_eta);
@@ -286,16 +299,22 @@ int JetValidation::process_event(PHCompositeNode *topNode)
 		  totalPy += pt * sin(tower_phi);
 		  totalPz += pt * sinh(tower_eta);
 		}
-	      else if ((*comp).first == 14)
+	      else if ((*comp).first == 14 || (*comp).first == 29)
 		{
-		  tower = towersEM3->getTower((*comp).second);
+		  tower = towersEM3->get_tower_at_channel(channel);
 		  if(!tower || !tower_geom)
 		    {
 		      continue;
 		    }
-		  float UE = background->get_UE(0).at(tower->get_bineta());
-		  float tower_phi = tower_geom->get_tower_geometry(tower->get_key())->get_phi();
-		  float tower_eta = tower_geom->get_tower_geometry(tower->get_key())->get_eta();
+
+		  unsigned int calokey = towersEM3->encode_key(channel);
+		  int ieta = towersEM3->getTowerEtaBin(calokey);
+		  int iphi = towersEM3->getTowerPhiBin(calokey);
+		  const RawTowerDefs::keytype key = RawTowerDefs::encode_towerid(RawTowerDefs::CalorimeterId::HCALIN, ieta, iphi);
+		  float UE = background->get_UE(0).at(ieta);
+		  float tower_phi = tower_geom->get_tower_geometry(key)->get_phi();
+		  float tower_eta = tower_geom->get_tower_geometry(key)->get_eta();
+
 		  UE = UE * (1 + 2 * background_v2 * cos(2 * (tower_phi - background_Psi2)));
 		  totalE +=tower->get_energy() + UE;
 		  double pt = tower->get_energy() / cosh(tower_eta);
