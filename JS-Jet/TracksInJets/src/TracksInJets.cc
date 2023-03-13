@@ -162,8 +162,8 @@ int TracksInJets::End(PHCompositeNode *topNode)
   for(int i = 0; i < m_h_track_vs_calo_pt->GetNbinsZ(); i++)
     {
       m_h_track_vs_calo_pt->GetZaxis()->SetRange(i+1,i+1);
-      h_proj = (TH2*) m_h_track_vs_calo_pt->Project3D("yz");
-      h_proj->Write(Form("h_track_vs_calo_%2.0f",m_h_track_vs_calo_pt->GetZaxis()->GetBinLowEdge(i+1)));
+      h_proj = (TH2*) m_h_track_vs_calo_pt->Project3D("yx");
+      h_proj->Write(Form("h_track_vs_calo_%1.0f",m_h_track_vs_calo_pt->GetZaxis()->GetBinLowEdge(i+1)));
     }
 
   return Fun4AllReturnCodes::EVENT_OK;
