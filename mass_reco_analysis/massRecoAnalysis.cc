@@ -150,17 +150,21 @@ void massRecoAnalysis::fillNtp(SvtxTrack *track1, SvtxTrack *track2, Acts::Vecto
   auto vtxid      = track1->get_vertex_id();
   auto svtxVertex = m_vertexMap->get(vtxid);
 
-  Acts::Vector3 vertex (svtxVertex->get_x(),svtxVertex->get_y(), svtxVertex->get_z());
+  Acts::Vector3 vertex (svtxVertex->get_x(),svtxVertex->get_y(), svtxVertex->get_z()); // primary vertex
 
   Acts::Vector3 pathLength      = (pca_rel1 + pca_rel2)*0.5 - vertex;
   Acts::Vector3 pathLength_proj = (pca_rel1_proj + pca_rel2_proj)*0.5 - vertex;
 
-  float mag_pathLength      =  sqrt(pow(pathLength(0),2) + pow(pathLength(1),2) + pow(pathLength(2),2));
+  float mag_pathLength      = sqrt(pow(pathLength(0),2) + pow(pathLength(1),2) + pow(pathLength(2),2));
   float mag_pathLength_proj = sqrt(pow(pathLength_proj(0),2) + pow(pathLength_proj(1),2) + pow(pathLength_proj(2),2));
+
+  
+  Acts::Vector3 projected_momentum = projected_mom1 + projected_mom2;
+  float cos_theta_reco = pathLength_proj.dot(projected_momentum)/(projected_momentum.norm()*pathLength_proj.norm());
 
   if(!svtxVertex){ return; }
   
-  float reco_info[] = {track1->get_x(), track1->get_y(), track1->get_z(), track1->get_px(), track1->get_py(), track1->get_pz(), (float) dcavals1(0), (float) dcavals1(1), (float) dcavals1(2), (float) pca_rel1(0), (float) pca_rel1(1), (float) pca_rel1(2), (float) eta1,  (float) track1->get_charge(), (float) tpcClusters1, track2->get_x(), track2->get_y(), track2->get_z(),  track2->get_px(), track2->get_py(), track2->get_pz(), (float) dcavals2(0), (float) dcavals2(1), (float) dcavals2(2), (float) pca_rel2(0), (float) pca_rel2(1), (float) pca_rel2(2), (float) eta2, (float) track2->get_charge(), (float) tpcClusters2, svtxVertex->get_x(), svtxVertex->get_y(), svtxVertex->get_z(), (float) pair_dca,(float) invariantMass, (float) invariantPt, (float) pathLength(0),(float) pathLength(1), (float) pathLength(2), mag_pathLength, rapidity, pseudorapidity, (float) projected_pos1(0),(float) projected_pos1(1),(float) projected_pos1(2), (float) projected_pos2(0),(float) projected_pos2(1),(float) projected_pos2(2), (float) projected_mom1(0),(float) projected_mom1(1),(float) projected_mom1(2), (float) projected_mom2(0), (float) projected_mom2(1), (float) projected_mom2(2),(float) pca_rel1_proj(0),(float) pca_rel1_proj(1),(float) pca_rel1_proj(2),(float) pca_rel2_proj(0),(float) pca_rel2_proj(1),(float) pca_rel2_proj(2),(float) pair_dca_proj, (float) pathLength_proj(0), (float) pathLength_proj(1), (float) pathLength_proj(2), mag_pathLength_proj, track1->get_quality(), track2->get_quality()};
+  float reco_info[] = {track1->get_x(), track1->get_y(), track1->get_z(), track1->get_px(), track1->get_py(), track1->get_pz(), (float) dcavals1(0), (float) dcavals1(1), (float) dcavals1(2), (float) pca_rel1(0), (float) pca_rel1(1), (float) pca_rel1(2), (float) eta1,  (float) track1->get_charge(), (float) tpcClusters1, track2->get_x(), track2->get_y(), track2->get_z(),  track2->get_px(), track2->get_py(), track2->get_pz(), (float) dcavals2(0), (float) dcavals2(1), (float) dcavals2(2), (float) pca_rel2(0), (float) pca_rel2(1), (float) pca_rel2(2), (float) eta2, (float) track2->get_charge(), (float) tpcClusters2, svtxVertex->get_x(), svtxVertex->get_y(), svtxVertex->get_z(), (float) pair_dca,(float) invariantMass, (float) invariantPt, (float) pathLength(0),(float) pathLength(1), (float) pathLength(2), mag_pathLength, rapidity, pseudorapidity, (float) projected_pos1(0),(float) projected_pos1(1),(float) projected_pos1(2), (float) projected_pos2(0),(float) projected_pos2(1),(float) projected_pos2(2), (float) projected_mom1(0),(float) projected_mom1(1),(float) projected_mom1(2), (float) projected_mom2(0), (float) projected_mom2(1), (float) projected_mom2(2),(float) pca_rel1_proj(0),(float) pca_rel1_proj(1),(float) pca_rel1_proj(2),(float) pca_rel2_proj(0),(float) pca_rel2_proj(1),(float) pca_rel2_proj(2),(float) pair_dca_proj, (float) pathLength_proj(0), (float) pathLength_proj(1), (float) pathLength_proj(2), mag_pathLength_proj, track1->get_quality(), track2->get_quality(),cos_theta_reco};
 
   ntp_reco_info->Fill(reco_info);
 }
@@ -475,7 +479,7 @@ int massRecoAnalysis::InitRun(PHCompositeNode *topNode)
   char fileName[500];
   sprintf(fileName, "eval_output/ntp_mass_out_%i.root",process);
   fout = new TFile(fileName,"recreate");
-  ntp_reco_info = new TNtuple("ntp_reco_info","decay_pairs","x1:y1:z1:px1:py1:pz1:dca3dxy1:dca3dz1:phi1:pca_rel1_x:pca_rel1_y:pca_rel1_z:eta1:charge1:tpcClusters_1:x2:y2:z2:px2:py2:pz2:dca3dxy2:dca3dz2:phi2:pca_rel2_x:pca_rel2_y:pca_rel2_z:eta2:charge2:tpcClusters_2:vertex_x:vertex_y:vertex_z:pair_dca:invariant_mass:invariant_pt:pathlength_x:pathlength_y:pathlength_z:pathlength:rapidity:pseudorapidity:projected_pos1_x:projected_pos1_y:projected_pos1_z:projected_pos2_x:projected_pos2_y:projected_pos2_z:projected_mom1_x:projected_mom1_y:projected_mom1_z:projected_mom2_x:projected_mom2_y:projected_mom2_z:projected_pca_rel1_x:projected_pca_rel1_y:projected_pca_rel1_z:projected_pca_rel2_x:projected_pca_rel2_y:projected_pca_rel2_z:projected_pair_dca:projected_pathlength_x:projected_pathlength_y:projected_pathlength_z:projected_pathlength:quality1:quality2");
+  ntp_reco_info = new TNtuple("ntp_reco_info","decay_pairs","x1:y1:z1:px1:py1:pz1:dca3dxy1:dca3dz1:phi1:pca_rel1_x:pca_rel1_y:pca_rel1_z:eta1:charge1:tpcClusters_1:x2:y2:z2:px2:py2:pz2:dca3dxy2:dca3dz2:phi2:pca_rel2_x:pca_rel2_y:pca_rel2_z:eta2:charge2:tpcClusters_2:vertex_x:vertex_y:vertex_z:pair_dca:invariant_mass:invariant_pt:pathlength_x:pathlength_y:pathlength_z:pathlength:rapidity:pseudorapidity:projected_pos1_x:projected_pos1_y:projected_pos1_z:projected_pos2_x:projected_pos2_y:projected_pos2_z:projected_mom1_x:projected_mom1_y:projected_mom1_z:projected_mom2_x:projected_mom2_y:projected_mom2_z:projected_pca_rel1_x:projected_pca_rel1_y:projected_pca_rel1_z:projected_pca_rel2_x:projected_pca_rel2_y:projected_pca_rel2_z:projected_pair_dca:projected_pathlength_x:projected_pathlength_y:projected_pathlength_z:projected_pathlength:quality1:quality2:cosThetaReco");
 
   getNodes(topNode);
   
