@@ -11,13 +11,15 @@ AM_LDFLAGS = \
   -L$(OFFLINE_MAIN)/lib64
 
 pkginclude_HEADERS = \
-  massRecoAnalysis.h
+  massRecoAnalysis.h \
+  helixResiduals.h
 
 lib_LTLIBRARIES = \
   libmassRecoAnalysis.la
 
 libmassRecoAnalysis_la_SOURCES = \
-  massRecoAnalysis.cc
+  massRecoAnalysis.cc \
+  helixResiduals.cc
 
 libmassRecoAnalysis_la_LIBADD = \
   -lphool \
@@ -32,7 +34,8 @@ libmassRecoAnalysis_la_LIBADD = \
   -lmvtx_io \
   -lintt_io \
   -lmicromegas_io \
-  -lSubsysReco
+  -lSubsysReco \
+  -ltrackeralign
 
 BUILT_SOURCES = testexternals.cc
 
