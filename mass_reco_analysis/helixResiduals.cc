@@ -78,52 +78,43 @@ int helixResiduals::process_event(PHCompositeNode * /*topNode*/)
   for(auto tpcseed_iter = _tpc_seeds->begin(); tpcseed_iter != _tpc_seeds->end(); ++tpcseed_iter)
   {
     int id = _tpc_seeds->index(tpcseed_iter);
-    std::cout << "getting id " << id << std::endl;
     TrackSeed* tpcseed = _tpc_seeds->get(id);
     if(!tpcseed) continue;
-    std::cout << "tpc seed id " << id << std::endl;
+    std::cout << "processing tpc seed " << id << std::endl;
     fill_residuals(tpcseed,id,true);
-    std::cout << "done" << std::endl;
   }
   for(auto siseed_iter = _si_seeds->begin(); siseed_iter != _si_seeds->end(); ++siseed_iter)
   {
     int id = _si_seeds->index(siseed_iter);
     TrackSeed* siseed = _si_seeds->get(id);
-    std::cout << "si seed id " << id << std::endl;
+    if(!siseed) continue;
+    std::cout << "processing si seed " << id << std::endl;
     fill_residuals(siseed,id,false);
-    std::cout << "done" << std::endl;
-  } 
+  }
+  std::cout << "done" << std::endl;
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
 void helixResiduals::fill_residuals(TrackSeed* seed, int seed_id, bool isTpc)
 {
-  std::cout << "pre-entered function" << std::endl;
   if(seed->size_cluster_keys()==0) return;
   
-  std::cout << "entered function" << std::endl;
   std::vector<Acts::Vector3> clusterPositions;
   std::vector<TrkrDefs::cluskey> clusterKeys;
-  std::cout << "about to get clusters" << std::endl;
   _fitter->getTrackletClusters(seed,clusterPositions,clusterKeys);
-  std::cout << "got clusters" << std::endl;
   std::vector<float> fitparams = _fitter->fitClusters(clusterPositions,clusterKeys);
-  std::cout << "fit clusters" << std::endl;
 
   float pt = seed->get_pt();
   float px = seed->get_px(_clusters,tGeometry);
   float py = seed->get_py(_clusters,tGeometry);
   float pz = seed->get_pz();
   unsigned int crossing = seed->get_crossing();
-  std::cout << "got track params" << std::endl;
   
   for(size_t i=0; i<clusterPositions.size(); i++)
   {
     unsigned int layer = TrkrDefs::getLayer(clusterKeys[i]);
     Acts::Vector3 position = clusterPositions[i];
-    std::cout << "got cluster params" << std::endl;
     Acts::Vector3 pca = _fitter->get_helix_pca(fitparams,position);
-    std::cout << "got helix pca" << std::endl;
     float cluster_phi = atan2(position(1),position(0));
     float pca_phi = atan2(pca(1),pca(0));
     float dphi = cluster_phi - pca_phi;
@@ -132,6 +123,5 @@ void helixResiduals::fill_residuals(TrackSeed* seed, int seed_id, bool isTpc)
     float dz = position(2) - pca(2);
 
     ntp_residuals->Fill(seed_id,layer,dphi,dz,position(0),position(1),position(2),pt,px,py,pz,crossing,!isTpc,isTpc);
-    std::cout << "filled ntuple" << std::endl;
   }
 }
