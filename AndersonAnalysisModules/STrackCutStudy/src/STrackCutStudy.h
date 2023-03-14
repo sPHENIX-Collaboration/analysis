@@ -35,10 +35,9 @@ using namespace std;
 
 // global constants
 static const Ssiz_t NVtx(4);
-static const Ssiz_t NTxt(3);
 static const Ssiz_t NType(9);
-static const Ssiz_t NTrkVar(10);
-static const Ssiz_t NPhysVar(3);
+static const Ssiz_t NTrkVar(12);
+static const Ssiz_t NPhysVar(6);
 static const Ssiz_t NRange(2);
 static const Ssiz_t NPanel(2);
 static const UInt_t FTxt(42);
@@ -51,21 +50,26 @@ class STrackCutStudy {
 
     // enums
     enum TRKVAR {
-      VX    = 0,
-      VY    = 1,
-      VZ    = 2,
-      NMMS  = 3,
-      NMAP  = 4,
-      NINT  = 5,
-      NTPC  = 6,
-      QUAL  = 7,
-      DCAXY = 8,
-      DCAZ  = 9
+      VX       = 0,
+      VY       = 1,
+      VZ       = 2,
+      NMMS     = 3,
+      NMAP     = 4,
+      NINT     = 5,
+      NTPC     = 6,
+      QUAL     = 7,
+      DCAXY    = 8,
+      DCAZ     = 9,
+      DELDCAXY = 10,
+      DELDCAZ  = 11
     };
     enum PHYSVAR {
-      PHI = 0,
-      ETA = 1,
-      PT  = 2
+      PHI    = 0,
+      ETA    = 1,
+      PT     = 2,
+      DELPHI = 3,
+      DELETA = 4,
+      DELPT  = 5
     };
     enum TYPE {
       TRACK     = 0,
@@ -88,11 +92,20 @@ class STrackCutStudy {
     void SetInputTuples(const TString sEmbedOnlyTuple, const TString sPileupTuple);
     void SetStudyParameters(const Bool_t intNorm, const Bool_t onlyPrim, const Double_t weirdFracMin, const Double_t weirdFracMax);
     void SetTrackCuts(const Double_t trkVzMin, const Double_t trkVzMax, const Double_t trkQualMin, const Double_t trkQualMax);
+    void SetPlotText(const Ssiz_t nTxtE, const Ssiz_t nTxtP, const TString sTxtE[], const TString sTxtP[]);
     void Init();
     void Analyze();
     void End();
 
   private:
+
+    // track type/variable names/labels
+    const Bool_t  isPileup[NType]     = {false,   false,   false,      false,     false,      false,    true,        true,          true};
+    const TString sTrkNames[NType]    = {"Track", "Truth", "AllWeird", "SiWeird", "TpcWeird", "Normal", "AllPileup", "PrimePileup", "NonPrimePileup"};
+    const TString sTrkLabels[NType]   = {"All tracks", "Truth tracks", "Weird tracks (all)", "Weird tracks (Si seed)", "Weird tracks (TPC seed)",
+                                         "Normal tracks", "Including pileup tracks (all)", "Including pileup tracks (only primary)", "Including pileup gracks (non-primary)"};
+    const TString sTrkVars[NTrkVar]   = {"Vx", "Vy", "Vz", "NMms", "NMap", "NInt", "NTpc", "Qual", "DcaXY", "DcaZ", "DeltaDcaXY", "DeltaDcaZ"};
+    const TString sPhysVars[NPhysVar] = {"Phi", "Eta", "Pt", "DeltaPhi", "DeltaEta", "DeltaPt"};
 
     // io members
     TFile   *fOut;
@@ -124,587 +137,11 @@ class STrackCutStudy {
     TH2D *hPhysVarVsPtTrue[NType][NPhysVar];
     TH2D *hPhysVarVsPtFrac[NType][NPhysVar];
 
-    // embed-only track output histograms
-    TH1D *hTrackNMms;
-    TH1D *hTrackNMap;
-    TH1D *hTrackNInt;
-    TH1D *hTrackNTpc;
-    TH1D *hTrackNTot;
-    TH1D *hTrackPerMms;
-    TH1D *hTrackPerMap;
-    TH1D *hTrackPerInt;
-    TH1D *hTrackPerTpc;
-    TH1D *hTrackPerTot;
-    TH1D *hTrackChi2;
-    TH1D *hTrackNDF;
-    TH1D *hTrackQuality;
-    TH1D *hTrackDCAxy;
-    TH1D *hTrackDCAz;
-    TH1D *hTrackVx;
-    TH1D *hTrackVy;
-    TH1D *hTrackVz;
-    TH1D *hTrackEta;
-    TH1D *hTrackPhi;
-    TH1D *hTrackPt;
-    TH1D *hDeltaDCAxy;
-    TH1D *hDeltaDCAz;
-    TH1D *hDeltaEta;
-    TH1D *hDeltaPhi;
-    TH1D *hDeltaPt;
-    TH2D *hTrackPtVsNMms;
-    TH2D *hTrackPtVsNMap;
-    TH2D *hTrackPtVsNInt;
-    TH2D *hTrackPtVsNTpc;
-    TH2D *hTrackPtVsNTot;
-    TH2D *hTrackPtVsPerMms;
-    TH2D *hTrackPtVsPerMap;
-    TH2D *hTrackPtVsPerInt;
-    TH2D *hTrackPtVsPerTpc;
-    TH2D *hTrackPtVsPerTot;
-    TH2D *hTrackPtVsChi2;
-    TH2D *hTrackPtVsNDF;
-    TH2D *hTrackPtVsQuality;
-    TH2D *hTrackPtVsDCAxy;
-    TH2D *hTrackPtVsDCAz;
-    TH2D *hDeltaDCAxyVsTrkPt;
-    TH2D *hDeltaDCAzVsTrkPt;
-    TH2D *hDeltaEtaVsTrkPt;
-    TH2D *hDeltaPhiVsTrkPt;
-    TH2D *hDeltaPtVsTrkPt;
-
-    // embed-only truth output histograms
-    TH1D *hTruthNMms;
-    TH1D *hTruthNMap;
-    TH1D *hTruthNInt;
-    TH1D *hTruthNTpc;
-    TH1D *hTruthNTot;
-    TH1D *hTruthEta;
-    TH1D *hTruthPhi;
-    TH1D *hTruthPt;
-    TH1D *hTruthVx;
-    TH1D *hTruthVy;
-    TH1D *hTruthVz;
-    TH1D *hTruthEtaFrac;
-    TH1D *hTruthPhiFrac;
-    TH1D *hTruthPtFrac;
-    TH1D *hTruthEtaDiff;
-    TH1D *hTruthPhiDiff;
-    TH1D *hTruthPtDiff;
-    TH1D *hTruthVxDiff;
-    TH1D *hTruthVyDiff;
-    TH1D *hTruthVzDiff;
-    TH2D *hTruthVsTrackEta;
-    TH2D *hTruthVsTrackPhi;
-    TH2D *hTruthVsTrackPt;
-    TH2D *hTruthVsTrackVx;
-    TH2D *hTruthVsTrackVy;
-    TH2D *hTruthVsTrackVz;
-    TH2D *hFracVsTruthEta;
-    TH2D *hFracVsTruthPhi;
-    TH2D *hFracVsTruthPt;
-    TH2D *hDiffVsTruthEta;
-    TH2D *hDiffVsTruthPhi;
-    TH2D *hDiffVsTruthPt;
-    TH2D *hTruthPtVsNMms;
-    TH2D *hTruthPtVsNMap;
-    TH2D *hTruthPtVsNInt;
-    TH2D *hTruthPtVsNTpc;
-    TH2D *hTruthPtVsNTot;
-    TH2D *hTruthPtVsChi2;
-    TH2D *hTruthPtVsNDF;
-    TH2D *hTruthPtVsQuality;
-    TH2D *hFracPtVsQuality;
-    TH2D *hTruthPtVsDCAxy;
-    TH2D *hTruthPtVsDCAz;
-    TH2D *hDeltaDCAxyVsTruPt;
-    TH2D *hDeltaDCAzVsTruPt;
-    TH2D *hDeltaEtaVsTruPt;
-    TH2D *hDeltaPhiVsTruPt;
-    TH2D *hDeltaPtVsTruPt;
-
-    // embed-only weird output histograms
-    TH1D *hWeirdNMms;
-    TH1D *hWeirdNMap;
-    TH1D *hWeirdNInt;
-    TH1D *hWeirdNTpc;
-    TH1D *hWeirdNTot;
-    TH1D *hWeirdPerMms;
-    TH1D *hWeirdPerMap;
-    TH1D *hWeirdPerInt;
-    TH1D *hWeirdPerTpc;
-    TH1D *hWeirdPerTot;
-    TH1D *hWeirdChi2;
-    TH1D *hWeirdNDF;
-    TH1D *hWeirdQuality;
-    TH1D *hWeirdDCAxy;
-    TH1D *hWeirdDCAz;
-    TH1D *hWeirdVx;
-    TH1D *hWeirdVy;
-    TH1D *hWeirdVz;
-    TH1D *hWeirdEta;
-    TH1D *hWeirdPhi;
-    TH1D *hWeirdPt;
-    TH1D *hWeirdDeltaDCAxy;
-    TH1D *hWeirdDeltaDCAz;
-    TH1D *hWeirdDeltaEta;
-    TH1D *hWeirdDeltaPhi;
-    TH1D *hWeirdDeltaPt;
-    TH1D *hWeirdEtaFrac;
-    TH1D *hWeirdPhiFrac;
-    TH1D *hWeirdPtFrac;
-    TH1D *hWeirdEtaDiff;
-    TH1D *hWeirdPhiDiff;
-    TH1D *hWeirdPtDiff;
-    TH1D *hWeirdVxDiff;
-    TH1D *hWeirdVyDiff;
-    TH1D *hWeirdVzDiff;
-    TH2D *hWeirdPtVsNMms;
-    TH2D *hWeirdPtVsNMap;
-    TH2D *hWeirdPtVsNInt;
-    TH2D *hWeirdPtVsNTpc;
-    TH2D *hWeirdPtVsNTot;
-    TH2D *hWeirdPtVsPerMms;
-    TH2D *hWeirdPtVsPerMap;
-    TH2D *hWeirdPtVsPerInt;
-    TH2D *hWeirdPtVsPerTpc;
-    TH2D *hWeirdPtVsPerTot;
-    TH2D *hWeirdPtVsChi2;
-    TH2D *hWeirdPtVsNDF;
-    TH2D *hWeirdPtVsQuality;
-    TH2D *hWeirdPtVsDCAxy;
-    TH2D *hWeirdPtVsDCAz;
-    TH2D *hDeltaDCAxyVsOddPt;
-    TH2D *hDeltaDCAzVsOddPt;
-    TH2D *hDeltaEtaVsOddPt;
-    TH2D *hDeltaPhiVsOddPt;
-    TH2D *hDeltaPtVsOddPt;
-    TH2D *hTruthVsWeirdEta;
-    TH2D *hTruthVsWeirdPhi;
-    TH2D *hTruthVsWeirdPt;
-    TH2D *hTruthVsWeirdVx;
-    TH2D *hTruthVsWeirdVy;
-    TH2D *hTruthVsWeirdVz;
-    TH2D *hOddFracVsTruEta;
-    TH2D *hOddFracVsTruPhi;
-    TH2D *hOddFracVsTruPt;
-    TH2D *hOddDiffVsTruEta;
-    TH2D *hOddDiffVsTruPhi;
-    TH2D *hOddDiffVsTruPt;
-    TH2D *hTruPtVsOddNMms;
-    TH2D *hTruPtVsOddNMap;
-    TH2D *hTruPtVsOddNInt;
-    TH2D *hTruPtVsOddNTpc;
-    TH2D *hTruPtVsOddNTot;
-    TH2D *hTruPtVsOddChi2;
-    TH2D *hTruPtVsOddNDF;
-    TH2D *hTruPtVsOddQuality;
-    TH2D *hFracPtVsOddQuality;
-    TH2D *hTruPtVsOddDCAxy;
-    TH2D *hTruPtVsOddDCAz;
-    TH2D *hOddDeltaDCAxyVsTruPt;
-    TH2D *hOddDeltaDCAzVsTruPt;
-    TH2D *hOddDeltaEtaVsTruPt;
-    TH2D *hOddDeltaPhiVsTruPt;
-    TH2D *hOddDeltaPtVsTruPt;
-
-    // embed-only weird output histograms (w/ si seeds)
-    TH1D *hWeirdNMms_SI;
-    TH1D *hWeirdNMap_SI;
-    TH1D *hWeirdNInt_SI;
-    TH1D *hWeirdNTpc_SI;
-    TH1D *hWeirdNTot_SI;
-    TH1D *hWeirdPerMms_SI;
-    TH1D *hWeirdPerMap_SI;
-    TH1D *hWeirdPerInt_SI;
-    TH1D *hWeirdPerTpc_SI;
-    TH1D *hWeirdPerTot_SI;
-    TH1D *hWeirdChi2_SI;
-    TH1D *hWeirdNDF_SI;
-    TH1D *hWeirdQuality_SI;
-    TH1D *hWeirdDCAxy_SI;
-    TH1D *hWeirdDCAz_SI;
-    TH1D *hWeirdVx_SI;
-    TH1D *hWeirdVy_SI;
-    TH1D *hWeirdVz_SI;
-    TH1D *hWeirdEta_SI;
-    TH1D *hWeirdPhi_SI;
-    TH1D *hWeirdPt_SI;
-    TH1D *hWeirdDeltaDCAxy_SI;
-    TH1D *hWeirdDeltaDCAz_SI;
-    TH1D *hWeirdDeltaEta_SI;
-    TH1D *hWeirdDeltaPhi_SI;
-    TH1D *hWeirdDeltaPt_SI;
-    TH1D *hWeirdEtaFrac_SI;
-    TH1D *hWeirdPhiFrac_SI;
-    TH1D *hWeirdPtFrac_SI;
-    TH1D *hWeirdEtaDiff_SI;
-    TH1D *hWeirdPhiDiff_SI;
-    TH1D *hWeirdPtDiff_SI;
-    TH1D *hWeirdVxDiff_SI;
-    TH1D *hWeirdVyDiff_SI;
-    TH1D *hWeirdVzDiff_SI;
-    TH2D *hWeirdPtVsNMms_SI;
-    TH2D *hWeirdPtVsNMap_SI;
-    TH2D *hWeirdPtVsNInt_SI;
-    TH2D *hWeirdPtVsNTpc_SI;
-    TH2D *hWeirdPtVsNTot_SI;
-    TH2D *hWeirdPtVsPerMms_SI;
-    TH2D *hWeirdPtVsPerMap_SI;
-    TH2D *hWeirdPtVsPerInt_SI;
-    TH2D *hWeirdPtVsPerTpc_SI;
-    TH2D *hWeirdPtVsPerTot_SI;
-    TH2D *hWeirdPtVsChi2_SI;
-    TH2D *hWeirdPtVsNDF_SI;
-    TH2D *hWeirdPtVsQuality_SI;
-    TH2D *hWeirdPtVsDCAxy_SI;
-    TH2D *hWeirdPtVsDCAz_SI;
-    TH2D *hDeltaDCAxyVsOddPt_SI;
-    TH2D *hDeltaDCAzVsOddPt_SI;
-    TH2D *hDeltaEtaVsOddPt_SI;
-    TH2D *hDeltaPhiVsOddPt_SI;
-    TH2D *hDeltaPtVsOddPt_SI;
-    TH2D *hTruthVsWeirdEta_SI;
-    TH2D *hTruthVsWeirdPhi_SI;
-    TH2D *hTruthVsWeirdPt_SI;
-    TH2D *hTruthVsWeirdVx_SI;
-    TH2D *hTruthVsWeirdVy_SI;
-    TH2D *hTruthVsWeirdVz_SI;
-    TH2D *hOddFracVsTruEta_SI;
-    TH2D *hOddFracVsTruPhi_SI;
-    TH2D *hOddFracVsTruPt_SI;
-    TH2D *hOddDiffVsTruEta_SI;
-    TH2D *hOddDiffVsTruPhi_SI;
-    TH2D *hOddDiffVsTruPt_SI;
-    TH2D *hTruPtVsOddNMms_SI;
-    TH2D *hTruPtVsOddNMap_SI;
-    TH2D *hTruPtVsOddNInt_SI;
-    TH2D *hTruPtVsOddNTpc_SI;
-    TH2D *hTruPtVsOddNTot_SI;
-    TH2D *hTruPtVsOddChi2_SI;
-    TH2D *hTruPtVsOddNDF_SI;
-    TH2D *hTruPtVsOddQuality_SI;
-    TH2D *hFracPtVsOddQuality_SI;
-    TH2D *hTruPtVsOddDCAxy_SI;
-    TH2D *hTruPtVsOddDCAz_SI;
-    TH2D *hOddDeltaDCAxyVsTruPt_SI;
-    TH2D *hOddDeltaDCAzVsTruPt_SI;
-    TH2D *hOddDeltaEtaVsTruPt_SI;
-    TH2D *hOddDeltaPhiVsTruPt_SI;
-    TH2D *hOddDeltaPtVsTruPt_SI;
-
-    // embed-only weird output histograms (w/ tpc seeds)
-    TH1D *hWeirdNMms_TPC;
-    TH1D *hWeirdNMap_TPC;
-    TH1D *hWeirdNInt_TPC;
-    TH1D *hWeirdNTpc_TPC;
-    TH1D *hWeirdNTot_TPC;
-    TH1D *hWeirdPerMms_TPC;
-    TH1D *hWeirdPerMap_TPC;
-    TH1D *hWeirdPerInt_TPC;
-    TH1D *hWeirdPerTpc_TPC;
-    TH1D *hWeirdPerTot_TPC;
-    TH1D *hWeirdChi2_TPC;
-    TH1D *hWeirdNDF_TPC;
-    TH1D *hWeirdQuality_TPC;
-    TH1D *hWeirdDCAxy_TPC;
-    TH1D *hWeirdDCAz_TPC;
-    TH1D *hWeirdVx_TPC;
-    TH1D *hWeirdVy_TPC;
-    TH1D *hWeirdVz_TPC;
-    TH1D *hWeirdEta_TPC;
-    TH1D *hWeirdPhi_TPC;
-    TH1D *hWeirdPt_TPC;
-    TH1D *hWeirdDeltaDCAxy_TPC;
-    TH1D *hWeirdDeltaDCAz_TPC;
-    TH1D *hWeirdDeltaEta_TPC;
-    TH1D *hWeirdDeltaPhi_TPC;
-    TH1D *hWeirdDeltaPt_TPC;
-    TH1D *hWeirdEtaFrac_TPC;
-    TH1D *hWeirdPhiFrac_TPC;
-    TH1D *hWeirdPtFrac_TPC;
-    TH1D *hWeirdEtaDiff_TPC;
-    TH1D *hWeirdPhiDiff_TPC;
-    TH1D *hWeirdPtDiff_TPC;
-    TH1D *hWeirdVxDiff_TPC;
-    TH1D *hWeirdVyDiff_TPC;
-    TH1D *hWeirdVzDiff_TPC;
-    TH2D *hWeirdPtVsNMms_TPC;
-    TH2D *hWeirdPtVsNMap_TPC;
-    TH2D *hWeirdPtVsNInt_TPC;
-    TH2D *hWeirdPtVsNTpc_TPC;
-    TH2D *hWeirdPtVsNTot_TPC;
-    TH2D *hWeirdPtVsPerMms_TPC;
-    TH2D *hWeirdPtVsPerMap_TPC;
-    TH2D *hWeirdPtVsPerInt_TPC;
-    TH2D *hWeirdPtVsPerTpc_TPC;
-    TH2D *hWeirdPtVsPerTot_TPC;
-    TH2D *hWeirdPtVsChi2_TPC;
-    TH2D *hWeirdPtVsNDF_TPC;
-    TH2D *hWeirdPtVsQuality_TPC;
-    TH2D *hWeirdPtVsDCAxy_TPC;
-    TH2D *hWeirdPtVsDCAz_TPC;
-    TH2D *hDeltaDCAxyVsOddPt_TPC;
-    TH2D *hDeltaDCAzVsOddPt_TPC;
-    TH2D *hDeltaEtaVsOddPt_TPC;
-    TH2D *hDeltaPhiVsOddPt_TPC;
-    TH2D *hDeltaPtVsOddPt_TPC;
-    TH2D *hTruthVsWeirdEta_TPC;
-    TH2D *hTruthVsWeirdPhi_TPC;
-    TH2D *hTruthVsWeirdPt_TPC;
-    TH2D *hTruthVsWeirdVx_TPC;
-    TH2D *hTruthVsWeirdVy_TPC;
-    TH2D *hTruthVsWeirdVz_TPC;
-    TH2D *hOddFracVsTruEta_TPC;
-    TH2D *hOddFracVsTruPhi_TPC;
-    TH2D *hOddFracVsTruPt_TPC;
-    TH2D *hOddDiffVsTruEta_TPC;
-    TH2D *hOddDiffVsTruPhi_TPC;
-    TH2D *hOddDiffVsTruPt_TPC;
-    TH2D *hTruPtVsOddNMms_TPC;
-    TH2D *hTruPtVsOddNMap_TPC;
-    TH2D *hTruPtVsOddNInt_TPC;
-    TH2D *hTruPtVsOddNTpc_TPC;
-    TH2D *hTruPtVsOddNTot_TPC;
-    TH2D *hTruPtVsOddChi2_TPC;
-    TH2D *hTruPtVsOddNDF_TPC;
-    TH2D *hTruPtVsOddQuality_TPC;
-    TH2D *hFracPtVsOddQuality_TPC;
-    TH2D *hTruPtVsOddDCAxy_TPC;
-    TH2D *hTruPtVsOddDCAz_TPC;
-    TH2D *hOddDeltaDCAxyVsTruPt_TPC;
-    TH2D *hOddDeltaDCAzVsTruPt_TPC;
-    TH2D *hOddDeltaEtaVsTruPt_TPC;
-    TH2D *hOddDeltaPhiVsTruPt_TPC;
-    TH2D *hOddDeltaPtVsTruPt_TPC;
-
-    // embed-only normal output histograms
-    TH1D *hNormalNMms;
-    TH1D *hNormalNMap;
-    TH1D *hNormalNInt;
-    TH1D *hNormalNTpc;
-    TH1D *hNormalNTot;
-    TH1D *hNormalPerMms;
-    TH1D *hNormalPerMap;
-    TH1D *hNormalPerInt;
-    TH1D *hNormalPerTpc;
-    TH1D *hNormalPerTot;
-    TH1D *hNormalChi2;
-    TH1D *hNormalNDF;
-    TH1D *hNormalQuality;
-    TH1D *hNormalDCAxy;
-    TH1D *hNormalDCAz;
-    TH1D *hNormalVx;
-    TH1D *hNormalVy;
-    TH1D *hNormalVz;
-    TH1D *hNormalEta;
-    TH1D *hNormalPhi;
-    TH1D *hNormalPt;
-    TH1D *hNormalDeltaDCAxy;
-    TH1D *hNormalDeltaDCAz;
-    TH1D *hNormalDeltaEta;
-    TH1D *hNormalDeltaPhi;
-    TH1D *hNormalDeltaPt;
-    TH1D *hNormalEtaFrac;
-    TH1D *hNormalPhiFrac;
-    TH1D *hNormalPtFrac;
-    TH1D *hNormalEtaDiff;
-    TH1D *hNormalPhiDiff;
-    TH1D *hNormalPtDiff;
-    TH1D *hNormalVxDiff;
-    TH1D *hNormalVyDiff;
-    TH1D *hNormalVzDiff;
-    TH2D *hNormalPtVsNMms;
-    TH2D *hNormalPtVsNMap;
-    TH2D *hNormalPtVsNInt;
-    TH2D *hNormalPtVsNTpc;
-    TH2D *hNormalPtVsNTot;
-    TH2D *hNormalPtVsPerMms;
-    TH2D *hNormalPtVsPerMap;
-    TH2D *hNormalPtVsPerInt;
-    TH2D *hNormalPtVsPerTpc;
-    TH2D *hNormalPtVsPerTot;
-    TH2D *hNormalPtVsChi2;
-    TH2D *hNormalPtVsNDF;
-    TH2D *hNormalPtVsQuality;
-    TH2D *hNormalPtVsDCAxy;
-    TH2D *hNormalPtVsDCAz;
-    TH2D *hDeltaDCAxyVsNormPt;
-    TH2D *hDeltaDCAzVsNormPt;
-    TH2D *hDeltaEtaVsNormPt;
-    TH2D *hDeltaPhiVsNormPt;
-    TH2D *hDeltaPtVsNormPt;
-    TH2D *hTruthVsNormalEta;
-    TH2D *hTruthVsNormalPhi;
-    TH2D *hTruthVsNormalPt;
-    TH2D *hTruthVsNormalVx;
-    TH2D *hTruthVsNormalVy;
-    TH2D *hTruthVsNormalVz;
-    TH2D *hNormFracVsTruEta;
-    TH2D *hNormFracVsTruPhi;
-    TH2D *hNormFracVsTruPt;
-    TH2D *hNormDiffVsTruEta;
-    TH2D *hNormDiffVsTruPhi;
-    TH2D *hNormDiffVsTruPt;
-    TH2D *hTruPtVsNormNMms;
-    TH2D *hTruPtVsNormNMap;
-    TH2D *hTruPtVsNormNInt;
-    TH2D *hTruPtVsNormNTpc;
-    TH2D *hTruPtVsNormNTot;
-    TH2D *hTruPtVsNormChi2;
-    TH2D *hTruPtVsNormNDF;
-    TH2D *hTruPtVsNormQuality;
-    TH2D *hFracPtVsNormQuality;
-    TH2D *hTruPtVsNormDCAxy;
-    TH2D *hTruPtVsNormDCAz;
-    TH2D *hNormDeltaDCAxyVsTruPt;
-    TH2D *hNormDeltaDCAzVsTruPt;
-    TH2D *hNormDeltaEtaVsTruPt;
-    TH2D *hNormDeltaPhiVsTruPt;
-    TH2D *hNormDeltaPtVsTruPt;
-
-    // with-pileup track histograms
-    TH1D *hTrackNMms_PU;
-    TH1D *hTrackNMap_PU;
-    TH1D *hTrackNInt_PU;
-    TH1D *hTrackNTpc_PU;
-    TH1D *hTrackNTot_PU;
-    TH1D *hTrackPerMms_PU;
-    TH1D *hTrackPerMap_PU;
-    TH1D *hTrackPerInt_PU;
-    TH1D *hTrackPerTpc_PU;
-    TH1D *hTrackPerTot_PU;
-    TH1D *hTrackChi2_PU;
-    TH1D *hTrackNDF_PU;
-    TH1D *hTrackQuality_PU;
-    TH1D *hTrackDCAxy_PU;
-    TH1D *hTrackDCAz_PU;
-    TH1D *hTrackVx_PU;
-    TH1D *hTrackVy_PU;
-    TH1D *hTrackVz_PU;
-    TH1D *hTrackEta_PU;
-    TH1D *hTrackPhi_PU;
-    TH1D *hTrackPt_PU;
-    TH1D *hDeltaDCAxy_PU;
-    TH1D *hDeltaDCAz_PU;
-    TH1D *hDeltaEta_PU;
-    TH1D *hDeltaPhi_PU;
-    TH1D *hDeltaPt_PU;
-    TH2D *hTrackPtVsNMms_PU;
-    TH2D *hTrackPtVsNMap_PU;
-    TH2D *hTrackPtVsNInt_PU;
-    TH2D *hTrackPtVsNTpc_PU;
-    TH2D *hTrackPtVsNTot_PU;
-    TH2D *hTrackPtVsPerMms_PU;
-    TH2D *hTrackPtVsPerMap_PU;
-    TH2D *hTrackPtVsPerInt_PU;
-    TH2D *hTrackPtVsPerTpc_PU;
-    TH2D *hTrackPtVsPerTot_PU;
-    TH2D *hTrackPtVsChi2_PU;
-    TH2D *hTrackPtVsNDF_PU;
-    TH2D *hTrackPtVsQuality_PU;
-    TH2D *hTrackPtVsDCAxy_PU;
-    TH2D *hTrackPtVsDCAz_PU;
-    TH2D *hDeltaDCAxyVsTrkPt_PU;
-    TH2D *hDeltaDCAzVsTrkPt_PU;
-    TH2D *hDeltaEtaVsTrkPt_PU;
-    TH2D *hDeltaPhiVsTrkPt_PU;
-    TH2D *hDeltaPtVsTrkPt_PU;
-
-    // with-pileup primary histograms
-    TH1D *hPrimaryNMms_PU;
-    TH1D *hPrimaryNMap_PU;
-    TH1D *hPrimaryNInt_PU;
-    TH1D *hPrimaryNTpc_PU;
-    TH1D *hPrimaryNTot_PU;
-    TH1D *hPrimaryPerMms_PU;
-    TH1D *hPrimaryPerMap_PU;
-    TH1D *hPrimaryPerInt_PU;
-    TH1D *hPrimaryPerTpc_PU;
-    TH1D *hPrimaryPerTot_PU;
-    TH1D *hPrimaryChi2_PU;
-    TH1D *hPrimaryNDF_PU;
-    TH1D *hPrimaryQuality_PU;
-    TH1D *hPrimaryDCAxy_PU;
-    TH1D *hPrimaryDCAz_PU;
-    TH1D *hPrimaryVx_PU;
-    TH1D *hPrimaryVy_PU;
-    TH1D *hPrimaryVz_PU;
-    TH1D *hPrimaryEta_PU;
-    TH1D *hPrimaryPhi_PU;
-    TH1D *hPrimaryPt_PU;
-    TH1D *hDeltaPrimDCAxy_PU;
-    TH1D *hDeltaPrimDCAz_PU;
-    TH1D *hDeltaPrimEta_PU;
-    TH1D *hDeltaPrimPhi_PU;
-    TH1D *hDeltaPrimPt_PU;
-    TH2D *hPrimaryPtVsNMms_PU;
-    TH2D *hPrimaryPtVsNMap_PU;
-    TH2D *hPrimaryPtVsNInt_PU;
-    TH2D *hPrimaryPtVsNTpc_PU;
-    TH2D *hPrimaryPtVsNTot_PU;
-    TH2D *hPrimaryPtVsPerMms_PU;
-    TH2D *hPrimaryPtVsPerMap_PU;
-    TH2D *hPrimaryPtVsPerInt_PU;
-    TH2D *hPrimaryPtVsPerTpc_PU;
-    TH2D *hPrimaryPtVsPerTot_PU;
-    TH2D *hPrimaryPtVsChi2_PU;
-    TH2D *hPrimaryPtVsNDF_PU;
-    TH2D *hPrimaryPtVsQuality_PU;
-    TH2D *hPrimaryPtVsDCAxy_PU;
-    TH2D *hPrimaryPtVsDCAz_PU;
-    TH2D *hDeltaDCAxyVsPrimPt_PU;
-    TH2D *hDeltaDCAzVsPrimPt_PU;
-    TH2D *hDeltaEtaVsPrimPt_PU;
-    TH2D *hDeltaPhiVsPrimPt_PU;
-    TH2D *hDeltaPtVsPrimPt_PU;
-
-    // with-pileup non-primary histograms
-    TH1D *hNonPrimNMms_PU;
-    TH1D *hNonPrimNMap_PU;
-    TH1D *hNonPrimNInt_PU;
-    TH1D *hNonPrimNTpc_PU;
-    TH1D *hNonPrimNTot_PU;
-    TH1D *hNonPrimPerMms_PU;
-    TH1D *hNonPrimPerMap_PU;
-    TH1D *hNonPrimPerInt_PU;
-    TH1D *hNonPrimPerTpc_PU;
-    TH1D *hNonPrimPerTot_PU;
-    TH1D *hNonPrimChi2_PU;
-    TH1D *hNonPrimNDF_PU;
-    TH1D *hNonPrimQuality_PU;
-    TH1D *hNonPrimDCAxy_PU;
-    TH1D *hNonPrimDCAz_PU;
-    TH1D *hNonPrimVx_PU;
-    TH1D *hNonPrimVy_PU;
-    TH1D *hNonPrimVz_PU;
-    TH1D *hNonPrimEta_PU;
-    TH1D *hNonPrimPhi_PU;
-    TH1D *hNonPrimPt_PU;
-    TH1D *hDeltaNoPrDCAxy_PU;
-    TH1D *hDeltaNoPrDCAz_PU;
-    TH1D *hDeltaNoPrEta_PU;
-    TH1D *hDeltaNoPrPhi_PU;
-    TH1D *hDeltaNoPrPt_PU;
-    TH2D *hNonPrimPtVsNMms_PU;
-    TH2D *hNonPrimPtVsNMap_PU;
-    TH2D *hNonPrimPtVsNInt_PU;
-    TH2D *hNonPrimPtVsNTpc_PU;
-    TH2D *hNonPrimPtVsNTot_PU;
-    TH2D *hNonPrimPtVsPerMms_PU;
-    TH2D *hNonPrimPtVsPerMap_PU;
-    TH2D *hNonPrimPtVsPerInt_PU;
-    TH2D *hNonPrimPtVsPerTpc_PU;
-    TH2D *hNonPrimPtVsPerTot_PU;
-    TH2D *hNonPrimPtVsChi2_PU;
-    TH2D *hNonPrimPtVsNDF_PU;
-    TH2D *hNonPrimPtVsQuality_PU;
-    TH2D *hNonPrimPtVsDCAxy_PU;
-    TH2D *hNonPrimPtVsDCAz_PU;
-    TH2D *hDeltaDCAxyVsNoPrPt_PU;
-    TH2D *hDeltaDCAzVsNoPrPt_PU;
-    TH2D *hDeltaEtaVsNoPrPt_PU;
-    TH2D *hDeltaPhiVsNoPrPt_PU;
-    TH2D *hDeltaPtVsNoPrPt_PU;
+    // text parameters
+    Ssiz_t          nTxtEO;
+    Ssiz_t          nTxtPU;
+    vector<TString> sTxtEO;
+    vector<TString> sTxtPU;
 
     // study parameters
     Bool_t   doIntNorm;
@@ -926,6 +363,7 @@ class STrackCutStudy {
     void   SaveHists();
     void   FillTrackHistograms(const Int_t type, const Double_t recoTrkVars[], const Double_t trueTrkVars[], const Double_t recoPhysVars[], const Double_t truePhysVars[]);
     void   FillTruthHistograms(const Int_t type, const Double_t recoTrkVars[], const Double_t trueTrkVars[], const Double_t recoPhysVars[], const Double_t truePhysVars[]);
+    void   ConstructPlots(const Ssiz_t nToDraw, const Int_t typesToDraw[], const TString sDirToSaveTo, const TString sPlotLabel);
     Bool_t ApplyCuts(const Double_t trkVz, const Double_t trkQuality);
 
 };  // end STrackCutStudy definition

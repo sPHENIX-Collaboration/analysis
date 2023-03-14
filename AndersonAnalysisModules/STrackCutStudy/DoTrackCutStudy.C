@@ -21,6 +21,8 @@ R__LOAD_LIBRARY(/sphenix/user/danderson/install/lib/libstrackcutstudy.so)
 
 // global constants
 static const Ssiz_t NCut = 2;
+static const Ssiz_t NTxt = 3;
+
 
 
 void DoTrackCutStudy() {
@@ -45,12 +47,17 @@ void DoTrackCutStudy() {
   const Double_t vzRange[NCut]      = {-5., 5.};
   const Double_t qualityRange[NCut] = {0.,  2.};
 
+  // text for plot
+  const TString sTxtEO[NTxt] = {"#bf{#it{sPHENIX}} Simulation", "single #pi^{-}, p_{T} #in (0, 20) GeV/c", "#bf{Embedded Only Tracks}"};
+  const TString sTxtPU[NTxt] = {"#bf{#it{sPHENIX}} Simulation", "0-20 fm Hijing, 50 kHz pileup", "#bf{With Pileup Tracks}"};
+
   // run track cut study
   STrackCutStudy *study = new STrackCutStudy();
   study -> SetInputOutputFiles(sInFileEO, sInFilePU, sOutFile);
   study -> SetInputTuples(sInTupleEO, sInTuplePU);
   study -> SetStudyParameters(doIntNorm, useOnlyPrimary, normalPtFracMin, normalPtFracMax);
   study -> SetTrackCuts(vzRange[0], vzRange[1], qualityRange[0], qualityRange[1]);
+  study -> SetPlotText(NTxt, NTxt, sTxtEO, sTxtPU);
   study -> Init();
   study -> Analyze();
   study -> End();
