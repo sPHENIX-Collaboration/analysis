@@ -3,7 +3,7 @@ AUTOMAKE_OPTIONS = foreign
 AM_CPPFLAGS = \
   -I$(includedir) \
   -I$(OFFLINE_MAIN)/include \
-  -I$(ROOTSYS)/include
+  -I`root-config --incdir`
 
 AM_LDFLAGS = \
   -L$(libdir) \
@@ -11,31 +11,19 @@ AM_LDFLAGS = \
   -L$(OFFLINE_MAIN)/lib64
 
 pkginclude_HEADERS = \
-  massRecoAnalysis.h \
-  helixResiduals.h
+  jetrtrack.h
 
 lib_LTLIBRARIES = \
-  libmassRecoAnalysis.la
+  libjetrtrack.la
 
-libmassRecoAnalysis_la_SOURCES = \
-  massRecoAnalysis.cc \
-  helixResiduals.cc
+libjetrtrack_la_SOURCES = \
+  jetrtrack.cc
 
-libmassRecoAnalysis_la_LIBADD = \
-  -lphool \
+libjetrtrack_la_LIBADD = \
   -lfun4all \
-  -lg4eval \
-  -lg4eval_io \
-  -lphg4hit \
-  -lg4detectors_io \
-  -ltrack_io \
-  -ltrackbase_historic_io \
-  -ltpc_io \
-  -lmvtx_io \
-  -lintt_io \
-  -lmicromegas_io \
-  -lSubsysReco \
-  -ltrackeralign
+  -lphool \
+  -lg4dst \
+  -lSubsysReco
 
 BUILT_SOURCES = testexternals.cc
 
@@ -43,7 +31,7 @@ noinst_PROGRAMS = \
   testexternals
 
 testexternals_SOURCES = testexternals.cc
-testexternals_LDADD   = libmassRecoAnalysis.la
+testexternals_LDADD   = libjetrtrack.la
 
 testexternals.cc:
 	echo "//*** this is a generated file. Do not commit, do not edit" > $@

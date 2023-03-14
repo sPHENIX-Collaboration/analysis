@@ -13,6 +13,9 @@
 #include <trackbase_historic/SvtxTrack.h>
 #include <trackbase_historic/SvtxTrackMap.h>
 
+#include <g4eval/SvtxEvalStack.h>   // for SvtxEvalStack
+#include <g4eval/SvtxTrackEval.h>   // for SvtxTrackEval
+
 /// HEPMC truth includes
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
@@ -68,6 +71,8 @@ BuildResonanceJetTaggingTree::BuildResonanceJetTaggingTree(const std::string &na
   , m_dorec(true)
   , m_dotruth(false)
   , m_nDaughters(0)
+  , m_svtx_evalstack(nullptr)
+  , m_trackeval(nullptr)
   , m_tag_particle(tag)
   , m_tag_pdg(0)
   , m_outfile(nullptr)
@@ -232,6 +237,17 @@ int BuildResonanceJetTaggingTree::loopHFHadronic(PHCompositeNode *topNode)
 
     kfContainer = getKFParticleContainerFromNode(topNode, m_tagcontainer_name);
     if(!kfContainer) return Fun4AllReturnCodes::ABORTEVENT;
+
+    if (!m_svtx_evalstack)
+    {
+      m_svtx_evalstack = new SvtxEvalStack(topNode);
+
+      m_trackeval = m_svtx_evalstack->get_track_eval();
+    }
+    else
+    {
+      m_svtx_evalstack->next_event(topNode);
+    }
   }
 
   HepMC::GenEvent *hepMCGenEvent = nullptr;
@@ -243,7 +259,7 @@ int BuildResonanceJetTaggingTree::loopHFHadronic(PHCompositeNode *topNode)
 
     hepMCGenEvent = getGenEventFromNode(topNode, "PHHepMCGenEventMap");
     if(!hepMCGenEvent) return Fun4AllReturnCodes::ABORTEVENT;
-    
+
   }
 
   m_eventcount_h->Fill(1);
@@ -313,7 +329,7 @@ int BuildResonanceJetTaggingTree::loopHFHadronic(PHCompositeNode *topNode)
           m_truth_tag_pz = genTag->momentum().pz();
           m_truth_tag_pt = std::sqrt(m_truth_tag_px * m_truth_tag_px + m_truth_tag_py * m_truth_tag_py);
           m_truth_tag_eta = atanh(m_truth_tag_pz / genTag->momentum().e());
-          m_truth_tag_phi = atan(m_truth_tag_py / m_truth_tag_px);
+          m_truth_tag_phi = atan2(m_truth_tag_py, m_truth_tag_px);
 	  m_truth_tag_m = genTag->momentum().m();
 	  m_truth_tag_e = genTag->momentum().e();
 
@@ -328,7 +344,7 @@ int BuildResonanceJetTaggingTree::loopHFHadronic(PHCompositeNode *topNode)
 
         }
       }
- 
+
       m_taggedjettree->Fill();
     }
   }
@@ -345,7 +361,7 @@ int BuildResonanceJetTaggingTree::loopHFHadronic(PHCompositeNode *topNode)
 
       //Check if truth was matched to reconstructed
       if(m_dorec) {
-	if(isReconstructed(genTagJet->get_id(), recJetIndex)) continue; 
+	if(isReconstructed(genTagJet->get_id(), recJetIndex)) continue;
       }
 
       Jet::Iter genTagIter = genTagJet->find(Jet::SRC::VOID);
@@ -357,7 +373,7 @@ int BuildResonanceJetTaggingTree::loopHFHadronic(PHCompositeNode *topNode)
       m_truth_tag_pz = genTag->momentum().pz();
       m_truth_tag_pt = std::sqrt(m_truth_tag_px * m_truth_tag_px + m_truth_tag_py * m_truth_tag_py);
       m_truth_tag_eta = atanh(m_truth_tag_pz / genTag->momentum().e());
-      m_truth_tag_phi = atan(m_truth_tag_py / m_truth_tag_px);
+      m_truth_tag_phi = atan2(m_truth_tag_py, m_truth_tag_px);
       m_truth_tag_m = genTag->momentum().m();
       m_truth_tag_e = genTag->momentum().e();
 
@@ -379,13 +395,13 @@ int BuildResonanceJetTaggingTree::loopHFHadronic(PHCompositeNode *topNode)
 	  if(constituent == genTag)
 	    {
 	      continue;
-	    } 
-        
+	    }
+
 	  m_truthjet_const_px.push_back(constituent->momentum().px());
 	  m_truthjet_const_py.push_back(constituent->momentum().py());
 	  m_truthjet_const_pz.push_back(constituent->momentum().pz());
 	  m_truthjet_const_e.push_back(constituent->momentum().e());
-	  	  
+
 	}
 
       m_taggedjettree->Fill();
@@ -426,23 +442,39 @@ void BuildResonanceJetTaggingTree::findMatchedTruthD0(PHCompositeNode *topNode, 
   // Truth map
   SvtxPHG4ParticleMap_v1 *dst_reco_truth_map = findNode::getClass<SvtxPHG4ParticleMap_v1>(topNode, "SvtxPHG4ParticleMap");
 
-  if (!dst_reco_truth_map)
+  if (dst_reco_truth_map)
   {
-    return;
-  }
-
-  for (int idecay = 0; idecay < m_nDaughters; idecay++)
-  {
-    std::map<float, std::set<int>> truth_set = dst_reco_truth_map->get(decays[idecay]);
-    const auto &best_weight = truth_set.rbegin();
-    int best_truth_id = *best_weight->second.rbegin();
-    g4particle = truthinfo->GetParticle(best_truth_id);
-    mcTags[idecay] = getMother(topNode, g4particle);
-    if (mcTags[idecay] == nullptr)
+    for (int idecay = 0; idecay < m_nDaughters; idecay++)
     {
-      return;
+      std::map<float, std::set<int>> truth_set = dst_reco_truth_map->get(decays[idecay]);
+      const auto &best_weight = truth_set.rbegin();
+      int best_truth_id = *best_weight->second.rbegin();
+      g4particle = truthinfo->GetParticle(best_truth_id);
+      mcTags[idecay] = getMother(topNode, g4particle);
+      if (mcTags[idecay] == nullptr)
+      {
+        return;
+      }
     }
   }
+  else
+  {
+    SvtxTrackMap *trackmap = findNode::getClass<SvtxTrackMap>(topNode, "SvtxTrackMap");
+    if(!trackmap) return;
+
+    for (int idecay = 0; idecay < m_nDaughters; idecay++)
+    {
+      SvtxTrack *track = trackmap->get(decays[idecay]);
+      if(!track) return;
+      g4particle = m_trackeval->max_truth_particle_by_nclusters(track);
+      mcTags[idecay] = getMother(topNode, g4particle);
+      if (mcTags[idecay] == nullptr)
+      {
+        return;
+      }
+    }
+  }
+
   // check is decays are from the same mother, otherwise it is background
   for (int idecay = 1; idecay < m_nDaughters; idecay++)
   {

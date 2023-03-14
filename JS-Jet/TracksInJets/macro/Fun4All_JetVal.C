@@ -12,28 +12,30 @@
 #include <phool/PHRandomSeed.h>
 #include <phool/recoConsts.h>
 
-#include <g4centrality/PHG4CentralityReco.h>
+#include <g4jets/FastJetAlgo.h>
+#include <g4jets/JetReco.h>
+#include <g4jets/TowerJetInput.h>
+#include <g4jets/TruthJetInput.h>
 
+#include <g4centrality/PHG4CentralityReco.h>
 
 #include <HIJetReco.C>
 
-
-#include <jetvalidation/JetValidation.h>
+#include <tracksinjets/TracksInJets.h>
 
 R__LOAD_LIBRARY(libfun4all.so)
 R__LOAD_LIBRARY(libg4jets.so)
 R__LOAD_LIBRARY(libjetbackground.so)
-R__LOAD_LIBRARY(libJetValidation.so)
+R__LOAD_LIBRARY(libTracksInJets.so)
 R__LOAD_LIBRARY(libg4centrality.so)
 R__LOAD_LIBRARY(libg4dst.so)
 
-
 #endif
 
-
-void Fun4All_JetVal(const char *filelisttruth = "dst_truth_jet.list",
-                     const char *filelistcalo = "dst_calo_cluster.list",  
-                     const char *outname = "outputest.root")
+void Fun4All_JetVal(const char *filelisttrk = "dst_tracks.list",
+		    const char *filelistcalo = "dst_calo_cluster.list",
+		    const char *filelistbbc = "dst_bbc_g4hit.list",
+		    const char *outname = "outputest.root")
 {
 
   
@@ -48,28 +50,24 @@ void Fun4All_JetVal(const char *filelisttruth = "dst_truth_jet.list",
   cent->GetCalibrationParameters().ReadFromFile("centrality", "xml", 0, 0, string(getenv("CALIBRATIONROOT")) + string("/Centrality/"));
   se->registerSubsystem( cent );
 
-  HIJetReco();
- 
+  HIJetReco();  
 
-  JetValidation *myJetVal = new JetValidation("AntiKt_Tower_r04_Sub1", "AntiKt_Truth_r04", outname);
-
-  myJetVal->setPtRange(5, 100);
-  myJetVal->setEtaRange(-1.1, 1.1);
-  myJetVal->doUnsub(1);
-  myJetVal->doTruth(1);
-  myJetVal->doSeeds(1);
-  se->registerSubsystem(myJetVal);
+  TracksInJets *trksinjets = new TracksInJets("AntiKt_Tower_r04_Sub1", outname);
+  se->registerSubsystem(trksinjets);  
   
-  Fun4AllInputManager *intrue = new Fun4AllDstInputManager("DSTtruth");
-  intrue->AddListFile(filelisttruth,1);
-  se->registerInputManager(intrue);
+  Fun4AllInputManager *in = new Fun4AllDstInputManager("DSTcalo");
+  in->AddListFile(filelistcalo,1);
+  se->registerInputManager(in);
 
-  Fun4AllInputManager *in2 = new Fun4AllDstInputManager("DSTcalo");
-  in2->AddListFile(filelistcalo,1);
-  se->registerInputManager(in2);
-
+  Fun4AllInputManager *intrk = new Fun4AllDstInputManager("DSTtrk");
+  intrk->AddListFile(filelisttrk,1);
+  se->registerInputManager(intrk);
   
-  se->run(-1);
+  Fun4AllInputManager *inbbc = new Fun4AllDstInputManager("DSTbbc");
+  inbbc->AddListFile(filelistbbc,1);
+  se->registerInputManager(inbbc);
+
+  se->run(100);
   se->End();
 
   gSystem->Exit(0);
