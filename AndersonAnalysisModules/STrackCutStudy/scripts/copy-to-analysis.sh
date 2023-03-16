@@ -32,10 +32,14 @@ files_to_copy[11]="scripts/RunTrackCutStudyWithPileupG4.job"
 files_to_copy[12]="scripts/wipe-source.sh"
 files_to_copy[13]="scripts/copy-to-analysis.sh"
 files_to_copy[14]="src/STrackCutStudy.cc"
-files_to_copy[15]="src/STrackCutStudy.h"
-files_to_copy[16]="src/autogen.sh"
-files_to_copy[17]="src/configure.ac"
-files_to_copy[18]="src/Makefile.am"
+files_to_copy[15]="src/STrackCutStudy.io.h"
+files_to_copy[16]="src/STrackCutStudy.ana.h"
+files_to_copy[17]="src/STrackCutStudy.hist.h"
+files_to_copy[18]="src/STrackCutStudy.plot.h"
+files_to_copy[19]="src/STrackCutStudy.h"
+files_to_copy[20]="src/autogen.sh"
+files_to_copy[21]="src/configure.ac"
+files_to_copy[22]="src/Makefile.am"
 
 # do copying
 # TODO: automate detection/creation of sub-directories

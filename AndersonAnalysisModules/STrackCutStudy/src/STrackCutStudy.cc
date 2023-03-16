@@ -11,8 +11,12 @@
 
 #define STRACKCUTSTUDY_CC
 
-// header file
+// header files
 #include "STrackCutStudy.h"
+#include "STrackCutStudy.io.h"
+#include "STrackCutStudy.ana.h"
+#include "STrackCutStudy.hist.h"
+#include "STrackCutStudy.plot.h"
 
 using namespace std;
 
@@ -22,12 +26,171 @@ using namespace std;
 
 STrackCutStudy::STrackCutStudy() {
 
+  // clear member variables
+  sTxtEO.clear();
+  sTxtPU.clear();
+  nTxtEO          = 0;
+  nTxtPU          = 0;
   doIntNorm       = false;
-  useOnlyPrimary  = false; 
+  doAvgClustCalc  = false;
   normalPtFracMin = 0.;
   normalPtFracMax = 9999.;
-  qualityMin      = 0.;
-  qualityMax      = 9999.;
+  doPrimaryCut    = false;
+  doMVtxCut       = false;
+  doVzCut         = false;
+  doDcaXyCut      = false;
+  doDcaZCut       = false;
+  doQualityCut    = false;
+
+  // set whether or not type is truth
+  isTruth[TYPE::TRACK]         = false;
+  isTruth[TYPE::TRUTH]         = true;
+  isTruth[TYPE::WEIRD_ALL]     = false;
+  isTruth[TYPE::WEIRD_SI]      = false;
+  isTruth[TYPE::WEIRD_TPC]     = false;
+  isTruth[TYPE::NORMAL]        = false;
+  isTruth[TYPE::PILEUP]        = false;
+  isTruth[TYPE::PRIMARY]       = false;
+  isTruth[TYPE::NONPRIM]       = false;
+  isTruth[TYPE::TRK_CUT]       = false;
+  isTruth[TYPE::TRU_CUT]       = true;
+  isTruth[TYPE::WEIRD_CUT]     = false;
+  isTruth[TYPE::WEIRD_SI_CUT]  = false;
+  isTruth[TYPE::WEIRD_TPC_CUT] = false;
+  isTruth[TYPE::NORM_CUT]      = false;
+
+  // set whether or not type has pileup
+  isPileup[TYPE::TRACK]         = false;
+  isPileup[TYPE::TRUTH]         = false;
+  isPileup[TYPE::WEIRD_ALL]     = false;
+  isPileup[TYPE::WEIRD_SI]      = false;
+  isPileup[TYPE::WEIRD_TPC]     = false;
+  isPileup[TYPE::NORMAL]        = false;
+  isPileup[TYPE::PILEUP]        = true;
+  isPileup[TYPE::PRIMARY]       = true;
+  isPileup[TYPE::NONPRIM]       = true;
+  isPileup[TYPE::TRK_CUT]       = false;
+  isPileup[TYPE::TRU_CUT]       = false;
+  isPileup[TYPE::WEIRD_CUT]     = false;
+  isPileup[TYPE::WEIRD_SI_CUT]  = false;
+  isPileup[TYPE::WEIRD_TPC_CUT] = false;
+  isPileup[TYPE::NORM_CUT]      = false;
+
+  // set whether or not track variable has a truth value
+  trkVarHasTruVal[TRKVAR::VX]       = true;
+  trkVarHasTruVal[TRKVAR::VY]       = true;
+  trkVarHasTruVal[TRKVAR::VZ]       = true;
+  trkVarHasTruVal[TRKVAR::NMMS]     = true;
+  trkVarHasTruVal[TRKVAR::NMAP]     = true;
+  trkVarHasTruVal[TRKVAR::NINT]     = true;
+  trkVarHasTruVal[TRKVAR::NTPC]     = true;
+  trkVarHasTruVal[TRKVAR::QUAL]     = false;
+  trkVarHasTruVal[TRKVAR::DCAXY]    = false;
+  trkVarHasTruVal[TRKVAR::DCAZ]     = false;
+  trkVarHasTruVal[TRKVAR::DELDCAXY] = false;
+  trkVarHasTruVal[TRKVAR::DELDCAZ]  = false;
+  trkVarHasTruVal[TRKVAR::NCLUST]   = true;
+  trkVarHasTruVal[TRKVAR::AVGCLUST] = true;
+
+  // set whether or not physics variable has a truth value
+  physVarHasTruVal[PHYSVAR::PHI]    = true;
+  physVarHasTruVal[PHYSVAR::ETA]    = true;
+  physVarHasTruVal[PHYSVAR::PT]     = true;
+  physVarHasTruVal[PHYSVAR::DELPHI] = false;
+  physVarHasTruVal[PHYSVAR::DELETA] = false;
+  physVarHasTruVal[PHYSVAR::DELPT]  = false;
+
+  // set type colors
+  fTypeCol[TYPE::TRACK]         = 923;
+  fTypeCol[TYPE::TRUTH]         = 899;
+  fTypeCol[TYPE::WEIRD_ALL]     = 879;
+  fTypeCol[TYPE::WEIRD_SI]      = 809;
+  fTypeCol[TYPE::WEIRD_TPC]     = 849;
+  fTypeCol[TYPE::NORMAL]        = 889;
+  fTypeCol[TYPE::PILEUP]        = 923;
+  fTypeCol[TYPE::PRIMARY]       = 859;
+  fTypeCol[TYPE::NONPRIM]       = 799;
+  fTypeCol[TYPE::TRK_CUT]       = 923;
+  fTypeCol[TYPE::TRU_CUT]       = 899;
+  fTypeCol[TYPE::WEIRD_CUT]     = 879;
+  fTypeCol[TYPE::WEIRD_SI_CUT]  = 809;
+  fTypeCol[TYPE::WEIRD_TPC_CUT] = 849;
+  fTypeCol[TYPE::NORM_CUT]      = 889;
+
+  // set type markers
+  fTypeMar[TYPE::TRACK]         = 20;
+  fTypeMar[TYPE::TRUTH]         = 24;
+  fTypeMar[TYPE::WEIRD_ALL]     = 26;
+  fTypeMar[TYPE::WEIRD_SI]      = 5;
+  fTypeMar[TYPE::WEIRD_TPC]     = 2;
+  fTypeMar[TYPE::NORMAL]        = 32;
+  fTypeMar[TYPE::PILEUP]        = 20;
+  fTypeMar[TYPE::PRIMARY]       = 26;
+  fTypeMar[TYPE::NONPRIM]       = 32;
+  fTypeMar[TYPE::TRK_CUT]       = 20;
+  fTypeMar[TYPE::TRU_CUT]       = 24;
+  fTypeMar[TYPE::WEIRD_CUT]     = 26;
+  fTypeMar[TYPE::WEIRD_SI_CUT]  = 5;
+  fTypeMar[TYPE::WEIRD_TPC_CUT] = 2;
+  fTypeMar[TYPE::NORM_CUT]      = 32;
+
+  // set type names
+  sTrkNames[TYPE::TRACK]         = "AllTrack";
+  sTrkNames[TYPE::TRUTH]         = "AllTruth";
+  sTrkNames[TYPE::WEIRD_ALL]     = "AllWeird";
+  sTrkNames[TYPE::WEIRD_SI]      = "AllSiWeird";
+  sTrkNames[TYPE::WEIRD_TPC]     = "AllTpcWeird";
+  sTrkNames[TYPE::NORMAL]        = "AllNormal";
+  sTrkNames[TYPE::PILEUP]        = "CutPileup";
+  sTrkNames[TYPE::PRIMARY]       = "CutPrimePileup";
+  sTrkNames[TYPE::NONPRIM]       = "CutNonPrimePileup";
+  sTrkNames[TYPE::TRK_CUT]       = "CutTrack";
+  sTrkNames[TYPE::TRU_CUT]       = "CutTruth";
+  sTrkNames[TYPE::WEIRD_CUT]     = "CutWeird";
+  sTrkNames[TYPE::WEIRD_SI_CUT]  = "CutSiWeird";
+  sTrkNames[TYPE::WEIRD_TPC_CUT] = "CutTpcWeird";
+  sTrkNames[TYPE::NORM_CUT]      = "CutNormal";
+
+  // set type plot labels
+  sTrkLabels[TYPE::TRACK]         = "Tracks (before cuts)";
+  sTrkLabels[TYPE::TRUTH]         = "Truth tracks (before cuts)";
+  sTrkLabels[TYPE::WEIRD_ALL]     = "Weird tracks (before cuts)";
+  sTrkLabels[TYPE::WEIRD_SI]      = "Weird tracks (Si seed, before cuts)";
+  sTrkLabels[TYPE::WEIRD_TPC]     = "Weird tracks (TPC seed, before cuts)";
+  sTrkLabels[TYPE::NORMAL]        = "Normal tracks (before cuts)";
+  sTrkLabels[TYPE::PILEUP]        = "Including pileup tracks (all)";
+  sTrkLabels[TYPE::PRIMARY]       = "Including pileup tracks (only primary)";
+  sTrkLabels[TYPE::NONPRIM]       = "Including pileup gracks (non-primary)";
+  sTrkLabels[TYPE::TRK_CUT]       = "Tracks (after cuts)";
+  sTrkLabels[TYPE::TRU_CUT]       = "Truth tracks (after cuts)";
+  sTrkLabels[TYPE::WEIRD_CUT]     = "Weird tracks (after cuts)";
+  sTrkLabels[TYPE::WEIRD_SI_CUT]  = "Weird tracks (Si seed, after cuts)";
+  sTrkLabels[TYPE::WEIRD_TPC_CUT] = "Weird tracks (TPC seed, after cuts)";
+  sTrkLabels[TYPE::NORM_CUT]      = "Normal tracks (after cuts)";
+
+  // set track variable names
+  sTrkVars[TRKVAR::VX]       = "Vx";
+  sTrkVars[TRKVAR::VY]       = "Vy";
+  sTrkVars[TRKVAR::VZ]       = "Vz";
+  sTrkVars[TRKVAR::NMMS]     = "NMms";
+  sTrkVars[TRKVAR::NMAP]     = "NMap";
+  sTrkVars[TRKVAR::NINT]     = "NInt";
+  sTrkVars[TRKVAR::NTPC]     = "NTpc";
+  sTrkVars[TRKVAR::QUAL]     = "Qual";
+  sTrkVars[TRKVAR::DCAXY]    = "DcaXY";
+  sTrkVars[TRKVAR::DCAZ]     = "DcaZ";
+  sTrkVars[TRKVAR::DELDCAXY] = "DeltaDcaXY";
+  sTrkVars[TRKVAR::DELDCAZ]  = "DeltaDcaZ";
+  sTrkVars[TRKVAR::NCLUST]   = "NClust";
+  sTrkVars[TRKVAR::AVGCLUST] = "AvgClustSize";
+
+  // set physics variable names
+  sPhysVars[PHYSVAR::PHI]    = "Phi";
+  sPhysVars[PHYSVAR::ETA]    = "Eta";
+  sPhysVars[PHYSVAR::PT]     = "Pt";
+  sPhysVars[PHYSVAR::DELPHI] = "DeltaPhi";
+  sPhysVars[PHYSVAR::DELETA] = "DeltaEta";
+  sPhysVars[PHYSVAR::DELPT]  = "DeltaPt";
   cout << "\n  Beginning track cut study."  << endl;
 
 }  // end ctor
@@ -49,97 +212,7 @@ STrackCutStudy::~STrackCutStudy() {
 
 
 
-// public methods -------------------------------------------------------------
-
-void STrackCutStudy::SetInputOutputFiles(const TString sEmbedOnlyInput, const TString sPileupInput, const TString sOutput) {
-
-  sInFileEO = sEmbedOnlyInput;
-  sInFilePU = sPileupInput;
-  sOutfile  = sOutput;
-  cout << "    Set i/o files:\n"
-       << "      Embed Only  = " << sInFileEO.Data() << "\n"
-       << "      With Pileup = " << sInFilePU.Data() << "\n"
-       << "      Output      = " << sOutput.Data()
-       << endl;
-  return;
-
-}  // end 'SetInputOutputFiles(TString, TString, TString)'
-
-
-
-void STrackCutStudy::SetInputTuples(const TString sEmbedOnlyTuple, const TString sPileupTuple) {
-
-  sInTupleEO = sEmbedOnlyTuple;
-  sInTuplePU = sPileupTuple;
-  cout << "    Set input tuples:\n"
-       << "      Embed Only  = " << sInTupleEO.Data() << "\n"
-       << "      With Pileup = " << sInTuplePU.Data()
-       << endl;
-  return;
-
-}  // end 'SetInputTuples(TString, TString)'
-
-
-
-void STrackCutStudy::SetStudyParameters(const Bool_t intNorm, const Bool_t onlyPrim, const Double_t normalFracMin, const Double_t normalFracMax) {
-
-  doIntNorm       = intNorm;
-  useOnlyPrimary  = onlyPrim;
-  normalPtFracMin = normalFracMin;
-  normalPtFracMax = normalFracMax;
-  cout << "    Set normal pT fraction:\n"
-       << "      Normal Pt Fraction = (" << normalPtFracMin << ", " << normalPtFracMax << ")"
-       << endl;
-
-  if (doIntNorm) {
-    cout << "    Normalizing by integral." << endl;
-  } else {
-    cout << "    No normalization." << endl;
-  }
-
-  if (useOnlyPrimary) {
-    cout << "    Considering only primary embed-only tracks." << endl;
-  } else {
-    cout << "    Considering all embed-only tracks." << endl;
-  }
-  return;
-
-}  // end 'SetStudyParameters(bool, bool, double, double)'
-
-
-
-void STrackCutStudy::SetTrackCuts(const Double_t trkVzMin, const Double_t trkVzMax, const Double_t trkQualMin, const Double_t trkQualMax) {
-
-  vzMin      = trkVzMin;
-  vzMax      = trkVzMax;
-  qualityMin = trkQualMin;
-  qualityMax = trkQualMax;
-  cout << "    Set track cuts:\n"
-       << "      z-vertex = (" << vzMin      << ", " << vzMax      << ")\n"
-       << "      quality  = (" << qualityMin << ", " << qualityMax << ")"
-       << endl;
-  return;
-
-}  // end 'SetTrackCuts(double, double)'
-
-
-
-void STrackCutStudy::SetPlotText(const Ssiz_t nTxtE, const Ssiz_t nTxtP, const TString sTxtE[], const TString sTxtP[]) {
-
-  nTxtEO = nTxtE;
-  nTxtPU = nTxtP;
-  for (Ssiz_t iTxtEO = 0; iTxtEO < nTxtEO; iTxtEO++) {
-    sTxtEO.push_back(sTxtE[iTxtEO]);
-  }
-  for (Ssiz_t iTxtPU = 0; iTxtPU < nTxtPU; iTxtPU++) {
-    sTxtPU.push_back(sTxtP[iTxtPU]);
-  }
-  cout << "    Set plot text." << endl;
-  return;
-
-}  // end 'SetPlotText(Ssiz_t, Ssiz_t, TString[], TString[])'
-
-
+//  main methods --------------------------------------------------------------
 
 void STrackCutStudy::Init() {
 
@@ -148,6 +221,7 @@ void STrackCutStudy::Init() {
   InitFiles();
   InitTuples();
   InitHists();
+  MakeCutText();
   return;
 
 }  // end Init()
@@ -219,6 +293,8 @@ void STrackCutStudy::Analyze() {
     recoTrkVars[TRKVAR::DCAZ]     = umDcaZ;
     recoTrkVars[TRKVAR::DELDCAXY] = deltaDcaXY;
     recoTrkVars[TRKVAR::DELDCAZ]  = deltaDcaZ;
+    recoTrkVars[TRKVAR::NCLUST]   = 0.;
+    recoTrkVars[TRKVAR::AVGCLUST] = 0.;
 
     // set true track variables
     trueTrkVars[TRKVAR::VX]       = gvx;
@@ -233,6 +309,8 @@ void STrackCutStudy::Analyze() {
     trueTrkVars[TRKVAR::DCAZ]     = umDcaZ;
     trueTrkVars[TRKVAR::DELDCAXY] = deltaDcaXY;
     trueTrkVars[TRKVAR::DELDCAZ]  = deltaDcaZ;
+    trueTrkVars[TRKVAR::NCLUST]   = 0.;
+    trueTrkVars[TRKVAR::AVGCLUST] = 0.;
 
     // set reco phys variables
     recoPhysVars[PHYSVAR::PHI]    = phi;
@@ -250,28 +328,40 @@ void STrackCutStudy::Analyze() {
     truePhysVars[PHYSVAR::DELETA] = deltaEta;
     truePhysVars[PHYSVAR::DELPT]  = deltaPt;
 
-    // [02.14.2023] TEST
-    const Bool_t isInMvtxCut = (nlmaps >= 2);
-    if (!isInMvtxCut) continue;
-
-    // select only primaries if need be
-    const Bool_t isPrimary = (gprimary == 1);
-    if (useOnlyPrimary && !isPrimary) continue;
-
-    // fill histograms
-    FillTrackHistograms(0, recoTrkVars, trueTrkVars, recoPhysVars, truePhysVars);
-    FillTruthHistograms(1, recoTrkVars, trueTrkVars, recoPhysVars, truePhysVars);
- 
-    // fill embed_only weird histograms
-    const Bool_t isWeirdTrack = ((ptFrac < normalPtFracMin) || (ptFrac > normalPtFracMax));
+    // check for weird tracks
     const Bool_t hasSiSeed    = (nmaps == 3);
     const Bool_t hasTpcSeed   = (nmaps == 0);
+    const Bool_t isPrimary    = (gprimary == 1);
+    const Bool_t isWeirdTrack = ((ptFrac < normalPtFracMin) || (ptFrac > normalPtFracMax));
+
+    // fill all track histograms
+    FillTrackHistograms(TYPE::TRACK, recoTrkVars, trueTrkVars, recoPhysVars, truePhysVars);
+    FillTruthHistograms(TYPE::TRUTH, recoTrkVars, trueTrkVars, recoPhysVars, truePhysVars);
+ 
+    // fill all embed_only weird histograms
     if (isWeirdTrack) {
-      FillTrackHistograms(2, recoTrkVars, trueTrkVars, recoPhysVars, truePhysVars);
-      if (hasSiSeed)  FillTrackHistograms(3, recoTrkVars, trueTrkVars, recoPhysVars, truePhysVars);
-      if (hasTpcSeed) FillTrackHistograms(4, recoTrkVars, trueTrkVars, recoPhysVars, truePhysVars);
+      FillTrackHistograms(TYPE::WEIRD_ALL, recoTrkVars, trueTrkVars, recoPhysVars, truePhysVars);
+      if (hasSiSeed)  FillTrackHistograms(TYPE::WEIRD_SI,  recoTrkVars, trueTrkVars, recoPhysVars, truePhysVars);
+      if (hasTpcSeed) FillTrackHistograms(TYPE::WEIRD_TPC, recoTrkVars, trueTrkVars, recoPhysVars, truePhysVars);
     } else {
-      FillTrackHistograms(5, recoTrkVars, trueTrkVars, recoPhysVars, truePhysVars);
+      FillTrackHistograms(TYPE::NORMAL, recoTrkVars, trueTrkVars, recoPhysVars, truePhysVars);
+    }
+
+    // apply cuts
+    const Bool_t isGoodTrk = ApplyCuts(isPrimary, (UInt_t) nlmaps, (UInt_t) ntpc, vz, umDcaXY, umDcaZ, quality);
+    if (!isGoodTrk) continue;
+
+    // fill cut track histograms
+    FillTrackHistograms(TYPE::TRK_CUT, recoTrkVars, trueTrkVars, recoPhysVars, truePhysVars);
+    FillTruthHistograms(TYPE::TRU_CUT, recoTrkVars, trueTrkVars, recoPhysVars, truePhysVars);
+ 
+    // fill cut embed_only weird histograms
+    if (isWeirdTrack) {
+      FillTrackHistograms(TYPE::WEIRD_CUT, recoTrkVars, trueTrkVars, recoPhysVars, truePhysVars);
+      if (hasSiSeed)  FillTrackHistograms(TYPE::WEIRD_SI_CUT,  recoTrkVars, trueTrkVars, recoPhysVars, truePhysVars);
+      if (hasTpcSeed) FillTrackHistograms(TYPE::WEIRD_TPC_CUT, recoTrkVars, trueTrkVars, recoPhysVars, truePhysVars);
+    } else {
+      FillTrackHistograms(TYPE::NORM_CUT, recoTrkVars, trueTrkVars, recoPhysVars, truePhysVars);
     }
   }  // end embed-only entry loop
   cout << "      Finished embed-only entry loop." << endl;
@@ -309,9 +399,8 @@ void STrackCutStudy::Analyze() {
     const Double_t deltaPhi   = abs(pu_deltaphi / pu_phi);
     const Double_t deltaPt    = abs(pu_deltapt / pu_pt);
 
-    // check if values are defined & if primary or not
+    // check if values are defined
     const Bool_t thereAreNans = (isnan(pu_dca3dxy) || isnan(pu_dca3dz) || isnan(pu_eta) || isnan(pu_phi) || isnan(pu_pt));
-    const Bool_t isPrimary    = (pu_gprimary == 1);
     if (thereAreNans) continue;
 
     // set reco track variables
@@ -327,6 +416,8 @@ void STrackCutStudy::Analyze() {
     recoTrkVars[TRKVAR::DCAZ]     = umDcaZ;
     recoTrkVars[TRKVAR::DELDCAXY] = deltaDcaXY;
     recoTrkVars[TRKVAR::DELDCAZ]  = deltaDcaZ;
+    recoTrkVars[TRKVAR::NCLUST]   = 0.;
+    recoTrkVars[TRKVAR::AVGCLUST] = 0.;
 
     // set true track variables
     trueTrkVars[TRKVAR::VX]       = pu_gvx;
@@ -341,6 +432,8 @@ void STrackCutStudy::Analyze() {
     trueTrkVars[TRKVAR::DCAZ]     = umDcaZ;
     trueTrkVars[TRKVAR::DELDCAXY] = deltaDcaXY;
     trueTrkVars[TRKVAR::DELDCAZ]  = deltaDcaZ;
+    trueTrkVars[TRKVAR::NCLUST]   = 0.;
+    trueTrkVars[TRKVAR::AVGCLUST] = 0.;
 
     // set reco phys variables
     recoPhysVars[PHYSVAR::PHI]    = pu_phi;
@@ -358,16 +451,17 @@ void STrackCutStudy::Analyze() {
     truePhysVars[PHYSVAR::DELETA] = deltaEta;
     truePhysVars[PHYSVAR::DELPT]  = deltaPt;
 
-    // [02.14.2023] TEST
-    const Bool_t isInMvtxCut = (pu_nlmaps >= 2);
-    if (!isInMvtxCut) continue;
+    // apply cuts
+    const Bool_t isPrimary = (pu_gprimary == 1);
+    const Bool_t isGoodTrk = ApplyCuts(isPrimary, (UInt_t) pu_nlmaps, (UInt_t) pu_ntpc, pu_vz, umDcaXY, umDcaZ, pu_quality);
+    if (!isGoodTrk) continue;
 
     // fill histograms
-    FillTrackHistograms(6, recoTrkVars, trueTrkVars, recoPhysVars, truePhysVars);
+    FillTrackHistograms(TYPE::PILEUP, recoTrkVars, trueTrkVars, recoPhysVars, truePhysVars);
     if (isPrimary) {
-      FillTrackHistograms(7, recoTrkVars, trueTrkVars, recoPhysVars, truePhysVars);
+      FillTrackHistograms(TYPE::PRIMARY, recoTrkVars, trueTrkVars, recoPhysVars, truePhysVars);
     } else {
-      FillTrackHistograms(6, recoTrkVars, trueTrkVars, recoPhysVars, truePhysVars);
+      FillTrackHistograms(TYPE::NONPRIM, recoTrkVars, trueTrkVars, recoPhysVars, truePhysVars);
     }
   }  // end with-pileup entry loop
   cout << "      Finished with-pileup entry loop." << endl;
@@ -401,1818 +495,5 @@ void STrackCutStudy::End() {
   return ;
 
 }  // end End()
-
-
-
-// private methods ------------------------------------------------------------
-
-void STrackCutStudy::InitFiles() {
-
-  // open files
-  fOut  = new TFile(sOutfile.Data(),  "recreate");
-  fInEO = new TFile(sInFileEO.Data(), "read");
-  fInPU = new TFile(sInFilePU.Data(), "read");
-  if (!fOut || !fInEO || !fInPU) {
-    cerr << "PANIC: couldn't open a file!\n"
-         << "       fOut = " << fOut << ", fInEO = " << fInEO << ", fInPU = " << fInPU << "\n"
-         << endl;
-    assert(fOut && fInEO && fInPU);
-  }
-  cout << "      Initialized files." << endl;
-  return;
-
-}  // end 'InitFiles()'
-
-
-
-void STrackCutStudy::InitTuples() {
-
-  // grab tuples
-  ntTrkEO = (TNtuple*) fInEO -> Get(sInTupleEO.Data());
-  ntTrkPU = (TNtuple*) fInPU -> Get(sInTuplePU.Data());
-  if (!ntTrkEO || !ntTrkPU) {
-    cerr << "PANIC: couldn't grab an input Ntuple!\n"
-         << "       ntTrkEO = " << ntTrkEO << ", ntTrkPU = " << ntTrkPU << "\n"
-         << endl;
-    assert(ntTrkEO && ntTrkPU);
-  }
-  cout << "      Initialized input ntuples." << endl;
-
-  // set embed-only branch addresses
-  ntTrkEO -> SetBranchAddress("event",           &event);
-  ntTrkEO -> SetBranchAddress("seed",            &seed);
-  ntTrkEO -> SetBranchAddress("trackID",         &trackID);
-  ntTrkEO -> SetBranchAddress("crossing",        &crossing);
-  ntTrkEO -> SetBranchAddress("px",              &px);
-  ntTrkEO -> SetBranchAddress("py",              &py);
-  ntTrkEO -> SetBranchAddress("pz",              &pz);
-  ntTrkEO -> SetBranchAddress("pt",              &pt);
-  ntTrkEO -> SetBranchAddress("eta",             &eta);
-  ntTrkEO -> SetBranchAddress("phi",             &phi);
-  ntTrkEO -> SetBranchAddress("deltapt",         &deltapt);
-  ntTrkEO -> SetBranchAddress("deltaeta",        &deltaeta);
-  ntTrkEO -> SetBranchAddress("deltaphi",        &deltaphi);
-  ntTrkEO -> SetBranchAddress("charge",          &charge);
-  ntTrkEO -> SetBranchAddress("quality",         &quality);
-  ntTrkEO -> SetBranchAddress("chisq",           &chisq);
-  ntTrkEO -> SetBranchAddress("ndf",             &ndf);
-  ntTrkEO -> SetBranchAddress("nhits",           &nhits);
-  ntTrkEO -> SetBranchAddress("nmaps",           &nmaps);
-  ntTrkEO -> SetBranchAddress("nintt",           &nintt);
-  ntTrkEO -> SetBranchAddress("ntpc",            &ntpc);
-  ntTrkEO -> SetBranchAddress("nmms",            &nmms);
-  ntTrkEO -> SetBranchAddress("ntpc1",           &ntpc1);
-  ntTrkEO -> SetBranchAddress("ntpc11",          &ntpc11);
-  ntTrkEO -> SetBranchAddress("ntpc2",           &ntpc2);
-  ntTrkEO -> SetBranchAddress("ntpc3",           &ntpc3);
-  ntTrkEO -> SetBranchAddress("nlmaps",          &nlmaps);
-  ntTrkEO -> SetBranchAddress("nlintt",          &nlintt);
-  ntTrkEO -> SetBranchAddress("nltpc",           &nltpc);
-  ntTrkEO -> SetBranchAddress("nlmms",           &nlmms);
-  ntTrkEO -> SetBranchAddress("layers",          &layers);
-  ntTrkEO -> SetBranchAddress("vertexID",        &vertexID);
-  ntTrkEO -> SetBranchAddress("vx",              &vx);
-  ntTrkEO -> SetBranchAddress("vy",              &vy);
-  ntTrkEO -> SetBranchAddress("vz",              &vz);
-  ntTrkEO -> SetBranchAddress("dca2d",           &dca2d);
-  ntTrkEO -> SetBranchAddress("dca2dsigma",      &dca2dsigma);
-  ntTrkEO -> SetBranchAddress("dca3dxy",         &dca3dxy);
-  ntTrkEO -> SetBranchAddress("dca3dxysigma",    &dca3dxysigma);
-  ntTrkEO -> SetBranchAddress("dca3dz",          &dca3dz);
-  ntTrkEO -> SetBranchAddress("dca3dzsigma",     &dca3dzsigma);
-  ntTrkEO -> SetBranchAddress("pcax",            &pcax);
-  ntTrkEO -> SetBranchAddress("pcay",            &pcay);
-  ntTrkEO -> SetBranchAddress("pcaz",            &pcaz);
-  ntTrkEO -> SetBranchAddress("gtrackID",        &gtrackID);
-  ntTrkEO -> SetBranchAddress("gflavor",         &gflavor);
-  ntTrkEO -> SetBranchAddress("gnhits",          &gnhits);
-  ntTrkEO -> SetBranchAddress("gnmaps",          &gnmaps);
-  ntTrkEO -> SetBranchAddress("gnintt",          &gnintt);
-  ntTrkEO -> SetBranchAddress("gntpc",           &gntpc);
-  ntTrkEO -> SetBranchAddress("gnmms",           &gnmms);
-  ntTrkEO -> SetBranchAddress("gnlmaps",         &gnlmaps);
-  ntTrkEO -> SetBranchAddress("gnlintt",         &gnlintt);
-  ntTrkEO -> SetBranchAddress("gnltpc",          &gnltpc);
-  ntTrkEO -> SetBranchAddress("gnlmms",          &gnlmms);
-  ntTrkEO -> SetBranchAddress("gpx",             &gpx);
-  ntTrkEO -> SetBranchAddress("gpy",             &gpy);
-  ntTrkEO -> SetBranchAddress("gpz",             &gpz);
-  ntTrkEO -> SetBranchAddress("gpt",             &gpt);
-  ntTrkEO -> SetBranchAddress("geta",            &geta);
-  ntTrkEO -> SetBranchAddress("gphi",            &gphi);
-  ntTrkEO -> SetBranchAddress("gvx",             &gvx);
-  ntTrkEO -> SetBranchAddress("gvy",             &gvy);
-  ntTrkEO -> SetBranchAddress("gvz",             &gvz);
-  ntTrkEO -> SetBranchAddress("gvt",             &gvt);
-  ntTrkEO -> SetBranchAddress("gfpx",            &gfpx);
-  ntTrkEO -> SetBranchAddress("gfpy",            &gfpy);
-  ntTrkEO -> SetBranchAddress("gfpz",            &gfpz);
-  ntTrkEO -> SetBranchAddress("gfx",             &gfx);
-  ntTrkEO -> SetBranchAddress("gfy",             &gfy);
-  ntTrkEO -> SetBranchAddress("gfz",             &gfz);
-  ntTrkEO -> SetBranchAddress("gembed",          &gembed);
-  ntTrkEO -> SetBranchAddress("gprimary",        &gprimary);
-  ntTrkEO -> SetBranchAddress("nfromtruth",      &nfromtruth);
-  ntTrkEO -> SetBranchAddress("nwrong",          &nwrong);
-  ntTrkEO -> SetBranchAddress("ntrumaps",        &ntrumaps);
-  ntTrkEO -> SetBranchAddress("ntruintt",        &ntruintt);
-  ntTrkEO -> SetBranchAddress("ntrutpc",         &ntrutpc);
-  ntTrkEO -> SetBranchAddress("ntrumms",         &ntrumms);
-  ntTrkEO -> SetBranchAddress("ntrutpc1",        &ntrutpc1);
-  ntTrkEO -> SetBranchAddress("ntrutpc11",       &ntrutpc11);
-  ntTrkEO -> SetBranchAddress("ntrutpc2",        &ntrutpc2);
-  ntTrkEO -> SetBranchAddress("ntrutpc3",        &ntrutpc3);
-  ntTrkEO -> SetBranchAddress("layersfromtruth", &layersfromtruth);
-  ntTrkEO -> SetBranchAddress("nhittpcall",      &nhittpcall);
-  ntTrkEO -> SetBranchAddress("nhittpcin",       &nhittpcin);
-  ntTrkEO -> SetBranchAddress("nhittpcmid",      &nhittpcmid);
-  ntTrkEO -> SetBranchAddress("nhittpcout",      &nhittpcout);
-  ntTrkEO -> SetBranchAddress("nclusall",        &nclusall);
-  ntTrkEO -> SetBranchAddress("nclustpc",        &nclustpc);
-  ntTrkEO -> SetBranchAddress("nclusintt",       &nclusintt);
-  ntTrkEO -> SetBranchAddress("nclusmaps",       &nclusmaps);
-  ntTrkEO -> SetBranchAddress("nclusmms",        &nclusmms);
-
-  // set with-pileup branch
-  ntTrkPU -> SetBranchAddress("event",           &pu_event);
-  ntTrkPU -> SetBranchAddress("seed",            &pu_seed);
-  ntTrkPU -> SetBranchAddress("gntracks",        &pu_gntracks);
-  ntTrkPU -> SetBranchAddress("gtrackID",        &pu_gtrackID);
-  ntTrkPU -> SetBranchAddress("gflavor",         &pu_gflavor);
-  ntTrkPU -> SetBranchAddress("gnhits",          &pu_gnhits);
-  ntTrkPU -> SetBranchAddress("gnmaps",          &pu_gnmaps);
-  ntTrkPU -> SetBranchAddress("gnintt",          &pu_gnintt);
-  ntTrkPU -> SetBranchAddress("gnmms",           &pu_gnmms);
-  ntTrkPU -> SetBranchAddress("gnintt1",         &pu_gnintt1);
-  ntTrkPU -> SetBranchAddress("gnintt2",         &pu_gnintt2);
-  ntTrkPU -> SetBranchAddress("gnintt3",         &pu_gnintt3);
-  ntTrkPU -> SetBranchAddress("gnintt4",         &pu_gnintt4);
-  ntTrkPU -> SetBranchAddress("gnintt5",         &pu_gnintt5);
-  ntTrkPU -> SetBranchAddress("gnintt6",         &pu_gnintt6);
-  ntTrkPU -> SetBranchAddress("gnintt7",         &pu_gnintt7);
-  ntTrkPU -> SetBranchAddress("gnintt8",         &pu_gnintt8);
-  ntTrkPU -> SetBranchAddress("gntpc",           &pu_gntpc);
-  ntTrkPU -> SetBranchAddress("gnlmaps",         &pu_gnlmaps);
-  ntTrkPU -> SetBranchAddress("gnlintt",         &pu_gnlintt);
-  ntTrkPU -> SetBranchAddress("gnltpc",          &pu_gnltpc);
-  ntTrkPU -> SetBranchAddress("gnlmms",          &pu_gnlmms);
-  ntTrkPU -> SetBranchAddress("gpx",             &pu_gpx);
-  ntTrkPU -> SetBranchAddress("gpy",             &pu_gpy);
-  ntTrkPU -> SetBranchAddress("gpz",             &pu_gpz);
-  ntTrkPU -> SetBranchAddress("gpt",             &pu_gpt);
-  ntTrkPU -> SetBranchAddress("geta",            &pu_geta);
-  ntTrkPU -> SetBranchAddress("gphi",            &pu_gphi);
-  ntTrkPU -> SetBranchAddress("gvx",             &pu_gvx);
-  ntTrkPU -> SetBranchAddress("gvy",             &pu_gvy);
-  ntTrkPU -> SetBranchAddress("gvz",             &pu_gvz);
-  ntTrkPU -> SetBranchAddress("gvt",             &pu_gvt);
-  ntTrkPU -> SetBranchAddress("gfpx",            &pu_gfpx);
-  ntTrkPU -> SetBranchAddress("gfpy",            &pu_gfpy);
-  ntTrkPU -> SetBranchAddress("gfpz",            &pu_gfpz);
-  ntTrkPU -> SetBranchAddress("gfx",             &pu_gfx);
-  ntTrkPU -> SetBranchAddress("gfy",             &pu_gfy);
-  ntTrkPU -> SetBranchAddress("gfz",             &pu_gfz);
-  ntTrkPU -> SetBranchAddress("gembed",          &pu_gembed);
-  ntTrkPU -> SetBranchAddress("gprimary",        &pu_gprimary);
-  ntTrkPU -> SetBranchAddress("trackID",         &pu_trackID);
-  ntTrkPU -> SetBranchAddress("px",              &pu_px);
-  ntTrkPU -> SetBranchAddress("py",              &pu_py);
-  ntTrkPU -> SetBranchAddress("pz",              &pu_pz);
-  ntTrkPU -> SetBranchAddress("pt",              &pu_pt);
-  ntTrkPU -> SetBranchAddress("eta",             &pu_eta);
-  ntTrkPU -> SetBranchAddress("phi",             &pu_phi);
-  ntTrkPU -> SetBranchAddress("deltapt",         &pu_deltapt);
-  ntTrkPU -> SetBranchAddress("deltaeta",        &pu_deltaeta);
-  ntTrkPU -> SetBranchAddress("deltaphi",        &pu_deltaphi);
-  ntTrkPU -> SetBranchAddress("charge",          &pu_charge);
-  ntTrkPU -> SetBranchAddress("quality",         &pu_quality);
-  ntTrkPU -> SetBranchAddress("chisq",           &pu_chisq);
-  ntTrkPU -> SetBranchAddress("ndf",             &pu_ndf);
-  ntTrkPU -> SetBranchAddress("nhits",           &pu_nhits);
-  ntTrkPU -> SetBranchAddress("layers",          &pu_layers);
-  ntTrkPU -> SetBranchAddress("nmaps",           &pu_nmaps);
-  ntTrkPU -> SetBranchAddress("nintt",           &pu_nintt);
-  ntTrkPU -> SetBranchAddress("ntpc",            &pu_ntpc);
-  ntTrkPU -> SetBranchAddress("nmms",            &pu_nmms);
-  ntTrkPU -> SetBranchAddress("ntpc1",           &pu_ntpc1);
-  ntTrkPU -> SetBranchAddress("ntpc11",          &pu_ntpc11);
-  ntTrkPU -> SetBranchAddress("ntpc2",           &pu_ntpc2);
-  ntTrkPU -> SetBranchAddress("ntpc3",           &pu_ntpc3);
-  ntTrkPU -> SetBranchAddress("nlmaps",          &pu_nlmaps);
-  ntTrkPU -> SetBranchAddress("nlintt",          &pu_nlintt);
-  ntTrkPU -> SetBranchAddress("nltpc",           &pu_nltpc);
-  ntTrkPU -> SetBranchAddress("nlmms",           &pu_nlmms);
-  ntTrkPU -> SetBranchAddress("vertexID",        &pu_vertexID);
-  ntTrkPU -> SetBranchAddress("vx",              &pu_vx);
-  ntTrkPU -> SetBranchAddress("vy",              &pu_vy);
-  ntTrkPU -> SetBranchAddress("vz",              &pu_vz);
-  ntTrkPU -> SetBranchAddress("dca2d",           &pu_dca2d);
-  ntTrkPU -> SetBranchAddress("dca2dsigma",      &pu_dca2dsigma);
-  ntTrkPU -> SetBranchAddress("dca3dxy",         &pu_dca3dxy);
-  ntTrkPU -> SetBranchAddress("dca3dxysigma",    &pu_dca3dxysigma);
-  ntTrkPU -> SetBranchAddress("dca3dz",          &pu_dca3dz);
-  ntTrkPU -> SetBranchAddress("dca3dzsigma",     &pu_dca3dzsigma);
-  ntTrkPU -> SetBranchAddress("pcax",            &pu_pcax);
-  ntTrkPU -> SetBranchAddress("pcay",            &pu_pcay);
-  ntTrkPU -> SetBranchAddress("pcaz",            &pu_pcaz);
-  ntTrkPU -> SetBranchAddress("nfromtruth",      &pu_nfromtruth);
-  ntTrkPU -> SetBranchAddress("nwrong",          &pu_nwrong);
-  ntTrkPU -> SetBranchAddress("ntrumaps",        &pu_ntrumaps);
-  ntTrkPU -> SetBranchAddress("ntruintt",        &pu_ntruintt);
-  ntTrkPU -> SetBranchAddress("ntrutpc",         &pu_ntrutpc);
-  ntTrkPU -> SetBranchAddress("ntrumms",         &pu_ntrumms);
-  ntTrkPU -> SetBranchAddress("ntrutpc1",        &pu_ntrutpc1);
-  ntTrkPU -> SetBranchAddress("ntrutpc11",       &pu_ntrutpc11);
-  ntTrkPU -> SetBranchAddress("ntrutpc2",        &pu_ntrutpc2);
-  ntTrkPU -> SetBranchAddress("ntrutpc3",        &pu_ntrutpc3);
-  ntTrkPU -> SetBranchAddress("layersfromtruth", &pu_layersfromtruth);
-  ntTrkPU -> SetBranchAddress("nhittpcall",      &pu_nhittpcall);
-  ntTrkPU -> SetBranchAddress("nhittpcin",       &pu_nhittpcin);
-  ntTrkPU -> SetBranchAddress("nhittpcmid",      &pu_nhittpcmid);
-  ntTrkPU -> SetBranchAddress("nhittpcout",      &pu_nhittpcout);
-  ntTrkPU -> SetBranchAddress("nclusall",        &pu_nclusall);
-  ntTrkPU -> SetBranchAddress("nclustpc",        &pu_nclustpc);
-  ntTrkPU -> SetBranchAddress("nclusintt",       &pu_nclusintt);
-  ntTrkPU -> SetBranchAddress("nclusmaps",       &pu_nclusmaps);
-  ntTrkPU -> SetBranchAddress("nclusmms",        &pu_nclusmms);
-  cout << "      Set branch addresses." << endl;
-  return;
-
-}  // end 'InitTuples()'
-
-
-
-void STrackCutStudy::InitHists() {
-
-  // histogram binning
-  const UInt_t  nNHitBins(100);
-  const UInt_t  nQualBins(40);
-  const UInt_t  nDcaBins(2000);
-  const UInt_t  nEtaBins(400);
-  const UInt_t  nPhiBins(60);
-  const UInt_t  nPtBins(100);
-  const UInt_t  nFracBins(100);
-  const UInt_t  nPtFracBins(500);
-  const UInt_t  nDiffBins(2000);
-  const UInt_t  nErrBins(5000);
-  const UInt_t  nXYVtxBins(1000);
-  const UInt_t  nZVtxBins(1200);
-  const UInt_t  nDVtxBins(2400);
-  const Float_t rNHitBins[NRange]   = {0,     100};
-  const Float_t rQualBins[NRange]   = {0.,    20.};
-  const Float_t rDcaBins[NRange]    = {-100., 100.};
-  const Float_t rEtaBins[NRange]    = {-2.,   2.};
-  const Float_t rPhiBins[NRange]    = {-3.15, 3.15};
-  const Float_t rPtBins[NRange]     = {0.,    100.};
-  const Float_t rFracBins[NRange]   = {0.,    5.};
-  const Float_t rPtFracBins[NRange] = {0.,    5.};
-  const Float_t rDiffBins[NRange]   = {-100., 100.};     
-  const Float_t rErrBins[NRange]    = {0.,    100.};
-  const Float_t rXYVtxBins[NRange]  = {-1.,   1.};
-  const Float_t rZVtxBins[NRange]   = {-300., 300.};
-  const Float_t rDVtxBins[NRange]   = {-600., 600.};
-
-  // for track-variable histogram names
-  TString sTrkVar[NType][NTrkVar];
-  TString sTrkVarDiff[NType][NTrkVar];
-  TString sTrkVarFrac[NType][NTrkVar];
-  TString sTrkVarVsNTpc[NType][NTrkVar];
-  TString sTrkVarVsPtReco[NType][NTrkVar];
-  TString sTrkVarVsPtTrue[NType][NTrkVar];
-  TString sTrkVarVsPtFrac[NType][NTrkVar];
-
-  // for physics-variable histogram names
-  TString sPhysVar[NType][NPhysVar];
-  TString sPhysVarDiff[NType][NPhysVar];
-  TString sPhysVarFrac[NType][NPhysVar];
-  TString sPhysVarVsNTpc[NType][NPhysVar];
-  TString sPhysVarVsPtReco[NType][NPhysVar];
-  TString sPhysVarVsPtTrue[NType][NPhysVar];
-  TString sPhysVarVsPtFrac[NType][NPhysVar];
-
-  // form histogram names
-  const TString sDiffSuffix("Diff");
-  const TString sFracSuffix("Frac");
-  const TString sVsNTpcSuffix("VsNTpc");
-  const TString sVsPtRecoSuffix("VsPtReco");
-  const TString sVsPtTrueSuffix("VsPtTrue");
-  const TString sVsPtFracSuffix("VsPtFrac");
-
-  // construct variable prefixes
-  TString sTrkVarName[NTrkVar];
-  TString sPhysVarName[NPhysVar];
-  for (size_t iTrkVar = 0; iTrkVar < NTrkVar; iTrkVar++) {
-    sTrkVarName[iTrkVar] = "h";
-    sTrkVarName[iTrkVar].Append(sTrkVars[iTrkVar].Data());
-  }
-  for (size_t iPhysVar = 0; iPhysVar < NPhysVar; iPhysVar++) {
-    sPhysVarName[iPhysVar] = "h";
-    sPhysVarName[iPhysVar].Append(sPhysVars[iPhysVar].Data());
-  }
-
-  // construct type suffixes
-  TString sTypeSuffix[NType];
-  for (size_t iType = 0; iType < NType; iType++) {
-    sTypeSuffix[iType] = "_";
-    sTypeSuffix[iType].Append(sTrkNames[iType].Data());
-  }
-
-  for (size_t iType = 0; iType < NType; iType++) {
-    for (size_t iTrkVar = 0; iTrkVar < NTrkVar; iTrkVar++) {
-      sTrkVar[iType][iTrkVar]         = sTrkVarName[iTrkVar].Data();
-      sTrkVarDiff[iType][iTrkVar]     = sTrkVarName[iTrkVar].Data();
-      sTrkVarFrac[iType][iTrkVar]     = sTrkVarName[iTrkVar].Data();
-      sTrkVarVsNTpc[iType][iTrkVar]   = sTrkVarName[iTrkVar].Data();
-      sTrkVarVsPtReco[iType][iTrkVar] = sTrkVarName[iTrkVar].Data();
-      sTrkVarVsPtTrue[iType][iTrkVar] = sTrkVarName[iTrkVar].Data();
-      sTrkVarVsPtFrac[iType][iTrkVar] = sTrkVarName[iTrkVar].Data();
-      sTrkVarDiff[iType][iTrkVar].Append(sDiffSuffix.Data());
-      sTrkVarFrac[iType][iTrkVar].Append(sFracSuffix.Data());
-      sTrkVarVsNTpc[iType][iTrkVar].Append(sVsNTpcSuffix.Data());
-      sTrkVarVsPtReco[iType][iTrkVar].Append(sVsPtRecoSuffix.Data());
-      sTrkVarVsPtTrue[iType][iTrkVar].Append(sVsPtTrueSuffix.Data());
-      sTrkVarVsPtFrac[iType][iTrkVar].Append(sVsPtFracSuffix.Data());
-      sTrkVar[iType][iTrkVar].Append(sTypeSuffix[iType].Data());
-      sTrkVarDiff[iType][iTrkVar].Append(sTypeSuffix[iType].Data());
-      sTrkVarFrac[iType][iTrkVar].Append(sTypeSuffix[iType].Data());
-      sTrkVarVsNTpc[iType][iTrkVar].Append(sTypeSuffix[iType].Data());
-      sTrkVarVsPtReco[iType][iTrkVar].Append(sTypeSuffix[iType].Data());
-      sTrkVarVsPtTrue[iType][iTrkVar].Append(sTypeSuffix[iType].Data());
-      sTrkVarVsPtFrac[iType][iTrkVar].Append(sTypeSuffix[iType].Data());
-    }
-    for (size_t iPhysVar = 0; iPhysVar < NPhysVar; iPhysVar++) {
-      sPhysVar[iType][iPhysVar]         = sPhysVarName[iPhysVar].Data();
-      sPhysVarDiff[iType][iPhysVar]     = sPhysVarName[iPhysVar].Data();
-      sPhysVarFrac[iType][iPhysVar]     = sPhysVarName[iPhysVar].Data();
-      sPhysVarVsNTpc[iType][iPhysVar]   = sPhysVarName[iPhysVar].Data();
-      sPhysVarVsPtReco[iType][iPhysVar] = sPhysVarName[iPhysVar].Data();
-      sPhysVarVsPtTrue[iType][iPhysVar] = sPhysVarName[iPhysVar].Data();
-      sPhysVarVsPtFrac[iType][iPhysVar] = sPhysVarName[iPhysVar].Data();
-      sPhysVarDiff[iType][iPhysVar].Append(sDiffSuffix.Data());
-      sPhysVarFrac[iType][iPhysVar].Append(sFracSuffix.Data());
-      sPhysVarVsNTpc[iType][iPhysVar].Append(sVsNTpcSuffix.Data());
-      sPhysVarVsPtReco[iType][iPhysVar].Append(sVsPtRecoSuffix.Data());
-      sPhysVarVsPtTrue[iType][iPhysVar].Append(sVsPtTrueSuffix.Data());
-      sPhysVarVsPtFrac[iType][iPhysVar].Append(sVsPtFracSuffix.Data());
-      sPhysVar[iType][iPhysVar].Append(sTypeSuffix[iType].Data());
-      sPhysVarDiff[iType][iPhysVar].Append(sTypeSuffix[iType].Data());
-      sPhysVarFrac[iType][iPhysVar].Append(sTypeSuffix[iType].Data());
-      sPhysVarVsNTpc[iType][iPhysVar].Append(sTypeSuffix[iType].Data());
-      sPhysVarVsPtReco[iType][iPhysVar].Append(sTypeSuffix[iType].Data());
-      sPhysVarVsPtTrue[iType][iPhysVar].Append(sTypeSuffix[iType].Data());
-      sPhysVarVsPtFrac[iType][iPhysVar].Append(sTypeSuffix[iType].Data());
-    }
-  }  // end type loop
-
-  // no. of track bins
-  const UInt_t nTrkBins[NTrkVar]     = {nXYVtxBins, nXYVtxBins, nZVtxBins, nNHitBins, nNHitBins, nNHitBins, nNHitBins, nQualBins, nDcaBins,  nDcaBins,  nErrBins,  nErrBins};
-  const UInt_t nTrkDiffBins[NTrkVar] = {nDVtxBins,  nDVtxBins,  nDVtxBins, nDiffBins, nDiffBins, nDiffBins, nDiffBins, nDiffBins, nDiffBins, nDiffBins, nDiffBins, nDiffBins};
-  const UInt_t nTrkFracBins[NTrkVar] = {nFracBins,  nFracBins,  nFracBins, nFracBins, nFracBins, nFracBins, nFracBins, nFracBins, nFracBins, nFracBins, nFracBins, nFracBins};
-
-  // no. of physics bins
-  const UInt_t nPhysBins[NPhysVar]     = {nPhiBins,   nEtaBins,   nPtBins,     nErrBins,  nErrBins,  nErrBins};
-  const UInt_t nPhysDiffBins[NPhysVar] = {nDiffBins,  nDiffBins,  nDiffBins,   nDiffBins, nDiffBins, nDiffBins};
-  const UInt_t nPhysFracBins[NPhysVar] = {nFracBins,  nFracBins,  nPtFracBins, nFracBins, nFracBins, nFracBins};
-
-  // track axis ranges
-  const Float_t rTrkBins[NTrkVar][NRange]     = {{rXYVtxBins[0], rXYVtxBins[1]}, {rXYVtxBins[0], rXYVtxBins[1]}, {rZVtxBins[0], rZVtxBins[1]},
-                                                 {rNHitBins[0],  rNHitBins[1]},  {rNHitBins[0],  rNHitBins[1]},  {rNHitBins[0], rNHitBins[1]},
-                                                 {rNHitBins[0],  rNHitBins[1]},  {rQualBins[0],  rQualBins[1]},  {rDcaBins[0],  rDcaBins[1]},
-                                                 {rDcaBins[0],   rDcaBins[1]},   {rErrBins[0],   rErrBins[1]},   {rErrBins[0],  rErrBins[1]}};
-  const Float_t rTrkDiffBins[NTrkVar][NRange] = {{rDVtxBins[0],  rDVtxBins[1]},  {rDVtxBins[0],  rDVtxBins[1]},  {rDiffBins[0], rDiffBins[1]},
-                                                 {rDiffBins[0],  rDiffBins[1]},  {rDiffBins[0],  rDiffBins[1]},  {rDiffBins[0], rDiffBins[1]},
-                                                 {rDiffBins[0],  rDiffBins[1]},  {rDiffBins[0],  rDiffBins[1]},  {rDiffBins[0], rDiffBins[1]},
-                                                 {rDiffBins[0],  rDiffBins[1]},  {rDiffBins[0],  rDiffBins[1]},  {rDiffBins[0], rDiffBins[1]}};
-  const Float_t rTrkFracBins[NTrkVar][NRange] = {{rFracBins[0],  rFracBins[1]},  {rFracBins[0],  rFracBins[1]},  {rFracBins[0], rFracBins[1]},
-                                                 {rFracBins[0],  rFracBins[1]},  {rFracBins[0],  rFracBins[1]},  {rFracBins[0], rFracBins[1]},
-                                                 {rFracBins[0],  rFracBins[1]},  {rFracBins[0],  rFracBins[1]},  {rFracBins[0], rFracBins[1]},
-                                                 {rFracBins[0],  rFracBins[1]},  {rFracBins[0],  rFracBins[1]},  {rFracBins[0], rFracBins[1]}};
-
-  // physics axis ranges
-  const Float_t rPhysBins[NPhysVar][NRange]     = {{rPhiBins[0],  rPhiBins[1]},  {rEtaBins[0],  rEtaBins[1]},  {rPtBins[0],     rPtBins[1]},
-                                                   {rErrBins[0],  rErrBins[1]},  {rErrBins[0],  rErrBins[1]},  {rErrBins[0],    rErrBins[1]}};
-  const Float_t rPhysDiffBins[NPhysVar][NRange] = {{rDiffBins[0], rDiffBins[1]}, {rDiffBins[0], rDiffBins[1]}, {rDiffBins[0],   rDiffBins[1]},
-                                                   {rDiffBins[0], rDiffBins[1]}, {rDiffBins[0], rDiffBins[1]}, {rDiffBins[0],   rDiffBins[1]}};
-  const Float_t rPhysFracBins[NPhysVar][NRange] = {{rFracBins[0], rFracBins[1]}, {rFracBins[0], rFracBins[1]}, {rPtFracBins[0], rPtFracBins[1]},
-                                                   {rFracBins[0], rFracBins[1]}, {rFracBins[0], rFracBins[1]}, {rPtFracBins[0], rPtFracBins[1]}};
-
-  // initialize histograms
-  for (int iType = 0; iType < NType; iType++) {
-    for (size_t iTrkVar = 0; iTrkVar < NTrkVar; iTrkVar++) {
-      hTrkVar[iType][iTrkVar]         = new TH1D(sTrkVar[iType][iTrkVar].Data(),         "", nTrkBins[iTrkVar],     rTrkBins[iTrkVar][0],     rTrkBins[iTrkVar][1]);
-      hTrkVarDiff[iType][iTrkVar]     = new TH1D(sTrkVarDiff[iType][iTrkVar].Data(),     "", nTrkDiffBins[iTrkVar], rTrkDiffBins[iTrkVar][0], rTrkDiffBins[iTrkVar][1]);
-      hTrkVarFrac[iType][iTrkVar]     = new TH1D(sTrkVarFrac[iType][iTrkVar].Data(),     "", nTrkFracBins[iTrkVar], rTrkFracBins[iTrkVar][0], rTrkFracBins[iTrkVar][1]);
-      hTrkVarVsNTpc[iType][iTrkVar]   = new TH2D(sTrkVarVsNTpc[iType][iTrkVar].Data(),   "", nTrkBins[iTrkVar],     rTrkBins[iTrkVar][0],     rTrkBins[iTrkVar][1], nNHitBins,   rNHitBins[0],   rNHitBins[1]);
-      hTrkVarVsPtReco[iType][iTrkVar] = new TH2D(sTrkVarVsPtReco[iType][iTrkVar].Data(), "", nTrkBins[iTrkVar],     rTrkBins[iTrkVar][0],     rTrkBins[iTrkVar][1], nPtBins,     rPtBins[0],     rPtBins[1]);
-      hTrkVarVsPtTrue[iType][iTrkVar] = new TH2D(sTrkVarVsPtTrue[iType][iTrkVar].Data(), "", nTrkBins[iTrkVar],     rTrkBins[iTrkVar][0],     rTrkBins[iTrkVar][1], nPtBins,     rPtBins[0],     rPtBins[1]);
-      hTrkVarVsPtFrac[iType][iTrkVar] = new TH2D(sTrkVarVsPtFrac[iType][iTrkVar].Data(), "", nTrkBins[iTrkVar],     rTrkBins[iTrkVar][0],     rTrkBins[iTrkVar][1], nPtFracBins, rPtFracBins[0], rPtFracBins[1]);
-      hTrkVar[iType][iTrkVar]         -> Sumw2();
-      hTrkVarDiff[iType][iTrkVar]     -> Sumw2();
-      hTrkVarFrac[iType][iTrkVar]     -> Sumw2();
-      hTrkVarVsNTpc[iType][iTrkVar]   -> Sumw2();
-      hTrkVarVsPtReco[iType][iTrkVar] -> Sumw2();
-      hTrkVarVsPtTrue[iType][iTrkVar] -> Sumw2();
-      hTrkVarVsPtFrac[iType][iTrkVar] -> Sumw2();
-    }
-    for (size_t iPhysVar = 0; iPhysVar < NPhysVar; iPhysVar++) {
-      hPhysVar[iType][iPhysVar]         = new TH1D(sPhysVar[iType][iPhysVar].Data(),         "", nPhysBins[iPhysVar],     rPhysBins[iPhysVar][0],     rPhysBins[iPhysVar][1]);
-      hPhysVarDiff[iType][iPhysVar]     = new TH1D(sPhysVarDiff[iType][iPhysVar].Data(),     "", nPhysDiffBins[iPhysVar], rPhysDiffBins[iPhysVar][0], rPhysDiffBins[iPhysVar][1]);
-      hPhysVarFrac[iType][iPhysVar]     = new TH1D(sPhysVarFrac[iType][iPhysVar].Data(),     "", nPhysFracBins[iPhysVar], rPhysFracBins[iPhysVar][0], rPhysFracBins[iPhysVar][1]);
-      hPhysVarVsNTpc[iType][iPhysVar]   = new TH2D(sPhysVarVsNTpc[iType][iPhysVar].Data(),   "", nPhysBins[iPhysVar],     rPhysBins[iPhysVar][0],     rPhysBins[iPhysVar][1], nNHitBins,   rNHitBins[0],   rNHitBins[1]);
-      hPhysVarVsPtReco[iType][iPhysVar] = new TH2D(sPhysVarVsPtReco[iType][iPhysVar].Data(), "", nPhysBins[iPhysVar],     rPhysBins[iPhysVar][0],     rPhysBins[iPhysVar][1], nPtBins,     rPtBins[0],     rPtBins[1]);
-      hPhysVarVsPtTrue[iType][iPhysVar] = new TH2D(sPhysVarVsPtTrue[iType][iPhysVar].Data(), "", nPhysBins[iPhysVar],     rPhysBins[iPhysVar][0],     rPhysBins[iPhysVar][1], nPtBins,     rPtBins[0],     rPtBins[1]);
-      hPhysVarVsPtFrac[iType][iPhysVar] = new TH2D(sPhysVarVsPtFrac[iType][iPhysVar].Data(), "", nPhysBins[iPhysVar],     rPhysBins[iPhysVar][0],     rPhysBins[iPhysVar][1], nPtFracBins, rPtFracBins[0], rPtFracBins[1]);
-      hPhysVar[iType][iPhysVar]         -> Sumw2();
-      hPhysVarDiff[iType][iPhysVar]     -> Sumw2();
-      hPhysVarFrac[iType][iPhysVar]     -> Sumw2();
-      hPhysVarVsNTpc[iType][iPhysVar]   -> Sumw2();
-      hPhysVarVsPtReco[iType][iPhysVar] -> Sumw2();
-      hPhysVarVsPtTrue[iType][iPhysVar] -> Sumw2();
-      hPhysVarVsPtFrac[iType][iPhysVar] -> Sumw2();
-    }
-  }
-  cout << "      Initialized output histograms." << endl;
-  return;
-
-}  // end 'InitHits()'
-
-
-
-void STrackCutStudy::NormalizeHists() {
-
-  for (int iType = 0; iType < NType; iType++) {
-    for (size_t iTrkVar = 0; iTrkVar < NTrkVar; iTrkVar++) {
-      const Double_t intTrkVar         = hTrkVar[iType][iTrkVar]         -> Integral();
-      const Double_t intTrkVarDiff     = hTrkVarDiff[iType][iTrkVar]     -> Integral();
-      const Double_t intTrkVarFrac     = hTrkVarFrac[iType][iTrkVar]     -> Integral();
-      const Double_t intTrkVarVsNTpc   = hTrkVarVsNTpc[iType][iTrkVar]   -> Integral();
-      const Double_t intTrkVarVsPtReco = hTrkVarVsPtReco[iType][iTrkVar] -> Integral();
-      const Double_t intTrkVarVsPtTrue = hTrkVarVsPtTrue[iType][iTrkVar] -> Integral();
-      const Double_t intTrkVarVsPtFrac = hTrkVarVsPtFrac[iType][iTrkVar] -> Integral();
-      if (intTrkVar         > 0.) hTrkVar[iType][iTrkVar]         -> Scale(1. / intTrkVar);
-      if (intTrkVarDiff     > 0.) hTrkVarDiff[iType][iTrkVar]     -> Scale(1. / intTrkVarDiff);
-      if (intTrkVarFrac     > 0.) hTrkVarFrac[iType][iTrkVar]     -> Scale(1. / intTrkVarFrac);
-      if (intTrkVarVsNTpc   > 0.) hTrkVarVsNTpc[iType][iTrkVar]   -> Scale(1. / intTrkVarVsNTpc);
-      if (intTrkVarVsPtReco > 0.) hTrkVarVsPtReco[iType][iTrkVar] -> Scale(1. / intTrkVarVsPtReco);
-      if (intTrkVarVsPtTrue > 0.) hTrkVarVsPtTrue[iType][iTrkVar] -> Scale(1. / intTrkVarVsPtTrue);
-      if (intTrkVarVsPtFrac > 0.) hTrkVarVsPtFrac[iType][iTrkVar] -> Scale(1. / intTrkVarVsPtFrac);
-    }
-    for (size_t iPhysVar = 0; iPhysVar < NPhysVar; iPhysVar++) {
-      const Double_t intPhysVar         = hPhysVar[iType][iPhysVar]         -> Integral();
-      const Double_t intPhysVarDiff     = hPhysVarDiff[iType][iPhysVar]     -> Integral();
-      const Double_t intPhysVarFrac     = hPhysVarFrac[iType][iPhysVar]     -> Integral();
-      const Double_t intPhysVarVsNTpc   = hPhysVarVsNTpc[iType][iPhysVar]   -> Integral();
-      const Double_t intPhysVarVsPtReco = hPhysVarVsPtReco[iType][iPhysVar] -> Integral();
-      const Double_t intPhysVarVsPtTrue = hPhysVarVsPtTrue[iType][iPhysVar] -> Integral();
-      const Double_t intPhysVarVsPtFrac = hPhysVarVsPtFrac[iType][iPhysVar] -> Integral();
-      if (intPhysVar         > 0.) hPhysVar[iType][iPhysVar]         -> Scale(1. / intPhysVar);
-      if (intPhysVarDiff     > 0.) hPhysVarDiff[iType][iPhysVar]     -> Scale(1. / intPhysVarDiff);
-      if (intPhysVarFrac     > 0.) hPhysVarFrac[iType][iPhysVar]     -> Scale(1. / intPhysVarFrac);
-      if (intPhysVarVsNTpc   > 0.) hPhysVarVsNTpc[iType][iPhysVar]   -> Scale(1. / intPhysVarVsNTpc);
-      if (intPhysVarVsPtReco > 0.) hPhysVarVsPtReco[iType][iPhysVar] -> Scale(1. / intPhysVarVsPtReco);
-      if (intPhysVarVsPtTrue > 0.) hPhysVarVsPtTrue[iType][iPhysVar] -> Scale(1. / intPhysVarVsPtTrue);
-      if (intPhysVarVsPtFrac > 0.) hPhysVarVsPtFrac[iType][iPhysVar] -> Scale(1. / intPhysVarVsPtFrac);
-    }
-  }
-  cout << "      Normalized histograms." << endl;
-  return;
-
-}  // end 'NormalizeHists()'
-
-
-
-void STrackCutStudy::SetHistStyles() {
-
-  // plot parameters
-  const UInt_t  fColTrk(923);
-  const UInt_t  fColTru(618);
-  const UInt_t  fColOdd(635);
-  const UInt_t  fColOddSi(631);
-  const UInt_t  fColOddTpc(627);
-  const UInt_t  fColNorm(603);
-  const UInt_t  fColPrim(879);
-  const UInt_t  fColNoPr(799);
-  const UInt_t  fMarTrk(22);
-  const UInt_t  fMarTru(32);
-  const UInt_t  fMarOdd(5);
-  const UInt_t  fMarOddSi(5);
-  const UInt_t  fMarOddTpc(5);
-  const UInt_t  fMarNorm(24);
-  const UInt_t  fMarPrim(26);
-  const UInt_t  fMarNoPr(32);
-  const UInt_t  fFil(0);
-  const UInt_t  fLin(1);
-  const Float_t fOffX(1.0);
-  const Float_t fOffY(1.2); 
-  const Float_t fOffZ(1.0);
-
-  // select count label to use
-  TString sCountToUse("");
-  if (doIntNorm) {
-    sCountToUse = "arbitrary units";
-  } else {
-    sCountToUse = "counts";
-  } 
-
-  // track axis titles
-  const TString sTrkNMms("N_{layer}^{MMS}");
-  const TString sTrkNMap("N_{layer}^{MAPS}");
-  const TString sTrkNInt("N_{layer}^{INTT}");
-  const TString sTrkNTpc("N_{layer}^{TPC}");
-  const TString sTrkQuality("#chi^{2}/ndf");
-  const TString sTrkDCAxy("DCA_{xy} [#mum]");
-  const TString sTrkDCAz("DCA_{z} [#mum]");
-  const TString sDeltaDCAxy("#DeltaDCA_{xy} / DCA_{xy}");
-  const TString sDeltaDCAz("#DeltaDCA_{z} / DCA_{z}");
-  const TString sTrkVx("v_{x} [cm]");
-  const TString sTrkVy("v_{y} [cm]");
-  const TString sTrkVz("v_{z} [cm]");
-  const TString sTrkPhi("#phi");
-  const TString sTrkEta("#eta");
-  const TString sTrkPt("p_{T} [GeV/c]");
-  const TString sTruPt("p_{T}^{truth} [GeV/c]");
-  const TString sDeltaEta("#Delta#eta^{trk} / #eta^{trk}");
-  const TString sDeltaPhi("#Delta#phi^{trk} / #phi^{trk}");
-  const TString sDeltaPt("#Deltap_{T}^{trk} / p_{T}^{trk}");
-
-  // difference axis titles
-  const TString sDiffVx("v_{x}^{reco} - v_{x}^{truth}");
-  const TString sDiffVy("v_{y}^{reco} - v_{y}^{truth}");
-  const TString sDiffVz("v_{z}^{reco} - v_{z}^{truth}");
-  const TString sDiffNMms("N_{layer/reco}^{MMS} - N_{layer/truth}^{MMS}");
-  const TString sDiffNMap("N_{layer/reco}^{MAP} - N_{layer/truth}^{MAP}");
-  const TString sDiffNInt("N_{layer/reco}^{INTT} - N_{layer/truth}^{INTT}");
-  const TString sDiffNTpc("N_{layer/reco}^{TPC} - N_{layer/truth}^{TPC}");
-  const TString sDiffQual("IRRELEVANT");
-  const TString sDiffDCAxy("DCA_{xy}^{reco} - DCA_{xy}^{truth} [#mum]");
-  const TString sDiffDCAz("DCA_{z}^{reco} - DCA_{z}^{truth} [#mum]");
-  const TString sDiffDeltaDCAxy("IRRELEVANT");
-  const TString sDiffDeltaDCAz("IRRELEVANT");
-  const TString sDiffPhi("#phi^{reco} - #phi^{truth}");
-  const TString sDiffEta("#eta^{reco} - #eta^{truth}");
-  const TString sDiffPt("p_{T}^{reco} - p_{T}^{truth}");
-  const TString sDiffDeltaPhi("IRRELEVANT");
-  const TString sDiffDeltaEta("IRRELEVANT");
-  const TString sDiffDeltaPt("IRRELEVANT");
-
-  // fraction axis titles
-  const TString sFracVx("v_{x}^{reco} / v_{x}^{truth}");
-  const TString sFracVy("v_{y}^{reco} / v_{y}^{truth}");
-  const TString sFracVz("v_{z}^{reco} / v_{z}^{truth}");
-  const TString sFracMms("N_{layer/reco}^{MMS} / N_{layer/truth}^{MMS}");
-  const TString sFracMap("N_{layer/reco}^{MAPS} / N_{layer/truth}^{MAPS}");
-  const TString sFracInt("N_{layer/reco}^{INTT} / N_{layer/truth}^{INTT}");
-  const TString sFracTpc("N_{layer/reco}^{TPC} / N_{layer/truth}^{TPC}");
-  const TString sFracTot("N_{layer/reco}^{tot} / N_{layer/truth}^{tot}");
-  const TString sFracQual("IRRELEVANT");
-  const TString sFracDCAxy("DCA_{xy}^{reco} / DCA_{xy}^{truth}");
-  const TString sFracDCAz("DCA_{z}^{reco} / DCA_{z}^{truth}");
-  const TString sFracDeltaDCAxy("IRRELEVANT");
-  const TString sFracDeltaDCAz("IRRELEVANT");
-  const TString sFracPhi("#delta#phi^{trk} = #phi^{trk} / #phi^{truth}");
-  const TString sFracEta("#delta#eta^{trk} = #eta^{trk} / #eta^{truth}");
-  const TString sFracPt("#deltap_{T}^{trk} = p_{T}^{trk} / p_{T}^{truth}");
-  const TString sFracDeltaPhi("IRRELEVANT");
-  const TString sFracDeltaEta("IRRELEVANT");
-  const TString sFracDeltaPt("IRRELEVANT");
-
-  // histograms styles
-  const UInt_t fTypeCol[NType] = {fColTrk, fColTru, fColOdd, fColOddSi, fColOddTpc, fColNorm, fColTrk, fColPrim, fColNoPr};
-  const UInt_t fTypeMar[NType] = {fMarTrk, fMarTru, fMarOdd, fMarOddSi, fMarOddTpc, fMarNorm, fMarTrk, fMarPrim, fMarNoPr};
-
-  // track axis titles
-  const TString sTrkTitles[NTrkVar]     = {sTrkVx,  sTrkVy,  sTrkVz,  sTrkNMms,  sTrkNMap,  sTrkNInt,  sTrkNTpc,  sTrkQuality, sTrkDCAxy,  sTrkDCAz,  sDeltaDCAxy,     sDeltaDCAz};
-  const TString sTrkDiffTitles[NTrkVar] = {sDiffVx, sDiffVy, sDiffVz, sDiffNMms, sDiffNMap, sDiffNInt, sDiffNTpc, sDiffQual,   sDiffDCAxy, sDiffDCAz, sDiffDeltaDCAxy, sDiffDeltaDCAz};
-  const TString sTrkFracTitles[NTrkVar] = {sFracVx, sFracVy, sFracVz, sFracMms,  sFracMap,  sFracInt,  sFracTpc,  sFracQual,   sTrkDCAxy,  sTrkDCAz,  sFracDeltaDCAxy, sFracDeltaDCAz};
-
-  // physics axis titles
-  const TString sPhysTitles[NPhysVar]     = {sTrkPhi,  sTrkEta,  sTrkPt,  sDeltaPhi,     sDeltaEta,     sDeltaPt};
-  const TString sPhysDiffTitles[NPhysVar] = {sDiffPhi, sDiffEta, sDiffPt, sDiffDeltaPhi, sDiffDeltaEta, sDiffDeltaPt};
-  const TString sPhysFracTitles[NPhysVar] = {sFracPhi, sFracEta, sFracPt, sFracDeltaPhi, sFracDeltaEta, sFracDeltaPt};
-
-  for (Int_t iType = 0; iType < NType; iType++) {
-    for (Int_t iTrkVar = 0; iTrkVar < NTrkVar; iTrkVar++) {
-      hTrkVar[iType][iTrkVar]         -> SetMarkerColor(fTypeCol[iType]);
-      hTrkVar[iType][iTrkVar]         -> SetMarkerStyle(fTypeMar[iType]);
-      hTrkVar[iType][iTrkVar]         -> SetLineColor(fTypeCol[iType]);
-      hTrkVar[iType][iTrkVar]         -> SetLineStyle(fLin);
-      hTrkVar[iType][iTrkVar]         -> SetFillColor(fTypeCol[iType]);
-      hTrkVar[iType][iTrkVar]         -> SetFillStyle(fFil);
-      hTrkVar[iType][iTrkVar]         -> SetTitleFont(FTxt);
-      hTrkVar[iType][iTrkVar]         -> GetXaxis() -> SetTitle(sTrkTitles[iTrkVar].Data());
-      hTrkVar[iType][iTrkVar]         -> GetXaxis() -> SetTitleFont(FTxt);
-      hTrkVar[iType][iTrkVar]         -> GetXaxis() -> SetTitleOffset(fOffX);
-      hTrkVar[iType][iTrkVar]         -> GetYaxis() -> SetTitle(sCountToUse.Data());
-      hTrkVar[iType][iTrkVar]         -> GetYaxis() -> SetTitleFont(FTxt);
-      hTrkVar[iType][iTrkVar]         -> GetYaxis() -> SetTitleOffset(fOffY);
-      hTrkVarDiff[iType][iTrkVar]     -> SetMarkerColor(fTypeCol[iType]);
-      hTrkVarDiff[iType][iTrkVar]     -> SetMarkerStyle(fTypeMar[iType]);
-      hTrkVarDiff[iType][iTrkVar]     -> SetLineColor(fTypeCol[iType]);
-      hTrkVarDiff[iType][iTrkVar]     -> SetLineStyle(fLin);
-      hTrkVarDiff[iType][iTrkVar]     -> SetFillColor(fTypeCol[iType]);
-      hTrkVarDiff[iType][iTrkVar]     -> SetFillStyle(fFil);
-      hTrkVarDiff[iType][iTrkVar]     -> SetTitleFont(FTxt);
-      hTrkVarDiff[iType][iTrkVar]     -> GetXaxis() -> SetTitle(sTrkDiffTitles[iTrkVar].Data());
-      hTrkVarDiff[iType][iTrkVar]     -> GetXaxis() -> SetTitleFont(FTxt);
-      hTrkVarDiff[iType][iTrkVar]     -> GetXaxis() -> SetTitleOffset(fOffX);
-      hTrkVarDiff[iType][iTrkVar]     -> GetYaxis() -> SetTitle(sCountToUse.Data());
-      hTrkVarDiff[iType][iTrkVar]     -> GetYaxis() -> SetTitleFont(FTxt);
-      hTrkVarDiff[iType][iTrkVar]     -> GetYaxis() -> SetTitleOffset(fOffY);
-      hTrkVarFrac[iType][iTrkVar]     -> SetMarkerColor(fTypeCol[iType]);
-      hTrkVarFrac[iType][iTrkVar]     -> SetMarkerStyle(fTypeMar[iType]);
-      hTrkVarFrac[iType][iTrkVar]     -> SetLineColor(fTypeCol[iType]);
-      hTrkVarFrac[iType][iTrkVar]     -> SetLineStyle(fLin);
-      hTrkVarFrac[iType][iTrkVar]     -> SetFillColor(fTypeCol[iType]);
-      hTrkVarFrac[iType][iTrkVar]     -> SetFillStyle(fFil);
-      hTrkVarFrac[iType][iTrkVar]     -> SetTitleFont(FTxt);
-      hTrkVarFrac[iType][iTrkVar]     -> GetXaxis() -> SetTitle(sTrkFracTitles[iTrkVar].Data());
-      hTrkVarFrac[iType][iTrkVar]     -> GetXaxis() -> SetTitleFont(FTxt);
-      hTrkVarFrac[iType][iTrkVar]     -> GetXaxis() -> SetTitleOffset(fOffX);
-      hTrkVarFrac[iType][iTrkVar]     -> GetYaxis() -> SetTitle(sCountToUse.Data());
-      hTrkVarFrac[iType][iTrkVar]     -> GetYaxis() -> SetTitleFont(FTxt);
-      hTrkVarFrac[iType][iTrkVar]     -> GetYaxis() -> SetTitleOffset(fOffY);
-      hTrkVarVsNTpc[iType][iTrkVar]   -> SetMarkerColor(fTypeCol[iType]);
-      hTrkVarVsNTpc[iType][iTrkVar]   -> SetMarkerStyle(fTypeMar[iType]);
-      hTrkVarVsNTpc[iType][iTrkVar]   -> SetLineColor(fTypeCol[iType]);
-      hTrkVarVsNTpc[iType][iTrkVar]   -> SetLineStyle(fLin);
-      hTrkVarVsNTpc[iType][iTrkVar]   -> SetFillColor(fTypeCol[iType]);
-      hTrkVarVsNTpc[iType][iTrkVar]   -> SetFillStyle(fFil);
-      hTrkVarVsNTpc[iType][iTrkVar]   -> SetTitleFont(FTxt);
-      hTrkVarVsNTpc[iType][iTrkVar]   -> GetXaxis() -> SetTitle(sTrkNTpc.Data());
-      hTrkVarVsNTpc[iType][iTrkVar]   -> GetXaxis() -> SetTitleFont(FTxt);
-      hTrkVarVsNTpc[iType][iTrkVar]   -> GetXaxis() -> SetTitleOffset(fOffX);
-      hTrkVarVsNTpc[iType][iTrkVar]   -> GetYaxis() -> SetTitle(sTrkTitles[iTrkVar].Data());
-      hTrkVarVsNTpc[iType][iTrkVar]   -> GetYaxis() -> SetTitleFont(FTxt);
-      hTrkVarVsNTpc[iType][iTrkVar]   -> GetYaxis() -> SetTitleOffset(fOffY);
-      hTrkVarVsNTpc[iType][iTrkVar]   -> GetZaxis() -> SetTitle(sCountToUse.Data());
-      hTrkVarVsNTpc[iType][iTrkVar]   -> GetZaxis() -> SetTitleFont(FTxt);
-      hTrkVarVsNTpc[iType][iTrkVar]   -> GetZaxis() -> SetTitleOffset(fOffZ);
-      hTrkVarVsPtReco[iType][iTrkVar] -> SetMarkerColor(fTypeCol[iType]);
-      hTrkVarVsPtReco[iType][iTrkVar] -> SetMarkerStyle(fTypeMar[iType]);
-      hTrkVarVsPtReco[iType][iTrkVar] -> SetLineColor(fTypeCol[iType]);
-      hTrkVarVsPtReco[iType][iTrkVar] -> SetLineStyle(fLin);
-      hTrkVarVsPtReco[iType][iTrkVar] -> SetFillColor(fTypeCol[iType]);
-      hTrkVarVsPtReco[iType][iTrkVar] -> SetFillStyle(fFil);
-      hTrkVarVsPtReco[iType][iTrkVar] -> SetTitleFont(FTxt);
-      hTrkVarVsPtReco[iType][iTrkVar] -> GetXaxis() -> SetTitle(sTrkPt.Data());
-      hTrkVarVsPtReco[iType][iTrkVar] -> GetXaxis() -> SetTitleFont(FTxt);
-      hTrkVarVsPtReco[iType][iTrkVar] -> GetXaxis() -> SetTitleOffset(fOffX);
-      hTrkVarVsPtReco[iType][iTrkVar] -> GetYaxis() -> SetTitle(sTrkTitles[iTrkVar].Data());
-      hTrkVarVsPtReco[iType][iTrkVar] -> GetYaxis() -> SetTitleFont(FTxt);
-      hTrkVarVsPtReco[iType][iTrkVar] -> GetYaxis() -> SetTitleOffset(fOffY);
-      hTrkVarVsPtReco[iType][iTrkVar] -> GetZaxis() -> SetTitle(sCountToUse.Data());
-      hTrkVarVsPtReco[iType][iTrkVar] -> GetZaxis() -> SetTitleFont(FTxt);
-      hTrkVarVsPtReco[iType][iTrkVar] -> GetZaxis() -> SetTitleOffset(fOffZ);
-      hTrkVarVsPtTrue[iType][iTrkVar] -> SetMarkerColor(fTypeCol[iType]);
-      hTrkVarVsPtTrue[iType][iTrkVar] -> SetMarkerStyle(fTypeMar[iType]);
-      hTrkVarVsPtTrue[iType][iTrkVar] -> SetLineColor(fTypeCol[iType]);
-      hTrkVarVsPtTrue[iType][iTrkVar] -> SetLineStyle(fLin);
-      hTrkVarVsPtTrue[iType][iTrkVar] -> SetFillColor(fTypeCol[iType]);
-      hTrkVarVsPtTrue[iType][iTrkVar] -> SetFillStyle(fFil);
-      hTrkVarVsPtTrue[iType][iTrkVar] -> SetTitleFont(FTxt);
-      hTrkVarVsPtTrue[iType][iTrkVar] -> GetXaxis() -> SetTitle(sTruPt.Data());
-      hTrkVarVsPtTrue[iType][iTrkVar] -> GetXaxis() -> SetTitleFont(FTxt);
-      hTrkVarVsPtTrue[iType][iTrkVar] -> GetXaxis() -> SetTitleOffset(fOffX);
-      hTrkVarVsPtTrue[iType][iTrkVar] -> GetYaxis() -> SetTitle(sTrkTitles[iTrkVar].Data());
-      hTrkVarVsPtTrue[iType][iTrkVar] -> GetYaxis() -> SetTitleFont(FTxt);
-      hTrkVarVsPtTrue[iType][iTrkVar] -> GetYaxis() -> SetTitleOffset(fOffY);
-      hTrkVarVsPtTrue[iType][iTrkVar] -> GetZaxis() -> SetTitle(sCountToUse.Data());
-      hTrkVarVsPtTrue[iType][iTrkVar] -> GetZaxis() -> SetTitleFont(FTxt);
-      hTrkVarVsPtTrue[iType][iTrkVar] -> GetZaxis() -> SetTitleOffset(fOffZ);
-      hTrkVarVsPtFrac[iType][iTrkVar] -> SetMarkerColor(fTypeCol[iType]);
-      hTrkVarVsPtFrac[iType][iTrkVar] -> SetMarkerStyle(fTypeMar[iType]);
-      hTrkVarVsPtFrac[iType][iTrkVar] -> SetLineColor(fTypeCol[iType]);
-      hTrkVarVsPtFrac[iType][iTrkVar] -> SetLineStyle(fLin);
-      hTrkVarVsPtFrac[iType][iTrkVar] -> SetFillColor(fTypeCol[iType]);
-      hTrkVarVsPtFrac[iType][iTrkVar] -> SetFillStyle(fFil);
-      hTrkVarVsPtFrac[iType][iTrkVar] -> SetTitleFont(FTxt);
-      hTrkVarVsPtFrac[iType][iTrkVar] -> GetXaxis() -> SetTitle(sFracPt.Data());
-      hTrkVarVsPtFrac[iType][iTrkVar] -> GetXaxis() -> SetTitleFont(FTxt);
-      hTrkVarVsPtFrac[iType][iTrkVar] -> GetXaxis() -> SetTitleOffset(fOffX);
-      hTrkVarVsPtFrac[iType][iTrkVar] -> GetYaxis() -> SetTitle(sTrkTitles[iTrkVar].Data());
-      hTrkVarVsPtFrac[iType][iTrkVar] -> GetYaxis() -> SetTitleFont(FTxt);
-      hTrkVarVsPtFrac[iType][iTrkVar] -> GetYaxis() -> SetTitleOffset(fOffY);
-      hTrkVarVsPtFrac[iType][iTrkVar] -> GetZaxis() -> SetTitle(sCountToUse.Data());
-      hTrkVarVsPtFrac[iType][iTrkVar] -> GetZaxis() -> SetTitleFont(FTxt);
-      hTrkVarVsPtFrac[iType][iTrkVar] -> GetZaxis() -> SetTitleOffset(fOffZ);
-    }
-    for (Int_t iPhysVar = 0; iPhysVar < NPhysVar; iPhysVar++) {
-      hPhysVar[iType][iPhysVar]         -> SetMarkerColor(fTypeCol[iType]);
-      hPhysVar[iType][iPhysVar]         -> SetMarkerStyle(fTypeMar[iType]);
-      hPhysVar[iType][iPhysVar]         -> SetLineColor(fTypeCol[iType]);
-      hPhysVar[iType][iPhysVar]         -> SetLineStyle(fLin);
-      hPhysVar[iType][iPhysVar]         -> SetFillColor(fTypeCol[iType]);
-      hPhysVar[iType][iPhysVar]         -> SetFillStyle(fFil);
-      hPhysVar[iType][iPhysVar]         -> SetTitleFont(FTxt);
-      hPhysVar[iType][iPhysVar]         -> GetXaxis() -> SetTitle(sPhysTitles[iPhysVar].Data());
-      hPhysVar[iType][iPhysVar]         -> GetXaxis() -> SetTitleFont(FTxt);
-      hPhysVar[iType][iPhysVar]         -> GetXaxis() -> SetTitleOffset(fOffX);
-      hPhysVar[iType][iPhysVar]         -> GetYaxis() -> SetTitle(sCountToUse.Data());
-      hPhysVar[iType][iPhysVar]         -> GetYaxis() -> SetTitleFont(FTxt);
-      hPhysVar[iType][iPhysVar]         -> GetYaxis() -> SetTitleOffset(fOffY);
-      hPhysVarDiff[iType][iPhysVar]     -> SetMarkerColor(fTypeCol[iType]);
-      hPhysVarDiff[iType][iPhysVar]     -> SetMarkerStyle(fTypeMar[iType]);
-      hPhysVarDiff[iType][iPhysVar]     -> SetLineColor(fTypeCol[iType]);
-      hPhysVarDiff[iType][iPhysVar]     -> SetLineStyle(fLin);
-      hPhysVarDiff[iType][iPhysVar]     -> SetFillColor(fTypeCol[iType]);
-      hPhysVarDiff[iType][iPhysVar]     -> SetFillStyle(fFil);
-      hPhysVarDiff[iType][iPhysVar]     -> SetTitleFont(FTxt);
-      hPhysVarDiff[iType][iPhysVar]     -> GetXaxis() -> SetTitle(sPhysDiffTitles[iPhysVar].Data());
-      hPhysVarDiff[iType][iPhysVar]     -> GetXaxis() -> SetTitleFont(FTxt);
-      hPhysVarDiff[iType][iPhysVar]     -> GetXaxis() -> SetTitleOffset(fOffX);
-      hPhysVarDiff[iType][iPhysVar]     -> GetYaxis() -> SetTitle(sCountToUse.Data());
-      hPhysVarDiff[iType][iPhysVar]     -> GetYaxis() -> SetTitleFont(FTxt);
-      hPhysVarDiff[iType][iPhysVar]     -> GetYaxis() -> SetTitleOffset(fOffY);
-      hPhysVarFrac[iType][iPhysVar]     -> SetMarkerColor(fTypeCol[iType]);
-      hPhysVarFrac[iType][iPhysVar]     -> SetMarkerStyle(fTypeMar[iType]);
-      hPhysVarFrac[iType][iPhysVar]     -> SetLineColor(fTypeCol[iType]);
-      hPhysVarFrac[iType][iPhysVar]     -> SetLineStyle(fLin);
-      hPhysVarFrac[iType][iPhysVar]     -> SetFillColor(fTypeCol[iType]);
-      hPhysVarFrac[iType][iPhysVar]     -> SetFillStyle(fFil);
-      hPhysVarFrac[iType][iPhysVar]     -> SetTitleFont(FTxt);
-      hPhysVarFrac[iType][iPhysVar]     -> GetXaxis() -> SetTitle(sPhysFracTitles[iPhysVar].Data());
-      hPhysVarFrac[iType][iPhysVar]     -> GetXaxis() -> SetTitleFont(FTxt);
-      hPhysVarFrac[iType][iPhysVar]     -> GetXaxis() -> SetTitleOffset(fOffX);
-      hPhysVarFrac[iType][iPhysVar]     -> GetYaxis() -> SetTitle(sCountToUse.Data());
-      hPhysVarFrac[iType][iPhysVar]     -> GetYaxis() -> SetTitleFont(FTxt);
-      hPhysVarFrac[iType][iPhysVar]     -> GetYaxis() -> SetTitleOffset(fOffY);
-      hPhysVarVsNTpc[iType][iPhysVar]   -> SetMarkerColor(fTypeCol[iType]);
-      hPhysVarVsNTpc[iType][iPhysVar]   -> SetMarkerStyle(fTypeMar[iType]);
-      hPhysVarVsNTpc[iType][iPhysVar]   -> SetLineColor(fTypeCol[iType]);
-      hPhysVarVsNTpc[iType][iPhysVar]   -> SetLineStyle(fLin);
-      hPhysVarVsNTpc[iType][iPhysVar]   -> SetFillColor(fTypeCol[iType]);
-      hPhysVarVsNTpc[iType][iPhysVar]   -> SetFillStyle(fFil);
-      hPhysVarVsNTpc[iType][iPhysVar]   -> SetTitleFont(FTxt);
-      hPhysVarVsNTpc[iType][iPhysVar]   -> GetXaxis() -> SetTitle(sTrkNTpc.Data());
-      hPhysVarVsNTpc[iType][iPhysVar]   -> GetXaxis() -> SetTitleFont(FTxt);
-      hPhysVarVsNTpc[iType][iPhysVar]   -> GetXaxis() -> SetTitleOffset(fOffX);
-      hPhysVarVsNTpc[iType][iPhysVar]   -> GetYaxis() -> SetTitle(sPhysTitles[iPhysVar].Data());
-      hPhysVarVsNTpc[iType][iPhysVar]   -> GetYaxis() -> SetTitleFont(FTxt);
-      hPhysVarVsNTpc[iType][iPhysVar]   -> GetYaxis() -> SetTitleOffset(fOffY);
-      hPhysVarVsNTpc[iType][iPhysVar]   -> GetZaxis() -> SetTitle(sCountToUse.Data());
-      hPhysVarVsNTpc[iType][iPhysVar]   -> GetZaxis() -> SetTitleFont(FTxt);
-      hPhysVarVsNTpc[iType][iPhysVar]   -> GetZaxis() -> SetTitleOffset(fOffZ);
-      hPhysVarVsPtReco[iType][iPhysVar] -> SetMarkerColor(fTypeCol[iType]);
-      hPhysVarVsPtReco[iType][iPhysVar] -> SetMarkerStyle(fTypeMar[iType]);
-      hPhysVarVsPtReco[iType][iPhysVar] -> SetLineColor(fTypeCol[iType]);
-      hPhysVarVsPtReco[iType][iPhysVar] -> SetLineStyle(fLin);
-      hPhysVarVsPtReco[iType][iPhysVar] -> SetFillColor(fTypeCol[iType]);
-      hPhysVarVsPtReco[iType][iPhysVar] -> SetFillStyle(fFil);
-      hPhysVarVsPtReco[iType][iPhysVar] -> SetTitleFont(FTxt);
-      hPhysVarVsPtReco[iType][iPhysVar] -> GetXaxis() -> SetTitle(sTrkPt.Data());
-      hPhysVarVsPtReco[iType][iPhysVar] -> GetXaxis() -> SetTitleFont(FTxt);
-      hPhysVarVsPtReco[iType][iPhysVar] -> GetXaxis() -> SetTitleOffset(fOffX);
-      hPhysVarVsPtReco[iType][iPhysVar] -> GetYaxis() -> SetTitle(sPhysTitles[iPhysVar].Data());
-      hPhysVarVsPtReco[iType][iPhysVar] -> GetYaxis() -> SetTitleFont(FTxt);
-      hPhysVarVsPtReco[iType][iPhysVar] -> GetYaxis() -> SetTitleOffset(fOffY);
-      hPhysVarVsPtReco[iType][iPhysVar] -> GetZaxis() -> SetTitle(sCountToUse.Data());
-      hPhysVarVsPtReco[iType][iPhysVar] -> GetZaxis() -> SetTitleFont(FTxt);
-      hPhysVarVsPtReco[iType][iPhysVar] -> GetZaxis() -> SetTitleOffset(fOffZ);
-      hPhysVarVsPtTrue[iType][iPhysVar] -> SetMarkerColor(fTypeCol[iType]);
-      hPhysVarVsPtTrue[iType][iPhysVar] -> SetMarkerStyle(fTypeMar[iType]);
-      hPhysVarVsPtTrue[iType][iPhysVar] -> SetLineColor(fTypeCol[iType]);
-      hPhysVarVsPtTrue[iType][iPhysVar] -> SetLineStyle(fLin);
-      hPhysVarVsPtTrue[iType][iPhysVar] -> SetFillColor(fTypeCol[iType]);
-      hPhysVarVsPtTrue[iType][iPhysVar] -> SetFillStyle(fFil);
-      hPhysVarVsPtTrue[iType][iPhysVar] -> SetTitleFont(FTxt);
-      hPhysVarVsPtTrue[iType][iPhysVar] -> GetXaxis() -> SetTitle(sTruPt.Data());
-      hPhysVarVsPtTrue[iType][iPhysVar] -> GetXaxis() -> SetTitleFont(FTxt);
-      hPhysVarVsPtTrue[iType][iPhysVar] -> GetXaxis() -> SetTitleOffset(fOffX);
-      hPhysVarVsPtTrue[iType][iPhysVar] -> GetYaxis() -> SetTitle(sPhysTitles[iPhysVar].Data());
-      hPhysVarVsPtTrue[iType][iPhysVar] -> GetYaxis() -> SetTitleFont(FTxt);
-      hPhysVarVsPtTrue[iType][iPhysVar] -> GetYaxis() -> SetTitleOffset(fOffY);
-      hPhysVarVsPtTrue[iType][iPhysVar] -> GetZaxis() -> SetTitle(sCountToUse.Data());
-      hPhysVarVsPtTrue[iType][iPhysVar] -> GetZaxis() -> SetTitleFont(FTxt);
-      hPhysVarVsPtTrue[iType][iPhysVar] -> GetZaxis() -> SetTitleOffset(fOffZ);
-      hPhysVarVsPtFrac[iType][iPhysVar] -> SetMarkerColor(fTypeCol[iType]);
-      hPhysVarVsPtFrac[iType][iPhysVar] -> SetMarkerStyle(fTypeMar[iType]);
-      hPhysVarVsPtFrac[iType][iPhysVar] -> SetLineColor(fTypeCol[iType]);
-      hPhysVarVsPtFrac[iType][iPhysVar] -> SetLineStyle(fLin);
-      hPhysVarVsPtFrac[iType][iPhysVar] -> SetFillColor(fTypeCol[iType]);
-      hPhysVarVsPtFrac[iType][iPhysVar] -> SetFillStyle(fFil);
-      hPhysVarVsPtFrac[iType][iPhysVar] -> SetTitleFont(FTxt);
-      hPhysVarVsPtFrac[iType][iPhysVar] -> GetXaxis() -> SetTitle(sFracPt.Data());
-      hPhysVarVsPtFrac[iType][iPhysVar] -> GetXaxis() -> SetTitleFont(FTxt);
-      hPhysVarVsPtFrac[iType][iPhysVar] -> GetXaxis() -> SetTitleOffset(fOffX);
-      hPhysVarVsPtFrac[iType][iPhysVar] -> GetYaxis() -> SetTitle(sPhysTitles[iPhysVar].Data());
-      hPhysVarVsPtFrac[iType][iPhysVar] -> GetYaxis() -> SetTitleFont(FTxt);
-      hPhysVarVsPtFrac[iType][iPhysVar] -> GetYaxis() -> SetTitleOffset(fOffY);
-      hPhysVarVsPtFrac[iType][iPhysVar] -> GetZaxis() -> SetTitle(sCountToUse.Data());
-      hPhysVarVsPtFrac[iType][iPhysVar] -> GetZaxis() -> SetTitleFont(FTxt);
-      hPhysVarVsPtFrac[iType][iPhysVar] -> GetZaxis() -> SetTitleOffset(fOffZ);
-    }
-  }
-  cout << "      Set histogram styles." << endl;
-  return;
-
-}  // end 'SetHistStyles()'
-
-
-
-void STrackCutStudy::CreatePlots(){
-
-  // plot labels/directories to save in
-  const TString sLabelEO("EmbedOnly");
-  const TString sLabelPU("WithPileup");
-  const TString sDirPlotEO("EmbedOnlyPlots");
-  const TString sDirPlotPU("WithPileupPlots");
-
-  // track types to plot together
-  const Ssiz_t nToDrawEO(6);
-  const Ssiz_t nToDrawPU(3);
-  const Int_t  sToDrawEO[nToDrawEO] = {TYPE::TRACK, TYPE::TRUTH, TYPE::WEIRD_ALL, TYPE::WEIRD_SI, TYPE::WEIRD_TPC, TYPE::NORMAL};
-  const Int_t  sToDrawPU[nToDrawPU] = {TYPE::PILEUP, TYPE::PRIMARY, TYPE::NONPRIM};
-
-  // create desired plots
-  ConstructPlots(nToDrawEO, sToDrawEO, sDirPlotEO, sLabelEO);
-  ConstructPlots(nToDrawPU, sToDrawPU, sDirPlotPU, sLabelPU);
-
-  cout << "      Created plots." << endl;
-  return;
-
-}  // end 'CreatePlots()'
-
-
-
-void STrackCutStudy::SaveHists() {
-
-  // create output directories
-  TDirectory *dOut[NType];
-  for (UInt_t iDir = 0; iDir < NType; iDir++) {
-    fOut       -> cd();
-    dOut[iDir] = (TDirectory*) fOut -> mkdir(sTrkNames[iDir].Data());
-  }
-  cout << "      Made directories." << endl;
-
-  // save histograms
-  for (int iType = 0; iType < NType; iType++) {
-    dOut[iType] -> cd();
-    for (size_t iTrkVar = 0; iTrkVar < NTrkVar; iTrkVar++) {
-      hTrkVar[iType][iTrkVar]         -> Write();
-      hTrkVarDiff[iType][iTrkVar]     -> Write();
-      hTrkVarFrac[iType][iTrkVar]     -> Write();
-      hTrkVarVsNTpc[iType][iTrkVar]   -> Write();
-      hTrkVarVsPtReco[iType][iTrkVar] -> Write();
-      hTrkVarVsPtTrue[iType][iTrkVar] -> Write();
-      hTrkVarVsPtFrac[iType][iTrkVar] -> Write();
-    }
-    for (size_t iPhysVar = 0; iPhysVar < NPhysVar; iPhysVar++) {
-      hPhysVar[iType][iPhysVar]         -> Write();
-      hPhysVarDiff[iType][iPhysVar]     -> Write();
-      hPhysVarFrac[iType][iPhysVar]     -> Write();
-      hPhysVarVsNTpc[iType][iPhysVar]   -> Write();
-      hPhysVarVsPtReco[iType][iPhysVar] -> Write();
-      hPhysVarVsPtTrue[iType][iPhysVar] -> Write();
-      hPhysVarVsPtFrac[iType][iPhysVar] -> Write();
-    }
-  }  // end type loop
-
-  cout << "      Saved histograms." << endl;
-  return;
-
-}  // end 'SaveHists()'
-
-
-
-void STrackCutStudy::FillTrackHistograms(const Int_t type, const Double_t recoTrkVars[], const Double_t trueTrkVars[], const Double_t recoPhysVars[], const Double_t truePhysVars[]) {
-
-  // grab 2d x-axes
-  const auto nTpc   = recoTrkVars[TRKVAR::NTPC];
-  const auto ptRec  = recoPhysVars[PHYSVAR::PT];
-  const auto ptTrue = truePhysVars[PHYSVAR::PT];
-  const auto ptFrac = ptRec / ptTrue;
-
-  // fill track variable hists
-  for (size_t iTrkVar = 0; iTrkVar < NTrkVar; iTrkVar++) {
-
-    // calculate difference and fraction
-    const auto trkVarDiff = recoTrkVars[iTrkVar] - trueTrkVars[iTrkVar];
-    const auto trkVarFrac = recoTrkVars[iTrkVar] / trueTrkVars[iTrkVar];
-
-    // fill hists
-    hTrkVar[type][iTrkVar]         -> Fill(recoTrkVars[iTrkVar]);
-    hTrkVarDiff[type][iTrkVar]     -> Fill(trkVarDiff);
-    hTrkVarFrac[type][iTrkVar]     -> Fill(trkVarFrac);
-    hTrkVarVsNTpc[type][iTrkVar]   -> Fill(nTpc,   recoTrkVars[iTrkVar]);
-    hTrkVarVsPtReco[type][iTrkVar] -> Fill(ptRec,  recoTrkVars[iTrkVar]);
-    hTrkVarVsPtTrue[type][iTrkVar] -> Fill(ptTrue, recoTrkVars[iTrkVar]);
-    hTrkVarVsPtFrac[type][iTrkVar] -> Fill(ptFrac, recoTrkVars[iTrkVar]); 
-  }
-
-  // fill track variable hists
-  for (size_t iPhysVar = 0; iPhysVar < NPhysVar; iPhysVar++) {
-
-    // calculate difference and fraction
-    const auto trkVarDiff = recoPhysVars[iPhysVar] - truePhysVars[iPhysVar];
-    const auto trkVarFrac = recoPhysVars[iPhysVar] / truePhysVars[iPhysVar];
-
-    // fill hists
-    hPhysVar[type][iPhysVar]         -> Fill(recoPhysVars[iPhysVar]);
-    hPhysVarDiff[type][iPhysVar]     -> Fill(trkVarDiff);
-    hPhysVarFrac[type][iPhysVar]     -> Fill(trkVarFrac);
-    hPhysVarVsNTpc[type][iPhysVar]   -> Fill(nTpc,   recoPhysVars[iPhysVar]);
-    hPhysVarVsPtReco[type][iPhysVar] -> Fill(ptRec,  recoPhysVars[iPhysVar]);
-    hPhysVarVsPtTrue[type][iPhysVar] -> Fill(ptTrue, recoPhysVars[iPhysVar]);
-    hPhysVarVsPtFrac[type][iPhysVar] -> Fill(ptFrac, recoPhysVars[iPhysVar]); 
-  }
-  return;
-
-}  // end 'FillTrackHistograms(Int_t, Double_t[], Double_t[], Double_t[], Double_t[])'
-
-
-
-void STrackCutStudy::FillTruthHistograms(const Int_t type, const Double_t recoTrkVars[], const Double_t trueTrkVars[], const Double_t recoPhysVars[], const Double_t truePhysVars[]) {
-
-  // grab 2d x-axes
-  const auto nTpc   = recoTrkVars[TRKVAR::NTPC];
-  const auto ptRec  = recoPhysVars[PHYSVAR::PT];
-  const auto ptTrue = truePhysVars[PHYSVAR::PT];
-  const auto ptFrac = ptRec / ptTrue;
-
-  // fill track variable hists
-  for (size_t iTrkVar = 0; iTrkVar < NTrkVar; iTrkVar++) {
-
-    // calculate difference and fraction
-    const auto trkVarDiff = recoTrkVars[iTrkVar] - trueTrkVars[iTrkVar];
-    const auto trkVarFrac = recoTrkVars[iTrkVar] / trueTrkVars[iTrkVar];
-
-    // fill hists
-    hTrkVar[type][iTrkVar]         -> Fill(trueTrkVars[iTrkVar]);
-    hTrkVarDiff[type][iTrkVar]     -> Fill(trkVarDiff);
-    hTrkVarFrac[type][iTrkVar]     -> Fill(trkVarFrac);
-    hTrkVarVsNTpc[type][iTrkVar]   -> Fill(nTpc,   trueTrkVars[iTrkVar]);
-    hTrkVarVsPtReco[type][iTrkVar] -> Fill(ptRec,  trueTrkVars[iTrkVar]);
-    hTrkVarVsPtTrue[type][iTrkVar] -> Fill(ptTrue, trueTrkVars[iTrkVar]);
-    hTrkVarVsPtFrac[type][iTrkVar] -> Fill(ptFrac, trueTrkVars[iTrkVar]); 
-  }
-
-  // fill track variable hists
-  for (size_t iPhysVar = 0; iPhysVar < NPhysVar; iPhysVar++) {
-
-    // calculate difference and fraction
-    const auto trkVarDiff = recoPhysVars[iPhysVar] - truePhysVars[iPhysVar];
-    const auto trkVarFrac = recoPhysVars[iPhysVar] / truePhysVars[iPhysVar];
-
-    // fill hists
-    hPhysVar[type][iPhysVar]         -> Fill(truePhysVars[iPhysVar]);
-    hPhysVarDiff[type][iPhysVar]     -> Fill(trkVarDiff);
-    hPhysVarFrac[type][iPhysVar]     -> Fill(trkVarFrac);
-    hPhysVarVsNTpc[type][iPhysVar]   -> Fill(nTpc,   truePhysVars[iPhysVar]);
-    hPhysVarVsPtReco[type][iPhysVar] -> Fill(ptRec,  truePhysVars[iPhysVar]);
-    hPhysVarVsPtTrue[type][iPhysVar] -> Fill(ptTrue, truePhysVars[iPhysVar]);
-    hPhysVarVsPtFrac[type][iPhysVar] -> Fill(ptFrac, truePhysVars[iPhysVar]); 
-  }
-  return;
-
-}  // end 'FillTruthHistograms(Int_t, Double_t[], Double_t[], Double_t[], Double_t[])'
-
-
-
-void STrackCutStudy::ConstructPlots(const Ssiz_t nToDraw, const Int_t typesToDraw[], const TString sDirToSaveTo, const TString sPlotLabel) {
-
-  // check if saving directory is made, if so, recruse into it
-  Bool_t dirIsThere = fOut -> cd(sDirToSaveTo.Data());
-  if (!dirIsThere) {
-    fOut -> mkdir(sDirToSaveTo.Data());
-    fOut -> cd(sDirToSaveTo.Data());
-  }
-
-  // construct legend
-  const UInt_t  fTxtL       = 42;
-  const UInt_t  fColL       = 0;
-  const UInt_t  fLinL       = 1;
-  const UInt_t  fFilL       = 0;
-  const Float_t hLeg        = 0.05 * nToDraw;
-  const Float_t yLeg        = 0.1 + hLeg;
-  const Float_t xyLeg[NVtx] = {0.1, 0.1, 0.3, yLeg};
-
-  TLegend *leg = new TLegend(xyLeg[0], xyLeg[1], xyLeg[2], xyLeg[3]);
-  leg -> SetFillColor(fColL);
-  leg -> SetFillStyle(fFilL);
-  leg -> SetLineColor(fColL);
-  leg -> SetLineStyle(fLinL);
-  leg -> SetTextFont(fTxtL);
-  for (Ssiz_t iToDraw = 0; iToDraw < nToDraw; iToDraw++) {
-    leg -> AddEntry(hTrkVar[typesToDraw[iToDraw]][0], sTrkLabels[typesToDraw[iToDraw]].Data(), "pf");
-  }
-
-  // determine what to text to add to box
-  Ssiz_t nTxt(0);
-  Bool_t hasPileup(false);
-  for (Ssiz_t iToDraw = 0; iToDraw < nToDraw; iToDraw++) {
-    cout << "CHECK0 iType = " << typesToDraw[iToDraw] << ", isPileup? " << isPileup[typesToDraw[iToDraw]] << endl;
-    if (isPileup[typesToDraw[iToDraw]]) {
-      hasPileup = true;
-      break;
-    }
-  }
-
-  if (hasPileup) {
-    nTxt = nTxtPU;
-    cout << "CHECK1 nTxt = " << nTxt << endl;
-  } else {
-    nTxt = nTxtEO;
-  }
-
-  // construct text box
-  const UInt_t  fTxtT       = 42;
-  const UInt_t  fAlnT       = 12;
-  const UInt_t  fColT       = 0;
-  const UInt_t  fLinT       = 1;
-  const UInt_t  fFilT       = 0;
-  const Float_t hTxt        = 0.05 * nTxt;
-  const Float_t yTxt        = 0.1 + hTxt;
-  const Float_t xyTxt[NVtx] = {0.3, 0.1, 0.5, yTxt};
-
-  TPaveText *ptTxt = new TPaveText(xyTxt[0], xyTxt[1], xyTxt[2], xyTxt[3], "NDC NB");
-  ptTxt -> SetFillColor(fColT);
-  ptTxt -> SetFillStyle(fFilT);
-  ptTxt -> SetLineColor(fColT);
-  ptTxt -> SetLineStyle(fLinT);
-  ptTxt -> SetTextFont(fTxtT);
-  ptTxt -> SetTextAlign(fAlnT);
-  for (Ssiz_t iTxt = 0; iTxt < nTxt; iTxt++) {
-    if (hasPileup) {
-      cout << "CHECK2 adding pileup text..." << endl;
-      ptTxt -> AddText(sTxtPU[iTxt].Data());
-    } else {
-      ptTxt -> AddText(sTxtEO[iTxt].Data());
-    }
-  }
-
-  // construct plots
-  const UInt_t  fWidth1P(750);
-  const UInt_t  fWidth2P(1500);
-  const UInt_t  fHeight1P(750);
-  const UInt_t  fHeight2P(750);
-  const UInt_t  fMode(0);
-  const UInt_t  fBord(2);
-  const UInt_t  fGrid(0);
-  const UInt_t  fTick(1);
-  const UInt_t  fLogX(0);
-  const UInt_t  fLogY(0);
-  const UInt_t  fLogZ(1);
-  const UInt_t  fFrame(0);
-  const Float_t fMarginL(0.12);
-  const Float_t fMarginR1(0.02);
-  const Float_t fMarginR2(0.12);
-  const Float_t fMarginT(0.02);
-  const Float_t fMarginB(0.12);
-  const Float_t padXY[NPanel][NVtx]        = {{0., 0., 0.5, 1.}, {0.5, 0., 1., 1.}};
-  const TString sOneVsTwoDimPanels[NPanel] = {"pOneDim", "pTwoDim"};
-
-  // form canvas names
-  const TString sDiffSuffix("Diff");
-  const TString sFracSuffix("Frac");
-  const TString sVsNTpcSuffix("VsNTpc");
-  const TString sVsPtRecoSuffix("VsPtReco");
-  const TString sVsPtTrueSuffix("VsPtTrue");
-  const TString sVsPtFracSuffix("VsPtFrac");
-
-  // for track-variable canvas names
-  TString sTrkVar[NTrkVar];
-  TString sTrkVarDiff[NTrkVar];
-  TString sTrkVarFrac[NTrkVar];
-  TString sTrkVarVsNTpc[NTrkVar];
-  TString sTrkVarVsPtReco[NTrkVar];
-  TString sTrkVarVsPtTrue[NTrkVar];
-  TString sTrkVarVsPtFrac[NTrkVar];
-
-  // for physics-variable canvas names
-  TString sPhysVar[NPhysVar];
-  TString sPhysVarDiff[NPhysVar];
-  TString sPhysVarFrac[NPhysVar];
-  TString sPhysVarVsNTpc[NPhysVar];
-  TString sPhysVarVsPtReco[NPhysVar];
-  TString sPhysVarVsPtTrue[NPhysVar];
-  TString sPhysVarVsPtFrac[NPhysVar];
-
-  // construct variable prefixes
-  TString sTrkVarName[NTrkVar];
-  TString sPhysVarName[NPhysVar];
-  for (size_t iTrkVar = 0; iTrkVar < NTrkVar; iTrkVar++) {
-    sTrkVarName[iTrkVar] = "c";
-    sTrkVarName[iTrkVar].Append(sTrkVars[iTrkVar].Data());
-  }
-  for (size_t iPhysVar = 0; iPhysVar < NPhysVar; iPhysVar++) {
-    sPhysVarName[iPhysVar] = "c";
-    sPhysVarName[iPhysVar].Append(sPhysVars[iPhysVar].Data());
-  }
-
-  for (size_t iTrkVar = 0; iTrkVar < NTrkVar; iTrkVar++) {
-    sTrkVar[iTrkVar]         = sTrkVarName[iTrkVar].Data();
-    sTrkVarDiff[iTrkVar]     = sTrkVarName[iTrkVar].Data();
-    sTrkVarFrac[iTrkVar]     = sTrkVarName[iTrkVar].Data();
-    sTrkVarVsNTpc[iTrkVar]   = sTrkVarName[iTrkVar].Data();
-    sTrkVarVsPtReco[iTrkVar] = sTrkVarName[iTrkVar].Data();
-    sTrkVarVsPtTrue[iTrkVar] = sTrkVarName[iTrkVar].Data();
-    sTrkVarVsPtFrac[iTrkVar] = sTrkVarName[iTrkVar].Data();
-    sTrkVarDiff[iTrkVar].Append(sDiffSuffix.Data());
-    sTrkVarFrac[iTrkVar].Append(sFracSuffix.Data());
-    sTrkVarVsNTpc[iTrkVar].Append(sVsNTpcSuffix.Data());
-    sTrkVarVsPtReco[iTrkVar].Append(sVsPtRecoSuffix.Data());
-    sTrkVarVsPtTrue[iTrkVar].Append(sVsPtTrueSuffix.Data());
-    sTrkVarVsPtFrac[iTrkVar].Append(sVsPtFracSuffix.Data());
-    sTrkVar[iTrkVar].Append("_");
-    sTrkVarDiff[iTrkVar].Append("_");
-    sTrkVarFrac[iTrkVar].Append("_");
-    sTrkVarVsNTpc[iTrkVar].Append("_");
-    sTrkVarVsPtReco[iTrkVar].Append("_");
-    sTrkVarVsPtTrue[iTrkVar].Append("_");
-    sTrkVarVsPtFrac[iTrkVar].Append("_");
-    sTrkVar[iTrkVar].Append(sPlotLabel.Data());
-    sTrkVarDiff[iTrkVar].Append(sPlotLabel.Data());
-    sTrkVarFrac[iTrkVar].Append(sPlotLabel.Data());
-    sTrkVarVsNTpc[iTrkVar].Append(sPlotLabel.Data());
-    sTrkVarVsPtReco[iTrkVar].Append(sPlotLabel.Data());
-    sTrkVarVsPtTrue[iTrkVar].Append(sPlotLabel.Data());
-    sTrkVarVsPtFrac[iTrkVar].Append(sPlotLabel.Data());
-  }
-  for (size_t iPhysVar = 0; iPhysVar < NPhysVar; iPhysVar++) {
-    sPhysVar[iPhysVar]         = sPhysVarName[iPhysVar].Data();
-    sPhysVarDiff[iPhysVar]     = sPhysVarName[iPhysVar].Data();
-    sPhysVarFrac[iPhysVar]     = sPhysVarName[iPhysVar].Data();
-    sPhysVarVsNTpc[iPhysVar]   = sPhysVarName[iPhysVar].Data();
-    sPhysVarVsPtReco[iPhysVar] = sPhysVarName[iPhysVar].Data();
-    sPhysVarVsPtTrue[iPhysVar] = sPhysVarName[iPhysVar].Data();
-    sPhysVarVsPtFrac[iPhysVar] = sPhysVarName[iPhysVar].Data();
-    sPhysVarDiff[iPhysVar].Append(sDiffSuffix.Data());
-    sPhysVarFrac[iPhysVar].Append(sFracSuffix.Data());
-    sPhysVarVsNTpc[iPhysVar].Append(sVsNTpcSuffix.Data());
-    sPhysVarVsPtReco[iPhysVar].Append(sVsPtRecoSuffix.Data());
-    sPhysVarVsPtTrue[iPhysVar].Append(sVsPtTrueSuffix.Data());
-    sPhysVarVsPtFrac[iPhysVar].Append(sVsPtFracSuffix.Data());
-    sPhysVar[iPhysVar].Append("_");
-    sPhysVarDiff[iPhysVar].Append("_");
-    sPhysVarFrac[iPhysVar].Append("_");
-    sPhysVarVsNTpc[iPhysVar].Append("_");
-    sPhysVarVsPtReco[iPhysVar].Append("_");
-    sPhysVarVsPtTrue[iPhysVar].Append("_");
-    sPhysVarVsPtFrac[iPhysVar].Append("_");
-    sPhysVar[iPhysVar].Append(sPlotLabel.Data());
-    sPhysVarDiff[iPhysVar].Append(sPlotLabel.Data());
-    sPhysVarFrac[iPhysVar].Append(sPlotLabel.Data());
-    sPhysVarVsNTpc[iPhysVar].Append(sPlotLabel.Data());
-    sPhysVarVsPtReco[iPhysVar].Append(sPlotLabel.Data());
-    sPhysVarVsPtTrue[iPhysVar].Append(sPlotLabel.Data());
-    sPhysVarVsPtFrac[iPhysVar].Append(sPlotLabel.Data());
-  }
-
-  // for track-variable plots
-  TCanvas *cTrkVar[NTrkVar];
-  TCanvas *cTrkVarDiff[NTrkVar];
-  TCanvas *cTrkVarFrac[NTrkVar];
-  TCanvas *cTrkVarVsNTpc[NTrkVar];
-  TCanvas *cTrkVarVsPtReco[NTrkVar];
-  TCanvas *cTrkVarVsPtTrue[NTrkVar];
-  TCanvas *cTrkVarVsPtFrac[NTrkVar];
-  TPad    *pTrkVarVsNTpc[NTrkVar][NPanel];
-  TPad    *pTrkVarVsPtReco[NTrkVar][NPanel];
-  TPad    *pTrkVarVsPtTrue[NTrkVar][NPanel];
-  TPad    *pTrkVarVsPtFrac[NTrkVar][NPanel];
-  for (size_t iTrkVar = 0; iTrkVar < NTrkVar; iTrkVar++) {
-
-    // 1d track variable
-    cTrkVar[iTrkVar] = new TCanvas(sTrkVar[iTrkVar].Data(), "", fWidth1P, fHeight1P);
-    cTrkVar[iTrkVar] -> SetGrid(fGrid, fGrid);
-    cTrkVar[iTrkVar] -> SetTicks(fTick, fTick);
-    cTrkVar[iTrkVar] -> SetLogx(fLogX);
-    cTrkVar[iTrkVar] -> SetLogy(fLogY);
-    cTrkVar[iTrkVar] -> SetLogz(fLogZ);
-    cTrkVar[iTrkVar] -> SetBorderMode(fMode);
-    cTrkVar[iTrkVar] -> SetBorderSize(fBord);
-    cTrkVar[iTrkVar] -> SetFrameBorderMode(fFrame);
-    cTrkVar[iTrkVar] -> SetLeftMargin(fMarginL);
-    cTrkVar[iTrkVar] -> SetRightMargin(fMarginR1);
-    cTrkVar[iTrkVar] -> SetTopMargin(fMarginT);
-    cTrkVar[iTrkVar] -> SetBottomMargin(fMarginB);
-    cTrkVar[iTrkVar] -> cd();
-    for (Ssiz_t iToDraw = 0; iToDraw < nToDraw; iToDraw++) {
-      if (iToDraw == 0) {
-        hTrkVar[typesToDraw[iToDraw]][iTrkVar] -> Draw();
-      } else {
-        hTrkVar[typesToDraw[iToDraw]][iTrkVar] -> Draw("same");
-      }
-    }  // end to-draw loop
-    leg              -> Draw();
-    ptTxt            -> Draw();
-    cTrkVar[iTrkVar] -> Write();
-    cTrkVar[iTrkVar] -> Close();
-
-    // 1d track difference
-    cTrkVarDiff[iTrkVar] = new TCanvas(sTrkVarDiff[iTrkVar].Data(), "", fWidth1P, fHeight1P);
-    cTrkVarDiff[iTrkVar] -> SetGrid(fGrid, fGrid);
-    cTrkVarDiff[iTrkVar] -> SetTicks(fTick, fTick);
-    cTrkVarDiff[iTrkVar] -> SetLogx(fLogX);
-    cTrkVarDiff[iTrkVar] -> SetLogy(fLogY);
-    cTrkVarDiff[iTrkVar] -> SetLogz(fLogZ);
-    cTrkVarDiff[iTrkVar] -> SetBorderMode(fMode);
-    cTrkVarDiff[iTrkVar] -> SetBorderSize(fBord);
-    cTrkVarDiff[iTrkVar] -> SetFrameBorderMode(fFrame);
-    cTrkVarDiff[iTrkVar] -> SetLeftMargin(fMarginL);
-    cTrkVarDiff[iTrkVar] -> SetRightMargin(fMarginR1);
-    cTrkVarDiff[iTrkVar] -> SetTopMargin(fMarginT);
-    cTrkVarDiff[iTrkVar] -> SetBottomMargin(fMarginB);
-    cTrkVarDiff[iTrkVar] -> cd();
-    for (Ssiz_t iToDraw = 0; iToDraw < nToDraw; iToDraw++) {
-      if (iToDraw == 0) {
-        hTrkVarDiff[typesToDraw[iToDraw]][iTrkVar] -> Draw();
-      } else {
-        hTrkVarDiff[typesToDraw[iToDraw]][iTrkVar] -> Draw("same");
-      }
-    }  // end to-draw loop
-    leg                  -> Draw();
-    ptTxt                -> Draw();
-    cTrkVarDiff[iTrkVar] -> Write();
-    cTrkVarDiff[iTrkVar] -> Close();
-
-    // 1d track fraction
-    cTrkVarFrac[iTrkVar] = new TCanvas(sTrkVarFrac[iTrkVar].Data(), "", fWidth1P, fHeight1P);
-    cTrkVarFrac[iTrkVar] -> SetGrid(fGrid, fGrid);
-    cTrkVarFrac[iTrkVar] -> SetTicks(fTick, fTick);
-    cTrkVarFrac[iTrkVar] -> SetLogx(fLogX);
-    cTrkVarFrac[iTrkVar] -> SetLogy(fLogY);
-    cTrkVarFrac[iTrkVar] -> SetLogz(fLogZ);
-    cTrkVarFrac[iTrkVar] -> SetBorderMode(fMode);
-    cTrkVarFrac[iTrkVar] -> SetBorderSize(fBord);
-    cTrkVarFrac[iTrkVar] -> SetFrameBorderMode(fFrame);
-    cTrkVarFrac[iTrkVar] -> SetLeftMargin(fMarginL);
-    cTrkVarFrac[iTrkVar] -> SetRightMargin(fMarginR1);
-    cTrkVarFrac[iTrkVar] -> SetTopMargin(fMarginT);
-    cTrkVarFrac[iTrkVar] -> SetBottomMargin(fMarginB);
-    cTrkVarFrac[iTrkVar] -> cd();
-    for (Ssiz_t iToDraw = 0; iToDraw < nToDraw; iToDraw++) {
-      if (iToDraw == 0) {
-        hTrkVarFrac[typesToDraw[iToDraw]][iTrkVar] -> Draw();
-      } else {
-        hTrkVarFrac[typesToDraw[iToDraw]][iTrkVar] -> Draw("same");
-      }
-    }  // end to-draw loop
-    leg                  -> Draw();
-    ptTxt                -> Draw();
-    cTrkVarFrac[iTrkVar] -> Write();
-    cTrkVarFrac[iTrkVar] -> Close();
-
-    // 2d track variables vs. ntpc
-    cTrkVarVsNTpc[iTrkVar]    = new TCanvas(sTrkVarVsNTpc[iTrkVar].Data(), "", fWidth2P, fHeight2P);
-    pTrkVarVsNTpc[iTrkVar][0] = new TPad(sOneVsTwoDimPanels[0].Data(), "", padXY[0][0], padXY[0][1], padXY[0][2], padXY[0][3]);
-    pTrkVarVsNTpc[iTrkVar][1] = new TPad(sOneVsTwoDimPanels[1].Data(), "", padXY[1][0], padXY[1][1], padXY[1][2], padXY[1][3]);
-    cTrkVarVsNTpc[iTrkVar]    -> SetGrid(fGrid, fGrid);
-    cTrkVarVsNTpc[iTrkVar]    -> SetTicks(fTick, fTick);
-    cTrkVarVsNTpc[iTrkVar]    -> SetBorderMode(fMode);
-    cTrkVarVsNTpc[iTrkVar]    -> SetBorderSize(fBord);
-    pTrkVarVsNTpc[iTrkVar][0] -> SetGrid(fGrid, fGrid);
-    pTrkVarVsNTpc[iTrkVar][0] -> SetTicks(fTick, fTick);
-    pTrkVarVsNTpc[iTrkVar][0] -> SetLogx(fLogX);
-    pTrkVarVsNTpc[iTrkVar][0] -> SetLogy(fLogY);
-    pTrkVarVsNTpc[iTrkVar][0] -> SetLogz(fLogZ);
-    pTrkVarVsNTpc[iTrkVar][0] -> SetBorderMode(fMode);
-    pTrkVarVsNTpc[iTrkVar][0] -> SetBorderSize(fBord);
-    pTrkVarVsNTpc[iTrkVar][0] -> SetFrameBorderMode(fFrame);
-    pTrkVarVsNTpc[iTrkVar][0] -> SetLeftMargin(fMarginL);
-    pTrkVarVsNTpc[iTrkVar][0] -> SetRightMargin(fMarginR1);
-    pTrkVarVsNTpc[iTrkVar][0] -> SetTopMargin(fMarginT);
-    pTrkVarVsNTpc[iTrkVar][0] -> SetBottomMargin(fMarginB);
-    pTrkVarVsNTpc[iTrkVar][1] -> SetGrid(fGrid, fGrid);
-    pTrkVarVsNTpc[iTrkVar][1] -> SetTicks(fTick, fTick);
-    pTrkVarVsNTpc[iTrkVar][1] -> SetLogx(fLogX);
-    pTrkVarVsNTpc[iTrkVar][1] -> SetLogy(fLogY);
-    pTrkVarVsNTpc[iTrkVar][1] -> SetLogz(fLogZ);
-    pTrkVarVsNTpc[iTrkVar][1] -> SetBorderMode(fMode);
-    pTrkVarVsNTpc[iTrkVar][1] -> SetBorderSize(fBord);
-    pTrkVarVsNTpc[iTrkVar][1] -> SetFrameBorderMode(fFrame);
-    pTrkVarVsNTpc[iTrkVar][1] -> SetLeftMargin(fMarginL);
-    pTrkVarVsNTpc[iTrkVar][1] -> SetRightMargin(fMarginR2);
-    pTrkVarVsNTpc[iTrkVar][1] -> SetTopMargin(fMarginT);
-    pTrkVarVsNTpc[iTrkVar][1] -> SetBottomMargin(fMarginB);
-    cTrkVarVsNTpc[iTrkVar]    -> cd();
-    pTrkVarVsNTpc[iTrkVar][0] -> Draw();
-    pTrkVarVsNTpc[iTrkVar][1] -> Draw();
-    pTrkVarVsNTpc[iTrkVar][0] -> cd();
-    for (Ssiz_t iToDraw = 0; iToDraw < nToDraw; iToDraw++) {
-      if (iToDraw == 0) {
-        hTrkVar[typesToDraw[iToDraw]][iTrkVar] -> Draw();
-      } else {
-        hTrkVar[typesToDraw[iToDraw]][iTrkVar] -> Draw("same");
-      }
-    }  // end to-draw loop
-    leg                       -> Draw();
-    ptTxt                     -> Draw();
-    pTrkVarVsNTpc[iTrkVar][1] -> cd();
-    for (Ssiz_t iToDraw = 0; iToDraw < nToDraw; iToDraw++) {
-      if (iToDraw == 0) {
-        hTrkVarVsNTpc[typesToDraw[iToDraw]][iTrkVar] -> Draw("colz");
-      } else {
-        hTrkVarVsNTpc[typesToDraw[iToDraw]][iTrkVar] -> Draw("p same");
-      }
-    }  // end to-draw loop
-    cTrkVarVsNTpc[iTrkVar] -> Write();
-    cTrkVarVsNTpc[iTrkVar] -> Close();
-
-    // 2d track variables vs. ptreco
-    cTrkVarVsPtReco[iTrkVar]    = new TCanvas(sTrkVarVsPtReco[iTrkVar].Data(), "", fWidth2P, fHeight2P);
-    pTrkVarVsPtReco[iTrkVar][0] = new TPad(sOneVsTwoDimPanels[0].Data(), "", padXY[0][0], padXY[0][1], padXY[0][2], padXY[0][3]);
-    pTrkVarVsPtReco[iTrkVar][1] = new TPad(sOneVsTwoDimPanels[1].Data(), "", padXY[1][0], padXY[1][1], padXY[1][2], padXY[1][3]);
-    cTrkVarVsPtReco[iTrkVar]    -> SetGrid(fGrid, fGrid);
-    cTrkVarVsPtReco[iTrkVar]    -> SetTicks(fTick, fTick);
-    cTrkVarVsPtReco[iTrkVar]    -> SetBorderMode(fMode);
-    cTrkVarVsPtReco[iTrkVar]    -> SetBorderSize(fBord);
-    pTrkVarVsPtReco[iTrkVar][0] -> SetGrid(fGrid, fGrid);
-    pTrkVarVsPtReco[iTrkVar][0] -> SetTicks(fTick, fTick);
-    pTrkVarVsPtReco[iTrkVar][0] -> SetLogx(fLogX);
-    pTrkVarVsPtReco[iTrkVar][0] -> SetLogy(fLogY);
-    pTrkVarVsPtReco[iTrkVar][0] -> SetLogz(fLogZ);
-    pTrkVarVsPtReco[iTrkVar][0] -> SetBorderMode(fMode);
-    pTrkVarVsPtReco[iTrkVar][0] -> SetBorderSize(fBord);
-    pTrkVarVsPtReco[iTrkVar][0] -> SetFrameBorderMode(fFrame);
-    pTrkVarVsPtReco[iTrkVar][0] -> SetLeftMargin(fMarginL);
-    pTrkVarVsPtReco[iTrkVar][0] -> SetRightMargin(fMarginR1);
-    pTrkVarVsPtReco[iTrkVar][0] -> SetTopMargin(fMarginT);
-    pTrkVarVsPtReco[iTrkVar][0] -> SetBottomMargin(fMarginB);
-    pTrkVarVsPtReco[iTrkVar][1] -> SetGrid(fGrid, fGrid);
-    pTrkVarVsPtReco[iTrkVar][1] -> SetTicks(fTick, fTick);
-    pTrkVarVsPtReco[iTrkVar][1] -> SetLogx(fLogX);
-    pTrkVarVsPtReco[iTrkVar][1] -> SetLogy(fLogY);
-    pTrkVarVsPtReco[iTrkVar][1] -> SetLogz(fLogZ);
-    pTrkVarVsPtReco[iTrkVar][1] -> SetBorderMode(fMode);
-    pTrkVarVsPtReco[iTrkVar][1] -> SetBorderSize(fBord);
-    pTrkVarVsPtReco[iTrkVar][1] -> SetFrameBorderMode(fFrame);
-    pTrkVarVsPtReco[iTrkVar][1] -> SetLeftMargin(fMarginL);
-    pTrkVarVsPtReco[iTrkVar][1] -> SetRightMargin(fMarginR2);
-    pTrkVarVsPtReco[iTrkVar][1] -> SetTopMargin(fMarginT);
-    pTrkVarVsPtReco[iTrkVar][1] -> SetBottomMargin(fMarginB);
-    cTrkVarVsPtReco[iTrkVar]    -> cd();
-    pTrkVarVsPtReco[iTrkVar][0] -> Draw();
-    pTrkVarVsPtReco[iTrkVar][1] -> Draw();
-    pTrkVarVsPtReco[iTrkVar][0] -> cd();
-    for (Ssiz_t iToDraw = 0; iToDraw < nToDraw; iToDraw++) {
-      if (iToDraw == 0) {
-        hTrkVar[typesToDraw[iToDraw]][iTrkVar] -> Draw();
-      } else {
-        hTrkVar[typesToDraw[iToDraw]][iTrkVar] -> Draw("same");
-      }
-    }  // end to-draw loop
-    leg                         -> Draw();
-    ptTxt                       -> Draw();
-    pTrkVarVsPtReco[iTrkVar][1] -> cd();
-    for (Ssiz_t iToDraw = 0; iToDraw < nToDraw; iToDraw++) {
-      if (iToDraw == 0) {
-        hTrkVarVsPtReco[typesToDraw[iToDraw]][iTrkVar] -> Draw("colz");
-      } else {
-        hTrkVarVsPtReco[typesToDraw[iToDraw]][iTrkVar] -> Draw("p same");
-      }
-    }  // end to-draw loop
-    cTrkVarVsPtReco[iTrkVar] -> Write();
-    cTrkVarVsPtReco[iTrkVar] -> Close();
-
-    // 2d track variables vs. pttrue
-    cTrkVarVsPtTrue[iTrkVar]    = new TCanvas(sTrkVarVsPtTrue[iTrkVar].Data(), "", fWidth2P, fHeight2P);
-    pTrkVarVsPtTrue[iTrkVar][0] = new TPad(sOneVsTwoDimPanels[0].Data(), "", padXY[0][0], padXY[0][1], padXY[0][2], padXY[0][3]);
-    pTrkVarVsPtTrue[iTrkVar][1] = new TPad(sOneVsTwoDimPanels[1].Data(), "", padXY[1][0], padXY[1][1], padXY[1][2], padXY[1][3]);
-    cTrkVarVsPtTrue[iTrkVar]    -> SetGrid(fGrid, fGrid);
-    cTrkVarVsPtTrue[iTrkVar]    -> SetTicks(fTick, fTick);
-    cTrkVarVsPtTrue[iTrkVar]    -> SetBorderMode(fMode);
-    cTrkVarVsPtTrue[iTrkVar]    -> SetBorderSize(fBord);
-    pTrkVarVsPtTrue[iTrkVar][0] -> SetGrid(fGrid, fGrid);
-    pTrkVarVsPtTrue[iTrkVar][0] -> SetTicks(fTick, fTick);
-    pTrkVarVsPtTrue[iTrkVar][0] -> SetLogx(fLogX);
-    pTrkVarVsPtTrue[iTrkVar][0] -> SetLogy(fLogY);
-    pTrkVarVsPtTrue[iTrkVar][0] -> SetLogz(fLogZ);
-    pTrkVarVsPtTrue[iTrkVar][0] -> SetBorderMode(fMode);
-    pTrkVarVsPtTrue[iTrkVar][0] -> SetBorderSize(fBord);
-    pTrkVarVsPtTrue[iTrkVar][0] -> SetFrameBorderMode(fFrame);
-    pTrkVarVsPtTrue[iTrkVar][0] -> SetLeftMargin(fMarginL);
-    pTrkVarVsPtTrue[iTrkVar][0] -> SetRightMargin(fMarginR1);
-    pTrkVarVsPtTrue[iTrkVar][0] -> SetTopMargin(fMarginT);
-    pTrkVarVsPtTrue[iTrkVar][0] -> SetBottomMargin(fMarginB);
-    pTrkVarVsPtTrue[iTrkVar][1] -> SetGrid(fGrid, fGrid);
-    pTrkVarVsPtTrue[iTrkVar][1] -> SetTicks(fTick, fTick);
-    pTrkVarVsPtTrue[iTrkVar][1] -> SetLogx(fLogX);
-    pTrkVarVsPtTrue[iTrkVar][1] -> SetLogy(fLogY);
-    pTrkVarVsPtTrue[iTrkVar][1] -> SetLogz(fLogZ);
-    pTrkVarVsPtTrue[iTrkVar][1] -> SetBorderMode(fMode);
-    pTrkVarVsPtTrue[iTrkVar][1] -> SetBorderSize(fBord);
-    pTrkVarVsPtTrue[iTrkVar][1] -> SetFrameBorderMode(fFrame);
-    pTrkVarVsPtTrue[iTrkVar][1] -> SetLeftMargin(fMarginL);
-    pTrkVarVsPtTrue[iTrkVar][1] -> SetRightMargin(fMarginR2);
-    pTrkVarVsPtTrue[iTrkVar][1] -> SetTopMargin(fMarginT);
-    pTrkVarVsPtTrue[iTrkVar][1] -> SetBottomMargin(fMarginB);
-    cTrkVarVsPtTrue[iTrkVar]    -> cd();
-    pTrkVarVsPtTrue[iTrkVar][0] -> Draw();
-    pTrkVarVsPtTrue[iTrkVar][1] -> Draw();
-    pTrkVarVsPtTrue[iTrkVar][0] -> cd();
-    for (Ssiz_t iToDraw = 0; iToDraw < nToDraw; iToDraw++) {
-      if (iToDraw == 0) {
-        hTrkVar[typesToDraw[iToDraw]][iTrkVar] -> Draw();
-      } else {
-        hTrkVar[typesToDraw[iToDraw]][iTrkVar] -> Draw("same");
-      }
-    }  // end to-draw loop
-    leg                         -> Draw();
-    ptTxt                       -> Draw();
-    pTrkVarVsPtTrue[iTrkVar][1] -> cd();
-    for (Ssiz_t iToDraw = 0; iToDraw < nToDraw; iToDraw++) {
-      if (iToDraw == 0) {
-        hTrkVarVsPtTrue[typesToDraw[iToDraw]][iTrkVar] -> Draw("colz");
-      } else {
-        hTrkVarVsPtTrue[typesToDraw[iToDraw]][iTrkVar] -> Draw("p same");
-      }
-    }  // end to-draw loop
-    cTrkVarVsPtTrue[iTrkVar] -> Write();
-    cTrkVarVsPtTrue[iTrkVar] -> Close();
-
-    // 2d track variables vs. pttrue
-    cTrkVarVsPtFrac[iTrkVar]    = new TCanvas(sTrkVarVsPtFrac[iTrkVar].Data(), "", fWidth2P, fHeight2P);
-    pTrkVarVsPtFrac[iTrkVar][0] = new TPad(sOneVsTwoDimPanels[0].Data(), "", padXY[0][0], padXY[0][1], padXY[0][2], padXY[0][3]);
-    pTrkVarVsPtFrac[iTrkVar][1] = new TPad(sOneVsTwoDimPanels[1].Data(), "", padXY[1][0], padXY[1][1], padXY[1][2], padXY[1][3]);
-    cTrkVarVsPtFrac[iTrkVar]    -> SetGrid(fGrid, fGrid);
-    cTrkVarVsPtFrac[iTrkVar]    -> SetTicks(fTick, fTick);
-    cTrkVarVsPtFrac[iTrkVar]    -> SetBorderMode(fMode);
-    cTrkVarVsPtFrac[iTrkVar]    -> SetBorderSize(fBord);
-    pTrkVarVsPtFrac[iTrkVar][0] -> SetGrid(fGrid, fGrid);
-    pTrkVarVsPtFrac[iTrkVar][0] -> SetTicks(fTick, fTick);
-    pTrkVarVsPtFrac[iTrkVar][0] -> SetLogx(fLogX);
-    pTrkVarVsPtFrac[iTrkVar][0] -> SetLogy(fLogY);
-    pTrkVarVsPtFrac[iTrkVar][0] -> SetLogz(fLogZ);
-    pTrkVarVsPtFrac[iTrkVar][0] -> SetBorderMode(fMode);
-    pTrkVarVsPtFrac[iTrkVar][0] -> SetBorderSize(fBord);
-    pTrkVarVsPtFrac[iTrkVar][0] -> SetFrameBorderMode(fFrame);
-    pTrkVarVsPtFrac[iTrkVar][0] -> SetLeftMargin(fMarginL);
-    pTrkVarVsPtFrac[iTrkVar][0] -> SetRightMargin(fMarginR1);
-    pTrkVarVsPtFrac[iTrkVar][0] -> SetTopMargin(fMarginT);
-    pTrkVarVsPtFrac[iTrkVar][0] -> SetBottomMargin(fMarginB);
-    pTrkVarVsPtFrac[iTrkVar][1] -> SetGrid(fGrid, fGrid);
-    pTrkVarVsPtFrac[iTrkVar][1] -> SetTicks(fTick, fTick);
-    pTrkVarVsPtFrac[iTrkVar][1] -> SetLogx(fLogX);
-    pTrkVarVsPtFrac[iTrkVar][1] -> SetLogy(fLogY);
-    pTrkVarVsPtFrac[iTrkVar][1] -> SetLogz(fLogZ);
-    pTrkVarVsPtFrac[iTrkVar][1] -> SetBorderMode(fMode);
-    pTrkVarVsPtFrac[iTrkVar][1] -> SetBorderSize(fBord);
-    pTrkVarVsPtFrac[iTrkVar][1] -> SetFrameBorderMode(fFrame);
-    pTrkVarVsPtFrac[iTrkVar][1] -> SetLeftMargin(fMarginL);
-    pTrkVarVsPtFrac[iTrkVar][1] -> SetRightMargin(fMarginR2);
-    pTrkVarVsPtFrac[iTrkVar][1] -> SetTopMargin(fMarginT);
-    pTrkVarVsPtFrac[iTrkVar][1] -> SetBottomMargin(fMarginB);
-    cTrkVarVsPtFrac[iTrkVar]    -> cd();
-    pTrkVarVsPtFrac[iTrkVar][0] -> Draw();
-    pTrkVarVsPtFrac[iTrkVar][1] -> Draw();
-    pTrkVarVsPtFrac[iTrkVar][0] -> cd();
-    for (Ssiz_t iToDraw = 0; iToDraw < nToDraw; iToDraw++) {
-      if (iToDraw == 0) {
-        hTrkVar[typesToDraw[iToDraw]][iTrkVar] -> Draw();
-      } else {
-        hTrkVar[typesToDraw[iToDraw]][iTrkVar] -> Draw("same");
-      }
-    }  // end to-draw loop
-    leg                         -> Draw();
-    ptTxt                       -> Draw();
-    pTrkVarVsPtFrac[iTrkVar][1] -> cd();
-    for (Ssiz_t iToDraw = 0; iToDraw < nToDraw; iToDraw++) {
-      if (iToDraw == 0) {
-        hTrkVarVsPtFrac[typesToDraw[iToDraw]][iTrkVar] -> Draw("colz");
-      } else {
-        hTrkVarVsPtFrac[typesToDraw[iToDraw]][iTrkVar] -> Draw("p same");
-      }
-    }  // end to-draw loop
-    cTrkVarVsPtFrac[iTrkVar] -> Write();
-    cTrkVarVsPtFrac[iTrkVar] -> Close();
-  }  // end track variable loop
-
-  // for physics-variable plots
-  TCanvas *cPhysVar[NPhysVar];
-  TCanvas *cPhysVarDiff[NPhysVar];
-  TCanvas *cPhysVarFrac[NPhysVar];
-  TCanvas *cPhysVarVsNTpc[NPhysVar];
-  TCanvas *cPhysVarVsPtReco[NPhysVar];
-  TCanvas *cPhysVarVsPtTrue[NPhysVar];
-  TCanvas *cPhysVarVsPtFrac[NPhysVar];
-  TPad    *pPhysVarVsNTpc[NPhysVar][NPanel];
-  TPad    *pPhysVarVsPtReco[NPhysVar][NPanel];
-  TPad    *pPhysVarVsPtTrue[NPhysVar][NPanel];
-  TPad    *pPhysVarVsPtFrac[NPhysVar][NPanel];
-  for (size_t iPhysVar = 0; iPhysVar < NPhysVar; iPhysVar++) {
-
-    // 1d physics variable
-    cPhysVar[iPhysVar] = new TCanvas(sPhysVar[iPhysVar].Data(), "", fWidth1P, fHeight1P);
-    cPhysVar[iPhysVar] -> SetGrid(fGrid, fGrid);
-    cPhysVar[iPhysVar] -> SetTicks(fTick, fTick);
-    cPhysVar[iPhysVar] -> SetLogx(fLogX);
-    cPhysVar[iPhysVar] -> SetLogy(fLogY);
-    cPhysVar[iPhysVar] -> SetLogz(fLogZ);
-    cPhysVar[iPhysVar] -> SetBorderMode(fMode);
-    cPhysVar[iPhysVar] -> SetBorderSize(fBord);
-    cPhysVar[iPhysVar] -> SetFrameBorderMode(fFrame);
-    cPhysVar[iPhysVar] -> SetLeftMargin(fMarginL);
-    cPhysVar[iPhysVar] -> SetRightMargin(fMarginR1);
-    cPhysVar[iPhysVar] -> SetTopMargin(fMarginT);
-    cPhysVar[iPhysVar] -> SetBottomMargin(fMarginB);
-    cPhysVar[iPhysVar] -> cd();
-    for (Ssiz_t iToDraw = 0; iToDraw < nToDraw; iToDraw++) {
-      if (iToDraw == 0) {
-        hPhysVar[typesToDraw[iToDraw]][iPhysVar] -> Draw();
-      } else {
-        hPhysVar[typesToDraw[iToDraw]][iPhysVar] -> Draw("same");
-      }
-    }  // end to-draw loop
-    leg              -> Draw();
-    ptTxt            -> Draw();
-    cPhysVar[iPhysVar] -> Write();
-    cPhysVar[iPhysVar] -> Close();
-
-    // 1d physics difference
-    cPhysVarDiff[iPhysVar] = new TCanvas(sPhysVarDiff[iPhysVar].Data(), "", fWidth1P, fHeight1P);
-    cPhysVarDiff[iPhysVar] -> SetGrid(fGrid, fGrid);
-    cPhysVarDiff[iPhysVar] -> SetTicks(fTick, fTick);
-    cPhysVarDiff[iPhysVar] -> SetLogx(fLogX);
-    cPhysVarDiff[iPhysVar] -> SetLogy(fLogY);
-    cPhysVarDiff[iPhysVar] -> SetLogz(fLogZ);
-    cPhysVarDiff[iPhysVar] -> SetBorderMode(fMode);
-    cPhysVarDiff[iPhysVar] -> SetBorderSize(fBord);
-    cPhysVarDiff[iPhysVar] -> SetFrameBorderMode(fFrame);
-    cPhysVarDiff[iPhysVar] -> SetLeftMargin(fMarginL);
-    cPhysVarDiff[iPhysVar] -> SetRightMargin(fMarginR1);
-    cPhysVarDiff[iPhysVar] -> SetTopMargin(fMarginT);
-    cPhysVarDiff[iPhysVar] -> SetBottomMargin(fMarginB);
-    cPhysVarDiff[iPhysVar] -> cd();
-    for (Ssiz_t iToDraw = 0; iToDraw < nToDraw; iToDraw++) {
-      if (iToDraw == 0) {
-        hPhysVarDiff[typesToDraw[iToDraw]][iPhysVar] -> Draw();
-      } else {
-        hPhysVarDiff[typesToDraw[iToDraw]][iPhysVar] -> Draw("same");
-      }
-    }  // end to-draw loop
-    leg                  -> Draw();
-    ptTxt                -> Draw();
-    cPhysVarDiff[iPhysVar] -> Write();
-    cPhysVarDiff[iPhysVar] -> Close();
-
-    // 1d physics fraction
-    cPhysVarFrac[iPhysVar] = new TCanvas(sPhysVarFrac[iPhysVar].Data(), "", fWidth1P, fHeight1P);
-    cPhysVarFrac[iPhysVar] -> SetGrid(fGrid, fGrid);
-    cPhysVarFrac[iPhysVar] -> SetTicks(fTick, fTick);
-    cPhysVarFrac[iPhysVar] -> SetLogx(fLogX);
-    cPhysVarFrac[iPhysVar] -> SetLogy(fLogY);
-    cPhysVarFrac[iPhysVar] -> SetLogz(fLogZ);
-    cPhysVarFrac[iPhysVar] -> SetBorderMode(fMode);
-    cPhysVarFrac[iPhysVar] -> SetBorderSize(fBord);
-    cPhysVarFrac[iPhysVar] -> SetFrameBorderMode(fFrame);
-    cPhysVarFrac[iPhysVar] -> SetLeftMargin(fMarginL);
-    cPhysVarFrac[iPhysVar] -> SetRightMargin(fMarginR1);
-    cPhysVarFrac[iPhysVar] -> SetTopMargin(fMarginT);
-    cPhysVarFrac[iPhysVar] -> SetBottomMargin(fMarginB);
-    cPhysVarFrac[iPhysVar] -> cd();
-    for (Ssiz_t iToDraw = 0; iToDraw < nToDraw; iToDraw++) {
-      if (iToDraw == 0) {
-        hPhysVarFrac[typesToDraw[iToDraw]][iPhysVar] -> Draw();
-      } else {
-        hPhysVarFrac[typesToDraw[iToDraw]][iPhysVar] -> Draw("same");
-      }
-    }  // end to-draw loop
-    leg                  -> Draw();
-    ptTxt                -> Draw();
-    cPhysVarFrac[iPhysVar] -> Write();
-    cPhysVarFrac[iPhysVar] -> Close();
-
-    // 2d physics variables vs. ntpc
-    cPhysVarVsNTpc[iPhysVar]    = new TCanvas(sPhysVarVsNTpc[iPhysVar].Data(), "", fWidth2P, fHeight2P);
-    pPhysVarVsNTpc[iPhysVar][0] = new TPad(sOneVsTwoDimPanels[0].Data(), "", padXY[0][0], padXY[0][1], padXY[0][2], padXY[0][3]);
-    pPhysVarVsNTpc[iPhysVar][1] = new TPad(sOneVsTwoDimPanels[1].Data(), "", padXY[1][0], padXY[1][1], padXY[1][2], padXY[1][3]);
-    cPhysVarVsNTpc[iPhysVar]    -> SetGrid(fGrid, fGrid);
-    cPhysVarVsNTpc[iPhysVar]    -> SetTicks(fTick, fTick);
-    cPhysVarVsNTpc[iPhysVar]    -> SetBorderMode(fMode);
-    cPhysVarVsNTpc[iPhysVar]    -> SetBorderSize(fBord);
-    pPhysVarVsNTpc[iPhysVar][0] -> SetGrid(fGrid, fGrid);
-    pPhysVarVsNTpc[iPhysVar][0] -> SetTicks(fTick, fTick);
-    pPhysVarVsNTpc[iPhysVar][0] -> SetLogx(fLogX);
-    pPhysVarVsNTpc[iPhysVar][0] -> SetLogy(fLogY);
-    pPhysVarVsNTpc[iPhysVar][0] -> SetLogz(fLogZ);
-    pPhysVarVsNTpc[iPhysVar][0] -> SetBorderMode(fMode);
-    pPhysVarVsNTpc[iPhysVar][0] -> SetBorderSize(fBord);
-    pPhysVarVsNTpc[iPhysVar][0] -> SetFrameBorderMode(fFrame);
-    pPhysVarVsNTpc[iPhysVar][0] -> SetLeftMargin(fMarginL);
-    pPhysVarVsNTpc[iPhysVar][0] -> SetRightMargin(fMarginR1);
-    pPhysVarVsNTpc[iPhysVar][0] -> SetTopMargin(fMarginT);
-    pPhysVarVsNTpc[iPhysVar][0] -> SetBottomMargin(fMarginB);
-    pPhysVarVsNTpc[iPhysVar][1] -> SetGrid(fGrid, fGrid);
-    pPhysVarVsNTpc[iPhysVar][1] -> SetTicks(fTick, fTick);
-    pPhysVarVsNTpc[iPhysVar][1] -> SetLogx(fLogX);
-    pPhysVarVsNTpc[iPhysVar][1] -> SetLogy(fLogY);
-    pPhysVarVsNTpc[iPhysVar][1] -> SetLogz(fLogZ);
-    pPhysVarVsNTpc[iPhysVar][1] -> SetBorderMode(fMode);
-    pPhysVarVsNTpc[iPhysVar][1] -> SetBorderSize(fBord);
-    pPhysVarVsNTpc[iPhysVar][1] -> SetFrameBorderMode(fFrame);
-    pPhysVarVsNTpc[iPhysVar][1] -> SetLeftMargin(fMarginL);
-    pPhysVarVsNTpc[iPhysVar][1] -> SetRightMargin(fMarginR2);
-    pPhysVarVsNTpc[iPhysVar][1] -> SetTopMargin(fMarginT);
-    pPhysVarVsNTpc[iPhysVar][1] -> SetBottomMargin(fMarginB);
-    cPhysVarVsNTpc[iPhysVar]    -> cd();
-    pPhysVarVsNTpc[iPhysVar][0] -> Draw();
-    pPhysVarVsNTpc[iPhysVar][1] -> Draw();
-    pPhysVarVsNTpc[iPhysVar][0] -> cd();
-    for (Ssiz_t iToDraw = 0; iToDraw < nToDraw; iToDraw++) {
-      if (iToDraw == 0) {
-        hPhysVar[typesToDraw[iToDraw]][iPhysVar] -> Draw();
-      } else {
-        hPhysVar[typesToDraw[iToDraw]][iPhysVar] -> Draw("same");
-      }
-    }  // end to-draw loop
-    leg                       -> Draw();
-    ptTxt                     -> Draw();
-    pPhysVarVsNTpc[iPhysVar][1] -> cd();
-    for (Ssiz_t iToDraw = 0; iToDraw < nToDraw; iToDraw++) {
-      if (iToDraw == 0) {
-        hPhysVarVsNTpc[typesToDraw[iToDraw]][iPhysVar] -> Draw("colz");
-      } else {
-        hPhysVarVsNTpc[typesToDraw[iToDraw]][iPhysVar] -> Draw("p same");
-      }
-    }  // end to-draw loop
-    cPhysVarVsNTpc[iPhysVar] -> Write();
-    cPhysVarVsNTpc[iPhysVar] -> Close();
-
-    // 2d physics variables vs. ptreco
-    cPhysVarVsPtReco[iPhysVar]    = new TCanvas(sPhysVarVsPtReco[iPhysVar].Data(), "", fWidth2P, fHeight2P);
-    pPhysVarVsPtReco[iPhysVar][0] = new TPad(sOneVsTwoDimPanels[0].Data(), "", padXY[0][0], padXY[0][1], padXY[0][2], padXY[0][3]);
-    pPhysVarVsPtReco[iPhysVar][1] = new TPad(sOneVsTwoDimPanels[1].Data(), "", padXY[1][0], padXY[1][1], padXY[1][2], padXY[1][3]);
-    cPhysVarVsPtReco[iPhysVar]    -> SetGrid(fGrid, fGrid);
-    cPhysVarVsPtReco[iPhysVar]    -> SetTicks(fTick, fTick);
-    cPhysVarVsPtReco[iPhysVar]    -> SetBorderMode(fMode);
-    cPhysVarVsPtReco[iPhysVar]    -> SetBorderSize(fBord);
-    pPhysVarVsPtReco[iPhysVar][0] -> SetGrid(fGrid, fGrid);
-    pPhysVarVsPtReco[iPhysVar][0] -> SetTicks(fTick, fTick);
-    pPhysVarVsPtReco[iPhysVar][0] -> SetLogx(fLogX);
-    pPhysVarVsPtReco[iPhysVar][0] -> SetLogy(fLogY);
-    pPhysVarVsPtReco[iPhysVar][0] -> SetLogz(fLogZ);
-    pPhysVarVsPtReco[iPhysVar][0] -> SetBorderMode(fMode);
-    pPhysVarVsPtReco[iPhysVar][0] -> SetBorderSize(fBord);
-    pPhysVarVsPtReco[iPhysVar][0] -> SetFrameBorderMode(fFrame);
-    pPhysVarVsPtReco[iPhysVar][0] -> SetLeftMargin(fMarginL);
-    pPhysVarVsPtReco[iPhysVar][0] -> SetRightMargin(fMarginR1);
-    pPhysVarVsPtReco[iPhysVar][0] -> SetTopMargin(fMarginT);
-    pPhysVarVsPtReco[iPhysVar][0] -> SetBottomMargin(fMarginB);
-    pPhysVarVsPtReco[iPhysVar][1] -> SetGrid(fGrid, fGrid);
-    pPhysVarVsPtReco[iPhysVar][1] -> SetTicks(fTick, fTick);
-    pPhysVarVsPtReco[iPhysVar][1] -> SetLogx(fLogX);
-    pPhysVarVsPtReco[iPhysVar][1] -> SetLogy(fLogY);
-    pPhysVarVsPtReco[iPhysVar][1] -> SetLogz(fLogZ);
-    pPhysVarVsPtReco[iPhysVar][1] -> SetBorderMode(fMode);
-    pPhysVarVsPtReco[iPhysVar][1] -> SetBorderSize(fBord);
-    pPhysVarVsPtReco[iPhysVar][1] -> SetFrameBorderMode(fFrame);
-    pPhysVarVsPtReco[iPhysVar][1] -> SetLeftMargin(fMarginL);
-    pPhysVarVsPtReco[iPhysVar][1] -> SetRightMargin(fMarginR2);
-    pPhysVarVsPtReco[iPhysVar][1] -> SetTopMargin(fMarginT);
-    pPhysVarVsPtReco[iPhysVar][1] -> SetBottomMargin(fMarginB);
-    cPhysVarVsPtReco[iPhysVar]    -> cd();
-    pPhysVarVsPtReco[iPhysVar][0] -> Draw();
-    pPhysVarVsPtReco[iPhysVar][1] -> Draw();
-    pPhysVarVsPtReco[iPhysVar][0] -> cd();
-    for (Ssiz_t iToDraw = 0; iToDraw < nToDraw; iToDraw++) {
-      if (iToDraw == 0) {
-        hPhysVar[typesToDraw[iToDraw]][iPhysVar] -> Draw();
-      } else {
-        hPhysVar[typesToDraw[iToDraw]][iPhysVar] -> Draw("same");
-      }
-    }  // end to-draw loop
-    leg                         -> Draw();
-    ptTxt                       -> Draw();
-    pPhysVarVsPtReco[iPhysVar][1] -> cd();
-    for (Ssiz_t iToDraw = 0; iToDraw < nToDraw; iToDraw++) {
-      if (iToDraw == 0) {
-        hPhysVarVsPtReco[typesToDraw[iToDraw]][iPhysVar] -> Draw("colz");
-      } else {
-        hPhysVarVsPtReco[typesToDraw[iToDraw]][iPhysVar] -> Draw("p same");
-      }
-    }  // end to-draw loop
-    cPhysVarVsPtReco[iPhysVar] -> Write();
-    cPhysVarVsPtReco[iPhysVar] -> Close();
-
-    // 2d physics variables vs. pttrue
-    cPhysVarVsPtTrue[iPhysVar]    = new TCanvas(sPhysVarVsPtTrue[iPhysVar].Data(), "", fWidth2P, fHeight2P);
-    pPhysVarVsPtTrue[iPhysVar][0] = new TPad(sOneVsTwoDimPanels[0].Data(), "", padXY[0][0], padXY[0][1], padXY[0][2], padXY[0][3]);
-    pPhysVarVsPtTrue[iPhysVar][1] = new TPad(sOneVsTwoDimPanels[1].Data(), "", padXY[1][0], padXY[1][1], padXY[1][2], padXY[1][3]);
-    cPhysVarVsPtTrue[iPhysVar]    -> SetGrid(fGrid, fGrid);
-    cPhysVarVsPtTrue[iPhysVar]    -> SetTicks(fTick, fTick);
-    cPhysVarVsPtTrue[iPhysVar]    -> SetBorderMode(fMode);
-    cPhysVarVsPtTrue[iPhysVar]    -> SetBorderSize(fBord);
-    pPhysVarVsPtTrue[iPhysVar][0] -> SetGrid(fGrid, fGrid);
-    pPhysVarVsPtTrue[iPhysVar][0] -> SetTicks(fTick, fTick);
-    pPhysVarVsPtTrue[iPhysVar][0] -> SetLogx(fLogX);
-    pPhysVarVsPtTrue[iPhysVar][0] -> SetLogy(fLogY);
-    pPhysVarVsPtTrue[iPhysVar][0] -> SetLogz(fLogZ);
-    pPhysVarVsPtTrue[iPhysVar][0] -> SetBorderMode(fMode);
-    pPhysVarVsPtTrue[iPhysVar][0] -> SetBorderSize(fBord);
-    pPhysVarVsPtTrue[iPhysVar][0] -> SetFrameBorderMode(fFrame);
-    pPhysVarVsPtTrue[iPhysVar][0] -> SetLeftMargin(fMarginL);
-    pPhysVarVsPtTrue[iPhysVar][0] -> SetRightMargin(fMarginR1);
-    pPhysVarVsPtTrue[iPhysVar][0] -> SetTopMargin(fMarginT);
-    pPhysVarVsPtTrue[iPhysVar][0] -> SetBottomMargin(fMarginB);
-    pPhysVarVsPtTrue[iPhysVar][1] -> SetGrid(fGrid, fGrid);
-    pPhysVarVsPtTrue[iPhysVar][1] -> SetTicks(fTick, fTick);
-    pPhysVarVsPtTrue[iPhysVar][1] -> SetLogx(fLogX);
-    pPhysVarVsPtTrue[iPhysVar][1] -> SetLogy(fLogY);
-    pPhysVarVsPtTrue[iPhysVar][1] -> SetLogz(fLogZ);
-    pPhysVarVsPtTrue[iPhysVar][1] -> SetBorderMode(fMode);
-    pPhysVarVsPtTrue[iPhysVar][1] -> SetBorderSize(fBord);
-    pPhysVarVsPtTrue[iPhysVar][1] -> SetFrameBorderMode(fFrame);
-    pPhysVarVsPtTrue[iPhysVar][1] -> SetLeftMargin(fMarginL);
-    pPhysVarVsPtTrue[iPhysVar][1] -> SetRightMargin(fMarginR2);
-    pPhysVarVsPtTrue[iPhysVar][1] -> SetTopMargin(fMarginT);
-    pPhysVarVsPtTrue[iPhysVar][1] -> SetBottomMargin(fMarginB);
-    cPhysVarVsPtTrue[iPhysVar]    -> cd();
-    pPhysVarVsPtTrue[iPhysVar][0] -> Draw();
-    pPhysVarVsPtTrue[iPhysVar][1] -> Draw();
-    pPhysVarVsPtTrue[iPhysVar][0] -> cd();
-    for (Ssiz_t iToDraw = 0; iToDraw < nToDraw; iToDraw++) {
-      if (iToDraw == 0) {
-        hPhysVar[typesToDraw[iToDraw]][iPhysVar] -> Draw();
-      } else {
-        hPhysVar[typesToDraw[iToDraw]][iPhysVar] -> Draw("same");
-      }
-    }  // end to-draw loop
-    leg                         -> Draw();
-    ptTxt                       -> Draw();
-    pPhysVarVsPtTrue[iPhysVar][1] -> cd();
-    for (Ssiz_t iToDraw = 0; iToDraw < nToDraw; iToDraw++) {
-      if (iToDraw == 0) {
-        hPhysVarVsPtTrue[typesToDraw[iToDraw]][iPhysVar] -> Draw("colz");
-      } else {
-        hPhysVarVsPtTrue[typesToDraw[iToDraw]][iPhysVar] -> Draw("p same");
-      }
-    }  // end to-draw loop
-    cPhysVarVsPtTrue[iPhysVar] -> Write();
-    cPhysVarVsPtTrue[iPhysVar] -> Close();
-
-    // 2d physics variables vs. pttrue
-    cPhysVarVsPtFrac[iPhysVar]    = new TCanvas(sPhysVarVsPtFrac[iPhysVar].Data(), "", fWidth2P, fHeight2P);
-    pPhysVarVsPtFrac[iPhysVar][0] = new TPad(sOneVsTwoDimPanels[0].Data(), "", padXY[0][0], padXY[0][1], padXY[0][2], padXY[0][3]);
-    pPhysVarVsPtFrac[iPhysVar][1] = new TPad(sOneVsTwoDimPanels[1].Data(), "", padXY[1][0], padXY[1][1], padXY[1][2], padXY[1][3]);
-    cPhysVarVsPtFrac[iPhysVar]    -> SetGrid(fGrid, fGrid);
-    cPhysVarVsPtFrac[iPhysVar]    -> SetTicks(fTick, fTick);
-    cPhysVarVsPtFrac[iPhysVar]    -> SetBorderMode(fMode);
-    cPhysVarVsPtFrac[iPhysVar]    -> SetBorderSize(fBord);
-    pPhysVarVsPtFrac[iPhysVar][0] -> SetGrid(fGrid, fGrid);
-    pPhysVarVsPtFrac[iPhysVar][0] -> SetTicks(fTick, fTick);
-    pPhysVarVsPtFrac[iPhysVar][0] -> SetLogx(fLogX);
-    pPhysVarVsPtFrac[iPhysVar][0] -> SetLogy(fLogY);
-    pPhysVarVsPtFrac[iPhysVar][0] -> SetLogz(fLogZ);
-    pPhysVarVsPtFrac[iPhysVar][0] -> SetBorderMode(fMode);
-    pPhysVarVsPtFrac[iPhysVar][0] -> SetBorderSize(fBord);
-    pPhysVarVsPtFrac[iPhysVar][0] -> SetFrameBorderMode(fFrame);
-    pPhysVarVsPtFrac[iPhysVar][0] -> SetLeftMargin(fMarginL);
-    pPhysVarVsPtFrac[iPhysVar][0] -> SetRightMargin(fMarginR1);
-    pPhysVarVsPtFrac[iPhysVar][0] -> SetTopMargin(fMarginT);
-    pPhysVarVsPtFrac[iPhysVar][0] -> SetBottomMargin(fMarginB);
-    pPhysVarVsPtFrac[iPhysVar][1] -> SetGrid(fGrid, fGrid);
-    pPhysVarVsPtFrac[iPhysVar][1] -> SetTicks(fTick, fTick);
-    pPhysVarVsPtFrac[iPhysVar][1] -> SetLogx(fLogX);
-    pPhysVarVsPtFrac[iPhysVar][1] -> SetLogy(fLogY);
-    pPhysVarVsPtFrac[iPhysVar][1] -> SetLogz(fLogZ);
-    pPhysVarVsPtFrac[iPhysVar][1] -> SetBorderMode(fMode);
-    pPhysVarVsPtFrac[iPhysVar][1] -> SetBorderSize(fBord);
-    pPhysVarVsPtFrac[iPhysVar][1] -> SetFrameBorderMode(fFrame);
-    pPhysVarVsPtFrac[iPhysVar][1] -> SetLeftMargin(fMarginL);
-    pPhysVarVsPtFrac[iPhysVar][1] -> SetRightMargin(fMarginR2);
-    pPhysVarVsPtFrac[iPhysVar][1] -> SetTopMargin(fMarginT);
-    pPhysVarVsPtFrac[iPhysVar][1] -> SetBottomMargin(fMarginB);
-    cPhysVarVsPtFrac[iPhysVar]    -> cd();
-    pPhysVarVsPtFrac[iPhysVar][0] -> Draw();
-    pPhysVarVsPtFrac[iPhysVar][1] -> Draw();
-    pPhysVarVsPtFrac[iPhysVar][0] -> cd();
-    for (Ssiz_t iToDraw = 0; iToDraw < nToDraw; iToDraw++) {
-      if (iToDraw == 0) {
-        hPhysVar[typesToDraw[iToDraw]][iPhysVar] -> Draw();
-      } else {
-        hPhysVar[typesToDraw[iToDraw]][iPhysVar] -> Draw("same");
-      }
-    }  // end to-draw loop
-    leg                         -> Draw();
-    ptTxt                       -> Draw();
-    pPhysVarVsPtFrac[iPhysVar][1] -> cd();
-    for (Ssiz_t iToDraw = 0; iToDraw < nToDraw; iToDraw++) {
-      if (iToDraw == 0) {
-        hPhysVarVsPtFrac[typesToDraw[iToDraw]][iPhysVar] -> Draw("colz");
-      } else {
-        hPhysVarVsPtFrac[typesToDraw[iToDraw]][iPhysVar] -> Draw("p same");
-      }
-    }  // end to-draw loop
-    cPhysVarVsPtFrac[iPhysVar] -> Write();
-    cPhysVarVsPtFrac[iPhysVar] -> Close();
-  }  // end physics variable loop
-
-  // return to top dir
-  fOut -> cd();
-  return;
-
-}  // end 'ConstructPlots(Ssiz_t, Int_t[], TString, TString)'
-
-
-
-Bool_t STrackCutStudy::ApplyCuts(const Double_t trkVz, const Double_t trkQuality) {
-
-  const Bool_t isInVzCut   = ((trkVz > vzMin) && (trkVz < vzMax));
-  const Bool_t isInQualCut = ((trkQuality > qualityMin) && (trkQuality < qualityMax));
-  const Bool_t isInTrkCut  = (isInVzCut && isInQualCut);
-  return isInTrkCut;
-
-}  // end 'ApplyCuts(Double_t)'
 
 // end ------------------------------------------------------------------------

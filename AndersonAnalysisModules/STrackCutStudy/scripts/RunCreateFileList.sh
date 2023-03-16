@@ -9,20 +9,20 @@
 # -----------------------------------------------------------------------------
 
 # output parameter
-NAME="forTrackCutStudy_withPileup"
+NAME="forTrackCutStudy_newMbHijingFiles"
 
 # CreateFileList.pl args
+RUN=6
 TYPE=6
 PILE=1
-FILE="G4Hits DST_TRUTH_G4HIT"
-SEG=300
+FILE="G4Hits"
 
 # construct list prefix
-summ="typ"$TYPE"pil"$PILE"seg"$SEG
+summ="run"$RUN"typ"$TYPE"pil"$PILE
 pref=$NAME"_"$summ
 
 # run script
-CreateFileList.pl -type $TYPE -pileup $PILE $FILE -s $SEG
+CreateFileList.pl -run $RUN -type $TYPE -pileup $PILE $FILE
 
 for list in *.list; do
   new=$pref"_"$list
