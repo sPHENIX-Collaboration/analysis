@@ -80,6 +80,8 @@
 #include <calobase/RawTowerContainer.h>
 #include <calobase/RawTowerGeom.h>
 #include <calobase/RawTowerGeomContainer.h>
+#include <calobase/TowerInfoContainer.h>
+#include <calobase/TowerInfo.h>
 
 #include <jetbackground/TowerBackground.h>
 
@@ -151,9 +153,9 @@ int UEvsEtaCentrality::process_event(PHCompositeNode *topNode)
   
 
   //calorimeter towers
-  RawTowerContainer *towersEM3 = findNode::getClass<RawTowerContainer>(topNode, "TOWER_CALIB_CEMC_RETOWER");
-  RawTowerContainer *towersIH3 = findNode::getClass<RawTowerContainer>(topNode, "TOWER_CALIB_HCALIN");
-  RawTowerContainer *towersOH3 = findNode::getClass<RawTowerContainer>(topNode, "TOWER_CALIB_HCALOUT");
+  TowerInfoContainer *towersEM3 = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_CEMC_RETOWER");
+  TowerInfoContainer *towersIH3 = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALIN");
+  TowerInfoContainer *towersOH3 = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALOUT");
   RawTowerGeomContainer *tower_geom = findNode::getClass<RawTowerGeomContainer>(topNode, "TOWERGEOM_HCALIN");
   RawTowerGeomContainer *tower_geomOH = findNode::getClass<RawTowerGeomContainer>(topNode, "TOWERGEOM_HCALOUT");
   if(!towersEM3 || !towersIH3 || !towersOH3){
@@ -168,10 +170,10 @@ int UEvsEtaCentrality::process_event(PHCompositeNode *topNode)
       <<"MyJetAnalysis::process_event - Error can not find raw tower geometry "
       << std::endl;
     exit(-1);
-  }  
+  }
 
-
-  TowerBackground *background = findNode::getClass<TowerBackground>(topNode, "TowerBackground_Sub2");
+  //underlying event
+  TowerBackground *background = findNode::getClass<TowerBackground>(topNode, "TowerInfoBackground_Sub2");
   if(!background){
     std::cout<<"Can't get background. Exiting"<<std::endl;
     return Fun4AllReturnCodes::EVENT_OK;
