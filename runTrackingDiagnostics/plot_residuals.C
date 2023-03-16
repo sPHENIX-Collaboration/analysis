@@ -5,9 +5,12 @@
 #include <TCut.h>
 #include <Eigen/Dense>
 
-void plot_residuals()
+void plot_residuals(const std::string inputFile = "residuals_G4sPHENIX.root", const std::string outputFile = "residuals_plots.root")
 {
-  TFile fin("residuals.root");
+  bool plotBool = false; // Determines whether plots are displayed or not
+  bool savePlot = true; // Determines whether histograms are saved to output file or not
+  
+  TFile fin(inputFile.c_str());
 
   TNtuple *ntuple;
   fin.GetObject("ntp_residuals",ntuple);
@@ -26,9 +29,6 @@ void plot_residuals()
   float crossing;
   float isSilicon;
   float isTpc;
-
-  //take seedid count entries() whihc is nclusters) with seedid and switches 
-  //count how many entries in ntuple have same seedid possibly thousands
 
   ntuple->SetBranchAddress("seed_id",&seed_id);
   ntuple->SetBranchAddress("layer",&layer);
@@ -58,13 +58,15 @@ void plot_residuals()
   TH2D *dphiPz     = new TH2D("dphiPz","dphi vs. pz",5000,-0.02,0.02,5000,0,5);
   
 
+  //take seedid count entries() whihc is nclusters) with seedid and switches 
+  //count how many entries in ntuple have same seedid possibly thousands
   //make seedid array
   //loop over entries
   // if seedid is allready in array add 1
   // if seed id not in array add to array then add 1
   // deltaphi v nhits
 
-  //make multimap wiht key as seedid and add
+  //make multimap with key as seedid and add
 
   for(int i=0; i<entries; ++i)
     {
@@ -90,34 +92,45 @@ void plot_residuals()
 	}
     } 
 
-  TCanvas *c1 = new TCanvas("c1","",10,10,800,800);
-  xy->DrawCopy();
+  if(plotBool)
+    {
+      TCanvas *c1 = new TCanvas("c1","",10,10,800,800);
+      xy->DrawCopy();
 
+      TCanvas *c2 = new TCanvas("c2","",10,10,800,800);
+      tpc_xy->DrawCopy();
 
-  TCanvas *c2 = new TCanvas("c2","",10,10,800,800);
-  tpc_xy->DrawCopy();
+      TCanvas *c3 = new TCanvas("c3","",10,10,600,600); 
+      si_xy->DrawCopy();
 
-  TCanvas *c3 = new TCanvas("c3","",10,10,600,600); 
-  si_xy->DrawCopy();
+      TCanvas *c4 = new TCanvas("c4","",10,10,800,800); 
+      dphiLayer->DrawCopy();
 
-  TCanvas *c4 = new TCanvas("c4","",10,10,800,800); 
-  dphiLayer->DrawCopy();
+      TCanvas *c5 = new TCanvas("c5","",10,10,800,800); 
+      dzLayer->DrawCopy();
 
-  TCanvas *c5 = new TCanvas("c5","",10,10,800,800); 
-  dzLayer->DrawCopy();
+      TCanvas *c6 = new TCanvas("c6","",10,10,800,800); 
+      resLayer->DrawCopy();
 
-  TCanvas *c6 = new TCanvas("c6","",10,10,800,800); 
-  resLayer->DrawCopy();
+      TCanvas *c7 = new TCanvas("c7","",10,10,800,800); 
+      dphiPt->DrawCopy();
 
-
-  TCanvas *c7 = new TCanvas("c7","",10,10,800,800); 
-  dphiPt->DrawCopy();
-
-
-  TCanvas *c8 = new TCanvas("c8","",10,10,800,800); 
-  dphiPz->DrawCopy();
-
- 
+      TCanvas *c8 = new TCanvas("c8","",10,10,800,800); 
+      dphiPz->DrawCopy();
+    }
+  
+  if(savePlot)
+    {
+      std::unique_ptr<TFile> residualsFile(TFile::Open(outputFile.c_str(), "recreate"));
+      residualsFile->WriteObject(xy,"cluster_xvy");
+      residualsFile->WriteObject(tpc_xy,"tpc_cluster_xvy ");
+      residualsFile->WriteObject(si_xy,"si_cluster_xvy");
+      residualsFile->WriteObject(dphiLayer,"dphi_v_layer");
+      residualsFile->WriteObject(dzLayer,"dz_v_layer");
+      residualsFile->WriteObject(resLayer,"residual_v_layer");
+      residualsFile->WriteObject(dphiPt,"dphi_v_pt");
+      residualsFile->WriteObject(dphiPz,"dphi_v_pz");
+    }
 
 
 }
