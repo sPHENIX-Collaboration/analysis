@@ -25,7 +25,7 @@
 TracksInJets::TracksInJets(const std::string& recojetname, const std::string& outputfilename):
  SubsysReco("TracksInJets_" + recojetname)
  , m_recoJetName(recojetname)
- , m_trk_pt_cut(3000)
+ , m_trk_pt_cut(2)
  , m_jetRadius(0.4)
  , m_outputFileName(outputfilename)
 {
@@ -115,7 +115,7 @@ int TracksInJets::process_event(PHCompositeNode *topNode)
 	    {
 	      nmvtxhits = silicon_seed->size_cluster_keys();
 	    }
-	  if(track->get_pt() < m_trk_pt_cut || quality < 6 || nmvtxhits < 4) //do some basic quality selections on tracks
+	  if(track->get_pt() < m_trk_pt_cut || quality > 6 || nmvtxhits < 4) //do some basic quality selections on tracks
 	    {
 	      continue;
 	    }
