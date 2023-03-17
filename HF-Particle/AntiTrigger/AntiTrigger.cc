@@ -6,10 +6,6 @@
  * 04/06/2021
  */
 
-typedef std::pair<int, float> particle_pair;
-KFParticle_particleList kfp_list;
-std::map<std::string, particle_pair> particleList = kfp_list.getParticleList();
-
 AntiTrigger::AntiTrigger()
   : SubsysReco("ANTITRIGGER")
 {
@@ -72,7 +68,7 @@ int AntiTrigger::parseParticleList()
   {  
     if (particleIsInList(m_particleList[i])) 
     {
-      m_particleIDs.push_back(particleList.find(m_particleList[i].c_str())->second.first);
+      m_particleIDs.push_back(TDatabasePDG::Instance()->GetParticle(m_particleList[i].c_str())->PdgCode());
     }
     else
     {
@@ -127,12 +123,12 @@ bool AntiTrigger::findParticle(PHCompositeNode *topNode)
 bool AntiTrigger::particleIsInList(std::string particle)
 {
   bool particleFound = true;
-  if (!particleList.count(particle))
+  if (!TDatabasePDG::Instance()->GetParticle(particle.c_str()))
   {
     if (Verbosity() >= VERBOSITY_SOME)
     {
       std::cout << "The particle, " << particle << " is not in the particle list" << std::endl;
-      std::cout << "Check KFParticle_particleList.cc for a list of available particles" << std::endl;
+      std::cout << "Check TDatabasePDG for a list of available particles" << std::endl;
     }
     particleFound = false;
   }

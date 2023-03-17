@@ -4,7 +4,8 @@
 
 #include <fun4all/SubsysReco.h>
 
-//#include "phhepmc/PHHepMCGenEvent.h"
+#include <TVector3.h>
+
 #include <HepMC/GenEvent.h>              // for GenEvent::particle_const_ite...
 #include <HepMC/GenParticle.h>           // for GenParticle
 
@@ -47,9 +48,9 @@ protected:
 
   HepMC::GenParticle* GetParent(HepMC::GenParticle*, HepMC::GenEvent*);
 
-  RawCluster* MatchClusterCEMC(SvtxTrack* track, RawClusterContainer* cemc_clusters, double &dphi, double &deta);
-
+  RawCluster* MatchClusterCEMC(SvtxTrack* track, RawClusterContainer* cemc_clusters, double &dphi, double &deta, double Zvtx, int what);
   double Get_CAL_e3x3(SvtxTrack* track, RawTowerContainer* _towersRawOH, RawTowerGeomContainer* _geomOH, int what, double Zvtx, double &dphi, double &deta);
+  TVector3 GetProjectionToCalorimeter(SvtxTrack* track, int what);
 
   bool isElectron(SvtxTrack* trk);
 

@@ -10,7 +10,8 @@
 R__LOAD_LIBRARY(libBBCStudy.so)
 
 void Run_BBCStudy(int nEvents = 1000,
-	const char *input_file = "/gpfs02/phenix/prod/sPHENIX/sunyrefnewinnerhcal/fieldmap/G4Hits_sPHENIX_mu-_eta0.30_40GeV.root",
+	const char *dst_bbc_file = "DST_BBC_G4HIT_sHijing_0_20fm_50kHz_bkg_0_20fm-0000000040-00000.root",
+	const char *dst_truth_file = "DST_TRUTH_sHijing_0_20fm_50kHz_bkg_0_20fm-0000000040-00000.root",
         const char *outFile = "outfile.root")
 {
   gSystem->Load("libfun4all");
@@ -48,11 +49,14 @@ void Run_BBCStudy(int nEvents = 1000,
   //
   //////////////////////////////////////////
 
-  Fun4AllInputManager *dstin = new Fun4AllDstInputManager( "BBCStudy", "DST", "TOP");
-  se->registerInputManager( dstin );
-  se->fileopen( dstin->Name(), input_file );
+  Fun4AllInputManager *dst_bbc_in = new Fun4AllDstInputManager( "BBCStudyBBC", "DST", "TOP");
+  se->registerInputManager( dst_bbc_in );
+  se->fileopen( dst_bbc_in->Name(), dst_bbc_file );
   //you can put a list of files as well 
   //dstin->AddListFile( input_file );   
+  Fun4AllInputManager *dst_truth_in = new Fun4AllDstInputManager( "BBCStudyTruth", "DST", "TOP");
+  se->registerInputManager( dst_truth_in );
+  se->fileopen( dst_truth_in->Name(), dst_truth_file );
 
   se->run(nEvents);
   se->End();

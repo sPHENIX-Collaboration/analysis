@@ -1,0 +1,31 @@
+# -----------------------------------------------------------------------------
+# 'RunTrackCutStudyG4.job'
+# Derek Anderson
+# 11.18.2022
+#
+# Job file to run F4A macro for
+# track cut study via Condor.
+# -----------------------------------------------------------------------------
+
+# generic parameters
+Universe     = vanilla
+notification = Never
+
+# executable parameters
+Executable           = RunSingleTrackCutStudyG4.sh
+Arguments            = $(nEvt) $(inFiles) $(embFiles) $(outFiles)
+PeriodicHold         = ((NumJobStarts >= 1) && (JobStatus == 1))
+Initialdir           = ./
+request_memory       = 4096MB
+transfer_input_files = DisplayOn.C,G4Setup_sPHENIX.C
+
+
+# output parameters
+Output = condorTest_danderson_$(process).out
+Error  = condorTest_danderson_$(process).err
+Log    = /tmp/condor_test_danderson_18nov2022.log
+
+# queue jobs
+Queue nEvt, inFiles, embFiles, outFiles from condor_test.list
+
+# end -------------------------------------------------------------------------

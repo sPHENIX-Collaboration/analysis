@@ -33,9 +33,9 @@ To run the tree making step (note if you are using a bash shell use instead the 
    
           cd ../../macro
           
-   * Get some files to run on using CreateFileList.pl, for example like:
+   * Get some files to run on using CreateFileList.pl, for example like (replacing N with the latest simulation run):
           
-          CreateFileList.pl -type 11 -run 4 DST_CALO_CLUSTER DST_TRUTH_JET
+          CreateFileList.pl -type 11 -run N DST_CALO_CLUSTER DST_TRUTH_JET
           
    * Test run using Fun4All. The Fun4All macro takes in input file lists for the truth jet and calo cluster DSTs and an output file name as inputs. For example, you can run:
           
