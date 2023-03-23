@@ -1,4 +1,5 @@
 #!/bin/bash
+# -----------------------------------------------------------------------------
 # 'RunCorrelatorJetTree.sh'
 # Derek Anderson
 # 01.03.2022
@@ -6,6 +7,7 @@
 # Short to script to run the macro
 # 'Fun4All_ForCorrelatorJetTree.C'
 # over a (small) set of files.
+# -----------------------------------------------------------------------------
 
 # declare i/o lists
 declare -a inHitsFiles

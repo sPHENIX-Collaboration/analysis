@@ -1,3 +1,4 @@
+// ----------------------------------------------------------------------------
 // 'Fun4All_RunCorrelatorJetTree.C'
 // Derek Anderson
 // 12.11.2022
@@ -7,6 +8,12 @@
 //
 // Derived from code by Cameron Dean and
 // Antonio Silva (thanks!!)
+//
+// NOTE: jetType sets whether or not jets
+// are full (charge + neutral) or charged
+//   jetType = 0: charged jets
+//   jetType = 1: full jets
+// ----------------------------------------------------------------------------
 
 /****************************/
 /*     MDC2 Reco for MDC2   */
@@ -31,22 +38,22 @@
 #include <caloreco/RawClusterBuilderTopo.h>
 #include <particleflowreco/ParticleFlowReco.h>
 // user includes
-#include </sphenix/u/danderson/install/include/scorrelatorjettree/SCorrelatorJetTree.h>
+#include "/sphenix/user/danderson/install/include/scorrelatorjettree/SCorrelatorJetTree.h"
 
 // load libraries
 R__LOAD_LIBRARY(libfun4all.so)
 R__LOAD_LIBRARY(libcalo_reco.so)
 R__LOAD_LIBRARY(libparticleflow.so)
-R__LOAD_LIBRARY(/sphenix/u/danderson/install/lib/libscorrelatorjettree.so)
+R__LOAD_LIBRARY(/sphenix/user/danderson/install/lib/libscorrelatorjettree.so)
 
 using namespace std;
 
 // global constants
-static const string       SInHitsDefault = "/sphenix/lustre01/sphnxpro/mdc2/pythia8_pp_mb/g4hits/G4Hits_pythia8_pp_mb-0000000050-03954.root";
-static const string       SInCaloDefault = "/sphenix/lustre01/sphnxpro/mdc2/pythia8_pp_mb/calocluster/DST_CALO_CLUSTER_pythia8_pp_mb_3MHz-0000000050-03954.root";
-static const string       SInSeedDefault = "/sphenix/lustre01/sphnxpro/mdc2/pythia8_pp_mb/trackseeds/DST_TRACKSEEDS_pythia8_pp_mb_3MHz-0000000050-03954.root";
-static const string       SInTrksDefault = "/sphenix/lustre01/sphnxpro/mdc2/pythia8_pp_mb/tracks/DST_TRACKS_pythia8_pp_mb_3MHz-0000000050-03954.root";
-static const string       SInTrueDefault = "/sphenix/lustre01/sphnxpro/mdc2/pythia8_pp_mb/trkrhit/DST_TRUTH_pythia8_pp_mb_3MHz-0000000050-03954.root";
+static const string       SInHitsDefault = "/sphenix/lustre01/sphnxpro/mdc2/js_pp200_signal/g4hits/run0006/jet30/G4Hits_pythia8_Jet30-0000000006-06666.root";
+static const string       SInCaloDefault = "/sphenix/lustre01/sphnxpro/mdc2/js_pp200_signal/nopileup/calocluster/run0006/jet30/DST_CALO_CLUSTER_pythia8_Jet30-0000000006-06666.root";
+static const string       SInSeedDefault = "/sphenix/lustre01/sphnxpro/mdc2/js_pp200_signal/trackseeds/nopileup/run0006/jet30/DST_TRACKSEEDS_pythia8_Jet30-0000000006-06666.root";
+static const string       SInTrksDefault = "/sphenix/lustre01/sphnxpro/mdc2/js_pp200_signal/tracks/nopileup/run0006/jet30/DST_TRACKS_pythia8_Jet30-0000000006-06666.root";
+static const string       SInTrueDefault = "/sphenix/lustre01/sphnxpro/mdc2/js_pp200_signal/nopileup/trkrhit/run0006/jet30/DST_TRUTH_pythia8_Jet30-0000000006-06666.root";
 static const string       SOutDefault    = "oops.root";
 static const int          NEvtDefault    = 10;
 static const int          VerbDefault    = 0;
@@ -74,13 +81,13 @@ void Fun4All_RunCorrelatorJetTree(const string sInHits = SInHitsDefault, const s
 
   // jet tree parameters
   const bool   isMC(true);
-  const bool   doDebug(true);
+  const bool   doDebug(false);
   const bool   saveDst(true);
   const bool   doQuality(true);
   const bool   addTracks(true);
-  const bool   addEMClusters(true);
-  const bool   addHClusters(true);
-  const bool   addParticleFlow(true);
+  const bool   addEMClusters(false);
+  const bool   addHClusters(false);
+  const bool   addParticleFlow(false);
   const double ptTrackAccept[NAccept]     = {0.2,  9999.};
   const double ptEMClustAccept[NAccept]   = {0.3,  9999.};
   const double ptHClustAccept[NAccept]    = {0.3,  9999.};
@@ -90,9 +97,10 @@ void Fun4All_RunCorrelatorJetTree(const string sInHits = SInHitsDefault, const s
   const double etaPartFlowAccept[NAccept] = {-1.1, 1.1};
 
   // jet tree jet parameters
-  const double jetRes  = 0.3;
-  const auto   jetAlgo = SCorrelatorJetTree::ALGO::ANTIKT;
-  const auto   jetReco = SCorrelatorJetTree::RECOMB::PT_SCHEME;
+  const double       jetRes  = 0.4;
+  const unsigned int jetType = 0;
+  const auto         jetAlgo = SCorrelatorJetTree::ALGO::ANTIKT;
+  const auto         jetReco = SCorrelatorJetTree::RECOMB::PT_SCHEME;
 
   // load libraries and create f4a server
   gSystem -> Load("libg4dst.so");
@@ -204,7 +212,7 @@ void Fun4All_RunCorrelatorJetTree(const string sInHits = SInHitsDefault, const s
   correlatorJetTree -> setEMCalClusterEtaAcc(etaEMClustAccept[0], etaEMClustAccept[1]);
   correlatorJetTree -> setHCalClusterEtaAcc(etaHClustAccept[0], etaHClustAccept[1]);
   correlatorJetTree -> setParticleFlowEtaAcc(etaPartFlowAccept[0], etaPartFlowAccept[1]);
-  correlatorJetTree -> setJetParameters(jetRes, jetAlgo, jetReco);
+  correlatorJetTree -> setJetParameters(jetRes, jetType, jetAlgo, jetReco);
   correlatorJetTree -> setSaveDST(saveDst);
   se                -> registerSubsystem(correlatorJetTree);
 

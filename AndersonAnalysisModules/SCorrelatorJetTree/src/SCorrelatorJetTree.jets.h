@@ -1,3 +1,4 @@
+// ----------------------------------------------------------------------------
 // 'SCorrelatorJetTree.jets.h'
 // Derek Anderson
 // 01.18.2023
@@ -11,6 +12,7 @@
 //
 // Derived from code by Antonio
 // Silva (thanks!!)
+// ----------------------------------------------------------------------------
 
 #pragma once
 
@@ -20,11 +22,13 @@ using namespace findNode;
 
 
 
+// jet methods ----------------------------------------------------------------
+
 void SCorrelatorJetTree::findJets(PHCompositeNode *topNode) {
 
   // print debug statement
   if (m_doDebug) {
-    cout << "SCorrelatorJetTree::findJets(PHCompositeNode *topNode) Finding jets..." << endl;
+    cout << "SCorrelatorJetTree::findJets(PHCompositeNode*) Finding jets..." << endl;
   }
 
   // declare fastjet objects
@@ -192,7 +196,7 @@ void SCorrelatorJetTree::findMcJets(PHCompositeNode *topNode) {
 
   // print debug statement
   if (m_doDebug || (Verbosity() > 6)) {
-    cout << "SCorrelatorJetTree::findMcJets(PHCompositeNode *topNode) Finding MC jets..." << endl;
+    cout << "SCorrelatorJetTree::findMcJets(PHCompositeNode*) Finding MC jets..." << endl;
   }
 
   // declare fastjet objects & mc fastjet map
@@ -353,7 +357,12 @@ void SCorrelatorJetTree::addParticleFlow(PHCompositeNode *topNode, vector<Pseudo
 
   // print debug statement
   if (m_doDebug) {
-    cout << "SCorrelatorJetTree::addParticleFlow(PHCompositeNode *topNode, vector<PseudoJet>&, map<int, parir<Jet::SRC, int>>&) Adding particle flow elements..." << endl;
+    cout << "SCorrelatorJetTree::addParticleFlow(PHCompositeNode*, vector<PseudoJet>&, map<int, pair<Jet::SRC, int>>&) Adding particle flow elements..." << endl;
+  }
+
+  // warn if jets should be charged
+  if (m_doDebug && (m_jetType != 1)) {
+    cerr << "SCorrelatorJetTree::addParticleFlow - Warning - trying to add particle flow elements to charged jets!" << endl;
   }
 
   // declare pf  objects
@@ -423,7 +432,7 @@ void SCorrelatorJetTree::addTracks(PHCompositeNode *topNode, vector<PseudoJet> &
 
   // print debug statement
   if (m_doDebug) {
-    cout << "SCorrelatorJetTree::addTracks(PHCompositeNode *topNode, vector<PseudoJet>&, map<int, pair<Jet::SRC, int>>&) Adding tracks..." << endl;
+    cout << "SCorrelatorJetTree::addTracks(PHCompositeNode*, vector<PseudoJet>&, map<int, pair<Jet::SRC, int>>&) Adding tracks..." << endl;
   }
 
   // get track map
@@ -498,7 +507,12 @@ void SCorrelatorJetTree::addClusters(PHCompositeNode *topNode, vector<PseudoJet>
 
   // print debug statement
   if (m_doDebug) {
-    cout << "SCorrelatorJetTree::addClusters(PHCompositeNode *topNode, vector<PseudoJet>&, map<int, pair<Jet::SRC, int>>&) Adding clusters..." << endl;
+    cout << "SCorrelatorJetTree::addClusters(PHCompositeNode*, vector<PseudoJet>&, map<int, pair<Jet::SRC, int>>&) Adding clusters..." << endl;
+  }
+
+  // warn if jets should be charged
+  if (m_doDebug && (m_jetType != 1)) {
+    cerr << "SCorrelatorJetTree::addClusters - Warning - trying to add calorimeter clusters to charged jets!" << endl;
   }
 
   // get vertex map
@@ -540,7 +554,7 @@ void SCorrelatorJetTree::addClusters(PHCompositeNode *topNode, vector<PseudoJet>
     }
 
     // loop over em clusters
-    RawClusterContainer::ConstRange    begin_end_EMC = clustersEMC->getClusters();
+    RawClusterContainer::ConstRange    begin_end_EMC = clustersEMC -> getClusters();
     RawClusterContainer::ConstIterator clusIter_EMC;
     for (clusIter_EMC = begin_end_EMC.first; clusIter_EMC != begin_end_EMC.second; ++clusIter_EMC) {
 
@@ -609,7 +623,7 @@ void SCorrelatorJetTree::addClusters(PHCompositeNode *topNode, vector<PseudoJet>
     }
 
     // Loop over ih clusters
-    RawClusterContainer::ConstRange    begin_end_HCALIN = clustersHCALIN->getClusters();
+    RawClusterContainer::ConstRange    begin_end_HCALIN = clustersHCALIN -> getClusters();
     RawClusterContainer::ConstIterator clusIter_HCALIN;
     for (clusIter_HCALIN = begin_end_HCALIN.first; clusIter_HCALIN != begin_end_HCALIN.second; ++clusIter_HCALIN) {
 
@@ -674,7 +688,7 @@ void SCorrelatorJetTree::addClusters(PHCompositeNode *topNode, vector<PseudoJet>
     }
 
     // loop over oh clusters
-    RawClusterContainer::ConstRange    begin_end_HCALOUT = clustersHCALOUT->getClusters();
+    RawClusterContainer::ConstRange    begin_end_HCALOUT = clustersHCALOUT -> getClusters();
     RawClusterContainer::ConstIterator clusIter_HCALOUT;
     for (clusIter_HCALOUT = begin_end_HCALOUT.first; clusIter_HCALOUT != begin_end_HCALOUT.second; ++clusIter_HCALOUT) {
 
@@ -783,7 +797,7 @@ void SCorrelatorJetTree::addParticles(PHCompositeNode *topNode, vector<PseudoJet
   for (HepMC::GenEvent::particle_const_iterator p = hepMCevent -> particles_begin(); p != hepMCevent -> particles_end(); ++p) {
 
     // check if particle is final state
-    const bool isFinalState = ((*p) -> status() > 1);
+    const bool isFinalState = ((*p) -> status() == 1);
     if (!isFinalState) {
       continue;
     } else {

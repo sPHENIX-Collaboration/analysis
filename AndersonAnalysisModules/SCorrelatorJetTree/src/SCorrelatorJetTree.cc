@@ -1,3 +1,4 @@
+// ----------------------------------------------------------------------------
 // 'SCorrelatorJetTree.cc'
 // Derek Anderson
 // 12.04.2022
@@ -11,6 +12,7 @@
 //
 // Derived from code by Antonio
 // Silva (thanks!!)
+// ----------------------------------------------------------------------------
 
 #define SCORRELATORJETTREE_CC
 
@@ -35,12 +37,12 @@ SCorrelatorJetTree::SCorrelatorJetTree(const string &name, const string &outfile
   m_ismc    = isMC;
   m_doDebug = debug;
   if (m_doDebug) {
-    cout << "SCorrelatorJetTree::SCorrelatorJetTree(const string &name) Calling ctor" << endl;
+    cout << "SCorrelatorJetTree::SCorrelatorJetTree(string, string, bool, bool) Calling ctor" << endl;
   }
   m_outfilename = outfile;
   initializeVariables();
 
-}  // end ctor(string, string)
+}  // end ctor(string, string, bool, bool)
 
 
 
@@ -65,7 +67,7 @@ int SCorrelatorJetTree::Init(PHCompositeNode *topNode) {
 
   // print debug statement
   if (m_doDebug || (Verbosity() > 1)) {
-    cout << "SCorrelatorJetTree::Init(PHCompositeNode *topNode) Initializing..." << endl;
+    cout << "SCorrelatorJetTree::Init(PHCompositeNode*) Initializing..." << endl;
   }
 
   // intitialize output file
@@ -92,7 +94,7 @@ int SCorrelatorJetTree::process_event(PHCompositeNode *topNode) {
 
   // print debug statement
   if (m_doDebug || (Verbosity() > 1)) {
-    cout << "SCorrelatorJetTree::process_event(PHCompositeNode *topNode) Processing Event..." << endl;
+    cout << "SCorrelatorJetTree::process_event(PHCompositeNode*) Processing Event..." << endl;
   }
 
   // find jets
@@ -110,7 +112,7 @@ int SCorrelatorJetTree::End(PHCompositeNode *topNode) {
 
   // print debug statements
   if (m_doDebug || (Verbosity() > 1)) {
-    cout << "SCorrelatorJetTree::End(PHCompositeNode *topNode) This is the End..." << endl;
+    cout << "SCorrelatorJetTree::End(PHCompositeNode*) This is the End..." << endl;
   }
 
   // save output and close

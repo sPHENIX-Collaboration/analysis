@@ -1,4 +1,5 @@
 #!/bin/bash
+# -----------------------------------------------------------------------------
 # 'copy-to-analysis.sh'
 # Derek Anderson
 # 01.06.2023
@@ -6,6 +7,7 @@
 # Script to automate copying files
 # over to the sPHENIX analysis
 # repository.
+# -----------------------------------------------------------------------------
 
 # declare filelist
 declare -a files_to_copy

@@ -1,3 +1,4 @@
+// ----------------------------------------------------------------------------
 // 'SCorrelatorJetTree.system.h'
 // Derek Anderson
 // 01.18.2023
@@ -12,6 +13,7 @@
 //
 // Derived from code by Antonio
 // Silva (thanks!!)
+// ----------------------------------------------------------------------------
 
 #pragma once
 
@@ -19,6 +21,8 @@ using namespace std;
 using namespace findNode;
 
 
+
+// system methods -------------------------------------------------------------
 
 void SCorrelatorJetTree::initializeVariables() {
 
@@ -52,6 +56,7 @@ void SCorrelatorJetTree::initializeVariables() {
   m_add_EMCal_clusters   = false;
   m_add_HCal_clusters    = false;
   m_jetr                 = 0.4;
+  m_jetType              = 0;
   m_jetalgo              = antikt_algorithm;
   m_recomb_scheme        = pt_scheme;
   m_doQualityPlots       = true;
@@ -115,7 +120,6 @@ void SCorrelatorJetTree::initializeHists() {
   if (m_doDebug) {
     cout << "SCorrelatorJetTree::initializeHists() Initializing QA histograms..." << endl;
   }
-
 
   // binning
   const unsigned long nNumBins(500);
@@ -277,7 +281,7 @@ int SCorrelatorJetTree::createJetNode(PHCompositeNode* topNode) {
 
   // print debug statement
   if (m_doDebug) {
-    cout << "SCorrelatorJetTree::createJetNode(PHCompositeNode *topNode) Creating jet node..." << endl;
+    cout << "SCorrelatorJetTree::createJetNode(PHCompositeNode*) Creating jet node..." << endl;
   }
 
   // create iterator & DST node
@@ -299,7 +303,7 @@ int SCorrelatorJetTree::createJetNode(PHCompositeNode* topNode) {
     baseName = m_jetcontainer_name;
   }
 
-  // cant have forward slashes in DST or else you make a subdirectory on save!!!
+  // can't have forward slashes in DST or else you make a subdirectory on save!!!
   string undrscr = "_";
   string nothing = "";
 

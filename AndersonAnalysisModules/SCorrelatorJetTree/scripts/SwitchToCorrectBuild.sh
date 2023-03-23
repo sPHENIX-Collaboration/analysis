@@ -1,10 +1,12 @@
 #!/bin/bash
+# -----------------------------------------------------------------------------
 # 'SwitchToCorrectBuild.sh'
 # Derek Anderson
 # 12.29.2022
 #
 # Use to switch to a particular
 # build of sPHENIX core software.
+# -----------------------------------------------------------------------------
 
 # build needed
 build="ana.322"
