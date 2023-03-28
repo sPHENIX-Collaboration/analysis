@@ -24,139 +24,188 @@ using namespace findNode;
 
 // i/o methods ---------------------------------------------------------------- 
 
-void SCorrelatorJetTree::setParticleFlowEtaAcc(double etamin, double etamax) {
+void SCorrelatorJetTree::SetParPtRange(const pair<double, double> ptRange) {
 
-  m_particleflow_mineta = etamin;
-  m_particleflow_maxeta = etamax;
+  m_parPtRange[0] = ptRange.first;
+  m_parPtRange[1] = ptRange.second;
   return;
 
-}  // end 'setParticleFlowEtaAcc(double, double)'
+}  // end 'SetParEtaRange(pair<double, double>)'
 
 
 
-void SCorrelatorJetTree::setTrackPtAcc(double ptmin, double ptmax) {
+void SCorrelatorJetTree::SetParEtaRange(const pair<double, double> etaRange) {
 
-  m_track_minpt = ptmin;
-  m_track_maxpt = ptmax;
+  m_parEtaRange[0] = etaRange.first;
+  m_parEtaRange[1] = etaRange.second;
   return;
 
-}  // end 'setTrackPtAcc(double, double)'
+}  // end 'SetParEtaRange(pair<double, double>)'
 
 
 
-void SCorrelatorJetTree::setTrackEtaAcc(double etamin, double etamax) {
+void SCorrelatorJetTree::SetTrackPtRange(const pair<double, double> ptRange) {
 
-  m_track_mineta = etamin;
-  m_track_maxeta = etamax;
+  m_trkPtRange[0] = ptRange.first;
+  m_trkPtRange[1] = ptRange.second;
   return;
 
-}  // end 'setTrackEtaAcc(double, double)'
+}  // end 'SetTrackPtRange(pair<double, double>)'
 
 
 
-void SCorrelatorJetTree::setEMCalClusterPtAcc(double ptmin, double ptmax) {
+void SCorrelatorJetTree::SetTrackEtaRange(const pair<double, double> etaRange) {
 
-  m_EMCal_cluster_minpt = ptmin;
-  m_EMCal_cluster_maxpt = ptmax;
+  m_trkEtaRange[0] = etaRange.first;
+  m_trkEtaRange[1] = etaRange.second;
   return;
 
-}  // end 'setEMCalClusterPtAcc(double, double)'
+}  // end 'SetTrackEtaRange(pair<double, double>)'
 
 
 
-void SCorrelatorJetTree::setEMCalClusterEtaAcc(double etamin, double etamax) {
+void SCorrelatorJetTree::SetFlowPtRange(const pair<double, double> ptRange) {
 
-  m_EMCal_cluster_mineta = etamin;
-  m_EMCal_cluster_maxeta = etamax;
+  m_flowPtRange[0] = ptRange.first;
+  m_flowPtRange[1] = ptRange.second;
   return;
 
-}  // end 'setEMCalClusterEtaAcc(double, double)'
+}  // end 'SetFlowPtRange(pair<double, double>)'
 
 
 
-void SCorrelatorJetTree::setHCalClusterPtAcc(double ptmin, double ptmax) {
+void SCorrelatorJetTree::SetFlowEtaRange(const pair<double, double> etaRange) {
 
-  m_HCal_cluster_minpt = ptmin;
-  m_HCal_cluster_maxpt = ptmax;
+  m_flowEtaRange[0] = etaRange.first;
+  m_flowEtaRange[1] = etaRange.second;
   return;
 
-}  // end 'setHCalClusterPtAcc(double, double)'
+}  // end 'SetFlowEtaRange(pair<double, double>)'
 
 
 
-void SCorrelatorJetTree::setHCalClusterEtaAcc(double etamin, double etamax) {
+void SCorrelatorJetTree::SetECalPtRange(const pair<double, double> ptRange) {
 
-  m_HCal_cluster_mineta = etamin;
-  m_HCal_cluster_maxeta = etamax;
+  m_ecalPtRange[0] = ptRange.first;
+  m_ecalPtRange[1] = ptRange.second;
   return;
 
-}  // end 'setHCalClusterEtaAcc(double, double)'
+}  // end 'SetECalPtRange(pair<double, double>)'
 
 
 
-void SCorrelatorJetTree::setParticlePtAcc(double ptmin, double ptmax) {
+void SCorrelatorJetTree::SetECalEtaRange(const pair<double, double> etaRange) {
 
-  m_MC_particle_minpt = ptmin;
-  m_MC_particle_maxpt = ptmax;
+  m_ecalEtaRange[0] = etaRange.first;
+  m_ecalEtaRange[1] = etaRange.second;
   return;
 
-}  // end 'setParticlePtAcc(double, double)'
+}  // end 'SetECalEtaRange(pair<double, double>)'
 
 
 
-void SCorrelatorJetTree::setParticleEtaAcc(double etamin, double etamax) {
+void SCorrelatorJetTree::SetHCalPtRange(const pair<double, double> ptRange) {
 
-  m_MC_particle_mineta = etamin;
-  m_MC_particle_maxeta = etamax;
+  m_hcalPtRange[0] = ptRange.first;
+  m_hcalPtRange[1] = ptRange.second;
   return;
 
-}  // end 'setParticleEtaAcc(double, double)'
+}  // end 'SetHCalPtRange(pair<double, double>)'
 
 
 
+void SCorrelatorJetTree::SetHCalEtaRange(const pair<double, double> etaRange) {
 
-void SCorrelatorJetTree::setJetAlgo(ALGO jetalgo) {
+  m_hcalEtaRange[0] = etaRange.first;
+  m_hcalEtaRange[1] = etaRange.second;
+  return;
 
-  switch (jetalgo) {
+}  // end 'SetHCalEtaRange(pair<double, double>)'
+
+
+
+void SCorrelatorJetTree::SetJetMatchQtRange(const pair<double, double> qtRange) {
+
+  m_jetMatchQtRange[0] = qtRange.first;
+  m_jetMatchQtRange[1] = qtRange.second;
+  return;
+
+}  // end 'SetJetMatchQtRange(pair<double, double>)'
+
+
+
+void SCorrelatorJetTree::SetJetMatchDrRange(const pair<double, double> drRange) {
+
+  m_jetMatchDrRange[0] = drRange.first;
+  m_jetMatchDrRange[1] = drRange.second;
+  return;
+
+}  // end 'SetJetMatchDrRange(pair<double, double>)'
+
+
+
+void SCorrelatorJetTree::SetCstMatchQtRange(const pair<double, double> qtRange) {
+
+  m_cstMatchQtRange[0] = qtRange.first;
+  m_cstMatchQtRange[1] = qtRange.second;
+  return;
+
+}  // end 'SetJetMatchQtRange(pair<double, double>)'
+
+
+
+void SCorrelatorJetTree::SetCstMatchDrRange(const pair<double, double> drRange) {
+
+  m_cstMatchDrRange[0] = drRange.first;
+  m_cstMatchDrRange[1] = drRange.second;
+  return;
+
+}  // end 'SetJetMatchDrRange(pair<double, double>)'
+
+
+
+void SCorrelatorJetTree::SetJetAlgo(const ALGO jetAlgo) {
+
+  switch (jetAlgo) {
     case ALGO::ANTIKT:
-      m_jetalgo = fastjet::antikt_algorithm;
+      m_jetAlgo = fastjet::antikt_algorithm;
       break;
     case ALGO::KT:
-      m_jetalgo = fastjet::kt_algorithm;
+      m_jetAlgo = fastjet::kt_algorithm;
       break;
     case ALGO::CAMBRIDGE:
-      m_jetalgo = fastjet::cambridge_algorithm;
+      m_jetAlgo = fastjet::cambridge_algorithm;
       break;
     default:
-      m_jetalgo = fastjet::antikt_algorithm;
+      m_jetAlgo = fastjet::antikt_algorithm;
       break;
   }
   return;
 
-}  // end 'setJetAlgo(ALGO)'
+}  // end 'SetJetAlgo(ALGO)'
 
 
 
-void SCorrelatorJetTree::setRecombScheme(RECOMB recomb_scheme) {
+void SCorrelatorJetTree::SetRecombScheme(const RECOMB recombScheme) {
 
-  switch(recomb_scheme) {
+  switch(recombScheme) {
     case RECOMB::E_SCHEME:
-      m_recomb_scheme = fastjet::E_scheme;
+      m_recombScheme = fastjet::E_scheme;
       break;
     case RECOMB::PT_SCHEME:
-      m_recomb_scheme = fastjet::pt_scheme;
+      m_recombScheme = fastjet::pt_scheme;
       break;
     case RECOMB::PT2_SCHEME:
-      m_recomb_scheme = fastjet::pt2_scheme;
+      m_recombScheme = fastjet::pt2_scheme;
       break;
     case RECOMB::ET_SCHEME:
-      m_recomb_scheme = fastjet::Et_scheme;
+      m_recombScheme = fastjet::Et_scheme;
       break;
     case RECOMB::ET2_SCHEME:
-      m_recomb_scheme = fastjet::Et2_scheme;
+      m_recombScheme = fastjet::Et2_scheme;
       break;
     default:
-      m_recomb_scheme = fastjet::E_scheme;
+      m_recombScheme = fastjet::E_scheme;
       break;
   }
   return;
@@ -165,14 +214,14 @@ void SCorrelatorJetTree::setRecombScheme(RECOMB recomb_scheme) {
 
 
 
-void SCorrelatorJetTree::setJetParameters(double r, unsigned int type, ALGO jetalgo, RECOMB recomb_scheme) {
+void SCorrelatorJetTree::SetJetParameters(const double rJet, uint32_t jetType, const ALGO jetAlgo, const RECOMB recombScheme) {
 
-  setR(r);
-  setType(type);
-  setJetAlgo(jetalgo);
-  setRecombScheme(recomb_scheme);
+  SetJetR(rJet);
+  SetJetType(jetType);
+  SetJetAlgo(jetAlgo);
+  SetRecombScheme(recombScheme);
   return;
 
-}  // end 'setJetParameters(double, ALGO, RECOMB)'
+}  // end 'setJetParameters(double, unint32_t, ALGO, RECOMB)'
 
 // end ------------------------------------------------------------------------
