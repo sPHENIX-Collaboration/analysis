@@ -31,7 +31,11 @@ STrackCutStudy::STrackCutStudy() {
   sTxtPU.clear();
   nTxtEO          = 0;
   nTxtPU          = 0;
+  inBatchMode     = false;
+  makePlots       = false;
+  doPileup        = false;
   doIntNorm       = false;
+  doBeforeCuts    = false;
   doAvgClustCalc  = false;
   normalPtFracMin = 0.;
   normalPtFracMax = 9999.;
@@ -58,6 +62,9 @@ STrackCutStudy::STrackCutStudy() {
   isTruth[TYPE::WEIRD_SI_CUT]  = false;
   isTruth[TYPE::WEIRD_TPC_CUT] = false;
   isTruth[TYPE::NORM_CUT]      = false;
+  isTruth[TYPE::PILE_CUT]      = false;
+  isTruth[TYPE::PRIM_CUT]      = false;
+  isTruth[TYPE::NONPRIM_CUT]   = false;
 
   // set whether or not type has pileup
   isPileup[TYPE::TRACK]         = false;
@@ -75,6 +82,29 @@ STrackCutStudy::STrackCutStudy() {
   isPileup[TYPE::WEIRD_SI_CUT]  = false;
   isPileup[TYPE::WEIRD_TPC_CUT] = false;
   isPileup[TYPE::NORM_CUT]      = false;
+  isPileup[TYPE::PILE_CUT]      = true;
+  isPileup[TYPE::PRIM_CUT]      = true;
+  isPileup[TYPE::NONPRIM_CUT]   = true;
+
+  // set whether or not type is before cuts
+  isBeforeCuts[TYPE::TRACK]         = true;
+  isBeforeCuts[TYPE::TRUTH]         = true;
+  isBeforeCuts[TYPE::WEIRD_ALL]     = true;
+  isBeforeCuts[TYPE::WEIRD_SI]      = true;
+  isBeforeCuts[TYPE::WEIRD_TPC]     = true;
+  isBeforeCuts[TYPE::NORMAL]        = true;
+  isBeforeCuts[TYPE::PILEUP]        = true;
+  isBeforeCuts[TYPE::PRIMARY]       = true;
+  isBeforeCuts[TYPE::NONPRIM]       = true;
+  isBeforeCuts[TYPE::TRK_CUT]       = false;
+  isBeforeCuts[TYPE::TRU_CUT]       = false;
+  isBeforeCuts[TYPE::WEIRD_CUT]     = false;
+  isBeforeCuts[TYPE::WEIRD_SI_CUT]  = false;
+  isBeforeCuts[TYPE::WEIRD_TPC_CUT] = false;
+  isBeforeCuts[TYPE::NORM_CUT]      = false;
+  isBeforeCuts[TYPE::PILE_CUT]      = false;
+  isBeforeCuts[TYPE::PRIM_CUT]      = false;
+  isBeforeCuts[TYPE::NONPRIM_CUT]   = false;
 
   // set whether or not track variable has a truth value
   trkVarHasTruVal[TRKVAR::VX]       = true;
@@ -116,6 +146,9 @@ STrackCutStudy::STrackCutStudy() {
   fTypeCol[TYPE::WEIRD_SI_CUT]  = 809;
   fTypeCol[TYPE::WEIRD_TPC_CUT] = 849;
   fTypeCol[TYPE::NORM_CUT]      = 889;
+  fTypeCol[TYPE::PILE_CUT]      = 923;
+  fTypeCol[TYPE::PRIM_CUT]      = 859;
+  fTypeCol[TYPE::NONPRIM_CUT]   = 799;
 
   // set type markers
   fTypeMar[TYPE::TRACK]         = 20;
@@ -133,6 +166,9 @@ STrackCutStudy::STrackCutStudy() {
   fTypeMar[TYPE::WEIRD_SI_CUT]  = 5;
   fTypeMar[TYPE::WEIRD_TPC_CUT] = 2;
   fTypeMar[TYPE::NORM_CUT]      = 32;
+  fTypeMar[TYPE::PILE_CUT]      = 20;
+  fTypeMar[TYPE::PRIM_CUT]      = 26;
+  fTypeMar[TYPE::NONPRIM_CUT]   = 32;
 
   // set type names
   sTrkNames[TYPE::TRACK]         = "AllTrack";
@@ -141,15 +177,18 @@ STrackCutStudy::STrackCutStudy() {
   sTrkNames[TYPE::WEIRD_SI]      = "AllSiWeird";
   sTrkNames[TYPE::WEIRD_TPC]     = "AllTpcWeird";
   sTrkNames[TYPE::NORMAL]        = "AllNormal";
-  sTrkNames[TYPE::PILEUP]        = "CutPileup";
-  sTrkNames[TYPE::PRIMARY]       = "CutPrimePileup";
-  sTrkNames[TYPE::NONPRIM]       = "CutNonPrimePileup";
+  sTrkNames[TYPE::PILEUP]        = "AllPileup";
+  sTrkNames[TYPE::PRIMARY]       = "AllPrimePileup";
+  sTrkNames[TYPE::NONPRIM]       = "AllNonPrimePileup";
   sTrkNames[TYPE::TRK_CUT]       = "CutTrack";
   sTrkNames[TYPE::TRU_CUT]       = "CutTruth";
   sTrkNames[TYPE::WEIRD_CUT]     = "CutWeird";
   sTrkNames[TYPE::WEIRD_SI_CUT]  = "CutSiWeird";
   sTrkNames[TYPE::WEIRD_TPC_CUT] = "CutTpcWeird";
   sTrkNames[TYPE::NORM_CUT]      = "CutNormal";
+  sTrkNames[TYPE::PILE_CUT]      = "CutPileup";
+  sTrkNames[TYPE::PRIM_CUT]      = "CutPrimePileup";
+  sTrkNames[TYPE::NONPRIM_CUT]   = "CutNonPrimePileup"; 
 
   // set type plot labels
   sTrkLabels[TYPE::TRACK]         = "Tracks (before cuts)";
@@ -158,15 +197,18 @@ STrackCutStudy::STrackCutStudy() {
   sTrkLabels[TYPE::WEIRD_SI]      = "Weird tracks (Si seed, before cuts)";
   sTrkLabels[TYPE::WEIRD_TPC]     = "Weird tracks (TPC seed, before cuts)";
   sTrkLabels[TYPE::NORMAL]        = "Normal tracks (before cuts)";
-  sTrkLabels[TYPE::PILEUP]        = "Including pileup tracks (all)";
-  sTrkLabels[TYPE::PRIMARY]       = "Including pileup tracks (only primary)";
-  sTrkLabels[TYPE::NONPRIM]       = "Including pileup gracks (non-primary)";
+  sTrkLabels[TYPE::PILEUP]        = "Including pileup tracks (all, before cuts)";
+  sTrkLabels[TYPE::PRIMARY]       = "Including pileup tracks (only primary, before cuts)";
+  sTrkLabels[TYPE::NONPRIM]       = "Including pileup gracks (non-primary, before cuts)";
   sTrkLabels[TYPE::TRK_CUT]       = "Tracks (after cuts)";
   sTrkLabels[TYPE::TRU_CUT]       = "Truth tracks (after cuts)";
   sTrkLabels[TYPE::WEIRD_CUT]     = "Weird tracks (after cuts)";
   sTrkLabels[TYPE::WEIRD_SI_CUT]  = "Weird tracks (Si seed, after cuts)";
   sTrkLabels[TYPE::WEIRD_TPC_CUT] = "Weird tracks (TPC seed, after cuts)";
   sTrkLabels[TYPE::NORM_CUT]      = "Normal tracks (after cuts)";
+  sTrkLabels[TYPE::PILE_CUT]      = "Including pileup tracks (all, after cuts)";
+  sTrkLabels[TYPE::PRIM_CUT]      = "Including pileup tracks (only primary, after cuts)";
+  sTrkLabels[TYPE::NONPRIM_CUT]   = "Including pileup gracks (non-primary, after cuts)";
 
   // set track variable names
   sTrkVars[TRKVAR::VX]       = "Vx";
@@ -264,10 +306,14 @@ void STrackCutStudy::Analyze() {
 
     // announce progress
     const Long64_t iProg = iEntry + 1;
-    if (iProg == nEntriesEO) {
+    if (inBatchMode) {
       cout << "        Processing embed-only entry " << iProg << "/" << nEntriesEO << "..." << endl;
     } else {
-      cout << "        Processing embed-only entry " << iProg << "/" << nEntriesEO << "...\r" << flush;
+      if (iProg == nEntriesEO) {
+        cout << "        Processing embed-only entry " << iProg << "/" << nEntriesEO << "..." << endl;
+      } else {
+        cout << "        Processing embed-only entry " << iProg << "/" << nEntriesEO << "...\r" << flush;
+      }
     }
 
     // perform calculations
@@ -335,16 +381,18 @@ void STrackCutStudy::Analyze() {
     const Bool_t isWeirdTrack = ((ptFrac < normalPtFracMin) || (ptFrac > normalPtFracMax));
 
     // fill all track histograms
-    FillTrackHistograms(TYPE::TRACK, recoTrkVars, trueTrkVars, recoPhysVars, truePhysVars);
-    FillTruthHistograms(TYPE::TRUTH, recoTrkVars, trueTrkVars, recoPhysVars, truePhysVars);
+    if (doBeforeCuts) {
+      FillTrackHistograms(TYPE::TRACK, recoTrkVars, trueTrkVars, recoPhysVars, truePhysVars);
+      FillTruthHistograms(TYPE::TRUTH, recoTrkVars, trueTrkVars, recoPhysVars, truePhysVars);
  
-    // fill all embed_only weird histograms
-    if (isWeirdTrack) {
-      FillTrackHistograms(TYPE::WEIRD_ALL, recoTrkVars, trueTrkVars, recoPhysVars, truePhysVars);
-      if (hasSiSeed)  FillTrackHistograms(TYPE::WEIRD_SI,  recoTrkVars, trueTrkVars, recoPhysVars, truePhysVars);
-      if (hasTpcSeed) FillTrackHistograms(TYPE::WEIRD_TPC, recoTrkVars, trueTrkVars, recoPhysVars, truePhysVars);
-    } else {
-      FillTrackHistograms(TYPE::NORMAL, recoTrkVars, trueTrkVars, recoPhysVars, truePhysVars);
+      // fill all embed_only weird histograms
+      if (isWeirdTrack) {
+        FillTrackHistograms(TYPE::WEIRD_ALL, recoTrkVars, trueTrkVars, recoPhysVars, truePhysVars);
+        if (hasSiSeed)  FillTrackHistograms(TYPE::WEIRD_SI,  recoTrkVars, trueTrkVars, recoPhysVars, truePhysVars);
+        if (hasTpcSeed) FillTrackHistograms(TYPE::WEIRD_TPC, recoTrkVars, trueTrkVars, recoPhysVars, truePhysVars);
+      } else {
+        FillTrackHistograms(TYPE::NORMAL, recoTrkVars, trueTrkVars, recoPhysVars, truePhysVars);
+      }
     }
 
     // apply cuts
@@ -367,104 +415,122 @@ void STrackCutStudy::Analyze() {
   cout << "      Finished embed-only entry loop." << endl;
 
   // prepare for with-pileup entry loop
-  Long64_t nEntriesPU = ntTrkPU -> GetEntries();
-  cout << "      Beginning with-pileup entry loop: " << nEntriesPU << " entries to process..." << endl;
+  if (doPileup) {
+    Long64_t nEntriesPU = ntTrkPU -> GetEntries();
+    cout << "      Beginning with-pileup entry loop: " << nEntriesPU << " entries to process..." << endl;
 
-  // loop over with-pileup tuple entries
-  Long64_t nBytesPU(0);
-  for (Long64_t iEntry = 0; iEntry < nEntriesPU; iEntry++) {
+    // loop over with-pileup tuple entries
+    Long64_t nBytesPU(0);
+    for (Long64_t iEntry = 0; iEntry < nEntriesPU; iEntry++) {
 
-    // grab entry
-    const Long64_t bytesPU = ntTrkPU -> GetEntry(iEntry);
-    if (bytesPU < 0.) {
-      cerr << "WARNING: something wrong with with-pileup entry #" << iEntry << "! Aborting loop!" << endl;
-      break;
-    }
-    nBytesPU += bytesPU;
+      // grab entry
+      const Long64_t bytesPU = ntTrkPU -> GetEntry(iEntry);
+      if (bytesPU < 0.) {
+        cerr << "WARNING: something wrong with with-pileup entry #" << iEntry << "! Aborting loop!" << endl;
+        break;
+      }
+      nBytesPU += bytesPU;
 
-    // announce progress
-    const Long64_t iProg = iEntry + 1;
-    if (iProg == nEntriesPU) {
-      cout << "        Processing with-pileup entry " << iProg << "/" << nEntriesPU << "..." << endl;
-    } else {
-      cout << "        Processing with-pileup entry " << iProg << "/" << nEntriesPU << "...\r" << flush;
-    }
+      // announce progress
+      const Long64_t iProg = iEntry + 1;
+      if (inBatchMode) {
+        cout << "        Processing with-pileup entry " << iProg << "/" << nEntriesPU << "..." << endl;
+      } else {
+        if (iProg == nEntriesPU) {
+          cout << "        Processing with-pileup entry " << iProg << "/" << nEntriesPU << "..." << endl;
+        } else {
+          cout << "        Processing with-pileup entry " << iProg << "/" << nEntriesPU << "...\r" << flush;
+        }
+      }
 
-    // perform calculations
-    const Double_t umDcaXY    = pu_dca3dxy * 10000;
-    const Double_t umDcaZ     = pu_dca3dz * 10000;
-    const Double_t deltaDcaXY = abs(pu_dca3dxysigma / pu_dca3dxy);
-    const Double_t deltaDcaZ  = abs(pu_dca3dzsigma / pu_dca3dz);
-    const Double_t deltaEta   = abs(pu_deltaeta / pu_eta);
-    const Double_t deltaPhi   = abs(pu_deltaphi / pu_phi);
-    const Double_t deltaPt    = abs(pu_deltapt / pu_pt);
+      // perform calculations
+      const Double_t umDcaXY    = pu_dca3dxy * 10000;
+      const Double_t umDcaZ     = pu_dca3dz * 10000;
+      const Double_t deltaDcaXY = abs(pu_dca3dxysigma / pu_dca3dxy);
+      const Double_t deltaDcaZ  = abs(pu_dca3dzsigma / pu_dca3dz);
+      const Double_t deltaEta   = abs(pu_deltaeta / pu_eta);
+      const Double_t deltaPhi   = abs(pu_deltaphi / pu_phi);
+      const Double_t deltaPt    = abs(pu_deltapt / pu_pt);
 
-    // check if values are defined
-    const Bool_t thereAreNans = (isnan(pu_dca3dxy) || isnan(pu_dca3dz) || isnan(pu_eta) || isnan(pu_phi) || isnan(pu_pt));
-    if (thereAreNans) continue;
+      // check if values are defined
+      const Bool_t thereAreNans = (isnan(pu_dca3dxy) || isnan(pu_dca3dz) || isnan(pu_eta) || isnan(pu_phi) || isnan(pu_pt));
+      if (thereAreNans) continue;
 
-    // set reco track variables
-    recoTrkVars[TRKVAR::VX]       = pu_vx;
-    recoTrkVars[TRKVAR::VY]       = pu_vy;
-    recoTrkVars[TRKVAR::VZ]       = pu_vz;
-    recoTrkVars[TRKVAR::NMMS]     = (Double_t) pu_nlmms;
-    recoTrkVars[TRKVAR::NMAP]     = (Double_t) pu_nlmaps;
-    recoTrkVars[TRKVAR::NINT]     = (Double_t) pu_nlintt;
-    recoTrkVars[TRKVAR::NTPC]     = (Double_t) pu_ntpc;
-    recoTrkVars[TRKVAR::QUAL]     = pu_quality;
-    recoTrkVars[TRKVAR::DCAXY]    = umDcaXY;
-    recoTrkVars[TRKVAR::DCAZ]     = umDcaZ;
-    recoTrkVars[TRKVAR::DELDCAXY] = deltaDcaXY;
-    recoTrkVars[TRKVAR::DELDCAZ]  = deltaDcaZ;
-    recoTrkVars[TRKVAR::NCLUST]   = 0.;
-    recoTrkVars[TRKVAR::AVGCLUST] = 0.;
+      // set reco track variables
+      recoTrkVars[TRKVAR::VX]       = pu_vx;
+      recoTrkVars[TRKVAR::VY]       = pu_vy;
+      recoTrkVars[TRKVAR::VZ]       = pu_vz;
+      recoTrkVars[TRKVAR::NMMS]     = (Double_t) pu_nlmms;
+      recoTrkVars[TRKVAR::NMAP]     = (Double_t) pu_nlmaps;
+      recoTrkVars[TRKVAR::NINT]     = (Double_t) pu_nlintt;
+      recoTrkVars[TRKVAR::NTPC]     = (Double_t) pu_ntpc;
+      recoTrkVars[TRKVAR::QUAL]     = pu_quality;
+      recoTrkVars[TRKVAR::DCAXY]    = umDcaXY;
+      recoTrkVars[TRKVAR::DCAZ]     = umDcaZ;
+      recoTrkVars[TRKVAR::DELDCAXY] = deltaDcaXY;
+      recoTrkVars[TRKVAR::DELDCAZ]  = deltaDcaZ;
+      recoTrkVars[TRKVAR::NCLUST]   = 0.;
+      recoTrkVars[TRKVAR::AVGCLUST] = 0.;
 
-    // set true track variables
-    trueTrkVars[TRKVAR::VX]       = pu_gvx;
-    trueTrkVars[TRKVAR::VY]       = pu_gvy;
-    trueTrkVars[TRKVAR::VZ]       = pu_gvz;
-    trueTrkVars[TRKVAR::NMMS]     = (Double_t) pu_gnlmms;
-    trueTrkVars[TRKVAR::NMAP]     = (Double_t) pu_gnlmaps;
-    trueTrkVars[TRKVAR::NINT]     = (Double_t) pu_gnlintt;
-    trueTrkVars[TRKVAR::NTPC]     = (Double_t) pu_gntpc;
-    trueTrkVars[TRKVAR::QUAL]     = pu_quality;
-    trueTrkVars[TRKVAR::DCAXY]    = umDcaXY;
-    trueTrkVars[TRKVAR::DCAZ]     = umDcaZ;
-    trueTrkVars[TRKVAR::DELDCAXY] = deltaDcaXY;
-    trueTrkVars[TRKVAR::DELDCAZ]  = deltaDcaZ;
-    trueTrkVars[TRKVAR::NCLUST]   = 0.;
-    trueTrkVars[TRKVAR::AVGCLUST] = 0.;
+      // set true track variables
+      trueTrkVars[TRKVAR::VX]       = pu_gvx;
+      trueTrkVars[TRKVAR::VY]       = pu_gvy;
+      trueTrkVars[TRKVAR::VZ]       = pu_gvz;
+      trueTrkVars[TRKVAR::NMMS]     = (Double_t) pu_gnlmms;
+      trueTrkVars[TRKVAR::NMAP]     = (Double_t) pu_gnlmaps;
+      trueTrkVars[TRKVAR::NINT]     = (Double_t) pu_gnlintt;
+      trueTrkVars[TRKVAR::NTPC]     = (Double_t) pu_gntpc;
+      trueTrkVars[TRKVAR::QUAL]     = pu_quality;
+      trueTrkVars[TRKVAR::DCAXY]    = umDcaXY;
+      trueTrkVars[TRKVAR::DCAZ]     = umDcaZ;
+      trueTrkVars[TRKVAR::DELDCAXY] = deltaDcaXY;
+      trueTrkVars[TRKVAR::DELDCAZ]  = deltaDcaZ;
+      trueTrkVars[TRKVAR::NCLUST]   = 0.;
+      trueTrkVars[TRKVAR::AVGCLUST] = 0.;
 
-    // set reco phys variables
-    recoPhysVars[PHYSVAR::PHI]    = pu_phi;
-    recoPhysVars[PHYSVAR::ETA]    = pu_eta;
-    recoPhysVars[PHYSVAR::PT]     = pu_pt;
-    recoPhysVars[PHYSVAR::DELPHI] = deltaPhi;
-    recoPhysVars[PHYSVAR::DELETA] = deltaEta;
-    recoPhysVars[PHYSVAR::DELPT]  = deltaPt;
+      // set reco phys variables
+      recoPhysVars[PHYSVAR::PHI]    = pu_phi;
+      recoPhysVars[PHYSVAR::ETA]    = pu_eta;
+      recoPhysVars[PHYSVAR::PT]     = pu_pt;
+      recoPhysVars[PHYSVAR::DELPHI] = deltaPhi;
+      recoPhysVars[PHYSVAR::DELETA] = deltaEta;
+      recoPhysVars[PHYSVAR::DELPT]  = deltaPt;
 
-    // set true phys variables
-    truePhysVars[PHYSVAR::PHI]    = gphi;
-    truePhysVars[PHYSVAR::ETA]    = geta;
-    truePhysVars[PHYSVAR::PT]     = gpt;
-    truePhysVars[PHYSVAR::DELPHI] = deltaPhi;
-    truePhysVars[PHYSVAR::DELETA] = deltaEta;
-    truePhysVars[PHYSVAR::DELPT]  = deltaPt;
+      // set true phys variables
+      truePhysVars[PHYSVAR::PHI]    = gphi;
+      truePhysVars[PHYSVAR::ETA]    = geta;
+      truePhysVars[PHYSVAR::PT]     = gpt;
+      truePhysVars[PHYSVAR::DELPHI] = deltaPhi;
+      truePhysVars[PHYSVAR::DELETA] = deltaEta;
+      truePhysVars[PHYSVAR::DELPT]  = deltaPt;
 
-    // apply cuts
-    const Bool_t isPrimary = (pu_gprimary == 1);
-    const Bool_t isGoodTrk = ApplyCuts(isPrimary, (UInt_t) pu_nlmaps, (UInt_t) pu_ntpc, pu_vz, umDcaXY, umDcaZ, pu_quality);
-    if (!isGoodTrk) continue;
+      // check for primary tracks
+      const Bool_t isPrimary = (pu_gprimary == 1);
 
-    // fill histograms
-    FillTrackHistograms(TYPE::PILEUP, recoTrkVars, trueTrkVars, recoPhysVars, truePhysVars);
-    if (isPrimary) {
-      FillTrackHistograms(TYPE::PRIMARY, recoTrkVars, trueTrkVars, recoPhysVars, truePhysVars);
-    } else {
-      FillTrackHistograms(TYPE::NONPRIM, recoTrkVars, trueTrkVars, recoPhysVars, truePhysVars);
-    }
-  }  // end with-pileup entry loop
-  cout << "      Finished with-pileup entry loop." << endl;
+      // fill all histograms
+      if (doBeforeCuts) {
+        FillTrackHistograms(TYPE::PILEUP, recoTrkVars, trueTrkVars, recoPhysVars, truePhysVars);
+        if (isPrimary) {
+          FillTrackHistograms(TYPE::PRIMARY, recoTrkVars, trueTrkVars, recoPhysVars, truePhysVars);
+        } else {
+          FillTrackHistograms(TYPE::NONPRIM, recoTrkVars, trueTrkVars, recoPhysVars, truePhysVars);
+        }
+      }
+
+      // apply cuts
+      const Bool_t isGoodTrk = ApplyCuts(isPrimary, (UInt_t) pu_nlmaps, (UInt_t) pu_ntpc, pu_vz, umDcaXY, umDcaZ, pu_quality);
+      if (!isGoodTrk) continue;
+
+      // fill cut histograms
+      FillTrackHistograms(TYPE::PILE_CUT, recoTrkVars, trueTrkVars, recoPhysVars, truePhysVars);
+      if (isPrimary) {
+        FillTrackHistograms(TYPE::PRIM_CUT, recoTrkVars, trueTrkVars, recoPhysVars, truePhysVars);
+      } else {
+        FillTrackHistograms(TYPE::NONPRIM_CUT, recoTrkVars, trueTrkVars, recoPhysVars, truePhysVars);
+      }
+    }  // end with-pileup entry loop
+    cout << "      Finished with-pileup entry loop." << endl;
+  }  // end if (doPileup)
 
   // normalize histograms if needed
   if (doIntNorm) NormalizeHists();
@@ -478,8 +544,49 @@ void STrackCutStudy::End() {
 
   // announce method
   cout << "    Ending:" << endl;
+
+  // set histogram styles
   SetHistStyles();
-  CreatePlots();
+
+  // plot labels/directories to save in
+  if (makePlots) {
+    const TString sLabelAllEO("EmbedOnly_BeforeCuts");
+    const TString sLabelCutEO("EmbedOnly_AfterCuts");
+    const TString sLabelOddEO("EmbedOnly_WeirdVsNormal");
+    const TString sLabelAllPU("WithPileup_BeforeCuts");
+    const TString sLabelCutPU("WithPileup_AfterCuts");
+    const TString sDirPlotAllEO("EmbedOnlyPlots_BeforeCuts");
+    const TString sDirPlotCutEO("EmbedOnlyPlots_AfterCuts");
+    const TString sDirPlotOddEO("EmbedOnlyPlots_WeirdVsNormal");
+    const TString sDirPlotAllPU("AllWithPileupPlots");
+    const TString sDirPlotCutPU("CutWithPileupPlots");
+
+    // track types to plot together
+    const Ssiz_t nToDrawAllEO(3);
+    const Ssiz_t nToDrawCutEO(3);
+    const Ssiz_t nToDrawOddEO(3);
+    const Ssiz_t nToDrawAllPU(3);
+    const Ssiz_t nToDrawCutPU(3);
+    const Int_t  sToDrawAllEO[nToDrawAllEO] = {TYPE::TRACK,    TYPE::TRUTH,     TYPE::WEIRD_ALL};
+    const Int_t  sToDrawCutEO[nToDrawCutEO] = {TYPE::TRK_CUT,  TYPE::TRU_CUT,   TYPE::WEIRD_CUT};
+    const Int_t  sToDrawOddEO[nToDrawOddEO] = {TYPE::WEIRD_SI_CUT, TYPE::WEIRD_TPC_CUT, TYPE::NORM_CUT};
+    const Int_t  sToDrawAllPU[nToDrawAllPU] = {TYPE::PILEUP,   TYPE::PRIMARY,   TYPE::NONPRIM};
+    const Int_t  sToDrawCutPU[nToDrawCutPU] = {TYPE::PILE_CUT, TYPE::PRIM_CUT,  TYPE::NONPRIM_CUT};
+
+    // create desired plots
+    ConstructPlots(nToDrawCutEO, sToDrawCutEO, sDirPlotCutEO, sLabelCutEO);
+    ConstructPlots(nToDrawOddEO, sToDrawOddEO, sDirPlotOddEO, sLabelOddEO);
+    if (doBeforeCuts) {
+      ConstructPlots(nToDrawAllEO, sToDrawAllEO, sDirPlotAllEO, sLabelAllEO);
+    }
+    if (doPileup) {
+      ConstructPlots(nToDrawCutPU, sToDrawCutPU, sDirPlotCutPU, sLabelCutPU);
+      if (doBeforeCuts) ConstructPlots(nToDrawAllPU, sToDrawAllPU, sDirPlotAllPU, sLabelAllPU);
+    }
+    cout << "      Created plots." << endl;
+  }
+
+  // save histograms
   SaveHists();
 
   // close files

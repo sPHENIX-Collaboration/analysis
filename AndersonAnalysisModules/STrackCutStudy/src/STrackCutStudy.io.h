@@ -17,6 +17,20 @@ using namespace std;
 
 // i/o methods ----------------------------------------------------------------
 
+void STrackCutStudy::SetBatchMode(const Bool_t doBatch) {
+
+  inBatchMode = doBatch;
+  if (inBatchMode) {
+    cout << "    Will run in batch mode." << endl;
+  } else {
+    cout << "    Will not run in batch mode." << endl;
+  }
+  return;
+
+}  // end 'SetBatchMode(Bool_t)'
+
+
+
 void STrackCutStudy::SetInputOutputFiles(const TString sEmbedOnlyInput, const TString sPileupInput, const TString sOutput) {
 
   sInFileEO = sEmbedOnlyInput;
@@ -54,9 +68,12 @@ void STrackCutStudy::SetInputTuples(const TString sEmbedOnlyTuple, const TString
 
 
 
-void STrackCutStudy::SetStudyParameters(const Bool_t intNorm, const Bool_t avgClustCalc, const Double_t normalFracMin, const Double_t normalFracMax) {
+void STrackCutStudy::SetStudyParameters(const Bool_t plots, const Bool_t pileup, const Bool_t intNorm, const Bool_t beforeCuts, const Bool_t avgClustCalc, const Double_t normalFracMin, const Double_t normalFracMax) {
 
+  makePlots       = plots;
+  doPileup        = pileup;
   doIntNorm       = intNorm;
+  doBeforeCuts    = beforeCuts;
   doAvgClustCalc  = avgClustCalc;
   normalPtFracMin = normalFracMin;
   normalPtFracMax = normalFracMax;
@@ -64,10 +81,28 @@ void STrackCutStudy::SetStudyParameters(const Bool_t intNorm, const Bool_t avgCl
        << "      Normal Pt Fraction = (" << normalPtFracMin << ", " << normalPtFracMax << ")"
        << endl;
 
+  if (makePlots) {
+    cout << "    Making plots." << endl;
+  } else {
+    cout << "    Not making plots." << endl;
+  }
+
+  if (doPileup) {
+    cout << "    Looking at pileup tuple." << endl;
+  } else {
+    cout << "    Not looking at pileup tuple." << endl;
+  }
+
   if (doIntNorm) {
     cout << "    Normalizing by integral." << endl;
   } else {
     cout << "    No normalization." << endl;
+  }
+
+  if (doBeforeCuts) {
+    cout << "    Including quantities before cuts." << endl;
+  } else {
+    cout << "    Not including quantities before cuts." << endl;
   }
 
   if (doAvgClustCalc) {
@@ -77,7 +112,7 @@ void STrackCutStudy::SetStudyParameters(const Bool_t intNorm, const Bool_t avgCl
   }
   return;
 
-}  // end 'SetStudyParameters(bool, bool, double, double)'
+}  // end 'SetStudyParameters(bool, bool, bool, bool, bool, double, double)'
 
 
 
@@ -166,14 +201,23 @@ void STrackCutStudy::InitFiles() {
 
 void STrackCutStudy::InitTuples() {
 
-  // grab tuples
+  // grab embed-only tuples
   ntTrkEO = (TNtuple*) fInEO -> Get(sInTupleEO.Data());
-  ntTrkPU = (TNtuple*) fInPU -> Get(sInTuplePU.Data());
-  if (!ntTrkEO || !ntTrkPU) {
+  if (!ntTrkEO) {
     cerr << "PANIC: couldn't grab an input Ntuple!\n"
-         << "       ntTrkEO = " << ntTrkEO << ", ntTrkPU = " << ntTrkPU << "\n"
+         << "       ntTrkEO = " << ntTrkEO << "\n"
          << endl;
-    assert(ntTrkEO && ntTrkPU);
+    assert(ntTrkEO);
+  }
+
+  if (doPileup) {
+    ntTrkPU = (TNtuple*) fInPU -> Get(sInTuplePU.Data());
+    if (!ntTrkPU) {
+      cerr << "PANIC: couldn't grab an input Ntuple!\n"
+           << "       ntTrkPU = " << ntTrkPU << "\n"
+           << endl;
+      assert(ntTrkPU);
+    }
   }
 
   if (doAvgClustCalc) {
@@ -283,107 +327,109 @@ void STrackCutStudy::InitTuples() {
   ntTrkEO -> SetBranchAddress("nclusmms",        &nclusmms);
 
   // set with-pileup branch
-  ntTrkPU -> SetBranchAddress("event",           &pu_event);
-  ntTrkPU -> SetBranchAddress("seed",            &pu_seed);
-  ntTrkPU -> SetBranchAddress("gntracks",        &pu_gntracks);
-  ntTrkPU -> SetBranchAddress("gtrackID",        &pu_gtrackID);
-  ntTrkPU -> SetBranchAddress("gflavor",         &pu_gflavor);
-  ntTrkPU -> SetBranchAddress("gnhits",          &pu_gnhits);
-  ntTrkPU -> SetBranchAddress("gnmaps",          &pu_gnmaps);
-  ntTrkPU -> SetBranchAddress("gnintt",          &pu_gnintt);
-  ntTrkPU -> SetBranchAddress("gnmms",           &pu_gnmms);
-  ntTrkPU -> SetBranchAddress("gnintt1",         &pu_gnintt1);
-  ntTrkPU -> SetBranchAddress("gnintt2",         &pu_gnintt2);
-  ntTrkPU -> SetBranchAddress("gnintt3",         &pu_gnintt3);
-  ntTrkPU -> SetBranchAddress("gnintt4",         &pu_gnintt4);
-  ntTrkPU -> SetBranchAddress("gnintt5",         &pu_gnintt5);
-  ntTrkPU -> SetBranchAddress("gnintt6",         &pu_gnintt6);
-  ntTrkPU -> SetBranchAddress("gnintt7",         &pu_gnintt7);
-  ntTrkPU -> SetBranchAddress("gnintt8",         &pu_gnintt8);
-  ntTrkPU -> SetBranchAddress("gntpc",           &pu_gntpc);
-  ntTrkPU -> SetBranchAddress("gnlmaps",         &pu_gnlmaps);
-  ntTrkPU -> SetBranchAddress("gnlintt",         &pu_gnlintt);
-  ntTrkPU -> SetBranchAddress("gnltpc",          &pu_gnltpc);
-  ntTrkPU -> SetBranchAddress("gnlmms",          &pu_gnlmms);
-  ntTrkPU -> SetBranchAddress("gpx",             &pu_gpx);
-  ntTrkPU -> SetBranchAddress("gpy",             &pu_gpy);
-  ntTrkPU -> SetBranchAddress("gpz",             &pu_gpz);
-  ntTrkPU -> SetBranchAddress("gpt",             &pu_gpt);
-  ntTrkPU -> SetBranchAddress("geta",            &pu_geta);
-  ntTrkPU -> SetBranchAddress("gphi",            &pu_gphi);
-  ntTrkPU -> SetBranchAddress("gvx",             &pu_gvx);
-  ntTrkPU -> SetBranchAddress("gvy",             &pu_gvy);
-  ntTrkPU -> SetBranchAddress("gvz",             &pu_gvz);
-  ntTrkPU -> SetBranchAddress("gvt",             &pu_gvt);
-  ntTrkPU -> SetBranchAddress("gfpx",            &pu_gfpx);
-  ntTrkPU -> SetBranchAddress("gfpy",            &pu_gfpy);
-  ntTrkPU -> SetBranchAddress("gfpz",            &pu_gfpz);
-  ntTrkPU -> SetBranchAddress("gfx",             &pu_gfx);
-  ntTrkPU -> SetBranchAddress("gfy",             &pu_gfy);
-  ntTrkPU -> SetBranchAddress("gfz",             &pu_gfz);
-  ntTrkPU -> SetBranchAddress("gembed",          &pu_gembed);
-  ntTrkPU -> SetBranchAddress("gprimary",        &pu_gprimary);
-  ntTrkPU -> SetBranchAddress("trackID",         &pu_trackID);
-  ntTrkPU -> SetBranchAddress("px",              &pu_px);
-  ntTrkPU -> SetBranchAddress("py",              &pu_py);
-  ntTrkPU -> SetBranchAddress("pz",              &pu_pz);
-  ntTrkPU -> SetBranchAddress("pt",              &pu_pt);
-  ntTrkPU -> SetBranchAddress("eta",             &pu_eta);
-  ntTrkPU -> SetBranchAddress("phi",             &pu_phi);
-  ntTrkPU -> SetBranchAddress("deltapt",         &pu_deltapt);
-  ntTrkPU -> SetBranchAddress("deltaeta",        &pu_deltaeta);
-  ntTrkPU -> SetBranchAddress("deltaphi",        &pu_deltaphi);
-  ntTrkPU -> SetBranchAddress("charge",          &pu_charge);
-  ntTrkPU -> SetBranchAddress("quality",         &pu_quality);
-  ntTrkPU -> SetBranchAddress("chisq",           &pu_chisq);
-  ntTrkPU -> SetBranchAddress("ndf",             &pu_ndf);
-  ntTrkPU -> SetBranchAddress("nhits",           &pu_nhits);
-  ntTrkPU -> SetBranchAddress("layers",          &pu_layers);
-  ntTrkPU -> SetBranchAddress("nmaps",           &pu_nmaps);
-  ntTrkPU -> SetBranchAddress("nintt",           &pu_nintt);
-  ntTrkPU -> SetBranchAddress("ntpc",            &pu_ntpc);
-  ntTrkPU -> SetBranchAddress("nmms",            &pu_nmms);
-  ntTrkPU -> SetBranchAddress("ntpc1",           &pu_ntpc1);
-  ntTrkPU -> SetBranchAddress("ntpc11",          &pu_ntpc11);
-  ntTrkPU -> SetBranchAddress("ntpc2",           &pu_ntpc2);
-  ntTrkPU -> SetBranchAddress("ntpc3",           &pu_ntpc3);
-  ntTrkPU -> SetBranchAddress("nlmaps",          &pu_nlmaps);
-  ntTrkPU -> SetBranchAddress("nlintt",          &pu_nlintt);
-  ntTrkPU -> SetBranchAddress("nltpc",           &pu_nltpc);
-  ntTrkPU -> SetBranchAddress("nlmms",           &pu_nlmms);
-  ntTrkPU -> SetBranchAddress("vertexID",        &pu_vertexID);
-  ntTrkPU -> SetBranchAddress("vx",              &pu_vx);
-  ntTrkPU -> SetBranchAddress("vy",              &pu_vy);
-  ntTrkPU -> SetBranchAddress("vz",              &pu_vz);
-  ntTrkPU -> SetBranchAddress("dca2d",           &pu_dca2d);
-  ntTrkPU -> SetBranchAddress("dca2dsigma",      &pu_dca2dsigma);
-  ntTrkPU -> SetBranchAddress("dca3dxy",         &pu_dca3dxy);
-  ntTrkPU -> SetBranchAddress("dca3dxysigma",    &pu_dca3dxysigma);
-  ntTrkPU -> SetBranchAddress("dca3dz",          &pu_dca3dz);
-  ntTrkPU -> SetBranchAddress("dca3dzsigma",     &pu_dca3dzsigma);
-  ntTrkPU -> SetBranchAddress("pcax",            &pu_pcax);
-  ntTrkPU -> SetBranchAddress("pcay",            &pu_pcay);
-  ntTrkPU -> SetBranchAddress("pcaz",            &pu_pcaz);
-  ntTrkPU -> SetBranchAddress("nfromtruth",      &pu_nfromtruth);
-  ntTrkPU -> SetBranchAddress("nwrong",          &pu_nwrong);
-  ntTrkPU -> SetBranchAddress("ntrumaps",        &pu_ntrumaps);
-  ntTrkPU -> SetBranchAddress("ntruintt",        &pu_ntruintt);
-  ntTrkPU -> SetBranchAddress("ntrutpc",         &pu_ntrutpc);
-  ntTrkPU -> SetBranchAddress("ntrumms",         &pu_ntrumms);
-  ntTrkPU -> SetBranchAddress("ntrutpc1",        &pu_ntrutpc1);
-  ntTrkPU -> SetBranchAddress("ntrutpc11",       &pu_ntrutpc11);
-  ntTrkPU -> SetBranchAddress("ntrutpc2",        &pu_ntrutpc2);
-  ntTrkPU -> SetBranchAddress("ntrutpc3",        &pu_ntrutpc3);
-  ntTrkPU -> SetBranchAddress("layersfromtruth", &pu_layersfromtruth);
-  ntTrkPU -> SetBranchAddress("nhittpcall",      &pu_nhittpcall);
-  ntTrkPU -> SetBranchAddress("nhittpcin",       &pu_nhittpcin);
-  ntTrkPU -> SetBranchAddress("nhittpcmid",      &pu_nhittpcmid);
-  ntTrkPU -> SetBranchAddress("nhittpcout",      &pu_nhittpcout);
-  ntTrkPU -> SetBranchAddress("nclusall",        &pu_nclusall);
-  ntTrkPU -> SetBranchAddress("nclustpc",        &pu_nclustpc);
-  ntTrkPU -> SetBranchAddress("nclusintt",       &pu_nclusintt);
-  ntTrkPU -> SetBranchAddress("nclusmaps",       &pu_nclusmaps);
-  ntTrkPU -> SetBranchAddress("nclusmms",        &pu_nclusmms);
+  if (doPileup) {
+    ntTrkPU -> SetBranchAddress("event",           &pu_event);
+    ntTrkPU -> SetBranchAddress("seed",            &pu_seed);
+    ntTrkPU -> SetBranchAddress("gntracks",        &pu_gntracks);
+    ntTrkPU -> SetBranchAddress("gtrackID",        &pu_gtrackID);
+    ntTrkPU -> SetBranchAddress("gflavor",         &pu_gflavor);
+    ntTrkPU -> SetBranchAddress("gnhits",          &pu_gnhits);
+    ntTrkPU -> SetBranchAddress("gnmaps",          &pu_gnmaps);
+    ntTrkPU -> SetBranchAddress("gnintt",          &pu_gnintt);
+    ntTrkPU -> SetBranchAddress("gnmms",           &pu_gnmms);
+    ntTrkPU -> SetBranchAddress("gnintt1",         &pu_gnintt1);
+    ntTrkPU -> SetBranchAddress("gnintt2",         &pu_gnintt2);
+    ntTrkPU -> SetBranchAddress("gnintt3",         &pu_gnintt3);
+    ntTrkPU -> SetBranchAddress("gnintt4",         &pu_gnintt4);
+    ntTrkPU -> SetBranchAddress("gnintt5",         &pu_gnintt5);
+    ntTrkPU -> SetBranchAddress("gnintt6",         &pu_gnintt6);
+    ntTrkPU -> SetBranchAddress("gnintt7",         &pu_gnintt7);
+    ntTrkPU -> SetBranchAddress("gnintt8",         &pu_gnintt8);
+    ntTrkPU -> SetBranchAddress("gntpc",           &pu_gntpc);
+    ntTrkPU -> SetBranchAddress("gnlmaps",         &pu_gnlmaps);
+    ntTrkPU -> SetBranchAddress("gnlintt",         &pu_gnlintt);
+    ntTrkPU -> SetBranchAddress("gnltpc",          &pu_gnltpc);
+    ntTrkPU -> SetBranchAddress("gnlmms",          &pu_gnlmms);
+    ntTrkPU -> SetBranchAddress("gpx",             &pu_gpx);
+    ntTrkPU -> SetBranchAddress("gpy",             &pu_gpy);
+    ntTrkPU -> SetBranchAddress("gpz",             &pu_gpz);
+    ntTrkPU -> SetBranchAddress("gpt",             &pu_gpt);
+    ntTrkPU -> SetBranchAddress("geta",            &pu_geta);
+    ntTrkPU -> SetBranchAddress("gphi",            &pu_gphi);
+    ntTrkPU -> SetBranchAddress("gvx",             &pu_gvx);
+    ntTrkPU -> SetBranchAddress("gvy",             &pu_gvy);
+    ntTrkPU -> SetBranchAddress("gvz",             &pu_gvz);
+    ntTrkPU -> SetBranchAddress("gvt",             &pu_gvt);
+    ntTrkPU -> SetBranchAddress("gfpx",            &pu_gfpx);
+    ntTrkPU -> SetBranchAddress("gfpy",            &pu_gfpy);
+    ntTrkPU -> SetBranchAddress("gfpz",            &pu_gfpz);
+    ntTrkPU -> SetBranchAddress("gfx",             &pu_gfx);
+    ntTrkPU -> SetBranchAddress("gfy",             &pu_gfy);
+    ntTrkPU -> SetBranchAddress("gfz",             &pu_gfz);
+    ntTrkPU -> SetBranchAddress("gembed",          &pu_gembed);
+    ntTrkPU -> SetBranchAddress("gprimary",        &pu_gprimary);
+    ntTrkPU -> SetBranchAddress("trackID",         &pu_trackID);
+    ntTrkPU -> SetBranchAddress("px",              &pu_px);
+    ntTrkPU -> SetBranchAddress("py",              &pu_py);
+    ntTrkPU -> SetBranchAddress("pz",              &pu_pz);
+    ntTrkPU -> SetBranchAddress("pt",              &pu_pt);
+    ntTrkPU -> SetBranchAddress("eta",             &pu_eta);
+    ntTrkPU -> SetBranchAddress("phi",             &pu_phi);
+    ntTrkPU -> SetBranchAddress("deltapt",         &pu_deltapt);
+    ntTrkPU -> SetBranchAddress("deltaeta",        &pu_deltaeta);
+    ntTrkPU -> SetBranchAddress("deltaphi",        &pu_deltaphi);
+    ntTrkPU -> SetBranchAddress("charge",          &pu_charge);
+    ntTrkPU -> SetBranchAddress("quality",         &pu_quality);
+    ntTrkPU -> SetBranchAddress("chisq",           &pu_chisq);
+    ntTrkPU -> SetBranchAddress("ndf",             &pu_ndf);
+    ntTrkPU -> SetBranchAddress("nhits",           &pu_nhits);
+    ntTrkPU -> SetBranchAddress("layers",          &pu_layers);
+    ntTrkPU -> SetBranchAddress("nmaps",           &pu_nmaps);
+    ntTrkPU -> SetBranchAddress("nintt",           &pu_nintt);
+    ntTrkPU -> SetBranchAddress("ntpc",            &pu_ntpc);
+    ntTrkPU -> SetBranchAddress("nmms",            &pu_nmms);
+    ntTrkPU -> SetBranchAddress("ntpc1",           &pu_ntpc1);
+    ntTrkPU -> SetBranchAddress("ntpc11",          &pu_ntpc11);
+    ntTrkPU -> SetBranchAddress("ntpc2",           &pu_ntpc2);
+    ntTrkPU -> SetBranchAddress("ntpc3",           &pu_ntpc3);
+    ntTrkPU -> SetBranchAddress("nlmaps",          &pu_nlmaps);
+    ntTrkPU -> SetBranchAddress("nlintt",          &pu_nlintt);
+    ntTrkPU -> SetBranchAddress("nltpc",           &pu_nltpc);
+    ntTrkPU -> SetBranchAddress("nlmms",           &pu_nlmms);
+    ntTrkPU -> SetBranchAddress("vertexID",        &pu_vertexID);
+    ntTrkPU -> SetBranchAddress("vx",              &pu_vx);
+    ntTrkPU -> SetBranchAddress("vy",              &pu_vy);
+    ntTrkPU -> SetBranchAddress("vz",              &pu_vz);
+    ntTrkPU -> SetBranchAddress("dca2d",           &pu_dca2d);
+    ntTrkPU -> SetBranchAddress("dca2dsigma",      &pu_dca2dsigma);
+    ntTrkPU -> SetBranchAddress("dca3dxy",         &pu_dca3dxy);
+    ntTrkPU -> SetBranchAddress("dca3dxysigma",    &pu_dca3dxysigma);
+    ntTrkPU -> SetBranchAddress("dca3dz",          &pu_dca3dz);
+    ntTrkPU -> SetBranchAddress("dca3dzsigma",     &pu_dca3dzsigma);
+    ntTrkPU -> SetBranchAddress("pcax",            &pu_pcax);
+    ntTrkPU -> SetBranchAddress("pcay",            &pu_pcay);
+    ntTrkPU -> SetBranchAddress("pcaz",            &pu_pcaz);
+    ntTrkPU -> SetBranchAddress("nfromtruth",      &pu_nfromtruth);
+    ntTrkPU -> SetBranchAddress("nwrong",          &pu_nwrong);
+    ntTrkPU -> SetBranchAddress("ntrumaps",        &pu_ntrumaps);
+    ntTrkPU -> SetBranchAddress("ntruintt",        &pu_ntruintt);
+    ntTrkPU -> SetBranchAddress("ntrutpc",         &pu_ntrutpc);
+    ntTrkPU -> SetBranchAddress("ntrumms",         &pu_ntrumms);
+    ntTrkPU -> SetBranchAddress("ntrutpc1",        &pu_ntrutpc1);
+    ntTrkPU -> SetBranchAddress("ntrutpc11",       &pu_ntrutpc11);
+    ntTrkPU -> SetBranchAddress("ntrutpc2",        &pu_ntrutpc2);
+    ntTrkPU -> SetBranchAddress("ntrutpc3",        &pu_ntrutpc3);
+    ntTrkPU -> SetBranchAddress("layersfromtruth", &pu_layersfromtruth);
+    ntTrkPU -> SetBranchAddress("nhittpcall",      &pu_nhittpcall);
+    ntTrkPU -> SetBranchAddress("nhittpcin",       &pu_nhittpcin);
+    ntTrkPU -> SetBranchAddress("nhittpcmid",      &pu_nhittpcmid);
+    ntTrkPU -> SetBranchAddress("nhittpcout",      &pu_nhittpcout);
+    ntTrkPU -> SetBranchAddress("nclusall",        &pu_nclusall);
+    ntTrkPU -> SetBranchAddress("nclustpc",        &pu_nclustpc);
+    ntTrkPU -> SetBranchAddress("nclusintt",       &pu_nclusintt);
+    ntTrkPU -> SetBranchAddress("nclusmaps",       &pu_nclusmaps);
+    ntTrkPU -> SetBranchAddress("nclusmms",        &pu_nclusmms);
+  }
   cout << "      Set branch addresses." << endl;
   return;
 
@@ -396,6 +442,14 @@ void STrackCutStudy::SaveHists() {
   // create output directories
   TDirectory *dOut[NType];
   for (UInt_t iDir = 0; iDir < NType; iDir++) {
+   
+    // check if directory should be created
+    if (isBeforeCuts[iDir] || isPileup[iDir]) {
+      if (isBeforeCuts[iDir] && !doBeforeCuts) continue;
+      if (isPileup[iDir]     && !doPileup)     continue;
+    }
+
+    // create directory 
     fOut       -> cd();
     dOut[iDir] = (TDirectory*) fOut -> mkdir(sTrkNames[iDir].Data());
   }
@@ -403,7 +457,14 @@ void STrackCutStudy::SaveHists() {
 
   // save histograms
   for (int iType = 0; iType < NType; iType++) {
-    dOut[iType] -> cd();
+
+    // check if histograms should be saved
+    if (isBeforeCuts[iType] || isPileup[iType]) {
+      if (isBeforeCuts[iType] && !doBeforeCuts) continue;
+      if (isPileup[iType]     && !doPileup)     continue;
+    }
+
+    dOut[iType] -> cd(); 
     for (size_t iTrkVar = 0; iTrkVar < NTrkVar; iTrkVar++) {
       hTrkVar[iType][iTrkVar]         -> Write();
       hTrkVarDiff[iType][iTrkVar]     -> Write();

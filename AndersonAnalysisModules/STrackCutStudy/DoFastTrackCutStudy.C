@@ -1,11 +1,10 @@
 // ----------------------------------------------------------------------------
-// 'DoTrackCutStudy.C'
+// 'DoFastTrackCutStudy.C'
 // Derek Anderson
-// 12.15.2022
+// 03.30.2023
 //
-// Runs the 'STrackCutStudy' class with
-// maximal output.  (Has to be run via
-// condor.)
+// Runs the 'STrackCutStudy' class with minimal amount
+// of output.  (Can be run from command line.)
 // ----------------------------------------------------------------------------
 
 #ifndef DOTRACKCUTSTUDY_C
@@ -31,13 +30,13 @@ static const Bool_t DefBatch = false;
 
 
 
-void DoTrackCutStudy(const Bool_t inBatchMode = DefBatch) {
+void DoFastTrackCutStudy(const Bool_t inBatchMode = DefBatch) {
 
   // lower verbosity
   gErrorIgnoreLevel = kWarning;
 
   // i/o parameters
-  const TString sOutFile("trackCutStudy.testFastCutStudy_slow.pt020n20pim.d30m3y2023.root");
+  const TString sOutFile("trackCutStudy.testFastCutStudy_fast.pt020n20pim.d30m3y2023.root");
   const TString sInFileEO("input/embed_only/final_merge/sPhenixG4_run6hijing50khz_embedScanOn_embedOnly.pt020n20pim.d24m3y2023.root");
   const TString sInFilePU("input/with_pileup/merged/sPhenixG4_forTrackCutStudy_hijing50khz_embedOnly0t19_g4svtxeval.d14m11y2022.root");
   const TString sInTupleEO("ntp_track");
@@ -46,9 +45,9 @@ void DoTrackCutStudy(const Bool_t inBatchMode = DefBatch) {
 
   // study parameters
   const Bool_t   makePlots(true);
-  const Bool_t   doPileup(true);
+  const Bool_t   doPileup(false);
   const Bool_t   doIntNorm(false);
-  const Bool_t   doBeforeCuts(true);
+  const Bool_t   doBeforeCuts(false);
   const Bool_t   doAvgClusterCalc(false);
   const Double_t normalPtFracMin(0.20);
   const Double_t normalPtFracMax(1.20);
