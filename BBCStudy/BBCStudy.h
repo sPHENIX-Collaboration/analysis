@@ -10,12 +10,14 @@
 class PHCompositeNode;
 class PHG4HitContainer;
 class PHG4TruthInfoContainer;
+class EventHeader;
 class TFile;
 class TTree;
 class TDatabasePDG;
 class TRandom3;
 class TH1;
 class TH2;
+class TCanvas;
 
 
 //Brief: basic ntuple and histogram creation for sim evaluation
@@ -51,11 +53,18 @@ private:
   //Output
   TTree* _tree;
   Int_t    f_evt;
+  Float_t  f_bimp;    // impact parameter
+  Int_t    f_ncoll;   // number n-n collisions
+  Int_t    f_npart;   // number participants
+  Float_t  f_vx;      // true x vertex of collision point
+  Float_t  f_vy;      // true y vertex
+  Float_t  f_vz;      // true z vertex
+  Float_t  f_vt;       // true start time
   Short_t  f_bbcn[2]; // num hits for each arm (north and south)
   Float_t  f_bbcq[2]; // total charge (currently npe) in each arm
   Float_t  f_bbct[2]; // time
-  Float_t  f_bbcz;  // z-vertex
-  Float_t  f_bbct0; // start time
+  Float_t  f_bbcz;    // z-vertex
+  Float_t  f_bbct0;   // start time
 
   TH1* h_bbcq[128];   // q in each tube
   TH1* h_bbcqtot[2];  // total q in bbc arms
@@ -63,6 +72,9 @@ private:
   TH1* h_ztrue;       // true z-vertex
   TH1* h_tdiff;       // time diff between estimated and real time
   TH2* h2_tdiff_ch;   // time diff by channel
+
+  TCanvas *c_bbct;    // Canvas to 
+  TH1 *hevt_bbct[2];  // time in each bbc, per event
 
   std::map<int,int> _pids;  // PIDs of tracks in the BBC
 
@@ -76,6 +88,7 @@ private:
   //Node pointers
   PHG4TruthInfoContainer* _truth_container;
   PHG4HitContainer* _bbchits;
+  EventHeader* _evtheader;
 
 };
 

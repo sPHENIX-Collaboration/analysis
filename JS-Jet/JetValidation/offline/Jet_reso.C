@@ -8,10 +8,14 @@ void Jet_reso()
   TH1::SetDefaultSumw2();
   TH2::SetDefaultSumw2();
 
-  TChain * ct = new TChain("T");  
-  for(int i = 1; i < 2; i++){
-    ct->Add(Form("/sphenix/user/vbailey/MDC2pythiajetsembed/TESToutput%i_r04.root",i));
-  }
+  TChain * ct = new TChain("T");
+  //if you want to run one file use this
+  ct->Add("../macro/output.root");
+
+  //if you want to combine multiple files use this
+  /*for(int i = 0; i < 100; i++){
+    ct->Add(Form("../macro/condor/output_%i.root",i));
+    }*/
 
   vector<float> *eta = 0;
   vector<float> *phi = 0;
@@ -60,22 +64,22 @@ void Jet_reso()
   const Float_t pt_range[] = {10,15,20,25,30,35,40,45,50,60,80};
   const int pt_N = sizeof(pt_range)/sizeof(float) - 1;
   const int resp_N = 60;
-  Float_t resp_bins[resp_N];
+  Float_t resp_bins[resp_N+1];
   for(int i = 0; i < resp_N+1; i++){
     resp_bins[i] = 1.2/resp_N * i;
   }
   const int eta_N = 40;
-  Float_t eta_bins[eta_N];
+  Float_t eta_bins[eta_N+1];
   for(int i = 0; i < eta_N+1; i++){
     eta_bins[i] = -1.1 + 2.2/eta_N * i;
   }
   const int phi_N = 40;
-  Float_t phi_bins[phi_N];
+  Float_t phi_bins[phi_N+1];
   for(int i = 0; i < phi_N+1; i++){
     phi_bins[i] = -TMath::Pi() + 2*TMath::Pi()/phi_N * i;
   }
   const int subet_N = 400;
-  Float_t subet_bins[subet_N];
+  Float_t subet_bins[subet_N+1];
   for(int i = 0; i < subet_N+1; i++){
     subet_bins[i] = i*0.5;
   }
@@ -125,6 +129,8 @@ void Jet_reso()
       for(int rj = 0; rj < nrecojets; rj++){
 	float dEta = truthEta->at(tj) - eta->at(rj);
 	float dPhi = truthPhi->at(tj) - phi->at(rj);
+	while(dPhi > TMath::Pi()) dPhi -= 2*TMath::Pi();
+	while(dPhi < -TMath::Pi()) dPhi += 2*TMath::Pi();
 	dR = TMath::Sqrt(dEta*dEta + dPhi*dPhi);
 	if(dR < dRMax){
 	  matchEta = eta->at(rj);
@@ -168,13 +174,23 @@ void Jet_reso()
       leg->AddEntry("",Form("%2.0f%%-%2.0f%%",h_MC_Reso_pt->GetZaxis()->GetBinLowEdge(icent+1),h_MC_Reso_pt->GetZaxis()->GetBinLowEdge(icent+2)),"");
       leg->AddEntry("",Form("%2.0f < p_T < %2.0f GeV",h_MC_Reso_pt->GetXaxis()->GetBinLowEdge(i+1),h_MC_Reso_pt->GetXaxis()->GetBinLowEdge(i+2)),"");
       leg->Draw("SAME");
+      /*-------for calculating the JER uncertainty----*/
+      float dsigma = func -> GetParError(2);
+      float denergy = func -> GetParError(1);
+      float sigma = func -> GetParameter(2);
+      float energy = func -> GetParameter(1);
+
+      float djer = dsigma/energy + sigma*denergy/pow(energy,2);//correct way to calculate jer
+                                                               //accounting for the fact that the 
+                                                               //mean response and width are correlated
       //c->Print("fits04.pdf");
       leg->Clear();
       g_jes[icent]->SetPoint(i,0.5*(pt_range[i]+pt_range[i+1]),func->GetParameter(1));
       g_jes[icent]->SetPointError(i,0.5*(pt_range[i+1]-pt_range[i]),func->GetParError(1));
       g_jer[icent]->SetPoint(i,0.5*(pt_range[i]+pt_range[i+1]),func->GetParameter(2)/func->GetParameter(1));
-      g_jer[icent]->SetPointError(i,0.5*(pt_range[i+1]-pt_range[i]),func->GetParError(2));
-
+      
+      //g_jer[icent]->SetPointError(i,0.5*(pt_range[i+1]-pt_range[i]),func->GetParError(2));
+      g_jer[icent]->SetPointError(i,0.5*(pt_range[i+1]-pt_range[i]),djer);
     }
   }
   //c->Print("fits04.pdf)");

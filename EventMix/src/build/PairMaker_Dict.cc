@@ -57,7 +57,7 @@ namespace ROOT {
       ::PairMaker *ptr = 0;
       static ::TVirtualIsAProxy* isa_proxy = new ::TIsAProxy(typeid(::PairMaker));
       static ::ROOT::TGenericClassInfo 
-         instance("PairMaker", "", 19,
+         instance("PairMaker", "", 20,
                   typeid(::PairMaker), ::ROOT::Internal::DefineBehavior(ptr, ptr),
                   &PairMaker_Dictionary, isa_proxy, 3,
                   sizeof(::PairMaker) );
@@ -146,6 +146,7 @@ class TH1D;
 class TRandom;
 class SvtxTrack;
 class sPHElectronPairContainerv1;
+
 
 class PairMaker: public SubsysReco {
 

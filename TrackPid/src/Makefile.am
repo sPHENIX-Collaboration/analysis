@@ -34,7 +34,8 @@ libtrackpid_la_SOURCES = \
 libtrackpid_la_LIBADD = \
   -lphool \
   -lSubsysReco \
-  -ltrackbase_historic_io
+  -ltrackbase_historic_io 
+
 
 ##added on Apr. 19, 2021 by Weihu
 libtrackpid_la_LDFLAGS = \
