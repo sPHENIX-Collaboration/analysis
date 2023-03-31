@@ -107,44 +107,9 @@ void STrackCutStudy::MakeCutText() {
 
 
 
-void STrackCutStudy::CreatePlots(){
-
-  // plot labels/directories to save in
-  const TString sLabelAllEO("EmbedOnly_BeforeCuts");
-  const TString sLabelCutEO("EmbedOnly_AfterCuts");
-  const TString sLabelOddEO("EmbedONly_WeirdVsNormal");
-  const TString sLabelAllPU("WithPileup");
-  const TString sDirPlotAllEO("EmbedOnlyPlots_BeforeCuts");
-  const TString sDirPlotCutEO("EmbedOnlyPlots_AfterCuts");
-  const TString sDirPlotOddEO("EmbedOnlyPlots_WeirdVsNormal");
-  const TString sDirPlotAllPU("AllWithPileupPlots");
-
-  // track types to plot together
-  const Ssiz_t nToDrawAllEO(3);
-  const Ssiz_t nToDrawCutEO(3);
-  const Ssiz_t nToDrawOddEO(3);
-  const Ssiz_t nToDrawAllPU(3);
-  const Int_t  sToDrawAllEO[nToDrawAllEO] = {TYPE::TRACK,    TYPE::TRUTH,     TYPE::WEIRD_ALL};
-  const Int_t  sToDrawCutEO[nToDrawCutEO] = {TYPE::TRK_CUT,  TYPE::TRU_CUT,   TYPE::WEIRD_CUT};
-  const Int_t  sToDrawOddEO[nToDrawOddEO] = {TYPE::WEIRD_SI, TYPE::WEIRD_TPC, TYPE::NORMAL};
-  const Int_t  sToDrawAllPU[nToDrawAllPU] = {TYPE::PILEUP,   TYPE::PRIMARY,   TYPE::NONPRIM};
-
-  // create desired plots
-  ConstructPlots(nToDrawAllEO, sToDrawAllEO, sDirPlotAllEO, sLabelAllEO);
-  ConstructPlots(nToDrawCutEO, sToDrawCutEO, sDirPlotCutEO, sLabelCutEO);
-  ConstructPlots(nToDrawOddEO, sToDrawOddEO, sDirPlotOddEO, sLabelOddEO);
-  ConstructPlots(nToDrawAllPU, sToDrawAllPU, sDirPlotAllPU, sLabelAllPU);
-
-  cout << "      Created plots." << endl;
-  return;
-
-}  // end 'CreatePlots()'
-
-
-
 void STrackCutStudy::ConstructPlots(const Ssiz_t nToDraw, const Int_t typesToDraw[], const TString sDirToSaveTo, const TString sPlotLabel) {
 
-  // check if saving directory is made, if so, recruse into it
+  // check if saving directory is made, if so, recurse into it
   Bool_t dirIsThere = fOut -> cd(sDirToSaveTo.Data());
   if (!dirIsThere) {
     fOut -> mkdir(sDirToSaveTo.Data());

@@ -1,4 +1,5 @@
 #!/bin/bash
+# -----------------------------------------------------------------------------
 # 'RunCorrelatorJetTreeOnCondor.sh'
 # Derek Anderson
 # 01.06.2022
@@ -8,6 +9,7 @@
 #
 # Derived from code by Cameron Dean
 # and Antonio Silva (thanks!!)
+# -----------------------------------------------------------------------------
 
 # grab home directory and set up environment
 export HOME=/sphenix/u/${LOGNAME}

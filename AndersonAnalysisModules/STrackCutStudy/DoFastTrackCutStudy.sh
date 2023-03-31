@@ -1,17 +1,12 @@
 #!/bin/bash
 # -----------------------------------------------------------------------------
-# 'SwitchToCorrectBuild.sh'
+# 'DoFastTrackCutStudy.sh'
 # Derek Anderson
-# 12.29.2022
+# 03.30.2023
 #
-# Use to switch to a particular
-# build of sPHENIX core software.
+# A script to run 'DoFastTrackCutStudy.C'
 # -----------------------------------------------------------------------------
 
-# build needed
-build="ana.322"
-
-# run setup script
-source /opt/sphenix/core/bin/sphenix_setup.sh -n $build
+root -b -q "DoFastTrackCutStudy.C(false)"
 
 # end -------------------------------------------------------------------------

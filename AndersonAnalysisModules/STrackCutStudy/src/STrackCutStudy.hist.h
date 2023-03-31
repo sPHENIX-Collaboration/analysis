@@ -197,6 +197,13 @@ void STrackCutStudy::InitHists() {
 
   // initialize histograms
   for (int iType = 0; iType < NType; iType++) {
+
+    // check if histograms should be initialized
+    if (isBeforeCuts[iType] || isPileup[iType]) {
+      if (isBeforeCuts[iType] && !doBeforeCuts) continue;
+      if (isPileup[iType]     && !doPileup)     continue;
+    }
+
     for (size_t iTrkVar = 0; iTrkVar < NTrkVar; iTrkVar++) {
       hTrkVar[iType][iTrkVar]         = new TH1D(sTrkVar[iType][iTrkVar].Data(),         "", nTrkBins[iTrkVar],     rTrkBins[iTrkVar][0],     rTrkBins[iTrkVar][1]);
       hTrkVarDiff[iType][iTrkVar]     = new TH1D(sTrkVarDiff[iType][iTrkVar].Data(),     "", nTrkDiffBins[iTrkVar], rTrkDiffBins[iTrkVar][0], rTrkDiffBins[iTrkVar][1]);
@@ -248,6 +255,13 @@ void STrackCutStudy::InitHists() {
 void STrackCutStudy::NormalizeHists() {
 
   for (int iType = 0; iType < NType; iType++) {
+
+    // check if histograms should be normalized
+    if (isBeforeCuts[iType] || isPileup[iType]) {
+      if (isBeforeCuts[iType] && !doBeforeCuts) continue;
+      if (isPileup[iType]     && !doPileup)     continue;
+    }
+
     for (size_t iTrkVar = 0; iTrkVar < NTrkVar; iTrkVar++) {
       const Double_t intTrkVar         = hTrkVar[iType][iTrkVar]         -> Integral();
       const Double_t intTrkVarDiff     = hTrkVarDiff[iType][iTrkVar]     -> Integral();
@@ -396,6 +410,13 @@ void STrackCutStudy::SetHistStyles() {
   const TString sPhysFracTitles[NPhysVar] = {sFracPhi, sFracEta, sFracPt, sFracDeltaPhi, sFracDeltaEta, sFracDeltaPt};
 
   for (Int_t iType = 0; iType < NType; iType++) {
+
+    // check if histograms should be styled
+    if (isBeforeCuts[iType] || isPileup[iType]) {
+      if (isBeforeCuts[iType] && !doBeforeCuts) continue;
+      if (isPileup[iType]     && !doPileup)     continue;
+    }
+
     for (Int_t iTrkVar = 0; iTrkVar < NTrkVar; iTrkVar++) {
       hTrkVar[iType][iTrkVar]         -> SetMarkerColor(fTypeCol[iType]);
       hTrkVar[iType][iTrkVar]         -> SetMarkerStyle(fTypeMar[iType]);

@@ -44,6 +44,7 @@ Bool_t STrackCutStudy::ApplyCuts(const Bool_t isPrimary, const UInt_t trkNMVtx, 
 
 Bool_t STrackCutStudy::DoClusterCalculation() {
 
+  /* cluster calc will go here */
   return true;
 
 }  // end 'DoClusterCalculation'
