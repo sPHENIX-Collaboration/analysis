@@ -137,7 +137,7 @@ void Fun4All_JetVal(
   se->registerInputManager(in2);
 
   
-  se->run(10);
+  se->run(-1);
   se->End();
 
   gSystem->Exit(0);
