@@ -14,8 +14,6 @@ class PHCompositeNode;
 class TH1;
 class TH2;
 class TH3;
-class TCanvas;
-class THStack;
 
 class JetKinematicCheck : public SubsysReco
 {
