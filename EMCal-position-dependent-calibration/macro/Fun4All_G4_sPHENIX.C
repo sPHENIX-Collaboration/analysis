@@ -1,16 +1,10 @@
 #ifndef MACRO_FUN4ALLG4SPHENIX_C
 #define MACRO_FUN4ALLG4SPHENIX_C
 
-// -- c++ includes --
-#include <fstream>
-// c++ includes --
-// -- root includes --
-#include <TSystem.h>
-#include <TROOT.h>
-// -- root includes --
-
 #include <GlobalVariables.C>
+
 #include <DisplayOn.C>
+#include <G4Setup_sPHENIX.C>
 #include <G4_Bbc.C>
 #include <G4_CaloTrigger.C>
 #include <G4_Centrality.C>
@@ -24,6 +18,7 @@
 #include <G4_Production.C>
 #include <G4_TopoClusterReco.C>
 #include <G4_Tracking.C>
+#include <G4_TrackingDiagnostics.C>
 #include <G4_User.C>
 #include <QA.C>
 
@@ -39,27 +34,23 @@
 #include <phool/PHRandomSeed.h>
 #include <phool/recoConsts.h>
 
-#include "G4Setup_sPHENIX.C"
-#include "CEmc_Spacal.C"
-
 R__LOAD_LIBRARY(libfun4all.so)
 R__LOAD_LIBRARY(libffamodules.so)
-R__LOAD_LIBRARY(libEMCalPositionDependentCalibration.so)
+
 // For HepMC Hijing
 // try inputFile = /sphenix/sim/sim01/sphnxpro/sHijing_HepMC/sHijing_0-12fm.dat
 
 int Fun4All_G4_sPHENIX(
     const int nEvents = 1,
     const int seed = 0,
-    const string &calib_path = "/direct/sphenix+u/anarde/Documents/sPHENIX/analysis/EMCal-position-dependent-calibration/calibrations/CEMC/PositionRecalibrationFull-ones",
     const string &outdir = ".",
-    const string &inputFile = "https://www.phenix.bnl.gov/WWW/publish/phnxbld/sPHENIX/files/sPHENIX_G4Hits_sHijing_9-11fm_00000_00010.root",
     const string &outputFile = "G4sPHENIX.root",
+    const string &inputFile = "https://www.phenix.bnl.gov/WWW/publish/phnxbld/sPHENIX/files/sPHENIX_G4Hits_sHijing_9-11fm_00000_00010.root",
     const string &embed_input_file = "https://www.phenix.bnl.gov/WWW/publish/phnxbld/sPHENIX/files/sPHENIX_G4Hits_sHijing_9-11fm_00000_00010.root",
     const int skip = 0)
 {
   Fun4AllServer *se = Fun4AllServer::instance();
-  se->Verbosity(1);
+  se->Verbosity(0);
 
   //Opt to print all random seed used for debugging reproducibility. Comment out to reduce stdout prints.
   PHRandomSeed::Verbosity(0);
@@ -108,6 +99,9 @@ int Fun4All_G4_sPHENIX(
   Input::SIMPLE = true;
   // Input::SIMPLE_NUMBER = 2; // if you need 2 of them
   // Input::SIMPLE_VERBOSITY = 1;
+
+  // Enable this is emulating the nominal pp/pA/AA collision vertex distribution
+  // Input::BEAM_CONFIGURATION = Input::AA_COLLISION; // Input::AA_COLLISION (default), Input::pA_COLLISION, Input::pp_COLLISION
 
   //  Input::PYTHIA6 = true;
 
@@ -174,6 +168,10 @@ int Fun4All_G4_sPHENIX(
     // INPUTGENERATOR::SimpleEventGenerator[0]->set_eta_range(-1.152, 1.152);
     // INPUTGENERATOR::SimpleEventGenerator[0]->set_phi_range(-M_PI, M_PI);
 
+    // Train
+    // INPUTGENERATOR::SimpleEventGenerator[0]->set_pt_range(20, 21.);
+
+    // Test
     INPUTGENERATOR::SimpleEventGenerator[0]->set_pt_range(1, 21.);
   }
   // Upsilons
@@ -204,13 +202,13 @@ int Fun4All_G4_sPHENIX(
   // pythia6
   if (Input::PYTHIA6)
   {
-    //! apply sPHENIX nominal beam parameter with 2mrad crossing as defined in sPH-TRG-2020-001
+    //! Nominal collision geometry is selected by Input::BEAM_CONFIGURATION
     Input::ApplysPHENIXBeamParameter(INPUTGENERATOR::Pythia6);
   }
   // pythia8
   if (Input::PYTHIA8)
   {
-    //! apply sPHENIX nominal beam parameter with 2mrad crossing as defined in sPH-TRG-2020-001
+    //! Nominal collision geometry is selected by Input::BEAM_CONFIGURATION
     Input::ApplysPHENIXBeamParameter(INPUTGENERATOR::Pythia8);
   }
 
@@ -221,7 +219,7 @@ int Fun4All_G4_sPHENIX(
 
   if (Input::HEPMC)
   {
-    //! apply sPHENIX nominal beam parameter with 2mrad crossing as defined in sPH-TRG-2020-001
+    //! Nominal collision geometry is selected by Input::BEAM_CONFIGURATION
     Input::ApplysPHENIXBeamParameter(INPUTMANAGER::HepMCInputManager);
 
     // optional overriding beam parameters
@@ -244,7 +242,7 @@ int Fun4All_G4_sPHENIX(
   }
   if (Input::PILEUPRATE > 0)
   {
-    //! apply sPHENIX nominal beam parameter with 2mrad crossing as defined in sPH-TRG-2020-001
+    //! Nominal collision geometry is selected by Input::BEAM_CONFIGURATION
     Input::ApplysPHENIXBeamParameter(INPUTMANAGER::HepMCPileupInputManager);
   }
   // register all input generators with Fun4All
@@ -331,6 +329,11 @@ int Fun4All_G4_sPHENIX(
   Enable::TRACKING_EVAL = Enable::TRACKING_TRACK && true;
   Enable::TRACKING_QA = Enable::TRACKING_TRACK && Enable::QA && true;
 
+  //Additional tracking tools 
+  //Enable::TRACKING_DIAGNOSTICS = Enable::TRACKING_TRACK && true;
+  //G4TRACKING::filter_conversion_electrons = true;
+
+
   //  cemc electronics + thin layer of W-epoxy to get albedo from cemc
   //  into the tracking, cannot run together with CEMC
   //  Enable::CEMCALBEDO = true;
@@ -339,11 +342,9 @@ int Fun4All_G4_sPHENIX(
   Enable::CEMC_ABSORBER = true;
   Enable::CEMC_CELL = Enable::CEMC && true;
   Enable::CEMC_TOWER = Enable::CEMC_CELL && true;
-  Enable::CEMC_CLUSTER = Enable::CEMC_TOWER && false;
-  Enable::CEMC_CLUSTER_FULL = Enable::CEMC_TOWER && true;
-  Enable::CEMC_EVAL = Enable::CEMC_CLUSTER && false;
-  Enable::CEMC_EVAL_POSITION_CORRECTION = Enable::CEMC_CLUSTER_FULL && true;
-  Enable::CEMC_QA = (Enable::CEMC_CLUSTER || Enable::CEMC_CLUSTER_FULL) && Enable::QA && true;
+  Enable::CEMC_CLUSTER = Enable::CEMC_TOWER && true;
+  Enable::CEMC_EVAL = Enable::CEMC_CLUSTER && true;
+  Enable::CEMC_QA = Enable::CEMC_CLUSTER && Enable::QA && true;
 
   Enable::HCALIN = false;
   Enable::HCALIN_ABSORBER = true;
@@ -364,7 +365,8 @@ int Fun4All_G4_sPHENIX(
   Enable::HCALOUT_EVAL = Enable::HCALOUT_CLUSTER && true;
   Enable::HCALOUT_QA = Enable::HCALOUT_CLUSTER && Enable::QA && true;
 
-  Enable::EPD = true;
+  Enable::EPD = false;
+  Enable::EPD_TILE = Enable::EPD && true;
 
   Enable::BEAMLINE = true;
 //  Enable::BEAMLINE_ABSORBER = true;  // makes the beam line magnets sensitive volumes
@@ -481,7 +483,12 @@ int Fun4All_G4_sPHENIX(
 
   if (Enable::CEMC_TOWER) CEMC_Towers();
   if (Enable::CEMC_CLUSTER) CEMC_Clusters();
-  if (Enable::CEMC_CLUSTER_FULL) CEMC_Clusters_Full(calib_path);
+
+  //--------------
+  // EPD tile reconstruction
+  //--------------
+
+  if (Enable::EPD_TILE) EPD_Tiles();
 
   //-----------------------------
   // HCAL towering and clustering
@@ -512,6 +519,16 @@ int Fun4All_G4_sPHENIX(
   {
     Tracking_Reco();
   }
+
+  if(Enable::TRACKING_DIAGNOSTICS)
+    {
+      const std::string kshortFile = "./kshort_" + outputFile;
+      const std::string residualsFile = "./residuals_" + outputFile;
+ 
+      G4KshortReconstruction(kshortFile);
+      seedResiduals(residualsFile);
+    }
+
   //-----------------
   // Global Vertexing
   //-----------------
@@ -572,8 +589,6 @@ int Fun4All_G4_sPHENIX(
 
   if (Enable::CEMC_EVAL) CEMC_Eval(outputroot + "_g4cemc_eval.root");
 
-  if (Enable::CEMC_EVAL_POSITION_CORRECTION) CEMC_Eval_Position_Correction(outputroot + "_g4cemc_eval.root");
-
   if (Enable::HCALIN_EVAL) HCALInner_Eval(outputroot + "_g4hcalin_eval.root");
 
   if (Enable::HCALOUT_EVAL) HCALOuter_Eval(outputroot + "_g4hcalout_eval.root");
@@ -583,6 +598,10 @@ int Fun4All_G4_sPHENIX(
   if (Enable::DSTREADER) G4DSTreader(outputroot + "_DSTReader.root");
 
   if (Enable::USER) UserAnalysisInit();
+
+  // Writes electrons from conversions to a new track map on the node tree
+  // the ntuple file is for diagnostics, it is produced only if the flag is set in G4_Tracking.C
+  if(G4TRACKING::filter_conversion_electrons) Filter_Conversion_Electrons(outputroot + "_secvert_ntuple.root");
 
   //======================
   // Run KFParticle on evt
