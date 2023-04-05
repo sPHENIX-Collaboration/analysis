@@ -1,0 +1,17 @@
+#+title: Readme
+
+* Description
+- Electronics readout chain: Signal -> SiPM -> Readout.
+- LED's take place of Signal.
+  - Validate performance of the SiPMs.
+- Test pulse takes place of the SiPM.
+  - Acts as an ideal response from the SiPMs.
+
+* Data
+** Test Pulse
+- Location: /sphenix/lustre01/sphnxpro/commissioning/emcal/calib/calib-00005027-0000.prdf
+- Packets Present: 6009-6016
+- Command used to check which packets present:
+#+begin_src bash
+dlist -i -f target.prdf
+#+end_src
