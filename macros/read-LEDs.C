@@ -58,6 +58,10 @@ void read_LEDs(const string &inputFile="data/LEDTowerBuilder.root",
    auto h2AdcVsChannel = new TH2F("h2AdcVsChannel", "Adc vs Channel; Channel; Adc", channels_bins, channels_min, channels_max, adc_bins, adc_min, adc_max);
    auto h2PedVsChannel = new TH2F("h2PedVsChannel", "Ped vs Channel; Channel; Ped", channels_bins, channels_min, channels_max, ped_bins, ped_min, ped_max);
 
+   auto h2AdcVsTime = new TH2F("h2AdcVsTime", "Adc vs Time; Time; Adc", time_bins, time_min, time_max, adc_bins, adc_min, adc_max);
+   auto h2PedVsTime = new TH2F("h2PedVsTime", "Ped vs Time; Time; Ped", time_bins, time_min, time_max, ped_bins, ped_min, ped_max);
+   auto h2AdcVsPed = new TH2F("h2AdcVsPed", "Adc vs Ped; Ped; Adc", ped_bins, ped_min, ped_max, adc_bins, adc_min, adc_max);
+
    for(UInt_t i = 0; i < nevents; ++i) {
       if(i%100 == 0) cout << "Progress: " << i*100./nevents << " %" << endl;
 
@@ -78,6 +82,10 @@ void read_LEDs(const string &inputFile="data/LEDTowerBuilder.root",
           h2TimeVsChannel->Fill(channel, time_val);
           h2AdcVsChannel->Fill(channel, adc_val);
           h2PedVsChannel->Fill(channel, ped_val);
+
+          h2AdcVsTime->Fill(time_val, adc_val);
+          h2PedVsTime->Fill(time_val, ped_val);
+          h2AdcVsPed->Fill(ped_val, adc_val);
 
           if(time_min > time_val) time_min = time_val;
           if(time_max < time_val) time_max = time_val;
@@ -106,6 +114,10 @@ void read_LEDs(const string &inputFile="data/LEDTowerBuilder.root",
    h2TimeVsChannel->Write();
    h2AdcVsChannel->Write();
    h2PedVsChannel->Write();
+
+   h2AdcVsTime->Write();
+   h2PedVsTime->Write();
+   h2AdcVsPed->Write();
 
    // Close root file
    input.Close();
