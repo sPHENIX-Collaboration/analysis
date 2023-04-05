@@ -9,11 +9,13 @@
 #include <g4main/PHG4VtxPoint.h>
 #include <fun4all/PHTFileServer.h>
 #include <fun4all/Fun4AllServer.h>
+#include <ffaobjects/EventHeaderv1.h>
 
 #include <TFile.h>
 #include <TTree.h>
 #include <TH1F.h>
 #include <TH2F.h>
+#include <TCanvas.h>
 #include <TString.h>
 #include <TLorentzVector.h>
 //#include <TMath.h>
@@ -30,7 +32,7 @@ const Double_t v_ckov = 1.0/index_refract;  // velocity threshold for CKOV
 const Double_t C = 29.9792458; // cm/ns
 
 // kludge where we have the hardcoded positions of the tubes
-// These are the x,y for the south BBC.
+// These are the x,y for the south BBC (in cm).
 // The north inverts the x coordinate (x -> -x)
 const float TubeLoc[64][2] = {
     { -12.2976,	4.26 },
@@ -97,7 +99,7 @@ const float TubeLoc[64][2] = {
     { -9.83805,	-2.84 },
     { -12.2976,	-4.26 },
     { -12.2976,	-1.42 }
-  };    
+};    
 
 
 
@@ -123,6 +125,12 @@ int BBCStudy::Init(PHCompositeNode *topNode)
   // Global BBC variables
   _tree = new TTree("t","BBC Study");
   _tree->Branch("evt",&f_evt,"evt/I");
+  _tree->Branch("bimp",&f_bimp,"bimp/F");
+  _tree->Branch("ncoll",&f_ncoll,"ncoll/I");
+  _tree->Branch("npart",&f_npart,"npart/I");
+  _tree->Branch("vx",&f_vx,"vx/F");
+  _tree->Branch("vy",&f_vy,"vy/F");
+  _tree->Branch("vz",&f_vz,"vz/F");
   _tree->Branch("bns",&f_bbcn[0],"bns/S");
   _tree->Branch("bnn",&f_bbcn[1],"bnn/S");
   _tree->Branch("bqs",&f_bbcq[0],"bqs/F");
@@ -140,7 +148,7 @@ int BBCStudy::Init(PHCompositeNode *topNode)
   {
     name = "h_bbcq"; name += ipmt;
     title = "bbc charge, ch "; title += ipmt;
-    h_bbcq[ipmt] = new TH1F(name,title,1200,0,120*30);
+    h_bbcq[ipmt] = new TH1F(name,title,1200,0,120*90);
 
     /*
     name = "h_tdiff_ch"; name += ipmt;
@@ -153,13 +161,22 @@ int BBCStudy::Init(PHCompositeNode *topNode)
   {
     name = "h_bbcqtot"; name += iarm;
     title = "bbc charge, arm "; title += iarm;
-    h_bbcqtot[iarm] = new TH1F(name,title,1200,0,120*30); // npe for 1 mip = 120, and up to 30 mips are possible
+    h_bbcqtot[iarm] = new TH1F(name,title,1200,0,120*60); // npe for 1 mip = 120, and up to 30 mips are possible
+
+    //
+    name = "hevt_bbct"; name += iarm;
+    title = "bbc times, arm "; title += iarm;
+    hevt_bbct[iarm] = new TH1F(name,title,1600,0,16);
+    hevt_bbct[iarm]->SetLineColor(4);
   }
-  h2_bbcqtot = new TH2F("h2_bbcqtot","north BBCQ vs South BBCQ",300,0,120*30,300,0,120*30);
+  h2_bbcqtot = new TH2F("h2_bbcqtot","north BBCQ vs South BBCQ",300,0,120*900,300,0,120*900);
 
   h_ztrue = new TH1F("h_ztrue","true z-vtx",600,-30,30);
-  h_tdiff = new TH1F("h_tdiff","dt between measured and true time",6000,-3,3);
-  h2_tdiff_ch = new TH2F("h2_tdiff_ch","dt between measured and true time vs ch",128,-0.5,127.5,200,-2,2);
+  h_tdiff = new TH1F("h_tdiff","dt (measured - true_time)",6000,-3,3);
+  h2_tdiff_ch = new TH2F("h2_tdiff_ch","dt (measured - true time) vs ch",128,-0.5,127.5,200,-2,2);
+
+  c_bbct = new TCanvas("c_bbct","BBC Times",1200,800);
+  c_bbct->Divide(1,2);
 
   return 0;
 }
@@ -178,7 +195,7 @@ int BBCStudy::process_event(PHCompositeNode *topNode)
 {
   //GetNodes(topNode);
 
-  f_evt++;
+  f_evt = _evtheader->get_EvtSequence();
   //if(f_evt%1000==0) cout << PHWHERE << "Events processed: " << f_evt << endl;
   if(f_evt%100==0) cout << PHWHERE << "Events processed: " << f_evt << endl;
 
@@ -191,8 +208,16 @@ int BBCStudy::process_event(PHCompositeNode *topNode)
   f_bbct[1] = -9999.;
   f_bbcz = -9999.;
   f_bbct0 = -9999.;
+  hevt_bbct[0]->Reset();
+  hevt_bbct[1]->Reset();
+
+  // Get Truth Centrality Info
+  f_bimp = _evtheader->get_ImpactParameter();
+  f_ncoll = _evtheader->get_ncoll();
+  f_npart = _evtheader->get_npart();
 
   // Get Primaries AND Secondaries
+  /*
   PHG4TruthInfoContainer::ConstRange primary_range = _truth_container->GetPrimaryParticleRange();
   int nprimaries = 0;
 
@@ -214,23 +239,25 @@ int BBCStudy::process_event(PHCompositeNode *topNode)
   {
     cout << "Num primaries = " << nprimaries << "\t" << _truth_container->GetNumPrimaryVertexParticles() << endl;
   }
+  */
 
 
   // Get True Vertex
+  // NB: Currently PrimaryVertexIndex is always 1, need to figure out how to handle collision pile-up
   PHG4VtxPoint *vtxp = _truth_container->GetPrimaryVtx( _truth_container->GetPrimaryVertexIndex() );
   if ( vtxp != 0 )
   {
-    double vx = vtxp->get_x();
-    double vy = vtxp->get_y();
-    double vz = vtxp->get_z();
-    double vt = vtxp->get_t();
+    f_vx = vtxp->get_x();
+    f_vy = vtxp->get_y();
+    f_vz = vtxp->get_z();
+    f_vt = vtxp->get_t();
 
     if ( f_evt<20 )
     {
-      cout << "VTXP " << "\t" << vx << "\t" << vy << "\t" << vz << "\t" << vt << endl;
+      cout << "VTXP " << "\t" << f_vx << "\t" << f_vy << "\t" << f_vz << "\t" << f_vt << endl;
     }
 
-    h_ztrue->Fill( vz );
+    h_ztrue->Fill( f_vz );
 
   }
 
@@ -239,6 +266,7 @@ int BBCStudy::process_event(PHCompositeNode *topNode)
   PHG4TruthInfoContainer::ConstVtxRange vtx_range = _truth_container->GetVtxRange();
   unsigned int nvtx = 0;
  
+  /*
   for (auto vtx_iter = vtx_range.first; vtx_iter != vtx_range.second; ++vtx_iter)
   {
     PHG4VtxPoint *vtx = vtx_iter->second;
@@ -247,28 +275,34 @@ int BBCStudy::process_event(PHCompositeNode *topNode)
     double vz = vtx->get_z();
     double vt = vtx->get_t();
 
-    //if ( nvtx < 10 )
+    // look at first few tracks
+    // What are negative track id's?
     if ( abs(vtx->get_id()) < 8 && f_evt<20 )
     {
       cout << "vtx " << nvtx << "\t" << vtx->get_id() << "\t" << vt << "\t" << vx << "\t" << vy << "\t" << vz << endl;
     }
     nvtx++;
   }
+  */
 
   if ( f_evt<20 )
   {
     cout << "Num Vertices = " << nvtx << "\t" << _truth_container->GetNumVertices() << endl;
-    cout << "Primary Vertex = " << _truth_container->GetPrimaryVertexIndex() << endl;
+    //cout << "Primary Vertex = " << _truth_container->GetPrimaryVertexIndex() << endl;
   }
 
   // Go through BBC hits to see what they look like
 
   float len[128] = {0.};
   float edep[128] = {0.};
+  float first_time[128];    // First hit time for each tube
+  std::fill_n(first_time, 128, 9999.);
+
+
   unsigned int nhits = 0;
 
   TLorentzVector v4;
-  TLorentzVector hitpos;
+  //TLorentzVector hitpos;
 
   PHG4HitContainer::ConstRange bbc_hit_range = _bbchits->getHits();
   for (auto hit_iter = bbc_hit_range.first; hit_iter != bbc_hit_range.second; hit_iter++)
@@ -276,7 +310,7 @@ int BBCStudy::process_event(PHCompositeNode *topNode)
     PHG4Hit *this_hit = hit_iter->second;
 
     unsigned int ch = this_hit->get_layer();  // pmt channel
-    int arm = ch/64;;          // south=0, north=1
+    int arm = ch/64;;                         // south=0, north=1
 
     int trkid = this_hit->get_trkid();
     if ( trkid>0 && f_evt<20 ) cout << "TRKID " << trkid << endl;
@@ -315,9 +349,22 @@ int BBCStudy::process_event(PHCompositeNode *topNode)
     float flight_z = fabs(tube_z - vtxp->get_z());
 
     float flight_time = sqrt( tube_x*tube_x + tube_y*tube_y + flight_z*flight_z )/C;
-    float tdiff = flight_time - ( this_hit->get_t(1) - vtxp->get_t() );
+    float tdiff = this_hit->get_t(1) - ( vtxp->get_t() + flight_time );
 
-    if ( f_evt<20 )
+    // get the first time
+    if ( this_hit->get_t(1) < first_time[ch] )
+    {
+      if ( fabs( this_hit->get_t(1) ) < 100)
+      {
+        first_time[ch] = this_hit->get_t(1) - vtxp->get_t();
+      }
+      else
+      {
+        cout << "BAD " << ch << "\t" << this_hit->get_t(1) << endl;
+      }
+    }
+
+    if ( f_evt<10 )
     {
       cout << "hit " << ch << "\t" << trkid << "\t" << pid
         //<< "\t" << v4.M()
@@ -333,6 +380,8 @@ int BBCStudy::process_event(PHCompositeNode *topNode)
         << "\t" << this_hit->get_t(1)
         << "\t" << tdiff
         << endl;
+
+      //cout << "WWW " << first_time[ch] << endl;
     }
 
     edep[ch] += this_hit->get_edep();
@@ -368,8 +417,15 @@ int BBCStudy::process_event(PHCompositeNode *topNode)
 
 
   // process the data from each channel
+  for (int iarm=0; iarm<2; iarm++)
+  {
+    f_bbct[iarm] = 0.;
+  }
+
   for (int ich=0; ich<128; ich++)
   {
+    //cout << "ZZZ " << ich << "\t" << first_time[ich] << "\t" << edep[ich] << "\t" << len[ich] << endl;
+
     int arm = ich/64; // ch 0-63 = south, ch 64-127 = north
 
     // Fill charge and time info
@@ -380,6 +436,7 @@ int BBCStudy::process_event(PHCompositeNode *topNode)
         cout << "ich " << ich << "\t" << len[ich] << "\t" << edep[ich] << endl;
       }
 
+      // Get charge in BBC tube
       float npe = len[ich]*(120/3.0);  // we get 120 p.e. per 3 cm
       float dnpe = static_cast<float>( _rndm->Gaus( 0, sqrt(npe) ) ); // get fluctuation in npe
 
@@ -390,10 +447,44 @@ int BBCStudy::process_event(PHCompositeNode *topNode)
       h_bbcq[ich]->Fill( npe );
       h_bbcqtot[arm]->Fill( npe );
 
+      // Now time
+      if ( first_time[ich] < 9999. )
+      {
+        // Fill evt histogram
+        hevt_bbct[arm]->Fill( first_time[ich] );
+
+        f_bbct[arm] += first_time[ich];
+        //cout << "XXX " << ich << "\t" << f_bbct[arm] << "\t" << first_time[ich] << endl;
+
+      }
+      else  // should never happen
+      {
+        cout << "ERROR, have hit but no time" << endl;
+      }
+
       // threshold should be > 0.
       ++f_bbcn[arm];
     }
   }
+
+  for (int iarm=0; iarm<2; iarm++)
+  {
+    c_bbct->cd(iarm+1);
+    hevt_bbct[iarm]->Draw();
+
+    if ( f_bbcn[iarm] > 0 )
+    {
+      f_bbct[iarm] = f_bbct[iarm] / f_bbcn[iarm];
+    }
+  }
+
+  c_bbct->Modified();
+  c_bbct->Update();
+
+  string response;
+  cout << "Event " << f_evt << " ? ";
+  cin >> response;
+
 
   h2_bbcqtot->Fill( f_bbcq[0], f_bbcq[1] );
 
@@ -409,11 +500,14 @@ void BBCStudy::GetNodes(PHCompositeNode *topNode)
 
   // Truth container
   _truth_container = findNode::getClass<PHG4TruthInfoContainer>(topNode, "G4TruthInfo");
-  if(!_truth_container && f_evt<2) cout << PHWHERE << " PHG4TruthInfoContainer node not found on node tree" << endl;
+  if(!_truth_container && f_evt<10) cout << PHWHERE << " PHG4TruthInfoContainer node not found on node tree" << endl;
 
   // BBC hit container
   _bbchits = findNode::getClass<PHG4HitContainer> (topNode, "G4HIT_BBC");
-  if(!_bbchits && f_evt<2) cout << PHWHERE << " G4HIT_BBC node not found on node tree" << endl;
+  if(!_bbchits && f_evt<10) cout << PHWHERE << " G4HIT_BBC node not found on node tree" << endl;
+
+  _evtheader = findNode::getClass<EventHeaderv1>(topNode, "EventHeader");
+  if (!_evtheader && f_evt<10) cout << PHWHERE << " G4HIT_BBC node not found on node tree" << endl;
 
 }
 

@@ -9,24 +9,27 @@
 #include <FROG.h>
 #include <decayfinder/DecayFinder.h>
 #include <fun4all/Fun4AllDstInputManager.h>
-#include <qa_modules/QAG4SimulationKFParticle.h>
+//#include <qa_modules/QAG4SimulationKFParticle.h>
+//#include <qa_modules/QAG4SimulationTruthDecay.h>
 
-R__LOAD_LIBRARY(libqa_modules.so)
+#include <g4eval/SvtxEvaluator.h>
+#include <g4eval/SvtxTruthRecoTableEval.h>
+
+//R__LOAD_LIBRARY(libqa_modules.so)
 R__LOAD_LIBRARY(libfun4all.so)
+R__LOAD_LIBRARY(libdecayfinder.so)
 
 using namespace std;
 using namespace HeavyFlavorReco;
 
 /****************************/
-/*     MDC2 Reco for MDC2     */
+/*     MDC2 Reco for MDC2   */
 /* Cameron Dean, LANL, 2021 */
 /*      cdean@bnl.gov       */
 /****************************/
 
 void Fun4All_MDC2reco(vector<string> myInputLists = {"condorJob/fileLists/productionFiles-CHARM-dst_tracks-00000.list"}, const int nEvents = 10)
 {
-  int verbosity = 1;
-
   gSystem->Load("libg4dst.so");
   gSystem->Load("libFROG.so");
   FROG *fr = new FROG();
@@ -42,16 +45,18 @@ void Fun4All_MDC2reco(vector<string> myInputLists = {"condorJob/fileLists/produc
   string remove_this = ".list";
   size_t pos = fileNumber.find(remove_this);
   if (pos != string::npos) fileNumber.erase(pos, remove_this.length());
-  string outputFileName = "outputData_" + reconstructionName + "_" + fileNumber + ".root";
+  string outputFileName = "outputTruthDecayTest_" + reconstructionName + "_" + fileNumber + ".root";
+  string outputEvalFileName = "outputEvaluator_" + reconstructionName + "_" + fileNumber + ".root";
 
-  string outputRecoDir = outDir + "/inReconstruction/";
+  string outputRecoDir = outDir + "inReconstruction/";
   string makeDirectory = "mkdir -p " + outputRecoDir;
   system(makeDirectory.c_str());
   outputRecoFile = outputRecoDir + outputFileName;
+  outputEvalFile = outputRecoDir + outputEvalFileName;
 
   //Create the server
   Fun4AllServer *se = Fun4AllServer::instance();
-  se->Verbosity(verbosity);
+  se->Verbosity(VERBOSITY);
 
   //Add all required input files
   for (unsigned int i = 0; i < myInputLists.size(); ++i)
@@ -61,22 +66,11 @@ void Fun4All_MDC2reco(vector<string> myInputLists = {"condorJob/fileLists/produc
     se->registerInputManager(infile);
   }
 
-  // Runs decay finder to trigger on your decay. Useful for signal cleaning
-  if (runTruthTrigger)
-  {
-    DecayFinder *myFinder = new DecayFinder(reconstructionName);
-    myFinder->Verbosity(verbosity);
-    myFinder->setDecayDescriptor(decayDescriptor);
-    myFinder->saveDST(runQA);
-    myFinder->allowPi0(true);
-    myFinder->allowPhotons(true);
-    myFinder->triggerOnDecay(true);
-    se->registerSubsystem(myFinder);
-  }
-
   //Run the tracking if not already done
   if (runTracking)
   {
+    Enable::MICROMEGAS=true;
+
     G4MAGNET::magfield_rescale = 1.;
     MagnetInit();
     MagnetFieldInit();
@@ -96,18 +90,54 @@ void Fun4All_MDC2reco(vector<string> myInputLists = {"condorJob/fileLists/produc
     Tracking_Reco();
   }
 
+  // Runs decay finder to trigger on your decay. Useful for signal cleaning
+  if (runTruthTrigger)
+  {
+    DecayFinder *myFinder = new DecayFinder("myFinder");
+    myFinder->Verbosity(VERBOSITY);
+    myFinder->setDecayDescriptor(decayDescriptor);
+    myFinder->saveDST(1);
+    myFinder->allowPi0(0);
+    myFinder->allowPhotons(0);
+    myFinder->triggerOnDecay(1);
+    myFinder->setPTmin(0.); //Note: sPHENIX min pT is 0.2 GeV for tracking
+    myFinder->setEtaRange(-10., 10.); //Note: sPHENIX acceptance is |eta| <= 1.1
+    se->registerSubsystem(myFinder);
+  } 
+
+  // this module builds high level truth track association table.
+  // If this module is used, this table should be called before any evaluator calls.
+  // Removing this module, evaluation will still work but trace truth association through the layers of G4-hit-cluster
+  if (buildTruthTable && runTracking)
+  {
+    SvtxTruthRecoTableEval *tables = new SvtxTruthRecoTableEval();
+    tables->Verbosity(VERBOSITY);
+    se->registerSubsystem(tables);
+  }
+  else if (buildTruthTable && !runTracking)
+  {
+    cout << "You requested to build the truth reco track table but the tracking is not being run" << endl;
+    cout << "Normally you must run the tracking before you build the truth tables, exiting now!" << endl;
+    cout << "If your DSTs are capable of creating the association tables without rerunning the tracking, comment this exit command out!" << endl;
+    exit(1);
+  }
+  else
+  {
+  }
+
   //Now run the actual reconstruction
   myHeavyFlavorReco();
 
   //We should set this up correctly
-  if (runQA)
-  {
-    QAG4SimulationKFParticle *myQA = new QAG4SimulationKFParticle("myQA", "D0", 1.7, 2.0);
-    se->registerSubsystem(myQA);
-    QA_Output("hf_qa.root");
-  }
+  //if (runQA)
+  //{
+  //  QAG4SimulationKFParticle *myQA = new QAG4SimulationKFParticle("myQA", "D0", 1.7, 2.0);
+  //  se->registerSubsystem(myQA);
+  //  QA_Output("hf_qa.root");
+  //}
 
   se->run(nEvents);
+  //QA_Output(outputEvalFile);
   se->End();
 
   ifstream file(outputRecoFile.c_str());
@@ -116,6 +146,13 @@ void Fun4All_MDC2reco(vector<string> myInputLists = {"condorJob/fileLists/produc
     string moveOutput = "mv " + outputRecoFile + " " + outDir;
     system(moveOutput.c_str());
   }
+
+  //ifstream evalfile(outputEvalFile.c_str());
+  //if (evalfile.good())
+  //{
+  //  string moveOutput = "mv " + outputEvalFile + " " + outDir;
+  //  system(moveOutput.c_str());
+  //}
 
   std::cout << "All done" << std::endl;
   delete se;
