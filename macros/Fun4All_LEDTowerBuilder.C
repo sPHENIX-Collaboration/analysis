@@ -19,7 +19,7 @@ R__LOAD_LIBRARY(libcalo_reco.so)
 R__LOAD_LIBRARY(libledtowerbuilder.so)
 
 #endif
-void Fun4All_LEDTowerBuilder(const int events = 10, const char *fListname = "files/fileList.list", const char *outfile = "testtree.root")
+void Fun4All_LEDTowerBuilder(const int events = 10, const string &fListname = "files/fileList.list", const string &outfile = "data/LEDTowerBuilder.root")
 
 {
   gSystem->Load("libg4dst");
@@ -27,7 +27,7 @@ void Fun4All_LEDTowerBuilder(const int events = 10, const char *fListname = "fil
   se->Verbosity(0);
 
 
-  LEDTowerBuilder *ca = new LEDTowerBuilder("data/LEDTowerBuilder.root");
+  LEDTowerBuilder *ca = new LEDTowerBuilder(outfile.c_str());
   ca->set_detector_type(LEDTowerBuilder::CEMC);
   se->registerSubsystem(ca);
 
@@ -37,7 +37,7 @@ void Fun4All_LEDTowerBuilder(const int events = 10, const char *fListname = "fil
 
 
   Fun4AllInputManager *in = new Fun4AllPrdfInputManager("in");
-  in->AddListFile(fListname);
+  in->AddListFile(fListname.c_str());
   se->registerInputManager(in);
 
   se->run(events);
