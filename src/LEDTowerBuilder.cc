@@ -44,7 +44,7 @@ LEDTowerBuilder::LEDTowerBuilder(const std::string &name):
   , m_time(0)
   , m_chan(0)
   , m_outputFilename(name)
-  , m_diagnostic(1)
+  , m_diagnostic(0)
 {
   std::cout << "LEDTowerBuilder::LEDTowerBuilder(const std::string &name) Calling ctor" << std::endl;
 
@@ -144,7 +144,7 @@ int LEDTowerBuilder::process_event(PHCompositeNode *topNode)
           waveform.push_back(packet->iValue(samp,channel));
           if(m_diagnostic) gWaveForm -> SetPoint(samp, samp, (packet->iValue(samp,channel)));
         }
-	      if(m_diagnostic)
+        if(m_diagnostic)
         {
           gWaveForm -> SetMarkerStyle(4);
           gWaveForm -> SetTitle(";sample number;");
@@ -175,6 +175,10 @@ int LEDTowerBuilder::process_event(PHCompositeNode *topNode)
 
   tOut -> Fill();
 
+  m_time.clear();
+  m_adc.clear();
+  m_ped.clear();
+  m_chan.clear();
   waveforms.clear();
 
   return Fun4AllReturnCodes::EVENT_OK;

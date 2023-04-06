@@ -43,7 +43,7 @@ void read_LEDs(const string &inputFile="data/LEDTowerBuilder.root",
 
    UInt_t channels_bins = 1600;
    UInt_t channels_min  = 0;
-   UInt_t channels_max  = 1.6e6;
+   UInt_t channels_max  = 1600;
 
    // QA
 

@@ -15,3 +15,18 @@
 #+begin_src bash
 dlist -i -f target.prdf
 #+end_src
+
+* dlist, ddump, and dpipe
+- the *dlist* utility, which lets you list the packets contained in a given event.
+- the *ddump* utility, which lets you dump and look at the contents of a packet in various ways.
+- the *dpipe* utility, which copies events from one destination to another with a lot of flexibility; you can also use this to sift through a data stream in a simple way.
+Reference: https://www.phenix.bnl.gov/~phoncs/oncs/code_documentation/Event/dlistddumpanddpipe.html
+
+* Readout Channels, IBs, Packets
+- In total there are 24,576 *readout channels* for the EMCal.
+- There are 64 *sectors* in the EMCal.
+- Each *sector* consists of 384 *readout channels* (8 in phi x 48 in eta).
+- Each *sector* is divided up into 6 *interface boards* (IB).
+- Each *IB* consists of 64 *readout channels* (8 in phi x 8 in eta).
+- Each *packet* consists of 3 IBs (192 *readout channels*).
+- Each *sector* consists of 2 *packets*.
