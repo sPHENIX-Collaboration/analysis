@@ -122,4 +122,6 @@ void read_LEDs(const string &inputFile="data/LEDTowerBuilder.root",
    // Close root file
    input.Close();
    output.Close();
+
+   cout << "done" << endl;
 }
