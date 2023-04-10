@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-rm -rf bin
-mkdir -p bin
-cd bin
+rm -rf build
+mkdir -p build
+cd build
 
 echo "Running autogen"
 # $(readlink -f ../src/Calibration)/autogen.sh --prefix=$MYINSTALL

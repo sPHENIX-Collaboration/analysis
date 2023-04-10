@@ -15,6 +15,10 @@
 #+begin_src bash
 dlist -i -f target.prdf
 #+end_src
+- Command used to check the number of events present:
+#+begin_src bash
+dpipe -d n -s f -i target.prdf | wc -l
+#+end_src
 
 * dlist, ddump, and dpipe
 - the *dlist* utility, which lets you list the packets contained in a given event.
@@ -30,3 +34,12 @@ Reference: https://www.phenix.bnl.gov/~phoncs/oncs/code_documentation/Event/dlis
 - Each *IB* consists of 64 *readout channels* (8 in phi x 8 in eta).
 - Each *packet* consists of 3 IBs (192 *readout channels*).
 - Each *sector* consists of 2 *packets*.
+
+* Usage
+- Read over the prdfs and make basic histograms to a root file:
+  #+begin_src bash
+  ./bin/read-LEDs <input> <output> <events>
+  #+end_src
+- <input>:  Location of LEDTowerBuilder.root. Default = data/LEDTowerBuilder.root.
+- <output>: output root file. Default = output/test.root.
+- <events>: Number of events to analyze. Default = 0 (meaning all events).
