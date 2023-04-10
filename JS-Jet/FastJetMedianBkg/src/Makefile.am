@@ -8,6 +8,7 @@ AM_CPPFLAGS = \
 lib_LTLIBRARIES = \
    libfastjetmedianbkg.la \
    libjetplusbackground.la
+   
 
 libfastjetmedianbkg_la_LDFLAGS = \
   -L$(libdir) \
