@@ -1,5 +1,5 @@
-#ifndef CALOJETRHOEST_H
-#define CALOJETRHOEST_H
+#ifndef JETRHOMEDIAN__H
+#define JETRHOMEDIAN__H
 
 #include <fun4all/SubsysReco.h>
 #include "MemTimeProgression.h"
@@ -17,19 +17,20 @@ class TTree;
 class TH1;
 class JetInput;
 
-class CaloJetRhoEst : public SubsysReco
+class JetRhoMedian : public SubsysReco
 {
  public:
-  CaloJetRhoEst(
-      const double min_calo_pt          = 0.02,
-      const int total_jobs              = 0,
-      const int n_print_freq            = 10,
-      const std::string &recojetname    = "AntiKt_Tower_r04",
-      const std::string &truthjetname   = "AntiKt_Truth_r04",
-      const std::string &outputfilename = "CaloJetRhoEst.root");
+  JetRhoMedian
+    ( const std::string& outputfilename = "JetRhoMedian.root"
+    , const float        pTlb           = -1. 
+    , const int          n_print_freq   = 500    // useful for print freq.
+    , const int          total_jobs     = 1000000  // useful for printing frequency
+    , const double       min_calo_pt    = 0.05
+    , const std::string& truthjetname   = "AntiKt_Truth_r04"
+    );
 
-  const double min_calo_pt;
-  virtual ~CaloJetRhoEst();
+  const double m_min_calo_pt;
+  virtual ~JetRhoMedian();
 
   //! set eta range
   void setEtaRange(double low, double high)
@@ -49,7 +50,7 @@ class CaloJetRhoEst : public SubsysReco
   int process_event (PHCompositeNode *topNode);
   int End           (PHCompositeNode *topNode);
   void clear_vectors();
-  void add_input(JetInput *input) { _inputs.push_back(input); }
+  void add_input(JetInput *input) { m_inputs.push_back(input); }
 
  private:
   std::string m_recoJetName;
@@ -68,6 +69,7 @@ class CaloJetRhoEst : public SubsysReco
   //! Output Tree variables
   TTree *m_T;
   int   m_id;
+  float m_pTlb {-1. }; // pT Lower Bound, 0. for MB, 10 for 10 GeV Jet Embedding, 30 for 30 GeV Jet Embedding
   float m_rho;
   float m_rho_sigma;
   float m_centrality;
@@ -77,7 +79,7 @@ class CaloJetRhoEst : public SubsysReco
   std::vector<float> m_CaloJetEta;
   std::vector<float> m_CaloJetPhi;
   std::vector<float> m_CaloJetE;
-  std::vector<float> m_CaloJetPt;
+  std::vector<float> m_CaloJetPtLessRhoA; // pT - rho x A
   std::vector<float> m_CaloJetArea;
 
   //Truth Jets
@@ -87,8 +89,8 @@ class CaloJetRhoEst : public SubsysReco
   std::vector<float> m_TruthJetPt;
   std::vector<float> m_TruthJetArea;
 
-  std::vector<JetInput *> _inputs; // copied from /direct/sphenix+u/dstewart/vv/coresoftware/simulation/g4simulation/g4jets/JetReco.h .cc
+  std::vector<JetInput *> m_inputs; // copied from /direct/sphenix+u/dstewart/vv/coresoftware/simulation/g4simulation/g4jets/JetReco.h .cc
   MemTimeProgression print_stats;
 };
 
-#endif  // CALOJETRHOEST_H_H
+#endif  // JETRHOMEDIAN__H

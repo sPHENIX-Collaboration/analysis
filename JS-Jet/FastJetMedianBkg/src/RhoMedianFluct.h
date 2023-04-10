@@ -1,5 +1,5 @@
-#ifndef JETPLUSBACKGROUND_H
-#define JETPLUSBACKGROUND_H
+#ifndef RHOMEDIANFLUCT__H
+#define RHOMEDIANFLUCT__H
 
 #include <fun4all/SubsysReco.h>
 #include "MemTimeProgression.h"
@@ -19,26 +19,20 @@ class TTree;
 class TH1;
 class JetInput;
 
-class JetPlusBackground : public SubsysReco
+class RhoMedianFluct : public SubsysReco
 {
  public:
-  JetPlusBackground(
-      const double min_calo_pt          = 0.02,
-      const int total_jobs              = 0,
-      const int n_print_freq            = 10,
-      const std::string &recojetname    = "AntiKt_Tower_r04",
-      /* const std::string &truthjetname   = "AntiKt_Truth_r04", */
-      const std::string &outputfilename = "JetPlusBackground.root");
+  RhoMedianFluct
+    ( const std::string &outputfilename = "RhoMedianFluct.root"
+    , const int n_print_freq            = 20
+    , const int total_jobs              = 1000
+    , const double min_calo_pt          = 0.05
+    , const std::string &recojetname    = "AntiKt_Tower_r04"
+  );
 
   const double min_calo_pt;
-  virtual ~JetPlusBackground();
+  virtual ~RhoMedianFluct();
 
-  //! set eta range
-  void setEtaRange(double low, double high)
-  {
-    m_etaRange.first  = low;
-    m_etaRange.second = high;
-  }
   //! set eta range
   void setPtRange(double low, double high)
   {
@@ -58,9 +52,6 @@ class JetPlusBackground : public SubsysReco
   /* std::string m_truthJetName; */
   std::string m_outputFileName;
 
-  //! eta range
-  std::pair<double, double> m_etaRange;
-
   //! pT range
   std::pair<double, double> m_ptRange;
 
@@ -71,6 +62,7 @@ class JetPlusBackground : public SubsysReco
   TTree *m_T;
   int   m_id;
   float m_rho;
+  int   m_part_size;
   float m_rho_sigma;
   float m_centrality;
   float m_impactparam;
@@ -82,7 +74,7 @@ class JetPlusBackground : public SubsysReco
   std::vector<float> m_CaloJetEta;
   std::vector<float> m_CaloJetPhi;
   std::vector<float> m_CaloJetE;
-  std::vector<float> m_CaloJetPt;
+  std::vector<float> m_CaloJetPtLessRhoA;
   std::vector<float> m_CaloJetArea;
 
   // embedded particle
@@ -101,8 +93,6 @@ class JetPlusBackground : public SubsysReco
   MemTimeProgression print_stats;
   TRandom3 rng;
 
-  /* bool jet_has_index(vector<fastjet::PseudoJet>& jets, int which_jet, int index); */
-  bool jetGT2_has_index(vector<fastjet::PseudoJet>& jets, int index);
 };
 
 #endif  // JETPLUSBACKGROUND_H_H
