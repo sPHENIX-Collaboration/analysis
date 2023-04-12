@@ -16,6 +16,7 @@ using std::string;
 using std::vector;
 using std::min;
 using std::max;
+using std::to_string;
 
 R__LOAD_LIBRARY(libcalo_io.so)
 
@@ -28,13 +29,13 @@ namespace myAnalysis {
     TFile* input;
     TTree* led_tree;
 
+    // QA
     TH1F* hTime;
     TH1F* hAdc;
     TH1F* hPed;
     TH1F* hChannels;
 
     // 2D correlations
-
     TH2F* h2TimeVsChannel;
     TH2F* h2AdcVsChannel;
     TH2F* h2PedVsChannel;
@@ -42,11 +43,21 @@ namespace myAnalysis {
     TH2F* h2PedVsTime;
     TH2F* h2AdcVsPed;
 
+    TH2F* h2TimeVsChannel_scat;
+    TH2F* h2AdcVsChannel_scat;
+    TH2F* h2PedVsChannel_scat;
+    TH2F* h2AdcVsTime_scat;
+    TH2F* h2PedVsTime_scat;
+    TH2F* h2AdcVsPed_scat;
+
+    // one graph per channel
+    vector<TH2F*> h2AdcVsTime_ch;
+
     UInt_t  time_bins    = 60;
     Float_t time_min     = 0;
     Float_t time_max     = 30;
 
-    UInt_t  adc_bins     = 120;
+    UInt_t  adc_bins     = 1200;
     Float_t adc_min      = 0;
     Float_t adc_max      = 12000;
 
@@ -79,6 +90,15 @@ void myAnalysis::init(const string& inputFile) {
     h2AdcVsTime = new TH2F("h2AdcVsTime", "Adc vs Time; Time; Adc", time_bins, time_min, time_max, adc_bins, adc_min, adc_max);
     h2PedVsTime = new TH2F("h2PedVsTime", "Ped vs Time; Time; Ped", time_bins, time_min, time_max, ped_bins, ped_min, ped_max);
     h2AdcVsPed = new TH2F("h2AdcVsPed", "Adc vs Ped; Ped; Adc", ped_bins, ped_min, ped_max, adc_bins, adc_min, adc_max);
+
+    // scatter
+    h2TimeVsChannel_scat = new TH2F("h2TimeVsChannel_scat", "Time vs Channel; Channel; Time", channels_bins, channels_min, channels_max, time_bins, time_min, time_max);
+    h2AdcVsChannel_scat = new TH2F("h2AdcVsChannel_scat", "Adc vs Channel; Channel; Adc", channels_bins, channels_min, channels_max, adc_bins, adc_min, adc_max);
+    h2PedVsChannel_scat = new TH2F("h2PedVsChannel_scat", "Ped vs Channel; Channel; Ped", channels_bins, channels_min, channels_max, ped_bins, ped_min, ped_max);
+
+    h2AdcVsTime_scat = new TH2F("h2AdcVsTime_scat", "Adc vs Time; Time; Adc", time_bins, time_min, time_max, adc_bins, adc_min, adc_max);
+    h2PedVsTime_scat = new TH2F("h2PedVsTime_scat", "Ped vs Time; Time; Ped", time_bins, time_min, time_max, ped_bins, ped_min, ped_max);
+    h2AdcVsPed_scat = new TH2F("h2AdcVsPed_scat", "Adc vs Ped; Ped; Adc", ped_bins, ped_min, ped_max, adc_bins, adc_min, adc_max);
 }
 
 void myAnalysis::analyze(UInt_t nevents) {
@@ -99,12 +119,31 @@ void myAnalysis::analyze(UInt_t nevents) {
         led_tree->GetEntry(i);
         UInt_t nchannels = time->size();
         hChannels->Fill(nchannels);
-        if(channels_max < nchannels) channels_max = nchannels;
+        channels_max = max(channels_max,nchannels);
 
         for(UInt_t channel = 0; channel < nchannels; ++channel) {
             Float_t time_val = time->at(channel);
             Float_t adc_val  = adc->at(channel);
             Float_t ped_val  = ped->at(channel);
+
+            Int_t time_bin    = hTime->FindBin(time_val);
+            Int_t adc_bin     = hAdc->FindBin(adc_val);
+            Int_t ped_bin     = hPed->FindBin(ped_val);
+            Int_t channel_bin = hChannels->FindBin(channel);
+
+            // UInt_t key    = TowerInfoDefs::encode_emcal(channel);
+            // UInt_t etabin = TowerInfoDefs::getCaloTowerEtaBin(key);
+            // UInt_t phibin = TowerInfoDefs::getCaloTowerPhiBin(key);
+
+            if(h2AdcVsTime_ch.size() < channel+1) {
+                h2AdcVsTime_ch.push_back(new TH2F(("h2AdcVsTime_" + to_string(channel)).c_str(),
+                                                   "Adc vs Time; Time; Adc",
+                                                   time_bins, time_min, time_max,
+                                                   adc_bins, adc_min, adc_max));
+            }
+
+            // h2AdcVsTime_ch[channel]->Fill(time_val,adc_val);
+            h2AdcVsTime_ch[channel]->SetBinContent(time_bin, adc_bin, 1);
 
             hTime->Fill(time_val);
             hAdc->Fill(adc_val);
@@ -114,9 +153,17 @@ void myAnalysis::analyze(UInt_t nevents) {
             h2AdcVsChannel->Fill(channel, adc_val);
             h2PedVsChannel->Fill(channel, ped_val);
 
+            h2TimeVsChannel_scat->SetBinContent(channel_bin, time_bin, 1);
+            h2AdcVsChannel_scat->SetBinContent(channel_bin, adc_bin, 1);
+            h2PedVsChannel_scat->SetBinContent(channel_bin, ped_bin, 1);
+
             h2AdcVsTime->Fill(time_val, adc_val);
             h2PedVsTime->Fill(time_val, ped_val);
             h2AdcVsPed->Fill(ped_val, adc_val);
+
+            h2AdcVsTime_scat->SetBinContent(time_bin, adc_bin, 1);
+            h2PedVsTime_scat->SetBinContent(time_bin, ped_bin, 1);
+            h2AdcVsPed_scat->SetBinContent(ped_bin, adc_bin, 1);
 
             time_min = min(time_min, time_val);
             time_max = max(time_max, time_val);
@@ -151,6 +198,23 @@ void myAnalysis::finalize(const string& outputFile) {
     h2AdcVsTime->Write();
     h2PedVsTime->Write();
     h2AdcVsPed->Write();
+
+    output.mkdir("scat");
+    output.cd("scat");
+
+    h2TimeVsChannel_scat->Write();
+    h2AdcVsChannel_scat->Write();
+    h2PedVsChannel_scat->Write();
+
+    h2AdcVsTime_scat->Write();
+    h2PedVsTime_scat->Write();
+    h2AdcVsPed_scat->Write();
+
+    output.cd();
+
+    output.mkdir("AdcVsTime");
+    output.cd("AdcVsTime");
+    for(auto h2 : h2AdcVsTime_ch) h2->Write();
 
     // Close root file
     input->Close();
