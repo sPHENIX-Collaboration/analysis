@@ -96,6 +96,7 @@ class LEDTowerBuilder : public SubsysReco
   std::vector<float> m_ped;
   std::vector<float> m_time;
   std::vector<int> m_chan;
+  std::vector<std::vector<float>> m_waveforms;
   std::string m_outputFilename;
   int m_diagnostic;
   

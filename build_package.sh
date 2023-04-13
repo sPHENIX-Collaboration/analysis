@@ -5,7 +5,6 @@ mkdir -p build
 cd build
 
 echo "Running autogen"
-# $(readlink -f ../src/Calibration)/autogen.sh --prefix=$MYINSTALL
 $(readlink -f ../src)/autogen.sh --prefix=$MYINSTALL
 
 echo "Running make"

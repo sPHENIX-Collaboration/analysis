@@ -1,6 +1,7 @@
 #+title: Readme
 
 * Description
+- Going over the prdf files and extracting the waveforms fitted ADC, peak location and pedestal values.
 - Electronics readout chain: Signal -> SiPM -> Readout.
 - LED's take place of Signal.
   - Validate performance of the SiPMs.
@@ -9,12 +10,13 @@
 
 * Data
 ** Test Pulse
-- Location: /sphenix/lustre01/sphnxpro/commissioning/emcal/calib/calib-00005027-0000.prdf
+- Location: ~/sphenix/lustre01/sphnxpro/commissioning/emcal/calib/calib-00005027-0000.prdf~
 - Packets Present: 6009-6016
 - Command used to check which packets present:
 #+begin_src bash
 dlist -i -f target.prdf
 #+end_src
+- Events: 11001
 - Command used to check the number of events present:
 #+begin_src bash
 dpipe -d n -s f -i target.prdf | wc -l
@@ -36,10 +38,34 @@ Reference: https://www.phenix.bnl.gov/~phoncs/oncs/code_documentation/Event/dlis
 - Each *sector* consists of 2 *packets*.
 
 * Usage
-- Read over the prdfs and make basic histograms to a root file:
+1) Compile ~LEDTowerBuilder.cc~ into ~libledtowerbuilder.so~ using:
   #+begin_src bash
-  ./bin/read-LEDs <input> <output> <events>
+./build_package
   #+end_src
+  - Note: Make sure to have ~$MYINSTALL~ set correctly.
+
+2) Compile ~macro/Fun4All_LEDTowerBuilder.C~ using:
+#+begin_src bash
+make
+#+end_src
+
+3) Read over the prdfs and make basic histograms to a root file:
+#+begin_src bash
+./bin/Fun4All_LEDTowerBuilder <events> <fListname> <outputFile>
+#+end_src
+ - <events>: Number of events to analyze from the prdfs. Default = 10.
+ - <fListname>: Location of the file list which contains the prdfs. Default = data/fileList.list.
+ - <outputFile>: Location of the analyzed prdfs root file. Default: data/LEDTowerBuilder.root.
+
+4) Go through the LEDTowerBuilder.root generated in the previous step and create QA histograms.
+#+begin_src bash
+./bin/read-LEDs <input> <output> <events>
+#+end_src
 - <input>:  Location of LEDTowerBuilder.root. Default = data/LEDTowerBuilder.root.
 - <output>: output root file. Default = output/test.root.
 - <events>: Number of events to analyze. Default = 0 (meaning all events).
+
+5) Plotting macro:
+#+begin_src bash
+root -b -l -q macro/display.C
+#+end_src

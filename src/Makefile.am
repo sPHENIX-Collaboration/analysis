@@ -24,7 +24,6 @@ libledtowerbuilder_la_LIBADD = \
   -lsph_onnx \
   -lcaloCalibDBFile \
   -lcdbobjects \
-  -ldbtools \
   -lphparameter \
   -lcalo_reco
 

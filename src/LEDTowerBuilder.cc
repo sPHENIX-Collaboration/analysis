@@ -43,6 +43,7 @@ LEDTowerBuilder::LEDTowerBuilder(const std::string &name):
   , m_ped(0)
   , m_time(0)
   , m_chan(0)
+  , m_waveforms(0)
   , m_outputFilename(name)
   , m_diagnostic(0)
 {
@@ -53,6 +54,7 @@ LEDTowerBuilder::LEDTowerBuilder(const std::string &name):
   tOut -> Branch("time",&m_time);
   tOut -> Branch("adc",&m_adc);
   tOut -> Branch("ped",&m_ped);
+  tOut -> Branch("waveforms",&m_waveforms);
   tOut -> Branch("chan",&m_chan);
 
 }
@@ -109,7 +111,7 @@ int LEDTowerBuilder::InitRun(PHCompositeNode *topNode)
 //____________________________________________________________________________..
 int LEDTowerBuilder::process_event(PHCompositeNode *topNode)
 {
-  std::vector<std::vector<float>> waveforms;
+  // std::vector<std::vector<float>> waveforms;
   TGraph *gWaveForm = new TGraph();
 
   // std::cout << "m_isdata: " << m_isdata << std::endl;
@@ -151,7 +153,8 @@ int LEDTowerBuilder::process_event(PHCompositeNode *topNode)
           gWaveForm -> Draw("ap");
           gPad -> WaitPrimitive();
         }
-        waveforms.push_back(waveform);
+        // waveforms.push_back(waveform);
+        m_waveforms.push_back(waveform);
         waveform.clear();
       }
       delete packet;
@@ -162,7 +165,7 @@ int LEDTowerBuilder::process_event(PHCompositeNode *topNode)
     std::cout << "m_isdata: false!!" << std::endl;
     return Fun4AllReturnCodes::EVENT_OK;
   }
-  std::vector<std::vector<float>> processed_waveforms =  WaveformProcessing->process_waveform(waveforms);
+  std::vector<std::vector<float>> processed_waveforms =  WaveformProcessing->process_waveform(m_waveforms);
 
   int n_channels = processed_waveforms.size();
   for (int i = 0 ; i < n_channels;i++)
@@ -179,7 +182,8 @@ int LEDTowerBuilder::process_event(PHCompositeNode *topNode)
   m_adc.clear();
   m_ped.clear();
   m_chan.clear();
-  waveforms.clear();
+  m_waveforms.clear();
+  // waveforms.clear();
 
   return Fun4AllReturnCodes::EVENT_OK;
 }

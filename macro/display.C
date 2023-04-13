@@ -1,7 +1,4 @@
-void display(){
-   const string inputFile="output/test.root";
-   const string outputFile="output/plots.pdf";
-
+void display(const string& inputFile="output/test.root", const string& outputFile="output/plots.pdf") {
    TFile input(inputFile.c_str());
 
    auto c1 = new TCanvas();
@@ -36,7 +33,7 @@ void display(){
 
    // ------------------------------------------------------------
 
-   h1 = (TH1D*)(input.Get("hAdc"))->Clone();
+   h1 = (TH1D*)(input.Get("hADC"))->Clone();
    h1->SetStats(0);
    h1->GetYaxis()->SetRangeUser(5e-1,1e7);
    h1->Draw();
@@ -68,7 +65,7 @@ void display(){
 
    c1->SetLeftMargin(.11);
    // c1->SetRightMargin(.1);
-   h2 = (TH2D*)(input.Get("scat/h2AdcVsChannel_scat"))->Clone();
+   h2 = (TH2D*)(input.Get("scat/h2ADCVsChannel_scat"))->Clone();
    h2->SetStats(0);
    h2->SetMarkerStyle(8);
    h2->SetMarkerColor(kRed);
@@ -94,7 +91,7 @@ void display(){
    // ------------------------------------------------------------
 
    c1->SetLeftMargin(.11);
-   h2 = (TH2D*)(input.Get("scat/h2AdcVsTime_scat"))->Clone();
+   h2 = (TH2D*)(input.Get("scat/h2ADCVsTime_scat"))->Clone();
    h2->SetStats(0);
    h2->SetMarkerStyle(8);
    h2->SetMarkerColor(kRed);
@@ -116,7 +113,7 @@ void display(){
    // ------------------------------------------------------------
 
    c1->SetLeftMargin(.11);
-   h2 = (TH2D*)(input.Get("scat/h2AdcVsPed_scat"))->Clone();
+   h2 = (TH2D*)(input.Get("scat/h2ADCVsPed_scat"))->Clone();
    h2->SetStats(0);
    h2->SetMarkerStyle(8);
    h2->SetMarkerColor(kRed);
@@ -142,11 +139,12 @@ void display(){
          c1->cd(j+1);
          gPad->SetTickx();
          gPad->SetTicky();
-         h2 = (TH2D*)(input.Get(("AdcVsTime/h2AdcVsTime_"+to_string(channel)).c_str()))->Clone();
+         h2 = (TH2D*)(input.Get(("adcVsTime/h2adcVsTime_"+to_string(channel)).c_str()))->Clone();
          h2->SetTitle("");
          h2->SetStats(0);
-         h2->GetYaxis()->SetRangeUser(0,4e3);
+         h2->GetYaxis()->SetRangeUser(0,6e3);
          h2->SetMarkerStyle(8);
+         h2->SetMarkerSize(0.3);
          h2->SetMarkerColor(kRed);
          h2->Draw();
 
@@ -154,9 +152,10 @@ void display(){
          pt->AddText((to_string(channel)).c_str());
          pt->Draw();
       }
-      if(i == 0) c1->Print("output/AdcVsTime.pdf(", "pdf portrait");
-      else if(i == i_max-1) c1->Print("output/AdcVsTime.pdf)", "pdf portrait");
-      else c1->Print("output/AdcVsTime.pdf", "pdf portrait");
+      if(i == 0 && i_max == 1) c1->Print("output/adcVsTime.pdf", "pdf portrait");
+      else if(i == 0) c1->Print("output/adcVsTime.pdf(", "pdf portrait");
+      else if(i == i_max-1) c1->Print("output/adcVsTime.pdf)", "pdf portrait");
+      else c1->Print("output/adcVsTime.pdf", "pdf portrait");
    }
 
    input.Close();
