@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import numpy as np
-# import subprocess
+import subprocess
 import argparse
 import os
 import shutil
@@ -10,6 +10,7 @@ subparser = parser.add_subparsers(dest='command')
 
 create = subparser.add_parser('create')
 status = subparser.add_parser('status')
+hadd   = subparser.add_parser('hadd')
 
 create.add_argument('--executable', type=str, help='Job script to execute.', required=True)
 create.add_argument('--macros', type=str, help='Directory of input macros. Directory containing Fun4All_G4_sPHENIX.C and G4Setup_sPHENIX.C.',required=True)
@@ -20,6 +21,11 @@ create.add_argument('-j', '--events-per-job', type=int, default=50, help='Number
 create.add_argument('--memory', type=int, default=10, help='Memory (units of GB) to request per condor submission. Default: 10 GB.')
 
 status.add_argument('-d','--condor-dir', type=str, help='Condor submission directory.', required=True)
+
+hadd.add_argument('-i','--job-dir-list', type=str, help='List of directories containing condor jobs to be merged.', required=True)
+hadd.add_argument('-o','--output', type=str, default='test.root', help='Output root file. Default: test.root.')
+hadd.add_argument('-n','--jobs-per-hadd', type=int, default=5000, help='Number of jobs to merge per hadd call. Default: 5000.')
+hadd.add_argument('-j','--jobs-open', type=int, default=50, help='Number of jobs to load at once. Default: 50.')
 
 args = parser.parse_args()
 
@@ -32,10 +38,7 @@ def create_jobs():
     memory              = args.memory
     macros_dir          = os.path.abspath(args.macros)
     jobs                = events//events_per_job
-    submissions         = jobs//jobs_per_submission
-    # add one more submission if there is any remainder left
-    if(jobs%jobs_per_submission):
-        submissions += 1
+    submissions         = int(np.ceil(jobs/jobs_per_submission))
 
     print(f'Events: {events}')
     print(f'Events per job: {events_per_job}')
@@ -108,9 +111,46 @@ def get_status():
     if(total != 0):
         print(f'Total jobs done: {jobs_done_total}, {jobs_done_total/total*100:.2f} %')
 
+def hadd():
+    job_dir_list  = os.path.abspath(args.job_dir_list)
+    output        = os.path.abspath(args.output)
+    jobs_per_hadd = args.jobs_per_hadd
+    jobs_open     = args.jobs_open+1
+    print(f'file list: {job_dir_list}')
+    print(f'output: {output}')
+    print(f'jobs per hadd: {jobs_per_hadd}')
+    print(f'jobs open at once: {jobs_open-1}')
+
+    jobs = []
+    with open(job_dir_list) as f:
+        for line in f:
+            line = line.strip()
+            jobs_l = os.listdir(line)
+            print(f'dir: {line}, jobs: {len(jobs_l)}')
+            jobs.extend([os.path.join(line,file) for file in jobs_l])
+
+    total_jobs = len(jobs)
+    hadd_calls = int(np.ceil(total_jobs/jobs_per_hadd))
+
+    print(f'total jobs: {total_jobs}')
+    print(f'hadd calls: {hadd_calls}')
+
+    for i in range(hadd_calls):
+        subprocess.run(['echo', '#######################'])
+        subprocess.run(['echo', f'working on hadd: {i}'])
+        command = ['hadd', '-a', '-n', str(jobs_open), output]
+        i_start = jobs_per_hadd*i
+        i_end = min(jobs_per_hadd*(i+1), total_jobs)
+        subprocess.run(['echo', f'i_start: {i_start}, i_end: {i_end}'])
+        command.extend(jobs[i_start:i_end])
+        subprocess.run(command)
+        subprocess.run(['echo', f'done with hadd: {i}'])
+        subprocess.run(['echo', '#######################'])
 
 if __name__ == '__main__':
     if(args.command == 'create'):
         create_jobs()
     elif(args.command == 'status'):
         get_status()
+    elif(args.command == 'hadd'):
+        hadd()
