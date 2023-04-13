@@ -39,9 +39,9 @@ Reference: https://www.phenix.bnl.gov/~phoncs/oncs/code_documentation/Event/dlis
 
 * Usage
 1) Compile ~LEDTowerBuilder.cc~ into ~libledtowerbuilder.so~ using:
-  #+begin_src bash
+#+begin_src bash
 ./build_package
-  #+end_src
+#+end_src
   - Note: Make sure to have ~$MYINSTALL~ set correctly.
 
 2) Compile ~macro/Fun4All_LEDTowerBuilder.C~ using:
