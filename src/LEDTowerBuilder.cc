@@ -1,25 +1,4 @@
 #include "LEDTowerBuilder.h"
-
-#include <fun4all/Fun4AllReturnCodes.h>
-#include <fun4all/SubsysReco.h>  // for SubsysReco
-
-#include <phool/PHCompositeNode.h>
-#include <phool/PHIODataNode.h>    // for PHIODataNode
-#include <phool/PHNodeIterator.h>  // for PHNodeIterator
-#include <phool/PHObject.h>        // for PHObject
-#include <phool/getClass.h>
-#include <phool/phool.h>
-
-#include <phool/PHCompositeNode.h>
-#include <Event/Event.h>
-#include <Event/EventTypes.h>
-#include <Event/packet.h>
-
-#include <TTree.h>
-#include <TGraph.h>
-#include <TPad.h>
-#include <TFile.h>
-
 //____________________________________________________________________________..
 LEDTowerBuilder::LEDTowerBuilder(const std::string &name):
   SubsysReco(name)

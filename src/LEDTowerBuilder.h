@@ -3,26 +3,21 @@
 #define LEDTOWERBUILDER_H
 
 #include <fun4all/SubsysReco.h>
+#include <fun4all/Fun4AllReturnCodes.h>
 
 #include <caloreco/CaloWaveformProcessing.h>
 
 #include <phool/PHCompositeNode.h>
-#include <phool/PHIODataNode.h>    // for PHIODataNode
-#include <phool/PHNodeIterator.h>  // for PHNodeIterator
-#include <phool/PHObject.h>        // for PHObject
 #include <phool/getClass.h>
-#include <phool/phool.h>
 
 #include <Event/Event.h>
-#include <Event/EventTypes.h>
 #include <Event/packet.h>
 
+#include <TTree.h>
+#include <TFile.h>
+
 #include <iostream>
-
 #include <string>
-
-class PHCompositeNode;
-class TTree;
 
 class LEDTowerBuilder : public SubsysReco {
   public:
