@@ -4,9 +4,6 @@
 
 #include <fun4all/SubsysReco.h>
 
-#include <calobase/RawTowerDefs.h>  // for HCALIN, HCALOUT, CEMC
-#include <calobase/TowerInfoContainerv1.h>
-#include <calobase/TowerInfov1.h>
 #include <caloreco/CaloWaveformProcessing.h>
 
 #include <phool/PHCompositeNode.h>
@@ -20,72 +17,61 @@
 #include <Event/EventTypes.h>
 #include <Event/packet.h>
 
-#include <cassert>
-#include <cmath>  // for NAN
 #include <iostream>
-#include <map>      // for _Rb_tree_const_iterator
-#include <utility>  // for pair
 
-#include <TRandom3.h>
 #include <string>
 
 class PHCompositeNode;
 class TTree;
 
-class LEDTowerBuilder : public SubsysReco
-{
- public:
+class LEDTowerBuilder : public SubsysReco {
+  public:
 
-  LEDTowerBuilder(const std::string &name = "LEDTowerBuilder");
-  ~LEDTowerBuilder() override;
+    LEDTowerBuilder(const std::string &name = "LEDTowerBuilder");
+    ~LEDTowerBuilder() override;
 
-  int InitRun(PHCompositeNode *topNode) override;
-  int process_event(PHCompositeNode *topNode) override;
-  int End(PHCompositeNode *topNode) override;
+    int InitRun(PHCompositeNode *topNode) override;
+    int process_event(PHCompositeNode *topNode) override;
+    int End(PHCompositeNode *topNode) override;
 
-  enum DetectorSystem
-  {
+    enum DetectorSystem {
     CEMC = 0,
     HCALIN = 1,
     HCALOUT = 2,
     EPD = 3
   };
 
-  void set_detector_type(LEDTowerBuilder::DetectorSystem dettype)
-  {
-    m_dettype = dettype;
-    return;
-  }
+    void set_detector_type(LEDTowerBuilder::DetectorSystem dettype) {
+      m_dettype = dettype;
+      return;
+    }
 
-  void set_nsamples(int _nsamples)
-  {
-    m_nsamples = _nsamples;
-    return;
-  }
-  void set_dataflag(bool flag)
-  {
-    m_isdata = flag;
-    return;
-  }
+    void set_nsamples(int _nsamples) {
+      m_nsamples = _nsamples;
+      return;
+    }
+    void set_dataflag(bool flag) {
+      m_isdata = flag;
+      return;
+    }
 
- private:
+  private:
  
-  CaloWaveformProcessing* WaveformProcessing = new CaloWaveformProcessing();
-  LEDTowerBuilder::DetectorSystem m_dettype; 
-  TowerInfoContainer *m_CaloInfoContainer; //! Calo info
-  std::string m_detector;
-  int m_packet_low;
-  int m_packet_high;
-  int m_nsamples;
-  bool m_isdata;
+    CaloWaveformProcessing* WaveformProcessing = new CaloWaveformProcessing();
+    LEDTowerBuilder::DetectorSystem m_dettype;
+    std::string m_detector;
+    int m_packet_low;
+    int m_packet_high;
+    int m_nsamples;
+    bool m_isdata;
   
-  TTree *tOut;
-  std::vector<float> m_adc;
-  std::vector<float> m_ped;
-  std::vector<float> m_time;
-  std::vector<int> m_chan;
-  std::vector<std::vector<float>> m_waveforms;
-  std::string m_outputFilename;
+    TTree *tOut;
+    std::vector<float> m_adc;
+    std::vector<float> m_ped;
+    std::vector<float> m_time;
+    std::vector<int> m_chan;
+    std::vector<std::vector<float>> m_waveforms;
+    std::string m_outputFilename;
 };
 
 #endif // LEDTOWERBUILDER_H
