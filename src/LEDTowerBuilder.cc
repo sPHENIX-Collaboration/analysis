@@ -27,7 +27,6 @@
 #include <TGraph.h>
 #include <TPad.h>
 #include <TFile.h>
-// #include <TRandom3.h>
 
 //____________________________________________________________________________..
 LEDTowerBuilder::LEDTowerBuilder(const std::string &name):
@@ -45,7 +44,6 @@ LEDTowerBuilder::LEDTowerBuilder(const std::string &name):
   , m_chan(0)
   , m_waveforms(0)
   , m_outputFilename(name)
-  , m_diagnostic(0)
 {
   std::cout << "LEDTowerBuilder::LEDTowerBuilder(const std::string &name) Calling ctor" << std::endl;
 
@@ -111,11 +109,6 @@ int LEDTowerBuilder::InitRun(PHCompositeNode *topNode)
 //____________________________________________________________________________..
 int LEDTowerBuilder::process_event(PHCompositeNode *topNode)
 {
-  // std::vector<std::vector<float>> waveforms;
-  TGraph *gWaveForm = new TGraph();
-
-  // std::cout << "m_isdata: " << m_isdata << std::endl;
-
   if (m_isdata)
   {
     Event *_event = findNode::getClass<Event>(topNode, "PRDF");
@@ -144,16 +137,7 @@ int LEDTowerBuilder::process_event(PHCompositeNode *topNode)
         for (int samp = 0; samp < m_nsamples;samp++)
         {
           waveform.push_back(packet->iValue(samp,channel));
-          if(m_diagnostic) gWaveForm -> SetPoint(samp, samp, (packet->iValue(samp,channel)));
         }
-        if(m_diagnostic)
-        {
-          gWaveForm -> SetMarkerStyle(4);
-          gWaveForm -> SetTitle(";sample number;");
-          gWaveForm -> Draw("ap");
-          gPad -> WaitPrimitive();
-        }
-        // waveforms.push_back(waveform);
         m_waveforms.push_back(waveform);
         waveform.clear();
       }
@@ -183,7 +167,6 @@ int LEDTowerBuilder::process_event(PHCompositeNode *topNode)
   m_ped.clear();
   m_chan.clear();
   m_waveforms.clear();
-  // waveforms.clear();
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -191,19 +174,10 @@ int LEDTowerBuilder::process_event(PHCompositeNode *topNode)
 int LEDTowerBuilder::End(PHCompositeNode *topNode)
 {
   std::cout << "LEDTowerBuilder opening output file: " << m_outputFilename << std::endl;
-  // PHTFileServer::get().open(m_outputFilename,"RECREATE");
   TFile output(m_outputFilename.c_str(),"recreate");
   output.cd();
   tOut -> Write();
   output.Close();
 
   return Fun4AllReturnCodes::EVENT_OK;
-}
-
-float LEDTowerBuilder::calculateRMS(std::vector<std::vector<float>> waveforms)
-{
-
-  float derp = 2.;
-  return derp;
-
 }

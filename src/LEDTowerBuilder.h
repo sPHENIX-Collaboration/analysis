@@ -1,16 +1,13 @@
-// Tell emacs that this is a C++ source
 //  -*- C++ -*-.
 #ifndef LEDTOWERBUILDER_H
 #define LEDTOWERBUILDER_H
 
 #include <fun4all/SubsysReco.h>
 
-
 #include <calobase/RawTowerDefs.h>  // for HCALIN, HCALOUT, CEMC
 #include <calobase/TowerInfoContainerv1.h>
 #include <calobase/TowerInfov1.h>
 #include <caloreco/CaloWaveformProcessing.h>
-
 
 #include <phool/PHCompositeNode.h>
 #include <phool/PHIODataNode.h>    // for PHIODataNode
@@ -29,8 +26,6 @@
 #include <map>      // for _Rb_tree_const_iterator
 #include <utility>  // for pair
 
-
-
 #include <TRandom3.h>
 #include <string>
 
@@ -47,7 +42,6 @@ class LEDTowerBuilder : public SubsysReco
   int InitRun(PHCompositeNode *topNode) override;
   int process_event(PHCompositeNode *topNode) override;
   int End(PHCompositeNode *topNode) override;
-  float calculateRMS(std::vector<std::vector<float>> waveforms);
 
   enum DetectorSystem
   {
@@ -74,12 +68,6 @@ class LEDTowerBuilder : public SubsysReco
     return;
   }
 
-  void set_diagnoistic(int diag)
-  {
-    m_diagnostic = diag;
-    return;
-  }
-  
  private:
  
   CaloWaveformProcessing* WaveformProcessing = new CaloWaveformProcessing();
@@ -98,8 +86,6 @@ class LEDTowerBuilder : public SubsysReco
   std::vector<int> m_chan;
   std::vector<std::vector<float>> m_waveforms;
   std::string m_outputFilename;
-  int m_diagnostic;
-  
 };
 
 #endif // LEDTOWERBUILDER_H
