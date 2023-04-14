@@ -111,6 +111,7 @@ int LEDTowerBuilder::InitRun(PHCompositeNode *topNode)
 //____________________________________________________________________________..
 int LEDTowerBuilder::process_event(PHCompositeNode *topNode)
 {
+  std::cout << "process_event" << std::endl;
   // std::vector<std::vector<float>> waveforms;
   TGraph *gWaveForm = new TGraph();
 
@@ -137,6 +138,7 @@ int LEDTowerBuilder::process_event(PHCompositeNode *topNode)
         std::cout << "No packet!!, pid: " << pid << std::endl;
         return Fun4AllReturnCodes::DISCARDEVENT;
       }
+      std::cout << "packet pid: " << pid << ", channels: " << packet->iValue(0,"CHANNELS") << std::endl;
       for ( int channel = 0; channel <  packet->iValue(0,"CHANNELS"); channel++)
       {
         std::vector<float> waveform;
