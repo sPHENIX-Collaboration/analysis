@@ -14,17 +14,6 @@ libledtowerbuilder_la_LDFLAGS = \
   -L$(OFFLINE_MAIN)/lib
 
 libledtowerbuilder_la_LIBADD = \
-  -lCLHEP \
-  -lphool \
-  -lSubsysReco \
-  -lgsl \
-  -lgslcblas \
-  -lg4vertex_io \
-  -lcalo_io \
-  -lsph_onnx \
-  -lcaloCalibDBFile \
-  -lcdbobjects \
-  -lphparameter \
   -lcalo_reco
 
 AM_CPPFLAGS = \
