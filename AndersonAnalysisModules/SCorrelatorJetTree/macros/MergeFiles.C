@@ -1,9 +1,11 @@
+// ----------------------------------------------------------------------------
 // 'MergeFiles.C'
 // Derek Anderson
 // 09.25.2020
 //
 // Merges root files.  Adapted from code
 // by Nihar Sahoo.
+// ----------------------------------------------------------------------------
 
 #include <fstream>
 #include <string.h>
@@ -187,4 +189,4 @@ void MergeRootfile( TDirectory *target, TList *sourcelist ) {
   TH1::AddDirectory(status);
 }  // end 'MergeRootFiles(TDirectory*, TList*)'
 
-// End ------------------------------------------------------------------------
+// end ------------------------------------------------------------------------
