@@ -1,5 +1,5 @@
-#ifndef CALOJETRHOEST_H
-#define CALOJETRHOEST_H
+#ifndef RHOMEDIANFLUCT__H
+#define RHOMEDIANFLUCT__H
 
 #include <fun4all/SubsysReco.h>
 #include "MemTimeProgression.h"
@@ -10,6 +10,8 @@
 
 #include <array>
 #include <vector>
+#include <TRandom3.h>
+#include <fastjet/PseudoJet.hh>
 
 class PHCompositeNode;
 class JetEvalStack;
@@ -17,26 +19,20 @@ class TTree;
 class TH1;
 class JetInput;
 
-class CaloJetRhoEst : public SubsysReco
+class RhoMedianFluct : public SubsysReco
 {
  public:
-  CaloJetRhoEst(
-      const double min_calo_pt          = 0.02,
-      const int total_jobs              = 0,
-      const int n_print_freq            = 10,
-      const std::string &recojetname    = "AntiKt_Tower_r04",
-      const std::string &truthjetname   = "AntiKt_Truth_r04",
-      const std::string &outputfilename = "CaloJetRhoEst.root");
+  RhoMedianFluct
+    ( const std::string &outputfilename = "RhoMedianFluct.root"
+    , const int n_print_freq            = 20
+    , const int total_jobs              = 1000
+    , const double min_calo_pt          = 0.05
+    , const std::string &recojetname    = "AntiKt_Tower_r04"
+  );
 
   const double min_calo_pt;
-  virtual ~CaloJetRhoEst();
+  virtual ~RhoMedianFluct();
 
-  //! set eta range
-  void setEtaRange(double low, double high)
-  {
-    m_etaRange.first  = low;
-    m_etaRange.second = high;
-  }
   //! set eta range
   void setPtRange(double low, double high)
   {
@@ -53,11 +49,8 @@ class CaloJetRhoEst : public SubsysReco
 
  private:
   std::string m_recoJetName;
-  std::string m_truthJetName;
+  /* std::string m_truthJetName; */
   std::string m_outputFileName;
-
-  //! eta range
-  std::pair<double, double> m_etaRange;
 
   //! pT range
   std::pair<double, double> m_ptRange;
@@ -69,26 +62,37 @@ class CaloJetRhoEst : public SubsysReco
   TTree *m_T;
   int   m_id;
   float m_rho;
+  int   m_part_size;
   float m_rho_sigma;
   float m_centrality;
   float m_impactparam;
 
-  //Calo Jets
+  float m_RhoBias;
+
+  //Calo Jets -- Note: the event will be rejected if the leading jet does not
+  //             contain the embedded particle
   std::vector<float> m_CaloJetEta;
   std::vector<float> m_CaloJetPhi;
   std::vector<float> m_CaloJetE;
-  std::vector<float> m_CaloJetPt;
+  std::vector<float> m_CaloJetPtLessRhoA;
   std::vector<float> m_CaloJetArea;
 
-  //Truth Jets
-  std::vector<float> m_TruthJetEta;
-  std::vector<float> m_TruthJetPhi;
-  std::vector<float> m_TruthJetE;
-  std::vector<float> m_TruthJetPt;
-  std::vector<float> m_TruthJetArea;
+  // embedded particle
+  float m_embEta;
+  float m_embPhi;
+  float m_embPt;
+
+  //Truth Jets -> only fill for the single leading leading jet
+  /* std::vector<float> m_TruthJetEta; */
+  /* std::vector<float> m_TruthJetPhi; */
+  /* std::vector<float> m_TruthJetE; */
+  /* std::vector<float> m_TruthJetPt; */
+  /* std::vector<float> m_TruthJetArea; */
 
   std::vector<JetInput *> _inputs; // copied from /direct/sphenix+u/dstewart/vv/coresoftware/simulation/g4simulation/g4jets/JetReco.h .cc
   MemTimeProgression print_stats;
+  TRandom3 rng;
+
 };
 
-#endif  // CALOJETRHOEST_H_H
+#endif  // JETPLUSBACKGROUND_H_H

@@ -94,13 +94,13 @@ int RhoMedianFluct::Init(PHCompositeNode* topNode)
   m_T = new TTree("T", "RhoMedianFluct Tree");
 
   // int m_event;
-  m_T->Branch("_fluct",            &m_RhoBias);
-  m_T->Branch("id",                &m_id);
-  m_T->Branch("rho",               &m_rho);
-  m_T->Branch("rho_sigma",         &m_rho_sigma);
-  m_T->Branch("centrality",        &m_centrality);
-  m_T->Branch("impactparam",       &m_impactparam);
-
+  m_T->Branch("fluct",       &m_RhoBias);
+  m_T->Branch("id",          &m_id);
+  m_T->Branch("rho",         &m_rho);
+  m_T->Branch("partsize",    &m_part_size);
+  m_T->Branch("rho_sigma",   &m_rho_sigma);
+  m_T->Branch("centrality",  &m_centrality);
+  m_T->Branch("impactparam", &m_impactparam);
 
   m_T->Branch("CaloJetEta",        &m_CaloJetEta);
   m_T->Branch("CaloJetPhi",        &m_CaloJetPhi);
@@ -108,9 +108,9 @@ int RhoMedianFluct::Init(PHCompositeNode* topNode)
   m_T->Branch("CaloJetPtLessRhoA", &m_CaloJetPtLessRhoA);
   m_T->Branch("CaloJetArea",       &m_CaloJetArea);
 
-  m_T->Branch("embEta",            &m_embEta);
-  m_T->Branch("embPhi",            &m_embPhi);
-  m_T->Branch("embPt",             &m_embPt);
+  m_T->Branch("embEta", &m_embEta);
+  m_T->Branch("embPhi", &m_embPhi);
+  m_T->Branch("embPt",  &m_embPt);
 
 
   return Fun4AllReturnCodes::EVENT_OK;
@@ -195,7 +195,8 @@ int RhoMedianFluct::process_event(PHCompositeNode* topNode)
   embjet.reset_PtYPhiM(m_embPt, m_embEta, m_embPhi);
 
   const int emb_index = particles_pseudojets.size();
-  if (emb_index > 5000) {
+  m_part_size = emb_index;
+  if (emb_index > 50000) {
     for (auto &p : particles) delete p;
     clear_vectors();
     return Fun4AllReturnCodes::EVENT_OK;
@@ -227,11 +228,12 @@ int RhoMedianFluct::process_event(PHCompositeNode* topNode)
 
   AreaDefinition area_def_bkgd( active_area_explicit_ghosts, GhostedAreaSpec(ghost_max_rap, 1, ghost_R));
   JetDefinition jet_def_bkgd(kt_algorithm, jet_R); // <--
-  Selector selector_rm0 = SelectorAbsEtaMax(0.6); // <-- remove the leading two jets
-  fastjet::JetMedianBackgroundEstimator bge_rm0 {selector_rm0, jet_def_bkgd, area_def_bkgd};
-  bge_rm0.set_particles(particles_pseudojets);
-  m_rho = bge_rm0.rho();
-  m_rho_sigma = bge_rm0.sigma();
+  // want to remove 2 consistently -- ultimately should be data determined
+  fastjet::Selector selector_rm2 = fastjet::SelectorAbsEtaMax(0.6) * (!fastjet::SelectorNHardest(2)); // <--
+  fastjet::JetMedianBackgroundEstimator bge_rm2 {selector_rm2, jet_def_bkgd, area_def_bkgd};
+  bge_rm2.set_particles(particles_pseudojets);
+  m_rho = bge_rm2.rho();
+  m_rho_sigma = bge_rm2.sigma();
 
   if (Verbosity()>5) cout << "Starting clustered jets" << endl;
   double max_rap = 2.0;
@@ -261,7 +263,7 @@ int RhoMedianFluct::process_event(PHCompositeNode* topNode)
     return Fun4AllReturnCodes::EVENT_OK;
   }
 
-  m_RhoBias = m_embPt - (jets[0].pt() - jets[0].area()*m_rho);
+  m_RhoBias = (jets[0].pt() - jets[0].area()*m_rho) - m_embPt;
 
   for (auto jet : jets) {
     m_CaloJetEta  .push_back( jet.eta());

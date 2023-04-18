@@ -18,19 +18,22 @@ from os import path
 
 
 def main():
-    n_per = 1
+    lines_per_output = 1 # lines per output
     try:
-        n_per = argv[1]
+        lines_per_output = argv[1]
     except:
         pass
 
-    n_files = 1
+    n_files = -1
     try:
         n_files = int(argv[2])
     except:
         pass
 
-    odir = f'jobs_{n_per}x{n_files}'
+    if n_files != -1:
+        odir = f'jobs_{lines_per_output}x{n_files}'
+    else:
+        odir = f'jobs_{lines_per_output}xAll'
 
     if path.isdir(odir):
         print(f'replacing contents of {odir}');
@@ -45,12 +48,16 @@ def main():
     # determine which input files will be divided
     in_files = []
     in_tags  = []
+    n_file = -1
     for file in glob('full_lists/dst_*.list'):
         in_files .append(open(file,'r'))
         in_tags .append(file.split('/')[-1][:-5])
 
     try:
-        for n_file in range(n_files):
+        while True:
+            n_file += 1
+            if n_files != -1 and n_file == n_files:
+                break
             o_files = []
             # queue.write(f'out_{n_file}.root, ')
             first = True
@@ -63,7 +70,7 @@ def main():
                     queue.write(f', {name}')
                 o_files.append(open(f'{odir}/{name}','w'))
             queue.write('\n')
-            for n in range (int(n_per)):
+            for n in range (int(lines_per_output)):
                 for i_file, o_file in zip(in_files, o_files):
                     line = i_file.readline()
                     if not line:
@@ -75,6 +82,10 @@ def main():
                 o_file.close()
     except StopIteration:
         pass
+    if n_files == -1:
+        with open(f'{odir}/last_list_is_{n_file}','w') as fout:
+            fout.write(f'There are {n_file+2} lists')
+
     queue.close()
     
 
