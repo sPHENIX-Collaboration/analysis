@@ -33,7 +33,7 @@ There are two different commpiled macros written:
 │   │   └── dst_truth_jet.list
 └── C30_ppemb
     └── full_lists
-         $ CreateFileList.pl -n 10000000000 -embed -type 11 DST_TRUTH_JET DST_CALO_CLUSTER DST_BBC_G4HIT
+         $ CreateFileList.pl -n 10000000000 -embed -type 19 DST_TRUTH_JET DST_CALO_CLUSTER DST_BBC_G4HIT
         ├── dst_bbc_g4hit.list
         ├── dst_calo_cluster.list
         └── dst_truth_jet.list
