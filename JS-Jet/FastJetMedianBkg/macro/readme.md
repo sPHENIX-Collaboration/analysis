@@ -9,7 +9,8 @@ There are two different commpiled macros written:
     The five directories, with the full_lists subdirectories, were made by hand. 
     Each full_lists directory was filled with dst file lists using the indicarted commands:
     (It is ok to not use sub a stupidly large number after -n; I just wanted all the events...)
-```.txt
+
+```
 .
 ├── A10_pp
 │   ├── full_lists
