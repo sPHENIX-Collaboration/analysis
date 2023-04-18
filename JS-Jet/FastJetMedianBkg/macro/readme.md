@@ -9,6 +9,7 @@ There are two different commpiled macros written:
     The five directories, with the full_lists subdirectories, were made by hand. 
     Each full_lists directory was filled with dst file lists using the indicarted commands:
     (It is ok to not use sub a stupidly large number after -n; I just wanted all the events...)
+```.txt
 .
 ├── A10_pp
 │   ├── full_lists
@@ -37,6 +38,7 @@ There are two different commpiled macros written:
         ├── dst_bbc_g4hit.list
         ├── dst_calo_cluster.list
         └── dst_truth_jet.list
+```
 
  Then in each directory (one level up from full_lists), the script ../make_inp_lists.py <n-flines-per-file> <n-files> 
  was run. It generated a new output directory named like (for n-lines-per-file=120 and n-files=100) jobs_120x100,
