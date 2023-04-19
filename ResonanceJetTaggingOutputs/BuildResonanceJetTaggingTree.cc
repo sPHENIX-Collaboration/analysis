@@ -237,17 +237,6 @@ int BuildResonanceJetTaggingTree::loopHFHadronic(PHCompositeNode *topNode)
 
     kfContainer = getKFParticleContainerFromNode(topNode, m_tagcontainer_name);
     if(!kfContainer) return Fun4AllReturnCodes::ABORTEVENT;
-
-    if (!m_svtx_evalstack)
-    {
-      m_svtx_evalstack = new SvtxEvalStack(topNode);
-
-      m_trackeval = m_svtx_evalstack->get_track_eval();
-    }
-    else
-    {
-      m_svtx_evalstack->next_event(topNode);
-    }
   }
 
   HepMC::GenEvent *hepMCGenEvent = nullptr;
@@ -259,6 +248,17 @@ int BuildResonanceJetTaggingTree::loopHFHadronic(PHCompositeNode *topNode)
 
     hepMCGenEvent = getGenEventFromNode(topNode, "PHHepMCGenEventMap");
     if(!hepMCGenEvent) return Fun4AllReturnCodes::ABORTEVENT;
+
+    if (!m_svtx_evalstack)
+    {
+      m_svtx_evalstack = new SvtxEvalStack(topNode);
+
+      m_trackeval = m_svtx_evalstack->get_track_eval();
+    }
+    else
+    {
+      m_svtx_evalstack->next_event(topNode);
+    }
 
   }
 
@@ -420,24 +420,10 @@ void BuildResonanceJetTaggingTree::findMatchedTruthD0(PHCompositeNode *topNode, 
   if(!hepMCGenEvent) return;
 
   PHG4Particle *g4particle = nullptr;
+  PHG4Particle *g4parent = nullptr;
   std::vector<HepMC::GenParticle*> mcTags(m_nDaughters);
 
-  PHNodeIterator nodeIter(topNode);
-  PHNode *findNode = dynamic_cast<PHNode *>(nodeIter.findFirst("SvtxPHG4ParticleMap"));
-  PHG4TruthInfoContainer *truthinfo = nullptr;
-  if (findNode)
-  {
-    findNode = dynamic_cast<PHNode *>(nodeIter.findFirst("G4TruthInfo"));
-    if (findNode)
-    {
-      truthinfo = findNode::getClass<PHG4TruthInfoContainer>(topNode, "G4TruthInfo");
-    }
-    else
-    {
-      std::cout << "KFParticle truth matching: G4TruthInfo does not exist" << std::endl;
-      return;
-    }
-  }
+  PHG4TruthInfoContainer *truthinfo = findNode::getClass<PHG4TruthInfoContainer>(topNode, "G4TruthInfo");
 
   // Truth map
   SvtxPHG4ParticleMap_v1 *dst_reco_truth_map = findNode::getClass<SvtxPHG4ParticleMap_v1>(topNode, "SvtxPHG4ParticleMap");
@@ -467,8 +453,21 @@ void BuildResonanceJetTaggingTree::findMatchedTruthD0(PHCompositeNode *topNode, 
       SvtxTrack *track = trackmap->get(decays[idecay]);
       if(!track) return;
       g4particle = m_trackeval->max_truth_particle_by_nclusters(track);
-      mcTags[idecay] = getMother(topNode, g4particle);
-      if (mcTags[idecay] == nullptr)
+
+      if(!g4particle)
+      {
+        return;
+      }
+
+      g4parent = truthinfo->GetParticle(g4particle->get_primary_id());
+
+      if(g4parent == nullptr)
+      {
+        return;
+      }
+
+      mcTags[idecay] = hepMCGenEvent->barcode_to_particle(g4parent->get_barcode());
+      if(mcTags[idecay] == nullptr)
       {
         return;
       }
@@ -521,6 +520,7 @@ HepMC::GenParticle *BuildResonanceJetTaggingTree::getMother(PHCompositeNode *top
   PHHepMCGenEvent *hepmcevent = hepmceventmap->get(1);
   if (!hepmcevent)
   {
+    std::cout << "no hepmcevent!!!" << std::endl;
     return nullptr;
   }
 

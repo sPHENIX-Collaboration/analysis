@@ -3,29 +3,31 @@ AUTOMAKE_OPTIONS = foreign
 AM_CPPFLAGS = \
   -I$(includedir) \
   -I$(OFFLINE_MAIN)/include \
-  -I$(OFFLINE_MAIN)/include/g4eval \
   -I$(ROOTSYS)/include
 
 AM_LDFLAGS = \
   -L$(libdir) \
   -L$(OFFLINE_MAIN)/lib \
-  -L$(OFFLINE_MAIN)/lib64 \
-  -lg4eval
+  -L$(OFFLINE_MAIN)/lib64
 
 pkginclude_HEADERS = \
-  CaloEvaluatorPositionCorrection.h \
-  RawClusterPositionCorrectionFull.h
+  JetKinematicCheck.h
 
 lib_LTLIBRARIES = \
-  libEMCalPositionDependentCalibration.la
+  libJetKinematicCheck.la
 
-libEMCalPositionDependentCalibration_la_SOURCES = \
-  CaloEvaluatorPositionCorrection.cc \
-  RawClusterPositionCorrectionFull.cc
+libJetKinematicCheck_la_SOURCES = \
+  JetKinematicCheck.cc
 
-libEMCalPositionDependentCalibration_la_LIBADD = \
+libJetKinematicCheck_la_LIBADD = \
   -lphool \
-  -lSubsysReco
+  -lSubsysReco \ 
+  -lfun4all \
+  -lg4dst \
+  -lg4eval \
+  -lg4jets_io \
+  -lg4jets
+
 
 BUILT_SOURCES = testexternals.cc
 
@@ -33,7 +35,7 @@ noinst_PROGRAMS = \
   testexternals
 
 testexternals_SOURCES = testexternals.cc
-testexternals_LDADD   = libEMCalPositionDependentCalibration.la
+testexternals_LDADD   = libJetKinematicCheck.la
 
 testexternals.cc:
 	echo "//*** this is a generated file. Do not commit, do not edit" > $@

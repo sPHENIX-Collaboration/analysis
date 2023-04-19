@@ -1,8 +1,8 @@
-#ifndef G4EVAL_CALOEVALUATORPOSITIONCORRECTION_H
-#define G4EVAL_CALOEVALUATORPOSITIONCORRECTION_H
+#ifndef G4EVAL_CALOEVALUATOR_H
+#define G4EVAL_CALOEVALUATOR_H
 
 //===============================================
-/// \file CaloEvaluatorPositionCorrection.h
+/// \file CaloEvaluator.h
 /// \brief Compares reconstructed tracks to truth particles
 /// \author Apurva Narde
 //===============================================
@@ -11,6 +11,7 @@
 
 #include <set>
 #include <string>
+#include <vector>
 
 class CaloEvalStack;
 class PHCompositeNode;
@@ -18,7 +19,7 @@ class TFile;
 class TNtuple;
 class TTree;  //Added by Barak
 
-/// \class CaloEvaluatorPositionCorrection
+/// \class CaloEvaluator
 ///
 /// \brief Compares reconstructed showers to truth particles
 ///
@@ -26,13 +27,13 @@ class TTree;  //Added by Barak
 /// the greatest contributor Monte Carlo particle and then
 /// test one against the other.
 ///
-class CaloEvaluatorPositionCorrection : public SubsysReco
+class CaloEvaluator : public SubsysReco
 {
  public:
-  CaloEvaluatorPositionCorrection(const std::string &name = "CALOEVALUATORPOSITIONCORRECTION",
+  CaloEvaluator(const std::string &name = "CALOEVALUATOR",
                 const std::string &caloname = "CEMC",
                 const std::string &filename = "g4eval_cemc.root");
-  ~CaloEvaluatorPositionCorrection() override{};
+  ~CaloEvaluator() override{};
 
   int Init(PHCompositeNode *topNode) override;
   int process_event(PHCompositeNode *topNode) override;
@@ -99,6 +100,10 @@ class CaloEvaluatorPositionCorrection : public SubsysReco
 
   CaloEvalStack *_caloevalstack;
 
+  std::vector<unsigned char> _towerEtas;
+  std::vector<unsigned char> _towerPhis;
+  std::vector<float> _towerEnergies;
+
   //----------------------------------
   // evaluator output ntuples
 
@@ -113,6 +118,7 @@ class CaloEvaluatorPositionCorrection : public SubsysReco
   TNtuple *_ntp_gshower;
   TNtuple *_ntp_tower;
   TTree *_tower_debug;  //Added by Barak
+  TTree *_cluster_tower_info; //Added by Apurva
   TNtuple *_ntp_cluster;
 
   // evaluator output file
@@ -125,4 +131,4 @@ class CaloEvaluatorPositionCorrection : public SubsysReco
   void printOutputInfo(PHCompositeNode *topNode);    ///< print out the ancestry information for detailed diagnosis
 };
 
-#endif  // G4EVAL_CALOEVALUATORPOSITIONCORRECTION_H
+#endif  // G4EVAL_CALOEVALUATOR_H
