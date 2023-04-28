@@ -23,9 +23,7 @@ using std::cout;
 using std::endl;
 using std::string;
 
-void Fun4All_LEDTowerBuilder(const int events = 10, const string &fListname = "files/fileList.list", const string &outfile = "data/LEDTowerBuilder.root")
-
-{
+void Fun4All_LEDTowerBuilder(const int events = 10, const string &fListname = "files/fileList.list", const string &outfile = "data/LEDTowerBuilder.root") {
   // gSystem->Load("libg4dst");
   Fun4AllServer *se = Fun4AllServer::instance();
   se->Verbosity(0);
