@@ -69,3 +69,14 @@ make
 #+begin_src bash
 root -b -l -q macro/display.C
 #+end_src
+
+* Useful commands
+- Find the number of events within each prdf that matches some pattern.
+#+begin_src bash
+fd <pattern> /direct/sphenix+lustre01/sphnxpro/commissioning/emcal/calib | xargs -t -I % sh -c "dpipe -d n -s f -i % | wc -l"
+#+end_src
+
+- Find the packets present within each prdf that matches some pattern.
+#+begin_src bash
+fd <pattern> /direct/sphenix+lustre01/sphnxpro/commissioning/emcal/calib | xargs -t -I % dlist -i -f %
+#+end_src
