@@ -79,19 +79,19 @@ int LEDTowerBuilder::process_event(PHCompositeNode *topNode) {
       std::cout << "Event Type >= 8!!" << std::endl;
       return Fun4AllReturnCodes::DISCARDEVENT;
     }
-    for ( int pid = m_packet_low; pid <= m_packet_high; pid++) {
+    for (int pid = m_packet_low; pid <= m_packet_high; pid++) {
       // there are 192 channels in a packet
       // Determine the channel id offset
       UInt_t channel_id = (pid-m_packet_low)*192;
       Packet* packet = _event->getPacket(pid);
       if (!packet) {
-        std::cout << "No packet!!, pid: " << pid << std::endl;
+        // std::cout << "No packet!!, pid: " << pid << std::endl;
         continue;
       }
-      for ( int channel = 0; channel <  packet->iValue(0,"CHANNELS"); channel++) {
+      for (int channel = 0; channel <  packet->iValue(0,"CHANNELS"); channel++) {
         std::vector<float> waveform;
 
-        for (int samp = 0; samp < m_nsamples;samp++) {
+        for (int samp = 0; samp < m_nsamples; samp++) {
           waveform.push_back(packet->iValue(samp,channel));
         }
         m_waveforms.push_back(waveform);
@@ -109,7 +109,7 @@ int LEDTowerBuilder::process_event(PHCompositeNode *topNode) {
   std::vector<std::vector<float>> processed_waveforms =  WaveformProcessing->process_waveform(m_waveforms);
 
   int n_channels = processed_waveforms.size();
-  for (int i = 0 ; i < n_channels;i++) {
+  for (int i = 0 ; i < n_channels; i++) {
     m_time.push_back(processed_waveforms.at(i).at(1));
     m_adc.push_back(processed_waveforms.at(i).at(0));
     m_ped.push_back(processed_waveforms.at(i).at(2));
