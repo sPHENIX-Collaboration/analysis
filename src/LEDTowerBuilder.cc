@@ -8,6 +8,7 @@ LEDTowerBuilder::LEDTowerBuilder(const std::string &name):
   , m_packet_high(6128) // 6128
   , m_nsamples(32)
   , m_isdata(true)
+  , m_event(0)
   , m_adc(0)
   , m_ped(0)
   , m_time(0)
@@ -68,6 +69,9 @@ int LEDTowerBuilder::InitRun(PHCompositeNode *topNode) {
 
 //____________________________________________________________________________..
 int LEDTowerBuilder::process_event(PHCompositeNode *topNode) {
+  if(m_event % 100 == 0) std::cout << "Event: " << m_event << std::endl;
+  ++m_event;
+
   if (m_isdata) {
     Event *_event = findNode::getClass<Event>(topNode, "PRDF");
     if (_event == 0) {
