@@ -92,7 +92,9 @@ int LEDTowerBuilder::process_event(PHCompositeNode *topNode) {
         // std::cout << "No packet!!, pid: " << pid << std::endl;
         continue;
       }
-      for (int channel = 0; channel <  packet->iValue(0,"CHANNELS"); channel++) {
+      // ensure that there are at most 192 channels in the packet
+      int nchannels = std::min(192, packet->iValue(0,"CHANNELS"));
+      for (int channel = 0; channel <  nchannels; ++channel) {
         std::vector<float> waveform;
 
         for (int samp = 0; samp < m_nsamples; samp++) {
