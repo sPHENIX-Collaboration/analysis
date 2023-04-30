@@ -65,9 +65,19 @@ make
 - <output>: output root file. Default = output/test.root.
 - <events>: Number of events to analyze. Default = 0 (meaning all events).
 
+Example:
+#+begin_src bash
+./bin/read-LEDs data/LEDTowerBuilder-<run>.root output/runs/<run>/test.root &> output/runs/<run>/log-read-LEDs.txt &
+#+end_src
+
 5) Plotting macro:
 #+begin_src bash
 root -b -l -q macro/display.C
+#+end_src
+
+Example:
+#+begin_src bash
+root -b -l -q 'macro/display.C("output/runs/<run>/test.root", "output/runs/<run>", "<run>")' &> output/runs/<run>/log-display.txt &
 #+end_src
 
 * Useful commands
