@@ -58,17 +58,17 @@ namespace myAnalysis {
     Float_t time_min     = 0-0.5;
     Float_t time_max     = 32-0.5;
 
-    UInt_t  ADC_bins     = 1200;
+    UInt_t  ADC_bins     = 1800;
     Float_t ADC_min      = 0;
-    Float_t ADC_max      = 12000;
+    Float_t ADC_max      = 18000;
 
-    UInt_t  adc_bins     = 1320;
+    UInt_t  adc_bins     = 1800;
     Float_t adc_min      = 0;
-    Float_t adc_max      = 13200;
+    Float_t adc_max      = 18000;
 
-    UInt_t  ped_bins     = 60;
-    Float_t ped_min      = 1300;
-    Float_t ped_max      = 1900;
+    UInt_t  ped_bins     = 1650;
+    Float_t ped_min      = 0;
+    Float_t ped_max      = 16500;
 
     UInt_t channels_bins = 24576;
     UInt_t channels_min  = 0;
@@ -110,7 +110,7 @@ void myAnalysis::init(const string& inputFile) {
         h2adcVsTime.push_back(new TH2F(("h2adcVsTime_" + to_string(i)).c_str(),
                                          "adc vs Time Sample; Time Sample; adc",
                                          time_bins, time_min, time_max,
-                                         adc_bins, adc_min, adc_max));
+                                         50, adc_min, adc_max));
     }
 }
 
@@ -130,10 +130,14 @@ void myAnalysis::analyze(UInt_t nevents) {
     // if nevents is 0 then use all events otherwise use the set number of events
     nevents = (nevents) ? nevents : led_tree->GetEntries();
 
+    Int_t counter_event[24576] = {0};
+    // maximum waveforms to overlap per channel
+    Int_t events_max = 100;
     for(UInt_t i = 0; i < nevents; ++i) {
         if(i%100 == 0) cout << "Progress: " << i*100./nevents << " %" << endl;
 
         led_tree->GetEntry(i);
+
         UInt_t nchannels = time->size();
         channels_max = max(channels_max,nchannels);
 
@@ -142,6 +146,10 @@ void myAnalysis::analyze(UInt_t nevents) {
             Float_t ADC_val  = ADC->at(j);
             Float_t ped_val  = ped->at(j);
             Int_t channel    = chan->at(j);
+            if(channel >= 24576) {
+                cout << "invalid channel number: " << channel << ", event: " << i << endl;
+                continue;
+            }
 
             UInt_t key    = TowerInfoDefs::encode_emcal(channel);
             UInt_t etabin = TowerInfoDefs::getCaloTowerEtaBin(key);
@@ -154,14 +162,19 @@ void myAnalysis::analyze(UInt_t nevents) {
 
             for (UInt_t sample = 0; sample < time_bins; ++sample) {
                 Float_t adc_val = waveforms->at(j).at(sample);
-                Int_t adc_bin   = hadc->FindBin(adc_val);
+                // Int_t adc_bin   = h2adcVsTime[channel]->GetYaxis()->FindBin(adc_val);
 
                 hadc->Fill(adc_val);
-                h2adcVsTime[channel]->SetBinContent(sample+1, adc_bin, 1);
+                // overlay at most #n events of waveforms for each channel
+                if(counter_event[channel] < events_max) {
+                    // h2adcVsTime[channel]->SetBinContent(sample+1, adc_bin, 1);
+                    h2adcVsTime[channel]->Fill(sample, adc_val);
+                }
 
                 adc_min = min(adc_min, adc_val);
                 adc_max = max(adc_max, adc_val);
             }
+            ++counter_event[channel];
 
             hChannels->Fill(channel);
 
@@ -196,6 +209,7 @@ void myAnalysis::analyze(UInt_t nevents) {
         }
     }
 
+    cout << "events processed: " << nevents << endl;
     cout << "max channels per event: " << channels_max << endl;
     cout << "time_min: " << time_min << " time_max: " << time_max << endl;
     cout << "ADC_min: " << ADC_min << " ADC_max: " << ADC_max << endl;
