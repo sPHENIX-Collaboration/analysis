@@ -14,6 +14,8 @@ using namespace std;
 
 
 
+// i/o methods ----------------------------------------------------------------
+
 void SEnergyCorrelator::SetInputTree(const string &iTreeName, const bool isTruthTree) {
 
   // print debug statemet

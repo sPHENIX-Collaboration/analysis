@@ -3,28 +3,25 @@ AUTOMAKE_OPTIONS = foreign
 AM_CPPFLAGS = \
   -I$(includedir) \
   -I$(OFFLINE_MAIN)/include \
-  -I$(OFFLINE_MAIN)/include/g4eval \
   -I$(ROOTSYS)/include
 
 AM_LDFLAGS = \
   -L$(libdir) \
   -L$(OFFLINE_MAIN)/lib \
-  -L$(OFFLINE_MAIN)/lib64 \
-  -lg4eval
+  -L$(OFFLINE_MAIN)/lib64
 
 pkginclude_HEADERS = \
-  CaloEvaluatorPositionCorrection.h \
-  RawClusterPositionCorrectionFull.h
+  TemplateCreation.h
 
 lib_LTLIBRARIES = \
-  libEMCalPositionDependentCalibration.la
+  libTemplateCreation.la
 
-libEMCalPositionDependentCalibration_la_SOURCES = \
-  CaloEvaluatorPositionCorrection.cc \
-  RawClusterPositionCorrectionFull.cc
+libTemplateCreation_la_SOURCES = \
+  TemplateCreation.cc
 
-libEMCalPositionDependentCalibration_la_LIBADD = \
+libTemplateCreation_la_LIBADD = \
   -lphool \
+  -lfun4all \
   -lSubsysReco
 
 BUILT_SOURCES = testexternals.cc
@@ -33,7 +30,7 @@ noinst_PROGRAMS = \
   testexternals
 
 testexternals_SOURCES = testexternals.cc
-testexternals_LDADD   = libEMCalPositionDependentCalibration.la
+testexternals_LDADD   = libTemplateCreation.la
 
 testexternals.cc:
 	echo "//*** this is a generated file. Do not commit, do not edit" > $@
