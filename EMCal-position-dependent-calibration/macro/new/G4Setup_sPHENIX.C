@@ -1,0 +1,1 @@
+/home/apurva/Documents/sPHENIX/macros/detectors/sPHENIX/G4Setup_sPHENIX.C
