@@ -13,11 +13,12 @@ status = subparser.add_parser('status')
 hadd   = subparser.add_parser('hadd')
 
 create.add_argument('--executable', type=str, help='Job script to execute.', required=True)
-create.add_argument('--macros', type=str, help='Directory of input macros. Directory containing Fun4All_G4_sPHENIX.C and G4Setup_sPHENIX.C.',required=True)
+create.add_argument('--macros', type=str, help='Directory of input macros. Directory containing Fun4All_G4_sPHENIX.C',required=True)
+create.add_argument('--bin-dir', type=str, default='/direct/sphenix+u/anarde/Documents/sPHENIX/analysis/EMCal-position-dependent-calibration/bin', help='Directory containing Fun4All_G4_sPHENIX executable. Default: /direct/sphenix+u/anarde/Documents/sPHENIX/analysis/EMCal-position-dependent-calibration/bin')
 create.add_argument('-n', '--events', type=int, default=1, help='Number of events to generate. Default: 1.')
 create.add_argument('-d', '--output', type=str, default='test', help='Output Directory. Default: Current Directory.')
 create.add_argument('-m', '--jobs-per-submission', type=int, default=20000, help='Maximum number of jobs per condor submission. Default: 20000.')
-create.add_argument('-j', '--events-per-job', type=int, default=50, help='Number of events to generate per job. Default: 50.')
+create.add_argument('-j', '--events-per-job', type=int, default=100, help='Number of events to generate per job. Default: 100.')
 create.add_argument('--memory', type=int, default=10, help='Memory (units of GB) to request per condor submission. Default: 10 GB.')
 
 status.add_argument('-d','--condor-dir', type=str, help='Condor submission directory.', required=True)
@@ -33,8 +34,9 @@ def create_jobs():
     events              = args.events
     jobs_per_submission = args.jobs_per_submission
     output_dir          = os.path.abspath(args.output)
+    bin_dir             = os.path.abspath(args.bin_dir)
     executable          = os.path.abspath(args.executable)
-    events_per_job      = args.events_per_job
+    events_per_job      = min(args.events_per_job, events)
     memory              = args.memory
     macros_dir          = os.path.abspath(args.macros)
     jobs                = events//events_per_job
@@ -48,6 +50,7 @@ def create_jobs():
     print(f'Requested memory per job: {memory}GB')
     print(f'Output Directory: {output_dir}')
     print(f'Macros Directory: {macros_dir}')
+    print(f'Bin Directory: {bin_dir}')
     print(f'Executable: {executable}')
     print('-----------------------------------')
 
@@ -63,7 +66,8 @@ def create_jobs():
         file.write(f'request_memory         = {memory}GB\n')
         file.write('should_transfer_files   = YES\n')
         file.write('when_to_transfer_output = ON_EXIT\n')
-        file.write('transfer_input_files    = src/Fun4All_G4_sPHENIX.C, src/G4Setup_sPHENIX.C\n')
+        # file.write('transfer_input_files    = src/Fun4All_G4_sPHENIX.C, src/G4Setup_sPHENIX.C\n')
+        file.write('transfer_input_files    = bin/Fun4All_G4_sPHENIX\n')
         file.write('transfer_output_files   = G4sPHENIX_g4cemc_eval-$(myPid).root\n')
         file.write('transfer_output_remaps  = "G4sPHENIX_g4cemc_eval-$(myPid).root = output/G4sPHENIX_g4cemc_eval-$(myPid).root"\n')
         file.write('queue myPid,initialSeed from seed.txt')
@@ -83,6 +87,7 @@ def create_jobs():
 
         shutil.copy(condor_file, submit_dir)
         shutil.copy(executable, f'{submit_dir}/bin')
+        shutil.copy(f'{bin_dir}/Fun4All_G4_sPHENIX', f'{submit_dir}/bin')
         shutil.copy(f'{macros_dir}/Fun4All_G4_sPHENIX.C', f'{submit_dir}/src')
         shutil.copy(f'{macros_dir}/G4Setup_sPHENIX.C', f'{submit_dir}/src')
 
