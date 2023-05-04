@@ -5,7 +5,7 @@
 # @version 0.1
 
 ROOT_CPPFLAGS = `root-config --cflags`
-sPHENIX_CPPFLAGS = -I./macro/current -I$(MYINSTALL)/include -I$(OFFLINE_MAIN)/include -I$(OFFLINE_MAIN)/rootmacros
+sPHENIX_CPPFLAGS = -I./macro -I$(MYINSTALL)/include -I$(OFFLINE_MAIN)/include -I$(OFFLINE_MAIN)/rootmacros
 
 LIBFLAGS = -L$(MYINSTALL)/lib -lg4eval
 ROOT_LIBFLAGS = -L`root-config --libdir` -lCore -lm -rdynamic
@@ -13,7 +13,7 @@ sPHENIX_LIBFLAGS = -L$(OFFLINE_MAIN)/lib -L$(OFFLINE_MAIN)/lib64 -lfun4all -lpho
 
 all: bin/Fun4All_G4_sPHENIX
 
-bin/Fun4All_G4_sPHENIX: macro/current/Fun4All_G4_sPHENIX.C
+bin/Fun4All_G4_sPHENIX: macro/Fun4All_G4_sPHENIX.C
 	mkdir -p bin
 	g++ -o $@ $< $(LIBFLAGS) $(ROOT_CPPFLAGS) $(ROOT_LIBFLAGS) $(sPHENIX_CPPFLAGS) $(sPHENIX_LIBFLAGS)
 
