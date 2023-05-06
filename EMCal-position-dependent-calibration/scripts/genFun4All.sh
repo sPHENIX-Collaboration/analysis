@@ -9,7 +9,7 @@ source /opt/sphenix/core/bin/setup_local.sh $MYINSTALL
 
 tag=$1
 initialSeed=$2
-seed=$(($1+$initialSeed))
+seed=$(($tag+$initialSeed))
 jobs=$3
 
 # root -b -l -q "Fun4All_G4_sPHENIX.C($jobs, $seed, ".", "$tag")"

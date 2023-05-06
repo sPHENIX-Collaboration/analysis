@@ -28,6 +28,7 @@ hadd.add_argument('-i','--job-dir-list', type=str, help='List of directories con
 hadd.add_argument('-o','--output', type=str, default='test.root', help='Output root file. Default: test.root.')
 hadd.add_argument('-n','--jobs-per-hadd', type=int, default=5000, help='Number of jobs to merge per hadd call. Default: 5000.')
 hadd.add_argument('-j','--jobs-open', type=int, default=50, help='Number of jobs to load at once. Default: 50.')
+hadd.add_argument('-m','--multiple-submit-dir', type=bool, default=False,help='If merging condor jobs over multiple directories. Default: False')
 
 args = parser.parse_args()
 
@@ -131,8 +132,7 @@ def get_status():
     if(total != 0):
         print(f'Total jobs done: {jobs_done_total}, {jobs_done_total/total*100:.2f} %')
 
-def hadd():
-    job_dir_list  = os.path.realpath(args.job_dir_list)
+def hadd(jobs_dir):
     output        = os.path.realpath(args.output)
     jobs_per_hadd = args.jobs_per_hadd
     jobs_open     = args.jobs_open+1
@@ -141,13 +141,7 @@ def hadd():
     print(f'jobs per hadd: {jobs_per_hadd}')
     print(f'jobs open at once: {jobs_open-1}')
 
-    jobs = []
-    with open(job_dir_list) as f:
-        for line in f:
-            line = line.strip()
-            jobs_l = os.listdir(line)
-            print(f'dir: {line}, jobs: {len(jobs_l)}')
-            jobs.extend([os.path.join(line,file) for file in jobs_l])
+    jobs = os.listdir(jobs_dir)
 
     total_jobs = len(jobs)
     hadd_calls = int(np.ceil(total_jobs/jobs_per_hadd))
@@ -158,7 +152,7 @@ def hadd():
     for i in range(hadd_calls):
         subprocess.run(['echo', '#######################'])
         subprocess.run(['echo', f'working on hadd: {i}'])
-        command = ['hadd', '-a', '-n', str(jobs_open), output]
+        command = f'hadd -a -n {jobs_open} {output}'.split()
         i_start = jobs_per_hadd*i
         i_end = min(jobs_per_hadd*(i+1), total_jobs)
         subprocess.run(['echo', f'i_start: {i_start}, i_end: {i_end}'])
@@ -173,4 +167,12 @@ if __name__ == '__main__':
     elif(args.command == 'status'):
         get_status()
     elif(args.command == 'hadd'):
-        hadd()
+        if(args.multiple_submit_dir):
+            job_dir_list  = os.path.realpath(args.job_dir_list)
+            with open(job_dir_list) as f:
+                for jobs_dir in f:
+                    jobs_dir = line.strip()
+                    hadd(jobs_dir)
+        else:
+            job_dir = args.job_dir_list
+            hadd(jobs_dir)
