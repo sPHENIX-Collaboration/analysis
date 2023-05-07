@@ -262,6 +262,8 @@ void display(const string& inputFile="output/test.root", const string& outputDir
 
    if(do_waveforms) {
 
+      gStyle->SetPalette(kThermometer);
+
       outputFile = outputDir + "/adcVsTime-" + run + ".pdf";
       // Total channels 24576
       Int_t i_max = 12; // 12

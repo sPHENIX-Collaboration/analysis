@@ -8,16 +8,17 @@ import shutil
 parser = argparse.ArgumentParser()
 subparser = parser.add_subparsers(dest='command')
 
-create = subparser.add_parser('create')
-run    = subparser.add_parser('run')
+create = subparser.add_parser('create', help='Create file lists.')
+run    = subparser.add_parser('run', help='Run LEDTowerBuilder on the given file list.')
 
 create.add_argument('-i', '--run-list', type=str, help='List of run numbers.', required=True)
-create.add_argument('--prdf-dir', type=str, default='/direct/sphenix+lustre01/sphnxpro/commissioning/emcal/calib', help='Directory containing the prdf files. Default: /direct/sphenix+lustre01/sphnxpro/commissioning/emcal/calib')
-create.add_argument('--output-dir', type=str, default='files', help='Directory to store the file lists. Default: files')
+create.add_argument('-p', '--prdf-dir', type=str, default='/direct/sphenix+lustre01/sphnxpro/commissioning/emcal/calib', help='Directory containing the prdf files. Default: /direct/sphenix+lustre01/sphnxpro/commissioning/emcal/calib')
+create.add_argument('-o', '--output-dir', type=str, default='files', help='Directory to store the file lists. Default: files')
 
 run.add_argument('-i', '--file-list', type=str, help='File list containing prdfs to analyze.', required=True)
 run.add_argument('-n', '--nevents', type=int, default = -1, help='Number of events to analyze. Default: -1 (analyze all)')
 run.add_argument('-o', '--output', type=str, default = 'data/LEDTowerBuilder.root', help='Output root file. Default: data/LEDTowerBuilder.root')
+run.add_argument('-m', '--max', type=int, default = 10000, help='Maximum number of events to analyze at once.')
 
 args = parser.parse_args()
 
@@ -42,9 +43,10 @@ def create_file_list():
                 fw.write(result.stdout)
 
 def run_analysis():
-    file_list = os.path.abspath(args.file_list)
-    nevents   = args.nevents
-    output    = args.output
+    file_list          = os.path.abspath(args.file_list)
+    nevents            = args.nevents
+    output             = args.output
+    max_events_per_run = args.max
 
     print(f'file list: {file_list}')
     print(f'output: {output}')
@@ -67,10 +69,32 @@ def run_analysis():
     if(nevents != total_events):
         print(f'events to analyze: {nevents}')
 
-    # command = f"root -b -l -q 'macro/Fun4All_LEDTowerBuilder.C({nevents}, \"{file_list}\", \"{output}\")'"
+    runs = int(np.ceil(total_events / max_events_per_run))
+    max_events_per_run = min(max_events_per_run, total_events)
+
+    print(f'Runs: {runs}')
+    print(f'Max events per run: {max_events_per_run}')
+
+    skip = 0
     log = os.path.basename(output).split('.')[0]
-    command = f"./bin/Fun4All_LEDTowerBuilder {nevents} {file_list} {output} &> data/log-{log}.txt &"
-    print(command)
+    output_dir = os.path.dirname(output)
+    process_events = max_events_per_run
+    merge_files = []
+    for i in range(runs):
+        subprocess.run(['echo', f'Run: {i}'])
+        command = f"./bin/Fun4All_LEDTowerBuilder {process_events} {skip} {file_list} {output_dir}/test-{i}.root &> {output_dir}/log/log-test-{i}.txt &"
+        print(command)
+        skip += max_events_per_run
+        process_events = min(max_events_per_run, nevents-(i+1)*max_events_per_run)
+        merge_files.append(f'{output_dir}/test-{i}.root')
+
+    print('hadd command: ')
+    merge_files = ' '.join(merge_files)
+    print(f'hadd -n 50 {output} {merge_files}')
+
+    # command = f"root -b -l -q 'macro/Fun4All_LEDTowerBuilder.C({nevents}, \"{file_list}\", \"{output}\")'"
+    # command = f"./bin/Fun4All_LEDTowerBuilder {nevents} {file_list} {output} &> data/log/log-{log}.txt &"
+    # print(command)
     # subprocess.run(['root','-b','-l','-q',f'macro/Fun4All_LEDTowerBuilder.C({nevents}, \"{file_list}\", \"{output}\")'])
 
 

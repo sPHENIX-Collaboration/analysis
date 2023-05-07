@@ -23,7 +23,7 @@ using std::cout;
 using std::endl;
 using std::string;
 
-void Fun4All_LEDTowerBuilder(const int events = 10, const string &fListname = "files/fileList.list", const string &outfile = "data/LEDTowerBuilder.root") {
+void Fun4All_LEDTowerBuilder(const int events = 10, const int skip = 0, const string &fListname = "files/fileList.list", const string &outfile = "data/LEDTowerBuilder.root") {
   // gSystem->Load("libg4dst");
   Fun4AllServer *se = Fun4AllServer::instance();
   se->Verbosity(0);
@@ -40,6 +40,7 @@ void Fun4All_LEDTowerBuilder(const int events = 10, const string &fListname = "f
   in->AddListFile(fListname.c_str());
   se->registerInputManager(in);
 
+  se->skip(skip);
   se->run(events);
   se->End();
   se->PrintTimer();
@@ -48,15 +49,17 @@ void Fun4All_LEDTowerBuilder(const int events = 10, const string &fListname = "f
 
 # ifndef __CINT__
 int main(int argc, char* argv[]) {
-    if(argc < 1 || argc > 4){
-        cout << "usage: ./bin/Fun4All_LEDTowerBuilder events fListname outputFile" << endl;
+    if(argc < 1 || argc > 5){
+        cout << "usage: ./bin/Fun4All_LEDTowerBuilder events skip fListname outputFile" << endl;
         cout << "events: Number of events to analyze. Default = 10." << endl;
+        cout << "skip: Number of events to skip. Default = 0." << endl;
         cout << "inputFile: Location of fileList containing prdfs. Default = files/fileList.list." << endl;
         cout << "outputFile: output root file. Default = data/LEDTowerBuilder.root." << endl;
         return 1;
     }
 
     UInt_t events = 10;
+    UInt_t skip   = 0;
     string input  = "files/fileList.list";
     string output = "data/LEDTowerBuilder.root";
 
@@ -64,13 +67,16 @@ int main(int argc, char* argv[]) {
         events = atoi(argv[1]);
     }
     if(argc >= 3) {
-        input = argv[2];
+        skip = atoi(argv[2]);
     }
     if(argc >= 4) {
-        output = argv[3];
+        input = argv[3];
+    }
+    if(argc >= 5) {
+        output = argv[4];
     }
 
-    Fun4All_LEDTowerBuilder(events, input, output);
+    Fun4All_LEDTowerBuilder(events, skip, input, output);
 
     cout << "done" << endl;
     return 0;
