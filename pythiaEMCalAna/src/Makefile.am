@@ -8,16 +8,7 @@ AM_CPPFLAGS = \
 AM_LDFLAGS = \
   -L$(libdir) \
   -L$(OFFLINE_MAIN)/lib \
-  -L$(OFFLINE_MAIN)/lib64 \
-  -lHepMC \
-  -lCLHEP \
-  -lg4vertex_io \
-  # -lg4vertex \
-  -lcalo_io \
-  -lg4dst \
-  -lg4eval \
-  -lg4jets_io \
-  -lg4jets
+  -L$(OFFLINE_MAIN)/lib64
 
 pkginclude_HEADERS = \
   pythiaEMCalAna.h
@@ -30,7 +21,14 @@ libpythiaEMCalAna_la_SOURCES = \
 
 libpythiaEMCalAna_la_LIBADD = \
   -lphool \
-  -lSubsysReco
+  -lSubsysReco \
+  -lHepMC \
+  -lCLHEP \
+  -lcalo_io \
+  -lg4dst \
+  -lg4eval \
+  -lg4jets_io \
+  -lg4jets
 
 BUILT_SOURCES = testexternals.cc
 

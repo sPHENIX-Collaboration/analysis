@@ -665,7 +665,7 @@ void pythiaEMCalAna::addSecondary(PHG4Particle* part, PHG4TruthInfoContainer* tr
     secondaryBarcodes.push_back(part->get_barcode());
 }
 
-HepMC::GenParticle* getGenParticle(int barcode, HepMC::GenEvent* theEvent) {
+HepMC::GenParticle* pythiaEMCalAna::getGenParticle(int barcode, HepMC::GenEvent* theEvent) {
     for(HepMC::GenEvent::particle_const_iterator p=theEvent->particles_begin(); p!=theEvent->particles_end(); ++p)
     {
 	assert(*p);
@@ -681,7 +681,7 @@ HepMC::GenParticle* getGenParticle(int barcode, HepMC::GenEvent* theEvent) {
 }
 
 
-PHG4VtxPoint* getG4EndVtx(int id, PHG4TruthInfoContainer* truthInfo) {
+PHG4VtxPoint* pythiaEMCalAna::getG4EndVtx(int id, PHG4TruthInfoContainer* truthInfo) {
     PHG4VtxPoint* end_vtx = nullptr;
     PHG4TruthInfoContainer::Range truthRange = truthInfo->GetSecondaryParticleRange();
     PHG4TruthInfoContainer::ConstIterator truthIter;
