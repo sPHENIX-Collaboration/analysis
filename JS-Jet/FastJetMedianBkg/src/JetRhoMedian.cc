@@ -332,10 +332,19 @@ int JetRhoMedian::process_event(PHCompositeNode* topNode)
       m_BGE_JetArea .push_back(jet.area() ) ;
     }
 
+  int cnt_out = 0;
+
     fastjet::ClusterSequenceArea clustSeq(calo_pseudojets, jet_def_antikt, area_def);
     vector<fastjet::PseudoJet> jets 
       = sorted_by_pt( selection( clustSeq.inclusive_jets(m_ptRange.first) ));
     for (auto jet : jets) {
+      if (cnt_out < 5) {
+        cout << " jet("<<(cnt_out++)<<") pt("<<jet.perp()<<") " << endl;
+        //cout the constituents
+        int i{0};
+        for (auto p : jet.constituents())  cout << "("<<i<<"|"<<p.perp()<<"]";
+        cout << endl;
+      }
       m_CaloJetEta .push_back( jet.eta()     );
       m_CaloJetPhi .push_back( jet.phi_std() );
       m_CaloJetE   .push_back( jet.E()       );
