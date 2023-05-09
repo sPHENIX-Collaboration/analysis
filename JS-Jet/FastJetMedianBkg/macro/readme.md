@@ -38,6 +38,8 @@ There are two different commpiled macros written:
         ├── dst_calo_cluster.list
         └── dst_truth_jet.list
 
+ CreateFileList.pl -n 10 -embed -nopileup -type 19
+
  Then in each directory (one level up from full_lists), the script ../make_inp_lists.py <n-flines-per-file> <n-files> 
  was run. It generated a new output directory named like (for n-lines-per-file=120 and n-files=100) jobs_120x100,
  in which the input lists have been divided the queue.list file has been generated.

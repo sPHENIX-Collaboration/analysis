@@ -12,9 +12,10 @@
 #include <g4jets/TruthJetInput.h>
 #include <g4vertex/GlobalVertexReco.h>
 #include <jetbackground/FastJetAlgoSub.h>
+#include <fun4all/PHTFileServer.h>
 
 // here you need your package name (set in configure.ac)
-#include <jetrhomedian/JetRhoMedian.h>
+#include <fastjetmedianbkg/JetRhoMedian.h>
 R__LOAD_LIBRARY(libfun4all.so)
 R__LOAD_LIBRARY(libg4centrality.so)
 R__LOAD_LIBRARY(libg4jets.so)
@@ -46,8 +47,8 @@ void Fun4All_JetRhoMedian(
   }
 
   int print_stats_freq = 100;
-  JetRhoMedian *jetRhoMedian = new JetRhoMedian(out_name, pTlb);
-  jetRhoMedian->setPtRange(5, 100);
+  JetRhoMedian *jetRhoMedian = new JetRhoMedian(out_name, pTlb, print_stats_freq);
+  /* jetRhoMedian->setPtRange(5, 100); */
   jetRhoMedian->setEtaRange(-1.1, 1.1);
 //    jetRhoMedian->setEtaRange(-2, 2); // this was to confirm that events without a truth lead
 //          jet over 10GeV are due to the jet being outside the kinematic acceptance
