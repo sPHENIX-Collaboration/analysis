@@ -338,13 +338,18 @@ int JetRhoMedian::process_event(PHCompositeNode* topNode)
     vector<fastjet::PseudoJet> jets 
       = sorted_by_pt( selection( clustSeq.inclusive_jets(m_ptRange.first) ));
     for (auto jet : jets) {
-      if (cnt_out < 5) {
+      if (cnt_out < 4) {
         cout << " jet("<<(cnt_out++)<<") pt("<<jet.perp()<<") " << endl;
-        //cout the constituents
-        int i{0};
-        for (auto p : jet.constituents())  cout << "("<<i<<"|"<<p.perp()<<"]";
+        auto cst = fastjet::sorted_by_pt(jet.constituents());
+        int i =0;
+        for (auto p : cst)  {
+          if (p.is_pure_ghost()) continue;
+          cout << Form(" %3i|%4.2f",i++,p.perp());
+          if (i%7==0) cout << endl;
+        }
         cout << endl;
       }
+
       m_CaloJetEta .push_back( jet.eta()     );
       m_CaloJetPhi .push_back( jet.phi_std() );
       m_CaloJetE   .push_back( jet.E()       );
