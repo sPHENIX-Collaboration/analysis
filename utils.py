@@ -72,25 +72,32 @@ def run_analysis():
     runs = int(np.ceil(total_events / max_events_per_run))
     max_events_per_run = min(max_events_per_run, total_events)
 
-    print(f'Runs: {runs}')
-    print(f'Max events per run: {max_events_per_run}')
-
-    skip = 0
     log = os.path.basename(output).split('.')[0]
     output_dir = os.path.dirname(output)
     process_events = max_events_per_run
-    merge_files = []
-    for i in range(runs):
-        subprocess.run(['echo', f'Run: {i}'])
-        command = f"./bin/Fun4All_LEDTowerBuilder {process_events} {skip} {file_list} {output_dir}/test-{i}.root &> {output_dir}/log/log-test-{i}.txt &"
-        print(command)
-        skip += max_events_per_run
-        process_events = min(max_events_per_run, nevents-(i+1)*max_events_per_run)
-        merge_files.append(f'{output_dir}/test-{i}.root')
+    skip = 0
 
-    print('hadd command: ')
-    merge_files = ' '.join(merge_files)
-    print(f'hadd -n 50 {output} {merge_files}')
+    if(runs > 1):
+        print(f'Runs: {runs}')
+        print(f'Max events per run: {max_events_per_run}')
+
+        merge_files = []
+        for i in range(runs):
+            subprocess.run(['echo', f'Run: {i}'])
+            command = f"./bin/Fun4All_LEDTowerBuilder {process_events} {skip} {file_list} {output_dir}/test-{i}.root &> {output_dir}/log/log-test-{i}.txt &"
+            print(command)
+            skip += max_events_per_run
+            process_events = min(max_events_per_run, nevents-(i+1)*max_events_per_run)
+            merge_files.append(f'{output_dir}/test-{i}.root')
+
+        print('hadd command: ')
+        merge_files = ' '.join(merge_files)
+        print(f'hadd -n 50 {output} {merge_files}')
+
+    else:
+        command = f"./bin/Fun4All_LEDTowerBuilder {process_events} {skip} {file_list} {output} &> {output_dir}/log/log-{log}.txt &"
+        print(command)
+
 
     # command = f"root -b -l -q 'macro/Fun4All_LEDTowerBuilder.C({nevents}, \"{file_list}\", \"{output}\")'"
     # command = f"./bin/Fun4All_LEDTowerBuilder {nevents} {file_list} {output} &> data/log/log-{log}.txt &"
