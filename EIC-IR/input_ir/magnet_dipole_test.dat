@@ -1,0 +1,8 @@
+## magnet parameters
+##
+##
+##name  center_z center_x center_y aperture_radius   length   angle      B      gradient
+##           [m]      [m]      [m]      [m]          [m]    [mrad]     [T]     [T/m]
+##
+  Q1pf    20.00    0.0    0.0   0.1  	  	      5.0    0.00    100.000   0.0
+

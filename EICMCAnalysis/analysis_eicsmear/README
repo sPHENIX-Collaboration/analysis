@@ -1,0 +1,33 @@
+To compile macro on RCF (with sPHENIX environment initialized) run:
+
+g++ `root-config --cflags --glibs` -L$OFFLINE_MAIN/lib -I$OFFLINE_MAIN/include -leicsmear eic_sphenix_fill_xq2.C -o eic_sphenix_fill_xq2
+
+This saves a lot of time when running the code!
+
+++++++++++++++++++++++++++++++
+
+Macros in this repository:
+
+* eic_sphenix_geomacceptance.h	:	Header file with simple gemetric acceptance cuts for EIC-sPHENIX
+
+* eic_sphenix.C			:	eic-smear detector model of EIC-sPHENIX.
+
+* eic_sphenix_fill_xq2.C	:	Fill kinematics histograms with events from Pythia files. Check detector acceptance of particles.
+
+* merge_and_scale.C		:	Add x-Q2 histograms from multiple files, scale relative weights by luminosity
+  					in each file, and scale overall entries to target luminosity.
+
+* eic_sphenix_dis_countbins.C	:	Count entries in each x-Q2 bin and plot x-Q2 acceptance, as well as g1 uncertainty in each bin.
+
+* eic_sphenix_sidis_countbins.C	:	Count entries in each kinematics bin for SIDIS events.
+
+
+++++++++++++++++++++++++++++++
+
+Steps to calculate projected uncertainties on g1 and A1:
+
+./eic_sphenix_fill_xq2 output/x_q2_pythia_ep.root data/pythia_ep.root data/pythia_ep.smear.root
+
+root -b -q calculate_g1_projection_per_bin.C\(\"output/x_q2_pythia_ep.root\"\)
+
+root -l plot_g1_projection.C\(\"output/eic_sphenix_dis_tree.root\"\)

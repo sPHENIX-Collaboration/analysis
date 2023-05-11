@@ -1,0 +1,119 @@
+<?xml version="1.0"?>
+<MethodSetup Method="MLP::MLP_ANN">
+  <GeneralInfo>
+    <Info name="TMVA Release" value="4.2.0 [262656]"/>
+    <Info name="ROOT Release" value="5.34/38 [336422]"/>
+    <Info name="Creator" value="vassalli"/>
+    <Info name="Date" value="Thu Jul 25 16:46:47 2019"/>
+    <Info name="Host" value="Linux cvmfswrite02.sdcc.bnl.gov 3.10.0-693.11.6.el7.x86_64 #1 SMP Wed Jan 3 18:09:42 CST 2018 x86_64 x86_64 x86_64 GNU/Linux"/>
+    <Info name="Dir" value="/direct/phenix+u/vassalli/sphenix/single/Training"/>
+    <Info name="Training events" value="50639"/>
+    <Info name="TrainingTime" value="1.13700480e+02"/>
+    <Info name="AnalysisType" value="Regression"/>
+  </GeneralInfo>
+  <Options>
+    <Option name="NCycles" modified="No">500</Option>
+    <Option name="HiddenLayers" modified="Yes">5</Option>
+    <Option name="NeuronType" modified="No">sigmoid</Option>
+    <Option name="RandomSeed" modified="No">1</Option>
+    <Option name="EstimatorType" modified="No">MSE</Option>
+    <Option name="NeuronInputType" modified="No">sum</Option>
+    <Option name="V" modified="No">False</Option>
+    <Option name="VerbosityLevel" modified="No">Default</Option>
+    <Option name="VarTransform" modified="No">None</Option>
+    <Option name="H" modified="No">False</Option>
+    <Option name="CreateMVAPdfs" modified="No">False</Option>
+    <Option name="IgnoreNegWeightsInTraining" modified="No">False</Option>
+    <Option name="TrainingMethod" modified="No">BP</Option>
+    <Option name="LearningRate" modified="No">2.000000e-02</Option>
+    <Option name="DecayRate" modified="No">1.000000e-02</Option>
+    <Option name="TestRate" modified="No">10</Option>
+    <Option name="EpochMonitoring" modified="No">False</Option>
+    <Option name="Sampling" modified="No">1.000000e+00</Option>
+    <Option name="SamplingEpoch" modified="No">1.000000e+00</Option>
+    <Option name="SamplingImportance" modified="No">1.000000e+00</Option>
+    <Option name="SamplingTraining" modified="No">True</Option>
+    <Option name="SamplingTesting" modified="No">False</Option>
+    <Option name="ResetStep" modified="No">50</Option>
+    <Option name="Tau" modified="No">3.000000e+00</Option>
+    <Option name="BPMode" modified="No">sequential</Option>
+    <Option name="BatchSize" modified="No">-1</Option>
+    <Option name="ConvergenceImprove" modified="No">1.000000e-30</Option>
+    <Option name="ConvergenceTests" modified="No">-1</Option>
+    <Option name="UseRegulator" modified="No">False</Option>
+    <Option name="UpdateLimit" modified="No">10000</Option>
+    <Option name="CalculateErrors" modified="No">False</Option>
+    <Option name="WeightRange" modified="No">1.000000e+00</Option>
+  </Options>
+  <Variables NVar="7">
+    <Variable VarIndex="0" Expression="track1_pt" Label="track1_pt" Title="track1_pt" Unit="" Internal="track1_pt" Type="F" Min="2.27336377e-01" Max="1.30949610e+07"/>
+    <Variable VarIndex="1" Expression="track2_pt" Label="track2_pt" Title="track2_pt" Unit="" Internal="track2_pt" Type="F" Min="2.01775104e-01" Max="2.31625450e+06"/>
+    <Variable VarIndex="2" Expression="track1_phi" Label="track1_phi" Title="track1_phi" Unit="" Internal="track1_phi" Type="F" Min="-3.14143348e+00" Max="3.14155984e+00"/>
+    <Variable VarIndex="3" Expression="track1_phi-track2_phi" Label="track1_phi-track2_phi" Title="d#phi" Unit="rad" Internal="track1_phi_M_track2_phi" Type="F" Min="-6.28082085e+00" Max="6.27153397e+00"/>
+    <Variable VarIndex="4" Expression="track1_eta" Label="track1_eta" Title="track1_eta" Unit="" Internal="track1_eta" Type="F" Min="-1.00359535e+00" Max="1.00661254e+00"/>
+    <Variable VarIndex="5" Expression="track1_eta-track2_eta" Label="track1_eta-track2_eta" Title="d#eta" Unit="rad" Internal="track1_eta_M_track2_eta" Type="F" Min="-7.91844368e-01" Max="7.59224176e-01"/>
+    <Variable VarIndex="6" Expression="vtx_radius" Label="vtx_radius" Title="radius" Unit="[cm]" Internal="vtx_radius" Type="F" Min="5.64375799e-03" Max="3.35550385e+02"/>
+  </Variables>
+  <Spectators NSpec="0"/>
+  <Classes NClass="1">
+    <Class Name="Regression" Index="0"/>
+  </Classes>
+  <Targets NTrgt="1">
+    <Target TargetIndex="0" Expression="tvtx_radius" Label="tvtx_radius" Title="radius" Unit="[cm]" Internal="tvtx_radius" Type="F" Min="2.00055170e+00" Max="2.09999981e+01"/>
+  </Targets>
+  <Transformations NTransformations="0"/>
+  <MVAPdfs/>
+  <Weights>
+    <Layout NLayers="3">
+      <Layer Index="0" NNeurons="8">
+        <Neuron NSynapses="5">
+          -nan -nan -nan -nan -nan 
+        </Neuron>
+        <Neuron NSynapses="5">
+          -nan -nan -nan -nan -nan 
+        </Neuron>
+        <Neuron NSynapses="5">
+          -nan -nan -nan -nan -nan 
+        </Neuron>
+        <Neuron NSynapses="5">
+          -nan -nan -nan -nan -nan 
+        </Neuron>
+        <Neuron NSynapses="5">
+          -nan -nan -nan -nan -nan 
+        </Neuron>
+        <Neuron NSynapses="5">
+          -nan -nan -nan -nan -nan 
+        </Neuron>
+        <Neuron NSynapses="5">
+          -nan -nan -nan -nan -nan 
+        </Neuron>
+        <Neuron NSynapses="5">
+          -nan -nan -nan -nan -nan 
+        </Neuron>
+      </Layer>
+      <Layer Index="1" NNeurons="6">
+        <Neuron NSynapses="1">
+          nan 
+        </Neuron>
+        <Neuron NSynapses="1">
+          nan 
+        </Neuron>
+        <Neuron NSynapses="1">
+          nan 
+        </Neuron>
+        <Neuron NSynapses="1">
+          nan 
+        </Neuron>
+        <Neuron NSynapses="1">
+          nan 
+        </Neuron>
+        <Neuron NSynapses="1">
+          nan 
+        </Neuron>
+      </Layer>
+      <Layer Index="2" NNeurons="1">
+        <Neuron NSynapses="0"/>
+      </Layer>
+    </Layout>
+  </Weights>
+</MethodSetup>
