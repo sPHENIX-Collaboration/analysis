@@ -1,0 +1,39 @@
+Running Event Generators with Fun4All:
+
+### HEPGen ####
+- compile and install sHEPGen.so library
+
+- Preparing the Fun4All macro: edit Fun4All_MCEventGen.C and set:
+
+"runpythia8 = false"
+"runpythia6 = false"
+"runhepgen = true"
+"runsartre = false"
+"readeictree = false"
+
+root -b -q Fun4All_MCEventGen.C
+
+### Sartre ###
+
+to get started
+
+add to .cshrc
+ setenv SARTRE_DIR /opt/sphenix/core/stow/sartre-1.20
+
+login in a new window
+cp the sartre.cfg to working area
+
+you will need to add the HepMC node reader after the PHSartre
+to feed the hepmc node into GEANT4
+
+for documentation on configuring Sartre, see
+
+http://sartre.hepforge.org/
+
+
+### Pythia6 ###
+
+### Pythia8 ###
+
+### Read EICTree ###
+

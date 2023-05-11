@@ -1,0 +1,78 @@
+# All local jobs are part of the vanilla universe.
+Universe        = vanilla
+
+# We want email if the job completed successfully. This can
+# be set to Always, Error, or Never.
+Notification    = Never
+
+# The executable we want to run.
+Executable   = runmb.csh
+
+GroupNumber     = 2000
+
+# The argument to pass to the executable.
+# process number, number of events
+Arguments       = $(GroupNumber) $(Process)
+
+# The requirement line specifies which machines we want to
+# run this job on.  Any arbitrary classad expression can
+# be used.
+Requirements    = CPU_Speed >= 1
+
+# Rank is an expression that states how to rank machines which 
+# have already met the requirements expression.  Essentially, 
+# rank expresses preference.  A higher numeric value equals better 
+# rank.  Condor will give the job the machine with the highest rank.
+Rank		= CPU_Speed
+
+# This tells Condor the maximum virtual image size to which
+# you believe your program will grow during its execution.
+#Image_Size      = 428 Meg
+
+# Jobs with higher numerical priority will run before jobs 
+# with lower numerical priority (-20 to 20).
+Priority        = +20
+
+# Copy all of the user's current shell environment variables 
+# at the time of job submission.
+#GetEnv          = True
+
+# Used to give jobs a directory with respect to file input 
+# and output.
+Initialdir   = /gpfs/mnt/gpfs02/sphenix/user/lebedev/mdc/test/analysis/EventMix/macro
+
+# Input file given to the job.
+Input           = /dev/null
+
+# The job's stdout is sent to this file.
+Output       = /sphenix/user/lebedev/mdc/logs/pairs.$(GroupNumber).$(Process)log
+
+# The job's stderr is sent to this file.
+Error       =  /sphenix/user/lebedev/mdc/logs/pairs.$(GroupNumber).$(Process).log
+ 
+
+# The condor log file for this job, useful when debugging.
+Log        =   /sphenix/user/lebedev/mdc/logs/pairs.$(GroupNumber).$(Process).log
+ 
+
+# Email address to send notification to.
+#Notify_user     = lebedev@iastate.edu
+
+# These are job flags which are non-Condor specific.
+# increase this as needed, job will be evicted at 30% above this value
+request_memory  = 12G
+
+# currently always true for sPHENIX jobs
+request_cpus = 1
+
+# this puts evicted jobs on hold, condor by default puts them back in idle
+# but they will never start again. 
+# They will actually prevent other jobs from starting
+PeriodicHold    = (NumJobStarts>=1 && JobStatus == 1)
+
+# This should be the last command and tells condor to queue the
+# job.  If a number is placed after the command (i.e. Queue 15)
+# then the job will be submitted N times.  Use the $(Process)
+# macro to make your input/output and log files unique.
+Queue 10
+

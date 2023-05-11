@@ -1,0 +1,4 @@
+testexternals.o: /sphenix/u/weihuma/analysis/Ana/testexternals.C \
+ /usr/include/stdc-predef.h
+
+/usr/include/stdc-predef.h:
