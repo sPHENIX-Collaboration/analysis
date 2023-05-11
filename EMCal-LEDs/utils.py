@@ -11,19 +11,19 @@ subparser = parser.add_subparsers(dest='command')
 create = subparser.add_parser('create', help='Create file lists.')
 run    = subparser.add_parser('run', help='Run LEDTowerBuilder on the given file list.')
 
-create.add_argument('-i', '--run-list', type=str, help='List of run numbers.', required=True)
+create.add_argument('-i', '--run-list', type=str, nargs='+' , help='List of run numbers.')
 create.add_argument('-p', '--prdf-dir', type=str, default='/direct/sphenix+lustre01/sphnxpro/commissioning/emcal/calib', help='Directory containing the prdf files. Default: /direct/sphenix+lustre01/sphnxpro/commissioning/emcal/calib')
 create.add_argument('-o', '--output-dir', type=str, default='files', help='Directory to store the file lists. Default: files')
 
 run.add_argument('-i', '--file-list', type=str, help='File list containing prdfs to analyze.', required=True)
 run.add_argument('-n', '--nevents', type=int, default = -1, help='Number of events to analyze. Default: -1 (analyze all)')
 run.add_argument('-o', '--output', type=str, default = 'data/LEDTowerBuilder.root', help='Output root file. Default: data/LEDTowerBuilder.root')
-run.add_argument('-m', '--max', type=int, default = 10000, help='Maximum number of events to analyze at once.')
+run.add_argument('-m', '--max', type=int, default = 10000, help='Maximum number of events to analyze at once. Default: 10000')
 
 args = parser.parse_args()
 
 def create_file_list():
-    run_list = os.path.abspath(args.run_list)
+    run_list = args.run_list
     prdf_dir = os.path.abspath(args.prdf_dir)
     output_dir = os.path.abspath(args.output_dir)
 
@@ -31,16 +31,14 @@ def create_file_list():
     print(f'prdf dir: {prdf_dir}')
     print(f'output dir: {output_dir}')
 
-    with open(run_list) as f:
-        for line in f:
-            run = int(line)
-            print(f'run: {run}')
+    for run in run_list:
+        print(f'run: {run}')
 
-            result = subprocess.run(['fd', str(run), prdf_dir], stdout=subprocess.PIPE, text=True)
-            print(result.stdout)
+        result = subprocess.run(['fd', run, prdf_dir], stdout=subprocess.PIPE, text=True)
+        print(result.stdout)
 
-            with open(f'{output_dir}/file-list-{run}.txt',mode='w') as fw:
-                fw.write(result.stdout)
+        with open(f'{output_dir}/file-list-{run}.txt',mode='w') as fw:
+            fw.write(result.stdout)
 
 def run_analysis():
     file_list          = os.path.abspath(args.file_list)
