@@ -1,10 +1,31 @@
 #ifndef MACRO_FUN4ALLG4SPHENIX_C
 #define MACRO_FUN4ALLG4SPHENIX_C
 
+// c++ includes --
+#include <string>
+#include <iostream>
+#include <fstream>
+#include <math.h>
+#include <set>
+#include <map>
+
+using std::cout;
+using std::endl;
+using std::string;
+using std::to_string;
+using std::set;
+using std::istringstream;
+using std::max;
+using std::map;
+
+// root includes --
+#include <TSystem.h>
+#include <TROOT.h>
+
 #include <GlobalVariables.C>
 
 #include <DisplayOn.C>
-#include <G4Setup_sPHENIX.C>
+#include "G4Setup_sPHENIX.C"
 #include <G4_Bbc.C>
 #include <G4_CaloTrigger.C>
 #include <G4_Centrality.C>
@@ -17,15 +38,22 @@
 #include <G4_ParticleFlow.C>
 #include <G4_Production.C>
 #include <G4_TopoClusterReco.C>
-#include <G4_Tracking.C>
-#include <G4_TrackingDiagnostics.C>
+
+#include <Trkr_RecoInit.C>
+#include <Trkr_Clustering.C>
+#include <Trkr_LaserClustering.C>
+#include <Trkr_Reco.C>
+#include <Trkr_Eval.C>
+#include <Trkr_QA.C>
+
+#include <Trkr_Diagnostics.C>
 #include <G4_User.C>
 #include <QA.C>
 
 #include <ffamodules/FlagHandler.h>
 #include <ffamodules/HeadReco.h>
 #include <ffamodules/SyncReco.h>
-#include <ffamodules/XploadInterface.h>
+#include <ffamodules/CDBInterface.h>
 
 #include <fun4all/Fun4AllDstOutputManager.h>
 #include <fun4all/Fun4AllOutputManager.h>
@@ -44,16 +72,17 @@ int Fun4All_G4_sPHENIX(
     const int nEvents = 1,
     const int seed = 0,
     const string &outdir = ".",
+    const string &tag = "0",
     const string &outputFile = "G4sPHENIX.root",
     const string &inputFile = "https://www.phenix.bnl.gov/WWW/publish/phnxbld/sPHENIX/files/sPHENIX_G4Hits_sHijing_9-11fm_00000_00010.root",
     const string &embed_input_file = "https://www.phenix.bnl.gov/WWW/publish/phnxbld/sPHENIX/files/sPHENIX_G4Hits_sHijing_9-11fm_00000_00010.root",
     const int skip = 0)
 {
   Fun4AllServer *se = Fun4AllServer::instance();
-  se->Verbosity(0);
+  se->Verbosity(1);
 
   //Opt to print all random seed used for debugging reproducibility. Comment out to reduce stdout prints.
-  PHRandomSeed::Verbosity(0);
+  PHRandomSeed::Verbosity(1);
 
   // just if we set some flags somewhere in this macro
   recoConsts *rc = recoConsts::instance();
@@ -296,6 +325,7 @@ int Fun4All_G4_sPHENIX(
 
   // Enable::BBC = true;
   // Enable::BBC_SUPPORT = true; // save hist in bbc support structure
+  // Enable::BBCRECO = Enable::BBC && true
   Enable::BBCFAKE = true;  // Smeared vtx and t0, use if you don't want real BBC in simulation
 
   Enable::PIPE = true;
@@ -405,10 +435,10 @@ int Fun4All_G4_sPHENIX(
   // particle flow jet reconstruction - needs topoClusters!
   Enable::PARTICLEFLOW = Enable::TOPOCLUSTER && true;
   // centrality reconstruction
-  Enable::CENTRALITY = true;
+  Enable::CENTRALITY = false;
 
   // new settings using Enable namespace in GlobalVariables.C
-  Enable::BLACKHOLE = true;
+  Enable::BLACKHOLE = false;
   //Enable::BLACKHOLE_SAVEHITS = false; // turn off saving of bh hits
   //Enable::BLACKHOLE_FORWARD_SAVEHITS = false; // disable forward/backward hits
   //BlackHoleGeometry::visible = true;
@@ -419,14 +449,11 @@ int Fun4All_G4_sPHENIX(
   //===============
   // conditions DB flags
   //===============
-  //Enable::XPLOAD = true;
-  // tag
-  rc->set_StringFlag("XPLOAD_TAG",XPLOAD::tag);
-  // database config
-  rc->set_StringFlag("XPLOAD_CONFIG",XPLOAD::config);
+  Enable::CDB = true;
+  // global tag
+  rc->set_StringFlag("CDB_GLOBALTAG",CDB::global_tag);
   // 64 bit timestamp
-  rc->set_uint64Flag("TIMESTAMP",XPLOAD::timestamp);
-
+  rc->set_uint64Flag("TIMESTAMP",CDB::timestamp);
   //---------------
   // World Settings
   //---------------
@@ -464,7 +491,7 @@ int Fun4All_G4_sPHENIX(
   // Detector Division
   //------------------
 
-  if (Enable::BBC || Enable::BBCFAKE) Bbc_Reco();
+  if ((Enable::BBC && Enable::BBCRECO) || Enable::BBCFAKE) Bbc_Reco();
 
   if (Enable::MVTX_CELL) Mvtx_Cells();
   if (Enable::INTT_CELL) Intt_Cells();
@@ -512,7 +539,17 @@ int Fun4All_G4_sPHENIX(
     }
   if (Enable::MVTX_CLUSTER) Mvtx_Clustering();
   if (Enable::INTT_CLUSTER) Intt_Clustering();
-  if (Enable::TPC_CLUSTER) TPC_Clustering();
+  if (Enable::TPC_CLUSTER)
+    {
+      if(G4TPC::ENABLE_DIRECT_LASER_HITS || G4TPC::ENABLE_CENTRAL_MEMBRANE_HITS)
+	{
+	  TPC_LaserClustering();
+	}
+      else
+	{
+	  TPC_Clustering();
+	}
+    }
   if (Enable::MICROMEGAS_CLUSTER) Micromegas_Clustering();
 
   if (Enable::TRACKING_TRACK)
@@ -577,7 +614,7 @@ int Fun4All_G4_sPHENIX(
   //----------------------
   // Simulation evaluation
   //----------------------
-  string outputroot = outputFile;
+  string outputroot = outdir + "/" + outputFile;
   string remove_this = ".root";
   size_t pos = outputroot.find(remove_this);
   if (pos != string::npos)
@@ -587,7 +624,7 @@ int Fun4All_G4_sPHENIX(
 
   if (Enable::TRACKING_EVAL) Tracking_Eval(outputroot + "_g4svtx_eval.root");
 
-  if (Enable::CEMC_EVAL) CEMC_Eval(outputroot + "_g4cemc_eval.root");
+  if (Enable::CEMC_EVAL) CEMC_Eval(outputroot + "_g4cemc_eval-" + tag + ".root");
 
   if (Enable::HCALIN_EVAL) HCALInner_Eval(outputroot + "_g4hcalin_eval.root");
 
@@ -695,6 +732,7 @@ int Fun4All_G4_sPHENIX(
   // Exit
   //-----
 
+//  CDBInterface::instance()->Print(); // print used DB files
   se->End();
   std::cout << "All done" << std::endl;
   delete se;
@@ -706,4 +744,60 @@ int Fun4All_G4_sPHENIX(
   gSystem->Exit(0);
   return 0;
 }
+
+# ifndef __CINT__
+int main(int argc, char* argv[]) {
+    if(argc < 1 || argc > 9){
+        cout << "usage: ./bin/Fun4All_G4_sPHENIX nEvents seed outdir tag outputFile inputFile embed_input_file skip" << endl;
+        cout << "nEvents: Number of events to generate. Default: 1." << endl;
+        cout << "seed: random seed to use for reproducibility. Default: 0" << endl;
+        cout << "outdir: Location of output directory. Default: ." << endl;
+        cout << "tag: Give a tag to the outputfile. Default: 0" << endl;
+        cout << "inputfile: Default: https://www.phenix.bnl.gov/WWW/publish/phnxbld/sPHENIX/files/sPHENIX_G4Hits_sHijing_9-11fm_00000_00010.root" << endl;
+        cout << "embed_input_file: Default: https://www.phenix.bnl.gov/WWW/publish/phnxbld/sPHENIX/files/sPHENIX_G4Hits_sHijing_9-11fm_00000_00010.root" << endl;
+        cout << "skip: Number of events to skip. Default 0." << endl;
+        return 1;
+    }
+
+     int nEvents = 1;
+     int seed = 0;
+     string outdir = ".";
+     string tag = "0";
+     string outputFile = "G4sPHENIX.root";
+     string inputFile = "https://www.phenix.bnl.gov/WWW/publish/phnxbld/sPHENIX/files/sPHENIX_G4Hits_sHijing_9-11fm_00000_00010.root";
+     string embed_input_file = "https://www.phenix.bnl.gov/WWW/publish/phnxbld/sPHENIX/files/sPHENIX_G4Hits_sHijing_9-11fm_00000_00010.root";
+     int skip = 0;
+
+    if(argc >= 2) {
+        nEvents = atoi(argv[1]);
+    }
+    if(argc >= 3) {
+        seed = atoi(argv[2]);
+    }
+    if(argc >= 4) {
+        outdir = argv[3];
+    }
+    if(argc >= 5) {
+        tag = argv[4];
+    }
+    if(argc >= 6) {
+        outputFile = argv[5];
+    }
+    if(argc >= 7) {
+        inputFile = argv[6];
+    }
+    if(argc >= 8) {
+        embed_input_file = argv[7];
+    }
+    if(argc >= 9) {
+        skip = atoi(argv[8]);
+    }
+
+    Fun4All_G4_sPHENIX(nEvents, seed, outdir, tag, outputFile, inputFile, embed_input_file, skip);
+
+    cout << "done" << endl;
+    return 0;
+}
+# endif
+
 #endif
