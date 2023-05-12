@@ -16,6 +16,7 @@
 #include <TFile.h>
 #include <TTree.h>
 
+#include <memory>
 #include <cassert>
 #include <iostream>
 
@@ -86,7 +87,7 @@ int TPCRawDataTree::process_event(PHCompositeNode *topNode)
 
     m_packet = packet;
 
-    Packet *p = _event->getPacket(m_packet);
+    std::unique_ptr<Packet> p (_event->getPacket(m_packet));
     if (!p)
     {
       if (Verbosity())
