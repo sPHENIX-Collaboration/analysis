@@ -12,8 +12,8 @@
 R__LOAD_LIBRARY(libfun4allraw.so)
 R__LOAD_LIBRARY(libTPCRawDataTree.so)
 
-int Fun4All_TPC_UnpackPRDF(const int nEvents = 50,
-                           const string &inputFile = "/sphenix/user/jinhuang/TPC/commissioning/TPC_ebdc14_junk-00010050-0000.prdf"  //
+int Fun4All_TPC_UnpackPRDF(const int nEvents = 10000,
+                           const string &inputFile = "/sphenix/user/jinhuang/TPC/commissioning/TPC_ebdc11_pedestal-00010147-0000.prdf"  //
 )
 {
   //---------------
@@ -23,6 +23,13 @@ int Fun4All_TPC_UnpackPRDF(const int nEvents = 50,
   se->Verbosity(1);
 
   TPCRawDataTree *r2tree = new TPCRawDataTree(inputFile + "_TPCRawDataTree.root");
+
+  // add all possible TPC packet that we need to analyze
+  for (int packet = 4001; packet<=4231; packet+=10)
+  {
+    r2tree->AddPacket(packet);
+  }
+
   se->registerSubsystem(r2tree);
 
   Fun4AllPrdfInputManager *in1 = new Fun4AllPrdfInputManager("PRDF1");
