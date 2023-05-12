@@ -94,8 +94,6 @@ int TPCRawDataTree::process_event(PHCompositeNode *topNode)
         std::cout << __PRETTY_FUNCTION__ << " : missing packet " << packet << std::endl;
       }
 
-      assert(p);
-
       continue;
     }
 
