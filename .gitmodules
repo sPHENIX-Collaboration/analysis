@@ -1,3 +1,0 @@
-[submodule "EMCal-LED"]
-	path = EMCal-LED
-	url = git@github.com:Steepspace/sPHENIX-EMCal-LEDs.git

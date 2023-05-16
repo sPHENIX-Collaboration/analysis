@@ -1,4 +1,5 @@
 #!/bin/bash
+# -----------------------------------------------------------------------------
 # 'copy-to-analysis.sh'
 # Derek Anderson
 # 01.06.2023
@@ -6,6 +7,7 @@
 # Script to automate copying files
 # over to the sPHENIX analysis
 # repository.
+# -----------------------------------------------------------------------------
 
 # declare filelist
 declare -a files_to_copy
@@ -27,6 +29,8 @@ files_to_copy[8]="src/configure.ac"
 files_to_copy[9]="src/Makefile.am"
 files_to_copy[10]="DoStandaloneCorrelatorCalculation.C"
 files_to_copy[11]="DoStandaloneCorrelatorCalculation.sh"
+files_to_copy[12]="macros/MakePrettyPlot.C"
+files_to_copy[13]="macros/MakeRatioComparisonPlot.C"
 
 # do copying
 # TODO: automate detection/creation of sub-directories
