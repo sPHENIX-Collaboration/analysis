@@ -43,8 +43,11 @@
 #include <g4jets/JetMap.h>
 #include <g4jets/JetMapv1.h>
 #include <g4jets/FastJetAlgo.h>
-#include <g4vertex/GlobalVertex.h>
-#include <g4vertex/GlobalVertexMap.h>
+#include <g4eval/SvtxTrackEval.h>
+#include <g4eval/SvtxEvalStack.h>
+// vtx includes
+#include <globalvertex/GlobalVertex.h>
+#include <globalvertex/GlobalVertexMap.h>
 // tracking includes
 #include <trackbase_historic/SvtxTrack.h>
 #include <trackbase_historic/SvtxVertex.h>
@@ -81,6 +84,53 @@
 #include "TMath.h"
 #include "TNtuple.h"
 #include "TDirectory.h"
+
+// TEST [05.12.2023] ----------------------------------------------------------
+#include "g4eval/SvtxEvaluator.h"
+
+#include "g4eval/SvtxClusterEval.h"
+#include "g4eval/SvtxHitEval.h"
+#include "g4eval/SvtxTruthEval.h"
+#include "g4eval/SvtxVertexEval.h"
+
+#include <trackbase/TrkrCluster.h>
+#include <trackbase/TrkrClusterv3.h>
+#include <trackbase/TrkrClusterv4.h>
+#include <trackbase/TrkrClusterv5.h>
+#include <trackbase/TrkrHit.h>
+#include <trackbase/TrkrHitSetContainer.h>
+#include <trackbase/TrkrDefs.h>
+#include <trackbase/ActsGeometry.h>
+#include <trackbase/ClusterErrorPara.h>
+
+#include <trackbase/TpcDefs.h>
+
+#include <trackbase/TrkrClusterContainer.h>
+#include <trackbase/TrkrHitSet.h>
+#include <trackbase/TrkrClusterHitAssoc.h>
+#include <trackbase/TrkrClusterIterationMapv1.h>
+
+#include <trackbase_historic/ActsTransformations.h>
+#include <trackbase_historic/TrackSeed.h>
+
+#include <g4main/PHG4VtxPoint.h>
+
+#include <g4detectors/PHG4TpcCylinderGeom.h>
+#include <g4detectors/PHG4TpcCylinderGeomContainer.h>
+
+#include <phool/PHTimer.h>
+#include <phool/recoConsts.h>
+
+#include <TVector3.h>
+
+#include <cmath>
+#include <iostream>
+#include <iomanip>
+#include <iterator>
+#include <map>
+#include <memory>                                       // for shared_ptr
+#include <set>                                          // for _Rb_tree_cons...
+// ----------------------------------------------------------------------------
 
 #pragma GCC diagnostic pop
 
@@ -198,10 +248,6 @@ class SCorrelatorJetTree : public SubsysReco {
     void SetECalEtaRange(const pair<double, double> etaRange);
     void SetHCalPtRange(const pair<double, double> ptRange);
     void SetHCalEtaRange(const pair<double, double> etaRange);
-    void SetJetMatchQtRange(const pair<double, double> qtRange);
-    void SetJetMatchDrRange(const pair<double, double> drRange);
-    void SetCstMatchQtRange(const pair<double, double> qtRange);
-    void SetCstMatchDrRange(const pair<double, double> drRange);
     void SetJetAlgo(const ALGO jetAlgo);
     void SetRecombScheme(const RECOMB recombScheme);
     void SetJetParameters(const double rJet, const uint32_t jetType, const ALGO jetAlgo, const RECOMB recombScheme);
@@ -239,16 +285,6 @@ class SCorrelatorJetTree : public SubsysReco {
     double GetHCalMinEta()  {return m_hcalEtaRange[0];}
     double GetHCalMaxEta()  {return m_hcalEtaRange[1];}
 
-    // matching getters
-    double GetJetMatchMinQt() {return m_jetMatchQtRange[0];}
-    double GetJetMatchMaxQt() {return m_jetMatchQtRange[1];}
-    double GetJetMatchMinDr() {return m_jetMatchDrRange[0];}
-    double GetJetMatchMaxDr() {return m_jetMatchDrRange[1];}
-    double GetCstMatchMinQt() {return m_cstMatchQtRange[0];}
-    double GetCstMatchMaxQt() {return m_cstMatchQtRange[1];}
-    double GetCstMatchMinDr() {return m_cstMatchDrRange[0];}
-    double GetCstMatchMaxDr() {return m_cstMatchDrRange[1];}
-
     // jet getters
     double              GetJetR()         {return m_jetR;}
     uint32_t            GetJetType()      {return m_jetType;}
@@ -258,47 +294,54 @@ class SCorrelatorJetTree : public SubsysReco {
   private:
 
     // event methods (*.evt.h)
-    void   FindPartons(PHCompositeNode *topNode);
-    void   GetEventVariables(PHCompositeNode *topNode);
-    long   GetNumTrks(PHCompositeNode *topNode);
-    long   GetNumChrgPars(PHCompositeNode *topNode);
-    double GetSumECalEne(PHCompositeNode *topNode);
-    double GetSumHCalEne(PHCompositeNode *topNode);
-    double GetSumParEne(PHCompositeNode *topNode);
+    void              GetEventVariables(PHCompositeNode *topNode);
+    void              GetPartonInfo(PHCompositeNode *topNode);
+    long              GetNumTrks(PHCompositeNode *topNode);
+    long              GetNumChrgPars(PHCompositeNode *topNode);
+    double            GetSumECalEne(PHCompositeNode *topNode);
+    double            GetSumHCalEne(PHCompositeNode *topNode);
+    double            GetSumParEne(PHCompositeNode *topNode);
+    CLHEP::Hep3Vector GetRecoVtx(PHCompositeNode *topNode);
 
     // jet methods (*.jet.h)
     void FindTrueJets(PHCompositeNode *topNode);
     void FindRecoJets(PHCompositeNode *topNode);
-    void DoMatching();
     void AddParticles(PHCompositeNode *topNode, vector<PseudoJet> &particles, map<int, pair<Jet::SRC, int>> &fjMap);
     void AddTracks(PHCompositeNode *topNode, vector<PseudoJet> &particles, map<int, pair<Jet::SRC, int>> &fjMap);
     void AddFlow(PHCompositeNode *topNode, vector<PseudoJet> &particles, map<int, pair<Jet::SRC, int>> &fjMap);
     void AddECal(PHCompositeNode *topNode, vector<PseudoJet> &particles, map<int, pair<Jet::SRC, int>> &fjMap);
     void AddHCal(PHCompositeNode *topNode, vector<PseudoJet> &particles, map<int, pair<Jet::SRC, int>> &fjMap);
-    bool IsJetGoodMatch(const double qtJet, const double drJet);
 
     // constituent methods (*.cst.h)
-    bool  IsGoodParticle(HepMC::GenParticle *part);
+    int   GetMatchID(SvtxTrack *track);
+    bool  IsGoodParticle(HepMC::GenParticle *par, const bool ignoreCharge=false);
     bool  IsGoodTrack(SvtxTrack *track);
-    bool  IsGoodFlow(ParticleFlowElement *pfPart);
-    bool  IsGoodECal(CLHEP::Hep3Vector &E_vec_cluster);
-    bool  IsGoodHCal(CLHEP::Hep3Vector &E_vec_cluster);
-    bool  IsCstGoodMatch(const double qtCst, const double drCst);
+    bool  IsGoodFlow(ParticleFlowElement *flow);
+    bool  IsGoodECal(CLHEP::Hep3Vector &hepVecECal);
+    bool  IsGoodHCal(CLHEP::Hep3Vector &hepVecHCal);
+    bool  IsOutgoingParton(HepMC::GenParticle *par);
     float GetParticleCharge(const int pid);
 
     // system methods (*.sys.h)
-    void InitVariables();
-    void InitHists();
-    void InitTrees();
-    void FillTrueTree();
-    void FillRecoTree();
-    void FillMatchTree();
-    void SaveOutput();
-    void ResetVariables();
-    int  CreateJetNode(PHCompositeNode* topNode);
+    void                          InitVariables();
+    void                          InitHists();
+    void                          InitTrees();
+    void                          InitEvals(PHCompositeNode *topNode);
+    void                          FillTrueTree();
+    void                          FillRecoTree();
+    void                          SaveOutput();
+    void                          ResetVariables();
+    int                           CreateJetNode(PHCompositeNode *topNode);
+    SvtxTrackMap*                 GetTrackMap(PHCompositeNode *topNode);
+    GlobalVertex*                 GetGlobalVertex(PHCompositeNode *topNode);
+    HepMC::GenEvent*              GetMcEvent(PHCompositeNode *topNode);
+    RawClusterContainer*          GetClusterStore(PHCompositeNode *topNode, const TString sNodeName);
+    ParticleFlowElementContainer* GetFlowStore(PHCompositeNode *topNode);
 
-    // F4A members
+    // F4A/utility members
     Fun4AllHistoManager *m_histMan;
+    SvtxEvalStack       *m_evalStack;
+    SvtxTrackEval       *m_trackEval;
 
     // io members
     TFile    *m_outFile;
@@ -341,12 +384,6 @@ class SCorrelatorJetTree : public SubsysReco {
     double m_hcalPtRange[NRange];
     double m_hcalEtaRange[NRange];
 
-    // matching parameters
-    double m_jetMatchQtRange[NRange];
-    double m_jetMatchDrRange[NRange];
-    double m_cstMatchQtRange[NRange];
-    double m_cstMatchDrRange[NRange];
-
     // jet parameters
     double               m_jetR;
     uint32_t             m_jetType;
@@ -358,32 +395,31 @@ class SCorrelatorJetTree : public SubsysReco {
     RecombinationScheme  m_recombScheme;
 
     // event, jet members
-    long              m_numTrks;
-    long              m_numChrgPars;
-    double            m_sumECalEne;
-    double            m_sumHCalEne;
-    double            m_sumParEne;
     long long         m_partonID[NPart];
     CLHEP::Hep3Vector m_partonMom[NPart];
+    CLHEP::Hep3Vector m_recoVtx;
+    CLHEP::Hep3Vector m_trueVtx;
     vector<PseudoJet> m_recoJets;
     vector<PseudoJet> m_trueJets;
 
     // output reco event variables
     unsigned long          m_recoNumJets;
-    long long              m_recoPartonID[NPart];
-    double                 m_recoPartonMomX[NPart];
-    double                 m_recoPartonMomY[NPart];
-    double                 m_recoPartonMomZ[NPart];
+    double                 m_recoVtxX;
+    double                 m_recoVtxY;
+    double                 m_recoVtxZ;
+    double                 m_recoSumECal;
+    double                 m_recoSumHCal;
+    long                   m_recoNumTrks;
     // output reco jet variables
     vector<unsigned long>  m_recoJetNCst;
-    vector<unsigned int>   m_recoJetId;
-    vector<unsigned int>   m_recoJetTruId;
+    vector<unsigned int>   m_recoJetID;
     vector<double>         m_recoJetE;
     vector<double>         m_recoJetPt;
     vector<double>         m_recoJetEta;
     vector<double>         m_recoJetPhi;
     vector<double>         m_recoJetArea;
     // output reco constituent variables
+    vector<vector<int>>    m_recoCstMatchID;
     vector<vector<double>> m_recoCstZ;
     vector<vector<double>> m_recoCstDr;
     vector<vector<double>> m_recoCstE;
@@ -397,25 +433,27 @@ class SCorrelatorJetTree : public SubsysReco {
     double                m_truePartonMomX[NPart];
     double                m_truePartonMomY[NPart];
     double                m_truePartonMomZ[NPart];
+    double                m_trueVtxX;
+    double                m_trueVtxY;
+    double                m_trueVtxZ;
+    double                m_trueSumPar;
+    long                  m_trueNumChrgPars;
     // output truth jet variables
     vector<unsigned long> m_trueJetNCst;
-    vector<unsigned int>  m_trueJetId;
-    vector<unsigned int>  m_trueJetTruId;
+    vector<unsigned int>  m_trueJetID;
     vector<double>        m_trueJetE;
     vector<double>        m_trueJetPt;
     vector<double>        m_trueJetEta;
     vector<double>        m_trueJetPhi;
     vector<double>        m_trueJetArea;
     // output truth constituent variables
+    vector<vector<int>>    m_trueCstID;
     vector<vector<double>> m_trueCstZ;
     vector<vector<double>> m_trueCstDr;
     vector<vector<double>> m_trueCstE;
     vector<vector<double>> m_trueCstJt;
     vector<vector<double>> m_trueCstEta;
     vector<vector<double>> m_trueCstPhi;
-
-    // output match event variables
-    /* will go here */
 
 };
 
