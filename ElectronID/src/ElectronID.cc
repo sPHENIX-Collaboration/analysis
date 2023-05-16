@@ -28,8 +28,8 @@
 #include <calobase/RawCluster.h>
 #include <calobase/RawClusterv1.h>
 
-#include <g4vertex/GlobalVertexMap.h>
-#include <g4vertex/GlobalVertex.h>
+#include <globalvertex/GlobalVertexMap.h>
+#include <globalvertex/GlobalVertex.h>
 
 #include <g4main/PHG4TruthInfoContainer.h>
 #include <g4main/PHG4Particle.h>

@@ -8,17 +8,19 @@ import shutil
 parser = argparse.ArgumentParser()
 subparser = parser.add_subparsers(dest='command')
 
-create = subparser.add_parser('create')
-status = subparser.add_parser('status')
-hadd   = subparser.add_parser('hadd')
+create = subparser.add_parser('create', help='Create condor submission directory.')
+status = subparser.add_parser('status', help='Check the status of the condor submission.')
+hadd   = subparser.add_parser('hadd', help='Merge completed condor jobs.')
 
-create.add_argument('--executable', type=str, help='Job script to execute.', required=True)
-create.add_argument('--macros', type=str, help='Directory of input macros. Directory containing Fun4All_G4_sPHENIX.C and G4Setup_sPHENIX.C.',required=True)
+create.add_argument('-e', '--executable', type=str, default='scripts/genFun4All.sh', help='Job script to execute. Default: scripts/genFun4All.sh')
+create.add_argument('-a', '--macros', type=str, default='current/macro', help='Directory of input macros. Directory containing Fun4All_G4_sPHENIX.C and G4Setup_sPHENIX.C. Default: current/macro')
+create.add_argument('-b', '--bin-dir', type=str, default='current/bin', help='Directory containing Fun4All_G4_sPHENIX executable. Default: current/bin')
 create.add_argument('-n', '--events', type=int, default=1, help='Number of events to generate. Default: 1.')
 create.add_argument('-d', '--output', type=str, default='test', help='Output Directory. Default: Current Directory.')
 create.add_argument('-m', '--jobs-per-submission', type=int, default=20000, help='Maximum number of jobs per condor submission. Default: 20000.')
-create.add_argument('-j', '--events-per-job', type=int, default=50, help='Number of events to generate per job. Default: 50.')
-create.add_argument('--memory', type=int, default=10, help='Memory (units of GB) to request per condor submission. Default: 10 GB.')
+create.add_argument('-j', '--events-per-job', type=int, default=100, help='Number of events to generate per job. Default: 100.')
+create.add_argument('-s', '--memory', type=int, default=6, help='Memory (units of GB) to request per condor submission. Default: 6 GB.')
+create.add_argument('-u', '--build-tag', type=str, default='unknown', help='Specify build tag. Ex: ana.xxx, Default: unknown')
 
 status.add_argument('-d','--condor-dir', type=str, help='Condor submission directory.', required=True)
 
@@ -26,19 +28,22 @@ hadd.add_argument('-i','--job-dir-list', type=str, help='List of directories con
 hadd.add_argument('-o','--output', type=str, default='test.root', help='Output root file. Default: test.root.')
 hadd.add_argument('-n','--jobs-per-hadd', type=int, default=5000, help='Number of jobs to merge per hadd call. Default: 5000.')
 hadd.add_argument('-j','--jobs-open', type=int, default=50, help='Number of jobs to load at once. Default: 50.')
+hadd.add_argument('-m','--multiple-submit-dir', type=bool, default=False,help='If merging condor jobs over multiple directories. Default: False')
 
 args = parser.parse_args()
 
 def create_jobs():
     events              = args.events
     jobs_per_submission = args.jobs_per_submission
-    output_dir          = os.path.abspath(args.output)
-    executable          = os.path.abspath(args.executable)
-    events_per_job      = args.events_per_job
+    output_dir          = os.path.realpath(args.output)
+    bin_dir             = os.path.realpath(args.bin_dir)
+    executable          = os.path.realpath(args.executable)
+    events_per_job      = min(args.events_per_job, events)
     memory              = args.memory
-    macros_dir          = os.path.abspath(args.macros)
+    macros_dir          = os.path.realpath(args.macros)
     jobs                = events//events_per_job
     submissions         = int(np.ceil(jobs/jobs_per_submission))
+    tag                 = args.build_tag
 
     print(f'Events: {events}')
     print(f'Events per job: {events_per_job}')
@@ -48,10 +53,24 @@ def create_jobs():
     print(f'Requested memory per job: {memory}GB')
     print(f'Output Directory: {output_dir}')
     print(f'Macros Directory: {macros_dir}')
+    print(f'Bin Directory: {bin_dir}')
     print(f'Executable: {executable}')
-    print('-----------------------------------')
+    print(f'Build Tag: {tag}')
 
     os.makedirs(output_dir,exist_ok=True)
+    with open(f'{output_dir}/log.txt', mode='w') as file:
+        file.write(f'Events: {events}\n')
+        file.write(f'Events per job: {events_per_job}\n')
+        file.write(f'Jobs: {jobs}\n')
+        file.write(f'Maximum jobs per condor submission: {jobs_per_submission}\n')
+        file.write(f'Submissions: {submissions}\n')
+        file.write(f'Requested memory per job: {memory}GB\n')
+        file.write(f'Output Directory: {output_dir}\n')
+        file.write(f'Macros Directory: {macros_dir}\n')
+        file.write(f'Bin Directory: {bin_dir}\n')
+        file.write(f'Executable: {executable}\n')
+        file.write(f'Build Tag: {tag}\n')
+
     # Generate condor submission file
     condor_file = f'{output_dir}/genFun4All.sub'
     with open(condor_file, mode="w") as file:
@@ -63,7 +82,8 @@ def create_jobs():
         file.write(f'request_memory         = {memory}GB\n')
         file.write('should_transfer_files   = YES\n')
         file.write('when_to_transfer_output = ON_EXIT\n')
-        file.write('transfer_input_files    = src/Fun4All_G4_sPHENIX.C, src/G4Setup_sPHENIX.C\n')
+        # file.write('transfer_input_files    = src/Fun4All_G4_sPHENIX.C, src/G4Setup_sPHENIX.C\n')
+        file.write('transfer_input_files    = bin/Fun4All_G4_sPHENIX\n')
         file.write('transfer_output_files   = G4sPHENIX_g4cemc_eval-$(myPid).root\n')
         file.write('transfer_output_remaps  = "G4sPHENIX_g4cemc_eval-$(myPid).root = output/G4sPHENIX_g4cemc_eval-$(myPid).root"\n')
         file.write('queue myPid,initialSeed from seed.txt')
@@ -83,6 +103,7 @@ def create_jobs():
 
         shutil.copy(condor_file, submit_dir)
         shutil.copy(executable, f'{submit_dir}/bin')
+        shutil.copy(f'{bin_dir}/Fun4All_G4_sPHENIX', f'{submit_dir}/bin')
         shutil.copy(f'{macros_dir}/Fun4All_G4_sPHENIX.C', f'{submit_dir}/src')
         shutil.copy(f'{macros_dir}/G4Setup_sPHENIX.C', f'{submit_dir}/src')
 
@@ -95,7 +116,7 @@ def create_jobs():
         print(f'Written {file_name}')
 
 def get_status():
-    condor_dir = os.path.abspath(args.condor_dir)
+    condor_dir = os.path.realpath(args.condor_dir)
     submit_dirs = next(os.walk(condor_dir))[1]
     print(f'Condor Directory: {condor_dir}')
     jobs_done_total = 0
@@ -111,9 +132,8 @@ def get_status():
     if(total != 0):
         print(f'Total jobs done: {jobs_done_total}, {jobs_done_total/total*100:.2f} %')
 
-def hadd():
-    job_dir_list  = os.path.abspath(args.job_dir_list)
-    output        = os.path.abspath(args.output)
+def hadd(jobs_dir):
+    output        = os.path.realpath(args.output)
     jobs_per_hadd = args.jobs_per_hadd
     jobs_open     = args.jobs_open+1
     print(f'file list: {job_dir_list}')
@@ -121,13 +141,7 @@ def hadd():
     print(f'jobs per hadd: {jobs_per_hadd}')
     print(f'jobs open at once: {jobs_open-1}')
 
-    jobs = []
-    with open(job_dir_list) as f:
-        for line in f:
-            line = line.strip()
-            jobs_l = os.listdir(line)
-            print(f'dir: {line}, jobs: {len(jobs_l)}')
-            jobs.extend([os.path.join(line,file) for file in jobs_l])
+    jobs = os.listdir(jobs_dir)
 
     total_jobs = len(jobs)
     hadd_calls = int(np.ceil(total_jobs/jobs_per_hadd))
@@ -138,7 +152,7 @@ def hadd():
     for i in range(hadd_calls):
         subprocess.run(['echo', '#######################'])
         subprocess.run(['echo', f'working on hadd: {i}'])
-        command = ['hadd', '-a', '-n', str(jobs_open), output]
+        command = f'hadd -a -n {jobs_open} {output}'.split()
         i_start = jobs_per_hadd*i
         i_end = min(jobs_per_hadd*(i+1), total_jobs)
         subprocess.run(['echo', f'i_start: {i_start}, i_end: {i_end}'])
@@ -153,4 +167,12 @@ if __name__ == '__main__':
     elif(args.command == 'status'):
         get_status()
     elif(args.command == 'hadd'):
-        hadd()
+        if(args.multiple_submit_dir):
+            job_dir_list  = os.path.realpath(args.job_dir_list)
+            with open(job_dir_list) as f:
+                for jobs_dir in f:
+                    jobs_dir = line.strip()
+                    hadd(jobs_dir)
+        else:
+            job_dir = args.job_dir_list
+            hadd(jobs_dir)
