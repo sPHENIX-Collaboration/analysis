@@ -159,7 +159,7 @@ int pythiaEMCalAna::InitRun(PHCompositeNode *topNode)
 //____________________________________________________________________________..
 int pythiaEMCalAna::process_event(PHCompositeNode *topNode)
 {
-  std::cout << "pythiaEMCalAna::process_event(PHCompositeNode *topNode) Processing event..." << std::endl;
+  /* std::cout << "pythiaEMCalAna::process_event(PHCompositeNode *topNode) Processing event..." << std::endl; */
   //Information on clusters
   // RawClusterContainer *clusterContainer = findNode::getClass<RawClusterContainer>(topNode,"CLUSTER_POS_COR_CEMC");
   RawClusterContainer *clusterContainer = findNode::getClass<RawClusterContainer>(topNode,"CLUSTER_CEMC");
@@ -368,43 +368,62 @@ int pythiaEMCalAna::process_event(PHCompositeNode *topNode)
   for(truthIter = truthRange.first; truthIter != truthRange.second; truthIter++)
   {
       PHG4Particle *truthPar = truthIter->second;
-      std::cout << "Beginning geant primary particle truthPar=" << truthPar << "\n";
+      /* std::cout << "Beginning geant primary particle truthPar=" << truthPar << "\n"; */
       int geant_barcode = truthPar->get_barcode();
       int pid = truthPar->get_pid();
       if (pid != 22) {
 	  // if it's not a photon, consider it a valid primary particle
-	  std::cout << "Found a non-photon primary truthPar=" << truthPar << ", adding it\n";
+	  /* std::cout << "Found a non-photon primary truthPar=" << truthPar << ", adding it\n"; */
+	  /* HepMC::GenParticle* genPar = getGenParticle(geant_barcode, theEvent); */
+	  /* std::cout << "Corresponding pythia particle is " << genPar << "; more info:\n"; */
+	  /* genPar->print(); */
+	  /* HepMC::GenVertex* prod_vtx = genPar->production_vertex(); */
+	  /* std::cout << "Found production vertex " << prod_vtx << " with " << prod_vtx->particles_in_size() << " particle(s) going in; more details:\n"; */
+	  /* prod_vtx->print(); */
+	  /* HepMC::FourVector fv = prod_vtx->position(); */
+	  /* std::cout << Form("production vertex (x,y,z,t) = (%f,%f,%f,%f)\n", fv.x(), fv.y(), fv.z(), fv.t()); */
+	  /* HepMC::GenVertex* end_vtx = genPar->end_vertex(); */
+	  /* if (end_vtx) { */
+	  /*     std::cout << "Found end vertex " << end_vtx << " with " << end_vtx->particles_in_size() << " particle(s) going out; more details:\n"; */
+	  /*     end_vtx->print(); */
+	  /* } */
+	  /* else std::cout << "No end vertex found\n"; */
+
 	  addPrimaryFromGeant(truthPar, truthinfo);
-	  std::cout << "\tadded\n";
+	  /* std::cout << "\tadded\n"; */
       }
       else {
 	  // if it's a photon, check if it came from a pi0
 	  // get the corresponding truth particle from PYTHIA
 	  HepMC::GenParticle* genPar = getGenParticle(geant_barcode, theEvent);
 	  HepMC::GenVertex* prod_vtx = genPar->production_vertex();
-	  std::cout << "Found production vertex " << prod_vtx << " with " << prod_vtx->particles_in_size() << " particle(s) going in\n";
+	  /* std::cout << "Found production vertex " << prod_vtx << " with " << prod_vtx->particles_in_size() << " particle(s) going in\n"; */
 	  if (prod_vtx->particles_in_size() == 1) {
 	      HepMC::GenVertex::particles_in_const_iterator parent = prod_vtx->particles_in_const_begin();
-	      std::cout << "Found *parent=" << *parent << "\n";
-	      if ( (*parent)->pdg_id() == 111 ) {
+	      /* std::cout << "Found *parent=" << *parent << "\n"; */
+	      /* if ( (*parent)->pdg_id() == 111 ) { */
+	      if ( (*parent)->pdg_id() ) {
 		  // make sure the parent pi0 hasn't already been added
-		  std::cout << "Parent is a pi0; checking if we already added it\n";
+		  /* std::cout << "Found a primary photon with exactly one parent. Parent is " << *parent << ":\n"; */
+		  /* (*parent)->print(); */
+		  /* std::cout << "Parent is a pi0; checking if we already added it\n"; */
 		  if (!vector_contains((*parent)->barcode(), primaryBarcodes)) {
-		      std::cout << "Adding primary *parent=" << *parent << "\n";
+		      /* std::cout << "Adding primary *parent=" << *parent << " from pythia\n"; */
 		      addPrimaryFromPythia((*parent));
-		      std::cout << "\tadded\n";
+		      /* std::cout << "\tadded\n"; */
 		  }
 		  // add the photon as a secondary particle
-		  std::cout << "Adding secondary truthPar=" << truthPar << "\n";
-		  addSecondary(truthPar, truthinfo);
-		  std::cout << "\tadded\n";
+		  /* std::cout << "Adding secondary truthPar=" << truthPar << "\n"; */
+		  addSecondaryWithoutParent(truthPar, truthinfo, (*parent));
+		  /* std::cout << "\tadded\n"; */
 	      } // end case where parent is a pi0
 	  }  // end case where photon has exactly 1 parent
 	  else {
 	      // photon does not come from a decay
+	      std::cout << "Greg info: adding primary photon from geant\n";
 	      addPrimaryFromGeant(truthPar, truthinfo);
 	  }
-	  std::cout << "Ending geant primary particle truthPar=" << truthPar << "\n";
+	  /* std::cout << "Ending geant primary particle truthPar=" << truthPar << "\n"; */
       }
   } // Done looping over GEANT primary particles
 
@@ -414,6 +433,7 @@ int pythiaEMCalAna::process_event(PHCompositeNode *topNode)
   for(truthIter = truthRange.first; truthIter != truthRange.second; truthIter++)
   {
       PHG4Particle *truthPar = truthIter->second;
+      /* std::cout << "Beginning geant secondary particle truthPar=" << truthPar << "\n"; */
       // check if the parent is in the primary list
       PHG4Particle* parent = truthinfo->GetParticle(truthPar->get_parent_id());
       if (!vector_contains(parent->get_barcode(), primaryBarcodes)) continue;
@@ -554,13 +574,33 @@ void pythiaEMCalAna::Print(const std::string &what) const
 }
 
 void pythiaEMCalAna::addPrimaryFromGeant(PHG4Particle* part, PHG4TruthInfoContainer* truthInfo) {
+    /* std::cout << "Entering pythiaEMCalAna::addPrimaryFromGeant\npart=" << part << "\n"; */
+    /* part->identify(); */
+    /* std::cout << "Barcode is " << part->get_barcode() << "\n"; */
+    /* int vtx_id = part->get_vtx_id(); */
+    /* std::cout << "vertex id is " << vtx_id << "\n"; */
+    /* PHG4VtxPoint* vtxpt = truthInfo->GetVtx(vtx_id); */
+    /* vtxpt->identify(); */
+    TLorentzVector truth_momentum;
+    truth_momentum.SetPxPyPzE(part->get_px(), part->get_py(), part->get_pz(), part->get_e());
+    float eta = truth_momentum.PseudoRapidity();
+    if (abs(eta) > 1.1) return;
+    int this_id = part->get_track_id();
+    PHG4VtxPoint* end_vtx = getG4EndVtx(this_id, truthInfo);
+    if (!end_vtx) {
+	std::cout << "\n\nGreg info: no end vertex found for primary particle:\n";
+	part->identify();
+	std::cout << Form("Mass=%f, pT=%f\n", truth_momentum.M(), truth_momentum.Pt());
+	return;
+    }
+
     m_truthBarcode.push_back(part->get_barcode());
     m_truthParentBarcode.push_back(0);
     m_truthIsPrimary.push_back(1);
     m_truthPid.push_back(part->get_pid());
 
-    TLorentzVector truth_momentum;
-    truth_momentum.SetPxPyPzE(part->get_px(), part->get_py(), part->get_pz(), part->get_e());
+    /* TLorentzVector truth_momentum; */
+    /* truth_momentum.SetPxPyPzE(part->get_px(), part->get_py(), part->get_pz(), part->get_e()); */
     m_truthE.push_back(truth_momentum.E());
     m_truthEta.push_back(truth_momentum.PseudoRapidity());
     m_truthPhi.push_back(truth_momentum.Phi());
@@ -570,8 +610,10 @@ void pythiaEMCalAna::addPrimaryFromGeant(PHG4Particle* part, PHG4TruthInfoContai
     // part->get_vtx_id() gives the *production* vertex, not the end vertex
     /* PHG4VtxPoint* end_vtx = truthInfo->GetVtx(part->get_vtx_id()); // DOES NOT WORK */
     // get the end vertex from one of the daughter particles
-    int this_id = part->get_track_id();
-    PHG4VtxPoint* end_vtx = getG4EndVtx(this_id, truthInfo);
+    /* int this_id = part->get_track_id(); */
+    /* std::cout << "this_id = " << this_id << "; getting end vertex\n"; */
+    /* PHG4VtxPoint* end_vtx = getG4EndVtx(this_id, truthInfo); */
+    /* std::cout << "end_vtx = " << end_vtx << "\n"; */
     assert(end_vtx);
     m_truthEndVtx_x.push_back(end_vtx->get_x());
     m_truthEndVtx_y.push_back(end_vtx->get_y());
@@ -586,26 +628,32 @@ void pythiaEMCalAna::addPrimaryFromGeant(PHG4Particle* part, PHG4TruthInfoContai
 }
 
 void pythiaEMCalAna::addPrimaryFromPythia(HepMC::GenParticle* part) {
-    std::cout << "Entering pythiaEMCalAna::addPrimaryFromPythia\npart=" << part << "\n";
+    /* std::cout << "Entering pythiaEMCalAna::addPrimaryFromPythia\npart=" << part << "\n"; */
+    HepMC::FourVector mom = part->momentum();
+    TLorentzVector truth_momentum;
+    truth_momentum.SetPxPyPzE(mom.px(), mom.py(), mom.pz(), mom.e());
+    float eta = truth_momentum.PseudoRapidity();
+    if (abs(eta) > 1.1) return;
+
     m_truthBarcode.push_back(part->barcode());
     m_truthParentBarcode.push_back(0);
     m_truthIsPrimary.push_back(1);
     m_truthPid.push_back(part->pdg_id());
 
-    std::cout << "Getting momentum\n";
-    HepMC::FourVector mom = part->momentum();
-    TLorentzVector truth_momentum;
-    truth_momentum.SetPxPyPzE(mom.px(), mom.py(), mom.pz(), mom.e());
+    /* std::cout << "Getting momentum\n"; */
+    /* HepMC::FourVector mom = part->momentum(); */
+    /* TLorentzVector truth_momentum; */
+    /* truth_momentum.SetPxPyPzE(mom.px(), mom.py(), mom.pz(), mom.e()); */
     m_truthE.push_back(truth_momentum.E());
     m_truthEta.push_back(truth_momentum.PseudoRapidity());
     m_truthPhi.push_back(truth_momentum.Phi());
     m_truthPt.push_back(truth_momentum.Pt());
     m_truthMass.push_back(truth_momentum.M());
 
-    std::cout << "Getting end vertex\n";
+    /* std::cout << "Getting end vertex\n"; */
     HepMC::GenVertex* end_vtx = part->end_vertex();
     assert(end_vtx);
-    std::cout << "Found end vertex in pythia\n";
+    /* std::cout << "Found end vertex in pythia\n"; */
     HepMC::FourVector position = end_vtx->position();
 
     m_truthEndVtx_x.push_back(position.x());
@@ -615,43 +663,46 @@ void pythiaEMCalAna::addPrimaryFromPythia(HepMC::GenParticle* part) {
     float x = position.x();
     float y = position.y();
     float r = sqrt(x*x + y*y);
-    std::cout << Form("Vertex r=%f, perp=%f\n", r, position.perp());
+    /* std::cout << Form("pythiaEMCalAna::addPrimaryFromPythia(): Vertex r=%f, perp=%f\n", r, position.perp()); */
     m_truthEndVtx_r.push_back(r);
 
     primaryBarcodes.push_back(part->barcode());
 }
 
 void pythiaEMCalAna::addSecondary(PHG4Particle* part, PHG4TruthInfoContainer* truthInfo) {
+    /* std::cout << "Entering pythiaEMCalAna::addSecondary(), geant particle is " << part << "\n"; */
+    TLorentzVector truth_momentum;
+    truth_momentum.SetPxPyPzE(part->get_px(), part->get_py(), part->get_pz(), part->get_e());
+    float eta = truth_momentum.PseudoRapidity();
+    if (abs(eta) > 1.1) return;
+    /* std::cout << "Done checking eta\n"; */
+    int this_id = part->get_track_id();
+    PHG4VtxPoint* end_vtx = getG4EndVtx(this_id, truthInfo);
+    if (!end_vtx) {
+	/* std::cout << "\n\nGreg info: no end vertex found for secondary particle:\n"; */
+	/* part->identify(); */
+	/* std::cout << "Particle eta=" << eta << "\n"; */
+	return;
+    }
+    /* std::cout << "Done checking end_vtx\n"; */
+
     m_truthBarcode.push_back(part->get_barcode());
     PHG4Particle* parent = truthInfo->GetParticle(part->get_parent_id());
     m_truthParentBarcode.push_back(parent->get_barcode());
     m_truthIsPrimary.push_back(0);
     m_truthPid.push_back(part->get_pid());
+    /* std::cout << "Done adding pid to vector\n"; */
 
-    TLorentzVector truth_momentum;
-    truth_momentum.SetPxPyPzE(part->get_px(), part->get_py(), part->get_pz(), part->get_e());
+    /* TLorentzVector truth_momentum; */
+    /* truth_momentum.SetPxPyPzE(part->get_px(), part->get_py(), part->get_pz(), part->get_e()); */
     m_truthE.push_back(truth_momentum.E());
     m_truthEta.push_back(truth_momentum.PseudoRapidity());
     m_truthPhi.push_back(truth_momentum.Phi());
     m_truthPt.push_back(truth_momentum.Pt());
     m_truthMass.push_back(truth_momentum.M());
+    /* std::cout << "Done adding kinematics to vector\n"; */
 
-    // part->get_vtx_id() gives the *production* vertex, not the end vertex
-    /* PHG4VtxPoint* end_vtx = truthInfo->GetVtx(part->get_vtx_id()); // DOES NOT WORK */
-    // get the end vertex from one of the daughter particles
-    PHG4VtxPoint* end_vtx = nullptr;
-    int this_id = part->get_track_id();
-    PHG4TruthInfoContainer::Range truthRange = truthInfo->GetSecondaryParticleRange();
-    PHG4TruthInfoContainer::ConstIterator truthIter;
-    for(truthIter = truthRange.first; truthIter != truthRange.second; truthIter++)
-    {
-	PHG4Particle *decayPar = truthIter->second;
-	int parent_id = decayPar->get_parent_id();
-	if (parent_id == this_id) {
-	    end_vtx = truthInfo->GetVtx(decayPar->get_vtx_id());
-	    break;
-	}
-    }
+    /* std::cout << "Asserting end_vtx= " << end_vtx << "\n"; */
     assert(end_vtx);
     m_truthEndVtx_x.push_back(end_vtx->get_x());
     m_truthEndVtx_y.push_back(end_vtx->get_y());
@@ -661,6 +712,54 @@ void pythiaEMCalAna::addSecondary(PHG4Particle* part, PHG4TruthInfoContainer* tr
     float y = end_vtx->get_y();
     float r = sqrt(x*x + y*y);
     m_truthEndVtx_r.push_back(r);
+    /* std::cout << "Done adding vertex to vector\n"; */
+
+    secondaryBarcodes.push_back(part->get_barcode());
+}
+
+void pythiaEMCalAna::addSecondaryWithoutParent(PHG4Particle* part, PHG4TruthInfoContainer* truthInfo, HepMC::GenParticle* genParent) {
+    /* std::cout << "Entering pythiaEMCalAna::addSecondaryWithoutParent(), geant particle is " << part << ", pythia particle is " << genParent << "\n"; */
+    TLorentzVector truth_momentum;
+    truth_momentum.SetPxPyPzE(part->get_px(), part->get_py(), part->get_pz(), part->get_e());
+    float eta = truth_momentum.PseudoRapidity();
+    if (abs(eta) > 1.1) return;
+    /* std::cout << "Done checking eta\n"; */
+    int this_id = part->get_track_id();
+    PHG4VtxPoint* end_vtx = getG4EndVtx(this_id, truthInfo);
+    if (!end_vtx) {
+	/* std::cout << "\n\nGreg info: no end vertex found for secondary particle:\n"; */
+	/* part->identify(); */
+	/* std::cout << "Particle eta=" << eta << "\n"; */
+	return;
+    }
+    /* std::cout << "Done checking end_vtx\n"; */
+
+    m_truthBarcode.push_back(part->get_barcode());
+    m_truthParentBarcode.push_back(genParent->barcode());
+    m_truthIsPrimary.push_back(0);
+    m_truthPid.push_back(part->get_pid());
+    /* std::cout << "Done adding pid to vector\n"; */
+
+    /* TLorentzVector truth_momentum; */
+    /* truth_momentum.SetPxPyPzE(part->get_px(), part->get_py(), part->get_pz(), part->get_e()); */
+    m_truthE.push_back(truth_momentum.E());
+    m_truthEta.push_back(truth_momentum.PseudoRapidity());
+    m_truthPhi.push_back(truth_momentum.Phi());
+    m_truthPt.push_back(truth_momentum.Pt());
+    m_truthMass.push_back(truth_momentum.M());
+    /* std::cout << "Done adding kinematics to vector\n"; */
+
+    /* std::cout << "Asserting end_vtx= " << end_vtx << "\n"; */
+    assert(end_vtx);
+    m_truthEndVtx_x.push_back(end_vtx->get_x());
+    m_truthEndVtx_y.push_back(end_vtx->get_y());
+    m_truthEndVtx_z.push_back(end_vtx->get_z());
+    m_truthEndVtx_t.push_back(end_vtx->get_t());
+    float x = end_vtx->get_x();
+    float y = end_vtx->get_y();
+    float r = sqrt(x*x + y*y);
+    m_truthEndVtx_r.push_back(r);
+    /* std::cout << "Done adding vertex to vector\n"; */
 
     secondaryBarcodes.push_back(part->get_barcode());
 }
@@ -676,7 +775,7 @@ HepMC::GenParticle* pythiaEMCalAna::getGenParticle(int barcode, HepMC::GenEvent*
     }
     // reached end of loop... if we still haven't found the right particle,
     // we have a problem
-    std::cout << "In getGenParticle(): could not find correct generated particle!\n";
+    std::cout << "Greg info: in getGenParticle(), could not find correct generated particle!\n";
     return nullptr;
 }
 
@@ -692,6 +791,21 @@ PHG4VtxPoint* pythiaEMCalAna::getG4EndVtx(int id, PHG4TruthInfoContainer* truthI
 	if (parent_id == id) {
 	    end_vtx = truthInfo->GetVtx(decayPar->get_vtx_id());
 	    break;
+	}
+    }
+    if (!end_vtx) {
+	// couldn't find any daughter particles in secondary list
+	// check primary list instead??
+	truthRange = truthInfo->GetPrimaryParticleRange();
+	for(truthIter = truthRange.first; truthIter != truthRange.second; truthIter++)
+	{
+	    PHG4Particle *decayPar = truthIter->second;
+	    int parent_id = decayPar->get_parent_id();
+	    if (parent_id == id) {
+		std::cout << "\tGreg info: found daughter in *primary* particle range!\n";
+		end_vtx = truthInfo->GetVtx(decayPar->get_vtx_id());
+		break;
+	    }
 	}
     }
     return end_vtx;
