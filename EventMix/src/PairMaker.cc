@@ -17,8 +17,8 @@
 #include <trackbase_historic/SvtxVertexMap.h>
 #include <trackbase/TrkrDefs.h>
 
-#include <g4vertex/GlobalVertexMap.h>
-#include <g4vertex/GlobalVertex.h>
+#include <globalvertex/GlobalVertexMap.h>
+#include <globalvertex/GlobalVertex.h>
 
 #include <calobase/RawClusterContainer.h>
 #include <calobase/RawCluster.h>
