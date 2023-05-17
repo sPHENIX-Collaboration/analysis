@@ -24,7 +24,30 @@ using namespace findNode;
 
 // constituent methods --------------------------------------------------------
 
-bool SCorrelatorJetTree::IsGoodParticle(HepMC::GenParticle *part) {
+int SCorrelatorJetTree::GetMatchID(SvtxTrack *track) {
+
+  // print debug statement
+  if (m_doDebug && (Verbosity() > 1)) {
+    cout << "SCorrelatorJetTree::GetMatchID(SvtxTrack*) Grabbing barcode of matching particle..." << endl;
+  }
+
+  // get best match from truth particles
+  PHG4Particle *bestMatch = m_trackEval -> max_truth_particle_by_nclusters(track);
+
+  // grab barcode of best match
+  int matchID;
+  if (bestMatch) {
+    matchID = bestMatch -> get_barcode();
+  } else {
+    matchID = -1;
+  }
+  return matchID;
+
+}  // end 'GetMatchID(SvtxTrack*)'
+
+
+
+bool SCorrelatorJetTree::IsGoodParticle(HepMC::GenParticle *par, const bool ignoreCharge) {
 
   // print debug statement
   if (m_doDebug && (Verbosity() > 1)) {
@@ -32,20 +55,23 @@ bool SCorrelatorJetTree::IsGoodParticle(HepMC::GenParticle *part) {
   }
 
   // check charge if needed
+  const bool isJetCharged  = (m_jetType != 1);
+  const bool doChargeCheck = (isJetCharged && !ignoreCharge);
+
   int   parID;
   bool  isGoodCharge;
   float parChrg;
-  if (m_jetType != 1) {
-    parID        = part -> pdg_id();
+  if (doChargeCheck) {
+    parID        = par -> pdg_id();
     parChrg      = GetParticleCharge(parID);
     isGoodCharge = (parChrg != 0.);
   } else {
     isGoodCharge = true;
   }
 
-  const double parEta       = part -> momentum().eta();
-  const double parPx        = part -> momentum().px();
-  const double parPy        = part -> momentum().py();
+  const double parEta       = par -> momentum().eta();
+  const double parPx        = par -> momentum().px();
+  const double parPy        = par -> momentum().py();
   const double parPt        = sqrt((parPx * parPx) + (parPy * parPy));
   const bool   isInPtRange  = ((parPt  > m_parPtRange[0])  && (parPt  < m_parPtRange[1]));
   const bool   isInEtaRange = ((parEta > m_parEtaRange[0]) && (parEta < m_parEtaRange[1]));
@@ -74,7 +100,7 @@ bool SCorrelatorJetTree::IsGoodTrack(SvtxTrack *track) {
 
 
 
-bool SCorrelatorJetTree::IsGoodFlow(ParticleFlowElement *pfPart) {
+bool SCorrelatorJetTree::IsGoodFlow(ParticleFlowElement *flow) {
 
   // print debug statement
   if (m_doDebug && (Verbosity() > 1)) {
@@ -82,7 +108,7 @@ bool SCorrelatorJetTree::IsGoodFlow(ParticleFlowElement *pfPart) {
   }
 
   // TODO: explore particle flow cuts
-  const double pfEta        = pfPart -> get_eta();
+  const double pfEta        = flow -> get_eta();
   const bool   isInEtaRange = ((pfEta > m_flowEtaRange[0]) && (pfEta < m_flowEtaRange[1]));
   const bool   isGoodFlow   = isInEtaRange;
   return isGoodFlow;
@@ -91,15 +117,15 @@ bool SCorrelatorJetTree::IsGoodFlow(ParticleFlowElement *pfPart) {
 
 
 
-bool SCorrelatorJetTree::IsGoodECal(CLHEP::Hep3Vector &E_vec_cluster) {
+bool SCorrelatorJetTree::IsGoodECal(CLHEP::Hep3Vector &hepVecECal) {
 
   // print debug statement
   if (m_doDebug && (Verbosity() > 1)) {
     cout << "SCorrelatorJetTree::IsGoodECal(CLHEP::Hep3Vector&) Checking if ECal cluster is good..." << endl;
   }
 
-  const double clustPt      = E_vec_cluster.perp();
-  const double clustEta     = E_vec_cluster.pseudoRapidity();
+  const double clustPt      = hepVecECal.perp();
+  const double clustEta     = hepVecECal.pseudoRapidity();
   const bool   isInPtRange  = ((clustPt  > m_ecalPtRange[0])  && (clustPt  < m_ecalPtRange[1]));
   const bool   isInEtaRange = ((clustEta > m_ecalEtaRange[0]) && (clustEta < m_ecalEtaRange[1]));
   const bool   isGoodClust  = (isInPtRange && isInEtaRange);
@@ -109,7 +135,7 @@ bool SCorrelatorJetTree::IsGoodECal(CLHEP::Hep3Vector &E_vec_cluster) {
 
 
 
-bool SCorrelatorJetTree::IsGoodHCal(CLHEP::Hep3Vector &E_vec_cluster) {
+bool SCorrelatorJetTree::IsGoodHCal(CLHEP::Hep3Vector &hepVecHCal) {
 
   // print debug statement
   if (m_doDebug && (Verbosity() > 1)) {
@@ -117,8 +143,8 @@ bool SCorrelatorJetTree::IsGoodHCal(CLHEP::Hep3Vector &E_vec_cluster) {
   }
 
   // TODO: explore particle cuts. These should vary with particle charge/species.
-  const double clustPt      = E_vec_cluster.perp();
-  const double clustEta     = E_vec_cluster.pseudoRapidity();
+  const double clustPt      = hepVecHCal.perp();
+  const double clustEta     = hepVecHCal.pseudoRapidity();
   const bool   isInPtRange  = ((clustPt  > m_hcalPtRange[0])  && (clustPt  < m_hcalPtRange[1]));
   const bool   isInEtaRange = ((clustEta > m_hcalEtaRange[0]) && (clustEta < m_hcalEtaRange[1]));
   const bool   isGoodClust  = (isInPtRange && isInEtaRange);
@@ -128,19 +154,28 @@ bool SCorrelatorJetTree::IsGoodHCal(CLHEP::Hep3Vector &E_vec_cluster) {
 
 
 
-bool SCorrelatorJetTree::IsCstGoodMatch(const double qtCst, const double drCst) {
+bool SCorrelatorJetTree::IsOutgoingParton(HepMC::GenParticle *par) {
 
   // print debug statement
   if (m_doDebug && (Verbosity() > 2)) {
-    cout << "SCorrelatorJetTree::IsCstGoodMatch(double, double) Checking if constituent match is good..." << endl;
+    cout << "SCorrelatorJetTree::IsParton(HepMC::GenParticle*) Checking if particle is a parton..." << endl;
   }
 
-  const bool isInQtRange = ((qtCst > m_cstMatchQtRange[0]) && (qtCst < m_cstMatchQtRange[1]));
-  const bool isInDrRange = ((drCst > m_cstMatchDrRange[0]) && (drCst < m_cstMatchDrRange[1]));
-  const bool isGoodMatch = (isInQtRange && isInDrRange);
-  return isGoodMatch;
+  // grab particle info
+  const int pid    = par -> pdg_id();
+  const int status = par -> status();
 
-}  // end 'IsCstGoodMatch(double, double)'
+  // check if is outgoing parton
+  const bool isStatusGood     = ((status == 23) || (status == 24));
+  const bool isLightQuark     = ((pid == 1)     || (pid == 2));
+  const bool isStrangeQuark   = ((pid == 3)     || (pid == 4));
+  const bool isHeavyQuark     = ((pid == 5)     || (pid == 6));
+  const bool isGluon          = (pid == 21);
+  const bool isParton         = (isLightQuark || isStrangeQuark || isHeavyQuark || isGluon);
+  const bool isOutgoingParton = (isStatusGood && isParton);
+  return isOutgoingParton;
+
+}  // end 'IsOutgoingParton(HepMC::GenParticle*)'
 
 
 

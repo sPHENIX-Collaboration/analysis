@@ -15,6 +15,8 @@ using namespace fastjet;
 
 
 
+// analysis methods -----------------------------------------------------------
+
 void SEnergyCorrelator::ExtractHistsFromCorr() {
 
   // print debug statement
@@ -81,7 +83,7 @@ void SEnergyCorrelator::ExtractHistsFromCorr() {
 
       // check if bin is good & set content/error
       const bool areBinValuesNans = (isnan(binContent) || isnan(binError));
-      if (!areBinValuesNans) {
+      if (areBinValuesNans) {
         PrintError(13, 0, iDrBin);
       } else {
         m_outHistDrAxis[iPtBin]   -> SetBinContent(iDrBin, binContent);
@@ -105,7 +107,8 @@ bool SEnergyCorrelator::ApplyJetCuts(const double ptJet, const double etaJet) {
   if (m_inDebugMode && (m_verbosity > 7)) PrintDebug(26);
 
   const bool isInPtRange  = ((ptJet >= m_ptJetRange[0])  && (ptJet < m_ptJetRange[1]));
-  const bool isInEtaRange = ((etaJet > m_etaJetRange[0]) && (etaJet < m_etaJetRange[1]));
+  //const bool isInEtaRange = ((etaJet > m_etaJetRange[0]) && (etaJet < m_etaJetRange[1]));
+  const bool isInEtaRange = (abs(etaJet) < m_etaJetRange[1]);
   const bool isGoodJet    = (isInPtRange && isInEtaRange);
   return isGoodJet;
 

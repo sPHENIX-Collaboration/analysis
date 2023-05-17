@@ -164,7 +164,7 @@ void SEnergyCorrelator::Analyze() {
       const double   pxJet   = ptJet * cos(phiJet);
       const double   pyJet   = ptJet * sin(phiJet);
       const double   pzJet   = ptJet * sinh(etaJet);
-      const double   pTotJet = sqrt((pxJet * pxJet) + (pyJet * pyJet) + (pzJet * pzJet));
+      const TVector3 pVecJet = TVector3(pxJet, pyJet, pzJet);
 
       // select jet pt bin & apply jet cuts
       const uint32_t  iPtJetBin = GetJetPtBin(ptJet);
@@ -174,30 +174,35 @@ void SEnergyCorrelator::Analyze() {
       // constituent loop
       for (uint64_t iCst = 0; iCst < nCsts; iCst++) {
 
+        // get cst 3-vector
+        const double   zCst    = (m_cstZ  -> at(iJet)).at(iCst);
+        const TVector3 pVecCst = zCst * pVecJet;
+
         // get cst info
-        const double zCst    = (m_cstZ   -> at(iJet)).at(iCst);
-        const double drCst   = (m_cstDr  -> at(iJet)).at(iCst);
         const double etaCst  = (m_cstEta -> at(iJet)).at(iCst);
-        const double phiCst  = (m_cstEta -> at(iJet)).at(iCst);
-        const double pTotCst = zCst * pTotJet;
+        const double phiCst  = (m_cstPhi -> at(iJet)).at(iCst);
+        const double jtCst   = (m_cstJt  -> at(iJet)).at(iCst);
+        const double pCst    = pVecCst.Mag();
+        const double pTotCst = sqrt((jtCst * jtCst) + (pCst * pCst));
         const double pxCst   = pTotCst * cosh(etaCst) * cos(phiCst);
         const double pyCst   = pTotCst * cosh(etaCst) * sin(phiCst);
         const double pzCst   = pTotCst * sinh(etaCst);
-
-        // apply cst cuts
-        const bool isGoodCst = ApplyCstCuts(pTotCst, drCst);
-        if (!isGoodCst) continue;
 
         // create pseudojet & add to list
         PseudoJet constituent(pxCst, pyCst, pzCst, pTotCst);
         constituent.set_user_index(iCst);
         m_jetCstVector.push_back(constituent);
-
       }  // end cst loop
 
       // run eec computation
-      m_eecLongSide[iPtJetBin] -> compute(m_jetCstVector);
-
+      for (size_t iPtBin = 0; iPtBin < m_nBinsJetPt; iPtBin++) {
+        const bool isInPtBin = ((ptJet >= m_ptJetBins[iPtBin].first) && (ptJet < m_ptJetBins[iPtBin].second));
+        if (isInPtBin) {
+          if (m_jetCstVector.size() > 0) {
+            m_eecLongSide[iPtJetBin] -> compute(m_jetCstVector);
+          }
+        }
+      }  // end pTjet bin loop
     }  // end jet loop
   }  // end event loop
   PrintMessage(13);
