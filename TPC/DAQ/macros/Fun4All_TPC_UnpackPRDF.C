@@ -31,9 +31,10 @@ int Fun4All_TPC_UnpackPRDF(const int nEvents = 100,
   TPCRawDataTree *r2tree = new TPCRawDataTree(outDir + fileName + "_TPCRawDataTree.root");
 
   // add all possible TPC packet that we need to analyze
-  for (int packet = 4001; packet<=4231; packet+=10)
+  for (int packet = 4000; packet<=4230; packet+=10)
   {
     r2tree->AddPacket(packet);
+    r2tree->AddPacket(packet+1);
   }
 
   se->registerSubsystem(r2tree);
