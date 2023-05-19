@@ -136,12 +136,13 @@ def hadd(jobs_dir):
     output        = os.path.realpath(args.output)
     jobs_per_hadd = args.jobs_per_hadd
     jobs_open     = args.jobs_open+1
-    print(f'file list: {job_dir_list}')
+    print(f'jobs directory: {jobs_dir}')
     print(f'output: {output}')
     print(f'jobs per hadd: {jobs_per_hadd}')
     print(f'jobs open at once: {jobs_open-1}')
 
     jobs = os.listdir(jobs_dir)
+    jobs = [f'{jobs_dir}/{job}' for job in jobs]
 
     total_jobs = len(jobs)
     hadd_calls = int(np.ceil(total_jobs/jobs_per_hadd))
@@ -171,7 +172,7 @@ if __name__ == '__main__':
             job_dir_list  = os.path.realpath(args.job_dir_list)
             with open(job_dir_list) as f:
                 for jobs_dir in f:
-                    jobs_dir = line.strip()
+                    jobs_dir = jobs_dir.strip()
                     hadd(jobs_dir)
         else:
             job_dir = args.job_dir_list
