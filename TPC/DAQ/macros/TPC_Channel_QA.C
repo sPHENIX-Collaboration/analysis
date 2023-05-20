@@ -21,7 +21,7 @@
 /*        rosstom@ucla.edu,aditya55@physics.ucla.edu         */
 /*************************************************************/
 
- void TPC_Channel_QA(){
+void TPC_Channel_QA(){
   gROOT->SetBatch(kTRUE);
   std::ofstream outdata;
   outdata.open("noisyChannels.txt");
@@ -181,7 +181,7 @@
         pt3->SetTextSize(0.04);
    	pt3->Draw();
       }
-
+ 
       string saveName = "images/S"+sectorNumber+"-"+runNumber+".png";
       c1->SaveAs(saveName.c_str());
       c1->Close();
