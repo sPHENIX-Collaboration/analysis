@@ -12,7 +12,7 @@ create = subparser.add_parser('create', help='Create file lists.')
 run    = subparser.add_parser('run', help='Run LEDTowerBuilder on the given file list.')
 
 create.add_argument('-i', '--run-list', type=str, nargs='+' , help='List of run numbers.')
-create.add_argument('-p', '--prdf-dir', type=str, default='/direct/sphenix+lustre01/sphnxpro/commissioning/emcal/calib', help='Directory containing the prdf files. Default: /direct/sphenix+lustre01/sphnxpro/commissioning/emcal/calib')
+create.add_argument('-p', '--prdf-dir', type=str, default='/direct/sphenix+lustre01/sphnxpro/rawdata/commissioning/emcal/calib', help='Directory containing the prdf files. Default: /direct/sphenix+lustre01/sphnxpro/rawdata/commissioning/emcal/calib')
 create.add_argument('-o', '--output-dir', type=str, default='files', help='Directory to store the file lists. Default: files')
 
 run.add_argument('-i', '--file-list', type=str, help='File list containing prdfs to analyze.', required=True)
@@ -61,14 +61,16 @@ def run_analysis():
 
             total_events += events
             print(f'prdf: {line}, events: {events}')
+            if(total_events > nevents and nevents >= 0):
+                break
 
     nevents = total_events if nevents == -1 else nevents
     print(f'total events: {total_events}')
     if(nevents != total_events):
         print(f'events to analyze: {nevents}')
 
-    runs = int(np.ceil(total_events / max_events_per_run))
-    max_events_per_run = min(max_events_per_run, total_events)
+    runs = int(np.ceil(nevents / max_events_per_run))
+    max_events_per_run = min(max_events_per_run, nevents)
 
     log = os.path.basename(output).split('.')[0]
     output_dir = os.path.dirname(output)
