@@ -21,7 +21,7 @@
 /*        rosstom@ucla.edu,aditya55@physics.ucla.edu         */
 /*************************************************************/
 
-void TPC_Channel_QA(){
+ void TPC_Channel_QA(){
   gROOT->SetBatch(kTRUE);
   std::ofstream outdata;
   outdata.open("noisyChannels.txt");
@@ -34,7 +34,7 @@ void TPC_Channel_QA(){
     if (q < 10) sectorNumber = "0"+std::to_string(q);
     else sectorNumber = std::to_string(q);   
 
-    string runNumber = "pedestal-00010169";
+    string runNumber = "pedestal-00010151";
     
     string fileName = "/sphenix/user/rosstom/test/testFiles/TPC_ebdc"+sectorNumber+"_"+runNumber+"-0000.prdf_TPCRawDataTree.root";
  
@@ -181,8 +181,8 @@ void TPC_Channel_QA(){
         pt3->SetTextSize(0.04);
    	pt3->Draw();
       }
- 
-      string saveName = "/sphenix/user/rosstom/test/images/S"+sectorNumber+"-"+runNumber+".png";
+
+      string saveName = "images/S"+sectorNumber+"-"+runNumber+".png";
       c1->SaveAs(saveName.c_str());
       c1->Close();
   }
