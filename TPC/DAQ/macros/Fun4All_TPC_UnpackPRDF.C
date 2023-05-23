@@ -13,7 +13,7 @@ R__LOAD_LIBRARY(libfun4allraw.so)
 R__LOAD_LIBRARY(libTPCRawDataTree.so)
 
 int Fun4All_TPC_UnpackPRDF(const int nEvents = 100,
-                           const string &inputFile = "/sphenix/user/jinhuang/TPC/commissioning/TPC_ebdc11_pedestal-00010147-0000.prdf"  //
+                           const string &inputFile = "/sphenix/user/jinhuang/TPC/commissioning/TPC_ebdc11_pedestal-00010179-0000.prdf"  //
 )
 {
   //---------------
@@ -22,7 +22,7 @@ int Fun4All_TPC_UnpackPRDF(const int nEvents = 100,
   Fun4AllServer *se = Fun4AllServer::instance();
   se->Verbosity(1);
 
-  string outDir = "/sphenix/user/rosstom/test/testFiles/";
+  string outDir = "/sphenix/u/jamesj3j3/workfest_Charles_mistake/sPEHNIXProjects/run-10179";
 
   string fileName = inputFile;
   size_t pos = fileName.find("TPC_ebdc");
