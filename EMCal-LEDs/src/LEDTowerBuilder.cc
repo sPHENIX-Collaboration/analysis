@@ -7,6 +7,7 @@ LEDTowerBuilder::LEDTowerBuilder(const std::string &name):
   , m_packet_low(6001) // 6001
   , m_packet_high(6128) // 6128
   , m_nsamples(32)
+  , m_nchannels(192)
   , m_isdata(true)
   , m_event(0)
   , m_adc(0)
@@ -86,16 +87,23 @@ int LEDTowerBuilder::process_event(PHCompositeNode *topNode) {
     for (int pid = m_packet_low; pid <= m_packet_high; pid++) {
       // there are 192 channels in a packet
       // Determine the channel id offset
-      UInt_t channel_id = (pid-m_packet_low)*192;
+      UInt_t channel_id = (pid-m_packet_low)*m_nchannels;
       Packet* packet = _event->getPacket(pid);
       if (!packet) {
         // std::cout << "No packet!!, pid: " << pid << std::endl;
         continue;
       }
+      int nchannels = packet->iValue(0,"CHANNELS");
+
       // ensure that there are at most 192 channels in the packet
-      int nchannels = std::min(192, packet->iValue(0,"CHANNELS"));
-      for (int channel = 0; channel <  nchannels; ++channel) {
+      // packet is corrupted if it reports too many channels
+      if(nchannels > m_nchannels) {
+        return Fun4AllReturnCodes::DISCARDEVENT;
+      }
+
+      for (int channel = 0; channel < nchannels; ++channel) {
         std::vector<float> waveform;
+        waveform.reserve(m_nsamples);
 
         for (int samp = 0; samp < m_nsamples; samp++) {
           waveform.push_back(packet->iValue(samp,channel));
