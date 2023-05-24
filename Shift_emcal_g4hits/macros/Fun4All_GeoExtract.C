@@ -25,7 +25,7 @@ void Fun4All_GeoExtract(const char *filegeometry = "G4Hits_sHijing_pAu_0_10fm-00
 		    const char * oufilename = "tree_test.root"
 		    )
 {
-
+  gSystem->Load("libg4dst.so");
   
   Fun4AllServer *se = Fun4AllServer::instance();
   int verbosity = 0;
@@ -50,11 +50,11 @@ void Fun4All_GeoExtract(const char *filegeometry = "G4Hits_sHijing_pAu_0_10fm-00
 
   Fun4AllDstOutputManager *out = new Fun4AllDstOutputManager("DSTOUT", "updated_geo.root");
   out->AddRunNode("CYLINDERGEOM_CEMC");
-  out->AddNode("Sync");
+  out->AddRunNode("RunHeader");
+  out->AddNode("just_pick_an_invalid_name");
   se->registerOutputManager(out);
 
 
-  se->skip();
   se->run(1);
   se->End();
 
