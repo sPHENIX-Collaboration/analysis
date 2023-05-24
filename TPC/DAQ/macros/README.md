@@ -1,3 +1,19 @@
+Procedure for creating TPC event display:
+
+* Make sure you have locally installed the TPCRawDataTree module located at `analysis/TPC/DAQ/TPCRawDataTree/` in orderto be able to unpack the prdf files
+* Edit the following variables in `run_TPCEventDisplay.sh` to adjust for your input/output directories and other conditions:
+	* `nEvents` - set to 2 by default since the first event for the pedestal runs I've been using don't have data in the 1st event. Should only really run this for 1 event for now because it's not currently designed to make multiple output files for multiple events just yet. (Will update this eventually)
+	* `outDir` - directory where you want the root files from the prdfs stored (needs to be one you have write access to)
+	* `adcCut` - whatever you'd like the ADC cut for all channels in the TPC to be, will only display hits above this threshold
+	* `outFile` - path and name of output json file (I just use the convention `<directory you have write access to>/TPCEventDisplay_<run_number>.json`, but feel free to use whatever works best)
+	* `runName` - name of the run in whatever file format you're using (e.g. for files labeled like `TPC_ebdc*_pedestal-00010151-0000.prdf` this would just be `pedestal-00010151`
+
+* Run the `run_TPCEventDisplay.sh` script for all TPC sector input files using:
+```
+source run_TPCEventDisplay.sh <path_to_prdf_files>/TPC_ebdc*<run_number>.prdf
+```
+* Download the output json file to your local machine and pass it to the [sPHENIX Event Display Website](https://www.sphenix.bnl.gov/edisplay/ "sPHENIX Event Display Website") in the `EVENT` box at the top right
+
 Procedure for processing PRDF pedestal run files:
 
 * Make sure you have locally installed the TPCRawDataTree module located at analysis/TPC/DAQ/TPCRawDataTree/
