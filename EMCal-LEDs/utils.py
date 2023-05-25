@@ -23,8 +23,9 @@ run.add_argument('-o', '--output', type=str, default = 'data/LEDTowerBuilder.roo
 run.add_argument('-m', '--max', type=int, default = 10000, help='Maximum number of events to analyze at once. Default: 10000')
 
 evtDisp.add_argument('-i', '--prdf', type=str, help='Prdfs to analyze.', required=True)
-evtDisp.add_argument('-n', '--event', type=int, default = 1, help='Event number to use. Default: 1.')
-evtDisp.add_argument('-o', '--output', type=str, default = 'event-display/test.json', help='Output json file. Default: test.json.')
+evtDisp.add_argument('-r', '--run', type=str, help='Run number.', required=True)
+evtDisp.add_argument('-n', '--event', type=str, default = '1', help='Event number to use. Default: 1.')
+evtDisp.add_argument('-o', '--output', type=str, help='Output json file.')
 
 args = parser.parse_args()
 
@@ -112,31 +113,36 @@ def run_analysis():
     # subprocess.run(['root','-b','-l','-q',f'macro/Fun4All_LEDTowerBuilder.C({nevents}, \"{file_list}\", \"{output}\")'])
 
 def event_display():
-    prdf_input = os.path.abspath(args.prdf)
-    event      = args.event
-    output     = args.output
+    prdf_input   = os.path.abspath(args.prdf)
+    run          = args.run
+    event        = args.event
+    output       = args.output
+
+    if(output is None):
+        output = f'event-display/run-{run}-event-{event}.json'
 
     print(f'prdf: {prdf_input}')
+    print(f'run: {run}')
     print(f'event: {event}')
     print(f'output: {output}')
+    print(f'display only: {display_only}')
 
     # isolate the specified event from the prdf
-    command = f'eventcombiner -v -i -e {event} -n 1 -f -p data/temp/test.prdf {prdf_input}'
+    command = f'eventcombiner -v -i -e {event} -n 1 -f -p data/temp/test-{run}-{event}.prdf {prdf_input}'
     print(f'command: {command.split()}')
     subprocess.run(command.split())
 
     # create temp file list containing the prdf
-    with open('files/temp.txt','w') as f:
-        f.write(f'{prdf_input}\n')
+    with open('files/test.txt','w') as f:
+        f.write(f'data/temp/test-{run}-{event}.prdf\n')
 
     # running the LEDTowerBuilder over the prdf
-    # using 2 events as the first one is skipped
-    command = f'bin/Fun4All_LEDTowerBuilder 2 0 files/temp.txt data/temp/test.root'
+    command = f'bin/Fun4All_LEDTowerBuilder 1 files/test.txt data/temp test'
     print(f'command: {command.split()}')
     subprocess.run(command.split())
 
     # running the event-display which generates the json output
-    command = f'bin/event-display data/temp/test.root {output}'
+    command = f'bin/event-display {run} {event} data/temp/test-CEMC.root {output} data/temp/test-HCALIN.root data/temp/test-HCALOUT.root'
     print(f'command: {command.split()}')
     subprocess.run(command.split())
 

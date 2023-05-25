@@ -23,24 +23,31 @@ using std::cout;
 using std::endl;
 using std::string;
 
-void Fun4All_LEDTowerBuilder(const int events = 1, const int skip = 0, const string &fListname = "files/fileList.list", const string &outfile = "data/LEDTowerBuilder.root") {
+void Fun4All_LEDTowerBuilder(const int events, const string &input, const string &outDir, const string &outName) {
   // gSystem->Load("libg4dst");
   Fun4AllServer *se = Fun4AllServer::instance();
   se->Verbosity(0);
 
-  LEDTowerBuilder *ca = new LEDTowerBuilder(outfile.c_str());
+  LEDTowerBuilder *ca = new LEDTowerBuilder((outDir + "/" + outName + "-CEMC.root").c_str());
   ca->set_detector_type(LEDTowerBuilder::CEMC);
   se->registerSubsystem(ca);
+
+  LEDTowerBuilder *ca_hcal_in = new LEDTowerBuilder((outDir + "/" + outName + "-HCALIN.root").c_str());
+  ca_hcal_in->set_detector_type(LEDTowerBuilder::HCALIN);
+  se->registerSubsystem(ca_hcal_in);
+
+  LEDTowerBuilder *ca_hcal_out = new LEDTowerBuilder((outDir + "/" + outName + "-HCALOUT.root").c_str());
+  ca_hcal_out->set_detector_type(LEDTowerBuilder::HCALOUT);
+  se->registerSubsystem(ca_hcal_out);
 
   //CaloAna *caloana = new CaloAna("CALOANA",outfile);
   //caloana->Detector("HCALOUT");
   //se->registerSubsystem(caloana);
 
   Fun4AllInputManager *in = new Fun4AllPrdfInputManager("in");
-  in->AddListFile(fListname.c_str());
+  in->AddListFile(input.c_str());
   se->registerInputManager(in);
 
-  se->skip(skip);
   se->run(events);
   se->End();
   se->PrintTimer();
@@ -50,33 +57,32 @@ void Fun4All_LEDTowerBuilder(const int events = 1, const int skip = 0, const str
 # ifndef __CINT__
 int main(int argc, char* argv[]) {
     if(argc < 1 || argc > 5){
-        cout << "usage: ./bin/Fun4All_LEDTowerBuilder events skip fListname outputFile" << endl;
-        cout << "events: Number of events to analyze. Default = 10." << endl;
-        cout << "skip: Number of events to skip. Default = 0." << endl;
-        cout << "inputFile: Location of fileList containing prdfs. Default = files/fileList.list." << endl;
-        cout << "outputFile: output root file. Default = data/LEDTowerBuilder.root." << endl;
+        cout << "usage: ./bin/Fun4All_LEDTowerBuilder events input outDir outName" << endl;
+        cout << "events: Number of events to analyze." << endl;
+        cout << "inputFile: Location of fileList containing prdfs." << endl;
+        cout << "outputFile: output root file." << endl;
         return 1;
     }
 
-    UInt_t events = 1;
-    UInt_t skip   = 0;
-    string input  = "files/fileList.list";
-    string output = "data/LEDTowerBuilder.root";
+    UInt_t events;
+    string input;
+    string outDir;
+    string outName;
 
     if(argc >= 2) {
         events = atoi(argv[1]);
     }
     if(argc >= 3) {
-        skip = atoi(argv[2]);
+        input = argv[2];
     }
     if(argc >= 4) {
-        input = argv[3];
+        outDir = argv[3];
     }
     if(argc >= 5) {
-        output = argv[4];
+        outName = argv[4];
     }
 
-    Fun4All_LEDTowerBuilder(events, skip, input, output);
+    Fun4All_LEDTowerBuilder(events, input, outDir, outName);
 
     cout << "done" << endl;
     return 0;
