@@ -53,7 +53,7 @@ make
 #+begin_src bash
 ./bin/Fun4All_LEDTowerBuilder <events> <fListname> <outputFile>
 #+end_src
- - <events>: Number of events to analyze from the prdfs. Default = 10.
+ - <events>: Number of events to analyze from the prdfs. Default = 1.
  - <fListname>: Location of the file list which contains the prdfs. Default = data/fileList.list.
  - <outputFile>: Location of the analyzed prdfs root file. Default: data/LEDTowerBuilder.root.
 
@@ -89,4 +89,9 @@ fd <pattern> /direct/sphenix+lustre01/sphnxpro/commissioning/emcal/calib | xargs
 - Find the packets present within each prdf that matches some pattern.
 #+begin_src bash
 fd <pattern> /direct/sphenix+lustre01/sphnxpro/commissioning/emcal/calib | xargs -t -I % dlist -i -f %
+#+end_src
+
+- Select a range of events from the prdf:
+#+begin_src bash
+eventcombiner -v -i -e <start-event> -n <nevents> -f -p <output.prdf> <input.prdf>
 #+end_src
