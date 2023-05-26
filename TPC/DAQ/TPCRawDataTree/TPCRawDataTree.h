@@ -5,6 +5,7 @@
 
 #include <fun4all/SubsysReco.h>
 
+#include <stdint.h>
 #include <string>
 #include <vector>
 
@@ -41,14 +42,14 @@ class TPCRawDataTree : public SubsysReco
 
  protected:
   //! which packet to decode
-  std::vector<int> m_packets{1001};
+  std::vector<int> m_packets;
 
  private:
-
   std::string m_fname;
-  TFile * m_file = nullptr;
-  TTree * m_SampleTree = nullptr;
-  TTree * m_PacketTree = nullptr;
+  TFile *m_file = nullptr;
+  TTree *m_SampleTree = nullptr;
+  TTree *m_PacketTree = nullptr;
+  TTree *m_TaggerTree = nullptr;
 
   int m_packet = 0;
   int m_frame = 0;
@@ -62,6 +63,20 @@ class TPCRawDataTree : public SubsysReco
   int m_BCO = 0;
   int m_checksum = 0;
   int m_checksumError = 0;
+
+  int m_nTaggerInFrame = 0;
+  uint16_t m_tagger_type = 0;
+  uint8_t m_is_endat = 0;
+  uint8_t m_is_lvl1 = 0;
+  uint64_t m_bco = 0;
+  uint32_t m_lvl1_count = 0;
+  uint32_t m_endat_count = 0;
+  uint64_t m_last_bco = 0;
+  uint8_t m_modebits = 0;
+
+
+  uint64_t m_last_lvl1_bco = 0;
+
   std::vector<unsigned short> m_adcSamples;
 };
 
