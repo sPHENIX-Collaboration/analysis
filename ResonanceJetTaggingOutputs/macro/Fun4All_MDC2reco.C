@@ -27,7 +27,6 @@ R__LOAD_LIBRARY(libparticleflow.so)
 R__LOAD_LIBRARY(libresonancejettaggingoutputs.so)
 
 using namespace std;
-using namespace HeavyFlavorReco;
 
 /****************************/
 /*     MDC2 Reco for MDC2   */
@@ -39,8 +38,13 @@ using namespace HeavyFlavorReco;
 /* Antonio Silva, ISU, 2022 */
 /*antonio.sphenix@gmail.com */
 /****************************/
+/****************************/
+/*        Contributor       */
+/* Jakub Kvapil, LANL, 2023 */
+/*   jakub.kvapil@cern.ch   */
+/****************************/
 
-void Fun4All_MDC2reco(vector<string> myInputLists = {"condorJob/fileLists/productionFiles-CHARM-dst_tracks-00000.list"}, const int nEvents = 10)
+void Fun4All_MDC2reco(vector<string> myInputLists = {"condorJob/fileLists/productionFiles-CHARM-dst_tracks-00000.list"}, const int nEvents = 10, ResonanceJetTagging::TAG tag = ResonanceJetTagging::TAG::D0)
 {
   int verbosity = 0;
 
@@ -48,10 +52,30 @@ void Fun4All_MDC2reco(vector<string> myInputLists = {"condorJob/fileLists/produc
   gSystem->Load("libFROG.so");
   FROG *fr = new FROG();
 
+  std::string particle_name;
+  switch (tag) {
+    case ResonanceJetTagging::TAG::D0:
+      particle_name = HFjets::KFPARTICLE::D0Name;
+      break;
+    case ResonanceJetTagging::TAG::D0TOK3PI:
+      particle_name = HFjets::KFPARTICLE::D0toK3piName;
+      break;
+    case ResonanceJetTagging::TAG::DPLUS:
+      particle_name = HFjets::KFPARTICLE::DplusName;
+      break;
+    case ResonanceJetTagging::TAG::LAMBDAC:
+      particle_name = HFjets::KFPARTICLE::LambdacName;
+      break;
+    default:
+      std::cout<<"ERROR:decay not implemented, ABORTING!";
+      return Fun4AllReturnCodes::ABORTRUN;
+      break;
+  }
+
   //The next set of lines figures out folder revisions, file numbers etc
   string outDir = "./";
   if (outDir.substr(outDir.size() - 1, 1) != "/") outDir += "/";
-  outDir += reconstructionName + "/";
+  outDir += HFjets::Enable::reconstructionName + "_" + particle_name + "/";
 
   string fileNumber = myInputLists[0];
   size_t findLastDash = fileNumber.find_last_of("-");
@@ -59,12 +83,12 @@ void Fun4All_MDC2reco(vector<string> myInputLists = {"condorJob/fileLists/produc
   string remove_this = ".list";
   size_t pos = fileNumber.find(remove_this);
   if (pos != string::npos) fileNumber.erase(pos, remove_this.length());
-  string outputFileName = "outputData_" + reconstructionName + "_" + fileNumber + ".root";
+  string outputFileName = "outputData_" + HFjets::Enable::reconstructionName + "_" + fileNumber + ".root";
 
   string outputRecoDir = outDir + "/inReconstruction/";
   string makeDirectory = "mkdir -p " + outputRecoDir;
   system(makeDirectory.c_str());
-  outputRecoFile = outputRecoDir + outputFileName;
+  string outputRecoFile = outputRecoDir + outputFileName;
 
   //Create the server
   Fun4AllServer *se = Fun4AllServer::instance();
@@ -79,11 +103,28 @@ void Fun4All_MDC2reco(vector<string> myInputLists = {"condorJob/fileLists/produc
   }
 
   // Runs decay finder to trigger on your decay. Useful for signal cleaning
-  if (runTruthTrigger)
+  if (HFjets::Enable::runTruthTrigger)
   {
     DecayFinder *myFinder = new DecayFinder("myFinder");
     myFinder->Verbosity(verbosity);
-    myFinder->setDecayDescriptor(decayDescriptor);
+    switch (tag) {
+    case ResonanceJetTagging::TAG::D0:
+      myFinder->setDecayDescriptor(HFjets::KFPARTICLE::D0toKpiDecayDescriptor);
+      break;
+    case ResonanceJetTagging::TAG::D0TOK3PI:
+      myFinder->setDecayDescriptor(HFjets::KFPARTICLE::D0toK3piDecayDescriptor);
+      break;
+    case ResonanceJetTagging::TAG::DPLUS:
+      myFinder->setDecayDescriptor(HFjets::KFPARTICLE::DplustoK2piDecayDescriptor);
+      break;
+    case ResonanceJetTagging::TAG::LAMBDAC:
+      myFinder->setDecayDescriptor(HFjets::KFPARTICLE::LambdacDecayDescriptor);
+      break;
+    default:
+      std::cout<<"ERROR:decay not implemented, ABORTING!";
+      return Fun4AllReturnCodes::ABORTRUN;
+      break;
+   }
     myFinder->saveDST(true);
     myFinder->allowPi0(false);
     myFinder->allowPhotons(false);
@@ -94,7 +135,7 @@ void Fun4All_MDC2reco(vector<string> myInputLists = {"condorJob/fileLists/produc
   }
 
   //Run the tracking if not already done
-  if (runTracking)
+  if (HFjets::Enable::runTracking)
   {
     Enable::MICROMEGAS=true;
 
@@ -118,14 +159,13 @@ void Fun4All_MDC2reco(vector<string> myInputLists = {"condorJob/fileLists/produc
   }
 
   SvtxTruthRecoTableEval *tables = new SvtxTruthRecoTableEval();
-
-  tables->Verbosity(0);
-
+  tables->Verbosity(verbosity);
   se->registerSubsystem(tables);
 
   //Now run the actual reconstruction
-  myHeavyFlavorReco();
+  if (HFjets::KFParticle_Set_Reco(tag) == Fun4AllReturnCodes::ABORTRUN) return;
 
+  //Set Calo towers
   RawClusterBuilderTopo* ClusterBuilder1 = new RawClusterBuilderTopo("HcalRawClusterBuilderTopo1");
   ClusterBuilder1->Verbosity(verbosity);
   ClusterBuilder1->set_nodename("TOPOCLUSTER_EMCAL");
@@ -157,10 +197,11 @@ void Fun4All_MDC2reco(vector<string> myInputLists = {"condorJob/fileLists/produc
   pfr->Verbosity(verbosity);
   se->registerSubsystem(pfr);
 
-  std::string jetTagRecoFile = outputRecoDir + "D0JetTree_" + fileNumber + ".root";
 
-  ResonanceJetTagging *jetTag = new ResonanceJetTagging("D0Tagging", ResonanceJetTagging::TAG::D0);
-  jetTag->Verbosity(1);
+  std::string jetTagRecoFile = outputRecoDir + particle_name + "JetTree_" + fileNumber + ".root";
+
+  ResonanceJetTagging *jetTag = new ResonanceJetTagging(particle_name + "Tagging", tag, particle_name + "_KFParticle_Container");
+  jetTag->Verbosity(verbosity);
   /*
   jetTag->setAddTracks(false);
   jetTag->setAddEMCalClusters(false);
@@ -171,17 +212,17 @@ void Fun4All_MDC2reco(vector<string> myInputLists = {"condorJob/fileLists/produc
   jetTag->setHCalClusterPtAcc(0.3, 9999.);
   jetTag->setHCalClusterEtaAcc(-1.1, 1.1);
   */
-  jetTag->setParticleFlowEtaAcc(-1.1, 1.1);
-  jetTag->setJetParameters(0.3, ResonanceJetTagging::ALGO::ANTIKT, ResonanceJetTagging::RECOMB::PT_SCHEME);
-  jetTag->setJetContainerName("D0Jets");
+  jetTag->setParticleFlowEtaAcc(-1.7, 1.7); // -1.1 1.1
+  jetTag->setJetParameters(0.4, ResonanceJetTagging::ALGO::ANTIKT, ResonanceJetTagging::RECOMB::E_SCHEME);
+  jetTag->setJetContainerName(particle_name + "Jets");
   jetTag->setDoTruth(true);
   se->registerSubsystem(jetTag);
 
-  BuildResonanceJetTaggingTree *buildTree = new BuildResonanceJetTaggingTree("D0JetTree", jetTagRecoFile, ResonanceJetTagging::TAG::D0);
+  BuildResonanceJetTaggingTree *buildTree = new BuildResonanceJetTaggingTree(particle_name + "JetTree", jetTagRecoFile, tag);
   buildTree->setDoTruth(true);
-  buildTree->setTagContainerName("reconstructedParticles_KFParticle_Container");
-  buildTree->setJetContainerName("D0Jets_Jet_Container");
-  buildTree->setTruthJetContainerName("D0Jets_Truth_Jet_Container");
+  buildTree->setTagContainerName(particle_name + "_KFParticle_Container");
+  buildTree->setJetContainerName(particle_name + "Jets_Jet_Container");
+  buildTree->setTruthJetContainerName(particle_name + "Jets_Truth_Jet_Container");
   se->registerSubsystem(buildTree);
 
   se->run(nEvents);

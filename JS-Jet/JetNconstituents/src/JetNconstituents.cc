@@ -49,6 +49,7 @@ JetNconstituents::~JetNconstituents()
   std::cout << "JetNconstituents::~JetNconstituents() Calling dtor" << std::endl;
 }
 
+
 //____________________________________________________________________________..
 int JetNconstituents::Init(PHCompositeNode *topNode)
 {
@@ -72,12 +73,14 @@ int JetNconstituents::Init(PHCompositeNode *topNode)
   h2d_SumEnergyDebug_vs_R->GetXaxis()->SetBinLabel(2, "0.4");
 
   std::vector<float> m_jet_radii = {0.2, 0.4};
+
   h2d_FracEnergy_vs_CaloLayer_R02 = new TH2D("h2d_FracEnergy_vs_CaloLayer_R02", "h2d_FracEnergy_vs_CaloLayer_R02", 3, 0, 3, 100, 0, 1);
   h2d_FracEnergy_vs_CaloLayer_R02->GetXaxis()->SetTitle("Calorimeter Layer ID");
   h2d_FracEnergy_vs_CaloLayer_R02->GetYaxis()->SetTitle("Fraction of Jet Energy");
   h2d_FracEnergy_vs_CaloLayer_R02->GetXaxis()->SetBinLabel(1, "EMCal");
   h2d_FracEnergy_vs_CaloLayer_R02->GetXaxis()->SetBinLabel(2, "HCalIn");
   h2d_FracEnergy_vs_CaloLayer_R02->GetXaxis()->SetBinLabel(3, "HCalOut");
+
   h2d_FracEnergy_vs_CaloLayer_R04 = new TH2D("h2d_FracEnergy_vs_CaloLayer_R04", "h2d_FracEnergy_vs_CaloLayer_R04", 3, 0, 3, 100, 0, 1);
   h2d_FracEnergy_vs_CaloLayer_R04->GetXaxis()->SetTitle("Calorimeter Layer ID");
   h2d_FracEnergy_vs_CaloLayer_R04->GetYaxis()->SetTitle("Fraction of Jet Energy");
@@ -272,9 +275,9 @@ int JetNconstituents::process_event(PHCompositeNode *topNode)
   std::vector<std::string> m_recojetname_string = {m_recojetnameR02, m_recojetnameR04};
   std::vector<float> m_jet_radii = {0.2, 0.4};
   int n_radii = m_jet_radii.size();
-  RawTowerContainer *towersEM3 = findNode::getClass<RawTowerContainer>(topNode, "TOWER_CALIB_CEMC_RETOWER");
-  RawTowerContainer *towersIH3 = findNode::getClass<RawTowerContainer>(topNode, "TOWER_CALIB_HCALIN");
-  RawTowerContainer *towersOH3 = findNode::getClass<RawTowerContainer>(topNode, "TOWER_CALIB_HCALOUT");
+  RawTowerContainer *towersEM3 = findNode::getClass<RawTowerContainer>(topNode, "TOWER_CALIB_CEMC_RETOWER_SUB1");
+  RawTowerContainer *towersIH3 = findNode::getClass<RawTowerContainer>(topNode, "TOWER_CALIB_HCALIN_SUB1");
+  RawTowerContainer *towersOH3 = findNode::getClass<RawTowerContainer>(topNode, "TOWER_CALIB_HCALOUT_SUB1");
   RawTowerGeomContainer *tower_geom = findNode::getClass<RawTowerGeomContainer>(topNode, "TOWERGEOM_HCALIN");
   RawTowerGeomContainer *tower_geomOH = findNode::getClass<RawTowerGeomContainer>(topNode, "TOWERGEOM_HCALOUT");
 

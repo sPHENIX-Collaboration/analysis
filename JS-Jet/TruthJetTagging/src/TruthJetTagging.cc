@@ -14,8 +14,12 @@
 #include <phool/phool.h>                    // for PHWHERE
 #include <g4main/PHG4Utils.h>
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #include <HepMC/GenEvent.h>
 #include <HepMC/GenVertex.h>
+#pragma GCC diagnostic pop
+
 #include <phhepmc/PHHepMCGenEvent.h>
 #include <phhepmc/PHHepMCGenEventMap.h>
 #include <TDatabasePDG.h>

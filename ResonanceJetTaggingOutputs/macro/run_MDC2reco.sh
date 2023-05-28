@@ -1,7 +1,8 @@
 #!/bin/bash
 
+
 export HOME=/sphenix/u/${LOGNAME}
-export MYINSTALL=/sphenix/u/antoniosilva/myInstall
+export MYINSTALL=/sphenix/u/jkvapil/sw/install
 source /opt/sphenix/core/bin/sphenix_setup.sh -n new
 source $OPT_SPHENIX/bin/setup_local.sh $MYINSTALL
 
@@ -16,5 +17,5 @@ done
 inputFiles=${inputFiles::-1}
 inputFiles+="}"
 echo running: run_HFreco.sh $*
-root.exe -q -b Fun4All_MDC2reco.C\(${inputFiles},$nEvents\)
+root.exe -q -b Fun4All_MDC2reco.C\(${inputFiles},$nEvents,ResonanceJetTagging::TAG::D0\)
 echo Script done

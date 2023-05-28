@@ -29,7 +29,8 @@ libresonancejettaggingoutputs_la_LDFLAGS = \
   -lkfparticle_sphenix_io \
   -lparticleflow_io \
   -lphg4hit \
-	-lresonancejettagging \
+  -lg4eval \
+  -lresonancejettagging \
   `fastjet-config --libs`
 
 

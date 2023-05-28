@@ -39,12 +39,15 @@
 #include <g4main/PHG4TruthInfoContainer.h>
 #include <g4main/PHG4Particle.h>
 #include <g4main/PHG4VtxPoint.h>
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #include <HepMC/GenEvent.h>
 #include <HepMC/GenParticle.h>
 #include <HepMC/GenVertex.h>
 #include <HepMC/IteratorRange.h>
 #include <HepMC/SimpleVector.h> 
 #include <HepMC/GenParticle.h>
+#pragma GCC diagnostic pop
 #include <CLHEP/Geometry/Point3D.h>
 
 
