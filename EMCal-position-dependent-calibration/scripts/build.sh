@@ -4,8 +4,9 @@ cd current
 
 echo "building g4eval"
 ./build_package.sh
+# ./build_package_fast.sh
 
 echo "building Fun4All"
 make clean
 
-make
+make -j 8

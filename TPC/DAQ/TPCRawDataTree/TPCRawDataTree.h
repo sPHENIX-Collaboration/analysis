@@ -12,6 +12,8 @@
 class PHCompositeNode;
 class TFile;
 class TTree;
+class TH1F;
+class TH2F;
 
 class TPCRawDataTree : public SubsysReco
 {
@@ -50,6 +52,13 @@ class TPCRawDataTree : public SubsysReco
   TTree *m_SampleTree = nullptr;
   TTree *m_PacketTree = nullptr;
   TTree *m_TaggerTree = nullptr;
+  TH1F *R1_hist = nullptr;
+  TH1F *R2_hist = nullptr;
+  TH1F *R3_hist = nullptr;
+  TH2F *R1_time = nullptr;
+  TH2F *R2_time = nullptr;
+  TH2F *R3_time = nullptr;
+
 
   int m_packet = 0;
   int m_frame = 0;
