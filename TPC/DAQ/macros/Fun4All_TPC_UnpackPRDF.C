@@ -12,8 +12,8 @@
 R__LOAD_LIBRARY(libfun4allraw.so)
 R__LOAD_LIBRARY(libTPCRawDataTree.so)
 
-int Fun4All_TPC_UnpackPRDF(const int nEvents = 50,
-                           const string &inputFile = "/sphenix/user/jinhuang/TPC/commissioning/TPC_ebdc14_junk-00010050-0000.prdf"  //
+int Fun4All_TPC_UnpackPRDF(const int nEvents = 100,
+                           const string &inputFile = "/sphenix/lustre01/sphnxpro/rawdata/commissioning/TPC_ebdc*_pedestal-00010619-0000.prdf"  //
 )
 {
   //---------------
@@ -22,13 +22,28 @@ int Fun4All_TPC_UnpackPRDF(const int nEvents = 50,
   Fun4AllServer *se = Fun4AllServer::instance();
   se->Verbosity(1);
 
-  TPCRawDataTree *r2tree = new TPCRawDataTree(inputFile + "_TPCRawDataTree.root");
+  string outDir = "/sphenix/u/jamesj3j3/workfest_Charles_mistake/sPEHNIXProjects/run-10616";
+
+  string fileName = inputFile;
+  size_t pos = fileName.find("TPC_ebdc");
+  fileName.erase(fileName.begin(),fileName.begin()+pos);
+  
+  TPCRawDataTree *r2tree = new TPCRawDataTree(outDir + fileName + "_TPCRawDataTree_skip100.root");/////////////////////////////
+
+  // add all possible TPC packet that we need to analyze
+  for (int packet = 4000; packet<=4230; packet+=10)
+  {
+    r2tree->AddPacket(packet);
+    r2tree->AddPacket(packet+1);
+  }
+
   se->registerSubsystem(r2tree);
 
   Fun4AllPrdfInputManager *in1 = new Fun4AllPrdfInputManager("PRDF1");
   in1->AddFile(inputFile);
   se->registerInputManager(in1);
 
+  se->skip(100);/////////////////////////////
   se->run(nEvents);
 
   se->End();

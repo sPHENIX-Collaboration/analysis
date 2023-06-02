@@ -33,6 +33,8 @@ void SCorrelatorJetTree::InitVariables() {
 
   // initialize class members as needed
   m_histMan              = 0x0;
+  m_evalStack            = 0x0;
+  m_trackEval            = 0x0;
   m_outFile              = 0x0;
   m_trueTree             = 0x0;
   m_recoTree             = 0x0;
@@ -63,19 +65,19 @@ void SCorrelatorJetTree::InitVariables() {
   m_hcalPtRange[1]       = 9999.;
   m_hcalEtaRange[0]      = -1.1;
   m_hcalEtaRange[1]      = 1.1;
-  m_jetMatchQtRange[0]   = 0.5;
-  m_jetMatchQtRange[1]   = 1.3;
-  m_jetMatchDrRange[0]   = 0.;
-  m_jetMatchDrRange[1]   = 0.4;
-  m_cstMatchQtRange[0]   = 0.15;
-  m_cstMatchQtRange[1]   = 1.5;
-  m_cstMatchDrRange[0]   = 0.;
-  m_cstMatchDrRange[1]   = 0.8;
   m_jetR                 = 0.4;
   m_jetType              = 0;
   m_jetAlgo              = antikt_algorithm;
   m_recombScheme         = pt_scheme;
+  m_partonID[0]           = -9999;
+  m_partonID[1]           = -9999;
+  m_partonMom[0]          = CLHEP::Hep3Vector(-9999., -9999., -9999.);
+  m_partonMom[1]          = CLHEP::Hep3Vector(-9999., -9999., -9999.);
+  m_recoVtx               = CLHEP::Hep3Vector(-9999., -9999., -9999.);
+  m_trueVtx               = CLHEP::Hep3Vector(-9999., -9999., -9999.);
   m_trueNumJets           = 0;
+  m_trueNumChrgPars       = -9999;
+  m_trueSumPar            = -9999.;
   m_truePartonID[0]       = -9999;
   m_truePartonID[1]       = -9999;
   m_truePartonMomX[0]     = -9999.;
@@ -84,29 +86,20 @@ void SCorrelatorJetTree::InitVariables() {
   m_truePartonMomY[1]     = -9999.;
   m_truePartonMomZ[0]     = -9999.;
   m_truePartonMomZ[1]     = -9999.;
+  m_trueVtxX              = -9999.;
+  m_trueVtxY              = -9999.;
+  m_trueVtxZ              = -9999.;
   m_recoNumJets           = 0;
-  m_recoPartonID[0]       = -9999;
-  m_recoPartonID[1]       = -9999;
-  m_recoPartonMomX[0]     = -9999.;
-  m_recoPartonMomX[1]     = -9999.;
-  m_recoPartonMomY[0]     = -9999.;
-  m_recoPartonMomY[1]     = -9999.;
-  m_recoPartonMomZ[0]     = -9999.;
-  m_recoPartonMomZ[1]     = -9999.;
-  m_numTrks               = -9999;
-  m_numChrgPars           = -9999;
-  m_sumECalEne            = -9999.;
-  m_sumHCalEne            = -9999.;
-  m_sumParEne             = -9999.;
-  m_partonID[0]           = -9999;
-  m_partonID[1]           = -9999;
-  m_partonMom[0]          = CLHEP::Hep3Vector(-9999., -9999., -9999.);
-  m_partonMom[1]          = CLHEP::Hep3Vector(-9999., -9999., -9999.);
+  m_recoVtxX              = -9999.;
+  m_recoVtxY              = -9999.;
+  m_recoVtxZ              = -9999.;
+  m_recoNumTrks           = -9999;
+  m_recoSumECal           = -9999.;
+  m_recoSumHCal           = -9999.;
   m_trueJets.clear();
   m_recoJets.clear();
   m_trueJetNCst.clear();
-  m_trueJetId.clear();
-  m_trueJetTruId.clear();
+  m_trueJetID.clear();
   m_trueJetE.clear();
   m_trueJetPt.clear();
   m_trueJetEta.clear();
@@ -119,8 +112,7 @@ void SCorrelatorJetTree::InitVariables() {
   m_trueCstEta.clear();
   m_trueCstPhi.clear();
   m_recoJetNCst.clear();
-  m_recoJetId.clear();
-  m_recoJetTruId.clear();
+  m_recoJetID.clear();
   m_recoJetE.clear();
   m_recoJetPt.clear();
   m_recoJetEta.clear();
@@ -250,58 +242,87 @@ void SCorrelatorJetTree::InitTrees() {
 
   // initialize true jet tree
   m_trueTree = new TTree("TruthJetTree", "A tree of truth jets");
-  m_trueTree -> Branch("EvtNumJets",   &m_trueNumJets,       "NumJets/I");
-  m_trueTree -> Branch("Parton3_ID",   &m_truePartonID[0],   "Parton3_ID/I");
-  m_trueTree -> Branch("Parton4_ID",   &m_truePartonID[1],   "Parton4_ID/I");
-  m_trueTree -> Branch("Parton3_MomX", &m_truePartonMomX[0], "Parton3_MomX/D");
-  m_trueTree -> Branch("Parton3_MomY", &m_truePartonMomY[0], "Parton3_MomY/D");
-  m_trueTree -> Branch("Parton3_MomZ", &m_truePartonMomZ[0], "Parton3_MomZ/D");
-  m_trueTree -> Branch("Parton4_MomX", &m_truePartonMomX[1], "Parton4_MomX/D");
-  m_trueTree -> Branch("Parton4_MomY", &m_truePartonMomY[1], "Parton4_MomY/D");
-  m_trueTree -> Branch("Parton4_MomZ", &m_truePartonMomZ[1], "Parton4_MomZ/D");
-  m_trueTree -> Branch("JetNumCst",    &m_trueJetNCst);
-  m_trueTree -> Branch("JetID",        &m_trueJetId);
-  m_trueTree -> Branch("JetTruthID",   &m_trueJetTruId);
-  m_trueTree -> Branch("JetEnergy",    &m_trueJetE);
-  m_trueTree -> Branch("JetPt",        &m_trueJetPt);
-  m_trueTree -> Branch("JetEta",       &m_trueJetEta);
-  m_trueTree -> Branch("JetPhi",       &m_trueJetPhi);
-  m_trueTree -> Branch("JetArea",      &m_trueJetArea);
-  m_trueTree -> Branch("CstZ",         &m_trueCstZ);
-  m_trueTree -> Branch("CstDr",        &m_trueCstDr);
-  m_trueTree -> Branch("CstEnergy",    &m_trueCstE);
-  m_trueTree -> Branch("CstJt",        &m_trueCstJt);
-  m_trueTree -> Branch("CstEta",       &m_trueCstEta);
-  m_trueTree -> Branch("CstPhi",       &m_trueCstPhi);
+  m_trueTree -> Branch("EvtNumJets",     &m_trueNumJets,       "EvtNumJets/I");
+  m_trueTree -> Branch("EvtNumChrgPars", &m_trueNumChrgPars,   "EvtNumChrgPars/I");
+  m_trueTree -> Branch("Parton3_ID",     &m_truePartonID[0],   "Parton3_ID/I");
+  m_trueTree -> Branch("Parton4_ID",     &m_truePartonID[1],   "Parton4_ID/I");
+  m_trueTree -> Branch("Parton3_MomX",   &m_truePartonMomX[0], "Parton3_MomX/D");
+  m_trueTree -> Branch("Parton3_MomY",   &m_truePartonMomY[0], "Parton3_MomY/D");
+  m_trueTree -> Branch("Parton3_MomZ",   &m_truePartonMomZ[0], "Parton3_MomZ/D");
+  m_trueTree -> Branch("Parton4_MomX",   &m_truePartonMomX[1], "Parton4_MomX/D");
+  m_trueTree -> Branch("Parton4_MomY",   &m_truePartonMomY[1], "Parton4_MomY/D");
+  m_trueTree -> Branch("Parton4_MomZ",   &m_truePartonMomZ[1], "Parton4_MomZ/D");
+  m_trueTree -> Branch("EvtVtxX",        &m_trueVtxX,          "EvtVtxX/D");
+  m_trueTree -> Branch("EvtVtxY",        &m_trueVtxY,          "EvtVtxY/D");
+  m_trueTree -> Branch("EvtVtxZ",        &m_trueVtxZ,          "EvtVtxZ/D");
+  m_trueTree -> Branch("EvtSumParEne",   &m_trueSumPar,        "EvtSumParEne/D");
+  m_trueTree -> Branch("JetNumCst",      &m_trueJetNCst);
+  m_trueTree -> Branch("JetID",          &m_trueJetID);
+  m_trueTree -> Branch("JetEnergy",      &m_trueJetE);
+  m_trueTree -> Branch("JetPt",          &m_trueJetPt);
+  m_trueTree -> Branch("JetEta",         &m_trueJetEta);
+  m_trueTree -> Branch("JetPhi",         &m_trueJetPhi);
+  m_trueTree -> Branch("JetArea",        &m_trueJetArea);
+  m_trueTree -> Branch("CstID",          &m_trueCstID);
+  m_trueTree -> Branch("CstZ",           &m_trueCstZ);
+  m_trueTree -> Branch("CstDr",          &m_trueCstDr);
+  m_trueTree -> Branch("CstEnergy",      &m_trueCstE);
+  m_trueTree -> Branch("CstJt",          &m_trueCstJt);
+  m_trueTree -> Branch("CstEta",         &m_trueCstEta);
+  m_trueTree -> Branch("CstPhi",         &m_trueCstPhi);
 
   // initialize reco jet tree
   m_recoTree = new TTree("RecoJetTree", "A tree of reconstructed jets");
-  m_recoTree -> Branch("EvtNumJets",   &m_recoNumJets,       "NumJets/I");
-  m_recoTree -> Branch("Parton3_ID",   &m_recoPartonID[0],   "Parton3_ID/I");
-  m_recoTree -> Branch("Parton4_ID",   &m_recoPartonID[1],   "Parton4_ID/I");
-  m_recoTree -> Branch("Parton3_MomX", &m_recoPartonMomX[0], "Parton3_MomX/D");
-  m_recoTree -> Branch("Parton3_MomY", &m_recoPartonMomY[0], "Parton3_MomY/D");
-  m_recoTree -> Branch("Parton3_MomZ", &m_recoPartonMomZ[0], "Parton3_MomZ/D");
-  m_recoTree -> Branch("Parton4_MomX", &m_recoPartonMomX[1], "Parton4_MomX/D");
-  m_recoTree -> Branch("Parton4_MomY", &m_recoPartonMomY[1], "Parton4_MomY/D");
-  m_recoTree -> Branch("Parton4_MomZ", &m_recoPartonMomZ[1], "Parton4_MomZ/D");
-  m_recoTree -> Branch("JetNumCst",    &m_recoJetNCst);
-  m_recoTree -> Branch("JetID",        &m_recoJetId);
-  m_recoTree -> Branch("JetTruthID",   &m_recoJetTruId);
-  m_recoTree -> Branch("JetEnergy",    &m_recoJetE);
-  m_recoTree -> Branch("JetPt",        &m_recoJetPt);
-  m_recoTree -> Branch("JetEta",       &m_recoJetEta);
-  m_recoTree -> Branch("JetPhi",       &m_recoJetPhi);
-  m_recoTree -> Branch("JetArea",      &m_recoJetArea);
-  m_recoTree -> Branch("CstZ",         &m_recoCstZ);
-  m_recoTree -> Branch("CstDr",        &m_recoCstDr);
-  m_recoTree -> Branch("CstEnergy",    &m_recoCstE);
-  m_recoTree -> Branch("CstJt",        &m_recoCstJt);
-  m_recoTree -> Branch("CstEta",       &m_recoCstEta);
-  m_recoTree -> Branch("CstPhi",       &m_recoCstPhi);
+  m_recoTree -> Branch("EvtNumJets",    &m_recoNumJets, "EvtNumJets/I");
+  m_recoTree -> Branch("EvtNumTrks",    &m_recoNumTrks, "EvtNumTrks/I");
+  m_recoTree -> Branch("EvtVtxX",       &m_recoVtxX,    "EvtVtxX/D");
+  m_recoTree -> Branch("EvtVtxY",       &m_recoVtxY,    "EvtVtxY/D");
+  m_recoTree -> Branch("EvtVtxZ",       &m_recoVtxZ,    "EvtVtxZ/D");
+  m_recoTree -> Branch("EvtSumECalEne", &m_recoSumECal, "EvtSumECalEne/D");
+  m_recoTree -> Branch("EvtSumHCalEne", &m_recoSumHCal, "EvtSumHCalEne/D");
+  m_recoTree -> Branch("JetNumCst",     &m_recoJetNCst);
+  m_recoTree -> Branch("JetID",         &m_recoJetID);
+  m_recoTree -> Branch("JetEnergy",     &m_recoJetE);
+  m_recoTree -> Branch("JetPt",         &m_recoJetPt);
+  m_recoTree -> Branch("JetEta",        &m_recoJetEta);
+  m_recoTree -> Branch("JetPhi",        &m_recoJetPhi);
+  m_recoTree -> Branch("JetArea",       &m_recoJetArea);
+  m_recoTree -> Branch("CstMatchID",    &m_recoCstMatchID);
+  m_recoTree -> Branch("CstZ",          &m_recoCstZ);
+  m_recoTree -> Branch("CstDr",         &m_recoCstDr);
+  m_recoTree -> Branch("CstEnergy",     &m_recoCstE);
+  m_recoTree -> Branch("CstJt",         &m_recoCstJt);
+  m_recoTree -> Branch("CstEta",        &m_recoCstEta);
+  m_recoTree -> Branch("CstPhi",        &m_recoCstPhi);
   return;
 
 }  // end 'InitTrees()'
+
+
+
+void SCorrelatorJetTree::InitEvals(PHCompositeNode *topNode) {
+
+  // print debug statement
+  if (m_doDebug) {
+    cout << "SCorrelatorJetTree::InitEvals(PHCompositeNode*) Initializing evaluators..." << endl;
+  }
+
+  m_evalStack = new SvtxEvalStack(topNode);
+  if (!m_evalStack) {
+    cerr << "SCorrelatorJetTree::InitEvals(PHCompositeNode*) PANIC: couldn't grab SvtxEvalStack! Aborting!" << endl;
+    assert(m_evalStack);
+  } else {
+    m_evalStack -> next_event(topNode);
+  }
+
+  m_trackEval = m_evalStack -> get_track_eval();
+  if (!m_trackEval) {
+    cerr << "SCorrelatorJetTree::InitEvals(PHCompositeNode*) PANIC: couldn't grab track evaluator! Aborting!" << endl;
+    assert(m_trackEval);
+  }
+  return;
+
+}  // end 'InitEvals(PHCompositeNode*)'
 
 
 
@@ -309,18 +330,18 @@ void SCorrelatorJetTree::FillTrueTree() {
 
   // print debug statement
   if (m_doDebug) {
-    cout << "SCorrelatorJetTree::FillTrueTree(PHCompositeNode*) Filling truth jet tree..." << endl;
+    cout << "SCorrelatorJetTree::FillTrueTree() Filling truth jet tree..." << endl;
   }
 
   // prepare vectors for filling
   m_trueJetNCst.clear();
-  m_trueJetId.clear();
-  m_trueJetTruId.clear();
+  m_trueJetID.clear();
   m_trueJetE.clear();
   m_trueJetPt.clear();
   m_trueJetEta.clear();
   m_trueJetPhi.clear();
   m_trueJetArea.clear();
+  m_trueCstID.clear();
   m_trueCstZ.clear();
   m_trueCstDr.clear();
   m_trueCstE.clear();
@@ -329,12 +350,14 @@ void SCorrelatorJetTree::FillTrueTree() {
   m_trueCstPhi.clear();
 
   // declare vectors to storing constituents
+  vector<int>    vecTruCstID;
   vector<double> vecTruCstZ;
   vector<double> vecTruCstDr;
   vector<double> vecTruCstE;
   vector<double> vecTruCstJt;
   vector<double> vecTruCstEta;
   vector<double> vecTruCstPhi;
+  vecTruCstID.clear();
   vecTruCstZ.clear();
   vecTruCstDr.clear();
   vecTruCstE.clear();
@@ -349,7 +372,6 @@ void SCorrelatorJetTree::FillTrueTree() {
 
     // get jet info
     const unsigned int jetNCst  = m_trueJets[iTruJet].constituents().size();
-    const unsigned int jetID    = 9999.;  // FIXME: this will need to be changed to the matched reco jet
     const unsigned int jetTruID = iTruJet;
     const double       jetPhi   = m_trueJets[iTruJet].phi_std();
     const double       jetEta   = m_trueJets[iTruJet].pseudorapidity();
@@ -362,6 +384,7 @@ void SCorrelatorJetTree::FillTrueTree() {
     const double       jetP     = sqrt((jetPx * jetPx) + (jetPy * jetPy) + (jetPz * jetPz));
 
     // clear constituent vectors
+    vecTruCstID.clear();
     vecTruCstZ.clear();
     vecTruCstDr.clear();
     vecTruCstE.clear();
@@ -374,6 +397,7 @@ void SCorrelatorJetTree::FillTrueTree() {
     for (unsigned int iTruCst = 0; iTruCst < trueCsts.size(); ++iTruCst) {
 
       // get constituent info
+      const int    cstID  = trueCsts[iTruCst].user_index();
       const double cstPhi = trueCsts[iTruCst].phi_std();
       const double cstEta = trueCsts[iTruCst].pseudorapidity();
       const double cstE   = trueCsts[iTruCst].E();
@@ -388,6 +412,7 @@ void SCorrelatorJetTree::FillTrueTree() {
       const double cstDr  = sqrt((cstDf * cstDf) + (cstDh * cstDh));
 
       // add csts to vectors
+      vecTruCstID.push_back(cstID);
       vecTruCstZ.push_back(cstZ);
       vecTruCstDr.push_back(cstDr);
       vecTruCstE.push_back(cstE);
@@ -405,13 +430,13 @@ void SCorrelatorJetTree::FillTrueTree() {
 
     // store jet/cst output
     m_trueJetNCst.push_back(jetNCst);
-    m_trueJetId.push_back(jetID);
-    m_trueJetTruId.push_back(jetTruID);
+    m_trueJetID.push_back(jetTruID);
     m_trueJetE.push_back(jetE);
     m_trueJetPt.push_back(jetPt);
     m_trueJetEta.push_back(jetEta);
     m_trueJetPhi.push_back(jetPhi);
     m_trueJetArea.push_back(jetArea);
+    m_trueCstID.push_back(vecTruCstID);
     m_trueCstZ.push_back(vecTruCstZ);
     m_trueCstDr.push_back(vecTruCstDr);
     m_trueCstE.push_back(vecTruCstE);
@@ -434,16 +459,18 @@ void SCorrelatorJetTree::FillTrueTree() {
   m_hNumObject[OBJECT::TCST] -> Fill(nTruCst);
 
   // store evt info
-  // FIXME: grab actual parton values
   m_trueNumJets       = nTruJet;
-  m_truePartonID[0]   = -9999;
-  m_truePartonID[1]   = -9999;
-  m_truePartonMomX[0] = -9999.;
-  m_truePartonMomX[1] = -9999.;
-  m_truePartonMomY[0] = -9999.;
-  m_truePartonMomY[1] = -9999.;
-  m_truePartonMomZ[0] = -9999.;
-  m_truePartonMomZ[1] = -9999.; 
+  m_truePartonID[0]   = m_partonID[0];
+  m_truePartonID[1]   = m_partonID[1];
+  m_truePartonMomX[0] = m_partonMom[0].x();
+  m_truePartonMomX[1] = m_partonMom[1].x();
+  m_truePartonMomY[0] = m_partonMom[0].y();
+  m_truePartonMomY[1] = m_partonMom[1].y();
+  m_truePartonMomZ[0] = m_partonMom[0].z();
+  m_truePartonMomZ[1] = m_partonMom[1].z(); 
+  m_trueVtxX          = m_trueVtx.x();
+  m_trueVtxY          = m_trueVtx.y();
+  m_trueVtxZ          = m_trueVtx.z();
 
   // fill output tree
   m_trueTree -> Fill();
@@ -457,18 +484,18 @@ void SCorrelatorJetTree::FillRecoTree() {
 
   // print debug statement
   if (m_doDebug) {
-    cout << "SCorrelatorJetTree::FillRecoTree(PHCompositeNode*) Filling reco jet tree..." << endl;
+    cout << "SCorrelatorJetTree::FillRecoTree() Filling reco jet tree..." << endl;
   }
 
   // prepare vectors for filling
   m_recoJetNCst.clear();
-  m_recoJetId.clear();
-  m_recoJetTruId.clear();
+  m_recoJetID.clear();
   m_recoJetE.clear();
   m_recoJetPt.clear();
   m_recoJetEta.clear();
   m_recoJetPhi.clear();
   m_recoJetArea.clear();
+  m_recoCstMatchID.clear();
   m_recoCstZ.clear();
   m_recoCstDr.clear();
   m_recoCstE.clear();
@@ -477,12 +504,14 @@ void SCorrelatorJetTree::FillRecoTree() {
   m_recoCstPhi.clear();
 
   // declare vectors for storing constituents
+  vector<int>    vecRecCstMatchID;
   vector<double> vecRecCstZ;
   vector<double> vecRecCstDr;
   vector<double> vecRecCstE;
   vector<double> vecRecCstJt;
   vector<double> vecRecCstEta;
   vector<double> vecRecCstPhi;
+  vecRecCstMatchID.clear();
   vecRecCstZ.clear();
   vecRecCstDr.clear();
   vecRecCstE.clear();
@@ -497,8 +526,7 @@ void SCorrelatorJetTree::FillRecoTree() {
 
     // get jet info
     const unsigned int jetNCst  = m_recoJets[iJet].constituents().size();
-    const unsigned int jetID    = iJet;
-    const unsigned int jetTruID = 99999;  // FIXME: this will need to be changed to the matched truth jet
+    const unsigned int jetRecID = iJet;
     const double       jetPhi   = m_recoJets[iJet].phi_std();
     const double       jetEta   = m_recoJets[iJet].pseudorapidity();
     const double       jetArea  = 0.;  // FIXME: jet area needs to be defined
@@ -510,6 +538,7 @@ void SCorrelatorJetTree::FillRecoTree() {
     const double       jetP     = sqrt((jetPx * jetPx) + (jetPy * jetPy) + (jetPz * jetPz));
 
     // clear constituent vectors
+    vecRecCstMatchID.clear();
     vecRecCstZ.clear();
     vecRecCstDr.clear();
     vecRecCstE.clear();
@@ -522,20 +551,22 @@ void SCorrelatorJetTree::FillRecoTree() {
     for (unsigned int iCst = 0; iCst < recoCsts.size(); ++iCst) {
 
       // get constituent info
-      const double cstPhi = recoCsts[iCst].phi_std();
-      const double cstEta = recoCsts[iCst].pseudorapidity();
-      const double cstE   = recoCsts[iCst].E();
-      const double cstJt  = recoCsts[iCst].perp();
-      const double cstJx  = recoCsts[iCst].px();
-      const double cstJy  = recoCsts[iCst].py();
-      const double cstJz  = recoCsts[iCst].pz();
-      const double cstJ   = ((cstJx * cstJx) + (cstJy * cstJy) + (cstJz * cstJz));
-      const double cstZ   = cstJ / jetP;
-      const double cstDf  = cstPhi - jetPhi;
-      const double cstDh  = cstEta - jetEta;
-      const double cstDr  = sqrt((cstDf * cstDf) + (cstDh * cstDh));
+      const double cstMatchID = recoCsts[iCst].user_index();
+      const double cstPhi     = recoCsts[iCst].phi_std();
+      const double cstEta     = recoCsts[iCst].pseudorapidity();
+      const double cstE       = recoCsts[iCst].E();
+      const double cstJt      = recoCsts[iCst].perp();
+      const double cstJx      = recoCsts[iCst].px();
+      const double cstJy      = recoCsts[iCst].py();
+      const double cstJz      = recoCsts[iCst].pz();
+      const double cstJ       = ((cstJx * cstJx) + (cstJy * cstJy) + (cstJz * cstJz));
+      const double cstZ       = cstJ / jetP;
+      const double cstDf      = cstPhi - jetPhi;
+      const double cstDh      = cstEta - jetEta;
+      const double cstDr      = sqrt((cstDf * cstDf) + (cstDh * cstDh));
 
       // add csts to vectors
+      vecRecCstMatchID.push_back(cstMatchID);
       vecRecCstZ.push_back(cstZ);
       vecRecCstDr.push_back(cstDr);
       vecRecCstE.push_back(cstE);
@@ -553,13 +584,13 @@ void SCorrelatorJetTree::FillRecoTree() {
 
     // store jet/cst output
     m_recoJetNCst.push_back(jetNCst);
-    m_recoJetId.push_back(jetID);
-    m_recoJetTruId.push_back(jetTruID);
+    m_recoJetID.push_back(jetRecID);
     m_recoJetE.push_back(jetE);
     m_recoJetPt.push_back(jetPt);
     m_recoJetEta.push_back(jetEta);
     m_recoJetPhi.push_back(jetPhi);
     m_recoJetArea.push_back(jetArea);
+    m_recoCstMatchID.push_back(vecRecCstMatchID);
     m_recoCstZ.push_back(vecRecCstZ);
     m_recoCstDr.push_back(vecRecCstDr);
     m_recoCstE.push_back(vecRecCstE);
@@ -581,32 +612,17 @@ void SCorrelatorJetTree::FillRecoTree() {
   m_hNumObject[OBJECT::RJET] -> Fill(nRecJet);
   m_hNumObject[OBJECT::RCST] -> Fill(nRecCst);
 
-  // store evt info
-  // FIXME: replace parton branches w/ relevant info
-  m_recoNumJets       = nRecJet;
-  m_recoPartonID[0]   = -9999;
-  m_recoPartonID[1]   = -9999;
-  m_recoPartonMomX[0] = -9999.;
-  m_recoPartonMomX[1] = -9999.;
-  m_recoPartonMomY[0] = -9999.;
-  m_recoPartonMomY[1] = -9999.;
-  m_recoPartonMomZ[0] = -9999.;
-  m_recoPartonMomZ[1] = -9999.;
+  // store event info
+  m_recoNumJets = nRecJet;
+  m_recoVtxX    = m_recoVtx.x();
+  m_recoVtxY    = m_recoVtx.y();
+  m_recoVtxZ    = m_recoVtx.z();
 
   // fill object tree
   m_recoTree -> Fill();
   return;
 
 }  // end 'FillRecoTree()'
-
-
-
-void SCorrelatorJetTree::FillMatchTree() {
-
-  /* TODO fill match tree here */
-  return;
-
-}  // end 'FillMatchTree()'
 
 
 
@@ -722,7 +738,15 @@ void SCorrelatorJetTree::ResetVariables() {
   m_recoClust  = 0x0;
 
   // reset output variables
+  m_partonID[0]           = -9999;
+  m_partonID[1]           = -9999;
+  m_partonMom[0]          = CLHEP::Hep3Vector(-9999., -9999., -9999.);
+  m_partonMom[1]          = CLHEP::Hep3Vector(-9999., -9999., -9999.);
+  m_recoVtx               = CLHEP::Hep3Vector(-9999., -9999., -9999.);
+  m_trueVtx               = CLHEP::Hep3Vector(-9999., -9999., -9999.);
   m_trueNumJets           = 0;
+  m_trueNumChrgPars       = -9999;
+  m_trueSumPar            = -9999.;
   m_truePartonID[0]       = -9999;
   m_truePartonID[1]       = -9999;
   m_truePartonMomX[0]     = -9999.;
@@ -732,28 +756,13 @@ void SCorrelatorJetTree::ResetVariables() {
   m_truePartonMomZ[0]     = -9999.;
   m_truePartonMomZ[1]     = -9999.;
   m_recoNumJets           = 0;
-  m_recoPartonID[0]       = -9999;
-  m_recoPartonID[1]       = -9999;
-  m_recoPartonMomX[0]     = -9999.;
-  m_recoPartonMomX[1]     = -9999.;
-  m_recoPartonMomY[0]     = -9999.;
-  m_recoPartonMomY[1]     = -9999.;
-  m_recoPartonMomZ[0]     = -9999.;
-  m_recoPartonMomZ[1]     = -9999.;
-  m_numTrks               = -9999;
-  m_numChrgPars           = -9999;
-  m_sumECalEne            = -9999.;
-  m_sumHCalEne            = -9999.;
-  m_sumParEne             = -9999.;
-  m_partonID[0]           = -9999;
-  m_partonID[1]           = -9999;
-  m_partonMom[0]          = CLHEP::Hep3Vector(-9999., -9999., -9999.);
-  m_partonMom[1]          = CLHEP::Hep3Vector(-9999., -9999., -9999.);
+  m_recoNumTrks           = -9999;
+  m_recoSumECal           = -9999.;
+  m_recoSumHCal           = -9999.;
   m_trueJets.clear();
   m_recoJets.clear();
   m_trueJetNCst.clear();
-  m_trueJetId.clear();
-  m_trueJetTruId.clear();
+  m_trueJetID.clear();
   m_trueJetE.clear();
   m_trueJetPt.clear();
   m_trueJetEta.clear();
@@ -766,8 +775,7 @@ void SCorrelatorJetTree::ResetVariables() {
   m_trueCstEta.clear();
   m_trueCstPhi.clear();
   m_recoJetNCst.clear();
-  m_recoJetId.clear();
-  m_recoJetTruId.clear();
+  m_recoJetID.clear();
   m_recoJetE.clear();
   m_recoJetPt.clear();
   m_recoJetEta.clear();
@@ -856,5 +864,139 @@ int SCorrelatorJetTree::CreateJetNode(PHCompositeNode* topNode) {
   return Fun4AllReturnCodes::EVENT_OK;
 
 }  // end 'CreateJetNode(PHCompositeNode*)'
+
+
+
+SvtxTrackMap* SCorrelatorJetTree::GetTrackMap(PHCompositeNode *topNode) {
+
+  // print debug statement
+  if (m_doDebug) {
+    cout << "SCorrelatorJetTree::GetTrackMap(PHCompositeNode*) Grabbing track map..." << endl;
+  }
+
+  // grab track map
+  SvtxTrackMap *mapTrks = findNode::getClass<SvtxTrackMap>(topNode, "SvtxTrackMap");
+  if (!mapTrks) {
+    cerr << PHWHERE
+         << "PANIC: SvtxTrackMap node is missing!"
+         << endl;
+    assert(mapTrks);
+  }
+  return mapTrks;
+
+}  // end 'GetTrackMap(PHCompositeNode*)'
+
+
+
+GlobalVertex* SCorrelatorJetTree::GetGlobalVertex(PHCompositeNode *topNode) {
+
+  // print debug statement
+  if (m_doDebug) {
+    cout << "SCorrelatorJetTree::GetGlobalVertex(PHCompositeNode*) Getting global vertex..." << endl;
+  }
+
+  // get vertex map & check if good
+  GlobalVertexMap *mapVtx = findNode::getClass<GlobalVertexMap>(topNode, "GlobalVertexMap");
+
+  const bool isVtxMapGood = (mapVtx && !(mapVtx -> empty()));
+  if (!isVtxMapGood) {
+    cerr << PHWHERE
+         << "PANIC: GlobalVertexMap node is missing or empty!\n"
+         << "       Please turn on the do_global flag in the main macro in order to reconstruct the global vertex!"
+         << endl;
+    assert(isVtxMapGood);
+  }
+
+  // grab vertex
+  GlobalVertex *vtx = mapVtx -> begin() -> second;
+  if (!vtx) {
+    cerr << PHWHERE
+         << "PANIC: no vertex!"
+         << endl;
+    assert(vtx);
+  }
+  return vtx;
+
+}  // end 'GetGlobalVertex(PHCompositeNode*)'
+
+
+
+HepMC::GenEvent* SCorrelatorJetTree::GetMcEvent(PHCompositeNode *topNode) {
+
+  // print debug statement
+  if (m_doDebug) {
+    cout << "SCorrelatorJetTree::GetMcEvent(PHCompositeNode*) Grabbing mc event..." << endl;
+  }
+
+  // grab mc event map
+  PHHepMCGenEventMap *mapMcEvts = findNode::getClass<PHHepMCGenEventMap>(topNode, "PHHepMCGenEventMap");
+  if (!mapMcEvts) {
+    cerr << PHWHERE
+         << "PANIC: HEPMC event map node is missing!"
+         << endl;
+    assert(mapMcEvts);
+  }
+
+  // grab mc event & check if good
+  PHHepMCGenEvent *mcEvtStart = mapMcEvts -> get(1);
+  if (!mcEvtStart) {
+    cerr << PHWHERE
+         << "PANIC: Couldn't grab start of mc events!"
+         << endl;
+    assert(mcEvtStart);
+  }
+
+  HepMC::GenEvent *mcEvt = mcEvtStart -> getEvent();
+  if (!mcEvt) {
+    cerr << PHWHERE
+         << "PANIC: Couldn't grab HepMC event!"
+         << endl;
+    assert(mcEvt);
+  }
+  return mcEvt;
+
+}  // end 'GetMcEvent(PHCompositeNode*)'
+
+
+
+RawClusterContainer* SCorrelatorJetTree::GetClusterStore(PHCompositeNode *topNode, const TString sNodeName) {
+
+  // print debug statement
+  if (m_doDebug) {
+    cout << "SCorrelatorJetTree::GetClusterStore(PHCompositeNode*, TString) Grabbing calorimeter cluster container..." << endl;
+  }
+
+  // grab clusters
+  RawClusterContainer *clustStore = findNode::getClass<RawClusterContainer>(topNode, sNodeName.Data());
+  if (!clustStore) {
+    cout << PHWHERE
+         << "PANIC: " << sNodeName.Data() << " node is missing!"
+         << endl;
+    assert(clustStore);
+  }
+  return clustStore;
+
+}  // end 'GetClusterStore(PHCompositeNode*, TString)'
+
+
+
+ParticleFlowElementContainer* SCorrelatorJetTree::GetFlowStore(PHCompositeNode *topNode) {
+
+  // print debug statement
+  if (m_doDebug) {
+    cout << "SCorrelatorJetTree::GetFlowStore(PHCompositeNode*) Grabbing particle flow container..." << endl;
+  }
+
+  // declare pf  objects
+  ParticleFlowElementContainer *flowStore = findNode::getClass<ParticleFlowElementContainer>(topNode, "ParticleFlowElements");
+  if (!flowStore) {
+    cerr << PHWHERE
+         << "PANIC: Couldn't grab particle flow container!"
+         << endl;
+    assert(flowStore);
+  }
+  return flowStore;
+
+}  // end 'GetFlowStore(PHCompositeNode*)'
 
 // end ------------------------------------------------------------------------

@@ -1,0 +1,97 @@
+#+title: Readme
+
+* Description
+- Going over the prdf files and extracting the waveforms fitted ADC, peak location and pedestal values.
+- Electronics readout chain: Signal -> SiPM -> Readout.
+- LED's take place of Signal.
+  - Validate performance of the SiPMs.
+- Test pulse takes place of the SiPM.
+  - Acts as an ideal response from the SiPMs.
+
+* Data
+** Test Pulse
+- Location: ~/sphenix/lustre01/sphnxpro/commissioning/emcal/calib/calib-00005027-0000.prdf~
+- Packets Present: 6009-6016
+- Command used to check which packets present:
+#+begin_src bash
+dlist -i -f target.prdf
+#+end_src
+- Events: 11001
+- Command used to check the number of events present:
+#+begin_src bash
+dpipe -d n -s f -i target.prdf | wc -l
+#+end_src
+
+* dlist, ddump, and dpipe
+- the *dlist* utility, which lets you list the packets contained in a given event.
+- the *ddump* utility, which lets you dump and look at the contents of a packet in various ways.
+- the *dpipe* utility, which copies events from one destination to another with a lot of flexibility; you can also use this to sift through a data stream in a simple way.
+Reference: https://www.phenix.bnl.gov/~phoncs/oncs/code_documentation/Event/dlistddumpanddpipe.html
+
+* Readout Channels, IBs, Packets
+- In total there are 24,576 *readout channels* for the EMCal.
+- There are 64 *sectors* in the EMCal.
+- Each *sector* consists of 384 *readout channels* (8 in phi x 48 in eta).
+- Each *sector* is divided up into 6 *interface boards* (IB).
+- Each *IB* consists of 64 *readout channels* (8 in phi x 8 in eta).
+- Each *packet* consists of 3 IBs (192 *readout channels*).
+- Each *sector* consists of 2 *packets*.
+
+* Usage
+1) Compile ~LEDTowerBuilder.cc~ into ~libledtowerbuilder.so~ using:
+  #+begin_src bash
+./build_package
+  #+end_src
+  - Note: Make sure to have ~$MYINSTALL~ set correctly.
+
+2) Compile ~macro/Fun4All_LEDTowerBuilder.C~ using:
+#+begin_src bash
+make
+#+end_src
+
+3) Read over the prdfs and make basic histograms to a root file:
+#+begin_src bash
+./bin/Fun4All_LEDTowerBuilder <events> <fListname> <outputFile>
+#+end_src
+ - <events>: Number of events to analyze from the prdfs. Default = 1.
+ - <fListname>: Location of the file list which contains the prdfs. Default = data/fileList.list.
+ - <outputFile>: Location of the analyzed prdfs root file. Default: data/LEDTowerBuilder.root.
+
+4) Go through the LEDTowerBuilder.root generated in the previous step and create QA histograms.
+#+begin_src bash
+./bin/read-LEDs <input> <output> <events>
+#+end_src
+- <input>:  Location of LEDTowerBuilder.root. Default = data/LEDTowerBuilder.root.
+- <output>: output root file. Default = output/test.root.
+- <events>: Number of events to analyze. Default = 0 (meaning all events).
+
+Example:
+#+begin_src bash
+./bin/read-LEDs data/LEDTowerBuilder-<run>.root output/runs/<run>/test.root &> output/runs/<run>/log-read-LEDs.txt &
+#+end_src
+
+5) Plotting macro:
+#+begin_src bash
+root -b -l -q macro/display.C
+#+end_src
+
+Example:
+#+begin_src bash
+root -b -l -q 'macro/display.C("output/runs/<run>/test.root", "output/runs/<run>", "<run>")' &> output/runs/<run>/log-display.txt &
+#+end_src
+
+* Useful commands
+- Find the number of events within each prdf that matches some pattern.
+#+begin_src bash
+fd <pattern> /direct/sphenix+lustre01/sphnxpro/commissioning/emcal/calib | xargs -t -I % sh -c "dpipe -d n -s f -i % | wc -l"
+#+end_src
+
+- Find the packets present within each prdf that matches some pattern.
+#+begin_src bash
+fd <pattern> /direct/sphenix+lustre01/sphnxpro/commissioning/emcal/calib | xargs -t -I % dlist -i -f %
+#+end_src
+
+- Select a range of events from the prdf:
+#+begin_src bash
+eventcombiner -v -i -e <start-event> -n <nevents> -f -p <output.prdf> <input.prdf>
+#+end_src

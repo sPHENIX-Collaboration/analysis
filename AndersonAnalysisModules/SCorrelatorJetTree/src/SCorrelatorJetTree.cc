@@ -54,6 +54,8 @@ SCorrelatorJetTree::~SCorrelatorJetTree() {
     cout << "SCorrelatorJetTree::~SCorrelatorJetTree() Calling dtor" << endl;
   }
   delete m_histMan;
+  delete m_evalStack;
+  delete m_trackEval;
   delete m_outFile;
   delete m_recoTree;
   delete m_trueTree;
@@ -87,7 +89,7 @@ int SCorrelatorJetTree::Init(PHCompositeNode *topNode) {
     CreateJetNode(topNode);
   }
 
-  // initialize QA histograms and output trees
+  // initialize QA histograms, output trees, and evaluators (if needed)
   InitHists();
   InitTrees();
   return Fun4AllReturnCodes::EVENT_OK;
@@ -103,11 +105,16 @@ int SCorrelatorJetTree::process_event(PHCompositeNode *topNode) {
     cout << "SCorrelatorJetTree::process_event(PHCompositeNode*) Processing Event..." << endl;
   }
 
+  // initialize evaluator for event
+  if (m_isMC) {
+    InitEvals(topNode);
+  }
+
   // reset for event and get event-wise variables
   ResetVariables();
   GetEventVariables(topNode);
   if (m_isMC) {
-    FindPartons(topNode);
+    GetPartonInfo(topNode);
   }
 
   // find jets
@@ -116,16 +123,10 @@ int SCorrelatorJetTree::process_event(PHCompositeNode *topNode) {
     FindTrueJets(topNode);
   }
 
-  // match jets/cst.s
-  if (m_isMC && m_doMatching) {
-    DoMatching();
-  }
-
   // fill output trees
   FillRecoTree();
   if (m_isMC) {
     FillTrueTree();
-    FillMatchTree();
   }
   return Fun4AllReturnCodes::EVENT_OK;
 

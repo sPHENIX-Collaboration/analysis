@@ -15,9 +15,12 @@
 
 #include <TFile.h>
 #include <TTree.h>
+#include <TH1F.h>
+#include <TH2F.h>
 
 #include <cassert>
 #include <iostream>
+#include <memory>
 
 //____________________________________________________________________________..
 TPCRawDataTree::TPCRawDataTree(const std::string &name)
@@ -39,6 +42,7 @@ int TPCRawDataTree::InitRun(PHCompositeNode *)
   m_PacketTree->Branch("packet", &m_packet, "packet/I");
   m_PacketTree->Branch("frame", &m_frame, "frame/I");
   m_PacketTree->Branch("nWaveormInFrame", &m_nWaveormInFrame, "nWaveormInFrame/I");
+  m_PacketTree->Branch("nTaggerInFrame", &m_nTaggerInFrame, "nTaggerInFrame/I");
   m_PacketTree->Branch("maxFEECount", &m_maxFEECount, "maxFEECount/I");
 
   m_SampleTree = new TTree("SampleTree", "Each entry is one waveform");
@@ -47,7 +51,6 @@ int TPCRawDataTree::InitRun(PHCompositeNode *)
   m_SampleTree->Branch("frame", &m_frame, "frame/I");
   m_SampleTree->Branch("nWaveormInFrame", &m_nWaveormInFrame, "nWaveormInFrame/I");
   m_SampleTree->Branch("maxFEECount", &m_maxFEECount, "maxFEECount/I");
-
   m_SampleTree->Branch("nSamples", &m_nSamples, "nSamples/I");
   m_SampleTree->Branch("adcSamples", &m_adcSamples[0], "adcSamples[nSamples]/s");
   m_SampleTree->Branch("fee", &m_fee, "fee/I");
@@ -57,6 +60,27 @@ int TPCRawDataTree::InitRun(PHCompositeNode *)
   m_SampleTree->Branch("BCO", &m_BCO, "BCO/I");
   m_SampleTree->Branch("checksum", &m_checksum, "checksum/I");
   m_SampleTree->Branch("checksumError", &m_checksumError, "checksumError/I");
+
+  m_TaggerTree = new TTree("TaggerTree", "Each entry is one tagger for level 1 trigger or endat tag");
+
+  m_TaggerTree->Branch("packet", &m_packet, "packet/I");
+  m_TaggerTree->Branch("frame", &m_frame, "frame/I");
+  m_TaggerTree->Branch("tagger_type", &m_tagger_type, "tagger_type/s");
+  m_TaggerTree->Branch("is_endat", &m_is_endat, "is_endat/b");
+  m_TaggerTree->Branch("is_lvl1", &m_is_lvl1, "is_lvl1/b");
+  m_TaggerTree->Branch("bco", &m_bco, "bco/l");
+  m_TaggerTree->Branch("lvl1_count", &m_lvl1_count, "lvl1_count/i");
+  m_TaggerTree->Branch("endat_count", &m_endat_count, "endat_count/i");
+  m_TaggerTree->Branch("last_bco", &m_last_bco, "last_bco/l");
+  m_TaggerTree->Branch("modebits", &m_modebits, "modebits/b");
+
+  R1_hist = new TH1F("R1_hist","R1_hist",1024,-0.5,1023.5);
+  R2_hist = new TH1F("R2_hist","R2_hist",1024,-0.5,1023.5);
+  R3_hist = new TH1F("R3_hist","R3_hist",1024,-0.5,1023.5);
+
+  R1_time = new TH2F("R1_time","R1_time",360,-0.5,359.5,1024,-0.5,1023.5);
+  R2_time = new TH2F("R2_time","R2_time",360,-0.5,359.5,1024,-0.5,1023.5);
+  R3_time = new TH2F("R3_time","R3_time",360,-0.5,359.5,1024,-0.5,1023.5);
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -86,7 +110,7 @@ int TPCRawDataTree::process_event(PHCompositeNode *topNode)
 
     m_packet = packet;
 
-    Packet *p = _event->getPacket(m_packet);
+    std::unique_ptr<Packet> p(_event->getPacket(m_packet));
     if (!p)
     {
       if (Verbosity())
@@ -94,13 +118,26 @@ int TPCRawDataTree::process_event(PHCompositeNode *topNode)
         std::cout << __PRETTY_FUNCTION__ << " : missing packet " << packet << std::endl;
       }
 
-      assert(p);
-
       continue;
     }
 
     m_nWaveormInFrame = p->iValue(0, "NR_WF");
+    m_nTaggerInFrame = p->lValue(0, "N_TAGGER");
     m_maxFEECount = p->iValue(0, "MAX_FEECOUNT");
+
+    for (int t = 0; t < m_nTaggerInFrame; t++)
+    {
+      /*uint16_t*/ m_tagger_type = (uint16_t) (p->lValue(t, "TAGGER_TYPE"));
+      /*uint8_t*/ m_is_endat = (uint8_t) (p->lValue(t, "IS_ENDAT"));
+      /*uint8_t*/ m_is_lvl1 = (uint8_t) (p->lValue(t, "IS_LEVEL1_TRIGGER"));
+      /*uint64_t*/ m_bco = (uint64_t) (p->lValue(t, "BCO"));
+      /*uint32_t*/ m_lvl1_count = (uint32_t) (p->lValue(t, "LEVEL1_COUNT"));
+      /*uint32_t*/ m_endat_count = (uint32_t) (p->lValue(t, "ENDAT_COUNT"));
+      /*uint64_t*/ m_last_bco = (uint64_t) (p->lValue(t, "LAST_BCO"));
+      /*uint8_t*/ m_modebits = (uint8_t) (p->lValue(t, "MODEBITS"));
+
+      m_TaggerTree->Fill();
+    }
 
     for (int wf = 0; wf < m_nWaveormInFrame; wf++)
     {
@@ -114,10 +151,34 @@ int TPCRawDataTree::process_event(PHCompositeNode *topNode)
       m_checksum = p->iValue(wf, "CHECKSUM");
       m_checksumError = p->iValue(wf, "CHECKSUMERROR");
 
+      TH1F *fillHist;
+      TH2F *fillHist2D;
+
+      if(m_fee == 2 ||
+         m_fee == 4 ||
+         m_fee == 3 ||
+         m_fee == 13 ||
+         m_fee == 17 ||
+         m_fee == 16){ fillHist=R1_hist; fillHist2D=R1_time;}
+      else if(m_fee == 11 ||
+         m_fee == 12 ||
+         m_fee == 19 ||
+         m_fee == 18 ||
+         m_fee == 01 ||
+         m_fee == 00 ||
+         m_fee == 16 ||
+         m_fee == 15){ fillHist=R2_hist; fillHist2D=R2_time;}
+      else{ fillHist=R3_hist; fillHist2D=R3_time;}
+
+
       assert(m_nSamples < (int) m_adcSamples.size());  // no need for movements in memory allocation
       for (int s = 0; s < m_nSamples; s++)
       {
         m_adcSamples[s] = p->iValue(wf, s);
+        if(m_checksumError==0){
+           fillHist->Fill(m_adcSamples[s]);
+           fillHist2D->Fill(s,m_adcSamples[s]);
+        }
       }
 
       m_SampleTree->Fill();

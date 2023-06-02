@@ -107,6 +107,8 @@ class pythiaEMCalAna : public SubsysReco
   void addPrimaryFromPythia(HepMC::GenParticle* part);
   // case 3: secondary that geant knows about
   void addSecondary(PHG4Particle* part, PHG4TruthInfoContainer* truthInfo);
+  // edge case: geant knows about secondary, but not its parent
+  void addSecondaryWithoutParent(PHG4Particle* part, PHG4TruthInfoContainer* truthInfo, HepMC::GenParticle* genParent);
 };
 
 #endif // ISOCLUSTER_H
