@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
 
+rm -rf src/g4eval
+cd /gpfs/mnt/gpfs02/sphenix/user/anarde/sPHENIX/coresoftware
+git pull
+cd -
+
+cp -r  /gpfs/mnt/gpfs02/sphenix/user/anarde/sPHENIX/coresoftware/simulation/g4simulation/g4eval/ src
 cp src/CaloEvaluator.cc src/CaloEvaluator.h src/g4eval
 
 rm -rf build
