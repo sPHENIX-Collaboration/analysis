@@ -165,9 +165,10 @@ void Fun4All_MDC2reco(vector<string> myInputLists = {"condorJob/fileLists/produc
     Tracking_Reco();
   }
 
-  SvtxTruthRecoTableEval *tables = new SvtxTruthRecoTableEval();
-  tables->Verbosity(verbosity);
-  se->registerSubsystem(tables);
+  // Commenting out these 3 lines, as the tables seem to be outdated for this analysis package
+  //SvtxTruthRecoTableEval *tables = new SvtxTruthRecoTableEval();
+  //tables->Verbosity(verbosity);
+  //se->registerSubsystem(tables);
 
   Global_Reco();
 
