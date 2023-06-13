@@ -16,7 +16,7 @@ To run the tree making step (note if you are using a bash shell use instead the 
 
          source /opt/sphenix/core/bin/sphenix_setup.csh -n (source /opt/sphenix/core/bin/sphenix_setup.sh)
          setenv MYINSTALL ~/install (export MYINSTALL=~/install)
-         source /opt/sphenix/core/bin/setup_local.csh $MYINSTALL (source /opt/sphenix/core/bin/setup_local.sh)
+         source /opt/sphenix/core/bin/setup_local.csh $MYINSTALL (source /opt/sphenix/core/bin/setup_local.sh $MYINSTALL)
         
    * Compile your code:
 
