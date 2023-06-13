@@ -11,21 +11,20 @@ AM_LDFLAGS = \
   -L$(OFFLINE_MAIN)/lib64
 
 pkginclude_HEADERS = \
-  JetValidation.h
+  Emcal_Tower_Masking.h
 
 lib_LTLIBRARIES = \
-  libJetValidation.la
+  libEmcal_Tower_Masking.la
 
-libJetValidation_la_SOURCES = \
-  JetValidation.cc
+libEmcal_Tower_Masking_la_SOURCES = \
+  Emcal_Tower_Masking.cc
 
-libJetValidation_la_LIBADD = \
+libEmcal_Tower_Masking_la_LIBADD = \
   -lphool \
-  -lSubsysReco \
   -lfun4all \
   -lg4dst \
-  -lg4eval \
-  -lg4jets
+  -lcalo_io \
+  -lSubsysReco
 
 BUILT_SOURCES = testexternals.cc
 
@@ -33,7 +32,7 @@ noinst_PROGRAMS = \
   testexternals
 
 testexternals_SOURCES = testexternals.cc
-testexternals_LDADD   = libJetValidation.la
+testexternals_LDADD   = libEmcal_Tower_Masking.la
 
 testexternals.cc:
 	echo "//*** this is a generated file. Do not commit, do not edit" > $@
