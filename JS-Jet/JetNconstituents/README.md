@@ -1,6 +1,6 @@
-This package is designed to create histograms for the jet constituents and jet energy fractions for each calorimeter layer.  
+This module is designed to create histograms for the jet constituents and jet energy fractions for each calorimeter layer.  
 
-# Histogram Making
+# Running Module
 Histograms are made with the JetNConsituents analysis module, run using the macro macro/Fun4All_JetNconst.C. 
 
 To run the tree making step (note if you are using a bash shell use instead the versions of the commands in parentheses):
@@ -38,6 +38,11 @@ Once you have made the TFile containing the histograms, you can save these as pd
         root -b -q 'plot_histos.C("output.root", "0.4")'
     
     * The first argument is the name of the root file containing the histograms. The second argument is the jet radius. This is used to label the histograms. The output pdfs are saved in the directory where you run the macro. 
+    * Example plots:
+    
+![image](https://github.com/sPHENIX-Collaboration/analysis/assets/38924390/9c4aaab6-0c64-4c4e-a64c-b3f81ae4f4d9)
+
+![image](https://github.com/sPHENIX-Collaboration/analysis/assets/38924390/d6d7812a-06c0-4359-bcf4-3a2c612daf29)
 
 
 # Questions/suggestions
