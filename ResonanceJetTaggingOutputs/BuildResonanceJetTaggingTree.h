@@ -5,7 +5,7 @@
 
 #include <fun4all/SubsysReco.h>
 
-#include <g4jets/JetMapv1.h>
+#include <jetbase/JetMapv1.h>
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
