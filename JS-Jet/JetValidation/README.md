@@ -18,14 +18,11 @@ To run the tree making step (note if you are using a bash shell use instead the 
          setenv MYINSTALL ~/install (export MYINSTALL=~/install)
          source /opt/sphenix/core/bin/setup_local.csh $MYINSTALL (source /opt/sphenix/core/bin/setup_local.sh)
         
-   * Compile your code and rerun the startup steps:
+   * Compile your code:
 
      	 /PATH_TO_YOUR_SOURCE_DIR/autogen.csh --prefix=$MYINSTALL (/PATH_TO_YOUR_SOURCE_DIR/autogen.sh --prefix=$MYINSTALL)
          make -j 4
          make install
-         source /opt/sphenix/core/bin/sphenix_setup.csh -n (source /opt/sphenix/core/bin/sphenix_setup.sh)
-         setenv MYINSTALL ~/install (export MYINSTALL=~/install)
-         source /opt/sphenix/core/bin/setup_local.csh $MYINSTALL (source /opt/sphenix/core/bin/setup_local.sh)
          
 2. Run the code using the Fun4All macro:
  
@@ -33,10 +30,10 @@ To run the tree making step (note if you are using a bash shell use instead the 
    
           cd ../../macro
           
-   * Get some files to run on using CreateFileList.pl, for example like (replacing N with the latest simulation run):
+   * Get some files to run on using CreateFileList.pl, for example to get 1000 events of pythia dijets embeded in minimum bias HIJING:
           
-          CreateFileList.pl -type 11 -run N DST_CALO_CLUSTER DST_TRUTH_JET
-          
+          CreateFileList.pl -n 1000 -type 11 -embed DST_CALO_CLUSTER DST_TRUTH_JET
+ 
    * Test run using Fun4All. The Fun4All macro takes in input file lists for the truth jet and calo cluster DSTs and an output file name as inputs. For example, you can run:
           
           root -b -q 'Fun4All_JetVal.C("dst_truth_jet.list", "dst_calo_cluster.list", "output.root")'
