@@ -4,6 +4,7 @@ R__LOAD_LIBRARY(libcalo_io.so)
 void display(const string& inputFile="output/test.root", const string& outputDir="output", const string& run = "0", bool do_waveforms = false) {
    TFile input(inputFile.c_str());
 
+   bool style_eta_phi = true;
    auto c1 = new TCanvas();
 
    c1->cd();
@@ -106,9 +107,15 @@ void display(const string& inputFile="output/test.root", const string& outputDir
 
    // h1 = (TH1D*)((TH2*)input.Get("scat/h2ADCVsChannel_scat"))->ProfileX();
    h1 = (TH1D*)((TH2*)input.Get("h2ADCVsChannel"))->ProfileX();
-   // h2 = new TH2D("h2AvgAdc", "Average ADC; Towerid #eta; Towerid #phi", 96, 0-0.5, 96-0.5, 256, 0-0.5, 256-0.5);
-   h2 = new TH2D("h2AvgAdc", "Average ADC; Towerid #phi; Towerid #eta", 256, 0-0.5, 256-0.5, 96, 0-0.5, 96-0.5);
-   auto h2_missing = new TH2D("h2AvgAdcMissing", "Average ADC (Zeros); Towerid #phi; Towerid #eta", 256, 0-0.5, 256-0.5, 96, 0-0.5, 96-0.5);
+   TH2D* h2_missing;
+   if(style_eta_phi) {
+      h2 = new TH2D("h2AvgAdc", "Average ADC; Towerid #eta; Towerid #phi", 96, 0-0.5, 96-0.5, 256, 0-0.5, 256-0.5);
+      h2_missing = new TH2D("h2AvgAdcMissing", "Average ADC (Zeros); Towerid #eta; Towerid #phi", 96, 0-0.5, 96-0.5, 256, 0-0.5, 256-0.5);
+   }
+   else {
+      h2 = new TH2D("h2AvgAdc", "Average ADC; Towerid #phi; Towerid #eta", 256, 0-0.5, 256-0.5, 96, 0-0.5, 96-0.5);
+      h2_missing = new TH2D("h2AvgAdcMissing", "Average ADC (Zeros); Towerid #phi; Towerid #eta", 256, 0-0.5, 256-0.5, 96, 0-0.5, 96-0.5);
+   }
 
    for (Int_t channel = 0; channel < 24576; ++channel) {
       Int_t key = TowerInfoDefs::encode_emcal(channel);
@@ -118,26 +125,40 @@ void display(const string& inputFile="output/test.root", const string& outputDir
       Double_t avg_adc = h1->GetBinContent(channel+1);
 
       //h2->SetBinContent(etabin+1, phibin+1, avg_adc);
-      h2->SetBinContent(phibin+1, etabin+1, avg_adc);
-      if(avg_adc == 0) h2_missing->SetBinContent(phibin+1, etabin+1, 1);
+      if(style_eta_phi) {
+         h2->SetBinContent(etabin+1, phibin+1, avg_adc);
+         if(avg_adc == 0) h2_missing->SetBinContent(etabin+1, phibin+1, 1);
+      }
+      else {
+         h2->SetBinContent(phibin+1, etabin+1, avg_adc);
+         if(avg_adc == 0) h2_missing->SetBinContent(phibin+1, etabin+1, 1);
+      }
       // if(avg_adc != 0) cout << "etabin: " << etabin << ", phibin: " << phibin << ", " << " channel: " << channel << ", avg_adc: " << avg_adc << endl;
    }
 
    c1->SetRightMargin(.12);
    h2->SetStats(0);
    h2->SetTitle(("Run: " + run + ", Average ADC").c_str());
-   // h2->SetMaximum(4e3);
+   // h2->SetMaximum(5e3);
    h2->Draw("COLZ1");
 
    auto tline = new TLine();
 
-   for (UInt_t i = 0; i < 32; ++i) {
-         // tline->DrawLine(-0.5, 8*i-0.5, 95.5, 8*i-0.5);
-         tline->DrawLine(8*i-0.5, -0.5, 8*i-0.5, 95.5);
+   if(style_eta_phi) {
+      for (UInt_t i = 0; i < 32; ++i) {
+         tline->DrawLine(-0.5, 8*i-0.5, 95.5, 8*i-0.5);
+      }
+      for (UInt_t i = 0; i < 12; ++i) {
+         tline->DrawLine(8*i-0.5, -0.5, 8*i-0.5, 255.5);
+      }
    }
-   for (UInt_t i = 0; i < 12; ++i) {
-         // tline->DrawLine(8*i-0.5, -0.5, 8*i-0.5, 255.5);
+   else {
+      for (UInt_t i = 0; i < 32; ++i) {
+         tline->DrawLine(8*i-0.5, -0.5, 8*i-0.5, 95.5);
+      }
+      for (UInt_t i = 0; i < 12; ++i) {
          tline->DrawLine(-0.5, 8*i-0.5, 255.5, 8*i-0.5);
+      }
    }
 
    c1->Print((outputFile).c_str(), "pdf portrait");
@@ -152,13 +173,21 @@ void display(const string& inputFile="output/test.root", const string& outputDir
 
    tline = new TLine();
 
-   for (UInt_t i = 0; i < 32; ++i) {
-         // tline->DrawLine(-0.5, 8*i-0.5, 95.5, 8*i-0.5);
-         tline->DrawLine(8*i-0.5, -0.5, 8*i-0.5, 95.5);
+   if(style_eta_phi) {
+      for (UInt_t i = 0; i < 32; ++i) {
+         tline->DrawLine(-0.5, 8*i-0.5, 95.5, 8*i-0.5);
+      }
+      for (UInt_t i = 0; i < 12; ++i) {
+         tline->DrawLine(8*i-0.5, -0.5, 8*i-0.5, 255.5);
+      }
    }
-   for (UInt_t i = 0; i < 12; ++i) {
-         // tline->DrawLine(8*i-0.5, -0.5, 8*i-0.5, 255.5);
+   else {
+      for (UInt_t i = 0; i < 32; ++i) {
+         tline->DrawLine(8*i-0.5, -0.5, 8*i-0.5, 95.5);
+      }
+      for (UInt_t i = 0; i < 12; ++i) {
          tline->DrawLine(-0.5, 8*i-0.5, 255.5, 8*i-0.5);
+      }
    }
 
    c1->Print((outputFile).c_str(), "pdf portrait");
@@ -191,7 +220,13 @@ void display(const string& inputFile="output/test.root", const string& outputDir
 
    h2 = (TH2D*)(input.Get("h2PedVsChannel"))->Clone();
    h1 = (TH1D*)h2->ProfileX()->Clone();
-   h2 = new TH2D("h2AvgPed", "Average Pedestal; Towerid #phi; Towerid #eta", 256, 0-0.5, 256-0.5, 96, 0-0.5, 96-0.5);
+
+   if(style_eta_phi) {
+      h2 = new TH2D("h2AvgPed", "Average Pedestal; Towerid #eta; Towerid #phi", 96, 0-0.5, 96-0.5, 256, 0-0.5, 256-0.5);
+   }
+   else {
+      h2 = new TH2D("h2AvgPed", "Average Pedestal; Towerid #phi; Towerid #eta", 256, 0-0.5, 256-0.5, 96, 0-0.5, 96-0.5);
+   }
 
    for (Int_t channel = 0; channel < 24576; ++channel) {
       Int_t key = TowerInfoDefs::encode_emcal(channel);
@@ -200,25 +235,34 @@ void display(const string& inputFile="output/test.root", const string& outputDir
 
       Double_t avg_ped = h1->GetBinContent(channel+1);
 
-      h2->SetBinContent(phibin+1, etabin+1, avg_ped);
+      if(style_eta_phi) h2->SetBinContent(etabin+1, phibin+1, avg_ped);
+      else              h2->SetBinContent(phibin+1, etabin+1, avg_ped);
       // if(avg_adc != 0) cout << "etabin: " << etabin << ", phibin: " << phibin << ", " << " channel: " << channel << ", avg_adc: " << avg_adc << endl;
    }
 
    c1->SetRightMargin(.12);
    h2->SetStats(0);
    h2->SetTitle(("Run: " + run + ", Average Pedestal").c_str());
-   // h2->SetMaximum(4e3);
+   h2->SetMaximum(3e3);
    h2->Draw("COLZ1");
 
    tline = new TLine();
 
-   for (UInt_t i = 0; i < 32; ++i) {
-         // tline->DrawLine(-0.5, 8*i-0.5, 95.5, 8*i-0.5);
-         tline->DrawLine(8*i-0.5, -0.5, 8*i-0.5, 95.5);
+   if(style_eta_phi) {
+      for (UInt_t i = 0; i < 32; ++i) {
+         tline->DrawLine(-0.5, 8*i-0.5, 95.5, 8*i-0.5);
+      }
+      for (UInt_t i = 0; i < 12; ++i) {
+         tline->DrawLine(8*i-0.5, -0.5, 8*i-0.5, 255.5);
+      }
    }
-   for (UInt_t i = 0; i < 12; ++i) {
-         // tline->DrawLine(8*i-0.5, -0.5, 8*i-0.5, 255.5);
+   else {
+      for (UInt_t i = 0; i < 32; ++i) {
+         tline->DrawLine(8*i-0.5, -0.5, 8*i-0.5, 95.5);
+      }
+      for (UInt_t i = 0; i < 12; ++i) {
          tline->DrawLine(-0.5, 8*i-0.5, 255.5, 8*i-0.5);
+      }
    }
 
    c1->Print((outputFile).c_str(), "pdf portrait");
