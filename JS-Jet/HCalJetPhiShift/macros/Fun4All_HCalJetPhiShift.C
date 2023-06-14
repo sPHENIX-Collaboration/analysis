@@ -33,17 +33,18 @@
 #include <phool/PHRandomSeed.h>
 #include <phool/recoConsts.h>
 
+#include <hcaljetphishift/HCalJetPhiShift.h>
+
 R__LOAD_LIBRARY(libfun4all.so)
 R__LOAD_LIBRARY(libffamodules.so)
+R__LOAD_LIBRARY(libHCalJetPhiShift.so)
 
 // For HepMC Hijing
 // try inputFile = /sphenix/sim/sim01/sphnxpro/sHijing_HepMC/sHijing_0-12fm.dat
 
 int Fun4All_HCalJetPhiShift(
-    const int nEvents = 10,
-//    const string &outputFile = "G4sPHENIX.root",
-    const int index = 5,
-//    const int skip = 0,
+    const int nEvents = 1,
+    const int index = 0,
     const string &outdir = ".")
 {
 
@@ -56,9 +57,18 @@ int Fun4All_HCalJetPhiShift(
   }
   
   string outputFile = outputroot + ".root";
-
+  
   Fun4AllServer *se = Fun4AllServer::instance();
   se->Verbosity(0);
+  
+  HCalJetPhiShift *caloPhiShift = new HCalJetPhiShift("caloPhiShift",outputFile);
+  
+//  caloPhiShift->setPtRange(5, 100);
+//  caloPhiShift->setEtaRange(-1.1, 1.1);
+//  caloPhiShift->doUnsub(1);
+//  caloPhiShift->doTruth(1);
+//  caloPhiShift->doSeeds(1);
+  se->registerSubsystem(caloPhiShift);
 
   //Opt to print all random seed used for debugging reproducibility. Comment out to reduce stdout prints.
   PHRandomSeed::Verbosity(1);
@@ -450,9 +460,9 @@ int Fun4All_HCalJetPhiShift(
 //  {
 //    outputroot.erase(pos, remove_this.length());
 //  }
-  int start_event = (int) index*10;
-  if (Enable::HCALOUT_EVAL) HCALOuter_Eval(outputroot + "_g4hcalout_eval.root", start_event);
-  if (Enable::HCALIN_EVAL) HCALInner_Eval(outputroot + "_g4hcalin_eval.root", start_event);
+//  int start_event = (int) index*10;
+//  if (Enable::HCALOUT_EVAL) HCALOuter_Eval(outputroot + "_g4hcalout_eval.root", start_event);
+//  if (Enable::HCALIN_EVAL) HCALInner_Eval(outputroot + "_g4hcalin_eval.root", start_event);
 
   //--------------
   // Set up Input Managers
@@ -479,21 +489,6 @@ int Fun4All_HCalJetPhiShift(
   //-----------------
   // Event processing
   //-----------------
-  if (Enable::DISPLAY)
-  {
-    DisplayOn();
-
-    gROOT->ProcessLine("Fun4AllServer *se = Fun4AllServer::instance();");
-    gROOT->ProcessLine("PHG4Reco *g4 = (PHG4Reco *) se->getSubsysReco(\"PHG4RECO\");");
-
-    cout << "-------------------------------------------------" << endl;
-    cout << "You are in event display mode. Run one event with" << endl;
-    cout << "se->run(1)" << endl;
-    cout << "Run Geant4 command with following examples" << endl;
-    gROOT->ProcessLine("displaycmd()");
-
-    return 0;
-  }
 
   // if we use a negative number of events we go back to the command line here
   if (nEvents < 0)

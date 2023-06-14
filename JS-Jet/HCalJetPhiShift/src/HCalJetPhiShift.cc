@@ -63,13 +63,52 @@
 
 #include "HCalJetPhiShift.h"
 
+#include "g4eval/CaloEvalStack.h"
+#include "g4eval/CaloRawClusterEval.h"
+#include "g4eval/CaloRawTowerEval.h"
+#include "g4eval/CaloTruthEval.h"
+
+#include <g4main/PHG4Particle.h>
+#include <g4main/PHG4Shower.h>
+#include <g4main/PHG4TruthInfoContainer.h>
+#include <g4main/PHG4VtxPoint.h>
+
 #include <fun4all/Fun4AllReturnCodes.h>
+#include <fun4all/PHTFileServer.h>
 
 #include <phool/PHCompositeNode.h>
+#include <phool/getClass.h>
+
+#include <calobase/RawTower.h>
+#include <calobase/RawTowerContainer.h>
+#include <calobase/RawTowerGeom.h>
+#include <calobase/RawTowerGeomContainer.h>
+#include <calobase/TowerInfoContainer.h>
+#include <calobase/TowerInfo.h>
+
+#include <TFile.h>
+#include <TTree.h>
 
 //____________________________________________________________________________..
-HCalJetPhiShift::HCalJetPhiShift(const std::string &name):
- SubsysReco(name)
+HCalJetPhiShift::HCalJetPhiShift(const std::string &name, const std::string &outputFile):
+SubsysReco(name),
+m_outputFileName(outputFile),
+m_T(nullptr),
+m_event(-1),
+m_nTowers(-1),
+m_eta(),
+m_phi(),
+m_e(),
+m_pt(),
+m_vx(),
+m_vy(),
+m_vz(),
+m_id(),
+m_eta_tow(),
+m_phi_tow(),
+m_e_tow(),
+m_ieta_tow(),
+m_iphi_tow()
 {
   std::cout << "HCalJetPhiShift::HCalJetPhiShift(const std::string &name) Calling ctor" << std::endl;
 }
@@ -81,9 +120,31 @@ HCalJetPhiShift::~HCalJetPhiShift()
 }
 
 //____________________________________________________________________________..
-int HCalJetPhiShift::Init(PHCompositeNode *topNode)
+int HCalJetPhiShift::Init(PHCompositeNode* /*topNode*/)
 {
   std::cout << "HCalJetPhiShift::Init(PHCompositeNode *topNode) Initializing" << std::endl;
+  PHTFileServer::get().open(m_outputFileName, "RECREATE");
+  std::cout << "HCalJetPhiShift::Init - Output to " << m_outputFileName << std::endl;
+  
+  // configure Tree
+  m_T = new TTree("T", "HCalJetPhiShift Tree");
+  m_T->Branch("event", &m_event);
+  m_T->Branch("nTowers", &m_nTowers);
+  m_T->Branch("eta", &m_eta);
+  m_T->Branch("phi", &m_phi);
+  m_T->Branch("e", &m_e);
+  m_T->Branch("pt", &m_pt);
+  m_T->Branch("vx", &m_vx);
+  m_T->Branch("vy", &m_vy);
+  m_T->Branch("vz", &m_vz);
+  m_T->Branch("id", &m_id);
+  m_T->Branch("eta_tow", &m_eta_tow);
+  m_T->Branch("phi_tow", &m_phi_tow);
+  m_T->Branch("e_tow", &m_e_tow);
+  m_T->Branch("ieta_tow", &m_ieta_tow);
+  m_T->Branch("iphi_tow", &m_iphi_tow);
+  // "event", "nTowers", "eta", "phi", "e", "pt", "vx", "vy", "vz", "id", "eta_tow", "phi_tow", "e_tow", "ieta_tow", "iphi_tow"
+  
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
@@ -97,14 +158,45 @@ int HCalJetPhiShift::InitRun(PHCompositeNode *topNode)
 //____________________________________________________________________________..
 int HCalJetPhiShift::process_event(PHCompositeNode *topNode)
 {
-  std::cout << "HCalJetPhiShift::process_event(PHCompositeNode *topNode) Processing Event" << std::endl;
+  //  std::cout << "HCalJetPhiShift::process_event(PHCompositeNode *topNode) Processing Event" << std::endl;
+  ++m_event;
+  
+  //calorimeter towers
+  TowerInfoContainer *towersIH3 = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALIN");
+  TowerInfoContainer *towersOH3 = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALOUT");
+  RawTowerGeomContainer *tower_geom = findNode::getClass<RawTowerGeomContainer>(topNode, "TOWERGEOM_HCALIN");
+  RawTowerGeomContainer *tower_geomOH = findNode::getClass<RawTowerGeomContainer>(topNode, "TOWERGEOM_HCALOUT");
+  if(!towersIH3 || !towersOH3){
+    std::cout
+    <<"MyJetAnalysis::process_event - Error can not find raw tower node "
+    << std::endl;
+    exit(-1);
+  }
+  
+  if(!tower_geom || !tower_geomOH){
+    std::cout
+    <<"MyJetAnalysis::process_event - Error can not find raw tower geometry "
+    << std::endl;
+    exit(-1);
+  }
+  
+  //fill the tree
+  FillTTree(topNode);
+  
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
 //____________________________________________________________________________..
 int HCalJetPhiShift::ResetEvent(PHCompositeNode *topNode)
 {
-  std::cout << "HCalJetPhiShift::ResetEvent(PHCompositeNode *topNode) Resetting internal structures, prepare for next event" << std::endl;
+  //  std::cout << "HCalJetPhiShift::ResetEvent(PHCompositeNode *topNode) Resetting internal structures, prepare for next event" << std::endl;
+  m_nTowers = -1;
+  m_id.clear();
+  m_eta_tow.clear();
+  m_phi_tow.clear();
+  m_e_tow.clear();
+  m_ieta_tow.clear();
+  m_iphi_tow.clear();
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
@@ -118,6 +210,10 @@ int HCalJetPhiShift::EndRun(const int runnumber)
 //____________________________________________________________________________..
 int HCalJetPhiShift::End(PHCompositeNode *topNode)
 {
+  std::cout << "HCalJetPhiShift::End - Output to " << m_outputFileName << std::endl;
+  PHTFileServer::get().cd(m_outputFileName);
+  
+  m_T->Write();
   std::cout << "HCalJetPhiShift::End(PHCompositeNode *topNode) This is the End..." << std::endl;
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -125,7 +221,7 @@ int HCalJetPhiShift::End(PHCompositeNode *topNode)
 //____________________________________________________________________________..
 int HCalJetPhiShift::Reset(PHCompositeNode *topNode)
 {
- std::cout << "HCalJetPhiShift::Reset(PHCompositeNode *topNode) being Reset" << std::endl;
+  std::cout << "HCalJetPhiShift::Reset(PHCompositeNode *topNode) being Reset" << std::endl;
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
@@ -133,4 +229,52 @@ int HCalJetPhiShift::Reset(PHCompositeNode *topNode)
 void HCalJetPhiShift::Print(const std::string &what) const
 {
   std::cout << "HCalJetPhiShift::Print(const std::string &what) const Printing info for " << what << std::endl;
+}
+
+//____________________________________________________________________________..
+int HCalJetPhiShift::FillTTree(PHCompositeNode *topNode)
+{  
+  std::cout << "HCalJetPhiShift::FillTTree(PHCompositeNode *topNode)" << std::endl;
+
+  PHG4TruthInfoContainer* truthinfo = findNode::getClass<PHG4TruthInfoContainer>(topNode, "G4TruthInfo");
+  if (!truthinfo)
+  {
+    std::cout << PHWHERE << " ERROR: Can't find G4TruthInfo" << std::endl;
+    exit(-1);
+  }
+  
+  PHG4TruthInfoContainer::ConstRange range = truthinfo->GetPrimaryParticleRange();
+  for (PHG4TruthInfoContainer::ConstIterator iter = range.first;
+       iter != range.second;
+       ++iter)
+  {
+    std::cout << 1 << std::endl;
+
+    PHG4Particle* primary = iter->second;
+    
+    if (primary->get_e() < 0.)
+    {
+      continue;
+    }
+    
+    float gpx = primary->get_px();
+    float gpy = primary->get_py();
+    float gpz = primary->get_pz();
+    m_e = primary->get_e();
+    
+    m_pt = std::sqrt(gpx * gpx + gpy * gpy);
+    m_eta = NAN;
+    if (m_pt != 0.0)
+    {
+      m_eta = std::asinh(gpz / m_pt);
+    }
+    m_phi = std::atan2(gpy, gpx);
+    
+    PHG4VtxPoint* gvertex = truthinfo->GetPrimaryVtx(truthinfo->GetPrimaryVertexIndex());
+    m_vx = gvertex->get_x();
+    m_vy = gvertex->get_y();
+    m_vz = gvertex->get_z();
+    m_T->Fill();
+  }
+  return Fun4AllReturnCodes::EVENT_OK;
 }
