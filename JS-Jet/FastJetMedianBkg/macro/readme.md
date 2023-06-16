@@ -80,6 +80,3 @@ To run the fastjet::JetMedianBackgroundEstimator code on the pp embedded in HIJI
    A few notes:
     - This code outputs whole TTree's, which may be heavier than something that you want
    
-   
-   
-
