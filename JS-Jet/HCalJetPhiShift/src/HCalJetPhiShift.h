@@ -66,7 +66,8 @@ private:
   
   //! eventwise quantities
   int m_event;
-  int m_nTowers;
+  int m_nTow_out;
+  int m_nTow_in;
   float m_eta;
   float m_phi;
   float m_e;
@@ -80,14 +81,14 @@ private:
   std::vector<float> m_eta_in;
   std::vector<float> m_phi_in;
   std::vector<float> m_e_in;
-  std::vector<float> m_ieta_in;
-  std::vector<float> m_iphi_in;
+  std::vector<int> m_ieta_in;
+  std::vector<int> m_iphi_in;
   
   std::vector<float> m_eta_out;
   std::vector<float> m_phi_out;
   std::vector<float> m_e_out;
-  std::vector<float> m_ieta_out;
-  std::vector<float> m_iphi_out;
+  std::vector<int> m_ieta_out;
+  std::vector<int> m_iphi_out;
 
   int FillTTree(PHCompositeNode *topNode);
 };

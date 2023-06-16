@@ -95,7 +95,8 @@ SubsysReco(name),
 m_outputFileName(outputFile),
 m_T(nullptr),
 m_event(-1),
-m_nTowers(0),
+m_nTow_in(0),
+m_nTow_out(0),
 m_eta(),
 m_phi(),
 m_e(),
@@ -134,7 +135,6 @@ int HCalJetPhiShift::Init(PHCompositeNode* /*topNode*/)
   // configure Tree
   m_T = new TTree("T", "HCalJetPhiShift Tree");
   m_T->Branch("event", &m_event);
-  m_T->Branch("nTowers", &m_nTowers);
   m_T->Branch("eta", &m_eta);
   m_T->Branch("phi", &m_phi);
   m_T->Branch("e", &m_e);
@@ -143,11 +143,13 @@ int HCalJetPhiShift::Init(PHCompositeNode* /*topNode*/)
   m_T->Branch("vy", &m_vy);
   m_T->Branch("vz", &m_vz);
   m_T->Branch("id", &m_id);
+  m_T->Branch("nTow_in", &m_nTow_in);
   m_T->Branch("eta_in", &m_eta_in);
   m_T->Branch("phi_in", &m_phi_in);
   m_T->Branch("e_in", &m_e_in);
   m_T->Branch("ieta_in", &m_ieta_in);
   m_T->Branch("iphi_in", &m_iphi_in);
+  m_T->Branch("nTow_out", &m_nTow_out);
   m_T->Branch("eta_out", &m_eta_out);
   m_T->Branch("phi_out", &m_phi_out);
   m_T->Branch("e_out", &m_e_out);
@@ -180,7 +182,8 @@ int HCalJetPhiShift::process_event(PHCompositeNode *topNode)
 int HCalJetPhiShift::ResetEvent(PHCompositeNode *topNode)
 {
   //  std::cout << "HCalJetPhiShift::ResetEvent(PHCompositeNode *topNode) Resetting internal structures, prepare for next event" << std::endl;
-  m_nTowers = 0;
+  m_nTow_in = 0;
+  m_nTow_out = 0;
   m_id.clear();
   m_eta_in.clear();
   m_phi_in.clear();
@@ -297,6 +300,8 @@ int HCalJetPhiShift::FillTTree(PHCompositeNode *topNode)
   for (int i_chan=0; i_chan<n_channels_IH; ++i_chan) {
     tower_in = towersIH3->get_tower_at_channel(i_chan);
     if (tower_in->get_energy()>0.) {
+      ++m_nTow_in;
+      
       unsigned int calokey = towersIH3->encode_key(i_chan);
       int ieta = towersIH3->getTowerEtaBin(calokey);
       int iphi = towersIH3->getTowerPhiBin(calokey);
@@ -315,7 +320,7 @@ int HCalJetPhiShift::FillTTree(PHCompositeNode *topNode)
     // Outer HCal
     tower_out = towersOH3->get_tower_at_channel(i_chan);
     if (tower_out->get_energy()>0.) {
-      ++’m_nTowers;
+      ++m_nTow_out;
       
       unsigned int calokey = towersOH3->encode_key(i_chan);
       int ieta = towersOH3->getTowerEtaBin(calokey);
