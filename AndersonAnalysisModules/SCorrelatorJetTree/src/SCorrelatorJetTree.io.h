@@ -124,46 +124,6 @@ void SCorrelatorJetTree::SetHCalEtaRange(const pair<double, double> etaRange) {
 
 
 
-void SCorrelatorJetTree::SetJetMatchQtRange(const pair<double, double> qtRange) {
-
-  m_jetMatchQtRange[0] = qtRange.first;
-  m_jetMatchQtRange[1] = qtRange.second;
-  return;
-
-}  // end 'SetJetMatchQtRange(pair<double, double>)'
-
-
-
-void SCorrelatorJetTree::SetJetMatchDrRange(const pair<double, double> drRange) {
-
-  m_jetMatchDrRange[0] = drRange.first;
-  m_jetMatchDrRange[1] = drRange.second;
-  return;
-
-}  // end 'SetJetMatchDrRange(pair<double, double>)'
-
-
-
-void SCorrelatorJetTree::SetCstMatchQtRange(const pair<double, double> qtRange) {
-
-  m_cstMatchQtRange[0] = qtRange.first;
-  m_cstMatchQtRange[1] = qtRange.second;
-  return;
-
-}  // end 'SetJetMatchQtRange(pair<double, double>)'
-
-
-
-void SCorrelatorJetTree::SetCstMatchDrRange(const pair<double, double> drRange) {
-
-  m_cstMatchDrRange[0] = drRange.first;
-  m_cstMatchDrRange[1] = drRange.second;
-  return;
-
-}  // end 'SetJetMatchDrRange(pair<double, double>)'
-
-
-
 void SCorrelatorJetTree::SetJetAlgo(const ALGO jetAlgo) {
 
   switch (jetAlgo) {

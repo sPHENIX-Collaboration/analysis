@@ -9,6 +9,8 @@ There are two different commpiled macros written:
     The five directories, with the full_lists subdirectories, were made by hand. 
     Each full_lists directory was filled with dst file lists using the indicarted commands:
     (It is ok to not use sub a stupidly large number after -n; I just wanted all the events...)
+
+```
 .
 ├── A40_pp
 │   ├── full_lists
@@ -36,6 +38,7 @@ There are two different commpiled macros written:
         ├── dst_bbc_g4hit.list
         ├── dst_calo_cluster.list
         └── dst_truth_jet.list
+```
 
  CreateFileList.pl -n 10 -embed -nopileup -type 19
 
