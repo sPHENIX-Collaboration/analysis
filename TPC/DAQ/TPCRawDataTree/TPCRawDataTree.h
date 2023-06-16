@@ -55,6 +55,12 @@ class TPCRawDataTree : public SubsysReco
   TH1F *R1_hist = nullptr;
   TH1F *R2_hist = nullptr;
   TH1F *R3_hist = nullptr;
+  TH1F *TotalFEE = nullptr;
+  TH1F *TotalFEEsampa = nullptr;
+  TH1F *TotalFRAME = nullptr;
+  TH1F *checksumError_fee = nullptr;
+  TH1F *checksumError_feesampa = nullptr;
+  TH1F *checksumError_frame = nullptr;
   TH2F *R1_time = nullptr;
   TH2F *R2_time = nullptr;
   TH2F *R3_time = nullptr;
