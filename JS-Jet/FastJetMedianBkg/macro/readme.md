@@ -59,21 +59,21 @@ To run the fastjet::JetMedianBackgroundEstimator code on the pp embedded in HIJI
    and sometimes there are comments:
 
    Do this:
-   `[macros] $ cd ../src`
-   `[src] $ mkdir build`
-   `[src] $ cd build`
-   `[build] $ ../autogen.sh ${HOME}/install` # (or wherever your local install directory is located)
-   `[build] $ cd ../../macros/C40_ppemb/full_lists`
-   `[full_lists] $ CreateFileList.pl -n 10000000000 -embed -type 19 DST_TRUTH_JET DST_CALO_CLUSTER DST_BBC_G4HIT`
-   `[full_lists] $ cd ../..`
-   `[pp40_emb] $ ../make_inp_lists.py 2 2` # generates file `jobs_2x2` -- small sample to run over
-   `[pp40_emb] $ cd jobs_2x2`
-   `[jobs_2x2] $ ../test.sh` # runs a short job interactively and outputs `./output.root`
-   `[jobs_2x2] $ condor_submit ../condor.job` # submits the test jobs to condor.
-   `[jobs_2x2] $ cd ..`
-   `[pp40_emb] $ ../make_inp_lists.py 50` # creates a full run, with 50 input files per job
-   `[pp40_emb] $ cd jobs_50xAll` 
-   `[jobs_50xAll] $ condor_submit ../condor.job`
+ - `[macros] $ cd ../src`
+ - `[src] $ mkdir build`
+ - `[src] $ cd build`
+ - `[build] $ ../autogen.sh ${HOME}/install` # (or wherever your local install directory is located)
+ - `[build] $ cd ../../macros/C40_ppemb/full_lists`
+ - `[full_lists] $ CreateFileList.pl -n 10000000000 -embed -type 19 DST_TRUTH_JET DST_CALO_CLUSTER DST_BBC_G4HIT`
+ - `[full_lists] $ cd ../..`
+ - `[pp40_emb] $ ../make_inp_lists.py 2 2` # generates file `jobs_2x2` -- small sample to run over
+ - `[pp40_emb] $ cd jobs_2x2`
+ - `[jobs_2x2] $ ../test.sh` # runs a short job interactively and outputs `./output.root`
+ - `[jobs_2x2] $ condor_submit ../condor.job` # submits the test jobs to condor.
+ - `[jobs_2x2] $ cd ..`
+ - `[pp40_emb] $ ../make_inp_lists.py 50` # creates a full run, with 50 input files per job
+ - `[pp40_emb] $ cd jobs_50xAll` 
+ - `[jobs_50xAll] $ condor_submit ../condor.job`
 
    And that's it! You have run all the jobs.
 
