@@ -52,6 +52,11 @@ public:
   int Reset(PHCompositeNode * /*topNode*/) override;
   
   void Print(const std::string &what = "ALL") const override;
+  
+  void SetEventNumber(int event_number)
+  {
+    m_event = event_number;
+  };
     
 private:
   std::string m_outputFileName;
@@ -72,12 +77,18 @@ private:
 
   //! towers
   std::vector<int> m_id;
-  std::vector<float> m_eta_tow;
-  std::vector<float> m_phi_tow;
-  std::vector<float> m_e_tow;
-  std::vector<float> m_ieta_tow;
-  std::vector<float> m_iphi_tow;
+  std::vector<float> m_eta_in;
+  std::vector<float> m_phi_in;
+  std::vector<float> m_e_in;
+  std::vector<float> m_ieta_in;
+  std::vector<float> m_iphi_in;
   
+  std::vector<float> m_eta_out;
+  std::vector<float> m_phi_out;
+  std::vector<float> m_e_out;
+  std::vector<float> m_ieta_out;
+  std::vector<float> m_iphi_out;
+
   int FillTTree(PHCompositeNode *topNode);
 };
 

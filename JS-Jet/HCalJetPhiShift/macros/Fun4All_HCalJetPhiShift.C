@@ -48,7 +48,7 @@ int Fun4All_HCalJetPhiShift(
     const string &outdir = ".")
 {
 
-  const int skip = 0;
+  int event_number = (int)index*nEvents;
 
   //  string outputFile = "HCalJetPhiShift"
   string outputroot = outdir + "/HCalJetPhiShift";
@@ -60,18 +60,9 @@ int Fun4All_HCalJetPhiShift(
   
   Fun4AllServer *se = Fun4AllServer::instance();
   se->Verbosity(0);
-  
-  HCalJetPhiShift *caloPhiShift = new HCalJetPhiShift("caloPhiShift",outputFile);
-  
-//  caloPhiShift->setPtRange(5, 100);
-//  caloPhiShift->setEtaRange(-1.1, 1.1);
-//  caloPhiShift->doUnsub(1);
-//  caloPhiShift->doTruth(1);
-//  caloPhiShift->doSeeds(1);
-  se->registerSubsystem(caloPhiShift);
 
   //Opt to print all random seed used for debugging reproducibility. Comment out to reduce stdout prints.
-  PHRandomSeed::Verbosity(1);
+//  PHRandomSeed::Verbosity(1);
 
   // just if we set some flags somewhere in this macro
   recoConsts *rc = recoConsts::instance();
@@ -90,11 +81,11 @@ int Fun4All_HCalJetPhiShift(
   // Input options
   //===============
   // verbosity setting (applies to all input managers)
-  Input::VERBOSITY = 0;
+//  Input::VERBOSITY = 0;
 
   Input::SIMPLE = true;
   // Input::SIMPLE_NUMBER = 2; // if you need 2 of them
-  Input::SIMPLE_VERBOSITY = 1;
+//  Input::SIMPLE_VERBOSITY = 0;
 
   //-----------------
   // Initialize the selected Input/Event generation
@@ -120,7 +111,7 @@ int Fun4All_HCalJetPhiShift(
     INPUTGENERATOR::SimpleEventGenerator[0]->set_vertex_distribution_width(0.0, 0.0, 0.0);
     INPUTGENERATOR::SimpleEventGenerator[0]->set_eta_range(-1, 1);
     INPUTGENERATOR::SimpleEventGenerator[0]->set_phi_range(-M_PI, M_PI);
-    INPUTGENERATOR::SimpleEventGenerator[0]->set_pt_range(2., 30.);
+    INPUTGENERATOR::SimpleEventGenerator[0]->set_pt_range(1., 30.);
   }
 
   //--------------
@@ -503,8 +494,10 @@ int Fun4All_HCalJetPhiShift(
     cout << "it will run forever, so I just return without running anything" << endl;
     return 0;
   }
-
-  se->skip(skip);
+  
+  HCalJetPhiShift *caloPhiShift = new HCalJetPhiShift("caloPhiShift",outputFile);
+  caloPhiShift->SetEventNumber(event_number);
+  se->registerSubsystem(caloPhiShift);
   se->run(nEvents);
 
   //-----

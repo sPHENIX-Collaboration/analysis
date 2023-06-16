@@ -95,7 +95,7 @@ SubsysReco(name),
 m_outputFileName(outputFile),
 m_T(nullptr),
 m_event(-1),
-m_nTowers(-1),
+m_nTowers(0),
 m_eta(),
 m_phi(),
 m_e(),
@@ -104,11 +104,16 @@ m_vx(),
 m_vy(),
 m_vz(),
 m_id(),
-m_eta_tow(),
-m_phi_tow(),
-m_e_tow(),
-m_ieta_tow(),
-m_iphi_tow()
+m_eta_in(),
+m_phi_in(),
+m_e_in(),
+m_ieta_in(),
+m_iphi_in(),
+m_eta_out(),
+m_phi_out(),
+m_e_out(),
+m_ieta_out(),
+m_iphi_out()
 {
   std::cout << "HCalJetPhiShift::HCalJetPhiShift(const std::string &name) Calling ctor" << std::endl;
 }
@@ -138,12 +143,16 @@ int HCalJetPhiShift::Init(PHCompositeNode* /*topNode*/)
   m_T->Branch("vy", &m_vy);
   m_T->Branch("vz", &m_vz);
   m_T->Branch("id", &m_id);
-  m_T->Branch("eta_tow", &m_eta_tow);
-  m_T->Branch("phi_tow", &m_phi_tow);
-  m_T->Branch("e_tow", &m_e_tow);
-  m_T->Branch("ieta_tow", &m_ieta_tow);
-  m_T->Branch("iphi_tow", &m_iphi_tow);
-  // "event", "nTowers", "eta", "phi", "e", "pt", "vx", "vy", "vz", "id", "eta_tow", "phi_tow", "e_tow", "ieta_tow", "iphi_tow"
+  m_T->Branch("eta_in", &m_eta_in);
+  m_T->Branch("phi_in", &m_phi_in);
+  m_T->Branch("e_in", &m_e_in);
+  m_T->Branch("ieta_in", &m_ieta_in);
+  m_T->Branch("iphi_in", &m_iphi_in);
+  m_T->Branch("eta_out", &m_eta_out);
+  m_T->Branch("phi_out", &m_phi_out);
+  m_T->Branch("e_out", &m_e_out);
+  m_T->Branch("ieta_out", &m_ieta_out);
+  m_T->Branch("iphi_out", &m_iphi_out);
   
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -161,25 +170,6 @@ int HCalJetPhiShift::process_event(PHCompositeNode *topNode)
   //  std::cout << "HCalJetPhiShift::process_event(PHCompositeNode *topNode) Processing Event" << std::endl;
   ++m_event;
   
-  //calorimeter towers
-  TowerInfoContainer *towersIH3 = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALIN");
-  TowerInfoContainer *towersOH3 = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALOUT");
-  RawTowerGeomContainer *tower_geom = findNode::getClass<RawTowerGeomContainer>(topNode, "TOWERGEOM_HCALIN");
-  RawTowerGeomContainer *tower_geomOH = findNode::getClass<RawTowerGeomContainer>(topNode, "TOWERGEOM_HCALOUT");
-  if(!towersIH3 || !towersOH3){
-    std::cout
-    <<"MyJetAnalysis::process_event - Error can not find raw tower node "
-    << std::endl;
-    exit(-1);
-  }
-  
-  if(!tower_geom || !tower_geomOH){
-    std::cout
-    <<"MyJetAnalysis::process_event - Error can not find raw tower geometry "
-    << std::endl;
-    exit(-1);
-  }
-  
   //fill the tree
   FillTTree(topNode);
   
@@ -190,13 +180,19 @@ int HCalJetPhiShift::process_event(PHCompositeNode *topNode)
 int HCalJetPhiShift::ResetEvent(PHCompositeNode *topNode)
 {
   //  std::cout << "HCalJetPhiShift::ResetEvent(PHCompositeNode *topNode) Resetting internal structures, prepare for next event" << std::endl;
-  m_nTowers = -1;
+  m_nTowers = 0;
   m_id.clear();
-  m_eta_tow.clear();
-  m_phi_tow.clear();
-  m_e_tow.clear();
-  m_ieta_tow.clear();
-  m_iphi_tow.clear();
+  m_eta_in.clear();
+  m_phi_in.clear();
+  m_e_in.clear();
+  m_ieta_in.clear();
+  m_iphi_in.clear();
+  
+  m_eta_out.clear();
+  m_phi_out.clear();
+  m_e_out.clear();
+  m_ieta_out.clear();
+  m_iphi_out.clear();
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
@@ -234,8 +230,9 @@ void HCalJetPhiShift::Print(const std::string &what) const
 //____________________________________________________________________________..
 int HCalJetPhiShift::FillTTree(PHCompositeNode *topNode)
 {  
-  std::cout << "HCalJetPhiShift::FillTTree(PHCompositeNode *topNode)" << std::endl;
-
+//  std::cout << "HCalJetPhiShift::FillTTree(PHCompositeNode *topNode)" << std::endl;
+  
+  // fill truth info from nodetree
   PHG4TruthInfoContainer* truthinfo = findNode::getClass<PHG4TruthInfoContainer>(topNode, "G4TruthInfo");
   if (!truthinfo)
   {
@@ -248,8 +245,6 @@ int HCalJetPhiShift::FillTTree(PHCompositeNode *topNode)
        iter != range.second;
        ++iter)
   {
-    std::cout << 1 << std::endl;
-
     PHG4Particle* primary = iter->second;
     
     if (primary->get_e() < 0.)
@@ -274,7 +269,72 @@ int HCalJetPhiShift::FillTTree(PHCompositeNode *topNode)
     m_vx = gvertex->get_x();
     m_vy = gvertex->get_y();
     m_vz = gvertex->get_z();
-    m_T->Fill();
   }
+  
+  //calorimeter towers
+  TowerInfoContainer *towersIH3 = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALIN");
+  TowerInfoContainer *towersOH3 = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALOUT");
+  RawTowerGeomContainer *tower_geomIH = findNode::getClass<RawTowerGeomContainer>(topNode, "TOWERGEOM_HCALIN");
+  RawTowerGeomContainer *tower_geomOH = findNode::getClass<RawTowerGeomContainer>(topNode, "TOWERGEOM_HCALOUT");
+  if(!towersIH3 || !towersOH3){
+    std::cout
+    <<"MyJetAnalysis::process_event - Error cannot find raw tower node "
+    << std::endl;
+    exit(-1);
+  }
+  
+  if(!tower_geomIH || !tower_geomOH){
+    std::cout
+    <<"MyJetAnalysis::process_event - Error cannot find raw tower geometry "
+    << std::endl;
+    exit(-1);
+  }
+  
+  TowerInfo *tower_in, *tower_out;
+  const int n_channels_IH = (int) towersIH3->size();
+  
+  // Inner HCal
+  for (int i_chan=0; i_chan<n_channels_IH; ++i_chan) {
+    tower_in = towersIH3->get_tower_at_channel(i_chan);
+    if (tower_in->get_energy()>0.) {
+      unsigned int calokey = towersIH3->encode_key(i_chan);
+      int ieta = towersIH3->getTowerEtaBin(calokey);
+      int iphi = towersIH3->getTowerPhiBin(calokey);
+      
+      const RawTowerDefs::keytype key = RawTowerDefs::encode_towerid(RawTowerDefs::CalorimeterId::HCALIN, ieta, iphi);
+      float tower_phi = tower_geomIH->get_tower_geometry(key)->get_phi();
+      float tower_eta = tower_geomIH->get_tower_geometry(key)->get_eta();
+      
+      m_eta_in.push_back(tower_eta);
+      m_phi_in.push_back(tower_phi);
+      m_e_in.push_back(tower_in->get_energy());
+      m_ieta_in.push_back(ieta);
+      m_iphi_in.push_back(iphi);
+    }
+
+    // Outer HCal
+    tower_out = towersOH3->get_tower_at_channel(i_chan);
+    if (tower_out->get_energy()>0.) {
+      ++’m_nTowers;
+      
+      unsigned int calokey = towersOH3->encode_key(i_chan);
+      int ieta = towersOH3->getTowerEtaBin(calokey);
+      int iphi = towersOH3->getTowerPhiBin(calokey);
+      
+      const RawTowerDefs::keytype key = RawTowerDefs::encode_towerid(RawTowerDefs::CalorimeterId::HCALOUT, ieta, iphi);
+      float tower_phi = tower_geomOH->get_tower_geometry(key)->get_phi();
+      float tower_eta = tower_geomOH->get_tower_geometry(key)->get_eta();
+      
+      m_eta_out.push_back(tower_eta);
+      m_phi_out.push_back(tower_phi);
+      m_e_out.push_back(tower_out->get_energy());
+      m_ieta_out.push_back(ieta);
+      m_iphi_out.push_back(iphi);
+    }
+
+  }
+
+  m_T->Fill();
+
   return Fun4AllReturnCodes::EVENT_OK;
 }
