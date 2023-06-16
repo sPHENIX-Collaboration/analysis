@@ -58,9 +58,10 @@ class LEDTowerBuilder : public SubsysReco {
     int m_packet_low;
     int m_packet_high;
     int m_nsamples;
+    int m_nchannels;
     bool m_isdata;
     int m_event;
-  
+
     TTree *tOut;
     std::vector<float> m_adc;
     std::vector<float> m_ped;

@@ -74,13 +74,10 @@ def theLoop(iteration,dataPoint,scatter):
                 scatter.set_color('white')
                 scatter.set(alpha=1.0)
 
-        if(abs(effective_z)>=len_TPC+drift_speed_posz[2]):
+        elif(abs(effective_z)<len_TPC+2*drift_speed_posz[2]):
                 scatter._offsets3d = ([100], [-100], [100]) #to plot all points outside TPC at one point
                 scatter.set_color('black')
                 scatter.set_sizes([10])
-    else:
-        scatter._offsets3d = ([100], [-100], [100]) #clusters from event not yet taken place
-        scatter.set_color('black')
     return 0
     
 #Parallel processing
@@ -169,15 +166,15 @@ def animate_clusters(data,animation_name="Animated_clusters_TPC.mp4",save=False,
     
     # Setting the axes properties
     ax.set_xlim3d([-100, 100])
-    ax.set_xlabel('X',color='white',fontsize=7)
+    ax.set_xlabel('X (cm)',color='white',fontsize=7)
     ax.xaxis.set_tick_params(colors='white',labelsize=7)
     
     ax.set_ylim3d([-100, 100])
-    ax.set_ylabel('Y',color='white',fontsize=7)
+    ax.set_ylabel('Y (cm)',color='white',fontsize=7)
     ax.yaxis.set_tick_params(colors='white',labelsize=7)
 
     ax.set_zlim3d([-120, 120])
-    ax.set_zlabel('Z',color='white',fontsize=7)
+    ax.set_zlabel('Z (cm)',color='white',fontsize=7)
     ax.zaxis.set_tick_params(colors='white',labelsize=7)
 
     ax.set_title('Clusters drifting in TPC') #(time scaled by $2*10^{5}$)')
@@ -185,7 +182,7 @@ def animate_clusters(data,animation_name="Animated_clusters_TPC.mp4",save=False,
     fig_text_sPhenix=ax.text(-100,130,100,  'sPHENIX', size=10,fontweight='bold',style='italic',color='w',alpha=0.9)
     fig_text_TPC=ax.text(-60,135,70,  'TPC simulation', size=10,color='w',alpha=0.9)
     
-    fig_text_sPhenix=ax.text(-100,110,100,  'p+p, $\sqrt{s_{NN}}$ = 200 GeV, 4MHz', size=10,color='w',alpha=0.9)
+    fig_text_sPhenix=ax.text(-100,110,100,  'p+p, $\sqrt{s_{NN}}$ = 200 GeV 4MHz', size=10,color='w',alpha=0.9)
     
     
     # Providing the starting angle for the view
@@ -193,6 +190,7 @@ def animate_clusters(data,animation_name="Animated_clusters_TPC.mp4",save=False,
     
     # Initializing scatters
     scatters = [ ax.scatter([100],[-100],[100]) for i in range(data.shape[0])]
+    for i in range(data.shape[0]): scatters[i].set_color('black')
     print("Plot initialized")
     #start = timer()
     ani = animation.FuncAnimation(fig, animate_scatters, iterations, fargs=(data, scatters,fig_text,time_scale,iteration_time,start_iteration),
@@ -204,7 +202,7 @@ def animate_clusters(data,animation_name="Animated_clusters_TPC.mp4",save=False,
     #end = timer()
     #print("Time for process=")
     #print(end-start)
-    plt.show()
+    #plt.show()
 
 def read_cluster_pos(inFile):
     if(inFile.lower().endswith('.json')):
@@ -241,22 +239,25 @@ def read_cluster_pos(inFile):
         print("Reading data from root file")
         file = uproot.open(inFile)
         ntp_cluster_tree=file['ntp_cluster']
-        branches=ntp_cluster_tree.arrays(["x","y","z","event","gvt"])
+        branches=ntp_cluster_tree.arrays(["x","y","z","event","gvt","layer"])
         branches=branches[~np.isnan(branches.gvt)]
         branches=branches[((branches.x)**2+(branches.y)**2)>900]
-        #branches=branches[branches.event<2]
+        branches=branches[branches.layer>6]        #layers corresponding to TPC
+        branches=branches[branches.layer<55]       #layers corresponding to TPC
+        #branches=branches[branches.event>=75]
+        #branches=branches[branches.event<55]
 
         print("Reading clusters")
         x_y_z_clusters_run=np.array([])
         len_events=len(np.unique(branches.event))
+        len_events=200
         event_times=[0]
         event_times=np.append(event_times,np.random.poisson(mean_eventtime*1000,len_events-1))
-        print(event_times)
         event_times=np.cumsum(event_times,dtype=float)
         for cluster in range(len(branches)):
             gvt_event=event_times[int(branches[cluster]['event'])]
             gvt_event=gvt_event*(10**(-6))*time_scale #Time in milliseconds scaled for animation
-            gvt_event=gvt_event/(iteration_time) #20ms is the time per iterations so this is the time in terms of iterations
+            gvt_event=gvt_event/(iteration_time) #this is the time in terms of iterations
             x_y_z_clusters_track=np.array([[branches[cluster]['x'], branches[cluster]['y'], branches[cluster]['z'],branches[cluster]['event'],gvt_event]])
             if(cluster==0):
                 x_y_z_clusters_run=np.copy(x_y_z_clusters_track)
@@ -268,32 +269,34 @@ print("Generating data for animation")
 
 
 # Main Program starts from here
-
+np.random.seed(3)
 #User defined values
 time_scale=4.0*(10.0**5) #inverse of speed scale
 collision_rate=4.0 #MHz #Set fig_text_sPhenix in line 188
 mean_eventtime=1/collision_rate
+print("Mean event time (microseconds)=")
+print(mean_eventtime)
 TPC_drift_speed=8.0*(10.0**3) #Actual TPC drift speed =8cm/microsecond=8*10^3cm/millisecond
 iteration_time=100.0 #actual duration between frames in FuncAnimation
 len_TPC=105.0
 
 drift_speed_posz=np.array([0.0,0.0,TPC_drift_speed/time_scale*iteration_time,0.0,0.0])
 drift_speed_negz=np.array([0.0,0.0,-TPC_drift_speed/time_scale*iteration_time,0.0,0.0])
-print("drift_speed_posz(cm/iteration)=")
+print("Drift_speed_posz(cm/iteration)=")
 print(drift_speed_posz)
-print("drift_speed_negz(cm/iteration)=")
+print("Drift_speed_negz(cm/iteration)=")
 print(drift_speed_negz)
 
 #ANIMATION
-data=read_cluster_pos("Data_files/G4sPHENIX_g4svtx_eval.root")
+data=read_cluster_pos("G4sPHENIX_g4svtx_eval.root")
 
 # Number of iterations
 no_events=np.max(data[:,3])+1
 print("no_events=")
 print(no_events)
 
-iterations = int(no_events*mean_eventtime/1000*time_scale/iteration_time+len_TPC/drift_speed_posz[2])+5
-#iterations=10
+iterations = int((no_events-1)*mean_eventtime*time_scale/(iteration_time*1000)+len_TPC/drift_speed_posz[2])+5
+#iterations=20
 
 print("number of iterations=")
 print(iterations)
