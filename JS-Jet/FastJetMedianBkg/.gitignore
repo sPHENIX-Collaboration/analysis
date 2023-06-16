@@ -5,4 +5,8 @@
 *.pdf
 *.out
 junk
+**/arch
+**/_
+**/prior
+**/figs
 
