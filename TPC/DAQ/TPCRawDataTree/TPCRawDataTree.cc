@@ -82,6 +82,13 @@ int TPCRawDataTree::InitRun(PHCompositeNode *)
   R2_time = new TH2F("R2_time","R2_time",360,-0.5,359.5,1024,-0.5,1023.5);
   R3_time = new TH2F("R3_time","R3_time",360,-0.5,359.5,1024,-0.5,1023.5);
 
+  TotalFEE = new TH1F("TotalFEE", "Total FEE", 26, -0.5, 25.5);
+  TotalFEEsampa = new TH1F("TotalFEEsampa", "Total FEE + sampa", 26*8, -0.5, 25*8-.5);
+  TotalFRAME = new TH1F("TotalFRAME", "Total FRAME", 21, -0.5, 20.5);
+
+  checksumError_fee = new TH1F("FEEWithError", "FEE with Error", 26, -0.5, 25.5);
+  checksumError_feesampa = new TH1F("FEEsampaWithError", "FEE*8+sampa with Error", 26*8, -0.5, 25*8-.5);
+  checksumError_frame = new TH1F("FRAMEWithError", "FRAME with Error", 21, -0.5, 20.5);
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
@@ -179,6 +186,14 @@ int TPCRawDataTree::process_event(PHCompositeNode *topNode)
            fillHist->Fill(m_adcSamples[s]);
            fillHist2D->Fill(s,m_adcSamples[s]);
         }
+        else {
+          checksumError_fee->Fill(m_fee);
+          checksumError_feesampa->Fill((m_fee*8. + m_sampaAddress));
+          checksumError_frame->Fill(m_frame);
+        }
+        TotalFEE->Fill(m_fee);
+        TotalFEEsampa->Fill((m_fee*8. + m_sampaAddress));
+        TotalFRAME->Fill(m_frame);
       }
 
       m_SampleTree->Fill();
@@ -193,6 +208,14 @@ int TPCRawDataTree::process_event(PHCompositeNode *topNode)
 //____________________________________________________________________________..
 int TPCRawDataTree::End(PHCompositeNode * /*topNode*/)
 {
+  checksumError_fee->Divide(TotalFEE);
+  checksumError_feesampa->Divide(TotalFEEsampa);
+  checksumError_frame->Divide(TotalFRAME);
+  
+  TotalFEE->SetDirectory(0);
+  TotalFEEsampa->SetDirectory(0);
+  TotalFRAME->SetDirectory(0);
+  
   m_file->Write();
 
   std::cout << __PRETTY_FUNCTION__ << " : completed saving to " << m_file->GetName() << std::endl;
