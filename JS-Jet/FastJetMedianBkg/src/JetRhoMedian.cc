@@ -24,8 +24,8 @@
 #include <fun4all/Fun4AllServer.h>
 #include <fun4all/PHTFileServer.h>
 #include <g4eval/JetEvalStack.h>
-#include <g4jets/JetInput.h>
-#include <g4jets/JetMapv1.h>
+#include <jetbase/JetInput.h>
+#include <jetbase/JetMapv1.h>
 #include <iostream>
 #include <limits>
 #include <phool/PHCompositeNode.h>
@@ -338,16 +338,18 @@ int JetRhoMedian::process_event(PHCompositeNode* topNode)
     vector<fastjet::PseudoJet> jets 
       = sorted_by_pt( selection( clustSeq.inclusive_jets(m_ptRange.first) ));
     for (auto jet : jets) {
-      if (cnt_out < 4) {
-        cout << " jet("<<(cnt_out++)<<") pt("<<jet.perp()<<") " << endl;
-        auto cst = fastjet::sorted_by_pt(jet.constituents());
-        int i =0;
-        for (auto p : cst)  {
-          if (p.is_pure_ghost()) continue;
-          cout << Form(" %3i|%4.2f",i++,p.perp());
-          if (i%7==0) cout << endl;
+      if (Verbosity() >= JetRhoMedian::VERBOSITY_SOME) {
+        if (cnt_out < 4) {
+          cout << " jet("<<(cnt_out++)<<") pt("<<jet.perp()<<") " << endl;
+          auto cst = fastjet::sorted_by_pt(jet.constituents());
+          int i =0;
+          for (auto p : cst)  {
+            if (p.is_pure_ghost()) continue;
+            cout << Form(" %3i|%4.2f",i++,p.perp());
+            if (i%7==0) cout << endl;
+          }
+          cout << endl;
         }
-        cout << endl;
       }
 
       m_CaloJetEta .push_back( jet.eta()     );

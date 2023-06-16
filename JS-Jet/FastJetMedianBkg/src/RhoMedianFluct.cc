@@ -24,8 +24,8 @@
 #include <centrality/CentralityInfo.h>
 
 //#include <g4jets/JetMap.h>
-#include <g4jets/JetMapv1.h>
-#include <g4jets/JetInput.h>
+#include <jetbase/JetMapv1.h>
+#include <jetbase/JetInput.h>
 
 #include <TFile.h>
 #include <TH1F.h>
@@ -341,33 +341,25 @@ int RhoMedianFluct::process_event(PHCompositeNode* topNode)
         m_BGE_JetArea .push_back(jet.area() ) ;
       }
     }
-  /* cout << " fixme a6 " << endl; */
 
     // make the jets
-  /* cout << "   fixme C0 " << endl; */
     fastjet::ClusterSequenceArea clustSeq(*particles[K], jet_def_antikt, area_def);
-  /* cout << "   fixme C1 " << endl; */
     vector<fastjet::PseudoJet> jets = sorted_by_pt( selection( clustSeq.inclusive_jets(m_ptRange.first) ));
-  /* cout << "   fixme C2 " << endl; */
     bool embtrack_found = false;
-  /* cout << "   fixme C3 " << endl; */
     if (jets.size() >= 1) {
       for (auto& cst : jets[0].constituents()) {
-    /* cout << "   fixme C4 " << endl; */
         if (cst.user_index() == emb_index) {
           embtrack_found = true;
           break;
         }
       }
     }
-  /* cout << " fixme B0 " << endl; */
     if (embtrack_found) {
       *v_fluct[K] = (jets[0].pt() - jets[0].area()*m_rho) - m_embPt;
     } else {
       *v_embPt[K] = -200;
       *v_fluct[K] = -1000.; // this number is simply bad -- it shouldn't be used.
     }
-  /* cout << " fixme B1 " << endl; */
     for (auto jet : jets) {
       v_JetEta[K]        ->push_back( jet.eta()     );
       v_JetPhi[K]        ->push_back( jet.phi_std() );
@@ -375,10 +367,8 @@ int RhoMedianFluct::process_event(PHCompositeNode* topNode)
       v_JetPtLessRhoA[K] ->push_back( jet.pt() - m_rho_HCALIn * jet.area());
       v_JetArea[K]       ->push_back( jet.area());
     }
-  /* cout << " fixme B2 " << endl; */
   }
 
-  /* cout << " fixme a7 " << endl; */
   m_T->Fill();
   return Fun4AllReturnCodes::EVENT_OK;
 }

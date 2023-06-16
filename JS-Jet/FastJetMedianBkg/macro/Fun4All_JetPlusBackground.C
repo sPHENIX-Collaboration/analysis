@@ -8,9 +8,9 @@
 
 /* #include <GlobalVariables.C> */
 /* #include <G4_Global.C> */
-#include <g4jets/FastJetAlgo.h>
-#include <g4jets/JetReco.h>
-#include <g4jets/TowerJetInput.h>
+#include <jetbase/FastJetAlgo.h>
+#include <jetbase/JetReco.h>
+#include <jetbase/TowerJetInput.h>
 #include <g4jets/TruthJetInput.h>
 
 #include <g4centrality/PHG4CentralityReco.h>
@@ -23,6 +23,7 @@
 R__LOAD_LIBRARY(libfun4all.so)
 R__LOAD_LIBRARY(libg4centrality.so)
 R__LOAD_LIBRARY(libg4jets.so)
+R__LOAD_LIBRARY(libjetbase.so)
 R__LOAD_LIBRARY(libjetbackground.so)
 R__LOAD_LIBRARY(libjetplusbackground.so)
 
