@@ -15,7 +15,6 @@
 #include <calotreegen/caloTreeGen.h>
 
 R__LOAD_LIBRARY(libfun4all.so)
-R__LOAD_LIBRARY(libglobalvertex.so)
 R__LOAD_LIBRARY(libcaloTreeGen.so)
 #endif
 
@@ -25,10 +24,8 @@ void Fun4All_CaloTreeGen(const int nEvents = 0, const char *listFile = "fileList
   recoConsts *rc = recoConsts::instance();
 
   caloTreeGen *calo = new caloTreeGen(inName);
-  calo -> setOHCal(0);
-  calo -> setIHCal(0);
   calo -> setClusters(1);
-  
+  calo -> setFineClusters(1);
   se->registerSubsystem(calo);
 
   Fun4AllInputManager *in = new Fun4AllDstInputManager("DSTcalo");
@@ -40,6 +37,7 @@ void Fun4All_CaloTreeGen(const int nEvents = 0, const char *listFile = "fileList
   se->run(nEvents);
   se->End();
   se->PrintTimer();
+  std::cout << "All done!" << std::endl;
+
   gSystem->Exit(0);
-  return 0;
 }
