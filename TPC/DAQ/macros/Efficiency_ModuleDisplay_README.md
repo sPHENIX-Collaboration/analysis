@@ -1,7 +1,8 @@
 
 Here are the instructions for creating the polar efficiency plots for the TPC
+
 *** If you encounter any problems please reach out to Jennifer (jennifer.l.james@vanderbilt.edu) or Luke (luke.legnosky@stonybrook.edu)
---------------------------------------
+
 Go to sphenix/user/<username>/analysis/TPC/DAQ/TPCRawDataTree
 Make sure the TPCRawDataTree is able to run by doing the following command
   ./autogen.sh
@@ -30,6 +31,7 @@ The * will make it run over all the sectors of the TPC. If you want just one sec
 Depending on the number of events you run it will take some time (100 events is about 15 minutes on a good day)
 
 ---------------------------------------
+
 Move to the repository you put these files (If you'd like, you can move TPC_Channel_QA.C, SectorMap_Display.C, Efficiency_ModuleDisplay.C,
 and Noise_ModuleDisplay.C with you to avoid calling the whole path).
 
@@ -41,6 +43,7 @@ string runNumber = "pedestal-00010179";
   *** Make sure to keep TPC_ebdc at the end of the path ***
 
 Example: /sphenix/user/rosstom/test/testFiles/TPC_ebdc"+sectorNumber+"_"+runNumber+"-0000.prdf_TPCRawDataTree.root \
+
          ---> /sphenix/<username>/<Working Directory>/TPC_ebdc"+sectorNumber+"_"+runNumber+"-0000.prdf_TPCRawDataTree.root
 
 Run TPC_Channel_QA.C with,
@@ -54,6 +57,7 @@ Yay, now there's root files we can build from. Now go into SectorMap_Display.C a
   Change the variable runNumber to whichever run you're looking at and make sure to change the path in filename2 to the correct directory:
 
    Example: sphenix/u/jamesj3j3/workfest/sPHENIXProjects/outputfile_TPC_ebdc%s_pedestal-00010305.root \
+
             ---> sphenix/user/<username>/<Working Directory>/outputfile_TPC_ebdc%s_pedestal-00010305.root
 
   Make sure to change the outfile name to be the correct run number:

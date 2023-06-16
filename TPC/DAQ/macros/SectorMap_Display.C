@@ -11,11 +11,18 @@
 #include <iostream>
 
 // forward declaration
-void Ana( TNtuple*, TNtuple*, TNtuple*, char[2], double tot[24], double dead[24], int );
+void Ana( TNtuple*, TNtuple*, TNtuple*, char[2], int, double tot[24], double dead[24], int );
 
 void SectorMap_Display( )
 {
-  string runNumber = "pedestal-00010305";
+
+  char name[100];
+  int run_num;
+
+  cout << "Input run number: ";
+  cin >> run_num;
+
+  //string runNumber = "pedestal-00010616";
 
   const char* run_str[24] =  { "00", "01", "02", "03" ,"04", "05", "06", "07", "08", "09", "10" , "11", "12" , "13" , "14", "15" , "16" , "17", "18" , "19", "20", "21" , "22", "23"  };
   double tot[24] = {0};
@@ -24,7 +31,10 @@ void SectorMap_Display( )
   double tot_ult[24]={0};
   double dead_ult[24]={0};
 
-  TFile h_outfile10305("pedestal-10305-outfile.root", "RECREATE");
+  sprintf(name, "pedestal-%d-outfile.root", run_num);
+
+  //TFile h_outfile10305("pedestal-10616-outfile.root", "RECREATE");
+  TFile h_outfile10305(name, "RECREATE");
   TNtuple *h_Alive=new TNtuple("h_Alive","Location Tntuple Cuts","chan_id:fee_id:module_id:pedMean:pedStdi:sec_id");
   TNtuple *h_AliveTot=new TNtuple("h_AliveTot","Location Tntuple No Cuts","chan_id:fee_id:module_id:pedMean:pedStdi:sec_id");
   TNtuple *h_AliveNoise=new TNtuple("h_AliveNoise","Location Tntuple Cuts","chan_id:fee_id:module_id:pedMean:pedStdi:sec_id:noise");
@@ -34,7 +44,7 @@ void SectorMap_Display( )
     char run[2]; //define character string
     std::sprintf(run,run_str[i]); //print run_str values indexed at i<72
 
-    Ana( h_Alive, h_AliveTot,h_AliveNoise, run, tot, dead, i); //create Ana function
+    Ana( h_Alive, h_AliveTot,h_AliveNoise, run, run_num, tot, dead, i); //create Ana function
 
     tot_ult[i] += tot[i]; //find total channels
     dead_ult[i] += dead[i]; //find dead channels
@@ -49,10 +59,11 @@ void SectorMap_Display( )
 
 // Define Ana function 
 
-void Ana( TNtuple *Alive, TNtuple *AliveTot, TNtuple *AliveNoise,  char run[2] = "11",double tot[24]={0}, double dead[24]={0}, int j = 0)
+void Ana(TNtuple *Alive, TNtuple *AliveTot, TNtuple *AliveNoise, char run[2] = "11", int runNumber = 00000, double tot[24]={0}, double dead[24]={0}, int j = 0)
 { // Ana starts     
      
-  const TString filename2( Form( "/sphenix/u/jamesj3j3/workfest_Charles_mistake/sPHENIXProjects/outputfile_TPC_ebdc%s_pedestal-00010305.root", run) );
+  //const TString filename2( Form( "/sphenix/u/llegnosky/Livechan_Pedestals_Noise/outputfile_TPC_ebdc%s_pedestal-00010616.root", run) );
+  const TString filename2( Form( "/sphenix/u/llegnosky/Livechan_Pedestals_Noise/run_%d/outputfile_TPC_ebdc%s_pedestal-000%d.root", runNumber,run,runNumber) );
 
   TFile* infile2 = TFile::Open(filename2);
 
