@@ -8,25 +8,24 @@ AM_CPPFLAGS = \
 AM_LDFLAGS = \
   -L$(libdir) \
   -L$(OFFLINE_MAIN)/lib \
-  -L$(OFFLINE_MAIN)/lib64
+  -L$(OFFLINE_MAIN)/lib64 \
+  -lcalo_io \
+  -lCLHEP \
+  -lglobalvertex \
+  -lglobalvertex_io
 
 pkginclude_HEADERS = \
-  JetNconstituents.h
+  caloTreeGen.h
 
 lib_LTLIBRARIES = \
-  libJetNconstituents.la
+  libcaloTreeGen.la
 
-libJetNconstituents_la_SOURCES = \
-  JetNconstituents.cc
+libcaloTreeGen_la_SOURCES = \
+  caloTreeGen.cc
 
-libJetNconstituents_la_LIBADD = \
+libcaloTreeGen_la_LIBADD = \
   -lphool \
-  -lSubsysReco \
-  -lfun4all \
-  -lg4dst \
-  -lg4eval \
-  -lg4jets_io \
-  -lg4jets
+  -lSubsysReco
 
 BUILT_SOURCES = testexternals.cc
 
@@ -34,7 +33,7 @@ noinst_PROGRAMS = \
   testexternals
 
 testexternals_SOURCES = testexternals.cc
-testexternals_LDADD   = libJetNconstituents.la
+testexternals_LDADD   = libcaloTreeGen.la
 
 testexternals.cc:
 	echo "//*** this is a generated file. Do not commit, do not edit" > $@

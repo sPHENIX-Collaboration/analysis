@@ -9,6 +9,7 @@
 
 #include "TFile.h"
 #include "TNtuple.h"
+#include "TH1F.h"
 #include "TH1D.h"
 #include "TF1.h"
 #include "TLorentzVector.h"
@@ -65,6 +66,12 @@ int sPHAnalysis_calo::Init(PHCompositeNode *topNode)
   h_mult =  new TH1D("h_mult","",1000,0.,10000.);
   h_ecore =  new TH1D("h_ecore","",200,0.,20.);
 
+  char hname[99];
+  for(int i=0; i<256*96; i++) {
+    sprintf(hname,"h_pedestal_%d",i);
+    h_pedestal[i] = new TH1F(hname,hname,10000,-0.5,9999.5);
+  }
+
   _rng = new TRandom2();
   _rng->SetSeed(0);
 
@@ -86,10 +93,42 @@ int sPHAnalysis_calo::InitRun(PHCompositeNode *topNode)
 int sPHAnalysis_calo::process_event(PHCompositeNode *topNode)
 {
   if(_whattodo==0) {
-    return process_event_test(topNode);
+    return process_event_test(topNode); // simulation
+  } else if(_whattodo==1) {
+    return process_event_data(topNode); // data
   } else {
     cerr << "ERROR: wrong choice of what to do." << endl; return Fun4AllReturnCodes::ABORTRUN; 
   }
+}
+
+//======================================================================
+
+int sPHAnalysis_calo::process_event_data(PHCompositeNode *topNode) {
+  EventNumber++;
+  float tmp1[99];
+
+  cout<<"--------------------------- EventNumber = " << EventNumber-1 << endl;
+  if(EventNumber==1) topNode->print();
+
+  TowerInfoContainer* _towersCEMC = findNode::getClass<TowerInfoContainerv1>(topNode, "TOWERS_CEMC");
+  if (!_towersCEMC) { std::cerr<<"No TOWERS_CEMC Node"<<std::endl; return Fun4AllReturnCodes::ABORTEVENT; }
+  unsigned int ntowers = _towersCEMC->size();
+  cout << " # of towers = " << ntowers << endl;
+
+  for (unsigned int channel = 0; channel < ntowers; channel++)
+  {
+    TowerInfo *cemcinfo_raw = _towersCEMC->get_tower_at_channel(channel);
+    float raw_amplitude = cemcinfo_raw->get_energy();
+    float raw_time = cemcinfo_raw->get_time();
+    unsigned int key = _towersCEMC->encode_key(channel);
+    unsigned int iphi = _towersCEMC->getTowerPhiBin(key);
+    unsigned int ieta = _towersCEMC->getTowerEtaBin(key);
+    h_pedestal[channel]->Fill(raw_amplitude);
+    if(channel>0 && channel<20) cout << channel << " " << iphi << " " << ieta << " " << raw_amplitude << " " << raw_time << endl;
+  }
+
+  cout << "sPHAnalysis_calo::procedss_event_data() ended." << endl;
+  return Fun4AllReturnCodes::EVENT_OK;
 }
 
 //======================================================================
