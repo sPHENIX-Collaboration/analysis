@@ -21,7 +21,7 @@ libPi0MassAnalysis_la_SOURCES = \
 
 libPi0MassAnalysis_la_LIBADD = \
   -lphool \
-	-lg4vertex_io \
+	-lglobalvertex_io \
 	-lcalo_io \
 	-lCLHEP \
 	-lSubsysReco
