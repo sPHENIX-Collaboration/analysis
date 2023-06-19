@@ -34,6 +34,12 @@ TPCRawDataTree::TPCRawDataTree(const std::string &name)
 //____________________________________________________________________________..
 int TPCRawDataTree::InitRun(PHCompositeNode *)
 {
+  sectorNum = m_fname;
+  size_t pos = sectorNum.find("TPC_ebdc");
+  sectorNum.erase(sectorNum.begin(),sectorNum.begin()+pos+8);
+  sectorNum.erase(sectorNum.begin()+2,sectorNum.end());
+  if(sectorNum.at(0) == '0') sectorNum.erase(sectorNum.begin(),sectorNum.begin()+1);
+
   m_file = TFile::Open(m_fname.c_str(), "recreate");
   assert(m_file->IsOpen());
 
@@ -89,6 +95,24 @@ int TPCRawDataTree::InitRun(PHCompositeNode *)
   checksumError_fee = new TH1F("FEEWithError", "FEE with Error", 26, -0.5, 25.5);
   checksumError_feesampa = new TH1F("FEEsampaWithError", "FEE*8+sampa with Error", 26*8, -0.5, 25*8-.5);
   checksumError_frame = new TH1F("FRAMEWithError", "FRAME with Error", 21, -0.5, 20.5);
+ 
+  if (m_includeXYPos)
+  {
+    m_SampleTree->Branch("xPos", &m_xPos, "xPos/d");  
+    m_SampleTree->Branch("yPos", &m_yPos, "yPos/d");  
+
+    R1_map = new TTree("R1_map","TPC Sector Mapping for R1");
+    R2_map = new TTree("R2_map","TPC Sector Mapping for R1");
+    R3_map = new TTree("R3_map","TPC Sector Mapping for R1");
+
+    R1_map->ReadFile("/sphenix/u/rosstom/calibrations/TPC/Mapping/PadPlane/AutoPad-R1-RevA.sch.ChannelMapping.csv",
+               "Entry/I:Radius/I:Pad/I:U/I:G/I:Pin/C:PinColID/I:PinRowID/I:PadName/C:FEE/F:FEE_Connector/C:FEE_Chan/I:phi/D:x/D:y/D:PadX/D:PadY/D:PadR/D:PadPhi/D",',');
+    R2_map->ReadFile("/sphenix/u/rosstom/calibrations/TPC/Mapping/PadPlane/AutoPad-R2-RevA-Pads.sch.ChannelMapping.csv",
+               "Entry/I:Radius/I:Pad/I:U/I:G/I:Pin/C:PinColID/I:PinRowID/I:PadName/C:FEE/F:FEE_Connector/C:FEE_Chan/I:phi/D:x/D:y/D:PadX/D:PadY/D:PadR/D:PadPhi/D",',');
+    R3_map->ReadFile("/sphenix/u/rosstom/calibrations/TPC/Mapping/PadPlane/AutoPad-R3-RevA.sch.ChannelMapping.csv",
+               "Entry/I:Radius/I:Pad/I:U/I:G/I:Pin/C:PinColID/I:PinRowID/I:PadName/C:FEE/F:FEE_Connector/C:FEE_Chan/I:phi/D:x/D:y/D:PadX/D:PadY/D:PadR/D:PadPhi/D",',');  
+  }
+
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
@@ -195,7 +219,25 @@ int TPCRawDataTree::process_event(PHCompositeNode *topNode)
         TotalFEEsampa->Fill((m_fee*8. + m_sampaAddress));
         TotalFRAME->Fill(m_frame);
       }
-
+      if(m_includeXYPos)
+      {
+        TTree* mapping = nullptr;
+        if (mod_arr[m_fee] == 1)
+        {
+          mapping = R1_map;
+        }
+        else if (mod_arr[m_fee] == 2)
+        {
+          mapping = R2_map;
+        }
+        else if (mod_arr[m_fee] == 3)
+        {
+          mapping = R3_map;
+        }
+        TVector2 position = getBinPosition(stoi(sectorNum), m_fee, m_Channel, mapping);
+        m_xPos = position.X();
+        m_yPos = position.Y();
+      }
       m_SampleTree->Fill();
     }
 
@@ -224,4 +266,46 @@ int TPCRawDataTree::End(PHCompositeNode * /*topNode*/)
   m_file->Close();
 
   return Fun4AllReturnCodes::EVENT_OK;
+}
+
+TVector2 TPCRawDataTree::getBinPosition(int sectorNumber, int feeNumber, int channelNumber, TTree* segmentMapping)
+{
+  float slot[26] = {5,6,1,3,2,12,10,11,9,8,7,1,2,4,8,7,6,5,4,3,1,3,2,4,6,5};
+  //TTreeReader* myReader;
+  //myReader = new TTreeReader(segmentMapping);
+  
+  //TTreeReaderValue<Float_t> FEE(*myReader, "FEE");
+  //TTreeReaderValue<Int_t> FEE_Chan(*myReader, "FEE_Chan");
+  //TTreeReaderValue<Double_t> phi(*myReader, "phi");
+  //TTreeReaderValue<Double_t> PadR(*myReader, "PadR");
+
+  Float_t FEE;
+  Int_t FEE_Chan;
+  Double_t phi, PadR;
+ 
+  segmentMapping->SetBranchAddress("FEE",&FEE);
+  segmentMapping->SetBranchAddress("FEE_Chan",&FEE_Chan);
+  segmentMapping->SetBranchAddress("phi",&phi);
+  segmentMapping->SetBranchAddress("PadR",&PadR);
+
+  double phiOffset;
+  if (sectorNumber < 12) phiOffset = 2*M_PI*((double)sectorNumber/12.) - 2*M_PI*(1./12.)/2;
+  else phiOffset = 2*M_PI*(((double)sectorNumber-12.)/12.) - 2*M_PI*(1./12.)/2;
+
+  int nEntries = segmentMapping->GetEntries();
+  for(int l = 0; l < nEntries; l++)
+  {
+    segmentMapping->GetEntry(l);
+    if (slot[feeNumber]-1 == FEE && channelNumber == FEE_Chan)
+    {
+      double x = (PadR/10)*std::cos(phi+phiOffset);
+      double y = (PadR/10)*std::sin(phi+phiOffset);
+      TVector2 pos;
+      pos.SetX(x); pos.SetY(y);
+      return pos;
+    }
+  }
+  TVector2 pos;
+  pos.SetX(0); pos.SetY(0);
+  return pos;
 }

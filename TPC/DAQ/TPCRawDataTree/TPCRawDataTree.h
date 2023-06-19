@@ -8,6 +8,7 @@
 #include <stdint.h>
 #include <string>
 #include <vector>
+#include <TVector2.h>
 
 class PHCompositeNode;
 class TFile;
@@ -37,21 +38,33 @@ class TPCRawDataTree : public SubsysReco
   /// Called at the end of all processing.
   int End(PHCompositeNode *topNode) override;
 
+  TVector2 getBinPosition(int sectorNumber, int feeNumber, int channelNumber, TTree* segmentMapping);
+
+
   void AddPacket(int packet)
   {
     m_packets.push_back(packet);
   }
 
+  void includeXYPos(bool doInclude)
+  {
+    m_includeXYPos = doInclude;
+  }
+ 
  protected:
   //! which packet to decode
   std::vector<int> m_packets;
 
  private:
+  bool m_includeXYPos = false;
   std::string m_fname;
   TFile *m_file = nullptr;
   TTree *m_SampleTree = nullptr;
   TTree *m_PacketTree = nullptr;
   TTree *m_TaggerTree = nullptr;
+  TTree *R1_map = nullptr;
+  TTree *R2_map = nullptr;
+  TTree *R3_map = nullptr;
   TH1F *R1_hist = nullptr;
   TH1F *R2_hist = nullptr;
   TH1F *R3_hist = nullptr;
@@ -65,6 +78,7 @@ class TPCRawDataTree : public SubsysReco
   TH2F *R2_time = nullptr;
   TH2F *R3_time = nullptr;
 
+  std::string sectorNum;
 
   int m_packet = 0;
   int m_frame = 0;
@@ -78,6 +92,8 @@ class TPCRawDataTree : public SubsysReco
   int m_BCO = 0;
   int m_checksum = 0;
   int m_checksumError = 0;
+  double m_xPos = 0.;
+  double m_yPos = 0.;
 
   int m_nTaggerInFrame = 0;
   uint16_t m_tagger_type = 0;
@@ -93,6 +109,8 @@ class TPCRawDataTree : public SubsysReco
   uint64_t m_last_lvl1_bco = 0;
 
   std::vector<unsigned short> m_adcSamples;
+
+  int mod_arr[26] = {2,2,1,1,1,3,3,3,3,3,3,2,2,1,2,2,1,1,2,2,3,3,3,3,3,3};
 };
 
 #endif  // TPCRawDataTree_H
