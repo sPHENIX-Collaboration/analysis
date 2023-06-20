@@ -10,7 +10,6 @@
 #include <stdint.h>
 #include <string>
 #include <vector>
-#include <TVector2.h>
 
 class PHCompositeNode;
 class TFile;
@@ -39,9 +38,6 @@ class TPCRawDataTree : public SubsysReco
 
   /// Called at the end of all processing.
   int End(PHCompositeNode *topNode) override;
-
-  TVector2 getBinPosition(int sectorNumber, int feeNumber, int channelNumber, TTree* segmentMapping);
-
 
   void AddPacket(int packet)
   {
@@ -116,7 +112,6 @@ class TPCRawDataTree : public SubsysReco
 
   int FEE_R[26]={2, 2, 1, 1, 1, 3, 3, 3, 3, 3, 3, 2, 2, 1, 2, 2, 1, 1, 2, 2, 3, 3, 3, 3, 3, 3};
   int FEE_map[26]={3, 2, 5, 3, 4, 0, 2, 1, 3, 4, 5, 7, 6, 2, 0, 1, 0, 1, 4, 5, 11, 9, 10, 8, 6, 7};
-  int pads_per_sector[3] = {96, 128, 192};
 };
 
 #endif  // TPCRawDataTree_H
