@@ -5,6 +5,8 @@
 
 #include <fun4all/SubsysReco.h>
 
+#include <tpc/TpcMap.h>
+
 #include <stdint.h>
 #include <string>
 #include <vector>
@@ -54,17 +56,18 @@ class TPCRawDataTree : public SubsysReco
  protected:
   //! which packet to decode
   std::vector<int> m_packets;
+  TpcMap M;
 
  private:
-  bool m_includeXYPos = false;
+  bool m_includeXYPos = true;
   std::string m_fname;
   TFile *m_file = nullptr;
   TTree *m_SampleTree = nullptr;
   TTree *m_PacketTree = nullptr;
   TTree *m_TaggerTree = nullptr;
-  TTree *R1_map = nullptr;
-  TTree *R2_map = nullptr;
-  TTree *R3_map = nullptr;
+  //TTree *R1_map = nullptr;
+  //TTree *R2_map = nullptr;
+  //TTree *R3_map = nullptr;
   TH1F *R1_hist = nullptr;
   TH1F *R2_hist = nullptr;
   TH1F *R3_hist = nullptr;
@@ -92,6 +95,7 @@ class TPCRawDataTree : public SubsysReco
   int m_BCO = 0;
   int m_checksum = 0;
   int m_checksumError = 0;
+  int side = 0;
   double m_xPos = 0.;
   double m_yPos = 0.;
 
@@ -110,7 +114,9 @@ class TPCRawDataTree : public SubsysReco
 
   std::vector<unsigned short> m_adcSamples;
 
-  int mod_arr[26] = {2,2,1,1,1,3,3,3,3,3,3,2,2,1,2,2,1,1,2,2,3,3,3,3,3,3};
+  int FEE_R[26]={2, 2, 1, 1, 1, 3, 3, 3, 3, 3, 3, 2, 2, 1, 2, 2, 1, 1, 2, 2, 3, 3, 3, 3, 3, 3};
+  int FEE_map[26]={3, 2, 5, 3, 4, 0, 2, 1, 3, 4, 5, 7, 6, 2, 0, 1, 0, 1, 4, 5, 11, 9, 10, 8, 6, 7};
+  int pads_per_sector[3] = {96, 128, 192};
 };
 
 #endif  // TPCRawDataTree_H
