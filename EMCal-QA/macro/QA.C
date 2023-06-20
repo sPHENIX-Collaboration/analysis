@@ -38,6 +38,7 @@ namespace myAnalysis {
     // 2D correlations
     TH2F* h2clusterPhiVsEta;
     TH2F* h2clusterPhiVsEta_2;
+    TH2F* h2clusterPhiVsEta_3;
     TH2F* h2clusterChisqVsE;
     TH2F* h2clusterChisqVsE_2;
     TH2F* h2clusterE_CalibVsE;
@@ -93,8 +94,9 @@ void myAnalysis::init(const string& inputFile) {
     // QA with cuts
     hclusterE_2         = new TH1F("hclusterE_2", "Cluster Energy (#chi^{2} < 10); ADC; Counts", e_bins, e_min, e_max);
     hclusterChisq_2     = new TH1F("hclusterChisq_2", "Cluster #chi^{2}; #chi^{2}; Counts", 100, 0, 100);
-    hclusterChisq_3     = new TH1F("hclusterChisq_3", "Cluster #chi^{2} (500 <= ADC < 16000); #chi^{2}; Counts", 100, 0, 100);
-    h2clusterPhiVsEta_2 = new TH2F("h2clusterPhiVsEta_2", "Cluster (500 <= ADC < 16000 and #chi^{2} < 10); #eta; #phi", eta_bins, eta_min, eta_max, phi_bins, phi_min, phi_max);
+    hclusterChisq_3     = new TH1F("hclusterChisq_3", "Cluster #chi^{2} (500 #leq ADC < 16000); #chi^{2}; Counts", 100, 0, 100);
+    h2clusterPhiVsEta_2 = new TH2F("h2clusterPhiVsEta_2", "Cluster (500 #leq ADC < 16000 and #chi^{2} < 10); #eta; #phi", eta_bins, eta_min, eta_max, phi_bins, phi_min, phi_max);
+    h2clusterPhiVsEta_3 = new TH2F("h2clusterPhiVsEta_3", "Cluster (8500 #leq ADC < 9500 and #chi^{2} < 10); #eta; #phi", 96, eta_min, eta_max, 256, phi_min, phi_max);
 
     cout << "Finish Init" << endl;
 }
@@ -166,6 +168,10 @@ void myAnalysis::analyze(UInt_t nevents) {
             if(clusterChisq_val < 10 && clusterE_val >= 500 && clusterE_val < 16000) {
                 h2clusterPhiVsEta_2->Fill(clusterEta_val, clusterPhi_val);
             }
+
+            if(clusterChisq_val < 10 && clusterE_val >= 8.5e3 && clusterE_val < 9.5e3) {
+                h2clusterPhiVsEta_3->Fill(clusterEta_val, clusterPhi_val);
+            }
         }
     }
 
@@ -192,6 +198,7 @@ void myAnalysis::finalize(const string& outputFile) {
     h2clusterChisqVsE_2->Write();
 
     h2clusterPhiVsEta_2->Write();
+    h2clusterPhiVsEta_3->Write();
     hclusterE_2->Write();
     hclusterChisq_2->Write();
     hclusterChisq_3->Write();
