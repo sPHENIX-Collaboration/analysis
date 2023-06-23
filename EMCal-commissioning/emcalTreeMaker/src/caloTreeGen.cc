@@ -114,8 +114,7 @@ int caloTreeGen::process_event(PHCompositeNode *topNode)
   
   //tower information
   TowerInfoContainer *emcTowerContainer;
-  if(doClusters)emcTowerContainer = findNode::getClass<TowerInfoContainer>(topNode,"TOWERINFO_CALIB_CEMC");
-  else emcTowerContainer =  findNode::getClass<TowerInfoContainer>(topNode,"TOWERS_CEMC");
+  emcTowerContainer = findNode::getClass<TowerInfoContainer>(topNode,"TOWERINFO_CALIB_CEMC");
   if(!emcTowerContainer)
     {
       std::cout << PHWHERE << "caloTreeGen::process_event Could not find node TOWERS_CEMC"  << std::endl;
