@@ -1,5 +1,17 @@
+#include <trackbase/ActsGeometry.h>
 
+bool writer = true;
 
+const int nlayers = 7;
+
+namespace 
+{
+  template<class T> inline constexpr T square(const T& x) { return x*x;}
+  template<class T> inline constexpr T get_r(const T&x ,const T&y)
+  { return std::sqrt(square(x)+square(y)); }
+  inline const double get_angle(const Acts::Vector3&x, const Acts::Vector3& y)
+  { return std::acos(x.dot(y)/(x.norm() * y.norm())); }
+}
 
 void AnalyzeResiduals(std::string infile, const bool use_helical = false)
 {
@@ -24,6 +36,29 @@ void AnalyzeResiduals(std::string infile, const bool use_helical = false)
   std::vector<int>* cluslayer=0;
   std::vector<int>* clussize=0;
   std::vector<uint32_t>* clushitsetkey = 0;
+
+  std::vector<float>* idealsurfcenterx=0;
+  std::vector<float>* idealsurfcentery=0;
+  std::vector<float>* idealsurfcenterz=0;
+  std::vector<float>* idealsurfnormx=0;
+  std::vector<float>* idealsurfnormy=0;
+  std::vector<float>* idealsurfnormz=0;
+  std::vector<float>* missurfcenterx=0;
+  std::vector<float>* missurfcentery=0;
+  std::vector<float>* missurfcenterz=0;
+  std::vector<float>* missurfnormx=0;
+  std::vector<float>* missurfnormy=0;
+  std::vector<float>* missurfnormz=0;
+  std::vector<float>* clusgxideal=0;
+  std::vector<float>* clusgyideal=0;
+  std::vector<float>* clusgzideal=0;
+  std::vector<float>* missurfalpha=0;
+  std::vector<float>* missurfbeta=0;
+  std::vector<float>* missurfgamma=0;
+  std::vector<float>* idealsurfalpha=0;
+  std::vector<float>* idealsurfbeta=0;
+  std::vector<float>* idealsurfgamma=0;
+
   std::vector<float>* statelx=0;
   std::vector<float>* statelz=0;
   std::vector<float>* stateelx=0;
@@ -90,6 +125,28 @@ void AnalyzeResiduals(std::string infile, const bool use_helical = false)
   tree->SetBranchAddress("clusgz",&clusgz);
   tree->SetBranchAddress("cluslayer",&cluslayer);
   tree->SetBranchAddress("clussize",&clussize);
+  tree->SetBranchAddress("idealsurfcenterx",&idealsurfcenterx);
+  tree->SetBranchAddress("idealsurfcentery",&idealsurfcentery);
+  tree->SetBranchAddress("idealsurfcenterz",&idealsurfcenterz);
+  tree->SetBranchAddress("missurfcenterx",&missurfcenterx);
+  tree->SetBranchAddress("missurfcentery",&missurfcentery);
+  tree->SetBranchAddress("missurfcenterz",&missurfcenterz);
+  tree->SetBranchAddress("idealsurfnormx",&idealsurfnormx);
+  tree->SetBranchAddress("idealsurfnormy",&idealsurfnormy);
+  tree->SetBranchAddress("idealsurfnormz",&idealsurfnormz);
+  tree->SetBranchAddress("missurfnormx",&missurfnormx);
+  tree->SetBranchAddress("missurfnormy",&missurfnormy);
+  tree->SetBranchAddress("missurfnormz",&missurfnormz);
+  tree->SetBranchAddress("clusgxideal",&clusgxideal);
+  tree->SetBranchAddress("clusgyideal", &clusgyideal);
+  tree->SetBranchAddress("clusgzideal",&clusgzideal);
+  tree->SetBranchAddress("missurfalpha",&missurfalpha);
+  tree->SetBranchAddress("missurfbeta",&missurfbeta);
+  tree->SetBranchAddress("missurfgamma",&missurfgamma);
+  tree->SetBranchAddress("idealsurfalpha",&idealsurfalpha);
+  tree->SetBranchAddress("idealsurfbeta",&idealsurfbeta);
+  tree->SetBranchAddress("idealsurfgamma",&idealsurfgamma);
+
   tree->SetBranchAddress("statelx",&statelx);
    tree->SetBranchAddress("statelz",&statelz);
   tree->SetBranchAddress("stateelx",&stateelx);
@@ -138,14 +195,28 @@ void AnalyzeResiduals(std::string infile, const bool use_helical = false)
   TH2 *h_residualstatepulllayerz = new TH2F("residualstatepulllayerz",";z residual / state error;layer",400,-10,10,60,0,60);
 
   // as a function of layer
-  const int nlayers = 57;
   TH2 *h_residualxclusr[nlayers];
   TH2 *h_residualxclusphi[nlayers];
+  TH2 *h_residualgxclusphi[nlayers];
+  TH2 *h_residualgyclusphi[nlayers];
+  TH2 *h_residualgzclusphi[nlayers];
   TH2 *h_residualxclusz[nlayers];
   TH2 *h_residualzclusr[nlayers];
   TH2 *h_residualzclusphi[nlayers];
   TH2 *h_residualzclusz[nlayers];
-  
+  TH2 *h_surfradiusdiffvsphi[nlayers];
+  TH2 *h_surfxdiffvsphi[nlayers];
+  TH2 *h_surfydiffvsphi[nlayers];
+  TH2 *h_surfzdiffvsphi[nlayers];
+  TH2 *h_surfadiffvsphi[nlayers];
+  TH2 *h_surfbdiffvsphi[nlayers];
+  TH2 *h_surfgdiffvsphi[nlayers];
+  TH2 *h_surfadiffvsz[nlayers];
+  TH2 *h_surfbdiffvsz[nlayers];
+  TH2 *h_surfgdiffvsz[nlayers];
+  TH3 *h_residualxclusphiz[nlayers];
+  TH3 *h_residualzclusphiz[nlayers];
+
   for(int i=0; i<nlayers; i++)
     {
       int zlow = -105;
@@ -160,6 +231,65 @@ void AnalyzeResiduals(std::string infile, const bool use_helical = false)
       } 
       
       ostringstream name;
+      name.str("");
+      name << "surfadiffvsphi_"<<i;
+      h_surfadiffvsphi[i] = new TH2F(name.str().c_str(),";Ideal #phi_{surf} [deg]; Ideal - misaligned angle to x axis [mrad]",120,-180,180,100,-10,10);
+      
+      name.str("");
+      name << "surfbdiffvsphi_"<<i;
+      h_surfbdiffvsphi[i] = new TH2F(name.str().c_str(),";Ideal #phi_{surf} [deg]; Ideal - misaligned angle to y axis [mrad]",120,-180,180,100,-10,10);
+
+name.str("");
+      name << "surfgdiffvsphi_"<<i;
+      h_surfgdiffvsphi[i] = new TH2F(name.str().c_str(),";Ideal #phi_{surf} [deg]; Ideal - misaligned angle to z axis [mrad]",120,-180,180,100,-10,10);
+    
+      name.str("");
+      name << "surfadiffvsz_"<<i;
+      h_surfadiffvsz[i] = new TH2F(name.str().c_str(),";Ideal z_{surf} [mm]; Ideal - misaligned angle to x axis [mrad]",120,-180,180,100,-10,10);
+      
+      name.str("");
+      name << "surfbdiffvsz_"<<i;
+      h_surfbdiffvsz[i] = new TH2F(name.str().c_str(),";Ideal z_{surf} [mm]; Ideal - misaligned angle to y axis [mrad]",120,-180,180,100,-10,10);
+
+      name.str("");
+      name << "surfgdiffvsz_"<<i;
+      h_surfgdiffvsz[i] = new TH2F(name.str().c_str(),";Ideal z_{surf} [deg]; Ideal - misaligned angle to z axis [mrad]",120,-180,180,100,-10,10);
+
+      name.str("");
+      name << "surfradiusdiffvsphi_"<<i;
+      h_surfradiusdiffvsphi[i] = new TH2F(name.str().c_str(),";Ideal #phi_{surf} [deg]; Ideal radius - misalign radius [mm]",120,-180,180,1000,-1,1);
+
+      name.str("");
+      name << "surfxdiffvsphi_"<<i;
+      h_surfxdiffvsphi[i] = new TH2F(name.str().c_str(),";Ideal #phi_{surf} [deg]; Misalign x - ideal x [mm]",120,-180,180,1000,-1,1);
+      
+      name.str("");
+      name << "surfydiffvsphi_"<<i;
+      h_surfydiffvsphi[i] = new TH2F(name.str().c_str(),";Ideal #phi_{surf} [deg]; Misalign y - ideal y [mm]", 120,-180,180,1000,-1,1);
+
+      name.str("");
+      name << "surfzdiffvsphi_"<<i;
+      h_surfzdiffvsphi[i] = new TH2F(name.str().c_str(), ";Ideal #phi_{surf} [deg]; Misalign z - ideal z [mm]",120,-180,180,2500,-10,10);
+
+      name.str("");
+      name << "residualxclusphiz_"<<i;
+      //h_residualxclusphiz[i] = new TH3F(name.str().c_str(),";#phi [deg]; z [mm]; x residual [mm]",180,-180,180,100,-200,200,1000,-1,1);
+      name.str("");
+      name << "residualzclusphiz_"<<i;
+      //h_residualzclusphiz[i] = new TH3F(name.str().c_str(),";#phi [deg]; z[mm]; z residual [mm]",180,-180,180,100,-200,200,1000,-1,1);
+
+      name.str("");
+      name<<"residualgxclusphi_"<<i;
+      h_residualgxclusphi[i] = new TH2F(name.str().c_str(),";#phi [deg]; x_{glob} residual [mm]", 180,-180,180,2000,-1,1);
+      
+      name.str("");
+      name << "residualgyclusphi_"<<i;
+      h_residualgyclusphi[i] = new TH2F(name.str().c_str(),";#phi [deg]; y_{glob} residual [mm]",180,-180,180,2000,-1,1);
+      
+      name.str("");
+      name << "residualgzclusphi_"<<i;
+      h_residualgzclusphi[i] = new TH2F(name.str().c_str(),";#phi [deg]; z_{glob} residual [mm]",180,-180,180,2000,-10,10);
+
       name.str("");
       name << "residualxclusr_"<<i;
       h_residualxclusr[i] = new TH2F(name.str().c_str(),";r [cm]; x residual [mm]",
@@ -186,104 +316,141 @@ void AnalyzeResiduals(std::string infile, const bool use_helical = false)
 				     210,zlow,zhigh,2000,-1,1);
     }
 
-  TH2D *h_residualhitsetkeyx = new TH2D("residualhitsetkeyx",";x residual [mm];hitsetkey",1000,-1,1,120000,0,120000);
-  TH2D *h_residualhitsetkeyz = new TH2D("residualhitsetkeyz",";z residual [mm];hitsetkey",1000,-1,1,120000,0,120000);
-  TH2D *h_residualcluspullhitsetkeyx = new TH2D("residualcluspullhitsetkeyx",";x residual / clus error;hitsetkey",400,-10,10,120000,0,120000);
-  TH2D *h_residualcluspullhitsetkeyz = new TH2D("residualcluspullhitsetkeyz",";z residual / clus error;hitsetkey",400,-10,10,120000,0,120000);
-  TH2D *h_residualstatepullhitsetkeyx = new TH2D("residualstatepullhitsetkeyx",";x residual / state error;hitsetkey",400,-10,10,120000,0,120000);
-  TH2D *h_residualstatepullhitsetkeyz = new TH2D("residualstatepullhitsetkeyz",";z residual / state error;hitsetkey",400,-10,10,120000,0,120000);
 
-  TH2D *h_xresidualgdx = new TH2D("xresidualgdx",";dx_{resid}/dx_{glob};x_{resid} [mm]",1000,-1.3,1.3,1000,-1,1);
-  TH2D *h_xresidualgdy = new TH2D("xresidualgdy",";dx_{resid}/dy_{glob};x_{resid} [mm]",1000,-1.3,1.3,1000,-1,1);
-  TH2D *h_xresidualgdz = new TH2D("xresidualgdz",";dx_{resid}/dz_{glob};x_{resid} [mm]",1000,-0.001,0.001,1000,-1,1);
-  TH2D *h_xresidualdalpha = new TH2D("xresidualdalpha",";dx_{resid}/d#alpha;x_{resid} [mm]",1000,-600,600,1000,-1,1);
-  TH2D *h_xresidualdbeta = new TH2D("xresidualdbeta",";dx_{resid}/d#beta;x_{resid} [mm]",1000,-600,600,1000,-1,1);
-  TH2D *h_xresidualdgamma = new TH2D("xresidualdgamma",";dx_{resid}/d#gamma;x_{resid} [mm]",1000,-20,20,1000,-1,1);
-  TH2D *h_xresidualdd0 = new TH2D("xresidualdd0",";dx_{resid}/dd_{0}; x_{resid} [mm]",1000,0.9,1.1,1000,-1,1);
-  TH2D *h_xresidualdz0 = new TH2D("xresidualdz0",";dx_{resid}/dz_{0}; x_{resid} [mm]",1000,-0.002,0.002,1000,-1,1);
-  TH2D *h_xresidualdphi = new TH2D("xresidualdphi",";dx_{resid}/d#phi; x_{resid} [mm]", 1000,-100,100,1000,-1,1);
-  TH2D *h_xresidualdtheta = new TH2D("xresidualdtheta",";dx_{resid}/d#theta; x_{resid} [mm]",1000,-10,10,1000,-1,1);
-  TH2D *h_xresidualdqop = new TH2D("xresidualdqop",";dx_{resid}/dqop; x_{resid} [mm]",1000,-20,10,1000,-1,1);
+
+  TH2F *h_residualhitsetkeyx = new TH2F("residualhitsetkeyx",";x residual [mm];hitsetkey",1000,-1,1,1200,0,1200);
+  TH2F *h_residualhitsetkeyz = new TH2F("residualhitsetkeyz",";z residual [mm];hitsetkey",1000,-1,1,1200,0,1200);
+  TH2F *h_residualcluspullhitsetkeyx = new TH2F("residualcluspullhitsetkeyx",";x residual / clus error;hitsetkey",400,-10,10,1200,0,1200);
+  TH2F *h_residualcluspullhitsetkeyz = new TH2F("residualcluspullhitsetkeyz",";z residual / clus error;hitsetkey",400,-10,10,1200,0,1200);
+  TH2F *h_residualstatepullhitsetkeyx = new TH2F("residualstatepullhitsetkeyx",";x residual / state error;hitsetkey",400,-10,10,1200,0,1200);
+  TH2F *h_residualstatepullhitsetkeyz = new TH2F("residualstatepullhitsetkeyz",";z residual / state error;hitsetkey",400,-10,10,1200,0,1200);
+
+  TH2F *h_xresidualgdx = new TH2F("xresidualgdx",";dx_{resid}/dx_{glob};x_{resid} [mm]",1000,-1.3,1.3,1000,-1,1);
+  TH2F *h_xresidualgdy = new TH2F("xresidualgdy",";dx_{resid}/dy_{glob};x_{resid} [mm]",1000,-1.3,1.3,1000,-1,1);
+  TH2F *h_xresidualgdz = new TH2F("xresidualgdz",";dx_{resid}/dz_{glob};x_{resid} [mm]",1000,-0.001,0.001,1000,-1,1);
+  TH2F *h_xresidualdalpha = new TH2F("xresidualdalpha",";dx_{resid}/d#alpha;x_{resid} [mm]",1000,-600,600,1000,-1,1);
+  TH2F *h_xresidualdbeta = new TH2F("xresidualdbeta",";dx_{resid}/d#beta;x_{resid} [mm]",1000,-600,600,1000,-1,1);
+  TH2F *h_xresidualdgamma = new TH2F("xresidualdgamma",";dx_{resid}/d#gamma;x_{resid} [mm]",1000,-20,20,1000,-1,1);
+  TH2F *h_xresidualdd0 = new TH2F("xresidualdd0",";dx_{resid}/dd_{0}; x_{resid} [mm]",1000,0.9,1.1,1000,-1,1);
+  TH2F *h_xresidualdz0 = new TH2F("xresidualdz0",";dx_{resid}/dz_{0}; x_{resid} [mm]",1000,-0.002,0.002,1000,-1,1);
+  TH2F *h_xresidualdphi = new TH2F("xresidualdphi",";dx_{resid}/d#phi; x_{resid} [mm]", 1000,-100,100,1000,-1,1);
+  TH2F *h_xresidualdtheta = new TH2F("xresidualdtheta",";dx_{resid}/d#theta; x_{resid} [mm]",1000,-10,10,1000,-1,1);
+  TH2F *h_xresidualdqop = new TH2F("xresidualdqop",";dx_{resid}/dqop; x_{resid} [mm]",1000,-20,10,1000,-1,1);
   
 
-  TH2D *h_zresidualgdx = new TH2D("zresidualgdx",";dz_{resid}/dx_{glob};z_{resid} [mm]",1000,-1.3,1.3,1000,-1,1);
-  TH2D *h_zresidualgdy = new TH2D("zresidualgdy",";dz_{resid}/dy_{glob};z_{resid} [mm]",1000,-1.3,1.3,1000,-1,1);
-  TH2D *h_zresidualgdz = new TH2D("zresidualgdz",";dz_{resid}/dz_{glob};z_{resid} [mm]",1000,-1.3,1.3,1000,-1,1);
-  TH2D *h_zresidualdalpha = new TH2D("zresidualdalpha",";dz_{resid}/d#alpha;z_{resid} [mm]",1000,-600,600,1000,-1,1);
-  TH2D *h_zresidualdbeta = new TH2D("zresidualdbeta",";dz_{resid}/d#beta;z_{resid} [mm]",1000,-600,600,1000,-1,1);
-  TH2D *h_zresidualdgamma = new TH2D("zresidualdgamma",";dz_{resid}/d#gamma;z_{resid} [mm]",1000,-20,20,1000,-1,1);
-  TH2D *h_zresidualdd0 = new TH2D("zresidualdd0",";dz_{resid}/dd_{0}; z_{resid} [mm]",1000,-1,1,1000,-1,1);
-  TH2D *h_zresidualdz0 = new TH2D("zresidualdz0",";dz_{resid}/dz_{0}; z_{resid} [mm]",1000,0.9,1.1,1000,-1,1);
-  TH2D *h_zresidualdphi = new TH2D("zresidualdphi",";dz_{resid}/d#phi; z_{resid} [mm]", 1000,-100,100,1000,-1,1);
-  TH2D *h_zresidualdtheta = new TH2D("zresidualdtheta",";dz_{resid}/d#theta; z_{resid} [mm]",5000,-600,10,1000,-1,1);
-  TH2D *h_zresidualdqop = new TH2D("zresidualdqop",";dz_{resid}/dqop; z_{resid} [mm]",1000,-2,2,1000,-1,1);
+  TH2F *h_zresidualgdx = new TH2F("zresidualgdx",";dz_{resid}/dx_{glob};z_{resid} [mm]",1000,-1.3,1.3,1000,-1,1);
+  TH2F *h_zresidualgdy = new TH2F("zresidualgdy",";dz_{resid}/dy_{glob};z_{resid} [mm]",1000,-1.3,1.3,1000,-1,1);
+  TH2F *h_zresidualgdz = new TH2F("zresidualgdz",";dz_{resid}/dz_{glob};z_{resid} [mm]",1000,-1.3,1.3,1000,-1,1);
+  TH2F *h_zresidualdalpha = new TH2F("zresidualdalpha",";dz_{resid}/d#alpha;z_{resid} [mm]",1000,-600,600,1000,-1,1);
+  TH2F *h_zresidualdbeta = new TH2F("zresidualdbeta",";dz_{resid}/d#beta;z_{resid} [mm]",1000,-600,600,1000,-1,1);
+  TH2F *h_zresidualdgamma = new TH2F("zresidualdgamma",";dz_{resid}/d#gamma;z_{resid} [mm]",1000,-20,20,1000,-1,1);
+  TH2F *h_zresidualdd0 = new TH2F("zresidualdd0",";dz_{resid}/dd_{0}; z_{resid} [mm]",1000,-1,1,1000,-1,1);
+  TH2F *h_zresidualdz0 = new TH2F("zresidualdz0",";dz_{resid}/dz_{0}; z_{resid} [mm]",1000,0.9,1.1,1000,-1,1);
+  TH2F *h_zresidualdphi = new TH2F("zresidualdphi",";dz_{resid}/d#phi; z_{resid} [mm]", 1000,-100,100,1000,-1,1);
+  TH2F *h_zresidualdtheta = new TH2F("zresidualdtheta",";dz_{resid}/d#theta; z_{resid} [mm]",5000,-600,10,1000,-1,1);
+  TH2F *h_zresidualdqop = new TH2F("zresidualdqop",";dz_{resid}/dqop; z_{resid} [mm]",1000,-2,2,1000,-1,1);
 
-  TH2D *h_dxdxvsphi = new TH2D("dxdxvsphi",";#phi [deg];dx_{resid}/dx_{glob}",120,-180,180,1000,-1.3,1.3);
-  TH2D *h_dxdyvsphi = new TH2D("dxdyvsphi",";#phi [deg];dx_{resid}/dy_{glob}",120,-180,180,1000,-1.3,1.3);
-  TH2D *h_dxdzvsphi = new TH2D("dxdzvsphi",";#phi [deg];dx_{resid}/dz_{glob}",120,-180,180,1000,-0.002,0.002);
-  TH2D *h_dxdalphavsphi = new TH2D("dxdalphavsphi",";#phi [deg];dx_{resid}/d#alpha",120,-180,180,1000,-600,600);
-  TH2D *h_dxdbetavsphi = new TH2D("dxdbetavsphi",";#phi [deg];dx_{resid}/d#beta",120,-180,180,1000,-600,600);
-  TH2D *h_dxdgammavsphi = new TH2D("dxdgammavsphi",";#phi [deg];dx_{resid}/d#gamma",120,-180,180,1000,-20,20);
-  TH2D *h_dxdd0vsphi = new TH2D("dxdd0vsphi",";#phi [deg];dx_{resid}/dd_{0}",120,-180,180,1000,0.9,1.1);
-  TH2D *h_dxdz0vsphi = new TH2D("dxdz0vsphi",";#phi [deg];dx_{resid}/dz_{0}",120,-180,180,1000,-0.002,0.002);
-  TH2D *h_dxdphivsphi = new TH2D("dxdphivsphi",";#phi [deg];dx_{resid}/d#phi",120,-180,180,1000,-100,100);
-  TH2D *h_dxdthetavsphi = new TH2D("dxdthetavsphi",";#phi [deg];dx_{resid}/d#theta",120,-180,180,1000,-10,10);
-  TH2D *h_dxdqopvsphi = new TH2D("dxdqopvsphi",";#phi [deg];dx_{resid}/dqop",120,-180,180,1000,-1,1);
+  TH2F *h_dxdxvsphi = new TH2F("dxdxvsphi",";#phi [deg];dx_{resid}/dx_{glob}",120,-180,180,1000,-1.3,1.3);
+  TH2F *h_dxdyvsphi = new TH2F("dxdyvsphi",";#phi [deg];dx_{resid}/dy_{glob}",120,-180,180,1000,-1.3,1.3);
+  TH2F *h_dxdzvsphi = new TH2F("dxdzvsphi",";#phi [deg];dx_{resid}/dz_{glob}",120,-180,180,1000,-0.002,0.002);
+  TH2F *h_dxdalphavsphi = new TH2F("dxdalphavsphi",";#phi [deg];dx_{resid}/d#alpha",120,-180,180,1000,-600,600);
+  TH2F *h_dxdbetavsphi = new TH2F("dxdbetavsphi",";#phi [deg];dx_{resid}/d#beta",120,-180,180,1000,-600,600);
+  TH2F *h_dxdgammavsphi = new TH2F("dxdgammavsphi",";#phi [deg];dx_{resid}/d#gamma",120,-180,180,1000,-20,20);
+  TH2F *h_dxdd0vsphi = new TH2F("dxdd0vsphi",";#phi [deg];dx_{resid}/dd_{0}",120,-180,180,1000,0.9,1.1);
+  TH2F *h_dxdz0vsphi = new TH2F("dxdz0vsphi",";#phi [deg];dx_{resid}/dz_{0}",120,-180,180,1000,-0.002,0.002);
+  TH2F *h_dxdphivsphi = new TH2F("dxdphivsphi",";#phi [deg];dx_{resid}/d#phi",120,-180,180,1000,-100,100);
+  TH2F *h_dxdthetavsphi = new TH2F("dxdthetavsphi",";#phi [deg];dx_{resid}/d#theta",120,-180,180,1000,-10,10);
+  TH2F *h_dxdqopvsphi = new TH2F("dxdqopvsphi",";#phi [deg];dx_{resid}/dqop",120,-180,180,1000,-1,1);
 
-  TH2D *h_dzdxvsphi = new TH2D("dzdxvsphi",";#phi [deg];dz_{resid}/dx_{glob}",120,-180,180,1000,-1.3,1.3);
-  TH2D *h_dzdyvsphi = new TH2D("dzdyvsphi",";#phi [deg];dz_{resid}/dy_{glob}",120,-180,180,1000,-1.3,1.3);
-  TH2D *h_dzdzvsphi = new TH2D("dzdzvsphi",";#phi [deg];dz_{resid}/dz_{glob}",120,-180,180,1000,-1.3,1.3);
-  TH2D *h_dzdalphavsphi = new TH2D("dzdalphavsphi",";#phi [deg];dz_{resid}/d#alpha",120,-180,180,1000,-600,600);
-  TH2D *h_dzdbetavsphi = new TH2D("dzdbetavsphi",";#phi [deg];dz_{resid}/d#beta",120,-180,180,1000,-600,600);
-  TH2D *h_dzdgammavsphi = new TH2D("dzdgammavsphi",";#phi [deg];dz_{resid}/d#gamma",120,-180,180,1000,-20,20);
-  TH2D *h_dzdd0vsphi = new TH2D("dzdd0vsphi",";#phi [deg];dz_{resid}/dd_{0}",120,-180,180,1000,-1,1);
-  TH2D *h_dzdz0vsphi = new TH2D("dzdz0vsphi",";#phi [deg];dz_{resid}/dz_{0}",120,-180,180,1000,0.9,1.1);
-  TH2D *h_dzdphivsphi = new TH2D("dzdphivsphi",";#phi [deg];dz_{resid}/d#phi",120,-180,180,1000,-100,100);
-  TH2D *h_dzdthetavsphi = new TH2D("dzdthetavsphi",";#phi [deg];dz_{resid}/d#theta",120,-180,180,1000,-10,10);
-  TH2D *h_dzdqopvsphi = new TH2D("dzdqopvsphi",";#phi [deg];dz_{resid}/dqop",120,-180,180,1000,-1,1);
+  TH2F *h_dzdxvsphi = new TH2F("dzdxvsphi",";#phi [deg];dz_{resid}/dx_{glob}",120,-180,180,1000,-1.3,1.3);
+  TH2F *h_dzdyvsphi = new TH2F("dzdyvsphi",";#phi [deg];dz_{resid}/dy_{glob}",120,-180,180,1000,-1.3,1.3);
+  TH2F *h_dzdzvsphi = new TH2F("dzdzvsphi",";#phi [deg];dz_{resid}/dz_{glob}",120,-180,180,1000,-1.3,1.3);
+  TH2F *h_dzdalphavsphi = new TH2F("dzdalphavsphi",";#phi [deg];dz_{resid}/d#alpha",120,-180,180,1000,-600,600);
+  TH2F *h_dzdbetavsphi = new TH2F("dzdbetavsphi",";#phi [deg];dz_{resid}/d#beta",120,-180,180,1000,-600,600);
+  TH2F *h_dzdgammavsphi = new TH2F("dzdgammavsphi",";#phi [deg];dz_{resid}/d#gamma",120,-180,180,1000,-20,20);
+  TH2F *h_dzdd0vsphi = new TH2F("dzdd0vsphi",";#phi [deg];dz_{resid}/dd_{0}",120,-180,180,1000,-1,1);
+  TH2F *h_dzdz0vsphi = new TH2F("dzdz0vsphi",";#phi [deg];dz_{resid}/dz_{0}",120,-180,180,1000,0.9,1.1);
+  TH2F *h_dzdphivsphi = new TH2F("dzdphivsphi",";#phi [deg];dz_{resid}/d#phi",120,-180,180,1000,-100,100);
+  TH2F *h_dzdthetavsphi = new TH2F("dzdthetavsphi",";#phi [deg];dz_{resid}/d#theta",120,-180,180,1000,-10,10);
+  TH2F *h_dzdqopvsphi = new TH2F("dzdqopvsphi",";#phi [deg];dz_{resid}/dqop",120,-180,180,1000,-1,1);
 
- TH2D *h_dxdxvseta = new TH2D("dxdxvseta",";#eta ;dx_{resid}/dx_{glob}",100,-1,1,1000,-1.3,1.3);
-  TH2D *h_dxdyvseta = new TH2D("dxdyvseta",";#eta ;dx_{resid}/dy_{glob}",100,-1,1,1000,-1.3,1.3);
-  TH2D *h_dxdzvseta = new TH2D("dxdzvseta",";#eta ;dx_{resid}/dz_{glob}",100,-1,1,1000,-1.3,1.3);
-  TH2D *h_dxdalphavseta = new TH2D("dxdalphavseta",";#eta ;dx_{resid}/d#alpha",100,-1,1,1000,-600,600);
-  TH2D *h_dxdbetavseta = new TH2D("dxdbetavseta",";#eta ;dx_{resid}/d#beta",100,-1,1,1000,-600,600);
-  TH2D *h_dxdgammavseta = new TH2D("dxdgammavseta",";#eta ;dx_{resid}/d#gamma",100,-1,1,1000,-20,20);
-  TH2D *h_dxdd0vseta = new TH2D("dxdd0vseta",";#eta ;dx_{resid}/dd_{0}",100,-1,1,1000,0.9,1.1);
-  TH2D *h_dxdz0vseta = new TH2D("dxdz0vseta",";#eta ;dx_{resid}/dz_{0}",100,-1,1,1000,-0.002,0.002);
-  TH2D *h_dxdphivseta = new TH2D("dxdphivseta",";#eta ;dx_{resid}/d#phi",100,-1,1,1000,-100,100);
-  TH2D *h_dxdthetavseta = new TH2D("dxdthetavseta",";#eta ;dx_{resid}/d#theta",100,-1,1,1000,-10,10);
-  TH2D *h_dxdqopvseta = new TH2D("dxdqopvseta",";#eta ;dx_{resid}/dqop",100,-1,1,1000,-1,1);
+ TH2F *h_dxdxvseta = new TH2F("dxdxvseta",";#eta ;dx_{resid}/dx_{glob}",100,-1,1,1000,-1.3,1.3);
+  TH2F *h_dxdyvseta = new TH2F("dxdyvseta",";#eta ;dx_{resid}/dy_{glob}",100,-1,1,1000,-1.3,1.3);
+  TH2F *h_dxdzvseta = new TH2F("dxdzvseta",";#eta ;dx_{resid}/dz_{glob}",100,-1,1,1000,-1.3,1.3);
+  TH2F *h_dxdalphavseta = new TH2F("dxdalphavseta",";#eta ;dx_{resid}/d#alpha",100,-1,1,1000,-600,600);
+  TH2F *h_dxdbetavseta = new TH2F("dxdbetavseta",";#eta ;dx_{resid}/d#beta",100,-1,1,1000,-600,600);
+  TH2F *h_dxdgammavseta = new TH2F("dxdgammavseta",";#eta ;dx_{resid}/d#gamma",100,-1,1,1000,-20,20);
+  TH2F *h_dxdd0vseta = new TH2F("dxdd0vseta",";#eta ;dx_{resid}/dd_{0}",100,-1,1,1000,0.9,1.1);
+  TH2F *h_dxdz0vseta = new TH2F("dxdz0vseta",";#eta ;dx_{resid}/dz_{0}",100,-1,1,1000,-0.002,0.002);
+  TH2F *h_dxdphivseta = new TH2F("dxdphivseta",";#eta ;dx_{resid}/d#phi",100,-1,1,1000,-100,100);
+  TH2F *h_dxdthetavseta = new TH2F("dxdthetavseta",";#eta ;dx_{resid}/d#theta",100,-1,1,1000,-10,10);
+  TH2F *h_dxdqopvseta = new TH2F("dxdqopvseta",";#eta ;dx_{resid}/dqop",100,-1,1,1000,-1,1);
 
-  TH2D *h_dzdxvseta = new TH2D("dzdxvseta",";#eta ;dz_{resid}/dx_{glob}",100,-1,1,1000,-1.3,1.3);
-  TH2D *h_dzdyvseta = new TH2D("dzdyvseta",";#eta ;dz_{resid}/dy_{glob}",100,-1,1,1000,-1.3,1.3);
-  TH2D *h_dzdzvseta = new TH2D("dzdzvseta",";#eta ;dz_{resid}/dz_{glob}",100,-1,1,1000,-1.3,1.3);
-  TH2D *h_dzdalphavseta = new TH2D("dzdalphavseta",";#eta ;dz_{resid}/d#alpha",100,-1,1,1000,-600,600);
-  TH2D *h_dzdbetavseta = new TH2D("dzdbetavseta",";#eta ;dz_{resid}/d#beta",100,-1,1,1000,-600,600);
-  TH2D *h_dzdgammavseta = new TH2D("dzdgammavseta",";#eta ;dz_{resid}/d#gamma",100,-1,1,1000,-20,20);
-  TH2D *h_dzdd0vseta = new TH2D("dzdd0vseta",";#eta ;dz_{resid}/dd_{0}",100,-1,1,1000,-1,1);
-  TH2D *h_dzdz0vseta = new TH2D("dzdz0vseta",";#eta ;dz_{resid}/dz_{0}",100,-1,1,1000,0.9,1.1);
-  TH2D *h_dzdphivseta = new TH2D("dzdphivseta",";#eta ;dz_{resid}/d#phi",100,-1,1,1000,-100,100);
-  TH2D *h_dzdthetavseta = new TH2D("dzdthetavseta",";#eta ;dz_{resid}/d#theta",100,-1,1,1000,-10,10);
-  TH2D *h_dzdqopvseta = new TH2D("dzdqopvseta",";#eta ;dz_{resid}/dqop",100,-1,1,1000,-1,1);
+  TH2F *h_dzdxvseta = new TH2F("dzdxvseta",";#eta ;dz_{resid}/dx_{glob}",100,-1,1,1000,-1.3,1.3);
+  TH2F *h_dzdyvseta = new TH2F("dzdyvseta",";#eta ;dz_{resid}/dy_{glob}",100,-1,1,1000,-1.3,1.3);
+  TH2F *h_dzdzvseta = new TH2F("dzdzvseta",";#eta ;dz_{resid}/dz_{glob}",100,-1,1,1000,-1.3,1.3);
+  TH2F *h_dzdalphavseta = new TH2F("dzdalphavseta",";#eta ;dz_{resid}/d#alpha",100,-1,1,1000,-600,600);
+  TH2F *h_dzdbetavseta = new TH2F("dzdbetavseta",";#eta ;dz_{resid}/d#beta",100,-1,1,1000,-600,600);
+  TH2F *h_dzdgammavseta = new TH2F("dzdgammavseta",";#eta ;dz_{resid}/d#gamma",100,-1,1,1000,-20,20);
+  TH2F *h_dzdd0vseta = new TH2F("dzdd0vseta",";#eta ;dz_{resid}/dd_{0}",100,-1,1,1000,-1,1);
+  TH2F *h_dzdz0vseta = new TH2F("dzdz0vseta",";#eta ;dz_{resid}/dz_{0}",100,-1,1,1000,0.9,1.1);
+  TH2F *h_dzdphivseta = new TH2F("dzdphivseta",";#eta ;dz_{resid}/d#phi",100,-1,1,1000,-100,100);
+  TH2F *h_dzdthetavseta = new TH2F("dzdthetavseta",";#eta ;dz_{resid}/d#theta",100,-1,1,1000,-10,10);
+  TH2F *h_dzdqopvseta = new TH2F("dzdqopvseta",";#eta ;dz_{resid}/dqop",100,-1,1,1000,-1,1);
+  TH2F *h_sensorlayercounts = new TH2F("sensorlayercounts",";sensor number; layer",1200,0,1200,58,0,58);
 
+  TH2F *h_lowcountsxy = new TH2F("lowcountsxy",";x_{clus} [cm];y_{clus} [cm];",
+				 10000,-20,20,10000,-20,20);
+
+  TH2F *h_lowcountsrz = new TH2F("lowcountsrz",";z_{clus} [cm];r_{clus} [cm];",
+				 10000,-40,40,100,0,20);
 
   int badent = 0;
-
+  int sensornum = 0;
+  std::map<uint32_t, int> hitsetkey_sensornum_map, hitsetkey_numcounts_map;
+  std::cout << "iterating " << tree->GetEntries() << std::endl;
   for(int i=0; i<tree->GetEntries(); i++)
     {
+      if(i > 25000)
+	break;
       tree->GetEntry(i);
-    
       for(int j=0; j<cluslx->size(); j++)
 	{
 	  unsigned int layer = cluslayer->at(j);
-	  if(!(layer == 1 or layer == 2))
-	    continue;
+
+	  if(layer > 6) continue;
 	  float xresidual = cluslx->at(j) - statelx->at(j);
 	  float zresidual = cluslz->at(j) - statelz->at(j);
+	  //convert to mm
+	  xresidual *= 10;
+	  zresidual *= 10;
 	  float celx = cluselx->at(j);
 	  float celz = cluselz->at(j);
 	  float cgz = clusgz->at(j);
+	  celx *= 10;
+	  celz *= 10;
+	  cgz *= 10;
 	  uint32_t hitsetkey = clushitsetkey->at(j);
+
+	  auto iter = hitsetkey_sensornum_map.find(hitsetkey);
+	  if(iter == hitsetkey_sensornum_map.end())
+	    {
+	      hitsetkey_sensornum_map.insert(std::make_pair(hitsetkey,sensornum));
+	      hitsetkey_numcounts_map.insert(std::make_pair(hitsetkey, 1));
+	      sensornum++;
+	    } 
+	  else
+	    {
+	      hitsetkey_numcounts_map.find(hitsetkey)->second++;
+	    }
+	  
+	  int sensornum = hitsetkey_sensornum_map.find(hitsetkey)->second;
+	  if(sensornum > 130)
+	    {
+	      h_lowcountsxy->Fill(clusgx->at(j), clusgy->at(j));
+	      h_lowcountsrz->Fill(clusgz->at(j),sqrt(clusgx->at(j)*clusgx->at(j)+clusgy->at(j)*clusgy->at(j)));
+	    }
+	  h_sensorlayercounts->Fill(sensornum, layer);
 	  TVector3 clusvec;
 	  clusvec.SetXYZ(clusgx->at(j), clusgy->at(j), clusgz->at(j));
 	  float clusphi = clusvec.Phi() * 180 / 3.14159;
@@ -292,8 +459,8 @@ void AnalyzeResiduals(std::string infile, const bool use_helical = false)
 	  
 	  float xresidualcluspull = xresidual / celx;
 	  float zresidualcluspull = zresidual / celz;
-	  float xresidualstatepull = xresidual / stateelx->at(j);
-	  float zresidualstatepull = zresidual / stateelz->at(j);
+	  float xresidualstatepull = xresidual / (10*stateelx->at(j));
+	  float zresidualstatepull = zresidual / (10*stateelz->at(j));
 
 	  float statelxglobdx = statelxglobderivdx->at(j);
 	  float statelxglobdy = statelxglobderivdy->at(j);
@@ -310,25 +477,67 @@ void AnalyzeResiduals(std::string infile, const bool use_helical = false)
 	  
 	  if(use_helical)
 	    {
-	      xresidual *= 10;
-	      zresidual *= 10;
-	      cgz *= 10;
 	      statelxglobdalpha *= 10;
 	      statelxglobdbeta *= 10;
 	      statelxglobdgamma *= 10;
 	      statelzglobdalpha *= 10;
 	      statelzglobdbeta *= 10;
 	      statelzglobdgamma *= 10;
-	      
 	    }
+	  
+	  Acts::Vector3 missurfnorm(missurfnormx->at(j),
+				    missurfnormy->at(j),
+				    missurfnormz->at(j));
+        
+	  Acts::Vector3 idealsurfnorm(idealsurfnormx->at(j),
+				      idealsurfnormy->at(j),
+				      idealsurfnormz->at(j));
 
+	  float alpha = idealsurfalpha->at(j)-missurfalpha->at(j);
+	  float beta = idealsurfbeta->at(j)-missurfbeta->at(j);
+	  float gamma = idealsurfgamma->at(j)-missurfgamma->at(j);
+
+	  /// convert to millirad
+	  alpha *= 1000;
+	  beta *=1000;
+	  gamma *=1000;
+	  float idealsurfphi = 180/M_PI*atan2(idealsurfcentery->at(j), 
+					      idealsurfcenterx->at(j));
+
+	  h_surfadiffvsphi[layer]->Fill(idealsurfphi, alpha);
+	  h_surfbdiffvsphi[layer]->Fill(idealsurfphi, beta);
+	  h_surfgdiffvsphi[layer]->Fill(idealsurfphi, gamma);
+	  h_surfadiffvsz[layer]->Fill(idealsurfcenterz->at(j)*10, alpha);
+	  h_surfbdiffvsz[layer]->Fill(idealsurfcenterz->at(j)*10, beta);
+	  h_surfgdiffvsz[layer]->Fill(idealsurfcenterz->at(j)*10, gamma);
+
+	  h_surfradiusdiffvsphi[layer]->Fill(idealsurfphi,
+					     get_r(missurfcenterx->at(j),
+						   missurfcentery->at(j))*10 -
+					     get_r(idealsurfcenterx->at(j),
+						   idealsurfcentery->at(j))*10);
+	  h_surfxdiffvsphi[layer]->Fill(idealsurfphi,
+					missurfcenterx->at(j)*10 - 
+					idealsurfcenterx->at(j)*10);
+	  h_surfydiffvsphi[layer]->Fill(idealsurfphi,
+					missurfcentery->at(j)*10 - 
+					idealsurfcentery->at(j)*10);
+        
+	  h_surfzdiffvsphi[layer]->Fill(idealsurfphi,
+					missurfcenterz->at(j)*10 - 
+					idealsurfcenterz->at(j)*10);
 	  h_residualxclusr[layer]->Fill(clusvec.Perp(), xresidual);
+	  h_residualgxclusphi[layer]->Fill(clusphi, (clusgx->at(j) - stategx->at(j))*10);
+	  h_residualgyclusphi[layer]->Fill(clusphi, (clusgy->at(j) - stategy->at(j))*10);
+	  h_residualgzclusphi[layer]->Fill(clusphi, (clusgz->at(j) - stategz->at(j))*10);
+        
 	  h_residualxclusphi[layer]->Fill(clusphi, xresidual);
 	  h_residualxclusz[layer]->Fill(cgz, xresidual);
 	  h_residualzclusr[layer]->Fill(clusvec.Perp(), zresidual);
 	  h_residualzclusphi[layer]->Fill(clusphi, zresidual);
 	  h_residualzclusz[layer]->Fill(cgz, zresidual);
-
+	  //h_residualxclusphiz[layer]->Fill(clusphi,cgz,xresidual);
+	  //h_residualzclusphiz[layer]->Fill(clusphi,cgz,zresidual);
 
 	  h_dxdxvsphi->Fill(clusphi, statelxglobdx);
 	  h_dxdyvsphi->Fill(clusphi, statelxglobdy);
@@ -408,20 +617,23 @@ void AnalyzeResiduals(std::string infile, const bool use_helical = false)
 	  h_residualcluspulllayerz->Fill(zresidualcluspull, layer);
 	  h_residualstatepulllayerx->Fill(xresidualstatepull, layer);
 	  h_residualstatepulllayerz->Fill(zresidualstatepull, layer);
-	  if(layer == 1 or layer == 2) {
-	  h_residualhitsetkeyx->Fill(xresidual, hitsetkey);
-	  h_residualhitsetkeyz->Fill(zresidual, hitsetkey);
-	  h_residualcluspullhitsetkeyx->Fill(xresidualcluspull, hitsetkey);
-	  h_residualcluspullhitsetkeyz->Fill(zresidualcluspull, hitsetkey);
-	  h_residualstatepullhitsetkeyx->Fill(xresidualstatepull, hitsetkey);
-	  h_residualstatepullhitsetkeyz->Fill(zresidualstatepull, hitsetkey);
-	  }	  
+        
+	  h_residualhitsetkeyx->Fill(xresidual, sensornum);
+	  h_residualhitsetkeyz->Fill(zresidual, sensornum);
+	  h_residualcluspullhitsetkeyx->Fill(xresidualcluspull, sensornum);
+	  h_residualcluspullhitsetkeyz->Fill(zresidualcluspull, sensornum);
+	  h_residualstatepullhitsetkeyx->Fill(xresidualstatepull, sensornum);
+	  h_residualstatepullhitsetkeyz->Fill(zresidualstatepull, sensornum);
+	  	  
 	}
     }
   std::cout << "badent " << badent<<std::endl;
+  for(const auto& [key, counts] : hitsetkey_numcounts_map)
+    {
+      std::cout << "hitsetkey " << key << " has " << counts << std::endl;
+    }
 
-
-  TCanvas *can1 = new TCanvas("can1","can1",200,200,1000,700);
+  TCanvas *can1 = new TCanvas("can1","can1",300,300,1000,700);
   can1->Divide(3,2);
   can1->cd(1);
   h_xresidualdalpha->Draw();
@@ -437,7 +649,7 @@ void AnalyzeResiduals(std::string infile, const bool use_helical = false)
   h_xresidualgdz->Draw();
 
   
-  TCanvas *can2 = new TCanvas("can2","can2",200,200,1000,700);
+  TCanvas *can2 = new TCanvas("can2","can2",300,300,1000,700);
   can2->Divide(3,2);
   can2->cd(1);
   h_xresidualdd0->Draw();
@@ -451,7 +663,7 @@ void AnalyzeResiduals(std::string infile, const bool use_helical = false)
   h_xresidualdqop->Draw();
   
   
-  TCanvas *can3 = new TCanvas("can3","can3",200,200,1000,700);
+  TCanvas *can3 = new TCanvas("can3","can3",300,300,1000,700);
   can3->Divide(3,2);
   can3->cd(1);
   h_zresidualdalpha->Draw();
@@ -467,7 +679,7 @@ void AnalyzeResiduals(std::string infile, const bool use_helical = false)
   h_zresidualgdz->Draw();
 
   
-  TCanvas *can4 = new TCanvas("can4","can4",200,200,1000,700);
+  TCanvas *can4 = new TCanvas("can4","can4",300,300,1000,700);
   can4->Divide(3,2);
   can4->cd(1);
   h_zresidualdd0->Draw();
@@ -481,7 +693,7 @@ void AnalyzeResiduals(std::string infile, const bool use_helical = false)
   h_zresidualdqop->Draw();
 
   
-  TCanvas *can5 = new TCanvas("can5","can5",200,200,1000,700);
+  TCanvas *can5 = new TCanvas("can5","can5",300,300,1000,700);
   can5->Divide(3,2);
   can5->cd(1);
 
@@ -497,7 +709,7 @@ void AnalyzeResiduals(std::string infile, const bool use_helical = false)
   can5->cd(6);
   h_dxdgammavsphi->Draw();
   
-  TCanvas *can6 = new TCanvas("can6","can6",200,200,1000,700);
+  TCanvas *can6 = new TCanvas("can6","can6",300,300,1000,700);
   can6->Divide(3,2);
   can6->cd(1);
 
@@ -511,7 +723,7 @@ void AnalyzeResiduals(std::string infile, const bool use_helical = false)
   can6->cd(5);
   h_dxdqopvsphi->Draw();
   
-  TCanvas *can7 = new TCanvas("can7","can7",200,200,1000,700);
+  TCanvas *can7 = new TCanvas("can7","can7",300,300,1000,700);
   can7->Divide(3,2);
   can7->cd(1);
 
@@ -527,7 +739,7 @@ void AnalyzeResiduals(std::string infile, const bool use_helical = false)
   can7->cd(6);
   h_dzdgammavsphi->Draw();
   
-  TCanvas *can8 = new TCanvas("can8","can8",200,200,1000,700);
+  TCanvas *can8 = new TCanvas("can8","can8",300,300,1000,700);
   can8->Divide(3,2);
   can8->cd(1);
 
@@ -542,7 +754,7 @@ void AnalyzeResiduals(std::string infile, const bool use_helical = false)
   h_dzdqopvsphi->Draw();
 
   
-  TCanvas *can9 = new TCanvas("can9","can9",200,200,1000,700);
+  TCanvas *can9 = new TCanvas("can9","can9",300,300,1000,700);
   can9->Divide(3,2);
   can9->cd(1);
 
@@ -558,7 +770,7 @@ void AnalyzeResiduals(std::string infile, const bool use_helical = false)
   can9->cd(6);
   h_dxdgammavseta->Draw();
 
-  TCanvas *can10 = new TCanvas("can10","can10",200,200,1000,700);
+  TCanvas *can10 = new TCanvas("can10","can10",300,300,1000,700);
   can10->Divide(3,2);
   can10->cd(1);
 
@@ -572,7 +784,7 @@ void AnalyzeResiduals(std::string infile, const bool use_helical = false)
   can10->cd(5);
   h_dxdqopvseta->Draw();
 
-  TCanvas *can11 = new TCanvas("can11","can11",200,200,1000,700);
+  TCanvas *can11 = new TCanvas("can11","can11",300,300,1000,700);
   can11->Divide(3,2);
   can11->cd(1);
 
@@ -588,7 +800,7 @@ void AnalyzeResiduals(std::string infile, const bool use_helical = false)
   can11->cd(6);
   h_dzdgammavseta->Draw();
 
-  TCanvas *can12 = new TCanvas("can12","can12",200,200,1000,700);
+  TCanvas *can12 = new TCanvas("can12","can12",300,300,1000,700);
   can12->Divide(3,2);
   can12->cd(1);
 
@@ -602,17 +814,19 @@ void AnalyzeResiduals(std::string infile, const bool use_helical = false)
   can12->cd(5);
   h_dzdqopvseta->Draw();
   
-  if(false)
+  if(writer)
     {
   outfile->cd();
-  
+  h_lowcountsxy->Write();
+  h_lowcountsrz->Write();
   h_residuallayerx->Write();
   h_residuallayerz->Write();
   h_residualcluspulllayerx->Write();
   h_residualcluspulllayerz->Write();
   h_residualstatepulllayerx->Write();
   h_residualstatepulllayerz->Write();
-  
+  h_sensorlayercounts->Write();
+
  h_residualhitsetkeyx->Write();
   h_residualhitsetkeyz->Write();
   h_residualcluspullhitsetkeyx->Write();
@@ -697,10 +911,27 @@ void AnalyzeResiduals(std::string infile, const bool use_helical = false)
     {
       h_residualxclusr[i]->Write();
       h_residualxclusz[i]->Write();
+      h_residualgxclusphi[i]->Write();
+      h_residualgyclusphi[i]->Write();
+      h_residualgzclusphi[i]->Write();
       h_residualzclusr[i]->Write();
       h_residualzclusz[i]->Write();
       h_residualxclusphi[i]->Write();
       h_residualzclusphi[i]->Write();
+      
+      //h_residualxclusphiz[i]->Write();
+      //h_residualzclusphiz[i]->Write();
+      h_surfradiusdiffvsphi[i]->Write();
+      h_surfxdiffvsphi[i]->Write();
+      h_surfydiffvsphi[i]->Write();
+      h_surfzdiffvsphi[i]->Write();
+      h_surfadiffvsphi[i]->Write();
+      h_surfbdiffvsphi[i]->Write();
+      h_surfgdiffvsphi[i]->Write();
+
+      h_surfadiffvsz[i]->Write();
+      h_surfbdiffvsz[i]->Write();
+      h_surfgdiffvsz[i]->Write();
     }
 
   outfile->Write();
