@@ -43,6 +43,7 @@ SubsysReco(name)
   ,doClusters(1)
 ,totalCaloE(0)
 ,doFineCluster(0)
+,iEvent(0)
 {
   std::cout << "caloTreeGen::caloTreeGen(const std::string &name) Calling ctor" << std::endl;
 }
@@ -71,6 +72,7 @@ int caloTreeGen::Init(PHCompositeNode *topNode)
   T -> Branch("emciPhi",&m_emciPhi);
   
   T -> Branch("clusterE",&m_clusterE);
+  T -> Branch("clusterE_calib",&m_clusterE_calib);
   T -> Branch("clusterPhi",&m_clusterPhi);
   T -> Branch("clusterEta", &m_clusterEta);
   T -> Branch("clustrPt", &m_clusterPt);
@@ -104,11 +106,22 @@ int caloTreeGen::InitRun(PHCompositeNode *topNode)
 int caloTreeGen::process_event(PHCompositeNode *topNode)
 {
 
+  if(iEvent%100 == 0) std::cout << "Progress: " << iEvent << std::endl;
+  ++iEvent;
+
    //Information on clusters
   RawClusterContainer *clusterContainer = findNode::getClass<RawClusterContainer>(topNode,"CLUSTERINFO_CEMC");
   if(!clusterContainer && doClusters)
     {
       std::cout << PHWHERE << "caloTreeGen::process_event - Fatal Error - CLUSTER_CEMC node is missing. " << std::endl;
+      return 0;
+    }
+
+   //Information on calibrated clusters
+  RawClusterContainer *clusterContainer_calib = findNode::getClass<RawClusterContainer>(topNode,"CLUSTERINFO_POS_COR_CEMC");
+  if(!clusterContainer_calib && doClusters)
+    {
+      std::cout << PHWHERE << "caloTreeGen::process_event - Fatal Error - CLUSTERINFO_POS_COR_CEMC node is missing. " << std::endl;
       return 0;
     }
   
@@ -163,13 +176,19 @@ int caloTreeGen::process_event(PHCompositeNode *topNode)
     {
       RawClusterContainer::ConstRange clusterEnd = clusterContainer -> getClusters();
       RawClusterContainer::ConstIterator clusterIter;
-      for(clusterIter = clusterEnd.first; clusterIter != clusterEnd.second; clusterIter++)
+      RawClusterContainer::ConstRange clusterEnd_calib = clusterContainer_calib -> getClusters();
+      RawClusterContainer::ConstIterator clusterIter_calib;
+
+      for(clusterIter = clusterEnd.first, clusterIter_calib = clusterEnd_calib.first;
+          clusterIter != clusterEnd.second; clusterIter++, clusterIter_calib++)
 	{
 	  RawCluster *recoCluster = clusterIter -> second;
+	  RawCluster *recoCluster_calib = clusterIter_calib -> second;
 
 	  CLHEP::Hep3Vector vertex(0,0,0);
 	  CLHEP::Hep3Vector E_vec_cluster = RawClusterUtility::GetECoreVec(*recoCluster, vertex);
 	  CLHEP::Hep3Vector E_vec_cluster_Full = RawClusterUtility::GetEVec(*recoCluster, vertex);
+	  CLHEP::Hep3Vector E_vec_cluster_Full_calib = RawClusterUtility::GetEVec(*recoCluster_calib, vertex);
 
 	  float clusE = E_vec_cluster.mag();
 	  float clus_eta = E_vec_cluster.pseudoRapidity();
@@ -180,6 +199,7 @@ int caloTreeGen::process_event(PHCompositeNode *topNode)
 	  float maxTowerEnergy = getMaxTowerE(recoCluster,emcTowerContainer);
 
 	  m_clusterE.push_back(E_vec_cluster_Full.mag());
+	  m_clusterE_calib.push_back(E_vec_cluster_Full_calib.mag());
 	  m_clusterECore.push_back(clusE);
 	  m_clusterPhi.push_back(clus_phi);
 	  m_clusterEta.push_back(clus_eta);
@@ -205,6 +225,7 @@ int caloTreeGen::process_event(PHCompositeNode *topNode)
 int caloTreeGen::ResetEvent(PHCompositeNode *topNode)
 {
   m_clusterE.clear();
+  m_clusterE_calib.clear();
   m_clusterPhi.clear();
   m_clusterEta.clear();
   m_clusterPt.clear();
