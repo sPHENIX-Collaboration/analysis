@@ -43,9 +43,9 @@ namespace myAnalysis {
     TH2F* h2clusterChisqVsE_2;
     TH2F* h2clusterE_CalibVsE;
 
-    UInt_t  eta_bins = 48;
-    Float_t eta_min  = -1.152;
-    Float_t eta_max  = 1.152;
+    UInt_t  eta_bins = 46;
+    Float_t eta_min  = -1.15;
+    Float_t eta_max  = 1.15;
 
     UInt_t  phi_bins = 126;
     Float_t phi_min  = -3.15;
@@ -79,7 +79,8 @@ void myAnalysis::init(const string& inputFile) {
     data->SetBranchAddress("clusterEta",&clusterEta);
     data->SetBranchAddress("clusterE",&clusterE);
     data->SetBranchAddress("clustrPt",&clusterPt);
-    data->SetBranchAddress("clusterChisq",&clusterChisq);
+    // data->SetBranchAddress("clusterChisq",&clusterChisq);
+    data->SetBranchAddress("clusterChi",&clusterChisq);
 
     // QA
     hclusterEta       = new TH1F("hclusterEta", "Cluster #eta; #eta; Counts", eta_bins, eta_min, eta_max);
@@ -117,6 +118,7 @@ void myAnalysis::analyze(UInt_t nevents) {
     Float_t clusterPt_max      = 0;
     Float_t clusterChisq_min   = 0;
     Float_t clusterChisq_max   = 0;
+    UInt_t ctr[3] = {0};
     cout << "Starting Event Loop" << endl;
     for(UInt_t i = 0; i < nevents; ++i) {
 
@@ -159,6 +161,7 @@ void myAnalysis::analyze(UInt_t nevents) {
 
             if(clusterChisq_val < 10) {
                 hclusterE_2->Fill(clusterE_val);
+                ++ctr[1];
             }
 
             if(clusterE_val >= 500 && clusterE_val < 16000) {
@@ -167,15 +170,21 @@ void myAnalysis::analyze(UInt_t nevents) {
 
             if(clusterChisq_val < 10 && clusterE_val >= 500 && clusterE_val < 16000) {
                 h2clusterPhiVsEta_2->Fill(clusterEta_val, clusterPhi_val);
+                ++ctr[2];
             }
 
             if(clusterChisq_val < 10 && clusterE_val >= 8.5e3 && clusterE_val < 9.5e3) {
                 h2clusterPhiVsEta_3->Fill(clusterEta_val, clusterPhi_val);
             }
+            // keep track of number of clusters
+            ++ctr[0];
         }
     }
 
     cout << "events processed: " << nevents << endl;
+    cout << "total clusters: " << ctr[0] << endl;
+    cout << "clusters with chi2 < 10: " << ctr[1] << ", " << ctr[1]*100./ctr[0] << " %" << endl;
+    cout << "clusters with chi2 < 10 and 500 <= ADC < 16000: " << ctr[2] << ", " << ctr[2]*100./ctr[0] << " %" << endl;
     cout << "clusterEta_min: " << clusterEta_min << " clusterEta_max: " << clusterEta_max << endl;
     cout << "clusterPhi_min: " << clusterPhi_min << " clusterPhi_max: " << clusterPhi_max << endl;
     cout << "clusterE_min: " << clusterE_min << " clusterE_max: " << clusterE_max << endl;
