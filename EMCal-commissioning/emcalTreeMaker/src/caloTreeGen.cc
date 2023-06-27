@@ -106,8 +106,11 @@ int caloTreeGen::InitRun(PHCompositeNode *topNode)
 int caloTreeGen::process_event(PHCompositeNode *topNode)
 {
 
-  if(iEvent%100 == 0) std::cout << "Progress: " << iEvent << std::endl;
-  ++iEvent;
+  if (Verbosity() >= Fun4AllBase::VERBOSITY_SOME)
+  {
+    if(iEvent%100 == 0) std::cout << "Progress: " << iEvent << std::endl;
+    ++iEvent;
+  }
 
    //Information on clusters
   RawClusterContainer *clusterContainer = findNode::getClass<RawClusterContainer>(topNode,"CLUSTERINFO_CEMC");
