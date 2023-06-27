@@ -71,8 +71,7 @@ int caloTreeGen::Init(PHCompositeNode *topNode)
   T -> Branch("emciEta",&m_emciEta);
   T -> Branch("emciPhi",&m_emciPhi);
   
-  T -> Branch("clusterE",&m_clusterE);
-  T -> Branch("clusterE_calib",&m_clusterE_calib);
+  T -> Branch("clusterEFull",&m_clusterE);
   T -> Branch("clusterPhi",&m_clusterPhi);
   T -> Branch("clusterEta", &m_clusterEta);
   T -> Branch("clustrPt", &m_clusterPt);
