@@ -208,6 +208,7 @@ void AnalyzeResiduals(std::string infile, const bool use_helical = false)
   TH2 *h_surfxdiffvsphi[nlayers];
   TH2 *h_surfydiffvsphi[nlayers];
   TH2 *h_surfzdiffvsphi[nlayers];
+  TH2 *h_surfphidiffvsphi[nlayers];
   TH2 *h_surfadiffvsphi[nlayers];
   TH2 *h_surfbdiffvsphi[nlayers];
   TH2 *h_surfgdiffvsphi[nlayers];
@@ -231,6 +232,10 @@ void AnalyzeResiduals(std::string infile, const bool use_helical = false)
       } 
       
       ostringstream name;
+      name.str("");
+      name << "surfphidiffvsphi_"<<i;
+      h_surfphidiffvsphi[i] = new TH2F(name.str().c_str(),";Ideal #phi_{surf} [deg]; Ideal - misaligned phi [deg]",120,-180,180,1080,-2,2);
+
       name.str("");
       name << "surfadiffvsphi_"<<i;
       h_surfadiffvsphi[i] = new TH2F(name.str().c_str(),";Ideal #phi_{surf} [deg]; Ideal - misaligned angle to x axis [mrad]",120,-180,180,100,-10,10);
@@ -503,7 +508,9 @@ name.str("");
 	  gamma *=1000;
 	  float idealsurfphi = 180/M_PI*atan2(idealsurfcentery->at(j), 
 					      idealsurfcenterx->at(j));
-
+	  float missurfphi = 180/M_PI*atan2(missurfcentery->at(j),
+					    missurfcenterx->at(j));
+	  h_surfphidiffvsphi[layer]->Fill(idealsurfphi, missurfphi-idealsurfphi);
 	  h_surfadiffvsphi[layer]->Fill(idealsurfphi, alpha);
 	  h_surfbdiffvsphi[layer]->Fill(idealsurfphi, beta);
 	  h_surfgdiffvsphi[layer]->Fill(idealsurfphi, gamma);
@@ -529,6 +536,7 @@ name.str("");
 	  h_residualxclusr[layer]->Fill(clusvec.Perp(), xresidual);
 	  h_residualgxclusphi[layer]->Fill(clusphi, (clusgx->at(j) - stategx->at(j))*10);
 	  h_residualgyclusphi[layer]->Fill(clusphi, (clusgy->at(j) - stategy->at(j))*10);
+	  //std::cout << clusgz->at(j) << ", " << stategz->at(j) << std::endl;
 	  h_residualgzclusphi[layer]->Fill(clusphi, (clusgz->at(j) - stategz->at(j))*10);
         
 	  h_residualxclusphi[layer]->Fill(clusphi, xresidual);
@@ -923,6 +931,7 @@ name.str("");
       //h_residualzclusphiz[i]->Write();
       h_surfradiusdiffvsphi[i]->Write();
       h_surfxdiffvsphi[i]->Write();
+      h_surfphidiffvsphi[i]->Write();
       h_surfydiffvsphi[i]->Write();
       h_surfzdiffvsphi[i]->Write();
       h_surfadiffvsphi[i]->Write();
