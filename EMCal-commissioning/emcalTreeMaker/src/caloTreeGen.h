@@ -73,7 +73,6 @@ class caloTreeGen : public SubsysReco
   std::vector<float> m_emciPhi;
 
   std::vector<float> m_clusterE;
-  std::vector<float> m_clusterE_calib;
   std::vector<float> m_clusterPhi;
   std::vector<float> m_clusterEta;
   std::vector<float> m_clusterPt;
@@ -81,6 +80,7 @@ class caloTreeGen : public SubsysReco
   std::vector<float> m_clusterNtow;
   std::vector<float> m_clusterTowMax;
   std::vector<float> m_clusterECore;
+  std::vector<float> m_clusterECoreCalib;
   
   std::vector<std::vector<int> > m_clusTowEta;
   std::vector<std::vector<int> > m_clusTowPhi;

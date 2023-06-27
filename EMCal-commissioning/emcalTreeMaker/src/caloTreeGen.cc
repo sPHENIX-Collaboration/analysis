@@ -79,6 +79,7 @@ int caloTreeGen::Init(PHCompositeNode *topNode)
   T -> Branch("clusterNtow",&m_clusterNtow);
   T -> Branch("clusterTowMax",&m_clusterTowMax);
   T -> Branch("clusterECore",&m_clusterECore);
+  T -> Branch("clusterECoreCalib",&m_clusterECoreCalib);
   
   T -> Branch("totalCaloE",&totalCaloE);
 
@@ -186,10 +187,11 @@ int caloTreeGen::process_event(PHCompositeNode *topNode)
 
 	  CLHEP::Hep3Vector vertex(0,0,0);
 	  CLHEP::Hep3Vector E_vec_cluster = RawClusterUtility::GetECoreVec(*recoCluster, vertex);
+	  CLHEP::Hep3Vector E_vec_cluster_calib = RawClusterUtility::GetECoreVec(*recoCluster_calib, vertex);
 	  CLHEP::Hep3Vector E_vec_cluster_Full = RawClusterUtility::GetEVec(*recoCluster, vertex);
-	  CLHEP::Hep3Vector E_vec_cluster_Full_calib = RawClusterUtility::GetEVec(*recoCluster_calib, vertex);
 
 	  float clusE = E_vec_cluster.mag();
+	  float clusE_calib = E_vec_cluster_calib.mag();
 	  float clus_eta = E_vec_cluster.pseudoRapidity();
 	  float clus_phi = E_vec_cluster.phi();
 	  float clus_pt = E_vec_cluster.perp();
@@ -198,8 +200,8 @@ int caloTreeGen::process_event(PHCompositeNode *topNode)
 	  float maxTowerEnergy = getMaxTowerE(recoCluster,emcTowerContainer);
 
 	  m_clusterE.push_back(E_vec_cluster_Full.mag());
-	  m_clusterE_calib.push_back(E_vec_cluster_Full_calib.mag());
 	  m_clusterECore.push_back(clusE);
+	  m_clusterECoreCalib.push_back(clusE_calib);
 	  m_clusterPhi.push_back(clus_phi);
 	  m_clusterEta.push_back(clus_eta);
 	  m_clusterPt.push_back(clus_pt);
@@ -224,7 +226,6 @@ int caloTreeGen::process_event(PHCompositeNode *topNode)
 int caloTreeGen::ResetEvent(PHCompositeNode *topNode)
 {
   m_clusterE.clear();
-  m_clusterE_calib.clear();
   m_clusterPhi.clear();
   m_clusterEta.clear();
   m_clusterPt.clear();
@@ -232,6 +233,7 @@ int caloTreeGen::ResetEvent(PHCompositeNode *topNode)
   m_clusterTowMax.clear();
   m_clusterNtow.clear();
   m_clusterECore.clear();
+  m_clusterECoreCalib.clear();
 
   m_emcTowPhi.clear();
   m_emcTowEta.clear();
