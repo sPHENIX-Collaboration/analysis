@@ -21,6 +21,7 @@ libTPCRawDataTree_la_SOURCES = \
 
 
 libTPCRawDataTree_la_LIBADD = \
+  -ltpc \
   -lphool \
   -lSubsysReco
 

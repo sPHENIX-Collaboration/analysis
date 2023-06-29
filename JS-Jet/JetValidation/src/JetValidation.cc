@@ -9,8 +9,8 @@
 #include <phool/PHCompositeNode.h>
 #include <phool/getClass.h>
 
-#include <g4jets/JetMap.h>
-#include <g4jets/Jetv1.h>
+#include <jetbase/JetMap.h>
+#include <jetbase/Jetv1.h>
 
 #include <centrality/CentralityInfo.h>
 

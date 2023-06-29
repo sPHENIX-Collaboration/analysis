@@ -9,7 +9,7 @@
 #include <G4_Magnet.C>
 #include <G4_Tracking.C>
 #include <QA.C>
-
+#include <G4_Global.C>
 #include <FROG.h>
 #include <decayfinder/DecayFinder.h>
 #include <fun4all/Fun4AllDstInputManager.h>
@@ -19,6 +19,7 @@
 
 #include <caloreco/RawClusterBuilderTopo.h>
 #include <particleflowreco/ParticleFlowReco.h>
+#include <phool/recoConsts.h>
 
 R__LOAD_LIBRARY(libdecayfinder.so)
 R__LOAD_LIBRARY(libcalo_reco.so)
@@ -44,13 +45,19 @@ using namespace std;
 /*   jakub.kvapil@cern.ch   */
 /****************************/
 
-void Fun4All_MDC2reco(vector<string> myInputLists = {"condorJob/fileLists/productionFiles-CHARM-dst_tracks-00000.list"}, const int nEvents = 10, ResonanceJetTagging::TAG tag = ResonanceJetTagging::TAG::D0)
+void Fun4All_MDC2reco(vector<string> myInputLists = {"condorJob/fileLists/productionFiles-CHARM-dst_tracks-00000.LIST"}, const int nEvents = 10, ResonanceJetTagging::TAG tag = ResonanceJetTagging::TAG::D0)
 {
   int verbosity = 0;
 
   gSystem->Load("libg4dst.so");
   gSystem->Load("libFROG.so");
   FROG *fr = new FROG();
+  recoConsts *rc = recoConsts::instance();
+  Enable::CDB = true;
+  // global tag
+  rc->set_StringFlag("CDB_GLOBALTAG",CDB::global_tag);
+  // 64 bit timestamp
+  rc->set_uint64Flag("TIMESTAMP",CDB::timestamp);
 
   std::string particle_name;
   switch (tag) {
@@ -158,9 +165,12 @@ void Fun4All_MDC2reco(vector<string> myInputLists = {"condorJob/fileLists/produc
     Tracking_Reco();
   }
 
-  SvtxTruthRecoTableEval *tables = new SvtxTruthRecoTableEval();
-  tables->Verbosity(verbosity);
-  se->registerSubsystem(tables);
+  // Commenting out these 3 lines, as the tables seem to be outdated for this analysis package
+  //SvtxTruthRecoTableEval *tables = new SvtxTruthRecoTableEval();
+  //tables->Verbosity(verbosity);
+  //se->registerSubsystem(tables);
+
+  Global_Reco();
 
   //Now run the actual reconstruction
   if (HFjets::KFParticle_Set_Reco(tag) == Fun4AllReturnCodes::ABORTRUN) return;

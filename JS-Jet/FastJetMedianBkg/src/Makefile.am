@@ -21,10 +21,12 @@ libjetrhomedian_la_LIBADD = \
 
 libjetrhomedian_la_SOURCES = \
   JetRhoMedian.cc \
+  JetTree.cc \
   MemTimeProgression.cc 
 
 pkginclude_HEADERS = \
   JetRhoMedian.h \
+  JetTree.h \
   RhoMedianFluct.h \
   MemTimeProgression.h
  

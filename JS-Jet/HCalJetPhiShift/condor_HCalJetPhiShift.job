@@ -1,0 +1,16 @@
+Universe     = vanilla
+Executable   = run_HCalJetPhiShift.sh
+notification = Never
+Output       = condor-out/condor$(process).out
+Error        = condor-out/condor$(process).err
+Log          = condor-out/condor$(process).log
+Initialdir   = /sphenix/user/verkest/analysis/JS-Jet/HCalJetPhiShift
+
+Arguments = 5 $(process) \"$(Initialdir)/out\"
+
+# Jobs by default use 1.5Gb of RAM, you need to ask for more if needed
+# with request_memory. Be mindful - if you request too little your jobs will be evicted, if you request way too much it will take longer for your job to start
+request_memory = 512MB
+# the importance of this PeriodicHold will be explained in the next section
+PeriodicHold = (NumJobStarts>=1 && JobStatus == 1)
+Queue process from seq 5000 9999 |

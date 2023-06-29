@@ -44,11 +44,14 @@ def main():
 
     queue = open(f'{odir}/queue.list','w')
 
-
     # determine which input files will be divided
     in_files = []
     in_tags  = []
     n_file = -1
+    if (len(glob('full_lists/dst_*.list')) == 0):
+        print("fatal error: no lists in full_lists")
+        exit()
+
     for file in glob('full_lists/dst_*.list'):
         in_files .append(open(file,'r'))
         in_tags .append(file.split('/')[-1][:-5])

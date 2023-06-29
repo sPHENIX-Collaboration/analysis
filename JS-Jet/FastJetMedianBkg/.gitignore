@@ -1,0 +1,12 @@
+*.err
+*.root
+*.list
+*.png
+*.pdf
+*.out
+junk
+**/arch
+**/_
+**/prior
+**/figs
+

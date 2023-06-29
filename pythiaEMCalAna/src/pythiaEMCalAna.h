@@ -95,18 +95,45 @@ class pythiaEMCalAna : public SubsysReco
   TFile *fout;
   std::string outname;
   int getEvent;
+  long int n_direct_photons;
+  long int n_direct_photons_in_acceptance;
+  long int n_pythia_direct_photons;
+  long int n_decay_photons;
+  long int n_pythia_decays;
+  long int n_geant_decays;
+  long int n_primary;
+  long int n_pythia_decay_photons;
+  long int n_pythia_decayed_pi0s;
+  long int n_pythia_nondecayed_pi0s;
+  long int n_geant_primary_pi0s;
+  std::vector<int> pythia_primary_barcodes;
 
   std::vector<int> primaryBarcodes;
   std::vector<int> secondaryBarcodes;
   HepMC::GenParticle* getGenParticle(int barcode, HepMC::GenEvent* theEvent);
   PHG4VtxPoint* getG4EndVtx(int id, PHG4TruthInfoContainer* truthInfo);
   bool vector_contains(int val, std::vector<int> vec);
-  // case 1: primary that geant knows about, decay handled by geant
-  void addPrimaryFromGeant(PHG4Particle* part, PHG4TruthInfoContainer* truthInfo);
-  // case 2: primary that geant doesn't know about, decay handled by pythia
-  void addPrimaryFromPythia(HepMC::GenParticle* part);
-  // case 3: secondary that geant knows about
-  void addSecondary(PHG4Particle* part, PHG4TruthInfoContainer* truthInfo);
+  /* // case 1: primary that geant knows about, decay handled by geant */
+  /* void addPrimaryFromGeant(PHG4Particle* part, PHG4TruthInfoContainer* truthInfo); */
+  /* // case 2: primary that geant doesn't know about, decay handled by pythia */
+  /* void addPrimaryFromPythia(HepMC::GenParticle* part); */
+  /* // case 3: secondary that geant knows about */
+  /* void addSecondary(PHG4Particle* part, PHG4TruthInfoContainer* truthInfo); */
+  /* // edge case: geant knows about secondary, but not its parent */
+  /* void addSecondaryWithoutParent(PHG4Particle* part, PHG4TruthInfoContainer* truthInfo, HepMC::GenParticle* genParent); */
+
+  // case 1: pythia handles decay
+  /* void addPrimaryFromPythia(HepMC::GenParticle* part); */
+  /* void addSecondaryFromPythia(HepMC::GenParticle* part, HepMC::GenParticle* parent); */
+  /* void addPrimaryFromGeant(PHG4Particle* part, PHG4TruthInfoContainer* truthInfo); */
+  /* void addSecondaryFromGeant(PHG4Particle* part, PHG4TruthInfoContainer* truthInfo); */
+
+
+  bool isDirectPhoton(PHG4Particle* part, HepMC::GenEvent* theEvent);
+  void addDirectPhoton(PHG4Particle* part, PHG4TruthInfoContainer* truthInfo);
+  void addDecayPhoton(PHG4Particle* part, PHG4TruthInfoContainer* truthInfo, HepMC::GenEvent* theEvent);
+  void addPrimaryHadronFromPythia(HepMC::GenParticle* part);
+  void addPrimaryHadronFromGeant(PHG4Particle* part, PHG4TruthInfoContainer* truthInfo);
 };
 
 #endif // ISOCLUSTER_H

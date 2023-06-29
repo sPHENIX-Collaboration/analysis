@@ -2,7 +2,7 @@
 
 
 export HOME=/sphenix/u/${LOGNAME}
-export MYINSTALL=/sphenix/u/jkvapil/sw/install
+export MYINSTALL=/sphenix/u/tmengel/installDir
 source /opt/sphenix/core/bin/sphenix_setup.sh -n new
 source $OPT_SPHENIX/bin/setup_local.sh $MYINSTALL
 
