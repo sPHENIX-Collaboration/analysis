@@ -29,11 +29,19 @@ TPCRawDataTree::TPCRawDataTree(const std::string &name)
 {
   // reserve memory for max ADC samples
   m_adcSamples.resize(1024, 0);
+  M.setMapNames("AutoPad-R1-RevA.sch.ChannelMapping.csv", "AutoPad-R2-RevA-Pads.sch.ChannelMapping.csv", "AutoPad-R3-RevA.sch.ChannelMapping.csv");
 }
 
 //____________________________________________________________________________..
 int TPCRawDataTree::InitRun(PHCompositeNode *)
 {
+  sectorNum = m_fname;
+  size_t pos = sectorNum.find("TPC_ebdc");
+  sectorNum.erase(sectorNum.begin(),sectorNum.begin()+pos+8);
+  sectorNum.erase(sectorNum.begin()+2,sectorNum.end());
+  if(sectorNum.at(0) == '0') sectorNum.erase(sectorNum.begin(),sectorNum.begin()+1);
+  if(stoi(sectorNum) > 11) side = 1;
+
   m_file = TFile::Open(m_fname.c_str(), "recreate");
   assert(m_file->IsOpen());
 
@@ -81,6 +89,20 @@ int TPCRawDataTree::InitRun(PHCompositeNode *)
   R1_time = new TH2F("R1_time","R1_time",360,-0.5,359.5,1024,-0.5,1023.5);
   R2_time = new TH2F("R2_time","R2_time",360,-0.5,359.5,1024,-0.5,1023.5);
   R3_time = new TH2F("R3_time","R3_time",360,-0.5,359.5,1024,-0.5,1023.5);
+
+  TotalFEE = new TH1F("TotalFEE", "Total FEE", 26, -0.5, 25.5);
+  TotalFEEsampa = new TH1F("TotalFEEsampa", "Total FEE + sampa", 26*8, -0.5, 25*8-.5);
+  TotalFRAME = new TH1F("TotalFRAME", "Total FRAME", 21, -0.5, 20.5);
+
+  checksumError_fee = new TH1F("FEEWithError", "FEE with Error", 26, -0.5, 25.5);
+  checksumError_feesampa = new TH1F("FEEsampaWithError", "FEE*8+sampa with Error", 26*8, -0.5, 25*8-.5);
+  checksumError_frame = new TH1F("FRAMEWithError", "FRAME with Error", 21, -0.5, 20.5);
+ 
+  if (m_includeXYPos)
+  {
+    m_SampleTree->Branch("xPos", &m_xPos, "xPos/d");  
+    m_SampleTree->Branch("yPos", &m_yPos, "yPos/d");  
+  }
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -179,8 +201,36 @@ int TPCRawDataTree::process_event(PHCompositeNode *topNode)
            fillHist->Fill(m_adcSamples[s]);
            fillHist2D->Fill(s,m_adcSamples[s]);
         }
+        else {
+          checksumError_fee->Fill(m_fee);
+          checksumError_feesampa->Fill((m_fee*8. + m_sampaAddress));
+          checksumError_frame->Fill(m_frame);
+        }
+        TotalFEE->Fill(m_fee);
+        TotalFEEsampa->Fill((m_fee*8. + m_sampaAddress));
+        TotalFRAME->Fill(m_frame);
       }
-
+      if(m_includeXYPos)
+      {
+        int feeM = FEE_map[m_fee];
+        if(FEE_R[m_fee]==2) feeM += 6;
+        if(FEE_R[m_fee]==3) feeM += 14;
+        int layer = M.getLayer(feeM, m_Channel);
+        if(layer!=0)
+        {
+          double R = M.getR(feeM, m_Channel);
+          double phi = M.getPhi(feeM, m_Channel) + (stod(sectorNum) - side*12. )* M_PI / 6. ;
+          R /= 10.; //convert mm to cm  
+ 
+          m_xPos = R*cos(phi);
+          m_yPos = R*sin(phi);
+        }
+        else
+        {
+          m_xPos = 0.;
+          m_yPos = 0.;
+        }
+      }
       m_SampleTree->Fill();
     }
 
@@ -193,6 +243,14 @@ int TPCRawDataTree::process_event(PHCompositeNode *topNode)
 //____________________________________________________________________________..
 int TPCRawDataTree::End(PHCompositeNode * /*topNode*/)
 {
+  checksumError_fee->Divide(TotalFEE);
+  checksumError_feesampa->Divide(TotalFEEsampa);
+  checksumError_frame->Divide(TotalFRAME);
+  
+  TotalFEE->SetDirectory(0);
+  TotalFEEsampa->SetDirectory(0);
+  TotalFRAME->SetDirectory(0);
+  
   m_file->Write();
 
   std::cout << __PRETTY_FUNCTION__ << " : completed saving to " << m_file->GetName() << std::endl;
