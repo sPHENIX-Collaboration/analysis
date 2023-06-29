@@ -66,8 +66,8 @@ private:
   
   //! eventwise quantities
   int m_event;
-  int m_nTow_out;
   int m_nTow_in;
+  int m_nTow_out;
   float m_eta;
   float m_phi;
   float m_e;
