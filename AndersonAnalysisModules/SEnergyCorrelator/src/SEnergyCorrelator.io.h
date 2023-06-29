@@ -168,4 +168,31 @@ void SEnergyCorrelator::SaveOutput() {
 
 }  // end 'SaveOutput()'
 
+
+
+void SEnergyCorrelator::CloseInputFile() {
+
+  // print debug statement
+  if (m_inDebugMode) PrintDebug(29);
+
+  m_inFile -> cd();
+  m_inFile -> Close();
+  return;
+
+}  // end 'CloseInputFile()'
+
+
+
+void SEnergyCorrelator::CloseOutputFile() {
+
+  // print debug statement
+  if (m_inDebugMode) PrintDebug(30);
+
+  // close file
+  m_outFile -> cd();
+  m_outFile -> Close();
+  return;
+
+}  // end 'CloseOutputFile()'
+
 // end ------------------------------------------------------------------------
