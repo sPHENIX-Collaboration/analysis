@@ -29,8 +29,10 @@ R__LOAD_LIBRARY(libfun4all.so)
 R__LOAD_LIBRARY(libcaloTreeGen.so)
 R__LOAD_LIBRARY(libcalo_reco.so)
 
-void Fun4All_CaloTreeGen(const int nEvents = 0, const string &listFile = "fileList_withGeo_timingCut_Template.list", const string &outputFile = "commissioning.root")
-{
+void Fun4All_CaloTreeGen(const string &inputFile,
+                         const string &outputFile = "test.root",
+                         const int nEvents = 0) {
+
   Fun4AllServer *se = Fun4AllServer::instance();
   // recoConsts *rc = recoConsts::instance();
 
@@ -61,7 +63,8 @@ void Fun4All_CaloTreeGen(const int nEvents = 0, const string &listFile = "fileLi
   se->registerSubsystem(calo);
 
   Fun4AllInputManager *in = new Fun4AllDstInputManager("DSTcalo");
-  in->AddListFile(listFile.c_str());
+  // in->AddListFile(inputFile.c_str());
+  in->AddFile(inputFile.c_str());
   se->registerInputManager(in);
 
   // Fun4AllDstOutputManager *out = new Fun4AllDstOutputManager("DSTOUT", outputFile);
@@ -78,29 +81,29 @@ void Fun4All_CaloTreeGen(const int nEvents = 0, const string &listFile = "fileLi
 
 # ifndef __CINT__
 int main(int argc, char* argv[]) {
-    if(argc < 1 || argc > 5){
-        cout << "usage: ./bin/Fun4All_CaloTreeGen events listFile outputFile" << endl;
+    if(argc < 2 || argc > 4){
+        cout << "usage: ./bin/Fun4All_CaloTreeGen events inputFile outputFile" << endl;
         cout << "events: Number of events to analyze." << endl;
-        cout << "listFile: Location of fileList containing dst." << endl;
+        cout << "inputFile: Location of fileList containing dst." << endl;
         cout << "outputFile: name of output file." << endl;
         return 1;
     }
 
-    UInt_t events = 0;
-    string listFile;
+    string inputFile;
     string outputFile = "commissioning.root";
+    UInt_t events = 0;
 
     if(argc >= 2) {
-        events = atoi(argv[1]);
+        inputFile = argv[1];
     }
     if(argc >= 3) {
-        listFile = argv[2];
+        outputFile = argv[2];
     }
     if(argc >= 4) {
-        outputFile = argv[3];
+        events = atoi(argv[3]);
     }
 
-    Fun4All_CaloTreeGen(events, listFile, outputFile);
+    Fun4All_CaloTreeGen(inputFile, outputFile, events);
 
     cout << "done" << endl;
     return 0;
