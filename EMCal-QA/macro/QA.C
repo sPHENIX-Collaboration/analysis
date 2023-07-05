@@ -6,7 +6,7 @@
 // -- root includes --
 #include <TH2F.h>
 #include <TFile.h>
-#include <TTree.h>
+#include <TChain.h>
 
 using std::cout;
 using std::endl;
@@ -18,12 +18,11 @@ using std::to_string;
 
 namespace myAnalysis {
 
-    void init(const string& inputFile);
+    void init(const string& input, Bool_t filesDir=false);
     void analyze(UInt_t nevents=0);
     void finalize(const string &outputFile="test.root");
 
-    TFile* input;
-    TTree* data;
+    TChain* data;
 
     // QA
     TH1F* hNClusters;
@@ -82,10 +81,15 @@ namespace myAnalysis {
     vector<Float_t>* clusterNtow   = 0;
 }
 
-void myAnalysis::init(const string& inputFile) {
+void myAnalysis::init(const string& input, Bool_t filesDir) {
     cout << "Start Init" << endl;
-    input = TFile::Open(inputFile.c_str());
-    data  = (TTree*)input->Get("T");
+    data = new TChain("T");
+    if(filesDir) {
+        Int_t nFiles = data->Add((input+"/*.root").c_str());
+    }
+    else {
+        data->Add((input).c_str());
+    }
 
     data->SetBranchAddress("clusterPhi",&clusterPhi);
     data->SetBranchAddress("clusterEta",&clusterEta);
@@ -144,6 +148,7 @@ void myAnalysis::analyze(UInt_t nevents) {
     Float_t clusterNtow_max  = 0;
     UInt_t ctr[3] = {0};
     cout << "Starting Event Loop" << endl;
+    cout << "Total Events: " << nevents << endl;
     for(UInt_t i = 0; i < nevents; ++i) {
 
         if(i%500 == 0) cout << "Progress: " << i*100./nevents << " %" << endl;
@@ -252,29 +257,35 @@ void myAnalysis::finalize(const string& outputFile) {
     hclusterChisq_2->Write();
     hclusterChisq_3->Write();
 
-    input->Close();
     output.Close();
 }
 
-void QA(const string &inputFile,
+void QA(const string &input,
         const string &outputFile="test.root",
-        UInt_t nevents=0) {
+        UInt_t nevents=0,
+        Bool_t filesDir=false) {
 
-    myAnalysis::init(inputFile);
+    cout << "Input: " << input << endl;
+    cout << "Output:" << outputFile << endl;
+    cout << "nevents: " << nevents << endl;
+    cout << "Use filesDir: " << filesDir << endl;
+
+    myAnalysis::init(input, filesDir);
     myAnalysis::analyze(nevents);
     myAnalysis::finalize(outputFile);
 }
 
 # ifndef __CINT__
 int main(int argc, char* argv[]) {
-    if(argc < 2 || argc > 4){
-        cout << "usage: ./bin/QA inputFile outputFile events" << endl;
+    if(argc < 2 || argc > 5){
+        cout << "usage: ./bin/QA input outputFile events filesDir" << endl;
         return 1;
     }
 
     string input;
     string output = "test.root";
     UInt_t events = 0;
+    Bool_t filesDir = false;
 
     if(argc >= 2) {
         input = argv[1];
@@ -285,8 +296,11 @@ int main(int argc, char* argv[]) {
     if(argc >= 4) {
         events = atoi(argv[3]);
     }
+    if(argc >= 5) {
+        filesDir = atoi(argv[4]);
+    }
 
-    QA(input, output, events);
+    QA(input, output, events, filesDir);
 
     cout << "done" << endl;
     return 0;
