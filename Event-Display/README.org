@@ -14,12 +14,12 @@ Event Display Render: https://www.sphenix.bnl.gov/edisplay/
 
 * Usage
 
-1) Build the module via:
+1 ) Build the module via:
 #+begin_src bash
 ./build_package.sh
 #+end_src
 
-2) Run the Fun4All macro:
+2 ) Run the Fun4All macro:
 #+begin_src bash
 root -b -l -q 'macro/Fun4All_CaloTreeGen.C(<input>,<event>,<run>,<output_json>,<output_ttree>)'
 #+end_src
@@ -27,5 +27,5 @@ root -b -l -q 'macro/Fun4All_CaloTreeGen.C(<input>,<event>,<run>,<output_json>,<
 - input: Location of fileList or file containing dst.
 - event: Event number to analyze.
 - run: Run number.
-- output_jsonj: name of event file.
+- output_json: name of event file.
 - output_ttree: name of output file.
