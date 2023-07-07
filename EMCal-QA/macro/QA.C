@@ -36,6 +36,7 @@ namespace myAnalysis {
     TH1F* hclusterChisq;
     TH1F* hclusterChisq_2;
     TH1F* hclusterChisq_3;
+    TH1F* hTotalCaloE;
 
     // 2D correlations
     TH2F* h2clusterPhiVsEta;
@@ -52,21 +53,25 @@ namespace myAnalysis {
     Float_t phi_min  = -3.15;
     Float_t phi_max  = 3.15;
 
-    UInt_t  e_bins  = 500;
+    UInt_t  e_bins  = 200;
     Float_t e_min   = 0;
-    Float_t e_max   = 5e4;
+    Float_t e_max   = 100;
 
-    UInt_t  pt_bins  = 500;
+    UInt_t  pt_bins  = 200;
     Float_t pt_min   = 0;
-    Float_t pt_max   = 5e4;
+    Float_t pt_max   = 100;
 
-    UInt_t  chi2_bins  = 500;
+    UInt_t  chi2_bins  = 1000;
     Float_t chi2_min   = 0;
-    Float_t chi2_max   = 5e5;
+    Float_t chi2_max   = 1e3;
 
-    UInt_t  clusNtow_bins = 100;
+    UInt_t  clusNtow_bins = 150;
     Float_t clusNtow_min  = 0;
-    Float_t clusNtow_max  = 100;
+    Float_t clusNtow_max  = 150;
+
+    UInt_t totalCaloE_bins = 1500;
+    Float_t totalCaloE_min = 0;
+    Float_t totalCaloE_max = 1.5e3;
 
     UInt_t  nClus_bins = 300;
     Float_t nClus_min  = 0;
@@ -79,6 +84,8 @@ namespace myAnalysis {
     vector<Float_t>* clusterPt     = 0;
     vector<Float_t>* clusterChisq  = 0;
     vector<Float_t>* clusterNtow   = 0;
+
+    Float_t totalCaloE;
 }
 
 void myAnalysis::init(const string& input, Bool_t filesDir) {
@@ -93,30 +100,33 @@ void myAnalysis::init(const string& input, Bool_t filesDir) {
 
     data->SetBranchAddress("clusterPhi",&clusterPhi);
     data->SetBranchAddress("clusterEta",&clusterEta);
-    data->SetBranchAddress("clusterEFull",&clusterEFull);
+    // data->SetBranchAddress("clusterEFull",&clusterEFull);
+    data->SetBranchAddress("clusterE",&clusterEFull);
     data->SetBranchAddress("clusterECore",&clusterECore);
     data->SetBranchAddress("clustrPt",&clusterPt);
     data->SetBranchAddress("clusterChi",&clusterChisq);
     data->SetBranchAddress("clusterNtow",&clusterNtow);
+    data->SetBranchAddress("totalCaloE",&totalCaloE);
 
     // QA
     hNClusters              = new TH1F("hNClusters", "# of clusters per event; # of clusters per event; Counts", nClus_bins, nClus_min, nClus_max);
     hClusNtow               = new TH1F("hClusNtow", "# of towers per cluster; # of towers per cluster; Counts", clusNtow_bins, clusNtow_min, clusNtow_max);
     hclusterEta             = new TH1F("hclusterEta", "Cluster #eta; #eta; Counts", eta_bins, eta_min, eta_max);
     hclusterPhi             = new TH1F("hclusterPhi", "Cluster #phi; #phi; Counts", phi_bins, phi_min, phi_max);
+    hTotalCaloE             = new TH1F("hTotalCaloE", "Total Calorimeter Energy; GeV; Counts", totalCaloE_bins, totalCaloE_min, totalCaloE_max);
 
-    hclusterEFull           = new TH1F("hclusterEFull", "Cluster Full Energy; ADC; Counts", e_bins, e_min, e_max);
-    hclusterEFull_2         = new TH1F("hclusterEFull_2", "Cluster Energy (#chi^{2} < 10); ADC; Counts", e_bins, e_min, e_max);
+    hclusterEFull           = new TH1F("hclusterEFull", "Cluster Full Energy; GeV; Counts", e_bins, e_min, e_max);
+    hclusterEFull_2         = new TH1F("hclusterEFull_2", "Cluster Energy (#chi^{2} < 4); GeV; Counts", e_bins, e_min, e_max);
 
-    hclusterECore           = new TH1F("hclusterECore", "Cluster Core Energy; ADC; Counts", e_bins, e_min, e_max);
-    hclusterPt              = new TH1F("hclusterPt", "Cluster p_{T}; ADC; Counts", pt_bins, pt_min, pt_max);
+    hclusterECore           = new TH1F("hclusterECore", "Cluster Core Energy; GeV; Counts", e_bins, e_min, e_max);
+    hclusterPt              = new TH1F("hclusterPt", "Cluster p_{T}; GeV; Counts", pt_bins, pt_min, pt_max);
 
     hclusterChisq           = new TH1F("hclusterChisq", "Cluster #chi^{2}; #chi^{2}; Counts", chi2_bins, chi2_min, chi2_max);
     hclusterChisq_2         = new TH1F("hclusterChisq_2", "Cluster #chi^{2}; #chi^{2}; Counts", 100, 0, 100);
-    hclusterChisq_3         = new TH1F("hclusterChisq_3", "Cluster #chi^{2} (500 #leq ADC < 16000); #chi^{2}; Counts", 100, 0, 100);
+    hclusterChisq_3         = new TH1F("hclusterChisq_3", "Cluster #chi^{2} (1 GeV #leq Energy < 32 GeV); #chi^{2}; Counts", 100, 0, 100);
 
     h2clusterPhiVsEta       = new TH2F("h2clusterPhiVsEta", "Cluster; #eta; #phi", eta_bins, eta_min, eta_max, phi_bins, phi_min, phi_max);
-    h2clusterPhiVsEta_2     = new TH2F("h2clusterPhiVsEta_2", "Cluster (500 #leq ADC < 16000 and #chi^{2} < 10); #eta; #phi", eta_bins, eta_min, eta_max, phi_bins, phi_min, phi_max);
+    h2clusterPhiVsEta_2     = new TH2F("h2clusterPhiVsEta_2", "Cluster (1 GeV #leq Energy < 32 GeV and #chi^{2} < 4); #eta; #phi", eta_bins, eta_min, eta_max, phi_bins, phi_min, phi_max);
     h2clusterPhiVsEta_3     = new TH2F("h2clusterPhiVsEta_3", "Cluster Energy; #eta; #phi", eta_bins, eta_min, eta_max, phi_bins, phi_min, phi_max);
 
     h2clusterChisqVsEFull   = new TH2F("h2clusterChisqVsEFull", "Cluster #chi^{2} vs E; Energy; #chi^{2}", e_bins, e_min, e_max, chi2_bins, chi2_min, chi2_max);
@@ -146,6 +156,8 @@ void myAnalysis::analyze(UInt_t nevents) {
     Float_t clusterChisq_max = 0;
     Float_t clusterNtow_min  = 0;
     Float_t clusterNtow_max  = 0;
+            totalCaloE_min   = 0;
+            totalCaloE_max   = 0;
     UInt_t ctr[3] = {0};
     cout << "Starting Event Loop" << endl;
     cout << "Total Events: " << nevents << endl;
@@ -182,12 +194,15 @@ void myAnalysis::analyze(UInt_t nevents) {
             clusterPt_max    = max(clusterPt_max, clusterPt_val);
             clusterChisq_min = min(clusterChisq_min, clusterChisq_val);
             clusterChisq_max = max(clusterChisq_max, clusterChisq_val);
-            clusterNtow_min = min(clusterNtow_min, clusterNtow_val);
-            clusterNtow_max = max(clusterNtow_max, clusterNtow_val);
+            clusterNtow_min  = min(clusterNtow_min, clusterNtow_val);
+            clusterNtow_max  = max(clusterNtow_max, clusterNtow_val);
+            totalCaloE_min   = min(totalCaloE_min, totalCaloE);
+            totalCaloE_max   = max(totalCaloE_max, totalCaloE);
 
             hClusNtow->Fill(clusterNtow_val);
             hclusterEta->Fill(clusterEta_val);
             hclusterPhi->Fill(clusterPhi_val);
+            hTotalCaloE->Fill(totalCaloE);
 
             h2clusterPhiVsEta->Fill(clusterEta_val, clusterPhi_val);
             h2clusterPhiVsEta_3->Fill(clusterEta_val, clusterPhi_val, clusterEFull_val);
@@ -201,16 +216,16 @@ void myAnalysis::analyze(UInt_t nevents) {
             h2clusterChisqVsEFull->Fill(clusterEFull_val, clusterChisq_val);
             h2clusterChisqVsEFull_2->Fill(clusterEFull_val, clusterChisq_val);
 
-            if(clusterChisq_val < 10) {
+            if(clusterChisq_val < 4) {
                 hclusterEFull_2->Fill(clusterEFull_val);
                 ++ctr[1];
             }
 
-            if(clusterEFull_val >= 500 && clusterEFull_val < 16000) {
+            if(clusterEFull_val >= 1 && clusterEFull_val < 32) {
                 hclusterChisq_3->Fill(clusterChisq_val);
             }
 
-            if(clusterChisq_val < 10 && clusterEFull_val >= 500 && clusterEFull_val < 16000) {
+            if(clusterChisq_val < 4 && clusterEFull_val >= 1 && clusterEFull_val < 32) {
                 h2clusterPhiVsEta_2->Fill(clusterEta_val, clusterPhi_val);
                 ++ctr[2];
             }
@@ -223,8 +238,8 @@ void myAnalysis::analyze(UInt_t nevents) {
     cout << "events processed: " << nevents << endl;
     cout << "total clusters: " << ctr[0] << endl;
     cout << "nClusters_max (by Event): " << nClusters_max << endl;
-    cout << "clusters with chi2 < 10: " << ctr[1] << ", " << ctr[1]*100./ctr[0] << " %" << endl;
-    cout << "clusters with chi2 < 10 and 500 <= ADC < 16000: " << ctr[2] << ", " << ctr[2]*100./ctr[0] << " %" << endl;
+    cout << "clusters with chi2 < 4: " << ctr[1] << ", " << ctr[1]*100./ctr[0] << " %" << endl;
+    cout << "clusters with chi2 < 4 and 1 <= GeV < 32: " << ctr[2] << ", " << ctr[2]*100./ctr[0] << " %" << endl;
     cout << "clusterEta_min: " << clusterEta_min << " clusterEta_max: " << clusterEta_max << endl;
     cout << "clusterPhi_min: " << clusterPhi_min << " clusterPhi_max: " << clusterPhi_max << endl;
     cout << "clusterEFull_min: " << clusterEFull_min << " clusterEFull_max: " << clusterEFull_max << endl;
@@ -232,6 +247,7 @@ void myAnalysis::analyze(UInt_t nevents) {
     cout << "clusterPt_min: " << clusterPt_min << " clusterPt_max: " << clusterPt_max << endl;
     cout << "clusterChisq_min: " << clusterChisq_min << " clusterChisq_max: " << clusterChisq_max << endl;
     cout << "clusterNtow_min: " << clusterNtow_min << " clusterNtow_max: " << clusterNtow_max << endl;
+    cout << "totalCaloE_min: " << totalCaloE_min << " totalCaloE_max: " << totalCaloE_max << endl;
     cout << "Finish Analyze" << endl;
 }
 
@@ -241,6 +257,7 @@ void myAnalysis::finalize(const string& outputFile) {
 
     hNClusters->Write();
     hClusNtow->Write();
+    hTotalCaloE->Write();
     hclusterEta->Write();
     hclusterPhi->Write();
     h2clusterPhiVsEta->Write();
