@@ -1,9 +1,11 @@
+// ----------------------------------------------------------------------------
 // 'DoStandaloneCorrelatorCalculation.C'
 // Derek Anderson
 // 02.02.2023
 //
 // Use this to run the SEnergyCorrelator
 // class in standalone mode.
+// ----------------------------------------------------------------------------
 
 #ifndef DOSTANDALONECORRELATORCALCULATION_C
 #define DOSTANDALONECORRELATORCALCULATION_C
@@ -31,9 +33,11 @@ static const size_t NEnergyCorrs = 2;
 void DoStandaloneCorrelatorCalculation() {
 
   // io parameters
-  const string inFile("/sphenix/user/danderson/eec/SCorrelatorJetTree/output/condor/final_merge/correlatorJetTree.pp200py8run50_tracks_withQAHists.d2m2y2023.root");
-  const string inTree[NEnergyCorrs]  = {"RecoJetTree",    "TruthJetTree"};
-  const string outFile[NEnergyCorrs] = {"test_reco.root", "test_true.root"};
+  const string inFile("/sphenix/user/danderson/eec/SCorrelatorJetTree/output/condor/final_merge/correlatorJetTree.pp200py8jet30run6_trksAndChrgPars.d24m2y2023.root");
+  const string inTree[NEnergyCorrs]  = {"RecoJetTree",
+                                        "TruthJetTree"};
+  const string outFile[NEnergyCorrs] = {"pp200run6jet40.forErrorTest_getHistVars_reco.d16m4y2023.root",
+                                        "pp200run6jet40.forErrorTest_getHistVars_true.d16m4y2023.root"};
 
   // correlator parameters
   const uint32_t  nPointCorr             = 2;

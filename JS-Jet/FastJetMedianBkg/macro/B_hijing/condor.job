@@ -1,0 +1,12 @@
+Executable = ../condor.sh
+Universe = vanilla
+Notification = Never
+Arguments = out_$(process).root 0 $(dst_calo_list) $(dst_bbc_list)
+# request_memory = $(memory)
+request_memory = 3.8GB
+output = condor_$(process).out
+error = condor_$(process).err
+Log = /tmp/dstewart_(process)_condor.log
+# Log = condor.log
+PeriodicHold = (NumJobStarts>=1 && JobStatus == 1)
+Queue dst_bbc_list, dst_calo_list from queue.list

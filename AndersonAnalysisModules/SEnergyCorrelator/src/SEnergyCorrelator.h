@@ -20,13 +20,24 @@
 #include <cstdlib>
 #include <utility>
 // root includes
-#include <TH1.h>
-#include <TROOT.h>
-#include <TFile.h>
-#include <TTree.h>
-#include <TMath.h>
-#include <TString.h>
-#include <TDirectory.h>
+#include "TH1.h"
+#include "TROOT.h"
+#include "TFile.h"
+#include "TTree.h"
+#include "TMath.h"
+#include "TString.h"
+#include "TVector3.h"  // TODO update to XYZvector
+#include "TDirectory.h"
+// f4a include
+#include <fun4all/SubsysReco.h>
+#include <fun4all/Fun4AllReturnCodes.h>
+#include <fun4all/Fun4AllHistoManager.h>
+// phool includes
+#include <phool/phool.h>
+#include <phool/getClass.h>
+#include <phool/PHIODataNode.h>
+#include <phool/PHNodeIterator.h>
+#include <phool/PHCompositeNode.h>
 // fastjet includes
 #include <fastjet/PseudoJet.hh>
 // eec include
@@ -35,26 +46,22 @@
 using namespace std;
 using namespace fastjet;
 
-// global constants
-static const size_t NRange     = 2;
-static const size_t NMaxPtBins = 10;
-
 
 
 // SEnergyCorrelator definition -----------------------------------------------
 
-//class SEnergyCorrelator : public SubsysReco {
-class SEnergyCorrelator {
+class SEnergyCorrelator : public SubsysReco {
 
   public:
 
     // ctor/dtor
     SEnergyCorrelator(const string &name = "SEnergyCorrelator", const bool isComplex = false, const bool doDebug = false, const bool inBatch = false);
-    //~SEnergyCorrelator() override;
-    ~SEnergyCorrelator();
+    ~SEnergyCorrelator() override;
 
     // F4A methods
-    /* TODO F4A methods will go here */
+    int Init(PHCompositeNode*)          override;
+    int process_event(PHCompositeNode*) override;
+    int End(PHCompositeNode*)           override;
 
     // standalone-only methods
     void Init();
@@ -101,11 +108,18 @@ class SEnergyCorrelator {
 
   private:
 
+    // constants
+    enum CONSTANTS {
+      NRANGE = 2
+    };
+
     // io methods (*.io.h)
     void GrabInputNode();
     void OpenInputFile();
     void OpenOutputFile();
     void SaveOutput();
+    void CloseInputFile();
+    void CloseOutputFile();
 
     // system methods (*.sys.h)
     void    InitializeMembers();
@@ -120,6 +134,7 @@ class SEnergyCorrelator {
     int64_t GetEntry(const uint64_t entry);
 
     // analysis methods (*.ana.h)
+    void     DoCorrelatorCalculation();
     void     ExtractHistsFromCorr();
     bool     ApplyJetCuts(const double ptJet, const double etaJet);
     bool     ApplyCstCuts(const double momCst, const double drCst);
@@ -150,11 +165,11 @@ class SEnergyCorrelator {
     uint32_t                     m_nPointCorr;
     uint64_t                     m_nBinsDr;
     size_t                       m_nBinsJetPt;
-    double                       m_drBinRange[NRange];
-    double                       m_ptJetRange[NRange];
-    double                       m_etaJetRange[NRange];
-    double                       m_momCstRange[NRange];
-    double                       m_drCstRange[NRange];
+    double                       m_drBinRange[CONSTANTS::NRANGE];
+    double                       m_ptJetRange[CONSTANTS::NRANGE];
+    double                       m_etaJetRange[CONSTANTS::NRANGE];
+    double                       m_momCstRange[CONSTANTS::NRANGE];
+    double                       m_drCstRange[CONSTANTS::NRANGE];
     vector<PseudoJet>            m_jetCstVector;
     vector<pair<double, double>> m_ptJetBins;
 

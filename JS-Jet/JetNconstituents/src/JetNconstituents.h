@@ -4,26 +4,23 @@
 #define JETNCONSTITUENTS_H
 
 #include <fun4all/SubsysReco.h>
-#include <g4jets/Jetv1.h>
+#include <jetbase/Jetv1.h>
 #include <TH2D.h>
 #include <TH1D.h>
-#include <TCanvas.h>
-#include <iostream>
+
 #include <string>
 #include <vector>
 
 class TH1;
 class TH2;
 class PHCompositeNode;
-class TCanvas; 
+
 
 class JetNconstituents : public SubsysReco
 {
  public:
 
-  JetNconstituents(const std::string &recojetnameR02 = "AntiKt_Tower_r02",
-   const std::string &recojetnameR04 ="AntiKt_Tower_r03",
-   const std::string &recojetnameR06 = "AntiKt_Tower_r04",
+  JetNconstituents(const std::string &recojetname = "AntiKt_Tower_r04",
    const std::string &outputfilename = "JetNconstituents.root");
 
   ~JetNconstituents() override;
@@ -72,41 +69,24 @@ class JetNconstituents : public SubsysReco
   void Print(const std::string &what = "ALL") const override;
 
  private:
-    std::string m_recojetnameR02;
-    std::string m_recojetnameR04;
-    std::string m_recojetnameR06;
+    //! Input Node pointers
+    std::string m_recoJetName;
     std::string m_outputFileName;
     std::pair<double, double> m_etaRange;
     std::pair<double, double> m_ptRange;
     //! Output Histos variables
-    TH2 * h2d_nConstituent_vs_R = nullptr;
-    TH2 * h2d_FracEnergyCheck_vs_R = nullptr;
-    TH2 * h2d_SumEnergyDebug_vs_R = nullptr;
-    TH1 * h1d_nConstituent_R02 = nullptr;
-    TH1 * h1d_nConstituent_R04 = nullptr;
-    TH2 * h2d_FracEnergy_vs_CaloLayer_R02 = nullptr;
-    TH2 * h2d_FracEnergy_vs_CaloLayer_R04 = nullptr;
-    TH1 * h1d_FracEnergy_EMCal_R02 = nullptr;
-    TH1 * h1d_FracEnergy_IHCal_R02 = nullptr;
-    TH1 * h1d_FracEnergy_OHCal_R02 = nullptr;
-    TH1 * h1d_FracEnergy_EMCal_R04 = nullptr;
-    TH1 * h1d_FracEnergy_IHCal_R04 = nullptr;
-    TH1 * h1d_FracEnergy_OHCal_R04 = nullptr;
 
-    TH1 * h1d_nConstituent_IHCal_R02 = nullptr;
-    TH1 * h1d_nConstituent_IHCal_R04 = nullptr;
-    TH1 * h1d_nConstituent_OHCal_R02 = nullptr;
-    TH1 * h1d_nConstituent_OHCal_R04 = nullptr;
-    TH1 * h1d_nConstituent_EMCal_R02 = nullptr;
-    TH1 * h1d_nConstituent_EMCal_R04 = nullptr;
+    TH1 * h1d_nConsituents = nullptr;
+    TH1 * h1d_nConsituents_IHCal = nullptr;
+    TH1 * h1d_nConsituents_OHCal = nullptr;
+    TH1 * h1d_nConsituents_EMCal = nullptr;
+    TH1 * h1d_FracEnergy_EMCal = nullptr;
+    TH1 * h1d_FracEnergy_IHCal = nullptr;
+    TH1 * h1d_FracEnergy_OHCal = nullptr;
+    
 
-    TCanvas * c_emcal = nullptr;
-    TCanvas * c_ihcal = nullptr;
-    TCanvas * c_ohcal = nullptr;
-    TCanvas * c_nconst = nullptr;
-    TCanvas * c_nconst_emcal = nullptr;
-    TCanvas * c_nconst_ihcal = nullptr;
-    TCanvas * c_nconst_ohcal = nullptr;
+    TH2 * h2d_FracEnergy_vs_CaloLayer = nullptr;
+    TH2 * h2d_nConstituent_vs_CaloLayer = nullptr;
 
 };
 

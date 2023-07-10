@@ -3,44 +3,46 @@ AUTOMAKE_OPTIONS = foreign
 AM_CPPFLAGS = \
   -I$(includedir) \
   -I$(OFFLINE_MAIN)/include \
-  -isystem`root-config --incdir`
+  -I`root-config --incdir`
 
 lib_LTLIBRARIES = \
-   libfastjetmedianbkg.la \
-   libjetplusbackground.la
+  libjetrhomedian.la \
+  librhomedianfluct.la
 
-libfastjetmedianbkg_la_LDFLAGS = \
+libjetrhomedian_la_LDFLAGS = \
   -L$(libdir) \
   -L$(OFFLINE_MAIN)/lib \
   `fastjet-config --libs`
 
-libfastjetmedianbkg_la_LIBADD = \
+libjetrhomedian_la_LIBADD = \
   -lfun4all \
   -lg4dst \
   -lg4eval
 
-libfastjetmedianbkg_la_SOURCES = \
-  CaloJetRhoEst.cc \
-    MemTimeProgression.cc
+libjetrhomedian_la_SOURCES = \
+  JetRhoMedian.cc \
+  JetTree.cc \
+  MemTimeProgression.cc 
 
 pkginclude_HEADERS = \
-  CaloJetRhoEst.h \
-  JetPlusBackground.h \
-    MemTimeProgression.h
-
-libjetplusbackground_la_LDFLAGS = \
+  JetRhoMedian.h \
+  JetTree.h \
+  RhoMedianFluct.h \
+  MemTimeProgression.h
+ 
+librhomedianfluct_la_LDFLAGS = \
   -L$(libdir) \
   -L$(OFFLINE_MAIN)/lib \
   `fastjet-config --libs`
 
-libjetplusbackground_la_LIBADD = \
+librhomedianfluct_la_LIBADD = \
   -lfun4all \
   -lg4dst \
   -lg4eval
 
-libjetplusbackground_la_SOURCES = \
-  JetPlusBackground.cc \
-    MemTimeProgression.cc
+librhomedianfluct_la_SOURCES = \
+  RhoMedianFluct.cc \
+  MemTimeProgression.cc
  
 ################################################
 # linking tests
@@ -54,8 +56,8 @@ testexternals_SOURCES = \
   testexternals.cc
 
 testexternals_LDADD = \
-  libfastjetmedianbkg.la \
-  libjetplusbackground.la
+  libjetrhomedian.la \
+  librhomedianfluct.la
 
 testexternals.cc:
 	echo "//*** this is a generated file. Do not commit, do not edit" > $@
