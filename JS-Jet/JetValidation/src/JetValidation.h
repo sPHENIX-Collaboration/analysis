@@ -4,7 +4,7 @@
 #define JETVALIDATION_H
 
 #include <fun4all/SubsysReco.h>
-#include <g4jets/Jetv1.h>
+#include <jetbase/Jetv1.h>
 
 #include <string>
 #include <vector>

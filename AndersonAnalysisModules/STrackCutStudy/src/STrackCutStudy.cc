@@ -273,7 +273,9 @@ void STrackCutStudy::Init() {
 void STrackCutStudy::Analyze() {
 
   // check for tree and announce method
-  const bool doTuplesExist = (ntTrkEO && ntTrkPU);
+  const bool isEmbedGood   = ntTrkEO;
+  const bool isPileGood    = !(doPileup && ntTrkPU);
+  const bool doTuplesExist = (isEmbedGood && isPileGood);
   if (!doTuplesExist) {
     cerr << "PANIC: no input tuples!\n"
          << "        ntTrkEO = " << ntTrkEO << ", ntTrkPU = " << ntTrkPU
@@ -319,8 +321,8 @@ void STrackCutStudy::Analyze() {
     // perform calculations
     const Double_t umDcaXY    = dca3dxy * 10000;
     const Double_t umDcaZ     = dca3dz * 10000;
-    const Double_t deltaDcaXY = abs(dca3dxysigma / dca3dxy);
-    const Double_t deltaDcaZ  = abs(dca3dzsigma / dca3dz);
+    const Double_t deltaDcaXY = abs(dca3dxy / dca3dxysigma);
+    const Double_t deltaDcaZ  = abs(dca3dz / dca3dzsigma);
     const Double_t deltaEta   = abs(deltaeta / eta);
     const Double_t deltaPhi   = abs(deltaphi / phi);
     const Double_t deltaPt    = abs(deltapt / pt);
@@ -446,8 +448,8 @@ void STrackCutStudy::Analyze() {
       // perform calculations
       const Double_t umDcaXY    = pu_dca3dxy * 10000;
       const Double_t umDcaZ     = pu_dca3dz * 10000;
-      const Double_t deltaDcaXY = abs(pu_dca3dxysigma / pu_dca3dxy);
-      const Double_t deltaDcaZ  = abs(pu_dca3dzsigma / pu_dca3dz);
+      const Double_t deltaDcaXY = abs(pu_dca3dxy / pu_dca3dxysigma);
+      const Double_t deltaDcaZ  = abs(pu_dca3dz / pu_dca3dzsigma);
       const Double_t deltaEta   = abs(pu_deltaeta / pu_eta);
       const Double_t deltaPhi   = abs(pu_deltaphi / pu_phi);
       const Double_t deltaPt    = abs(pu_deltapt / pu_pt);
@@ -567,11 +569,11 @@ void STrackCutStudy::End() {
     const Ssiz_t nToDrawOddEO(3);
     const Ssiz_t nToDrawAllPU(3);
     const Ssiz_t nToDrawCutPU(3);
-    const Int_t  sToDrawAllEO[nToDrawAllEO] = {TYPE::TRACK,    TYPE::TRUTH,     TYPE::WEIRD_ALL};
-    const Int_t  sToDrawCutEO[nToDrawCutEO] = {TYPE::TRK_CUT,  TYPE::TRU_CUT,   TYPE::WEIRD_CUT};
+    const Int_t  sToDrawAllEO[nToDrawAllEO] = {TYPE::TRACK,        TYPE::TRUTH,         TYPE::WEIRD_ALL};
+    const Int_t  sToDrawCutEO[nToDrawCutEO] = {TYPE::TRK_CUT,      TYPE::TRU_CUT,       TYPE::WEIRD_CUT};
     const Int_t  sToDrawOddEO[nToDrawOddEO] = {TYPE::WEIRD_SI_CUT, TYPE::WEIRD_TPC_CUT, TYPE::NORM_CUT};
-    const Int_t  sToDrawAllPU[nToDrawAllPU] = {TYPE::PILEUP,   TYPE::PRIMARY,   TYPE::NONPRIM};
-    const Int_t  sToDrawCutPU[nToDrawCutPU] = {TYPE::PILE_CUT, TYPE::PRIM_CUT,  TYPE::NONPRIM_CUT};
+    const Int_t  sToDrawAllPU[nToDrawAllPU] = {TYPE::PILEUP,       TYPE::PRIMARY,       TYPE::NONPRIM};
+    const Int_t  sToDrawCutPU[nToDrawCutPU] = {TYPE::PILE_CUT,     TYPE::PRIM_CUT,      TYPE::NONPRIM_CUT};
 
     // create desired plots
     ConstructPlots(nToDrawCutEO, sToDrawCutEO, sDirPlotCutEO, sLabelCutEO);
