@@ -402,6 +402,15 @@ void SEnergyCorrelator::PrintDebug(const uint32_t code) {
     case 28:
       cout << "SEnergyCorrelator::GetJetPtBin(double) getting jet pT bin..." << endl;
       break;
+    case 29:
+      cout << "SEnergyCorrelator::CloseInputFile() closing input file..." << endl;
+      break;
+    case 30:
+      cout << "SEnergyCorrelator::CloseOutputFile() closing output file..." << endl;
+      break;
+    case 31:
+      cout << "SEnergyCorrelator::DoCorrelatorCalculation() looping over events and calculating correlators..." << endl;
+      break;
   }
   return;
 
@@ -511,6 +520,13 @@ void SEnergyCorrelator::PrintError(const uint32_t code, const size_t nDrBinEdges
     case 13:
       if (m_inStandaloneMode) {
         cerr << "WARNING: dR bin #" << iDrBin << " has a NAN as content or error..." << endl;
+      }
+      break;
+    case 14:
+      if (m_inComplexMode) {
+        cerr << "SEnergyCorrelatorFile::End() PANIC: calling standalone method in complex mode! Aborting!" << endl;
+      } else {
+        cerr << "PANIC: calling standalone method in complex mode! Aborting!" << endl;
       }
       break;
   }

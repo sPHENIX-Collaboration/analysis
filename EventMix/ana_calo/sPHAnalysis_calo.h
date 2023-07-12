@@ -5,6 +5,7 @@
 
 class TFile;
 class TNtuple;
+class TH1F;
 class TH1D;
 class TRandom;
 class RawCluster;
@@ -30,6 +31,7 @@ public:
 protected:
 
   int process_event_test(PHCompositeNode *topNode);
+  int process_event_data(PHCompositeNode *topNode);
 
   TFile* OutputNtupleFile;
   std::string OutputFileName;
@@ -37,6 +39,8 @@ protected:
   TNtuple* ntp_notracking;
   TH1D* h_mult;
   TH1D* h_ecore;
+
+  TH1F* h_pedestal[256*96];
 
   int EventNumber;
   int _whattodo;
