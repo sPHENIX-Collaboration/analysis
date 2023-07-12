@@ -5,7 +5,7 @@
 
 #include <fun4all/SubsysReco.h>
 
-#include <g4jets/JetMapv1.h>
+#include <jetbase/JetMapv1.h>
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
@@ -81,6 +81,9 @@ class BuildResonanceJetTaggingTree : public SubsysReco
   int m_nDaughters;
   SvtxEvalStack *m_svtx_evalstack = nullptr;
   SvtxTrackEval *m_trackeval = nullptr;
+
+  std::vector<float> m_recojet_const_px, m_recojet_const_py,
+    m_recojet_const_pz, m_recojet_const_e;
 
   std::vector<float> m_truthjet_const_px, m_truthjet_const_py,
     m_truthjet_const_pz, m_truthjet_const_e;

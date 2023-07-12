@@ -5,8 +5,8 @@
 #include <phool/phool.h>
 
 /// Jet includes
-#include <g4jets/JetMap.h>
-#include <g4jets/Jetv1.h>
+#include <jetbase/JetMap.h>
+#include <jetbase/Jetv1.h>
 
 /// Tracking includes
 #include <trackbase_historic/SvtxPHG4ParticleMap_v1.h>
@@ -22,6 +22,10 @@
 #include <HepMC/GenEvent.h>
 #include <HepMC/GenVertex.h>
 #pragma GCC diagnostic pop
+
+// Particle Flow
+#include <particleflowreco/ParticleFlowElement.h>
+#include <particleflowreco/ParticleFlowElementContainer.h>
 
 #include <phhepmc/PHHepMCGenEvent.h>
 #include <phhepmc/PHHepMCGenEventMap.h>
@@ -313,6 +317,31 @@ int BuildResonanceJetTaggingTree::loopHFHadronic(PHCompositeNode *topNode)
       m_reco_jet_m = recTagJet->get_mass();
       m_reco_jet_e = recTagJet->get_e();
 
+      //std::cout << "tag mass : " << recTag->GetMass() << std::endl;
+      /// iterate over all constituents and add them to the tree
+      ParticleFlowElementContainer *pflowContainer = findNode::getClass<ParticleFlowElementContainer>(topNode, "ParticleFlowElements");
+      ParticleFlowElement *pf_constituent = nullptr;
+      for(auto citer = recTagJet->begin_comp(); citer != recTagJet->end_comp(); ++citer)
+	{
+	  std::cout <<"first : " << citer->first << " second: " << citer->second << std::endl;
+
+	  // Don't include the tagged particle 
+	  // if (citer->first == JET::SRC::VOID)
+	  //  {
+	  //    continue;
+	  //  }
+
+	  pf_constituent = pflowContainer->getParticleFlowElement(citer->second);
+	  
+	  
+	  m_recojet_const_px.push_back(pf_constituent->get_px());
+	  m_recojet_const_py.push_back(pf_constituent->get_py());
+	  m_recojet_const_pz.push_back(pf_constituent->get_pz());
+	  m_recojet_const_e.push_back(pf_constituent->get_e());
+
+	 
+	}
+
       genTagJet = nullptr;
       genTag = nullptr;
 
@@ -342,6 +371,21 @@ int BuildResonanceJetTaggingTree::loopHFHadronic(PHCompositeNode *topNode)
           m_truth_jet_m = genTagJet->get_mass();
           m_truth_jet_e = genTagJet->get_e();
 
+	  /// iterate over all constituents and add them to the tree
+	  for(auto citer = genTagJet->begin_comp(); citer != genTagJet->end_comp();++citer)
+	    {
+	      HepMC::GenParticle* constituent = hepMCGenEvent->barcode_to_particle(citer->second);
+	      /// Don't include the tagged particle
+	      if(constituent == genTag)
+		{
+		  continue;
+		}
+
+	      m_truthjet_const_px.push_back(constituent->momentum().px());
+	      m_truthjet_const_py.push_back(constituent->momentum().py());
+	      m_truthjet_const_pz.push_back(constituent->momentum().pz());
+	      m_truthjet_const_e.push_back(constituent->momentum().e());
+	    }
         }
       }
 
@@ -590,6 +634,10 @@ void BuildResonanceJetTaggingTree::initializeTrees()
   m_taggedjettree->Branch("m_reco_jet_phi", &m_reco_jet_phi, "m_reco_jet_phi/F");
   m_taggedjettree->Branch("m_reco_jet_m", &m_reco_jet_m, "m_reco_jet_m/F");
   m_taggedjettree->Branch("m_reco_jet_e", &m_reco_jet_e, "m_reco_jet_e/F");
+  m_taggedjettree->Branch("m_recojet_const_px", &m_recojet_const_px);
+  m_taggedjettree->Branch("m_recojet_const_py", &m_recojet_const_py);
+  m_taggedjettree->Branch("m_recojet_const_pz", &m_recojet_const_pz);
+  m_taggedjettree->Branch("m_recojet_const_e", &m_recojet_const_e);
 
   m_taggedjettree->Branch("m_truth_tag_px", &m_truth_tag_px, "m_truth_tag_px/F");
   m_taggedjettree->Branch("m_truth_tag_py", &m_truth_tag_py, "m_truth_tag_py/F");
@@ -643,6 +691,12 @@ void BuildResonanceJetTaggingTree::resetTreeVariables()
   m_reco_jet_phi = NAN;
   m_reco_jet_m = NAN;
   m_reco_jet_e = NAN;
+
+  m_recojet_const_px.clear();
+  m_recojet_const_py.clear();
+  m_recojet_const_pz.clear();
+  m_recojet_const_e.clear();
+
   //Truth info
   m_truth_tag_px = NAN;
   m_truth_tag_py = NAN;

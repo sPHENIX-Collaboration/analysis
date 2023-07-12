@@ -7,8 +7,15 @@
 #include <g4main/Fun4AllDstPileupInputManager.h>
 
 #include <G4_Magnet.C>
-#include <G4_Tracking.C>
+
+#include <Trkr_RecoInit.C>
+#include <Trkr_Clustering.C>
+#include <Trkr_LaserClustering.C>
+#include <Trkr_Reco.C>
+#include <Trkr_Eval.C>
+#include <Trkr_QA.C>
 #include <QA.C>
+
 #include <G4_Global.C>
 #include <FROG.h>
 #include <decayfinder/DecayFinder.h>
@@ -45,7 +52,7 @@ using namespace std;
 /*   jakub.kvapil@cern.ch   */
 /****************************/
 
-void Fun4All_MDC2reco(vector<string> myInputLists = {"condorJob/fileLists/productionFiles-CHARM-dst_tracks-00000.LIST"}, const int nEvents = 10, ResonanceJetTagging::TAG tag = ResonanceJetTagging::TAG::D0)
+void Fun4All_MDC2reco(vector<string> myInputLists = {"dst_tracks.list", "dst_calo_cluster.list", "dst_truth.list", "dst_trkr_cluster.list", "dst_trackseeds.list", "dst_trkr_hit.list", "g4hits.list"}, const int nEvents = 500, ResonanceJetTagging::TAG tag = ResonanceJetTagging::TAG::D0)
 {
   int verbosity = 0;
 
@@ -150,10 +157,10 @@ void Fun4All_MDC2reco(vector<string> myInputLists = {"condorJob/fileLists/produc
     MagnetInit();
     MagnetFieldInit();
 
-    Mvtx_Cells();
-    Intt_Cells();
-    TPC_Cells();
-    Micromegas_Cells();
+    //Mvtx_Cells();
+    //Intt_Cells();
+    //TPC_Cells();
+    //Micromegas_Cells();
 
     TrackingInit();
 
