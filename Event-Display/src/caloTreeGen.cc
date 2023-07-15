@@ -37,7 +37,13 @@
 
 
 //____________________________________________________________________________..
-caloTreeGen::caloTreeGen(const std::string &name, const std::string &eventFile, const int eventNumber, const int runid):
+caloTreeGen::caloTreeGen(const std::string &name,
+                         const std::string &eventFile,
+                         const int eventNumber,
+                         const int runid,
+                         const float tow_cemc_min,
+                         const float tow_hcalin_min,
+                         const float tow_hcalout_min):
   SubsysReco(name)
   ,T(nullptr)
   ,Outfile(name)
@@ -45,7 +51,10 @@ caloTreeGen::caloTreeGen(const std::string &name, const std::string &eventFile, 
   ,totalCaloE(0)
   ,iEvent(0)
   ,eventNumber(eventNumber)
-  ,runid(runid) {
+  ,runid(runid)
+  ,tow_cemc_min(tow_cemc_min)
+  ,tow_hcalin_min(tow_hcalin_min)
+  ,tow_hcalout_min(tow_hcalout_min) {
 
   std::cout << "caloTreeGen::caloTreeGen(const std::string &name) Calling ctor" << std::endl;
 }
@@ -126,7 +135,7 @@ int caloTreeGen::Init(PHCompositeNode *topNode) {
                 \"dphi\": 0.025,\n \
                 \"color\": 4290445312,\n \
                 \"transparent\": 0.6,\n \
-                \"scaleminmax\": true\n \
+                \"scaleminmax\": false\n \
               }\n \
           },\n \
           \"HCALOUT\": {\n \
@@ -138,7 +147,7 @@ int caloTreeGen::Init(PHCompositeNode *topNode) {
                 \"dphi\": 0.025,\n \
                 \"color\": 24773,\n \
                 \"transparent\": 0.6,\n \
-                \"scaleminmax\": true\n \
+                \"scaleminmax\": false\n \
               }\n \
           }\n \
         }\n \
@@ -210,6 +219,8 @@ int caloTreeGen::process_event(PHCompositeNode *topNode) {
     m_emcTowE.push_back(energy);
     m_emcTiming.push_back(time);
 
+    if(energy < tow_cemc_min) continue;
+
     if(first_entry) {
         eventOutput << "\"CEMC\": [{ \"eta\": " << eta << ", \"phi\": " << phi << " , \"e\": " << energy << "}\n";
         first_entry = false;
@@ -253,6 +264,8 @@ int caloTreeGen::process_event(PHCompositeNode *topNode) {
     double energy = ohcTowerContainer -> get_tower_at_channel(iter) -> get_energy();
     m_ohcTowE.push_back(energy);
 
+    if(energy < tow_hcalout_min) continue;
+
     if(first_entry) {
       eventOutput << "\"HCALOUT\": [{ \"eta\": " << eta << ", \"phi\": " << phi << " , \"e\": " << energy << "}\n";
       first_entry = false;
@@ -295,6 +308,8 @@ int caloTreeGen::process_event(PHCompositeNode *topNode) {
       
     double energy = ihcTowerContainer -> get_tower_at_channel(iter) -> get_energy();
     m_ihcTowE.push_back(energy);
+
+    if(energy < tow_hcalin_min) continue;
 
     if(first_entry) {
       eventOutput << "\"HCALIN\": [{ \"eta\": " << eta << ", \"phi\": " << phi << " , \"e\": " << energy << "}\n";
