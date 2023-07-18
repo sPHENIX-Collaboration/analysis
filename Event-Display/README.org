@@ -21,11 +21,14 @@ Event Display Render: https://www.sphenix.bnl.gov/edisplay/
 
 2 ) Run the Fun4All macro:
 #+begin_src bash
-root -b -l -q 'macro/Fun4All_CaloTreeGen.C(<input>,<event>,<run>,<output_json>,<output_ttree>)'
+root -b -l -q 'macro/Fun4All_CaloTreeGen.C(<input>,<event>,<run>,<tow_cemc_min>,<tow_hcalin_min>,<tow_hcalin_min>,<output_json>,<output_ttree>)'
 #+end_src
 
 - input: Location of fileList or file containing dst.
 - event: Event number to analyze.
 - run: Run number.
+- tow_cemc_min: minimum threshold tower energy for CEMC.
+- tow_hcalin: minimum threshold tower energy for iHCal.
+- tow_hcalout: minimum threshold tower energy for oHCal.
 - output_json: name of event file.
 - output_ttree: name of output file.
