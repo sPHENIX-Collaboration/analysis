@@ -45,7 +45,6 @@ using namespace std;
 void Locate(Int_t id, Bool_t is_ASIDE, Double_t *rbin, Double_t *thbin);
 
 
-
 void Noise_ModuleDisplay(){
 
   //  std::vector <pair<int,int>> vec1;
@@ -54,7 +53,13 @@ void Noise_ModuleDisplay(){
 
   std::vector<pair<int,int>> vec; 
 
-  const TString filename3( Form( "./pedestal-10305-outfile.root") );
+  char name[100];
+  int run_num;
+
+  cout << "Input run number: ";
+  cin >> run_num;
+
+  const TString filename3( Form( "/sphenix/u/llegnosky/Livechan_Pedestals_Noise/run_%d/pedestal-%d-outfile.root",run_num,run_num) );
   //const TString filename3( Form( "/sphenix/u/jamesj3j3/workfest_Charles_mistake/sPHENIXProjects/pedestal-10131-outfile.root") );
 
   //    std::cout << "Analyze - filename2: " << filename2 << std::endl;
@@ -248,9 +253,12 @@ void Noise_ModuleDisplay(){
     // cout<<"Region # C "<<(i)<<" Alive Fraction = "<<sub_arrC[i]<<endl;   
   }
    
-  
-  TH2D* dummy_his1 = new TH2D("dummy1", "10305-Noise map in ADC unit North Side", 100, -1.5, 1.5, 100, -1.5, 1.5); //dummy histos for titles
-  TH2D* dummy_his2 = new TH2D("dummy2", "10305-Noise map in ADC unit South Side", 100, -1.5, 1.5, 100, -1.5, 1.5);
+  sprintf(name, "%d-Noise map in ADC unit North Side",run_num);
+  TH2D* dummy_his1 = new TH2D("dummy1", name, 100, -1.5, 1.5, 100, -1.5, 1.5);
+  //TH2D* dummy_his1 = new TH2D("dummy1", "10616-Noise map in ADC unit North Side", 100, -1.5, 1.5, 100, -1.5, 1.5); //dummy histos for titles
+  sprintf(name, "%d-Noise map in ADC unit South Side",run_num);
+  TH2D* dummy_his2 = new TH2D("dummy2", name, 100, -1.5, 1.5, 100, -1.5, 1.5);
+  //TH2D* dummy_his2 = new TH2D("dummy2", "10616-Noise map in ADC unit South Side", 100, -1.5, 1.5, 100, -1.5, 1.5);
   //TPaveLabels for sector labels
   TPaveLabel* A00 = new TPaveLabel( 1.046586,-0.1938999,1.407997,0.2144871, "18" );
   TPaveLabel* A01 = new TPaveLabel( 0.962076,0.4382608,1.323487,0.8466479 , "17" );
@@ -371,6 +379,9 @@ void Noise_ModuleDisplay(){
   //Trip_per_stack_dist->Fit("PoissonFit","ERS");
   //cout<< "\nThe total trips = " << trip_count_total << endl;
   //delete sparsforVIZ;
+
+  sprintf(name,"/sphenix/u/llegnosky/Livechan_Pedestals_Noise/run_%d/run_%d_Noise.png",run_num,run_num);
+  Error_Viz->Print(name);
 
   outf->Write();
 }
