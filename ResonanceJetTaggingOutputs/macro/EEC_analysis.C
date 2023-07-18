@@ -10,7 +10,7 @@ void EEC_analysis()
   // Histograms
   //
   // reco
-  TH1F *EEC = new TH1F("EEC", ";R_{L};EEC",50, 0.0, 1.0);
+  TH1F *EEC = new TH1F("EEC", ";R_{L};EEC",50, 0.001, 0.5);
   EEC->Sumw2();
   TH1F *rD = new TH1F("rD", ";r_{D};",50, 0.0, 0.5);
   rD->Sumw2();
@@ -28,7 +28,7 @@ void EEC_analysis()
   mD->Sumw2();
   //
   //truth
-  TH1F *truthEEC = new TH1F("truthEEC", ";R_{L};EEC",50, 0.0, 1.0);
+  TH1F *truthEEC = new TH1F("truthEEC", ";R_{L};EEC",50, 0.001, 0.5);
   truthEEC->Sumw2();
   TH1F *truthrD = new TH1F("truthrD", ";r_{D};",50, 0.0, 0.5);
   truthrD->Sumw2();
@@ -45,6 +45,26 @@ void EEC_analysis()
   TH1F *truthmD = new TH1F("truthmD", ";m_{D};", 50, 1.7, 2.);
   truthmD->Sumw2();
 
+  //resolution
+  TH1F *D_eta_res = new TH1F("D_eta_res", "; #Delta #eta^{D};", 50, -0.02, 0.02);
+  D_eta_res->Sumw2();
+  TH1F *D_phi_res = new TH1F("D_phi_res", "; #Delta #phi^{D};", 50, -0.02, 0.02);
+  D_phi_res->Sumw2();
+  TH1F *D_p_res = new TH1F("D_p_res", "; #Delta p^{D};", 50, -0.5, 0.5);
+  D_p_res->Sumw2();
+  TH1F *D_pt_res = new TH1F("D_pt_res", "; #Delta p_{T}^{D};", 50, -0.5, 0.5);
+  D_pt_res->Sumw2();
+  TH1F *jet_eta_res = new TH1F("jet_eta_res", "; #Delta #eta^{jet};", 50, -0.2, 0.2);
+  jet_eta_res->Sumw2();
+  TH1F *jet_phi_res = new TH1F("jet_phi_res", "; #Delta #phi^{jet};", 50, -0.2, 0.2);
+  jet_phi_res->Sumw2();
+  TH1F *jet_p_res = new TH1F("jet_p_res", "; #Delta p^{jet};", 50, -5., 5.);
+  jet_p_res->Sumw2();
+  TH1F *jet_pt_res = new TH1F("jet_pt_res", "; #Delta p_{T}^{jet};", 50, -5., 5.);
+  jet_pt_res->Sumw2();
+
+  TH2F *D_etaphi_res_widerange = new TH2F("D_eta_phi_widerange", ";#Delta #phi^{D}; #Delta #eta^{D}",50, -0.5, 0.5, 50, -0.3, 0.3);
+    TH2F *D_etaphi_res = new TH2F("D_eta_phi", ";#Delta #phi^{D}; #Delta #eta^{D}",50, -0.02, 0.02, 50, -0.02, 0.02);
 
   // I/O
   TString infilename = "myTestReco_D0/D0JetTree_dst_tracks_5k.root";
@@ -133,6 +153,21 @@ void EEC_analysis()
 	  truthptD->Fill(truthtag4vec.Pt());
 	  truthptjet->Fill(truthjet4vec.Pt());
 	  truthmD->Fill(truth_tag_m);
+
+	  // res
+	  D_eta_res->Fill(tag4vec.Eta() - truthtag4vec.Eta());
+	  D_phi_res->Fill(tag4vec.Phi() - truthtag4vec.Phi());
+	  D_p_res->Fill(tag4vec.P() - truthtag4vec.P());
+	  D_pt_res->Fill(tag4vec.Pt() - truthtag4vec.Pt());
+
+	  D_etaphi_res_widerange->Fill(tag4vec.Phi() - truthtag4vec.Phi(), tag4vec.Eta() - truthtag4vec.Eta());
+	  D_etaphi_res->Fill(tag4vec.Phi() - truthtag4vec.Phi(), tag4vec.Eta() - truthtag4vec.Eta());
+
+	  jet_eta_res->Fill(jet4vec.Eta() - truthjet4vec.Eta());
+	  jet_phi_res->Fill(jet4vec.Phi() - truthjet4vec.Phi());
+	  jet_p_res->Fill(jet4vec.P() - truthjet4vec.P());
+	  jet_pt_res->Fill(jet4vec.Pt() - truthjet4vec.Pt());
+
 	  // reco
 	  for(int j=0; j<reco_const_px->size(); ++j)
 	    {
@@ -148,6 +183,7 @@ void EEC_analysis()
 	      //std::cout << "weight : " << weight << std::endl;
 	      EEC->Fill(RL,weight);
 	      rDcons->Fill(tag4vec.DeltaR(con4vec,false));
+
 	    }
 
 	  // truth
@@ -201,6 +237,36 @@ void EEC_analysis()
   mD->Draw("same");
   TCanvas *c9 = new TCanvas("c9");
   mD->Draw();
+  TCanvas *c10 = new TCanvas("c10");
+  D_phi_res->Draw();
+  D_phi_res->Write();
+  TCanvas *c11 = new TCanvas("c11");
+  D_eta_res->Draw();
+  D_eta_res->Write();
+  TCanvas *c12 = new TCanvas("c12");
+  D_p_res->Draw();
+  D_p_res->Write();
+  TCanvas *c13 = new TCanvas("c13");
+  D_pt_res->Draw();
+  D_pt_res->Write();
+  TCanvas *c14 = new TCanvas("c14");
+  jet_phi_res->Draw();
+  jet_phi_res->Write();
+  TCanvas *c15 = new TCanvas("c15");
+  jet_eta_res->Draw();
+  jet_eta_res->Write();
+  TCanvas *c16 = new TCanvas("c16");
+  jet_p_res->Draw();
+  jet_p_res->Write();
+  TCanvas *c17 = new TCanvas("c17");
+  jet_pt_res->Draw();
+  jet_pt_res->Write();
+  TCanvas *c18 = new TCanvas("c18");
+  D_etaphi_res_widerange->Draw("colz");
+  D_etaphi_res_widerange->Write();
+  TCanvas *c19 = new TCanvas("c19");
+  D_etaphi_res->Draw("colz");
+  D_etaphi_res->Write();
   
   THStack *EECstack = new THStack("EECstack",";R_{L};EEC");
   EECstack->Add(EEC);
@@ -241,6 +307,7 @@ void EEC_analysis()
   truthrcons->Write();
   rD->Write();
   truthrD->Write();
+  
   
   outfile->Write();
   outfile->Close();

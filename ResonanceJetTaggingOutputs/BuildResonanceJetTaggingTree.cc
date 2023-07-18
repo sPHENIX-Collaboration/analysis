@@ -323,13 +323,13 @@ int BuildResonanceJetTaggingTree::loopHFHadronic(PHCompositeNode *topNode)
       ParticleFlowElement *pf_constituent = nullptr;
       for(auto citer = recTagJet->begin_comp(); citer != recTagJet->end_comp(); ++citer)
 	{
-	  std::cout <<"first : " << citer->first << " second: " << citer->second << std::endl;
+	  //std::cout <<"first : " << citer->first << " second: " << citer->second << std::endl;
 
 	  // Don't include the tagged particle 
-	  // if (citer->first == JET::SRC::VOID)
-	  //  {
-	  //    continue;
-	  //  }
+	   if (citer->first == Jet::SRC::VOID)
+	    {
+	      continue;
+	    }
 
 	  pf_constituent = pflowContainer->getParticleFlowElement(citer->second);
 	  
