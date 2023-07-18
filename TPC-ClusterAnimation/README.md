@@ -7,8 +7,8 @@ iteration_time: actual duration between frames in FuncAnimation, determines the 
 TPC_drift_speed: drift speed in cm/ms. 
 Name of the animation: In line 307 as second argument
 
-To run TPC_Cluster_Drift_Animator.py
-Set name file to read (data) in line 291 (json or root format) and run using python3 TPC Cluster_Drift_Animator.py 
+To run TPC_Cluster_Drift_Animator.py and TPC_Cluster_Drift_Animator_beam.py
+Set name of file to read (data) in line 291 (json or root format) and run using python3 TPC Cluster_Drift_Animator.py (or python3 TPC Cluster_Drift_Animator_beam.py)
 In order to generate smaller animations and then merge them set number of iterations as iterations (line 299) and start_iteration (line 307) as the starting iteration from which animation is generated. Also to use only those events relevant for this smaller animation, select the events using branches.event in line 247 and 248.
 Run each such macro(using tmux parallely), update the filenames in filelist.txt and then merge the animations using ffmpeg -f concat -safe 0 -i filelist.txt -c copy mergedVideo.mp4
 
