@@ -90,7 +90,7 @@ def makeCondorJob():
     condorOutputInfo = "$(condorDir)/log/condor-{0}-$INT(Process,%05d)".format(inputType)
     condorFile.write("Output             = {0}.out\n".format(condorOutputInfo))
     condorFile.write("Error              = {0}.err\n".format(condorOutputInfo))
-    condorFile.write("Log                = {0}.log\n".format(condorOutputInfo))
+    condorFile.write("Log                = /tmp/condor-{0}-$INT(Process,%05d).log\n".format(inputType))
     condorFile.write("Arguments          = \"{}\"\n".format(' '.join(listFileGeneric)))
     condorFile.write("Queue {}\n".format(nJob))
     print("Submission setup complete!")
