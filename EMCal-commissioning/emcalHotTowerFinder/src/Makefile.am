@@ -1,5 +1,9 @@
 AUTOMAKE_OPTIONS = foreign
 
+CINTINCLUDES = -pthread -I$(includedir) -I$(OFFLINE_MAIN)/lib -I$(OFFLINE_MAIN)/include -I$(ROOTSYS)/include -I$(ROOTSYS)/lib/include -I$(OPT_SPHENIX)/include
+
+INCLUDES = $(CINTINCLUDES)
+
 AM_CPPFLAGS = \
   -I$(includedir) \
   -I$(OFFLINE_MAIN)/include \
@@ -9,23 +13,22 @@ AM_LDFLAGS = \
   -L$(libdir) \
   -L$(OFFLINE_MAIN)/lib \
   -L$(OFFLINE_MAIN)/lib64 \
-   -lHepMC \
-  -lCLHEP \
-  -lglobalvertex_io \
   -lcalo_io \
-  -lg4dst \
-  -lg4eval
+  -lCLHEP \
+  -lglobalvertex \
+  -lglobalvertex_io
+pcmdir = $(libdir)
 
 pkginclude_HEADERS = \
-  singlePhotonClusterAna.h
+  towerid.h
 
 lib_LTLIBRARIES = \
-  libsinglePhotonClusterAna.la
+  libtowerid.la
 
-libsinglePhotonClusterAna_la_SOURCES = \
-  singlePhotonClusterAna.cc
+libtowerid_la_SOURCES = \
+  towerid.cc
 
-libsinglePhotonClusterAna_la_LIBADD = \
+libtowerid_la_LIBADD = \
   -lphool \
   -lSubsysReco
 
@@ -35,7 +38,9 @@ noinst_PROGRAMS = \
   testexternals
 
 testexternals_SOURCES = testexternals.cc
-testexternals_LDADD   = libsinglePhotonClusterAna.la
+testexternals_LDADD   = libtowerid.la
+
+TOWERIDOBJS=towerid.o derp.o
 
 testexternals.cc:
 	echo "//*** this is a generated file. Do not commit, do not edit" > $@
@@ -43,6 +48,7 @@ testexternals.cc:
 	echo "{" >> $@
 	echo "  return 0;" >> $@
 	echo "}" >> $@
+#rootcint -f $@ -c $(DEFAULT_INCLUDES) $(CINTINCLUDES) $^ towerid.cc -c 
 
 clean-local:
-	rm -f $(BUILT_SOURCES)
+	rm -f *Dict*  $(BUILT_SOURCES) *.pcm

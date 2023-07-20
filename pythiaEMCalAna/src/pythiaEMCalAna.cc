@@ -183,29 +183,29 @@ int pythiaEMCalAna::process_event(PHCompositeNode *topNode)
     }
 
   //Vertex information
-  GlobalVertexMap *vtxContainer = findNode::getClass<GlobalVertexMap>(topNode,"GlobalVertexMap");
-  if (!vtxContainer)
-    {
-      std::cout << PHWHERE << "pythiaEMCalAna::process_event - Fatal Error - GlobalVertexMap node is missing. Please turn on the do_global flag in the main macro in order to reconstruct the global vertex." << std::endl;
-      assert(vtxContainer);  // force quit
+  /* GlobalVertexMap *vtxContainer = findNode::getClass<GlobalVertexMap>(topNode,"GlobalVertexMap"); */
+  /* if (!vtxContainer) */
+  /*   { */
+  /*     std::cout << PHWHERE << "pythiaEMCalAna::process_event - Fatal Error - GlobalVertexMap node is missing. Please turn on the do_global flag in the main macro in order to reconstruct the global vertex." << std::endl; */
+  /*     assert(vtxContainer);  // force quit */
 
-      return 0;
-    }
+  /*     return 0; */
+  /*   } */
 
-  if (vtxContainer->empty())
-    {
-      std::cout << PHWHERE << "pythiaEMCalAna::process_event - Fatal Error - GlobalVertexMap node is empty. Please turn on the do_global flag in the main macro in order to reconstruct the global vertex." << std::endl;
-      return 0;
-    }
+  /* if (vtxContainer->empty()) */
+  /*   { */
+  /*     std::cout << PHWHERE << "pythiaEMCalAna::process_event - Fatal Error - GlobalVertexMap node is empty. Please turn on the do_global flag in the main macro in order to reconstruct the global vertex." << std::endl; */
+  /*     return 0; */
+  /*   } */
 
-  //More vertex information
-  GlobalVertex *vtx = vtxContainer->begin()->second;
-  if(!vtx)
-    {
+  /* //More vertex information */
+  /* GlobalVertex *vtx = vtxContainer->begin()->second; */
+  /* if(!vtx) */
+  /*   { */
 
-      std::cout << PHWHERE << "pythiaEMCalAna::process_event Could not find vtx from vtxContainer"  << std::endl;
-      return Fun4AllReturnCodes::ABORTEVENT;
-    }
+  /*     std::cout << PHWHERE << "pythiaEMCalAna::process_event Could not find vtx from vtxContainer"  << std::endl; */
+  /*     return Fun4AllReturnCodes::ABORTEVENT; */
+  /*   } */
   
   //Tower geometry node for location information
   RawTowerGeomContainer *towergeom = findNode::getClass<RawTowerGeomContainer>(topNode, "TOWERGEOM_CEMC");
@@ -230,6 +230,19 @@ int pythiaEMCalAna::process_event(PHCompositeNode *topNode)
       std::cout << PHWHERE << "pythiaEMCalAna::process_event Could not find node G4TruthInfo"  << std::endl;
       return Fun4AllReturnCodes::ABORTEVENT;
     }
+
+  // Vertex information
+  PHG4VtxPoint* vtx;
+  PHG4TruthInfoContainer::VtxRange vtx_range = truthinfo->GetPrimaryVtxRange();
+  PHG4TruthInfoContainer::ConstVtxIterator vtxIter = vtx_range.first;
+  vtx = vtxIter->second;
+
+  /* PHG4TruthInfoContainer::Range truthRange = truthinfo->GetPrimaryParticleRange(); */
+  /* PHG4TruthInfoContainer::ConstIterator truthIter; */
+  /* //from the HepMC event log */
+  /* for(truthIter = truthRange.first; truthIter != truthRange.second; truthIter++) */
+  /*   { */
+  /*     //PHG4Particle* part = truthinfo->GetParticle(truthIter->second->get_trkid()) */
 
   //For eventgen ancestory information
   PHHepMCGenEventMap *genEventMap = findNode::getClass<PHHepMCGenEventMap>(topNode, "PHHepMCGenEventMap");

@@ -21,7 +21,13 @@ class caloTreeGen : public SubsysReco
 {
  public:
 
-  caloTreeGen(const std::string &name = "caloTreeGen", const std::string &eventFile = "test.json", const int eventNumber = 0, const int runid = 0);
+  caloTreeGen(const std::string &name="caloTreeGen",
+              const std::string &eventFile="test.json",
+              const int eventNumber = 0,
+              const int runid = 0,
+              const float tow_cemc_min = 0,
+              const float tow_hcalin_min = 0,
+              const float tow_hcalout_min = 0);
 
   ~caloTreeGen() override;
 
@@ -93,6 +99,9 @@ class caloTreeGen : public SubsysReco
   int iEvent;
   int eventNumber;
   int runid;
+  float tow_cemc_min;
+  float tow_hcalin_min;
+  float tow_hcalout_min;
 
   std::ofstream eventOutput;
 
