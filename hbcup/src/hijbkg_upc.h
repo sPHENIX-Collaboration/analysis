@@ -1,6 +1,7 @@
 #ifndef __HIJBKG_UPC_H__
 #define __HIJBKG_UPC_H__
 
+#include <Rtypes.h>
 #include <fun4all/SubsysReco.h>
 
 #include <string>
@@ -55,15 +56,16 @@ class hijbkg_upc : public SubsysReco
  private:
 
   TTree *T;
+  int m_evt {0};
   std::vector<int> m_pid = {0};
-  std::vector<float> m_pt =  {0};
-  std::vector<float> m_eta = {0};
-  std::vector<float> m_phi = {0};
-  std::vector<float> m_e = {0};
-  std::vector<float> m_p = {0};
-  float m_psi2 = 0;
-  float m_cent = 0;
-  float m_b = 0;
+  std::vector<Float_t> m_pt =  {0};
+  std::vector<Float_t> m_eta = {0};
+  std::vector<Float_t> m_phi = {0};
+  std::vector<Float_t> m_e = {0};
+  std::vector<Float_t> m_p = {0};
+  Float_t m_psi2 = 0;
+  Float_t m_cent = 0;
+  Float_t m_b = 0;
   std::string Outfile;
   TFile *out;
 
