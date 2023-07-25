@@ -56,6 +56,8 @@ private:
   std::string _savefname;
   TFile* _savefile;
    
+  int nprocessed{0};     // num events processed
+
   //Output
   TTree* _tree;
   Int_t    f_evt;
