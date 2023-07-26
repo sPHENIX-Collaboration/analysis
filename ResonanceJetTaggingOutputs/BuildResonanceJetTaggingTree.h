@@ -82,8 +82,10 @@ class BuildResonanceJetTaggingTree : public SubsysReco
   SvtxEvalStack *m_svtx_evalstack = nullptr;
   SvtxTrackEval *m_trackeval = nullptr;
 
+  //std::vector<float> m_recojet_const_px, m_recojet_const_py, m_recojet_const_pz, m_recojet_const_e;
+
   std::vector<float> m_recojet_const_px, m_recojet_const_py,
-    m_recojet_const_pz, m_recojet_const_e;
+    m_recojet_const_pz;
 
   std::vector<float> m_truthjet_const_px, m_truthjet_const_py,
     m_truthjet_const_pz, m_truthjet_const_e;

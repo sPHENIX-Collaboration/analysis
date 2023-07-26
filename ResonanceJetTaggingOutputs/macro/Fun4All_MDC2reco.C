@@ -52,7 +52,7 @@ using namespace std;
 /*   jakub.kvapil@cern.ch   */
 /****************************/
 
-void Fun4All_MDC2reco(vector<string> myInputLists = {"dst_tracks.list", "dst_calo_cluster.list", "dst_truth.list", "dst_trkr_cluster.list", "dst_trackseeds.list", "dst_trkr_hit.list", "g4hits.list"}, const int nEvents = 500, ResonanceJetTagging::TAG tag = ResonanceJetTagging::TAG::D0)
+void Fun4All_MDC2reco(vector<string> myInputLists = {"dst_tracks.list", "dst_calo_cluster.list", "dst_truth.list", "dst_trkr_cluster.list", "dst_trackseeds.list", "g4hits.list"}, const int nEvents = 100, ResonanceJetTagging::TAG tag = ResonanceJetTagging::TAG::D0)
 {
   int verbosity = 0;
 
@@ -229,10 +229,15 @@ void Fun4All_MDC2reco(vector<string> myInputLists = {"dst_tracks.list", "dst_cal
   jetTag->setHCalClusterPtAcc(0.3, 9999.);
   jetTag->setHCalClusterEtaAcc(-1.1, 1.1);
   */
-  jetTag->setParticleFlowEtaAcc(-1.7, 1.7); // -1.1 1.1
+  //jetTag->setParticleFlowEtaAcc(-1.7, 1.7); // -1.1 1.1
   jetTag->setJetParameters(0.4, ResonanceJetTagging::ALGO::ANTIKT, ResonanceJetTagging::RECOMB::E_SCHEME);
   jetTag->setJetContainerName(particle_name + "Jets");
   jetTag->setDoTruth(true);
+  jetTag->setAddParticleFlow(false);
+  jetTag->setAddTracks(true);
+  jetTag->setTrackEtaAcc(-1.1, 1.1);
+ 
+
   se->registerSubsystem(jetTag);
 
   BuildResonanceJetTaggingTree *buildTree = new BuildResonanceJetTaggingTree(particle_name + "JetTree", jetTagRecoFile, tag);

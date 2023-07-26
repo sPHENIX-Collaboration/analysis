@@ -316,32 +316,53 @@ int BuildResonanceJetTaggingTree::loopHFHadronic(PHCompositeNode *topNode)
       m_reco_jet_phi = recTagJet->get_phi();
       m_reco_jet_m = recTagJet->get_mass();
       m_reco_jet_e = recTagJet->get_e();
-
-      //std::cout << "tag mass : " << recTag->GetMass() << std::endl;
+      /*
       /// iterate over all constituents and add them to the tree
       ParticleFlowElementContainer *pflowContainer = findNode::getClass<ParticleFlowElementContainer>(topNode, "ParticleFlowElements");
       ParticleFlowElement *pf_constituent = nullptr;
+      
       for(auto citer = recTagJet->begin_comp(); citer != recTagJet->end_comp(); ++citer)
+      {
+        //std::cout <<"first : " << citer->first << " second: " << citer->second << std::endl;
+
+	// Don't include the tagged particle 
+	if (citer->first == Jet::SRC::VOID)
 	{
-	  //std::cout <<"first : " << citer->first << " second: " << citer->second << std::endl;
-
-	  // Don't include the tagged particle 
-	   if (citer->first == Jet::SRC::VOID)
-	    {
-	      continue;
-	    }
-
-	  pf_constituent = pflowContainer->getParticleFlowElement(citer->second);
-	  
-	  
-	  m_recojet_const_px.push_back(pf_constituent->get_px());
-	  m_recojet_const_py.push_back(pf_constituent->get_py());
-	  m_recojet_const_pz.push_back(pf_constituent->get_pz());
-	  m_recojet_const_e.push_back(pf_constituent->get_e());
-
-	 
+          continue;
 	}
 
+	pf_constituent = pflowContainer->getParticleFlowElement(citer->second);
+	  
+	  
+	m_recojet_const_px.push_back(pf_constituent->get_px());
+	m_recojet_const_py.push_back(pf_constituent->get_py());
+	m_recojet_const_pz.push_back(pf_constituent->get_pz());
+	m_recojet_const_e.push_back(pf_constituent->get_e());	 
+      }
+      */
+
+      /// iterate over all constituents and add them to the tree
+      SvtxTrackMap *svtxtrackmap = findNode::getClass<SvtxTrackMap>(topNode, "SvtxTracks");
+      SvtxTrack *svtxtrack = nullptr;
+      
+      for(auto citer = recTagJet->begin_comp(); citer != recTagJet->end_comp(); ++citer)
+      {
+        //std::cout <<"first : " << citer->first << " second: " << citer->second << std::endl;
+
+	// Don't include the tagged particle 
+	if (citer->first == Jet::SRC::VOID)
+	{
+          continue;
+	}
+
+	svtxtrack = svtxtrackmap->get(citer->second);
+	  
+	  
+	m_recojet_const_px.push_back(svtxtrack->get_px());
+	m_recojet_const_py.push_back(svtxtrack->get_py());
+	m_recojet_const_pz.push_back(svtxtrack->get_pz());
+	//m_recojet_const_e.push_back(svtxtrack->get_cal_cluster_e(1));	 
+      }
       genTagJet = nullptr;
       genTag = nullptr;
 
@@ -637,7 +658,7 @@ void BuildResonanceJetTaggingTree::initializeTrees()
   m_taggedjettree->Branch("m_recojet_const_px", &m_recojet_const_px);
   m_taggedjettree->Branch("m_recojet_const_py", &m_recojet_const_py);
   m_taggedjettree->Branch("m_recojet_const_pz", &m_recojet_const_pz);
-  m_taggedjettree->Branch("m_recojet_const_e", &m_recojet_const_e);
+  //m_taggedjettree->Branch("m_recojet_const_e", &m_recojet_const_e);
 
   m_taggedjettree->Branch("m_truth_tag_px", &m_truth_tag_px, "m_truth_tag_px/F");
   m_taggedjettree->Branch("m_truth_tag_py", &m_truth_tag_py, "m_truth_tag_py/F");
@@ -695,7 +716,7 @@ void BuildResonanceJetTaggingTree::resetTreeVariables()
   m_recojet_const_px.clear();
   m_recojet_const_py.clear();
   m_recojet_const_pz.clear();
-  m_recojet_const_e.clear();
+  //m_recojet_const_e.clear();
 
   //Truth info
   m_truth_tag_px = NAN;
