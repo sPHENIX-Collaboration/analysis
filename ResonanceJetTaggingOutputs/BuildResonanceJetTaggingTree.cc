@@ -5,8 +5,8 @@
 #include <phool/phool.h>
 
 /// Jet includes
-#include <g4jets/JetMap.h>
-#include <g4jets/Jetv1.h>
+#include <jetbase/JetMap.h>
+#include <jetbase/Jetv1.h>
 
 /// Tracking includes
 #include <trackbase_historic/SvtxPHG4ParticleMap_v1.h>

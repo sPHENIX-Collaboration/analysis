@@ -26,11 +26,12 @@ if inputType not in types:
   sys.exit()
 
 
-dstSets = ['DST_TRACKS', 'DST_VERTEX']
+#dstSets = ['DST_TRACKS', 'DST_VERTEX']
+dstSets = ['DST_TRACKS']
 if args.truth:
     args.g4hit = False
     dstSets.append('DST_TRUTH')
-    dstSets.append('DST_TRKR_G4HIT')
+#    dstSets.append('DST_TRKR_G4HIT')
     dstSets.append('DST_TRACKSEEDS')
     dstSets.append('DST_TRKR_CLUSTER')
 if args.calo: dstSets.append('DST_CALO_CLUSTER')

@@ -4,6 +4,10 @@
 #include <fun4all/Fun4AllInputManager.h>
 #include <fun4all/Fun4AllServer.h>
 
+#include <GlobalVariables.C>
+#include <G4_Global.C>
+#include <G4_Bbc.C>
+
 #include <pythiaemcalana/pythiaEMCalAna.h>
 
 R__LOAD_LIBRARY(libfun4all.so)

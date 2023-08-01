@@ -36,8 +36,8 @@ void DoStandaloneCorrelatorCalculation() {
   const string inFile("/sphenix/user/danderson/eec/SCorrelatorJetTree/output/condor/final_merge/correlatorJetTree.pp200py8jet30run6_trksAndChrgPars.d24m2y2023.root");
   const string inTree[NEnergyCorrs]  = {"RecoJetTree",
                                         "TruthJetTree"};
-  const string outFile[NEnergyCorrs] = {"pp200run6jet40.forDebug_reco_withPhiFix.d18m4y2023.root",
-                                        "pp200run6jet40.forDebug_true_withPhiFix.d18m4y2023.root"};
+  const string outFile[NEnergyCorrs] = {"pp200run6jet40.forErrorTest_getHistVars_reco.d16m4y2023.root",
+                                        "pp200run6jet40.forErrorTest_getHistVars_true.d16m4y2023.root"};
 
   // correlator parameters
   const uint32_t  nPointCorr             = 2;

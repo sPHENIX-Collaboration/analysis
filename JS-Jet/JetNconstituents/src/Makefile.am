@@ -25,7 +25,6 @@ libJetNconstituents_la_LIBADD = \
   -lfun4all \
   -lg4dst \
   -lg4eval \
-  -lg4jets_io \
   -lg4jets
 
 BUILT_SOURCES = testexternals.cc

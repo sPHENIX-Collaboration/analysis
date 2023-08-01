@@ -28,7 +28,7 @@ int Fun4All_TPC_UnpackPRDF(const int nEvents = 100,
   size_t pos = fileName.find("TPC_ebdc");
   fileName.erase(fileName.begin(),fileName.begin()+pos);
   
-  TPCRawDataTree *r2tree = new TPCRawDataTree(outDir + fileName + "_TPCRawDataTree.root");
+  TPCRawDataTree *r2tree = new TPCRawDataTree(outDir + fileName + "_TPCRawDataTree_skip100.root");/////////////////////////////
 
   // add all possible TPC packet that we need to analyze
   for (int packet = 4000; packet<=4230; packet+=10)
@@ -43,6 +43,7 @@ int Fun4All_TPC_UnpackPRDF(const int nEvents = 100,
   in1->AddFile(inputFile);
   se->registerInputManager(in1);
 
+  se->skip(100);/////////////////////////////
   se->run(nEvents);
 
   se->End();
