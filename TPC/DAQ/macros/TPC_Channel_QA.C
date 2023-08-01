@@ -34,7 +34,7 @@ void TPC_Channel_QA(){
     if (q < 10) sectorNumber = "0"+std::to_string(q);
     else sectorNumber = std::to_string(q);   
 
-    string runNumber = "pedestal-00010151";
+    string runNumber = "pedestal-00010305";
     
     string fileName = "/sphenix/user/rosstom/test/testFiles/TPC_ebdc"+sectorNumber+"_"+runNumber+"-0000.prdf_TPCRawDataTree.root";
  
