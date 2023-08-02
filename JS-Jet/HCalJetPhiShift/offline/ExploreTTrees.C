@@ -9,7 +9,6 @@
 
 // Declaration of leaf types
 Int_t           event;
-Int_t           nTowers;
 Float_t         eta;
 Float_t         phi;
 Float_t         e;
@@ -18,41 +17,60 @@ Float_t         vx;
 Float_t         vy;
 Float_t         vz;
 vector<int>     id;
+
+int nTow_in;
 vector<float>   eta_in;
 vector<float>   phi_in;
 vector<float>   e_in;
-vector<float>   ieta_in;
-vector<float>   iphi_in;
+vector<int>   ieta_in;
+vector<int>   iphi_in;
+int nTow_out;
 vector<float>   eta_out;
 vector<float>   phi_out;
 vector<float>   e_out;
-vector<float>   ieta_out;
-vector<float>   iphi_out;
+vector<int>   ieta_out;
+vector<int>   iphi_out;
+int nTow_emc;
+vector<float>   eta_emc;
+vector<float>   phi_emc;
+vector<float>   e_emc;
+vector<int>   ieta_emc;
+vector<int>   iphi_emc;
 
 TTree          *fChain;   //!pointer to the analyzed TTree or TChain
 Int_t          fCurrent; //!current Tree number in a TChain
 
 
-const int ncal = 2;
+const int ncal = 3;
 string cal_name[] = { "iHCal", "oHCal", "EMCal" };
-string cal_tag[] = { "_in", "_out", "_em" };
+string cal_tag[] = { "_in", "_out", "_emc" };
 TString inFileName = "HCalJetPhiShift_10k.root";
 //TString inFileName = "HCalJetPhiShift_negativePion_magnetOn_15k.root";
-int n_pt_bins[ncal] = {80,100};
-double pt_bin_lo[ncal] = {0.,0.};
-double pt_bin_hi[ncal] = {4.,50.};
+int n_pt_bins[ncal] = {80,100,100};
+double pt_bin_lo[ncal] = {0.,0.,0.};
+double pt_bin_hi[ncal] = {4.,50.,20.};
+double eta_max[ncal] = {1.1,1.1,1.152};
+int n_eta_bins[ncal] = {24,24,96};
+int n_phi_bins[ncal] = {64,64,256};
 
-vector<float> *calo_eta[ncal] = {&eta_in, &eta_out};
-vector<float> *calo_phi[ncal] = {&phi_in, &phi_out};
-vector<float> *calo_e[ncal] = {&e_in, &e_out};
-vector<float> *calo_ieta[ncal] = {&ieta_in, &ieta_out};
-vector<float> *calo_iphi[ncal] = {&iphi_in, &iphi_out};
+int *nTowers[ncal] = {&nTow_in, &nTow_out, &nTow_emc};
+vector<float> *calo_eta[ncal] = {&eta_in, &eta_out, &eta_emc};
+vector<float> *calo_phi[ncal] = {&phi_in, &phi_out, &phi_emc};
+vector<float> *calo_e[ncal] = {&e_in, &e_out, &e_emc};
+vector<int> *calo_ieta[ncal] = {&ieta_in, &ieta_out, &ieta_emc};
+vector<int> *calo_iphi[ncal] = {&iphi_in, &iphi_out, &iphi_emc};
 
 double delta_phi(double phi1, double phi2){
   double dPhi = phi1 - phi2;
   while (dPhi>=M_PI) { dPhi -= 2.*M_PI; }
   while (dPhi<=-M_PI) { dPhi += 2.*M_PI; }
   return dPhi;
+};
+
+double dR(double phi1, double phi2, double eta1, double eta2){
+  double dphi_sqrd = delta_phi( phi1, phi2)*delta_phi( phi1, phi2);
+  double deta_sqrd = (eta1-eta2)*(eta1-eta2);
+  return sqrt(dphi_sqrd+deta_sqrd);
 };
 
 double phi_in_range(double phi){
@@ -63,25 +81,29 @@ double phi_in_range(double phi){
 
 TH1D *hGeantPhi = new TH1D("hGeantPhi",";truth #phi",64,-M_PI,M_PI);
 TH3D *hE_inner_vs_outer = new TH3D("hE_inner_vs_outer",";pion p_{T};total E deposited in iHCal;total E deposited in oHCal",60,0.,30.,100, 0., 10.,120,0.,60.);
+TH3D *hDeltaPhi_fraction_HcalOverAll = new TH3D("hDeltaPhi_fraction_HcalOverAll",";pion p_{T};E_{HCals}/E_{all calos};oHCal #Delta#phi",60,0.,30.,100,0.,1.,160,-0.4,0.4);
+TH3D *hDeltaPhi_fraction_oHcalOverHcals = new TH3D("hDeltaPhi_fraction_oHcalOverHcals",";pion p_{T};E_{oHCal}/E_{HCals};oHCal #Delta#phi",60,0.,30.,100,0.,1.,160,-0.4,0.4);
 
-TH3D *hE_weighted_eta_phi[ncal];
-TH2D *hPhi2D[ncal], *hDeltaPhi_pt[ncal], *hDeltaPhi_eta[ncal], *hTowerEt_pionEt[ncal], *hCaloEnergy_pionPt[ncal], *hEnergy_fraction[ncal], *hDeltaPhi_E[ncal], *hDeltaPhi_iPhi[ncal];
+TH3D *hE_weighted_eta_phi[ncal], *h_eta_phi[ncal];
+TH2D *hPhi2D[ncal], *hDeltaPhi_pt[ncal], *hDeltaPhi_eta[ncal], *hTowerEt_pionEt[ncal], *hCaloEnergy_pionPt[ncal], *hEnergy_fraction[ncal], *hDeltaPhi_E[ncal], *hDeltaPhi_iPhi[ncal], *hDeltaPhi_fraction[ncal];
 TH1D *hDeltaPhi[ncal], *hCaloPhi[ncal], *hTowerEt[ncal];
 
 void ExploreTTrees() {
   
   for (int i_cal=0; i_cal<ncal; ++i_cal) {  // LOOP OVER CALORIMETER LAYERS
-    hE_weighted_eta_phi[i_cal] = new TH3D(Form("hE_weighted_eta_phi_%s",cal_name[i_cal].c_str()),";pion p_{T};calo #eta;calo #phi",60,0.,30.,22,-1.,1.,64,-M_PI,M_PI);
-    hPhi2D[i_cal] = new TH2D(Form("hPhi2D_%s",cal_name[i_cal].c_str()),";truth #phi;tower #phi",64,-M_PI,M_PI,64,-M_PI,M_PI);
+    hE_weighted_eta_phi[i_cal] = new TH3D(Form("hE_weighted_eta_phi_%s",cal_name[i_cal].c_str()),";pion p_{T};calo #eta;calo #phi",60,0.,30.,n_eta_bins[i_cal],-eta_max[i_cal],eta_max[i_cal],n_phi_bins[i_cal],-M_PI,M_PI);
+    h_eta_phi[i_cal] = new TH3D(Form("h_eta_phi_%s",cal_name[i_cal].c_str()),";pion p_{T};calo #eta;calo #phi",60,0.,30.,n_eta_bins[i_cal],-eta_max[i_cal],eta_max[i_cal],n_phi_bins[i_cal],-M_PI,M_PI);
+    hPhi2D[i_cal] = new TH2D(Form("hPhi2D_%s",cal_name[i_cal].c_str()),";truth #phi;tower #phi",n_phi_bins[i_cal],-M_PI,M_PI,n_phi_bins[i_cal],-M_PI,M_PI);
     hDeltaPhi_pt[i_cal] = new TH2D(Form("hDeltaPhi_pt_%s",cal_name[i_cal].c_str()),";pion p_{T};tower #phi - truth #phi",120,0.,60.,320,-4.,4.);
     hDeltaPhi_E[i_cal] = new TH2D(Form("hDeltaPhi_E_%s",cal_name[i_cal].c_str()),";tower #phi - truth #phi;tower E_{T}",320,-4.,4.,n_pt_bins[i_cal], pt_bin_lo[i_cal], pt_bin_hi[i_cal]);
-    hDeltaPhi_iPhi[i_cal] = new TH2D(Form("hDeltaPhi_iPhi_%s",cal_name[i_cal].c_str()),";tower #phi - truth #phi;tower iphi",320,-4.,4.,24,0.,24.);
-    hDeltaPhi_eta[i_cal] = new TH2D(Form("hDeltaPhi_eta_%s",cal_name[i_cal].c_str()),";pion #eta;tower #phi - truth #phi",60,-1.,1.,320,-4.,4.);
+    hDeltaPhi_fraction[i_cal] = new TH2D(Form("hDeltaPhi_fraction_%s",cal_name[i_cal].c_str()),";tower #phi - truth #phi;fraction of total calo E in layer",320,-4.,4.,100,0,1.);
+    hDeltaPhi_iPhi[i_cal] = new TH2D(Form("hDeltaPhi_iPhi_%s",cal_name[i_cal].c_str()),";tower #phi - truth #phi;tower iphi",320,-4.,4.,256,0.,256.);
+    hDeltaPhi_eta[i_cal] = new TH2D(Form("hDeltaPhi_eta_%s",cal_name[i_cal].c_str()),";pion #eta;tower #phi - truth #phi",n_phi_bins[i_cal],-eta_max[i_cal],eta_max[i_cal],320,-4.,4.);
     hTowerEt_pionEt[i_cal] = new TH2D(Form("hTowerEt_pionEt_%s",cal_name[i_cal].c_str()),";tower E_{T};pion E_{T}",n_pt_bins[i_cal], pt_bin_lo[i_cal], pt_bin_hi[i_cal],120,0.,60.);
     hCaloEnergy_pionPt[i_cal] = new TH2D(Form("hCaloEnergy_pionPt_%s",cal_name[i_cal].c_str()),";pion p_{T};total E deposited in calo",60,0.,30.,n_pt_bins[i_cal], pt_bin_lo[i_cal], pt_bin_hi[i_cal]);
-    hEnergy_fraction[i_cal] = new TH2D(Form("hEnergy_fraction_%s",cal_name[i_cal].c_str()),";pion E;fraction of pion E in calo",120,0.,60.,100,0.,1.);
+    hEnergy_fraction[i_cal] = new TH2D(Form("hEnergy_fraction_%s",cal_name[i_cal].c_str()),";pion E;fraction of pion E in calo",120,0.,60.,100,0.,10.);
     hDeltaPhi[i_cal] = new TH1D(Form("hDeltaPhi_%s",cal_name[i_cal].c_str()),";tower #phi - truth #phi",128,-2.*M_PI,2.*M_PI);
-    hCaloPhi[i_cal] = new TH1D(Form("hCaloPhi_%s",cal_name[i_cal].c_str()),";tower #phi",64,-M_PI,M_PI);
+    hCaloPhi[i_cal] = new TH1D(Form("hCaloPhi_%s",cal_name[i_cal].c_str()),";tower #phi",n_phi_bins[i_cal],-M_PI,M_PI);
     hTowerEt[i_cal] = new TH1D(Form("hTowerEt_%s",cal_name[i_cal].c_str()),";tower E_{T}",n_pt_bins[i_cal], pt_bin_lo[i_cal], pt_bin_hi[i_cal]);
   }
   
@@ -89,7 +111,6 @@ void ExploreTTrees() {
   TTree *fChain = (TTree*)f->Get("T");
   
   fChain->SetBranchAddress("event", &event);
-  fChain->SetBranchAddress("nTowers", &nTowers);
   fChain->SetBranchAddress("eta", &eta);
   fChain->SetBranchAddress("phi", &phi);
   fChain->SetBranchAddress("e", &e);
@@ -99,6 +120,7 @@ void ExploreTTrees() {
   fChain->SetBranchAddress("vz", &vz);
   
   for (int i_cal=0; i_cal<ncal; ++i_cal) {  // LOOP OVER CALORIMETER LAYERS
+    fChain->SetBranchAddress(Form("nTow%s",cal_tag[i_cal].c_str()), &nTowers[i_cal]);
     fChain->SetBranchAddress(Form("eta%s",cal_tag[i_cal].c_str()), &calo_eta[i_cal]);
     fChain->SetBranchAddress(Form("phi%s",cal_tag[i_cal].c_str()), &calo_phi[i_cal]);
     fChain->SetBranchAddress(Form("e%s",cal_tag[i_cal].c_str()), &calo_e[i_cal]);
@@ -116,26 +138,46 @@ void ExploreTTrees() {
     
     hGeantPhi->Fill(phi_in_range(phi));
     
-    float total_E[ncal] = {0.,0.};
+    float total_E[ncal] = {0.,0.,0.};
+    float max_out_phi;
+    //    float max_tow_phi[ncal];// = {0.,0.,0.};
+    
+    float closestOuter_tow_dR = 9999.;
+    float closestOuter_tow_eta;
+    float closestOuter_tow_phi;
     
     for (int i_cal=0; i_cal<ncal; ++i_cal) {  // LOOP OVER CALORIMETER LAYERS
       float max_tow_e = 0.;
       float max_tow_eta;
-      float max_tow_phi;
       int   max_tow_iphi;
-      
-      
+      float max_tow_phi;
+
       for (int itow=0; itow<calo_e[i_cal]->size(); ++itow) {  // LOOP OVER CALORIMETER TOWERS
+//        if (calo_e[i_cal]->at(itow)<=0.) continue;
+//        if (i_cal==2 && calo_e[i_cal]->at(itow)<0.08) { continue; }
         total_E[i_cal] += calo_e[i_cal]->at(itow);
         if (calo_e[i_cal]->at(itow)>max_tow_e){
           max_tow_e = calo_e[i_cal]->at(itow);
           max_tow_eta = calo_eta[i_cal]->at(itow);
-          max_tow_phi = phi_in_range(calo_phi[i_cal]->at(itow));
+          max_tow_phi = calo_phi[i_cal]->at(itow);
           max_tow_iphi = calo_iphi[i_cal]->at(itow);
         }
+        if( i_cal==1 ){  // MATCH PION TO CLOSEST OHCAL TOWER
+          float delta_R = dR(phi, calo_phi[i_cal]->at(itow), eta, calo_eta[i_cal]->at(itow));
+          if (delta_R<closestOuter_tow_dR){
+            closestOuter_tow_dR = delta_R;
+            closestOuter_tow_eta = calo_eta[i_cal]->at(itow);
+            closestOuter_tow_phi = calo_phi[i_cal]->at(itow);
+          }
+        }
         hCaloEnergy_pionPt[i_cal]->Fill(pt,calo_e[i_cal]->at(itow));
-        hE_weighted_eta_phi[i_cal]->Fill(pt,calo_eta[i_cal]->at(itow),calo_phi[i_cal]->at(itow),calo_e[i_cal]->at(itow));
+        h_eta_phi[i_cal]->Fill(pt,calo_eta[i_cal]->at(itow),phi_in_range(calo_phi[i_cal]->at(itow)));
+        hE_weighted_eta_phi[i_cal]->Fill(pt,calo_eta[i_cal]->at(itow),phi_in_range(calo_phi[i_cal]->at(itow)),calo_e[i_cal]->at(itow));
       }  // end tower loop
+      
+//      cout<<cal_tag[i_cal]<<"\t"<<max_tow_eta<<"\t"<<eta<<"\t"<<delta_phi(max_tow_phi,phi)<<endl;
+      
+      if (i_cal==1) {max_out_phi=max_tow_phi;}
       
       double e_fraction = (double) total_E[i_cal]/e;
       hEnergy_fraction[i_cal]->Fill(e,e_fraction);
@@ -150,24 +192,34 @@ void ExploreTTrees() {
       hTowerEt_pionEt[i_cal]->Fill(max_tow_e,e);
       // if (Cut(ientry) < 0) continue;
     }  // end calo loop
+    
+    for (int i_cal=0; i_cal<ncal; ++i_cal) {  // LOOP OVER CALORIMETER LAYERS
+      hDeltaPhi_fraction[i_cal]->Fill(delta_phi(max_out_phi,phi),total_E[i_cal]/(total_E[0]+total_E[1]+total_E[2]));
+    }
+    
+    hDeltaPhi_fraction_HcalOverAll->Fill(pt, (total_E[0]+total_E[1])/(total_E[0]+total_E[1]+total_E[2]), delta_phi(closestOuter_tow_phi,phi));
+    hDeltaPhi_fraction_oHcalOverHcals->Fill(pt, total_E[1]/(total_E[0]+total_E[1]), delta_phi(closestOuter_tow_phi,phi));
+    
     hE_inner_vs_outer->Fill(pt, total_E[0], total_E[1]);
   }  // end event loop
   
-  //  hPhi2D->Draw("COLZ");
-  //  new TCanvas;
-  //  hDeltaPhi->Draw("COLZ");
-  //  new TCanvas;
-  //  hDeltaPhi_pt->Draw("COLZ");
-  //  new TCanvas;
-  //  hGeantPhi->Draw();
-  //  new TCanvas;
-  //  hCaloPhi->Draw();
-  //  new TCanvas;
-  //  hTowerEt->Draw();
-  //  new TCanvas;
-  //  hTowerEt_pionEt->Draw("COLZ");
-  //  new TCanvas;
-  //  hDeltaPhi_eta->Draw("COLZ");
+  new TCanvas;
+  hGeantPhi->Draw();
+  for (int i_cal=0; i_cal<ncal; ++i_cal) {  // LOOP OVER CALORIMETER LAYERS
+    hPhi2D[i_cal]->Draw("COLZ");
+    new TCanvas;
+    hDeltaPhi[i_cal]->Draw("COLZ");
+    new TCanvas;
+    hDeltaPhi_pt[i_cal]->Draw("COLZ");
+    new TCanvas;
+    hCaloPhi[i_cal]->Draw();
+    new TCanvas;
+    hTowerEt[i_cal]->Draw();
+    new TCanvas;
+    hTowerEt_pionEt[i_cal]->Draw("COLZ");
+    new TCanvas;
+    hDeltaPhi_eta[i_cal]->Draw("COLZ");
+  }
   
   string outputroot = (string) inFileName;
   string remove_this = ".root";
@@ -177,14 +229,18 @@ void ExploreTTrees() {
   TFile *outFile = new TFile(outFileName,"RECREATE");
   hGeantPhi->Write();
   hE_inner_vs_outer->Write();
+  hDeltaPhi_fraction_HcalOverAll->Write();
+  hDeltaPhi_fraction_oHcalOverHcals->Write();
   for (int i_cal=0; i_cal<ncal; ++i_cal) {  // LOOP OVER CALORIMETER LAYERS
     hE_weighted_eta_phi[i_cal]->Write();
+    h_eta_phi[i_cal]->Write();
     hPhi2D[i_cal]->Write();
     hDeltaPhi_pt[i_cal]->Write();
     hDeltaPhi_eta[i_cal]->Write();
     hTowerEt_pionEt[i_cal]->Write();
     hCaloEnergy_pionPt[i_cal]->Write();
     hEnergy_fraction[i_cal]->Write();
+    hDeltaPhi_fraction[i_cal]->Write();
     hDeltaPhi_E[i_cal]->Write();
     hDeltaPhi_iPhi[i_cal]->Write();
     hDeltaPhi[i_cal]->Write();
@@ -192,4 +248,59 @@ void ExploreTTrees() {
     hTowerEt[i_cal]->Write();
   }
   
+  for (int i_cal=0; i_cal<ncal; ++i_cal) {  // LOOP OVER CALORIMETER LAYERS
+    new TCanvas;
+    hDeltaPhi_fraction[i_cal]->Draw("COLZ");
+  }
+  
+  vector<TH3D *> histos = {hDeltaPhi_fraction_HcalOverAll, hDeltaPhi_fraction_oHcalOverHcals};
+  
+  TCanvas * can = new TCanvas( "can" , "" ,700 ,500 );
+  can->SetLogz();
+  const char us[] = "_";
+  
+  auto fa1 = new TF1("fa1","0.",0,1);
+  
+  for (int i=0; i<histos.size(); ++i ) {
+    TH2D *hTemp = (TH2D*)histos[i]->Project3D("ZY");
+    hTemp->SetLineColor(kRed);
+    hTemp->SetMarkerColor(kRed);
+    hTemp->Draw("COLZ");
+    hTemp->ProfileX()->Draw("SAME");
+    can->SaveAs(Form("plots/ExploreTTrees/%s.pdf",histos[i]->GetName()),"PDF");
+    hTemp->ProfileX()->Draw("");
+    fa1->Draw("SAME");
+    can->SaveAs(Form("plots/ExploreTTrees/%s_pfx.pdf",histos[i]->GetName()),"PDF");
+    for (int j=0; j<3; ++j) {
+      double ptlo = (double)10.*j;
+      double pthi = (double)10.*(j+1);
+      histos[i]->GetXaxis()->SetRangeUser(ptlo,pthi);
+      hTemp = (TH2D*)histos[i]->Project3D("ZY");
+      hTemp->SetLineColor(kRed);
+      hTemp->SetMarkerColor(kRed);
+      hTemp->Draw("COLZ");
+      hTemp->ProfileX()->Draw("SAME");
+      can->SaveAs(Form("plots/ExploreTTrees/%s%s%i%s%i.pdf",histos[i]->GetName(),us,(int)ptlo,us,(int)pthi),"PDF");
+      hTemp->ProfileX()->Draw("");
+      fa1->Draw("SAME");
+      can->SaveAs(Form("plots/ExploreTTrees/%s%s%i%s%i_pfx.pdf",histos[i]->GetName(),us,(int)ptlo,us,(int)pthi),"PDF");
+    }
+    for (int j=1; j<10; ++j) {
+      double ptlo = (double)1.*j;
+      double pthi = (double)1.*(j+1);
+      histos[i]->GetXaxis()->SetRangeUser(ptlo,pthi);
+      hTemp = (TH2D*)histos[i]->Project3D("ZY");
+      hTemp->SetLineColor(kRed);
+      hTemp->SetMarkerColor(kRed);
+      hTemp->Draw("COLZ");
+      hTemp->ProfileX()->Draw("SAME");
+      can->SaveAs(Form("plots/ExploreTTrees/%s%s%i%s%i.pdf",histos[i]->GetName(),us,(int)ptlo,us,(int)pthi),"PDF");
+      hTemp->ProfileX()->Draw("");
+      fa1->Draw("SAME");
+      can->SaveAs(Form("plots/ExploreTTrees/%s%s%i%s%i_pfx.pdf",histos[i]->GetName(),us,(int)ptlo,us,(int)pthi),"PDF");
+    }
+    histos[i]->GetXaxis()->SetRangeUser(0.,30.);
+  }
+  
 }
+
