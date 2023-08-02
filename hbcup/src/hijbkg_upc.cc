@@ -5,10 +5,9 @@
 #include <phool/PHCompositeNode.h>
 #include <phool/getClass.h>
 
-#include <centrality/CentralityInfo.h>
-
 #include <g4main/PHG4TruthInfoContainer.h>
 #include <g4main/PHG4Particle.h>
+#include <ffaobjects/EventHeader.h>
 
 #include <phhepmc/PHHepMCGenEvent.h>
 #include <phhepmc/PHHepMCGenEventMap.h>
@@ -27,8 +26,8 @@
 
 //____________________________________________________________________________..
 hijbkg_upc::hijbkg_upc(const std::string &name):
-  SubsysReco(name)
-  ,Outfile(name)
+  SubsysReco(name),
+  Outfile(name)
 {
   std::cout << "hijbkg_upc::hijbkg_upc(const std::string &name) Calling ctor" << std::endl;
 }  
@@ -43,9 +42,10 @@ int hijbkg_upc::Init(PHCompositeNode *topNode)
 {
   std::cout << "hijbkg_upc::Init(PHCompositeNode *topNode) Initializing" << std::endl;
 
-  out = new TFile("qhTest.root","RECREATE");
+  out = new TFile("hijbkg.root","RECREATE");
   
   T = new TTree("T","T");
+  T -> Branch("evt",&m_evt);
   T -> Branch("pid",&m_pid);
   T -> Branch("pt",&m_pt);
   T -> Branch("eta",&m_eta);
@@ -71,16 +71,12 @@ int hijbkg_upc::InitRun(PHCompositeNode *topNode)
 int hijbkg_upc::process_event(PHCompositeNode *topNode)
 {
 
-  CentralityInfo *cent_node = findNode::getClass<CentralityInfo>(topNode, "CentralityInfo");
-  if(!cent_node)
-    {
-      std::cout << "No cent node" << std::endl;
-      return Fun4AllReturnCodes::ABORTEVENT;
-    }
-  
-  m_cent = cent_node -> get_centile(CentralityInfo::PROP::bimp);
-  m_b = cent_node -> get_quantity(CentralityInfo::PROP::bimp);
-  
+  // Get Event Header
+  EventHeader *evtheader = findNode::getClass<EventHeader>(topNode, "EventHeader");
+  m_evt = evtheader->get_EvtSequence();
+  if ( m_evt%1 == 0 ) std::cout << "Event " << m_evt << std::endl;
+
+
   //truth particle information
   PHG4TruthInfoContainer *truthinfo = findNode::getClass<PHG4TruthInfoContainer>(topNode, "G4TruthInfo");
   if(!truthinfo)
@@ -88,31 +84,7 @@ int hijbkg_upc::process_event(PHCompositeNode *topNode)
       std::cout << PHWHERE << "hijingTruthCheck::process_event Could not find node G4TruthInfo"  << std::endl;
       return Fun4AllReturnCodes::ABORTEVENT;
     }
-
   
-  
-  //For pythia ancestory information
-  PHHepMCGenEventMap *genEventMap = findNode::getClass<PHHepMCGenEventMap>(topNode, "PHHepMCGenEventMap");
-  if(!genEventMap)
-    {
-      std::cout << PHWHERE << "cemc::process_event Could not find PHHepMCGenEventMap"  << std::endl;
-      return Fun4AllReturnCodes::ABORTEVENT;
-    }
-  //event level information of the above
-  PHHepMCGenEvent *genEvent = genEventMap -> get(0);
-  if(!genEvent)
-    {
-      std::cout << PHWHERE << "cemc::process_event Could not find PHHepMCGenEvent"  << std::endl;
-      return Fun4AllReturnCodes::ABORTEVENT;
-    }
-
-  HepMC::GenEvent *evt = genEvent -> getEvent();
-  
-  HepMC::HeavyIon *hi = evt -> heavy_ion();
-  
-  m_psi2 = hi -> event_plane_angle();
-
- 
   PHG4TruthInfoContainer::Range truthRange = truthinfo -> GetPrimaryParticleRange();
   PHG4TruthInfoContainer::ConstIterator truthIter;
 
@@ -186,6 +158,7 @@ void hijbkg_upc::Print(const std::string &what) const
 {
   std::cout << "hijbkg_upc::Print(const std::string &what) const Printing info for " << what << std::endl;
 }
+
 //____________________________________________________________________________..
 float hijbkg_upc::getEta(PHG4Particle *particle)
 {
@@ -196,12 +169,14 @@ float hijbkg_upc::getEta(PHG4Particle *particle)
 
   return 0.5*log((p+pz)/(p-pz));
 }
+
 //____________________________________________________________________________..
 float hijbkg_upc::getPhi(PHG4Particle *particle)
 {
   float phi = atan2(particle -> get_py(),particle -> get_px());
   return phi;
 }
+
 //____________________________________________________________________________..
 float hijbkg_upc::getpT(PHG4Particle *particle)
 {
@@ -211,6 +186,7 @@ float hijbkg_upc::getpT(PHG4Particle *particle)
   float pt = sqrt(pow(px,2) + pow(py,2));
   return pt;
 }
+
 //____________________________________________________________________________..
 float hijbkg_upc::getP(PHG4Particle *particle)
 {

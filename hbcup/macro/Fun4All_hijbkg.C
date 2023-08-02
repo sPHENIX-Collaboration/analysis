@@ -13,7 +13,7 @@
 #include <phool/recoConsts.h>
 
 
-#include "hijbkg_upc.h"
+#include "upc/hijbkg_upc.h"
 
 R__LOAD_LIBRARY(libfun4all.so)
 R__LOAD_LIBRARY(libhbcup.so)

@@ -32,7 +32,7 @@ libBBCStudy_la_LIBADD = \
   -lphool \
   -lSubsysReco \
   -lg4detectors \
-  -lbbc \
+  -lbbc_io \
   -lphg4hit
 
 libBBCStudy_la_LDFLAGS = \
