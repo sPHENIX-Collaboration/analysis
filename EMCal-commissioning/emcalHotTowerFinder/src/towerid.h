@@ -78,7 +78,14 @@ class towerid : public SubsysReco
   TH1F*Fspec_K = new TH1F("Fspec_K","Fspec_K",0,1,1);
   TH1F*Fspec_sector = new TH1F("Fspec_sector","Fspec_sector",0,1,1);
   TH1F*Fspec_IB = new TH1F("Fspec_IB","Fspec_IB",0,1,1);
-  
+ 
+   TH1F*Fspeci = new TH1F("Fspec_init","Fspec_init",0,1,1);
+  TH1F*Fspeci_SG = new TH1F("Fspec_SG_init","Fspec_SG_init",0,1,1);
+  TH1F*Fspeci_K = new TH1F("Fspec_K_init","Fspec_K_init",0,1,1);
+  TH1F*Fspeci_sector = new TH1F("Fspec_sector_init","Fspec_sector_init",0,1,1);
+  TH1F*Fspeci_IB = new TH1F("Fspec_IB_init","Fspec_IB_init",0,1,1);
+
+ 
   TH1F*Espec = new TH1F("Espec","Espec",0,1,1);
   TH1F*Espec_SG = new TH1F("Espec_SG","Espec_SG",0,1,1);
   TH1F*Espec_K = new TH1F("Espec_K","Espec_K",0,1,1);

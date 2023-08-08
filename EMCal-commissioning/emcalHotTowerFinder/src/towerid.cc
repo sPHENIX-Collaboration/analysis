@@ -1,9 +1,6 @@
 #include "towerid.h"
-
 #include <fun4all/Fun4AllReturnCodes.h>
-
 #include <phool/PHCompositeNode.h>
-
 
 //Fun4All
 #include <fun4all/Fun4AllReturnCodes.h>
@@ -123,41 +120,54 @@ int towerid::ResetEvent(PHCompositeNode *topNode)
 
 //__________________________
 int towerid::EndRun(const int runnumber)
-{
+{	
+	
+  Fspeci->SetBins(goodevents,0,goodevents);
+  Fspeci_SG->SetBins(goodevents,0,goodevents);
+  Fspeci_K->SetBins(goodevents,0,goodevents);
+  Fspeci_IB->SetBins(goodevents,0,goodevents);
+  Fspeci_sector->SetBins(goodevents,0,goodevents);	
+
   Fspec->SetBins(goodevents,0,goodevents);
-  Fspec_SG->SetBins(goodevents,0,goodevents);
-  Fspec_K->SetBins(goodevents,0,goodevents);  
-  Fspec_IB->SetBins(goodevents,0,goodevents);
-  Fspec_sector->SetBins(goodevents,0,goodevents);
+  Fspec_SG->SetBins(SG_f*goodevents,0,SG_f*goodevents);
+  Fspec_K->SetBins(Kur_f*goodevents,0,Kur_f*goodevents);  
+  Fspec_IB->SetBins(region_f*goodevents,0,region_f*goodevents);
+  Fspec_sector->SetBins(region_f*goodevents,0,region_f*goodevents);
   
-  Espec->SetBins(10*goodevents,0,1000*goodevents);
-  Espec_SG->SetBins(10*goodevents,0,1000*goodevents);
-  Espec_K->SetBins(10*goodevents,0,1000*goodevents);
-  Espec_IB->SetBins(10*goodevents,0,1000*goodevents);
-  Espec_sector->SetBins(10*goodevents,0,1000*goodevents); 
+  Espec->SetBins(goodevents,0,goodevents);
+  Espec_SG->SetBins(goodevents,0,goodevents);
+  Espec_K->SetBins(goodevents,0,goodevents);
+  Espec_IB->SetBins(goodevents,0,goodevents);
+  Espec_sector->SetBins(goodevents,0,goodevents); 
 
  
  for(int i = 0; i < 24576; i++){
 
 	Fspec->Fill(towerF[i]);
 	Espec->Fill(towerE[i]);
+	Fspeci->Fill(towerF[i]);
+
 	channels->GetEntry(i);
 	if(fiber_type == 0){
 	Fspec_SG->Fill(towerF[i]);
 	Espec_SG->Fill(towerE[i]);
+	Fspeci_SG->Fill(towerF[i]);
 	}
 	else{
 	Fspec_K->Fill(towerF[i]);
 	Espec_K->Fill(towerE[i]);
+	Fspeci_K->Fill(towerF[i]);
 	}
 	}
  for(int j = 0; j<384; j++){
 	Fspec_IB->Fill(1.0*ibF[j]/64);
 	Espec_IB->Fill(1.0*ibE[j]/64);
+	Fspeci_IB->Fill(1.0*ibF[j]/64);
 	}
  for(int k = 0; k<64; k++){
 	Fspec_sector->Fill(1.0*sectorF[k]/384);
 	Espec_sector->Fill(1.0*sectorE[k]/384);
+	Fspeci_sector->Fill(1.0*sectorF[k]/384);
 	}
 
   Fspec->SetBinContent(1,0);
@@ -172,20 +182,29 @@ int towerid::EndRun(const int runnumber)
 	
 	float cutoffFreq_sector;
 	float cutoffFreq_IB;
+
 	
+
 	cutoffFreq_SG = Fspec_SG->GetStdDev()*sigmas + Fspec_SG->GetXaxis()->GetBinCenter(Fspec_SG->GetMaximumBin());
 	cutoffFreq_K = Fspec_K->GetStdDev()*sigmas + Fspec_K->GetXaxis()->GetBinCenter(Fspec_K->GetMaximumBin());
 	cutoffFreq = Fspec->GetStdDev()*sigmas + Fspec->GetXaxis()->GetBinCenter(Fspec->GetMaximumBin());	
 	cutoffFreq_IB = Fspec_IB->GetStdDev()*sigmas + Fspec_IB->GetXaxis()->GetBinCenter(Fspec_IB->GetMaximumBin());
 	cutoffFreq_sector = Fspec_sector->GetStdDev()*sigmas + Fspec_sector->GetXaxis()->GetBinCenter(Fspec_sector->GetMaximumBin());
+	
+	std::cout << "towerid::EndRun(const int runnumber) Ending Run for Run " << runnumber << std::endl;
+  	std::cout << "Saint Gobain Cutoff Frequency: " << cutoffFreq_SG << std::endl;
+  	std::cout <<  "Kurary Cutoff Frequency: " << cutoffFreq_K << std::endl;
+  	std::cout << "Overall Tower Cutoff Frequency: " << cutoffFreq << std::endl;
+  	std::cout << "IB Cutoff hit Frequency: " << cutoffFreq_IB << std::endl;
+ 	 std::cout <<  "Sector Cutoff hit Frequency: " << cutoffFreq_sector << std::endl;
 
     for(int i = 0; i < 24576; i++){
 
 	channels->GetEntry(i);
-	if(fiber_type == 0 && towerF[i] > SG_f*goodevents){
+	if(fiber_type == 0 && towerF[i] > cutoffFreq_SG){
 		hottowers[i]++;
 	}
-	else if(fiber_type == 1 && towerF[i]> Kur_f*goodevents){
+	else if(fiber_type == 1 && towerF[i]> cutoffFreq_K){
 		hottowers[i]++;
 	}
 	else if(towerF[i]==0){
@@ -198,34 +217,40 @@ int towerid::EndRun(const int runnumber)
 		T->Fill();
 	}	*/
 	}
+    hot_regions = 0;	
     for(int j = 0; j<384; j++){
-	if(ibF[j]>region_f*goodevents){
+	if((ibF[j]/64.0)>cutoffFreq_IB){
 		hot_regions = 1;
+		std::cout << "IB " << j << "is hot with ADC rate" << (ibF[j]/64.0) << std::endl;
 		hotIB[j]++;
 		for(int j1 = 0; j1<64; j1++ ){
 			hottowers[j*64+j1]++;
+			towerF[j*64+j1] = 0;
+		
 		}
+		ibF[j] = 0;
 	}
 	}
     
     for(int k = 0; k<64; k++){
-	if(sectorF[k]>region_f*goodevents){
+	if((sectorF[k]/384.0)>cutoffFreq_sector){
 		hot_regions = 1;
+		std::cout << "sector " << k << "is hot with ADC rate" << (sectorF[k]/384.0) << std::endl;
 		hotsectors[k]++;
 		for(int k1 = 0; k1 < 384; k1++){
 			hottowers[k*384+k1]++;
+			towerF[k*384+k1] = 0;
 		}
+		sectorF[k] = 0;
 	}
 	}
 
-	std::fill_n(towerF, 24576, 0);
-        std::fill_n(towerE, 24576, 0);
-        std::fill_n(ibF,384,0);
-        std::fill_n(ibE,384,0);
-        std::fill_n(sectorF,64,0);
-        std::fill_n(sectorE,64,0);
+        
 
-        Fspec->Reset();
+	if(hot_regions == 1){
+	while(hot_regions == 1){
+	std::cout << "hot IB or sector detected. Running another pass for hot towers" << std::endl;
+	Fspec->Reset();
         Fspec_SG->Reset();
         Fspec_K->Reset();
         Fspec_IB->Reset();
@@ -237,15 +262,91 @@ int towerid::EndRun(const int runnumber)
         Espec_IB->Reset();
         Espec_sector->Reset();
 
+	for(int i = 0; i < 24576; i++){
 
+        	Fspec->Fill(towerF[i]);
+        	Espec->Fill(towerE[i]);
+        	channels->GetEntry(i);
+        	if(fiber_type == 0){
+        		Fspec_SG->Fill(towerF[i]);
+        		Espec_SG->Fill(towerE[i]);
+        		}
+      	 	else{
+        		Fspec_K->Fill(towerF[i]);
+        		Espec_K->Fill(towerE[i]);
+        		}
+        	}
+
+ 	for(int j = 0; j<384; j++){
+        	Fspec_IB->Fill(1.0*ibF[j]/64);
+        	Espec_IB->Fill(1.0*ibE[j]/64);
+        	}
+ 	for(int k = 0; k<64; k++){
+        	Fspec_sector->Fill(1.0*sectorF[k]/384);
+        	Espec_sector->Fill(1.0*sectorE[k]/384);
+        	}
+
+  	Fspec->SetBinContent(1,0);
+  	Fspec_SG->SetBinContent(1,0);
+  	Fspec_K->SetBinContent(1,0);
+  	Fspec_IB->SetBinContent(1,0);
+	  Fspec_sector->SetBinContent(1,0);
+
+
+        cutoffFreq_SG = Fspec_SG->GetStdDev()*sigmas + Fspec_SG->GetXaxis()->GetBinCenter(Fspec_SG->GetMaximumBin());
+        cutoffFreq_K = Fspec_K->GetStdDev()*sigmas + Fspec_K->GetXaxis()->GetBinCenter(Fspec_K->GetMaximumBin());
+        cutoffFreq = Fspec->GetStdDev()*sigmas + Fspec->GetXaxis()->GetBinCenter(Fspec->GetMaximumBin());
+        cutoffFreq_IB = Fspec_IB->GetStdDev()*sigmas + Fspec_IB->GetXaxis()->GetBinCenter(Fspec_IB->GetMaximumBin());
+        cutoffFreq_sector = Fspec_sector->GetStdDev()*sigmas + Fspec_sector->GetXaxis()->GetBinCenter(Fspec_sector->GetMaximumBin());
+	
+	for(int i = 0; i < 24576; i++){
+
+        	channels->GetEntry(i);
+        	if(fiber_type == 0 && towerF[i] > cutoffFreq_SG){
+                	hottowers[i]++;
+        	}
+        	else if(fiber_type == 1 && towerF[i]> cutoffFreq_K){
+                	hottowers[i]++;
+        	}
+        	}
+
+    	hot_regions = 0;
+    	for(int j = 0; j<384; j++){
+        	if((ibF[j]/64.0)>cutoffFreq_IB){
+			std::cout << "IB " << j << "is hot with ADC rate " << (ibF[j]/64.0) <<std::endl;
+                	hot_regions = 1;
+                	hotIB[j]++;
+                	for(int j1 = 0; j1<64; j1++ ){
+                        	hottowers[j*64+j1]++;
+                        	towerF[j*64+j1] = 0;
+                	}
+			ibF[j] = 0;
+        	}
+        }
+
+    	for(int k = 0; k<64; k++){
+        	if((sectorF[k]/384.0)>cutoffFreq_sector){
+	                std::cout << "sector " << k  << "is hot with ADC rate " << (sectorF[k]/384.0)<< std::endl;	
+			hot_regions = 1;
+                	hotsectors[k]++;
+                	for(int k1 = 0; k1 < 384; k1++){
+                        	hottowers[k*384+k1]++;
+                        	towerF[k*384+k1] = 0;
+                	}
+			sectorF[k] = 0;
+        	}
+        }
+	}
+	}
   std::cout << "towerid::EndRun(const int runnumber) Ending Run for Run " << runnumber << std::endl;
   std::cout << "Saint Gobain Cutoff Frequency: " << cutoffFreq_SG << std::endl;
   std::cout <<  "Kurary Cutoff Frequency: " << cutoffFreq_K << std::endl;
   std::cout << "Overall Tower Cutoff Frequency: " << cutoffFreq << std::endl;
   std::cout << "IB Cutoff hit Frequency: " << cutoffFreq_IB << std::endl;
   std::cout <<  "Sector Cutoff hit Frequency: " << cutoffFreq_sector << std::endl;
-  return hot_regions;
+  return Fun4AllReturnCodes::EVENT_OK;
 }
+
 //____________________________________________________________________________..
 int towerid::End(PHCompositeNode *topNode)
 {
@@ -271,6 +372,11 @@ int towerid::End(PHCompositeNode *topNode)
   Espec_K->Write();
   Espec_sector->Write();
   Espec_IB->Write();
+   Fspeci->Write();
+  Fspeci_K->Write();
+  Fspeci_SG->Write();
+  Fspeci_sector->Write();
+  Fspeci_IB->Write();
   T -> Write();
   out -> Close();
   delete out;
@@ -291,50 +397,6 @@ void towerid::Print(const std::string &what) const
 }
 
 //____________________________________________________
-/*
-int towerid::Sectormask(PHCompositeNode *topNode)
-{
-	if(hot_regions == 1){
-	//std::cout << "hot regions detected" << std::endl;
-	
-	TowerInfoContainer *emcTowerContainer;
-	emcTowerContainer =  findNode::getClass<TowerInfoContainer>(topNode,"TOWERS_CEMC");
-	 if(!emcTowerContainer)
-   	 {
-     	 std::cout << PHWHERE << "towerid::process_event Could not find node TOWERS_CEMC"  << std::endl;
-     	 return Fun4AllReturnCodes::ABORTEVENT;
-   	 }
- 	int tower_range = emcTowerContainer->size();
-        for(int j = 0; j < tower_range; j++){
-		
-		if(hotsectors[j/384] != 0){continue;}
-		if(hotIB[j/64]!= 0){continue;}
-		
-		double energy = emcTowerContainer -> get_tower_at_channel(j) -> get_energy();
-                channels->GetEntry(j);
-                
-		if((fiber_type ==0) && (energy > adccut_sg)){
-                towerF[j]++;
-                sectorF[j/384]++;
-                ibF[j/64]++;
-                }
-                else if ((fiber_type ==1) &&( energy > adccut_k)){
-                towerF[j]++;
-                sectorF[j/384]++;
-                ibF[j/64]++;
-                }
-
-                //std::cout << energy << std::endl;
-                 towerE[j]+=energy;
-                 sectorE[j/384]+=energy;
-                 ibE[j/64]+=energy;
-		}
-	}
-	//else{std::cout << "no hot regions, continuing...." << std::endl;}	
-	return Fun4AllReturnCodes::EVENT_OK;
-}
-*/
-//______________________________________________________
 
 
 
