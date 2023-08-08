@@ -1,0 +1,12 @@
+Universe       = vanilla
+Notification   = Never
+Initialdir     = $ENV(PWD)
+Executable     = $ENV(PWD)/runana.cmd
+Arguments      = $(Process)
+Log            = $ENV(PWD)/log/ana_$(Process).log
+Output         = $ENV(PWD)/log/ana_$(Process).out
+Error          = $ENV(PWD)/log/ana_$(Process).err
+request_memory = 5120MB
+#PeriodicHold   = (NumJobStarts>=1 && JobStatus == 1)
+GetEnv         = True
+Queue 10000
