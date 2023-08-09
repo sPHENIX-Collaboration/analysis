@@ -19,10 +19,10 @@ ulimit -c 0	# no core files
 let line=$1+1
 
 # Kludge
-#if [[ $PWD == "/phenix/u/chiu/sphenix/sphenix_bbc/offline/analysis/hbcup/workarea" ]]
-#then
-# let line=$1+10001
-#fi
+if [[ $PWD == "/phenix/u/chiu/sphenix/sphenix_bbc/offline/analysis/hbcup/workarea" ]]
+then
+ let line=$1+20001
+fi
 
 dst_truth_fname=`sed -n "${line}p" dst_truth.list`
 
