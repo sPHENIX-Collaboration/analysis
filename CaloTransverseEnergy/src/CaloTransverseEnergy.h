@@ -18,7 +18,7 @@ class CaloTransverseEnergy:public SubsysReco
 {
 	private:
 		//Here there be dragons
-		float GetTotalEnergy(std::vector<float>);
+		float GetTotalEnergy(std::vector<float>, float);
 		float EMCaltoHCalRatio(float, float);
 		void FitToData(std::vector<float>);
 		float Heuristic(std::vector<float>); //This is a place holder for right now, will properly implement in a bit, pretty much just adjusting models with an A* approach
