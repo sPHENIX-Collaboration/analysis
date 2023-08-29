@@ -3,23 +3,24 @@ std::vector <int> packets;
 
 int CaloTransverseEnergy::processEvent(Event* e)
 {
+	if(!ApplyCuts(e)) return 1;
 	std::vector<float> emcalenergy, ihcalenergy, ohcalenergy; 
 	for (auto pn:packets)
 	{
 		if(pn/1000 ==6 ) 
 		{
 			//this is the EMCal
-			processPacket(pn, e, &emcamenergy);
+			processPacket(pn, e, &emcamenergy, false);
 		}
 		else if (pn/1000 == 7) 
 		{
 			//inner Hcal
-			processPacket(pn, e, &ihcalenergy);
+			processPacket(pn, e, &ihcalenergy, true);
 		}
 		else if (pn/1000 == 8)
 		{
 			//outerhcal
-			processPacket(pn, e, &ohcalenergy);
+			processPacket(pn, e, &ohcalenergy, true);
 		}
 		else
 		{
@@ -28,19 +29,47 @@ int CaloTransverseEnergy::processEvent(Event* e)
 			continue;
 		}
 	}
+	float emcaltotal=GetTotalEnergy(emcalenergy,1); //not sure about the calibration factor, need to check
+	float ihcaltotal=GetTotalEnergy(ihcalenergy,1);
+	float ohcaltotal=GetTotalEnergy(ohcalenergy,1);
+	EMCALE->Fill(emcaltotal);
+	IHCALE->Fill(ihcaltotal);
+	OHCALE->Fill(ohcaltotal);
+	ETOTAL->Fill(emcaltotal+ihcaltotal+ohcaltotal);
+	return 1;
 }
 void CaloTransverseEnergy::processPacket(int packet, Event * e, std::vector<float>* energy, bool HorE)
 {
 	Packet *p= e->getPacket(packet); 
 	for(int c=0; c<p->iValue(0, "CHANNELS"); c++)
 	{
-		float eta;
-		if(HorE) eta=-1* 
+		float eta=0, baseline=0, en=0;
+		if(HorE) eta=(((c%16)/2+c/64*8)-12)/12+1/24; //HCal
+		else eta=(((c%16)/2+c/4)-48)/48+1/96; //EMCal
+		for(int s=0; s<p->iValue(c, "SAMPLES"); s++)
+		{
+			if(s<3) baseline+=p->iValue(s,c); 
+			if(s==3) baseline=baseline/3; //first 3 for baseline
+			float val=p->iValue(s,c);
+			if(val>en) en=val;
+		}
+		en=en-baseline;
+		energy->push_back(GetTransverseEnergy(en,eta));
+		//For the hcal get the phi distribution
+		//take packet#, each packet has 8 phi bins
+		//
+		int phibin=(c%64)/16;
+		phibin=phibin*2+c%2;
+		phibin+=(ph%10)*8;	
+		float phval=PhiD->GetBinContent(phibin);
+		phcal+=GetTransverseEnergy(en,eta);
+		PhiD->SetBinContent(phibin, phval);	
+	}
 
 }
 float CaloTransverseEnergy::GetTransverseEnergy(float energy, float eta)
 {
-	float et=energy*sin(2*atan(-eta));
+	float et=energy*sin(2*atan(exp(-eta)));
 	return et;
 }
 float CaloTransverseEnergy::GetTotalEnergy(std::vector<float> caloenergy, float calib)
