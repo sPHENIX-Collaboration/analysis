@@ -1,10 +1,42 @@
 #include "CaloTransverseEnergy.h"
 std::vector <int> packets;
-int 
+
 int CaloTransverseEnergy::processEvent(Event* e)
 {
 	std::vector<float> emcalenergy, ihcalenergy, ohcalenergy; 
-	
+	for (auto pn:packets)
+	{
+		if(pn/1000 ==6 ) 
+		{
+			//this is the EMCal
+			processPacket(pn, e, &emcamenergy);
+		}
+		else if (pn/1000 == 7) 
+		{
+			//inner Hcal
+			processPacket(pn, e, &ihcalenergy);
+		}
+		else if (pn/1000 == 8)
+		{
+			//outerhcal
+			processPacket(pn, e, &ohcalenergy);
+		}
+		else
+		{
+			//not a calorimeter 
+			packets.erase(p); //this is not quite the way to do it, but the idea is there
+			continue;
+		}
+	}
+}
+void CaloTransverseEnergy::processPacket(int packet, Event * e, std::vector<float>* energy, bool HorE)
+{
+	Packet *p= e->getPacket(packet); 
+	for(int c=0; c<p->iValue(0, "CHANNELS"); c++)
+	{
+		float eta;
+		if(HorE) eta=-1* 
+
 }
 float CaloTransverseEnergy::GetTransverseEnergy(float energy, float eta)
 {
