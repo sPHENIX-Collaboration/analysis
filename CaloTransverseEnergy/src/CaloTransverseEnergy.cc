@@ -1,7 +1,6 @@
 #include "CaloTransverseEnergy.h"
-std::vector <int> packets;
-int 
-int CaloTransverseEnergy::processEvent(Event* e)
+std::vector <int> packets; 
+int CaloTransverseEnergy::processEvent(PHCompositeNode *topNode)
 {
 	std::vector<float> emcalenergy, ihcalenergy, ohcalenergy; 
 	
