@@ -24,12 +24,22 @@ class CaloTransverseEnergy:public SubsysReco
 		void FitToData(std::vector<float>);
 		float Heuristic(std::vector<float>); //This is a place holder for right now, will properly implement in a bit, pretty much just adjusting models with an A* approach
 		bool ApplyCuts(Event* e);
+		void processPacket(int, Event *, std::vector<float>*, bool);
+		float GetTransverseEnergy(float, float);
 	public:
 		
 		int processEvent(Event* e);
 		void ProduceOutput();
-		CaloTransverseEnergy(){};
+		CaloTransverseEnergy(){
+			IHCALE=new TH1F("iHCal", "Total Transverse energy depositied in inner HCal; Energy [ADC]", 1000, 0, 100000); 
+			OHCALE=new TH1F("oHCal", "Total Transverse energy depositied in outer HCal; Energy [ADC]", 1000, 0, 100000); 
+			EMCALE=new TH1F("emCal", "Total Transverse energy depositied in EMCal; Energy [ADC]", 1000, 0, 100000); 
+			
+			ETOTAL=new TH1F("total", "Total Transverse energy depositied in all Calorimeters; Energy [ADC]", 1000, 0, 100000); 
+			PhiD=new TH1F("phid", "Transverse energy deposited in #varphi; #varphi; Energy [ADC] ", 64, -3.15, 3.15);
+			};
 		~CaloTransverseEnergy(){};
+		static TH1F* IHCALE, OHCALE, EMCALE, ETOTAL, PhiD;
 		struct kinematics 
 			{
 				float phi_min=-PI;
