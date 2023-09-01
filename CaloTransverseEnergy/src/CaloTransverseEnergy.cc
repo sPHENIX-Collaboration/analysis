@@ -5,7 +5,6 @@ class Fun4AllInputManager;
 class Event;
 int CaloTransverseEnergy::processEvent(PHCompositeNode *topNode)
 {
-	const std::string &prdfnode="PRDF"; //maybe I can add an overload to this? just do either version
 	if(!ApplyCuts(e)) return 1;
 	std::vector<float> emcalenergy, ihcalenergy, ohcalenergy; 
 	for (auto pn:packets)
