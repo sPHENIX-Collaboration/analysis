@@ -3,33 +3,43 @@ std::vector <int> packets;
 class PHCompositeNode;
 class Fun4AllInputManager;
 class Event;
+
 int CaloTransverseEnergy::processEvent(PHCompositeNode *topNode)
 {
 	if(!ApplyCuts(e)) return 1;
 	std::vector<float> emcalenergy, ihcalenergy, ohcalenergy; 
-	for (auto pn:packets)
-	{
-		if(pn/1000 ==6 ) 
+	if(isPRDF){
+		for (auto pn:packets)
 		{
+			Event* e= findNode::getClass<Event>(topNode, prdfnode);
+			if(pn/1000 ==6 ) 
+			{
 			//this is the EMCal
-			processPacket(pn, e, &emcamenergy, false);
-		}
-		else if (pn/1000 == 7) 
-		{
+				processPacket(pn, e, &emcalenergy, false);
+			}
+			else if (pn/1000 == 7) 
+			{
 			//inner Hcal
-			processPacket(pn, e, &ihcalenergy, true);
-		}
-		else if (pn/1000 == 8)
-		{
+				processPacket(pn, e, &ihcalenergy, true);
+			}
+			else if (pn/1000 == 8)
+			{	
 			//outerhcal
-			processPacket(pn, e, &ohcalenergy, true);
-		}
-		else
-		{
+				processPacket(pn, e, &ohcalenergy, true);
+			}
+			else
+			{
 			//not a calorimeter 
-			packets.erase(p); //this is not quite the way to do it, but the idea is there
-			continue;
+				packets.erase(p); //this is not quite the way to do it, but the idea is there
+				continue;
+			}
 		}
+	}
+	else { // This is the DST Processor
+		//
+		Event* ihe=findNode::getClass<Event>(topNode, iHCALnode);
+		Event* ohe=findNode::getClass<Event>(topNode, oHCALnode);
+		Event* eme=findNode::getClass<Event>(topNode, EMCALnode); 
 	}
 	float emcaltotal=GetTotalEnergy(emcalenergy,1); //not sure about the calibration factor, need to check
 	float ihcaltotal=GetTotalEnergy(ihcalenergy,1);
@@ -40,8 +50,17 @@ int CaloTransverseEnergy::processEvent(PHCompositeNode *topNode)
 	ETOTAL->Fill(emcaltotal+ihcaltotal+ohcaltotal);
 	return 1;
 }
+void CaloTransverseEnergy::processDST(std::vector<Event*> evts, std::vector<std::vector<float>>* energies)
+{
+	//This processes all events in the DST in the processor 
+	
+}
 void CaloTransverseEnergy::processPacket(int packet, Event * e, std::vector<float>* energy, bool HorE)
 {
+	try{
+		e->getPacket(packet);
+	}
+	catch(std::exception* e) { break;} 
 	Packet *p= e->getPacket(packet); 
 	for(int c=0; c<p->iValue(0, "CHANNELS"); c++)
 	{
@@ -112,4 +131,30 @@ bool CaloTransverseEnergy::ApplyCuts(Event* e)
 {
 	//pass through a set of cuts
 }
-
+void CaloTransverseEnergy::GetNodes(PHCompositeNode *topNode)
+{
+	_topNode=topNode;
+	_IHCALNode=findNode::getClass<TowerInfoContainerv1>(topNode, iHCALnode);
+	_OHCALNode=findNode::getClass<TowerInfoContainerv1>(topNode, oHCALnode); 
+	_EMCALNode=findNode::getClass<TowerInfoContainerv1>(topNode, EMCalnode);
+}
+int CaloTransverseEnergy::Init(PHCompositeNode *topNode)
+{
+	
+	if(!isPRDF) GetNodes(topNode); //load the composite nodes into the global variables if using DST approach
+	std::string outname="Transverse_Energy_"+ (std::string) run_number + "_segment_"+DST_Segment+".root";
+	outfile=new TFile(outname.c_str(), "RECREATE");
+	datatree=new TTree("data", "data");
+	datatree->Branch("total_energy", &energy);
+	datatree->Branch("hcal_energy", &hcalenergy);
+	datatree->Branch("emcal_energy", &emcalenergy);
+	datatree->Branch("energy_transverse", &energy_transverse);
+	datatree->Branch("Et_hcal", &et_hcal);
+	datatree->Branch("Et_emcal", &et_emcal);
+	datatree->Branch("Phi_Et", &etphi);
+	datatree->Branch("EMCal_Phi_Et", &etephi);
+	datatree->Branch("HCal_Phi_Et", &ethphi);
+	datatree->Branch("Eta_Et", &eteta);
+	datatree->Branch("EMCal_Eta_Et", &eteeta);
+	datatree->Branch("HCal_Eta_Et", &etheta);	 
+}

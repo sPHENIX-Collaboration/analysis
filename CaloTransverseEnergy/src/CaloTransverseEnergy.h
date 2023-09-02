@@ -1,21 +1,48 @@
 #ifndef __CALOTRANSVERSEENERGY_H__
 #define __CALOTRANSVERSEENERGY_H__
-
+//Root includes
 #include <TTree.h>
+#include <TH1.h>
+#include <TRoot.h>
+#include <TFile.h>
+#include <TLorentzVector.h>
+#include <TNtuple.h>
+
+//C++ headers
+#include <cstdio>
+#include <stringstream>
+#include <fstream> 
+#include <math.h>
+#include <omp.h>
+#include <vector>
+#include <string>
+#include <utilities>
+
+//Fun4all inputs and base
 #include <fun4all/Fun4AllInputManager.h>
 #include <fun4allraw/Fun4AllPrdfInputManager.h>
 #include <fun4allraw/Fun4AllPrdfInputPoolManager.h>
 #include <fun4all/SubsysReco.h>
 #include <fun4all/Fun4AllBase.h>
+
 #include <Event/Event.h>
 #include <Event/EventTypes.h>
-#include <vector>
-#include <string>
-#include <TH1.h>
-#include <TRoot.h>
-#include <math.h>
-#include <omp.h>
+
+//Calo Fun4all
+
+#include <calobase/RawTowerContainer.h>
+#include <calobase/RawTowerContainerv1.h>
+#include <calobase/>
+
+//Phool nodes
+#include <phool/PHCompositeNode.h>
+
 #define PI 3.1415926535
+
+//Necessary classes 
+class PHCompositeNode; 
+class TFile; 
+
 class CaloTransverseEnergy:public SubsysReco
 {
 	private:
@@ -26,13 +53,17 @@ class CaloTransverseEnergy:public SubsysReco
 		float Heuristic(std::vector<float>); //This is a place holder for right now, will properly implement in a bit, pretty much just adjusting models with an A* approach
 		bool ApplyCuts(Event* e);
 		void processPacket(int, Event *, std::vector<float>*, bool);
+		void processEvent(std::vector<Event*>, std::vector<std::vector<float>>*);
 		float GetTransverseEnergy(float, float);
 		const std::string &prdfnode="PRDF"; //maybe I can add an overload to this? just do either version
-		const std::string &DSTnode="DST";
-		const std::string &iHCALnode="IHCAL";
-		const std::string &oHCALnode="OHCAL";
-		const std::string &EMCAL="EMCAL";
-		const bool isPRDF=true;
+		static const std::string &DSTnode="DST";
+		static const std::string &iHCALnode="HCALIN";
+		static const std::string &oHCALnode="HCALOUT";
+		static const std::string &EMCALnode="CEMC";
+		static const bool isPRDF=true;
+		static TTree* datatree;
+		static TFile* outfile;
+
 	public:
 		
 		int processEvent(PHCompositeNode *topNode) override;
@@ -48,7 +79,7 @@ class CaloTransverseEnergy:public SubsysReco
 			if(inputfile.find("prdf")==std::string::npos) isPRDF=false;
 		};
 		~CaloTransverseEnergy(){};
-		int Init() override; 
+		int Init(PHCompositeNode *topNode) override; 
 		static TH1F* IHCALE, OHCALE, EMCALE, ETOTAL, PhiD;
 		struct kinematics //just a basic kinematic cut, allow for cuts later, default to full acceptance
 			{
@@ -59,6 +90,9 @@ class CaloTransverseEnergy:public SubsysReco
 				float pt_min=0;
 				float pt_max=200;
 			} kinematiccuts;
-		
+		static PHCompositeNode* _topNode, _IHCALNode, _OHCALNode, _EMCALNode;
+		static TFile *outfile;
+		float energy, hcalenergy, emcalenergy, energy_transverse, et_hcal, et_emcal; //transverse energies
+		float etphi, eteta, etephi, eteeta, ethphi, etheta; //angular energy distributions  
 };
 #endif
