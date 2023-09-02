@@ -24,18 +24,22 @@
 #include <fun4allraw/Fun4AllPrdfInputPoolManager.h>
 #include <fun4all/SubsysReco.h>
 #include <fun4all/Fun4AllBase.h>
+#include <fun4all/Fun4AllReturnCodes.h>
 
 #include <Event/Event.h>
 #include <Event/EventTypes.h>
 
 //Calo Fun4all
 
-#include <calobase/RawTowerContainer.h>
-#include <calobase/RawTowerContainerv1.h>
-#include <calobase/>
+#include <calobase/TowerInfoContainer.h>
+#include <calobase/TowerInfoContainerv1.h>
+#include <calobase/TowerInfov1.h>
+
 
 //Phool nodes
 #include <phool/PHCompositeNode.h>
+#include <phool/phool.h>
+#include <phool/getClass.h>
 
 #define PI 3.1415926535
 

@@ -37,9 +37,31 @@ int CaloTransverseEnergy::processEvent(PHCompositeNode *topNode)
 	}
 	else { // This is the DST Processor
 		//
-		Event* ihe=findNode::getClass<Event>(topNode, iHCALnode);
-		Event* ohe=findNode::getClass<Event>(topNode, oHCALnode);
-		Event* eme=findNode::getClass<Event>(topNode, EMCALnode); 
+		energy=0; 
+		hcalenergy=0;
+		emcalenergy=0;
+		energy_transeverse=0;
+		et_hcal=0;
+		et_emcal=0;
+		etphi=0;
+		eteta=0;
+		etephi=0;
+		etephi=0;
+		eteeta=0;
+		ethphi=0;
+		ethet=0;
+		std::string ihcalgoem="TOWERGEOM_HCALIN", ohcalgeom="TOWERGEOM_HCALOUT", emcalgoem="TOWERGEOM_CEMC";
+		TowerInfoContainerv1* ihe=findNode::getClass<TowerInfoContainerv1>(_iHCALNode);
+		TowerInfoContainerv1* ohe=findNode::getClass<TowerInfoContainerv1>(_oHCALNode);
+		TowerInfoContainerv1* eme=findNode::getClass<TowerInfoContainerv1>(_EMCALNode);
+		TowerGeomContainer *ihg=findNode::getClass<TowerGeomContainer>(topNode, ihcalgeom);
+		TowerGeomContainer *ohg=findNode::getClass<TowerGeomContainer>(topNode, ohcalgeom);
+		TowerGeomContainer *emg=findNode::getClass<TowerGeomContainer>(topNode, emcalgeom);
+		GlobalVertexMap *vtxmap=findNode::getClass<GlobalVertexMap>(topNode, "GlobalVertexMap");
+		GlobalVertex *vtx=vtxmap->begin()->second;
+		processDST(eme, &emcalenergy, emg, vtx, 0);
+		processDST(ihe, &ihcalenergy, ihg, vtx, 1);
+		processDST(ohe, &ohcalenergy, ohg, vtx, 2); 
 	}
 	float emcaltotal=GetTotalEnergy(emcalenergy,1); //not sure about the calibration factor, need to check
 	float ihcaltotal=GetTotalEnergy(ihcalenergy,1);
@@ -48,11 +70,35 @@ int CaloTransverseEnergy::processEvent(PHCompositeNode *topNode)
 	IHCALE->Fill(ihcaltotal);
 	OHCALE->Fill(ohcaltotal);
 	ETOTAL->Fill(emcaltotal+ihcaltotal+ohcaltotal);
+	datatree->Fill();
 	return 1;
 }
-void CaloTransverseEnergy::processDST(std::vector<Event*> evts, std::vector<std::vector<float>>* energies)
+void CaloTransverseEnergy::processDST(TowerInfoContainer* calo_event, std::vector<float>* energies, RawTowerGeomContainer* geom, GlobalVertex* vtx)
 {
 	//This processes all events in the DST in the processor 
+	TowerInfoContainerv1::Range tower_range=calo_event->getTowers();
+	for(TowerInfoContainerv1::ConstIterator citer=tower_range.first; citer !=tower_range.second; ++citer)
+	{
+		TowerInfov1* tower=(TowerInfov1*)citer->second;
+		float energy1=tower->get_energy();
+		float phibin=calo_event->getTowerPhiBin(citer->first);
+		float etabin=calo_event->getTowerEtaBin(citer->first);
+		TowerGeom *towergeom=geom->get_tower_geometry(tower->first);
+		assert(towergeom);
+		if(energy1<=0) continue;
+		double phi=atan2(towergeom->get_center_y(), towergeom->get_center_x());
+		double eta=asinh(towergeom->get_center_z()-vtx->get_z()/towergeom->get_center_radius());
+		energies->push_back(GetTransverseEnergy(energy1, eta);
+		energy+=energy1;
+		if(!hcalorem){
+			emcalenergy+=energy1;
+			eteeta;
+		}
+		if(hcalored){
+			hcalenergy+=energy1;
+			etheta+=;
+			ethphi+=;
+	}
 	
 }
 void CaloTransverseEnergy::processPacket(int packet, Event * e, std::vector<float>* energy, bool HorE)
