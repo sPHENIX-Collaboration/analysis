@@ -54,9 +54,9 @@ int CaloTransverseEnergy::processEvent(PHCompositeNode *topNode)
 		TowerInfoContainerv1* ihe=findNode::getClass<TowerInfoContainerv1>(_iHCALNode);
 		TowerInfoContainerv1* ohe=findNode::getClass<TowerInfoContainerv1>(_oHCALNode);
 		TowerInfoContainerv1* eme=findNode::getClass<TowerInfoContainerv1>(_EMCALNode);
-		TowerGeomContainer *ihg=findNode::getClass<TowerGeomContainer>(topNode, ihcalgeom);
-		TowerGeomContainer *ohg=findNode::getClass<TowerGeomContainer>(topNode, ohcalgeom);
-		TowerGeomContainer *emg=findNode::getClass<TowerGeomContainer>(topNode, emcalgeom);
+		RawTowerGeomContainer_Cylinderv1 *ihg=findNode::getClass<RawTowerGeomContainer_Cylinderv1>(topNode, ihcalgeom);
+		RawTowerGeomContainer_Cylinderv1 *ohg=findNode::getClass<RawTowerGeomContainer_Cylinderv1>(topNode, ohcalgeom);
+		RawTowerGeomContainer_Cylinderv1 *emg=findNode::getClass<RawTowerGeomContainer_Cylinderv1>(topNode, emcalgeom);
 		GlobalVertexMap *vtxmap=findNode::getClass<GlobalVertexMap>(topNode, "GlobalVertexMap");
 		GlobalVertex *vtx=vtxmap->begin()->second;
 		processDST(eme, &emcalenergy, emg, vtx, 0);
