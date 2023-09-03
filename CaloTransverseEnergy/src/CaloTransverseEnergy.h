@@ -97,6 +97,6 @@ class CaloTransverseEnergy:public SubsysReco
 		static PHCompositeNode* _topNode, _IHCALNode, _OHCALNode, _EMCALNode;
 		static TFile *outfile;
 		float energy, hcalenergy, emcalenergy, energy_transverse, et_hcal, et_emcal; //transverse energies
-		float etphi, eteta, etephi, eteeta, ethphi, etheta; //angular energy distributions  
+		std::map<double, float> etphi, eteta, etephi, eteeta, ethphi, etheta; //angular energy distributions  
 };
 #endif

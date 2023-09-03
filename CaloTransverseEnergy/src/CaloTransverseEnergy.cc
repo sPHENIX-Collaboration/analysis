@@ -43,13 +43,6 @@ int CaloTransverseEnergy::processEvent(PHCompositeNode *topNode)
 		energy_transeverse=0;
 		et_hcal=0;
 		et_emcal=0;
-		etphi=0;
-		eteta=0;
-		etephi=0;
-		etephi=0;
-		eteeta=0;
-		ethphi=0;
-		ethet=0;
 		std::string ihcalgoem="TOWERGEOM_HCALIN", ohcalgeom="TOWERGEOM_HCALOUT", emcalgoem="TOWERGEOM_CEMC";
 		TowerInfoContainerv1* ihe=findNode::getClass<TowerInfoContainerv1>(_iHCALNode);
 		TowerInfoContainerv1* ohe=findNode::getClass<TowerInfoContainerv1>(_oHCALNode);
@@ -59,9 +52,9 @@ int CaloTransverseEnergy::processEvent(PHCompositeNode *topNode)
 		RawTowerGeomContainer_Cylinderv1 *emg=findNode::getClass<RawTowerGeomContainer_Cylinderv1>(topNode, emcalgeom);
 		GlobalVertexMap *vtxmap=findNode::getClass<GlobalVertexMap>(topNode, "GlobalVertexMap");
 		GlobalVertex *vtx=vtxmap->begin()->second;
-		processDST(eme, &emcalenergy, emg, vtx, 0);
-		processDST(ihe, &ihcalenergy, ihg, vtx, 1);
-		processDST(ohe, &ohcalenergy, ohg, vtx, 2); 
+		processDST(eme, &emcalenergy, emg, vtx, false);
+		processDST(ihe, &ihcalenergy, ihg, vtx, true);
+		processDST(ohe, &ohcalenergy, ohg, vtx, true); 
 	}
 	float emcaltotal=GetTotalEnergy(emcalenergy,1); //not sure about the calibration factor, need to check
 	float ihcaltotal=GetTotalEnergy(ihcalenergy,1);
@@ -81,23 +74,36 @@ void CaloTransverseEnergy::processDST(TowerInfoContainer* calo_event, std::vecto
 	{
 		TowerInfov1* tower=(TowerInfov1*)citer->second;
 		float energy1=tower->get_energy();
-		float phibin=calo_event->getTowerPhiBin(citer->first);
-		float etabin=calo_event->getTowerEtaBin(citer->first);
-		TowerGeom *towergeom=geom->get_tower_geometry(tower->first);
+		int phibin=calo_event->getTowerPhiBin(citer->first);
+		int etabin=calo_event->getTowerEtaBin(citer->first);
+		RawTowerGeom *towergeom=geom->get_tower_geometry(tower->first);
 		assert(towergeom);
 		if(energy1<=0) continue;
-		double phi=atan2(towergeom->get_center_y(), towergeom->get_center_x());
-		double eta=asinh(towergeom->get_center_z()-vtx->get_z()/towergeom->get_center_radius());
+		double eta=get_etacenter(etabin);
+		double phi=get_phicenter(phibin);
 		energies->push_back(GetTransverseEnergy(energy1, eta);
 		energy+=energy1;
 		if(!hcalorem){
 			emcalenergy+=energy1;
-			eteeta;
+			if(eteeta.find(eta) != eteeta.end()) eteeta[eta]+=energies.at(-1);
+			else{
+				eteeta[eta]=energies.at(-1);
+			}
+			if(etephi.find(phi) != etephi.end(){
+				etephi[phi]+=energies.at(-1);	
+			}
+			else{
+				etephi[phi]=energies.at(-1);
+			}
+				
 		}
 		if(hcalored){
 			hcalenergy+=energy1;
-			etheta+=;
-			ethphi+=;
+			if(etheta.find(eta) != etheta.end())etheta[eta]+=energies.at(-1);
+			else etheta[eta]=energies.at(-1);
+			if(ethphi.find(phi) != ethphi.end()) ethphi[phi]+=energies.at(-1);
+			else ethphi[phi]=energies.at(-1);
+		}
 	}
 	
 }
@@ -165,10 +171,17 @@ float CaloTransverseEnergy::Heuristic(std::vector<float> model_fit)
 {
 	float chindf=0;
 }
-void CaloTransverseEnergy::ValidateDistro(std::map<std::pair<int, int> std::vector<float>>)
+bool CaloTransverseEnergy::ValidateDistro()
 {
 	//Just make sure that the distribution looks correct
-}
+	double eavg=0;
+	int bad=0;
+	for(auto e:etphi) eavg+=e;  
+	eavg=eavg/etphi.size();
+	for(auto e:etphi) if(e > eavg*1.25 || e < eavg*0.75 ) bad++; 
+	if(bad > etphi.size()*0.25) return false; //if over half of the phi values are outside of the range someting is off
+	else return true;
+}	
 void CaloTransverseEnergy::ProduceOutput()
 {
 	//just make a ton of histos
