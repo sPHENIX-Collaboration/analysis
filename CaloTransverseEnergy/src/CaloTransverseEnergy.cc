@@ -6,8 +6,8 @@ class Event;
 
 int CaloTransverseEnergy::processEvent(PHCompositeNode *topNode)
 {
-	if(!ApplyCuts(e)) return 1;
-	std::vector<float> emcalenergy, ihcalenergy, ohcalenergy; 
+//	if(!ApplyCuts(e)) return 1;
+	std::vector<float> emcalenergy_vec, ihcalenergy_vec, ohcalenergy_vec; 
 	if(isPRDF){
 		for (auto pn:packets)
 		{
@@ -15,22 +15,22 @@ int CaloTransverseEnergy::processEvent(PHCompositeNode *topNode)
 			if(pn/1000 ==6 ) 
 			{
 			//this is the EMCal
-				processPacket(pn, e, &emcalenergy, false);
+				processPacket(pn, e, &emcalenergy_vec, false);
 			}
 			else if (pn/1000 == 7) 
 			{
 			//inner Hcal
-				processPacket(pn, e, &ihcalenergy, true);
+				processPacket(pn, e, &ihcalenergy_vec, true);
 			}
 			else if (pn/1000 == 8)
 			{	
 			//outerhcal
-				processPacket(pn, e, &ohcalenergy, true);
+				processPacket(pn, e, &ohcalenergy_vec, true);
 			}
 			else
 			{
 			//not a calorimeter 
-				packets.erase(p); //this is not quite the way to do it, but the idea is there
+				//packets.erase(&pn); //this is not quite the way to do it, but the idea is there
 				continue;
 			}
 		}
@@ -40,25 +40,25 @@ int CaloTransverseEnergy::processEvent(PHCompositeNode *topNode)
 		energy=0; 
 		hcalenergy=0;
 		emcalenergy=0;
-		energy_transeverse=0;
+		energy_transverse=0;
 		et_hcal=0;
 		et_emcal=0;
-		std::string ihcalgoem="TOWERGEOM_HCALIN", ohcalgeom="TOWERGEOM_HCALOUT", emcalgoem="TOWERGEOM_CEMC";
-		TowerInfoContainerv1* ihe=findNode::getClass<TowerInfoContainerv1>(_iHCALNode);
-		TowerInfoContainerv1* ohe=findNode::getClass<TowerInfoContainerv1>(_oHCALNode);
-		TowerInfoContainerv1* eme=findNode::getClass<TowerInfoContainerv1>(_EMCALNode);
+		std::string ihcalgeom="TOWERGEOM_HCALIN", ohcalgeom="TOWERGEOM_HCALOUT", emcalgeom="TOWERGEOM_CEMC";
+		TowerInfoContainerv1* ihe=findNode::getClass<TowerInfoContainerv1>(_IHCALNode, "TOWERS_HCALIN");
+		TowerInfoContainerv1* ohe=findNode::getClass<TowerInfoContainerv1>(_OHCALNode, "TOWERS_HCALOUT");
+		TowerInfoContainerv1* eme=findNode::getClass<TowerInfoContainerv1>(_EMCALNode, "TOWERS_CEMC");
 		RawTowerGeomContainer_Cylinderv1 *ihg=findNode::getClass<RawTowerGeomContainer_Cylinderv1>(topNode, ihcalgeom);
 		RawTowerGeomContainer_Cylinderv1 *ohg=findNode::getClass<RawTowerGeomContainer_Cylinderv1>(topNode, ohcalgeom);
 		RawTowerGeomContainer_Cylinderv1 *emg=findNode::getClass<RawTowerGeomContainer_Cylinderv1>(topNode, emcalgeom);
-		GlobalVertexMap *vtxmap=findNode::getClass<GlobalVertexMap>(topNode, "GlobalVertexMap");
-		GlobalVertex *vtx=vtxmap->begin()->second;
-		processDST(eme, &emcalenergy, emg, vtx, false);
-		processDST(ihe, &ihcalenergy, ihg, vtx, true);
-		processDST(ohe, &ohcalenergy, ohg, vtx, true); 
+//		GlobalVertexMap *vtxmap=findNode::getClass<PHObject>(topNode, "GLOBAL_VERTEX");
+//		GlobalVertex *vtx=vtxmap->begin()->second;
+		processDST(eme, &emcalenergy_vec, emg, false, false);
+		processDST(ihe, &ihcalenergy_vec, ihg, true, true);
+		processDST(ohe, &ohcalenergy_vec, ohg, true, false); 
 	}
-	float emcaltotal=GetTotalEnergy(emcalenergy,1); //not sure about the calibration factor, need to check
-	float ihcaltotal=GetTotalEnergy(ihcalenergy,1);
-	float ohcaltotal=GetTotalEnergy(ohcalenergy,1);
+	float emcaltotal=GetTotalEnergy(emcalenergy_vec,1); //not sure about the calibration factor, need to check
+	float ihcaltotal=GetTotalEnergy(ihcalenergy_vec,1);
+	float ohcaltotal=GetTotalEnergy(ohcalenergy_vec,1);
 	EMCALE->Fill(emcaltotal);
 	IHCALE->Fill(ihcaltotal);
 	OHCALE->Fill(ohcaltotal);
@@ -66,43 +66,49 @@ int CaloTransverseEnergy::processEvent(PHCompositeNode *topNode)
 	datatree->Fill();
 	return 1;
 }
-void CaloTransverseEnergy::processDST(TowerInfoContainer* calo_event, std::vector<float>* energies, RawTowerGeomContainer* geom, GlobalVertex* vtx)
+void CaloTransverseEnergy::processDST(TowerInfoContainerv1* calo_event, std::vector<float>* energies, RawTowerGeomContainer_Cylinderv1* geom, bool hcalorem, bool inner)
 {
+//	if(!hcalorem) geom->set_calorimeter_id("CEMC"); 
+//	else{
+//		if(inner) geom->set_calorimeter_id("HCALIN");
+//		else geom->set_calorimeter_id("HCALOUT");
+//	}
 	//This processes all events in the DST in the processor 
-	TowerInfoContainerv1::Range tower_range=calo_event->getTowers();
-	for(TowerInfoContainerv1::ConstIterator citer=tower_range.first; citer !=tower_range.second; ++citer)
+	int ntowers=calo_event->size();
+	for(int i =0;i<ntowers; i++ )
 	{
-		TowerInfov1* tower=(TowerInfov1*)citer->second;
+		TowerInfov1* tower=calo_event->get_tower_at_channel(i);
 		float energy1=tower->get_energy();
-		int phibin=calo_event->getTowerPhiBin(citer->first);
-		int etabin=calo_event->getTowerEtaBin(citer->first);
-		RawTowerGeom *towergeom=geom->get_tower_geometry(tower->first);
+		int key=calo_event->encode_key(i);
+		int phibin=calo_event->getTowerPhiBin(key);
+		int etabin=calo_event->getTowerEtaBin(key);
+		RawTowerGeom *towergeom=geom->get_tower_geometry(key);
 		assert(towergeom);
 		if(energy1<=0) continue;
-		double eta=get_etacenter(etabin);
-		double phi=get_phicenter(phibin);
-		energies->push_back(GetTransverseEnergy(energy1, eta);
+		double eta=geom->get_etacenter(etabin);
+		double phi=geom->get_phicenter(phibin);
+		energies->push_back(GetTransverseEnergy(energy1, eta));
 		energy+=energy1;
 		if(!hcalorem){
 			emcalenergy+=energy1;
-			if(eteeta.find(eta) != eteeta.end()) eteeta[eta]+=energies.at(-1);
+			if(eteeta.find(eta) != eteeta.end()) eteeta[eta]+=energies->at(-1);
 			else{
-				eteeta[eta]=energies.at(-1);
+				eteeta[eta]=energies->at(-1);
 			}
-			if(etephi.find(phi) != etephi.end(){
-				etephi[phi]+=energies.at(-1);	
+			if(etephi.find(phi) != etephi.end()){
+				etephi[phi]+=energies->at(-1);	
 			}
 			else{
-				etephi[phi]=energies.at(-1);
+				etephi[phi]=energies->at(-1);
 			}
 				
 		}
-		if(hcalored){
+		if(hcalorem){
 			hcalenergy+=energy1;
-			if(etheta.find(eta) != etheta.end())etheta[eta]+=energies.at(-1);
-			else etheta[eta]=energies.at(-1);
-			if(ethphi.find(phi) != ethphi.end()) ethphi[phi]+=energies.at(-1);
-			else ethphi[phi]=energies.at(-1);
+			if(etheta.find(eta) != etheta.end())etheta[eta]+=energies->at(-1);
+			else etheta[eta]=energies->at(-1);
+			if(ethphi.find(phi) != ethphi.end()) ethphi[phi]+=energies->at(-1);
+			else ethphi[phi]=energies->at(-1);
 		}
 	}
 	
@@ -112,7 +118,7 @@ void CaloTransverseEnergy::processPacket(int packet, Event * e, std::vector<floa
 	try{
 		e->getPacket(packet);
 	}
-	catch(std::exception* e) { break;} 
+	catch(std::exception* e) {} 
 	Packet *p= e->getPacket(packet); 
 	for(int c=0; c<p->iValue(0, "CHANNELS"); c++)
 	{
@@ -133,9 +139,9 @@ void CaloTransverseEnergy::processPacket(int packet, Event * e, std::vector<floa
 		//
 		int phibin=(c%64)/16;
 		phibin=phibin*2+c%2;
-		phibin+=(ph%10)*8;	
+		phibin+=(packet%10)*8;	
 		float phval=PhiD->GetBinContent(phibin);
-		phcal+=GetTransverseEnergy(en,eta);
+		phval+=GetTransverseEnergy(en,eta);
 		PhiD->SetBinContent(phibin, phval);	
 	}
 
@@ -176,9 +182,9 @@ bool CaloTransverseEnergy::ValidateDistro()
 	//Just make sure that the distribution looks correct
 	double eavg=0;
 	int bad=0;
-	for(auto e:etphi) eavg+=e;  
+	for(auto e:etphi) eavg+=e.second;  
 	eavg=eavg/etphi.size();
-	for(auto e:etphi) if(e > eavg*1.25 || e < eavg*0.75 ) bad++; 
+	for(auto e:etphi) if(e.second > eavg*1.25 || e.second < eavg*0.75 ) bad++; 
 	if(bad > etphi.size()*0.25) return false; //if over half of the phi values are outside of the range someting is off
 	else return true;
 }	
@@ -189,20 +195,21 @@ void CaloTransverseEnergy::ProduceOutput()
 bool CaloTransverseEnergy::ApplyCuts(Event* e)
 {
 	//pass through a set of cuts
+	return true;
 }
 void CaloTransverseEnergy::GetNodes(PHCompositeNode *topNode)
 {
 	_topNode=topNode;
-	_IHCALNode=findNode::getClass<TowerInfoContainerv1>(topNode, iHCALnode);
-	_OHCALNode=findNode::getClass<TowerInfoContainerv1>(topNode, oHCALnode); 
-	_EMCALNode=findNode::getClass<TowerInfoContainerv1>(topNode, EMCalnode);
+	_IHCALNode=findNode::getClass<PHCompositeNode>(topNode, iHCALnode);
+	_OHCALNode=findNode::getClass<PHCompositeNode>(topNode, oHCALnode); 
+	_EMCALNode=findNode::getClass<PHCompositeNode>(topNode, EMCALnode);
 }
 int CaloTransverseEnergy::Init(PHCompositeNode *topNode)
 {
 	
 	if(!isPRDF) GetNodes(topNode); //load the composite nodes into the global variables if using DST approach
-	std::string outname="Transverse_Energy_"+ (std::string) run_number + "_segment_"+DST_Segment+".root";
-	outfile=new TFile(outname.c_str(), "RECREATE");
+	//std::string outname=("Transverse_Energy_%i_segment_%i.root", run_number, DST_Segment);
+	outfile=new TFile(Form("Transverse_Energy%d_segment_%d.root",run_number, DST_Segment), "RECREATE");
 	datatree=new TTree("data", "data");
 	datatree->Branch("total_energy", &energy);
 	datatree->Branch("hcal_energy", &hcalenergy);
