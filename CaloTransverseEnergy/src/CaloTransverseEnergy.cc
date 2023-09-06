@@ -178,6 +178,7 @@ void CaloTransverseEnergy::FitToData(std::vector<float> data,int which_model)
 float CaloTransverseEnergy::Heuristic(std::vector<float> model_fit)
 {
 	float chindf=0;
+	return chindf;
 }
 bool CaloTransverseEnergy::ValidateDistro()
 {

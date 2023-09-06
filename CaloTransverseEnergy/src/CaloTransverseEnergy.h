@@ -44,6 +44,7 @@
 #include <phool/PHCompositeNode.h>
 #include <phool/phool.h>
 #include <phool/getClass.h>
+#include <phool/PHObject.h>
 
 #define PI 3.1415926535
 
@@ -53,6 +54,7 @@ class TFile;
 class GlobalVertexMapv1;
 class Fun4AllInputManager;
 class TowerInfov1;
+class PHObject; 
 
 class CaloTransverseEnergy:public SubsysReco
 {

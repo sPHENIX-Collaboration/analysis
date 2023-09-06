@@ -7,7 +7,7 @@ ROOTLIBS = $(shell root-config --glibs)
 CXXFLAGS = -I.  $(ROOTFLAGS) -I$(ONLINE_MAIN)/include -I$(OFFLINE_MAIN)/include
 RCFLAGS = -I.  -I$(ONLINE_MAIN)/include -I$(OFFLINE_MAIN)/include
 
-LDFLAGS = -Wl,--no-as-needed  -L$(ONLINE_MAIN)/lib -L$(OFFLINE_MAIN)/lib -lphool -lfun4all -lfun4allraw -lSubsysReco -lcalo_io -lEvent -lNoRootEvent -lmessage  $(ROOTLIBS) -fPIC
+LDFLAGS = -Wl,--no-as-needed  -L$(ONLINE_MAIN)/lib -L$(OFFLINE_MAIN)/lib  -lphg4hit -lg4detectors_io -lphool -lfun4all -lfun4allraw -lSubsysReco -lcalo_io -lEvent -lNoRootEvent -lmessage  $(ROOTLIBS) -fPIC
 
 
 
