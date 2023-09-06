@@ -6,7 +6,9 @@
 #include <Fun4AllDstInputManager.h>
 #include <recoConsts.h>
 #include <BBCStudy.h>
+#include <g4bbc/BbcDigitization.h>
 
+R__LOAD_LIBRARY(libg4bbc.so)
 R__LOAD_LIBRARY(libBBCStudy.so)
 
 void Run_BBCStudy(int nEvents = 1000,
@@ -19,6 +21,8 @@ void Run_BBCStudy(int nEvents = 1000,
   gSystem->Load("libg4detectors.so");
   gSystem->Load("libg4decayer.so");
   gSystem->Load("libg4eval.so");   
+  gSystem->Load("libg4bbc.so");   
+  gSystem->Load("libg4bbc_io.so");   
 
   ///////////////////////////////////////////
   //
@@ -34,6 +38,9 @@ void Run_BBCStudy(int nEvents = 1000,
   //////////////////////////////////////////
   Fun4AllServer *se = Fun4AllServer::instance();
   se->Verbosity(0);
+
+  BbcDigitization *bbcg4reco = new BbcDigitization();
+  se->registerSubsystem( bbcg4reco );
 
   BBCStudy *ana = new BBCStudy();
   //ana->set_flag( BBCStudy::TRUTH, true);

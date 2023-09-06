@@ -19,12 +19,17 @@ Exit ctrl-x ctrl-c
 To change event number go into run_UnpackPRDF.sh located in sphenix/user/<username>/analysis/TPC/DAQ/macros and update the variable nEvents
 ---------------------------------------
 
-Now source in the PRDFs, you need all of the two lines below:
+Now source in the PRDFs, you need all of the two lines below (pedestal):
 
   source run_UnpackPRDF.sh /sphenix/lustre01/sphnxpro/rawdata/commissioning/tpc/pedestal/*10179*
   /sphenix/lustre01/sphnxpro/rawdata/commissioning/tpc/pedestal/TPC_ebdc*_pedestal-00010179-0000.prdf
 
-Replace 10179 (the run number) to the one you need
+OR -- you need all of the two lines below (beam):
+
+  source run_UnpackPRDF.sh /sphenix/lustre01/sphnxpro/commissioning/tpc/beam/*11000*
+  /sphenix/lustre01/sphnxpro/commissioning/tpc/beam/TPC_ebdc*_beam-00011000-0000.prdf
+
+Replace the run number to the one you need
 The * will make it run over all the sectors of the TPC. If you want just one sector enter the sector number
   Example: TPC_ebdc*_pedestal-00010179-0000.prdf  ---> TPC_ebdc00_pedestal-00010179-0000.prdf
 
