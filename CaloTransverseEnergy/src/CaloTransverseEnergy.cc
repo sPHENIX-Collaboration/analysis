@@ -7,7 +7,9 @@ class Event;
 int CaloTransverseEnergy::processEvent(PHCompositeNode *topNode)
 {
 //	if(!ApplyCuts(e)) return 1;
+	n_evt++;
 	std::vector<float> emcalenergy_vec, ihcalenergy_vec, ohcalenergy_vec; 
+	std::cout <<"Running on event " <<n_evt <<std::endl;
 	if(isPRDF){
 		for (auto pn:packets)
 		{
@@ -222,5 +224,6 @@ int CaloTransverseEnergy::Init(PHCompositeNode *topNode)
 	datatree->Branch("HCal_Phi_Et", &ethphi);
 	datatree->Branch("Eta_Et", &eteta);
 	datatree->Branch("EMCal_Eta_Et", &eteeta);
-	datatree->Branch("HCal_Eta_Et", &etheta);	 
+	datatree->Branch("HCal_Eta_Et", &etheta);
+	return 0;	 
 }

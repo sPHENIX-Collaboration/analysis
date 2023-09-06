@@ -23,11 +23,6 @@ int main(int argc, const char* argv[])
 	int is_input=0;
 	//load in the DST Segment and run number
 	while(std::getline(subs, substr, '-')){
-		if(substr.find("DST")!=std::string::npos) is_input=1; 
-		if(is_input==1){
-			 cte->run_number=std::stoi(substr);
-			 is_input=2;
-		}
 		if(is_input==2){
 			std::stringstream sss(substr);
 			std::string subsub;
@@ -38,9 +33,17 @@ int main(int argc, const char* argv[])
 			catch(std::exception* e) {}
 			}
 		} 
+		if(is_input==1){
+			std::cout<<substr<<std::endl; 
+			cte->run_number=std::stoi(substr);
+			 is_input=2;
+		}
+		if(substr.find("DST")!=std::string::npos) is_input=1; 
 	}
+	std::cout<<"Have loaded in the subsystem" <<std::endl;
+	se->registerInputManager(in);
 	se->registerSubsystem(cte);
-//	se->run();
+	se->run();
 	return 0;				
 }
 	

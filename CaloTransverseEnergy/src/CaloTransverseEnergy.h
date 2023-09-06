@@ -50,6 +50,9 @@
 //Necessary classes 
 class PHCompositeNode; 
 class TFile; 
+class GlobalVertexMapv1;
+class Fun4AllInputManager;
+class TowerInfov1;
 
 class CaloTransverseEnergy:public SubsysReco
 {
@@ -70,13 +73,15 @@ class CaloTransverseEnergy:public SubsysReco
 		const std::string &iHCALnode="HCALIN";
 		const std::string &oHCALnode="HCALOUT";
 		const std::string &EMCALnode="CEMC";
-		bool isPRDF=true;
+		bool isPRDF=false;
+		int n_evt=1;
 		TTree* datatree;
 
 	public:
 		
 		int processEvent(PHCompositeNode *topNode);
 		void ProduceOutput();
+		CaloTransverseEnergy() {};
 		CaloTransverseEnergy(std::string inputfile)
 		{
 			IHCALE=new TH1F("iHCal", "Total Transverse energy depositied in inner HCal; Energy [ADC]", 1000, 0, 100000); 
