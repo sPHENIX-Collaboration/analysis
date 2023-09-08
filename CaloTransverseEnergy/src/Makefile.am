@@ -1,7 +1,7 @@
 AUTOMAKE_OPTIONS = foreign
 
 lib_LTLIBRARIES = \
-    libcaloet.la
+    libcalotransverseenergy.la
 
 AM_LDFLAGS = \
   -L$(libdir) \
@@ -34,7 +34,7 @@ noinst_PROGRAMS = \
   testexternals
 
 testexternals_SOURCES = testexternals.C
-testexternals_LDADD = libcaloet.la
+testexternals_LDADD = libcalotransverseenergy.la
 
 testexternals.C:
 	echo "//*** this is a generated file. Do not commit, do not edit" > $@

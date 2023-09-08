@@ -1,5 +1,5 @@
-CaloTransverseEnergy.lo: CaloTransverseEnergy.cc \
- /usr/include/stdc-predef.h CaloTransverseEnergy.h \
+CaloTransverseEnergy.lo: ../CaloTransverseEnergy.cc \
+ /usr/include/stdc-predef.h ../CaloTransverseEnergy.h \
  /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/root-6.26.06.p01/include/TTree.h \
  /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/root-6.26.06.p01/include/Compression.h \
  /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/root-6.26.06.p01/include/RtypesCore.h \
@@ -377,7 +377,7 @@ CaloTransverseEnergy.lo: CaloTransverseEnergy.cc \
  /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/release/release_ana/ana.374/include/phool/PHNodeIterator.h \
  /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/release/release_ana/ana.374/include/phool/phooldefs.h
 /usr/include/stdc-predef.h:
-CaloTransverseEnergy.h:
+../CaloTransverseEnergy.h:
 /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/root-6.26.06.p01/include/TTree.h:
 /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/root-6.26.06.p01/include/Compression.h:
 /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/root-6.26.06.p01/include/RtypesCore.h:
