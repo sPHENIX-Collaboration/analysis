@@ -16,7 +16,7 @@
 
 
 
-
+VPATH = ..
 am__is_gnu_make = test -n '$(MAKEFILE_LIST)' && test -n '$(MAKELEVEL)'
 am__make_running_with_option = \
   case $${target_option-} in \
@@ -84,8 +84,8 @@ noinst_PROGRAMS = testexternals$(EXEEXT)
 subdir = .
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/configure $(am__configure_deps) depcomp \
-	$(pkginclude_HEADERS) COPYING INSTALL config.guess config.sub \
-	install-sh missing ltmain.sh
+	$(pkginclude_HEADERS) config.guess config.sub install-sh \
+	missing ltmain.sh
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
@@ -124,20 +124,18 @@ am__uninstall_files_from_dir = { \
   }
 am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(pkgincludedir)"
 LTLIBRARIES = $(lib_LTLIBRARIES)
-libcaloet_la_LIBADD =
-am_libcaloet_la_OBJECTS = CaloTransverseEnergy.lo
-libcaloet_la_OBJECTS = $(am_libcaloet_la_OBJECTS)
+libCaloTransverseEnergy_la_DEPENDENCIES =
+am_libCaloTransverseEnergy_la_OBJECTS = CaloTransverseEnergy.lo
+libCaloTransverseEnergy_la_OBJECTS =  \
+	$(am_libCaloTransverseEnergy_la_OBJECTS)
 AM_V_lt = $(am__v_lt_$(V))
 am__v_lt_ = $(am__v_lt_$(AM_DEFAULT_VERBOSITY))
 am__v_lt_0 = --silent
 am__v_lt_1 = 
-libcaloet_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
-	$(CXXFLAGS) $(libcaloet_la_LDFLAGS) $(LDFLAGS) -o $@
 PROGRAMS = $(noinst_PROGRAMS)
 am_testexternals_OBJECTS = testexternals.$(OBJEXT)
 testexternals_OBJECTS = $(am_testexternals_OBJECTS)
-testexternals_DEPENDENCIES = libcaloet.la
+testexternals_DEPENDENCIES = libCaloTransverseEnergy.la
 AM_V_P = $(am__v_P_$(V))
 am__v_P_ = $(am__v_P_$(AM_DEFAULT_VERBOSITY))
 am__v_P_0 = false
@@ -150,7 +148,7 @@ AM_V_at = $(am__v_at_$(V))
 am__v_at_ = $(am__v_at_$(AM_DEFAULT_VERBOSITY))
 am__v_at_0 = @
 am__v_at_1 = 
-DEFAULT_INCLUDES = -I.
+DEFAULT_INCLUDES = -I. -I$(srcdir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
 am__mv = mv -f
@@ -172,8 +170,10 @@ AM_V_CXXLD = $(am__v_CXXLD_$(V))
 am__v_CXXLD_ = $(am__v_CXXLD_$(AM_DEFAULT_VERBOSITY))
 am__v_CXXLD_0 = @echo "  CXXLD   " $@;
 am__v_CXXLD_1 = 
-SOURCES = $(libcaloet_la_SOURCES) $(testexternals_SOURCES)
-DIST_SOURCES = $(libcaloet_la_SOURCES) $(testexternals_SOURCES)
+SOURCES = $(libCaloTransverseEnergy_la_SOURCES) \
+	$(testexternals_SOURCES)
+DIST_SOURCES = $(libCaloTransverseEnergy_la_SOURCES) \
+	$(testexternals_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -234,9 +234,9 @@ CPPFLAGS =
 CXX = /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/gcc/12.1.0-57c96/x86_64-centos7/bin/g++
 CXXCPP = /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/gcc/12.1.0-57c96/x86_64-centos7/bin/g++ -E
 CXXDEPMODE = depmode=gcc3
-CXXFLAGS = -g -O2 -std=c++17 -Wall -Werror -Wno-deprecated-declarations
+CXXFLAGS = -g -O2 -std=c++17 -Wall -Werror
 CYGPATH_W = echo
-DEFS = -DPACKAGE_NAME=\"CaloTransverseEnergy\" -DPACKAGE_TARNAME=\"calotransverseenergy\" -DPACKAGE_VERSION=\"1.00\" -DPACKAGE_STRING=\"CaloTransverseEnergy\ 1.00\" -DPACKAGE_BUGREPORT=\"\" -DPACKAGE_URL=\"\" -DPACKAGE=\"calotransverseenergy\" -DVERSION=\"1.00\" -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1 -DHAVE_DLFCN_H=1 -DLT_OBJDIR=\".libs/\"
+DEFS = -DPACKAGE_NAME=\"calotransverseenergy\" -DPACKAGE_TARNAME=\"calotransverseenergy\" -DPACKAGE_VERSION=\"1.00\" -DPACKAGE_STRING=\"calotransverseenergy\ 1.00\" -DPACKAGE_BUGREPORT=\"\" -DPACKAGE_URL=\"\" -DPACKAGE=\"calotransverseenergy\" -DVERSION=\"1.00\" -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1 -DHAVE_DLFCN_H=1 -DLT_OBJDIR=\".libs/\"
 DEPDIR = .deps
 DLLTOOL = false
 DSYMUTIL = 
@@ -272,8 +272,8 @@ OTOOL =
 OTOOL64 = 
 PACKAGE = calotransverseenergy
 PACKAGE_BUGREPORT = 
-PACKAGE_NAME = CaloTransverseEnergy
-PACKAGE_STRING = CaloTransverseEnergy 1.00
+PACKAGE_NAME = calotransverseenergy
+PACKAGE_STRING = calotransverseenergy 1.00
 PACKAGE_TARNAME = calotransverseenergy
 PACKAGE_URL = 
 PACKAGE_VERSION = 1.00
@@ -284,10 +284,10 @@ SET_MAKE =
 SHELL = /bin/sh
 STRIP = strip
 VERSION = 1.00
-abs_builddir = /sphenix/user/sgross/sphenix_analysis/CaloTransverseEnergy/src
-abs_srcdir = /sphenix/user/sgross/sphenix_analysis/CaloTransverseEnergy/src
-abs_top_builddir = /sphenix/user/sgross/sphenix_analysis/CaloTransverseEnergy/src
-abs_top_srcdir = /sphenix/user/sgross/sphenix_analysis/CaloTransverseEnergy/src
+abs_builddir = /sphenix/user/sgross/sphenix_analysis/CaloTransverseEnergy/src/build
+abs_srcdir = /sphenix/user/sgross/sphenix_analysis/CaloTransverseEnergy/src/build/..
+abs_top_builddir = /sphenix/user/sgross/sphenix_analysis/CaloTransverseEnergy/src/build
+abs_top_srcdir = /sphenix/user/sgross/sphenix_analysis/CaloTransverseEnergy/src/build/..
 ac_ct_AR = ar
 ac_ct_CC = /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/gcc/12.1.0-57c96/x86_64-centos7/bin/gcc
 ac_ct_CXX = 
@@ -326,50 +326,53 @@ mandir = ${datarootdir}/man
 mkdir_p = $(MKDIR_P)
 oldincludedir = /usr/include
 pdfdir = ${docdir}
-prefix = /usr/local
+prefix = /sphenix/user/sgross/analysis/JS-Jet/JetValidation/src/build/install
 program_transform_name = s,x,x,
 psdir = ${docdir}
 sbindir = ${exec_prefix}/sbin
 sharedstatedir = ${prefix}/com
-srcdir = .
+srcdir = ..
 sysconfdir = ${prefix}/etc
 target_alias = 
 top_build_prefix = 
 top_builddir = .
-top_srcdir = .
+top_srcdir = ..
 AUTOMAKE_OPTIONS = foreign
-lib_LTLIBRARIES = \
-    libcaloet.la
-
-AM_LDFLAGS = \
-  -L$(libdir) \
-  -L$(OFFLINE_MAIN)/lib
-
 AM_CPPFLAGS = \
   -I$(includedir) \
   -I$(OFFLINE_MAIN)/include \
-  -isystem$(ROOTSYS)/include
+  -I$(ROOTSYS)/include
+
+AM_LDFLAGS = \
+  -L$(libdir) \
+  -L$(OFFLINE_MAIN)/lib \
+  -L$(OFFLINE_MAIN)/lib64
 
 pkginclude_HEADERS = \
   CaloTransverseEnergy.h
 
-libcaloet_la_SOURCES = \
-  CaloTransverseEnergy.cc 
+lib_LTLIBRARIES = \
+  libCaloTransverseEnergy.la
 
-libcaloet_la_LDFLAGS = \
-  -L$(libdir) \
-  -L$(OFFLINE_MAIN)/lib \
-  -lcalo_io \
+libCaloTransverseEnergy_la_SOURCES = \
+  CaloTransverseEnergy.cc
+
+libCaloTransverseEnergy_la_LIBADD = \
+  -lphool \
+  -lSubsysReco \
   -lfun4all \
-  -lg4detectors_io \
-  -lphg4hit
+  -lg4dst \
+  -lg4eval \
+  -lcalo_io 
 
-testexternals_SOURCES = testexternals.C
-testexternals_LDADD = libcaloet.la
-all: all-am
+BUILT_SOURCES = testexternals.cc
+testexternals_SOURCES = testexternals.cc
+testexternals_LDADD = libCaloTransverseEnergy.la
+all: $(BUILT_SOURCES)
+	$(MAKE) $(AM_MAKEFLAGS) all-am
 
 .SUFFIXES:
-.SUFFIXES: .C .cc .lo .o .obj
+.SUFFIXES: .cc .lo .o .obj
 am--refresh: Makefile
 	@:
 $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
@@ -440,8 +443,8 @@ clean-libLTLIBRARIES:
 	  rm -f $${locs}; \
 	}
 
-libcaloet.la: $(libcaloet_la_OBJECTS) $(libcaloet_la_DEPENDENCIES) $(EXTRA_libcaloet_la_DEPENDENCIES) 
-	$(AM_V_CXXLD)$(libcaloet_la_LINK) -rpath $(libdir) $(libcaloet_la_OBJECTS) $(libcaloet_la_LIBADD) $(LIBS)
+libCaloTransverseEnergy.la: $(libCaloTransverseEnergy_la_OBJECTS) $(libCaloTransverseEnergy_la_DEPENDENCIES) $(EXTRA_libCaloTransverseEnergy_la_DEPENDENCIES) 
+	$(AM_V_CXXLD)$(CXXLINK) -rpath $(libdir) $(libCaloTransverseEnergy_la_OBJECTS) $(libCaloTransverseEnergy_la_LIBADD) $(LIBS)
 
 clean-noinstPROGRAMS:
 	@list='$(noinst_PROGRAMS)'; test -n "$$list" || exit 0; \
@@ -464,27 +467,6 @@ distclean-compile:
 
 include ./$(DEPDIR)/CaloTransverseEnergy.Plo
 include ./$(DEPDIR)/testexternals.Po
-
-.C.o:
-	$(AM_V_CXX)$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
-	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
-#	$(AM_V_CXX)source='$<' object='$@' libtool=no \
-#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
-#	$(AM_V_CXX_no)$(CXXCOMPILE) -c -o $@ $<
-
-.C.obj:
-	$(AM_V_CXX)$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `$(CYGPATH_W) '$<'`
-	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
-#	$(AM_V_CXX)source='$<' object='$@' libtool=no \
-#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
-#	$(AM_V_CXX_no)$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
-
-.C.lo:
-	$(AM_V_CXX)$(LTCXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
-	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Plo
-#	$(AM_V_CXX)source='$<' object='$@' libtool=yes \
-#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
-#	$(AM_V_CXX_no)$(LTCXXCOMPILE) -c -o $@ $<
 
 .cc.o:
 	$(AM_V_CXX)$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -753,13 +735,15 @@ distcleancheck: distclean
 	       $(distcleancheck_listfiles) ; \
 	       exit 1; } >&2
 check-am: all-am
-check: check-am
+check: $(BUILT_SOURCES)
+	$(MAKE) $(AM_MAKEFLAGS) check-am
 all-am: Makefile $(LTLIBRARIES) $(PROGRAMS) $(HEADERS)
 installdirs:
 	for dir in "$(DESTDIR)$(libdir)" "$(DESTDIR)$(pkgincludedir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
-install: install-am
+install: $(BUILT_SOURCES)
+	$(MAKE) $(AM_MAKEFLAGS) install-am
 install-exec: install-exec-am
 install-data: install-data-am
 uninstall: uninstall-am
@@ -789,6 +773,7 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
+	-test -z "$(BUILT_SOURCES)" || rm -f $(BUILT_SOURCES)
 clean: clean-am
 
 clean-am: clean-generic clean-libLTLIBRARIES clean-libtool clean-local \
@@ -863,7 +848,7 @@ ps-am:
 
 uninstall-am: uninstall-libLTLIBRARIES uninstall-pkgincludeHEADERS
 
-.MAKE: install-am install-strip
+.MAKE: all check install install-am install-strip
 
 .PHONY: CTAGS GTAGS TAGS all all-am am--refresh check check-am clean \
 	clean-cscope clean-generic clean-libLTLIBRARIES clean-libtool \
@@ -885,16 +870,12 @@ uninstall-am: uninstall-libLTLIBRARIES uninstall-pkgincludeHEADERS
 	uninstall-libLTLIBRARIES uninstall-pkgincludeHEADERS
 
 
-testexternals.C:
+testexternals.cc:
 	echo "//*** this is a generated file. Do not commit, do not edit" > $@
 	echo "int main()" >> $@
 	echo "{" >> $@
 	echo "  return 0;" >> $@
 	echo "}" >> $@
-
-# Rule for generating table CINT dictionaries.
-%_Dict.cc: %.h %LinkDef.h
-	rootcint -f $@ @CINTDEFS@ -c $(DEFAULT_INCLUDES) $(AM_CPPFLAGS) $^
 
 clean-local:
 	rm -f $(BUILT_SOURCES)
