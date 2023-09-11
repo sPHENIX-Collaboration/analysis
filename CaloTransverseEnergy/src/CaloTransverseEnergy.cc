@@ -3,13 +3,17 @@ std::vector <int> packets;
 class PHCompositeNode;
 class Fun4AllInputManager;
 class Event;
+const std::string &prdfnode="PRDF"; //maybe I can add an overload to this? just do either version
+const std::string &DSTnode="DST";
+const std::string &iHCALnode="HCALIN";
+const std::string &oHCALnode="HCALOUT";
+const std::string &EMCALnode="CEMC";
 
-int CaloTransverseEnergy::processEvent(PHCompositeNode *topNode)
+int CaloTransverseEnergy::process_event(PHCompositeNode *topNode)
 {
 //	if(!ApplyCuts(e)) return 1;
 	n_evt++;
 	std::vector<float> emcalenergy_vec, ihcalenergy_vec, ohcalenergy_vec; 
-	std::cout <<"Running on event " <<n_evt <<std::endl;
 	if(isPRDF){
 		for (auto pn:packets)
 		{
@@ -45,22 +49,26 @@ int CaloTransverseEnergy::processEvent(PHCompositeNode *topNode)
 		energy_transverse=0;
 		et_hcal=0;
 		et_emcal=0;
+		std::cout <<"Running on event " <<n_evt <<std::endl;
 		std::string ihcalgeom="TOWERGEOM_HCALIN", ohcalgeom="TOWERGEOM_HCALOUT", emcalgeom="TOWERGEOM_CEMC";
-		TowerInfoContainerv1* ihe=findNode::getClass<TowerInfoContainerv1>(_IHCALNode, "TOWERS_HCALIN");
-		TowerInfoContainerv1* ohe=findNode::getClass<TowerInfoContainerv1>(_OHCALNode, "TOWERS_HCALOUT");
-		TowerInfoContainerv1* eme=findNode::getClass<TowerInfoContainerv1>(_EMCALNode, "TOWERS_CEMC");
+		TowerInfoContainerv1* ihe=findNode::getClass<TowerInfoContainerv1>(topNode, "TOWERS_HCALIN");
+		TowerInfoContainerv1* ohe=findNode::getClass<TowerInfoContainerv1>(topNode, "TOWERS_HCALOUT");
+		TowerInfoContainerv1* eme=findNode::getClass<TowerInfoContainerv1>(topNode, "TOWERS_CEMC");
 		RawTowerGeomContainer_Cylinderv1 *ihg=findNode::getClass<RawTowerGeomContainer_Cylinderv1>(topNode, ihcalgeom);
 		RawTowerGeomContainer_Cylinderv1 *ohg=findNode::getClass<RawTowerGeomContainer_Cylinderv1>(topNode, ohcalgeom);
 		RawTowerGeomContainer_Cylinderv1 *emg=findNode::getClass<RawTowerGeomContainer_Cylinderv1>(topNode, emcalgeom);
 //		GlobalVertexMap *vtxmap=findNode::getClass<PHObject>(topNode, "GLOBAL_VERTEX");
 //		GlobalVertex *vtx=vtxmap->begin()->second;
+		std::cout<<"Getting Energies" <<std::endl;
 		processDST(eme, &emcalenergy_vec, emg, false, false);
 		processDST(ihe, &ihcalenergy_vec, ihg, true, true);
-		processDST(ohe, &ohcalenergy_vec, ohg, true, false); 
+		processDST(ohe, &ohcalenergy_vec, ohg, true, false);
+		std::cout<<"Found energy"<<std::endl; 
 	}
 	float emcaltotal=GetTotalEnergy(emcalenergy_vec,1); //not sure about the calibration factor, need to check
 	float ihcaltotal=GetTotalEnergy(ihcalenergy_vec,1);
 	float ohcaltotal=GetTotalEnergy(ohcalenergy_vec,1);
+	std::cout<<"Adding the data to the histograms" <<std::endl;
 	EMCALE->Fill(emcaltotal);
 	IHCALE->Fill(ihcaltotal);
 	OHCALE->Fill(ohcaltotal);
@@ -77,6 +85,7 @@ void CaloTransverseEnergy::processDST(TowerInfoContainerv1* calo_event, std::vec
 //	}
 	//This processes all events in the DST in the processor 
 	int ntowers=calo_event->size();
+	try{
 	for(int i =0;i<ntowers; i++ )
 	{
 		TowerInfov1* tower=calo_event->get_tower_at_channel(i);
@@ -84,14 +93,17 @@ void CaloTransverseEnergy::processDST(TowerInfoContainerv1* calo_event, std::vec
 		int key=calo_event->encode_key(i);
 		int phibin=calo_event->getTowerPhiBin(key);
 		int etabin=calo_event->getTowerEtaBin(key);
-		RawTowerGeom *towergeom=geom->get_tower_geometry(key);
-		assert(towergeom);
+//		RawTowerGeom *towergeom=geom->get_tower_geometry(key);
+//		assert(towergeom);
 		if(energy1<=0) continue;
+//		std::cout<<"Have the calorimeter tower" <<std::endl;
 		double eta=geom->get_etacenter(etabin);
 		double phi=geom->get_phicenter(phibin);
+//		std::cout<<"Have the eta bins" <<std::endl;
 		energies->push_back(GetTransverseEnergy(energy1, eta));
 		energy+=energy1;
-		if(!hcalorem){
+                std::cout<<"Energy is " <<energy1 <<" With phi " <<phi <<std::endl;
+		/*if(!hcalorem){
 			emcalenergy+=energy1;
 			if(eteeta.find(eta) != eteeta.end()) eteeta[eta]+=energies->at(-1);
 			else{
@@ -111,8 +123,10 @@ void CaloTransverseEnergy::processDST(TowerInfoContainerv1* calo_event, std::vec
 			else etheta[eta]=energies->at(-1);
 			if(ethphi.find(phi) != ethphi.end()) ethphi[phi]+=energies->at(-1);
 			else ethphi[phi]=energies->at(-1);
-		}
+		}*/
 	}
+	}
+	catch (std::exception& e){std::cout<<"Exception found " <<e.what() <<std::endl;}
 	
 }
 void CaloTransverseEnergy::processPacket(int packet, Event * e, std::vector<float>* energy, bool HorE)
@@ -193,7 +207,16 @@ bool CaloTransverseEnergy::ValidateDistro()
 }	
 void CaloTransverseEnergy::ProduceOutput()
 {
+	TFile* outfile=new TFile(Form("Transverse_Energy%d_segment_%d.root",run_number, DST_Segment), "RECREATE");
 	//just make a ton of histos
+	EMCALE->Write();
+	IHCALE->Write();
+	OHCALE->Write();
+	ETOTAL->Write();
+	PhiD->Write();
+	datatree->Write();
+	outfile->Write();
+	outfile->Close();
 }
 bool CaloTransverseEnergy::ApplyCuts(Event* e)
 {
@@ -212,8 +235,7 @@ int CaloTransverseEnergy::Init(PHCompositeNode *topNode)
 	
 	if(!isPRDF) GetNodes(topNode); //load the composite nodes into the global variables if using DST approach
 	//std::string outname=("Transverse_Energy_%i_segment_%i.root", run_number, DST_Segment);
-	outfile=new TFile(Form("Transverse_Energy%d_segment_%d.root",run_number, DST_Segment), "RECREATE");
-	datatree=new TTree("data", "data");
+	datatree=new TTree("CALOET", "CALOET");
 	datatree->Branch("total_energy", &energy);
 	datatree->Branch("hcal_energy", &hcalenergy);
 	datatree->Branch("emcal_energy", &emcalenergy);
