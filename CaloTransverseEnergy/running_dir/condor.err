@@ -1,2 +1,0 @@
-Error in <TSystem::ExpandFileName>: input: $HOME/.root.mimes, output: $HOME/.root.mimes
-/gpfs/mnt/gpfs02/sphenix/user/sgross/sphenix_analysis/CaloTransverseEnergy/src/GetET.sh: line 5: 31573 Segmentation fault      ./GetET "/sphenix/tg/tg01/jets/ahodges/run23_production/21518/DST-00021518-0000.root"
