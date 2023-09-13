@@ -5,3 +5,5 @@
 *.out
 */build
 */running_dir
+*/macros/*.job
+*/macros/*.root
