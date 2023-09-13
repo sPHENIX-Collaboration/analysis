@@ -1,1 +1,27 @@
 This code sums the transverse energy in the towers of the calorimeters
+
+#GOALS#
+This code aims to sum the transverse energy depositied in all towers in each event. 
+This is a compartive measurement to one performed at PHENIX, with the caveat of an added HCAL
+
+THis work also aims to allow for fitting of multiple QGP and event models to the data to allow for affimation of the underlying generator. 
+Currently the code has the structure to provide kinematic cuts and data fitting tools with an inbuilt heuristic model, however, these are not implemented in the current version (as of 11 Sept) 
+
+Other future uses include the inclusion of a validation of the distribution by looking at the phi and eta distributions across all events to search out hot regions, and proper tower masking. 
+
+Additional macros are needed to combine and print out the data, however this is a nearly trivial step
+ ###INSTALLATION###
+cd src
+mkdir build build/install build/install/include
+cd build
+export MYINSTALL=$(pwd)/install
+source /sphenix-setup -n ana
+source local_setup $MYINSTALL
+source /sphenix-setup -n ana
+
+../autogen.sh -prefix=$MYINSTALL
+make -j4
+make install
+
+###Running ###
+The GetET.C macro allow for the processing of a single DST file, builds a root file with a few basic histograms and a ttree of the data.
