@@ -1,0 +1,284 @@
+000 (9669107.000.000) 2023-09-11 15:40:40 Job submitted from host: <130.199.48.94:9618?addrs=130.199.48.94-9618&alias=rcas2065.rcf.bnl.gov&noUDP&sock=schedd_9170_49e9>
+...
+001 (9669107.000.000) 2023-09-11 15:41:01 Job executing on host: <130.199.201.159:9618?addrs=130.199.201.159-9618&alias=spool0117.sdcc.bnl.gov&noUDP&sock=startd_146374_9f65>
+...
+006 (9669107.000.000) 2023-09-11 15:41:08 Image size of job updated: 34552
+	0  -  MemoryUsage of job (MB)
+	0  -  ResidentSetSize of job (KB)
+...
+005 (9669107.000.000) 2023-09-11 15:41:09 Job terminated.
+	(1) Normal termination (return value 0)
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Local Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Total Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Total Local Usage
+	0  -  Run Bytes Sent By Job
+	0  -  Run Bytes Received By Job
+	0  -  Total Bytes Sent By Job
+	0  -  Total Bytes Received By Job
+	Partitionable Resources :    Usage  Request Allocated 
+	   Cpus                 :                 1         1 
+	   Disk (KB)            :        1        1   6681558 
+	   Memory (MB)          :        0     8192      8192 
+	   xferslots            :                           0 
+
+	Job terminated of its own accord at 2023-09-11T19:41:08Z.
+...
+000 (9669127.000.000) 2023-09-11 15:44:50 Job submitted from host: <130.199.48.94:9618?addrs=130.199.48.94-9618&alias=rcas2065.rcf.bnl.gov&noUDP&sock=schedd_9170_49e9>
+...
+001 (9669127.000.000) 2023-09-11 15:44:58 Job executing on host: <130.199.157.14:9618?addrs=130.199.157.14-9618&alias=spool0827.sdcc.bnl.gov&noUDP&sock=startd_149813_05d1>
+...
+006 (9669127.000.000) 2023-09-11 15:45:06 Image size of job updated: 333520
+	0  -  MemoryUsage of job (MB)
+	0  -  ResidentSetSize of job (KB)
+...
+005 (9669127.000.000) 2023-09-11 15:45:07 Job terminated.
+	(1) Normal termination (return value 0)
+		Usr 0 00:00:00, Sys 0 00:00:01  -  Run Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Local Usage
+		Usr 0 00:00:00, Sys 0 00:00:01  -  Total Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Total Local Usage
+	0  -  Run Bytes Sent By Job
+	0  -  Run Bytes Received By Job
+	0  -  Total Bytes Sent By Job
+	0  -  Total Bytes Received By Job
+	Partitionable Resources :    Usage  Request Allocated 
+	   Cpus                 :                 1         1 
+	   Disk (KB)            :        1        1   6743273 
+	   Memory (MB)          :        0     8192      8192 
+	   xferslots            :                           0 
+
+	Job terminated of its own accord at 2023-09-11T19:45:06Z.
+...
+000 (9669146.000.000) 2023-09-11 15:47:51 Job submitted from host: <130.199.48.94:9618?addrs=130.199.48.94-9618&alias=rcas2065.rcf.bnl.gov&noUDP&sock=schedd_9170_49e9>
+...
+001 (9669146.000.000) 2023-09-11 15:48:08 Job executing on host: <130.199.151.19:9618?addrs=130.199.151.19-9618&alias=spool1597.sdcc.bnl.gov&noUDP&sock=startd_36512_afc2>
+...
+006 (9669146.000.000) 2023-09-11 15:48:09 Image size of job updated: 1
+	0  -  MemoryUsage of job (MB)
+	0  -  ResidentSetSize of job (KB)
+...
+005 (9669146.000.000) 2023-09-11 15:48:09 Job terminated.
+	(1) Normal termination (return value 1)
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Local Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Total Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Total Local Usage
+	0  -  Run Bytes Sent By Job
+	0  -  Run Bytes Received By Job
+	0  -  Total Bytes Sent By Job
+	0  -  Total Bytes Received By Job
+	Partitionable Resources :    Usage  Request Allocated 
+	   Cpus                 :                 1         1 
+	   Disk (KB)            :        1        1   6681265 
+	   Memory (MB)          :        0     8192      8192 
+	   xferslots            :                           0 
+
+	Job terminated of its own accord at 2023-09-11T19:48:09Z.
+...
+000 (9669165.000.000) 2023-09-11 15:48:48 Job submitted from host: <130.199.48.94:9618?addrs=130.199.48.94-9618&alias=rcas2065.rcf.bnl.gov&noUDP&sock=schedd_9170_49e9>
+...
+001 (9669165.000.000) 2023-09-11 15:49:04 Job executing on host: <130.199.151.25:9618?addrs=130.199.151.25-9618&alias=spool1603.sdcc.bnl.gov&noUDP&sock=startd_37526_9ad1>
+...
+006 (9669165.000.000) 2023-09-11 15:49:04 Image size of job updated: 1
+	0  -  MemoryUsage of job (MB)
+	0  -  ResidentSetSize of job (KB)
+...
+005 (9669165.000.000) 2023-09-11 15:49:05 Job terminated.
+	(1) Normal termination (return value 1)
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Local Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Total Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Total Local Usage
+	0  -  Run Bytes Sent By Job
+	0  -  Run Bytes Received By Job
+	0  -  Total Bytes Sent By Job
+	0  -  Total Bytes Received By Job
+	Partitionable Resources :    Usage  Request Allocated 
+	   Cpus                 :                 1         1 
+	   Disk (KB)            :        1        1   6681265 
+	   Memory (MB)          :        0     8192      8192 
+	   xferslots            :                           0 
+
+	Job terminated of its own accord at 2023-09-11T19:49:04Z.
+...
+000 (9669184.000.000) 2023-09-11 15:49:50 Job submitted from host: <130.199.48.94:9618?addrs=130.199.48.94-9618&alias=rcas2065.rcf.bnl.gov&noUDP&sock=schedd_9170_49e9>
+...
+001 (9669184.000.000) 2023-09-11 15:49:56 Job executing on host: <130.199.151.11:9618?addrs=130.199.151.11-9618&alias=spool1589.sdcc.bnl.gov&noUDP&sock=startd_41293_d00d>
+...
+006 (9669184.000.000) 2023-09-11 15:50:03 Image size of job updated: 463788
+	0  -  MemoryUsage of job (MB)
+	0  -  ResidentSetSize of job (KB)
+...
+005 (9669184.000.000) 2023-09-11 15:50:03 Job terminated.
+	(1) Normal termination (return value 0)
+		Usr 0 00:00:00, Sys 0 00:00:01  -  Run Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Local Usage
+		Usr 0 00:00:00, Sys 0 00:00:01  -  Total Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Total Local Usage
+	0  -  Run Bytes Sent By Job
+	0  -  Run Bytes Received By Job
+	0  -  Total Bytes Sent By Job
+	0  -  Total Bytes Received By Job
+	Partitionable Resources :    Usage  Request Allocated 
+	   Cpus                 :                 1         1 
+	   Disk (KB)            :        1        1   6681265 
+	   Memory (MB)          :        0     8192      8192 
+	   xferslots            :                           0 
+
+	Job terminated of its own accord at 2023-09-11T19:50:03Z.
+...
+000 (9669205.000.000) 2023-09-11 15:54:22 Job submitted from host: <130.199.48.94:9618?addrs=130.199.48.94-9618&alias=rcas2065.rcf.bnl.gov&noUDP&sock=schedd_9170_49e9>
+...
+001 (9669205.000.000) 2023-09-11 15:54:40 Job executing on host: <130.199.151.19:9618?addrs=130.199.151.19-9618&alias=spool1597.sdcc.bnl.gov&noUDP&sock=startd_36512_afc2>
+...
+006 (9669205.000.000) 2023-09-11 15:54:49 Image size of job updated: 341976
+	109  -  MemoryUsage of job (MB)
+	111328  -  ResidentSetSize of job (KB)
+...
+005 (9669205.000.000) 2023-09-11 15:54:50 Job terminated.
+	(1) Normal termination (return value 0)
+		Usr 0 00:00:01, Sys 0 00:00:01  -  Run Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Local Usage
+		Usr 0 00:00:01, Sys 0 00:00:01  -  Total Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Total Local Usage
+	0  -  Run Bytes Sent By Job
+	0  -  Run Bytes Received By Job
+	0  -  Total Bytes Sent By Job
+	0  -  Total Bytes Received By Job
+	Partitionable Resources :    Usage  Request Allocated 
+	   Cpus                 :                 1         1 
+	   Disk (KB)            :        1        1   6681265 
+	   Memory (MB)          :      109     8192      8192 
+	   xferslots            :                           0 
+
+	Job terminated of its own accord at 2023-09-11T19:54:50Z.
+...
+000 (9669214.000.000) 2023-09-11 15:58:03 Job submitted from host: <130.199.48.94:9618?addrs=130.199.48.94-9618&alias=rcas2065.rcf.bnl.gov&noUDP&sock=schedd_9170_49e9>
+...
+001 (9669214.000.000) 2023-09-11 15:58:20 Job executing on host: <130.199.150.93:9618?addrs=130.199.150.93-9618&alias=spool1574.sdcc.bnl.gov&noUDP&sock=startd_39058_76a2>
+...
+006 (9669214.000.000) 2023-09-11 15:58:29 Image size of job updated: 887232
+	162  -  MemoryUsage of job (MB)
+	165656  -  ResidentSetSize of job (KB)
+...
+006 (9669214.000.000) 2023-09-11 16:03:30 Image size of job updated: 909840
+	272  -  MemoryUsage of job (MB)
+	277728  -  ResidentSetSize of job (KB)
+...
+006 (9669214.000.000) 2023-09-11 16:08:30 Image size of job updated: 909840
+	272  -  MemoryUsage of job (MB)
+	277968  -  ResidentSetSize of job (KB)
+...
+006 (9669214.000.000) 2023-09-11 16:13:30 Image size of job updated: 909840
+	272  -  MemoryUsage of job (MB)
+	278048  -  ResidentSetSize of job (KB)
+...
+005 (9669214.000.000) 2023-09-11 16:16:45 Job terminated.
+	(1) Normal termination (return value 0)
+		Usr 0 00:04:37, Sys 0 00:13:36  -  Run Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Local Usage
+		Usr 0 00:04:37, Sys 0 00:13:36  -  Total Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Total Local Usage
+	0  -  Run Bytes Sent By Job
+	0  -  Run Bytes Received By Job
+	0  -  Total Bytes Sent By Job
+	0  -  Total Bytes Received By Job
+	Partitionable Resources :    Usage  Request Allocated 
+	   Cpus                 :     0.99        1         1 
+	   Disk (KB)            :     1           1   6681265 
+	   Memory (MB)          :   272        8192      8192 
+	   xferslots            :                           0 
+
+	Job terminated of its own accord at 2023-09-11T20:16:45Z.
+...
+000 (1540208.000.000) 2023-09-13 10:16:24 Job submitted from host: <130.199.48.81:9618?addrs=130.199.48.81-9618&alias=rcas2062.rcf.bnl.gov&noUDP&sock=schedd_9125_0bfa>
+...
+001 (1540208.000.000) 2023-09-13 10:17:39 Job executing on host: <130.199.150.66:9618?addrs=130.199.150.66-9618&alias=spool1547.sdcc.bnl.gov&noUDP&sock=startd_42214_4c2d>
+...
+006 (1540208.000.000) 2023-09-13 10:17:48 Image size of job updated: 342372
+	85  -  MemoryUsage of job (MB)
+	86864  -  ResidentSetSize of job (KB)
+...
+006 (1540208.000.000) 2023-09-13 10:19:11 Image size of job updated: 909848
+	85  -  MemoryUsage of job (MB)
+	86880  -  ResidentSetSize of job (KB)
+...
+005 (1540208.000.000) 2023-09-13 10:19:12 Job terminated.
+	(1) Normal termination (return value 0)
+		Usr 0 00:01:16, Sys 0 00:00:04  -  Run Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Local Usage
+		Usr 0 00:01:16, Sys 0 00:00:04  -  Total Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Total Local Usage
+	0  -  Run Bytes Sent By Job
+	0  -  Run Bytes Received By Job
+	0  -  Total Bytes Sent By Job
+	0  -  Total Bytes Received By Job
+	Partitionable Resources :    Usage  Request Allocated 
+	   Cpus                 :                 1         1 
+	   Disk (KB)            :        1        1   6681265 
+	   Memory (MB)          :       85     8192      8192 
+	   xferslots            :                           0 
+
+	Job terminated of its own accord at 2023-09-13T14:19:11Z.
+...
+000 (1540227.000.000) 2023-09-13 10:21:34 Job submitted from host: <130.199.48.81:9618?addrs=130.199.48.81-9618&alias=rcas2062.rcf.bnl.gov&noUDP&sock=schedd_9125_0bfa>
+...
+001 (1540227.000.000) 2023-09-13 10:23:18 Job executing on host: <130.199.151.16:9618?addrs=130.199.151.16-9618&alias=spool1594.sdcc.bnl.gov&noUDP&sock=startd_36618_3bf5>
+...
+006 (1540227.000.000) 2023-09-13 10:23:27 Image size of job updated: 373164
+	271  -  MemoryUsage of job (MB)
+	277160  -  ResidentSetSize of job (KB)
+...
+006 (1540227.000.000) 2023-09-13 10:24:47 Image size of job updated: 909848
+	271  -  MemoryUsage of job (MB)
+	277160  -  ResidentSetSize of job (KB)
+...
+005 (1540227.000.000) 2023-09-13 10:24:47 Job terminated.
+	(1) Normal termination (return value 0)
+		Usr 0 00:01:18, Sys 0 00:00:04  -  Run Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Local Usage
+		Usr 0 00:01:18, Sys 0 00:00:04  -  Total Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Total Local Usage
+	0  -  Run Bytes Sent By Job
+	0  -  Run Bytes Received By Job
+	0  -  Total Bytes Sent By Job
+	0  -  Total Bytes Received By Job
+	Partitionable Resources :    Usage  Request Allocated 
+	   Cpus                 :                 1         1 
+	   Disk (KB)            :        1        1   6681265 
+	   Memory (MB)          :      271     8192      8192 
+	   xferslots            :                           0 
+
+	Job terminated of its own accord at 2023-09-13T14:24:47Z.
+...
+000 (1540246.000.000) 2023-09-13 10:44:48 Job submitted from host: <130.199.48.81:9618?addrs=130.199.48.81-9618&alias=rcas2062.rcf.bnl.gov&noUDP&sock=schedd_9125_0bfa>
+...
+001 (1540246.000.000) 2023-09-13 10:45:20 Job executing on host: <130.199.150.87:9618?addrs=130.199.150.87-9618&alias=spool1568.sdcc.bnl.gov&noUDP&sock=startd_37478_69d2>
+...
+006 (1540246.000.000) 2023-09-13 10:45:29 Image size of job updated: 162196
+	85  -  MemoryUsage of job (MB)
+	86448  -  ResidentSetSize of job (KB)
+...
+006 (1540246.000.000) 2023-09-13 10:47:27 Image size of job updated: 917616
+	85  -  MemoryUsage of job (MB)
+	86460  -  ResidentSetSize of job (KB)
+...
+005 (1540246.000.000) 2023-09-13 10:47:27 Job terminated.
+	(1) Normal termination (return value 0)
+		Usr 0 00:01:51, Sys 0 00:00:04  -  Run Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Local Usage
+		Usr 0 00:01:51, Sys 0 00:00:04  -  Total Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Total Local Usage
+	0  -  Run Bytes Sent By Job
+	0  -  Run Bytes Received By Job
+	0  -  Total Bytes Sent By Job
+	0  -  Total Bytes Received By Job
+	Partitionable Resources :    Usage  Request Allocated 
+	   Cpus                 :     1.00        1         1 
+	   Disk (KB)            :     1           1   6681265 
+	   Memory (MB)          :    85        8192      8192 
+	   xferslots            :                           0 
+
+	Job terminated of its own accord at 2023-09-13T14:47:27Z.
+...

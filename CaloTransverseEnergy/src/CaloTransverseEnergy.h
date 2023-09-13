@@ -88,12 +88,12 @@ class CaloTransverseEnergy:public SubsysReco
 		CaloTransverseEnergy(std::string inputfile, const std::string &name="CaloTE")
 			:SubsysReco(name)
 		{
-			IHCALE=new TH1F("iHCal", "Total Transverse energy depositied in inner HCal; Energy [ADC]", 1000, 0, 100000); 
-			OHCALE=new TH1F("oHCal", "Total Transverse energy depositied in outer HCal; Energy [ADC]", 1000, 0, 100000); 
-			EMCALE=new TH1F("emCal", "Total Transverse energy depositied in EMCal; Energy [ADC]", 1000, 0, 100000); 
+			IHCALE=new TH1F("iHCal", "Total Transverse energy depositied in inner HCal; Energy [MeV]", 1000, 0, 300); 
+			OHCALE=new TH1F("oHCal", "Total Transverse energy depositied in outer HCal; Energy [MeV", 1000, 0, 300); 
+			EMCALE=new TH1F("emCal", "Total Transverse energy depositied in EMCal; Energy [MeV]", 1000, 0, 300); 
 			
-			ETOTAL=new TH1F("total", "Total Transverse energy depositied in all Calorimeters; Energy [ADC]", 1000, 0, 100000); 
-			PhiD=new TH1F("phid", "Transverse energy deposited in #varphi; #varphi; Energy [ADC] ", 64, -3.15, 3.15);
+			ETOTAL=new TH1F("total", "Total Transverse energy depositied in all Calorimeters; Energy [MeV]", 1000, 0, 300); 
+			PhiD=new TH1F("phid", "Transverse energy deposited in #varphi; #varphi; Energy [MeV] ", 64, 0, 6.30);
 			if(inputfile.find("prdf")==std::string::npos) isPRDF=false;
 		};
 		~CaloTransverseEnergy(){};

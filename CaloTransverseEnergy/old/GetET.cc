@@ -1,31 +1,23 @@
-#pragma once
-#if ROOT_VERSION_CODE >= ROOT_VERSION(6,00,0)
-#include <calotransverseenergy/CaloTransverseEnergy.h>
-#include "sPhenixStyle.h"
-#include "sPhenixStyle.C"
-#include <fun4all/Fun4AllInputManager.h>
+#include "CaloTransverseEnergy.h"
+//#include "sPhenixStyle.h"
+//#include "sPhenixStyle.C"
 #include <fun4all/Fun4AllServer.h>
 #include <fun4all/Fun4AllDstInputManager.h>
 #include <fun4all/SubsysReco.h>
 #include <sstream>
 #include <string.h>
-R__LOAD_LIBRARY(libfun4all.so);
-R__LOAD_LIBRARY(libcalo_io.so);
-R__LOAD_LIBRARY(libCaloTransverseEnergy.so);
-R__LOAD_LIBRARY(libffamodules.so);
 
-int GetET(std::string filename="/sphenix/tg/tg01/jets/ahodges/run23_production/21518/DST-00021518-0000.root")
+int main(int argc, const char* argv[])
 {
 	//taking in a data file and will run over all data 
 	//std::cout<<"input of " <<argc <<std::endl;
 	//std::string filename (argv[1]);
-//	std::string filename="/sphenix/tg/tg01/jets/ahodges/run23_production/21518/DST-00021518-0000.root";
+	std::string filename="/sphenix/tg/tg01/jets/ahodges/run23_production/21518/DST-00021518-0000.root";
 	std::cout<<"Input file is " <<filename <<std::endl;
-	SetsPhenixStyle();
 	Fun4AllServer *se=Fun4AllServer::instance();
 	Fun4AllDstInputManager *in = new Fun4AllDstInputManager("in");
 	in->AddFile(filename);
-	CaloTransverseEnergy* cte=new CaloTransverseEnergy(filename, "CaloET");
+	CaloTransverseEnergy* cte=new CaloTransverseEnergy(filename);
 	std::stringstream subs(filename);
 	std::string substr;
 	int is_input=0;
@@ -52,7 +44,6 @@ int GetET(std::string filename="/sphenix/tg/tg01/jets/ahodges/run23_production/2
 	se->registerInputManager(in);
 	se->registerSubsystem(cte);
 	se->run();
-        cte->ProduceOutput();
 	return 0;				
 }
-#endif	
+	

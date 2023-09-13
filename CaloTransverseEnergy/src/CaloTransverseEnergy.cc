@@ -100,30 +100,35 @@ void CaloTransverseEnergy::processDST(TowerInfoContainerv1* calo_event, std::vec
 		double eta=geom->get_etacenter(etabin);
 		double phi=geom->get_phicenter(phibin);
 //		std::cout<<"Have the eta bins" <<std::endl;
+		float et=GetTransverseEnergy(energy1, eta);
 		energies->push_back(GetTransverseEnergy(energy1, eta));
+		int phibin1=PhiD->GetBin(phi);
+		float bc=PhiD->GetBinContent(phibin1);
+		bc+=et;
+		PhiD->SetBinContent(phibin1, bc);
 		energy+=energy1;
-                std::cout<<"Energy is " <<energy1 <<" With phi " <<phi <<std::endl;
-		/*if(!hcalorem){
+                //std::cout<<"Energy is " <<energy1 <<" With phi " <<phi <<std::endl;
+		if(!hcalorem){
 			emcalenergy+=energy1;
-			if(eteeta.find(eta) != eteeta.end()) eteeta[eta]+=energies->at(-1);
-			else{
-				eteeta[eta]=energies->at(-1);
+			try{eteeta[eta]+=et;}
+			catch(std::exception& e){
+				eteeta[eta]=et;
 			}
-			if(etephi.find(phi) != etephi.end()){
-				etephi[phi]+=energies->at(-1);	
+			try{
+				etephi[phi]+=et;	
 			}
-			else{
-				etephi[phi]=energies->at(-1);
+			catch(std::exception& e){
+				etephi[phi]=et;
 			}
 				
 		}
 		if(hcalorem){
 			hcalenergy+=energy1;
-			if(etheta.find(eta) != etheta.end())etheta[eta]+=energies->at(-1);
-			else etheta[eta]=energies->at(-1);
-			if(ethphi.find(phi) != ethphi.end()) ethphi[phi]+=energies->at(-1);
-			else ethphi[phi]=energies->at(-1);
-		}*/
+			try{etheta[eta]+=et;}
+			catch(std::exception& e){ etheta[eta]=et;}
+			try{ethphi[phi]+=et;}
+			catch(std::exception* e){ ethphi[phi]=et;}
+		}
 	}
 	}
 	catch (std::exception& e){std::cout<<"Exception found " <<e.what() <<std::endl;}
@@ -207,7 +212,7 @@ bool CaloTransverseEnergy::ValidateDistro()
 }	
 void CaloTransverseEnergy::ProduceOutput()
 {
-	TFile* outfile=new TFile(Form("Transverse_Energy%d_segment_%d.root",run_number, DST_Segment), "RECREATE");
+	TFile* outfile=new TFile(Form("../data_output/Transverse_Energy_run_%d_segment_%d.root",run_number, DST_Segment), "RECREATE");
 	//just make a ton of histos
 	EMCALE->Write();
 	IHCALE->Write();

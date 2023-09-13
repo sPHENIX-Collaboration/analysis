@@ -1,0 +1,14 @@
+Universe        = vanilla
+Executable      = /gpfs/mnt/gpfs02/sphenix/user/sgross/sphenix_analysis/CaloTransverseEnergy/macros/GetET.sh
+Arguments       = /sphenix/tg/tg01/jets/ahodges/run23_production/21518/DST-00021518-0016.root 
+Output          = /gpfs/mnt/gpfs02/sphenix/user/sgross/sphenix_analysis/CaloTransverseEnergy/running_dir/condor_16.out
+Error           =/gpfs/mnt/gpfs02/sphenix/user/sgross/sphenix_analysis/CaloTransverseEnergy/running_dir/condor_16.err
+Log             =/gpfs/mnt/gpfs02/sphenix/user/sgross/sphenix_analysis/CaloTransverseEnergy/running_dir/condor_16.log
+Initialdir      = /gpfs/mnt/gpfs02/sphenix/user/sgross/sphenix_analysis/CaloTransverseEnergy/src
+PeriodicHold    = (NumJobStarts>=1 && JobStatus == 1)
+accounting_group = group_phenix.u
+accounting_group_user = sgross
+request_memory = 8192MB
+Priority = 90
+job_lease_duration = 3600
+Queue 1 
