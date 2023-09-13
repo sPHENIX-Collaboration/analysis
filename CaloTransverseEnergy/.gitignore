@@ -1,0 +1,7 @@
+*.root
+*.job
+*.log
+*.err
+*.out
+*/build
+*/running_dir
