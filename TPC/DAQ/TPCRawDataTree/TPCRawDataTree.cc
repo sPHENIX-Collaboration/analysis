@@ -219,7 +219,7 @@ int TPCRawDataTree::process_event(PHCompositeNode *topNode)
         if(layer!=0)
         {
           double R = M.getR(feeM, m_Channel);
-          double phi = M.getPhi(feeM, m_Channel) + (stod(sectorNum) - side*12. )* M_PI / 6. ;
+          double phi = (stoi(sectorNum)<12? -M.getPhi(feeM, m_Channel) : M.getPhi(feeM, m_Channel) ) + (stoi(sectorNum) - side*12. )* M_PI / 6. ;
           R /= 10.; //convert mm to cm  
  
           m_xPos = R*cos(phi);
