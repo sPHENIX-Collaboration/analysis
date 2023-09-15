@@ -34,6 +34,7 @@
 #include <calobase/TowerInfoContainer.h>
 #include <calobase/TowerInfoContainerv1.h>
 #include <calobase/TowerInfov1.h>
+#include <calobase/RawTowerDefs.h>
 #include <calobase/RawTowerGeomContainer.h>
 #include <calobase/RawTowerGeomContainer_Cylinderv1.h>
 #include <globalvertex/GlobalVertex.h>
@@ -66,7 +67,7 @@ class CaloTransverseEnergy:public SubsysReco
 		float Heuristic(std::vector<float>); //This is a place holder for right now, will properly implement in a bit, pretty much just adjusting models with an A* approach
 		bool ApplyCuts(Event* e);
 		void processPacket(int, Event *, std::vector<float>*, bool);
-		void processDST(TowerInfoContainerv1*, std::vector<float>*, RawTowerGeomContainer_Cylinderv1*, bool, bool);
+		void processDST(TowerInfoContainerv1*, std::vector<float>*, RawTowerGeomContainer_Cylinderv1*, bool, bool, RawTowerDefs::CalorimeterId);
 		float GetTransverseEnergy(float, float);
 		void GetNodes(PHCompositeNode*); 
 		bool ValidateDistro();
@@ -88,17 +89,18 @@ class CaloTransverseEnergy:public SubsysReco
 		CaloTransverseEnergy(std::string inputfile, const std::string &name="CaloTE")
 			:SubsysReco(name)
 		{
-			IHCALE=new TH1F("iHCal", "Total Transverse energy depositied in inner HCal; Energy [MeV]", 1000, 0, 300); 
-			OHCALE=new TH1F("oHCal", "Total Transverse energy depositied in outer HCal; Energy [MeV", 1000, 0, 300); 
-			EMCALE=new TH1F("emCal", "Total Transverse energy depositied in EMCal; Energy [MeV]", 1000, 0, 300); 
+			IHCALE=new TH1F("iHCal", "Total Transverse energy depositied in inner HCal; Energy [GeV]", 1000, 0, 300); 
+			OHCALE=new TH1F("oHCal", "Total Transverse energy depositied in outer HCal; Energy [GeV", 1000, 0, 300); 
+			EMCALE=new TH1F("emCal", "Total Transverse energy depositied in EMCal; Energy [GeV]", 1000, 0, 300); 
 			
-			ETOTAL=new TH1F("total", "Total Transverse energy depositied in all Calorimeters; Energy [MeV]", 1000, 0, 300); 
-			PhiD=new TH1F("phid", "Transverse energy deposited in #varphi; #varphi; Energy [MeV] ", 64, 0, 6.30);
+			ETOTAL=new TH1F("total", "Total Transverse energy depositied in all Calorimeters; Energy [GeV]", 1000, 0, 300); 
+			PhiD=new TH1F("phid", "Transverse energy deposited in #varphi; #varphi; Energy [GeV] ", 64, -3.15, 6.30);
+			EtaD=new TH1F("etad", "Transverse energy depositied in #eta; #eta; Energy [GeV]", 24, -1, 1);
 			if(inputfile.find("prdf")==std::string::npos) isPRDF=false;
 		};
 		~CaloTransverseEnergy(){};
 		int Init(PHCompositeNode *topNode) override; 
-		TH1F *IHCALE, *OHCALE, *EMCALE, *ETOTAL, *PhiD;
+		TH1F *IHCALE, *OHCALE, *EMCALE, *ETOTAL, *PhiD, *EtaD;
 		struct kinematics //just a basic kinematic cut, allow for cuts later, default to full acceptance
 			{
 				float phi_min=-PI;

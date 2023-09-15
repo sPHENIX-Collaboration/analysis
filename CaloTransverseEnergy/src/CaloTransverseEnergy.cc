@@ -60,9 +60,9 @@ int CaloTransverseEnergy::process_event(PHCompositeNode *topNode)
 //		GlobalVertexMap *vtxmap=findNode::getClass<PHObject>(topNode, "GLOBAL_VERTEX");
 //		GlobalVertex *vtx=vtxmap->begin()->second;
 		std::cout<<"Getting Energies" <<std::endl;
-		processDST(eme, &emcalenergy_vec, emg, false, false);
-		processDST(ihe, &ihcalenergy_vec, ihg, true, true);
-		processDST(ohe, &ohcalenergy_vec, ohg, true, false);
+		processDST(eme, &emcalenergy_vec, emg, false, false, RawTowerDefs::CEMC);
+		processDST(ihe, &ihcalenergy_vec, ihg, true, true, RawTowerDefs::HCALIN);
+		processDST(ohe, &ohcalenergy_vec, ohg, true, false, RawTowerDefs::HCALOUT);
 		std::cout<<"Found energy"<<std::endl; 
 	}
 	float emcaltotal=GetTotalEnergy(emcalenergy_vec,1); //not sure about the calibration factor, need to check
@@ -76,13 +76,14 @@ int CaloTransverseEnergy::process_event(PHCompositeNode *topNode)
 	datatree->Fill();
 	return 1;
 }
-void CaloTransverseEnergy::processDST(TowerInfoContainerv1* calo_event, std::vector<float>* energies, RawTowerGeomContainer_Cylinderv1* geom, bool hcalorem, bool inner)
+void CaloTransverseEnergy::processDST(TowerInfoContainerv1* calo_event, std::vector<float>* energies, RawTowerGeomContainer_Cylinderv1* geom, bool hcalorem, bool inner, RawTowerDefs::CalorimeterId caloid)
 {
-//	if(!hcalorem) geom->set_calorimeter_id("CEMC"); 
-//	else{
-//		if(inner) geom->set_calorimeter_id("HCALIN");
-//		else geom->set_calorimeter_id("HCALOUT");
-//	}
+	geom->set_calorimeter_id(caloid);
+	/*if(!hcalorem) geom->set_calorimeter_id("CEMC"); 
+	else{
+		if(inner) geom->set_calorimeter_id("HCALIN");
+		else geom->set_calorimeter_id("HCALOUT");
+	}*/
 	//This processes all events in the DST in the processor 
 	int ntowers=calo_event->size();
 	try{
@@ -106,6 +107,10 @@ void CaloTransverseEnergy::processDST(TowerInfoContainerv1* calo_event, std::vec
 		float bc=PhiD->GetBinContent(phibin1);
 		bc+=et;
 		PhiD->SetBinContent(phibin1, bc);
+		int etabin1=EtaD->GetBin(eta);
+		bc=EtaD->GetBinContent(etabin1);
+		bc+=et;
+		EtaD->SetBinContent(etabin1, bc);		
 		energy+=energy1;
                 //std::cout<<"Energy is " <<energy1 <<" With phi " <<phi <<std::endl;
 		if(!hcalorem){
@@ -139,7 +144,7 @@ void CaloTransverseEnergy::processPacket(int packet, Event * e, std::vector<floa
 	try{
 		e->getPacket(packet);
 	}
-	catch(std::exception* e) {} 
+	catch(std::exception* e) {return;} 
 	Packet *p= e->getPacket(packet); 
 	for(int c=0; c<p->iValue(0, "CHANNELS"); c++)
 	{
