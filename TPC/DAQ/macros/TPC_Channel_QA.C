@@ -40,9 +40,13 @@ void TPC_Channel_QA(){
     if (q < 10) sectorNumber = "0"+std::to_string(q);
     else sectorNumber = std::to_string(q);   
 
+<<<<<<< HEAD
+    string runNumber = "pedestal-00010305";
+=======
     //string runNumber = "pedestal-00010616";
 
     sprintf(name,"/sphenix/u/llegnosky/Livechan_Pedestals_Noise/run_%d/TPC_ebdc", run_num);
+>>>>>>> bd817833d15b916d9d1932a9cf55c848a1c584a3
     
 	    //string fileName = "/sphenix/u/llegnosky/BaselineAnalysis/10616/TPC_ebdc"+sectorNumber+"_"+runNumber+"-0000.prdf_TPCRawDataTree.root";
 	    string fileName = name+sectorNumber+"_"+runNumber+"-0000.prdf_TPCRawDataTree.root";
