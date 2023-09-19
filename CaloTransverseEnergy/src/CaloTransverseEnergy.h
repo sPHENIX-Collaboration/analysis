@@ -89,18 +89,20 @@ class CaloTransverseEnergy:public SubsysReco
 		CaloTransverseEnergy(std::string inputfile, const std::string &name="CaloTE")
 			:SubsysReco(name)
 		{
-			IHCALE=new TH1F("iHCal", "Total Transverse energy depositied in inner HCal; Energy [GeV]", 1000, 0, 300); 
-			OHCALE=new TH1F("oHCal", "Total Transverse energy depositied in outer HCal; Energy [GeV", 1000, 0, 300); 
-			EMCALE=new TH1F("emCal", "Total Transverse energy depositied in EMCal; Energy [GeV]", 1000, 0, 300); 
+			IHCALE=new TH1F("iHCal", "Total Transverse energy depositied in inner HCal; Energy [GeV]", 100, 0, 300); 
+			OHCALE=new TH1F("oHCal", "Total Transverse energy depositied in outer HCal; Energy [GeV", 100, 0, 300); 
+			EMCALE=new TH1F("emCal", "Total Transverse energy depositied in EMCal; Energy [GeV]", 100, 0, 300); 
 			
-			ETOTAL=new TH1F("total", "Total Transverse energy depositied in all Calorimeters; Energy [GeV]", 1000, 0, 300); 
-			PhiD=new TH1F("phid", "Transverse energy deposited in #varphi; #varphi; Energy [GeV] ", 64, -3.15, 6.30);
+			ETOTAL=new TH1F("total", "Total Transverse energy depositied in all Calorimeters; Energy [GeV]", 100, 0, 300); 
+			PhiD=new TH1F("phid", "Transverse energy deposited in #varphi; #varphi; Energy [GeV] ", 32, 0, 6.30);
 			EtaD=new TH1F("etad", "Transverse energy depositied in #eta; #eta; Energy [GeV]", 24, -1, 1);
+			phis=new TH1F("phis", "N events in #varphi; #varphi", 32, 0, 6.30); 
+			etas=new TH1F("etas", "N events in #eta; #eta", 24, -1, 1);
 			if(inputfile.find("prdf")==std::string::npos) isPRDF=false;
 		};
 		~CaloTransverseEnergy(){};
 		int Init(PHCompositeNode *topNode) override; 
-		TH1F *IHCALE, *OHCALE, *EMCALE, *ETOTAL, *PhiD, *EtaD;
+		TH1F *IHCALE, *OHCALE, *EMCALE, *ETOTAL, *PhiD, *EtaD, *phis, *etas;
 		struct kinematics //just a basic kinematic cut, allow for cuts later, default to full acceptance
 			{
 				float phi_min=-PI;

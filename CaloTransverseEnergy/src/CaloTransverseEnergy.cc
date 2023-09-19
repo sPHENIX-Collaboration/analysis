@@ -94,23 +94,27 @@ void CaloTransverseEnergy::processDST(TowerInfoContainerv1* calo_event, std::vec
 		int key=calo_event->encode_key(i);
 		int phibin=calo_event->getTowerPhiBin(key);
 		int etabin=calo_event->getTowerEtaBin(key);
-//		RawTowerGeom *towergeom=geom->get_tower_geometry(key);
-//		assert(towergeom);
-		if(energy1<=0) continue;
+		//RawTowerGeom *towergeom=geom->get_tower_geometry(key);
+		//assert(towergeom);
+		if(energy1<=0){ std::cout<<"Energy is negative with value: " <<energy1 << " GeV in phi-eta bins: " <<phibin <<"," <<etabin <<std::endl;
+		continue;}
 //		std::cout<<"Have the calorimeter tower" <<std::endl;
 		double eta=geom->get_etacenter(etabin);
 		double phi=geom->get_phicenter(phibin);
 //		std::cout<<"Have the eta bins" <<std::endl;
 		float et=GetTransverseEnergy(energy1, eta);
+		phis->Fill(phi);
+		etas->Fill(eta);
 		energies->push_back(GetTransverseEnergy(energy1, eta));
-		int phibin1=PhiD->GetBin(phi);
-		float bc=PhiD->GetBinContent(phibin1);
-		bc+=et;
-		PhiD->SetBinContent(phibin1, bc);
-		int etabin1=EtaD->GetBin(eta);
-		bc=EtaD->GetBinContent(etabin1);
-		bc+=et;
-		EtaD->SetBinContent(etabin1, bc);		
+	//	int phibin1= phi*16/3.15+1; 
+	//	std::cout<<"Phi value: " <<phi <<" has bin:" <<phibin1<<std::endl;
+	//	float bc=PhiD->GetBinContent(phibin1);
+	//	bc+=et;
+		PhiD->Fill(phi, et);
+//		int etabin1=(eta+1)/12+1;
+//		bc=EtaD->GetBinContent(etabin1);
+//		bc+=et;
+		EtaD->Fill(eta, et);		
 		energy+=energy1;
                 //std::cout<<"Energy is " <<energy1 <<" With phi " <<phi <<std::endl;
 		if(!hcalorem){
@@ -224,6 +228,9 @@ void CaloTransverseEnergy::ProduceOutput()
 	OHCALE->Write();
 	ETOTAL->Write();
 	PhiD->Write();
+	EtaD->Write();
+	phis->Write();
+	etas->Write();
 	datatree->Write();
 	outfile->Write();
 	outfile->Close();
@@ -252,11 +259,11 @@ int CaloTransverseEnergy::Init(PHCompositeNode *topNode)
 	datatree->Branch("energy_transverse", &energy_transverse);
 	datatree->Branch("Et_hcal", &et_hcal);
 	datatree->Branch("Et_emcal", &et_emcal);
-	datatree->Branch("Phi_Et", &etphi);
+	/*datatree->Branch("Phi_Et", &etphi);
 	datatree->Branch("EMCal_Phi_Et", &etephi);
 	datatree->Branch("HCal_Phi_Et", &ethphi);
 	datatree->Branch("Eta_Et", &eteta);
 	datatree->Branch("EMCal_Eta_Et", &eteeta);
-	datatree->Branch("HCal_Eta_Et", &etheta);
+	datatree->Branch("HCal_Eta_Et", &etheta);*/
 	return 0;	 
 }

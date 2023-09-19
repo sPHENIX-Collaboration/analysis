@@ -1,4 +1,7 @@
 #! /bin/bash 
+#input is run number submit  
+RUN=${1:-'21518'}
+SUBMIT=${2:-'test'}
 for i in {0..18}; do 
 	fname="condor_$i.job"
 	touch $fname
@@ -6,9 +9,9 @@ for i in {0..18}; do
 echo "Universe        = vanilla" > $fname
 echo "Executable      = /gpfs/mnt/gpfs02/sphenix/user/sgross/sphenix_analysis/CaloTransverseEnergy/macros/GetET.sh" >> $fname
 	if ((i<10)); then 
-		echo "Arguments       = /sphenix/tg/tg01/jets/ahodges/run23_production/21518/DST-00021518-000$i.root " >> $fname 
+		echo "Arguments       = /sphenix/tg/tg01/jets/ahodges/run23_production/$RUN/DST-000$1-000$i.root " >> $fname 
 	else 
-	echo "Arguments       = /sphenix/tg/tg01/jets/ahodges/run23_production/21518/DST-00021518-00$i.root " >> $fname
+	echo "Arguments       = /sphenix/tg/tg01/jets/ahodges/run23_production/$RUN/DST-000$RUN-00$i.root " >> $fname
 	fi
 echo "Output          = /gpfs/mnt/gpfs02/sphenix/user/sgross/sphenix_analysis/CaloTransverseEnergy/running_dir/condor_$i.out" >> $fname
 echo "Error           =/gpfs/mnt/gpfs02/sphenix/user/sgross/sphenix_analysis/CaloTransverseEnergy/running_dir/condor_$i.err" >> $fname
@@ -22,8 +25,9 @@ echo "Priority = 90" >> $fname
 echo "job_lease_duration = 3600" >> $fname
 echo "Queue 1 " >> $fname
 
-#if (( i>9 )); then 
+
+if [[ $2 -eq "submit" ]]; then 
 	condor_submit $fname
-#fi
+fi
 done
  	
