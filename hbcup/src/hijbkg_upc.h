@@ -6,6 +6,7 @@
 
 #include <string>
 #include <vector>
+#include <TParticle.h>
 
 class PHCompositeNode;
 class PHG4Particle;
@@ -56,7 +57,11 @@ class hijbkg_upc : public SubsysReco
  private:
 
   TTree *T;
-  int m_evt {0};
+  int m_evt {0};            // event number
+  Float_t m_cent = 0;       // centrality
+  Float_t m_b = 0;          // impact parameter
+  TParticle m_part[2];      // particle 1 and 2
+
   std::vector<int> m_pid = {0};
   std::vector<Float_t> m_pt =  {0};
   std::vector<Float_t> m_eta = {0};
@@ -64,11 +69,11 @@ class hijbkg_upc : public SubsysReco
   std::vector<Float_t> m_e = {0};
   std::vector<Float_t> m_p = {0};
   Float_t m_psi2 = 0;
-  Float_t m_cent = 0;
-  Float_t m_b = 0;
+
   std::string Outfile;
   TFile *out;
 
+  int isStableCharged(int pid);
   float getpT(PHG4Particle *particle);
   float getPhi(PHG4Particle *particle);
   float getEta(PHG4Particle *particle);
