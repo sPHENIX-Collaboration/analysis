@@ -6,6 +6,9 @@
 #include <fun4all/Fun4AllInputManager.h>
 #include <fun4all/Fun4AllServer.h>
 #include <fun4all/Fun4AllDstInputManager.h>
+#include <fun4allraw/Fun4AllPrdfInputManager.h>
+#include <fun4allraw/Fun4AllPrdfInputPoolManager.h>
+#include <fun4allraw/SinglePrdfInput.h>
 #include <fun4all/SubsysReco.h>
 #include <sstream>
 #include <string.h>
@@ -23,8 +26,9 @@ int GetET(std::string filename="/sphenix/tg/tg01/jets/ahodges/run23_production/2
 	std::cout<<"Input file is " <<filename <<std::endl;
 	SetsPhenixStyle();
 	Fun4AllServer *se=Fun4AllServer::instance();
+	Fun4AllPrdfInputPoolManager *inp = new Fun4AllPrdfInputPoolManager("inp");
 	Fun4AllDstInputManager *in = new Fun4AllDstInputManager("in");
-	in->AddFile(filename);
+	//in->AddFile(filename);
 	CaloTransverseEnergy* cte=new CaloTransverseEnergy(filename, "CaloET");
 	std::stringstream subs(filename);
 	std::string substr;
@@ -44,12 +48,21 @@ int GetET(std::string filename="/sphenix/tg/tg01/jets/ahodges/run23_production/2
 		if(is_input==1){
 			std::cout<<substr<<std::endl; 
 			cte->run_number=std::stoi(substr);
-			 is_input=2;
+			is_input=2;
 		}
-		if(substr.find("DST")!=std::string::npos) is_input=1; 
+		if(substr.find("DST")!=std::string::npos) is_input=1;
+		if(substr.find("run")!=std::string::npos) is_input=1; 
 	}
 	std::cout<<"Have loaded in the subsystem" <<std::endl;
-	se->registerInputManager(in);
+	if(filename.find("DST") != std::string::npos){
+		in->AddFile(filename); 
+		se->registerInputManager(in);
+	}
+	if(filename.find("prdf") != std::string::npos){
+		inp->AddPrdfInputList(filename)->MakeReference(true);
+		se->registerInputManager(inp);
+		cte->isPRDF=true;
+	}
 	se->registerSubsystem(cte);
 	se->run();
         cte->ProduceOutput();
