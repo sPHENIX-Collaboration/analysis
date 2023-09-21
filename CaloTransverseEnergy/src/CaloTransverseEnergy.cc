@@ -17,6 +17,7 @@ int CaloTransverseEnergy::process_event(PHCompositeNode *topNode)
 	if(isPRDF){
 		for (auto pn:packets)
 		{
+			std::cout<<"Looking at packet " <<pn <<std::endl;
 			Event* e= findNode::getClass<Event>(topNode, prdfnode);
 			if(pn/1000 ==6 ) 
 			{
@@ -98,25 +99,15 @@ void CaloTransverseEnergy::processDST(TowerInfoContainerv1* calo_event, std::vec
 		//assert(towergeom);
 		if(energy1<=0){ std::cout<<"Energy is negative with value: " <<energy1 << " GeV in phi-eta bins: " <<phibin <<"," <<etabin <<std::endl;
 		continue;}
-//		std::cout<<"Have the calorimeter tower" <<std::endl;
 		double eta=geom->get_etacenter(etabin);
 		double phi=geom->get_phicenter(phibin);
-//		std::cout<<"Have the eta bins" <<std::endl;
 		float et=GetTransverseEnergy(energy1, eta);
 		phis->Fill(phi);
 		etas->Fill(eta);
 		energies->push_back(GetTransverseEnergy(energy1, eta));
-	//	int phibin1= phi*16/3.15+1; 
-	//	std::cout<<"Phi value: " <<phi <<" has bin:" <<phibin1<<std::endl;
-	//	float bc=PhiD->GetBinContent(phibin1);
-	//	bc+=et;
 		PhiD->Fill(phi, et);
-//		int etabin1=(eta+1)/12+1;
-//		bc=EtaD->GetBinContent(etabin1);
-//		bc+=et;
 		EtaD->Fill(eta, et);		
 		energy+=energy1;
-                //std::cout<<"Energy is " <<energy1 <<" With phi " <<phi <<std::endl;
 		if(!hcalorem){
 			emcalenergy+=energy1;
 			try{eteeta[eta]+=et;}
@@ -149,12 +140,15 @@ void CaloTransverseEnergy::processPacket(int packet, Event * e, std::vector<floa
 		e->getPacket(packet);
 	}
 	catch(std::exception* e) {return;} 
-	Packet *p= e->getPacket(packet); 
+	Packet *p= e->getPacket(packet);
+	if(!p) return;
+	std::cout<<"Have the packet with " <<p->iValue(0, "CHANNELS") <<" many channels"<<std::endl; 
 	for(int c=0; c<p->iValue(0, "CHANNELS"); c++)
 	{
 		float eta=0, baseline=0, en=0;
 		if(HorE) eta=(((c%16)/2+c/64*8)-12)/12+1/24; //HCal
 		else eta=(((c%16)/2+c/4)-48)/48+1/96; //EMCal
+		std::cout<<"Eta value is " <<eta <<std::endl;
 		for(int s=0; s<p->iValue(c, "SAMPLES"); s++)
 		{
 			if(s<3) baseline+=p->iValue(s,c); 
@@ -164,15 +158,17 @@ void CaloTransverseEnergy::processPacket(int packet, Event * e, std::vector<floa
 		}
 		en=en-baseline;
 		energy->push_back(GetTransverseEnergy(en,eta));
+		std::cout<<"Energy is " <<en <<std::endl;
 		//For the hcal get the phi distribution
 		//take packet#, each packet has 8 phi bins
 		//
 		int phibin=(c%64)/16;
 		phibin=phibin*2+c%2;
-		phibin+=(packet%10)*8;	
+		phibin+=(packet%10)*8;
+		float phi=phibin*PI/16;	
 		float phval=PhiD->GetBinContent(phibin);
-		phval+=GetTransverseEnergy(en,eta);
-		PhiD->SetBinContent(phibin, phval);	
+		phval=GetTransverseEnergy(en,eta);
+		PhiD->Fill(phi, phval);	
 	}
 
 }
@@ -265,5 +261,16 @@ int CaloTransverseEnergy::Init(PHCompositeNode *topNode)
 	datatree->Branch("Eta_Et", &eteta);
 	datatree->Branch("EMCal_Eta_Et", &eteeta);
 	datatree->Branch("HCal_Eta_Et", &etheta);*/
+	for(int i =0; i<8; i++)
+	{
+		int ih=7001+i;
+		int oh=8001+i;
+		packets.push_back(ih);
+		packets.push_back(oh);
+	}
+	for(int i=0; i<128; i++){
+		int em=6001+i;
+		packets.push_back(em);
+	}
 	return 0;	 
 }

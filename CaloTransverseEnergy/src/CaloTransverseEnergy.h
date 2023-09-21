@@ -76,7 +76,7 @@ class CaloTransverseEnergy:public SubsysReco
 		const std::string &iHCALnode="HCALIN";
 		const std::string &oHCALnode="HCALOUT";
 		const std::string &EMCALnode="CEMC";
-	*/	bool isPRDF=false;
+	*/	
 		int n_evt=0;
 		TTree* datatree;
 
@@ -116,5 +116,6 @@ class CaloTransverseEnergy:public SubsysReco
 		float energy, hcalenergy, emcalenergy, energy_transverse, et_hcal, et_emcal; //transverse energies
 		std::map<double, float> etphi, eteta, etephi, eteeta, ethphi, etheta; //angular energy distributions  
 		int run_number=1, DST_Segment=0;
+		bool isPRDF=false;
 };
 #endif
