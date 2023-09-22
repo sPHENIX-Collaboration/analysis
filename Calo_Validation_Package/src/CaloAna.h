@@ -11,6 +11,7 @@ class TNtuple;
 class TTree;
 class TH2F;
 class TH1F;
+class TH1;
 
 class CaloAna : public SubsysReco
 {
@@ -36,24 +37,37 @@ class CaloAna : public SubsysReco
   int process_clusters(PHCompositeNode *);
 
   void Detector(const std::string &name) { detector = name; }
+  void set_timing_cut_width(const int &t) { _range = t;}
 
  protected:
   std::string detector;
   std::string outfilename;
+  int Getpeaktime(TH1 *h);
   Fun4AllHistoManager *hm = nullptr;
   TFile *outfile = nullptr;
-
-
   TH2F* h_emcal_mbd_correlation = nullptr;
   TH2F* h_ohcal_mbd_correlation = nullptr;
   TH2F* h_ihcal_mbd_correlation = nullptr;
   TH2F* h_emcal_hcal_correlation = nullptr;
+  TH2F* h_emcal_zdc_correlation = nullptr;
+  
   TH1F* h_InvMass = nullptr;
 
   TH2F* h_cemc_etaphi = nullptr;
   TH2F* h_hcalin_etaphi = nullptr;
   TH2F* h_hcalout_etaphi = nullptr;
 
+  TH1* hzdctime;
+  TH1* hmbdtime;
+  TH1* hemcaltime;
+  TH1* hihcaltime;
+  TH1* hohcaltime;
+
+  TH1* hzdctime_cut;
+  TH1* hmbdtime_cut;
+  TH1* hemcaltime_cut;
+  TH1* hihcaltime_cut;
+  TH1* hohcaltime_cut;
 
 
   TNtuple *g4hitntuple = nullptr;
@@ -84,7 +98,8 @@ class CaloAna : public SubsysReco
   std::vector<float> m_bbc_energy;
   std::vector<int> m_bbc_type;
   std::vector<int> m_bbc_side;
-
+  int _eventcounter;
+  int _range;
 };
 
 #endif
