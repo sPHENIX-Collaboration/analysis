@@ -68,9 +68,10 @@ void Fun4All_Calo(const string &OutFile = "/sphenix/user/eumaka/CaloAnalysisfile
 
   CaloAna *ca = new CaloAna("calomodulename",OutFile);
   ca->set_timing_cut_width(2);  //integers for timing width, > 1 : wider cut around max peak time
+  ca->set_vertex_cut(20.);
   se->registerSubsystem(ca);
 
-  se->run(1);
+  se->run(1); //update number of events as needed
   se->End();
 
 }
