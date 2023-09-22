@@ -11,7 +11,6 @@
 #include <fun4all/Fun4AllDstOutputManager.h>
 #include <fun4all/Fun4AllOutputManager.h>
 
-// #include <calotowerbuilder/CaloTowerBuilder.h>
 #include <caloreco/CaloTowerBuilder.h>
 #include <caloreco/CaloWaveformProcessing.h>
 
@@ -29,11 +28,9 @@ R__LOAD_LIBRARY(libcaloana.so)
 R__LOAD_LIBRARY(libffamodules.so)
 #endif
 
-void Fun4All_Calo(const char* infile = "/gpfs/mnt/gpfs02/sphenix/user/trinn/comissioning_data_production/test_file.root",const char *outfile = "tim_calo_23699.root")
+void Fun4All_Calo(const string &OutFile = "/sphenix/user/eumaka/CaloAnalysisfiles/Calo_Output21813.root")
 {
 
-
- 
 
   Fun4AllServer *se = Fun4AllServer::instance();
   int verbosity = 0;
@@ -51,20 +48,29 @@ void Fun4All_Calo(const char* infile = "/gpfs/mnt/gpfs02/sphenix/user/trinn/comi
   rc->set_uint64Flag("TIMESTAMP",6);
 
 
-Fun4AllInputManager *intrue = new Fun4AllDstInputManager("DST_TOWERS");
-  intrue->AddFile(infile);
-se->registerInputManager(intrue);
+  Fun4AllInputManager *in = new Fun4AllDstInputManager("DST_TOWERS");
+    
+  in->AddFile("/sphenix/tg/tg01/jets/ahodges/run23_production_zvertex/21813/DST-00021813-0000.root");
+  in->AddFile("/sphenix/tg/tg01/jets/ahodges/run23_production_zvertex/21813/DST-00021813-0001.root");
+  in->AddFile("/sphenix/tg/tg01/jets/ahodges/run23_production_zvertex/21813/DST-00021813-0002.root");
+  in->AddFile("/sphenix/tg/tg01/jets/ahodges/run23_production_zvertex/21813/DST-00021813-0003.root");
+  in->AddFile("/sphenix/tg/tg01/jets/ahodges/run23_production_zvertex/21813/DST-00021813-0004.root");
+  in->AddFile("/sphenix/tg/tg01/jets/ahodges/run23_production_zvertex/21813/DST-00021813-0005.root");
+  in->AddFile("/sphenix/tg/tg01/jets/ahodges/run23_production_zvertex/21813/DST-00021813-0006.root");
+  in->AddFile("/sphenix/tg/tg01/jets/ahodges/run23_production_zvertex/21813/DST-00021813-0007.root");
+  in->AddFile("/sphenix/tg/tg01/jets/ahodges/run23_production_zvertex/21813/DST-00021813-0008.root");
+  in->AddFile("/sphenix/tg/tg01/jets/ahodges/run23_production_zvertex/21813/DST-00021813-0009.root");
+  in->AddFile("/sphenix/tg/tg01/jets/ahodges/run23_production_zvertex/21813/DST-00021813-0010.root");      
+        
+        
+  se->registerInputManager(in);
 
 
- CaloAna *ca = new CaloAna("calomodulename",outfile);
+  CaloAna *ca = new CaloAna("calomodulename",OutFile);
+  ca->set_timing_cut_width(2);  //integers for timing width, > 1 : wider cut around max peak time
   se->registerSubsystem(ca);
 
-
-
-
-
-
-  se->run();
+  se->run(1);
   se->End();
 
 }
