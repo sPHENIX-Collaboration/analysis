@@ -15,6 +15,7 @@ int CaloTransverseEnergy::process_event(PHCompositeNode *topNode)
 	n_evt++;
 	std::vector<float> emcalenergy_vec, ihcalenergy_vec, ohcalenergy_vec; 
 	if(isPRDF){
+		if(n_evt>1000000) return 1;
 		for (auto pn:packets)
 		{
 			std::cout<<"Looking at packet " <<pn <<std::endl;
@@ -52,9 +53,9 @@ int CaloTransverseEnergy::process_event(PHCompositeNode *topNode)
 		et_emcal=0;
 		std::cout <<"Running on event " <<n_evt <<std::endl;
 		std::string ihcalgeom="TOWERGEOM_HCALIN", ohcalgeom="TOWERGEOM_HCALOUT", emcalgeom="TOWERGEOM_CEMC";
-		TowerInfoContainerv1* ihe=findNode::getClass<TowerInfoContainerv1>(topNode, "TOWERS_HCALIN");
-		TowerInfoContainerv1* ohe=findNode::getClass<TowerInfoContainerv1>(topNode, "TOWERS_HCALOUT");
-		TowerInfoContainerv1* eme=findNode::getClass<TowerInfoContainerv1>(topNode, "TOWERS_CEMC");
+		TowerInfoContainerv1* ihe=findNode::getClass<TowerInfoContainerv1>(topNode, "TOWERINFO_CALIB_HCALIN");
+		TowerInfoContainerv1* ohe=findNode::getClass<TowerInfoContainerv1>(topNode, "TOWERINFO_CALIB_HCALOUT");
+		TowerInfoContainerv1* eme=findNode::getClass<TowerInfoContainerv1>(topNode, "TOWERINFO_CALIB_CEMC");
 		RawTowerGeomContainer_Cylinderv1 *ihg=findNode::getClass<RawTowerGeomContainer_Cylinderv1>(topNode, ihcalgeom);
 		RawTowerGeomContainer_Cylinderv1 *ohg=findNode::getClass<RawTowerGeomContainer_Cylinderv1>(topNode, ohcalgeom);
 		RawTowerGeomContainer_Cylinderv1 *emg=findNode::getClass<RawTowerGeomContainer_Cylinderv1>(topNode, emcalgeom);
@@ -146,8 +147,16 @@ void CaloTransverseEnergy::processPacket(int packet, Event * e, std::vector<floa
 	for(int c=0; c<p->iValue(0, "CHANNELS"); c++)
 	{
 		float eta=0, baseline=0, en=0;
-		if(HorE) eta=(((c%16)/2+c/64*8)-12)/12+1/24; //HCal
-		else eta=(((c%16)/2+c/4)-48)/48+1/96; //EMCal
+		if(HorE){
+		 	 int cable_channel=(c%16), cable_number=c/64;
+			 cable_channel=cable_channel/2; //doubling of eta to get extra phi resolution
+			 int etabin=cable_channel+8*cable_number; //24 eta bins
+			 eta= etabin/12-1; //HCal
+		}
+		else{
+			//int cable_channel=(c%16), cable_number=c/64; 
+			eta=(((c%16)/2+c/4)-48)/48+1/96; //EMCal
+		}
 		std::cout<<"Eta value is " <<eta <<std::endl;
 		for(int s=0; s<p->iValue(c, "SAMPLES"); s++)
 		{
@@ -158,7 +167,7 @@ void CaloTransverseEnergy::processPacket(int packet, Event * e, std::vector<floa
 		}
 		en=en-baseline;
 		energy->push_back(GetTransverseEnergy(en,eta));
-		std::cout<<"Energy is " <<en <<std::endl;
+	//	std::cout<<"Energy is " <<en <<std::endl;
 		//For the hcal get the phi distribution
 		//take packet#, each packet has 8 phi bins
 		//
