@@ -1,5 +1,6 @@
 #include "CaloAna.h"
 
+
 // G4Hits includes
 #include <g4main/PHG4Hit.h>
 #include <g4main/PHG4HitContainer.h>
@@ -29,6 +30,11 @@
 #include <fun4all/Fun4AllReturnCodes.h>
 
 #include <phool/getClass.h>
+
+
+#include <globalvertex/GlobalVertex.h>
+#include <globalvertex/GlobalVertexMap.h>
+
 
 #include <TFile.h>
 #include <TNtuple.h>
@@ -74,11 +80,13 @@ int CaloAna::Init(PHCompositeNode*)
   h_cemc_etaphi = new TH2F("h_cemc_etaphi",";eta;phi",96,0,96,256,0,256);
   h_hcalin_etaphi = new TH2F("h_ihcal_etaphi",";eta;phi",24,0,24,64,0,64);
   h_hcalout_etaphi = new TH2F("h_ohcal_etaphi",";eta;phi",24,0,24,64,0,64);
-  h_emcal_zdc_correlation = new TH2F("h_zdc_emcal_correlation",";zdc;emcal",100,0,1,100,0,1);
+  h_emcal_zdc_correlation = new TH2F("h_zdc_emcal_correlation",";emcal;zdc",100,0,1,100,0,1);
+    
+    
   h_InvMass = new TH1F("h_InvMass","Invariant Mass",120,0,1.2);
     
-    
-  
+  hvtx_z = new TH1D("hvtx_z", "hvtx_z", 101, -50.5 , 50.5);
+
   //raw timing information
   hzdctime_cut = new TH1D("hzdctime_cut", "hzdctime_cut", 30, 2.5 , 32.5);
   hmbdtime_cut = new TH1D("hmbdtime_cut", "hmbdtime_cut", 30, 2.5 , 32.5);
@@ -110,91 +118,115 @@ int CaloAna::process_event(PHCompositeNode* topNode)
 
 int CaloAna::process_towers(PHCompositeNode* topNode)
 {
-
-  std::cout<<_eventcounter<<std::endl;
     
-  float totalcemc = 0.;
-  float totalihcal = 0.;
-  float totalohcal = 0.;
-  float totalmbd = 0.;
-  float totalzdc = 0.;
-
-  float emcaldownscale = 1000000/800;
-  float ihcaldownscale = 40000/300;
-  float ohcaldownscale = 250000/600;
-  float mbddownscale = 250000.0;
-  float zdcdownscale  = 2e4;
+    std::cout<<_eventcounter<<std::endl;
+    
+    float totalcemc = 0.;
+    float totalihcal = 0.;
+    float totalohcal = 0.;
+    float totalmbd = 0.;
+    float totalzdc = 0.;
+    
+    float emcaldownscale = 1000000/800;
+    float ihcaldownscale = 40000/300;
+    float ohcaldownscale = 250000/600;
+    float mbddownscale = 250000.0;
+    float zdcdownscale  = 2e4;
     
     
-  int max_zdc_t = -1;
-  int max_emcal_t = -1;
-  int max_mbd_t = -1;
-  int max_ihcal_t = -1;
-  int max_ohcal_t = -1;
+    int max_zdc_t = -1;
+    int max_emcal_t = -1;
+    int max_mbd_t = -1;
+    int max_ihcal_t = -1;
+    int max_ohcal_t = -1;
     
- //----------------------------------------------timing-----------------------------------------------//
-  {
-    TowerInfoContainer* offlinetowers = findNode::getClass<TowerInfoContainerv1>(topNode, "TOWERS_CEMC");
-    if (offlinetowers)
+    
+    
+    //----------------------------------get vertex------------------------------------------------------//
+    
+    GlobalVertexMap *vertexmap = findNode::getClass<GlobalVertexMap>(topNode, "GlobalVertexMap");
+    if (!vertexmap)
     {
-      int size = offlinetowers->size();
-      for (int channel = 0; channel < size;channel++)
+        std::cout << PHWHERE << " Fatal Error - GlobalVertexMap node is missing"
+        << std::endl;
+        return Fun4AllReturnCodes::ABORTRUN;
+    }
+    
+    GlobalVertex *vtx = vertexmap->begin()->second;
+    float vtx_z = NAN;
+    if (vtx)
+    {
+        vtx_z = vtx->get_z();
+    }
+   
+    if (abs(vtx_z) < _vz)
+    {
+        
+     hvtx_z->Fill(vtx_z);
+    
+    //----------------------------------------------timing-----------------------------------------------//
+    {
+        TowerInfoContainer* offlinetowers = findNode::getClass<TowerInfoContainerv1>(topNode, "TOWERS_CEMC");
+        if (offlinetowers)
         {
-          hemcaltime_cut->Fill(offlinetowers->get_tower_at_channel(channel)->get_time());
-        }
-      }
-    }
- 
-    {
-      TowerInfoContainer* offlinetowers = findNode::getClass<TowerInfoContainerv1>(topNode, "TOWERS_HCALIN");
-      if (offlinetowers)
-      {
-        int size = offlinetowers->size();
-        for (int channel = 0; channel < size;channel++)
-          {
-             hihcaltime_cut->Fill(offlinetowers->get_tower_at_channel(channel)->get_time());
-          }
-        }
-      }
-    
-    {
-      TowerInfoContainer* offlinetowers = findNode::getClass<TowerInfoContainerv1>(topNode, "TOWERS_HCALOUT");
-      if (offlinetowers)
-      {
-        int size = offlinetowers->size();
-        for (int channel = 0; channel < size;channel++)
-          {
-             hohcaltime_cut->Fill(offlinetowers->get_tower_at_channel(channel)->get_time());
-          }
-        }
-      }
-    
-    {
-      TowerInfoContainer* offlinetowers = findNode::getClass<TowerInfoContainerv1>(topNode, "TOWERS_MBD");
-      if (offlinetowers)
-      {
-        int size = offlinetowers->size();
-        for (int channel = 0; channel < size;channel++)
-          {
-              unsigned int towerkey = TowerInfoDefs::encode_mbd(channel);
-              int type = TowerInfoDefs::get_mbd_type(towerkey);
-              if (type == 1) hmbdtime_cut->Fill(offlinetowers->get_tower_at_channel(channel)->get_time());
-          }
+            int size = offlinetowers->size();
+            for (int channel = 0; channel < size;channel++)
+            {
+                hemcaltime_cut->Fill(offlinetowers->get_tower_at_channel(channel)->get_time());
+            }
         }
     }
- 
+    
     {
-      TowerInfoContainer* offlinetowers = findNode::getClass<TowerInfoContainerv1>(topNode, "TOWERS_ZDC");
-      if (offlinetowers)
-      {
-        int size = offlinetowers->size();
-        for (int channel = 0; channel < size;channel++)
-          {
-              hzdctime_cut->Fill(offlinetowers->get_tower_at_channel(channel)->get_time());
-          }
+        TowerInfoContainer* offlinetowers = findNode::getClass<TowerInfoContainerv1>(topNode, "TOWERS_HCALIN");
+        if (offlinetowers)
+        {
+            int size = offlinetowers->size();
+            for (int channel = 0; channel < size;channel++)
+            {
+                hihcaltime_cut->Fill(offlinetowers->get_tower_at_channel(channel)->get_time());
+            }
         }
-      }
- 
+    }
+    
+    {
+        TowerInfoContainer* offlinetowers = findNode::getClass<TowerInfoContainerv1>(topNode, "TOWERS_HCALOUT");
+        if (offlinetowers)
+        {
+            int size = offlinetowers->size();
+            for (int channel = 0; channel < size;channel++)
+            {
+                hohcaltime_cut->Fill(offlinetowers->get_tower_at_channel(channel)->get_time());
+            }
+        }
+    }
+    
+    {
+        TowerInfoContainer* offlinetowers = findNode::getClass<TowerInfoContainerv1>(topNode, "TOWERS_MBD");
+        if (offlinetowers)
+        {
+            int size = offlinetowers->size();
+            for (int channel = 0; channel < size;channel++)
+            {
+                unsigned int towerkey = TowerInfoDefs::encode_mbd(channel);
+                int type = TowerInfoDefs::get_mbd_type(towerkey);
+                if (type == 1) hmbdtime_cut->Fill(offlinetowers->get_tower_at_channel(channel)->get_time());
+            }
+        }
+    }
+    
+    {
+        TowerInfoContainer* offlinetowers = findNode::getClass<TowerInfoContainerv1>(topNode, "TOWERS_ZDC");
+        if (offlinetowers)
+        {
+            int size = offlinetowers->size();
+            for (int channel = 0; channel < size;channel++)
+            {
+                hzdctime_cut->Fill(offlinetowers->get_tower_at_channel(channel)->get_time());
+            }
+        }
+    }
+    
     
     //get time estimate
     max_zdc_t = Getpeaktime(hzdctime_cut);
@@ -202,145 +234,147 @@ int CaloAna::process_towers(PHCompositeNode* topNode)
     max_emcal_t = Getpeaktime(hemcaltime_cut);
     max_ihcal_t = Getpeaktime(hihcaltime_cut);
     max_ohcal_t = Getpeaktime(hohcaltime_cut);
-   
-//----------------------------------------------tower energies -----------------------------------------------//
-
-  {
-    TowerInfoContainer* offlinetowers = findNode::getClass<TowerInfoContainerv1>(topNode, "TOWERINFO_CALIB_CEMC");
-    if (offlinetowers)
-      {
-        int size = offlinetowers->size(); //online towers should be the same!
-        for (int channel = 0; channel < size;channel++)
-	  {
-	    TowerInfo* offlinetower = offlinetowers->get_tower_at_channel(channel);
-	    float offlineenergy = offlinetower->get_energy();
-            unsigned int towerkey = offlinetowers->encode_key(channel);
-            int ieta = offlinetowers->getTowerEtaBin(towerkey);
-            int iphi = offlinetowers->getTowerPhiBin(towerkey);
-            int _time = offlinetowers->get_tower_at_channel(channel)->get_time();
-          
-           if(_time > (max_emcal_t - _range) && _time < (max_emcal_t + _range))
-           {
-            totalcemc += offlineenergy;
-            hemcaltime->Fill(_time);
-            
-            if (offlineenergy > 1)
+    
+    //----------------------------------------------tower energies -----------------------------------------------//
+    
+    {
+        TowerInfoContainer* offlinetowers = findNode::getClass<TowerInfoContainerv1>(topNode, "TOWERINFO_CALIB_CEMC");
+        if (offlinetowers)
+        {
+            int size = offlinetowers->size(); //online towers should be the same!
+            for (int channel = 0; channel < size;channel++)
             {
-               h_cemc_etaphi->Fill(ieta,iphi,offlineenergy);
+                TowerInfo* offlinetower = offlinetowers->get_tower_at_channel(channel);
+                float offlineenergy = offlinetower->get_energy();
+                unsigned int towerkey = offlinetowers->encode_key(channel);
+                int ieta = offlinetowers->getTowerEtaBin(towerkey);
+                int iphi = offlinetowers->getTowerPhiBin(towerkey);
+                int _time = offlinetowers->get_tower_at_channel(channel)->get_time();
+                
+                if(_time > (max_emcal_t - _range) && _time < (max_emcal_t + _range))
+                {
+                    totalcemc += offlineenergy;
+                    hemcaltime->Fill(_time);
+                    
+                    if (offlineenergy > 1)
+                    {
+                        h_cemc_etaphi->Fill(ieta,iphi,offlineenergy);
+                    }
+                }
             }
         }
-      }
     }
-  }
     
-  {
-    TowerInfoContainer* offlinetowers = findNode::getClass<TowerInfoContainerv1>(topNode, "TOWERINFO_CALIB_HCALIN");
-    if (offlinetowers)
-      { 
-	int size = offlinetowers->size(); //online towers should be the same!
-	for (int channel = 0; channel < size;channel++)
-	  {
-	    TowerInfo* offlinetower = offlinetowers->get_tower_at_channel(channel);
-	    float offlineenergy = offlinetower->get_energy();
-	    unsigned int towerkey = offlinetowers->encode_key(channel);
-	    int ieta = offlinetowers->getTowerEtaBin(towerkey);
-	    int iphi = offlinetowers->getTowerPhiBin(towerkey);
-            int _time = offlinetowers->get_tower_at_channel(channel)->get_time();
-          
-           if(_time > (max_ihcal_t - _range) && _time < (max_ihcal_t + _range))
+    {
+        TowerInfoContainer* offlinetowers = findNode::getClass<TowerInfoContainerv1>(topNode, "TOWERINFO_CALIB_HCALIN");
+        if (offlinetowers)
+        {
+            int size = offlinetowers->size(); //online towers should be the same!
+            for (int channel = 0; channel < size;channel++)
             {
-            totalihcal += offlineenergy;
-            hihcaltime->Fill(_time);
-            
-             if (offlineenergy > 1)
-              {
-                  h_hcalin_etaphi->Fill(ieta,iphi,offlineenergy);
-              }
-             }
-	  }
-      }
-  }
-  {
-    TowerInfoContainer* offlinetowers = findNode::getClass<TowerInfoContainerv1>(topNode, "TOWERINFO_CALIB_HCALOUT");
-    if (offlinetowers)
-      { 
-	int size = offlinetowers->size(); //online towers should be the same!
-	for (int channel = 0; channel < size;channel++)
-	  {
-	    TowerInfo* offlinetower = offlinetowers->get_tower_at_channel(channel);
-	    float offlineenergy = offlinetower->get_energy();
-	    unsigned int towerkey = offlinetowers->encode_key(channel);
-	    int ieta = offlinetowers->getTowerEtaBin(towerkey);
-	    int iphi = offlinetowers->getTowerPhiBin(towerkey);
-            int _time = offlinetowers->get_tower_at_channel(channel)->get_time();
-          
-            if(_time > (max_ohcal_t - _range) && _time < (max_ohcal_t + _range))
-            {
-            totalohcal += offlineenergy;
-            hohcaltime->Fill(_time);
-            
-            if (offlineenergy > 1)
-              {
-                  h_hcalout_etaphi->Fill(ieta,iphi,offlineenergy);
-              }
-             }
-	  }
-      }
-  }
-  {
-    TowerInfoContainer* offlinetowers = findNode::getClass<TowerInfoContainerv1>(topNode, "TOWERS_MBD");
-    if (offlinetowers)
-      { 
-	int size = offlinetowers->size(); //online towers should be the same!
-	for (int channel = 0; channel < size;channel++)
-	  {
-	    TowerInfo* offlinetower = offlinetowers->get_tower_at_channel(channel);
-	    float offlineenergy = offlinetower->get_energy();
-	    unsigned int towerkey = TowerInfoDefs::encode_mbd(channel);
-	    int type = TowerInfoDefs::get_mbd_type(towerkey);
-            int _time = offlinetowers->get_tower_at_channel(channel)->get_time();
-
-	    if (type == 1)
-	      {
-            if(_time > (max_mbd_t - _range) && _time < (max_mbd_t + _range))
-            {
-                totalmbd += offlineenergy; hmbdtime->Fill(_time);
-            }
-          }
-	  }
-      }
-  }
-    
-  {
-    TowerInfoContainer* offlinetowers = findNode::getClass<TowerInfoContainerv1>(topNode, "TOWERS_ZDC");
-    if (offlinetowers)
-      { 
-	int size = offlinetowers->size(); //online towers should be the same!
-	for (int channel = 0; channel < size;channel++)
-	  {
-	    TowerInfo* offlinetower = offlinetowers->get_tower_at_channel(channel);
-	    float offlineenergy = offlinetower->get_energy();
-            int _time = offlinetowers->get_tower_at_channel(channel)->get_time();
-
-	     if(channel == 0 || channel == 2 || channel == 4 || channel == 8 || channel == 10 || channel == 12)
-	      {
-              if(_time > (max_zdc_t - _range) && _time < (max_zdc_t + _range))
+                TowerInfo* offlinetower = offlinetowers->get_tower_at_channel(channel);
+                float offlineenergy = offlinetower->get_energy();
+                unsigned int towerkey = offlinetowers->encode_key(channel);
+                int ieta = offlinetowers->getTowerEtaBin(towerkey);
+                int iphi = offlinetowers->getTowerPhiBin(towerkey);
+                int _time = offlinetowers->get_tower_at_channel(channel)->get_time();
+                
+                if(_time > (max_ihcal_t - _range) && _time < (max_ihcal_t + _range))
                 {
-                  totalzdc += offlineenergy;
-                  hzdctime->Fill(_time);
+                    totalihcal += offlineenergy;
+                    hihcaltime->Fill(_time);
+                    
+                    if (offlineenergy > 1)
+                    {
+                        h_hcalin_etaphi->Fill(ieta,iphi,offlineenergy);
+                    }
                 }
-	      }
-	  }
-      }
-  }
-
-  h_emcal_mbd_correlation->Fill(totalcemc/emcaldownscale,totalmbd/mbddownscale);
-  h_ihcal_mbd_correlation->Fill(totalihcal/ihcaldownscale,totalmbd/mbddownscale);
-  h_ohcal_mbd_correlation->Fill(totalohcal/ohcaldownscale,totalmbd/mbddownscale);
-  h_emcal_hcal_correlation->Fill(totalcemc/emcaldownscale,totalohcal/ohcaldownscale);
-  h_emcal_zdc_correlation->Fill(totalcemc/emcaldownscale,totalzdc/zdcdownscale);
-
-
+                
+            }
+        }
+    }
+    {
+        TowerInfoContainer* offlinetowers = findNode::getClass<TowerInfoContainerv1>(topNode, "TOWERINFO_CALIB_HCALOUT");
+        if (offlinetowers)
+        {
+            int size = offlinetowers->size(); //online towers should be the same!
+            for (int channel = 0; channel < size;channel++)
+            {
+                TowerInfo* offlinetower = offlinetowers->get_tower_at_channel(channel);
+                float offlineenergy = offlinetower->get_energy();
+                unsigned int towerkey = offlinetowers->encode_key(channel);
+                int ieta = offlinetowers->getTowerEtaBin(towerkey);
+                int iphi = offlinetowers->getTowerPhiBin(towerkey);
+                int _time = offlinetowers->get_tower_at_channel(channel)->get_time();
+                
+                if(_time > (max_ohcal_t - _range) && _time < (max_ohcal_t + _range))
+                {
+                    totalohcal += offlineenergy;
+                    hohcaltime->Fill(_time);
+                    
+                    if (offlineenergy > 1)
+                    {
+                        h_hcalout_etaphi->Fill(ieta,iphi,offlineenergy);
+                    }
+                }
+                
+            }
+        }
+    }
+    {
+        TowerInfoContainer* offlinetowers = findNode::getClass<TowerInfoContainerv1>(topNode, "TOWERS_MBD");
+        if (offlinetowers)
+        {
+            int size = offlinetowers->size(); //online towers should be the same!
+            for (int channel = 0; channel < size;channel++)
+            {
+                TowerInfo* offlinetower = offlinetowers->get_tower_at_channel(channel);
+                float offlineenergy = offlinetower->get_energy();
+                unsigned int towerkey = TowerInfoDefs::encode_mbd(channel);
+                int type = TowerInfoDefs::get_mbd_type(towerkey);
+                int _time = offlinetowers->get_tower_at_channel(channel)->get_time();
+                
+                if (type == 1)
+                {
+                    if(_time > (max_mbd_t - _range) && _time < (max_mbd_t + _range))
+                    {
+                        totalmbd += offlineenergy; hmbdtime->Fill(_time);
+                    }
+                }
+            }
+        }
+    }
+    
+    {
+        TowerInfoContainer* offlinetowers = findNode::getClass<TowerInfoContainerv1>(topNode, "TOWERS_ZDC");
+        if (offlinetowers)
+        {
+            int size = offlinetowers->size(); //online towers should be the same!
+            for (int channel = 0; channel < size;channel++)
+            {
+                TowerInfo* offlinetower = offlinetowers->get_tower_at_channel(channel);
+                float offlineenergy = offlinetower->get_energy();
+                int _time = offlinetowers->get_tower_at_channel(channel)->get_time();
+                
+                if(channel == 0 || channel == 2 || channel == 4 || channel == 8 || channel == 10 || channel == 12)
+                {
+                    if(_time > (max_zdc_t - _range) && _time < (max_zdc_t + _range))
+                    {
+                        totalzdc += offlineenergy;
+                        hzdctime->Fill(_time);
+                    }
+                }
+            }
+        }
+    }
+    
+    h_emcal_mbd_correlation->Fill(totalcemc/emcaldownscale,totalmbd/mbddownscale);
+    h_ihcal_mbd_correlation->Fill(totalihcal/ihcaldownscale,totalmbd/mbddownscale);
+    h_ohcal_mbd_correlation->Fill(totalohcal/ohcaldownscale,totalmbd/mbddownscale);
+    h_emcal_hcal_correlation->Fill(totalcemc/emcaldownscale,totalohcal/ohcaldownscale);
+    h_emcal_zdc_correlation->Fill(totalcemc/emcaldownscale,totalzdc/zdcdownscale);
+    
+}
  //------------------------------------------------- pi 0 --------------------------------------------------------//
 
   RawClusterContainer *clusterContainer = findNode::getClass<RawClusterContainer>(topNode,"CLUSTERINFO_POS_COR_CEMC");
