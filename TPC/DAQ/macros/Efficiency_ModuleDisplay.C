@@ -47,29 +47,11 @@ void Locate(Int_t id, Bool_t is_ASIDE, Double_t *rbin, Double_t *thbin);
 
 void Efficiency_ModuleDisplay(){
 
-  bool skip_empty_fees;  // true will skip FEEs with 0 channel output and false will keep them in the plot/analysis
-
-  string res;
-
-  cout << "Please input true or false: ";
-  cin >> res;
-
-  if(res == "true"){
-    skip_empty_fees = true;
-  }
-  else{
-    skip_empty_fees = false;
-  }
+  bool skip_empty_fees =true;  // true will skip FEEs with 0 channel output and false will keep them in the plot/analysis
 
   std::vector<pair<int,int>> vec; 
 
-  char name[100];
-  int run_num;
-
-  cout << "Input run number: ";
-  cin >> run_num;
-
-  const TString filename3( Form( "/sphenix/u/llegnosky/Livechan_Pedestals_Noise/run_%d/pedestal-%d-outfile.root", run_num, run_num) ); // change the run number as needed
+  const TString filename3( Form( "./pedestal-26540-outfile.root") ); // change the run number as needed
 
   TFile *infile3 = TFile::Open(filename3);
   
@@ -240,13 +222,8 @@ void Efficiency_ModuleDisplay(){
   }
    
   // change the titles as needed
-  
-    //TH2D* dummy_his1 = new TH2D("dummy1", "10616-Alive Channel Fraction North Side (%)", 100, -1.5, 1.5, 100, -1.5, 1.5); //dummy histos for titles
-  sprintf(name, "%d-Alive Channel Fraction North Side (%)",run_num);
-  TH2D* dummy_his1 = new TH2D("dummy1", name, 100, -1.5, 1.5, 100, -1.5, 1.5); //dummy histos for titles
-  //TH2D* dummy_his2 = new TH2D("dummy2", "10616-Alive Channel Fraction South Side (%)", 100, -1.5, 1.5, 100, -1.5, 1.5);
-  sprintf(name, "%d-Alive Channel Fraction South Side (%)",run_num);
-  TH2D* dummy_his2 = new TH2D("dummy2", name, 100, -1.5, 1.5, 100, -1.5, 1.5);
+  TH2D* dummy_his1 = new TH2D("dummy1", "26540-Alive Channel Fraction North Side (%)", 100, -1.5, 1.5, 100, -1.5, 1.5); //dummy histos for titles
+  TH2D* dummy_his2 = new TH2D("dummy2", "26540-Alive Channel Fraction South Side (%)", 100, -1.5, 1.5, 100, -1.5, 1.5);
   //TPaveLabels for sector labels
   TPaveLabel* A00 = new TPaveLabel( 1.046586,-0.1938999,1.407997,0.2144871, "18" );
   TPaveLabel* A01 = new TPaveLabel( 0.962076,0.4382608,1.323487,0.8466479 , "17" );
@@ -341,8 +318,8 @@ void Efficiency_ModuleDisplay(){
   ErrASide->SetMaximum(100);
 
   //change minimum live fraction value as needed
-  ErrCSide->SetMinimum(90);
-  ErrASide->SetMinimum(90);
+  ErrCSide->SetMinimum(80);
+  ErrASide->SetMinimum(80);
   
 
   //Set Same Scale for A and C side displays
@@ -351,15 +328,6 @@ void Efficiency_ModuleDisplay(){
 
   TFile *outf = new TFile("Trip_Histos.root","RECREATE");
   Error_Viz->Write();
-
-  if(skip_empty_fees == true){
-    sprintf(name,"/sphenix/u/llegnosky/Livechan_Pedestals_Noise/run_%d/run_%d_Active.png",run_num,run_num);
-    Error_Viz->Print(name);
-  }
-  else{
-    sprintf(name,"/sphenix/u/llegnosky/Livechan_Pedestals_Noise/run_%d/run_%d_Inactive.png",run_num,run_num);
-    Error_Viz->Print(name);
-  }
 
   outf->Write();
 }
