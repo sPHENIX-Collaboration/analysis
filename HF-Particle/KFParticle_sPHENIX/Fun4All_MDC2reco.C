@@ -3,21 +3,26 @@
 #include <g4main/Fun4AllDstPileupInputManager.h>
 
 #include <G4_Magnet.C>
-#include <G4_Tracking.C>
-#include <QA.C>
+#include <G4_ActsGeom.C>
 
 #include <FROG.h>
 #include <decayfinder/DecayFinder.h>
+#include <hftrackefficiency/HFTrackEfficiency.h>
+
 #include <fun4all/Fun4AllDstInputManager.h>
-//#include <qa_modules/QAG4SimulationKFParticle.h>
-//#include <qa_modules/QAG4SimulationTruthDecay.h>
 
 #include <g4eval/SvtxEvaluator.h>
 #include <g4eval/SvtxTruthRecoTableEval.h>
 
-//R__LOAD_LIBRARY(libqa_modules.so)
+#include <ffamodules/CDBInterface.h>
+#include <phool/recoConsts.h>
+#include <globalvertex/GlobalVertexReco.h>
+
 R__LOAD_LIBRARY(libfun4all.so)
 R__LOAD_LIBRARY(libdecayfinder.so)
+R__LOAD_LIBRARY(libhftrackefficiency.so)
+R__LOAD_LIBRARY(libg4vertex.so)
+R__LOAD_LIBRARY(libglobalvertex.so)
 
 using namespace std;
 using namespace HeavyFlavorReco;
@@ -45,18 +50,24 @@ void Fun4All_MDC2reco(vector<string> myInputLists = {"condorJob/fileLists/produc
   string remove_this = ".list";
   size_t pos = fileNumber.find(remove_this);
   if (pos != string::npos) fileNumber.erase(pos, remove_this.length());
-  string outputFileName = "outputTruthDecayTest_" + reconstructionName + "_" + fileNumber + ".root";
-  string outputEvalFileName = "outputEvaluator_" + reconstructionName + "_" + fileNumber + ".root";
+  string outputFileName = "outputFile_" + reconstructionName + "_" + fileNumber + ".root";
+  string outputHFEffFileName = "outputHFEff_" + reconstructionName + "_" + fileNumber + ".root";
 
   string outputRecoDir = outDir + "inReconstruction/";
   string makeDirectory = "mkdir -p " + outputRecoDir;
   system(makeDirectory.c_str());
   outputRecoFile = outputRecoDir + outputFileName;
-  outputEvalFile = outputRecoDir + outputEvalFileName;
+  if (runTrackEff) outputHFEffFile = outputRecoDir + outputHFEffFileName;
 
   //Create the server
   Fun4AllServer *se = Fun4AllServer::instance();
-  se->Verbosity(VERBOSITY);
+  se->Verbosity(1);
+
+  recoConsts *rc = recoConsts::instance();
+  // global tag
+  rc->set_StringFlag("CDB_GLOBALTAG", "MDC2");
+  // 64 bit timestamp
+  rc->set_uint64Flag("TIMESTAMP", 6);
 
   //Add all required input files
   for (unsigned int i = 0; i < myInputLists.size(); ++i)
@@ -65,7 +76,7 @@ void Fun4All_MDC2reco(vector<string> myInputLists = {"condorJob/fileLists/produc
     infile->AddListFile(myInputLists[i]);
     se->registerInputManager(infile);
   }
-
+/*
   //Run the tracking if not already done
   if (runTracking)
   {
@@ -89,21 +100,41 @@ void Fun4All_MDC2reco(vector<string> myInputLists = {"condorJob/fileLists/produc
 
     Tracking_Reco();
   }
+*/
+
+  //ACTSGEOM::ActsGeomInit();
+
+  GlobalVertexReco* gblvertex = new GlobalVertexReco();
+  gblvertex->Verbosity(0);
+  se->registerSubsystem(gblvertex);
+
 
   // Runs decay finder to trigger on your decay. Useful for signal cleaning
   if (runTruthTrigger)
   {
     DecayFinder *myFinder = new DecayFinder("myFinder");
-    myFinder->Verbosity(VERBOSITY);
+    myFinder->Verbosity(1);
     myFinder->setDecayDescriptor(decayDescriptor);
     myFinder->saveDST(1);
     myFinder->allowPi0(0);
     myFinder->allowPhotons(0);
-    myFinder->triggerOnDecay(1);
-    myFinder->setPTmin(0.); //Note: sPHENIX min pT is 0.2 GeV for tracking
-    myFinder->setEtaRange(-10., 10.); //Note: sPHENIX acceptance is |eta| <= 1.1
+    myFinder->triggerOnDecay(0);
+    myFinder->setPTmin(0.2); //Note: sPHENIX min pT is 0.2 GeV for tracking
+    myFinder->setEtaRange(-1.1, 1.1); //Note: sPHENIX acceptance is |eta| <= 1.1
     se->registerSubsystem(myFinder);
   } 
+
+  if (runTrackEff)
+  {
+    HFTrackEfficiency *myTrackEff = new HFTrackEfficiency("myTrackEff");
+    myTrackEff->Verbosity(1);
+    myTrackEff->setDFNodeName("myFinder");
+    myTrackEff->triggerOnDecay(0);
+    myTrackEff->writeSelectedTrackMap(false);
+    myTrackEff->writeOutputFile(true);
+    myTrackEff->setOutputFileName(outputHFEffFile);
+    se->registerSubsystem(myTrackEff);
+  }
 
   // this module builds high level truth track association table.
   // If this module is used, this table should be called before any evaluator calls.
@@ -128,16 +159,7 @@ void Fun4All_MDC2reco(vector<string> myInputLists = {"condorJob/fileLists/produc
   //Now run the actual reconstruction
   myHeavyFlavorReco();
 
-  //We should set this up correctly
-  //if (runQA)
-  //{
-  //  QAG4SimulationKFParticle *myQA = new QAG4SimulationKFParticle("myQA", "D0", 1.7, 2.0);
-  //  se->registerSubsystem(myQA);
-  //  QA_Output("hf_qa.root");
-  //}
-
   se->run(nEvents);
-  //QA_Output(outputEvalFile);
   se->End();
 
   ifstream file(outputRecoFile.c_str());
@@ -147,12 +169,15 @@ void Fun4All_MDC2reco(vector<string> myInputLists = {"condorJob/fileLists/produc
     system(moveOutput.c_str());
   }
 
-  //ifstream evalfile(outputEvalFile.c_str());
-  //if (evalfile.good())
-  //{
-  //  string moveOutput = "mv " + outputEvalFile + " " + outDir;
-  //  system(moveOutput.c_str());
-  //}
+  if (runTrackEff)
+  {
+    ifstream evalfile(outputHFEffFile.c_str());
+    if (evalfile.good())
+    {
+      string moveOutput = "mv " + outputHFEffFile + " " + outDir;
+      system(moveOutput.c_str());
+    }
+  }
 
   std::cout << "All done" << std::endl;
   delete se;
