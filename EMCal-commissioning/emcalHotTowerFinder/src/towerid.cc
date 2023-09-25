@@ -451,17 +451,17 @@ int towerid::End(PHCompositeNode *topNode)
    for(int i = 0; i<24576; i++){
 
                 if(hottowers[i] >= 0.5){
-                        m_hot_channels = 1;
+                        m_hot_channels = 2;
                         T->Fill();
 			cdbttree->SetIntValue(i,fieldname,2);
                 }
 		else if(deadtowers[i] >= 0.5){
-			m_hot_channels = -1;
+			m_hot_channels = 1;
                         T->Fill();
 			cdbttree->SetIntValue(i,fieldname,1);
 		}
 		else if(coldtowers[i] > 0.5){
-			m_hot_channels = -1;
+			m_hot_channels = 3;
                         T->Fill();
 			cdbttree->SetIntValue(i,fieldname,3);
 		}
