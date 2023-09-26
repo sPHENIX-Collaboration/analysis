@@ -4,6 +4,11 @@
 
 #include <G4_Magnet.C>
 #include <G4_ActsGeom.C>
+#include <G4_TrkrSimulation.C>
+
+#include <Trkr_Clustering.C>
+#include <Trkr_Reco.C>
+#include <Trkr_RecoInit.C>
 
 #include <FROG.h>
 #include <decayfinder/DecayFinder.h>
@@ -76,7 +81,7 @@ void Fun4All_MDC2reco(vector<string> myInputLists = {"condorJob/fileLists/produc
     infile->AddListFile(myInputLists[i]);
     se->registerInputManager(infile);
   }
-/*
+
   //Run the tracking if not already done
   if (runTracking)
   {
@@ -100,7 +105,6 @@ void Fun4All_MDC2reco(vector<string> myInputLists = {"condorJob/fileLists/produc
 
     Tracking_Reco();
   }
-*/
 
   //ACTSGEOM::ActsGeomInit();
 

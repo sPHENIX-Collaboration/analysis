@@ -61,7 +61,7 @@ void myHeavyFlavorReco()
   {
     kfparticle->constrainToPrimaryVertex(true);
     kfparticle->setMotherIPchi2(3);
-    kfparticle->setFlightDistancechi(0.);
+    kfparticle->setFlightDistancechi2(0.);
     kfparticle->setMinDIRA(0.90);
   }
 
