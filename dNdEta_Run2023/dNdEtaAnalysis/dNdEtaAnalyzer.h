@@ -54,7 +54,7 @@ class CentralityInfo;
 class dNdEtaAnalyzer : public SubsysReco
 {
 public:
-    dNdEtaAnalyzer(const std::string &name = "dNdEtaAnalyzer", const bool &isData = false, const int &inputFileListIndex = 0, const int &nEvtPerFile = 0);
+    dNdEtaAnalyzer(const std::string &name = "dNdEtaAnalyzer", const std::string &outputfile = "MVTXdNdEta.root", const bool &isData = false, const int &inputFileListIndex = 0, const int &nEvtPerFile = 0);
 
     ~dNdEtaAnalyzer() override;
 
@@ -112,6 +112,7 @@ private:
     bool _get_centrality;
 
     unsigned int eventNum = 0;
+    std::string _outputFile;
     bool IsData;
     int InputFileListIndex;
     int NEvtPerFile;
