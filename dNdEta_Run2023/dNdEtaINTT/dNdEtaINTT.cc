@@ -77,30 +77,9 @@ template <class T> void CleanVec(std::vector<T> &v)
 } // namespace
 
 //____________________________________________________________________________..
-dNdEtaINTT::dNdEtaINTT(
-    const std::string &name, 
-    const std::string &outputfile, 
-    const bool &isData, 
-    const int &inputFileListIndex, 
-    const int &nEvtPerFile)
-    : SubsysReco(name), 
-    _get_truth_pv(true), 
-    _get_reco_cluster(true), 
-    _get_centrality(true),
-    _outputFile(outputfile),
-    IsData(isData), 
-    InputFileListIndex(inputFileListIndex), 
-    NEvtPerFile(nEvtPerFile), 
-    svtx_evalstack(nullptr), 
-    truth_eval(nullptr), 
-    clustereval(nullptr),
-    hiteval(nullptr), 
-    dst_clustermap(nullptr), 
-    clusterhitmap(nullptr), 
-    hitsets(nullptr), 
-    _tgeometry(nullptr), 
-    m_truth_info(nullptr), 
-    m_CentInfo(nullptr)
+dNdEtaINTT::dNdEtaINTT(const std::string &name, const bool &isData, const int &inputFileListIndex, const int &nEvtPerFile)
+    : SubsysReco(name), _get_truth_pv(true), _get_reco_cluster(true), _get_centrality(true), IsData(isData), InputFileListIndex(inputFileListIndex), NEvtPerFile(nEvtPerFile), svtx_evalstack(nullptr), truth_eval(nullptr), clustereval(nullptr),
+      hiteval(nullptr), dst_clustermap(nullptr), clusterhitmap(nullptr), hitsets(nullptr), _tgeometry(nullptr), m_truth_info(nullptr), m_CentInfo(nullptr)
 {
     std::cout << "dNdEtaINTT::dNdEtaINTT(const std::string &name) Calling ctor" << std::endl;
 }
@@ -116,15 +95,15 @@ int dNdEtaINTT::Init(PHCompositeNode *topNode)
               << "Initial eventnum = " << InputFileListIndex * NEvtPerFile << std::endl
               << "Number of events per file = " << NEvtPerFile << std::endl;
 
-    PHTFileServer::get().open(_outputFile.c_str(), "RECREATE");
+    PHTFileServer::get().open(Form("/sphenix/user/hjheng/TrackletAna/data/INTT/%s.root", Name().c_str()), "RECREATE");
     outtree = new TTree("EventTree", "EventTree");
     outtree->Branch("event", &event_);
     if (!IsData)
     {
-        outtree->Branch("centrality_bimp", &centrality_bimp_);
-        outtree->Branch("centrality_impactparam", &centrality_impactparam_);
-        outtree->Branch("centrality_mbd", &centrality_mbd_);
-        outtree->Branch("centrality_mbdquantity", &centrality_mbdquantity_);
+        // outtree->Branch("centrality_bimp", &centrality_bimp_);
+        // outtree->Branch("centrality_impactparam", &centrality_impactparam_);
+        // outtree->Branch("centrality_mbd", &centrality_mbd_);
+        // outtree->Branch("centrality_mbdquantity", &centrality_mbdquantity_);
         outtree->Branch("NTruthVtx", &NTruthVtx_);
         outtree->Branch("TruthPV_x", &TruthPV_x_);
         outtree->Branch("TruthPV_y", &TruthPV_y_);
@@ -269,9 +248,9 @@ int dNdEtaINTT::EndRun(const int runnumber)
 //____________________________________________________________________________..
 int dNdEtaINTT::End(PHCompositeNode *topNode)
 {
-    std::cout << "dNdEtaINTT::End(PHCompositeNode *topNode) This is the End - Output to " << _outputFile << std::endl;
+    std::cout << "dNdEtaINTT::End(PHCompositeNode *topNode) This is the End - Output to " << Form("/sphenix/user/hjheng/TrackletAna/data/INTT/%s.root", Name().c_str()) << std::endl;
 
-    PHTFileServer::get().cd(_outputFile.c_str());
+    PHTFileServer::get().cd(Form("/sphenix/user/hjheng/TrackletAna/data/INTT/%s.root", Name().c_str()));
     outtree->Write("", TObject::kOverwrite);
 
     delete svtx_evalstack;
@@ -349,7 +328,8 @@ void dNdEtaINTT::GetRecoClusterInfo(PHCompositeNode *topNode)
             if (trkrId != TrkrDefs::inttId)
                 continue; // we want only INTT clusters
 
-            _NClus[TrkrDefs::getLayer(ckey)]++;
+            int layer = (TrkrDefs::getLayer(ckey) == 3 || TrkrDefs::getLayer(ckey) == 4) ? 0 : 1;
+            _NClus[layer]++;
             if (cluster == nullptr)
             {
                 std::cout << "cluster is nullptr, ckey=" << ckey << std::endl;
@@ -409,7 +389,7 @@ void dNdEtaINTT::GetRecoClusterInfo(PHCompositeNode *topNode)
 
     NClus_ = _NClus[0] + _NClus[1];
     Layer1_occupancy_ = _NClus[0];
-    std::cout << "NMVTXClus (total,0,1,2)=(" << NClus_ << "," << _NClus[0] << "," << _NClus[1] << ")" << std::endl;
+    std::cout << "NMVTXClus (total,0,1)=(" << NClus_ << "," << _NClus[0] << "," << _NClus[1] << ")" << std::endl;
     std::cout << "Size of G4PfromClus_PID_=" << G4PfromClus_PID_.size() << "; Number of non-null PHG4Particle ptr=" << G4PfromClus_IsValid[0] << ", number of null PHG4Particle ptr=" << G4PfromClus_IsValid[1] << std::endl;
 
     int uniqueAncG4P = 0, N_MatchedClus = 0;
@@ -435,7 +415,7 @@ void dNdEtaINTT::GetTruthPVInfo(PHCompositeNode *topNode)
     vertex_particle_count.clear();
     std::map<int, unsigned int> vertex_hit_count;
     vertex_hit_count.clear();
-    // std::vector<int> layerID_mvtx{0, 1, 2};
+
     for (auto iter = prange.first; iter != prange.second; ++iter) // process all primary paricle
     {
         ++vertex_particle_count[iter->second->get_vtx_id()];
@@ -444,9 +424,9 @@ void dNdEtaINTT::GetTruthPVInfo(PHCompositeNode *topNode)
         std::set<PHG4Hit *> g4hits = truth_eval->all_truth_hits(iter->second);
         for (auto hit : g4hits)
         {
-            std::vector<int> layerID_mvtx{0, 1, 2};
-            std::vector<int>::iterator it = std::find(layerID_mvtx.begin(), layerID_mvtx.end(), hit->get_layer());
-            if (it != layerID_mvtx.end())
+            std::vector<int> layerID{3, 4, 5, 6};
+            std::vector<int>::iterator it = std::find(layerID.begin(), layerID.end(), hit->get_layer());
+            if (it != layerID.end())
             {
                 ++vertex_hit_count[iter->second->get_vtx_id()];
             }
@@ -501,7 +481,7 @@ void dNdEtaINTT::GetTruthPVInfo(PHCompositeNode *topNode)
             // = (" << point->get_x() << "," << point->get_y() << "," <<
             // point->get_z() << "," << point->get_t() << "," <<
             // m_truth_info->isEmbededVtx(point_id) << ")" << std::endl;
-            std::cout << "TruthPV_idx = " << TruthPV_idx << "(x,y,z,t,Npart,NMvtxhits,NMvtxClus,embed) = (" << point->get_x() << "," << point->get_y() << "," << point->get_z() << "," << point->get_t() << "," << vertex_particle_count[point_id] << ","
+            std::cout << "TruthPV_idx = " << TruthPV_idx << "(x,y,z,t,Npart,NIntthits,NInttClus,embed) = (" << point->get_x() << "," << point->get_y() << "," << point->get_z() << "," << point->get_t() << "," << vertex_particle_count[point_id] << ","
                       << vertex_hit_count[point_id] << "," << vertex_cluster_count[point_id] << "," << m_truth_info->isEmbededVtx(point_id) << ")" << std::endl;
             TruthPV_idx++;
         }
