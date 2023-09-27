@@ -77,9 +77,30 @@ template <class T> void CleanVec(std::vector<T> &v)
 } // namespace
 
 //____________________________________________________________________________..
-dNdEtaINTT::dNdEtaINTT(const std::string &name, const bool &isData, const int &inputFileListIndex, const int &nEvtPerFile)
-    : SubsysReco(name), _get_truth_pv(true), _get_reco_cluster(true), _get_centrality(true), IsData(isData), InputFileListIndex(inputFileListIndex), NEvtPerFile(nEvtPerFile), svtx_evalstack(nullptr), truth_eval(nullptr), clustereval(nullptr),
-      hiteval(nullptr), dst_clustermap(nullptr), clusterhitmap(nullptr), hitsets(nullptr), _tgeometry(nullptr), m_truth_info(nullptr), m_CentInfo(nullptr)
+dNdEtaINTT::dNdEtaINTT(
+    const std::string &name, 
+    const std::string &outputfile, 
+    const bool &isData, 
+    const int &inputFileListIndex, 
+    const int &nEvtPerFile)
+    : SubsysReco(name), 
+    _get_truth_pv(true), 
+    _get_reco_cluster(true), 
+    _get_centrality(true),
+    _outputFile(outputfile),
+    IsData(isData), 
+    InputFileListIndex(inputFileListIndex), 
+    NEvtPerFile(nEvtPerFile), 
+    svtx_evalstack(nullptr), 
+    truth_eval(nullptr), 
+    clustereval(nullptr),
+    hiteval(nullptr), 
+    dst_clustermap(nullptr), 
+    clusterhitmap(nullptr), 
+    hitsets(nullptr), 
+    _tgeometry(nullptr), 
+    m_truth_info(nullptr), 
+    m_CentInfo(nullptr)
 {
     std::cout << "dNdEtaINTT::dNdEtaINTT(const std::string &name) Calling ctor" << std::endl;
 }
@@ -95,7 +116,7 @@ int dNdEtaINTT::Init(PHCompositeNode *topNode)
               << "Initial eventnum = " << InputFileListIndex * NEvtPerFile << std::endl
               << "Number of events per file = " << NEvtPerFile << std::endl;
 
-    PHTFileServer::get().open(Form("/sphenix/user/hjheng/TrackletAna/data/INTT/%s.root", Name().c_str()), "RECREATE");
+    PHTFileServer::get().open(_outputFile, "RECREATE");
     outtree = new TTree("EventTree", "EventTree");
     outtree->Branch("event", &event_);
     if (!IsData)
@@ -248,9 +269,9 @@ int dNdEtaINTT::EndRun(const int runnumber)
 //____________________________________________________________________________..
 int dNdEtaINTT::End(PHCompositeNode *topNode)
 {
-    std::cout << "dNdEtaINTT::End(PHCompositeNode *topNode) This is the End - Output to " << Form("/sphenix/user/hjheng/TrackletAna/data/INTT/%s.root", Name().c_str()) << std::endl;
+    std::cout << "dNdEtaINTT::End(PHCompositeNode *topNode) This is the End - Output to " << _outputFile << std::endl;
 
-    PHTFileServer::get().cd(Form("/sphenix/user/hjheng/TrackletAna/data/INTT/%s.root", Name().c_str()));
+    PHTFileServer::get().cd(_outputFile);
     outtree->Write("", TObject::kOverwrite);
 
     delete svtx_evalstack;
