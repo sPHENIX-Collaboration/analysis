@@ -103,83 +103,83 @@ int CaloAna::process_towers(PHCompositeNode* topNode)
   {
     TowerInfoContainer* offlinetowers = findNode::getClass<TowerInfoContainerv1>(topNode, "TOWERINFO_CALIB_CEMC");
     if (offlinetowers)
+    {
+      int size = offlinetowers->size(); //online towers should be the same!
+      for (int channel = 0; channel < size;channel++)
       {
-	int size = offlinetowers->size(); //online towers should be the same!
-	for (int channel = 0; channel < size;channel++)
-	  {
-	    TowerInfo* offlinetower = offlinetowers->get_tower_at_channel(channel);
-	    float offlineenergy = offlinetower->get_energy();
-	    totalcemc += offlineenergy;
-	    unsigned int towerkey = offlinetowers->encode_key(channel);
-	    int ieta = offlinetowers->getTowerEtaBin(towerkey);
-	    int iphi = offlinetowers->getTowerPhiBin(towerkey);
-	    if (offlineenergy > 1)
-	      {
-		h_cemc_etaphi->Fill(ieta,iphi,offlineenergy);
-	      }
+        TowerInfo* offlinetower = offlinetowers->get_tower_at_channel(channel);
+        float offlineenergy = offlinetower->get_energy();
+        totalcemc += offlineenergy;
+        unsigned int towerkey = offlinetowers->encode_key(channel);
+        int ieta = offlinetowers->getTowerEtaBin(towerkey);
+        int iphi = offlinetowers->getTowerPhiBin(towerkey);
+        if (offlineenergy > 1)
+        {
+          h_cemc_etaphi->Fill(ieta,iphi,offlineenergy);
+        }
 
-	  }
       }
+    }
   }
   {
     TowerInfoContainer* offlinetowers = findNode::getClass<TowerInfoContainerv1>(topNode, "TOWERINFO_CALIB_HCALIN");
     if (offlinetowers)
-      { 
-	int size = offlinetowers->size(); //online towers should be the same!
-	for (int channel = 0; channel < size;channel++)
-	  {
-	    TowerInfo* offlinetower = offlinetowers->get_tower_at_channel(channel);
-	    float offlineenergy = offlinetower->get_energy();
-	    totalihcal += offlineenergy;
-	    unsigned int towerkey = offlinetowers->encode_key(channel);
-	    int ieta = offlinetowers->getTowerEtaBin(towerkey);
-	    int iphi = offlinetowers->getTowerPhiBin(towerkey);
-	    if (offlineenergy > 1)
-	      {
-		h_hcalin_etaphi->Fill(ieta,iphi,offlineenergy);
-	      }
+    {
+      int size = offlinetowers->size(); //online towers should be the same!
+      for (int channel = 0; channel < size;channel++)
+      {
+        TowerInfo* offlinetower = offlinetowers->get_tower_at_channel(channel);
+        float offlineenergy = offlinetower->get_energy();
+        totalihcal += offlineenergy;
+        unsigned int towerkey = offlinetowers->encode_key(channel);
+        int ieta = offlinetowers->getTowerEtaBin(towerkey);
+        int iphi = offlinetowers->getTowerPhiBin(towerkey);
+        if (offlineenergy > 1)
+        {
+          h_hcalin_etaphi->Fill(ieta,iphi,offlineenergy);
+        }
 
-	  }
       }
+    }
   }
   {
     TowerInfoContainer* offlinetowers = findNode::getClass<TowerInfoContainerv1>(topNode, "TOWERINFO_CALIB_HCALOUT");
     if (offlinetowers)
-      { 
-	int size = offlinetowers->size(); //online towers should be the same!
-	for (int channel = 0; channel < size;channel++)
-	  {
-	    TowerInfo* offlinetower = offlinetowers->get_tower_at_channel(channel);
-	    float offlineenergy = offlinetower->get_energy();
-	    totalohcal += offlineenergy;
-	    unsigned int towerkey = offlinetowers->encode_key(channel);
-	    int ieta = offlinetowers->getTowerEtaBin(towerkey);
-	    int iphi = offlinetowers->getTowerPhiBin(towerkey);
-	    if (offlineenergy > 1)
-	      {
-		h_hcalout_etaphi->Fill(ieta,iphi,offlineenergy);
-	      }
+    {
+      int size = offlinetowers->size(); //online towers should be the same!
+      for (int channel = 0; channel < size;channel++)
+      {
+        TowerInfo* offlinetower = offlinetowers->get_tower_at_channel(channel);
+        float offlineenergy = offlinetower->get_energy();
+        totalohcal += offlineenergy;
+        unsigned int towerkey = offlinetowers->encode_key(channel);
+        int ieta = offlinetowers->getTowerEtaBin(towerkey);
+        int iphi = offlinetowers->getTowerPhiBin(towerkey);
+        if (offlineenergy > 1)
+        {
+          h_hcalout_etaphi->Fill(ieta,iphi,offlineenergy);
+        }
 
-	  }
       }
+    }
   }
   {
     TowerInfoContainer* offlinetowers = findNode::getClass<TowerInfoContainerv1>(topNode, "TOWERS_MBD");
     if (offlinetowers)
-      { 
-	int size = offlinetowers->size(); //online towers should be the same!
-	for (int channel = 0; channel < size;channel++)
-	  {
-	    TowerInfo* offlinetower = offlinetowers->get_tower_at_channel(channel);
-	    float offlineenergy = offlinetower->get_energy();
-	    unsigned int towerkey = TowerInfoDefs::encode_mbd(channel);
-	    int type = TowerInfoDefs::get_mbd_type(towerkey);
-	    if (type == 1)
-	      {
-		totalmbd += offlineenergy;
-	      }
-	  }
+    {
+      int size = offlinetowers->size(); //online towers should be the same!
+      for (int channel = 0; channel < size;channel++)
+      {
+        TowerInfo* offlinetower = offlinetowers->get_tower_at_channel(channel);
+        float offlineenergy = offlinetower->get_energy();
+        unsigned int towerkey = TowerInfoDefs::encode_mbd(channel);
+        int type = TowerInfoDefs::get_mbd_type(towerkey);
+        if (type == 1)
+        {
+          totalmbd += offlineenergy;
+        }
       }
+    }
   }
   h_emcal_mbd_correlation->Fill(totalcemc/emcaldownscale,totalmbd/mbddownscale);
   h_ihcal_mbd_correlation->Fill(totalihcal/ihcaldownscale,totalmbd/mbddownscale);
@@ -189,10 +189,10 @@ int CaloAna::process_towers(PHCompositeNode* topNode)
 
   RawClusterContainer *clusterContainer = findNode::getClass<RawClusterContainer>(topNode,"CLUSTERINFO_POS_COR_CEMC");
   if(!clusterContainer)
-    {
-      std::cout << PHWHERE << "funkyCaloStuff::process_event - Fatal Error - CLUSTER_CEMC node is missing. " << std::endl;
-      return 0;
-    }
+  {
+    std::cout << PHWHERE << "funkyCaloStuff::process_event - Fatal Error - CLUSTER_CEMC node is missing. " << std::endl;
+    return 0;
+  }
 
 
 
@@ -203,72 +203,72 @@ int CaloAna::process_towers(PHCompositeNode* topNode)
   float maxAlpha = 0.8;
 
   if (totalmbd < 0.1*mbddownscale)
+  {
+
+    RawClusterContainer::ConstRange clusterEnd = clusterContainer -> getClusters();
+    RawClusterContainer::ConstIterator clusterIter;
+    RawClusterContainer::ConstIterator clusterIter2;
+
+    for(clusterIter = clusterEnd.first; clusterIter != clusterEnd.second; clusterIter++)
     {
+      RawCluster *recoCluster = clusterIter -> second;
 
-      RawClusterContainer::ConstRange clusterEnd = clusterContainer -> getClusters();
-      RawClusterContainer::ConstIterator clusterIter;
-      RawClusterContainer::ConstIterator clusterIter2;
+      CLHEP::Hep3Vector vertex(0,0,0);
+      CLHEP::Hep3Vector E_vec_cluster = RawClusterUtility::GetECoreVec(*recoCluster, vertex);
 
-      for(clusterIter = clusterEnd.first; clusterIter != clusterEnd.second; clusterIter++)
-	{
-	  RawCluster *recoCluster = clusterIter -> second;
-	  
-	  CLHEP::Hep3Vector vertex(0,0,0);
-	  CLHEP::Hep3Vector E_vec_cluster = RawClusterUtility::GetECoreVec(*recoCluster, vertex);
-	  
-	  float clusE = E_vec_cluster.mag();
-	  float clus_eta = E_vec_cluster.pseudoRapidity();
-	  float clus_phi = E_vec_cluster.phi();
-	  float clus_pt = E_vec_cluster.perp();
-	  float clus_chisq = recoCluster->get_chi2();
-	  
-	  if (clusE < emcMinClusE1 || clusE > emcMaxClusE){continue;}
-	  if (abs(clus_eta) > 0.7){continue;}
-	  if (clus_chisq > 4){continue;}
-	  
-	  TLorentzVector photon1;
-	  photon1.SetPtEtaPhiE(clus_pt, clus_eta, clus_phi, clusE);
-	  
+      float clusE = E_vec_cluster.mag();
+      float clus_eta = E_vec_cluster.pseudoRapidity();
+      float clus_phi = E_vec_cluster.phi();
+      float clus_pt = E_vec_cluster.perp();
+      float clus_chisq = recoCluster->get_chi2();
 
-	  
-	  for(clusterIter2 = clusterEnd.first; clusterIter2 != clusterEnd.second; clusterIter2++)
-	    {
-	      if (clusterIter ==clusterIter2){continue;}
-	      RawCluster *recoCluster2 = clusterIter2 -> second;
-	  
-	      CLHEP::Hep3Vector vertex2(0,0,0);
-	      CLHEP::Hep3Vector E_vec_cluster2 = RawClusterUtility::GetECoreVec(*recoCluster2, vertex2);
-	  
+      if (clusE < emcMinClusE1 || clusE > emcMaxClusE){continue;}
+      if (abs(clus_eta) > 0.7){continue;}
+      if (clus_chisq > 4){continue;}
+
+      TLorentzVector photon1;
+      photon1.SetPtEtaPhiE(clus_pt, clus_eta, clus_phi, clusE);
 
 
 
-	      float clus2E = E_vec_cluster2.mag();
-	      float clus2_eta = E_vec_cluster2.pseudoRapidity();
-	      float clus2_phi = E_vec_cluster2.phi();
-	      float clus2_pt = E_vec_cluster2.perp();
-	      float clus2_chisq = recoCluster2->get_chi2();
-	      
-	      if (clus2E < emcMinClusE2 || clus2E > emcMaxClusE){continue;}
-	      if (abs(clus2_eta) > 0.7){continue;}
-	      if (clus2_chisq > 4){continue;}
-	      
-	      TLorentzVector photon2;
-	      photon2.SetPtEtaPhiE(clus2_pt, clus2_eta, clus2_phi, clus2E);
-	      
+      for(clusterIter2 = clusterEnd.first; clusterIter2 != clusterEnd.second; clusterIter2++)
+      {
+        if (clusterIter ==clusterIter2){continue;}
+        RawCluster *recoCluster2 = clusterIter2 -> second;
+
+        CLHEP::Hep3Vector vertex2(0,0,0);
+        CLHEP::Hep3Vector E_vec_cluster2 = RawClusterUtility::GetECoreVec(*recoCluster2, vertex2);
 
 
-	      if(sqrt(pow(clusE - clus2E,2))/(clusE + clus2E) > maxAlpha) continue; 
 
 
-	      if(photon1.DeltaR(photon2) < minDr) continue;
-	      TLorentzVector pi0 = photon1 + photon2;
-	      h_InvMass -> Fill(pi0.M());
-	    }
-	  
-	}
-      
-      
+        float clus2E = E_vec_cluster2.mag();
+        float clus2_eta = E_vec_cluster2.pseudoRapidity();
+        float clus2_phi = E_vec_cluster2.phi();
+        float clus2_pt = E_vec_cluster2.perp();
+        float clus2_chisq = recoCluster2->get_chi2();
+
+        if (clus2E < emcMinClusE2 || clus2E > emcMaxClusE){continue;}
+        if (abs(clus2_eta) > 0.7){continue;}
+        if (clus2_chisq > 4){continue;}
+
+        TLorentzVector photon2;
+        photon2.SetPtEtaPhiE(clus2_pt, clus2_eta, clus2_phi, clus2E);
+
+
+
+        if(sqrt(pow(clusE - clus2E,2))/(clusE + clus2E) > maxAlpha) continue;
+
+
+        if(photon1.DeltaR(photon2) < minDr) continue;
+        TLorentzVector pi0 = photon1 + photon2;
+        h_InvMass -> Fill(pi0.M());
+      }
+
     }
+      
+      
+  }
   
   return Fun4AllReturnCodes::EVENT_OK;
 }

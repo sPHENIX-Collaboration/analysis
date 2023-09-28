@@ -37,12 +37,12 @@
 
 //____________________________________________________________________________..
 caloTreeGen::caloTreeGen(const std::string &name):
-SubsysReco(name)
+  SubsysReco(name)
   ,T(nullptr)
   ,Outfile(name)
   ,doClusters(1)
-,totalCaloE(0)
-,doFineCluster(0)
+  ,totalCaloE(0)
+  ,doFineCluster(0)
 {
   std::cout << "caloTreeGen::caloTreeGen(const std::string &name) Calling ctor" << std::endl;
 }
@@ -85,7 +85,7 @@ int caloTreeGen::Init(PHCompositeNode *topNode)
   T -> Branch("clusTowEta","vector<vector<int> >",&m_clusTowEta);
   T -> Branch("clusTowE","vector<vector<float> >",&m_clusTowE);
   
- //so that the histos actually get written out
+  //so that the histos actually get written out
   Fun4AllServer *se = Fun4AllServer::instance();
   se -> Print("NODETREE"); 
   
@@ -104,97 +104,97 @@ int caloTreeGen::InitRun(PHCompositeNode *topNode)
 int caloTreeGen::process_event(PHCompositeNode *topNode)
 {
 
-   //Information on clusters
+  //Information on clusters
   RawClusterContainer *clusterContainer = findNode::getClass<RawClusterContainer>(topNode,"CLUSTERINFO_CEMC");
   if(!clusterContainer && doClusters)
-    {
-      std::cout << PHWHERE << "caloTreeGen::process_event - Fatal Error - CLUSTER_CEMC node is missing. " << std::endl;
-      return 0;
-    }
+  {
+    std::cout << PHWHERE << "caloTreeGen::process_event - Fatal Error - CLUSTER_CEMC node is missing. " << std::endl;
+    return 0;
+  }
   
   //tower information
   TowerInfoContainer *emcTowerContainer;
   emcTowerContainer = findNode::getClass<TowerInfoContainer>(topNode,"TOWERINFO_CALIB_CEMC");
   if(!emcTowerContainer)
-    {
-      std::cout << PHWHERE << "caloTreeGen::process_event Could not find node TOWERS_CEMC"  << std::endl;
-      return Fun4AllReturnCodes::ABORTEVENT;
-    }
+  {
+    std::cout << PHWHERE << "caloTreeGen::process_event Could not find node TOWERS_CEMC"  << std::endl;
+    return Fun4AllReturnCodes::ABORTEVENT;
+  }
   
   
   //Tower geometry node for location information
   RawTowerGeomContainer *towergeom = findNode::getClass<RawTowerGeomContainer>(topNode, "TOWERGEOM_CEMC");
   if (!towergeom && doClusters)
-    {
-      std::cout << PHWHERE << "caloTreeGen::process_event Could not find node TOWERGEOM_CEMC"  << std::endl;
-      return Fun4AllReturnCodes::ABORTEVENT;
-    }
+  {
+    std::cout << PHWHERE << "caloTreeGen::process_event Could not find node TOWERGEOM_CEMC"  << std::endl;
+    return Fun4AllReturnCodes::ABORTEVENT;
+  }
   
   float calib = 1.;
 
   //grab all the towers and fill their energies. 
-  unsigned int tower_range = emcTowerContainer->size();
+      unsigned int tower_range = emcTowerContainer->size();
   totalCaloE = 0;
   for(unsigned int iter = 0; iter < tower_range; iter++)
+  {
+    unsigned int towerkey = emcTowerContainer->encode_key(iter);
+    unsigned int ieta = getCaloTowerEtaBin(towerkey);
+    unsigned int iphi = getCaloTowerPhiBin(towerkey);
+    m_emciEta.push_back(ieta);
+    m_emciPhi.push_back(iphi);
+      
+    double energy = emcTowerContainer -> get_tower_at_channel(iter) -> get_energy()/calib;
+    totalCaloE += energy;
+    double time = emcTowerContainer -> get_tower_at_channel(iter) -> get_time();
+      
+    if(doClusters)
     {
-      unsigned int towerkey = emcTowerContainer->encode_key(iter);
-      unsigned int ieta = getCaloTowerEtaBin(towerkey);
-      unsigned int iphi = getCaloTowerPhiBin(towerkey);
-      m_emciEta.push_back(ieta);
-      m_emciPhi.push_back(iphi);
+      double phi = towergeom -> get_phicenter(iphi);
+      double eta = towergeom -> get_etacenter(ieta);
+      m_emcTowPhi.push_back(phi);
+      m_emcTowEta.push_back(eta);
+    }
+    m_emcTowE.push_back(energy);
+    m_emcTiming.push_back(time);
       
-      double energy = emcTowerContainer -> get_tower_at_channel(iter) -> get_energy()/calib;
-      totalCaloE += energy;
-      double time = emcTowerContainer -> get_tower_at_channel(iter) -> get_time();
-      
-      if(doClusters)
-	{
-	  double phi = towergeom -> get_phicenter(iphi);
-	  double eta = towergeom -> get_etacenter(ieta);
-	  m_emcTowPhi.push_back(phi);
-	  m_emcTowEta.push_back(eta);
-	}
-      m_emcTowE.push_back(energy);
-      m_emcTiming.push_back(time);
-      
-    } 
+  }
   
   if(doClusters)
+  {
+    RawClusterContainer::ConstRange clusterEnd = clusterContainer -> getClusters();
+    RawClusterContainer::ConstIterator clusterIter;
+    for(clusterIter = clusterEnd.first; clusterIter != clusterEnd.second; clusterIter++)
     {
-      RawClusterContainer::ConstRange clusterEnd = clusterContainer -> getClusters();
-      RawClusterContainer::ConstIterator clusterIter;
-      for(clusterIter = clusterEnd.first; clusterIter != clusterEnd.second; clusterIter++)
-	{
-	  RawCluster *recoCluster = clusterIter -> second;
+      RawCluster *recoCluster = clusterIter -> second;
 
-	  CLHEP::Hep3Vector vertex(0,0,0);
-	  CLHEP::Hep3Vector E_vec_cluster = RawClusterUtility::GetECoreVec(*recoCluster, vertex);
-	  CLHEP::Hep3Vector E_vec_cluster_Full = RawClusterUtility::GetEVec(*recoCluster, vertex);
+      CLHEP::Hep3Vector vertex(0,0,0);
+      CLHEP::Hep3Vector E_vec_cluster = RawClusterUtility::GetECoreVec(*recoCluster, vertex);
+      CLHEP::Hep3Vector E_vec_cluster_Full = RawClusterUtility::GetEVec(*recoCluster, vertex);
 
-	  float clusE = E_vec_cluster.mag();
-	  float clus_eta = E_vec_cluster.pseudoRapidity();
-	  float clus_phi = E_vec_cluster.phi();
-	  float clus_pt = E_vec_cluster.perp();
-	  float clus_chi = recoCluster -> get_chi2();
-	  float nTowers = recoCluster ->getNTowers(); 
-	  float maxTowerEnergy = getMaxTowerE(recoCluster,emcTowerContainer);
+      float clusE = E_vec_cluster.mag();
+      float clus_eta = E_vec_cluster.pseudoRapidity();
+      float clus_phi = E_vec_cluster.phi();
+      float clus_pt = E_vec_cluster.perp();
+      float clus_chi = recoCluster -> get_chi2();
+      float nTowers = recoCluster ->getNTowers();
+      float maxTowerEnergy = getMaxTowerE(recoCluster,emcTowerContainer);
 
-	  m_clusterE.push_back(E_vec_cluster_Full.mag());
-	  m_clusterECore.push_back(clusE);
-	  m_clusterPhi.push_back(clus_phi);
-	  m_clusterEta.push_back(clus_eta);
-	  m_clusterPt.push_back(clus_pt);
-	  m_clusterChi.push_back(clus_chi);
-	  m_clusterNtow.push_back(nTowers);
-	  m_clusterTowMax.push_back(maxTowerEnergy);
-	  if(doFineCluster)
-	    {
-	      m_clusTowPhi.push_back(returnClusterTowPhi(recoCluster,emcTowerContainer));
-	      m_clusTowEta.push_back(returnClusterTowEta(recoCluster,emcTowerContainer));
-	      m_clusTowE.push_back(returnClusterTowE(recoCluster,emcTowerContainer));
-	    }		     
-	}
+      m_clusterE.push_back(E_vec_cluster_Full.mag());
+      m_clusterECore.push_back(clusE);
+      m_clusterPhi.push_back(clus_phi);
+      m_clusterEta.push_back(clus_eta);
+      m_clusterPt.push_back(clus_pt);
+      m_clusterChi.push_back(clus_chi);
+      m_clusterNtow.push_back(nTowers);
+      m_clusterTowMax.push_back(maxTowerEnergy);
+      if(doFineCluster)
+      {
+        m_clusTowPhi.push_back(returnClusterTowPhi(recoCluster,emcTowerContainer));
+        m_clusTowEta.push_back(returnClusterTowEta(recoCluster,emcTowerContainer));
+        m_clusTowE.push_back(returnClusterTowE(recoCluster,emcTowerContainer));
+      }
     }
+  }
 
   T -> Fill();
   
@@ -251,7 +251,7 @@ int caloTreeGen::End(PHCompositeNode *topNode)
 //____________________________________________________________________________..
 int caloTreeGen::Reset(PHCompositeNode *topNode)
 {
- std::cout << "caloTreeGen::Reset(PHCompositeNode *topNode) being Reset" << std::endl;
+  std::cout << "caloTreeGen::Reset(PHCompositeNode *topNode) being Reset" << std::endl;
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
@@ -284,11 +284,11 @@ float caloTreeGen::getMaxTowerE(RawCluster *cluster, TowerInfoContainer *towerCo
   
   float maxEnergy = 0;
   for(toweriter = towers.first; toweriter != towers.second; toweriter++)
-    {
-      float towE = toweriter -> second;
+  {
+    float towE = toweriter -> second;
    
-      if( towE > maxEnergy)  maxEnergy = towE;
-    }
+    if( towE > maxEnergy)  maxEnergy = towE;
+  }
   return maxEnergy;
 }
 //____________________________________________________________________________..
