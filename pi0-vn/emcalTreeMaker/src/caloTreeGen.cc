@@ -105,10 +105,11 @@ int caloTreeGen::process_event(PHCompositeNode *topNode)
 {
 
   //Information on clusters
-  RawClusterContainer *clusterContainer = findNode::getClass<RawClusterContainer>(topNode,"CLUSTERINFO_CEMC");
+  RawClusterContainer *clusterContainer = findNode::getClass<RawClusterContainer>(topNode,"CLUSTERINFO_POS_COR_CEMC");
+  // RawClusterContainer *clusterContainer = findNode::getClass<RawClusterContainer>(topNode,"CLUSTERINFO_CEMC");
   if(!clusterContainer && doClusters)
   {
-    std::cout << PHWHERE << "caloTreeGen::process_event - Fatal Error - CLUSTER_CEMC node is missing. " << std::endl;
+    std::cout << PHWHERE << "caloTreeGen::process_event - Fatal Error - CLUSTERINFO_POS_COR_CEMC node is missing. " << std::endl;
     return 0;
   }
   

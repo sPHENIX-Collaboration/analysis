@@ -190,7 +190,7 @@ int CaloAna::process_towers(PHCompositeNode* topNode)
   RawClusterContainer *clusterContainer = findNode::getClass<RawClusterContainer>(topNode,"CLUSTERINFO_POS_COR_CEMC");
   if(!clusterContainer)
   {
-    std::cout << PHWHERE << "funkyCaloStuff::process_event - Fatal Error - CLUSTER_CEMC node is missing. " << std::endl;
+    std::cout << PHWHERE << "funkyCaloStuff::process_event - Fatal Error - CLUSTERINFO_POS_COR_CEMC node is missing. " << std::endl;
     return 0;
   }
 
@@ -269,7 +269,7 @@ int CaloAna::process_towers(PHCompositeNode* topNode)
       
       
   }
-  
+
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
