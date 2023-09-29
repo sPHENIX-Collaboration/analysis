@@ -77,30 +77,9 @@ template <class T> void CleanVec(std::vector<T> &v)
 } // namespace
 
 //____________________________________________________________________________..
-dNdEtaINTT::dNdEtaINTT(
-    const std::string &name, 
-    const std::string &outputfile, 
-    const bool &isData, 
-    const int &inputFileListIndex, 
-    const int &nEvtPerFile)
-    : SubsysReco(name), 
-    _get_truth_pv(true), 
-    _get_reco_cluster(true), 
-    _get_centrality(true),
-    _outputFile(outputfile),
-    IsData(isData), 
-    InputFileListIndex(inputFileListIndex), 
-    NEvtPerFile(nEvtPerFile), 
-    svtx_evalstack(nullptr), 
-    truth_eval(nullptr), 
-    clustereval(nullptr),
-    hiteval(nullptr), 
-    dst_clustermap(nullptr), 
-    clusterhitmap(nullptr), 
-    hitsets(nullptr), 
-    _tgeometry(nullptr), 
-    m_truth_info(nullptr), 
-    m_CentInfo(nullptr)
+dNdEtaINTT::dNdEtaINTT(const std::string &name, const std::string &outputfile, const bool &isData, const int &inputFileListIndex, const int &nEvtPerFile)
+    : SubsysReco(name), _get_truth_pv(true), _get_reco_cluster(true), _get_centrality(true), _outputFile(outputfile), IsData(isData), InputFileListIndex(inputFileListIndex), NEvtPerFile(nEvtPerFile), svtx_evalstack(nullptr), truth_eval(nullptr),
+      clustereval(nullptr), hiteval(nullptr), dst_clustermap(nullptr), clusterhitmap(nullptr), hitsets(nullptr), _tgeometry(nullptr), m_truth_info(nullptr), m_CentInfo(nullptr)
 {
     std::cout << "dNdEtaINTT::dNdEtaINTT(const std::string &name) Calling ctor" << std::endl;
 }
@@ -410,7 +389,7 @@ void dNdEtaINTT::GetRecoClusterInfo(PHCompositeNode *topNode)
 
     NClus_ = _NClus[0] + _NClus[1];
     Layer1_occupancy_ = _NClus[0];
-    std::cout << "NMVTXClus (total,0,1)=(" << NClus_ << "," << _NClus[0] << "," << _NClus[1] << ")" << std::endl;
+    std::cout << "Number of clusters (total,0,1)=(" << NClus_ << "," << _NClus[0] << "," << _NClus[1] << ")" << std::endl;
     std::cout << "Size of G4PfromClus_PID_=" << G4PfromClus_PID_.size() << "; Number of non-null PHG4Particle ptr=" << G4PfromClus_IsValid[0] << ", number of null PHG4Particle ptr=" << G4PfromClus_IsValid[1] << std::endl;
 
     int uniqueAncG4P = 0, N_MatchedClus = 0;
