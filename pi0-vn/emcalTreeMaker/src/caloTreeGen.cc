@@ -43,6 +43,7 @@ caloTreeGen::caloTreeGen(const std::string &name):
   ,doClusters(1)
   ,totalCaloE(0)
   ,doFineCluster(0)
+  ,iEvent(0)
 {
   std::cout << "caloTreeGen::caloTreeGen(const std::string &name) Calling ctor" << std::endl;
 }
@@ -59,7 +60,7 @@ int caloTreeGen::Init(PHCompositeNode *topNode)
   
   out = new TFile(Outfile.c_str(),"RECREATE");
 
-  
+
   T = new TTree("T","T");
 
   //emc
@@ -78,7 +79,7 @@ int caloTreeGen::Init(PHCompositeNode *topNode)
   T -> Branch("clusterNtow",&m_clusterNtow);
   T -> Branch("clusterTowMax",&m_clusterTowMax);
   T -> Branch("clusterECore",&m_clusterECore);
-  
+
   T -> Branch("totalCaloE",&totalCaloE);
 
   T -> Branch("clusTowPhi","vector<vector<int> >",&m_clusTowPhi);
@@ -103,6 +104,9 @@ int caloTreeGen::InitRun(PHCompositeNode *topNode)
 //____________________________________________________________________________..
 int caloTreeGen::process_event(PHCompositeNode *topNode)
 {
+
+  if(iEvent%500 == 0) std::cout << "Progress: " << iEvent << std::endl;
+  iEvent++;
 
   //Information on clusters
   RawClusterContainer *clusterContainer = findNode::getClass<RawClusterContainer>(topNode,"CLUSTERINFO_POS_COR_CEMC");
@@ -134,7 +138,7 @@ int caloTreeGen::process_event(PHCompositeNode *topNode)
   float calib = 1.;
 
   //grab all the towers and fill their energies. 
-      unsigned int tower_range = emcTowerContainer->size();
+  unsigned int tower_range = emcTowerContainer->size();
   totalCaloE = 0;
   for(unsigned int iter = 0; iter < tower_range; iter++)
   {

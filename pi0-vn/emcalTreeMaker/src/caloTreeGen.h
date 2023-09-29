@@ -97,10 +97,10 @@ class caloTreeGen : public SubsysReco
   std::vector<int> returnClusterTowPhi(RawCluster *cluster, TowerInfoContainer *towerContainer);
   std::vector<int> returnClusterTowEta(RawCluster *cluster, TowerInfoContainer *towerContainer);
 
-;
   int doClusters;
   float totalCaloE;
   int doFineCluster;
+  int iEvent;
 
 };
 
