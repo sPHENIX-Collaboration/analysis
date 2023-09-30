@@ -28,12 +28,13 @@ R__LOAD_LIBRARY(libfun4all.so)
 R__LOAD_LIBRARY(libcaloTreeGen.so)
 
 void Fun4All_CaloTreeGen(const string &inputFile,
-                         const string &outputFile = "test.root",
+                         const string &qaFile = "qa.root",
+                         const string &ntpFile = "ntp.root",
                          const int nEvents = 0) {
   Fun4AllServer *se = Fun4AllServer::instance();
   // recoConsts *rc = recoConsts::instance();
 
-  caloTreeGen *calo = new caloTreeGen(outputFile.c_str());
+  caloTreeGen *calo = new caloTreeGen(qaFile.c_str(), ntpFile.c_str());
   calo -> setClusters(1);
   calo -> setFineClusters(0);
   calo -> Verbosity(Fun4AllBase::VERBOSITY_QUIET);
@@ -54,29 +55,34 @@ void Fun4All_CaloTreeGen(const string &inputFile,
 
 # ifndef __CINT__
 int main(int argc, char* argv[]) {
-    if(argc < 2 || argc > 4){
-        cout << "usage: ./bin/Fun4All_CaloTreeGen inputFile outputFile events" << endl;
+    if(argc < 2 || argc > 5){
+        cout << "usage: ./bin/Fun4All_CaloTreeGen inputFile qaFile ntpFile events" << endl;
         cout << "events: Number of events to analyze." << endl;
         cout << "inputFile: Location of fileList containing dst." << endl;
-        cout << "outputFile: name of output file." << endl;
+        cout << "qaFile: name of output file." << endl;
+        cout << "ntpFile: name of output file." << endl;
         return 1;
     }
 
     string inputFile;
-    string outputFile = "test.root";
+    string qaFile = "qa.root";
+    string ntpFile = "ntp.root";
     UInt_t events = 0;
 
     if(argc >= 2) {
         inputFile = argv[1];
     }
     if(argc >= 3) {
-        outputFile = argv[2];
+        qaFile = argv[2];
     }
     if(argc >= 4) {
-        events = atoi(argv[3]);
+        ntpFile = argv[3];
+    }
+    if(argc >= 5) {
+        events = atoi(argv[4]);
     }
 
-    Fun4All_CaloTreeGen(inputFile, outputFile, events);
+    Fun4All_CaloTreeGen(inputFile, qaFile, ntpFile, events);
 
     cout << "done" << endl;
     return 0;

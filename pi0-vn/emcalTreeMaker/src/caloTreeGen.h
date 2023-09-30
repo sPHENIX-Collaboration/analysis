@@ -7,20 +7,22 @@
 
 #include <string>
 #include <vector>
-#include <TTree.h>
+#include <TNtuple.h>
 
-class TTree;
+class TNtuple;
 class PHCompositeNode;
 class Fun4AllHistoManager;
 class TFile;
 class RawCluster;
 class TowerInfoContainer;
+class TH1F;
+class TH2F;
 
 class caloTreeGen : public SubsysReco
 {
  public:
 
-  caloTreeGen(const std::string &name = "caloTreeGen");
+  caloTreeGen(const std::string &name = "caloTreeGen", const std::string &name2 = "ntp");
 
   ~caloTreeGen() override;
 
@@ -63,32 +65,13 @@ class caloTreeGen : public SubsysReco
   
  private:
 
-  TTree *T;
-  
-  std::vector<float> m_emcTowPhi;
-  std::vector<float> m_emcTowEta;
-  std::vector<float> m_emcTowE;
-  std::vector<float> m_emcTiming;
-  std::vector<float> m_emciEta;
-  std::vector<float> m_emciPhi;
+  TNtuple *T;
 
-  std::vector<float> m_clusterE;
-  std::vector<float> m_clusterPhi;
-  std::vector<float> m_clusterEta;
-  std::vector<float> m_clusterPt;
-  std::vector<float> m_clusterChi;
-  std::vector<float> m_clusterNtow;
-  std::vector<float> m_clusterTowMax;
-  std::vector<float> m_clusterECore;
-  
-  std::vector<std::vector<int> > m_clusTowEta;
-  std::vector<std::vector<int> > m_clusTowPhi;
-  std::vector<std::vector<float> > m_clusTowE;
-  
-    
   TFile *out;
+  TFile *out2;
   //Fun4AllHistoManager *hm = nullptr;
-  std::string Outfile = "commissioning.root";
+  std::string Outfile = "test.root";
+  std::string Outfile2 = "ntp.root";
 
   unsigned int getCaloTowerPhiBin(const unsigned int key);
   unsigned int getCaloTowerEtaBin(const unsigned int key);
@@ -98,10 +81,33 @@ class caloTreeGen : public SubsysReco
   std::vector<int> returnClusterTowEta(RawCluster *cluster, TowerInfoContainer *towerContainer);
 
   int doClusters;
-  float totalCaloE;
   int doFineCluster;
   int iEvent;
 
-};
+  Float_t min_clusterECore;
+  Float_t min_clusterEta;
+  Float_t min_clusterPhi;
+  Float_t min_clusterPt;
+  Float_t min_clusterChi;
 
-#endif 
+  Float_t max_clusterECore;
+  Float_t max_clusterEta;
+  Float_t max_clusterPhi;
+  Float_t max_clusterPt;
+  Float_t max_clusterChi;
+  Float_t max_totalCaloE;
+  Float_t max_totalmbd;
+  UInt_t  max_NClusters;
+
+  TH1F* hClusterECore;
+  TH1F* hClusterPt;
+  TH1F* hClusterChi;
+  TH1F* hNClusters;
+  TH1F* hTotalMBD;
+  TH1F* hTotalCaloE;
+  TH2F* h2ClusterEtaPhi;
+  TH2F* h2ClusterEtaPhiWeighted;
+  TH2F* h2TowEtaPhiWeighted;
+
+};
+#endif
