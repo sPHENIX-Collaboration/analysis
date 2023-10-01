@@ -59,10 +59,6 @@ class caloTreeGen : public SubsysReco
 
   void Print(const std::string &what = "ALL") const override;
 
-  void setClusters(int clusters)  {doClusters = clusters;}
-
-  void setFineClusters(int fineCluster) {doFineCluster = fineCluster;}
-  
  private:
 
   TNtuple *T;
@@ -80,8 +76,6 @@ class caloTreeGen : public SubsysReco
   std::vector<int> returnClusterTowPhi(RawCluster *cluster, TowerInfoContainer *towerContainer);
   std::vector<int> returnClusterTowEta(RawCluster *cluster, TowerInfoContainer *towerContainer);
 
-  int doClusters;
-  int doFineCluster;
   int iEvent;
 
   Float_t min_clusterECore;
