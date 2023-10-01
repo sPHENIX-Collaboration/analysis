@@ -257,7 +257,8 @@ int caloTreeGen::process_event(PHCompositeNode *topNode)
     for(clusterIter2 = std::next(clusterIter); clusterIter2 != clusterEnd.second; clusterIter2++) {
       RawCluster *recoCluster2 = clusterIter2 -> second;
 
-      CLHEP::Hep3Vector E_vec_cluster2 = RawClusterUtility::GetECoreVec(*recoCluster2, vertex);
+      CLHEP::Hep3Vector vertex2(0,0,0);
+      CLHEP::Hep3Vector E_vec_cluster2 = RawClusterUtility::GetECoreVec(*recoCluster2, vertex2);
 
       float clusE2 = E_vec_cluster2.mag();
       float clus_eta2 = E_vec_cluster2.pseudoRapidity();
@@ -278,8 +279,8 @@ int caloTreeGen::process_event(PHCompositeNode *topNode)
       Float_t pi0_phi = pi0.Phi();
 
       Float_t cluster_data[] = {totalmbd,
-      clusE, clus_eta, clus_pt, clus_chi,
-      clusE2, clus_eta2, clus_pt2, clus_chi2,
+      clusE, clus_eta, clus_phi, clus_pt, clus_chi,
+      clusE2, clus_eta2, clus_phi2, clus_pt2, clus_chi2,
       pi0_mass, pi0_pt, pi0_eta, pi0_phi};
 
       T->Fill(cluster_data);
