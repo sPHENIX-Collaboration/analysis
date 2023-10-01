@@ -111,7 +111,7 @@ int caloTreeGen::Init(PHCompositeNode *topNode)
 
   out2 = new TFile(Outfile2.c_str(),"RECREATE");
 
-  T = new TNtuple("T","T","totalMBD:clus_E:clus_eta:clus_phi:clus_pt:clus_chi:clus_E2:clus_eta2:clus_phi2:clus_pt2:clus_chi2:pi0_mass:pi0_pt:pi0_eta:pi0_phi");
+  T = new TNtuple("T","T","totalCaloE:totalMBD:clus_E:clus_eta:clus_phi:clus_pt:clus_chi:clus_E2:clus_eta2:clus_phi2:clus_pt2:clus_chi2:pi0_mass:pi0_pt:pi0_eta:pi0_phi");
 
   //so that the histos actually get written out
   Fun4AllServer *se = Fun4AllServer::instance();
@@ -252,7 +252,7 @@ int caloTreeGen::process_event(PHCompositeNode *topNode)
     TLorentzVector photon1;
     photon1.SetPtEtaPhiE(clus_pt, clus_eta, clus_phi, clusE);
 
-    if(totalmbd >= 0.2*mbddownscale || clusE < 0.5) continue;
+    if(totalmbd >= 0.2*mbddownscale || clusE < 0.5 || clus_chi >= 20) continue;
 
     for(clusterIter2 = std::next(clusterIter); clusterIter2 != clusterEnd.second; clusterIter2++) {
       RawCluster *recoCluster2 = clusterIter2 -> second;
@@ -266,7 +266,7 @@ int caloTreeGen::process_event(PHCompositeNode *topNode)
       float clus_pt2 = E_vec_cluster2.perp();
       float clus_chi2 = recoCluster2->get_chi2();
 
-      if(clusE2 < 0.5) continue;
+      if(clusE2 < 0.5 || clus_chi2 >= 20) continue;
 
       TLorentzVector photon2;
       photon2.SetPtEtaPhiE(clus_pt2, clus_eta2, clus_phi2, clusE2);
@@ -278,7 +278,7 @@ int caloTreeGen::process_event(PHCompositeNode *topNode)
       Float_t pi0_eta = pi0.Eta();
       Float_t pi0_phi = pi0.Phi();
 
-      Float_t cluster_data[] = {totalmbd,
+      Float_t cluster_data[] = {totalCaloE, totalmbd,
       clusE, clus_eta, clus_phi, clus_pt, clus_chi,
       clusE2, clus_eta2, clus_phi2, clus_pt2, clus_chi2,
       pi0_mass, pi0_pt, pi0_eta, pi0_phi};
