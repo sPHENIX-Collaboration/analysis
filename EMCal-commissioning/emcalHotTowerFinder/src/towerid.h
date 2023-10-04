@@ -117,12 +117,15 @@ class towerid : public SubsysReco
   int hotIB[384] = {0};
   int hotsectors[64] = {0};
   int deadtowers[24576] = {0};
+
 	
   int coldtowers[24576] = {0};
   int coldIB[384] = {0};
   int coldsectors[64] = {0};
   int hot_regions = 0;
   int cold_regions = 0;  
+
+
 int goodevents = 0;
 };
 
