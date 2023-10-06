@@ -5,9 +5,12 @@
 
 #include <fun4all/SubsysReco.h>
 #include <jetbase/Jetv1.h>
+#include <fastjet/PseudoJet.hh>
 
 #include <string>
 #include <vector>
+
+using namespace fastjet;
 
 class PHCompositeNode;
 class TTree;
@@ -19,6 +22,8 @@ class EMJetVal : public SubsysReco
   EMJetVal(const std::string &recojetname = "AntiKt_Tower_r04",
 	   const std::string &truthjetname = "AntiKt_Truth_r04",
 	   const std::string &outputfilename = "myjetanalysis.root");
+
+  int retrieveEvent(vector<PseudoJet>& event);
 
   ~EMJetVal() override;
 
