@@ -39,11 +39,13 @@ caloTreeGen::caloTreeGen(const std::string &name, const std::string &name2):
   ,Outfile(name)
   ,Outfile2(name2)
   ,iEvent(0)
+  ,min_towE(0)
   ,min_clusterECore(0)
   ,min_clusterEta(0)
   ,min_clusterPhi(0)
   ,min_clusterPt(0)
   ,min_clusterChi(0)
+  ,max_towE(0)
   ,max_clusterECore(0)
   ,max_clusterEta(0)
   ,max_clusterPhi(0)
@@ -63,41 +65,9 @@ caloTreeGen::~caloTreeGen()
 //____________________________________________________________________________..
 int caloTreeGen::Init(PHCompositeNode *topNode)
 {
-
-  UInt_t  bins_e = 200;
-  Float_t low_e = 0;
-  Float_t high_e = 50;
-
-  UInt_t  bins_pt = 200;
-  Float_t low_pt = 0;
-  Float_t high_pt = 50;
-
-  UInt_t  bins_eta = 96;
-  Float_t low_eta = -1.152;
-  Float_t high_eta = 1.152;
-
-  UInt_t  bins_phi = 256;
-  Float_t low_phi = -M_PI;
-  Float_t high_phi = M_PI;
-
-  UInt_t  bins_chi = 400;
-  Float_t low_chi = 0;
-  Float_t high_chi = 100;
-
-  UInt_t  bins_n = 3000;
-  Float_t low_n = 0;
-  Float_t high_n = 3000;
-
-  UInt_t  bins_totalmbd = 3500;
-  Float_t low_totalmbd = 0;
-  Float_t high_totalmbd = 350000;
-
-  UInt_t  bins_totalcaloE = 1500;
-  Float_t low_totalcaloE = 0;
-  Float_t high_totalcaloE = 1500;
-
   out = new TFile(Outfile.c_str(),"RECREATE");
 
+  hTowE = new TH1F("hTowE", "Tower Energy; Energy [GeV]; Counts", bins_towE, low_e, high_e);
   hClusterECore = new TH1F("hClusterECore", "Cluster ECore; Energy [GeV]; Counts", bins_e, low_e, high_e);
   hClusterPt = new TH1F("hClusterPt", "Cluster; #p_T [GeV]; Counts", bins_pt, low_pt, high_pt);
   hClusterChi = new TH1F("hClusterChi", "Cluster; #chi^{2}; Counts", bins_chi, low_chi, high_chi);
@@ -108,10 +78,11 @@ int caloTreeGen::Init(PHCompositeNode *topNode)
   h2ClusterEtaPhi = new TH2F("h2ClusterEtaPhi", "Cluster; #eta; #phi", bins_eta, low_eta, high_eta, bins_phi, low_phi, high_phi);
   h2ClusterEtaPhiWeighted = new TH2F("h2ClusterEtaPhiWeighted", "Cluster ECore; #eta; #phi", bins_eta, low_eta, high_eta, bins_phi, low_phi, high_phi);
   h2TowEtaPhiWeighted = new TH2F("h2TowEtaPhiWeighted", "Tower Energy; #eta; #phi",  bins_eta, low_eta, high_eta, bins_phi, low_phi, high_phi);
+  h2TotalMBDCaloE = new TH2F("h2TotalMBDCaloE", "Total MBD Charge vs Total EMCAL Energy; Total EMCAL Energy [Arb]; Total MBD Charge [Arb]", 100, 0, 1, 100, 0, 1);
 
   out2 = new TFile(Outfile2.c_str(),"RECREATE");
 
-  T = new TNtuple("T","T","totalCaloE:totalMBD:clus_E:clus_eta:clus_phi:clus_pt:clus_chi:clus_E2:clus_eta2:clus_phi2:clus_pt2:clus_chi2:pi0_mass:pi0_pt:pi0_eta:pi0_phi");
+  T = new TNtuple("T","T","totalCaloE:totalMBD:clus_E:clus_eta:clus_phi:clus_chi:clus_E2:clus_eta2:clus_phi2:clus_chi2:pi0_mass:pi0_pt:pi0_eta:pi0_phi");
 
   //so that the histos actually get written out
   Fun4AllServer *se = Fun4AllServer::instance();
@@ -195,6 +166,10 @@ int caloTreeGen::process_event(PHCompositeNode *topNode)
     totalCaloE += energy;
     // double time = emcTowerContainer -> get_tower_at_channel(iter) -> get_time();
 
+    min_towE = std::min(min_towE, energy);
+    max_towE = std::max(max_towE, energy);
+
+    hTowE->Fill(energy);
 
     // phi is in range [0, 2pi] so we need map [pi, 2pi] to [-pi, 0]
     double phi = towergeom -> get_phicenter(iphi);
@@ -207,7 +182,7 @@ int caloTreeGen::process_event(PHCompositeNode *topNode)
   max_totalCaloE = std::max(max_totalCaloE, totalCaloE);
   hTotalCaloE->Fill(totalCaloE);
 
-  Float_t mbddownscale = 250000;
+  h2TotalMBDCaloE->Fill(totalCaloE/high_totalcaloE, totalmbd/high_totalmbd);
 
   max_NClusters = std::max(max_NClusters, clusterContainer->size());
   hNClusters->Fill(clusterContainer->size());
@@ -243,18 +218,23 @@ int caloTreeGen::process_event(PHCompositeNode *topNode)
     max_clusterPt = std::max(max_clusterPt, clus_pt);
     max_clusterChi = std::max(max_clusterChi, clus_chi);
 
-    hClusterECore->Fill(clusE);
-    h2ClusterEtaPhi->Fill(clus_eta, clus_phi);
-    h2ClusterEtaPhiWeighted->Fill(clus_eta, clus_phi, clusE);
-    hClusterPt->Fill(clus_pt);
-    hClusterChi->Fill(clus_chi);
+    if(clusE >= 1) {
+      hClusterECore->Fill(clusE);
+      h2ClusterEtaPhi->Fill(clus_eta, clus_phi);
+      h2ClusterEtaPhiWeighted->Fill(clus_eta, clus_phi, clusE);
+      hClusterPt->Fill(clus_pt);
+      hClusterChi->Fill(clus_chi);
+    }
+
+    if(clusE < 1 || clus_chi >= 10) continue;
 
     TLorentzVector photon1;
     photon1.SetPtEtaPhiE(clus_pt, clus_eta, clus_phi, clusE);
 
-    if(totalmbd >= 0.2*mbddownscale || clusE < 0.5 || clus_chi >= 20) continue;
-
     for(clusterIter2 = std::next(clusterIter); clusterIter2 != clusterEnd.second; clusterIter2++) {
+
+      if(clusterIter2 == clusterIter) std::cout << "Error: clusterIter2 == clusterIter" << std::endl;
+
       RawCluster *recoCluster2 = clusterIter2 -> second;
 
       CLHEP::Hep3Vector vertex2(0,0,0);
@@ -266,7 +246,7 @@ int caloTreeGen::process_event(PHCompositeNode *topNode)
       float clus_pt2 = E_vec_cluster2.perp();
       float clus_chi2 = recoCluster2->get_chi2();
 
-      if(clusE2 < 0.5 || clus_chi2 >= 20) continue;
+      if(clusE2 < 1 || clus_chi2 >= 10) continue;
 
       TLorentzVector photon2;
       photon2.SetPtEtaPhiE(clus_pt2, clus_eta2, clus_phi2, clusE2);
@@ -278,9 +258,10 @@ int caloTreeGen::process_event(PHCompositeNode *topNode)
       Float_t pi0_eta = pi0.Eta();
       Float_t pi0_phi = pi0.Phi();
 
+      // not storing cluster pT since we can derive pT = E/cosh(eta)
       Float_t cluster_data[] = {totalCaloE, totalmbd,
-      clusE, clus_eta, clus_phi, clus_pt, clus_chi,
-      clusE2, clus_eta2, clus_phi2, clus_pt2, clus_chi2,
+      clusE, clus_eta, clus_phi, clus_chi,
+      clusE2, clus_eta2, clus_phi2, clus_chi2,
       pi0_mass, pi0_pt, pi0_eta, pi0_phi};
 
       T->Fill(cluster_data);
@@ -309,6 +290,7 @@ int caloTreeGen::End(PHCompositeNode *topNode)
 
   std::cout << "max totalCaloE: " << max_totalCaloE << std::endl;
   std::cout << "max totalmbd: " << max_totalmbd << std::endl;
+  std::cout << "min tower energy: " << min_towE << ", max tower energy: " << max_towE << std::endl;
   std::cout << "min clusterECore: " << min_clusterECore << ", max clusterECore: " << max_clusterECore << std::endl;
   std::cout << "min clusterEta: " << min_clusterEta << ", max clusterEta: " << max_clusterEta << std::endl;
   std::cout << "min clusterPhi: " << min_clusterPhi << ", max clusterPhi: " << max_clusterPhi << std::endl;
@@ -322,6 +304,7 @@ int caloTreeGen::End(PHCompositeNode *topNode)
 
   hTotalMBD->Write();
   hTotalCaloE->Write();
+  hTowE->Write();
   hClusterECore->Write();
   hClusterPt->Write();
   hClusterChi->Write();
@@ -329,6 +312,7 @@ int caloTreeGen::End(PHCompositeNode *topNode)
   h2ClusterEtaPhi->Write();
   h2ClusterEtaPhiWeighted->Write();
   h2TowEtaPhiWeighted->Write();
+  h2TotalMBDCaloE->Write();
   out -> Close();
   delete out;
 

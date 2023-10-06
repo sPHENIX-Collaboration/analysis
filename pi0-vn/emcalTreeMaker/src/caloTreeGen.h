@@ -78,12 +78,14 @@ class caloTreeGen : public SubsysReco
 
   int iEvent;
 
+  Double_t min_towE;
   Float_t min_clusterECore;
   Float_t min_clusterEta;
   Float_t min_clusterPhi;
   Float_t min_clusterPt;
   Float_t min_clusterChi;
 
+  Double_t max_towE;
   Float_t max_clusterECore;
   Float_t max_clusterEta;
   Float_t max_clusterPhi;
@@ -93,6 +95,7 @@ class caloTreeGen : public SubsysReco
   Float_t max_totalmbd;
   UInt_t  max_NClusters;
 
+  TH1F* hTowE;
   TH1F* hClusterECore;
   TH1F* hClusterPt;
   TH1F* hClusterChi;
@@ -102,6 +105,39 @@ class caloTreeGen : public SubsysReco
   TH2F* h2ClusterEtaPhi;
   TH2F* h2ClusterEtaPhiWeighted;
   TH2F* h2TowEtaPhiWeighted;
+  TH2F* h2TotalMBDCaloE;
 
+  UInt_t bins_towE = 400;
+  UInt_t  bins_e = 200;
+  Float_t low_e = 0;
+  Float_t high_e = 50;
+
+  UInt_t  bins_pt = 200;
+  Float_t low_pt = 0;
+  Float_t high_pt = 50;
+
+  UInt_t  bins_eta = 96;
+  Float_t low_eta = -1.152;
+  Float_t high_eta = 1.152;
+
+  UInt_t  bins_phi = 256;
+  Float_t low_phi = -M_PI;
+  Float_t high_phi = M_PI;
+
+  UInt_t  bins_chi = 400;
+  Float_t low_chi = 0;
+  Float_t high_chi = 100;
+
+  UInt_t  bins_n = 3000;
+  Float_t low_n = 0;
+  Float_t high_n = 3000;
+
+  UInt_t  bins_totalmbd = 3500;
+  Float_t low_totalmbd = 0;
+  Float_t high_totalmbd = 350000;
+
+  UInt_t  bins_totalcaloE = 1500;
+  Float_t low_totalcaloE = 0;
+  Float_t high_totalcaloE = 1500;
 };
 #endif
