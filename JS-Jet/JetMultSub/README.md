@@ -38,8 +38,8 @@ The expression for the subtracted jet energy is:
           root -b -q 'Fun4All_JetSub.C("dst_truth_jet.list", "dst_calo_cluster.list", "dst_global.list")'
    
    * This will create an output file containing all the necessary information for the histogram making.
-   ## Options in JetValidation
-   There are a few options you can specify in the Fun4All macro for the JetValidation module:
+   ## Options in JetMultSub
+   There are a few options you can specify in the Fun4All macro for the JetMultSub module:
    * setPtRange(low, high): set the pt range of TRUTH jets you are interested in keeping in your tree
    * setEtaRange(low, high): set the eta range of TRUTH jets you are interested in keeping in your tree
    * add_reco_input(string): add a reco jet input to the tree. The string should be the name of the reco jet node in the DST. Default is "AntiKt_Tower_r04"
