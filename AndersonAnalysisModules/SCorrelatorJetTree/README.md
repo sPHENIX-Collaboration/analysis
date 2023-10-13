@@ -6,12 +6,10 @@ Derived from code by Antonio Silva (thanks!!)
 
 ## Usage
 
-After copying the source files (in `src/`), compile the module in the usual manner:
+After copying the source files (in `src/`), compile the module using the `sphx-build` script in `src`:
 
 ```
-./autogen.sh --prefix=$MYINSTALL
-make -j 4
-make install
+./sphx-build
 ```
 
 The class can then be added to and ran in a Fun4All macro, e.g.
@@ -23,6 +21,8 @@ root -b -q Fun4All_RunCorrelatorJetTree.C
 ---
 
 ### TODO Items:
-  - [Minor] Implement jet area calculation
+  - [Major] Implement jet area calculation
+  - [Major] Refactor for ease-of-maintenance, readability, and organization
+  - [Minor] Wrap source code in relevant namespace
   - [Minor] Clean up unnecessary includes/members
   - [Minor] Fix verbosity levels

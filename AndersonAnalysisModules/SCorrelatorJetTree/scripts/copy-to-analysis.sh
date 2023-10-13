@@ -40,6 +40,7 @@ files_to_copy[19]="src/SCorrelatorJetTree.evt.h"
 files_to_copy[20]="src/autogen.sh"
 files_to_copy[21]="src/configure.ac"
 files_to_copy[22]="src/Makefile.am"
+files_to_copy[23]="src/sphx-build"
 
 # do copying
 # TODO: automate detection/creation of sub-directories

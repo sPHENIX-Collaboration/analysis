@@ -18,6 +18,8 @@
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 
 // standard c include
+#include <map>
+#include <array>
 #include <string>
 #include <vector>
 #include <cassert>
@@ -34,15 +36,16 @@
 #include <phool/PHIODataNode.h>
 #include <phool/PHNodeIterator.h>
 #include <phool/PHCompositeNode.h>
-// g4 includes
+// main geant4 includes
 #include <g4main/PHG4Hit.h>
 #include <g4main/PHG4Particle.h>
 #include <g4main/PHG4TruthInfoContainer.h>
-#include <g4jets/Jet.h>
-#include <g4jets/Jetv1.h>
-#include <g4jets/JetMap.h>
-#include <g4jets/JetMapv1.h>
-#include <g4jets/FastJetAlgo.h>
+// jet includes
+#include <jetbase/Jet.h>
+#include <jetbase/JetMap.h>
+#include <jetbase/JetMapv1.h>
+#include <jetbase/FastJetAlgo.h>
+// track evaluator includes
 #include <g4eval/SvtxTrackEval.h>
 #include <g4eval/SvtxEvalStack.h>
 // vtx includes
@@ -53,6 +56,7 @@
 #include <trackbase_historic/SvtxVertex.h>
 #include <trackbase_historic/SvtxTrackMap.h>
 #include <trackbase_historic/SvtxVertexMap.h>
+#include <trackbase_historic/TrackAnalysisUtils.h>
 // calo includes
 #include <calobase/RawCluster.h>
 #include <calobase/RawClusterUtility.h>
@@ -77,60 +81,14 @@
 #include <phhepmc/PHHepMCGenEvent.h>
 #include <phhepmc/PHHepMCGenEventMap.h>
 // root includes
-#include "TH1.h"
-#include "TH2.h"
-#include "TFile.h"
-#include "TTree.h"
-#include "TMath.h"
-#include "TNtuple.h"
-#include "TDirectory.h"
-
-// TEST [05.12.2023] ----------------------------------------------------------
-#include "g4eval/SvtxEvaluator.h"
-
-#include "g4eval/SvtxClusterEval.h"
-#include "g4eval/SvtxHitEval.h"
-#include "g4eval/SvtxTruthEval.h"
-#include "g4eval/SvtxVertexEval.h"
-
-#include <trackbase/TrkrCluster.h>
-#include <trackbase/TrkrClusterv3.h>
-#include <trackbase/TrkrClusterv4.h>
-#include <trackbase/TrkrClusterv5.h>
-#include <trackbase/TrkrHit.h>
-#include <trackbase/TrkrHitSetContainer.h>
-#include <trackbase/TrkrDefs.h>
-#include <trackbase/ActsGeometry.h>
-#include <trackbase/ClusterErrorPara.h>
-
-#include <trackbase/TpcDefs.h>
-
-#include <trackbase/TrkrClusterContainer.h>
-#include <trackbase/TrkrHitSet.h>
-#include <trackbase/TrkrClusterHitAssoc.h>
-#include <trackbase/TrkrClusterIterationMapv1.h>
-
-#include <trackbase_historic/ActsTransformations.h>
-#include <trackbase_historic/TrackSeed.h>
-
-#include <g4main/PHG4VtxPoint.h>
-
-#include <g4detectors/PHG4TpcCylinderGeom.h>
-#include <g4detectors/PHG4TpcCylinderGeomContainer.h>
-
-#include <phool/PHTimer.h>
-#include <phool/recoConsts.h>
-
-#include <TVector3.h>
-
-#include <cmath>
-#include <iostream>
-#include <iomanip>
-#include <iterator>
-#include <map>
-#include <memory>                                       // for shared_ptr
-#include <set>                                          // for _Rb_tree_cons...
-// ----------------------------------------------------------------------------
+#include <TH1.h>
+#include <TH2.h>
+#include <TF1.h>
+#include <TFile.h>
+#include <TTree.h>
+#include <TMath.h>
+#include <TNtuple.h>
+#include <TDirectory.h>
 
 #pragma GCC diagnostic pop
 
@@ -157,18 +115,6 @@ class SvtxTrackEval;
 class SvtxTrack;
 class ParticleFlowElement;
 
-// global constants
-static const size_t NPart(2);
-static const size_t NComp(3);
-static const size_t NRange(2);
-static const size_t NMoment(2);
-static const size_t NInfoQA(4);
-static const size_t NJetType(2);
-static const size_t NCstType(5);
-static const size_t NObjType(9);
-static const size_t NDirectory(NObjType - 3);
-static const double MassPion(0.140);
-
 
 
 // SCorrelatorJetTree definition ----------------------------------------------
@@ -177,7 +123,7 @@ class SCorrelatorJetTree : public SubsysReco {
 
   public:
 
-    // enums
+    // public enums
     enum ALGO {
       ANTIKT    = 0,
       KT        = 1,
@@ -190,58 +136,43 @@ class SCorrelatorJetTree : public SubsysReco {
       ET_SCHEME  = 3,
       ET2_SCHEME = 4
     };
-    enum OBJECT {
-      TRACK  = 0,
-      ECLUST = 1,
-      HCLUST = 2,
-      FLOW   = 3,
-      PART   = 4,
-      TJET   = 5,
-      RJET   = 6,
-      TCST   = 7,
-      RCST   = 8
-    };
-    enum CST_TYPE {
-      PART_CST  = 0,
-      TRACK_CST = 1,
-      FLOW_CST  = 2,
-      ECAL_CST  = 3,
-      HCAL_CST  = 4
-    };
-    enum INFO {
-      PT  = 0,
-      ETA = 1,
-      PHI = 2,
-      ENE = 3
-    };
 
     // ctor/dtor
-    SCorrelatorJetTree(const string &name = "SCorrelatorJetTree", const string &outFile = "correlator_jet_tree.root", const bool isMC = false, const bool debug = false);
+    SCorrelatorJetTree(const string& name = "SCorrelatorJetTree", const string& outFile = "correlator_jet_tree.root", const bool isMC = false, const bool isEmbed = false, const bool debug = false);
     ~SCorrelatorJetTree() override;
 
     // F4A methods
-    int Init(PHCompositeNode *)          override;
-    int process_event(PHCompositeNode *) override;
-    int End(PHCompositeNode *)           override;
+    int Init(PHCompositeNode*)          override;
+    int process_event(PHCompositeNode*) override;
+    int End(PHCompositeNode*)           override;
 
     // setters (inline)
-    void SetAddTracks(const bool addTracks) {m_addTracks      = addTracks;}
-    void SetAddFlow(const bool addFlow)     {m_addFlow        = addFlow;}
-    void SetAddECal(const bool addECal)     {m_addECal        = addECal;}
-    void SetAddHCal(const bool addHCal)     {m_addHCal        = addHCal;}
-    void SetDoQualityPlots(const bool doQA) {m_doQualityPlots = doQA;}
-    void SetDoMatching(const bool doMatch)  {m_doMatching     = doMatch;}
-    void SetSaveDST(const bool doSave)      {m_saveDST        = doSave;}
-    void SetIsMC(const bool isMC)           {m_isMC           = isMC;}
-    void SetJetR(const double jetR)         {m_jetR           = jetR;}
-    void SetJetType(const uint32_t type)    {m_jetType        = type;}
-    void SetJetTreeName(const string name)  {m_jetTreeName    = name;}
+    void SetAddTracks(const bool addTracks)    {m_addTracks      = addTracks;}
+    void SetAddFlow(const bool addFlow)        {m_addFlow        = addFlow;}
+    void SetAddECal(const bool addECal)        {m_addECal        = addECal;}
+    void SetAddHCal(const bool addHCal)        {m_addHCal        = addHCal;}
+    void SetDoQualityPlots(const bool doQA)    {m_doQualityPlots = doQA;}
+    void SetRequireSiSeeds(const bool require) {m_requireSiSeeds = require;}
+    void SetSaveDST(const bool doSave)         {m_saveDST        = doSave;}
+    void SetIsMC(const bool isMC)              {m_isMC           = isMC;}
+    void SetIsEmbed(const bool isEmbed)        {m_isEmbed        = isEmbed;}
+    void SetJetR(const double jetR)            {m_jetR           = jetR;}
+    void SetJetType(const uint32_t type)       {m_jetType        = type;}
+    void SetJetTreeName(const string name)     {m_jetTreeName    = name;}
 
     // setters (*.io.h)
     void SetParPtRange(const pair<double, double> ptRange);
     void SetParEtaRange(const pair<double, double> etaRange);
     void SetTrackPtRange(const pair<double, double> ptRange);
     void SetTrackEtaRange(const pair<double, double> etaRange);
+    void SetTrackQualityRange(const pair<double, double> qualRange);
+    void SetTrackNMvtxRange(const pair<double, double> nMvtxRange);
+    void SetTrackNInttRange(const pair<double, double> nInttRange);
+    void SetTrackNTpcRange(const pair<double, double> nTpcRange);
+    void SetTrackDcaRangeXY(const pair<double, double> dcaRangeXY);
+    void SetTrackDcaRangeZ(const pair<double, double> dcaRangeZ);
+    void SetTrackDeltaPtRange(const pair<double, double> deltaPtRange);
+    void SetTrackDcaSigmaParameters(const bool doDcaSigmaCut, const pair<double, double> nSigma, const vector<double> paramDcaXY, const vector<double> paramDcaZ);
     void SetFlowPtRange(const pair<double, double> ptRange);
     void SetFlowEtaRange(const pair<double, double> etaRange);
     void SetECalPtRange(const pair<double, double> ptRange);
@@ -253,37 +184,54 @@ class SCorrelatorJetTree : public SubsysReco {
     void SetJetParameters(const double rJet, const uint32_t jetType, const ALGO jetAlgo, const RECOMB recombScheme);
 
     // system getters
-    bool   GetAddFlow()        {return m_addFlow;}
-    bool   GetAddTracks()      {return m_addTracks;}
-    bool   GetAddECal()        {return m_addECal;}
-    bool   GetAddHCal()        {return m_addHCal;}
     bool   GetDoQualityPlots() {return m_doQualityPlots;}
-    bool   GetDoMatching()     {return m_doMatching;}
+    bool   GetRequireSiSeeds() {return m_requireSiSeeds;}
+    bool   GetDoDcaSigmaCut()  {return m_doDcaSigmaCut;}
     bool   GetSaveDST()        {return m_saveDST;}
     bool   GetIsMC()           {return m_isMC;}
+    bool   GetIsEmbed()        {return m_isEmbed;}
+    bool   GetDoDebug()        {return m_doDebug;}
+    bool   GetAddTracks()      {return m_addTracks;}
+    bool   GetAddFlow()        {return m_addFlow;}
+    bool   GetAddECal()        {return m_addECal;}
+    bool   GetAddHCal()        {return m_addHCal;}
     string GetJetTreeName()    {return m_jetTreeName;}
 
     // acceptance getters
-    double GetParMinPt()    {return m_parPtRange[0];}
-    double GetParMaxPt()    {return m_parPtRange[1];}
-    double GetParMinEta()   {return m_parEtaRange[0];}
-    double GetParMaxEta()   {return m_parEtaRange[1];}
-    double GetTrackMinPt()  {return m_trkPtRange[0];}
-    double GetTrackMaxPt()  {return m_trkPtRange[1];}
-    double GetTrackMinEta() {return m_trkEtaRange[0];}
-    double GetTrackMaxEta() {return m_trkEtaRange[1];}
-    double GetFlowMinPt()   {return m_flowPtRange[0];}
-    double GetFlowMaxPt()   {return m_flowPtRange[1];}
-    double GetFlowMinEta()  {return m_flowEtaRange[0];}
-    double GetFlowMaxEta()  {return m_flowEtaRange[1];}
-    double GetECalMinPt()   {return m_ecalPtRange[0];}
-    double GetECalMaxPt()   {return m_ecalPtRange[1];}
-    double GetECalMinEta()  {return m_ecalEtaRange[0];}
-    double GetECalMaxEta()  {return m_ecalEtaRange[1];}
-    double GetHCalMinPt()   {return m_hcalPtRange[0];}
-    double GetHCalMaxPt()   {return m_hcalPtRange[1];}
-    double GetHCalMinEta()  {return m_hcalEtaRange[0];}
-    double GetHCalMaxEta()  {return m_hcalEtaRange[1];}
+    double GetParMinPt()        {return m_parPtRange[0];}
+    double GetParMaxPt()        {return m_parPtRange[1];}
+    double GetParMinEta()       {return m_parEtaRange[0];}
+    double GetParMaxEta()       {return m_parEtaRange[1];}
+    double GetTrackMinPt()      {return m_trkPtRange[0];}
+    double GetTrackMaxPt()      {return m_trkPtRange[1];}
+    double GetTrackMinEta()     {return m_trkEtaRange[0];}
+    double GetTrackMaxEta()     {return m_trkEtaRange[1];}
+    double GetTrackMinQual()    {return m_trkQualRange[0];}
+    double GetTrackMaxQual()    {return m_trkQualRange[1];}
+    double GetTrackMinNMvtx()   {return m_trkNMvtxRange[0];}
+    double GetTrackMaxNMvtx()   {return m_trkNMvtxRange[1];}
+    double GetTrackMinNIntt()   {return m_trkNInttRange[0];}
+    double GetTrackMaxNIntt()   {return m_trkNInttRange[1];}
+    double GetTrackMinNTpc()    {return m_trkNTpcRange[0];}
+    double GetTrackMaxNTpc()    {return m_trkNTpcRange[1];}
+    double GetTrackMinDcaXY()   {return m_trkDcaRangeXY[0];}
+    double GetTrackMaxDcaXY()   {return m_trkDcaRangeXY[1];}
+    double GetTrackMinDcaZ()    {return m_trkDcaRangeZ[0];}
+    double GetTrackMaxDcaZ()    {return m_trkDcaRangeZ[1];}
+    double GetTrackMinDeltaPt() {return m_trkDeltaPtRange[0];}
+    double GetTrackMaxDeltaPt() {return m_trkDeltaPtRange[1];}
+    double GetFlowMinPt()       {return m_flowPtRange[0];}
+    double GetFlowMaxPt()       {return m_flowPtRange[1];}
+    double GetFlowMinEta()      {return m_flowEtaRange[0];}
+    double GetFlowMaxEta()      {return m_flowEtaRange[1];}
+    double GetECalMinPt()       {return m_ecalPtRange[0];}
+    double GetECalMaxPt()       {return m_ecalPtRange[1];}
+    double GetECalMinEta()      {return m_ecalEtaRange[0];}
+    double GetECalMaxEta()      {return m_ecalEtaRange[1];}
+    double GetHCalMinPt()       {return m_hcalPtRange[0];}
+    double GetHCalMaxPt()       {return m_hcalPtRange[1];}
+    double GetHCalMinEta()      {return m_hcalEtaRange[0];}
+    double GetHCalMaxEta()      {return m_hcalEtaRange[1];}
 
     // jet getters
     double              GetJetR()         {return m_jetR;}
@@ -293,114 +241,207 @@ class SCorrelatorJetTree : public SubsysReco {
 
   private:
 
+    // constants
+    enum CONST {
+      NPart      = 2,
+      NComp      = 3,
+      NParam     = 3,
+      NRange     = 2,
+      NMoment    = 2,
+      NInfoQA    = 9,
+      NJetType   = 2,
+      NCstType   = 5,
+      NObjType   = 9,
+      NDirectory = 6,
+      NMvtxLayer = 3,
+      NInttLayer = 8,
+      NTpcLayer  = 48
+    };
+
+    // qa info & tracking subsystems
+    enum SUBSYS   {MVTX, INTT, TPC};
+    enum CST_TYPE {PART_CST, TRACK_CST, FLOW_CST, ECAL_CST, HCAL_CST};
+    enum OBJECT   {TRACK, ECLUST, HCLUST, FLOW, PART, TJET, RJET, TCST, RCST};
+    enum INFO     {PT, ETA, PHI, ENE, QUAL, DCAXY, DCAZ, DELTAPT, NTPC};
+
     // event methods (*.evt.h)
-    void              GetEventVariables(PHCompositeNode *topNode);
-    void              GetPartonInfo(PHCompositeNode *topNode);
-    long              GetNumTrks(PHCompositeNode *topNode);
-    long              GetNumChrgPars(PHCompositeNode *topNode);
-    double            GetSumECalEne(PHCompositeNode *topNode);
-    double            GetSumHCalEne(PHCompositeNode *topNode);
-    double            GetSumParEne(PHCompositeNode *topNode);
-    CLHEP::Hep3Vector GetRecoVtx(PHCompositeNode *topNode);
+    void              GetEventVariables(PHCompositeNode* topNode);
+    void              GetPartonInfo(PHCompositeNode* topNode);
+    long              GetNumTrks(PHCompositeNode* topNode);
+    long              GetNumChrgPars(PHCompositeNode* topNode);
+    double            GetSumECalEne(PHCompositeNode* topNode);
+    double            GetSumHCalEne(PHCompositeNode* topNode);
+    double            GetSumParEne(PHCompositeNode* topNode);
+    CLHEP::Hep3Vector GetRecoVtx(PHCompositeNode* topNode);
 
     // jet methods (*.jet.h)
-    void FindTrueJets(PHCompositeNode *topNode);
-    void FindRecoJets(PHCompositeNode *topNode);
-    void AddParticles(PHCompositeNode *topNode, vector<PseudoJet> &particles, map<int, pair<Jet::SRC, int>> &fjMap);
-    void AddTracks(PHCompositeNode *topNode, vector<PseudoJet> &particles, map<int, pair<Jet::SRC, int>> &fjMap);
-    void AddFlow(PHCompositeNode *topNode, vector<PseudoJet> &particles, map<int, pair<Jet::SRC, int>> &fjMap);
-    void AddECal(PHCompositeNode *topNode, vector<PseudoJet> &particles, map<int, pair<Jet::SRC, int>> &fjMap);
-    void AddHCal(PHCompositeNode *topNode, vector<PseudoJet> &particles, map<int, pair<Jet::SRC, int>> &fjMap);
+    void FindTrueJets(PHCompositeNode* topNode);
+    void FindRecoJets(PHCompositeNode* topNode);
+    void AddParticles(PHCompositeNode* topNode, vector<PseudoJet>& particles, map<int, pair<Jet::SRC, int>>& fjMap);
+    void AddTracks(PHCompositeNode* topNode, vector<PseudoJet>& particles, map<int, pair<Jet::SRC, int>>& fjMap);
+    void AddFlow(PHCompositeNode* topNode, vector<PseudoJet>& particles, map<int, pair<Jet::SRC, int>>& fjMap);
+    void AddECal(PHCompositeNode* topNode, vector<PseudoJet>& particles, map<int, pair<Jet::SRC, int>>& fjMap);
+    void AddHCal(PHCompositeNode* topNode, vector<PseudoJet>& particles, map<int, pair<Jet::SRC, int>>& fjMap);
 
     // constituent methods (*.cst.h)
-    int   GetMatchID(SvtxTrack *track);
-    bool  IsGoodParticle(HepMC::GenParticle *par, const bool ignoreCharge=false);
-    bool  IsGoodTrack(SvtxTrack *track);
-    bool  IsGoodFlow(ParticleFlowElement *flow);
-    bool  IsGoodECal(CLHEP::Hep3Vector &hepVecECal);
-    bool  IsGoodHCal(CLHEP::Hep3Vector &hepVecHCal);
-    bool  IsOutgoingParton(HepMC::GenParticle *par);
-    float GetParticleCharge(const int pid);
+    bool                 IsGoodParticle(HepMC::GenParticle* par, const bool ignoreCharge = false);
+    bool                 IsGoodTrack(SvtxTrack* track, PHCompositeNode* topNode);
+    bool                 IsGoodFlow(ParticleFlowElement* flow);
+    bool                 IsGoodECal(CLHEP::Hep3Vector& hepVecECal);
+    bool                 IsGoodHCal(CLHEP::Hep3Vector& hepVecHCal);
+    bool                 IsGoodTrackSeed(SvtxTrack* track);
+    bool                 IsOutgoingParton(HepMC::GenParticle* par);
+    pair<double, double> GetTrackDcaPair(SvtxTrack *track, PHCompositeNode* topNode);
+    double               GetTrackDeltaPt(SvtxTrack *track);
+    float                GetParticleCharge(const int pid);
+    int                  GetNumLayer(SvtxTrack* track, const uint8_t subsys = 0);
+    int                  GetMatchID(SvtxTrack* track);
 
     // system methods (*.sys.h)
     void                          InitVariables();
     void                          InitHists();
+    void                          InitTuples();
     void                          InitTrees();
-    void                          InitEvals(PHCompositeNode *topNode);
+    void                          InitFuncs();
+    void                          InitEvals(PHCompositeNode* topNode);
     void                          FillTrueTree();
     void                          FillRecoTree();
     void                          SaveOutput();
     void                          ResetVariables();
-    int                           CreateJetNode(PHCompositeNode *topNode);
-    SvtxTrackMap*                 GetTrackMap(PHCompositeNode *topNode);
-    GlobalVertex*                 GetGlobalVertex(PHCompositeNode *topNode);
-    HepMC::GenEvent*              GetMcEvent(PHCompositeNode *topNode);
-    RawClusterContainer*          GetClusterStore(PHCompositeNode *topNode, const TString sNodeName);
-    ParticleFlowElementContainer* GetFlowStore(PHCompositeNode *topNode);
+    void                          DetermineEvtsToGrab(PHCompositeNode* topNode);
+    int                           CreateJetNode(PHCompositeNode* topNode);
+    int                           GetEmbedID(PHCompositeNode* topNode, const int iEvtToGrab = 1);
+    SvtxTrackMap*                 GetTrackMap(PHCompositeNode* topNode);
+    GlobalVertex*                 GetGlobalVertex(PHCompositeNode* topNode);
+    HepMC::GenEvent*              GetMcEvent(PHCompositeNode* topNode, const int iEvtToGrab = 1);
+    RawClusterContainer*          GetClusterStore(PHCompositeNode* topNode, const TString sNodeName);
+    ParticleFlowElementContainer* GetFlowStore(PHCompositeNode* topNode);
 
     // F4A/utility members
-    Fun4AllHistoManager *m_histMan;
-    SvtxEvalStack       *m_evalStack;
-    SvtxTrackEval       *m_trackEval;
+    Fun4AllHistoManager* m_histMan   = NULL;
+    SvtxEvalStack*       m_evalStack = NULL;
+    SvtxTrackEval*       m_trackEval = NULL;
 
     // io members
-    TFile    *m_outFile;
-    TTree    *m_trueTree;
-    TTree    *m_recoTree;
-    TTree    *m_matchTree;
-    string    m_outFileName;
-    string    m_jetTreeName;
-    JetMapv1 *m_recoJetMap;
-    JetMapv1 *m_trueJetMap;
+    TFile*    m_outFile     = NULL;
+    TTree*    m_recoTree    = NULL;
+    TTree*    m_trueTree    = NULL;
+    string    m_outFileName = "";
+    string    m_jetTreeName = "";
+    JetMapv1* m_recoJetMap  = NULL;
+    JetMapv1* m_trueJetMap  = NULL;
+
+    // tracking members
+    bool isMvtxLayerHit[CONST::NMvtxLayer] = {false};
+    bool isInttLayerHit[CONST::NInttLayer] = {false};
+    bool isTpcLayerHit[CONST::NTpcLayer]   = {false};
 
     // QA members
-    TH1D *m_hJetArea[NJetType];
-    TH1D *m_hJetNumCst[NJetType];
-    TH1D *m_hNumObject[NObjType];
-    TH1D *m_hSumCstEne[NCstType];
-    TH1D *m_hObjectQA[NObjType][NInfoQA];
-    TH1D *m_hNumCstAccept[NCstType][NMoment];
+    // TODO factorize out QA-related operations
+    // TODO replace all QA histograms with tuples
+    TH1D*    m_hJetArea[CONST::NJetType];
+    TH1D*    m_hJetNumCst[CONST::NJetType];
+    TH1D*    m_hNumObject[CONST::NObjType];
+    TH1D*    m_hSumCstEne[CONST::NCstType];
+    TH1D*    m_hObjectQA[CONST::NObjType][CONST::NInfoQA];
+    TH1D*    m_hNumCstAccept[CONST::NCstType][CONST::NMoment];
+    TNtuple* m_ntTrkQA = NULL;
 
     // system members
-    bool m_doQualityPlots;
-    bool m_saveDST;
-    bool m_isMC;
-    bool m_doDebug;
-    bool m_doMatching;
-    bool m_addTracks;
-    bool m_addFlow;
-    bool m_addECal;
-    bool m_addHCal;
+    bool          m_doQualityPlots = true;
+    bool          m_requireSiSeeds = true;
+    bool          m_doDcaSigmaCut  = true;
+    bool          m_saveDST        = false;
+    bool          m_isMC           = true;
+    bool          m_isEmbed        = false;
+    bool          m_doDebug        = false;
+    bool          m_addTracks      = true;
+    bool          m_addFlow        = false;
+    bool          m_addECal        = false;
+    bool          m_addHCal        = false;
+    vector<int>   m_vecEvtsToGrab;
+    map<int, int> m_mapCstToEmbedID;
 
-    // acceptance parameters
-    double m_parPtRange[NRange];
-    double m_parEtaRange[NRange];
-    double m_trkPtRange[NRange];
-    double m_trkEtaRange[NRange];
-    double m_flowPtRange[NRange];
-    double m_flowEtaRange[NRange];
-    double m_ecalPtRange[NRange];
-    double m_ecalEtaRange[NRange];
-    double m_hcalPtRange[NRange];
-    double m_hcalEtaRange[NRange];
+    // particle acceptance parameters
+    // TODO convert most acceptances to pairs of structs
+    double m_parPtRange[CONST::NRange]  = {0.1,  9999.};
+    double m_parEtaRange[CONST::NRange] = {-1.1, 1.1};
+
+    // track acceptance parameters
+    double m_trkPtRange[CONST::NRange]      = {0.1,  100.};
+    double m_trkEtaRange[CONST::NRange]     = {-1.1, 1.1};
+    double m_trkQualRange[CONST::NRange]    = {-1.,  10.};
+    double m_trkNMvtxRange[CONST::NRange]   = {2.,   100.};
+    double m_trkNInttRange[CONST::NRange]   = {1.,   100.};
+    double m_trkNTpcRange[CONST::NRange]    = {25.,  100.};
+    double m_trkDcaRangeXY[CONST::NRange]   = {-5.,  5.};
+    double m_trkDcaRangeZ[CONST::NRange]    = {-5.,  5.};
+    double m_trkDeltaPtRange[CONST::NRange] = {0., 0.5};
+
+    // particle flow acceptance parameters
+    double m_flowPtRange[CONST::NRange]  = {0.,   9999.};
+    double m_flowEtaRange[CONST::NRange] = {-1.1, 1.1};
+
+    // calorimeter acceptance parameters
+    double m_ecalPtRange[CONST::NRange]  = {0.,   9999.};
+    double m_ecalEtaRange[CONST::NRange] = {-1.1, 1.1};
+    double m_hcalPtRange[CONST::NRange]  = {0.,   9999.};
+    double m_hcalEtaRange[CONST::NRange] = {-1.1, 1.1};
+
+    // for pt-dependent dca cuts
+    TF1*                         m_fSigDcaXY   = NULL;
+    TF1*                         m_fSigDcaZ    = NULL;
+    double                       m_nSigCutXY   = 1.;
+    double                       m_nSigCutZ    = 1.;
+    array<double, CONST::NParam> m_parSigDcaXY = {1., 1., 1.};
+    array<double, CONST::NParam> m_parSigDcaZ  = {1., 1., 1.};
 
     // jet parameters
-    double               m_jetR;
-    uint32_t             m_jetType;
-    JetAlgorithm         m_jetAlgo;
-    JetDefinition       *m_trueJetDef;
-    JetDefinition       *m_recoJetDef;
-    ClusterSequence     *m_trueClust;
-    ClusterSequence     *m_recoClust;
-    RecombinationScheme  m_recombScheme;
+    double               m_jetR         = 0.4;
+    uint32_t             m_jetType      = 0;
+    JetAlgorithm         m_jetAlgo      = antikt_algorithm;
+    JetDefinition*       m_trueJetDef   = NULL;
+    JetDefinition*       m_recoJetDef   = NULL;
+    ClusterSequence*     m_trueClust    = NULL;
+    ClusterSequence*     m_recoClust    = NULL;
+    RecombinationScheme  m_recombScheme = pt_scheme;
 
     // event, jet members
-    long long         m_partonID[NPart];
-    CLHEP::Hep3Vector m_partonMom[NPart];
-    CLHEP::Hep3Vector m_recoVtx;
+    long long         m_partonID[CONST::NPart];
+    CLHEP::Hep3Vector m_partonMom[CONST::NPart];
     CLHEP::Hep3Vector m_trueVtx;
-    vector<PseudoJet> m_recoJets;
+    CLHEP::Hep3Vector m_recoVtx;
     vector<PseudoJet> m_trueJets;
+    vector<PseudoJet> m_recoJets;
+
+    // output truth event variables
+    unsigned long          m_trueNumJets;
+    long long              m_truePartonID[CONST::NPart];
+    double                 m_truePartonMomX[CONST::NPart];
+    double                 m_truePartonMomY[CONST::NPart];
+    double                 m_truePartonMomZ[CONST::NPart];
+    double                 m_trueVtxX;
+    double                 m_trueVtxY;
+    double                 m_trueVtxZ;
+    double                 m_trueSumPar;
+    long                   m_trueNumChrgPars;
+    // output truth jet variables
+    vector<unsigned long>  m_trueJetNCst;
+    vector<unsigned int>   m_trueJetID;
+    vector<double>         m_trueJetE;
+    vector<double>         m_trueJetPt;
+    vector<double>         m_trueJetEta;
+    vector<double>         m_trueJetPhi;
+    vector<double>         m_trueJetArea;
+    // output truth constituent variables
+    vector<vector<int>>    m_trueCstID;
+    vector<vector<int>>    m_trueCstEmbedID;
+    vector<vector<double>> m_trueCstZ;
+    vector<vector<double>> m_trueCstDr;
+    vector<vector<double>> m_trueCstE;
+    vector<vector<double>> m_trueCstJt;
+    vector<vector<double>> m_trueCstEta;
+    vector<vector<double>> m_trueCstPhi;
 
     // output reco event variables
     unsigned long          m_recoNumJets;
@@ -426,34 +467,6 @@ class SCorrelatorJetTree : public SubsysReco {
     vector<vector<double>> m_recoCstJt;
     vector<vector<double>> m_recoCstEta;
     vector<vector<double>> m_recoCstPhi;
-
-    // output truth event variables
-    unsigned long         m_trueNumJets;
-    long long             m_truePartonID[NPart];
-    double                m_truePartonMomX[NPart];
-    double                m_truePartonMomY[NPart];
-    double                m_truePartonMomZ[NPart];
-    double                m_trueVtxX;
-    double                m_trueVtxY;
-    double                m_trueVtxZ;
-    double                m_trueSumPar;
-    long                  m_trueNumChrgPars;
-    // output truth jet variables
-    vector<unsigned long> m_trueJetNCst;
-    vector<unsigned int>  m_trueJetID;
-    vector<double>        m_trueJetE;
-    vector<double>        m_trueJetPt;
-    vector<double>        m_trueJetEta;
-    vector<double>        m_trueJetPhi;
-    vector<double>        m_trueJetArea;
-    // output truth constituent variables
-    vector<vector<int>>    m_trueCstID;
-    vector<vector<double>> m_trueCstZ;
-    vector<vector<double>> m_trueCstDr;
-    vector<vector<double>> m_trueCstE;
-    vector<vector<double>> m_trueCstJt;
-    vector<vector<double>> m_trueCstEta;
-    vector<vector<double>> m_trueCstPhi;
 
 };
 

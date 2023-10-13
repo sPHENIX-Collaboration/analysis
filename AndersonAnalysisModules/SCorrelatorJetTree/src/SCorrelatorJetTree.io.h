@@ -64,6 +64,111 @@ void SCorrelatorJetTree::SetTrackEtaRange(const pair<double, double> etaRange) {
 
 
 
+void SCorrelatorJetTree::SetTrackQualityRange(const pair<double, double> qualRange) {
+
+  m_trkQualRange[0] = qualRange.first;
+  m_trkQualRange[1] = qualRange.second;
+  return;
+
+}  // end 'SetTrackQualityRange(pair<double, double>)'
+
+
+
+void SCorrelatorJetTree::SetTrackNMvtxRange(const pair<double, double> nMvtxRange) {
+
+  m_trkNMvtxRange[0] = nMvtxRange.first;
+  m_trkNMvtxRange[1] = nMvtxRange.second;
+  return;
+
+}  // end 'SetTrackNMvtxRange(pair<double, double>)'
+
+
+
+void SCorrelatorJetTree::SetTrackNInttRange(const pair<double, double> nInttRange) {
+
+  m_trkNInttRange[0] = nInttRange.first;
+  m_trkNInttRange[1] = nInttRange.second;
+  return;
+
+}  // end 'SetTrackNInttRange(pair<double, double>)'
+
+
+
+void SCorrelatorJetTree::SetTrackNTpcRange(const pair<double, double> nTpcRange) {
+
+  m_trkNTpcRange[0] = nTpcRange.first;
+  m_trkNTpcRange[1] = nTpcRange.second;
+  return;
+
+}  // end SetTrackNTpcRange(pair<double, double>)'
+
+
+
+void SCorrelatorJetTree::SetTrackDcaRangeXY(const pair<double, double> dcaRangeXY) {
+
+  m_trkDcaRangeXY[0] = dcaRangeXY.first;
+  m_trkDcaRangeXY[1] = dcaRangeXY.second;
+  return;
+
+}  // end 'SetTrackDcaRangeXY(pair<double, double>)'
+
+
+
+void SCorrelatorJetTree::SetTrackDcaRangeZ(const pair<double, double> dcaRangeZ) {
+
+  m_trkDcaRangeZ[0] = dcaRangeZ.first;
+  m_trkDcaRangeZ[1] = dcaRangeZ.second;
+  return;
+
+}  // end 'SetTrackDcaRangeZ(pair<double, double>)'
+
+
+
+void SCorrelatorJetTree::SetTrackDeltaPtRange(const pair<double, double> deltaPtRange) {
+
+  m_trkDeltaPtRange[0] = deltaPtRange.first;
+  m_trkDeltaPtRange[1] = deltaPtRange.second;
+  return;
+
+}  // end 'SetTrackDeltaPtRange(pair<double, double>)'
+
+
+
+void SCorrelatorJetTree::SetTrackDcaSigmaParameters(const bool doDcaSigmaCut, const pair<double, double> nSigma, const vector<double> paramDcaXY, const vector<double> paramDcaZ) {
+
+  m_doDcaSigmaCut = doDcaSigmaCut;
+  m_nSigCutXY     = nSigma.first;
+  m_nSigCutZ      = nSigma.second;
+  for (uint8_t iParam = 0; iParam < CONST::NParam; iParam++) {
+
+    // try to set dca xy values
+    try {
+      m_parSigDcaXY[iParam] = paramDcaXY.at(iParam);
+    } catch (std::out_of_range &out) {
+      cerr << "SCorrelatorJetTree::SetTrackDcaSigmaParameters: WARNING!\n"
+           << "  Tried to pass a vector of wrong size for sigma dca xy fit parameters!\n"
+           << "  Size of vector was " << paramDcaXY.size() << " but should've been " << CONST::NParam << "..."
+           << endl;
+      assert(paramDcaXY.size() == CONST::NParam);
+    }
+
+    // try to set dca z values
+    try {
+      m_parSigDcaZ[iParam] = paramDcaZ.at(iParam);
+    } catch (std::out_of_range &out) {
+      cerr << "SCorrelatorJetTree::SetTrackDcaSigmaParameters: WARNING!\n"
+           << "  Tried to pass a vector of wrong size for sigma dca z fit parameters!\n"
+           << "  Size of vector was " << paramDcaZ.size() << " but should've been " << CONST::NParam << "..."
+           << endl;
+      assert(paramDcaZ.size() == CONST::NParam);
+    }
+  }  // end parameter loop
+  return;
+
+}  // end 'SetTrackDcaSigmaParameters(bool, pair<double, double>, vector<double>, vector<double>)'
+
+
+
 void SCorrelatorJetTree::SetFlowPtRange(const pair<double, double> ptRange) {
 
   m_flowPtRange[0] = ptRange.first;

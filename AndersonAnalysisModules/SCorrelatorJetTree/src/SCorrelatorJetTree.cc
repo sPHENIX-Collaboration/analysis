@@ -32,18 +32,19 @@ using namespace findNode;
 
 // ctor/dtor ------------------------------------------------------------------
 
-SCorrelatorJetTree::SCorrelatorJetTree(const string &name, const string &outFile, const bool isMC, const bool debug) : SubsysReco(name) {
+SCorrelatorJetTree::SCorrelatorJetTree(const string& name, const string& outFile, const bool isMC, const bool isEmbed, const bool debug) : SubsysReco(name) {
 
   // print debug statement
   m_isMC    = isMC;
+  m_isEmbed = isEmbed;
   m_doDebug = debug;
   if (m_doDebug) {
-    cout << "SCorrelatorJetTree::SCorrelatorJetTree(string, string, bool, bool) Calling ctor" << endl;
+    cout << "SCorrelatorJetTree::SCorrelatorJetTree(string, string, bool, bool, bool) Calling ctor" << endl;
   }
   m_outFileName = outFile;
   InitVariables();
 
-}  // end ctor(string, string, bool, bool)
+}  // end ctor(string&, string&, bool, bool, bool)
 
 
 
@@ -53,17 +54,33 @@ SCorrelatorJetTree::~SCorrelatorJetTree() {
   if (m_doDebug) {
     cout << "SCorrelatorJetTree::~SCorrelatorJetTree() Calling dtor" << endl;
   }
-  delete m_histMan;
-  delete m_evalStack;
-  delete m_trackEval;
-  delete m_outFile;
-  delete m_recoTree;
-  delete m_trueTree;
-  delete m_matchTree;
-  delete m_trueJetDef;
-  delete m_recoJetDef;
-  delete m_trueClust;
-  delete m_recoClust;
+
+  // clean up dangling pointers
+  if (m_histMan) {
+    delete m_histMan;
+    m_histMan = NULL;
+  }
+  if (m_evalStack) {
+    delete m_evalStack;
+    m_evalStack = NULL;
+    m_trackEval = NULL;
+  }
+  if (m_trueJetDef) {
+    delete m_trueJetDef;
+    m_trueJetDef = NULL;
+  }
+  if (m_recoJetDef) {
+    delete m_recoJetDef;
+    m_recoJetDef = NULL;
+  }
+  if (m_trueClust) {
+    delete m_trueClust;
+    m_trueClust = NULL;
+  }
+  if (m_recoClust) {
+    delete m_recoClust;
+    m_recoClust = NULL;
+  }
 
 }  // end dtor
 
@@ -71,7 +88,7 @@ SCorrelatorJetTree::~SCorrelatorJetTree() {
 
 // F4A methods ----------------------------------------------------------------
 
-int SCorrelatorJetTree::Init(PHCompositeNode *topNode) {
+int SCorrelatorJetTree::Init(PHCompositeNode* topNode) {
 
   // print debug statement
   if (m_doDebug || (Verbosity() > 1)) {
@@ -89,29 +106,34 @@ int SCorrelatorJetTree::Init(PHCompositeNode *topNode) {
     CreateJetNode(topNode);
   }
 
-  // initialize QA histograms, output trees, and evaluators (if needed)
+  // initialize QA histograms/tuples, output trees, and functions
   InitHists();
+  InitTuples();
   InitTrees();
+  InitFuncs();
   return Fun4AllReturnCodes::EVENT_OK;
 
 }  // end 'Init(PHcompositeNode*)'
 
 
 
-int SCorrelatorJetTree::process_event(PHCompositeNode *topNode) {
+int SCorrelatorJetTree::process_event(PHCompositeNode* topNode) {
 
   // print debug statement
   if (m_doDebug || (Verbosity() > 1)) {
     cout << "SCorrelatorJetTree::process_event(PHCompositeNode*) Processing Event..." << endl;
   }
 
-  // initialize evaluator for event
+  // reset event-wise variables & members
+  ResetVariables();
+
+  // initialize evaluator & determine subevts to grab for event
   if (m_isMC) {
     InitEvals(topNode);
+    DetermineEvtsToGrab(topNode);
   }
 
-  // reset for event and get event-wise variables
-  ResetVariables();
+  // get event-wise variables
   GetEventVariables(topNode);
   if (m_isMC) {
     GetPartonInfo(topNode);
@@ -134,7 +156,7 @@ int SCorrelatorJetTree::process_event(PHCompositeNode *topNode) {
 
 
 
-int SCorrelatorJetTree::End(PHCompositeNode *topNode) {
+int SCorrelatorJetTree::End(PHCompositeNode* topNode) {
 
   // print debug statements
   if (m_doDebug || (Verbosity() > 1)) {
