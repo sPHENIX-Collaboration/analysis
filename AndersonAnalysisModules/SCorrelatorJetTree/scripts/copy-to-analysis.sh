@@ -41,6 +41,10 @@ files_to_copy[20]="src/autogen.sh"
 files_to_copy[21]="src/configure.ac"
 files_to_copy[22]="src/Makefile.am"
 files_to_copy[23]="src/sphx-build"
+files_to_copy[24]="scripts/HAddFilesFromList.rb"
+files_to_copy[25]="scripts/HAddFilesFromPattern.rb"
+files_to_copy[26]="scripts/MergeFilesFromList.rb"
+files_to_copy[27]="scripts/SplitFileLists.rb"
 
 # do copying
 # TODO: automate detection/creation of sub-directories
