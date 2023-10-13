@@ -33,6 +33,7 @@ files_to_copy[12]="src/Makefile.am"
 files_to_copy[13]="macros/MakePrettyPlot.C"
 files_to_copy[14]="macros/MakeRatioComparisonPlot.C"
 files_to_copy[15]="macros/DoPercentDifference.C"
+files_to_copy[16]="src/sphx-build"
 
 # do copying
 # TODO: automate detection/creation of sub-directories

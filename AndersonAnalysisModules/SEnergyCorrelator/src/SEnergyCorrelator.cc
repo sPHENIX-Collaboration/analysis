@@ -3,9 +3,9 @@
 // Derek Anderson
 // 01.20.2023
 //
-// A module to implement Peter Komiske's
-// EEC library in the sPHENIX software
-// stack.
+// A module to implement Peter Komiske's EEC library
+// in the sPHENIX software stack for the Cold QCD
+// Energy-Energy Correlator analysis.
 // ----------------------------------------------------------------------------
 
 #define SENERGYCORRELATOR_CC
@@ -21,172 +21,178 @@ using namespace fastjet;
 
 
 
-// ctor/dtor ------------------------------------------------------------------
+namespace SColdQcdCorrelatorAnalysis {
 
-SEnergyCorrelator::SEnergyCorrelator(const string &name, const bool isComplex, const bool doDebug, const bool inBatch) : SubsysReco(name) {
+  // ctor/dtor ----------------------------------------------------------------
 
-  // initialize internal variables
-  InitializeMembers();
+  SEnergyCorrelator::SEnergyCorrelator(const string &name, const bool isComplex, const bool doDebug, const bool inBatch) : SubsysReco(name) {
 
-  // set standalone/complex mode
-  if (isComplex) {
-    m_inComplexMode    = true;
-    m_inStandaloneMode = false; 
-  } else {
-    m_inComplexMode    = false;
-    m_inStandaloneMode = true;
-  }
+    // initialize internal variables
+    InitializeMembers();
 
-  // set verbosity in complex mode
-  if (m_inComplexMode) {
-    m_verbosity = Verbosity();
-  }
+    // set standalone/complex mode
+    if (isComplex) {
+      m_inComplexMode    = true;
+      m_inStandaloneMode = false; 
+    } else {
+      m_inComplexMode    = false;
+      m_inStandaloneMode = true;
+    }
 
-  // set debug/batch mode & print debug statement
-  m_inDebugMode = doDebug;
-  m_inBatchMode = inBatch;
-  if (m_inDebugMode) PrintDebug(1);
+    // set verbosity in complex mode
+    if (m_inComplexMode) {
+      m_verbosity = Verbosity();
+    }
 
-  // set module name & announce start of calculation
-  m_moduleName = name;
-  if (m_inStandaloneMode) PrintMessage(0);
+    // set debug/batch mode & print debug statement
+    m_inDebugMode = doDebug;
+    m_inBatchMode = inBatch;
+    if (m_inDebugMode) PrintDebug(1);
 
-}  // end ctor(string, bool, bool)
+    // set module name & announce start of calculation
+    m_moduleName = name;
+    if (m_inStandaloneMode) PrintMessage(0);
 
-
-
-SEnergyCorrelator::~SEnergyCorrelator() {
-
-  // print debug statement
-  if (m_inDebugMode) PrintDebug(14);
-
-  // delete pointers to files
-  if (!m_inTree) {
-    delete m_inFile;
-    delete m_outFile;
-  }
-
-  // delete pointers to correlators/histograms
-  for (size_t iPtBin = 0; iPtBin < m_nBinsJetPt; iPtBin++) {
-    delete m_eecLongSide.at(iPtBin);
-    delete m_outHistDrAxis.at(iPtBin);
-    delete m_outHistLnDrAxis.at(iPtBin);
-  }
-  m_outHistLnDrAxis.clear();
-  m_outHistDrAxis.clear();
-  m_eecLongSide.clear();
-  m_ptJetBins.clear();
-
-}  // end dtor
+  }  // end ctor(string, bool, bool)
 
 
 
-// F4A methods ----------------------------------------------------------------
+  SEnergyCorrelator::~SEnergyCorrelator() {
 
-int SEnergyCorrelator::Init(PHCompositeNode*) {
+    // print debug statement
+    if (m_inDebugMode) PrintDebug(14);
 
-  /* TODO init will go here */
-  return Fun4AllReturnCodes::EVENT_OK;
+    // delete pointers to files
+    if (!m_inChain) {
+      delete m_outFile;
+    }
+    m_inFileNames.clear();
 
-}  // end 'Init(PHCompositeNode*)'
+    // delete pointers to correlators/histograms
+    for (size_t iPtBin = 0; iPtBin < m_nBinsJetPt; iPtBin++) {
+      delete m_eecLongSide.at(iPtBin);
+      delete m_outHistVarDrAxis.at(iPtBin);
+      delete m_outHistErrDrAxis.at(iPtBin);
+      delete m_outHistVarLnDrAxis.at(iPtBin);
+      delete m_outHistErrLnDrAxis.at(iPtBin);
+    }
+    m_ptJetBins.clear();
+    m_eecLongSide.clear();
+    m_outHistVarDrAxis.clear();
+    m_outHistErrDrAxis.clear();
+    m_outHistVarLnDrAxis.clear();
+    m_outHistErrLnDrAxis.clear();
 
-
-
-
-int SEnergyCorrelator::process_event(PHCompositeNode*) {
-
-  /* TODO event processing will go here */
-  return Fun4AllReturnCodes::EVENT_OK;
-
-}  // end 'process_event(PHCompositeNode*)'
-
-
-
-int SEnergyCorrelator::End(PHCompositeNode*) {
-
-  /* TODO end will go here */
-  return Fun4AllReturnCodes::EVENT_OK;
-
-}  // end 'End(PHCompositeNode*)'
-
-
-
-// standalone-only methods ----------------------------------------------------
-
-void SEnergyCorrelator::Init() {
-
-  // print debug statement
-  if (m_inDebugMode) PrintDebug(10);
-
-  // make sure standalone mode is on & open files
-  if (m_inComplexMode) {
-    PrintError(5);
-    assert(m_inStandaloneMode);
-  } else {
-    OpenInputFile();
-  }
-  OpenOutputFile();
-
-  // announce files
-  PrintMessage(1);
-
-  // initialize input, output, & correlators
-  InitializeTree();
-  InitializeHists();
-  InitializeCorrs();
-  return;
-
-}  // end 'StandaloneInit()'
+  }  // end dtor
 
 
 
-void SEnergyCorrelator::Analyze() {
+  // F4A methods --------------------------------------------------------------
 
-  // print debug statement
-  if (m_inDebugMode) PrintDebug(12);
+  int SEnergyCorrelator::Init(PHCompositeNode*) {
 
-  // make sure standalone mode is on
-  if (m_inComplexMode) {
-    PrintError(8);
-    assert(m_inStandaloneMode);
-  }
+    /* TODO init will go here */
+    return Fun4AllReturnCodes::EVENT_OK;
 
-  // loop over events and calculate correlators
-  DoCorrelatorCalculation();
-
-  // translate correlators into root hists
-  ExtractHistsFromCorr();
-  PrintMessage(9);
-  return;
-
-}  // end 'StandaloneAnalyze()'
+  }  // end 'Init(PHCompositeNode*)'
 
 
 
-void SEnergyCorrelator::End() {
 
-  // print debug statement
-  if (m_inDebugMode) PrintDebug(13);
+  int SEnergyCorrelator::process_event(PHCompositeNode*) {
 
-  // make sure standalone mode is on & save output
-  if (m_inComplexMode) {
-    PrintError(9);
-    assert(m_inStandaloneMode);
-  } else {
-    SaveOutput();
-  }
+    /* TODO event processing will go here */
+    return Fun4AllReturnCodes::EVENT_OK;
 
-  // close files and announce end
-  if (m_inComplexMode) {
-    PrintError(14);
-    assert(m_inStandaloneMode);
-  } else {
-    CloseInputFile();
-  }
-  CloseOutputFile();
-  PrintMessage(11);
-  return;
+  }  // end 'process_event(PHCompositeNode*)'
 
-}  // end 'StandaloneEnd()'
+
+
+  int SEnergyCorrelator::End(PHCompositeNode*) {
+
+    /* TODO end will go here */
+    return Fun4AllReturnCodes::EVENT_OK;
+
+  }  // end 'End(PHCompositeNode*)'
+
+
+
+  // standalone-only methods --------------------------------------------------
+
+  void SEnergyCorrelator::Init() {
+
+    // print debug statement
+    if (m_inDebugMode) PrintDebug(10);
+
+    // make sure standalone mode is on & open files
+    if (m_inComplexMode) {
+      PrintError(5);
+      assert(m_inStandaloneMode);
+    } else {
+      OpenInputFiles();
+    }
+    OpenOutputFile();
+
+    // announce files
+    PrintMessage(1);
+
+    // initialize input, output, & correlators
+    InitializeTree();
+    InitializeHists();
+    InitializeCorrs();
+    return;
+
+  }  // end 'StandaloneInit()'
+
+
+
+  void SEnergyCorrelator::Analyze() {
+
+    // print debug statement
+    if (m_inDebugMode) PrintDebug(12);
+
+    // make sure standalone mode is on
+    if (m_inComplexMode) {
+      PrintError(8);
+      assert(m_inStandaloneMode);
+    }
+
+    // loop over events and calculate correlators
+    DoCorrelatorCalculation();
+
+    // translate correlators into root hists
+    ExtractHistsFromCorr();
+    PrintMessage(9);
+    return;
+
+  }  // end 'StandaloneAnalyze()'
+
+
+
+  void SEnergyCorrelator::End() {
+
+    // print debug statement
+    if (m_inDebugMode) PrintDebug(13);
+
+    // make sure standalone mode is on & save output
+    if (m_inComplexMode) {
+      PrintError(9);
+      assert(m_inStandaloneMode);
+    } else {
+      SaveOutput();
+    }
+
+    // close files and announce end
+    if (m_inComplexMode) {
+      PrintError(15);
+      assert(m_inStandaloneMode);
+    }
+    CloseOutputFile();
+    PrintMessage(11);
+    return;
+
+  }  // end 'StandaloneEnd()'
+
+}  // end SColdQcdCorrelatorAnalysis namespace
 
 // end ------------------------------------------------------------------------
