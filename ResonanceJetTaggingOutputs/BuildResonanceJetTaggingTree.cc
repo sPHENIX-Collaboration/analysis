@@ -328,7 +328,7 @@ int BuildResonanceJetTaggingTree::loopHFHadronic(PHCompositeNode *topNode)
           m_truth_tag_py = genTag->momentum().py();
           m_truth_tag_pz = genTag->momentum().pz();
           m_truth_tag_pt = std::sqrt(m_truth_tag_px * m_truth_tag_px + m_truth_tag_py * m_truth_tag_py);
-          m_truth_tag_eta = atanh(m_truth_tag_pz / genTag->momentum().e());
+          m_truth_tag_eta = genTag->momentum().pseudoRapidity();
           m_truth_tag_phi = atan2(m_truth_tag_py, m_truth_tag_px);
 	  m_truth_tag_m = genTag->momentum().m();
 	  m_truth_tag_e = genTag->momentum().e();
@@ -372,7 +372,7 @@ int BuildResonanceJetTaggingTree::loopHFHadronic(PHCompositeNode *topNode)
       m_truth_tag_py = genTag->momentum().py();
       m_truth_tag_pz = genTag->momentum().pz();
       m_truth_tag_pt = std::sqrt(m_truth_tag_px * m_truth_tag_px + m_truth_tag_py * m_truth_tag_py);
-      m_truth_tag_eta = atanh(m_truth_tag_pz / genTag->momentum().e());
+      m_truth_tag_eta = genTag->momentum().pseudoRapidity();
       m_truth_tag_phi = atan2(m_truth_tag_py, m_truth_tag_px);
       m_truth_tag_m = genTag->momentum().m();
       m_truth_tag_e = genTag->momentum().e();
