@@ -77,7 +77,7 @@ int caloTreeGen::Init(PHCompositeNode *topNode)
 
   h2ClusterEtaPhi = new TH2F("h2ClusterEtaPhi", "Cluster; #eta; #phi", bins_eta, low_eta, high_eta, bins_phi, low_phi, high_phi);
   h2ClusterEtaPhiWeighted = new TH2F("h2ClusterEtaPhiWeighted", "Cluster ECore; #eta; #phi", bins_eta, low_eta, high_eta, bins_phi, low_phi, high_phi);
-  h2TowEtaPhiWeighted = new TH2F("h2TowEtaPhiWeighted", "Tower Energy; #eta; #phi",  bins_eta, low_eta, high_eta, bins_phi, low_phi, high_phi);
+  h2TowEtaPhiWeighted = new TH2F("h2TowEtaPhiWeighted", "Tower Energy; Towerid #eta; Towerid #phi",  bins_eta, 0, bins_eta, bins_phi, 0, bins_phi);
   h2TotalMBDCaloE = new TH2F("h2TotalMBDCaloE", "Total MBD Charge vs Total EMCAL Energy; Total EMCAL Energy [Arb]; Total MBD Charge [Arb]", 100, 0, 1, 100, 0, 1);
 
   out2 = new TFile(Outfile2.c_str(),"RECREATE");
@@ -172,11 +172,15 @@ int caloTreeGen::process_event(PHCompositeNode *topNode)
     hTowE->Fill(energy);
 
     // phi is in range [0, 2pi] so we need map [pi, 2pi] to [-pi, 0]
-    double phi = towergeom -> get_phicenter(iphi);
-    if(phi >= M_PI) phi -= 2*M_PI;
+    // double phi = towergeom -> get_phicenter(iphi);
+    // if(phi >= M_PI) phi -= 2*M_PI;
 
-    double eta = towergeom -> get_etacenter(ieta);
-    h2TowEtaPhiWeighted->Fill(eta, phi, energy);
+    // double eta = towergeom -> get_etacenter(ieta);
+
+    // check to make sure that ieta and iphi are in range
+    if(ieta >= bins_eta || iphi >= bins_phi) std::cerr << "ieta: " << ieta << ", iphi: " << iphi << std::endl;
+
+    h2TowEtaPhiWeighted->Fill(ieta, iphi, energy);
   }
 
   max_totalCaloE = std::max(max_totalCaloE, totalCaloE);

@@ -11,12 +11,10 @@ input=${1}
 qa=${2}
 ntp=${3}
 output=${4}
+exe=${5}
 
-Fun4All_CaloTreeGen $input $qa $ntp
+# print the environment - needed for debugging
+printenv
 
-echo "finished job"
-echo "transferring output files"
-
-cp $qa $ntp $output
-
-echo "Done"
+mkdir -p output
+$exe $input $qa $ntp

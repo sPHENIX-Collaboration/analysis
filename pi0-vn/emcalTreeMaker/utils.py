@@ -14,7 +14,8 @@ create.add_argument('-i', '--run-list', type=str, help='List of runs', required=
 create.add_argument('-e', '--executable', type=str, default='genFun4All.sh', help='Job script to execute. Default: scripts/genFun4All.sh')
 create.add_argument('-b', '--f4a', type=str, default='bin/Fun4All_CaloTreeGen', help='Fun4All executable. Default: Fun4All_CaloTreeGen')
 create.add_argument('-d', '--output', type=str, default='test', help='Output Directory. Default: ./test')
-create.add_argument('-s', '--memory', type=int, default=3, help='Memory (units of GB) to request per condor submission. Default: 3 GB.')
+create.add_argument('-s', '--memory', type=int, default=2, help='Memory (units of GB) to request per condor submission. Default: 2 GB.')
+create.add_argument('-l', '--log', type=str, default='/tmp/anarde/dump/job-$(ClusterId)-$(Process).log', help='Condor log file.')
 
 args = parser.parse_args()
 
@@ -24,12 +25,14 @@ def create_jobs():
     f4a        = os.path.realpath(args.f4a)
     executable = os.path.realpath(args.executable)
     memory     = args.memory
+    log        = args.log
 
     print(f'Run List: {run_list}')
     print(f'Output Directory: {output_dir}')
-    print(f'Bin Directory: {f4a}')
+    print(f'Bin: {f4a}')
     print(f'Executable: {executable}')
     print(f'Requested memory per job: {memory}GB')
+    print(f'Condor log file: {log}')
 
     os.makedirs(output_dir,exist_ok=True)
     shutil.copy(f4a, output_dir)
@@ -51,12 +54,11 @@ def create_jobs():
 
             with open(f'{job_dir}/genFun4All.sub', mode="w") as file:
                 file.write(f'executable             = ../{os.path.basename(executable)}\n')
-                file.write(f'arguments              = $(input) qa-$(Process).root ntp-$(Process).root {job_dir}/output\n')
-                file.write('log                     = /tmp/anarde/dump/job-$(ClusterId)-$(Process).log\n')
+                file.write(f'arguments              = $(input) output/qa-$(Process).root output/ntp-$(Process).root {job_dir}/output {output_dir}/{os.path.basename(f4a)}\n')
+                file.write(f'log                    = {log}\n')
                 file.write('output                  = stdout/job-$(Process).out\n')
                 file.write('error                   = error/job-$(Process).err\n')
                 file.write(f'request_memory         = {memory}GB\n')
-                file.write('transfer_input_files    = ../Fun4All_CaloTreeGen\n')
                 file.write('queue input from jobs.txt')
 
             print(f'cd {job_dir} && condor_submit genFun4All.sub')
