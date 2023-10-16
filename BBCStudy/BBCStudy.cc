@@ -147,7 +147,7 @@ int BBCStudy::Init(PHCompositeNode *topNode)
   _tree->Branch("bz",&f_bbcz,"bz/F");
   _tree->Branch("bt0",&f_bbct0,"bt0/F");
 
-  _pdg = new TDatabasePDG();  // database of PDG info on particles
+  _pdg = TDatabasePDG::Instance();  // database of PDG info on particles
   _rndm = new TRandom3(0);
 
   TString name, title;
@@ -203,11 +203,12 @@ int BBCStudy::InitRun(PHCompositeNode *topNode)
 //Call user instructions for every event
 int BBCStudy::process_event(PHCompositeNode *topNode)
 {
+  nprocessed++;
+
   //GetNodes(topNode);
 
   f_evt = _evtheader->get_EvtSequence();
-  //if(f_evt%1000==0) cout << PHWHERE << "Events processed: " << f_evt << endl;
-  if(f_evt%100==0) cout << PHWHERE << "Events processed: " << f_evt << endl;
+  if(f_evt%1==0) cout << PHWHERE << "Event " << f_evt << "\t" << ", nprocessed = " << nprocessed << endl;
 
   // Initialize Variables
   f_bbcn[0] = 0;
@@ -528,19 +529,13 @@ int BBCStudy::process_event(PHCompositeNode *topNode)
     //if ( response[0] == 'q' )
     TString name = "evt_"; name += f_evt; name += ".png";
     c_bbct->SaveAs( name );
-    /*
-       if ( f_evt>4020 )
-       {
-       gSystem->Exit(0);
-       }
-       */
   }
 
   h2_bbcqtot->Fill( f_bbcq[0], f_bbcq[1] );
 
   _tree->Fill();
 
-  CheckDST(topNode);
+  //CheckDST(topNode);
 
   return 0;
 }
@@ -568,6 +563,7 @@ int BBCStudy::End(PHCompositeNode *topNode)
 {
   _savefile->cd();
   _savefile->Write();
+  _savefile->Close();
 
   // print out list of pids that hit BBC
   cout << "PIDs of Particles that hit BBC" << endl;
