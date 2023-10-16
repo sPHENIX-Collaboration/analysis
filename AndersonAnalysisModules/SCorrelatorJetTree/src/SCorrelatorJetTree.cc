@@ -139,18 +139,33 @@ int SCorrelatorJetTree::process_event(PHCompositeNode* topNode) {
     GetPartonInfo(topNode);
   }
 
-  // find jets
-  FindRecoJets(topNode);
-  if (m_isMC) {
-    FindTrueJets(topNode);
+  // check if reconstructed vertex is in in acceptance
+  const bool isGoodEvt = IsGoodEvent(m_recoVtxX, m_recoVtxY, m_recoVtxZ);
+
+  // set event status
+  int eventStatus;
+  if (m_doVtxCut && !isGoodEvt) {
+    eventStatus = Fun4AllReturnCodes::DISCARDEVENT;
+  } else {
+    eventStatus = Fun4AllReturnCodes::EVENT_OK;
   }
 
-  // fill output trees
-  FillRecoTree();
-  if (m_isMC) {
-    FillTrueTree();
+  // if event is good, continue processing
+  if (isGoodEvt) {
+
+    // find jets
+    FindRecoJets(topNode);
+    if (m_isMC) {
+      FindTrueJets(topNode);
+    }
+
+    // fill output trees
+    FillRecoTree();
+    if (m_isMC) {
+      FillTrueTree();
+    }
   }
-  return Fun4AllReturnCodes::EVENT_OK;
+  return eventStatus;
 
 }  // end 'process_event(PHCompositeNode*)'
 

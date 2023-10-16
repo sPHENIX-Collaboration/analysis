@@ -20,6 +20,26 @@ using namespace findNode;
 
 // event methods --------------------------------------------------------------
 
+bool SCorrelatorJetTree::IsGoodEvent(const double vx, const double vy, const double vz) {
+
+  // print debug statement
+  if (m_doDebug) {
+    cout << "SCorrelatorJetTree::IsGoodEvent(double, double, double) Checking if event is good..." << endl;
+  }
+
+  // calculate vr
+  const double vr = sqrt((vx * vx) + (vy * vy));
+
+  // check if event is good
+  const bool isInEvtVzRange = ((vz      > m_evtVzRange[0]) && (vz      < m_evtVzRange[1]));
+  const bool isInEvtVrRange = ((abs(vr) > m_evtVrRange[0]) && (abs(vr) < m_evtVrRange[1]));
+  const bool isGoodEvent    = (isInEvtVzRange && isInEvtVrRange);
+  return isGoodEvent;
+
+}  // end 'IsGoodEvent(double, double, double)'
+
+
+
 void SCorrelatorJetTree::GetEventVariables(PHCompositeNode* topNode) {
 
   // print debug statement

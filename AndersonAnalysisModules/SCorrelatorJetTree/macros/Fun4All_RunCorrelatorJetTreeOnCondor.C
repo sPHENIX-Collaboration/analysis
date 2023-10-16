@@ -91,9 +91,10 @@ void Fun4All_RunCorrelatorJetTreeOnCondor(vector<string> sInputLists = {SInListD
   const bool isEmbed(false);
   const bool doDebug(false);
   const bool saveDst(true);
+  const bool doVtxCut(false);
   const bool doQuality(true);
   const bool requireSiSeeds(true);
-  const bool doDcaSigmaCut(true);
+  const bool doDcaSigmaCut(false);
   const bool addTracks(true);
   const bool addECal(false);
   const bool addHCal(false);
@@ -104,6 +105,10 @@ void Fun4All_RunCorrelatorJetTreeOnCondor(vector<string> sInputLists = {SInListD
   const unsigned int jetType = 0;
   const auto         jetAlgo = SCorrelatorJetTree::ALGO::ANTIKT;
   const auto         jetReco = SCorrelatorJetTree::RECOMB::PT_SCHEME;
+
+  // event acceptance
+  const pair<double, double> vzEvtRange = {-10., 10.};
+  const pair<double, double> vrEvtRange = {0.0,  0.418};
 
   // particle acceptance
   const pair<double, double> ptParRange  = {0.,   9999.};
@@ -254,11 +259,14 @@ void Fun4All_RunCorrelatorJetTreeOnCondor(vector<string> sInputLists = {SInListD
   // create correlator jet tree
   SCorrelatorJetTree *correlatorJetTree = new SCorrelatorJetTree("SCorrelatorJetTree", outputRecoFile, isMC, isEmbed, doDebug);
   correlatorJetTree -> Verbosity(verbosity);
+  correlatorJetTree -> SetDoVertexCut(doVtxCut);
   correlatorJetTree -> SetDoQualityPlots(doQuality);
   correlatorJetTree -> SetAddTracks(addTracks);
   correlatorJetTree -> SetAddFlow(addParticleFlow);
   correlatorJetTree -> SetAddECal(addECal);
   correlatorJetTree -> SetAddHCal(addHCal);
+  correlatorJetTree -> SetEvtVzRange(vzEvtRange);
+  correlatorJetTree -> SetEvtVrRange(vrEvtRange);
   if (isMC) {
     correlatorJetTree -> SetParPtRange(ptParRange);
     correlatorJetTree -> SetParEtaRange(etaParRange);

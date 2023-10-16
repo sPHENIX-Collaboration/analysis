@@ -151,6 +151,7 @@ class SCorrelatorJetTree : public SubsysReco {
     void SetAddFlow(const bool addFlow)        {m_addFlow        = addFlow;}
     void SetAddECal(const bool addECal)        {m_addECal        = addECal;}
     void SetAddHCal(const bool addHCal)        {m_addHCal        = addHCal;}
+    void SetDoVertexCut(const bool doVtx)      {m_doVtxCut       = doVtx;}
     void SetDoQualityPlots(const bool doQA)    {m_doQualityPlots = doQA;}
     void SetRequireSiSeeds(const bool require) {m_requireSiSeeds = require;}
     void SetSaveDST(const bool doSave)         {m_saveDST        = doSave;}
@@ -161,6 +162,9 @@ class SCorrelatorJetTree : public SubsysReco {
     void SetJetTreeName(const string name)     {m_jetTreeName    = name;}
 
     // setters (*.io.h)
+    // TODO consolidate parameters into less emthods
+    void SetEvtVzRange(const pair<double, double> vzRange);
+    void SetEvtVrRange(const pair<double, double> vrRange);
     void SetParPtRange(const pair<double, double> ptRange);
     void SetParEtaRange(const pair<double, double> etaRange);
     void SetTrackPtRange(const pair<double, double> ptRange);
@@ -184,6 +188,7 @@ class SCorrelatorJetTree : public SubsysReco {
     void SetJetParameters(const double rJet, const uint32_t jetType, const ALGO jetAlgo, const RECOMB recombScheme);
 
     // system getters
+    bool   GetDoVtxCut()       {return m_doVtxCut;}
     bool   GetDoQualityPlots() {return m_doQualityPlots;}
     bool   GetRequireSiSeeds() {return m_requireSiSeeds;}
     bool   GetDoDcaSigmaCut()  {return m_doDcaSigmaCut;}
@@ -198,6 +203,10 @@ class SCorrelatorJetTree : public SubsysReco {
     string GetJetTreeName()    {return m_jetTreeName;}
 
     // acceptance getters
+    double GetEvtMinVz()        {return m_evtVzRange[0];}
+    double GetEvtMaxVz()        {return m_evtVzRange[1];}
+    double GetEvtMinVr()        {return m_evtVrRange[0];}
+    double GetEvtMaxVr()        {return m_evtVrRange[1];}
     double GetParMinPt()        {return m_parPtRange[0];}
     double GetParMaxPt()        {return m_parPtRange[1];}
     double GetParMinEta()       {return m_parEtaRange[0];}
@@ -265,6 +274,7 @@ class SCorrelatorJetTree : public SubsysReco {
     enum INFO     {PT, ETA, PHI, ENE, QUAL, DCAXY, DCAZ, DELTAPT, NTPC};
 
     // event methods (*.evt.h)
+    bool              IsGoodEvent(const double vx, const double vy, const double vz);
     void              GetEventVariables(PHCompositeNode* topNode);
     void              GetPartonInfo(PHCompositeNode* topNode);
     long              GetNumTrks(PHCompositeNode* topNode);
@@ -348,9 +358,10 @@ class SCorrelatorJetTree : public SubsysReco {
     TNtuple* m_ntTrkQA = NULL;
 
     // system members
+    bool          m_doVtxCut       = false;
     bool          m_doQualityPlots = true;
     bool          m_requireSiSeeds = true;
-    bool          m_doDcaSigmaCut  = true;
+    bool          m_doDcaSigmaCut  = false;
     bool          m_saveDST        = false;
     bool          m_isMC           = true;
     bool          m_isEmbed        = false;
@@ -362,8 +373,12 @@ class SCorrelatorJetTree : public SubsysReco {
     vector<int>   m_vecEvtsToGrab;
     map<int, int> m_mapCstToEmbedID;
 
+    // event acceptance parameters
+    // TODO convert most acceptances to pairs/pairs of structs
+    double m_evtVzRange[CONST::NRange] = {-10., 10.};
+    double m_evtVrRange[CONST::NRange] = {0.0,  0.418};
+
     // particle acceptance parameters
-    // TODO convert most acceptances to pairs of structs
     double m_parPtRange[CONST::NRange]  = {0.1,  9999.};
     double m_parEtaRange[CONST::NRange] = {-1.1, 1.1};
 

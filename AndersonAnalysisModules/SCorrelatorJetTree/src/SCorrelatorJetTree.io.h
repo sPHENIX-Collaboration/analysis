@@ -24,6 +24,26 @@ using namespace findNode;
 
 // i/o methods ---------------------------------------------------------------- 
 
+void SCorrelatorJetTree::SetEvtVzRange(const pair<double, double> vzRange) {
+
+  m_evtVzRange[0] = vzRange.first;
+  m_evtVzRange[1] = vzRange.second;
+  return;
+
+}  // end 'SetEvtVzRange(pair<double, double>)'
+
+
+
+void SCorrelatorJetTree::SetEvtVrRange(const pair<double, double> vrRange) {
+
+  m_evtVrRange[0] = vrRange.first;
+  m_evtVrRange[1] = vrRange.second;
+  return;
+
+}  // end 'SetEvtVrRange(pair<double, double>)'
+
+
+
 void SCorrelatorJetTree::SetParPtRange(const pair<double, double> ptRange) {
 
   m_parPtRange[0] = ptRange.first;
