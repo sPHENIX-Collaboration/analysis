@@ -19,6 +19,7 @@
 #include <phool/getClass.h>
 #include <trackbase/ActsGeometry.h>
 #include <trackbase/MvtxDefs.h>
+#include <trackbase/InttDefs.h>
 #include <trackbase/TrkrCluster.h>
 #include <trackbase/TrkrClusterContainerv4.h>
 #include <trackbase/TrkrClusterHitAssoc.h>
@@ -94,17 +95,20 @@ class dNdEtaINTT : public SubsysReco
     void GetTruthPV(bool b) { _get_truth_pv = b; }
     void GetRecoCluster(bool b) { _get_reco_cluster = b; }
     void GetCentrality(bool b) { _get_centrality = b; }
+    void GetTrkrHit(bool b) { _get_trkr_hit = b; }
 
   private:
     void ResetVectors();
     void GetTruthPVInfo(PHCompositeNode *topNode);
     void GetRecoClusterInfo(PHCompositeNode *topNode);
     void GetCentralityInfo(PHCompositeNode *topNode);
+    void GetTrkrHitInfo(PHCompositeNode *topNode);
     PHG4Particle *GetG4PAncestor(PHG4Particle *p);
 
     bool _get_truth_pv;
     bool _get_reco_cluster;
     bool _get_centrality;
+    bool _get_trkr_hit;
 
     unsigned int eventNum = 0;
     std::string _outputFile;
@@ -121,12 +125,17 @@ class dNdEtaINTT : public SubsysReco
     int NTruthVtx_, TruthPV_trig_Npart_;
     std::vector<float> TruthPV_x_, TruthPV_y_, TruthPV_z_, TruthPV_t_, TruthPV_embed_;
     std::vector<int> TruthPV_Npart_, TruthPV_Nhits_, TruthPV_NClus_;
-    // Reconstructed cluster information & G4 information Matching for simulation
+    // Reconstructed cluster information & 
     int NClus_;
     std::vector<int> ClusLayer_, ClusHitcount_;
     std::vector<float> ClusX_, ClusY_, ClusZ_, ClusR_, ClusPhi_, ClusEta_;
     std::vector<unsigned int> ClusAdc_;
     std::vector<float> ClusPhiSize_, ClusZSize_;
+    std::vector<uint8_t> ClusLadderZId_, ClusLadderPhiId_;
+    // TrkrHit information
+    int NTrkrhits_;
+    std::vector<uint16_t> TrkrHitRow_, TrkrHitColumn_;
+    // G4 information Matching for simulation
     std::vector<int> G4PfromClus_PID_;
     std::vector<float> UniqueAncG4P_Px_, UniqueAncG4P_Py_, UniqueAncG4P_Pz_, UniqueAncG4P_Pt_, UniqueAncG4P_Eta_, UniqueAncG4P_Phi_, UniqueAncG4P_E_;
     std::vector<int> UniqueAncG4P_PID_, UniqueAncG4P_TrackPID_, UniqueAncG4P_VtxPID_, UniqueAncG4P_ParentPID_, UniqueAncG4P_PrimaryPID_;
