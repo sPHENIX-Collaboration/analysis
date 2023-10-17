@@ -56,6 +56,7 @@ R__LOAD_LIBRARY(libparticleflow.so)
 R__LOAD_LIBRARY(/sphenix/user/danderson/install/lib/libscorrelatorjettree.so)
 
 using namespace std;
+using namespace SColdQcdCorrelatorAnalysis;
 
 // global constants
 static const string       SInListDefault   = "test.list";
@@ -126,7 +127,8 @@ void Fun4All_RunCorrelatorJetTreeOnCondor(vector<string> sInputLists = {SInListD
   const pair<double, double> deltaPtTrackRange = {0.,    0.04};
 
   // for pt dependent dca cuts
-  const pair<double, double> nDcaSigmaTrack   = {3., 3.};
+  const pair<double, double> dcaPtFitMax      = {15., 15.};
+  const pair<double, double> nDcaSigmaTrack   = {3.,  3.};
   const vector<double>       dcaSigmaParamsXY = {-0.0095, 0.091, -0.029};
   const vector<double>       dcaSigmaParamsZ  = {1.73,    26.1,  -9.45};
 
@@ -283,7 +285,7 @@ void Fun4All_RunCorrelatorJetTreeOnCondor(vector<string> sInputLists = {SInListD
     correlatorJetTree -> SetTrackDcaRangeZ(dcaTrackRangeZ);
     correlatorJetTree -> SetTrackDeltaPtRange(deltaPtTrackRange);
     if (doDcaSigmaCut) {
-      correlatorJetTree -> SetTrackDcaSigmaParameters(doDcaSigmaCut, nDcaSigmaTrack, dcaSigmaParamsXY, dcaSigmaParamsZ);
+      correlatorJetTree -> SetTrackDcaSigmaParameters(doDcaSigmaCut, dcaPtFitMax, nDcaSigmaTrack, dcaSigmaParamsXY, dcaSigmaParamsZ);
     }
   }
   if (addParticleFlow) {
