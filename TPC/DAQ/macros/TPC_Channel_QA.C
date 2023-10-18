@@ -15,8 +15,7 @@
 #include "TTreeReaderValue.h"
 #include "TTreeReaderArray.h"
 
-
-void TPC_Channel_QA(){
+void TPC_Channel_QA_Backup() {
   gROOT->SetBatch(kTRUE);
   std::ofstream outdata;
   outdata.open("noisyChannels.txt");
@@ -24,29 +23,16 @@ void TPC_Channel_QA(){
       cerr << "Error: file could not be opened" << endl;
       exit(1);
   }
-
-  char name[100];
-  int run_num;
-
-  cout << "Input run number: ";
-  cin >> run_num;
- 
-  sprintf(name, "pedestal-000%d", run_num);
-
-  string runNumber = name;
-
   for (int q = 0; q < 24; q++){
     string sectorNumber;
     if (q < 10) sectorNumber = "0"+std::to_string(q);
     else sectorNumber = std::to_string(q);   
 
-    //string runNumber = "pedestal-00010616";
-
-    sprintf(name,"/sphenix/u/llegnosky/Livechan_Pedestals_Noise/run_%d/TPC_ebdc", run_num);
+    string runNumber = "beam-00026540";
     
-	    //string fileName = "/sphenix/u/llegnosky/BaselineAnalysis/10616/TPC_ebdc"+sectorNumber+"_"+runNumber+"-0000.prdf_TPCRawDataTree.root";
-	    string fileName = name+sectorNumber+"_"+runNumber+"-0000.prdf_TPCRawDataTree.root";
- 
+      string fileName = "/sphenix/user/jamesj3j3/tpc/sPHENIXProjects/pedestal-run-26540/TPC_ebdc"+sectorNumber+"_"+runNumber+"-0000.prdf_TPCRawDataTree_skip100.root";
+    //    string fileName = "/sphenix/user/jamesj3j3/tpc/sPHENIXProjects/pedestal-run-26540/TPC_ebdc02_"+runNumber+"-0000.prdf_TPCRawDataTree_skip100.root"; 
+
 //    string mod[26] = {"R2","R2","R1","R1","R1","R3","R3","R3","R3","R3","R3","R2","R2","R1","R2","R2","R1","R1","R2","R2","R3","R3","R3","R3","R3","R3"}; 
 //    string slot[26] = {"5","6","1","3","2","12","10","11","9","8","7","1","2","4","8","7","6","5","4","3","1","3","2","4","6","5"}; 
     int mod_arr[26]={2,2,1,1,1,3,3,3,3,3,3,2,2,1,2,2,1,1,2,2,3,3,3,3,3,3};
@@ -61,7 +47,7 @@ void TPC_Channel_QA(){
     TTreeReaderValue<Int_t> Channel_in(myReader, "Channel");
 
 //Adding the output tree
-        TString* outputfilename=new TString("outputfile_TPC_ebdc"+sectorNumber+"_"+runNumber+".root");
+    TString* outputfilename=new TString("/sphenix/user/jamesj3j3/tpc/sPHENIXProjects/pedestal-run-26540/outputfile_TPC_ebdc"+sectorNumber+"_"+runNumber+"_skip100.root");
  	TFile* outputfile=new TFile(outputfilename->Data(),"recreate");
  	TTree* outputTree=new TTree("outputTree","outputTree");
 	Int_t isAlive=1.0; // 1 if the channel is working properly, 0 if no signal(number of samples is 0, adc value is 0 or nan), pedestal above 200 or below 10

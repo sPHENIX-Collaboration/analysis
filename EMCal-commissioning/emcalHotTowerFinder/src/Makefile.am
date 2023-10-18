@@ -16,7 +16,8 @@ AM_LDFLAGS = \
   -lcalo_io \
   -lCLHEP \
   -lglobalvertex \
-  -lglobalvertex_io
+  -lglobalvertex_io \
+  -lcdbobjects
 pcmdir = $(libdir)
 
 pkginclude_HEADERS = \

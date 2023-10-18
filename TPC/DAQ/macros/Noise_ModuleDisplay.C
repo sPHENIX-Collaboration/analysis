@@ -49,7 +49,7 @@ void Noise_ModuleDisplay(){
 
   //  std::vector <pair<int,int>> vec1;
 
-  bool skip_empty_fees = true;
+  bool skip_empty_fees = false;
 
   std::vector<pair<int,int>> vec; 
 
@@ -59,7 +59,7 @@ void Noise_ModuleDisplay(){
   cout << "Input run number: ";
   cin >> run_num;
 
-  const TString filename3( Form( "/sphenix/u/llegnosky/Livechan_Pedestals_Noise/run_%d/pedestal-%d-outfile.root",run_num,run_num) );
+  const TString filename3( Form( "./pedestal-%d-outfile.root",run_num,run_num) );
   //const TString filename3( Form( "/sphenix/u/jamesj3j3/workfest_Charles_mistake/sPHENIXProjects/pedestal-10131-outfile.root") );
 
   //    std::cout << "Analyze - filename2: " << filename2 << std::endl;
@@ -105,27 +105,34 @@ void Noise_ModuleDisplay(){
       Float_t denom=0; // denominator (total)   
       Float_t sum_noise=0;
 
-      for (Int_t k = 0; k < dm2->GetNbinsX(); k++) { // k is looping over FEE ID                                                      
+      for (Int_t k = 0; k < dm2->GetNbinsX(); k++) { // k is looping over FEE ID
+
+	Float_t FEE_noise_sum = 0.0;
         
-        if( skip_empty_fees){ //if you want to skip empty fees
-          if( dm2->GetBinContent(k+1,i+1,j+1) >= 1){ //only add to numerator and denominator if FEE has at least 1 live channel
-            num+=dm2->GetBinContent(k+1,i+1,j+1);
-            denom+=tot->GetBinContent(k+1,i+1,j+1);
-            sum_noise+=h_AlivePedestalNoise->GetBinContent(k+1,i+1,j+1);
-          }
-        }
-        else { //if you don't want to skip empty fees
-	  num+=dm2->GetBinContent(k+1,i+1,j+1);
-	  denom+=tot->GetBinContent(k+1,i+1,j+1); 
-	  sum_noise+=h_AlivePedestalNoise->GetBinContent(k+1,i+1,j+1);
+	if(h_AlivePedestalNoise->GetBinContent(k+1,i+1,j+1) > 0.0){
+	  if( skip_empty_fees){ //if you want to skip empty fees
+	    if( dm2->GetBinContent(k+1,i+1,j+1) >= 1){ //only add to numerator and denominator if FEE has at least 1 live channel
+	      num+=dm2->GetBinContent(k+1,i+1,j+1);
+	      denom+=tot->GetBinContent(k+1,i+1,j+1);
+	      sum_noise+=h_AlivePedestalNoise->GetBinContent(k+1,i+1,j+1);
+	    }
+	  }
+	  else { //if you don't want to skip empty fees
+	    num+=dm2->GetBinContent(k+1,i+1,j+1);
+	    denom+=tot->GetBinContent(k+1,i+1,j+1); 
+	    sum_noise+=h_AlivePedestalNoise->GetBinContent(k+1,i+1,j+1);
+	  }
 	}
-      }      
+	FEE_noise_sum = h_AlivePedestalNoise->GetBinContent(k+1,i+1,j+1);
+	std::cout << "Sec ID = " << i+1 << ", Module ID = " << j+1 << ", FEE ID = " << k+1 << ", Std. Dev. sum = " << FEE_noise_sum << std::endl;
+      }     
                                                            
       Float_t frac_val= ( num / denom) * 100.0; // calculate the fraction 
       Float_t noise_value = sum_noise/num;
                                                                
       frac[i+1][j+1] = frac_val; // store fraction in array                                                                              
       std::cout << "Sec ID = " << i+1 << ", Module ID = " << j+1 << ", Live fraction = " << frac_val << "%" << std::endl;
+      std::cout << "Sec ID = " << i+1 << ", Module ID = " << j+1 << ", Avg. Std. Dev. = " << noise_value << std::endl;
       if (i < 12) {
 	sub_arrC.push_back(noise_value);
 	//std::cout <<  " Live fraction C = " << sub_arrC.size() << " %" << std::endl;
@@ -242,21 +249,25 @@ void Noise_ModuleDisplay(){
   Bool_t is_ASIDE = true;
 
   for (Int_t i = 0; i < 36; i++) {
-    Locate(i + 1, true, &r, &theta);
-    ErrASide->Fill(theta, r, sub_arrA[i]);
-    // cout<<"Region # A "<<(i)<<" Alive Fraction = "<<sub_arrA[i]<<endl;   
+    if(sub_arrA[i] > 0.0){
+      Locate(i + 1, true, &r, &theta);
+      ErrASide->Fill(theta, r, sub_arrA[i]);
+      // cout<<"Region # A "<<(i)<<" Alive Fraction = "<<sub_arrA[i]<<endl; 
+    }  
   }
 
   for (Int_t i = 0; i < 36; i++) {
-    Locate(i + 1,false, &r, &theta);
-    ErrCSide->Fill(theta, r, sub_arrC[i]);
-    // cout<<"Region # C "<<(i)<<" Alive Fraction = "<<sub_arrC[i]<<endl;   
+    if(sub_arrC[i] > 0.0){
+      Locate(i + 1,false, &r, &theta);
+      ErrCSide->Fill(theta, r, sub_arrC[i]);
+      // cout<<"Region # C "<<(i)<<" Alive Fraction = "<<sub_arrC[i]<<endl;   
+    }
   }
    
-  sprintf(name, "%d-Noise map in ADC unit North Side",run_num);
+  sprintf(name, "%d-Noise Std. Dev. in ADC (North Side)",run_num);
   TH2D* dummy_his1 = new TH2D("dummy1", name, 100, -1.5, 1.5, 100, -1.5, 1.5);
   //TH2D* dummy_his1 = new TH2D("dummy1", "10616-Noise map in ADC unit North Side", 100, -1.5, 1.5, 100, -1.5, 1.5); //dummy histos for titles
-  sprintf(name, "%d-Noise map in ADC unit South Side",run_num);
+  sprintf(name, "%d-Noise Std. Dev. in ADC (South Side)",run_num);
   TH2D* dummy_his2 = new TH2D("dummy2", name, 100, -1.5, 1.5, 100, -1.5, 1.5);
   //TH2D* dummy_his2 = new TH2D("dummy2", "10616-Noise map in ADC unit South Side", 100, -1.5, 1.5, 100, -1.5, 1.5);
   //TPaveLabels for sector labels
@@ -380,7 +391,7 @@ void Noise_ModuleDisplay(){
   //cout<< "\nThe total trips = " << trip_count_total << endl;
   //delete sparsforVIZ;
 
-  sprintf(name,"/sphenix/u/llegnosky/Livechan_Pedestals_Noise/run_%d/run_%d_Noise.png",run_num,run_num);
+  sprintf(name,"/sphenix/user/llegnosky/run_%d/run_%d_Noise.png",run_num,run_num);
   Error_Viz->Print(name);
 
   outf->Write();

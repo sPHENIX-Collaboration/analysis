@@ -4,6 +4,7 @@
 #define TOWERID_H
 
 #include <fun4all/SubsysReco.h>
+//#include <cdbobjects/CDBTTree.h>
 
 #include <string>
 #include <vector>
@@ -22,7 +23,7 @@ class towerid : public SubsysReco
 {
  public:
 
-  towerid(const std::string &name = "towerid.root", float adccut_sg = 250,float adccut_k = 500, float sigmas = 4.5, int nevents = 5000, float SG_f = 0.0002, float Kur_f = 0.0002, float region_f = 0.03);
+  towerid(const std::string &name = "towerid.root", const std::string &cdbtreename = "test.root", float adccut_sg = 250,float adccut_k = 500, float sigmas_lo = 1, float sigmas_hi = 4.5, float SG_f = 0.0002, float Kur_f = 0.0002, float region_f = 0.03);
 
   ~towerid() override;
 
@@ -64,6 +65,8 @@ class towerid : public SubsysReco
 
   TTree *T;
   TFile *out;
+
+//  CDBTTree *cdbttree;
  
   TFile*fchannels;
   TTree *channels;
@@ -91,11 +94,12 @@ class towerid : public SubsysReco
   TH1F*Espec_K = new TH1F("Espec_K","Espec_K",0,1,1);
   TH1F*Espec_sector = new TH1F("Espec_sector","Espec_sector",0,1,1);
   TH1F*Espec_IB = new TH1F("Espec_IB","Espec_IB",0,1,1);
-	
+
+  const std::string cdbtreename; 	
   float adccut_sg;
   float adccut_k;
-  float sigmas;
-  int nevents;
+  float sigmas_lo;
+  float sigmas_hi;
   float SG_f;
   float Kur_f;
   float region_f;
@@ -113,9 +117,16 @@ class towerid : public SubsysReco
   int hotIB[384] = {0};
   int hotsectors[64] = {0};
   int deadtowers[24576] = {0};
+
 	
+  int coldtowers[24576] = {0};
+  int coldIB[384] = {0};
+  int coldsectors[64] = {0};
   int hot_regions = 0;
-  int goodevents = 0;
+  int cold_regions = 0;  
+
+
+int goodevents = 0;
 };
 
 #endif 
