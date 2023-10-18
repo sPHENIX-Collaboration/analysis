@@ -13,6 +13,8 @@
 #include <jetbase/Jetv1.h>
 
 #include <centrality/CentralityInfo.h>
+#include <globalvertex/GlobalVertex.h>
+#include <globalvertex/GlobalVertexMap.h>
 
 #include <calobase/RawTower.h>
 #include <calobase/RawTowerContainer.h>
@@ -85,6 +87,7 @@ int JetValidation::Init(PHCompositeNode *topNode)
   m_T->Branch("m_event", &m_event, "event/I");
   m_T->Branch("nJet", &m_nJet, "nJet/I");
   m_T->Branch("cent", &m_centrality);
+  m_T->Branch("zvtx", &m_zvtx);
   m_T->Branch("b", &m_impactparam);
   m_T->Branch("id", &m_id);
   m_T->Branch("nComponent", &m_nComponent);
@@ -186,10 +189,16 @@ int JetValidation::process_event(PHCompositeNode *topNode)
       exit(-1);
     }
 
+  //zvertex
+  GlobalVertexMap *vertexmap = findNode::getClass<GlobalVertexMap>(topNode, "GlobalVertexMap");
+  GlobalVertex *vtx = vertexmap->begin()->second;
+  m_zvtx = vtx->get_z();
+
+
   //calorimeter towers
-  TowerInfoContainer *towersEM3 = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_CEMC_RETOWER");
-  TowerInfoContainer *towersIH3 = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALIN");
-  TowerInfoContainer *towersOH3 = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALOUT");
+  TowerInfoContainer *towersEM3 = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_CEMC_RETOWER_SUB1");
+  TowerInfoContainer *towersIH3 = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALIN_SUB1");
+  TowerInfoContainer *towersOH3 = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALOUT_SUB1");
   RawTowerGeomContainer *tower_geom = findNode::getClass<RawTowerGeomContainer>(topNode, "TOWERGEOM_HCALIN");
   RawTowerGeomContainer *tower_geomOH = findNode::getClass<RawTowerGeomContainer>(topNode, "TOWERGEOM_HCALOUT");
   if(!towersEM3 || !towersIH3 || !towersOH3){
@@ -321,6 +330,7 @@ int JetValidation::process_event(PHCompositeNode *topNode)
 		  totalPx += pt * cos(tower_phi);
 		  totalPy += pt * sin(tower_phi);
 		  totalPz += pt * sinh(tower_eta);
+		
 		}
 	    }
 	  //get unsubtracted jet
