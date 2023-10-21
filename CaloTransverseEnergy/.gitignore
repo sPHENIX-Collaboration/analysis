@@ -3,7 +3,9 @@
 *.log
 *.err
 *.out
-*/build
-*/running_dir
+*/build/*
+*/running_dir/*
 */macros/*.job
 */macros/*.root
+*.txt
+

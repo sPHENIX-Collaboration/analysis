@@ -13,9 +13,11 @@
 #include <sstream>
 #include <string.h>
 R__LOAD_LIBRARY(libfun4all.so);
+R__LOAD_LIBRARY(libfun4allraw.so);
 R__LOAD_LIBRARY(libcalo_io.so);
 R__LOAD_LIBRARY(libCaloTransverseEnergy.so);
 R__LOAD_LIBRARY(libffamodules.so);
+R__LOAD_LIBRARY(libffarawmodules.so);
 
 int GetET(std::string filename="/sphenix/tg/tg01/jets/ahodges/run23_production/21518/DST-00021518-0000.root")
 {
@@ -65,6 +67,7 @@ int GetET(std::string filename="/sphenix/tg/tg01/jets/ahodges/run23_production/2
 	}
 	se->registerSubsystem(cte);
 	se->run();
+	std::cout<<"Writing to file"<<std::endl;
         cte->ProduceOutput();
 	return 0;				
 }
