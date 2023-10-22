@@ -108,36 +108,40 @@ class caloTreeGen : public SubsysReco
   TH2F* h2TotalMBDCaloE;
 
   UInt_t bins_towE = 400;
-  UInt_t  bins_e = 200;
-  Float_t low_e = 0;
-  Float_t high_e = 50;
+  UInt_t  bins_e   = 200;
+  Float_t low_e    = 0;
+  Float_t high_e   = 50;
 
   UInt_t  bins_pt = 200;
-  Float_t low_pt = 0;
+  Float_t low_pt  = 0;
   Float_t high_pt = 50;
 
   UInt_t  bins_eta = 96;
-  Float_t low_eta = -1.152;
+  Float_t low_eta  = -1.152;
   Float_t high_eta = 1.152;
 
   UInt_t  bins_phi = 256;
-  Float_t low_phi = -M_PI;
+  Float_t low_phi  = -M_PI;
   Float_t high_phi = M_PI;
 
   UInt_t  bins_chi = 400;
-  Float_t low_chi = 0;
+  Float_t low_chi  = 0;
   Float_t high_chi = 100;
 
   UInt_t  bins_n = 3000;
-  Float_t low_n = 0;
+  Float_t low_n  = 0;
   Float_t high_n = 3000;
 
   UInt_t  bins_totalmbd = 3500;
-  Float_t low_totalmbd = 0;
+  Float_t low_totalmbd  = 0;
   Float_t high_totalmbd = 350000;
 
   UInt_t  bins_totalcaloE = 1500;
-  Float_t low_totalcaloE = 0;
+  Float_t low_totalcaloE  = 0;
   Float_t high_totalcaloE = 1500;
+
+  // Define PI0 Cuts
+  Float_t clusE_min    = 1;
+  Float_t clus_chi_max = 10;
 };
 #endif

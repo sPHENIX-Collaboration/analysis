@@ -222,7 +222,7 @@ int caloTreeGen::process_event(PHCompositeNode *topNode)
     max_clusterPt = std::max(max_clusterPt, clus_pt);
     max_clusterChi = std::max(max_clusterChi, clus_chi);
 
-    if(clusE >= 1) {
+    if(clusE >= clusE_min) {
       hClusterECore->Fill(clusE);
       h2ClusterEtaPhi->Fill(clus_eta, clus_phi);
       h2ClusterEtaPhiWeighted->Fill(clus_eta, clus_phi, clusE);
@@ -230,7 +230,7 @@ int caloTreeGen::process_event(PHCompositeNode *topNode)
       hClusterChi->Fill(clus_chi);
     }
 
-    if(clusE < 1 || clus_chi >= 10) continue;
+    if(clusE < clusE_min || clus_chi >= clus_chi_max) continue;
 
     TLorentzVector photon1;
     photon1.SetPtEtaPhiE(clus_pt, clus_eta, clus_phi, clusE);
@@ -250,7 +250,7 @@ int caloTreeGen::process_event(PHCompositeNode *topNode)
       float clus_pt2 = E_vec_cluster2.perp();
       float clus_chi2 = recoCluster2->get_chi2();
 
-      if(clusE2 < 1 || clus_chi2 >= 10) continue;
+      if(clusE2 < clusE_min || clus_chi2 >= clus_chi_max) continue;
 
       TLorentzVector photon2;
       photon2.SetPtEtaPhiE(clus_pt2, clus_eta2, clus_phi2, clusE2);
@@ -301,6 +301,7 @@ int caloTreeGen::End(PHCompositeNode *topNode)
   std::cout << "min clusterPt: " << min_clusterPt << ", max clusterPt: " << max_clusterPt << std::endl;
   std::cout << "min clusterChi: " << min_clusterChi << ", max clusterChi: " << max_clusterChi << std::endl;
   std::cout << "max NClusters: " << max_NClusters << std::endl;
+  std::cout << "pi0 cuts: cluster minimum energy: " << clusE_min << ", cluster maximum chi2: " << clus_chi_max << std::endl;
 
   std::cout << "caloTreeGen::End(PHCompositeNode *topNode) This is the End..." << std::endl;
 
