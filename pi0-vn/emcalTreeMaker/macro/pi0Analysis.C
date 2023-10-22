@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 
+
 // -- root includes --
 #include <TH2F.h>
 #include <TFile.h>
@@ -30,8 +31,10 @@ namespace myAnalysis {
         Float_t pi0_pt_max;
         Float_t e1;
         Float_t e2;
-        Float_t e_asym;
-        Float_t deltaR;
+        Float_t e_asym_min;
+        Float_t e_asym_max;
+        Float_t deltaR_min;
+        Float_t deltaR_max;
         Float_t chi1;
         Float_t chi2;
     };
@@ -192,11 +195,13 @@ Int_t myAnalysis::readCuts(const string &i_cuts) {
 
         if (lineStream >> cut.pi0_pt_min >> comma
                        >> cut.pi0_pt_max >> comma
-                       >> cut.e1 >> comma
-                       >> cut.e2 >> comma
-                       >> cut.e_asym >> comma
-                       >> cut.deltaR >> comma
-                       >> cut.chi1 >> comma
+                       >> cut.e1         >> comma
+                       >> cut.e2         >> comma
+                       >> cut.e_asym_min >> comma
+                       >> cut.e_asym_max >> comma
+                       >> cut.deltaR_min >> comma
+                       >> cut.deltaR_max >> comma
+                       >> cut.chi1       >> comma
                        >> cut.chi2) cuts.push_back(cut);
         else {
             cerr << "Failed to parse line: " << line << endl;
@@ -209,14 +214,16 @@ Int_t myAnalysis::readCuts(const string &i_cuts) {
 
     cout << "Cuts" << endl;
     for(auto cut : cuts) {
-        cout << "pi0_pt_min: " << cut.pi0_pt_min
-           << ", pi0_pt_max: " << cut.pi0_pt_max
-           << ", e1: "         << cut.e1
-           << ", e2: "         << cut.e2
-           << ", e_asym: "     << cut.e_asym
-           << ", deltaR: "     << cut.deltaR
-           << ", chi1: "       << cut.chi1
-           << ", chi2: "       << cut.chi2 << endl;
+        cout << left << "pi0_pt_min: "   << setw(8) << cut.pi0_pt_min
+                     << ", pi0_pt_max: " << setw(8) << cut.pi0_pt_max
+                     << ", e1: "         << setw(8) << cut.e1
+                     << ", e2: "         << setw(8) << cut.e2
+                     << ", e_asym_min: " << setw(8) << cut.e_asym_min
+                     << ", e_asym_max: " << setw(8) << cut.e_asym_max
+                     << ", deltaR_min: " << setw(8) << cut.deltaR_min
+                     << ", deltaR_max: " << setw(8) << cut.deltaR_max
+                     << ", chi1: "       << setw(8) << cut.chi1
+                     << ", chi2: "       << setw(8) << cut.chi2 << endl;
     }
 
     return 0;
