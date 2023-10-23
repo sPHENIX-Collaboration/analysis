@@ -138,6 +138,8 @@ int dNdEtaINTT::Init(PHCompositeNode *topNode)
     outtree->Branch("Layer1_occupancy", &Layer1_occupancy_);
     outtree->Branch("NClus", &NClus_);
     outtree->Branch("NTrkrhits", &NTrkrhits_);
+    outtree->Branch("TrkrHitRow", &TrkrHitRow_);
+    outtree->Branch("TrkrHitColumn", &TrkrHitColumn_);
     outtree->Branch("ClusLayer", &ClusLayer_);
     outtree->Branch("ClusX", &ClusX_);
     outtree->Branch("ClusY", &ClusY_);
@@ -532,6 +534,8 @@ void dNdEtaINTT::ResetVectors()
     CleanVec(ClusZSize_);
     CleanVec(ClusLadderZId_);
     CleanVec(ClusLadderPhiId_);
+    CleanVec(TrkrHitRow_);
+    CleanVec(TrkrHitColumn_);
     CleanVec(TruthPV_x_);
     CleanVec(TruthPV_y_);
     CleanVec(TruthPV_z_);
@@ -540,6 +544,7 @@ void dNdEtaINTT::ResetVectors()
     CleanVec(TruthPV_NClus_);
     CleanVec(TruthPV_t_);
     CleanVec(TruthPV_embed_);
+    CleanVec(G4PfromClus_PID_);
     CleanVec(UniqueAncG4P_Px_);
     CleanVec(UniqueAncG4P_Py_);
     CleanVec(UniqueAncG4P_Pz_);
