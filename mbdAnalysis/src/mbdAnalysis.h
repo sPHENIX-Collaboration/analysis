@@ -55,13 +55,16 @@ class mbdAnalysis : public SubsysReco
 
   TFile *out;
   TTree *T = nullptr;
-  std::vector<float> adc;
-  std::vector<float> tdc0;
-  std::vector<float> tdc1;
+  //std::vector<float> adc;
+  //std::vector<float> tdc0;
+  //std::vector<float> tdc1;
+  std::vector<float> pmtcharge;
+  std::vector<float> pmttime;
   std::vector<float> pmtx;
   std::vector<float> pmty;
   std::vector<float> pmtz;
   std::vector<float> pmtr;
+  std::vector<float> pmtphi;
 
 };
 

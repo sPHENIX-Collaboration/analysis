@@ -1,5 +1,9 @@
-#include <bbc/BbcPmtContainerV1.h>
-#include <bbc/BbcGeom.h>
+//#include <bbc/BbcPmtContainerV1.h>
+//#include <bbc/BbcGeom.h>
+#include <bbc/MbdOut.h>
+#include <bbc/MbdPmtContainer.h>
+#include <bbc/MbdGeom.h>
+#include <phool/getClass.h>
 
 #include <phool/PHCompositeNode.h>
 
@@ -46,13 +50,17 @@ int mbdAnalysis::Init(PHCompositeNode *topNode)
   out = new TFile("output.root","RECREATE");
   
   T = new TTree("T","T");
-  T -> Branch("adc",&adc);
-  T -> Branch("tdc0",&tdc0);
-  T -> Branch("tdc1",&tdc1);
+//  T -> Branch("adc",&adc);
+//  T -> Branch("tdc0",&tdc0);
+//  T -> Branch("tdc1",&tdc1);
+  T -> Branch("pmtcharge",&pmtcharge);
+  T -> Branch("pmttime",&pmttime);
   T -> Branch("pmtx",&pmtx);
   T -> Branch("pmty",&pmty);
   T -> Branch("pmtz",&pmtz);
   T -> Branch("pmtr",&pmtr);
+  T -> Branch("pmtphi",&pmtphi);
+
   
   
   return Fun4AllReturnCodes::EVENT_OK;
@@ -71,38 +79,54 @@ int mbdAnalysis::process_event(PHCompositeNode *topNode)
 
   //tower information
   //mbdinfo
-  BbcPmtContainerV1 *mbdTowerContainer = findNode::getClass<BbcPmtContainerV1>(topNode,"BbcPmtContainer");
-  if(!mbdTowerContainer)
+  //these two lines copied directly from wiki:
+  PHCompositeNode *mbdNode = dynamic_cast<PHCompositeNode *>(iter.findFirst("PHCompositeNode", "MBD"));
+  MbdOut *mbdout = findNode::getClass<MbdOut>(mbdNode, "MbdOut");
+
+  MbdPmtContainer *mbdpmts = findNode::getClass<MbdPmtContainer>(mbdNode,"MbdPmtContainer"); // mbd info
+  if(!mbdpmts)
     {
-      std::cout << "makeMBDTrees::process_event: Could not find BbcPmtContainer, aborting" << std::endl;
+      std::cout << "makeMBDTrees::process_event: Could not find mbdpmts, aborting" << std::endl;
       return Fun4AllReturnCodes::ABORTEVENT;
     }
   
-  BbcGeom *mbdGeom = new BbcGeom();
-  int nPMTs = mbdTowerContainer -> get_npmt();
+  //MbdGeom *mbdGeom = new MbdGeom();
+  MbdGeom *mbdgeom = findNode::getClass<MbdGeom>(mbdNode, "MbdGeom");
+  int nPMTs = mbdpmts -> get_npmt();        //size (should always be 128)
   for(int i = 0; i < nPMTs; i++)
     {
-      short pmtID = mbdTowerContainer -> get_pmt(i);
+      //short pmtID = mbdTowerContainer -> get_pmt(i);
+      MbdPmtHit* mbdpmt = mbdpmts -> get_pmt(i);        // grab 1 pmt (changed from pmtID)
       
-      float pmtadc =  mbdTowerContainer -> get_adc(i);
-      std::cout << "adc for tower i: " << i << " is: " <<pmtadc << std::endl;
+      //float pmtadc =  mbdpmts -> get_adc(i);        // grab adc from the ith pmt in mbdpmts
+      //std::cout << "adc for tower i: " << i << " is: " <<pmtadc << std::endl;
       
-      pmtadc =  mbdTowerContainer -> get_adc(pmtID);
-      std::cout << "adc for tower pmtID: " << pmtID << " is: " <<pmtadc << std::endl;
-	    
+     // pmtadc =  mbdpmts -> get_adc(mbdpmt);
+      //std::cout << "adc for tower mbdpmt: " << mbdpmt << " is: " <<pmtadc << std::endl;
+      int pmtch =  mbdpmt->get_pmtch();        //pmt charge 
+      float charge =  mbdpmt->get_q();        //pmt charge 
+      float time =  mbdpmt->get_time();        //pmt charge 
+      std::cout << "mbdpmt:" << mbdpmt << " pmt channel number: " << pmtch << "; pmtcharge: " << charge <<"; pmttime: "<< time <<  std::endl;
+      
+      pmttime.push_back(charge);
+      pmtcharge.push_back(time);
+/*	    
       adc.push_back(pmtadc);
-      float pmttdc0 = mbdTowerContainer -> get_tdc0(i);
+      float pmttdc0 = mbdpmts -> get_tdc0(i);
       std::cout << "pmttdc0: " << pmttdc0 << std::endl;
       tdc0.push_back(pmttdc0);
-      float pmttdc1 = mbdTowerContainer -> get_tdc1(i);
+      float pmttdc1 = mbdpmts -> get_tdc1(i);
       tdc1.push_back(pmttdc1);
+*/
+// according to the wiki https://wiki.sphenix.bnl.gov/index.php/MBD_DST_Output these should be get_x(i) rather tahn
+// get_x(mbdpmt
+      pmtx.push_back(mbdgeom->get_x(i));
+      pmty.push_back(mbdgeom->get_y(i));
+      pmtz.push_back(mbdgeom->get_z(i));
+      pmtr.push_back(mbdgeom->get_r(i));
+      pmtphi.push_back(mbdgeom->get_phi(i));
 
-      pmtx.push_back(mbdGeom->get_x(i));
-      std::cout << "mbdGeom->get_x(pmtID): " << mbdGeom->get_x(pmtID) << std::endl;
-      pmty.push_back(mbdGeom->get_y(i));
-      pmtz.push_back(mbdGeom->get_z(i));
-      pmtr.push_back(mbdGeom->get_r(i));
-
+      std::cout << "phi angle of pmt is mbdgeom->get_phi(i)): " << mbdgeom->get_phi(i) << std::endl;
     }
   
   T -> Fill();
@@ -138,13 +162,16 @@ int mbdAnalysis::End(PHCompositeNode *topNode)
 //____________________________________________________________________________..
 int mbdAnalysis::Reset(PHCompositeNode *topNode)
 {
-  adc.clear();
-  tdc0.clear();
-  tdc1.clear();
+ // adc.clear();
+  //tdc0.clear();
+  //tdc1.clear();
+  pmtcharge.clear();
+  pmttime.clear();
   pmtx.clear();
   pmty.clear();
   pmtz.clear();
   pmtr.clear();
+  pmtphi.clear();
 
   
   return Fun4AllReturnCodes::EVENT_OK;
