@@ -81,11 +81,11 @@ int mbdAnalysis::process_event(PHCompositeNode *topNode)
   //tower information
   //mbdinfo
   //these two lines copied directly from wiki:
-  PHNodeIterator iter(topNode);
-  PHCompositeNode *mbdNode = dynamic_cast<PHCompositeNode *>(iter.findFirst("PHCompositeNode", "MBD"));
+  //PHNodeIterator iter(topNode);
+  //PHCompositeNode *mbdNode = dynamic_cast<PHCompositeNode *>(iter.findFirst("PHCompositeNode", "MBD"));
   //MbdOut *mbdout = findNode::getClass<MbdOut>(mbdNode, "MbdOut");
 
-  MbdPmtContainer *mbdpmts = findNode::getClass<MbdPmtContainer>(mbdNode,"MbdPmtContainer"); // mbd info
+  MbdPmtContainer *mbdpmts = findNode::getClass<MbdPmtContainer>(topNode,"MbdPmtContainer"); // mbd info
   if(!mbdpmts)
     {
       std::cout << "makeMBDTrees::process_event: Could not find mbdpmts, aborting" << std::endl;
@@ -93,7 +93,7 @@ int mbdAnalysis::process_event(PHCompositeNode *topNode)
     }
   
   //MbdGeom *mbdGeom = new MbdGeom();
-  MbdGeom *mbdgeom = findNode::getClass<MbdGeom>(mbdNode, "MbdGeom");
+  MbdGeom *mbdgeom = findNode::getClass<MbdGeom>(topNode, "MbdGeom");
 
 
 
