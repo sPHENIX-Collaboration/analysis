@@ -3,6 +3,7 @@
 #include <bbc/MbdOut.h>
 #include <bbc/MbdPmtContainer.h>
 #include <bbc/MbdGeom.h>
+#include <bbc/MbdPmtHit.h>
 #include <phool/getClass.h>
 
 #include <phool/PHCompositeNode.h>
@@ -80,8 +81,9 @@ int mbdAnalysis::process_event(PHCompositeNode *topNode)
   //tower information
   //mbdinfo
   //these two lines copied directly from wiki:
+  PHNodeIterator iter(topNode);
   PHCompositeNode *mbdNode = dynamic_cast<PHCompositeNode *>(iter.findFirst("PHCompositeNode", "MBD"));
-  MbdOut *mbdout = findNode::getClass<MbdOut>(mbdNode, "MbdOut");
+  //MbdOut *mbdout = findNode::getClass<MbdOut>(mbdNode, "MbdOut");
 
   MbdPmtContainer *mbdpmts = findNode::getClass<MbdPmtContainer>(mbdNode,"MbdPmtContainer"); // mbd info
   if(!mbdpmts)
@@ -92,6 +94,10 @@ int mbdAnalysis::process_event(PHCompositeNode *topNode)
   
   //MbdGeom *mbdGeom = new MbdGeom();
   MbdGeom *mbdgeom = findNode::getClass<MbdGeom>(mbdNode, "MbdGeom");
+
+
+
+
   int nPMTs = mbdpmts -> get_npmt();        //size (should always be 128)
   for(int i = 0; i < nPMTs; i++)
     {
@@ -103,14 +109,14 @@ int mbdAnalysis::process_event(PHCompositeNode *topNode)
       
      // pmtadc =  mbdpmts -> get_adc(mbdpmt);
       //std::cout << "adc for tower mbdpmt: " << mbdpmt << " is: " <<pmtadc << std::endl;
-      int pmtch =  mbdpmt->get_pmtch();        //pmt charge 
+      //int pmtch =  mbdpmt->get_pmtch();        //pmt charge 
       float charge =  mbdpmt->get_q();        //pmt charge 
       float time =  mbdpmt->get_time();        //pmt charge 
-      std::cout << "mbdpmt:" << mbdpmt << " pmt channel number: " << pmtch << "; pmtcharge: " << charge <<"; pmttime: "<< time <<  std::endl;
+      //std::cout << " pmt channel number: " << pmtch << "; pmtcharge: " << charge <<"; pmttime: "<< time <<  std::endl;
       
       pmttime.push_back(charge);
       pmtcharge.push_back(time);
-/*	    
+	/*    
       adc.push_back(pmtadc);
       float pmttdc0 = mbdpmts -> get_tdc0(i);
       std::cout << "pmttdc0: " << pmttdc0 << std::endl;
