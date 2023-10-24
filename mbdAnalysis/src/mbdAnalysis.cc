@@ -88,7 +88,7 @@ int mbdAnalysis::process_event(PHCompositeNode *topNode)
   MbdPmtContainer *mbdpmts = findNode::getClass<MbdPmtContainer>(topNode,"MbdPmtContainer"); // mbd info
   if(!mbdpmts)
     {
-      std::cout << "makeMBDTrees::process_event: Could not find mbdpmts, aborting" << std::endl;
+      std::cout << "makeMBDTrees::process_event: Could not find MbdPmtContainer, aborting" << std::endl;
       return Fun4AllReturnCodes::ABORTEVENT;
     }
   
