@@ -11,7 +11,9 @@ To use this code:
 Steps 2-4 make the JetReco tree
  2. Get the input files:
  ```
-   $ cd macro/full_lists
+   $ cd macro
+   $ mkdir full_lists
+   $ cd full_lists
    $ CreateFileList.pl -type 11 -embed -n 100000000 DST_BBC_G4HIT DST_CALO_CLUSTER DST_TRUTH_JET DST_TRUTH_G4HIT DST_GLOBAL
    $ cd ..
  ```
@@ -23,7 +25,7 @@ Steps 2-4 make the JetReco tree
    $ ./make_inp_lists.py 2 1
    $ cd jobs_2x1
    $ ../test.sh
-   [inspect the outputs of the generated test file]
+   [inspect the outputs of the generated *.root test file]
    $ cd ..
 ```
  4. When you are happy with step 3., make a directory to run over all the input file lists. If, for instance, you want jobs
@@ -54,7 +56,8 @@ Steps 6-9 make the rho fluctuation tree
  7. Make a small test run:
  ```
     $ ./make_inp_lists.py 1 1 rhofluct_lists 
-    [modify rhofluct_test.sh rhofluct_condor.sh and Fun4All_RhoFluct to use
+    $ chmod a+x rhofluct_test.sh rhofluct_condor.sh Fun4All_RhoFluct.C
+    [modify rhofluct_test.sh rhofluct_condor.sh and Fun4All_RhoFluct.C to use
     your proper install directory and probably in the test file to fun only a few events]
     $ cd rhofluct_1x1
     $ ../rhofluct_test.sh
@@ -76,7 +79,4 @@ Steps 6-9 make the rho fluctuation tree
     $ root -l dodecile_RhoFluct.C
     [your output file dodecile_RhoFluct.root contains the desired data]
 ```
-
-
-
 
