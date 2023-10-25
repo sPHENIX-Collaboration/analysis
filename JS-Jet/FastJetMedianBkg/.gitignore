@@ -9,4 +9,10 @@ junk
 **/_
 **/prior
 **/figs
-
+**/.deps
+**/.so
+**/build
+**/src_jet
+**/src_origrho
+**/src_rhofluct
+**/build
