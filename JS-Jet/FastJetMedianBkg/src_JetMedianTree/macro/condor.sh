@@ -6,7 +6,7 @@ export HOME=/sphenix/u/${LOGNAME} #(or /star/u/${LOGNAME} or /sphenix/u/${LOGNAM
  
 source /opt/sphenix/core/bin/sphenix_setup.sh -n
 # source /opt/sphenix/core/bin/setup_local.sh $HOME/install
-source /opt/sphenix/core/bin/setup_local.sh $HOME/install_master
+source /opt/sphenix/core/bin/setup_local.sh $HOME/install_dual
 
 # print the environment - needed for debugging
 printenv
@@ -23,7 +23,15 @@ global_list=$8
 truthg4_list=$9
 verbosity=$10
 
-echo root.exe -q -l ../Fun4All_JetRhoMedian.C\($nevnt,$jet_R,\"$out_name\",$min_lead_truth_pt,\"$calo_list\",\"$jettruth_list\",\"$bbc_list\",\"$global_list\",\"$truthg4_list\",0\);
-root.exe -q -l ../Fun4All_JetRhoMedian.C\($nevnt,$jet_R,\"$out_name\",$min_lead_truth_pt,\"$calo_list\",\"$jettruth_list\",\"$bbc_list\",\"$global_list\",\"$truthg4_list\",0\);
+F4A_file="Fun4All_JetRhoMedian.C"
+
+
+# Define the source file and destination directory
+if [ ! -e "$F4A_file" ]; then
+    cp "../$F4A_file" "./"
+fi
+
+echo root.exe -q -l ../$F4A_file\($nevnt,$jet_R,\"$out_name\",$min_lead_truth_pt,\"$calo_list\",\"$jettruth_list\",\"$bbc_list\",\"$global_list\",\"$truthg4_list\",0\);
+root.exe -q -l ../$F4A_file\($nevnt,$jet_R,\"$out_name\",$min_lead_truth_pt,\"$calo_list\",\"$jettruth_list\",\"$bbc_list\",\"$global_list\",\"$truthg4_list\",0\);
 
 echo all done

@@ -1,6 +1,6 @@
 #! /bin/bash
 out_name=out.root
-nevnt=10
+nevnt=100
 min_lead_truth_pt=10
 
 calo_list=dst_calo_cluster_0.list

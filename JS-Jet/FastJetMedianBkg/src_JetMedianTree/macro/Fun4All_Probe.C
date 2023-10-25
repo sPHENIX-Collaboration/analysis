@@ -28,7 +28,7 @@ R__LOAD_LIBRARY(libjetrhomedian.so)
 R__LOAD_LIBRARY(libjetbackground.so)
 /* R__LOAD_LIBRARY(libg4vertex.so) */
 
-void Fun4All_JetRhoMedian(
+void Fun4All_Probe(
     const int     nevnt = 10
   , const float   jet_R = 0.4
   , const string& out_name = "test.root"
@@ -60,25 +60,11 @@ void Fun4All_JetRhoMedian(
     gSystem->Exit(0);
   }
 
-  // add the CEMC retowering
-  RetowerCEMC *rcemc = new RetowerCEMC(); 
-  /* rcemc->Verbosity(verbosity); */ 
-  /* rcemc->set_towerinfo(true); */
-  se->registerSubsystem(rcemc);
   //
   // do the background subtraction
-  Enable::HIJETS_TRUTH=false;
-  HIJetReco();
 
-  std::string sub1_jet_name = Form("AntiKt_Tower_r0%i_Sub1", ((int)(jet_R*10)));
+  /* std::string sub1_jet_name = Form("AntiKt_Tower_r0%i_Sub1", ((int)(jet_R*10))); */
   std::string truth_jet_name = Form("AntiKt_Truth_r0%i", ((int)(jet_R*10)));
-
-  JetRhoMedian *jetRhoMedian = new JetRhoMedian(out_name, jet_R, truth_jet_name, sub1_jet_name, min_lead_truth_pt);
-  jetRhoMedian->add_input(new TowerJetInput(Jet::CEMC_TOWER_RETOWER));
-  jetRhoMedian->add_input(new TowerJetInput(Jet::HCALIN_TOWER));
-  jetRhoMedian->add_input(new TowerJetInput(Jet::HCALOUT_TOWER));
-  jetRhoMedian->Verbosity(0);
-  se->registerSubsystem(jetRhoMedian);
 
 
   if (list_truth_jet!="") {
@@ -117,12 +103,71 @@ void Fun4All_JetRhoMedian(
     cout << " Fatal: missing truth g4hit list file. Exiting." << endl;
     gSystem->Exit(0);
   }
+ 
+  // add the CEMC retowering
+  RetowerCEMC *rcemc = new RetowerCEMC(); 
+  /* rcemc->Verbosity(verbosity); */ 
+  rcemc->set_towerinfo(true);
+  se->registerSubsystem(rcemc);
 
+  Enable::HIJETS_TRUTH=false;
+  HIJetReco();
+
+    /* auto towerinfo_jets = new JetReco(); */
+    /* towerinfo_jets->add_input(new TowerJetInput(Jet::CEMC_TOWER_RETOWER)); */
+    /* towerinfo_jets->add_input(new TowerJetInput(Jet::HCALIN_TOWERINFO)); */
+    /* towerinfo_jets->add_input(new TowerJetInput(Jet::HCALOUT_TOWERINFO)); */
+    /* towerinfo_jets->add_algo(new FastJetAlgo(Jet::ANTIKT, 0.4), "TOWERINFO_AntiKt_Tower_r04"); */
+    /* towerinfo_jets->set_algo_node("ANTIKT"); */
+    /* towerinfo_jets->set_input_node("TOWER"); */
+    /* se->registerSubsystem(towerinfo_jets); */
+
+    /* auto SUB1_jets = new JetReco(); */
+    /* SUB1_jets->add_input(new TowerJetInput(Jet::CEMC_TOWERINFO_SUB1)); */
+    /* SUB1_jets->add_input(new TowerJetInput(Jet::HCALIN_TOWERINFO_SUB1)); */
+    /* SUB1_jets->add_input(new TowerJetInput(Jet::HCALOUT_TOWERINFO_SUB1)); */
+    /* SUB1_jets->add_algo(new FastJetAlgo(Jet::ANTIKT, 0.4), "SUB1_AntiKt_Tower_r04"); */
+    /* SUB1_jets->set_algo_node("ANTIKT"); */
+    /* SUB1_jets->set_input_node("TOWER"); */
+    /* se->registerSubsystem(SUB1_jets); */
+
+  PrintTowers* print_tow = new PrintTowers( {{truth_jet_name
+      /* , "SUB1_AntiKt_Tower_r04" */
+      , "AntiKt_Tower_r04_Sub1"
+      }}, { {{truth_jet_name, "AntiKt_Tower_r04_Sub1"} }}, {{
+      {Jet::CEMC_TOWER_RETOWER, "CEMC_TOWER_RETOWER"},
+      {Jet::HCALIN_TOWER,  "HCALIN_TOWER"},
+      {Jet::HCALIN_TOWER,  "HCALOUT_TOWER"},
+      {Jet::CEMC_TOWERINFO_RETOWER, "CEMC_TOWERINFO_RETOWER"},
+      {Jet::HCALIN_TOWERINFO,  "HCALIN_TOWERINFO"},
+      {Jet::HCALOUT_TOWERINFO, "HCALOUT_TOWERINFO"},
+      {Jet::CEMC_TOWERINFO_SUB1,    "CEMC_TOWERSUB1"},
+      {Jet::HCALIN_TOWERINFO_SUB1, "HCALIN_TOWERINFO_SUB1"},
+      {Jet::HCALOUT_TOWERINFO_SUB1, "HCALOUT_TOWERINFO_SUB1"}
+}}, 5, 0.3 );
+  /* PrintTowers* print_tow = new PrintTowers( {{truth_jet_name, "TOWERINFO_AntiKt_Tower_r04", "SUB1_AntiKt_Tower_r04" }}, {}, 10., 10); */
+  print_tow->nmax_jetprint = 20;
+  /* print_tow->m_max_cent = 10; */
+      /* {Jet::CEMC_TOWER_RETOWER, "CEMC_TOWER_RETOWER"}, */
+      /* {Jet::CEMC_TOWERINFO_RETOWER, "CEMC_TOWERINFO_RETOWER"}, */
+      /* {Jet::HCALIN_TOWERINFO,  "HCALIN_TOWERINFO"}, */
+      /* {Jet::HCALOUT_TOWERINFO, "HCALOUT_TOWERINFO"}, */
+  /* }}, 5., 0.01 ); */
+
+  /* PrintTowers* print_tow = new PrintTowers( {{truth_jet_name, sub1_jet_name, "TOWERINFO_AntiKt_Tower_r04", "SUB1_AntiKt_Tower_r04"}}, {{ */ 
+  /*     {Jet::CEMC_TOWERINFO_RETOWER, "CEMC_TOWERINFO_RETOWER"}, */
+  /*     {Jet::HCALIN_TOWERINFO,  "HCALIN_TOWERINFO"}, */
+  /*     {Jet::HCALOUT_TOWERINFO, "HCALOUT_TOWERINFO"}, */
+  /*     {Jet::CEMC_TOWERINFO_SUB1,    "CEMC_TOWERSUB1"}, */
+  /*     {Jet::HCALIN_TOWERINFO_SUB1, "HCALIN_TOWERINFO_SUB1"}, */
+  /*     {Jet::HCALOUT_TOWERINFO_SUB1, "HCALOUT_TOWERINFO_SUB1"} */
+  /* }}, 5., 0.10 ); */
+  se->registerSubsystem(print_tow);
 
   se->run(nevnt);
   se->End();
   delete se;
-  cout << " Done in Fun4All_JetRhoMedian.C " << endl;
+  cout << " Done in Fun4All_Probe.C " << endl;
   gSystem->Exit(0);
 
 }

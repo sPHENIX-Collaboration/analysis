@@ -19,10 +19,14 @@ libjetrhomedian_la_LIBADD = \
   -lg4eval
 
 libjetrhomedian_la_SOURCES = \
-  JetRhoMedian.cc
+  PrintTowers.cc \
+  JetRhoMedian.cc \
+  RhoFluct.cc
 
 pkginclude_HEADERS = \
-  JetRhoMedian.h
+  PrintTowers.h \
+  JetRhoMedian.h \
+  RhoFluct.h
  
 ################################################
 # linking tests

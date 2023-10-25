@@ -1,5 +1,5 @@
-#ifndef JETRHOMEDIAN__H
-#define JETRHOMEDIAN__H
+#ifndef RHOFLUCT__H
+#define RHOFLUCT__H
 
 #include <fun4all/SubsysReco.h>
 
@@ -10,6 +10,8 @@
 #include <array>
 #include <vector>
 
+#include <TRandom3.h>
+
 class PHCompositeNode;
 class JetEvalStack;
 class TTree;
@@ -17,35 +19,33 @@ class TH2D;
 class TH1;
 class JetInput;
 
-class JetRhoMedian : public SubsysReco
+class RhoFluct : public SubsysReco
 {
  public:
-  JetRhoMedian
-    ( const std::string& outputfilename = "JetRhoMedian.root"
-    , const float        _jet_R          = 0.4
-    , const std::string& truthjetname   = "AntiKt_Truth_r04"
-    , const std::string& sub1jetname   = "AntiKt_Truth_r04"
-    , const float min_lead_truth_pt = 10.
+  RhoFluct
+    ( const std::string& outputfilename = "RhoFluct.root"
+    , const float _jet_R = 0.4
     );
 
-  virtual ~JetRhoMedian();
+  virtual ~RhoFluct();
 
   /* void use_initial_vertex(const bool b = true) {initial_vertex = b;} */
   int Init          (PHCompositeNode *topNode);
   int InitRun       (PHCompositeNode *topNode);
   int process_event (PHCompositeNode *topNode);
   int End           (PHCompositeNode *topNode);
-  void clear_vectors();
-  void add_input(JetInput *input) { m_inputs.push_back(input); }
+  void add_input_Sub1(JetInput *input) { m_input_Sub1.push_back(input); }
+  void add_input_rhoA(JetInput *input) { m_input_rhoA.push_back(input); }
 
  private:
+  TRandom3 rand3 {};
+
   long long int nevent { 0 };
   long long int outevent { 0 };
   const std::string m_outputfilename;
   const float jet_R;
   const std::string m_truthJetName;
-  const std::string m_sub1JetName;
-  const float m_min_lead_truth_pt;
+  const std::string m_Sub1JetName;
 
   int i_truthset = 0;
 
@@ -62,21 +62,23 @@ class JetRhoMedian : public SubsysReco
   float m_impactparam { -1. };
 
   //Calo Jets -- all
-  std::vector<float> m_CaloJetEta        {};
-  std::vector<float> m_CaloJetPhi        {};
-  std::vector<float> m_CaloJetPt          {};
-  std::vector<float> m_CaloJetPtLessRhoA {}; // pT - rho x A
-  std::vector<float> m_CaloJetArea       {};
+  float m_1TeV_phi ; // always embed a 100 GeV particle
+  float m_1TeV_eta ;
 
-  //Truth Jets
-  std::vector<float> m_TruthJetEta  {};
-  std::vector<float> m_TruthJetPhi  {};
-  std::vector<float> m_TruthJetPt   {};
 
-  //SUB1 Jets
-  std::vector<float> m_Sub1JetEta  {};
-  std::vector<float> m_Sub1JetPhi  {};
-  std::vector<float> m_Sub1JetPt   {};
+  bool   m_rhoA_ismatched;
+  float  m_rhoAJetPhi ;
+  float  m_rhoAJetEta ;
+  float  m_rhoAJetPt  ;
+  float  m_rhoAJetArea  ;
+  float  m_rhoAJetPtLessRhoA ; // pT - rho x A
+  float  m_rhoAJet_delpt; // (pT-rhoxA)-1TeV
+
+  bool   m_Sub1_ismatched;
+  float  m_Sub1JetPhi ;
+  float  m_Sub1JetEta ;
+  float  m_Sub1JetPt  ;
+  float   m_Sub1Jet_delpt ; // pT - 1TeV
 
   // FIXME -- functions straight from background median estimator
   float        mBGE_mean_area    { 0 };
@@ -84,7 +86,7 @@ class JetRhoMedian : public SubsysReco
   float        mBGE_n_empty_jets { 0 };
   unsigned int mBGE_n_jets_used  { 0 };
 
-  std::vector<JetInput *> m_inputs; // copied from /direct/sphenix+u/dstewart/vv/coresoftware/simulation/g4simulation/g4jets/JetReco.h .cc
+  std::vector<JetInput *> m_input_Sub1, m_input_rhoA; // copied from /direct/sphenix+u/dstewart/vv/coresoftware/simulation/g4simulation/g4jets/JetReco.h .cc
 };
 
-#endif  // JETRHOMEDIAN__H
+#endif  // RhoFluct

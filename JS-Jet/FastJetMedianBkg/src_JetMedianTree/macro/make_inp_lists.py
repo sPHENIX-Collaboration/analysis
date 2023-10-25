@@ -30,10 +30,31 @@ def main():
     except:
         pass
 
+    inp_dir = 'full_lists'
+    try:
+        inp_dir = argv[3]
+    except:
+        pass
+
+    # figure out the output directory tag
+    odir_tag = "jobs"
+    print (f"inp_dir: {inp_dir}")
+    if not inp_dir == "full_lists":
+        print (f"odir_tag: {odir_tag} 0")
+        if "_lists" in inp_dir:
+            odir_tag = inp_dir[:inp_dir.find("_lists")]
+            print (f"odir_tag: {odir_tag} 1")
+        else:
+            odir_tag = "jobs"
+            print (f"odir_tag: {odir_tag} 2")
+
+
     if n_files != -1:
-        odir = f'jobs_{lines_per_output}x{n_files}'
+        odir = f'{odir_tag}_{lines_per_output}x{n_files}'
     else:
-        odir = f'jobs_{lines_per_output}xAll'
+        odir = f'{odir_tag}_{lines_per_output}xAll'
+
+    print (f"odir: {odir}")
 
     if path.isdir(odir):
         print(f'replacing contents of {odir}');
@@ -48,11 +69,11 @@ def main():
     in_files = []
     in_tags  = []
     n_file = -1
-    if (len(glob('full_lists/dst_*.list')) == 0):
-        print("fatal error: no lists in full_lists")
+    if (len(glob(f'{inp_dir}/dst_*.list')) == 0):
+        print(f"fatal error: no lists in {inp_dir}")
         exit()
 
-    for file in glob('full_lists/dst_*.list'):
+    for file in glob(f'{inp_dir}/dst_*.list'):
         in_files .append(open(file,'r'))
         in_tags .append(file.split('/')[-1][:-5])
 

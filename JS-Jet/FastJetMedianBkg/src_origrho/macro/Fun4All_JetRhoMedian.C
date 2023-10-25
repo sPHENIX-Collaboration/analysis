@@ -18,6 +18,7 @@
 
 // here you need your package name (set in configure.ac)
 #include <fastjetmedianbkg/JetRhoMedian.h>
+#include <fastjetmedianbkg/PrintTowers.h>
 R__LOAD_LIBRARY(libfun4all.so)
 R__LOAD_LIBRARY(libg4centrality.so)
 R__LOAD_LIBRARY(libg4jets.so)
@@ -31,7 +32,7 @@ void Fun4All_JetRhoMedian(
     const int     nevnt = 10
   , const float   jet_R = 0.4
   , const string& out_name = "test.root"
-  , const float   min_lead_truth_pt = 10
+  , const float   min_lead_truth_pt = 30
   , const string& list_calo_cluster=""
   , const string& list_truth_jet=""
   , const string& list_bbc=""
@@ -61,7 +62,7 @@ void Fun4All_JetRhoMedian(
 
   // add the CEMC retowering
   RetowerCEMC *rcemc = new RetowerCEMC(); 
-  rcemc->Verbosity(verbosity); 
+  /* rcemc->Verbosity(verbosity); */ 
   /* rcemc->set_towerinfo(true); */
   se->registerSubsystem(rcemc);
   //
@@ -73,9 +74,10 @@ void Fun4All_JetRhoMedian(
   std::string truth_jet_name = Form("AntiKt_Truth_r0%i", ((int)(jet_R*10)));
 
   JetRhoMedian *jetRhoMedian = new JetRhoMedian(out_name, jet_R, truth_jet_name, sub1_jet_name, min_lead_truth_pt);
-  jetRhoMedian->add_input(new TowerJetInput(Jet::CEMC_TOWERINFO_RETOWER));
-  jetRhoMedian->add_input(new TowerJetInput(Jet::HCALIN_TOWERINFO));
-  jetRhoMedian->add_input(new TowerJetInput(Jet::HCALOUT_TOWERINFO));
+  jetRhoMedian->add_input(new TowerJetInput(Jet::CEMC_TOWER_RETOWER));
+  jetRhoMedian->add_input(new TowerJetInput(Jet::HCALIN_TOWER));
+  jetRhoMedian->add_input(new TowerJetInput(Jet::HCALOUT_TOWER));
+  jetRhoMedian->Verbosity(0);
   se->registerSubsystem(jetRhoMedian);
 
 

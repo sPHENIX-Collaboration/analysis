@@ -75,6 +75,7 @@ int JetRhoMedian::Init(PHCompositeNode* topNode)
   /* m_T->Branch("id",                &m_id); */
   m_T->Branch("rho",               &m_rho);
   m_T->Branch("rho_sigma",         &m_rho_sigma);
+  m_T->Branch("cent",          &m_cent);
   m_T->Branch("cent_mdb",          &m_cent_mdb);
   m_T->Branch("cent_epd",          &m_cent_epd);
   m_T->Branch("impactparam",       &m_impactparam);
@@ -132,11 +133,12 @@ int JetRhoMedian::process_event(PHCompositeNode* topNode)
     m_cent_epd  =  cent_node->get_centile(CentralityInfo::PROP::epd_NS);
     m_cent_mdb  =  cent_node->get_centile(CentralityInfo::PROP::mbd_NS);
     m_impactparam =  cent_node->get_quantity(CentralityInfo::PROP::bimp);
+    m_cent =  cent_node->get_centile(CentralityInfo::PROP::bimp);
   }
 
   const double ghost_max_rap = 1.1;
   const double ghost_R = 0.01;
-  const double max_jet_rap = 1.1 - jet_R;
+  const double max_jet_rap = 1.1; // - jet_R;
 
 
   /* fastjet::JetDefinition jet_def(fastjet::kt_algorithm, 0.4);     //  JET DEFINITION */
@@ -157,35 +159,58 @@ int JetRhoMedian::process_event(PHCompositeNode* topNode)
   }
 
   bool isfirst = true;
-  for (auto& jet : jetsMC->vec()) {  // will return jets in order of descending pT
+  int fixmek = 0;
+  auto vjets = jetsMC->vec();
+  std::sort(vjets.begin(), vjets.end(), [](Jet* a, Jet* b){return a->get_pt() > b->get_pt();});
+  if (Verbosity() > 100) {
+    if (m_cent_mdb<10) {
+      std::cout << " NEW EVENT[" << (outevent++) << "]" << std::endl;
+      std::cout << " ---  Truth Jets [set(" << outevent << ")]" <<  std::endl;
+    }
+  }
+  for (auto& jet : vjets) { 
     float pt  = jet->get_pt();
+    if  (pt < 5.) continue;
     float eta = jet->get_eta();
     if (eta < -max_jet_rap || eta > max_jet_rap) continue;
+    if (Verbosity()>100 && m_cent_mdb<10) {
+      std::cout << Form("k[%i] pt:phi:eta[%5.2f:%5.2f:%5.2f]", fixmek++, jet->get_pt(), jet->get_phi(), jet->get_eta()) << std::endl;
+    }
 
     if (isfirst) {
       isfirst = false;
       if (pt < m_min_lead_truth_pt) return Fun4AllReturnCodes::EVENT_OK;
     }
-    if  (pt < 5.) continue;
     m_TruthJetPt .push_back(jet->get_pt());
     m_TruthJetEta.push_back(jet->get_eta());
     m_TruthJetPhi.push_back(jet->get_phi());
   }
 
   //get the SUB1 jets
+    if (Verbosity() > 100 && m_cent_mdb<10) {
+      std::cout << "  --- Sub1 Jets [set(" << outevent << ")]" <<  std::endl;
+       fixmek = 0;
+    }
   JetMap* jets_sub1 = findNode::getClass<JetMap>(topNode, m_sub1JetName);
-  for (auto& jet : jets_sub1->vec()) {
-    // will return jets in order of descending pT
-    float pt  = jet->get_pt();
-    float eta = jet->get_eta();
-    if (eta < -max_jet_rap || eta > max_jet_rap) continue;
-    if  (pt < 5.) continue;
-    m_Sub1JetPt .push_back(jet->get_pt());
-    m_Sub1JetEta.push_back(jet->get_eta());
-    m_Sub1JetPhi.push_back(jet->get_phi());
+  if (jets_sub1 != nullptr) {
+    vjets = jets_sub1->vec();
+    std::sort(vjets.begin(), vjets.end(), [](Jet* a, Jet* b){return a->get_pt() > b->get_pt();});
+    fixmek = 0;
+    if (Verbosity()>100 && m_cent_mdb<10) std::cout << "SUB1 jets" << std::endl;
+    for (auto& jet : jets_sub1->vec()) {
+      // will return jets in order of descending pT
+      float pt  = jet->get_pt();
+      float eta = jet->get_eta();
+      if (eta < -max_jet_rap || eta > max_jet_rap) continue;
+      if  (pt < 5.) continue;
+      if (Verbosity()>100 && m_cent_mdb<10) std::cout << Form("k[%i] pt:phi:eta[%5.2f:%5.2f:%5.2f]", fixmek++, jet->get_pt(), jet->get_phi(), jet->get_eta()) << std::endl;
+      m_Sub1JetPt .push_back(jet->get_pt());
+      m_Sub1JetEta.push_back(jet->get_eta());
+      m_Sub1JetPhi.push_back(jet->get_phi());
+    }
   }
 
-  const int TOW_PRINT_INT = 10;
+  const int TOW_PRINT_INT = 8000;
 
   int n_inputs {0};
   std::vector<fastjet::PseudoJet> calo_pseudojets;
@@ -252,8 +277,21 @@ int JetRhoMedian::process_event(PHCompositeNode* topNode)
   fastjet::ClusterSequenceArea clustSeq(calo_pseudojets, jet_def_antikt, area_def);
   std::vector<fastjet::PseudoJet> jets 
     = sorted_by_pt( selection( clustSeq.inclusive_jets(5.) ));
+
+  if (Verbosity()>100 && m_cent_mdb<10) {
+    fixmek = 0;
+    std::cout << "  --- rhoA jets [set("<<outevent<<")]" << std::endl;
+    for (auto jet : jets) {
+      if (jet.perp()-m_rho*jet.area() > 5.) {
+        auto phi = jet.phi();
+        while (phi > M_PI) phi -= 2*M_PI;
+         std::cout << Form("k[%i] pt:phi:eta[%5.2f:%5.2f:%5.2f]", fixmek++, (jet.perp()-m_rho*jet.area()), phi, jet.eta()) << std::endl;
+      }
+    }
+  }
+
   for (auto jet : jets) {
-    if (Verbosity() >= JetRhoMedian::VERBOSITY_SOME) {
+    if (false && Verbosity() >= JetRhoMedian::VERBOSITY_SOME) {
         auto cst = fastjet::sorted_by_pt(jet.constituents());
         int i =0;
         for (auto p : cst)  {
