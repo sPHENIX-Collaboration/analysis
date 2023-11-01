@@ -34,7 +34,7 @@ This package is designed to subtract jets using the jet multiplicity method, the
  
    * Test run using Fun4All. The Fun4All macro takes in input file lists for the truth jet and calo cluster DSTs. For example, you can run:
           
-          root -b -q 'Fun4All_JetBkgd.C("dst_truth_jet.list", "dst_calo_cluster.list", "dst_global.list")'
+          root -b -q 'Fun4All_JetBkgd.C("dst_truth_jet.list", "dst_calo_cluster.list", "dst_global.list", "output.root", 0.4)'
    
    * This will create an output file containing all the necessary information for the histogram making.
    ## Options in JetBkgdSub

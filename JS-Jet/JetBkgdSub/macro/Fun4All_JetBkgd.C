@@ -44,8 +44,6 @@ void Fun4All_JetBkgd(
 	const char *filelistglobal = "dst_global.list",
   const char * outputfile = "output.root",
   const double jet_parameter = 0.4,
-  const double min_leading_jet_pt = 30,
-  const double max_leading_jet_pt = 1000  
 )
 {
 
@@ -64,12 +62,6 @@ void Fun4All_JetBkgd(
   string truthname = "AntiKt_Truth_r0" + to_string(int(jet_parameter * 10));
   string reconame = "AntiKt_Tower_r0" + to_string(int(jet_parameter * 10))+ "_Sub1";
   // check that min leading jet pt is less than max leading jet pt
-  if (min_leading_jet_pt > max_leading_jet_pt)
-  {
-    std::cout << "Min leading jet pt must be less than max leading jet pt" << std::endl;
-    exit(-1);
-  }
-
 
   //-----------------------------------
   // Fun4All server initialization
