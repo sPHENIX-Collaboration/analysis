@@ -42,6 +42,12 @@ This package is designed to subtract jets using the jet multiplicity method, the
    * setPtRange(low, high): set the pt range of TRUTH jets you are interested in keeping in your tree
    * setEtaRange(low, high): set the eta range of TRUTH jets you are interested in keeping in your tree
    * add_input(string): add jet input to the tree. The string should be the name of the tower input.
+   * doIterative(bool): Saves iterative background subtracted jets to the tree
+   * doAreaSub(bool): Saves area background subtracted jets to the tree
+   * doMultSub(bool): Saves multiplicity background subtracted jets to the tree
+   * doTruth(bool): Saves truth jets to the tree
+   * setMinRecoPt(float): Sets the minimum pt of the reconstructed jet to be saved to the tree
+   
 
 
 # Questions/suggestions

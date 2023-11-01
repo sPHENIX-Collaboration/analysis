@@ -43,25 +43,9 @@ void Fun4All_JetBkgd(
   const char *filelistcalo = "dst_calo_cluster.list",
 	const char *filelistglobal = "dst_global.list",
   const char * outputfile = "output.root",
-  const double jet_parameter = 0.4,
+  const double jet_parameter = 0.4
 )
 {
-
-  //-----------------------------------
-  // Initialization
-  //-----------------------------------
-
-  // check jet parameter is in range 0.2-0.8
-  if (jet_parameter < 0.2 || jet_parameter > 0.8)
-  {
-    std::cout << "Jet parameter must be in range 0.2-0.8" << std::endl;
-    exit(-1);
-  }
-  // create jetreco and jettruth node names
-  string rawname = "AntiKt_Tower_r0" + to_string(int(jet_parameter * 10));
-  string truthname = "AntiKt_Truth_r0" + to_string(int(jet_parameter * 10));
-  string reconame = "AntiKt_Tower_r0" + to_string(int(jet_parameter * 10))+ "_Sub1";
-  // check that min leading jet pt is less than max leading jet pt
 
   //-----------------------------------
   // Fun4All server initialization
@@ -91,7 +75,9 @@ void Fun4All_JetBkgd(
   Enable::HIJETS_TRUTH=false;
   HIJetReco();
     
-  // // tower jets
+  // tower jets
+  // create jetreco and jettruth node names
+  string rawname = "AntiKt_Tower_r0" + to_string(int(jet_parameter * 10));
   JetReco *towerjetreco = new JetReco();
   towerjetreco->add_input(new TowerJetInput(Jet::CEMC_TOWERINFO_RETOWER));
   towerjetreco->add_input(new TowerJetInput(Jet::HCALIN_TOWERINFO));
@@ -105,12 +91,18 @@ void Fun4All_JetBkgd(
   // ==============
   // Jet Bkgd Sub
   // ==============
-  JetBkgdSub *myJetTree = new JetBkgdSub(jet_parameter,reconame,rawname,truthname,outputfile);
+  double etamin = -1.1 + jet_parameter;
+  double etamax = 1.1 - jet_parameter;
+  JetBkgdSub *myJetTree = new JetBkgdSub(jet_parameter,outputfile);
   myJetTree->add_input(new TowerJetInput(Jet::CEMC_TOWERINFO_RETOWER));
   myJetTree->add_input(new TowerJetInput(Jet::HCALIN_TOWERINFO));
   myJetTree->add_input(new TowerJetInput(Jet::HCALOUT_TOWERINFO));
-  myJetTree->setEtaRange(-1.1, 1.1);
-  myJetTree->setPtRange(5, 100);
+  myJetTree->doIterative(true);
+  myJetTree->doAreaSub(true);
+  myJetTree->doMultSub(true);
+  myJetTree->doTruth(true);
+  myJetTree->setEtaRange(etamin, etamax);
+  myJetTree->setPtRange(5, 100); // only sets range for truth jets
   myJetTree->Verbosity(verbosity);
   se->registerSubsystem(myJetTree);
 

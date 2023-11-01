@@ -22,14 +22,16 @@ class JetBkgdSub : public SubsysReco
 public:
     // constructor
     JetBkgdSub(const float jet_R = 0.4,
-            const std::string &recojetname = "AntiKt_Tower_r04_Sub1",
-            const std::string &rawjetname = "AntiKt_Tower_r04",
-            const std::string &truthjetname = "AntiKt_Truth_r04",
             const std::string &outputfilename = "jettree.root");
 
     ~JetBkgdSub() override; // destructor
 
     // setters
+    void doIterative(bool b = true) { _doIterative = b; }
+    void doAreaSub(bool b = true) { _doAreaSub = b; }
+    void doMultSub(bool b = true) { _doMultSub = b; }
+    void doTruth(bool b = true) { _doTruth = b; }
+
     void setEtaRange(double low, double high)
     {
         m_etaRange.first = low;
@@ -42,9 +44,11 @@ public:
         m_ptRange.second = high;
     }
 
+    void setMinRecoPt(double pt) { _minrecopT = pt; }
+
     void add_input(JetInput *input) { _inputs.push_back(input); }
     
-    // event trigger
+    // event trigger (for simulation)
     float LeadingR04TruthJet(PHCompositeNode *topNode);
     
     // Standard Fun4All functions
@@ -55,25 +59,33 @@ public:
 
     void EstimateRhoMult(PHCompositeNode *topNode);
     double GetMedian(std::vector<double> &v);
+    void GetCentInfo(PHCompositeNode *topNode);
+    float NSignalCorrection(float jet_pt, int cent);
 
 private:
 
     // private variables
     float m_jet_R;
-     std::string m_reco_input;
+    std::string m_iter_input;
     std::string m_raw_input; 
     std::string m_truth_input;
     std::string m_outputfilename;
     std::pair<double, double> m_etaRange;
     std::pair<double, double> m_ptRange;
+    double _minrecopT;
     std::vector<JetInput *> _inputs;
+    bool _doIterative;
+    bool _doAreaSub;
+    bool _doMultSub;
+    bool _doTruth;
+
 
     //____________________________________________________________________________..
     // output tree variables
     int m_event;
     int m_rhoA_jets;
-    int m_raw_jets;
-    int m_reco_jets;
+    int m_mult_jets;
+    int m_iter_jets;
     int m_truth_jets;
     int m_centrality;
     double m_rho_area;
@@ -85,10 +97,10 @@ private:
      // output trees
     TTree *m_tree;
     //sub1 jet variables
-    std::vector<float> m_reco_eta;
-    std::vector<float> m_reco_phi;
-    std::vector<float> m_reco_pt;
-    std::vector<float> m_reco_pt_unsub;
+    std::vector<float> m_iter_eta;
+    std::vector<float> m_iter_phi;
+    std::vector<float> m_iter_pt;
+    std::vector<float> m_iter_pt_unsub;
 
     // rhoA jet variables
     std::vector<float> m_rhoA_eta;
@@ -98,10 +110,11 @@ private:
     std::vector<float> m_rhoA_pt_unsub; 
 
     // mult jet variables
-    std::vector<int> m_raw_ncomponent;
-    std::vector<float> m_raw_eta;
-    std::vector<float> m_raw_phi;
-    std::vector<float> m_raw_pt;
+    std::vector<int> m_mult_ncomponent;
+    std::vector<float> m_mult_eta;
+    std::vector<float> m_mult_phi;
+    std::vector<float> m_mult_pt;
+    std::vector<float> m_mult_pt_unsub; 
 
     // truth jet variables
     std::vector<int> m_truth_ncomponent;
