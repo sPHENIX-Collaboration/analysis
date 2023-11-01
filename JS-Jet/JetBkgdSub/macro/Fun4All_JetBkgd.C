@@ -101,8 +101,9 @@ void Fun4All_JetBkgd(
   myJetTree->doAreaSub(true);
   myJetTree->doMultSub(true);
   myJetTree->doTruth(true);
+  myJetTree->setMinRecoPt(5.0); // only sets range for reco jets
   myJetTree->setEtaRange(etamin, etamax);
-  myJetTree->setPtRange(5, 100); // only sets range for truth jets
+  myJetTree->setPtRange(10, 100); // only sets range for truth jets
   myJetTree->Verbosity(verbosity);
   se->registerSubsystem(myJetTree);
 
