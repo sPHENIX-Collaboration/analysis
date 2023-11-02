@@ -21,7 +21,7 @@ class JetBkgdSub : public SubsysReco
 {
 public:
     // constructor
-    JetBkgdSub(const float jet_R = 0.4,
+    JetBkgdSub(const double jet_R = 0.4,
             const std::string &outputfilename = "jettree.root");
 
     ~JetBkgdSub() override; // destructor
@@ -65,7 +65,7 @@ public:
 private:
 
     // private variables
-    float m_jet_R;
+    double m_jet_R;
     std::string m_iter_input;
     std::string m_raw_input; 
     std::string m_truth_input;
@@ -111,6 +111,7 @@ private:
 
     // mult jet variables
     std::vector<int> m_mult_ncomponent;
+    std::vector<float> m_mult_nsignal;
     std::vector<float> m_mult_eta;
     std::vector<float> m_mult_phi;
     std::vector<float> m_mult_pt;
