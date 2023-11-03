@@ -57,6 +57,7 @@ class CaloAna : public SubsysReco
   TH2F* h_cemc_etaphi = nullptr;
   TH2F* h_hcalin_etaphi = nullptr;
   TH2F* h_hcalout_etaphi = nullptr;
+  TH1* h_totalzdc_e;
 
   TH1* hzdctime;
   TH1* hmbdtime;
@@ -103,6 +104,7 @@ class CaloAna : public SubsysReco
   int _eventcounter;
   int _range = 1;
   float _vz = 0.;
+  bool m_vtxCut = 0;
 };
 
 #endif
