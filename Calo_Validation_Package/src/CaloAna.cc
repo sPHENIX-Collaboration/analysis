@@ -1,6 +1,5 @@
 #include "CaloAna.h"
 
-
 // G4Hits includes
 #include <g4main/PHG4Hit.h>
 #include <g4main/PHG4HitContainer.h>
@@ -31,10 +30,12 @@
 
 #include <phool/getClass.h>
 
-
 #include <globalvertex/GlobalVertex.h>
 #include <globalvertex/GlobalVertexMap.h>
 
+#include <mbd/MbdOut.h>
+#include <mbd/MbdPmtContainer.h>
+#include <mbd/MbdPmtHit.h>
 
 #include <TFile.h>
 #include <TNtuple.h>
@@ -69,6 +70,7 @@ CaloAna::~CaloAna()
 
 int CaloAna::Init(PHCompositeNode*)
 {
+    
   hm = new Fun4AllHistoManager(Name());
   // create and register your histos (all types) here
 
@@ -82,10 +84,15 @@ int CaloAna::Init(PHCompositeNode*)
   h_hcalout_etaphi = new TH2F("h_ohcal_etaphi",";eta;phi",24,0,24,64,0,64);
   h_emcal_zdc_correlation = new TH2F("h_zdc_emcal_correlation",";emcal;zdc",100,0,1,100,0,1);
     
-    
+  hzdcSouthraw = new TH1D("hzdcSouthraw", "hzdcSouthraw", 1500, 0 , 15000);
+  hzdcNorthraw = new TH1D("hzdcNorthraw", "hzdcNorthraw", 1500, 0 , 15000);
+  hzdcSouthcalib = new TH1D("hzdcSouthcalib", "hzdcSouthcalib", 1500, 0 , 15000);
+  hzdcNorthcalib = new TH1D("hzdcNorthcalib", "hzdcNorthcalib", 1500, 0 , 15000);
+
+  hvtx_z_raw = new TH1D("hvtx_z_raw", "hvtx_z_raw", 201, -100.5 , 100.5);
+  hvtx_z_cut = new TH1D("hvtx_z_cut", "hvtx_z_cut", 201, -100.5 , 100.5);
+
   h_InvMass = new TH1F("h_InvMass","Invariant Mass",120,0,1.2);
-    
-  hvtx_z = new TH1D("hvtx_z", "hvtx_z", 101, -50.5 , 50.5);
 
   //raw timing information
   hzdctime_cut = new TH1D("hzdctime_cut", "hzdctime_cut", 30, 2.5 , 32.5);
@@ -141,8 +148,7 @@ int CaloAna::process_towers(PHCompositeNode* topNode)
     int max_ohcal_t = -1;
     
     
-    
-    //----------------------------------get vertex------------------------------------------------------//
+    //----------------------------------get vertex-----------------------------------
     
     GlobalVertexMap *vertexmap = findNode::getClass<GlobalVertexMap>(topNode, "GlobalVertexMap");
     if (!vertexmap)
@@ -158,12 +164,11 @@ int CaloAna::process_towers(PHCompositeNode* topNode)
     {
         vtx_z = vtx->get_z();
     }
-   
-    if (abs(vtx_z) < _vz)
-    {
-        
-     hvtx_z->Fill(vtx_z);
     
+    hvtx_z_raw->Fill(vtx_z);
+    
+    std::cout<<"this is vtx \t"<< vtx_z << std::endl;
+
     //----------------------------------------------timing-----------------------------------------------//
     {
         TowerInfoContainer* offlinetowers = findNode::getClass<TowerInfoContainerv1>(topNode, "TOWERS_CEMC");
@@ -202,16 +207,13 @@ int CaloAna::process_towers(PHCompositeNode* topNode)
     }
     
     {
-        TowerInfoContainer* offlinetowers = findNode::getClass<TowerInfoContainerv1>(topNode, "TOWERS_MBD");
-        if (offlinetowers)
+        MbdPmtContainer *mbdpmts = findNode::getClass<MbdPmtContainer>(topNode, "MbdPmtContainer");
+        if (mbdpmts)
         {
-            int size = offlinetowers->size();
-            for (int channel = 0; channel < size;channel++)
-            {
-                unsigned int towerkey = TowerInfoDefs::encode_mbd(channel);
-                int type = TowerInfoDefs::get_mbd_type(towerkey);
-                if (type == 1) hmbdtime_cut->Fill(offlinetowers->get_tower_at_channel(channel)->get_time());
-            }
+            for (int ipmt=0; ipmt<mbdpmts->get_npmt(); ipmt++)
+             {
+                 hmbdtime_cut->Fill(mbdpmts->get_pmt(ipmt)->get_time());
+             }
         }
     }
     
@@ -234,10 +236,14 @@ int CaloAna::process_towers(PHCompositeNode* topNode)
     max_emcal_t = Getpeaktime(hemcaltime_cut);
     max_ihcal_t = Getpeaktime(hihcaltime_cut);
     max_ohcal_t = Getpeaktime(hohcaltime_cut);
-    
+  
+    if((vtx_z != 0.) && (abs(vtx_z) < _vz))
+    {
+        
+     hvtx_z_cut->Fill(vtx_z);
     //----------------------------------------------tower energies -----------------------------------------------//
     
-    {
+     {
         TowerInfoContainer* offlinetowers = findNode::getClass<TowerInfoContainerv1>(topNode, "TOWERINFO_CALIB_CEMC");
         if (offlinetowers)
         {
@@ -255,12 +261,13 @@ int CaloAna::process_towers(PHCompositeNode* topNode)
                 {
                     totalcemc += offlineenergy;
                     hemcaltime->Fill(_time);
-                    
-                    if (offlineenergy > 1)
-                    {
-                        h_cemc_etaphi->Fill(ieta,iphi,offlineenergy);
-                    }
                 }
+                
+                if (offlineenergy > 1)
+                {
+                    h_cemc_etaphi->Fill(ieta,iphi,offlineenergy);
+                }
+
             }
         }
     }
@@ -283,13 +290,11 @@ int CaloAna::process_towers(PHCompositeNode* topNode)
                 {
                     totalihcal += offlineenergy;
                     hihcaltime->Fill(_time);
-                    
-                    if (offlineenergy > 1)
-                    {
-                        h_hcalin_etaphi->Fill(ieta,iphi,offlineenergy);
-                    }
                 }
-                
+                if (offlineenergy > 1)
+                {
+                    h_hcalin_etaphi->Fill(ieta,iphi,offlineenergy);
+                }
             }
         }
     }
@@ -305,42 +310,31 @@ int CaloAna::process_towers(PHCompositeNode* topNode)
                 unsigned int towerkey = offlinetowers->encode_key(channel);
                 int ieta = offlinetowers->getTowerEtaBin(towerkey);
                 int iphi = offlinetowers->getTowerPhiBin(towerkey);
-                int _time = offlinetowers->get_tower_at_channel(channel)->get_time();
-                
+                int _time = offlinetowers->get_tower_at_channel(channel)->get_time();        
                 if(_time > (max_ohcal_t - _range) && _time < (max_ohcal_t + _range))
                 {
                     totalohcal += offlineenergy;
                     hohcaltime->Fill(_time);
-                    
-                    if (offlineenergy > 1)
-                    {
-                        h_hcalout_etaphi->Fill(ieta,iphi,offlineenergy);
-                    }
                 }
-                
+                if (offlineenergy > 1)
+                {
+                    h_hcalout_etaphi->Fill(ieta,iphi,offlineenergy);
+                }
             }
         }
     }
     {
-        TowerInfoContainer* offlinetowers = findNode::getClass<TowerInfoContainerv1>(topNode, "TOWERS_MBD");
-        if (offlinetowers)
+        MbdPmtContainer *mbdpmts = findNode::getClass<MbdPmtContainer>(topNode, "MbdPmtContainer");
+        if (mbdpmts)
         {
-            int size = offlinetowers->size(); //online towers should be the same!
-            for (int channel = 0; channel < size;channel++)
+            for (int ipmt=0; ipmt<mbdpmts->get_npmt(); ipmt++)
             {
-                TowerInfo* offlinetower = offlinetowers->get_tower_at_channel(channel);
-                float offlineenergy = offlinetower->get_energy();
-                unsigned int towerkey = TowerInfoDefs::encode_mbd(channel);
-                int type = TowerInfoDefs::get_mbd_type(towerkey);
-                int _time = offlinetowers->get_tower_at_channel(channel)->get_time();
-                
-                if (type == 1)
-                {
-                    if(_time > (max_mbd_t - _range) && _time < (max_mbd_t + _range))
-                    {
-                        totalmbd += offlineenergy; hmbdtime->Fill(_time);
-                    }
-                }
+              float q = mbdpmts->get_pmt(ipmt)->get_q();
+              float _time = mbdpmts->get_pmt(ipmt)->get_time();
+              if(_time > (max_mbd_t - _range) && _time < (max_mbd_t + _range))
+              {
+                totalmbd += q; hmbdtime->Fill(_time);
+              }
             }
         }
     }
@@ -350,12 +344,21 @@ int CaloAna::process_towers(PHCompositeNode* topNode)
         if (offlinetowers)
         {
             int size = offlinetowers->size(); //online towers should be the same!
-            for (int channel = 0; channel < size;channel++)
+            for (int channel = 0; channel < size; channel++)
             {
                 TowerInfo* offlinetower = offlinetowers->get_tower_at_channel(channel);
                 float offlineenergy = offlinetower->get_energy();
                 int _time = offlinetowers->get_tower_at_channel(channel)->get_time();
                 
+                if(channel == 0 || channel == 2 || channel == 4)
+                {
+                    hzdcSouthraw->Fill(offlineenergy);
+                }
+                if(channel == 8 || channel == 10 || channel == 12)
+                {
+                    hzdcNorthraw->Fill(offlineenergy);
+                }
+                    
                 if(channel == 0 || channel == 2 || channel == 4 || channel == 8 || channel == 10 || channel == 12)
                 {
                     if(_time > (max_zdc_t - _range) && _time < (max_zdc_t + _range))
@@ -366,7 +369,29 @@ int CaloAna::process_towers(PHCompositeNode* topNode)
                 }
             }
         }
+   }
+       
+    {
+        TowerInfoContainer* offlinetowers = findNode::getClass<TowerInfoContainerv1>(topNode, "TOWERINFO_CALIB_ZDC");
+        if (offlinetowers)
+        {
+            int size = offlinetowers->size(); //online towers should be the same!
+            for (int channel = 0; channel < size; channel++)
+            {
+                TowerInfo* offlinetower = offlinetowers->get_tower_at_channel(channel);
+                float offlineenergy = offlinetower->get_energy();
+                if(channel == 0 || channel == 2 || channel == 4)
+                {
+                    hzdcSouthcalib->Fill(offlineenergy);
+                }
+                if(channel == 8 || channel == 10 || channel == 12)
+                {
+                    hzdcNorthcalib->Fill(offlineenergy);
+                }
+            }
+        }
     }
+        
     
     h_emcal_mbd_correlation->Fill(totalcemc/emcaldownscale,totalmbd/mbddownscale);
     h_ihcal_mbd_correlation->Fill(totalihcal/ihcaldownscale,totalmbd/mbddownscale);
@@ -374,7 +399,6 @@ int CaloAna::process_towers(PHCompositeNode* topNode)
     h_emcal_hcal_correlation->Fill(totalcemc/emcaldownscale,totalohcal/ohcaldownscale);
     h_emcal_zdc_correlation->Fill(totalcemc/emcaldownscale,totalzdc/zdcdownscale);
     
-}
  //------------------------------------------------- pi 0 --------------------------------------------------------//
 
   RawClusterContainer *clusterContainer = findNode::getClass<RawClusterContainer>(topNode,"CLUSTERINFO_POS_COR_CEMC");
@@ -453,7 +477,8 @@ int CaloAna::process_towers(PHCompositeNode* topNode)
       
       
     }
-  
+  } //z-vertex cut
+
   return Fun4AllReturnCodes::EVENT_OK;
 
 }
