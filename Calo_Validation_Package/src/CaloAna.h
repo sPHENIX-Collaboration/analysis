@@ -70,7 +70,14 @@ class CaloAna : public SubsysReco
   TH1* hihcaltime_cut;
   TH1* hohcaltime_cut;
 
-  TH1* hvtx_z;
+  TH1* hvtx_z_raw;
+  TH1* hvtx_z_cut;
+
+  TH1* hzdcSouthraw;
+  TH1* hzdcNorthraw;
+  TH1* hzdcSouthcalib;
+  TH1* hzdcNorthcalib;
+
 
   TNtuple *g4hitntuple = nullptr;
   TNtuple *g4cellntuple = nullptr;
@@ -101,8 +108,8 @@ class CaloAna : public SubsysReco
   std::vector<int> m_bbc_type;
   std::vector<int> m_bbc_side;
   int _eventcounter;
-  int _range = 1;
-  float _vz = 0.;
+  int _range = 5;
+  float _vz = 100.;
 };
 
 #endif
