@@ -57,6 +57,7 @@ void Fun4All_Calo(int nevents = 10,const std::string &fname = "/sphenix/lustre01
 
   CaloAna *ca = new CaloAna("calomodulename",OutFile);
   ca->set_timing_cut_width(2);  //integers for timing width, > 1 : wider cut around max peak time
+  ca->apply_vertex_cut(true);  
   ca->set_vertex_cut(20.);
   se->registerSubsystem(ca);
 
