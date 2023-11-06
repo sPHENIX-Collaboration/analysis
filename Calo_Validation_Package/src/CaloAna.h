@@ -39,6 +39,7 @@ class CaloAna : public SubsysReco
   void Detector(const std::string &name) { detector = name; }
   void set_timing_cut_width(const int &t) { _range = t;}
   void set_vertex_cut(const float &v) { _vz = v;}
+  void apply_vertex_cut(bool Vtx_cut) { m_vtxCut = Vtx_cut; }
 
  protected:
   std::string detector;
@@ -110,7 +111,7 @@ class CaloAna : public SubsysReco
   int _eventcounter;
   int _range = 1;
   float _vz = 0.;
-  bool m_vtxCut = 0;
+  bool m_vtxCut = false;
 };
 
 #endif
