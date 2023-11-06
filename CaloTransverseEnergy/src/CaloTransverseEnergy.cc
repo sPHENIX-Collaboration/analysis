@@ -3,7 +3,7 @@ std::vector <int> packets;
 class PHCompositeNode;
 class Fun4AllInputManager;
 class Event;
-const std::string &prdfnode="PRDF"; //maybe I can add an overload to this? just do either version
+const std::string &prdfnode="PRDF"; 
 const std::string &DSTnode="DST";
 const std::string &iHCALnode="HCALIN";
 const std::string &oHCALnode="HCALOUT";
@@ -70,22 +70,19 @@ int CaloTransverseEnergy::process_event(PHCompositeNode *topNode)
 		processDST(ohe,ohek,&ohcalenergy_vec, ohg, true, false, RawTowerDefs::HCALOUT);
 		std::cout<<"Found energy"<<std::endl; 
 	}
-	float emcaltotal=GetTotalEnergy(emcalenergy_vec,1); //not sure about the calibration factor, need to check
+	float emcaltotal=GetTotalEnergy(emcalenergy_vec,1)/2.26; //not sure about the calibration factor, need to check
 	float ihcalcalib=1, ohcalcalib=1;
 	if(isPRDF){
 		ihcalcalib=1966.26;
 		ohcalcalib=311.6;
 	}
-	float ihcaltotal=GetTotalEnergy(ihcalenergy_vec,ihcalcalib);
-	float ohcaltotal=GetTotalEnergy(ohcalenergy_vec,ohcalcalib);
-	emcaltotal=emcaltotal*64*2*192;;
-	ihcaltotal=ihcaltotal*1536;
-	ohcaltotal=ohcaltotal*1536;
+	float ihcaltotal=GetTotalEnergy(ihcalenergy_vec,ihcalcalib)/2.2;
+	float ohcaltotal=GetTotalEnergy(ohcalenergy_vec,ohcalcalib)/2.2;
 	std::cout<<"Adding the data to the histograms" <<std::endl;
 	EMCALE->Fill(emcaltotal);
 	IHCALE->Fill(ihcaltotal);
 	OHCALE->Fill(ohcaltotal);
-	ETOTAL->Fill(emcaltotal+ihcaltotal+ohcaltotal);
+//	ETOTAL->Fill(emcaltotal+ihcaltotal+ohcaltotal);
 	datatree->Fill();
 	ihcalenergy_vec.clear();
 	ohcalenergy_vec.clear();
@@ -133,30 +130,37 @@ void CaloTransverseEnergy::processDST(TowerInfoContainerv1* calo_event, TowerInf
 		std::pair <double, double> phibounds=geom->get_phibounds(phibin); 
 		double phi_width=abs(phibounds.first - phibounds.second);
 		if(!hcalorem){
-			 if(etabin_em->GetBinContent(etabin) <= 0.001 )  etabin_em->SetBinContent(etabin, eta_width);
-			 if(phibin_em->GetBinContent(phibin) <= 0.001) phibin_em->SetBinContent(phibin, phi_width);
+			 eta=1.134/96*(1+2*etabin)-1.134;
+			 eta_width=1.134/48;
+		}
+		else eta_width=2.2/24;
+		if(!hcalorem){
+			 if( n_evt == 600 && etabin_em->GetBinContent(etabin) <= 0.001 )  etabin_em->SetBinContent(etabin, eta);
+			 if(n_evt == 600 && phibin_em->GetBinContent(phibin) <= 0.001) phibin_em->SetBinContent(phibin, phi_width);
 		} 
 		else{
 			if(etabin_hc->GetBinContent(etabin) <= 0.001)  etabin_hc->SetBinContent(etabin, eta_width);
 			if(phibin_hc->GetBinContent(phibin) <= 0.001) phibin_hc->SetBinContent(phibin, phi_width);			}
 			//if(n_evt == 6670) std::cout<<"Eta bin " <<etabin <<" has width " <<eta_width <<" for calo " <<hcalorem <<inner <<std::endl;
 		//if(hcalorem && n_evt==10) std::cout<<"eta bin number " <<etabin<<std::endl;// eta_width=tower_eta_widths[etabin];
-		if(eta_width>0) energy1=energy1*eta_width/2.2;
+		if(eta_width>0) energy1=energy1/eta_width;
 		float et=GetTransverseEnergy(energy1, eta);
 		phis->Fill(phi);
 		etas->Fill(eta);
 		PhiD->Fill(phi, et);
 		EtaD->Fill(eta, et);		
-		energy+=energy1;
+		energy+=energy1*eta_width;
 //		EtaPhi->Fill(eta, phi, et);
 		tep->Fill(eta, phi, et);
 		teps->Fill(eta, phi);
 		if(!hcalorem){
+			float rat=eEtaD->GetNbinsX();
+			rat=et*rat/96;
 			emcalenergy+=energy1;
 			ephis->Fill(phi);
 			eetas->Fill(eta);
 			ePhiD->Fill(phi, et);
-			eEtaD->Fill(eta, et);
+			eEtaD->Fill(eta,rat);
 			eep->Fill(etabin, phibin, et);
 			eeps->Fill(etabin, phibin);
 			//try{eteeta[eta]i+=et;}
@@ -180,8 +184,10 @@ void CaloTransverseEnergy::processDST(TowerInfoContainerv1* calo_event, TowerInf
 			hcalenergy+=energy1;
 			hphis->Fill(phi);
 			hetas->Fill(eta);
-			hPhiD->Fill(phi, et);
-			hEtaD->Fill(eta, et);
+			if(!inner) ohPhiD->Fill(phi, et);
+			else ihPhiD->Fill(phi, et);
+			if(!inner) ohEtaD->Fill(etabin, et);
+			else ihEtaD->Fill(etabin, et);
 			//try{etheta[eta]+=et;}
 			etheta[eta].push_back(et);
 			EtaPhi->Fill(eta, phi, et, 0, et);
@@ -199,7 +205,7 @@ void CaloTransverseEnergy::processDST(TowerInfoContainerv1* calo_event, TowerInf
 				}*/
 			}
 		}
-		energies->push_back(GetTransverseEnergy(energy1, eta));
+		energies->push_back(GetTransverseEnergy(energy1*eta_width, eta));
 		
 	}
 	}
@@ -266,7 +272,7 @@ float CaloTransverseEnergy::GetTotalEnergy(std::vector<float> caloenergy, float 
 	{
 		total_energy+=e/calib; //right now this is summing with the calibration factor
 	}
-	total_energy=total_energy/caloenergy.size(); //normalize for number of towers, should apply a "percent of towers" but that can be a next step
+//	total_energy=total_energy/caloenergy.size(); //normalize for number of towers, should apply a "percent of towers" but that can be a next step
 	//std::cout<<"There are " <<caloenergy.size() <<"active towers in this run with energy " <<total_energy <<std::endl;
 	return total_energy; 
 }
@@ -307,7 +313,8 @@ bool CaloTransverseEnergy::ValidateDistro()
 }	
 void CaloTransverseEnergy::ProduceOutput()
 {
-	for(auto val:eteeta){
+	/*
+ 	for(auto val:eteeta){
 		double eta=val.first;
 		int etabin=(eta-1)/12+1;
 		int ntows=val.second.size();
@@ -338,15 +345,50 @@ void CaloTransverseEnergy::ProduceOutput()
 		float ete=hPhiD->GetBinContent(phibin);
 		ete=ete/ntows;
 		hPhiD->SetBinContent(phibin, ete);
-	}
-	for(int i=1; i<25; i++) EtaD->SetBinContent(i, hEtaD->GetBinContent(i) + eEtaD->GetBinContent(i));
-	for(int i=1; i<33; i++) PhiD->SetBinContent(i, hPhiD->GetBinContent(i) + ePhiD->GetBinContent(i));
+	}*/
 	TFile* outfile=new TFile(Form("../data_output/Transverse_Energy_run_%d_segment_%d.root",run_number, DST_Segment), "RECREATE");
+	std::vector<float> acceptance_eta_em (96, 0);
+	TH1F* acceptance_eta_em_h=new TH1F("h", "H", 96, eEtaD->GetXaxis()->GetXmin(), eEtaD->GetXaxis()->GetXmax());
+	int n_emtow=0, n_ihtow=0, n_ohtow=0; 
+	for(int i=0; i<eeps->GetNbinsX(); i++){
+		 for(int j=0; j<eeps->GetNbinsY(); j++){
+				std::cout<<"The number of towers with events is " <<n_emtow <<std::endl; 
+				if(eeps->GetBinContent(i,j) > 0){
+					 n_emtow++;
+					 acceptance_eta_em.at(i)+=1;
+					 acceptance_eta_em_h->Fill(eEtaD->GetBinCenter(i));
+				}
+		}
+	}
+	for (int i=0; i<iheps->GetNbinsX(); i++) for(int j=0; j<iheps->GetNbinsY(); j++) if(iheps->GetBinContent(i,j) > 0) n_ihtow++;
+	for (int i=0; i<oheps->GetNbinsX(); i++) for(int k=0; k<oheps->GetNbinsY(); k++) if(oheps->GetBinContent(i,k) > n_evt/10) n_ohtow++;
+	float accept_e=256*96/float(n_emtow), accept_ih=64*24/float(n_ihtow), accept_oh=64*24/float(n_ohtow);
+	std::cout<<"acceptances " <<accept_e <<" , " <<accept_ih <<" , " <<accept_oh <<std::endl;
+	eEtaD->Scale(1/n_evt);
+	acceptance_eta_em_h->Scale(1/256.);
+	//eEtaD->Divide(acceptance_eta_em_h);
+	for(int i=0; i<eEtaD->GetNbinsX(); i++) eEtaD->SetBinContent(i+1, eEtaD->GetBinContent(i+1)*acceptance_eta_em.at(i)/256.);
+	ePhiD->Scale(accept_e/n_evt);
+	ohEtaD->Scale(accept_oh/n_evt);
+	ohPhiD->Scale(accept_oh/n_evt);
+	ihEtaD->Scale(accept_ih/n_evt);
+	ihPhiD->Scale(accept_ih/n_evt);
+//	for(int i=1; i<25; i++) EtaD->Fill(i, ihEtaD->GetBinContent(i)+ohEtaD->GetBinContent(i) + eEtaD->GetBinContent(4*i)+eEtaD->GetBinContent(4+i+1)+eEtaD->GetBinContent(4*i+2)+eEtaD->GetBinContent(4*i+3));
+	for(int i=1; i<33; i++) PhiD->Fill(i, ihPhiD->GetBinContent(i)+ohPhiD->GetBinContent(i) + ePhiD->GetBinContent(4*i)+ePhiD->GetBinContent(4*i+1)+ePhiD->GetBinContent(4*i+2)+ePhiD->GetBinContent(4*i+3));
+	//EtaD->Scale(1/n_evt);
+	//PhiD->Scale(1/n_evt);
 	//just make a ton of histos
+	EMCALE->Scale(accept_e);
 	EMCALE->Write();
+	IHCALE->Scale(accept_ih);
 	IHCALE->Write();
+	OHCALE->Scale(accept_oh);
 	OHCALE->Write();
-	ETOTAL->Write();
+	ETOTAL=(TH1F*)EMCALE->Clone();
+	ETOTAL->SetName("total");
+	ETOTAL->SetTitle("Total #frac{dE^{event}_{T}}{d#eta}; #sum_{tow} #frac{d E^{tow}_{T}}{d#eta}; N_{Evt}");
+	ETOTAL->Add(IHCALE);
+	ETOTAL->Add(OHCALE);;
 	PhiD->Write();
 	EtaD->Write();
 	phis->Write();
@@ -355,9 +397,11 @@ void CaloTransverseEnergy::ProduceOutput()
 	eEtaD->Write();
 	ephis->Write();
 	eetas->Write();
-	hPhiD->Write();
-	hEtaD->Write();
+	ohPhiD->Write();
+	ohEtaD->Write();
 	hphis->Write();
+	ihPhiD->Write();
+	ihEtaD->Write();
 	hetas->Write();
 	eep->Write();
 	eeps->Write();
@@ -371,8 +415,8 @@ void CaloTransverseEnergy::ProduceOutput()
 	phibin_hc->Write();
 	etabin_em->Write();
 	phibin_em->Write();
-	EtaPhi->Write();
-	datatree->Write();
+//	EtaPhi->Write();
+//	datatree->Write();
 	outfile->Write();
 	outfile->Close();
 }
