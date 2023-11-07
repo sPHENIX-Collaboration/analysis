@@ -26,7 +26,6 @@
 #include <calobase/RawTowerGeomContainer.h>
 #include <calobase/TowerInfoContainerv1.h>
 #include <calobase/TowerInfov1.h>
-#include <calobase/TowerInfoDefs.h>
 
 //Tower stuff
 #include <calobase/TowerInfoContainer.h>
@@ -69,8 +68,9 @@ int caloTreeGen::Init(PHCompositeNode *topNode)
 
   hTowE = new TH1F("hTowE", "Tower Energy; Energy [GeV]; Counts", bins_towE, low_e, high_e);
   hClusterECore = new TH1F("hClusterECore", "Cluster ECore; Energy [GeV]; Counts", bins_e, low_e, high_e);
-  hClusterPt = new TH1F("hClusterPt", "Cluster; #p_T [GeV]; Counts", bins_pt, low_pt, high_pt);
-  hClusterChi = new TH1F("hClusterChi", "Cluster; #chi^{2}; Counts", bins_chi, low_chi, high_chi);
+  hClusterPt = new TH1F("hClusterPt", "Cluster p_{T}; p_{T} [GeV]; Counts", bins_pt, low_pt, high_pt);
+  hClusterChi = new TH1F("hClusterChi", "Cluster #chi^{2}; #chi^{2}; Counts", bins_chi, low_chi, high_chi);
+  hClusterTime = new TH1F("hClusterTime", "Cluster Time; Time; Counts", bins_time, low_time, high_time);
   hNClusters = new TH1F("hNClusters", "Cluster; # of clusters per event; Counts", bins_n, low_n, high_n);
   hTotalMBD = new TH1F("hTotalMBD", "MBD Charge; MBD Charge; Counts", bins_totalmbd, low_totalmbd, high_totalmbd);
   hTotalCaloE = new TH1F("hTotalCaloE", "Total Calo E; Total Calo E [GeV]; Counts", bins_totalcaloE, low_totalcaloE, high_totalcaloE);
@@ -82,7 +82,10 @@ int caloTreeGen::Init(PHCompositeNode *topNode)
 
   out2 = new TFile(Outfile2.c_str(),"RECREATE");
 
-  T = new TNtuple("T","T","totalCaloE:totalMBD:clus_E:clus_eta:clus_phi:clus_chi:clus_E2:clus_eta2:clus_phi2:clus_chi2:pi0_mass:pi0_pt:pi0_eta:pi0_phi");
+  T = new TNtuple("T","T","totalCaloE:totalMBD:"
+                           "clus_E:clus_eta:clus_phi:clus_chi:clus_time:"
+                           "clus_E2:clus_eta2:clus_phi2:clus_chi2:clus_time2:"
+                           "pi0_mass:pi0_pt:pi0_eta:pi0_phi");
 
   //so that the histos actually get written out
   Fun4AllServer *se = Fun4AllServer::instance();
@@ -135,7 +138,7 @@ int caloTreeGen::process_event(PHCompositeNode *topNode)
   
   float calib = 1.;
 
-  Float_t totalmbd = 0;
+  Float_t totalMBD = 0;
   TowerInfoContainer* offlinetowers = findNode::getClass<TowerInfoContainerv1>(topNode, "TOWERS_MBD");
   if (offlinetowers) {
     int size = offlinetowers->size(); //online towers should be the same!
@@ -145,13 +148,13 @@ int caloTreeGen::process_event(PHCompositeNode *topNode)
       unsigned int towerkey = TowerInfoDefs::encode_mbd(channel);
       int type = TowerInfoDefs::get_mbd_type(towerkey);
       if (type == 1) {
-        totalmbd += offlineenergy;
+        totalMBD += offlineenergy;
       }
     }
   }
 
-  max_totalmbd = std::max(max_totalmbd, totalmbd);
-  hTotalMBD->Fill(totalmbd);
+  max_totalmbd = std::max(max_totalmbd, totalMBD);
+  hTotalMBD->Fill(totalMBD);
 
   //grab all the towers and fill their energies. 
   unsigned int tower_range = emcTowerContainer->size();
@@ -186,7 +189,7 @@ int caloTreeGen::process_event(PHCompositeNode *topNode)
   max_totalCaloE = std::max(max_totalCaloE, totalCaloE);
   hTotalCaloE->Fill(totalCaloE);
 
-  h2TotalMBDCaloE->Fill(totalCaloE/high_totalcaloE, totalmbd/high_totalmbd);
+  h2TotalMBDCaloE->Fill(totalCaloE/high_totalcaloE, totalMBD/high_totalmbd);
 
   max_NClusters = std::max(max_NClusters, clusterContainer->size());
   hNClusters->Fill(clusterContainer->size());
@@ -223,14 +226,18 @@ int caloTreeGen::process_event(PHCompositeNode *topNode)
     max_clusterChi = std::max(max_clusterChi, clus_chi);
 
     if(clusE >= clusE_min) {
-      hClusterECore->Fill(clusE);
-      h2ClusterEtaPhi->Fill(clus_eta, clus_phi);
-      h2ClusterEtaPhiWeighted->Fill(clus_eta, clus_phi, clusE);
-      hClusterPt->Fill(clus_pt);
       hClusterChi->Fill(clus_chi);
     }
 
     if(clusE < clusE_min || clus_chi >= clus_chi_max) continue;
+
+    Short_t clus_time = getMaxTowerTime(recoCluster, emcTowerContainer);
+
+    hClusterECore->Fill(clusE);
+    h2ClusterEtaPhi->Fill(clus_eta, clus_phi);
+    h2ClusterEtaPhiWeighted->Fill(clus_eta, clus_phi, clusE);
+    hClusterPt->Fill(clus_pt);
+    hClusterTime->Fill(clus_time);
 
     TLorentzVector photon1;
     photon1.SetPtEtaPhiE(clus_pt, clus_eta, clus_phi, clusE);
@@ -252,6 +259,8 @@ int caloTreeGen::process_event(PHCompositeNode *topNode)
 
       if(clusE2 < clusE_min || clus_chi2 >= clus_chi_max) continue;
 
+      Short_t clus_time2 = getMaxTowerTime(recoCluster2, emcTowerContainer);
+
       TLorentzVector photon2;
       photon2.SetPtEtaPhiE(clus_pt2, clus_eta2, clus_phi2, clusE2);
 
@@ -263,12 +272,12 @@ int caloTreeGen::process_event(PHCompositeNode *topNode)
       Float_t pi0_phi = pi0.Phi();
 
       // not storing cluster pT since we can derive pT = E/cosh(eta)
-      Float_t cluster_data[] = {totalCaloE, totalmbd,
-      clusE, clus_eta, clus_phi, clus_chi,
-      clusE2, clus_eta2, clus_phi2, clus_chi2,
-      pi0_mass, pi0_pt, pi0_eta, pi0_phi};
+      Float_t pi0_data[] = {totalCaloE, totalMBD,
+                            clusE,      clus_eta,  clus_phi,  clus_chi,  (Float_t)clus_time,
+                            clusE2,     clus_eta2, clus_phi2, clus_chi2, (Float_t)clus_time2,
+                            pi0_mass,   pi0_pt,    pi0_eta,   pi0_phi};
 
-      T->Fill(cluster_data);
+      T->Fill(pi0_data);
     }
   }
 
@@ -313,6 +322,7 @@ int caloTreeGen::End(PHCompositeNode *topNode)
   hClusterECore->Write();
   hClusterPt->Write();
   hClusterChi->Write();
+  hClusterTime->Write();
   hNClusters->Write();
   h2ClusterEtaPhi->Write();
   h2ClusterEtaPhiWeighted->Write();
@@ -361,17 +371,9 @@ unsigned int caloTreeGen::getCaloTowerEtaBin(const unsigned int key)
 //____________________________________________________________________________..
 float caloTreeGen::getMaxTowerE(RawCluster *cluster, TowerInfoContainer *towerContainer)
 {
-  RawCluster::TowerConstRange towers = cluster -> get_towers();
-  RawCluster::TowerConstIterator toweriter;
-  
-  float maxEnergy = 0;
-  for(toweriter = towers.first; toweriter != towers.second; toweriter++)
-  {
-    float towE = toweriter -> second;
-   
-    if( towE > maxEnergy)  maxEnergy = towE;
-  }
-  return maxEnergy;
+  TowerInfo* tower = getMaxTower(cluster, towerContainer);
+
+  return tower->get_energy();
 }
 //____________________________________________________________________________..
 std::vector<int> caloTreeGen::returnClusterTowEta(RawCluster *cluster, TowerInfoContainer *towerContainer)
@@ -404,4 +406,39 @@ std::vector<float> caloTreeGen::returnClusterTowE(RawCluster *cluster, TowerInfo
   for(toweriter = towers.first; toweriter != towers.second; toweriter++) towerE.push_back(toweriter -> second);
   
   return towerE;
+}
+
+TowerInfo* caloTreeGen::getTower(RawTowerDefs::keytype key, TowerInfoContainer *towerContainer) {
+      if(!towerContainer) return nullptr; // check if towerContainer is null
+
+      int ieta = RawTowerDefs::decode_index1(key);  // index1 is eta in CYL
+      int iphi = RawTowerDefs::decode_index2(key);  // index2 is phi in CYL
+      unsigned int towerkey = TowerInfoDefs::encode_emcal(ieta,iphi);
+
+      return towerContainer->get_tower_at_key(towerkey);
+}
+
+
+TowerInfo* caloTreeGen::getMaxTower(RawCluster *cluster, TowerInfoContainer *towerContainer) {
+  RawCluster::TowerConstRange towers = cluster -> get_towers();
+  RawCluster::TowerConstIterator toweriter;
+
+  float maxEnergy = 0;
+  RawTowerDefs::keytype key = 0;
+  for(toweriter = towers.first; toweriter != towers.second; toweriter++)
+  {
+    float towE = toweriter -> second;
+
+    if(towE > maxEnergy) {
+      maxEnergy = towE;
+      key = toweriter->first;
+    }
+  }
+  return getTower(key, towerContainer);
+}
+
+Short_t caloTreeGen::getMaxTowerTime(RawCluster *cluster, TowerInfoContainer *towerContainer) {
+  TowerInfo* tower = getMaxTower(cluster, towerContainer);
+
+  return tower->get_time();
 }

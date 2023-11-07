@@ -4,12 +4,13 @@
 #define CALOTREEGEN_H
 
 #include <fun4all/SubsysReco.h>
+#include <calobase/TowerInfoDefs.h>
+
+#include <TNtuple.h>
 
 #include <string>
 #include <vector>
-#include <TNtuple.h>
 
-class TNtuple;
 class PHCompositeNode;
 class Fun4AllHistoManager;
 class TFile;
@@ -17,6 +18,7 @@ class RawCluster;
 class TowerInfoContainer;
 class TH1F;
 class TH2F;
+class TowerInfo;
 
 class caloTreeGen : public SubsysReco
 {
@@ -76,6 +78,10 @@ class caloTreeGen : public SubsysReco
   std::vector<int> returnClusterTowPhi(RawCluster *cluster, TowerInfoContainer *towerContainer);
   std::vector<int> returnClusterTowEta(RawCluster *cluster, TowerInfoContainer *towerContainer);
 
+  TowerInfo* getTower(RawTowerDefs::keytype key, TowerInfoContainer *towerContainer);
+  TowerInfo* getMaxTower(RawCluster *cluster, TowerInfoContainer *towerContainer);
+  Short_t    getMaxTowerTime(RawCluster *cluster, TowerInfoContainer *towerContainer);
+
   int iEvent;
 
   Double_t min_towE;
@@ -99,6 +105,7 @@ class caloTreeGen : public SubsysReco
   TH1F* hClusterECore;
   TH1F* hClusterPt;
   TH1F* hClusterChi;
+  TH1F* hClusterTime;
   TH1F* hNClusters;
   TH1F* hTotalMBD;
   TH1F* hTotalCaloE;
@@ -127,6 +134,10 @@ class caloTreeGen : public SubsysReco
   UInt_t  bins_chi = 400;
   Float_t low_chi  = 0;
   Float_t high_chi = 100;
+
+  UInt_t  bins_time = 32;
+  Float_t low_time  = 0;
+  Float_t high_time = 32;
 
   UInt_t  bins_n = 3000;
   Float_t low_n  = 0;
