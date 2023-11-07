@@ -28,9 +28,8 @@ R__LOAD_LIBRARY(libcaloana.so)
 R__LOAD_LIBRARY(libffamodules.so)
 #endif
 
-void Fun4All_Calo(const string &OutFile = "/sphenix/user/eumaka/CaloAnalysisfiles/Calo_Output21813.root")
+void Fun4All_Calo(int nevents = 10,const std::string &fname = "/sphenix/lustre01/sphnxpro/commissioning/DSTv3/DST_CALOR-00021598-0001.root")
 {
-
 
   Fun4AllServer *se = Fun4AllServer::instance();
   int verbosity = 0;
@@ -49,29 +48,20 @@ void Fun4All_Calo(const string &OutFile = "/sphenix/user/eumaka/CaloAnalysisfile
 
 
   Fun4AllInputManager *in = new Fun4AllDstInputManager("DST_TOWERS");
-    
-  in->AddFile("/sphenix/tg/tg01/jets/ahodges/run23_production_zvertex/21813/DST-00021813-0000.root");
-  in->AddFile("/sphenix/tg/tg01/jets/ahodges/run23_production_zvertex/21813/DST-00021813-0001.root");
-  in->AddFile("/sphenix/tg/tg01/jets/ahodges/run23_production_zvertex/21813/DST-00021813-0002.root");
-  in->AddFile("/sphenix/tg/tg01/jets/ahodges/run23_production_zvertex/21813/DST-00021813-0003.root");
-  in->AddFile("/sphenix/tg/tg01/jets/ahodges/run23_production_zvertex/21813/DST-00021813-0004.root");
-  in->AddFile("/sphenix/tg/tg01/jets/ahodges/run23_production_zvertex/21813/DST-00021813-0005.root");
-  in->AddFile("/sphenix/tg/tg01/jets/ahodges/run23_production_zvertex/21813/DST-00021813-0006.root");
-  in->AddFile("/sphenix/tg/tg01/jets/ahodges/run23_production_zvertex/21813/DST-00021813-0007.root");
-  in->AddFile("/sphenix/tg/tg01/jets/ahodges/run23_production_zvertex/21813/DST-00021813-0008.root");
-  in->AddFile("/sphenix/tg/tg01/jets/ahodges/run23_production_zvertex/21813/DST-00021813-0009.root");
-  in->AddFile("/sphenix/tg/tg01/jets/ahodges/run23_production_zvertex/21813/DST-00021813-0010.root");      
-        
-        
+  //in->AddFile("/sphenix/tg/tg01/jets/ahodges/run23_production_zvertex/21813/DST-00021813-0010.root");      
+  in->AddFile(fname);
   se->registerInputManager(in);
 
+  std::string filename = fname.substr(fname.find_last_of("/\\") + 1);
+  std::string OutFile = "CALOHIST_" + filename;
 
   CaloAna *ca = new CaloAna("calomodulename",OutFile);
   ca->set_timing_cut_width(2);  //integers for timing width, > 1 : wider cut around max peak time
+  ca->apply_vertex_cut(true);  
   ca->set_vertex_cut(20.);
   se->registerSubsystem(ca);
 
-  se->run(1); //update number of events as needed
+  se->run(nevents); //update number of events as needed
   se->End();
 
 }

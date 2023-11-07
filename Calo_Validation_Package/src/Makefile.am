@@ -22,6 +22,7 @@ libcaloana_la_SOURCES = \
 libcaloana_la_LIBADD = \
   -lcalo_io \
   -lphool \
+  -lmbd_io \
   -lSubsysReco \
   -lcentrality_io \
   -lfun4all \
