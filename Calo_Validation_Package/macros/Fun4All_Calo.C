@@ -11,7 +11,6 @@
 #include <fun4all/Fun4AllDstOutputManager.h>
 #include <fun4all/Fun4AllOutputManager.h>
 
-// #include <calotowerbuilder/CaloTowerBuilder.h>
 #include <caloreco/CaloTowerBuilder.h>
 #include <caloreco/CaloWaveformProcessing.h>
 
@@ -29,11 +28,8 @@ R__LOAD_LIBRARY(libcaloana.so)
 R__LOAD_LIBRARY(libffamodules.so)
 #endif
 
-void Fun4All_Calo(const char* infile = "/gpfs/mnt/gpfs02/sphenix/user/trinn/comissioning_data_production/test_file.root",const char *outfile = "tim_calo_23699.root")
+void Fun4All_Calo(int nevents = 10,const std::string &fname = "/sphenix/lustre01/sphnxpro/commissioning/DSTv3/DST_CALOR-00021598-0001.root")
 {
-
-
- 
 
   Fun4AllServer *se = Fun4AllServer::instance();
   int verbosity = 0;
@@ -51,20 +47,21 @@ void Fun4All_Calo(const char* infile = "/gpfs/mnt/gpfs02/sphenix/user/trinn/comi
   rc->set_uint64Flag("TIMESTAMP",6);
 
 
-Fun4AllInputManager *intrue = new Fun4AllDstInputManager("DST_TOWERS");
-  intrue->AddFile(infile);
-se->registerInputManager(intrue);
+  Fun4AllInputManager *in = new Fun4AllDstInputManager("DST_TOWERS");
+  //in->AddFile("/sphenix/tg/tg01/jets/ahodges/run23_production_zvertex/21813/DST-00021813-0010.root");      
+  in->AddFile(fname);
+  se->registerInputManager(in);
 
+  std::string filename = fname.substr(fname.find_last_of("/\\") + 1);
+  std::string OutFile = "CALOHIST_" + filename;
 
- CaloAna *ca = new CaloAna("calomodulename",outfile);
+  CaloAna *ca = new CaloAna("calomodulename",OutFile);
+  ca->set_timing_cut_width(2);  //integers for timing width, > 1 : wider cut around max peak time
+  ca->apply_vertex_cut(true);  
+  ca->set_vertex_cut(20.);
   se->registerSubsystem(ca);
 
-
-
-
-
-
-  se->run();
+  se->run(nevents); //update number of events as needed
   se->End();
 
 }
