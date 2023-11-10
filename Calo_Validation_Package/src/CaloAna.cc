@@ -112,6 +112,9 @@ int CaloAna::Init(PHCompositeNode*)
   hihcaltime = new TH1D("hihcaltime", "hihcaltime",50, -17.5 , 32.5);
   hohcaltime = new TH1D("hohcaltime", "hohcaltime",50, -17.5 , 32.5);
 
+  // cluster QA
+  h_etaphi_clus = new TH2F("h_etaphi_clus","",140,-1.2,1.2,64,-1*TMath::Pi(),TMath::Pi());
+  h_clusE = new TH1F("h_clusE","",100,0,10);
 
   return 0;
 }
@@ -175,16 +178,16 @@ int CaloAna::process_towers(PHCompositeNode* topNode)
         //return Fun4AllReturnCodes::ABORTRUN;
     }
     float vtx_z = NAN; 
-    if(vertexmap)
+    if(vertexmap && !vertexmap->empty())
     {
         GlobalVertex *vtx = vertexmap->begin()->second;
         if (vtx)
         {
             vtx_z = vtx->get_z();
         }
+         hvtx_z_raw->Fill(vtx_z);
     }
     
-    hvtx_z_raw->Fill(vtx_z);
     
 
     if (!m_vtxCut || abs(vtx_z) < _vz)
@@ -399,6 +402,9 @@ int CaloAna::process_towers(PHCompositeNode* topNode)
 	  float clus_phi = E_vec_cluster.phi();
 	  float clus_pt = E_vec_cluster.perp();
 	  float clus_chisq = recoCluster->get_chi2();
+
+          h_etaphi_clus->Fill(clus_eta,clus_phi);
+          h_clusE->Fill(clusE);
 	  
 	  if (clusE < emcMinClusE1 || clusE > emcMaxClusE){continue;}
 	  if (abs(clus_eta) > 0.7){continue;}
@@ -452,15 +458,6 @@ int CaloAna::End(PHCompositeNode* /*topNode*/)
 {
   outfile->cd();
  
-  //h_emcal_mbd_correlation->Write();
-  //h_ihcal_mbd_correlation->Write();
-  //h_ohcal_mbd_correlation->Write();
-  //h_emcal_hcal_correlation->Write();
-  //h_InvMass->Write();
-  //h_cemc_etaphi->Write();
-  //h_hcalin_etaphi->Write();
-  //h_hcalout_etaphi->Write();
-
   outfile->Write();
   outfile->Close();
   delete outfile;
