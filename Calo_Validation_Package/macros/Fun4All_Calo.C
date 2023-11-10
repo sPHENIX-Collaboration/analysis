@@ -28,7 +28,7 @@ R__LOAD_LIBRARY(libcaloana.so)
 R__LOAD_LIBRARY(libffamodules.so)
 #endif
 
-void Fun4All_Calo(int nevents = 10,const std::string &fname = "/sphenix/lustre01/sphnxpro/commissioning/DSTv3/DST_CALOR-00021598-0001.root")
+void Fun4All_Calo(int nevents = 100,const std::string &fname = "/sphenix/lustre01/sphnxpro/commissioning/DST_ana.386_2023p003/DST_CALOR_ana.386_2023p003-00021796-0001.root")
 {
 
   Fun4AllServer *se = Fun4AllServer::instance();

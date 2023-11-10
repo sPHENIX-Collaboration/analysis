@@ -80,6 +80,9 @@ class CaloAna : public SubsysReco
   TH1* hzdcSouthcalib;
   TH1* hzdcNorthcalib;
 
+  TH1F* h_clusE;
+  TH2F* h_etaphi_clus;
+
   TNtuple *g4hitntuple = nullptr;
   TNtuple *g4cellntuple = nullptr;
   TTree *towerntuple = nullptr;
