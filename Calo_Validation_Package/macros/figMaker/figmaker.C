@@ -1,8 +1,4 @@
-//#include "/sphenix/u/bseidlitz/plotstyle/AtlasStyle.C"
-//#include "/sphenix/u/bseidlitz/plotstyle/AtlasUtils.C"
 
-//gROOT->LoadMacro("sPhenixStyle.C");
-//gROOT->ProcessLine("SetsPhenixStyle()");
 #include "sPhenixStyle.C"
 
 void myText(Double_t x,Double_t y,Color_t color, const char *text, Double_t tsize=0.04) {
@@ -60,8 +56,11 @@ void figmaker(){
     TH2F* h_cemc_etaphi            = (TH2F*) fin->Get("h_cemc_etaphi"           );
     TH2F* h_ihcal_etaphi           = (TH2F*) fin->Get("h_ihcal_etaphi"          );
     TH2F* h_ohcal_etaphi           = (TH2F*) fin->Get("h_ohcal_etaphi"          );
+    TH2F* h_zdc_emcal_correlation  = (TH2F*) fin->Get("h_zdc_emcal_correlation");
+    TH1F* hzdcNorthcalib           = (TH1F*) fin->Get("hzdcNorthcalib");
+    TH1F* hzdcSouthcalib           = (TH1F*) fin->Get("hzdcSouthcalib");
 
-    TCanvas* c1 = new TCanvas("c1", "c1", 600, 600);
+    TCanvas* c1 = new TCanvas("c1", "c1", 400, 400);
     h_emcal_mbd_correlation ->Draw("COLZ");
     h_emcal_mbd_correlation ->SetXTitle("#Sigma #it{E}^{EMCal} [Arb]");
     h_emcal_mbd_correlation ->SetYTitle("#Sigma #it{E}^{MBD} [Arb]");
@@ -73,7 +72,7 @@ void figmaker(){
     c1->SaveAs(Form("../plots/emcal_mbd_correlation_%d.pdf",run));
 
 
-    TCanvas* c2 = new TCanvas("c2", "c2", 600, 600);
+    TCanvas* c2 = new TCanvas("c2", "c2", 400, 400);
     h_ihcal_mbd_correlation ->Draw("COLZ");
     h_ihcal_mbd_correlation ->SetXTitle("#Sigma #it{E}^{ihcal} [Arb]");
     h_ihcal_mbd_correlation ->SetYTitle("#Sigma #it{E}^{MBD} [Arb]");
@@ -84,7 +83,7 @@ void figmaker(){
 
     c2->SaveAs(Form("../plots/ihcal_mbd_correlation_%d.pdf",run));
 
-    TCanvas* c3 = new TCanvas("c3", "c3", 600, 600);
+    TCanvas* c3 = new TCanvas("c3", "c3", 400, 400);
     h_ohcal_mbd_correlation ->Draw("COLZ");
     h_ohcal_mbd_correlation ->SetXTitle("#Sigma #it{E}^{ohcal} [Arb]");
     h_ohcal_mbd_correlation ->SetYTitle("#Sigma #it{E}^{MBD} [Arb]");
@@ -96,7 +95,7 @@ void figmaker(){
     c3->SaveAs(Form("../plots/ohcal_mbd_correlation_%d.pdf",run));
 
 
-    TCanvas* c4 = new TCanvas("c4", "c4", 600, 600);
+    TCanvas* c4 = new TCanvas("c4", "c4", 400, 400);
     h_emcal_hcal_correlation->Draw("COLZ");
     h_emcal_hcal_correlation->SetXTitle("#Sigma #it{E}^{EMCal} [Arb]");
     h_emcal_hcal_correlation->SetYTitle("#Sigma #it{E}^{HCal} [Arb]");
@@ -108,7 +107,7 @@ void figmaker(){
     c3->SaveAs(Form("../plots/emcal_hcal_correlation_%d.pdf",run));
 
 
-    TCanvas* c5 = new TCanvas("c5", "c5", 600, 600);
+    TCanvas* c5 = new TCanvas("c5", "c5", 400, 400);
     h_InvMass               ->Draw("");
     h_InvMass               ->SetXTitle("#it{M}_{#gamma#gamma}");
     h_InvMass               ->SetYTitle("counts");
@@ -118,7 +117,7 @@ void figmaker(){
     c5->SaveAs(Form("../plots/InvMass_%d.pdf",run));
 
 
-    TCanvas* c6 = new TCanvas("c6", "c6", 600, 600);
+    TCanvas* c6 = new TCanvas("c6", "c6", 400, 400);
     h_cemc_etaphi           ->Draw("COLZ");
     h_cemc_etaphi           ->SetXTitle("#it{#eta}_{i} EMCal");
     h_cemc_etaphi           ->SetYTitle("#it{#phi}_{i} EMCal");
@@ -132,7 +131,7 @@ void figmaker(){
 
 
 
-    TCanvas* c7 = new TCanvas("c7", "c7", 600, 600);
+    TCanvas* c7 = new TCanvas("c7", "c7", 400, 400);
     h_ihcal_etaphi          ->Draw("COLZ");
     h_ihcal_etaphi          ->SetXTitle("#it{#eta}_{i} iHcal");
     h_ihcal_etaphi          ->SetYTitle("#it{#phi}_{i} iHcal");
@@ -144,7 +143,7 @@ void figmaker(){
     c7->SaveAs(Form("../plots/ihcal_etaphi_%d.pdf",run));
 
 
-    TCanvas* c8 = new TCanvas("c8", "c8", 600, 600);
+    TCanvas* c8 = new TCanvas("c8", "c8", 400, 400);
     h_ohcal_etaphi          ->Draw("COLZ");
     h_ohcal_etaphi          ->SetXTitle("#it{#eta}_{i} oHcal");
     h_ohcal_etaphi          ->SetYTitle("#it{#phi}_{i} oHcal");
@@ -158,7 +157,7 @@ void figmaker(){
 
     TH1F* h_emcal_proj = (TH1F*) proj(h_cemc_etaphi)->Clone("h_emcal_proj");
 
-    TCanvas* c9 = new TCanvas("c9", "c9", 600, 300);
+    TCanvas* c9 = new TCanvas("c9", "c9", 400, 200);
     h_emcal_proj->Draw("hist");
     h_emcal_proj->SetYTitle("N^{twr}(E_{T} > 1 GeV)");
 
@@ -171,10 +170,10 @@ void figmaker(){
 
     TH1F* h_ohcal_proj = (TH1F*) proj(h_ohcal_etaphi)->Clone("h_ohcal_proj");
 
-    TCanvas* c10 = new TCanvas("c10", "c10", 600, 300);
+    TCanvas* c10 = new TCanvas("c10", "c10", 400, 200);
     h_ohcal_proj->Draw("hist");
     h_ohcal_proj->SetYTitle("N^{twr}(E_{T} > 1 GeV)");
-     h_ohcal_proj->GetYaxis()->SetRangeUser(0, h_ohcal_proj->GetMaximum()*1.05);
+    h_ohcal_proj->GetYaxis()->SetRangeUser(0, h_ohcal_proj->GetMaximum()*1.05);
 
     myText(0.22, 0.9, 1, "#it{#bf{sPHENIX}} Internal");
     myText(0.22, 0.85, 1, Form("run %d", run));
@@ -185,7 +184,7 @@ void figmaker(){
 
     TH1F* h_ihcal_proj = (TH1F*) proj(h_ihcal_etaphi)->Clone("h_ihcal_proj");
 
-    TCanvas* c11 = new TCanvas("c11", "c10", 600, 300);
+    TCanvas* c11 = new TCanvas("c11", "c10", 400, 200);
     h_ihcal_proj->Draw("hist");
     h_ihcal_proj->SetYTitle("N^{twr}(E_{T} > 1 GeV)");
     h_ihcal_proj->SetXTitle("#eta_{i}");
@@ -201,7 +200,7 @@ void figmaker(){
     TH1F* h_fb_ratio_ihcal = FBratio(h_ihcal_proj);
     TH1F* h_fb_ratio_ohcal = FBratio(h_ohcal_proj);
 
-    TCanvas* c12 = new TCanvas("c12", "c12", 600, 300);
+    TCanvas* c12 = new TCanvas("c12", "c12", 400, 200);
     h_fb_ratio_emcal->Draw("ex0");
     h_fb_ratio_emcal->SetYTitle("N^{twr}(#eta_{i})/N^{twr}(#eta_{N-i})");
     h_fb_ratio_emcal->SetXTitle("#eta_{i}");
@@ -224,6 +223,35 @@ void figmaker(){
     myText(0.42,0.80,kRed,"iHCal");
     
     c12->SaveAs(Form("../plots/h_fb_ratio_emcal_%d.pdf",run));
+
+
+    TCanvas* c13 = new TCanvas("c13", "c13", 400, 200);* 
+    h_zdc_emcal_correlation->Draw("COLZ");
+    h_zdc_emcal_correlation->SetXTitle("#Sigma #it{E}^{EMCal} [Arb]");
+    h_zdc_emcal_correlation->SetYTitle("#Sigma #it{E}^{ZDC} [Arb]");
+    myText(0.22, 0.9, 1, "#it{#bf{sPHENIX}} Internal");
+    myText(0.22, 0.85, 1, Form("run %d", run));
+    gPad->SetRightMargin(0.15);
+    gPad->SetLogz();
+
+    c13->SaveAs(Form("../plots/zdc_emcal_correlation_%d.pdf",run));
+
+
+    TCanvas* c14 = new TCanvas("c14", "c14", 400, 200);* 
+    hzdcNorthcalib->Draw();
+    hzdcNorthcalib->GetXaxis()->SetRangeUser(0.25,15000);
+    hzdcNorthcalib->SetXTitle("#Sigma #it{E}^{ZDC Side}");
+    hzdcNorthcalib->SetYTitle("Events");
+
+    hzdcSouthcalib->Draw("same");
+    hzdcSouthcalib->SetLineColor(kBlack);
+    gPad->SetLogx();
+
+    myText(0.22, 0.9, 1, "#it{#bf{sPHENIX}} Internal");
+    myText(0.22, 0.85, 1, Form("run %d", run));
+
+    c3->SaveAs(Form("../plots/zdc_emcal_correlation_%d.pdf",run));
+
   }
 
 
