@@ -17,25 +17,45 @@
 
 \newcommand{\p}{../plots/}
 
-\foreach \n in {21518,21520,21598,21599,21615,21626,21796,21813,21889,21891,22949,22950,22951,22979,22982}{
-\begin{frame}{run \n}
+\foreach \n in {21813,21796,21615,21599,21598,21891,22979,22950,22949,22951,22982,21518,21520,21889}{
+
+\begin{frame}{run \n correlations}
 
 \centering{
-\includegraphics[width=0.24\textwidth]{\p/emcal_mbd_correlation_\n.pdf}
-\includegraphics[width=0.24\textwidth]{\p/ihcal_mbd_correlation_\n.pdf}
-\includegraphics[width=0.24\textwidth]{\p/ohcal_mbd_correlation_\n.pdf}
-\includegraphics[width=0.24\textwidth]{\p/emcal_hcal_correlation_\n.pdf}
-\includegraphics[width=0.24\textwidth]{\p/InvMass_\n.pdf}
-\includegraphics[width=0.24\textwidth]{\p/cemc_etaphi_\n.pdf}
-\includegraphics[width=0.24\textwidth]{\p/ihcal_etaphi_\n.pdf}
-\includegraphics[width=0.24\textwidth]{\p/ohcal_etaphi_\n.pdf}
+    \includegraphics[width=0.24\textwidth]{\p/emcal_mbd_correlation_\n.pdf}
+    \includegraphics[width=0.24\textwidth]{\p/ihcal_mbd_correlation_\n.pdf}
+    \includegraphics[width=0.24\textwidth]{\p/ohcal_mbd_correlation_\n.pdf}
+    \includegraphics[width=0.24\textwidth]{\p/emcal_hcal_correlation_\n.pdf} 
 
+    \includegraphics[width=0.24\textwidth]{\p/zdc_emcal_correlation_\n.pdf}
+    \includegraphics[width=0.24\textwidth]{\p/zdc_e_northSouth_\n.pdf}
+    \includegraphics[width=0.24\textwidth]{\p/vtx_z_\n.pdf}
 
-%\includegraphics[width=0.9\textwidth]{status_mod\n.pdf}
-\hspace{0.3\textwidth}
-
+    %\includegraphics[width=0.9\textwidth]{status_mod\n.pdf}
+    \hspace{0.3\textwidth}
 }
 \end{frame}
+
+
+\begin{frame}{run \n Calorimeter}
+
+    \centering{
+    \includegraphics[width=0.24\textwidth]{\p/InvMass_\n.pdf}
+    \includegraphics[width=0.24\textwidth]{\p/cemc_etaphi_\n.pdf}
+    \includegraphics[width=0.24\textwidth]{\p/ihcal_etaphi_\n.pdf}
+    \includegraphics[width=0.24\textwidth]{\p/ohcal_etaphi_\n.pdf}
+    
+    \includegraphics[width=0.24\textwidth]{\p/etaphi_clus_\n.pdf}
+    \includegraphics[width=0.24\textwidth]{\p/cemc_proj_\n.pdf}
+    \includegraphics[width=0.24\textwidth]{\p/ohcal_proj_\n.pdf}
+    \includegraphics[width=0.24\textwidth]{\p/ihcal_proj_\n.pdf}
+    
+    %\includegraphics[width=0.9\textwidth]{status_mod\n.pdf}
+    \hspace{0.3\textwidth}
+    
+    }
+\end{frame}
+
 }
 
 \end{document}
