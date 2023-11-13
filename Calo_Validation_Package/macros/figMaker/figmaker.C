@@ -66,6 +66,7 @@ void figmaker(){
     h_emcal_mbd_correlation ->Draw("COLZ");
     h_emcal_mbd_correlation ->SetXTitle("#Sigma #it{E}^{EMCal} [Arb]");
     h_emcal_mbd_correlation ->SetYTitle("#Sigma #it{E}^{MBD} [Arb]");
+    h_emcal_mbd_correlation->GetXaxis()->SetNdivisions(505);
     myText(0.22, 0.9, 1, "#it{#bf{sPHENIX}} Internal");
     myText(0.22, 0.85, 1, Form("run %d", run));
     gPad->SetRightMargin(0.15);
@@ -78,6 +79,7 @@ void figmaker(){
     h_ihcal_mbd_correlation ->Draw("COLZ");
     h_ihcal_mbd_correlation ->SetXTitle("#Sigma #it{E}^{ihcal} [Arb]");
     h_ihcal_mbd_correlation ->SetYTitle("#Sigma #it{E}^{MBD} [Arb]");
+    h_ihcal_mbd_correlation->GetXaxis()->SetNdivisions(505);
     myText(0.22, 0.9, 1, "#it{#bf{sPHENIX}} Internal");
     myText(0.22, 0.85, 1, Form("run %d", run));
     gPad->SetRightMargin(0.15);
@@ -89,6 +91,7 @@ void figmaker(){
     h_ohcal_mbd_correlation ->Draw("COLZ");
     h_ohcal_mbd_correlation ->SetXTitle("#Sigma #it{E}^{ohcal} [Arb]");
     h_ohcal_mbd_correlation ->SetYTitle("#Sigma #it{E}^{MBD} [Arb]");
+    h_ohcal_mbd_correlation->GetXaxis()->SetNdivisions(505);
     myText(0.22, 0.9, 1, "#it{#bf{sPHENIX}} Internal");
     myText(0.22, 0.85, 1, Form("run %d", run));
     gPad->SetRightMargin(0.15);
@@ -101,12 +104,13 @@ void figmaker(){
     h_emcal_hcal_correlation->Draw("COLZ");
     h_emcal_hcal_correlation->SetXTitle("#Sigma #it{E}^{EMCal} [Arb]");
     h_emcal_hcal_correlation->SetYTitle("#Sigma #it{E}^{HCal} [Arb]");
+    h_emcal_hcal_correlation->GetXaxis()->SetNdivisions(505);
     myText(0.22, 0.9, 1, "#it{#bf{sPHENIX}} Internal");
     myText(0.22, 0.85, 1, Form("run %d", run));
     gPad->SetRightMargin(0.15);
     gPad->SetLogz();
 
-    c3->SaveAs(Form("../plots/emcal_hcal_correlation_%d.pdf",run));
+    c4->SaveAs(Form("../plots/emcal_hcal_correlation_%d.pdf",run));
 
 
     TCanvas* c5 = new TCanvas("c5", "c5", 400, 400);
@@ -231,6 +235,7 @@ void figmaker(){
     h_zdc_emcal_correlation->Draw("COLZ");
     h_zdc_emcal_correlation->SetXTitle("#Sigma #it{E}^{EMCal} [Arb]");
     h_zdc_emcal_correlation->SetYTitle("#Sigma #it{E}^{ZDC} [Arb]");
+    h_zdc_emcal_correlation->GetXaxis()->SetNdivisions(505);
     myText(0.22, 0.9, 1, "#it{#bf{sPHENIX}} Internal");
     myText(0.22, 0.85, 1, Form("run %d", run));
     gPad->SetRightMargin(0.15);
@@ -241,16 +246,20 @@ void figmaker(){
 
     TCanvas* c14 = new TCanvas("c14", "c14", 400, 400);
     hzdcNorthcalib->Draw();
+    hzdcNorthcalib->SetLineColor(kBlue);
     hzdcNorthcalib->GetXaxis()->SetRangeUser(0.25,15000);
     hzdcNorthcalib->SetXTitle("#Sigma #it{E}^{ZDC Side}");
     hzdcNorthcalib->SetYTitle("Events");
 
     hzdcSouthcalib->Draw("same");
-    hzdcSouthcalib->SetLineColor(kBlack);
+    hzdcSouthcalib->SetLineColor(kRed);
     gPad->SetLogx();
+    gPad->SetLogy();
 
-    myText(0.22, 0.9, 1, "#it{#bf{sPHENIX}} Internal");
-    myText(0.22, 0.85, 1, Form("run %d", run));
+    myText(0.7, 0.9, 1, "#it{#bf{sPHENIX}} Internal");
+    myText(0.7, 0.85, 1, Form("run %d", run));
+    myText(0.7, 0.80, kBlue,"North");
+    myText(0.32, 0.80, kRed,"South");
 
     c14->SaveAs(Form("../plots/zdc_e_northSouth_%d.pdf",run));
 
@@ -266,6 +275,7 @@ void figmaker(){
     gPad->SetRightMargin(0.15);
 
     c15->SaveAs(Form("../plots/etaphi_clus_%d.pdf",run));
+
 
     TCanvas* c16 = new TCanvas("c16", "c16", 400, 400);
     hvtx_z_raw          ->Draw("COLZ");

@@ -35,7 +35,7 @@ R__LOAD_LIBRARY(libcaloana.so)
 R__LOAD_LIBRARY(libffamodules.so)
 #endif
 
-void Fun4All_Calo(int nevents = 100,const std::string &fname = "/sphenix/lustre01/sphnxpro/commissioning/DST_ana.386_2023p003/DST_CALOR_ana.386_2023p003-00021598-0001.root")
+void Fun4All_Calo(int nevents = 100,const std::string &fname = "/sphenix/lustre01/sphnxpro/commissioning/DST_ana.386_2023p003/DST_CALOR_ana.386_2023p003-00021598-0001.root",bool fIsList=0)
 {
 
   bool enableMasking = 0;
@@ -49,19 +49,19 @@ void Fun4All_Calo(int nevents = 100,const std::string &fname = "/sphenix/lustre0
  //===============
   // conditions DB flags
   //===============
-  pair<int, int> runseg = Fun4AllUtils::GetRunSegment(fname);
-  int runnumber = runseg.first;
-   cout << "run number = " << runnumber << endl;
+  //pair<int, int> runseg = Fun4AllUtils::GetRunSegment(fname);
+  //int runnumber = runseg.first;
+  // cout << "run number = " << runnumber << endl;
 
-  // global tag
-  rc->set_StringFlag("CDB_GLOBALTAG","MDC2");
-  // // 64 bit timestamp
-  rc->set_uint64Flag("TIMESTAMP",runnumber);
+  //// global tag
+  //rc->set_StringFlag("CDB_GLOBALTAG","MDC2");
+  //// // 64 bit timestamp
+  //rc->set_uint64Flag("TIMESTAMP",runnumber);
 
 
   Fun4AllInputManager *in = new Fun4AllDstInputManager("DST_TOWERS");
-  //in->AddFile("/sphenix/tg/tg01/jets/ahodges/run23_production_zvertex/21813/DST-00021813-0010.root");      
-  in->AddFile(fname);
+  if (!fIsList) in->AddFile(fname);
+  if (fIsList) in->AddListFile(fname);
   se->registerInputManager(in);
 
   std::string filename = fname.substr(fname.find_last_of("/\\") + 1);
