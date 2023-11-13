@@ -59,6 +59,8 @@ void figmaker(){
     TH2F* h_zdc_emcal_correlation  = (TH2F*) fin->Get("h_zdc_emcal_correlation");
     TH1F* hzdcNorthcalib           = (TH1F*) fin->Get("hzdcNorthcalib");
     TH1F* hzdcSouthcalib           = (TH1F*) fin->Get("hzdcSouthcalib");
+    TH2F* h_etaphi_clus            = (TH2F*) fin->Get("h_etaphi_clus"           );
+    TH1F* hvtx_z_raw               = (TH1F*) fin->Get("hvtx_z_raw");
 
     TCanvas* c1 = new TCanvas("c1", "c1", 400, 400);
     h_emcal_mbd_correlation ->Draw("COLZ");
@@ -157,7 +159,7 @@ void figmaker(){
 
     TH1F* h_emcal_proj = (TH1F*) proj(h_cemc_etaphi)->Clone("h_emcal_proj");
 
-    TCanvas* c9 = new TCanvas("c9", "c9", 400, 200);
+    TCanvas* c9 = new TCanvas("c9", "c9", 400, 400);
     h_emcal_proj->Draw("hist");
     h_emcal_proj->SetYTitle("N^{twr}(E_{T} > 1 GeV)");
 
@@ -170,7 +172,7 @@ void figmaker(){
 
     TH1F* h_ohcal_proj = (TH1F*) proj(h_ohcal_etaphi)->Clone("h_ohcal_proj");
 
-    TCanvas* c10 = new TCanvas("c10", "c10", 400, 200);
+    TCanvas* c10 = new TCanvas("c10", "c10", 400, 400);
     h_ohcal_proj->Draw("hist");
     h_ohcal_proj->SetYTitle("N^{twr}(E_{T} > 1 GeV)");
     h_ohcal_proj->GetYaxis()->SetRangeUser(0, h_ohcal_proj->GetMaximum()*1.05);
@@ -184,7 +186,7 @@ void figmaker(){
 
     TH1F* h_ihcal_proj = (TH1F*) proj(h_ihcal_etaphi)->Clone("h_ihcal_proj");
 
-    TCanvas* c11 = new TCanvas("c11", "c10", 400, 200);
+    TCanvas* c11 = new TCanvas("c11", "c10", 400, 400);
     h_ihcal_proj->Draw("hist");
     h_ihcal_proj->SetYTitle("N^{twr}(E_{T} > 1 GeV)");
     h_ihcal_proj->SetXTitle("#eta_{i}");
@@ -200,7 +202,7 @@ void figmaker(){
     TH1F* h_fb_ratio_ihcal = FBratio(h_ihcal_proj);
     TH1F* h_fb_ratio_ohcal = FBratio(h_ohcal_proj);
 
-    TCanvas* c12 = new TCanvas("c12", "c12", 400, 200);
+    TCanvas* c12 = new TCanvas("c12", "c12", 400, 400);
     h_fb_ratio_emcal->Draw("ex0");
     h_fb_ratio_emcal->SetYTitle("N^{twr}(#eta_{i})/N^{twr}(#eta_{N-i})");
     h_fb_ratio_emcal->SetXTitle("#eta_{i}");
@@ -225,7 +227,7 @@ void figmaker(){
     c12->SaveAs(Form("../plots/h_fb_ratio_emcal_%d.pdf",run));
 
 
-    TCanvas* c13 = new TCanvas("c13", "c13", 400, 200);* 
+    TCanvas* c13 = new TCanvas("c13", "c13", 400, 400);
     h_zdc_emcal_correlation->Draw("COLZ");
     h_zdc_emcal_correlation->SetXTitle("#Sigma #it{E}^{EMCal} [Arb]");
     h_zdc_emcal_correlation->SetYTitle("#Sigma #it{E}^{ZDC} [Arb]");
@@ -237,7 +239,7 @@ void figmaker(){
     c13->SaveAs(Form("../plots/zdc_emcal_correlation_%d.pdf",run));
 
 
-    TCanvas* c14 = new TCanvas("c14", "c14", 400, 200);* 
+    TCanvas* c14 = new TCanvas("c14", "c14", 400, 400);
     hzdcNorthcalib->Draw();
     hzdcNorthcalib->GetXaxis()->SetRangeUser(0.25,15000);
     hzdcNorthcalib->SetXTitle("#Sigma #it{E}^{ZDC Side}");
@@ -250,14 +252,42 @@ void figmaker(){
     myText(0.22, 0.9, 1, "#it{#bf{sPHENIX}} Internal");
     myText(0.22, 0.85, 1, Form("run %d", run));
 
-    c3->SaveAs(Form("../plots/zdc_emcal_correlation_%d.pdf",run));
+    c14->SaveAs(Form("../plots/zdc_e_northSouth_%d.pdf",run));
+
+
+
+
+    TCanvas* c15 = new TCanvas("c15", "c15", 400, 400);
+    h_etaphi_clus          ->Draw("COLZ");
+    h_etaphi_clus          ->SetXTitle("#it{#eta}_{i} EMCal Clusters");
+    h_etaphi_clus          ->SetYTitle("#it{#phi}_{i} EMCal Clusters");
+    myText(0.22, 0.9, 1, "#it{#bf{sPHENIX}} Internal");
+    myText(0.22, 0.85, 1, Form("run %d", run));
+    gPad->SetRightMargin(0.15);
+
+    c15->SaveAs(Form("../plots/etaphi_clus_%d.pdf",run));
+
+    TCanvas* c16 = new TCanvas("c16", "c16", 400, 400);
+    hvtx_z_raw          ->Draw("COLZ");
+    hvtx_z_raw          ->SetXTitle("MBD Vertex #it{z} [cm]");
+    hvtx_z_raw          ->SetYTitle("Events");
+    myText(0.22, 0.9, 1, "#it{#bf{sPHENIX}} Internal");
+    myText(0.22, 0.85, 1, Form("run %d", run));
+
+    c16->SaveAs(Form("../plots/vtx_z_%d.pdf",run));
 
   }
 
-
-
+  for (int ir=0; ir<Nruns; ir++){
+    cout << runList[ir] << ",";
+  }
+  cout << endl;
 
 }
+
+
+
+
 
 
 TH1F* proj(TH2F* h2){
@@ -279,6 +309,7 @@ TH1F* proj(TH2F* h2){
     h->SetBinContent(ix,sum_cor);
     h->SetBinError(ix,sqrt(sum_cor));
   }
+
 
   return h;
 }

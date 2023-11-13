@@ -2,18 +2,20 @@
 
 export TargetDir="$PWD"/condorout
 
-if [ -d ${TargetDir}/OutDir0 ]; then
-  rm -rf ${TargetDir}/OutDir*
+if [ -d ${TargetDir} ]; then
+  if [ -d ${TargetDir}/OutDir0 ]; then
+    rm -rf ${TargetDir}/OutDir*
+  fi
 else
   mkdir ${TargetDir}
 fi
 
 i=0
 while read dir; do # read each line of run list
-  for filepath in /sphenix/lustre01/sphnxpro/commissioning/DST_ana.386_2023p003/DST_CALOR_ana.386_2023p003-000"$dir"-*.root; do
-    if [ ! -f "$filepath" ]; then
-      continue
-    fi
+  for filepath in /sphenix/lustre01/sphnxpro/commissioning/DST_ana.387_2023p003/DST_CALOR-000"$dir"-*.root; do
+    #if [ ! -f "$filepath" ]; then
+    #  continue
+    #fi
     
     li=$(printf "%04d" $i)
   
