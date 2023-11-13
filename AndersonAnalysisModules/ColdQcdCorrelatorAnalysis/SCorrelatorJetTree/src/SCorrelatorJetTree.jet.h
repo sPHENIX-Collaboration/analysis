@@ -162,12 +162,24 @@ namespace SColdQcdCorrelatorAnalysis {
       cout << "SCorrelatorJetTree::AddTracks(PHCompositeNode*, vector<PseudoJet>&, map<int, pair<Jet::SRC, int>>&) Adding tracks..." << endl;
     }
 
+    // for weird tracks
+    array<float, 40> arrWeirdTrackLeaves;
+    for (size_t iLeaf = 0; iLeaf < 40; iLeaf++) {
+      arrWeirdTrackLeaves[iLeaf] = 0.;
+    }
+
+    vector<TrkrDefs::cluskey> clustKeysA;
+    vector<TrkrDefs::cluskey> clustKeysB;
+    clustKeysA.clear();
+    clustKeysB.clear();
+
     // loop over tracks
     unsigned int  iCst    = particles.size();
     unsigned int  nTrkTot = 0;
     unsigned int  nTrkAcc = 0;
     double        eTrkSum = 0.;
     SvtxTrack*    track   = NULL;
+    SvtxTrack*    trackB  = NULL;
     SvtxTrackMap* mapTrks = GetTrackMap(topNode);
     for (SvtxTrackMap::Iter itTrk = mapTrks -> begin(); itTrk != mapTrks -> end(); ++itTrk) {
 
@@ -192,7 +204,7 @@ namespace SColdQcdCorrelatorAnalysis {
       const double trkPx = track -> get_px();
       const double trkPy = track -> get_py();
       const double trkPz = track -> get_pz();
-      const double trkE  = sqrt((trkPx * trkPx) + (trkPy * trkPy) + (trkPz * trkPz) + (0.140 * 0.140));
+      const double trkE  = sqrt((trkPx * trkPx) + (trkPy * trkPy) + (trkPz * trkPz) + (0.140 * 0.140));  // FIXME move pion mass to constant in utilities namespace
 
       // grab barcode of matching particle
       int matchID;
@@ -202,6 +214,7 @@ namespace SColdQcdCorrelatorAnalysis {
         matchID = -1;
       }
 
+
       fastjet::PseudoJet fjTrack(trkPx, trkPy, trkPz, trkE);
       fjTrack.set_user_index(matchID);
       particles.push_back(fjTrack);
@@ -210,8 +223,9 @@ namespace SColdQcdCorrelatorAnalysis {
       pair<int, pair<Jet::SRC, int>> jetTrkPair(iCst, make_pair(Jet::SRC::TRACK, trkID));
       fjMap.insert(jetTrkPair);
 
-      // grab track dca
+      // grab track dca and vertex
       pair<double, double> trkDcaPair = GetTrackDcaPair(track, topNode);
+      CLHEP::Hep3Vector    trkVtx     = GetTrackVertex(track, topNode);
 
       // grab remaining track info
       const double trkQuality = track -> get_quality();
@@ -221,6 +235,135 @@ namespace SColdQcdCorrelatorAnalysis {
       const int    trkNumTpc  = GetNumLayer(track, SUBSYS::TPC);
       const int    trkNumIntt = GetNumLayer(track, SUBSYS::INTT);
       const int    trkNumMvtx = GetNumLayer(track, SUBSYS::MVTX);
+
+      const int    trkClustTpc  = GetNumClust(track, SUBSYS::TPC);
+      const int    trkClustIntt = GetNumClust(track, SUBSYS::INTT);
+      const int    trkClustMvtx = GetNumClust(track, SUBSYS::MVTX);
+      const double trkPhi       = track -> get_phi();
+      const double trkEta       = track -> get_eta();
+      const double trkPt        = track -> get_pt();
+      if (m_checkWeirdTrks) {
+        for (SvtxTrackMap::Iter itTrkB = mapTrks -> begin(); itTrkB != mapTrks -> end(); ++itTrkB) {
+
+          // grab track B and skip if bad
+          trackB = itTrkB -> second;
+          if (!trackB) continue;
+
+          const bool isGoodTrackB = IsGoodTrack(trackB, topNode);
+          if (!isGoodTrackB) continue;
+
+          // grab track B dca and vertex
+          pair<double, double> trkDcaPairB = GetTrackDcaPair(trackB, topNode);
+          CLHEP::Hep3Vector    trkVtxB     = GetTrackVertex(trackB, topNode);
+
+          // get info from track B
+          const int    trkIDB        = trackB -> get_id();
+          const int    trkNumTpcB    = GetNumLayer(trackB, SUBSYS::TPC);
+          const int    trkNumInttB   = GetNumLayer(trackB, SUBSYS::INTT);
+          const int    trkNumMvtxB   = GetNumLayer(trackB, SUBSYS::MVTX);
+          const int    trkClustTpcB  = GetNumClust(trackB, SUBSYS::TPC);
+          const int    trkClustInttB = GetNumClust(trackB, SUBSYS::INTT);
+          const int    trkClustMvtxB = GetNumClust(trackB, SUBSYS::MVTX);
+          const double trkQualityB   = trackB -> get_quality();
+          const double trkDeltaPtB   = GetTrackDeltaPt(trackB);
+          const double trkDcaXYB     = trkDcaPairB.first;
+          const double trkDcaZB      = trkDcaPairB.second;
+          const double trkPxB        = trackB -> get_px();
+          const double trkPyB        = trackB -> get_py();
+          const double trkPzB        = trackB -> get_pz();
+          const double trkEB         = sqrt((trkPxB * trkPxB) + (trkPyB * trkPyB) + (trkPzB * trkPzB) + (0.140 * 0.140));
+          const double trkPhiB       = trackB -> get_phi();
+          const double trkEtaB       = trackB -> get_eta();
+          const double trkPtB        = trackB -> get_pt();
+
+          // calculate delta-R
+          const double dfTrkAB = trkPhi - trkPhiB;
+          const double dhTrkAB = trkEta - trkEtaB;
+          const double drTrkAB = sqrt((dfTrkAB * dfTrkAB) + (dhTrkAB * dhTrkAB));
+
+          // skip if same as track A
+          if (trkID == trkIDB) continue;
+
+          // clear vectors for checking cluster keys
+          clustKeysA.clear();
+          clustKeysB.clear();
+
+          // loop over clusters from track A
+          auto seedTpcA = track -> get_tpc_seed();
+          if (seedTpcA) {
+            for (auto local_iterA = seedTpcA -> begin_cluster_keys(); local_iterA != seedTpcA -> end_cluster_keys(); ++local_iterA) {
+              TrkrDefs::cluskey cluster_keyA = *local_iterA;
+              clustKeysA.push_back(cluster_keyA);
+            }
+          }
+
+          // loop over clusters from track B
+          auto seedTpcB = trackB -> get_tpc_seed();
+          if (seedTpcB) {
+            for (auto local_iterB = seedTpcB -> begin_cluster_keys(); local_iterB != seedTpcB -> end_cluster_keys(); ++local_iterB) {
+              TrkrDefs::cluskey cluster_keyB = *local_iterB;
+              clustKeysB.push_back(cluster_keyB);
+            }
+          }
+
+          // calculate no. of same cluster keys
+          uint64_t nSameKey = 0;
+          for (auto keyA : clustKeysA) {
+            for (auto keyB : clustKeysB) {
+              if (keyA == keyB) {
+                ++nSameKey;
+                break;
+              }
+            }  // end cluster key B loop
+          }  // end cluster key A loop
+
+          // set tuple leaves
+          arrWeirdTrackLeaves[0]  = (float) trkID;
+          arrWeirdTrackLeaves[1]  = (float) trkIDB;
+          arrWeirdTrackLeaves[2]  = (float) trkPt;
+          arrWeirdTrackLeaves[3]  = (float) trkPtB;
+          arrWeirdTrackLeaves[4]  = (float) trkEta;
+          arrWeirdTrackLeaves[5]  = (float) trkEtaB;
+          arrWeirdTrackLeaves[6]  = (float) trkPhi;
+          arrWeirdTrackLeaves[7]  = (float) trkPhiB;
+          arrWeirdTrackLeaves[8]  = (float) trkE;
+          arrWeirdTrackLeaves[9]  = (float) trkEB;
+          arrWeirdTrackLeaves[10] = (float) trkDcaXY;
+          arrWeirdTrackLeaves[11] = (float) trkDcaXYB;
+          arrWeirdTrackLeaves[12] = (float) trkDcaZ;
+          arrWeirdTrackLeaves[13] = (float) trkDcaZB;
+          arrWeirdTrackLeaves[14] = (float) trkVtx.x();
+          arrWeirdTrackLeaves[15] = (float) trkVtxB.x();
+          arrWeirdTrackLeaves[16] = (float) trkVtx.y();
+          arrWeirdTrackLeaves[17] = (float) trkVtxB.y();
+          arrWeirdTrackLeaves[18] = (float) trkVtx.z();
+          arrWeirdTrackLeaves[19] = (float) trkVtxB.z();
+          arrWeirdTrackLeaves[20] = (float) trkQuality;
+          arrWeirdTrackLeaves[21] = (float) trkQualityB;
+          arrWeirdTrackLeaves[22] = (float) trkDeltaPt;
+          arrWeirdTrackLeaves[23] = (float) trkDeltaPtB;
+          arrWeirdTrackLeaves[24] = (float) trkNumMvtx;
+          arrWeirdTrackLeaves[25] = (float) trkNumMvtxB;
+          arrWeirdTrackLeaves[26] = (float) trkNumIntt;
+          arrWeirdTrackLeaves[27] = (float) trkNumInttB;
+          arrWeirdTrackLeaves[28] = (float) trkNumTpc;
+          arrWeirdTrackLeaves[29] = (float) trkNumTpcB;
+          arrWeirdTrackLeaves[30] = (float) trkClustMvtx;
+          arrWeirdTrackLeaves[31] = (float) trkClustMvtxB;
+          arrWeirdTrackLeaves[32] = (float) trkClustIntt;
+          arrWeirdTrackLeaves[33] = (float) trkClustInttB;
+          arrWeirdTrackLeaves[34] = (float) trkClustTpc;
+          arrWeirdTrackLeaves[35] = (float) trkClustTpcB;
+          arrWeirdTrackLeaves[36] = (float) clustKeysA.size();
+          arrWeirdTrackLeaves[37] = (float) clustKeysB.size();
+          arrWeirdTrackLeaves[38] = (float) nSameKey;
+          arrWeirdTrackLeaves[39] = (float) drTrkAB;
+ 
+          // fill weird track tuple
+          m_ntWeirdTracks -> Fill(arrWeirdTrackLeaves.data());
+
+        }  // end 2nd track loop
+      }  // end if (m_checkWeirdTrks)
 
       // fill QA histograms
       m_hObjectQA[OBJECT::TRACK][INFO::PT]      -> Fill(fjTrack.perp());
@@ -245,7 +388,10 @@ namespace SColdQcdCorrelatorAnalysis {
         (float) trkQuality,
         (float) trkNumMvtx,
         (float) trkNumIntt,
-        (float) trkNumTpc
+        (float) trkNumTpc,
+        (float) trkVtx.x(),
+        (float) trkVtx.y(),
+        (float) trkVtx.z()
       );
       eTrkSum += trkE;
       ++iCst;
