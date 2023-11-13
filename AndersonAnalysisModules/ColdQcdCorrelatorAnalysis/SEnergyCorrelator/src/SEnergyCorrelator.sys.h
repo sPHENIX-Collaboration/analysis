@@ -87,7 +87,7 @@ namespace SColdQcdCorrelatorAnalysis {
     m_inChain -> SetBranchAddress("CstZ",       &m_cstZ,       &m_brCstZ);
     m_inChain -> SetBranchAddress("CstDr",      &m_cstDr,      &m_brCstDr);
     m_inChain -> SetBranchAddress("CstEnergy",  &m_cstEnergy,  &m_brCstEnergy);
-    m_inChain -> SetBranchAddress("CstJt",      &m_cstJt,      &m_brCstJt);
+    m_inChain -> SetBranchAddress("CstJt",      &m_cstPt,      &m_brCstPt);
     m_inChain -> SetBranchAddress("CstEta",     &m_cstEta,     &m_brCstEta);
     m_inChain -> SetBranchAddress("CstPhi",     &m_cstPhi,     &m_brCstPhi);
 
@@ -115,6 +115,31 @@ namespace SColdQcdCorrelatorAnalysis {
       m_outHistErrLnDrAxis.push_back(hInitialErrLnDrAxis);
     }
 
+    // for weird cst check
+    if (m_doSecondCstLoop) {
+      vector<double> drBinEdges  = m_eecLongSide[0] -> bin_edges();
+      size_t         nDrBinEdges = drBinEdges.size();
+ 
+      double drBinEdgeArray[nDrBinEdges];
+      for (size_t iDrEdge = 0; iDrEdge < nDrBinEdges; iDrEdge++) {
+        drBinEdgeArray[iDrEdge] = drBinEdges.at(iDrEdge);
+      }
+      hCstPtOneVsDr      = new TH2D("hCstPtOneVsDr",      "", m_nBinsDr, drBinEdgeArray, 200,  0.,   100.);
+      hCstPtTwoVsDr      = new TH2D("hCstPtTwoVsDr",      "", m_nBinsDr, drBinEdgeArray, 200,  0.,   100.);
+      hCstPtFracVsDr     = new TH2D("hCstPtFracVsDr",     "", m_nBinsDr, drBinEdgeArray, 500,  0.,   5.);
+      hCstPhiOneVsDr     = new TH2D("hCstPhiOneVsDr",     "", m_nBinsDr, drBinEdgeArray, 360, -3.15, 3.15);;
+      hCstPhiTwoVsDr     = new TH2D("hCstPhiTwoVsDr",     "", m_nBinsDr, drBinEdgeArray, 360, -3.15, 3.15);
+      hCstEtaOneVsDr     = new TH2D("hCstEtaOneVsDr",     "", m_nBinsDr, drBinEdgeArray, 400, -2.,   2.);
+      hCstEtaTwoVsDr     = new TH2D("hCstEtaTwoVsDr",     "", m_nBinsDr, drBinEdgeArray, 400, -2.,   2.);
+      hDeltaPhiOneVsDr   = new TH2D("hDeltaPhiOneVsDr",   "", m_nBinsDr, drBinEdgeArray, 720, -6.30, 6.30);
+      hDeltaPhiTwoVsDr   = new TH2D("hDeltaPhiTwoVsDr",   "", m_nBinsDr, drBinEdgeArray, 720, -6.30, 6.30);
+      hDeltaEtaOneVsDr   = new TH2D("hDeltaEtaOneVsDr",   "", m_nBinsDr, drBinEdgeArray, 800, -4.,   4.);
+      hDeltaEtaTwoVsDr   = new TH2D("hDeltaEtaTwoVsDr",   "", m_nBinsDr, drBinEdgeArray, 800, -4.,   4.);
+      hJetPtFracOneVsDr  = new TH2D("hJetPtFracOneVsDr",  "", m_nBinsDr, drBinEdgeArray, 500, 0.,    5.);
+      hJetPtFracTwoVsDr  = new TH2D("hJetPtFracTwoVsDr",  "", m_nBinsDr, drBinEdgeArray, 500, 0.,    5.);
+      hCstPairWeightVsDr = new TH2D("hCstPairWeightVsDr", "", m_nBinsDr, drBinEdgeArray, 100,  0.,   1.);
+    }
+
     // announce histogram initialization
     if (m_inStandaloneMode) PrintMessage(3);
     return;
@@ -130,7 +155,7 @@ namespace SColdQcdCorrelatorAnalysis {
 
     // initialize correlator for each jet pt bin
     for (size_t iPtBin = 0; iPtBin < m_nBinsJetPt; iPtBin++) {
-      m_eecLongSide.push_back(new contrib::eec::EECLongestSide<contrib::eec::hist::axis::log>(m_nPointCorr, m_nBinsDr, {m_drBinRange[0], m_drBinRange[1]}));
+      m_eecLongSide.push_back(new contrib::eec::EECLongestSide<contrib::eec::hist::axis::log>(m_nPointCorr, m_nBinsDr, {m_drBinRange.first, m_drBinRange.second}));
     }
 
     // announce correlator initialization
@@ -180,14 +205,14 @@ namespace SColdQcdCorrelatorAnalysis {
         break;
       case 5:
         cout << "    Set correlator parameters:\n"
-             << "      n-point = "       << m_nPointCorr    << ", number of dR bins = " << m_nBinsDr       << "\n"
-             << "      dR bin range = (" << m_drBinRange[0] << ", "                     << m_drBinRange[1] << ")"
+             << "      n-point = "       << m_nPointCorr       << ", number of dR bins = " << m_nBinsDr           << "\n"
+             << "      dR bin range = (" << m_drBinRange.first << ", "                     << m_drBinRange.second << ")"
              << endl;
         break;
       case 6:
         cout << "    Set jet parameters:\n"
-             << "      eta range = (" << m_etaJetRange[0] << ", " << m_etaJetRange[1] << ")\n"
-             << "      pt range  = (" << m_ptJetRange[0]  << ", " << m_ptJetRange[1]  << ")\n"
+             << "      eta range = (" << m_etaJetRange.first << ", " << m_etaJetRange.second << ")\n"
+             << "      pt range  = (" << m_ptJetRange.first  << ", " << m_ptJetRange.second  << ")\n"
              << "    Set pTjet bins:"
              << endl;
         for (uint32_t iPtBin = 0; iPtBin < m_nBinsJetPt; iPtBin++) {
@@ -217,8 +242,8 @@ namespace SColdQcdCorrelatorAnalysis {
       case 12:
         cout << "    Set constituent parameters:\n"
              << "      apply constituent cuts? = " << m_applyCstCuts   << "\n"
-             << "      momentum range = ("         << m_momCstRange[0] << ", " << m_momCstRange[1] << ")\n"
-             << "      dr range       = ("         << m_drCstRange[0]  << ", " << m_drCstRange[1]  << ")"
+             << "      momentum range = ("         << m_momCstRange.first << ", " << m_momCstRange.second << ")\n"
+             << "      dr range       = ("         << m_drCstRange.first  << ", " << m_drCstRange.second  << ")"
              << endl;
         break;
       case 13:
@@ -330,10 +355,10 @@ namespace SColdQcdCorrelatorAnalysis {
         cout << "SEnergyCorrelator::SetInputTree(string, bool) setting input tree name..." << endl;
         break;
       case 19:
-        cout << "SEnergyCorrelator::SetCorrelatorParameters(uint32_t, uint64_t, double, double) setting correlator parameters..." << endl;
+        cout << "SEnergyCorrelator::SetCorrelatorParameters(uint32_t, uint64_t, pair<double, double>) setting correlator parameters..." << endl;
         break;
       case 20:
-        cout << "SEnergyCorrelator::SetJetParameters(vector<pair<double, double>>, double, double) setting jet parameters..." << endl;
+        cout << "SEnergyCorrelator::SetJetParameters(vector<pair<double, double>>, pair<double, double>) setting jet parameters..." << endl;
         break;
       case 21:
         cout << "SEnergyCorrelators:CheckCriticalParameters() checking critical parameters..." << endl;
@@ -345,7 +370,7 @@ namespace SColdQcdCorrelatorAnalysis {
         cout << "SEnergyCorrelator::PrintError(uint32_t) printing an error..." << endl;
         break;
       case 24:
-        cout << "SEnergyCorrelator::SetConstituentParameters(double, double, double, double) setting constituent parameters..." << endl;
+        cout << "SEnergyCorrelator::SetConstituentParameters(pair<double, double>, pair<double, double>) setting constituent parameters..." << endl;
         break;
       case 25:
         cout << "SEnergyCorrelator::ExtractHistsFromCorr() extracting output histograms..." << endl;
