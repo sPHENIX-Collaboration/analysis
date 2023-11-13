@@ -8,10 +8,10 @@
 #include <fun4all/Fun4AllNoSyncDstInputManager.h>
 #include <fun4all/Fun4AllDstInputManager.h>
 
+#include <caloreco/RawClusterBuilderTemplate.h>
 #include <fun4all/Fun4AllDstOutputManager.h>
 #include <fun4all/Fun4AllOutputManager.h>
 
-// #include <calotowerbuilder/CaloTowerBuilder.h>
 #include <caloreco/CaloTowerBuilder.h>
 #include <caloreco/CaloWaveformProcessing.h>
 
@@ -20,8 +20,14 @@
 #include <ffamodules/SyncReco.h>
 #include <ffamodules/CDBInterface.h>
 
+#include <caloreco/TowerInfoDeadHotMask.h>
+#include <caloreco/DeadHotMapLoader.h>
+#include <caloreco/RawClusterDeadHotMask.h>
+
+
 #include <caloana/CaloAna.h>
 #include <fun4all/Fun4AllDstOutputManager.h>
+#include <fun4all/Fun4AllUtils.h>
 R__LOAD_LIBRARY(libfun4all.so)
 R__LOAD_LIBRARY(libfun4allraw.so)
 R__LOAD_LIBRARY(libcalo_reco.so)
@@ -29,11 +35,10 @@ R__LOAD_LIBRARY(libcaloana.so)
 R__LOAD_LIBRARY(libffamodules.so)
 #endif
 
-void Fun4All_Calo(const char* infile = "/gpfs/mnt/gpfs02/sphenix/user/trinn/comissioning_data_production/test_file.root",const char *outfile = "tim_calo_23699.root")
+void Fun4All_Calo(int nevents = 100,const std::string &fname = "/sphenix/lustre01/sphnxpro/commissioning/DST_ana.386_2023p003/DST_CALOR_ana.386_2023p003-00021598-0001.root")
 {
 
-
- 
+  bool enableMasking = 0;
 
   Fun4AllServer *se = Fun4AllServer::instance();
   int verbosity = 0;
@@ -44,27 +49,85 @@ void Fun4All_Calo(const char* infile = "/gpfs/mnt/gpfs02/sphenix/user/trinn/comi
  //===============
   // conditions DB flags
   //===============
+  pair<int, int> runseg = Fun4AllUtils::GetRunSegment(fname);
+  int runnumber = runseg.first;
+   cout << "run number = " << runnumber << endl;
 
   // global tag
   rc->set_StringFlag("CDB_GLOBALTAG","MDC2");
   // // 64 bit timestamp
-  rc->set_uint64Flag("TIMESTAMP",6);
+  rc->set_uint64Flag("TIMESTAMP",runnumber);
 
 
-Fun4AllInputManager *intrue = new Fun4AllDstInputManager("DST_TOWERS");
-  intrue->AddFile(infile);
-se->registerInputManager(intrue);
+  Fun4AllInputManager *in = new Fun4AllDstInputManager("DST_TOWERS");
+  //in->AddFile("/sphenix/tg/tg01/jets/ahodges/run23_production_zvertex/21813/DST-00021813-0010.root");      
+  in->AddFile(fname);
+  se->registerInputManager(in);
+
+  std::string filename = fname.substr(fname.find_last_of("/\\") + 1);
+  std::string OutFile = "CALOHIST_" + filename;
 
 
- CaloAna *ca = new CaloAna("calomodulename",outfile);
+  /////////////
+  // masking
+  if (enableMasking)
+  {
+    std::cout << "Loading EMCal deadmap" << std::endl;
+    DeadHotMapLoader *towerMapCemc = new DeadHotMapLoader("CEMC");
+    towerMapCemc->detector("CEMC");
+    se->registerSubsystem(towerMapCemc);
+
+    std::cout << "Loading ihcal deadmap" << std::endl;
+    DeadHotMapLoader *towerMapHCalin = new DeadHotMapLoader("HCALIN");
+    towerMapHCalin->detector("HCALIN");
+    se->registerSubsystem(towerMapHCalin);
+
+    std::cout << "Loading ohcal deadmap" << std::endl;
+    DeadHotMapLoader *towerMapHCalout = new DeadHotMapLoader("HCALOUT");
+    towerMapHCalout->detector("HCALOUT");
+    se->registerSubsystem(towerMapHCalout);
+
+    std::cout << "Loading cemc masker" << std::endl;
+    TowerInfoDeadHotMask *towerMaskCemc = new TowerInfoDeadHotMask("CEMC");
+    towerMaskCemc->detector("CEMC");
+    se->registerSubsystem(towerMaskCemc);
+
+    std::cout << "Loading hcal maskers" << std::endl;
+    TowerInfoDeadHotMask *towerMaskHCalin = new TowerInfoDeadHotMask("HCALIN");
+    towerMaskHCalin->detector("HCALIN");
+    se->registerSubsystem(towerMaskHCalin);
+
+    TowerInfoDeadHotMask *towerMaskHCalout = new TowerInfoDeadHotMask("HCALOUT");
+    towerMaskHCalout->detector("HCALOUT");
+    se->registerSubsystem(towerMaskHCalout);
+
+  ///////////
+  // Clusters
+  std::cout << "Building clusters" << std::endl;
+  RawClusterBuilderTemplate *ClusterBuilder = new RawClusterBuilderTemplate("EmcRawClusterBuilderTemplate");
+  ClusterBuilder->Detector("CEMC");
+  ClusterBuilder->set_threshold_energy(0.030);  // for when using basic calibration
+  std::string emc_prof = getenv("CALIBRATIONROOT");
+  emc_prof += "/EmcProfile/CEMCprof_Thresh30MeV.root";
+  ClusterBuilder->LoadProfile(emc_prof);
+  ClusterBuilder->set_UseTowerInfo(1);  // to use towerinfo objects rather than old RawTower
+  se->registerSubsystem(ClusterBuilder);
+
+
+    std::cout << "Masking clusters" << std::endl;
+    RawClusterDeadHotMask *clusterMask = new RawClusterDeadHotMask("clusterMask");
+    clusterMask->detector("CEMC");
+    se->registerSubsystem(clusterMask);
+
+  }
+
+  CaloAna *ca = new CaloAna("calomodulename",OutFile);
+  ca->set_timing_cut_width(200);  //integers for timing width, > 1 : wider cut around max peak time
+  ca->apply_vertex_cut(false);  
+  ca->set_vertex_cut(20.);
   se->registerSubsystem(ca);
 
-
-
-
-
-
-  se->run();
+  se->run(nevents); //update number of events as needed
   se->End();
 
 }
