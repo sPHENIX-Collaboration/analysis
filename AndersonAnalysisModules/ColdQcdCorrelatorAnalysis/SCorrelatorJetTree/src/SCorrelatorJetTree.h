@@ -51,9 +51,7 @@
 #include <globalvertex/GlobalVertexMap.h>
 // tracking includes
 #include <trackbase_historic/SvtxTrack.h>
-#include <trackbase_historic/SvtxVertex.h>
 #include <trackbase_historic/SvtxTrackMap.h>
-#include <trackbase_historic/SvtxVertexMap.h>
 #include <trackbase_historic/TrackAnalysisUtils.h>
 // calo includes
 #include <calobase/RawCluster.h>
@@ -155,6 +153,9 @@ namespace SColdQcdCorrelatorAnalysis {
       void SetDoVertexCut(const bool doVtx)      {m_doVtxCut       = doVtx;}
       void SetDoQualityPlots(const bool doQA)    {m_doQualityPlots = doQA;}
       void SetRequireSiSeeds(const bool require) {m_requireSiSeeds = require;}
+      void SetUseOnlyPrimVtx(const bool primary) {m_useOnlyPrimVtx = primary;}
+      void SetMaskTpcSectors(const bool mask)    {m_maskTpcSectors = mask;}
+      void SetCheckWeirdTrks(const bool check)   {m_checkWeirdTrks = check;}
       void SetSaveDST(const bool doSave)         {m_saveDST        = doSave;}
       void SetIsMC(const bool isMC)              {m_isMC           = isMC;}
       void SetIsEmbed(const bool isEmbed)        {m_isEmbed        = isEmbed;}
@@ -163,7 +164,7 @@ namespace SColdQcdCorrelatorAnalysis {
       void SetJetTreeName(const string name)     {m_jetTreeName    = name;}
 
       // setters (*.io.h)
-      // TODO consolidate parameters into less emthods
+      // TODO consolidate parameters into less methods
       void SetEvtVzRange(const pair<double, double> vzRange);
       void SetEvtVrRange(const pair<double, double> vrRange);
       void SetParPtRange(const pair<double, double> ptRange);
@@ -192,7 +193,10 @@ namespace SColdQcdCorrelatorAnalysis {
       bool   GetDoVtxCut()       {return m_doVtxCut;}
       bool   GetDoQualityPlots() {return m_doQualityPlots;}
       bool   GetRequireSiSeeds() {return m_requireSiSeeds;}
+      bool   GetUseOnlyPrimVtx() {return m_useOnlyPrimVtx;}
       bool   GetDoDcaSigmaCut()  {return m_doDcaSigmaCut;}
+      bool   GetMaskTpcSectors() {return m_maskTpcSectors;}
+      bool   GetCheckWeirdTrks() {return m_checkWeirdTrks;}
       bool   GetSaveDST()        {return m_saveDST;}
       bool   GetIsMC()           {return m_isMC;}
       bool   GetIsEmbed()        {return m_isEmbed;}
@@ -265,7 +269,8 @@ namespace SColdQcdCorrelatorAnalysis {
         NDirectory = 6,
         NMvtxLayer = 3,
         NInttLayer = 8,
-        NTpcLayer  = 48
+        NTpcLayer  = 48,
+        NTpcSector = 12
       };
 
       // qa info & tracking subsystems
@@ -275,7 +280,7 @@ namespace SColdQcdCorrelatorAnalysis {
       enum INFO     {PT, ETA, PHI, ENE, QUAL, DCAXY, DCAZ, DELTAPT, NTPC};
 
       // event methods (*.evt.h)
-      bool              IsGoodEvent(const CLHEP::Hep3Vector vtx);
+      bool              IsGoodVertex(const CLHEP::Hep3Vector vtx);
       void              GetEventVariables(PHCompositeNode* topNode);
       void              GetPartonInfo(PHCompositeNode* topNode);
       long              GetNumTrks(PHCompositeNode* topNode);
@@ -301,11 +306,15 @@ namespace SColdQcdCorrelatorAnalysis {
       bool                 IsGoodECal(CLHEP::Hep3Vector& hepVecECal);
       bool                 IsGoodHCal(CLHEP::Hep3Vector& hepVecHCal);
       bool                 IsGoodTrackSeed(SvtxTrack* track);
+      bool                 IsGoodTrackPhi(SvtxTrack* track, const float phiMaskSize = 0.01);  // FIXME make user configurable
+      bool                 IsFromPrimaryVtx(SvtxTrack* track, PHCompositeNode* topNode);
       bool                 IsOutgoingParton(HepMC::GenParticle* par);
-      pair<double, double> GetTrackDcaPair(SvtxTrack *track, PHCompositeNode* topNode);
-      double               GetTrackDeltaPt(SvtxTrack *track);
+      pair<double, double> GetTrackDcaPair(SvtxTrack* track, PHCompositeNode* topNode);
+      CLHEP::Hep3Vector    GetTrackVertex(SvtxTrack* track, PHCompositeNode* topNode);
+      double               GetTrackDeltaPt(SvtxTrack* track);
       float                GetParticleCharge(const int pid);
       int                  GetNumLayer(SvtxTrack* track, const uint8_t subsys = 0);
+      int                  GetNumClust(SvtxTrack* track, const uint8_t subsys = 0);
       int                  GetMatchID(SvtxTrack* track);
 
       // system methods (*.sys.h)
@@ -323,7 +332,8 @@ namespace SColdQcdCorrelatorAnalysis {
       int                           CreateJetNode(PHCompositeNode* topNode);
       int                           GetEmbedID(PHCompositeNode* topNode, const int iEvtToGrab = 1);
       SvtxTrackMap*                 GetTrackMap(PHCompositeNode* topNode);
-      GlobalVertex*                 GetGlobalVertex(PHCompositeNode* topNode);
+      GlobalVertex*                 GetGlobalVertex(PHCompositeNode* topNode, const int iVtxToGrab = -1);
+      GlobalVertexMap*              GetVertexMap(PHCompositeNode* topNode);
       HepMC::GenEvent*              GetMcEvent(PHCompositeNode* topNode, const int iEvtToGrab = 1);
       RawClusterContainer*          GetClusterStore(PHCompositeNode* topNode, const TString sNodeName);
       ParticleFlowElementContainer* GetFlowStore(PHCompositeNode* topNode);
@@ -356,17 +366,21 @@ namespace SColdQcdCorrelatorAnalysis {
       TH1D*    m_hSumCstEne[CONST::NCstType];
       TH1D*    m_hObjectQA[CONST::NObjType][CONST::NInfoQA];
       TH1D*    m_hNumCstAccept[CONST::NCstType][CONST::NMoment];
-      TNtuple* m_ntTrkQA = NULL;
+      TNtuple* m_ntTrkQA       = NULL;
+      TNtuple* m_ntWeirdTracks = NULL;
 
       // system members
       bool          m_doVtxCut       = false;
       bool          m_doQualityPlots = true;
       bool          m_requireSiSeeds = true;
+      bool          m_useOnlyPrimVtx = true;
       bool          m_doDcaSigmaCut  = false;
+      bool          m_maskTpcSectors = false;
       bool          m_saveDST        = false;
       bool          m_isMC           = true;
       bool          m_isEmbed        = false;
       bool          m_doDebug        = false;
+      bool          m_checkWeirdTrks = false;
       bool          m_addTracks      = true;
       bool          m_addFlow        = false;
       bool          m_addECal        = false;
@@ -457,7 +471,7 @@ namespace SColdQcdCorrelatorAnalysis {
       vector<vector<double>> m_trueCstZ;
       vector<vector<double>> m_trueCstDr;
       vector<vector<double>> m_trueCstE;
-      vector<vector<double>> m_trueCstJt;
+      vector<vector<double>> m_trueCstPt;
       vector<vector<double>> m_trueCstEta;
       vector<vector<double>> m_trueCstPhi;
 
@@ -482,7 +496,7 @@ namespace SColdQcdCorrelatorAnalysis {
       vector<vector<double>> m_recoCstZ;
       vector<vector<double>> m_recoCstDr;
       vector<vector<double>> m_recoCstE;
-      vector<vector<double>> m_recoCstJt;
+      vector<vector<double>> m_recoCstPt;
       vector<vector<double>> m_recoCstEta;
       vector<vector<double>> m_recoCstPhi;
 

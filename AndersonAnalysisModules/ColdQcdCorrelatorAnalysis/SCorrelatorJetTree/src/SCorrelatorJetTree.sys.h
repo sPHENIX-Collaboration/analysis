@@ -61,7 +61,7 @@ namespace SColdQcdCorrelatorAnalysis {
     m_trueCstZ.clear();
     m_trueCstDr.clear();
     m_trueCstE.clear();
-    m_trueCstJt.clear();
+    m_trueCstPt.clear();
     m_trueCstEta.clear();
     m_trueCstPhi.clear();
 
@@ -89,7 +89,7 @@ namespace SColdQcdCorrelatorAnalysis {
     m_recoCstZ.clear();
     m_recoCstDr.clear();
     m_recoCstE.clear();
-    m_recoCstJt.clear();
+    m_recoCstPt.clear();
     m_recoCstEta.clear();
     m_recoCstPhi.clear();
     return;
@@ -312,7 +312,10 @@ namespace SColdQcdCorrelatorAnalysis {
       "quality",
       "nmvtxlayer",
       "ninttlayer",
-      "ntpclayer"
+      "ntpclayer",
+      "vtxx",
+      "vtxy",
+      "vtxz"
     };
 
     // flatten leaf list
@@ -323,8 +326,60 @@ namespace SColdQcdCorrelatorAnalysis {
         argTrkQALeaves.append(":");
       }
     }
-
     m_ntTrkQA = new TNtuple("ntTrkQA", "Track QA", argTrkQALeaves.data());
+
+    // leaves for weird track check
+    const vector<string> vecWeirdTrkLeaves = {
+      "trkid_a",
+      "trkid_b",
+      "pt_a",
+      "pt_b",
+      "eta_a",
+      "eta_b",
+      "phi_a",
+      "phi_b",
+      "ene_a",
+      "ene_b",
+      "dcaxy_a",
+      "dcaxy_b",
+      "dcaz_a",
+      "dcaz_b",
+      "vtxx_a",
+      "vtxx_b",
+      "vtxy_a",
+      "vtxy_b",
+      "vtxz_a",
+      "vtxz_b",
+      "quality_a",
+      "quality_b",
+      "deltapt_a",
+      "deltapt_b",
+      "nmvtxlayers_a",
+      "nmvtxlayers_b",
+      "ninttlayers_a",
+      "ninttlayers_b",
+      "ntpclayers_a",
+      "ntpclayers_b",
+      "nmvtxclusts_a",
+      "nmvtxclusts_b",
+      "ninttclusts_a",
+      "ninttclusts_b",
+      "ntpcclusts_a",
+      "ntpcclusts_b",
+      "nclustkey_a",
+      "nclustkey_b",
+      "nsameclustkey",
+      "deltartrack"
+    };
+
+    string argWeirdTrkLeaves("");
+    for (size_t iLeaf = 0; iLeaf < vecWeirdTrkLeaves.size(); iLeaf++) {
+      argWeirdTrkLeaves.append(vecWeirdTrkLeaves[iLeaf]);
+      if ((iLeaf + 1) != vecWeirdTrkLeaves.size()) {
+        argWeirdTrkLeaves.append(":");
+      }
+    }
+    m_ntWeirdTracks = new TNtuple("ntWeirdTracks", "Weird Tracks",   argWeirdTrkLeaves.data());
     return;
 
   }  // end 'InitTuples()'
@@ -366,7 +421,7 @@ namespace SColdQcdCorrelatorAnalysis {
     m_trueTree -> Branch("CstZ",           &m_trueCstZ);
     m_trueTree -> Branch("CstDr",          &m_trueCstDr);
     m_trueTree -> Branch("CstEnergy",      &m_trueCstE);
-    m_trueTree -> Branch("CstJt",          &m_trueCstJt);
+    m_trueTree -> Branch("CstPt",          &m_trueCstPt);
     m_trueTree -> Branch("CstEta",         &m_trueCstEta);
     m_trueTree -> Branch("CstPhi",         &m_trueCstPhi);
 
@@ -390,7 +445,7 @@ namespace SColdQcdCorrelatorAnalysis {
     m_recoTree -> Branch("CstZ",          &m_recoCstZ);
     m_recoTree -> Branch("CstDr",         &m_recoCstDr);
     m_recoTree -> Branch("CstEnergy",     &m_recoCstE);
-    m_recoTree -> Branch("CstJt",         &m_recoCstJt);
+    m_recoTree -> Branch("CstPt",         &m_recoCstPt);
     m_recoTree -> Branch("CstEta",        &m_recoCstEta);
     m_recoTree -> Branch("CstPhi",        &m_recoCstPhi);
     return;
@@ -445,7 +500,7 @@ namespace SColdQcdCorrelatorAnalysis {
     m_trueCstZ.clear();
     m_trueCstDr.clear();
     m_trueCstE.clear();
-    m_trueCstJt.clear();
+    m_trueCstPt.clear();
     m_trueCstEta.clear();
     m_trueCstPhi.clear();
 
@@ -455,14 +510,14 @@ namespace SColdQcdCorrelatorAnalysis {
     vector<double> vecTruCstZ;
     vector<double> vecTruCstDr;
     vector<double> vecTruCstE;
-    vector<double> vecTruCstJt;
+    vector<double> vecTruCstPt;
     vector<double> vecTruCstEta;
     vector<double> vecTruCstPhi;
     vecTruCstID.clear();
     vecTruCstZ.clear();
     vecTruCstDr.clear();
     vecTruCstE.clear();
-    vecTruCstJt.clear();
+    vecTruCstPt.clear();
     vecTruCstEta.clear();
     vecTruCstPhi.clear();
 
@@ -490,7 +545,7 @@ namespace SColdQcdCorrelatorAnalysis {
       vecTruCstZ.clear();
       vecTruCstDr.clear();
       vecTruCstE.clear();
-      vecTruCstJt.clear();
+      vecTruCstPt.clear();
       vecTruCstEta.clear();
       vecTruCstPhi.clear();
 
@@ -502,12 +557,12 @@ namespace SColdQcdCorrelatorAnalysis {
         const double cstPhi = trueCsts[iTruCst].phi_std();
         const double cstEta = trueCsts[iTruCst].pseudorapidity();
         const double cstE   = trueCsts[iTruCst].E();
-        const double cstJt  = trueCsts[iTruCst].perp();
-        const double cstJx  = trueCsts[iTruCst].px();
-        const double cstJy  = trueCsts[iTruCst].py();
-        const double cstJz  = trueCsts[iTruCst].pz();
-        const double cstJ   = ((cstJx * cstJx) + (cstJy * cstJy) + (cstJz * cstJz));
-        const double cstZ   = cstJ / jetP;
+        const double cstPt  = trueCsts[iTruCst].perp();
+        const double cstPx  = trueCsts[iTruCst].px();
+        const double cstPy  = trueCsts[iTruCst].py();
+        const double cstPz  = trueCsts[iTruCst].pz();
+        const double cstP   = ((cstPx * cstPx) + (cstPy * cstPy) + (cstPz * cstPz));
+        const double cstZ   = cstP / jetP;
         const double cstDf  = cstPhi - jetPhi;
         const double cstDh  = cstEta - jetEta;
         const double cstDr  = sqrt((cstDf * cstDf) + (cstDh * cstDh));
@@ -522,12 +577,12 @@ namespace SColdQcdCorrelatorAnalysis {
         vecTruCstZ.push_back(cstZ);
         vecTruCstDr.push_back(cstDr);
         vecTruCstE.push_back(cstE);
-        vecTruCstJt.push_back(cstJt);
+        vecTruCstPt.push_back(cstPt);
         vecTruCstEta.push_back(cstEta);
         vecTruCstPhi.push_back(cstPhi);
 
         // fill QA histograms and increment counters
-        m_hObjectQA[OBJECT::TCST][INFO::PT]  -> Fill(cstJt);
+        m_hObjectQA[OBJECT::TCST][INFO::PT]  -> Fill(cstPt);
         m_hObjectQA[OBJECT::TCST][INFO::ETA] -> Fill(cstEta);
         m_hObjectQA[OBJECT::TCST][INFO::PHI] -> Fill(cstPhi);
         m_hObjectQA[OBJECT::TCST][INFO::ENE] -> Fill(cstE);
@@ -547,7 +602,7 @@ namespace SColdQcdCorrelatorAnalysis {
       m_trueCstZ.push_back(vecTruCstZ);
       m_trueCstDr.push_back(vecTruCstDr);
       m_trueCstE.push_back(vecTruCstE);
-      m_trueCstJt.push_back(vecTruCstJt);
+      m_trueCstPt.push_back(vecTruCstPt);
       m_trueCstEta.push_back(vecTruCstEta);
       m_trueCstPhi.push_back(vecTruCstPhi);
 
@@ -606,7 +661,7 @@ namespace SColdQcdCorrelatorAnalysis {
     m_recoCstZ.clear();
     m_recoCstDr.clear();
     m_recoCstE.clear();
-    m_recoCstJt.clear();
+    m_recoCstPt.clear();
     m_recoCstEta.clear();
     m_recoCstPhi.clear();
 
@@ -615,14 +670,14 @@ namespace SColdQcdCorrelatorAnalysis {
     vector<double> vecRecCstZ;
     vector<double> vecRecCstDr;
     vector<double> vecRecCstE;
-    vector<double> vecRecCstJt;
+    vector<double> vecRecCstPt;
     vector<double> vecRecCstEta;
     vector<double> vecRecCstPhi;
     vecRecCstMatchID.clear();
     vecRecCstZ.clear();
     vecRecCstDr.clear();
     vecRecCstE.clear();
-    vecRecCstJt.clear();
+    vecRecCstPt.clear();
     vecRecCstEta.clear();
     vecRecCstPhi.clear();
 
@@ -649,7 +704,7 @@ namespace SColdQcdCorrelatorAnalysis {
       vecRecCstZ.clear();
       vecRecCstDr.clear();
       vecRecCstE.clear();
-      vecRecCstJt.clear();
+      vecRecCstPt.clear();
       vecRecCstEta.clear();
       vecRecCstPhi.clear();
 
@@ -662,12 +717,12 @@ namespace SColdQcdCorrelatorAnalysis {
         const double cstPhi     = recoCsts[iCst].phi_std();
         const double cstEta     = recoCsts[iCst].pseudorapidity();
         const double cstE       = recoCsts[iCst].E();
-        const double cstJt      = recoCsts[iCst].perp();
-        const double cstJx      = recoCsts[iCst].px();
-        const double cstJy      = recoCsts[iCst].py();
-        const double cstJz      = recoCsts[iCst].pz();
-        const double cstJ       = ((cstJx * cstJx) + (cstJy * cstJy) + (cstJz * cstJz));
-        const double cstZ       = cstJ / jetP;
+        const double cstPt      = recoCsts[iCst].perp();
+        const double cstPx      = recoCsts[iCst].px();
+        const double cstPy      = recoCsts[iCst].py();
+        const double cstPz      = recoCsts[iCst].pz();
+        const double cstP       = ((cstPx * cstPx) + (cstPy * cstPy) + (cstPz * cstPz));
+        const double cstZ       = cstP / jetP;
         const double cstDf      = cstPhi - jetPhi;
         const double cstDh      = cstEta - jetEta;
         const double cstDr      = sqrt((cstDf * cstDf) + (cstDh * cstDh));
@@ -677,12 +732,12 @@ namespace SColdQcdCorrelatorAnalysis {
         vecRecCstZ.push_back(cstZ);
         vecRecCstDr.push_back(cstDr);
         vecRecCstE.push_back(cstE);
-        vecRecCstJt.push_back(cstJt);
+        vecRecCstPt.push_back(cstPt);
         vecRecCstEta.push_back(cstEta);
         vecRecCstPhi.push_back(cstPhi);
 
         // fill QA histograms and increment counters
-        m_hObjectQA[OBJECT::RCST][INFO::PT]  -> Fill(cstJt);
+        m_hObjectQA[OBJECT::RCST][INFO::PT]  -> Fill(cstPt);
         m_hObjectQA[OBJECT::RCST][INFO::ETA] -> Fill(cstEta);
         m_hObjectQA[OBJECT::RCST][INFO::PHI] -> Fill(cstPhi);
         m_hObjectQA[OBJECT::RCST][INFO::ENE] -> Fill(cstE);
@@ -701,7 +756,7 @@ namespace SColdQcdCorrelatorAnalysis {
       m_recoCstZ.push_back(vecRecCstZ);
       m_recoCstDr.push_back(vecRecCstDr);
       m_recoCstE.push_back(vecRecCstE);
-      m_recoCstJt.push_back(vecRecCstJt);
+      m_recoCstPt.push_back(vecRecCstPt);
       m_recoCstEta.push_back(vecRecCstEta);
       m_recoCstPhi.push_back(vecRecCstPhi);
 
@@ -824,6 +879,9 @@ namespace SColdQcdCorrelatorAnalysis {
     // save QA tuples
     dQuality[0] -> cd();
     m_ntTrkQA   -> Write();
+    if (m_checkWeirdTrks) {
+      m_ntWeirdTracks -> Write();
+    }
 
     // save output trees
     m_outFile  -> cd();
@@ -884,7 +942,7 @@ namespace SColdQcdCorrelatorAnalysis {
     m_trueCstZ.clear();
     m_trueCstDr.clear();
     m_trueCstE.clear();
-    m_trueCstJt.clear();
+    m_trueCstPt.clear();
     m_trueCstEta.clear();
     m_trueCstPhi.clear();
 
@@ -905,7 +963,7 @@ namespace SColdQcdCorrelatorAnalysis {
     m_recoCstZ.clear();
     m_recoCstDr.clear();
     m_recoCstE.clear();
-    m_recoCstJt.clear();
+    m_recoCstPt.clear();
     m_recoCstEta.clear();
     m_recoCstPhi.clear();
     return;
@@ -1065,27 +1123,25 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
-  GlobalVertex* SCorrelatorJetTree::GetGlobalVertex(PHCompositeNode* topNode) {
+  GlobalVertex* SCorrelatorJetTree::GetGlobalVertex(PHCompositeNode* topNode, const int iVtxToGrab) {
 
     // print debug statement
     if (m_doDebug) {
       cout << "SCorrelatorJetTree::GetGlobalVertex(PHCompositeNode*) Getting global vertex..." << endl;
     }
 
-    // get vertex map & check if good
-    GlobalVertexMap* mapVtx = findNode::getClass<GlobalVertexMap>(topNode, "GlobalVertexMap");
+    // get vertex map
+    GlobalVertexMap* mapVtx = GetVertexMap(topNode);
 
-    const bool isVtxMapGood = (mapVtx && !(mapVtx -> empty()));
-    if (!isVtxMapGood) {
-      cerr << PHWHERE
-           << "PANIC: GlobalVertexMap node is missing or empty!\n"
-           << "       Please turn on the do_global flag in the main macro in order to reconstruct the global vertex!"
-           << endl;
-      assert(isVtxMapGood);
+    // get specified vertex
+    GlobalVertex* vtx = NULL;
+    if (iVtxToGrab < 0) {
+      vtx = mapVtx -> begin() -> second;
+    } else {
+      vtx = mapVtx -> get(iVtxToGrab);
     }
 
-    // grab vertex
-    GlobalVertex* vtx = mapVtx -> begin() -> second;
+    // check if good
     if (!vtx) {
       cerr << PHWHERE
            << "PANIC: no vertex!"
@@ -1096,6 +1152,31 @@ namespace SColdQcdCorrelatorAnalysis {
 
   }  // end 'GetGlobalVertex(PHCompositeNode*, int)'
 
+
+
+  GlobalVertexMap* SCorrelatorJetTree::GetVertexMap(PHCompositeNode* topNode) {
+
+    // print debug statement
+    if (m_doDebug) {
+      cout << "SCorrelatorJetTree::GetVertexMap(PHCompositeNode*) Getting global vertex map..." << endl;
+    }
+
+    // get vertex map
+    GlobalVertexMap* mapVtx = findNode::getClass<GlobalVertexMap>(topNode, "GlobalVertexMap");
+
+    // check if good
+    const bool isVtxMapGood = (mapVtx && !(mapVtx -> empty()));
+    if (!isVtxMapGood) {
+      cerr << PHWHERE
+           << "PANIC: GlobalVertexMap node is missing or empty!\n"
+           << "       Please turn on the do_global flag in the main macro in order to reconstruct the global vertex!"
+           << endl;
+      assert(isVtxMapGood);
+    }
+    return mapVtx;
+
+  }  // end 'GetVertexMap(PHCompositeNode*)'
+  
 
 
   HepMC::GenEvent* SCorrelatorJetTree::GetMcEvent(PHCompositeNode* topNode, const int iEvtToGrab) {
