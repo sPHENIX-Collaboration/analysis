@@ -27,7 +27,6 @@
 #include <cstdlib>
 #include <utility>
 // f4a/sphenix includes
-#include <QA.C>
 #include <FROG.h>
 #include <G4_Magnet.C>
 #include <fun4all/Fun4AllDstInputManager.h>
@@ -95,7 +94,10 @@ void Fun4All_RunCorrelatorJetTreeOnCondor(vector<string> sInputLists = {SInListD
   const bool doVtxCut(false);
   const bool doQuality(true);
   const bool requireSiSeeds(true);
+  const bool useOnlyPrimVtx(true);
   const bool doDcaSigmaCut(false);
+  const bool checkWeirdTrks(false);
+  const bool maskTpcSectors(false);
   const bool addTracks(true);
   const bool addECal(false);
   const bool addHCal(false);
@@ -275,6 +277,9 @@ void Fun4All_RunCorrelatorJetTreeOnCondor(vector<string> sInputLists = {SInListD
   }
   if (addTracks) {
     correlatorJetTree -> SetRequireSiSeeds(requireSiSeeds);
+    correlatorJetTree -> SetUseOnlyPrimVtx(useOnlyPrimVtx);
+    correlatorJetTree -> SetMaskTpcSectors(maskTpcSectors);
+    correlatorJetTree -> SetCheckWeirdTrks(checkWeirdTrks);
     correlatorJetTree -> SetTrackPtRange(ptTrackRange);
     correlatorJetTree -> SetTrackEtaRange(etaTrackRange);
     correlatorJetTree -> SetTrackQualityRange(qualTrackRange);
