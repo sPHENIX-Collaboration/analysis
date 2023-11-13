@@ -39,6 +39,7 @@ class CaloAna : public SubsysReco
   void Detector(const std::string &name) { detector = name; }
   void set_timing_cut_width(const int &t) { _range = t;}
   void set_vertex_cut(const float &v) { _vz = v;}
+  void apply_vertex_cut(bool Vtx_cut) { m_vtxCut = Vtx_cut; }
 
  protected:
   std::string detector;
@@ -57,6 +58,10 @@ class CaloAna : public SubsysReco
   TH2F* h_cemc_etaphi = nullptr;
   TH2F* h_hcalin_etaphi = nullptr;
   TH2F* h_hcalout_etaphi = nullptr;
+  TH2F* h_cemc_etaphi_wQA = nullptr;
+  TH2F* h_hcalin_etaphi_wQA = nullptr;
+  TH2F* h_hcalout_etaphi_wQA = nullptr;
+  TH1* h_totalzdc_e;
 
   TH1* hzdctime;
   TH1* hmbdtime;
@@ -70,7 +75,16 @@ class CaloAna : public SubsysReco
   TH1* hihcaltime_cut;
   TH1* hohcaltime_cut;
 
-  TH1* hvtx_z;
+  TH1* hvtx_z_raw;
+  TH1* hvtx_z_cut;
+
+  TH1* hzdcSouthraw;
+  TH1* hzdcNorthraw;
+  TH1* hzdcSouthcalib;
+  TH1* hzdcNorthcalib;
+
+  TH1F* h_clusE;
+  TH2F* h_etaphi_clus;
 
   TNtuple *g4hitntuple = nullptr;
   TNtuple *g4cellntuple = nullptr;
@@ -103,6 +117,7 @@ class CaloAna : public SubsysReco
   int _eventcounter;
   int _range = 1;
   float _vz = 0.;
+  bool m_vtxCut = false;
 };
 
 #endif

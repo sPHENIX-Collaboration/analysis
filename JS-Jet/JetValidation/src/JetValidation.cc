@@ -280,7 +280,7 @@ int JetValidation::process_event(PHCompositeNode *topNode)
 
 		  UE = UE * (1 + 2 * background_v2 * cos(2 * (tower_phi - background_Psi2)));
 		  totalE += tower->get_energy() + UE;
-		  double pt = tower->get_energy() / cosh(tower_eta);
+		  double pt = (tower->get_energy() + UE) / cosh(tower_eta);
 		  totalPx += pt * cos(tower_phi);
 		  totalPy += pt * sin(tower_phi);
 		  totalPz += pt * sinh(tower_eta);
@@ -303,7 +303,7 @@ int JetValidation::process_event(PHCompositeNode *topNode)
 
 		  UE = UE * (1 + 2 * background_v2 * cos(2 * (tower_phi - background_Psi2)));
 		  totalE +=tower->get_energy() + UE;
-		  double pt = tower->get_energy() / cosh(tower_eta);
+		  double pt = (tower->get_energy() + UE) / cosh(tower_eta);
 		  totalPx += pt * cos(tower_phi);
 		  totalPy += pt * sin(tower_phi);
 		  totalPz += pt * sinh(tower_eta);
@@ -326,7 +326,7 @@ int JetValidation::process_event(PHCompositeNode *topNode)
 
 		  UE = UE * (1 + 2 * background_v2 * cos(2 * (tower_phi - background_Psi2)));
 		  totalE +=tower->get_energy() + UE;
-		  double pt = tower->get_energy() / cosh(tower_eta);
+		  double pt = (tower->get_energy() + UE) / cosh(tower_eta);
 		  totalPx += pt * cos(tower_phi);
 		  totalPy += pt * sin(tower_phi);
 		  totalPz += pt * sinh(tower_eta);

@@ -1,0 +1,12 @@
+Executable = ../condor.sh
+Universe = vanilla
+Notification = Never
+Arguments = 0 0.4 condor_r04_$(process).root 30 $(calo_list) $(jettruth_list) $(bbc_list) $(g4truth_list) $(global_list)
+# request_memory = $(memory)
+request_memory = 4GB
+output = condor_$(process)_r04.out
+error = condor_$(process)_r04.err
+Log = /tmp/dstewart_Background_$(process)_condor.log
+# Log = condor.log
+PeriodicHold = (NumJobStarts>=1 && JobStatus == 1)
+Queue bbc_list, calo_list, global_list, g4truth_list, jettruth_list from queue.list

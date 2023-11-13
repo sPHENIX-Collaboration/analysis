@@ -6,7 +6,7 @@
 
 #include <GlobalVariables.C>
 #include <G4_Global.C>
-#include <G4_Bbc.C>
+#include <G4_Mbd.C>
 
 #include <pythiaemcalana/pythiaEMCalAna.h>
 
