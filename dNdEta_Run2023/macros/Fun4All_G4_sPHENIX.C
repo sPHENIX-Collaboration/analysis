@@ -86,11 +86,10 @@ int Fun4All_G4_sPHENIX(const int nEvents = 1, const int inputfilelistidx = 0, co
     bool isData = false;
     // dNdEtaAnalyzer *myAnalyzer = new dNdEtaAnalyzer(outputFile, isData, inputfilelistidx);
     dNdEtaINTT *myAnalyzer = new dNdEtaINTT("dNdEtaAnalyzer", outputFile, isData, inputfilelistidx);
-    myAnalyzer->GetTruthPV(false);
-    // myAnalyzer->GetG4Particle(false);
+    myAnalyzer->GetTruthPV(true);
     myAnalyzer->GetRecoCluster(true);
-    // myAnalyzer->GetMVTXhits(true);
     myAnalyzer->GetCentrality(false);
+    myAnalyzer->GetTrkrHit(true);
     se->registerSubsystem(myAnalyzer);
 
     //--------------

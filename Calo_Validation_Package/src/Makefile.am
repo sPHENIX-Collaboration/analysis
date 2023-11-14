@@ -5,7 +5,8 @@ lib_LTLIBRARIES = \
 
 AM_LDFLAGS = \
   -L$(libdir) \
-  -L$(OFFLINE_MAIN)/lib
+  -L$(OFFLINE_MAIN)/lib \
+  -L$(OFFLINE_MAIN)/lib64
 
 AM_CPPFLAGS = \
   -I$(includedir) \
@@ -20,11 +21,14 @@ libcaloana_la_SOURCES = \
   CaloAna.cc \
   CaloAna_new.cc 
 
-libcaloana_la_LDFLAGS = \
-  -L$(libdir) \
-  -L$(OFFLINE_MAIN)/lib \
+libcaloana_la_LIBADD = \
   -lcalo_io \
+  -lphool \
+  -lmbd_io \
+  -lSubsysReco \
+  -lcentrality_io \
   -lfun4all \
+  -lg4dst \
   -lg4detectors_io \
   -lphg4hit
 

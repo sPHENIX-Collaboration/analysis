@@ -101,13 +101,27 @@ fout(NULL),
   n_direct_photons_in_acceptance(0),
   n_pythia_direct_photons(0),
   n_decay_photons(0),
+  n_decay_photons_in_acceptance(0),
   n_pythia_decays(0),
+  n_pythia_decays_in_acceptance(0),
   n_geant_decays(0),
+  n_geant_decays_in_acceptance(0),
   n_primary(0),
+  n_primary_in_acceptance(0),
   n_pythia_decay_photons(0),
+  n_pythia_decay_photons_in_acceptance(0),
   n_pythia_decayed_pi0s(0),
+  n_pythia_decayed_pi0s_in_acceptance(0),
+  n_pythia_nondecayed_hadrons(0),
+  n_pythia_nondecayed_hadrons_in_acceptance(0),
   n_pythia_nondecayed_pi0s(0),
+  n_pythia_nondecayed_pi0s_in_acceptance(0),
+  n_geant_decay_photons(0),
+  n_geant_decay_photons_in_acceptance(0),
+  n_geant_primary_hadrons(0),
+  n_geant_primary_hadrons_in_acceptance(0),
   n_geant_primary_pi0s(0),
+  n_geant_primary_pi0s_in_acceptance(0),
   pythia_primary_barcodes(0),
   primaryBarcodes(0),
   secondaryBarcodes(0)
@@ -140,8 +154,8 @@ int pythiaEMCalAna::Init(PHCompositeNode *topNode)
   clusters_Towers -> Branch("clusterNTowers",&m_cluster_nTowers);
 
   truth_particles = new TTree("TreeTruthParticles", "Tree for Truth Particles");
-  truth_particles->Branch("truthBarcode",&m_truthBarcode);
-  truth_particles->Branch("truthParentBarcode",&m_truthParentBarcode);
+  truth_particles->Branch("truthBarcode",&m_truthBarcode, 32000, 0);
+  truth_particles->Branch("truthParentBarcode",&m_truthParentBarcode, 32000, 0);
   truth_particles->Branch("truthIsPrimary",&m_truthIsPrimary);
   truth_particles->Branch("truthPid",&m_truthPid);
   truth_particles->Branch("truthE",&m_truthE);
@@ -251,16 +265,20 @@ int pythiaEMCalAna::process_event(PHCompositeNode *topNode)
       std::cout << PHWHERE << "pythiaEMCalAna::process_event Could not find PHHepMCGenEventMap"  << std::endl;
       return Fun4AllReturnCodes::ABORTEVENT;
     }
+  /* std::cout << "genEventMap is " << genEventMap << " with size " << genEventMap->size() << "; more details:\n"; */
+  /* genEventMap->identify(); */
 
   //event level information of the above
-  PHHepMCGenEvent *genEvent = genEventMap -> get(getEvent);
-  if(!genEvent)
-    {
-      std::cout << PHWHERE << "pythiaEMCalAna::process_event Could not find PHHepMCGenEvent"  << std::endl;
-      return Fun4AllReturnCodes::ABORTEVENT;
-    }
+  PHHepMCGenEvent *genEvent = nullptr; // = genEventMap -> get(getEvent);
+  /* if(!genEvent) */
+  /*   { */
+  /*     std::cout << PHWHERE << "pythiaEMCalAna::process_event Could not find PHHepMCGenEvent"  << std::endl; */
+  /*     return Fun4AllReturnCodes::ABORTEVENT; */
+  /*   } */
+  /* std::cout << "genEvent is " << genEvent << " with size " << genEvent->size() << "; more details:\n"; */
+  /* genEvent->identify(); */
    
-  HepMC::GenEvent *theEvent = genEvent -> getEvent();
+  HepMC::GenEvent *theEvent = nullptr; // = genEvent -> getEvent();
 
   CaloEvalStack caloevalstack(topNode, "CEMC");
   CaloRawClusterEval *clustereval = caloevalstack.get_rawcluster_eval();
@@ -320,59 +338,7 @@ int pythiaEMCalAna::process_event(PHCompositeNode *topNode)
       }
   }
   
-  // next grab the truth particles
-
-  /* //grab all the direct photons in the event */
-  /* PHG4TruthInfoContainer::Range truthRange = truthinfo->GetPrimaryParticleRange(); */
-  /* PHG4TruthInfoContainer::ConstIterator truthIter; */
-  /* //from the HepMC event log */
-  /* for(truthIter = truthRange.first; truthIter != truthRange.second; truthIter++) */
-  /*   { */
-  /*     //PHG4Particle* part = truthinfo->GetParticle(truthIter->second->get_trkid()) */
-      
-  /*     PHG4Particle *truthPar = truthIter->second; */
-  /*     int previousparentid = -999; */
-  /*     if(truthPar -> get_pid() != 22) continue;//end with a photon */
-
-      
-  /*     int parentid = truthPar->get_parent_id(); */
-  /*     previousparentid = truthPar->get_track_id(); */
-  /*     while (parentid != 0) */
-	/* { */
-	  /* previousparentid = parentid; */
-	  /* PHG4Particle* mommypart = truthinfo->GetParticle(parentid); */
-	  /* parentid = mommypart->get_parent_id(); */
-	/* } */
-      
-  /*     if(previousparentid > 0)truthPar = truthinfo -> GetParticle(previousparentid); */
-  /*     if(truthPar -> get_pid() != 22) continue;//start with a photon */
-
-  /*     for(HepMC::GenEvent::particle_const_iterator p = theEvent -> particles_begin(); p != theEvent -> particles_end(); ++p) */
-	/* { */
-	  /* assert(*p); */
-	   
-	  /* if((*p) -> barcode() == truthPar -> get_barcode()) */
-	    /* { */
-	      /* for(HepMC::GenVertex::particle_iterator mother = (*p)->production_vertex()->particles_begin(HepMC::parents); */
-		  /* mother != (*p)->production_vertex()->particles_end(HepMC::parents); ++mother) */
-		/* { */
-		  /* //std::cout << "Mother pid: " << (*mother) -> pdg_id() << std::endl; */
-		  /* //if((*mother) -> pdg_id() != 21 || (*mother) -> pdg_id() != 1 || (*mother) -> pdg_id() != 2) continue; */
-		  /* if((*mother) -> pdg_id() != 22) continue; */
-
-		  /* HepMC::FourVector moMomentum = (*mother) -> momentum(); */
-
-		  /* m_photonE.push_back(moMomentum.e()); */
-		  /* m_photonEta.push_back(moMomentum.pseudoRapidity()); */
-		  /* m_photonPhi.push_back(moMomentum.phi()); */
-		  /* m_photonPt.push_back(sqrt(moMomentum.px()*moMomentum.px()+moMomentum.py()*moMomentum.py())); */
-		  
-		  
-		/* } */
-		       
-	    /* } */
-	/* } */
-  /*   } */
+  // Next grab the truth particles
 
   // Want to find all direct photons, primary particles which decay to photons,
   // and the resulting decay photons
@@ -383,60 +349,86 @@ int pythiaEMCalAna::process_event(PHCompositeNode *topNode)
   //
   // First check for direct photons and decays handled by PYTHIA
 
-  // loop over PYTHIA particles
-  for(HepMC::GenEvent::particle_const_iterator p = theEvent -> particles_begin(); p != theEvent -> particles_end(); ++p)
-  {
-      assert(*p);
-      // look for photons only
-      if ((*p)->pdg_id() == 22) {
-	  // only want final-state particles, i.e. status = 1
-	  if ((*p)->status() != 1) continue;
-	  // get the photon's parent
-	  HepMC::GenVertex* prod_vtx = (*p)->production_vertex();
-	  if (prod_vtx->particles_in_size() == 1) {
-	      HepMC::GenVertex::particles_in_const_iterator parent = prod_vtx->particles_in_const_begin();
-	      assert((*parent));
-	      // parent's status and pdg_id tell us whether it's a direct photon
-	      // or a decay photon
-	      if ((*parent)->status() > 2 && abs((*parent)->pdg_id()) < 100) {
-		  // direct photon
-		  /* addPrimaryFromPythia((*p)); */
-		  n_pythia_direct_photons++;
-	      }
-	      else if ((*parent)->status() == 2 && abs((*parent)->pdg_id()) >= 100) {
-		  // decay photon
-		  n_pythia_decay_photons++;
-		  if (! vector_contains((*parent)->barcode(), pythia_primary_barcodes) ) {
-		      pythia_primary_barcodes.push_back((*parent)->barcode());
-		      if ( (*parent)->pdg_id() == 111 ) n_pythia_decayed_pi0s++;
+  // need to loop over all the different HepMC events in this Fun4All event
+  PHHepMCGenEventMap::Iter genEventIter;
+  for (genEventIter = genEventMap->begin(); genEventIter != genEventMap->end(); genEventIter++) {
+  /* for (long unsigned int embedIndex=0; embedIndex<genEventMap->size(); embedIndex++) { */
+      /* int embedID = 2 - genEventMap->size() + embedIndex; */
+      /* if (embedID < 1) continue; */
+      int embedID = genEventIter->first;
+      /* genEvent = genEventMap->get(embedID); */
+      genEvent = genEventIter->second;
+      theEvent = genEvent->getEvent();
+      /* std::cout << Form("Greg info: embedID=%d, genEvent->is_simulated()=%d\n", embedID, genEvent->is_simulated()); */
+      // now loop over PYTHIA particles
+      for(HepMC::GenEvent::particle_const_iterator p = theEvent -> particles_begin(); p != theEvent -> particles_end(); ++p)
+      {
+	  assert(*p);
+	  // look for photons only
+	  if ((*p)->pdg_id() == 22) {
+	      // only want final-state particles, i.e. status = 1
+	      if ((*p)->status() != 1) continue;
+	      // get the photon's parent
+	      HepMC::GenVertex* prod_vtx = (*p)->production_vertex();
+	      if (prod_vtx->particles_in_size() == 1) {
+		  HepMC::GenVertex::particles_in_const_iterator parent = prod_vtx->particles_in_const_begin();
+		  assert((*parent));
+		  // parent's status and pdg_id tell us whether it's a direct photon
+		  // or a decay photon
+		  if ((*parent)->status() > 2 && abs((*parent)->pdg_id()) < 100) {
+		      // direct photon
+		      /* addPrimaryFromPythia((*p)); */
+		      n_pythia_direct_photons++;
 		  }
-		  
+		  else if ((*parent)->status() == 2 && abs((*parent)->pdg_id()) >= 100) {
+		      // decay photon
+		      n_pythia_decay_photons++;
+		      if (withinAcceptance((*p))) n_pythia_decay_photons_in_acceptance++;
+		      std::pair<int,int> embedBarcode = std::pair<int,int>(embedID, (*parent)->barcode());
+			  if (! vector_contains(embedBarcode, pythia_primary_barcodes) ) {
+			      pythia_primary_barcodes.push_back(embedBarcode);
+			      n_pythia_decays++;
+			      if (withinAcceptance((*parent))) n_pythia_decays_in_acceptance++;
+			      if ( (*parent)->pdg_id() == 111 ) {
+				  n_pythia_decayed_pi0s++;
+				  if (withinAcceptance((*parent))) n_pythia_decayed_pi0s_in_acceptance++;
+			      }
+			  }
+
+		  }
+		  else {
+		      // weird case??
+		      std::cout << "\nGreg info: weird combination of photon or parent status or PID... photon:\n";
+		      (*p)->print();
+		      std::cout << "Parent:\n";
+		      (*parent)->print();
+		      std::cout << "\n";
+		  }
 	      }
 	      else {
-		  // weird case??
-		  std::cout << "\nGreg info: weird combination of photon or parent status or PID... photon:\n";
+		  // weird photon -- they should only have 1 parent
+		  std::cout << "\nGreg info: found a photon with " << prod_vtx->particles_in_size() << " parent(s). Photon:\n";
 		  (*p)->print();
-		  std::cout << "Parent:\n";
-		  (*parent)->print();
 		  std::cout << "\n";
 	      }
-	  }
+	  } // end photon check
 	  else {
-	      // weird photon -- they should only have 1 parent
-	      std::cout << "\nGreg info: found a photon with " << prod_vtx->particles_in_size() << " parent(s). Photon:\n";
-	      (*p)->print();
-	      std::cout << "\n";
+	      // check for (final state) non-decayed pi0s
+	      if ( (*p)->status() == 1 && (*p)->pdg_id() > 100) {
+		  n_pythia_nondecayed_hadrons++;
+		  if (withinAcceptance((*p))) n_pythia_nondecayed_hadrons_in_acceptance++;
+		  if ( (*p)->pdg_id() == 111 ) {
+		      n_pythia_nondecayed_pi0s++;
+		      if (withinAcceptance((*p))) n_pythia_nondecayed_pi0s_in_acceptance++;
+		  }
+	      }
 	  }
-      } // end photon check
-      else {
-	  // check for (final state) non-decayed pi0s
-	  if ( (*p)->pdg_id() == 111 && (*p)->status() == 1 ) n_pythia_nondecayed_pi0s++;
-      }
-  } // end PYTHIA loop
+      } // end PYTHIA loop
+  } // end loop over embedID
   /* std::cout << "PYTHIA: " << n_pythia << " total particles, " << n_pho_pythia << " photons, " << n_pi0_pythia << " pi0s\n"; */
 
-  // Next check for decays handled by Geant
 
+  // Next check for decays handled by Geant
   // Start with primary particles from GEANT
   // Look for photons and decide if they are direct or decay photons
   PHG4TruthInfoContainer::Range truthRange = truthinfo->GetPrimaryParticleRange();
@@ -445,14 +437,19 @@ int pythiaEMCalAna::process_event(PHCompositeNode *topNode)
   for(truthIter = truthRange.first; truthIter != truthRange.second; truthIter++)
   {
       PHG4Particle *truthPar = truthIter->second;
+      int embedID = truthinfo->isEmbeded(truthPar->get_track_id());
+      /* if (embedID < 1) continue; */
       int geant_barcode = truthPar->get_barcode();
       int pid = truthPar->get_pid();
       // look for photons only
       if (pid == 22) {
-	  /* std::cout << "\tFound a primary photon (barcode=" << geant_barcode << ")\n"; */
+	  /* std::cout << "\nFound a primary photon (embedID=" << embedID << ", barcode=" << geant_barcode << "); details:\t"; */
+	  /* truthPar->identify(); */
+	  genEvent = genEventMap -> get(embedID);
+	  theEvent = genEvent -> getEvent();
 	  // is it a direct photon?
 	  if (isDirectPhoton(truthPar, theEvent)) {
-	      /* std::cout << "\t\tis a direct photon!\n"; */
+	      /* std::cout << "\tbarcode " << geant_barcode << " is a direct photon... adding to list\n"; */
 	      n_direct_photons++;
 	      addDirectPhoton(truthPar, truthinfo);
 	      TLorentzVector truth_momentum;
@@ -462,38 +459,55 @@ int pythiaEMCalAna::process_event(PHCompositeNode *topNode)
 	  }
 	  else {
 	      // decay photon
-	      /* std::cout << "\t\tis a decay photon. "; */
+	      /* std::cout << "\tbarcode " << geant_barcode << " is a decay photon... check parent info\n"; */
 	      n_decay_photons++;
+	      if (withinAcceptance(truthPar)) n_decay_photons_in_acceptance++;
 	      addDecayPhoton(truthPar, truthinfo, theEvent);
 	      // find the parent and add it as a primary
 	      // primary photon means geant doesn't know about the parent
 	      // so match this photon to the pythia photon
 	      HepMC::GenParticle* pho = getGenParticle(geant_barcode, theEvent);
+	      /* assert(pho); */
+	      if (!pho) {
+		  // problem -- we couldn't find the corresponding pythia particle
+		  std::cout << "\t\tGreg info: skipping Geant primary with barcode " << geant_barcode << " because corresponding pythia particle could not be found; more details:\t";
+		  truthPar->identify();
+		  continue;
+	      }
 	      // now find the parent in pythia
 	      HepMC::GenVertex* prod_vtx = pho->production_vertex();
 	      if (prod_vtx->particles_in_size() == 1) {
 		  HepMC::GenVertex::particles_in_const_iterator parent = prod_vtx->particles_in_const_begin();
 		  assert((*parent));
-		  /* std::cout << "Parent barcode=" << (*parent)->barcode() << ", id=" << (*parent)->pdg_id() << ", "; */
-		  if (! vector_contains((*parent)->barcode(), primaryBarcodes) ) {
+		  /* std::cout << "\t\tParent barcode=" << (*parent)->barcode() << ", id=" << (*parent)->pdg_id() << "... "; */
+		  std::pair<int,int> embedBarcode(embedID, (*parent)->barcode());
+		  if (! vector_contains(embedBarcode, primaryBarcodes) ) {
 		      /* std::cout << "adding to primaries.\n"; */
-		      primaryBarcodes.push_back((*parent)->barcode());
+		      primaryBarcodes.push_back(embedBarcode);
 		      n_primary++;
-		      n_pythia_decays++;
-		      /* std::cout << "Adding primary from pythia. PID=" << (*parent)->pdg_id() << "\n"; */
-		      addPrimaryHadronFromPythia((*parent));
+		      if (withinAcceptance((*parent))) n_primary_in_acceptance++;
+		      /* n_pythia_decays++; */
+		      /* std::cout << "adding primary from pythia. PID=" << (*parent)->pdg_id() << "\n"; */
+		      addPrimaryHadronFromPythia((*parent), embedID);
 		  }
 		  else {
 		      /* std::cout << "already added this primary.\n"; */
 		  }
 	      }
 	      else {
-		  std::cout << "Greg info: pythia-decayed photon with " << prod_vtx->particles_in_size() << " parents. Skipping...\n";
+		  std::cout << "\t\tGreg info: pythia-decayed photon with " << prod_vtx->particles_in_size() << " parents. Skipping...\n";
 	      }
 	  }
       } // end photon check
       else {
-	  if (pid == 111) n_geant_primary_pi0s++;
+	  if (pid > 100) {
+	      n_geant_primary_hadrons++;
+	      if (withinAcceptance(truthPar)) n_geant_primary_hadrons_in_acceptance++;
+	  }
+	  if (pid == 111) {
+	      n_geant_primary_pi0s++;
+	      if (withinAcceptance(truthPar)) n_geant_primary_pi0s_in_acceptance++;
+	  }
       }
   } // end loop over geant primary particles
 
@@ -564,6 +578,8 @@ int pythiaEMCalAna::process_event(PHCompositeNode *topNode)
   for(truthIter = truthRange.first; truthIter != truthRange.second; truthIter++)
   {
       PHG4Particle *truthPar = truthIter->second;
+      /* int embedID = truthinfo->isEmbeded(truthPar->get_track_id()); */
+      /* if (embedID < 1) continue; */
       // only looking for decay photons and their corresponding primaries
       if (truthPar->get_pid() == 22) {
 	  // get the parent
@@ -577,12 +593,24 @@ int pythiaEMCalAna::process_event(PHCompositeNode *topNode)
 	      /* std::cout << "\tFound a secondary photon (barcode=" << truthPar->get_barcode() << ")\n"; */
 	      /* std::cout << "\t\tParent is primary (barcode=" << parent->get_barcode() << ", id=" << parent->get_pid() << "), "; */
 	      n_decay_photons++;
+	      if (withinAcceptance(truthPar)) n_decay_photons_in_acceptance++;
+	      n_geant_decay_photons++;
+	      if (withinAcceptance(truthPar)) n_geant_decay_photons_in_acceptance++;
 	      addDecayPhoton(truthPar, truthinfo, theEvent);
-	      if (! vector_contains(parent->get_barcode(), primaryBarcodes) ) {
+	      int embedID = truthinfo->isEmbeded(parent->get_track_id());
+	      std::pair<int,int> embedBarcode(embedID, parent->get_barcode());
+	      /* if (parent->get_pid() == 111) { */
+		  /* std::cout << "Found a primary pi0 with embedID " << embedID << ", barcode " << parent->get_barcode() << "\n"; */
+	      /* } */
+	      if (! vector_contains(embedBarcode, primaryBarcodes) ) {
 		  /* std::cout << "adding to primaries.\n"; */
-		  primaryBarcodes.push_back(parent->get_barcode());
+		  primaryBarcodes.push_back(embedBarcode);
 		  n_primary++;
+		  if (withinAcceptance(parent)) n_primary_in_acceptance++;
 		  n_geant_decays++;
+		  if (withinAcceptance(parent)) n_geant_decays_in_acceptance++;
+
+		  /* std::cout << "\tadded primary with embedID " << embedID << ", barcode " << parent->get_barcode() << "\n"; */
 		  /* std::cout << "Adding primary from geant. PID=" << parent->get_pid() << "\n"; */
 		  addPrimaryHadronFromGeant(parent, truthinfo);
 		  /* std::cout << "\nFound a geant-decayed primary:\n"; */
@@ -717,15 +745,22 @@ int pythiaEMCalAna::End(PHCompositeNode *topNode)
 {
   std::cout << "pythiaEMCalAna::End(PHCompositeNode *topNode) This is the End..." << std::endl;
   std::cout << "Total direct photons: " << n_direct_photons << " (" << n_direct_photons_in_acceptance << " within acceptance)\n";
-  std::cout << "Total direct photons (from PYTHIA): " << n_pythia_direct_photons << "\n";
-  std::cout << "Total decay photons: " << n_decay_photons << "\n";
-  std::cout << "Total primary particles decaying to photons: " << n_primary << "\n";
-  std::cout << "Total PYTHIA decays: " << n_pythia_decays << "\n";
-  std::cout << "Total Geant decays: " << n_geant_decays << "\n";
-  std::cout << "Num decay photons from pythia: " << n_pythia_decay_photons << "\n";
-  std::cout << "Num decayed pi0s from pythia: " << n_pythia_decayed_pi0s << "\n";
-  std::cout << "Num non-decayed pi0s from pythia: " << n_pythia_nondecayed_pi0s << "\n";
-  std::cout << "Num primary pi0s from geant: " << n_geant_primary_pi0s << "\n";
+  std::cout << Form("Total direct photons (from pythia): %ld\n", n_pythia_direct_photons);
+  std::cout << Form("Total decay photons: %ld (%ld within acceptance)\n", n_decay_photons, n_decay_photons_in_acceptance);
+  std::cout << Form("Total primary particles decaying to photons: %ld (%ld within acceptance)\n", n_primary, n_primary_in_acceptance);
+  // pythia info
+  std::cout << "\nInfo from pythia:\n";
+  std::cout << Form("Num decay photons from pythia: %ld (%ld within acceptance)\n", n_pythia_decay_photons, n_pythia_decay_photons_in_acceptance);
+  std::cout << Form("Num primary hadron decays from pythia: %ld (%ld within acceptance)\n", n_pythia_decays, n_pythia_decays_in_acceptance);
+  std::cout << Form("Num decayed pi0s from pythia: %ld (%ld within acceptance)\n", n_pythia_decayed_pi0s, n_pythia_decayed_pi0s_in_acceptance);
+  std::cout << Form("Num non-decayed hadrons from pythia: %ld (%ld within acceptance)\n", n_pythia_nondecayed_hadrons, n_pythia_nondecayed_hadrons_in_acceptance);
+  std::cout << Form("Num non-decayed pi0s from pythia: %ld (%ld within acceptance)\n", n_pythia_nondecayed_pi0s, n_pythia_nondecayed_pi0s_in_acceptance);
+  // geant info
+  std::cout << "\nInfo from Geant:\n";
+  std::cout << Form("Num primary hadrons from geant: %ld (%ld within acceptance)\n", n_geant_primary_hadrons, n_geant_primary_hadrons_in_acceptance);
+  std::cout << Form("Num primary pi0s from geant: %ld (%ld within acceptance)\n", n_geant_primary_pi0s, n_geant_primary_pi0s_in_acceptance);
+  std::cout << Form("Num decay photons from geant: %ld (%ld within acceptance)\n", n_geant_decay_photons, n_geant_decay_photons_in_acceptance);
+  std::cout << Form("Num primary hadrons decayed to photons by geant: %ld (%ld within acceptance)\n", n_geant_decays, n_geant_decays_in_acceptance);
   fout -> cd();
   clusters_Towers -> Write();
   truth_particles -> Write();
@@ -789,7 +824,18 @@ void pythiaEMCalAna::Print(const std::string &what) const
 /* } */
 
 bool pythiaEMCalAna::isDirectPhoton(PHG4Particle* part, HepMC::GenEvent* theEvent) {
+    /* std::cout << "\tGreg info: entering isDirectPhoton(). "; */
+    /* std::cout << "G4 particle is " << part << ", barcode " << part->get_barcode() << "\n";//; printing info\n"; */
+    /* part->identify(); */
     HepMC::GenParticle* genpart = getGenParticle(part->get_barcode(), theEvent);
+    if (!genpart) {
+	std::cout << "\t\tGreg info: in isDirectPhoton(), could not find pythia particle with barcode " << part->get_barcode() << "; returning true. (This may be an error!)\n";
+	return true;
+    }
+    assert(genpart);
+    /* std::cout << "\tFound corresponding pythia particle; printing info\t"; */
+    /* genpart->print(); */
+    /* else std::cout << "Greg info: found corresponding pythia photon (" << genpart << ")\n"; */
     HepMC::GenVertex* prod_vtx = genpart->production_vertex();
     if (prod_vtx->particles_in_size() == 1) {
 	HepMC::GenVertex::particles_in_const_iterator parent = prod_vtx->particles_in_const_begin();
@@ -816,19 +862,18 @@ bool pythiaEMCalAna::isDirectPhoton(PHG4Particle* part, HepMC::GenEvent* theEven
     }
     else {
 	// weird photon -- they should only have 1 parent
-	std::cout << "\nGreg info: found a photon with " << prod_vtx->particles_in_size() << " parent(s). Photon:\n";
+	std::cout << "Greg info: found a photon with " << prod_vtx->particles_in_size() << " parent(s). Photon:\n";
 	genpart->print();
-	std::cout << "\n";
+	/* std::cout << "\n"; */
 	return false;
     }
 }
 
 void pythiaEMCalAna::addDirectPhoton(PHG4Particle* part, PHG4TruthInfoContainer* truthInfo) {
+    /* std::cout << "Found a direct photon!\n"; */
     TLorentzVector truth_momentum;
     truth_momentum.SetPxPyPzE(part->get_px(), part->get_py(), part->get_pz(), part->get_e());
-    float eta = truth_momentum.PseudoRapidity();
-    /* std::cout << "Found a direct photon!\n"; */
-    if (abs(eta) > 1.1) return;
+    if (! withinAcceptance(part)) return;
     /* std::cout << "\tIs within acceptance!\n"; */
     /* part->identify(); */
     int this_id = part->get_track_id();
@@ -841,8 +886,9 @@ void pythiaEMCalAna::addDirectPhoton(PHG4Particle* part, PHG4TruthInfoContainer*
 	return;
     }
 
-    m_truthBarcode.push_back(part->get_barcode());
-    m_truthParentBarcode.push_back(0);
+    int embedID = truthInfo->isEmbeded(part->get_track_id());
+    m_truthBarcode.push_back(std::pair<int,int>(embedID, part->get_barcode()));
+    m_truthParentBarcode.push_back(std::pair<int,int>(embedID, 0));
     m_truthIsPrimary.push_back(1);
     m_truthPid.push_back(part->get_pid());
 
@@ -877,8 +923,7 @@ void pythiaEMCalAna::addDirectPhoton(PHG4Particle* part, PHG4TruthInfoContainer*
 void pythiaEMCalAna::addDecayPhoton(PHG4Particle* part, PHG4TruthInfoContainer* truthInfo, HepMC::GenEvent* theEvent) {
     TLorentzVector truth_momentum;
     truth_momentum.SetPxPyPzE(part->get_px(), part->get_py(), part->get_pz(), part->get_e());
-    float eta = truth_momentum.PseudoRapidity();
-    if (abs(eta) > 1.1) return;
+    if (! withinAcceptance(part)) return;
     int this_id = part->get_track_id();
     
     PHG4VtxPoint* end_vtx = getG4EndVtx(this_id, truthInfo);
@@ -898,6 +943,7 @@ void pythiaEMCalAna::addDecayPhoton(PHG4Particle* part, PHG4TruthInfoContainer* 
     else {
 	// pythia handled the decay, so get the parent from there
 	HepMC::GenParticle* pho = getGenParticle(part->get_barcode(), theEvent);
+	assert(pho);
 	HepMC::GenVertex* prod_vtx = pho->production_vertex();
 	if (prod_vtx->particles_in_size() == 1) {
 	    HepMC::GenVertex::particles_in_const_iterator pythia_parent = prod_vtx->particles_in_const_begin();
@@ -911,8 +957,9 @@ void pythiaEMCalAna::addDecayPhoton(PHG4Particle* part, PHG4TruthInfoContainer* 
     } // done getting parent barcode
 
     /* std::cout << "Adding decay photon with barcode " << part->get_barcode() << "; geant_parent is " << geant_parent << "\n"; */
-    m_truthBarcode.push_back(part->get_barcode());
-    m_truthParentBarcode.push_back(parent_barcode);
+    int embedID = truthInfo->isEmbeded(part->get_track_id());
+    m_truthBarcode.push_back(std::pair<int,int>(embedID, part->get_barcode()));
+    m_truthParentBarcode.push_back(std::pair<int,int>(embedID, parent_barcode));
     m_truthIsPrimary.push_back(0);
     m_truthPid.push_back(part->get_pid());
 
@@ -944,13 +991,12 @@ void pythiaEMCalAna::addDecayPhoton(PHG4Particle* part, PHG4TruthInfoContainer* 
     /* secondaryBarcodes.push_back(part->get_barcode()); */
 }
 
-void pythiaEMCalAna::addPrimaryHadronFromPythia(HepMC::GenParticle* part) {
+void pythiaEMCalAna::addPrimaryHadronFromPythia(HepMC::GenParticle* part, int embedID) {
     // case where PYTHIA handles the decay and Geant never knows about the primary
     HepMC::FourVector mom = part->momentum();
     TLorentzVector truth_momentum;
     truth_momentum.SetPxPyPzE(mom.px(), mom.py(), mom.pz(), mom.e());
-    float eta = truth_momentum.PseudoRapidity();
-    if (abs(eta) > 1.1) return;
+    if (! withinAcceptance(part)) return;
     HepMC::GenVertex* end_vtx = part->end_vertex();
     if (!end_vtx) {
 	std::cout << "\nGreg info: no end vertex found for Pythia-decayed primary:\n";
@@ -959,8 +1005,8 @@ void pythiaEMCalAna::addPrimaryHadronFromPythia(HepMC::GenParticle* part) {
 	return;
     }
     
-    m_truthBarcode.push_back(part->barcode());
-    m_truthParentBarcode.push_back(0);
+    m_truthBarcode.push_back(std::pair<int,int>(embedID, part->barcode()));
+    m_truthParentBarcode.push_back(std::pair<int,int>(embedID, 0));
     m_truthIsPrimary.push_back(1);
     m_truthPid.push_back(part->pdg_id());
     if (part->pdg_id() == 22) std::cout << "Greg info: primary in addPrimaryHadronFromPythia is a photon!\n";
@@ -993,8 +1039,7 @@ void pythiaEMCalAna::addPrimaryHadronFromGeant(PHG4Particle* part, PHG4TruthInfo
     // case where Geant handles the decay
     TLorentzVector truth_momentum;
     truth_momentum.SetPxPyPzE(part->get_px(), part->get_py(), part->get_pz(), part->get_e());
-    float eta = truth_momentum.PseudoRapidity();
-    if (abs(eta) > 1.1) return;
+    if (! withinAcceptance(part)) return;
     int this_id = part->get_track_id();
     
     PHG4VtxPoint* end_vtx = getG4EndVtx(this_id, truthInfo);
@@ -1005,8 +1050,9 @@ void pythiaEMCalAna::addPrimaryHadronFromGeant(PHG4Particle* part, PHG4TruthInfo
 	return;
     }
 
-    m_truthBarcode.push_back(part->get_barcode());
-    m_truthParentBarcode.push_back(0);
+    int embedID = truthInfo->isEmbeded(part->get_track_id());
+    m_truthBarcode.push_back(std::pair<int,int>(embedID, part->get_barcode()));
+    m_truthParentBarcode.push_back(std::pair<int,int>(embedID, 0));
     m_truthIsPrimary.push_back(1);
     m_truthPid.push_back(part->get_pid());
     if (part->get_pid() == 22) std::cout << "Greg info: primary in addPrimaryHadronFromGeant is a photon!\n";
@@ -1234,9 +1280,15 @@ void pythiaEMCalAna::addPrimaryHadronFromGeant(PHG4Particle* part, PHG4TruthInfo
 /* } */
 
 HepMC::GenParticle* pythiaEMCalAna::getGenParticle(int barcode, HepMC::GenEvent* theEvent) {
+    /* std::cout << "Greg info: in getGenParticle, looking for barcode " << barcode << "\n"; */
     for(HepMC::GenEvent::particle_const_iterator p=theEvent->particles_begin(); p!=theEvent->particles_end(); ++p)
     {
 	assert(*p);
+	/* std::cout << "\tpythia barcode " << (*p)->barcode() << "\n"; */
+	/* if ((*p)->barcode() == 33) { */
+	/*     std::cout << "barcode 33 details: \t"; */
+	/*     (*p)->print(); */
+	/* } */
 	if ( (*p)->barcode() == barcode ) {
 	    // found the right particle
 	    return (*p);
@@ -1244,10 +1296,32 @@ HepMC::GenParticle* pythiaEMCalAna::getGenParticle(int barcode, HepMC::GenEvent*
     }
     // reached end of loop... if we still haven't found the right particle,
     // we have a problem
-    std::cout << "Greg info: in getGenParticle(), could not find correct generated particle!\n";
+    std::cout << "\t\tGreg info: in getGenParticle(), could not find correct generated particle!\n";
     return nullptr;
 }
 
+bool pythiaEMCalAna::withinAcceptance(PHG4Particle* part) {
+    float max_eta = 1.1;
+    float min_E = 1.0;
+    TLorentzVector truth_momentum;
+    truth_momentum.SetPxPyPzE(part->get_px(), part->get_py(), part->get_pz(), part->get_e());
+    float eta = truth_momentum.PseudoRapidity();
+    if (abs(eta) > max_eta) return false;
+    if (truth_momentum.E() < min_E) return false;
+    else return true;
+}
+
+bool pythiaEMCalAna::withinAcceptance(HepMC::GenParticle* part) {
+    float max_eta = 1.1;
+    float min_E = 1.0;
+    HepMC::FourVector mom = part->momentum();
+    TLorentzVector truth_momentum;
+    truth_momentum.SetPxPyPzE(mom.px(), mom.py(), mom.pz(), mom.e());
+    float eta = truth_momentum.PseudoRapidity();
+    if (abs(eta) > max_eta) return false;
+    if (truth_momentum.E() < min_E) return false;
+    else return true;
+}
 
 PHG4VtxPoint* pythiaEMCalAna::getG4EndVtx(int id, PHG4TruthInfoContainer* truthInfo) {
     PHG4VtxPoint* end_vtx = nullptr;
@@ -1280,7 +1354,7 @@ PHG4VtxPoint* pythiaEMCalAna::getG4EndVtx(int id, PHG4TruthInfoContainer* truthI
     return end_vtx;
 }
 
-bool pythiaEMCalAna::vector_contains(int val, std::vector<int> vec) {
+bool pythiaEMCalAna::vector_contains(std::pair<int,int> val, std::vector<std::pair<int,int>> vec) {
     unsigned int s = vec.size();
     if ( s == 0 ) return false;
     unsigned int i;

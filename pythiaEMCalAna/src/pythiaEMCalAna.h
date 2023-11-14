@@ -77,8 +77,8 @@ class pythiaEMCalAna : public SubsysReco
   std::vector<float> m_cluster_nTowers;
   
   //truth particle information
-  std::vector<float> m_truthBarcode;
-  std::vector<float> m_truthParentBarcode;
+  std::vector<std::pair<int, int>> m_truthBarcode;
+  std::vector<std::pair<int, int>> m_truthParentBarcode;
   std::vector<float> m_truthIsPrimary;
   std::vector<float> m_truthPid;
   std::vector<float> m_truthE;
@@ -99,20 +99,36 @@ class pythiaEMCalAna : public SubsysReco
   long int n_direct_photons_in_acceptance;
   long int n_pythia_direct_photons;
   long int n_decay_photons;
+  long int n_decay_photons_in_acceptance;
   long int n_pythia_decays;
+  long int n_pythia_decays_in_acceptance;
   long int n_geant_decays;
+  long int n_geant_decays_in_acceptance;
   long int n_primary;
+  long int n_primary_in_acceptance;
   long int n_pythia_decay_photons;
+  long int n_pythia_decay_photons_in_acceptance;
   long int n_pythia_decayed_pi0s;
+  long int n_pythia_decayed_pi0s_in_acceptance;
+  long int n_pythia_nondecayed_hadrons;
+  long int n_pythia_nondecayed_hadrons_in_acceptance;
   long int n_pythia_nondecayed_pi0s;
+  long int n_pythia_nondecayed_pi0s_in_acceptance;
+  long int n_geant_decay_photons;
+  long int n_geant_decay_photons_in_acceptance;
+  long int n_geant_primary_hadrons;
+  long int n_geant_primary_hadrons_in_acceptance;
   long int n_geant_primary_pi0s;
-  std::vector<int> pythia_primary_barcodes;
+  long int n_geant_primary_pi0s_in_acceptance;
+  std::vector<std::pair<int,int>> pythia_primary_barcodes;
 
-  std::vector<int> primaryBarcodes;
-  std::vector<int> secondaryBarcodes;
+  std::vector<std::pair<int,int>> primaryBarcodes;
+  std::vector<std::pair<int,int>> secondaryBarcodes;
   HepMC::GenParticle* getGenParticle(int barcode, HepMC::GenEvent* theEvent);
+  bool withinAcceptance(PHG4Particle* part);
+  bool withinAcceptance(HepMC::GenParticle* part);
   PHG4VtxPoint* getG4EndVtx(int id, PHG4TruthInfoContainer* truthInfo);
-  bool vector_contains(int val, std::vector<int> vec);
+  bool vector_contains(std::pair<int,int> val, std::vector<std::pair<int,int>> vec);
   /* // case 1: primary that geant knows about, decay handled by geant */
   /* void addPrimaryFromGeant(PHG4Particle* part, PHG4TruthInfoContainer* truthInfo); */
   /* // case 2: primary that geant doesn't know about, decay handled by pythia */
@@ -132,7 +148,7 @@ class pythiaEMCalAna : public SubsysReco
   bool isDirectPhoton(PHG4Particle* part, HepMC::GenEvent* theEvent);
   void addDirectPhoton(PHG4Particle* part, PHG4TruthInfoContainer* truthInfo);
   void addDecayPhoton(PHG4Particle* part, PHG4TruthInfoContainer* truthInfo, HepMC::GenEvent* theEvent);
-  void addPrimaryHadronFromPythia(HepMC::GenParticle* part);
+  void addPrimaryHadronFromPythia(HepMC::GenParticle* part, int embedID);
   void addPrimaryHadronFromGeant(PHG4Particle* part, PHG4TruthInfoContainer* truthInfo);
 };
 
