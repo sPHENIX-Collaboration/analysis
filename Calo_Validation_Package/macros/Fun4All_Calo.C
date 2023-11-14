@@ -29,7 +29,7 @@ R__LOAD_LIBRARY(libcaloana.so)
 R__LOAD_LIBRARY(libffamodules.so)
 #endif
 
-void Fun4All_Calo(const char* infile = "/gpfs/mnt/gpfs02/sphenix/user/trinn/comissioning_data_production/test_file.root",const char *outfile = "tim_calo_23699.root")
+void Fun4All_Calo(int nEvents = -1, const char* infile = "/gpfs/mnt/gpfs02/sphenix/user/trinn/comissioning_data_production/test_file.root",const char *outfile = "tim_calo_23699.root")
 {
 
 
@@ -52,7 +52,8 @@ void Fun4All_Calo(const char* infile = "/gpfs/mnt/gpfs02/sphenix/user/trinn/comi
 
 
 Fun4AllInputManager *intrue = new Fun4AllDstInputManager("DST_TOWERS");
-  intrue->AddFile(infile);
+//intrue->AddFile(infile);
+  intrue->AddListFile(infile);
 se->registerInputManager(intrue);
 
 
@@ -64,7 +65,7 @@ se->registerInputManager(intrue);
 
 
 
-  se->run();
+  se->run(nEvents);
   se->End();
 
 }
