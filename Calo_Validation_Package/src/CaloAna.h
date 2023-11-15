@@ -118,6 +118,7 @@ class CaloAna : public SubsysReco
   int _range = 1;
   float _vz = 0.;
   bool m_vtxCut = false;
+  bool dynMaskClus = true;
 };
 
 #endif

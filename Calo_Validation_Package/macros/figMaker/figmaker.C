@@ -53,9 +53,9 @@ void figmaker(){
     TH2F* h_ohcal_mbd_correlation  = (TH2F*) fin->Get("h_ohcal_mbd_correlation" );
     TH2F* h_emcal_hcal_correlation = (TH2F*) fin->Get("h_emcal_hcal_correlation");
     TH1F* h_InvMass                = (TH1F*) fin->Get("h_InvMass"               );
-    TH2F* h_cemc_etaphi            = (TH2F*) fin->Get("h_cemc_etaphi"           );
-    TH2F* h_ihcal_etaphi           = (TH2F*) fin->Get("h_ihcal_etaphi"          );
-    TH2F* h_ohcal_etaphi           = (TH2F*) fin->Get("h_ohcal_etaphi"          );
+    TH2F* h_cemc_etaphi            = (TH2F*) fin->Get("h_cemc_etaphi_wQA"           );
+    TH2F* h_ihcal_etaphi           = (TH2F*) fin->Get("h_ihcal_etaphi_wQA"          );
+    TH2F* h_ohcal_etaphi           = (TH2F*) fin->Get("h_ohcal_etaphi_wQA"          );
     TH2F* h_zdc_emcal_correlation  = (TH2F*) fin->Get("h_zdc_emcal_correlation");
     TH1F* hzdcNorthcalib           = (TH1F*) fin->Get("hzdcNorthcalib");
     TH1F* hzdcSouthcalib           = (TH1F*) fin->Get("hzdcSouthcalib");
@@ -247,19 +247,19 @@ void figmaker(){
     TCanvas* c14 = new TCanvas("c14", "c14", 400, 400);
     hzdcNorthcalib->Draw();
     hzdcNorthcalib->SetLineColor(kBlue);
-    hzdcNorthcalib->GetXaxis()->SetRangeUser(0.25,15000);
+    hzdcNorthcalib->GetXaxis()->SetRangeUser(0.0,12000);
     hzdcNorthcalib->SetXTitle("#Sigma #it{E}^{ZDC Side}");
     hzdcNorthcalib->SetYTitle("Events");
+    hzdcNorthcalib->GetXaxis()->SetNdivisions(505);
 
     hzdcSouthcalib->Draw("same");
     hzdcSouthcalib->SetLineColor(kRed);
-    gPad->SetLogx();
     gPad->SetLogy();
 
     myText(0.7, 0.9, 1, "#it{#bf{sPHENIX}} Internal");
     myText(0.7, 0.85, 1, Form("run %d", run));
-    myText(0.7, 0.80, kBlue,"North");
-    myText(0.32, 0.80, kRed,"South");
+    myText(0.75, 0.80, kBlue,"North");
+    myText(0.65, 0.80, kRed,"South");
 
     c14->SaveAs(Form("../plots/zdc_e_northSouth_%d.pdf",run));
 
@@ -285,6 +285,32 @@ void figmaker(){
     myText(0.22, 0.85, 1, Form("run %d", run));
 
     c16->SaveAs(Form("../plots/vtx_z_%d.pdf",run));
+
+
+    TCanvas* c17 = new TCanvas("c17", "c17", 400, 400);
+    hzdcNorthcalib->Draw();
+    hzdcNorthcalib->SetLineColor(kBlue);
+    hzdcNorthcalib->GetXaxis()->SetRangeUser(10,300);
+    hzdcNorthcalib->SetXTitle("#Sigma #it{E}^{ZDC Side}");
+    hzdcNorthcalib->SetYTitle("Events");
+
+    TGraph* gr_1n = new TGraph();
+    gr_1n->SetPoint(0,100,0);
+    gr_1n->SetPoint(1,100,1e7);
+    gr_1n->SetLineStyle(7);
+    gr_1n->Draw("l");
+
+    hzdcSouthcalib->Draw("same");
+    hzdcSouthcalib->SetLineColor(kRed);
+    gPad->SetLogy();
+
+    myText(0.7, 0.9, 1, "#it{#bf{sPHENIX}} Internal");
+    myText(0.7, 0.85, 1, Form("run %d", run));
+    myText(0.75, 0.80, kBlue,"North");
+    myText(0.65, 0.80, kRed,"South");
+
+    c17->SaveAs(Form("../plots/zdc_e_northSouth_1n_%d.pdf",run));
+
 
   }
 
