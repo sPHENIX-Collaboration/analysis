@@ -138,8 +138,8 @@ namespace SColdQcdCorrelatorAnalysis {
 
     // initialize input, output, & correlators
     InitializeTree();
-    InitializeHists();
     InitializeCorrs();
+    InitializeHists();
     return;
 
   }  // end 'StandaloneInit()'

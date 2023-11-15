@@ -40,7 +40,7 @@ namespace SColdQcdCorrelatorAnalysis {
         break;
       } else {
         nBytes += bytes;
-        PrintMessage(8, nEvts, iEvt);
+        //PrintMessage(8, nEvts, iEvt);
       }
 
       // jet loop
@@ -51,51 +51,77 @@ namespace SColdQcdCorrelatorAnalysis {
         m_jetCstVector.clear();
 
         // get jet info
-        const uint64_t nCsts   = m_jetNumCst -> at(iJet);
-        const double   ptJet   = m_jetPt     -> at(iJet);
-        const double   etaJet  = m_jetEta    -> at(iJet);
-        const double   phiJet  = m_jetPhi    -> at(iJet);
-        const double   pxJet   = ptJet * cos(phiJet);
-        const double   pyJet   = ptJet * sin(phiJet);
-        const double   pzJet   = ptJet * sinh(etaJet);
-        const TVector3 pVecJet = TVector3(pxJet, pyJet, pzJet);
+        const uint64_t nCsts  = m_jetNumCst -> at(iJet);
+        const double   ptJet  = m_jetPt     -> at(iJet);
+        const double   etaJet = m_jetEta    -> at(iJet);
 
         // select jet pt bin & apply jet cuts
-        const uint32_t  iPtJetBin = GetJetPtBin(ptJet);
-        const bool      isGoodJet = ApplyJetCuts(ptJet, etaJet);
+        const uint32_t iPtJetBin = GetJetPtBin(ptJet);
+        const bool     isGoodJet = ApplyJetCuts(ptJet, etaJet);
         if (!isGoodJet) continue;
 
         // constituent loop
         for (uint64_t iCst = 0; iCst < nCsts; iCst++) {
 
-          // get cst 3-vector
-          const double   zCst    = (m_cstZ  -> at(iJet)).at(iCst);
-          const TVector3 pVecCst = zCst * pVecJet;
-
           // get cst info
-          const double drCst   = (m_cstDr  -> at(iJet)).at(iCst);
-          const double etaCst  = (m_cstEta -> at(iJet)).at(iCst);
-          const double phiCst  = (m_cstPhi -> at(iJet)).at(iCst);
-          const double jtCst   = (m_cstJt  -> at(iJet)).at(iCst);
-          const double pCst    = pVecCst.Mag();
-          const double pTotCst = sqrt((jtCst * jtCst) + (pCst * pCst));
-          const double pxCst   = pTotCst * cosh(etaCst) * cos(phiCst);
-          const double pyCst   = pTotCst * cosh(etaCst) * sin(phiCst);
-          const double pzCst   = pTotCst * sinh(etaCst);
+          const double drCst  = (m_cstDr  -> at(iJet)).at(iCst);
+          const double etaCst = (m_cstEta -> at(iJet)).at(iCst);
+          const double phiCst = (m_cstPhi -> at(iJet)).at(iCst);
+          const double ptCst  = (m_cstPt  -> at(iJet)).at(iCst);
+
+          // for weird cst check
+          if (m_doSecondCstLoop) {
+            for (uint64_t jCst = 0; jCst < nCsts; jCst++) {
+
+              // skip over the same cst
+              if (jCst == iCst) continue;
+
+              // get cst info
+              const double etaCstB = (m_cstEta -> at(iJet)).at(jCst);
+              const double phiCstB = (m_cstPhi -> at(iJet)).at(jCst);
+              const double ptCstB  = (m_cstPt  -> at(iJet)).at(jCst);
+
+              // calculate separation and pt-weight
+              const double dhCstAB  = (etaCst - etaCstB);
+              const double dfCstAB  = (phiCst - phiCstB);
+              const double drCstAB  = sqrt((dhCstAB * dhCstAB) + (dfCstAB * dfCstAB));
+              const double ptFrac   = ptCst / ptCstB;
+              const double ztJetA   = ptCst / ptJet;
+              const double ztJetB   = ptCstB / ptJet;
+              const double ptWeight = (ptCst * ptCstB) / (ptJet * ptJet);
+              hCstPtOneVsDr      -> Fill(drCstAB, ptCst);
+              hCstPtTwoVsDr      -> Fill(drCstAB, ptCstB);
+              hCstPtFracVsDr     -> Fill(drCstAB, ptFrac);
+              hCstPhiOneVsDr     -> Fill(drCstAB, phiCst);
+              hCstPhiTwoVsDr     -> Fill(drCstAB, phiCstB);
+              hCstEtaOneVsDr     -> Fill(drCstAB, etaCst);
+              hCstEtaTwoVsDr     -> Fill(drCstAB, etaCstB);
+              hDeltaPhiOneVsDr   -> Fill(drCstAB, dfCstAB);
+              hDeltaPhiTwoVsDr   -> Fill(drCstAB, dfCstAB);
+              hDeltaEtaOneVsDr   -> Fill(drCstAB, dhCstAB);
+              hDeltaEtaTwoVsDr   -> Fill(drCstAB, dhCstAB);
+              hJetPtFracOneVsDr  -> Fill(drCstAB, ztJetA);
+              hJetPtFracTwoVsDr  -> Fill(drCstAB, ztJetB);
+              hCstPairWeightVsDr -> Fill(drCstAB, ptWeight);
+            }  // end 2nd cst loop
+          }
+
+          // create cst 4-vector
+          ROOT::Math::PtEtaPhiMVector rVecCst(ptCst, etaCst, phiCst, 0.140);  // FIXME move pion mass to a constant in utilities namespace
 
           // if truth tree and needed, check embedding ID
           if (m_isInputTreeTruth && m_selectSubEvts) {
-            const int  embedCst    = (m_cstEmbedID -> at(iJet)).at(iCst);
+            const int  embedCst     = (m_cstEmbedID -> at(iJet)).at(iCst);
             const bool isSubEvtGood = CheckIfSubEvtGood(embedCst);
             if (!isSubEvtGood) continue;
           }
 
           // if needed, apply constituent cuts
-          const bool isGoodCst = ApplyCstCuts(pCst, drCst);
+          const bool isGoodCst = ApplyCstCuts(ptCst, drCst);
           if (m_applyCstCuts && !isGoodCst) continue;
 
           // create pseudojet & add to list
-          PseudoJet constituent(pxCst, pyCst, pzCst, pTotCst);
+          PseudoJet constituent(rVecCst.Px(), rVecCst.Py(), rVecCst.Pz(), rVecCst.E());
           constituent.set_user_index(iCst);
           m_jetCstVector.push_back(constituent);
         }  // end cst loop
@@ -234,8 +260,8 @@ namespace SColdQcdCorrelatorAnalysis {
     // print debug statement
     if (m_inDebugMode && (m_verbosity > 7)) PrintDebug(26);
 
-    const bool isInPtRange  = ((ptJet >= m_ptJetRange[0])  && (ptJet < m_ptJetRange[1]));
-    const bool isInEtaRange = ((etaJet > m_etaJetRange[0]) && (etaJet < m_etaJetRange[1]));
+    const bool isInPtRange  = ((ptJet >= m_ptJetRange.first)  && (ptJet < m_ptJetRange.second));
+    const bool isInEtaRange = ((etaJet > m_etaJetRange.first) && (etaJet < m_etaJetRange.second));
     const bool isGoodJet    = (isInPtRange && isInEtaRange);
     return isGoodJet;
 
@@ -248,8 +274,8 @@ namespace SColdQcdCorrelatorAnalysis {
     // print debug statement
     if (m_inDebugMode && (m_verbosity > 7)) PrintDebug(27);
 
-    const bool isInMomRange = ((momCst >= m_momCstRange[0]) && (momCst < m_momCstRange[1]));
-    const bool isInDrRange  = ((drCst >= m_drCstRange[0])   && (drCst < m_drCstRange[1]));
+    const bool isInMomRange = ((momCst >= m_momCstRange.first) && (momCst < m_momCstRange.second));
+    const bool isInDrRange  = ((drCst >= m_drCstRange.first)   && (drCst < m_drCstRange.second));
     const bool isGoodCst    = (isInMomRange && isInDrRange);
     return isGoodCst;
 

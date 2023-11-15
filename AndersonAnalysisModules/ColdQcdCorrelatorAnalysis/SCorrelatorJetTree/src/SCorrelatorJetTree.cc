@@ -139,7 +139,7 @@ namespace SColdQcdCorrelatorAnalysis {
     // check if reconstructed vertex is in in acceptance
     bool isGoodEvt = true;
     if (m_doVtxCut) {
-      isGoodEvt = IsGoodEvent(m_recoVtx);
+      isGoodEvt = IsGoodVertex(m_recoVtx);
     }
 
     // set event status
