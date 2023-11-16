@@ -1,0 +1,12 @@
+Index 0: 3786.87
+Index 1: 695.285
+Index 2: 22.2875
+Index 3: 15754.9
+Index 4: 2365.98
+Index 5: 166.23
+Index 6: 27490.1
+Index 7: 7204.25
+Index 8: 556.35
+Index 9: 376939
+Index 10: 34385.2
+Index 11: 2293.87
