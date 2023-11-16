@@ -1,5 +1,5 @@
-#ifndef __BBCSTUDY_H__
-#define __BBCSTUDY_H__
+#ifndef __BBCCHECK_H__
+#define __BBCCHECK_H__
 
 #include <fun4all/SubsysReco.h>
 #include <string>
@@ -8,29 +8,27 @@
 
 //Forward declerations
 class PHCompositeNode;
-class PHG4HitContainer;
-class PHG4TruthInfoContainer;
 class EventHeader;
 class MbdOut;
 class MbdPmtContainer;
-class MbdGeom;
 class TFile;
 class TTree;
 class TDatabasePDG;
 class TRandom3;
 class TH1;
 class TH2;
+class TGraphErrors;
 class TF1;
 class TCanvas;
 
 
 //Brief: basic TTree and histogram creation for sim evaluation
-class BBCStudy: public SubsysReco
+class BbcCheck: public SubsysReco
 {
 public: 
 
   //Default constructor
-  BBCStudy(const std::string &name="BBCStudy");
+  BbcCheck(const std::string &name="BbcCheck");
 
   //Initialization, called for initialization
   int Init(PHCompositeNode *);
@@ -47,12 +45,18 @@ public:
   //Change output filename
   void set_savefile(const char *f) { _savefname = f; }
 
-  void set_tres(const Float_t tr) { _tres = tr; }
+  void set_run(const int r) { f_run = r; }
 
 private:
 
   //
   void CheckDST(PHCompositeNode *topNode);
+
+  int  Getpeaktime(TH1 *h);
+  void process_zdc( PHCompositeNode *topNode );
+  void process_emcal( PHCompositeNode *topNode );
+  void process_ohcal( PHCompositeNode *topNode );
+  void process_ihcal( PHCompositeNode *topNode );
 
   //output filename
   std::string _savefname;
@@ -62,7 +66,12 @@ private:
 
   //Output
   TTree* _tree;
+  Int_t    f_run;
   Int_t    f_evt;
+  Int_t    f_ch;
+  Float_t  f_qmean;
+  Float_t  f_qmerr;
+
   Float_t  f_bimp;    // impact parameter
   Int_t    f_ncoll;   // number n-n collisions
   Int_t    f_npart;   // number participants
@@ -77,12 +86,20 @@ private:
   Float_t  f_bbcz;    // z-vertex
   Float_t  f_bbct0;   // start time
 
-  TH1* h_bbcq[128];   // q in each tube
-  TH1* h_bbcqtot[2];  // total q in bbc arms
-  TH2* h2_bbcqtot;    // north q vs south q
-  TH1* h_ztrue;       // true z-vertex
-  TH1* h_tdiff;       // time diff between estimated and real time
-  TH2* h2_tdiff_ch;   // time diff by channel
+  TH1 *h_bbcq[128];   // q in each tube
+  TGraphErrors *g_bbcq[128];   // q in each tube
+  TH1 *h_bbcqtot[2];  // total q in bbc arms
+  TH1 *h_bbcqsum;     // total q in bbc arms
+  TH2 *h2_bbcqtot;    // north q vs south q
+
+  TH1 *h_emcale;
+  TH1 *h_emcaltimecut;
+  TH1 *h_ohcale;
+  TH1 *h_ohcaltimecut;
+  TH1 *h_ihcale;
+  TH1 *h_ihcaltimecut;
+  TH1 *h_zdce;
+  TH1 *h_zdctimecut;
 
   TCanvas *c_bbct;    // Canvas to 
   TH1 *hevt_bbct[2];  // time in each bbc, per event
@@ -91,7 +108,6 @@ private:
   std::map<int,int> _pids;  // PIDs of tracks in the BBC
 
   //
-  TDatabasePDG* _pdg;
   TRandom3*     _rndm;
   Float_t       _tres;    // time resolution of one channel
 
@@ -99,13 +115,10 @@ private:
   void GetNodes(PHCompositeNode *);
   
   //Node pointers
-  PHG4TruthInfoContainer* _truth_container;
-  PHG4HitContainer* _bbchits;
   EventHeader* _evtheader;
   MbdOut* _bbcout;
   MbdPmtContainer* _bbcpmts;
-  MbdGeom* _bbcgeom;
 
 };
 
-#endif //* __BBCSTUDY_H__ *//
+#endif //* __BBCCHECK_H__ *//
