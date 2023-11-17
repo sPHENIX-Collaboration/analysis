@@ -66,7 +66,7 @@
 #pragma GCC diagnostic pop
 
 //____________________________________________________________________________..
-pythiaEMCalAna::pythiaEMCalAna(const std::string &name):
+pythiaEMCalAna::pythiaEMCalAna(const std::string &name, bool isAuAu):
 SubsysReco(name),
   clusters_Towers(nullptr),
   truth_particles(nullptr),
@@ -97,6 +97,7 @@ SubsysReco(name),
 fout(NULL),
   outname(name),
   getEvent(-9999),
+  hasHIJING(isAuAu),
   n_direct_photons(0),
   n_direct_photons_in_acceptance(0),
   n_pythia_direct_photons(0),
@@ -356,9 +357,16 @@ int pythiaEMCalAna::process_event(PHCompositeNode *topNode)
       /* int embedID = 2 - genEventMap->size() + embedIndex; */
       /* if (embedID < 1) continue; */
       int embedID = genEventIter->first;
+      // For HIJING embedded samples, the PYTHIA event has a positive embedID
+      if (hasHIJING && embedID < 1) continue;
+      if (embedID < 1) continue;
       /* genEvent = genEventMap->get(embedID); */
       genEvent = genEventIter->second;
+      /* std::cout << "Greg info: embedID=" << embedID << "; printing genEvent\n"; */
+      /* genEvent->identify(); */
       theEvent = genEvent->getEvent();
+      /* std::cout << "Greg info: printing theEvent\n"; */
+      /* theEvent->print(); */
       /* std::cout << Form("Greg info: embedID=%d, genEvent->is_simulated()=%d\n", embedID, genEvent->is_simulated()); */
       // now loop over PYTHIA particles
       for(HepMC::GenEvent::particle_const_iterator p = theEvent -> particles_begin(); p != theEvent -> particles_end(); ++p)
@@ -407,8 +415,12 @@ int pythiaEMCalAna::process_event(PHCompositeNode *topNode)
 	      }
 	      else {
 		  // weird photon -- they should only have 1 parent
-		  std::cout << "\nGreg info: found a photon with " << prod_vtx->particles_in_size() << " parent(s). Photon:\n";
+		  std::cout << "\nGreg info: in PYTHIA check, found a photon with " << prod_vtx->particles_in_size() << " parent(s). Photon:\n";
 		  (*p)->print();
+		  for (HepMC::GenVertex::particles_in_const_iterator parent = prod_vtx->particles_in_const_begin(); parent != prod_vtx->particles_in_const_end(); parent++) {
+		      std::cout << "Parent:\n";
+		      (*parent)->print();
+		  }
 		  std::cout << "\n";
 	      }
 	  } // end photon check
@@ -438,7 +450,8 @@ int pythiaEMCalAna::process_event(PHCompositeNode *topNode)
   {
       PHG4Particle *truthPar = truthIter->second;
       int embedID = truthinfo->isEmbeded(truthPar->get_track_id());
-      /* if (embedID < 1) continue; */
+      if (hasHIJING && embedID < 1) continue;
+      if (embedID < 1) continue;
       int geant_barcode = truthPar->get_barcode();
       int pid = truthPar->get_pid();
       // look for photons only
@@ -578,8 +591,9 @@ int pythiaEMCalAna::process_event(PHCompositeNode *topNode)
   for(truthIter = truthRange.first; truthIter != truthRange.second; truthIter++)
   {
       PHG4Particle *truthPar = truthIter->second;
-      /* int embedID = truthinfo->isEmbeded(truthPar->get_track_id()); */
-      /* if (embedID < 1) continue; */
+      int embedID = truthinfo->isEmbeded(truthPar->get_track_id());
+      if (hasHIJING && embedID < 1) continue;
+      if (embedID < 1) continue;
       // only looking for decay photons and their corresponding primaries
       if (truthPar->get_pid() == 22) {
 	  // get the parent
@@ -844,10 +858,38 @@ bool pythiaEMCalAna::isDirectPhoton(PHG4Particle* part, HepMC::GenEvent* theEven
 	// or a decay photon
 	if ((*parent)->status() > 2 && abs((*parent)->pdg_id()) < 100) {
 	    // direct photon
+	    /* std::cout << "\nGreg info: found a direct photon. Photon:\n"; */
+	    /* genpart->print(); */
+	    bool printHistory = false;
+	    if (printHistory) {
+		// print history of all ancestors
+		// generation 0 is genpart, gen -1 is its parent, etc.
+		int generation = -1;
+		std::cout << "\tGeneration " << generation << " -- ";
+		(*parent)->print();
+		while (true) {
+		    generation--;
+		    HepMC::GenVertex::particles_in_const_iterator parentparent;
+		    HepMC::GenVertex* parent_prod_vtx = (*parent)->production_vertex();
+		    if (parent_prod_vtx) {
+			parentparent = parent_prod_vtx->particles_in_const_begin();
+			std::cout << "\tGeneration " << generation << ": ";
+			(*parentparent)->print();
+			parent = parentparent;
+		    }
+		    else break;
+		}
+		parent = prod_vtx->particles_in_const_begin(); // reset parent to genpart's actual parent
+	    }
 	    return true;
 	}
 	else if ((*parent)->status() == 2 && abs((*parent)->pdg_id()) >= 100) {
 	    // decay photon
+	    /* std::cout << "\nGreg info: found a decay photon. Photon:\n"; */
+	    /* genpart->print(); */
+	    /* std::cout << "Parent:\n"; */
+	    /* (*parent)->print(); */
+	    /* std::cout << "\n"; */
 	    return false;
 	}
 	else {
@@ -859,11 +901,15 @@ bool pythiaEMCalAna::isDirectPhoton(PHG4Particle* part, HepMC::GenEvent* theEven
 	    std::cout << "\n";
 	    return false;
 	}
-    }
+    } // single parent check
     else {
 	// weird photon -- they should only have 1 parent
 	std::cout << "Greg info: found a photon with " << prod_vtx->particles_in_size() << " parent(s). Photon:\n";
 	genpart->print();
+	for (HepMC::GenVertex::particles_in_const_iterator parent = prod_vtx->particles_in_const_begin(); parent != prod_vtx->particles_in_const_end(); parent++) {
+	    std::cout << "Parent:\n";
+	    (*parent)->print();
+	}
 	/* std::cout << "\n"; */
 	return false;
     }
