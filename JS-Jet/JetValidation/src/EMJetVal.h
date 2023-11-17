@@ -9,6 +9,12 @@
 
 #include <string>
 #include <vector>
+#pragma once
+
+#include <TFile.h>
+#include <TH1F.h>
+#include <TH2D.h>
+
 
 using namespace fastjet;
 
@@ -22,8 +28,12 @@ class EMJetVal : public SubsysReco
   EMJetVal(const std::string &recojetname = "AntiKt_Tower_r04",
 	   const std::string &truthjetname = "AntiKt_Truth_r04",
 	   const std::string &outputfilename = "myjetanalysis.root");
+ 
+ std::vector<fastjet::PseudoJet> eventVector;
+    
+  int retrieveEvent(const fastjet::PseudoJet& jet);
 
-  int retrieveEvent(vector<PseudoJet>& event);
+  //  int retrieveEvent(vector<PseudoJet>& event);
 
   ~EMJetVal() override;
 
@@ -99,6 +109,41 @@ class EMJetVal : public SubsysReco
 
   //! Output Tree variables
   TTree *m_T;
+  TFile* outFile;
+  TH1F *_h_R04_z_sj_15_20;
+  TH1F *_h_R04_theta_sj_15_20;
+  TH1F *_h_R04_z_sj_20_25;
+  TH1F *_h_R04_theta_sj_20_25;
+  TH1F *_h_R04_z_sj_25_30;
+  TH1F *_h_R04_theta_sj_25_30;
+  TH1F *_h_R04_z_sj_30_40;
+  TH1F *_h_R04_theta_sj_30_40;
+  TH1F *_h_R04_z_g_15_20;
+  TH1F *_h_R04_theta_g_15_20;
+  TH1F *_h_R04_z_g_20_25;
+  TH1F *_h_R04_theta_g_20_25;
+  TH1F *_h_R04_z_g_25_30;
+  TH1F *_h_R04_theta_g_25_30;
+  TH1F *_h_R04_z_g_30_40;
+  TH1F *_h_R04_theta_g_30_40;
+  TH1F *_hmult_R04;
+  //softDrop multiplicity hists
+  TH1F *_hmult_R04_pT_15_20GeV;
+  TH1F *_hmult_R04_pT_20_25GeV;
+  TH1F *_hmult_R04_pT_25_30GeV;
+  TH1F *_hmult_R04_pT_30_40GeV;
+  TH1F *_hjetpT_R04;
+  TH1F *_hjeteta_R04;
+  //correlation figures
+  TH2D *correlation_theta_15_20;
+  TH2D *correlation_theta_20_25;
+  TH2D *correlation_theta_25_30;
+  TH2D *correlation_theta_30_40;
+  TH2D *correlation_z_15_20;
+  TH2D *correlation_z_20_25;
+  TH2D *correlation_z_25_30;
+  TH2D *correlation_z_30_40;
+
 
   //! eventwise quantities
   int m_event;
