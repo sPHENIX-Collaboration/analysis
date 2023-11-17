@@ -33,7 +33,7 @@ void JetSpectra()
   }
 
   // TCanvas *canvas = new TCanvas("canvas", "Histogram Canvas", 800, 600);
-  TCanvas *canvas = new TCanvas("canvas", "c1",10,54,700,500);
+  TCanvas *canvas = new TCanvas("canvas", "canvas",10,54,700,500);
   canvas->Range(41,-4.051882,51,0.1891844);
   canvas->SetFillColor(0);
   canvas->SetBorderMode(0);
@@ -42,7 +42,25 @@ void JetSpectra()
   canvas->SetFrameBorderMode(0);
   canvas->SetFrameBorderMode(0);
 
-  // Normalize the x-axis by dividing each bin content by its width                                                                                                          
+  TPaveStats *ptstats = new TPaveStats(0.78,0.775,0.98,0.935,"brNDC");
+  ptstats->SetName("stats");
+  ptstats->SetBorderSize(1);
+  ptstats->SetFillColor(0);
+  ptstats->SetTextAlign(12);
+  ptstats->SetTextFont(42);
+  TText *ptstats_LaTex = ptstats->AddText("pt_hist");
+  ptstats_LaTex->SetTextSize(0.0368);
+  ptstats_LaTex = ptstats->AddText("Entries = 23023  ");
+  ptstats_LaTex = ptstats->AddText("Mean  =  44.05");
+  ptstats_LaTex = ptstats->AddText("s_{NN}=200 GeV");
+  ptstats_LaTex = ptstats->AddText("-0.3 < #eta < 0.7");
+  ptstats->SetOptStat(1111);
+  ptstats->SetOptFit(0);
+  ptstats->Draw();
+  pt_hist->GetListOfFunctions()->Add(ptstats);
+  ptstats->SetParent(pt_hist);
+
+  // Normalize the x-axis by dividig each bin content by its width                                                                                                          
   for (int biny = 1; biny <= pt_hist->GetNbinsY(); ++biny) {
     double binContenty = pt_hist->GetBinContent(biny);
     double binWidthy = pt_hist->GetBinWidth(biny);
@@ -70,25 +88,8 @@ void JetSpectra()
   pt_hist->GetZaxis()->SetLabelFont(42);
   pt_hist->GetZaxis()->SetTitleOffset(1);
   pt_hist->GetZaxis()->SetTitleFont(42);
+  pt_hist->Scale(1.0/pt_hist->Integral("width"));
   pt_hist->Draw("");
-
-  TPaveStats *ptstats = new TPaveStats(0.78,0.775,0.98,0.935,"brNDC");
-  ptstats->SetName("stats");
-  ptstats->SetBorderSize(1);
-  ptstats->SetFillColor(0);
-  ptstats->SetTextAlign(12);
-  ptstats->SetTextFont(42);
-  TText *ptstats_LaTex = ptstats->AddText("pt_hist");
-  ptstats_LaTex->SetTextSize(0.0368);
-  ptstats_LaTex = ptstats->AddText("Entries = 23023  ");
-  ptstats_LaTex = ptstats->AddText("Mean  =  44.05");
-  ptstats_LaTex = ptstats->AddText("s_{NN}=200 GeV");
-  ptstats_LaTex = ptstats->AddText("-0.3 < #eta < 0.7");
-  ptstats->SetOptStat(1111);
-  ptstats->SetOptFit(0);
-  ptstats->Draw();
-  pt_hist->GetListOfFunctions()->Add(ptstats);
-  ptstats->SetParent(pt_hist);
 
   TPaveLabel *label = new TPaveLabel(0.2, 0.5, 0.5, 0.6, "s_{NN}=200GeV");
   label->SetTextSize(0.04); // Adjust the label's text size                                                                                                                  
