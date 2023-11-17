@@ -32,8 +32,9 @@ R__LOAD_LIBRARY(libg4dst.so)
 
 
 void Fun4All_JetVal(const char *filelisttruth = "dst_truth_jet.list",
-                     const char *filelistcalo = "dst_calo_cluster.list",  
-                     const char *outname = "outputest.root")
+                    const char *filelistcalo = "dst_calo_cluster.list",
+		    const char *filelistglobal = "dst_global.list",
+		    const char *outname = "outputest.root")
 {
 
   
