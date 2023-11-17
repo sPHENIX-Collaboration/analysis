@@ -116,6 +116,13 @@ int mbdAnalysis::process_event(PHCompositeNode *topNode)
 //____________________________________________________________________________..
 int mbdAnalysis::ResetEvent(PHCompositeNode *topNode)
 {
+  pmtcharge.clear();
+  pmttime.clear();
+  pmtx.clear();
+  pmty.clear();
+  pmtz.clear();
+  pmtr.clear();
+  pmtphi.clear();
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
