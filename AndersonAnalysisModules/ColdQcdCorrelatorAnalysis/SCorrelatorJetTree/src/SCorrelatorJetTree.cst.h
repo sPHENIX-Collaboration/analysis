@@ -76,14 +76,15 @@ namespace SColdQcdCorrelatorAnalysis {
     const double trkDcaXY = trkDca.first;
     const double trkDcaZ  = trkDca.second;
 
+
     // if above max pt used to fit dca width,
     // use value of fit at max pt
     double ptEvalXY = (trkPt > m_dcaPtFitMaxXY) ? m_dcaPtFitMaxXY : trkPt;
     double ptEvalZ  = (trkPt > m_dcaPtFitMaxZ)  ? m_dcaPtFitMaxZ  : trkPt;
 
     // check if dca is good
-    bool   isInDcaRangeXY = false;
-    bool   isInDcaRangeZ  = false;
+    bool isInDcaRangeXY = false;
+    bool isInDcaRangeZ  = false;
     if (m_doDcaSigmaCut) {
       isInDcaRangeXY = (abs(trkDcaXY) < (m_nSigCutXY * (m_fSigDcaXY -> Eval(ptEvalXY))));
       isInDcaRangeZ  = (abs(trkDcaZ)  < (m_nSigCutZ  * (m_fSigDcaZ  -> Eval(ptEvalZ))));
@@ -91,6 +92,30 @@ namespace SColdQcdCorrelatorAnalysis {
       isInDcaRangeXY = ((trkDcaXY > m_trkDcaRangeXY[0]) && (trkDcaXY < m_trkDcaRangeXY[1]));
       isInDcaRangeZ  = ((trkDcaZ  > m_trkDcaRangeZ[0])  && (trkDcaZ  < m_trkDcaRangeZ[1]));
     }  
+
+    // if applying vertex cuts, grab track
+    // vertex and check if good
+    bool isInVtxRange = true;
+    if (m_doVtxCut) {
+      CLHEP::Hep3Vector trkVtx = GetTrackVertex(track, topNode);
+      isInVtxRange = IsGoodVertex(trkVtx);
+    }
+
+    // if using only primary vertex,
+    // ignore tracks from other vertices
+    if (m_useOnlyPrimVtx) {
+      const bool isFromPrimVtx = IsFromPrimaryVtx(track, topNode);
+      if (!isFromPrimVtx) {
+        isInVtxRange = false;
+      }
+    }
+
+    // if masking tpc sector boundaries,
+    // ignore tracks near boundaries
+    bool isGoodPhi = true;
+    if (m_maskTpcSectors) {
+      isGoodPhi = IsGoodTrackPhi(track);
+    }
 
     // apply cuts
     const bool isSeedGood       = IsGoodTrackSeed(track);
@@ -103,7 +128,7 @@ namespace SColdQcdCorrelatorAnalysis {
     const bool isInDeltaPtRange = ((trkDeltaPt > m_trkDeltaPtRange[0]) && (trkDeltaPt <  m_trkDeltaPtRange[1]));
     const bool isInNumRange     = (isInNMvtxRange && isInNInttRange && isInNTpcRange);
     const bool isInDcaRange     = (isInDcaRangeXY && isInDcaRangeZ);
-    const bool isGoodTrack      = (isSeedGood && isInPtRange && isInEtaRange && isInQualRange && isInNumRange && isInDcaRange && isInDeltaPtRange);
+    const bool isGoodTrack      = (isSeedGood && isGoodPhi && isInPtRange && isInEtaRange && isInQualRange && isInNumRange && isInDcaRange && isInDeltaPtRange && isInVtxRange);
     return isGoodTrack;
 
   }  // end 'IsGoodTrack(SvtxTrack*)'
@@ -186,6 +211,50 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
+  bool SCorrelatorJetTree::IsGoodTrackPhi(SvtxTrack* track, const float phiMaskSize) {
+
+    // print debug statement
+    if (m_doDebug && (Verbosity() > 2)) {
+      cout << "SCorrelatorJetTree::IsGoodTrackPhi(SvtxTrack*) Checking if track phi is good..." << endl;
+    }
+
+    // TPC sector boundaries:
+    //   12 sectors --> ~0.523 rad/sector,
+    //   assumed to be symmetric about phi = 0
+    // FIXME move to constant in utilities namespace
+    const array<float, NTpcSector> phiSectorBoundaries = {
+      -2.877,
+      -2.354,
+      -1.831,
+      -1.308,
+      -0.785,
+      -0.262,
+      0.262,
+      0.785,
+      1.308,
+      1.831,
+      2.354,
+      2.877
+    };
+
+    // flag phi as bad if within boundary +- (phiMaskSize / 2)
+    const double halfMaskSize = phiMaskSize / 2.;
+    const double trkPhi       = track -> get_phi();
+
+    // loop over sector boundaries and check phi
+    bool isGoodPhi = true;
+    for (const float boundary : phiSectorBoundaries) {
+      if ((trkPhi > (boundary - halfMaskSize)) && (trkPhi < (boundary + halfMaskSize))) {
+        isGoodPhi = false;
+        break;
+      }
+    }
+    return isGoodPhi;
+
+  }  // end 'IsGoodTrackPhi(SvtxTrack*, float)'
+
+
+
   bool SCorrelatorJetTree::IsOutgoingParton(HepMC::GenParticle* par) {
 
     // print debug statement
@@ -211,7 +280,29 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
-  pair<double, double> SCorrelatorJetTree::GetTrackDcaPair(SvtxTrack *track, PHCompositeNode* topNode) {
+  bool SCorrelatorJetTree::IsFromPrimaryVtx(SvtxTrack* track, PHCompositeNode* topNode) {
+
+    // print debug statement
+    if (m_doDebug) {
+      cout << "SCorrelatorJetTree::IsFromPrimaryVtx(SvtxTrack*, PHCompositeNode*) Checking if track is from primary vertex..." << endl;
+    }
+
+    // get id of vertex associated with track
+    const int vtxID = (int) track -> get_vertex_id();
+
+    // get id of primary vertex
+    GlobalVertex* primVtx   = GetGlobalVertex(topNode);
+    const int     primVtxID = primVtx -> get_id();
+
+    // check if from vertex and return
+    const bool isFromPrimVtx = (vtxID == primVtxID);
+    return isFromPrimVtx;
+
+  }  // end 'IsFromPrimaryVtx(SvtTrack*, PHCompsiteNode*)'
+
+
+
+  pair<double, double> SCorrelatorJetTree::GetTrackDcaPair(SvtxTrack* track, PHCompositeNode* topNode) {
 
     // print debug statement
     if (m_doDebug) {
@@ -227,6 +318,25 @@ namespace SColdQcdCorrelatorAnalysis {
     return make_pair(dcaAndErr.first.first, dcaAndErr.second.first);
 
   }  // end 'GetTrackDcaPair(SvtxTrack*, PHCompositeNode*)'
+
+
+
+  CLHEP::Hep3Vector SCorrelatorJetTree::GetTrackVertex(SvtxTrack* track, PHCompositeNode* topNode) {
+
+    // print debug statement
+    if (m_doDebug) {
+      cout << "SCorrelatorJetTree::GetTrackVertex(SvtxTrack*, PHCompositeNode*) Getting track vertex..." << endl;
+    }
+
+    // get vertex associated with track
+    const int     vtxID = (int) track -> get_vertex_id();
+    GlobalVertex* vtx   = GetGlobalVertex(topNode, vtxID);
+
+    // return vertex 3-vector
+    CLHEP::Hep3Vector hepVecVtx = CLHEP::Hep3Vector(vtx -> get_x(), vtx -> get_y(), vtx -> get_z());
+    return hepVecVtx;
+
+  }  // end 'GetTrackVertex(SvtxTrack*, PHCompositeNode*)'
 
 
 
@@ -529,6 +639,86 @@ namespace SColdQcdCorrelatorAnalysis {
     return nLayer;
 
   }  // end 'GetNumLayer(SvtxTrack*, uint8_t)'
+
+
+
+  int SCorrelatorJetTree::GetNumClust(SvtxTrack* track, const uint8_t subsys) {
+
+    // issue warning if subsys is not set correctly
+    const bool isSubsysWrong = (subsys > 2);
+    if (isSubsysWrong && m_doDebug && (Verbosity() > 3)) {
+      cerr << "SCorrelatorJetTree::GetNumLClust(SvtxTrack*, uint8_t) PANIC: trying to determine no. of clusters for an unknown subsystem (subsys = " << subsys << ")! Aborting!" << endl;
+      assert(subsys <= 2);
+    }
+
+    // check if seed is good
+    const bool isSeedGood = IsGoodTrackSeed(track);
+    if (!isSeedGood && m_doDebug && (Verbosity() > 3)) {
+      cerr << "SCorrelatorJetTree::GetNumLayer(SvtxTrack*, uint8_t) PANIC: track seed(s) is (are) no good! Aborting!" << endl;
+      assert(isSeedGood);
+    }
+
+    // get both track seeds
+    TrackSeed* trkSiSeed  = track -> get_silicon_seed();
+    TrackSeed* trkTpcSeed = track -> get_tpc_seed();
+
+    // select relevant seed
+    const bool hasBothSeeds   = (trkSiSeed  && trkTpcSeed);
+    const bool hasOnlyTpcSeed = (!trkSiSeed && trkTpcSeed);
+
+    TrackSeed* seed = NULL;
+    switch (subsys) {
+      case SUBSYS::MVTX:
+        if (hasBothSeeds)   seed = trkSiSeed;
+        if (hasOnlyTpcSeed) seed = trkTpcSeed;
+        break;
+      case SUBSYS::INTT:
+        if (hasBothSeeds)   seed = trkSiSeed;
+        if (hasOnlyTpcSeed) seed = trkTpcSeed;
+        break;
+      case SUBSYS::TPC:
+        seed = trkTpcSeed;
+        break;
+    }
+    if (!seed && m_doDebug && (Verbosity() > 3)) {
+      cerr << "SCorrelatorJetTree::GetNumClust(SvtxTrack*, uint8_t) PANIC: couldn't set seed! Aborting!" << endl;
+      assert(seed);
+    }
+
+    // set min no. of layers
+    const int minInttLayer = CONST::NMvtxLayer;
+    const int minTpcLayer  = CONST::NMvtxLayer + CONST::NInttLayer;
+
+    // determine no. of clusters for a given layer
+    unsigned int layer    = 0;
+    unsigned int nCluster = 0;
+    for (auto itClustKey = (seed -> begin_cluster_keys()); itClustKey != (seed -> end_cluster_keys()); ++itClustKey) {
+
+      // grab layer number
+      layer = TrkrDefs::getLayer(*itClustKey);
+
+      // increment accordingly
+      switch (subsys) {
+        case SUBSYS::MVTX:
+          if (layer < CONST::NMvtxLayer) {
+            ++nCluster;
+          }
+          break;
+        case SUBSYS::INTT:
+          if ((layer >= minInttLayer) && (layer < minTpcLayer)) {
+            ++nCluster;
+          }
+          break;
+        case SUBSYS::TPC:
+          if (layer >= minTpcLayer) {
+            ++nCluster;
+          }
+          break;
+      }
+    }  // end cluster loop
+    return nCluster;
+
+  }  // end 'GetNumClust(SvtxTrack*, uint8_t)'
 
 
 

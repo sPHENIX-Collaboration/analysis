@@ -21,13 +21,14 @@
 #include <utility>
 // root includes
 #include <TH1.h>
+#include <TH2.h>
 #include <TROOT.h>
 #include <TFile.h>
 #include <TMath.h>
 #include <TChain.h>
 #include <TString.h>
-#include <TVector3.h>  // TODO update to XYZvector
 #include <TDirectory.h>
+#include <Math/Vector4D.h>
 // f4a include
 #include <fun4all/SubsysReco.h>
 #include <fun4all/Fun4AllReturnCodes.h>
@@ -71,16 +72,17 @@ namespace SColdQcdCorrelatorAnalysis {
       void End();
 
       // setters (inline)
-      void SetVerbosity(const int verb)                        {m_verbosity   = verb;}
-      void SetInputNode(const string &iNodeName)               {m_inNodeName  = iNodeName;}
-      void SetOutputFile(const string &oFileName)              {m_outFileName = oFileName;}
-      void SetInputFiles(const vector<string> &vecInFileNames) {m_inFileNames = vecInFileNames;}
+      void SetVerbosity(const int verb)                        {m_verbosity       = verb;}
+      void SetInputNode(const string &iNodeName)               {m_inNodeName      = iNodeName;}
+      void SetOutputFile(const string &oFileName)              {m_outFileName     = oFileName;}
+      void SetDoSecondCstLoop(const bool loop)                 {m_doSecondCstLoop = loop;}
+      void SetInputFiles(const vector<string> &vecInFileNames) {m_inFileNames     = vecInFileNames;}
 
       // setters (*.io.h)
       void SetInputTree(const string &iTreeName, const bool isTruthTree = false, const bool isEmbedTree = false);
-      void SetJetParameters(const vector<pair<double, double>> &pTjetBins, const double minEta, const double maxEta);
-      void SetConstituentParameters(const double minMom, const double maxMom, const double minDr, const double maxDr, const bool applyCstCuts = false);
-      void SetCorrelatorParameters(const uint32_t nPointCorr, const uint64_t nBinsDr, const double minDr, const double maxDr);
+      void SetJetParameters(const vector<pair<double, double>> &pTjetBins, const pair<double, double> etaJetRange);
+      void SetConstituentParameters(const pair<double, double> momCstRange, const pair<double, double> drCstRange, const bool applyCstCuts = false);
+      void SetCorrelatorParameters(const uint32_t nPointCorr, const uint64_t nBinsDr, const pair<double, double> drBinRange);
       void SetSubEventsToUse(const uint16_t subEvtOpt = 0, const vector<int> vecSubEvtsToUse = {});
 
       // system getters
@@ -93,6 +95,7 @@ namespace SColdQcdCorrelatorAnalysis {
       bool           GetIsInputTreeEmbed() {return m_isInputTreeEmbed;}
       bool           GetApplyCstCuts()     {return m_applyCstCuts;}
       bool           GetSelectSubEvts()    {return m_selectSubEvts;}
+      bool           GetDoSecondCstLoop()  {return m_doSecondCstLoop;}
       string         GetModuleName()       {return m_moduleName;}
       string         GetInputNodeName()    {return m_inNodeName;}
       string         GetInputTreeName()    {return m_inTreeName;}
@@ -101,16 +104,16 @@ namespace SColdQcdCorrelatorAnalysis {
       vector<string> GetInputFileNames()   {return m_inFileNames;}
 
       // correlator getters
-      double   GetMinDrBin()   {return m_drBinRange[0];}
-      double   GetMaxDrBin()   {return m_drBinRange[1];}
-      double   GetMinJetPt()   {return m_ptJetRange[0];}
-      double   GetMaxJetPt()   {return m_ptJetRange[1];}
-      double   GetMinJetEta()  {return m_etaJetRange[0];}
-      double   GetMaxJetEta()  {return m_etaJetRange[1];}
-      double   GetMinCstMom()  {return m_momCstRange[0];}
-      double   GetMaxCstMom()  {return m_momCstRange[1];}
-      double   GetMinCstDr()   {return m_drCstRange[0];}
-      double   GetMaxCstDr()   {return m_drCstRange[1];}
+      double   GetMinDrBin()   {return m_drBinRange.first;}
+      double   GetMaxDrBin()   {return m_drBinRange.second;}
+      double   GetMinJetPt()   {return m_ptJetRange.first;}
+      double   GetMaxJetPt()   {return m_ptJetRange.second;}
+      double   GetMinJetEta()  {return m_etaJetRange.first;}
+      double   GetMaxJetEta()  {return m_etaJetRange.second;}
+      double   GetMinCstMom()  {return m_momCstRange.first;}
+      double   GetMaxCstMom()  {return m_momCstRange.second;}
+      double   GetMinCstDr()   {return m_drCstRange.first;}
+      double   GetMaxCstDr()   {return m_drCstRange.second;}
       size_t   GetNBinsJetPt() {return m_nBinsJetPt;}
       uint32_t GetNPointCorr() {return m_nPointCorr;}
       uint64_t GetNBinsDr()    {return m_nBinsDr;}
@@ -119,7 +122,6 @@ namespace SColdQcdCorrelatorAnalysis {
 
       // constants
       enum CONST {
-        NRANGE   = 2,
         NPARTONS = 2
       };
 
@@ -161,6 +163,22 @@ namespace SColdQcdCorrelatorAnalysis {
       vector<TH1D*> m_outHistVarLnDrAxis;
       vector<TH1D*> m_outHistErrLnDrAxis;
 
+      // for weird cst check
+      TH2D* hCstPtOneVsDr;
+      TH2D* hCstPtTwoVsDr;
+      TH2D* hCstPtFracVsDr;
+      TH2D* hCstPhiOneVsDr;
+      TH2D* hCstPhiTwoVsDr;
+      TH2D* hCstEtaOneVsDr;
+      TH2D* hCstEtaTwoVsDr;
+      TH2D* hDeltaPhiOneVsDr;
+      TH2D* hDeltaPhiTwoVsDr;
+      TH2D* hDeltaEtaOneVsDr;
+      TH2D* hDeltaEtaTwoVsDr;
+      TH2D* hJetPtFracOneVsDr;
+      TH2D* hJetPtFracTwoVsDr;
+      TH2D* hCstPairWeightVsDr;
+
       // system members
       int      m_fCurrent         = 0;
       int      m_verbosity        = 0;
@@ -172,6 +190,7 @@ namespace SColdQcdCorrelatorAnalysis {
       bool     m_isInputTreeEmbed = false;
       bool     m_applyCstCuts     = false;
       bool     m_selectSubEvts    = false;
+      bool     m_doSecondCstLoop  = false;
       string   m_moduleName       = "";
       string   m_inNodeName       = "";
       string   m_inTreeName       = "";
@@ -182,17 +201,17 @@ namespace SColdQcdCorrelatorAnalysis {
       vector<string> m_inFileNames;
 
       // jet, cst, correlator parameters
-      uint32_t                     m_nPointCorr                 = 0;
-      uint64_t                     m_nBinsDr                    = 0;
-      size_t                       m_nBinsJetPt                 = 0;
-      double                       m_drBinRange[CONST::NRANGE]  = {-999., -999.};
-      double                       m_ptJetRange[CONST::NRANGE]  = {-999., -999.};
-      double                       m_etaJetRange[CONST::NRANGE] = {-999., -999.};
-      double                       m_momCstRange[CONST::NRANGE] = {-999., -999.};
-      double                       m_drCstRange[CONST::NRANGE]  = {-999., -999.};
-      vector<int>                  m_subEvtsToUse;
-      vector<PseudoJet>            m_jetCstVector;
+      uint32_t                     m_nPointCorr  = 0;
+      uint64_t                     m_nBinsDr     = 0;
+      size_t                       m_nBinsJetPt  = 0;
+      pair<double, double>         m_drBinRange  = {-999., -999.};
+      pair<double, double>         m_ptJetRange  = {-999., -999.};
+      pair<double, double>         m_etaJetRange = {-999., -999.};
+      pair<double, double>         m_momCstRange = {-999., -999.};
+      pair<double, double>         m_drCstRange  = {-999., -999.};
       vector<pair<double, double>> m_ptJetBins;
+      vector<PseudoJet>            m_jetCstVector;
+      vector<int>                  m_subEvtsToUse;
 
       // correlators
       vector<contrib::eec::EECLongestSide<contrib::eec::hist::axis::log>*> m_eecLongSide;
@@ -228,7 +247,7 @@ namespace SColdQcdCorrelatorAnalysis {
       vector<vector<double>>* m_cstZ       = NULL;
       vector<vector<double>>* m_cstDr      = NULL;
       vector<vector<double>>* m_cstEnergy  = NULL;
-      vector<vector<double>>* m_cstJt      = NULL;
+      vector<vector<double>>* m_cstPt      = NULL;
       vector<vector<double>>* m_cstEta     = NULL;
       vector<vector<double>>* m_cstPhi     = NULL;
 
@@ -260,8 +279,8 @@ namespace SColdQcdCorrelatorAnalysis {
       TBranch* m_brJetArea    = NULL;
       TBranch* m_brCstZ       = NULL;
       TBranch* m_brCstDr      = NULL;
+      TBranch* m_brCstPt      = NULL;
       TBranch* m_brCstEnergy  = NULL;
-      TBranch* m_brCstJt      = NULL;
       TBranch* m_brCstEta     = NULL;
       TBranch* m_brCstPhi     = NULL;
 

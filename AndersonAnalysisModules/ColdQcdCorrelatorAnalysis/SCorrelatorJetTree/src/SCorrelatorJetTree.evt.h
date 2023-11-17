@@ -20,11 +20,11 @@ namespace SColdQcdCorrelatorAnalysis {
 
   // event methods ------------------------------------------------------------
 
-  bool SCorrelatorJetTree::IsGoodEvent(const CLHEP::Hep3Vector vtx) {
+  bool SCorrelatorJetTree::IsGoodVertex(const CLHEP::Hep3Vector vtx) {
 
     // print debug statement
     if (m_doDebug) {
-      cout << "SCorrelatorJetTree::IsGoodEvent(CLHEP::Hep3Vector) Checking if event is good..." << endl;
+      cout << "SCorrelatorJetTree::IsGoodVertex(CLHEP::Hep3Vector) Checking if event is good..." << endl;
     }
 
     // calculate vr
@@ -33,10 +33,10 @@ namespace SColdQcdCorrelatorAnalysis {
     // check if event is good
     const bool isInEvtVzRange = ((vtx.z() > m_evtVzRange[0]) && (vtx.z() < m_evtVzRange[1]));
     const bool isInEvtVrRange = ((abs(vr) > m_evtVrRange[0]) && (abs(vr) < m_evtVrRange[1]));
-    const bool isGoodEvent    = (isInEvtVzRange && isInEvtVrRange);
-    return isGoodEvent;
+    const bool isGoodVertex   = (isInEvtVzRange && isInEvtVrRange);
+    return isGoodVertex;
 
-  }  // end 'IsGoodEvent(CLHEP::Hep3Vector)'
+  }  // end 'IsGoodVertex(CLHEP::Hep3Vector)'
 
 
 

@@ -32,65 +32,61 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
-  void SEnergyCorrelator::SetJetParameters(const vector<pair<double, double>> &pTjetBins, const double minEta, const double maxEta) {
+  void SEnergyCorrelator::SetJetParameters(const vector<pair<double, double>> &pTjetBins, const pair<double, double> etaJetRange) {
 
     // print debug statement
     if (m_inDebugMode) PrintDebug(20);
 
-    m_etaJetRange[0] = minEta;
-    m_etaJetRange[1] = maxEta;
-    m_nBinsJetPt     = pTjetBins.size();
+    m_etaJetRange = etaJetRange;
+    m_nBinsJetPt  = pTjetBins.size();
     for (uint32_t iPtBin = 0; iPtBin < m_nBinsJetPt; iPtBin++) {
       const double               minPt = pTjetBins.at(iPtBin).first;
       const double               maxPt = pTjetBins.at(iPtBin).second;
       const pair<double, double> ptBin = {minPt, maxPt};
       m_ptJetBins.push_back(ptBin);
     }
-    m_ptJetRange[0] = m_ptJetBins[0].first;
-    m_ptJetRange[1] = m_ptJetBins[m_nBinsJetPt - 1].second;
+    m_ptJetRange.first  = m_ptJetBins[0].first;
+    m_ptJetRange.second = m_ptJetBins[m_nBinsJetPt - 1].second;
 
     // announce jet parameters
     if (m_inStandaloneMode) PrintMessage(6);
     return;
 
-  }  // end 'SetJetParameters(vector<pair<double, double>>&, double, double)'
+  }  // end 'SetJetParameters(vector<pair<double, double>>&, pair<double, double>)'
 
 
 
-  void SEnergyCorrelator::SetConstituentParameters(const double minMom, const double maxMom, const double minDr, const double maxDr, const bool applyCstCuts) {
+  void SEnergyCorrelator::SetConstituentParameters(const pair<double, double> momCstRange, const pair<double, double> drCstRange, const bool applyCstCuts) {
 
     // print debug statement
     if (m_inDebugMode) PrintDebug(24);
 
-    m_momCstRange[0] = minMom;
-    m_momCstRange[1] = maxMom;
-    m_drCstRange[0]  = minDr;
-    m_drCstRange[1]  = maxDr;
-    m_applyCstCuts   = applyCstCuts;
+    m_momCstRange  = momCstRange;
+    m_drCstRange   = drCstRange;
+    m_applyCstCuts = applyCstCuts;
 
     // announce cst parameters
     if (m_inStandaloneMode) PrintMessage(12);
     return;
 
-  }  // end 'SetConstituentParameters(double, double, double, double)'
+  }  // end 'SetConstituentParameters(pair<double, double>, pair<double, double>)'
 
 
 
-  void SEnergyCorrelator::SetCorrelatorParameters(const uint32_t nPointCorr, const uint64_t nBinsDr, const double minDr, const double maxDr) {
+  void SEnergyCorrelator::SetCorrelatorParameters(const uint32_t nPointCorr, const uint64_t nBinsDr, const pair<double, double> drBinRange) {
 
     // print debug statement
     if (m_inDebugMode) PrintDebug(19);
 
-    m_nPointCorr    = nPointCorr;
-    m_nBinsDr       = nBinsDr;
-    m_drBinRange[0] = minDr;
-    m_drBinRange[1] = maxDr;
+    m_nPointCorr = nPointCorr;
+    m_nBinsDr    = nBinsDr;
+    m_drBinRange = drBinRange;
 
     // announce correlator parameters
     if (m_inStandaloneMode) PrintMessage(5);
     return;
 
-  }  // end 'SetCorrelatorParameters(uint32_t, uint64_t, double, double)'
+  }  // end 'SetCorrelatorParameters(uint32_t, uint64_t, pair<double, double>)'
 
 
 
@@ -191,6 +187,25 @@ namespace SColdQcdCorrelatorAnalysis {
       m_outHistErrDrAxis[iPtBin]   -> Write();
       m_outHistVarLnDrAxis[iPtBin] -> Write();
       m_outHistErrLnDrAxis[iPtBin] -> Write();
+    }
+
+    // for weird cst check
+    if (m_doSecondCstLoop) {
+      m_outFile          -> cd();
+      hCstPtOneVsDr      -> Write();
+      hCstPtTwoVsDr      -> Write();
+      hCstPtFracVsDr     -> Write();
+      hCstPhiOneVsDr     -> Write();
+      hCstPhiTwoVsDr     -> Write();
+      hCstEtaOneVsDr     -> Write();
+      hCstEtaTwoVsDr     -> Write();
+      hDeltaPhiOneVsDr   -> Write();
+      hDeltaPhiTwoVsDr   -> Write();
+      hDeltaEtaOneVsDr   -> Write();
+      hDeltaEtaTwoVsDr   -> Write();
+      hJetPtFracOneVsDr  -> Write();
+      hJetPtFracTwoVsDr  -> Write();
+      hCstPairWeightVsDr -> Write();
     }
 
     // announce saving

@@ -58,6 +58,9 @@ class CaloAna : public SubsysReco
   TH2F* h_cemc_etaphi = nullptr;
   TH2F* h_hcalin_etaphi = nullptr;
   TH2F* h_hcalout_etaphi = nullptr;
+  TH2F* h_cemc_etaphi_wQA = nullptr;
+  TH2F* h_hcalin_etaphi_wQA = nullptr;
+  TH2F* h_hcalout_etaphi_wQA = nullptr;
   TH1* h_totalzdc_e;
 
   TH1* hzdctime;
@@ -79,6 +82,9 @@ class CaloAna : public SubsysReco
   TH1* hzdcNorthraw;
   TH1* hzdcSouthcalib;
   TH1* hzdcNorthcalib;
+
+  TH1F* h_clusE;
+  TH2F* h_etaphi_clus;
 
   TNtuple *g4hitntuple = nullptr;
   TNtuple *g4cellntuple = nullptr;
@@ -112,6 +118,7 @@ class CaloAna : public SubsysReco
   int _range = 1;
   float _vz = 0.;
   bool m_vtxCut = false;
+  bool dynMaskClus = true;
 };
 
 #endif

@@ -8,8 +8,7 @@ AM_CPPFLAGS = \
 AM_LDFLAGS = \
   -L$(libdir) \
   -L$(OFFLINE_MAIN)/lib \
-  -L$(OFFLINE_MAIN)/lib64 \
-  -lbbc_io
+  -L$(OFFLINE_MAIN)/lib64 
 
 pkginclude_HEADERS = \
   mbdAnalysis.h
@@ -22,6 +21,7 @@ libmbdAnalysis_la_SOURCES = \
 
 libmbdAnalysis_la_LIBADD = \
   -lphool \
+  -lmbd_io \
   -lSubsysReco
 
 BUILT_SOURCES = testexternals.cc

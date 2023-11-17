@@ -27,7 +27,6 @@
 #include <cstdlib>
 #include <utility>
 // f4a/sphenix includes
-#include <QA.C>
 #include <FROG.h>
 #include <G4_Magnet.C>
 #include <fun4all/Fun4AllDstInputManager.h>
@@ -65,16 +64,15 @@ static const size_t         NTopoClusts = 2;
 static const size_t         NTopoPar    = 3;
 static const string         SOutDefault = "testingPAuInput.root";
 static const vector<string> SInDefault  = {
-  "DST_GLOBAL_pythia8_Jet20_sHijing_pAu_0_10fm_500kHz_bkg_0_10fm-0000000006-00009.root",
-  "DST_TRKR_G4HIT_pythia8_Jet20_sHijing_pAu_0_10fm_500kHz_bkg_0_10fm-0000000006-00009.root",
-  "DST_TRACKSEEDS_pythia8_Jet20_sHijing_pAu_0_10fm_500kHz_bkg_0_10fm-0000000006-00009.root",
-  "DST_TRKR_CLUSTER_pythia8_Jet20_sHijing_pAu_0_10fm_500kHz_bkg_0_10fm-0000000006-00009.root",
-  "DST_TRACKS_pythia8_Jet20_sHijing_pAu_0_10fm_500kHz_bkg_0_10fm-0000000006-00009.root",
-  "DST_CALO_G4HIT_pythia8_Jet20_sHijing_pAu_0_10fm_500kHz_bkg_0_10fm-0000000006-00009.root",
-  "DST_CALO_CLUSTER_pythia8_Jet20_sHijing_pAu_0_10fm_500kHz_bkg_0_10fm-0000000006-00009.root",
-  "DST_TRUTH_G4HIT_pythia8_Jet20_sHijing_pAu_0_10fm_500kHz_bkg_0_10fm-0000000006-00009.root",
-  "DST_TRUTH_pythia8_Jet20_sHijing_pAu_0_10fm_500kHz_bkg_0_10fm-0000000006-00009.root",
-  "DST_VERTEX_pythia8_Jet20_sHijing_pAu_0_10fm_500kHz_bkg_0_10fm-0000000006-00009.root"
+  "DST_GLOBAL_pythia8_Jet10_sHijing_pAu_0_10fm_500kHz_bkg_0_10fm-0000000009-00009.root",
+  "DST_TRKR_G4HIT_pythia8_Jet10_sHijing_pAu_0_10fm_500kHz_bkg_0_10fm-0000000009-00009.root",
+  "DST_TRACKSEEDS_pythia8_Jet10_sHijing_pAu_0_10fm_500kHz_bkg_0_10fm-0000000009-00009.root",
+  "DST_TRKR_CLUSTER_pythia8_Jet10_sHijing_pAu_0_10fm_500kHz_bkg_0_10fm-0000000009-00009.root",
+  "DST_TRACKS_pythia8_Jet10_sHijing_pAu_0_10fm_500kHz_bkg_0_10fm-0000000009-00009.root",
+  "DST_CALO_G4HIT_pythia8_Jet10_sHijing_pAu_0_10fm_500kHz_bkg_0_10fm-0000000009-00009.root",
+  "DST_CALO_CLUSTER_pythia8_Jet10_sHijing_pAu_0_10fm_500kHz_bkg_0_10fm-0000000009-00009.root",
+  "DST_TRUTH_G4HIT_pythia8_Jet10_sHijing_pAu_0_10fm_500kHz_bkg_0_10fm-0000000009-00009.root",
+  "DST_TRUTH_pythia8_Jet10_sHijing_pAu_0_10fm_500kHz_bkg_0_10fm-0000000009-00009.root"
 };
 
 
@@ -104,7 +102,10 @@ void Fun4All_RunCorrelatorJetTree(const vector<string>& sInput = SInDefault, con
   const bool doVtxCut(false);
   const bool doQuality(true);
   const bool requireSiSeeds(true);
+  const bool useOnlyPrimVtx(true);
   const bool doDcaSigmaCut(false);
+  const bool maskTpcSectors(false);
+  const bool checkWeirdTrks(false);
   const bool addTracks(true);
   const bool addECal(false);
   const bool addHCal(false);
@@ -257,6 +258,9 @@ void Fun4All_RunCorrelatorJetTree(const vector<string>& sInput = SInDefault, con
   }
   if (addTracks) {
     correlatorJetTree -> SetRequireSiSeeds(requireSiSeeds);
+    correlatorJetTree -> SetUseOnlyPrimVtx(useOnlyPrimVtx);
+    correlatorJetTree -> SetMaskTpcSectors(maskTpcSectors);
+    correlatorJetTree -> SetCheckWeirdTrks(checkWeirdTrks);
     correlatorJetTree -> SetTrackPtRange(ptTrackRange);
     correlatorJetTree -> SetTrackEtaRange(etaTrackRange);
     correlatorJetTree -> SetTrackQualityRange(qualTrackRange);
