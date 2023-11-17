@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # condor executes runana.cmd 0, runana.cmd 1, etc.
 #
@@ -30,9 +30,13 @@ dst_fname=$1
 #mkdir -p ${savedir}
 #cd ${savedir}
 
-out_fname=`echo $dst_fname | sed 's/^.*DST/CHECK/'`
+if echo ${dst_fname} | grep '.root$'
+then
+  out_fname=`echo $dst_fname | sed 's/^.*DST/CHECK/'`
+else
+  out_fname=`head -1 ${dst_fname} |  sed 's/^.*DST/CHECK/' | sed 's/-[0-9]*.root/.root/'`
+fi
 echo $out_fname
-pwd
 
 nevents=0
 if [[ $# -eq 2 ]]

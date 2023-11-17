@@ -114,6 +114,8 @@ int BbcCheck::Init(PHCompositeNode *topNode)
   h_ihcale = new TH1F("h_ihcale","IHCAL Energy",1000,-100,900);
   h_ihcaltimecut = new TH1F("h_ihcaltimecut", "ihcaltimecut", 50, -17.5 , 32.5);
 
+  h_bz = new TH1F("h_bz","MBD z-vertex",1200,-300,300);
+
   gaussian = new TF1("gaussian","gaus",0,20);
   gaussian->FixParameter(2,0.05);   // set sigma to 50 ps
 
@@ -231,6 +233,7 @@ void BbcCheck::CheckDST(PHCompositeNode *topNode)
   Float_t bqn = _bbcout->get_q(1);
   Float_t bz = _bbcout->get_zvtx();
 
+  h_bz->Fill( bz );
 
   // Check the GlobalVertex
   GlobalVertexMap *vertexmap = findNode::getClass<GlobalVertexMap>(topNode, "GlobalVertexMap");
@@ -239,8 +242,6 @@ void BbcCheck::CheckDST(PHCompositeNode *topNode)
     GlobalVertex *vtx = vertexmap->begin()->second;
     if ( vtx )
     {
-      //printf("GVTX %d\t%p\t%p\t%g\t%d\n",vertexmap->size(),vtx,_bbcout,bz,nprocessed);
-      //cout << "AAA " << hex << vtx << dec << endl;
       float vtx_z = vtx->get_z();
       if ( vtx_z != bz )
       {
@@ -250,7 +251,9 @@ void BbcCheck::CheckDST(PHCompositeNode *topNode)
   }
   else
   {
-    //cout << "GlobalVertexMap not found or is empty" << endl;
+    static int counter = 0;
+    if ( counter < 4 ) cout << "GlobalVertexMap not found or is empty" << endl;
+    counter++;
   }
 
   if ( fabs(bz)>60. ) return;

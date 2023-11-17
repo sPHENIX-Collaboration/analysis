@@ -100,6 +100,7 @@ private:
   TH1 *h_ihcaltimecut;
   TH1 *h_zdce;
   TH1 *h_zdctimecut;
+  TH1 *h_bz;
 
   TCanvas *c_bbct;    // Canvas to 
   TH1 *hevt_bbct[2];  // time in each bbc, per event
