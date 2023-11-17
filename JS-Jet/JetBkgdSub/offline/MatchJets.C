@@ -4,9 +4,27 @@
 using namespace std;
 
 
-Int_t JetReso(TString infile="matched.root", TString outfile="resohists.root")
+Int_t MatchJets(TString infile="../macro/output.root", TString outfile="matched.root", Float_t JetParameter=0.4, Float_t pTHard=30.0)
 {
 
+    // Set event selection cuts
+    double dRMax = 0.75*JetParameter;
+    float pTmin_truth = 10;
+    float pTmin_reco = 5;
+    float pThard_min, pThard_max;
+    float weight;
+    if(pTHard == 10){
+        pThard_min = 10;
+        pThard_max = 30;
+        weight = 3.210e-6;
+    }
+    else{
+        pThard_min = 30;
+        pThard_max = 999;
+        weight = 2.178e-9;
+    }
+
+    
     //=======================================================
     //================ Input File ===========================
     //=======================================================
@@ -28,204 +46,288 @@ Int_t JetReso(TString infile="matched.root", TString outfile="resohists.root")
         exit(-1);
     }
 
-    // get branches
+    int event = 0;
     int centrality = 0;
+    float event_leading_truth_pt = 0;
     double rho_area = 0;
+    double rho_area_sigma = 0;
     double rho_mult = 0;
-    float weight = 0;
-    std::vector<float> *matched_pt_iter = 0;
-    std::vector<float> *matched_pt_area = 0;
-    std::vector<float> *matched_pt_mult = 0;
-    std::vector<float> *matched_pt_iter_unsub = 0;
-    std::vector<float> *matched_pt_area_unsub = 0;
-    std::vector<float> *matched_pt_mult_unsub = 0;
-    std::vector<float> *matched_truth_pt_iter = 0;
-    std::vector<float> *matched_truth_pt_area = 0;
-    std::vector<float> *matched_truth_pt_mult = 0;
-    std::vector<float> *unmatched_pt_iter = 0;
-    std::vector<float> *unmatched_pt_area = 0;
-    std::vector<float> *unmatched_pt_mult = 0;
-    std::vector<float> *unmatched_pt_iter_unsub = 0;
-    std::vector<float> *unmatched_pt_area_unsub = 0;
-    std::vector<float> *unmatched_pt_mult_unsub = 0;
-    std::vector<float> *missed_truth_pt_iter = 0;
-    std::vector<float> *missed_truth_pt_area = 0;
-    std::vector<float> *missed_truth_pt_mult = 0;
 
-    tree->SetBranchAddress("weight", &weight);
+    // reco jet variables 
+    std::vector<float> * iter_eta = 0;
+    std::vector<float> * iter_phi = 0;
+    std::vector<float> * iter_pt = 0;
+    std::vector<float> * iter_pt_unsub = 0;
+
+    // mult jet variables
+    std::vector<int> * mult_ncomponent = 0;
+    std::vector<float> * mult_eta = 0;
+    std::vector<float> * mult_phi = 0;
+    std::vector<float> * mult_pt = 0;
+    std::vector<float> * mult_pt_unsub = 0;
+    std::vector<int> * mult_nsignal = 0;
+
+    // truth jet variables
+    std::vector<int> * truth_ncomponent = 0;
+    std::vector<float> * truth_eta = 0;
+    std::vector<float> * truth_phi = 0;
+    std::vector<float> * truth_pt = 0;
+
+    //rhoA jet variables
+    std::vector<float> * rhoA_eta = 0;
+    std::vector<float> * rhoA_phi = 0;
+    std::vector<float> * rhoA_pt = 0;
+    std::vector<float> * rhoA_pt_unsub = 0;
+    std::vector<float> * rhoA_area = 0;
+
+    tree->SetBranchAddress("event", &event);
+    tree->SetBranchAddress("event_leading_truth_pt", &event_leading_truth_pt);
     tree->SetBranchAddress("centrality", &centrality);
+    tree->SetBranchAddress("truth_ncomponent", &truth_ncomponent);
+    tree->SetBranchAddress("truth_eta", &truth_eta);
+    tree->SetBranchAddress("truth_phi", &truth_phi);
+    tree->SetBranchAddress("truth_pt", &truth_pt);
     tree->SetBranchAddress("rho_area", &rho_area);
+    tree->SetBranchAddress("rho_area_sigma", &rho_area_sigma);
+    tree->SetBranchAddress("rhoA_eta", &rhoA_eta);
+    tree->SetBranchAddress("rhoA_phi", &rhoA_phi);
+    tree->SetBranchAddress("rhoA_pt", &rhoA_pt);
+    tree->SetBranchAddress("rhoA_area", &rhoA_area);
+    tree->SetBranchAddress("rhoA_pt_unsub", &rhoA_pt_unsub);
     tree->SetBranchAddress("rho_mult", &rho_mult);
-    tree->SetBranchAddress("matched_pt_iter", &matched_pt_iter);
-    tree->SetBranchAddress("matched_pt_area", &matched_pt_area);
-    tree->SetBranchAddress("matched_pt_mult", &matched_pt_mult);
-    tree->SetBranchAddress("matched_pt_iter_unsub", &matched_pt_iter_unsub);
-    tree->SetBranchAddress("matched_pt_area_unsub", &matched_pt_area_unsub);
-    tree->SetBranchAddress("matched_pt_mult_unsub", &matched_pt_mult_unsub);
-    tree->SetBranchAddress("matched_truth_pt_iter", &matched_truth_pt_iter);
-    tree->SetBranchAddress("matched_truth_pt_area", &matched_truth_pt_area);
-    tree->SetBranchAddress("matched_truth_pt_mult", &matched_truth_pt_mult);
-    tree->SetBranchAddress("unmatched_pt_iter", &unmatched_pt_iter);
-    tree->SetBranchAddress("unmatched_pt_area", &unmatched_pt_area);
-    tree->SetBranchAddress("unmatched_pt_mult", &unmatched_pt_mult);
-    tree->SetBranchAddress("unmatched_pt_iter_unsub", &unmatched_pt_iter_unsub);
-    tree->SetBranchAddress("unmatched_pt_area_unsub", &unmatched_pt_area_unsub);
-    tree->SetBranchAddress("unmatched_pt_mult_unsub", &unmatched_pt_mult_unsub);
-    tree->SetBranchAddress("missed_truth_pt_iter", &missed_truth_pt_iter);
-    tree->SetBranchAddress("missed_truth_pt_area", &missed_truth_pt_area);
-    tree->SetBranchAddress("missed_truth_pt_mult", &missed_truth_pt_mult);
+    tree->SetBranchAddress("mult_ncomponent", &mult_ncomponent);
+    tree->SetBranchAddress("mult_nsignal", &mult_nsignal);
+    tree->SetBranchAddress("mult_eta", &mult_eta);
+    tree->SetBranchAddress("mult_phi", &mult_phi);
+    tree->SetBranchAddress("mult_pt", &mult_pt);
+    tree->SetBranchAddress("mult_pt_unsub", &mult_pt_unsub);
+    tree->SetBranchAddress("iter_eta", &iter_eta);
+    tree->SetBranchAddress("iter_phi", &iter_phi);
+    tree->SetBranchAddress("iter_pt", &iter_pt);
+    tree->SetBranchAddress("iter_pt_unsub", &iter_pt_unsub);
+
 
     //=======================================================
-    // declare histograms
-    //=======================================================
-    const double pt_range[] = {10,15,20,25,30,35,40,45,50,60,80};
-    const int pt_N = sizeof(pt_range)/sizeof(double) - 1;
 
-    const int resp_N = 100;
-    double resp_bins[resp_N+1];
-    for(int i = 0; i < resp_N+1; i++){
-        resp_bins[i] = 2.0/resp_N * i;
-    }
+    // output file
+    std::cout << "Output file: " << outfile.Data() << std::endl;
+    TFile *fout = new TFile(outfile.Data(), "RECREATE");
+    TTree *out_tree = new TTree("T", "MatchedJets");
 
-    const double cent_bins[] = {-1, 0, 10, 30, 50, 80}; //the first bin is for inclusive in centrality/pp events
-    const int cent_N = sizeof(cent_bins)/sizeof(double) - 1;
+    // output variables
+    int out_centrality = 0;
+    double out_rho_area = 0;
+    double out_rho_mult = 0;
 
-    TH3D * h3_reso_area = new TH3D("h3_reso_area", "h3_reso_area", pt_N, pt_range, resp_N, resp_bins, cent_N, cent_bins);
-    TH3D * h3_reso_mult = new TH3D("h3_reso_mult", "h3_reso_mult", pt_N, pt_range, resp_N, resp_bins, cent_N, cent_bins);
-    TH3D * h3_reso_iter = new TH3D("h3_reso_iter", "h3_reso_iter", pt_N, pt_range, resp_N, resp_bins, cent_N, cent_bins);
+    std::vector<float> matched_pt_iter, matched_pt_area, matched_pt_mult;
+    std::vector<float> matched_pt_iter_unsub, matched_pt_area_unsub, matched_pt_mult_unsub;
+    std::vector<float> matched_truth_pt_iter, matched_truth_pt_area, matched_truth_pt_mult;
+    std::vector<float> unmatched_pt_iter, unmatched_pt_area, unmatched_pt_mult;
+    std::vector<float> unmatched_pt_iter_unsub, unmatched_pt_area_unsub, unmatched_pt_mult_unsub;
+    std::vector<float> missed_truth_pt_iter, missed_truth_pt_area, missed_truth_pt_mult;
 
-    // fill histograms
-    int nentries = tree->GetEntries();
-    for (int iEvent = 0; iEvent < nentries; iEvent++){
+    // set branch addresses
+    out_tree->Branch("weight", &weight);
+    out_tree->Branch("centrality", &out_centrality);
+    out_tree->Branch("rho_area", &out_rho_area);
+    out_tree->Branch("rho_mult", &out_rho_mult);
+    out_tree->Branch("matched_pt_iter", &matched_pt_iter);
+    out_tree->Branch("matched_pt_area", &matched_pt_area);
+    out_tree->Branch("matched_pt_mult", &matched_pt_mult);
+    out_tree->Branch("matched_pt_iter_unsub", &matched_pt_iter_unsub);
+    out_tree->Branch("matched_pt_area_unsub", &matched_pt_area_unsub);
+    out_tree->Branch("matched_pt_mult_unsub", &matched_pt_mult_unsub);
+    out_tree->Branch("matched_truth_pt_iter", &matched_truth_pt_iter);
+    out_tree->Branch("matched_truth_pt_area", &matched_truth_pt_area);
+    out_tree->Branch("matched_truth_pt_mult", &matched_truth_pt_mult);
+    out_tree->Branch("unmatched_pt_iter", &unmatched_pt_iter);
+    out_tree->Branch("unmatched_pt_area", &unmatched_pt_area);
+    out_tree->Branch("unmatched_pt_mult", &unmatched_pt_mult);
+    out_tree->Branch("unmatched_pt_iter_unsub", &unmatched_pt_iter_unsub);
+    out_tree->Branch("unmatched_pt_area_unsub", &unmatched_pt_area_unsub);
+    out_tree->Branch("unmatched_pt_mult_unsub", &unmatched_pt_mult_unsub);
+    out_tree->Branch("missed_truth_pt_iter", &missed_truth_pt_iter);
+    out_tree->Branch("missed_truth_pt_area", &missed_truth_pt_area);
+    out_tree->Branch("missed_truth_pt_mult", &missed_truth_pt_mult);
+
+    // get number of entries
+    int nEntries = tree->GetEntries();
+    for (int iEvent = 0; iEvent < nEntries; iEvent++){
         // get entry
         tree->GetEntry(iEvent);
 
-        for (unsigned int ijet =0; ijet < matched_pt_iter->size(); ijet++){
-            h3_reso_iter->Fill(matched_truth_pt_iter->at(ijet), matched_pt_iter->at(ijet)/matched_truth_pt_iter->at(ijet), centrality, weight);
-            h3_reso_iter->Fill(matched_truth_pt_iter->at(ijet), matched_pt_iter->at(ijet)/matched_truth_pt_iter->at(ijet), -1, weight);
-        }
-        for (unsigned int ijet =0; ijet < matched_pt_area->size(); ijet++){
-            h3_reso_area->Fill(matched_truth_pt_area->at(ijet), matched_pt_area->at(ijet)/matched_truth_pt_area->at(ijet), centrality, weight);
-            h3_reso_area->Fill(matched_truth_pt_area->at(ijet), matched_pt_area->at(ijet)/matched_truth_pt_area->at(ijet), -1, weight);
-        }
-        for (unsigned int ijet =0; ijet < matched_pt_mult->size(); ijet++){
-            h3_reso_mult->Fill(matched_truth_pt_mult->at(ijet), matched_pt_mult->at(ijet)/matched_truth_pt_mult->at(ijet), centrality, weight);
-            h3_reso_mult->Fill(matched_truth_pt_mult->at(ijet), matched_pt_mult->at(ijet)/matched_truth_pt_mult->at(ijet), -1, weight);
-        }
-    }
+        // event selection
+        if(event_leading_truth_pt < pThard_min || event_leading_truth_pt > pThard_max) continue;
 
-    //=======================================================
-    // JES and JER
-    //=======================================================
-    TH1D * h_jes_area[cent_N];
-    TH1D * h_jer_area[cent_N];
-    TH1D * h_jes_mult[cent_N];
-    TH1D * h_jer_mult[cent_N];
-    TH1D * h_jes_iter[cent_N];
-    TH1D * h_jer_iter[cent_N];
-
-    for (int icent = 1; icent <= cent_N; icent++){
-        h_jes_area[icent-1] = new TH1D(Form("h_jes_area_%d", icent), Form("h_jes_area_%d", icent), pt_N, pt_range);
-        h_jer_area[icent-1] = new TH1D(Form("h_jer_area_%d", icent), Form("h_jer_area_%d", icent), pt_N, pt_range);
-        h_jes_mult[icent-1] = new TH1D(Form("h_jes_mult_%d", icent), Form("h_jes_mult_%d", icent), pt_N, pt_range);
-        h_jer_mult[icent-1] = new TH1D(Form("h_jer_mult_%d", icent), Form("h_jer_mult_%d", icent), pt_N, pt_range);
-        h_jes_iter[icent-1] = new TH1D(Form("h_jes_iter_%d", icent), Form("h_jes_iter_%d", icent), pt_N, pt_range);
-        h_jer_iter[icent-1] = new TH1D(Form("h_jer_iter_%d", icent), Form("h_jer_iter_%d", icent), pt_N, pt_range);
-    }
-
-    for(int icent = 0; icent < cent_N; ++icent)
-    {
-        // area 
-        for (int i = 0; i < pt_N; ++i)
+        // clear output variables
+        out_centrality = centrality;
+        out_rho_area = rho_area;
+        out_rho_mult = rho_mult;
+        // clear vectors
+        matched_pt_iter.clear();
+        matched_pt_area.clear();
+        matched_pt_mult.clear();
+        matched_pt_iter_unsub.clear();
+        matched_pt_area_unsub.clear();
+        matched_pt_mult_unsub.clear();  
+        matched_truth_pt_iter.clear();
+        matched_truth_pt_area.clear();
+        matched_truth_pt_mult.clear();
+        unmatched_pt_iter.clear();
+        unmatched_pt_area.clear();
+        unmatched_pt_mult.clear();
+        unmatched_pt_iter_unsub.clear();
+        unmatched_pt_area_unsub.clear();
+        unmatched_pt_mult_unsub.clear();
+        missed_truth_pt_iter.clear();
+        missed_truth_pt_area.clear();
+        missed_truth_pt_mult.clear();
+        
+        // vector of matched reco jets for each method
+        std::vector<unsigned int> matched_area_jets, matched_mult_jets, matched_iter_jets;
+        
+        // loop over truth jets
+        for(unsigned int ijet =0; ijet < truth_pt->size(); ijet++)
         {
-            // fit function
-            TF1 *func = new TF1("func","gaus",0, 1.2);
-            h3_reso_area->GetXaxis()->SetRange(i+1,i+1);
-            h3_reso_area->GetZaxis()->SetRange(icent+1,icent+1);
-            TH1D * h_temp = (TH1D*)h3_reso_area->Project3D("y");
-            h_temp->SetName(Form("h_jes_area_%d_%d", icent, i));
-            h_temp->Fit(func,"","",0,1.2);
-            h_temp->Fit(func,"","",func->GetParameter(1)-1.5*func->GetParameter(2),func->GetParameter(1)+1.5*func->GetParameter(2));          
-            float dsigma = func -> GetParError(2);
-            float denergy = func -> GetParError(1);
-            float sigma = func -> GetParameter(2);
-            float energy = func -> GetParameter(1);
-            float djer = dsigma/energy + (sigma*denergy)/(energy*energy);
-            h_jes_area[icent]->SetBinContent(i+1, energy);
-            h_jes_area[icent]->SetBinError(i+1, denergy);
-            h_jer_area[icent]->SetBinContent(i+1, sigma/energy);
-            h_jer_area[icent]->SetBinError(i+1, djer);
-        }
+            // apply truth cut 
+            if(truth_pt->at(ijet) < pTmin_truth) continue;
 
-        // mult
-        for (int i = 0; i < pt_N; ++i)
+            float dr = 999;
+            float matched_area_pt, matched_area_unsubpt;
+            float matched_mult_pt, matched_mult_unsubpt;
+            float matched_iter_pt, matched_iter_unsubpt;
+            unsigned int matched_idx_area, matched_idx_mult, matched_idx_iter;
+
+            // match area jets to truth jets
+            for(unsigned int jjet = 0; jjet < rhoA_pt->size(); jjet++)
+            {   
+                // apply reco jet cut
+                if(rhoA_pt->at(jjet) < pTmin_reco) continue;
+
+                // dr calculation
+                float dphi = rhoA_phi->at(jjet) - truth_phi->at(ijet);
+                float deta = rhoA_eta->at(jjet) - truth_eta->at(ijet);
+                if(dphi > TMath::Pi()) dphi -= 2*TMath::Pi();
+                if(dphi < -TMath::Pi()) dphi += 2*TMath::Pi();
+                float dr_tmp = TMath::Sqrt(dphi*dphi + deta*deta);
+                if(dr_tmp < dr && dr_tmp < dRMax)
+                {
+                    dr = dr_tmp;
+                    matched_area_pt = rhoA_pt->at(jjet);
+                    matched_area_unsubpt = rhoA_pt_unsub->at(jjet);
+                    matched_idx_area = jjet;
+                }
+            }
+            if(dr > dRMax){
+                missed_truth_pt_area.push_back(truth_pt->at(ijet));
+            }
+            else{
+                matched_truth_pt_area.push_back(truth_pt->at(ijet));
+                matched_pt_area.push_back(matched_area_pt);
+                matched_pt_area_unsub.push_back(matched_area_unsubpt);
+                matched_area_jets.push_back(matched_idx_area);
+            }
+
+            // reset dr
+            dr = 999;
+            // match mult jets to truth jets
+            for(unsigned int jjet = 0; jjet < mult_pt->size(); jjet++)
+            {
+                // apply reco jet cut
+                if(mult_pt->at(jjet) < pTmin_reco) continue;
+
+                // dr calculation
+                float dphi = mult_phi->at(jjet) - truth_phi->at(ijet);
+                float deta = mult_eta->at(jjet) - truth_eta->at(ijet);
+                if(dphi > TMath::Pi()) dphi -= 2*TMath::Pi();
+                if(dphi < -TMath::Pi()) dphi += 2*TMath::Pi();
+                float dr_tmp = TMath::Sqrt(dphi*dphi + deta*deta);
+                if(dr_tmp < dr && dr_tmp < dRMax)
+                {
+                    dr = dr_tmp;
+                    matched_mult_pt = mult_pt->at(jjet);
+                    matched_mult_unsubpt = mult_pt_unsub->at(jjet);
+                    matched_idx_mult = jjet;
+                } 
+            }
+            if (dr > dRMax){
+                missed_truth_pt_mult.push_back(truth_pt->at(ijet));
+            }
+            else{
+                matched_truth_pt_mult.push_back(truth_pt->at(ijet));
+                matched_pt_mult.push_back(matched_mult_pt);
+                matched_pt_mult_unsub.push_back(matched_mult_unsubpt);
+                matched_mult_jets.push_back(matched_idx_mult);
+            }
+
+            // // reset dr
+            dr = 999;
+            // match iter jets to truth jets
+            for (unsigned int jjet = 0; jjet < iter_pt->size(); jjet++)
+            {
+                // apply reco jet cut
+                if(iter_pt->at(jjet) < pTmin_reco) continue;
+
+                // dr calculation
+                float dphi = iter_phi->at(jjet) - truth_phi->at(ijet);
+                float deta = iter_eta->at(jjet) - truth_eta->at(ijet);
+                if(dphi > TMath::Pi()) dphi -= 2*TMath::Pi();
+                if(dphi < -TMath::Pi()) dphi += 2*TMath::Pi();
+                float dr_tmp = TMath::Sqrt(dphi*dphi + deta*deta);
+                if(dr_tmp < dr && dr_tmp < dRMax)
+                {
+                    dr = dr_tmp;
+                    matched_iter_pt = iter_pt->at(jjet);
+                    matched_iter_unsubpt = iter_pt_unsub->at(jjet);
+                    matched_idx_iter = jjet;
+                }
+            }
+            if (dr > dRMax){
+                missed_truth_pt_iter.push_back(truth_pt->at(ijet));
+            }
+            else{
+                matched_truth_pt_iter.push_back(truth_pt->at(ijet));
+                matched_pt_iter.push_back(matched_iter_pt);
+                matched_pt_iter_unsub.push_back(matched_iter_unsubpt);
+                matched_iter_jets.push_back(matched_idx_iter);
+            }
+            
+        
+        }
+        // fill unmatched  area jets
+        for(unsigned int jjet = 0; jjet < rhoA_pt->size(); jjet++)
         {
-            // fit function
-            TF1 *func = new TF1("func","gaus",0, 1.2);
-            h3_reso_mult->GetXaxis()->SetRange(i+1,i+1);
-            h3_reso_mult->GetZaxis()->SetRange(icent+1,icent+1);
-            TH1D * h_temp = (TH1D*)h3_reso_mult->Project3D("y");
-            h_temp->SetName(Form("h_jes_mult_%d_%d", icent, i));
-            h_temp->Fit(func,"","",0,1.2);
-            h_temp->Fit(func,"","",func->GetParameter(1)-1.5*func->GetParameter(2),func->GetParameter(1)+1.5*func->GetParameter(2));          
-            float dsigma = func -> GetParError(2);
-            float denergy = func -> GetParError(1);
-            float sigma = func -> GetParameter(2);
-            float energy = func -> GetParameter(1);
-            float djer = dsigma/energy + (sigma*denergy)/(energy*energy);
-            h_jes_mult[icent]->SetBinContent(i+1, energy);
-            h_jes_mult[icent]->SetBinError(i+1, denergy);
-            h_jer_mult[icent]->SetBinContent(i+1, sigma/energy);
-            h_jer_mult[icent]->SetBinError(i+1, djer);
+            if(std::find(matched_area_jets.begin(), matched_area_jets.end(), jjet) != matched_area_jets.end()) continue;
+            if(rhoA_pt->at(jjet) < pTmin_reco) continue;
+            unmatched_pt_area.push_back(rhoA_pt->at(jjet));
+            unmatched_pt_area_unsub.push_back(rhoA_pt_unsub->at(jjet));
         }
-
-        // iter
-        for (int i = 0; i < pt_N; ++i)
+        // fill unmatched reco mult jets
+        for(unsigned int jjet = 0; jjet < mult_pt->size(); jjet++)
         {
-            // fit function
-            TF1 *func = new TF1("func","gaus",0, 1.2);
-            h3_reso_iter->GetXaxis()->SetRange(i+1,i+1);
-            h3_reso_iter->GetZaxis()->SetRange(icent+1,icent+1);
-            TH1D * h_temp = (TH1D*)h3_reso_iter->Project3D("y");
-            h_temp->SetName(Form("h_jes_iter_%d_%d", icent, i));
-            h_temp->Fit(func,"","",0,1.2);
-            h_temp->Fit(func,"","",func->GetParameter(1)-1.5*func->GetParameter(2),func->GetParameter(1)+1.5*func->GetParameter(2));          
-            float dsigma = func -> GetParError(2);
-            float denergy = func -> GetParError(1);
-            float sigma = func -> GetParameter(2);
-            float energy = func -> GetParameter(1);
-            float djer = dsigma/energy + (sigma*denergy)/(energy*energy);
-            h_jes_iter[icent]->SetBinContent(i+1, energy);
-            h_jes_iter[icent]->SetBinError(i+1, denergy);
-            h_jer_iter[icent]->SetBinContent(i+1, sigma/energy);
-            h_jer_iter[icent]->SetBinError(i+1, djer);
+            if(std::find(matched_mult_jets.begin(), matched_mult_jets.end(), jjet) != matched_mult_jets.end()) continue;
+            if(mult_pt->at(jjet) < pTmin_reco) continue;
+            unmatched_pt_mult.push_back(mult_pt->at(jjet));
+            unmatched_pt_mult_unsub.push_back(mult_pt_unsub->at(jjet));
+        }
+        // fill unmatched reco iter jets
+        for(unsigned int jjet = 0; jjet < iter_pt->size(); jjet++)
+        {
+            if(std::find(matched_iter_jets.begin(), matched_iter_jets.end(), jjet) != matched_iter_jets.end()) continue;
+            if(iter_pt->at(jjet) < pTmin_reco) continue;
+            unmatched_pt_iter.push_back(iter_pt->at(jjet));
+            unmatched_pt_iter_unsub.push_back(iter_pt_unsub->at(jjet));
         }
 
-
+        // fill tree
+        out_tree->Fill();
     }
-
-    //=======================================================
-    //================ Output File ==========================
-    //=======================================================
-    std::cout << "Output file: " << outfile.Data() << std::endl;
-    TFile * fout = new TFile(outfile.Data(), "RECREATE");
-    h3_reso_area->Write();
-    h3_reso_mult->Write();
-    h3_reso_iter->Write();
-    for (int icent = 1; icent <= cent_N; icent++){
-        h_jes_area[icent-1]->Write();
-        h_jer_area[icent-1]->Write();
-        h_jes_mult[icent-1]->Write();
-        h_jer_mult[icent-1]->Write();
-        h_jes_iter[icent-1]->Write();
-        h_jer_iter[icent-1]->Write();
-    }
+    
+    // write output file
+    fout->Write();
     fout->Close();
-
     // close input file
     fin.Close();
     return 0;
-
-
-
 }
+    
