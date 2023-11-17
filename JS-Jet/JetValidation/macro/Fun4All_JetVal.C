@@ -69,6 +69,9 @@ void Fun4All_JetVal(const char *filelisttruth = "dst_truth_jet.list",
   in2->AddListFile(filelistcalo,1);
   se->registerInputManager(in2);
 
+  Fun4AllInputManager *in3 = new Fun4AllDstInputManager("DSTglobal");
+  in3->AddListFile(filelistglobal,1);
+  se->registerInputManager(in3);
   
   se->run(-1);
   se->End();

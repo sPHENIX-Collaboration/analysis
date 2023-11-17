@@ -102,6 +102,7 @@ class JetValidation : public SubsysReco
   float m_totalCalo;
   int m_centrality;
   float m_impactparam;
+  float m_zvtx;
 
   //! reconstructed jets
   std::vector<int> m_id;
