@@ -35,7 +35,9 @@ void Fun4All_CaloTreeGen(const string &inputFile,
   // recoConsts *rc = recoConsts::instance();
 
   caloTreeGen *calo = new caloTreeGen(qaFile.c_str(), ntpFile.c_str());
-  calo -> Verbosity(Fun4AllBase::VERBOSITY_QUIET);
+  calo->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
+  calo->set_clusterE_min(0.5);
+  calo->set_cluster_chi_max(4);
   se->registerSubsystem(calo);
 
   Fun4AllInputManager *in = new Fun4AllDstInputManager("DSTcalo");
