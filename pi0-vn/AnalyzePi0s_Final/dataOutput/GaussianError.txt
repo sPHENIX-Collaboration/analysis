@@ -1,0 +1,3 @@
+Index 0: Sigma: 0.0211649, Sigma Error: 0.00298659
+Index 0: Sigma: 0.0211649, Sigma Error: 0.00298659
+Index 0: Sigma: 0.0211649, Sigma Error: 0.00298659
