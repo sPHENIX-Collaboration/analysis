@@ -1,3 +1,27 @@
+/*
+ This macro maintains the naming scheme from FillHists.cpp, ensuring the correct cut values output on each generated plot,with the only changes needed are the paths, and the root file name being analyzed
+ 
+ The strategy of this macro is two fold--
+ ----Be able to analyze the set of 12 histograms for a single root file, outputting each invariant mass histogram, as well as signal yield, signal error, gauss mean, gauss error
+ 
+ ----Be able to track data globally as change root files, appending to a CSV file only when fit is ready to be finalized for that specific set of cuts and bin being analyzed
+ 
+ This strategy is why theres a seperation of functionality between what is generated for the text files, and why we need a repeat of parameters funneleled into the CSV file
+ --the csv file is to be built apon long term, with different sets of cuts etc
+ ---the text files are used for after one sets of cuts 12 plots are generated with fits that are acceptable, you can decide to output the 4 plots for that range of cuts that show signal yield and gauss parameters over the centralities and pT bins used for that specific set of cuts
+ 
+ 
+ EACH TIME YOU RUN THE MACRO:
+ ---input 'N' or any character in the terminal other than 'Y or y'
+ ------this keep isFitGood boolean as false, until you are happy with a specific indices fit, and then input 'Y' or 'y' so the proper data for that histogram is outputted to the 4 text files as well as the CSV file
+ ---once fits are complete for the 12 plots in a range of cuts, change the boolean flag:
+ bool CreateSignalandGaussParPlots = false; //control flag for plotting signal and signal error
+ 
+ to true, and the text files will be used to generate the 4 overview plots of signal Yield, relative signal error, gaussian mean filled with mean error, and gaussian sigma filled with sigma error, over the pT bins for all centralities in that range of cuts
+ 
+ Once done with that root file, the csv will still keep all the data used, but I then delete the text files used for this output, and go through the process again for the next set of cuts over the pT and centrality bins
+ */
+
 #include <TCanvas.h>
 #include <TFile.h>
 #include <TH1F.h>
@@ -8,29 +32,54 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-
+// Define a structure to hold cut values
 struct CutValues {
-    float deltaR;
-    float asymmetry;
-    float chi;
-    float clusE;
+    float deltaR;     // Cut value for delta R
+    float asymmetry;  // Cut value for asymmetry
+    float chi;        // Cut value for chi
+    float clusE;      // Cut value for cluster energy
 };
 // Global variables
 std::string globalFilename = "/Users/patsfan753/Desktop/AnalyzePi0s_Final/histRootFiles/hPi0Mass_E1point25_Asym0point5_Delr0point075_Chi4.root";
 CutValues globalCutValues;
+/*
+ Function to parse the filename and extract cut values
+ */
 CutValues parseFileName() {
-    CutValues cuts = {0, 0, 0, 0};
-    // Adjusted regex to match the file name format correctly
+    CutValues cuts = {0, 0, 0, 0}; // Initialize cut values to zero
+    // Regular expression to match the filename pattern and extract cut values
     std::regex re("hPi0Mass_E([0-9]+(?:point[0-9]*)?)_Asym([0-9]+(?:point[0-9]*)?)_Delr([0-9]+(?:point[0-9]*)?)_Chi([0-9]+(?:point[0-9]*)?)\\.root");
-    std::smatch match;
-
+    std::smatch match; // Object to store the results of regex search
+    
+    // Perform a regex (Regular Expression) search on the global filename.
+    /*
+     Regex is a method used for matching text patterns. 
+     --- Here, it is used to parse the filename and extract numerical values representing cut values.
+     The pattern defined in 're' looks for sequences in the filename that match the expected format (e.g., 'E1point25', 'Asym0point5').
+      In the pattern:
+      - "hPi0Mass_E" etc., are literal texts to match.
+      - "([0-9]+(?:point[0-9]*)?)" is a regex pattern where:
+        - "[0-9]+" matches one or more digits.
+        - "(?:point[0-9]*)?" is a non-capturing group matching the word 'point' followed by any number of digits, making 'point' optional.
+      - "\\root" matches the file extension.
+     The 'regex_search' function scans 'globalFilename' to find these patterns.
+     If a match is found, the 'match' object holds the extracted values (e.g., numeric parts of 'E', 'Asym', etc.).
+     These are then converted into floating-point values representing the cut parameters (e.g., energy cut, asymmetry).
+     */
     if (std::regex_search(globalFilename, match, re) && match.size() > 4) {
+        // Lambda function to convert a string with 'point' to a float
         auto convert = [](const std::string& input) -> float {
+            // Create a temporary string to hold the modified input
             std::string temp = input;
+            // Find the position of 'point' in the string
             size_t pointPos = temp.find("point");
+            // If 'point' is found, replace it with a decimal point '.'
+            // The 'point' substring has a length of 5 characters
             if (pointPos != std::string::npos) {
                 temp.replace(pointPos, 5, ".");
             }
+            // Attempt to convert the modified string to a float
+            // Use a try-catch block to handle any exceptions that might occur during conversion
             try {
                 return std::stof(temp);
             } catch (const std::exception&) {
@@ -43,24 +92,26 @@ CutValues parseFileName() {
         for (size_t i = 1; i < match.size(); ++i) {
             std::cout << "Match[" << i << "]: " << match[i].str() << " --> " << convert(match[i].str()) << std::endl;
         }
-
+        // Assign the extracted values to the respective fields in the cuts structure
         cuts.clusE = convert(match[1].str());
         cuts.asymmetry = convert(match[2].str());
         cuts.deltaR = convert(match[3].str());
         cuts.chi = convert(match[4].str());
     } else {
+        // If regex does not match, log an error message
         std::cout << "Regex did not match the filename: " << globalFilename << std::endl;
     }
 
-    return cuts;
+    return cuts;// Return the populated cuts structure
 }
-
-
-bool CreateSignalYieldAndErrorPlot = false; //control flag for plotting signal and signal error
+bool CreateSignalandGaussParPlots = false; //control flag for plotting signal and signal error
 bool isFitGood; // No initial value needed here
 struct Range {
     double ptLow, ptHigh, mbdLow, mbdHigh;
 };
+/*
+ Automatic printing of MBD values onto canvas of invar mass histograms, switches when histIndex is swithced in main method at bottom of macro
+ */
 Range ranges[] = {
     {2.0, 3.0, 0.0, 21395.5},       // index 0
     {3.0, 4.0, 0.0, 21395.5},       // index 1
@@ -78,6 +129,9 @@ Range ranges[] = {
     {3.0, 4.0, 109768, 250000},     // index 10
     {4.0, 5.0, 109768, 250000}      // index 11
 };
+/*
+ Fitting method, when called in the main method, if argument setFitManual is true, can use manual parameters, otherwise fit dynamically
+ */
 void PerformFitting(TH1F* hPi0Mass, bool setFitManual, TF1*& totalFit, double& fitStart, double& fitEnd) {
     // Define the start of the fit
     int binThreshold = 1;
@@ -126,6 +180,9 @@ void PerformFitting(TH1F* hPi0Mass, bool setFitManual, TF1*& totalFit, double& f
     // Apply the fit
     hPi0Mass->Fit("totalFit", "R+");
 }
+/*
+ Signal to background ratio calculation and terminal output
+ */
 double CalculateSignalToBackgroundRatio(TF1* totalFit, TF1* polyFit, double fitMean, double fitSigma) {
     double signalPlusBackground = totalFit->Integral(fitMean - 2*fitSigma, fitMean + 2*fitSigma);
     double background = polyFit->Integral(fitMean - 2*fitSigma, fitMean + 2*fitSigma);
@@ -139,6 +196,9 @@ double CalculateSignalToBackgroundRatio(TF1* totalFit, TF1* polyFit, double fitM
 
     return signalToBackgroundRatio;
 }
+/*
+ Fill text file with gaussian mean, gaussian mean error, gaussian sigma, gaussian sigma error when happy with fit (user input 'y' in terminal upon running code)
+ */
 void WriteGaussianParametersToFile(int histIndex, double fitMean, double fitMeanError, double fitSigma, double fitSigmaError) {
     if (isFitGood) {
         std::ofstream meanFile("/Users/patsfan753/Desktop/AnalyzePi0s_Final/dataOutput/GaussianMean.txt", std::ios::app);
@@ -158,7 +218,9 @@ void WriteGaussianParametersToFile(int histIndex, double fitMean, double fitMean
         std::cout << "Fit not good for Index " << histIndex << ". No Gaussian parameters added to files." << std::endl;
     }
 }
-
+/*
+ Calculation for signal yield and error, simiarly to above method outputs to text file upon user input in terminal when happy with fit
+ */
 void CalculateSignalYieldAndError(TH1F* hPi0Mass, TF1* polyFit, double fitMean, double fitSigma, int histIndex) {
     TH1F *hSignal = (TH1F*)hPi0Mass->Clone("hSignal");
     double binCenter, binContent, bgContent, binError;
@@ -193,6 +255,10 @@ void CalculateSignalYieldAndError(TH1F* hPi0Mass, TF1* polyFit, double fitMean, 
     }
     std::cout << "Signal Yield: " << signalYield << " +/- " << signalError << std::endl;
 }
+/*
+ Output for canvas of signal yield, signal error, gauss mean, gauss signal plots, which are over centralities which is why no MBD print statement or pT statement (since this is x axis)
+ NOTE: NO need to edit anything, automatically gets updated according to name of root file globally set
+ */
 void DrawCanvasTextSignalAndGaussPlots(TLatex& latex){
     latex.SetTextSize(0.03);
     latex.DrawLatex(0.68, 0.86, "Cuts (Inclusive):");
@@ -201,6 +267,9 @@ void DrawCanvasTextSignalAndGaussPlots(TLatex& latex){
     latex.DrawLatex(0.13, 0.74, Form("#chi^{2} < %.3f", globalCutValues.chi));
     latex.DrawLatex(0.13, 0.615, Form("Cluster E #geq %.3f GeV", globalCutValues.clusE));
 }
+/*
+ Plot generation for for plots that summarize the 12 plots for one range of cuts, uses the text files generated and only generates plots when boolean set to true (CreateSignalandGaussParPlots)
+ */
 void GenerateSignalAndGaussParPlots() {
     const int nPoints = 12; // Total number of points in each file
     double yield[nPoints], error[nPoints];
@@ -528,6 +597,9 @@ void GenerateSignalAndGaussParPlots() {
     cGaussSigma->Update(); // Update the canvas
     cGaussSigma->SaveAs("/Users/patsfan753/Desktop/AnalyzePi0s_Final/plotOutput/gaussPars/sigma.pdf");
 }
+/*
+ Draws on canvas for invariant mass histograms, no need for manual input automatically updates according to root file and plot generated
+ */
 void DrawCanvasText(TLatex& latex, const Range& selectedRange, double fitMean, double fitSigma, double signalToBackgroundRatio) {
     // Drawing text related to the range and cuts
     std::ostringstream mbdStream, ptStream;
@@ -549,6 +621,9 @@ void DrawCanvasText(TLatex& latex, const Range& selectedRange, double fitMean, d
     latex.DrawLatex(0.43, 0.81, Form("Std. Dev. of Gaussian: %.4f GeV", fitSigma));
     latex.DrawLatex(0.43, 0.76, Form("S/B Ratio: %.4f", signalToBackgroundRatio));
 }
+/*
+ method to globally keep track of parameters as you go index by index and switch between root files with different cuts
+ */
 void WriteDataToCSV(int histIndex, const CutValues& cutValues, double fitMean, double fitMeanError, double fitSigma, double fitSigmaError, double signalToBackgroundRatio, double signalYield, double signalError) {
     // Check if the fit is good before proceeding
     if (!isFitGood) {
@@ -570,8 +645,11 @@ void WriteDataToCSV(int histIndex, const CutValues& cutValues, double fitMean, d
 
     // Write column headers if file is empty
     if (fileIsEmpty) {
-        file << "Index,Energy,Asymmetry,Chi2,DeltaR,GaussMean,GaussMeanError,GaussSigma,GaussSigmaError,S/B,Yield,YieldError\n";
+        file << "Index,Energy,Asymmetry,Chi2,DeltaR,GaussMean,GaussMeanError,GaussSigma,GaussSigmaError,S/B,Yield,YieldError,RelativeSignalError\n";
     }
+
+    // Calculate relativeSignalError (ensure we don't divide by zero)
+    double relativeSignalError = signalYield != 0 ? signalError / signalYield : 0;
 
     // Write data to CSV
     file << histIndex << ",";
@@ -585,10 +663,15 @@ void WriteDataToCSV(int histIndex, const CutValues& cutValues, double fitMean, d
     file << fitSigmaError << ",";
     file << signalToBackgroundRatio << ",";
     file << signalYield << ",";
-    file << signalError << "\n";
+    file << signalError << ",";
+    file << relativeSignalError << "\n";
+
 
     file.close();
 }
+/*
+ main method
+ */
 void AnalyzePi0() {
     // Load the root file
     TFile *file = new TFile(globalFilename.c_str(), "READ");
@@ -668,7 +751,7 @@ void AnalyzePi0() {
     std::string imageName = "/Users/patsfan753/Desktop/AnalyzePi0s_Final/plotOutput/InvMassPlots/" + histName + "_fit.pdf";
     canvas->SaveAs(imageName.c_str());
     CalculateSignalYieldAndError(hPi0Mass, polyFit, fitMean, fitSigma, histIndex);
-    // Read the signal yield and error from text files
+    // Read the signal yield and error from text files so can be transferred to CSV input
     double signalYield = 0.0, signalError = 0.0;
     if (isFitGood) {
         std::ifstream yieldFile("/Users/patsfan753/Desktop/AnalyzePi0s_Final/dataOutput/signalYield.txt");
@@ -694,7 +777,7 @@ void AnalyzePi0() {
     // Call the new method to write to CSV if the fit is good
     WriteDataToCSV(histIndex, globalCutValues, fitMean, fitMeanError, fitSigma, fitSigmaError, signalToBackgroundRatio, signalYield, signalError);
     // Conditional plotting
-    if (CreateSignalYieldAndErrorPlot) {
+    if (CreateSignalandGaussParPlots) {
         GenerateSignalAndGaussParPlots();
     }
 }
