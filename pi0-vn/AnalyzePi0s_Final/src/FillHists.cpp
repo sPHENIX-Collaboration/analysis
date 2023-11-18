@@ -136,6 +136,7 @@ void FillHists() {
                         std::cout << "Writing histogram for index: " << i << std::endl; // Print the histogram index being written
                         hPi0Mass[i]->Write();
                         std::cout << "Finished writing histogram " << i << std::endl;
+                        delete hPi0Mass[i]; // Delete the histogram to free memory
                     }
                     outFile.Close();
                     std::cout << "Completed processing for file: " << filename << std::endl;
