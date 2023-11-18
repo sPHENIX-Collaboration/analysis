@@ -21,7 +21,6 @@
  
  Once done with that root file, the csv will still keep all the data used, but I then delete the text files used for this output, and go through the process again for the next set of cuts over the pT and centrality bins
  */
-
 #include <TCanvas.h>
 #include <TFile.h>
 #include <TH1F.h>
@@ -32,6 +31,88 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+/*
+ Fitting method, when called in the main method, if argument setFitManual is true, can use manual parameters, otherwise fit dynamically
+ 
+ Top of code for easy scrolling
+ */
+// Global variables
+std::string globalFilename = "/Users/patsfan753/Desktop/AnalyzePi0s_Final/histRootFiles/hPi0Mass_E1_Asym0point3_Delr0point07_Chi4.root";
+bool CreateSignalandGaussParPlots = false; //control flag for plotting signal and signal error
+// Global variable for setFitManual
+bool globalSetFitManual = false;
+// Global variables for additional parameters
+double globalFitEnd;
+double globalFindBin1Value;
+double globalFindBin2Value;
+double globalSigmaEstimate;
+double globalSigmaParScale;
+
+void PerformFitting(TH1F* hPi0Mass, bool setFitManual, TF1*& totalFit, double& fitStart, double& fitEnd) {
+    // Assign the setFitManual value to the global variable
+    globalSetFitManual = setFitManual;
+    
+    // Define the start of the fit
+    int binThreshold = 1;
+    int firstBinAboveThreshold = 0;
+    for (int i = 1; i <= hPi0Mass->GetNbinsX() - 1; ++i) {
+        double derivative = hPi0Mass->GetBinContent(i + 1) - hPi0Mass->GetBinContent(i);
+        if (derivative > binThreshold && firstBinAboveThreshold == 0) {
+            firstBinAboveThreshold = i;
+            break;
+        }
+    }
+    fitStart = hPi0Mass->GetBinLowEdge(firstBinAboveThreshold);
+//    fitStart = 0.141;
+    fitEnd = 0.6;
+    
+    // Set global variables for additional parameters
+    globalFitEnd = fitEnd;
+    globalFindBin1Value = 0.1; // Value in FindBin for bin1
+    globalFindBin2Value = 0.2; // Value in FindBin for bin2
+    globalSigmaEstimate = 0.01; // sigmaEstimate value
+
+    // Check if SetParLimits is used for sigma
+    if (!setFitManual) {
+        globalSigmaParScale = 2.0; // Scale factor used in SetParLimits
+    } else {
+        globalSigmaParScale = 0.0; // No SetParLimits used
+    }
+    
+    
+    // Define totalFit
+    totalFit = new TF1("totalFit", "gaus(0) + pol4(3)", fitStart, fitEnd);
+
+    // Set fitting parameters
+    if (setFitManual) {
+        totalFit->SetParameter(0, 100000);
+        totalFit->SetParameter(1, 0.145);
+        totalFit->SetParameter(2, 0.01);
+        totalFit->SetParLimits(1, 0.13, 0.15);
+        totalFit->SetParLimits(2, 0.01, 0.03);
+    } else {
+        int bin1 = hPi0Mass->GetXaxis()->FindBin(globalFindBin1Value);
+        int bin2 = hPi0Mass->GetXaxis()->FindBin(globalFindBin2Value);
+        int maxBin = bin1;
+        double maxBinContent = hPi0Mass->GetBinContent(bin1);
+        for (int i = bin1 + 1; i <= bin2; ++i) {
+            if (hPi0Mass->GetBinContent(i) > maxBinContent) {
+                maxBinContent = hPi0Mass->GetBinContent(i);
+                maxBin = i;
+            }
+        }
+        double maxBinCenter = hPi0Mass->GetXaxis()->GetBinCenter(maxBin);
+        totalFit->SetParameter(0, maxBinContent);
+        totalFit->SetParameter(1, maxBinCenter);
+        double sigmaEstimate = globalSigmaEstimate;
+        totalFit->SetParameter(2, sigmaEstimate);
+        totalFit->SetParLimits(1, maxBinCenter - sigmaEstimate, maxBinCenter + sigmaEstimate);
+        totalFit->SetParLimits(2, sigmaEstimate - globalSigmaParScale*sigmaEstimate, sigmaEstimate + globalSigmaParScale*sigmaEstimate);
+    }
+
+    // Apply the fit
+    hPi0Mass->Fit("totalFit", "R+");
+}
 // Define a structure to hold cut values
 struct CutValues {
     float deltaR;     // Cut value for delta R
@@ -39,8 +120,6 @@ struct CutValues {
     float chi;        // Cut value for chi
     float clusE;      // Cut value for cluster energy
 };
-// Global variables
-std::string globalFilename = "/Users/patsfan753/Desktop/AnalyzePi0s_Final/histRootFiles/hPi0Mass_E1point25_Asym0point5_Delr0point075_Chi4.root";
 CutValues globalCutValues;
 /*
  Function to parse the filename and extract cut values
@@ -104,7 +183,6 @@ CutValues parseFileName() {
 
     return cuts;// Return the populated cuts structure
 }
-bool CreateSignalandGaussParPlots = false; //control flag for plotting signal and signal error
 bool isFitGood; // No initial value needed here
 struct Range {
     double ptLow, ptHigh, mbdLow, mbdHigh;
@@ -129,57 +207,6 @@ Range ranges[] = {
     {3.0, 4.0, 109768, 250000},     // index 10
     {4.0, 5.0, 109768, 250000}      // index 11
 };
-/*
- Fitting method, when called in the main method, if argument setFitManual is true, can use manual parameters, otherwise fit dynamically
- */
-void PerformFitting(TH1F* hPi0Mass, bool setFitManual, TF1*& totalFit, double& fitStart, double& fitEnd) {
-    // Define the start of the fit
-    int binThreshold = 1;
-    int firstBinAboveThreshold = 0;
-    for (int i = 1; i <= hPi0Mass->GetNbinsX() - 1; ++i) {
-        double derivative = hPi0Mass->GetBinContent(i + 1) - hPi0Mass->GetBinContent(i);
-        if (derivative > binThreshold && firstBinAboveThreshold == 0) {
-            firstBinAboveThreshold = i;
-            break;
-        }
-    }
-    fitStart = hPi0Mass->GetBinLowEdge(firstBinAboveThreshold);
-//    fitStart = 0.11;
-    fitEnd = 0.5;
-
-    // Define totalFit
-    totalFit = new TF1("totalFit", "gaus(0) + pol4(3)", fitStart, fitEnd);
-
-    // Set fitting parameters
-    if (setFitManual) {
-        totalFit->SetParameter(0, 100000);
-        totalFit->SetParameter(1, 0.14);
-        totalFit->SetParameter(2, 0.04);
-        totalFit->SetParLimits(1, 0.13, 0.15);
-//        totalFit->SetParLimits(2, 0.001, 0.03);
-    } else {
-        int bin1 = hPi0Mass->GetXaxis()->FindBin(0.1);
-        int bin2 = hPi0Mass->GetXaxis()->FindBin(0.17);
-        int maxBin = bin1;
-        double maxBinContent = hPi0Mass->GetBinContent(bin1);
-        for (int i = bin1 + 1; i <= bin2; ++i) {
-            if (hPi0Mass->GetBinContent(i) > maxBinContent) {
-                maxBinContent = hPi0Mass->GetBinContent(i);
-                maxBin = i;
-            }
-        }
-        double maxBinCenter = hPi0Mass->GetXaxis()->GetBinCenter(maxBin);
-        totalFit->SetParameter(0, maxBinContent);
-        totalFit->SetParameter(1, maxBinCenter);
-        double sigmaEstimate = 0.02;
-        totalFit->SetParameter(2, sigmaEstimate);
-        totalFit->SetParLimits(1, maxBinCenter - sigmaEstimate, maxBinCenter + sigmaEstimate);
-        totalFit->SetParLimits(2, sigmaEstimate - .1*sigmaEstimate, sigmaEstimate + .1*sigmaEstimate);
-    }
-
-    // Apply the fit
-    hPi0Mass->Fit("totalFit", "R+");
-}
 /*
  Signal to background ratio calculation and terminal output
  */
@@ -262,10 +289,10 @@ void CalculateSignalYieldAndError(TH1F* hPi0Mass, TF1* polyFit, double fitMean, 
 void DrawCanvasTextSignalAndGaussPlots(TLatex& latex){
     latex.SetTextSize(0.03);
     latex.DrawLatex(0.68, 0.86, "Cuts (Inclusive):");
-    latex.DrawLatex(0.13, 0.82, Form("#Delta R #geq %.3f", globalCutValues.deltaR));
-    latex.DrawLatex(0.13, 0.78, Form("Asymmetry < %.3f", globalCutValues.asymmetry));
-    latex.DrawLatex(0.13, 0.74, Form("#chi^{2} < %.3f", globalCutValues.chi));
-    latex.DrawLatex(0.13, 0.615, Form("Cluster E #geq %.3f GeV", globalCutValues.clusE));
+    latex.DrawLatex(0.68, 0.82, Form("#Delta R #geq %.3f", globalCutValues.deltaR));
+    latex.DrawLatex(0.68, 0.78, Form("Asymmetry < %.3f", globalCutValues.asymmetry));
+    latex.DrawLatex(0.68, 0.74, Form("#chi^{2} < %.3f", globalCutValues.chi));
+    latex.DrawLatex(0.68, 0.7, Form("Cluster E #geq %.3f GeV", globalCutValues.clusE));
 }
 /*
  Plot generation for for plots that summarize the 12 plots for one range of cuts, uses the text files generated and only generates plots when boolean set to true (CreateSignalandGaussParPlots)
@@ -669,6 +696,43 @@ void WriteDataToCSV(int histIndex, const CutValues& cutValues, double fitMean, d
 
     file.close();
 }
+void WriteAdditionalParametersToCSV(int histIndex, const CutValues& cutValues) {
+    if (!isFitGood || globalSetFitManual) {
+        return; // Do not write to CSV if conditions are not met
+    }
+
+    std::string filename = "/Users/patsfan753/Desktop/AnalyzePi0s_Final/dataOutput/AdditionalParameters.csv";
+    std::ifstream checkFile(filename);
+    bool fileIsEmpty = checkFile.peek() == std::ifstream::traits_type::eof();
+    checkFile.close();
+
+    std::ofstream file(filename, std::ios::app); // Open file in append mode
+    if (!file.is_open()) {
+        std::cerr << "Unable to open CSV file for writing additional parameters." << std::endl;
+        return;
+    }
+
+    // Write column headers if file is empty
+    if (fileIsEmpty) {
+        file << "Index,Energy,Asymmetry,Chi2,DeltaR,FitEnd,FindBin1,FindBin2,SigmaEstimate,SigmaParScale\n";
+    }
+
+    // Write data to CSV
+    file << histIndex << ",";
+    file << cutValues.clusE << ",";
+    file << cutValues.asymmetry << ",";
+    file << cutValues.chi << ",";
+    file << cutValues.deltaR << ",";
+    file << globalFitEnd << ",";
+    file << globalFindBin1Value << ",";
+    file << globalFindBin2Value << ",";
+    file << globalSigmaEstimate << ",";
+    file << globalSigmaParScale << "\n";
+
+    file.close();
+}
+
+
 /*
  main method
  */
@@ -678,7 +742,7 @@ void AnalyzePi0() {
     // Initialize global cut values
     globalCutValues = parseFileName();
     
-    int histIndex = 0;  // This is the variable you can change of which histogram to extract
+    int histIndex = 3;  // This is the variable you can change of which histogram to extract
     
     // User interaction to set global isFitGood
     char userInput;
@@ -690,14 +754,14 @@ void AnalyzePi0() {
     // Fetch histogram based on index
     std::string histName = "hPi0Mass_" + std::to_string(histIndex);
     TH1F *hPi0Mass = (TH1F*)file->Get(histName.c_str());
-    hPi0Mass->GetYaxis()->SetRangeUser(0, 800);
+    hPi0Mass->GetYaxis()->SetRangeUser(0, 12000);
 
     // Declare variables for fit parameters
     TF1 *totalFit;
     double fitStart, fitEnd;
 
     // Call PerformFitting to execute the fitting procedure
-    PerformFitting(hPi0Mass, false, totalFit, fitStart, fitEnd);//SET FALSE TO TRUE FOR MANUAL FITTING CODE
+    PerformFitting(hPi0Mass, globalSetFitManual, totalFit, fitStart, fitEnd);//SET FALSE TO TRUE FOR MANUAL FITTING CODE
     
     
     TCanvas *canvas = new TCanvas("canvas", "Pi0 Mass Distribution", 900, 600);
@@ -740,8 +804,8 @@ void AnalyzePi0() {
     DrawCanvasText(latex, ranges[histIndex], fitMean, fitSigma, signalToBackgroundRatio);
 
     double amplitude = totalFit->GetParameter(0);
-    TLine *line1 = new TLine(fitMean + 2*fitSigma, 0, fitMean + 2*fitSigma, amplitude+50);
-    TLine *line2 = new TLine(fitMean - 2*fitSigma, 0, fitMean - 2*fitSigma, amplitude+50);
+    TLine *line1 = new TLine(fitMean + 2*fitSigma, 0, fitMean + 2*fitSigma, amplitude+5000);
+    TLine *line2 = new TLine(fitMean - 2*fitSigma, 0, fitMean - 2*fitSigma, amplitude+5000);
     line1->SetLineColor(kBlack);
     line1->SetLineStyle(1);
     line2->SetLineColor(kBlack);
@@ -776,6 +840,10 @@ void AnalyzePi0() {
     }
     // Call the new method to write to CSV if the fit is good
     WriteDataToCSV(histIndex, globalCutValues, fitMean, fitMeanError, fitSigma, fitSigmaError, signalToBackgroundRatio, signalYield, signalError);
+    
+    WriteAdditionalParametersToCSV(histIndex, globalCutValues);
+    
+    
     // Conditional plotting
     if (CreateSignalandGaussParPlots) {
         GenerateSignalAndGaussParPlots();
