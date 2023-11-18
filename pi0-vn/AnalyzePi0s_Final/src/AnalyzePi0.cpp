@@ -37,7 +37,7 @@
  Top of code for easy scrolling
  */
 // Global variables
-std::string globalFilename = "/Users/patsfan753/Desktop/AnalyzePi0s_Final/histRootFiles/hPi0Mass_E1_Asym0point3_Delr0point07_Chi4.root";
+std::string globalFilename = "/Users/patsfan753/Desktop/AnalyzePi0s_Final/histRootFiles/hPi0Mass_E1_Asym0point3_Delr0point07_Chi3.root";
 bool CreateSignalandGaussParPlots = false; //control flag for plotting signal and signal error
 // Global variable for setFitManual
 bool globalSetFitManual = false;
@@ -47,7 +47,11 @@ double globalFindBin1Value;
 double globalFindBin2Value;
 double globalSigmaEstimate;
 double globalSigmaParScale;
+double globalNumEntries;
 
+
+double globalYAxisRange[2] = {0, 1400}; // Lower and upper limits
+double globalLineHeight = 300;
 void PerformFitting(TH1F* hPi0Mass, bool setFitManual, TF1*& totalFit, double& fitStart, double& fitEnd) {
     // Assign the setFitManual value to the global variable
     globalSetFitManual = setFitManual;
@@ -69,12 +73,12 @@ void PerformFitting(TH1F* hPi0Mass, bool setFitManual, TF1*& totalFit, double& f
     // Set global variables for additional parameters
     globalFitEnd = fitEnd;
     globalFindBin1Value = 0.1; // Value in FindBin for bin1
-    globalFindBin2Value = 0.2; // Value in FindBin for bin2
-    globalSigmaEstimate = 0.01; // sigmaEstimate value
+    globalFindBin2Value = 0.162; // Value in FindBin for bin2
+    globalSigmaEstimate = 0.016; // sigmaEstimate value
 
     // Check if SetParLimits is used for sigma
     if (!setFitManual) {
-        globalSigmaParScale = 2.0; // Scale factor used in SetParLimits
+        globalSigmaParScale = .2; // Scale factor used in SetParLimits
     } else {
         globalSigmaParScale = 0.0; // No SetParLimits used
     }
@@ -226,10 +230,23 @@ double CalculateSignalToBackgroundRatio(TF1* totalFit, TF1* polyFit, double fitM
 /*
  Fill text file with gaussian mean, gaussian mean error, gaussian sigma, gaussian sigma error when happy with fit (user input 'y' in terminal upon running code)
  */
-void WriteGaussianParametersToFile(int histIndex, double fitMean, double fitMeanError, double fitSigma, double fitSigmaError) {
+void WriteGaussianParametersToFile(int histIndex, double fitMean, double fitMeanError, double fitSigma, double fitSigmaError, const CutValues& cutValues) {
     if (isFitGood) {
-        std::ofstream meanFile("/Users/patsfan753/Desktop/AnalyzePi0s_Final/dataOutput/GaussianMean.txt", std::ios::app);
-        std::ofstream gaussianErrorFile("/Users/patsfan753/Desktop/AnalyzePi0s_Final/dataOutput/GaussianError.txt", std::ios::app);
+        // Generate unique file names based on cut values
+        std::ostringstream meanFilenameStream;
+        meanFilenameStream << "/Users/patsfan753/Desktop/AnalyzePi0s_Final/dataOutput/GaussianMean_"
+                           << "E" << cutValues.clusE << "_Asym" << cutValues.asymmetry
+                           << "_Chi" << cutValues.chi << "_DeltaR" << cutValues.deltaR << ".txt";
+        std::string meanFilename = meanFilenameStream.str();
+
+        std::ostringstream errorFilenameStream;
+        errorFilenameStream << "/Users/patsfan753/Desktop/AnalyzePi0s_Final/dataOutput/GaussianError_"
+                            << "E" << cutValues.clusE << "_Asym" << cutValues.asymmetry
+                            << "_Chi" << cutValues.chi << "_DeltaR" << cutValues.deltaR << ".txt";
+        std::string errorFilename = errorFilenameStream.str();
+
+        std::ofstream meanFile(meanFilename, std::ios::app);
+        std::ofstream gaussianErrorFile(errorFilename, std::ios::app);
 
         if (meanFile.is_open() && gaussianErrorFile.is_open()) {
             meanFile << "Index " << histIndex << ": Mean: " << fitMean << ", Mean Error: " << fitMeanError << std::endl;
@@ -248,7 +265,7 @@ void WriteGaussianParametersToFile(int histIndex, double fitMean, double fitMean
 /*
  Calculation for signal yield and error, simiarly to above method outputs to text file upon user input in terminal when happy with fit
  */
-void CalculateSignalYieldAndError(TH1F* hPi0Mass, TF1* polyFit, double fitMean, double fitSigma, int histIndex) {
+void CalculateSignalYieldAndError(TH1F* hPi0Mass, TF1* polyFit, double fitMean, double fitSigma, int histIndex, const CutValues& cutValues) {
     TH1F *hSignal = (TH1F*)hPi0Mass->Clone("hSignal");
     double binCenter, binContent, bgContent, binError;
     int firstBinSignal = hPi0Mass->FindBin(fitMean - 2*fitSigma);
@@ -266,14 +283,28 @@ void CalculateSignalYieldAndError(TH1F* hPi0Mass, TF1* polyFit, double fitMean, 
     signalYield = hSignal->IntegralAndError(firstBinSignal, lastBinSignal, signalError, "");
     std::cout << "isFitGood status before appending to array: " << (isFitGood ? "true" : "false") << std::endl;
     if (isFitGood) {
-        std::ofstream yieldFile("/Users/patsfan753/Desktop/AnalyzePi0s_Final/dataOutput/signalYield.txt", std::ios::app);
-        std::ofstream errorFile("/Users/patsfan753/Desktop/AnalyzePi0s_Final/dataOutput/signalError.txt", std::ios::app);
+        // Generate unique file names based on cut values
+        std::ostringstream yieldFilenameStream, errorFilenameStream;
+        yieldFilenameStream << "/Users/patsfan753/Desktop/AnalyzePi0s_Final/dataOutput/signalYield_"
+                            << "E" << cutValues.clusE << "_Asym" << cutValues.asymmetry
+                            << "_Chi" << cutValues.chi << "_DeltaR" << cutValues.deltaR << ".txt";
+        std::string yieldFilename = yieldFilenameStream.str();
+
+        errorFilenameStream << "/Users/patsfan753/Desktop/AnalyzePi0s_Final/dataOutput/signalError_"
+                            << "E" << cutValues.clusE << "_Asym" << cutValues.asymmetry
+                            << "_Chi" << cutValues.chi << "_DeltaR" << cutValues.deltaR << ".txt";
+        std::string errorFilename = errorFilenameStream.str();
+
+        std::ofstream yieldFile(yieldFilename, std::ios::app);
+        std::ofstream errorFile(errorFilename, std::ios::app);
+
         if (yieldFile.is_open() && errorFile.is_open()) {
             yieldFile << "Index " << histIndex << ": " << signalYield << std::endl;
             errorFile << "Index " << histIndex << ": " << signalError << std::endl;
         } else {
             std::cerr << "Unable to open file(s) for writing." << std::endl;
         }
+
         yieldFile.close();
         errorFile.close();
         std::cout << "Fit good. Added to files for Index " << histIndex << " - Signal Yield: " << signalYield << ", Signal Error: " << signalError << std::endl;
@@ -701,37 +732,36 @@ void WriteAdditionalParametersToCSV(int histIndex, const CutValues& cutValues) {
         return; // Do not write to CSV if conditions are not met
     }
 
-    std::string filename = "/Users/patsfan753/Desktop/AnalyzePi0s_Final/dataOutput/AdditionalParameters.csv";
-    std::ifstream checkFile(filename);
-    bool fileIsEmpty = checkFile.peek() == std::ifstream::traits_type::eof();
-    checkFile.close();
-
-    std::ofstream file(filename, std::ios::app); // Open file in append mode
+    // Open file in append mode
+    std::ofstream file("/Users/patsfan753/Desktop/AnalyzePi0s_Final/dataOutput/AdditionalParameters.csv", std::ios::app);
     if (!file.is_open()) {
         std::cerr << "Unable to open CSV file for writing additional parameters." << std::endl;
         return;
     }
 
-    // Write column headers if file is empty
-    if (fileIsEmpty) {
-        file << "Index,Energy,Asymmetry,Chi2,DeltaR,FitEnd,FindBin1,FindBin2,SigmaEstimate,SigmaParScale\n";
+    // Check if file is empty and write headers
+    file.seekp(0, std::ios::end); // Go to the end of file
+    if (file.tellp() == 0) { // If file position is at the beginning, file is empty
+        file << "Index,Energy,Asymmetry,Chi2,DeltaR,FitEnd,FindBin1,FindBin2,SigmaEstimate,SigmaParScale,NumEntries,YAxisLower,YAxisUpper\n";
     }
 
     // Write data to CSV
-    file << histIndex << ",";
-    file << cutValues.clusE << ",";
-    file << cutValues.asymmetry << ",";
-    file << cutValues.chi << ",";
-    file << cutValues.deltaR << ",";
-    file << globalFitEnd << ",";
-    file << globalFindBin1Value << ",";
-    file << globalFindBin2Value << ",";
-    file << globalSigmaEstimate << ",";
-    file << globalSigmaParScale << "\n";
+    file << histIndex << ","
+         << cutValues.clusE << ","
+         << cutValues.asymmetry << ","
+         << cutValues.chi << ","
+         << cutValues.deltaR << ","
+         << globalFitEnd << ","
+         << globalFindBin1Value << ","
+         << globalFindBin2Value << ","
+         << globalSigmaEstimate << ","
+         << globalSigmaParScale << ","
+         << globalNumEntries << ","       // Assuming globalNumEntries is correctly set
+         << globalYAxisRange[0] << ","    // Assuming globalYAxisRange[0] is the lower limit
+         << globalYAxisRange[1] << "\n";  // Assuming globalYAxisRange[1] is the upper limit
 
     file.close();
 }
-
 
 /*
  main method
@@ -742,7 +772,7 @@ void AnalyzePi0() {
     // Initialize global cut values
     globalCutValues = parseFileName();
     
-    int histIndex = 3;  // This is the variable you can change of which histogram to extract
+    int histIndex = 0;  // This is the variable you can change of which histogram to extract
     
     // User interaction to set global isFitGood
     char userInput;
@@ -754,7 +784,8 @@ void AnalyzePi0() {
     // Fetch histogram based on index
     std::string histName = "hPi0Mass_" + std::to_string(histIndex);
     TH1F *hPi0Mass = (TH1F*)file->Get(histName.c_str());
-    hPi0Mass->GetYaxis()->SetRangeUser(0, 12000);
+    globalNumEntries = hPi0Mass->GetEntries(); // Set global variable for number of entries
+    hPi0Mass->GetYaxis()->SetRangeUser(globalYAxisRange[0], globalYAxisRange[1]); // Use global variable for Y-axis range
 
     // Declare variables for fit parameters
     TF1 *totalFit;
@@ -775,8 +806,7 @@ void AnalyzePi0() {
     double fitSigma = totalFit->GetParameter(2);
     double fitSigmaError = totalFit->GetParError(2);
     
-    // Call the new method to write Gaussian parameters to files
-    WriteGaussianParametersToFile(histIndex, fitMean, fitMeanError, fitSigma, fitSigmaError);
+    WriteGaussianParametersToFile(histIndex, fitMean, fitMeanError, fitSigma, fitSigmaError, globalCutValues);
 
     
     TF1 *gaussFit = new TF1("gaussFit", "gaus", fitStart, .28);
@@ -804,8 +834,10 @@ void AnalyzePi0() {
     DrawCanvasText(latex, ranges[histIndex], fitMean, fitSigma, signalToBackgroundRatio);
 
     double amplitude = totalFit->GetParameter(0);
-    TLine *line1 = new TLine(fitMean + 2*fitSigma, 0, fitMean + 2*fitSigma, amplitude+5000);
-    TLine *line2 = new TLine(fitMean - 2*fitSigma, 0, fitMean - 2*fitSigma, amplitude+5000);
+    
+    
+    TLine *line1 = new TLine(fitMean + 2*fitSigma, 0, fitMean + 2*fitSigma, amplitude+globalLineHeight);
+    TLine *line2 = new TLine(fitMean - 2*fitSigma, 0, fitMean - 2*fitSigma, amplitude+globalLineHeight);
     line1->SetLineColor(kBlack);
     line1->SetLineStyle(1);
     line2->SetLineColor(kBlack);
@@ -814,31 +846,49 @@ void AnalyzePi0() {
     line2->Draw("same");
     std::string imageName = "/Users/patsfan753/Desktop/AnalyzePi0s_Final/plotOutput/InvMassPlots/" + histName + "_fit.pdf";
     canvas->SaveAs(imageName.c_str());
-    CalculateSignalYieldAndError(hPi0Mass, polyFit, fitMean, fitSigma, histIndex);
+    CalculateSignalYieldAndError(hPi0Mass, polyFit, fitMean, fitSigma, histIndex, globalCutValues);
     // Read the signal yield and error from text files so can be transferred to CSV input
     double signalYield = 0.0, signalError = 0.0;
     if (isFitGood) {
-        std::ifstream yieldFile("/Users/patsfan753/Desktop/AnalyzePi0s_Final/dataOutput/signalYield.txt");
-        std::ifstream errorFile("/Users/patsfan753/Desktop/AnalyzePi0s_Final/dataOutput/signalError.txt");
+        // Construct file names based on cut values to match the writing pattern
+        std::ostringstream yieldFilenameStream, errorFilenameStream;
+        yieldFilenameStream << "/Users/patsfan753/Desktop/AnalyzePi0s_Final/dataOutput/signalYield_"
+                            << "E" << globalCutValues.clusE << "_Asym" << globalCutValues.asymmetry
+                            << "_Chi" << globalCutValues.chi << "_DeltaR" << globalCutValues.deltaR << ".txt";
+        std::string yieldFilename = yieldFilenameStream.str();
+
+        errorFilenameStream << "/Users/patsfan753/Desktop/AnalyzePi0s_Final/dataOutput/signalError_"
+                            << "E" << globalCutValues.clusE << "_Asym" << globalCutValues.asymmetry
+                            << "_Chi" << globalCutValues.chi << "_DeltaR" << globalCutValues.deltaR << ".txt";
+        std::string errorFilename = errorFilenameStream.str();
+
+        // Open the files using the constructed names
+        std::ifstream yieldFile(yieldFilename);
+        std::ifstream errorFile(errorFilename);
         std::string line;
 
-        while (getline(yieldFile, line)) {
-            if (line.find("Index " + std::to_string(histIndex) + ":") != std::string::npos) {
-                std::istringstream iss(line.substr(line.find(':') + 1));
-                iss >> signalYield;
-                break;
-            }
+        // Reading signal yield
+        if (yieldFile.is_open() && getline(yieldFile, line)) {
+            std::istringstream iss(line.substr(line.find(':') + 1));
+            iss >> signalYield;
+        } else {
+            std::cerr << "Unable to open yield file for reading." << std::endl;
         }
+        yieldFile.close();
 
-        while (getline(errorFile, line)) {
-            if (line.find("Index " + std::to_string(histIndex) + ":") != std::string::npos) {
-                std::istringstream iss(line.substr(line.find(':') + 1));
-                iss >> signalError;
-                break;
-            }
+        // Reading signal error
+        if (errorFile.is_open() && getline(errorFile, line)) {
+            std::istringstream iss(line.substr(line.find(':') + 1));
+            iss >> signalError;
+        } else {
+            std::cerr << "Unable to open error file for reading." << std::endl;
         }
+        errorFile.close();
+
+        std::cout << "For Index " << histIndex << " - Signal Yield: " << signalYield
+                  << ", Signal Error: " << signalError << std::endl;
     }
-    // Call the new method to write to CSV if the fit is good
+//    // Call the new method to write to CSV if the fit is good
     WriteDataToCSV(histIndex, globalCutValues, fitMean, fitMeanError, fitSigma, fitSigmaError, signalToBackgroundRatio, signalYield, signalError);
     
     WriteAdditionalParametersToCSV(histIndex, globalCutValues);
