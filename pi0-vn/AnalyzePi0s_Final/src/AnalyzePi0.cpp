@@ -49,9 +49,9 @@ double globalSigmaEstimate;
 double globalSigmaParScale;
 double globalNumEntries;
 
-
-double globalYAxisRange[2] = {0, 1400}; // Lower and upper limits
-double globalLineHeight = 300;
+int histIndex = 5;
+double globalYAxisRange[2] = {0, 130}; // Lower and upper limits
+double globalLineHeight = 50;
 void PerformFitting(TH1F* hPi0Mass, bool setFitManual, TF1*& totalFit, double& fitStart, double& fitEnd) {
     // Assign the setFitManual value to the global variable
     globalSetFitManual = setFitManual;
@@ -68,17 +68,17 @@ void PerformFitting(TH1F* hPi0Mass, bool setFitManual, TF1*& totalFit, double& f
     }
     fitStart = hPi0Mass->GetBinLowEdge(firstBinAboveThreshold);
 //    fitStart = 0.141;
-    fitEnd = 0.6;
+    fitEnd = 0.55;
     
     // Set global variables for additional parameters
     globalFitEnd = fitEnd;
     globalFindBin1Value = 0.1; // Value in FindBin for bin1
-    globalFindBin2Value = 0.162; // Value in FindBin for bin2
-    globalSigmaEstimate = 0.016; // sigmaEstimate value
+    globalFindBin2Value = 0.2; // Value in FindBin for bin2
+    globalSigmaEstimate = 0.012; // sigmaEstimate value
 
     // Check if SetParLimits is used for sigma
     if (!setFitManual) {
-        globalSigmaParScale = .2; // Scale factor used in SetParLimits
+        globalSigmaParScale = .5; // Scale factor used in SetParLimits
     } else {
         globalSigmaParScale = 0.0; // No SetParLimits used
     }
@@ -328,7 +328,7 @@ void DrawCanvasTextSignalAndGaussPlots(TLatex& latex){
 /*
  Plot generation for for plots that summarize the 12 plots for one range of cuts, uses the text files generated and only generates plots when boolean set to true (CreateSignalandGaussParPlots)
  */
-void GenerateSignalAndGaussParPlots() {
+void GenerateSignalAndGaussParPlots(const CutValues& cutValues) {
     const int nPoints = 12; // Total number of points in each file
     double yield[nPoints], error[nPoints];
     // Additional arrays to store Gaussian Mean and Sigma values
@@ -338,8 +338,25 @@ void GenerateSignalAndGaussParPlots() {
     const double jitterAmount = 0.04;
     
     double xPoints[nPoints] = {2.5, 3.5, 4.5, 2.5, 3.5, 4.5, 2.5, 3.5, 4.5, 2.5, 3.5, 4.5};
-    std::ifstream yieldFile("/Users/patsfan753/Desktop/AnalyzePi0s_Final/dataOutput/signalYield.txt");
-    std::ifstream errorFile("/Users/patsfan753/Desktop/AnalyzePi0s_Final/dataOutput/signalError.txt");
+    // Construct file names based on cut values for yield and error
+    std::ostringstream yieldFilenameStream, errorFilenameStream;
+    yieldFilenameStream << "/Users/patsfan753/Desktop/AnalyzePi0s_Final/dataOutput/signalYield_"
+                        << "E" << cutValues.clusE << "_Asym" << cutValues.asymmetry
+                        << "_Chi" << cutValues.chi << "_DeltaR" << cutValues.deltaR << ".txt";
+    std::string yieldFilename = yieldFilenameStream.str();
+
+    errorFilenameStream << "/Users/patsfan753/Desktop/AnalyzePi0s_Final/dataOutput/signalError_"
+                        << "E" << cutValues.clusE << "_Asym" << cutValues.asymmetry
+                        << "_Chi" << cutValues.chi << "_DeltaR" << cutValues.deltaR << ".txt";
+    std::string errorFilename = errorFilenameStream.str();
+
+    // Printing the filenames for verification
+    std::cout << "Reading yield data from: " << yieldFilename << std::endl;
+    std::cout << "Reading error data from: " << errorFilename << std::endl;
+
+    // Open the files using the constructed names for yield and error
+    std::ifstream yieldFile(yieldFilename);
+    std::ifstream errorFile(errorFilename);
     std::string line;
     int index;
     double value, errorValue;
@@ -359,29 +376,54 @@ void GenerateSignalAndGaussParPlots() {
     errorFile.close();
     
     
-    // Reading Gaussian Mean values
-    std::ifstream gaussianMeanFile("/Users/patsfan753/Desktop/AnalyzePi0s_Final/dataOutput/GaussianMean.txt");
+    // Define the filename stream and generate the filename based on cut values
+    std::ostringstream gaussianMeanFilenameStream;
+    gaussianMeanFilenameStream << "/Users/patsfan753/Desktop/AnalyzePi0s_Final/dataOutput/GaussianMean_"
+                               << "E" << cutValues.clusE << "_Asym" << cutValues.asymmetry
+                               << "_Chi" << cutValues.chi << "_DeltaR" << cutValues.deltaR << ".txt";
+    std::string gaussianMeanFilename = gaussianMeanFilenameStream.str();
+
+    std::cout << "Reading Gaussian Mean data from: " << gaussianMeanFilename << std::endl;
+    // Open the Gaussian Mean file using the constructed filename
+    std::ifstream gaussianMeanFile(gaussianMeanFilename);
     if (!gaussianMeanFile.is_open()) {
-        std::cerr << "Error opening GaussianMean.txt." << std::endl;
+        std::cerr << "Error opening file: " << gaussianMeanFilename << std::endl;
         return;
     }
+
+    // Read the Gaussian Mean values from the file
     while (getline(gaussianMeanFile, line)) {
         sscanf(line.c_str(), "Index %d: Mean: %lf, Mean Error: %lf", &index, &value, &errorValue);
-        gaussianMean[index] = value;
-        gaussianMeanError[index] = errorValue;
+        // Ensure that the index is within the bounds of the array
+        if (index >= 0 && index < nPoints) {
+            gaussianMean[index] = value;
+            gaussianMeanError[index] = errorValue;
+        }
     }
+
+    // Close the file after reading
     gaussianMeanFile.close();
 
     // Reading Gaussian Sigma values
-    std::ifstream gaussianSigmaFile("/Users/patsfan753/Desktop/AnalyzePi0s_Final/dataOutput/GaussianError.txt");
+    std::ostringstream gaussianSigmaFilenameStream;
+    gaussianSigmaFilenameStream << "/Users/patsfan753/Desktop/AnalyzePi0s_Final/dataOutput/GaussianError_"
+                                << "E" << cutValues.clusE << "_Asym" << cutValues.asymmetry
+                                << "_Chi" << cutValues.chi << "_DeltaR" << cutValues.deltaR << ".txt";
+    std::string gaussianSigmaFilename = gaussianSigmaFilenameStream.str();
+    
+    std::cout << "Reading Gaussian Sigma data from: " << gaussianSigmaFilename << std::endl;
+    std::ifstream gaussianSigmaFile(gaussianSigmaFilename);
     if (!gaussianSigmaFile.is_open()) {
-        std::cerr << "Error opening GaussianError.txt." << std::endl;
+        std::cerr << "Error opening file: " << gaussianSigmaFilename << std::endl;
         return;
     }
     while (getline(gaussianSigmaFile, line)) {
         sscanf(line.c_str(), "Index %d: Sigma: %lf, Sigma Error: %lf", &index, &value, &errorValue);
-        gaussianSigma[index] = value;
-        gaussianSigmaError[index] = errorValue;
+        // Check if the index is within bounds before accessing the arrays
+        if (index >= 0 && index < nPoints) {
+            gaussianSigma[index] = value;
+            gaussianSigmaError[index] = errorValue;
+        }
     }
     gaussianSigmaFile.close();
     
@@ -771,9 +813,6 @@ void AnalyzePi0() {
     TFile *file = new TFile(globalFilename.c_str(), "READ");
     // Initialize global cut values
     globalCutValues = parseFileName();
-    
-    int histIndex = 0;  // This is the variable you can change of which histogram to extract
-    
     // User interaction to set global isFitGood
     char userInput;
     std::cout << "Is fit ready to be finalized? (Y/N): ";
@@ -850,7 +889,7 @@ void AnalyzePi0() {
     // Read the signal yield and error from text files so can be transferred to CSV input
     double signalYield = 0.0, signalError = 0.0;
     if (isFitGood) {
-        // Construct file names based on cut values to match the writing pattern
+        // Construct file names based on cut values
         std::ostringstream yieldFilenameStream, errorFilenameStream;
         yieldFilenameStream << "/Users/patsfan753/Desktop/AnalyzePi0s_Final/dataOutput/signalYield_"
                             << "E" << globalCutValues.clusE << "_Asym" << globalCutValues.asymmetry
@@ -868,27 +907,32 @@ void AnalyzePi0() {
         std::string line;
 
         // Reading signal yield
-        if (yieldFile.is_open() && getline(yieldFile, line)) {
-            std::istringstream iss(line.substr(line.find(':') + 1));
-            iss >> signalYield;
-        } else {
-            std::cerr << "Unable to open yield file for reading." << std::endl;
+        while (getline(yieldFile, line)) {
+            if (line.find("Index " + std::to_string(histIndex) + ":") != std::string::npos) {
+                std::istringstream iss(line.substr(line.find(':') + 1));
+                iss >> signalYield;
+                break;
+            }
         }
-        yieldFile.close();
 
         // Reading signal error
-        if (errorFile.is_open() && getline(errorFile, line)) {
-            std::istringstream iss(line.substr(line.find(':') + 1));
-            iss >> signalError;
-        } else {
-            std::cerr << "Unable to open error file for reading." << std::endl;
+        while (getline(errorFile, line)) {
+            if (line.find("Index " + std::to_string(histIndex) + ":") != std::string::npos) {
+                std::istringstream iss(line.substr(line.find(':') + 1));
+                iss >> signalError;
+                break;
+            }
         }
+
+        yieldFile.close();
         errorFile.close();
 
         std::cout << "For Index " << histIndex << " - Signal Yield: " << signalYield
                   << ", Signal Error: " << signalError << std::endl;
     }
-//    // Call the new method to write to CSV if the fit is good
+
+
+    // Call the new method to write to CSV if the fit is good
     WriteDataToCSV(histIndex, globalCutValues, fitMean, fitMeanError, fitSigma, fitSigmaError, signalToBackgroundRatio, signalYield, signalError);
     
     WriteAdditionalParametersToCSV(histIndex, globalCutValues);
@@ -896,6 +940,6 @@ void AnalyzePi0() {
     
     // Conditional plotting
     if (CreateSignalandGaussParPlots) {
-        GenerateSignalAndGaussParPlots();
+        GenerateSignalAndGaussParPlots(globalCutValues);
     }
 }
