@@ -71,6 +71,7 @@ void PerformFitting(TH1F* hPi0Mass, bool setFitManual, TF1*& totalFit, double& f
             break;
         }
     }
+ //this lower bound dynamic setting of fit has worked well for me, have not needed to set manually so far
     fitStart = hPi0Mass->GetBinLowEdge(firstBinAboveThreshold);
 //    fitStart = 0.141;
  //Set to where total fit should end (can have real effect on final fit)
