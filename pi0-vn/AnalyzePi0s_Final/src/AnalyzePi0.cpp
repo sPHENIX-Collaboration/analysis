@@ -19,7 +19,8 @@
  
  to true, and the text files will be used to generate the 4 overview plots of signal Yield, relative signal error, gaussian mean filled with mean error, and gaussian sigma filled with sigma error, over the pT bins for all centralities in that range of cuts
  
- Once done with that root file, the csv will still keep all the data used, but I then delete the text files used for this output, and go through the process again for the next set of cuts over the pT and centrality bins
+ Once done with that root file, the csv will still keep all the data used
+ Text file is named after the inputted cut values read in from root name, so no need to change anything when running new root file, new text files on cut basis get generated
  */
 #include <TCanvas.h>
 #include <TFile.h>
@@ -31,27 +32,31 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-/*
- Fitting method, when called in the main method, if argument setFitManual is true, can use manual parameters, otherwise fit dynamically
- 
- Top of code for easy scrolling
- */
 // Global variables
-std::string globalFilename = "/Users/patsfan753/Desktop/AnalyzePi0s_Final/histRootFiles/hPi0Mass_E1_Asym0point3_Delr0point07_Chi3.root";
+std::string globalFilename = "/Users/patsfan753/Desktop/AnalyzePi0s_Final/histRootFiles/hPi0Mass_E1_Asym0point3_Delr0point07_Chi4point5.root";
+//CHANGE BOOLEAN BELOW when finished with set of 12 plots, and ready for plots over the centrality in the pT bins
 bool CreateSignalandGaussParPlots = false; //control flag for plotting signal and signal error
-// Global variable for setFitManual
+// Global variable for setFitManual, SET TRUE if want to fit manually (see below fitting method)
 bool globalSetFitManual = false;
-// Global variables for additional parameters
+// Global variables for additional parameters, see fitting method for when set (use this strategy so variables can be passed to text file to be analyzed later on
 double globalFitEnd;
 double globalFindBin1Value;
 double globalFindBin2Value;
 double globalSigmaEstimate;
 double globalSigmaParScale;
 double globalNumEntries;
-
-int histIndex = 5;
-double globalYAxisRange[2] = {0, 130}; // Lower and upper limits
-double globalLineHeight = 50;
+/*
+ Set which histogram index is being analyzed, make sure to switch after finishing previous fit
+ */
+int histIndex = 2;
+/*
+ Set height of y axis range here
+ */
+double globalYAxisRange[2] = {0, 80}; // Lower and upper limits
+/*
+ set height of black vertical line output below
+ */
+double globalLineHeight = 10;
 void PerformFitting(TH1F* hPi0Mass, bool setFitManual, TF1*& totalFit, double& fitStart, double& fitEnd) {
     // Assign the setFitManual value to the global variable
     globalSetFitManual = setFitManual;
@@ -68,18 +73,22 @@ void PerformFitting(TH1F* hPi0Mass, bool setFitManual, TF1*& totalFit, double& f
     }
     fitStart = hPi0Mass->GetBinLowEdge(firstBinAboveThreshold);
 //    fitStart = 0.141;
-    fitEnd = 0.55;
-    
-    // Set global variables for additional parameters
+ //Set to where total fit should end (can have real effect on final fit)
+    fitEnd = 0.59;
     globalFitEnd = fitEnd;
+ //Set to where fit should start looking for mean and amplitude (I keep this unchanged)
     globalFindBin1Value = 0.1; // Value in FindBin for bin1
+ //Set to where fit should stop looking for mean and amplitude (since highest point, narrow this down in low pT central regions)
     globalFindBin2Value = 0.2; // Value in FindBin for bin2
-    globalSigmaEstimate = 0.012; // sigmaEstimate value
+ //set as estimated width of gaussian fit
+    globalSigmaEstimate = 0.01; // sigmaEstimate value
 
     // Check if SetParLimits is used for sigma
     if (!setFitManual) {
+     //see below for how this plays in, I set the par limits with it for the gaussian width by estimated sigma +- this value * estimated sigma
         globalSigmaParScale = .5; // Scale factor used in SetParLimits
     } else {
+     //if want to comment out set par limits of sigma, auto goes to 0
         globalSigmaParScale = 0.0; // No SetParLimits used
     }
     
@@ -87,12 +96,17 @@ void PerformFitting(TH1F* hPi0Mass, bool setFitManual, TF1*& totalFit, double& f
     // Define totalFit
     totalFit = new TF1("totalFit", "gaus(0) + pol4(3)", fitStart, fitEnd);
 
-    // Set fitting parameters
+    // Set fitting parameters manually below
     if (setFitManual) {
+     //gauss amplitude
         totalFit->SetParameter(0, 100000);
+     //gaussian mean
         totalFit->SetParameter(1, 0.145);
+     //gaussian width
         totalFit->SetParameter(2, 0.01);
+     //gaussian mean limits
         totalFit->SetParLimits(1, 0.13, 0.15);
+     //gaussian sigma limits
         totalFit->SetParLimits(2, 0.01, 0.03);
     } else {
         int bin1 = hPi0Mass->GetXaxis()->FindBin(globalFindBin1Value);
@@ -126,7 +140,7 @@ struct CutValues {
 };
 CutValues globalCutValues;
 /*
- Function to parse the filename and extract cut values
+ Function to parse the filename and extract cut values from globally set root file above
  */
 CutValues parseFileName() {
     CutValues cuts = {0, 0, 0, 0}; // Initialize cut values to zero
@@ -187,7 +201,7 @@ CutValues parseFileName() {
 
     return cuts;// Return the populated cuts structure
 }
-bool isFitGood; // No initial value needed here
+bool isFitGood; // No initial value needed here, set by the user upon running code
 struct Range {
     double ptLow, ptHigh, mbdLow, mbdHigh;
 };
@@ -264,6 +278,7 @@ void WriteGaussianParametersToFile(int histIndex, double fitMean, double fitMean
 }
 /*
  Calculation for signal yield and error, simiarly to above method outputs to text file upon user input in terminal when happy with fit
+ Text file name uniquley set as cut values which is then dynamically passed through outputted plots when want to generate them
  */
 void CalculateSignalYieldAndError(TH1F* hPi0Mass, TF1* polyFit, double fitMean, double fitSigma, int histIndex, const CutValues& cutValues) {
     TH1F *hSignal = (TH1F*)hPi0Mass->Clone("hSignal");
@@ -652,9 +667,9 @@ void GenerateSignalAndGaussParPlots(const CutValues& cutValues) {
     hDummyGausSigma->GetXaxis()->SetLimits(2, 5); // This sets the user-defined limits for the axis
     hDummyGausSigma->GetXaxis()->SetLabelSize(0.04); // You can adjust the size as needed
     hDummyGausSigma->GetXaxis()->SetNdivisions(004); // This will create four primary divisions (2, 3, 4, 5)
-    hDummyGausSigma->SetMinimum(0); // Replace yourMinValue with the desired minimum value
-    hDummyGausSigma->SetMaximum(.07); // Replace yourMaxValue with the desired maximum value
-    hDummyGausSigma->SetStats(0); // Remove the statistics box
+    hDummyGausSigma->SetMinimum(0); 
+    hDummyGausSigma->SetMaximum(.07); 
+    hDummyGausSigma->SetStats(0); 
     hDummyGausSigma->GetYaxis()->SetTitle("Gaussian Sigma [GeV]");
     hDummyGausSigma->Draw(); // Draw the dummy histogram to define axis ranges
 
@@ -831,7 +846,7 @@ void AnalyzePi0() {
     double fitStart, fitEnd;
 
     // Call PerformFitting to execute the fitting procedure
-    PerformFitting(hPi0Mass, globalSetFitManual, totalFit, fitStart, fitEnd);//SET FALSE TO TRUE FOR MANUAL FITTING CODE
+    PerformFitting(hPi0Mass, globalSetFitManual, totalFit, fitStart, fitEnd);
     
     
     TCanvas *canvas = new TCanvas("canvas", "Pi0 Mass Distribution", 900, 600);
@@ -841,7 +856,7 @@ void AnalyzePi0() {
     hPi0Mass->Draw("PE");
 
     double fitMean = totalFit->GetParameter(1);
-    double fitMeanError = totalFit->GetParError(1); // Corrected index to 1 for mean
+    double fitMeanError = totalFit->GetParError(1); 
     double fitSigma = totalFit->GetParameter(2);
     double fitSigmaError = totalFit->GetParError(2);
     
@@ -869,12 +884,9 @@ void AnalyzePi0() {
 
     double signalToBackgroundRatio = CalculateSignalToBackgroundRatio(totalFit, polyFit, fitMean, fitSigma);
 
-    // Call the new method to draw text on the canvas
     DrawCanvasText(latex, ranges[histIndex], fitMean, fitSigma, signalToBackgroundRatio);
 
     double amplitude = totalFit->GetParameter(0);
-    
-    
     TLine *line1 = new TLine(fitMean + 2*fitSigma, 0, fitMean + 2*fitSigma, amplitude+globalLineHeight);
     TLine *line2 = new TLine(fitMean - 2*fitSigma, 0, fitMean - 2*fitSigma, amplitude+globalLineHeight);
     line1->SetLineColor(kBlack);
@@ -883,9 +895,12 @@ void AnalyzePi0() {
     line2->SetLineStyle(1);
     line1->Draw("same");
     line2->Draw("same");
+ 
     std::string imageName = "/Users/patsfan753/Desktop/AnalyzePi0s_Final/plotOutput/InvMassPlots/" + histName + "_fit.pdf";
     canvas->SaveAs(imageName.c_str());
+ 
     CalculateSignalYieldAndError(hPi0Mass, polyFit, fitMean, fitSigma, histIndex, globalCutValues);
+ 
     // Read the signal yield and error from text files so can be transferred to CSV input
     double signalYield = 0.0, signalError = 0.0;
     if (isFitGood) {
@@ -930,16 +945,11 @@ void AnalyzePi0() {
         std::cout << "For Index " << histIndex << " - Signal Yield: " << signalYield
                   << ", Signal Error: " << signalError << std::endl;
     }
-
-
-    // Call the new method to write to CSV if the fit is good
     WriteDataToCSV(histIndex, globalCutValues, fitMean, fitMeanError, fitSigma, fitSigmaError, signalToBackgroundRatio, signalYield, signalError);
-    
     WriteAdditionalParametersToCSV(histIndex, globalCutValues);
-    
-    
     // Conditional plotting
     if (CreateSignalandGaussParPlots) {
         GenerateSignalAndGaussParPlots(globalCutValues);
     }
 }
+
