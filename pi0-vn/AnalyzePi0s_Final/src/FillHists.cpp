@@ -16,10 +16,10 @@ void FillHists() {
     float clus_E, clus_E2, clus_eta, clus_phi, clus_eta2, clus_phi2, clus_time, clus_time2;
     float clus_chi, clus_chi2, pi0_mass, pi0_pt, MBD_charge;
     // Define arrays for cut values
-    std::vector<float> delta_R_values = {.07,.075,.08,.085,.09,.095,.1};
-    std::vector<float> asymmetry_values = {.3, .4, .5, .6, .7};
-    std::vector<float> clus_chi_values = {3, 3.5, 4, 4.5, 5};      
-    std::vector<float> clus_E_values = {1.0, 1.25, 1.5};    
+    std::vector<float> delta_R_values = {.07,.075,.08,.085,.09,.095,.1}; // Example values
+    std::vector<float> asymmetry_values = {.3, .4, .5, .6, .7};    // Example values
+    std::vector<float> clus_chi_values = {3, 3.5, 4, 4.5, 5};         // Example values
+    std::vector<float> clus_E_values = {1.0, 1.25, 1.5};    // Example values
 
     // Iterate over each combination of cuts
     for (float cut_delta_R : delta_R_values) {
@@ -165,3 +165,4 @@ TChain* ReadData() {
     std::cout << "\033[1;32mData loaded.\033[0m" << std::endl;
     return chain;
 }
+
