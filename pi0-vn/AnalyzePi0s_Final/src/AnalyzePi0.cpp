@@ -14,24 +14,12 @@
  Top of code for easy scrolling
  */
 // Global variables
-std::string globalFilename = "/Users/patsfan753/Desktop/AnalyzePi0s_Final/histRootFiles/hPi0Mass_E1_Asym0point3_Delr0point07_Chi4point5.root";
+std::string globalFilename = "/Users/patsfan753/Desktop/AnalyzePi0s_Final/histRootFiles/hPi0Mass_E1_Asym0point3_Delr0point07_Chi5.root";
 bool CreateSignalandGaussParPlots = false; //control flag for plotting signal and signal error
 // Global variable for setFitManual
 bool globalSetFitManual = false;
 // Global variable for setting dynamic parameters automatically
-bool globalSetDynamicParsAuto = true;  // Set this as needed in your code
-/*
- Set which histogram index is being analyzed, make sure to switch after finishing previous fit
- */
-int histIndex = 9;
-/*
- Set height of y axis range here
- */
-double globalYAxisRange[2] = {0, 1400000}; // Lower and upper limits
-/*
- set height of black vertical line output below
- */
-double globalLineHeight = 300000;
+bool globalSetDynamicParsAuto = false;  // Set this as needed in your code
 
 struct ParameterSet {
     double FitEnd;
@@ -40,7 +28,7 @@ struct ParameterSet {
     double SigmaParScale;
 };
 
-// Function to read the CSV file with fit information and find the parameters for the given histIndex
+// Function to read the CSV file and find the parameters for the given histIndex
 ParameterSet ReadParametersFromCSV(const std::string& filename, int histIndex) {
     std::ifstream file(filename);
     std::string line;
@@ -85,23 +73,26 @@ ParameterSet ReadParametersFromCSV(const std::string& filename, int histIndex) {
     file.close();
     return params;
 }
-// Global variables dynamic fit parameters that are tunable
+// Global variables for additional parameters
 double globalFitEnd;
 double globalFindBin1Value;
 double globalFindBin2Value;
 double globalSigmaEstimate;
 double globalSigmaParScale;
 double globalNumEntries;
-/*
- My path where the dynbamic fit parameters that are tunable get outputted to CSV
- */
 std::string csvFilePath = "/Users/patsfan753/Desktop/AnalyzePi0s_Final/dataOutput/AdditionalParameters.csv";
-
-
-
 /*
- Fitting Method
+ Set which histogram index is being analyzed, make sure to switch after finishing previous fit
  */
+int histIndex = 2;
+/*
+ Set height of y axis range here
+ */
+double globalYAxisRange[2] = {0, 60}; // Lower and upper limits
+/*
+ set height of black vertical line output below
+ */
+double globalLineHeight = 10;
 void PerformFitting(TH1F* hPi0Mass, bool setFitManual, TF1*& totalFit, double& fitStart, double& fitEnd) {
     // Assign the setFitManual value to the global variable
     globalSetFitManual = setFitManual;
@@ -116,24 +107,17 @@ void PerformFitting(TH1F* hPi0Mass, bool setFitManual, TF1*& totalFit, double& f
             break;
         }
     }
-    //This lower bound fit strategy has been working consisently, uncomment line below it if not
     fitStart = hPi0Mass->GetBinLowEdge(firstBinAboveThreshold);
     //    fitStart = 0.141;
-    
-    
-    // Set dynamic fitting tunable parameters to the most recent histogram created in the last cuts that were analyzed
+    // Set fitting end point and other parameters
     if (!setFitManual && globalSetDynamicParsAuto) {
         // Read parameters from CSV file
         ParameterSet params = ReadParametersFromCSV(csvFilePath, histIndex);
         fitEnd = params.FitEnd;
+        globalFitEnd = fitEnd;
         globalFindBin2Value = params.FindBin2;
         globalSigmaEstimate = params.SigmaEstimate;
-        // Check if SetParLimits is used for sigma
-        if (!setFitManual) {
-            globalSigmaParScale = params.SigmaParScale;; // Scale factor used in SetParLimits
-        } else {
-            globalSigmaParScale = 0.0; // No SetParLimits used
-        }
+        globalSigmaParScale = params.SigmaParScale;
 
         // Print out the parameters set dynamically
         std::cout << "\033[1;32m" // Set text color to bright green
@@ -145,7 +129,7 @@ void PerformFitting(TH1F* hPi0Mass, bool setFitManual, TF1*& totalFit, double& f
                   << "\033[0m" // Reset text color
                   << std::endl;
     } else {
-        // SET THESE TUNABLE PARAMETERS MANUALLY
+        // Set global variables for additional parameters (manual setting)
         fitEnd = 0.4;
         globalFitEnd = fitEnd;
         globalFindBin1Value = 0.1; // Value in FindBin for bin1
@@ -169,8 +153,6 @@ void PerformFitting(TH1F* hPi0Mass, bool setFitManual, TF1*& totalFit, double& f
                   << "\033[0m" // Reset text color
                   << std::endl;
     }
-    
-    
     // Define totalFit
     totalFit = new TF1("totalFit", "gaus(0) + pol4(3)", fitStart, fitEnd);
 
