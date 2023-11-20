@@ -35,7 +35,7 @@ R__LOAD_LIBRARY(libcaloana.so)
 R__LOAD_LIBRARY(libffamodules.so)
 #endif
 
-void Fun4All_Calo(int nevents = 100,const std::string &fname = "/sphenix/lustre01/sphnxpro/commissioning/DST_ana.386_2023p003/DST_CALOR_ana.386_2023p003-00021598-0001.root",bool fIsList=0)
+void Fun4All_Calo(int nevents = 100,const std::string &fname = "input.txt")
 {
 
   bool enableMasking = 0;
@@ -46,25 +46,28 @@ void Fun4All_Calo(int nevents = 100,const std::string &fname = "/sphenix/lustre0
   se->Verbosity(verbosity);
   recoConsts *rc = recoConsts::instance();
 
+  ifstream file(fname);
+  string first_file;
+  getline(file, first_file);
+
  //===============
   // conditions DB flags
   //===============
-  //pair<int, int> runseg = Fun4AllUtils::GetRunSegment(fname);
-  //int runnumber = runseg.first;
-  // cout << "run number = " << runnumber << endl;
+  pair<int, int> runseg = Fun4AllUtils::GetRunSegment(first_file);
+  int runnumber = runseg.first;
+   cout << "run number = " << runnumber << endl;
 
-  //// global tag
-  //rc->set_StringFlag("CDB_GLOBALTAG","MDC2");
-  //// // 64 bit timestamp
-  //rc->set_uint64Flag("TIMESTAMP",runnumber);
+  // global tag
+  rc->set_StringFlag("CDB_GLOBALTAG","MDC2");
+  // // 64 bit timestamp
+  rc->set_uint64Flag("TIMESTAMP",runnumber);
 
 
   Fun4AllInputManager *in = new Fun4AllDstInputManager("DST_TOWERS");
-  if (!fIsList) in->AddFile(fname);
-  if (fIsList) in->AddListFile(fname);
+  in->AddListFile(fname);
   se->registerInputManager(in);
 
-  std::string filename = fname.substr(fname.find_last_of("/\\") + 1);
+  std::string filename = first_file.substr(first_file.find_last_of("/\\") + 1);
   std::string OutFile = "CALOHIST_" + filename;
 
 
@@ -101,17 +104,17 @@ void Fun4All_Calo(int nevents = 100,const std::string &fname = "/sphenix/lustre0
     towerMaskHCalout->detector("HCALOUT");
     se->registerSubsystem(towerMaskHCalout);
 
-  ///////////
-  // Clusters
-  std::cout << "Building clusters" << std::endl;
-  RawClusterBuilderTemplate *ClusterBuilder = new RawClusterBuilderTemplate("EmcRawClusterBuilderTemplate");
-  ClusterBuilder->Detector("CEMC");
-  ClusterBuilder->set_threshold_energy(0.030);  // for when using basic calibration
-  std::string emc_prof = getenv("CALIBRATIONROOT");
-  emc_prof += "/EmcProfile/CEMCprof_Thresh30MeV.root";
-  ClusterBuilder->LoadProfile(emc_prof);
-  ClusterBuilder->set_UseTowerInfo(1);  // to use towerinfo objects rather than old RawTower
-  se->registerSubsystem(ClusterBuilder);
+    ///////////
+    // Clusters
+    std::cout << "Building clusters" << std::endl;
+    RawClusterBuilderTemplate *ClusterBuilder = new RawClusterBuilderTemplate("EmcRawClusterBuilderTemplate");
+    ClusterBuilder->Detector("CEMC");
+    ClusterBuilder->set_threshold_energy(0.030);  // for when using basic calibration
+    std::string emc_prof = getenv("CALIBRATIONROOT");
+    emc_prof += "/EmcProfile/CEMCprof_Thresh30MeV.root";
+    ClusterBuilder->LoadProfile(emc_prof);
+    ClusterBuilder->set_UseTowerInfo(1);  // to use towerinfo objects rather than old RawTower
+    se->registerSubsystem(ClusterBuilder);
 
 
     std::cout << "Masking clusters" << std::endl;
