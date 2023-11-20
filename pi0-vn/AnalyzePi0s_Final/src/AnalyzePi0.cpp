@@ -14,7 +14,7 @@
  Top of code for easy scrolling
  */
 // Global variables
-std::string globalFilename = "/Users/patsfan753/Desktop/AnalyzePi0s_Final/histRootFiles/hPi0Mass_E1_Asym0point3_Delr0point07_Chi5.root";
+std::string globalFilename = "/Users/patsfan753/Desktop/AnalyzePi0s_Final/histRootFiles/hPi0Mass_E1_Asym0point4_Delr0point07_Chi3.root";
 bool CreateSignalandGaussParPlots = false; //control flag for plotting signal and signal error
 // Global variable for setFitManual
 bool globalSetFitManual = false;
@@ -28,7 +28,7 @@ struct ParameterSet {
     double SigmaParScale;
 };
 
-// Function to read the CSV file and find the parameters for the given histIndex
+// Function to read the CSV file and find the parameters for the given histIndex to auto set the dynamic fitting process, using the previous fit parameters from last set of cuts analyzed, this has been working really well
 ParameterSet ReadParametersFromCSV(const std::string& filename, int histIndex) {
     std::ifstream file(filename);
     std::string line;
@@ -84,15 +84,15 @@ std::string csvFilePath = "/Users/patsfan753/Desktop/AnalyzePi0s_Final/dataOutpu
 /*
  Set which histogram index is being analyzed, make sure to switch after finishing previous fit
  */
-int histIndex = 2;
+int histIndex = 11;
 /*
  Set height of y axis range here
  */
-double globalYAxisRange[2] = {0, 60}; // Lower and upper limits
+double globalYAxisRange[2] = {0, 2000}; // Lower and upper limits
 /*
  set height of black vertical line output below
  */
-double globalLineHeight = 10;
+double globalLineHeight = 700;
 void PerformFitting(TH1F* hPi0Mass, bool setFitManual, TF1*& totalFit, double& fitStart, double& fitEnd) {
     // Assign the setFitManual value to the global variable
     globalSetFitManual = setFitManual;
@@ -130,14 +130,14 @@ void PerformFitting(TH1F* hPi0Mass, bool setFitManual, TF1*& totalFit, double& f
                   << std::endl;
     } else {
         // Set global variables for additional parameters (manual setting)
-        fitEnd = 0.4;
+        fitEnd = 0.55;
         globalFitEnd = fitEnd;
         globalFindBin1Value = 0.1; // Value in FindBin for bin1
-        globalFindBin2Value = 0.11; // Value in FindBin for bin2
-        globalSigmaEstimate = 0.008; // sigmaEstimate value
+        globalFindBin2Value = 0.2; // Value in FindBin for bin2
+        globalSigmaEstimate = 0.01; // sigmaEstimate value
         // Check if SetParLimits is used for sigma
         if (!setFitManual) {
-            globalSigmaParScale = .5; // Scale factor used in SetParLimits
+            globalSigmaParScale = .7; // Scale factor used in SetParLimits
         } else {
             globalSigmaParScale = 0.0; // No SetParLimits used
         }
