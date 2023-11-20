@@ -8,14 +8,14 @@ So if using this macro, the only thing that should be editted is the array of cu
 
 
 INSTRUCTIONS ON USING AnalyzePi0.cpp:
-The way I use this macroo is as follows-
+The way I use this macro is as follows-
 1) Load in the root file of cuts you want to analyze in the variable 'globalFileName' at the beginning of the macro.
 --It is set up such that as you change the root file name generated from FillHists, the name of the root file gets decomposed into what cuts are used.
 -----The macro then knows automatically what cuts to print out to the invariant mass histograms, the 4 additional plots of analysis (signal yield, yield error, gauss mean, and gauss sigma) as well as what cuts to print out to the global tracking of histograms in the CSV file and the global tracking of fit tuning parameters in the additional CSV file 
 
 2)After globalFileName, there are 3 booleans that are set up to be used:
 CreateSignalandGaussParPlots:
----This is for after analyzing 12 histograms from a root file for a set of cuts, you set this boolean to true and re run the code, which then outputs all 4 plots specified above from text files with information needed to output this.
+---This is for after analyzing 12 histograms from a root file for a set of cuts, you set this boolean to true and re run the code, which then outputs all 4 plots specified above from text files with information needed to output this. No other manual changes need to be made at this point since text files automatically are named after the set of cuts.
 
 globalSetFitManual:
 Looking in the function PerformFitting(), you will see:
@@ -53,9 +53,9 @@ in which if setFitManual is true, you can set the parameters manually for whatev
 bool globalSetDynamicParsAuto:
 This is set up such that when true, it will load in the CSV file that outputted with the dynamic fit parameters that remained tunable, such as sigma and fitEnd, and set up your current histogram index being analyzed to the values used in the previous root file.
 
----This works well since when slightly varying cuts, these values essentially remain consistent, so it quickens the fitting procedure a lot
+---This works very well with incremental changes of cuts, these values essentially remain consistent, so it quickens the fitting procedure a lot. Especially since when cuts do change some of these parameters, you can set it easily to the parameters from before once, and then those changes propagate as you incremtnally vary the cuts further.
 
-------However if this is not working for the fit, you can set this to false, and manually set the values in the PeformFitting function:
+------So if is not working for the fit, you can set this to false, and manually set the values in the PeformFitting function (i always start with the values from the dynamic setting which print to the terminal as a starting point):
         fitEnd = 0.4;
         globalFitEnd = fitEnd;
         globalFindBin1Value = 0.1; // Value in FindBin for bin1
@@ -76,15 +76,11 @@ and if you want to comment out that line of code, it uploads the value as a 0 to
 
 
 
-
-
-
-
 ON a hist by hist basis, just change:
 int histIndex = 9;
 
 that is after these boolean statements to whatever histogram you want to look at.
-
+Really the only other thing that manually is inputted is y axis range and height of vertical lines printed, but this is pretty easy to guess based on image from previous output and adding or subtracting some value, which gets quick to guess after doing this a bunch.
 
 
 
