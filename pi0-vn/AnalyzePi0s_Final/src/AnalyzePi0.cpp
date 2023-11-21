@@ -14,12 +14,12 @@
  Top of code for easy scrolling
  */
 // Global variables
-std::string globalFilename = "/Users/patsfan753/Desktop/AnalyzePi0s_Final/histRootFiles/hPi0Mass_E1_Asym0point4_Delr0point07_Chi3.root";
+std::string globalFilename = "/Users/patsfan753/Desktop/AnalyzePi0s_Final/histRootFiles/hPi0Mass_E1_Asym0point5_Delr0point07_Chi3.root";
 bool CreateSignalandGaussParPlots = false; //control flag for plotting signal and signal error
 // Global variable for setFitManual
 bool globalSetFitManual = false;
 // Global variable for setting dynamic parameters automatically
-bool globalSetDynamicParsAuto = false;  // Set this as needed in your code
+bool globalSetDynamicParsAuto = true;  // Set this as needed in your code
 
 struct ParameterSet {
     double FitEnd;
@@ -29,6 +29,8 @@ struct ParameterSet {
 };
 
 // Function to read the CSV file and find the parameters for the given histIndex to auto set the dynamic fitting process, using the previous fit parameters from last set of cuts analyzed, this has been working really well
+
+//Doing it this way means if there is a big change in needed parameter sets for the fit, you can change it once, and set that in the CSV, then that change will propagate since should check incremental changes of cuts, makes further fits after finding the first good one take no time at all
 ParameterSet ReadParametersFromCSV(const std::string& filename, int histIndex) {
     std::ifstream file(filename);
     std::string line;
@@ -84,15 +86,16 @@ std::string csvFilePath = "/Users/patsfan753/Desktop/AnalyzePi0s_Final/dataOutpu
 /*
  Set which histogram index is being analyzed, make sure to switch after finishing previous fit
  */
-int histIndex = 11;
+int histIndex = 4;
 /*
  Set height of y axis range here
  */
-double globalYAxisRange[2] = {0, 2000}; // Lower and upper limits
+double globalYAxisRange[2] = {0, 12000}; // Lower and upper limits
 /*
  set height of black vertical line output below
  */
-double globalLineHeight = 700;
+double globalLineHeight = 0.20 * globalYAxisRange[1];
+
 void PerformFitting(TH1F* hPi0Mass, bool setFitManual, TF1*& totalFit, double& fitStart, double& fitEnd) {
     // Assign the setFitManual value to the global variable
     globalSetFitManual = setFitManual;
@@ -121,7 +124,7 @@ void PerformFitting(TH1F* hPi0Mass, bool setFitManual, TF1*& totalFit, double& f
 
         // Print out the parameters set dynamically
         std::cout << "\033[1;32m" // Set text color to bright green
-                  << "Dynamic Parameters Set: "
+                  << "Previous Parameters Set: "
                   << "\nFitEnd: " << fitEnd
                   << "\nFindBin2: " << globalFindBin2Value
                   << "\nSigmaEstimate: " << globalSigmaEstimate
@@ -130,14 +133,14 @@ void PerformFitting(TH1F* hPi0Mass, bool setFitManual, TF1*& totalFit, double& f
                   << std::endl;
     } else {
         // Set global variables for additional parameters (manual setting)
-        fitEnd = 0.55;
+        fitEnd = 0.4;
         globalFitEnd = fitEnd;
         globalFindBin1Value = 0.1; // Value in FindBin for bin1
-        globalFindBin2Value = 0.2; // Value in FindBin for bin2
-        globalSigmaEstimate = 0.01; // sigmaEstimate value
+        globalFindBin2Value = 0.12; // Value in FindBin for bin2
+        globalSigmaEstimate = 0.009; // sigmaEstimate value
         // Check if SetParLimits is used for sigma
         if (!setFitManual) {
-            globalSigmaParScale = .7; // Scale factor used in SetParLimits
+            globalSigmaParScale = .5; // Scale factor used in SetParLimits
         } else {
             globalSigmaParScale = 0.0; // No SetParLimits used
         }
@@ -350,7 +353,12 @@ void CalculateSignalYieldAndError(TH1F* hPi0Mass, TF1* polyFit, double fitMean, 
     }
     double signalYield, signalError;
     signalYield = hSignal->IntegralAndError(firstBinSignal, lastBinSignal, signalError, "");
-    std::cout << "isFitGood status before appending to array: " << (isFitGood ? "true" : "false") << std::endl;
+    std::cout << "\033[1m" // Bold start
+              << "isFitGood status before appending to array: "
+              << (isFitGood ? "\033[31mtrue" : "\033[34mfalse") // Red for true, blue for false
+              << "\033[0m" // Reset to default at the end
+              << std::endl;
+
     if (isFitGood) {
         // Generate unique file names based on cut values
         std::ostringstream yieldFilenameStream, errorFilenameStream;
@@ -405,6 +413,7 @@ void GenerateSignalAndGaussParPlots(const CutValues& cutValues) {
     double gaussianSigma[nPoints], gaussianSigmaError[nPoints];
     // Define a small jitter amount for horizontal offset of points
     const double jitterAmount = 0.04;
+    const double jitterAmountGaussMean = 0.05;
     
     double xPoints[nPoints] = {2.5, 3.5, 4.5, 2.5, 3.5, 4.5, 2.5, 3.5, 4.5, 2.5, 3.5, 4.5};
     // Construct file names based on cut values for yield and error
@@ -577,7 +586,7 @@ void GenerateSignalAndGaussParPlots(const CutValues& cutValues) {
     hDummyError->GetXaxis()->SetLimits(2, 5); // This sets the user-defined limits for the axis
     hDummyError->GetXaxis()->SetLabelSize(0.04); // You can adjust the size as needed
     hDummyError->GetXaxis()->SetNdivisions(004); // This will create four primary divisions (2, 3, 4, 5)
-    hDummyError->SetMaximum(0.7); // Adjust if necessary for your error values
+    hDummyError->SetMaximum(.8); // Adjust if necessary for your error values
     hDummyError->SetMinimum(0); // The minimum is 0
     hDummyError->SetStats(0); // Remove the statistics box
     hDummyError->Draw(); // Draw the dummy histogram to define axis ranges
@@ -653,7 +662,7 @@ void GenerateSignalAndGaussParPlots(const CutValues& cutValues) {
         GaussMeanGraphs[i] = new TGraphErrors(3);
         for (int j = 0; j < 3; ++j) {
             int idx = indices[i][j];
-            double adjustedX = xPoints[idx] + (i - 1.5) * jitterAmount; // Apply jittering
+            double adjustedX = xPoints[idx] + (i - 1.5) * jitterAmountGaussMean; // Apply jittering
             GaussMeanGraphs[i]->SetPoint(j, adjustedX, gaussianMean[idx]);
             GaussMeanGraphs[i]->SetPointError(j, 0, gaussianMeanError[idx]);
             GaussMeanGraphs[i]->SetLineColor(colors[i]);
