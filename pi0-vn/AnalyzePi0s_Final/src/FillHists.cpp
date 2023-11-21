@@ -16,10 +16,10 @@ void FillHists() {
     float clus_E, clus_E2, clus_eta, clus_phi, clus_eta2, clus_phi2, clus_time, clus_time2;
     float clus_chi, clus_chi2, pi0_mass, pi0_pt, MBD_charge;
     // Define arrays for cut values
-    std::vector<float> delta_R_values = {.07,.075,.08,.085,.09,.095,.1}; // Example values
-    std::vector<float> asymmetry_values = {.3, .4, .5, .6, .7};    // Example values
-    std::vector<float> clus_chi_values = {3, 3.5, 4, 4.5, 5};         // Example values
-    std::vector<float> clus_E_values = {1.0, 1.25, 1.5};    // Example values
+    std::vector<float> delta_R_values = {.07, .08,.09,.1};
+    std::vector<float> asymmetry_values = {.4, .45,.5};
+    std::vector<float> clus_chi_values = {3, 3.5, 4, 4.5, 5};
+    std::vector<float> clus_E_values = {.5,.55, .6, .7, .75, .8, .9};
 
     // Iterate over each combination of cuts
     for (float cut_delta_R : delta_R_values) {
@@ -66,8 +66,8 @@ void FillHists() {
                     chain->SetBranchAddress("clus_time", &clus_time);
                     chain->SetBranchAddress("clus_time2", &clus_time2);
 
-                    TH1F *hPi0Mass[12];
-                    for (int i = 0; i < 12; ++i) {
+                    TH1F *hPi0Mass[16];
+                    for (int i = 0; i < 16; ++i) {
                         hPi0Mass[i] = new TH1F(Form("hPi0Mass_%d", i), "Reconstructed Diphoton;Invariant Mass [GeV];Counts", 80, 0.0, 1.0);
                         hPi0Mass[i]->Sumw2();  // Enabling Sumw2 for error bars
                     }
@@ -75,6 +75,12 @@ void FillHists() {
                     
                     Long64_t nentries = chain->GetEntries();
                     std::cout << "Total entries to process: " << nentries << std::endl;
+                    
+                    // Calculate the entry points for 25%, 50%, and 75%
+                    Long64_t entryPoint25 = nentries / 4;
+                    Long64_t entryPoint50 = nentries / 2;
+                    Long64_t entryPoint75 = (3 * nentries) / 4;
+                    
                     // Print information about cuts and histograms.
                     std::cout << "Cuts (inclusive):\n"
                               << " Delta R >= " << cut_delta_R << "\n"
@@ -83,6 +89,15 @@ void FillHists() {
                               << " Cluster Chi < " << cut_clus_chi << "\n";
                     
                     for(Long64_t i = 0; i < nentries; i++) {
+                        // Progress update checks
+                        if (i == entryPoint25) {
+                            std::cout << "Processed 25% of the data." << std::endl;
+                        } else if (i == entryPoint50) {
+                            std::cout << "Processed 50% of the data." << std::endl;
+                        } else if (i == entryPoint75) {
+                            std::cout << "Processed 75% of the data." << std::endl;
+                        }
+                        
                         chain->GetEntry(i);
 
                         float asymmetry = fabs(clus_E - clus_E2) / (clus_E + clus_E2);
@@ -103,21 +118,26 @@ void FillHists() {
                         if      (pi0_pt >= 2.0 && pi0_pt < 3.0 && MBD_charge >= 0.0 && MBD_charge < 21395.5)      index = 0;
                         else if (pi0_pt >= 3.0 && pi0_pt < 4.0 && MBD_charge >= 0.0 && MBD_charge < 21395.5)      index = 1;
                         else if (pi0_pt >= 4.0 && pi0_pt < 5.0 && MBD_charge >= 0.0 && MBD_charge < 21395.5)      index = 2;
+                        else if (pi0_pt >= 5.0 && pi0_pt < 6.0 && MBD_charge >= 0.0 && MBD_charge < 21395.5)      index = 3;
 
                         //upper limit corresponding to 0.4 centrality
-                        else if (pi0_pt >= 2.0 && pi0_pt < 3.0 && MBD_charge >= 21395.5 && MBD_charge < 53640.9)  index = 3;
-                        else if (pi0_pt >= 3.0 && pi0_pt < 4.0 && MBD_charge >= 21395.5 && MBD_charge < 53640.9)  index = 4;
-                        else if (pi0_pt >= 4.0 && pi0_pt < 5.0 && MBD_charge >= 21395.5 && MBD_charge < 53640.9)  index = 5;
+                        else if (pi0_pt >= 2.0 && pi0_pt < 3.0 && MBD_charge >= 21395.5 && MBD_charge < 53640.9)  index = 4;
+                        else if (pi0_pt >= 3.0 && pi0_pt < 4.0 && MBD_charge >= 21395.5 && MBD_charge < 53640.9)  index = 5;
+                        else if (pi0_pt >= 4.0 && pi0_pt < 5.0 && MBD_charge >= 21395.5 && MBD_charge < 53640.9)  index = 6;
+                        else if (pi0_pt >= 5.0 && pi0_pt < 6.0 && MBD_charge >= 21395.5 && MBD_charge < 53640.9)  index = 7;
                         
                         //upper limit corresponding to 0.2 centrality
-                        else if (pi0_pt >= 2.0 && pi0_pt < 3.0 && MBD_charge >= 53640.9 && MBD_charge < 109768)  index = 6;
-                        else if (pi0_pt >= 3.0 && pi0_pt < 4.0 && MBD_charge >= 53640.9 && MBD_charge < 109768)  index = 7;
-                        else if (pi0_pt >= 4.0 && pi0_pt < 5.0 && MBD_charge >= 53640.9 && MBD_charge < 109768)  index = 8;
+                        else if (pi0_pt >= 2.0 && pi0_pt < 3.0 && MBD_charge >= 53640.9 && MBD_charge < 109768)  index = 8;
+                        else if (pi0_pt >= 3.0 && pi0_pt < 4.0 && MBD_charge >= 53640.9 && MBD_charge < 109768)  index = 9;
+                        else if (pi0_pt >= 4.0 && pi0_pt < 5.0 && MBD_charge >= 53640.9 && MBD_charge < 109768)  index = 10;
+                        else if (pi0_pt >= 5.0 && pi0_pt < 6.0 && MBD_charge >= 53640.9 && MBD_charge < 109768)  index = 11;
                         
                         //upper limit corresponding to max MBD value
-                        else if (pi0_pt >= 2.0 && pi0_pt < 3.0 && MBD_charge >= 109768 && MBD_charge < 250000)  index = 9;
-                        else if (pi0_pt >= 3.0 && pi0_pt < 4.0 && MBD_charge >= 109768 && MBD_charge < 250000)  index = 10;
-                        else if (pi0_pt >= 4.0 && pi0_pt < 5.0 && MBD_charge >= 109768 && MBD_charge < 250000)  index = 11;
+                        else if (pi0_pt >= 2.0 && pi0_pt < 3.0 && MBD_charge >= 109768 && MBD_charge < 250000)  index = 12;
+                        else if (pi0_pt >= 3.0 && pi0_pt < 4.0 && MBD_charge >= 109768 && MBD_charge < 250000)  index = 13;
+                        else if (pi0_pt >= 4.0 && pi0_pt < 5.0 && MBD_charge >= 109768 && MBD_charge < 250000)  index = 14;
+                        else if (pi0_pt >= 5.0 && pi0_pt < 6.0 && MBD_charge >= 109768 && MBD_charge < 250000)  index = 15;
+                        
                         // Check if 'index' has a valid value (i.e., not equal to -1).
                         if (index != -1) {
                             // Fill the histogram at the given index with the value of 'pi0_mass'.
@@ -125,14 +145,14 @@ void FillHists() {
                         }
                     }
                     // Constructing the file name
-                    std::string filename = "/Users/patsfan753/Desktop/AnalyzePi0s_Final/histRootFiles/hPi0Mass_E"
+                    std::string filename = "/Users/patsfan753/Desktop/AnalyzePi0s_Final/histRootFiles/lessThan1GeV/hPi0Mass_E"
                                            + formatFloatForFilename(cut_clus_E) + "_Asym"
                                            + formatFloatForFilename(cut_asymmetry) + "_Delr"
                                            + formatFloatForFilename(cut_delta_R) + "_Chi"
                                            + formatFloatForFilename(cut_clus_chi) + ".root";
                     std::cout << "Processing for file: " << filename << std::endl;
                     TFile outFile(filename.c_str(), "RECREATE");
-                    for (int i = 0; i < 12; ++i) {
+                    for (int i = 0; i < 16; ++i) {
                         std::cout << "Writing histogram for index: " << i << std::endl; // Print the histogram index being written
                         hPi0Mass[i]->Write();
                         std::cout << "Finished writing histogram " << i << std::endl;
@@ -157,7 +177,7 @@ TChain* ReadData() {
      */
 
     const std::vector<std::string> runs = { "21518", "21520", "21598", "21599", "21615", "21796", "21813", "21889", "21891", "22949", "22950", "22951", "22979", "22982" };
-    std::string baseDir = "/Users/patsfan753/Desktop/Pi0_Organized/ntp_rootFiles_11_6/";
+    std::string baseDir = "/Users/patsfan753/Desktop/AnalyzePi0s_Final/ntp_rootFiles_11_19/";
     for (const auto& run : runs) {
         std::cout << "Adding run: " << run << std::endl; // Print the run being loaded
         chain->Add((baseDir + run + "/ntp.root").c_str());
@@ -165,4 +185,3 @@ TChain* ReadData() {
     std::cout << "\033[1;32mData loaded.\033[0m" << std::endl;
     return chain;
 }
-
