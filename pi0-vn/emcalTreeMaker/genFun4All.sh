@@ -7,11 +7,10 @@ export MYINSTALL="$HOME/Documents/sPHENIX/install"
 source /opt/sphenix/core/bin/sphenix_setup.sh -n new
 source /opt/sphenix/core/bin/setup_local.sh $MYINSTALL
 
-input=${1}
-qa=${2}
-ntp=${3}
-output=${4}
-exe=${5}
+exe=${1}
+input=${2}
+qa=${3}
+ntp=${4}
 
 # print the environment - needed for debugging
 printenv

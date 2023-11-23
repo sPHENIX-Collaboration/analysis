@@ -299,7 +299,7 @@ void pi0Analysis(const string &i_input,
 # ifndef __CINT__
 Int_t main(Int_t argc, char* argv[]) {
 if(argc < 3 || argc > 6){
-        cout << "usage: ./pi0_analysis inputFile cuts [start] [end] [outputFile]" << endl;
+        cout << "usage: ./pi0Ana inputFile cuts [start] [end] [outputFile]" << endl;
         cout << "inputFile: containing list of root file paths" << endl;
         cout << "cuts: csv file containing cuts" << endl;
         cout << "start: start event number. Default: 0." << endl;
