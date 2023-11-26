@@ -7,6 +7,7 @@
 #include <TH2F.h>
 #include <TFile.h>
 #include <TChain.h>
+#include <TMath.h>
 
 using std::cout;
 using std::cerr;
@@ -21,6 +22,7 @@ using std::min;
 using std::max;
 using std::left;
 using std::setw;
+using std::stringstream;
 
 namespace myAnalysis {
     TChain* T;
@@ -47,16 +49,39 @@ namespace myAnalysis {
                                                      {"40-60",  make_pair(21395.5, 53640.9)},
                                                      {"60-100", make_pair(0, 21395.5)}};
 
-    map<string,pair<Float_t, Float_t>> diphoton_pt = {{"2-3", make_pair(2, 3)},
-                                                     {"3-4",  make_pair(3, 4)},
-                                                     {"4-5",  make_pair(4, 5)}};
+    map<string,pair<Float_t, Float_t>> diphoton_pt = {{"1-2", make_pair(1, 2)},
+                                                      {"2-3", make_pair(2, 3)},
+                                                      {"3-4", make_pair(3, 4)},
+                                                      {"4-5", make_pair(4, 5)}};
 
 
     map<pair<string,string>, vector<TH1F*>> hPi0Mass; // hPi0Mass[make_pair(cent,pt)][i], for accessing diphoton invariant mass hist of i-th cut of cent,pt
 
+    map<pair<string,string>, TH2F*> h2DeltaRVsMass;
+    map<pair<string,string>, TH2F*> h2AsymVsMass;
+    map<pair<string,string>, TH2F*> h2TimingAsymVsMass;
+    map<pair<string,string>, TH2F*> h2ChiAsymVsMass;
+    map<string, TH1F*>              hDiphotonPt;
+
     Int_t   bins_pi0_mass = 80;
     Float_t hpi0_mass_min = 0;
     Float_t hpi0_mass_max = 1;
+
+    Int_t   bins_pt   = 500;
+    Float_t hpt_min   = 0;
+    Float_t hpt_max   = 20;
+
+    Int_t   bins_deltaR   = 100;
+    Float_t hdeltaR_min   = 0;
+    Float_t hdeltaR_max   = 4;
+
+    Int_t   bins_asym   = 100;
+    Float_t hasym_min   = 0;
+    Float_t hasym_max   = 1;
+
+    Int_t   bins_time   = 32;
+    Float_t htime_min   = 0;
+    Float_t htime_max   = 32;
 }
 
 Int_t myAnalysis::init(const string &i_input, const string &i_cuts) {
@@ -76,10 +101,12 @@ Int_t myAnalysis::init(const string &i_input, const string &i_cuts) {
     T->SetBranchStatus("clus_eta",  true);
     T->SetBranchStatus("clus_phi",  true);
     T->SetBranchStatus("clus_chi",  true);
+    T->SetBranchStatus("clus_time", true);
     T->SetBranchStatus("clus_E2",   true);
     T->SetBranchStatus("clus_eta2", true);
     T->SetBranchStatus("clus_phi2", true);
     T->SetBranchStatus("clus_chi2", true);
+    T->SetBranchStatus("clus_time2",true);
     T->SetBranchStatus("pi0_mass",  true);
     T->SetBranchStatus("pi0_pt",    true);
 
@@ -166,17 +193,52 @@ Int_t myAnalysis::readCuts(const string &i_cuts) {
 
 void myAnalysis::init_hists() {
 
+    stringstream s;
+    stringstream t;
     // create a pi0 mass hist for each cut
+    // create QA plots for each centrality/pt bin
     for(auto cent : centrality) {
+
+        string suffix_title =  "Centrality: " + cent.first + "%";
+        hDiphotonPt[cent.first] = new TH1F(("hDiphotonPt_"+cent.first).c_str(), ("Diphoton p_{T}, " + suffix_title +"; p_{T} [GeV]; Counts").c_str(), bins_pt, hpt_min, hpt_max);
+
         for(auto pt : diphoton_pt) {
+
+            pair<string,string> key = make_pair(cent.first,pt.first);
+            string suffix = "_"+cent.first+"_"+pt.first;
+            suffix_title = "Centrality: " + cent.first + "%, Diphoton p_{T}: " + pt.first + " GeV";
+
+
+            h2DeltaRVsMass[key] = new TH2F(("h2DeltaRVsMass"+suffix).c_str(),
+                                            ("#Delta R vs Diphoton Invariant Mass, " + suffix_title +"; Mass [GeV]; #Delta R").c_str(),
+                                            bins_pi0_mass, hpi0_mass_min, hpi0_mass_max,
+                                            bins_deltaR, hdeltaR_min, hdeltaR_max);
+
+            h2AsymVsMass[key] = new TH2F(("h2AsymVsMass"+suffix).c_str(),
+                                            ("Cluster Energy Asymmetry vs Diphoton Invariant Mass, " + suffix_title +"; Mass [GeV]; Energy Asymmetry").c_str(),
+                                            bins_pi0_mass, hpi0_mass_min, hpi0_mass_max,
+                                            bins_asym, hasym_min, hasym_max);
+
+            h2TimingAsymVsMass[key] = new TH2F(("h2TimingAsymVsMass"+suffix).c_str(),
+                                            ("Cluster Timing Asymmetry vs Diphoton Invariant Mass, " + suffix_title +"; Mass [GeV]; Timing Asymmetry").c_str(),
+                                            bins_pi0_mass, hpi0_mass_min, hpi0_mass_max,
+                                            bins_asym, hasym_min, hasym_max);
+
+            h2ChiAsymVsMass[key] = new TH2F(("h2ChiAsymVsMass"+suffix).c_str(),
+                                            ("Cluster #chi^{2} Asymmetry vs Diphoton Invariant Mass, " + suffix_title +"; Mass [GeV]; #chi^{2} Asymmetry").c_str(),
+                                            bins_pi0_mass, hpi0_mass_min, hpi0_mass_max,
+                                            bins_asym, hasym_min, hasym_max);
+
             vector<TH1F*> h;
             for (auto cut : cuts) {
-                h.push_back(new TH1F(("hPi0Mass_"+cent.first+"_"+pt.first+"_"+to_string(cut.e)+"_"+to_string(cut.chi)
-                                     +"_"+to_string(cut.deltaR)+"_"+to_string(cut.e_asym)).c_str(),
-                                     "Diphoton Invariant mass; Mass [GeV]; Counts",
-                                     bins_pi0_mass, hpi0_mass_min, hpi0_mass_max));
+                s.str("");
+                t.str("");
+                s << "hPi0Mass" << suffix << "_" << cut.e << "_" << cut.e_asym << "_" << cut.deltaR << "_" << cut.chi;
+                t << "Diphoton: E #geq " << cut.e << ", Asym < " << cut.e_asym << ", #Delta R #geq " << cut.deltaR
+                  << ", #chi^{2} < " << cut.chi << "; Invariant Mass [GeV]; Counts";
+                h.push_back(new TH1F(s.str().c_str(), t.str().c_str(), bins_pi0_mass, hpi0_mass_min, hpi0_mass_max));
             }
-            hPi0Mass[make_pair(cent.first,pt.first)] = h;
+            hPi0Mass[key] = h;
         }
     }
 }
@@ -191,10 +253,12 @@ void myAnalysis::process_event(Long64_t start, Long64_t end) {
     Float_t clus_eta;
     Float_t clus_phi;
     Float_t clus_chi;
+    Float_t clus_time;
     Float_t clus_E2;
     Float_t clus_eta2;
     Float_t clus_phi2;
     Float_t clus_chi2;
+    Float_t clus_time2;
     Float_t pi0_mass;
     Float_t pi0_pt;
 
@@ -203,10 +267,12 @@ void myAnalysis::process_event(Long64_t start, Long64_t end) {
     T->SetBranchAddress("clus_eta",  &clus_eta);
     T->SetBranchAddress("clus_phi",  &clus_phi);
     T->SetBranchAddress("clus_chi",  &clus_chi);
+    T->SetBranchAddress("clus_time", &clus_time);
     T->SetBranchAddress("clus_E2",   &clus_E2);
     T->SetBranchAddress("clus_eta2", &clus_eta2);
     T->SetBranchAddress("clus_phi2", &clus_phi2);
     T->SetBranchAddress("clus_chi2", &clus_chi2);
+    T->SetBranchAddress("clus_time2",&clus_time2);
     T->SetBranchAddress("pi0_mass",  &pi0_mass);
     T->SetBranchAddress("pi0_pt",    &pi0_pt);
 
@@ -223,21 +289,37 @@ void myAnalysis::process_event(Long64_t start, Long64_t end) {
 
         Float_t deltaR = sqrt(pow(clus_eta-clus_eta2,2)+pow(deltaPhi,2));
         Float_t e_asym = abs(clus_E-clus_E2)/(clus_E+clus_E2);
+        Float_t time_asym = abs(clus_time-clus_time2)/(clus_time+clus_time2);
+        Float_t chi_asym = abs(clus_chi-clus_chi2)/(clus_chi+clus_chi2);
 
         // fill in the pi0 mass histogram for each cut
+        // fill in QA plots for each centrality/pt bin
         bool flag = false;
         for(auto cent : centrality) {
+
+            if(totalMBD >= cent.second.first && totalMBD < cent.second.second) {
+               hDiphotonPt[cent.first]->Fill(pi0_pt);
+            }
+
             for(auto pt : diphoton_pt) {
 
                 if(totalMBD >= cent.second.first && totalMBD < cent.second.second &&
                    pi0_pt   >= pt.second.first   && pi0_pt   < pt.second.second) {
+
+                    pair<string,string> key = make_pair(cent.first, pt.first);
+
+                    h2DeltaRVsMass[key]    ->Fill(pi0_mass, deltaR);
+                    h2AsymVsMass[key]      ->Fill(pi0_mass, e_asym);
+                    h2TimingAsymVsMass[key]->Fill(pi0_mass, time_asym);
+                    h2ChiAsymVsMass[key]   ->Fill(pi0_mass, chi_asym);
 
                     for(Int_t i = 0; i < cuts.size(); ++i) {
 
                         if(clus_E >= cuts[i].e     && clus_E2 >= cuts[i].e &&
                            clus_chi < cuts[i].chi  && clus_chi2 < cuts[i].chi &&
                            e_asym < cuts[i].e_asym && deltaR >= cuts[i].deltaR) {
-                            hPi0Mass[make_pair(cent.first, pt.first)][i]->Fill(pi0_mass);
+
+                           hPi0Mass[key][i]->Fill(pi0_mass);
                         }
                     }
                     flag = true;
@@ -254,21 +336,39 @@ void myAnalysis::process_event(Long64_t start, Long64_t end) {
 
 void myAnalysis::finalize(const string &i_output) {
     TFile output(i_output.c_str(),"recreate");
+    output.mkdir("results");
+    output.mkdir("QA/hDiphotonPt");
+    output.mkdir("QA/h2DeltaRVsMass");
+    output.mkdir("QA/h2AsymVsMass");
+    output.mkdir("QA/h2TimingAsymVsMass");
+    output.mkdir("QA/h2ChiAsymVsMass");
 
     for(auto cent : centrality) {
-        output.mkdir(cent.first.c_str());
+        output.cd("QA/hDiphotonPt");
+        hDiphotonPt[cent.first]->Write();
 
         for(auto pt : diphoton_pt) {
-            output.mkdir((cent.first+"/"+pt.first).c_str());
-            output.cd((cent.first+"/"+pt.first).c_str());
+            pair<string,string> key = make_pair(cent.first, pt.first);
+
+            output.cd("QA/h2DeltaRVsMass");
+            h2DeltaRVsMass[key]    ->Write();
+
+            output.cd("QA/h2AsymVsMass");
+            h2AsymVsMass[key]      ->Write();
+
+            output.cd("QA/h2TimingAsymVsMass");
+            h2TimingAsymVsMass[key]->Write();
+
+            output.cd("QA/h2ChiAsymVsMass");
+            h2ChiAsymVsMass[key]   ->Write();
+
+            output.mkdir(("results/"+cent.first+"/"+pt.first).c_str());
+            output.cd(("results/"+cent.first+"/"+pt.first).c_str());
 
             for(Int_t i = 0; i < cuts.size(); ++i) {
-                hPi0Mass[make_pair(cent.first, pt.first)][i]->Write();
+                hPi0Mass[key][i]->Write();
             }
-
-            output.cd();
         }
-        output.cd();
     }
 
     output.Close();
