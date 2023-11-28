@@ -73,6 +73,7 @@ class CaloTransverseEnergy:public SubsysReco
 		float GetTransverseEnergy(float, float);
 		void GetNodes(PHCompositeNode*); 
 		bool ValidateDistro();
+		
 	/*	const std::string &prdfnode="PRDF"; //maybe I can add an overload to this? just do either version
 		const std::string &DSTnode="DST";
 		const std::string &iHCALnode="HCALIN";
@@ -80,7 +81,8 @@ class CaloTransverseEnergy:public SubsysReco
 		const std::string &EMCALnode="CEMC";
 	*/	
 		int n_evt=0;
-		TTree* datatree;
+		bool led=false;
+		TTree* datatree, *headertree;
 		std::map<int, float> em_towers_eta_width {
 			{0, 0.021268},{1, 0.021267}, {2,0.021475}, {3,0.021475}, {4,0.21682}, {5,0.021681}, {6,0.021886}, {7,0.021886}, {8,0.022089}, {9,0.022089}, {10,0.2229}, {11,0.022291},
 			{12, 0.022491}, {13,0.022491 }, {14,0.02269}, {15,0.022691 }, {16, 0.02289}, {17, 0.02289}, {18,0.023089}, {19,0.023088}, {20,0.023289}, {21,0.023288}, {22,0.023488}, {23,0.023488}, {24, 0.02369}, {25, 0.02369}, {26,0.023894}, {27,0.023894 }, {28,0.024101}, {29,0.024101 }, {30,0.024312 }, {31,0.024312}, {32,0.24529}, {33,0.024529}, {34, 0.024751}, {35, 0.024751}, {36, 0.024981}, {37, 0.024981}, {38, 0.02522}, {39, 0.025219}, {40, 0.025468}, {41, 0.025469}, {42, 0.23926}, {43,  0.023926}, {44, 0.24041}, {45, 0.024041}, {46, 0.024101}, {47, 0.024101}, {48, 0.024101}, {49, 0.024101}, 
@@ -99,7 +101,7 @@ class CaloTransverseEnergy:public SubsysReco
 		{
 			IHCALE=new TH1F("iHCal", "Total Transverse energy depositied in inner HCal; Energy #towers percent of towers [GeV]", 400, 0, 401); 
 			OHCALE=new TH1F("oHCal", "Total Transverse energy depositied in outer HCal; Energy #times percent oftowers [GeV]", 400, 0,401); 
-		EMCALE=new TH1F("emCal", "Total Transverse energy depositied in EMCal; Energy #times percent of towers [GeV]", 400, 0, 400); 
+		EMCALE=new TH1F("emCal", "Total Transverse energy depositied in EMCal; Energy #times percent of towers [GeV]", 400, 0, 401); 
 			
 //			ETOTAL=new TH1F("total", "Total Transverse energy depositied in all Calorimeters; Energy [GeV]", 2500, 0, 2501); 
 			PhiD=new TH1F("phid", "Transverse energy deposited in #varphi; #varphi; Energy [GeV] ", 32, -0.1, 6.30);
@@ -149,21 +151,20 @@ class CaloTransverseEnergy:public SubsysReco
 			} kinematiccuts;
 		struct event_data
 			{
-				std::vector<float> emcal_tower_et;
-				std::vector<float> ihcal_tower_et;
-				std::vector<float> ohcal_tower_et;
-				float emcal;
-				float ohcal;
-				float ihcal;
-			} ;
+				std::map <float, float> emcal_tower_et;
+				std::map <float, float> ihcal_tower_et;
+				std::map <float, float> ohcal_tower_et;
+				float emcal_et=0;
+				float ohcal_et=0;
+				float ihcal_et=0;
+			} evt_data;
 		struct segment_data
 			{
 				std::vector<float> em_eta_acceptance;
 				std::vector<float> ihcal_eta_acceptance;
 				std::vector<float> ohcal_eta_acceptance;
 				float emcal_acceptance, ihcal_acceptance, ohcal_acceptance;
-				int n_events;
-			};
+			}seg_acceptance;
 		PHCompositeNode* _topNode, *_IHCALNode, *_OHCALNode, *_EMCALNode;
 		float energy, hcalenergy, emcalenergy, energy_transverse, et_hcal, et_emcal; //transverse energies
 		std::map<float, std::vector<float>> etphi, eteta, etephi, eteeta, ethphi, etheta; //angular energy distributions  
