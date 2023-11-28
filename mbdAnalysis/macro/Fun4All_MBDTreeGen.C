@@ -16,6 +16,8 @@
 
 R__LOAD_LIBRARY(libfun4all.so)
 R__LOAD_LIBRARY(libmbdAnalysis.so)
+R__LOAD_LIBRARY(libmbd_io.so)
+R__LOAD_LIBRARY(libmbd.so)
 #endif
 
 void Fun4All_MBDTreeGen(const int nEvents = 100, const char *listFile = "mbdFileList.list")

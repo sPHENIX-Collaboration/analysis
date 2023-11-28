@@ -43,6 +43,7 @@
 #include <TH2.h>
 #include <TNtuple.h>
 #include <TTree.h>
+#include <TProfile2D.h>
 
 #include <Event/Event.h>
 #include <Event/packet.h>
@@ -84,9 +85,19 @@ int CaloAna::Init(PHCompositeNode*)
   h_cemc_etaphi = new TH2F("h_cemc_etaphi", ";eta;phi", 96, 0, 96, 256, 0, 256);
   h_hcalin_etaphi = new TH2F("h_ihcal_etaphi", ";eta;phi", 24, 0, 24, 64, 0, 64);
   h_hcalout_etaphi = new TH2F("h_ohcal_etaphi", ";eta;phi", 24, 0, 24, 64, 0, 64);
+
   h_cemc_etaphi_wQA = new TH2F("h_cemc_etaphi_wQA", ";eta;phi", 96, 0, 96, 256, 0, 256);
   h_hcalin_etaphi_wQA = new TH2F("h_ihcal_etaphi_wQA", ";eta;phi", 24, 0, 24, 64, 0, 64);
   h_hcalout_etaphi_wQA = new TH2F("h_ohcal_etaphi_wQA", ";eta;phi", 24, 0, 24, 64, 0, 64);
+
+  h_cemc_etaphi_time = new TProfile2D("h_cemc_etaphi_time", ";eta;phi", 96, 0, 96, 256, 0, 256,-10,10);
+  h_hcalin_etaphi_time = new TProfile2D("h_ihcal_etaphi_time", ";eta;phi", 24, 0, 24, 64, 0, 64 ,-10,10);
+  h_hcalout_etaphi_time = new TProfile2D("h_ohcal_etaphi_time", ";eta;phi", 24, 0, 24, 64, 0, 64 ,-10,10);
+
+  h_cemc_etaphi_badChi2 = new TProfile2D("h_cemc_etaphi_badChi2", ";eta;phi", 96, 0, 96, 256, 0, 256,-10,10);
+  h_hcalin_etaphi_badChi2 = new TProfile2D("h_ihcal_etaphi_badChi2", ";eta;phi", 24, 0, 24, 64, 0, 64 ,-10,10);
+  h_hcalout_etaphi_badChi2 = new TProfile2D("h_ohcal_etaphi_badChi2", ";eta;phi", 24, 0, 24, 64, 0, 64 ,-10,10);
+
 
   // 1D distributions
   h_InvMass = new TH1F("h_InvMass", "Invariant Mass", 120, 0, 1.2);
@@ -151,8 +162,8 @@ int CaloAna::process_towers(PHCompositeNode* topNode)
   float mbddownscale = 2000.0;
   float zdcdownscale = 1e4;
 
-  float emcal_hit_threshold = 1;
-  float ohcal_hit_threshold = 1;
+  float emcal_hit_threshold = 0.5; // GeV
+  float ohcal_hit_threshold = 0.5;
   float ihcal_hit_threshold = 0.25;
 
   int max_zdc_t = -1;
@@ -186,6 +197,9 @@ int CaloAna::process_towers(PHCompositeNode* topNode)
     hvtx_z_raw->Fill(vtx_z);
   }
 
+  vector<float> ht_eta;
+  vector<float> ht_phi;
+
   if (!m_vtxCut || abs(vtx_z) < _vz)
   {
     hvtx_z_cut->Fill(vtx_z);
@@ -205,19 +219,30 @@ int CaloAna::process_towers(PHCompositeNode* topNode)
           int ieta = towers->getTowerEtaBin(towerkey);
           int iphi = towers->getTowerPhiBin(towerkey);
           int _time = tower->get_time();
+          float _timef = tower->get_time_float();
           hemcaltime_cut->Fill(_time);
-          //   if (tower->get_isBadChi2()) cout << "tower-" << ieta << "," << iphi << "  has a bad chi" << endl;
-          //   if (tower->get_isHot()) cout << "tower-" << ieta << "," << iphi << "  is hot" << endl;
-          bool isGood = tower->get_isBadChi2();
+          bool isGood = ! (tower->get_isBadChi2());
+          if (!isGood && offlineenergy > 0.2) 
+          {
+            ht_eta.push_back(ieta);
+            ht_phi.push_back(iphi);
+          }
+
           if (_time > (max_emcal_t - _range) && _time < (max_emcal_t + _range))
           {
             totalcemc += offlineenergy;
             hemcaltime->Fill(_time);
-
             if (offlineenergy > emcal_hit_threshold)
             {
-              h_cemc_etaphi->Fill(ieta, iphi, offlineenergy);
-              if(isGood) h_cemc_etaphi_wQA->Fill(ieta, iphi, offlineenergy);
+              h_cemc_etaphi_time->Fill(ieta, iphi, _timef);
+              h_cemc_etaphi->Fill(ieta, iphi);
+              if (isGood) h_cemc_etaphi_wQA->Fill(ieta, iphi, offlineenergy);
+              if (tower->get_isBadChi2()){
+                h_cemc_etaphi_badChi2->Fill(ieta,iphi,1);
+              }
+              else{
+                h_cemc_etaphi_badChi2->Fill(ieta,iphi,0);
+              }
             }
           }
         }
@@ -236,10 +261,10 @@ int CaloAna::process_towers(PHCompositeNode* topNode)
           unsigned int towerkey = towers->encode_key(channel);
           int ieta = towers->getTowerEtaBin(towerkey);
           int iphi = towers->getTowerPhiBin(towerkey);
-          int _time = towers->get_tower_at_channel(channel)->get_time();
+          int _time = tower->get_time();
+          float _timef = tower->get_time_float();
           hihcaltime_cut->Fill(_time);
-          bool isGood = tower->get_isBadChi2();
-
+          bool isGood = !(tower->get_isBadChi2());
           if (_time > (max_ihcal_t - _range) && _time < (max_ihcal_t + _range))
           {
             totalihcal += offlineenergy;
@@ -247,8 +272,15 @@ int CaloAna::process_towers(PHCompositeNode* topNode)
 
             if (offlineenergy > ihcal_hit_threshold)
             {
-              h_hcalin_etaphi->Fill(ieta, iphi, offlineenergy);
-              if (isGood) h_hcalin_etaphi->Fill(ieta, iphi, offlineenergy);
+              h_hcalin_etaphi->Fill(ieta, iphi);
+              h_hcalin_etaphi_time->Fill(ieta, iphi, _timef);
+              if (isGood) h_hcalin_etaphi_wQA->Fill(ieta, iphi, offlineenergy);
+              if (tower->get_isBadChi2()){
+                h_hcalin_etaphi_badChi2->Fill(ieta,iphi,1);
+              }
+              else{
+                h_hcalin_etaphi_badChi2->Fill(ieta,iphi,0);
+              }
             }
           }
         }
@@ -266,9 +298,11 @@ int CaloAna::process_towers(PHCompositeNode* topNode)
           unsigned int towerkey = towers->encode_key(channel);
           int ieta = towers->getTowerEtaBin(towerkey);
           int iphi = towers->getTowerPhiBin(towerkey);
-          int _time = towers->get_tower_at_channel(channel)->get_time();
+          int _time = tower->get_time();
+          float _timef = tower->get_time_float();
+          hihcaltime_cut->Fill(_time);
           hohcaltime_cut->Fill(_time);
-          bool isGood = tower->get_isBadChi2();
+          bool isGood = !(tower->get_isBadChi2());
 
           if (_time > (max_ohcal_t - _range) && _time < (max_ohcal_t + _range))
           {
@@ -277,8 +311,15 @@ int CaloAna::process_towers(PHCompositeNode* topNode)
 
             if (offlineenergy > ohcal_hit_threshold)
             {
-              h_hcalout_etaphi->Fill(ieta, iphi, offlineenergy);
-              if(isGood) h_hcalout_etaphi->Fill(ieta, iphi, offlineenergy);
+              h_hcalout_etaphi->Fill(ieta, iphi);
+              h_hcalout_etaphi_time->Fill(ieta, iphi, _timef);
+              if (isGood) h_hcalout_etaphi_wQA->Fill(ieta, iphi, offlineenergy);
+              if (tower->get_isBadChi2()){
+                h_hcalout_etaphi_badChi2->Fill(ieta,iphi,1);
+              }
+              else{
+                h_hcalout_etaphi_badChi2->Fill(ieta,iphi,0);
+              }
             }
           }
         }
@@ -296,7 +337,6 @@ int CaloAna::process_towers(PHCompositeNode* topNode)
           float offlineenergy = tower->get_energy();
           int _time = towers->get_tower_at_channel(channel)->get_time();
           hzdctime_cut->Fill(_time);
-
           if (channel == 0 || channel == 2 || channel == 4)
           {
             totalzdcsouthcalib += offlineenergy;
@@ -375,14 +415,27 @@ int CaloAna::process_towers(PHCompositeNode* topNode)
     return 0;
   }
 
+  //////////////////////////////////////////
+  // geometry for hot tower/cluster masking
+  std::string towergeomnodename = "TOWERGEOM_CEMC";
+  RawTowerGeomContainer* m_geometry = findNode::getClass<RawTowerGeomContainer>(topNode, towergeomnodename);
+  if (!m_geometry)
+  {
+    std::cout << Name() << "::" 
+              << "CreateNodeTree"
+              << ": Could not find node " << towergeomnodename << std::endl;
+    throw std::runtime_error("failed to find TOWERGEOM node in RawClusterDeadHotMask::CreateNodeTree");
+  }
+
+  // cuts
   float emcMinClusE1 = 1.5;  // 0.5;
   float emcMinClusE2 = 0.8;  // 0.5;
   float emcMaxClusE = 32;
   float minDr = 0.08;
   float maxAlpha = 0.8;
 
-  //if (totalmbd < 0.1 * mbddownscale  )
-  if (totalcemc < 0.2*emcaldownscale )
+  // if (totalmbd < 0.1 * mbddownscale  )
+  if (totalcemc < 0.2 * emcaldownscale)
   {
     RawClusterContainer::ConstRange clusterEnd = clusterContainer->getClusters();
     RawClusterContainer::ConstIterator clusterIter;
@@ -401,7 +454,6 @@ int CaloAna::process_towers(PHCompositeNode* topNode)
       float clus_pt = E_vec_cluster.perp();
       float clus_chisq = recoCluster->get_chi2();
 
-      h_etaphi_clus->Fill(clus_eta, clus_phi);
       h_clusE->Fill(clusE);
 
       if (clusE < emcMinClusE1 || clusE > emcMaxClusE)
@@ -416,6 +468,26 @@ int CaloAna::process_towers(PHCompositeNode* topNode)
       {
         continue;
       }
+
+      if (dynMaskClus)
+      {
+        // loop over the towers in the cluster
+        RawCluster::TowerConstRange towers = recoCluster->get_towers();
+        RawCluster::TowerConstIterator toweriter;
+        bool hotClus = false;
+        for (toweriter = towers.first; toweriter != towers.second; ++toweriter)
+        {
+          int towereta = m_geometry->get_tower_geometry(toweriter->first)->get_bineta();
+          int towerphi = m_geometry->get_tower_geometry(toweriter->first)->get_binphi();
+          for (size_t i = 0; i < ht_eta.size(); i++)
+          {
+            if (towerphi == ht_phi[i] && towereta == ht_eta[i]) hotClus = true;
+          }
+        }
+        if (hotClus == true) continue;
+      }
+
+      h_etaphi_clus->Fill(clus_eta, clus_phi);
 
       TLorentzVector photon1;
       photon1.SetPtEtaPhiE(clus_pt, clus_eta, clus_phi, clusE);
@@ -450,6 +522,25 @@ int CaloAna::process_towers(PHCompositeNode* topNode)
           continue;
         }
 
+        if (dynMaskClus)
+        {
+          // loop over the towers in the cluster
+          RawCluster::TowerConstRange towers2 = recoCluster2->get_towers();
+          RawCluster::TowerConstIterator toweriter2;
+          bool hotClus = false;
+          for (toweriter2 = towers2.first; toweriter2 != towers2.second; ++toweriter2)
+          {
+            int towereta = m_geometry->get_tower_geometry(toweriter2->first)->get_bineta();
+            int towerphi = m_geometry->get_tower_geometry(toweriter2->first)->get_binphi();
+
+            for (size_t i = 0; i < ht_eta.size(); i++)
+            {
+              if (towerphi == ht_phi[i] && towereta == ht_phi[i]) hotClus = true;
+            }
+          }
+          if (hotClus == true) continue;
+        }
+
         TLorentzVector photon2;
         photon2.SetPtEtaPhiE(clus2_pt, clus2_eta, clus2_phi, clus2E);
 
@@ -464,8 +555,6 @@ int CaloAna::process_towers(PHCompositeNode* topNode)
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
-
-
 
 int CaloAna::End(PHCompositeNode* /*topNode*/)
 {
