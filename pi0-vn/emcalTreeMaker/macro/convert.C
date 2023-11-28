@@ -8,18 +8,10 @@
 #include <TFile.h>
 
 using std::cout;
-using std::cerr;
 using std::endl;
 using std::string;
 using std::to_string;
 using std::vector;
-using std::map;
-using std::pair;
-using std::make_pair;
-using std::min;
-using std::max;
-using std::left;
-using std::setw;
 using std::stringstream;
 
 namespace myAnalysis {
