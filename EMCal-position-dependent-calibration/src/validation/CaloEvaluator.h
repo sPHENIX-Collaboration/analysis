@@ -11,7 +11,6 @@
 
 #include <set>
 #include <string>
-#include <vector>
 
 class CaloEvalStack;
 class PHCompositeNode;
@@ -87,8 +86,6 @@ class CaloEvaluator : public SubsysReco
   void set_do_cluster_eval(bool b) { _do_cluster_eval = b; }
 
  private:
-  TTree *_cluster_tower_info; //Added by Apurva
-
   // subroutines
   void printInputInfo(PHCompositeNode *topNode);     ///< print out the input object information (debugging upstream components)
   void fillOutputNtuples(PHCompositeNode *topNode);  ///< dump the evaluator information into ntuple for external analysis
@@ -119,9 +116,9 @@ class CaloEvaluator : public SubsysReco
   float _reco_e_threshold = 0.;
 
   bool _do_cluster_eval = true;
-  bool _do_gpoint_eval = false;
+  bool _do_gpoint_eval = true;
   bool _do_gshower_eval = true;
-  bool _do_tower_eval = false;
+  bool _do_tower_eval = true;
   bool _strict = false;
 
   std::string _caloname;

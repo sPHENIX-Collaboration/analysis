@@ -100,26 +100,21 @@ int CaloEvaluator::Init(PHCompositeNode* /*topNode*/)
   if (_do_cluster_eval)
   {
     _ntp_cluster = new TNtuple("ntp_cluster", "cluster => max truth primary",
-                                              "event:clusterID:ntowers:eta_detector:eta:x:y:z:phi:e:e_calib:ecore:ecore_calib:avgeta:avgphi:"
+                                              "event:clusterID:ntowers:eta_detector:eta:x:y:z:phi:e:e_calib:ecore:ecore_calib:"
                                               "gparticleID:gflavor:gnhits:"
                                               "geta:gphi:ge:gpt:gvx:gvy:gvz:"
                                               "gembed:gedep:"
                                               "efromtruth");
-
-    // _cluster_tower_info = new TTree("cluster_tower_info", "Cluster Tower Info");
-    // _cluster_tower_info->Branch("towerEtas", &_towerEtas);
-    // _cluster_tower_info->Branch("towerPhis", &_towerPhis);
-    // _cluster_tower_info->Branch("towerEnergies", &_towerEnergies);
   }
-
-  // set minimum cluster energy to 1 GeV
-  set_reco_tracing_energy_threshold(1);
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
 int CaloEvaluator::process_event(PHCompositeNode* topNode)
 {
+  // show progress
+  if(_ievent % 200 == 0) std::cout << "Progress: " << _ievent << std::endl;
+
   if (!_caloevalstack)
   {
     _caloevalstack = new CaloEvalStack(topNode, _caloname);
@@ -175,7 +170,6 @@ int CaloEvaluator::End(PHCompositeNode* /*topNode*/)
   if (_do_cluster_eval)
   {
     _ntp_cluster->Write();
-    // _cluster_tower_info->Write();
   }
 
   _tfile->Close();
@@ -776,9 +770,7 @@ void CaloEvaluator::fillOutputNtuples(PHCompositeNode* topNode)
     GlobalVertexMap* vertexmap = findNode::getClass<GlobalVertexMap>(topNode, "GlobalVertexMap");
 
     std::string clusternode = "CLUSTER_" + _caloname;
-    // string clusternode = "CLUSTERINFO_" + _caloname;
     RawClusterContainer* clusters = findNode::getClass<RawClusterContainer>(topNode, clusternode.c_str());
-
     if (!clusters)
     {
       std::cerr << PHWHERE << " ERROR: Can't find " << clusternode << std::endl;
@@ -793,31 +785,6 @@ void CaloEvaluator::fillOutputNtuples(PHCompositeNode* topNode)
       std::cerr << PHWHERE << " ERROR: Can't find " << clusternode_calib << std::endl;
       exit(-1);
     }
-
-    // string towernode = "TOWER_CALIB_" + _caloname;
-    // RawTowerContainer* towers = findNode::getClass<RawTowerContainer>(topNode, towernode.c_str());
-    // if (!towers) {
-    //   cerr << PHWHERE << " ERROR: Can't find towers " << towernode << endl;
-    //   exit(-1);
-    // }
-
-    std::string towerinfoNodename = "TOWERINFO_CALIB_" + _caloname;
-    TowerInfoContainer* _towerinfos = findNode::getClass<TowerInfoContainer>(topNode, towerinfoNodename);
-
-    if (!_towerinfos) {
-      std::cerr << PHWHERE << " ERROR: Can't find " << towerinfoNodename << std::endl;
-      exit(-1);
-    }
-
-    std::string towergeomnodename = "TOWERGEOM_" + _caloname;
-    RawTowerGeomContainer *towergeom = findNode::getClass<RawTowerGeomContainer>(topNode, towergeomnodename);
-
-    if (!towergeom) {
-      std::cerr << PHWHERE << " ERROR: Can't find " << towergeomnodename << std::endl;
-      exit(-1);
-    }
-
-    const int nphibin = towergeom->get_phibins();
 
     // for every cluster
     // iterate over uncalibrated and calibrated clusters simultaneously
@@ -928,115 +895,33 @@ void CaloEvaluator::fillOutputNtuples(PHCompositeNode* topNode)
                                                           primary);
       }
 
-      // loop over the towers in the cluster
-      RawCluster::TowerConstRange towers = cluster->get_towers();
-      RawCluster::TowerConstIterator toweriter;
-
-      // _towerEtas.clear();
-      // _towerPhis.clear();
-      // _towerEnergies.clear();
-
-      float etamult = 0;
-      float etasum  = 0;
-      float phimult = 0;
-      float phisum  = 0;
-
-      int iphi_0    = -1;
-
-      for (toweriter = towers.first; toweriter != towers.second; ++toweriter) {
-
-        int iphi = RawTowerDefs::decode_index2(toweriter->first);  // index2 is phi in CYL
-        int ieta = RawTowerDefs::decode_index1(toweriter->first);  // index1 is eta in CYL
-
-        if(toweriter == towers.first) {
-          iphi_0 = iphi;
-        }
-
-        // unsigned int towerkey = iphi + (ieta << 16U);
-        unsigned int towerkey = TowerInfoDefs::encode_emcal(ieta, iphi);
-
-        unsigned int towerindex = _towerinfos->decode_key(towerkey);
-
-        TowerInfo *towinfo = _towerinfos->get_tower_at_channel(towerindex);
-
-        double towerenergy = towinfo->get_energy();
-
-        // put the eta, phi, energy into corresponding vectors
-        // _towerEtas.push_back(ieta);
-        // _towerPhis.push_back(iphi);
-        // _towerEnergies.push_back(towerenergy);
-
-        float energymult = towerenergy * ieta;
-        etamult += energymult;
-        etasum += towerenergy;
-
-        int phibin = iphi;
-
-        if (phibin - iphi_0 < -nphibin / 2.0) {
-          phibin += nphibin;
-        }
-        else if (phibin - iphi_0 > nphibin / 2.0) {
-          phibin -= nphibin;
-        }
-        assert(abs(phibin - iphi_0) <= nphibin / 2.0);
-
-        energymult = towerenergy * phibin;
-        phimult += energymult;
-        phisum += towerenergy;
-      }
-
-      float avgphi = phimult / phisum;
-      float avgeta = etamult / etasum;
-
-      if (avgphi < 0) {
-        avgphi += nphibin;
-      }
-
-      avgphi = fmod(avgphi, nphibin);
-
       float cluster_data[] = {(float) _ievent,
-      clusterID,
-      ntowers,
-      eta_detector,
-      eta,
-      x,
-      y,
-      z,
-      phi,
-      e,
-      e_calib,
-      ecore,
-      ecore_calib,
-      avgeta,
-      avgphi,
-      gparticleID,
-      gflavor,
-      gnhits,
-      geta,
-      gphi,
-      ge,
-      gpt,
-      gvx,
-      gvy,
-      gvz,
-      gembed,
-      gedep,
-      efromtruth};
+                              clusterID,
+                              ntowers,
+                              eta_detector,
+                              eta,
+                              x,
+                              y,
+                              z,
+                              phi,
+                              e,
+                              e_calib,
+                              ecore,
+                              ecore_calib,
+                              gparticleID,
+                              gflavor,
+                              gnhits,
+                              geta,
+                              gphi,
+                              ge,
+                              gpt,
+                              gvx,
+                              gvy,
+                              gvz,
+                              gembed,
+                              gedep,
+                              efromtruth};
 
-
-      // for (toweriter = towersConstRange.first; toweriter != towersConstRange.second; ++toweriter) {
-      //   RawTower* tower = towers->getTower(toweriter->first);
-
-      //   unsigned char towerEta = tower->get_bineta();
-      //   unsigned char towerPhi = tower->get_binphi();
-      //   float towerEnergy = tower->get_energy();
-
-      //   //put the etabin, phibin, and energy into the corresponding vectors
-      //   _towerEtas.push_back(towerEta);
-      //   _towerPhis.push_back(towerPhi);
-      //   _towerEnergies.push_back(towerEnergy);
-      // }
-      // _cluster_tower_info->Fill();
       _ntp_cluster->Fill(cluster_data);
     }
   }
