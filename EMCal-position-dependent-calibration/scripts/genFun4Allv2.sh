@@ -9,8 +9,8 @@ source /opt/sphenix/core/bin/setup_local.sh $MYINSTALL
 
 exe=${1}
 calo=${2}
-g4=${2}
-output=${3}
+g4=${3}
+output=${4}
 
 # print the environment - needed for debugging
 printenv
