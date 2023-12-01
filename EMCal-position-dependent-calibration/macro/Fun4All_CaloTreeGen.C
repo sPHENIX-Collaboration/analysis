@@ -42,20 +42,20 @@ void Fun4All_CaloTreeGen(const string &inputFile,
   eval->set_do_gpoint_eval(false);
   eval->set_do_gshower_eval(false);
   eval->set_do_tower_eval(false);
-  // set minimum cluster energy to 1 GeV
-  eval->set_reco_tracing_energy_threshold(1);
+  // set minimum cluster energy
+  eval->set_reco_tracing_energy_threshold(0.5);
 
   // eval->Verbosity(verbosity);
   se->registerSubsystem(eval);
 
   Fun4AllInputManager *in = new Fun4AllDstInputManager("DSTcalo");
-  in->AddListFile(inputFile.c_str());
-  // in->AddFile(inputFile.c_str());
+  // in->AddListFile(inputFile.c_str());
+  in->AddFile(inputFile.c_str());
   se->registerInputManager(in);
 
   Fun4AllInputManager *g4Hits = new Fun4AllDstInputManager("G4Hits");
-  g4Hits->AddListFile(inputG4Hits.c_str());
-  // g4Hits->AddFile(inputFile.c_str());
+  // g4Hits->AddListFile(inputG4Hits.c_str());
+  g4Hits->AddFile(inputG4Hits.c_str());
   se->registerInputManager(g4Hits);
 
   se->run(nEvents);

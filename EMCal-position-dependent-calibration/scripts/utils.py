@@ -8,9 +8,10 @@ import shutil
 parser = argparse.ArgumentParser()
 subparser = parser.add_subparsers(dest='command')
 
-create = subparser.add_parser('create', help='Create condor submission directory.')
-status = subparser.add_parser('status', help='Check the status of the condor submission.')
-hadd   = subparser.add_parser('hadd', help='Merge completed condor jobs.')
+create     = subparser.add_parser('create', help='Create condor submission directory.')
+status     = subparser.add_parser('status', help='Check the status of the condor submission.')
+hadd       = subparser.add_parser('hadd', help='Merge completed condor jobs.')
+validation = subparser.add_parser('vd', help='Create condor submission directory for validation.')
 
 create.add_argument('-e', '--executable', type=str, default='scripts/genFun4All.sh', help='Job script to execute. Default: scripts/genFun4All.sh')
 create.add_argument('-a', '--macros', type=str, default='current/macro', help='Directory of input macros. Directory containing Fun4All_G4_sPHENIX.C and G4Setup_sPHENIX.C. Default: current/macro')
@@ -29,6 +30,13 @@ hadd.add_argument('-o','--output', type=str, default='test.root', help='Output r
 hadd.add_argument('-n','--jobs-per-hadd', type=int, default=5000, help='Number of jobs to merge per hadd call. Default: 5000.')
 hadd.add_argument('-j','--jobs-open', type=int, default=50, help='Number of jobs to load at once. Default: 50.')
 hadd.add_argument('-m','--multiple-submit-dir', type=bool, default=False,help='If merging condor jobs over multiple directories. Default: False')
+
+validation.add_argument('-i', '--file-list', type=str, help='List of files', required=True)
+validation.add_argument('-e', '--executable', type=str, default='scripts/genFun4Allv2.sh', help='Job script to execute. Default: scripts/genFun4Allv2.sh')
+validation.add_argument('-b', '--f4a', type=str, default='bin/Fun4All_CaloTreeGen', help='Fun4All executable. Default: bin/Fun4All_CaloTreeGen')
+validation.add_argument('-d', '--output', type=str, default='test', help='Output Directory. Default: ./test')
+validation.add_argument('-s', '--memory', type=int, default=1, help='Memory (units of GB) to request per condor submission. Default: 1 GB.')
+validation.add_argument('-l', '--log', type=str, default='/tmp/anarde/dump/job-$(ClusterId)-$(Process).log', help='Condor log file.')
 
 args = parser.parse_args()
 
@@ -162,6 +170,39 @@ def hadd(jobs_dir):
         subprocess.run(['echo', f'done with hadd: {i}'])
         subprocess.run(['echo', '#######################'])
 
+def create_validation_jobs():
+    file_list  = os.path.realpath(args.file_list)
+    executable = os.path.realpath(args.executable)
+    f4a        = os.path.realpath(args.f4a)
+    output_dir = os.path.realpath(args.output)
+    memory     = args.memory
+    log        = args.log
+
+    print(f'File List: {file_list}')
+    print(f'Executable: {executable}')
+    print(f'f4a: {f4a}')
+    print(f'Output Directory: {output_dir}')
+    print(f'Requested memory per job: {memory}GB')
+    print(f'Condor log file: {log}')
+
+    os.makedirs(output_dir,exist_ok=True)
+    shutil.copy(executable, output_dir)
+    shutil.copy(f4a, output_dir)
+    shutil.copy(file_list, output_dir)
+
+    os.makedirs(f'{output_dir}/stdout',exist_ok=True)
+    os.makedirs(f'{output_dir}/error',exist_ok=True)
+    os.makedirs(f'{output_dir}/output',exist_ok=True)
+
+    with open(f'{output_dir}/genFun4All.sub', mode="w") as file:
+        file.write(f'executable     = {os.path.basename(executable)}\n')
+        file.write(f'arguments      = {output_dir}/{os.path.basename(f4a)} $(dst_calo_cluster) $(g4hits) output/test-$(Process).root\n')
+        file.write(f'log            = {log}\n')
+        file.write( 'output         = stdout/job-$(Process).out\n')
+        file.write( 'error          = error/job-$(Process).err\n')
+        file.write(f'request_memory = {memory}GB\n')
+        file.write(f'queue dst_calo_cluster, g4hits from {os.path.basename(file_list)}')
+
 if __name__ == '__main__':
     if(args.command == 'create'):
         create_jobs()
@@ -177,3 +218,6 @@ if __name__ == '__main__':
         else:
             job_dir = args.job_dir_list
             hadd(jobs_dir)
+
+    elif(args.command == 'vd'):
+        create_validation_jobs()
