@@ -54,7 +54,7 @@ def plot_data(filtered_data, clear_plot):
     else:
         plot_update_count += 1  # Increment the counter for each overlay
         
-        
+    
     x_points_base = [2.5, 3.5, 4.5]
     x_ticks = [2, 3, 4, 5]
     colors = ['red', 'blue', 'lightgreen', 'deeppink']
@@ -78,7 +78,7 @@ def plot_data(filtered_data, clear_plot):
         local_max_y = max(local_max_y, max(y_vals) * 10)
         container = ax.errorbar(x_vals, y_vals, yerr=y_errs, fmt=marker, color=color)
         container[0].set_gid(i)
-        container[0].set_picker(10)
+        container[0].set_picker(5)
 
         print(f"Plotted data with GID: {i}")
 
@@ -90,6 +90,11 @@ def plot_data(filtered_data, clear_plot):
     ax.set_ylim(0.1, global_max_y)
     ax.set_xticks(x_ticks)
     ax.set_xlim(1.5, 5.5)
+    
+    ax.set_title(r"$\pi^0$ Yield")
+
+    ax.set_xlabel(r"$\pi^0$ pT")
+    ax.set_ylabel(r"$\pi^0$ Signal Yield")
     canvas.draw()
 
     print("Finished plotting data")
@@ -232,6 +237,7 @@ exit_button.grid(row=7, column=0, columnspan=2, padx=5, pady=5)
 
 # Setting up the plot area
 fig, ax = plt.subplots()
+
 canvas = FigureCanvasTkAgg(fig, master=frame)
 canvas.get_tk_widget().grid(row=8, column=0, columnspan=2, padx=5, pady=5)
 
