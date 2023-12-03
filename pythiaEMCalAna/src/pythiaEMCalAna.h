@@ -20,7 +20,7 @@ class pythiaEMCalAna : public SubsysReco
 {
  public:
 
-  pythiaEMCalAna(const std::string &name = "pythiaEMCalAna");
+  pythiaEMCalAna(const std::string &name = "pythiaEMCalAna", bool isAuAu = false);
 
   ~pythiaEMCalAna() override;
 
@@ -95,6 +95,7 @@ class pythiaEMCalAna : public SubsysReco
   TFile *fout;
   std::string outname;
   int getEvent;
+  bool hasHIJING; // needed to handle HIJING embedded samples correctly
   long int n_direct_photons;
   long int n_direct_photons_in_acceptance;
   long int n_pythia_direct_photons;
