@@ -371,84 +371,56 @@ def plot_GaussianSigma(filtered_data, clear_plot):
 
 # Function to plot Relative Signal Error values.
 def plot_RelativeSignalError(filtered_data, clear_plot):
-    # Access and update global variables
     global global_max_y_RelativeSignalError, plot_RelativeSignalError_history, plot_update_count_RelativeSignalError, total_point_count_RelativeSignalError
-    
-    # Clear existing plot and reset variables if needed
     if clear_plot:
-        ax.clear()  # Clear the axes for a new plot
-        global_max_y_RelativeSignalError = 0  # Reset the maximum y-value for Relative Signal Error
-        init_legend()  # Initialize the legend for the plot
-        plot_RelativeSignalError_history = {}  # Reset the history of plotted Relative Signal Error data
-        plot_update_count_RelativeSignalError = 0  # Reset the count of plot updates
+        ax.clear()
+        global_max_y_RelativeSignalError = 0
+        init_legend()
+        plot_RelativeSignalError_history = {}
+        plot_update_count_RelativeSignalError = 0
     else:
-        plot_update_count_RelativeSignalError += 1  # Increment the plot update count for subsequent plots
-
-    # Base x-points and tick marks for the plot
-    x_points_base = [2.5, 3.5, 4.5]  # Base x-values for plotting
-    x_ticks = [2, 3, 4, 5]  # Tick marks for the x-axis
-    markers = ['o', 's', '^', 'v']  # Different markers for each data series
-
-    # Initialize local max y-value for this specific plot
+        plot_update_count_RelativeSignalError += 1
+    x_points_base = [2.5, 3.5, 4.5]
+    x_ticks = [2, 3, 4, 5]
+    markers = ['o', 's', '^', 'v']
     local_max_y = 0
-
-    # Retrieve current cuts (filters) from the GUI entries
     current_cuts = {
         'E': energy_entry.get(),
         'A': asymmetry_entry.get(),
         'C': chi2_entry.get(),
         'D': delta_r_entry.get()
     }
-
-    # Loop through each data series for plotting
     for i, (color, marker) in enumerate(zip(colors, markers)):
-        # Calculate jitter offset for x-values to prevent overlapping
         base_jitter_offset = (i - 1.5) * 0.05
         overlay_jitter_offset = plot_update_count_RelativeSignalError * 0.08
         total_jitter_offset = base_jitter_offset + overlay_jitter_offset
-
-        # Determine indices for slicing the filtered data
         indices = range(i * 3, (i + 1) * 3)
-
-        # Adjust x-values and retrieve Relative Signal Error values
         x_vals = [x + total_jitter_offset for x in x_points_base]
         relSig_vals = [filtered_data.iloc[j]['RelativeSignalError'] for j in indices]
-        
-        # Plot each point without error bars
         for j, x_val in enumerate(x_vals):
-            relSig_val = relSig_vals[j]  # Get the y-value
-            point_id = (plot_update_count_RelativeSignalError, i, j)  # Unique point identifier
+            relSig_val = relSig_vals[j]
+            point_id = (plot_update_count_RelativeSignalError, i, j)
+            plot_RelativeSignalError_history[point_id] = {
+                'relSig_val': relSig_val, 'cuts': current_cuts.copy()
+            }
 
-            # Store point data in history for future reference
-            plot_RelativeSignalError_history[point_id] = {'relSig_val': relSig_val, 'cuts': current_cuts.copy()}
+            # Plot each point and make it interactive
+            line, = ax.plot(x_val, relSig_val, marker=marker, color=color)
+            line.set_gid(point_id)
+            line.set_picker(5)
 
-            # Plot the point without error bars
-            ax.plot(x_val, relSig_val, marker=marker, color=color)
-
-        # Update local max y-value
-        local_max_y = max(local_max_y, max(relSig_vals))
-
-    # Update the global max y-value if necessary
+            
+            
+        local_max_y = max(local_max_y, max(relSig_vals))  # Adjusted to not consider error bars
     if local_max_y > global_max_y_RelativeSignalError:
         global_max_y_RelativeSignalError = local_max_y
-
-    # Define a buffer factor for the upper limit of the y-axis
     upper_buffer_factor = 1.25
-
-    # Set the y-axis limits
-    # The lower limit is set to 0 and the upper limit is increased by the buffer factor
     ax.set_ylim(0, global_max_y_RelativeSignalError * upper_buffer_factor)
-    
-    # Set the x-axis ticks and limits
     ax.set_xticks(x_ticks)
     ax.set_xlim(1.5, 5.5)
-
-    # Set the plot title and axis labels
     ax.set_title(r"Relative Signal Error")
     ax.set_xlabel(r"$\pi^0$ pT")
     ax.set_ylabel(r"Relative Signal Error")
-
-    # Render the plot
     canvas.draw()
 
 
