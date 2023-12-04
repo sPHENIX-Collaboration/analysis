@@ -1,3 +1,6 @@
+//Creates a huge list of plots procedurally, allowing for me to be properly lazy 
+//need to test implementation and check in rcalo values as of 4-12-2023
+//Have to check on the eta shift with Joey
 class caloplots{ //creates a relevant plot for each calorimeter type
 	public: 
 		std::string calo="EMCAL";
@@ -12,9 +15,11 @@ class caloplots{ //creates a relevant plot for each calorimeter type
 			zh=zhigh;
 			calo=caloname;
 			z=(zl+zh)/2;
+			if(calo.find("OHCAL") != std::string::npos || calo.find("ALL") != std::string::npos) rcalo=3;
+			if(calo.find("IHCAL") != std::string::npos) rcalo=2;
 			if(calo.find("HCAL") != std::string::npos || calo.find("ALL") != std::string::npos){
-					zmax=;
-					zmin=;
+					zmax=rcalo*(1-etamax*etamax)/(2*etamax);
+					zmin=rcalo*(1-etamin*etamin)/(2*etamin);
 				}
 			AdjustEtaEdge();
 			MakePlots();
@@ -33,9 +38,8 @@ class caloplots{ //creates a relevant plot for each calorimeter type
 		{
 			//shifts min and max eta value on z boundries.
 			float deltaeta=0;
-
-			etamax=;
-			etamin=;
+			etamax=-2/etamax-zh/rcalo+sqrt(pow((etamax*zh-rcalo)/(etamax*rcalo), 2)+ 1);
+			etamin=-2/etamin-zl/rcalo+sqrt(pow((etamin*zl-rcalo)/(etamin*rcalo), 2)+ 1);
 		}
 		MakePlots(){
 			if(calo.find("HCAL") != std::string::npos || calo.find("ALL") != std::string::npos){
@@ -60,6 +64,13 @@ class caloplots{ //creates a relevant plot for each calorimeter type
 		       	E_eta_phi=new TH2F*(Form("E_eta_phi_%s_Z_%d", calo, z), Form("E(#eta, #varphi)	physical binning in %s with vertex centered at z=%d, #eta, #varphi, E [GeV]", calo, z), etabins, -1.13, 1.13, phibins, phimax);
 			ET_z_eta=new TH2F*(Form("ET_z_eta_%s_%z_%d", calo, z), Form("E_{T}(z_{vertex}, #eta) in %s with vertex centered at z=%d, z_{vertex}, #eta, E_{T} [GeV]", calo, z), 40, zl, zh, etabins, etamin, etamax);
 		}
+}
 struct plots{
 		int z_bin=0;
+		float zl=0, zh=1;
+		caloplots* em=new caloplots("EMCAL",zl,zh);
+		caloplots* ihcal=new caloplots("IHCAL", zl, zh);
+		caloplots* ohcal=new caloplots("OHCAL", zl, zh);
+		caloplots* total=new caloplots("ALL", zl, zh);
+}
 		
