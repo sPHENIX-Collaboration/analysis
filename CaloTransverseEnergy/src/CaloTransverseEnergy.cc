@@ -15,7 +15,7 @@ int CaloTransverseEnergy::process_event(PHCompositeNode *topNode)
 	n_evt++;
 	std::vector<float> emcalenergy_vec, ihcalenergy_vec, ohcalenergy_vec; 
 	if(isPRDF){
-		if(n_evt>1000000) return 1;
+	//	if(n_evt>1000000) return 1;
 		for (auto pn:packets)
 		{
 			std::cout<<"Looking at packet " <<pn <<std::endl;
@@ -237,7 +237,7 @@ void CaloTransverseEnergy::processPacket(int packet, Event * e, std::vector<floa
 	catch(std::exception* e) {return;} 
 	Packet *p= e->getPacket(packet);
 	if(!p) return;
-	//std::cout<<"Have the packet with " <<p->iValue(0, "CHANNELS") <<" many channels"<<std::endl; 
+	std::cout<<"Have the packet with " <<p->iValue(0, "CHANNELS") <<" many channels"<<std::endl; 
 	for(int c=0; c<p->iValue(0, "CHANNELS"); c++)
 	{
 		int etabin=0;
@@ -261,7 +261,11 @@ void CaloTransverseEnergy::processPacket(int packet, Event * e, std::vector<floa
 			if(val>en) en=val;
 		}
 		en=en-baseline;
-		if(en==0) continue;
+		if(packet/1000 == 7 ) en=en/1966.26;
+		if(packet/1000 == 8 ) en=en/311.6;
+		if(energy->size() >= 2) if(GetTransverseEnergy(en,eta)>2*energy->at(energy->size()-1)) continue; 
+		if(en <=0 ) continue;
+		//control for high channels and 0 energy conditions
 		energy->push_back(GetTransverseEnergy(en,eta));
 	//	std::cout<<"Energy is " <<en <<std::endl;
 		//For the hcal get the phi distribution
@@ -273,8 +277,24 @@ void CaloTransverseEnergy::processPacket(int packet, Event * e, std::vector<floa
 		float phi=phibin*PI/16;	
 		float phval=GetTransverseEnergy(en,eta);
 		PhiD->Fill(phi, phval);	
-		EtaD->Fill(eta, phval*24.0/2.2);
+		EtaD->Fill(etabin, phval*24.0/2.2);
 		tep->Fill(etabin, phibin, phval);
+		teps->Fill(etabin, phibin, 1);
+		if(packet/1000 == 7) 
+		{
+			ihPhiD->Fill(phi, phval);
+			ihEtaD->Fill(etabin,phval*24/2.2);
+			ihep->Fill(etabin, phibin, phval);
+			iheps->Fill(etabin, phibin, 1);
+		}
+		if(packet/1000 == 8) 
+		{
+			ohPhiD->Fill(phi, phval);
+			ohEtaD->Fill(etabin,phval*24/2.2);
+			ohep->Fill(etabin, phibin, phval);
+			oheps->Fill(etabin, phibin, 1);
+		}
+			
 		//n_evt_eta.at(etabin)++;
 	}
 
@@ -335,7 +355,23 @@ bool CaloTransverseEnergy::ValidateDistro()
 void CaloTransverseEnergy::ProduceOutput()
 {
 	TFile* outfile=new TFile(Form("../data_output/Transverse_Energy_run_%d_segment_%d.root",run_number, DST_Segment), "RECREATE");
-	TH1F* acceptance_eta_em_h=new TH1F("h", "H", 96, eEtaD->GetXaxis()->GetXmin(), eEtaD->GetXaxis()->GetXmax());
+	PLTS.em->getAcceptance(PLTS.event_data);
+	PLTS.ihcal->getAcceptance(PLTS.event_data);
+	PLTS.ohcal->getAcceptance(PLTS.event_data);
+	PLTS.em->scaleThePlots(n_evts);
+	PLTS.ihcal->scaleThePlots(n_evts);
+	PLTS.ohcal->scaleThePlots(n_evts);
+	PLTS.total->BuildTotal();
+	for(auto h:PLTS.em->hists_1)h->Write();
+	for(auto h:PLTS.em->hists_2)h->Write()		
+	for(auto h:PLTS.ihcal->hists_1)h->Write();
+	for(auto h:PLTS.ihcal->hists_2)h->Write();
+	for(auto h:PLTS.ohcal->hists_1)h->Write();
+	for(auto h:PLTS.ohcal->hists_2)h->Write();
+	for(auto h:PLTS.total->hists_1)h->Write();
+	for(auto h:PLTS.total->hists_2)h->Write();
+	/*TH1F* acceptance_eta_em_h=new TH1F("h", "H", 96, eEtaD->GetXaxis()->GetXmin(), eEtaD->GetXaxis()->GetXmax());
+	
 	int n_emtow=0, n_ihtow=0, n_ohtow=0; 
 	seg_acceptance.em_eta_acceptance=std::vector<float> (96,0);
 	seg_acceptance.ihcal_eta_acceptance=std::vector<float> (96,0);
@@ -371,16 +407,16 @@ void CaloTransverseEnergy::ProduceOutput()
 	acceptance_eta_em_h->Scale(1/256.);
 	//eEtaD->Divide(acceptance_eta_em_h);
 //	for(int i=0; i<eEtaD->GetNbinsX(); i++) eEtaD->SetBinContent(i+1, eEtaD->GetBinContent(i+1)*acceptance_eta_em.at(i)/256.);
-/*	ePhiD->Scale(accept_e/n_evt);
+	ePhiD->Scale(accept_e/n_evt);
 	ohEtaD->Scale(accept_oh/n_evt);
 	ohPhiD->Scale(accept_oh/n_evt);
 	ihEtaD->Scale(accept_ih/n_evt);
-	ihPhiD->Scale(accept_ih/n_evt);*/
+	ihPhiD->Scale(accept_ih/n_evt);
 //	for(int i=1; i<25; i++) EtaD->Fill(i, ihEtaD->GetBinContent(i)+ohEtaD->GetBinContent(i) + eEtaD->GetBinContent(4*i)+eEtaD->GetBinContent(4+i+1)+eEtaD->GetBinContent(4*i+2)+eEtaD->GetBinContent(4*i+3));
-	for(int i=1; i<33; i++) PhiD->Fill(i, ihPhiD->GetBinContent(i)+ohPhiD->GetBinContent(i) + ePhiD->GetBinContent(4*i)+ePhiD->GetBinContent(4*i+1)+ePhiD->GetBinContent(4*i+2)+ePhiD->GetBinContent(4*i+3));
+//	for(int i=1; i<33; i++) PhiD->Fill(i, ihPhiD->GetBinContent(i)+ohPhiD->GetBinContent(i) + ePhiD->GetBinContent(4*i)+ePhiD->GetBinContent(4*i+1)+ePhiD->GetBinContent(4*i+2)+ePhiD->GetBinContent(4*i+3));
 	//EtaD->Scale(1/n_evt);
 	//PhiD->Scale(1/n_evt);
-//	EtaD->Scale(1/(float)n_evt);
+	EtaD->Scale(1/(float)n_evt);
 	//just make a ton of histos
 	EMCALE->Scale(seg_acceptance.emcal_acceptance);
 	EMCALE->Write();
@@ -419,7 +455,7 @@ void CaloTransverseEnergy::ProduceOutput()
 	phibin_hc->Write();
 	etabin_em->Write();
 	phibin_em->Write();
-//	EtaPhi->Write();
+//	EtaPhi->Write();*/
 	datatree->Write();
 	headertree->Fill();
 	headertree->Write();
@@ -473,9 +509,9 @@ int CaloTransverseEnergy::Init(PHCompositeNode *topNode)
 		packets.push_back(ih);
 		packets.push_back(oh);
 	}
-	for(int i=0; i<128; i++){
-		int em=6001+i;
-		packets.push_back(em);
-	}
+	//for(int i=0; i<128; i++){
+	//	int em=6001+i;
+	//	packets.push_back(em);
+	//}
 	return 0;	 
 }

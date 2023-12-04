@@ -99,13 +99,13 @@ class CaloTransverseEnergy:public SubsysReco
 		CaloTransverseEnergy(std::string inputfile, const std::string &name="CaloTE")
 			:SubsysReco(name)
 		{
-			IHCALE=new TH1F("iHCal", "Total Transverse energy depositied in inner HCal; Energy #towers percent of towers [GeV]", 400, 0, 401); 
+		/*	IHCALE=new TH1F("iHCal", "Total Transverse energy depositied in inner HCal; Energy #times percent of towers [GeV]", 400, 0, 401); 
 			OHCALE=new TH1F("oHCal", "Total Transverse energy depositied in outer HCal; Energy #times percent oftowers [GeV]", 400, 0,401); 
 		EMCALE=new TH1F("emCal", "Total Transverse energy depositied in EMCal; Energy #times percent of towers [GeV]", 400, 0, 401); 
 			
 //			ETOTAL=new TH1F("total", "Total Transverse energy depositied in all Calorimeters; Energy [GeV]", 2500, 0, 2501); 
 			PhiD=new TH1F("phid", "Transverse energy deposited in #varphi; #varphi; Energy [GeV] ", 32, -0.1, 6.30);
-			EtaD=new TH1F("etad", "Transverse energy depositied in #eta; #eta; Energy [GeV]", 24, -1.1, 1.1);
+			EtaD=new TH1F("etad", "Transverse energy depositied in #eta; #eta; Energy [GeV]", 24, -0.5, 23.5);
 			phis=new TH1F("phis", "N events in #varphi; #varphi", 32, -0.1, 6.31); 
 			etas=new TH1F("etas", "N events in #eta; #eta", 24, -1.1, 1.1);
 			ePhiD=new TH1F("emCal_phid", "Transverse energy deposited per active towers in #varphi EmCal; #varphi; Energy/Tower hits [GeV/N] ", 256, 0, 6.30);
@@ -113,9 +113,9 @@ class CaloTransverseEnergy:public SubsysReco
 			ephis=new TH1F("emcal_phis", "N events in #varphi EMCal; #varphi", 32, 0, 6.31); 
 			eetas=new TH1F("emcal_etas", "N events in #eta EMCal ; #eta", 24, -1.1, 1.1);
 			ohPhiD=new TH1F("ohcal_phid", "Transverse energy deposited in #varphi outer HCal; #varphi; #frac{d E_{T}}{d #eta} [GeV] ", 64, 0, 6.30);
-			ohEtaD=new TH1F("ohcal_etad", "Transverse energy depositied in #eta outer HCal; #eta; Energy/Active Tower Hits [GeV/N]", 24, -0.5, 23.5);
+			ohEtaD=new TH1F("ohcal_etad", "Transverse energy depositied in #eta outer HCal; #eta_{bin}; #frac{dE_{T}}{d #eta}[GeV]", 24, -0.5, 23.5);
 			ihPhiD=new TH1F("ihcal_phid", "Transverse energy deposited in #varphi inner HCal; #varphi; #frac{d E_{T}}{d #eta} [GeV] ", 64, 0, 6.30);
-			ihEtaD=new TH1F("ihcal_etad", "Transverse energy depositied in #eta inner HCal; #eta; Energy/Active Tower Hits [GeV/N]", 24, -0.5, 23.5);
+			ihEtaD=new TH1F("ihcal_etad", "Transverse energy depositied in #eta inner HCal; #eta_{bin};#frac{dE_{T}}{d #eta} [GeV]", 24, -0.5, 23.5);
 			hphis=new TH1F("hcal_phis", "N events in #varphi HCal; #varphi", 32, 0, 6.31); 
 			hetas=new TH1F("hcal_etas", "N events in #eta HCal; #eta", 24, -1.1, 1.1);
 			eep=new TH2F("emcal_towers_et", "Transverse energy deposited in each tower in EM Cal; #eta ; #varphi ; E_{T} [GeV]", 96, 0, 95, 256, 0, 255); 
@@ -124,14 +124,18 @@ class CaloTransverseEnergy:public SubsysReco
 			eeps=new TH2F("emcal_towers_hits", "Events in each tower in EM Cal; #eta ; #varphi ; N_{events}", 96, -0.5, 95.5, 256, -0.5, 255.5); 
 			oheps=new TH2F("outer_hcal_towers_hits", "Events in each tower in outer HCal; #eta; #varphi; N_{events}", 24, -0.5, 23.5, 64, -0.5, 63.5); 
 			iheps=new TH2F("inner_hcal_towers_hits", "Events in each tower in inner HCal; #eta; #varphi; N_{events}", 24, -0.5, 23.5, 64, 0, 63.5); 
-			tep=new TH2F("total_towers_et", "Transverse energy deposited in each tower binned by HCal; #eta; #varphi; E_{T} [GeV]", 24, -1.1, 1.1, 64, -0.1, 6.3); 
+			tep=new TH2F("total_towers_et", "Transverse energy deposited in each tower binned by HCal; #eta; #varphi; E_{T} [GeV]", 24, -0.5, 23.5, 64, -0.5, 63.5); 
 			teps=new TH2F("total_towers_hits", "Events in each tower in all binned by HCal; #eta ; #varphi ; N_{events}", 24, -1.1, 1.1, 64, -0.1, 6.3); 
 			etabin_em=new TH1F("emeta", "#eta bin to #eta center EmCal; #eta_{bin}; #eta", 96, -0.5, 95.5);
 			phibin_em=new TH1F("emphi", "#varphi bin to #delta #varphi width EmCal; #varphi_{bin}; #delta #varphi", 256, -0.5, 255.5);
 			
 			etabin_hc=new TH1F("hceta", "#eta bin to #delta #eta width HCal; #eta_{bin};#delta #eta", 24, -0.5, 23.5);
-			phibin_hc=new TH1F("hcphi", "#varphi bin to #delta #varphi width HCal; #varphi_{bin}; #delta #varphi", 64, -0.5, 63.5);
+			phibin_hc=new TH1F("hcphi", "#varphi bin to #delta #varphi width HCal; #varphi_{bin}; #delta #varphi", 64, -0.5, 63.5);*/
 			if(inputfile.find("prdf")==std::string::npos) isPRDF=false;
+			plots PLTS;
+			PLTS.zl=-30;
+			PLTS.zh=30;
+			
 		};
 		~CaloTransverseEnergy(){};
 		int Init(PHCompositeNode *topNode) override; 
