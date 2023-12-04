@@ -1063,6 +1063,7 @@ def sort_by_gaussian_mean(root):
     results_display.see('1.0')
 
 
+
 def main():
     global fig, ax, canvas
     root = tk.Tk()
