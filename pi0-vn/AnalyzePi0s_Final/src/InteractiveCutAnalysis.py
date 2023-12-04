@@ -963,26 +963,33 @@ def summarize_csv_data(root, csv_data):
     summary_window.title("CSV Data Summary")
 
     # Create a text widget to display the summary with specified width and height
-    summary_display = tk.Text(summary_window, width=100, height=25)  # Adjust width and height as needed
+    summary_display = tk.Text(summary_window, width=100, height=25)
     summary_display.pack(expand=True, fill='both')
 
+    # Calculate the amount of unique cut variations analyzed
+    cut_columns = ['Energy', 'Asymmetry', 'Chi2', 'DeltaR']
+    cut_variations = csv_data[cut_columns].drop_duplicates()
+    unique_cut_combinations_count = len(cut_variations)
+
+    # Amount of cut variations analyzed
+    top_summary_text = f"Amount of cut variations analyzed: {unique_cut_combinations_count}\n\n"
 
     # Analysis for Centrality Categories
-    summary_text = "Centrality Analysis:\n"
-    summary_text += analyze_categories(csv_data, centrality_categories)
+    summary_text = top_summary_text + "Centrality Analysis:\n"
+    summary_text += analyze_categories(csv_data, centrality_categories) + "\n"
 
     # Analysis for pT Categories
-    summary_text += "\npT Analysis:\n"
-    summary_text += analyze_categories(csv_data, pT_categories)
+    summary_text += "pT Analysis:\n"
+    summary_text += analyze_categories(csv_data, pT_categories) + "\n"
 
-    # Print the centrality and pT analysis to the terminal
+    # Print the full summary to the terminal
     print(summary_text)
 
-    # Insert the summary text into the text widget
+    # Insert the full summary text into the text widget
     summary_display.insert(tk.END, summary_text)
     
     # Additional analysis to find the highest yield value, cuts, and S/B for each index
-    highest_yield_text = "\nHighest Yield Analysis by Index:\n"
+    highest_yield_text = "Highest Yield Analysis by Index:\n"
     for index in range(csv_data['Index'].max() + 1):
         index_data = csv_data[csv_data['Index'] == index]
         if not index_data.empty:
@@ -990,12 +997,14 @@ def summarize_csv_data(root, csv_data):
             highest_yield_text += f"Index {index}: Highest Yield: {max_yield_row['Yield']}, Cuts: E: {max_yield_row['Energy']}, A: {max_yield_row['Asymmetry']}, C: {max_yield_row['Chi2']}, D: {max_yield_row['DeltaR']}, S/B: {max_yield_row['S/B']}\n"
 
     # Print the highest yield analysis to the terminal
+    highest_yield_text += "\n"  # Added newline for spacing after the highest yield analysis
     print(highest_yield_text)
 
     # Insert the highest yield analysis text into the text widget after the previous analyses
     summary_display.insert(tk.END, highest_yield_text)
     summary_display.see(tk.END)  # Ensure the widget scrolls to show the new analysis
 
+    # Reset the view to the top of the text widget
     summary_display.see('1.0')
 
 
@@ -1022,11 +1031,10 @@ def analyze_categories(csv_data, categories):
         # Format the cut values
         cuts_str = f"Cuts: E: {highest_avg_yield_group[0]}, A: {highest_avg_yield_group[1]}, C: {highest_avg_yield_group[2]}, D: {highest_avg_yield_group[3]}"
 
-        analysis_text += f"For {category}, {cuts_str} give the highest yield values on average\n"
+        analysis_text += f"For {category}, {cuts_str} give the highest yield values on average\n\n"  # Added newline for spacing between categories
 
     return analysis_text
 
-    
     
 # Function to create the side analysis window WITHIN unique plotting windows
 def create_analysis_window(root):
