@@ -833,7 +833,6 @@ def create_csv_analysis_window(root, csv_data):
     ttk.Button(csv_analysis_window, text="Summarize CSV Data", command=lambda: summarize_csv_data(root, csv_data)).pack()
 
 
-    
 def sort_csv_by_signal_yield(root, csv_data):
     # Read the data from the CSV file
     sorted_data = csv_data.sort_values(by='Yield', ascending=False)
@@ -845,7 +844,7 @@ def sort_csv_by_signal_yield(root, csv_data):
         '20-40%': [6, 7, 8],
         '0-20%': [9, 10, 11]
     }
-    
+
     # Create a new window to display sorted results
     results_window = tk.Toplevel(root)
     results_window.title("Sorted Signal Yields from CSV")
@@ -855,36 +854,40 @@ def sort_csv_by_signal_yield(root, csv_data):
     results_display.pack()
 
     # Define tags for styling
-    results_display.tag_configure('centrality', foreground='red')
+    results_display.tag_configure('centrality', foreground='red', font=('Helvetica', '10', 'bold'))
     results_display.tag_configure('index', font=('Helvetica', '10', 'bold'))
 
-
-    # Build up the entire text string in memory first
-    full_text = ""
+    # Insert data and apply tags directly to avoid incorrect tag application
     for centrality, indices in centrality_categories.items():
+        # Insert centrality label with the 'centrality' tag
+        results_display.insert(tk.END, f"{centrality}:\n", 'centrality')
+
         centrality_data = sorted_data[sorted_data['Index'].isin(indices)]
-        centrality_data_sorted = centrality_data.sort_values(by='Yield', ascending=False)
-        
-        full_text += f"{centrality}:\n"
+        centrality_data_sorted = centrality_data.sort_values(by=['Index', 'Yield'], ascending=[True, False])
+
         last_index = -1
         for _, row in centrality_data_sorted.iterrows():
-            if last_index != -1 and last_index != row['Index']:
-                full_text += "\n"
-            index_str = f"Index {int(row['Index'])}: Yield: {row['Yield']}, "
-            cuts_str = f"Cuts: E: {row['Energy']}, A: {row['Asymmetry']}, C: {row['Chi2']}, D: {row['DeltaR']}\n"
-            full_text += index_str + cuts_str
-            last_index = row['Index']
-        full_text += "\n"
+            if last_index != row['Index']:
+                if last_index != -1:
+                    # Ensure there is a newline between groups of different indices
+                    results_display.insert(tk.END, "\n")
+                last_index = row['Index']
 
-    # Now, insert the entire text at once
-    results_display.insert(tk.END, full_text)
-    
+            # Construct strings for each line
+            index_label = f"Index {int(row['Index'])}: "
+            yield_str = f"Yield: {row['Yield']}, "
+            cuts_str = f"Cuts: E: {row['Energy']}, A: {row['Asymmetry']}, C: {row['Chi2']}, D: {row['DeltaR']}\n"
+
+            # Insert index label with 'index' tag for bold styling
+            results_display.insert(tk.END, index_label, 'index')
+            # Insert the rest of the line without any tag for normal styling
+            results_display.insert(tk.END, yield_str + cuts_str)
+
+        # Ensure there is a newline after each centrality section
+        results_display.insert(tk.END, "\n")
 
     # Scroll back to the top of the text widget
     results_display.see('1.0')
-
-
-
 
 def sort_csv_by_yield_and_sb(root, csv_data):
     # Read the data from the CSV file
