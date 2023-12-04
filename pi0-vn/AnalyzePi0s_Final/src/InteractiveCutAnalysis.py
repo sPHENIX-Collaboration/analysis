@@ -828,7 +828,10 @@ def create_csv_analysis_window(root, csv_data):
     # Button for sorting the entire CSV dataset by Signal Yield
     ttk.Button(csv_analysis_window, text="Sort Entire Dataset by Signal Yield", command=lambda: sort_csv_by_signal_yield(root, csv_data)).pack()
 
-    # ... [add more buttons for other analysis types as needed] ..
+    ttk.Button(csv_analysis_window, text="Sort Dataset by Yield and S/B", command=lambda: sort_csv_by_yield_and_sb(root, csv_data)).pack()
+    
+    ttk.Button(csv_analysis_window, text="Summarize CSV Data", command=lambda: summarize_csv_data(root, csv_data)).pack()
+
 
     
 def sort_csv_by_signal_yield(root, csv_data):
@@ -880,7 +883,143 @@ def sort_csv_by_signal_yield(root, csv_data):
     # Scroll back to the top of the text widget
     results_display.see('1.0')
 
+
+def sort_csv_by_yield_and_sb(root, csv_data):
+    # Read the data from the CSV file
+    sorted_data = csv_data.sort_values(by=['Yield', 'S/B'], ascending=[False, False])
+
+    # Define centrality categories based on the 'Index' column
+    centrality_categories = {
+        '60-100%': [0, 1, 2],
+        '40-60%': [3, 4, 5],
+        '20-40%': [6, 7, 8],
+        '0-20%': [9, 10, 11]
+    }
+
+    # Create a new window to display sorted results
+    results_window = tk.Toplevel(root)
+    results_window.title("Sorted Signal Yields by Yield and S/B")
+
+    # Create a text widget to display the sorted results
+    results_display = tk.Text(results_window)
+    results_display.pack()
+
+    # Define tags for styling
+    results_display.tag_configure('centrality', foreground='red', font=('Helvetica', '10', 'bold'))
+    results_display.tag_configure('index', font=('Helvetica', '10', 'bold'))
+
+    for centrality, indices in centrality_categories.items():
+        # Insert centrality label with the 'centrality' tag
+        results_display.insert(tk.END, f"{centrality}:\n", 'centrality')
+
+        # Filter and sort the data for the current centrality
+        centrality_data = sorted_data[sorted_data['Index'].isin(indices)]
+        centrality_data_sorted = centrality_data.sort_values(by=['Index', 'Yield', 'S/B'], ascending=[True, False, False])
+
+        last_index = -1
+        for _, row in centrality_data_sorted.iterrows():
+            if last_index != row['Index']:
+                if last_index != -1:
+                    results_display.insert(tk.END, "\n")
+                last_index = row['Index']
+
+            # Construct strings for each line
+            index_label = f"Index {int(row['Index'])}: "
+            yield_sb_str = f"Yield: {row['Yield']}, S/B: {row['S/B']}, "
+            cuts_str = f"Cuts: E: {row['Energy']}, A: {row['Asymmetry']}, C: {row['Chi2']}, D: {row['DeltaR']}\n"
+
+            # Insert index label with 'index' tag for bold styling
+            results_display.insert(tk.END, index_label, 'index')
+            # Insert the rest of the line without any tag for normal styling
+            results_display.insert(tk.END, yield_sb_str + cuts_str)
+
+        results_display.insert(tk.END, "\n")
+
+    results_display.see('1.0')
+
     
+def summarize_csv_data(root, csv_data):
+    # Define centrality and pT categories
+    centrality_categories = {
+        '60-100%': [0, 1, 2],
+        '40-60%': [3, 4, 5],
+        '20-40%': [6, 7, 8],
+        '0-20%': [9, 10, 11]
+    }
+
+    pT_categories = {
+        '2 ≤ pT < 3': [0, 3, 6, 9],
+        '3 ≤ pT < 4': [1, 4, 7, 10],
+        '4 ≤ pT < 5': [2, 5, 8, 11],
+    }
+
+    # Create a new window to display summary results
+    summary_window = tk.Toplevel(root)
+    summary_window.title("CSV Data Summary")
+
+    # Create a text widget to display the summary
+    summary_display = tk.Text(summary_window)
+    summary_display.pack()
+
+    # Analysis for Centrality Categories
+    summary_text = "Centrality Analysis:\n"
+    summary_text += analyze_categories(csv_data, centrality_categories)
+
+    # Analysis for pT Categories
+    summary_text += "\npT Analysis:\n"
+    summary_text += analyze_categories(csv_data, pT_categories)
+
+    # Print the centrality and pT analysis to the terminal
+    print(summary_text)
+
+    # Insert the summary text into the text widget
+    summary_display.insert(tk.END, summary_text)
+    
+    # Additional analysis to find the highest yield value, cuts, and S/B for each index
+    highest_yield_text = "\nHighest Yield Analysis by Index:\n"
+    for index in range(csv_data['Index'].max() + 1):
+        index_data = csv_data[csv_data['Index'] == index]
+        if not index_data.empty:
+            max_yield_row = index_data.loc[index_data['Yield'].idxmax()]
+            highest_yield_text += f"Index {index}: Highest Yield: {max_yield_row['Yield']}, Cuts: E: {max_yield_row['Energy']}, A: {max_yield_row['Asymmetry']}, C: {max_yield_row['Chi2']}, D: {max_yield_row['DeltaR']}, S/B: {max_yield_row['S/B']}\n"
+
+    # Print the highest yield analysis to the terminal
+    print(highest_yield_text)
+
+    # Insert the highest yield analysis text into the text widget after the previous analyses
+    summary_display.insert(tk.END, highest_yield_text)
+    summary_display.see(tk.END)  # Ensure the widget scrolls to show the new analysis
+
+    summary_display.see('1.0')
+
+
+# The data is first divided based on centrality/pT bins to ensure analysis specific to each centrality/pT range
+# The groupby method in Pandas is used to group the data by the unique combinations of cut values (Energy, Asymmetry, Chi2, DeltaR).
+# Instead of looking at the cuts independently, this approach recognizes that the combination of cuts works together to influence the yield.
+# For each group of cut combinations, the average yield is calculated.
+# After calculating the average yields, the method identifies the group (or the set of cut values) with the highest average yield for each centrality/Pt category
+# Traverse the data and calculate the summaries
+def analyze_categories(csv_data, categories):
+    analysis_text = ""
+    for category, indices in categories.items():
+        category_data = csv_data[csv_data['Index'].isin(indices)]
+
+        # Group by cut combinations
+        grouped = category_data.groupby(['Energy', 'Asymmetry', 'Chi2', 'DeltaR'])
+
+        # Calculate the average yield for each group
+        avg_yield = grouped['Yield'].mean()
+
+        # Find the group with the highest average yield
+        highest_avg_yield_group = avg_yield.idxmax()
+
+        # Format the cut values
+        cuts_str = f"Cuts: E: {highest_avg_yield_group[0]}, A: {highest_avg_yield_group[1]}, C: {highest_avg_yield_group[2]}, D: {highest_avg_yield_group[3]}"
+
+        analysis_text += f"For {category}, {cuts_str} give the highest yield values on average\n"
+
+    return analysis_text
+
     
 # Function to create the side analysis window
 def create_analysis_window(root):
