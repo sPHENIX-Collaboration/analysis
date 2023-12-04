@@ -884,6 +884,8 @@ def sort_csv_by_signal_yield(root, csv_data):
     results_display.see('1.0')
 
 
+
+
 def sort_csv_by_yield_and_sb(root, csv_data):
     # Read the data from the CSV file
     sorted_data = csv_data.sort_values(by=['Yield', 'S/B'], ascending=[False, False])
@@ -957,9 +959,10 @@ def summarize_csv_data(root, csv_data):
     summary_window = tk.Toplevel(root)
     summary_window.title("CSV Data Summary")
 
-    # Create a text widget to display the summary
-    summary_display = tk.Text(summary_window)
-    summary_display.pack()
+    # Create a text widget to display the summary with specified width and height
+    summary_display = tk.Text(summary_window, width=100, height=25)  # Adjust width and height as needed
+    summary_display.pack(expand=True, fill='both')
+
 
     # Analysis for Centrality Categories
     summary_text = "Centrality Analysis:\n"
@@ -1021,7 +1024,8 @@ def analyze_categories(csv_data, categories):
     return analysis_text
 
     
-# Function to create the side analysis window
+    
+# Function to create the side analysis window WITHIN unique plotting windows
 def create_analysis_window(root):
     analysis_window = tk.Toplevel(root)
     analysis_window.title("Further Quantitative Analysis")
@@ -1039,62 +1043,53 @@ def create_analysis_window(root):
     # ... Add more buttons for other analysis features here ...
 
 
-def sort_csv_by_signal_yield(root, csv_data):
-    # Read the data from the CSV file
-    sorted_data = csv_data.sort_values(by='Yield', ascending=False)
+# Function to perform the sorting of signal yield and display results
+def sort_by_signal_yield(root):
+    # Filter out the data points that are not currently visible
+    visible_data = {point_id: data for point_id, data in plot_SignalYield_history.items()
+                    if centrality_visibility[data['centrality']]}
 
-    # Define centrality categories based on the 'Index' column
-    centrality_categories = {
-        '60-100%': [0, 1, 2],
-        '40-60%': [3, 4, 5],
-        '20-40%': [6, 7, 8],
-        '0-20%': [9, 10, 11]
-    }
+    # Group data by centrality and then sort by index within each group
+    grouped_data = {}
+    for data in visible_data.values():
+        centrality_group = data['centrality']
+        if centrality_group not in grouped_data:
+            grouped_data[centrality_group] = []
+        grouped_data[centrality_group].append(data)
+    
+    # Sort each group by index
+    for centrality in grouped_data:
+        grouped_data[centrality].sort(key=lambda x: x['csv_index'])
 
-    # Create a new window to display sorted results
+
     results_window = tk.Toplevel(root)
-    results_window.title("Sorted Signal Yields from CSV")
+    results_window.title("Sorted Signal Yields")
 
-    # Create a text widget to display the sorted results
+    # Create a text widget or a listbox to display the sorted results
     results_display = tk.Text(results_window)
     results_display.pack()
 
     # Define tags for styling
-    results_display.tag_configure('centrality', foreground='red', font=('Helvetica', '10', 'bold'))
+    results_display.tag_configure('centrality', foreground='red')
     results_display.tag_configure('index', font=('Helvetica', '10', 'bold'))
 
-    # Insert data and apply tags directly to avoid incorrect tag application
-    for centrality, indices in centrality_categories.items():
-        # Insert centrality label with the 'centrality' tag
+    # Insert sorted data into the text widget, grouped by centrality
+    for centrality, data_list in grouped_data.items():
+        centrality_position = results_display.index(tk.END)
         results_display.insert(tk.END, f"{centrality}:\n", 'centrality')
-
-        centrality_data = sorted_data[sorted_data['Index'].isin(indices)]
-        centrality_data_sorted = centrality_data.sort_values(by=['Index', 'Yield'], ascending=[True, False])
-
-        last_index = -1
-        for _, row in centrality_data_sorted.iterrows():
-            if last_index != row['Index']:
-                if last_index != -1:
-                    # Ensure there is a newline between groups of different indices
-                    results_display.insert(tk.END, "\n")
-                last_index = row['Index']
-
-            # Construct strings for each line
-            index_label = f"Index {int(row['Index'])}: "
-            yield_str = f"Yield: {row['Yield']}, "
-            cuts_str = f"Cuts: E: {row['Energy']}, A: {row['Asymmetry']}, C: {row['Chi2']}, D: {row['DeltaR']}\n"
-
-            # Insert index label with 'index' tag for bold styling
-            results_display.insert(tk.END, index_label, 'index')
-            # Insert the rest of the line without any tag for normal styling
-            results_display.insert(tk.END, yield_str + cuts_str)
-
-        # Ensure there is a newline after each centrality section
-        results_display.insert(tk.END, "\n")
+        last_index = None
+        for data in data_list:
+            if last_index is not None and last_index != data['csv_index']:
+                results_display.insert(tk.END, "\n")  # Add a newline for new index groups
+            index_position = results_display.index(tk.END)
+            cuts_str = ", ".join(f"{k}: {v}" for k, v in data['cuts'].items())
+            results_display.insert(tk.END, f"Index {data['csv_index']}: ", 'index')
+            results_display.insert(tk.END, f"Yield: {data['y_val']}, Cuts: {cuts_str}\n")
+            last_index = data['csv_index']
+        results_display.insert(tk.END, "\n\n")  # Add extra newline after each centrality group for better readability
 
     # Scroll back to the top of the text widget
     results_display.see('1.0')
-
 
 # Function to sort signal yield data by both yield and S/B ratio
 def sort_by_yield_and_sb(root):
@@ -1121,8 +1116,8 @@ def sort_by_yield_and_sb(root):
     results_window.title("Sorted Signal Yields by Yield and S/B")
 
     # Create a text widget to display the sorted results
-    results_display = tk.Text(results_window)
-    results_display.pack()
+    results_display = tk.Text(results_window, width = 100, height = 25)
+    results_display.pack(expand = True, fill = 'both')
 
     # Define tags for styling
     results_display.tag_configure('centrality', foreground='red')
@@ -1174,8 +1169,8 @@ def sort_by_gaussian_mean(root):
     results_window.title("Sorted Gaussian Mean Data")
 
     # Create a text widget or a listbox to display the sorted results
-    results_display = tk.Text(results_window)
-    results_display.pack()
+    results_display = tk.Text(results_window, width = 100, height = 25)
+    results_display.pack(expand = True, fill = 'both')
 
     # Define tags for styling
     results_display.tag_configure('centrality', foreground='red')
