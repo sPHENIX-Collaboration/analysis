@@ -1,5 +1,7 @@
 //get zdc weigthts per side for 3 modules
+//updated for sPHENIX ZDC
 //Ejiro Umaka, Peter Steinberg
+
 
 #define Nmodules 3
 float E_n;
@@ -85,7 +87,7 @@ void zdc_calib(TString filename = "", float e = 100)
   TH1F h_e_uncorr("h_e_uncorr","Uncorr. energy;E_{uncorr}",3000,0,6000);
   TH2F h_e_uncorr2D("h_e_uncorr2D","Uncorr. energy;E_{ZDC} [GeV]};E_{EM} [GeV];",100,0,300,100,0,300);
   TH1F h_e_corr("h_e_corr","corr. energy;E_{corr}",3000,0,6000);
-  TH2F h_e_corr2D("h_e_corr2D","LHCf vs. ZDC;E_{ZDC} [GeV];E_{EM} [GeV]",100,0,600,100,0,600);
+  TH2F h_e_corr2D("h_e_corr2D","corr. energy;E_{ZDC} [GeV];E_{EM} [GeV]",100,0,600,100,0,600);
   
   int n_zdc = std::accumulate(skip_zdc_mod.begin(),skip_zdc_mod.end(),0);
   std::cout << "Working with " << n_zdc << " modules!" << std::endl;
