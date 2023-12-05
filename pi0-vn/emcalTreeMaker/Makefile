@@ -10,7 +10,7 @@ sPHENIX_CPPFLAGS = -I$(MYINSTALL)/include -I$(OFFLINE_MAIN)/include
 LIBFLAGS = -L$(MYINSTALL)/lib -lcaloTreeGen
 sPHENIX_LIBFLAGS = -L$(OFFLINE_MAIN)/lib -lcalo_io -lfun4all -lfun4allraw
 
-all: bin/Fun4All_CaloTreeGen bin/pi0Ana
+all: bin/Fun4All_CaloTreeGen bin/pi0Ana bin/convert
 
 bin/Fun4All_CaloTreeGen: macro/Fun4All_CaloTreeGen.C
 	mkdir -p bin
@@ -20,6 +20,11 @@ bin/pi0Ana: macro/pi0Analysis.C
 	mkdir -p bin
 	g++ -o $@ $< $(ROOT_CPPFLAGS) $(ROOT_LIBFLAGS)
 
+bin/convert: macro/convert.C
+	mkdir -p bin
+	g++ -o $@ $< $(ROOT_CPPFLAGS) $(ROOT_LIBFLAGS)
+
 clean:
 	rm bin/Fun4All_CaloTreeGen
 	rm bin/pi0Ana
+	rm bin/convert
