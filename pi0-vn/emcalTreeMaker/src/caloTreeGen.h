@@ -151,9 +151,9 @@ class caloTreeGen : public SubsysReco
     Float_t low_n  = 0;
     Float_t high_n = 3000;
 
-    UInt_t  bins_totalmbd = 3500;
+    UInt_t  bins_totalmbd = 200;
     Float_t low_totalmbd  = 0;
-    Float_t high_totalmbd = 350000;
+    Float_t high_totalmbd = 2000;
 
     UInt_t  bins_totalcaloE = 1500;
     Float_t low_totalcaloE  = 0;

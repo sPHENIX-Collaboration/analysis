@@ -27,6 +27,10 @@
 #include <calobase/TowerInfoContainerv1.h>
 #include <calobase/TowerInfov1.h>
 
+// MBD
+#include <mbd/MbdPmtContainerV1.h>
+#include <mbd/MbdPmtHit.h>
+
 //Tower stuff
 #include <calobase/TowerInfoContainer.h>
 #include <calobase/TowerInfo.h>
@@ -139,18 +143,20 @@ int caloTreeGen::process_event(PHCompositeNode *topNode)
   float calib = 1.;
 
   Float_t totalMBD = 0;
-  TowerInfoContainer* offlinetowers = findNode::getClass<TowerInfoContainerv1>(topNode, "TOWERS_MBD");
-  if (offlinetowers) {
-    int size = offlinetowers->size(); //online towers should be the same!
-    for (int channel = 0; channel < size;channel++) {
-      TowerInfo* offlinetower = offlinetowers->get_tower_at_channel(channel);
-      float offlineenergy = offlinetower->get_energy();
-      unsigned int towerkey = TowerInfoDefs::encode_mbd(channel);
-      int type = TowerInfoDefs::get_mbd_type(towerkey);
-      if (type == 1) {
-        totalMBD += offlineenergy;
-      }
-    }
+
+  MbdPmtContainer *mbdpmts = findNode::getClass<MbdPmtContainer>(topNode,"MbdPmtContainer"); // mbd info
+  if(!mbdpmts)
+  {
+    std::cout << PHWHERE << "caloTreeGen::process_event: Could not find node MbdPmtContainer" << std::endl;
+    return Fun4AllReturnCodes::ABORTEVENT;
+  }
+
+  Int_t nPMTs = mbdpmts -> get_npmt(); //size (should always be 128)
+
+  for(Int_t i = 0; i < nPMTs; ++i) {
+    MbdPmtHit* mbdpmt = mbdpmts->get_pmt(i);
+    Float_t charge    = mbdpmt->get_q(); //pmt charge
+    totalMBD         += charge;
   }
 
   max_totalmbd = std::max(max_totalmbd, totalMBD);
