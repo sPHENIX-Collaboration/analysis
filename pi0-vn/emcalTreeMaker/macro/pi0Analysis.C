@@ -49,8 +49,7 @@ namespace myAnalysis {
                                                      {"40-60",  make_pair(21395.5, 53640.9)},
                                                      {"60-100", make_pair(0, 21395.5)}};
 
-    map<string,pair<Float_t, Float_t>> diphoton_pt = {{"1-2", make_pair(1, 2)},
-                                                      {"2-3", make_pair(2, 3)},
+    map<string,pair<Float_t, Float_t>> diphoton_pt = {{"1.5-2", make_pair(1.5, 2)},
                                                       {"3-4", make_pair(3, 4)},
                                                       {"4-5", make_pair(4, 5)}};
 

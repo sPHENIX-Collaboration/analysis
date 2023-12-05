@@ -16,10 +16,10 @@ if __name__ == '__main__':
     output = os.path.realpath(args.output)
     print(f'Output: {output}')
 
-    e      = getRange(0.5,2,0.25)
+    e      = getRange(0.5, 1, 0.25)
     chi    = [4]
-    deltaR = getRange(0.05,0.1,0.01)
-    asym   = getRange(0.3,0.8,0.1)
+    deltaR = [0, 0.09]
+    asym   = [0.5,0.8]
 
     print(f'Cluster E:           {e}')
     print(f'Cluster chi:         {chi}')
