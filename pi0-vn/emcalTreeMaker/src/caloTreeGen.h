@@ -33,31 +33,31 @@ class caloTreeGen : public SubsysReco
         register them to Fun4AllServer (so they can be output to file
         using Fun4AllServer::dumpHistos() method).
     */
-    int Init(PHCompositeNode *topNode) override;
+    Int_t Init(PHCompositeNode *topNode) override;
 
     /** Called for first event when run number is known.
         Typically this is where you may want to fetch data from
         database, because you know the run number. A place
         to book histograms which have to know the run number.
     */
-    int InitRun(PHCompositeNode *topNode) override;
+    Int_t InitRun(PHCompositeNode *topNode) override;
 
     /** Called for each event.
         This is where you do the real work.
     */
-    int process_event(PHCompositeNode *topNode) override;
+    Int_t process_event(PHCompositeNode *topNode) override;
 
     /// Clean up internals after each event.
-    int ResetEvent(PHCompositeNode *topNode) override;
+    Int_t ResetEvent(PHCompositeNode *topNode) override;
 
     /// Called at the end of each run.
-    int EndRun(const int runnumber) override;
+    Int_t EndRun(const Int_t runnumber) override;
 
     /// Called at the end of all processing.
-    int End(PHCompositeNode *topNode) override;
+    Int_t End(PHCompositeNode *topNode) override;
 
     /// Reset
-    int Reset(PHCompositeNode * /*topNode*/) override;
+    Int_t Reset(PHCompositeNode * /*topNode*/) override;
 
     void Print(const std::string &what = "ALL") const override;
 
@@ -79,18 +79,18 @@ class caloTreeGen : public SubsysReco
     std::string Outfile = "test.root";
     std::string Outfile2 = "ntp.root";
 
-    unsigned int getCaloTowerPhiBin(const unsigned int key);
-    unsigned int getCaloTowerEtaBin(const unsigned int key);
-    float getMaxTowerE(RawCluster *cluster, TowerInfoContainer *towerContainer);
-    std::vector<float> returnClusterTowE(RawCluster *cluster, TowerInfoContainer *towerContainer);
-    std::vector<int> returnClusterTowPhi(RawCluster *cluster, TowerInfoContainer *towerContainer);
-    std::vector<int> returnClusterTowEta(RawCluster *cluster, TowerInfoContainer *towerContainer);
+    UInt_t getCaloTowerPhiBin(const UInt_t key);
+    UInt_t getCaloTowerEtaBin(const UInt_t key);
+    Float_t getMaxTowerE(RawCluster *cluster, TowerInfoContainer *towerContainer);
+    std::vector<Float_t> returnClusterTowE(RawCluster *cluster, TowerInfoContainer *towerContainer);
+    std::vector<Int_t> returnClusterTowPhi(RawCluster *cluster, TowerInfoContainer *towerContainer);
+    std::vector<Int_t> returnClusterTowEta(RawCluster *cluster, TowerInfoContainer *towerContainer);
 
     TowerInfo* getTower(RawTowerDefs::keytype key, TowerInfoContainer *towerContainer);
     TowerInfo* getMaxTower(RawCluster *cluster, TowerInfoContainer *towerContainer);
     Short_t    getMaxTowerTime(RawCluster *cluster, TowerInfoContainer *towerContainer);
 
-    int iEvent;
+    Int_t iEvent;
 
     Double_t min_towE;
     Float_t min_clusterECore;

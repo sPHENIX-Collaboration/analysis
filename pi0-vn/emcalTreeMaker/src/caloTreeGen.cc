@@ -66,7 +66,7 @@ caloTreeGen::~caloTreeGen()
 }
 
 //____________________________________________________________________________..
-int caloTreeGen::Init(PHCompositeNode *topNode)
+Int_t caloTreeGen::Init(PHCompositeNode *topNode)
 {
   out = new TFile(Outfile.c_str(),"RECREATE");
 
@@ -100,14 +100,14 @@ int caloTreeGen::Init(PHCompositeNode *topNode)
 }
 
 //____________________________________________________________________________..
-int caloTreeGen::InitRun(PHCompositeNode *topNode)
+Int_t caloTreeGen::InitRun(PHCompositeNode *topNode)
 {
   std::cout << "caloTreeGen::InitRun(PHCompositeNode *topNode) Initializing for Run XXX" << std::endl;
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
 //____________________________________________________________________________..
-int caloTreeGen::process_event(PHCompositeNode *topNode)
+Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
 {
 
   if(iEvent%500 == 0) std::cout << "Progress: " << iEvent << std::endl;
@@ -140,7 +140,7 @@ int caloTreeGen::process_event(PHCompositeNode *topNode)
     return Fun4AllReturnCodes::ABORTEVENT;
   }
   
-  float calib = 1.;
+  Float_t calib = 1.;
 
   Float_t totalMBD = 0;
 
@@ -163,13 +163,13 @@ int caloTreeGen::process_event(PHCompositeNode *topNode)
   hTotalMBD->Fill(totalMBD);
 
   //grab all the towers and fill their energies. 
-  unsigned int tower_range = emcTowerContainer->size();
+  UInt_t tower_range = emcTowerContainer->size();
   Float_t totalCaloE = 0;
-  for(unsigned int iter = 0; iter < tower_range; iter++)
+  for(UInt_t iter = 0; iter < tower_range; iter++)
   {
-    unsigned int towerkey = emcTowerContainer->encode_key(iter);
-    unsigned int ieta = getCaloTowerEtaBin(towerkey);
-    unsigned int iphi = getCaloTowerPhiBin(towerkey);
+    UInt_t towerkey = emcTowerContainer->encode_key(iter);
+    UInt_t ieta = getCaloTowerEtaBin(towerkey);
+    UInt_t iphi = getCaloTowerPhiBin(towerkey);
 
     double energy = emcTowerContainer -> get_tower_at_channel(iter) -> get_energy()/calib;
     totalCaloE += energy;
@@ -211,13 +211,13 @@ int caloTreeGen::process_event(PHCompositeNode *topNode)
     CLHEP::Hep3Vector E_vec_cluster = RawClusterUtility::GetECoreVec(*recoCluster, vertex);
     // CLHEP::Hep3Vector E_vec_cluster_Full = RawClusterUtility::GetEVec(*recoCluster, vertex);
 
-    float clusE = E_vec_cluster.mag();
-    float clus_eta = E_vec_cluster.pseudoRapidity();
-    float clus_phi = E_vec_cluster.phi();
-    float clus_pt = E_vec_cluster.perp();
-    float clus_chi = recoCluster -> get_chi2();
-    // float nTowers = recoCluster ->getNTowers();
-    // float maxTowerEnergy = getMaxTowerE(recoCluster,emcTowerContainer);
+    Float_t clusE = E_vec_cluster.mag();
+    Float_t clus_eta = E_vec_cluster.pseudoRapidity();
+    Float_t clus_phi = E_vec_cluster.phi();
+    Float_t clus_pt = E_vec_cluster.perp();
+    Float_t clus_chi = recoCluster -> get_chi2();
+    // Float_t nTowers = recoCluster ->getNTowers();
+    // Float_t maxTowerEnergy = getMaxTowerE(recoCluster,emcTowerContainer);
 
     min_clusterECore = std::min(min_clusterECore, clusE);
     min_clusterEta = std::min(min_clusterEta, clus_eta);
@@ -257,11 +257,11 @@ int caloTreeGen::process_event(PHCompositeNode *topNode)
       CLHEP::Hep3Vector vertex2(0,0,0);
       CLHEP::Hep3Vector E_vec_cluster2 = RawClusterUtility::GetECoreVec(*recoCluster2, vertex2);
 
-      float clusE2 = E_vec_cluster2.mag();
-      float clus_eta2 = E_vec_cluster2.pseudoRapidity();
-      float clus_phi2 = E_vec_cluster2.phi();
-      float clus_pt2 = E_vec_cluster2.perp();
-      float clus_chi2 = recoCluster2->get_chi2();
+      Float_t clusE2 = E_vec_cluster2.mag();
+      Float_t clus_eta2 = E_vec_cluster2.pseudoRapidity();
+      Float_t clus_phi2 = E_vec_cluster2.phi();
+      Float_t clus_pt2 = E_vec_cluster2.perp();
+      Float_t clus_chi2 = recoCluster2->get_chi2();
 
       if(clusE2 < clusE_min || clus_chi2 >= clus_chi_max) continue;
 
@@ -291,20 +291,20 @@ int caloTreeGen::process_event(PHCompositeNode *topNode)
 }
 
 //____________________________________________________________________________..
-int caloTreeGen::ResetEvent(PHCompositeNode *topNode)
+Int_t caloTreeGen::ResetEvent(PHCompositeNode *topNode)
 {
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
 //____________________________________________________________________________..
-int caloTreeGen::EndRun(const int runnumber)
+Int_t caloTreeGen::EndRun(const Int_t runnumber)
 {
   std::cout << "caloTreeGen::EndRun(const int runnumber) Ending Run for Run " << runnumber << std::endl;
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
 //____________________________________________________________________________..
-int caloTreeGen::End(PHCompositeNode *topNode)
+Int_t caloTreeGen::End(PHCompositeNode *topNode)
 {
 
   std::cout << "max totalCaloE: " << max_totalCaloE << std::endl;
@@ -347,7 +347,7 @@ int caloTreeGen::End(PHCompositeNode *topNode)
 }
 
 //____________________________________________________________________________..
-int caloTreeGen::Reset(PHCompositeNode *topNode)
+Int_t caloTreeGen::Reset(PHCompositeNode *topNode)
 {
   std::cout << "caloTreeGen::Reset(PHCompositeNode *topNode) being Reset" << std::endl;
   return Fun4AllReturnCodes::EVENT_OK;
@@ -360,55 +360,55 @@ void caloTreeGen::Print(const std::string &what) const
 }
 // convert from calorimeter key to phi bin
 //____________________________________________________________________________..
-unsigned int caloTreeGen::getCaloTowerPhiBin(const unsigned int key)
+UInt_t caloTreeGen::getCaloTowerPhiBin(const UInt_t key)
 {
-  unsigned int etabin = key >> 16U;
-  unsigned int phibin = key - (etabin << 16U);
+  UInt_t etabin = key >> 16U;
+  UInt_t phibin = key - (etabin << 16U);
   return phibin;
 }
 
 //____________________________________________________________________________..
 // convert from calorimeter key to eta bin
-unsigned int caloTreeGen::getCaloTowerEtaBin(const unsigned int key)
+UInt_t caloTreeGen::getCaloTowerEtaBin(const UInt_t key)
 {
-  unsigned int etabin = key >> 16U;
+  UInt_t etabin = key >> 16U;
   return etabin;
 }
 //____________________________________________________________________________..
-float caloTreeGen::getMaxTowerE(RawCluster *cluster, TowerInfoContainer *towerContainer)
+Float_t caloTreeGen::getMaxTowerE(RawCluster *cluster, TowerInfoContainer *towerContainer)
 {
   TowerInfo* tower = getMaxTower(cluster, towerContainer);
 
   return tower->get_energy();
 }
 //____________________________________________________________________________..
-std::vector<int> caloTreeGen::returnClusterTowEta(RawCluster *cluster, TowerInfoContainer *towerContainer)
+std::vector<Int_t> caloTreeGen::returnClusterTowEta(RawCluster *cluster, TowerInfoContainer *towerContainer)
 {
   RawCluster::TowerConstRange towers = cluster -> get_towers();
   RawCluster::TowerConstIterator toweriter;
   
-  std::vector<int> towerIDsEta;
+  std::vector<Int_t> towerIDsEta;
   for(toweriter = towers.first; toweriter != towers.second; toweriter++) towerIDsEta.push_back(RawTowerDefs::decode_index1(toweriter -> first));
 
   return towerIDsEta;
 }
 //____________________________________________________________________________..
-std::vector<int> caloTreeGen::returnClusterTowPhi(RawCluster *cluster, TowerInfoContainer *towerContainer)
+std::vector<Int_t> caloTreeGen::returnClusterTowPhi(RawCluster *cluster, TowerInfoContainer *towerContainer)
 {
   RawCluster::TowerConstRange towers = cluster -> get_towers();
   RawCluster::TowerConstIterator toweriter;
   
-  std::vector<int> towerIDsPhi;
+  std::vector<Int_t> towerIDsPhi;
   for(toweriter = towers.first; toweriter != towers.second; toweriter++) towerIDsPhi.push_back(RawTowerDefs::decode_index2(toweriter -> first));
   return towerIDsPhi;
 }
 //____________________________________________________________________________..
-std::vector<float> caloTreeGen::returnClusterTowE(RawCluster *cluster, TowerInfoContainer *towerContainer)
+std::vector<Float_t> caloTreeGen::returnClusterTowE(RawCluster *cluster, TowerInfoContainer *towerContainer)
 {
   RawCluster::TowerConstRange towers = cluster -> get_towers();
   RawCluster::TowerConstIterator toweriter;
   
-  std::vector<float> towerE;
+  std::vector<Float_t> towerE;
   for(toweriter = towers.first; toweriter != towers.second; toweriter++) towerE.push_back(toweriter -> second);
   
   return towerE;
@@ -417,9 +417,9 @@ std::vector<float> caloTreeGen::returnClusterTowE(RawCluster *cluster, TowerInfo
 TowerInfo* caloTreeGen::getTower(RawTowerDefs::keytype key, TowerInfoContainer *towerContainer) {
       if(!towerContainer) return nullptr; // check if towerContainer is null
 
-      int ieta = RawTowerDefs::decode_index1(key);  // index1 is eta in CYL
-      int iphi = RawTowerDefs::decode_index2(key);  // index2 is phi in CYL
-      unsigned int towerkey = TowerInfoDefs::encode_emcal(ieta,iphi);
+      Int_t ieta = RawTowerDefs::decode_index1(key);  // index1 is eta in CYL
+      Int_t iphi = RawTowerDefs::decode_index2(key);  // index2 is phi in CYL
+      UInt_t towerkey = TowerInfoDefs::encode_emcal(ieta,iphi);
 
       return towerContainer->get_tower_at_key(towerkey);
 }
@@ -429,11 +429,11 @@ TowerInfo* caloTreeGen::getMaxTower(RawCluster *cluster, TowerInfoContainer *tow
   RawCluster::TowerConstRange towers = cluster -> get_towers();
   RawCluster::TowerConstIterator toweriter;
 
-  float maxEnergy = 0;
+  Float_t maxEnergy = 0;
   RawTowerDefs::keytype key = 0;
   for(toweriter = towers.first; toweriter != towers.second; toweriter++)
   {
-    float towE = toweriter -> second;
+    Float_t towE = toweriter -> second;
 
     if(towE > maxEnergy) {
       maxEnergy = towE;
