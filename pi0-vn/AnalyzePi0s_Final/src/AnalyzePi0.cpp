@@ -303,7 +303,7 @@ double CalculateSignalToBackgroundRatio(TF1* totalFit, TF1* polyFit, TH1F* hPi0M
 
     // Create histograms within the fit range of totalFit
     TH1F* histTotalFit = new TH1F("histTotalFit", "Histogram for Total Fit", nbins, fitStart, fitEnd);
-    TH1F* histPolyFit = new TH1F("histPolyFit", "Histogram for Polynomial Fit", nbins, fitStart, fitEnd);
+    TH1F* histPolyFit = new TH1F("histPolyFit", "Histogram for Polynomial Fit", nbins, fitStart, .28);
     
     // Fill the histograms using the TF1 fits
     for (int i = 1; i <= nbins; ++i) {
