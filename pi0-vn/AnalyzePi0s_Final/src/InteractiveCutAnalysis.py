@@ -192,6 +192,143 @@ def plot_SignalYield(filtered_data, clear_plot):
     #Redraw canvas with new data
     canvas.draw()
     
+
+def summarize_index(root, history_dict):
+    # Create new window for index input
+    index_window = tk.Toplevel(root)
+    index_window.title("Summarize Yield For Specific Index")
+
+    tk.Label(index_window, text="Enter Index:").pack(side=tk.LEFT)
+    index_entry = tk.Entry(index_window)
+    index_entry.pack(side=tk.LEFT)
+    submit_button = ttk.Button(index_window, text="Submit",
+                               command=lambda: plot_index_data(index_entry.get(), history_dict))
+    submit_button.pack(side=tk.LEFT)
+
+
+def plot_index_data(index_str, history_dict):
+    try:
+        index = int(index_str)  # Convert the index to an integer
+        # Filter the history_dict for entries with the specified index
+        index_data = [data for point_id, data in history_dict.items() if data['csv_index'] == index]
+        if not index_data:
+            messagebox.showerror("Error", f"No data found for index {index}")
+            return
+
+        # Generate a new figure and axis for plotting
+        fig, ax = plt.subplots()
+        # Convert to a Tkinter compatible figure
+        root = tk.Tk()
+        canvas = FigureCanvasTkAgg(fig, master=root)
+        canvas.draw()
+        canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+
+        toolbar = NavigationToolbar2Tk(canvas, root)
+        toolbar.update()
+        canvas._tkcanvas.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+
+        # Map each unique cut combination to a unique integer
+        cut_combinations = {}
+        cut_labels_map = {}
+        for i, data in enumerate(index_data):
+            cuts = tuple(sorted(data['cuts'].items()))
+            if cuts not in cut_combinations:
+                cut_combinations[cuts] = i + 1  # start labeling from 1
+            cut_labels_map[cut_combinations[cuts]] = cuts
+
+        # Extract yield values, yield errors, and associated cut combination labels
+        yields = [data['y_val'] for data in index_data]
+        yield_errors = [data['y_err'] for data in index_data]  # Ensure you have 'y_err' in your data
+        cut_labels = [cut_combinations[tuple(sorted(data['cuts'].items()))] for data in index_data]
+
+        # Print statements for terminal output
+        for i, (yield_value, yield_error) in enumerate(zip(yields, yield_errors)):
+            print(f"Yield for Index {index}, Cut {i+1}: {yield_value} +/- {yield_error}")
+
+        # Plot the data with error bars
+        for cut_label, yield_value, yield_error in zip(cut_labels, yields, yield_errors):
+            ax.errorbar(cut_label, yield_value, yerr=yield_error, fmt='o', color='blue', label=f'Index {index}')
+
+        # Set the x-axis to show only integer labels corresponding to cut combinations
+        ax.set_xticks(range(1, len(cut_combinations) + 1))  # This will set ticks at 1, 2, 3, ...
+
+        # Set plot title and labels
+        centrality_label, pt_label = get_centrality_and_pt_range(index)
+        ax.set_title(f'Yield for Index {index} ({centrality_label}, {pt_label})')
+        ax.set_xlabel('Cut Combinations')
+        ax.set_ylabel('Signal Yield')
+
+        # Create custom legend entries for cut combinations without markers
+        cut_combination_labels = []
+        for num, cuts in cut_labels_map.items():
+            label = f"{num}: "
+            cuts_dict = dict(cuts)
+            for key, value in cuts_dict.items():
+                if key == 'C':
+                    key = r'$\chi^2$'  # Replace 'C' with chi^2
+                elif key == 'D':
+                    key = r'$\Delta R$'  # Replace 'D' with delta R
+                label += f"{key}: {value}, "
+            label = label.rstrip(", ")
+            cut_combination_labels.append(label)
+
+        # Create a blank rectangle to use in the legend
+        from matplotlib.patches import Rectangle
+        blank_rect = Rectangle((0, 0), 1, 1, fill=False, edgecolor='none', visible=False)
+
+        # Create legend handles for each label, using the blank rectangle
+        legend_handles = [blank_rect] * len(cut_combination_labels)
+        ax.legend(legend_handles, cut_combination_labels, title='Cut Combinations', loc='best', handlelength=0, handletextpad=0)
+
+
+
+        def save_figure():
+            file_path = filedialog.asksaveasfilename(defaultextension=".pdf",
+                                                     filetypes=[("PDF files", "*.pdf")])
+            if file_path:
+                fig.savefig(file_path)
+        
+        # Add a save button to the toolbar
+        save_button = tk.Button(master=root, text="Save as PDF", command=save_figure)
+        save_button.pack(side=tk.BOTTOM)
+
+        # This is required to bring the tkinter window to the front
+        root.lift()
+        root.attributes('-topmost',True)
+        root.after_idle(root.attributes,'-topmost',False)
+
+        # Start the tkinter loop
+        tk.mainloop()
+        plt.show()
+
+    except ValueError:
+        messagebox.show
+
+
+
+
+# Helper function to get centrality and pT range for the index
+def get_centrality_and_pt_range(index):
+    centrality_categories = {
+        '60-100%': [0, 1, 2],
+        '40-60%': [3, 4, 5],
+        '20-40%': [6, 7, 8],
+        '0-20%': [9, 10, 11]
+    }
+    pt_categories = {
+        '2 ≤ pT < 3': [0, 3, 6, 9],
+        '3 ≤ pT < 4': [1, 4, 7, 10],
+        '4 ≤ pT < 5': [2, 5, 8, 11],
+    }
+    for centrality, indices in centrality_categories.items():
+        if index in indices:
+            for pt_range, pt_indices in pt_categories.items():
+                if index in pt_indices:
+                    return centrality, pt_range
+    return "Unknown Centrality", "Unknown pT"
+
+
+
 #Interactive plot of gaussian mean data filled with gaussian mean error
 def plot_GaussianMean(filtered_data, clear_plot):
     # Access global variables to modify within the function.
@@ -737,6 +874,15 @@ def create_main_application(root):
     # Modify the command to pass 'root' to the 'create_analysis_window' function
     analyze_button = ttk.Button(frame, text="Analyze Data on Screen", command=lambda: create_analysis_window(root))
     analyze_button.grid(row=10, column=0, columnspan=2, padx=5, pady=5)
+    
+    # Bind the function to the summarize button
+    summarize_button = ttk.Button(
+        frame,
+        text="Summarize Yield For Specific Index",
+        command=lambda: summarize_index(root, plot_SignalYield_history)
+    )
+    summarize_button.grid(row=11, column=0, columnspan=2, padx=5, pady=5)
+
 
 
     
