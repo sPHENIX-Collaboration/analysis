@@ -4,9 +4,9 @@
 class caloplots{ //creates a relevant plot for each calorimeter type
 	public: 
 		std::string calo="EMCAL";
-		TH1F* Energy, *E_phi, *ET, *dET_eta, *ET_phi, *ET_z, *dET, *acceptance_eta;
+		TH1F* Energy, *E_phi, *ET, *dET_eta, *ET_phi, *ET_z, *dET, *acceptance_eta, phi, eta, z;
 		std::vector<TH1F*> *hists_1;
-		TH2F* ET_eta_phi, *E_eta_phi, *E_T_z_eta;
+		TH2F* ET_eta_phi, *E_eta_phi, *E_T_z_eta, *Hits2D;
 		std::vector<TH2F*> *hists_2;
 		float acceptance=0.0; 
 		bool ok_phi=false;
@@ -96,6 +96,9 @@ class caloplots{ //creates a relevant plot for each calorimeter type
 
 			dET=new TH1F*(Form("dET_%s_z_%d", calo, z), Form("#frac{dE_{T}}{d#eta} in %s with vertex z=%d, #frac{dE_{T}}{d#eta} [GeV]",calo,z), 1000, 0.5, 100.5);
 			acceptance_eta=new TH1F*(Form("acceptance_%s_z_%d", calo, z), Form("Acceptance in physical #eta slice in %s with vertex z=%d, #eta, percent towers responding", calo,z), etabins, etamin, etamax);
+			phi=new TH1F*(Form("phi_%s_z_%d", calo, z), Form("Hit distribution in #varphi_{bin} in %s with vertex z=%d, #varphi_{bin}, N_{Hits}", calo, z), phibins, -0.5, phibins-0.5);
+			eta=new TH1F*(Form("eta_%s_z_%d", calo, z), Form("Hit distribution in physical #eta_{bin} in %s with vertex z=%d, #eta_{bin}, N_{Hits}", calo, z), etabins, -0.5, etabins-0.5);
+			z=new TH1F*(Form("z_%s_z_%d", calo, z), Form("Hit distribution in z vertex in %s with vertex centered at z=%d, z, N_{events}", calo, z), 100, zl, zh);
 			hists_1->push_back(Energy);
 			hists_1->push_back(ET);
 			hists_1->push_back(E_phi);
@@ -104,12 +107,17 @@ class caloplots{ //creates a relevant plot for each calorimeter type
 			hists_1->push_back(ET_z);
 			hists_1->push_back(dET);
 			hists_1->push_back(acceptance_eta);
-			ET_eta_phi=new TH2F*(Form("ET_eta_phi_%s_z%d", calo, z), Form("E_{T}(#eta, #varphi) in %S with vertex z=%d, #eta, #varphi, E_{T} [GeV]", calo, z), etabins, etamin, etamax, phibins, phimax);
+			hists_1->push_back(phi);
+			hists_1->push_back(eta);
+			hists_1->push_back(z);
+			ET_eta_phi=new TH2F*(Form("ET_eta_phi_%s_z%d", calo, z), Form("E_{T}(#eta, #varphi) in %S with vertex z=%d, #eta, #varphi, E_{T} [GeV]", calo, z), etabins, etamin, etamax, phibins,-0.1, 6.3);
 		       	E_eta_phi=new TH2F*(Form("E_eta_phi_%s_Z_%d", calo, z), Form("E(#eta, #varphi)	physical binning in %s with vertex centered at z=%d, #eta, #varphi, E [GeV]", calo, z), etabins, -1.13, 1.13, phibins, phimax);
 			ET_z_eta=new TH2F*(Form("ET_z_eta_%s_%z_%d", calo, z), Form("E_{T}(z_{vertex}, #eta) in %s with vertex centered at z=%d, z_{vertex}, #eta, E_{T} [GeV]", calo, z), 40, zl, zh, etabins, etamin, etamax);
+			Hits2D=new TH2F*(Form("Hits_2D_%s_z_%d", calo, z), Form("Hits in #eta and #varphi in %s with vertex centered at z=%d, #eta, #varphi", calo, z), etabins, etamin, etamax, phibins, -0.1, 6.3);
 			hists_2->push_back(ET_eta_phi);
 			hists_2->push_back(E_eta_phi);
 			hists_2->push_back(ET_z_eta);
+			hists_2->push_back(Hits2D_;
 		}
 }
 struct plots{
@@ -119,6 +127,6 @@ struct plots{
 		caloplots* ihcal=new caloplots("IHCAL", zl, zh);
 		caloplots* ohcal=new caloplots("OHCAL", zl, zh);
 		caloplots* total=new caloplots("ALL", zl, zh);
-		std::vector<std::map<std::string, float>> event_data; 
+		std::vector<std::map<std::string, float>> event_data;
 }
 		
