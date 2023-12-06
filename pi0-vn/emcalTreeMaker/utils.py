@@ -10,7 +10,7 @@ subparser = parser.add_subparsers(dest='command')
 
 f4a = subparser.add_parser('f4a', help='Create condor submission directory for Fun4All_CaloTreeGen.')
 
-f4a.add_argument('-i', '--run-list', type=str, help='List of runs', required=True)
+f4a.add_argument('-i', '--run-list-dir', type=str, help='Directory of run lists', required=True)
 f4a.add_argument('-e', '--executable', type=str, default='genFun4All.sh', help='Job script to execute. Default: scripts/genFun4All.sh')
 f4a.add_argument('-b', '--f4a', type=str, default='bin/Fun4All_CaloTreeGen', help='Fun4All executable. Default: Fun4All_CaloTreeGen')
 f4a.add_argument('-d', '--output', type=str, default='test', help='Output Directory. Default: ./test')
@@ -19,10 +19,10 @@ f4a.add_argument('-l', '--log', type=str, default='/tmp/anarde/dump/job-$(Cluste
 
 pi0Ana = subparser.add_parser('pi0Ana', help='Create condor submission directory for pi0Analysis.')
 
-pi0Ana.add_argument('-i', '--run-list', type=str, help='Directory of run lists', required=True)
+pi0Ana.add_argument('-i', '--ntp-list', type=str, help='List of Ntuples', required=True)
 pi0Ana.add_argument('-c', '--cuts', type=str, help='List of cuts', required=True)
 pi0Ana.add_argument('-n', '--events', type=int, help='Number of events to analyze.', required=True)
-pi0Ana.add_argument('-j', '--jobs', type=int, default=1, help='Number of jobs to submit. Default: 1.')
+pi0Ana.add_argument('-j', '--jobs', type=int, default=19999, help='Number of jobs to submit. Default: 1.')
 pi0Ana.add_argument('-e', '--script', type=str, default='genPi0Ana.sh', help='Job script to execute. Default: genPi0Ana.sh')
 pi0Ana.add_argument('-b', '--executable', type=str, default='bin/pi0Ana', help='Executable. Default: bin/pi0Ana')
 pi0Ana.add_argument('-d', '--output', type=str, default='test', help='Output Directory. Default: ./test')
@@ -32,14 +32,14 @@ pi0Ana.add_argument('-l', '--log', type=str, default='/tmp/anarde/dump/job-$(Clu
 args = parser.parse_args()
 
 def create_f4a_jobs():
-    run_list   = os.path.realpath(args.run_list)
+    run_list_dir   = os.path.realpath(args.run_list_dir)
     output_dir = os.path.realpath(args.output)
     f4a        = os.path.realpath(args.f4a)
     executable = os.path.realpath(args.executable)
     memory     = args.memory
     log        = args.log
 
-    print(f'Run List Directory: {run_list}')
+    print(f'Run List Directory: {run_list_dir}')
     print(f'Output Directory: {output_dir}')
     print(f'Bin: {f4a}')
     print(f'Executable: {executable}')
@@ -50,9 +50,9 @@ def create_f4a_jobs():
     shutil.copy(f4a, output_dir)
     shutil.copy(executable, output_dir)
 
-    for filename in os.listdir(run_list):
+    for filename in os.listdir(run_list_dir):
         if(filename.endswith('list')):
-            f = os.path.join(run_list, filename)
+            f = os.path.join(run_list_dir, filename)
             run = int(filename.split('-')[1].split('.')[0])
             job_dir = f'{output_dir}/{run}'
 
@@ -75,7 +75,7 @@ def create_f4a_jobs():
             print(f'cd {job_dir} && condor_submit genFun4All.sub')
 
 def create_pi0Ana_jobs():
-    run_list   = os.path.realpath(args.run_list)
+    ntp_list   = os.path.realpath(args.ntp_list)
     cuts       = os.path.realpath(args.cuts)
     events     = args.events
     jobs       = args.jobs
@@ -85,7 +85,7 @@ def create_pi0Ana_jobs():
     memory     = args.memory
     log        = args.log
 
-    print(f'Run List: {run_list}')
+    print(f'Run List: {ntp_list}')
     print(f'Cuts: {cuts}')
     print(f'Events: {events}')
     print(f'Jobs: {jobs if(events%jobs == 0) else jobs+1}')
@@ -98,7 +98,7 @@ def create_pi0Ana_jobs():
     os.makedirs(output_dir,exist_ok=True)
     shutil.copy(script, output_dir)
     shutil.copy(executable, output_dir)
-    shutil.copy(run_list, output_dir)
+    shutil.copy(ntp_list, output_dir)
     shutil.copy(cuts, output_dir)
 
     os.makedirs(f'{output_dir}/stdout',exist_ok=True)
@@ -118,7 +118,7 @@ def create_pi0Ana_jobs():
 
     with open(f'{output_dir}/genPi0Ana.sub', mode="w") as file:
         file.write(f'executable     = {os.path.basename(script)}\n')
-        file.write(f'arguments      = {output_dir}/{os.path.basename(executable)} {output_dir}/{os.path.basename(run_list)} {output_dir}/{os.path.basename(cuts)} $(start) $(end) output/test-$(start)-$(end).root\n')
+        file.write(f'arguments      = {output_dir}/{os.path.basename(executable)} {output_dir}/{os.path.basename(ntp_list)} {output_dir}/{os.path.basename(cuts)} $(start) $(end) output/test-$(start)-$(end).root\n')
         file.write(f'log            = {log}\n')
         file.write( 'output         = stdout/job-$(start)-$(end).out\n')
         file.write( 'error          = error/job-$(start)-$(end).err\n')
