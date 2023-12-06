@@ -19,7 +19,7 @@ f4a.add_argument('-l', '--log', type=str, default='/tmp/anarde/dump/job-$(Cluste
 
 pi0Ana = subparser.add_parser('pi0Ana', help='Create condor submission directory for pi0Analysis.')
 
-pi0Ana.add_argument('-i', '--run-list', type=str, help='List of runs', required=True)
+pi0Ana.add_argument('-i', '--run-list', type=str, help='Directory of run lists', required=True)
 pi0Ana.add_argument('-c', '--cuts', type=str, help='List of cuts', required=True)
 pi0Ana.add_argument('-n', '--events', type=int, help='Number of events to analyze.', required=True)
 pi0Ana.add_argument('-j', '--jobs', type=int, default=1, help='Number of jobs to submit. Default: 1.')
@@ -39,7 +39,7 @@ def create_f4a_jobs():
     memory     = args.memory
     log        = args.log
 
-    print(f'Run List: {run_list}')
+    print(f'Run List Directory: {run_list}')
     print(f'Output Directory: {output_dir}')
     print(f'Bin: {f4a}')
     print(f'Executable: {executable}')
@@ -50,28 +50,27 @@ def create_f4a_jobs():
     shutil.copy(f4a, output_dir)
     shutil.copy(executable, output_dir)
 
-    with open(run_list) as file_list:
-        for run in file_list:
-            run = run.strip()
-            job_dir = f'{output_dir}/{os.path.basename(run)}'
+    for filename in os.listdir(run_list):
+        if(filename.endswith('list')):
+            f = os.path.join(run_list, filename)
+            run = int(filename.split('-')[1].split('.')[0])
+            job_dir = f'{output_dir}/{run}'
+
             os.makedirs(job_dir,exist_ok=True)
             os.makedirs(f'{job_dir}/stdout',exist_ok=True)
             os.makedirs(f'{job_dir}/error',exist_ok=True)
             os.makedirs(f'{job_dir}/output',exist_ok=True)
 
-            # create file list for each submission
-            with open(f'{job_dir}/jobs.txt', mode='w') as file:
-                for segment in os.listdir(run):
-                    file.write(f'{run}/{segment}\n')
+            shutil.copy(f, job_dir)
 
             with open(f'{job_dir}/genFun4All.sub', mode="w") as file:
                 file.write(f'executable             = ../{os.path.basename(executable)}\n')
-                file.write(f'arguments              = {output_dir}/{os.path.basename(f4a)} $(input) output/qa-$(Process).root output/ntp-$(Process).root\n')
+                file.write(f'arguments              = {output_dir}/{os.path.basename(f4a)} $(input_dst) output/qa-$(Process).root output/ntp-$(Process).root\n')
                 file.write(f'log                    = {log}\n')
                 file.write('output                  = stdout/job-$(Process).out\n')
                 file.write('error                   = error/job-$(Process).err\n')
                 file.write(f'request_memory         = {memory}GB\n')
-                file.write('queue input from jobs.txt')
+                file.write(f'queue input_dst from {filename}')
 
             print(f'cd {job_dir} && condor_submit genFun4All.sub')
 
