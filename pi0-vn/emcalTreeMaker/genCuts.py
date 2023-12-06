@@ -18,7 +18,7 @@ if __name__ == '__main__':
 
     e      = getRange(0.5, 1, 0.25)
     chi    = [4]
-    deltaR = [0, 0.09]
+    deltaR = [0]
     asym   = [0.5,0.8]
 
     print(f'Cluster E:           {e}')

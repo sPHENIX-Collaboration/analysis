@@ -29,7 +29,7 @@ namespace myAnalysis {
     string parseFloat(Float_t value);
 
     vector<string> centrality = {"60-100","40-60","20-40","0-20"};
-    vector<string> pt         = {"1.5-2","3-4","4-5"};
+    vector<string> pt         = {"2-2.5","3-4","4-5"};
 }
 
 Int_t myAnalysis::readCuts(const string &i_cuts) {
