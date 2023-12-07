@@ -44,10 +44,10 @@ namespace myAnalysis {
     void process_event(Long64_t start = 0, Long64_t end = 0);
     void finalize(const string &i_output = "test.root");
 
-    map<string,pair<Float_t, Float_t>> centrality = {{"0-20",   make_pair(109768, 250000)},
-                                                     {"20-40",  make_pair(53640.9, 109768)},
-                                                     {"40-60",  make_pair(21395.5, 53640.9)},
-                                                     {"60-100", make_pair(0, 21395.5)}};
+    map<string,pair<Float_t, Float_t>> centrality = {{"0-20",   make_pair(97028.6, 250000)},
+                                                     {"20-40",  make_pair(43100, 97028.6)},
+                                                     {"40-60",  make_pair(16821.4, 43100)},
+                                                     {"60-100", make_pair(0, 16821.4)}};
 
     map<string,pair<Float_t, Float_t>> diphoton_pt = {{"2-2.5", make_pair(2, 2.5)},
                                                       {"3-4", make_pair(3, 4)},
