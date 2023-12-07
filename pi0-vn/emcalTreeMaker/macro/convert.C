@@ -132,7 +132,7 @@ void convert(const string &i_input,
 Int_t main(Int_t argc, char* argv[]) {
 if(argc < 3 || argc > 4){
         cout << "usage: ./convert inputFile cuts [outputDir]" << endl;
-        cout << "inputFile: containing list of root file paths" << endl;
+        cout << "inputFile: input root file" << endl;
         cout << "cuts: csv file containing cuts" << endl;
         cout << "outputDir: location of output directory. Default: current directory." << endl;
         return 1;
