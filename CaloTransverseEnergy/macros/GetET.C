@@ -12,6 +12,8 @@
 #include <fun4all/SubsysReco.h>
 #include <sstream>
 #include <string.h>
+#include <G4_Global.C>
+
 R__LOAD_LIBRARY(libfun4all.so);
 R__LOAD_LIBRARY(libfun4allraw.so);
 R__LOAD_LIBRARY(libcalo_io.so);

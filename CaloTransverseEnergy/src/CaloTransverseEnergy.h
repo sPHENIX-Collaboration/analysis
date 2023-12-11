@@ -18,7 +18,8 @@
 #include <vector>
 #include <string>
 #include <utility>
-
+#include "caloplots.h"
+#include "plots.h" 
 
 //Fun4all inputs and base
 #include <fun4all/Fun4AllInputManager.h>
@@ -41,7 +42,8 @@
 #include <calobase/RawTowerGeomContainer_Cylinderv1.h>
 #include <globalvertex/GlobalVertex.h>
 #include <globalvertex/GlobalVertexMap.h>
-
+#include <globalvertex/MbdVertexMapv1.h>
+#include <globalvertex/MbdVertex.h>
 
 //Phool nodes
 #include <phool/PHCompositeNode.h>
@@ -55,9 +57,11 @@
 class PHCompositeNode; 
 class TFile; 
 class GlobalVertexMapv1;
+class MbdVertexMapv1;
 class Fun4AllInputManager;
 class TowerInfov1;
 class PHObject; 
+class caloplots;
 
 class CaloTransverseEnergy:public SubsysReco
 {
@@ -69,7 +73,7 @@ class CaloTransverseEnergy:public SubsysReco
 		float Heuristic(std::vector<float>); //This is a place holder for right now, will properly implement in a bit, pretty much just adjusting models with an A* approach
 		bool ApplyCuts(Event* e);
 		void processPacket(int, Event *, std::vector<float>*, bool);
-		void processDST(TowerInfoContainerv1*, TowerInfoContainerv1*, std::vector<float>*, RawTowerGeomContainer_Cylinderv1*, bool, bool, RawTowerDefs::CalorimeterId);
+		void processDST(TowerInfoContainerv1*, TowerInfoContainerv1*, std::vector<float>*, RawTowerGeomContainer_Cylinderv1*, bool, bool, RawTowerDefs::CalorimeterId, float);
 		float GetTransverseEnergy(float, float);
 		void GetNodes(PHCompositeNode*); 
 		bool ValidateDistro();
@@ -99,23 +103,24 @@ class CaloTransverseEnergy:public SubsysReco
 		CaloTransverseEnergy(std::string inputfile, const std::string &name="CaloTE")
 			:SubsysReco(name)
 		{
+			std::cout<<"Starting to process input file " <<inputfile <<std::endl;
 		/*	IHCALE=new TH1F("iHCal", "Total Transverse energy depositied in inner HCal; Energy #times percent of towers [GeV]", 400, 0, 401); 
 			OHCALE=new TH1F("oHCal", "Total Transverse energy depositied in outer HCal; Energy #times percent oftowers [GeV]", 400, 0,401); 
 		EMCALE=new TH1F("emCal", "Total Transverse energy depositied in EMCal; Energy #times percent of towers [GeV]", 400, 0, 401); 
 			
 //			ETOTAL=new TH1F("total", "Total Transverse energy depositied in all Calorimeters; Energy [GeV]", 2500, 0, 2501); 
-			PhiD=new TH1F("phid", "Transverse energy deposited in #varphi; #varphi; Energy [GeV] ", 32, -0.1, 6.30);
-			EtaD=new TH1F("etad", "Transverse energy depositied in #eta; #eta; Energy [GeV]", 24, -0.5, 23.5);
+			PhiD=new TH1F("phif", "Transverse energy deposited in #varphi; #varphi; Energy [GeV] ", 32, -0.1, 6.30);
+			EtaD=new TH1F("etaf", "Transverse energy depositied in #eta; #eta; Energy [GeV]", 24, -0.5, 23.5);
 			phis=new TH1F("phis", "N events in #varphi; #varphi", 32, -0.1, 6.31); 
 			etas=new TH1F("etas", "N events in #eta; #eta", 24, -1.1, 1.1);
-			ePhiD=new TH1F("emCal_phid", "Transverse energy deposited per active towers in #varphi EmCal; #varphi; Energy/Tower hits [GeV/N] ", 256, 0, 6.30);
-			eEtaD=new TH1F("emCal_etad", "Transverse energy in #eta EmCal, two tower binning; #eta; #frac{1}{N_{Events}} #frac{dE_{T}}{d#eta} [GeV]", 48, -1.134, 1.134);
+			ePhiD=new TH1F("emCal_phif", "Transverse energy deposited per active towers in #varphi EmCal; #varphi; Energy/Tower hits [GeV/N] ", 256, 0, 6.30);
+			eEtaD=new TH1F("emCal_etaf", "Transverse energy in #eta EmCal, two tower binning; #eta; #frac{1}{N_{Events}} #frac{dE_{T}}{d#eta} [GeV]", 48, -1.134, 1.134);
 			ephis=new TH1F("emcal_phis", "N events in #varphi EMCal; #varphi", 32, 0, 6.31); 
 			eetas=new TH1F("emcal_etas", "N events in #eta EMCal ; #eta", 24, -1.1, 1.1);
-			ohPhiD=new TH1F("ohcal_phid", "Transverse energy deposited in #varphi outer HCal; #varphi; #frac{d E_{T}}{d #eta} [GeV] ", 64, 0, 6.30);
-			ohEtaD=new TH1F("ohcal_etad", "Transverse energy depositied in #eta outer HCal; #eta_{bin}; #frac{dE_{T}}{d #eta}[GeV]", 24, -0.5, 23.5);
-			ihPhiD=new TH1F("ihcal_phid", "Transverse energy deposited in #varphi inner HCal; #varphi; #frac{d E_{T}}{d #eta} [GeV] ", 64, 0, 6.30);
-			ihEtaD=new TH1F("ihcal_etad", "Transverse energy depositied in #eta inner HCal; #eta_{bin};#frac{dE_{T}}{d #eta} [GeV]", 24, -0.5, 23.5);
+			ohPhiD=new TH1F("ohcal_phif", "Transverse energy deposited in #varphi outer HCal; #varphi; #frac{d E_{T}}{d #eta} [GeV] ", 64, 0, 6.30);
+			ohEtaD=new TH1F("ohcal_etaf", "Transverse energy depositied in #eta outer HCal; #eta_{bin}; #frac{dE_{T}}{d #eta}[GeV]", 24, -0.5, 23.5);
+			ihPhiD=new TH1F("ihcal_phif", "Transverse energy deposited in #varphi inner HCal; #varphi; #frac{d E_{T}}{d #eta} [GeV] ", 64, 0, 6.30);
+			ihEtaD=new TH1F("ihcal_etaf", "Transverse energy depositied in #eta inner HCal; #eta_{bin};#frac{dE_{T}}{d #eta} [GeV]", 24, -0.5, 23.5);
 			hphis=new TH1F("hcal_phis", "N events in #varphi HCal; #varphi", 32, 0, 6.31); 
 			hetas=new TH1F("hcal_etas", "N events in #eta HCal; #eta", 24, -1.1, 1.1);
 			eep=new TH2F("emcal_towers_et", "Transverse energy deposited in each tower in EM Cal; #eta ; #varphi ; E_{T} [GeV]", 96, 0, 95, 256, 0, 255); 
@@ -132,7 +137,6 @@ class CaloTransverseEnergy:public SubsysReco
 			etabin_hc=new TH1F("hceta", "#eta bin to #delta #eta width HCal; #eta_{bin};#delta #eta", 24, -0.5, 23.5);
 			phibin_hc=new TH1F("hcphi", "#varphi bin to #delta #varphi width HCal; #varphi_{bin}; #delta #varphi", 64, -0.5, 63.5);*/
 			if(inputfile.find("prdf")==std::string::npos) isPRDF=false;
-			plots PLTS;
 			PLTS.zl=-30;
 			PLTS.zh=30;
 			
@@ -144,6 +148,7 @@ class CaloTransverseEnergy:public SubsysReco
 		TH1F *ihPhiD, *ihEtaD, *ohPhiD, *ohEtaD, *hphis, *hetas;
 		TH1F *etabin_em, *phibin_em, *etabin_hc, *phibin_hc;
 		TH2F *eep, *ohep, *ihep, *eeps, *oheps, *iheps, *tep, *teps;
+		plots PLTS;
 		struct kinematics //just a basic kinematic cut, allow for cuts later, default to full acceptance
 			{
 				float phi_min=-PI;
@@ -176,4 +181,8 @@ class CaloTransverseEnergy:public SubsysReco
 		int run_number=1, DST_Segment=0;
 		bool isPRDF=false;
 };
+//Creates a huge list of plots procedurally, allowing for me to be properly lazy 
+//need to test implementation and check in rcalo values as of 4-12-2023
+//Have to check on the eta shift with Joey
+		
 #endif
