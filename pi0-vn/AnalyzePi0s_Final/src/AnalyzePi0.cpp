@@ -92,11 +92,11 @@ int histIndex = 0;
 /*
  Set height of y axis range here
  */
-double globalYAxisRange[2] = {0, 30000}; // Lower and upper limits
+double globalYAxisRange[2] = {0, 3000}; // Lower and upper limits
 /*
  set height of black vertical line output below
  */
-double globalLineHeight = 0.40 * globalYAxisRange[1];
+double globalLineHeight = 0.2 * globalYAxisRange[1];
 
 void PerformFitting(TH1F* hPi0Mass, bool setFitManual, TF1*& totalFit, double& fitStart, double& fitEnd) {
     // Assign the setFitManual value to the global variable
@@ -112,8 +112,15 @@ void PerformFitting(TH1F* hPi0Mass, bool setFitManual, TF1*& totalFit, double& f
             break;
         }
     }
+    /*
+     MAYBE CAN DO SOMETHING LIKE
+     
+     IF SEE A PEAK, SO INCREASING AND DECREASING VALUES BEFORE .1, set fit start manual
+     
+     If all increasing values before .1, set fit automatic
+     */
     fitStart = hPi0Mass->GetBinLowEdge(firstBinAboveThreshold);
-    fitStart = 0.09;
+    fitStart = 0.08;
     globalFitStart = fitStart;
     // Set fitting end point and other parameters
     if (!setFitManual && globalSetDynamicParsAuto) {
@@ -136,14 +143,14 @@ void PerformFitting(TH1F* hPi0Mass, bool setFitManual, TF1*& totalFit, double& f
                   << std::endl;
     } else {
         // Set global variables for additional parameters (manual setting)
-        fitEnd = 0.45;
+        fitEnd = 0.5;
         globalFitEnd = fitEnd;
         globalFindBin1Value = 0.1; // Value in FindBin for bin1
         globalFindBin2Value = 0.2; // Value in FindBin for bin2
         globalSigmaEstimate = 0.02; // sigmaEstimate value
         // Check if SetParLimits is used for sigma
         if (!setFitManual) {
-            globalSigmaParScale = .5; // Scale factor used in SetParLimits
+            globalSigmaParScale = .2; // Scale factor used in SetParLimits
         } else {
             globalSigmaParScale = 0.0; // No SetParLimits used
         }
@@ -270,69 +277,69 @@ struct Range {
  Automatic printing of MBD values onto canvas of invar mass histograms, switches when histIndex is swithced in main method at bottom of macro
  */
 Range ranges[] = {
-    {1.5, 2.0, 0.0, 21395.5},       // index 0
-    {3.0, 4.0, 0.0, 21395.5},       // index 1
-    {4.0, 5.0, 0.0, 21395.5},       // index 2
+    {2.0, 2.5, 0.0, 16821.4},       // index 0
+    {3.0, 4.0, 0.0, 16821.4},       // index 1
+    {4.0, 5.0, 0.0, 16821.4},       // index 2
     
-    {1.5, 2.0, 21395.5, 53640.9},   // index 3
-    {3.0, 4.0, 21395.5, 53640.9},   // index 4
-    {4.0, 5.0, 21395.5, 53640.9},   // index 5
+    {2.0, 2.5, 16821.4, 43100},   // index 3
+    {3.0, 4.0, 16821.4, 43100},   // index 4
+    {4.0, 5.0, 16821.4, 43100},   // index 5
     
-    {1.5, 2.0, 53640.9, 109768},   // index 6
-    {3.0, 4.0, 53640.9, 109768},   // index 7
-    {4.0, 5.0, 53640.9, 109768},   // index 8
+    {2.0, 2.5, 43100, 97028.6},   // index 6
+    {3.0, 4.0, 43100, 97028.6},   // index 7
+    {4.0, 5.0, 43100, 97028.6},   // index 8
     
-    {1.5, 2.0, 109768, 250000},     // index 9
-    {3.0, 4.0, 109768, 250000},     // index 10
-    {4.0, 5.0, 109768, 250000}      // index 11
+    {2.0, 2.5, 97028.6, 250000},     // index 9
+    {3.0, 4.0, 97028.6, 250000},     // index 10
+    {4.0, 5.0, 97028.6, 250000}      // index 11
 };
 /*
  Signal to background ratio calculation and terminal output
  */
-double CalculateSignalToBackgroundRatio(TF1* totalFit, TF1* polyFit, double fitMean, double fitSigma, double& signalToBackgroundError) {
-    // Declare variables for the errors in the integral calculations.
-    double signalPlusBackgroundError, backgroundError;
+double CalculateSignalToBackgroundRatio(TF1* totalFit, TF1* polyFit, TH1F* hPi0Mass, double fitMean, double fitSigma, double& errorSignalToBackgroundRatio) {
+    // Use the fit range of totalFit for creating histograms
+    double fitStart = totalFit->GetXmin();
+    double fitEnd = totalFit->GetXmax();
 
-    // Calculate the integral of the total fit function over a specified range.
-    // This range is determined by the mean and standard deviation (sigma) of the fit.
-    // The integral represents the total area under the curve (signal plus background).
-    double signalPlusBackground = totalFit->Integral(fitMean - 2*fitSigma, fitMean + 2*fitSigma);
+    // Determine the number of bins based on the range and bin width of hPi0Mass
+    double binWidth = hPi0Mass->GetBinWidth(1);
+    int nbins = static_cast<int>((fitEnd - fitStart) / binWidth);
 
-    // Calculate the error in the integral of the total fit.
-    // This error estimation takes into account the uncertainties in the fit parameters.
-    signalPlusBackgroundError = totalFit->IntegralError(fitMean - 2*fitSigma, fitMean + 2*fitSigma, nullptr, nullptr, 1.E-2);
+    // Create histograms within the fit range of totalFit
+    TH1F* histTotalFit = new TH1F("histTotalFit", "Histogram for Total Fit", nbins, fitStart, fitEnd);
+    TH1F* histPolyFit = new TH1F("histPolyFit", "Histogram for Polynomial Fit", nbins, fitStart, .28);
+    
+    // Fill the histograms using the TF1 fits
+    for (int i = 1; i <= nbins; ++i) {
+        double binCenter = histTotalFit->GetBinCenter(i);
+        histTotalFit->SetBinContent(i, totalFit->Eval(binCenter));
+        histPolyFit->SetBinContent(i, polyFit->Eval(binCenter));
+    }
+    
+    // Calculate integrals and errors
+    double errorTotal, errorPoly;
+    int firstBin = histTotalFit->FindBin(fitMean - 2*fitSigma);
+    int lastBin = histTotalFit->FindBin(fitMean + 2*fitSigma);
 
-    // Calculate the integral of the background fit function over the same range.
-    // This represents the area under the background component of the fit.
-    double background = polyFit->Integral(fitMean - 2*fitSigma, fitMean + 2*fitSigma);
+    double signalPlusBackground = histTotalFit->IntegralAndError(firstBin, lastBin, errorTotal);
+    double background = histPolyFit->IntegralAndError(firstBin, lastBin, errorPoly);
 
-    // Calculate the error in the integral of the background fit.
-    backgroundError = polyFit->IntegralError(fitMean - 2*fitSigma, fitMean + 2*fitSigma, nullptr, nullptr, 1.E-2);
-
-    // Calculate the net signal by subtracting the background from the total (signal plus background).
+    // Calculate net signal and signal-to-background ratio
     double netSignal = signalPlusBackground - background;
+    double errorNetSignal = sqrt(pow(errorTotal, 2) + pow(errorPoly, 2));
 
-    // Propagate the errors from the total (signal plus background) and background to find the error in the net signal.
-    // This is done using the quadrature method, which is standard for error propagation in subtraction.
-    double netSignalError = sqrt(pow(signalPlusBackgroundError, 2) + pow(backgroundError, 2));
-
-    // Calculate the signal-to-background ratio by dividing the net signal by the background.
     double signalToBackgroundRatio = netSignal / background;
+    errorSignalToBackgroundRatio = sqrt(pow(errorNetSignal / netSignal, 2) + pow(errorPoly / background, 2)) * signalToBackgroundRatio;
 
-    // Propagate the errors for the division operation to find the error in the signal-to-background ratio.
-    // This accounts for the relative errors of the net signal and the background.
-    signalToBackgroundError = signalToBackgroundRatio * sqrt(pow(netSignalError / netSignal, 2) + pow(backgroundError / background, 2));
+    // Clean up
+    delete histTotalFit;
+    delete histPolyFit;
 
-    // Output the calculated values and their associated errors to the standard output.
-    std::cout << "Area Under Total Fit: " << signalPlusBackground << " +/- " << signalPlusBackgroundError << std::endl;
-    std::cout << "Area Under Background Fit: " << background << " +/- " << backgroundError << std::endl;
-    std::cout << "Net Signal: " << netSignal << " +/- " << netSignalError << std::endl;
-    std::cout << "Signal-to-Background Ratio: " << signalToBackgroundRatio << " +/- " << signalToBackgroundError << std::endl;
+    // Output results
+    std::cout << "Signal-to-Background Ratio: " << signalToBackgroundRatio << " +/- " << errorSignalToBackgroundRatio << std::endl;
 
-    // Return the calculated signal-to-background ratio.
     return signalToBackgroundRatio;
 }
-
 
 
 /*
@@ -448,10 +455,30 @@ void GenerateSignalAndGaussParPlots(const CutValues& cutValues) {
     double gaussianMean[nPoints], gaussianMeanError[nPoints];
     double gaussianSigma[nPoints], gaussianSigmaError[nPoints];
     // Define a small jitter amount for horizontal offset of points
-    const double jitterAmount = 0.04;
+    const double jitterAmount = 0.05;
     const double jitterAmountGaussMean = 0.05;
     
-    double xPoints[nPoints] = {2.5, 3.5, 4.5, 2.5, 3.5, 4.5, 2.5, 3.5, 4.5, 2.5, 3.5, 4.5};
+//    double xPoints[nPoints] = {2.5, 3.5, 4.5, 2.5, 3.5, 4.5, 2.5, 3.5, 4.5, 2.5, 3.5, 4.5};
+    
+    /*
+     UNCOMMENT ABOVE CODE WHEN SWITCH BACK TO 2 TO 3 GEV
+     */
+    // Define new x-coordinates for the points
+    double xPoints[nPoints] = {
+        1.75, // Shifted left to be between 1.5 and 2
+        3.5,  // Remains the same
+        4.5,  // Remains the same
+        1.75, // Shifted left to be between 1.5 and 2
+        3.5,  // Remains the same
+        4.5,  // Remains the same
+        1.75, // Shifted left to be between 1.5 and 2
+        3.5,  // Remains the same
+        4.5,  // Remains the same
+        1.75, // Shifted left to be between 1.5 and 2
+        3.5,  // Remains the same
+        4.5   // Remains the same
+    };
+
     // Construct file names based on cut values for yield and error
     std::ostringstream yieldFilenameStream, errorFilenameStream;
     yieldFilenameStream << "/Users/patsfan753/Desktop/Desktop/AnalyzePi0s_Final/dataOutput/signalYield_"
@@ -558,15 +585,20 @@ void GenerateSignalAndGaussParPlots(const CutValues& cutValues) {
     hDummy->SetTitle("#pi^{0} Signal Yield");
     hDummy->GetXaxis()->SetTitle("#pi^{0} p_{T} [GeV]");
     hDummy->GetXaxis()->SetTitleOffset(1.1);
-    hDummy->GetXaxis()->SetLimits(2, 5); // This sets the user-defined limits for the axis
+    /*
+     CHANGE 1.5 BACK TO 2 IF FIX XPOINTS
+     */
+    hDummy->GetXaxis()->SetLimits(1.5, 5); // This sets the user-defined limits for the axis
     hDummy->GetXaxis()->SetLabelSize(0.04); // You can adjust the size as needed
     // Manually setting the x-axis labels
     hDummy->GetXaxis()->SetNdivisions(004); // This will create four primary divisions (2, 3, 4, 5)
+    
     for (int i = 0; i < 4; ++i) {
         graphs[i] = new TGraphErrors(3);
         for (int j = 0; j < 3; ++j) {
             int idx = indices[i][j];
-            graphs[i]->SetPoint(j, xPoints[idx], yield[idx]);
+            double adjustedX = xPoints[idx] + (i - 1.5) * jitterAmount; // Apply jittering
+            graphs[i]->SetPoint(j, adjustedX, yield[idx]);
             graphs[i]->SetPointError(j, 0, error[idx]);
             graphs[i]->SetLineColor(colors[i]);
             graphs[i]->SetMarkerColor(colors[i]);
@@ -619,7 +651,7 @@ void GenerateSignalAndGaussParPlots(const CutValues& cutValues) {
     hDummyError->GetXaxis()->SetTitle("#pi^{0} p_{T} [GeV]");
     hDummyError->GetXaxis()->SetTitleOffset(1.1); // Adjust this value as needed to position the title
     hDummyError->SetTitle("Relative Error of #pi^{0} Signal Yield");
-    hDummyError->GetXaxis()->SetLimits(2, 5); // This sets the user-defined limits for the axis
+    hDummyError->GetXaxis()->SetLimits(1.5, 5); // This sets the user-defined limits for the axis
     hDummyError->GetXaxis()->SetLabelSize(0.04); // You can adjust the size as needed
     hDummyError->GetXaxis()->SetNdivisions(004); // This will create four primary divisions (2, 3, 4, 5)
     hDummyError->SetMaximum(.8); // Adjust if necessary for your error values
@@ -684,11 +716,11 @@ void GenerateSignalAndGaussParPlots(const CutValues& cutValues) {
     hDummyGausMean->SetTitle("Gaussian Mean");
     hDummyGausMean->GetXaxis()->SetTitle("Diphoton p_{T} [GeV]");
     hDummyGausMean->GetXaxis()->SetTitleOffset(1.1);
-    hDummyGausMean->GetXaxis()->SetLimits(2, 5); // This sets the user-defined limits for the axis
+    hDummyGausMean->GetXaxis()->SetLimits(1.5, 5); // This sets the user-defined limits for the axis
     hDummyGausMean->GetXaxis()->SetLabelSize(0.04); // You can adjust the size as needed
     hDummyGausMean->GetXaxis()->SetNdivisions(004); // This will create four primary divisions (2, 3, 4, 5)
     hDummyGausMean->SetMinimum(.06); // Replace yourMinValue with the desired minimum value
-    hDummyGausMean->SetMaximum(.25); // Replace yourMaxValue with the desired maximum value
+    hDummyGausMean->SetMaximum(.35); // Replace yourMaxValue with the desired maximum value
     hDummyGausMean->SetStats(0); // Remove the statistics box
     hDummyGausMean->GetYaxis()->SetTitle("Gaussian Mean [GeV]");
     hDummyGausMean->Draw(); // Draw the dummy histogram to define axis ranges
@@ -729,7 +761,7 @@ void GenerateSignalAndGaussParPlots(const CutValues& cutValues) {
     label.SetTextSize(0.03);
     label.SetTextColor(kRed); // Match the line color
     // Position the label near the line, adjust the coordinates as necessary
-    label.DrawLatex(0.82, 0.42, "#pi^{0} mass");
+    label.DrawLatex(0.82, 0.32, "#pi^{0} mass");
 
     // Position the legend in the top-left corner
     TLegend *legGaussMean = new TLegend(0.11, 0.68, 0.31, 0.88);
@@ -763,7 +795,7 @@ void GenerateSignalAndGaussParPlots(const CutValues& cutValues) {
     hDummyGausSigma->SetTitle("Gaussian Sigma");
     hDummyGausSigma->GetXaxis()->SetTitle("Diphoton p_{T} [GeV]");
     hDummyGausSigma->GetXaxis()->SetTitleOffset(1.1);
-    hDummyGausSigma->GetXaxis()->SetLimits(2, 5); // This sets the user-defined limits for the axis
+    hDummyGausSigma->GetXaxis()->SetLimits(1.5, 5); // This sets the user-defined limits for the axis
     hDummyGausSigma->GetXaxis()->SetLabelSize(0.04); // You can adjust the size as needed
     hDummyGausSigma->GetXaxis()->SetNdivisions(004); // This will create four primary divisions (2, 3, 4, 5)
     hDummyGausSigma->SetMinimum(0); // Replace yourMinValue with the desired minimum value
@@ -941,6 +973,7 @@ void AnalyzePi0() {
     TH1F *hPi0Mass = (TH1F*)file->Get(histName.c_str());
     globalNumEntries = hPi0Mass->GetEntries(); // Set global variable for number of entries
     hPi0Mass->GetYaxis()->SetRangeUser(globalYAxisRange[0], globalYAxisRange[1]); // Use global variable for Y-axis range
+    hPi0Mass->SetTitle("Reconstructed Diphoton");
 
     // Declare variables for fit parameters
     TF1 *totalFit;
@@ -969,9 +1002,12 @@ void AnalyzePi0() {
     gaussFit->SetParameter(0, totalFit->GetParameter(0));
     gaussFit->SetParameter(1, totalFit->GetParameter(1));
     gaussFit->SetParameter(2, totalFit->GetParameter(2));
+
     for (int i = 3; i < 8; i++) {
         polyFit->SetParameter(i - 3, totalFit->GetParameter(i));
+        polyFit->SetParError(i - 3, totalFit->GetParError(i)); // Transfer the parameter errors as well
     }
+
     gaussFit->SetLineColor(kOrange+2);
     gaussFit->SetLineStyle(2);
     gaussFit->Draw("SAME");
@@ -980,18 +1016,17 @@ void AnalyzePi0() {
     polyFit->SetLineStyle(2);
     polyFit->Draw("SAME");
     
+    
     TLatex latex;
     latex.SetNDC();
 
-    double signalToBackgroundRatio;
-    double signalToBackgroundError;
 
-    // Updated function call
-    signalToBackgroundRatio = CalculateSignalToBackgroundRatio(totalFit, polyFit, fitMean, fitSigma, signalToBackgroundError);
+    double errorSignalToBackgroundRatio;
+    double signalToBackgroundRatio = CalculateSignalToBackgroundRatio(totalFit, polyFit, hPi0Mass, fitMean, fitSigma, errorSignalToBackgroundRatio);
 
 
     // Call the new method to draw text on the canvas
-    DrawCanvasText(latex, ranges[histIndex], fitMean, fitSigma, signalToBackgroundRatio, signalToBackgroundError);
+    DrawCanvasText(latex, ranges[histIndex], fitMean, fitSigma, signalToBackgroundRatio, errorSignalToBackgroundRatio);
 
     double amplitude = totalFit->GetParameter(0);
     
@@ -1054,7 +1089,7 @@ void AnalyzePi0() {
 
 
     // Call the new method to write to CSV if the fit is good
-    WriteDataToCSV(histIndex, globalCutValues, fitMean, fitMeanError, fitSigma, fitSigmaError, signalToBackgroundRatio, signalToBackgroundError, signalYield, signalError);
+    WriteDataToCSV(histIndex, globalCutValues, fitMean, fitMeanError, fitSigma, fitSigmaError, signalToBackgroundRatio, errorSignalToBackgroundRatio, signalYield, signalError);
     
     WriteAdditionalParametersToCSV(histIndex, globalCutValues);
     
