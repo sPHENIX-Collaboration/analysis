@@ -13,6 +13,10 @@
 #include <jetbase/FastJetAlgo.h>
 #include <jetbase/JetInput.h>
 #include <jetbase/TowerJetInput.h>
+#include <jetbase/JetMapv1.h>
+#include <jetbase/JetContainer.h>
+#include <jetbase/JetContainerv1.h>
+#include <jetbase/Jetv2.h>
 
 #include <calobase/RawTower.h>
 #include <calobase/RawTowerContainer.h>
@@ -164,11 +168,30 @@ int JetBkgdSub::Init(PHCompositeNode *topNode)
     m_tree->Branch("iter_pt_unsub", &m_iter_pt_unsub);
   }
 
+  std::cout << "JetBkgdSub::Init(PHCompositeNode *topNode) Initialization successfull" << std::endl;
+
+  //cout all settings
+  std::cout << "JetBkgdSub::Init(PHCompositeNode *topNode) Settings:" << std::endl;
+  std::cout << "JetBkgdSub::Init(PHCompositeNode *topNode) Jet R: " << m_jet_R << std::endl;
+  std::cout << "JetBkgdSub::Init(PHCompositeNode *topNode) Output file: " << m_outputfilename << std::endl;
+  std::cout << "JetBkgdSub::Init(PHCompositeNode *topNode) Eta range: " << m_etaRange.first << " - " << m_etaRange.second << std::endl;
+  std::cout << "JetBkgdSub::Init(PHCompositeNode *topNode) Pt range: " << m_ptRange.first << " - " << m_ptRange.second << std::endl;
+  std::cout << "JetBkgdSub::Init(PHCompositeNode *topNode) Min reco jet pt: " << _minrecopT << std::endl;
+  std::cout << "JetBkgdSub::Init(PHCompositeNode *topNode) Do iterative subtraction: " << _doIterative << std::endl;
+  std::cout << "JetBkgdSub::Init(PHCompositeNode *topNode) Do area subtraction: " << _doAreaSub << std::endl;
+  std::cout << "JetBkgdSub::Init(PHCompositeNode *topNode) Do mult subtraction: " << _doMultSub << std::endl;
+  std::cout << "JetBkgdSub::Init(PHCompositeNode *topNode) Do truth jets: " << _doTruth << std::endl;
+  std::cout << "JetBkgdSub::Init(PHCompositeNode *topNode) Truth jet input: " << m_truth_input << std::endl;
+  std::cout << "JetBkgdSub::Init(PHCompositeNode *topNode) Raw jet input: " << m_raw_input << std::endl;
+  std::cout << "JetBkgdSub::Init(PHCompositeNode *topNode) Iterative jet input: " << m_iter_input << std::endl;
+  std::cout << "JetBkgdSub::Init(PHCompositeNode *topNode) Output tree: " << m_tree->GetName() << std::endl;
+
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
 int JetBkgdSub::process_event(PHCompositeNode *topNode)
 {
+  std::cout << "JetBkgdSub::process_event(PHCompositeNode *topNode) Processing event " << m_event << std::endl;
   ++m_event;
 
   // min reco jet pt cut 
@@ -179,9 +202,11 @@ int JetBkgdSub::process_event(PHCompositeNode *topNode)
   // Get centrality info
   //==================================
   GetCentInfo(topNode);
+  std::cout << "JetBkgdSub::process_event(PHCompositeNode *topNode) Centrality: " << m_centrality << std::endl;
 
   // Leading truth jet pt (R = 0.4) (for simulation event selection)
   m_event_leading_truth_pt = LeadingR04TruthJet(topNode);
+  std::cout << "JetBkgdSub::process_event(PHCompositeNode *topNode) Leading truth jet pt: " << m_event_leading_truth_pt << std::endl;
 
   // ==================================
   // Get truth jet info
@@ -424,7 +449,7 @@ int JetBkgdSub::process_event(PHCompositeNode *topNode)
     if(m_rho_mult < 0 ) return Fun4AllReturnCodes::EVENT_OK; // skip event if rho_mult < 0
 
     // get raw tower jets
-    JetMap *multjets = findNode::getClass<JetMap>(topNode, m_raw_input);
+    JetContainer *multjets = findNode::getClass<JetContainer>(topNode, m_raw_input);
     if(!multjets) 
     {
       std::cout << "JetTree::process_event(PHCompositeNode *topNode) Could not find mult jet nodes" << std::endl;
@@ -433,9 +458,10 @@ int JetBkgdSub::process_event(PHCompositeNode *topNode)
 
     // loop over mult jets
     m_mult_jets = 0;
-    for(JetMap::Iter iter = multjets->begin(); iter != multjets->end(); ++iter){
-
-      Jet *jet = iter->second;
+    // for(JetMap::Iter iter = multjets->begin(); iter != multjets->end(); ++iter){
+    for(auto jet : *multjets)
+    {
+      // Jet *jet = iter->second;
       float nsignal = NSignalCorrection(jet->get_pt(), m_centrality);
       float pt = jet->get_pt() - m_rho_mult*(jet->size_comp() - nsignal);
       if(pt < min_reco_jet_pt) continue;
