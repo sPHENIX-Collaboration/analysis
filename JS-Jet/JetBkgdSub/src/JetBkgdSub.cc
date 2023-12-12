@@ -191,7 +191,7 @@ int JetBkgdSub::Init(PHCompositeNode *topNode)
 
 int JetBkgdSub::process_event(PHCompositeNode *topNode)
 {
-  std::cout << "JetBkgdSub::process_event(PHCompositeNode *topNode) Processing event " << m_event << std::endl;
+  // std::cout << "JetBkgdSub::process_event(PHCompositeNode *topNode) Processing event " << m_event << std::endl;
   ++m_event;
 
   // min reco jet pt cut 
@@ -202,11 +202,11 @@ int JetBkgdSub::process_event(PHCompositeNode *topNode)
   // Get centrality info
   //==================================
   GetCentInfo(topNode);
-  std::cout << "JetBkgdSub::process_event(PHCompositeNode *topNode) Centrality: " << m_centrality << std::endl;
+  // std::cout << "JetBkgdSub::process_event(PHCompositeNode *topNode) Centrality: " << m_centrality << std::endl;
 
   // Leading truth jet pt (R = 0.4) (for simulation event selection)
   m_event_leading_truth_pt = LeadingR04TruthJet(topNode);
-  std::cout << "JetBkgdSub::process_event(PHCompositeNode *topNode) Leading truth jet pt: " << m_event_leading_truth_pt << std::endl;
+  // std::cout << "JetBkgdSub::process_event(PHCompositeNode *topNode) Leading truth jet pt: " << m_event_leading_truth_pt << std::endl;
 
   // ==================================
   // Get truth jet info
@@ -240,8 +240,9 @@ int JetBkgdSub::process_event(PHCompositeNode *topNode)
   // Get iter jet info
   //==================================
   if(_doIterative)
-  {
-    JetMap *iterjets = findNode::getClass<JetMap>(topNode, m_iter_input);
+  { 
+    std::cout << "JetBkgdSub::process_event(PHCompositeNode *topNode) Iterative subtraction" << std::endl;
+    JetContainer *iterjets = findNode::getClass<JetContainer>(topNode, m_iter_input);
     if(!iterjets) 
     {
       std::cout << "JetTree::process_event(PHCompositeNode *topNode) Could not find iter jet nodes" << std::endl;
@@ -272,9 +273,14 @@ int JetBkgdSub::process_event(PHCompositeNode *topNode)
     float background_Psi2 = background->get_Psi2();
 
     m_iter_jets = 0;
-    for(JetMap::Iter iter = iterjets->begin(); iter != iterjets->end(); ++iter){
+    unsigned int n_ijets_in_event = iterjets->size();
+    std::cout << "JetBkgdSub::process_event(PHCompositeNode *topNode) Number of iter jets: " << n_ijets_in_event << std::endl;
+    for (unsigned int ijet = 0; ijet<=n_ijets_in_event; ++ijet){
+      Jet *jet = iterjets->get_jet(ijet);
+      // for (auto ijet: *iterjets){
 
-      Jet *jet = iter->second;
+      // Jet *jet = iter->second;
+      std::cout << "JetBkgdSub::process_event(PHCompositeNode *topNode) Iter jet pt: " << jet->get_pt() << std::endl;
       if(jet->get_pt() < min_reco_jet_pt) continue;
       m_iter_eta.push_back(jet->get_eta());
       m_iter_phi.push_back(jet->get_phi());
@@ -285,54 +291,57 @@ int JetBkgdSub::process_event(PHCompositeNode *topNode)
       float totalPy = 0;
       float totalPz = 0;
       float totalE = 0;
-
-      for (Jet::ConstIter comp = jet->begin_comp(); comp != jet->end_comp(); ++comp)
+      
+      auto comp_vec = jet->get_comp_vec();
+      for (auto comp = comp_vec.begin(); comp != comp_vec.end(); ++comp)
       {
+        // for (Jet::ConstIter comp = jet->begin_comp(); comp != jet->end_comp(); ++comp)
+        // {
         TowerInfo *tower;
-        unsigned int channel = (*comp).second;
-        
-        if ((*comp).first == 15 ||  (*comp).first == 30)
+        // unsigned int channel = (*comp).second;
+        unsigned int channel = comp->second;
+        unsigned int calo_src = comp->first;
+        if(calo_src == 15 || calo_src == 30)
         {
+            tower = towersIH3->get_tower_at_channel(channel);
+            if(!tower || !tower_geom) continue;
+      
+            unsigned int calokey = towersIH3->encode_key(channel);
+            int ieta = towersIH3->getTowerEtaBin(calokey);
+            int iphi = towersIH3->getTowerPhiBin(calokey);
+            const RawTowerDefs::keytype key = RawTowerDefs::encode_towerid(RawTowerDefs::CalorimeterId::HCALIN, ieta, iphi);
+            float UE = background->get_UE(1).at(ieta);
+            float tower_phi = tower_geom->get_tower_geometry(key)->get_phi();
+            float tower_eta = tower_geom->get_tower_geometry(key)->get_eta();
 
-          tower = towersIH3->get_tower_at_channel(channel);
-          if(!tower || !tower_geom) continue;
-    
-          unsigned int calokey = towersIH3->encode_key(channel);
-          int ieta = towersIH3->getTowerEtaBin(calokey);
-          int iphi = towersIH3->getTowerPhiBin(calokey);
-          const RawTowerDefs::keytype key = RawTowerDefs::encode_towerid(RawTowerDefs::CalorimeterId::HCALIN, ieta, iphi);
-          float UE = background->get_UE(1).at(ieta);
-          float tower_phi = tower_geom->get_tower_geometry(key)->get_phi();
-          float tower_eta = tower_geom->get_tower_geometry(key)->get_eta();
-
-          UE = UE * (1 + 2 * background_v2 * cos(2 * (tower_phi - background_Psi2)));
-          totalE += tower->get_energy() + UE;
-          double pt = (tower->get_energy() + UE) / cosh(tower_eta);
-          totalPx += pt * cos(tower_phi);
-          totalPy += pt * sin(tower_phi);
-          totalPz += pt * sinh(tower_eta);
+            UE = UE * (1 + 2 * background_v2 * cos(2 * (tower_phi - background_Psi2)));
+            totalE += tower->get_energy() + UE;
+            double pt = (tower->get_energy() + UE) / cosh(tower_eta);
+            totalPx += pt * cos(tower_phi);
+            totalPy += pt * sin(tower_phi);
+            totalPz += pt * sinh(tower_eta);
         }
-        else if ((*comp).first == 16 || (*comp).first == 31)
+        else if (calo_src == 16 || calo_src == 31)
         {
-          tower = towersOH3->get_tower_at_channel(channel);
-          if(!tower || !tower_geomOH)  continue;
-        
-          unsigned int calokey = towersOH3->encode_key(channel);
-          int ieta = towersOH3->getTowerEtaBin(calokey);
-          int iphi = towersOH3->getTowerPhiBin(calokey);
-          const RawTowerDefs::keytype key = RawTowerDefs::encode_towerid(RawTowerDefs::CalorimeterId::HCALOUT, ieta, iphi);
-          float UE = background->get_UE(2).at(ieta);
-          float tower_phi = tower_geomOH->get_tower_geometry(key)->get_phi();
-          float tower_eta = tower_geomOH->get_tower_geometry(key)->get_eta();
+            tower = towersOH3->get_tower_at_channel(channel);
+            if(!tower || !tower_geomOH)  continue;
+          
+            unsigned int calokey = towersOH3->encode_key(channel);
+            int ieta = towersOH3->getTowerEtaBin(calokey);
+            int iphi = towersOH3->getTowerPhiBin(calokey);
+            const RawTowerDefs::keytype key = RawTowerDefs::encode_towerid(RawTowerDefs::CalorimeterId::HCALOUT, ieta, iphi);
+            float UE = background->get_UE(2).at(ieta);
+            float tower_phi = tower_geomOH->get_tower_geometry(key)->get_phi();
+            float tower_eta = tower_geomOH->get_tower_geometry(key)->get_eta();
 
-          UE = UE * (1 + 2 * background_v2 * cos(2 * (tower_phi - background_Psi2)));
-          totalE +=tower->get_energy() + UE;
-          double pt = (tower->get_energy() + UE) / cosh(tower_eta);
-          totalPx += pt * cos(tower_phi);
-          totalPy += pt * sin(tower_phi);
-          totalPz += pt * sinh(tower_eta);
+            UE = UE * (1 + 2 * background_v2 * cos(2 * (tower_phi - background_Psi2)));
+            totalE +=tower->get_energy() + UE;
+            double pt = (tower->get_energy() + UE) / cosh(tower_eta);
+            totalPx += pt * cos(tower_phi);
+            totalPy += pt * sin(tower_phi);
+            totalPz += pt * sinh(tower_eta);
         }
-        else if ((*comp).first == 14 || (*comp).first == 29)
+        else if (calo_src == 14 || calo_src == 29)
         {
           tower = towersEM3->get_tower_at_channel(channel);
           if(!tower || !tower_geom) continue;
@@ -352,6 +361,7 @@ int JetBkgdSub::process_event(PHCompositeNode *topNode)
           totalPz += pt * sinh(tower_eta);
         }
       }
+      
 
       //get unsubtracted jet
       unsubjet->set_px(totalPx);
