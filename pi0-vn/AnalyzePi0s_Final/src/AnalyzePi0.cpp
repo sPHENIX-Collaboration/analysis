@@ -1063,15 +1063,16 @@ void AnalyzePi0() {
     line2->SetLineStyle(1);
     line1->Draw("same");
     line2->Draw("same");
-    std::ostringstream filenameStream;
-    filenameStream << "/Users/patsfan753/Desktop/Desktop/AnalyzePi0s_Final/plotOutput/InvMassPlots/hPi0Mass_"
-                   << histIndex << "_E" << globalCutValues.clusE
-                   << "_Asym" << globalCutValues.asymmetry
-                   << "_Chi" << globalCutValues.chi
-                   << "_DeltaR" << globalCutValues.deltaR << "_fit.pdf";
-    std::string imageName = filenameStream.str();
-    canvas->SaveAs(imageName.c_str());
-    
+    if (isFitGood) {
+        std::ostringstream filenameStream;
+        filenameStream << "/Users/patsfan753/Desktop/Desktop/AnalyzePi0s_Final/plotOutput/InvMassPlots/hPi0Mass_"
+                       << histIndex << "_E" << globalCutValues.clusE
+                       << "_Asym" << globalCutValues.asymmetry
+                       << "_Chi" << globalCutValues.chi
+                       << "_DeltaR" << globalCutValues.deltaR << "_fit.pdf";
+        std::string imageName = filenameStream.str();
+        canvas->SaveAs(imageName.c_str());
+    }
     std::string imageName2 = "/Users/patsfan753/Desktop/Desktop/AnalyzePi0s_Final/plotOutput/InvMassPlotsNoCutSpecified/" + histName + "_fit.pdf";
     canvas->SaveAs(imageName2.c_str());
     CalculateSignalYieldAndError(hPi0Mass, polyFit, fitMean, fitSigma, histIndex, globalCutValues);
