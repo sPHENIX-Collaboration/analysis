@@ -6,6 +6,7 @@
 #include <map>
 #include <vector>
 #include <math.h> 
+#include <iostream>
 
 #include <TH1.h>
 #include <TH2.h>
@@ -19,9 +20,9 @@ class caloplots
 	public: 
 		std::string calo="EMCAL";
 		TH1F* Energy, *E_phi, *ET, *dET_eta, *ET_phi, *ET_z, *dET, *acceptance_eta, *phi, *eta, *z_val;
-		std::vector<TH1F*> *hists_1;
+		std::vector<TH1F*> hists_1;
 		TH2F* ET_eta_phi, *E_eta_phi, *ET_z_eta, *Hits2D;
-		std::vector<TH2F*> *hists_2;
+		std::vector<TH2F*> hists_2;
 		float acceptance=0.0; 
 		bool ok_phi=false;
 		float z=0, zl, zh, zmin=1, zmax=1, rcalo=1;
@@ -31,6 +32,8 @@ class caloplots
 			zl=zlow; 
 			zh=zhigh;
 			calo=caloname;
+		//	hists_1=NULL;
+		//	hists_2=NULL;
 			z=(zl+zh)/2;
 			if(calo.find("OHCAL") != std::string::npos || calo.find("ALL") != std::string::npos) rcalo=3;
 			if(calo.find("IHCAL") != std::string::npos) rcalo=2;
@@ -38,10 +41,18 @@ class caloplots
 					zmax=rcalo*(1-etamax*etamax)/(2*etamax);
 					zmin=rcalo*(1-etamin*etamin)/(2*etamin);
 				}
+			//AdjustEtaEdge();
+			//MakePlots();
+		}
+		~caloplots();
+		void UpdateZ(float zlow, float zhigh){ 
+			z=(zlow+zhigh)/2.0;
+			zl=zlow;
+			zh=zhigh;
+			std::cout<<"The center for this is " <<z<<std::endl;
 			AdjustEtaEdge();
 			MakePlots();
 		}
-		~caloplots();
 		void validatePhi(){
 			int good=0, nbins=E_phi->GetNbinsX();
 			float avg=0;
@@ -83,16 +94,16 @@ class caloplots
 				total_val+=data_point["OHCAL"];
 				dET->Fill(total_val);
 			}
-			for(unsigned int i=0; i<hists_1->size(); i++){
-				 hists_1->at(i)->Add(PLT.em->hists_1->at(i));
-				 hists_1->at(i)->Add(PLT.ihcal->hists_1->at(i));
-				 hists_1->at(i)->Add(PLT.ohcal->hists_1->at(i));
+			for(unsigned int i=0; i<hists_1.size(); i++){
+				 hists_1.at(i)->Add(PLT.em->hists_1.at(i));
+				 hists_1.at(i)->Add(PLT.ihcal->hists_1.at(i));
+				 hists_1.at(i)->Add(PLT.ohcal->hists_1.at(i));
 			}
 
-			for(unsigned int i=0; i<hists_2->size(); i++){
-				 hists_2->at(i)->Add(PLT.em->hists_2->at(i));
-				 hists_2->at(i)->Add(PLT.ihcal->hists_2->at(i));
-				 hists_2->at(i)->Add(PLT.ohcal->hists_2->at(i));
+			for(unsigned int i=0; i<hists_2.size(); i++){
+				 hists_2.at(i)->Add(PLT.em->hists_2.at(i));
+				 hists_2.at(i)->Add(PLT.ihcal->hists_2.at(i));
+				 hists_2.at(i)->Add(PLT.ohcal->hists_2.at(i));
 			}
 		}*/
 	private:
@@ -107,42 +118,42 @@ class caloplots
 				etabins=24;
 				phibins=64;
 			}
+			int z_lab=10*z;
+			Energy=new TH1F(Form("Enengy_%s_z_%d", calo.c_str(), z_lab), Form("E_{event} in %s with vertex z=%f; E [GeV]", calo.c_str(), z), 1000, 0.5, 1000.5);
+			
+			ET=new TH1F(Form("ET_%s_z_%d", calo.c_str(), z_lab), Form("E_{T}^{event} in %s with vertex z=%f; E [GeV]", calo.c_str(), z), 1000, 0.5, 1000.5);
+			E_phi=new TH1F(Form("E_phi_%s_z_%d", calo.c_str(), z_lab), Form("E(#varphi) in %s with vertex z=%f, #varphi, E [GeV]",calo.c_str(),z), phibins, -0.01, 6.3);
+			
+			ET_phi=new TH1F(Form("ET_phi_%s_z_%d", calo.c_str(), z_lab), Form("E_{T}(#varphi) in %s with vertex z=%f, #varphi, #E_{T} [GeV]",calo.c_str(),z), phibins, -0.01, 6.3);
+			
+			dET_eta=new TH1F(Form("dET_eta_%s_z_%d", calo.c_str(), z_lab), Form("dE_{T}/d#eta(#eta) in %s with vertex z=%f, #eta, #frac{dE_{T}}{d#eta} [GeV]",calo.c_str(),z), etabins, etamin, etamax);
+			
+			ET_z=new TH1F(Form("ET_z_%s_z_%d", calo.c_str(), z_lab), Form("E_{T}(z) in %s with vertex z=%f, z, #E_{T} [GeV]",calo.c_str(),z), 40, zmin,zmax);
 
-			Energy=new TH1F(Form("Enengy_%s_z_%f", calo.c_str(), z), Form("E_{event} in %s with vertex z=%f; E [GeV]", calo.c_str(), z), 1000, 0.5, 1000.5);
-			
-			ET=new TH1F(Form("ET_%s_z_%f", calo.c_str(), z), Form("E_{T}^{event} in %s with vertex z=%f; E [GeV]", calo.c_str(), z), 1000, 0.5, 1000.5);
-			E_phi=new TH1F(Form("E_phi_%s_z_%f", calo.c_str(), z), Form("E(#varphi) in %s with vertex z=%f, #varphi, E [GeV]",calo.c_str(),z), phibins, -0.01, 6.3);
-			
-			ET_phi=new TH1F(Form("ET_phi_%s_z_%f", calo.c_str(), z), Form("E_{T}(#varphi) in %s with vertex z=%f, #varphi, #E_{T} [GeV]",calo.c_str(),z), phibins, -0.01, 6.3);
-			
-			dET_eta=new TH1F(Form("dET_eta_%s_z_%f", calo.c_str(), z), Form("dE_{T}/d#eta(#eta) in %s with vertex z=%f, #eta, #frac{dE_{T}}{d#eta} [GeV]",calo.c_str(),z), etabins, etamin, etamax);
-			
-			ET_z=new TH1F(Form("ET_z_%s_z_%f", calo.c_str(), z), Form("E_{T}(z) in %s with vertex z=%f, z, #E_{T} [GeV]",calo.c_str(),z), 40, zmin,zmax);
-
-			dET=new TH1F(Form("dET_%s_z_%f", calo.c_str(), z), Form("#frac{dE_{T}}{d#eta} in %s with vertex z=%f, #frac{dE_{T}}{d#eta} [GeV]",calo.c_str(),z), 1000, 0.5, 100.5);
-			acceptance_eta=new TH1F(Form("acceptance_%s_z_%f", calo.c_str(), z), Form("Acceptance in physical #eta slice in %s with vertex z=%f, #eta, percent towers responding", calo.c_str(),z), etabins, etamin, etamax);
-			phi=new TH1F(Form("phi_%s_z_%f", calo.c_str(), z), Form("Hit distribution in #varphi_{bin} in %s with vertex z=%f, #varphi_{bin}, N_{Hits}", calo.c_str(), z), phibins, -0.5, phibins-0.5);
-			eta=new TH1F(Form("eta_%s_z_%f", calo.c_str(), z), Form("Hit distribution in physical #eta_{bin} in %s with vertex z=%f, #eta_{bin}, N_{Hits}", calo.c_str(), z), etabins, -0.5, etabins-0.5);
-			z_val=new TH1F(Form("z_%s_z_%f", calo.c_str(), z), Form("Hit distribution in z vertex in %s with vertex centered at z=%f, z, N_{events}", calo.c_str(), z), 100, zl, zh);
-			hists_1->push_back(Energy);
-			hists_1->push_back(ET);
-			hists_1->push_back(E_phi);
-			hists_1->push_back(ET_phi);
-			hists_1->push_back(dET_eta);
-			hists_1->push_back(ET_z);
-			hists_1->push_back(dET);
-			hists_1->push_back(acceptance_eta);
-			hists_1->push_back(phi);
-			hists_1->push_back(eta);
-			hists_1->push_back(z_val);
-			ET_eta_phi=new TH2F(Form("ET_eta_phi_%s_z%f", calo.c_str(), z), Form("E_{T}(#eta, #varphi) in %s with vertex z=%f, #eta, #varphi, E_{T} [GeV]", calo.c_str(), z), etabins, etamin, etamax, phibins,-0.1, 6.3);
-		       	E_eta_phi=new TH2F(Form("E_eta_phi_%s_z_%f", calo.c_str(), z), Form("E(#eta, #varphi)	physical binning in %s with vertex centered at z=%f, #eta, #varphi, E [GeV]", calo.c_str(), z), etabins, -1.13, 1.13, phibins, -0.1, 6.3);
-			ET_z_eta=new TH2F(Form("ET_z_eta_%s_z_%f", calo.c_str(), z), Form("E_{T}(z_{vertex}, #eta) in %s with vertex centered at z=%f, z_{vertex}, #eta, E_{T} [GeV]", calo.c_str(), z), 40, zl, zh, etabins, etamin, etamax);
-			Hits2D=new TH2F(Form("Hits_2D_%s_z_%f", calo.c_str(), z), Form("Hits in #eta and #varphi in %s with vertex centered at z=%f, #eta, #varphi", calo.c_str(), z), etabins, etamin, etamax, phibins, -0.1, 6.3);
-			hists_2->push_back(ET_eta_phi);
-			hists_2->push_back(E_eta_phi);
-			hists_2->push_back(ET_z_eta);
-			hists_2->push_back(Hits2D);
+			dET=new TH1F(Form("dET_%s_z_%d", calo.c_str(), z_lab), Form("#frac{dE_{T}}{d#eta} in %s with vertex z=%f, #frac{dE_{T}}{d#eta} [GeV]",calo.c_str(),z), 1000, 0.5, 100.5);
+			acceptance_eta=new TH1F(Form("acceptance_%s_z_%d", calo.c_str(), z_lab), Form("Acceptance in physical #eta slice in %s with vertex z=%f, #eta, percent towers responding", calo.c_str(),z), etabins, etamin, etamax);
+			phi=new TH1F(Form("phi_%s_z_%d", calo.c_str(), z_lab), Form("Hit distribution in #varphi_{bin} in %s with vertex z=%f, #varphi_{bin}, N_{Hits}", calo.c_str(), z), phibins, -0.5, phibins-0.5);
+			eta=new TH1F(Form("eta_%s_z_%d", calo.c_str(), z_lab), Form("Hit distribution in physical #eta_{bin} in %s with vertex z=%f, #eta_{bin}, N_{Hits}", calo.c_str(), z), etabins, -0.5, etabins-0.5);
+			z_val=new TH1F(Form("z_%s_z_%d", calo.c_str(), z_lab), Form("Hit distribution in z vertex in %s with vertex centered at z=%f, z, N_{events}", calo.c_str(), z), 100, zl, zh);
+			hists_1.push_back(Energy);
+			hists_1.push_back(ET);
+			hists_1.push_back(E_phi);
+			hists_1.push_back(ET_phi);
+			hists_1.push_back(dET_eta);
+			hists_1.push_back(ET_z);
+			hists_1.push_back(dET);
+			hists_1.push_back(acceptance_eta);
+			hists_1.push_back(phi);
+			hists_1.push_back(eta);
+			hists_1.push_back(z_val);
+			ET_eta_phi=new TH2F(Form("ET_eta_phi_%s_z_%d", calo.c_str(), z_lab), Form("E_{T}(#eta, #varphi) in %s with vertex z=%f, #eta, #varphi, E_{T} [GeV]", calo.c_str(), z), etabins, etamin, etamax, phibins,-0.1, 6.3);
+		       	E_eta_phi=new TH2F(Form("E_eta_phi_%s_z_%d", calo.c_str(), z_lab), Form("E(#eta, #varphi)	physical binning in %s with vertex centered at z=%f, #eta, #varphi, E [GeV]", calo.c_str(), z), etabins, -1.13, 1.13, phibins, -0.1, 6.3);
+			ET_z_eta=new TH2F(Form("ET_z_eta_%s_z_%d", calo.c_str(), z_lab), Form("E_{T}(z_{vertex}, #eta) in %s with vertex centered at z=%f, z_{vertex}, #eta, E_{T} [GeV]", calo.c_str(), z), 40, zl, zh, etabins, etamin, etamax);
+			Hits2D=new TH2F(Form("Hits_2D_%s_z_%d", calo.c_str(), z_lab), Form("Hits in #eta and #varphi in %s with vertex centered at z=%f, #eta, #varphi", calo.c_str(), z), etabins, etamin, etamax, phibins, -0.1, 6.3);
+			hists_2.push_back(ET_eta_phi);
+			hists_2.push_back(E_eta_phi);
+			hists_2.push_back(ET_z_eta);
+			hists_2.push_back(Hits2D);
 		}
 };
 #endif

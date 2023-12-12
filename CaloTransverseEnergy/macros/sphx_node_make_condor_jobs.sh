@@ -3,7 +3,7 @@
 RUN=${1:-'21518'}
 SUBMIT=${2:-'test'}
 i=0
-for infile in /sphenix/tg/tg01/jets/ahodges/run23_production/$RUN/DST-000$RUN-*; do 
+for infile in  /sphenix/lustre01/sphnxpro/commissioning/DST_ana391_2023p006/DST_*$RUN*.root; do 
 	fname="condor_"$i"_run_"$RUN".job"
 	touch $fname
 	echo $fname

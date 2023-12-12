@@ -29,14 +29,17 @@ int GetET(std::string filename="/sphenix/tg/tg01/jets/ahodges/run23_production/2
 //	std::string filename="/sphenix/tg/tg01/jets/ahodges/run23_production/21518/DST-00021518-0000.root";
 	std::cout<<"Input file is " <<filename <<std::endl;
 	SetsPhenixStyle();
+	Global_Reco();
 	Fun4AllServer *se=Fun4AllServer::instance();
 	Fun4AllPrdfInputPoolManager *inp = new Fun4AllPrdfInputPoolManager("inp");
 	Fun4AllDstInputManager *in = new Fun4AllDstInputManager("in");
+	std::cout<<"have the input manager loaded" <<std::endl;
 	//in->AddFile(filename);
 	CaloTransverseEnergy* cte=new CaloTransverseEnergy(filename, "CaloET");
 	std::stringstream subs(filename);
 	std::string substr;
 	int is_input=0;
+	std::cout<<"Have loaded the first instance of the calo" <<std::endl;
 	//load in the DST Segment and run number
 	while(std::getline(subs, substr, '-')){
 		if(is_input==2){

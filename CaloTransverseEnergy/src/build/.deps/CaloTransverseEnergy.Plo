@@ -313,7 +313,9 @@ CaloTransverseEnergy.lo: ../CaloTransverseEnergy.cc \
  /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/gcc/12.1.0-57c96/x86_64-centos7/include/c++/12.1.0/x86_64-pc-linux-gnu/bits/basic_file.h \
  /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/gcc/12.1.0-57c96/x86_64-centos7/include/c++/12.1.0/x86_64-pc-linux-gnu/bits/c++io.h \
  /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/gcc/12.1.0-57c96/x86_64-centos7/include/c++/12.1.0/bits/fstream.tcc \
- ../caloplots.h ../plots.h \
+ ../caloplots.h \
+ /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/gcc/12.1.0-57c96/x86_64-centos7/include/c++/12.1.0/iostream \
+ ../plots.h \
  /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/release/release_ana/ana.393/include/fun4all/Fun4AllInputManager.h \
  /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/release/release_ana/ana.393/include/fun4all/Fun4AllBase.h \
  /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/gcc/12.1.0-57c96/x86_64-centos7/include/c++/12.1.0/climits \
@@ -337,7 +339,6 @@ CaloTransverseEnergy.lo: ../CaloTransverseEnergy.cc \
  /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/release/release_ana/ana.393/include/Event/generalDefinitions.h \
  /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/release/release_ana/ana.393/include/Event/event_io.h \
  /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/release/release_ana/ana.393/include/Event/ioselect.h \
- /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/gcc/12.1.0-57c96/x86_64-centos7/include/c++/12.1.0/iostream \
  /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/gcc/12.1.0-57c96/x86_64-centos7/include/c++/12.1.0/iomanip \
  /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/gcc/12.1.0-57c96/x86_64-centos7/include/c++/12.1.0/locale \
  /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/gcc/12.1.0-57c96/x86_64-centos7/include/c++/12.1.0/bits/locale_facets_nonio.h \
@@ -356,6 +357,8 @@ CaloTransverseEnergy.lo: ../CaloTransverseEnergy.cc \
  /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/release/release_ana/ana.393/include/calobase/TowerInfoContainer.h \
  /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/release/release_ana/ana.393/include/calobase/TowerInfov1.h \
  /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/root-6.26.06.p01/include/TClonesArray.h \
+ /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/release/release_ana/ana.393/include/calobase/TowerInfoContainerv2.h \
+ /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/release/release_ana/ana.393/include/calobase/TowerInfov2.h \
  /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/release/release_ana/ana.393/include/calobase/TowerInfov1.h \
  /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/release/release_ana/ana.393/include/calobase/RawTowerDefs.h \
  /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/gcc/12.1.0-57c96/x86_64-centos7/include/c++/12.1.0/bitset \
@@ -733,6 +736,7 @@ CaloTransverseEnergy.lo: ../CaloTransverseEnergy.cc \
 /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/gcc/12.1.0-57c96/x86_64-centos7/include/c++/12.1.0/x86_64-pc-linux-gnu/bits/c++io.h:
 /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/gcc/12.1.0-57c96/x86_64-centos7/include/c++/12.1.0/bits/fstream.tcc:
 ../caloplots.h:
+/cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/gcc/12.1.0-57c96/x86_64-centos7/include/c++/12.1.0/iostream:
 ../plots.h:
 /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/release/release_ana/ana.393/include/fun4all/Fun4AllInputManager.h:
 /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/release/release_ana/ana.393/include/fun4all/Fun4AllBase.h:
@@ -760,7 +764,6 @@ CaloTransverseEnergy.lo: ../CaloTransverseEnergy.cc \
 /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/release/release_ana/ana.393/include/Event/generalDefinitions.h:
 /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/release/release_ana/ana.393/include/Event/event_io.h:
 /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/release/release_ana/ana.393/include/Event/ioselect.h:
-/cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/gcc/12.1.0-57c96/x86_64-centos7/include/c++/12.1.0/iostream:
 /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/gcc/12.1.0-57c96/x86_64-centos7/include/c++/12.1.0/iomanip:
 /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/gcc/12.1.0-57c96/x86_64-centos7/include/c++/12.1.0/locale:
 /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/gcc/12.1.0-57c96/x86_64-centos7/include/c++/12.1.0/bits/locale_facets_nonio.h:
@@ -779,6 +782,8 @@ CaloTransverseEnergy.lo: ../CaloTransverseEnergy.cc \
 /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/release/release_ana/ana.393/include/calobase/TowerInfoContainer.h:
 /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/release/release_ana/ana.393/include/calobase/TowerInfov1.h:
 /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/root-6.26.06.p01/include/TClonesArray.h:
+/cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/release/release_ana/ana.393/include/calobase/TowerInfoContainerv2.h:
+/cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/release/release_ana/ana.393/include/calobase/TowerInfov2.h:
 /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/release/release_ana/ana.393/include/calobase/TowerInfov1.h:
 /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/release/release_ana/ana.393/include/calobase/RawTowerDefs.h:
 /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/gcc/12.1.0-57c96/x86_64-centos7/include/c++/12.1.0/bitset:

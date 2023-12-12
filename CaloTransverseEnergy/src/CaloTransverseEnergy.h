@@ -36,6 +36,7 @@
 
 #include <calobase/TowerInfoContainer.h>
 #include <calobase/TowerInfoContainerv1.h>
+#include <calobase/TowerInfoContainerv2.h>
 #include <calobase/TowerInfov1.h>
 #include <calobase/RawTowerDefs.h>
 #include <calobase/RawTowerGeomContainer.h>
@@ -73,7 +74,7 @@ class CaloTransverseEnergy:public SubsysReco
 		float Heuristic(std::vector<float>); //This is a place holder for right now, will properly implement in a bit, pretty much just adjusting models with an A* approach
 		bool ApplyCuts(Event* e);
 		void processPacket(int, Event *, std::vector<float>*, bool);
-		void processDST(TowerInfoContainerv1*, TowerInfoContainerv1*, std::vector<float>*, RawTowerGeomContainer_Cylinderv1*, bool, bool, RawTowerDefs::CalorimeterId, float);
+		void processDST(TowerInfoContainerv2*, TowerInfoContainerv2*, std::vector<float>*, RawTowerGeomContainer_Cylinderv1*, bool, bool, RawTowerDefs::CalorimeterId, float, plots*);
 		float GetTransverseEnergy(float, float);
 		void GetNodes(PHCompositeNode*); 
 		bool ValidateDistro();
@@ -137,8 +138,18 @@ class CaloTransverseEnergy:public SubsysReco
 			etabin_hc=new TH1F("hceta", "#eta bin to #delta #eta width HCal; #eta_{bin};#delta #eta", 24, -0.5, 23.5);
 			phibin_hc=new TH1F("hcphi", "#varphi bin to #delta #varphi width HCal; #varphi_{bin}; #delta #varphi", 64, -0.5, 63.5);*/
 			if(inputfile.find("prdf")==std::string::npos) isPRDF=false;
-			PLTS.zl=-30;
-			PLTS.zh=30;
+			for(int i=0; i<20; i++){
+				plots* PLT=new plots;
+				int zb=3*i-30; 
+				PLT->zl=zb-30;
+				PLT->zh=zb+30;
+				std::cout<<"The lower value for z " <<PLT->zl <<std::endl;
+				PLT->em->UpdateZ(PLT->zl, PLT->zh);
+				PLT->ihcal->UpdateZ(PLT->zl, PLT->zh);
+				PLT->ohcal->UpdateZ(PLT->zl, PLT->zh);
+				PLT->total->UpdateZ(PLT->zl, PLT->zh);
+				zPLTS[zb]=PLT;
+			}
 			
 		};
 		~CaloTransverseEnergy(){};
@@ -148,7 +159,7 @@ class CaloTransverseEnergy:public SubsysReco
 		TH1F *ihPhiD, *ihEtaD, *ohPhiD, *ohEtaD, *hphis, *hetas;
 		TH1F *etabin_em, *phibin_em, *etabin_hc, *phibin_hc;
 		TH2F *eep, *ohep, *ihep, *eeps, *oheps, *iheps, *tep, *teps;
-		plots PLTS;
+		std::map<int, plots*> zPLTS;
 		struct kinematics //just a basic kinematic cut, allow for cuts later, default to full acceptance
 			{
 				float phi_min=-PI;

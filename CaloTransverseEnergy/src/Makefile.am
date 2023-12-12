@@ -11,8 +11,9 @@ AM_LDFLAGS = \
   -L$(OFFLINE_MAIN)/lib64
 
 pkginclude_HEADERS = \
-  CaloTransverseEnergy.h
-
+  CaloTransverseEnergy.h \
+  caloplots.h \
+  plots.h 
 lib_LTLIBRARIES = \
   libCaloTransverseEnergy.la
 
