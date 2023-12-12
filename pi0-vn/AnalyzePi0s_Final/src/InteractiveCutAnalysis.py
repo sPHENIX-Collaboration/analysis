@@ -1,4 +1,3 @@
-# Importing necessary libraries
 import tkinter as tk  # For creating GUI elements
 from tkinter import ttk, messagebox, filedialog, simpledialog  # Additional GUI components and dialogs
 import pandas as pd  # For data handling and manipulation
@@ -13,11 +12,19 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolb
 import sys  # For system-specific parameters and functions
 import itertools
 import numpy as np
-
-
-
+import subprocess
+import webbrowser
+import os
+from PIL import Image
+from pdf2image import convert_from_path
+from PyPDF2 import PdfReader, PdfWriter
+from reportlab.pdfgen.canvas import Canvas as ReportLabCanvas
+from reportlab.lib.pagesizes import letter, landscape
+import shlex  # For safely splitting the command string
+import fitz  # PyMuPDF
+import io
 # Reading data from a CSV file into a pandas DataFrame
-data = pd.read_csv('/Users/patsfan753/Desktop/Desktop/AnalyzePi0s_Final/dataOutput/PlotByPlotOutputNewLowerPtBound.csv')
+data = pd.read_csv('/Users/patsfan753/Desktop/Desktop/AnalyzePi0s_Final/dataOutput/PlotByPlotOutputNewLowerPtBoundCleaned.csv')
 
 # Dictionary to maintain the visibility state of different centrality categories in the plot
 centrality_visibility = {"60-100%": True, "40-60%": True, "20-40%": True, "0-20%": True}
@@ -28,7 +35,7 @@ labels = ["60-100%", "40-60%", "20-40%", "0-20%"]
 # Global variables to hold the maximum Y-values for different plot types; used for scaling the plot
 global_max_y_signalYield = 0
 global_max_y_GaussianMean = 0
-global_min_y_GaussianMean = 0 #needed for a buffer for low gaussian mean values
+global_min_y_GaussianMean = 0
 global_max_y_GaussianSigma = 0
 global_min_y_GaussianSigma = 0
 global_max_y_SBratio = 0
@@ -187,7 +194,7 @@ def plot_SignalYield(filtered_data, clear_plot):
             total_point_count_SignalYield += 1
             
         # Update local max y-value based on the plotted data.
-        local_max_y = max(local_max_y, max(y_vals) * 10)
+        local_max_y = max(local_max_y, max(y_vals) * 50)
         
     # Update global max y-value if the local max is greater.
     if local_max_y > global_max_y_signalYield:
@@ -307,15 +314,17 @@ def plot_GaussianMean(filtered_data, clear_plot):
     # Highlight the theoretical pi0 mass with a horizontal line.
     pi0_mass = 0.135
     ax.axhline(y=pi0_mass, color='gray', linestyle='--')
-    ax.text(1.6, pi0_mass, r'$\pi^0$ mass', va='center', ha='left', backgroundcolor='white')
+    # Change the font color to red, remove the background box, and adjust vertical alignment
+    ax.text(1.6, pi0_mass, r'$\pi^0$ mass', color='red', va='bottom', ha='left', fontsize=10, bbox=dict(facecolor='none', edgecolor='none'))
+
 
     # Set x-axis properties.
     ax.set_xticks(x_ticks)
     ax.set_xlim(1.5, 5.5)
 
     # Add titles and labels to the plot.
-    ax.set_title(r"Gaussian Mean Values vs $\pi^0$ pT")
-    ax.set_xlabel(r"$\pi^0$ pT")
+    ax.set_title(r"Gaussian Mean Values vs $\pi^0$ $p_T$")
+    ax.set_xlabel(r"$\pi^0$ $p_T$")
     ax.set_ylabel(r"Gaussian Mean")
 
     # Redraw the canvas with the updated plot.
@@ -746,7 +755,7 @@ def plot_index_data(index_str, history_dict):
         ax.set_xticks(range(1, len(cut_combinations) + 1))
         ax.grid(True, linestyle='--', linewidth=0.5, alpha=0.7)
 
-        cut_mapping = {'A': '       Asy', 'C': r'$\chi^2$', 'D': r'$\Delta R$', 'E': '   E'}
+        cut_mapping = {'A': '      Asy', 'C': r'$\chi^2$', 'D': r'$\Delta R$', 'E': '   E'}
 
 
         # Define the headers for the legend
@@ -790,14 +799,21 @@ def plot_index_data(index_str, history_dict):
         leg = ax.legend(legend_handles, legend_str_list, loc='center left', bbox_to_anchor=(1.05, 0.5), fontsize='small', title='Cut Combinations', handlelength=0, handletextpad=0)
         leg.get_frame().set_edgecolor('black')
 
-        # Function to save the plot as a PDF
+        # Function to save the plot with a choice of file format
         def save_figure():
-            file_path = filedialog.asksaveasfilename(defaultextension=".pdf", filetypes=[("PDF files", "*.pdf")])
+            filetypes = [
+                ("PDF files", "*.pdf"),
+                ("PNG files", "*.png"),
+                # Add other file types if needed
+            ]
+            file_path = filedialog.asksaveasfilename(defaultextension=".pdf", filetypes=filetypes)
             if file_path:
+                # Determine the format based on the file extension
+                file_format = 'PDF' if file_path.endswith('.pdf') else 'PNG'
                 # Save the current figure with high resolution and tight bounding box
-                fig.savefig(file_path, dpi=300, bbox_inches='tight', bbox_extra_artists=[leg])
+                fig.savefig(file_path, dpi=300, format=file_format.lower(), bbox_inches='tight', bbox_extra_artists=[leg])
 
-        save_button = tk.Button(master=root, text="Save as PDF", command=save_figure)
+        save_button = tk.Button(master=root, text="Save as PDF or PNG", command=save_figure)
         save_button.pack(side=tk.BOTTOM)
 
         root.lift()
@@ -819,7 +835,7 @@ def get_centrality_and_pt_range(index):
     }
     pt_categories = {
     #Can change pT label output below
-        '1.5 ≤ pT < 2': [0, 3, 6, 9],
+        '2.0 ≤ pT < 2.5': [0, 3, 6, 9],
         '3 ≤ pT < 4': [1, 4, 7, 10],
         '4 ≤ pT < 5': [2, 5, 8, 11],
     }
@@ -877,12 +893,292 @@ class InfoDialog(simpledialog.Dialog):
         
     # Method to create the button box at the bottom of the dialog.
     def buttonbox(self):
-        box = tk.Frame(self) # Create a frame to hold the button.
-        w = tk.Button(box, text="OK", width=10, command=self.ok, default=tk.ACTIVE)
-        w.pack(side=tk.LEFT, padx=5, pady=5) # Pack the OK button into the frame.
-        self.bind("<Return>", self.ok) # Bind the Return key to the OK button action.
-        box.pack() # Pack the box into the dialog.
+        box = tk.Frame(self)
+
+        # OK button
+        ok_button = tk.Button(box, text="OK", width=10, command=self.ok, default=tk.ACTIVE)
+        ok_button.pack(side=tk.LEFT, padx=5, pady=5)
         
+        # Button for opening the invariant mass histogram
+        hist_button = tk.Button(box, text="Open Inv Mass Hist", width=20, command=self.open_inv_mass_hist)
+        hist_button.pack(side=tk.LEFT, padx=5, pady=5)
+
+        self.bind("<Return>", self.ok)
+        box.pack()
+
+    def open_inv_mass_hist(self):
+        index = self.data['index']
+        cuts = self.data['cuts']
+        # Convert cuts from string to dictionary if needed
+        cuts_dict = {k: v for k, v in (x.split('=') for x in cuts.split(', '))}
+        self.open_histogram(index, cuts_dict)
+
+    @staticmethod
+    def open_histogram(index, cuts):
+        # Path to the directory containing the histograms
+        histogram_path = "/Users/patsfan753/Desktop/Desktop/AnalyzePi0s_Final/plotOutput/InvMassPlots"
+        
+        def format_cut_value(value):
+            try:
+                # Convert to a float
+                float_value = float(value)
+                
+                # Check if the value is an integer
+                if float_value.is_integer():
+                    return str(int(float_value))
+                
+                # Check if it's a special case like '.75' which needs to be kept with two decimal places
+                elif len(value) > 2 and value[2] != '0':
+                    return f"{float_value:.2f}"
+                
+                # Otherwise, format the number with a single decimal place
+                else:
+                    return f"{float_value:.1f}"
+            except ValueError:
+                return value
+
+        formatted_cuts = {k: format_cut_value(v) for k, v in cuts.items()}
+        
+        filename = f"hPi0Mass_{index}_E{formatted_cuts['E']}_Asym{formatted_cuts['A']}_Chi{formatted_cuts['C']}_DeltaR{formatted_cuts['D']}_fit.pdf"
+        full_path = os.path.join(histogram_path, filename)
+
+        print(f"Attempting to open histogram PDF: {filename}")
+        print(f"Full path: {full_path}")
+
+        if os.path.isfile(full_path):
+            try:
+                # Execute the open command directly
+                result = subprocess.run(['open', full_path], check=True, capture_output=True, text=True)
+                print(result.stdout)
+            except subprocess.CalledProcessError as e:
+                print(f"Failed to open the PDF. Return code: {e.returncode}. Output: {e.output}. Error: {e.stderr}")
+                tk.messagebox.showerror("Error", f"Failed to open the PDF using 'open' command. Return code: {e.returncode}. Output: {e.output}. Error: {e.stderr}")
+            except Exception as e:
+                print(f"An unexpected error occurred: {e}")
+                tk.messagebox.showerror("Error", f"An unexpected error occurred: {e}")
+        else:
+            tk.messagebox.showerror("Error", f"Histogram PDF does not exist at {full_path}.")
+
+
+# Placeholder for the format_cut_value function
+def format_cut_value(value):
+    print(f"Formatting value: {value}")
+    try:
+        # Convert to a float
+        float_value = float(value)
+        
+        # Check if the value is an integer
+        if float_value.is_integer():
+            return str(int(float_value))
+        
+        # Check if it's a special case like '.75' which needs to be kept with two decimal places
+        elif len(value) > 2 and value[2] != '0':
+            return f"{float_value:.2f}"
+        
+        # Otherwise, format the number with a single decimal place
+        else:
+            return f"{float_value:.1f}"
+    except ValueError:
+        return value
+
+
+def add_labels_and_dividers(page, cell_width, cell_height, centrality_categories, pt_categories, cuts):
+    # Define text and line styles
+    font_size = 10
+    red = (1, 0, 0)
+    black = (0, 0, 0)  # Black color for lines
+    blue = (0, 0, 1)   # Blue color for the title
+    # Calculate the number of rows and columns
+    num_rows = len(centrality_categories)
+    num_cols = len(pt_categories)
+
+    # Add the horizontal line above the centralities labels
+    top_label_y_position = font_size * 3  # Adjust this value as necessary to position above the line
+    
+    # Draw vertical dividing lines extended to just under the title
+    for i in range(num_cols + 1):
+        x_line = i * cell_width
+        # Start the line a bit above the top_y_label position
+        start_y_position = top_label_y_position - font_size  # Adjust as needed to go just under the title
+        end_y_position = page.rect.height  # End at the bottom of the page
+        page.draw_line((x_line, start_y_position), (x_line, end_y_position), color=black, width=1)
+
+
+    # Draw horizontal dividing lines
+    for i in range(num_rows + 1):
+        y_line = i * cell_height
+        page.draw_line((0, y_line), (page.rect.width, y_line), color=black, width=1)
+
+
+    # Add the horizontal line above the centralities labels
+    page.draw_line((0, font_size * 2), (page.rect.width, font_size * 2), color=black, width=1)
+
+    # Add the title with the cuts used for the plot
+    title = f"E: {cuts['E']}, Asymmetry: {cuts['A']}, delR: {cuts['D']}, and chi2: {cuts['C']}"
+    # Center the title on the page
+    title_x = (page.rect.width - len(title) * font_size / 2) / 2  # Adjust calculation as needed
+    page.insert_text((title_x, font_size), title, fontsize=font_size, color=blue)
+
+    row_label_font_size = 8  # Reduced font size for the row labels
+
+    # Add centrality labels above the top dividing line
+    for i, centrality_label in enumerate(centrality_categories.keys()):
+        x_position = (i * cell_width) + (cell_width / 2)
+        page.insert_text((x_position, top_label_y_position - font_size), centrality_label, fontsize=font_size, color=red)
+   
+    # Add pT labels to the left of each row
+    for i, pt_label in enumerate(pt_categories.keys()):
+        # Calculate the y_position to center the label in the middle of the row
+        # and shift it down a bit by adding a small y_offset
+        y_offset = 15  # Adjust this value as needed for a slight downward shift
+        y_position = (i * cell_height) + (cell_height / 2) - (row_label_font_size / 2) + y_offset
+
+        # Adjust the x_position to account for smaller font size and centering
+        x_position = cell_width * 0.05  # 5% of the cell width from the left edge of the page
+
+        # Insert the row label text with the smaller font size and adjusted y_position
+        page.insert_text((x_position, y_position), pt_label, fontsize=row_label_font_size, color=red, rotate=90)
+
+
+
+def generate_histogram_table(cuts):
+    histogram_path = "/Users/patsfan753/Desktop/Desktop/AnalyzePi0s_Final/plotOutput/InvMassPlots"
+
+    # Define the centrality and pT categories
+    centrality_categories = {
+        '60-100%': [0, 1, 2],
+        '40-60%': [3, 4, 5],
+        '20-40%': [6, 7, 8],
+        '0-20%': [9, 10, 11]
+    }
+    pt_categories = {
+        '2.0 ≤ pT < 2.5': [0, 3, 6, 9],
+        '3 ≤ pT < 4': [1, 4, 7, 10],
+        '4 ≤ pT < 5': [2, 5, 8, 11],
+    }
+
+    formatted_cuts = {k: format_cut_value(v) for k, v in cuts.items()}
+
+    # Create a new PDF to place the histograms
+    output_filename = "Table_E{}_A{}_Chi{}_DeltaR{}.pdf".format(
+        formatted_cuts['E'],
+        formatted_cuts['A'],
+        formatted_cuts['C'],
+        formatted_cuts['D']
+    )
+    new_pdf = fitz.open()  # Create a new PDF
+
+    # Use A4 landscape dimensions (in points)
+    a4_width = 842
+    a4_height = 595
+
+    new_page = new_pdf.new_page(pno=-1, width=a4_width, height=a4_height)  # A4 size in points, landscape
+
+    output_path = "/Users/patsfan753/Desktop"
+
+    # Calculate the size and position for each histogram on an A4 landscape
+    # Divide by 4 for the columns because there are 4 histograms per row
+    cell_width = a4_width / 4
+
+    # Divide by 3 for the rows because there are 3 rows of histograms
+    cell_height = a4_height / 3
+
+    # Calculate the number of rows and columns based on the categories
+    num_rows = len(centrality_categories)
+    num_cols = len(pt_categories)
+
+    # After setting up the new_page, call this function to add the dividing lines and labels
+    add_labels_and_dividers(new_page, cell_width, cell_height, centrality_categories, pt_categories, formatted_cuts)
+
+
+    #Forced row mapping into correct order
+    row_mapping = {
+        2: 0,
+        5: 0,
+        8: 0,
+        11: 0,
+        1: 1,
+        4: 1,
+        7: 1,
+        10: 1,
+        0: 2,
+        3: 2,
+        6: 2,
+        9: 2
+    }
+
+    for pt_label, pt_indices in pt_categories.items():
+        for centrality_label, centrality_indices in centrality_categories.items():
+            for centrality_index in centrality_indices:
+                if centrality_index in pt_indices:
+                    column = pt_indices.index(centrality_index)
+                    # Use the row_mapping to determine the correct row based on the index
+                    row = row_mapping[centrality_index]
+
+
+                    # Add an offset to the x_position to move the plot to the right
+                    x_offset = cell_width * 0.01  # 10% of the cell width, adjust as needed
+                    x_position = column * cell_width + x_offset
+
+                    # Calculate y_position so the top row is at the top of the page
+                    y_position = (2 - row) * cell_height  # The top row (0) becomes (2 - 0) * cell_height
+
+
+                    filename = f"hPi0Mass_{centrality_index}_E{formatted_cuts['E']}_Asym{formatted_cuts['A']}_Chi{formatted_cuts['C']}_DeltaR{formatted_cuts['D']}_fit.pdf"
+                    file_path = os.path.join(histogram_path, filename)
+
+                    if os.path.exists(file_path):
+                        src_pdf = fitz.open(file_path)
+                        src_page = src_pdf[0]
+
+                        # Extract the first page as an image
+                        pix = src_page.get_pixmap()
+                        img_data = pix.tobytes("png")
+                        img = Image.open(io.BytesIO(img_data))
+
+                        # Rotate the image using PIL
+                        rotated_img = img.rotate(0, expand=True)  # 270 degrees to rotate clockwise
+
+                        # Save the rotated image to a bytes buffer
+                        img_byte_arr = io.BytesIO()
+                        rotated_img.save(img_byte_arr, format='PNG')
+                        img_byte_arr = img_byte_arr.getvalue()
+
+                        # Create an image XObject from the rotated image
+                        img_xobj = fitz.open("png", img_byte_arr)
+
+                        # Calculate the new scale factors after rotation
+                        img_rect = img_xobj[0].rect
+                        fitz_scale_factor = min(cell_width / img_rect.width, cell_height / img_rect.height)
+
+                        # Add the image to the PDF page at the correct position and scale
+                        new_page.insert_image(fitz.Rect(x_position, y_position, x_position + cell_width, y_position + cell_height), stream=img_byte_arr, keep_proportion=True, overlay=True)
+
+                        src_pdf.close()
+                    else:
+                        print(f"File does not exist: {filename}")
+
+    # Save the new PDF
+    add_labels_and_dividers(new_page, cell_width, cell_height, centrality_categories, pt_categories, formatted_cuts)
+    new_pdf.save(os.path.join(output_path, output_filename))
+    new_pdf.close()
+
+    
+def on_generate_table_click():
+    print("Generate table button clicked.")
+    # Read the cuts from the user inputs
+    cuts = {
+        'E': energy_entry.get(),
+        'A': asymmetry_entry.get(),
+        'C': chi2_entry.get(),
+        'D': delta_r_entry.get()
+    }
+    print(f"Cuts received: {cuts}")
+    # Call the function to generate the histogram table
+    generate_histogram_table(cuts)
+    print("Table generation process completed.")
+    
+    
 # Function to handle click events on the plot.
 def on_click(event, root):
     global current_plot_type # Access the global variable to determine the current plot type.
@@ -1050,20 +1346,38 @@ def plot_all_combinations():
     canvas.draw()
 
 
-# Function to save the current plot to a PDF file.
+# Function to save the current plot to a file with a choice of format.
 def save_plot():
+    # Define the file types that the user can save as.
+    filetypes = [
+        ("PDF files", "*.pdf"),
+        ("PNG files", "*.png"),
+        # Add other file types if needed.
+    ]
+    
     # Open a file dialog to choose the save location and file name.
     file_path = filedialog.asksaveasfilename(defaultextension=".pdf",
-                                             filetypes=[("PDF files", "*.pdf")])
+                                             filetypes=filetypes)
     if file_path:
-        # If a file path is selected, save the current figure to that path.
-        fig.savefig(file_path)
+        # Determine the format based on the file extension.
+        if file_path.endswith('.pdf'):
+            file_format = 'PDF'
+        elif file_path.endswith('.png'):
+            file_format = 'PNG'
+        else:
+            return  # If the file format is not recognized, return without saving.
+
+        # Save the current figure to that path.
+        fig.savefig(file_path, format=file_format.lower())
+
 
 # Function to exit the program.
 def exit_program():
     # Terminate the program execution.
     sys.exit()
 
+    
+    
 # Function to create the main application window with all its widgets.
 def create_main_application(root):
     # Define global variables that will be used in this function.
@@ -1073,63 +1387,72 @@ def create_main_application(root):
     root.deiconify()
     root.title("Pi0 Yield Analysis")
     
-    # Create a frame in the root window to hold all other widgets.
-    frame = ttk.Frame(root)
-    frame.pack(fill=tk.BOTH, expand=True)
+    # Set a style for the application
+    style = ttk.Style()
+    style.configure('TButton', font=('Helvetica', 12, 'bold'), borderwidth='1',
+                    background="#00b4db", relief="raised")
+    style.configure('TFrame', background='light gray', relief='sunken', borderwidth=5)
+
+    style.map('TButton',
+              background=[('active', '#0083b0')],
+              foreground=[('active', 'white')])
+
+    style.configure('TLabel', font=('Helvetica', 10, 'bold'), background='light gray')
+    style.configure('TEntry', font=('Helvetica', 10), borderwidth='1')
+    style.configure('TLabelframe', font=('Helvetica', 10, 'bold'), borderwidth='2')
+    style.configure('TLabelframe.Label', font=('Helvetica', 10, 'bold'))
+    style.configure('TCheckbutton', font=('Helvetica', 10, 'bold'))
+
+    # Set the theme for the application
+    style.theme_use('clam')
+
+    # Set the background color for the root window if desired
+    root.configure(background='light gray')
     
-    # Create an entry widget for energy input and position it in the grid layout.
-    energy_entry = ttk.Entry(frame)
-    energy_entry.grid(row=0, column=1, padx=5, pady=5)
     
-    # Place a label next to the energy entry field.
-    ttk.Label(frame, text="Energy:").grid(row=0, column=0, padx=5, pady=5)
-    
-    # Repeat the process for asymmetry, chi2, and delta_r input fields.
-    asymmetry_entry = ttk.Entry(frame)
-    asymmetry_entry.grid(row=1, column=1, padx=5, pady=5)
-    ttk.Label(frame, text="Asymmetry:").grid(row=1, column=0, padx=5, pady=5)
-    
-    chi2_entry = ttk.Entry(frame)
-    chi2_entry.grid(row=2, column=1, padx=5, pady=5)
-    ttk.Label(frame, text="Chi2:").grid(row=2, column=0, padx=5, pady=5)
-    
-    delta_r_entry = ttk.Entry(frame)
-    delta_r_entry.grid(row=3, column=1, padx=5, pady=5)
-    ttk.Label(frame, text="DeltaR:").grid(row=3, column=0, padx=5, pady=5)
-    
-    # Create buttons for various actions and place them in the grid.
-    update_button = ttk.Button(frame, text="Apply First Cuts/Renew Points", command=lambda: update_plot(clear_plot=True))
-    update_button.grid(row=4, column=0, columnspan=2, padx=5, pady=5)
-    overlay_button = ttk.Button(frame, text="Overlay New Cuts", command=overlay_new_cuts)
-    overlay_button.grid(row=5, column=0, columnspan=2, padx=5, pady=5)
-    save_button = ttk.Button(frame, text="Save Plot as PDF", command=save_plot)
-    save_button.grid(row=6, column=0, columnspan=2, padx=5, pady=5)
-    exit_button = ttk.Button(frame, text="Exit Program", command=exit_program)
-    exit_button.grid(row=7, column=0, columnspan=2, padx=5, pady=5)
-    
-    # Initialize the Matplotlib figure and axis.
-    fig, ax = plt.subplots()
-    
-    # Embed the Matplotlib figure in the Tkinter frame.
-    canvas = FigureCanvasTkAgg(fig, master=frame)
-    canvas.get_tk_widget().grid(row=8, column=0, columnspan=2, padx=5, pady=5)
-    
-    # Annotation setup for interactive elements on the plot.
-    annot = ax.annotate('', xy=(0, 0), xytext=(20, 20), textcoords="offset points",
-                        bbox=dict(boxstyle="round", fc="w"), arrowprops=dict(arrowstyle="->"))
-    annot.set_visible(False)
-    
-    # Connect a function to handle click events on the plot.
-    fig.canvas.mpl_connect('pick_event', lambda event: on_click(event, root))
-    
-    # Frame for centrality toggle buttons.
-    centrality_frame = ttk.LabelFrame(frame, text="Hide Centrality:")
-    centrality_frame.grid(row=9, column=0, columnspan=2, padx=5, pady=5, sticky="ew")
-    
-    # Modify the command to pass 'root' to the 'create_analysis_window' function
-    analyze_button = ttk.Button(frame, text="Analyze Data on Screen", command=lambda: create_analysis_window(root))
-    analyze_button.grid(row=10, column=0, columnspan=2, padx=5, pady=5)
-    
+    # Create two main frames: one for the left side and one for the right side.
+    left_frame = ttk.Frame(root)
+    # When packing the left_frame, add some left padding to create a gap
+    left_frame.pack(side=tk.LEFT, fill=tk.Y, padx=(10, 0))  # Added padx to create the gap
+
+
+    # Create a frame for the buttons at the bottom left
+    bottom_left_frame = ttk.Frame(root)
+    bottom_left_frame.pack(side=tk.BOTTOM, anchor='w', fill=tk.X)
+
+
+    # Create and place cut entry boxes in the left frame.
+    ttk.Label(left_frame, text="Energy:").grid(row=0, column=0, sticky='e', pady=(10, 0))
+    energy_entry = ttk.Entry(left_frame, width=10)
+    energy_entry.grid(row=0, column=1, sticky='w', pady=(10, 0))
+
+    ttk.Label(left_frame, text="Asymmetry:").grid(row=1, column=0, sticky='e', pady=(10, 0))
+    asymmetry_entry = ttk.Entry(left_frame, width=10)
+    asymmetry_entry.grid(row=1, column=1, sticky='w', pady=(10, 0))
+
+    ttk.Label(left_frame, text="Chi2:").grid(row=2, column=0, sticky='e', pady=(10, 0))
+    chi2_entry = ttk.Entry(left_frame, width=10)
+    chi2_entry.grid(row=2, column=1, sticky='w', pady=(10, 0))
+
+    ttk.Label(left_frame, text="DeltaR:").grid(row=3, column=0, sticky='e', pady=(10, 0))
+    delta_r_entry = ttk.Entry(left_frame, width=10)
+    delta_r_entry.grid(row=3, column=1, sticky='w', pady=(10, 0))
+
+
+    # Add the buttons with added padding.
+    update_button = ttk.Button(left_frame, text="Apply First Cuts/Renew Points", style='TButton', command=lambda: update_plot(clear_plot=True))
+    update_button.grid(row=4, column=0, columnspan=2, sticky='ew', pady=(200, 0))
+
+    overlay_button = ttk.Button(left_frame, text="Overlay New Cuts", command=overlay_new_cuts)
+    overlay_button.grid(row=5, column=0, columnspan=2, sticky='ew', pady=(10, 0))
+
+    plot_all_combinations_button = ttk.Button(left_frame, text="Plot All Cut Combinations", command=plot_all_combinations)
+    plot_all_combinations_button.grid(row=6, column=0, columnspan=2, sticky='ew', pady=(10, 0))
+
+    analyze_button = ttk.Button(left_frame, text="Analyze Data on Screen", command=lambda: create_analysis_window(root))
+    analyze_button.grid(row=7, column=0, columnspan=2, sticky='ew', pady=(10, 0))
+
+
     # Determine the button text based on the current plot type
     if current_plot_type == "SignalYield":
         summarize_button_text = "Summarize Yield For Specific Index"
@@ -1140,20 +1463,63 @@ def create_main_application(root):
     else:
         summarize_button_text = "Summarize Data For Specific Index"  # Default text
 
+    summarize_button = ttk.Button(left_frame, text=summarize_button_text, command=lambda: summarize_index(root, get_history_dict_based_on_plot_type(current_plot_type)))
+    summarize_button.grid(row=8, column=0, columnspan=2, sticky='ew', pady=(10, 0))
 
-    summarize_button = ttk.Button(
-        frame,
-        text=summarize_button_text,
-        # Use a lambda function to pass the current_plot_type to summarize_index
-        command=lambda: summarize_index(root, get_history_dict_based_on_plot_type(current_plot_type))
+    generate_table_button = ttk.Button(
+        left_frame,
+        text="Generate Inv Mass Table for These Cuts",
+        command=on_generate_table_click
     )
-    summarize_button.grid(row=11, column=0, columnspan=2, padx=5, pady=5)
-    
-    # Add a new button to the GUI to plot all combinations
-    plot_all_combinations_button = ttk.Button(frame, text="Plot All Cut Combinations", command=plot_all_combinations)
-    # Place the new button in the GUI layout
-    plot_all_combinations_button.grid(row=12, column=0, columnspan=2, padx=5, pady=5)
+    generate_table_button.grid(row=9, column=0, columnspan=2, sticky='ew', pady=(10, 0))
 
+    plt.style.use('ggplot')
+    # Increase the size of the plot for better focus and visibility
+    fig, ax = plt.subplots(figsize=(12, 10))  # Adjust figsize to your needs
+
+
+    # Create a frame for the plot to the right of the button frame
+    plot_frame = ttk.Frame(root)
+    plot_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
+    canvas = FigureCanvasTkAgg(fig, master=plot_frame)
+    canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+
+
+
+    # Pack the buttons vertically in the bottom left frame
+    exit_button = ttk.Button(bottom_left_frame, text="Exit Program", command=exit_program)
+    exit_button.pack(side=tk.TOP, fill=tk.X)
+
+
+    save_button = ttk.Button(bottom_left_frame, text="Save Plot", command=save_plot)
+    save_button.pack(side=tk.TOP, fill=tk.X)
+
+
+    # Annotation setup for interactive elements on the plot.
+    annot = ax.annotate('', xy=(0, 0), xytext=(20, 20), textcoords="offset points",
+                        bbox=dict(boxstyle="round", fc="w"), arrowprops=dict(arrowstyle="->"))
+    annot.set_visible(False)
+    
+    # Connect a function to handle click events on the plot.
+    fig.canvas.mpl_connect('pick_event', lambda event: on_click(event, root))
+    
+
+    # Modify the LabelFrame style to center the title and underline it
+    style.configure('Center.TLabelframe.Label', font=('Helvetica', 14, 'underline'), background='light gray')
+    style.layout("Center.TLabelframe.Label", [('Labelframe.label', {'sticky': 'nswe'})]) # Center alignment
+    centrality_frame = ttk.LabelFrame(left_frame, text="                 Hide Centrality", style='Center.TLabelframe')
+    centrality_frame.grid(row=10, column=0, columnspan=2, sticky="ew", pady=(220, 0))
+
+
+    # Creating toggle buttons for each centrality category and placing them in centrality_frame vertically.
+    centrality_labels = ["60-100%", "40-60%", "20-40%", "0-20%"]
+    for i, label in enumerate(centrality_labels):
+        check_var = tk.BooleanVar(value=True)  # Initialize variable to True
+        # Place each checkbutton in a new row, in the first column of the centrality_frame.
+        check_button = ttk.Checkbutton(centrality_frame, text=label, variable=check_var,
+                                       command=lambda l=label: toggle_centrality(l))
+        check_button.var = check_var  # Store the variable within the button for easy access
+        check_button.grid(row=i, column=0, sticky='w', padx=10, pady=2)  # Use pady for spacing between buttons
 
 
     
@@ -1210,26 +1576,16 @@ def create_main_application(root):
             for barline in barline_cols:
                 barline.set_visible(visibility)
                 
-     # Creating toggle buttons for each centrality category.
-    for label in ["60-100%", "40-60%", "20-40%", "0-20%"]:
-        check_var = tk.BooleanVar(value=True)  # Initialize variable to True
-        check_button = ttk.Checkbutton(centrality_frame, text=label, variable=check_var,
-                                       command=lambda l=label: toggle_centrality(l))
-        check_button.var = check_var  # Store the variable within the button for easy access
-        check_button.pack(side=tk.LEFT, padx=10)
-        
-    # Frame for the navigation toolbar of Matplotlib.
-    toolbar_frame = ttk.Frame(root)
-    toolbar_frame.pack(fill=tk.X, expand=True)
-    
-    # Add the navigation toolbar for the plot.
-    toolbar = NavigationToolbar2Tk(canvas, toolbar_frame)
-    toolbar.update()
-    
+
     # Final draw call for the canvas.
     canvas.draw()
-    
-    
+
+    # Apply padding around the canvas to give some space
+    canvas.get_tk_widget().configure(background='light gray', highlightthickness=0)
+    canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+
+
 def create_initial_window(root):
     initial_window = tk.Toplevel(root)
     initial_window.title("What data would you like to analyze?")
