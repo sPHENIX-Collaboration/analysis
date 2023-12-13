@@ -912,7 +912,7 @@ void WriteDataToCSV(int histIndex, const CutValues& cutValues, double fitMean, d
 
     // Write column headers if file is empty
     if (fileIsEmpty) {
-        file << "Index,Energy,Asymmetry,Chi2,DeltaR,GaussMean,GaussMeanError,GaussSigma,GaussSigmaError,S/B,S/Berror,Yield,YieldError,RelativeSignalError\n";
+        file << "Index,Energy,Asymmetry,Chi2,DeltaR,GaussMean,GaussMeanError,GaussSigma,GaussSigmaError,S/B,S/Berror,NumEntry,Yield,YieldError,RelativeSignalError\n";
     }
 
     // Calculate relativeSignalError (ensure we don't divide by zero)
@@ -930,6 +930,7 @@ void WriteDataToCSV(int histIndex, const CutValues& cutValues, double fitMean, d
     file << fitSigmaError << ",";
     file << signalToBackgroundRatio << ",";
     file << signalToBackgroundError << ",";
+    file << globalNumEntries << ",";
     file << signalYield << ",";
     file << signalError << ",";
     file << relativeSignalError << "\n";
