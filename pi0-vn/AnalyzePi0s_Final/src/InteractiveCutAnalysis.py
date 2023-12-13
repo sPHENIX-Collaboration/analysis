@@ -1809,6 +1809,7 @@ def create_analysis_window(root):
         ttk.Button(analysis_window, text="Sort by Distance from π⁰ mass", command=lambda: sort_by_gaussian_mean(root)).pack()
     elif current_plot_type == "GaussianSigma":
         ttk.Button(analysis_window, text="Sort by Gauss Sigma", command=lambda: sort_by_gaussianSigma(root)).pack()
+        ttk.Button(analysis_window, text="Sort by Gauss Sigma, S/B, nEntries", command=lambda: sort_by_gaussianSigma_andSB_andNentries(root)).pack()
     elif current_plot_type == "SBratio":
         # Button for sorting Signal Yield data
         ttk.Button(analysis_window, text="Sort by S/B ratio", command=lambda: sort_by_SBratio(root)).pack()
@@ -1886,8 +1887,167 @@ def sort_by_signal_yield(root):
 
     # Scroll back to the top of the text widget
     results_display.see('1.0')
+    
+# Function to sort signal yield data by both yield and S/B ratio
+def sort_by_yield_and_sb(root):
+    # Filter out the data points that are not currently visible
+    visible_data = {point_id: data for point_id, data in plot_SignalYield_history.items()
+                    if centrality_visibility[data['centrality']]}
 
-# Function to perform the sorting of signal yield and display results
+    # Group data by centrality and then sort by yield and S/B within each group
+    grouped_data = {}
+    for data in visible_data.values():
+        centrality_group = data['centrality']
+        if centrality_group not in grouped_data:
+            grouped_data[centrality_group] = []
+        grouped_data[centrality_group].append(data)
+
+    # Sort each group first by yield and then by S/B ratio
+    # This sorting logic means that the yield is always the primary factor in determining the order.
+    # The S/B ratio is only considered when there is a tie in yield values.
+    for centrality in grouped_data:
+        grouped_data[centrality].sort(key=lambda x: (-x['y_val'], -x['S_B_ratio']))
+
+    # Create a new window to display sorted results
+    results_window = tk.Toplevel(root)
+    results_window.title("Sorted Signal Yields by Yield and S/B")
+
+    # Create a text widget to display the sorted results
+    results_display = tk.Text(results_window, width = 100, height = 25)
+    results_display.pack(expand = True, fill = 'both')
+
+    # Define tags for styling
+    results_display.tag_configure('centrality', foreground='red')
+    results_display.tag_configure('index', font=('Helvetica', '10', 'bold'))
+
+    # Insert sorted data into the text widget, grouped by centrality
+    for centrality, data_list in grouped_data.items():
+        results_display.insert(tk.END, f"{centrality}:\n", 'centrality')
+        last_index = None
+        for data in data_list:
+            if last_index is not None and last_index != data['csv_index']:
+                results_display.insert(tk.END, "\n")  # Add a newline for new index groups
+            cuts_str = ", ".join(f"{k}: {v}" for k, v in data['cuts'].items())
+            results_display.insert(tk.END, f"Index {data['csv_index']}: ", 'index')
+            results_display.insert(tk.END, f"Yield: {data['y_val']}, S/B: {data['S_B_ratio']}, Cuts: {cuts_str}\n")
+            last_index = data['csv_index']
+        results_display.insert(tk.END, "\n\n")
+
+    # Scroll back to the top of the text widget
+    results_display.see('1.0')
+
+
+def sort_by_yield_and_entries(root):
+    # Filter out the data points that are not currently visible
+    visible_data = {point_id: data for point_id, data in plot_SignalYield_history.items()
+                    if centrality_visibility[data['centrality']]}
+
+    # Group data by centrality and then sort by yield and S/B within each group
+    grouped_data = {}
+    for data in visible_data.values():
+        centrality_group = data['centrality']
+        if centrality_group not in grouped_data:
+            grouped_data[centrality_group] = []
+        grouped_data[centrality_group].append(data)
+
+    # Sort each group first by yield and then by S/B ratio
+    # This sorting logic means that the yield is always the primary factor in determining the order.
+    # The S/B ratio is only considered when there is a tie in yield values.
+    for centrality in grouped_data:
+        grouped_data[centrality].sort(key=lambda x: (-x['y_val'], -x['numEntry']))
+
+    # Create a new window to display sorted results
+    results_window = tk.Toplevel(root)
+    results_window.title("Sorted Signal Yields by Yield and NumEntries")
+
+    # Create a text widget to display the sorted results
+    results_display = tk.Text(results_window, width = 100, height = 25)
+    results_display.pack(expand = True, fill = 'both')
+
+    # Define tags for styling
+    results_display.tag_configure('centrality', foreground='red')
+    results_display.tag_configure('index', font=('Helvetica', '10', 'bold'))
+
+    # Insert sorted data into the text widget, grouped by centrality
+    for centrality, data_list in grouped_data.items():
+        results_display.insert(tk.END, f"{centrality}:\n", 'centrality')
+        last_index = None
+        for data in data_list:
+            if last_index is not None and last_index != data['csv_index']:
+                results_display.insert(tk.END, "\n")  # Add a newline for new index groups
+            cuts_str = ", ".join(f"{k}: {v}" for k, v in data['cuts'].items())
+            results_display.insert(tk.END, f"Index {data['csv_index']}: ", 'index')
+            results_display.insert(tk.END, f"Yield: {data['y_val']}, NumEntry: {data['numEntry']}, Cuts: {cuts_str}\n")
+            last_index = data['csv_index']
+        results_display.insert(tk.END, "\n\n")
+
+    # Scroll back to the top of the text widget
+    results_display.see('1.0')
+
+
+def sort_by_yield_sb_and_entries(root):
+    # Filter out the data points that are not currently visible
+    visible_data = {point_id: data for point_id, data in plot_SignalYield_history.items()
+                    if centrality_visibility[data['centrality']]}
+
+    # Group data by centrality
+    grouped_data = {}
+    for data in visible_data.values():
+        centrality_group = data['centrality']
+        if centrality_group not in grouped_data:
+            grouped_data[centrality_group] = []
+        grouped_data[centrality_group].append(data)
+
+    # Within each centrality, group by 'csv_index', then sort each group by 'y_val' in descending order
+    sorted_data = {}
+    for centrality, data_list in grouped_data.items():
+        # Group by 'csv_index'
+        index_grouped_data = {}
+        for data in data_list:
+            index = data['csv_index']
+            if index not in index_grouped_data:
+                index_grouped_data[index] = []
+            index_grouped_data[index].append(data)
+
+        # Sort each index group by 'y_val' in descending order
+        for index in index_grouped_data:
+            index_grouped_data[index].sort(key=lambda x: x['y_val'], reverse=True)
+        
+        # Flatten the sorted groups back into a list
+        sorted_data[centrality] = [item for sublist in index_grouped_data.values() for item in sublist]
+
+    # Create a new window to display sorted results
+    results_window = tk.Toplevel(root)
+    results_window.title("Sorted Signal Yields by Yield, S/B and NumEntries")
+
+    # Create a text widget to display the sorted results
+    results_display = tk.Text(results_window, width=100, height=25)
+    results_display.pack(expand=True, fill='both')
+
+    # Define tags for styling
+    results_display.tag_configure('centrality', foreground='red')
+    results_display.tag_configure('index', font=('Helvetica', '10', 'bold'))
+
+    # Insert sorted data into the text widget, grouped by centrality and then by index
+    for centrality, data_list in sorted_data.items():
+        results_display.insert(tk.END, f"{centrality}:\n", 'centrality')
+        last_index = None
+        for data in data_list:
+            if last_index != data['csv_index']:
+                if last_index is not None:
+                    results_display.insert(tk.END, "\n")  # Add a newline for new index groups
+                last_index = data['csv_index']
+            cuts_str = ", ".join(f"{k}: {v}" for k, v in data['cuts'].items())
+            results_display.insert(tk.END, f"Index {data['csv_index']}: ", 'index')
+            results_display.insert(tk.END, f"Yield: {data['y_val']}, S/B: {data['S_B_ratio']}, NumEntry: {data['numEntry']}, Cuts: {cuts_str}\n")
+        results_display.insert(tk.END, "\n\n")  # Add extra newline after each centrality group for better readability
+
+    # Scroll back to the top of the text widget
+    results_display.see('1.0')
+
+
+
+
 def sort_by_gaussianSigma(root):
     # Filter out the data points that are not currently visible
     visible_data = {point_id: data for point_id, data in plot_GaussianSigma_history.items()
@@ -1956,14 +2116,13 @@ def sort_by_gaussianSigma(root):
 
     # Scroll back to the top of the text widget
     results_display.see('1.0')
-    
-# Function to sort signal yield data by both yield and S/B ratio
-def sort_by_yield_and_sb(root):
+
+def sort_by_gaussianSigma_andSB_andNentries(root):
     # Filter out the data points that are not currently visible
-    visible_data = {point_id: data for point_id, data in plot_SignalYield_history.items()
+    visible_data = {point_id: data for point_id, data in plot_GaussianSigma_history.items()
                     if centrality_visibility[data['centrality']]}
 
-    # Group data by centrality and then sort by yield and S/B within each group
+    # Group data by centrality
     grouped_data = {}
     for data in visible_data.values():
         centrality_group = data['centrality']
@@ -1971,85 +2130,49 @@ def sort_by_yield_and_sb(root):
             grouped_data[centrality_group] = []
         grouped_data[centrality_group].append(data)
 
-    # Sort each group first by yield and then by S/B ratio
-    # This sorting logic means that the yield is always the primary factor in determining the order.
-    # The S/B ratio is only considered when there is a tie in yield values.
-    for centrality in grouped_data:
-        grouped_data[centrality].sort(key=lambda x: (-x['y_val'], -x['S_B_ratio']))
+    # Within each centrality, group by 'csv_index', then sort each group by 'sigma_val' in descending order
+    sorted_data = {}
+    for centrality, data_list in grouped_data.items():
+        # Group by 'csv_index'
+        index_grouped_data = {}
+        for data in data_list:
+            index = data['csv_index']
+            if index not in index_grouped_data:
+                index_grouped_data[index] = []
+            index_grouped_data[index].append(data)
+
+        # Sort each index group by 'sigma_val' in descending order
+        for index in index_grouped_data:
+            index_grouped_data[index].sort(key=lambda x: x['sigma_val'], reverse=True)
+        
+        # Flatten the sorted groups back into a list
+        sorted_data[centrality] = [item for sublist in index_grouped_data.values() for item in sublist]
 
     # Create a new window to display sorted results
     results_window = tk.Toplevel(root)
-    results_window.title("Sorted Signal Yields by Yield and S/B")
+    results_window.title("Sorted Gauss Sigma by Sigma, S/B, NumEntries, and Sigma Error")
 
     # Create a text widget to display the sorted results
-    results_display = tk.Text(results_window, width = 100, height = 25)
-    results_display.pack(expand = True, fill = 'both')
+    results_display = tk.Text(results_window, width=100, height=25)
+    results_display.pack(expand=True, fill='both')
 
     # Define tags for styling
     results_display.tag_configure('centrality', foreground='red')
     results_display.tag_configure('index', font=('Helvetica', '10', 'bold'))
 
-    # Insert sorted data into the text widget, grouped by centrality
-    for centrality, data_list in grouped_data.items():
+    # Insert sorted data into the text widget, grouped by centrality and then by index
+    for centrality, data_list in sorted_data.items():
         results_display.insert(tk.END, f"{centrality}:\n", 'centrality')
         last_index = None
         for data in data_list:
-            if last_index is not None and last_index != data['csv_index']:
-                results_display.insert(tk.END, "\n")  # Add a newline for new index groups
+            if last_index != data['csv_index']:
+                if last_index is not None:
+                    results_display.insert(tk.END, "\n")  # Add a newline for new index groups
+                last_index = data['csv_index']
             cuts_str = ", ".join(f"{k}: {v}" for k, v in data['cuts'].items())
             results_display.insert(tk.END, f"Index {data['csv_index']}: ", 'index')
-            results_display.insert(tk.END, f"Yield: {data['y_val']}, S/B: {data['S_B_ratio']}, Cuts: {cuts_str}\n")
-            last_index = data['csv_index']
-        results_display.insert(tk.END, "\n\n")
-
-    # Scroll back to the top of the text widget
-    results_display.see('1.0')
-
-
-
-def sort_by_yield_and_entries(root):
-    # Filter out the data points that are not currently visible
-    visible_data = {point_id: data for point_id, data in plot_SignalYield_history.items()
-                    if centrality_visibility[data['centrality']]}
-
-    # Group data by centrality and then sort by yield and S/B within each group
-    grouped_data = {}
-    for data in visible_data.values():
-        centrality_group = data['centrality']
-        if centrality_group not in grouped_data:
-            grouped_data[centrality_group] = []
-        grouped_data[centrality_group].append(data)
-
-    # Sort each group first by yield and then by S/B ratio
-    # This sorting logic means that the yield is always the primary factor in determining the order.
-    # The S/B ratio is only considered when there is a tie in yield values.
-    for centrality in grouped_data:
-        grouped_data[centrality].sort(key=lambda x: (-x['y_val'], -x['numEntry']))
-
-    # Create a new window to display sorted results
-    results_window = tk.Toplevel(root)
-    results_window.title("Sorted Signal Yields by Yield and NumEntries")
-
-    # Create a text widget to display the sorted results
-    results_display = tk.Text(results_window, width = 100, height = 25)
-    results_display.pack(expand = True, fill = 'both')
-
-    # Define tags for styling
-    results_display.tag_configure('centrality', foreground='red')
-    results_display.tag_configure('index', font=('Helvetica', '10', 'bold'))
-
-    # Insert sorted data into the text widget, grouped by centrality
-    for centrality, data_list in grouped_data.items():
-        results_display.insert(tk.END, f"{centrality}:\n", 'centrality')
-        last_index = None
-        for data in data_list:
-            if last_index is not None and last_index != data['csv_index']:
-                results_display.insert(tk.END, "\n")  # Add a newline for new index groups
-            cuts_str = ", ".join(f"{k}: {v}" for k, v in data['cuts'].items())
-            results_display.insert(tk.END, f"Index {data['csv_index']}: ", 'index')
-            results_display.insert(tk.END, f"Yield: {data['y_val']}, NumEntry: {data['numEntry']}, Cuts: {cuts_str}\n")
-            last_index = data['csv_index']
-        results_display.insert(tk.END, "\n\n")
+            results_display.insert(tk.END, f"Sigma: {data['sigma_val']} \u00B1 {data['sigma_err']}, S/B: {data['S_B_ratio']}, NumEntry: {data['numEntry']}, Cuts: {cuts_str}\n")
+        results_display.insert(tk.END, "\n\n")  # Add extra newline after each centrality group for better readability
 
     # Scroll back to the top of the text widget
     results_display.see('1.0')
@@ -2111,67 +2234,6 @@ def sort_by_gaussian_mean(root):
     results_display.see('1.0')
     
     
-def sort_by_yield_sb_and_entries(root):
-    # Filter out the data points that are not currently visible
-    visible_data = {point_id: data for point_id, data in plot_SignalYield_history.items()
-                    if centrality_visibility[data['centrality']]}
-
-    # Group data by centrality
-    grouped_data = {}
-    for data in visible_data.values():
-        centrality_group = data['centrality']
-        if centrality_group not in grouped_data:
-            grouped_data[centrality_group] = []
-        grouped_data[centrality_group].append(data)
-
-    # Within each centrality, group by 'csv_index', then sort each group by 'y_val' in descending order
-    sorted_data = {}
-    for centrality, data_list in grouped_data.items():
-        # Group by 'csv_index'
-        index_grouped_data = {}
-        for data in data_list:
-            index = data['csv_index']
-            if index not in index_grouped_data:
-                index_grouped_data[index] = []
-            index_grouped_data[index].append(data)
-
-        # Sort each index group by 'y_val' in descending order
-        for index in index_grouped_data:
-            index_grouped_data[index].sort(key=lambda x: x['y_val'], reverse=True)
-        
-        # Flatten the sorted groups back into a list
-        sorted_data[centrality] = [item for sublist in index_grouped_data.values() for item in sublist]
-
-    # Create a new window to display sorted results
-    results_window = tk.Toplevel(root)
-    results_window.title("Sorted Signal Yields by Yield, S/B and NumEntries")
-
-    # Create a text widget to display the sorted results
-    results_display = tk.Text(results_window, width=100, height=25)
-    results_display.pack(expand=True, fill='both')
-
-    # Define tags for styling
-    results_display.tag_configure('centrality', foreground='red')
-    results_display.tag_configure('index', font=('Helvetica', '10', 'bold'))
-
-    # Insert sorted data into the text widget, grouped by centrality and then by index
-    for centrality, data_list in sorted_data.items():
-        results_display.insert(tk.END, f"{centrality}:\n", 'centrality')
-        last_index = None
-        for data in data_list:
-            if last_index != data['csv_index']:
-                if last_index is not None:
-                    results_display.insert(tk.END, "\n")  # Add a newline for new index groups
-                last_index = data['csv_index']
-            cuts_str = ", ".join(f"{k}: {v}" for k, v in data['cuts'].items())
-            results_display.insert(tk.END, f"Index {data['csv_index']}: ", 'index')
-            results_display.insert(tk.END, f"Yield: {data['y_val']}, S/B: {data['S_B_ratio']}, NumEntry: {data['numEntry']}, Cuts: {cuts_str}\n")
-        results_display.insert(tk.END, "\n\n")  # Add extra newline after each centrality group for better readability
-
-    # Scroll back to the top of the text widget
-    results_display.see('1.0')
-
-
 
 # Function to perform the sorting of signal yield and display results
 def sort_by_SBratio(root):
@@ -2242,55 +2304,6 @@ def sort_by_SBratio(root):
 
     # Scroll back to the top of the text widget
     results_display.see('1.0')
-
-# Function to sort signal yield data by both yield and S/B ratio
-def sort_by_yield_and_sb(root):
-    # Filter out the data points that are not currently visible
-    visible_data = {point_id: data for point_id, data in plot_SignalYield_history.items()
-                    if centrality_visibility[data['centrality']]}
-
-    # Group data by centrality and then sort by yield and S/B within each group
-    grouped_data = {}
-    for data in visible_data.values():
-        centrality_group = data['centrality']
-        if centrality_group not in grouped_data:
-            grouped_data[centrality_group] = []
-        grouped_data[centrality_group].append(data)
-
-    # Sort each group first by yield and then by S/B ratio
-    # This sorting logic means that the yield is always the primary factor in determining the order.
-    # The S/B ratio is only considered when there is a tie in yield values.
-    for centrality in grouped_data:
-        grouped_data[centrality].sort(key=lambda x: (-x['y_val'], -x['S_B_ratio']))
-
-    # Create a new window to display sorted results
-    results_window = tk.Toplevel(root)
-    results_window.title("Sorted Signal Yields by Yield and S/B")
-
-    # Create a text widget to display the sorted results
-    results_display = tk.Text(results_window, width = 100, height = 25)
-    results_display.pack(expand = True, fill = 'both')
-
-    # Define tags for styling
-    results_display.tag_configure('centrality', foreground='red')
-    results_display.tag_configure('index', font=('Helvetica', '10', 'bold'))
-
-    # Insert sorted data into the text widget, grouped by centrality
-    for centrality, data_list in grouped_data.items():
-        results_display.insert(tk.END, f"{centrality}:\n", 'centrality')
-        last_index = None
-        for data in data_list:
-            if last_index is not None and last_index != data['csv_index']:
-                results_display.insert(tk.END, "\n")  # Add a newline for new index groups
-            cuts_str = ", ".join(f"{k}: {v}" for k, v in data['cuts'].items())
-            results_display.insert(tk.END, f"Index {data['csv_index']}: ", 'index')
-            results_display.insert(tk.END, f"Yield: {data['y_val']}, S/B: {data['S_B_ratio']}, Cuts: {cuts_str}\n")
-            last_index = data['csv_index']
-        results_display.insert(tk.END, "\n\n")
-
-    # Scroll back to the top of the text widget
-    results_display.see('1.0')
-
 
 def main():
     global fig, ax, canvas
