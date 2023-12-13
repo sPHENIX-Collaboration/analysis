@@ -23,8 +23,7 @@ from reportlab.lib.pagesizes import letter, landscape
 import shlex  # For safely splitting the command string
 import fitz  # PyMuPDF
 import io
-# Reading data from a CSV file into a pandas DataFrame
-data = pd.read_csv('/Users/patsfan753/Desktop/Desktop/AnalyzePi0s_Final/dataOutput/PlotByPlotOutputNewLowerPtBoundCleaned.csv')
+data = pd.read_csv('/Users/patsfan753/Desktop/Desktop/AnalyzePi0s_Final/dataOutput/PlotByPlotOutputNewLowerPtBound.csv')
 
 # Dictionary to maintain the visibility state of different centrality categories in the plot
 centrality_visibility = {"60-100%": True, "40-60%": True, "20-40%": True, "0-20%": True}
@@ -172,16 +171,17 @@ def plot_SignalYield(filtered_data, clear_plot):
         y_vals = [filtered_data.iloc[j]['Yield'] for j in indices]
         y_errs = [filtered_data.iloc[j]['YieldError'] for j in indices]
         S_B_ratios = [filtered_data.iloc[j]['S/B'] for j in indices]
+        numEntries = [filtered_data.iloc[j]['NumEntry'] for j in indices]
 
         # Plot each data point with the corresponding error bar.
-        for j, (x_val, y_val, y_err, S_B_ratio) in enumerate(zip(x_vals, y_vals, y_errs, S_B_ratios)):
+        for j, (x_val, y_val, y_err, S_B_ratio, numEntry) in enumerate(zip(x_vals, y_vals, y_errs, S_B_ratios, numEntries)):
             index = i * 3 + j  # Calculate the specific index for the point.
             point_id = (plot_update_count_SignalYield, i, j)  # Unique identifier for each point.
             
             # Store data about the point in the history dictionary.
             plot_SignalYield_history[point_id] = {
                 'y_val': y_val, 'y_err': y_err, 'cuts': current_cuts.copy(),
-                'centrality': labels[i], 'csv_index': index, 'S_B_ratio': S_B_ratio
+                'centrality': labels[i], 'csv_index': index, 'S_B_ratio': S_B_ratio, 'numEntry': numEntry
             }
 
             # Create an error bar container for each point and add it to the list.
@@ -270,16 +270,17 @@ def plot_GaussianMean(filtered_data, clear_plot):
         mean_vals = [filtered_data.iloc[j]['GaussMean'] for j in indices]
         mean_errs = [filtered_data.iloc[j]['GaussMeanError'] for j in indices]
         S_B_ratios = [filtered_data.iloc[j]['S/B'] for j in indices]
+        numEntries = [filtered_data.iloc[j]['NumEntry'] for j in indices]
 
         # Plot each data point with the corresponding error bar.
-        for j, (x_val, mean_val, mean_err, S_B_ratio) in enumerate(zip(x_vals, mean_vals, mean_errs, S_B_ratios)):
+        for j, (x_val, mean_val, mean_err, S_B_ratio, numEntry) in enumerate(zip(x_vals, mean_vals, mean_errs, S_B_ratios, numEntries)):
             index = i * 3 + j  # Calculate the specific index for each point.
             point_id = (plot_update_count_GaussianMean, i, j)  # Unique identifier for the point.
             
             # Store point data in the history dictionary.
             plot_GaussianMean_history[point_id] = {
                 'mean_val': mean_val, 'mean_err': mean_err, 'cuts': current_cuts.copy(),
-                'centrality': labels[i], 'csv_index': index, 'S_B_ratio': S_B_ratio
+                'centrality': labels[i], 'csv_index': index, 'S_B_ratio': S_B_ratio, 'numEntry': numEntry
             }
 
             # Create an error bar container for the point and add it to the list.
@@ -387,16 +388,17 @@ def plot_GaussianSigma(filtered_data, clear_plot):
         sigma_vals = [filtered_data.iloc[j]['GaussSigma'] for j in indices]
         sigma_errs = [filtered_data.iloc[j]['GaussSigmaError'] for j in indices]
         S_B_ratios = [filtered_data.iloc[j]['S/B'] for j in indices]
+        numEntries = [filtered_data.iloc[j]['NumEntry'] for j in indices]
 
         # Plot each data point with an error bar.
-        for j, (x_val, sigma_val, sigma_err, S_B_ratio) in enumerate(zip(x_vals, sigma_vals, sigma_errs, S_B_ratios)):
+        for j, (x_val, sigma_val, sigma_err, S_B_ratio, numEntry) in enumerate(zip(x_vals, sigma_vals, sigma_errs, S_B_ratios, numEntries)):
             index = i * 3 + j  # Determine the specific index for each point.
             point_id = (plot_update_count_GaussianSigma, i, j)  # Create a unique identifier for the point.
             
             # Store point data in the history dictionary.
             plot_GaussianSigma_history[point_id] = {
                 'sigma_val': sigma_val, 'sigma_err': sigma_err, 'cuts': current_cuts.copy(),
-                'centrality': labels[i], 'csv_index': index
+                'centrality': labels[i], 'csv_index': index, 'S_B_ratio': S_B_ratio, 'numEntry': numEntry
             }
 
             # Create an error bar container for the point and add it to the list.
@@ -755,7 +757,7 @@ def plot_index_data(index_str, history_dict):
         ax.set_xticks(range(1, len(cut_combinations) + 1))
         ax.grid(True, linestyle='--', linewidth=0.5, alpha=0.7)
 
-        cut_mapping = {'A': '      Asy', 'C': r'$\chi^2$', 'D': r'$\Delta R$', 'E': '   E'}
+        cut_mapping = {'A': '      Asy', 'C': r'$\chi^2$', 'D': r'$\Delta R$', 'E': 'E'}
 
 
         # Define the headers for the legend
@@ -1800,6 +1802,8 @@ def create_analysis_window(root):
         # Button for sorting Signal Yield data
         ttk.Button(analysis_window, text="Sort by Signal Yield", command=lambda: sort_by_signal_yield(root)).pack()
         ttk.Button(analysis_window, text="Sort by Highest Yield and S/B", command=lambda: sort_by_yield_and_sb(root)).pack()
+        ttk.Button(analysis_window, text="Sort by Yield and Number of Entries", command=lambda: sort_by_yield_and_entries(root)).pack()
+        ttk.Button(analysis_window, text="Sort by Yield with NumEntries and S/B", command=lambda: sort_by_yield_sb_and_entries(root)).pack()
     elif current_plot_type == "GaussianMean":
         # Button for sorting Gaussian Mean data
         ttk.Button(analysis_window, text="Sort by Distance from π⁰ mass", command=lambda: sort_by_gaussian_mean(root)).pack()
@@ -2001,8 +2005,56 @@ def sort_by_yield_and_sb(root):
     # Scroll back to the top of the text widget
     results_display.see('1.0')
 
-    
 
+
+def sort_by_yield_and_entries(root):
+    # Filter out the data points that are not currently visible
+    visible_data = {point_id: data for point_id, data in plot_SignalYield_history.items()
+                    if centrality_visibility[data['centrality']]}
+
+    # Group data by centrality and then sort by yield and S/B within each group
+    grouped_data = {}
+    for data in visible_data.values():
+        centrality_group = data['centrality']
+        if centrality_group not in grouped_data:
+            grouped_data[centrality_group] = []
+        grouped_data[centrality_group].append(data)
+
+    # Sort each group first by yield and then by S/B ratio
+    # This sorting logic means that the yield is always the primary factor in determining the order.
+    # The S/B ratio is only considered when there is a tie in yield values.
+    for centrality in grouped_data:
+        grouped_data[centrality].sort(key=lambda x: (-x['y_val'], -x['numEntry']))
+
+    # Create a new window to display sorted results
+    results_window = tk.Toplevel(root)
+    results_window.title("Sorted Signal Yields by Yield and NumEntries")
+
+    # Create a text widget to display the sorted results
+    results_display = tk.Text(results_window, width = 100, height = 25)
+    results_display.pack(expand = True, fill = 'both')
+
+    # Define tags for styling
+    results_display.tag_configure('centrality', foreground='red')
+    results_display.tag_configure('index', font=('Helvetica', '10', 'bold'))
+
+    # Insert sorted data into the text widget, grouped by centrality
+    for centrality, data_list in grouped_data.items():
+        results_display.insert(tk.END, f"{centrality}:\n", 'centrality')
+        last_index = None
+        for data in data_list:
+            if last_index is not None and last_index != data['csv_index']:
+                results_display.insert(tk.END, "\n")  # Add a newline for new index groups
+            cuts_str = ", ".join(f"{k}: {v}" for k, v in data['cuts'].items())
+            results_display.insert(tk.END, f"Index {data['csv_index']}: ", 'index')
+            results_display.insert(tk.END, f"Yield: {data['y_val']}, NumEntry: {data['numEntry']}, Cuts: {cuts_str}\n")
+            last_index = data['csv_index']
+        results_display.insert(tk.END, "\n\n")
+
+    # Scroll back to the top of the text widget
+    results_display.see('1.0')
+
+    
 # Function to perform the sorting of Gaussian Mean data and display results
 def sort_by_gaussian_mean(root):
     # Filter out the data points that are not currently visible
@@ -2057,6 +2109,69 @@ def sort_by_gaussian_mean(root):
 
     # Scroll back to the top of the text widget
     results_display.see('1.0')
+    
+    
+def sort_by_yield_sb_and_entries(root):
+    # Filter out the data points that are not currently visible
+    visible_data = {point_id: data for point_id, data in plot_SignalYield_history.items()
+                    if centrality_visibility[data['centrality']]}
+
+    # Group data by centrality
+    grouped_data = {}
+    for data in visible_data.values():
+        centrality_group = data['centrality']
+        if centrality_group not in grouped_data:
+            grouped_data[centrality_group] = []
+        grouped_data[centrality_group].append(data)
+
+    # Within each centrality, group by 'csv_index', then sort each group by 'y_val' in descending order
+    sorted_data = {}
+    for centrality, data_list in grouped_data.items():
+        # Group by 'csv_index'
+        index_grouped_data = {}
+        for data in data_list:
+            index = data['csv_index']
+            if index not in index_grouped_data:
+                index_grouped_data[index] = []
+            index_grouped_data[index].append(data)
+
+        # Sort each index group by 'y_val' in descending order
+        for index in index_grouped_data:
+            index_grouped_data[index].sort(key=lambda x: x['y_val'], reverse=True)
+        
+        # Flatten the sorted groups back into a list
+        sorted_data[centrality] = [item for sublist in index_grouped_data.values() for item in sublist]
+
+    # Create a new window to display sorted results
+    results_window = tk.Toplevel(root)
+    results_window.title("Sorted Signal Yields by Yield, S/B and NumEntries")
+
+    # Create a text widget to display the sorted results
+    results_display = tk.Text(results_window, width=100, height=25)
+    results_display.pack(expand=True, fill='both')
+
+    # Define tags for styling
+    results_display.tag_configure('centrality', foreground='red')
+    results_display.tag_configure('index', font=('Helvetica', '10', 'bold'))
+
+    # Insert sorted data into the text widget, grouped by centrality and then by index
+    for centrality, data_list in sorted_data.items():
+        results_display.insert(tk.END, f"{centrality}:\n", 'centrality')
+        last_index = None
+        for data in data_list:
+            if last_index != data['csv_index']:
+                if last_index is not None:
+                    results_display.insert(tk.END, "\n")  # Add a newline for new index groups
+                last_index = data['csv_index']
+            cuts_str = ", ".join(f"{k}: {v}" for k, v in data['cuts'].items())
+            results_display.insert(tk.END, f"Index {data['csv_index']}: ", 'index')
+            results_display.insert(tk.END, f"Yield: {data['y_val']}, S/B: {data['S_B_ratio']}, NumEntry: {data['numEntry']}, Cuts: {cuts_str}\n")
+        results_display.insert(tk.END, "\n\n")  # Add extra newline after each centrality group for better readability
+
+    # Scroll back to the top of the text widget
+    results_display.see('1.0')
+
+
 
 # Function to perform the sorting of signal yield and display results
 def sort_by_SBratio(root):
