@@ -24,7 +24,7 @@ class caloTreeGen : public SubsysReco
 {
   public:
 
-    caloTreeGen(const std::string &name = "caloTreeGen", const std::string &name2 = "ntp");
+    caloTreeGen(const std::string &name = "qa", const std::string &name2 = "ntp");
 
     ~caloTreeGen() override;
 
@@ -90,24 +90,24 @@ class caloTreeGen : public SubsysReco
     TowerInfo* getMaxTower(RawCluster *cluster, TowerInfoContainer *towerContainer);
     Short_t    getMaxTowerTime(RawCluster *cluster, TowerInfoContainer *towerContainer);
 
-    Int_t iEvent;
+    Int_t iEvent = 0;
 
-    Double_t min_towE;
-    Float_t min_clusterECore;
-    Float_t min_clusterEta;
-    Float_t min_clusterPhi;
-    Float_t min_clusterPt;
-    Float_t min_clusterChi;
+    Double_t min_towE        = 9999;
+    Float_t min_clusterECore = 9999;
+    Float_t min_clusterEta   = 9999;
+    Float_t min_clusterPhi   = 9999;
+    Float_t min_clusterPt    = 9999;
+    Float_t min_clusterChi   = 9999;
 
-    Double_t max_towE;
-    Float_t max_clusterECore;
-    Float_t max_clusterEta;
-    Float_t max_clusterPhi;
-    Float_t max_clusterPt;
-    Float_t max_clusterChi;
-    Float_t max_totalCaloE;
-    Float_t max_totalmbd;
-    UInt_t  max_NClusters;
+    Double_t max_towE        = 0;
+    Float_t max_clusterECore = 0;
+    Float_t max_clusterEta   = 0;
+    Float_t max_clusterPhi   = 0;
+    Float_t max_clusterPt    = 0;
+    Float_t max_clusterChi   = 0;
+    Float_t max_totalCaloE   = 0;
+    Float_t max_totalmbd     = 0;
+    UInt_t  max_NClusters    = 0;
 
     TH1F* hTowE;
     TH1F* hClusterECore;
@@ -122,7 +122,10 @@ class caloTreeGen : public SubsysReco
     TH2F* h2TowEtaPhiWeighted;
     TH2F* h2TotalMBDCaloE;
 
-    UInt_t bins_towE = 400;
+    UInt_t bins_towE  = 800;
+    Float_t low_towE  = -50;
+    Float_t high_towE = 50;
+
     UInt_t  bins_e   = 200;
     Float_t low_e    = 0;
     Float_t high_e   = 50;
@@ -151,9 +154,9 @@ class caloTreeGen : public SubsysReco
     Float_t low_n  = 0;
     Float_t high_n = 3000;
 
-    UInt_t  bins_totalmbd = 200;
+    UInt_t  bins_totalmbd = 300;
     Float_t low_totalmbd  = 0;
-    Float_t high_totalmbd = 2000;
+    Float_t high_totalmbd = 3000;
 
     UInt_t  bins_totalcaloE = 1500;
     Float_t low_totalcaloE  = 0;

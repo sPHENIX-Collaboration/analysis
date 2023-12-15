@@ -41,20 +41,6 @@ caloTreeGen::caloTreeGen(const std::string &name, const std::string &name2):
   ,T(nullptr)
   ,Outfile(name)
   ,Outfile2(name2)
-  ,iEvent(0)
-  ,min_towE(0)
-  ,min_clusterECore(0)
-  ,min_clusterEta(0)
-  ,min_clusterPhi(0)
-  ,min_clusterPt(0)
-  ,min_clusterChi(0)
-  ,max_towE(0)
-  ,max_clusterECore(0)
-  ,max_clusterEta(0)
-  ,max_clusterPhi(0)
-  ,max_clusterPt(0)
-  ,max_clusterChi(0)
-  ,max_NClusters(0)
 {
   std::cout << "caloTreeGen::caloTreeGen(const std::string &name) Calling ctor" << std::endl;
 }
@@ -70,7 +56,7 @@ Int_t caloTreeGen::Init(PHCompositeNode *topNode)
 {
   out = new TFile(Outfile.c_str(),"RECREATE");
 
-  hTowE = new TH1F("hTowE", "Tower Energy; Energy [GeV]; Counts", bins_towE, low_e, high_e);
+  hTowE = new TH1F("hTowE", "Tower Energy; Energy [GeV]; Counts", bins_towE, low_towE, high_towE);
   hClusterECore = new TH1F("hClusterECore", "Cluster ECore; Energy [GeV]; Counts", bins_e, low_e, high_e);
   hClusterPt = new TH1F("hClusterPt", "Cluster p_{T}; p_{T} [GeV]; Counts", bins_pt, low_pt, high_pt);
   hClusterChi = new TH1F("hClusterChi", "Cluster #chi^{2}; #chi^{2}; Counts", bins_chi, low_chi, high_chi);
