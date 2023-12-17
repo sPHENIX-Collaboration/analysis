@@ -23,6 +23,10 @@ from reportlab.lib.pagesizes import letter, landscape
 import shlex  # For safely splitting the command string
 import fitz  # PyMuPDF
 import io
+import math
+
+
+
 data = pd.read_csv('/Users/patsfan753/Desktop/Desktop/AnalyzePi0s_Final/dataOutput/PlotByPlotOutputNewLowerPtBound.csv')
 
 # Dictionary to maintain the visibility state of different centrality categories in the plot
@@ -205,7 +209,7 @@ def plot_SignalYield(filtered_data, clear_plot):
     ax.set_xticks(x_ticks)
     ax.set_xlim(1.5, 5.5)
     ax.set_title(r"$\pi^0$ Yield")
-    ax.set_xlabel(r"$\pi^0$ pT")
+    ax.set_xlabel(r"$\pi^0$ pT [GeV]")
     ax.set_ylabel(r"$\pi^0$ Signal Yield")
     
     #Redraw canvas with new data
@@ -325,7 +329,7 @@ def plot_GaussianMean(filtered_data, clear_plot):
 
     # Add titles and labels to the plot.
     ax.set_title(r"Gaussian Mean Values vs $\pi^0$ $p_T$")
-    ax.set_xlabel(r"$\pi^0$ $p_T$")
+    ax.set_xlabel(r"$\pi^0$ $p_T$ [GeV]")
     ax.set_ylabel(r"Gaussian Mean")
 
     # Redraw the canvas with the updated plot.
@@ -436,7 +440,7 @@ def plot_GaussianSigma(filtered_data, clear_plot):
 
     # Add titles and labels to the plot.
     ax.set_title(r"Gaussian Sigma Values vs $\pi^0$ pT")
-    ax.set_xlabel(r"$\pi^0$ pT")
+    ax.set_xlabel(r"$\pi^0$ $p_T$ [GeV]")
     ax.set_ylabel(r"Gaussian Sigma")
 
     # Redraw the canvas with the updated plot.
@@ -553,7 +557,7 @@ def plot_SBratio(filtered_data, clear_plot):
 
     # Add titles and labels to the plot.
     ax.set_title(r"Signal To Background Ratio vs $\pi^0$ pT")
-    ax.set_xlabel(r"$\pi^0$ pT")
+    ax.set_xlabel(r"$\pi^0$ $p_T$ [GeV]")
     ax.set_ylabel(r"S/B")
 
     # Redraw the canvas with the updated plot.
@@ -651,7 +655,7 @@ def plot_RelativeSignalError(filtered_data, clear_plot):
     
     # Add titles and labels to the plot.
     ax.set_title(r"Relative Signal Error")
-    ax.set_xlabel(r"$\pi^0$ pT")
+    ax.set_xlabel(r"$\pi^0$ $p_T$ [GeV]")
     ax.set_ylabel(r"Relative Signal Error")
     
     # Redraw the canvas with the updated plot.
@@ -1007,7 +1011,7 @@ def add_labels_and_dividers(page, cell_width, cell_height, centrality_categories
 
 
     # Draw horizontal dividing lines
-    for i in range(num_rows + 1):
+    for i in range(num_rows):
         y_line = i * cell_height
         page.draw_line((0, y_line), (page.rect.width, y_line), color=black, width=1)
 
@@ -1108,6 +1112,17 @@ def generate_histogram_table(cuts):
         6: 2,
         9: 2
     }
+    # Constants for adjustments
+    bottom_padding = .01  # Space from the bottom of the page to the bottom row of images
+    inter_row_spacing = .5  # Space between the rows of images
+
+    # Calculate the total height used by the plots and the spacing
+    total_plots_height = 3 * cell_height + 2 * -inter_row_spacing  # For three rows and spacing between them
+    remaining_space = a4_height - total_plots_height - bottom_padding  # Remaining space on the page
+
+    # Calculate the starting y-position for the bottom row
+    bottom_row_start_y = remaining_space + bottom_padding
+
 
     for pt_label, pt_indices in pt_categories.items():
         for centrality_label, centrality_indices in centrality_categories.items():
@@ -1122,8 +1137,15 @@ def generate_histogram_table(cuts):
                     x_offset = cell_width * 0.01  # 10% of the cell width, adjust as needed
                     x_position = column * cell_width + x_offset
 
-                    # Calculate y_position so the top row is at the top of the page
-                    y_position = (2 - row) * cell_height  # The top row (0) becomes (2 - 0) * cell_height
+
+                    # Calculate the y_position for each row
+                    if row == 2:  # Bottom row
+                        y_position = bottom_row_start_y
+                    elif row == 1:  # Middle row
+                        y_position = bottom_row_start_y + cell_height + inter_row_spacing
+                    else:  # Top row
+                        y_position = bottom_row_start_y + 2 * (cell_height + inter_row_spacing)
+
 
 
                     filename = f"hPi0Mass_{centrality_index}_E{formatted_cuts['E']}_Asym{formatted_cuts['A']}_Chi{formatted_cuts['C']}_DeltaR{formatted_cuts['D']}_fit.pdf"
@@ -1347,6 +1369,40 @@ def plot_all_combinations():
     # Redraw the canvas with all the new data
     canvas.draw()
 
+def apply_transformation():
+    global plot_SignalYield_history, ax, canvas, global_max_y_signalYield
+
+    # Initialize new_max_y and new_min_y to track the max and min y-values after transformation
+    new_max_y = 0
+    new_min_y = float('inf')  # Set it to infinity so any real value will be less
+
+    for point_id, point_data in plot_SignalYield_history.items():
+        y_val = point_data['y_val']
+        if y_val > 0:
+            # Apply the transformation sqrt(n)/n
+            transformed_value = math.sqrt(y_val) / y_val
+            point_data['y_val'] = transformed_value
+
+            # Update the max and min y-values
+            new_max_y = max(new_max_y, transformed_value)
+            new_min_y = min(new_min_y, transformed_value)
+
+            for container in errorbar_containers_SignalYield:
+                if container[0].get_gid() == point_id:
+                    container[0].set_ydata([transformed_value])
+                    # Update error bars if necessary
+                    # e.g., container[2].set_ydata([new_error_value])
+    
+    # Calculate a safe lower limit for the y-axis on a log scale
+    lower_limit = new_min_y / 10 if new_min_y / 10 > 0 else new_min_y * 10
+
+    # Adjust the y-axis to fit the new range of values, ensuring the lower limit is not too close to zero
+    ax.set_ylim(lower_limit, new_max_y * 10)
+    global_max_y_signalYield = new_max_y
+
+    canvas.draw_idle()
+
+
 
 # Function to save the current plot to a file with a choice of format.
 def save_plot():
@@ -1443,7 +1499,7 @@ def create_main_application(root):
 
     # Add the buttons with added padding.
     update_button = ttk.Button(left_frame, text="Apply First Cuts/Renew Points", style='TButton', command=lambda: update_plot(clear_plot=True))
-    update_button.grid(row=4, column=0, columnspan=2, sticky='ew', pady=(200, 0))
+    update_button.grid(row=4, column=0, columnspan=2, sticky='ew', pady=(80, 0))
 
     overlay_button = ttk.Button(left_frame, text="Overlay New Cuts", command=overlay_new_cuts)
     overlay_button.grid(row=5, column=0, columnspan=2, sticky='ew', pady=(10, 0))
@@ -1452,7 +1508,7 @@ def create_main_application(root):
     plot_all_combinations_button.grid(row=6, column=0, columnspan=2, sticky='ew', pady=(10, 0))
 
     analyze_button = ttk.Button(left_frame, text="Analyze Data on Screen", command=lambda: create_analysis_window(root))
-    analyze_button.grid(row=7, column=0, columnspan=2, sticky='ew', pady=(10, 0))
+    analyze_button.grid(row=7, column=0, columnspan=2, sticky='ew', pady=(250, 0))
 
 
     # Determine the button text based on the current plot type
@@ -1474,6 +1530,25 @@ def create_main_application(root):
         command=on_generate_table_click
     )
     generate_table_button.grid(row=9, column=0, columnspan=2, sticky='ew', pady=(10, 0))
+
+    # Here we check if the current plot type is 'SignalYield'
+    if current_plot_type == "SignalYield":
+        transformation_button_text = "Apply √Yield/Yield Transformation"
+        transformation_button = ttk.Button(left_frame, text=transformation_button_text, command=apply_transformation)
+        transformation_button.grid(row=10, column=0, columnspan=2, sticky='ew', pady=(10, 0))
+        centrality_frame_row = 11  # We position the centrality frame below the transformation button
+        padyVal = 70
+    else:
+        centrality_frame_row = 10  # There is no transformation button, so centrality frame moves up
+        padyVal = 100
+
+    # Modify the LabelFrame style to center the title and underline it
+    style.configure('Center.TLabelframe.Label', font=('Helvetica', 14, 'underline'), background='light gray')
+    style.layout("Center.TLabelframe.Label", [('Labelframe.label', {'sticky': 'nswe'})])  # Center alignment
+    centrality_frame = ttk.LabelFrame(left_frame, text="                 Hide Centrality", style='Center.TLabelframe')
+    centrality_frame.grid(row=centrality_frame_row, column=0, columnspan=2, sticky="ew", pady=(padyVal, 0))
+
+
 
     plt.style.use('ggplot')
     # Increase the size of the plot for better focus and visibility
@@ -1505,13 +1580,6 @@ def create_main_application(root):
     # Connect a function to handle click events on the plot.
     fig.canvas.mpl_connect('pick_event', lambda event: on_click(event, root))
     
-
-    # Modify the LabelFrame style to center the title and underline it
-    style.configure('Center.TLabelframe.Label', font=('Helvetica', 14, 'underline'), background='light gray')
-    style.layout("Center.TLabelframe.Label", [('Labelframe.label', {'sticky': 'nswe'})]) # Center alignment
-    centrality_frame = ttk.LabelFrame(left_frame, text="                 Hide Centrality", style='Center.TLabelframe')
-    centrality_frame.grid(row=10, column=0, columnspan=2, sticky="ew", pady=(220, 0))
-
 
     # Creating toggle buttons for each centrality category and placing them in centrality_frame vertically.
     centrality_labels = ["60-100%", "40-60%", "20-40%", "0-20%"]
@@ -1804,6 +1872,8 @@ def create_analysis_window(root):
         ttk.Button(analysis_window, text="Sort by Highest Yield and S/B", command=lambda: sort_by_yield_and_sb(root)).pack()
         ttk.Button(analysis_window, text="Sort by Yield and Number of Entries", command=lambda: sort_by_yield_and_entries(root)).pack()
         ttk.Button(analysis_window, text="Sort by Yield with NumEntries and S/B", command=lambda: sort_by_yield_sb_and_entries(root)).pack()
+        ttk.Button(analysis_window, text="Sort by Transformed Yield", command=lambda: sort_by_transformed_yield(root)).pack()
+        
     elif current_plot_type == "GaussianMean":
         # Button for sorting Gaussian Mean data
         ttk.Button(analysis_window, text="Sort by Distance from π⁰ mass", command=lambda: sort_by_gaussian_mean(root)).pack()
@@ -2039,12 +2109,77 @@ def sort_by_yield_sb_and_entries(root):
                 last_index = data['csv_index']
             cuts_str = ", ".join(f"{k}: {v}" for k, v in data['cuts'].items())
             results_display.insert(tk.END, f"Index {data['csv_index']}: ", 'index')
-            results_display.insert(tk.END, f"Yield: {data['y_val']}, S/B: {data['S_B_ratio']}, NumEntry: {data['numEntry']}, Cuts: {cuts_str}\n")
+            # Display yield with associated error
+            results_display.insert(tk.END, f"Yield: {data['y_val']} \u00B1 {data['y_err']}, S/B: {data['S_B_ratio']}, NumEntry: {data['numEntry']}, Cuts: {cuts_str}\n")
         results_display.insert(tk.END, "\n\n")  # Add extra newline after each centrality group for better readability
 
     # Scroll back to the top of the text widget
     results_display.see('1.0')
 
+def sort_by_transformed_yield(root):
+    # Filter out the data points that are not currently visible
+    visible_data = {point_id: data for point_id, data in plot_SignalYield_history.items()
+                    if centrality_visibility[data['centrality']]}
+
+    # Group data by centrality
+    grouped_data = {}
+    for data in visible_data.values():
+        centrality_group = data['centrality']
+        if centrality_group not in grouped_data:
+            grouped_data[centrality_group] = []
+        grouped_data[centrality_group].append(data)
+
+    # Within each centrality, group by 'csv_index', then sort each group by transformed yield in descending order
+    sorted_data = {}
+    for centrality, data_list in grouped_data.items():
+        # Apply the transformation
+        for data in data_list:
+            y_val = data['y_val']
+            data['transformed_yield'] = math.sqrt(y_val) / y_val if y_val > 0 else 0
+
+        # Group by 'csv_index'
+        index_grouped_data = {}
+        for data in data_list:
+            index = data['csv_index']
+            if index not in index_grouped_data:
+                index_grouped_data[index] = []
+            index_grouped_data[index].append(data)
+
+        # Sort each index group by 'transformed_yield' in descending order
+        for index, group in index_grouped_data.items():
+            index_grouped_data[index] = sorted(group, key=lambda x: x['transformed_yield'], reverse=True)
+
+        # Flatten the sorted groups back into a list
+        sorted_data[centrality] = [item for sublist in index_grouped_data.values() for item in sublist]
+
+    # Create a new window to display sorted results
+    results_window = tk.Toplevel(root)
+    results_window.title("Sorted Signal Yields by Transformed Yield")
+
+    # Create a text widget to display the sorted results
+    results_display = tk.Text(results_window, width=100, height=25)
+    results_display.pack(expand=True, fill='both')
+
+    # Define tags for styling
+    results_display.tag_configure('centrality', foreground='red')
+    results_display.tag_configure('index', font=('Helvetica', '10', 'bold'))
+
+    # Insert sorted data into the text widget, grouped by centrality and then by index
+    for centrality, data_list in sorted_data.items():
+        results_display.insert(tk.END, f"{centrality}:\n", 'centrality')
+        last_index = None
+        for data in data_list:
+            if last_index is not None and last_index != data['csv_index']:
+                results_display.insert(tk.END, "\n")  # Add a newline for new index groups
+            last_index = data['csv_index']
+            cuts_str = ", ".join(f"{k}: {v}" for k, v in data['cuts'].items())
+            results_display.insert(tk.END, f"Index {data['csv_index']}: ", 'index')
+            # Display transformed yield with associated error
+            results_display.insert(tk.END, f"Transformed Yield: {data['transformed_yield']}, S/B: {data['S_B_ratio']}, NumEntry: {data['numEntry']}, Cuts: {cuts_str}\n")
+        results_display.insert(tk.END, "\n\n")  # Add extra newline after each centrality group for better readability
+
+    # Scroll back to the top of the text widget
+    results_display.see('1.0')
 
 
 
@@ -2130,7 +2265,7 @@ def sort_by_gaussianSigma_andSB_andNentries(root):
             grouped_data[centrality_group] = []
         grouped_data[centrality_group].append(data)
 
-    # Within each centrality, group by 'csv_index', then sort each group by 'sigma_val' in descending order
+    # Within each centrality, group by 'csv_index'
     sorted_data = {}
     for centrality, data_list in grouped_data.items():
         # Group by 'csv_index'
@@ -2141,9 +2276,9 @@ def sort_by_gaussianSigma_andSB_andNentries(root):
                 index_grouped_data[index] = []
             index_grouped_data[index].append(data)
 
-        # Sort each index group by 'sigma_val' in descending order
+        # Sort each index group by 'sigma_val', then 'S_B_ratio', and then 'numEntry' in descending order
         for index in index_grouped_data:
-            index_grouped_data[index].sort(key=lambda x: x['sigma_val'], reverse=True)
+            index_grouped_data[index].sort(key=lambda x: (x['sigma_val'], x['S_B_ratio'], x['numEntry']), reverse=True)
         
         # Flatten the sorted groups back into a list
         sorted_data[centrality] = [item for sublist in index_grouped_data.values() for item in sublist]
