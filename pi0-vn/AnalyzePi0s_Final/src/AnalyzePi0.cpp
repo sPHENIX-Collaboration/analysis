@@ -92,9 +92,7 @@ std::string csvFilePath = "/Users/patsfan753/Desktop/Desktop/AnalyzePi0s_Final/d
  */
 int histIndex = 11;
 double globalYAxisRange[2] = {0, 8000}; // Lower and upper limits
-/*
- set height of black vertical line output below
- */
+
 double globalLineHeight = 0.4 * globalYAxisRange[1];
 
 TFitResultPtr PerformFitting(TH1F* hPi0Mass, bool setFitManual, TF1*& totalFit, double& fitStart, double& fitEnd) {
