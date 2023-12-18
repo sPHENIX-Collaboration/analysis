@@ -14,12 +14,12 @@
  Top of code for easy scrolling
  */
 // Global variables
-std::string globalFilename = "/Users/patsfan753/Desktop/Desktop/AnalyzePi0s_Final/histRootFileFinal/histRootFilesIndexSWITCH/hPi0Mass_E0point5_Asym0point5_Delr0_Chi4.root";
+std::string globalFilename = "/Users/patsfan753/Desktop/Desktop/AnalyzePi0s_Final/histRootFileFinal/histRootFilesIndexSWITCH/hPi0Mass_E1_Asym0point8_Delr0_Chi4.root";
 bool CreateSignalandGaussParPlots = false; //control flag for plotting signal and signal error
 // Global variable for setFitManual
 bool globalSetFitManual = false;
 // Global variable for setting dynamic parameters automatically
-bool globalSetDynamicParsAuto = true;  // Set this as needed in your code
+bool globalSetDynamicParsAuto = false;  // Set this as needed in your code
 
 struct ParameterSet {
     double FitStart;
@@ -86,16 +86,16 @@ double globalFindBin2Value;
 double globalSigmaEstimate;
 double globalSigmaParScale;
 double globalNumEntries;
-std::string csvFilePath = "/Users/patsfan753/Desktop/Desktop/AnalyzePi0s_Final/dataOutput/AdditionalParametersNewLowestPtRange.csv";
+std::string csvFilePath = "/Users/patsfan753/Desktop/Desktop/AnalyzePi0s_Final/dataOutput/DataFinalizedBins/AdditionalParametersFinalizedBins.csv";
 /*
  Set which histogram index is being analyzed, make sure to switch after finishing previous fit
  */
-int histIndex = 0;
-double globalYAxisRange[2] = {0, 3000}; // Lower and upper limits
+int histIndex = 11;
+double globalYAxisRange[2] = {0, 8000}; // Lower and upper limits
 /*
  set height of black vertical line output below
  */
-double globalLineHeight = 0.25 * globalYAxisRange[1];
+double globalLineHeight = 0.4 * globalYAxisRange[1];
 
 TFitResultPtr PerformFitting(TH1F* hPi0Mass, bool setFitManual, TF1*& totalFit, double& fitStart, double& fitEnd) {
     // Assign the setFitManual value to the global variable
@@ -124,7 +124,7 @@ TFitResultPtr PerformFitting(TH1F* hPi0Mass, bool setFitManual, TF1*& totalFit, 
         ParameterSet params = ReadParametersFromCSV(csvFilePath, histIndex);
         fitStart = params.FitStart;
         
-//        fitStart = hPi0Mass->GetBinLowEdge(firstBinAboveThreshold);
+ //       fitStart = hPi0Mass->GetBinLowEdge(firstBinAboveThreshold);
         
         fitEnd = params.FitEnd;
         globalFitStart = fitStart;
@@ -145,14 +145,14 @@ TFitResultPtr PerformFitting(TH1F* hPi0Mass, bool setFitManual, TF1*& totalFit, 
                   << std::endl;
     } else {
         // Set global variables for additional parameters (manual setting)
-        fitStart = 0.075;
-        //fitStart = hPi0Mass->GetBinLowEdge(firstBinAboveThreshold);
+        fitStart = hPi0Mass->GetBinLowEdge(firstBinAboveThreshold);
+        fitStart = 0.06;
         fitEnd = 0.5;
         globalFitStart = fitStart;
         globalFitEnd = fitEnd;
         globalFindBin1Value = 0.1; // Value in FindBin for bin1
         globalFindBin2Value = 0.2; // Value in FindBin for bin2
-        globalSigmaEstimate = 0.018; // sigmaEstimate value
+        globalSigmaEstimate = 0.025; // sigmaEstimate value
         // Check if SetParLimits is used for sigma
         if (!setFitManual) {
             globalSigmaParScale = .2; // Scale factor used in SetParLimits
@@ -283,84 +283,85 @@ struct Range {
  Automatic printing of MBD values onto canvas of invar mass histograms, switches when histIndex is swithced in main method at bottom of macro
  */
 Range ranges[] = {
-    {2.0, 2.5, 0.0, 16821.4},       // index 0
-    {3.0, 4.0, 0.0, 16821.4},       // index 1
-    {4.0, 5.0, 0.0, 16821.4},       // index 2
+//    {2.0, 2.5, 0.0, 16821.4},       // index 0
+//    {3.0, 4.0, 0.0, 16821.4},       // index 1
+//    {4.0, 5.0, 0.0, 16821.4},       // index 2
+//    
+//    {2.0, 2.5, 16821.4, 43100},   // index 3
+//    {3.0, 4.0, 16821.4, 43100},   // index 4
+//    {4.0, 5.0, 16821.4, 43100},   // index 5
+//    
+//    {2.0, 2.5, 43100, 97028.6},   // index 6
+//    {3.0, 4.0, 43100, 97028.6},   // index 7
+//    {4.0, 5.0, 43100, 97028.6},   // index 8
+//    
+//    {2.0, 2.5, 97028.6, 250000},     // index 9
+//    {3.0, 4.0, 97028.6, 250000},     // index 10
+//    {4.0, 5.0, 97028.6, 250000}      // index 11
     
-    {2.0, 2.5, 16821.4, 43100},   // index 3
-    {3.0, 4.0, 16821.4, 43100},   // index 4
-    {4.0, 5.0, 16821.4, 43100},   // index 5
+    {2.0, 2.5, 16821.4, 43100},       // index 0
+    {2.5, 3.0, 16821.4, 43100},       // index 1
+    {3.0, 3.5, 16821.4, 43100},       // index 2
+    {3.5, 4.0, 16821.4, 43100},       // index 3
+    {4.0, 4.5, 16821.4, 43100},       // index 4
+    {4.5, 5.0, 16821.4, 43100},       // index 5
     
-    {2.0, 2.5, 43100, 97028.6},   // index 6
-    {3.0, 4.0, 43100, 97028.6},   // index 7
-    {4.0, 5.0, 43100, 97028.6},   // index 8
     
-    {2.0, 2.5, 97028.6, 250000},     // index 9
-    {3.0, 4.0, 97028.6, 250000},     // index 10
-    {4.0, 5.0, 97028.6, 250000}      // index 11
+    {2.0, 2.5, 43100, 97028.6},       // index 6
+    {2.5, 3.0, 43100, 97028.6},       // index 7
+    {3.0, 3.5, 43100, 97028.6},       // index 8
+    {3.5, 4.0, 43100, 97028.6},       // index 9
+    {4.0, 4.5, 43100, 97028.6},       // index 10
+    {4.5, 5.0, 43100, 97028.6},       // index 11
+
 };
 /*
  Signal to background ratio calculation and terminal output
  */
-double CalculateSignalToBackgroundRatio(TF1* totalFit, TF1* polyFit, double fitMean, double fitSigma, double& signalToBackgroundError, const TFitResultPtr &fitResult) {
-    // Declare variables for the errors in the integral calculations.
-    double signalPlusBackgroundError, backgroundError;
+double CalculateSignalToBackgroundRatio(TH1F* hPi0Mass, TF1* polyFit, double fitMean, double fitSigma, double& signalToBackgroundError) {
+    // Cloning histograms for signal and background
+    TH1F *hSignal = (TH1F*)hPi0Mass->Clone("hSignal");
+    TH1F *hBackground = (TH1F*)hPi0Mass->Clone("hBackground");
 
-    // Calculate the integral of the total fit function over a specified range.
-    // This range is determined by the mean and standard deviation (sigma) of the fit.
-    // The integral represents the total area under the curve (signal plus background).
-    double signalPlusBackground = totalFit->Integral(fitMean - 2*fitSigma, fitMean + 2*fitSigma);
+    int firstBinSignal = hPi0Mass->FindBin(fitMean - 2*fitSigma);
+    int lastBinSignal = hPi0Mass->FindBin(fitMean + 2*fitSigma);
 
-    // Calculate the error in the integral of the total fit.
-    // This error estimation takes into account the uncertainties in the fit parameters.
-    signalPlusBackgroundError = totalFit->IntegralError(fitMean - 2*fitSigma, fitMean + 2*fitSigma, nullptr, nullptr, 1.E-2);
+    double binCenter, binContent, bgContent, binError;
+    for (int i = firstBinSignal; i <= lastBinSignal; ++i) {
+        binCenter = hPi0Mass->GetBinCenter(i);
+        binContent = hPi0Mass->GetBinContent(i);
+        binError = hPi0Mass->GetBinError(i);
+        bgContent = polyFit->Eval(binCenter);
+        bgContent = std::max(bgContent, 0.0);
 
-    // Calculate the integral of the background fit function over the same range.
-    // This represents the area under the background component of the fit.
-    double background = polyFit->Integral(fitMean - 2*fitSigma, fitMean + 2*fitSigma);
+        // Setting signal and background contents
+        hSignal->SetBinContent(i, binContent - bgContent);
+        hBackground->SetBinContent(i, bgContent);
 
-    const int polyParamStart = 3; // Index of the first polynomial parameter in totalFit
-    const int polyParamEnd = 7; // Index of the last polynomial parameter in totalFit
-    const int numPolyParams = polyParamEnd - polyParamStart + 1; // Total number of polynomial parameters
-
-    // Define the array to hold the polynomial parameters
-    double polyParams[numPolyParams];
-    for (int i = 0; i < numPolyParams; ++i) {
-        polyParams[i] = totalFit->GetParameter(polyParamStart + i);
+        // Set bin errors
+        hSignal->SetBinError(i, binError); // Error for signal
+        hBackground->SetBinError(i, sqrt(bgContent)); // Error for background (Poisson statistics)
     }
 
-    // Obtain the covariance matrix for the polynomial part
-    // The submatrix indices should include all the polynomial parameters
-    TMatrixDSym covMatrix = fitResult->GetCovarianceMatrix().GetSub(polyParamStart, polyParamEnd, polyParamStart, polyParamEnd);
+    double signalYield, signalError, backgroundYield, backgroundError;
+    signalYield = hSignal->IntegralAndError(firstBinSignal, lastBinSignal, signalError, "");
+    backgroundYield = hBackground->IntegralAndError(firstBinSignal, lastBinSignal, backgroundError, "");
 
-    // Calculate the error in the integral of the background fit using the covariance matrix
-    // Pass the array of polynomial parameters and the corresponding submatrix of the covariance matrix
-    backgroundError = polyFit->IntegralError(fitMean - 2*fitSigma, fitMean + 2*fitSigma, polyParams, covMatrix.GetMatrixArray());
+    double signalToBackgroundRatio = signalYield / backgroundYield;
 
-    // Calculate the net signal by subtracting the background from the total (signal plus background).
-    double netSignal = signalPlusBackground - background;
+    // Error propagation for division
+    signalToBackgroundError = signalToBackgroundRatio * sqrt(pow(signalError / signalYield, 2) + pow(backgroundError / backgroundYield, 2));
 
-    // Propagate the errors from the total (signal plus background) and background to find the error in the net signal.
-    // This is done using the quadrature method, which is standard for error propagation in subtraction.
-    double netSignalError = sqrt(pow(signalPlusBackgroundError, 2) + pow(backgroundError, 2));
-
-    // Calculate the signal-to-background ratio by dividing the net signal by the background.
-    double signalToBackgroundRatio = netSignal / background;
-
-    // Propagate the errors for the division operation to find the error in the signal-to-background ratio.
-    // This accounts for the relative errors of the net signal and the background.
-    signalToBackgroundError = signalToBackgroundRatio * sqrt(pow(netSignalError / netSignal, 2) + pow(backgroundError / background, 2));
-
-    // Output the calculated values and their associated errors to the standard output.
-    std::cout << "Area Under Total Fit: " << signalPlusBackground << " +/- " << signalPlusBackgroundError << std::endl;
-    std::cout << "Area Under Background Fit: " << background << " +/- " << backgroundError << std::endl;
-    std::cout << "Net Signal: " << netSignal << " +/- " << netSignalError << std::endl;
+    std::cout << "Signal Yield: " << signalYield << " +/- " << signalError << std::endl;
+    std::cout << "Background Yield: " << backgroundYield << " +/- " << backgroundError << std::endl;
     std::cout << "Signal-to-Background Ratio: " << signalToBackgroundRatio << " +/- " << signalToBackgroundError << std::endl;
 
-    // Return the calculated signal-to-background ratio.
+    // Cleanup
+    delete hSignal;
+    delete hBackground;
+
     return signalToBackgroundRatio;
 }
-
 
 
 /*
@@ -370,13 +371,13 @@ void WriteGaussianParametersToFile(int histIndex, double fitMean, double fitMean
     if (isFitGood) {
         // Generate unique file names based on cut values
         std::ostringstream meanFilenameStream;
-        meanFilenameStream << "/Users/patsfan753/Desktop/Desktop/AnalyzePi0s_Final/dataOutput/GaussianMean_"
+        meanFilenameStream << "/Users/patsfan753/Desktop/Desktop/AnalyzePi0s_Final/dataOutput/DataFinalizedBins/GaussianMean_"
                            << "E" << cutValues.clusE << "_Asym" << cutValues.asymmetry
                            << "_Chi" << cutValues.chi << "_DeltaR" << cutValues.deltaR << ".txt";
         std::string meanFilename = meanFilenameStream.str();
 
         std::ostringstream errorFilenameStream;
-        errorFilenameStream << "/Users/patsfan753/Desktop/Desktop/AnalyzePi0s_Final/dataOutput/GaussianError_"
+        errorFilenameStream << "/Users/patsfan753/Desktop/Desktop/AnalyzePi0s_Final/dataOutput/DataFinalizedBins/GaussianError_"
                             << "E" << cutValues.clusE << "_Asym" << cutValues.asymmetry
                             << "_Chi" << cutValues.chi << "_DeltaR" << cutValues.deltaR << ".txt";
         std::string errorFilename = errorFilenameStream.str();
@@ -426,12 +427,12 @@ void CalculateSignalYieldAndError(TH1F* hPi0Mass, TF1* polyFit, double fitMean, 
     if (isFitGood) {
         // Generate unique file names based on cut values
         std::ostringstream yieldFilenameStream, errorFilenameStream;
-        yieldFilenameStream << "/Users/patsfan753/Desktop/Desktop/AnalyzePi0s_Final/dataOutput/signalYield_"
+        yieldFilenameStream << "/Users/patsfan753/Desktop/Desktop/AnalyzePi0s_Final/dataOutput/DataFinalizedBins/signalYield_"
                             << "E" << cutValues.clusE << "_Asym" << cutValues.asymmetry
                             << "_Chi" << cutValues.chi << "_DeltaR" << cutValues.deltaR << ".txt";
         std::string yieldFilename = yieldFilenameStream.str();
 
-        errorFilenameStream << "/Users/patsfan753/Desktop/Desktop/AnalyzePi0s_Final/dataOutput/signalError_"
+        errorFilenameStream << "/Users/patsfan753/Desktop/Desktop/AnalyzePi0s_Final/dataOutput/DataFinalizedBins/signalError_"
                             << "E" << cutValues.clusE << "_Asym" << cutValues.asymmetry
                             << "_Chi" << cutValues.chi << "_DeltaR" << cutValues.deltaR << ".txt";
         std::string errorFilename = errorFilenameStream.str();
@@ -502,12 +503,12 @@ void GenerateSignalAndGaussParPlots(const CutValues& cutValues) {
 
     // Construct file names based on cut values for yield and error
     std::ostringstream yieldFilenameStream, errorFilenameStream;
-    yieldFilenameStream << "/Users/patsfan753/Desktop/Desktop/AnalyzePi0s_Final/dataOutput/signalYield_"
+    yieldFilenameStream << "/Users/patsfan753/Desktop/Desktop/AnalyzePi0s_Final/dataOutput/DataFinalizedBins/signalYield_"
                         << "E" << cutValues.clusE << "_Asym" << cutValues.asymmetry
                         << "_Chi" << cutValues.chi << "_DeltaR" << cutValues.deltaR << ".txt";
     std::string yieldFilename = yieldFilenameStream.str();
 
-    errorFilenameStream << "/Users/patsfan753/Desktop/Desktop/AnalyzePi0s_Final/dataOutput/signalError_"
+    errorFilenameStream << "/Users/patsfan753/Desktop/Desktop/AnalyzePi0s_Final/dataOutput/DataFinalizedBins/signalError_"
                         << "E" << cutValues.clusE << "_Asym" << cutValues.asymmetry
                         << "_Chi" << cutValues.chi << "_DeltaR" << cutValues.deltaR << ".txt";
     std::string errorFilename = errorFilenameStream.str();
@@ -540,7 +541,7 @@ void GenerateSignalAndGaussParPlots(const CutValues& cutValues) {
     
     // Define the filename stream and generate the filename based on cut values
     std::ostringstream gaussianMeanFilenameStream;
-    gaussianMeanFilenameStream << "/Users/patsfan753/Desktop/Desktop/AnalyzePi0s_Final/dataOutput/GaussianMean_"
+    gaussianMeanFilenameStream << "/Users/patsfan753/Desktop/Desktop/AnalyzePi0s_Final/dataOutput/DataFinalizedBins/GaussianMean_"
                                << "E" << cutValues.clusE << "_Asym" << cutValues.asymmetry
                                << "_Chi" << cutValues.chi << "_DeltaR" << cutValues.deltaR << ".txt";
     std::string gaussianMeanFilename = gaussianMeanFilenameStream.str();
@@ -568,7 +569,7 @@ void GenerateSignalAndGaussParPlots(const CutValues& cutValues) {
 
     // Reading Gaussian Sigma values
     std::ostringstream gaussianSigmaFilenameStream;
-    gaussianSigmaFilenameStream << "/Users/patsfan753/Desktop/Desktop/AnalyzePi0s_Final/dataOutput/GaussianError_"
+    gaussianSigmaFilenameStream << "/Users/patsfan753/Desktop/Desktop/AnalyzePi0s_Final/dataOutput/DataFinalizedBins/GaussianError_"
                                 << "E" << cutValues.clusE << "_Asym" << cutValues.asymmetry
                                 << "_Chi" << cutValues.chi << "_DeltaR" << cutValues.deltaR << ".txt";
     std::string gaussianSigmaFilename = gaussianSigmaFilenameStream.str();
@@ -898,7 +899,7 @@ void WriteDataToCSV(int histIndex, const CutValues& cutValues, double fitMean, d
         return;
     }
 
-    std::string filename = "/Users/patsfan753/Desktop/Desktop/AnalyzePi0s_Final/dataOutput/PlotByPlotOutputNewLowerPtBound.csv";
+    std::string filename = "/Users/patsfan753/Desktop/Desktop/AnalyzePi0s_Final/dataOutput/DataFinalizedBins/PlotByPlotOutputFinalizedBins.csv";
     std::ifstream checkFile(filename);
     bool fileIsEmpty = checkFile.peek() == std::ifstream::traits_type::eof();
     checkFile.close();
@@ -944,7 +945,7 @@ void WriteAdditionalParametersToCSV(int histIndex, const CutValues& cutValues) {
     }
 
     // Open file in append mode
-    std::ofstream file("/Users/patsfan753/Desktop/Desktop/AnalyzePi0s_Final/dataOutput/AdditionalParametersNewLowestPtRange.csv", std::ios::app);
+    std::ofstream file("/Users/patsfan753/Desktop/Desktop/AnalyzePi0s_Final/dataOutput/DataFinalizedBins/AdditionalParametersFinalizedBins.csv", std::ios::app);
     if (!file.is_open()) {
         std::cerr << "Unable to open CSV file for writing additional parameters." << std::endl;
         return;
@@ -1045,9 +1046,9 @@ void AnalyzePi0() {
 
 
 
+    // Ensure you are passing the correct histogram (hPi0Mass) to the function
     double signalToBackgroundError;
-
-    double signalToBackgroundRatio = CalculateSignalToBackgroundRatio(totalFit, polyFit, fitMean, fitSigma, signalToBackgroundError, fitResult);
+    double signalToBackgroundRatio = CalculateSignalToBackgroundRatio(hPi0Mass, polyFit, fitMean, fitSigma, signalToBackgroundError);
 
 
     // Call the new method to draw text on the canvas
@@ -1082,12 +1083,12 @@ void AnalyzePi0() {
     if (isFitGood) {
         // Construct file names based on cut values
         std::ostringstream yieldFilenameStream, errorFilenameStream;
-        yieldFilenameStream << "/Users/patsfan753/Desktop/Desktop/AnalyzePi0s_Final/dataOutput/signalYield_"
+        yieldFilenameStream << "/Users/patsfan753/Desktop/Desktop/AnalyzePi0s_Final/dataOutput/DataFinalizedBins/signalYield_"
                             << "E" << globalCutValues.clusE << "_Asym" << globalCutValues.asymmetry
                             << "_Chi" << globalCutValues.chi << "_DeltaR" << globalCutValues.deltaR << ".txt";
         std::string yieldFilename = yieldFilenameStream.str();
 
-        errorFilenameStream << "/Users/patsfan753/Desktop/Desktop/AnalyzePi0s_Final/dataOutput/signalError_"
+        errorFilenameStream << "/Users/patsfan753/Desktop/Desktop/AnalyzePi0s_Final/dataOutput/DataFinalizedBins/signalError_"
                             << "E" << globalCutValues.clusE << "_Asym" << globalCutValues.asymmetry
                             << "_Chi" << globalCutValues.chi << "_DeltaR" << globalCutValues.deltaR << ".txt";
         std::string errorFilename = errorFilenameStream.str();
