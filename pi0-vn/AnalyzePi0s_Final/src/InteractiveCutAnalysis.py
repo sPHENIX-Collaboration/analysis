@@ -27,7 +27,7 @@ import math
 
 
 
-data = pd.read_csv('/Users/patsfan753/Desktop/Desktop/AnalyzePi0s_Final/dataOutput/PlotByPlotOutputNewLowerPtBound.csv')
+data = pd.read_csv('/Users/patsfan753/Desktop/Desktop/AnalyzePi0s_Final/dataOutput/PlotByPlotOutput.csv')
 
 # Dictionary to maintain the visibility state of different centrality categories in the plot
 centrality_visibility = {"60-100%": True, "40-60%": True, "20-40%": True, "0-20%": True}
