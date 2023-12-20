@@ -38,6 +38,7 @@ void Fun4All_CaloTreeGen(const string &inputFile,
   calo->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
   calo->set_clusterE_min(0.5);
   calo->set_cluster_chi_max(4);
+  calo->set_do_pi0_ana(false);
   se->registerSubsystem(calo);
 
   Fun4AllInputManager *in = new Fun4AllDstInputManager("DSTcalo");

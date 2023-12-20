@@ -231,6 +231,8 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
     hClusterPt->Fill(clus_pt);
     hClusterTime->Fill(clus_time);
 
+    if(!do_pi0_ana) continue;
+
     TLorentzVector photon1;
     photon1.SetPtEtaPhiE(clus_pt, clus_eta, clus_phi, clusE);
 

@@ -69,6 +69,10 @@ class caloTreeGen : public SubsysReco
       this->clus_chi_max = clus_chi_max;
     }
 
+    void set_do_pi0_ana(Bool_t do_pi0_ana = false) {
+      this->do_pi0_ana = do_pi0_ana;
+    }
+
   private:
 
     TNtuple *T;
@@ -122,9 +126,9 @@ class caloTreeGen : public SubsysReco
     TH2F* h2TowEtaPhiWeighted;
     TH2F* h2TotalMBDCaloE;
 
-    UInt_t bins_towE  = 800;
+    UInt_t bins_towE  = 1200;
     Float_t low_towE  = -50;
-    Float_t high_towE = 50;
+    Float_t high_towE = 100;
 
     UInt_t  bins_e   = 200;
     Float_t low_e    = 0;
@@ -158,12 +162,14 @@ class caloTreeGen : public SubsysReco
     Float_t low_totalmbd  = 0;
     Float_t high_totalmbd = 3000;
 
-    UInt_t  bins_totalcaloE = 1500;
+    UInt_t  bins_totalcaloE = 2000;
     Float_t low_totalcaloE  = 0;
-    Float_t high_totalcaloE = 1500;
+    Float_t high_totalcaloE = 2000;
 
     // Define PI0 Cuts
     Float_t clusE_min    = 1;
     Float_t clus_chi_max = 10;
+
+    Bool_t do_pi0_ana = false;
 };
 #endif
