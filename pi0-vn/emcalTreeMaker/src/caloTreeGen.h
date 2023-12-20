@@ -102,6 +102,7 @@ class caloTreeGen : public SubsysReco
     Float_t min_clusterPhi   = 9999;
     Float_t min_clusterPt    = 9999;
     Float_t min_clusterChi   = 9999;
+    Float_t min_totalCaloE   = 9999;
 
     Double_t max_towE        = 0;
     Float_t max_clusterECore = 0;
@@ -162,8 +163,8 @@ class caloTreeGen : public SubsysReco
     Float_t low_totalmbd  = 0;
     Float_t high_totalmbd = 3000;
 
-    UInt_t  bins_totalcaloE = 2000;
-    Float_t low_totalcaloE  = 0;
+    UInt_t  bins_totalcaloE = 2500;
+    Float_t low_totalcaloE  = -500;
     Float_t high_totalcaloE = 2000;
 
     // Define PI0 Cuts

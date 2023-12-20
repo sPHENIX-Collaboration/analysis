@@ -179,6 +179,7 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
   }
 
   max_totalCaloE = std::max(max_totalCaloE, totalCaloE);
+  min_totalCaloE = std::min(min_totalCaloE, totalCaloE);
   hTotalCaloE->Fill(totalCaloE);
 
   h2TotalMBDCaloE->Fill(totalCaloE/high_totalcaloE, totalMBD/high_totalmbd);
@@ -295,7 +296,7 @@ Int_t caloTreeGen::EndRun(const Int_t runnumber)
 Int_t caloTreeGen::End(PHCompositeNode *topNode)
 {
 
-  std::cout << "max totalCaloE: " << max_totalCaloE << std::endl;
+  std::cout << "min totalCaloE: " << min_totalCaloE << ", max totalCaloE: " << max_totalCaloE << std::endl;
   std::cout << "max totalmbd: " << max_totalmbd << std::endl;
   std::cout << "min tower energy: " << min_towE << ", max tower energy: " << max_towE << std::endl;
   std::cout << "min clusterECore: " << min_clusterECore << ", max clusterECore: " << max_clusterECore << std::endl;
