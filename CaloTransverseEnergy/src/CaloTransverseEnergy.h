@@ -28,6 +28,7 @@
 #include <fun4all/SubsysReco.h>
 #include <fun4all/Fun4AllBase.h>
 #include <fun4all/Fun4AllReturnCodes.h>
+#include <ffaobjects/EventHeaderv1.h>
 
 #include <Event/Event.h>
 #include <Event/EventTypes.h>
@@ -41,6 +42,7 @@
 #include <calobase/RawTowerDefs.h>
 #include <calobase/RawTowerGeomContainer.h>
 #include <calobase/RawTowerGeomContainer_Cylinderv1.h>
+
 #include <globalvertex/GlobalVertex.h>
 #include <globalvertex/GlobalVertexMap.h>
 #include <globalvertex/MbdVertexMapv1.h>
@@ -51,6 +53,16 @@
 #include <phool/phool.h>
 #include <phool/getClass.h>
 #include <phool/PHObject.h>
+
+#include <g4main/PHG4VtxPoint.h>
+#include <g4main/PHG4TruthInfoContainer.h>
+#include <g4main/PHG4Particle.h>
+#include <g4main/PHG4HitContainer.h>
+#include <g4main/PHG4Hit.h>
+
+#include <phhepmc/PHHepMCGenEvent.h>
+#include <phhepmc/PHHepMCGenEventMap.h>
+#include <HepMC/GenEvent.h>
 
 #define PI 3.1415926535
 
@@ -105,11 +117,11 @@ class CaloTransverseEnergy:public SubsysReco
 			:SubsysReco(name)
 		{
 			std::cout<<"Starting to process input file " <<inputfile <<std::endl;
-		/*	IHCALE=new TH1F("iHCal", "Total Transverse energy depositied in inner HCal; Energy #times percent of towers [GeV]", 400, 0, 401); 
-			OHCALE=new TH1F("oHCal", "Total Transverse energy depositied in outer HCal; Energy #times percent oftowers [GeV]", 400, 0,401); 
-		EMCALE=new TH1F("emCal", "Total Transverse energy depositied in EMCal; Energy #times percent of towers [GeV]", 400, 0, 401); 
+			IHCALE=new TH1F("iHCal", "Total Transverse energy depositied in inner HCal towers; Energy #times percent of towers [GeV]", 400, 0, 2); 
+			OHCALE=new TH1F("oHCal", "Total Transverse energy depositied in outer HCal towers; Energy #times percent oftowers [GeV]", 400, 0,2); 
+			EMCALE=new TH1F("emCal", "Transverse energy depositied in EMCal towers; Energy #times percent of towers [GeV]", 400, 0, 2); 
 			
-//			ETOTAL=new TH1F("total", "Total Transverse energy depositied in all Calorimeters; Energy [GeV]", 2500, 0, 2501); 
+/*			ETOTAL=new TH1F("total", "Total Transverse energy depositied in all Calorimeters; Energy [GeV]", 2500, 0, 2501); 
 			PhiD=new TH1F("phif", "Transverse energy deposited in #varphi; #varphi; Energy [GeV] ", 32, -0.1, 6.30);
 			EtaD=new TH1F("etaf", "Transverse energy depositied in #eta; #eta; Energy [GeV]", 24, -0.5, 23.5);
 			phis=new TH1F("phis", "N events in #varphi; #varphi", 32, -0.1, 6.31); 
@@ -137,29 +149,52 @@ class CaloTransverseEnergy:public SubsysReco
 			
 			etabin_hc=new TH1F("hceta", "#eta bin to #delta #eta width HCal; #eta_{bin};#delta #eta", 24, -0.5, 23.5);
 			phibin_hc=new TH1F("hcphi", "#varphi bin to #delta #varphi width HCal; #varphi_{bin}; #delta #varphi", 64, -0.5, 63.5);*/
+			z_vertex=new TH1F("z_vertex", "z vertex position; z [mm]", 100, -100, 100);
 			if(inputfile.find("prdf")==std::string::npos) isPRDF=false;
-			for(int i=0; i<20; i++){
+			if(run_number <1000) sim=true;
+			for(int i=0; i<10; i++){
 				plots* PLT=new plots;
-				int zb=3*i-30; 
+				plots* sPLT=new plots;
+				std::string rs=std::to_string(run_number);
+				if(sim) sPLT->ihcal->setSimulation(rs);
+				if(sim) sPLT->ohcal->setSimulation(rs);
+				if(sim) sPLT->em->setSimulation(rs);
+				if(sim) sPLT->total->setSimulation(rs);
+				int zb=6*i-30; 
 				PLT->zl=zb-30;
 				PLT->zh=zb+30;
+				sPLT->zh=zb+30;
+				sPLT->zl=zb-30;
 				std::cout<<"The lower value for z " <<PLT->zl <<std::endl;
 				PLT->em->UpdateZ(PLT->zl, PLT->zh);
 				PLT->ihcal->UpdateZ(PLT->zl, PLT->zh);
 				PLT->ohcal->UpdateZ(PLT->zl, PLT->zh);
 				PLT->total->UpdateZ(PLT->zl, PLT->zh);
 				zPLTS[zb]=PLT;
+				sPLT->em->UpdateZ(sPLT->zl, sPLT->zh);
+				sPLT->ihcal->UpdateZ(sPLT->zl, sPLT->zh);
+				sPLT->ohcal->UpdateZ(sPLT->zl, sPLT->zh);
+				sPLT->total->UpdateZ(sPLT->zl, sPLT->zh);
+				szPLTS[zb]=sPLT;
+				
 			}
+			
 			
 		};
 		~CaloTransverseEnergy(){};
 		int Init(PHCompositeNode *topNode) override; 
-		TH1F *IHCALE, *OHCALE, *EMCALE, *ETOTAL, *PhiD, *EtaD, *phis, *etas;
+		TH1F *IHCALE, *OHCALE, *EMCALE,  *z_vertex;
 		TH1F *ePhiD, *eEtaD, *ephis, *eetas;
 		TH1F *ihPhiD, *ihEtaD, *ohPhiD, *ohEtaD, *hphis, *hetas;
 		TH1F *etabin_em, *phibin_em, *etabin_hc, *phibin_hc;
 		TH2F *eep, *ohep, *ihep, *eeps, *oheps, *iheps, *tep, *teps;
-		std::map<int, plots*> zPLTS;
+		std::map<int, plots*> zPLTS, szPLTS;
+		std::vector<int> baryons{2212,2112,2224,2214,2114,1114,3122,3222,3212,3112,
+		      3224,3214,3114,3322,3312,3324,3314,3334,4122,4222,4212,4112,4224,4214,
+		      4114,4232,4312,4324,4314,4332,4334,4412,4422,4414,4424,4432,4434,4444,
+		      5122,5112,5212,5222,5114,5214,5224,5132,5232,5312,5322,5314,5324,5332,
+		      5334,5142,5242,5412,5422,5414,5424,5342,5432,5434,5442,5444,5512,5522,
+		      5514,5524,5532,5534,5542,5544,5554};
 		struct kinematics //just a basic kinematic cut, allow for cuts later, default to full acceptance
 			{
 				float phi_min=-PI;
@@ -190,7 +225,7 @@ class CaloTransverseEnergy:public SubsysReco
 		std::map<float, std::vector<float>> etphi, eteta, etephi, eteeta, ethphi, etheta; //angular energy distributions  
 		TNtuple *EtaPhi, *EMEtaPhi, *HEtaPhi;
 		int run_number=1, DST_Segment=0;
-		bool isPRDF=false;
+		bool isPRDF=false, sim=false;;
 };
 //Creates a huge list of plots procedurally, allowing for me to be properly lazy 
 //need to test implementation and check in rcalo values as of 4-12-2023
