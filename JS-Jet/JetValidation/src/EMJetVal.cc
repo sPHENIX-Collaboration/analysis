@@ -9,8 +9,9 @@
 #include <phool/PHCompositeNode.h>
 #include <phool/getClass.h>
 #include <jetbase/JetMap.h>
+#include <jetbase/JetContainer.h>
+//#include <jetbase/Jetv2.h>
 #include <jetbase/Jetv1.h>
-
 #include <centrality/CentralityInfo.h>
 #include <globalvertex/GlobalVertex.h>
 #include <globalvertex/GlobalVertexMap.h>
@@ -186,6 +187,8 @@ int EMJetVal::Init(PHCompositeNode *topNode)
   }
   */
 
+  std::cout << "finished declaring histos" << std::endl;
+
   return Fun4AllReturnCodes::EVENT_OK;
 }
 //____________________________________________________________________________..
@@ -207,7 +210,7 @@ int EMJetVal::InitRun(PHCompositeNode *topNode)
 //____________________________________________________________________________..
 int EMJetVal::process_event(PHCompositeNode *topNode)
 {
-  //std::cout << "EMJetVal::process_event(PHCompositeNode *topNode) Processing Event" << std::endl;
+  std::cout << "EMJetVal::process_event(PHCompositeNode *topNode) Processing Event " << m_event << std::endl;
   ++m_event;
 
   // interface to reco jets
