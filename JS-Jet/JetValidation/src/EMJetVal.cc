@@ -175,11 +175,11 @@ int EMJetVal::process_event(PHCompositeNode *topNode)
   ++m_event;
 
   // interface to reco jets
-  JetMap* jets = findNode::getClass<JetMap>(topNode, m_recoJetName);
+  JetContainer* jets = findNode::getClass<JetContainer>(topNode, m_recoJetName);
   if (!jets)
     {
       std::cout
-	<< "MyJetAnalysis::process_event - Error can not find DST Reco JetMap node "
+	<< "MyJetAnalysis::process_event - Error can not find DST Reco JetContainer node "
 	<< m_recoJetName << std::endl;
       exit(-1);
     }
@@ -195,7 +195,7 @@ int EMJetVal::process_event(PHCompositeNode *topNode)
     }
   
   // interface to jet seeds
-  JetMap* seedjetsraw = findNode::getClass<JetMap>(topNode, "AntiKt_TowerInfo_HIRecoSeedsRaw_r02");
+  JetContainer* seedjetsraw = findNode::getClass<JetContainer>(topNode, "AntiKt_TowerInfo_HIRecoSeedsRaw_r02");
   if (!seedjetsraw && m_doSeeds)
     {
       std::cout
@@ -204,7 +204,7 @@ int EMJetVal::process_event(PHCompositeNode *topNode)
       exit(-1);
     }
 
-  JetMap* seedjetssub = findNode::getClass<JetMap>(topNode, "AntiKt_TowerInfo_HIRecoSeedsSub_r02");
+  JetContainer* seedjetssub = findNode::getClass<JetContainer>(topNode, "AntiKt_TowerInfo_HIRecoSeedsSub_r02");
   if (!seedjetssub && m_doSeeds)
     {
       std::cout
@@ -263,10 +263,8 @@ int EMJetVal::process_event(PHCompositeNode *topNode)
       background_v2 = background->get_v2();
       background_Psi2 = background->get_Psi2();
     }
-  for (JetMap::Iter iter = jets->begin(); iter != jets->end(); ++iter)
+  for (auto jet : jets) //JetMap::Iter iter = jets->begin(); iter != jets->end(); ++iter)
     {
-
-      Jet* jet = iter->second;
       if(jet->get_pt() < 1) continue; // to remove noise jets
 
       m_id.push_back(jet->get_id());
@@ -315,14 +313,14 @@ int EMJetVal::process_event(PHCompositeNode *topNode)
 	  float totalE = 0;
 	  int nconst = 0;
 
-	  for (Jet::ConstIter comp = jet->begin_comp(); comp != jet->end_comp(); ++comp)
+	  for (auto comp : jet->get_comp_vec()) //Jet::ConstIter comp = jet->begin_comp(); comp != jet->end_comp(); ++comp)
 	    {
 	      particles.clear();
 	      TowerInfo *tower;
 	      nconst++;
-	      unsigned int channel = (*comp).second;
+	      unsigned int channel = comp.second;
 	      
-	      if ((*comp).first == 15 ||  (*comp).first == 30)
+	      if (comp.first == 15 || comp.first == 30)
 		{
 		  tower = towersIH3->get_tower_at_channel(channel);
 		  if(!tower || !tower_geom){
@@ -343,7 +341,7 @@ int EMJetVal::process_event(PHCompositeNode *topNode)
 		  totalPy += pt * sin(tower_phi);
 		  totalPz += pt * sinh(tower_eta);
 		}
-	      else if ((*comp).first == 16 || (*comp).first == 31)
+	      else if (comp.first == 16 || comp.first == 31)
 		{
 		  tower = towersOH3->get_tower_at_channel(channel);
 		  if(!tower || !tower_geomOH)
@@ -366,7 +364,7 @@ int EMJetVal::process_event(PHCompositeNode *topNode)
 		  totalPy += pt * sin(tower_phi);
 		  totalPz += pt * sinh(tower_eta);
 		}
-	      else if ((*comp).first == 14 || (*comp).first == 29)
+	      else if (comp.first == 14 || comp.first == 29)
 		{
 		  tower = towersEM3->get_tower_at_channel(channel);
 		  if(!tower || !tower_geom)
