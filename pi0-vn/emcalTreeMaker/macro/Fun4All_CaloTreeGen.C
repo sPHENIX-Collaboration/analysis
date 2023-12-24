@@ -27,18 +27,21 @@ using std::string;
 R__LOAD_LIBRARY(libfun4all.so)
 R__LOAD_LIBRARY(libcaloTreeGen.so)
 
-void Fun4All_CaloTreeGen(const string &inputFile,
-                         const string &qaFile = "qa.root",
-                         const string &ntpFile = "ntp.root",
-                         const int nEvents = 0) {
+void Fun4All_CaloTreeGen(const string  &inputFile,
+                         const string  &qaFile     = "qa.root",
+                         const string  &ntpFile    = "ntp.root",
+                         const Bool_t  doPi0Ana    = true,
+                         const Float_t clusE_min   = 0.5 /*GeV*/,
+                         const Float_t clusChi_max = 4,
+                         const UInt_t  nEvents     = 0) {
   Fun4AllServer *se = Fun4AllServer::instance();
   // recoConsts *rc = recoConsts::instance();
 
   caloTreeGen *calo = new caloTreeGen(qaFile.c_str(), ntpFile.c_str());
   calo->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
-  calo->set_clusterE_min(0.5);
-  calo->set_cluster_chi_max(4);
-  calo->set_do_pi0_ana(false);
+  calo->set_clusterE_min(clusE_min);
+  calo->set_cluster_chi_max(clusChi_max);
+  calo->set_do_pi0_ana(doPi0Ana);
   se->registerSubsystem(calo);
 
   Fun4AllInputManager *in = new Fun4AllDstInputManager("DSTcalo");
@@ -56,19 +59,25 @@ void Fun4All_CaloTreeGen(const string &inputFile,
 
 # ifndef __CINT__
 int main(int argc, char* argv[]) {
-    if(argc < 2 || argc > 5){
-        cout << "usage: ./bin/Fun4All_CaloTreeGen inputFile qaFile ntpFile events" << endl;
-        cout << "events: Number of events to analyze." << endl;
+    if(argc < 2 || argc > 8){
+        cout << "usage: ./bin/Fun4All_CaloTreeGen inputFile qaFile ntpFile doPi0Ana clusE_min clusChi_max events" << endl;
         cout << "inputFile: Location of fileList containing dst." << endl;
         cout << "qaFile: name of output file." << endl;
         cout << "ntpFile: name of output file." << endl;
+        cout << "doPi0Ana: Enable pi0 analysis (takes longer). Default: true" << endl;
+        cout << "clusE_min: Minimum cluster energy. Default: 0.5 GeV" << endl;
+        cout << "clusChi_max: Maximum cluster chi squared. Default: 4" << endl;
+        cout << "events: Number of events to analyze. Default: all" << endl;
         return 1;
     }
 
     string inputFile;
-    string qaFile = "qa.root";
-    string ntpFile = "ntp.root";
-    UInt_t events = 0;
+    string qaFile       = "qa.root";
+    string ntpFile      = "ntp.root";
+    Bool_t doPi0Ana     = true;
+    Float_t clusE_min   = 0.5;
+    Float_t clusChi_max = 4;
+    UInt_t events       = 0;
 
     if(argc >= 2) {
         inputFile = argv[1];
@@ -80,10 +89,19 @@ int main(int argc, char* argv[]) {
         ntpFile = argv[3];
     }
     if(argc >= 5) {
-        events = atoi(argv[4]);
+        doPi0Ana = atoi(argv[4]);
+    }
+    if(argc >= 6) {
+        clusE_min = atof(argv[5]);
+    }
+    if(argc >= 7) {
+        clusChi_max = atof(argv[6]);
+    }
+    if(argc >= 8) {
+        events = atoi(argv[7]);
     }
 
-    Fun4All_CaloTreeGen(inputFile, qaFile, ntpFile, events);
+    Fun4All_CaloTreeGen(inputFile, qaFile, ntpFile, doPi0Ana, clusE_min, clusChi_max, events);
 
     cout << "done" << endl;
     return 0;
