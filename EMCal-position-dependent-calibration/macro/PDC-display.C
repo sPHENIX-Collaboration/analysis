@@ -16,6 +16,9 @@ namespace myAnalysis {
     vector<TH1F*> hResponseEta;
     vector<TH1F*> hResponseCalibEta;
 
+    vector<TH1F*> hResponsePt;
+    vector<TH1F*> hResponseCalibPt;
+
     string outDir = "output/12-21-23";
     string inputFile1 = "data/test-3-5.root";
     string output1    = outDir + "/" + "fits-3-5.pdf";
@@ -27,6 +30,14 @@ namespace myAnalysis {
 
     Float_t min_mu = 9999;
     Float_t max_mu = 0;
+
+    UInt_t  bins_pt = 22;
+    Float_t low_pt  = 3;
+    Float_t high_pt = 25;
+
+    UInt_t  bins_eta = 10;
+    Float_t low_eta  = -1;
+    Float_t high_eta = 1;
 }
 
 Bool_t myAnalysis::fit(const string &name, const string& output, TFile* input, TCanvas* c, Float_t &mu, Float_t &mu_error) {
@@ -98,21 +109,32 @@ void myAnalysis::process() {
 
     hResponse       = new TH1F("hResponse", "Gaussian Fit E_{Core}/E_{Truth}; E_{Core}/E_{Truth}; Counts", 35, 0.99, 1.06);
     hResponseCalib  = new TH1F("hResponseCalib", "Gaussian Fit E_{Core}/E_{Truth}; E_{Core}/E_{Truth}; Counts", 35, 0.99, 1.06);
-    h2Response      = new TH2F("h2Response", "Gaussian Fit E_{Core}/E_{Truth}; p_{T}^{Truth} [GeV]; #eta_{Truth}", 22, 3, 25, 10, -1, 1);
-    h2ResponseCalib = new TH2F("h2ResponseCalib", "Gaussian Fit Calib E_{Core}/E_{Truth}; p_{T}^{Truth} [GeV]; #eta_{Truth}", 22, 3, 25, 10, -1, 1);
+    h2Response      = new TH2F("h2Response", "Gaussian Fit E_{Core}/E_{Truth}; p_{T}^{Truth} [GeV]; #eta_{Truth}", bins_pt, low_pt, high_pt, bins_eta, low_eta, high_eta);
+    h2ResponseCalib = new TH2F("h2ResponseCalib", "Gaussian Fit Calib E_{Core}/E_{Truth}; p_{T}^{Truth} [GeV]; #eta_{Truth}", bins_pt, low_pt, high_pt, bins_eta, low_eta, high_eta);
 
-    hResponseEta.push_back(new TH1F("hResponseEta_0", "Gaussian Fit E_{Core}/E_{Truth}, 3 GeV #leq p_{T}^{Truth} < 4 GeV; #eta_{Truth}; E_{Core}/E_{Truth}", 10, -1, 1));
-    hResponseCalibEta.push_back(new TH1F("hResponseCalibEta_0", "Gaussian Fit E_{Core}/E_{Truth}, 3 GeV #leq p_{T}^{Truth} < 4 GeV; #eta_{Truth}; E_{Core}/E_{Truth}", 10, -1, 1));
+    hResponseEta.push_back(new TH1F("hResponseEta_0", "Gaussian Fit E_{Core}/E_{Truth}, 3 GeV #leq p_{T}^{Truth} < 4 GeV; #eta_{Truth}; E_{Core}/E_{Truth}", bins_eta, low_eta, high_eta));
+    hResponseCalibEta.push_back(new TH1F("hResponseCalibEta_0", "Gaussian Fit E_{Core}/E_{Truth}, 3 GeV #leq p_{T}^{Truth} < 4 GeV; #eta_{Truth}; E_{Core}/E_{Truth}", bins_eta, low_eta, high_eta));
 
     for(UInt_t i = 10; i < 15; ++i) {
        string name   = "hResponseEta_" + to_string(i-9);
        string name2  = "hResponseCalibEta_" + to_string(i-9);
        string title  = "Gaussian Fit E_{Core}/E_{Truth}, " + to_string(i) + " GeV #leq p_{T}^{Truth} < " + to_string(i+1) + " GeV; #eta_{Truth}; E_{Core}/E_{Truth}";
-       hResponseEta.push_back(new TH1F(name.c_str(), title.c_str(), 10, -1, 1));
-       hResponseCalibEta.push_back(new TH1F(name2.c_str(), title.c_str(), 10, -1, 1));
+       hResponseEta.push_back(new TH1F(name.c_str(), title.c_str(), bins_eta, low_eta, high_eta));
+       hResponseCalibEta.push_back(new TH1F(name2.c_str(), title.c_str(), bins_eta, low_eta, high_eta));
+    }
+
+    stringstream s;
+    for(Int_t i = 0; i < bins_eta; ++i) {
+        s.str("");
+       string name   = "hResponsePt_" + to_string(i);
+       string name2  = "hResponseCalibPt_" + to_string(i);
+       s << "Gaussian Fit E_{Core}/E_{Truth}, " << -1+i*0.2 << " #leq #eta_{Truth} < " << -1+(i+1)*0.2 << "; p_{T}^{Truth} [GeV]; E_{Core}/E_{Truth}";
+       hResponsePt.push_back(new TH1F(name.c_str(), s.str().c_str(), bins_pt, low_pt, high_pt));
+       hResponseCalibPt.push_back(new TH1F(name2.c_str(), s.str().c_str(), bins_pt, low_pt, high_pt));
     }
 
     cout << "hResponseEta: " << hResponseEta.size() << ", hResponseCalibEta: " << hResponseCalibEta.size() << endl;
+    cout << "hResponsePt: " << hResponsePt.size() << ", hResponseCalibPt: " << hResponseCalibPt.size() << endl;
 
     c1->SetTickx();
     c1->SetTicky();
@@ -134,8 +156,9 @@ void myAnalysis::process() {
     Float_t mu       = 0;
     Float_t mu_error = 0;
 
-    for(UInt_t i = 0; i < 22; ++i) {
-        for(UInt_t j = 0; j < 10; ++j) {
+    for(UInt_t i = 0; i < bins_pt; ++i) {
+        UInt_t pt = i+3;
+        for(UInt_t j = 0; j < bins_eta; ++j) {
             string name = "response/hResponse_"+to_string(i)+"_"+to_string(j);
             Bool_t fitStatus = fit(name, output1, input1, c1, mu, mu_error);
 
@@ -145,10 +168,13 @@ void myAnalysis::process() {
                 h2Response->SetBinError(i+1, j+1, mu_error);
                 hResponse->Fill(mu);
 
-                if(i+3 == 3 /*3 to 4 GeV bin*/) {
+                if(pt == 3 /*3 to 4 GeV bin*/) {
                     hResponseEta[0]->SetBinContent(j+1, mu);
                     hResponseEta[0]->SetBinError(j+1, mu_error);
                 }
+
+                hResponsePt[j]->SetBinContent(i+1, mu);
+                hResponsePt[j]->SetBinError(i+1, mu_error);
             }
 
             fitStatus = fit(name, output2, input2, c2, mu, mu_error);
@@ -159,10 +185,13 @@ void myAnalysis::process() {
                 h2Response->SetBinError(i+1, j+1, mu_error);
                 hResponse->Fill(mu);
 
-                if(i+3 >= 10 && i+3 < 15) {
-                    hResponseEta[i+3-9]->SetBinContent(j+1, mu);
-                    hResponseEta[i+3-9]->SetBinError(j+1, mu_error);
+                if(pt >= 10 && pt < 15) {
+                    hResponseEta[pt-9]->SetBinContent(j+1, mu);
+                    hResponseEta[pt-9]->SetBinError(j+1, mu_error);
                 }
+
+                hResponsePt[j]->SetBinContent(i+1, mu);
+                hResponsePt[j]->SetBinError(i+1, mu_error);
             }
 
             name = "response_calib/hResponseCalib_"+to_string(i)+"_"+to_string(j);
@@ -178,6 +207,9 @@ void myAnalysis::process() {
                     hResponseCalibEta[0]->SetBinContent(j+1, mu);
                     hResponseCalibEta[0]->SetBinError(j+1, mu_error);
                 }
+
+                hResponseCalibPt[j]->SetBinContent(i+1, mu);
+                hResponseCalibPt[j]->SetBinError(i+1, mu_error);
             }
 
             fitStatus = fit(name, output2, input2, c2, mu, mu_error);
@@ -192,6 +224,9 @@ void myAnalysis::process() {
                     hResponseCalibEta[i+3-9]->SetBinContent(j+1, mu);
                     hResponseCalibEta[i+3-9]->SetBinError(j+1, mu_error);
                 }
+
+                hResponseCalibPt[j]->SetBinContent(i+1, mu);
+                hResponseCalibPt[j]->SetBinError(i+1, mu_error);
             }
         }
     }
@@ -260,6 +295,26 @@ void myAnalysis::process() {
 
         c2->Print((output3).c_str(), "pdf portrait");
         c2->Print((outDir + "/hResponseEta_" + to_string(i) + ".png").c_str());
+    }
+
+    for(UInt_t i = 0; i < bins_eta; ++i) {
+        legend = new TLegend(0.7,0.78,0.94,0.9);
+        hResponsePt[i]->SetStats(0);
+        hResponsePt[i]->SetLineColor(kBlue);
+        hResponsePt[i]->GetYaxis()->SetRangeUser(0.98,1.07);
+        legend->AddEntry(hResponsePt[i],"Uncalibrated", "PE");
+        hResponsePt[i]->Draw("PE");
+
+        hResponseCalibPt[i]->SetStats(0);
+        hResponseCalibPt[i]->SetLineColor(kRed);
+        legend->AddEntry(hResponseCalibPt[i],"Calibrated", "PE");
+        hResponseCalibPt[i]->Draw("same PE");
+
+        legend->SetTextSize(0.05);
+        legend->Draw("same");
+
+        c2->Print((output3).c_str(), "pdf portrait");
+        c2->Print((outDir + "/hResponsePt_" + to_string(i) + ".png").c_str());
     }
 
     c2->Print((output3 + "]").c_str(), "pdf portrait");
