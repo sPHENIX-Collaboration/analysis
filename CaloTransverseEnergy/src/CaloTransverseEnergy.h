@@ -1,5 +1,7 @@
 #ifndef __CALOTRANSVERSEENERGY_H__
 #define __CALOTRANSVERSEENERGY_H__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 //Root includes
 #include <TTree.h>
 #include <TH1.h>
@@ -225,7 +227,7 @@ class CaloTransverseEnergy:public SubsysReco
 		std::map<float, std::vector<float>> etphi, eteta, etephi, eteeta, ethphi, etheta; //angular energy distributions  
 		TNtuple *EtaPhi, *EMEtaPhi, *HEtaPhi;
 		int run_number=1, DST_Segment=0;
-		bool isPRDF=false, sim=false;;
+		bool isPRDF=false, sim=false;
 };
 //Creates a huge list of plots procedurally, allowing for me to be properly lazy 
 //need to test implementation and check in rcalo values as of 4-12-2023

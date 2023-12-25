@@ -146,7 +146,7 @@ class caloplots
 			
 			ET_z=new TH1F(Form("ET_z_%s_z_%d", calo.c_str(), z_lab), Form("E_{T}(z) in %s with vertex z=%f; z; #E_{T} [GeV]",calo.c_str(),z), 40, zmin,zmax);
 
-			dET=new TH1F(Form("dET_%s_z_%d", calo.c_str(), z_lab), Form("#frac{dE_{T}}{d#eta} in %s with vertex z=%f; #frac{dE_{T}}{d#eta} [GeV]",calo.c_str(),z), 1000, 0.5, 1000.5);
+			dET=new TH1F(Form("dET_%s_z_%d", calo.c_str(), z_lab), Form("#frac{dE_{T}}{d#eta} in %s with vertex z=%f; #frac{dE_{T}}{d#eta} [GeV]",calo.c_str(),z), 1000, -0.5, 1000.5);
 			acceptance_eta=new TH1F(Form("acceptance_%s_z_%d", calo.c_str(), z_lab), Form("Acceptance in physical #eta slice in %s with vertex z=%f; #eta; percent towers responding", calo.c_str(),z), etabins, etamin, etamax);
 			phi=new TH1F(Form("phi_%s_z_%d", calo.c_str(), z_lab), Form("Hit distribution in #varphi_{bin} in %s with vertex z=%f; #varphi_{bin}; N_{Hits}", calo.c_str(), z), phibins, -0.5, phibins-0.5);
 			eta=new TH1F(Form("eta_%s_z_%d", calo.c_str(), z_lab), Form("Hit distribution in physical #eta_{bin} in %s with vertex z=%f; #eta_{bin}; N_{Hits}", calo.c_str(), z), etabins, -0.5, etabins-0.5);

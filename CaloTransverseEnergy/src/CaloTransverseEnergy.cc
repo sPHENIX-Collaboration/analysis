@@ -104,29 +104,30 @@ int CaloTransverseEnergy::process_event(PHCompositeNode *topNode)
 			n_evt--;
 			return 1;}
 	//	std::cout<<"Found energy"<<std::endl;
-		if(sim){
+	/*	if(sim){
 			try{
-				PHHepMCGenEventMap *phg=findNode::getClass<PHHepMCGeEventMap>(topNode, "PHHepMCGenEventMap");
-				EventHEaderv1 *evthead=findNode::getClass<EventHeaderv1>(topNode, "EventHeader");
+				PHHepMCGenEventMap *phg=findNode::getClass<PHHepMCGenEventMap>(topNode, "PHHepMCGenEventMap");
+				//EventHeaderv1 *evthead=findNode::getClass<EventHeaderv1>(topNode, "EventHeader");
 				PHG4TruthInfoContainer *truthinfo = findNode::getClass<PHG4TruthInfoContainer>(topNode, "G4TruthInfo");
 				std::map<std::string, std::vector<float>> hep_map;
-				for(PHHepMCGeEventMap::ConstIter eventIter=phg->begin(); eventIter != phg->end(); ++eventIter){
+				for(PHHepMCGenEventMap::ConstIter eventIter=phg->begin(); eventIter != phg->end(); ++eventIter){
 					PHHepMCGenEvent * hpev=eventIter->second;
 					if(hpev && hpev->get_embedding_id() == 0){
 						HepMC::GenEvent *truthevent =hpev->getEvent();		
-						if(!truthevt) return 1;
+						PHHepMCGenEvent *phe=phg->get(0);
+						hep_map["VTX_Z"].push_back(phe->get_collision_vertex().z());
+						if(!truthevent) return 1;
 						for(HepMC::GenEvent::particle_const_iterator iter = truthevent->particles_begin(); iter != truthevent ->particles_end(); ++iter){
 							if(!(*iter)->end_vertex() && (*iter)->status() ==1){
-								hep_map["Energy"]=(*iter)->momentum().e();
+								hep_map["Energy"].push_back((*iter)->momentum().e());
 								double px=(*iter)->momentum().px();
-								double py=(*iter)->momenutm().py();
+								double py=(*iter)->momentum().py();
 								double pz=(*iter)->momentum().pz();
 								hep_map["PT"].push_back(sqrt(px*px+py*py));
 								hep_map["PZ"].push_back(pz);
 								hep_map["phi"].push_back(atan2(py, px));
-								hep_map["eta"].push_back(asinh(pz/hep_map["PZ"].back());
+								hep_map["eta"].push_back(asinh(pz/hep_map["PZ"].back()));
 								hep_map["ID"].push_back((*iter)->pdg_id());
-								hep_map["VTX_Z"].push_back((*iter)->get_collison_vertex().z());
 							}
 						}
 						break;
@@ -146,13 +147,13 @@ int CaloTransverseEnergy::process_event(PHCompositeNode *topNode)
 				{
 					float pmass = 0.938272;
 					const PHG4Particle* truth=iter->second;
-					if(!truthinfo->is_pripary(truth)) continue;
+					if(!truthinfo->is_primary(truth)) continue;
 					float pt=sqrt(pow(truth->get_px(),2) + pow(truth->get_py(),2));
 					float pz=truth->get_pz()+hep_map["VTX_Z"].at(0);
 					float E, ps=pow(pt,2)+pow(pz,2);
 					std::vector<int>::iterator parit =std::find(baryons.begin(), baryons.end(), truth->get_pid());
 					std::vector<int>::iterator aparit =std::find(baryons.begin(), baryons.end(), -truth->get_pid());
-					if(partit !=baryons.end()){
+					if(parit !=baryons.end()){
 						E=truth->get_e() -sqrt(pow(truth->get_e(),2)-ps);
 					}
 					else if(aparit != baryons.end()) E=truth->get_e() -sqrt(pow(truth->get_e(),2)-ps)+2*pmass;
@@ -176,11 +177,13 @@ int CaloTransverseEnergy::process_event(PHCompositeNode *topNode)
 					szPLTS[zbin]->total->Hits2D->Fill(eta, phi);
 				
 				}
-				for(auto E:truth_event_e) szPLTS[E->first]->total->Energy->Fill(E->second);
-				for(auto E:evt_ETe) szPLTS[E->first]->total->ET->Fill(E->second);
+				for(auto E:truth_event_e) szPLTS[E.first]->total->Energy->Fill(E.second);
+				for(auto E:evt_ET) szPLTS[E.first]->total->ET->Fill(E.second);
 				
 			}
-		}
+			catch(std::exception& e){ return 1;}
+		}*/
+	}
 	float emcaltotal=GetTotalEnergy(emcalenergy_vec,1)/2.26; //not sure about the calibration factor, need to check
 	float ihcalcalib=1, ohcalcalib=1;
 //	if(isPRDF){
@@ -245,7 +248,7 @@ void CaloTransverseEnergy::processDST(TowerInfoContainerv2* calo_event, TowerInf
 		//TowerInfov1* tower=calo_event->get_tower_at_channel(i);
 		float energy1=tower->get_energy();
 		if(hcalorem && inner) PLTS->ihcal->E_f->Fill(energy1);
-		else if(hcalorm) PLTS->ohcal->E_f->Fill(energy1);
+		else if(hcalorem) PLTS->ohcal->E_f->Fill(energy1);
 		else PLTS->em->E_f->Fill(energy1);
 		PLTS->total->E_f->Fill(energy1);
 //		if(!hcalorem) std::cout<<"energy is " <<energy1 <<std::endl;
@@ -279,7 +282,7 @@ void CaloTransverseEnergy::processDST(TowerInfoContainerv2* calo_event, TowerInf
 		//assert(towergeom);
 		if(energy1 <= 0){continue;}
 		if(hcalorem && inner) PLTS->ihcal->E_s->Fill(energy1);
-		else if(hcalorm) PLTS->ohcal->E_s->Fill(energy1);
+		else if(hcalorem) PLTS->ohcal->E_s->Fill(energy1);
 		else PLTS->em->E_s->Fill(energy1);
 		PLTS->total->E_s->Fill(energy1);
 		n_live_towers++;
@@ -563,9 +566,9 @@ void CaloTransverseEnergy::ProduceOutput()
 	PLTS->em->getAcceptance();
 	PLTS->ihcal->getAcceptance();
 	PLTS->ohcal->getAcceptance();
-	PLTS->em->scaleThePlots(n_evt, PLTS->event_data);
-	PLTS->ihcal->scaleThePlots(n_evt, PLTS->event_data);
-	PLTS->ohcal->scaleThePlots(n_evt, PLTS->event_data);
+	PLTS->em->scaleThePlots(n_evt, &PLTS->event_data);
+	PLTS->ihcal->scaleThePlots(n_evt, &PLTS->event_data);
+	PLTS->ohcal->scaleThePlots(n_evt, &PLTS->event_data);
 	for(auto data_point:PLTS->event_data){
 		float total_val=0;
 		total_val+=data_point["EMCAL"];
@@ -595,8 +598,8 @@ void CaloTransverseEnergy::ProduceOutput()
 	for(auto h:PLTS->total->hists_2)h->Write();
 	}
 	for(auto p:szPLTS){
-		plots* pts=p->second;
-		pts->total->ScaleThePlots(n_evts, pts->event_data);
+		plots* pts=p.second;
+		pts->total->scaleThePlots(n_evt, &pts->event_data);
 		for(auto h:pts->total->hists_1) h->Write();
 		for(auto h:pts->total->hists_2) h->Write();
 	}
