@@ -18,6 +18,7 @@ copy_to   = "/sphenix/user/danderson/sphenix/analysis/AndersonAnalysisModules/Co
 # what files to copy
 to_copy = [
   "README.md",
+  "Fun4All_RunCorrelatorQAModules.C",
   "scripts/copy-to-analysis.rb",
   "scripts/wipe-source.sh",
   "scripts/RunSigmaDcaCalculation.sh",
