@@ -4,13 +4,18 @@ export LOGNAME=${USER}
 export HOME=/sphenix/u/${LOGNAME}
 export MYINSTALL="$HOME/Documents/sPHENIX/install"
 
-source /opt/sphenix/core/bin/sphenix_setup.sh -n ana.354
+source /opt/sphenix/core/bin/sphenix_setup.sh -n new
 source /opt/sphenix/core/bin/setup_local.sh $MYINSTALL
 
-tag=$1
-initialSeed=$2
-seed=$(($tag+$initialSeed))
-jobs=$3
+exe=${1}
+events=${2}
+seed=${3}
+outDir=${4}
+tag=${5}
+outputFile=${6}
 
-# root -b -l -q "Fun4All_G4_sPHENIX.C($jobs, $seed, ".", "$tag")"
-Fun4All_G4_sPHENIX $jobs $seed "." $tag
+# print the environment - needed for debugging
+printenv
+
+mkdir -p $outDir
+$exe $events $seed $outDir $tag $outputFile

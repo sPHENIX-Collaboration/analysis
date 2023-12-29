@@ -18,10 +18,6 @@
 #include <g4main/PHG4Reco.h>
 #include <g4main/PHG4Utils.h>
 
-#include <caloreco/DeadHotMapLoader.h>
-#include <caloreco/RawTowerDeadTowerInterp.h>
-#include <caloreco/RawClusterDeadHotMask.h>
-#include <caloreco/TowerInfoDeadHotMask.h>
 #include <caloreco/RawClusterBuilderGraph.h>
 #include <caloreco/RawClusterBuilderTemplate.h>
 #include <caloreco/RawClusterPositionCorrection.h>
@@ -248,15 +244,10 @@ void CEMC_Towers()
   sampling_fraction = 2e-02;                 // 2017 Tilt porjective SPACAL, tower-by-tower calibration
   const double photoelectron_per_GeV = 500;  // 500 photon per total GeV deposition
 
-  DeadHotMapLoader *DeadTowerMap = new DeadHotMapLoader("CEMC");
-  se->registerSubsystem(DeadTowerMap);
-
   RawTowerDigitizer *TowerDigitizer = new RawTowerDigitizer("EmcRawTowerDigitizer");
   TowerDigitizer->Detector("CEMC");
   TowerDigitizer->Verbosity(verbosity);
   TowerDigitizer->set_digi_algorithm(G4CEMC::TowerDigi);
-  std::cout << "G4CEMC::TowerDigi: " << G4CEMC::TowerDigi << std::endl;
-  std::cout << "RawTowerDigitizer::kNo_digitization: " << RawTowerDigitizer::kNo_digitization << std::endl;
   TowerDigitizer->set_variable_pedestal(true);  // read ped central and width from calibrations file comment next 2 lines if true
                                                 //   TowerDigitizer->set_pedstal_central_ADC(0);
                                                 //   TowerDigitizer->set_pedstal_width_ADC(8);  // eRD1 test beam setting
@@ -280,8 +271,6 @@ void CEMC_Towers()
   TowerCalibration->Detector("CEMC");
   TowerCalibration->Verbosity(verbosity);
   if (!Enable::CEMC_G4Hit) TowerCalibration->set_towerinfo(RawTowerCalibration::ProcessTowerType::kTowerInfoOnly);  // just use towerinfo
-  std::cout << "G4CEMC::TowerDigi: " << G4CEMC::TowerDigi << std::endl;
-  std::cout << "RawTowerDigitizer::kNo_digitization: " << RawTowerDigitizer::kNo_digitization << std::endl;
   if (G4CEMC::TowerDigi == RawTowerDigitizer::kNo_digitization)
   {
     // just use sampling fraction set previously
@@ -306,14 +295,6 @@ void CEMC_Towers()
   }
   se->registerSubsystem(TowerCalibration);
 
-  // RawTowerDeadTowerInterp *towerInterp = new RawTowerDeadTowerInterp("TowerInterp");
-  // towerInterp->detector("CEMC");
-  // towerInterp->Verbosity(10);
-  // se->registerSubsystem(towerInterp);
-
-  TowerInfoDeadHotMask *towerInfoMask = new TowerInfoDeadHotMask("towerInfoMask");
-  towerInfoMask->detector("CEMC");
-  se->registerSubsystem(towerInfoMask);
   return;
 }
 
@@ -381,6 +362,11 @@ void CEMC_Eval(const std::string &outputfile)
 
   CaloEvaluator *eval = new CaloEvaluator("CEMCEVALUATOR", "CEMC", outputfile);
   eval->Verbosity(verbosity);
+  eval->set_do_gpoint_eval(false);
+  eval->set_do_gshower_eval(false);
+  eval->set_do_tower_eval(false);
+  // set minimum cluster energy
+  eval->set_reco_tracing_energy_threshold(0.5);
   se->registerSubsystem(eval);
 
   return;

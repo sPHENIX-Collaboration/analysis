@@ -26,7 +26,7 @@ using std::map;
 
 #include <DisplayOn.C>
 #include "G4Setup_sPHENIX.C"
-#include <G4_Bbc.C>
+#include <G4_Mbd.C>
 #include <G4_CaloTrigger.C>
 #include <G4_Centrality.C>
 #include <G4_DSTReader.C>
@@ -74,12 +74,12 @@ int Fun4All_G4_sPHENIX(
     const string &outdir = ".",
     const string &tag = "0",
     const string &outputFile = "G4sPHENIX.root",
-    const float eta_min = 0,
-    const float eta_max = 1.152,
-    const float phi_min = -M_PI/32-0.05,
-    const float phi_max = M_PI/32+0.05,
-    const float p_min = 20,
-    const float p_max = 21,
+    const Double_t eta_min = -1.152,
+    const Double_t eta_max = 1.152,
+    const Double_t phi_min = -M_PI,
+    const Double_t phi_max = M_PI,
+    const Double_t p_min = 20,
+    const Double_t p_max = 21,
     const string &inputFile = "https://www.phenix.bnl.gov/WWW/publish/phnxbld/sPHENIX/files/sPHENIX_G4Hits_sHijing_9-11fm_00000_00010.root",
     const string &embed_input_file = "https://www.phenix.bnl.gov/WWW/publish/phnxbld/sPHENIX/files/sPHENIX_G4Hits_sHijing_9-11fm_00000_00010.root",
     const int skip = 0)
@@ -162,6 +162,8 @@ int Fun4All_G4_sPHENIX(
   //  Input::GUN_NUMBER = 3; // if you need 3 of them
   // Input::GUN_VERBOSITY = 1;
 
+  // Input::COSMIC = true;
+
   //D0 generator
   //Input::DZERO = false;
   //Input::DZERO_VERBOSITY = 0;
@@ -175,9 +177,24 @@ int Fun4All_G4_sPHENIX(
 
   //  Input::HEPMC = true;
   INPUTHEPMC::filename = inputFile;
+  //-----------------
+  // Hijing options (symmetrize hijing, add flow, add fermi motion)
+  //-----------------
+  //  INPUTHEPMC::HIJINGFLIP = true;
+  //  INPUTHEPMC::FLOW = true;
+  //  INPUTHEPMC::FLOW_VERBOSITY = 3;
+  //  INPUTHEPMC::FERMIMOTION = true;
+
 
   // Event pile up simulation with collision rate in Hz MB collisions.
-  //Input::PILEUPRATE = 100e3;
+  //Input::PILEUPRATE = 50e3; // 50 kHz for AuAu
+  //Input::PILEUPRATE = 3e6; // 3MHz for pp
+
+  // Enable this is emulating the nominal pp/pA/AA collision vertex distribution
+  // for HepMC records (hijing, pythia8)
+  //  Input::BEAM_CONFIGURATION = Input::AA_COLLISION; // for 2023 sims we want the AA geometry for no pileup sims
+  //  Input::BEAM_CONFIGURATION = Input::pp_COLLISION; // for 2024 sims we want the pp geometry for no pileup sims
+  //  Input::BEAM_CONFIGURATION = Input::pA_COLLISION; // for pAu sims we want the pA geometry for no pileup sims
 
   //-----------------
   // Initialize the selected Input/Event generation
@@ -211,19 +228,8 @@ int Fun4All_G4_sPHENIX(
       INPUTGENERATOR::SimpleEventGenerator[0]->set_vertex_distribution_mean(0., 0., 0.);
       INPUTGENERATOR::SimpleEventGenerator[0]->set_vertex_distribution_width(0.01, 0.01, 5.);
     }
-    // generation in one sector
     INPUTGENERATOR::SimpleEventGenerator[0]->set_eta_range(eta_min, eta_max);
     INPUTGENERATOR::SimpleEventGenerator[0]->set_phi_range(phi_min, phi_max);
-
-    // for testing use full range, all sectors
-    // INPUTGENERATOR::SimpleEventGenerator[0]->set_eta_range(-1.152, 1.152);
-    // INPUTGENERATOR::SimpleEventGenerator[0]->set_phi_range(-M_PI, M_PI);
-
-    // Train
-    // INPUTGENERATOR::SimpleEventGenerator[0]->set_pt_range(20, 21.);
-
-    // Test
-    // INPUTGENERATOR::SimpleEventGenerator[0]->set_pt_range(pt_min, pt_max);
     INPUTGENERATOR::SimpleEventGenerator[0]->set_p_range(p_min, p_max);
   }
   // Upsilons
@@ -346,10 +352,10 @@ int Fun4All_G4_sPHENIX(
   //  Enable::OVERLAPCHECK = true;
   //  Enable::VERBOSITY = 1;
 
-  // Enable::BBC = true;
-  // Enable::BBC_SUPPORT = true; // save hist in bbc support structure
-  // Enable::BBCRECO = Enable::BBC && true
-  Enable::BBCFAKE = true;  // Smeared vtx and t0, use if you don't want real BBC in simulation
+  // Enable::MBD = true;
+  // Enable::MBD_SUPPORT = true; // save hist in MBD/BBC support structure
+  // Enable::MBDRECO = Enable::MBD && true;
+  Enable::MBDFAKE = true;  // Smeared vtx and t0, use if you don't want real MBD/BBC in simulation
 
   Enable::PIPE = true;
   Enable::PIPE_ABSORBER = true;
@@ -379,7 +385,8 @@ int Fun4All_G4_sPHENIX(
   Enable::MICROMEGAS_QA = Enable::MICROMEGAS_CLUSTER && Enable::QA && true;
 
   Enable::TRACKING_TRACK = (Enable::MICROMEGAS_CLUSTER && Enable::TPC_CLUSTER && Enable::INTT_CLUSTER && Enable::MVTX_CLUSTER) && true;
-  Enable::TRACKING_EVAL = Enable::TRACKING_TRACK && true;
+  Enable::GLOBAL_RECO = (Enable::MBDFAKE || Enable::MBDRECO || Enable::TRACKING_TRACK) && true;
+  Enable::TRACKING_EVAL = Enable::TRACKING_TRACK && Enable::GLOBAL_RECO && true;
   Enable::TRACKING_QA = Enable::TRACKING_TRACK && Enable::QA && true;
 
   // only do track matching if TRACKINGTRACK is also used
@@ -439,8 +446,7 @@ int Fun4All_G4_sPHENIX(
   //Enable::PLUGDOOR = true;
   Enable::PLUGDOOR_ABSORBER = true;
 
-  Enable::GLOBAL_RECO = (Enable::BBCFAKE || Enable::TRACKING_TRACK) && true;
-  //Enable::GLOBAL_FASTSIM = true;
+ //Enable::GLOBAL_FASTSIM = true;
 
   //Enable::KFPARTICLE = true;
   //Enable::KFPARTICLE_VERBOSITY = 1;
@@ -519,7 +525,7 @@ int Fun4All_G4_sPHENIX(
   // Detector Division
   //------------------
 
-  if ((Enable::BBC && Enable::BBCRECO) || Enable::BBCFAKE) Bbc_Reco();
+  if ((Enable::MBD && Enable::MBDRECO) || Enable::MBDFAKE) Mbd_Reco();
 
   if (Enable::MVTX_CELL) Mvtx_Cells();
   if (Enable::INTT_CELL) Intt_Cells();
@@ -800,12 +806,12 @@ int main(int argc, char* argv[]) {
      string outdir = ".";
      string tag = "0";
      string outputFile = "G4sPHENIX.root";
-     float eta_min = 0;
-     float eta_max = 1.152;
-     float phi_min = -M_PI/32-0.02;
-     float phi_max = M_PI/32+0.02;
-     float p_min = 20;
-     float p_max = 21;
+     Double_t eta_min = -1.152;
+     Double_t eta_max = 1.152;
+     Double_t phi_min = -M_PI;
+     Double_t phi_max = M_PI;
+     Double_t p_min = 20;
+     Double_t p_max = 21;
      string inputFile = "https://www.phenix.bnl.gov/WWW/publish/phnxbld/sPHENIX/files/sPHENIX_G4Hits_sHijing_9-11fm_00000_00010.root";
      string embed_input_file = "https://www.phenix.bnl.gov/WWW/publish/phnxbld/sPHENIX/files/sPHENIX_G4Hits_sHijing_9-11fm_00000_00010.root";
      int skip = 0;

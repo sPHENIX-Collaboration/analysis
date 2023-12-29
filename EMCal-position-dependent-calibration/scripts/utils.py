@@ -14,14 +14,13 @@ hadd       = subparser.add_parser('hadd', help='Merge completed condor jobs.')
 validation = subparser.add_parser('vd', help='Create condor submission directory for validation.')
 
 create.add_argument('-e', '--executable', type=str, default='scripts/genFun4All.sh', help='Job script to execute. Default: scripts/genFun4All.sh')
-create.add_argument('-a', '--macros', type=str, default='current/macro', help='Directory of input macros. Directory containing Fun4All_G4_sPHENIX.C and G4Setup_sPHENIX.C. Default: current/macro')
-create.add_argument('-b', '--bin-dir', type=str, default='current/bin', help='Directory containing Fun4All_G4_sPHENIX executable. Default: current/bin')
-create.add_argument('-n', '--events', type=int, default=1, help='Number of events to generate. Default: 1.')
+create.add_argument('-b', '--f4a', type=str, default='macro/new/Fun4All_G4_sPHENIX', help='Fun4All_G4_sPHENIX executable. Default: macro/new/Fun4all_G4_sPHENIX')
+create.add_argument('-n', '--jobs', type=int, default=1, help='Number jobs to submit. Default: 1.')
 create.add_argument('-d', '--output', type=str, default='test', help='Output Directory. Default: Current Directory.')
-create.add_argument('-m', '--jobs-per-submission', type=int, default=20000, help='Maximum number of jobs per condor submission. Default: 20000.')
+# create.add_argument('-m', '--jobs-per-submission', type=int, default=20000, help='Maximum number of jobs per condor submission. Default: 20000.')
 create.add_argument('-j', '--events-per-job', type=int, default=100, help='Number of events to generate per job. Default: 100.')
-create.add_argument('-s', '--memory', type=int, default=6, help='Memory (units of GB) to request per condor submission. Default: 6 GB.')
-create.add_argument('-u', '--build-tag', type=str, default='unknown', help='Specify build tag. Ex: ana.xxx, Default: unknown')
+create.add_argument('-s', '--memory', type=int, default=3, help='Memory (units of GB) to request per condor submission. Default: 3 GB.')
+create.add_argument('-l', '--log', type=str, default='/tmp/anarde/dump/job-$(ClusterId)-$(Process).log', help='Condor log file.')
 
 status.add_argument('-d','--condor-dir', type=str, help='Condor submission directory.', required=True)
 
@@ -41,87 +40,49 @@ validation.add_argument('-l', '--log', type=str, default='/tmp/anarde/dump/job-$
 args = parser.parse_args()
 
 def create_jobs():
-    events              = args.events
-    jobs_per_submission = args.jobs_per_submission
-    output_dir          = os.path.realpath(args.output)
-    bin_dir             = os.path.realpath(args.bin_dir)
+    jobs                = min(20000, args.jobs) # condor only accepts 20000 jobs per submission
+    events_per_job      = args.events_per_job
+    events              = jobs*events_per_job
     executable          = os.path.realpath(args.executable)
-    events_per_job      = min(args.events_per_job, events)
+    f4a                 = os.path.realpath(args.f4a)
+    output_dir          = os.path.realpath(args.output)
     memory              = args.memory
-    macros_dir          = os.path.realpath(args.macros)
-    jobs                = events//events_per_job
-    submissions         = int(np.ceil(jobs/jobs_per_submission))
-    tag                 = args.build_tag
+    log                 = args.log
 
-    print(f'Events: {events}')
-    print(f'Events per job: {events_per_job}')
     print(f'Jobs: {jobs}')
-    print(f'Maximum jobs per condor submission: {jobs_per_submission}')
-    print(f'Submissions: {submissions}')
+    print(f'Events per job: {events_per_job}')
+    print(f'Events: {events}')
     print(f'Requested memory per job: {memory}GB')
     print(f'Output Directory: {output_dir}')
-    print(f'Macros Directory: {macros_dir}')
-    print(f'Bin Directory: {bin_dir}')
     print(f'Executable: {executable}')
-    print(f'Build Tag: {tag}')
+    print(f'f4a: {f4a}')
+    print(f'Condor log file: {log}')
 
     os.makedirs(output_dir,exist_ok=True)
+    shutil.copy(executable, output_dir)
+    shutil.copy(f4a, output_dir)
+
+    os.makedirs(f'{output_dir}/stdout',exist_ok=True)
+    os.makedirs(f'{output_dir}/error',exist_ok=True)
+    os.makedirs(f'{output_dir}/output',exist_ok=True)
+
+    with open(f'{output_dir}/genFun4All.sub', mode="w") as file:
+        file.write(f'executable     = {os.path.basename(executable)}\n')
+        file.write(f'arguments      = {output_dir}/{os.path.basename(f4a)} {events_per_job} 0 output $(Process) test.root\n')
+        file.write(f'log            = {log}\n')
+        file.write( 'output         = stdout/job-$(Process).out\n')
+        file.write( 'error          = error/job-$(Process).err\n')
+        file.write(f'request_memory = {memory}GB\n')
+        file.write(f'queue {jobs}')
+
     with open(f'{output_dir}/log.txt', mode='w') as file:
         file.write(f'Events: {events}\n')
         file.write(f'Events per job: {events_per_job}\n')
         file.write(f'Jobs: {jobs}\n')
-        file.write(f'Maximum jobs per condor submission: {jobs_per_submission}\n')
-        file.write(f'Submissions: {submissions}\n')
         file.write(f'Requested memory per job: {memory}GB\n')
         file.write(f'Output Directory: {output_dir}\n')
-        file.write(f'Macros Directory: {macros_dir}\n')
-        file.write(f'Bin Directory: {bin_dir}\n')
+        file.write(f'Bin: {f4a}\n')
         file.write(f'Executable: {executable}\n')
-        file.write(f'Build Tag: {tag}\n')
-
-    # Generate condor submission file
-    condor_file = f'{output_dir}/genFun4All.sub'
-    with open(condor_file, mode="w") as file:
-        file.write(f'executable             = bin/{os.path.basename(executable)}\n')
-        file.write(f'arguments              = $(myPid) $(initialSeed) {events_per_job}\n')
-        file.write('log                     = log/job-$(myPid).log\n')
-        file.write('output                  = stdout/job-$(myPid).out\n')
-        file.write('error                   = error/job-$(myPid).err\n')
-        file.write(f'request_memory         = {memory}GB\n')
-        file.write('should_transfer_files   = YES\n')
-        file.write('when_to_transfer_output = ON_EXIT\n')
-        # file.write('transfer_input_files    = src/Fun4All_G4_sPHENIX.C, src/G4Setup_sPHENIX.C\n')
-        file.write('transfer_input_files    = bin/Fun4All_G4_sPHENIX\n')
-        file.write('transfer_output_files   = G4sPHENIX_g4cemc_eval-$(myPid).root\n')
-        file.write('transfer_output_remaps  = "G4sPHENIX_g4cemc_eval-$(myPid).root = output/G4sPHENIX_g4cemc_eval-$(myPid).root"\n')
-        file.write('queue myPid,initialSeed from seed.txt')
-
-    for i in range(submissions):
-        print(f'Submission: {i}')
-
-        submit_dir = f'{output_dir}/submission-{i}'
-        print(f'Submission Directory: {submit_dir}')
-
-        os.makedirs(f'{submit_dir}/stdout',exist_ok=True)
-        os.makedirs(f'{submit_dir}/error',exist_ok=True)
-        os.makedirs(f'{submit_dir}/log',exist_ok=True)
-        os.makedirs(f'{submit_dir}/output',exist_ok=True)
-        os.makedirs(f'{submit_dir}/bin',exist_ok=True)
-        os.makedirs(f'{submit_dir}/src',exist_ok=True)
-
-        shutil.copy(condor_file, submit_dir)
-        shutil.copy(executable, f'{submit_dir}/bin')
-        shutil.copy(f'{bin_dir}/Fun4All_G4_sPHENIX', f'{submit_dir}/bin')
-        shutil.copy(f'{macros_dir}/Fun4All_G4_sPHENIX.C', f'{submit_dir}/src')
-        shutil.copy(f'{macros_dir}/G4Setup_sPHENIX.C', f'{submit_dir}/src')
-
-        file_name = f'{submit_dir}/seed.txt'
-        with open(file_name, mode="w") as file:
-            for j in range(min(jobs,jobs_per_submission)):
-                file.write(f'{j} {i*jobs_per_submission+100}\n')
-
-        jobs -= min(jobs,jobs_per_submission)
-        print(f'Written {file_name}')
 
 def get_status():
     condor_dir = os.path.realpath(args.condor_dir)
