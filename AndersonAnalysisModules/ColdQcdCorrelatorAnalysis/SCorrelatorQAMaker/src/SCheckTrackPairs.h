@@ -67,9 +67,13 @@ namespace SColdQcdCorrelatorAnalysis {
 
   // SCheckTrackPairs definition ----------------------------------------------
 
-  class SCheckTrackPairs : public SubsysReco, SBaseQAPlugin<SCheckTrackPairsConfig> {
+  class SCheckTrackPairs : public SubsysReco, public SBaseQAPlugin<SCheckTrackPairsConfig> {
 
     public:
+
+      // ctor/dtor
+      SCheckTrackPairs(const string& name = "CheckTrackPairs") : SubsysReco(name) {};
+      ~SCheckTrackPairs() {};
 
       // F4A methods
       int Init(PHCompositeNode*)          override;
@@ -101,6 +105,7 @@ namespace SColdQcdCorrelatorAnalysis {
 
   int SCheckTrackPairs::Init(PHCompositeNode* topNode) {
 
+    InitOutput();
     InitTuples();
     return Fun4AllReturnCodes::EVENT_OK;
 
@@ -121,6 +126,7 @@ namespace SColdQcdCorrelatorAnalysis {
   int SCheckTrackPairs::End(PHCompositeNode* topNode) {
 
     SaveOutput();
+    CloseOutput();
     return Fun4AllReturnCodes::EVENT_OK;
 
   }  // end 'End(PHCompositeNode*)'

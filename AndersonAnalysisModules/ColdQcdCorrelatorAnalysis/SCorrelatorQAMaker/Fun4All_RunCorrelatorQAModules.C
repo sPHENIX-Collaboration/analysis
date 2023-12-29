@@ -182,13 +182,13 @@ void Fun4All_RunCorrelatorQAModules(
 
   // register qa maker --------------------------------------------------------
 
-  // instantiate qa maker
+  // instantiate qa maker and plugins
   SCorrelatorQAMaker* maker = new SCorrelatorQAMaker();
+  maker     -> InitPlugin(cfg_checkTrackPairs, "CheckTrackPairs");
   maker     -> SetGlobalOutFile(vecOutFiles.at(0));
   maker     -> SetGlobalVerbosity(verbosity);
   maker     -> SetGlobalDebug(debug);
   maker     -> CheckTrackPairs() -> SetOutDir(vecOutDir.at(0));
-  maker     -> CheckTrackPairs() -> SetConfig(cfg_checkTrackPairs);
   ffaServer -> registerSubsystem(maker -> CheckTrackPairs());
 
   // run and close f4a --------------------------------------------------------

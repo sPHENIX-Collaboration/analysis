@@ -38,7 +38,7 @@ namespace SColdQcdCorrelatorAnalysis {
       void SetOutFile(const string file)     {m_outFileName = file;}
       void SetOutDir(const string name)      {m_outDirName  = name;}
       void SetVerbosity(const uint16_t verb) {m_verbosity   = verb;}
-      void SetConfig(Config& cfg)            {m_config      = cfg;}
+      void SetConfig(const Config& cfg)      {m_config      = cfg;}
 
       // output getters
       TFile*      GetOutFile() {return m_outFile;}
@@ -51,7 +51,9 @@ namespace SColdQcdCorrelatorAnalysis {
         // check output file and create if needed
         const bool doesFileExist = gSystem -> AccessPathName(m_outFileName.data());
         if (!doesFileExist) {
-          m_outFile = new TFile(m_outFileName.data(), "create");
+          m_outFile = new TFile(m_outFileName.data(), "recreate");
+        } else {
+          m_outFile = new TFile(m_outFileName.data(), "update");
         }
 
         // create output directory if needed
@@ -81,7 +83,7 @@ namespace SColdQcdCorrelatorAnalysis {
       TDirectory* m_outDir  = NULL;
 
       // atomic members
-      bool     m_isDebugOn   = "";
+      bool     m_isDebugOn   = false;
       string   m_outFileName = "";
       string   m_outDirName  = "";
       uint16_t m_verbosity   = 0;
