@@ -42,6 +42,7 @@
 #include <calobase/TowerInfoContainerv2.h>
 #include <calobase/TowerInfov1.h>
 #include <calobase/RawTowerDefs.h>
+#include <calobase/RawTowerContainer.h>
 #include <calobase/RawTowerGeomContainer.h>
 #include <calobase/RawTowerGeomContainer_Cylinderv1.h>
 
@@ -88,6 +89,7 @@ class CaloTransverseEnergy:public SubsysReco
 		float Heuristic(std::vector<float>); //This is a place holder for right now, will properly implement in a bit, pretty much just adjusting models with an A* approach
 		bool ApplyCuts(Event* e);
 		void processPacket(int, Event *, std::vector<float>*, bool);
+		void processDST(TowerInfoContainerv1*, RawTowerContainer*, std::vector<float>*, RawTowerGeomContainer_Cylinderv1*, bool, bool, RawTowerDefs::CalorimeterId, float, plots*);
 		void processDST(TowerInfoContainerv2*, TowerInfoContainerv2*, std::vector<float>*, RawTowerGeomContainer_Cylinderv1*, bool, bool, RawTowerDefs::CalorimeterId, float, plots*);
 		float GetTransverseEnergy(float, float);
 		void GetNodes(PHCompositeNode*); 
@@ -151,33 +153,35 @@ class CaloTransverseEnergy:public SubsysReco
 			
 			etabin_hc=new TH1F("hceta", "#eta bin to #delta #eta width HCal; #eta_{bin};#delta #eta", 24, -0.5, 23.5);
 			phibin_hc=new TH1F("hcphi", "#varphi bin to #delta #varphi width HCal; #varphi_{bin}; #delta #varphi", 64, -0.5, 63.5);*/
-			z_vertex=new TH1F("z_vertex", "z vertex position; z [mm]", 100, -100, 100);
+			z_vertex=new TH1F("z_vertex", "z vertex position; z [mm]", 100, -150, 150);
 			if(inputfile.find("prdf")==std::string::npos) isPRDF=false;
 			if(run_number <1000) sim=true;
-			for(int i=0; i<10; i++){
+			if(sim) std::cout<<"Found the simulation tag, run is number " <<run_number <<std::endl;
+			for(int i=0; i<20; i++){
 				plots* PLT=new plots;
-				plots* sPLT=new plots;
+				plots* sPLT;
+				if(sim) sPLT=new plots {.sim=true};
 				std::string rs=std::to_string(run_number);
 				if(sim) sPLT->ihcal->setSimulation(rs);
 				if(sim) sPLT->ohcal->setSimulation(rs);
 				if(sim) sPLT->em->setSimulation(rs);
 				if(sim) sPLT->total->setSimulation(rs);
-				int zb=6*i-30; 
+				int zb=10*i-100; 
 				PLT->zl=zb-30;
 				PLT->zh=zb+30;
 				sPLT->zh=zb+30;
 				sPLT->zl=zb-30;
-				std::cout<<"The lower value for z " <<PLT->zl <<std::endl;
+			//	std::cout<<"The lower value for z " <<PLT->zl <<std::endl;
 				PLT->em->UpdateZ(PLT->zl, PLT->zh);
 				PLT->ihcal->UpdateZ(PLT->zl, PLT->zh);
 				PLT->ohcal->UpdateZ(PLT->zl, PLT->zh);
 				PLT->total->UpdateZ(PLT->zl, PLT->zh);
 				zPLTS[zb]=PLT;
-				sPLT->em->UpdateZ(sPLT->zl, sPLT->zh);
+			if(sim){	sPLT->em->UpdateZ(sPLT->zl, sPLT->zh);
 				sPLT->ihcal->UpdateZ(sPLT->zl, sPLT->zh);
 				sPLT->ohcal->UpdateZ(sPLT->zl, sPLT->zh);
 				sPLT->total->UpdateZ(sPLT->zl, sPLT->zh);
-				szPLTS[zb]=sPLT;
+				szPLTS[zb]=sPLT;}
 				
 			}
 			
