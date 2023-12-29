@@ -54,8 +54,7 @@ int CaloTransverseEnergy::process_event(PHCompositeNode *topNode)
 		et_emcal=0;
 		std::cout <<"Running on event " <<n_evt <<std::endl;
 		TowerInfoContainerv2* ihe=NULL, *ohe=NULL, *eme=NULL, *ihek=NULL, *ohek=NULL, *emek=NULL;
-		TowerInfoContainerv1* ihes=NULL, *ohes=NULL, *emes=NULL;
-		RawTowerContainer *iheks=NULL, *oheks=NULL, *emeks=NULL; 
+		TowerInfoContainerv1* ihes=NULL, *ohes=NULL, *emes=NULL, *iheks=NULL, *oheks=NULL, *emeks=NULL; 
 		std::string ihcalgeom="TOWERGEOM_HCALIN", ohcalgeom="TOWERGEOM_HCALOUT", emcalgeom="TOWERGEOM_CEMC";
 		if(!sim) {
 			ihe=findNode::getClass<TowerInfoContainerv2>(topNode, "TOWERINFO_CALIB_HCALIN");
@@ -68,9 +67,9 @@ int CaloTransverseEnergy::process_event(PHCompositeNode *topNode)
 		else if(sim) {
 			ihes=findNode::getClass<TowerInfoContainerv1>(topNode, "TOWERINFO_CALIB_HCALIN");
 			ohes=findNode::getClass<TowerInfoContainerv1>(topNode, "TOWERINFO_CALIB_HCALOUT");
-			iheks=findNode::getClass<RawTowerContainer>(topNode, "TOWER_CALIB_HCALIN");
-			oheks=findNode::getClass<RawTowerContainer>(topNode, "TOWER_CALIB_HCALOUT");
-			emeks=findNode::getClass<RawTowerContainer>(topNode, "TOWER_CALIB_CEMC");
+			iheks=findNode::getClass<TowerInfoContainer>(topNode, "TOWERS_HCALIN");
+			oheks=findNode::getClass<TowerInfoContainer>(topNode, "TOWERS_HCALOUT");
+			emeks=findNode::getClass<TowerInfoContainer>(topNode, "TOWERS_CEMC");
 			emes=findNode::getClass<TowerInfoContainerv1>(topNode, "TOWERINFO_CALIB_CEMC");
 		}
 		RawTowerGeomContainer_Cylinderv1 *ihg=findNode::getClass<RawTowerGeomContainer_Cylinderv1>(topNode, ihcalgeom);

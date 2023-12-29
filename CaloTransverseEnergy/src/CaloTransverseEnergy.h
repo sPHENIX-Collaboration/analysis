@@ -89,7 +89,7 @@ class CaloTransverseEnergy:public SubsysReco
 		float Heuristic(std::vector<float>); //This is a place holder for right now, will properly implement in a bit, pretty much just adjusting models with an A* approach
 		bool ApplyCuts(Event* e);
 		void processPacket(int, Event *, std::vector<float>*, bool);
-		void processDST(TowerInfoContainerv1*, RawTowerContainer*, std::vector<float>*, RawTowerGeomContainer_Cylinderv1*, bool, bool, RawTowerDefs::CalorimeterId, float, plots*);
+		void processDST(TowerInfoContainerv1*, TowerInfoContainerv1*, std::vector<float>*, RawTowerGeomContainer_Cylinderv1*, bool, bool, RawTowerDefs::CalorimeterId, float, plots*);
 		void processDST(TowerInfoContainerv2*, TowerInfoContainerv2*, std::vector<float>*, RawTowerGeomContainer_Cylinderv1*, bool, bool, RawTowerDefs::CalorimeterId, float, plots*);
 		float GetTransverseEnergy(float, float);
 		void GetNodes(PHCompositeNode*); 
