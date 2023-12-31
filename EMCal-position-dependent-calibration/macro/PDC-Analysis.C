@@ -61,6 +61,14 @@ namespace myAnalysis {
     UInt_t  bins_response = 100;
     Float_t low_response  = 0;
     Float_t high_response = 5;
+
+    UInt_t  bins_gpt = 22;
+    Float_t low_gpt  = 3;
+    Float_t high_gpt = 25;
+
+    UInt_t  bins_geta = 10;
+    Float_t low_geta  = -1;
+    Float_t high_geta  = 1;
 }
 
 void myAnalysis::init_hists() {
@@ -84,19 +92,17 @@ void myAnalysis::init_hists() {
     hResponseCalibVsResponse  = new TH2F("hResponseCalibVsResponse", "Response Calib vs Response; E_{Core}/E_{Truth} ; E_{Core}/E_{Truth} Calib", bins_response, low_response, high_response, bins_response, low_response, high_response);
     hClusEtaVsPhotonEta       = new TH2F("hClusEtaVsPhotonEta", "Cluster #eta vs Photon #eta_{Truth}; #eta_{Truth}; #eta", bins_eta, low_eta, high_eta, bins_eta, low_eta, high_eta);
 
-    Float_t pt_min = 3;
-    Float_t eta_min = -1;
-    Float_t eta_bin = 0.2;
+    Float_t eta_bin = (high_geta-low_geta)/bins_geta;
     stringstream title;
     // photon pT bins: 22 [3,25]
-    for(UInt_t i = 0; i < 22; ++i) {
+    for(UInt_t i = 0; i < bins_gpt; ++i) {
         vector<TH1F*> hDummy1;
         vector<TH1F*> hDummy2;
         // photon eta bins: 10 [-1,1]
-        for(UInt_t j = 0; j < 10; ++j) {
+        for(UInt_t j = 0; j < bins_geta; ++j) {
             title.str("");
-            title << "Response: " << pt_min+i << " #leq p_{T}^{Truth} < " << pt_min+i+1
-                  << ", " << eta_min + j*eta_bin << " #leq #eta_{Truth} < " << eta_min + (j+1)*eta_bin
+            title << "Response: " << low_gpt+i << " #leq p_{T}^{Truth} < " << low_gpt+i+1
+                  << ", " << low_geta + j*eta_bin << " #leq #eta_{Truth} < " << low_geta + (j+1)*eta_bin
                   << "; E_{Core}/E_{Truth}; Counts";
 
             string name = "hResponse_"+to_string(i)+"_"+to_string(j);
@@ -105,8 +111,8 @@ void myAnalysis::init_hists() {
             hDummy1.push_back(h);
 
             title.str("");
-            title << "Response Calib: " << pt_min+i << " #leq p_{T}^{Truth} < " << pt_min+i+1
-                  << ", " << eta_min + j*eta_bin << " #leq #eta_{Truth} < " << eta_min + (j+1)*eta_bin
+            title << "Response Calib: " << low_gpt+i << " #leq p_{T}^{Truth} < " << low_gpt+i+1
+                  << ", " << low_geta + j*eta_bin << " #leq #eta_{Truth} < " << low_geta + (j+1)*eta_bin
                   << "; E_{Core}/E_{Truth}; Counts";
 
             name = "hResponseCalib_"+to_string(i)+"_"+to_string(j);
@@ -179,8 +185,8 @@ void myAnalysis::process_event(UInt_t events) {
     Float_t response_max       = 0;
     Float_t response_calib_max = 0;
 
-    auto hDummyPt  = new TH1F("hDummyPt","",22,3,25);
-    auto hDummyEta = new TH1F("hDummyEta","",10,-1,1);
+    auto hDummyPt  = new TH1F("hDummyPt","",bins_gpt, low_gpt, high_gpt);
+    auto hDummyEta = new TH1F("hDummyEta","",bins_geta, low_geta, high_geta);
 
     UInt_t ctr = 0;
 
@@ -235,7 +241,7 @@ void myAnalysis::process_event(UInt_t events) {
 
         Int_t binx = hDummyPt->FindBin(gpt)-1;
         Int_t biny = hDummyEta->FindBin(geta)-1;
-        if(binx >= 0 && binx < 22 && biny >= 0 && biny < 10) {
+        if(binx >= 0 && binx < bins_gpt && biny >= 0 && biny < bins_geta) {
             hResponses[binx][biny]->Fill(response);
             hResponsesCalib[binx][biny]->Fill(response_calib);
             ++ctr;
@@ -286,9 +292,9 @@ void myAnalysis::finalize(const string &i_output) {
     output.mkdir("response_calib");
 
     // photon pT bins: 22 [3,25]
-    for(UInt_t i = 0; i < 22; ++i) {
+    for(UInt_t i = 0; i < bins_gpt; ++i) {
         // photon eta bins: 10 [-1,1]
-        for(UInt_t j = 0; j < 10; ++j) {
+        for(UInt_t j = 0; j < bins_geta; ++j) {
             output.cd("response");
             if(hResponses[i][j]->GetEntries()) hResponses[i][j]->Write();
 
