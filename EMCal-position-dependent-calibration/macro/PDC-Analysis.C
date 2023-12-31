@@ -54,9 +54,9 @@ namespace myAnalysis {
     Float_t low_ge  = 0;
     Float_t high_ge = 30;
 
-    UInt_t  bins_eta = 100;
-    Float_t low_eta  = -1.2;
-    Float_t high_eta = 1.2;
+    UInt_t  bins_eta = 96;
+    Float_t low_eta  = -1.152;
+    Float_t high_eta = 1.152;
 
     UInt_t  bins_response = 100;
     Float_t low_response  = 0;
@@ -182,6 +182,8 @@ void myAnalysis::process_event(UInt_t events) {
     auto hDummyPt  = new TH1F("hDummyPt","",22,3,25);
     auto hDummyEta = new TH1F("hDummyEta","",10,-1,1);
 
+    UInt_t ctr = 0;
+
     for (UInt_t i = 0; i < events; ++i) {
 
         ntp->GetEntry(i);
@@ -236,6 +238,7 @@ void myAnalysis::process_event(UInt_t events) {
         if(binx >= 0 && binx < 22 && biny >= 0 && biny < 10) {
             hResponses[binx][biny]->Fill(response);
             hResponsesCalib[binx][biny]->Fill(response_calib);
+            ++ctr;
         }
 
         // hResponseVsPhotonEtaVsPhotonPt->Fill(gpt, geta, response);
@@ -250,6 +253,7 @@ void myAnalysis::process_event(UInt_t events) {
     cout << "geta min: " << geta_min << ", geta max: " << geta_max << endl;
     cout << "response min: " << response_min << ", response max: " << response_max << endl;
     cout << "response calib min: " << response_calib_min << ", response calib max: " << response_calib_max << endl;
+    cout << "Accepted clusters: " << ctr << ", " << ctr*100./events << " %"<< endl;
     cout << "finished process event" << endl;
 }
 
