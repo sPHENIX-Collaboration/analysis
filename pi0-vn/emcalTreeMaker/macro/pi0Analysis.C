@@ -36,22 +36,28 @@ namespace myAnalysis {
 
     vector<Cut> cuts;
 
-    Int_t init(const string &i_input, const string &i_cuts);
-    Int_t readFiles(const string &i_input);
+    Int_t init(const string &i_input, const string &i_cuts, Long64_t start = 0, Long64_t end = 0);
+    Int_t readFiles(const string &i_input, Long64_t start = 0, Long64_t end = 0);
     Int_t readCuts(const string &i_cuts);
     void init_hists();
 
     void process_event(Long64_t start = 0, Long64_t end = 0);
     void finalize(const string &i_output = "test.root");
 
-    map<string,pair<Float_t, Float_t>> centrality = {{"0-20",   make_pair(97028.6, 250000)},
-                                                     {"20-40",  make_pair(43100, 97028.6)},
-                                                     {"40-60",  make_pair(16821.4, 43100)},
-                                                     {"60-100", make_pair(0, 16821.4)}};
+    // map<string,pair<Float_t, Float_t>> centrality = {{"0-20",   make_pair(939.074, 2000)},
+    //                                                  {"20-40",  make_pair(472.037, 939.074)},
+    //                                                  {"40-60",  make_pair(187.222, 472.037)},
+    //                                                  {"60-100", make_pair(0, 187.222)}};
+
+    map<string,pair<Float_t, Float_t>> centrality = {{"20-40",  make_pair(472.037, 939.074)},
+                                                     {"40-60",  make_pair(187.222, 472.037)}};
 
     map<string,pair<Float_t, Float_t>> diphoton_pt = {{"2-2.5", make_pair(2, 2.5)},
-                                                      {"3-4", make_pair(3, 4)},
-                                                      {"4-5", make_pair(4, 5)}};
+                                                      {"2.5-3", make_pair(2.5, 3)},
+                                                      {"3-3.5", make_pair(3, 3.5)},
+                                                      {"3.5-4", make_pair(3.5, 4)},
+                                                      {"4-4.5", make_pair(4, 4.5)},
+                                                      {"4.5-5", make_pair(4.5, 5)}};
 
 
     map<pair<string,string>, vector<TH1F*>> hPi0Mass; // hPi0Mass[make_pair(cent,pt)][i], for accessing diphoton invariant mass hist of i-th cut of cent,pt
@@ -83,8 +89,8 @@ namespace myAnalysis {
     Float_t htime_max   = 32;
 }
 
-Int_t myAnalysis::init(const string &i_input, const string &i_cuts) {
-    Int_t ret = readFiles(i_input);
+Int_t myAnalysis::init(const string &i_input, const string &i_cuts, Long64_t start, Long64_t end) {
+    Int_t ret = readFiles(i_input, start, end);
     if(ret != 0) return ret;
 
     ret = readCuts(i_cuts);
@@ -112,7 +118,7 @@ Int_t myAnalysis::init(const string &i_input, const string &i_cuts) {
     return 0;
 }
 
-Int_t myAnalysis::readFiles(const string &i_input) {
+Int_t myAnalysis::readFiles(const string &i_input, Long64_t start, Long64_t end) {
     T = new TChain("T");
 
     // Create an input stream
@@ -134,6 +140,8 @@ Int_t myAnalysis::readFiles(const string &i_input) {
 
         cout << line << ", entries: " << T->GetEntries()-entries << endl;
         entries = T->GetEntries();
+
+        if(entries > end) break;
     }
     cout << "======================================" << endl;
     cout << "Total Entries: " << T->GetEntries() << endl;
@@ -277,6 +285,8 @@ void myAnalysis::process_event(Long64_t start, Long64_t end) {
 
     end = (end) ? min(end, T->GetEntries()-1) : T->GetEntries()-1;
 
+    UInt_t ctr = 0;
+    cout << "Entries to process: " << end-start << endl;
     // loop over each diphoton candidate
     for (Long64_t i = start; i <= end; ++i) {
         if(i%500000 == 0) cout << "Progress: " << (i-start)*100./(end-start) << "%" << endl;
@@ -321,6 +331,8 @@ void myAnalysis::process_event(Long64_t start, Long64_t end) {
                            hPi0Mass[key][i]->Fill(pi0_mass);
                         }
                     }
+
+                    ++ctr;
                     flag = true;
                     break;
                 }
@@ -329,6 +341,7 @@ void myAnalysis::process_event(Long64_t start, Long64_t end) {
         }
     }
 
+    cout << "Accepted Entries: " << ctr << ", " << ctr*100./(end-start) << " %" << endl;
     cout << "Finish Process Event" << endl;
 }
 
@@ -388,7 +401,7 @@ void pi0Analysis(const string &i_input,
     cout << "outputFile: " << i_output << endl;
     cout << "#############################" << endl;
 
-    Int_t ret = myAnalysis::init(i_input, i_cuts);
+    Int_t ret = myAnalysis::init(i_input, i_cuts, start, end);
     if(ret != 0) return;
 
     myAnalysis::process_event(start,end);
