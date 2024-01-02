@@ -4,6 +4,10 @@
 #include <fun4all/Fun4AllInputManager.h>
 #include <fun4all/Fun4AllServer.h>
 
+#include <GlobalVariables.C>
+#include <G4_Global.C>
+#include <G4_Mbd.C>
+
 #include <pythiaemcalana/pythiaEMCalAna.h>
 
 R__LOAD_LIBRARY(libfun4all.so)
@@ -13,7 +17,8 @@ void Fun4All_pythiaEMCalAna(
                      int nEvents = 1,
                      const char *filelist1 = "dst_calo_cluster.list",
                      const char *filelist2 = "dst_truth.list",
-		     const string outname = "pythiaEMCalTrees.root")
+		     const string outname = "pythiaEMCalTrees.root",
+		     bool isAuAu = false)
 {
   // this convenience library knows all our i/o objects so you don't
   // have to figure out what is in each dst type
@@ -32,7 +37,7 @@ void Fun4All_pythiaEMCalAna(
   inTruth -> AddListFile(filelist2,1);
   se -> registerInputManager(inTruth);
 
-  pythiaEMCalAna *eval = new pythiaEMCalAna(outname.c_str());
+  pythiaEMCalAna *eval = new pythiaEMCalAna(outname.c_str(), isAuAu);
   eval -> setGenEvent(1);
   se -> registerSubsystem(eval);
   

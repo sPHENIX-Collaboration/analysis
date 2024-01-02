@@ -21,6 +21,7 @@
 #include <G4_PSTOF.C>
 #include <G4_Pipe.C>
 #include <G4_PlugDoor.C>
+
 #include <G4_User.C>
 #include <G4_World.C>
 #include <G4_ZDC.C>
@@ -57,6 +58,7 @@ void G4Init()
 //  if (Enable::INTT) InttInit();
 //  if (Enable::TPC) TPCInit();
 //  if (Enable::MICROMEGAS) MicromegasInit();
+
   if (Enable::BBC) BbcInit();
   if (Enable::CEMCALBEDO) CEmcAlbedoInit();
   if (Enable::CEMC) CEmcInit();
@@ -125,6 +127,7 @@ int G4Setup()
 //  if (Enable::INTT) radius = Intt(g4Reco, radius);
 //  if (Enable::TPC) radius = TPC(g4Reco, radius);
 //  if (Enable::MICROMEGAS) Micromegas(g4Reco);
+
   if (Enable::BBC) Bbc(g4Reco);
   if (Enable::CEMCALBEDO) CEmcAlbedo(g4Reco);
   if (Enable::CEMC) radius = CEmc(g4Reco, radius, 8);

@@ -86,6 +86,7 @@ TH3D *hDeltaPhi_fraction_oHcalOverHcals = new TH3D("hDeltaPhi_fraction_oHcalOver
 
 TH3D *hE_weighted_eta_phi[ncal], *h_eta_phi[ncal];
 TH2D *hPhi2D[ncal], *hDeltaPhi_pt[ncal], *hDeltaPhi_eta[ncal], *hTowerEt_pionEt[ncal], *hCaloEnergy_pionPt[ncal], *hEnergy_fraction[ncal], *hDeltaPhi_E[ncal], *hDeltaPhi_iPhi[ncal], *hDeltaPhi_fraction[ncal];
+
 TH1D *hDeltaPhi[ncal], *hCaloPhi[ncal], *hTowerEt[ncal];
 
 void ExploreTTrees() {
@@ -155,6 +156,7 @@ void ExploreTTrees() {
       for (int itow=0; itow<calo_e[i_cal]->size(); ++itow) {  // LOOP OVER CALORIMETER TOWERS
 //        if (calo_e[i_cal]->at(itow)<=0.) continue;
 //        if (i_cal==2 && calo_e[i_cal]->at(itow)<0.08) { continue; }
+
         total_E[i_cal] += calo_e[i_cal]->at(itow);
         if (calo_e[i_cal]->at(itow)>max_tow_e){
           max_tow_e = calo_e[i_cal]->at(itow);
@@ -303,4 +305,3 @@ void ExploreTTrees() {
   }
   
 }
-

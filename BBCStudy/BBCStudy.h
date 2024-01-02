@@ -11,12 +11,14 @@ class PHCompositeNode;
 class PHG4HitContainer;
 class PHG4TruthInfoContainer;
 class EventHeader;
+class BbcOut;
 class TFile;
 class TTree;
 class TDatabasePDG;
 class TRandom3;
 class TH1;
 class TH2;
+class TF1;
 class TCanvas;
 
 
@@ -43,13 +45,19 @@ public:
   //Change output filename
   void set_savefile(const char *f) { _savefname = f; }
 
+  void set_tres(const Float_t tr) { _tres = tr; }
 
 private:
+
+  //
+  void CheckDST(PHCompositeNode *topNode);
 
   //output filename
   std::string _savefname;
   TFile* _savefile;
    
+  int nprocessed{0};     // num events processed
+
   //Output
   TTree* _tree;
   Int_t    f_evt;
@@ -62,7 +70,8 @@ private:
   Float_t  f_vt;       // true start time
   Short_t  f_bbcn[2]; // num hits for each arm (north and south)
   Float_t  f_bbcq[2]; // total charge (currently npe) in each arm
-  Float_t  f_bbct[2]; // time
+  Float_t  f_bbct[2]; // time in arm
+  Float_t  f_bbcte[2]; // earliest hit time in arm
   Float_t  f_bbcz;    // z-vertex
   Float_t  f_bbct0;   // start time
 
@@ -75,12 +84,14 @@ private:
 
   TCanvas *c_bbct;    // Canvas to 
   TH1 *hevt_bbct[2];  // time in each bbc, per event
+  TF1 *gaussian;
 
   std::map<int,int> _pids;  // PIDs of tracks in the BBC
 
   //
   TDatabasePDG* _pdg;
   TRandom3*     _rndm;
+  Float_t       _tres;    // time resolution of one channel
 
   //Get all the nodes
   void GetNodes(PHCompositeNode *);

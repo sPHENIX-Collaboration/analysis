@@ -87,6 +87,7 @@ int Fun4All_HCalJetPhiShift(
   // Input::SIMPLE_NUMBER = 2; // if you need 2 of them
   Input::SIMPLE_VERBOSITY = false;
 
+
   //-----------------
   // Initialize the selected Input/Event generation
   //-----------------
@@ -198,10 +199,11 @@ int Fun4All_HCalJetPhiShift(
   Enable::TRACKING_EVAL = Enable::TRACKING_TRACK && true;
   Enable::TRACKING_QA = Enable::TRACKING_TRACK && Enable::QA && true;
 
-  G4CEMC::TowerDigi = RawTowerDigitizer::kNo_digitization;
+  //G4CEMC::TowerDigi = RawTowerDigitizer::kNo_digitization;
   
   Enable::CEMC = true;
   Enable::CEMC_ABSORBER = true;
+
   Enable::CEMC_CELL = Enable::CEMC && true;
   Enable::CEMC_TOWER = Enable::CEMC_CELL && true;
   Enable::CEMC_CLUSTER = Enable::CEMC_TOWER && true;
@@ -496,15 +498,14 @@ int Fun4All_HCalJetPhiShift(
     cout << "it will run forever, so I just return without running anything" << endl;
     return 0;
   }
-  
-  
+    
   RawTowerCalibration *TowerCalibration = new RawTowerCalibration("EmcRawTowerCalibration");
   TowerCalibration->Detector("CEMC");
   TowerCalibration->set_calib_algorithm(RawTowerCalibration::kSimple_linear_calibration);
   TowerCalibration->set_calib_const_GeV_ADC(1. / 0.023);
   TowerCalibration->set_pedstal_ADC(0);
   se->registerSubsystem(TowerCalibration);
-  
+
   HCalJetPhiShift *caloPhiShift = new HCalJetPhiShift("caloPhiShift",outputFile);
   caloPhiShift->SetEventNumber(event_number);
   se->registerSubsystem(caloPhiShift);

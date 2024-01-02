@@ -26,8 +26,8 @@
 #include <calobase/RawTowerContainer.h>
 
 //for vetex information
-#include <g4vertex/GlobalVertex.h>
-#include <g4vertex/GlobalVertexMap.h>
+#include <globalvertex/GlobalVertex.h>
+#include <globalvertex/GlobalVertexMap.h>
 
 //tracking
 #include <trackbase_historic/SvtxTrack.h>

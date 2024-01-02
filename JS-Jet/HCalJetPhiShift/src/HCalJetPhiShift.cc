@@ -69,6 +69,7 @@ m_phi_emc(),
 m_e_emc(),
 m_ieta_emc(),
 m_iphi_emc()
+
 {
   std::cout << "HCalJetPhiShift::HCalJetPhiShift(const std::string &name) Calling ctor" << std::endl;
 }
@@ -115,6 +116,7 @@ int HCalJetPhiShift::Init(PHCompositeNode* /*topNode*/)
   m_T->Branch("e_emc", &m_e_emc);
   m_T->Branch("ieta_emc", &m_ieta_emc);
   m_T->Branch("iphi_emc", &m_iphi_emc);
+
   
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -146,7 +148,6 @@ int HCalJetPhiShift::ResetEvent(PHCompositeNode *topNode)
   m_nTow_out = 0;
   m_nTow_emc = 0;
   m_id.clear();
-  
   m_eta_in.clear();
   m_phi_in.clear();
   m_e_in.clear();
@@ -164,7 +165,7 @@ int HCalJetPhiShift::ResetEvent(PHCompositeNode *topNode)
   m_e_emc.clear();
   m_ieta_emc.clear();
   m_iphi_emc.clear();
-
+  
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
@@ -254,6 +255,7 @@ int HCalJetPhiShift::FillTTree(PHCompositeNode *topNode)
   if(!towersIH3 || !towersOH3 || !towersEM3){
     std::cout
     <<"HCalJetPhiShift::process_event - Error cannot find raw tower node "
+
     << std::endl;
     exit(-1);
   }
@@ -261,11 +263,13 @@ int HCalJetPhiShift::FillTTree(PHCompositeNode *topNode)
   if(!tower_geomIH || !tower_geomOH || !tower_geomEM){
     std::cout
     <<"HCalJetPhiShift::process_event - Error cannot find raw tower geometry "
+
     << std::endl;
     exit(-1);
   }
   
   TowerInfo *tower_in, *tower_out;//, *tower_emc;
+
   const int n_channels_IH = (int) towersIH3->size();
   
   // Inner HCal
@@ -344,7 +348,7 @@ int HCalJetPhiShift::FillTTree(PHCompositeNode *topNode)
     }
 
   }
-  
+
 
   m_T->Fill();
 

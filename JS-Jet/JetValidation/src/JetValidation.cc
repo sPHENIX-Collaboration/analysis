@@ -9,10 +9,13 @@
 #include <phool/PHCompositeNode.h>
 #include <phool/getClass.h>
 
+#include <jetbase/JetContainer.h>
 #include <jetbase/JetMap.h>
 #include <jetbase/Jetv1.h>
 
 #include <centrality/CentralityInfo.h>
+#include <globalvertex/GlobalVertex.h>
+#include <globalvertex/GlobalVertexMap.h>
 
 #include <calobase/RawTower.h>
 #include <calobase/RawTowerContainer.h>
@@ -85,6 +88,7 @@ int JetValidation::Init(PHCompositeNode *topNode)
   m_T->Branch("m_event", &m_event, "event/I");
   m_T->Branch("nJet", &m_nJet, "nJet/I");
   m_T->Branch("cent", &m_centrality);
+  m_T->Branch("zvtx", &m_zvtx);
   m_T->Branch("b", &m_impactparam);
   m_T->Branch("id", &m_id);
   m_T->Branch("nComponent", &m_nComponent);
@@ -138,11 +142,11 @@ int JetValidation::process_event(PHCompositeNode *topNode)
   ++m_event;
 
   // interface to reco jets
-  JetMap* jets = findNode::getClass<JetMap>(topNode, m_recoJetName);
+  JetContainer* jets = findNode::getClass<JetContainer>(topNode, m_recoJetName);
   if (!jets)
     {
       std::cout
-	<< "MyJetAnalysis::process_event - Error can not find DST Reco JetMap node "
+	<< "MyJetAnalysis::process_event - Error can not find DST Reco JetContainer node "
 	<< m_recoJetName << std::endl;
       exit(-1);
     }
@@ -158,7 +162,7 @@ int JetValidation::process_event(PHCompositeNode *topNode)
     }
   
   // interface to jet seeds
-  JetMap* seedjetsraw = findNode::getClass<JetMap>(topNode, "AntiKt_TowerInfo_HIRecoSeedsRaw_r02");
+  JetContainer* seedjetsraw = findNode::getClass<JetContainer>(topNode, "AntiKt_TowerInfo_HIRecoSeedsRaw_r02");
   if (!seedjetsraw && m_doSeeds)
     {
       std::cout
@@ -167,7 +171,7 @@ int JetValidation::process_event(PHCompositeNode *topNode)
       exit(-1);
     }
 
-  JetMap* seedjetssub = findNode::getClass<JetMap>(topNode, "AntiKt_TowerInfo_HIRecoSeedsSub_r02");
+  JetContainer* seedjetssub = findNode::getClass<JetContainer>(topNode, "AntiKt_TowerInfo_HIRecoSeedsSub_r02");
   if (!seedjetssub && m_doSeeds)
     {
       std::cout
@@ -186,10 +190,16 @@ int JetValidation::process_event(PHCompositeNode *topNode)
       exit(-1);
     }
 
+  //zvertex
+  GlobalVertexMap *vertexmap = findNode::getClass<GlobalVertexMap>(topNode, "GlobalVertexMap");
+  GlobalVertex *vtx = vertexmap->begin()->second;
+  m_zvtx = vtx->get_z();
+
+
   //calorimeter towers
-  TowerInfoContainer *towersEM3 = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_CEMC_RETOWER");
-  TowerInfoContainer *towersIH3 = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALIN");
-  TowerInfoContainer *towersOH3 = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALOUT");
+  TowerInfoContainer *towersEM3 = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_CEMC_RETOWER_SUB1");
+  TowerInfoContainer *towersIH3 = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALIN_SUB1");
+  TowerInfoContainer *towersOH3 = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALOUT_SUB1");
   RawTowerGeomContainer *tower_geom = findNode::getClass<RawTowerGeomContainer>(topNode, "TOWERGEOM_HCALIN");
   RawTowerGeomContainer *tower_geomOH = findNode::getClass<RawTowerGeomContainer>(topNode, "TOWERGEOM_HCALOUT");
   if(!towersEM3 || !towersIH3 || !towersOH3){
@@ -226,10 +236,9 @@ int JetValidation::process_event(PHCompositeNode *topNode)
       background_v2 = background->get_v2();
       background_Psi2 = background->get_Psi2();
     }
-  for (JetMap::Iter iter = jets->begin(); iter != jets->end(); ++iter)
+  /* for (JetMap::Iter iter = jets->begin(); iter != jets->end(); ++iter) */
+  for (auto jet : *jets)
     {
-
-      Jet* jet = iter->second;
 
       if(jet->get_pt() < 1) continue; // to remove noise jets
 
@@ -271,7 +280,7 @@ int JetValidation::process_event(PHCompositeNode *topNode)
 
 		  UE = UE * (1 + 2 * background_v2 * cos(2 * (tower_phi - background_Psi2)));
 		  totalE += tower->get_energy() + UE;
-		  double pt = tower->get_energy() / cosh(tower_eta);
+		  double pt = (tower->get_energy() + UE) / cosh(tower_eta);
 		  totalPx += pt * cos(tower_phi);
 		  totalPy += pt * sin(tower_phi);
 		  totalPz += pt * sinh(tower_eta);
@@ -294,7 +303,7 @@ int JetValidation::process_event(PHCompositeNode *topNode)
 
 		  UE = UE * (1 + 2 * background_v2 * cos(2 * (tower_phi - background_Psi2)));
 		  totalE +=tower->get_energy() + UE;
-		  double pt = tower->get_energy() / cosh(tower_eta);
+		  double pt = (tower->get_energy() + UE) / cosh(tower_eta);
 		  totalPx += pt * cos(tower_phi);
 		  totalPy += pt * sin(tower_phi);
 		  totalPz += pt * sinh(tower_eta);
@@ -317,10 +326,11 @@ int JetValidation::process_event(PHCompositeNode *topNode)
 
 		  UE = UE * (1 + 2 * background_v2 * cos(2 * (tower_phi - background_Psi2)));
 		  totalE +=tower->get_energy() + UE;
-		  double pt = tower->get_energy() / cosh(tower_eta);
+		  double pt = (tower->get_energy() + UE) / cosh(tower_eta);
 		  totalPx += pt * cos(tower_phi);
 		  totalPy += pt * sin(tower_phi);
 		  totalPz += pt * sinh(tower_eta);
+		
 		}
 	    }
 	  //get unsubtracted jet
@@ -359,9 +369,8 @@ int JetValidation::process_event(PHCompositeNode *topNode)
   //get seed jets
   if(m_doSeeds)
     {
-      for (JetMap::Iter iter = seedjetsraw->begin(); iter != seedjetsraw->end(); ++iter)
+      for (auto jet : *seedjetsraw)
 	{
-	  Jet* jet = iter->second;
 	  int passesCut = jet->get_property(Jet::PROPERTY::prop_SeedItr);
 	  m_eta_rawseed.push_back(jet->get_eta());
 	  m_phi_rawseed.push_back(jet->get_phi());
@@ -370,9 +379,8 @@ int JetValidation::process_event(PHCompositeNode *topNode)
 	  m_rawseed_cut.push_back(passesCut);
 	}
 
-      for (JetMap::Iter iter = seedjetssub->begin(); iter != seedjetssub->end(); ++iter)
+      for (auto jet : *seedjetssub) //JetMap::Iter iter = seedjetssub->begin(); iter != seedjetssub->end(); ++iter)
 	{
-	  Jet* jet = iter->second;
 	  int passesCut = jet->get_property(Jet::PROPERTY::prop_SeedItr);
 	  m_eta_subseed.push_back(jet->get_eta());
 	  m_phi_subseed.push_back(jet->get_phi());
