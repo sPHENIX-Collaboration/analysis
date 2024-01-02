@@ -99,6 +99,7 @@ TH3D *hDeltaPhi_fraction_oHcalOverHcals = new TH3D("hDeltaPhi_fraction_oHcalOver
 
 TH3D *hE_weighted_eta_phi[ncal], *h_eta_phi[ncal];
 TH2D *hPhi2D[ncal], *hDeltaPhi_pt[ncal], *hDeltaPhi_eta[ncal], *hTowerEt_pionEt[ncal], *hCaloEnergy_pionPt[ncal], *hEnergy_fraction[ncal], *hDeltaPhi_E[ncal], *hDeltaPhi_iPhi[ncal], *hDeltaPhi_fraction[ncal];
+
 TH1D *hDeltaPhi[ncal], *hCaloPhi[ncal], *hTowerEt[ncal];
 
 void ExploreTTrees() {
@@ -175,6 +176,7 @@ void ExploreTTrees() {
         
 //        if (calo_e[i_cal]->at(itow)<=0.) continue;
 //        if (i_cal==2 && calo_e[i_cal]->at(itow)<0.08) { continue; }
+        
         total_E[i_cal] += calo_e[i_cal]->at(itow);
         if (calo_e[i_cal]->at(itow)>max_tow_e){
           max_tow_e = calo_e[i_cal]->at(itow);
@@ -199,6 +201,7 @@ void ExploreTTrees() {
         hEMCal3x3->Fill(pt,energyIn3x3);
         hEMCal3x3_FINE->Fill(pt,energyIn3x3);
       }
+
 //      cout<<cal_tag[i_cal]<<"\t"<<max_tow_eta<<"\t"<<eta<<"\t"<<delta_phi(max_tow_phi,phi)<<endl;
       
       if (i_cal==1) {max_out_phi=max_tow_phi;}
@@ -244,6 +247,7 @@ void ExploreTTrees() {
 //    new TCanvas;
 //    hDeltaPhi_eta[i_cal]->Draw("COLZ");
 //  }
+
   
   string outputroot = (string) inFileName;
   string remove_this = ".root";
