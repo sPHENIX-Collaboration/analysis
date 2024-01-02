@@ -79,14 +79,26 @@ double phi_in_range(double phi){
   return phi;
 };
 
+bool tower_in_3x3(float calo_eta, float calo_phi, float eta, float phi){
+  double min_eta = eta - 0.024 - 0.012;
+  double max_eta = eta + 0.024 + 0.012;
+  if ( calo_eta<min_eta || calo_eta>max_eta ) { return false; }
+  double min_phi = phi - (M_PI/128.) - (M_PI/256.);
+  double max_phi = phi + (M_PI/128.) + (M_PI/256.);
+  if ( calo_phi<min_phi || calo_phi>max_phi ) { return false; }
+  if ( calo_eta>=min_eta && calo_eta<=max_eta && calo_phi>=min_phi && calo_phi<=max_phi ) { return true; }
+  return false;
+};
+
 TH1D *hGeantPhi = new TH1D("hGeantPhi",";truth #phi",64,-M_PI,M_PI);
+TH2D *hEMCal3x3 = new TH2D("hEMCal3x3","pion p_{T};E_{EMCal}^{3x3} about max-E tower [GeV]",30,0.,30.,120,0.,60.);
+TH2D *hEMCal3x3_FINE = new TH2D("hEMCal3x3_FINE","pion p_{T};E_{EMCal}^{3x3} about max-E tower [GeV]",30,0.,30.,200.,0.,2.);
 TH3D *hE_inner_vs_outer = new TH3D("hE_inner_vs_outer",";pion p_{T};total E deposited in iHCal;total E deposited in oHCal",60,0.,30.,100, 0., 10.,120,0.,60.);
 TH3D *hDeltaPhi_fraction_HcalOverAll = new TH3D("hDeltaPhi_fraction_HcalOverAll",";pion p_{T};E_{HCals}/E_{all calos};oHCal #Delta#phi",60,0.,30.,100,0.,1.,160,-0.4,0.4);
 TH3D *hDeltaPhi_fraction_oHcalOverHcals = new TH3D("hDeltaPhi_fraction_oHcalOverHcals",";pion p_{T};E_{oHCal}/E_{HCals};oHCal #Delta#phi",60,0.,30.,100,0.,1.,160,-0.4,0.4);
 
 TH3D *hE_weighted_eta_phi[ncal], *h_eta_phi[ncal];
 TH2D *hPhi2D[ncal], *hDeltaPhi_pt[ncal], *hDeltaPhi_eta[ncal], *hTowerEt_pionEt[ncal], *hCaloEnergy_pionPt[ncal], *hEnergy_fraction[ncal], *hDeltaPhi_E[ncal], *hDeltaPhi_iPhi[ncal], *hDeltaPhi_fraction[ncal];
-
 TH1D *hDeltaPhi[ncal], *hCaloPhi[ncal], *hTowerEt[ncal];
 
 void ExploreTTrees() {
@@ -147,6 +159,8 @@ void ExploreTTrees() {
     float closestOuter_tow_eta;
     float closestOuter_tow_phi;
     
+    float energyIn3x3 = 0;
+    
     for (int i_cal=0; i_cal<ncal; ++i_cal) {  // LOOP OVER CALORIMETER LAYERS
       float max_tow_e = 0.;
       float max_tow_eta;
@@ -154,9 +168,13 @@ void ExploreTTrees() {
       float max_tow_phi;
 
       for (int itow=0; itow<calo_e[i_cal]->size(); ++itow) {  // LOOP OVER CALORIMETER TOWERS
+        
+        if (i_cal==2 && tower_in_3x3(calo_eta[i_cal]->at(itow), calo_phi[i_cal]->at(itow), eta, phi) ){
+          energyIn3x3 += calo_e[i_cal]->at(itow);
+        }
+        
 //        if (calo_e[i_cal]->at(itow)<=0.) continue;
 //        if (i_cal==2 && calo_e[i_cal]->at(itow)<0.08) { continue; }
-
         total_E[i_cal] += calo_e[i_cal]->at(itow);
         if (calo_e[i_cal]->at(itow)>max_tow_e){
           max_tow_e = calo_e[i_cal]->at(itow);
@@ -177,6 +195,10 @@ void ExploreTTrees() {
         hE_weighted_eta_phi[i_cal]->Fill(pt,calo_eta[i_cal]->at(itow),phi_in_range(calo_phi[i_cal]->at(itow)),calo_e[i_cal]->at(itow));
       }  // end tower loop
       
+      if (i_cal==2) {
+        hEMCal3x3->Fill(pt,energyIn3x3);
+        hEMCal3x3_FINE->Fill(pt,energyIn3x3);
+      }
 //      cout<<cal_tag[i_cal]<<"\t"<<max_tow_eta<<"\t"<<eta<<"\t"<<delta_phi(max_tow_phi,phi)<<endl;
       
       if (i_cal==1) {max_out_phi=max_tow_phi;}
@@ -205,30 +227,33 @@ void ExploreTTrees() {
     hE_inner_vs_outer->Fill(pt, total_E[0], total_E[1]);
   }  // end event loop
   
-  new TCanvas;
-  hGeantPhi->Draw();
-  for (int i_cal=0; i_cal<ncal; ++i_cal) {  // LOOP OVER CALORIMETER LAYERS
-    hPhi2D[i_cal]->Draw("COLZ");
-    new TCanvas;
-    hDeltaPhi[i_cal]->Draw("COLZ");
-    new TCanvas;
-    hDeltaPhi_pt[i_cal]->Draw("COLZ");
-    new TCanvas;
-    hCaloPhi[i_cal]->Draw();
-    new TCanvas;
-    hTowerEt[i_cal]->Draw();
-    new TCanvas;
-    hTowerEt_pionEt[i_cal]->Draw("COLZ");
-    new TCanvas;
-    hDeltaPhi_eta[i_cal]->Draw("COLZ");
-  }
+//  new TCanvas;
+//  hGeantPhi->Draw();
+//  for (int i_cal=0; i_cal<ncal; ++i_cal) {  // LOOP OVER CALORIMETER LAYERS
+//    hPhi2D[i_cal]->Draw("COLZ");
+//    new TCanvas;
+//    hDeltaPhi[i_cal]->Draw("COLZ");
+//    new TCanvas;
+//    hDeltaPhi_pt[i_cal]->Draw("COLZ");
+//    new TCanvas;
+//    hCaloPhi[i_cal]->Draw();
+//    new TCanvas;
+//    hTowerEt[i_cal]->Draw();
+//    new TCanvas;
+//    hTowerEt_pionEt[i_cal]->Draw("COLZ");
+//    new TCanvas;
+//    hDeltaPhi_eta[i_cal]->Draw("COLZ");
+//  }
   
   string outputroot = (string) inFileName;
   string remove_this = ".root";
   size_t pos = outputroot.find(remove_this);
+  if (pos != string::npos) { outputroot.erase(pos, remove_this.length()); }
   TString outFileName = outputroot + "_histos.root";
   
   TFile *outFile = new TFile(outFileName,"RECREATE");
+  hEMCal3x3->Write();
+  hEMCal3x3_FINE->Write();
   hGeantPhi->Write();
   hE_inner_vs_outer->Write();
   hDeltaPhi_fraction_HcalOverAll->Write();
@@ -304,4 +329,61 @@ void ExploreTTrees() {
     histos[i]->GetXaxis()->SetRangeUser(0.,30.);
   }
   
+//  gStyle->SetPalette(kCMYK);
+
+  hEMCal3x3->Draw("COLZ");
+  can->SaveAs("plots/ExploreTTrees/hEMCal3x3.pdf","PDF");
+
+  hEMCal3x3_FINE->Draw("COLZ");
+  can->SaveAs("plots/ExploreTTrees/hEMCal3x3_FINE.pdf","PDF");
+
+  
+  TF1 *f1 = new TF1("f1","gaus",0.,0.6);
+  
+  float MIP_value[29];//, MIP_sigma[29];
+  
+  TH1D *hEMCal3x3_FINE_py[30];
+  new TCanvas;
+  for (int i=1; i<30; ++i) {
+    int ptbin = i+1;
+    int ptlo = i;
+    int pthi = i+1;
+    hEMCal3x3_FINE_py[i-1] = (TH1D*)hEMCal3x3_FINE->ProjectionY(Form("hEMCal3x3_FINE_py__%i_%iGeV",ptlo,pthi),ptbin,ptbin);
+//    hEMCal3x3_FINE_py[i-1]->Scale(1./hEMCal3x3_FINE_py[i-1]->Integral());
+    hEMCal3x3_FINE_py[i-1]->SetTitle(Form("%i-%i GeV/c pion",ptlo,pthi));
+    hEMCal3x3_FINE_py[i-1]->SetStats(0);
+    hEMCal3x3_FINE_py[i-1]->GetYaxis()->SetRangeUser(0.0,80.0);
+    hEMCal3x3_FINE_py[i-1]->Draw("SAMEPLCPMC");
+    hEMCal3x3_FINE_py[i-1]->Fit(f1,"","",0.,0.6);
+    MIP_value[i-1] = f1->GetMaximumX();
+  }
+  
+  float mean_value = 0;
+  for (int i=0; i<29; ++i) {
+    cout<<i+1<<"-"<<i+2<<"GeV/c \t"<<MIP_value[i]<<endl;
+    mean_value += MIP_value[i];
+  }
+  mean_value/=29.;
+  cout<<endl<<mean_value<<endl;
+  
+  TLegend *leg0;
+  
+  leg0 = new TLegend(0.7, 0.3, 0.98, 0.98,NULL,"brNDC");    // LEGEND 0
+  leg0->SetBorderSize(0);  leg0->SetLineColor(1);  leg0->SetLineStyle(1);
+  leg0->SetLineWidth(1);
+//  leg0->SetFillColorAlpha(0,0.0);
+//  leg0->SetFillStyle(1001);
+  leg0->SetNColumns(2);
+  leg0->SetHeader("p_{T}^{pion}\t\t\tGaussian Mean","");
+//    leg0->AddEntry((TObject*)0,"EA_{Low} \t", "");
+//    leg0->AddEntry((TObject*)0,"\tEA_{High}", "");
+  
+  for (int i=0; i<29; ++i) {
+    string title = "";
+    leg0->AddEntry(hEMCal3x3_FINE_py[i],Form("%i-%i GeV/c",i+1,i+2),"lpf");
+    leg0->AddEntry("",Form("%f",MIP_value[i]),"");
+  }
+  leg0->Draw("SAME");
+  
 }
+
