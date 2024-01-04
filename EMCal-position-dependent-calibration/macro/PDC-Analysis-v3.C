@@ -79,6 +79,9 @@ namespace myAnalysis {
     UInt_t  bins_eta = 22;
     Float_t low_eta  = -1.1;
     Float_t high_eta = 1.1;
+    UInt_t eventsA        = 8532690;
+    UInt_t eventsB        = 10233670;
+    Float_t eventsBWeight = 20.*eventsA/(4*eventsB);
 }
 
 void myAnalysis::init_hists() {
@@ -164,6 +167,7 @@ void myAnalysis::process_event(UInt_t events) {
     cout << "starting process event" << endl;
     events = (events) ? events : ntp->GetEntries();
     cout << "events: " << events << endl;
+    cout << "eventsA: " << eventsA << ", eventsB: " << eventsB << ", eventsBWeight: " << eventsBWeight << endl;
 
     Float_t ecore; // cluster ecore
     Float_t ecore_calib; // PDC calibrated cluster ecore
@@ -230,30 +234,34 @@ void myAnalysis::process_event(UInt_t events) {
         response_max       = max(response_max, response);
         response_calib_max = max(response_calib_max, response_calib);
 
-        hPhotonPt      ->Fill(gpt);
+        Float_t weight = 1;
+        // use event weight for 5-25 GeV sample
+        if(ge >= 5) weight = eventsBWeight;
 
-        hClusECore     ->Fill(ecore);
-        hClusECoreCalib->Fill(ecore_calib);
-        hClusEta       ->Fill(eta);
-        hPhotonGE      ->Fill(ge);
-        hPhotonEta     ->Fill(geta);
-        hResponse      ->Fill(response);
-        hResponseCalib ->Fill(response_calib);
+        hPhotonPt      ->Fill(gpt, weight);
 
-        hResponseVsPhotonGE      ->Fill(ge, response);
-        hResponseCalibVsPhotonGE ->Fill(ge, response_calib);
-        hResponseCalibVsResponse ->Fill(response, response_calib);
-        hClusECoreCalibVsECore   ->Fill(ecore, ecore_calib);
-        hClusECoreVsPhotonGE     ->Fill(ge, ecore);
-        hClusECoreCalibVsPhotonGE->Fill(ge, ecore_calib);
-        hClusEtaVsPhotonEta      ->Fill(geta, eta);
-        hClusEtaVsECoreCalib     ->Fill(ecore_calib, eta);
+        hClusECore     ->Fill(ecore, weight);
+        hClusECoreCalib->Fill(ecore_calib, weight);
+        hClusEta       ->Fill(eta, weight);
+        hPhotonGE      ->Fill(ge, weight);
+        hPhotonEta     ->Fill(geta, weight);
+        hResponse      ->Fill(response, weight);
+        hResponseCalib ->Fill(response_calib, weight);
+
+        hResponseVsPhotonGE      ->Fill(ge, response, weight);
+        hResponseCalibVsPhotonGE ->Fill(ge, response_calib, weight);
+        hResponseCalibVsResponse ->Fill(response, response_calib, weight);
+        hClusECoreCalibVsECore   ->Fill(ecore, ecore_calib, weight);
+        hClusECoreVsPhotonGE     ->Fill(ge, ecore, weight);
+        hClusECoreCalibVsPhotonGE->Fill(ge, ecore_calib, weight);
+        hClusEtaVsPhotonEta      ->Fill(geta, eta, weight);
+        hClusEtaVsECoreCalib     ->Fill(ecore_calib, eta, weight);
 
         Int_t binx = hDummyECore->FindBin(ecore_calib)-1;
         Int_t biny = hDummyEta->FindBin(eta)-1;
         if(binx >= 0 && binx < bins_ecore && biny >= 0 && biny < bins_eta) {
             // hResponses[binx][biny]->Fill(response);
-            hResponsesCalib[binx][biny]->Fill(response_calib);
+            hResponsesCalib[binx][biny]->Fill(response_calib, weight);
             ++ctr;
         }
         // else if(binx < 0 && binx >= bins_ecore) cout << "eta: " << eta << ", ecore_calib: " << ecore_calib << endl;

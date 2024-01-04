@@ -119,7 +119,7 @@ void myAnalysis::process() {
 
     c1 = new TCanvas();
 
-    hResponseCalib  = new TH1F("hResponseCalib", "Gaussian Fit E_{Core}/E_{Truth}; E_{Core}/E_{Truth}; Counts", 36, 0.96, 1.14);
+    hResponseCalib  = new TH1F("hResponseCalib", "Gaussian Fit E_{Core}/E_{Truth}; E_{Core}/E_{Truth}; Counts", 40, 0.97, 1.07);
     h2ResponseCalib = new TH2F("h2ResponseCalib", "Gaussian Fit Calib E_{Core}/E_{Truth}; E_{Core} Calib [GeV]; Cluster #eta", bins_ecore, low_ecore, high_ecore, bins_eta, low_eta, high_eta);
 
     c1->SetTickx();
@@ -168,7 +168,7 @@ void myAnalysis::process() {
 
     auto h1 = (TH1F*)input1->Get("hClusECoreCalib");
 
-    h1->Draw();
+    h1->Draw("HIST");
 
     c1->Print((output2).c_str(), "pdf portrait");
     c1->Print((outDir + "/qa-ClusterECoreCalib.png").c_str());
@@ -180,8 +180,7 @@ void myAnalysis::process() {
     h1 = (TH1F*)input1->Get("hPhotonGE");
 
     h1->SetStats(0);
-    h1->GetXaxis()->SetRangeUser(19.8,21.2);
-    h1->Draw();
+    h1->Draw("HIST");
 
     c1->Print((output2).c_str(), "pdf portrait");
     c1->Print((outDir + "/qa-PhotonGE.png").c_str());
@@ -195,7 +194,7 @@ void myAnalysis::process() {
 
     h1->SetStats(0);
     h1->GetXaxis()->SetRangeUser(10,22);
-    h1->Draw();
+    h1->Draw("HIST");
 
     c1->Print((output2).c_str(), "pdf portrait");
     c1->Print((outDir + "/qa-PhotonPt.png").c_str());
@@ -211,8 +210,8 @@ void myAnalysis::process() {
 
     // ----------------------------------------------
 
-    h2ResponseCalib->SetMinimum(0.96);
-    h2ResponseCalib->SetMaximum(1.14);
+    h2ResponseCalib->SetMinimum(0.97);
+    h2ResponseCalib->SetMaximum(1.07);
     h2ResponseCalib->GetXaxis()->SetRangeUser(0.5,25);
     h2ResponseCalib->SetStats(0);
     h2ResponseCalib->Draw("COLZ1");
