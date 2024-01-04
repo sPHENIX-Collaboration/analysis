@@ -117,7 +117,7 @@ class CaloTransverseEnergy:public SubsysReco
 		void ProduceOutput();
 		CaloTransverseEnergy(const std::string& name="CaloTE"):
 			SubsysReco(name) {};
-		CaloTransverseEnergy(std::string inputfile, const std::string &name="CaloTE")
+		CaloTransverseEnergy(std::string inputfile, int rn, const std::string &name="CaloTE")
 			:SubsysReco(name)
 		{
 			std::cout<<"Starting to process input file " <<inputfile <<std::endl;
@@ -153,38 +153,45 @@ class CaloTransverseEnergy:public SubsysReco
 			
 			etabin_hc=new TH1F("hceta", "#eta bin to #delta #eta width HCal; #eta_{bin};#delta #eta", 24, -0.5, 23.5);
 			phibin_hc=new TH1F("hcphi", "#varphi bin to #delta #varphi width HCal; #varphi_{bin}; #delta #varphi", 64, -0.5, 63.5);*/
-			z_vertex=new TH1F("z_vertex", "z vertex position; z [mm]", 100, -150, 150);
+			z_vertex=new TH1F("z_vertex", "z vertex position; z [mm]; N_{evts}", 21, -100.5, 100.5);
 			if(inputfile.find("prdf")==std::string::npos) isPRDF=false;
+			std::cout<<"Run number " <<rn <<std::endl;
+			run_number=rn;
 			if(run_number <1000) sim=true;
 			if(sim) std::cout<<"Found the simulation tag, run is number " <<run_number <<std::endl;
-			for(int i=0; i<20; i++){
+			else std::cout<<"This is real data, run number " <<run_number <<std::endl;
+			for(int i=0; i<21; i++){
 				plots* PLT=new plots;
 				plots* sPLT;
 				if(sim) sPLT=new plots {.sim=true};
 				std::string rs=std::to_string(run_number);
 				if(sim) sPLT->ihcal->setSimulation(rs);
+				std::cout<<"i is " << i <<std::endl;
 				if(sim) sPLT->ohcal->setSimulation(rs);
 				if(sim) sPLT->em->setSimulation(rs);
 				if(sim) sPLT->total->setSimulation(rs);
 				int zb=10*i-100; 
+				int zl=zb-30, zh=zb+30;
 				PLT->zl=zb-30;
+				std::cout<<"izb is " << zb <<std::endl;
 				PLT->zh=zb+30;
-				sPLT->zh=zb+30;
-				sPLT->zl=zb-30;
-			//	std::cout<<"The lower value for z " <<PLT->zl <<std::endl;
-				PLT->em->UpdateZ(PLT->zl, PLT->zh);
-				PLT->ihcal->UpdateZ(PLT->zl, PLT->zh);
-				PLT->ohcal->UpdateZ(PLT->zl, PLT->zh);
-				PLT->total->UpdateZ(PLT->zl, PLT->zh);
+				if(sim){sPLT->zh=zb+30;
+				sPLT->zl=zb-30;}
+				std::cout<<"The central value for z " <<zb <<std::endl;
+				PLT->em->UpdateZ(zl, zh);
+				PLT->ihcal->UpdateZ(zl, zh);
+				PLT->ohcal->UpdateZ(zl, zh);
+				PLT->total->UpdateZ(zl, zh);
+				std::cout<<"have the updated z values" <<std::endl;
 				zPLTS[zb]=PLT;
-			if(sim){	sPLT->em->UpdateZ(sPLT->zl, sPLT->zh);
-				sPLT->ihcal->UpdateZ(sPLT->zl, sPLT->zh);
-				sPLT->ohcal->UpdateZ(sPLT->zl, sPLT->zh);
-				sPLT->total->UpdateZ(sPLT->zl, sPLT->zh);
+			if(sim){	sPLT->em->UpdateZ(zl, zh);
+				sPLT->ihcal->UpdateZ(zl, zh);
+				sPLT->ohcal->UpdateZ(zl, zh);
+				sPLT->total->UpdateZ(zl, zh);
 				szPLTS[zb]=sPLT;}
 				
 			}
-			
+			std::cout<<"Have set up the caloplots class as required" <<std::endl;	
 			
 		};
 		~CaloTransverseEnergy(){};
@@ -231,7 +238,7 @@ class CaloTransverseEnergy:public SubsysReco
 		std::map<float, std::vector<float>> etphi, eteta, etephi, eteeta, ethphi, etheta; //angular energy distributions  
 		TNtuple *EtaPhi, *EMEtaPhi, *HEtaPhi;
 		int run_number=1, DST_Segment=0;
-		bool isPRDF=false, sim=false;
+		bool isPRDF=false, sim=false, truth=false;
 };
 //Creates a huge list of plots procedurally, allowing for me to be properly lazy 
 //need to test implementation and check in rcalo values as of 4-12-2023

@@ -13,6 +13,7 @@
 #include <sstream>
 #include <string.h>
 #include <G4_Global.C>
+#include <algorithm>
 
 R__LOAD_LIBRARY(libfun4all.so);
 R__LOAD_LIBRARY(libfun4allraw.so);
@@ -35,10 +36,10 @@ int GetET(std::string filename="/sphenix/tg/tg01/jets/ahodges/run23_production/2
 	Fun4AllDstInputManager *in = new Fun4AllDstInputManager("in");
 	std::cout<<"have the input manager loaded" <<std::endl;
 	//in->AddFile(filename);
-	CaloTransverseEnergy* cte=new CaloTransverseEnergy(filename, "CaloET");
 	std::stringstream subs(filename);
 	std::string substr;
-	int is_input=0;
+	bool truth=false;
+	int is_input=0, run_number=21518, DST_Segment=0;
 	std::cout<<"Have loaded the first instance of the calo" <<std::endl;
 	//load in the DST Segment and run number
 	while(std::getline(subs, substr, '-')){
@@ -47,22 +48,32 @@ int GetET(std::string filename="/sphenix/tg/tg01/jets/ahodges/run23_production/2
 			std::string subsub;
 			while(std::getline(sss, subsub, '.')){
 			try{
-			 	cte->DST_Segment=std::stoi(substr);
+			 	DST_Segment=std::stoi(substr);
 				}	
 			catch(std::exception* e) {}
 			}
 		} 
 		if(is_input==1){
 			std::cout<<substr<<std::endl; 
-			cte->run_number=std::stoi(substr);
+			run_number=std::stoi(substr);
 			is_input=2;
 		}
 		if(substr.find("DST")!=std::string::npos) is_input=1;
 		if(substr.find("run")!=std::string::npos) is_input=1; 
+		if(substr.find("TRUTH")!=std::string::npos) truth=true;
 	}
+	CaloTransverseEnergy* cte=new CaloTransverseEnergy(filename, run_number, "CaloET");
+	cte->run_number=run_number;
+	cte->DST_Segment=DST_Segment;
+	cte->truth=truth;
 	std::cout<<"Have loaded in the subsystem" <<std::endl;
 	if(filename.find("DST") != std::string::npos){
-		in->AddFile(filename); 
+		in->AddFile(filename);
+	//	if(cte->run_number <100){
+	//		std::string file2="DST_TRUTH_sHijing_0_20fm_50kHz_bkg_0_20fm-0000000007-";
+	//		file2+=std::string(5-std::min(5, (int) std::to_string(cte->DST_Segment).length()), '0')+std::to_string(cte->DST_Segment)+".root";
+	//		in->AddFile(file2); 
+	//	}
 		se->registerInputManager(in);
 	}
 	if(filename.find("prdf") != std::string::npos){
@@ -70,6 +81,7 @@ int GetET(std::string filename="/sphenix/tg/tg01/jets/ahodges/run23_production/2
 		se->registerInputManager(inp);
 		cte->isPRDF=true;
 	}
+	//if(isPRDF) std::cout<<"Hi did you mean to load in a prdf?" <<std::endl;
 	se->registerSubsystem(cte);
 	se->run();
 	std::cout<<"Writing to file"<<std::endl;

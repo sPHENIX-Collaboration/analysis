@@ -54,7 +54,7 @@ int CaloTransverseEnergy::process_event(PHCompositeNode *topNode)
 		et_emcal=0;
 		std::cout <<"Running on event " <<n_evt <<std::endl;
 		TowerInfoContainerv2* ihe=NULL, *ohe=NULL, *eme=NULL, *ihek=NULL, *ohek=NULL, *emek=NULL;
-		TowerInfoContainerv1* ihes=NULL, *ohes=NULL, *emes=NULL, *iheks=NULL, *oheks=NULL, *emeks=NULL; 
+		TowerInfoContainerv1* ihes=NULL, *ohes=NULL, *emes=NULL;// *iheks=NULL, *oheks=NULL, *emeks=NULL; 
 		std::string ihcalgeom="TOWERGEOM_HCALIN", ohcalgeom="TOWERGEOM_HCALOUT", emcalgeom="TOWERGEOM_CEMC";
 		if(!sim) {
 			ihe=findNode::getClass<TowerInfoContainerv2>(topNode, "TOWERINFO_CALIB_HCALIN");
@@ -67,9 +67,9 @@ int CaloTransverseEnergy::process_event(PHCompositeNode *topNode)
 		else if(sim) {
 			ihes=findNode::getClass<TowerInfoContainerv1>(topNode, "TOWERINFO_CALIB_HCALIN");
 			ohes=findNode::getClass<TowerInfoContainerv1>(topNode, "TOWERINFO_CALIB_HCALOUT");
-			iheks=findNode::getClass<TowerInfoContainer>(topNode, "TOWERS_HCALIN");
-			oheks=findNode::getClass<TowerInfoContainer>(topNode, "TOWERS_HCALOUT");
-			emeks=findNode::getClass<TowerInfoContainer>(topNode, "TOWERS_CEMC");
+			//iheks=findNode::getClass<TowerInfoContainerv1>(topNode, "TOWERS_HCALIN");
+			//oheks=findNode::getClass<TowerInfoContainerv1>(topNode, "TOWERS_HCALOUT");
+			//emeks=findNode::getClass<TowerInfoContainerv1>(topNode, "TOWERS_CEMC");
 			emes=findNode::getClass<TowerInfoContainerv1>(topNode, "TOWERINFO_CALIB_CEMC");
 		}
 		RawTowerGeomContainer_Cylinderv1 *ihg=findNode::getClass<RawTowerGeomContainer_Cylinderv1>(topNode, ihcalgeom);
@@ -120,25 +120,25 @@ int CaloTransverseEnergy::process_event(PHCompositeNode *topNode)
 			n_evt--;
 			return 1;}
 		}
-		else if(sim){
+		else if(sim && !truth){
 			std::cout<<"Trying to run on the simulation data "<<std::endl;
 			try{	
 		//	std::cout<<"Plots with z_bin " <<zbin <<" have high value of " <<zPLTS[zbin]->zh <<std::endl;
-			processDST(emes,emeks,&emcalenergy_vec, emg, false, false, RawTowerDefs::CEMC, z_vtx, zPLTS[z_bin]);}
+			processDST(emes,emes,&emcalenergy_vec, emg, false, false, RawTowerDefs::CEMC, z_vtx, zPLTS[z_bin]);}
 		catch(std::exception& e){
 			n_evt--;
 			return 1;}
-		try{processDST(ihes,iheks,&ihcalenergy_vec, ihg, true, true, RawTowerDefs::HCALIN, z_vtx, zPLTS[z_bin]);}
+		try{processDST(ihes,ihes,&ihcalenergy_vec, ihg, true, true, RawTowerDefs::HCALIN, z_vtx, zPLTS[z_bin]);}
 		catch(std::exception& e){
 			n_evt--;
 			return 1;}
-		try{processDST(ohes,oheks,&ohcalenergy_vec, ohg, true, false, RawTowerDefs::HCALOUT, z_vtx, zPLTS[z_bin]);}
+		try{processDST(ohes,ohes,&ohcalenergy_vec, ohg, true, false, RawTowerDefs::HCALOUT, z_vtx, zPLTS[z_bin]);}
 		catch(std::exception& e){
 			n_evt--;
 			return 1;}
 		}
 		std::cout<<"Found energy"<<std::endl;
-	/*	if(sim){
+		if(sim && truth){
 			try{
 				PHHepMCGenEventMap *phg=findNode::getClass<PHHepMCGenEventMap>(topNode, "PHHepMCGenEventMap");
 				//EventHeaderv1 *evthead=findNode::getClass<EventHeaderv1>(topNode, "EventHeader");
@@ -216,7 +216,7 @@ int CaloTransverseEnergy::process_event(PHCompositeNode *topNode)
 				
 			}
 			catch(std::exception& e){ return 1;}
-		}*/
+		}
 	}
 	float emcaltotal=GetTotalEnergy(emcalenergy_vec,1)/2.26; //not sure about the calibration factor, need to check
 	float ihcalcalib=1, ohcalcalib=1;
@@ -285,7 +285,7 @@ void CaloTransverseEnergy::processDST(TowerInfoContainerv1* calo_event, TowerInf
 		else if(hcalorem) PLTS->ohcal->E_m->Fill(energy1);
 		else PLTS->em->E_m->Fill(energy1);
 		PLTS->total->E_m->Fill(energy1);
-		if(!hcalorem) std::cout<<"energy is " <<energy1 <<std::endl;
+		if(hcalorem) std::cout<<"energy is " <<energy1 <<std::endl;
 		float time=tower->get_time();
 		if(inner){
 			 if(time<-2 || time > 2) energy1=-0.1;
@@ -311,7 +311,7 @@ void CaloTransverseEnergy::processDST(TowerInfoContainerv1* calo_event, TowerInf
 		float radius, z;
 		radius=geom->get_radius(); 
 		n_time++;
-		if(!hcalorem) std::cout<<"Tower is at radius " <<radius <<std::endl;
+		if(hcalorem) std::cout<<"Tower is at radius " <<radius <<std::endl;
 		//RawTowerGeom *towergeom=geom->get_tower_geometry(key);
 		//assert(towergeom);
 		if(energy1 <= 0){continue;}
@@ -322,7 +322,7 @@ void CaloTransverseEnergy::processDST(TowerInfoContainerv1* calo_event, TowerInf
 		n_live_towers++;
 		if(etabin>maxeta) maxeta=etabin;
 		if(phibin>maxphi) maxphi=phibin;
-		if(inner)std::cout<<"Have figures stuff out" <<std::endl;
+	//	if(inner)std::cout<<"Have figures stuff out" <<std::endl;
 		double eta=geom->get_etacenter(etabin);
 		double phi=geom->get_phicenter(phibin);
 		std::pair<double, double> etabounds=geom->get_etabounds(etabin);
@@ -336,7 +336,7 @@ void CaloTransverseEnergy::processDST(TowerInfoContainerv1* calo_event, TowerInf
 		double theta=2*atan(exp(-eta));
 		z=radius/tan(theta);	
 		z+=z_vtx;
-		if(!hcalorem) std::cout<<"Distance of " <<z<<std::endl;
+		if(hcalorem) std::cout<<"Distance of " <<z<<std::endl;
 		theta=atan2(radius, z);
 		eta=-log(tan(theta/2));;
 		etabounds.first=-log(tan(atan2(radius, z_vtx+(2*atan(exp(-etabounds.first))))));
@@ -575,7 +575,7 @@ void CaloTransverseEnergy::processDST(TowerInfoContainerv2* calo_event, TowerInf
 				PLTS->ihcal->eta->Fill(etabin);
 				PLTS->ihcal->E_phi->Fill(phi, energy1);
 				PLTS->ihcal->ET_phi->Fill(phi, et);
-				if(eta< PLTS->ihcal->etamin || eta > PLTS->ihcal->etamax) std::cout<<"Non-good eta " <<eta <<std::endl;
+		//		if(eta< PLTS->ihcal->etamin || eta > PLTS->ihcal->etamax) std::cout<<"Non-good eta " <<eta <<std::endl;
 				PLTS->ihcal->dET_eta->Fill(eta, et_div);
 				PLTS->ihcal->ET_eta_phi->Fill(eta, phi, et_div);
 				PLTS->ihcal->Hits2D->Fill(etabin, phibin);
@@ -736,7 +736,12 @@ bool CaloTransverseEnergy::ValidateDistro()
 }	
 void CaloTransverseEnergy::ProduceOutput()
 {
-	TFile* outfile=new TFile(Form("../data_output/Transverse_Energy_run_%d_segment_%d.root",run_number, DST_Segment), "RECREATE");
+	
+	TFile* outfile=NULL;
+	if(sim && truth) outfile=new TFile(Form("../data_output/MC/Transverse_Energy_truth_run_%d_segment_%d.root",run_number, DST_Segment), "RECREATE");
+	else if(sim) outfile=new TFile(Form("../data_output/MC/Transverse_Energy_run_%d_segment_%d.root",run_number, DST_Segment), "RECREATE");
+	else outfile=new TFile(Form("../data_output/Transverse_Energy_run_%d_segment_%d.root",run_number, DST_Segment), "RECREATE");
+	
 	for(auto p:zPLTS){
 	plots* PLTS=p.second;
 	PLTS->em->getAcceptance();
