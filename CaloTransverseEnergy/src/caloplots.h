@@ -141,7 +141,7 @@ class caloplots
 			if(z<0) calo+="_neg";
 			float pb=(float)phibins-0.1;
 			float eb=(float)etabins-0.1;
-			std::cout<<"making the plots for calo " <<calo <<std::endl;
+			//std::cout<<"making the plots for calo " <<calo <<std::endl;
 			Energy=new TH1F(Form("Energy_%s_z_%d", calo.c_str(), z_lab), Form("E_{event} in %s with vertex z=%f; E [GeV]", calo.c_str(), z), 1000, 0.5, 1000.5);
 			
 			ET=new TH1F(Form("ET_%s_z_%d", calo.c_str(), z_lab), Form("E_{T}^{event} in %s with vertex z=%f; E [GeV]", calo.c_str(), z), 1000, 0.5, 1000.5);

@@ -9,7 +9,7 @@ for infile in  `more dst_truth.list`; do
 	if [[ $i -gt $NFILES ]]; then 
 		break
 	fi 
-	fname="condor_"$i"_run_"$RUN".job"
+	fname="condor_"$i"_truth_run_"$RUN".job"
 	touch $fname
 	echo $fname
 	
@@ -20,9 +20,9 @@ echo "Executable      = /gpfs/mnt/gpfs02/sphenix/user/sgross/sphenix_analysis/Ca
 #	else 
 	echo "Arguments       = $infile " >> $fname
 #	fi
-echo "Output          = /gpfs/mnt/gpfs02/sphenix/user/sgross/sphenix_analysis/CaloTransverseEnergy/running_dir/condor_"$i"_run_"$RUN".out" >> $fname
-echo "Error           =/gpfs/mnt/gpfs02/sphenix/user/sgross/sphenix_analysis/CaloTransverseEnergy/running_dir/condor_"$i"_run_"$RUN".err" >> $fname
-echo "Log             =/gpfs/mnt/gpfs02/sphenix/user/sgross/sphenix_analysis/CaloTransverseEnergy/running_dir/condor_"$i"_run_"$RUN".log" >> $fname
+echo "Output          = /gpfs/mnt/gpfs02/sphenix/user/sgross/sphenix_analysis/CaloTransverseEnergy/running_dir/condor_"$i"_truth_run_"$RUN".out" >> $fname
+echo "Error           =/gpfs/mnt/gpfs02/sphenix/user/sgross/sphenix_analysis/CaloTransverseEnergy/running_dir/condor_"$i"_truth_run_"$RUN".err" >> $fname
+echo "Log             =/gpfs/mnt/gpfs02/sphenix/user/sgross/sphenix_analysis/CaloTransverseEnergy/running_dir/condor_"$i"_truth_run_"$RUN".log" >> $fname
 echo "Initialdir      = /gpfs/mnt/gpfs02/sphenix/user/sgross/sphenix_analysis/CaloTransverseEnergy/src" >> $fname
 echo "PeriodicHold    = (NumJobStarts>=1 && JobStatus == 1)" >> $fname
 echo "accounting_group = group_phenix.u" >> $fname

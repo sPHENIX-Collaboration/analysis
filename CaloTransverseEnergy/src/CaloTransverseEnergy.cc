@@ -144,6 +144,7 @@ int CaloTransverseEnergy::process_event(PHCompositeNode *topNode)
 				//EventHeaderv1 *evthead=findNode::getClass<EventHeaderv1>(topNode, "EventHeader");
 				PHG4TruthInfoContainer *truthinfo = findNode::getClass<PHG4TruthInfoContainer>(topNode, "G4TruthInfo");
 				std::map<std::string, std::vector<float>> hep_map;
+				std::cout<<"Found the hep map"<<std::endl;
 				for(PHHepMCGenEventMap::ConstIter eventIter=phg->begin(); eventIter != phg->end(); ++eventIter){
 					PHHepMCGenEvent * hpev=eventIter->second;
 					if(hpev && hpev->get_embedding_id() == 0){
@@ -167,12 +168,13 @@ int CaloTransverseEnergy::process_event(PHCompositeNode *topNode)
 						break;
 					}
 				}
+				std::cout<<"Have the hep particle maps loaded" <<std::endl;
 				if(!truthinfo) return 1;
 				PHG4TruthInfoContainer::Range range=truthinfo->GetPrimaryParticleRange();
 				int tpt=0;
 				std::map<int, float> truth_event_e, evt_ET;
-				for(int i=-30; i<30; i++){
-						if(i%6==0){
+				for(int i=-100; i<=100; i++){
+						if(i%10==0){
 							truth_event_e[i]=0;
 							evt_ET[i]=0;
 						}
@@ -192,16 +194,23 @@ int CaloTransverseEnergy::process_event(PHCompositeNode *topNode)
 					}
 					else if(aparit != baryons.end()) E=truth->get_e() -sqrt(pow(truth->get_e(),2)-ps)+2*pmass;
 					else E=truth->get_e();
+					std::cout<<"Found a particle with particle id " <<truth->get_pid() <<std::endl;
 					float phi=atan2(truth->get_py(), truth->get_px());
 					float eta=asinh(pz/pt);
 					tpt++;
-					int zbin=6*(hep_map["VTX_Z"].at(0)/6);
-					if(zbin <-30) zbin=-30;
-					if(zbin >24) zbin=24;
+					int zbin=10*(hep_map["VTX_Z"].at(0)/10);
+					if(zbin <-100) zbin=-100;
+					if(zbin >100) zbin=100;
+					zbin=0;
 					truth_event_e[zbin]+=E;
+					std::cout<<"added an energy of " <<E <<std::endl;
+					try{std::cout<<szPLTS[zbin]->z_bin<<std::endl;}
+					catch(std::exception& e){std::cout<<"found bad zbin " <<zbin <<std::endl;}
 					szPLTS[zbin]->total->phi->Fill(phi);
+					std::cout<<"phi dis" <<std::endl;
 					szPLTS[zbin]->total->eta->Fill(eta);
 					szPLTS[zbin]->total->E_phi->Fill(phi, E);
+					std::cout<<"accessed bins of szplts" <<std::endl;
 					float ET=GetTransverseEnergy(E, eta);
 					evt_ET[zbin]+=ET;
 					szPLTS[zbin]->total->dET_eta->Fill(eta,ET/2.2);
@@ -211,6 +220,7 @@ int CaloTransverseEnergy::process_event(PHCompositeNode *topNode)
 					szPLTS[zbin]->total->Hits2D->Fill(eta, phi);
 				
 				}
+				std::cout<<"Now loading the energy into the plts" <<std::endl;
 				for(auto E:truth_event_e) szPLTS[E.first]->total->Energy->Fill(E.second);
 				for(auto E:evt_ET) szPLTS[E.first]->total->ET->Fill(E.second);
 				
@@ -336,7 +346,7 @@ void CaloTransverseEnergy::processDST(TowerInfoContainerv1* calo_event, TowerInf
 		double theta=2*atan(exp(-eta));
 		z=radius/tan(theta);	
 		z+=z_vtx;
-		if(hcalorem) std::cout<<"Distance of " <<z<<std::endl;
+//		if(hcalorem) std::cout<<"Distance of " <<z<<std::endl;
 		theta=atan2(radius, z);
 		eta=-log(tan(theta/2));;
 		etabounds.first=-log(tan(atan2(radius, z_vtx+(2*atan(exp(-etabounds.first))))));
@@ -361,7 +371,7 @@ void CaloTransverseEnergy::processDST(TowerInfoContainerv1* calo_event, TowerInf
 		}
 		float et=GetTransverseEnergy(energy1, eta);
 		float et_div=et;
-		if(eta_width>0) et_div=et/eta_width;
+		if(eta_width>0) et_div=et/(float)eta_width;
 
 		energies->push_back(GetTransverseEnergy(energy1, eta));
 		if(!hcalorem){
@@ -371,11 +381,13 @@ void CaloTransverseEnergy::processDST(TowerInfoContainerv1* calo_event, TowerInf
 			emcalenergy+=energy1;
 			float etamin=PLTS->em->etamin, etamax=PLTS->em->etamax; 
 			if(etamin < eta || etamax > eta) std::cout<<"Out of bounds with eta : " <<eta <<" bounds are " <<etamin << " to " <<etamax<<std::endl;
+			std::cout<<"Energy " <<et_div <<" with eta " <<eta <<std::endl;
 			PLTS->em->phi->Fill(phibin);
 			PLTS->em->eta->Fill(etabin);
 			PLTS->em->E_phi->Fill(phi, energy1);
 			PLTS->em->ET_phi->Fill(phi, et);
-			PLTS->em->dET_eta->Fill(eta,rat);
+			PLTS->em->dET_eta->Fill(eta,et_div);
+			std::cout<<"filled data in to the det/eta" <<std::endl;
 			PLTS->em->ET_eta_phi->Fill(eta, phi, et_div);
 			PLTS->em->Hits2D->Fill(etabin, phibin);
 			PLTS->em->ET_z_eta->Fill(z_vtx, eta, et_div);
@@ -738,7 +750,7 @@ void CaloTransverseEnergy::ProduceOutput()
 {
 	
 	TFile* outfile=NULL;
-	if(sim && truth) outfile=new TFile(Form("../data_output/MC/Transverse_Energy_truth_run_%d_segment_%d.root",run_number, DST_Segment), "RECREATE");
+	if(truth) outfile=new TFile(Form("../data_output/MC/Transverse_Energy_truth_run_%d_segment_%d.root",run_number, DST_Segment), "RECREATE");
 	else if(sim) outfile=new TFile(Form("../data_output/MC/Transverse_Energy_run_%d_segment_%d.root",run_number, DST_Segment), "RECREATE");
 	else outfile=new TFile(Form("../data_output/Transverse_Energy_run_%d_segment_%d.root",run_number, DST_Segment), "RECREATE");
 	

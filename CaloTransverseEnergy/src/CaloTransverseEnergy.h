@@ -166,29 +166,27 @@ class CaloTransverseEnergy:public SubsysReco
 				if(sim) sPLT=new plots {.sim=true};
 				std::string rs=std::to_string(run_number);
 				if(sim) sPLT->ihcal->setSimulation(rs);
-				std::cout<<"i is " << i <<std::endl;
 				if(sim) sPLT->ohcal->setSimulation(rs);
 				if(sim) sPLT->em->setSimulation(rs);
 				if(sim) sPLT->total->setSimulation(rs);
 				int zb=10*i-100; 
 				int zl=zb-30, zh=zb+30;
 				PLT->zl=zb-30;
-				std::cout<<"izb is " << zb <<std::endl;
 				PLT->zh=zb+30;
 				if(sim){sPLT->zh=zb+30;
 				sPLT->zl=zb-30;}
-				std::cout<<"The central value for z " <<zb <<std::endl;
 				PLT->em->UpdateZ(zl, zh);
 				PLT->ihcal->UpdateZ(zl, zh);
 				PLT->ohcal->UpdateZ(zl, zh);
 				PLT->total->UpdateZ(zl, zh);
-				std::cout<<"have the updated z values" <<std::endl;
 				zPLTS[zb]=PLT;
-			if(sim){	sPLT->em->UpdateZ(zl, zh);
-				sPLT->ihcal->UpdateZ(zl, zh);
-				sPLT->ohcal->UpdateZ(zl, zh);
-				sPLT->total->UpdateZ(zl, zh);
-				szPLTS[zb]=sPLT;}
+				if(sim){
+					sPLT->em->UpdateZ(zl, zh);
+					sPLT->ihcal->UpdateZ(zl, zh);
+					sPLT->ohcal->UpdateZ(zl, zh);
+					sPLT->total->UpdateZ(zl, zh);
+					szPLTS[zb]=sPLT;
+				}
 				
 			}
 			std::cout<<"Have set up the caloplots class as required" <<std::endl;	
