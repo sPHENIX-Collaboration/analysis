@@ -786,6 +786,12 @@ void CaloEvaluator::fillOutputNtuples(PHCompositeNode* topNode)
       exit(-1);
     }
 
+    if(clusters->size() != clusters_calib->size()) {
+      std::cerr << PHWHERE << clusternode << ": " << clusters->size() << ", " << clusternode_calib << ": " << clusters_calib->size() << std::endl;
+      std::cerr << PHWHERE << " ERROR: " << clusternode << " and " << clusternode_calib << " do not have the same size!" << std::endl;
+      exit(-1);
+    }
+
     // for every cluster
     // iterate over uncalibrated and calibrated clusters simultaneously
 

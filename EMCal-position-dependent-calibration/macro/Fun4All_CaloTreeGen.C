@@ -34,9 +34,13 @@ void Fun4All_CaloTreeGen(const string &inputFile,
                          const string &output = "test.root",
                          const int nEvents = 0) {
   Fun4AllServer *se = Fun4AllServer::instance();
-  // recoConsts *rc = recoConsts::instance();
-  // rc->set_StringFlag("CDB_GLOBALTAG", "ProdA_2023");
-  // rc->set_uint64Flag("TIMESTAMP", 0);
+  recoConsts *rc = recoConsts::instance();
+  rc->set_StringFlag("CDB_GLOBALTAG", "ProdA_2023");
+  rc->set_uint64Flag("TIMESTAMP", 0);
+
+  RawClusterPositionCorrection *clusterCorrection = new RawClusterPositionCorrection("CEMC");
+  // clusterCorrection->set_UseTowerInfo(1);
+  se->registerSubsystem(clusterCorrection);
 
   CaloEvaluator *eval = new CaloEvaluator("CEMCEVALUATOR", "CEMC", output);
   eval->set_do_gpoint_eval(false);
