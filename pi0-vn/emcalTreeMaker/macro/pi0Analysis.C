@@ -133,7 +133,7 @@ Int_t myAnalysis::readFiles(const string &i_input, Long64_t start, Long64_t end)
     cout << "Reading in TNtuples" << endl;
     cout << "======================================" << endl;
     string line;
-    Int_t entries = 0;
+    ULong_t entries = 0;
     while (std::getline(file, line)) {
         // Process each line here
         T->Add(line.c_str());
