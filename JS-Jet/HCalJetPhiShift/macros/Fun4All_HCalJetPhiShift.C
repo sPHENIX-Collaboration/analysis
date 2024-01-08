@@ -81,11 +81,12 @@ int Fun4All_HCalJetPhiShift(
   // Input options
   //===============
   // verbosity setting (applies to all input managers)
-//  Input::VERBOSITY = 0;
+  Input::VERBOSITY = 0;
 
   Input::SIMPLE = true;
   // Input::SIMPLE_NUMBER = 2; // if you need 2 of them
-//  Input::SIMPLE_VERBOSITY = 0;
+  Input::SIMPLE_VERBOSITY = false;
+
 
   //-----------------
   // Initialize the selected Input/Event generation
@@ -198,8 +199,11 @@ int Fun4All_HCalJetPhiShift(
   Enable::TRACKING_EVAL = Enable::TRACKING_TRACK && true;
   Enable::TRACKING_QA = Enable::TRACKING_TRACK && Enable::QA && true;
 
-  Enable::CEMC = false;
-  Enable::CEMC_ABSORBER = false;
+  //G4CEMC::TowerDigi = RawTowerDigitizer::kNo_digitization;
+  
+  Enable::CEMC = true;
+  Enable::CEMC_ABSORBER = true;
+
   Enable::CEMC_CELL = Enable::CEMC && true;
   Enable::CEMC_TOWER = Enable::CEMC_CELL && true;
   Enable::CEMC_CLUSTER = Enable::CEMC_TOWER && true;
@@ -327,8 +331,8 @@ int Fun4All_HCalJetPhiShift(
 //  if (Enable::INTT_CELL) Intt_Cells();
 //  if (Enable::TPC_CELL) TPC_Cells();
 //  if (Enable::MICROMEGAS_CELL) Micromegas_Cells();
-//
-//  if (Enable::CEMC_CELL) CEMC_Cells();
+
+  if (Enable::CEMC_CELL) CEMC_Cells();
 
   if (Enable::HCALIN_CELL) HCALInner_Cells();
 
@@ -338,8 +342,8 @@ int Fun4All_HCalJetPhiShift(
   // CEMC towering and clustering
   //-----------------------------
 
-//  if (Enable::CEMC_TOWER) CEMC_Towers();
-//  if (Enable::CEMC_CLUSTER) CEMC_Clusters();
+  if (Enable::CEMC_TOWER) CEMC_Towers();
+  if (Enable::CEMC_CLUSTER) CEMC_Clusters();
 
   //--------------
   // EPD tile reconstruction
@@ -494,7 +498,14 @@ int Fun4All_HCalJetPhiShift(
     cout << "it will run forever, so I just return without running anything" << endl;
     return 0;
   }
-  
+    
+  RawTowerCalibration *TowerCalibration = new RawTowerCalibration("EmcRawTowerCalibration");
+  TowerCalibration->Detector("CEMC");
+  TowerCalibration->set_calib_algorithm(RawTowerCalibration::kSimple_linear_calibration);
+  TowerCalibration->set_calib_const_GeV_ADC(1. / 0.023);
+  TowerCalibration->set_pedstal_ADC(0);
+  se->registerSubsystem(TowerCalibration);
+
   HCalJetPhiShift *caloPhiShift = new HCalJetPhiShift("caloPhiShift",outputFile);
   caloPhiShift->SetEventNumber(event_number);
   se->registerSubsystem(caloPhiShift);
