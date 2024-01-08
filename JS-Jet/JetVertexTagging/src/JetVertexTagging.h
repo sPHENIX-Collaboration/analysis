@@ -4,10 +4,19 @@
 #define JETVERTEXTAGGING_H
 
 #include <fun4all/SubsysReco.h>
-#include <g4jets/Jetv1.h>
+#include <jetbase/Jetv1.h>
+#include <globalvertex/GlobalVertex.h>
+#include <trackbase_historic/SvtxTrack.h>
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#include <HepMC/GenEvent.h>
+#include <HepMC/GenVertex.h>
+#pragma GCC diagnostic pop
 
 #include <string>
 #include <vector>
+#include <TH1.h>
 
 class PHCompositeNode;
 class TTree;
@@ -16,11 +25,16 @@ class JetVertexTagging : public SubsysReco
 {
  public:
 
-  JetVertexTagging(const std::string &recojetname = "AntiKt_Tower_r04",
-		const std::string &truthjetname = "AntiKt_Truth_r04",
-		const std::string &outputfilename = "myjetanalysis.root");
+  //note max 10 inputs allowed
+  JetVertexTagging(	const std::string &outputfilename = "myjetanalysis.root", int n_inputs = 0, std::vector<std::string> TreeNameCollection= {"0","1","2","3"});
 
   ~JetVertexTagging() override;
+
+  void add_input(const std::string &recojetname = "AntiKt_Tower_r04",
+		const std::string &truthjetname = "AntiKt_Truth_r04"){
+      m_recoJetName.push_back(recojetname);
+      m_truthJetName.push_back(truthjetname);
+    }
 
   void setEtaRange(double low, double high)
   {
@@ -70,50 +84,83 @@ class JetVertexTagging : public SubsysReco
 
   void Print(const std::string &what = "ALL") const override;
 
+  std::pair<double,double> calcIP(SvtxTrack *m_dst_track, GlobalVertex *m_dst_vertex,float &val, float &err);
+  std::pair<double,double> calcIP2(SvtxTrack *m_dst_track, GlobalVertex *m_dst_vertex);
+  std::vector<TrkrDefs::cluskey> get_cluster_keys(SvtxTrack* track);
+
  private:
-  std::string m_recoJetName;
-  std::string m_truthJetName;
+  int m_inputs;
+  std::vector<std::string> m_TreeNameCollection;
+  std::vector<std::string> m_recoJetName;
+  std::vector<std::string> m_truthJetName;
   std::string m_outputFileName;
   std::pair<double, double> m_etaRange;
   std::pair<double, double> m_ptRange;
   int m_doTruthJets;
  
+  //Hope Chris will not see this, everyone likes hardcoded variables, right? 
+  //But it was kinda pain to make branches addresses with vectors
+
   //! Output Tree variables
-  TTree *m_T;
+  TTree *m_T[10];
 
   //! eventwise quantities
-  int m_event;
-  int m_reco_jet_n;
-  int m_truth_jet_n;
-  int m_centrality;
-  float m_impactparam;
+  int m_event[10];
+  int m_reco_jet_n[10];
+  int m_truth_jet_n[10];
+  int m_centrality[10];
+  float m_impactparam[10];
 
   //! reconstructed jets
-  std::vector<int> m_reco_jet_id;
-  std::vector<int> m_reco_jet_nConstituents;
-  std::vector<float> m_reco_jet_px;
-  std::vector<float> m_reco_jet_py;
-  std::vector<float> m_reco_jet_pz;
-  std::vector<float> m_reco_jet_pt;
-  std::vector<float> m_reco_jet_eta;
-  std::vector<float> m_reco_jet_phi;
-  std::vector<float> m_reco_jet_m;
-  std::vector<float> m_reco_jet_e;
+  std::vector<int> m_reco_jet_id[10];
+  std::vector<int> m_reco_jet_nConstituents[10];
+  std::vector<int> m_reco_jet_nChConstituents[10];
+  std::vector<float> m_reco_jet_px[10];
+  std::vector<float> m_reco_jet_py[10];
+  std::vector<float> m_reco_jet_pz[10];
+  std::vector<float> m_reco_jet_pt[10];
+  std::vector<float> m_reco_jet_eta[10];
+  std::vector<float> m_reco_jet_phi[10];
+  std::vector<float> m_reco_jet_m[10];
+  std::vector<float> m_reco_jet_e[10];
+  std::vector<std::vector<float>> m_reco_constituents_pt[10];
+  std::vector<std::vector<float>> m_reco_constituents_dxy[10];
+  std::vector<std::vector<float>> m_reco_constituents_dxy_unc[10];
+  std::vector<std::vector<float>> m_reco_constituents_Sdxy_old[10];
+  std::vector<std::vector<float>> m_reco_constituents_Sdxy[10];
+  std::vector<std::vector<float>> m_reco_constituents_pt_cut[10];
+  std::vector<std::vector<float>> m_reco_constituents_dxy_cut[10];
+  std::vector<std::vector<float>> m_reco_constituents_dxy_unc_cut[10];
+  std::vector<std::vector<float>> m_reco_constituents_Sdxy_old_cut[10];
+  std::vector<std::vector<float>> m_reco_constituents_Sdxy_cut[10];
+
+ 
  // std::vector<float> m_reco_jet_dR;
 
 
   //! truth jets
-  std::vector<int> m_truth_jet_id;
-  std::vector<int> m_truth_jet_nConstituents;
-  std::vector<float> m_truth_jet_px;
-  std::vector<float> m_truth_jet_py;
-  std::vector<float> m_truth_jet_pz;
-  std::vector<float> m_truth_jet_pt;
-  std::vector<float> m_truth_jet_eta;
-  std::vector<float> m_truth_jet_phi;
-  std::vector<float> m_truth_jet_m;
-  std::vector<float> m_truth_jet_e;
+  std::vector<int> m_truth_jet_id[10];
+  std::vector<int> m_truth_jet_nConstituents[10];
+  std::vector<int> m_truth_jet_nChConstituents[10];
+  std::vector<float> m_truth_jet_px[10];
+  std::vector<float> m_truth_jet_py[10];
+  std::vector<float> m_truth_jet_pz[10];
+  std::vector<float> m_truth_jet_pt[10];
+  std::vector<float> m_truth_jet_eta[10];
+  std::vector<float> m_truth_jet_phi[10];
+  std::vector<float> m_truth_jet_m[10];
+  std::vector<float> m_truth_jet_e[10];
+  //std::vector<std::vector<std::pair<HepMC::GenVertex*,int>>> m_truth_constituents_PDG_ID[10];
+  std::vector<std::vector<int>> m_truth_constituents_PDG_ID[10];
+ // std::vector<std::vector<float>> m_truth_constituents_dxy[10];
+ // std::vector<std::vector<float>> m_truth_constituents_dxy_unc[10];
+ // std::vector<std::vector<float>> m_truth_constituents_Sdxy[10];
+ // std::vector<std::vector<float>> m_truth_constituents_Sdxy_2017[10];
 //  std::vector<float> m_truth_jet_dR;
+  TH1D *m_chi2ndf[10];
+  TH1I *m_mvtxcl[10];
+  TH1I *m_inttcl[10];
+  TH1I *m_mtpccl[10];
 
 };
 

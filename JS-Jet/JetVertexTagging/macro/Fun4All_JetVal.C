@@ -24,25 +24,37 @@
 
 //#include <jetvertextagging/JetVertexTagging.h>
 #include <JetVertexTagging.h>
+#include <fstream>
+
+#include <globalvertex/GlobalVertexReco.h>
 
 R__LOAD_LIBRARY(libfun4all.so)
-R__LOAD_LIBRARY(libg4jets.so)
+R__LOAD_LIBRARY(libjetbase.so)
 R__LOAD_LIBRARY(libjetbackground.so)
 R__LOAD_LIBRARY(libJetVertexTagging.so)
 R__LOAD_LIBRARY(libg4centrality.so)
 R__LOAD_LIBRARY(libg4dst.so)
 R__LOAD_LIBRARY(libcalo_reco.so)
 R__LOAD_LIBRARY(libparticleflow.so)
+R__LOAD_LIBRARY(libglobalvertex.so)
 
 
 //void Fun4All_JetVal(const char *filelisttruth = "dst_truth_jet.list",
 //                     const char *filelistcalo = "dst_calo_cluster.list",  
 //                     const char *outname = "outputest.root")
-void Fun4All_JetVal(std::vector<std::string> myInputLists = {"condorJob/fileLists/productionFiles-CHARM-dst_tracks-00000.LIST"}, const int nEvents = 10){
+void Fun4All_JetVal(std::vector<std::string> myInputLists = {"condorJob/fileLists/productionFiles-CHARM-dst_tracks-00000.LIST"}, const int nEvents = 1){
 
   
   Fun4AllServer *se = Fun4AllServer::instance();
   int verbosity = 0;
+
+  //std::string outDir = "./";
+
+  std::string outDir = "/sphenix/tg/tg01/hf/jkvapil/JET10_new/";
+  if (outDir.substr(outDir.size() - 1, 1) != "/") outDir += "/";
+  outDir += "myTestJets/";
+
+
 
   std::string fileNumber = myInputLists[0];
   size_t findLastDash = fileNumber.find_last_of("-");
@@ -51,6 +63,11 @@ void Fun4All_JetVal(std::vector<std::string> myInputLists = {"condorJob/fileList
   size_t pos = fileNumber.find(remove_this);
   if (pos != std::string::npos) fileNumber.erase(pos, remove_this.length());
   std::string outputFileName = "outputData_" + fileNumber + ".root";
+
+  std::string outputRecoDir = outDir + "/inReconstruction/";
+  std::string makeDirectory = "mkdir -p " + outputRecoDir;
+  system(makeDirectory.c_str());
+  std::string outputRecoFile = outputRecoDir + outputFileName;
 
   //Create the server
   se->Verbosity(verbosity);
@@ -69,16 +86,21 @@ void Fun4All_JetVal(std::vector<std::string> myInputLists = {"condorJob/fileList
   cent->GetCalibrationParameters().ReadFromFile("centrality", "xml", 0, 0, std::string(getenv("CALIBRATIONROOT")) + std::string("/Centrality/"));
   se->registerSubsystem( cent );
 
+   GlobalVertexReco* gblvertex = new GlobalVertexReco();
+  gblvertex->Verbosity(0);
+  se->registerSubsystem(gblvertex);
+
   //HIJetReco();
 
   JetReco *truthjetreco = new JetReco();
       TruthJetInput *tji = new TruthJetInput(Jet::PARTICLE);
       tji->add_embedding_flag(0);  // changes depending on signal vs. embedded
       truthjetreco->add_input(tji);
-      truthjetreco->add_algo(new FastJetAlgo(Jet::ANTIKT, 0.2), "AntiKt_Truth_r02");
-      truthjetreco->add_algo(new FastJetAlgo(Jet::ANTIKT, 0.3), "AntiKt_Truth_r03");
+      //truthjetreco->add_algo(new FastJetAlgo(Jet::ANTIKT, 0.2), "AntiKt_Truth_r02"); // actually you cannot rename it, or you get empty trees...sad
+     // truthjetreco->add_algo(new FastJetAlgo(Jet::ANTIKT, 0.3), "AntiKt_Truth_r03");
       truthjetreco->add_algo(new FastJetAlgo(Jet::ANTIKT, 0.4), "AntiKt_Truth_r04");
-      truthjetreco->add_algo(new FastJetAlgo(Jet::ANTIKT, 0.5), "AntiKt_Truth_r05");
+     // truthjetreco->add_algo(new FastJetAlgo(Jet::ANTIKT, 0.5), "AntiKt_Truth_r05");
+      //truthjetreco->add_algo(new FastJetAlgo(Jet::ANTIKT, 0.6), "AntiKt_Truth_r06");
       truthjetreco->set_algo_node("ANTIKT");
       truthjetreco->set_input_node("TRUTH");
       truthjetreco->Verbosity(verbosity);
@@ -121,25 +143,42 @@ void Fun4All_JetVal(std::vector<std::string> myInputLists = {"condorJob/fileList
   pfr->Verbosity(verbosity);
   se->registerSubsystem(pfr);
 
+ 
+
   JetReco *towerjetreco = new JetReco();
   towerjetreco->add_input(new ParticleFlowJetInput());
-  towerjetreco->add_algo(new FastJetAlgo(Jet::ANTIKT, 0.2, 10), "AntiKt_Tower_r02_Sub1");
-  towerjetreco->add_algo(new FastJetAlgo(Jet::ANTIKT, 0.3, 10), "AntiKt_Tower_r03_Sub1");
-  towerjetreco->add_algo(new FastJetAlgo(Jet::ANTIKT, 0.4, 10), "AntiKt_Tower_r04_Sub1");
-  towerjetreco->add_algo(new FastJetAlgo(Jet::ANTIKT, 0.5, 10), "AntiKt_Tower_r05_Sub1");
+  //towerjetreco->add_algo(new FastJetAlgo(Jet::ANTIKT, 0.2, verbosity), "AntiKt_reco_r02");
+  //towerjetreco->add_algo(new FastJetAlgo(Jet::ANTIKT, 0.3, verbosity), "AntiKt_reco_r03");
+  towerjetreco->add_algo(new FastJetAlgo(Jet::ANTIKT, 0.4, verbosity), "AntiKt_reco_r04");
+  //towerjetreco->add_algo(new FastJetAlgo(Jet::ANTIKT, 0.5, verbosity), "AntiKt_reco_r05");
+  //towerjetreco->add_algo(new FastJetAlgo(Jet::ANTIKT, 0.6, verbosity), "AntiKt_reco_r06");
   towerjetreco->set_algo_node("ANTIKT");
-  towerjetreco->set_input_node("TOWER");
+  towerjetreco->set_input_node("INCLUSIVE_RECO");
   towerjetreco->Verbosity(verbosity);
   se->registerSubsystem(towerjetreco);
  
-  JetVertexTagging *myJetVal = new JetVertexTagging("AntiKt_Tower_r04_Sub1", "AntiKt_Truth_r04", outputFileName);
+  JetVertexTagging *myJetVal = new JetVertexTagging(outputRecoFile,1,{"AntiKt_r04"});//{"AntiKt_r02","AntiKt_r03","AntiKt_r04","AntiKt_r05","AntiKt_r06"});
+ // myJetVal->add_input("AntiKt_reco_r02", "AntiKt_Truth_r02");
+  //myJetVal->add_input("AntiKt_reco_r03", "AntiKt_Truth_r03");
+  myJetVal->add_input("AntiKt_reco_r04", "AntiKt_Truth_r04");
+  //myJetVal->add_input("AntiKt_reco_r05", "AntiKt_Truth_r05");
+  //myJetVal->add_input("AntiKt_reco_r06", "AntiKt_Truth_r06");
   myJetVal->setPtRange(5, 100);
   myJetVal->setEtaRange(-1.1, 1.1);
-  myJetVal->doTruth(1);
+  myJetVal->doTruth(true);
   se->registerSubsystem(myJetVal);
+
+
   
   se->run(nEvents);
   se->End();
+
+  std::ifstream file(outputRecoFile.c_str());
+  if (file.good())
+  {
+    std::string moveOutput = "mv " + outputRecoFile + " " + outDir;
+    system(moveOutput.c_str());
+  }
 
   gSystem->Exit(0);
   return;

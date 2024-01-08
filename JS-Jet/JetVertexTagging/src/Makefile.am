@@ -25,8 +25,7 @@ libJetVertexTagging_la_LIBADD = \
   -lfun4all \
   -lg4dst \
   -lg4eval \
-  -lg4jets_io \
-  -lg4jets
+  -ljetbase
 
 BUILT_SOURCES = testexternals.cc
 
