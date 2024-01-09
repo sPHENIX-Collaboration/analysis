@@ -99,7 +99,6 @@ int CaloTransverseEnergy::process_event(PHCompositeNode *topNode)
 		if(z_bin<-100) z_bin=-100;
 		else if(z_bin > 100) z_bin = 100;
 		zbin=z_bin;
-		zbin=0;
 		std::cout<<"z bin is " <<z_bin <<std::endl;
 		if(zPLTS.find(zbin) == zPLTS.end()){ 
 			std::cout<<"Could not find the zbin, what is up with that?" <<std::endl;
@@ -137,14 +136,14 @@ int CaloTransverseEnergy::process_event(PHCompositeNode *topNode)
 			n_evt--;
 			return 1;}
 		}
-		std::cout<<"Found energy"<<std::endl;
+//		std::cout<<"Found energy"<<std::endl;
 		if(sim && truth){
 			try{
 				PHHepMCGenEventMap *phg=findNode::getClass<PHHepMCGenEventMap>(topNode, "PHHepMCGenEventMap");
 				//EventHeaderv1 *evthead=findNode::getClass<EventHeaderv1>(topNode, "EventHeader");
 				PHG4TruthInfoContainer *truthinfo = findNode::getClass<PHG4TruthInfoContainer>(topNode, "G4TruthInfo");
 				std::map<std::string, std::vector<float>> hep_map;
-				std::cout<<"Found the hep map"<<std::endl;
+//				std::cout<<"Found the hep map"<<std::endl;
 				for(PHHepMCGenEventMap::ConstIter eventIter=phg->begin(); eventIter != phg->end(); ++eventIter){
 					PHHepMCGenEvent * hpev=eventIter->second;
 					if(hpev && hpev->get_embedding_id() == 0){
@@ -161,14 +160,14 @@ int CaloTransverseEnergy::process_event(PHCompositeNode *topNode)
 								hep_map["PT"].push_back(sqrt(px*px+py*py));
 								hep_map["PZ"].push_back(pz);
 								hep_map["phi"].push_back(atan2(py, px));
-								hep_map["eta"].push_back(asinh(pz/hep_map["PZ"].back()));
+								hep_map["eta"].push_back(asinh(pz/hep_map["PT"].back()));
 								hep_map["ID"].push_back((*iter)->pdg_id());
 							}
 						}
 						break;
 					}
 				}
-				std::cout<<"Have the hep particle maps loaded" <<std::endl;
+//				std::cout<<"Have the hep particle maps loaded" <<std::endl;
 				if(!truthinfo) return 1;
 				PHG4TruthInfoContainer::Range range=truthinfo->GetPrimaryParticleRange();
 				int tpt=0;
@@ -186,43 +185,59 @@ int CaloTransverseEnergy::process_event(PHCompositeNode *topNode)
 					if(!truthinfo->is_primary(truth)) continue;
 					float pt=sqrt(pow(truth->get_px(),2) + pow(truth->get_py(),2));
 					float pz=truth->get_pz()+hep_map["VTX_Z"].at(0);
-					float E, ps=pow(pt,2)+pow(pz,2);
+					float E=0, ps=pow(pt,2)+pow(pz,2);
 					std::vector<int>::iterator parit =std::find(baryons.begin(), baryons.end(), truth->get_pid());
 					std::vector<int>::iterator aparit =std::find(baryons.begin(), baryons.end(), -truth->get_pid());
 					if(parit !=baryons.end()){
 						E=truth->get_e() -sqrt(pow(truth->get_e(),2)-ps);
+						if(sqrt(ps) > truth->get_e()){ std::cout<<"PS is too high Energy " <<truth->get_e() <<" to ps " <<ps <<" for particle id " <<truth->get_pid() <<std::endl;
+						E=truth->get_e() - pmass;}
 					}
-					else if(aparit != baryons.end()) E=truth->get_e() -sqrt(pow(truth->get_e(),2)-ps)+2*pmass;
+					else if(aparit != baryons.end()){
+						 E=truth->get_e() -sqrt(pow(truth->get_e(),2)-ps)+2*pmass;
+						if(sqrt(ps) > truth->get_e()){
+							 std::cout<<"PS is too high Energy " <<truth->get_e() <<" to ps " <<sqrt(ps) <<" for particle id " <<truth->get_pid() <<std::endl;
+							E=truth->get_e()+pmass; 
+						}
+					}
 					else E=truth->get_e();
-					std::cout<<"Found a particle with particle id " <<truth->get_pid() <<std::endl;
 					float phi=atan2(truth->get_py(), truth->get_px());
 					float eta=asinh(pz/pt);
+					if(abs(eta) > 1.13 ) continue;
 					tpt++;
+//					std::cout<<"Found a particle with particle id " <<truth->get_pid() <<" with energy " <<E <<std::endl;
 					int zbin=10*(hep_map["VTX_Z"].at(0)/10);
 					if(zbin <-100) zbin=-100;
 					if(zbin >100) zbin=100;
 					zbin=0;
+					//zbin=0;
+					float etawidth=2.2/24., phiwidth=3.14159/32.;
+					int etabin=(1.1+eta-etawidth/2.0)/etawidth, phibin=(phi+3.1415-phiwidth/2.0)/phiwidth;
 					truth_event_e[zbin]+=E;
-					std::cout<<"added an energy of " <<E <<std::endl;
+//					std::cout<<"added an energy of " <<E <<std::endl;
 					try{std::cout<<szPLTS[zbin]->z_bin<<std::endl;}
 					catch(std::exception& e){std::cout<<"found bad zbin " <<zbin <<std::endl;}
 					szPLTS[zbin]->total->phi->Fill(phi);
-					std::cout<<"phi dis" <<std::endl;
 					szPLTS[zbin]->total->eta->Fill(eta);
 					szPLTS[zbin]->total->E_phi->Fill(phi, E);
-					std::cout<<"accessed bins of szplts" <<std::endl;
-					float ET=GetTransverseEnergy(E, eta);
-					evt_ET[zbin]+=ET;
-					szPLTS[zbin]->total->dET_eta->Fill(eta,ET/2.2);
-					szPLTS[zbin]->total->ET_phi->Fill(phi, ET);
-					szPLTS[zbin]->total->ET_eta_phi->Fill(eta, phi, ET);
-					szPLTS[zbin]->total->E_eta_phi->Fill(eta, phi, E);
-					szPLTS[zbin]->total->Hits2D->Fill(eta, phi);
+//					std::cout<<"accessed bins of szplts" <<std::endl;
+					float et=GetTransverseEnergy(E, eta);
+//					float ET=(float)E/(float)cosh(eta);
+					std::cout <<"ET is " <<et  <<"for eta " <<eta <<std::endl;
+					evt_ET[zbin]+=et;
+					et=et/2.2;
+					et=et*24.0;
+					szPLTS[zbin]->total->dET_eta->Fill(eta,et);
+					et=et/24.0;
+					szPLTS[zbin]->total->ET_phi->Fill(phi, et);
+					szPLTS[zbin]->total->ET_eta_phi->Fill(etabin, phibin, et);
+					szPLTS[zbin]->total->E_eta_phi->Fill(etabin, phibin, E);
+					szPLTS[zbin]->total->Hits2D->Fill(etabin, phibin);
 				
 				}
-				std::cout<<"Now loading the energy into the plts" <<std::endl;
-				for(auto E:truth_event_e) szPLTS[E.first]->total->Energy->Fill(E.second);
-				for(auto E:evt_ET) szPLTS[E.first]->total->ET->Fill(E.second);
+			//	std::cout<<"Now loading the energy into the plts" <<std::endl;
+				for(auto E:truth_event_e) szPLTS[0]->total->Energy->Fill(E.second);
+				for(auto E:evt_ET) szPLTS[0]->total->ET->Fill(E.second);
 				
 			}
 			catch(std::exception& e){ return 1;}
@@ -246,8 +261,8 @@ int CaloTransverseEnergy::process_event(PHCompositeNode *topNode)
 	evt_data.emcal_et=emcaltotal;
 	evt_data.ohcal_et=ohcaltotal;
 	evt_data.ihcal_et=ihcaltotal;
-	float total=emcaltotal+ihcaltotal+ohcaltotal;
-	std::cout<<"Base level sum is " <<total <<std::endl;
+	//float total=emcaltotal+ihcaltotal+ohcaltotal;
+//	if(!truth) std::cout<<"Base level sum is " <<total <<std::endl;
 	std::map<std::string, float> data {{"EMCAL", emcaltotal}, {"OHCAL", ohcaltotal}, {"IHCAL", ihcaltotal}};
 	zPLTS[zbin]->event_data.push_back(data);
 //	PLTS.event_data.push_back(std::make_pair("OHCAL", ohcaltotal));
@@ -270,11 +285,11 @@ void CaloTransverseEnergy::processDST(TowerInfoContainerv1* calo_event, TowerInf
 {
 	int maxphi=0, maxeta=0;
 	geom->set_calorimeter_id(caloid);
-	std::cout<<"Have now entered the DST processor and set the caloid on event " <<n_evt <<std::endl;
+//	std::cout<<"Have now entered the DST processor and set the caloid on event " <<n_evt <<std::endl;
 	//This processes all events in the DST in the processor 
 	int ntowers=calo_event->size();
 	int n_live_towers=0, n_time=0;
-	std::cout<<"N Towers: " <<ntowers <<std::endl;
+//	std::cout<<"N Towers: " <<ntowers <<std::endl;
 	try{
 	for(int i =0;i<ntowers; i++ )
 	{
@@ -295,18 +310,18 @@ void CaloTransverseEnergy::processDST(TowerInfoContainerv1* calo_event, TowerInf
 		else if(hcalorem) PLTS->ohcal->E_m->Fill(energy1);
 		else PLTS->em->E_m->Fill(energy1);
 		PLTS->total->E_m->Fill(energy1);
-		if(hcalorem) std::cout<<"energy is " <<energy1 <<std::endl;
+//		if(hcalorem) std::cout<<"energy is " <<energy1 <<std::endl;
 		float time=tower->get_time();
 		if(inner){
-			 if(time<-2 || time > 2) energy1=-0.1;
+			 if(time<-2 || time > 2) energy1=-10;
 			PLTS->ihcal->timing->Fill(time);
 		} //using a specific timing for the relevant runs I'm using, should do the systematic from cdb when available 
 		if (hcalorem && ! inner){ 
-				if (time<-2 || time >2) energy1=-0.1;
+				if (time<-2 || time >2) energy1=-10;
 				PLTS->ohcal->timing->Fill(time);
 		}
 		else{
-			 if(time < -1 || time > 1 ) energy1=-0.1; 
+			 if(time < -1 || time > 1 ) energy1=-10; 
 			PLTS->em->timing->Fill(time);
 		}
 		PLTS->total->timing->Fill(time);
@@ -319,12 +334,12 @@ void CaloTransverseEnergy::processDST(TowerInfoContainerv1* calo_event, TowerInf
 		int phibin=calo_key->getTowerPhiBin(key);
 		int etabin=calo_key->getTowerEtaBin(key);
 		float radius, z;
-		radius=geom->get_radius(); 
+		radius=geom->get_radius();
 		n_time++;
-		if(hcalorem) std::cout<<"Tower is at radius " <<radius <<std::endl;
+		//std::cout<<"Tower is at radius " <<radius <<std::endl;
 		//RawTowerGeom *towergeom=geom->get_tower_geometry(key);
 		//assert(towergeom);
-		if(energy1 <= 0){continue;}
+		if(energy1 <= -5){continue;}
 		if(hcalorem && inner) PLTS->ihcal->E_s->Fill(energy1);
 		else if(hcalorem) PLTS->ohcal->E_s->Fill(energy1);
 		else PLTS->em->E_s->Fill(energy1);
@@ -369,8 +384,8 @@ void CaloTransverseEnergy::processDST(TowerInfoContainerv1* calo_event, TowerInf
 			else PLTS->ohcal->z_val->Fill(z_vtx);
 	//		std::cout<<"putting in the vertex for hcal" <<std::endl;
 		}
-		float et=GetTransverseEnergy(energy1, eta);
-		float et_div=et;
+		float et=GetTransverseEnergy((float)energy1, eta);
+		float et_div=energy1/cosh(eta);
 		if(eta_width>0) et_div=et/(float)eta_width;
 
 		energies->push_back(GetTransverseEnergy(energy1, eta));
@@ -379,15 +394,16 @@ void CaloTransverseEnergy::processDST(TowerInfoContainerv1* calo_event, TowerInf
 			float rat=4.0;
 			rat=et_div*96.0/rat;
 			emcalenergy+=energy1;
-			float etamin=PLTS->em->etamin, etamax=PLTS->em->etamax; 
-			if(etamin < eta || etamax > eta) std::cout<<"Out of bounds with eta : " <<eta <<" bounds are " <<etamin << " to " <<etamax<<std::endl;
-			std::cout<<"Energy " <<et_div <<" with eta " <<eta <<std::endl;
+			//float etamin=PLTS->em->dET_eta->GetBinCenter(1), etamax=PLTS->em->dET_eta->GetBinCenter(96); 
+			//if(etamin < eta || etamax > eta) std::cout<<"Out of bounds with eta : " <<eta <<" bounds are " <<etamin << " to " <<etamax<<std::endl;
+//			if(et_div > 0 ) std::cout<<"Energy " <<et_div <<" with eta " <<eta <<std::endl;
 			PLTS->em->phi->Fill(phibin);
 			PLTS->em->eta->Fill(etabin);
 			PLTS->em->E_phi->Fill(phi, energy1);
 			PLTS->em->ET_phi->Fill(phi, et);
 			PLTS->em->dET_eta->Fill(eta,et_div);
-			std::cout<<"filled data in to the det/eta" <<std::endl;
+		
+			//if(et_div >0 ) std::cout<<"filled data in to the det/eta of" <<et_div <<" and readsback as " <<PLTS->em->dET_eta->GetBinContent(PLTS->em->dET_eta->FindBin(eta)) << "\n with sample value " <<PLTS->em->dET_eta->FindBin(eta) <<" not in " <<etamin <<" , to " <<etamax <<std::endl;
 			PLTS->em->ET_eta_phi->Fill(eta, phi, et_div);
 			PLTS->em->Hits2D->Fill(etabin, phibin);
 			PLTS->em->ET_z_eta->Fill(z_vtx, eta, et_div);
@@ -477,15 +493,15 @@ void CaloTransverseEnergy::processDST(TowerInfoContainerv2* calo_event, TowerInf
 //		if(!hcalorem) std::cout<<"energy is " <<energy1 <<std::endl;
 		float time=tower->get_time();
 		if(inner){
-			 if(time<-2 || time > 2) energy1=-0.1;
+			 if(time<-2 || time > 2) energy1=-10;
 			PLTS->ihcal->timing->Fill(time);
 		} //using a specific timing for the relevant runs I'm using, should do the systematic from cdb when available 
 		if (hcalorem && ! inner){ 
-				if (time<-2 || time >2) energy1=-0.1;
+				if (time<-2 || time >2) energy1=-10;
 				PLTS->ohcal->timing->Fill(time);
 		}
 		else{
-			 if(time < -1 || time > 1 ) energy1=-0.1; 
+			 if(time < -1 || time > 1 ) energy1=-10; 
 			PLTS->em->timing->Fill(time);
 		}
 		PLTS->total->timing->Fill(time);
@@ -503,7 +519,7 @@ void CaloTransverseEnergy::processDST(TowerInfoContainerv2* calo_event, TowerInf
 //		if(!hcalorem) std::cout<<"Tower is at radius " <<radius <<std::endl;
 		//RawTowerGeom *towergeom=geom->get_tower_geometry(key);
 		//assert(towergeom);
-		if(energy1 <= 0){continue;}
+		//if(energy1 <= -5){continue;}
 		if(hcalorem && inner) PLTS->ihcal->E_s->Fill(energy1);
 		else if(hcalorem) PLTS->ohcal->E_s->Fill(energy1);
 		else PLTS->em->E_s->Fill(energy1);
@@ -550,7 +566,7 @@ void CaloTransverseEnergy::processDST(TowerInfoContainerv2* calo_event, TowerInf
 		}
 		float et=GetTransverseEnergy(energy1, eta);
 		float et_div=et;
-		if(eta_width>0) et_div=et/eta_width;
+		if(eta_width>0) et_div=et/(float)eta_width;
 
 		energies->push_back(GetTransverseEnergy(energy1, eta));
 		if(!hcalorem){
@@ -558,8 +574,8 @@ void CaloTransverseEnergy::processDST(TowerInfoContainerv2* calo_event, TowerInf
 			float rat=4.0;
 			rat=et_div*96.0/rat;
 			emcalenergy+=energy1;
-			float etamin=PLTS->em->etamin, etamax=PLTS->em->etamax; 
-			if(etamin < eta || etamax > eta) std::cout<<"Out of bounds with eta : " <<eta <<" bounds are " <<etamin << " to " <<etamax<<std::endl;
+	//		float etamin=PLTS->em->etamin, etamax=PLTS->em->etamax; 
+	//		if(etamin < eta || etamax > eta) std::cout<<"Out of bounds with eta : " <<eta <<" bounds are " <<etamin << " to " <<etamax<<std::endl;
 			PLTS->em->phi->Fill(phibin);
 			PLTS->em->eta->Fill(etabin);
 			PLTS->em->E_phi->Fill(phi, energy1);
@@ -588,7 +604,7 @@ void CaloTransverseEnergy::processDST(TowerInfoContainerv2* calo_event, TowerInf
 				PLTS->ihcal->E_phi->Fill(phi, energy1);
 				PLTS->ihcal->ET_phi->Fill(phi, et);
 		//		if(eta< PLTS->ihcal->etamin || eta > PLTS->ihcal->etamax) std::cout<<"Non-good eta " <<eta <<std::endl;
-				PLTS->ihcal->dET_eta->Fill(eta, et_div);
+				PLTS->ihcal->dET_eta->Fill(eta, (float)et_div);
 				PLTS->ihcal->ET_eta_phi->Fill(eta, phi, et_div);
 				PLTS->ihcal->Hits2D->Fill(etabin, phibin);
 				PLTS->ihcal->Eta_width->Fill(etabin, eta_width);
@@ -603,7 +619,7 @@ void CaloTransverseEnergy::processDST(TowerInfoContainerv2* calo_event, TowerInf
 				PLTS->ohcal->phi->Fill(phibin);
 				PLTS->ohcal->eta->Fill(etabin);
 				PLTS->ohcal->E_phi->Fill(phi, et);
-				PLTS->ohcal->dET_eta->Fill(eta, et_div);
+				PLTS->ohcal->dET_eta->Fill(eta, (float)et_div);
 				PLTS->ohcal->ET_eta_phi->Fill(eta, phi, et_div);
 				PLTS->ohcal->Hits2D->Fill(etabin, phibin);
 				PLTS->ohcal->Eta_width->Fill(etabin, eta_width);
@@ -756,12 +772,15 @@ void CaloTransverseEnergy::ProduceOutput()
 	
 	for(auto p:zPLTS){
 	plots* PLTS=p.second;
-	PLTS->em->getAcceptance();
-	PLTS->ihcal->getAcceptance();
-	PLTS->ohcal->getAcceptance();
-	PLTS->em->scaleThePlots(n_evt, &PLTS->event_data);
-	PLTS->ihcal->scaleThePlots(n_evt, &PLTS->event_data);
-	PLTS->ohcal->scaleThePlots(n_evt, &PLTS->event_data);
+		PLTS->em->getAcceptance();
+		PLTS->ihcal->getAcceptance();
+		PLTS->ohcal->getAcceptance();
+
+		PLTS->em->scaleThePlots(n_evt, &PLTS->event_data);
+		PLTS->ihcal->scaleThePlots(n_evt, &PLTS->event_data);
+		PLTS->ohcal->scaleThePlots(n_evt, &PLTS->event_data);
+		if(PLTS->em->z==0) std::cout<<"The plots have " <<PLTS->em->dET_eta->GetEntries() <<" entries with mean" <<PLTS->em->dET_eta->GetBinContent(PLTS->em->dET_eta->GetMaximumBin()) <<std::endl;
+	
 	for(auto data_point:PLTS->event_data){
 		float total_val=0;
 		total_val+=data_point["EMCAL"];

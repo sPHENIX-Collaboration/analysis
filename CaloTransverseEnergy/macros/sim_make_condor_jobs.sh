@@ -4,7 +4,7 @@ NFILES=$1
 RUN=${2:-'7'}
 SUBMIT=${3:-'test'}
 i=0
-echo $NFILES
+echo "Submitting first $NFILES"
 while [[ $i -le $NFILES ]]; do 
 	for infile in  `more other.txt`; do 
 		if [[ $i -gt $NFILES ]]; then
@@ -21,9 +21,9 @@ echo "Executable      = /gpfs/mnt/gpfs02/sphenix/user/sgross/sphenix_analysis/Ca
 #	else 
 	echo "Arguments       = $infile " >> $fname
 #	fi
-echo "Output          = /gpfs/mnt/gpfs02/sphenix/user/sgross/sphenix_analysis/CaloTransverseEnergy/running_dir/condor_"$i"_run_"$RUN".out" >> $fname
-echo "Error           =/gpfs/mnt/gpfs02/sphenix/user/sgross/sphenix_analysis/CaloTransverseEnergy/running_dir/condor_"$i"_run_"$RUN".err" >> $fname
-echo "Log             =/gpfs/mnt/gpfs02/sphenix/user/sgross/sphenix_analysis/CaloTransverseEnergy/running_dir/condor_"$i"_run_"$RUN".log" >> $fname
+echo "Output          = /gpfs/mnt/gpfs02/sphenix/user/sgross/sphenix_analysis/CaloTransverseEnergy/running_dir/condor_run_"$RUN".out" >> $fname
+echo "Error           =/gpfs/mnt/gpfs02/sphenix/user/sgross/sphenix_analysis/CaloTransverseEnergy/running_dir/condor_run_"$RUN".err" >> $fname
+echo "Log             =/gpfs/mnt/gpfs02/sphenix/user/sgross/sphenix_analysis/CaloTransverseEnergy/running_dir/condor_run_"$RUN".log" >> $fname
 echo "Initialdir      = /gpfs/mnt/gpfs02/sphenix/user/sgross/sphenix_analysis/CaloTransverseEnergy/src" >> $fname
 echo "PeriodicHold    = (NumJobStarts>=1 && JobStatus == 1)" >> $fname
 echo "accounting_group = group_phenix.u" >> $fname
@@ -35,10 +35,11 @@ echo "Queue 1 " >> $fname
 
 
 i=$(( $i+1 ))
-echo $i 
+
 if [ "$SUBMIT" == "submit" ]; then 
 	condor_submit $fname
 fi
 done
+
 done
  	

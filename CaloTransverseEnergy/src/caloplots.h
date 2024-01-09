@@ -26,7 +26,7 @@ class caloplots
 		std::vector<TH2F*> hists_2;
 		float acceptance=0.0; 
 		bool ok_phi=false;
-		float z=0, zl, zh, zmin=1, zmax=1, rcalo=1;
+		float z=0, zl, zh, zmin=1, zmax=1, rcalo=93.5;
 		int phibins=256, etabins=96;
 		float etamin=-1.13, etamax=1.13;
 		caloplots(std::string caloname="EMCAL", float zlow=-30, float zhigh=30, bool simul=false){
@@ -37,8 +37,8 @@ class caloplots
 		//	hists_1=NULL;
 		//	hists_2=NULL;
 			z=(zl+zh)/2;
-			if(calo.find("OHCAL") != std::string::npos || calo.find("ALL") != std::string::npos) rcalo=3;
-			if(calo.find("IHCAL") != std::string::npos) rcalo=2;
+			if(calo.find("OHCAL") != std::string::npos || calo.find("ALL") != std::string::npos) rcalo=177.423;
+			if(calo.find("IHCAL") != std::string::npos) rcalo=115.0;
 			if(calo.find("HCAL") != std::string::npos || calo.find("ALL") != std::string::npos){
 					zmax=rcalo*(1-etamax*etamax)/(2*etamax);
 					zmin=rcalo*(1-etamin*etamin)/(2*etamin);
@@ -80,7 +80,8 @@ class caloplots
 		void scaleThePlots(int n_evt, std::vector<std::map<std::string, float>>* calo_data){
 			n_evt=1;
 			dET_eta->Scale(1/(float)n_evt);
-			dET_eta->Divide(acceptance_eta);
+			if(acceptance != 0) dET_eta->Divide(acceptance_eta);
+			else acceptance=1.0;
 			ET_phi->Scale(1/((float)n_evt*acceptance));
 			ET_z->Scale(1/((float)n_evt*acceptance));
 			dET->Scale(1/(float)acceptance);
@@ -128,8 +129,10 @@ class caloplots
 		void AdjustEtaEdge()
 		{
 			//shifts min and max eta value on z boundries.
-			etamax=-2/etamax-zh/rcalo+sqrt(pow((etamax*zh-rcalo)/(etamax*rcalo), 2)+ 1);
-			etamin=-2/etamin-zl/rcalo+sqrt(pow((etamin*zl-rcalo)/(etamin*rcalo), 2)+ 1);
+			etamax=sinh(etamax)*rcalo+zh;
+			etamax=asinh(etamax/rcalo);
+			etamin=asinh(sinh(etamin)+zl/rcalo);
+			std::cout<<"eta is [" <<etamin <<"," <<etamax <<"]" <<std::endl;
 		}
 		void MakePlots(){
 			if(calo.find("HCAL") != std::string::npos || calo.find("ALL") != std::string::npos){
@@ -159,9 +162,9 @@ class caloplots
 			eta=new TH1F(Form("eta_%s_z_%d", calo.c_str(), z_lab), Form("Hit distribution in physical #eta_{bin} in %s with vertex z=%f; #eta_{bin}; N_{Hits}", calo.c_str(), z), etabins, -0.5, etabins-0.5);
 			z_val=new TH1F(Form("z_%s_z_%d", calo.c_str(), z_lab), Form("Hit distribution in z vertex in %s with vertex centered at z=%f; z; N_{events}", calo.c_str(), z), 100, zl, zh);
 			timing=new TH1F(Form("time_%s_z_%d", calo.c_str(), z_lab), Form("Timing distribution precut in %s with vertex centerd at z=%f; time [samples]; N_{evts}",calo.c_str(), z), 20, -10.5, 10.5);
-			E_f=new TH1F(Form("en_%s_z_%d", calo.c_str(), z_lab), Form("Energy distribution pre-timing cut in %s with vertex centerd at z=%f; Energy [GeV]; N_{towers}", calo.c_str(), z), 100, -20.5, 20.5);  
-			E_m=new TH1F(Form("en_pp_%s_z_%d", calo.c_str(), z_lab), Form("Energy distribution post-energy cut in %s with vertex centerd at z=%f; Energy [GeV]; N_{towers}", calo.c_str(), z), 100, -20.5, 20.5);  
-			E_s=new TH1F(Form("en_pc_%s_z_%d", calo.c_str(), z_lab), Form("Energy distribution post-timing cut in %s with vertex centerd at z=%f; Energy [GeV]; N_{towers}", calo.c_str(), z), 100, -20.5, 20.5); 
+			E_f=new TH1F(Form("en_%s_z_%d", calo.c_str(), z_lab), Form("Energy distribution pre-timing cut in %s with vertex centerd at z=%f; Energy [GeV]; N_{towers}", calo.c_str(), z), 10000, -20.5, 20.5);  
+			E_m=new TH1F(Form("en_pp_%s_z_%d", calo.c_str(), z_lab), Form("Energy distribution post-energy cut in %s with vertex centerd at z=%f; Energy [GeV]; N_{towers}", calo.c_str(), z), 10000, -20.5, 20.5);  
+			E_s=new TH1F(Form("en_pc_%s_z_%d", calo.c_str(), z_lab), Form("Energy distribution post-timing cut in %s with vertex centerd at z=%f; Energy [GeV]; N_{towers}", calo.c_str(), z), 10000, -20.5, 20.5); 
 			Eta_width=new TH1F(Form("eta_width_%s_z_%d", calo.c_str(), z_lab), Form("Eta bin width in %s with vertex centerd at z=%f; #eta_{bin}; width", calo.c_str(), z), etabins, -0.1, eb); 
 			hists_1.push_back(Energy);
 			hists_1.push_back(ET);
