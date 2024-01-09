@@ -38,7 +38,7 @@ R__LOAD_LIBRARY(libLiteCaloEvalTowSlope.so)
 #include <caloana/CaloAna.h>
 R__LOAD_LIBRARY(libcaloana.so)
 
-void Fun4All_EMCal_Hist(int nevents = 100, const std::string &fname = "inputdata.txt")
+void Fun4All_EMCal_Hist(int nevents = 0, const std::string &fname = "inputdata.txt")
 {
 
   Fun4AllServer *se = Fun4AllServer::instance();
