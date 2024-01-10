@@ -9,8 +9,9 @@
 #include <phool/PHCompositeNode.h>
 #include <phool/getClass.h>
 
+#include <jetbase/JetContainer.h>
 #include <jetbase/JetMap.h>
-#include <jetbase/Jetv1.h>
+#include <jetbase/Jet.h>
 
 #include <centrality/CentralityInfo.h>
 
@@ -20,8 +21,8 @@
 #include <particleflowreco/ParticleFlowElementv1.h>
 #include <particleflowreco/ParticleFlowElementContainer.h>
 
-#include <bbc/BbcPmtContainer.h>
-#include <bbc/BbcPmtContainer.h>
+//#include <bbc/BbcPmtContainer.h>
+//#include <bbc/BbcPmtContainer.h>
 
 #define HomogeneousField
 #include <KFParticle.h>
@@ -29,7 +30,7 @@
 #include <g4main/PHG4TruthInfoContainer.h>
 #include <g4main/PHG4Particle.h>
 
-#include <trackbase_historic/SvtxVertex.h>
+//#include <trackbase_historic/SvtxVertex.h>
 #include <trackbase_historic/SvtxTrack.h>
 #include <trackbase_historic/SvtxTrackMap.h>
 #include <trackbase_historic/TrackAnalysisUtils.h>
@@ -273,13 +274,19 @@ int JetVertexTagging::process_event(PHCompositeNode *topNode)
   m_centrality[input] =  cent_node->get_centile(CentralityInfo::PROP::bimp);
   m_impactparam[input] =  cent_node->get_quantity(CentralityInfo::PROP::bimp);
 
+  // interface to reco jets
+  JetContainer* jets = findNode::getClass<JetContainer>(topNode, m_recoJetName.at(input));
+  if (!jets)
+    {
+      std::cout	<< "MyJetAnalysis::process_event - Error can not find DST Reco JetContainer node " << m_recoJetName.at(input) << std::endl;
+      exit(-1);
+    }
 
-
-    JetMap* jets = findNode::getClass<JetMap>(topNode, m_recoJetName.at(input));
+   /* JetMap* jets = findNode::getClass<JetMap>(topNode, m_recoJetName.at(input));
     if (!jets){
       std::cout	<< "MyJetAnalysis::process_event - Error can not find DST Reco JetMap node " << m_recoJetName.at(input) << std::endl;
       exit(-1);
-    }
+    }*/
 
     //interface to truth jets
     JetMap* jetsMC = findNode::getClass<JetMap>(topNode, m_truthJetName.at(input));
@@ -348,8 +355,9 @@ int JetVertexTagging::process_event(PHCompositeNode *topNode)
  
   //get reco jets
     m_reco_jet_n[input] = 0;
-    for (JetMap::Iter iter = jets->begin(); iter != jets->end(); ++iter){
-      Jet* jet = iter->second;
+    //for (JetMap::Iter iter = jets->begin(); iter != jets->end(); ++iter){
+      for (Jet* jet : *jets){
+      //Jet* jet = iter->second;
       
       if(jet->get_pt() < 5.0) continue; // to remove noise jets  input
       //bool eta_cut = (jet->get_eta() >= m_etaRange.first) and (jet->get_eta() <= m_etaRange.second);
@@ -372,11 +380,13 @@ int JetVertexTagging::process_event(PHCompositeNode *topNode)
       
    
       //std::cout<<"NEW jet"<<std::endl;
-      for(auto citer = jet->begin_comp(); citer != jet->end_comp(); ++citer){
+      //for(auto citer = jet->begin_comp(); citer != jet->end_comp(); ++citer){
+      for (const auto& comp : jet->get_comp_vec()){
 	      //HepMC::GenParticle* constituent = hepMCGenEvent->barcode_to_particle(citer->second);
         //Jet::SRC source = citer->first;
         //std::cout<<source<<" "<<citer->second<<std::endl;
-        ParticleFlowElement *pflow = pflowContainer->getParticleFlowElement(citer->second);
+       // ParticleFlowElement *pflow = pflowContainer->getParticleFlowElement(comp->second);
+        ParticleFlowElement *pflow = pflowContainer->getParticleFlowElement(comp.second);
         //std::cout<<"id: "<<citer->second<<" px: "<< pflow->get_px()<<" py: "<< pflow->get_py()<<" pz: "<< pflow->get_pz()<<std::endl;
         //std::cout<<"d0 line in 2D "<<vtx->get_x()*std::sin(pflow->get_phi()) - vtx->get_y()*std::cos(pflow->get_phi())<<std::endl;
         //jetd0.push_back(vtx->get_x()*std::sin(pflow->get_phi()) - vtx->get_y()*std::cos(pflow->get_phi()));
