@@ -1,8 +1,8 @@
 executable = condorsubmitHotMapMakerPass1.csh
 arguments = $(filename) 2.5
-log  = /tmp/ahodges/logs/hotTower/log_21813/job-$(Process).log
-output  = out/21813/job-$(Process).out
-error = err/21813/job-$(Process).err
+log  = /tmp/ahodges/logs/hotTower/job-$(Process).log
+output  = out/job-$(Process).out
+error = err/job-$(Process).err
 request_memory = 4GB
 should_transfer_files  = NO
 
