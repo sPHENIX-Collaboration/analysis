@@ -371,6 +371,7 @@ CaloTransverseEnergy.lo: ../CaloTransverseEnergy.cc \
  /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/release/release_ana/ana.397/include/calobase/RawTowerGeomContainer_Cylinderv1.h \
  /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/release/release_ana/ana.397/include/calobase/RawTowerGeomContainerv1.h \
  /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/release/release_ana/ana.397/include/calobase/RawTowerGeomContainer.h \
+ /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/release/release_ana/ana.397/include/caloreco/DeadHotMapLoader.h \
  /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/release/release_ana/ana.397/include/globalvertex/GlobalVertex.h \
  /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/release/release_ana/ana.397/include/globalvertex/Vertex.h \
  /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/gcc/12.1.0-57c96/x86_64-centos7/include/c++/12.1.0/set \
@@ -855,6 +856,7 @@ CaloTransverseEnergy.lo: ../CaloTransverseEnergy.cc \
 /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/release/release_ana/ana.397/include/calobase/RawTowerGeomContainer_Cylinderv1.h:
 /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/release/release_ana/ana.397/include/calobase/RawTowerGeomContainerv1.h:
 /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/release/release_ana/ana.397/include/calobase/RawTowerGeomContainer.h:
+/cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/release/release_ana/ana.397/include/caloreco/DeadHotMapLoader.h:
 /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/release/release_ana/ana.397/include/globalvertex/GlobalVertex.h:
 /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/release/release_ana/ana.397/include/globalvertex/Vertex.h:
 /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/gcc/12.1.0-57c96/x86_64-centos7/include/c++/12.1.0/set:

@@ -1,17 +1,18 @@
 #! /bin/bash 
 #input is run number submit  
-NFILES=${1:-'100'}
+NFILES=$1
 RUN=${2:-'7'}
 SUBMIT=${3:-'test'}
 i=0
-while [[ $i -lt $NFILES ]]; do 
-for infile in  `more dst_truth.txt`; do
-	if [[ $i -gt $NFILES ]]; then 
-		break
-	fi 
-	fname="condor_"$i"_truth_run_"$RUN".job"
-	touch $fname
-	echo $fname
+echo "Submitting first $NFILES"
+while [[ $i -le $NFILES ]]; do 
+	for infile in  `more dst_calo_cluster.list`; do 
+		if [[ $i -gt $NFILES ]]; then
+			break
+		fi
+		fname="condor_"$i"_run_"$RUN".job"
+		touch $fname
+		echo $fname
 	
 echo "Universe        = vanilla" > $fname
 echo "Executable      = /gpfs/mnt/gpfs02/sphenix/user/sgross/sphenix_analysis/CaloTransverseEnergy/macros/GetET.sh" >> $fname
@@ -20,9 +21,9 @@ echo "Executable      = /gpfs/mnt/gpfs02/sphenix/user/sgross/sphenix_analysis/Ca
 #	else 
 	echo "Arguments       = $infile " >> $fname
 #	fi
-echo "Output          = /gpfs/mnt/gpfs02/sphenix/user/sgross/sphenix_analysis/CaloTransverseEnergy/running_dir/condor_"$i"_truth_run_"$RUN".out" >> $fname
-echo "Error           =/gpfs/mnt/gpfs02/sphenix/user/sgross/sphenix_analysis/CaloTransverseEnergy/running_dir/condor_"$i"_truth_run_"$RUN".err" >> $fname
-echo "Log             =/gpfs/mnt/gpfs02/sphenix/user/sgross/sphenix_analysis/CaloTransverseEnergy/running_dir/condor_"$i"_truth_run_"$RUN".log" >> $fname
+echo "Output          = /gpfs/mnt/gpfs02/sphenix/user/sgross/sphenix_analysis/CaloTransverseEnergy/running_dir/condor_run_"$RUN".out" >> $fname
+echo "Error           =/gpfs/mnt/gpfs02/sphenix/user/sgross/sphenix_analysis/CaloTransverseEnergy/running_dir/condor_run_"$RUN".err" >> $fname
+echo "Log             =/gpfs/mnt/gpfs02/sphenix/user/sgross/sphenix_analysis/CaloTransverseEnergy/running_dir/condor_run_"$RUN".log" >> $fname
 echo "Initialdir      = /gpfs/mnt/gpfs02/sphenix/user/sgross/sphenix_analysis/CaloTransverseEnergy/src" >> $fname
 echo "PeriodicHold    = (NumJobStarts>=1 && JobStatus == 1)" >> $fname
 echo "accounting_group = group_phenix.u" >> $fname
@@ -35,9 +36,10 @@ echo "Queue 1 " >> $fname
 
 i=$(( $i+1 ))
 
-if [[ "$SUMBIT"=="submit" ]]; then 
+if [ "$SUBMIT" == "submit" ]; then 
 	condor_submit $fname
 fi
 done
+
 done
  	

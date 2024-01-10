@@ -45,6 +45,7 @@
 #include <calobase/RawTowerContainer.h>
 #include <calobase/RawTowerGeomContainer.h>
 #include <calobase/RawTowerGeomContainer_Cylinderv1.h>
+#include <caloreco/DeadHotMapLoader.h>
 
 #include <globalvertex/GlobalVertex.h>
 #include <globalvertex/GlobalVertexMap.h>

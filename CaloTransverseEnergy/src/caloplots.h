@@ -26,10 +26,10 @@ class caloplots
 		std::vector<TH2F*> hists_2;
 		float acceptance=0.0; 
 		bool ok_phi=false;
-		float z=0, zl, zh, zmin=1, zmax=1, rcalo=93.5;
+		float z=0., zl, zh, zmin=1., zmax=1., rcalo=93.5;
 		int phibins=256, etabins=96;
 		float etamin=-1.13, etamax=1.13;
-		caloplots(std::string caloname="EMCAL", float zlow=-30, float zhigh=30, bool simul=false){
+		caloplots(std::string caloname="EMCAL", float zlow=-30., float zhigh=30., bool simul=false){
 			zl=zlow; 
 			zh=zhigh;
 			calo=caloname;
@@ -66,22 +66,27 @@ class caloplots
 			for(int i=0; i<etabins; i++){
 				int live_towers=0;
 				for(int j=0; j<phibins; j++){
-					if(ET_eta_phi->GetBinContent(i+1, j+1) >= 0){
+					if(ET_eta_phi->GetBinContent(i+1, j+1) > 0){
 						 live_towers++;
 						 acceptance++;
 					}
 				}
 				if(live_towers==0) live_towers=1;
 				float pct=(float)live_towers/(float)phibins;
-				acceptance_eta->Fill(i, pct);
+				std::cout<<"eta bin is " <<dET_eta->GetBinCenter(i+1) <<" with acceptance " <<pct<<std::endl;
+				float bc=(float)dET_eta->GetBinCenter(i+1);
+				acceptance_eta->Fill(bc, pct);
+				std::cout<<"bin content fill is " <<bc <<" but the bin that should be filled has a center at " <<acceptance_eta->GetBinCenter(i) <<std::endl;
+				std::cout<<acceptance_eta->GetBinContent(i+1) <<" should be " <<pct <<std::endl;
 			}
 			acceptance=acceptance/(float)(phibins*etabins);
 		}
 		void scaleThePlots(int n_evt, std::vector<std::map<std::string, float>>* calo_data){
 			n_evt=1;
 			dET_eta->Scale(1/(float)n_evt);
-			if(acceptance != 0) dET_eta->Divide(acceptance_eta);
-			else acceptance=1.0;
+			//if(acceptance > 0.0) dET_eta->Divide(acceptance_eta);
+			//else acceptance=1.0;
+			if(acceptance <= 0.0) acceptance=1.0;
 			ET_phi->Scale(1/((float)n_evt*acceptance));
 			ET_z->Scale(1/((float)n_evt*acceptance));
 			dET->Scale(1/(float)acceptance);
@@ -129,9 +134,9 @@ class caloplots
 		void AdjustEtaEdge()
 		{
 			//shifts min and max eta value on z boundries.
-			etamax=sinh(etamax)*rcalo+zh;
-			etamax=asinh(etamax/rcalo);
-			etamin=asinh(sinh(etamin)+zl/rcalo);
+			etamax=sinh(etamax)*(float)rcalo+(float)zh;
+			etamax=asinh(etamax/(float)rcalo);
+			etamin=asinh(sinh(etamin)+(float)zl/(float)rcalo);
 			std::cout<<"eta is [" <<etamin <<"," <<etamax <<"]" <<std::endl;
 		}
 		void MakePlots(){
@@ -144,6 +149,7 @@ class caloplots
 			if(z<0) calo+="_neg";
 			float pb=(float)phibins-0.1;
 			float eb=(float)etabins-0.1;
+			
 			//std::cout<<"making the plots for calo " <<calo <<std::endl;
 			Energy=new TH1F(Form("Energy_%s_z_%d", calo.c_str(), z_lab), Form("E_{event} in %s with vertex z=%f; E [GeV]", calo.c_str(), z), 1000, 0.5, 1000.5);
 			
@@ -152,12 +158,12 @@ class caloplots
 			
 			ET_phi=new TH1F(Form("ET_phi_%s_z_%d", calo.c_str(), z_lab), Form("E_{T}(#varphi) in %s with vertex z=%f; #varphi; #E_{T} [GeV]",calo.c_str(),z), phibins, -0.01, 6.3);
 			
-			dET_eta=new TH1F(Form("dET_eta_%s_z_%d", calo.c_str(), z_lab), Form("dE_{T}/d#eta(#eta) in %s with vertex z=%f; #eta; #frac{dE_{T}}{d#eta} [GeV]",calo.c_str(),z), etabins, etamin, etamax);
+			dET_eta=new TH1F(Form("dET_eta_%s_z_%d", calo.c_str(), z_lab), Form("dE_{T}/d#eta(#eta) in %s with vertex z=%f; #eta; #frac{dE_{T}}{d#eta} [GeV]",calo.c_str(),z), etabins, (float) etamin-0.01, (float)etamax-0.01);
 			
 			ET_z=new TH1F(Form("ET_z_%s_z_%d", calo.c_str(), z_lab), Form("E_{T}(z) in %s with vertex z=%f; z; #E_{T} [GeV]",calo.c_str(),z), 40, zmin,zmax);
 
 			dET=new TH1F(Form("dET_%s_z_%d", calo.c_str(), z_lab), Form("#frac{dE_{T}}{d#eta} in %s with vertex z=%f; #frac{dE_{T}}{d#eta} [GeV]",calo.c_str(),z), 1000, -0.5, 1000.5);
-			acceptance_eta=new TH1F(Form("acceptance_%s_z_%d", calo.c_str(), z_lab), Form("Acceptance in physical #eta slice in %s with vertex z=%f; #eta; percent towers responding", calo.c_str(),z), etabins, etamin, etamax);
+			acceptance_eta=new TH1F(Form("acceptance_%s_z_%d", calo.c_str(), z_lab), Form("Acceptance in physical #eta slice in %s with vertex z=%f; #eta; percent towers responding", calo.c_str(),z), etabins, (float)etamin-0.01, (float)etamax-0.01);
 			phi=new TH1F(Form("phi_%s_z_%d", calo.c_str(), z_lab), Form("Hit distribution in #varphi_{bin} in %s with vertex z=%f; #varphi_{bin}; N_{Hits}", calo.c_str(), z), phibins, -0.5, phibins-0.5);
 			eta=new TH1F(Form("eta_%s_z_%d", calo.c_str(), z_lab), Form("Hit distribution in physical #eta_{bin} in %s with vertex z=%f; #eta_{bin}; N_{Hits}", calo.c_str(), z), etabins, -0.5, etabins-0.5);
 			z_val=new TH1F(Form("z_%s_z_%d", calo.c_str(), z_lab), Form("Hit distribution in z vertex in %s with vertex centered at z=%f; z; N_{events}", calo.c_str(), z), 100, zl, zh);
