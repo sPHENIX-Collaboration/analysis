@@ -1,3 +1,38 @@
+These are the instructions for running the code to generate lists of noisy towers 
+and generate the corresponding CDBTTrees
+
+Build code:
+
+mkdir build
+cd build
+$PWD/../src/autogen.sh --prefix=${Whatever you've named your install environment variable}
+
+head to macros directory
+
+Directory structure for condor
+     mkdir out out_hadd cdbMaps err err_hadd submission submission_hadd mkdir fileLists log log_hadd output
+
+cd fileLists
+
+Create file lists for data of interest
+
+Create file list of filelists
+
+ls -1 *.list > fileListofLists.list
+
+cd ../
+
+makeSingleFileList.csh
+
+runHotTowermacroMultistage.csh fileLists/fileListofLists.list sigma
+
+This will submit a condor job for each segment of each run to be processed individually.
+Then it will hadd the output files after pass 0
+Then it will submit a job per run, which is actually making the bad towers, don't delete the output files from the previous step!
+Then it writes the cdbttrees to the cdbMaps directory. These are immediately ready for upload. 
+
+Where sigma is the desired cutoff. The code currently employs it symmetrically but it can be asymmetric as well.
+
 Toweridmacro
 - Takes in a run from the infile (supplied as argument)
 - Iterates through each event (supplied as argument)
