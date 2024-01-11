@@ -13,6 +13,7 @@ class TH2F;
 class TH1F;
 class TH1;
 class TProfile2D;
+class TLorentzVector;
 
 class CaloAna : public SubsysReco
 {
@@ -58,6 +59,7 @@ class CaloAna : public SubsysReco
   TH2F* h_emcal_zdc_correlation = nullptr;
   
   TH1F* h_InvMass = nullptr;
+  TH1F* h_InvMassMix = nullptr;
 
   TH2F* h_cemc_etaphi = nullptr;
   TH2F* h_hcalin_etaphi = nullptr;
@@ -122,7 +124,6 @@ class CaloAna : public SubsysReco
   std::vector<int> m_zdc_index;
   std::vector<int> m_zdc_side;
 
-
   std::vector<float> m_bbc_energy;
   std::vector<int> m_bbc_type;
   std::vector<int> m_bbc_side;
@@ -130,7 +131,7 @@ class CaloAna : public SubsysReco
   int _range = 1;
   float _vz = 0.;
   bool m_vtxCut = false;
-  bool dynMaskClus = true;
+  bool dynMaskClus = false;
 
   TH1F* h_pt1;
   TH1F* h_pt2;
