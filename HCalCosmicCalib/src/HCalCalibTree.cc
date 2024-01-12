@@ -20,8 +20,8 @@
 
 using namespace std;
 
-HCalCalibTree::HCalCalibTree(const std::string &name, const std::string &filename)
-    : SubsysReco(name), detector("HCALIN"), prefix("TOWERS_"), outfilename(filename)
+HCalCalibTree::HCalCalibTree(const std::string &name, const std::string &filename, const std::string &prefix)
+    : SubsysReco(name), detector("HCALIN"), prefix(prefix), outfilename(filename)
 {
 }
 
@@ -44,24 +44,44 @@ int HCalCalibTree::Init(PHCompositeNode *) {
   h_waveformchi2->GetXaxis()->SetTitle("peak (ADC)");
   h_waveformchi2->GetYaxis()->SetTitle("chi2");
 
+  h_check = new TH1F("h_check", "", 1000, 0, 0.01);
+  h_eventnumber_record = new TH1F("h_eventnumber_record", "", 2, 0, 2);
+
+  if (prefix == "TOWERINFO_SIM_") {
+    tower_threshold = tower_threshold_sim;
+    vert_threshold = vert_threshold_sim;
+    veto_threshold = veto_threshold_sim;
+  } else {
+    tower_threshold = tower_threshold_data;
+    vert_threshold = vert_threshold_data;
+    veto_threshold = veto_threshold_data;
+  }
+  std::cout << "Offline cut applied: " << std::endl;
+  std::cout << "tower_threshold = " << tower_threshold << std::endl;
+  std::cout << "vert_threshold = " << vert_threshold << std::endl;
+  std::cout << "veto_threshold = " << veto_threshold << std::endl;
+
   Fun4AllServer *se = Fun4AllServer::instance();
   se -> registerHistoManager(hm);
 
   event = 0;
+  goodevent = 0;
   return 0;
 }
 
 int HCalCalibTree::process_event(PHCompositeNode *topNode) {
   if (event % 100 == 0) std::cout << "HCalCalibTree::process_event " << event << std::endl;
+  goodevent_check = 0;
   process_towers(topNode);
   event++;
+  if (goodevent_check == 1) goodevent++;
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
 int HCalCalibTree::process_towers(PHCompositeNode *topNode) {
   ostringstream nodenamev2;
   nodenamev2.str("");
-  nodenamev2 << "TOWERSV2_" << detector;
+  nodenamev2 << prefix << detector;
 
   TowerInfoContainer *towers = findNode::getClass<TowerInfoContainer>(topNode, nodenamev2.str());
   if (!towers ) {
@@ -80,6 +100,7 @@ int HCalCalibTree::process_towers(PHCompositeNode *topNode) {
     m_peak[ieta][iphi] = energy;
     m_chi2[ieta][iphi] = chi2;
     h_waveformchi2->Fill(m_peak[ieta][iphi], m_chi2[ieta][iphi]);
+    h_check->Fill(m_peak[ieta][iphi]);
     if (m_chi2[ieta][iphi] > 10000) m_peak[ieta][iphi] = 0;
   }
 
@@ -94,8 +115,8 @@ int HCalCalibTree::process_towers(PHCompositeNode *topNode) {
       if (m_peak[ieta][up] < vert_threshold || m_peak[ieta][down] < vert_threshold) continue; //vert cut
       if (ieta != 0 && (m_peak[ieta-1][up] > veto_threshold || m_peak[ieta-1][iphi] > veto_threshold || m_peak[ieta-1][down] > veto_threshold)) continue; // left veto cut
       if (ieta != 23 && (m_peak[ieta+1][up] > veto_threshold || m_peak[ieta+1][iphi] > veto_threshold || m_peak[ieta+1][down] > veto_threshold)) continue; //right veto cut
-      std::cout << "ieta: " << ieta << " iphi: " << iphi << " energy: " << m_peak[ieta][iphi] << " chi2: " << m_chi2[ieta][iphi] << std::endl;
       h_channel_hist[ieta][iphi]->Fill(m_peak[ieta][iphi]);
+      goodevent_check = 1;
     }
   }
   return Fun4AllReturnCodes::EVENT_OK;
@@ -107,6 +128,10 @@ int HCalCalibTree::ResetEvent(PHCompositeNode *topNode) {
 
 int HCalCalibTree::End(PHCompositeNode * /*topNode*/) {
   std::cout << "HCalCalibTree::End" << std::endl;
+  std::cout << "Number of events: " << event << std::endl;
+  std::cout << "Number of good events: " << goodevent << std::endl;
+  h_eventnumber_record->SetBinContent(1, event);
+  h_eventnumber_record->SetBinContent(2, goodevent);
   outfile->cd();
   for (int ieta = 0; ieta < n_etabin; ++ieta) {
     for (int iphi = 0; iphi < n_phibin; ++iphi) {
@@ -115,6 +140,8 @@ int HCalCalibTree::End(PHCompositeNode * /*topNode*/) {
     }
   }
   h_waveformchi2->Write();
+  h_check->Write();
+  h_eventnumber_record->Write();
   outfile->Close();
   delete outfile;
   hm->dumpHistos(outfilename, "UPDATE");
