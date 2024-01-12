@@ -37,6 +37,7 @@ class CaloAna : public SubsysReco
   int process_towers(PHCompositeNode *);
   int process_clusters(PHCompositeNode *);
 
+
   void Detector(const std::string &name) { detector = name; }
   void set_timing_cut_width(const int &t) { _range = t;}
   void set_vertex_cut(const float &v) { _vz = v;}
@@ -67,6 +68,10 @@ class CaloAna : public SubsysReco
   TProfile2D*    h_cemc_etaphi_time = nullptr;
   TProfile2D*  h_hcalin_etaphi_time = nullptr;
   TProfile2D* h_hcalout_etaphi_time = nullptr;
+
+  TH2F* h_cemc_e_chi2 = nullptr;
+  TH2F* h_ohcal_e_chi2 = nullptr;
+  TH2F* h_ihcal_e_chi2 = nullptr;
 
   TProfile2D* h_cemc_etaphi_badChi2 = nullptr;
   TProfile2D* h_hcalin_etaphi_badChi2 = nullptr;

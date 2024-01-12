@@ -19,7 +19,6 @@
 #include <jetbase/JetReco.h>
 #include <jetbase/TowerJetInput.h>
 #include <jetbase/FastJetAlgo.h>
-#include <g4jets/TruthJetInput.h>
 
 #include <HIJetReco.C>
 
@@ -66,14 +65,15 @@ void Fun4All_JetBkgd(
   // retower CEMC
   RetowerCEMC *rcemc = new RetowerCEMC(); 
   rcemc->Verbosity(verbosity); 
+  rcemc->set_towerinfo(true);
   se->registerSubsystem(rcemc);
 
 
   //-----------------------------------
   // Jet reco
   //-----------------------------------
-  Enable::HIJETS_TRUTH=false;
-  HIJetReco();
+  // Enable::HIJETS_TRUTH=false;
+  // HIJetReco();
     
   // tower jets
   // create jetreco and jettruth node names
@@ -97,13 +97,13 @@ void Fun4All_JetBkgd(
   myJetTree->add_input(new TowerJetInput(Jet::CEMC_TOWERINFO_RETOWER));
   myJetTree->add_input(new TowerJetInput(Jet::HCALIN_TOWERINFO));
   myJetTree->add_input(new TowerJetInput(Jet::HCALOUT_TOWERINFO));
-  myJetTree->doIterative(true);
+  myJetTree->doIterative(false);
   myJetTree->doAreaSub(true);
   myJetTree->doMultSub(true);
   myJetTree->doTruth(true);
   myJetTree->setMinRecoPt(5.0); // only sets range for reco jets
   myJetTree->setEtaRange(etamin, etamax);
-  myJetTree->setPtRange(10, 100); // only sets range for truth jets
+  myJetTree->setPtRange(0, 100); // only sets range for truth jets
   myJetTree->Verbosity(verbosity);
   se->registerSubsystem(myJetTree);
 
@@ -127,7 +127,7 @@ void Fun4All_JetBkgd(
   // Run the analysis
   //-----------------------------------
   
-  se->run(-1);
+  se->run(10);
   se->End();
 
   gSystem->Exit(0);
