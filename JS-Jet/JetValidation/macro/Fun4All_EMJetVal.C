@@ -18,9 +18,9 @@
 #include <HIJetReco.C>
 
 
-#include </sphenix/user/jamesj3j3/analysis/JS-Jet/JetValidation/src/EMJetVal.h>
+#include "jetvalidation/EMJetVal.h"
+//#include </sphenix/user/jamesj3j3/analysis/JS-Jet/JetValidation/src/EMJetVal.h>
 //#include </sphenix/user/jamesj3j3/analysis/JS-Jet/JetValidation/src/JetValidation.h>
-
 
 R__LOAD_LIBRARY(libfun4all.so)
 R__LOAD_LIBRARY(libg4jets.so)
@@ -60,18 +60,11 @@ void Fun4All_EMJetVal(const char *filelisttruth = "dst_truth_jet.list",
   myEMJetVal->setPtRange(5, 100);
   myEMJetVal->setEtaRange(-1.1, 1.1);
   myEMJetVal->doUnsub(1);
-  myEMJetVal->doTruth(0);
+  myEMJetVal->doTruth(1);
   myEMJetVal->doSeeds(1);
   //  se->registerSubsystem(myJetVal);
   se->registerSubsystem(myEMJetVal);
-  /*
-  myJetVal->setPtRange(5, 100);
-  myJetVal->setEtaRange(-1.1, 1.1);
-  myJetVal->doUnsub(1);
-  myJetVal->doTruth(1);
-  myJetVal->doSeeds(1);
-  se->registerSubsystem(myJetVal);
-  */
+
   Fun4AllInputManager *intrue = new Fun4AllDstInputManager("DSTtruth");
   intrue->AddListFile(filelisttruth,1);
   // se->registerInputManager(intrue);
@@ -87,7 +80,7 @@ void Fun4All_EMJetVal(const char *filelisttruth = "dst_truth_jet.list",
   // se->registerInputManager(in3);
   se->registerInputManager(in3);
 
-  se->run(10);
+  se->run(1000);
   se->End();
   
   // se->run(-1);
