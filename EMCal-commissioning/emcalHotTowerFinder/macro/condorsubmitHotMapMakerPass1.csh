@@ -1,0 +1,17 @@
+#!/bin/tcsh
+
+setenv HOME /phenix/u/$LOGNAME
+source /etc/csh.login
+foreach i(/etc/profile.d/*.csh)
+    source $i
+end
+
+source $HOME/.login
+#source /opt/sphenix/core/bin/sphenix_setup.sh -n
+#source /opt/sphenix/core/bin/setup_local.sh $MYINSTALLSPHE
+
+set filename=$1
+set runnumber=`echo $filename | awk '{print substr($0,38,5)}'`
+set sigma=$2
+
+root -l -b -q Fun4All_EMCalBadTowerID.C'(0,"'$filename'","output/'$runnumber'/DST_CALOR-'`echo $filename | awk '{print substr($0,35,13)}'`'_badTowerMapTree.root", "cdbMaps/'$runnumber'/CEMC_'`echo $filename | awk '{print substr($0,35,13)}'`'_badTowerMapCDBTree'$2'Low_'$2'High.root", 15, 15,  '$2', '$2', 0.50,  0.50,  0.50, 1)'
