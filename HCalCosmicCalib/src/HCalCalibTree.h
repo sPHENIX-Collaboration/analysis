@@ -18,7 +18,7 @@ class HCalCalibTree : public SubsysReco
 {
 public:
   //! constructor
-  HCalCalibTree(const std::string &name = "HCalCalibTree", const std::string &fname = "HCalCalibtuple.root");
+  HCalCalibTree(const std::string &name = "HCalCalibTree", const std::string &fname = "HCalCalibtuple.root", const std::string &prefix = "TOWERSV2_");
   //! destructor
   virtual ~HCalCalibTree();
 
@@ -43,16 +43,26 @@ protected:
   static const int n_phibin = 64;
 
   // Cut threshold
-  static const int tower_threshold = 500;
-  static const int vert_threshold = 1500;
-  static const int veto_threshold = 350;
+  float tower_threshold, vert_threshold, veto_threshold;
+
+  const float tower_threshold_data = 500;
+  const float vert_threshold_data = 1500;
+  const float veto_threshold_data = 350;
+
+  const float tower_threshold_sim = 0.001767; //283 ADC/MeV
+  const float vert_threshold_sim = 0.0053;
+  const float veto_threshold_sim = 0.001237;
 
   TH1F* h_channel_hist[n_etabin][n_phibin] = {{nullptr}};
   TH2F* h_waveformchi2 = nullptr;
+  TH1F* h_check = nullptr;
+  TH1F* h_eventnumber_record;
 
   std::string outfilename;
 
   int event;
+  int goodevent;
+  int goodevent_check;
 
   float m_peak[n_etabin][n_phibin];
   float m_chi2[n_etabin][n_phibin];
