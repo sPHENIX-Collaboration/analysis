@@ -92,9 +92,10 @@ class caloTreeGen : public SubsysReco
 
     TowerInfo* getTower(RawTowerDefs::keytype key, TowerInfoContainer *towerContainer);
     TowerInfo* getMaxTower(RawCluster *cluster, TowerInfoContainer *towerContainer);
-    Short_t    getMaxTowerTime(RawCluster *cluster, TowerInfoContainer *towerContainer);
+    Float_t    getMaxTowerTime(RawCluster *cluster, TowerInfoContainer *towerContainer);
 
     Int_t iEvent = 0;
+    Float_t avg_goodTowers = 0;
 
     Double_t min_towE        = 9999;
     Float_t min_clusterECore = 9999;
@@ -103,6 +104,7 @@ class caloTreeGen : public SubsysReco
     Float_t min_clusterPt    = 9999;
     Float_t min_clusterChi   = 9999;
     Float_t min_totalCaloE   = 9999;
+    Int_t   min_goodTowers   = 9999;
 
     Double_t max_towE        = 0;
     Float_t max_clusterECore = 0;
@@ -113,6 +115,7 @@ class caloTreeGen : public SubsysReco
     Float_t max_totalCaloE   = 0;
     Float_t max_totalmbd     = 0;
     UInt_t  max_NClusters    = 0;
+    Int_t   max_goodTowers   = 0;
 
     TH1F* hTowE;
     TH1F* hClusterECore;

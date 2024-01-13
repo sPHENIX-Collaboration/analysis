@@ -151,13 +151,21 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
   //grab all the towers and fill their energies. 
   UInt_t tower_range = emcTowerContainer->size();
   Float_t totalCaloE = 0;
+  Int_t goodTowerCtr = 0;
   for(UInt_t iter = 0; iter < tower_range; iter++)
   {
     UInt_t towerkey = emcTowerContainer->encode_key(iter);
     UInt_t ieta = getCaloTowerEtaBin(towerkey);
     UInt_t iphi = getCaloTowerPhiBin(towerkey);
 
-    double energy = emcTowerContainer -> get_tower_at_channel(iter) -> get_energy()/calib;
+    TowerInfo* tower = emcTowerContainer -> get_tower_at_channel(iter);
+    double energy = tower -> get_energy()/calib;
+
+    // check if tower is good
+    if(!tower->get_isGood() || energy <= 0) continue;
+
+    ++goodTowerCtr;
+
     totalCaloE += energy;
     // double time = emcTowerContainer -> get_tower_at_channel(iter) -> get_time();
 
@@ -173,10 +181,12 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
     // double eta = towergeom -> get_etacenter(ieta);
 
     // check to make sure that ieta and iphi are in range
-    if(ieta >= bins_eta || iphi >= bins_phi) std::cerr << "ieta: " << ieta << ", iphi: " << iphi << std::endl;
+    if(ieta >= bins_eta || iphi >= bins_phi) std::cout << "ieta: " << ieta << ", iphi: " << iphi << std::endl;
 
     h2TowEtaPhiWeighted->Fill(ieta, iphi, energy);
   }
+
+  avg_goodTowers += goodTowerCtr*1./tower_range;
 
   max_totalCaloE = std::max(max_totalCaloE, totalCaloE);
   min_totalCaloE = std::min(min_totalCaloE, totalCaloE);
@@ -224,7 +234,7 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
 
     if(clusE < clusE_min || clus_chi >= clus_chi_max) continue;
 
-    Short_t clus_time = getMaxTowerTime(recoCluster, emcTowerContainer);
+    Float_t clus_time = getMaxTowerTime(recoCluster, emcTowerContainer);
 
     hClusterECore->Fill(clusE);
     h2ClusterEtaPhi->Fill(clus_eta, clus_phi);
@@ -254,7 +264,7 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
 
       if(clusE2 < clusE_min || clus_chi2 >= clus_chi_max) continue;
 
-      Short_t clus_time2 = getMaxTowerTime(recoCluster2, emcTowerContainer);
+      Float_t clus_time2 = getMaxTowerTime(recoCluster2, emcTowerContainer);
 
       TLorentzVector photon2;
       photon2.SetPtEtaPhiE(clus_pt2, clus_eta2, clus_phi2, clusE2);
@@ -305,6 +315,7 @@ Int_t caloTreeGen::End(PHCompositeNode *topNode)
   std::cout << "min clusterPt: " << min_clusterPt << ", max clusterPt: " << max_clusterPt << std::endl;
   std::cout << "min clusterChi: " << min_clusterChi << ", max clusterChi: " << max_clusterChi << std::endl;
   std::cout << "max NClusters: " << max_NClusters << std::endl;
+  std::cout << "avg_goodTowers: " << avg_goodTowers*100./iEvent << " %" << std::endl;
   std::cout << "pi0 cuts: cluster minimum energy: " << clusE_min << ", cluster maximum chi2: " << clus_chi_max << std::endl;
 
   std::cout << "caloTreeGen::End(PHCompositeNode *topNode) This is the End..." << std::endl;
@@ -432,8 +443,8 @@ TowerInfo* caloTreeGen::getMaxTower(RawCluster *cluster, TowerInfoContainer *tow
   return getTower(key, towerContainer);
 }
 
-Short_t caloTreeGen::getMaxTowerTime(RawCluster *cluster, TowerInfoContainer *towerContainer) {
+Float_t caloTreeGen::getMaxTowerTime(RawCluster *cluster, TowerInfoContainer *towerContainer) {
   TowerInfo* tower = getMaxTower(cluster, towerContainer);
 
-  return tower->get_time();
+  return tower->get_time_float();
 }

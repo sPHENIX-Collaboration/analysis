@@ -13,7 +13,7 @@ f4a = subparser.add_parser('f4a', help='Create condor submission directory for F
 
 f4a.add_argument('-i', '--run-list-dir', type=str, help='Directory of run lists', required=True)
 f4a.add_argument('-e', '--executable', type=str, default='genFun4All.sh', help='Job script to execute. Default: scripts/genFun4All.sh')
-f4a.add_argument('-b', '--f4a', type=str, default='bin/Fun4All_CaloTreeGen', help='Fun4All executable. Default: Fun4All_CaloTreeGen')
+f4a.add_argument('-b', '--f4a', type=str, default='bin/Fun4All_CaloTreeGen', help='Fun4All executable. Default: bin/Fun4All_CaloTreeGen')
 f4a.add_argument('-d', '--output', type=str, default='test', help='Output Directory. Default: ./test')
 f4a.add_argument('-s', '--memory', type=int, default=2, help='Memory (units of GB) to request per condor submission. Default: 2 GB.')
 f4a.add_argument('-l', '--log', type=str, default='/tmp/anarde/dump/job-$(ClusterId)-$(Process).log', help='Condor log file.')
