@@ -36,22 +36,25 @@ dummy.add_argument('-i', '--entries', type=str, help='Text file of all runs and 
 dummy2 = subparser.add_parser('dummy2', help='Create pi0Ana submission command for multiple runs.')
 dummy2.add_argument('-i', '--fp', type=str, help='Text file of all runs and events', required=True)
 dummy2.add_argument('-d', '--directory', type=str, default='.', help='output directory. Default: .')
+dummy2.add_argument('-e', '--input-dir', type=str, default='.', help='Directory containing the <run>.list files. Default: .')
 dummy2.add_argument('-j', '--jobs', type=str, default=999, help='Number of jobs. Default: 999')
 
 args = parser.parse_args()
 
 def process_dummy2():
-    fp     = os.path.realpath(args.fp)
-    output = args.directory
-    jobs   = args.jobs
+    fp        = os.path.realpath(args.fp)
+    input_dir = os.path.realpath(args.input_dir)
+    output    = args.directory
+    jobs      = args.jobs
 
     print(f'Input file: {fp}')
+    print(f'Input dir: {input_dir}')
     print(f'Output Directory: {output}')
     print(f'Jobs: {jobs}')
 
     with open(fp) as file:
         for line in file:
-            print(f'./utils.py pi0Ana -i {line.split()[0]}.list -c cuts.txt -n {line.split()[1]} -j {jobs} -d {output}/{line.split()[0]} && ', end='')
+            print(f'./utils.py pi0Ana -i {input_dir}/{line.split()[0]}.list -c cuts.txt -n {line.split()[1]} -j {jobs} -d {output}/{line.split()[0]} && ', end='')
 
 
 def process_dummy():

@@ -49,8 +49,8 @@ namespace myAnalysis {
     //                                                  {"40-60",  make_pair(187.222, 472.037)},
     //                                                  {"60-100", make_pair(0, 187.222)}};
 
-    map<string,pair<Float_t, Float_t>> centrality = {{"20-40",  make_pair(472.037, 939.074)},
-                                                     {"40-60",  make_pair(187.222, 472.037)}};
+    map<string,pair<Float_t, Float_t>> centrality = {{"20-40",  make_pair(465.741, 935.37)},
+                                                     {"40-60",  make_pair(177.222, 465.741)}};
 
     map<string,pair<Float_t, Float_t>> diphoton_pt = {{"2-2.5", make_pair(2, 2.5)},
                                                       {"2.5-3", make_pair(2.5, 3)},
