@@ -1,0 +1,17 @@
+Universe           = vanilla
+Initialdir         = /sphenix/user/hjheng/sPHENIXdNdEta/macros/
+Executable         = $(Initialdir)/production_INTT.sh
+PeriodicHold       = (NumJobStarts>=1 && JobStatus == 1)
+request_memory     = 8GB
+Priority           = 20
+job_lease_duration = 3600
+runData            = RUNDATA
+nEvents            = NEVENTS
+InputfilelistIdx   = INPUTFILELISTIDX
+FileName           = FILENAME
+skipEvt            = 0
+Output             = $(Initialdir)/condor_INTT/condor_out/out/condor_INPUTFILELISTIDX.out
+Error              = $(Initialdir)/condor_INTT/condor_out/err/condor_INPUTFILELISTIDX.err
+Log                = $(Initialdir)/condor_INTT/condor_out/log/condor_INPUTFILELISTIDX.log
+Arguments          = "$(runData) $(nEvents) $(InputfilelistIdx) $(FileName) $(skipEvt)"
+Queue 1

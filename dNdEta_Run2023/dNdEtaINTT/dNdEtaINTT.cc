@@ -100,10 +100,10 @@ int dNdEtaINTT::Init(PHCompositeNode *topNode)
     outtree->Branch("event", &event_);
     if (!IsData)
     {
-        // outtree->Branch("centrality_bimp", &centrality_bimp_);
-        // outtree->Branch("centrality_impactparam", &centrality_impactparam_);
-        // outtree->Branch("centrality_mbd", &centrality_mbd_);
-        // outtree->Branch("centrality_mbdquantity", &centrality_mbdquantity_);
+        outtree->Branch("centrality_bimp", &centrality_bimp_);
+        outtree->Branch("centrality_impactparam", &centrality_impactparam_);
+        outtree->Branch("centrality_mbd", &centrality_mbd_);
+        outtree->Branch("centrality_mbdquantity", &centrality_mbdquantity_);
         outtree->Branch("NTruthVtx", &NTruthVtx_);
         outtree->Branch("TruthPV_x", &TruthPV_x_);
         outtree->Branch("TruthPV_y", &TruthPV_y_);
@@ -152,6 +152,8 @@ int dNdEtaINTT::Init(PHCompositeNode *topNode)
     outtree->Branch("ClusZSize", &ClusZSize_);
     outtree->Branch("ClusLadderZId", &ClusLadderZId_);
     outtree->Branch("ClusLadderPhiId", &ClusLadderPhiId_);
+    outtree->Branch("ClusTrkrHitSetKey", &ClusTrkrHitSetKey_);
+    outtree->Branch("ClusTimeBucketId", &ClusTimeBucketId_);
 
     return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -376,6 +378,8 @@ void dNdEtaINTT::GetRecoClusterInfo(PHCompositeNode *topNode)
             ClusZSize_.push_back(cluster->getZSize());
             ClusLadderZId_.push_back(InttDefs::getLadderZId(ckey));
             ClusLadderPhiId_.push_back(InttDefs::getLadderPhiId(ckey));
+            ClusTrkrHitSetKey_.push_back(hitsetkey);
+            ClusTimeBucketId_.push_back(InttDefs::getTimeBucketId(ckey));
             if (!IsData)
             {
                 // std::cout << "This cluster: (x,y,z)=(" << globalpos(0) << "," << globalpos(1) << "," << globalpos(2) << ")" << std::endl;
@@ -534,6 +538,8 @@ void dNdEtaINTT::ResetVectors()
     CleanVec(ClusZSize_);
     CleanVec(ClusLadderZId_);
     CleanVec(ClusLadderPhiId_);
+    CleanVec(ClusTrkrHitSetKey_);
+    CleanVec(ClusTimeBucketId_);
     CleanVec(TrkrHitRow_);
     CleanVec(TrkrHitColumn_);
     CleanVec(TruthPV_x_);
