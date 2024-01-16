@@ -51,6 +51,8 @@
 #include <sstream>
 #include <string>
 
+TH2F* LogYHist2D(const char* name, const char* title, int xbins_in, double_t xmin, double_t xmax, int ybins_in, double_t ymin, double_t ymax);
+
 using namespace std;
 
 CaloAna::CaloAna(const std::string& name, const std::string& filename)
@@ -89,6 +91,10 @@ int CaloAna::Init(PHCompositeNode*)
   h_cemc_etaphi_wQA = new TH2F("h_cemc_etaphi_wQA", ";eta;phi", 96, 0, 96, 256, 0, 256);
   h_hcalin_etaphi_wQA = new TH2F("h_ihcal_etaphi_wQA", ";eta;phi", 24, 0, 24, 64, 0, 64);
   h_hcalout_etaphi_wQA = new TH2F("h_ohcal_etaphi_wQA", ";eta;phi", 24, 0, 24, 64, 0, 64);
+
+  h_cemc_e_chi2 =  LogYHist2D("h_cemc_e_chi2", "", 500,-2,30, 1000, 0.5, 5e6);
+  h_ihcal_e_chi2 =  LogYHist2D("h_ihcal_e_chi2", "", 500,-2,30, 1000, 0.5, 5e6);
+  h_ohcal_e_chi2 =  LogYHist2D("h_ohcal_e_chi2", "", 500,-2,30, 1000, 0.5, 5e6);
 
   h_cemc_etaphi_time = new TProfile2D("h_cemc_etaphi_time", ";eta;phi", 96, 0, 96, 256, 0, 256,-10,10);
   h_hcalin_etaphi_time = new TProfile2D("h_ihcal_etaphi_time", ";eta;phi", 24, 0, 24, 64, 0, 64 ,-10,10);
@@ -219,6 +225,7 @@ int CaloAna::process_towers(PHCompositeNode* topNode)
           int ieta = towers->getTowerEtaBin(towerkey);
           int iphi = towers->getTowerPhiBin(towerkey);
           int _time = tower->get_time();
+          h_cemc_e_chi2->Fill( offlineenergy,tower->get_chi2());
           float _timef = tower->get_time_float();
           hemcaltime_cut->Fill(_time);
           bool isGood = ! (tower->get_isBadChi2());
@@ -264,6 +271,7 @@ int CaloAna::process_towers(PHCompositeNode* topNode)
           int _time = tower->get_time();
           float _timef = tower->get_time_float();
           hihcaltime_cut->Fill(_time);
+          h_ihcal_e_chi2->Fill( offlineenergy,tower->get_chi2());
           bool isGood = !(tower->get_isBadChi2());
           if (_time > (max_ihcal_t - _range) && _time < (max_ihcal_t + _range))
           {
@@ -302,6 +310,7 @@ int CaloAna::process_towers(PHCompositeNode* topNode)
           float _timef = tower->get_time_float();
           hihcaltime_cut->Fill(_time);
           hohcaltime_cut->Fill(_time);
+          h_ohcal_e_chi2->Fill( offlineenergy,tower->get_chi2());
           bool isGood = !(tower->get_isBadChi2());
 
           if (_time > (max_ohcal_t - _range) && _time < (max_ohcal_t + _range))
@@ -585,3 +594,20 @@ int CaloAna::Getpeaktime(TH1* h)
 
   return tcut;
 }
+
+
+
+TH2F* LogYHist2D(const char* name, const char* title, int xbins_in, double_t xmin, double_t xmax, int ybins_in, double_t ymin, double_t ymax)    {
+  Double_t logymin = TMath::Log10(ymin);
+  Double_t logymax = TMath::Log10(ymax);
+  Double_t binwidth = (logymax - logymin) / ybins_in;
+  Double_t ybins[ybins_in + 1];
+
+  for (Int_t i = 0; i <= ybins_in + 1; i++)
+    ybins[i] = TMath::Power(10, logymin + i * binwidth);
+
+  TH2F* h = new TH2F(name, title, xbins_in, xmin, xmax, ybins_in, ybins);
+
+  return h;
+}
+

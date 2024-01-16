@@ -68,6 +68,7 @@ private:
   int m_event;
   int m_nTow_in;
   int m_nTow_out;
+  int m_nTow_emc;
   float m_eta;
   float m_phi;
   float m_e;
@@ -89,6 +90,12 @@ private:
   std::vector<float> m_e_out;
   std::vector<int> m_ieta_out;
   std::vector<int> m_iphi_out;
+
+  std::vector<float> m_eta_emc;
+  std::vector<float> m_phi_emc;
+  std::vector<float> m_e_emc;
+  std::vector<int> m_ieta_emc;
+  std::vector<int> m_iphi_emc;
 
   int FillTTree(PHCompositeNode *topNode);
 };
