@@ -14,12 +14,10 @@ AM_CPPFLAGS = \
   -isystem$(ROOTSYS)/include
 
 pkginclude_HEADERS = \
-  CaloAna.h \
-  CaloAna_new.h
+  CaloAna.h 
 
 libcaloana_la_SOURCES = \
-  CaloAna.cc \
-  CaloAna_new.cc 
+  CaloAna.cc 
 
 libcaloana_la_LIBADD = \
   -lcalo_io \
