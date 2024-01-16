@@ -78,8 +78,8 @@ template <class T> void CleanVec(std::vector<T> &v)
 
 //____________________________________________________________________________..
 dNdEtaINTT::dNdEtaINTT(const std::string &name, const std::string &outputfile, const bool &isData, const int &inputFileListIndex, const int &nEvtPerFile)
-    : SubsysReco(name), _get_truth_pv(true), _get_reco_cluster(true), _get_centrality(true), _get_trkr_hit(true), _outputFile(outputfile), IsData(isData), InputFileListIndex(inputFileListIndex), NEvtPerFile(nEvtPerFile), svtx_evalstack(nullptr), truth_eval(nullptr),
-      clustereval(nullptr), hiteval(nullptr), dst_clustermap(nullptr), clusterhitmap(nullptr), hitsets(nullptr), _tgeometry(nullptr), m_truth_info(nullptr), m_CentInfo(nullptr)
+    : SubsysReco(name), _get_truth_pv(true), _get_reco_cluster(true), _get_centrality(true), _get_trkr_hit(true), _outputFile(outputfile), IsData(isData), InputFileListIndex(inputFileListIndex), NEvtPerFile(nEvtPerFile), svtx_evalstack(nullptr),
+      truth_eval(nullptr), clustereval(nullptr), hiteval(nullptr), dst_clustermap(nullptr), clusterhitmap(nullptr), hitsets(nullptr), _tgeometry(nullptr), m_truth_info(nullptr), m_CentInfo(nullptr)
 {
     std::cout << "dNdEtaINTT::dNdEtaINTT(const std::string &name) Calling ctor" << std::endl;
 }
@@ -223,9 +223,10 @@ int dNdEtaINTT::process_event(PHCompositeNode *topNode)
         std::cout << "Running on simulation" << std::endl;
         if (_get_truth_pv)
             GetTruthPVInfo(topNode);
-        if (_get_centrality)
-            GetCentralityInfo(topNode);
     }
+
+    if (_get_centrality)
+        GetCentralityInfo(topNode);
 
     if (_get_trkr_hit)
         GetTrkrHitInfo(topNode);
@@ -291,8 +292,11 @@ void dNdEtaINTT::GetCentralityInfo(PHCompositeNode *topNode)
         return;
     }
 
-    centrality_bimp_ = m_CentInfo->get_centile(CentralityInfo::PROP::bimp);
-    centrality_impactparam_ = m_CentInfo->get_quantity(CentralityInfo::PROP::bimp);
+    if (!IsData)
+    {
+        centrality_bimp_ = m_CentInfo->get_centile(CentralityInfo::PROP::bimp);
+        centrality_impactparam_ = m_CentInfo->get_quantity(CentralityInfo::PROP::bimp);
+    }
     centrality_mbd_ = m_CentInfo->get_centile(CentralityInfo::PROP::mbd_NS);
     centrality_mbdquantity_ = m_CentInfo->get_quantity(CentralityInfo::PROP::mbd_NS);
     std::cout << "Centrality: (bimp,impactparam) = (" << centrality_bimp_ << ", " << centrality_impactparam_ << "); (mbd,mbdquantity) = (" << centrality_mbd_ << ", " << centrality_mbdquantity_ << ")" << std::endl;
@@ -317,7 +321,7 @@ PHG4Particle *dNdEtaINTT::GetG4PAncestor(PHG4Particle *p)
 void dNdEtaINTT::GetTrkrHitInfo(PHCompositeNode *topNode)
 {
     std::cout << "Get TrkrHit info." << std::endl;
-    
+
     TrkrHitSetContainer::ConstRange hitset_range = hitsets->getHitSets(TrkrDefs::TrkrId::inttId);
     for (TrkrHitSetContainer::ConstIterator hitset_iter = hitset_range.first; hitset_iter != hitset_range.second; ++hitset_iter)
     {
