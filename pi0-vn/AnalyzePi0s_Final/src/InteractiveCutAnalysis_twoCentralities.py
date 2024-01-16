@@ -1,11 +1,13 @@
 import tkinter as tk  # For creating GUI elements
 from tkinter import ttk, messagebox, filedialog, simpledialog  # Additional GUI components and dialogs
 import pandas as pd  # For data handling and manipulation
+import seaborn as sns
 import matplotlib  # For plotting graphs
 from matplotlib.patches import Rectangle
 matplotlib.use('TkAgg')  # Setting the backend of matplotlib to TkAgg for GUI integration
 import matplotlib.pyplot as plt  # For creating and manipulating plots
 from matplotlib.lines import Line2D  # For creating line objects in matplotlib
+from matplotlib.ticker import AutoMinorLocator
 from matplotlib.container import ErrorbarContainer  # For handling error bars in plots
 from matplotlib.legend_handler import HandlerErrorbar  # For custom legend handling with error bars
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk  # Tkinter integration with matplotlib
@@ -58,6 +60,8 @@ x_points_base = [2.25, 2.75, 3.25, 3.75, 4.25, 4.75]
 # Set x-axis ticks.
 x_ticks = [2, 2.5, 3, 3.5, 4, 4.5, 5]
 
+# Initialize a list to hold colors for each set of cuts
+cut_colors = []
 
 # Global variables to hold the maximum Y-values for different plot types; used for scaling the plot
 global_max_y_signalYield = 0
@@ -102,6 +106,9 @@ current_plot_type = "SignalYield"
 # Global variable to track the transformation state
 is_yield_transformed = False
 
+# Flag to trigger color variation in cut combinations if and only if user selects plot all cut combos
+color_variation_trigger = False
+
 #initialize the legend for a plot, setting up the labels, colors, and markers for different centrality ranges
 def init_legend():
     # List to hold dummy line objects. These are used for creating the legend entries.
@@ -128,11 +135,29 @@ def init_legend():
     else:
         legend_loc = 'upper right'
         
+    # At the end of the init_legend function
+    if plot_update_count_SignalYield > 0:
+        # Add new legend entries for the additional color pairs
+        for i in range(1, plot_update_count_SignalYield + 1):
+            ax.errorbar([], [], yerr=[], fmt=markers[0], color=additional_colors[i][0], label=f'Cut Set {i+1} - 20-40%')
+            ax.errorbar([], [], yerr=[], fmt=markers[1], color=additional_colors[i][1], label=f'Cut Set {i+1} - 40-60%')
+            
     # Create the legend on the plot.
     # The legend uses the dummy lines, the specified title, the custom handler map, and the determined location.
-    ax.legend(handles=dummy_lines, title='Centrality:', handler_map=handler_map, loc = legend_loc)
+    #ax.legend(handles=dummy_lines, title='Centrality:', handler_map=handler_map, loc = legend_loc)
     
-    
+
+# Constants for plot adjustment
+bin_width = 0.008  # Width of each bin
+num_points_per_bin = 12  # Assuming 6 squares and 6 triangles per bin
+
+# Function to calculate jitter
+def calculate_jitter(bin_center, point_index, num_points, bin_width):
+    # Calculate the spacing between points given the bin width and number of points
+    spacing = bin_width / (num_points - 1)
+    # Calculate the jitter as the distance from the bin center
+    jitter = (point_index + 1) * spacing - (bin_width / 2)
+    return jitter
     
 #create interactive plot for signal yield data
 def plot_SignalYield(filtered_data, clear_plot):
@@ -151,6 +176,7 @@ def plot_SignalYield(filtered_data, clear_plot):
     else:
         plot_update_count_SignalYield += 1  # Increment the count for each new overlay.
 
+
     # Variable to track the highest y-value in the plot.
     local_max_y = 0
 
@@ -162,15 +188,24 @@ def plot_SignalYield(filtered_data, clear_plot):
         'D': delta_r_entry.get()
     }
     
-    # Iterate over each centrality category.
-    for i, (color, marker) in enumerate(zip(colors, markers)):
+    # Check if the plot_update_count_SignalYield index is in the bounds of the cut_colors
+    if color_variation_trigger and plot_update_count_SignalYield > 0 and plot_update_count_SignalYield <= len(cut_colors):
+        current_color = cut_colors[plot_update_count_SignalYield - 1]
+    else:
+        current_color = 'blue'  # Default color
+
+    
+    # Iterate over each centrality category for plotting.
+    for i, marker in enumerate(markers):
+        color = colors[i % len(colors)]  # This will cycle through the colors list
+
         # Check visibility setting for each centrality category.
         if not centrality_visibility[labels[i]]:
             continue  # Skip hidden categories.
 
         # Calculate offsets for x-values to avoid overlapping points.
-        base_jitter_offset = (i - 1.5) * 0.05
-        overlay_jitter_offset = plot_update_count_SignalYield * 0.08
+        base_jitter_offset = (i - 3.5) * 0.05
+        overlay_jitter_offset = plot_update_count_SignalYield * 0.065
         total_jitter_offset = base_jitter_offset + overlay_jitter_offset
 
         # Determine the indices for the current centrality category.
@@ -182,10 +217,12 @@ def plot_SignalYield(filtered_data, clear_plot):
         y_errs = [filtered_data.iloc[j]['YieldError'] for j in indices]
         S_B_ratios = [filtered_data.iloc[j]['S/B'] for j in indices]
         numEntries = [filtered_data.iloc[j]['NumEntry'] for j in indices]
-
+        
+        bin_index = i // 2  # This assumes two markers per bin
+        
         # Plot each data point with the corresponding error bar.
         for j, (x_val, y_val, y_err, S_B_ratio, numEntry) in enumerate(zip(x_vals, y_vals, y_errs, S_B_ratios, numEntries)):
-            index = i * 3 + j  # Calculate the specific index for the point.
+            index = i * 6 + j  # Calculate the specific index for the point.
             point_id = (plot_update_count_SignalYield, i, j)  # Unique identifier for each point.
             
             # Store data about the point in the history dictionary.
@@ -193,9 +230,12 @@ def plot_SignalYield(filtered_data, clear_plot):
                 'y_val': y_val, 'y_err': y_err, 'cuts': current_cuts.copy(),
                 'centrality': labels[i], 'csv_index': index, 'S_B_ratio': S_B_ratio, 'numEntry': numEntry
             }
-
+            # Calculate the jitter for this point
+            jitter = calculate_jitter(x_points_base[bin_index], j % num_points_per_bin, num_points_per_bin, bin_width)
+            # Adjust the x_val by adding the jitter
+            adjusted_x_val = x_val + jitter
             # Create an error bar container for each point and add it to the list.
-            container = ax.errorbar(x_val, y_val, yerr=y_err, fmt=marker, color=color)
+            container = ax.errorbar(adjusted_x_val, y_val, yerr=y_err, fmt=marker, color=current_color)
             container[0].set_gid(point_id)  # Set a group ID for the container.
             container[0].set_picker(5)  # Enable picking on the plot point.
             errorbar_containers_SignalYield.append(container)
@@ -211,11 +251,12 @@ def plot_SignalYield(filtered_data, clear_plot):
         global_max_y_signalYield = local_max_y
         
     #Set plot limits/labels
+    ax.set_yscale('log')  # Set y-axis scale to logarithmic.
     ax.set_ylim(0.1, global_max_y_signalYield)
     ax.set_xticks(x_ticks)
     ax.set_xlim(2.0, 5.0)
     ax.set_ylabel(r"$\pi^0$ Signal Yield")
-    ax.set_xlabel(r"$\pi^0$ pT [GeV]")
+    ax.set_xlabel(r"$\pi^0$ pT [GeV]", fontsize=14)
     ax.set_ylabel(r"$\pi^0$ Signal Yield")
     # Set the title for the plot
     ax.set_title(r"$\pi^0$ Signal Yield over $p_T$")
@@ -223,7 +264,6 @@ def plot_SignalYield(filtered_data, clear_plot):
     #Redraw canvas with new data
     canvas.draw()
     
-
 
 #Interactive plot of gaussian mean data filled with gaussian mean error
 def plot_GaussianMean(filtered_data, clear_plot):
@@ -242,8 +282,6 @@ def plot_GaussianMean(filtered_data, clear_plot):
     else:
         plot_update_count_GaussianMean += 1  # Increments the count for each overlay.
 
-    # Define markers for each plot point.
-    markers = ['o', 's', '^', 'v']
 
     # Variables to keep track of the highest and lowest y-values in the plot.
     local_max_y = 0
@@ -256,7 +294,6 @@ def plot_GaussianMean(filtered_data, clear_plot):
         'C': chi2_entry.get(),
         'D': delta_r_entry.get()
     }
-
     # Iterate over each centrality category for plotting.
     for i, (color, marker) in enumerate(zip(colors, markers)):
         # Skip plotting for categories that are not visible.
@@ -280,7 +317,7 @@ def plot_GaussianMean(filtered_data, clear_plot):
 
         # Plot each data point with the corresponding error bar.
         for j, (x_val, mean_val, mean_err, S_B_ratio, numEntry) in enumerate(zip(x_vals, mean_vals, mean_errs, S_B_ratios, numEntries)):
-            index = i * 3 + j  # Calculate the specific index for each point.
+            index = i * 6 + j  # Calculate the specific index for each point.
             point_id = (plot_update_count_GaussianMean, i, j)  # Unique identifier for the point.
             
             # Store point data in the history dictionary.
@@ -312,7 +349,7 @@ def plot_GaussianMean(filtered_data, clear_plot):
     else:
         global_min_y_GaussianSigma = 0  # Set a default lower bound.
 
-    # Set y-axis limits with buffer factors for better visualization.
+    # Set y-axis limits with buffer factors
     upper_buffer_factor = 1.5
     lower_buffer_factor = 0.1
     ax.set_ylim(global_min_y_GaussianMean - (global_min_y_GaussianMean * lower_buffer_factor),
@@ -337,7 +374,7 @@ def plot_GaussianMean(filtered_data, clear_plot):
     # Redraw the canvas with the updated plot.
     canvas.draw()
 
-
+#create interactive plot for Gaussian Sigma Data
 def plot_GaussianSigma(filtered_data, clear_plot):
     # Access and modify global variables within the function.
     global global_max_y_GaussianSigma, global_min_y_GaussianSigma, plot_GaussianSigma_history, plot_update_count_GaussianSigma, errorbar_containers_GaussianSigma, total_point_count_GaussianSigma, centrality_visibility, x_points_base, x_ticks
@@ -439,7 +476,7 @@ def plot_GaussianSigma(filtered_data, clear_plot):
     # Redraw the canvas with the updated plot.
     canvas.draw()
 
-
+#Interactive Plotting for S/B
 def plot_SBratio(filtered_data, clear_plot):
     # Access and modify global variables within the function.
     global global_max_y_SBratio, global_min_y_SBratio, plot_SBratio_history, plot_update_count_SBratio, errorbar_containers_SBratio, total_point_count_SBratio, centrality_visibility, x_points_base, x_ticks
@@ -468,15 +505,23 @@ def plot_SBratio(filtered_data, clear_plot):
         'D': delta_r_entry.get()
     }
 
-    # Iterate through each centrality category for plotting.
-    for i, (color, marker) in enumerate(zip(colors, markers)):
-        # Skip plotting if the centrality category is not visible.
-        if not centrality_visibility[labels[i]]:
-            continue
+    if color_variation_trigger and plot_update_count_SBratio > 0 and plot_update_count_SBratio <= len(cut_colors):
+        current_color = cut_colors[plot_update_count_SBratio - 1]
+    else:
+        current_color = 'blue'  # Default color
 
-        # Calculate offsets to avoid point overlapping.
-        base_jitter_offset = (i - 1.5) * 0.05
-        overlay_jitter_offset = plot_update_count_SBratio * 0.08
+    
+    # Iterate over each centrality category for plotting.
+    for i, marker in enumerate(markers):
+        color = colors[i % len(colors)]  # This will cycle through the colors list
+
+        # Check visibility setting for each centrality category.
+        if not centrality_visibility[labels[i]]:
+            continue  # Skip hidden categories.
+
+        # Calculate offsets for x-values to avoid overlapping points.
+        base_jitter_offset = (i - 3.5) * 0.05
+        overlay_jitter_offset = plot_update_count_SBratio * 0.065
         total_jitter_offset = base_jitter_offset + overlay_jitter_offset
 
         # Determine indices for data points in this category.
@@ -486,6 +531,10 @@ def plot_SBratio(filtered_data, clear_plot):
         x_vals = [x + total_jitter_offset for x in x_points_base]
         sb_vals = [filtered_data.iloc[j]['S/B'] for j in indices]
         sb_errs = []
+        
+        bin_index = i // 2  # This assumes two markers per bin
+        
+        
         for j, sb_err_value in enumerate([filtered_data.iloc[j]['S/Berror'] for j in indices]):
             if sb_err_value < 0:
                 print(f"Negative S/B error value corrected to 0 for index {indices[j]} with cuts: {current_cuts}")
@@ -495,7 +544,7 @@ def plot_SBratio(filtered_data, clear_plot):
                 
         # Plot each data point with an error bar.
         for j, (x_val, sb_val, sb_err) in enumerate(zip(x_vals, sb_vals, sb_errs)):
-            index = i * 3 + j  # Determine the specific index for each point.
+            index = i * 6 + j  # Determine the specific index for each point.
             point_id = (plot_update_count_SBratio, i, j)  # Create a unique identifier for the point.
             
             # Store point data in the history dictionary.
@@ -504,8 +553,13 @@ def plot_SBratio(filtered_data, clear_plot):
                 'centrality': labels[i], 'csv_index': index
             }
 
-            # Create an error bar container for the point and add it to the list.
-            container = ax.errorbar(x_val, sb_val, yerr=sb_err, fmt=marker, color=color)
+            # Calculate the jitter for this point
+            jitter = calculate_jitter(x_points_base[bin_index], j % num_points_per_bin, num_points_per_bin, bin_width)
+            # Adjust the x_val by adding the jitter
+            adjusted_x_val = x_val + jitter
+            # Create an error bar container for each point and add it to the list.
+            container = ax.errorbar(adjusted_x_val, sb_val, yerr=sb_err, fmt=marker, color=current_color)
+            
             container[0].set_gid(point_id)  # Assign group ID to the container.
             container[0].set_picker(5)  # Enable picking on the plot point.
             errorbar_containers_SBratio.append(container)
@@ -672,7 +726,12 @@ def plot_index_data(index_str, history_dict):
         # Create the main figure and axis for the plot
         fig, ax = plt.subplots(figsize=(15, 8))
         plt.subplots_adjust(right=0.7)  # Adjusting the subplot to make room for the legend
-        plt.style.use('ggplot')
+        plt.style.use('default')  # Reset style to default
+        fig.patch.set_facecolor('white')  # Set the background color to white for the entire figure
+        ax.set_facecolor('white')  # Set the background color to white for the plot area
+        # Set the tick params for both major and minor ticks on both axes
+        ax.tick_params(which='major', length=10, width=1, colors='black')  # Major ticks are more pronounced
+        ax.tick_params(which='minor', length=5, width=0.5, colors='black')  # Minor ticks are less pronounced
         root = tk.Tk()
         root.geometry("1600x900")
         canvas = FigureCanvasTkAgg(fig, master=root)
@@ -692,7 +751,6 @@ def plot_index_data(index_str, history_dict):
             cuts = {k: v for k, v in sorted(data['cuts'].items())}
             cut_combinations[tuple(cuts.values())] = i + 1
             cut_labels_map[i + 1] = cuts  # Map the index to the cuts
-
 
 
         # Determine the plotting keys and labels
@@ -726,23 +784,41 @@ def plot_index_data(index_str, history_dict):
             print(f"Index {cut_label}): Cuts - {cut_details_str}, {current_plot_type} - Value: {value}, Error: {error}")
 
 
-        # Plot each data point with error bars
+        # Plot each data point with error bars, black points with black error bars
         for cut_label, value, error in zip(cut_combinations.values(), values, errors):
-            ax.errorbar(cut_label, value, yerr=error, fmt='o', color='blue', ecolor='lightblue', elinewidth=3, capsize=0, alpha=0.7)
+            ax.errorbar(cut_label, value, yerr=error, fmt='o', color='black', ecolor='black', elinewidth=1, capsize=5, capthick=1, alpha=0.7)
 
         # Set plot title, labels, and ticks
         centrality_label, pt_label = get_centrality_and_pt_range(index)
-        ax.set_title(f'{current_plot_type} for Index {index} ({centrality_label}, {pt_label})', fontsize=16)
-        ax.set_xlabel('Cut Combinations', fontsize=14)
-        ax.set_ylabel(ylabel, fontsize=14)
+        ax.set_title(f'{current_plot_type} for Index {index} ({centrality_label}, {pt_label})', fontsize=20, weight='bold', color='black')
+        ax.set_xlabel('Cut Combinations', fontsize=16, weight='bold', color='black')
+        ax.set_ylabel(ylabel, fontsize=16, weight='bold', color='black')
+        ax.tick_params(axis='both', which='major', labelsize=14)
         ax.set_xticks(range(1, len(cut_combinations) + 1))
-        ax.grid(True, linestyle='--', linewidth=0.5, alpha=0.7)
+        
+        
+        ax.set_ylim(.1, .4)
+        ax.yaxis.grid(True, which='major', linestyle='-', linewidth=0.08, color='gray')
+        ax.xaxis.grid(True, which='major', linestyle='-', linewidth=0.08, color='gray')
+        # Darken the minor tick marks
+        ax.tick_params(which='minor', length=5, width=1, colors='black')
+
+        # Set the number of minor intervals between major y-axis ticks
+        ax.yaxis.set_minor_locator(AutoMinorLocator(2))
+        
+        ax.grid(which='major', linestyle='-', linewidth=0.5, color='black')  # Major grid lines only
+        ax.grid(which='minor', linestyle='', linewidth=0)  # No minor grid lines
+        ax.xaxis.set_minor_locator(AutoMinorLocator())
+        ax.yaxis.set_minor_locator(AutoMinorLocator())
+        
+        font = {'family': 'sans-serif', 'weight': 'normal', 'size': 14}
+        plt.rc('font', **font)
 
         cut_mapping = {'A': '      Asy', 'C': r'$\chi^2$', 'D': r'  $\Delta R$', 'E': 'E'}
 
 
         # Define the headers for the legend
-        headers = ['A', 'C', 'D', 'E']  # The abbreviations to be used as headers
+        headers = ['A', 'C', 'D', 'E']  # The abbreviations to be used as headers--A=Asymmetry, C = Chi2, D = DeltaR, E = energy
 
         # Create the header row for the legend
         header_row = [cut_mapping[header] for header in headers]
@@ -774,20 +850,24 @@ def plot_index_data(index_str, history_dict):
 
         # Adjust subplot and legend location
         plt.subplots_adjust(right=0.8)  # Adjust subplot to make room for the legend
-        # Utilize a monospaced font for the legend
         monospace_font = {'family': 'monospace'}
         plt.rc('font', **monospace_font)
 
         # Create the legend with custom handles
-        leg = ax.legend(legend_handles, legend_str_list, loc='center left', bbox_to_anchor=(1.05, 0.5), fontsize='small', title='Cut Combinations', handlelength=0, handletextpad=0)
+        leg = ax.legend(legend_handles, legend_str_list, loc='upper right', fontsize='medium', title='Cut Combinations', frameon=True, edgecolor='black')
+        leg.set_zorder(100)  # This ensures the legend is drawn on top of the grid lines
+        
+        plt.setp(leg.get_texts(), fontsize='small')
+        leg.get_frame().set_facecolor('white')
+        leg.get_frame().set_edgecolor('white')
         leg.get_frame().set_edgecolor('black')
+        leg.get_frame().set_facecolor('white')
 
         # Function to save the plot with a choice of file format
         def save_figure():
             filetypes = [
                 ("PDF files", "*.pdf"),
                 ("PNG files", "*.png"),
-                # Add other file types if needed
             ]
             file_path = filedialog.asksaveasfilename(defaultextension=".pdf", filetypes=filetypes)
             if file_path:
@@ -816,7 +896,6 @@ def get_centrality_and_pt_range(index):
                 if index in pt_indices:
                     return centrality, pt_range
     return "Unknown Centrality", "Unknown pT"
-
 
 
 # Define a custom dialog class that inherits from the simpledialog.Dialog class from tkinter.
@@ -990,7 +1069,7 @@ def add_labels_and_dividers(page, cell_width, cell_height, centrality_categories
     title_x = (page.rect.width - len(title) * font_size / 2) / 2  # Adjust calculation as needed
     page.insert_text((title_x, font_size), title, fontsize=font_size, color=blue)
 
-    row_label_font_size = 8  # Reduced font size for the row labels
+    row_label_font_size = 8
 
     # Add centrality labels above the top dividing line
     for i, centrality_label in enumerate(centrality_categories.keys()):
@@ -1083,11 +1162,9 @@ def generate_histogram_table(cuts):
                     # Use the row_mapping to determine the correct row based on the index
                     row = row_mapping[centrality_index]
 
-
                     # Add an offset to the x_position to move the plot to the right
                     x_offset = cell_width * 0.01  # 10% of the cell width, adjust as needed
                     x_position = column * cell_width + x_offset
-
 
                     # Calculate the y_position for each row
                     if row == 2:  # Bottom row
@@ -1096,8 +1173,6 @@ def generate_histogram_table(cuts):
                         y_position = bottom_row_start_y + cell_height + inter_row_spacing
                     else:  # Top row
                         y_position = bottom_row_start_y + 2 * (cell_height + inter_row_spacing)
-
-
 
                     filename = f"hPi0Mass_{centrality_index}_E{formatted_cuts['E']}_Asym{formatted_cuts['A']}_Chi{formatted_cuts['C']}_DeltaR{formatted_cuts['D']}_fit.pdf"
                     file_path = os.path.join(histogram_path, filename)
@@ -1299,6 +1374,10 @@ def apply_cuts_and_plot(energy, asymmetry, chi2, delta_r, clear_plot):
 
 # Function to generate all combinations of cuts and plot them
 def plot_all_combinations():
+    global color_variation_trigger, cut_colors
+    color_variation_trigger = True  # Set the flag to True
+    cut_colors = []  # Reset the colors for each new full combination plot
+    
     # Parse the cut values from the entry widgets
     energies = parse_cut_values(energy_entry.get())
     asymmetries = parse_cut_values(asymmetry_entry.get())
@@ -1313,12 +1392,15 @@ def plot_all_combinations():
     
     # Iterate over all combinations and apply each one
     for combination in all_cut_combinations:
+        # Assign a new color for this set of cuts
+        cut_colors.append(np.random.rand(3,))
         apply_cuts_and_plot(*combination, clear_plot=clear_plot)
         # After the first plot, set clear_plot to False so that subsequent plots are overlaid
         clear_plot = False
 
     # Redraw the canvas with all the new data
     canvas.draw()
+    color_variation_trigger = False
 
 def apply_transformation():
     # Accessing global variables that will be modified in this function.
