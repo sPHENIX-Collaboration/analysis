@@ -12,6 +12,7 @@
 
 // c++ utilities
 #include <cassert>
+#include <optional>
 // user includes
 #include "SCorrelatorQAMaker.h"
 
@@ -26,6 +27,7 @@ namespace SColdQcdCorrelatorAnalysis {
   SCorrelatorQAMaker::~SCorrelatorQAMaker() {
 
     delete m_checkTrackPairs;
+    delete m_makeTrackQATuples;
 
   }  // end dtor
 
@@ -35,23 +37,28 @@ namespace SColdQcdCorrelatorAnalysis {
 
   void SCorrelatorQAMaker::SetGlobalDebug(const bool debug) {
 
-    m_checkTrackPairs -> SetDebug(debug);
+    m_checkTrackPairs   -> SetDebug(debug);
+    m_makeTrackQATuples -> SetDebug(debug);
     return;
 
   }  // end 'SetGlobalDebug(bool)'
 
 
+
   void SCorrelatorQAMaker::SetGlobalOutFile(const string sOutFile) {
 
-    m_checkTrackPairs -> SetOutFile(sOutFile);
+    m_checkTrackPairs   -> SetOutFile(sOutFile);
+    m_makeTrackQATuples -> SetOutFile(sOutFile);
     return;
 
   }  // end 'SetGlobalOutFile(string)'
 
 
+
   void SCorrelatorQAMaker::SetGlobalVerbosity(const int verbosity) {
 
-    m_checkTrackPairs -> SetVerbosity(verbosity);
+    m_checkTrackPairs   -> SetVerbosity(verbosity);
+    m_makeTrackQATuples -> SetVerbosity(verbosity);
     return;
 
   }  // end 'SetGlobalVerbosity(int)'
@@ -73,6 +80,22 @@ namespace SColdQcdCorrelatorAnalysis {
     return;
 
   }  // end 'InitPlugin(SCheckTrackPairs, optional<string>)'
+
+
+
+  // specialization for SMakeTrkQATuples
+  template <> void SCorrelatorQAMaker::InitPlugin(const SMakeTrkQATuplesConfig& config, optional<string> name) {
+
+    // throw error if no name provided
+    if (!name.has_value()) {
+      assert(name.has_value());
+    }
+
+    m_makeTrackQATuples = new SMakeTrkQATuples(name.value());
+    m_makeTrackQATuples -> SetConfig(config);
+    return;
+
+  }  // end 'InitPlugin(SMakeTrkQATuples, optional<string>)'
 
 }  // end SColdQcdCorrelatorAnalysis namespace
 
