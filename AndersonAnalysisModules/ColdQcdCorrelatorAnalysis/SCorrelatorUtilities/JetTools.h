@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// 'SCorrelatorUtilities.JetInfo.h'
+// 'JetTools.h'
 // Derek Anderson
 // 10.22.2023
 //
@@ -9,10 +9,18 @@
 
 #pragma once
 
+// c++ utilities
+#include <vector>
+
+// make common namespaces implicit
+using namespace std;
+
 
 
 namespace SColdQcdCorrelatorAnalysis {
   namespace SCorrelatorUtilities {
+
+    // JetInfo definition -----------------------------------------------------
 
     struct JetInfo {
 
@@ -48,6 +56,10 @@ namespace SColdQcdCorrelatorAnalysis {
       }  // end 'Reset()'
 
     };  // end JetInfo def
+
+
+
+    // jet methods ------------------------------------------------------------
 
   }  // end SCorrelatorUtilities namespace
 }  // end SColdQcdCorrealtorAnalysis namespace

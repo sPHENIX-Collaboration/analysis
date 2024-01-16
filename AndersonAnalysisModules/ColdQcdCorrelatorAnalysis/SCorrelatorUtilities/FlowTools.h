@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// 'SCorrelatorUtilities.FlowTools.h'
+// 'FlowTools.h'
 // Derek Anderson
 // 11.16.2023
 //
@@ -9,6 +9,8 @@
 
 #pragma once
 
+// c++ utilities
+#include <cassert>
 // f4a libraries
 #include <fun4all/SubsysReco.h>
 // phool libraries
@@ -30,24 +32,162 @@ using namespace findNode;
 namespace SColdQcdCorrelatorAnalysis {
   namespace SCorrelatorUtilities {
 
+    // FlowInfo definition ----------------------------------------------------
+
+    struct FlowInfo {
+
+      // data members
+      int   id   = -1;
+      int   type = -1;
+      float mass = -999.;
+      float eta  = -999.;
+      float phi  = -999.;
+      float ene  = -999.;
+      float px   = -999.;
+      float py   = -999.;
+      float pz   = -999.;
+      float pt   = -999.;
+
+      void SetInfo(const ParticleFlowElement* flow) {
+        id   = flow -> get_id();
+        type = flow -> get_type();
+        mass = flow -> get_mass();
+        eta  = flow -> get_eta();
+        phi  = flow -> get_phi();
+        ene  = flow -> get_e();
+        px   = flow -> get_px();
+        py   = flow -> get_py();
+        pz   = flow -> get_pz();
+        pt   = flow -> get_pt();
+        return;
+      }  // end 'SetInfo(ParticleFlowElement*)'
+
+      void Reset() {
+        id   = -1;
+        type = -1;
+        mass = -999.;
+        eta  = -999.;
+        phi  = -999.;
+        ene  = -999.;
+        px   = -999.;
+        py   = -999.;
+        pz   = -999.;
+        pt   = -999.;
+        return;
+      }  // end 'Reset()'
+
+      static vector<string> GetListOfMembers() {
+        vector<string> members = {
+          "id",
+          "type",
+          "mass",
+          "eta",
+          "phi",
+          "ene",
+          "px",
+          "py",
+          "pz",
+          "pt"
+        };
+        return members;
+      }  // end 'GetListOfMembers()'
+
+      // overloaded < operator
+      friend bool operator<(const FlowInfo& lhs, const FlowInfo& rhs) {
+
+        // note that some quantities aren't relevant for this comparison
+        const bool isLessThan = (
+          (lhs.mass < rhs.mass) &&
+          (lhs.ene  < rhs.ene)  &&
+          (lhs.eta  < rhs.eta)  &&
+          (lhs.phi  < rhs.phi)  &&
+          (lhs.px   < rhs.px)   &&
+          (lhs.py   < rhs.py)   &&
+          (lhs.pz   < rhs.pz)   &&
+          (lhs.pt   < rhs.pt)
+        );
+        return isLessThan;
+
+      }  // end 'operator<(FlowInfo&, FlowInfo&)'
+
+      // overloaded > operator
+      friend bool operator>(const FlowInfo& lhs, const FlowInfo& rhs) {
+
+        // note that some quantities aren't relevant for this comparison
+        const bool isGreaterThan = (
+          (lhs.mass > rhs.mass) &&
+          (lhs.ene  > rhs.ene)  &&
+          (lhs.eta  > rhs.eta)  &&
+          (lhs.phi  > rhs.phi)  &&
+          (lhs.px   > rhs.px)   &&
+          (lhs.py   > rhs.py)   &&
+          (lhs.pz   > rhs.pz)   &&
+          (lhs.pt   > rhs.pt)
+        );
+        return isGreaterThan;
+
+      }  // end 'operator>(FlowInfo&, FlowInfo&)'
+
+      // overloaded, <=, >= operators
+      inline friend bool operator<=(const FlowInfo& lhs, const FlowInfo& rhs) {return !(lhs > rhs);}
+      inline friend bool operator>=(const FlowInfo& lhs, const FlowInfo& rhs) {return !(lhs < rhs);}
+
+      // default ctor/dtor
+      FlowInfo()  {};
+      ~FlowInfo() {};
+
+      // ctor accepting ParticleFlowElements
+      FlowInfo(const ParticleFlowElement* flow) {
+        SetInfo(flow);
+      }
+
+    };  // end FlowInfo definition
+
+
+
     // particle flow methods --------------------------------------------------
 
     ParticleFlowElementContainer* GetFlowStore(PHCompositeNode* topNode) {
 
-      // declare pf objects
-      ParticleFlowElementContainer* flowStore = findNode::getClass<ParticleFlowElementContainer>(topNode, "ParticleFlowElements");
-      if (!flowStore) {
+      ParticleFlowElementContainer* store = findNode::getClass<ParticleFlowElementContainer>(topNode, "ParticleFlowElements");
+      if (!store) {
         cerr << PHWHERE
              << "PANIC: Couldn't grab particle flow container!"
              << endl;
-        assert(flowStore);
+        assert(store);
       }
-      return flowStore;
+      return store;
 
     }  // end 'GetFlowStore(PHCompositeNode*)'
+
+
+
+    ParticleFlowElementContainer::ConstRange GetParticleFlowObjects(PHCompositeNode* topNode) {
+
+      // get container
+      ParticleFlowElementContainer* store = GetFlowStore(topNode);
+
+      // get objects
+      ParticleFlowElementContainer::ConstRange objects = store -> getParticleFlowElements();
+      if (!objects) {
+        cerr << PHWHERE
+             << "PANIC: Couldn't grab particle flow objects!"
+             << endl;
+        assert(objects);
+      }
+      return objects;
+
+    }  // end 'GetParticleFlowObjects(PHCompositeNode*)'
+
+
+
+    bool IsInFlowAcceptance(const FlowInfo& flow, const FlowInfo& minimum, const FlowInfo& maximum) {
+
+      return ((flow >= minimum) && (flow <= maximum));
+
+    }  // end 'IsInFlowAcceptance(FlowInfo&, FlowInfo&, FlowInfo&)'
 
   }  // end SCorrelatorUtilities namespace
 }  // end SColdQcdCorrealtorAnalysis namespace
 
 // end ------------------------------------------------------------------------
-
