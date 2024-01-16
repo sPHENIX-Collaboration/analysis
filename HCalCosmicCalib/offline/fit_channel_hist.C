@@ -12,21 +12,70 @@
 #include <TSpectrum.h>
 
 double gamma_function(double *x, double *par) {
-    double peak = par[0];
-    double shift = par[1];
-    double scale = par[2];
-    double N = par[3];
+  double peak = par[0];
+  double shift = par[1];
+  double scale = par[2];
+  double N = par[3];
 
-    double arg_para = (x[0] - shift) / scale;
-    double peak_para = (peak - shift) / scale;
-    double numerator = N * pow(arg_para, peak_para) * TMath::Exp(-arg_para);
-    double denominator = ROOT::Math::tgamma(peak_para + 1) * scale;
+  double arg_para = (x[0] - shift) / scale;
+  double peak_para = (peak - shift) / scale;
+  double numerator = N * pow(arg_para, peak_para) * TMath::Exp(-arg_para);
+  double denominator = ROOT::Math::tgamma(peak_para + 1) * scale;
 
-    if (denominator != 0) return (double)(numerator / denominator);
-    else return 0;
+  if (denominator != 0) return (double)(numerator / denominator);
+  else return 0;
 }
 
-void do_peak_finder(TH1F* hist, float& x, float& y) {
+float get_temp_shift(TH1F* hist, float y) {
+  float shift = 0.;
+  for (int i = 1; i <= hist->GetNbinsX(); i++) {
+    if (hist->GetBinContent(i) > y/10.) {
+      shift = hist->GetBinCenter(i);
+      break;
+    }
+  }
+  return shift;
+}
+
+float get_temp_scale(TH1F* hist, float x) {
+  float scale = (hist->GetMean() - x);
+  return scale;
+}
+
+float get_temp_N(float x, float y, float shift, float scale) {
+  float temp_par0 = (x - shift) / scale;
+  float temp_par1 = pow(temp_par0, temp_par0) * TMath::Exp(-temp_par0);
+  float temp_par2 = ROOT::Math::tgamma(temp_par0 + 1) * scale * y;
+  float temp_N = temp_par2 / temp_par1;
+  return temp_N;
+}
+
+float get_fit_min(TH1F* hist, float y) {
+  float min = 0.;
+  for (int i = 1; i <= hist->GetNbinsX(); i++) {
+    if (hist->GetBinContent(i) > 2*y/3.) {
+      min = hist->GetBinCenter(i);
+      if (hist->GetBinContent(i) > 3*y/4.) {
+        min = hist->GetBinCenter(i-1);
+      }
+      break;
+    }
+  }
+  return min;
+}
+
+float get_fit_max(TH1F* hist, float y) {
+  float max = 0.;
+  for (int i = hist->GetNbinsX(); i >= 1; i--) {
+    if (hist->GetBinContent(i) > y/5.) {
+      max = hist->GetBinCenter(i);
+      break;
+    }
+  }
+  return max;
+}
+
+void do_peak_finder(TH1F* hist, float& x, float& y, float& shift, float& scale, float& N, float& min, float& max) {
   TH1F *h_peakfinder = (TH1F*)hist->Clone("h_peakfinder");
   h_peakfinder->Smooth(2);
   TSpectrum *s = new TSpectrum(10);
@@ -42,18 +91,23 @@ void do_peak_finder(TH1F* hist, float& x, float& y) {
     x = xtemp[0];
     y = ytemp[0];
   }
+  shift = get_temp_shift(h_peakfinder, y);
+  scale = get_temp_scale(hist, x);
+  N = get_temp_N(x, y, shift, scale);
+  min = get_fit_min(h_peakfinder, y);
+  max = get_fit_max(h_peakfinder, y);
   delete h_peakfinder;
   delete s;
 }
 
 void do_peak_fit(TH1F* hist, TF1* func) {
-  float peak_position_finder, peak_value_finder;
-  do_peak_finder(hist, peak_position_finder, peak_value_finder);
+  float peak_position_finder, peak_value_finder, shift_finder, scale_finder, N_finder, min_finder, max_finder;
+  do_peak_finder(hist, peak_position_finder, peak_value_finder, shift_finder, scale_finder, N_finder, min_finder, max_finder);
   func->SetParameter(0, peak_position_finder);
-  func->SetParameter(1, peak_position_finder - 600);
-  func->SetParameter(2, hist->GetMean()-peak_position_finder);
-  func->SetParameter(3, hist->GetEntries() * 90);
-  hist->Fit(func, "", "", peak_position_finder - 550, peak_position_finder + 2200);
+  func->SetParameter(1, shift_finder);
+  func->SetParameter(2, scale_finder);
+  func->SetParameter(3, N_finder);
+  hist->Fit(func, "", "", min_finder, max_finder);
 }
 
 void fit_channel_hist() {
@@ -73,6 +127,9 @@ void fit_channel_hist() {
   std::ofstream ihcal_calibinfo("ihcal_calibinfo.txt",ios::trunc);
 
   // oHCal setup
+  TH2F *h_2Dohcal_hit = new TH2F("h_2Dohcal_hit", "", n_etabin, 0, n_etabin, n_phibin, 0, n_phibin);
+  h_2Dohcal_hit->GetXaxis()->SetTitle("ieta");
+  h_2Dohcal_hit->GetYaxis()->SetTitle("iphi");
   TH1F *h_ohcal_total;
   h_ohcal_total = new TH1F("h_ohcal_total","",200,0,10000);
   h_ohcal_total->GetXaxis()->SetTitle("ADC");
@@ -92,6 +149,9 @@ void fit_channel_hist() {
   h_ohcal_chindf->GetYaxis()->SetTitle("Counts");
 
   // iHCal setup
+  TH2F *h_2Dihcal_hit = new TH2F("h_2Dihcal_hit", "", n_etabin, 0, n_etabin, n_phibin, 0, n_phibin);
+  h_2Dihcal_hit->GetXaxis()->SetTitle("ieta");
+  h_2Dihcal_hit->GetYaxis()->SetTitle("iphi");
   TH1F *h_ihcal_total;
   h_ihcal_total = new TH1F("h_ihcal_total","",200,0,10000);
   h_ihcal_total->GetXaxis()->SetTitle("ADC");
@@ -145,7 +205,6 @@ void fit_channel_hist() {
   peak_ihcal_total = f_gamma->GetParameter(0);
   chindf_ihcal_total = f_gamma->GetChisquare() / (float)f_gamma->GetNDF();
   for (int ieta = 0; ieta < n_etabin; ++ieta) {
-
     for (int iphi = 0; iphi < n_phibin; ++iphi) {
       do_peak_fit(h_ohcal_channel[ieta][iphi], f_gamma);
       peak_ohcal[ieta][iphi] = f_gamma->GetParameter(0);
@@ -155,10 +214,14 @@ void fit_channel_hist() {
       peak_ihcal[ieta][iphi] = f_gamma->GetParameter(0);
       chindf_ihcal[ieta][iphi] = f_gamma->GetChisquare() / (float)f_gamma->GetNDF();
       h_ihcal_chindf->Fill(chindf_ihcal[ieta][iphi]);
+
+      h_2Dohcal_hit->SetBinContent(ieta+1, iphi+1, h_ohcal_channel[ieta][iphi]->GetEntries());
+      h_2Dihcal_hit->SetBinContent(ieta+1, iphi+1, h_ihcal_channel[ieta][iphi]->GetEntries());
     }
   }
   delete f_gamma;
 
+  // Output.
   // Get Calib info.
   float ihcal_samplingfraction = 0.162166;
   float ohcal_samplingfraction = 3.38021e-02;
@@ -174,7 +237,6 @@ void fit_channel_hist() {
     }
   }
 
-  // Output.
   total_mpvinfo << "oHCal: MPV = " << peak_ohcal_total << ", Chi^2/NDF = " << chindf_ohcal_total << std::endl;
   total_mpvinfo << "iHCal: MPV = " << peak_ihcal_total << ", Chi^2/NDF = " << chindf_ihcal_total << std::endl;
   total_mpvinfo << std::endl << "Channel-by-channel Chi^2/NDF value: " << std::endl << "    oHCal:" << h_ohcal_chindf->GetMean() << std::endl << "    iHCal:" << h_ihcal_chindf->GetMean() << std::endl;
@@ -215,6 +277,7 @@ void fit_channel_hist() {
   ohcal_output->cd();
   h_ohcal_total->Write();
   h_ohcal_chindf->Write();
+  h_2Dohcal_hit->Write();
   delete h_ohcal_total;
   delete h_ohcal_chindf;
   ohcal_output->Close();
@@ -222,6 +285,7 @@ void fit_channel_hist() {
   ihcal_output->cd();
   h_ihcal_total->Write();
   h_ihcal_chindf->Write();
+  h_2Dihcal_hit->Write();
   delete h_ihcal_total;
   delete h_ihcal_chindf;
   ihcal_output->Close();
