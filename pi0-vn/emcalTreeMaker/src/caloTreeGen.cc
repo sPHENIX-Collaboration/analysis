@@ -69,6 +69,8 @@ Int_t caloTreeGen::Init(PHCompositeNode *topNode)
   h2ClusterEtaPhiWeighted = new TH2F("h2ClusterEtaPhiWeighted", "Cluster ECore; #eta; #phi", bins_eta, low_eta, high_eta, bins_phi, low_phi, high_phi);
   h2TowEtaPhiWeighted = new TH2F("h2TowEtaPhiWeighted", "Tower Energy; Towerid #eta; Towerid #phi",  bins_eta, 0, bins_eta, bins_phi, 0, bins_phi);
   h2TotalMBDCaloE = new TH2F("h2TotalMBDCaloE", "Total MBD Charge vs Total EMCAL Energy; Total EMCAL Energy [Arb]; Total MBD Charge [Arb]", 100, 0, 1, 100, 0, 1);
+  h2TotalMBDCaloEv2 = new TH2F("h2TotalMBDCaloEv2", "Total MBD Charge vs Total EMCAL Energy; Total EMCAL Energy; Total MBD Charge", bins_totalcaloEv2, low_totalcaloEv2, high_totalcaloEv2,
+                                                                                                                                    bins_totalmbdv2, low_totalmbdv2, high_totalmbdv2);
 
   out2 = new TFile(Outfile2.c_str(),"RECREATE");
 
@@ -194,6 +196,11 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
 
   h2TotalMBDCaloE->Fill(totalCaloE/high_totalcaloE, totalMBD/high_totalmbd);
 
+  if(totalCaloE < 0) {
+    max_totalmbd2 = std::max(max_totalmbd2, totalMBD);
+    h2TotalMBDCaloEv2->Fill(totalCaloE, totalMBD);
+  }
+
   max_NClusters = std::max(max_NClusters, clusterContainer->size());
   hNClusters->Fill(clusterContainer->size());
 
@@ -307,7 +314,7 @@ Int_t caloTreeGen::End(PHCompositeNode *topNode)
 {
 
   std::cout << "min totalCaloE: " << min_totalCaloE << ", max totalCaloE: " << max_totalCaloE << std::endl;
-  std::cout << "max totalmbd: " << max_totalmbd << std::endl;
+  std::cout << "max totalmbd: " << max_totalmbd << ", max totalmbd (for totalCaloE < 0): " << max_totalmbd2 << std::endl;
   std::cout << "min tower energy: " << min_towE << ", max tower energy: " << max_towE << std::endl;
   std::cout << "min clusterECore: " << min_clusterECore << ", max clusterECore: " << max_clusterECore << std::endl;
   std::cout << "min clusterEta: " << min_clusterEta << ", max clusterEta: " << max_clusterEta << std::endl;
@@ -334,6 +341,7 @@ Int_t caloTreeGen::End(PHCompositeNode *topNode)
   h2ClusterEtaPhiWeighted->Write();
   h2TowEtaPhiWeighted->Write();
   h2TotalMBDCaloE->Write();
+  h2TotalMBDCaloEv2->Write();
   out -> Close();
   delete out;
 

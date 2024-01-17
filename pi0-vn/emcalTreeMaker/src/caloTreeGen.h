@@ -114,6 +114,7 @@ class caloTreeGen : public SubsysReco
     Float_t max_clusterChi   = 0;
     Float_t max_totalCaloE   = 0;
     Float_t max_totalmbd     = 0;
+    Float_t max_totalmbd2    = 0;
     UInt_t  max_NClusters    = 0;
     Int_t   max_goodTowers   = 0;
 
@@ -129,6 +130,7 @@ class caloTreeGen : public SubsysReco
     TH2F* h2ClusterEtaPhiWeighted;
     TH2F* h2TowEtaPhiWeighted;
     TH2F* h2TotalMBDCaloE;
+    TH2F* h2TotalMBDCaloEv2;
 
     UInt_t bins_towE  = 1200;
     Float_t low_towE  = -50;
@@ -169,6 +171,14 @@ class caloTreeGen : public SubsysReco
     UInt_t  bins_totalcaloE = 2500;
     Float_t low_totalcaloE  = -500;
     Float_t high_totalcaloE = 2000;
+
+    UInt_t  bins_totalmbdv2 = 100;
+    Float_t low_totalmbdv2  = 0;
+    Float_t high_totalmbdv2 = 3e4;
+
+    UInt_t  bins_totalcaloEv2 = 100;
+    Float_t low_totalcaloEv2  = -200;
+    Float_t high_totalcaloEv2 = 0;
 
     // Define PI0 Cuts
     Float_t clusE_min    = 1;
