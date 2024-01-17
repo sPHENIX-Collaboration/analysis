@@ -164,7 +164,7 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
     double energy = tower -> get_energy()/calib;
 
     // check if tower is good
-    if(!tower->get_isGood() || energy <= 0) continue;
+    if(!tower->get_isGood()) continue;
 
     ++goodTowerCtr;
 
