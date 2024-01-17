@@ -141,13 +141,32 @@ void makehist(TString infname, TString outfname)
 
     fout->Close();
 
-    system(Form("cd ./plot/; python plotTracklet.py -f %s", outfname.Data()));
+//    system(Form("cd ./plot/; python plotTracklet.py -f %s", outfname.Data()));
 }
 
 int main(int argc, char *argv[])
 {
-    // makehist(TString infname, TString outfname)
-    makehist("/sphenix/user/hjheng/TrackletAna/minitree/INTT/TrackletMinitree_ana382_zvtx-20cm/TrackletAna_minitree_Evt0to500_dRcut5.root","/sphenix/user/hjheng/TrackletAna/analysis_INTT/plot/hists/ana382_zvtx-20cm/Hists_RecoTracklets.root");
+    TString infname;
+    TString outfname;
+
+    if(argc==1)
+    {
+        infname = "/sphenix/user/hjheng/TrackletAna/minitree/INTT/TrackletMinitree_ana382_zvtx-20cm/TrackletAna_minitree_Evt0to500_dRcut5.root";
+        outfname = "/sphenix/user/hjheng/TrackletAna/analysis_INTT/plot/hists/ana382_zvtx-20cm/Hists_RecoTracklets.root";
+    }
+    else if(argc==3)
+    {
+        infname = argv[1];
+        outfname = argv[2];
+    }
+    else
+    {
+        std::cout << "Usage: ./plotTracklets [infile] [outfile]" << std::endl;
+        return 0;
+    }
+
+    makehist(infname,outfname);
+    //makehist("/sphenix/user/hjheng/TrackletAna/minitree/INTT/TrackletMinitree_ana382_zvtx-20cm/TrackletAna_minitree_Evt0to500_dRcut5.root","/sphenix/user/hjheng/TrackletAna/analysis_INTT/plot/hists/ana382_zvtx-20cm/Hists_RecoTracklets.root");
 
     return 0;
 }
