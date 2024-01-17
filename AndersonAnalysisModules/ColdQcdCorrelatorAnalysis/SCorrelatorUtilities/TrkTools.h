@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// 'SCorrelatorUtilities.TrkTools.h'
+// 'TrkTools.h'
 // Derek Anderson
 // 10.30.2023
 //
@@ -36,7 +36,7 @@
 #include <g4main/PHG4Particle.h>
 // analysis utilities
 #include "Constants.h"
-#include "EvtTools.h"
+#include "VtxTools.h"
 
 // make common namespaces implicit
 using namespace std;
@@ -137,6 +137,33 @@ namespace SColdQcdCorrelatorAnalysis {
         return;
       }  // end 'Reset()'
 
+      static vector<string> GetListOfMembers() {
+        vector<string> members = {
+          "id",
+          "nMvtxLayer",
+          "nInttLayer",
+          "nTpcLayer",
+          "nMvtxClust",
+          "nInttClust",
+          "nTpcClust",
+          "eta",
+          "phi",
+          "px",
+          "py",
+          "pz",
+          "pt",
+          "ene",
+          "dcaXY",
+          "dcaZ",
+          "ptErr",
+          "quality",
+          "vtxX",
+          "vtxY",
+          "vtxZ"
+        };
+        return members;
+      }  // end 'GetListOfMembers()'
+
       // overloaded < operator
       friend bool operator<(const TrkInfo& lhs, const TrkInfo& rhs) {
 
@@ -234,9 +261,7 @@ namespace SColdQcdCorrelatorAnalysis {
 
     bool IsInTrackAcceptance(const TrkInfo& trk, const TrkInfo& minimum, const TrkInfo& maximum) {
 
-      // compare track against limits
-      const bool isInAcceptance = ((trk >= minimum) && (trk <= maximum));
-      return isInAcceptance;
+      return ((trk >= minimum) && (trk <= maximum));
 
     }  // end 'IsInTrackAcceptance(TrkInfo&, TrkInfo&, TrkInfo&)'
 

@@ -5,6 +5,8 @@
 
 #include <fun4all/SubsysReco.h>
 
+#include <ffaobjects/EventHeader.h>
+
 #include <g4eval/SvtxClusterEval.h>
 #include <g4eval/SvtxEvalStack.h>
 #include <g4eval/SvtxHitEval.h>
@@ -30,8 +32,8 @@
 #include <trackbase_historic/ActsTransformations.h>
 #include <trackbase_historic/SvtxTrack.h>
 #include <trackbase_historic/SvtxTrackMap.h>
-#include <trackbase_historic/SvtxVertex.h>
-#include <trackbase_historic/SvtxVertexMap.h>
+// #include <trackbase_historic/SvtxVertex.h>
+// #include <trackbase_historic/SvtxVertexMap.h>
 // #include <centrality/CentralityInfov1.h>
 
 #include <fstream>
@@ -127,11 +129,12 @@ class dNdEtaINTT : public SubsysReco
     std::vector<int> TruthPV_Npart_, TruthPV_Nhits_, TruthPV_NClus_;
     // Reconstructed cluster information & 
     int NClus_;
-    std::vector<int> ClusLayer_, ClusHitcount_;
+    std::vector<int> ClusLayer_, ClusHitcount_, ClusTimeBucketId_;
     std::vector<float> ClusX_, ClusY_, ClusZ_, ClusR_, ClusPhi_, ClusEta_;
     std::vector<unsigned int> ClusAdc_;
     std::vector<float> ClusPhiSize_, ClusZSize_;
     std::vector<uint8_t> ClusLadderZId_, ClusLadderPhiId_;
+    std::vector<uint32_t> ClusTrkrHitSetKey_;
     // TrkrHit information
     int NTrkrhits_;
     std::vector<uint16_t> TrkrHitRow_, TrkrHitColumn_;

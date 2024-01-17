@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// 'SCorrelatorUtilities.GenTools.h'
+// 'GenTools.h'
 // Derek Anderson
 // 10.30.2023
 //
@@ -8,6 +8,26 @@
 // ----------------------------------------------------------------------------
 
 #pragma once
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+
+// c++ utilities
+#include <cmath>
+// phool libraries
+#include <phool/phool.h>
+#include <phool/getClass.h>
+#include <phool/PHIODataNode.h>
+#include <phool/PHNodeIterator.h>
+#include <phool/PHCompositeNode.h>
+// hepmc includes
+#include <HepMC/GenEvent.h>
+#include <HepMC/GenVertex.h>
+#include <HepMC/GenParticle.h>
+#include <phhepmc/PHHepMCGenEvent.h>
+#include <phhepmc/PHHepMCGenEventMap.h>
+
+#pragma GCC diagnostic pop
 
 // make common namespaces implicit
 using namespace std;
@@ -18,56 +38,163 @@ using namespace findNode;
 namespace SColdQcdCorrelatorAnalysis {
   namespace SCorrelatorUtilities {
 
+    // ParInfo definition -----------------------------------------------------
+
+    struct ParInfo {
+
+      int   pid     = -1;
+      int   status  = 0;
+      int   barcode = -1;
+      int   embedID = -1;
+      float charge  = -999.;
+      float mass    = -999.;
+      float eta     = -999.;
+      float phi     = -999.;
+      float ene     = -999.;
+      float px      = -999.;
+      float py      = -999.;
+      float pz      = -999.;
+      float pt      = -999.;
+      float vx      = -999.;
+      float vy      = -999.;
+      float vz      = -999.;
+
+      void SetInfo(const HepMC::GenParticle* particle, const int event) {
+        pid     = particle -> pdg_id();
+        status  = particle -> status();
+        barcode = particle -> barcode();
+        embedID = event;
+        charge  = mapPidOntoCharge[pid];
+        mass    = particle -> momentum().m();
+        eta     = particle -> momentum().eta();
+        phi     = particle -> momentum().phi();
+        ene     = particle -> momentum().e();
+        px      = particle -> momentum().px();
+        py      = particle -> momentum().py();
+        pz      = particle -> momentum().pz();
+        pt      = particle -> momentum().perp();
+        vx      = particle -> production_vertex() -> position().x();
+        vy      = particle -> production_vertex() -> position().y();
+        vz      = particle -> production_vertex() -> position().z();
+        return;
+      };
+
+      void Reset() {
+        pid     = -1;
+        status  = 0;
+        barcode = -1;
+        embedID = -1;
+        charge  = -999.;
+        mass    = -999.;
+        eta     = -999.;
+        phi     = -999.;
+        ene     = -999.;
+        px      = -999.;
+        py      = -999.;
+        pz      = -999.;
+        pt      = -999.;
+        vx      = -999.;
+        vy      = -999.;
+        vz      = -999.;
+        return;
+      };
+
+      static vector<string> GetListOfMembers() {
+        vector<string> members = {
+          "pid",
+          "status",
+          "barcode",
+          "embedID",
+          "charge",
+          "mass",
+          "eta",
+          "phi",
+          "ene",
+          "px",
+          "py",
+          "pz",
+          "pt",
+          "vx",
+          "vy",
+          "vz"
+        };
+        return members;
+      }  // end 'GetListOfMembers()'
+
+      // overloaded < operator
+      friend bool operator<(const ParInfo& lhs, const ParInfo& rhs) {
+
+        // note that some quantities aren't relevant for this comparison
+        const bool isLessThan = (
+          (lhs.eta  < rhs.eta)  &&
+          (lhs.phi  < rhs.phi)  &&
+          (lhs.ene  < rhs.ene)  &&
+          (lhs.px   < rhs.px)   &&
+          (lhs.py   < rhs.py)   &&
+          (lhs.pz   < rhs.pz)   &&
+          (lhs.pt   < rhs.pt)
+        );
+        return isLessThan;
+
+      }  // end 'operator>(ParInfo&, ParInfo&)'
+
+      // overloaded > operator
+      friend bool operator>(const ParInfo& lhs, const ParInfo& rhs) {
+
+        // note that some quantities aren't relevant for this comparison
+        const bool isGreaterThan = (
+          (lhs.eta  > rhs.eta)  &&
+          (lhs.phi  > rhs.phi)  &&
+          (lhs.ene  > rhs.ene)  &&
+          (lhs.px   > rhs.px)   &&
+          (lhs.py   > rhs.py)   &&
+          (lhs.pz   > rhs.pz)   &&
+          (lhs.pt   > rhs.pt)
+        );
+        return isGreaterThan;
+
+      }  // end 'operator>(ParInfo&, ParInfo&)'
+
+      // overloaded, <=, >= operators
+      inline friend bool operator<=(const ParInfo& lhs, const ParInfo& rhs) {return !(lhs > rhs);}
+      inline friend bool operator>=(const ParInfo& lhs, const ParInfo& rhs) {return !(lhs < rhs);}
+
+      // default ctor/dtor
+      ParInfo()  {};
+      ~ParInfo() {};
+
+      ParInfo(HepMC::GenParticle* particle, const int event) {
+        SetInfo(particle, event);
+      };
+
+    };  // end ParInfo definition
+
+
+
     // generator/mc methods ---------------------------------------------------
 
-    int GetEmbedID(PHCompositeNode* topNode, const int iEvtToGrab) {
+    PHHepMCGenEventMap* GetMcEventMap(PHCompositeNode* topNode) {
 
-      // grab mc event map
-      PHHepMCGenEventMap* mapMcEvts = findNode::getClass<PHHepMCGenEventMap>(topNode, "PHHepMCGenEventMap");
+      PHHepMCGenEventMap* mapMcEvts = getClass<PHHepMCGenEventMap>(topNode, "PHHepMCGenEventMap");
       if (!mapMcEvts) {
         cerr << PHWHERE
              << "PANIC: HEPMC event map node is missing!"
              << endl;
         assert(mapMcEvts);
       }
+      return mapMcEvts;
 
-      // grab mc event & return embedding id
-      PHHepMCGenEvent* mcEvtStart = mapMcEvts -> get(iEvtToGrab);
-      if (!mcEvtStart) {
-        cerr << PHWHERE
-             << "PANIC: Couldn't grab start of mc events!"
-             << endl;
-        assert(mcEvtStart);
-      }
-      return mcEvtStart -> get_embedding_id();
-
-    }  // end 'GetEmbedID(PHCompositeNode*, int)'
+    }  // end 'GetMcEventMap(PHCompositeNode*)'
 
 
-    HepMC::GenEvent* GetMcEvent(PHCompositeNode* topNode, const int iEvtToGrab) {
 
-      // grab mc event map
-      PHHepMCGenEventMap* mapMcEvts = findNode::getClass<PHHepMCGenEventMap>(topNode, "PHHepMCGenEventMap");
-      if (!mapMcEvts) {
-        cerr << PHWHERE
-             << "PANIC: HEPMC event map node is missing!"
-             << endl;
-        assert(mapMcEvts);
-      }
+    PHHepMCGenEvent* GetMcEvent(PHCompositeNode* topNode, const int iEvtToGrab) {
 
-      // grab mc event & check if good
-      PHHepMCGenEvent* mcEvtStart = mapMcEvts -> get(iEvtToGrab);
-      if (!mcEvtStart) {
-        cerr << PHWHERE
-             << "PANIC: Couldn't grab start of mc events!"
-             << endl;
-        assert(mcEvtStart);
-      }
-
-      HepMC::GenEvent* mcEvt = mcEvtStart -> getEvent();
+      PHHepMCGenEventMap* mcEvtMap = GetMcEventMap(topNode);
+      PHHepMCGenEvent*    mcEvt    = mcEvtMap -> get(iEvtToGrab);
       if (!mcEvt) {
         cerr << PHWHERE
-             << "PANIC: Couldn't grab HepMC event!"
+             << "PANIC: Couldn't grab mc event!"
              << endl;
         assert(mcEvt);
       }
@@ -77,188 +204,86 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
-    /* TODO
-     *   - replace most of this with comparison b/n ParInfo objects
-     */
-    bool IsGoodParticle(HepMC::GenParticle* par, const bool ignoreCharge) {
+    HepMC::GenEvent* GetGenEvent(PHCompositeNode* topNode, const int iEvtToGrab) {
 
-      // check charge if needed
-      const bool isJetCharged  = (m_jetType != 1);
-      const bool doChargeCheck = (isJetCharged && !ignoreCharge);
-
-      int   parID;
-      bool  isGoodCharge;
-      float parChrg;
-      if (doChargeCheck) {
-        parID        = par -> pdg_id();
-        parChrg      = GetParticleCharge(parID);
-        isGoodCharge = (parChrg != 0.);
-      } else {
-        isGoodCharge = true;
+      PHHepMCGenEvent* mcEvt  = GetMcEvent(topNode, iEvtToGrab);
+      HepMC::GenEvent* genEvt = mcEvt -> getEvent();
+      if (!genEvt) {
+        cerr << PHWHERE
+             << "PANIC: Couldn't grab HepMC event!"
+             << endl;
+        assert(mcEvt);
       }
+      return genEvt;
 
-      const double parEta       = par -> momentum().eta();
-      const double parPx        = par -> momentum().px();
-      const double parPy        = par -> momentum().py();
-      const double parPt        = sqrt((parPx * parPx) + (parPy * parPy));
-      const bool   isInPtRange  = ((parPt  > m_parPtRange[0])  && (parPt  < m_parPtRange[1]));
-      const bool   isInEtaRange = ((parEta > m_parEtaRange[0]) && (parEta < m_parEtaRange[1]));
-      const bool   isGoodPar    = (isGoodCharge && isInPtRange && isInEtaRange);
-      return isGoodPar;
-
-    }  // end 'IsGoodParticle(HepMC::GenParticle*, bool)'
+    }  // end 'GetGenEvent(PHCompositeNode*, int)'
 
 
 
-    bool IsOutgoingParton(HepMC::GenParticle* par) {
+    int GetEmbedID(PHCompositeNode* topNode, const int iEvtToGrab) {
+
+      // grab mc event & return embedding id
+      PHHepMCGenEvent* mcEvt = GetMcEvent(topNode, iEvtToGrab);
+      return mcEvt -> get_embedding_id();
+
+    }  // end 'GetEmbedID(PHCompositeNode*, int)'
+
+
+
+    bool IsInParAcceptance(const ParInfo& particle, const ParInfo& minimum, const ParInfo& maximum) {
+
+      return ((particle >= minimum) && (particle <= maximum));
+
+    }  // end 'IsInParAcceptance(ParInfo&, ParInfo&, ParInfo&)'
+
+
+
+    bool IsFinalState(const int status) {
+
+      return (status == 1);
+
+    }  // end 'IsFinalState(int)'
+
+
+
+    bool IsHardScatterProduct(const int status) {
+
+      return ((status == 23) || (status == 24));
+
+    }  // end 'IsHardScatterProduct(int)'
+
+
+
+    bool IsParton(const int pid) {
+
+      const bool isLightQuark   = ((pid == 1) || (pid == 2));
+      const bool isStrangeQuark = ((pid == 3) || (pid == 4));
+      const bool isHeavyQuark   = ((pid == 5) || (pid == 6));
+      const bool isGluon        = (pid == 21);
+      return (isLightQuark || isStrangeQuark || isHeavyQuark || isGluon);
+
+    }  // end 'IsParton(int)'
+
+
+
+    bool IsOutgoingParton(const HepMC::GenParticle* par) {
 
       // grab particle info
       const int pid    = par -> pdg_id();
       const int status = par -> status();
 
       // check if is outgoing parton
-      const bool isStatusGood     = ((status == 23) || (status == 24));
-      const bool isLightQuark     = ((pid == 1)     || (pid == 2));
-      const bool isStrangeQuark   = ((pid == 3)     || (pid == 4));
-      const bool isHeavyQuark     = ((pid == 5)     || (pid == 6));
-      const bool isGluon          = (pid == 21);
-      const bool isParton         = (isLightQuark || isStrangeQuark || isHeavyQuark || isGluon);
-      const bool isOutgoingParton = (isStatusGood && isParton);
+      const bool isOutgoingParton = (IsHardScatterProduct(status) && IsParton(pid));
       return isOutgoingParton;
 
     }  // end 'IsOutgoingParton(HepMC::GenParticle*)'
 
 
 
-    /* TODO
-     *   - replace switch-case w/ a map of PID onto charge
-     */ 
     float GetParticleCharge(const int pid) {
 
       // particle charge
-      float charge(-999.);
-
-      switch (abs(pid)) {
-        // e+/e-
-        case 11:
-          charge = 1.;
-          break;
-        // e neutrinos
-        case 12:
-          charge = 0.;
-          break;
-        // mu-/mu+
-        case 13:
-          charge = -1.;
-          break;
-        // mu neutrinos
-        case 14:
-          charge = 0.;
-          break;
-        // tau-/tau+
-        case 15:
-          charge = -1.;
-          break;
-        // tau neutrinos
-        case 16:
-          charge = 0.;
-          break;
-        // photon
-        case 22:
-          charge = 0.;
-          break;
-        // Z0
-        case 23:
-          charge = 0.;
-          break;
-        // W+/W-
-        case 24:
-          charge = 1.;
-          break;
-        // pi0
-        case 111:
-          charge = 0.;
-          break;
-        // pi+/pi-
-        case 211:
-          charge = 1.;
-          break;
-        // K0 (long)
-        case 130:
-          charge = 0.;
-          break;
-        // K0 (short)
-        case 310:
-          charge = 0.;
-          break;
-        // K+/K-
-        case 321:
-          charge = 1.;
-          break;
-        // D+/D-
-        case 441:
-          charge = 1.;
-          break;
-        // D0
-        case 421:
-          charge = 0.;
-          break;
-        // DS+/DS-
-        case 431:
-          charge = 1.;
-          break;
-        // eta
-        case 221:
-          charge = 0.;
-          break;
-        // proton/antiproton
-        case 2212:
-          charge = 1.;
-          break;
-        // neutron
-        case 2112:
-          charge = 0.;
-          break;
-        // lambda
-        case 3122:
-          charge = 0.;
-          break;
-        // sigma+/antisigma+
-        case 3222:
-          charge = 1.;
-          break;
-        // sigma0
-        case 3212:
-          charge = 0.;
-          break;
-        // sigma-/antisigma-
-        case 3112:
-          charge = -1.;
-          break;
-        // xi0
-        case 3322:
-          charge = 0.;
-          break;
-        // deuteron
-        case 700201:
-          charge = 0.;
-          break;
-        // alpha
-        case 700202:
-          charge = 2.;
-          break;
-        // triton
-        case 700301:
-          charge = 0.;
-          break;
-        // he3
-        case 700302:
-          charge = 3.;
-          break;
-        default:
-          charge = 0.;
-          break;
-      }  // end switch (abs(pid))
+      float charge = mapPidOntoCharge[abs(pid)];
 
       // if antiparticle, flip charge and return
       if (pid < 0) {
