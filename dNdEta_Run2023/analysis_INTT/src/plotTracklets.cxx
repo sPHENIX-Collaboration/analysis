@@ -25,7 +25,7 @@ float edges[NBins + 1] = {1.00000000e-04, 1.18571250e-04, 1.40591414e-04, 1.6670
                           8.38425353e-03, 9.94131425e-03, 1.17875406e-02, 1.39766343e-02, 1.65722701e-02, 1.96499479e-02, 2.32991889e-02, 2.76261397e-02, 3.27566592e-02, 3.88399805e-02, 4.60530506e-02, 5.46056779e-02, 6.47466352e-02,
                           7.67708949e-02, 9.10282102e-02, 1.07933287e-01, 1.27977848e-01, 1.51744935e-01, 1.79925867e-01, 2.13340350e-01, 2.52960321e-01, 2.99938216e-01, 3.55640493e-01, 4.21687380e-01, 5.00000000e-01};
 
-void makehist(TString infname, TString outfname)
+void makehist(TString infname, TString outfname, TString plotdir, bool rundata)
 {
     TFile *fout = new TFile(outfname, "RECREATE");
 
@@ -49,6 +49,10 @@ void makehist(TString infname, TString outfname)
     TH1F *hM_Eta_reco = new TH1F("hM_Eta_reco", "hM_Eta_reco", 160, -4, 4);
     TH1F *hM_Phi_reco = new TH1F("hM_Phi_reco", "hM_Phi_reco", 140, -3.5, 3.5);
     TH2F *hM_Eta_vtxZ_reco_incl = new TH2F("hM_Eta_vtxZ_reco_incl", "hM_Eta_vtxZ_reco_incl", 280, -3.5, 3.5, 220, -44, 0);
+
+    TH1F *hM_NClusLayer1 = new TH1F("hM_NClusLayer1", "hM_NClusLayer1", 100, 0, 5000);
+    TH1F *hM_NPrototkl = new TH1F("hM_NPrototkl", "hM_NPrototkl", 100, 0, 10000);
+    TH1F *hM_NRecotkl_Raw = new TH1F("hM_NRecotkl_Raw", "hM_NRecotkl_Raw", 100, 0, 5000);
 
     TFile *f = new TFile(infname, "READ");
     TTree *t = (TTree *)f->Get("minitree");
@@ -85,6 +89,10 @@ void makehist(TString infname, TString outfname)
 
         cout << "Event=" << event << "; NClusLayer1=" << NClusLayer1 << "; NPrototkl=" << NPrototkl << "; NRecotkl_Raw=" << NRecotkl_Raw << endl;
 
+        hM_NClusLayer1->Fill(NClusLayer1);
+        hM_NPrototkl->Fill(NPrototkl);
+        hM_NRecotkl_Raw->Fill(NRecotkl_Raw);
+
         for (size_t j = 0; j < prototkl_eta->size(); j++)
         {
             hM_dEta_proto->Fill(prototkl_deta->at(j));
@@ -117,6 +125,9 @@ void makehist(TString infname, TString outfname)
     f->Close();
 
     fout->cd();
+    hM_NClusLayer1->Write();
+    hM_NPrototkl->Write();
+    hM_NRecotkl_Raw->Write();
     hM_dEta_proto->Write();
     hM_dEta_reco->Write();
     hM_dEta_proto->Write();
@@ -141,13 +152,17 @@ void makehist(TString infname, TString outfname)
 
     fout->Close();
 
-    system(Form("cd ./plot/; python plotTracklet.py -f %s", outfname.Data()));
+    TString rundataarg = (rundata) ? "-s" : "";
+    system(Form("cd ./plot/; python plotTracklet.py -f %s -d %s %s", outfname.Data(), plotdir.Data(), rundataarg.Data()));
 }
 
 int main(int argc, char *argv[])
 {
-    // makehist(TString infname, TString outfname)
-    makehist("/sphenix/user/hjheng/TrackletAna/minitree/INTT/TrackletMinitree_ana382_zvtx-20cm/TrackletAna_minitree_Evt0to500_dRcut5.root","/sphenix/user/hjheng/TrackletAna/analysis_INTT/plot/hists/ana382_zvtx-20cm/Hists_RecoTracklets.root");
+    // makehist(TString infname, TString outfname, TString plotdir, bool rundata)
+    TString inputfname = "/sphenix/user/hjheng/TrackletAna/minitree/INTT/TrackletMinitree_ana382_zvtx-20cm_dummyAlignParams/TrackletAna_minitree_Evt0to2000_dRcut0p5.root";
+    TString outputfname = "/sphenix/user/hjheng/TrackletAna/analysis_INTT/plot/hists/ana382_zvtx-20cm_dummyAlignParams/Hists_RecoTracklets.root";
+    TString plotdir = "/sphenix/user/hjheng/TrackletAna/analysis_INTT/plot/RecoTracklet/ana382_zvtx-20cm_dummyAlignParams/";
+    makehist(inputfname, outputfname, plotdir, 0);
 
     return 0;
 }
