@@ -45,17 +45,14 @@ void draw_demoplot(TH1F *h, TF1 *f, float dcacut, TString plotname)
     f->SetLineColor(kRed);
     f->SetLineWidth(2);
     f->Draw("L same");
-    TLegend *leg = new TLegend(0.53, 0.7, 0.9, 0.9);
-    leg->SetHeader(Form("DCA < %.2f cm", dcacut));
+    TLegend *leg = new TLegend(0.47, 0.8, 0.9, 0.92);
+    leg->SetHeader();
     leg->SetBorderSize(0);
     leg->SetFillStyle(0);
     leg->SetTextSize(0.035);
+    leg->AddEntry((TObject*)0, Form("DCA < %.2f cm", dcacut), "");
+    leg->AddEntry((TObject*)0, Form("#mu_{Gaussian} = %.2f #pm %.2f cm", f->GetParameter(1), f->GetParError(1)), "");
     leg->Draw();
-    // TLatex to display the mean and sigma of the Gaussian fit
-    TLatex *tl = new TLatex(0.55, 0.67, Form("#mu_{Gaussian} = %.2f #pm %.2f cm", f->GetParameter(1), f->GetParError(1)));
-    tl->SetNDC();
-    tl->SetTextSize(0.035);
-    tl->Draw();
     c->SaveAs(Form("%s.pdf", plotname.Data()));
     c->SaveAs(Form("%s.png", plotname.Data()));
 
@@ -118,9 +115,6 @@ int main(int argc, char *argv[])
     TTree *minitree = new TTree("minitree", "Minitree of reconstructed vertices");
     SetVtxMinitree(minitree, vtxdata);
 
-    // TH1F *hM_vtxzreso = new TH1F("hM_vtxzreso", "hM_vtxzreso", 100, -5, 5);
-    // TH2F *hM_truth_recotruthdiff = new TH2F("hM_truth_recotruthdiff", "hM_truth_recotruthdiff", 140, -50, 20, 100, -5, 5);
-
     for (int ev = 0; ev < NevtToRun_; ev++)
     {
         Long64_t local = t->LoadTree(index->GetIndex()[ev]);
@@ -135,7 +129,7 @@ int main(int argc, char *argv[])
         {
             if (ClusLayer->at(ihit) == 3 || ClusLayer->at(ihit) == 4)
             {
-                Hit *hit = new Hit(ClusX->at(ihit), ClusY->at(ihit), ClusZ->at(ihit), 0., 0., 0., 0);
+                Hit *hit = new Hit(ClusX->at(ihit), ClusY->at(ihit), ClusZ->at(ihit), avgVtxX, avgVtxY, 0., 0);
                 // Set edge
                 if (ClusLadderZId->at(ihit) == 0 || ClusLadderZId->at(ihit) == 2)
                     hit->SetEdge(ClusZ->at(ihit) - 0.8, ClusZ->at(ihit) + 0.8);
@@ -151,7 +145,7 @@ int main(int argc, char *argv[])
             }
             else if (ClusLayer->at(ihit) == 5 || ClusLayer->at(ihit) == 6)
             {
-                Hit *hit = new Hit(ClusX->at(ihit), ClusY->at(ihit), ClusZ->at(ihit), 0., 0., 0., 1);
+                Hit *hit = new Hit(ClusX->at(ihit), ClusY->at(ihit), ClusZ->at(ihit), avgVtxX, avgVtxY, 0., 1);
                 // Set edge
                 if (ClusLadderZId->at(ihit) == 0 || ClusLadderZId->at(ihit) == 2)
                     hit->SetEdge(ClusZ->at(ihit) - 0.8, ClusZ->at(ihit) + 0.8);
@@ -169,20 +163,9 @@ int main(int argc, char *argv[])
                 continue;
         }
 
-        // vector<float> dca_cuts = {0.01, 0.03, 0.05, 0.1, 0.2};
-        // vector<TH1F *> hM_vtxcandz_dca, hM_vtxzedge_dca;
-        // for (size_t i = 0; i < dca_cuts.size(); i++)
-        // {
-        //     TH1F *hM_vtxcandz = new TH1F(Form("hM_vtxcandz_ev%d_dcacut%d", ev, i), Form("hM_vtxcandz_ev%d_dcacut%d", ev, i), 50, -70, 70);
-        //     hM_vtxcandz_dca.push_back(hM_vtxcandz);
-        //     TH1F *hM_vtxzedgproj = new TH1F(Form("hM_vtxzedgproj_ev%d_dcacut%d", ev, i), Form("hM_vtxzedgproj_ev%d_dcacut%d", ev, i), 2800, -70, 70);
-        //     hM_vtxzedge_dca.push_back(hM_vtxzedgproj);
-        // }
-
-        TH1F *hM_vtxzprojseg = new TH1F(Form("hM_vtxzprojseg_ev%d", ev), Form("hM_vtxzprojseg_ev%d", ev), 2800, -70, 70);
-
         cout << "# of clusters in 1st layer (layer ID 3+4, after cluster phi size selection) = " << INTTlayer1.size() << ", 2nd layer (layer ID 5+6) = " << INTTlayer2.size() << endl;
 
+        TH1F *hM_vtxzprojseg = new TH1F(Form("hM_vtxzprojseg_ev%d", ev), Form("hM_vtxzprojseg_ev%d", ev), 2800, -70, 70);
         for (size_t i = 0; i < INTTlayer1.size(); i++)
         {
             for (size_t j = 0; j < INTTlayer2.size(); j++)
@@ -295,43 +278,6 @@ int main(int argc, char *argv[])
 
         minitree->Fill();
     }
-
-    // TCanvas *c1 = new TCanvas("c1", "c1", 800, 700);
-    // c1->cd();
-    // hM_vtxzreso->GetXaxis()->SetTitle("v_{z}^{reco} - v_{z}^{truth} [cm]");
-    // hM_vtxzreso->GetYaxis()->SetTitle("Counts");
-    // hM_vtxzreso->GetYaxis()->SetTitleOffset(1.5);
-    // hM_vtxzreso->SetLineWidth(2);
-    // hM_vtxzreso->Draw("hist");
-    // // fit the histogram with a Gaussian function
-    // TF1 *f1 = new TF1("f1", "gaus", hM_vtxzreso->GetMean() - 0.6 * hM_vtxzreso->GetRMS(), hM_vtxzreso->GetMean() + 0.6 * hM_vtxzreso->GetRMS());
-    // f1->SetLineColor(kRed);
-    // hM_vtxzreso->Fit("f1", "R");
-    // f1->Draw("L same");
-    // float mean = f1->GetParameter(1);
-    // float sigma = f1->GetParameter(2);
-    // float mean_err = f1->GetParError(1);
-    // float sigma_err = f1->GetParError(2);
-    // // TLatex to display the mean and sigma of the Gaussian fit
-    // TLatex *tl1 = new TLatex(0.6, 0.67, Form("#mu_{Gaussian} = %.2f #pm %.2f cm", mean, mean_err));
-    // tl1->SetNDC();
-    // tl1->SetTextSize(0.035);
-    // tl1->Draw();
-    // TLatex *tl2 = new TLatex(0.6, 0.62, Form("#sigma_{Gaussian} = %.2f #pm %.2f cm", sigma, sigma_err));
-    // tl2->SetNDC();
-    // tl2->SetTextSize(0.035);
-    // tl2->Draw();
-    // c1->SaveAs(Form("%s/hM_vtxzreso.pdf", demoplotpath.Data()));
-    // c1->SaveAs(Form("%s/hM_vtxzreso.png", demoplotpath.Data()));
-
-    // TCanvas *c2 = new TCanvas("c2", "c2", 800, 700);
-    // gPad->SetRightMargin(0.15);
-    // c2->cd();
-    // hM_truth_recotruthdiff->GetXaxis()->SetTitle("v_{z}^{truth} [cm]");
-    // hM_truth_recotruthdiff->GetYaxis()->SetTitle("v_{z}^{reco} - v_{z}^{truth} [cm]");
-    // hM_truth_recotruthdiff->Draw("colz");
-    // c2->SaveAs(Form("%s/hM_truth_recotruthdiff.pdf", demoplotpath.Data()));
-    // c2->SaveAs(Form("%s/hM_truth_recotruthdiff.png", demoplotpath.Data()));
 
     outfile->cd();
     minitree->Write();
