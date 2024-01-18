@@ -710,17 +710,29 @@ def summarize_index(root, plot_type):
     submit_button = ttk.Button(index_window, text="Submit",
                                command=lambda: plot_index_data(index_entry.get(), plot_type))
     submit_button.pack(side=tk.LEFT)
+    
+    # Button for summarizing all indices
+    summarize_all_button = ttk.Button(index_window, text="Summarize for All Indices",
+                                      command=lambda: summarize_all_indices(root, plot_type))
+    summarize_all_button.pack(side=tk.LEFT)
 
 
 
-def plot_index_data(index_str, history_dict):
+def summarize_all_indices(root, plot_type):
+    save_path = '/Users/patsfan753/Desktop'
+    for index in range(12):  # Assuming indices from 0 to 11
+        plot_index_data(str(index), plot_type, save_path=save_path)
+
+
+def plot_index_data(index_str, history_dict, save_path = None):
     try:
         index = int(index_str)
         history_dict = get_history_dict_based_on_plot_type(current_plot_type)
         index_data = [data for point_id, data in history_dict.items() if data['csv_index'] == index]
 
         if not index_data:
-            messagebox.showerror("Error", f"No data found for index {index}")
+            if save_path is None:  # Only show the error if the plot is being displayed
+                messagebox.showerror("Error", f"No data found for index {index}")
             return
             
         # Create the main figure and axis for the plot
@@ -732,17 +744,7 @@ def plot_index_data(index_str, history_dict):
         # Set the tick params for both major and minor ticks on both axes
         ax.tick_params(which='major', length=10, width=1, colors='black')  # Major ticks are more pronounced
         ax.tick_params(which='minor', length=5, width=0.5, colors='black')  # Minor ticks are less pronounced
-        root = tk.Tk()
-        root.geometry("1600x900")
-        canvas = FigureCanvasTkAgg(fig, master=root)
-        canvas.draw()
-
-        # Adjust the placement of the canvas and toolbar
-        canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
-        toolbar = NavigationToolbar2Tk(canvas, root)
-        toolbar.update()
-        canvas._tkcanvas.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
-
+    
 
         # Prepare the data for plotting
         cut_combinations = {}
@@ -863,26 +865,45 @@ def plot_index_data(index_str, history_dict):
         leg.get_frame().set_edgecolor('black')
         leg.get_frame().set_facecolor('white')
 
-        # Function to save the plot with a choice of file format
-        def save_figure():
-            filetypes = [
-                ("PDF files", "*.pdf"),
-                ("PNG files", "*.png"),
-            ]
-            file_path = filedialog.asksaveasfilename(defaultextension=".pdf", filetypes=filetypes)
-            if file_path:
-                # Determine the format based on the file extension
-                file_format = 'PDF' if file_path.endswith('.pdf') else 'PNG'
-                # Save the current figure with high resolution and tight bounding box
-                fig.savefig(file_path, dpi=300, format=file_format.lower(), bbox_inches='tight', bbox_extra_artists=[leg])
+        if save_path is not None:
+            # Save the plot directly to a file and return
+            file_name = f'plot_index_{index_str}.png'
+            full_path = os.path.join(save_path, file_name)
+            fig.savefig(full_path, dpi=300, format='png', bbox_inches='tight', bbox_extra_artists=[leg])
+            plt.close(fig)  # Close the plot to free up memory
+        else:
+            # Existing Tkinter display code
+            root = tk.Tk()
+            root.geometry("1600x900")
+            canvas = FigureCanvasTkAgg(fig, master=root)
+            canvas.draw()
 
-        save_button = tk.Button(master=root, text="Save as PDF or PNG", command=save_figure)
-        save_button.pack(side=tk.BOTTOM)
+            # Adjust the placement of the canvas and toolbar
+            canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+            toolbar = NavigationToolbar2Tk(canvas, root)
+            toolbar.update()
+            canvas._tkcanvas.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
 
-        root.lift()
-        root.attributes('-topmost', True)
-        root.after_idle(root.attributes, '-topmost', False)
-        tk.mainloop()
+            # Function to save the plot with a choice of file format
+            def save_figure():
+                filetypes = [
+                    ("PDF files", "*.pdf"),
+                    ("PNG files", "*.png"),
+                ]
+                file_path = filedialog.asksaveasfilename(defaultextension=".pdf", filetypes=filetypes)
+                if file_path:
+                    # Determine the format based on the file extension
+                    file_format = 'PDF' if file_path.endswith('.pdf') else 'PNG'
+                    # Save the current figure with high resolution and tight bounding box
+                    fig.savefig(file_path, dpi=300, format=file_format.lower(), bbox_inches='tight', bbox_extra_artists=[leg])
+
+            save_button = tk.Button(master=root, text="Save as PDF or PNG", command=save_figure)
+            save_button.pack(side=tk.BOTTOM)
+
+            root.lift()
+            root.attributes('-topmost', True)
+            root.after_idle(root.attributes, '-topmost', False)
+            tk.mainloop()
         
     except ValueError:
         messagebox.showerror("Error", "Invalid index entered. Please enter a numerical index.")
@@ -1537,20 +1558,18 @@ def create_main_application(root):
     # Set the theme for the application
     style.theme_use('clam')
 
-    # Set the background color for the root window if desired
+    # Set the background color for the root window
     root.configure(background='light gray')
     
     
     # Create two main frames: one for the left side and one for the right side.
     left_frame = ttk.Frame(root)
-    # When packing the left_frame, add some left padding to create a gap
-    left_frame.pack(side=tk.LEFT, fill=tk.Y, padx=(10, 0))  # Added padx to create the gap
-
+    # When packing the left_frame, add some left padding to create a gap using padx
+    left_frame.pack(side=tk.LEFT, fill=tk.Y, padx=(10, 0))
 
     # Create a frame for the buttons at the bottom left
     bottom_left_frame = ttk.Frame(root)
     bottom_left_frame.pack(side=tk.BOTTOM, anchor='w', fill=tk.X)
-
 
     # Create and place cut entry boxes in the left frame.
     ttk.Label(left_frame, text="Energy:").grid(row=0, column=0, sticky='e', pady=(10, 0))
@@ -1621,12 +1640,8 @@ def create_main_application(root):
     centrality_frame = ttk.LabelFrame(left_frame, text="                 Hide Centrality", style='Center.TLabelframe')
     centrality_frame.grid(row=centrality_frame_row, column=0, columnspan=2, sticky="ew", pady=(padyVal, 0))
 
-
-
     plt.style.use('ggplot')
-    # Increase the size of the plot for better focus and visibility
-    fig, ax = plt.subplots(figsize=(12, 10))  # Adjust figsize to your needs
-
+    fig, ax = plt.subplots(figsize=(12, 10))  # Adjust figsize
 
     # Create a frame for the plot to the right of the button frame
     plot_frame = ttk.Frame(root)
@@ -1634,16 +1649,12 @@ def create_main_application(root):
     canvas = FigureCanvasTkAgg(fig, master=plot_frame)
     canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
-
-
     # Pack the buttons vertically in the bottom left frame
     exit_button = ttk.Button(bottom_left_frame, text="Exit Program", command=exit_program)
     exit_button.pack(side=tk.TOP, fill=tk.X)
 
-
     save_button = ttk.Button(bottom_left_frame, text="Save Plot", command=save_plot)
     save_button.pack(side=tk.TOP, fill=tk.X)
-
 
     # Annotation setup for interactive elements on the plot.
     annot = ax.annotate('', xy=(0, 0), xytext=(20, 20), textcoords="offset points",
@@ -1652,7 +1663,6 @@ def create_main_application(root):
     
     # Connect a function to handle click events on the plot.
     fig.canvas.mpl_connect('pick_event', lambda event: on_click(event, root))
-    
 
     # Creating toggle buttons for each centrality category and placing them in centrality_frame vertically.
     centrality_labels = ["40-60%", "20-40%"]
@@ -1665,7 +1675,6 @@ def create_main_application(root):
         check_button.grid(row=i, column=0, sticky='w', padx=10, pady=2)  # Use pady for spacing between buttons
 
 
-    
     # Function to toggle visibility of plot elements based on centrality.
     def toggle_centrality(label):
         global labels, centrality_visibility, errorbar_containers_SignalYield, errorbar_containers_GaussianMean, line_index_mapping
@@ -1780,7 +1789,6 @@ def sort_csv_by_signal_yield(csv_data):
                     # Print a separator between different indices
                     print()
 
-            # Construct strings for each line
             index_label = f"Index {int(row['Index'])}: "
             yield_str = f"Yield: {row['Yield']}, "
             cuts_str = f"Cuts: E: {row['Energy']}, A: {row['Asymmetry']}, C: {row['Chi2']}, D: {row['DeltaR']}"
