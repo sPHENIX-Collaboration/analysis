@@ -1,1 +1,0 @@
-This code runs over real emcal data and produces a rather large set of vectors pertaining to the calorimeters, and additionally outputs information from the EMCal's clusters. 

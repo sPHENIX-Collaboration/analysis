@@ -1,0 +1,4 @@
+* Quick testing commands:
+#+begin_src bash
+./bin/Fun4All_CaloTreeGen files/jamie-ana395-2023p007/dst_calo-00023020.list qa.root ntp.root 0 0.5 4 2>/dev/null 1>log.txt &
+#+end_src
