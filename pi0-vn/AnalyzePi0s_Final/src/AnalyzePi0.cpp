@@ -897,7 +897,7 @@ void WriteDataToCSV(int histIndex, const CutValues& cutValues, double fitMean, d
         return;
     }
 
-    std::string filename = "/Users/patsfan753/Desktop/Desktop/AnalyzePi0s_Final/dataOutput/DataFinalizedBins/PlotByPlotOutputFinalizedBins.csv";
+    std::string filename = globalDataPath + "PlotByPlotOutputJamiesUpdatedMasking_edits.csv";
     std::ifstream checkFile(filename);
     bool fileIsEmpty = checkFile.peek() == std::ifstream::traits_type::eof();
     checkFile.close();
@@ -911,12 +911,16 @@ void WriteDataToCSV(int histIndex, const CutValues& cutValues, double fitMean, d
 
     // Write column headers if file is empty
     if (fileIsEmpty) {
-        file << "Index,Energy,Asymmetry,Chi2,DeltaR,GaussMean,GaussMeanError,GaussSigma,GaussSigmaError,S/B,S/Berror,NumEntry,Yield,YieldError,RelativeSignalError\n";
+        file << "Index,Energy,Asymmetry,Chi2,DeltaR,GaussMean,GaussMeanError,GaussSigma,GaussSigmaError,S/B,S/Berror,NumEntry,Yield,YieldError,RelativeSignalError,LowerSignalBound,UpperSignalBound\n";
     }
 
     // Calculate relativeSignalError (ensure we don't divide by zero)
     double relativeSignalError = signalYield != 0 ? signalError / signalYield : 0;
 
+    // Calculate lowerSignalBound and upperSignalBound
+    double lowerSignalBound = fitMean - 2 * fitSigma;
+    double upperSignalBound = fitMean + 2 * fitSigma;
+    
     // Write data to CSV
     file << histIndex << ",";
     file << cutValues.clusE << ",";
@@ -932,7 +936,9 @@ void WriteDataToCSV(int histIndex, const CutValues& cutValues, double fitMean, d
     file << globalNumEntries << ",";
     file << signalYield << ",";
     file << signalError << ",";
-    file << relativeSignalError << "\n";
+    file << relativeSignalError << ",";
+    file << lowerSignalBound << ",";
+    file << upperSignalBound << "\n";
 
 
     file.close();
