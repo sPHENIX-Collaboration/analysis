@@ -50,8 +50,8 @@ void draw_demoplot(TH1F *h, TF1 *f, float dcacut, TString plotname)
     leg->SetBorderSize(0);
     leg->SetFillStyle(0);
     leg->SetTextSize(0.035);
-    leg->AddEntry((TObject*)0, Form("DCA < %.2f cm", dcacut), "");
-    leg->AddEntry((TObject*)0, Form("#mu_{Gaussian} = %.2f #pm %.2f cm", f->GetParameter(1), f->GetParError(1)), "");
+    leg->AddEntry((TObject *)0, Form("DCA < %.2f cm", dcacut), "");
+    leg->AddEntry((TObject *)0, Form("#mu_{Gaussian} = %.2f #pm %.2f cm", f->GetParameter(1), f->GetParError(1)), "");
     leg->Draw();
     c->SaveAs(Form("%s.pdf", plotname.Data()));
     c->SaveAs(Form("%s.png", plotname.Data()));
@@ -68,11 +68,11 @@ int main(int argc, char *argv[])
     int NevtToRun_ = TString(argv[2]).Atoi();
     float avgVtxX = TString(argv[3]).Atof();  // float avgVtxX = -0.0015
     float avgVtxY = TString(argv[4]).Atof();  // avgVtxY = 0.0012;
-    float dPhi_cut = TString(argv[5]).Atof(); // Example 0.11;
-    float dca_cut = TString(argv[6]).Atof();
-    TString infilename = TString(argv[7]);   // /sphenix/user/hjheng/TrackletAna/data/INTT/ana382_zvtx-20cm_dummyAlignParams/sim/INTTRecoClusters_sim_merged.root
-    TString outfilepath = TString(argv[8]);  // /sphenix/user/hjheng/TrackletAna/minitree/INTT/VtxEvtMap_ana382_zvtx-20cm_dummyAlignParams
-    TString demoplotpath = TString(argv[9]); // ./plot/RecoPV_demo/RecoPV_sim/INTTVtxZ_ana382_zvtx-20cm_dummyAlignParams
+    float dPhi_cut = TString(argv[5]).Atof(); // Example: 0.11 radian;
+    float dca_cut = TString(argv[6]).Atof();  // Example: 0.05cm
+    TString infilename = TString(argv[7]);    // /sphenix/user/hjheng/TrackletAna/data/INTT/ana382_zvtx-20cm_dummyAlignParams/sim/INTTRecoClusters_sim_merged.root
+    TString outfilepath = TString(argv[8]);   // /sphenix/user/hjheng/TrackletAna/minitree/INTT/VtxEvtMap_ana382_zvtx-20cm_dummyAlignParams
+    TString demoplotpath = TString(argv[9]);  // ./plot/RecoPV_demo/RecoPV_sim/INTTVtxZ_ana382_zvtx-20cm_dummyAlignParams
     bool debug = (TString(argv[10]).Atoi() == 1) ? true : false;
 
     system(Form("mkdir -p %s", outfilepath.Data()));
@@ -127,6 +127,9 @@ int main(int argc, char *argv[])
 
         for (size_t ihit = 0; ihit < ClusLayer->size(); ihit++)
         {
+            if (ClusPhiSize->at(ihit) >= 5)
+                    continue;
+
             if (ClusLayer->at(ihit) == 3 || ClusLayer->at(ihit) == 4)
             {
                 Hit *hit = new Hit(ClusX->at(ihit), ClusY->at(ihit), ClusZ->at(ihit), avgVtxX, avgVtxY, 0., 0);
@@ -136,9 +139,6 @@ int main(int argc, char *argv[])
                 else if (ClusLadderZId->at(ihit) == 1 || ClusLadderZId->at(ihit) == 3)
                     hit->SetEdge(ClusZ->at(ihit) - 0.5, ClusZ->at(ihit) + 0.5);
                 else
-                    continue;
-
-                if (ClusPhiSize->at(ihit) > 5)
                     continue;
 
                 INTTlayer1.push_back(hit);
@@ -154,9 +154,6 @@ int main(int argc, char *argv[])
                 else
                     continue;
 
-                if (ClusPhiSize->at(ihit) > 5)
-                    continue;
-
                 INTTlayer2.push_back(hit);
             }
             else
@@ -166,6 +163,7 @@ int main(int argc, char *argv[])
         cout << "# of clusters in 1st layer (layer ID 3+4, after cluster phi size selection) = " << INTTlayer1.size() << ", 2nd layer (layer ID 5+6) = " << INTTlayer2.size() << endl;
 
         TH1F *hM_vtxzprojseg = new TH1F(Form("hM_vtxzprojseg_ev%d", ev), Form("hM_vtxzprojseg_ev%d", ev), 2800, -70, 70);
+        int goodpaircount = 0;
         for (size_t i = 0; i < INTTlayer1.size(); i++)
         {
             for (size_t j = 0; j < INTTlayer2.size(); j++)
@@ -205,9 +203,10 @@ int main(int argc, char *argv[])
 
                 if (debug)
                     cout << "DCA cut = " << dca_cut << " [cm]; vertex candidate (center,edge1,edge2) = (" << z << "," << edge1 << "," << edge2 << "), difference = " << edge2 - edge1 << endl;
-                
+
                 if (fabs(z) < 70)
                 {
+                    goodpaircount++;
                     int bin1 = hM_vtxzprojseg->FindBin(edge1);
                     int bin2 = hM_vtxzprojseg->FindBin(edge2);
 
@@ -218,9 +217,9 @@ int main(int argc, char *argv[])
                         // for bin1 and bin2, find the distance of the edge1 and edge2 to the respective bin edge
                         float w;
                         if (ibin == bin1)
-                            w = (bincenter + 0.5 * binwidth) - edge1;
+                            w = ((bincenter + 0.5 * binwidth) - edge1) / binwidth;
                         else if (ibin == bin2)
-                            w = edge2 - (bincenter - 0.5 * binwidth);
+                            w = (edge2 - (bincenter - 0.5 * binwidth)) / binwidth;
                         else
                             w = 1.;
 
@@ -231,6 +230,8 @@ int main(int argc, char *argv[])
             }
         }
 
+        cout << "Number of entries in hM_vtxzprojseg = " << hM_vtxzprojseg->Integral(-1, -1) << endl;
+        cout << "Number of good pairs = " << goodpaircount << endl;
         if (debug && !IsData)
             cout << "Event " << ev << "(Truth PVx, Truth PVy, Truth PVz) = (" << TruthPV_trig_x << ", " << TruthPV_trig_y << ", " << TruthPV_trig_z << ")" << endl;
 

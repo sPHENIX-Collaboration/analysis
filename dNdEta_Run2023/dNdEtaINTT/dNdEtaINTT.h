@@ -121,14 +121,12 @@ class dNdEtaINTT : public SubsysReco
     TTree *outtree;
     int event_;
     float centrality_bimp_, centrality_impactparam_, centrality_mbd_, centrality_mbdquantity_;
-    int Layer1_occupancy_;
+    int ncoll_, npart_; // number of collisions and participants
     // Truth primary vertex information
     float TruthPV_trig_x_, TruthPV_trig_y_, TruthPV_trig_z_;
-    int NTruthVtx_, TruthPV_trig_Npart_;
-    std::vector<float> TruthPV_x_, TruthPV_y_, TruthPV_z_, TruthPV_t_, TruthPV_embed_;
-    std::vector<int> TruthPV_Npart_, TruthPV_Nhits_, TruthPV_NClus_;
-    // Reconstructed cluster information & 
-    int NClus_;
+    int NTruthVtx_;
+    // Reconstructed cluster information
+    int NClus_, NClus_Layer1_;
     std::vector<int> ClusLayer_, ClusHitcount_, ClusTimeBucketId_;
     std::vector<float> ClusX_, ClusY_, ClusZ_, ClusR_, ClusPhi_, ClusEta_;
     std::vector<unsigned int> ClusAdc_;
@@ -139,13 +137,12 @@ class dNdEtaINTT : public SubsysReco
     int NTrkrhits_;
     std::vector<uint16_t> TrkrHitRow_, TrkrHitColumn_;
     // G4 information Matching for simulation
-    std::vector<int> G4PfromClus_PID_;
-    std::vector<float> UniqueAncG4P_Px_, UniqueAncG4P_Py_, UniqueAncG4P_Pz_, UniqueAncG4P_Pt_, UniqueAncG4P_Eta_, UniqueAncG4P_Phi_, UniqueAncG4P_E_;
-    std::vector<int> UniqueAncG4P_PID_, UniqueAncG4P_TrackPID_, UniqueAncG4P_VtxPID_, UniqueAncG4P_ParentPID_, UniqueAncG4P_PrimaryPID_;
-    std::vector<double> UniqueAncG4P_IonCharge_;
-    std::vector<int> UniqueAncG4P_TrackID_, UniqueAncG4P_NClus_;
+    int NGenPart_;
+    std::vector<float> UniqueAncG4P_Pt_, UniqueAncG4P_Eta_, UniqueAncG4P_Phi_, UniqueAncG4P_E_;
+    std::vector<int> UniqueAncG4P_PID_;
 
-    // must initialize as null pointer otherwise weird things happen...
+    EventHeader *eventheader = nullptr;
+
     SvtxEvalStack *svtx_evalstack = nullptr;
     SvtxTruthEval *truth_eval = nullptr;
     SvtxClusterEval *clustereval = nullptr;
