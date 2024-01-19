@@ -8,6 +8,7 @@ from ROOT import *
 import numpy as np
 import math
 import glob
+from plotUtil import Draw_1Dhist 
 
 gROOT.LoadMacro('./sPHENIXStyle/sPhenixStyle.C')
 gROOT.ProcessLine('SetsPhenixStyle()')
@@ -31,6 +32,8 @@ def Draw_1Dhist_wPercentile(hist, l_percentile, norm1, logx, logy, ymaxscale, Xa
     printbinwidth = True
     if binwidth != binwidth2:
         printbinwidth = False
+    
+    histmax = hist.GetMaximum()
     
     c = TCanvas('c', 'c', 800, 700)
     if norm1:
@@ -93,9 +96,9 @@ def Draw_1Dhist_wPercentile(hist, l_percentile, norm1, logx, logy, ymaxscale, Xa
     linestorage = []
     textstorage = []
     for i,p in enumerate(l_percentile):
-        if (logx == False and hist.GetXaxis().GetXmax() <= 1000 and i > 3):
-            continue
-        pline = TLine(p, 0, p, (hist.GetMaximum()/ymaxscale)*0.8)
+        # if (logx == False and i < 3):
+        #     continue
+        pline = TLine(p, 0, p, histmax*0.6)
         pline.SetLineWidth(1)
         pline.SetLineStyle(kDashed)
         pline.SetLineColor(2)
@@ -106,8 +109,9 @@ def Draw_1Dhist_wPercentile(hist, l_percentile, norm1, logx, logy, ymaxscale, Xa
         gPad.Update()
         linestorage.append(pline)
 
-        if (logx == False and hist.GetXaxis().GetXmax() > 1000 and i > 3) or (logx == False and hist.GetXaxis().GetXmax() <= 1000 and i <= 3) or logx == True:
-            ptext = TText(p,(hist.GetMaximum()/ymaxscale)*0.3,'{:d}-{:d}%'.format(int(interval*((len(l_percentile)+1)-(i+2))),int(interval*((len(l_percentile)+1)-(i+1)))))
+        if (logx == False and i > 2) or logx == True:
+            print (i, int(interval*((len(l_percentile))-(i+1))), int(interval*((len(l_percentile))-(i))))
+            ptext = TText(p, histmax*0.25, '{:d}-{:d}%'.format(int(interval*((len(l_percentile)+1)-(i+2))), int(interval*((len(l_percentile)+1)-(i+1)))))
             ptext.SetTextAlign(13)
             ptext.SetTextSize(0.02)
             ptext.SetTextColor(2)
@@ -129,7 +133,7 @@ def Draw_1Dhist_wPercentile(hist, l_percentile, norm1, logx, logy, ymaxscale, Xa
         del c
         c = 0
 
-def Draw_2Dhist_wPercentile(hist, l_percentile, logz, norm1, rmargin, XaxisName, YaxisName, drawopt, outname):
+def Draw_2Dhist_wPercentile(hist, centvar, l_percentile, logz, norm1, rmargin, XaxisName, YaxisName, drawopt, outname):
     c = TCanvas('c', 'c', 800, 700)
     if logz:
         c.SetLogz()
@@ -156,7 +160,10 @@ def Draw_2Dhist_wPercentile(hist, l_percentile, logz, norm1, rmargin, XaxisName,
 
     linestorage = []
     for i,p in enumerate(l_percentile):
-        pline = TLine(p, 0, p, hist.GetYaxis().GetXmax())
+        if centvar == 'Centrality_mbdquantity':
+            pline = TLine(0, p, hist.GetXaxis().GetXmax(), p)
+        elif centvar == 'NClusLayer1':
+            pline = TLine(p, 0, p, hist.GetYaxis().GetXmax())
         pline.SetLineWidth(1)
         pline.SetLineStyle(kDashed)
         pline.SetLineColor(2)
@@ -183,41 +190,51 @@ if __name__ == '__main__':
     parser = OptionParser(usage="usage: %prog ver [options -n]")
     parser.add_option("-f", "--inputfile", dest="inputfile", type="string", default='/sphenix/user/hjheng/TrackletAna/minitree/INTT/VtxEvtMap_ana382_zvtx-20cm_dummyAlignParams/INTTVtxZ.root', help="Input ntuple file name")
     parser.add_option("-d", "--plotdir", dest="plotdir", type="string", default='./centProxy/ana382_zvtx-20cm_dummyAlignParams', help="Plot directory")
+    parser.add_option("-c", "--centralityvar", dest="centralityvar", type="string", default='Centrality_mbdquantity', help="Centrality variable name [Centrality_mbdquantity or NClusLayer1]")
 
     (opt, args) = parser.parse_args()
 
     inputfile = opt.inputfile
     plotdir = opt.plotdir
+    centralityvar = opt.centralityvar
+    maxcent = 50 if centralityvar == 'Centrality_mbdquantity' else 5000
 
     os.makedirs(plotdir, exist_ok=True)
 
     df = ROOT.RDataFrame('minitree', inputfile)
-    np_NClusL1 = df.AsNumpy(columns=['NClusLayer1'])
-    NClusL1_percentile = []
-    Binedge_NClusL1_percentile = [0]
-    NClusL1_percentile_cut = [0]
+    np_centvar = df.AsNumpy(columns=[centralityvar])
+    CentVar_percentile = []
+    Binedge_CentVar_percentile = [0]
+    CentVar_percentile_cut = [0]
     for i in range(NpercentileDiv-1):
-        print('percentile={}-{}%, Nhits={}'.format(i*interval, (i+1)*interval, np.percentile(np_NClusL1['NClusLayer1'], (i+1)*interval)))
-        NClusL1_percentile.append(np.percentile(np_NClusL1['NClusLayer1'], (i+1)*interval))
-        Binedge_NClusL1_percentile.append(np.percentile(np_NClusL1['NClusLayer1'], (i+1)*interval))
+        print('percentile={}-{}%, Centrality quantity({})={}'.format(i*interval, (i+1)*interval, centralityvar, np.percentile(np_centvar[centralityvar], (i+1)*interval)))
+        CentVar_percentile.append(np.percentile(np_centvar[centralityvar], (i+1)*interval))
+        Binedge_CentVar_percentile.append(np.percentile(np_centvar[centralityvar], (i+1)*interval))
         if i % 2 == 1:
-            NClusL1_percentile_cut.append(np.percentile(np_NClusL1['NClusLayer1'], (i+1)*interval))
-    NClusL1_percentile_cut.append(5000)
-    Binedge_NClusL1_percentile.append(5000)
+            CentVar_percentile_cut.append(np.percentile(np_centvar[centralityvar], (i+1)*interval))
+    CentVar_percentile_cut.append(maxcent)
+    Binedge_CentVar_percentile.append(maxcent)
     
-    with open('{}/Centrality_bin.txt'.format(plotdir), 'w') as f:
-        for i in Binedge_NClusL1_percentile:
-            print('{:3g}'.format(i), file=f)
+    with open('{}/Centrality_{}_bin.txt'.format(plotdir, centralityvar), 'w') as f:
+        for i in Binedge_CentVar_percentile:
+            print('{:g}'.format(i), file=f)
 
     hM_NClusLayer1 = TH1F('hM_NClusLayer1', 'hM_NClusLayer1', 200, 0, 4000)
+    hM_MBDquantity = TH1F('hM_MBDquantity', 'hM_MBDquantity', 200, 0, 25)
     hM_NClusLayer1_MBDquantity = TH2F('hM_NClusLayer1_MBDquantity', 'hM_NClusLayer1_MBDquantity', 200, 0, 4000, 200, 0, 25)
     f = TFile(inputfile, 'r')
     tree = f.Get('minitree')
     for idx in range(tree.GetEntries()):
         tree.GetEntry(idx)
         hM_NClusLayer1.Fill(tree.NClusLayer1)
+        hM_MBDquantity.Fill(tree.Centrality_mbdquantity)
         hM_NClusLayer1_MBDquantity.Fill(tree.NClusLayer1, tree.Centrality_mbdquantity)
 
-
-    Draw_1Dhist_wPercentile(hM_NClusLayer1, NClusL1_percentile, False, False, True, 5, 'Number of clusters (Layer 3+4)', '', '{}/NClusLayer1_wPercentile'.format(plotdir))
-    Draw_2Dhist_wPercentile(hM_NClusLayer1_MBDquantity, NClusL1_percentile, True, False, 0.13, 'Number of clusters (Layer 3+4)', 'MBD charge sum (N+S)', 'colz', '{}/NClusLayer1_MBDquantity'.format(plotdir))
+    if centralityvar == 'Centrality_mbdquantity':
+        Draw_1Dhist_wPercentile(hM_MBDquantity, CentVar_percentile, False, False, True, 5, 'MBD charge sum (N+S)', '', '{}/MBDquantity_wPercentile'.format(plotdir))
+        Draw_1Dhist(hM_NClusLayer1, False, False, True, 5, 'Number of clusters (Layer 3+4)', '', '{}/NClusLayer1'.format(plotdir))
+    elif centralityvar == 'NClusLayer1':
+        Draw_1Dhist_wPercentile(hM_NClusLayer1, CentVar_percentile, False, False, True, 5, 'Number of clusters (Layer 3+4)', '', '{}/NClusLayer1_wPercentile'.format(plotdir))
+        Draw_1Dhist(hM_MBDquantity, False, False, True, 5, 'MBD charge sum (N+S)', '', '{}/MBDquantity'.format(plotdir))
+    
+    Draw_2Dhist_wPercentile(hM_NClusLayer1_MBDquantity, centralityvar, CentVar_percentile, True, False, 0.13, 'Number of clusters (Layer 3+4)', 'MBD charge sum (N+S)', 'colz', '{}/NClusLayer1_MBDquantity'.format(plotdir))

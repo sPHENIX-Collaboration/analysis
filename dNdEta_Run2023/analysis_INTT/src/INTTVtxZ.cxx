@@ -127,40 +127,28 @@ int main(int argc, char *argv[])
 
         for (size_t ihit = 0; ihit < ClusLayer->size(); ihit++)
         {
+            if ((ClusLayer->at(ihit) < 3 || ClusLayer->at(ihit) > 6) || (ClusLadderZId->at(ihit) < 0 || ClusLadderZId->at(ihit) > 3))
+            {
+                cout << "Cluster (layer, ladderZId) = (" << ClusLayer->at(ihit) << "," << ClusLadderZId->at(ihit) << ") is not in the INTT acceptance. Exit and check." << endl;
+                exit(1);
+            }
+    
             if (ClusPhiSize->at(ihit) >= 5)
-                    continue;
-
-            if (ClusLayer->at(ihit) == 3 || ClusLayer->at(ihit) == 4)
-            {
-                Hit *hit = new Hit(ClusX->at(ihit), ClusY->at(ihit), ClusZ->at(ihit), avgVtxX, avgVtxY, 0., 0);
-                // Set edge
-                if (ClusLadderZId->at(ihit) == 0 || ClusLadderZId->at(ihit) == 2)
-                    hit->SetEdge(ClusZ->at(ihit) - 0.8, ClusZ->at(ihit) + 0.8);
-                else if (ClusLadderZId->at(ihit) == 1 || ClusLadderZId->at(ihit) == 3)
-                    hit->SetEdge(ClusZ->at(ihit) - 0.5, ClusZ->at(ihit) + 0.5);
-                else
-                    continue;
-
-                INTTlayer1.push_back(hit);
-            }
-            else if (ClusLayer->at(ihit) == 5 || ClusLayer->at(ihit) == 6)
-            {
-                Hit *hit = new Hit(ClusX->at(ihit), ClusY->at(ihit), ClusZ->at(ihit), avgVtxX, avgVtxY, 0., 1);
-                // Set edge
-                if (ClusLadderZId->at(ihit) == 0 || ClusLadderZId->at(ihit) == 2)
-                    hit->SetEdge(ClusZ->at(ihit) - 0.8, ClusZ->at(ihit) + 0.8);
-                else if (ClusLadderZId->at(ihit) == 1 || ClusLadderZId->at(ihit) == 3)
-                    hit->SetEdge(ClusZ->at(ihit) - 0.5, ClusZ->at(ihit) + 0.5);
-                else
-                    continue;
-
-                INTTlayer2.push_back(hit);
-            }
-            else
                 continue;
+
+            int layer = (ClusLayer->at(ihit) == 3 || ClusLayer->at(ihit) == 4) ? 0 : 1;
+            
+            Hit *hit = new Hit(ClusX->at(ihit), ClusY->at(ihit), ClusZ->at(ihit), avgVtxX, avgVtxY, 0., layer);
+            float edge = (ClusLadderZId->at(ihit) == 0 || ClusLadderZId->at(ihit) == 2) ? 0.8 : 0.5;
+            hit->SetEdge(ClusZ->at(ihit) - edge, ClusZ->at(ihit) + edge);
+
+            if (layer == 0)
+                INTTlayer1.push_back(hit);
+            else
+                INTTlayer2.push_back(hit);
         }
 
-        cout << "# of clusters in 1st layer (layer ID 3+4, after cluster phi size selection) = " << INTTlayer1.size() << ", 2nd layer (layer ID 5+6) = " << INTTlayer2.size() << endl;
+        cout << "# of clusters in inner layer (layer ID 3+4, after cluster phi size selection) = " << INTTlayer1.size() << ", outer layer (layer ID 5+6) = " << INTTlayer2.size() << endl;
 
         TH1F *hM_vtxzprojseg = new TH1F(Form("hM_vtxzprojseg_ev%d", ev), Form("hM_vtxzprojseg_ev%d", ev), 2800, -70, 70);
         int goodpaircount = 0;
@@ -204,9 +192,9 @@ int main(int argc, char *argv[])
                 if (debug)
                     cout << "DCA cut = " << dca_cut << " [cm]; vertex candidate (center,edge1,edge2) = (" << z << "," << edge1 << "," << edge2 << "), difference = " << edge2 - edge1 << endl;
 
+                goodpaircount++;
                 if (fabs(z) < 70)
                 {
-                    goodpaircount++;
                     int bin1 = hM_vtxzprojseg->FindBin(edge1);
                     int bin2 = hM_vtxzprojseg->FindBin(edge2);
 
