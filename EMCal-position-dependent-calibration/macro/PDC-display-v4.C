@@ -13,7 +13,7 @@ namespace myAnalysis {
     Int_t fit(const string &name, const string& output, TFile* input, TCanvas* c, Float_t &mu, Float_t &mu_error);
     void PDC_display();
 
-    TFile* input1;
+    TFile* input;
     TCanvas* c1;
 
     TH1F* hResponse;
@@ -28,16 +28,17 @@ namespace myAnalysis {
     vector<TH1F*> hResponsePt;
     vector<TH1F*> hResponseCalibPt;
 
-    // string outDir     = "output/1-7-24/original";
-    // string inputFile1 = "output/validation-original-plots-0.3-25-GeV.root";
-    // string outDir     = "output/1-7-24/residual";
-    // string inputFile1 = "output/validation-residual-plots-0.3-25-GeV.root";
-    string outDir     = "output/1-7-24/nocalib";
-    string inputFile1 = "output/validation-residual-plots-0.3-25-GeV.root";
-    string output1    = outDir + "/" + "fits-0.3-25.pdf";
-    string output2    = outDir + "/" + "qa.pdf";
-    string output3    = outDir + "/" + "response.pdf";
-    string output4    = outDir + "/" + "response.root";
+    string outDir;
+    string inputFile;
+    string output1;
+    string output2;
+    string output3;
+    string output4;
+
+    // 1: nocalib
+    // 2: original calib
+    // 3: residual calib
+    Int_t plot_type = 1;
 
     Float_t min_mu = 9999;
     Float_t max_mu = 0;
@@ -50,22 +51,11 @@ namespace myAnalysis {
     Float_t low_eta  = -1.1;
     Float_t high_eta = 1.1;
 
-    // nocalib
-    UInt_t bins_response = 32;
-    Float_t low_response = 1;
-    Float_t high_response = 1.08;
+    UInt_t bins_response;
+    Float_t low_response;
+    Float_t high_response;
 
-    // original
-    // UInt_t bins_response = 28;
-    // Float_t low_response = 1;
-    // Float_t high_response = 1.07;
-
-    // residual
-    // UInt_t bins_response = 28;
-    // Float_t low_response = 0.99;
-    // Float_t high_response = 1.06;
-
-    Bool_t saveFits = true;
+    Bool_t saveFits = false;
 }
 
 Int_t myAnalysis::fit(const string &name, const string& output, TFile* input, TCanvas* c, Float_t &mu, Float_t &mu_error) {
@@ -139,16 +129,50 @@ Int_t myAnalysis::fit(const string &name, const string& output, TFile* input, TC
 
 void myAnalysis::process() {
 
-    input1 = TFile::Open(inputFile1.c_str());
+    if(plot_type == 1) {
+        bins_response = 32;
+        low_response  = 1;
+        high_response = 1.08;
+
+        outDir     = "output/1-7-24/nocalib";
+        inputFile = "output/validation-residual-plots-0.3-25-GeV.root";
+
+    }
+    else if(plot_type == 2) {
+        bins_response = 28;
+        low_response  = 1;
+        high_response = 1.07;
+
+        outDir     = "output/1-7-24/original";
+        inputFile = "output/validation-original-plots-0.3-25-GeV.root";
+    }
+    else {
+        bins_response = 20;
+        low_response  = 0.99;
+        high_response = 1.01;
+
+        outDir     = "output/1-7-24/residual";
+        inputFile = "output/validation-residual-plots-0.3-25-GeV.root";
+    }
+    output1    = outDir + "/" + "fits-0.3-25.pdf";
+    output2    = outDir + "/" + "qa.pdf";
+    output3    = outDir + "/" + "response.pdf";
+    output4    = outDir + "/" + "response.root";
+
+    input = TFile::Open(inputFile.c_str());
 
     c1 = new TCanvas();
 
-    // original
-    hResponseCalib  = new TH1F("hResponse", "Gaussian Fit E_{Core}/E_{Truth}; E_{Core}/E_{Truth}; Counts", bins_response, low_response, high_response);
-    h2ResponseCalib = new TH2F("h2Response", "Gaussian Fit E_{Core}/E_{Truth}; E_{Truth} [GeV]; Cluster #eta", bins_ge, low_ge, high_ge, bins_eta, low_eta, high_eta);
-    // calib
-    // hResponseCalib  = new TH1F("hResponseCalib", "Gaussian Fit E_{Core}/E_{Truth}; E_{Core}/E_{Truth}; Counts", bins_response, low_response, high_response);
-    // h2ResponseCalib = new TH2F("h2ResponseCalib", "Gaussian Fit Calib E_{Core}/E_{Truth}; E_{Truth} [GeV]; Cluster #eta", bins_ge, low_ge, high_ge, bins_eta, low_eta, high_eta);
+    if(plot_type == 1) {
+        // original
+        hResponseCalib  = new TH1F("hResponse", "Gaussian Fit E_{Core}/E_{Truth}; E_{Core}/E_{Truth}; Counts", bins_response, low_response, high_response);
+        h2ResponseCalib = new TH2F("h2Response", "Gaussian Fit E_{Core}/E_{Truth}; E_{Truth} [GeV]; Cluster #eta", bins_ge, low_ge, high_ge, bins_eta, low_eta, high_eta);
+    }
+    if(plot_type >= 2) {
+        // calib
+        hResponseCalib  = new TH1F("hResponseCalib", "Gaussian Fit E_{Core}/E_{Truth}; E_{Core}/E_{Truth}; Counts", bins_response, low_response, high_response);
+        h2ResponseCalib = new TH2F("h2ResponseCalib", "Gaussian Fit Calib E_{Core}/E_{Truth}; E_{Truth} [GeV]; Cluster #eta", bins_ge, low_ge, high_ge, bins_eta, low_eta, high_eta);
+    }
 
     c1->SetTickx();
     c1->SetTicky();
@@ -163,11 +187,10 @@ void myAnalysis::process() {
     Float_t mu_error = 0;
 
     for(UInt_t i = 0; i < bins_ge; ++i) {
-        for(UInt_t j = 0; j < bins_eta; ++j) {
-
-            // string name = "response_calib/hResponseCalib_"+to_string(i)+"_"+to_string(j);
-            string name = "response/hResponse_"+to_string(i)+"_"+to_string(j);
-            Int_t fitStatus = fit(name, output1, input1, c1, mu, mu_error);
+        for(UInt_t j = 2; j < bins_eta; ++j) {
+            string name = (plot_type == 1) ? "response/hResponse_"+to_string(i)+"_"+to_string(j):
+                                             "response_calib/hResponseCalib_"+to_string(i)+"_"+to_string(j);
+            Int_t fitStatus = fit(name, output1, input, c1, mu, mu_error);
 
             if(!fitStatus) {
                 h2ResponseCalib->SetBinContent(i+1, j+1, mu);
@@ -195,7 +218,7 @@ void myAnalysis::process() {
 
     // ----------------------------------------------
 
-    auto h1 = (TH1F*)input1->Get("hClusECoreCalib");
+    auto h1 = (TH1F*)input->Get("hClusECoreCalib");
 
     h1->Draw("HIST");
 
@@ -206,7 +229,7 @@ void myAnalysis::process() {
 
     // ----------------------------------------------
 
-    h1 = (TH1F*)input1->Get("hPhotonGE");
+    h1 = (TH1F*)input->Get("hPhotonGE");
 
     h1->SetStats(0);
     h1->Draw("HIST");
@@ -219,7 +242,7 @@ void myAnalysis::process() {
     c1->SetLeftMargin(.11);
     c1->SetRightMargin(.06);
 
-    h1 = (TH1F*)input1->Get("hPhotonPt");
+    h1 = (TH1F*)input->Get("hPhotonPt");
 
     h1->SetStats(0);
     h1->GetXaxis()->SetRangeUser(10,22);
@@ -241,8 +264,9 @@ void myAnalysis::process() {
 
     h2ResponseCalib->SetMinimum(low_response);
     h2ResponseCalib->SetMaximum(high_response);
-    // h2ResponseCalib->SetMaximum(1.025);
-    h2ResponseCalib->GetXaxis()->SetRangeUser(0.5,25);
+
+    // if(plot_type == 3) h2ResponseCalib->GetXaxis()->SetRangeUser(0.5,25);
+
     h2ResponseCalib->SetStats(0);
     h2ResponseCalib->Draw("COLZ1");
 
@@ -253,6 +277,7 @@ void myAnalysis::process() {
 
     cout << "hResponseCalib max: " << hResponseCalib->GetMaximum() << endl;
     c1->SetRightMargin(.06);
+    hResponseCalib->GetYaxis()->SetRangeUser(5e-1, 1e3);
     gPad->SetLogy();
     hResponseCalib->Draw("PE");
 
@@ -261,7 +286,7 @@ void myAnalysis::process() {
 
     c1->Print((output3 + "]").c_str(), "pdf portrait");
 
-    input1->Close();
+    input->Close();
 }
 
 void PDC_display_v4() {
