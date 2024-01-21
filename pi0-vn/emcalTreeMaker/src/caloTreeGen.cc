@@ -87,18 +87,18 @@ Int_t caloTreeGen::Init(PHCompositeNode *topNode)
   T2->Branch("run",       &run,      "run/I");
   T2->Branch("event",     &event,    "event/I");
   T2->Branch("totalMBD",  &totalMBD, "totalMBD/F");
-  T2->Branch("Q_x",       &Q_x,      "Q_x/F");
-  T2->Branch("Q_y",       &Q_y,      "Q_y/F");
   T2->Branch("Q_N_x",     &Q_N_x,    "Q_N_x/F");
   T2->Branch("Q_N_y",     &Q_N_y,    "Q_N_y/F");
   T2->Branch("Q_P_x",     &Q_P_x,    "Q_P_x/F");
   T2->Branch("Q_P_y",     &Q_P_y,    "Q_P_y/F");
   T2->Branch("pi0_phi",   &pi0_phi_vec);
-  // T2->Branch("pi0_eta",   &pi0_eta_vec);
+  T2->Branch("pi0_eta",   &pi0_eta_vec);
   T2->Branch("pi0_pt",    &pi0_pt_vec);
   T2->Branch("pi0_mass",  &pi0_mass_vec);
   T2->Branch("asym",      &asym_vec);
+  T2->Branch("deltaR",    &deltaR_vec);
   T2->Branch("ecore_min", &ecore_min_vec);
+  T2->Branch("chi2_max",  &chi2_max_vec);
 
   //so that the histos actually get written out
   Fun4AllServer *se = Fun4AllServer::instance();
@@ -186,9 +186,6 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
     Float_t x = charge*std::cos(2*phi);
     Float_t y = charge*std::sin(2*phi);
 
-    Q_x += x;
-    Q_y += y;
-
     if(z < 0) {
       Q_N_x    += x;
       Q_N_y    += y;
@@ -203,8 +200,6 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
     totalMBD += charge;
   }
 
-  Q_x   = (Q_x)   ? Q_x/totalMBD   : 0;
-  Q_y   = (Q_y)   ? Q_y/totalMBD   : 0;
   Q_N_x = (Q_N_x) ? Q_N_x/charge_N : 0;
   Q_N_y = (Q_N_y) ? Q_N_y/charge_N : 0;
   Q_P_x = (Q_P_x) ? Q_P_x/charge_P : 0;
@@ -356,13 +351,19 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
 
       Float_t asym      = abs(clusE-clusE2)/(clusE+clusE2);
       Float_t ecore_min = std::min(clusE, clusE2);
+      Float_t chi2_max  = std::max(clus_chi, clus_chi2);
+      Float_t deltaPhi  = abs(clus_phi-clus_phi2);
+              deltaPhi  = (deltaPhi > M_PI) ? 2*M_PI - deltaPhi : deltaPhi; // ensure that deltaPhi is in [0,pi]
+      Float_t deltaR    = sqrt(pow(clus_eta-clus_eta2,2)+pow(deltaPhi,2));
 
       pi0_phi_vec.push_back(pi0_phi);
-      // pi0_eta_vec.push_back(pi0_eta);
+      pi0_eta_vec.push_back(pi0_eta);
       pi0_pt_vec.push_back(pi0_pt);
       pi0_mass_vec.push_back(pi0_mass);
       asym_vec.push_back(asym);
+      deltaR_vec.push_back(deltaR);
       ecore_min_vec.push_back(ecore_min);
+      chi2_max_vec.push_back(chi2_max);
 
       T->Fill(pi0_data);
     }
@@ -377,19 +378,19 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
 Int_t caloTreeGen::ResetEvent(PHCompositeNode *topNode)
 {
   totalMBD = 0;
-  Q_x      = 0;
-  Q_y      = 0;
   Q_N_x    = 0;
   Q_N_y    = 0;
   Q_P_x    = 0;
   Q_P_y    = 0;
 
   pi0_phi_vec.clear();
-  // pi0_eta_vec.clear();
+  pi0_eta_vec.clear();
   pi0_pt_vec.clear();
   pi0_mass_vec.clear();
   asym_vec.clear();
+  deltaR_vec.clear();
   ecore_min_vec.clear();
+  chi2_max_vec.clear();
 
   return Fun4AllReturnCodes::EVENT_OK;
 }

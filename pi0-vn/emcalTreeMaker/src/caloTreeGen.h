@@ -193,17 +193,17 @@ class caloTreeGen : public SubsysReco
     Int_t   run      = 0;
     Int_t   event    = 0;
     Float_t totalMBD = 0;
-    Float_t Q_x      = 0;
-    Float_t Q_y      = 0;
     Float_t Q_N_x    = 0;
     Float_t Q_N_y    = 0;
     Float_t Q_P_x    = 0;
     Float_t Q_P_y    = 0;
     std::vector<Float_t> pi0_phi_vec;
-    // std::vector<Float_t> pi0_eta_vec;
+    std::vector<Float_t> pi0_eta_vec;
     std::vector<Float_t> pi0_pt_vec;
     std::vector<Float_t> pi0_mass_vec;
     std::vector<Float_t> asym_vec;
+    std::vector<Float_t> deltaR_vec;
     std::vector<Float_t> ecore_min_vec;
+    std::vector<Float_t> chi2_max_vec;
 };
 #endif
