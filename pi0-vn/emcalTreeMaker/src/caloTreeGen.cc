@@ -259,9 +259,11 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
 
   h2TotalMBDCaloE->Fill(totalCaloE/high_totalcaloE, totalMBD/high_totalmbd);
 
-  if(totalCaloE < 0) {
+  if(totalCaloE <= 0) {
     max_totalmbd2 = std::max(max_totalmbd2, totalMBD);
     h2TotalMBDCaloEv2->Fill(totalCaloE, totalMBD);
+    std::cout << PHWHERE << "caloTreeGen::process_event totalCaloE <= 0: " << totalCaloE  << std::endl;
+    return Fun4AllReturnCodes::ABORTEVENT;
   }
 
   max_NClusters = std::max(max_NClusters, clusterContainer->size());
