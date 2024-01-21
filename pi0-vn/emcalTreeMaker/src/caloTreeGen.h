@@ -24,7 +24,7 @@ class caloTreeGen : public SubsysReco
 {
   public:
 
-    caloTreeGen(const std::string &name = "qa", const std::string &name2 = "ntp");
+    caloTreeGen(const std::string &name = "qa", const std::string &name2 = "ntp", const std::string &name3 = "pi0");
 
     ~caloTreeGen() override;
 
@@ -76,12 +76,15 @@ class caloTreeGen : public SubsysReco
   private:
 
     TNtuple *T;
+    TTree   *T2;
 
     TFile *out;
     TFile *out2;
+    TFile *out3;
     //Fun4AllHistoManager *hm = nullptr;
     std::string Outfile = "test.root";
     std::string Outfile2 = "ntp.root";
+    std::string Outfile3 = "pi0.root";
 
     UInt_t getCaloTowerPhiBin(const UInt_t key);
     UInt_t getCaloTowerEtaBin(const UInt_t key);
@@ -185,5 +188,22 @@ class caloTreeGen : public SubsysReco
     Float_t clus_chi_max = 10;
 
     Bool_t do_pi0_ana = false;
+
+    // branches of T2
+    Int_t   run      = 0;
+    Int_t   event    = 0;
+    Float_t totalMBD = 0;
+    Float_t Q_x      = 0;
+    Float_t Q_y      = 0;
+    Float_t Q_N_x    = 0;
+    Float_t Q_N_y    = 0;
+    Float_t Q_P_x    = 0;
+    Float_t Q_P_y    = 0;
+    std::vector<Float_t> pi0_phi_vec;
+    // std::vector<Float_t> pi0_eta_vec;
+    std::vector<Float_t> pi0_pt_vec;
+    std::vector<Float_t> pi0_mass_vec;
+    std::vector<Float_t> asym_vec;
+    std::vector<Float_t> ecore_min_vec;
 };
 #endif

@@ -30,17 +30,19 @@
 // MBD
 #include <mbd/MbdPmtContainerV1.h>
 #include <mbd/MbdPmtHit.h>
+#include <mbd/MbdGeom.h>
 
 //Tower stuff
 #include <calobase/TowerInfoContainer.h>
 #include <calobase/TowerInfo.h>
 
 //____________________________________________________________________________..
-caloTreeGen::caloTreeGen(const std::string &name, const std::string &name2):
+caloTreeGen::caloTreeGen(const std::string &name, const std::string &name2, const std::string &name3):
   SubsysReco(name)
   ,T(nullptr)
   ,Outfile(name)
   ,Outfile2(name2)
+  ,Outfile3(name3)
 {
   std::cout << "caloTreeGen::caloTreeGen(const std::string &name) Calling ctor" << std::endl;
 }
@@ -79,6 +81,25 @@ Int_t caloTreeGen::Init(PHCompositeNode *topNode)
                            "clus_E2:clus_eta2:clus_phi2:clus_chi2:clus_time2:"
                            "pi0_mass:pi0_pt:pi0_eta:pi0_phi");
 
+  out3 = new TFile(Outfile3.c_str(),"RECREATE");
+
+  T2 = new TTree("T2", "T2");
+  T2->Branch("run",       &run,      "run/I");
+  T2->Branch("event",     &event,    "event/I");
+  T2->Branch("totalMBD",  &totalMBD, "totalMBD/F");
+  T2->Branch("Q_x",       &Q_x,      "Q_x/F");
+  T2->Branch("Q_y",       &Q_y,      "Q_y/F");
+  T2->Branch("Q_N_x",     &Q_N_x,    "Q_N_x/F");
+  T2->Branch("Q_N_y",     &Q_N_y,    "Q_N_y/F");
+  T2->Branch("Q_P_x",     &Q_P_x,    "Q_P_x/F");
+  T2->Branch("Q_P_y",     &Q_P_y,    "Q_P_y/F");
+  T2->Branch("pi0_phi",   &pi0_phi_vec);
+  // T2->Branch("pi0_eta",   &pi0_eta_vec);
+  T2->Branch("pi0_pt",    &pi0_pt_vec);
+  T2->Branch("pi0_mass",  &pi0_mass_vec);
+  T2->Branch("asym",      &asym_vec);
+  T2->Branch("ecore_min", &ecore_min_vec);
+
   //so that the histos actually get written out
   Fun4AllServer *se = Fun4AllServer::instance();
   se -> Print("NODETREE"); 
@@ -97,6 +118,16 @@ Int_t caloTreeGen::InitRun(PHCompositeNode *topNode)
 //____________________________________________________________________________..
 Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
 {
+  EventHeader* eventInfo = findNode::getClass<EventHeader>(topNode,"EventHeader");
+  if(!eventInfo)
+  {
+    std::cout << PHWHERE << "caloTreeGen::process_event - Fatal Error - EventHeader node is missing. " << std::endl;
+    return 0;
+  }
+
+  event = eventInfo->get_EvtSequence();
+  run   = eventInfo->get_RunNumber();
+  // std::cout << "Event: " << event->get_EvtSequence() << ", Run: " << event->get_RunNumber() << std::endl;
 
   if(iEvent%500 == 0) std::cout << "Progress: " << iEvent << std::endl;
   iEvent++;
@@ -118,8 +149,7 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
     std::cout << PHWHERE << "caloTreeGen::process_event Could not find node TOWERS_CEMC"  << std::endl;
     return Fun4AllReturnCodes::ABORTEVENT;
   }
-  
-  
+
   //Tower geometry node for location information
   RawTowerGeomContainer *towergeom = findNode::getClass<RawTowerGeomContainer>(topNode, "TOWERGEOM_CEMC");
   if (!towergeom)
@@ -128,10 +158,6 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
     return Fun4AllReturnCodes::ABORTEVENT;
   }
   
-  Float_t calib = 1.;
-
-  Float_t totalMBD = 0;
-
   MbdPmtContainer *mbdpmts = findNode::getClass<MbdPmtContainer>(topNode,"MbdPmtContainer"); // mbd info
   if(!mbdpmts)
   {
@@ -139,13 +165,50 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
     return Fun4AllReturnCodes::ABORTEVENT;
   }
 
+  MbdGeom *mbdgeom = findNode::getClass<MbdGeom>(topNode,"MbdGeom"); // mbd geometry
+  if(!mbdgeom)
+  {
+    std::cout << PHWHERE << "caloTreeGen::process_event: Could not find node MbdGeom" << std::endl;
+    return Fun4AllReturnCodes::ABORTEVENT;
+  }
+
   Int_t nPMTs = mbdpmts -> get_npmt(); //size (should always be 128)
+
+  Float_t charge_N = 0;
+  Float_t charge_P = 0;
 
   for(Int_t i = 0; i < nPMTs; ++i) {
     MbdPmtHit* mbdpmt = mbdpmts->get_pmt(i);
-    Float_t charge    = mbdpmt->get_q(); //pmt charge
-    totalMBD         += charge;
+    Float_t charge    = mbdpmt->get_q();     //pmt charge
+    Float_t phi       = mbdgeom->get_phi(i); //pmt phi
+    Float_t z         = mbdgeom->get_z(i);    //pmt z ~ eta
+
+    Float_t x = charge*std::cos(2*phi);
+    Float_t y = charge*std::sin(2*phi);
+
+    Q_x += x;
+    Q_y += y;
+
+    if(z < 0) {
+      Q_N_x    += x;
+      Q_N_y    += y;
+      charge_N += charge;
+    }
+    else {
+      Q_P_x    += x;
+      Q_P_y    += y;
+      charge_P += charge;
+    }
+
+    totalMBD += charge;
   }
+
+  Q_x   = (Q_x)   ? Q_x/totalMBD   : 0;
+  Q_y   = (Q_y)   ? Q_y/totalMBD   : 0;
+  Q_N_x = (Q_N_x) ? Q_N_x/charge_N : 0;
+  Q_N_y = (Q_N_y) ? Q_N_y/charge_N : 0;
+  Q_P_x = (Q_P_x) ? Q_P_x/charge_P : 0;
+  Q_P_y = (Q_P_y) ? Q_P_y/charge_P : 0;
 
   max_totalmbd = std::max(max_totalmbd, totalMBD);
   hTotalMBD->Fill(totalMBD);
@@ -161,7 +224,7 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
     UInt_t iphi = getCaloTowerPhiBin(towerkey);
 
     TowerInfo* tower = emcTowerContainer -> get_tower_at_channel(iter);
-    double energy = tower -> get_energy()/calib;
+    double energy = tower -> get_energy();
 
     // check if tower is good
     if(!tower->get_isGood()) continue;
@@ -224,16 +287,16 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
     // Float_t maxTowerEnergy = getMaxTowerE(recoCluster,emcTowerContainer);
 
     min_clusterECore = std::min(min_clusterECore, clusE);
-    min_clusterEta = std::min(min_clusterEta, clus_eta);
-    min_clusterPhi = std::min(min_clusterPhi, clus_phi);
-    min_clusterPt = std::min(min_clusterPt, clus_pt);
-    min_clusterChi = std::min(min_clusterChi, clus_chi);
+    min_clusterEta   = std::min(min_clusterEta, clus_eta);
+    min_clusterPhi   = std::min(min_clusterPhi, clus_phi);
+    min_clusterPt    = std::min(min_clusterPt, clus_pt);
+    min_clusterChi   = std::min(min_clusterChi, clus_chi);
 
     max_clusterECore = std::max(max_clusterECore, clusE);
-    max_clusterEta = std::max(max_clusterEta, clus_eta);
-    max_clusterPhi = std::max(max_clusterPhi, clus_phi);
-    max_clusterPt = std::max(max_clusterPt, clus_pt);
-    max_clusterChi = std::max(max_clusterChi, clus_chi);
+    max_clusterEta   = std::max(max_clusterEta, clus_eta);
+    max_clusterPhi   = std::max(max_clusterPhi, clus_phi);
+    max_clusterPt    = std::max(max_clusterPt, clus_pt);
+    max_clusterChi   = std::max(max_clusterChi, clus_chi);
 
     if(clusE >= clusE_min) {
       hClusterChi->Fill(clus_chi);
@@ -289,9 +352,21 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
                             clusE2,     clus_eta2, clus_phi2, clus_chi2, (Float_t)clus_time2,
                             pi0_mass,   pi0_pt,    pi0_eta,   pi0_phi};
 
+      Float_t asym      = abs(clusE-clusE2)/(clusE+clusE2);
+      Float_t ecore_min = std::min(clusE, clusE2);
+
+      pi0_phi_vec.push_back(pi0_phi);
+      // pi0_eta_vec.push_back(pi0_eta);
+      pi0_pt_vec.push_back(pi0_pt);
+      pi0_mass_vec.push_back(pi0_mass);
+      asym_vec.push_back(asym);
+      ecore_min_vec.push_back(ecore_min);
+
       T->Fill(pi0_data);
     }
   }
+
+  T2->Fill();
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -299,6 +374,21 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
 //____________________________________________________________________________..
 Int_t caloTreeGen::ResetEvent(PHCompositeNode *topNode)
 {
+  totalMBD = 0;
+  Q_x      = 0;
+  Q_y      = 0;
+  Q_N_x    = 0;
+  Q_N_y    = 0;
+  Q_P_x    = 0;
+  Q_P_y    = 0;
+
+  pi0_phi_vec.clear();
+  // pi0_eta_vec.clear();
+  pi0_pt_vec.clear();
+  pi0_mass_vec.clear();
+  asym_vec.clear();
+  ecore_min_vec.clear();
+
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
@@ -349,6 +439,12 @@ Int_t caloTreeGen::End(PHCompositeNode *topNode)
   T->Write();
   out2 -> Close();
   delete out2;
+
+  out3 -> cd();
+  // T2->BuildIndex("run", "event");
+  T2->Write();
+  out3 -> Close();
+  delete out3;
 
   //hm -> dumpHistos(Outfile.c_str(), "UPDATE");
   return Fun4AllReturnCodes::EVENT_OK;
