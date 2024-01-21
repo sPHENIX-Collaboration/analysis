@@ -343,6 +343,9 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
       Float_t pi0_eta = pi0.Eta();
       Float_t pi0_phi = pi0.Phi();
 
+      // exclude pi0 mass if it's more than 1 GeV
+      if(pi0_mass >= 0.6) continue;
+
       // not storing cluster pT since we can derive pT = E/cosh(eta)
       Float_t pi0_data[] = {totalCaloE, totalMBD,
                             clusE,      clus_eta,  clus_phi,  clus_chi,  (Float_t)clus_time,

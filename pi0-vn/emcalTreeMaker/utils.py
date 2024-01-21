@@ -107,7 +107,8 @@ def create_f4a_jobs():
                 file.write(f'request_memory         = {memory}GB\n')
                 file.write(f'queue input_dst from {filename}')
 
-            print(f'cd {job_dir} && condor_submit genFun4All.sub')
+            print(f'cd {job_dir} && condor_submit genFun4All.sub && ', end='')
+    print()
 
 def create_pi0Ana_jobs():
     ntp_list   = os.path.realpath(args.ntp_list)
