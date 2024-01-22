@@ -23,9 +23,12 @@ using std::max;
 using std::left;
 using std::setw;
 using std::stringstream;
+using std::sin;
+using std::cos;
 
 namespace myAnalysis {
     TChain* T;
+    TTree*  tree;
 
     struct Cut {
         Float_t e;      // min cluster energy
@@ -36,7 +39,7 @@ namespace myAnalysis {
 
     vector<Cut> cuts;
 
-    Int_t init(const string &i_input, const string &i_cuts, Long64_t start = 0, Long64_t end = 0);
+    Int_t init(const string &i_input, const string &i_cuts);
     Int_t readFiles(const string &i_input, Long64_t start = 0, Long64_t end = 0);
     Int_t readCuts(const string &i_cuts);
     void init_hists();
@@ -44,76 +47,67 @@ namespace myAnalysis {
     void process_event(Long64_t start = 0, Long64_t end = 0);
     void finalize(const string &i_output = "test.root");
 
-    // map<string,pair<Float_t, Float_t>> centrality = {{"0-20",   make_pair(939.074, 2000)},
-    //                                                  {"20-40",  make_pair(472.037, 939.074)},
-    //                                                  {"40-60",  make_pair(187.222, 472.037)},
-    //                                                  {"60-100", make_pair(0, 187.222)}};
+    map<string,pair<Float_t, Float_t>> centrality = {{"40-60",  make_pair(177.222, 465.741)},
+                                                     {"20-40",  make_pair(465.741, 935.37)}};
 
-    map<string,pair<Float_t, Float_t>> centrality = {{"20-40",  make_pair(465.741, 935.37)},
-                                                     {"40-60",  make_pair(177.222, 465.741)}};
-
-    map<string,pair<Float_t, Float_t>> diphoton_pt = {{"2-2.5", make_pair(2, 2.5)},
+    map<string,pair<Float_t, Float_t>> diphoton_pt = {{"2-2.5", make_pair(2,   2.5)},
                                                       {"2.5-3", make_pair(2.5, 3)},
-                                                      {"3-3.5", make_pair(3, 3.5)},
+                                                      {"3-3.5", make_pair(3,   3.5)},
                                                       {"3.5-4", make_pair(3.5, 4)},
-                                                      {"4-4.5", make_pair(4, 4.5)},
+                                                      {"4-4.5", make_pair(4,   4.5)},
                                                       {"4.5-5", make_pair(4.5, 5)}};
 
+    vector<string> cent_key = {"40-60", "20-40"};
+    vector<string> pt_key   = {"2-2.5", "2.5-3", "3-3.5", "3.5-4", "4-4.5", "4.5-5"};
+
+    TH1F* pt_dum_vec   = new TH1F("pt_dum_vec","",6,2,5);
+    TH1F* cent_dum_vec = new TH1F("cent_dum_vec","", 2, new Double_t[3] {177.222, 465.741, 935.37});
+
+    vector<Float_t> pi0_ctr(cent_key.size()*pt_key.size());
+
+    vector<UInt_t> evt_ctr(cent_key.size());
+
+    vector<Float_t> QQ(cent_key.size());
+
+    vector<Float_t> qQ(cent_key.size()*pt_key.size());
 
     map<pair<string,string>, vector<TH1F*>> hPi0Mass; // hPi0Mass[make_pair(cent,pt)][i], for accessing diphoton invariant mass hist of i-th cut of cent,pt
 
     map<pair<string,string>, TH2F*> h2DeltaRVsMass;
     map<pair<string,string>, TH2F*> h2AsymVsMass;
-    map<pair<string,string>, TH2F*> h2TimingAsymVsMass;
-    map<pair<string,string>, TH2F*> h2ChiAsymVsMass;
     map<string, TH1F*>              hDiphotonPt;
 
-    Int_t   bins_pi0_mass = 80;
+    Int_t   bins_pi0_mass = 48;
     Float_t hpi0_mass_min = 0;
-    Float_t hpi0_mass_max = 1;
+    Float_t hpi0_mass_max = 0.6;
 
-    Int_t   bins_pt   = 500;
-    Float_t hpt_min   = 0;
-    Float_t hpt_max   = 20;
+    Int_t   bins_pt = 500;
+    Float_t hpt_min = 0;
+    Float_t hpt_max = 20;
 
     Int_t   bins_deltaR   = 100;
     Float_t hdeltaR_min   = 0;
     Float_t hdeltaR_max   = 4;
 
-    Int_t   bins_asym   = 100;
-    Float_t hasym_min   = 0;
-    Float_t hasym_max   = 1;
-
-    Int_t   bins_time   = 32;
-    Float_t htime_min   = 0;
-    Float_t htime_max   = 32;
+    Int_t   bins_asym = 100;
+    Float_t hasym_min = 0;
+    Float_t hasym_max = 1;
 }
 
-Int_t myAnalysis::init(const string &i_input, const string &i_cuts, Long64_t start, Long64_t end) {
-    Int_t ret = readFiles(i_input, start, end);
-    if(ret != 0) return ret;
+Int_t myAnalysis::init(const string &i_input, const string &i_cuts) {
+    T = new TChain("T2");
+    T->Add(i_input.c_str());
 
-    ret = readCuts(i_cuts);
+    tree = new TTree("flow","flow");
+    tree->Branch("pi0_ctr", &pi0_ctr);
+    tree->Branch("evt_ctr", &evt_ctr);
+    tree->Branch("QQ", &QQ);
+    tree->Branch("qQ", &qQ);
+
+    Int_t ret = readCuts(i_cuts);
     if(ret != 0) return ret;
 
     init_hists();
-
-    // Disable everything...
-    T->SetBranchStatus("*", false);
-    // ...but the branch we need
-    T->SetBranchStatus("totalMBD",  true);
-    T->SetBranchStatus("clus_E",    true);
-    T->SetBranchStatus("clus_eta",  true);
-    T->SetBranchStatus("clus_phi",  true);
-    T->SetBranchStatus("clus_chi",  true);
-    T->SetBranchStatus("clus_time", true);
-    T->SetBranchStatus("clus_E2",   true);
-    T->SetBranchStatus("clus_eta2", true);
-    T->SetBranchStatus("clus_phi2", true);
-    T->SetBranchStatus("clus_chi2", true);
-    T->SetBranchStatus("clus_time2",true);
-    T->SetBranchStatus("pi0_mass",  true);
-    T->SetBranchStatus("pi0_pt",    true);
 
     return 0;
 }
@@ -226,16 +220,6 @@ void myAnalysis::init_hists() {
                                             bins_pi0_mass, hpi0_mass_min, hpi0_mass_max,
                                             bins_asym, hasym_min, hasym_max);
 
-            h2TimingAsymVsMass[key] = new TH2F(("h2TimingAsymVsMass"+suffix).c_str(),
-                                            ("Cluster Timing Asymmetry vs Diphoton Invariant Mass, " + suffix_title +"; Mass [GeV]; Timing Asymmetry").c_str(),
-                                            bins_pi0_mass, hpi0_mass_min, hpi0_mass_max,
-                                            bins_asym, hasym_min, hasym_max);
-
-            h2ChiAsymVsMass[key] = new TH2F(("h2ChiAsymVsMass"+suffix).c_str(),
-                                            ("Cluster #chi^{2} Asymmetry vs Diphoton Invariant Mass, " + suffix_title +"; Mass [GeV]; #chi^{2} Asymmetry").c_str(),
-                                            bins_pi0_mass, hpi0_mass_min, hpi0_mass_max,
-                                            bins_asym, hasym_min, hasym_max);
-
             vector<TH1F*> h;
             for (auto cut : cuts) {
                 s.str("");
@@ -255,93 +239,134 @@ void myAnalysis::process_event(Long64_t start, Long64_t end) {
     cout << "Begin Process Event" << endl;
     cout << "======================================" << endl;
 
+    Int_t   run;
+    Int_t   event;
     Float_t totalMBD;
-    Float_t clus_E;
-    Float_t clus_eta;
-    Float_t clus_phi;
-    Float_t clus_chi;
-    Float_t clus_time;
-    Float_t clus_E2;
-    Float_t clus_eta2;
-    Float_t clus_phi2;
-    Float_t clus_chi2;
-    Float_t clus_time2;
-    Float_t pi0_mass;
-    Float_t pi0_pt;
+    Float_t Q_N_x;
+    Float_t Q_N_y;
+    Float_t Q_P_x;
+    Float_t Q_P_y;
+    vector<Float_t>* pi0_mass   = 0;
+    vector<Float_t>* pi0_pt     = 0;
+    vector<Float_t>* pi0_phi    = 0;
+    vector<Float_t>* pi0_eta    = 0;
+    vector<Float_t>* pi0_asym   = 0;
+    vector<Float_t>* pi0_deltaR = 0;
+    vector<Float_t>* ecore_min  = 0;
+    vector<Float_t>* chi2_max   = 0;
 
+    T->SetBranchAddress("run",       &run);
+    T->SetBranchAddress("event",     &event);
     T->SetBranchAddress("totalMBD",  &totalMBD);
-    T->SetBranchAddress("clus_E",    &clus_E);
-    T->SetBranchAddress("clus_eta",  &clus_eta);
-    T->SetBranchAddress("clus_phi",  &clus_phi);
-    T->SetBranchAddress("clus_chi",  &clus_chi);
-    T->SetBranchAddress("clus_time", &clus_time);
-    T->SetBranchAddress("clus_E2",   &clus_E2);
-    T->SetBranchAddress("clus_eta2", &clus_eta2);
-    T->SetBranchAddress("clus_phi2", &clus_phi2);
-    T->SetBranchAddress("clus_chi2", &clus_chi2);
-    T->SetBranchAddress("clus_time2",&clus_time2);
+    T->SetBranchAddress("Q_N_x",     &Q_N_x);
+    T->SetBranchAddress("Q_N_y",     &Q_N_y);
+    T->SetBranchAddress("Q_P_x",     &Q_P_x);
+    T->SetBranchAddress("Q_P_y",     &Q_P_y);
     T->SetBranchAddress("pi0_mass",  &pi0_mass);
     T->SetBranchAddress("pi0_pt",    &pi0_pt);
+    T->SetBranchAddress("pi0_phi",   &pi0_phi);
+    T->SetBranchAddress("pi0_eta",   &pi0_eta);
+    T->SetBranchAddress("asym",      &pi0_asym);
+    T->SetBranchAddress("deltaR",    &pi0_deltaR);
+    T->SetBranchAddress("ecore_min", &ecore_min);
+    T->SetBranchAddress("chi2_max",  &chi2_max);
 
     end = (end) ? min(end, T->GetEntries()-1) : T->GetEntries()-1;
 
-    UInt_t ctr = 0;
-    cout << "Entries to process: " << end-start << endl;
-    // loop over each diphoton candidate
+    UInt_t max_npi0 = 0;
+
+    cout << "Events to process: " << end-start << endl;
+    // loop over each event
     for (Long64_t i = start; i <= end; ++i) {
-        if(i%500000 == 0) cout << "Progress: " << (i-start)*100./(end-start) << "%" << endl;
+        if(i%100 == 0) cout << "Progress: " << (i-start)*100./(end-start) << "%" << endl;
         // Load the data for the given tree entry
         T->GetEntry(i);
 
-        Float_t deltaPhi = abs(clus_phi-clus_phi2);
-        deltaPhi = (deltaPhi > M_PI) ? 2*M_PI - deltaPhi : deltaPhi; // ensure that deltaPhi is in [0,pi]
+        Int_t cent_idx = cent_dum_vec->FindBin(totalMBD)-1;
 
-        Float_t deltaR = sqrt(pow(clus_eta-clus_eta2,2)+pow(deltaPhi,2));
-        Float_t e_asym = abs(clus_E-clus_E2)/(clus_E+clus_E2);
-        Float_t time_asym = abs(clus_time-clus_time2)/(clus_time+clus_time2);
-        Float_t chi_asym = abs(clus_chi-clus_chi2)/(clus_chi+clus_chi2);
+        // check if centrality is found in one of the specified bins
+        if(cent_idx < 0 || cent_idx >= 2) continue;
 
-        // fill in the pi0 mass histogram for each cut
-        // fill in QA plots for each centrality/pt bin
-        bool flag = false;
-        for(auto cent : centrality) {
+        ++evt_ctr[cent_idx];
 
-            if(totalMBD >= cent.second.first && totalMBD < cent.second.second) {
-               hDiphotonPt[cent.first]->Fill(pi0_pt);
-            }
+        QQ[cent_idx] += Q_N_x*Q_P_x + Q_N_y*Q_P_y;
 
-            for(auto pt : diphoton_pt) {
+        UInt_t n = pi0_mass->size();
 
-                if(totalMBD >= cent.second.first && totalMBD < cent.second.second &&
-                   pi0_pt   >= pt.second.first   && pi0_pt   < pt.second.second) {
+        max_npi0 = max(max_npi0, n);
 
-                    pair<string,string> key = make_pair(cent.first, pt.first);
+        // loop over all diphoton candidates
+        for(UInt_t j = 0; j < n; ++j) {
+            Float_t pi0_pt_val = pi0_pt->at(j);
+            Int_t pt_idx = pt_dum_vec->FindBin(pi0_pt_val)-1;
 
-                    h2DeltaRVsMass[key]    ->Fill(pi0_mass, deltaR);
-                    h2AsymVsMass[key]      ->Fill(pi0_mass, e_asym);
-                    h2TimingAsymVsMass[key]->Fill(pi0_mass, time_asym);
-                    h2ChiAsymVsMass[key]   ->Fill(pi0_mass, chi_asym);
+            hDiphotonPt[cent_key[cent_idx]]->Fill(pi0_pt_val);
+            // check if pt is found in one of the specified bins
+            if(pt_idx < 0 || pt_idx >= 6) continue;
 
-                    for(Int_t i = 0; i < cuts.size(); ++i) {
+            pair<string,string> key = make_pair(cent_key[cent_idx], pt_key[pt_idx]);
 
-                        if(clus_E >= cuts[i].e     && clus_E2 >= cuts[i].e &&
-                           clus_chi < cuts[i].chi  && clus_chi2 < cuts[i].chi &&
-                           e_asym < cuts[i].e_asym && deltaR >= cuts[i].deltaR) {
+            Float_t pi0_mass_val  = pi0_mass->at(j);
+            Float_t pi0_phi_val   = pi0_phi->at(j);
+            Float_t pi0_eta_val   = pi0_eta->at(j);
+            Float_t asym_val      = pi0_asym->at(j);
+            Float_t deltaR_val    = pi0_deltaR->at(j);
+            Float_t ecore_min_val = ecore_min->at(j);
+            Float_t chi2_max_val  = chi2_max->at(j);
 
-                           hPi0Mass[key][i]->Fill(pi0_mass);
-                        }
+            Float_t Q_x = (pi0_eta_val < 0) ? Q_P_x : Q_N_x;
+            Float_t Q_y = (pi0_eta_val < 0) ? Q_P_y : Q_N_y;
+
+            Float_t q_x = cos(2*pi0_phi_val);
+            Float_t q_y = sin(2*pi0_phi_val);
+
+            Float_t qQ_val = q_x*Q_x + q_y*Q_y;
+
+            h2AsymVsMass[key]->Fill(pi0_mass_val, asym_val);
+            h2DeltaRVsMass[key]->Fill(pi0_mass_val, deltaR_val);
+
+            Int_t idx = cent_idx*pt_key.size()+pt_idx;
+
+            for(Int_t k = 0; k < cuts.size(); ++k) {
+                if(ecore_min_val >= cuts[k].e      && asym_val     < cuts[k].e_asym &&
+                   deltaR_val    >= cuts[k].deltaR && chi2_max_val < cuts[k].chi) {
+                    hPi0Mass[key][k]->Fill(pi0_mass_val);
+
+                    // add condition to check if mass is in range
+                    // do this for only one of the cuts for which we have signal bound information
+                    if(k == 0) {
+                        ++pi0_ctr[idx];
+                        qQ[idx] += qQ_val;
                     }
-
-                    ++ctr;
-                    flag = true;
-                    break;
                 }
             }
-            if(flag) break;
         }
     }
 
-    cout << "Accepted Entries: " << ctr << ", " << ctr*100./(end-start) << " %" << endl;
+    tree->Fill();
+
+    cout << endl;
+    for(Int_t i = 0; i < cent_key.size(); ++i) {
+        QQ[i] /= evt_ctr[i];
+        cout << "Cent: "     << cent_key[i]
+             << ", Events: " << evt_ctr[i]
+             << ", avg QQ: " << QQ[i] << endl;
+
+        for(Int_t j = 0; j < pt_key.size(); ++j) {
+            Int_t key = i*pt_key.size()+j;
+            qQ[key] = (pi0_ctr[key]) ? qQ[key]/pi0_ctr[key] : 0;
+
+            cout << "pT: "          << pt_key[j]
+                 << ", asym: "      << cuts[0].e_asym
+                 << ", ECore_min: " << cuts[0].e
+                 << ", pi0s: "      << pi0_ctr[key]
+                 << ", avg qQ: "    << qQ[key] << endl;
+
+            cout << endl;
+        }
+    }
+
+    cout << "Max Pi0s per event: " << max_npi0 << endl;
     cout << "Finish Process Event" << endl;
 }
 
@@ -352,8 +377,6 @@ void myAnalysis::finalize(const string &i_output) {
     output.mkdir("QA/hDiphotonPt");
     output.mkdir("QA/h2DeltaRVsMass");
     output.mkdir("QA/h2AsymVsMass");
-    output.mkdir("QA/h2TimingAsymVsMass");
-    output.mkdir("QA/h2ChiAsymVsMass");
 
     for(auto cent : centrality) {
         output.cd("QA/hDiphotonPt");
@@ -368,12 +391,6 @@ void myAnalysis::finalize(const string &i_output) {
             output.cd("QA/h2AsymVsMass");
             h2AsymVsMass[key]      ->Write();
 
-            output.cd("QA/h2TimingAsymVsMass");
-            h2TimingAsymVsMass[key]->Write();
-
-            output.cd("QA/h2ChiAsymVsMass");
-            h2ChiAsymVsMass[key]   ->Write();
-
             output.mkdir(("results/"+cent.first+"/"+pt.first).c_str());
             output.cd(("results/"+cent.first+"/"+pt.first).c_str());
 
@@ -382,6 +399,9 @@ void myAnalysis::finalize(const string &i_output) {
             }
         }
     }
+
+    output.cd();
+    tree->Write();
 
     output.Close();
 }
@@ -401,7 +421,7 @@ void pi0Analysis(const string &i_input,
     cout << "outputFile: " << i_output << endl;
     cout << "#############################" << endl;
 
-    Int_t ret = myAnalysis::init(i_input, i_cuts, start, end);
+    Int_t ret = myAnalysis::init(i_input, i_cuts);
     if(ret != 0) return;
 
     myAnalysis::process_event(start,end);
