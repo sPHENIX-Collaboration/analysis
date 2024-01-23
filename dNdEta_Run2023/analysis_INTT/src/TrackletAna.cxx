@@ -14,26 +14,57 @@
 #include "GenHadron.h"
 #include "Tracklet.h"
 #include "Vertex.h"
-#include "misalignment.h"
+//#include "misalignment.h"
 #include "pdgidfunc.h"
 
 int main(int argc, char *argv[])
 {
-    // Usage: ./TrackletAna [NevtToRun] [skip] [layer] [randhit_case] [clusplit_case] [dRCut]
+    // Usage: ./TrackletAna [NevtToRun] [skip] [dRCut] [vertextree] [infile] [outfile]
     // Example: ./TrackletAna 2000 0 12 0 0 0 0.5
-    int NevtToRun_ = TString(argv[1]).Atoi();
-    int skip = TString(argv[2]).Atoi();
-    float dRCut = TString(argv[3]).Atof(); // Nominal: 0.5, variation \pm 0.1
+    
+    int NevtToRun_;
+    int skip;
+    float dRCut;
+    TString EvtVtx_map_filename;
+    TString infilename;
+    TString outfilename;
+
+    if(argc!=4 && argc!=7)
+    {
+        std::cout << "Usage: ./TrackletAna [NevtToRun] [skip] [dRCut] [vertextree] [infile] [outfile]" << std::endl;
+        return 0;
+    }
+
+    if(argc==4 || argc==7)
+    {
+        NevtToRun_ = TString(argv[1]).Atoi();
+        skip = TString(argv[2]).Atoi();
+        dRCut = TString(argv[3]).Atof(); // Nominal: 0.5, variation \pm 0.1
+    }
 
     int iniEvt = skip;
 
-    cout << "[Run Info] NevtToRun: " << NevtToRun_ << ", skip: " << skip << ", dRCut: " << dRCut << endl;
+    if(argc==4)
+    {
+        EvtVtx_map_filename = "/sphenix/user/hjheng/TrackletAna/minitree/INTT/VtxEvtMap_ana382_zvtx-20cm/INTTVtxZ.root";
+        infilename = "/sphenix/user/hjheng/TrackletAna/data/INTT/ana382_zvtx-20cm/INTTRecoClusters_sim_merged.root";
+        outfilename = Form("/sphenix/user/hjheng/TrackletAna/minitree/INTT/TrackletMinitree_ana382_zvtx-20cm/TrackletAna_minitree_Evt%dto%d_dRcut%s.root", iniEvt, iniEvt + NevtToRun_, number_to_string(dRCut).c_str());
+    }
 
+    if(argc==7)
+    {
+        EvtVtx_map_filename = TString(argv[4]);
+        infilename = TString(argv[5]);
+        outfilename = TString(argv[6]);
+    }
+
+    cout << "[Run Info] NevtToRun: " << NevtToRun_ << ", skip: " << skip << ", dRCut: " << dRCut << endl;
+/*
     // Optimized cut values for vertex finding algorithm
     TString EvtVtx_map_filename = "/sphenix/user/hjheng/TrackletAna/minitree/INTT/VtxEvtMap_ana382_zvtx-20cm/INTTVtxZ.root";
     TString infilename = "/sphenix/user/hjheng/TrackletAna/data/INTT/ana382_zvtx-20cm/INTTRecoClusters_sim_merged.root";
     TString outfilename = Form("/sphenix/user/hjheng/TrackletAna/minitree/INTT/TrackletMinitree_ana382_zvtx-20cm/TrackletAna_minitree_Evt%dto%d_dRcut%s.root", iniEvt, iniEvt + NevtToRun_, number_to_string(dRCut).c_str());
-
+*/
     TrackletData tkldata = {};
 
     std::map<int, vector<float>> EvtVtx_map = EvtVtx_map_tklcluster(EvtVtx_map_filename.Data());

@@ -31,10 +31,13 @@ R__LOAD_LIBRARY(libg4centrality.so)
 // For HepMC Hijing
 // try inputFile = /sphenix/sim/sim01/sphnxpro/sHijing_HepMC/sHijing_0-12fm.dat
 
-int Fun4All_G4_sPHENIX(const bool rundata = false, const int nEvents = 1, const int inputfilelistidx = 0, const string &outputFile = "/sphenix/user/hjheng/TrackletAna/data/INTT/INTTRecoClusters_sim_test.root", const int skip = 0)
+int Fun4All_G4_sPHENIX(const bool rundata = true, const int nEvents = -1, const int inputfilelistidx = 0, const string &outputFile = "dataNtuple.root", const int process = 0)
 {
+    int skip;
+    if(rundata) skip = nEvents*process;
+    else skip = 0;
     Fun4AllServer *se = Fun4AllServer::instance();
-    se->Verbosity(0);
+    se->Verbosity(1);
 
     recoConsts *rc = recoConsts::instance();
 
@@ -42,13 +45,17 @@ int Fun4All_G4_sPHENIX(const bool rundata = false, const int nEvents = 1, const 
     Input::READHITS = true;
     // const vector<string> &filelist = {Form("/sphenix/user/hjheng/sPHENIXdNdEta/macros/list/dst_calo_cluster.list"), Form("/sphenix/user/hjheng/sPHENIXdNdEta/macros/list/dst_trkr_hit.list"),
     //   Form("/sphenix/user/hjheng/sPHENIXdNdEta/macros/list/dst_truth.list"), Form("/sphenix/user/hjheng/sPHENIXdNdEta/macros/list/g4hits.list")};
-    const vector<string> &filelist = {Form("/sphenix/user/hjheng/sPHENIXdNdEta/macros/list/dNdEta_INTT/dst_INTTdNdEta_sim_%d.list", inputfilelistidx)};
+    //const vector<string> &filelist = {Form("/sphenix/user/hjheng/sPHENIXdNdEta/macros/list/dNdEta_INTT/dst_INTTdNdEta_data.list", inputfilelistidx)};
+    string infile;
+    if(rundata) infile = "/sphenix/tg/tg01/bulk/dNdeta_INTT_run2023/data/data/run_00020869/ana.382/beam_intt_combined-dst-00020869-0000.root";
+    else infile = "/sphenix/tg/tg01/bulk/dNdeta_INTT_run2023/data/simulation/ana.388/HIJING/fullSim/magOff/detectorAligned/dstSet_00000/dNdeta-sim-HIJING-000-"+std::string(TString::Format("%05d",process).Data())+".root";
     // const vector<string> &filelist = {"/sphenix/user/hjheng/sPHENIXdNdEta/macros/list/dNdEta_INTT/dst_INTTdNdEta_data.list"};
 
-    for (unsigned int i = 0; i < filelist.size(); ++i)
-    {
-        INPUTREADHITS::listfile[i] = filelist[i];
-    }
+//    for (unsigned int i = 0; i < filelist.size(); ++i)
+//    {
+        //INPUTREADHITS::listfile[i] = filelist[i];
+        INPUTREADHITS::filename[0] = infile;
+//    }
 
     // register all input generators with Fun4All
     // InputRegister();
@@ -78,7 +85,7 @@ int Fun4All_G4_sPHENIX(const bool rundata = false, const int nEvents = 1, const 
     TrackingInit();
     // Reco clustering
     // Mvtx_Clustering();
-    // Intt_Clustering();
+    if(rundata) Intt_Clustering();
 
     //-----------------
     // Centrality Determination

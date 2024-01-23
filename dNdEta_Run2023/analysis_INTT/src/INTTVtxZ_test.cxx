@@ -31,19 +31,47 @@
 
 int main(int argc, char *argv[])
 {
+    bool IsData;
+    TString infilename;
+    TString outfilename;
+    TString demoplotname;
+
+    if(argc==1)
+    {
+      std::cout << "Using default IsData, infile, outfile, plotname..." << std::endl;
+      IsData = false;
+      infilename = "/sphenix/user/hjheng/TrackletAna/data/INTT/ana382_zvtx-20cm/INTTRecoClusters_sim_merged.root";
+      outfilename = "/sphenix/user/hjheng/TrackletAna/minitree/INTT/VtxEvtMap_ana382_zvtx-20cm/INTTVtxZ.root";
+      demoplotname = "./plot/RecoPV_demo/RecoPV_Sim/INTTVtxZ_ana382_zvtx-20cm";
+    }
+    else if(argc!=5)
+    {
+      std::cout << "Usage: ./INTTVtxZ_test [isdata] [infile] [outfile] [plotname]" << std::endl;
+      return 0;
+    }
+    else
+    {
+      IsData = (atoi(argv[1])>0);
+      infilename = argv[2];
+      outfilename = argv[3];
+      demoplotname = argv[4];
+    }
+
     SetsPhenixStyle();
     gStyle->SetPalette(kThermometer);
 
     // Average vertex X and Y positions in cm
     float avgVtxX = -0.0015, avgVtxY = 0.0012;
-
-    bool IsData = false;
-    TString infilename = "/sphenix/user/hjheng/TrackletAna/data/INTT/ana382_zvtx-20cm/INTTRecoClusters_sim_merged.root";
+/*
+    bool IsData = true;
+    TString infilename = "/sphenix/user/mjpeters/analysis/dNdEta_Run2023/macros/dataNtuple_0.root";
     // TString infilename = "/sphenix/user/hjheng/TrackletAna/data/INTT/ana376_zvtx0cm/INTTRecoClusters_merged.root";
-    TString outfilename = "/sphenix/user/hjheng/TrackletAna/minitree/INTT/VtxEvtMap_ana382_zvtx-20cm/INTTVtxZ.root";
+    TString outfilename = "/sphenix/user/mjpeters/analysis/dNdEta_Run2023/macros/dataVertex_0.root";
     // TString outfilename = "/sphenix/user/hjheng/TrackletAna/minitree/INTT/ana376_zvtx0cm/INTTVtxZ.root";
-    TString demoplotname = "./plot/RecoPV_demo/RecoPV_Sim/INTTVtxZ_ana382_zvtx-20cm";
+    TString demoplotname = "./plot/data";
     // TString demoplotname = "./plot/RecoPV_demo/RecoPV_Sim/INTTVtxZ_ana376_zvtx0cm";
+*/
+
     system("mkdir -p " + demoplotname);
 
     vector<Hit *> INTTlayer1, INTTlayer2;
@@ -86,8 +114,8 @@ int main(int argc, char *argv[])
     TH2F *hM_truth_recotruthdiff = new TH2F("hM_truth_recotruthdiff", "hM_truth_recotruthdiff", 100, -50, 0, 100, -5, 5);
 
     // for (int ev = 0; ev < index->GetN(); ev++)
-    for (int ev = 0; ev < 2000; ev++)
-    // for (Long64_t ev = 0; ev < t->GetEntriesFast(); ev++)
+    //for (int ev = 0; ev < 100; ev++)
+    for (Long64_t ev = 0; ev < t->GetEntriesFast(); ev++)
     {
         Long64_t local = t->LoadTree(index->GetIndex()[ev]);
         t->GetEntry(local);
