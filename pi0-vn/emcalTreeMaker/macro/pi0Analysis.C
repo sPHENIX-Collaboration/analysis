@@ -39,9 +39,10 @@ namespace myAnalysis {
 
     vector<Cut> cuts;
 
-    Int_t init(const string &i_input, const string &i_cuts);
+    Int_t init(const string &i_input, const string &i_cuts, const string &fitStats);
     Int_t readFiles(const string &i_input, Long64_t start = 0, Long64_t end = 0);
     Int_t readCuts(const string &i_cuts);
+    Int_t readFitStats(const string &fitStats);
     void init_hists();
 
     void process_event(Long64_t start = 0, Long64_t end = 0);
@@ -69,7 +70,11 @@ namespace myAnalysis {
 
     vector<Float_t> QQ(cent_key.size());
 
+    // contains the aggregrate sum of dot product of pi0 q vector and MBD Q vector
     vector<Float_t> qQ(cent_key.size()*pt_key.size());
+
+    // keep track of low and high pi0 mass values to filter on for the computation of the v2
+    vector<pair<Float_t,Float_t>> pi0_mass_range(cent_key.size()*pt_key.size());
 
     map<pair<string,string>, vector<TH1F*>> hPi0Mass; // hPi0Mass[make_pair(cent,pt)][i], for accessing diphoton invariant mass hist of i-th cut of cent,pt
 
@@ -92,9 +97,11 @@ namespace myAnalysis {
     Int_t   bins_asym = 100;
     Float_t hasym_min = 0;
     Float_t hasym_max = 1;
+
+    Bool_t use_mass_range = false;
 }
 
-Int_t myAnalysis::init(const string &i_input, const string &i_cuts) {
+Int_t myAnalysis::init(const string &i_input, const string &i_cuts, const string& fitStats) {
     T = new TChain("T2");
     T->Add(i_input.c_str());
 
@@ -109,7 +116,9 @@ Int_t myAnalysis::init(const string &i_input, const string &i_cuts) {
 
     init_hists();
 
-    return 0;
+    if(!fitStats.empty()) ret = readFitStats(fitStats);
+
+    return ret;
 }
 
 Int_t myAnalysis::readFiles(const string &i_input, Long64_t start, Long64_t end) {
@@ -186,6 +195,61 @@ Int_t myAnalysis::readCuts(const string &i_cuts) {
                      << ", e_asym: " << setw(8) << cut.e_asym
                      << ", deltaR: " << setw(8) << cut.deltaR
                      << ", chi: "    << setw(8) << cut.chi << endl;
+    }
+
+    return 0;
+}
+
+Int_t myAnalysis::readFitStats(const string &fitStats) {
+    // Create an input stream
+    std::ifstream file(fitStats);
+
+    // Check if the file was successfully opened
+    if (!file.is_open()) {
+        cerr << "Failed to open cuts file: " << fitStats << endl;
+        return 1;
+    }
+
+    int col1Idx = 15; // Replace with the index of the first column you want
+    int col2Idx = 16; // Replace with the index of the second column you want
+
+    std::string line;
+    Int_t idx = 0;
+    while (std::getline(file, line)) {
+
+        // skip header line
+        if(!idx++) continue;
+
+        std::stringstream ss(line);
+        std::string token;
+
+        int colIdx = 0;
+        while (std::getline(ss, token, ',')) { // Assuming comma-separated values
+            if (colIdx == col1Idx) {
+                // load pi0_mass low val
+                pi0_mass_range[idx-2].first = stof(token);
+            } else if (colIdx == col2Idx) {
+                // load pi0_mass high val
+                pi0_mass_range[idx-2].second = stof(token);
+            }
+            colIdx++;
+        }
+    }
+
+    use_mass_range = true;
+
+    cout << endl;
+    for(Int_t i = 0; i < cent_key.size(); ++i) {
+        cout << "cent: " << cent_key[i] << endl;
+
+        for(Int_t j = 0; j < pt_key.size(); ++j) {
+            Int_t idx = i*pt_key.size()+j;
+
+            cout << "pt: " << pt_key[j]
+                 << ", low mass val: "  << pi0_mass_range[idx].first
+                 << ", high mass val: " << pi0_mass_range[idx].second << endl;
+        }
+        cout << endl;
     }
 
     return 0;
@@ -334,7 +398,7 @@ void myAnalysis::process_event(Long64_t start, Long64_t end) {
 
                     // add condition to check if mass is in range
                     // do this for only one of the cuts for which we have signal bound information
-                    if(k == 0) {
+                    if(k == 0 && use_mass_range && pi0_mass_val >= pi0_mass_range[idx].first && pi0_mass_val < pi0_mass_range[idx].second) {
                         ++pi0_ctr[idx];
                         qQ[idx] += qQ_val;
                     }
@@ -361,9 +425,8 @@ void myAnalysis::process_event(Long64_t start, Long64_t end) {
                  << ", ECore_min: " << cuts[0].e
                  << ", pi0s: "      << pi0_ctr[key]
                  << ", avg qQ: "    << qQ[key] << endl;
-
-            cout << endl;
         }
+        cout << endl;
     }
 
     cout << "Max Pi0s per event: " << max_npi0 << endl;
@@ -408,20 +471,22 @@ void myAnalysis::finalize(const string &i_output) {
 
 void pi0Analysis(const string &i_input,
                  const string &i_cuts,
+                 const string &fitStats = "",
+                 const string &i_output = "test.root",
                  Long64_t      start    = 0,
-                 Long64_t      end      = 0,
-                 const string &i_output = "test.root") {
+                 Long64_t      end      = 0) {
 
     cout << "#############################" << endl;
     cout << "Run Parameters" << endl;
     cout << "inputFile: "  << i_input << endl;
     cout << "Cuts: "       << i_cuts << endl;
+    cout << "fitStats: "   << fitStats << endl;
+    cout << "outputFile: " << i_output << endl;
     cout << "start: "      << start << endl;
     cout << "end: "        << end << endl;
-    cout << "outputFile: " << i_output << endl;
     cout << "#############################" << endl;
 
-    Int_t ret = myAnalysis::init(i_input, i_cuts);
+    Int_t ret = myAnalysis::init(i_input, i_cuts, fitStats);
     if(ret != 0) return;
 
     myAnalysis::process_event(start,end);
@@ -430,28 +495,33 @@ void pi0Analysis(const string &i_input,
 
 # ifndef __CINT__
 Int_t main(Int_t argc, char* argv[]) {
-if(argc < 3 || argc > 6){
-        cout << "usage: ./pi0Ana inputFile cuts [start] [end] [outputFile]" << endl;
+if(argc < 3 || argc > 7){
+        cout << "usage: ./pi0Ana inputFile cuts [fitStats] [outputFile] [start] [end] " << endl;
         cout << "inputFile: containing list of root file paths" << endl;
         cout << "cuts: csv file containing cuts" << endl;
+        cout << "fitStats: csv file containing fit stats" << endl;
+        cout << "outputFile: location of output file. Default: test.root." << endl;
         cout << "start: start event number. Default: 0." << endl;
         cout << "end: end event number. Default: 0. (to run over all entries)." << endl;
-        cout << "outputFile: location of output file. Default: test.root." << endl;
         return 1;
     }
 
+    string fitStats   = "";
+    string outputFile = "test.root";
     Long64_t start    = 0;
     Long64_t end      = 0;
-    string outputFile = "test.root";
 
     if(argc >= 4) {
-        start = atol(argv[3]);
+        fitStats = argv[3];
     }
     if(argc >= 5) {
-        end = atol(argv[4]);
+        outputFile = argv[4];
     }
     if(argc >= 6) {
-        outputFile = argv[5];
+        start = atol(argv[5]);
+    }
+    if(argc >= 7) {
+        end = atol(argv[6]);
     }
 
     // ensure that 0 <= start <= end
@@ -460,7 +530,7 @@ if(argc < 3 || argc > 6){
         return 1;
     }
 
-    pi0Analysis(argv[1], argv[2], start, end, outputFile);
+    pi0Analysis(argv[1], argv[2], fitStats, outputFile, start, end);
 
     cout << "======================================" << endl;
     cout << "done" << endl;
