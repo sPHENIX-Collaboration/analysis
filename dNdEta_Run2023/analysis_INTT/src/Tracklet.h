@@ -110,7 +110,7 @@ class TrackletData
     vector<Tracklet *> ProtoTkls, RecoTkls, RecoTkls_GenMatched;
     vector<GenHadron *> GenHadrons;
 
-    int event, NClusLayer1, NPrototkl, NRecotkl_Raw, NRecotkl_GenMatched;
+    int event, NClusLayer1, NPrototkl, NRecotkl_Raw, NRecotkl_GenMatched, NGenHadron;
     float PV_x, PV_y, PV_z, TruthPV_x, TruthPV_y, TruthPV_z;
     float Centrality_mbd, Centrality_mbdquantity;
     bool pu0_sel, trig;
