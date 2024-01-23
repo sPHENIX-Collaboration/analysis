@@ -15,9 +15,7 @@
 #include <string>
 #include <vector>
 
-#include "GenHadron.h"
-#include "Tracklet.h"
-#include "Vertex.h"
+using namespace std;
 
 const int NBins = 50;
 float edges[NBins + 1] = {1.00000000e-04, 1.18571250e-04, 1.40591414e-04, 1.66700998e-04, 1.97659458e-04, 2.34367291e-04, 2.77892228e-04, 3.29500290e-04, 3.90692614e-04, 4.63249118e-04, 5.49280272e-04, 6.51288487e-04, 7.72240903e-04,
@@ -37,7 +35,7 @@ void makehist(TString infname, TString outfname, TString plotdir, bool rundata)
     TH1F *hM_dR_proto_LogX = new TH1F("hM_dR_proto_LogX", "hM_dR_proto_LogX", NBins, edges);
     TH1F *hM_Eta_proto = new TH1F("hM_Eta_proto", "hM_Eta_proto", 160, -4, 4);
     TH1F *hM_Phi_proto = new TH1F("hM_Phi_proto", "hM_Phi_proto", 140, -3.5, 3.5);
-    TH2F *hM_Eta_vtxZ_proto_incl = new TH2F("hM_Eta_vtxZ_proto_incl", "hM_Eta_vtxZ_proto_incl", 280, -3.5, 3.5, 220, -44, 0);
+    TH2F *hM_Eta_vtxZ_proto_incl = new TH2F("hM_Eta_vtxZ_proto_incl", "hM_Eta_vtxZ_proto_incl", 280, -3.5, 3.5, 300, -50, 10);
 
     TH1F *hM_dEta_reco = new TH1F("hM_dEta_reco", "hM_dEta_reco", 200, -3, 3);
     TH1F *hM_dEta_reco_altrange = new TH1F("hM_dEta_reco_altrange", "hM_dEta_reco_altrange", 100, -0.5, 0.5);
@@ -48,7 +46,7 @@ void makehist(TString infname, TString outfname, TString plotdir, bool rundata)
     TH1F *hM_dR_reco_LogX = new TH1F("hM_dR_reco_LogX", "hM_dR_reco_LogX", NBins, edges);
     TH1F *hM_Eta_reco = new TH1F("hM_Eta_reco", "hM_Eta_reco", 160, -4, 4);
     TH1F *hM_Phi_reco = new TH1F("hM_Phi_reco", "hM_Phi_reco", 140, -3.5, 3.5);
-    TH2F *hM_Eta_vtxZ_reco_incl = new TH2F("hM_Eta_vtxZ_reco_incl", "hM_Eta_vtxZ_reco_incl", 280, -3.5, 3.5, 220, -44, 0);
+    TH2F *hM_Eta_vtxZ_reco_incl = new TH2F("hM_Eta_vtxZ_reco_incl", "hM_Eta_vtxZ_reco_incl", 280, -3.5, 3.5, 300, -50, 10);
 
     TH1F *hM_NClusLayer1 = new TH1F("hM_NClusLayer1", "hM_NClusLayer1", 100, 0, 5000);
     TH1F *hM_NPrototkl = new TH1F("hM_NPrototkl", "hM_NPrototkl", 100, 0, 10000);
@@ -152,8 +150,8 @@ void makehist(TString infname, TString outfname, TString plotdir, bool rundata)
 
     fout->Close();
 
-    TString rundataarg = (rundata) ? "-s" : "";
-    system(Form("cd ./plot/; python plotTracklet.py -f %s -d %s %s", outfname.Data(), plotdir.Data(), rundataarg.Data()));
+    // TString rundataarg = (rundata) ? "-s" : "";
+    // system(Form("cd ./plot/; python plotTracklet.py -f %s -d %s %s", outfname.Data(), plotdir.Data(), rundataarg.Data()));
 }
 
 int main(int argc, char *argv[])
@@ -163,28 +161,33 @@ int main(int argc, char *argv[])
     TString plotdir;
     bool rundata;
 
-    if(argc==1)
+    if (argc == 1)
     {
+        rundata = false;
         infname = "/sphenix/user/hjheng/TrackletAna/minitree/INTT/TrackletMinitree_ana382_zvtx-20cm_dummyAlignParams/TrackletAna_minitree_Evt0to2000_dRcut0p5.root";
         outfname = "/sphenix/user/hjheng/TrackletAna/analysis_INTT/plot/hists/ana382_zvtx-20cm_dummyAlignParams/Hists_RecoTracklets.root";
-        plotdir = "/sphenix/user/hjheng/TrackletAna/analysis_INTT/plot/RecoTracklet/ana382_zvtx-20cm_dummyAlignParams/";
-        rundata = false;
+        // plotdir = "/sphenix/user/hjheng/TrackletAna/analysis_INTT/plot/RecoTracklet/ana382_zvtx-20cm_dummyAlignParams/";
     }
-    else if(argc==5)
+    else if (argc == 4)
     {
-        infname = argv[1];
-        outfname = argv[2];
-        plotdir = argv[3];
-        rundata = atoi(argv[4]);
+        rundata = (TString(argv[1]).Atoi() == 1) ? true : false; 
+        infname = argv[2];
+        outfname = argv[3];
+        // plotdir = argv[3];
     }
     else
     {
-        std::cout << "Usage: ./plotTracklets [infile] [outfile] [plotdir]" << std::endl;
+        std::cout << "Usage: ./plotTracklets [infile] [outfile] [rundata]" << std::endl;
         return 0;
     }
 
-    makehist(infname,outfname,plotdir,rundata);
-    //makehist("/sphenix/user/hjheng/TrackletAna/minitree/INTT/TrackletMinitree_ana382_zvtx-20cm/TrackletAna_minitree_Evt0to500_dRcut5.root","/sphenix/user/hjheng/TrackletAna/analysis_INTT/plot/hists/ana382_zvtx-20cm/Hists_RecoTracklets.root");
+    cout << "[Run Info] Input file = " << infname << endl
+         << "           Output file = " << outfname << endl
+         << "           rundata = " << rundata << endl
+         << "-----------" << endl;
+
+    makehist(infname, outfname, plotdir, rundata);
+    // makehist("/sphenix/user/hjheng/TrackletAna/minitree/INTT/TrackletMinitree_ana382_zvtx-20cm/TrackletAna_minitree_Evt0to500_dRcut5.root","/sphenix/user/hjheng/TrackletAna/analysis_INTT/plot/hists/ana382_zvtx-20cm/Hists_RecoTracklets.root");
 
     return 0;
 }

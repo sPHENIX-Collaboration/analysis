@@ -105,16 +105,20 @@ GenHadron *Tracklet::MatchedGenHadron() { return _genhad; }
 class TrackletData
 {
   public:
+    bool isdata;
     vector<vector<Hit *>> layers = {{}, {}};
-    vector<Tracklet *> ProtoTkls, RecoTkls;
+    vector<Tracklet *> ProtoTkls, RecoTkls, RecoTkls_GenMatched;
+    vector<GenHadron *> GenHadrons;
 
-    int event, NClusLayer1, NPrototkl, NRecotkl_Raw;
+    int event, NClusLayer1, NPrototkl, NRecotkl_Raw, NRecotkl_GenMatched;
     float PV_x, PV_y, PV_z, TruthPV_x, TruthPV_y, TruthPV_z;
     float Centrality_mbd, Centrality_mbdquantity;
     bool pu0_sel, trig;
     int process; // single diffractive process
     vector<float> prototkl_eta, prototkl_phi, prototkl_deta, prototkl_dphi, prototkl_dR;
     vector<float> recotklraw_eta, recotklraw_phi, recotklraw_deta, recotklraw_dphi, recotklraw_dR;
+    vector<float> recotklgm_eta, recotklgm_phi, recotklgm_deta, recotklgm_dphi, recotklgm_dR;
+    vector<float> GenHadron_Pt, GenHadron_eta, GenHadron_phi, GenHadron_E, GenHadron_matched_Pt, GenHadron_matched_eta, GenHadron_matched_phi, GenHadron_matched_E;
 };
 
 void SetMinitree(TTree *outTree, TrackletData &tkldata)
@@ -128,12 +132,7 @@ void SetMinitree(TTree *outTree, TrackletData &tkldata)
     outTree->Branch("PV_x", &tkldata.PV_x);
     outTree->Branch("PV_y", &tkldata.PV_y);
     outTree->Branch("PV_z", &tkldata.PV_z);
-    outTree->Branch("TruthPV_x", &tkldata.TruthPV_x);
-    outTree->Branch("TruthPV_y", &tkldata.TruthPV_y);
-    outTree->Branch("TruthPV_z", &tkldata.TruthPV_z);
-    outTree->Branch("pu0_sel", &tkldata.pu0_sel);
     outTree->Branch("trig", &tkldata.trig);
-    outTree->Branch("process", &tkldata.process);
     outTree->Branch("prototkl_eta", &tkldata.prototkl_eta);
     outTree->Branch("prototkl_phi", &tkldata.prototkl_phi);
     outTree->Branch("prototkl_deta", &tkldata.prototkl_deta);
@@ -144,6 +143,29 @@ void SetMinitree(TTree *outTree, TrackletData &tkldata)
     outTree->Branch("recotklraw_deta", &tkldata.recotklraw_deta);
     outTree->Branch("recotklraw_dphi", &tkldata.recotklraw_dphi);
     outTree->Branch("recotklraw_dR", &tkldata.recotklraw_dR);
+
+    if (!tkldata.isdata)
+    {
+        outTree->Branch("NRecotkl_GenMatched", &tkldata.NRecotkl_GenMatched);
+        outTree->Branch("TruthPV_x", &tkldata.TruthPV_x);
+        outTree->Branch("TruthPV_y", &tkldata.TruthPV_y);
+        outTree->Branch("TruthPV_z", &tkldata.TruthPV_z);
+        outTree->Branch("pu0_sel", &tkldata.pu0_sel);
+        outTree->Branch("process", &tkldata.process);
+        outTree->Branch("recotklgm_eta", &tkldata.recotklgm_eta);
+        outTree->Branch("recotklgm_phi", &tkldata.recotklgm_phi);
+        outTree->Branch("recotklgm_deta", &tkldata.recotklgm_deta);
+        outTree->Branch("recotklgm_dphi", &tkldata.recotklgm_dphi);
+        outTree->Branch("recotklgm_dR", &tkldata.recotklgm_dR);
+        outTree->Branch("GenHadron_Pt", &tkldata.GenHadron_Pt);
+        outTree->Branch("GenHadron_eta", &tkldata.GenHadron_eta);
+        outTree->Branch("GenHadron_phi", &tkldata.GenHadron_phi);
+        outTree->Branch("GenHadron_E", &tkldata.GenHadron_E);
+        outTree->Branch("GenHadron_matched_Pt", &tkldata.GenHadron_matched_Pt);
+        outTree->Branch("GenHadron_matched_eta", &tkldata.GenHadron_matched_eta);
+        outTree->Branch("GenHadron_matched_phi", &tkldata.GenHadron_matched_phi);
+        outTree->Branch("GenHadron_matched_E", &tkldata.GenHadron_matched_E);
+    }
 }
 
 void ResetVec(TrackletData &tkldata)
@@ -164,6 +186,20 @@ void ResetVec(TrackletData &tkldata)
     CleanVec(tkldata.recotklraw_deta);
     CleanVec(tkldata.recotklraw_dphi);
     CleanVec(tkldata.recotklraw_dR);
+    CleanVec(tkldata.recotklgm_eta);
+    CleanVec(tkldata.recotklgm_phi);
+    CleanVec(tkldata.recotklgm_deta);
+    CleanVec(tkldata.recotklgm_dphi);
+    CleanVec(tkldata.recotklgm_dR);
+    CleanVec(tkldata.GenHadrons);
+    CleanVec(tkldata.GenHadron_Pt);
+    CleanVec(tkldata.GenHadron_eta);
+    CleanVec(tkldata.GenHadron_phi);
+    CleanVec(tkldata.GenHadron_E);
+    CleanVec(tkldata.GenHadron_matched_Pt);
+    CleanVec(tkldata.GenHadron_matched_eta);
+    CleanVec(tkldata.GenHadron_matched_phi);
+    CleanVec(tkldata.GenHadron_matched_E);
 }
 
 bool compare_dR(Tracklet *a, Tracklet *b) { return a->dR() < b->dR(); }
@@ -231,6 +267,41 @@ void RecoTracklets(TrackletData &tkldata)
     }
 
     tkldata.NRecotkl_Raw = tkldata.RecoTkls.size();
+}
+
+void GenMatch_Recotkl(TrackletData &tkldata)
+{
+    for (auto &tkl : tkldata.RecoTkls)
+    {
+        if (tkl->IsMatchedGenHadron())
+            continue;
+        for (auto &ghadron : tkldata.GenHadrons)
+        {
+            if (ghadron->IsMatchedToRecotkl() || tkl->IsMatchedGenHadron())
+                continue;
+            // Matching criteria
+            if (deltaR(tkl->Eta(), tkl->Phi(), ghadron->Eta(), ghadron->Phi()) > 0.1)
+                continue;
+            else
+            {
+                tkl->SetMatchedGenHardon();
+                ghadron->SetMatchedToRecotkl();
+                tkl->SetGenHadron(ghadron);
+                tkldata.RecoTkls_GenMatched.push_back(tkl);
+                tkldata.recotklgm_eta.push_back(tkl->Hit1()->Eta());
+                tkldata.recotklgm_phi.push_back(tkl->Hit1()->Phi());
+                tkldata.recotklgm_deta.push_back(tkl->dEta());
+                tkldata.recotklgm_dphi.push_back(tkl->dPhi());
+                tkldata.recotklgm_dR.push_back(tkl->dR());
+                tkldata.GenHadron_matched_Pt.push_back(ghadron->Pt());
+                tkldata.GenHadron_matched_eta.push_back(ghadron->Eta());
+                tkldata.GenHadron_matched_phi.push_back(ghadron->Phi());
+                tkldata.GenHadron_matched_E.push_back(ghadron->E());
+            }
+        }
+    }
+
+    tkldata.NRecotkl_GenMatched = tkldata.RecoTkls_GenMatched.size();
 }
 
 #endif

@@ -85,7 +85,8 @@ int Fun4All_G4_sPHENIX(const bool rundata = true, const int nEvents = -1, const 
     TrackingInit();
     // Reco clustering
     // Mvtx_Clustering();
-    if(rundata) Intt_Clustering();
+    if (rundata)
+        Intt_Clustering();
 
     //-----------------
     // Centrality Determination
