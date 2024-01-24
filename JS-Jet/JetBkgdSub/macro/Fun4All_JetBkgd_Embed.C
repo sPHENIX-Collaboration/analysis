@@ -149,13 +149,10 @@ void Fun4All_JetBkgd_Embed(
   //data
   JetBkgdSub *myJetTree = new JetBkgdSub(jet_parameter,outputbase + ".root");
   TowerJetInput *inputCEMC = new TowerJetInput(Jet::CEMC_TOWERINFO);
-  inputCEMC->set_remove_bad_towers(true);
   myJetTree->add_input(inputCEMC);
   TowerJetInput *inputIHCAL = new TowerJetInput(Jet::HCALIN_TOWERINFO);
-  inputIHCAL->set_remove_bad_towers(true);
   myJetTree->add_input(inputIHCAL);
   TowerJetInput *inputOHCAL = new TowerJetInput(Jet::HCALOUT_TOWERINFO);
-  inputOHCAL->set_remove_bad_towers(true);
   myJetTree->add_input(inputOHCAL);
   myJetTree->doIterative(false);
   myJetTree->doAreaSub(true);
@@ -173,13 +170,10 @@ void Fun4All_JetBkgd_Embed(
   //embed
   JetBkgdSub *myJetTreeEmbed = new JetBkgdSub(jet_parameter,outputbase + "_embed.root");
   TowerJetInput *inputCEMCEmbed = new TowerJetInput(Jet::CEMC_TOWERINFO_EMBED);
-  inputCEMCEmbed->set_remove_bad_towers(true);
   myJetTreeEmbed->add_input(inputCEMCEmbed);
   TowerJetInput *inputIHCALEmbed = new TowerJetInput(Jet::HCALIN_TOWERINFO_EMBED);
-  inputIHCALEmbed->set_remove_bad_towers(true);
   myJetTreeEmbed->add_input(inputIHCALEmbed);
   TowerJetInput *inputOHCALEmbed = new TowerJetInput(Jet::HCALOUT_TOWERINFO_EMBED);
-  inputOHCAL->set_remove_bad_towers(true);
   myJetTreeEmbed->add_input(inputOHCALEmbed);
   myJetTreeEmbed->doIterative(false);
   myJetTreeEmbed->doAreaSub(true);
@@ -196,13 +190,10 @@ void Fun4All_JetBkgd_Embed(
   //sim
   JetBkgdSub *myJetTreeSim = new JetBkgdSub(jet_parameter,outputbase + "_sim.root");
   TowerJetInput *inputCEMCSim = new TowerJetInput(Jet::CEMC_TOWERINFO_SIM);
-  inputCEMCSim->set_remove_bad_towers(true);
   myJetTreeSim->add_input(inputCEMCSim);
   TowerJetInput *inputIHCALSim = new TowerJetInput(Jet::HCALIN_TOWERINFO_SIM);
-  inputIHCALSim->set_remove_bad_towers(true);
   myJetTreeSim->add_input(inputIHCALSim);
   TowerJetInput *inputOHCALSim = new TowerJetInput(Jet::HCALOUT_TOWERINFO_SIM);
-  inputOHCALSim->set_remove_bad_towers(true);
   myJetTreeSim->add_input(inputOHCALSim);
   myJetTreeSim->doIterative(false);
   myJetTreeSim->doAreaSub(true);
