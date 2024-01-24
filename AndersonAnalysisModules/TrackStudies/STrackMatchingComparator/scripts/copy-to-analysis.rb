@@ -19,6 +19,7 @@ copy_to   = "/sphenix/user/danderson/sphenix/analysis/AndersonAnalysisModules/Tr
 to_copy = [
   "README.md",
   "MakeNewMatcherPlots.cxx",
+  "MakeNewMatcherTuplePlots.cxx",
   "MakeOldEvaluatorPlots.cxx",
   "CompareOldVsNewPlots.cxx",
   "macros/Fun4All_RunNewTruthMatcher.C",
