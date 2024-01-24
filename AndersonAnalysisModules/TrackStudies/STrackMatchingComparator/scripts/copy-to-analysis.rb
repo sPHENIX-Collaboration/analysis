@@ -25,9 +25,13 @@ to_copy = [
   "macros/G4Setup_sPHENIX.C",
   "macros/QuickTreePlotter.C",
   "macros/QuickTuplePlotter.C",
+  "macros/MergeFiles.C",
   "scripts/copy-to-analysis.rb",
   "scripts/RunNewTruthMatcherOnCondor.sh",
-  "scripts/RunNewTruthMatcherOnCondor.job"
+  "scripts/RunNewTruthMatcherOnCondor.job",
+  "scripts/HAddFilesFromPattern.rb",
+  "scripts/MergeCondorFiles.rb",
+  "scripts/MergeFiles.rb"
 ]
 
 # do copying
