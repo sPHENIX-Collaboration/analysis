@@ -25,7 +25,12 @@
 #include <calobase/TowerInfoContainer.h>
 #include <calobase/TowerInfo.h>
 
+#include <globalvertex/GlobalVertexMap.h>
+#include <globalvertex/GlobalVertexMapv1.h>
+
 #include <jetbackground/TowerBackground.h>
+
+#include <mbd/MbdOut.h>
 
 #include "fastjet/AreaDefinition.hh"
 #include "fastjet/ClusterSequenceArea.hh"
@@ -56,16 +61,20 @@ JetBkgdSub::JetBkgdSub(const double jet_R, const std::string& outputfilename)
   , m_etaRange(-1.1, 1.1)
   , m_ptRange(0.0, 100000.0)
   , _minrecopT(5.0)
+  , m_vtxZ_cut(10.0)
   , _doIterative(false)
   , _doAreaSub(false)
   , _doMultSub(false)
   , _doTruth(false)
+  , _doData(false)
+  , _doEmbed(false)
   , m_event(-1)
   , m_rhoA_jets(0)
   , m_mult_jets(0)
   , m_iter_jets(0)
   , m_truth_jets(0)
   , m_centrality(-1)
+  , m_mbd_NS(0.0)
   , m_rho_area(-1)
   , m_rho_area_sigma(-1)
   , m_event_leading_truth_pt(-1)
@@ -128,6 +137,7 @@ int JetBkgdSub::Init(PHCompositeNode *topNode)
   m_tree->Branch("event", &m_event, "event/I");
   m_tree->Branch("event_leading_truth_pt", &m_event_leading_truth_pt, "event_leading_truth_pt/F");
   m_tree->Branch("centrality", &m_centrality, "centrality/I");
+  m_tree->Branch("mbd_NS", &m_mbd_NS, "mbd_NS/F");
   if(_doTruth)
   {
     m_tree->Branch("truth_jets", &m_truth_jets, "truth_jets/I");
@@ -194,6 +204,23 @@ int JetBkgdSub::process_event(PHCompositeNode *topNode)
   // std::cout << "JetBkgdSub::process_event(PHCompositeNode *topNode) Processing event " << m_event << std::endl;
   ++m_event;
 
+  GlobalVertexMap *vtxMap = findNode::getClass<GlobalVertexMapv1>(topNode,"GlobalVertexMap");
+  if (!vtxMap)
+    {
+      if(Verbosity()) std::cout << "JetBkgdSub::processEvent(PHCompositeNode *topNode) Could not find global vertex map node" << std::endl;
+      exit(-1);
+    }
+  if (!vtxMap->get(0))
+    {
+      if(Verbosity()) std::cout << "no vertex found" << std::endl;
+      return Fun4AllReturnCodes::ABORTEVENT;
+    }
+  if (fabs(vtxMap->get(0)->get_z()) < m_vtxZ_cut)
+    {
+      if(Verbosity()) std::cout << "vertex not in range" << std::endl;
+      return Fun4AllReturnCodes::ABORTEVENT;
+    }
+
   // min reco jet pt cut 
   // sets min for all subtraction types
   double min_reco_jet_pt = _minrecopT;
@@ -205,7 +232,14 @@ int JetBkgdSub::process_event(PHCompositeNode *topNode)
   // std::cout << "JetBkgdSub::process_event(PHCompositeNode *topNode) Centrality: " << m_centrality << std::endl;
 
   // Leading truth jet pt (R = 0.4) (for simulation event selection)
-  m_event_leading_truth_pt = LeadingR04TruthJet(topNode);
+  if (_doData || _doEmbed || !_doTruth)
+    {
+      m_event_leading_truth_pt = -1.0;
+    }
+  else
+    {
+      m_event_leading_truth_pt = LeadingR04TruthJet(topNode);
+    }
   // std::cout << "JetBkgdSub::process_event(PHCompositeNode *topNode) Leading truth jet pt: " << m_event_leading_truth_pt << std::endl;
 
   // ==================================
@@ -421,14 +455,16 @@ int JetBkgdSub::process_event(PHCompositeNode *topNode)
     fastjet::AreaDefinition area_def(fastjet::active_area_explicit_ghosts, fastjet::GhostedAreaSpec(ghost_max_rap, 1, ghost_R));
     fastjet::JetDefinition jet_def_antikt(fastjet::antikt_algorithm, m_jet_R);
     fastjet::JetDefinition jet_def_bkgd(fastjet::kt_algorithm, m_jet_R); 
-    fastjet::Selector selector_rm2 = jetrap * (!fastjet::SelectorNHardest(2));
-    fastjet::JetMedianBackgroundEstimator bge_rm2 {selector_rm2, jet_def_bkgd, area_def};
+    fastjet::Selector selector_rm_jets;
+    if (_doEmbed) selector_rm_jets = jetrap * (!fastjet::SelectorNHardest(4));
+    else selector_rm_jets = jetrap * (!fastjet::SelectorNHardest(2));
+    fastjet::JetMedianBackgroundEstimator bge {selector_rm_jets, jet_def_bkgd, area_def};
     // set particles for background estimation
-    bge_rm2.set_particles(calo_pseudojets);
+    bge.set_particles(calo_pseudojets);
     
     // rho and sigma
-    m_rho_area = bge_rm2.rho();
-    m_rho_area_sigma = bge_rm2.sigma();
+    m_rho_area = bge.rho();
+    m_rho_area_sigma = bge.sigma();
     
     // cluster jets
     fastjet::ClusterSequenceArea clustSeq(calo_pseudojets, jet_def_antikt, area_def);
@@ -505,7 +541,36 @@ void JetBkgdSub::GetCentInfo(PHCompositeNode *topNode)
       std::cout << "JetBkgdSub::process_event() ERROR: Can't find CentralityInfo" << std::endl;
       exit(-1);
   }
-  m_centrality = cent_node->get_centile(CentralityInfo::PROP::bimp);
+  
+  if (!_doData)
+    {
+      m_centrality = cent_node->get_centile(CentralityInfo::PROP::bimp);
+      m_mbd_NS = cent_node->get_quantity(CentralityInfo::PROP::mbd_NS);
+    }
+  else
+    {
+      m_centrality = cent_node->get_centile(CentralityInfo::PROP::mbd_NS);
+
+      PHNodeIterator iter(topNode);
+      PHCompositeNode *mbdNode = dynamic_cast<PHCompositeNode *>(iter.findFirst("PHCompositeNode", "MBD"));
+      if(!mbdNode)
+	{
+	  std::cerr << Name() << "::" <<  __PRETTY_FUNCTION__
+		    << "MBD Node missing, doing nothing." << std::endl;
+	  throw std::runtime_error(
+				   "Failed to find MBD node in JetBkgdSub::GetCentInfo");
+	}
+      MbdOut *_data_MBD = findNode::getClass<MbdOut>(mbdNode, "MbdOut");
+      if(!_data_MBD)
+	{
+	  std::cerr << Name() << "::" <<  __PRETTY_FUNCTION__
+		    << "MbdOut Node missing, doing nothing." << std::endl;
+	  throw std::runtime_error(
+				   "Failed to find MbdOut node in JetBkgdSub::GetCentInfo");
+	}
+
+      m_mbd_NS = _data_MBD->get_q(0) + _data_MBD->get_q(1);
+    }
   return ;
 }
 
