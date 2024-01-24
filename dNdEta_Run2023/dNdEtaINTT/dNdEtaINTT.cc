@@ -78,8 +78,8 @@ template <class T> void CleanVec(std::vector<T> &v)
 
 //____________________________________________________________________________..
 dNdEtaINTT::dNdEtaINTT(const std::string &name, const std::string &outputfile, const bool &isData, const int &inputFileListIndex, const int &nEvtPerFile)
-    : SubsysReco(name), _get_truth_pv(true), _get_reco_cluster(true), _get_centrality(true), _get_trkr_hit(true), _outputFile(outputfile), IsData(isData), InputFileListIndex(inputFileListIndex), NEvtPerFile(nEvtPerFile), svtx_evalstack(nullptr), truth_eval(nullptr),
-      clustereval(nullptr), hiteval(nullptr), dst_clustermap(nullptr), clusterhitmap(nullptr), hitsets(nullptr), _tgeometry(nullptr), m_truth_info(nullptr), m_CentInfo(nullptr)
+    : SubsysReco(name), _get_truth_pv(true), _get_reco_cluster(true), _get_centrality(true), _get_trkr_hit(true), _outputFile(outputfile), IsData(isData), InputFileListIndex(inputFileListIndex), NEvtPerFile(nEvtPerFile), svtx_evalstack(nullptr),
+      truth_eval(nullptr), clustereval(nullptr), hiteval(nullptr), dst_clustermap(nullptr), clusterhitmap(nullptr), hitsets(nullptr), _tgeometry(nullptr), m_truth_info(nullptr), m_CentInfo(nullptr)
 {
     std::cout << "dNdEtaINTT::dNdEtaINTT(const std::string &name) Calling ctor" << std::endl;
 }
@@ -100,42 +100,25 @@ int dNdEtaINTT::Init(PHCompositeNode *topNode)
     outtree->Branch("event", &event_);
     if (!IsData)
     {
-        // outtree->Branch("centrality_bimp", &centrality_bimp_);
-        // outtree->Branch("centrality_impactparam", &centrality_impactparam_);
-        // outtree->Branch("centrality_mbd", &centrality_mbd_);
-        // outtree->Branch("centrality_mbdquantity", &centrality_mbdquantity_);
+        outtree->Branch("ncoll", &ncoll_);
+        outtree->Branch("npart", &npart_);
+        outtree->Branch("centrality_bimp", &centrality_bimp_);
+        outtree->Branch("centrality_impactparam", &centrality_impactparam_);
+        outtree->Branch("centrality_mbd", &centrality_mbd_);
+        outtree->Branch("centrality_mbdquantity", &centrality_mbdquantity_);
         outtree->Branch("NTruthVtx", &NTruthVtx_);
-        outtree->Branch("TruthPV_x", &TruthPV_x_);
-        outtree->Branch("TruthPV_y", &TruthPV_y_);
-        outtree->Branch("TruthPV_z", &TruthPV_z_);
-        outtree->Branch("TruthPV_Npart", &TruthPV_Npart_);
-        outtree->Branch("TruthPV_Nhits", &TruthPV_Nhits_);
-        outtree->Branch("TruthPV_NClus", &TruthPV_NClus_);
-        outtree->Branch("TruthPV_t", &TruthPV_t_);
-        outtree->Branch("TruthPV_embed", &TruthPV_embed_);
         outtree->Branch("TruthPV_trig_x", &TruthPV_trig_x_);
         outtree->Branch("TruthPV_trig_y", &TruthPV_trig_y_);
         outtree->Branch("TruthPV_trig_z", &TruthPV_trig_z_);
-        outtree->Branch("TruthPV_trig_Npart", &TruthPV_trig_Npart_);
-
-        outtree->Branch("UniqueAncG4P_Px", &UniqueAncG4P_Px_);
-        outtree->Branch("UniqueAncG4P_Py", &UniqueAncG4P_Py_);
-        outtree->Branch("UniqueAncG4P_Pz", &UniqueAncG4P_Pz_);
+        outtree->Branch("NGenPart", &NGenPart_);
         outtree->Branch("UniqueAncG4P_Pt", &UniqueAncG4P_Pt_);
         outtree->Branch("UniqueAncG4P_Eta", &UniqueAncG4P_Eta_);
         outtree->Branch("UniqueAncG4P_Phi", &UniqueAncG4P_Phi_);
         outtree->Branch("UniqueAncG4P_E", &UniqueAncG4P_E_);
         outtree->Branch("UniqueAncG4P_PID", &UniqueAncG4P_PID_);
-        outtree->Branch("UniqueAncG4P_TrackPID", &UniqueAncG4P_TrackPID_);
-        outtree->Branch("UniqueAncG4P_VtxPID", &UniqueAncG4P_VtxPID_);
-        outtree->Branch("UniqueAncG4P_ParentPID", &UniqueAncG4P_ParentPID_);
-        outtree->Branch("UniqueAncG4P_PrimaryPID", &UniqueAncG4P_PrimaryPID_);
-        outtree->Branch("UniqueAncG4P_IonCharge", &UniqueAncG4P_IonCharge_);
-        outtree->Branch("UniqueAncG4P_TrackID", &UniqueAncG4P_TrackID_);
-        outtree->Branch("UniqueAncG4P_NClus", &UniqueAncG4P_NClus_);
     }
 
-    outtree->Branch("Layer1_occupancy", &Layer1_occupancy_);
+    outtree->Branch("NClus_Layer1", &NClus_Layer1_);
     outtree->Branch("NClus", &NClus_);
     outtree->Branch("NTrkrhits", &NTrkrhits_);
     outtree->Branch("TrkrHitRow", &TrkrHitRow_);
@@ -152,6 +135,8 @@ int dNdEtaINTT::Init(PHCompositeNode *topNode)
     outtree->Branch("ClusZSize", &ClusZSize_);
     outtree->Branch("ClusLadderZId", &ClusLadderZId_);
     outtree->Branch("ClusLadderPhiId", &ClusLadderPhiId_);
+    outtree->Branch("ClusTrkrHitSetKey", &ClusTrkrHitSetKey_);
+    outtree->Branch("ClusTimeBucketId", &ClusTimeBucketId_);
 
     return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -179,6 +164,21 @@ int dNdEtaINTT::process_event(PHCompositeNode *topNode)
     }
 
     svtx_evalstack->next_event(topNode);
+
+    eventheader = findNode::getClass<EventHeader>(topNode, "EventHeader");
+    if (!eventheader)
+    {
+        std::cout << PHWHERE << "Error, can't find EventHeader" << std::endl;
+        return Fun4AllReturnCodes::ABORTEVENT;
+    }
+
+    // Centrality info
+    m_CentInfo = findNode::getClass<CentralityInfo>(topNode, "CentralityInfo");
+    if (!m_CentInfo)
+    {
+        std::cout << PHWHERE << "Error, can't find CentralityInfov1" << std::endl;
+        return Fun4AllReturnCodes::ABORTEVENT;
+    }
 
     dst_clustermap = findNode::getClass<TrkrClusterContainerv4>(topNode, "TRKR_CLUSTER");
     if (!dst_clustermap)
@@ -221,9 +221,10 @@ int dNdEtaINTT::process_event(PHCompositeNode *topNode)
         std::cout << "Running on simulation" << std::endl;
         if (_get_truth_pv)
             GetTruthPVInfo(topNode);
-        if (_get_centrality)
-            GetCentralityInfo(topNode);
     }
+
+    if (_get_centrality)
+        GetCentralityInfo(topNode);
 
     if (_get_trkr_hit)
         GetTrkrHitInfo(topNode);
@@ -277,25 +278,6 @@ int dNdEtaINTT::Reset(PHCompositeNode *topNode)
 //____________________________________________________________________________..
 void dNdEtaINTT::Print(const std::string &what) const { std::cout << "dNdEtaINTT::Print(const std::string &what) const Printing info for " << what << std::endl; }
 //____________________________________________________________________________..
-void dNdEtaINTT::GetCentralityInfo(PHCompositeNode *topNode)
-{
-    std::cout << "Get centrality info." << std::endl;
-
-    // Centrality info
-    m_CentInfo = findNode::getClass<CentralityInfo>(topNode, "CentralityInfo");
-    if (!m_CentInfo)
-    {
-        std::cout << PHWHERE << "Error, can't find CentralityInfov1" << std::endl;
-        return;
-    }
-
-    centrality_bimp_ = m_CentInfo->get_centile(CentralityInfo::PROP::bimp);
-    centrality_impactparam_ = m_CentInfo->get_quantity(CentralityInfo::PROP::bimp);
-    centrality_mbd_ = m_CentInfo->get_centile(CentralityInfo::PROP::mbd_NS);
-    centrality_mbdquantity_ = m_CentInfo->get_quantity(CentralityInfo::PROP::mbd_NS);
-    std::cout << "Centrality: (bimp,impactparam) = (" << centrality_bimp_ << ", " << centrality_impactparam_ << "); (mbd,mbdquantity) = (" << centrality_mbd_ << ", " << centrality_mbdquantity_ << ")" << std::endl;
-}
-//____________________________________________________________________________..
 PHG4Particle *dNdEtaINTT::GetG4PAncestor(PHG4Particle *p)
 {
     // std::cout << "In GetG4Ancestor: " << std::endl << "start with original particle: ";
@@ -312,10 +294,30 @@ PHG4Particle *dNdEtaINTT::GetG4PAncestor(PHG4Particle *p)
     return prevpart;
 }
 //____________________________________________________________________________..
+void dNdEtaINTT::GetCentralityInfo(PHCompositeNode *topNode)
+{
+    std::cout << "Get centrality info." << std::endl;
+
+    if (!IsData)
+    {
+        centrality_bimp_ = m_CentInfo->get_centile(CentralityInfo::PROP::bimp);
+        centrality_impactparam_ = m_CentInfo->get_quantity(CentralityInfo::PROP::bimp);
+    }
+    centrality_mbd_ = m_CentInfo->get_centile(CentralityInfo::PROP::mbd_NS);
+    centrality_mbdquantity_ = m_CentInfo->get_quantity(CentralityInfo::PROP::mbd_NS);
+
+    // Glauber parameter information
+    ncoll_ = eventheader->get_ncoll();
+    npart_ = eventheader->get_npart();
+
+    std::cout << "Centrality: (bimp,impactparam) = (" << centrality_bimp_ << ", " << centrality_impactparam_ << "); (mbd,mbdquantity) = (" << centrality_mbd_ << ", " << centrality_mbdquantity_ << ")" << std::endl;
+    std::cout << "Glauber parameter information: (ncoll,npart) = (" << ncoll_ << ", " << npart_ << ")" << std::endl;
+}
+//____________________________________________________________________________..
 void dNdEtaINTT::GetTrkrHitInfo(PHCompositeNode *topNode)
 {
     std::cout << "Get TrkrHit info." << std::endl;
-    
+
     TrkrHitSetContainer::ConstRange hitset_range = hitsets->getHitSets(TrkrDefs::TrkrId::inttId);
     for (TrkrHitSetContainer::ConstIterator hitset_iter = hitset_range.first; hitset_iter != hitset_range.second; ++hitset_iter)
     {
@@ -336,7 +338,6 @@ void dNdEtaINTT::GetRecoClusterInfo(PHCompositeNode *topNode)
     std::cout << "Get reconstructed cluster info." << std::endl;
 
     std::vector<int> _NClus = {0, 0};
-    std::vector<int> G4PfromClus_IsValid = {0, 0};
     std::map<int, unsigned int> AncG4P_cluster_count;
     AncG4P_cluster_count.clear();
 
@@ -376,6 +377,8 @@ void dNdEtaINTT::GetRecoClusterInfo(PHCompositeNode *topNode)
             ClusZSize_.push_back(cluster->getZSize());
             ClusLadderZId_.push_back(InttDefs::getLadderZId(ckey));
             ClusLadderPhiId_.push_back(InttDefs::getLadderPhiId(ckey));
+            ClusTrkrHitSetKey_.push_back(hitsetkey);
+            ClusTimeBucketId_.push_back(InttDefs::getTimeBucketId(ckey));
             if (!IsData)
             {
                 // std::cout << "This cluster: (x,y,z)=(" << globalpos(0) << "," << globalpos(1) << "," << globalpos(2) << ")" << std::endl;
@@ -384,19 +387,11 @@ void dNdEtaINTT::GetRecoClusterInfo(PHCompositeNode *topNode)
 
                 if (g4p)
                 {
-                    G4PfromClus_PID_.push_back(g4p->get_pid());
-                    G4PfromClus_IsValid[0]++;
-
                     PHG4Particle *g4pancestor = GetG4PAncestor(g4p);
 
                     if (g4pancestor && AncG4P_cluster_count[g4pancestor->get_track_id()] == 0)
                     {
                         UniqueAncG4P_PID_.push_back(g4pancestor->get_pid());
-                        UniqueAncG4P_TrackPID_.push_back(g4pancestor->get_track_id());
-                        UniqueAncG4P_VtxPID_.push_back(g4pancestor->get_vtx_id());
-                        UniqueAncG4P_ParentPID_.push_back(g4pancestor->get_parent_id());
-                        UniqueAncG4P_PrimaryPID_.push_back(g4pancestor->get_primary_id());
-                        UniqueAncG4P_IonCharge_.push_back(g4pancestor->get_IonCharge());
                         TLorentzVector g4pAncvec;
                         g4pAncvec.SetPxPyPzE(g4pancestor->get_px(), g4pancestor->get_py(), g4pancestor->get_pz(), g4pancestor->get_e());
                         UniqueAncG4P_E_.push_back(g4pancestor->get_e());
@@ -407,19 +402,14 @@ void dNdEtaINTT::GetRecoClusterInfo(PHCompositeNode *topNode)
                         ++AncG4P_cluster_count[g4pancestor->get_track_id()];
                     }
                 }
-                else
-                {
-                    G4PfromClus_PID_.push_back(INT_MAX);
-                    G4PfromClus_IsValid[1]++;
-                }
             }
         }
     }
 
     NClus_ = _NClus[0] + _NClus[1];
-    Layer1_occupancy_ = _NClus[0];
+    NClus_Layer1_ = _NClus[0];
     std::cout << "Number of clusters (total,0,1)=(" << NClus_ << "," << _NClus[0] << "," << _NClus[1] << ")" << std::endl;
-    std::cout << "Size of G4PfromClus_PID_=" << G4PfromClus_PID_.size() << "; Number of non-null PHG4Particle ptr=" << G4PfromClus_IsValid[0] << ", number of null PHG4Particle ptr=" << G4PfromClus_IsValid[1] << std::endl;
+    NGenPart_ = UniqueAncG4P_PID_.size();
 
     int uniqueAncG4P = 0, N_MatchedClus = 0;
     for (auto it = AncG4P_cluster_count.cbegin(); it != AncG4P_cluster_count.cend(); ++it)
@@ -427,8 +417,6 @@ void dNdEtaINTT::GetRecoClusterInfo(PHCompositeNode *topNode)
         // std::cout << "(Ancestor G4P trackID, matched cluster counts)=(" << it->first << "," << it->second << ")" << std::endl;
         uniqueAncG4P++;
         N_MatchedClus += it->second;
-        UniqueAncG4P_TrackID_.push_back(it->first);
-        UniqueAncG4P_NClus_.push_back(it->second);
     }
     std::cout << "(# of unique ancestor G4P, # of matched clusters, ratio)=(" << uniqueAncG4P << "," << N_MatchedClus << "," << (float)uniqueAncG4P / N_MatchedClus << ")" << std::endl;
 }
@@ -438,50 +426,8 @@ void dNdEtaINTT::GetTruthPVInfo(PHCompositeNode *topNode)
     std::cout << "Get truth primary vertex info." << std::endl;
 
     auto vrange = m_truth_info->GetPrimaryVtxRange();
-    const auto prange = m_truth_info->GetPrimaryParticleRange();
 
-    std::map<int, unsigned int> vertex_particle_count;
-    vertex_particle_count.clear();
-    std::map<int, unsigned int> vertex_hit_count;
-    vertex_hit_count.clear();
-
-    for (auto iter = prange.first; iter != prange.second; ++iter) // process all primary paricle
-    {
-        ++vertex_particle_count[iter->second->get_vtx_id()];
-
-        // PHG4Particle *particle = iter->second;
-        std::set<PHG4Hit *> g4hits = truth_eval->all_truth_hits(iter->second);
-        for (auto hit : g4hits)
-        {
-            std::vector<int> layerID{3, 4, 5, 6};
-            std::vector<int>::iterator it = std::find(layerID.begin(), layerID.end(), hit->get_layer());
-            if (it != layerID.end())
-            {
-                ++vertex_hit_count[iter->second->get_vtx_id()];
-            }
-        }
-    }
-
-    std::map<int, unsigned int> vertex_cluster_count;
-    vertex_cluster_count.clear();
-    for (const auto &hitsetkey : dst_clustermap->getHitSetKeys(TrkrDefs::inttId))
-    {
-        auto range = dst_clustermap->getClusters(hitsetkey);
-        for (auto iter = range.first; iter != range.second; ++iter)
-        {
-            PHG4Particle *g4particle = clustereval->max_truth_particle_by_cluster_energy(iter->first);
-            if (g4particle)
-            {
-                if (g4particle->get_parent_id() != 0) // primary particles
-                    continue;
-
-                ++vertex_cluster_count[g4particle->get_vtx_id()];
-            }
-        }
-    }
-
-    // int TruthPV_idx = 0;
-    int TruthPV_idx = 0;
+    int NTruthPV = 0;
     for (auto iter = vrange.first; iter != vrange.second; ++iter) // process all primary vertices
     {
         const int point_id = iter->first;
@@ -489,34 +435,21 @@ void dNdEtaINTT::GetTruthPVInfo(PHCompositeNode *topNode)
 
         if (point)
         {
-            TruthPV_x_.push_back(point->get_x());
-            TruthPV_y_.push_back(point->get_y());
-            TruthPV_z_.push_back(point->get_z());
-            TruthPV_Npart_.push_back(vertex_particle_count[point_id]);
-            TruthPV_Nhits_.push_back(vertex_hit_count[point_id]);
-            TruthPV_NClus_.push_back(vertex_cluster_count[point_id]);
-            TruthPV_t_.push_back(point->get_t());
-            TruthPV_embed_.push_back(m_truth_info->isEmbededVtx(point_id));
-
             if (m_truth_info->isEmbededVtx(point_id) == 0)
             {
                 TruthPV_trig_x_ = point->get_x();
                 TruthPV_trig_y_ = point->get_y();
                 TruthPV_trig_z_ = point->get_z();
-                TruthPV_trig_Npart_ = vertex_particle_count[point_id];
             }
 
-            // std::cout << "TruthPV_idx = " << TruthPV_idx << "(x,y,z,t,embed)
-            // = (" << point->get_x() << "," << point->get_y() << "," <<
-            // point->get_z() << "," << point->get_t() << "," <<
-            // m_truth_info->isEmbededVtx(point_id) << ")" << std::endl;
-            std::cout << "TruthPV_idx = " << TruthPV_idx << "(x,y,z,t,Npart,NIntthits,NInttClus,embed) = (" << point->get_x() << "," << point->get_y() << "," << point->get_z() << "," << point->get_t() << "," << vertex_particle_count[point_id] << ","
-                      << vertex_hit_count[point_id] << "," << vertex_cluster_count[point_id] << "," << m_truth_info->isEmbededVtx(point_id) << ")" << std::endl;
-            TruthPV_idx++;
+            NTruthPV++;
         }
     }
 
-    NTruthVtx_ = (int)TruthPV_x_.size();
+    // print out the truth vertex information
+    std::cout << "Number of truth primary vertices = " << NTruthPV << "; Triggered truth vtx pos (x,y,z)=(" << TruthPV_trig_x_ << "," << TruthPV_trig_y_ << "," << TruthPV_trig_z_ << ")" << std::endl;
+
+    NTruthVtx_ = NTruthPV;
 }
 //____________________________________________________________________________..
 void dNdEtaINTT::ResetVectors()
@@ -534,30 +467,13 @@ void dNdEtaINTT::ResetVectors()
     CleanVec(ClusZSize_);
     CleanVec(ClusLadderZId_);
     CleanVec(ClusLadderPhiId_);
+    CleanVec(ClusTrkrHitSetKey_);
+    CleanVec(ClusTimeBucketId_);
     CleanVec(TrkrHitRow_);
     CleanVec(TrkrHitColumn_);
-    CleanVec(TruthPV_x_);
-    CleanVec(TruthPV_y_);
-    CleanVec(TruthPV_z_);
-    CleanVec(TruthPV_Npart_);
-    CleanVec(TruthPV_Nhits_);
-    CleanVec(TruthPV_NClus_);
-    CleanVec(TruthPV_t_);
-    CleanVec(TruthPV_embed_);
-    CleanVec(G4PfromClus_PID_);
-    CleanVec(UniqueAncG4P_Px_);
-    CleanVec(UniqueAncG4P_Py_);
-    CleanVec(UniqueAncG4P_Pz_);
     CleanVec(UniqueAncG4P_Pt_);
     CleanVec(UniqueAncG4P_Eta_);
     CleanVec(UniqueAncG4P_Phi_);
     CleanVec(UniqueAncG4P_E_);
-    CleanVec(UniqueAncG4P_TrackID_);
-    CleanVec(UniqueAncG4P_NClus_);
-    CleanVec(UniqueAncG4P_IonCharge_);
     CleanVec(UniqueAncG4P_PID_);
-    CleanVec(UniqueAncG4P_TrackPID_);
-    CleanVec(UniqueAncG4P_VtxPID_);
-    CleanVec(UniqueAncG4P_ParentPID_);
-    CleanVec(UniqueAncG4P_PrimaryPID_);
 }

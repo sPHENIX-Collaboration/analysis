@@ -14,26 +14,36 @@
 #include "GenHadron.h"
 #include "Tracklet.h"
 #include "Vertex.h"
-#include "misalignment.h"
 #include "pdgidfunc.h"
 
 int main(int argc, char *argv[])
 {
-    // Usage: ./TrackletAna [NevtToRun] [skip] [layer] [randhit_case] [clusplit_case] [dRCut]
-    // Example: ./TrackletAna 2000 0 12 0 0 0 0.5
-    int NevtToRun_ = TString(argv[1]).Atoi();
-    int skip = TString(argv[2]).Atoi();
-    float dRCut = TString(argv[3]).Atof(); // Nominal: 0.5, variation \pm 0.1
+    // Usage: ./TrackletAna [isdata] [evt-vtx map file] [infile] [outfile] [NevtToRun] [skip] [dRCut]
+    bool IsData = (TString(argv[1]).Atoi() == 1) ? true : false;
+    TString EvtVtx_map_filename = TString(argv[2]);
+    TString infilename = TString(argv[3]);
+    TString outfilename = TString(argv[4]);
+    int NevtToRun_ = TString(argv[5]).Atoi();
+    int skip = TString(argv[6]).Atoi();
+    float dRCut = TString(argv[7]).Atof();
 
     int iniEvt = skip;
 
+    cout << "[Run Info] Event-vertex map file = " << EvtVtx_map_filename << endl
+            << "           Input file = " << infilename << endl
+            << "           Output file = " << outfilename << endl
+            << "           Number of events to run = " << NevtToRun_ << endl
+            << "           Skip = " << skip << endl
+            << "           dRCut = " << dRCut << endl
+            << "-----------" << endl;
+
     cout << "[Run Info] NevtToRun: " << NevtToRun_ << ", skip: " << skip << ", dRCut: " << dRCut << endl;
-
+/*
     // Optimized cut values for vertex finding algorithm
-    TString EvtVtx_map_filename = "/sphenix/user/hjheng/TrackletAna/minitree/INTT/VtxEvtMap_ana382_zvtx-20cm/INTTVtxZ.root";
-    TString infilename = "/sphenix/user/hjheng/TrackletAna/data/INTT/ana382_zvtx-20cm/INTTRecoClusters_sim_merged.root";
-    TString outfilename = Form("/sphenix/user/hjheng/TrackletAna/minitree/INTT/TrackletMinitree_ana382_zvtx-20cm/TrackletAna_minitree_Evt%dto%d_dRcut%s.root", iniEvt, iniEvt + NevtToRun_, number_to_string(dRCut).c_str());
-
+    // TString EvtVtx_map_filename = "/sphenix/user/hjheng/TrackletAna/minitree/INTT/VtxEvtMap_ana382_zvtx-20cm_dummyAlignParams/INTTVtxZ.root";
+    // TString infilename = "/sphenix/user/hjheng/TrackletAna/data/INTT/ana382_zvtx-20cm_dummyAlignParams/sim/INTTRecoClusters_sim_merged.root";
+    // TString outfilename = Form("/sphenix/user/hjheng/TrackletAna/minitree/INTT/TrackletMinitree_ana382_zvtx-20cm_dummyAlignParams/TrackletAna_minitree_Evt%dto%d_dRcut%s.root", iniEvt, iniEvt + NevtToRun_, number_to_string(dRCut).c_str());
+*/
     TrackletData tkldata = {};
 
     std::map<int, vector<float>> EvtVtx_map = EvtVtx_map_tklcluster(EvtVtx_map_filename.Data());
@@ -59,6 +69,11 @@ int main(int argc, char *argv[])
     t->SetBranchAddress("ClusX", &ClusX);
     t->SetBranchAddress("ClusY", &ClusY);
     t->SetBranchAddress("ClusZ", &ClusZ);
+    t->SetBranchAddress("UniqueAncG4P_PID", &UniqueAncG4P_PID);
+    t->SetBranchAddress("UniqueAncG4P_Pt", &UniqueAncG4P_Pt);
+    t->SetBranchAddress("UniqueAncG4P_Eta", &UniqueAncG4P_Eta);
+    t->SetBranchAddress("UniqueAncG4P_Phi", &UniqueAncG4P_Phi);
+    t->SetBranchAddress("UniqueAncG4P_E", &UniqueAncG4P_E);
 
     TFile *outfile = new TFile(outfilename, "RECREATE");
     TTree *minitree = new TTree("minitree", "Minitree of Reconstructed Tracklets");
@@ -114,7 +129,24 @@ int main(int argc, char *argv[])
         // Tracklet reconstruction: proto-tracklets -> reco-tracklets -> gen-hadron matching
         ProtoTracklets(tkldata, dRCut);
         RecoTracklets(tkldata);
+        // Generated charged hadrons
+        for (size_t ihad = 0; ihad < UniqueAncG4P_PID->size(); ihad++)
+        {
+            if (is_chargedHadron(UniqueAncG4P_PID->at(ihad)) == false)
+                continue;
 
+            GenHadron *genhadron = new GenHadron(UniqueAncG4P_Pt->at(ihad), UniqueAncG4P_Eta->at(ihad), UniqueAncG4P_Phi->at(ihad), UniqueAncG4P_E->at(ihad));
+            tkldata.GenHadrons.push_back(genhadron);
+            tkldata.GenHadron_Pt.push_back(UniqueAncG4P_Pt->at(ihad));
+            tkldata.GenHadron_eta.push_back(UniqueAncG4P_Eta->at(ihad));
+            tkldata.GenHadron_phi.push_back(UniqueAncG4P_Phi->at(ihad));
+            tkldata.GenHadron_E.push_back(UniqueAncG4P_E->at(ihad));
+        }
+        tkldata.NGenHadron = tkldata.GenHadrons.size();
+
+        GenMatch_Recotkl(tkldata);
+
+        cout << "NCluster layer 1 = " << tkldata.NClusLayer1 << "; NRecotkl_Raw = " << tkldata.NRecotkl_Raw << "; NRecotkl_GenMatched = " << tkldata.NRecotkl_GenMatched << endl;
         minitree->Fill();
         ResetVec(tkldata);
         cout << "----------" << endl;

@@ -46,15 +46,17 @@ void Fun4All_EMJetVal(const char *filelisttruth = "dst_truth_jet.list",
   se->Verbosity(verbosity);
   recoConsts *rc = recoConsts::instance();
 
+  
   PHG4CentralityReco *cent = new PHG4CentralityReco();
   cent->Verbosity(0);
   cent->GetCalibrationParameters().ReadFromFile("centrality", "xml", 0, 0, string(getenv("CALIBRATIONROOT")) + string("/Centrality/"));
   se->registerSubsystem( cent );
-
+  
   HIJetReco();
  
 
   // JetValidation *myJetVal = new JetValidation("AntiKt_Tower_r04_Sub1", "AntiKt_Truth_r04", outname);
+  
   EMJetVal *myEMJetVal = new EMJetVal("AntiKt_Tower_r04_Sub1","AntiKt_Truth_r04", outname);
 
   myEMJetVal->setPtRange(5, 100);
@@ -64,6 +66,7 @@ void Fun4All_EMJetVal(const char *filelisttruth = "dst_truth_jet.list",
   myEMJetVal->doSeeds(1);
   //  se->registerSubsystem(myJetVal);
   se->registerSubsystem(myEMJetVal);
+  
 
   Fun4AllInputManager *intrue = new Fun4AllDstInputManager("DSTtruth");
   intrue->AddListFile(filelisttruth,1);
