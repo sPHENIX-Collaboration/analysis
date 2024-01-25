@@ -198,7 +198,7 @@ int main(int argc, char *argv[])
                 float edge1 = INTTlayer1[i]->Edge().first - (INTTlayer2[j]->Edge().second - INTTlayer1[i]->Edge().first) / (rho2 - rho1) * rho1;
                 float edge2 = INTTlayer1[i]->Edge().second - (INTTlayer2[j]->Edge().first - INTTlayer1[i]->Edge().second) / (rho2 - rho1) * rho1;
 
-                if (debug && event == 24)
+                if (debug)
                 {
                     cout << "----------" << endl
                          << "Cluster pair (i,j) = (" << i << "," << j << "); position (x1,y1,z1,x2,y2,z2) mm =(" << INTTlayer1[i]->posX() * 10. << "," << INTTlayer1[i]->posY() * 10. << "," << INTTlayer1[i]->posZ() * 10. << ","
