@@ -549,7 +549,7 @@ void JetBkgdSub::GetCentInfo(PHCompositeNode *topNode)
     }
   else
     {
-      m_centrality = cent_node->get_centile(CentralityInfo::PROP::mbd_NS);
+      m_centrality = (int)(100*cent_node->get_centile(CentralityInfo::PROP::mbd_NS));
 
       PHNodeIterator iter(topNode);
       PHCompositeNode *mbdNode = dynamic_cast<PHCompositeNode *>(iter.findFirst("PHCompositeNode", "MBD"));
