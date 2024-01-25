@@ -12,21 +12,27 @@
 require 'fileutils'
 
 # top directory to copy from/to
-copy_from = "/sphenix/user/danderson/eec/SCorrelatorUtilities"
-copy_to   = "/sphenix/user/danderson/sphenix/analysis/AndersonAnalysisModules/ColdQcdCorrelatorAnalysis/SCorrelatorUtilities"
+copy_from = "/sphenix/user/danderson/tracking/TrackMatchingComparison"
+copy_to   = "/sphenix/user/danderson/sphenix/analysis/AndersonAnalysisModules/TrackStudies/STrackMatchingComparator"
 
 # what files to copy
 to_copy = [
   "README.md",
-  "CalTools.h",
-  "Constants.h",
-  "CstTools.h",
-  "EvtTools.h",
-  "FlowTools.h",
-  "GenTools.h",
-  "JetTools.h",
-  "TrkTools.h",
-  "scripts/copy-to-analysis.rb"
+  "MakeNewMatcherPlots.cxx",
+  "MakeNewMatcherTuplePlots.cxx",
+  "MakeOldEvaluatorPlots.cxx",
+  "CompareOldVsNewPlots.cxx",
+  "macros/Fun4All_RunNewTruthMatcher.C",
+  "macros/G4Setup_sPHENIX.C",
+  "macros/QuickTreePlotter.C",
+  "macros/QuickTuplePlotter.C",
+  "macros/MergeFiles.C",
+  "scripts/copy-to-analysis.rb",
+  "scripts/RunNewTruthMatcherOnCondor.sh",
+  "scripts/RunNewTruthMatcherOnCondor.job",
+  "scripts/HAddFilesFromPattern.rb",
+  "scripts/MergeCondorFiles.rb",
+  "scripts/MergeFiles.rb"
 ]
 
 # do copying

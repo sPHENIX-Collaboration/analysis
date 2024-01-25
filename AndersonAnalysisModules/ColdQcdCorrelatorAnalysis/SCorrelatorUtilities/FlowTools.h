@@ -37,16 +37,16 @@ namespace SColdQcdCorrelatorAnalysis {
     struct FlowInfo {
 
       // data members
-      int   id   = -1;
-      int   type = -1;
-      float mass = -999.;
-      float eta  = -999.;
-      float phi  = -999.;
-      float ene  = -999.;
-      float px   = -999.;
-      float py   = -999.;
-      float pz   = -999.;
-      float pt   = -999.;
+      int    id   = numeric_limits<int>::max();
+      int    type = numeric_limits<int>::max();
+      double mass = numeric_limits<double>::max();
+      double eta  = numeric_limits<double>::max();
+      double phi  = numeric_limits<double>::max();
+      double ene  = numeric_limits<double>::max();
+      double px   = numeric_limits<double>::max();
+      double py   = numeric_limits<double>::max();
+      double pz   = numeric_limits<double>::max();
+      double pt   = numeric_limits<double>::max();
 
       void SetInfo(const ParticleFlowElement* flow) {
         id   = flow -> get_id();
@@ -63,16 +63,16 @@ namespace SColdQcdCorrelatorAnalysis {
       }  // end 'SetInfo(ParticleFlowElement*)'
 
       void Reset() {
-        id   = -1;
-        type = -1;
-        mass = -999.;
-        eta  = -999.;
-        phi  = -999.;
-        ene  = -999.;
-        px   = -999.;
-        py   = -999.;
-        pz   = -999.;
-        pt   = -999.;
+        id   = numeric_limits<int>::max();
+        type = numeric_limits<int>::max();
+        mass = numeric_limits<double>::max();
+        eta  = numeric_limits<double>::max();
+        phi  = numeric_limits<double>::max();
+        ene  = numeric_limits<double>::max();
+        px   = numeric_limits<double>::max();
+        py   = numeric_limits<double>::max();
+        pz   = numeric_limits<double>::max();
+        pt   = numeric_limits<double>::max();
         return;
       }  // end 'Reset()'
 
@@ -181,11 +181,11 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
-    bool IsInFlowAcceptance(const FlowInfo& flow, const FlowInfo& minimum, const FlowInfo& maximum) {
+    bool IsInAcceptance(const FlowInfo& flow, const FlowInfo& minimum, const FlowInfo& maximum) {
 
       return ((flow >= minimum) && (flow <= maximum));
 
-    }  // end 'IsInFlowAcceptance(FlowInfo&, FlowInfo&, FlowInfo&)'
+    }  // end 'IsInAcceptance(FlowInfo&, FlowInfo&, FlowInfo&)'
 
   }  // end SCorrelatorUtilities namespace
 }  // end SColdQcdCorrealtorAnalysis namespace

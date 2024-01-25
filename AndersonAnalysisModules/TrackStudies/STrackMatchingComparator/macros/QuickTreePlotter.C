@@ -1,58 +1,46 @@
 // ----------------------------------------------------------------------------
-// 'QuickTuplePlotter.C
+// 'QuickTreePlotter.C
 // Derek Anderson
-// 06.02.2023
+// 08.24.2023
 //
-// Use to quick plot some leaves from an ntuple.
+// Use to quick plot some leaves from a TTree
 // ----------------------------------------------------------------------------
 
 #include <vector>
 #include <iostream>
 #include "TH1.h"
 #include "TH2.h"
+#include "TTree.h"
 #include "TFile.h"
 #include "TError.h"
 #include "TString.h"
-#include "TNtuple.h"
 #include "TDirectory.h"
 
 using namespace std;
 
 
 
-void QuickTuplePlotter() {
+void QuickTreePlotter() {
 
   // lower verbosity
   gErrorIgnoreLevel = kError;
-  cout << "\n  Beginning quick tuple plotting..." << endl;
+  cout << "\n  Beginning quick tree plotting..." << endl;
 
   // i/o parameters
-  const TString sOutput  = "truthPhiCheck.allVsWeirdVsNormal.pt2040n100weird2pim.d10m7y2023.root";
-  const TString sInput   = "input/embed_only/final_merge/sPhenixG4_forPtCheck_embedScanOn_embedOnly.pt2040n100pim.d8m5y2023.root";
-  const TString sInTuple = "ntp_track";
+  const TString sOutput  = "newMatcher.allVsWeirdVsNormal.pt020n15pim.d24m8y2023.root";
+  const TString sInput   = "input/merged/sPhenixG4_testingNewMatcher_newMatcher_run0.pt020n15pim.d14m8y2023.root";
+  const TString sInTree = "T";
 
   // cuts to apply and labels
   const vector<TString> vecCutsToApply = {
-    "(abs(vz)<10)&&(nintt>=1)&&(nmaps>2)&&(ntpc>35)&&(pt<100)&&(quality<10)",
-    "(abs(vz)<10)&&(nintt>=1)&&(nmaps>2)&&(ntpc>35)&&(pt<100)&&(quality<10)&&((pt/gpt<0.2)||(pt/gpt>1.2))",
-    "(abs(vz)<10)&&(nintt>=1)&&(nmaps>2)&&(ntpc>35)&&(pt<100)&&(quality<10)&&((pt/gpt>=0.2)&&(pt/gpt<=1.2))",
-    "(abs(vz)<10)&&(nintt>=1)&&(nmaps>2)&&(ntpc>35)&&(pt<20)&&(quality<10)",
-    "(abs(vz)<10)&&(nintt>=1)&&(nmaps>2)&&(ntpc>35)&&(pt<20)&&(quality<10)&&((pt/gpt<0.2)||(pt/gpt>1.2))",
-    "(abs(vz)<10)&&(nintt>=1)&&(nmaps>2)&&(ntpc>35)&&(pt<20)&&(quality<10)&&((pt/gpt>=0.2)&&(pt/gpt<=1.2))",
-    "(abs(vz)<10)&&(nintt>=1)&&(nmaps>2)&&(ntpc>35)&&(pt>20)&&(pt<100)&&(quality<10)",
-    "(abs(vz)<10)&&(nintt>=1)&&(nmaps>2)&&(ntpc>35)&&(pt>20)&&(pt<100)&&(quality<10)&&((pt/gpt<0.2)||(pt/gpt>1.2))",
-    "(abs(vz)<10)&&(nintt>=1)&&(nmaps>2)&&(ntpc>35)&&(pt>20)&&(pt<100)&&(quality<10)&&((pt/gpt>=0.2)&&(pt/gpt<=1.2))"
+    "(is_matched==1)",
+    "(is_matched==1)",
+    "(is_matched==1)"
   };
   const vector<TString> vecCutLabels = {
     "All",
     "Weird",
-    "Normal",
-    "AllPtL20",
-    "WeirdPtL20",
-    "NormalPtL20",
-    "AllPtG20",
-    "WeirdPtG20",
-    "NormalPtG20"
+    "Normal"
   };
 
   // 1d things to draw and histogram names
@@ -118,8 +106,8 @@ void QuickTuplePlotter() {
   cout << "    Constructed histogram lists." << endl;
 
   // open files
-  TFile *fOutput = new TFile(sOutput.Data(), "recreate");
-  TFile *fInput  = new TFile(sInput.Data(),  "read");
+  TFile* fOutput = new TFile(sOutput.Data(), "recreate");
+  TFile* fInput  = new TFile(sInput.Data(),  "read");
   if (!fOutput || !fInput) {
     cerr << "PANIC: couldn't open a file!\n"
          << "       fOutput = " << fOutput << ", fInput = " << fInput << "\n"
@@ -129,8 +117,8 @@ void QuickTuplePlotter() {
   cout << "    Opened files." << endl;
 
   // grab input tuple
-  TNtuple *ntToDrawFrom = (TNtuple*) fInput -> Get(sInTuple.Data());
-  if (!ntToDrawFrom) {
+  TTree* tToDrawFrom = (TNtuple*) fInput -> Get(sInTree.Data());
+  if (!tToDrawFrom) {
     cerr << "PANIC: couldn't grab input tuple!\n" << endl;
     return;
   }
@@ -153,7 +141,7 @@ void QuickTuplePlotter() {
       cout << "      Drawing '" << sDrawArg1D.Data() << "'..." << endl;
 
       // draw to histogram
-      ntToDrawFrom -> Draw(sDrawArg1D.Data(), vecCutsToApply[iCutToApply].Data());
+      tToDrawFrom -> Draw(sDrawArg1D.Data(), vecCutsToApply[iCutToApply].Data());
       ++iHistToDraw1D;
     } 
     for (Ssiz_t iToDraw2D = 0; iToDraw2D < nToDraw2D; iToDraw2D++) {
@@ -165,7 +153,7 @@ void QuickTuplePlotter() {
       cout << "      Drawing '" << sDrawArg2D.Data() << "'..." << endl;
 
       // draw to histogram
-      ntToDrawFrom -> Draw(sDrawArg2D.Data(), vecCutsToApply[iCutToApply].Data());
+      tToDrawFrom -> Draw(sDrawArg2D.Data(), vecCutsToApply[iCutToApply].Data());
       ++iHistToDraw2D;
     }
   }  // end cut loop
@@ -175,8 +163,8 @@ void QuickTuplePlotter() {
   const Ssiz_t nHistToDraw1D = vecHistToDraw1D.size();
   const Ssiz_t nHistToDraw2D = vecHistToDraw2D.size();
 
-  TH1D *hHistToDraw1D[nHistToDraw1D];
-  TH2D *hHistToDraw2D[nHistToDraw2D];
+  TH1D* hHistToDraw1D[nHistToDraw1D];
+  TH2D* hHistToDraw2D[nHistToDraw2D];
   for (Ssiz_t iHist1D = 0; iHist1D < nHistToDraw1D; iHist1D++) {
 
     // grab histogram
@@ -207,7 +195,7 @@ void QuickTuplePlotter() {
   cout << "    Closed files." << endl;
 
   // announce end and exit
-  cout << "  Finished quick tuple plotting!\n" << endl;
+  cout << "  Finished quick tree plotting!\n" << endl;
   return;
 
 }

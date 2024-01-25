@@ -12,21 +12,27 @@
 require 'fileutils'
 
 # top directory to copy from/to
-copy_from = "/sphenix/user/danderson/eec/SCorrelatorUtilities"
-copy_to   = "/sphenix/user/danderson/sphenix/analysis/AndersonAnalysisModules/ColdQcdCorrelatorAnalysis/SCorrelatorUtilities"
+copy_from = "/sphenix/user/danderson/tracking/DeltaPtCutStudy"
+copy_to   = "/sphenix/user/danderson/sphenix/analysis/AndersonAnalysisModules/TrackStudies/SDeltaPtCutStudy"
 
 # what files to copy
 to_copy = [
   "README.md",
-  "CalTools.h",
-  "Constants.h",
-  "CstTools.h",
-  "EvtTools.h",
-  "FlowTools.h",
-  "GenTools.h",
-  "JetTools.h",
-  "TrkTools.h",
-  "scripts/copy-to-analysis.rb"
+  "DoDeltaPtCutStudy.C",
+  "scripts/wipe-source.sh",
+  "scripts/copy-to-analysis.rb",
+  "macros/CheckDeltaPtWithBoundaryMasks.cxx",
+  "src/SDeltaPtCutStudy.cc",
+  "src/SDeltaPtCutStudy.h",
+  "src/SDeltaPtCutStudy.io.h",
+  "src/SDeltaPtCutStudy.sys.h",
+  "src/SDeltaPtCutStudy.ana.h",
+  "src/SDeltaPtCutStudy.plot.h",
+  "src/SDeltaPtCutStudyLinkDef.h",
+  "src/autogen.sh",
+  "src/configure.ac",
+  "src/Makefile.am",
+  "src/sphx-build"
 ]
 
 # do copying

@@ -14,6 +14,11 @@
 
 // c++ utilities
 #include <cmath>
+#include <limits>
+#include <string>
+#include <vector>
+#include <utility>
+#include <optional>
 // phool libraries
 #include <phool/phool.h>
 #include <phool/getClass.h>
@@ -26,6 +31,8 @@
 #include <HepMC/GenParticle.h>
 #include <phhepmc/PHHepMCGenEvent.h>
 #include <phhepmc/PHHepMCGenEventMap.h>
+// analysis utilities
+#include "Constants.h"
 
 #pragma GCC diagnostic pop
 
@@ -42,29 +49,30 @@ namespace SColdQcdCorrelatorAnalysis {
 
     struct ParInfo {
 
-      int   pid     = -1;
-      int   status  = 0;
-      int   barcode = -1;
-      int   embedID = -1;
-      float charge  = -999.;
-      float mass    = -999.;
-      float eta     = -999.;
-      float phi     = -999.;
-      float ene     = -999.;
-      float px      = -999.;
-      float py      = -999.;
-      float pz      = -999.;
-      float pt      = -999.;
-      float vx      = -999.;
-      float vy      = -999.;
-      float vz      = -999.;
+      int    pid     = numeric_limits<int>::max();
+      int    status  = numeric_limits<int>::max();
+      int    barcode = numeric_limits<int>::max();
+      int    embedID = numeric_limits<int>::max();
+      float  charge  = numeric_limits<float>::max();
+      double mass    = numeric_limits<double>::max();
+      double eta     = numeric_limits<double>::max();
+      double phi     = numeric_limits<double>::max();
+      double ene     = numeric_limits<double>::max();
+      double px      = numeric_limits<double>::max();
+      double py      = numeric_limits<double>::max();
+      double pz      = numeric_limits<double>::max();
+      double pt      = numeric_limits<double>::max();
+      double vx      = numeric_limits<double>::max();
+      double vy      = numeric_limits<double>::max();
+      double vz      = numeric_limits<double>::max();
+      double vr      = numeric_limits<double>::max();
 
       void SetInfo(const HepMC::GenParticle* particle, const int event) {
         pid     = particle -> pdg_id();
         status  = particle -> status();
         barcode = particle -> barcode();
         embedID = event;
-        charge  = mapPidOntoCharge[pid];
+        charge  = MapPidOntoCharge[pid];
         mass    = particle -> momentum().m();
         eta     = particle -> momentum().eta();
         phi     = particle -> momentum().phi();
@@ -76,26 +84,28 @@ namespace SColdQcdCorrelatorAnalysis {
         vx      = particle -> production_vertex() -> position().x();
         vy      = particle -> production_vertex() -> position().y();
         vz      = particle -> production_vertex() -> position().z();
+        vr      = hypot(vx, vy);
         return;
       };
 
       void Reset() {
-        pid     = -1;
-        status  = 0;
-        barcode = -1;
-        embedID = -1;
-        charge  = -999.;
-        mass    = -999.;
-        eta     = -999.;
-        phi     = -999.;
-        ene     = -999.;
-        px      = -999.;
-        py      = -999.;
-        pz      = -999.;
-        pt      = -999.;
-        vx      = -999.;
-        vy      = -999.;
-        vz      = -999.;
+        pid     = numeric_limits<int>::max();
+        status  = numeric_limits<int>::max();
+        barcode = numeric_limits<int>::max();
+        embedID = numeric_limits<int>::max();
+        charge  = numeric_limits<float>::max();
+        mass    = numeric_limits<double>::max();
+        eta     = numeric_limits<double>::max();
+        phi     = numeric_limits<double>::max();
+        ene     = numeric_limits<double>::max();
+        px      = numeric_limits<double>::max();
+        py      = numeric_limits<double>::max();
+        pz      = numeric_limits<double>::max();
+        pt      = numeric_limits<double>::max();
+        vx      = numeric_limits<double>::max();
+        vy      = numeric_limits<double>::max();
+        vz      = numeric_limits<double>::max();
+        vr      = numeric_limits<double>::max();
         return;
       };
 
@@ -116,7 +126,8 @@ namespace SColdQcdCorrelatorAnalysis {
           "pt",
           "vx",
           "vy",
-          "vz"
+          "vz",
+          "vr"
         };
         return members;
       }  // end 'GetListOfMembers()'
@@ -230,11 +241,11 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
-    bool IsInParAcceptance(const ParInfo& particle, const ParInfo& minimum, const ParInfo& maximum) {
+    bool IsInAcceptance(const ParInfo& particle, const ParInfo& minimum, const ParInfo& maximum) {
 
       return ((particle >= minimum) && (particle <= maximum));
 
-    }  // end 'IsInParAcceptance(ParInfo&, ParInfo&, ParInfo&)'
+    }  // end 'IsInAcceptance(ParInfo&, ParInfo&, ParInfo&)'
 
 
 
@@ -248,7 +259,7 @@ namespace SColdQcdCorrelatorAnalysis {
 
     bool IsHardScatterProduct(const int status) {
 
-      return ((status == 23) || (status == 24));
+      return ((status == HardScatterStatus::First) || (status == HardScatterStatus::Second));
 
     }  // end 'IsHardScatterProduct(int)'
 
@@ -256,10 +267,10 @@ namespace SColdQcdCorrelatorAnalysis {
 
     bool IsParton(const int pid) {
 
-      const bool isLightQuark   = ((pid == 1) || (pid == 2));
-      const bool isStrangeQuark = ((pid == 3) || (pid == 4));
-      const bool isHeavyQuark   = ((pid == 5) || (pid == 6));
-      const bool isGluon        = (pid == 21);
+      const bool isLightQuark   = ((pid == Parton::Down)    || (pid == Parton::Up));
+      const bool isStrangeQuark = ((pid == Parton::Strange) || (pid == Parton::Charm));
+      const bool isHeavyQuark   = ((pid == Parton::Bottom)  || (pid == Parton::Top));
+      const bool isGluon        = (pid == Parton::Gluon);
       return (isLightQuark || isStrangeQuark || isHeavyQuark || isGluon);
 
     }  // end 'IsParton(int)'
@@ -283,7 +294,7 @@ namespace SColdQcdCorrelatorAnalysis {
     float GetParticleCharge(const int pid) {
 
       // particle charge
-      float charge = mapPidOntoCharge[abs(pid)];
+      float charge = MapPidOntoCharge[abs(pid)];
 
       // if antiparticle, flip charge and return
       if (pid < 0) {
@@ -292,6 +303,105 @@ namespace SColdQcdCorrelatorAnalysis {
       return charge;
 
     }  // end 'GetParticleCharge(int)'
+
+
+
+    vector<int> GrabSubevents(PHCompositeNode* topNode, optional<vector<int>> evtsToGrab = nullopt) {
+
+      // instantiate vector to hold subevents
+      vector<int> subevents;
+  
+      PHHepMCGenEventMap* mcEvtMap = GetMcEventMap(topNode);
+      for (
+        PHHepMCGenEventMap::ConstIter itEvt = mcEvtMap -> begin();
+        itEvt != mcEvtMap -> end();
+        ++itEvt
+      ) {
+
+        // grab event id
+        const int embedID = itEvt -> second -> get_embedding_id();
+
+        // if selecting certain subevents, check if matched
+        bool addToList = false;
+        if (evtsToGrab.has_value()) {
+          for (const int idToCheck : evtsToGrab.value()) {
+            if (embedID == idToCheck) {
+              addToList = true;
+              break;
+            }
+          }  // end evtsToGrab loop
+        } else {
+          addToList = true;
+        }
+
+        // add id to list if needed
+        if (addToList) subevents.push_back(embedID);
+      }
+      return subevents;
+
+    }  // end 'GrabSubevents(PHCompositeNode*, optional<vector<int>>)'
+
+
+
+    bool IsSubEvtGood(const int embedID, const int option, const bool isEmbed) {
+
+      // set ID of signal
+      int signalID = SubEvt::NotEmbedSignal;
+      if (isEmbed) {
+        signalID = SubEvt::EmbedSignal;
+      }
+
+      bool isSubEvtGood = true;
+      switch (option) {
+
+        // consider everything
+        case SubEvtOpt::Everything:
+          isSubEvtGood = true;
+          break;
+
+        // only consider signal event
+        case SubEvtOpt::OnlySignal:
+          isSubEvtGood = (embedID == signalID);
+          break;
+
+        // only consider background events
+        case SubEvtOpt::AllBkgd:
+          isSubEvtGood = (embedID <= SubEvt::Background);
+          break;
+
+        // only consider primary background event
+        case SubEvtOpt::PrimaryBkgd:
+          isSubEvtGood = (embedID == SubEvt::Background);
+          break;
+
+        // only consider pileup events
+        case SubEvtOpt::Pileup:
+          isSubEvtGood = (embedID < SubEvt::Background);
+          break;
+
+        // by default do nothing
+        default:
+          isSubEvtGood = true;
+          break;
+      }
+      return isSubEvtGood;
+
+    }  // end 'IsSubEvtGood(int, int, bool)'
+
+
+
+    bool IsSubEvtGood(const int embedID, vector<int> subEvtsToUse) {
+
+      bool isSubEvtGood = false;
+      for (const int evtToUse : subEvtsToUse) {
+        if (embedID == evtToUse) {
+          isSubEvtGood = true;
+          break;
+        }
+      }
+      return isSubEvtGood;
+
+    }  // end 'IsSubEvtGood(int, vector<int>)'
 
   }  // end SCorrelatorUtilities namespace
 }  // end SColdQcdCorrealtorAnalysis namespace

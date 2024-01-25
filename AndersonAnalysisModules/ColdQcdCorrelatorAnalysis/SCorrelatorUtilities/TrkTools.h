@@ -12,6 +12,9 @@
 
 // c++ utilities
 #include <array>
+#include <limits>
+#include <string>
+#include <vector>
 #include <cassert>
 #include <utility>
 // root utilities
@@ -59,27 +62,27 @@ namespace SColdQcdCorrelatorAnalysis {
     struct TrkInfo {
 
       // data members
-      int    id         = -1;
-      int    nMvtxLayer = -1;
-      int    nInttLayer = -1;
-      int    nTpcLayer  = -1;
-      int    nMvtxClust = -1;
-      int    nInttClust = -1;
-      int    nTpcClust  = -1;
-      double phi        = -999.;
-      double ene        = -999.;
-      double px         = -999.;
-      double py         = -999.;
-      double pz         = -999.;
-      double pt         = -999.;
-      double eta        = -999.;
-      double dcaXY      = -999.;
-      double dcaZ       = -999.;
-      double ptErr      = -999.;
-      double quality    = -999.;
-      double vtxX       = -999.;
-      double vtxY       = -999.;
-      double vtxZ       = -999.;
+      int    id         = numeric_limits<int>::max();
+      int    nMvtxLayer = numeric_limits<int>::max();
+      int    nInttLayer = numeric_limits<int>::max();
+      int    nTpcLayer  = numeric_limits<int>::max();
+      int    nMvtxClust = numeric_limits<int>::max();
+      int    nInttClust = numeric_limits<int>::max();
+      int    nTpcClust  = numeric_limits<int>::max();
+      double phi        = numeric_limits<double>::max();
+      double ene        = numeric_limits<double>::max();
+      double px         = numeric_limits<double>::max();
+      double py         = numeric_limits<double>::max();
+      double pz         = numeric_limits<double>::max();
+      double pt         = numeric_limits<double>::max();
+      double eta        = numeric_limits<double>::max();
+      double dcaXY      = numeric_limits<double>::max();
+      double dcaZ       = numeric_limits<double>::max();
+      double ptErr      = numeric_limits<double>::max();
+      double quality    = numeric_limits<double>::max();
+      double vtxX       = numeric_limits<double>::max();
+      double vtxY       = numeric_limits<double>::max();
+      double vtxZ       = numeric_limits<double>::max();
 
       void SetInfo(SvtxTrack* track, PHCompositeNode* topNode) {
 
@@ -113,27 +116,27 @@ namespace SColdQcdCorrelatorAnalysis {
       }  // end 'SetInfo(SvtxTrack*, PHCompositeNode*)'
 
       void Reset() {
-        id         = -1;
-        nMvtxLayer = -1;
-        nInttLayer = -1;
-        nTpcLayer  = -1;
-        nMvtxClust = -1;
-        nInttClust = -1;
-        nTpcClust  = -1;
-        eta        = -999.;
-        phi        = -999.;
-        px         = -999.;
-        py         = -999.;
-        pz         = -999.;
-        pt         = -999.;
-        ene        = -999.;
-        dcaXY      = -999.;
-        dcaZ       = -999.;
-        ptErr      = -999.;
-        quality    = -999.;
-        vtxX       = -999.;
-        vtxY       = -999.;
-        vtxZ       = -999.;
+        id         = numeric_limits<int>::max();
+        nMvtxLayer = numeric_limits<int>::max();
+        nInttLayer = numeric_limits<int>::max();
+        nTpcLayer  = numeric_limits<int>::max();
+        nMvtxClust = numeric_limits<int>::max();
+        nInttClust = numeric_limits<int>::max();
+        nTpcClust  = numeric_limits<int>::max();
+        eta        = numeric_limits<double>::max();
+        phi        = numeric_limits<double>::max();
+        px         = numeric_limits<double>::max();
+        py         = numeric_limits<double>::max();
+        pz         = numeric_limits<double>::max();
+        pt         = numeric_limits<double>::max();
+        ene        = numeric_limits<double>::max();
+        dcaXY      = numeric_limits<double>::max();
+        dcaZ       = numeric_limits<double>::max();
+        ptErr      = numeric_limits<double>::max();
+        quality    = numeric_limits<double>::max();
+        vtxX       = numeric_limits<double>::max();
+        vtxY       = numeric_limits<double>::max();
+        vtxZ       = numeric_limits<double>::max();
         return;
       }  // end 'Reset()'
 
@@ -259,11 +262,11 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
-    bool IsInTrackAcceptance(const TrkInfo& trk, const TrkInfo& minimum, const TrkInfo& maximum) {
+    bool IsInAcceptance(const TrkInfo& trk, const TrkInfo& minimum, const TrkInfo& maximum) {
 
       return ((trk >= minimum) && (trk <= maximum));
 
-    }  // end 'IsInTrackAcceptance(TrkInfo&, TrkInfo&, TrkInfo&)'
+    }  // end 'IsInAcceptance(TrkInfo&, TrkInfo&, TrkInfo&)'
 
 
 
@@ -531,7 +534,7 @@ namespace SColdQcdCorrelatorAnalysis {
       if (bestMatch) {
         matchID = bestMatch -> get_barcode();
       } else {
-        matchID = -1;
+        matchID = numeric_limits<int>::max();
       }
       return matchID;
 

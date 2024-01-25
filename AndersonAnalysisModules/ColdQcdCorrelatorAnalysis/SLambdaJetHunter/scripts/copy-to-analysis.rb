@@ -12,21 +12,27 @@
 require 'fileutils'
 
 # top directory to copy from/to
-copy_from = "/sphenix/user/danderson/eec/SCorrelatorUtilities"
-copy_to   = "/sphenix/user/danderson/sphenix/analysis/AndersonAnalysisModules/ColdQcdCorrelatorAnalysis/SCorrelatorUtilities"
+copy_from = "/sphenix/user/danderson/eec/SLambdaJetHunter"
+copy_to   = "/sphenix/user/danderson/sphenix/analysis/AndersonAnalysisModules/ColdQcdCorrelatorAnalysis/SLambdaJetHunter"
 
 # what files to copy
 to_copy = [
   "README.md",
-  "CalTools.h",
-  "Constants.h",
-  "CstTools.h",
-  "EvtTools.h",
-  "FlowTools.h",
-  "GenTools.h",
-  "JetTools.h",
-  "TrkTools.h",
-  "scripts/copy-to-analysis.rb"
+  "Fun4All_RunLambdaJetHunter.C",
+  "LambdaJetHunterOptions.h",
+  "RunLamdbdaJetHunter.rb",
+  "scripts/copy-to-analysis.rb",
+  "scripts/wipe-source.sh",
+  "src/SLambdaJetHunter.cc",
+  "src/SLambdaJetHunter.h",
+  "src/SLambdaJetHunter.ana.h",
+  "src/SLambdaJetHunter.sys.h",
+  "src/SLambdaJetHunterConfig.h",
+  "src/SLambdaJetHunterLinkDef.h",
+  "src/autogen.sh",
+  "src/configure.ac",
+  "src/Makefile.am",
+  "src/sphx-build"
 ]
 
 # do copying

@@ -12,21 +12,45 @@
 require 'fileutils'
 
 # top directory to copy from/to
-copy_from = "/sphenix/user/danderson/eec/SCorrelatorUtilities"
-copy_to   = "/sphenix/user/danderson/sphenix/analysis/AndersonAnalysisModules/ColdQcdCorrelatorAnalysis/SCorrelatorUtilities"
+copy_from = "/sphenix/user/danderson/tracking/TrackCutStudy"
+copy_to   = "/sphenix/user/danderson/sphenix/analysis/AndersonAnalysisModules/TrackStudies/STrackCutStudy"
 
 # what files to copy
 to_copy = [
   "README.md",
-  "CalTools.h",
-  "Constants.h",
-  "CstTools.h",
-  "EvtTools.h",
-  "FlowTools.h",
-  "GenTools.h",
-  "JetTools.h",
-  "TrkTools.h",
-  "scripts/copy-to-analysis.rb"
+  "DoTrackCutStudy.C",
+  "DoFastTrackCutStudy.C",
+  "DoFastTrackCutStudy.sh",
+  "DoTrackCutStudyOnCondor.sh",
+  "DoTrackCutStudyOnCondor.job",
+  "SubmitTrackCutStudy.sh",
+  "macros/QuickTuplePlotter.C",
+  "macros/Fun4All_G4_sPHENIX_ForTrackCutStudy_EmbedScanOff.C",
+  "macros/Fun4All_G4_sPHENIX_ForTrackCutStudy_EmbedScanOn.C",
+  "macros/Fun4All_G4_sPHENIX_ForTrackCutStudy_WithPileup_EmbedScanOn.C",
+  "macros/Fun4All_G4_sPHENIX_ForTrackCutStudy_WithPileup_EmbedScanOff.C",
+  "macros/G4Setup_sPHENIX.C",
+  "macros/MergeFiles.C",
+  "scripts/MergeFiles.rb",
+  "scripts/MergeCondorFiles.rb",
+  "scripts/MergeFilesFromList.rb",
+  "scripts/RunCreateFileList.sh",
+  "scripts/RunSingleTrackCutStudyG4.sh",
+  "scripts/RunSingleTrackCutStudyWithPileupG4.sh",
+  "scripts/RunTrackCutStudyG4.job",
+  "scripts/RunTrackCutStudyG4.sh",
+  "scripts/RunTrackCutStudyWithPileupG4.job",
+  "scripts/wipe-source.sh",
+  "scripts/copy-to-analysis.rb",
+  "src/STrackCutStudy.cc",
+  "src/STrackCutStudy.io.h",
+  "src/STrackCutStudy.ana.h",
+  "src/STrackCutStudy.hist.h",
+  "src/STrackCutStudy.plot.h",
+  "src/STrackCutStudy.h",
+  "src/autogen.sh",
+  "src/configure.ac",
+  "src/Makefile.am"
 ]
 
 # do copying
