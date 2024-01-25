@@ -13,6 +13,8 @@
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 
 // c++ utilities
+#include <cmath>
+#include <limits>
 #include <vector>
 #include <cassert>
 #include <utility>
@@ -75,14 +77,15 @@ namespace SColdQcdCorrelatorAnalysis {
     struct RecoInfo {
 
       // data members
-      int    nTrks     = -1;
-      double pSumTrks  = -999.;
-      double eSumEMCal = -999.;
-      double eSumIHCal = -999.;
-      double eSumOHCal = -999.;
-      double vx        = -999.;
-      double vy        = -999.;
-      double vz        = -999.;
+      int    nTrks     = numeric_limits<int>::max();
+      double pSumTrks  = numeric_limits<double>::max();
+      double eSumEMCal = numeric_limits<double>::max();
+      double eSumIHCal = numeric_limits<double>::max();
+      double eSumOHCal = numeric_limits<double>::max();
+      double vx        = numeric_limits<double>::max();
+      double vy        = numeric_limits<double>::max();
+      double vz        = numeric_limits<double>::max();
+      double vr        = numeric_limits<double>::max();
 
       void SetInfo(PHCompositeNode* topNode) {
 
@@ -98,18 +101,20 @@ namespace SColdQcdCorrelatorAnalysis {
         vx = vtx.x();
         vy = vtx.y();
         vz = vtx.z();
+        vr = hypot(vx, vy);
         return;
       }  // end 'SetInfo(PHCompositeNode*)'
 
       void Reset() {
-        nTrks     = -1;
-        pSumTrks  = -999.;
-        eSumEMCal = -999.;
-        eSumIHCal = -999.;
-        eSumOHCal = -999.;
-        vx        = -999.;
-        vy        = -999.;
-        vz        = -999.;
+        nTrks     = numeric_limits<int>::max();
+        pSumTrks  = numeric_limits<double>::max();
+        eSumEMCal = numeric_limits<double>::max();
+        eSumIHCal = numeric_limits<double>::max();
+        eSumOHCal = numeric_limits<double>::max();
+        vx        = numeric_limits<double>::max();
+        vy        = numeric_limits<double>::max();
+        vz        = numeric_limits<double>::max();
+        vr        = numeric_limits<double>::max();
         return;
       }  // end 'Reset()'
 
@@ -122,7 +127,8 @@ namespace SColdQcdCorrelatorAnalysis {
           "eSumOHCal",
           "vx",
           "vy",
-          "vz"
+          "vz",
+          "vr"
         };
         return members;
       }  // end 'GetListOfMembers()'
@@ -145,11 +151,11 @@ namespace SColdQcdCorrelatorAnalysis {
     struct GenInfo {
 
       // atomic data members
-      int    nChrgPar = -1;
-      int    nNeuPar  = -1;
+      int    nChrgPar = numeric_limits<int>::max();
+      int    nNeuPar  = numeric_limits<int>::max();
       bool   isEmbed  = false;
-      double eSumChrg = -999.;
-      double eSumNeu  = -999.;
+      double eSumChrg = numeric_limits<double>::max();
+      double eSumNeu  = numeric_limits<double>::max();
 
       // hard scatter products
       pair<ParInfo, ParInfo> partons;
@@ -162,12 +168,12 @@ namespace SColdQcdCorrelatorAnalysis {
         // set parton info
         isEmbed  = embed;
         if (isEmbed) {
-          partons.first  = GetPartonInfo(topNode, Signal::Embed, HardScatterStatus::First);
-          partons.second = GetPartonInfo(topNode, Signal::Embed, HardScatterStatus::Second);
+          partons.first  = GetPartonInfo(topNode, SubEvt::EmbedSignal, HardScatterStatus::First);
+          partons.second = GetPartonInfo(topNode, SubEvt::EmbedSignal, HardScatterStatus::Second);
 
         } else {
-          partons.first  = GetPartonInfo(topNode, Signal::NotEmbed, HardScatterStatus::First);
-          partons.second = GetPartonInfo(topNode, Signal::NotEmbed, HardScatterStatus::Second);
+          partons.first  = GetPartonInfo(topNode, SubEvt::NotEmbedSignal, HardScatterStatus::First);
+          partons.second = GetPartonInfo(topNode, SubEvt::NotEmbedSignal, HardScatterStatus::Second);
         }
 
         // get sums
@@ -179,11 +185,11 @@ namespace SColdQcdCorrelatorAnalysis {
       }  // end 'SetInfo(PHCompositeNode*, vector<int>)'
 
       void Reset() {
-        nChrgPar = -1;
-        nNeuPar  = -1;
+        nChrgPar = numeric_limits<int>::max();
+        nNeuPar  = numeric_limits<int>::max();
         isEmbed  = false;
-        eSumChrg = -999.;
-        eSumNeu  = -999.;
+        eSumChrg = numeric_limits<double>::max();
+        eSumNeu  = numeric_limits<double>::max();
         return;
       }  // end 'Reset()'
 
@@ -314,7 +320,7 @@ namespace SColdQcdCorrelatorAnalysis {
       // grab clusters
       RawClusterContainer::ConstRange clusters = GetClusters(topNode, store);
 
-      // loop over emcal clusters
+      // loop over clusters
       double eSum = 0.;
       for (
         RawClusterContainer::ConstIterator itClust = clusters.first;

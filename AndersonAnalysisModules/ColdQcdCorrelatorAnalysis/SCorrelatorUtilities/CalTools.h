@@ -10,6 +10,7 @@
 #pragma once
 
 // c++ utilities
+#include <limits>
 #include <string>
 #include <vector>
 #include <cassert>
@@ -41,24 +42,24 @@ namespace SColdQcdCorrelatorAnalysis {
     struct ClustInfo {
 
       // data members
-      int    system = -1;
-      size_t nTwr   = -1;
-      double ene    = -999.;
-      double rho    = -999.;
-      double eta    = -999.;
-      double phi    = -999.;
-      double rx     = -999.;
-      double ry     = -999.;
-      double rz     = -999.;
+      int    system = numeric_limits<int>::max();
+      size_t nTwr   = numeric_limits<size_t>::max();
+      double ene    = numeric_limits<double>::max();
+      double rho    = numeric_limits<double>::max();
+      double eta    = numeric_limits<double>::max();
+      double phi    = numeric_limits<double>::max();
+      double rx     = numeric_limits<double>::max();
+      double ry     = numeric_limits<double>::max();
+      double rz     = numeric_limits<double>::max();
 
-      void SetInfo(const RawCluster* clust, optional<int> sys) {
+      void SetInfo(const RawCluster* clust, optional<int> sys = nullopt) {
         if (sys.has_value()) {
           system = sys.value();
         }
         nTwr = clust -> getNTowers();
         ene  = clust -> get_energy();
         rho  = clust -> get_r();
-        eta  = -999.;  // FIXME add method to calculate eta
+        eta  = numeric_limits<double>::max();  // FIXME add method to calculate eta
         phi  = clust -> get_phi();
         rx   = clust -> get_position().x();
         ry   = clust -> get_position().y();
@@ -67,15 +68,15 @@ namespace SColdQcdCorrelatorAnalysis {
       };
 
       void Reset() {
-        system  = -1;
-        nTwr    = -1;
-        ene     = -999.;
-        rho     = -999.;
-        eta     = -999.;
-        phi     = -999.;
-        rx      = -999.;
-        ry      = -999.;
-        rz      = -999.;
+        system  = numeric_limits<int>::max();
+        nTwr    = numeric_limits<int>::max();
+        ene     = numeric_limits<double>::max();
+        rho     = numeric_limits<double>::max();
+        eta     = numeric_limits<double>::max();
+        phi     = numeric_limits<double>::max();
+        rx      = numeric_limits<double>::max();
+        ry      = numeric_limits<double>::max();
+        rz      = numeric_limits<double>::max();
         return;
       }  // end 'Reset()'
 
@@ -139,7 +140,7 @@ namespace SColdQcdCorrelatorAnalysis {
       ~ClustInfo() {};
 
       // ctor accepting RawClusters
-      ClustInfo(RawCluster* clust, optional<int> sys) {
+      ClustInfo(const RawCluster* clust, optional<int> sys = nullopt) {
         SetInfo(clust, sys);
       }
 
@@ -175,11 +176,11 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
-    bool IsInClusterAcceptance(const ClustInfo& cluster, const ClustInfo& minimum, const ClustInfo& maximum) {
+    bool IsInAcceptance(const ClustInfo& cluster, const ClustInfo& minimum, const ClustInfo& maximum) {
 
       return ((cluster >= minimum) && (cluster <= maximum));
 
-    }  // end 'IsInClusterAcceptance(ClustInfo&, ClustInfo&, ClustInfo&)'
+    }  // end 'IsInAcceptance(ClustInfo&, ClustInfo&, ClustInfo&)'
 
   }  // end SCorrelatorUtilities namespace
 }  // end SColdQcdCorrealtorAnalysis namespace

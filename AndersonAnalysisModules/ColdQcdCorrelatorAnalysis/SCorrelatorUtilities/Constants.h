@@ -12,6 +12,10 @@
 // c++ utilities
 #include <map>
 
+// make common namespaces implicit
+using namespace std;
+
+
 
 namespace SColdQcdCorrelatorAnalysis {
 
@@ -19,22 +23,40 @@ namespace SColdQcdCorrelatorAnalysis {
 
   namespace {
 
+    // object types
+    enum Object {Track, Cluster, Flow, Particle, Unknown};
+
     // subsystem indices
     enum Subsys {Mvtx, Intt, Tpc, EMCal, IHCal, OHCal};
 
     // particle charge subsets
     enum Subset {All, Charged, Neutral};
 
-    // signal event indices
-    enum Signal {
-      NotEmbed = 1,
-      Embed    = 2
+    // subevent options
+    enum SubEvtOpt {Everything, OnlySignal, AllBkgd, PrimaryBkgd, Pileup, Specific};
+
+    // special subevent indices
+    enum SubEvt {
+      Background     = 0,
+      NotEmbedSignal = 1,
+      EmbedSignal    = 2
     };
 
     // hard scatter product statuses
     enum HardScatterStatus {
       First  = 23,
       Second = 24
+    };
+
+    // parton pdg codes
+    enum Parton {
+      Down    = 1,
+      Up      = 2,
+      Strange = 3,
+      Charm   = 4,
+      Bottom  = 5,
+      Top     = 6,
+      Gluon   = 21
     };
 
     // tracking-related constants
@@ -47,7 +69,7 @@ namespace SColdQcdCorrelatorAnalysis {
     const double MassPion = 0.140;
 
     // map of PID onto charges
-    map<int, float> mapPidOntoCharge = {
+    map<int, float> MapPidOntoCharge = {
       {11, -1.},
       {12, 0.},
       {13, -1.},
@@ -77,6 +99,23 @@ namespace SColdQcdCorrelatorAnalysis {
       {700202, 2.},
       {700301, 0.},
       {700302, 3.}
+    };
+
+    // map of node name onto subsystem index
+    map<string, int> MapNodeOntoIndex = {
+      {"CLUSTER_CEMC", Subsys::EMCal},
+      {"CLUSTER_HCALIN", Subsys::IHCal},
+      {"CLUSTER_HCALOUT", Subsys::OHCal}
+    };
+
+    // map of forbidden strings onto good ones
+    map<string, string> MapBadOntoGoodStrings = {
+      {"/", "_"},
+      {"(", "_"},
+      {")", ""},
+      {"+", "plus"},
+      {"-", "minus"},
+      {"*", "star"},
     };
 
   }  // end constants

@@ -20,7 +20,7 @@ to_copy = [
   "README.md",
   "CalTools.h",
   "Constants.h",
-  "CstInfo.h",
+  "CstTools.h",
   "EvtTools.h",
   "FlowTools.h",
   "GenTools.h",
