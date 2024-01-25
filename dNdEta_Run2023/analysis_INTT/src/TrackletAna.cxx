@@ -59,21 +59,27 @@ int main(int argc, char *argv[])
     vector<int> *UniqueAncG4P_PID = 0;
     vector<float> *UniqueAncG4P_Pt = 0, *UniqueAncG4P_Eta = 0, *UniqueAncG4P_Phi = 0, *UniqueAncG4P_E = 0;
     t->SetBranchAddress("event", &event);
-    t->SetBranchAddress("NTruthVtx", &NTruthVtx);
-    t->SetBranchAddress("TruthPV_trig_x", &TruthPV_trig_x);
-    t->SetBranchAddress("TruthPV_trig_y", &TruthPV_trig_y);
-    t->SetBranchAddress("TruthPV_trig_z", &TruthPV_trig_z);
+    if(!IsData)
+    {
+      t->SetBranchAddress("NTruthVtx", &NTruthVtx);
+      t->SetBranchAddress("TruthPV_trig_x", &TruthPV_trig_x);
+      t->SetBranchAddress("TruthPV_trig_y", &TruthPV_trig_y);
+      t->SetBranchAddress("TruthPV_trig_z", &TruthPV_trig_z);
+    }
     t->SetBranchAddress("centrality_mbd", &centrality_mbd);
     t->SetBranchAddress("centrality_mbdquantity", &centrality_mbdquantity);
     t->SetBranchAddress("ClusLayer", &ClusLayer);
     t->SetBranchAddress("ClusX", &ClusX);
     t->SetBranchAddress("ClusY", &ClusY);
     t->SetBranchAddress("ClusZ", &ClusZ);
-    t->SetBranchAddress("UniqueAncG4P_PID", &UniqueAncG4P_PID);
-    t->SetBranchAddress("UniqueAncG4P_Pt", &UniqueAncG4P_Pt);
-    t->SetBranchAddress("UniqueAncG4P_Eta", &UniqueAncG4P_Eta);
-    t->SetBranchAddress("UniqueAncG4P_Phi", &UniqueAncG4P_Phi);
-    t->SetBranchAddress("UniqueAncG4P_E", &UniqueAncG4P_E);
+    if(!IsData)
+    {
+        t->SetBranchAddress("UniqueAncG4P_PID", &UniqueAncG4P_PID);
+        t->SetBranchAddress("UniqueAncG4P_Pt", &UniqueAncG4P_Pt);
+        t->SetBranchAddress("UniqueAncG4P_Eta", &UniqueAncG4P_Eta);
+        t->SetBranchAddress("UniqueAncG4P_Phi", &UniqueAncG4P_Phi);
+        t->SetBranchAddress("UniqueAncG4P_E", &UniqueAncG4P_E);
+    }
 
     TFile *outfile = new TFile(outfilename, "RECREATE");
     TTree *minitree = new TTree("minitree", "Minitree of Reconstructed Tracklets");
@@ -90,9 +96,12 @@ int main(int argc, char *argv[])
         tkldata.PV_x = PV[0];
         tkldata.PV_y = PV[1];
         tkldata.PV_z = PV[2];
-        tkldata.TruthPV_x = TruthPV_trig_x;
-        tkldata.TruthPV_y = TruthPV_trig_y;
-        tkldata.TruthPV_z = TruthPV_trig_z;
+        if(!IsData)
+        {
+            tkldata.TruthPV_x = TruthPV_trig_x;
+            tkldata.TruthPV_y = TruthPV_trig_y;
+            tkldata.TruthPV_z = TruthPV_trig_z;
+        }
         // Centrality
         tkldata.Centrality_mbd = centrality_mbd;
         tkldata.Centrality_mbdquantity = centrality_mbdquantity;
@@ -129,24 +138,27 @@ int main(int argc, char *argv[])
         // Tracklet reconstruction: proto-tracklets -> reco-tracklets -> gen-hadron matching
         ProtoTracklets(tkldata, dRCut);
         RecoTracklets(tkldata);
-        // Generated charged hadrons
-        for (size_t ihad = 0; ihad < UniqueAncG4P_PID->size(); ihad++)
+        if(!IsData)
         {
-            if (is_chargedHadron(UniqueAncG4P_PID->at(ihad)) == false)
-                continue;
+            // Generated charged hadrons
+            for (size_t ihad = 0; ihad < UniqueAncG4P_PID->size(); ihad++)
+            {
+                if (is_chargedHadron(UniqueAncG4P_PID->at(ihad)) == false)
+                    continue;
 
-            GenHadron *genhadron = new GenHadron(UniqueAncG4P_Pt->at(ihad), UniqueAncG4P_Eta->at(ihad), UniqueAncG4P_Phi->at(ihad), UniqueAncG4P_E->at(ihad));
-            tkldata.GenHadrons.push_back(genhadron);
-            tkldata.GenHadron_Pt.push_back(UniqueAncG4P_Pt->at(ihad));
-            tkldata.GenHadron_eta.push_back(UniqueAncG4P_Eta->at(ihad));
-            tkldata.GenHadron_phi.push_back(UniqueAncG4P_Phi->at(ihad));
-            tkldata.GenHadron_E.push_back(UniqueAncG4P_E->at(ihad));
+                GenHadron *genhadron = new GenHadron(UniqueAncG4P_Pt->at(ihad), UniqueAncG4P_Eta->at(ihad), UniqueAncG4P_Phi->at(ihad), UniqueAncG4P_E->at(ihad));
+                tkldata.GenHadrons.push_back(genhadron);
+                tkldata.GenHadron_Pt.push_back(UniqueAncG4P_Pt->at(ihad));
+                tkldata.GenHadron_eta.push_back(UniqueAncG4P_Eta->at(ihad));
+                tkldata.GenHadron_phi.push_back(UniqueAncG4P_Phi->at(ihad));
+                tkldata.GenHadron_E.push_back(UniqueAncG4P_E->at(ihad));
+            }
+            tkldata.NGenHadron = tkldata.GenHadrons.size();
+
+            GenMatch_Recotkl(tkldata);
+
+            cout << "NCluster layer 1 = " << tkldata.NClusLayer1 << "; NRecotkl_Raw = " << tkldata.NRecotkl_Raw << "; NRecotkl_GenMatched = " << tkldata.NRecotkl_GenMatched << endl;
         }
-        tkldata.NGenHadron = tkldata.GenHadrons.size();
-
-        GenMatch_Recotkl(tkldata);
-
-        cout << "NCluster layer 1 = " << tkldata.NClusLayer1 << "; NRecotkl_Raw = " << tkldata.NRecotkl_Raw << "; NRecotkl_GenMatched = " << tkldata.NRecotkl_GenMatched << endl;
         minitree->Fill();
         ResetVec(tkldata);
         cout << "----------" << endl;
