@@ -215,7 +215,7 @@ int JetBkgdSub::process_event(PHCompositeNode *topNode)
       if(Verbosity()) std::cout << "no vertex found" << std::endl;
       return Fun4AllReturnCodes::ABORTEVENT;
     }
-  if (fabs(vtxMap->get(0)->get_z()) < m_vtxZ_cut)
+  if (fabs(vtxMap->get(0)->get_z()) > m_vtxZ_cut)
     {
       if(Verbosity()) std::cout << "vertex not in range" << std::endl;
       return Fun4AllReturnCodes::ABORTEVENT;
