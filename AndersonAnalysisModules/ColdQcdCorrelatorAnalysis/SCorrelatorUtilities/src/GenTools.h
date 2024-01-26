@@ -49,6 +49,7 @@ namespace SColdQcdCorrelatorAnalysis {
 
     struct ParInfo {
 
+      // data members
       int    pid     = numeric_limits<int>::max();
       int    status  = numeric_limits<int>::max();
       int    barcode = numeric_limits<int>::max();
