@@ -10,11 +10,10 @@ source /opt/sphenix/core/bin/setup_local.sh $MYINSTALL
 exe=${1}
 input=${2}
 qa=${3}
-ntp=${4}
-pi0=${5}
+diphoton=${4}
 
 # print the environment - needed for debugging
 printenv
 
 mkdir -p output
-$exe $input $qa $ntp $pi0
+$exe $input $qa $diphoton
