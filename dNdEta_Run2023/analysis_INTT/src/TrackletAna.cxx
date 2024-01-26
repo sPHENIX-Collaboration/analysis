@@ -30,20 +30,15 @@ int main(int argc, char *argv[])
     int iniEvt = skip;
 
     cout << "[Run Info] Event-vertex map file = " << EvtVtx_map_filename << endl
-            << "           Input file = " << infilename << endl
-            << "           Output file = " << outfilename << endl
-            << "           Number of events to run = " << NevtToRun_ << endl
-            << "           Skip = " << skip << endl
-            << "           dRCut = " << dRCut << endl
-            << "-----------" << endl;
+         << "           Input file = " << infilename << endl
+         << "           Output file = " << outfilename << endl
+         << "           Number of events to run = " << NevtToRun_ << endl
+         << "           Skip = " << skip << endl
+         << "           dRCut = " << dRCut << endl
+         << "-----------" << endl;
 
     cout << "[Run Info] NevtToRun: " << NevtToRun_ << ", skip: " << skip << ", dRCut: " << dRCut << endl;
-/*
-    // Optimized cut values for vertex finding algorithm
-    // TString EvtVtx_map_filename = "/sphenix/user/hjheng/TrackletAna/minitree/INTT/VtxEvtMap_ana382_zvtx-20cm_dummyAlignParams/INTTVtxZ.root";
-    // TString infilename = "/sphenix/user/hjheng/TrackletAna/data/INTT/ana382_zvtx-20cm_dummyAlignParams/sim/INTTRecoClusters_sim_merged.root";
-    // TString outfilename = Form("/sphenix/user/hjheng/TrackletAna/minitree/INTT/TrackletMinitree_ana382_zvtx-20cm_dummyAlignParams/TrackletAna_minitree_Evt%dto%d_dRcut%s.root", iniEvt, iniEvt + NevtToRun_, number_to_string(dRCut).c_str());
-*/
+
     TrackletData tkldata = {};
 
     std::map<int, vector<float>> EvtVtx_map = EvtVtx_map_tklcluster(EvtVtx_map_filename.Data());
@@ -55,16 +50,21 @@ int main(int argc, char *argv[])
     int event, NTruthVtx;
     float TruthPV_trig_x, TruthPV_trig_y, TruthPV_trig_z, centrality_mbd, centrality_mbdquantity;
     vector<int> *ClusLayer = 0;
-    vector<float> *ClusX = 0, *ClusY = 0, *ClusZ = 0;
+    vector<float> *ClusX = 0, *ClusY = 0, *ClusZ = 0, *ClusPhiSize = 0, *ClusZSize = 0;
     vector<int> *UniqueAncG4P_PID = 0;
     vector<float> *UniqueAncG4P_Pt = 0, *UniqueAncG4P_Eta = 0, *UniqueAncG4P_Phi = 0, *UniqueAncG4P_E = 0;
     t->SetBranchAddress("event", &event);
-    if(!IsData)
+    if (!IsData)
     {
-      t->SetBranchAddress("NTruthVtx", &NTruthVtx);
-      t->SetBranchAddress("TruthPV_trig_x", &TruthPV_trig_x);
-      t->SetBranchAddress("TruthPV_trig_y", &TruthPV_trig_y);
-      t->SetBranchAddress("TruthPV_trig_z", &TruthPV_trig_z);
+        t->SetBranchAddress("NTruthVtx", &NTruthVtx);
+        t->SetBranchAddress("TruthPV_trig_x", &TruthPV_trig_x);
+        t->SetBranchAddress("TruthPV_trig_y", &TruthPV_trig_y);
+        t->SetBranchAddress("TruthPV_trig_z", &TruthPV_trig_z);
+        t->SetBranchAddress("UniqueAncG4P_PID", &UniqueAncG4P_PID);
+        t->SetBranchAddress("UniqueAncG4P_Pt", &UniqueAncG4P_Pt);
+        t->SetBranchAddress("UniqueAncG4P_Eta", &UniqueAncG4P_Eta);
+        t->SetBranchAddress("UniqueAncG4P_Phi", &UniqueAncG4P_Phi);
+        t->SetBranchAddress("UniqueAncG4P_E", &UniqueAncG4P_E);
     }
     t->SetBranchAddress("centrality_mbd", &centrality_mbd);
     t->SetBranchAddress("centrality_mbdquantity", &centrality_mbdquantity);
@@ -72,14 +72,8 @@ int main(int argc, char *argv[])
     t->SetBranchAddress("ClusX", &ClusX);
     t->SetBranchAddress("ClusY", &ClusY);
     t->SetBranchAddress("ClusZ", &ClusZ);
-    if(!IsData)
-    {
-        t->SetBranchAddress("UniqueAncG4P_PID", &UniqueAncG4P_PID);
-        t->SetBranchAddress("UniqueAncG4P_Pt", &UniqueAncG4P_Pt);
-        t->SetBranchAddress("UniqueAncG4P_Eta", &UniqueAncG4P_Eta);
-        t->SetBranchAddress("UniqueAncG4P_Phi", &UniqueAncG4P_Phi);
-        t->SetBranchAddress("UniqueAncG4P_E", &UniqueAncG4P_E);
-    }
+    t->SetBranchAddress("ClusPhiSize", &ClusPhiSize);
+    t->SetBranchAddress("ClusZSize", &ClusZSize);
 
     TFile *outfile = new TFile(outfilename, "RECREATE");
     TTree *minitree = new TTree("minitree", "Minitree of Reconstructed Tracklets");
@@ -96,7 +90,7 @@ int main(int argc, char *argv[])
         tkldata.PV_x = PV[0];
         tkldata.PV_y = PV[1];
         tkldata.PV_z = PV[2];
-        if(!IsData)
+        if (!IsData)
         {
             tkldata.TruthPV_x = TruthPV_trig_x;
             tkldata.TruthPV_y = TruthPV_trig_y;
@@ -115,22 +109,20 @@ int main(int argc, char *argv[])
 
         // Prepare clusters
         for (size_t ihit = 0; ihit < ClusLayer->size(); ihit++)
-        {
-            if (ClusLayer->at(ihit) == 3 || ClusLayer->at(ihit) == 4)
-            {
-                Hit *hit = new Hit(ClusX->at(ihit), ClusY->at(ihit), ClusZ->at(ihit), PV[0], PV[1], PV[2], 0);
-                tkldata.layers[0].push_back(hit);
-            }
-            else if (ClusLayer->at(ihit) == 5 || ClusLayer->at(ihit) == 6)
-            {
-                Hit *hit = new Hit(ClusX->at(ihit), ClusY->at(ihit), ClusZ->at(ihit), PV[0], PV[1], PV[2], 1);
-                tkldata.layers[1].push_back(hit);
-            }
-            else
+        {   
+            if (ClusLayer->at(ihit) < 3 || ClusLayer->at(ihit) > 6)
             {
                 cout << "[WARNING] Unknown layer: " << ClusLayer->at(ihit) << endl; // Should not happen
                 continue;
             }
+
+            int layer = (ClusLayer->at(ihit) == 3 || ClusLayer->at(ihit) == 4) ? 0 : 1;
+            Hit *hit = new Hit(ClusX->at(ihit), ClusY->at(ihit), ClusZ->at(ihit), PV[0], PV[1], PV[2], 0);
+            tkldata.layers[layer].push_back(hit);
+            tkldata.clusphi.push_back(hit->Phi());
+            tkldata.cluseta.push_back(hit->Eta());
+            tkldata.clusphisize.push_back(ClusPhiSize->at(ihit));
+            tkldata.cluszsize.push_back(ClusZSize->at(ihit));
         }
 
         tkldata.NClusLayer1 = tkldata.layers[0].size();
@@ -138,7 +130,7 @@ int main(int argc, char *argv[])
         // Tracklet reconstruction: proto-tracklets -> reco-tracklets -> gen-hadron matching
         ProtoTracklets(tkldata, dRCut);
         RecoTracklets(tkldata);
-        if(!IsData)
+        if (!IsData)
         {
             // Generated charged hadrons
             for (size_t ihad = 0; ihad < UniqueAncG4P_PID->size(); ihad++)

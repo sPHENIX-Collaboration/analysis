@@ -70,7 +70,8 @@ namespace SColdQcdCorrelatorAnalysis {
       cout << "SLambdaJetHunter::Init(PHCompositeNode *topNode) Initializing" << endl;
     }
 
-    /* TODO initializing goes here */
+    InitOutput();
+    InitTree();
     return Fun4AllReturnCodes::EVENT_OK;
 
   }  // end 'Init(PHCompositeNode*)'
@@ -97,7 +98,7 @@ namespace SColdQcdCorrelatorAnalysis {
       cout << "SLambdaJetHunter::End(PHCompositeNode *topNode) This is the End..." << endl;
     }
 
-     /* TODO finishing goes here */
+    SaveAndCloseOutput();
     return Fun4AllReturnCodes::EVENT_OK;
 
   }

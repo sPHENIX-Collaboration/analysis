@@ -12,8 +12,8 @@ plotRecoCluster_INTT : src/plotRecoCluster_INTT.cxx
 plotTracklets : src/plotTracklets.cxx
 	g++ $(CFLAGS) src/plotTracklets.cxx src/Hit.h src/Tracklet.h src/GenHadron.h -o plotTracklets
 
-INTTVtxZ_test : src/INTTVtxZ_test.cxx
-	g++ $(CFLAGS) src/INTTVtxZ_test.cxx -o INTTVtxZ_test
+INTTVtxZ : src/INTTVtxZ.cxx
+	g++ $(CFLAGS) src/INTTVtxZ.cxx -o INTTVtxZ
 
 INTTVtxZ : src/INTTVtxZ.cxx
 	g++ $(CFLAGS) src/INTTVtxZ.cxx -o INTTVtxZ

@@ -13,7 +13,8 @@ AM_CPPFLAGS = \
   -I$(ROOTSYS)/include
 
 pkginclude_HEADERS = \
-  SLambdaJetHunter.h
+  SLambdaJetHunter.h \
+  SLambdaJetHunterConfig.h
 
 if ! MAKEROOT6
   ROOT5_DICTS = \
