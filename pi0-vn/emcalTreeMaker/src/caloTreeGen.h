@@ -113,6 +113,7 @@ class caloTreeGen : public SubsysReco
     Float_t min_totalCaloE   = 9999;
     Int_t   min_goodTowers   = 9999;
     Float_t min_vtx_z        = 9999;
+    Float_t min_cent         = 9999;
 
     Double_t max_towE        = 0;
     Float_t max_clusterECore = 0;
@@ -126,6 +127,7 @@ class caloTreeGen : public SubsysReco
     UInt_t  max_NClusters    = 0;
     Int_t   max_goodTowers   = 0;
     Float_t max_vtx_z        = 0;
+    Float_t max_cent         = 0;
 
     TH1F* hTowE;
     TH1F* hClusterECore;
@@ -134,6 +136,7 @@ class caloTreeGen : public SubsysReco
     TH1F* hClusterTime;
     TH1F* hNClusters;
     TH1F* hTotalMBD;
+    TH1F* hCentrality;
     TH1F* hTotalCaloE;
     TH1F* hVtxZ;
 
@@ -141,6 +144,7 @@ class caloTreeGen : public SubsysReco
     TH2F* h2ClusterEtaPhiWeighted;
     TH2F* h2TowEtaPhiWeighted;
     TH2F* h2TotalMBDCaloE;
+    TH2F* h2TotalMBDCentrality;
     TH2F* h2TotalMBDCaloEv2;
 
     UInt_t bins_towE  = 1200;
@@ -179,6 +183,10 @@ class caloTreeGen : public SubsysReco
     Float_t low_totalmbd  = 0;
     Float_t high_totalmbd = 3000;
 
+    UInt_t  bins_cent = 100;
+    Float_t low_cent  = 0;
+    Float_t high_cent = 1;
+
     UInt_t  bins_totalcaloE = 2500;
     Float_t low_totalcaloE  = -500;
     Float_t high_totalcaloE = 2000;
@@ -208,6 +216,7 @@ class caloTreeGen : public SubsysReco
     Int_t   run      = 0;
     Int_t   event    = 0;
     Float_t totalMBD = 0;
+    Float_t cent     = 0;
     Float_t Q_N_x    = 0;
     Float_t Q_N_y    = 0;
     Float_t Q_P_x    = 0;

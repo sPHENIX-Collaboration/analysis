@@ -40,6 +40,9 @@
 #include <globalvertex/GlobalVertex.h>
 #include <globalvertex/GlobalVertexMap.h>
 
+// Centrality
+#include <centrality/CentralityInfo.h>
+
 //____________________________________________________________________________..
 caloTreeGen::caloTreeGen(const std::string &name, const std::string &name2, const std::string &name3):
   SubsysReco(name)
@@ -70,12 +73,14 @@ Int_t caloTreeGen::Init(PHCompositeNode *topNode)
   hClusterTime = new TH1F("hClusterTime", "Cluster Time; Time; Counts", bins_time, low_time, high_time);
   hNClusters = new TH1F("hNClusters", "Cluster; # of clusters per event; Counts", bins_n, low_n, high_n);
   hTotalMBD = new TH1F("hTotalMBD", "MBD Charge; MBD Charge; Counts", bins_totalmbd, low_totalmbd, high_totalmbd);
+  hCentrality = new TH1F("hCentrality", "Centrality; Centrality; Counts", bins_cent, low_cent, high_cent);
   hTotalCaloE = new TH1F("hTotalCaloE", "Total Calo E; Total Calo E [GeV]; Counts", bins_totalcaloE, low_totalcaloE, high_totalcaloE);
 
   h2ClusterEtaPhi = new TH2F("h2ClusterEtaPhi", "Cluster; #eta; #phi", bins_eta, low_eta, high_eta, bins_phi, low_phi, high_phi);
   h2ClusterEtaPhiWeighted = new TH2F("h2ClusterEtaPhiWeighted", "Cluster ECore; #eta; #phi", bins_eta, low_eta, high_eta, bins_phi, low_phi, high_phi);
   h2TowEtaPhiWeighted = new TH2F("h2TowEtaPhiWeighted", "Tower Energy; Towerid #eta; Towerid #phi",  bins_eta, 0, bins_eta, bins_phi, 0, bins_phi);
   h2TotalMBDCaloE = new TH2F("h2TotalMBDCaloE", "Total MBD Charge vs Total EMCAL Energy; Total EMCAL Energy [Arb]; Total MBD Charge [Arb]", 100, 0, 1, 100, 0, 1);
+  h2TotalMBDCentrality = new TH2F("h2TotalMBDCentrality", "Total MBD Charge vs Centrality; Centrality; Total MBD Charge [Arb]", 100, 0, 1, 100, 0, 1);
   h2TotalMBDCaloEv2 = new TH2F("h2TotalMBDCaloEv2", "Total MBD Charge vs Total EMCAL Energy; Total EMCAL Energy; Total MBD Charge", bins_totalcaloEv2, low_totalcaloEv2, high_totalcaloEv2,
                                                                                                                                     bins_totalmbdv2, low_totalmbdv2, high_totalmbdv2);
 
@@ -92,6 +97,7 @@ Int_t caloTreeGen::Init(PHCompositeNode *topNode)
   T2->Branch("run",       &run,      "run/I");
   T2->Branch("event",     &event,    "event/I");
   T2->Branch("totalMBD",  &totalMBD, "totalMBD/F");
+  T2->Branch("centrality",&cent,     "cenrality/F");
   T2->Branch("Q_N_x",     &Q_N_x,    "Q_N_x/F");
   T2->Branch("Q_N_y",     &Q_N_y,    "Q_N_y/F");
   T2->Branch("Q_P_x",     &Q_P_x,    "Q_P_x/F");
@@ -176,6 +182,14 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
     std::cout << PHWHERE << "caloTreeGen::process_event: Could not find node MbdGeom" << std::endl;
     return Fun4AllReturnCodes::ABORTEVENT;
   }
+
+  CentralityInfo *centInfo = findNode::getClass<CentralityInfo>(topNode,"CentralityInfo");
+  if(!centInfo)
+  {
+    std::cout << PHWHERE << "caloTreeGen::process_event: Could not find node CentralityInfo" << std::endl;
+    return Fun4AllReturnCodes::ABORTEVENT;
+  }
+  cent = centInfo->get_centile(CentralityInfo::PROP::mbd_NS);
 
   //----------------------------------vertex------------------------------------------------------//
   GlobalVertexMap* vertexmap = findNode::getClass<GlobalVertexMap>(topNode, "GlobalVertexMap");
@@ -278,9 +292,6 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
 
   max_totalCaloE = std::max(max_totalCaloE, totalCaloE);
   min_totalCaloE = std::min(min_totalCaloE, totalCaloE);
-  hTotalCaloE->Fill(totalCaloE);
-
-  h2TotalMBDCaloE->Fill(totalCaloE/high_totalcaloE, totalMBD/high_totalmbd);
 
   if(totalCaloE <= 0) {
     max_totalmbd2 = std::max(max_totalmbd2, totalMBD);
@@ -289,12 +300,24 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
     return Fun4AllReturnCodes::ABORTEVENT;
   }
 
+  hTotalCaloE->Fill(totalCaloE);
+  h2TotalMBDCaloE->Fill(totalCaloE/high_totalcaloE, totalMBD/high_totalmbd);
+  h2TotalMBDCentrality->Fill(cent, totalMBD/high_totalmbd);
+  hCentrality->Fill(cent);
+
+  min_cent = std::min(min_cent, cent);
+  max_cent = std::max(max_cent, cent);
+
+  if(cent < 0 || cent > 1) std::cout << "Centrality: " << cent << ", totalMBD: " << totalMBD << std::endl;
+
   max_NClusters = std::max(max_NClusters, clusterContainer->size());
   hNClusters->Fill(clusterContainer->size());
 
   RawClusterContainer::ConstRange clusterEnd = clusterContainer -> getClusters();
   RawClusterContainer::ConstIterator clusterIter;
   RawClusterContainer::ConstIterator clusterIter2;
+
+  // loop over all clusters in event
   for(clusterIter = clusterEnd.first; clusterIter != clusterEnd.second; clusterIter++)
   {
     RawCluster *recoCluster = clusterIter -> second;
@@ -438,6 +461,7 @@ Int_t caloTreeGen::End(PHCompositeNode *topNode)
 {
 
   std::cout << "min z-vertex: " << min_vtx_z << ", max z-vertex: " << max_vtx_z << std::endl;
+  std::cout << "min centrality: " << min_cent << ", max centrality: " << max_cent << std::endl;
   std::cout << "min totalCaloE: " << min_totalCaloE << ", max totalCaloE: " << max_totalCaloE << std::endl;
   std::cout << "max totalmbd: " << max_totalmbd << ", max totalmbd (for totalCaloE < 0): " << max_totalmbd2 << std::endl;
   std::cout << "min tower energy: " << min_towE << ", max tower energy: " << max_towE << std::endl;
@@ -456,6 +480,7 @@ Int_t caloTreeGen::End(PHCompositeNode *topNode)
 
   hVtxZ->Write();
   hTotalMBD->Write();
+  hCentrality->Write();
   hTotalCaloE->Write();
   hTowE->Write();
   hClusterECore->Write();
@@ -467,6 +492,7 @@ Int_t caloTreeGen::End(PHCompositeNode *topNode)
   h2ClusterEtaPhiWeighted->Write();
   h2TowEtaPhiWeighted->Write();
   h2TotalMBDCaloE->Write();
+  h2TotalMBDCentrality->Write();
   h2TotalMBDCaloEv2->Write();
   out -> Close();
   delete out;
