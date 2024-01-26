@@ -215,6 +215,7 @@ class caloTreeGen : public SubsysReco
     // branches of T2
     Int_t   run      = 0;
     Int_t   event    = 0;
+    Float_t vtx_z    = 0;
     Float_t totalMBD = 0;
     Float_t cent     = 0;
     Float_t Q_S_x    = 0;

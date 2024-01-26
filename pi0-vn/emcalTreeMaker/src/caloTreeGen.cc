@@ -98,6 +98,7 @@ Int_t caloTreeGen::Init(PHCompositeNode *topNode)
   T2->Branch("event",     &event,    "event/I");
   T2->Branch("totalMBD",  &totalMBD, "totalMBD/F");
   T2->Branch("centrality",&cent,     "cenrality/F");
+  T2->Branch("vtx_z",     &vtx_z,    "vtx_z/F");
   T2->Branch("Q_S_x",     &Q_S_x,    "Q_S_x/F");
   T2->Branch("Q_S_y",     &Q_S_y,    "Q_S_y/F");
   T2->Branch("Q_N_x",     &Q_N_x,    "Q_N_x/F");
@@ -197,7 +198,6 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
   {
     std::cout << PHWHERE << "caloTreeGen::process_event: Could not find node GlobalVertexMap" << std::endl;
   }
-  Float_t vtx_z = NAN;
   if (vertexmap && !vertexmap->empty()) {
     GlobalVertex* vtx = vertexmap->begin()->second;
     if (vtx) {
