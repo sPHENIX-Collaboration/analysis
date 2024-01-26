@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
     gStyle->SetPalette(kThermometer);
 
     // Average vertex X and Y positions in cm
-    float avgVtxX = -0.0015, avgVtxY = 0.0012;
+    float avgVtxX = -0.04, avgVtxY = 0.24;
 /*
     bool IsData = true;
     TString infilename = "/sphenix/user/mjpeters/analysis/dNdEta_Run2023/macros/dataNtuple_0.root";

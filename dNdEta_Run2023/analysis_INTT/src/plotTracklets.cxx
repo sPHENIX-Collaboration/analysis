@@ -177,7 +177,7 @@ int main(int argc, char *argv[])
     }
     else
     {
-        std::cout << "Usage: ./plotTracklets [infile] [outfile] [rundata]" << std::endl;
+        std::cout << "Usage: ./plotTracklets [rundata] [infile] [outfile]" << std::endl;
         return 0;
     }
 

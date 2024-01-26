@@ -71,6 +71,7 @@ int Fun4All_G4_sPHENIX(const bool rundata = true, const int nEvents = -1, const 
     // conditions DB flags
     //===============
     Enable::CDB = true;
+    Enable::VERBOSITY = 2;
     // global tag
     rc->set_StringFlag("CDB_GLOBALTAG", CDB::global_tag);
     // 64 bit timestamp

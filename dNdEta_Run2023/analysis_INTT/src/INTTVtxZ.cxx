@@ -75,7 +75,7 @@ int main(int argc, char *argv[])
     TString demoplotpath = TString(argv[9]);  // ./plot/RecoPV_demo/RecoPV_sim/INTTVtxZ_ana382_zvtx-20cm_dummyAlignParams
     bool debug = (TString(argv[10]).Atoi() == 1) ? true : false;
 
-    system(Form("mkdir -p %s", outfilepath.Data()));
+    //system(Form("mkdir -p %s", outfilepath.Data()));
     system(Form("mkdir -p %s", demoplotpath.Data()));
 
     vector<Hit *> INTTlayer1, INTTlayer2;
@@ -111,7 +111,7 @@ int main(int argc, char *argv[])
     t->SetBranchAddress("ClusLadderZId", &ClusLadderZId);
     t->SetBranchAddress("ClusLadderPhiId", &ClusLadderPhiId);
 
-    TFile *outfile = new TFile(Form("%s/INTTVtxZ.root", outfilepath.Data()), "RECREATE");
+    TFile *outfile = new TFile(outfilepath.Data(), "RECREATE");
     TTree *minitree = new TTree("minitree", "Minitree of reconstructed vertices");
     SetVtxMinitree(minitree, vtxdata);
 
