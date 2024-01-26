@@ -36,6 +36,10 @@
 #include <calobase/TowerInfoContainer.h>
 #include <calobase/TowerInfo.h>
 
+// z-vertex stuff
+#include <globalvertex/GlobalVertex.h>
+#include <globalvertex/GlobalVertexMap.h>
+
 //____________________________________________________________________________..
 caloTreeGen::caloTreeGen(const std::string &name, const std::string &name2, const std::string &name3):
   SubsysReco(name)
@@ -58,6 +62,7 @@ Int_t caloTreeGen::Init(PHCompositeNode *topNode)
 {
   out = new TFile(Outfile.c_str(),"RECREATE");
 
+  hVtxZ = new TH1F("hVtxZ", "Event z-vertex; z [cm]; Counts", bins_vtx_z, low_vtx_z, high_vtx_z);
   hTowE = new TH1F("hTowE", "Tower Energy; Energy [GeV]; Counts", bins_towE, low_towE, high_towE);
   hClusterECore = new TH1F("hClusterECore", "Cluster ECore; Energy [GeV]; Counts", bins_e, low_e, high_e);
   hClusterPt = new TH1F("hClusterPt", "Cluster p_{T}; p_{T} [GeV]; Counts", bins_pt, low_pt, high_pt);
@@ -171,6 +176,29 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
     std::cout << PHWHERE << "caloTreeGen::process_event: Could not find node MbdGeom" << std::endl;
     return Fun4AllReturnCodes::ABORTEVENT;
   }
+
+  //----------------------------------vertex------------------------------------------------------//
+  GlobalVertexMap* vertexmap = findNode::getClass<GlobalVertexMap>(topNode, "GlobalVertexMap");
+  if (!vertexmap)
+  {
+    std::cout << PHWHERE << "caloTreeGen::process_event: Could not find node GlobalVertexMap" << std::endl;
+  }
+  Float_t vtx_z = NAN;
+  if (vertexmap && !vertexmap->empty()) {
+    GlobalVertex* vtx = vertexmap->begin()->second;
+    if (vtx) {
+      vtx_z = vtx->get_z();
+    }
+    min_vtx_z = std::min(min_vtx_z, vtx_z);
+    max_vtx_z = std::max(max_vtx_z, vtx_z);
+    hVtxZ->Fill(vtx_z);
+
+    if(abs(vtx_z) >= vtx_z_max) {
+      std::cout << PHWHERE << "|z-vertex| >= " << vtx_z_max << ": " << vtx_z << std::endl;
+      return Fun4AllReturnCodes::ABORTEVENT;
+    }
+  }
+  //----------------------------------vertex------------------------------------------------------//
 
   Int_t nPMTs = mbdpmts -> get_npmt(); //size (should always be 128)
 
@@ -409,6 +437,7 @@ Int_t caloTreeGen::EndRun(const Int_t runnumber)
 Int_t caloTreeGen::End(PHCompositeNode *topNode)
 {
 
+  std::cout << "min z-vertex: " << min_vtx_z << ", max z-vertex: " << max_vtx_z << std::endl;
   std::cout << "min totalCaloE: " << min_totalCaloE << ", max totalCaloE: " << max_totalCaloE << std::endl;
   std::cout << "max totalmbd: " << max_totalmbd << ", max totalmbd (for totalCaloE < 0): " << max_totalmbd2 << std::endl;
   std::cout << "min tower energy: " << min_towE << ", max tower energy: " << max_towE << std::endl;
@@ -425,6 +454,7 @@ Int_t caloTreeGen::End(PHCompositeNode *topNode)
 
   out -> cd();
 
+  hVtxZ->Write();
   hTotalMBD->Write();
   hTotalCaloE->Write();
   hTowE->Write();

@@ -69,6 +69,10 @@ class caloTreeGen : public SubsysReco
       this->clus_chi_max = clus_chi_max;
     }
 
+    void set_vtx_z_max(Float_t vtx_z_max = 10) {
+      this->vtx_z_max = vtx_z_max;
+    }
+
     void set_do_pi0_ana(Bool_t do_pi0_ana = false) {
       this->do_pi0_ana = do_pi0_ana;
     }
@@ -108,6 +112,7 @@ class caloTreeGen : public SubsysReco
     Float_t min_clusterChi   = 9999;
     Float_t min_totalCaloE   = 9999;
     Int_t   min_goodTowers   = 9999;
+    Float_t min_vtx_z        = 9999;
 
     Double_t max_towE        = 0;
     Float_t max_clusterECore = 0;
@@ -120,6 +125,7 @@ class caloTreeGen : public SubsysReco
     Float_t max_totalmbd2    = 0;
     UInt_t  max_NClusters    = 0;
     Int_t   max_goodTowers   = 0;
+    Float_t max_vtx_z        = 0;
 
     TH1F* hTowE;
     TH1F* hClusterECore;
@@ -129,6 +135,8 @@ class caloTreeGen : public SubsysReco
     TH1F* hNClusters;
     TH1F* hTotalMBD;
     TH1F* hTotalCaloE;
+    TH1F* hVtxZ;
+
     TH2F* h2ClusterEtaPhi;
     TH2F* h2ClusterEtaPhiWeighted;
     TH2F* h2TowEtaPhiWeighted;
@@ -183,11 +191,18 @@ class caloTreeGen : public SubsysReco
     Float_t low_totalcaloEv2  = -200;
     Float_t high_totalcaloEv2 = 0;
 
+    UInt_t  bins_vtx_z = 400;
+    Float_t low_vtx_z  = -100;
+    Float_t high_vtx_z = 100;
+
     // Define PI0 Cuts
     Float_t clusE_min    = 1;
     Float_t clus_chi_max = 10;
 
     Bool_t do_pi0_ana = false;
+
+    // Define z-vertex cut
+    Float_t vtx_z_max;
 
     // branches of T2
     Int_t   run      = 0;
