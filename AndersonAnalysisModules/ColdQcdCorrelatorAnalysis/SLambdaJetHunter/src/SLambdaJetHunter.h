@@ -16,28 +16,21 @@
 // root libraries
 #include <TFile.h>
 #include <TTree.h>
-// fastjet libraries
-#include <fastjet/PseudoJet.hh>
-#include <fastjet/JetDefinition.hh>
-#include <fastjet/ClusterSequence.hh>
-#include <fastjet/FunctionOfPseudoJet.hh>
 // f4a utilities
 #include <fun4all/SubsysReco.h>
 // analysis utilities
 #include "SLambdaJetHunterConfig.h"
-#include "/sphenix/user/danderson/eec/SCorrelatorUtilities/EvtTools.h"
-#include "/sphenix/user/danderson/eec/SCorrelatorUtilities/JetTools.h"
-#include "/sphenix/user/danderson/eec/SCorrelatorUtilities/CstTools.h"
-#include "/sphenix/user/danderson/eec/SCorrelatorUtilities/GenTools.h"
+#include "/sphenix/user/danderson/install/include/scorrelatorutilities/EvtTools.h"
+#include "/sphenix/user/danderson/install/include/scorrelatorutilities/JetTools.h"
+#include "/sphenix/user/danderson/install/include/scorrelatorutilities/CstTools.h"
+#include "/sphenix/user/danderson/install/include/scorrelatorutilities/GenTools.h"
 
 // make common namespaces implicit
 using namespace std;
-using namespace fastjet;
 using namespace SColdQcdCorrelatorAnalysis::SCorrelatorUtilities;
 
 // forward declarations
 class PHCompositeNode;
-
 
 
 namespace SColdQcdCorrelatorAnalysis {
@@ -87,7 +80,9 @@ namespace SColdQcdCorrelatorAnalysis {
       /* TODO will go here */
 
       // system methods (*.sys.h)
-      /* TODO will go here */
+      void InitTree();
+      void InitOutput();
+      void SaveAndCloseOutput();
 
   };  // end SLambdaJetHunter
 

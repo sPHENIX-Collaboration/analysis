@@ -11,8 +11,6 @@
 // c++ utilities
 #include <vector>
 #include <string>
-#include <cstdlib>
-#include <utility>
 // f4a/sphenix libraries
 #include <FROG.h>
 #include <fun4all/Fun4AllServer.h>
@@ -21,9 +19,11 @@
 // analysis specific utilities
 #include "LambdaJetHunterOptions.h"
 #include "/sphenix/user/danderson/install/include/slambdajethunter/SLambdaJetHunter.h"
+#include "/sphenix/user/danderson/install/include/slambdajethunter/SLambdaJetHunterConfig.h"
 
 // load libraries
 R__LOAD_LIBRARY(/sphenix/user/danderson/install/lib/libslambdajethunter.so)
+R__LOAD_LIBRARY(/sphenix/user/danderson/install/lib/libscorrelatorutilities.so)
 
 // make common namespaces implicit
 using namespace std;
@@ -43,15 +43,14 @@ static const vector<string> SInDefault  = {
 // macro body -----------------------------------------------------------------
 
 void Fun4All_RunLambdaJetHunter(
-  const vector<string>& sInput = SInDefault,
-  const string sOutput = SOutDefault,
-  const int nEvents = NEvtDefault,
-  const int verbosity = VerbDefault
+  const vector<string>& sInput    = SInDefault,
+  const string          sOutput   = SOutDefault,
+  const int             nEvents   = NEvtDefault,
+  const int             verbosity = VerbDefault
 ) {
 
-  // set verbosity & output
-  LambdaJetHunterOptions::Config.verbosity   = verbosity;
-  LambdaJetHunterOptions::Config.outFileName = sOutput;
+  // set module configuration
+  SLambdaJetHunterConfig config = LambdaJetHunterOptions::GetConfig(verbosity, sOutput);
 
   // load libraries and create f4a server
   gSystem -> Load("libg4dst.so");
@@ -69,7 +68,7 @@ void Fun4All_RunLambdaJetHunter(
   }
 
   // instantiate & register lambda jet hunter
-  SLambdaJetHunter* hunter = new SLambdaJetHunter(LambdaJetHunterOptions::Config);
+  SLambdaJetHunter* hunter = new SLambdaJetHunter(config);
   ffaServer -> registerSubsystem(hunter);
 
   // run reconstruction & close f4a
