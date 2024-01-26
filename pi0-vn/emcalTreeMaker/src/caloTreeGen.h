@@ -6,7 +6,7 @@
 #include <fun4all/SubsysReco.h>
 #include <calobase/TowerInfoDefs.h>
 
-#include <TNtuple.h>
+#include <TTree.h>
 
 #include <string>
 #include <vector>
@@ -24,7 +24,7 @@ class caloTreeGen : public SubsysReco
 {
   public:
 
-    caloTreeGen(const std::string &name = "qa", const std::string &name2 = "ntp", const std::string &name3 = "pi0");
+    caloTreeGen(const std::string &name = "qa", const std::string &name2 = "diphoton");
 
     ~caloTreeGen() override;
 
@@ -79,16 +79,13 @@ class caloTreeGen : public SubsysReco
 
   private:
 
-    TNtuple *T;
-    TTree   *T2;
+    TTree *T;
 
     TFile *out;
     TFile *out2;
-    TFile *out3;
     //Fun4AllHistoManager *hm = nullptr;
-    std::string Outfile = "test.root";
-    std::string Outfile2 = "ntp.root";
-    std::string Outfile3 = "pi0.root";
+    std::string Outfile  = "qa.root";
+    std::string Outfile2 = "diphoton.root";
 
     UInt_t getCaloTowerPhiBin(const UInt_t key);
     UInt_t getCaloTowerEtaBin(const UInt_t key);
@@ -133,7 +130,7 @@ class caloTreeGen : public SubsysReco
     TH1F* hClusterECore;
     TH1F* hClusterPt;
     TH1F* hClusterChi;
-    TH1F* hClusterTime;
+    // TH1F* hClusterTime;
     TH1F* hNClusters;
     TH1F* hTotalMBD;
     TH1F* hCentrality;
@@ -171,9 +168,9 @@ class caloTreeGen : public SubsysReco
     Float_t low_chi  = 0;
     Float_t high_chi = 100;
 
-    UInt_t  bins_time = 32;
-    Float_t low_time  = 0;
-    Float_t high_time = 32;
+    // UInt_t  bins_time = 32;
+    // Float_t low_time  = 0;
+    // Float_t high_time = 32;
 
     UInt_t  bins_n = 3000;
     Float_t low_n  = 0;
@@ -212,7 +209,7 @@ class caloTreeGen : public SubsysReco
     // Define z-vertex cut
     Float_t vtx_z_max;
 
-    // branches of T2
+    // branches of T
     Int_t   run      = 0;
     Int_t   event    = 0;
     Float_t vtx_z    = 0;

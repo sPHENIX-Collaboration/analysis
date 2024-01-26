@@ -27,18 +27,17 @@ using std::string;
 R__LOAD_LIBRARY(libcaloTreeGen.so)
 
 void Fun4All_CaloTreeGen(const string  &inputFile,
-                         const string  &qaFile     = "qa.root",
-                         const string  &ntpFile    = "ntp.root",
-                         const string  &pi0File    = "pi0.root",
-                         const Bool_t  doPi0Ana    = true,
-                         const Float_t clusE_min   = 0.5 /*GeV*/,
-                         const Float_t clusChi_max = 4,
-                         const Float_t vtx_z_max   = 10, /*cm*/
-                         const UInt_t  nEvents     = 0) {
+                         const string  &qaFile       = "qa.root",
+                         const string  &diphotonFile = "diphoton.root",
+                         const Bool_t  doPi0Ana      = true,
+                         const Float_t clusE_min     = 0.5 /*GeV*/,
+                         const Float_t clusChi_max   = 4,
+                         const Float_t vtx_z_max     = 10, /*cm*/
+                         const UInt_t  nEvents       = 0) {
   Fun4AllServer *se = Fun4AllServer::instance();
   // recoConsts *rc = recoConsts::instance();
 
-  caloTreeGen *calo = new caloTreeGen(qaFile.c_str(), ntpFile.c_str(), pi0File.c_str());
+  caloTreeGen *calo = new caloTreeGen(qaFile.c_str(), diphotonFile.c_str());
   calo->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
   calo->set_clusterE_min(clusE_min);
   calo->set_cluster_chi_max(clusChi_max);
@@ -61,12 +60,11 @@ void Fun4All_CaloTreeGen(const string  &inputFile,
 
 # ifndef __CINT__
 int main(int argc, char* argv[]) {
-    if(argc < 2 || argc > 10){
-        cout << "usage: ./bin/Fun4All_CaloTreeGen inputFile qaFile ntpFile pi0File doPi0Ana clusE_min clusChi_max vtx_z_max events" << endl;
+    if(argc < 2 || argc > 9){
+        cout << "usage: ./bin/Fun4All_CaloTreeGen inputFile qaFile diphotonFile doPi0Ana clusE_min clusChi_max vtx_z_max events" << endl;
         cout << "inputFile: Location of fileList containing dst." << endl;
         cout << "qaFile: name of output file." << endl;
-        cout << "ntpFile: name of output file." << endl;
-        cout << "pi0File: name of output file." << endl;
+        cout << "diphotonFile: name of output file." << endl;
         cout << "doPi0Ana: Enable pi0 analysis (takes longer). Default: true" << endl;
         cout << "clusE_min: Minimum cluster energy. Default: 0.5 GeV" << endl;
         cout << "clusChi_max: Maximum cluster chi squared. Default: 4" << endl;
@@ -77,8 +75,7 @@ int main(int argc, char* argv[]) {
 
     string inputFile;
     string qaFile       = "qa.root";
-    string ntpFile      = "ntp.root";
-    string pi0File      = "pi0.root";
+    string diphotonFile = "diphoton.root";
     Bool_t doPi0Ana     = true;
     Float_t clusE_min   = 0.5;
     Float_t clusChi_max = 4;
@@ -92,28 +89,25 @@ int main(int argc, char* argv[]) {
         qaFile = argv[2];
     }
     if(argc >= 4) {
-        ntpFile = argv[3];
+        diphotonFile = argv[3];
     }
     if(argc >= 5) {
-        pi0File = argv[4];
+        doPi0Ana = atoi(argv[4]);
     }
     if(argc >= 6) {
-        doPi0Ana = atoi(argv[5]);
+        clusE_min = atof(argv[5]);
     }
     if(argc >= 7) {
-        clusE_min = atof(argv[6]);
+        clusChi_max = atof(argv[6]);
     }
     if(argc >= 8) {
-        clusChi_max = atof(argv[7]);
+        vtx_z_max = atof(argv[7]);
     }
     if(argc >= 9) {
-        vtx_z_max = atof(argv[8]);
-    }
-    if(argc >= 10) {
-        events = atoi(argv[9]);
+        events = atoi(argv[8]);
     }
 
-    Fun4All_CaloTreeGen(inputFile, qaFile, ntpFile, pi0File, doPi0Ana, clusE_min, clusChi_max, vtx_z_max, events);
+    Fun4All_CaloTreeGen(inputFile, qaFile, diphotonFile, doPi0Ana, clusE_min, clusChi_max, vtx_z_max, events);
 
     cout << "done" << endl;
     return 0;

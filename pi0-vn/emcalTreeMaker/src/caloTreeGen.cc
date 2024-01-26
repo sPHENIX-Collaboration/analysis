@@ -44,12 +44,13 @@
 #include <centrality/CentralityInfo.h>
 
 //____________________________________________________________________________..
-caloTreeGen::caloTreeGen(const std::string &name, const std::string &name2, const std::string &name3):
+caloTreeGen::caloTreeGen(const std::string &name, const std::string &name2):
   SubsysReco(name)
   ,T(nullptr)
+  ,out(nullptr)
+  ,out2(nullptr)
   ,Outfile(name)
   ,Outfile2(name2)
-  ,Outfile3(name3)
 {
   std::cout << "caloTreeGen::caloTreeGen(const std::string &name) Calling ctor" << std::endl;
 }
@@ -70,7 +71,7 @@ Int_t caloTreeGen::Init(PHCompositeNode *topNode)
   hClusterECore = new TH1F("hClusterECore", "Cluster ECore; Energy [GeV]; Counts", bins_e, low_e, high_e);
   hClusterPt = new TH1F("hClusterPt", "Cluster p_{T}; p_{T} [GeV]; Counts", bins_pt, low_pt, high_pt);
   hClusterChi = new TH1F("hClusterChi", "Cluster #chi^{2}; #chi^{2}; Counts", bins_chi, low_chi, high_chi);
-  hClusterTime = new TH1F("hClusterTime", "Cluster Time; Time; Counts", bins_time, low_time, high_time);
+  // hClusterTime = new TH1F("hClusterTime", "Cluster Time; Time; Counts", bins_time, low_time, high_time);
   hNClusters = new TH1F("hNClusters", "Cluster; # of clusters per event; Counts", bins_n, low_n, high_n);
   hTotalMBD = new TH1F("hTotalMBD", "MBD Charge; MBD Charge; Counts", bins_totalmbd, low_totalmbd, high_totalmbd);
   hCentrality = new TH1F("hCentrality", "Centrality; Centrality; Counts", bins_cent, low_cent, high_cent);
@@ -86,31 +87,24 @@ Int_t caloTreeGen::Init(PHCompositeNode *topNode)
 
   out2 = new TFile(Outfile2.c_str(),"RECREATE");
 
-  T = new TNtuple("T","T","totalCaloE:totalMBD:"
-                           "clus_E:clus_eta:clus_phi:clus_chi:clus_time:"
-                           "clus_E2:clus_eta2:clus_phi2:clus_chi2:clus_time2:"
-                           "pi0_mass:pi0_pt:pi0_eta:pi0_phi");
-
-  out3 = new TFile(Outfile3.c_str(),"RECREATE");
-
-  T2 = new TTree("T2", "T2");
-  T2->Branch("run",       &run,      "run/I");
-  T2->Branch("event",     &event,    "event/I");
-  T2->Branch("totalMBD",  &totalMBD, "totalMBD/F");
-  T2->Branch("centrality",&cent,     "cenrality/F");
-  T2->Branch("vtx_z",     &vtx_z,    "vtx_z/F");
-  T2->Branch("Q_S_x",     &Q_S_x,    "Q_S_x/F");
-  T2->Branch("Q_S_y",     &Q_S_y,    "Q_S_y/F");
-  T2->Branch("Q_N_x",     &Q_N_x,    "Q_N_x/F");
-  T2->Branch("Q_N_y",     &Q_N_y,    "Q_N_y/F");
-  T2->Branch("pi0_phi",   &pi0_phi_vec);
-  T2->Branch("pi0_eta",   &pi0_eta_vec);
-  T2->Branch("pi0_pt",    &pi0_pt_vec);
-  T2->Branch("pi0_mass",  &pi0_mass_vec);
-  T2->Branch("asym",      &asym_vec);
-  T2->Branch("deltaR",    &deltaR_vec);
-  T2->Branch("ecore_min", &ecore_min_vec);
-  T2->Branch("chi2_max",  &chi2_max_vec);
+  T = new TTree("T", "T");
+  T->Branch("run",       &run,      "run/I");
+  T->Branch("event",     &event,    "event/I");
+  T->Branch("totalMBD",  &totalMBD, "totalMBD/F");
+  T->Branch("centrality",&cent,     "centrality/F");
+  T->Branch("vtx_z",     &vtx_z,    "vtx_z/F");
+  T->Branch("Q_S_x",     &Q_S_x,    "Q_S_x/F");
+  T->Branch("Q_S_y",     &Q_S_y,    "Q_S_y/F");
+  T->Branch("Q_N_x",     &Q_N_x,    "Q_N_x/F");
+  T->Branch("Q_N_y",     &Q_N_y,    "Q_N_y/F");
+  T->Branch("pi0_phi",   &pi0_phi_vec);
+  T->Branch("pi0_eta",   &pi0_eta_vec);
+  T->Branch("pi0_pt",    &pi0_pt_vec);
+  T->Branch("pi0_mass",  &pi0_mass_vec);
+  T->Branch("asym",      &asym_vec);
+  T->Branch("deltaR",    &deltaR_vec);
+  T->Branch("ecore_min", &ecore_min_vec);
+  T->Branch("chi2_max",  &chi2_max_vec);
 
   //so that the histos actually get written out
   Fun4AllServer *se = Fun4AllServer::instance();
@@ -352,13 +346,13 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
 
     if(clusE < clusE_min || clus_chi >= clus_chi_max) continue;
 
-    Float_t clus_time = getMaxTowerTime(recoCluster, emcTowerContainer);
+    // Float_t clus_time = getMaxTowerTime(recoCluster, emcTowerContainer);
 
     hClusterECore->Fill(clusE);
     h2ClusterEtaPhi->Fill(clus_eta, clus_phi);
     h2ClusterEtaPhiWeighted->Fill(clus_eta, clus_phi, clusE);
     hClusterPt->Fill(clus_pt);
-    hClusterTime->Fill(clus_time);
+    // hClusterTime->Fill(clus_time);
 
     if(!do_pi0_ana) continue;
 
@@ -382,7 +376,7 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
 
       if(clusE2 < clusE_min || clus_chi2 >= clus_chi_max) continue;
 
-      Float_t clus_time2 = getMaxTowerTime(recoCluster2, emcTowerContainer);
+      // Float_t clus_time2 = getMaxTowerTime(recoCluster2, emcTowerContainer);
 
       TLorentzVector photon2;
       photon2.SetPtEtaPhiE(clus_pt2, clus_eta2, clus_phi2, clusE2);
@@ -395,13 +389,8 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
       Float_t pi0_phi = pi0.Phi();
 
       // exclude pi0 mass if it's more than 1 GeV
+      // saves storage
       if(pi0_mass >= 0.6) continue;
-
-      // not storing cluster pT since we can derive pT = E/cosh(eta)
-      Float_t pi0_data[] = {totalCaloE, totalMBD,
-                            clusE,      clus_eta,  clus_phi,  clus_chi,  (Float_t)clus_time,
-                            clusE2,     clus_eta2, clus_phi2, clus_chi2, (Float_t)clus_time2,
-                            pi0_mass,   pi0_pt,    pi0_eta,   pi0_phi};
 
       Float_t asym      = abs(clusE-clusE2)/(clusE+clusE2);
       Float_t ecore_min = std::min(clusE, clusE2);
@@ -418,12 +407,10 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
       deltaR_vec.push_back(deltaR);
       ecore_min_vec.push_back(ecore_min);
       chi2_max_vec.push_back(chi2_max);
-
-      T->Fill(pi0_data);
     }
   }
 
-  T2->Fill();
+  T->Fill();
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -486,7 +473,7 @@ Int_t caloTreeGen::End(PHCompositeNode *topNode)
   hClusterECore->Write();
   hClusterPt->Write();
   hClusterChi->Write();
-  hClusterTime->Write();
+  // hClusterTime->Write();
   hNClusters->Write();
   h2ClusterEtaPhi->Write();
   h2ClusterEtaPhiWeighted->Write();
@@ -498,15 +485,10 @@ Int_t caloTreeGen::End(PHCompositeNode *topNode)
   delete out;
 
   out2 -> cd();
+  // T->BuildIndex("run", "event");
   T->Write();
   out2 -> Close();
   delete out2;
-
-  out3 -> cd();
-  // T2->BuildIndex("run", "event");
-  T2->Write();
-  out3 -> Close();
-  delete out3;
 
   //hm -> dumpHistos(Outfile.c_str(), "UPDATE");
   return Fun4AllReturnCodes::EVENT_OK;
