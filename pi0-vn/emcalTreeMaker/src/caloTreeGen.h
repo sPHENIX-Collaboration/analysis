@@ -115,19 +115,19 @@ class caloTreeGen : public SubsysReco
     Float_t min_vtx_z        = 9999;
     Float_t min_cent         = 9999;
 
-    Double_t max_towE        = 0;
-    Float_t max_clusterECore = 0;
-    Float_t max_clusterEta   = 0;
-    Float_t max_clusterPhi   = 0;
-    Float_t max_clusterPt    = 0;
-    Float_t max_clusterChi   = 0;
-    Float_t max_totalCaloE   = 0;
-    Float_t max_totalmbd     = 0;
-    Float_t max_totalmbd2    = 0;
-    UInt_t  max_NClusters    = 0;
-    Int_t   max_goodTowers   = 0;
-    Float_t max_vtx_z        = 0;
-    Float_t max_cent         = 0;
+    Double_t max_towE         = 0;
+    Float_t  max_clusterECore = 0;
+    Float_t  max_clusterEta   = 0;
+    Float_t  max_clusterPhi   = 0;
+    Float_t  max_clusterPt    = 0;
+    Float_t  max_clusterChi   = 0;
+    Float_t  max_totalCaloE   = 0;
+    Float_t  max_totalmbd     = 0;
+    Float_t  max_totalmbd2    = 0;
+    UInt_t   max_NClusters    = 0;
+    Int_t    max_goodTowers   = 0;
+    Float_t  max_vtx_z        = 0;
+    Float_t  max_cent         = 0;
 
     TH1F* hTowE;
     TH1F* hClusterECore;
@@ -217,10 +217,10 @@ class caloTreeGen : public SubsysReco
     Int_t   event    = 0;
     Float_t totalMBD = 0;
     Float_t cent     = 0;
+    Float_t Q_S_x    = 0;
+    Float_t Q_S_y    = 0;
     Float_t Q_N_x    = 0;
     Float_t Q_N_y    = 0;
-    Float_t Q_P_x    = 0;
-    Float_t Q_P_y    = 0;
     std::vector<Float_t> pi0_phi_vec;
     std::vector<Float_t> pi0_eta_vec;
     std::vector<Float_t> pi0_pt_vec;

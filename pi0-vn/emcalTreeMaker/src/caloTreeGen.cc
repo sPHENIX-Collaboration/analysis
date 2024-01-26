@@ -98,10 +98,10 @@ Int_t caloTreeGen::Init(PHCompositeNode *topNode)
   T2->Branch("event",     &event,    "event/I");
   T2->Branch("totalMBD",  &totalMBD, "totalMBD/F");
   T2->Branch("centrality",&cent,     "cenrality/F");
+  T2->Branch("Q_S_x",     &Q_S_x,    "Q_S_x/F");
+  T2->Branch("Q_S_y",     &Q_S_y,    "Q_S_y/F");
   T2->Branch("Q_N_x",     &Q_N_x,    "Q_N_x/F");
   T2->Branch("Q_N_y",     &Q_N_y,    "Q_N_y/F");
-  T2->Branch("Q_P_x",     &Q_P_x,    "Q_P_x/F");
-  T2->Branch("Q_P_y",     &Q_P_y,    "Q_P_y/F");
   T2->Branch("pi0_phi",   &pi0_phi_vec);
   T2->Branch("pi0_eta",   &pi0_eta_vec);
   T2->Branch("pi0_pt",    &pi0_pt_vec);
@@ -216,36 +216,36 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
 
   Int_t nPMTs = mbdpmts -> get_npmt(); //size (should always be 128)
 
+  Float_t charge_S = 0;
   Float_t charge_N = 0;
-  Float_t charge_P = 0;
 
   for(Int_t i = 0; i < nPMTs; ++i) {
     MbdPmtHit* mbdpmt = mbdpmts->get_pmt(i);
     Float_t charge    = mbdpmt->get_q();     //pmt charge
     Float_t phi       = mbdgeom->get_phi(i); //pmt phi
-    Float_t z         = mbdgeom->get_z(i);    //pmt z ~ eta
+    Float_t z         = mbdgeom->get_z(i);   //pmt z ~ eta
 
     Float_t x = charge*std::cos(2*phi);
     Float_t y = charge*std::sin(2*phi);
 
     if(z < 0) {
+      Q_S_x    += x;
+      Q_S_y    += y;
+      charge_S += charge;
+    }
+    else {
       Q_N_x    += x;
       Q_N_y    += y;
       charge_N += charge;
-    }
-    else {
-      Q_P_x    += x;
-      Q_P_y    += y;
-      charge_P += charge;
     }
 
     totalMBD += charge;
   }
 
+  Q_S_x = (Q_S_x) ? Q_S_x/charge_S : 0;
+  Q_S_y = (Q_S_y) ? Q_S_y/charge_S : 0;
   Q_N_x = (Q_N_x) ? Q_N_x/charge_N : 0;
   Q_N_y = (Q_N_y) ? Q_N_y/charge_N : 0;
-  Q_P_x = (Q_P_x) ? Q_P_x/charge_P : 0;
-  Q_P_y = (Q_P_y) ? Q_P_y/charge_P : 0;
 
   max_totalmbd = std::max(max_totalmbd, totalMBD);
   hTotalMBD->Fill(totalMBD);
@@ -432,10 +432,10 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
 Int_t caloTreeGen::ResetEvent(PHCompositeNode *topNode)
 {
   totalMBD = 0;
+  Q_S_x    = 0;
+  Q_S_y    = 0;
   Q_N_x    = 0;
   Q_N_y    = 0;
-  Q_P_x    = 0;
-  Q_P_y    = 0;
 
   pi0_phi_vec.clear();
   pi0_eta_vec.clear();
