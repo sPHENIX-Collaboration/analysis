@@ -24,10 +24,7 @@ using std::cout;
 using std::endl;
 using std::string;
 
-R__LOAD_LIBRARY(libfun4all.so)
 R__LOAD_LIBRARY(libcaloTreeGen.so)
-R__LOAD_LIBRARY(libcentrality_io.so)
-R__LOAD_LIBRARY(libcalotrigger_io.so)
 
 void Fun4All_CaloTreeGen(const string  &inputFile,
                          const string  &qaFile     = "qa.root",
