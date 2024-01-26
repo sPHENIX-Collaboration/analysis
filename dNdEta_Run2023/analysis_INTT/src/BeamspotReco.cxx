@@ -10,7 +10,7 @@
 #include "Hit.h"
 #include "Beamspot.h"
 
-Beamspot fit_PCAD0Phi0(std::vector<std::pair<std::shared_ptr<Hit>,std::shared_ptr<Hit>>> tracklets)
+Beamspot fit_PCAD0Phi0(std::vector<std::pair<std::shared_ptr<Hit>,std::shared_ptr<Hit>>> tracklets, Beamspot BS_init, double d0_cut)
 {
   Beamspot reco_BS;
 
@@ -55,16 +55,17 @@ Beamspot fit_PCAD0Phi0(std::vector<std::pair<std::shared_ptr<Hit>,std::shared_pt
     //std::cout << "phi0: " << phi0 << " +- " << sqrt(sigma2_phi0) << std::endl;
 
     // PCA and uncertainty
-    double pca_x = x1 - (x1*cos(phi0)+y1*sin(phi0))*cos(phi0);
-    double pca_y = y1 - (x1*cos(phi0)+y1*sin(phi0))*sin(phi0);
+    double pca_x = x1 + ((BS_init.x-x1)*cos(phi0)+(BS_init.y-y1)*sin(phi0))*cos(phi0);
+    double pca_y = y1 + ((BS_init.x-x1)*cos(phi0)+(BS_init.y-y1)*sin(phi0))*sin(phi0);
     //std::cout << "PCA: (" << pca_x << " +- " << sqrt(sigma2_pca_x) << ", " << pca_y << " +- " << sqrt(sigma2_pca_y) << std::endl;
 
-    double dca = sqrt(pca_x*pca_x+pca_y*pca_y);
+    double dca_origin = sqrt(pca_x*pca_x+pca_y*pca_y);
     double dzdr = (z2-z1)/(r2-r1);
-    double z0 = z1-dzdr*(r1-dca);
+    double z0 = z1-dzdr*(r1-dca_origin);
 
-    double d0 = sqrt(pca_x*pca_x+pca_y*pca_y);
-    double phi_pca = atan2(pca_y,pca_x);
+    double d0 = sqrt(pow(pca_x-BS_init.x,2.)+pow(pca_y-BS_init.y,2.));
+    if(d0>d0_cut) continue;
+    double phi_pca = atan2(pca_y-BS_init.y,pca_x-BS_init.x);
     double oppositephi_pca = phi_pca+M_PI;
     if(oppositephi_pca>M_PI) oppositephi_pca -= 2*M_PI;
 
@@ -122,8 +123,8 @@ Beamspot fit_PCAD0Phi0(std::vector<std::pair<std::shared_ptr<Hit>,std::shared_pt
   double BS_sigmad0 = d0cos.GetParError(0);
   double BS_sigmaphi0 = d0cos.GetParError(1);
 
-  reco_BS.x = BS_d0*cos(BS_phi0);
-  reco_BS.y = BS_d0*sin(BS_phi0);
+  reco_BS.x = BS_d0*cos(BS_phi0)+BS_init.x;
+  reco_BS.y = BS_d0*sin(BS_phi0)+BS_init.y;
   reco_BS.sigma_x = sqrt(pow(cos(BS_phi0),2.)*pow(BS_sigmad0,2.)+pow(BS_d0*sin(BS_phi0),2.)*pow(BS_sigmaphi0,2.));
   reco_BS.sigma_y = sqrt(pow(sin(BS_phi0),2.)*pow(BS_sigmad0,2.)+pow(BS_d0*cos(BS_phi0),2.)*pow(BS_sigmaphi0,2.));
   
@@ -202,7 +203,11 @@ int main(int argc, char** argv)
     }
   }
 
-  Beamspot BS = fit_PCAD0Phi0(tracklets);
+  Beamspot origin;
+  Beamspot BS = fit_PCAD0Phi0(tracklets,origin,100.);
+  //BS = fit_PCAD0Phi0(tracklets,BS,0.5);
+  //BS = fit_PCAD0Phi0(tracklets,BS,0.2);
+  //BS = fit_PCAD0Phi0(tracklets,BS,0.1);
 
   t->Branch("x",&BS.x);
   t->Branch("y",&BS.y);

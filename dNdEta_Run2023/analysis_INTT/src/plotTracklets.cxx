@@ -233,10 +233,10 @@ int main(int argc, char *argv[])
         infname = "/sphenix/user/hjheng/TrackletAna/minitree/INTT/TrackletMinitree_ana382_zvtx-20cm_dummyAlignParams/TrackletAna_minitree_Evt0to2000_dRcut0p5.root";
         outfname = "/sphenix/user/hjheng/TrackletAna/analysis_INTT/plot/hists/ana382_zvtx-20cm_dummyAlignParams/Hists_RecoTracklets.root";
     }
-    else if (argc == 4)
+    else if (argc == 3)
     {
-        infname = argv[2];
-        outfname = argv[3];
+        infname = argv[1];
+        outfname = argv[2];
     }
     else
     {

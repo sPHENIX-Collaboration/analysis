@@ -166,7 +166,7 @@ int dNdEtaINTT::process_event(PHCompositeNode *topNode)
     svtx_evalstack->next_event(topNode);
 
     eventheader = findNode::getClass<EventHeader>(topNode, "EventHeader");
-    if (!eventheader)
+    if (!IsData && !eventheader) // data files do not currently contain EventHeader
     {
         std::cout << PHWHERE << "Error, can't find EventHeader" << std::endl;
         return Fun4AllReturnCodes::ABORTEVENT;
@@ -307,8 +307,11 @@ void dNdEtaINTT::GetCentralityInfo(PHCompositeNode *topNode)
     centrality_mbdquantity_ = m_CentInfo->get_quantity(CentralityInfo::PROP::mbd_NS);
 
     // Glauber parameter information
-    ncoll_ = eventheader->get_ncoll();
-    npart_ = eventheader->get_npart();
+    if(!IsData)
+    {
+        ncoll_ = eventheader->get_ncoll();
+        npart_ = eventheader->get_npart();
+    }
 
     std::cout << "Centrality: (bimp,impactparam) = (" << centrality_bimp_ << ", " << centrality_impactparam_ << "); (mbd,mbdquantity) = (" << centrality_mbd_ << ", " << centrality_mbdquantity_ << ")" << std::endl;
     std::cout << "Glauber parameter information: (ncoll,npart) = (" << ncoll_ << ", " << npart_ << ")" << std::endl;

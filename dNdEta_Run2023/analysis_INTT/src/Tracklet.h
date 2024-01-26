@@ -115,6 +115,7 @@ class TrackletData
     float Centrality_mbd, Centrality_mbdquantity;
     bool pu0_sel, trig;
     int process; // single diffractive process
+    vector<float> clusphi, cluseta, clusphisize, cluszsize;
     vector<float> prototkl_eta, prototkl_phi, prototkl_deta, prototkl_dphi, prototkl_dR;
     vector<float> recotklraw_eta, recotklraw_phi, recotklraw_deta, recotklraw_dphi, recotklraw_dR;
     vector<float> recotklgm_eta, recotklgm_phi, recotklgm_deta, recotklgm_dphi, recotklgm_dR;
@@ -133,6 +134,10 @@ void SetMinitree(TTree *outTree, TrackletData &tkldata)
     outTree->Branch("PV_y", &tkldata.PV_y);
     outTree->Branch("PV_z", &tkldata.PV_z);
     outTree->Branch("trig", &tkldata.trig);
+    outTree->Branch("clusPhi", &tkldata.clusphi);
+    outTree->Branch("clusEta", &tkldata.cluseta);
+    outTree->Branch("clusPhiSize", &tkldata.clusphisize);
+    outTree->Branch("clusZSize", &tkldata.cluszsize);    
     outTree->Branch("prototkl_eta", &tkldata.prototkl_eta);
     outTree->Branch("prototkl_phi", &tkldata.prototkl_phi);
     outTree->Branch("prototkl_deta", &tkldata.prototkl_deta);
