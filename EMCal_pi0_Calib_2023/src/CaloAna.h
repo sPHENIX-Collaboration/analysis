@@ -132,12 +132,17 @@ class CaloAna : public SubsysReco
   float _vz = 0.;
   bool m_vtxCut = false;
   bool dynMaskClus = false;
+  bool getVtx = false;
 
   TH1F* h_pt1;
   TH1F* h_pt2;
   TH1F* h_nclusters; 
   TH1F* h_mass_eta_lt[96];
+  TH1F* h_pt_eta[96];
   TH1F* h_emcal_e_eta;
+  TH1F* h_truth_eta;
+  TH1F* h_truth_e;
+  TH1F* h_truth_pt;
 
   float target_pi0_mass = 0.145;
 
