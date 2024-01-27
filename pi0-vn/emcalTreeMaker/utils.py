@@ -141,7 +141,7 @@ def create_pi0Ana_jobs():
     os.makedirs(f'{output_dir}/output',exist_ok=True)
 
     cuts     = f'{output_dir}/{os.path.basename(cuts)}'
-    fitStats = f'{output_dir}/{os.path.basename(fitStats)}' if(fitStats != '') else '\"\"'
+    fitStats = f'{output_dir}/{os.path.basename(fitStats)}' if(fitStats != '') else r'\"\"'
 
     with open(f'{output_dir}/genPi0Ana.sub', mode="w") as file:
         file.write(f'executable     = {os.path.basename(script)}\n')
