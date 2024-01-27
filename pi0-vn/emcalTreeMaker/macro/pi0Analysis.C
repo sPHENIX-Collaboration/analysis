@@ -48,8 +48,8 @@ namespace myAnalysis {
     void process_event(Long64_t start = 0, Long64_t end = 0);
     void finalize(const string &i_output = "test.root");
 
-    map<string,pair<Float_t, Float_t>> centrality = {{"40-60",  make_pair(177.222, 465.741)},
-                                                     {"20-40",  make_pair(465.741, 935.37)}};
+    map<string,pair<Float_t, Float_t>> centrality = {{"40-60",  make_pair(215, 497.222)},
+                                                     {"20-40",  make_pair(497.222, 955.741)}};
 
     map<string,pair<Float_t, Float_t>> diphoton_pt = {{"2-2.5", make_pair(2,   2.5)},
                                                       {"2.5-3", make_pair(2.5, 3)},
@@ -62,7 +62,7 @@ namespace myAnalysis {
     vector<string> pt_key   = {"2-2.5", "2.5-3", "3-3.5", "3.5-4", "4-4.5", "4.5-5"};
 
     TH1F* pt_dum_vec   = new TH1F("pt_dum_vec","",6,2,5);
-    TH1F* cent_dum_vec = new TH1F("cent_dum_vec","", 2, new Double_t[3] {177.222, 465.741, 935.37});
+    TH1F* cent_dum_vec = new TH1F("cent_dum_vec","", 2, new Double_t[3] {215, 497.222, 955.741});
 
     vector<Float_t> pi0_ctr(cent_key.size()*pt_key.size());
 
