@@ -64,14 +64,14 @@ namespace myAnalysis {
     TH1F* pt_dum_vec   = new TH1F("pt_dum_vec","",6,2,5);
     TH1F* cent_dum_vec = new TH1F("cent_dum_vec","", 2, new Double_t[3] {215, 497.222, 955.741});
 
-    vector<Float_t> pi0_ctr(cent_key.size()*pt_key.size());
+    vector<UInt_t> pi0_ctr(cent_key.size()*pt_key.size());
 
     vector<UInt_t> evt_ctr(cent_key.size());
 
-    vector<Float_t> QQ(cent_key.size());
+    vector<Double_t> QQ(cent_key.size());
 
     // contains the aggregrate sum of dot product of pi0 q vector and MBD Q vector
-    vector<Float_t> qQ(cent_key.size()*pt_key.size());
+    vector<Double_t> qQ(cent_key.size()*pt_key.size());
 
     // keep track of low and high pi0 mass values to filter on for the computation of the v2
     vector<pair<Float_t,Float_t>> pi0_mass_range(cent_key.size()*pt_key.size());
@@ -98,28 +98,31 @@ namespace myAnalysis {
     Float_t hasym_min = 0;
     Float_t hasym_max = 1;
 
-    Bool_t use_mass_range = false;
+    Bool_t do_vn_calc = false;
 }
 
 Int_t myAnalysis::init(const string &i_input, const string &i_cuts, const string& fitStats, Long64_t start, Long64_t end) {
     T = new TChain("T");
     T->Add(i_input.c_str());
 
-    tree = new TTree("flow","flow");
-    tree->Branch("pi0_ctr", &pi0_ctr);
-    tree->Branch("evt_ctr", &evt_ctr);
-    tree->Branch("QQ", &QQ);
-    tree->Branch("qQ", &qQ);
     Int_t ret;
     // ret = readFiles(i_input, start, end);
     // if(ret != 0) return ret;
 
-    Int_t ret = readCuts(i_cuts);
+    if(do_vn_calc) {
+        tree = new TTree("flow","flow");
+        tree->Branch("pi0_ctr", &pi0_ctr);
+        tree->Branch("evt_ctr", &evt_ctr);
+        tree->Branch("QQ", &QQ);
+        tree->Branch("qQ", &qQ);
+    }
+
+    ret = readCuts(i_cuts);
     if(ret != 0) return ret;
 
     init_hists();
 
-    if(!fitStats.empty()) ret = readFitStats(fitStats);
+    if(do_vn_calc && !fitStats.empty()) ret = readFitStats(fitStats);
 
     return ret;
 }
@@ -239,8 +242,6 @@ Int_t myAnalysis::readFitStats(const string &fitStats) {
         }
     }
 
-    use_mass_range = true;
-
     cout << endl;
     for(Int_t i = 0; i < cent_key.size(); ++i) {
         cout << "cent: " << cent_key[i] << endl;
@@ -306,37 +307,65 @@ void myAnalysis::process_event(Long64_t start, Long64_t end) {
     cout << "Begin Process Event" << endl;
     cout << "======================================" << endl;
 
-    Int_t   run;
-    Int_t   event;
+    // Disable everything...
+    T->SetBranchStatus("*", false);
+    // ...but the branch we need
+    // T->SetBranchStatus("run",       true);
+    // T->SetBranchStatus("event",     true);
+    T->SetBranchStatus("totalMBD",  true);
+    T->SetBranchStatus("pi0_mass",  true);
+    T->SetBranchStatus("pi0_pt",    true);
+    T->SetBranchStatus("asym",      true);
+    T->SetBranchStatus("deltaR",    true);
+    T->SetBranchStatus("ecore_min", true);
+    T->SetBranchStatus("chi2_max",  true);
+
+    if(do_vn_calc) {
+        T->SetBranchStatus("Q_N_x",   true);
+        T->SetBranchStatus("Q_N_y",   true);
+        T->SetBranchStatus("Q_P_x",   true);
+        T->SetBranchStatus("Q_P_y",   true);
+
+        T->SetBranchStatus("pi0_phi", true);
+        T->SetBranchStatus("pi0_eta", true);
+    }
+
+    // Int_t   run;
+    // Int_t   event;
     Float_t totalMBD;
-    Float_t Q_N_x;
-    Float_t Q_N_y;
-    Float_t Q_P_x;
-    Float_t Q_P_y;
     vector<Float_t>* pi0_mass   = 0;
     vector<Float_t>* pi0_pt     = 0;
-    vector<Float_t>* pi0_phi    = 0;
-    vector<Float_t>* pi0_eta    = 0;
     vector<Float_t>* pi0_asym   = 0;
     vector<Float_t>* pi0_deltaR = 0;
     vector<Float_t>* ecore_min  = 0;
     vector<Float_t>* chi2_max   = 0;
 
-    T->SetBranchAddress("run",       &run);
-    T->SetBranchAddress("event",     &event);
+    Float_t Q_N_x;
+    Float_t Q_N_y;
+    Float_t Q_P_x;
+    Float_t Q_P_y;
+    vector<Float_t>* pi0_phi    = 0;
+    vector<Float_t>* pi0_eta    = 0;
+
+    // T->SetBranchAddress("run",       &run);
+    // T->SetBranchAddress("event",     &event);
     T->SetBranchAddress("totalMBD",  &totalMBD);
-    T->SetBranchAddress("Q_N_x",     &Q_N_x);
-    T->SetBranchAddress("Q_N_y",     &Q_N_y);
-    T->SetBranchAddress("Q_P_x",     &Q_P_x);
-    T->SetBranchAddress("Q_P_y",     &Q_P_y);
     T->SetBranchAddress("pi0_mass",  &pi0_mass);
     T->SetBranchAddress("pi0_pt",    &pi0_pt);
-    T->SetBranchAddress("pi0_phi",   &pi0_phi);
-    T->SetBranchAddress("pi0_eta",   &pi0_eta);
     T->SetBranchAddress("asym",      &pi0_asym);
     T->SetBranchAddress("deltaR",    &pi0_deltaR);
     T->SetBranchAddress("ecore_min", &ecore_min);
     T->SetBranchAddress("chi2_max",  &chi2_max);
+
+    if(do_vn_calc) {
+        T->SetBranchAddress("Q_N_x",   &Q_N_x);
+        T->SetBranchAddress("Q_N_y",   &Q_N_y);
+        T->SetBranchAddress("Q_P_x",   &Q_P_x);
+        T->SetBranchAddress("Q_P_y",   &Q_P_y);
+
+        T->SetBranchAddress("pi0_phi", &pi0_phi);
+        T->SetBranchAddress("pi0_eta", &pi0_eta);
+    }
 
     end = (end) ? min(end, T->GetEntries()-1) : T->GetEntries()-1;
 
@@ -356,7 +385,7 @@ void myAnalysis::process_event(Long64_t start, Long64_t end) {
 
         ++evt_ctr[cent_idx];
 
-        QQ[cent_idx] += Q_N_x*Q_P_x + Q_N_y*Q_P_y;
+        if(do_vn_calc) QQ[cent_idx] += Q_N_x*Q_P_x + Q_N_y*Q_P_y;
 
         UInt_t n = pi0_mass->size();
 
@@ -374,20 +403,32 @@ void myAnalysis::process_event(Long64_t start, Long64_t end) {
             pair<string,string> key = make_pair(cent_key[cent_idx], pt_key[pt_idx]);
 
             Float_t pi0_mass_val  = pi0_mass->at(j);
-            Float_t pi0_phi_val   = pi0_phi->at(j);
-            Float_t pi0_eta_val   = pi0_eta->at(j);
             Float_t asym_val      = pi0_asym->at(j);
             Float_t deltaR_val    = pi0_deltaR->at(j);
             Float_t ecore_min_val = ecore_min->at(j);
             Float_t chi2_max_val  = chi2_max->at(j);
 
-            Float_t Q_x = (pi0_eta_val < 0) ? Q_P_x : Q_N_x;
-            Float_t Q_y = (pi0_eta_val < 0) ? Q_P_y : Q_N_y;
+            Float_t pi0_phi_val = 0;
+            Float_t pi0_eta_val = 0;
 
-            Float_t q_x = cos(2*pi0_phi_val);
-            Float_t q_y = sin(2*pi0_phi_val);
+            Float_t Q_x = 0;
+            Float_t Q_y = 0;
 
-            Float_t qQ_val = q_x*Q_x + q_y*Q_y;
+            Double_t q_x    = 0;
+            Double_t q_y    = 0;
+            Double_t qQ_val = 0;
+
+            if(do_vn_calc) {
+                pi0_phi_val   = pi0_phi->at(j);
+                pi0_eta_val   = pi0_eta->at(j);
+
+                Q_x = (pi0_eta_val < 0) ? Q_P_x : Q_N_x;
+                Q_y = (pi0_eta_val < 0) ? Q_P_y : Q_N_y;
+
+                q_x = cos(2*pi0_phi_val);
+                q_y = sin(2*pi0_phi_val);
+                qQ_val = q_x*Q_x + q_y*Q_y;
+            }
 
             h2AsymVsMass[key]->Fill(pi0_mass_val, asym_val);
             h2DeltaRVsMass[key]->Fill(pi0_mass_val, deltaR_val);
@@ -401,7 +442,7 @@ void myAnalysis::process_event(Long64_t start, Long64_t end) {
 
                     // add condition to check if mass is in range
                     // do this for only one of the cuts for which we have signal bound information
-                    if(k == 0 && use_mass_range && pi0_mass_val >= pi0_mass_range[idx].first && pi0_mass_val < pi0_mass_range[idx].second) {
+                    if(k == 0 && do_vn_calc && pi0_mass_val >= pi0_mass_range[idx].first && pi0_mass_val < pi0_mass_range[idx].second) {
                         ++pi0_ctr[idx];
                         qQ[idx] += qQ_val;
                     }
@@ -410,26 +451,29 @@ void myAnalysis::process_event(Long64_t start, Long64_t end) {
         }
     }
 
-    tree->Fill();
-
-    cout << endl;
-    for(Int_t i = 0; i < cent_key.size(); ++i) {
-        QQ[i] /= evt_ctr[i];
-        cout << "Cent: "     << cent_key[i]
-             << ", Events: " << evt_ctr[i]
-             << ", avg QQ: " << QQ[i] << endl;
-
-        for(Int_t j = 0; j < pt_key.size(); ++j) {
-            Int_t key = i*pt_key.size()+j;
-            qQ[key] = (pi0_ctr[key]) ? qQ[key]/pi0_ctr[key] : 0;
-
-            cout << "pT: "          << pt_key[j]
-                 << ", asym: "      << cuts[0].e_asym
-                 << ", ECore_min: " << cuts[0].e
-                 << ", pi0s: "      << pi0_ctr[key]
-                 << ", avg qQ: "    << qQ[key] << endl;
-        }
+    if(do_vn_calc) {
+        tree->Fill();
         cout << endl;
+        for(Int_t i = 0; i < cent_key.size(); ++i) {
+            QQ[i] /= evt_ctr[i];
+            cout << "Cent: "     << cent_key[i]
+                << ", Events: " << evt_ctr[i]
+                << ", avg QQ: " << QQ[i] << endl;
+
+            for(Int_t j = 0; j < pt_key.size(); ++j) {
+                Int_t idx = i*pt_key.size()+j;
+                qQ[idx] = (pi0_ctr[idx]) ? qQ[idx]/pi0_ctr[idx] : 0;
+                Float_t v2 = (QQ[i]) ? qQ[idx]/sqrt(QQ[i]) : 0;
+
+                cout << "pT: "         << pt_key[j]
+                    << ", asym: "      << cuts[0].e_asym
+                    << ", ECore_min: " << cuts[0].e
+                    << ", pi0s: "      << pi0_ctr[idx]
+                    << ", avg qQ: "    << qQ[idx]
+                    << ", v2: "        << v2 << endl;
+            }
+            cout << endl;
+        }
     }
 
     cout << "Max Pi0s per event: " << max_npi0 << endl;
@@ -466,8 +510,10 @@ void myAnalysis::finalize(const string &i_output) {
         }
     }
 
-    output.cd();
-    tree->Write();
+    if(do_vn_calc) {
+        output.cd();
+        tree->Write();
+    }
 
     output.Close();
 }

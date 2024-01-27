@@ -10,12 +10,11 @@ source /opt/sphenix/core/bin/setup_local.sh $MYINSTALL
 exe=${1}
 input=${2}
 cuts=${3}
-start=${4}
-end=${5}
-output=${6}
+fitStats=${4}
+output=${5}
 
 # print the environment - needed for debugging
 printenv
 
 mkdir -p output
-$exe $input $cuts $start $end $output
+$exe $input $cuts $fitStats $output

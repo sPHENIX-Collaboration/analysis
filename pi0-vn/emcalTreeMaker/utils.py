@@ -15,15 +15,14 @@ f4a.add_argument('-i', '--run-list-dir', type=str, help='Directory of run lists'
 f4a.add_argument('-e', '--executable', type=str, default='genFun4All.sh', help='Job script to execute. Default: scripts/genFun4All.sh')
 f4a.add_argument('-b', '--f4a', type=str, default='bin/Fun4All_CaloTreeGen', help='Fun4All executable. Default: bin/Fun4All_CaloTreeGen')
 f4a.add_argument('-d', '--output', type=str, default='test', help='Output Directory. Default: ./test')
-f4a.add_argument('-s', '--memory', type=int, default=2, help='Memory (units of GB) to request per condor submission. Default: 2 GB.')
+f4a.add_argument('-s', '--memory', type=int, default=1, help='Memory (units of GB) to request per condor submission. Default: 2 GB.')
 f4a.add_argument('-l', '--log', type=str, default='/tmp/anarde/dump/job-$(ClusterId)-$(Process).log', help='Condor log file.')
 
 pi0Ana = subparser.add_parser('pi0Ana', help='Create condor submission directory for pi0Analysis.')
 
 pi0Ana.add_argument('-i', '--ntp-list', type=str, help='List of Ntuples', required=True)
 pi0Ana.add_argument('-c', '--cuts', type=str, help='List of cuts', required=True)
-pi0Ana.add_argument('-n', '--events', type=int, help='Number of events to analyze.', required=True)
-pi0Ana.add_argument('-j', '--jobs', type=int, default=19999, help='Number of jobs to submit. Default: 19999.')
+pi0Ana.add_argument('-c2', '--csv', type=str, default="", help='CSV file with fitStats. Default: ""')
 pi0Ana.add_argument('-e', '--script', type=str, default='genPi0Ana.sh', help='Job script to execute. Default: genPi0Ana.sh')
 pi0Ana.add_argument('-b', '--executable', type=str, default='bin/pi0Ana', help='Executable. Default: bin/pi0Ana')
 pi0Ana.add_argument('-d', '--output', type=str, default='test', help='Output Directory. Default: ./test')
@@ -113,8 +112,7 @@ def create_f4a_jobs():
 def create_pi0Ana_jobs():
     ntp_list   = os.path.realpath(args.ntp_list)
     cuts       = os.path.realpath(args.cuts)
-    events     = args.events
-    jobs       = args.jobs
+    fitStats   = os.path.realpath(args.csv) if(args.csv != '') else ''
     script     = os.path.realpath(args.script)
     executable = os.path.realpath(args.executable)
     output_dir = os.path.realpath(args.output)
@@ -123,8 +121,7 @@ def create_pi0Ana_jobs():
 
     print(f'Run List: {ntp_list}')
     print(f'Cuts: {cuts}')
-    print(f'Events: {events}')
-    print(f'Jobs: {jobs if(events%jobs == 0) else jobs+1}')
+    print(f'FitStats: {fitStats}')
     print(f'Script: {script}')
     print(f'Executable: {executable}')
     print(f'Output Directory: {output_dir}')
@@ -136,30 +133,24 @@ def create_pi0Ana_jobs():
     shutil.copy(executable, output_dir)
     shutil.copy(ntp_list, output_dir)
     shutil.copy(cuts, output_dir)
+    if(fitStats != ''):
+        shutil.copy(fitStats, output_dir)
 
     os.makedirs(f'{output_dir}/stdout',exist_ok=True)
     os.makedirs(f'{output_dir}/error',exist_ok=True)
     os.makedirs(f'{output_dir}/output',exist_ok=True)
 
-    p = events // jobs
-    r = events % jobs
-
-    with open(f'{output_dir}/start_end.txt', mode='w') as file:
-        for i in range(jobs):
-           file.write(f'{i*p} {(i+1)*p-1}\n')
-
-        # if there is a nonzero remainder then add one more job to take care of the remaning events
-        if(r != 0):
-           file.write(f'{jobs*p} {events-1}\n')
+    cuts     = f'{output_dir}/{os.path.basename(cuts)}'
+    fitStats = f'{output_dir}/{os.path.basename(fitStats)}' if(fitStats != '') else '\"\"'
 
     with open(f'{output_dir}/genPi0Ana.sub', mode="w") as file:
         file.write(f'executable     = {os.path.basename(script)}\n')
-        file.write(f'arguments      = {output_dir}/{os.path.basename(executable)} {output_dir}/{os.path.basename(ntp_list)} {output_dir}/{os.path.basename(cuts)} $(start) $(end) output/test-$(start)-$(end).root\n')
+        file.write(f'arguments      = {output_dir}/{os.path.basename(executable)} $(input_ntp) {cuts} {fitStats} output/test-$(Process).root\n')
         file.write(f'log            = {log}\n')
-        file.write( 'output         = stdout/job-$(start)-$(end).out\n')
-        file.write( 'error          = error/job-$(start)-$(end).err\n')
+        file.write( 'output         = stdout/job-$(Process).out\n')
+        file.write( 'error          = error/job-$(Process).err\n')
         file.write(f'request_memory = {memory}GB\n')
-        file.write( 'queue start, end from start_end.txt')
+        file.write(f'queue input_ntp from {os.path.basename(ntp_list)}')
 
 if __name__ == '__main__':
     if(args.command == 'f4a'):
