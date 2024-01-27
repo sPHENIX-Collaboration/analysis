@@ -39,7 +39,7 @@ namespace myAnalysis {
 
     vector<Cut> cuts;
 
-    Int_t init(const string &i_input, const string &i_cuts, const string &fitStats);
+    Int_t init(const string &i_input, const string &i_cuts, const string &fitStats, Long64_t start = 0, Long64_t end = 0);
     Int_t readFiles(const string &i_input, Long64_t start = 0, Long64_t end = 0);
     Int_t readCuts(const string &i_cuts);
     Int_t readFitStats(const string &fitStats);
@@ -101,8 +101,8 @@ namespace myAnalysis {
     Bool_t use_mass_range = false;
 }
 
-Int_t myAnalysis::init(const string &i_input, const string &i_cuts, const string& fitStats) {
-    T = new TChain("T2");
+Int_t myAnalysis::init(const string &i_input, const string &i_cuts, const string& fitStats, Long64_t start, Long64_t end) {
+    T = new TChain("T");
     T->Add(i_input.c_str());
 
     tree = new TTree("flow","flow");
@@ -110,6 +110,9 @@ Int_t myAnalysis::init(const string &i_input, const string &i_cuts, const string
     tree->Branch("evt_ctr", &evt_ctr);
     tree->Branch("QQ", &QQ);
     tree->Branch("qQ", &qQ);
+    Int_t ret;
+    // ret = readFiles(i_input, start, end);
+    // if(ret != 0) return ret;
 
     Int_t ret = readCuts(i_cuts);
     if(ret != 0) return ret;
@@ -486,10 +489,10 @@ void pi0Analysis(const string &i_input,
     cout << "end: "        << end << endl;
     cout << "#############################" << endl;
 
-    Int_t ret = myAnalysis::init(i_input, i_cuts, fitStats);
+    Int_t ret = myAnalysis::init(i_input, i_cuts, fitStats, start, end);
     if(ret != 0) return;
 
-    myAnalysis::process_event(start,end);
+    myAnalysis::process_event(start, end);
     myAnalysis::finalize(i_output);
 }
 
