@@ -64,6 +64,7 @@ namespace myAnalysis {
     map<string, TH1F*>              hDiphotonPt;
     map<string, TH1F*>              hQQ;
     map<pair<string,string>, TH1F*> hqQ;
+    map<pair<string,string>, TH2F*> h2Pi0EtaPhi;
 
     Int_t   bins_pi0_mass = 48;
     Float_t hpi0_mass_min = 0;
@@ -84,6 +85,14 @@ namespace myAnalysis {
     Int_t   bins_Q = 200;
     Float_t Q_min  = -1;
     Float_t Q_max  = 1;
+
+    Int_t   bins_phi = 128; // Bin width on the order of blocks
+    Float_t phi_min  = -M_PI;
+    Float_t phi_max  = M_PI;
+
+    Int_t   bins_eta = 48; // Bin width on the order of blocks
+    Float_t eta_min  = -1.152;
+    Float_t eta_max  = 1.152;
 
     Bool_t do_vn_calc = true;
 
@@ -339,7 +348,9 @@ void myAnalysis::init_hists() {
             string suffix = "_"+cent_key[i]+"_"+pt_key[j];
             suffix_title = "Centrality: " + cent_key[i] + "%, Diphoton p_{T}: " + pt_key[j] + " GeV";
 
-            hqQ[key] = new TH1F(("hqQ_"+to_string(idx)).c_str(), ("qQ, " + suffix_title +"; qQ; Counts").c_str(), bins_Q, Q_min, Q_max);
+            hqQ[key] = new TH1F(("hqQ_"+to_string(idx)).c_str(), ("qQ, " + suffix_title + "; qQ; Counts").c_str(), bins_Q, Q_min, Q_max);
+
+            h2Pi0EtaPhi[key] = new TH2F(("h2Pi0EtaPhi_"+to_string(idx)).c_str(), ("#pi_{0}, " + suffix_title + "; #eta; #phi").c_str(), bins_eta, eta_min, eta_max, bins_phi, phi_min, phi_max);
 
             h2DeltaRVsMass[key] = new TH2F(("h2DeltaRVsMass"+suffix).c_str(),
                                             ("#Delta R vs Diphoton Invariant Mass, " + suffix_title +"; Mass [GeV]; #Delta R").c_str(),
@@ -437,8 +448,10 @@ void myAnalysis::process_event(Long64_t start, Long64_t end) {
     UInt_t max_npi0 = 0;
     Float_t QQ_min  = 9999;
     Float_t qQ_min  = 9999;
+    Float_t eta_min = 9999;
     Float_t QQ_max  = 0;
     Float_t qQ_max  = 0;
+    Float_t eta_max = 0;
 
     cout << "Events to process: " << end-start << endl;
     // loop over each event
@@ -537,6 +550,9 @@ void myAnalysis::process_event(Long64_t start, Long64_t end) {
                     if(k == 0 && do_vn_calc && pi0_mass_val >= pi0_mass_range[idx].first && pi0_mass_val < pi0_mass_range[idx].second) {
                         ++pi0_ctr[idx];
                         qQ[idx] += qQ_val;
+                        h2Pi0EtaPhi[key]->Fill(pi0_eta_val, pi0_phi_val);
+                        eta_min = min(eta_min, pi0_eta_val);
+                        eta_max = max(eta_max, pi0_eta_val);
                     }
                 }
             }
@@ -566,6 +582,7 @@ void myAnalysis::process_event(Long64_t start, Long64_t end) {
 
     cout << "QQ min: " << QQ_min << ", QQ max: " << QQ_max << endl;
     cout << "qQ min: " << qQ_min << ", qQ max: " << qQ_max << endl;
+    cout << "pi0 eta min: " << eta_min << ", pi0 eta max: " << eta_max << endl;
     cout << "Max Pi0s per event: " << max_npi0 << endl;
     cout << "Finish Process Event" << endl;
 }
@@ -581,6 +598,8 @@ void myAnalysis::finalize(const string &i_output) {
     if(do_vn_calc) {
         output.mkdir("vn/QQ");
         output.mkdir("vn/qQ");
+
+        output.mkdir("QA/h2Pi0EtaPhi");
     }
 
     for(auto cent : cent_key) {
@@ -604,6 +623,9 @@ void myAnalysis::finalize(const string &i_output) {
             if(do_vn_calc) {
                 output.cd("vn/qQ");
                 hqQ[key]->Write();
+
+                output.cd("QA/h2Pi0EtaPhi");
+                h2Pi0EtaPhi[key]->Write();
             }
 
             output.mkdir(("results/"+cent+"/"+pt).c_str());
