@@ -43,9 +43,9 @@ namespace myAnalysis {
     TH1F* hPsi_S[2][3]; // [cent][order of correction]
     TH1F* hPsi_N[2][3]; // [cent][order of correction]
 
-    UInt_t bins_psi = 50;
-    UInt_t low_psi  = 0;
-    UInt_t high_psi = M_PI;
+    UInt_t bins_psi  = 100;
+    Float_t low_psi  = -M_PI;
+    Float_t high_psi = M_PI;
 
     // First Order Correction
     Float_t Q_S_x_avg[2] = {0};
@@ -62,11 +62,11 @@ void myAnalysis::init_hists() {
     for (Int_t i = 0; i < 2; ++i) {
         for (Int_t j = 0; j < 3; ++j) {
             string name = "hPsi_S_"+cent_key[i]+"_"+to_string(j);
-            string title = to_string(j) + "-th Order Corrected #Psi_{2}^{S}, Centrality: " + cent_key[i] + "; #Psi_{2}^{S}; Counts";
+            string title = to_string(j) + "-th Order Corrected 2#Psi_{2}^{S}, Centrality: " + cent_key[i] + "; 2#Psi_{2}^{S}; Counts";
             hPsi_S[i][j] = new TH1F((name).c_str(), title.c_str(), bins_psi, low_psi, high_psi);
 
             name = "hPsi_N_"+cent_key[i]+"_"+to_string(j);
-            title = to_string(j) + "-th Order Corrected #Psi_{2}^{N}, Centrality: " + cent_key[i] + "; #Psi_{2}^{N}; Counts";
+            title = to_string(j) + "-th Order Corrected 2#Psi_{2}^{N}, Centrality: " + cent_key[i] + "; 2#Psi_{2}^{N}; Counts";
             hPsi_N[i][j] = new TH1F((name).c_str(), title.c_str(), bins_psi, low_psi, high_psi);
        }
     }
@@ -314,29 +314,29 @@ void myAnalysis::process_event(Long64_t start, Long64_t end) {
         // compute Psi
         // no correction
         Float_t psi = atan2(Q_S_y, Q_S_x);
-        psi = (psi < 0) ? (2*M_PI+psi)/2 : psi/2;
+        // psi = (psi < 0) ? (2*M_PI+psi)/2 : psi/2;
         hPsi_S[j][0]->Fill(psi);
 
         psi = atan2(Q_N_y, Q_N_x);
-        psi = (psi < 0) ? (2*M_PI+psi)/2 : psi/2;
+        // psi = (psi < 0) ? (2*M_PI+psi)/2 : psi/2;
         hPsi_N[j][0]->Fill(psi);
 
         // order 1
         psi = atan2(Q_S_y_corr[j], Q_S_x_corr[j]);
-        psi = (psi < 0) ? (2*M_PI+psi)/2 : psi/2;
+        // psi = (psi < 0) ? (2*M_PI+psi)/2 : psi/2;
         hPsi_S[j][1]->Fill(psi);
 
         psi = atan2(Q_N_y_corr[j], Q_N_x_corr[j]);
-        psi = (psi < 0) ? (2*M_PI+psi)/2 : psi/2;
+        // psi = (psi < 0) ? (2*M_PI+psi)/2 : psi/2;
         hPsi_N[j][1]->Fill(psi);
 
         // order 2
         psi = atan2(Q_S_y_corr2[j], Q_S_x_corr2[j]);
-        psi = (psi < 0) ? (2*M_PI+psi)/2 : psi/2;
+        // psi = (psi < 0) ? (2*M_PI+psi)/2 : psi/2;
         hPsi_S[j][2]->Fill(psi);
 
         psi = atan2(Q_N_y_corr2[j], Q_N_x_corr2[j]);
-        psi = (psi < 0) ? (2*M_PI+psi)/2 : psi/2;
+        // psi = (psi < 0) ? (2*M_PI+psi)/2 : psi/2;
         hPsi_N[j][2]->Fill(psi);
     }
 
