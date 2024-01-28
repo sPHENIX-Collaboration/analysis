@@ -27,7 +27,7 @@ import fitz  # PyMuPDF
 import io
 import math
 
-data = pd.read_csv('/Users/patsfan753/Desktop/Desktop/AnalyzePi0s_Final/dataOutput/PlotByPlotOutputJamiesUpdatedMasking.csv')
+data = pd.read_csv('/Users/patsfan753/Desktop/Desktop/AnalyzePi0s_Final/dataOutput/PlotByPlotOutputJamies_1_27_24.csv')
 
 # Dictionary to maintain the visibility state of different centrality categories in the plot
 centrality_visibility = {"40-60%": True, "20-40%": True}
@@ -159,6 +159,20 @@ def calculate_jitter(bin_center, point_index, num_points, bin_width):
     jitter = (point_index + 1) * spacing - (bin_width / 2)
     return jitter
     
+    
+    
+# Define a function to generate random colors
+def generate_random_color():
+    return "#{:06x}".format(np.random.randint(0, 0xFFFFFF))
+
+# Predefined colors list in the order specified
+predefined_colors = ['blue', 'orange', 'darkgreen', 'lightgreen', 'purple', 'red']
+
+# Extend the predefined colors with random colors if necessary
+for _ in range(100):  # Assuming you won't need more than 100 updates
+    predefined_colors.append(generate_random_color())
+
+
 #create interactive plot for signal yield data
 def plot_SignalYield(filtered_data, clear_plot):
     # Declare global variables to be modified inside this function.
@@ -190,7 +204,7 @@ def plot_SignalYield(filtered_data, clear_plot):
     
     # Check if the plot_update_count_SignalYield index is in the bounds of the cut_colors
     if color_variation_trigger and plot_update_count_SignalYield > 0 and plot_update_count_SignalYield <= len(cut_colors):
-        current_color = cut_colors[plot_update_count_SignalYield - 1]
+        current_color = predefined_colors[(plot_update_count_SignalYield) % len(predefined_colors)]
     else:
         current_color = 'blue'  # Default color
 
@@ -505,8 +519,9 @@ def plot_SBratio(filtered_data, clear_plot):
         'D': delta_r_entry.get()
     }
 
+    # Check if the plot_update_count_SignalYield index is in the bounds of the cut_colors
     if color_variation_trigger and plot_update_count_SBratio > 0 and plot_update_count_SBratio <= len(cut_colors):
-        current_color = cut_colors[plot_update_count_SBratio - 1]
+        current_color = predefined_colors[(plot_update_count_SBratio) % len(predefined_colors)]
     else:
         current_color = 'blue'  # Default color
 
@@ -589,7 +604,7 @@ def plot_SBratio(filtered_data, clear_plot):
 
     # Set x-axis properties.
     ax.set_xticks(x_ticks)
-    ax.set_xlim(1.5, 5.5)
+    ax.set_xlim(2.0, 5.0)
 
     # Add titles and labels to the plot.
     ax.set_title(r"Signal To Background Ratio vs $\pi^0$ pT")
@@ -799,7 +814,24 @@ def plot_index_data(index_str, history_dict, save_path = None):
         ax.set_xticks(range(1, len(cut_combinations) + 1))
         
         
-        ax.set_ylim(.1, .4)
+        values = [data[values_key] for data in index_data]
+        errors = [data[errors_key] for data in index_data]
+
+        # Calculate the minimum and maximum y-values considering the errors
+        min_y = min([v - e for v, e in zip(values, errors)], default=0)
+        max_y = max([v + e for v, e in zip(values, errors)], default=0)
+
+        # Add different buffer sizes for min and max values
+        min_buffer = (max_y - min_y) * 0.1  # Smaller buffer for min, e.g., 10%
+        max_buffer = (max_y - min_y) * 0.8  # Larger buffer for max, e.g., 40%
+
+        y_min_limit = min_y - min_buffer
+        y_max_limit = max_y + max_buffer
+
+        # Set the y-axis limits
+        ax.set_ylim(y_min_limit, y_max_limit)
+
+        
         ax.yaxis.grid(True, which='major', linestyle='-', linewidth=0.08, color='gray')
         ax.xaxis.grid(True, which='major', linestyle='-', linewidth=0.08, color='gray')
         # Darken the minor tick marks
@@ -2280,3 +2312,4 @@ def main():
     root.mainloop()
 if __name__ == "__main__":
     main()
+
