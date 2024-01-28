@@ -39,10 +39,11 @@ namespace myAnalysis {
 
     vector<Cut> cuts;
 
-    Int_t init(const string &i_input, const string &i_cuts, const string &fitStats, Long64_t start = 0, Long64_t end = 0);
+    Int_t init(const string &i_input, const string &i_cuts, const string &fitStats, const string &QVecCorr, Long64_t start = 0, Long64_t end = 0);
     Int_t readFiles(const string &i_input, Long64_t start = 0, Long64_t end = 0);
     Int_t readCuts(const string &i_cuts);
     Int_t readFitStats(const string &fitStats);
+    Int_t readQVectorCorrection(const string &i_input);
     void init_hists();
 
     void process_event(Long64_t start = 0, Long64_t end = 0);
@@ -99,9 +100,19 @@ namespace myAnalysis {
     Float_t hasym_max = 1;
 
     Bool_t do_vn_calc = false;
+
+    // First Order Correction
+    Float_t Q_S_x_avg[2] = {0};
+    Float_t Q_S_y_avg[2] = {0};
+    Float_t Q_N_x_avg[2] = {0};
+    Float_t Q_N_y_avg[2] = {0};
+
+    // Second Order Correction
+    Float_t X_S[2][2][2] = {0}; // [cent][row][col]
+    Float_t X_N[2][2][2] = {0}; // [cent][row][col]
 }
 
-Int_t myAnalysis::init(const string &i_input, const string &i_cuts, const string& fitStats, Long64_t start, Long64_t end) {
+Int_t myAnalysis::init(const string &i_input, const string &i_cuts, const string& fitStats, const string& QVecCorr, Long64_t start, Long64_t end) {
     T = new TChain("T");
     T->Add(i_input.c_str());
 
@@ -122,7 +133,11 @@ Int_t myAnalysis::init(const string &i_input, const string &i_cuts, const string
 
     init_hists();
 
-    if(do_vn_calc && !fitStats.empty()) ret = readFitStats(fitStats);
+    if(do_vn_calc) {
+        ret = readFitStats(fitStats);
+        if(ret) return ret;
+        ret = readQVectorCorrection(QVecCorr);
+    }
 
     return ret;
 }
@@ -253,6 +268,70 @@ Int_t myAnalysis::readFitStats(const string &fitStats) {
                  << ", low mass val: "  << pi0_mass_range[idx].first
                  << ", high mass val: " << pi0_mass_range[idx].second << endl;
         }
+        cout << endl;
+    }
+
+    return 0;
+}
+
+Int_t myAnalysis::readQVectorCorrection(const string &i_input) {
+    // Create an input stream
+    std::ifstream file(i_input);
+
+    // Check if the file was successfully opened
+    if (!file.is_open()) {
+        cerr << "Failed to open csv file: " << i_input << endl;
+        return 1;
+    }
+
+    string line;
+
+    // get line and discard header
+    std::getline(file, line);
+
+    Int_t i = 0;
+    while (std::getline(file, line)) {
+        std::istringstream lineStream(line);
+        string cell;
+        char comma;
+
+        if (!(lineStream >> Q_S_x_avg[i] >> comma
+                         >> Q_S_y_avg[i] >> comma
+                         >> Q_N_x_avg[i] >> comma
+                         >> Q_N_y_avg[i] >> comma
+                         >> X_S[i][0][0] >> comma
+                         >> X_S[i][0][1] >> comma
+                         >> X_S[i][1][1] >> comma
+                         >> X_N[i][0][0] >> comma
+                         >> X_N[i][0][1] >> comma
+                         >> X_N[i][1][1])) {
+
+            cerr << "Failed to parse line: " << line << endl;
+            return 1;
+        }
+        ++i;
+    }
+
+    // Close the file
+    file.close();
+
+    cout << "Q Vector Corr Factors" << endl;
+    for(Int_t j = 0; j < i; ++j) {
+        cout << "Cent: " << cent_key[j] << endl;
+        cout << left << "Q_S_x_avg: "   << setw(8) << Q_S_x_avg[j]
+                     << ", Q_S_y_avg: " << setw(8) << Q_S_y_avg[j] << endl;
+
+        cout << left << "Q_N_x_avg: "   << setw(8) << Q_N_x_avg[j]
+                     << ", Q_N_y_avg: " << setw(8) << Q_N_y_avg[j] << endl;
+
+        cout << left << "X_S_00: "   << setw(8) << X_S[j][0][0]
+                     << ", X_S_01: " << setw(8) << X_S[j][0][1]
+                     << ", X_S_11: " << setw(8) << X_S[j][1][1] << endl;
+
+        cout << left << "X_N_00: "   << setw(8) << X_N[j][0][0]
+                     << ", X_N_01: " << setw(8) << X_N[j][0][1]
+                     << ", X_N_11: " << setw(8) << X_N[j][1][1] << endl;
+
         cout << endl;
     }
 
@@ -521,6 +600,7 @@ void myAnalysis::finalize(const string &i_output) {
 void pi0Analysis(const string &i_input,
                  const string &i_cuts,
                  const string &fitStats = "",
+                 const string &QVecCorr  = "",
                  const string &i_output = "test.root",
                  Long64_t      start    = 0,
                  Long64_t      end      = 0) {
@@ -530,12 +610,13 @@ void pi0Analysis(const string &i_input,
     cout << "inputFile: "  << i_input << endl;
     cout << "Cuts: "       << i_cuts << endl;
     cout << "fitStats: "   << fitStats << endl;
+    cout << "QVecCorr: "   << QVecCorr << endl;
     cout << "outputFile: " << i_output << endl;
     cout << "start: "      << start << endl;
     cout << "end: "        << end << endl;
     cout << "#############################" << endl;
 
-    Int_t ret = myAnalysis::init(i_input, i_cuts, fitStats, start, end);
+    Int_t ret = myAnalysis::init(i_input, i_cuts, fitStats, QVecCorr, start, end);
     if(ret != 0) return;
 
     myAnalysis::process_event(start, end);
@@ -544,11 +625,12 @@ void pi0Analysis(const string &i_input,
 
 # ifndef __CINT__
 Int_t main(Int_t argc, char* argv[]) {
-if(argc < 3 || argc > 7){
-        cout << "usage: ./pi0Ana inputFile cuts [fitStats] [outputFile] [start] [end] " << endl;
+if(argc < 3 || argc > 8){
+        cout << "usage: ./pi0Ana inputFile cuts [fitStats] [QVecCorr] [outputFile] [start] [end] " << endl;
         cout << "inputFile: containing list of root file paths" << endl;
         cout << "cuts: csv file containing cuts" << endl;
         cout << "fitStats: csv file containing fit stats" << endl;
+        cout << "QVecCorr: csv file containing Q vector corrections" << endl;
         cout << "outputFile: location of output file. Default: test.root." << endl;
         cout << "start: start event number. Default: 0." << endl;
         cout << "end: end event number. Default: 0. (to run over all entries)." << endl;
@@ -556,6 +638,7 @@ if(argc < 3 || argc > 7){
     }
 
     string fitStats   = "";
+    string QVecCorr   = "";
     string outputFile = "test.root";
     Long64_t start    = 0;
     Long64_t end      = 0;
@@ -564,13 +647,16 @@ if(argc < 3 || argc > 7){
         fitStats = argv[3];
     }
     if(argc >= 5) {
-        outputFile = argv[4];
+        QVecCorr = argv[4];
     }
     if(argc >= 6) {
-        start = atol(argv[5]);
+        outputFile = argv[5];
     }
     if(argc >= 7) {
-        end = atol(argv[6]);
+        start = atol(argv[6]);
+    }
+    if(argc >= 8) {
+        end = atol(argv[7]);
     }
 
     // ensure that 0 <= start <= end
@@ -579,7 +665,7 @@ if(argc < 3 || argc > 7){
         return 1;
     }
 
-    pi0Analysis(argv[1], argv[2], fitStats, outputFile, start, end);
+    pi0Analysis(argv[1], argv[2], fitStats, QVecCorr, outputFile, start, end);
 
     cout << "======================================" << endl;
     cout << "done" << endl;
