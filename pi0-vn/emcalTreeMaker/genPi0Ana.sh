@@ -11,10 +11,11 @@ exe=${1}
 input=${2}
 cuts=${3}
 fitStats=${4}
-output=${5}
+Q_vec_corr=${5}
+output=${6}
 
 # print the environment - needed for debugging
 printenv
 
 mkdir -p output
-$exe $input $cuts $fitStats $output
+$exe $input $cuts $fitStats $Q_vec_corr $output

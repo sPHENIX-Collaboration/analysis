@@ -28,7 +28,6 @@ using std::cos;
 
 namespace myAnalysis {
     TChain* T;
-    TTree*  tree;
 
     struct Cut {
         Float_t e;      // min cluster energy
@@ -49,30 +48,11 @@ namespace myAnalysis {
     void process_event(Long64_t start = 0, Long64_t end = 0);
     void finalize(const string &i_output = "test.root");
 
-    map<string,pair<Float_t, Float_t>> centrality = {{"40-60",  make_pair(215, 497.222)},
-                                                     {"20-40",  make_pair(497.222, 955.741)}};
-
-    map<string,pair<Float_t, Float_t>> diphoton_pt = {{"2-2.5", make_pair(2,   2.5)},
-                                                      {"2.5-3", make_pair(2.5, 3)},
-                                                      {"3-3.5", make_pair(3,   3.5)},
-                                                      {"3.5-4", make_pair(3.5, 4)},
-                                                      {"4-4.5", make_pair(4,   4.5)},
-                                                      {"4.5-5", make_pair(4.5, 5)}};
-
     vector<string> cent_key = {"40-60", "20-40"};
     vector<string> pt_key   = {"2-2.5", "2.5-3", "3-3.5", "3.5-4", "4-4.5", "4.5-5"};
 
     TH1F* pt_dum_vec   = new TH1F("pt_dum_vec","",6,2,5);
     TH1F* cent_dum_vec = new TH1F("cent_dum_vec","", 2, new Double_t[3] {215, 497.222, 955.741});
-
-    vector<UInt_t> pi0_ctr(cent_key.size()*pt_key.size());
-
-    vector<UInt_t> evt_ctr(cent_key.size());
-
-    vector<Double_t> QQ(cent_key.size());
-
-    // contains the aggregrate sum of dot product of pi0 q vector and MBD Q vector
-    vector<Double_t> qQ(cent_key.size()*pt_key.size());
 
     // keep track of low and high pi0 mass values to filter on for the computation of the v2
     vector<pair<Float_t,Float_t>> pi0_mass_range(cent_key.size()*pt_key.size());
@@ -82,6 +62,8 @@ namespace myAnalysis {
     map<pair<string,string>, TH2F*> h2DeltaRVsMass;
     map<pair<string,string>, TH2F*> h2AsymVsMass;
     map<string, TH1F*>              hDiphotonPt;
+    map<string, TH1F*>              hQQ;
+    map<pair<string,string>, TH1F*> hqQ;
 
     Int_t   bins_pi0_mass = 48;
     Float_t hpi0_mass_min = 0;
@@ -99,7 +81,11 @@ namespace myAnalysis {
     Float_t hasym_min = 0;
     Float_t hasym_max = 1;
 
-    Bool_t do_vn_calc = false;
+    Int_t   bins_Q = 200;
+    Float_t Q_min  = -1;
+    Float_t Q_max  = 1;
+
+    Bool_t do_vn_calc = true;
 
     // First Order Correction
     Float_t Q_S_x_avg[2] = {0};
@@ -108,8 +94,8 @@ namespace myAnalysis {
     Float_t Q_N_y_avg[2] = {0};
 
     // Second Order Correction
-    Float_t X_S[2][2][2] = {0}; // [cent][row][col]
-    Float_t X_N[2][2][2] = {0}; // [cent][row][col]
+    Float_t X_S[2][2][2] = {0}; // [cent][row][col], off diagonal entries are the same
+    Float_t X_N[2][2][2] = {0}; // [cent][row][col], off diagonal entries are the same
 }
 
 Int_t myAnalysis::init(const string &i_input, const string &i_cuts, const string& fitStats, const string& QVecCorr, Long64_t start, Long64_t end) {
@@ -119,14 +105,6 @@ Int_t myAnalysis::init(const string &i_input, const string &i_cuts, const string
     Int_t ret;
     // ret = readFiles(i_input, start, end);
     // if(ret != 0) return ret;
-
-    if(do_vn_calc) {
-        tree = new TTree("flow","flow");
-        tree->Branch("pi0_ctr", &pi0_ctr);
-        tree->Branch("evt_ctr", &evt_ctr);
-        tree->Branch("QQ", &QQ);
-        tree->Branch("qQ", &qQ);
-    }
 
     ret = readCuts(i_cuts);
     if(ret != 0) return ret;
@@ -165,7 +143,7 @@ Int_t myAnalysis::readFiles(const string &i_input, Long64_t start, Long64_t end)
         cout << line << ", entries: " << T->GetEntries()-entries << endl;
         entries = T->GetEntries();
 
-        if(entries > end) break;
+        if(end && entries > end) break;
     }
     cout << "======================================" << endl;
     cout << "Total Entries: " << T->GetEntries() << endl;
@@ -236,25 +214,26 @@ Int_t myAnalysis::readFitStats(const string &fitStats) {
 
     std::string line;
     Int_t idx = 0;
+
+    // skip header
+    std::getline(file, line);
+
     while (std::getline(file, line)) {
-
-        // skip header line
-        if(!idx++) continue;
-
         std::stringstream ss(line);
         std::string token;
 
-        int colIdx = 0;
+        Int_t colIdx = 0;
         while (std::getline(ss, token, ',')) { // Assuming comma-separated values
             if (colIdx == col1Idx) {
                 // load pi0_mass low val
-                pi0_mass_range[idx-2].first = stof(token);
+                pi0_mass_range[idx].first = stof(token);
             } else if (colIdx == col2Idx) {
                 // load pi0_mass high val
-                pi0_mass_range[idx-2].second = stof(token);
+                pi0_mass_range[idx].second = stof(token);
             }
             colIdx++;
         }
+        ++idx;
     }
 
     cout << endl;
@@ -345,17 +324,22 @@ void myAnalysis::init_hists() {
     stringstream t;
     // create a pi0 mass hist for each cut
     // create QA plots for each centrality/pt bin
-    for(auto cent : centrality) {
+    for(Int_t i = 0; i < cent_key.size(); ++i) {
 
-        string suffix_title =  "Centrality: " + cent.first + "%";
-        hDiphotonPt[cent.first] = new TH1F(("hDiphotonPt_"+cent.first).c_str(), ("Diphoton p_{T}, " + suffix_title +"; p_{T} [GeV]; Counts").c_str(), bins_pt, hpt_min, hpt_max);
+        string suffix_title =  "Centrality: " + cent_key[i] + "%";
+        hDiphotonPt[cent_key[i]] = new TH1F(("hDiphotonPt_"+cent_key[i]).c_str(), ("Diphoton p_{T}, " + suffix_title +"; p_{T} [GeV]; Counts").c_str(), bins_pt, hpt_min, hpt_max);
 
-        for(auto pt : diphoton_pt) {
+        hQQ[cent_key[i]] = new TH1F(("hQQ_"+cent_key[i]).c_str(), ("QQ, " + suffix_title +"; QQ; Counts").c_str(), bins_Q, Q_min, Q_max);
 
-            pair<string,string> key = make_pair(cent.first,pt.first);
-            string suffix = "_"+cent.first+"_"+pt.first;
-            suffix_title = "Centrality: " + cent.first + "%, Diphoton p_{T}: " + pt.first + " GeV";
+        for(Int_t j = 0; j < pt_key.size(); ++j) {
 
+            Int_t idx = i*pt_key.size()+j;
+
+            pair<string,string> key = make_pair(cent_key[i],pt_key[j]);
+            string suffix = "_"+cent_key[i]+"_"+pt_key[j];
+            suffix_title = "Centrality: " + cent_key[i] + "%, Diphoton p_{T}: " + pt_key[j] + " GeV";
+
+            hqQ[key] = new TH1F(("hqQ_"+to_string(idx)).c_str(), ("qQ, " + suffix_title +"; qQ; Counts").c_str(), bins_Q, Q_min, Q_max);
 
             h2DeltaRVsMass[key] = new TH2F(("h2DeltaRVsMass"+suffix).c_str(),
                                             ("#Delta R vs Diphoton Invariant Mass, " + suffix_title +"; Mass [GeV]; #Delta R").c_str(),
@@ -400,10 +384,10 @@ void myAnalysis::process_event(Long64_t start, Long64_t end) {
     T->SetBranchStatus("chi2_max",  true);
 
     if(do_vn_calc) {
+        T->SetBranchStatus("Q_S_x",   true);
+        T->SetBranchStatus("Q_S_y",   true);
         T->SetBranchStatus("Q_N_x",   true);
         T->SetBranchStatus("Q_N_y",   true);
-        T->SetBranchStatus("Q_P_x",   true);
-        T->SetBranchStatus("Q_P_y",   true);
 
         T->SetBranchStatus("pi0_phi", true);
         T->SetBranchStatus("pi0_eta", true);
@@ -419,10 +403,10 @@ void myAnalysis::process_event(Long64_t start, Long64_t end) {
     vector<Float_t>* ecore_min  = 0;
     vector<Float_t>* chi2_max   = 0;
 
+    Float_t Q_S_x;
+    Float_t Q_S_y;
     Float_t Q_N_x;
     Float_t Q_N_y;
-    Float_t Q_P_x;
-    Float_t Q_P_y;
     vector<Float_t>* pi0_phi    = 0;
     vector<Float_t>* pi0_eta    = 0;
 
@@ -437,10 +421,10 @@ void myAnalysis::process_event(Long64_t start, Long64_t end) {
     T->SetBranchAddress("chi2_max",  &chi2_max);
 
     if(do_vn_calc) {
+        T->SetBranchAddress("Q_S_x",   &Q_S_x);
+        T->SetBranchAddress("Q_S_y",   &Q_S_y);
         T->SetBranchAddress("Q_N_x",   &Q_N_x);
         T->SetBranchAddress("Q_N_y",   &Q_N_y);
-        T->SetBranchAddress("Q_P_x",   &Q_P_x);
-        T->SetBranchAddress("Q_P_y",   &Q_P_y);
 
         T->SetBranchAddress("pi0_phi", &pi0_phi);
         T->SetBranchAddress("pi0_eta", &pi0_eta);
@@ -448,7 +432,13 @@ void myAnalysis::process_event(Long64_t start, Long64_t end) {
 
     end = (end) ? min(end, T->GetEntries()-1) : T->GetEntries()-1;
 
+    UInt_t evt_ctr[cent_key.size()] = {0};
+
     UInt_t max_npi0 = 0;
+    Float_t QQ_min  = 9999;
+    Float_t qQ_min  = 9999;
+    Float_t QQ_max  = 0;
+    Float_t qQ_max  = 0;
 
     cout << "Events to process: " << end-start << endl;
     // loop over each event
@@ -464,12 +454,35 @@ void myAnalysis::process_event(Long64_t start, Long64_t end) {
 
         ++evt_ctr[cent_idx];
 
-        if(do_vn_calc) QQ[cent_idx] += Q_N_x*Q_P_x + Q_N_y*Q_P_y;
+        if(do_vn_calc){
+            // Apply first and second order correction to the Q vectors
+            //============================================
+            // compute first order correction
+            Float_t Q_S_x_temp = Q_S_x - Q_S_x_avg[cent_idx];
+            Float_t Q_S_y_temp = Q_S_y - Q_S_y_avg[cent_idx];
+            Float_t Q_N_x_temp = Q_N_x - Q_N_x_avg[cent_idx];
+            Float_t Q_N_y_temp = Q_N_y - Q_N_y_avg[cent_idx];
+
+            // compute second order correction
+            Q_S_x = X_S[cent_idx][0][0]*Q_S_x_temp+X_S[cent_idx][0][1]*Q_S_y_temp;
+            Q_S_y = X_S[cent_idx][0][1]*Q_S_x_temp+X_S[cent_idx][1][1]*Q_S_y_temp;
+            Q_N_x = X_N[cent_idx][0][0]*Q_N_x_temp+X_N[cent_idx][0][1]*Q_N_y_temp;
+            Q_N_y = X_N[cent_idx][0][1]*Q_N_x_temp+X_N[cent_idx][1][1]*Q_N_y_temp;
+            //============================================
+
+            Float_t QQ = Q_S_x*Q_N_x + Q_S_y*Q_N_y;
+            QQ_min = min(QQ_min, QQ);
+            QQ_max = max(QQ_max, QQ);
+
+            hQQ[cent_key[cent_idx]]->Fill(QQ);
+        }
 
         UInt_t n = pi0_mass->size();
 
         max_npi0 = max(max_npi0, n);
 
+        UInt_t pi0_ctr[cent_key.size()*pt_key.size()] = {0};
+        Float_t qQ[cent_key.size()*pt_key.size()]     = {0};
         // loop over all diphoton candidates
         for(UInt_t j = 0; j < n; ++j) {
             Float_t pi0_pt_val = pi0_pt->at(j);
@@ -501,8 +514,8 @@ void myAnalysis::process_event(Long64_t start, Long64_t end) {
                 pi0_phi_val   = pi0_phi->at(j);
                 pi0_eta_val   = pi0_eta->at(j);
 
-                Q_x = (pi0_eta_val < 0) ? Q_P_x : Q_N_x;
-                Q_y = (pi0_eta_val < 0) ? Q_P_y : Q_N_y;
+                Q_x = (pi0_eta_val < 0) ? Q_N_x : Q_S_x;
+                Q_y = (pi0_eta_val < 0) ? Q_N_y : Q_S_y;
 
                 q_x = cos(2*pi0_phi_val);
                 q_y = sin(2*pi0_phi_val);
@@ -528,33 +541,31 @@ void myAnalysis::process_event(Long64_t start, Long64_t end) {
                 }
             }
         }
-    }
+        if(do_vn_calc) {
+            for(UInt_t j = 0; j < cent_key.size(); ++j) {
+                for(UInt_t k = 0; k < pt_key.size(); ++k) {
+                    Int_t idx = j*pt_key.size()+k;
 
-    if(do_vn_calc) {
-        tree->Fill();
-        cout << endl;
-        for(Int_t i = 0; i < cent_key.size(); ++i) {
-            QQ[i] /= evt_ctr[i];
-            cout << "Cent: "     << cent_key[i]
-                << ", Events: " << evt_ctr[i]
-                << ", avg QQ: " << QQ[i] << endl;
+                    qQ[idx] = (pi0_ctr[idx]) ? qQ[idx]/pi0_ctr[idx] : 0;
+                    qQ_min = min(qQ_min, qQ[idx]);
+                    qQ_max = max(qQ_max, qQ[idx]);
 
-            for(Int_t j = 0; j < pt_key.size(); ++j) {
-                Int_t idx = i*pt_key.size()+j;
-                qQ[idx] = (pi0_ctr[idx]) ? qQ[idx]/pi0_ctr[idx] : 0;
-                Float_t v2 = (QQ[i]) ? qQ[idx]/sqrt(QQ[i]) : 0;
+                    pair<string,string> key = make_pair(cent_key[j], pt_key[k]);
 
-                cout << "pT: "         << pt_key[j]
-                    << ", asym: "      << cuts[0].e_asym
-                    << ", ECore_min: " << cuts[0].e
-                    << ", pi0s: "      << pi0_ctr[idx]
-                    << ", avg qQ: "    << qQ[idx]
-                    << ", v2: "        << v2 << endl;
+                    if(qQ[idx]) hqQ[key]->Fill(qQ[idx]);
+                }
             }
-            cout << endl;
         }
     }
 
+    cout << endl;
+    for(Int_t i = 0; i < cent_key.size(); ++i) {
+        cout << "Cent: "     << cent_key[i]
+             << ", Events: " << evt_ctr[i] << endl;
+    }
+
+    cout << "QQ min: " << QQ_min << ", QQ max: " << QQ_max << endl;
+    cout << "qQ min: " << qQ_min << ", qQ max: " << qQ_max << endl;
     cout << "Max Pi0s per event: " << max_npi0 << endl;
     cout << "Finish Process Event" << endl;
 }
@@ -567,12 +578,22 @@ void myAnalysis::finalize(const string &i_output) {
     output.mkdir("QA/h2DeltaRVsMass");
     output.mkdir("QA/h2AsymVsMass");
 
-    for(auto cent : centrality) {
-        output.cd("QA/hDiphotonPt");
-        hDiphotonPt[cent.first]->Write();
+    if(do_vn_calc) {
+        output.mkdir("vn/QQ");
+        output.mkdir("vn/qQ");
+    }
 
-        for(auto pt : diphoton_pt) {
-            pair<string,string> key = make_pair(cent.first, pt.first);
+    for(auto cent : cent_key) {
+        output.cd("QA/hDiphotonPt");
+        hDiphotonPt[cent]->Write();
+
+        if(do_vn_calc) {
+            output.cd("vn/QQ");
+            hQQ[cent]->Write();
+        }
+
+        for(auto pt : pt_key) {
+            pair<string,string> key = make_pair(cent, pt);
 
             output.cd("QA/h2DeltaRVsMass");
             h2DeltaRVsMass[key]    ->Write();
@@ -580,18 +601,18 @@ void myAnalysis::finalize(const string &i_output) {
             output.cd("QA/h2AsymVsMass");
             h2AsymVsMass[key]      ->Write();
 
-            output.mkdir(("results/"+cent.first+"/"+pt.first).c_str());
-            output.cd(("results/"+cent.first+"/"+pt.first).c_str());
+            if(do_vn_calc) {
+                output.cd("vn/qQ");
+                hqQ[key]->Write();
+            }
+
+            output.mkdir(("results/"+cent+"/"+pt).c_str());
+            output.cd(("results/"+cent+"/"+pt).c_str());
 
             for(Int_t i = 0; i < cuts.size(); ++i) {
                 hPi0Mass[key][i]->Write();
             }
         }
-    }
-
-    if(do_vn_calc) {
-        output.cd();
-        tree->Write();
     }
 
     output.Close();

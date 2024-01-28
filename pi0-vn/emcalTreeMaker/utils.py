@@ -23,6 +23,7 @@ pi0Ana = subparser.add_parser('pi0Ana', help='Create condor submission directory
 pi0Ana.add_argument('-i', '--ntp-list', type=str, help='List of Ntuples', required=True)
 pi0Ana.add_argument('-c', '--cuts', type=str, help='List of cuts', required=True)
 pi0Ana.add_argument('-c2', '--csv', type=str, default="", help='CSV file with fitStats. Default: ""')
+pi0Ana.add_argument('-c3', '--Q-vec-corr', type=str, default="", help='CSV file with Q vector corrections. Default: ""')
 pi0Ana.add_argument('-e', '--script', type=str, default='genPi0Ana.sh', help='Job script to execute. Default: genPi0Ana.sh')
 pi0Ana.add_argument('-b', '--executable', type=str, default='bin/pi0Ana', help='Executable. Default: bin/pi0Ana')
 pi0Ana.add_argument('-d', '--output', type=str, default='test', help='Output Directory. Default: ./test')
@@ -113,6 +114,7 @@ def create_pi0Ana_jobs():
     ntp_list   = os.path.realpath(args.ntp_list)
     cuts       = os.path.realpath(args.cuts)
     fitStats   = os.path.realpath(args.csv) if(args.csv != '') else ''
+    Q_vec_corr = os.path.realpath(args.Q_vec_corr) if(args.Q_vec_corr != '') else ''
     script     = os.path.realpath(args.script)
     executable = os.path.realpath(args.executable)
     output_dir = os.path.realpath(args.output)
@@ -122,6 +124,7 @@ def create_pi0Ana_jobs():
     print(f'Run List: {ntp_list}')
     print(f'Cuts: {cuts}')
     print(f'FitStats: {fitStats}')
+    print(f'Q Vector Correction: {Q_vec_corr}')
     print(f'Script: {script}')
     print(f'Executable: {executable}')
     print(f'Output Directory: {output_dir}')
@@ -135,17 +138,20 @@ def create_pi0Ana_jobs():
     shutil.copy(cuts, output_dir)
     if(fitStats != ''):
         shutil.copy(fitStats, output_dir)
+    if(Q_vec_corr != ''):
+        shutil.copy(Q_vec_corr, output_dir)
 
     os.makedirs(f'{output_dir}/stdout',exist_ok=True)
     os.makedirs(f'{output_dir}/error',exist_ok=True)
     os.makedirs(f'{output_dir}/output',exist_ok=True)
 
-    cuts     = f'{output_dir}/{os.path.basename(cuts)}'
-    fitStats = f'{output_dir}/{os.path.basename(fitStats)}' if(fitStats != '') else r'\"\"'
+    cuts       = f'{output_dir}/{os.path.basename(cuts)}'
+    fitStats   = f'{output_dir}/{os.path.basename(fitStats)}' if(fitStats != '') else r'\"\"'
+    Q_vec_corr = f'{output_dir}/{os.path.basename(Q_vec_corr)}' if(Q_vec_corr != '') else r'\"\"'
 
     with open(f'{output_dir}/genPi0Ana.sub', mode="w") as file:
         file.write(f'executable     = {os.path.basename(script)}\n')
-        file.write(f'arguments      = {output_dir}/{os.path.basename(executable)} $(input_ntp) {cuts} {fitStats} output/test-$(Process).root\n')
+        file.write(f'arguments      = {output_dir}/{os.path.basename(executable)} $(input_ntp) {cuts} {fitStats} {Q_vec_corr} output/test-$(Process).root\n')
         file.write(f'log            = {log}\n')
         file.write( 'output         = stdout/job-$(Process).out\n')
         file.write( 'error          = error/job-$(Process).err\n')
