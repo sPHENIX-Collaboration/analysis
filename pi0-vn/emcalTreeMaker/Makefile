@@ -10,13 +10,17 @@ sPHENIX_CPPFLAGS = -I$(MYINSTALL)/include -I$(OFFLINE_MAIN)/include
 LIBFLAGS = -L$(MYINSTALL)/lib -lcaloTreeGen
 sPHENIX_LIBFLAGS = -L$(OFFLINE_MAIN)/lib -lfun4all
 
-all: bin/Fun4All_CaloTreeGen bin/pi0Ana bin/convert
+all: bin/Fun4All_CaloTreeGen bin/pi0Ana bin/convert bin/Q-vec-corr
 
 bin/Fun4All_CaloTreeGen: macro/Fun4All_CaloTreeGen.C
 	mkdir -p bin
 	g++ -o $@ $< $(ROOT_CPPFLAGS) $(sPHENIX_CPPFLAGS) $(LIBFLAGS) $(ROOT_LIBFLAGS) $(sPHENIX_LIBFLAGS)
 
 bin/pi0Ana: macro/pi0Analysis.C
+	mkdir -p bin
+	g++ -o $@ $< $(ROOT_CPPFLAGS) $(ROOT_LIBFLAGS)
+
+bin/Q-vec-corr: macro/Q-vector-correction.C
 	mkdir -p bin
 	g++ -o $@ $< $(ROOT_CPPFLAGS) $(ROOT_LIBFLAGS)
 
@@ -28,3 +32,4 @@ clean:
 	rm bin/Fun4All_CaloTreeGen
 	rm bin/pi0Ana
 	rm bin/convert
+	rm bin/Q-vec-corr
