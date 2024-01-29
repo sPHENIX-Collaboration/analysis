@@ -8,6 +8,31 @@ RightMargin = 0.08
 TopMargin = 0.08
 BottomMargin = 0.13
 
+black_hex = '#1B1A17'
+red_hex = '#9A031E'
+blue_hex = '#0B60B0'
+green_hex = '#186F65'
+orange_hex = '#e99960'
+purple_hex = '#7F167F'
+pink_hex = '#FFC0CB'
+yellow_hex = '#ffcc66'
+cyan_hex = '#7FE9DE'
+
+def colorset(i):
+    if i == 1:
+        return [black_hex]
+    elif i == 2:
+        return [blue_hex, red_hex]
+    elif i == 3:
+        return [blue_hex, red_hex, green_hex]
+    elif i == 4:
+        return [blue_hex, red_hex, green_hex, orange_hex]
+    elif i == 5:
+        return [blue_hex, red_hex, green_hex, orange_hex, purple_hex]
+    else:
+        print ("Attempt to use more than 5 colors")
+        return [blue_hex, red_hex, green_hex, orange_hex, purple_hex, pink_hex, yellow_hex, cyan_hex]
+    
 
 def Draw_1Dhist(hist, IsData, norm1, logy, ymaxscale, XaxisName, Ytitle_unit, outname):
     hist.Sumw2()

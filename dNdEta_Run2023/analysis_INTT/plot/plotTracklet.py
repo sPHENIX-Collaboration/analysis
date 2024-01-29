@@ -16,8 +16,8 @@ gROOT.SetBatch(True)
 
 if __name__ == '__main__':
     parser = OptionParser(usage="usage: %prog ver [options -n]")
-    parser.add_option("-f", "--histfile", dest="histfname", type="string", default='/sphenix/user/hjheng/TrackletAna/analysis_INTT/plot/hists/ana382_zvtx-20cm/Hists_RecoTracklets.root', help="Input file name")
-    parser.add_option("-d", "--plotdir", dest="plotdir", type="string", default='./RecoTracklet/ana382_zvtx-20cm/', help="Plot directory")
+    parser.add_option("-f", "--histfile", dest="histfname", type="string", default='/sphenix/user/hjheng/TrackletAna/analysis_INTT/plot/hists/HIJING_ana398_xvtx-0p04cm_yvtx0p24cm_zvtx-20cm_dummyAlignParams/dRcut0p5/hists_merged.root', help="Input file name")
+    parser.add_option("-d", "--plotdir", dest="plotdir", type="string", default='./RecoTracklet/HIJING_ana398_xvtx-0p04cm_yvtx0p24cm_zvtx-20cm_dummyAlignParams/dRcut0p5/', help="Plot directory")
     parser.add_option("-s", "--isdata", dest="isdata", action="store_true", default=False, help="Is data")
 
     (opt, args) = parser.parse_args()
@@ -56,6 +56,9 @@ if __name__ == '__main__':
     hM_Eta_vtxZ_proto_incl = GetHistogram(histfname, 'hM_Eta_vtxZ_proto_incl')
     hM_Eta_vtxZ_reco_incl = GetHistogram(histfname, 'hM_Eta_vtxZ_reco_incl')
 
+    hM_clusphi_clusphisize = GetHistogram(histfname, 'hM_clusphi_clusphisize')
+    hM_cluseta_clusphisize = GetHistogram(histfname, 'hM_cluseta_clusphisize')
+
     # Draw_1Dhist(hist, IsData, norm1, logy, ymaxscale, XaxisName, Ytitle_unit, outname):
     # Do the plots
     Draw_1Dhist(hM_NClusLayer1, isdata, False, True, 1.3, 'Number of clusters (Layer 3+4)', '', plotdir+'NClusLayer1')
@@ -84,3 +87,5 @@ if __name__ == '__main__':
     # Draw_2Dhist(hist, IsData, logz, norm1, rmargin, XaxisName, YaxisName, drawopt, outname):
     Draw_2Dhist(hM_Eta_vtxZ_proto_incl, isdata, False, False, 0.16, 'Proto-tracklet #eta', 'Primary vertex V_{z} [cm]', 'colz', plotdir+'ProtoTracklet_Eta_vtxZ')
     Draw_2Dhist(hM_Eta_vtxZ_reco_incl, isdata, False, False, 0.14, 'Reco-tracklet #eta', 'Primary vertex V_{z} [cm]', 'colz', plotdir+'RecoTracklet_Eta_vtxZ')
+    Draw_2Dhist(hM_clusphi_clusphisize, isdata, True, False, 0.16, 'Cluster #phi', 'Cluster #phi size', 'colz', plotdir+'Cluster_Phi_ClusSize')
+    Draw_2Dhist(hM_cluseta_clusphisize, isdata, True, False, 0.14, 'Cluster #eta', 'Cluster #phi size', 'colz', plotdir+'Cluster_Eta_ClusSize')
