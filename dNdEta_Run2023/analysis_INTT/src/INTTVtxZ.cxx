@@ -77,27 +77,26 @@ int main(int argc, char *argv[])
     gStyle->SetPalette(kThermometer);
 
     bool IsData = (TString(argv[1]).Atoi() == 1) ? true : false;
-    int process = TString(argv[2]).Atoi();
-    int NevtToRun = TString(argv[3]).Atoi();
-    float avgVtxX = TString(argv[4]).Atof();  // float avgVtxX = -0.0015 (ana.382) / -0.04 (ana.398) /
-    float avgVtxY = TString(argv[5]).Atof();  // avgVtxY = 0.0012 (ana.382) / 0.24 (ana.398) /
-    float dPhi_cut = TString(argv[6]).Atof(); // Example: 0.11 radian; 0.001919862 radian = 0.11 degree
-    float dca_cut = TString(argv[7]).Atof();  // Example: 0.05cm
-    TString infilename = TString(argv[8]);    // /sphenix/user/hjheng/TrackletAna/data/INTT/ana382_zvtx-20cm_dummyAlignParams/sim/INTTRecoClusters_sim_merged.root
-    TString outfilepath = TString(argv[9]);   // /sphenix/user/hjheng/TrackletAna/minitree/INTT/VtxEvtMap_ana382_zvtx-20cm_dummyAlignParams
-    TString demoplotpath = TString(argv[10]);  // ./plot/RecoPV_demo/RecoPV_sim/INTTVtxZ_ana382_zvtx-20cm_dummyAlignParams
-    bool debug = (TString(argv[11]).Atoi() == 1) ? true : false;
-    bool makedemoplot = (TString(argv[12]).Atoi() == 1) ? true : false;
+    int NevtToRun = TString(argv[2]).Atoi();
+    float avgVtxX = TString(argv[3]).Atof();  // float avgVtxX = -0.0015 (ana.382) / -0.04 (ana.398) /
+    float avgVtxY = TString(argv[4]).Atof();  // avgVtxY = 0.0012 (ana.382) / 0.24 (ana.398) /
+    float dPhi_cut = TString(argv[5]).Atof(); // Example: 0.11 radian; 0.001919862 radian = 0.11 degree
+    float dca_cut = TString(argv[6]).Atof();  // Example: 0.05cm
+    TString infilename = TString(argv[7]);    // /sphenix/user/hjheng/TrackletAna/data/INTT/ana382_zvtx-20cm_dummyAlignParams/sim/INTTRecoClusters_sim_merged.root
+    TString outfilename = TString(argv[8]);   // /sphenix/user/hjheng/TrackletAna/minitree/INTT/VtxEvtMap_ana382_zvtx-20cm_dummyAlignParams
+    TString demoplotpath = TString(argv[9]); // ./plot/RecoPV_demo/RecoPV_sim/INTTVtxZ_ana382_zvtx-20cm_dummyAlignParams
+    bool debug = (TString(argv[10]).Atoi() == 1) ? true : false;
+    bool makedemoplot = (TString(argv[11]).Atoi() == 1) ? true : false;
 
-    int initevt = process * NevtToRun;
+    // int initevt = process * NevtToRun;
 
-    // loop argv and cout 
+    // loop argv and cout
     for (int i = 0; i < argc; i++)
     {
         cout << "argv[" << i << "] = " << argv[i] << endl;
     }
 
-    system(Form("mkdir -p %s", outfilepath.Data()));
+    // system(Form("mkdir -p %s", outfilepath.Data()));
     if (makedemoplot)
         system(Form("mkdir -p %s", demoplotpath.Data()));
 
@@ -122,9 +121,13 @@ int main(int argc, char *argv[])
         t->SetBranchAddress("TruthPV_trig_z", &TruthPV_trig_z);
         t->SetBranchAddress("centrality_bimp", &centrality_bimp);
         t->SetBranchAddress("centrality_impactparam", &centrality_impactparam);
+        // The data DST doesn't have centrality_mbd and centrality_mbdquantity branches
+        //! TO BE FIXED
+        t->SetBranchAddress("centrality_mbd", &centrality_mbd);
+        t->SetBranchAddress("centrality_mbdquantity", &centrality_mbdquantity);
     }
-    t->SetBranchAddress("centrality_mbd", &centrality_mbd);
-    t->SetBranchAddress("centrality_mbdquantity", &centrality_mbdquantity);
+    // t->SetBranchAddress("centrality_mbd", &centrality_mbd);
+    // t->SetBranchAddress("centrality_mbdquantity", &centrality_mbdquantity);
     t->SetBranchAddress("ClusLayer", &ClusLayer);
     t->SetBranchAddress("ClusX", &ClusX);
     t->SetBranchAddress("ClusY", &ClusY);
@@ -134,11 +137,11 @@ int main(int argc, char *argv[])
     t->SetBranchAddress("ClusLadderZId", &ClusLadderZId);
     t->SetBranchAddress("ClusLadderPhiId", &ClusLadderPhiId);
 
-    TFile *outfile = new TFile(Form("%s/INTTVtxZ_%d.root", outfilepath.Data(), process), "RECREATE");
+    TFile *outfile = new TFile(outfilename.Data(), "RECREATE");
     TTree *minitree = new TTree("minitree", "Minitree of reconstructed vertices");
     SetVtxMinitree(minitree, vtxdata);
 
-    for (int ev = initevt; ev < initevt + NevtToRun; ev++)
+    for (int ev = 0; ev < NevtToRun; ev++)
     {
         Long64_t local = t->LoadTree(index->GetIndex()[ev]);
         t->GetEntry(local);
@@ -261,10 +264,10 @@ int main(int argc, char *argv[])
         // float mean = f1->GetParameter(1);
         // float meanErr = f1->GetParError(1);
 
-        TF1 *f1 = new TF1("gaus_fit", gaus_func, maxbincenter-10, maxbincenter+10, 4); // Gaussian + const. offset
+        TF1 *f1 = new TF1("gaus_fit", gaus_func, maxbincenter - 10, maxbincenter + 10, 4); // Gaussian + const. offset
         f1->SetParameters(hM_vtxzprojseg->GetBinContent(hM_vtxzprojseg->GetMaximumBin()), hM_vtxzprojseg->GetBinCenter(hM_vtxzprojseg->GetMaximumBin()), 4, 0);
-        f1->SetParLimits(0, 0, 10000); 
-        f1->SetParLimits(2, 0, 1000); 
+        f1->SetParLimits(0, 0, 10000);
+        f1->SetParLimits(2, 0, 1000);
         f1->SetParLimits(3, 0, 1000);
         hM_vtxzprojseg->Fit(f1, "NQ", "", hM_vtxzprojseg->GetBinCenter(hM_vtxzprojseg->GetMaximumBin()) - 9, hM_vtxzprojseg->GetBinCenter(hM_vtxzprojseg->GetMaximumBin()) + 9);
         f1->SetParameters(hM_vtxzprojseg->GetBinContent(hM_vtxzprojseg->GetMaximumBin()), hM_vtxzprojseg->GetBinCenter(hM_vtxzprojseg->GetMaximumBin()), 4, 0);
@@ -278,7 +281,7 @@ int main(int argc, char *argv[])
         if (debug)
             cout << "Event " << ev << " Reco PVz = " << mean << " +/- " << meanErr << " cm" << endl;
 
-        if (ev < NevtToPlot)
+        if (ev < NevtToPlot && makedemoplot)
         {
             TString pname = Form("%s/hM_vtxzprojseg_ev%d", demoplotpath.Data(), event);
             draw_demoplot(hM_vtxzprojseg, f1, dca_cut, pname);

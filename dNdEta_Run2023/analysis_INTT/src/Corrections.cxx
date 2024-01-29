@@ -107,15 +107,15 @@ void calccorr(const TString infilename, int CentLow = -1, int CentHigh = 10, boo
     TH1::SetDefaultSumw2();
 
     /* Setup bins for correction histograms */
-    int neta = 17;
+    int neta = 68;
     float etamin = -3.4;
     float etamax = 3.4;
     float etab[neta + 1];
     for (int i = 0; i <= neta; i++)
         etab[i] = i * (etamax - etamin) / neta + etamin;
-    int nvz = 9;
-    float vzmin = -28;
-    float vzmax = 10;
+    int nvz = 50;
+    float vzmin = -45;
+    float vzmax = 5;
     float vzb[nvz + 1];
     for (int i = 0; i <= nvz; i++)
         vzb[i] = i * (vzmax - vzmin) / nvz + vzmin;
@@ -787,7 +787,7 @@ void calccorr(const TString infilename, int CentLow = -1, int CentHigh = 10, boo
     gStyle->SetPaintTextFormat("1.3f");
     h2alphafinal->SetMarkerSize(0.6);
     h2alphafinal->SetContour(1000);
-    h2alphafinal->Draw("colz text45");
+    h2alphafinal->Draw("colz");
     calpha->SaveAs(Form("./plot/corrections/CentBin%dto%d/alpha2D_inclTklMult.pdf", CentLow, CentHigh));
 
     for (int k = 0; k < nmult; k++)
@@ -804,7 +804,7 @@ void calccorr(const TString infilename, int CentLow = -1, int CentHigh = 10, boo
         gStyle->SetPaintTextFormat("1.3f");
         h2alpha_multb[k]->SetMarkerSize(0.6);
         h2alpha_multb[k]->SetContour(1000);
-        h2alpha_multb[k]->Draw("colz text45");
+        h2alpha_multb[k]->Draw("colz");
         calpha->SaveAs(Form("./plot/corrections/CentBin%dto%d/alpha2D_TklMultb%d.pdf", CentLow, CentHigh, k));
     }
 
@@ -895,7 +895,7 @@ int main(int argc, char *argv[])
     // calccorr(int layer = 12, int CentLow = -1, int CentHigh = 20, bool applyc = false, bool applyg = false, bool applym = false, TString estag = "", TString putag = "", bool debug = false)
 
     gStyle->SetPaintTextFormat();
-    TString input = "/sphenix/user/hjheng/TrackletAna/minitree/INTT/TrackletMinitree_ana382_zvtx-20cm_dummyAlignParams/TrackletAna_minitree_Evt0to2000_dRcut0p5.root";
+    TString input = "/sphenix/user/hjheng/TrackletAna/minitree/INTT/TrackletMinitree_ana398_zvtx-20cm_dummyAlignParams/sim/TrackletAna_minitree_merged.root";
     calccorr(input, 5, 95, false, false, false, "", "", false);
     for (int i = 0; i < 10; i++)
     {

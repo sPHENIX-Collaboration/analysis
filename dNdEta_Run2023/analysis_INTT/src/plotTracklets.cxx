@@ -28,8 +28,11 @@ void makehist(TString infname, TString outfname)
 {
     TFile *fout = new TFile(outfname, "RECREATE");
 
-    TH2F *hM_clusPhi_clusPhiSize = new TH2F("hM_clusPhi_clusPhiSize", "hM_clusPhi_clusPhiSize", 140, -3.5, 3.5, 50, 0, 50);
-    TH2F *hM_clusEta_clusPhiSize = new TH2F("hM_clusEta_clusPhiSize", "hM_clusEta_clusPhiSize", 160, -4, 4, 50, 0, 50);
+    TH1F *hM_clusphi = new TH1F("hM_clusphi", "hM_clusphi", 140, -3.5, 3.5);
+    TH1F *hM_cluseta = new TH1F("hM_cluseta", "hM_cluseta", 160, -4, 4);
+    TH1F *hM_clusphisize = new TH1F("hM_clusphisize", "hM_clusphisize", 80, 0, 80);
+    TH2F *hM_clusphi_clusphisize = new TH2F("hM_clusphi_clusphisize", "hM_clusphi_clusphisize", 140, -3.5, 3.5, 80, 0, 80);
+    TH2F *hM_cluseta_clusphisize = new TH2F("hM_cluseta_clusphisize", "hM_cluseta_clusphisize", 160, -4, 4, 80, 0, 80);
 
     TH1F *hM_dEta_proto = new TH1F("hM_dEta_proto", "hM_dEta_proto", 200, -5, 5);
     TH1F *hM_dPhi_proto = new TH1F("hM_dPhi_proto", "hM_dPhi_proto", 100, -0.5, 0.5);
@@ -78,7 +81,7 @@ void makehist(TString infname, TString outfname)
     TTreeIndex *index = (TTreeIndex *)t->GetTreeIndex();
     int event, NClusLayer1, NPrototkl, NRecotkl_Raw, NRecotkl_GenMatched, NGenHadron;
     float PV_z, TruthPV_z;
-    vector<float> *clusPhi = 0, *clusEta = 0, *clusPhiSize = 0;
+    vector<float> *clusphi = 0, *cluseta = 0, *clusphisize = 0;
     vector<float> *prototkl_eta = 0, *prototkl_phi = 0, *prototkl_deta = 0, *prototkl_dphi = 0, *prototkl_dR = 0;
     vector<float> *recotklraw_eta = 0, *recotklraw_phi = 0, *recotklraw_deta = 0, *recotklraw_dphi = 0, *recotklraw_dR = 0;
     t->SetBranchAddress("event", &event);
@@ -87,9 +90,9 @@ void makehist(TString infname, TString outfname)
     t->SetBranchAddress("NRecotkl_Raw", &NRecotkl_Raw);
     t->SetBranchAddress("PV_z", &PV_z);
     t->SetBranchAddress("TruthPV_z", &TruthPV_z);
-    t->SetBranchAddress("clusPhi", &clusPhi);
-    t->SetBranchAddress("clusEta", &clusEta);
-    t->SetBranchAddress("clusPhiSize", &clusPhiSize);
+    t->SetBranchAddress("clusphi", &clusphi);
+    t->SetBranchAddress("cluseta", &cluseta);
+    t->SetBranchAddress("clusphisize", &clusphisize);
     t->SetBranchAddress("prototkl_eta", &prototkl_eta);
     t->SetBranchAddress("prototkl_phi", &prototkl_phi);
     t->SetBranchAddress("prototkl_deta", &prototkl_deta);
@@ -121,10 +124,13 @@ void makehist(TString infname, TString outfname)
         else
             hM_RecoPVz_Nclusgt4000->Fill(PV_z);
 
-        for (size_t j = 0; j < clusPhiSize->size(); j++)
+        for (size_t j = 0; j < clusphisize->size(); j++)
         {
-            hM_clusPhi_clusPhiSize->Fill(clusPhi->at(j), clusPhiSize->at(j));
-            hM_clusEta_clusPhiSize->Fill(clusEta->at(j), clusPhiSize->at(j));
+            hM_clusphi->Fill(clusphi->at(j));
+            hM_cluseta->Fill(cluseta->at(j));
+            hM_clusphisize->Fill(clusphisize->at(j));
+            hM_clusphi_clusphisize->Fill(clusphi->at(j), clusphisize->at(j));
+            hM_cluseta_clusphisize->Fill(cluseta->at(j), clusphisize->at(j));
         }
 
         for (size_t j = 0; j < prototkl_eta->size(); j++)
@@ -184,8 +190,11 @@ void makehist(TString infname, TString outfname)
     hM_RecoPVz->Write();
     hM_RecoPVz_Nclusle4000->Write();
     hM_RecoPVz_Nclusgt4000->Write();
-    hM_clusPhi_clusPhiSize->Write();
-    hM_clusEta_clusPhiSize->Write();
+    hM_clusphi->Write();
+    hM_cluseta->Write();
+    hM_clusphisize->Write();
+    hM_clusphi_clusphisize->Write();
+    hM_cluseta_clusphisize->Write();
     hM_dEta_proto->Write();
     hM_dEta_reco->Write();
     hM_dEta_proto->Write();

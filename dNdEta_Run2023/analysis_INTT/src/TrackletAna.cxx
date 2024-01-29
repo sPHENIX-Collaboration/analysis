@@ -24,20 +24,18 @@ int main(int argc, char *argv[])
     TString infilename = TString(argv[3]);
     TString outfilename = TString(argv[4]);
     int NevtToRun_ = TString(argv[5]).Atoi();
-    int skip = TString(argv[6]).Atoi();
-    float dRCut = TString(argv[7]).Atof();
-
-    int iniEvt = skip;
+    float dRCut = TString(argv[6]).Atof();
+    
+    // int iniEvt = skip;
 
     cout << "[Run Info] Event-vertex map file = " << EvtVtx_map_filename << endl
          << "           Input file = " << infilename << endl
          << "           Output file = " << outfilename << endl
          << "           Number of events to run = " << NevtToRun_ << endl
-         << "           Skip = " << skip << endl
          << "           dRCut = " << dRCut << endl
          << "-----------" << endl;
 
-    cout << "[Run Info] NevtToRun: " << NevtToRun_ << ", skip: " << skip << ", dRCut: " << dRCut << endl;
+    cout << "[Run Info] NevtToRun: " << NevtToRun_ << ", dRCut: " << dRCut << endl;
 
     TrackletData tkldata = {};
 
@@ -79,7 +77,7 @@ int main(int argc, char *argv[])
     TTree *minitree = new TTree("minitree", "Minitree of Reconstructed Tracklets");
     SetMinitree(minitree, tkldata);
 
-    for (int i = skip; i < skip + NevtToRun_; i++)
+    for (int i = 0; i < NevtToRun_; i++)
     {
         Long64_t local = t->LoadTree(index->GetIndex()[i]);
         t->GetEntry(local);
