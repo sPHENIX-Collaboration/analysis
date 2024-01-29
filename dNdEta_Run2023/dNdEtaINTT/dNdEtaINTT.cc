@@ -77,9 +77,9 @@ template <class T> void CleanVec(std::vector<T> &v)
 } // namespace
 
 //____________________________________________________________________________..
-dNdEtaINTT::dNdEtaINTT(const std::string &name, const std::string &outputfile, const bool &isData, const int &inputFileListIndex, const int &nEvtPerFile)
-    : SubsysReco(name), _get_truth_pv(true), _get_reco_cluster(true), _get_centrality(true), _get_trkr_hit(true), _outputFile(outputfile), IsData(isData), InputFileListIndex(inputFileListIndex), NEvtPerFile(nEvtPerFile), svtx_evalstack(nullptr),
-      truth_eval(nullptr), clustereval(nullptr), hiteval(nullptr), dst_clustermap(nullptr), clusterhitmap(nullptr), hitsets(nullptr), _tgeometry(nullptr), m_truth_info(nullptr), m_CentInfo(nullptr)
+dNdEtaINTT::dNdEtaINTT(const std::string &name, const std::string &outputfile, const bool &isData)
+    : SubsysReco(name), _get_truth_pv(true), _get_reco_cluster(true), _get_centrality(true), _get_trkr_hit(true), _outputFile(outputfile), IsData(isData), svtx_evalstack(nullptr), truth_eval(nullptr), clustereval(nullptr), hiteval(nullptr),
+      dst_clustermap(nullptr), clusterhitmap(nullptr), hitsets(nullptr), _tgeometry(nullptr), m_truth_info(nullptr), m_CentInfo(nullptr)
 {
     std::cout << "dNdEtaINTT::dNdEtaINTT(const std::string &name) Calling ctor" << std::endl;
 }
@@ -90,10 +90,7 @@ dNdEtaINTT::~dNdEtaINTT() { std::cout << "dNdEtaINTT::~dNdEtaINTT() Calling dtor
 //____________________________________________________________________________..
 int dNdEtaINTT::Init(PHCompositeNode *topNode)
 {
-    std::cout << "dNdEtaINTT::Init(PHCompositeNode *topNode) Initializing" << std::endl
-              << "Running on Data or simulation? -> IsData = " << IsData << std::endl
-              << "Initial eventnum = " << InputFileListIndex * NEvtPerFile << std::endl
-              << "Number of events per file = " << NEvtPerFile << std::endl;
+    std::cout << "dNdEtaINTT::Init(PHCompositeNode *topNode) Initializing" << std::endl << "Running on Data or simulation? -> IsData = " << IsData << std::endl;
 
     PHTFileServer::get().open(_outputFile, "RECREATE");
     outtree = new TTree("EventTree", "EventTree");
@@ -151,7 +148,8 @@ int dNdEtaINTT::InitRun(PHCompositeNode *topNode)
 //____________________________________________________________________________..
 int dNdEtaINTT::process_event(PHCompositeNode *topNode)
 {
-    std::cout << "dNdEtaINTT::process_event(PHCompositeNode *topNode) Processing Event" << InputFileListIndex * NEvtPerFile + eventNum << std::endl;
+    // std::cout << "dNdEtaINTT::process_event(PHCompositeNode *topNode) Processing Event" << InputFileListIndex * NEvtPerFile + eventNum << std::endl;
+    std::cout << "dNdEtaINTT::process_event(PHCompositeNode *topNode) Processing Event" << eventNum << std::endl;
 
     PHNodeIterator nodeIter(topNode);
 
@@ -165,12 +163,12 @@ int dNdEtaINTT::process_event(PHCompositeNode *topNode)
 
     svtx_evalstack->next_event(topNode);
 
-    eventheader = findNode::getClass<EventHeader>(topNode, "EventHeader");
-    if (!IsData && !eventheader) // data files do not currently contain EventHeader
-    {
-        std::cout << PHWHERE << "Error, can't find EventHeader" << std::endl;
-        return Fun4AllReturnCodes::ABORTEVENT;
-    }
+    // eventheader = findNode::getClass<EventHeader>(topNode, "EventHeader");
+    // if (!eventheader)
+    // {
+    //     std::cout << PHWHERE << "Error, can't find EventHeader" << std::endl;
+    //     return Fun4AllReturnCodes::ABORTEVENT;
+    // }
 
     // Centrality info
     m_CentInfo = findNode::getClass<CentralityInfo>(topNode, "CentralityInfo");
@@ -219,6 +217,14 @@ int dNdEtaINTT::process_event(PHCompositeNode *topNode)
     if (!IsData)
     {
         std::cout << "Running on simulation" << std::endl;
+
+        eventheader = findNode::getClass<EventHeader>(topNode, "EventHeader");
+        if (!eventheader)
+        {
+            std::cout << PHWHERE << "Error, can't find EventHeader" << std::endl;
+            return Fun4AllReturnCodes::ABORTEVENT;
+        }
+
         if (_get_truth_pv)
             GetTruthPVInfo(topNode);
     }
@@ -232,7 +238,8 @@ int dNdEtaINTT::process_event(PHCompositeNode *topNode)
     if (_get_reco_cluster)
         GetRecoClusterInfo(topNode);
 
-    event_ = InputFileListIndex * NEvtPerFile + eventNum;
+    // event_ = InputFileListIndex * NEvtPerFile + eventNum;
+    event_ = eventNum;
     outtree->Fill();
     eventNum++;
 
@@ -302,16 +309,13 @@ void dNdEtaINTT::GetCentralityInfo(PHCompositeNode *topNode)
     {
         centrality_bimp_ = m_CentInfo->get_centile(CentralityInfo::PROP::bimp);
         centrality_impactparam_ = m_CentInfo->get_quantity(CentralityInfo::PROP::bimp);
-    }
-    centrality_mbd_ = m_CentInfo->get_centile(CentralityInfo::PROP::mbd_NS);
-    centrality_mbdquantity_ = m_CentInfo->get_quantity(CentralityInfo::PROP::mbd_NS);
 
-    // Glauber parameter information
-    if(!IsData)
-    {
+        // Glauber parameter information
         ncoll_ = eventheader->get_ncoll();
         npart_ = eventheader->get_npart();
     }
+    centrality_mbd_ = m_CentInfo->get_centile(CentralityInfo::PROP::mbd_NS);
+    centrality_mbdquantity_ = m_CentInfo->get_quantity(CentralityInfo::PROP::mbd_NS);
 
     std::cout << "Centrality: (bimp,impactparam) = (" << centrality_bimp_ << ", " << centrality_impactparam_ << "); (mbd,mbdquantity) = (" << centrality_mbd_ << ", " << centrality_mbdquantity_ << ")" << std::endl;
     std::cout << "Glauber parameter information: (ncoll,npart) = (" << ncoll_ << ", " << npart_ << ")" << std::endl;
