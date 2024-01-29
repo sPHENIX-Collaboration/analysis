@@ -49,7 +49,7 @@ int Fun4All_G4_sPHENIX(const bool rundata = true, const string generator = "HIJI
     else
     {
         if (generator == "HIJING")
-            infile = "/sphenix/tg/tg01/bulk/dNdeta_INTT_run2023/data/simulation/ana.388/HIJING/fullSim/magOff/detectorAligned/dstSet_00000/dNdeta-sim-HIJING-000-" + std::string(TString::Format("%05d", process).Data()) + ".root";
+            infile = "/sphenix/tg/tg01/bulk/dNdeta_INTT_run2023/data/simulation/ana.398/HIJING/fullSim/magOff/detectorAligned/dstSet_00000/dNdeta-sim-HIJING-000-" + std::string(TString::Format("%05d", process).Data()) + ".root";
         else if (generator == "EPOS")
             infile = "/sphenix/tg/tg01/bulk/dNdeta_INTT_run2023/data/simulation/ana.399/EPOS/fullSim/magOff/detectorAligned/dstSet_00000/dNdeta-sim-EPOS-000-" + std::string(TString::Format("%05d", process).Data()) + ".root";
         else if (generator == "AMPT")
