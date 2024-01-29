@@ -1,7 +1,7 @@
 CFLAGS = -g3 -pthread -m64 -Wno-deprecated -I src/ 
 CFLAGS += $(shell root-config --cflags --libs)
 
-all : TrackletAna plotTracklets plotRecoCluster_INTT BeamspotReco INTTVtxZ BeamspotReco_Quadrant
+all : TrackletAna plotTracklets plotRecoCluster_INTT BeamspotReco INTTVtxZ
 
 TrackletAna : src/TrackletAna.cxx src/Hit.h src/Tracklet.h
 	g++ ${CFLAGS} src/TrackletAna.cxx src/Hit.h src/Tracklet.h -o TrackletAna
@@ -18,8 +18,5 @@ INTTVtxZ : src/INTTVtxZ.cxx
 BeamspotReco : src/BeamspotReco.cxx
 	g++ $(CFLAGS) src/BeamspotReco.cxx -I$(OFFLINE_MAIN)/include -o BeamspotReco
 
-BeamspotReco_Quadrant : src/BeamspotReco_Quadrant.cxx
-	g++ $(CFLAGS) src/BeamspotReco_Quadrant.cxx -o BeamspotReco_Quadrant
-
 clean : 
-	rm TrackletAna plotTracklets plotRecoCluster_INTT BeamspotReco INTTVtxZ BeamspotReco_Quadrant
+	rm TrackletAna plotTracklets plotRecoCluster_INTT BeamspotReco INTTVtxZ
