@@ -28,7 +28,7 @@ namespace myAnalysis {
     Int_t readCuts(const string &i_cuts);
     string parseFloat(Float_t value);
 
-    vector<string> centrality = {"40-60","20-40"};
+    vector<string> centrality = {"20-40", "40-60"};
     vector<string> pt         = {"2-2.5","2.5-3","3-3.5","3.5-4","4-4.5","4.5-5"};
 }
 

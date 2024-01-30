@@ -66,6 +66,8 @@ namespace myAnalysis {
     map<string, TH1F*>              hDiphotonPt;
     map<string, TH1F*>              hQQ;
     map<pair<string,string>, TH1F*> hqQ;
+    map<pair<string,string>, TH1F*> hqQ_bg;
+    map<pair<string,string>, TH1F*> hNPi0;
     map<pair<string,string>, TH2F*> h2Pi0EtaPhi;
 
     Int_t   bins_pi0_mass = 48;
@@ -95,6 +97,13 @@ namespace myAnalysis {
     Int_t   bins_eta = 48; // Bin width on the order of blocks
     Float_t eta_min  = -1.152;
     Float_t eta_max  = 1.152;
+
+    Int_t   bins_npi0 = 60;
+    Float_t npi0_min  = 0;
+    Float_t npi0_max  = 60;
+
+    Float_t bg_min = 0.3;
+    Float_t bg_max = 0.6;
 
     Bool_t do_vn_calc = true;
 
@@ -351,18 +360,21 @@ void myAnalysis::init_hists() {
             suffix_title = "Centrality: " + cent_key[i] + "%, Diphoton p_{T}: " + pt_key[j] + " GeV";
 
             hqQ[key] = new TH1F(("hqQ_"+to_string(idx)).c_str(), ("qQ, " + suffix_title + "; qQ; Counts").c_str(), bins_Q, Q_min, Q_max);
+            hqQ_bg[key] = new TH1F(("hqQ_bg_"+to_string(idx)).c_str(), ("qQ, " + suffix_title + "; qQ; Counts").c_str(), bins_Q, Q_min, Q_max);
 
             h2Pi0EtaPhi[key] = new TH2F(("h2Pi0EtaPhi_"+to_string(idx)).c_str(), ("#pi_{0}, " + suffix_title + "; #eta; #phi").c_str(), bins_eta, eta_min, eta_max, bins_phi, phi_min, phi_max);
 
-            h2DeltaRVsMass[key] = new TH2F(("h2DeltaRVsMass"+suffix).c_str(),
+            h2DeltaRVsMass[key] = new TH2F(("h2DeltaRVsMass_"+to_string(idx)).c_str(),
                                             ("#Delta R vs Diphoton Invariant Mass, " + suffix_title +"; Mass [GeV]; #Delta R").c_str(),
                                             bins_pi0_mass, hpi0_mass_min, hpi0_mass_max,
                                             bins_deltaR, hdeltaR_min, hdeltaR_max);
 
-            h2AsymVsMass[key] = new TH2F(("h2AsymVsMass"+suffix).c_str(),
+            h2AsymVsMass[key] = new TH2F(("h2AsymVsMass_"+to_string(idx)).c_str(),
                                             ("Cluster Energy Asymmetry vs Diphoton Invariant Mass, " + suffix_title +"; Mass [GeV]; Energy Asymmetry").c_str(),
                                             bins_pi0_mass, hpi0_mass_min, hpi0_mass_max,
                                             bins_asym, hasym_min, hasym_max);
+
+            hNPi0[key] = new TH1F(("hNPi0_"+to_string(idx)).c_str(), ("#pi_{0} Counts, " + suffix_title +"; # of #pi_{0} per event; Counts").c_str(), bins_npi0, npi0_min, npi0_max);
 
             vector<TH1F*> h;
             for (auto cut : cuts) {
@@ -449,15 +461,17 @@ void myAnalysis::process_event(Long64_t start, Long64_t end) {
 
     UInt_t evt_ctr[cent_key.size()] = {0};
 
-    UInt_t max_npi0 = 0;
-    Float_t QQ_min  = 9999;
-    Float_t qQ_min  = 9999;
-    Float_t eta_min = 9999;
-    Float_t QQ_max  = 0;
-    Float_t qQ_max  = 0;
-    Float_t eta_max = 0;
+    Float_t QQ_min    = 9999;
+    Float_t qQ_min    = 9999;
+    Float_t qQ_bg_min = 9999;
+    Float_t eta_min   = 9999;
+    UInt_t  npi0_max  = 0;
+    Float_t QQ_max    = 0;
+    Float_t qQ_max    = 0;
+    Float_t qQ_bg_max = 0;
+    Float_t eta_max   = 0;
 
-    cout << "Events to process: " << end-start << endl;
+    cout << "Events to process: " << end-start+1 << endl;
     // loop over each event
     for (Long64_t i = start; i <= end; ++i) {
         if(i%100 == 0) cout << "Progress: " << (i-start)*100./(end-start) << "%" << endl;
@@ -472,7 +486,7 @@ void myAnalysis::process_event(Long64_t start, Long64_t end) {
 
         ++evt_ctr[cent_idx];
 
-        if(do_vn_calc){
+        if(do_vn_calc) {
             // Apply first and second order correction to the Q vectors
             //============================================
             // compute first order correction
@@ -495,14 +509,12 @@ void myAnalysis::process_event(Long64_t start, Long64_t end) {
             hQQ[cent_key[cent_idx]]->Fill(QQ);
         }
 
-        UInt_t n = pi0_mass->size();
-
-        max_npi0 = max(max_npi0, n);
-
         UInt_t pi0_ctr[cent_key.size()*pt_key.size()] = {0};
+        UInt_t bg_ctr[cent_key.size()*pt_key.size()]  = {0};
         Float_t qQ[cent_key.size()*pt_key.size()]     = {0};
+        Float_t qQ_bg[cent_key.size()*pt_key.size()]  = {0};
         // loop over all diphoton candidates
-        for(UInt_t j = 0; j < n; ++j) {
+        for(UInt_t j = 0; j < pi0_mass->size(); ++j) {
             Float_t pi0_pt_val = pi0_pt->at(j);
             Int_t pt_idx = pt_dum_vec->FindBin(pi0_pt_val)-1;
 
@@ -550,7 +562,12 @@ void myAnalysis::process_event(Long64_t start, Long64_t end) {
                    deltaR_val    >= cuts[k].deltaR && chi2_max_val < cuts[k].chi) {
                     hPi0Mass[key][k]->Fill(pi0_mass_val);
 
-                    // add condition to check if mass is in range
+                    // fill in qQ for the background
+                    if(k == 0 && do_vn_calc && pi0_mass_val >= bg_min && pi0_mass_val < bg_max) {
+                        ++bg_ctr[idx];
+                        qQ_bg[idx] += qQ_val;
+                    }
+                    // fill in the qQ for the signal+background region
                     // do this for only one of the cuts for which we have signal bound information
                     if(k == 0 && do_vn_calc && pi0_mass_val >= pi0_mass_range[idx].first && pi0_mass_val < pi0_mass_range[idx].second) {
                         ++pi0_ctr[idx];
@@ -562,16 +579,28 @@ void myAnalysis::process_event(Long64_t start, Long64_t end) {
                 }
             }
         }
-        if(do_vn_calc) {
-            for(UInt_t j = 0; j < cent_key.size(); ++j) {
-                for(UInt_t k = 0; k < pt_key.size(); ++k) {
-                    Int_t idx = j*pt_key.size()+k;
 
+        // loop over each centrality and pT bin
+        for(UInt_t j = 0; j < cent_key.size(); ++j) {
+            for(UInt_t k = 0; k < pt_key.size(); ++k) {
+                Int_t idx = j*pt_key.size()+k;
+                pair<string,string> key = make_pair(cent_key[j], pt_key[k]);
+
+                npi0_max = max(npi0_max, pi0_ctr[idx]);
+                if(pi0_ctr[idx]) hNPi0[key]->Fill(pi0_ctr[idx]);
+
+                if(do_vn_calc) {
+                    // compute qQ for the background
+                    qQ_bg[idx] = (bg_ctr[idx]) ? qQ_bg[idx]/bg_ctr[idx] : 0;
+                    qQ_bg_min = min(qQ_bg_min, qQ_bg[idx]);
+                    qQ_bg_max = max(qQ_bg_max, qQ_bg[idx]);
+
+                    if(qQ_bg[idx]) hqQ_bg[key]->Fill(qQ_bg[idx]);
+
+                    // compute qQ for the pi0 candiates
                     qQ[idx] = (pi0_ctr[idx]) ? qQ[idx]/pi0_ctr[idx] : 0;
                     qQ_min = min(qQ_min, qQ[idx]);
                     qQ_max = max(qQ_max, qQ[idx]);
-
-                    pair<string,string> key = make_pair(cent_key[j], pt_key[k]);
 
                     if(qQ[idx]) hqQ[key]->Fill(qQ[idx]);
                 }
@@ -587,8 +616,9 @@ void myAnalysis::process_event(Long64_t start, Long64_t end) {
 
     cout << "QQ min: " << QQ_min << ", QQ max: " << QQ_max << endl;
     cout << "qQ min: " << qQ_min << ", qQ max: " << qQ_max << endl;
+    cout << "qQ bg min: " << qQ_bg_min << ", qQ bg max: " << qQ_bg_max << endl;
     cout << "pi0 eta min: " << eta_min << ", pi0 eta max: " << eta_max << endl;
-    cout << "Max Pi0s per event: " << max_npi0 << endl;
+    cout << "Max Pi0s per event: " << npi0_max << endl;
     cout << "Finish Process Event" << endl;
 }
 
@@ -599,10 +629,12 @@ void myAnalysis::finalize(const string &i_output) {
     output.mkdir("QA/hDiphotonPt");
     output.mkdir("QA/h2DeltaRVsMass");
     output.mkdir("QA/h2AsymVsMass");
+    output.mkdir("QA/hNPi0");
 
     if(do_vn_calc) {
         output.mkdir("vn/QQ");
         output.mkdir("vn/qQ");
+        output.mkdir("vn/qQ_bg");
 
         output.mkdir("QA/h2Pi0EtaPhi");
     }
@@ -625,9 +657,15 @@ void myAnalysis::finalize(const string &i_output) {
             output.cd("QA/h2AsymVsMass");
             h2AsymVsMass[key]      ->Write();
 
+            output.cd("QA/hNPi0");
+            hNPi0[key]->Write();
+
             if(do_vn_calc) {
                 output.cd("vn/qQ");
                 hqQ[key]->Write();
+
+                output.cd("vn/qQ_bg");
+                hqQ_bg[key]->Write();
 
                 output.cd("QA/h2Pi0EtaPhi");
                 h2Pi0EtaPhi[key]->Write();
