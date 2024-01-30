@@ -36,9 +36,11 @@ namespace myAnalysis {
     void process_event(Long64_t start = 0, Long64_t end = 0);
     void finalize(const string &i_output = "test.root", const string &i_output_csv = "test.csv");
 
-    vector<string> cent_key = {"40-60", "20-40"};
+    // vector<string> cent_key = {"40-60", "20-40"};
+    vector<string> cent_key = {"20-40", "40-60"};
 
-    TH1F* cent_dum_vec = new TH1F("cent_dum_vec","", 2, new Double_t[3] {215, 497.222, 955.741});
+    // TH1F* cent_dum_vec = new TH1F("cent_dum_vec","", 2, new Double_t[3] {215, 497.222, 955.741});
+    TH1F* cent_dum_vec = new TH1F("cent_dum_vec","", 2, new Double_t[3] {0.2, 0.4, 0.6});
 
     TH1F* hPsi_S[2][3]; // [cent][order of correction]
     TH1F* hPsi_N[2][3]; // [cent][order of correction]
@@ -135,6 +137,7 @@ void myAnalysis::process_event(Long64_t start, Long64_t end) {
     Float_t Q_N_x;
     Float_t Q_N_y;
     Float_t totalMBD;
+    Float_t cent;
 
     // event counter
     UInt_t evt_ctr[2] = {0};
@@ -166,15 +169,16 @@ void myAnalysis::process_event(Long64_t start, Long64_t end) {
     Float_t psi_S[2][3] = {0}; // [cent][order of correction]
     Float_t psi_N[2][3] = {0}; // [cent][order of correction]
 
-    T->SetBranchAddress("Q_S_x",    &Q_S_x);
-    T->SetBranchAddress("Q_S_y",    &Q_S_y);
-    T->SetBranchAddress("Q_N_x",    &Q_N_x);
-    T->SetBranchAddress("Q_N_y",    &Q_N_y);
-    T->SetBranchAddress("totalMBD", &totalMBD);
+    T->SetBranchAddress("Q_S_x",      &Q_S_x);
+    T->SetBranchAddress("Q_S_y",      &Q_S_y);
+    T->SetBranchAddress("Q_N_x",      &Q_N_x);
+    T->SetBranchAddress("Q_N_y",      &Q_N_y);
+    T->SetBranchAddress("totalMBD",   &totalMBD);
+    T->SetBranchAddress("centrality", &cent);
 
     end = (end) ? min(end, T->GetEntries()-1) : T->GetEntries()-1;
 
-    cout << "Events to process: " << end-start << endl;
+    cout << "Events to process: " << end-start+1 << endl;
     // loop over each event
     // first order correction
     for (Long64_t i = start; i <= end; ++i) {
@@ -182,7 +186,8 @@ void myAnalysis::process_event(Long64_t start, Long64_t end) {
         // Load the data for the given tree entry
         T->GetEntry(i);
 
-        Int_t j = cent_dum_vec->FindBin(totalMBD)-1;
+        // Int_t j = cent_dum_vec->FindBin(totalMBD)-1;
+        Int_t j = cent_dum_vec->FindBin(cent)-1;
 
         // check if centrality is found in one of the specified bins
         if(j < 0 || j >= 2) continue;
@@ -221,7 +226,8 @@ void myAnalysis::process_event(Long64_t start, Long64_t end) {
         // Load the data for the given tree entry
         T->GetEntry(i);
 
-        Int_t j = cent_dum_vec->FindBin(totalMBD)-1;
+        // Int_t j = cent_dum_vec->FindBin(totalMBD)-1;
+        Int_t j = cent_dum_vec->FindBin(cent)-1;
 
         // check if centrality is found in one of the specified bins
         if(j < 0 || j >= 2) continue;
@@ -294,7 +300,8 @@ void myAnalysis::process_event(Long64_t start, Long64_t end) {
         // Load the data for the given tree entry
         T->GetEntry(i);
 
-        Int_t j = cent_dum_vec->FindBin(totalMBD)-1;
+        // Int_t j = cent_dum_vec->FindBin(totalMBD)-1;
+        Int_t j = cent_dum_vec->FindBin(cent)-1;
 
         // check if centrality is found in one of the specified bins
         if(j < 0 || j >= 2) continue;
@@ -404,7 +411,7 @@ void Q_vector_correction(const string &i_input,
 # ifndef __CINT__
 Int_t main(Int_t argc, char* argv[]) {
 if(argc < 2 || argc > 6){
-        cout << "usage: ./pi0Ana inputFile [outputFile] [output_csv] [start] [end] " << endl;
+        cout << "usage: ./Q-vec-corr inputFile [outputFile] [output_csv] [start] [end] " << endl;
         cout << "inputFile: containing list of root file paths" << endl;
         cout << "outputFile: location of output file. Default: test.root." << endl;
         cout << "start: start event number. Default: 0." << endl;

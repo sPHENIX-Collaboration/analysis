@@ -48,11 +48,13 @@ namespace myAnalysis {
     void process_event(Long64_t start = 0, Long64_t end = 0);
     void finalize(const string &i_output = "test.root");
 
-    vector<string> cent_key = {"40-60", "20-40"};
+    vector<string> cent_key = {"20-40", "40-60"};
+    // vector<string> cent_key = {"40-60", "20-40"};
     vector<string> pt_key   = {"2-2.5", "2.5-3", "3-3.5", "3.5-4", "4-4.5", "4.5-5"};
 
     TH1F* pt_dum_vec   = new TH1F("pt_dum_vec","",6,2,5);
-    TH1F* cent_dum_vec = new TH1F("cent_dum_vec","", 2, new Double_t[3] {215, 497.222, 955.741});
+    // TH1F* cent_dum_vec = new TH1F("cent_dum_vec","", 2, new Double_t[3] {215, 497.222, 955.741});
+    TH1F* cent_dum_vec = new TH1F("cent_dum_vec","", 2, new Double_t[3] {0.2, 0.4, 0.6});
 
     // keep track of low and high pi0 mass values to filter on for the computation of the v2
     vector<pair<Float_t,Float_t>> pi0_mass_range(cent_key.size()*pt_key.size());
@@ -214,7 +216,7 @@ Int_t myAnalysis::readFitStats(const string &fitStats) {
 
     // Check if the file was successfully opened
     if (!file.is_open()) {
-        cerr << "Failed to open cuts file: " << fitStats << endl;
+        cerr << "Failed to open fit-stats file: " << fitStats << endl;
         return 1;
     }
 
@@ -268,7 +270,7 @@ Int_t myAnalysis::readQVectorCorrection(const string &i_input) {
 
     // Check if the file was successfully opened
     if (!file.is_open()) {
-        cerr << "Failed to open csv file: " << i_input << endl;
+        cerr << "Failed to open Q-vec-corr file: " << i_input << endl;
         return 1;
     }
 
@@ -386,7 +388,7 @@ void myAnalysis::process_event(Long64_t start, Long64_t end) {
     // ...but the branch we need
     // T->SetBranchStatus("run",       true);
     // T->SetBranchStatus("event",     true);
-    T->SetBranchStatus("totalMBD",  true);
+    // T->SetBranchStatus("totalMBD",  true);
     T->SetBranchStatus("pi0_mass",  true);
     T->SetBranchStatus("pi0_pt",    true);
     T->SetBranchStatus("asym",      true);
@@ -407,6 +409,7 @@ void myAnalysis::process_event(Long64_t start, Long64_t end) {
     // Int_t   run;
     // Int_t   event;
     Float_t totalMBD;
+    Float_t cent;
     vector<Float_t>* pi0_mass   = 0;
     vector<Float_t>* pi0_pt     = 0;
     vector<Float_t>* pi0_asym   = 0;
@@ -423,13 +426,14 @@ void myAnalysis::process_event(Long64_t start, Long64_t end) {
 
     // T->SetBranchAddress("run",       &run);
     // T->SetBranchAddress("event",     &event);
-    T->SetBranchAddress("totalMBD",  &totalMBD);
-    T->SetBranchAddress("pi0_mass",  &pi0_mass);
-    T->SetBranchAddress("pi0_pt",    &pi0_pt);
-    T->SetBranchAddress("asym",      &pi0_asym);
-    T->SetBranchAddress("deltaR",    &pi0_deltaR);
-    T->SetBranchAddress("ecore_min", &ecore_min);
-    T->SetBranchAddress("chi2_max",  &chi2_max);
+    T->SetBranchAddress("totalMBD",   &totalMBD);
+    T->SetBranchAddress("centrality", &cent);
+    T->SetBranchAddress("pi0_mass",   &pi0_mass);
+    T->SetBranchAddress("pi0_pt",     &pi0_pt);
+    T->SetBranchAddress("asym",       &pi0_asym);
+    T->SetBranchAddress("deltaR",     &pi0_deltaR);
+    T->SetBranchAddress("ecore_min",  &ecore_min);
+    T->SetBranchAddress("chi2_max",   &chi2_max);
 
     if(do_vn_calc) {
         T->SetBranchAddress("Q_S_x",   &Q_S_x);
@@ -460,7 +464,8 @@ void myAnalysis::process_event(Long64_t start, Long64_t end) {
         // Load the data for the given tree entry
         T->GetEntry(i);
 
-        Int_t cent_idx = cent_dum_vec->FindBin(totalMBD)-1;
+        // Int_t cent_idx = cent_dum_vec->FindBin(totalMBD)-1;
+        Int_t cent_idx = cent_dum_vec->FindBin(cent)-1;
 
         // check if centrality is found in one of the specified bins
         if(cent_idx < 0 || cent_idx >= 2) continue;
