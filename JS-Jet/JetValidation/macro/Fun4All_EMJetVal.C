@@ -14,10 +14,7 @@
 
 #include <g4centrality/PHG4CentralityReco.h>
 
-
 #include <HIJetReco.C>
-
-
 #include "jetvalidation/EMJetVal.h"
 //#include </sphenix/user/jamesj3j3/analysis/JS-Jet/JetValidation/src/EMJetVal.h>
 //#include </sphenix/user/jamesj3j3/analysis/JS-Jet/JetValidation/src/JetValidation.h>
@@ -62,16 +59,16 @@ void Fun4All_EMJetVal(const char *filelisttruth = "dst_truth_jet.list",
   myEMJetVal->setPtRange(5, 100);
   myEMJetVal->setEtaRange(-1.1, 1.1);
   myEMJetVal->doUnsub(1);
-  myEMJetVal->doTruth(1);
-  myEMJetVal->doSeeds(1);
+  myEMJetVal->doTruth(0);
+  myEMJetVal->doSeeds(0);
   //  se->registerSubsystem(myJetVal);
   se->registerSubsystem(myEMJetVal);
   
 
   Fun4AllInputManager *intrue = new Fun4AllDstInputManager("DSTtruth");
-  intrue->AddListFile(filelisttruth,1);
+  //intrue->AddListFile(filelisttruth,1);
+  // turn off for running data
   // se->registerInputManager(intrue);
-  se->registerInputManager(intrue);
 
   Fun4AllInputManager *in2 = new Fun4AllDstInputManager("DSTcalo");
   in2->AddListFile(filelistcalo,1);
@@ -79,15 +76,12 @@ void Fun4All_EMJetVal(const char *filelisttruth = "dst_truth_jet.list",
   se->registerInputManager(in2);
 
   Fun4AllInputManager *in3 = new Fun4AllDstInputManager("DSTglobal");
-  in3->AddListFile(filelistglobal,1);
+  // in3->AddListFile(filelistglobal,1);
+  // turn off for running data
   // se->registerInputManager(in3);
-  se->registerInputManager(in3);
 
-  se->run(1000);
+  se->run(10000);
   se->End();
-  
-  // se->run(-1);
-  // se->End();
 
   gSystem->Exit(0);
   return 0;
