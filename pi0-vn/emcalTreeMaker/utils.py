@@ -24,6 +24,7 @@ pi0Ana.add_argument('-i', '--ntp-list', type=str, help='List of Ntuples', requir
 pi0Ana.add_argument('-c', '--cuts', type=str, help='List of cuts', required=True)
 pi0Ana.add_argument('-c2', '--csv', type=str, default="", help='CSV file with fitStats. Default: ""')
 pi0Ana.add_argument('-c3', '--Q-vec-corr', type=str, default="", help='CSV file with Q vector corrections. Default: ""')
+pi0Ana.add_argument('-m', '--macro', type=str, default='macro/pi0Analysis.C', help='pi0Analysis macro. Default: macro/pi0Analysis.C')
 pi0Ana.add_argument('-e', '--script', type=str, default='genPi0Ana.sh', help='Job script to execute. Default: genPi0Ana.sh')
 pi0Ana.add_argument('-b', '--executable', type=str, default='bin/pi0Ana', help='Executable. Default: bin/pi0Ana')
 pi0Ana.add_argument('-d', '--output', type=str, default='test', help='Output Directory. Default: ./test')
@@ -113,6 +114,7 @@ def create_f4a_jobs():
 def create_pi0Ana_jobs():
     ntp_list   = os.path.realpath(args.ntp_list)
     cuts       = os.path.realpath(args.cuts)
+    macro      = os.path.realpath(args.macro)
     fitStats   = os.path.realpath(args.csv) if(args.csv != '') else ''
     Q_vec_corr = os.path.realpath(args.Q_vec_corr) if(args.Q_vec_corr != '') else ''
     script     = os.path.realpath(args.script)
@@ -121,6 +123,7 @@ def create_pi0Ana_jobs():
     memory     = args.memory
     log        = args.log
 
+    print(f'Macro: {macro}')
     print(f'Run List: {ntp_list}')
     print(f'Cuts: {cuts}')
     print(f'FitStats: {fitStats}')
@@ -136,6 +139,7 @@ def create_pi0Ana_jobs():
     shutil.copy(executable, output_dir)
     shutil.copy(ntp_list, output_dir)
     shutil.copy(cuts, output_dir)
+    shutil.copy(macro, output_dir)
     if(fitStats != ''):
         shutil.copy(fitStats, output_dir)
     if(Q_vec_corr != ''):
