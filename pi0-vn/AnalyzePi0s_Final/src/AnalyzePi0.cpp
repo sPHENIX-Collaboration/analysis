@@ -14,12 +14,15 @@
  Top of code for easy scrolling
  */
 // Global variables
-std::string globalFilename = "/Users/patsfan753/Desktop/Desktop/AnalyzePi0s_Final/histRootFileFinal/histRootFilesIndexSWITCH/hPi0Mass_E1_Asym0point8_Delr0_Chi4.root";
-bool CreateSignalandGaussParPlots = false; //control flag for plotting signal and signal error
+std::string globalFilename = "/Users/patsfan753/Desktop/Desktop/AnalyzePi0s_Final/histRootFiles_1_30_cenModule/hPi0Mass_E0point5_Asym0point6_Delr0_Chi4.root";
+/*
+ Control flage below not really needed anymore since have new interactive analysis code, but can think about how this will work more as we go
+ */
+bool CreateSignalandGaussParPlots = false; //control flag for plotting signal and signal error and gaussian parameters
 // Global variable for setFitManual
 bool globalSetFitManual = false;
 // Global variable for setting dynamic parameters automatically
-bool globalSetDynamicParsAuto = false;  // Set this as needed in your code
+bool globalSetDynamicParsAuto = true;  // Set this as needed in your code
 
 struct ParameterSet {
     double FitStart;
@@ -86,14 +89,20 @@ double globalFindBin2Value;
 double globalSigmaEstimate;
 double globalSigmaParScale;
 double globalNumEntries;
-std::string csvFilePath = "/Users/patsfan753/Desktop/Desktop/AnalyzePi0s_Final/dataOutput/DataFinalizedBins/AdditionalParametersFinalizedBins.csv";
+
+// Global variable
+std::string globalDataPath = "/Users/patsfan753/Desktop/Desktop/AnalyzePi0s_Final/dataOutput/";
+std::string csvFilePath = globalDataPath + "AdditionalParameters_1_30_With_cenModule.csv";
+
 /*
  Set which histogram index is being analyzed, make sure to switch after finishing previous fit
  */
-int histIndex = 11;
-double globalYAxisRange[2] = {0, 8000}; // Lower and upper limits
-
-double globalLineHeight = 0.4 * globalYAxisRange[1];
+int histIndex = 0;
+double globalYAxisRange[2] = {0, 700}; // Lower and upper limits
+/*
+ set height of black vertical line output below
+ */
+double globalLineHeight = 0.35 * globalYAxisRange[1];
 
 TFitResultPtr PerformFitting(TH1F* hPi0Mass, bool setFitManual, TF1*& totalFit, double& fitStart, double& fitEnd) {
     // Assign the setFitManual value to the global variable
@@ -144,16 +153,16 @@ TFitResultPtr PerformFitting(TH1F* hPi0Mass, bool setFitManual, TF1*& totalFit, 
     } else {
         // Set global variables for additional parameters (manual setting)
         fitStart = hPi0Mass->GetBinLowEdge(firstBinAboveThreshold);
-        fitStart = 0.06;
-        fitEnd = 0.5;
+        //fitStart = 0.072;
+        fitEnd = 0.4;
         globalFitStart = fitStart;
         globalFitEnd = fitEnd;
-        globalFindBin1Value = 0.1; // Value in FindBin for bin1
-        globalFindBin2Value = 0.2; // Value in FindBin for bin2
-        globalSigmaEstimate = 0.025; // sigmaEstimate value
+        globalFindBin1Value = 0.12; // Value in FindBin for bin1
+        globalFindBin2Value = 0.17; // Value in FindBin for bin2
+        globalSigmaEstimate = 0.022; // sigmaEstimate value
         // Check if SetParLimits is used for sigma
         if (!setFitManual) {
-            globalSigmaParScale = .2; // Scale factor used in SetParLimits
+            globalSigmaParScale = .1; // Scale factor used in SetParLimits
         } else {
             globalSigmaParScale = 0.0; // No SetParLimits used
         }
@@ -281,36 +290,21 @@ struct Range {
  Automatic printing of MBD values onto canvas of invar mass histograms, switches when histIndex is swithced in main method at bottom of macro
  */
 Range ranges[] = {
-//    {2.0, 2.5, 0.0, 16821.4},       // index 0
-//    {3.0, 4.0, 0.0, 16821.4},       // index 1
-//    {4.0, 5.0, 0.0, 16821.4},       // index 2
-//    
-//    {2.0, 2.5, 16821.4, 43100},   // index 3
-//    {3.0, 4.0, 16821.4, 43100},   // index 4
-//    {4.0, 5.0, 16821.4, 43100},   // index 5
-//    
-//    {2.0, 2.5, 43100, 97028.6},   // index 6
-//    {3.0, 4.0, 43100, 97028.6},   // index 7
-//    {4.0, 5.0, 43100, 97028.6},   // index 8
-//    
-//    {2.0, 2.5, 97028.6, 250000},     // index 9
-//    {3.0, 4.0, 97028.6, 250000},     // index 10
-//    {4.0, 5.0, 97028.6, 250000}      // index 11
+    //40-60 percent centrality
+    {2.0, 2.5, 40, 60},       // index 0
+    {2.5, 3.0, 40, 60},       // index 1
+    {3.0, 3.5, 40, 60},       // index 2
+    {3.5, 4.0, 40, 60},       // index 3
+    {4.0, 4.5, 40, 60},       // index 4
+    {4.5, 5.0, 40, 60},       // index 5
     
-    {2.0, 2.5, 16821.4, 43100},       // index 0
-    {2.5, 3.0, 16821.4, 43100},       // index 1
-    {3.0, 3.5, 16821.4, 43100},       // index 2
-    {3.5, 4.0, 16821.4, 43100},       // index 3
-    {4.0, 4.5, 16821.4, 43100},       // index 4
-    {4.5, 5.0, 16821.4, 43100},       // index 5
-    
-    
-    {2.0, 2.5, 43100, 97028.6},       // index 6
-    {2.5, 3.0, 43100, 97028.6},       // index 7
-    {3.0, 3.5, 43100, 97028.6},       // index 8
-    {3.5, 4.0, 43100, 97028.6},       // index 9
-    {4.0, 4.5, 43100, 97028.6},       // index 10
-    {4.5, 5.0, 43100, 97028.6},       // index 11
+    //20 - 40 percent centrality
+    {2.0, 2.5, 20, 40},       // index 6
+    {2.5, 3.0, 20, 40},       // index 7
+    {3.0, 3.5, 20, 40},       // index 8
+    {3.5, 4.0, 20, 40},       // index 9
+    {4.0, 4.5, 20, 40},       // index 10
+    {4.5, 5.0, 20, 40},       // index 11
 
 };
 /*
@@ -369,13 +363,13 @@ void WriteGaussianParametersToFile(int histIndex, double fitMean, double fitMean
     if (isFitGood) {
         // Generate unique file names based on cut values
         std::ostringstream meanFilenameStream;
-        meanFilenameStream << "/Users/patsfan753/Desktop/Desktop/AnalyzePi0s_Final/dataOutput/DataFinalizedBins/GaussianMean_"
+        meanFilenameStream << globalDataPath << "GaussianMean_"
                            << "E" << cutValues.clusE << "_Asym" << cutValues.asymmetry
                            << "_Chi" << cutValues.chi << "_DeltaR" << cutValues.deltaR << ".txt";
         std::string meanFilename = meanFilenameStream.str();
 
         std::ostringstream errorFilenameStream;
-        errorFilenameStream << "/Users/patsfan753/Desktop/Desktop/AnalyzePi0s_Final/dataOutput/DataFinalizedBins/GaussianError_"
+        errorFilenameStream << globalDataPath << "GaussianError_"
                             << "E" << cutValues.clusE << "_Asym" << cutValues.asymmetry
                             << "_Chi" << cutValues.chi << "_DeltaR" << cutValues.deltaR << ".txt";
         std::string errorFilename = errorFilenameStream.str();
@@ -425,12 +419,12 @@ void CalculateSignalYieldAndError(TH1F* hPi0Mass, TF1* polyFit, double fitMean, 
     if (isFitGood) {
         // Generate unique file names based on cut values
         std::ostringstream yieldFilenameStream, errorFilenameStream;
-        yieldFilenameStream << "/Users/patsfan753/Desktop/Desktop/AnalyzePi0s_Final/dataOutput/DataFinalizedBins/signalYield_"
+        yieldFilenameStream << globalDataPath << "signalYield_"
                             << "E" << cutValues.clusE << "_Asym" << cutValues.asymmetry
                             << "_Chi" << cutValues.chi << "_DeltaR" << cutValues.deltaR << ".txt";
         std::string yieldFilename = yieldFilenameStream.str();
 
-        errorFilenameStream << "/Users/patsfan753/Desktop/Desktop/AnalyzePi0s_Final/dataOutput/DataFinalizedBins/signalError_"
+        errorFilenameStream << globalDataPath << "signalError_"
                             << "E" << cutValues.clusE << "_Asym" << cutValues.asymmetry
                             << "_Chi" << cutValues.chi << "_DeltaR" << cutValues.deltaR << ".txt";
         std::string errorFilename = errorFilenameStream.str();
@@ -480,33 +474,15 @@ void GenerateSignalAndGaussParPlots(const CutValues& cutValues) {
     
     double xPoints[nPoints] = {2.5, 3.5, 4.5, 2.5, 3.5, 4.5, 2.5, 3.5, 4.5, 2.5, 3.5, 4.5};
     
-    /*
-     UNCOMMENT ABOVE CODE WHEN SWITCH BACK TO 2 TO 3 GEV
-     */
-    // Define new x-coordinates for the points
-//    double xPoints[nPoints] = {
-//        1.75, // Shifted left to be between 1.5 and 2
-//        3.5,  // Remains the same
-//        4.5,  // Remains the same
-//        1.75, // Shifted left to be between 1.5 and 2
-//        3.5,  // Remains the same
-//        4.5,  // Remains the same
-//        1.75, // Shifted left to be between 1.5 and 2
-//        3.5,  // Remains the same
-//        4.5,  // Remains the same
-//        1.75, // Shifted left to be between 1.5 and 2
-//        3.5,  // Remains the same
-//        4.5   // Remains the same
-//    };
 
     // Construct file names based on cut values for yield and error
     std::ostringstream yieldFilenameStream, errorFilenameStream;
-    yieldFilenameStream << "/Users/patsfan753/Desktop/Desktop/AnalyzePi0s_Final/dataOutput/DataFinalizedBins/signalYield_"
+    yieldFilenameStream << globalDataPath << "signalYield_"
                         << "E" << cutValues.clusE << "_Asym" << cutValues.asymmetry
                         << "_Chi" << cutValues.chi << "_DeltaR" << cutValues.deltaR << ".txt";
     std::string yieldFilename = yieldFilenameStream.str();
 
-    errorFilenameStream << "/Users/patsfan753/Desktop/Desktop/AnalyzePi0s_Final/dataOutput/DataFinalizedBins/signalError_"
+    errorFilenameStream << globalDataPath << "signalError_"
                         << "E" << cutValues.clusE << "_Asym" << cutValues.asymmetry
                         << "_Chi" << cutValues.chi << "_DeltaR" << cutValues.deltaR << ".txt";
     std::string errorFilename = errorFilenameStream.str();
@@ -539,7 +515,7 @@ void GenerateSignalAndGaussParPlots(const CutValues& cutValues) {
     
     // Define the filename stream and generate the filename based on cut values
     std::ostringstream gaussianMeanFilenameStream;
-    gaussianMeanFilenameStream << "/Users/patsfan753/Desktop/Desktop/AnalyzePi0s_Final/dataOutput/DataFinalizedBins/GaussianMean_"
+    gaussianMeanFilenameStream << globalDataPath << "GaussianMean_"
                                << "E" << cutValues.clusE << "_Asym" << cutValues.asymmetry
                                << "_Chi" << cutValues.chi << "_DeltaR" << cutValues.deltaR << ".txt";
     std::string gaussianMeanFilename = gaussianMeanFilenameStream.str();
@@ -567,7 +543,7 @@ void GenerateSignalAndGaussParPlots(const CutValues& cutValues) {
 
     // Reading Gaussian Sigma values
     std::ostringstream gaussianSigmaFilenameStream;
-    gaussianSigmaFilenameStream << "/Users/patsfan753/Desktop/Desktop/AnalyzePi0s_Final/dataOutput/DataFinalizedBins/GaussianError_"
+    gaussianSigmaFilenameStream << globalDataPath << "GaussianError_"
                                 << "E" << cutValues.clusE << "_Asym" << cutValues.asymmetry
                                 << "_Chi" << cutValues.chi << "_DeltaR" << cutValues.deltaR << ".txt";
     std::string gaussianSigmaFilename = gaussianSigmaFilenameStream.str();
@@ -869,8 +845,8 @@ void GenerateSignalAndGaussParPlots(const CutValues& cutValues) {
 void DrawCanvasText(TLatex& latex, const Range& selectedRange, double fitMean, double fitSigma, double signalToBackgroundRatio, double signalToBackgroundRatioError) {
     // Drawing text related to the range and cuts
     std::ostringstream mbdStream, ptStream;
-    mbdStream << std::fixed << std::setprecision(1) << selectedRange.mbdLow << " #leq MBD Charge < " << selectedRange.mbdHigh;
-    ptStream << std::fixed << std::setprecision(1) << selectedRange.ptLow << " #leq Diphoton p_{T} < " << selectedRange.ptHigh << " GeV";
+    mbdStream << std::fixed << std::setprecision(0) << "Centrality: " << selectedRange.mbdLow << " - " << selectedRange.mbdHigh << "%";
+    ptStream << std::fixed << std::setprecision(2) << selectedRange.ptLow << " #leq Diphoton p_{T} < " << selectedRange.ptHigh << " GeV";
 
     latex.SetTextSize(0.035);
     latex.DrawLatex(0.13, 0.86, "Cuts (Inclusive):");
@@ -897,7 +873,7 @@ void WriteDataToCSV(int histIndex, const CutValues& cutValues, double fitMean, d
         return;
     }
 
-    std::string filename = globalDataPath + "PlotByPlotOutputJamiesUpdatedMasking_edits.csv";
+    std::string filename = globalDataPath + "PlotByPlotOutput_1_30_With_cenModule.csv";
     std::ifstream checkFile(filename);
     bool fileIsEmpty = checkFile.peek() == std::ifstream::traits_type::eof();
     checkFile.close();
@@ -949,7 +925,7 @@ void WriteAdditionalParametersToCSV(int histIndex, const CutValues& cutValues) {
     }
 
     // Open file in append mode
-    std::ofstream file("/Users/patsfan753/Desktop/Desktop/AnalyzePi0s_Final/dataOutput/DataFinalizedBins/AdditionalParametersFinalizedBins.csv", std::ios::app);
+    std::ofstream file(csvFilePath, std::ios::app);
     if (!file.is_open()) {
         std::cerr << "Unable to open CSV file for writing additional parameters." << std::endl;
         return;
@@ -1025,8 +1001,8 @@ void AnalyzePi0() {
     WriteGaussianParametersToFile(histIndex, fitMean, fitMeanError, fitSigma, fitSigmaError, globalCutValues);
 
     
-    TF1 *gaussFit = new TF1("gaussFit", "gaus", fitStart, .28);
-    TF1 *polyFit = new TF1("polyFit", "pol4", fitStart, .28);
+    TF1 *gaussFit = new TF1("gaussFit", "gaus", fitStart, fitMean + 2*fitSigma + .02);
+    TF1 *polyFit = new TF1("polyFit", "pol4", fitStart, fitMean + 2*fitSigma + .02);
     gaussFit->SetParameter(0, totalFit->GetParameter(0));
     gaussFit->SetParameter(1, totalFit->GetParameter(1));
     gaussFit->SetParameter(2, totalFit->GetParameter(2));
@@ -1079,7 +1055,7 @@ void AnalyzePi0() {
         std::string imageName = filenameStream.str();
         canvas->SaveAs(imageName.c_str());
     }
-    std::string imageName2 = "/Users/patsfan753/Desktop/Desktop/AnalyzePi0s_Final/plotOutput/InvMassPlotsNoCutSpecified/" + histName + "_fit.pdf";
+    std::string imageName2 = "/Users/patsfan753/Desktop/Desktop/AnalyzePi0s_Final/plotOutput/InvMassPlotsNoCutSpecified/" + histName + "_fit.png";
     canvas->SaveAs(imageName2.c_str());
     CalculateSignalYieldAndError(hPi0Mass, polyFit, fitMean, fitSigma, histIndex, globalCutValues);
     // Read the signal yield and error from text files so can be transferred to CSV input
@@ -1087,12 +1063,12 @@ void AnalyzePi0() {
     if (isFitGood) {
         // Construct file names based on cut values
         std::ostringstream yieldFilenameStream, errorFilenameStream;
-        yieldFilenameStream << "/Users/patsfan753/Desktop/Desktop/AnalyzePi0s_Final/dataOutput/DataFinalizedBins/signalYield_"
+        yieldFilenameStream << globalDataPath << "signalYield_"
                             << "E" << globalCutValues.clusE << "_Asym" << globalCutValues.asymmetry
                             << "_Chi" << globalCutValues.chi << "_DeltaR" << globalCutValues.deltaR << ".txt";
         std::string yieldFilename = yieldFilenameStream.str();
 
-        errorFilenameStream << "/Users/patsfan753/Desktop/Desktop/AnalyzePi0s_Final/dataOutput/DataFinalizedBins/signalError_"
+        errorFilenameStream << globalDataPath << "signalError_"
                             << "E" << globalCutValues.clusE << "_Asym" << globalCutValues.asymmetry
                             << "_Chi" << globalCutValues.chi << "_DeltaR" << globalCutValues.deltaR << ".txt";
         std::string errorFilename = errorFilenameStream.str();
