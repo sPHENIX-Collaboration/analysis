@@ -48,7 +48,7 @@ namespace myAnalysis {
     void process_event(Long64_t start = 0, Long64_t end = 0);
     void finalize(const string &i_output = "test.root");
 
-    vector<string> cent_key = {"20-40", "40-60"};
+    vector<string> cent_key = {"40-60", "20-40"};
     // vector<string> cent_key = {"40-60", "20-40"};
     vector<string> pt_key   = {"2-2.5", "2.5-3", "3-3.5", "3.5-4", "4-4.5", "4.5-5"};
 
@@ -78,9 +78,9 @@ namespace myAnalysis {
     Float_t hpt_min = 0;
     Float_t hpt_max = 20;
 
-    Int_t   bins_deltaR   = 100;
-    Float_t hdeltaR_min   = 0;
-    Float_t hdeltaR_max   = 4;
+    Int_t   bins_deltaR = 100;
+    Float_t hdeltaR_min = 0;
+    Float_t hdeltaR_max = 4;
 
     Int_t   bins_asym = 100;
     Float_t hasym_min = 0;
@@ -483,6 +483,9 @@ void myAnalysis::process_event(Long64_t start, Long64_t end) {
 
         // check if centrality is found in one of the specified bins
         if(cent_idx < 0 || cent_idx >= 2) continue;
+
+        // need to reverse this index since we want to match cent_key
+        cent_idx = cent_key.size() - cent_idx - 1;
 
         ++evt_ctr[cent_idx];
 
