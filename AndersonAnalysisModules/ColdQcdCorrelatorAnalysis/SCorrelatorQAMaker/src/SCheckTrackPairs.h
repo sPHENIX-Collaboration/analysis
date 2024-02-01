@@ -36,6 +36,7 @@
 #include "SBaseQAPlugin.h"
 #include "/sphenix/user/danderson/eec/SCorrelatorUtilities/TrkTools.h"
 #include "/sphenix/user/danderson/eec/SCorrelatorUtilities/Constants.h"
+#include "/sphenix/user/danderson/eec/SCorrelatorUtilities/Interfaces.h"
 
 // make common namespaces implicit
 using namespace std;
@@ -109,7 +110,7 @@ namespace SColdQcdCorrelatorAnalysis {
     InitTuples();
     return Fun4AllReturnCodes::EVENT_OK;
 
-  }  // end 'Init(PHCompositenNode*)'
+  }  // end 'Init(PHCompositeNode*)'
 
 
 
@@ -141,61 +142,24 @@ namespace SColdQcdCorrelatorAnalysis {
       cout << "SColdQcdCorrelatorAnalysis::SCheckTrackPairs::InitTuples(): initializing output tuple." << endl;
     }
 
-    // list of track pair leaves
-    const vector<string> vecTrkPairLeaves = {
-      "trkid_a",
-      "trkid_b",
-      "pt_a",
-      "pt_b",
-      "eta_a",
-      "eta_b",
-      "phi_a",
-      "phi_b",
-      "ene_a",
-      "ene_b",
-      "dcaxy_a",
-      "dcaxy_b",
-      "dcaz_a",
-      "dcaz_b",
-      "vtxx_a",
-      "vtxx_b",
-      "vtxy_a",
-      "vtxy_b",
-      "vtxz_a",
-      "vtxz_b",
-      "quality_a",
-      "quality_b",
-      "deltapt_a",
-      "deltapt_b",
-      "nmvtxlayers_a",
-      "nmvtxlayers_b",
-      "ninttlayers_a",
-      "ninttlayers_b",
-      "ntpclayers_a",
-      "ntpclayers_b",
-      "nmvtxclusts_a",
-      "nmvtxclusts_b",
-      "ninttclusts_a",
-      "ninttclusts_b",
-      "ntpcclusts_a",
-      "ntpcclusts_b",
-      "nclustkey_a",
-      "nclustkey_b",
-      "nsameclustkey",
-      "deltartrack"
-    };
+    // create leaf list and add leaves for 1st track in pair
+    vector<string> vecTrkPairLeaves = MakeLeafVector<TrkInfo>("_a");
+    vecTrkPairLeaves.push_back("nClustKey_a");
 
-    // compress leaves into a list
-    string argTrkPairLeaves("");
-    for (size_t iLeaf = 0; iLeaf < vecTrkPairLeaves.size(); iLeaf++) {
-      argTrkPairLeaves.append(vecTrkPairLeaves[iLeaf]);
-      if ((iLeaf + 1) != vecTrkPairLeaves.size()) {
-        argTrkPairLeaves.append(":");
-      }
-    }
+    // add leaves for 2nd track in pair
+    AddLeavesToVector<TrkInfo>(vecTrkPairLeaves, "_b");
+    vecTrkPairLeaves.push_back("nClustKey_b");
+
+    // add leaves for no. of same cluster keys b/n pair and
+    // distance between pair
+    vecTrkPairLeaves.push_back("nSameClustKey");
+    vecTrkPairLeaves.push_back("trackDeltaR");
+
+    // compress leaves into a colon-separated list
+    string argTrkPairLeaves = FlattenLeafList(vecTrkPairLeaves);
 
     // create tuple and return
-    m_ntTrackPairs = new TNtuple("ntTrackPairs", "Pairs of tracks",   argTrkPairLeaves.data());
+    m_ntTrackPairs = new TNtuple("ntTrackPairs", "Pairs of tracks", argTrkPairLeaves.data());
     m_vecTrackPairLeaves.reserve(vecTrkPairLeaves.size());
     return;
 
@@ -239,6 +203,10 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
   void SCheckTrackPairs::DoDoubleTrackLoop(PHCompositeNode* topNode) {
+
+    if (m_isDebugOn && (m_verbosity > 2)) {
+      cout << "SColdQcdCorrelatorAnalysis::SCheckTrackPairs::DoDoubleTrackLoop(): looping over all pairs of tracks." << endl;
+    }
 
     // loop over tracks
     SvtxTrack*    trackA  = NULL;
@@ -312,45 +280,51 @@ namespace SColdQcdCorrelatorAnalysis {
 
         // set tuple leaves
         m_vecTrackPairLeaves[0]  = (float) trkInfoA.id;
-        m_vecTrackPairLeaves[1]  = (float) trkInfoB.id;
-        m_vecTrackPairLeaves[2]  = (float) trkInfoA.pt;
-        m_vecTrackPairLeaves[3]  = (float) trkInfoB.pt;
-        m_vecTrackPairLeaves[4]  = (float) trkInfoA.eta;
-        m_vecTrackPairLeaves[5]  = (float) trkInfoB.eta;
-        m_vecTrackPairLeaves[6]  = (float) trkInfoA.phi;
-        m_vecTrackPairLeaves[7]  = (float) trkInfoB.phi;
-        m_vecTrackPairLeaves[8]  = (float) trkInfoA.ene;
-        m_vecTrackPairLeaves[9]  = (float) trkInfoB.ene;
-        m_vecTrackPairLeaves[10] = (float) trkInfoA.dcaXY;
-        m_vecTrackPairLeaves[11] = (float) trkInfoB.dcaXY;
-        m_vecTrackPairLeaves[12] = (float) trkInfoA.dcaZ;
-        m_vecTrackPairLeaves[13] = (float) trkInfoB.dcaZ;
-        m_vecTrackPairLeaves[14] = (float) trkInfoA.vtxX;
-        m_vecTrackPairLeaves[15] = (float) trkInfoB.vtxX;
-        m_vecTrackPairLeaves[16] = (float) trkInfoA.vtxY;
-        m_vecTrackPairLeaves[17] = (float) trkInfoB.vtxY;
-        m_vecTrackPairLeaves[18] = (float) trkInfoA.vtxZ;
-        m_vecTrackPairLeaves[19] = (float) trkInfoB.vtxZ;
-        m_vecTrackPairLeaves[20] = (float) trkInfoA.quality;
-        m_vecTrackPairLeaves[21] = (float) trkInfoB.quality;
-        m_vecTrackPairLeaves[22] = (float) trkInfoA.ptErr;
-        m_vecTrackPairLeaves[23] = (float) trkInfoB.ptErr;
-        m_vecTrackPairLeaves[24] = (float) trkInfoA.nMvtxLayer;
-        m_vecTrackPairLeaves[25] = (float) trkInfoB.nMvtxLayer;
-        m_vecTrackPairLeaves[26] = (float) trkInfoA.nInttLayer;
-        m_vecTrackPairLeaves[27] = (float) trkInfoB.nInttLayer;
-        m_vecTrackPairLeaves[28] = (float) trkInfoA.nTpcLayer;
-        m_vecTrackPairLeaves[29] = (float) trkInfoB.nTpcLayer;
-        m_vecTrackPairLeaves[30] = (float) trkInfoA.nMvtxClust;
-        m_vecTrackPairLeaves[31] = (float) trkInfoB.nMvtxClust;
-        m_vecTrackPairLeaves[32] = (float) trkInfoA.nInttClust;
-        m_vecTrackPairLeaves[33] = (float) trkInfoB.nInttClust;
-        m_vecTrackPairLeaves[34] = (float) trkInfoA.nTpcClust;
-        m_vecTrackPairLeaves[35] = (float) trkInfoB.nTpcClust;
-        m_vecTrackPairLeaves[36] = (float) m_vecClustKeysA.size();
-        m_vecTrackPairLeaves[37] = (float) m_vecClustKeysB.size();
-        m_vecTrackPairLeaves[38] = (float) nSameKey;
-        m_vecTrackPairLeaves[39] = (float) drTrkAB;
+        m_vecTrackPairLeaves[1]  = (float) trkInfoA.nMvtxLayer;
+        m_vecTrackPairLeaves[2]  = (float) trkInfoA.nInttLayer;
+        m_vecTrackPairLeaves[3]  = (float) trkInfoA.nTpcLayer;
+        m_vecTrackPairLeaves[4]  = (float) trkInfoA.nMvtxClust;
+        m_vecTrackPairLeaves[5]  = (float) trkInfoA.nInttClust;
+        m_vecTrackPairLeaves[6]  = (float) trkInfoA.nTpcClust;
+        m_vecTrackPairLeaves[7]  = (float) trkInfoA.eta;
+        m_vecTrackPairLeaves[8]  = (float) trkInfoA.phi;
+        m_vecTrackPairLeaves[9]  = (float) trkInfoA.px;
+        m_vecTrackPairLeaves[10] = (float) trkInfoA.py;
+        m_vecTrackPairLeaves[11] = (float) trkInfoA.pz;
+        m_vecTrackPairLeaves[12] = (float) trkInfoA.pt;
+        m_vecTrackPairLeaves[13] = (float) trkInfoA.ene;
+        m_vecTrackPairLeaves[14] = (float) trkInfoA.dcaXY;
+        m_vecTrackPairLeaves[15] = (float) trkInfoA.dcaZ;
+        m_vecTrackPairLeaves[16] = (float) trkInfoA.ptErr;
+        m_vecTrackPairLeaves[17] = (float) trkInfoA.quality;
+        m_vecTrackPairLeaves[18] = (float) trkInfoA.vtxX;
+        m_vecTrackPairLeaves[19] = (float) trkInfoA.vtxY;
+        m_vecTrackPairLeaves[20] = (float) trkInfoA.vtxZ;
+        m_vecTrackPairLeaves[21] = (float) m_vecClustKeysA.size();
+        m_vecTrackPairLeaves[22] = (float) trkInfoB.id;
+        m_vecTrackPairLeaves[23] = (float) trkInfoB.nMvtxLayer;
+        m_vecTrackPairLeaves[24] = (float) trkInfoB.nInttLayer;
+        m_vecTrackPairLeaves[25] = (float) trkInfoB.nTpcLayer;
+        m_vecTrackPairLeaves[26] = (float) trkInfoB.nMvtxClust;
+        m_vecTrackPairLeaves[27] = (float) trkInfoB.nInttClust;
+        m_vecTrackPairLeaves[28] = (float) trkInfoB.nTpcClust;
+        m_vecTrackPairLeaves[29] = (float) trkInfoB.eta;
+        m_vecTrackPairLeaves[30] = (float) trkInfoB.phi;
+        m_vecTrackPairLeaves[31] = (float) trkInfoB.px;
+        m_vecTrackPairLeaves[32] = (float) trkInfoB.py;
+        m_vecTrackPairLeaves[33] = (float) trkInfoB.pz;
+        m_vecTrackPairLeaves[34] = (float) trkInfoB.pt;
+        m_vecTrackPairLeaves[35] = (float) trkInfoB.ene;
+        m_vecTrackPairLeaves[36] = (float) trkInfoB.dcaXY;
+        m_vecTrackPairLeaves[37] = (float) trkInfoB.dcaZ;
+        m_vecTrackPairLeaves[38] = (float) trkInfoB.ptErr;
+        m_vecTrackPairLeaves[39] = (float) trkInfoB.quality;
+        m_vecTrackPairLeaves[40] = (float) trkInfoB.vtxX;
+        m_vecTrackPairLeaves[41] = (float) trkInfoB.vtxY;
+        m_vecTrackPairLeaves[42] = (float) trkInfoB.vtxZ;
+        m_vecTrackPairLeaves[43] = (float) m_vecClustKeysB.size();
+        m_vecTrackPairLeaves[44] = (float) nSameKey;
+        m_vecTrackPairLeaves[45] = (float) drTrkAB;
 
         // fill track pair tuple
         m_ntTrackPairs -> Fill(m_vecTrackPairLeaves.data());

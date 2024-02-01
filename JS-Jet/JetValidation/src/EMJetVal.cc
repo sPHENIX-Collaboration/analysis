@@ -1,5 +1,3 @@
-
-
 // Modified version of JetValidation.cc for the purpose of subjet analysis -- Jennifer James jennifer.l.james@vanderbilt.edu
 //module for producing a TTree with jet information for doing jet validation studies
 // for questions/bugs please contact Virginia Bailey vbailey13@gsu.edu and myself
@@ -11,10 +9,12 @@
 #include <phool/PHCompositeNode.h>
 #include <phool/getClass.h>
 #include <jetbase/JetMap.h>
+#include <jetbase/JetContainer.h>
+#include <jetbase/Jetv2.h>
 #include <jetbase/Jetv1.h>
-
 #include <centrality/CentralityInfo.h>
-
+#include <globalvertex/GlobalVertex.h>
+#include <globalvertex/GlobalVertexMap.h>
 #include <calobase/RawTower.h>
 #include <calobase/RawTowerContainer.h>
 #include <calobase/RawTowerGeom.h>
@@ -25,6 +25,7 @@
 #include <Pythia8/Pythia.h> // Include the Pythia header
 #include <jetbackground/TowerBackground.h>
 
+#include <TTree.h>
 #include <iostream>
 #include <fastjet/PseudoJet.hh>
 #include <sstream>
@@ -103,13 +104,28 @@ EMJetVal::~EMJetVal()
 //____________________________________________________________________________..
 int EMJetVal::Init(PHCompositeNode *topNode)
 {
-  std::cout << "EMJetVal::Init(PHCompositeNode *topNode) Initializing" << std::endl;
-  PHTFileServer::get().open(m_outputFileName, "RECREATE");
+  //  std::cout << "EMJetVal::Init(PHCompositeNode *topNode) Initializing" << std::endl;
+  //PHTFileServer::get().open(m_outputFileName, "RECREATE");
   std::cout << "EMJetVal::Init - Output to " << m_outputFileName << std::endl;
   //Analysis hists
-  outFile = new TFile("hist_jets.root", "RECREATE");
-
+  outFile = new TFile(m_outputFileName.c_str(), "RECREATE");
+  _h_R04_z_sj_10_20= new TH1F("R04_z_sj_10_20","z_sj in subjets 1 & 2", 10, 0, 0.5);
+  _h_R04_theta_sj_10_20= new TH1F("R04_theta_sj_10_20","theta_sj in subjets 1 & 2", 10, 0, 0.5);
+  // softdrop hists
+   _h_R04_z_g_10_20= new TH1F("R04_z_g_10_20","z_g in subjets 1 & 2", 10, 0, 0.5);
+   _h_R04_theta_g_10_20= new TH1F("R04_theta_g_10_20","theta_g in subjets 1 & 2", 10, 0, 0.5);
+  // multiplicity hists
+  _hmult_R04= new TH1F("mult_R04","total number of constituents inside R=0.4 jets", 30, 0, 30);
+  _hmult_R04_pT_10_20GeV= new TH1F("mult_R04_pT_10_20GeV","total number of constituents inside R=0.4 jets with 10 < p_{T} < 20", 30, 0, 30);
+  _hjetpT_R04 = new TH1F("jetpT_R04","jet transverse momentum for R=0.4 jets", 100, 0, 100);
+  _hjeteta_R04 = new TH1F("jeteta_R04","jet pseudorapidity for R=0.4 jets", 50, -0.6, 0.6);
+  // corellation hists
+  correlation_theta_10_20 = new TH2D("correlation_theta_10_20", "Correlation Plot 10 < p_{T} < 20 [GeV/c]; R_{g}; #theta_{sj}", 20, 0, 0.5, 20, 0, 0.5);
+  correlation_z_10_20 = new TH2D("correlation_z_10_20", "Correlation Plot; z_{g}; z_{sj}", 20, 0, 0.5, 20, 0, 0.5);   
   // configure Tree
+
+  //PHTFileServer::get().open("hist_jets.root", "RECREATE");
+  
   m_T = new TTree("T", "MyJetAnalysis Tree");
   m_T->Branch("m_event", &m_event, "event/I");
   m_T->Branch("nJet", &m_nJet, "nJet/I");
@@ -149,6 +165,8 @@ int EMJetVal::Init(PHCompositeNode *topNode)
     m_T->Branch("subseedE", &m_e_subseed);
     m_T->Branch("subseedCut", &m_subseed_cut);
   }
+ 
+  std::cout << "finished declaring histos" << std::endl;
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -164,15 +182,15 @@ int EMJetVal::retrieveEvent(const fastjet::PseudoJet& jet) {
 //____________________________________________________________________________..
 int EMJetVal::InitRun(PHCompositeNode *topNode)
 {
-  std::cout << "EMJetVal::InitRun(PHCompositeNode *topNode) Initializing for Run XXX" << std::endl;
+  // std::cout << "EMJetVal::InitRun(PHCompositeNode *topNode) Initializing for Run XXX" << std::endl;
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
 //____________________________________________________________________________..
 int EMJetVal::process_event(PHCompositeNode *topNode)
 {
-  //std::cout << "EMJetVal::process_event(PHCompositeNode *topNode) Processing Event" << std::endl;
-  ++m_event;
+  std::cout << "EMJetVal::process_event(PHCompositeNode *topNode) Processing Event " << m_event << std::endl;
+   ++m_event;
 
   // interface to reco jets
   JetContainer* jets = findNode::getClass<JetContainer>(topNode, m_recoJetName);
@@ -193,6 +211,7 @@ int EMJetVal::process_event(PHCompositeNode *topNode)
 	<< m_truthJetName << std::endl;
       exit(-1);
     }
+
   
   // interface to jet seeds
   JetContainer* seedjetsraw = findNode::getClass<JetContainer>(topNode, "AntiKt_TowerInfo_HIRecoSeedsRaw_r02");
@@ -212,7 +231,7 @@ int EMJetVal::process_event(PHCompositeNode *topNode)
 	<< std::endl;
       exit(-1);
     }
-
+  
   //centrality
   CentralityInfo* cent_node = findNode::getClass<CentralityInfo>(topNode, "CentralityInfo");
   if (!cent_node)
@@ -263,50 +282,24 @@ int EMJetVal::process_event(PHCompositeNode *topNode)
       background_v2 = background->get_v2();
       background_Psi2 = background->get_Psi2();
     }
-  for (auto jet : jets) //JetMap::Iter iter = jets->begin(); iter != jets->end(); ++iter)
+  for (auto jet : *jets)// jets //JetMap::Iter iter = jets->begin(); iter != jets->end(); ++iter)
     {
+
+      std::cout << "working on original jet " << jet->get_id() << " out of " << jets->size() << std::endl;
+
       if(jet->get_pt() < 1) continue; // to remove noise jets
 
+      
       m_id.push_back(jet->get_id());
       m_nComponent.push_back(jet->size_comp());
       m_eta.push_back(jet->get_eta());
       m_phi.push_back(jet->get_phi());
       m_e.push_back(jet->get_e());
       m_pt.push_back(jet->get_pt());
-      // Assuming 'jets' is a JetMap::Iter
-
-      //      vector<PseudoJet> pseudoJets;  // Create a vector to store PseudoJet objects
-
-      // Convert 'jets' to a vector of PseudoJet
-      //      pseudoJets.push_back(iter->second);
       
-
-      // Now, you can iterate over 'pseudoJets' using a vector iterator
-      // for (vector<PseudoJet>::iterator iter = pseudoJets.begin(); iter != pseudoJets.end(); ++iter) {
-      //	EMJetVal::retrieveEvent(*iter);
-	// }
-
-      // Assuming 'm_eta', 'm_phi', 'm_e', and 'm_pt' are vectors with event data
-      for (std::vector<float>::size_type i = 0; i < m_eta.size(); ++i) {
-	double eta = m_eta[i];
-	double phi = m_phi[i];
-	double e = m_e[i];
-	double pt = m_pt[i];
-
-	// Create a PseudoJet and add it to the 'tower' vector
-	PseudoJet particles(pt * cos(phi), pt * sin(phi), pt * sinh(eta), e);
-	//	vector<PseudoJet> particles;
-
-	//	particles.push_back(iter->second);
-      }
-
-      //  return 0; // Return 0 for success
-
       std::vector<PseudoJet> particles;
+      particles.clear();
       
-      if(m_doUnsubJet)
-	{
-	  //  Jet* unsubjet = new Jetv1();
 	  float totalPx = 0;
 	  float totalPy = 0;
 	  float totalPz = 0;
@@ -315,7 +308,6 @@ int EMJetVal::process_event(PHCompositeNode *topNode)
 
 	  for (auto comp : jet->get_comp_vec()) //Jet::ConstIter comp = jet->begin_comp(); comp != jet->end_comp(); ++comp)
 	    {
-	      particles.clear();
 	      TowerInfo *tower;
 	      nconst++;
 	      unsigned int channel = comp.second;
@@ -336,7 +328,7 @@ int EMJetVal::process_event(PHCompositeNode *topNode)
 
 		  UE = UE * (1 + 2 * background_v2 * cos(2 * (tower_phi - background_Psi2)));
 		  totalE += tower->get_energy() + UE;
-		  double pt = tower->get_energy() / cosh(tower_eta);
+		  double pt = (tower->get_energy() + UE) / cosh(tower_eta);
 		  totalPx += pt * cos(tower_phi);
 		  totalPy += pt * sin(tower_phi);
 		  totalPz += pt * sinh(tower_eta);
@@ -359,7 +351,7 @@ int EMJetVal::process_event(PHCompositeNode *topNode)
 
 		  UE = UE * (1 + 2 * background_v2 * cos(2 * (tower_phi - background_Psi2)));
 		  totalE +=tower->get_energy() + UE;
-		  double pt = tower->get_energy() / cosh(tower_eta);
+		  double pt = (tower->get_energy() + UE) / cosh(tower_eta);
 		  totalPx += pt * cos(tower_phi);
 		  totalPy += pt * sin(tower_phi);
 		  totalPz += pt * sinh(tower_eta);
@@ -382,30 +374,32 @@ int EMJetVal::process_event(PHCompositeNode *topNode)
 
 
 		  UE = UE * (1 + 2 * background_v2 * cos(2 * (tower_phi - background_Psi2)));
-		  double ETmp = tower->get_energy() + UE;
-		  totalE += ETmp;
+		  double ETmp = tower->get_energy();
 		  double pt = tower->get_energy() / cosh(tower_eta);
+		  if(m_doUnsubJet){
+		    ETmp += UE;
+		    pt = ETmp / cosh(tower_eta);
+		  }
 		  double pxTmp = pt * cos(tower_phi);
-		  totalPx += pxTmp;
 		  double pyTmp = pt * sin(tower_phi);
+		  double pzTmp = pt * sinh(tower_eta);
+
+		  totalE += ETmp;
+		  totalPx += pxTmp;
 		  totalPy += pyTmp;
-		  double pzTmp = sinh(tower_eta);
-		  totalPz += pzTmp;		      
+		  totalPz += pzTmp;
+
 
 		  particles.push_back( PseudoJet( pxTmp, pyTmp, pzTmp, ETmp) );
-		  //
-		  // vector<PseudoJet> tower;
 
-		  // EMJetVal emJetVal; // Create an instance of the EMJetVal class
-		  // Retrieve the event data using the retrieveEvent function
-		  // int retrieveStatus = emJetVal.retrieveEvent(tower);
-		  //  std::cout << "passed here -389 -inserted my kinematics" << std::endl
-		  // Detector size, anti-kT radius, and modified mass-drop tagger z.
-		  //	  double etaMax = 1.;
+		}//end if over sources
+
+	    }//end loop over constituents
+
 		  double radius[5] = {0.05, 0.1, 0.2, 0.4, 0.6}; // jet radius
-		  double pseudorapidity = -999; // pseudorapidity
-		  double theta_sj = -1; // delta radius (value describes an unachievable value)
-		  double z_sj = -1; // delta radius (value describes an unachievable value)
+		  double pseudorapidity = -999.; // pseudorapidity
+		  double theta_sj = -1.; // delta radius (value describes an unachievable value)
+		  double z_sj = -1.; // delta radius (value describes an unachievable value)
 		   
 		  //  std::cout << "passed here -397 -my jet defs" << std::endl
 		  // Set up FastJet jet finders and modified mass-drop tagger.
@@ -421,208 +415,90 @@ int EMJetVal::process_event(PHCompositeNode *topNode)
     
 		  //! create a loop to run over the jets -
 		  
-		  for (std::vector<float>::size_type j = 0; j < sortedJets_R04.size(); ++j) {
-		    PseudoJet jet = sortedJets_R04.at(j);
-		    if(fabs(jet.eta()) > 0.6)
+		  for (int j = 0; j < (int)sortedJets_R04.size(); j++) {
+		    
+		    std::cout << "working on reclustered jet " << j << " of " << sortedJets_R04.size() << std::endl;
+
+		    PseudoJet jet_reco = sortedJets_R04.at(j);
+		    if(fabs(jet_reco.eta()) > 0.6)
 		      continue;
       
-		    ClusterSequence clustSeq_R01_con(jet.constituents() , jetDefAKT_R01 );
+		    std::cout << "jet within eta of 0.6" << std::endl; 
+
+		    ClusterSequence clustSeq_R01_con(jet_reco.constituents() , jetDefAKT_R01 );
+		    std::cout << "made R=0.1 cluster sequence" << std::endl;
 		    std:: vector<PseudoJet> sortedJets_R01_con = sorted_by_pt( clustSeq_R01_con.inclusive_jets() );
+		    std::cout << "ran R=0.1 and sorted by pT" << std::endl;
+		    std::cout << "number of subjets: " << sortedJets_R01_con.size() << std::endl;
 		    // std::cout << "passed here -476 -pseudojet" << std::endl
-		    if (sortedJets_R01_con.size() < 2)
+		    if (sortedJets_R01_con.size() < 2){
+		      std::cout << "not enough subjets" << std::endl;
 		      continue;
+		    }		      
+
+		    std:: cout << "at least 2 subjets" << std::endl;
+
 		    PseudoJet sj1 = sortedJets_R01_con.at(0);
 		    PseudoJet sj2 = sortedJets_R01_con.at(1);
 
+		    //  std::cout << "sj1 pt=" << sj1.pt() << std::endl;
+		    // std::cout << "sj2 pt=" << sj2.pt() << std::endl;
+		    if (sj1.pt() < 3 || sj2.pt() < 3 )
+		      continue;
+		    // std::cout << "sj1 pt=" << sj1.pt() << std::endl;
+		    // std::cout << "sj2 pt=" << sj2.pt() << std::endl;
+		     std::cout << "both are above 3" << std::endl;
+		    
 		    theta_sj = sj1.delta_R(sj2);
 		    z_sj = sj2.pt()/(sj2.pt()+sj1.pt());
-      
-		    // 15 to 20
-		    if (jet.pt() > 15 and jet.pt() < 20 ){
+
+		    std::cout << "theta_sj = " << theta_sj << "   z_sj = " << z_sj << std::endl;
+		   
+		    // 10 to 20 pT
+		    if (jet_reco.pt() > 10 && jet_reco.pt() < 20 ){
 		      // cout<<"sorted jets at "<<j<<" the pT = "<<jet.pt()<<endl;
-		      _hjetpT_R04->Fill(jet.perp());
-		      pseudorapidity = jet.eta();
+		      std::cout << "jet pt >10 & <20: " << jet_reco.pt() << std::endl;
+		      _hjetpT_R04->Fill(jet_reco.perp());
+		      pseudorapidity = jet_reco.eta();
 		      _hjeteta_R04->Fill(pseudorapidity);
-		      _hmult_R04->Fill(jet.constituents().size());
+		      _hmult_R04->Fill(jet_reco.constituents().size());
 
-		      ClusterSequence clustSeqCA(jet.constituents(), jetDefCA);
-		      std:: vector<PseudoJet> cambridgeJets = sorted_by_pt(clustSeqCA.inclusive_jets());
-    
-		      // SoftDrop parameters
-		      double z_cut = 0.20;
-		      double beta = 0.0;
-		      contrib::SoftDrop sd(beta, z_cut);
-		      //! get subjets 15 to 20 pT
-		      
-		      _h_R04_z_sj_15_20->Fill(z_sj);
-		      _h_R04_theta_sj_15_20->Fill(theta_sj);
-
-		      _hmult_R04_pT_15_20GeV->Fill(jet.constituents().size());
-
-		      PseudoJet sd_jet = sd(jet);
-		      if (sd_jet == 0)
-			continue;
-		      // SoftDrop was successful, analyze the resulting sd_jet
-		      // cout << endl;
-		      // cout << "original    jet: " << cambridgeJet << endl;
-		      // cout << "SoftDropped jet: " << sd_jet << endl;
-		      cout << "jet pT: " << sd_jet.perp() << endl;
-		      cout << "  delta_R between subjets: " << sd_jet.structure_of<contrib::SoftDrop>().delta_R() << endl;
-		      cout << "  symmetry measure(z):     " << sd_jet.structure_of<contrib::SoftDrop>().symmetry() << endl;
-		      cout << " theta_sj: " << theta_sj << endl;
-		      cout << " z_sj: " << z_sj << endl;
-		      // cout << "  mass drop(mu):           " << sd_jet.structure_of<contrib::SoftDrop>().mu() << endl;
-
-		      // Fill histograms with delta_R and symmetry measure z
-		      double delta_R_subjets = sd_jet.structure_of<contrib::SoftDrop>().delta_R();
-		      double z_subjets = sd_jet.structure_of<contrib::SoftDrop>().symmetry();
-
-		      _h_R04_z_g_15_20->Fill(z_subjets);
-		      _h_R04_theta_g_15_20->Fill(delta_R_subjets);
-
-		      correlation_theta_15_20->Fill(delta_R_subjets, theta_sj);
-		      correlation_z_15_20->Fill(z_subjets, z_sj);
-		          
-		      // SoftDrop failed, handle the case as needed
-		      // e.g., skip this jet or perform alternative analysis
-		            
-		    }
- 
-		    // 20 to 25 pT
-
-		    else if (jet.pt() > 20 and jet.pt() < 25 ){
-		      // cout<<"sorted jets at "<<j<<" the pT = "<<jet.pt()<<endl;
-		      _hjetpT_R04->Fill(jet.perp());
-		      pseudorapidity = jet.eta();
-		      _hjeteta_R04->Fill(pseudorapidity);
-		      _hmult_R04->Fill(jet.constituents().size());
-		      
-		      ClusterSequence clustSeqCA(jet.constituents(), jetDefCA);
+		      ClusterSequence clustSeqCA(jet_reco.constituents(), jetDefCA);
 		      std::vector<PseudoJet> cambridgeJets = sorted_by_pt(clustSeqCA.inclusive_jets());
 
-		      // SoftDrop parameters
-		      double z_cut = 0.20;
-		      double beta = 0.0;
-		      contrib::SoftDrop sd(beta, z_cut);
-		      //! get subjets 20 to 25 pT
-		      _h_R04_z_sj_20_25->Fill(z_sj);
-		      _h_R04_theta_sj_20_25->Fill(theta_sj);
-
-		      // Apply SoftDrop to the jet
-		      PseudoJet sd_jet = sd(jet);
-		      if (sd_jet == 0)
-			continue;
-		      cout << "jet pT: " << sd_jet.perp() << endl;
-		      cout << "  delta_R between subjets: " << sd_jet.structure_of<contrib::SoftDrop>().delta_R() << endl;
-		      cout << "  symmetry measure(z):     " << sd_jet.structure_of<contrib::SoftDrop>().symmetry() << endl;
-		      cout << " theta_sj: " << theta_sj << endl;
-		      cout << " z_sj: " << z_sj << endl;
-		      // Fill histograms with delta_R and symmetry measure z
-		      double delta_R_subjets = sd_jet.structure_of<contrib::SoftDrop>().delta_R();
-		      double z_subjets = sd_jet.structure_of<contrib::SoftDrop>().symmetry();
-
-		      _h_R04_z_g_20_25->Fill(z_subjets);
-		      _h_R04_theta_g_20_25->Fill(delta_R_subjets);
-
-		      correlation_theta_20_25->Fill(delta_R_subjets, theta_sj);
-		      correlation_z_20_25->Fill(z_subjets, z_sj);
-		          
-		      // SoftDrop failed, handle the case as needed
-		      // e.g., skip this jet or perform alternative analysis
-		    } else {
-		      _hmult_R04_pT_20_25GeV->Fill(jet.constituents().size());
-		    }
-        
-		    // 25 to 30 pT
-
-		    if (jet.pt() > 25 and jet.pt() < 30 ){
-		      // cout<<"sorted jets at "<<j<<" the pT = "<<jet.pt()<<endl;
-		      _hjetpT_R04->Fill(jet.perp());
-		      pseudorapidity = jet.eta();
-		      _hjeteta_R04->Fill(pseudorapidity);
-		      _hmult_R04->Fill(jet.constituents().size());
-		      
-		      ClusterSequence clustSeqCA(jet.constituents(), jetDefCA);
-		      std::vector<PseudoJet> cambridgeJets = sorted_by_pt(clustSeqCA.inclusive_jets());
-
+		      std::cout << "have CA sort jets: " << cambridgeJets.size() << std::endl;
 
 		      // SoftDrop parameters
-		      double z_cut = 0.20;
-		      double beta = 0.0;
+		      double z_cut = 0.30;
+		      double beta = 2.0;
 		      contrib::SoftDrop sd(beta, z_cut);
 		      //! get subjets
-      
-		      _h_R04_z_sj_25_30->Fill(z_sj);
-		      _h_R04_theta_sj_25_30->Fill(theta_sj);
-		      
-		      PseudoJet sd_jet = sd(jet);
-		      if (sd_jet == 0)
-			continue;
-		      
-		      cout << "jet pT: " << sd_jet.perp() << endl;
-		      cout << "  delta_R between subjets: " << sd_jet.structure_of<contrib::SoftDrop>().delta_R() << endl;
-		      cout << "  symmetry measure(z):     " << sd_jet.structure_of<contrib::SoftDrop>().symmetry() << endl;
-		      cout << " theta_sj: " << theta_sj << endl;
-		      cout << " z_sj: " << z_sj << endl;
-		      // Fill histograms with delta_R and symmetry measure z
-		      double delta_R_subjets = sd_jet.structure_of<contrib::SoftDrop>().delta_R();
-		      double z_subjets = sd_jet.structure_of<contrib::SoftDrop>().symmetry();
-		        
-		      _h_R04_z_g_25_30->Fill(z_subjets);
-		      _h_R04_theta_g_25_30->Fill(delta_R_subjets);
-
-		      correlation_theta_25_30->Fill(delta_R_subjets, theta_sj);
-		      correlation_z_25_30->Fill(z_subjets, z_sj);
-		          
-		      // SoftDrop failed, handle the case as needed
-		      // e.g., skip this jet or perform alternative analysis
-		      
-		    } else {
-		      _hmult_R04_pT_25_30GeV->Fill(jet.constituents().size());
-		    }
-
-		    // 30 to 40 pT
-
-		    if (jet.pt() > 30 and jet.pt() < 40 ){
-		      // cout<<"sorted jets at "<<j<<" the pT = "<<jet.pt()<<endl;
-		      _hjetpT_R04->Fill(jet.perp());
-		      pseudorapidity = jet.eta();
-		      _hjeteta_R04->Fill(pseudorapidity);
-		      _hmult_R04->Fill(jet.constituents().size());
-
-		      ClusterSequence clustSeqCA(jet.constituents(), jetDefCA);
-		      std::vector<PseudoJet> cambridgeJets = sorted_by_pt(clustSeqCA.inclusive_jets());
-
-		      // SoftDrop parameters
-		      double z_cut = 0.20;
-		      double beta = 0.0;
-		      contrib::SoftDrop sd(beta, z_cut);
-		      //! get subjets
-		      _h_R04_z_sj_30_40->Fill(z_sj);
-		      _h_R04_theta_sj_30_40->Fill(theta_sj);
-		      
+		      if (!isnan(theta_sj) && !isnan(z_sj) && !isinf(theta_sj) && !isinf(z_sj)){
+			  _h_R04_z_sj_10_20->Fill(z_sj);
+			  _h_R04_theta_sj_10_20->Fill(theta_sj);
+			}
+		    
+		      std::cout << "filled some histos" << std::endl;
 		      // Apply SoftDrop to the jet
-		      PseudoJet sd_jet = sd(jet);
+		      PseudoJet sd_jet = sd(jet_reco);
+		      std::cout << "ran sd" << std::endl;
 		      if (sd_jet == 0)
+
 			continue;
-		      cout << "jet pT: " << sd_jet.perp() << endl;
-		      cout << "  delta_R between subjets: " << sd_jet.structure_of<contrib::SoftDrop>().delta_R() << endl;
-		      cout << "  symmetry measure(z):     " << sd_jet.structure_of<contrib::SoftDrop>().symmetry() << endl;
-		      cout << " theta_sj: " << theta_sj << endl;
-		      cout << " z_sj: " << z_sj << endl;
-		      double delta_R_subjets = sd_jet.structure_of<contrib::SoftDrop>().delta_R();
-		      double z_subjets = sd_jet.structure_of<contrib::SoftDrop>().symmetry();
+		      std::cout << "sd jet exists" << std::endl;
+		       double delta_R_subjets = sd_jet.structure_of<contrib::SoftDrop>().delta_R();
+		       double z_subjets = sd_jet.structure_of<contrib::SoftDrop>().symmetry();
 
-		      _h_R04_z_g_30_40->Fill(z_subjets);
-		      _h_R04_theta_g_30_40->Fill(delta_R_subjets);
+		      _h_R04_z_g_10_20->Fill(z_subjets);
+		      _h_R04_theta_g_10_20->Fill(delta_R_subjets);
 
-		      correlation_theta_30_40->Fill(delta_R_subjets, theta_sj);
-		      correlation_z_30_40->Fill(z_subjets, z_sj);
+		      correlation_theta_10_20->Fill(delta_R_subjets, theta_sj);
+		      correlation_z_10_20->Fill(z_subjets, z_sj);
 		          
 		      // SoftDrop failed, handle the case as needed
 		      // e.g., skip this jet or perform alternative analysis
 		    } else {
-		      _hmult_R04_pT_30_40GeV->Fill(jet.constituents().size());
+		      _hmult_R04_pT_10_20GeV->Fill(jet_reco.constituents().size());
 		    }
     
 		    //! jet loop
@@ -630,59 +506,78 @@ int EMJetVal::process_event(PHCompositeNode *topNode)
 
 		    //filled nEvent in histogram
 		    _hmult_R04->Fill(m_nJet);
-    
+		    
 		    //   std::// cout << "iZ = " << nEvent << std::endl;
-    
-		  }//! event loop ends for pT
+		    std::cout << "finished jet " << j << std::endl;
 
-	   
+		  }//! event loop ends for pT
+		  
+		  
+		  std::cout << "finished loop over reclustered jets" << std::endl;
+
 		  // End of event loop. Statistics. Histograms. Done.
-		}
-	      //return 0;
-	    }
+		  
+		  
+		  m_nJet++;
+		  std::cout << "m_nJet: " << m_nJet << std::endl;
+    }
+
+  std::cout << "finised loop over original jets" << std::endl;
+  /*
+//get truth jets
+if(m_doTruthJets)
+  {
+    m_nTruthJet = 0;
+    for (JetMap::Iter iter = jetsMC->begin(); iter != jetsMC->end(); ++iter)
+      {
+	Jet* truthjet = iter->second;
+
+	bool eta_cut = (truthjet->get_eta() >= m_etaRange.first) and (truthjet->get_eta() <= m_etaRange.second);
+	bool pt_cut = (truthjet->get_pt() >= m_ptRange.first) and (truthjet->get_pt() <= m_ptRange.second);
+	if ((not eta_cut) or (not pt_cut)) continue;
+	m_truthID.push_back(truthjet->get_id());
+	m_truthNComponent.push_back(truthjet->size_comp());
+	m_truthEta.push_back(truthjet->get_eta());
+	m_truthPhi.push_back(truthjet->get_phi());
+	m_truthE.push_back(truthjet->get_e());
+	m_truthPt.push_back(truthjet->get_pt());
+	m_nTruthJet++;
+      }
+  }
+  //get seed jets
+  if(m_doSeeds)
+    {
+      for (auto jet : *seedjetsraw)
+	{
+	  int passesCut = jet->get_property(Jet::PROPERTY::prop_SeedItr);
+	  m_eta_rawseed.push_back(jet->get_eta());
+	  m_phi_rawseed.push_back(jet->get_phi());
+	  m_e_rawseed.push_back(jet->get_e());
+	  m_pt_rawseed.push_back(jet->get_pt());
+	  m_rawseed_cut.push_back(passesCut);
+	}
+
+      for (auto jet : *seedjetssub) //JetMap::Iter iter = seedjetssub->begin(); iter != seedjetssub->end(); ++iter)
+	{
+	  int passesCut = jet->get_property(Jet::PROPERTY::prop_SeedItr);
+	  m_eta_subseed.push_back(jet->get_eta());
+	  m_phi_subseed.push_back(jet->get_phi());
+	  m_e_subseed.push_back(jet->get_e());
+	  m_pt_subseed.push_back(jet->get_pt());
+	  m_subseed_cut.push_back(passesCut);
 	}
     }
+  */
   //fill the tree
+
   m_T->Fill();
+  std::cout << "filled TTree" << std::endl;
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
-  /*
-  //get unsubtracted jet
-  unsubjet->set_px(totalPx);
-  unsubjet->set_py(totalPy);
-  unsubjet->set_pz(totalPz);
-  unsubjet->set_e(totalE);
-  m_unsub_pt.push_back(unsubjet->get_pt());
-  m_sub_et.push_back(unsubjet->get_et() - jet->get_et());*/
 
-  
-  /*  //get truth jets
-      if(m_doTruthJets)
-      {
-      m_nTruthJet = 0;
-      for (JetMap::Iter iter = jetsMC->begin(); iter != jetsMC->end(); ++iter)
-      {
-      Jet* truthjet = iter->second;
-
-      bool eta_cut = (truthjet->get_eta() >= m_etaRange.first) and (truthjet->get_eta() <= m_etaRange.second);
-      bool pt_cut = (truthjet->get_pt() >= m_ptRange.first) and (truthjet->get_pt() <= m_ptRange.second);
-      if ((not eta_cut) or (not pt_cut)) continue;
-      m_truthID.push_back(truthjet->get_id());
-      m_truthNComponent.push_back(truthjet->size_comp());
-      m_truthEta.push_back(truthjet->get_eta());
-      m_truthPhi.push_back(truthjet->get_phi());
-      m_truthE.push_back(truthjet->get_e());
-      m_truthPt.push_back(truthjet->get_pt());
-      m_nTruthJet++;
-      }
-      }
-  */
-  //return Fun4AllReturnCodes::EVENT_OK;
-
-
-  //____________________________________________________________________________..
+    //____________________________________________________________________________..
   int EMJetVal::ResetEvent(PHCompositeNode *topNode)
   {
     //std::cout << "EMJetVal::ResetEvent(PHCompositeNode *topNode) Resetting internal structures, prepare for next event" << std::endl;
@@ -695,7 +590,25 @@ int EMJetVal::process_event(PHCompositeNode *topNode)
     m_unsub_pt.clear();
     m_sub_et.clear();
   
+    m_truthID.clear();
+    m_truthNComponent.clear();
+    m_truthEta.clear();
+    m_truthPhi.clear();
+    m_truthE.clear();
+    m_truthPt.clear();
+    m_truthdR.clear();
 
+    m_eta_subseed.clear();
+    m_phi_subseed.clear();
+    m_e_subseed.clear();
+    m_pt_subseed.clear();
+    m_subseed_cut.clear();
+
+    m_eta_rawseed.clear();
+    m_phi_rawseed.clear();
+    m_e_rawseed.clear();
+    m_pt_rawseed.clear();
+    m_rawseed_cut.clear();
   return Fun4AllReturnCodes::EVENT_OK;
 
   }
@@ -709,10 +622,35 @@ int EMJetVal::process_event(PHCompositeNode *topNode)
   //____________________________________________________________________________..
   int EMJetVal::End(PHCompositeNode *topNode)
   {
-    std::cout << "EMJetVal::End - Output to " << m_outputFileName << std::endl;
-    PHTFileServer::get().cd(m_outputFileName);
 
-    m_T->Write();
+    /*
+
+  // Normalize 10-20 hists
+  _h_R04_z_sj_10_20->Scale(1./_h_R04_z_sj_10_20->Integral());
+  _h_R04_theta_sj_10_20->Scale(1./_h_R04_theta_sj_10_20->Integral());
+
+  _h_R04_z_sj_10_20->Scale(1./0.05);
+  _h_R04_theta_sj_10_20->Scale(1./0.05);
+  //SoftDrop Normalization
+  // Normalize 10-20 hists
+  _h_R04_z_g_10_20->Scale(1./_h_R04_z_g_10_20->Integral());
+  _h_R04_theta_g_10_20->Scale(1./_h_R04_theta_g_10_20->Integral());
+
+  _h_R04_z_g_10_20->Scale(1./0.05);
+  _h_R04_theta_g_10_20->Scale(1./0.05);
+    */
+
+
+    outFile->cd();
+    outFile->Write();
+    outFile->Close();
+    
+    //std::cout << "EMJetVal::End - Output to " << m_outputFileName << std::endl;
+
+
+    // PHTFileServer::get().cd(m_outputFileName);
+
+    //m_T->Write();
     std::cout << "EMJetVal::End(PHCompositeNode *topNode) This is the End..." << std::endl;
     return Fun4AllReturnCodes::EVENT_OK;
   }
@@ -720,14 +658,14 @@ int EMJetVal::process_event(PHCompositeNode *topNode)
   //____________________________________________________________________________..
   int EMJetVal::Reset(PHCompositeNode *topNode)
   {
-    std::cout << "EMJetVal::Reset(PHCompositeNode *topNode) being Reset" << std::endl;
+    // std::cout << "EMJetVal::Reset(PHCompositeNode *topNode) being Reset" << std::endl;
     return Fun4AllReturnCodes::EVENT_OK;
   }
 
   //____________________________________________________________________________..
   void EMJetVal::Print(const std::string &what) const
   {
-    std::cout << "EMJetVal::Print(const std::string &what) const Printing info for " << what << std::endl;
+     std::cout << "EMJetVal::Print(const std::string &what) const Printing info for " << what << std::endl;
   }
     
 

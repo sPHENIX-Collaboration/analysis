@@ -14,13 +14,10 @@
 
 #include <g4centrality/PHG4CentralityReco.h>
 
-
 #include <HIJetReco.C>
-
-
-#include </sphenix/user/jamesj3j3/analysis/JS-Jet/JetValidation/src/EMJetVal.h>
+#include "jetvalidation/EMJetVal.h"
+//#include </sphenix/user/jamesj3j3/analysis/JS-Jet/JetValidation/src/EMJetVal.h>
 //#include </sphenix/user/jamesj3j3/analysis/JS-Jet/JetValidation/src/JetValidation.h>
-
 
 R__LOAD_LIBRARY(libfun4all.so)
 R__LOAD_LIBRARY(libg4jets.so)
@@ -46,36 +43,32 @@ void Fun4All_EMJetVal(const char *filelisttruth = "dst_truth_jet.list",
   se->Verbosity(verbosity);
   recoConsts *rc = recoConsts::instance();
 
+  
   PHG4CentralityReco *cent = new PHG4CentralityReco();
   cent->Verbosity(0);
   cent->GetCalibrationParameters().ReadFromFile("centrality", "xml", 0, 0, string(getenv("CALIBRATIONROOT")) + string("/Centrality/"));
   se->registerSubsystem( cent );
-
+  
   HIJetReco();
  
 
   // JetValidation *myJetVal = new JetValidation("AntiKt_Tower_r04_Sub1", "AntiKt_Truth_r04", outname);
+  
   EMJetVal *myEMJetVal = new EMJetVal("AntiKt_Tower_r04_Sub1","AntiKt_Truth_r04", outname);
 
   myEMJetVal->setPtRange(5, 100);
   myEMJetVal->setEtaRange(-1.1, 1.1);
   myEMJetVal->doUnsub(1);
   myEMJetVal->doTruth(0);
-  myEMJetVal->doSeeds(1);
+  myEMJetVal->doSeeds(0);
   //  se->registerSubsystem(myJetVal);
   se->registerSubsystem(myEMJetVal);
-  /*
-  myJetVal->setPtRange(5, 100);
-  myJetVal->setEtaRange(-1.1, 1.1);
-  myJetVal->doUnsub(1);
-  myJetVal->doTruth(1);
-  myJetVal->doSeeds(1);
-  se->registerSubsystem(myJetVal);
-  */
+  
+
   Fun4AllInputManager *intrue = new Fun4AllDstInputManager("DSTtruth");
-  intrue->AddListFile(filelisttruth,1);
+  //intrue->AddListFile(filelisttruth,1);
+  // turn off for running data
   // se->registerInputManager(intrue);
-  se->registerInputManager(intrue);
 
   Fun4AllInputManager *in2 = new Fun4AllDstInputManager("DSTcalo");
   in2->AddListFile(filelistcalo,1);
@@ -83,15 +76,12 @@ void Fun4All_EMJetVal(const char *filelisttruth = "dst_truth_jet.list",
   se->registerInputManager(in2);
 
   Fun4AllInputManager *in3 = new Fun4AllDstInputManager("DSTglobal");
-  in3->AddListFile(filelistglobal,1);
+  // in3->AddListFile(filelistglobal,1);
+  // turn off for running data
   // se->registerInputManager(in3);
-  se->registerInputManager(in3);
 
-  se->run(10);
+  se->run(10000);
   se->End();
-  
-  // se->run(-1);
-  // se->End();
 
   gSystem->Exit(0);
   return 0;

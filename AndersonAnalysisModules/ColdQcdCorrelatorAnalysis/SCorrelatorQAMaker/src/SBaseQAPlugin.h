@@ -49,6 +49,7 @@ namespace SColdQcdCorrelatorAnalysis {
       void InitOutput() {
 
         // check output file and create if needed
+        //   FIXME doesn't work for files already opened yet!
         const bool doesFileExist = gSystem -> AccessPathName(m_outFileName.data());
         if (!doesFileExist) {
           m_outFile = new TFile(m_outFileName.data(), "recreate");
@@ -69,6 +70,7 @@ namespace SColdQcdCorrelatorAnalysis {
       void CloseOutput() {
 
         // close output if still open
+        //   FIXME needs care not to close files that should still be open!
         const bool isFileOpen = m_outFile -> IsOpen();
         if (isFileOpen) {
           m_outFile -> cd();

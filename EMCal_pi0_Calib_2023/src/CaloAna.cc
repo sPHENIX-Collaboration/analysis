@@ -53,18 +53,16 @@
 
 #include <iostream>
 #include <utility>
-#include "TH1F.h"
-#include "TF1.h"
 #include "TCanvas.h"
+#include "TF1.h"
 #include "TFile.h"
+#include "TH1F.h"
 
 #include <cdbobjects/CDBTTree.h>  // for CDBTTree
 #include <ffamodules/CDBInterface.h>
 #include <phool/recoConsts.h>
 
 R__LOAD_LIBRARY(libLiteCaloEvalTowSlope.so)
-
-
 
 using namespace std;
 
@@ -90,9 +88,7 @@ int CaloAna::Init(PHCompositeNode*)
   hm = new Fun4AllHistoManager(Name());
   // create and register your histos (all types) here
 
-
   outfile = new TFile(outfilename.c_str(), "RECREATE");
-
 
   // correlation plots
   for (int i = 0; i < 96; i++) h_mass_eta_lt[i] = new TH1F(Form("h_mass_eta_lt%d", i), "", 50, 0, 0.5);
@@ -101,17 +97,19 @@ int CaloAna::Init(PHCompositeNode*)
 
   // 1D distributions
   h_InvMass = new TH1F("h_InvMass", "Invariant Mass", 120, 0, 1.2);
+  h_InvMassMix = new TH1F("h_InvMassMix", "Invariant Mass", 120, 0, 1.2);
 
   // cluster QA
   h_etaphi_clus = new TH2F("h_etaphi_clus", "", 140, -1.2, 1.2, 64, -1 * TMath::Pi(), TMath::Pi());
   h_clusE = new TH1F("h_clusE", "", 100, 0, 10);
 
-  h_emcal_e_eta = new TH1F("h_emcal_e_eta","",96,0,96);
+  h_emcal_e_eta = new TH1F("h_emcal_e_eta", "", 96, 0, 96);
 
-  h_pt1 = new TH1F("h_pt1","",100,0,5);
-  h_pt2 = new TH1F("h_pt2","",100,0,5);
+  h_pt1 = new TH1F("h_pt1", "", 100, 0, 5);
+  h_pt2 = new TH1F("h_pt2", "", 100, 0, 5);
 
   h_nclusters = new TH1F("h_nclusters", "", 1000, 0, 1000);
+
 
   return 0;
 }
@@ -127,9 +125,7 @@ int CaloAna::process_event(PHCompositeNode* topNode)
 
 int CaloAna::process_towers(PHCompositeNode* topNode)
 {
-  if((_eventcounter%1000)==0) std::cout << _eventcounter << std::endl;
-
-  float totalcemc = 0.;
+  if ((_eventcounter % 1000) == 0) std::cout << _eventcounter << std::endl;
 
   // float emcaldownscale = 1000000 / 800;
 
@@ -160,7 +156,7 @@ int CaloAna::process_towers(PHCompositeNode* topNode)
       vtx_z = vtx->get_z();
     }
   }
-  
+
   vector<float> ht_eta;
   vector<float> ht_phi;
 
@@ -183,8 +179,7 @@ int CaloAna::process_towers(PHCompositeNode* topNode)
         ht_eta.push_back(ieta);
         ht_phi.push_back(iphi);
       }
-      if (isGood) totalcemc += offlineenergy;
-      if (isGood) h_emcal_e_eta->Fill(ieta,offlineenergy);
+      if (isGood) h_emcal_e_eta->Fill(ieta, offlineenergy);
       if (offlineenergy > emcal_hit_threshold)
       {
         h_cemc_etaphi->Fill(ieta, iphi);
@@ -211,9 +206,6 @@ int CaloAna::process_towers(PHCompositeNode* topNode)
     throw std::runtime_error("failed to find TOWERGEOM node in RawClusterDeadHotMask::CreateNodeTree");
   }
 
-  // if (totalcemc > 0.2 * emcaldownscale || totalcemc < 0.02 * emcaldownscale)    return Fun4AllReturnCodes::EVENT_OK;
-
-
   RawClusterContainer::ConstRange clusterEnd = clusterContainer->getClusters();
   RawClusterContainer::ConstIterator clusterIter;
   RawClusterContainer::ConstIterator clusterIter2;
@@ -236,10 +228,10 @@ int CaloAna::process_towers(PHCompositeNode* topNode)
 
   h_nclusters->Fill(nClusCount);
 
-  if (nClusCount > max_nClusCount)   return Fun4AllReturnCodes::EVENT_OK;
+  if (nClusCount > max_nClusCount) return Fun4AllReturnCodes::EVENT_OK;
 
-  float pt1ClusCut = 1.3; //1.3
-  float pt2ClusCut = 0.7; // 0.7
+  float pt1ClusCut = 2;  // 1.3
+  float pt2ClusCut = 1.3;  // 0.7
 
   if (nClusCount > 30)
   {
@@ -248,6 +240,11 @@ int CaloAna::process_towers(PHCompositeNode* topNode)
   }
 
   float pi0ptcut = 1.22 * (pt1ClusCut + pt2ClusCut);
+
+  vector<float> save_pt;
+  vector<float> save_eta;
+  vector<float> save_phi;
+  vector<float> save_e;
 
   for (clusterIter = clusterEnd.first; clusterIter != clusterEnd.second; clusterIter++)
   {
@@ -263,8 +260,7 @@ int CaloAna::process_towers(PHCompositeNode* topNode)
     float clus_chisq = recoCluster->get_chi2();
     h_clusE->Fill(clusE);
 
-    if (clus_pt < pt1ClusCut) continue;
-    if (clus_chisq > clus_chisq_cut)continue;
+    if (clus_chisq > clus_chisq_cut) continue;
 
     // loop over the towers in the cluster
     RawCluster::TowerConstRange towerCR = recoCluster->get_towers();
@@ -297,65 +293,70 @@ int CaloAna::process_towers(PHCompositeNode* topNode)
     TLorentzVector photon1;
     photon1.SetPtEtaPhiE(clus_pt, clus_eta, clus_phi, clusE);
 
-    for (clusterIter2 = clusterEnd.first; clusterIter2 != clusterEnd.second; clusterIter2++)
+  
+
+  if (clus_pt < pt1ClusCut) continue;
+
+  for (clusterIter2 = clusterEnd.first; clusterIter2 != clusterEnd.second; clusterIter2++)
+  {
+    if (clusterIter == clusterIter2)
     {
-      if (clusterIter == clusterIter2)
-      {
-        continue;
-      }
-      RawCluster* recoCluster2 = clusterIter2->second;
-
-      CLHEP::Hep3Vector E_vec_cluster2 = RawClusterUtility::GetECoreVec(*recoCluster2, vertex);
-
-      float clus2E = E_vec_cluster2.mag();
-      float clus2_eta = E_vec_cluster2.pseudoRapidity();
-      float clus2_phi = E_vec_cluster2.phi();
-      float clus2_pt = E_vec_cluster2.perp();
-      float clus2_chisq = recoCluster2->get_chi2();
-
-      if (clus2_pt < pt2ClusCut) continue;
-      if (clus2_chisq > clus_chisq_cut) continue;
-
-      // loop over the towers in the cluster
-      RawCluster::TowerConstRange towerCR2 = recoCluster2->get_towers();
-      RawCluster::TowerConstIterator toweriter2;
-      bool hotClus2 = false;
-      for (toweriter2 = towerCR2.first; toweriter2 != towerCR2.second; ++toweriter2)
-      {
-        int towereta = m_geometry->get_tower_geometry(toweriter2->first)->get_bineta();
-        int towerphi = m_geometry->get_tower_geometry(toweriter2->first)->get_binphi();
-
-        for (size_t i = 0; i < ht_eta.size(); i++)
-        {
-          if (towerphi == ht_phi[i] && towereta == ht_phi[i]) hotClus2 = true;
-        }
-      }
-      if (dynMaskClus && hotClus2 == true) continue;
-
-      TLorentzVector photon2;
-      photon2.SetPtEtaPhiE(clus2_pt, clus2_eta, clus2_phi, clus2E);
-
-      if (fabs(clusE - clus2E) / (clusE + clus2E) > maxAlpha) continue;
-
-      if (photon1.DeltaR(photon2) > maxDr) continue;
-
-      TLorentzVector pi0 = photon1 + photon2;
-      if (pi0.Pt() < pi0ptcut) continue;
-
-      h_pt1->Fill(photon1.Pt());
-      h_pt2->Fill(photon2.Pt());
-      h_InvMass->Fill(pi0.M());
-      if (lt_eta > 95) continue;;
-      h_mass_eta_lt[lt_eta]->Fill(pi0.M());
+      continue;
     }
+    RawCluster* recoCluster2 = clusterIter2->second;
+
+    CLHEP::Hep3Vector E_vec_cluster2 = RawClusterUtility::GetECoreVec(*recoCluster2, vertex);
+
+    float clus2E = E_vec_cluster2.mag();
+    float clus2_eta = E_vec_cluster2.pseudoRapidity();
+    float clus2_phi = E_vec_cluster2.phi();
+    float clus2_pt = E_vec_cluster2.perp();
+    float clus2_chisq = recoCluster2->get_chi2();
+
+    if (clus2_pt < pt2ClusCut) continue;
+    if (clus2_chisq > clus_chisq_cut) continue;
+
+    // loop over the towers in the cluster
+    RawCluster::TowerConstRange towerCR2 = recoCluster2->get_towers();
+    RawCluster::TowerConstIterator toweriter2;
+    bool hotClus2 = false;
+    for (toweriter2 = towerCR2.first; toweriter2 != towerCR2.second; ++toweriter2)
+    {
+      int towereta = m_geometry->get_tower_geometry(toweriter2->first)->get_bineta();
+      int towerphi = m_geometry->get_tower_geometry(toweriter2->first)->get_binphi();
+
+      for (size_t i = 0; i < ht_eta.size(); i++)
+      {
+        if (towerphi == ht_phi[i] && towereta == ht_phi[i]) hotClus2 = true;
+      }
+    }
+    if (dynMaskClus && hotClus2 == true) continue;
+
+    TLorentzVector photon2;
+    photon2.SetPtEtaPhiE(clus2_pt, clus2_eta, clus2_phi, clus2E);
+
+    if (fabs(clusE - clus2E) / (clusE + clus2E) > maxAlpha) continue;
+
+    if (photon1.DeltaR(photon2) > maxDr) continue;
+
+    TLorentzVector pi0 = photon1 + photon2;
+    if (pi0.Pt() < pi0ptcut) continue;
+
+    h_pt1->Fill(photon1.Pt());
+    h_pt2->Fill(photon2.Pt());
+    h_InvMass->Fill(pi0.M());
+    if (lt_eta > 95) continue;
+    h_mass_eta_lt[lt_eta]->Fill(pi0.M());
   }
+}  // clus1 loop
 
-  ht_phi.clear();
-  ht_eta.clear();
 
-  return Fun4AllReturnCodes::EVENT_OK;
+
+ht_phi.clear();
+ht_eta.clear();
+
+return Fun4AllReturnCodes::EVENT_OK;
 }
-
 
 int CaloAna::End(PHCompositeNode* /*topNode*/)
 {
@@ -368,65 +369,64 @@ int CaloAna::End(PHCompositeNode* /*topNode*/)
   return 0;
 }
 
+std::pair<double, double> CaloAna::fitHistogram(TH1F* h)
+{
+  TF1* fitFunc = new TF1("fitFunc", "[0]*exp(-0.5*((x-[1])/[2])^2) + [3] + [4]*x + [5]*x^2 + [6]*x^3", h->GetXaxis()->GetXmin(), h->GetXaxis()->GetXmax());
 
+  fitFunc->SetParameter(0, h->GetMaximum());
+  fitFunc->SetParameter(1, target_pi0_mass);
+  fitFunc->SetParameter(2, 0.01);
+  fitFunc->SetParameter(3, 0.0);
+  fitFunc->SetParameter(4, 0.0);
+  fitFunc->SetParameter(5, 0.0);
+  fitFunc->SetParameter(6, 0.0);
 
-std::pair<double, double> CaloAna::fitHistogram(TH1F* h) {
-    
-    TF1* fitFunc = new TF1("fitFunc", "[0]*exp(-0.5*((x-[1])/[2])^2) + [3] + [4]*x + [5]*x^2 + [6]*x^3", h->GetXaxis()->GetXmin(), h->GetXaxis()->GetXmax());
+  fitFunc->SetParLimits(1, 0.1, 0.2);
 
-    fitFunc->SetParameter(0, h->GetMaximum()); 
-    fitFunc->SetParameter(1, target_pi0_mass);    
-    fitFunc->SetParameter(2, 0.01);     
-    fitFunc->SetParameter(3, 0.0); 
-    fitFunc->SetParameter(4, 0.0);  
-    fitFunc->SetParameter(5, 0.0); 
-    fitFunc->SetParameter(6, 0.0);  
+  // Perform the fit
+  h->Fit("fitFunc", "QN");
 
-    fitFunc->SetParLimits(1, 0.1, 0.2);
+  // Get the mean and its error
+  double mean = fitFunc->GetParameter(1);
+  double errorOnMean = fitFunc->GetParError(1);
 
-    // Perform the fit
-    h->Fit("fitFunc", "QN");
+  // Create a pair to store the results
+  std::pair<double, double> result(mean, errorOnMean);
 
-    // Get the mean and its error
-    double mean = fitFunc->GetParameter(1);
-    double errorOnMean = fitFunc->GetParError(1);
-
-    // Create a pair to store the results
-    std::pair<double, double> result(mean, errorOnMean);
-
-    return result;
+  return result;
 }
 
-
-void  CaloAna::fitEtaSlices(std::string infile, std::string fitOutFile,std::string cdbFile){
-
+void CaloAna::fitEtaSlices(std::string infile, std::string fitOutFile, std::string cdbFile)
+{
   TFile* fin = new TFile(infile.c_str());
   cout << "getting hists" << endl;
-  TH1F* h_peak_eta =  new TH1F("h_peak_eta","",96,0,96);
+  TH1F* h_peak_eta = new TH1F("h_peak_eta", "", 96, 0, 96);
   if (!fin) cout << "CaloAna::fitEtaSlices null fin" << endl;
   TH1F* h_M_eta[96];
-  for(int i=0; i<96; i++)  h_M_eta[i] = (TH1F*) fin->Get(Form("h_mass_eta_lt%d", i));
+  for (int i = 0; i < 96; i++) h_M_eta[i] = (TH1F*) fin->Get(Form("h_mass_eta_lt%d", i));
 
-  for(int i=0; i<96; i++)  {
+  for (int i = 0; i < 96; i++)
+  {
     if (!h_M_eta[i]) cout << "CaloAna::fitEtaSlices null hist" << endl;
-    std::pair<double,double> result = fitHistogram(h_M_eta[i]);
-    h_peak_eta->SetBinContent(i+1,result.first);
-    h_peak_eta->SetBinError(i+1,result.second);
+    std::pair<double, double> result = fitHistogram(h_M_eta[i]);
+    h_peak_eta->SetBinContent(i + 1, result.first);
+    h_peak_eta->SetBinError(i + 1, result.second);
   }
+  cdbFile = "";
 
-  CDBTTree *cdbttree1 = new CDBTTree(cdbFile.c_str());  
-  CDBTTree *cdbttree2 = new CDBTTree(cdbFile.c_str());  
+  CDBTTree* cdbttree1 = new CDBTTree(cdbFile.c_str());
+  CDBTTree* cdbttree2 = new CDBTTree(cdbFile.c_str());
 
   string m_fieldname = "Femc_datadriven_qm1_correction";
 
-  for(int i = 0; i < 96 ; i++)
+  for (int i = 0; i < 96; i++)
   {
-    for(int j = 0; j < 256; j++)
+    for (int j = 0; j < 256; j++)
     {
-      float correction = target_pi0_mass / h_peak_eta->GetBinContent(i+1);
-      unsigned int key = TowerInfoDefs::encode_emcal(i,j);
+      float correction = target_pi0_mass / h_peak_eta->GetBinContent(i + 1);
+      unsigned int key = TowerInfoDefs::encode_emcal(i, j);
       float val1 = cdbttree1->GetFloatValue(key, m_fieldname);
-      cdbttree2->SetFloatValue(key,m_fieldname,val1*correction);
+      cdbttree2->SetFloatValue(key, m_fieldname, val1 * correction);
     }
   }
 
@@ -435,19 +435,18 @@ void  CaloAna::fitEtaSlices(std::string infile, std::string fitOutFile,std::stri
   delete cdbttree2;
   delete cdbttree1;
 
-  TFile* fit_out = new TFile(fitOutFile.c_str(),"recreate");
+  TFile* fit_out = new TFile(fitOutFile.c_str(), "recreate");
   fit_out->cd();
   h_peak_eta->Write();
-  for(int i=0; i<96; i++){
+  for (int i = 0; i < 96; i++)
+  {
     h_M_eta[i]->Write();
     delete h_M_eta[i];
   }
 
   fin->Close();
 
-
-    cout << "finish fitting suc" << endl;
+  cout << "finish fitting suc" << endl;
 
   return;
 }
-

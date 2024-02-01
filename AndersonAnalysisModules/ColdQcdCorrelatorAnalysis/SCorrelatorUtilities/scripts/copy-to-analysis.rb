@@ -18,15 +18,18 @@ copy_to   = "/sphenix/user/danderson/sphenix/analysis/AndersonAnalysisModules/Co
 # what files to copy
 to_copy = [
   "README.md",
-  "ClustTools.h",
-  "Constants.h",
-  "CstInfo.h",
-  "EvtTools.h",
-  "FlowTools.h",
-  "GenTools.h",
-  "JetInfo.h",
-  "TrkTools.h",
-  "scripts/copy-to-analysis.rb"
+  "src/CalTools.h",
+  "src/Constants.h",
+  "src/CstTools.h",
+  "src/EvtTools.h",
+  "src/FlowTools.h",
+  "src/GenTools.h",
+  "src/Interfaces.h",
+  "src/JetTools.h",
+  "src/TrkTools.h",
+  "src/VtxTools.h",
+  "scripts/copy-to-analysis.rb",
+  "scripts/wipe-source.sh"
 ]
 
 # do copying

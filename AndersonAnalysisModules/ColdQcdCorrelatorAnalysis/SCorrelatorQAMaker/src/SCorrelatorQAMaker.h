@@ -16,6 +16,7 @@
 #include <optional>
 // plugin definitions
 #include "SCheckTrackPairs.h"
+#include "SMakeTrkQATuples.h"
 
 using namespace std;
 
@@ -42,12 +43,14 @@ namespace SColdQcdCorrelatorAnalysis {
       template <typename T> void InitPlugin(const T& config, optional<string> name);
 
       // plugin accessors
-      SCheckTrackPairs* CheckTrackPairs() {return m_checkTrackPairs;}
+      SCheckTrackPairs* CheckTrackPairs()   {return m_checkTrackPairs;}
+      SMakeTrkQATuples* MakeTrackQATuples() {return m_makeTrackQATuples;}
 
     private:
 
       // plugins
       SCheckTrackPairs* m_checkTrackPairs;
+      SMakeTrkQATuples* m_makeTrackQATuples;
 
   };
 
