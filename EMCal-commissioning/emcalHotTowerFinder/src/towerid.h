@@ -19,11 +19,17 @@ class TFile;
 class RawCluster;
 class TowerInfoContainer;
 
+const int nTowers = 24576;
+const int nIB = 384;
+const int nSectors = 64;
+const int nTowersIB = 64;
+const int nTowersSec = 384;
+
 class towerid : public SubsysReco
 {
  public:
 
-  towerid(const std::string &name = "towerid.root", const std::string &cdbtreename = "test.root", float adccut_sg = 250,float adccut_k = 500, float sigmas_lo = 1, float sigmas_hi = 4.5, float SG_f = 0.0002, float Kur_f = 0.0002, float region_f = 0.03);
+  towerid(const std::string &name = "towerid.root", const std::string &cdbtreename = "test.root", float adccut_sg = 250,float adccut_k = 500, float sigmas_lo = 1, float sigmas_hi = 4.5, float SG_f = 0.55, float Kur_f = 0.55, float region_f = 0.55);
 
   ~towerid() override;
 
@@ -60,7 +66,13 @@ class towerid : public SubsysReco
 
   void Print(const std::string &what = "ALL") const override;
   
+  //histogram filler so we don't have to call the End function
+  void FillHistograms(const int runnumber, const int segment);
 
+  void CalculateCutOffs(const int runnumber);
+
+  void WriteCDBTree(const int runnumber);
+  
  private:
 
   TTree *T;
@@ -75,27 +87,29 @@ class towerid : public SubsysReco
  
   //Fun4AllHistoManager *hm = nullptr;
   std::string Outfile = "commissioning.root";
-
-  TH1F*Fspec = new TH1F("Fspec","Fspec",0,1,1);
-  TH1F*Fspec_SG = new TH1F("Fspec_SG","Fspec_SG",0,1,1);
-  TH1F*Fspec_K = new TH1F("Fspec_K","Fspec_K",0,1,1);
-  TH1F*Fspec_sector = new TH1F("Fspec_sector","Fspec_sector",0,1,1);
-  TH1F*Fspec_IB = new TH1F("Fspec_IB","Fspec_IB",0,1,1);
+  
+  TH1F* hEventCounter = NULL;
+  
+  TH2F* Fspec = NULL;
+  TH2F* Fspec_SG = NULL;
+  TH2F* Fspec_K = NULL;
+  TH2F* Fspec_sector = NULL;
+  TH2F* Fspec_IB = NULL;
  
-   TH1F*Fspeci = new TH1F("Fspec_init","Fspec_init",0,1,1);
-  TH1F*Fspeci_SG = new TH1F("Fspec_SG_init","Fspec_SG_init",0,1,1);
-  TH1F*Fspeci_K = new TH1F("Fspec_K_init","Fspec_K_init",0,1,1);
-  TH1F*Fspeci_sector = new TH1F("Fspec_sector_init","Fspec_sector_init",0,1,1);
-  TH1F*Fspeci_IB = new TH1F("Fspec_IB_init","Fspec_IB_init",0,1,1);
+  TH2F* Fspeci = NULL;
+  TH2F* Fspeci_SG = NULL;
+  TH2F* Fspeci_K = NULL;
+  TH2F* Fspeci_sector = NULL;
+  TH2F* Fspeci_IB = NULL;
 
- 
-  TH1F*Espec = new TH1F("Espec","Espec",0,1,1);
-  TH1F*Espec_SG = new TH1F("Espec_SG","Espec_SG",0,1,1);
-  TH1F*Espec_K = new TH1F("Espec_K","Espec_K",0,1,1);
-  TH1F*Espec_sector = new TH1F("Espec_sector","Espec_sector",0,1,1);
-  TH1F*Espec_IB = new TH1F("Espec_IB","Espec_IB",0,1,1);
+  TH2F* Espec = NULL;
+  TH2F* Espec_SG = NULL; 
+  TH2F* Espec_K = NULL; 
+  TH2F* Espec_sector = NULL;
+  TH2F* Espec_IB = NULL;
 
-  const std::string cdbtreename; 	
+  const std::string cdbtreename; 
+  
   float adccut_sg;
   float adccut_k;
   float sigmas_lo;
@@ -105,28 +119,28 @@ class towerid : public SubsysReco
   float region_f;
 	
   int m_hot_channels;
-  int towerF[24576] = {0};
-  int sectorF[64] = {0};
-  int ibF[384] = {0};
+  float towerF[nTowers] = {0};
+  float sectorF[nSectors] = {0};
+  float ibF[nIB] = {0};
 
-  float towerE[24576] = {0};
-  float sectorE[64] = {0};
-  float ibE[384] = {0};
+  float towerE[nTowers] = {0};
+  float sectorE[nSectors] = {0};
+  float ibE[nIB] = {0};
 
-  int hottowers[24576] = {0};
-  int hotIB[384] = {0};
-  int hotsectors[64] = {0};
-  int deadtowers[24576] = {0};
+  int hottowers[nTowers] = {0};
+  int hotIB[nIB] = {0};
+  int hotsectors[nSectors] = {0};
+  int deadtowers[nTowers] = {0};
 
 	
-  int coldtowers[24576] = {0};
-  int coldIB[384] = {0};
-  int coldsectors[64] = {0};
+  int coldtowers[nTowers] = {0};
+  int coldIB[nIB] = {0};
+  int coldsectors[nSectors] = {0};
   int hot_regions = 0;
   int cold_regions = 0;  
 
 
-int goodevents = 0;
+  int goodevents = 0;
 };
 
 #endif 
