@@ -122,8 +122,8 @@ Int_t myAnalysis::fit(const string &name, const string& output, TFile* input, TC
 void myAnalysis::process() {
 
     if(plot_type == 1) {
-        bins_response = 32;
-        low_response  = 0.98;
+        bins_response = 20;
+        low_response  = 1.01;
         high_response = 1.06;
 
         outDir    = "output/1-31-24/nocalib";
@@ -283,6 +283,6 @@ void myAnalysis::process() {
     input->Close();
 }
 
-void PDC_display_v4() {
+void PDC_display_v5() {
     myAnalysis::process();
 }
