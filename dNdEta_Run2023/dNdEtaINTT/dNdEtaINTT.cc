@@ -66,6 +66,7 @@
 #include <fun4all/Fun4AllReturnCodes.h>
 #include <fun4all/PHTFileServer.h>
 #include <phool/PHCompositeNode.h>
+#include <trackbase/TrkrHitv2.h>
 
 namespace
 {
@@ -120,6 +121,10 @@ int dNdEtaINTT::Init(PHCompositeNode *topNode)
     outtree->Branch("NTrkrhits", &NTrkrhits_);
     outtree->Branch("TrkrHitRow", &TrkrHitRow_);
     outtree->Branch("TrkrHitColumn", &TrkrHitColumn_);
+    outtree->Branch("TrkrHitLadderZId", &TrkrHitLadderZId_);
+    outtree->Branch("TrkrHitLadderPhiId", &TrkrHitLadderPhiId_);
+    outtree->Branch("TrkrHitLayer", &TrkrHitLayer_);
+    outtree->Branch("TrkrHitADC", &TrkrHitADC_);
     outtree->Branch("ClusLayer", &ClusLayer_);
     outtree->Branch("ClusX", &ClusX_);
     outtree->Branch("ClusY", &ClusY_);
@@ -332,9 +337,14 @@ void dNdEtaINTT::GetTrkrHitInfo(PHCompositeNode *topNode)
         for (TrkrHitSet::ConstIterator hit_iter = hit_range.first; hit_iter != hit_range.second; ++hit_iter)
         {
             TrkrDefs::hitkey hitKey = hit_iter->first;
+            TrkrDefs::hitsetkey hitSetKey = hitset_iter->first;
 
             TrkrHitRow_.push_back(InttDefs::getRow(hitKey));
             TrkrHitColumn_.push_back(InttDefs::getCol(hitKey));
+            TrkrHitLadderZId_.push_back(InttDefs::getLadderZId(hitSetKey));
+            TrkrHitLadderPhiId_.push_back(InttDefs::getLadderPhiId(hitSetKey));
+            TrkrHitLayer_.push_back(TrkrDefs::getLayer(hitSetKey));
+            TrkrHitADC_.push_back(hit_iter->second->getAdc());
         }
     }
     NTrkrhits_ = TrkrHitRow_.size();
@@ -478,6 +488,10 @@ void dNdEtaINTT::ResetVectors()
     CleanVec(ClusTimeBucketId_);
     CleanVec(TrkrHitRow_);
     CleanVec(TrkrHitColumn_);
+    CleanVec(TrkrHitLadderZId_);
+    CleanVec(TrkrHitLadderPhiId_);
+    CleanVec(TrkrHitLayer_);
+    CleanVec(TrkrHitADC_);
     CleanVec(UniqueAncG4P_Pt_);
     CleanVec(UniqueAncG4P_Eta_);
     CleanVec(UniqueAncG4P_Phi_);
