@@ -5,9 +5,16 @@
 
 #include <fun4all/SubsysReco.h>
 #include <jetbase/Jetv1.h>
+#include <jetbase/Jetv2.h>
+#include <fastjet/PseudoJet.hh>
 
 #include <string>
 #include <vector>
+
+#include <TFile.h>
+#include <TH1F.h>
+#include <TH2D.h>
+
 
 class PHCompositeNode;
 class TTree;
