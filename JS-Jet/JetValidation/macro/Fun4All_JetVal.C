@@ -4,7 +4,6 @@
 #include <fun4all/Fun4AllServer.h>
 #include <fun4all/Fun4AllInputManager.h>
 #include <fun4all/Fun4AllDstInputManager.h>
-#include <fun4all/Fun4AllNoSyncDstInputManager.h>
 
 #include <fun4all/Fun4AllDstOutputManager.h>
 #include <fun4all/Fun4AllOutputManager.h>
@@ -60,11 +59,11 @@ void Fun4All_JetVal(const char *filelisttruth = "dst_truth_jet.list",
   intrue->AddListFile(filelisttruth,1);
   se->registerInputManager(intrue);
 
-  Fun4AllInputManager *in2 = new Fun4AllNoSyncDstInputManager("DSTcalo");
+  Fun4AllInputManager *in2 = new Fun4AllDstInputManager("DSTcalo");
   in2->AddListFile(filelistcalo,1);
   se->registerInputManager(in2);
 
-  Fun4AllInputManager *in3 = new Fun4AllNoSyncDstInputManager("DSTglobal");
+  Fun4AllInputManager *in3 = new Fun4AllDstInputManager("DSTglobal");
   in3->AddListFile(filelistglobal,1);
   se->registerInputManager(in3);
   
