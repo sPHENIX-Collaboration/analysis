@@ -15,11 +15,8 @@
 
 #include <g4centrality/PHG4CentralityReco.h>
 
-
 #include <HIJetReco.C>
-
-
-#include <jetvalidation/JetValidation.h>
+#include </sphenix/user/jamesj3j3/analysis/JS-Jet/JetValidation/src/JetValidation.h>
 
 R__LOAD_LIBRARY(libfun4all.so)
 R__LOAD_LIBRARY(libg4jets.so)
@@ -30,8 +27,6 @@ R__LOAD_LIBRARY(libg4dst.so)
 
 
 #endif
-
-
 void Fun4All_JetVal(const char *filelisttruth = "dst_truth_jet.list",
                     const char *filelistcalo = "dst_calo_cluster.list",
 		    const char *filelistglobal = "dst_global.list",
@@ -51,7 +46,6 @@ void Fun4All_JetVal(const char *filelisttruth = "dst_truth_jet.list",
   se->registerSubsystem( cent );
 
   HIJetReco();
- 
 
   JetValidation *myJetVal = new JetValidation("AntiKt_Tower_r04_Sub1", "AntiKt_Truth_r04", outname);
 
@@ -61,7 +55,7 @@ void Fun4All_JetVal(const char *filelisttruth = "dst_truth_jet.list",
   myJetVal->doTruth(1);
   myJetVal->doSeeds(1);
   se->registerSubsystem(myJetVal);
-  
+ 
   Fun4AllInputManager *intrue = new Fun4AllDstInputManager("DSTtruth");
   intrue->AddListFile(filelisttruth,1);
   se->registerInputManager(intrue);
@@ -74,7 +68,7 @@ void Fun4All_JetVal(const char *filelisttruth = "dst_truth_jet.list",
   in3->AddListFile(filelistglobal,1);
   se->registerInputManager(in3);
   
-  se->run(-1);
+  se->run(1000);
   se->End();
 
   gSystem->Exit(0);

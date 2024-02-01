@@ -165,7 +165,14 @@ void MakeNewMatcherPlots() {
     Phi,
     Eta,
     Pt,
-    Frac
+    Frac,
+    Qual,
+    PtErr,
+    EtaErr,
+    PhiErr,
+    PtRes,
+    EtaRes,
+    PhiRes
   };
   enum Type {
     Truth,
@@ -191,7 +198,14 @@ void MakeNewMatcherPlots() {
     {"hTruthPhi",     "hTrackPhi",     "hWeirdPhi",     "hNormPhi"},
     {"hTruthEta",     "hTrackEta",     "hWeirdEta",     "hNormEta"},
     {"hTruthPt",      "hTrackPt",      "hWeirdPt",      "hNormPt"},
-    {"hTruthFrac",    "hTrackFrac",    "hWeirdFrac",    "hNormFrac"}
+    {"hTruthFrac",    "hTrackFrac",    "hWeirdFrac",    "hNormFrac"},
+    {"hTruthQual",    "hTrackQual",    "hWeirdQual",    "hNormQual"},
+    {"hTruthPtErr",   "hTrackPtErr",   "hWeirdPtErr",   "hNormPtErr"},
+    {"hTruthEtaErr",  "hTrackEtaErr",  "hWeirdEtaErr",  "hNormEtaErr"},
+    {"hTruthPhiErr",  "hTrackPhiErr",  "hWeirdPhiErr",  "hNormPhiErr"},
+    {"hTruthPtRes",   "hTrackPtRes",   "hWeirdPtRes",   "hNormPtRes"},
+    {"hTruthEtaRes",  "hTrackEtaRes",  "hWeirdEtaRes",  "hNormEtaRes"},
+    {"hTruthPhiRes",  "hTrackPhiRes",  "hWeirdPhiRes",  "hNormPhiRes"}
   };
   const size_t nHistRows  = vecHistBase.size();
   const size_t nHistTypes = vecHistBase[0].size();
@@ -231,6 +245,8 @@ void MakeNewMatcherPlots() {
   const uint32_t nPhiBins  = 360;
   const uint32_t nPtBins   = 202;
   const uint32_t nFracBins = 220;
+  const uint32_t nQualBins = ;
+  const uint32_t nResBins  = ;
 
   // output histogram bin ranges
   const pair<float, float> xNumBins  = {-0.5,  100.5};
@@ -239,6 +255,8 @@ void MakeNewMatcherPlots() {
   const pair<float, float> xPhiBins  = {-3.15, 3.15};
   const pair<float, float> xPtBins   = {-1.,   100.};
   const pair<float, float> xFracBins = {-0.5,  10.5};
+  const pair<float, float> xQualBins = {};
+  const pair<float, float> xResBins  = {};
 
   // output histogram base binning definitions
   vector<tuple<uint32_t, pair<float, float>>> vecBaseHistBins = {
@@ -253,7 +271,8 @@ void MakeNewMatcherPlots() {
     make_tuple(nPhiBins,  xPhiBins),
     make_tuple(nEtaBins,  xEtaBins),
     make_tuple(nPtBins,   xPtBins),
-    make_tuple(nFracBins, xFracBins)
+    make_tuple(nFracBins, xFracBins),
+    make_tuple(nResBins,  xResBins)
   };
 
   // output 2D histogram x-axis binning

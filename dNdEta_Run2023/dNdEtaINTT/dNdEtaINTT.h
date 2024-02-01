@@ -135,7 +135,8 @@ class dNdEtaINTT : public SubsysReco
     std::vector<uint32_t> ClusTrkrHitSetKey_;
     // TrkrHit information
     int NTrkrhits_;
-    std::vector<uint16_t> TrkrHitRow_, TrkrHitColumn_;
+    std::vector<uint16_t> TrkrHitRow_, TrkrHitColumn_, TrkrHitADC_;
+    std::vector<uint8_t> TrkrHitLadderZId_, TrkrHitLadderPhiId_, TrkrHitLayer_;
     // G4 information Matching for simulation
     int NGenPart_;
     std::vector<float> UniqueAncG4P_Pt_, UniqueAncG4P_Eta_, UniqueAncG4P_Phi_, UniqueAncG4P_E_;
