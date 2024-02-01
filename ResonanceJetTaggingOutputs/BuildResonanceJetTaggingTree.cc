@@ -5,8 +5,9 @@
 #include <phool/phool.h>
 
 /// Jet includes
-#include <jetbase/JetMap.h>
-#include <jetbase/Jetv1.h>
+#include <jetbase/Jet.h>
+#include <jetbase/JetContainerv1.h>
+#include <jetbase/Jetv2.h>
 
 /// Tracking includes
 #include <trackbase_historic/SvtxPHG4ParticleMap_v1.h>
@@ -232,8 +233,8 @@ int BuildResonanceJetTaggingTree::loopHFHadronic(PHCompositeNode *topNode)
 
   if(m_dorec)
   {
-    m_taggedJetMap = getJetMapFromNode(topNode, m_jetcontainer_name);
-    if(!m_taggedJetMap) return Fun4AllReturnCodes::ABORTEVENT;
+    m_taggedJetContainer = getJetContainerFromNode(topNode, m_jetcontainer_name);
+    if(!m_taggedJetContainer) return Fun4AllReturnCodes::ABORTEVENT;
 
     kfContainer = getKFParticleContainerFromNode(topNode, m_tagcontainer_name);
     if(!kfContainer) return Fun4AllReturnCodes::ABORTEVENT;
@@ -243,8 +244,8 @@ int BuildResonanceJetTaggingTree::loopHFHadronic(PHCompositeNode *topNode)
 
   if(m_dotruth)
   {
-    m_truth_taggedJetMap = getJetMapFromNode(topNode, m_truth_jetcontainer_name);
-    if(!m_truth_taggedJetMap) return Fun4AllReturnCodes::ABORTEVENT;
+    m_truth_taggedJetContainer = getJetContainerFromNode(topNode, m_truth_jetcontainer_name);
+    if(!m_truth_taggedJetContainer) return Fun4AllReturnCodes::ABORTEVENT;
 
     hepMCGenEvent = getGenEventFromNode(topNode, "PHHepMCGenEventMap");
     if(!hepMCGenEvent) return Fun4AllReturnCodes::ABORTEVENT;
@@ -275,22 +276,31 @@ int BuildResonanceJetTaggingTree::loopHFHadronic(PHCompositeNode *topNode)
 
   if(m_dorec)
   {
-    for (JetMap::Iter iter = m_taggedJetMap->begin(); iter != m_taggedJetMap->end(); ++iter)
+    for(auto recJet : *m_taggedJetContainer)
     {
-      recTagJet = iter->second;
+      recTagJet = recJet;
 
       if(!recTagJet) continue;
 
-      Jet::Iter recTagIter = recTagJet->find(Jet::SRC::VOID);
+      int tagID = -1;
 
-      if(recTagIter == recTagJet->end_comp()) continue;
+      for(auto comp : recTagJet->get_comp_vec())
+      {
+        if(comp.first == Jet::SRC::VOID)
+        {
+          recTag = kfContainer->get(comp.second);
+          tagID = comp.second;
+        }
+      }
 
-      recTag = kfContainer->get(recTagIter->second);
+      if(!recTag)
+      {
+        continue;
+      }
 
-      if(!recTag) continue;
-
-      for (int iDaughter = 0; iDaughter < m_nDaughters; iDaughter++){
-        recDaughtersID[iDaughter] = (kfContainer->get(recTagIter->second + iDaughter +1))->Id();
+      for (int iDaughter = 0; iDaughter < m_nDaughters; iDaughter++)
+      {
+        recDaughtersID[iDaughter] = (kfContainer->get(tagID + iDaughter +1))->Id();
       }
 
       resetTreeVariables();
@@ -330,8 +340,8 @@ int BuildResonanceJetTaggingTree::loopHFHadronic(PHCompositeNode *topNode)
           m_truth_tag_pt = std::sqrt(m_truth_tag_px * m_truth_tag_px + m_truth_tag_py * m_truth_tag_py);
           m_truth_tag_eta = genTag->momentum().pseudoRapidity();
           m_truth_tag_phi = atan2(m_truth_tag_py, m_truth_tag_px);
-	  m_truth_tag_m = genTag->momentum().m();
-	  m_truth_tag_e = genTag->momentum().e();
+          m_truth_tag_m = genTag->momentum().m();
+          m_truth_tag_e = genTag->momentum().e();
 
           m_truth_jet_px = genTagJet->get_px();
           m_truth_jet_py = genTagJet->get_py();
@@ -353,20 +363,33 @@ int BuildResonanceJetTaggingTree::loopHFHadronic(PHCompositeNode *topNode)
   {
     resetTreeVariables();
 
-    for (JetMap::Iter iter = m_truth_taggedJetMap->begin(); iter != m_truth_taggedJetMap->end(); ++iter)
+    for(auto mcJet : *m_truth_taggedJetContainer)
     {
-      genTagJet = iter->second;
+      genTagJet = mcJet;
 
       if(!genTagJet) continue;
 
       //Check if truth was matched to reconstructed
-      if(m_dorec) {
-	if(isReconstructed(genTagJet->get_id(), recJetIndex)) continue;
+      if(m_dorec)
+      {
+        if(isReconstructed(genTagJet->get_id(), recJetIndex))
+        {
+          continue;
+        }
       }
 
-      Jet::Iter genTagIter = genTagJet->find(Jet::SRC::VOID);
+      for(auto comp : genTagJet->get_comp_vec())
+      {
+        if(comp.first == Jet::SRC::VOID)
+        {
+          genTag = hepMCGenEvent->barcode_to_particle(comp.second);
+        }
+      }
 
-      genTag = hepMCGenEvent->barcode_to_particle(genTagIter->second);
+      if(!genTag)
+      {
+        continue;
+      }
 
       m_truth_tag_px = genTag->momentum().px();
       m_truth_tag_py = genTag->momentum().py();
@@ -387,22 +410,20 @@ int BuildResonanceJetTaggingTree::loopHFHadronic(PHCompositeNode *topNode)
       m_truth_jet_e = genTagJet->get_e();
 
       /// iterate over all constituents and add them to the tree
-      for(auto citer = genTagJet->begin_comp(); citer != genTagJet->end_comp();
-	  ++citer)
-	{
-	  HepMC::GenParticle* constituent = hepMCGenEvent->barcode_to_particle(citer->second);
-	  /// Don't include the tagged particle
-	  if(constituent == genTag)
-	    {
-	      continue;
-	    }
+      for(auto comp : genTagJet->get_comp_vec())
+      {
+        HepMC::GenParticle* constituent = hepMCGenEvent->barcode_to_particle(comp.second);
+        /// Don't include the tagged particle
+        if(constituent == genTag)
+        {
+          continue;
+        }
 
-	  m_truthjet_const_px.push_back(constituent->momentum().px());
-	  m_truthjet_const_py.push_back(constituent->momentum().py());
-	  m_truthjet_const_pz.push_back(constituent->momentum().pz());
-	  m_truthjet_const_e.push_back(constituent->momentum().e());
-
-	}
+        m_truthjet_const_px.push_back(constituent->momentum().px());
+        m_truthjet_const_py.push_back(constituent->momentum().py());
+        m_truthjet_const_pz.push_back(constituent->momentum().pz());
+        m_truthjet_const_e.push_back(constituent->momentum().e());
+      }
 
       m_taggedjettree->Fill();
     }
@@ -413,8 +434,8 @@ int BuildResonanceJetTaggingTree::loopHFHadronic(PHCompositeNode *topNode)
 
 void BuildResonanceJetTaggingTree::findMatchedTruthD0(PHCompositeNode *topNode, Jet *&mcTagJet, HepMC::GenParticle *&mcTag, std::vector<int> decays)
 {
-  m_truth_taggedJetMap = getJetMapFromNode(topNode, m_truth_jetcontainer_name);
-  if(!m_truth_taggedJetMap) return;
+  m_truth_taggedJetContainer = getJetContainerFromNode(topNode, m_truth_jetcontainer_name);
+  if(!m_truth_taggedJetContainer) return;
 
   HepMC::GenEvent *hepMCGenEvent = getGenEventFromNode(topNode, "PHHepMCGenEventMap");
   if(!hepMCGenEvent) return;
@@ -485,18 +506,17 @@ void BuildResonanceJetTaggingTree::findMatchedTruthD0(PHCompositeNode *topNode, 
 
   mcTag = mcTags[0];
 
-  for (JetMap::Iter iter = m_truth_taggedJetMap->begin(); iter != m_truth_taggedJetMap->end(); ++iter)
+  for(auto mcJet : *m_truth_taggedJetContainer)
   {
-    mcTagJet = iter->second;
-
-    Jet::Iter mcTagIter = mcTagJet->find(Jet::SRC::VOID);
-
-    if(int(mcTagIter->second) != mcTag->barcode())
+    for(auto comp : mcJet->get_comp_vec())
     {
-      mcTagJet = nullptr;
-      continue;
+      if(comp.first == Jet::SRC::VOID && int(comp.second) == mcTag->barcode())
+      {
+        mcTagJet = mcJet;
+      }
     }
-    else
+
+    if(mcTagJet)
     {
       break;
     }
@@ -667,19 +687,19 @@ void BuildResonanceJetTaggingTree::resetTreeVariables()
   m_truthjet_const_e.clear();
 }
 
-JetMapv1* BuildResonanceJetTaggingTree::getJetMapFromNode(PHCompositeNode *topNode, const std::string &name)
+JetContainerv1* BuildResonanceJetTaggingTree::getJetContainerFromNode(PHCompositeNode *topNode, const std::string &name)
 {
-  JetMapv1 *jetmap = findNode::getClass<JetMapv1>(topNode, name);
+  JetContainerv1 *jetcont = findNode::getClass<JetContainerv1>(topNode, name);
 
-  if (!jetmap)
+  if (!jetcont)
   {
     std::cout << PHWHERE
-         << "JetMap node is missing, can't collect jets"
+         << "JetContainerv1 node is missing, can't collect jets"
          << std::endl;
     return 0;
   }
 
-  return jetmap;
+  return jetcont;
 }
 KFParticle_Container* BuildResonanceJetTaggingTree::getKFParticleContainerFromNode(PHCompositeNode *topNode, const std::string &name)
 {
