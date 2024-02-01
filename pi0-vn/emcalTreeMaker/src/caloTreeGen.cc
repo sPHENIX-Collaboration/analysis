@@ -43,6 +43,9 @@
 // Centrality
 #include <centrality/CentralityInfo.h>
 
+// Minimum Bias
+#include <calotrigger/MinimumBiasInfo.h>
+
 //____________________________________________________________________________..
 caloTreeGen::caloTreeGen(const std::string &name, const std::string &name2):
   SubsysReco(name)
@@ -185,6 +188,14 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
     return Fun4AllReturnCodes::ABORTEVENT;
   }
   cent = centInfo->get_centile(CentralityInfo::PROP::mbd_NS);
+
+  MinimumBiasInfo *minBiasInfo = findNode::getClass<MinimumBiasInfo>(topNode,"MinimumBiasInfo");
+  Bool_t isMinBias = (minBiasInfo) ? minBiasInfo->isAuAuMinimumBias() : false;
+  if(!minBiasInfo || !isMinBias)
+  {
+    std::cout << PHWHERE << "caloTreeGen::process_event: " << event << " is not MinimumBias" << std::endl;
+    return Fun4AllReturnCodes::ABORTEVENT;
+  }
 
   //----------------------------------vertex------------------------------------------------------//
   GlobalVertexMap* vertexmap = findNode::getClass<GlobalVertexMap>(topNode, "GlobalVertexMap");

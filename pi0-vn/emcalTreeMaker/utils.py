@@ -13,6 +13,8 @@ f4a = subparser.add_parser('f4a', help='Create condor submission directory for F
 
 f4a.add_argument('-i', '--run-list-dir', type=str, help='Directory of run lists', required=True)
 f4a.add_argument('-e', '--executable', type=str, default='genFun4All.sh', help='Job script to execute. Default: scripts/genFun4All.sh')
+f4a.add_argument('-m', '--macro', type=str, default='macro/Fun4All_CaloTreeGen.C', help='Fun4All macro. Default: macro/Fun4All_CaloTreeGen.C')
+f4a.add_argument('-m2', '--src', type=str, default='src', help='Directory Containing src files. Default: src')
 f4a.add_argument('-b', '--f4a', type=str, default='bin/Fun4All_CaloTreeGen', help='Fun4All executable. Default: bin/Fun4All_CaloTreeGen')
 f4a.add_argument('-d', '--output', type=str, default='test', help='Output Directory. Default: ./test')
 f4a.add_argument('-s', '--memory', type=int, default=1, help='Memory (units of GB) to request per condor submission. Default: 2 GB.')
@@ -71,10 +73,14 @@ def create_f4a_jobs():
     run_list_dir = os.path.realpath(args.run_list_dir)
     output_dir   = os.path.realpath(args.output)
     f4a          = os.path.realpath(args.f4a)
+    macro        = os.path.realpath(args.macro)
+    src          = os.path.realpath(args.src)
     executable   = os.path.realpath(args.executable)
     memory       = args.memory
     log          = args.log
 
+    print(f'Fun4All : {macro}')
+    print(f'src: {src}')
     print(f'Run List Directory: {run_list_dir}')
     print(f'Output Directory: {output_dir}')
     print(f'Bin: {f4a}')
@@ -84,6 +90,8 @@ def create_f4a_jobs():
 
     os.makedirs(output_dir,exist_ok=True)
     shutil.copy(f4a, output_dir)
+    shutil.copy(macro, output_dir)
+    shutil.copytree(src, f'{output_dir}/src')
     shutil.copy(executable, output_dir)
 
     for filename in os.listdir(run_list_dir):
