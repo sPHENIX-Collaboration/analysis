@@ -16,6 +16,8 @@
 #include "bjetanalyse.h"
 
 
+R__LOAD_LIBRARY(libJetVertexTagging.so)
+
 
 bjetanalyse::bjetanalyse(	const std::string &filename = "myjetanalysis.root"):
 input_file_name_(filename)
@@ -49,16 +51,24 @@ bool bjetanalyse::analyse() {
    // TTreeReaderArray objects. It knows the current entry number and knows
    // how to iterate through the TTree.
   // std::cout<<"A"<<std::endl;
-   TChain *tc = new TChain("AntiKt_r04");
+   TChain *tc = new TChain("AntiKt_r04/Data");
   // std::cout<<"B"<<std::endl;
-   tc->Add("/sphenix/tg/tg01/hf/jkvapil/JET10_new/myTestJets/outputData_0*.root");
+   tc->Add("/sphenix/tg/tg01/hf/jkvapil/JET30_r8/myTestJets/outputData_0*.root");
    std::cout<<"entries: "<<tc->GetEntries()<<std::endl;
    TTreeReader reader(tc);
   // std::cout<<"D"<<std::endl;
   // TFile *f = new TFile(input_file_name_.data(),"READ");
   // TTreeReader reader("AntiKt_r04", f);
 
+  //TTreeReaderValue<JetVertexTagging::Container> *jet_container_= nullptr;
 
+  jet_container_ = new TTreeReaderValue<JetVertexTagging::Container>(reader,"JetContainer");
+
+  TTreeReaderValue<JetVertexTagging::Container> jet_container_2 (reader,"JetContainer"); 
+
+
+  
+/*
   n_event_ = new TTreeReaderValue<int>(reader,"m_event");
   n_reco_jet_= new TTreeReaderValue<int>(reader,"m_reco_jet_n");
   n_truth_jet_= new TTreeReaderValue<int>(reader,"m_truth_jet_n");
@@ -95,8 +105,8 @@ bool bjetanalyse::analyse() {
   truth_jet_phi_ = new TTreeReaderValue<std::vector<float>>(reader,"m_truth_jet_phi");
   truth_jet_m_ = new TTreeReaderValue<std::vector<float>>(reader,"m_truth_jet_m");
   truth_jet_e_ = new TTreeReaderValue<std::vector<float>>(reader,"m_truth_jet_e");
-  truth_constituents_PDG_ID_ = new TTreeReaderValue<std::vector<std::vector<int>>>(reader,"m_truth_constituents_PDG_ID");
-
+  truth_constituents_PDG_ID_ = new TTreeReaderValue<std::vector<std::vector<int>>>(reader,"m_truth_constituents_PDG_ID");*/
+/*
      TFile *fo = new TFile("/sphenix/tg/tg01/hf/jkvapil/JET10_new/out2.root","recreate");
 
 
@@ -144,11 +154,11 @@ bool bjetanalyse::analyse() {
     phi->GetXaxis()->SetTitle("phi");
     TH1D *phim = new TH1D("phim","phim",800,-4,4);
     phim->GetXaxis()->SetTitle("phi_match");
-
+*/
    /*  TH1D *rel = new TH1D("rel","rel",200,-20,20);
      TH1D *rec = new TH1D("rec","rec",200,-20,20);
      TH1D *reb = new TH1D("reb","reb",200,-20,20);*/
-
+/*
    std::vector<std::vector<double>> binEdges;
    //axis 1 reco 
    std::vector<double> recoPt;
@@ -229,18 +239,18 @@ bool bjetanalyse::analyse() {
       mat[i]->GetXaxis()->SetBinLabel(4,"2T -> 1R");
       mat[i]->GetXaxis()->SetBinLabel(5,"1T -> 2R");
     }
-
-int countFD = 0;
+*/
+//int countFD = 0;
    // Read a TriggerInfo object from the tree entries:
    // Now iterate through the TTree entries and fill a histogram.
 //std::cout<<"E"<<std::endl;
   // int nentries = reader.GetEntries();
    int nentries = tc->GetEntries();
-   std::cout<<"events"<<nentries<<std::endl;
+   std::cout<<"events "<<nentries<<std::endl;
 //std::cout<<"F"<<std::endl;
    while (reader.Next()) {
-      if (!CheckValue(*n_event_)) return false;
-      if (!CheckValue(*n_reco_jet_)) return false;
+ //     if (!CheckValue(*jet_container_)) return false;
+      /*if (!CheckValue(*n_reco_jet_)) return false;
       if (!CheckValue(*n_truth_jet_)) return false;
       if (!CheckValue(*reco_jet_id_)) return false;
       if (!CheckValue(*reco_jet_nConstituents_)) return false;
@@ -272,17 +282,44 @@ int countFD = 0;
       if (!CheckValue(*truth_jet_phi_)) return false;
       if (!CheckValue(*truth_jet_m_)) return false;
       if (!CheckValue(*truth_jet_e_)) return false;
-      if (!CheckValue(*truth_constituents_PDG_ID_)) return false;
+      if (!CheckValue(*truth_constituents_PDG_ID_)) return false;*/
     //std::cout<<"AA"<<std::endl;  
-      printProgress(reader.GetCurrentEntry(),nentries);    //reader.GetEntries();   printProgress(reader.GetCurrentEntry(),reader.GetEntries())
+ //     printProgress(reader.GetCurrentEntry(),nentries);    //reader.GetEntries();   printProgress(reader.GetCurrentEntry(),reader.GetEntries())
 //std::cout<<"AB"<<std::endl;  JetIDT_map
       //main matching loop
-      std::vector<int> matchedR;
+    /*  std::vector<int> matchedR;
       std::vector<int> matchedT;
       std::vector<int> JetIDR;
       std::vector<int> JetIDT;
       std::map<int,int> JetIDR_map;
-      std::map<int,int> JetIDT_map;
+      std::map<int,int> JetIDT_map;*/
+
+      auto jet_container = *jet_container_2;
+      //auto truth_jets = (**jet_container_).truthjets;
+
+      std::cout<<"R04 "<< jet_container.reco_jet_n <<std::endl;
+
+      for (auto reco_jet : jet_container.recojets){
+         std::cout<<"JET pt "<< reco_jet.pt<<std::endl;
+         std::cout<<"JET E "<< reco_jet.e<<std::endl;
+         for (auto constituents : reco_jet.constituents){
+            std::cout<<"track pt "<< constituents.pt<<std::endl;
+           // std::cout<<"track chi2 "<< constituents.chisq<<std::endl;
+           // std::cout<<"track mvtx "<< constituents.n_mvtx<<std::endl;
+          //  std::cout<<"track intt "<< constituents.n_intt<<std::endl;
+           // std::cout<<"track tpc "<< constituents.n_tpc<<std::endl;
+
+         }
+
+         
+      }
+
+            
+   
+
+
+
+      /*
 
       //ID of reco jets
       for (int ijetR = 0; ijetR < **n_reco_jet_; ijetR++) {
@@ -464,7 +501,7 @@ int countFD = 0;
                else
                   isLF = true;
 
-
+*/
 
                //if(m_truth_jet_flavour == 0 && !isLF ) std::cout<<"old LF but not new LF"<<std::endl;
 
@@ -482,7 +519,7 @@ int countFD = 0;
 
                } 
                }*/
-
+/*
                for( auto elem :(**reco_constituents_Sdxy_old_).at(ijetR)){
                   if (isC) rec[0]->Fill(elem);
                   if (isB) reb[0]->Fill(elem);
@@ -509,7 +546,7 @@ int countFD = 0;
                   
                   
                 
-       
+ */      
 
 
              /*  for( auto elem :(**reco_constituents_dxy_).at(ijetR)){
@@ -544,7 +581,7 @@ int countFD = 0;
                             //std::vector<float> orig_vec=(**reco_constituents_Sdxy_).at(ijetR);
                           //  std::cout<<"jet"<<std::endl;
 
-               for( auto elem :(**reco_constituents_Sdxy_cut_).at(ijetR)){
+ /*              for( auto elem :(**reco_constituents_Sdxy_cut_).at(ijetR)){
                      if (std::abs(elem) < 40) m_reco_constituents_Sdxy_cut.push_back(elem);
                }
 
@@ -568,9 +605,9 @@ int countFD = 0;
                         } 
 
                      } 
-                     /*if(tag_power < (**reco_constituents_Sdxy_cut_).at(ijetR).size()){
-                        dnd = *((**reco_constituents_Sdxy_cut_).at(ijetR).begin()+tag_power);
-                     } */
+                     //if(tag_power < (**reco_constituents_Sdxy_cut_).at(ijetR).size()){
+                     //   dnd = *((**reco_constituents_Sdxy_cut_).at(ijetR).begin()+tag_power);
+                     //} 
                      if (tag_power == 0) m_reco_jet_Sdxy_1N = dnd;
                      if (tag_power == 1) m_reco_jet_Sdxy_2N = dnd;
                      if (tag_power == 2) m_reco_jet_Sdxy_3N = dnd;
@@ -583,11 +620,13 @@ int countFD = 0;
                      else rel[4+tag_power]->Fill(dnd);
                   }    
                }
+
+               */
                //std::cout<<"D"<<std::endl;       
-               ttree_out_->Fill();
-            }        
-         }
-      }
+   //            ttree_out_->Fill();
+  //          }        
+  //       }
+  //    }
 
 
 //std::cout<<"CC"<<std::endl;  
@@ -670,7 +709,7 @@ int countFD = 0;
          std::cout<<i_reco_jet_eta_<<std::endl;
       }*/
 
-      unmatchedR.clear();
+ /*     unmatchedR.clear();
       unmatchedT.clear();
       doublymatchedR.clear();
       doublymatchedT.clear();
@@ -678,14 +717,14 @@ int countFD = 0;
       matchedR.clear();
       matchedT.clear();
       JetIDR_map.clear();
-      JetIDT_map.clear();
+      JetIDT_map.clear();*/
      
    } // TTree entry / event loop
 
-     std::cout<<"FD count" <<countFD<<std::endl;
+  //   std::cout<<"FD count" <<countFD<<std::endl;
 
 
-   ttree_out_->Write("", TObject::kOverwrite);
+  /* ttree_out_->Write("", TObject::kOverwrite);
     for (int i = 0; i< 4; i++){
       mat[i]->Write();
    }
@@ -693,7 +732,7 @@ int countFD = 0;
    ru->Write();
    rm->Write();
    t->Write();
-   tm->Write();
+   tm->Write();*/
 
    
    //fo->Close();
@@ -708,7 +747,7 @@ int countFD = 0;
 
 
 
-   for(int i=0;i<7;i++){
+  /* for(int i=0;i<7;i++){
       c2->cd(i+1);
       c2->cd(i+1)->SetLogy();
       rel[i]->Scale(1./rel[i]->Integral());
@@ -729,7 +768,7 @@ int countFD = 0;
       rel[i]->Write();
       reb[i]->Write();
       rec[i]->Write();
-   }
+   }*/
 
 
 
@@ -747,7 +786,7 @@ int countFD = 0;
         c->cd(5);
         c->cd(5)->SetLogy();
    mat->Draw();*/
-
+/*
    for (int i = 0; i< 4; i++){
       c->cd(i+1);
       mat[i]->Draw();
@@ -756,7 +795,7 @@ int countFD = 0;
    phi->Draw();
    c->cd(6);
    phim->Draw();
-
+*/
 
    return true;
 }

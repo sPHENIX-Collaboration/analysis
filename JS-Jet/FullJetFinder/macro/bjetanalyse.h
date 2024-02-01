@@ -12,6 +12,8 @@
 #include <TTreeReaderArray.h>
 #include <THn.h>
 
+#include "JetVertexTagging.h"
+
 class TFile;
  
 
@@ -34,12 +36,14 @@ class bjetanalyse{
 
    
   TTree *ttree_;
-  TTreeReaderValue<int> *n_event_ = nullptr;
-  TTreeReaderValue<int> *n_reco_jet_= nullptr;
-  TTreeReaderValue<int> *n_truth_jet_= nullptr;
+  TTreeReaderValue<JetVertexTagging::Container> *jet_container_= nullptr;
+  TTreeReaderValue<JetVertexTagging::Container> *jet_container_2= nullptr;
+  //TTreeReaderValue<int> *n_event_ = nullptr;
+  //TTreeReaderValue<int> *n_reco_jet_= nullptr;
+  //TTreeReaderValue<int> *n_truth_jet_= nullptr;
 
   //! reconstructed jets
-  TTreeReaderValue<std::vector<int>> *reco_jet_id_= nullptr;
+ /* TTreeReaderValue<std::vector<int>> *reco_jet_id_= nullptr;
   TTreeReaderValue<std::vector<int>> *reco_jet_nConstituents_= nullptr;
   TTreeReaderValue<std::vector<int>> *reco_jet_nChConstituents_= nullptr;
   TTreeReaderValue<std::vector<float>> *reco_jet_px_= nullptr;
@@ -72,7 +76,7 @@ class bjetanalyse{
   TTreeReaderValue<std::vector<float>> *truth_jet_phi_= nullptr;
   TTreeReaderValue<std::vector<float>> *truth_jet_m_= nullptr;
   TTreeReaderValue<std::vector<float>> *truth_jet_e_= nullptr;
-  TTreeReaderValue<std::vector<std::vector<int>>> *truth_constituents_PDG_ID_= nullptr;
+  TTreeReaderValue<std::vector<std::vector<int>>> *truth_constituents_PDG_ID_= nullptr;*/
 
   THnD *THn_matrix;
 
