@@ -48,13 +48,11 @@ namespace myAnalysis {
     void process_event(Long64_t start = 0, Long64_t end = 0);
     void finalize(const string &i_output = "test.root");
 
-    vector<string> cent_key = {"40-60", "20-40"};
-    // vector<string> cent_key = {"40-60", "20-40"};
+    vector<string> cent_key = {"40-60", "20-40", "0-20"};
     vector<string> pt_key   = {"2-2.5", "2.5-3", "3-3.5", "3.5-4", "4-4.5", "4.5-5"};
 
     TH1F* pt_dum_vec   = new TH1F("pt_dum_vec","",6,2,5);
-    // TH1F* cent_dum_vec = new TH1F("cent_dum_vec","", 2, new Double_t[3] {215, 497.222, 955.741});
-    TH1F* cent_dum_vec = new TH1F("cent_dum_vec","", 2, new Double_t[3] {0.2, 0.4, 0.6});
+    TH1F* cent_dum_vec = new TH1F("cent_dum_vec","", 3, 0, 0.6);
 
     // keep track of low and high pi0 mass values to filter on for the computation of the v2
     vector<pair<Float_t,Float_t>> pi0_mass_range(cent_key.size()*pt_key.size());
@@ -103,19 +101,19 @@ namespace myAnalysis {
     Float_t npi0_max  = 60;
 
     Float_t bg_min = 0.3;
-    Float_t bg_max = 0.6;
+    Float_t bg_max = 0.45;
 
     Bool_t do_vn_calc = true;
 
     // First Order Correction
-    Float_t Q_S_x_avg[2] = {0};
-    Float_t Q_S_y_avg[2] = {0};
-    Float_t Q_N_x_avg[2] = {0};
-    Float_t Q_N_y_avg[2] = {0};
+    Float_t Q_S_x_avg[3] = {0};
+    Float_t Q_S_y_avg[3] = {0};
+    Float_t Q_N_x_avg[3] = {0};
+    Float_t Q_N_y_avg[3] = {0};
 
     // Second Order Correction
-    Float_t X_S[2][2][2] = {0}; // [cent][row][col], off diagonal entries are the same
-    Float_t X_N[2][2][2] = {0}; // [cent][row][col], off diagonal entries are the same
+    Float_t X_S[3][2][2] = {0}; // [cent][row][col], off diagonal entries are the same
+    Float_t X_N[3][2][2] = {0}; // [cent][row][col], off diagonal entries are the same
 }
 
 Int_t myAnalysis::init(const string &i_input, const string &i_cuts, const string& fitStats, const string& QVecCorr, Long64_t start, Long64_t end) {
@@ -401,12 +399,13 @@ void myAnalysis::process_event(Long64_t start, Long64_t end) {
     // T->SetBranchStatus("run",       true);
     // T->SetBranchStatus("event",     true);
     // T->SetBranchStatus("totalMBD",  true);
-    T->SetBranchStatus("pi0_mass",  true);
-    T->SetBranchStatus("pi0_pt",    true);
-    T->SetBranchStatus("asym",      true);
-    T->SetBranchStatus("deltaR",    true);
-    T->SetBranchStatus("ecore_min", true);
-    T->SetBranchStatus("chi2_max",  true);
+    T->SetBranchStatus("centrality", true);
+    T->SetBranchStatus("pi0_mass",   true);
+    T->SetBranchStatus("pi0_pt",     true);
+    T->SetBranchStatus("asym",       true);
+    T->SetBranchStatus("deltaR",     true);
+    T->SetBranchStatus("ecore_min",  true);
+    T->SetBranchStatus("chi2_max",   true);
 
     if(do_vn_calc) {
         T->SetBranchStatus("Q_S_x",   true);
@@ -438,7 +437,7 @@ void myAnalysis::process_event(Long64_t start, Long64_t end) {
 
     // T->SetBranchAddress("run",       &run);
     // T->SetBranchAddress("event",     &event);
-    T->SetBranchAddress("totalMBD",   &totalMBD);
+    // T->SetBranchAddress("totalMBD",   &totalMBD);
     T->SetBranchAddress("centrality", &cent);
     T->SetBranchAddress("pi0_mass",   &pi0_mass);
     T->SetBranchAddress("pi0_pt",     &pi0_pt);
@@ -482,7 +481,7 @@ void myAnalysis::process_event(Long64_t start, Long64_t end) {
         Int_t cent_idx = cent_dum_vec->FindBin(cent)-1;
 
         // check if centrality is found in one of the specified bins
-        if(cent_idx < 0 || cent_idx >= 2) continue;
+        if(cent_idx < 0 || cent_idx >= 3) continue;
 
         // need to reverse this index since we want to match cent_key
         cent_idx = cent_key.size() - cent_idx - 1;
@@ -589,10 +588,10 @@ void myAnalysis::process_event(Long64_t start, Long64_t end) {
                 Int_t idx = j*pt_key.size()+k;
                 pair<string,string> key = make_pair(cent_key[j], pt_key[k]);
 
-                npi0_max = max(npi0_max, pi0_ctr[idx]);
-                if(pi0_ctr[idx]) hNPi0[key]->Fill(pi0_ctr[idx]);
-
                 if(do_vn_calc) {
+                    npi0_max = max(npi0_max, pi0_ctr[idx]);
+                    if(pi0_ctr[idx]) hNPi0[key]->Fill(pi0_ctr[idx]);
+
                     // compute qQ for the background
                     qQ_bg[idx] = (bg_ctr[idx]) ? qQ_bg[idx]/bg_ctr[idx] : 0;
                     qQ_bg_min = min(qQ_bg_min, qQ_bg[idx]);
@@ -632,7 +631,6 @@ void myAnalysis::finalize(const string &i_output) {
     output.mkdir("QA/hDiphotonPt");
     output.mkdir("QA/h2DeltaRVsMass");
     output.mkdir("QA/h2AsymVsMass");
-    output.mkdir("QA/hNPi0");
 
     if(do_vn_calc) {
         output.mkdir("vn/QQ");
@@ -640,6 +638,7 @@ void myAnalysis::finalize(const string &i_output) {
         output.mkdir("vn/qQ_bg");
 
         output.mkdir("QA/h2Pi0EtaPhi");
+        output.mkdir("QA/hNPi0");
     }
 
     for(auto cent : cent_key) {
@@ -660,10 +659,10 @@ void myAnalysis::finalize(const string &i_output) {
             output.cd("QA/h2AsymVsMass");
             h2AsymVsMass[key]      ->Write();
 
-            output.cd("QA/hNPi0");
-            hNPi0[key]->Write();
-
             if(do_vn_calc) {
+                output.cd("QA/hNPi0");
+                hNPi0[key]->Write();
+
                 output.cd("vn/qQ");
                 hqQ[key]->Write();
 
