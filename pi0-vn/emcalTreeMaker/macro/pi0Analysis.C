@@ -55,7 +55,7 @@ namespace myAnalysis {
     TH1F* cent_dum_vec = new TH1F("cent_dum_vec","", 3, 0, 0.6);
 
     // keep track of low and high pi0 mass values to filter on for the computation of the v2
-    vector<pair<Float_t,Float_t>> pi0_mass_range(cent_key.size()*pt_key.size());
+    vector<pair<Float_t,Float_t>> pi0_mass_mu_sigma(cent_key.size()*pt_key.size()); // (mu, sigma)
 
     map<pair<string,string>, vector<TH1F*>> hPi0Mass; // hPi0Mass[make_pair(cent,pt)][i], for accessing diphoton invariant mass hist of i-th cut of cent,pt
 
@@ -227,8 +227,9 @@ Int_t myAnalysis::readFitStats(const string &fitStats) {
         return 1;
     }
 
-    int col1Idx = 15; // Replace with the index of the first column you want
-    int col2Idx = 16; // Replace with the index of the second column you want
+    // 5: mu
+    // 7: sigma
+    Int_t col[2] = {5,7};
 
     std::string line;
     Int_t idx = 0;
@@ -242,12 +243,11 @@ Int_t myAnalysis::readFitStats(const string &fitStats) {
 
         Int_t colIdx = 0;
         while (std::getline(ss, token, ',')) { // Assuming comma-separated values
-            if (colIdx == col1Idx) {
-                // load pi0_mass low val
-                pi0_mass_range[idx].first = stof(token);
-            } else if (colIdx == col2Idx) {
-                // load pi0_mass high val
-                pi0_mass_range[idx].second = stof(token);
+            if (colIdx == col[0]) {
+                pi0_mass_mu_sigma[idx].first = stof(token);
+            }
+            else if (colIdx == col[1]) {
+                pi0_mass_mu_sigma[idx].second = stof(token);
             }
             colIdx++;
         }
@@ -262,8 +262,12 @@ Int_t myAnalysis::readFitStats(const string &fitStats) {
             Int_t idx = i*pt_key.size()+j;
 
             cout << "pt: " << pt_key[j]
-                 << ", low mass val: "  << pi0_mass_range[idx].first
-                 << ", high mass val: " << pi0_mass_range[idx].second << endl;
+                 << ", mu: "            << pi0_mass_mu_sigma[idx].first
+                 << ", sigma: "         << pi0_mass_mu_sigma[idx].second
+                 << ", mu-2*sigma: "    << pi0_mass_mu_sigma[idx].first-2*pi0_mass_mu_sigma[idx].second
+                 << ", mu+2*sigma: "    << pi0_mass_mu_sigma[idx].first+2*pi0_mass_mu_sigma[idx].second
+                 << ", mu+3*sigma: "    << pi0_mass_mu_sigma[idx].first+3*pi0_mass_mu_sigma[idx].second
+                 << endl;
         }
         cout << endl;
     }
@@ -559,6 +563,9 @@ void myAnalysis::process_event(Long64_t start, Long64_t end) {
 
             Int_t idx = cent_idx*pt_key.size()+pt_idx;
 
+            // compute mu+-2*sd of the pi0 mass to select diphotons as pi0 candidates
+            Float_t pi0_mass_low  = pi0_mass_mu_sigma[idx].first-2*pi0_mass_mu_sigma[idx].second;
+            Float_t pi0_mass_high = pi0_mass_mu_sigma[idx].first+2*pi0_mass_mu_sigma[idx].second;
             for(Int_t k = 0; k < cuts.size(); ++k) {
                 if(ecore_min_val >= cuts[k].e      && asym_val     < cuts[k].e_asym &&
                    deltaR_val    >= cuts[k].deltaR && chi2_max_val < cuts[k].chi) {
@@ -571,7 +578,7 @@ void myAnalysis::process_event(Long64_t start, Long64_t end) {
                     }
                     // fill in the qQ for the signal+background region
                     // do this for only one of the cuts for which we have signal bound information
-                    if(k == 0 && do_vn_calc && pi0_mass_val >= pi0_mass_range[idx].first && pi0_mass_val < pi0_mass_range[idx].second) {
+                    if(k == 0 && do_vn_calc && pi0_mass_val >= pi0_mass_low && pi0_mass_val < pi0_mass_high) {
                         ++pi0_ctr[idx];
                         qQ[idx] += qQ_val;
                         h2Pi0EtaPhi[key]->Fill(pi0_eta_val, pi0_phi_val);
