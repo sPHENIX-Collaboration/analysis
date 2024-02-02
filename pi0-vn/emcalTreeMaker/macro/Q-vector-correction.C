@@ -36,32 +36,30 @@ namespace myAnalysis {
     void process_event(Long64_t start = 0, Long64_t end = 0);
     void finalize(const string &i_output = "test.root", const string &i_output_csv = "test.csv");
 
-    // vector<string> cent_key = {"40-60", "20-40"};
-    vector<string> cent_key = {"20-40", "40-60"};
+    vector<string> cent_key = {"40-60", "20-40", "0-20"};
 
-    // TH1F* cent_dum_vec = new TH1F("cent_dum_vec","", 2, new Double_t[3] {215, 497.222, 955.741});
-    TH1F* cent_dum_vec = new TH1F("cent_dum_vec","", 2, new Double_t[3] {0.2, 0.4, 0.6});
+    TH1F* cent_dum_vec = new TH1F("cent_dum_vec","", 3, 0, 0.6);
 
-    TH1F* hPsi_S[2][3]; // [cent][order of correction]
-    TH1F* hPsi_N[2][3]; // [cent][order of correction]
+    TH1F* hPsi_S[3][3]; // [cent][order of correction]
+    TH1F* hPsi_N[3][3]; // [cent][order of correction]
 
     UInt_t bins_psi  = 100;
     Float_t low_psi  = -M_PI;
     Float_t high_psi = M_PI;
 
     // First Order Correction
-    Float_t Q_S_x_avg[2] = {0};
-    Float_t Q_S_y_avg[2] = {0};
-    Float_t Q_N_x_avg[2] = {0};
-    Float_t Q_N_y_avg[2] = {0};
+    Float_t Q_S_x_avg[3] = {0};
+    Float_t Q_S_y_avg[3] = {0};
+    Float_t Q_N_x_avg[3] = {0};
+    Float_t Q_N_y_avg[3] = {0};
 
     // Second Order Correction
-    Float_t X_S[2][2][2] = {0}; // [cent][row][col]
-    Float_t X_N[2][2][2] = {0}; // [cent][row][col]
+    Float_t X_S[3][2][2] = {0}; // [cent][row][col]
+    Float_t X_N[3][2][2] = {0}; // [cent][row][col]
 }
 
 void myAnalysis::init_hists() {
-    for (Int_t i = 0; i < 2; ++i) {
+    for (Int_t i = 0; i < cent_key.size(); ++i) {
         for (Int_t j = 0; j < 3; ++j) {
             string name = "hPsi_S_"+cent_key[i]+"_"+to_string(j);
             string title = to_string(j) + "-th Order Corrected 2#Psi_{2}^{S}, Centrality: " + cent_key[i] + "; 2#Psi_{2}^{S}; Counts";
@@ -130,7 +128,8 @@ void myAnalysis::process_event(Long64_t start, Long64_t end) {
     T->SetBranchStatus("Q_S_y",    true);
     T->SetBranchStatus("Q_N_x",    true);
     T->SetBranchStatus("Q_N_y",    true);
-    T->SetBranchStatus("totalMBD", true);
+    // T->SetBranchStatus("totalMBD", true);
+    T->SetBranchStatus("centrality", true);
 
     Float_t Q_S_x;
     Float_t Q_S_y;
@@ -140,40 +139,40 @@ void myAnalysis::process_event(Long64_t start, Long64_t end) {
     Float_t cent;
 
     // event counter
-    UInt_t evt_ctr[2] = {0};
+    UInt_t evt_ctr[3] = {0};
 
     // First Order Correction
-    Float_t Q_S_x_corr[2] = {0};
-    Float_t Q_S_y_corr[2] = {0};
-    Float_t Q_N_x_corr[2] = {0};
-    Float_t Q_N_y_corr[2] = {0};
+    Float_t Q_S_x_corr[3] = {0};
+    Float_t Q_S_y_corr[3] = {0};
+    Float_t Q_N_x_corr[3] = {0};
+    Float_t Q_N_y_corr[3] = {0};
 
     // Second Order Correction
-    Float_t Q2_S_x_avg[2]  = {0};
-    Float_t Q2_S_y_avg[2]  = {0};
-    Float_t Q2_S_xy_avg[2] = {0};
-    Float_t Q2_N_x_avg[2]  = {0};
-    Float_t Q2_N_y_avg[2]  = {0};
-    Float_t Q2_N_xy_avg[2] = {0};
+    Float_t Q2_S_x_avg[3]  = {0};
+    Float_t Q2_S_y_avg[3]  = {0};
+    Float_t Q2_S_xy_avg[3] = {0};
+    Float_t Q2_N_x_avg[3]  = {0};
+    Float_t Q2_N_y_avg[3]  = {0};
+    Float_t Q2_N_xy_avg[3] = {0};
 
-    Float_t Q_S_x_corr2[2] = {0};
-    Float_t Q_S_y_corr2[2] = {0};
-    Float_t Q_N_x_corr2[2] = {0};
-    Float_t Q_N_y_corr2[2] = {0};
+    Float_t Q_S_x_corr2[3] = {0};
+    Float_t Q_S_y_corr2[3] = {0};
+    Float_t Q_N_x_corr2[3] = {0};
+    Float_t Q_N_y_corr2[3] = {0};
 
-    Float_t D_S[2] = {0};
-    Float_t D_N[2] = {0};
-    Float_t N_S[2] = {0};
-    Float_t N_N[2] = {0};
+    Float_t D_S[3] = {0};
+    Float_t D_N[3] = {0};
+    Float_t N_S[3] = {0};
+    Float_t N_N[3] = {0};
 
-    Float_t psi_S[2][3] = {0}; // [cent][order of correction]
-    Float_t psi_N[2][3] = {0}; // [cent][order of correction]
+    Float_t psi_S[3][3] = {0}; // [cent][order of correction]
+    Float_t psi_N[3][3] = {0}; // [cent][order of correction]
 
-    T->SetBranchAddress("Q_S_x",      &Q_S_x);
-    T->SetBranchAddress("Q_S_y",      &Q_S_y);
-    T->SetBranchAddress("Q_N_x",      &Q_N_x);
-    T->SetBranchAddress("Q_N_y",      &Q_N_y);
-    T->SetBranchAddress("totalMBD",   &totalMBD);
+    T->SetBranchAddress("Q_S_x", &Q_S_x);
+    T->SetBranchAddress("Q_S_y", &Q_S_y);
+    T->SetBranchAddress("Q_N_x", &Q_N_x);
+    T->SetBranchAddress("Q_N_y", &Q_N_y);
+    // T->SetBranchAddress("totalMBD",   &totalMBD);
     T->SetBranchAddress("centrality", &cent);
 
     end = (end) ? min(end, T->GetEntries()-1) : T->GetEntries()-1;
@@ -190,7 +189,10 @@ void myAnalysis::process_event(Long64_t start, Long64_t end) {
         Int_t j = cent_dum_vec->FindBin(cent)-1;
 
         // check if centrality is found in one of the specified bins
-        if(j < 0 || j >= 2) continue;
+        if(j < 0 || j >= 3) continue;
+
+        // need to reverse this index since we want to match cent_key
+        j = cent_key.size() - j - 1;
 
         ++evt_ctr[j];
 
@@ -230,7 +232,10 @@ void myAnalysis::process_event(Long64_t start, Long64_t end) {
         Int_t j = cent_dum_vec->FindBin(cent)-1;
 
         // check if centrality is found in one of the specified bins
-        if(j < 0 || j >= 2) continue;
+        if(j < 0 || j >= 3) continue;
+
+        // need to reverse this index since we want to match cent_key
+        j = cent_key.size() - j - 1;
 
         // compute the first order correction
         Q_S_x_corr[j] = Q_S_x - Q_S_x_avg[j];
@@ -304,7 +309,10 @@ void myAnalysis::process_event(Long64_t start, Long64_t end) {
         Int_t j = cent_dum_vec->FindBin(cent)-1;
 
         // check if centrality is found in one of the specified bins
-        if(j < 0 || j >= 2) continue;
+        if(j < 0 || j >= 3) continue;
+
+        // need to reverse this index since we want to match cent_key
+        j = cent_key.size() - j - 1;
 
         // compute first order correction
         Q_S_x_corr[j] = Q_S_x - Q_S_x_avg[j];
