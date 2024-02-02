@@ -68,6 +68,7 @@ JetBkgdSub::JetBkgdSub(const double jet_R, const std::string& outputfilename)
   , _doTruth(false)
   , _doData(false)
   , _doEmbed(false)
+  , _doTowerECut(false)
   , m_event(-1)
   , m_rhoA_jets(0)
   , m_mult_jets(0)
@@ -77,6 +78,12 @@ JetBkgdSub::JetBkgdSub(const double jet_R, const std::string& outputfilename)
   , m_mbd_NS(0.0)
   , m_rho_area(-1)
   , m_rho_area_sigma(-1)
+  , m_rho_area_CEMC(-1)
+  , m_rho_area_sigma_CEMC(-1)
+  , m_rho_area_IHCAL(-1)
+  , m_rho_area_sigma_IHCAL(-1)
+  , m_rho_area_OHCAL(-1)
+  , m_rho_area_sigma_OHCAL(-1)
   , m_event_leading_truth_pt(-1)
   , m_tree(nullptr)
   , m_iter_eta()
@@ -137,7 +144,7 @@ int JetBkgdSub::Init(PHCompositeNode *topNode)
   m_tree->Branch("event", &m_event, "event/I");
   m_tree->Branch("event_leading_truth_pt", &m_event_leading_truth_pt, "event_leading_truth_pt/F");
   m_tree->Branch("centrality", &m_centrality, "centrality/I");
-  m_tree->Branch("mbd_NS", &m_mbd_NS, "mbd_NS/F");
+  m_tree->Branch("mbd_NS", &m_mbd_NS, "mbd_NS/D");
   if(_doTruth)
   {
     m_tree->Branch("truth_jets", &m_truth_jets, "truth_jets/I");
@@ -150,6 +157,12 @@ int JetBkgdSub::Init(PHCompositeNode *topNode)
   {
     m_tree->Branch("rho_area", &m_rho_area, "rho_area/D");
     m_tree->Branch("rho_area_sigma", &m_rho_area_sigma, "rho_area_sigma/D");
+    m_tree->Branch("rho_area_CEMC", &m_rho_area_CEMC, "rho_area_CEMC/D");
+    m_tree->Branch("rho_area_sigma_CEMC", &m_rho_area_sigma_CEMC, "rho_area_sigma_CEMC/D");
+    m_tree->Branch("rho_area_IHCAL", &m_rho_area_IHCAL, "rho_area_IHCAL/D");
+    m_tree->Branch("rho_area_sigma_IHCAL", &m_rho_area_sigma_IHCAL, "rho_area_sigma_IHCAL/D");
+    m_tree->Branch("rho_area_OHCAL", &m_rho_area_OHCAL, "rho_area_OHCAL/D");
+    m_tree->Branch("rho_area_sigma_OHCAL", &m_rho_area_sigma_OHCAL, "rho_area_sigma_OHCAL/D");
     m_tree->Branch("rhoA_jets", &m_rhoA_jets, "rhoA_jets/I");
     m_tree->Branch("rhoA_eta", &m_rhoA_eta);
     m_tree->Branch("rhoA_phi", &m_rhoA_phi);
@@ -415,6 +428,9 @@ int JetBkgdSub::process_event(PHCompositeNode *topNode)
   {
     // get fastjet input from tower nodes
     std::vector<fastjet::PseudoJet> calo_pseudojets;
+    std::vector<fastjet::PseudoJet> CEMC_pseudojets;
+    std::vector<fastjet::PseudoJet> IHCAL_pseudojets;
+    std::vector<fastjet::PseudoJet> OHCAL_pseudojets;
     for (auto & _input : _inputs)
     {
       std::vector<Jet *> parts = _input->get_input(topNode);
@@ -426,16 +442,40 @@ int JetBkgdSub::process_event(PHCompositeNode *topNode)
         float this_px = parts[i]->get_px();
         float this_py = parts[i]->get_py();
         float this_pz = parts[i]->get_pz();
-        if (this_e < 0)
-        {
-          // make energy = +1 MeV for purposes of clustering
-          float e_ratio = 0.001 / this_e;
-          this_e  = this_e * e_ratio;
-          this_px = this_px * e_ratio;
-          this_py = this_py * e_ratio;
-          this_pz = this_pz * e_ratio;
-        }
+	if(_doTowerECut)
+	{
+	  if(this_e < m_towerThreshold) continue;
+	  if (this_e < 0)
+	  {
+	    // make energy = +1 MeV for purposes of clustering
+	    float e_ratio = 0.001 / this_e;
+	    this_e  = this_e * e_ratio;
+	    this_px = this_px * e_ratio;
+	    this_py = this_py * e_ratio;
+	    this_pz = this_pz * e_ratio;
+	  }
+	}
         fastjet::PseudoJet pseudojet(this_px, this_py, this_pz, this_e);
+	
+	if(_input->get_src() == Jet::SRC::CEMC_TOWERINFO ||
+	   _input->get_src() == Jet::SRC::CEMC_TOWERINFO_EMBED ||
+	   _input->get_src() == Jet::SRC::CEMC_TOWERINFO_SIM ||
+	   _input->get_src() == Jet::SRC::CEMC_TOWERINFO_RETOWER)
+	  {
+	    CEMC_pseudojets.push_back(pseudojet);
+	  }
+	if(_input->get_src() == Jet::SRC::HCALIN_TOWERINFO ||
+	   _input->get_src() == Jet::SRC::HCALIN_TOWERINFO_EMBED ||
+	   _input->get_src() == Jet::SRC::HCALIN_TOWERINFO_SIM)
+	  {
+	    IHCAL_pseudojets.push_back(pseudojet);
+	  }
+	if(_input->get_src() == Jet::SRC::HCALOUT_TOWERINFO ||
+	   _input->get_src() == Jet::SRC::HCALOUT_TOWERINFO_EMBED ||
+	   _input->get_src() == Jet::SRC::HCALOUT_TOWERINFO_SIM)
+	  {
+	    OHCAL_pseudojets.push_back(pseudojet);
+	  }
         calo_pseudojets.push_back(pseudojet);
       }
       for (auto &p : parts) delete p;
@@ -459,12 +499,24 @@ int JetBkgdSub::process_event(PHCompositeNode *topNode)
     if (_doEmbed) selector_rm_jets = jetrap * (!fastjet::SelectorNHardest(4));
     else selector_rm_jets = jetrap * (!fastjet::SelectorNHardest(2));
     fastjet::JetMedianBackgroundEstimator bge {selector_rm_jets, jet_def_bkgd, area_def};
+    fastjet::JetMedianBackgroundEstimator bge_CEMC {selector_rm_jets, jet_def_bkgd, area_def};
+    fastjet::JetMedianBackgroundEstimator bge_IHCAL {selector_rm_jets, jet_def_bkgd, area_def};
+    fastjet::JetMedianBackgroundEstimator bge_OHCAL {selector_rm_jets, jet_def_bkgd, area_def};
     // set particles for background estimation
     bge.set_particles(calo_pseudojets);
+    bge_CEMC.set_particles(CEMC_pseudojets);
+    bge_IHCAL.set_particles(IHCAL_pseudojets);
+    bge_OHCAL.set_particles(OHCAL_pseudojets);
     
     // rho and sigma
     m_rho_area = bge.rho();
     m_rho_area_sigma = bge.sigma();
+    m_rho_area_CEMC = bge_CEMC.rho();
+    m_rho_area_sigma_CEMC = bge_CEMC.sigma();
+    m_rho_area_IHCAL = bge_IHCAL.rho();
+    m_rho_area_sigma_IHCAL = bge_IHCAL.sigma();
+    m_rho_area_OHCAL = bge_OHCAL.rho();
+    m_rho_area_sigma_OHCAL = bge_OHCAL.sigma();
     
     // cluster jets
     fastjet::ClusterSequenceArea clustSeq(calo_pseudojets, jet_def_antikt, area_def);
