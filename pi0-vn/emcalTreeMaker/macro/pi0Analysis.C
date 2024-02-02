@@ -65,6 +65,7 @@ namespace myAnalysis {
     map<string, TH1F*>              hQQ;
     map<pair<string,string>, TH1F*> hqQ;
     map<pair<string,string>, TH1F*> hqQ_bg;
+    map<pair<string,string>, TH1F*> hqQ_bg_left;
     map<pair<string,string>, TH1F*> hNPi0;
     map<pair<string,string>, TH2F*> h2Pi0EtaPhi;
 
@@ -99,9 +100,6 @@ namespace myAnalysis {
     Int_t   bins_npi0 = 60;
     Float_t npi0_min  = 0;
     Float_t npi0_max  = 60;
-
-    Float_t bg_min = 0.3;
-    Float_t bg_max = 0.45;
 
     Bool_t do_vn_calc = true;
 
@@ -363,6 +361,7 @@ void myAnalysis::init_hists() {
 
             hqQ[key] = new TH1F(("hqQ_"+to_string(idx)).c_str(), ("qQ, " + suffix_title + "; qQ; Counts").c_str(), bins_Q, Q_min, Q_max);
             hqQ_bg[key] = new TH1F(("hqQ_bg_"+to_string(idx)).c_str(), ("qQ, " + suffix_title + "; qQ; Counts").c_str(), bins_Q, Q_min, Q_max);
+            hqQ_bg_left[key] = new TH1F(("hqQ_bg_left_"+to_string(idx)).c_str(), ("qQ, " + suffix_title + "; qQ; Counts").c_str(), bins_Q, Q_min, Q_max);
 
             h2Pi0EtaPhi[key] = new TH2F(("h2Pi0EtaPhi_"+to_string(idx)).c_str(), ("#pi_{0}, " + suffix_title + "; #eta; #phi").c_str(), bins_eta, eta_min, eta_max, bins_phi, phi_min, phi_max);
 
@@ -517,8 +516,10 @@ void myAnalysis::process_event(Long64_t start, Long64_t end) {
 
         UInt_t pi0_ctr[cent_key.size()*pt_key.size()] = {0};
         UInt_t bg_ctr[cent_key.size()*pt_key.size()]  = {0};
+        UInt_t bg_left_ctr[cent_key.size()*pt_key.size()]  = {0};
         Float_t qQ[cent_key.size()*pt_key.size()]     = {0};
         Float_t qQ_bg[cent_key.size()*pt_key.size()]  = {0};
+        Float_t qQ_bg_left[cent_key.size()*pt_key.size()]  = {0};
         // loop over all diphoton candidates
         for(UInt_t j = 0; j < pi0_mass->size(); ++j) {
             Float_t pi0_pt_val = pi0_pt->at(j);
@@ -566,10 +567,21 @@ void myAnalysis::process_event(Long64_t start, Long64_t end) {
             // compute mu+-2*sd of the pi0 mass to select diphotons as pi0 candidates
             Float_t pi0_mass_low  = pi0_mass_mu_sigma[idx].first-2*pi0_mass_mu_sigma[idx].second;
             Float_t pi0_mass_high = pi0_mass_mu_sigma[idx].first+2*pi0_mass_mu_sigma[idx].second;
+
+            // compute mu+3*sd of the pi0 mass to select background diphotons
+            Float_t bg_min = pi0_mass_mu_sigma[idx].first+3*pi0_mass_mu_sigma[idx].second;
+            Float_t bg_max = 0.5; // setting max at 0.5 GeV to avoid the eta
+
             for(Int_t k = 0; k < cuts.size(); ++k) {
                 if(ecore_min_val >= cuts[k].e      && asym_val     < cuts[k].e_asym &&
                    deltaR_val    >= cuts[k].deltaR && chi2_max_val < cuts[k].chi) {
                     hPi0Mass[key][k]->Fill(pi0_mass_val);
+
+                    // fill in qQ for the background to the left of the pi0 peak
+                    if(k == 0 && do_vn_calc && pi0_mass_val < bg_min) {
+                        ++bg_left_ctr[idx];
+                        qQ_bg_left[idx] += qQ_val;
+                    }
 
                     // fill in qQ for the background
                     if(k == 0 && do_vn_calc && pi0_mass_val >= bg_min && pi0_mass_val < bg_max) {
@@ -598,6 +610,13 @@ void myAnalysis::process_event(Long64_t start, Long64_t end) {
                 if(do_vn_calc) {
                     npi0_max = max(npi0_max, pi0_ctr[idx]);
                     if(pi0_ctr[idx]) hNPi0[key]->Fill(pi0_ctr[idx]);
+
+                    // compute qQ for the background to the left of the pi0 peak
+                    qQ_bg_left[idx] = (bg_left_ctr[idx]) ? qQ_bg_left[idx]/bg_left_ctr[idx] : 0;
+                    qQ_bg_min = min(qQ_bg_min, qQ_bg_left[idx]);
+                    qQ_bg_max = max(qQ_bg_max, qQ_bg_left[idx]);
+
+                    if(qQ_bg_left[idx]) hqQ_bg_left[key]->Fill(qQ_bg_left[idx]);
 
                     // compute qQ for the background
                     qQ_bg[idx] = (bg_ctr[idx]) ? qQ_bg[idx]/bg_ctr[idx] : 0;
@@ -643,6 +662,7 @@ void myAnalysis::finalize(const string &i_output) {
         output.mkdir("vn/QQ");
         output.mkdir("vn/qQ");
         output.mkdir("vn/qQ_bg");
+        output.mkdir("vn/qQ_bg_left");
 
         output.mkdir("QA/h2Pi0EtaPhi");
         output.mkdir("QA/hNPi0");
@@ -675,6 +695,9 @@ void myAnalysis::finalize(const string &i_output) {
 
                 output.cd("vn/qQ_bg");
                 hqQ_bg[key]->Write();
+
+                output.cd("vn/qQ_bg_left");
+                hqQ_bg_left[key]->Write();
 
                 output.cd("QA/h2Pi0EtaPhi");
                 h2Pi0EtaPhi[key]->Write();
