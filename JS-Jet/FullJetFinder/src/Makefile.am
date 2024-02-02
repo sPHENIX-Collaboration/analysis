@@ -33,7 +33,7 @@ libFullJetFinder_la_LIBADD = \
   -ljetbase
 
 %_Dict.cc: %.h %LinkDef.h
-        rootcint -f $@ @CINTDEFS@  $(DEFAULT_INCLUDES) $(AM_CPPFLAGS) $^
+	rootcint -f $@ @CINTDEFS@  $(DEFAULT_INCLUDES) $(AM_CPPFLAGS) $^
 
 %_Dict_rdict.pcm: %_Dict.cc ;
 
@@ -46,11 +46,11 @@ testexternals_SOURCES = testexternals.cc
 testexternals_LDADD   = libFullJetFinder.la
 
 testexternals.cc:
-        echo "//*** this is a generated file. Do not commit, do not edit" > $@
-        echo "int main()" >> $@
-        echo "{" >> $@
-        echo "  return 0;" >> $@
-        echo "}" >> $@
+	echo "//*** this is a generated file. Do not commit, do not edit" > $@	
+	echo "int main()" >> $@
+	echo "{" >> $@
+	echo "  return 0;" >> $@
+	echo "}" >> $@
 
 clean-local:
-        rm -f $(BUILT_SOURCES)
+	rm -f $(BUILT_SOURCES)
