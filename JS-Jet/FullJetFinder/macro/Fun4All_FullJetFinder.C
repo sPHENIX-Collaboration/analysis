@@ -7,6 +7,11 @@
 #include <fun4all/Fun4AllOutputManager.h>
 #include <fun4all/Fun4AllServer.h>
 
+#include <jetbase/FastJetAlgo.h>
+#include <jetbase/JetReco.h>
+#include <g4jets/TruthJetInput.h>
+#include <jetbackground/RetowerCEMC.h>
+
 #include <phool/PHRandomSeed.h>
 #include <phool/recoConsts.h>
 
@@ -15,7 +20,7 @@
 #include <g4centrality/PHG4CentralityReco.h>
 #include <string>
 
-#include "HIJetReco.C"
+//#include "HIJetReco.C"
 
 #include <caloreco/RawClusterBuilderTopo.h>
 #include <particleflowreco/ParticleFlowReco.h>
