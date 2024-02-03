@@ -401,7 +401,7 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
 
       // exclude pi0 mass if it's more than 1 GeV
       // saves storage
-      if(pi0_mass >= 0.6) continue;
+      if(pi0_mass >= 0.7) continue;
 
       Float_t asym      = abs(clusE-clusE2)/(clusE+clusE2);
       Float_t ecore_min = std::min(clusE, clusE2);

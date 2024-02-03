@@ -32,7 +32,7 @@ void Fun4All_CaloTreeGen(const string  &inputFile,
                          const Bool_t  doPi0Ana      = true,
                          const Float_t clusE_min     = 0.5 /*GeV*/,
                          const Float_t clusChi_max   = 4,
-                         const Float_t vtx_z_max     = 10, /*cm*/
+                         const Float_t vtx_z_max     = 30, /*cm*/
                          const UInt_t  nEvents       = 0) {
   Fun4AllServer *se = Fun4AllServer::instance();
   // recoConsts *rc = recoConsts::instance();
@@ -79,7 +79,7 @@ int main(int argc, char* argv[]) {
     Bool_t doPi0Ana     = true;
     Float_t clusE_min   = 0.5;
     Float_t clusChi_max = 4;
-    Float_t vtx_z_max   = 10;
+    Float_t vtx_z_max   = 30;
     UInt_t events       = 0;
 
     if(argc >= 2) {

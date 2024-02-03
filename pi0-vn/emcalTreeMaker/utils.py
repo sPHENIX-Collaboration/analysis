@@ -91,7 +91,7 @@ def create_f4a_jobs():
     os.makedirs(output_dir,exist_ok=True)
     shutil.copy(f4a, output_dir)
     shutil.copy(macro, output_dir)
-    shutil.copytree(src, f'{output_dir}/src')
+    shutil.copytree(src, f'{output_dir}/src', dirs_exist_ok=True)
     shutil.copy(executable, output_dir)
 
     for filename in os.listdir(run_list_dir):
