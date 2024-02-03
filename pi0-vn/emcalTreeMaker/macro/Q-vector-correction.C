@@ -56,6 +56,9 @@ namespace myAnalysis {
     // Second Order Correction
     Float_t X_S[3][2][2] = {0}; // [cent][row][col]
     Float_t X_N[3][2][2] = {0}; // [cent][row][col]
+
+    // z-vtx cut [cm]
+    Float_t z_max = 10; // or 30
 }
 
 void myAnalysis::init_hists() {
@@ -128,6 +131,7 @@ void myAnalysis::process_event(Long64_t start, Long64_t end) {
     T->SetBranchStatus("Q_S_y",    true);
     T->SetBranchStatus("Q_N_x",    true);
     T->SetBranchStatus("Q_N_y",    true);
+    T->SetBranchStatus("vtx_z",    true);
     // T->SetBranchStatus("totalMBD", true);
     T->SetBranchStatus("centrality", true);
 
@@ -137,6 +141,7 @@ void myAnalysis::process_event(Long64_t start, Long64_t end) {
     Float_t Q_N_y;
     Float_t totalMBD;
     Float_t cent;
+    Float_t z;
 
     // event counter
     UInt_t evt_ctr[3] = {0};
@@ -174,6 +179,7 @@ void myAnalysis::process_event(Long64_t start, Long64_t end) {
     T->SetBranchAddress("Q_N_y", &Q_N_y);
     // T->SetBranchAddress("totalMBD",   &totalMBD);
     T->SetBranchAddress("centrality", &cent);
+    T->SetBranchAddress("vtx_z", &z);
 
     end = (end) ? min(end, T->GetEntries()-1) : T->GetEntries()-1;
 
@@ -184,6 +190,9 @@ void myAnalysis::process_event(Long64_t start, Long64_t end) {
         if(i%100000 == 0) cout << "Progress: " << (i-start)*100./(end-start) << "%" << endl;
         // Load the data for the given tree entry
         T->GetEntry(i);
+
+        // ensure the z vertex is within range
+        if(abs(z) >= z_max) continue;
 
         // Int_t j = cent_dum_vec->FindBin(totalMBD)-1;
         Int_t j = cent_dum_vec->FindBin(cent)-1;
@@ -227,6 +236,9 @@ void myAnalysis::process_event(Long64_t start, Long64_t end) {
         if(i%100000 == 0) cout << "Progress: " << (i-start)*100./(end-start) << "%" << endl;
         // Load the data for the given tree entry
         T->GetEntry(i);
+
+        // ensure the z vertex is within range
+        if(abs(z) >= z_max) continue;
 
         // Int_t j = cent_dum_vec->FindBin(totalMBD)-1;
         Int_t j = cent_dum_vec->FindBin(cent)-1;
@@ -304,6 +316,9 @@ void myAnalysis::process_event(Long64_t start, Long64_t end) {
         if(i%100000 == 0) cout << "Progress: " << (i-start)*100./(end-start) << "%" << endl;
         // Load the data for the given tree entry
         T->GetEntry(i);
+
+        // ensure the z vertex is within range
+        if(abs(z) >= z_max) continue;
 
         // Int_t j = cent_dum_vec->FindBin(totalMBD)-1;
         Int_t j = cent_dum_vec->FindBin(cent)-1;

@@ -69,9 +69,9 @@ namespace myAnalysis {
     map<pair<string,string>, TH1F*> hNPi0;
     map<pair<string,string>, TH2F*> h2Pi0EtaPhi;
 
-    Int_t   bins_pi0_mass = 48;
+    Int_t   bins_pi0_mass = 56;
     Float_t hpi0_mass_min = 0;
-    Float_t hpi0_mass_max = 0.6;
+    Float_t hpi0_mass_max = 0.7;
 
     Int_t   bins_pt = 500;
     Float_t hpt_min = 0;
@@ -112,6 +112,9 @@ namespace myAnalysis {
     // Second Order Correction
     Float_t X_S[3][2][2] = {0}; // [cent][row][col], off diagonal entries are the same
     Float_t X_N[3][2][2] = {0}; // [cent][row][col], off diagonal entries are the same
+
+    // z-vtx cut [cm]
+    Float_t z_max = 10; // or 30
 }
 
 Int_t myAnalysis::init(const string &i_input, const string &i_cuts, const string& fitStats, const string& QVecCorr, Long64_t start, Long64_t end) {
@@ -403,6 +406,7 @@ void myAnalysis::process_event(Long64_t start, Long64_t end) {
     // T->SetBranchStatus("event",     true);
     // T->SetBranchStatus("totalMBD",  true);
     T->SetBranchStatus("centrality", true);
+    T->SetBranchStatus("vtx_z",      true);
     T->SetBranchStatus("pi0_mass",   true);
     T->SetBranchStatus("pi0_pt",     true);
     T->SetBranchStatus("asym",       true);
@@ -424,6 +428,7 @@ void myAnalysis::process_event(Long64_t start, Long64_t end) {
     // Int_t   event;
     Float_t totalMBD;
     Float_t cent;
+    Float_t z;
     vector<Float_t>* pi0_mass   = 0;
     vector<Float_t>* pi0_pt     = 0;
     vector<Float_t>* pi0_asym   = 0;
@@ -442,6 +447,7 @@ void myAnalysis::process_event(Long64_t start, Long64_t end) {
     // T->SetBranchAddress("event",     &event);
     // T->SetBranchAddress("totalMBD",   &totalMBD);
     T->SetBranchAddress("centrality", &cent);
+    T->SetBranchAddress("vtx_z",      &z);
     T->SetBranchAddress("pi0_mass",   &pi0_mass);
     T->SetBranchAddress("pi0_pt",     &pi0_pt);
     T->SetBranchAddress("asym",       &pi0_asym);
@@ -479,6 +485,9 @@ void myAnalysis::process_event(Long64_t start, Long64_t end) {
         if(i%100 == 0) cout << "Progress: " << (i-start)*100./(end-start) << "%" << endl;
         // Load the data for the given tree entry
         T->GetEntry(i);
+
+        // ensure the z vertex is within range
+        if(abs(z) >= z_max) continue;
 
         // Int_t cent_idx = cent_dum_vec->FindBin(totalMBD)-1;
         Int_t cent_idx = cent_dum_vec->FindBin(cent)-1;
