@@ -13,9 +13,10 @@ cuts=${3}
 fitStats=${4}
 Q_vec_corr=${5}
 output=${6}
+z=${7}
 
 # print the environment - needed for debugging
 printenv
 
 mkdir -p output
-$exe $input $cuts $fitStats $Q_vec_corr $output
+$exe $input $cuts $fitStats $Q_vec_corr $output $z
