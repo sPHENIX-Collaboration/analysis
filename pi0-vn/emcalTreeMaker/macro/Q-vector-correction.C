@@ -33,7 +33,7 @@ namespace myAnalysis {
     Int_t readFiles(const string &i_input, Long64_t start = 0, Long64_t end = 0);
     void init_hists();
 
-    void process_event(Long64_t start = 0, Long64_t end = 0);
+    void process_event(Float_t z_max = 10, Long64_t start = 0, Long64_t end = 0);
     void finalize(const string &i_output = "test.root", const string &i_output_csv = "test.csv");
 
     vector<string> cent_key = {"40-60", "20-40", "0-20"};
@@ -56,9 +56,6 @@ namespace myAnalysis {
     // Second Order Correction
     Float_t X_S[3][2][2] = {0}; // [cent][row][col]
     Float_t X_N[3][2][2] = {0}; // [cent][row][col]
-
-    // z-vtx cut [cm]
-    Float_t z_max = 10; // or 30
 }
 
 void myAnalysis::init_hists() {
@@ -119,7 +116,7 @@ Int_t myAnalysis::readFiles(const string &i_input, Long64_t start, Long64_t end)
     return 0;
 }
 
-void myAnalysis::process_event(Long64_t start, Long64_t end) {
+void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end) {
     cout << "======================================" << endl;
     cout << "Begin Process Event" << endl;
     cout << "======================================" << endl;
@@ -410,6 +407,7 @@ void myAnalysis::finalize(const string &i_output, const string &i_output_csv) {
 }
 
 void Q_vector_correction(const string &i_input,
+                         Float_t z                  = 10,
                          const string &i_output     = "test.root",
                          const string &i_output_csv = "test.csv",
                          Long64_t      start        = 0,
@@ -418,6 +416,7 @@ void Q_vector_correction(const string &i_input,
     cout << "#############################"     << endl;
     cout << "Run Parameters"                    << endl;
     cout << "inputFile: "       << i_input      << endl;
+    cout << "z: "               << z << endl;
     cout << "outputFile: "      << i_output     << endl;
     cout << "output CSV File: " << i_output_csv << endl;
     cout << "start: "           << start        << endl;
@@ -427,37 +426,42 @@ void Q_vector_correction(const string &i_input,
     Int_t ret = myAnalysis::init(i_input, start, end);
     if(ret != 0) return;
 
-    myAnalysis::process_event(start, end);
+    myAnalysis::process_event(z, start, end);
     myAnalysis::finalize(i_output, i_output_csv);
 }
 
 # ifndef __CINT__
 Int_t main(Int_t argc, char* argv[]) {
-if(argc < 2 || argc > 6){
-        cout << "usage: ./Q-vec-corr inputFile [outputFile] [output_csv] [start] [end] " << endl;
+if(argc < 2 || argc > 7){
+        cout << "usage: ./Q-vec-corr inputFile [z] [outputFile] [output_csv] [start] [end] " << endl;
         cout << "inputFile: containing list of root file paths" << endl;
+        cout << "z: z-vertex cut. Default: 10 cm. Range: 0 to 30 cm." << endl;
         cout << "outputFile: location of output file. Default: test.root." << endl;
         cout << "start: start event number. Default: 0." << endl;
         cout << "end: end event number. Default: 0. (to run over all entries)." << endl;
         return 1;
     }
 
+    Float_t z         = 10;
     string outputFile = "test.root";
     string output_csv = "test.csv";
     Long64_t start    = 0;
     Long64_t end      = 0;
 
     if(argc >= 3) {
-        outputFile = argv[2];
+        z = atof(argv[2]);
     }
     if(argc >= 4) {
-        output_csv = argv[3];
+        outputFile = argv[3];
     }
     if(argc >= 5) {
-        start = atol(argv[4]);
+        output_csv = argv[4];
     }
     if(argc >= 6) {
-        end = atol(argv[5]);
+        start = atol(argv[5]);
+    }
+    if(argc >= 7) {
+        end = atol(argv[6]);
     }
 
     // ensure that 0 <= start <= end
@@ -466,7 +470,7 @@ if(argc < 2 || argc > 6){
         return 1;
     }
 
-    Q_vector_correction(argv[1], outputFile, output_csv, start, end);
+    Q_vector_correction(argv[1], z, outputFile, output_csv, start, end);
 
     cout << "======================================" << endl;
     cout << "done" << endl;

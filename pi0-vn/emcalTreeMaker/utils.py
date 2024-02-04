@@ -26,6 +26,7 @@ pi0Ana.add_argument('-i', '--ntp-list', type=str, help='List of Ntuples', requir
 pi0Ana.add_argument('-c', '--cuts', type=str, help='List of cuts', required=True)
 pi0Ana.add_argument('-c2', '--csv', type=str, default="", help='CSV file with fitStats. Default: ""')
 pi0Ana.add_argument('-c3', '--Q-vec-corr', type=str, default="", help='CSV file with Q vector corrections. Default: ""')
+pi0Ana.add_argument('-z', '--vtx-z', type=float, default=10, help='Event z-vertex cut. Default: 10 [cm]')
 pi0Ana.add_argument('-m', '--macro', type=str, default='macro/pi0Analysis.C', help='pi0Analysis macro. Default: macro/pi0Analysis.C')
 pi0Ana.add_argument('-e', '--script', type=str, default='genPi0Ana.sh', help='Job script to execute. Default: genPi0Ana.sh')
 pi0Ana.add_argument('-b', '--executable', type=str, default='bin/pi0Ana', help='Executable. Default: bin/pi0Ana')
@@ -129,6 +130,7 @@ def create_pi0Ana_jobs():
     executable = os.path.realpath(args.executable)
     output_dir = os.path.realpath(args.output)
     memory     = args.memory
+    z          = args.vtx_z
     log        = args.log
 
     print(f'Macro: {macro}')
@@ -136,6 +138,7 @@ def create_pi0Ana_jobs():
     print(f'Cuts: {cuts}')
     print(f'FitStats: {fitStats}')
     print(f'Q Vector Correction: {Q_vec_corr}')
+    print(f'Vtx z max: {z} cm')
     print(f'Script: {script}')
     print(f'Executable: {executable}')
     print(f'Output Directory: {output_dir}')
@@ -163,7 +166,7 @@ def create_pi0Ana_jobs():
 
     with open(f'{output_dir}/genPi0Ana.sub', mode="w") as file:
         file.write(f'executable     = {os.path.basename(script)}\n')
-        file.write(f'arguments      = {output_dir}/{os.path.basename(executable)} $(input_ntp) {cuts} {fitStats} {Q_vec_corr} output/test-$(Process).root\n')
+        file.write(f'arguments      = {output_dir}/{os.path.basename(executable)} $(input_ntp) {cuts} {fitStats} {Q_vec_corr} output/test-$(Process).root {z}\n')
         file.write(f'log            = {log}\n')
         file.write( 'output         = stdout/job-$(Process).out\n')
         file.write( 'error          = error/job-$(Process).err\n')

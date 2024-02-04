@@ -45,7 +45,7 @@ namespace myAnalysis {
     Int_t readQVectorCorrection(const string &i_input);
     void init_hists();
 
-    void process_event(Long64_t start = 0, Long64_t end = 0);
+    void process_event(Float_t z_max = 10, Long64_t start = 0, Long64_t end = 0);
     void finalize(const string &i_output = "test.root");
 
     vector<string> cent_key = {"40-60", "20-40", "0-20"};
@@ -112,9 +112,6 @@ namespace myAnalysis {
     // Second Order Correction
     Float_t X_S[3][2][2] = {0}; // [cent][row][col], off diagonal entries are the same
     Float_t X_N[3][2][2] = {0}; // [cent][row][col], off diagonal entries are the same
-
-    // z-vtx cut [cm]
-    Float_t z_max = 10; // or 30
 }
 
 Int_t myAnalysis::init(const string &i_input, const string &i_cuts, const string& fitStats, const string& QVecCorr, Long64_t start, Long64_t end) {
@@ -394,7 +391,7 @@ void myAnalysis::init_hists() {
     }
 }
 
-void myAnalysis::process_event(Long64_t start, Long64_t end) {
+void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end) {
     cout << "======================================" << endl;
     cout << "Begin Process Event" << endl;
     cout << "======================================" << endl;
@@ -729,6 +726,7 @@ void pi0Analysis(const string &i_input,
                  const string &fitStats = "",
                  const string &QVecCorr  = "",
                  const string &i_output = "test.root",
+                 Float_t       z        = 10, /*cm*/
                  Long64_t      start    = 0,
                  Long64_t      end      = 0) {
 
@@ -739,6 +737,7 @@ void pi0Analysis(const string &i_input,
     cout << "fitStats: "   << fitStats << endl;
     cout << "QVecCorr: "   << QVecCorr << endl;
     cout << "outputFile: " << i_output << endl;
+    cout << "z: "          << z << endl;
     cout << "start: "      << start << endl;
     cout << "end: "        << end << endl;
     cout << "#############################" << endl;
@@ -746,18 +745,19 @@ void pi0Analysis(const string &i_input,
     Int_t ret = myAnalysis::init(i_input, i_cuts, fitStats, QVecCorr, start, end);
     if(ret != 0) return;
 
-    myAnalysis::process_event(start, end);
+    myAnalysis::process_event(z, start, end);
     myAnalysis::finalize(i_output);
 }
 
 # ifndef __CINT__
 Int_t main(Int_t argc, char* argv[]) {
-if(argc < 3 || argc > 8){
-        cout << "usage: ./pi0Ana inputFile cuts [fitStats] [QVecCorr] [outputFile] [start] [end] " << endl;
+if(argc < 3 || argc > 9){
+        cout << "usage: ./pi0Ana inputFile cuts [fitStats] [QVecCorr] [outputFile] [z] [start] [end] " << endl;
         cout << "inputFile: containing list of root file paths" << endl;
         cout << "cuts: csv file containing cuts" << endl;
         cout << "fitStats: csv file containing fit stats" << endl;
         cout << "QVecCorr: csv file containing Q vector corrections" << endl;
+        cout << "z: z-vertex cut. Default: 10 cm. Range: 0 to 30 cm." << endl;
         cout << "outputFile: location of output file. Default: test.root." << endl;
         cout << "start: start event number. Default: 0." << endl;
         cout << "end: end event number. Default: 0. (to run over all entries)." << endl;
@@ -767,6 +767,7 @@ if(argc < 3 || argc > 8){
     string fitStats   = "";
     string QVecCorr   = "";
     string outputFile = "test.root";
+    Float_t z         = 10;
     Long64_t start    = 0;
     Long64_t end      = 0;
 
@@ -780,10 +781,13 @@ if(argc < 3 || argc > 8){
         outputFile = argv[5];
     }
     if(argc >= 7) {
-        start = atol(argv[6]);
+        z = atof(argv[6]);
     }
     if(argc >= 8) {
-        end = atol(argv[7]);
+        start = atol(argv[7]);
+    }
+    if(argc >= 9) {
+        end = atol(argv[8]);
     }
 
     // ensure that 0 <= start <= end
@@ -792,7 +796,7 @@ if(argc < 3 || argc > 8){
         return 1;
     }
 
-    pi0Analysis(argv[1], argv[2], fitStats, QVecCorr, outputFile, start, end);
+    pi0Analysis(argv[1], argv[2], fitStats, QVecCorr, outputFile, z, start, end);
 
     cout << "======================================" << endl;
     cout << "done" << endl;
