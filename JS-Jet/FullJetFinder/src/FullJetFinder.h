@@ -97,7 +97,7 @@ class FullJetFinder : public SubsysReco {
       float jetptmax;
   };
 
-  struct nConstituent{
+  struct neConstituent{
     ParticleFlowElement::PFLOWTYPE pflowtype;
     float e;
     float eta;
@@ -136,7 +136,7 @@ class FullJetFinder : public SubsysReco {
       float phi;
       float m;
       float e;
-      std::vector<nConstituent> nConstituents;
+      std::vector<neConstituent> neConstituents;
       std::vector<chConstituent> chConstituents;
 
     using List = std::vector<RecoJets>;

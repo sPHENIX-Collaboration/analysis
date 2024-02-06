@@ -46,7 +46,7 @@ testexternals_SOURCES = testexternals.cc
 testexternals_LDADD   = libFullJetFinder.la
 
 testexternals.cc:
-	echo "//*** this is a generated file. Do not commit, do not edit" > $@	
+	echo "//*** this is a generated file. Do not commit, do not edit" > $@
 	echo "int main()" >> $@
 	echo "{" >> $@
 	echo "  return 0;" >> $@

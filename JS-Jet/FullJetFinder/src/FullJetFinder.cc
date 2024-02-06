@@ -380,12 +380,12 @@ vtx -0.000921115 0.00567926 2.26759*/
           recojet.chConstituents.push_back(track_properties);
         } // end if(pflow->get_track())
         else{ //neutral tracl
-          nConstituent neutral_properties;
+          neConstituent neutral_properties;
           neutral_properties.pflowtype = pflow->get_type();
           neutral_properties.e = pflow->get_e();
           neutral_properties.eta = pflow->get_eta();
           neutral_properties.phi = pflow->get_phi();
-          recojet.nConstituents.push_back(neutral_properties);
+          recojet.neConstituents.push_back(neutral_properties);
         }
       } // end for (const auto& comp : jet->get_comp_vec())
 

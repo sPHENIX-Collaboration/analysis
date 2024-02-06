@@ -54,6 +54,10 @@ void Fun4All_JetBkgd_Embed(
 
   std::string outputbase = output;
 
+  bool doCEMC = true;
+  bool doIHCAL = true;
+  bool doOHCAL = true;
+
   //-----------------------------------
   // Fun4All server initialization
   //-----------------------------------
@@ -65,7 +69,7 @@ void Fun4All_JetBkgd_Embed(
   recoConsts *rc = recoConsts::instance();
   
   rc->set_StringFlag("CDB_GLOBALTAG","ProdA_2023");
-  rc->set_uint64Flag("TIMESTAMP",23696);
+  rc->set_uint64Flag("TIMESTAMP",23745);
 
 
   CentralityReco *cent = new CentralityReco("CentralityReco");
@@ -104,43 +108,48 @@ void Fun4All_JetBkgd_Embed(
   */
 
 
-  CaloTowerStatus *statusEMC = new CaloTowerStatus("CEMCSTATUS");
-  statusEMC->set_detector_type(CaloTowerDefs::CEMC);
-  statusEMC->set_time_cut(1);
-  statusEMC->set_inputNodePrefix("TOWERINFO_CALIB_");
-  se->registerSubsystem(statusEMC);
+  if(doCEMC){
+    CaloTowerStatus *statusEMC = new CaloTowerStatus("CEMCSTATUS");
+    statusEMC->set_detector_type(CaloTowerDefs::CEMC);
+    statusEMC->set_time_cut(1);
+    statusEMC->set_inputNodePrefix("TOWERINFO_CALIB_");
+    se->registerSubsystem(statusEMC);
 
-  CaloTowerStatus *statusIHCAL = new CaloTowerStatus("IHCALSTATUS");
-  statusIHCAL->set_detector_type(CaloTowerDefs::HCALIN);
-  statusIHCAL->set_time_cut(2);
-  statusIHCAL->set_inputNodePrefix("TOWERINFO_CALIB_");
-  se->registerSubsystem(statusIHCAL);
+    caloTowerEmbed *embedder_CEMC = new caloTowerEmbed("embedder_CEMC");
+    embedder_CEMC->set_detector_type(CaloTowerDefs::CEMC);
+    embedder_CEMC->set_removeBadTowers(true);
+    embedder_CEMC->set_inputNodePrefix("TOWERINFO_CALIB_");
+    se->registerSubsystem(embedder_CEMC);
+  }
 
+  if(doIHCAL){
+    CaloTowerStatus *statusIHCAL = new CaloTowerStatus("IHCALSTATUS");
+    statusIHCAL->set_detector_type(CaloTowerDefs::HCALIN);
+    statusIHCAL->set_time_cut(2);
+    statusIHCAL->set_inputNodePrefix("TOWERINFO_CALIB_");
+    se->registerSubsystem(statusIHCAL);
 
-  CaloTowerStatus *statusOHCAL = new CaloTowerStatus("OHCALSTATUS");
-  statusOHCAL->set_detector_type(CaloTowerDefs::HCALOUT);
-  statusOHCAL->set_time_cut(2);
-  statusOHCAL->set_inputNodePrefix("TOWERINFO_CALIB_");
-  se->registerSubsystem(statusOHCAL);
+    caloTowerEmbed *embedder_IHCAL = new caloTowerEmbed("embedder_IHCAL");
+    embedder_IHCAL->set_detector_type(CaloTowerDefs::HCALIN);
+    embedder_IHCAL->set_removeBadTowers(true);
+    embedder_IHCAL->set_inputNodePrefix("TOWERINFO_CALIB_");
+    se->registerSubsystem(embedder_IHCAL);
+  }
 
+  if(doOHCAL){
+    caloTowerEmbed *embedder_OHCAL = new caloTowerEmbed("embedder_OHCal");
+    embedder_OHCAL->set_detector_type(CaloTowerDefs::HCALOUT);
+    embedder_OHCAL->set_removeBadTowers(true);
+    embedder_OHCAL->set_inputNodePrefix("TOWERINFO_CALIB_");
+    se->registerSubsystem(embedder_OHCAL);
+    
+    CaloTowerStatus *statusOHCAL = new CaloTowerStatus("OHCALSTATUS");
+    statusOHCAL->set_detector_type(CaloTowerDefs::HCALOUT);
+    statusOHCAL->set_time_cut(2);
+    statusOHCAL->set_inputNodePrefix("TOWERINFO_CALIB_");
+    se->registerSubsystem(statusOHCAL);
+  }
 
-  caloTowerEmbed *embedder_CEMC = new caloTowerEmbed("embedder_CEMC");
-  embedder_CEMC->set_detector_type(CaloTowerDefs::CEMC);
-  embedder_CEMC->set_inputNodePrefix("TOWERINFO_CALIB_");
-  se->registerSubsystem(embedder_CEMC);
-
-  caloTowerEmbed *embedder_IHCAL = new caloTowerEmbed("embedder_IHCAL");
-  embedder_IHCAL->set_detector_type(CaloTowerDefs::HCALIN);
-  embedder_IHCAL->set_inputNodePrefix("TOWERINFO_CALIB_");
-  se->registerSubsystem(embedder_IHCAL);
-
-  caloTowerEmbed *embedder_OHCAL = new caloTowerEmbed("embedder_OHCal");
-  embedder_OHCAL->set_detector_type(CaloTowerDefs::HCALOUT);
-  embedder_OHCAL->set_inputNodePrefix("TOWERINFO_CALIB_");
-  se->registerSubsystem(embedder_OHCAL);
-
-
-  
   // ==============
   // Jet Bkgd Sub
   // ==============
@@ -148,18 +157,17 @@ void Fun4All_JetBkgd_Embed(
   double etamax = 1.1 - jet_parameter;
   //data
   JetBkgdSub *myJetTree = new JetBkgdSub(jet_parameter,outputbase + ".root");
-  TowerJetInput *inputCEMC = new TowerJetInput(Jet::CEMC_TOWERINFO);
-  myJetTree->add_input(inputCEMC);
-  TowerJetInput *inputIHCAL = new TowerJetInput(Jet::HCALIN_TOWERINFO);
-  myJetTree->add_input(inputIHCAL);
-  TowerJetInput *inputOHCAL = new TowerJetInput(Jet::HCALOUT_TOWERINFO);
-  myJetTree->add_input(inputOHCAL);
+  if(doCEMC) myJetTree->add_input(new TowerJetInput(Jet::CEMC_TOWERINFO));
+  if(doIHCAL) myJetTree->add_input(new TowerJetInput(Jet::HCALIN_TOWERINFO));
+  if(doOHCAL) myJetTree->add_input(new TowerJetInput(Jet::HCALOUT_TOWERINFO));
   myJetTree->doIterative(false);
   myJetTree->doAreaSub(true);
   myJetTree->doMultSub(false);
   myJetTree->doTruth(false);
   myJetTree->doData(true);
   myJetTree->doEmbed(false);
+  myJetTree->doTowerECut(true);
+  myJetTree->setTowerThreshold(0.05);
   myJetTree->setMinRecoPt(5.0); // only sets range for reco jets
   myJetTree->setEtaRange(etamin, etamax);
   myJetTree->setPtRange(10, 100); // only sets range for truth jets
@@ -169,18 +177,17 @@ void Fun4All_JetBkgd_Embed(
 
   //embed
   JetBkgdSub *myJetTreeEmbed = new JetBkgdSub(jet_parameter,outputbase + "_embed.root");
-  TowerJetInput *inputCEMCEmbed = new TowerJetInput(Jet::CEMC_TOWERINFO_EMBED);
-  myJetTreeEmbed->add_input(inputCEMCEmbed);
-  TowerJetInput *inputIHCALEmbed = new TowerJetInput(Jet::HCALIN_TOWERINFO_EMBED);
-  myJetTreeEmbed->add_input(inputIHCALEmbed);
-  TowerJetInput *inputOHCALEmbed = new TowerJetInput(Jet::HCALOUT_TOWERINFO_EMBED);
-  myJetTreeEmbed->add_input(inputOHCALEmbed);
+  if(doCEMC) myJetTreeEmbed->add_input(new TowerJetInput(Jet::CEMC_TOWERINFO_EMBED));
+  if(doIHCAL) myJetTreeEmbed->add_input(new TowerJetInput(Jet::HCALIN_TOWERINFO_EMBED));
+  if(doOHCAL) myJetTreeEmbed->add_input(new TowerJetInput(Jet::HCALOUT_TOWERINFO_EMBED));
   myJetTreeEmbed->doIterative(false);
   myJetTreeEmbed->doAreaSub(true);
   myJetTreeEmbed->doMultSub(false);
   myJetTreeEmbed->doTruth(false);
   myJetTreeEmbed->doData(true);
   myJetTreeEmbed->doEmbed(true);
+  myJetTreeEmbed->doTowerECut(true);
+  myJetTreeEmbed->setTowerThreshold(0.05);
   myJetTreeEmbed->setMinRecoPt(5.0); // only sets range for reco jets
   myJetTreeEmbed->setEtaRange(etamin, etamax);
   myJetTreeEmbed->setPtRange(10, 100); // only sets range for truth jets
@@ -189,18 +196,17 @@ void Fun4All_JetBkgd_Embed(
 
   //sim
   JetBkgdSub *myJetTreeSim = new JetBkgdSub(jet_parameter,outputbase + "_sim.root");
-  TowerJetInput *inputCEMCSim = new TowerJetInput(Jet::CEMC_TOWERINFO_SIM);
-  myJetTreeSim->add_input(inputCEMCSim);
-  TowerJetInput *inputIHCALSim = new TowerJetInput(Jet::HCALIN_TOWERINFO_SIM);
-  myJetTreeSim->add_input(inputIHCALSim);
-  TowerJetInput *inputOHCALSim = new TowerJetInput(Jet::HCALOUT_TOWERINFO_SIM);
-  myJetTreeSim->add_input(inputOHCALSim);
+  if(doCEMC) myJetTreeSim->add_input(new TowerJetInput(Jet::CEMC_TOWERINFO_SIM));
+  if(doIHCAL) myJetTreeSim->add_input(new TowerJetInput(Jet::HCALIN_TOWERINFO_SIM));
+  if(doOHCAL) myJetTreeSim->add_input(new TowerJetInput(Jet::HCALOUT_TOWERINFO_SIM));
   myJetTreeSim->doIterative(false);
   myJetTreeSim->doAreaSub(true);
   myJetTreeSim->doMultSub(false);
   myJetTreeSim->doTruth(false);
   myJetTreeSim->doData(false);
   myJetTreeSim->doEmbed(false);
+  myJetTreeSim->doTowerECut(true);
+  myJetTreeSim->setTowerThreshold(0.05);
   myJetTreeSim->setMinRecoPt(5.0); // only sets range for reco jets
   myJetTreeSim->setEtaRange(etamin, etamax);
   myJetTreeSim->setPtRange(10, 100); // only sets range for truth jets
