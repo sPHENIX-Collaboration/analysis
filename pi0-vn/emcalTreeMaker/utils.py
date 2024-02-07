@@ -156,22 +156,36 @@ def create_pi0Ana_jobs():
     if(Q_vec_corr != ''):
         shutil.copy(Q_vec_corr, output_dir)
 
-    os.makedirs(f'{output_dir}/stdout',exist_ok=True)
-    os.makedirs(f'{output_dir}/error',exist_ok=True)
-    os.makedirs(f'{output_dir}/output',exist_ok=True)
-
     cuts       = f'{output_dir}/{os.path.basename(cuts)}'
     fitStats   = f'{output_dir}/{os.path.basename(fitStats)}' if(fitStats != '') else r'\"\"'
     Q_vec_corr = f'{output_dir}/{os.path.basename(Q_vec_corr)}' if(Q_vec_corr != '') else r'\"\"'
 
-    with open(f'{output_dir}/genPi0Ana.sub', mode="w") as file:
-        file.write(f'executable     = {os.path.basename(script)}\n')
-        file.write(f'arguments      = {output_dir}/{os.path.basename(executable)} $(input_ntp) {cuts} {fitStats} {Q_vec_corr} output/test-$(Process).root {z}\n')
-        file.write(f'log            = {log}\n')
-        file.write( 'output         = stdout/job-$(Process).out\n')
-        file.write( 'error          = error/job-$(Process).err\n')
-        file.write(f'request_memory = {memory}GB\n')
-        file.write(f'queue input_ntp from {os.path.basename(ntp_list)}')
+    sub = ''
+    with open(ntp_list) as file:
+        for line in file:
+            line = line.rstrip() # remove \n from the end of the string
+            run = os.path.splitext(os.path.basename(line))[0] # extract the run number from the file name
+
+            print(f'Run: {run}')
+            os.makedirs(f'{output_dir}/{run}/stdout',exist_ok=True)
+            os.makedirs(f'{output_dir}/{run}/error',exist_ok=True)
+            os.makedirs(f'{output_dir}/{run}/output',exist_ok=True)
+
+            shutil.copy(line, f'{output_dir}/{run}')
+
+            with open(f'{output_dir}/{run}/genPi0Ana.sub', mode="w") as file2:
+                file2.write(f'executable     = ../{os.path.basename(script)}\n')
+                file2.write(f'arguments      = {output_dir}/{os.path.basename(executable)} $(input_ntp) {cuts} {fitStats} {Q_vec_corr} output/test-$(Process).root {z}\n')
+                file2.write(f'log            = {log}\n')
+                file2.write( 'output         = stdout/job-$(Process).out\n')
+                file2.write( 'error          = error/job-$(Process).err\n')
+                file2.write(f'request_memory = {memory}GB\n')
+                file2.write(f'queue input_ntp from {os.path.basename(line)}')
+
+            sub = f'{sub} cd {output_dir}/{run} && condor_submit genPi0Ana.sub &&'
+
+    # print condor submission command
+    print(sub)
 
 if __name__ == '__main__':
     if(args.command == 'f4a'):
