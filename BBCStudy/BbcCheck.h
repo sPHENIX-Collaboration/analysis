@@ -90,7 +90,7 @@ private:
   TGraphErrors *g_bbcq[128];   // q in each tube
   TH1 *h_bbcqtot[2];  // total q in bbc arms
   TH1 *h_bbcqsum;     // total q in bbc arms
-  TH2 *h2_bbcqtot;    // north q vs south q
+  TH2 *h2_bbcqsum;    // north q vs south q
 
   TH1 *h_emcale;
   TH1 *h_emcaltimecut;

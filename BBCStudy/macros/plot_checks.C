@@ -1,18 +1,30 @@
 #include "get_runstr.h"
 #include <iostream>
 #include <fstream>
+#include <TGraphErrors.h>
+#include <TString.h>
 
 int do_zdc = 0;
 int do_emcal = 0;
 int do_ohcal = 0;
 int do_ihcal = 0;
-int calc_gain_corr = 0;
+int calc_gain_corr = 1;
 
 const int MAXRUNS = 20000;
-Double_t bqmean[MAXRUNS][128];
+Double_t bqmeansum[MAXRUNS];            // bq mean in sum of two arms
+Double_t bqmeansumerr[MAXRUNS];
+Double_t bqmeantot[2][MAXRUNS];         // bq mean in each arm
+Double_t bqmeantoterr[2][MAXRUNS];
+Double_t bqmean[128][MAXRUNS];
+Double_t bqmeanerr[128][MAXRUNS];
+Double_t runindex[MAXRUNS];
+TGraphErrors *g_meansum {nullptr};
+TGraphErrors *g_meantot[2] {nullptr};
+TGraphErrors *g_mean[128] {nullptr};
 
 TFile *tfile[MAXRUNS];
 TH1 *h_bbcqsum[MAXRUNS];
+TH1 *h_bbcqtot[2][MAXRUNS];
 TH1 *h_bbcq[MAXRUNS][128];
 TH2 *h2_bbcq[128];
 
@@ -21,18 +33,57 @@ TH1 *h_emcale[MAXRUNS];
 TH1 *h_ohcale[MAXRUNS];
 TH1 *h_ihcale[MAXRUNS];
 
+
+// Get mean gain for each channel across runs, and write out the values
+void fit_across_runs(TGraphErrors *gainvals[], const char *flist)
+{
+  TString meangainfname = "results/"; meangainfname.Append( flist );
+  meangainfname.ReplaceAll(".list","_qmean.calib");
+  ofstream meangainfile( meangainfname );
+  TF1 *f_meangain[128] {nullptr};
+  Double_t grp_mean[128];
+  Double_t grp_meanerr[128];
+  for (int ipmt=0; ipmt<128; ipmt++)
+  {
+    TString name = "f_meangain"; name += ipmt;
+    f_meangain[ipmt] = new TF1(name,"pol0",0,1e9);
+    gainvals[ipmt]->Fit(f_meangain[ipmt]);
+    gPad->Update();
+    gPad->Modified();
+    grp_mean[ipmt] = f_meangain[ipmt]->GetParameter(0);
+    grp_meanerr[ipmt] = f_meangain[ipmt]->GetParError(0);
+
+    meangainfile << ipmt << "\t" << grp_mean[ipmt] << "\t" << grp_meanerr[ipmt] << endl;
+    cout << ipmt << "\t" << grp_mean[ipmt] << "\t" << grp_meanerr[ipmt] << endl;
+  }
+  meangainfile.close();
+}
+
 void plot_checks(const char *flistname = "c.list")
 {
 
   ifstream flist(flistname);
 
-  TString name;
+  TString dir = "results/plot_checks_"; dir += flistname;
+  dir.ReplaceAll(".list","/");
+  TString name = "mkdir -p " + dir;
+  gSystem->Exec( name );
+
   TString dstfname;
   int nruns = 0;
   while ( flist >> dstfname )
   {
     tfile[nruns] = new TFile(dstfname,"READ");
     h_bbcqsum[nruns] = (TH1*)tfile[nruns]->Get("h_bbcqsum");
+    h_bbcqtot[0][nruns] = (TH1*)tfile[nruns]->Get("h_bbcqtot0");
+    h_bbcqtot[1][nruns] = (TH1*)tfile[nruns]->Get("h_bbcqtot1");
+    bqmeansum[nruns] = h_bbcqsum[nruns]->GetMean();
+    bqmeansumerr[nruns] = h_bbcqsum[nruns]->GetMeanError();
+    bqmeantot[0][nruns] = h_bbcqtot[0][nruns]->GetMean();
+    bqmeantoterr[0][nruns] = h_bbcqtot[0][nruns]->GetMeanError();
+    bqmeantot[1][nruns] = h_bbcqtot[0][nruns]->GetMean();
+    bqmeantoterr[1][nruns] = h_bbcqtot[0][nruns]->GetMeanError();
+
     h_zdce[nruns] = (TH1*)tfile[nruns]->Get("h_zdce");
     h_emcale[nruns] = (TH1*)tfile[nruns]->Get("h_emcale");
     h_ohcale[nruns] = (TH1*)tfile[nruns]->Get("h_ohcale");
@@ -42,15 +93,53 @@ void plot_checks(const char *flistname = "c.list")
     {
       name = "h_bbcq"; name += ipmt;
       h_bbcq[nruns][ipmt] = (TH1*)tfile[nruns]->Get(name);
-      bqmean[nruns][ipmt] = h_bbcq[nruns][ipmt]->GetMean();
+      bqmean[ipmt][nruns] = h_bbcq[nruns][ipmt]->GetMean();
+      bqmeanerr[ipmt][nruns] = h_bbcq[nruns][ipmt]->GetMeanError();
     }
 
+    runindex[nruns] = nruns;
     nruns++;
   }
   cout << "Processed " << nruns << " runs." << endl;
 
+  TCanvas *bc = new TCanvas("bc","mean fits",800,600);
+  TString title;
+  TString meangainfname = dir + flistname;
+  meangainfname.ReplaceAll(".list","_qmean.calib");
+  ofstream meanfile( meangainfname );
+  TF1 *meanfit = new TF1("meanfit","pol0",0,nruns);
+  double runmean[128];
+  double runmeanerr[128];
+  double chi2ndf[128];
+  for (int ipmt=0; ipmt<128; ipmt++)
+  {
+    g_mean[ipmt] = new TGraphErrors(nruns,runindex,bqmean[ipmt],0,bqmeanerr[ipmt]);
+    name = "q_mean"; name += ipmt;
+    title = name;
+    g_mean[ipmt]->SetName( name );
+    g_mean[ipmt]->SetTitle( title );
+
+    g_mean[ipmt]->Draw("ap");
+    meanfit->SetParameter(0,100);
+    g_mean[ipmt]->Fit(meanfit,"R");
+    gPad->Modified();
+    gPad->Update();
+
+    runmean[ipmt] = meanfit->GetParameter(0);
+    runmeanerr[ipmt] = meanfit->GetParError(0);
+    Double_t chi2 = meanfit->GetChisquare();
+    Double_t ndf = meanfit->GetNDF();
+    chi2ndf[ipmt] = chi2/ndf;
+
+    meanfile << ipmt << "\t" << runmean[ipmt] << "\t" << runmeanerr[ipmt] << "\t" << chi2ndf[ipmt] << endl;
+    cout << ipmt << "\t" << runmean[ipmt] << "\t" << runmeanerr[ipmt] << "\t" << chi2ndf[ipmt] << endl;
+  }
+  meanfile.close();
+
   // Make vs run index plots
   TH2 *h2_bbcqsum_vs_run = new TH2F("h2_bbcqsum_vs_run","bbc qsum vs run",nruns,0,nruns,3000,0,3000);
+  TH2 *h2_bbcqs_vs_run = new TH2F("h2_bbcqs_vs_run","bbc south qsum vs run",nruns,0,nruns,1400,0,1400);
+  TH2 *h2_bbcqn_vs_run = new TH2F("h2_bbcqn_vs_run","bbc north qsum vs run",nruns,0,nruns,1400,0,1400);
   for (int ipmt=0; ipmt<128; ipmt++)
   {
     name = "h2_bbcq"; name += ipmt;
@@ -98,6 +187,14 @@ void plot_checks(const char *flistname = "c.list")
       Float_t val = h_bbcqsum[irun]->GetBinContent(ibin);
       Float_t qsum = h_bbcqsum[irun]->GetBinCenter(ibin);
       h2_bbcqsum_vs_run->Fill( irun, qsum, val );
+
+      val = h_bbcqtot[0][irun]->GetBinContent(ibin);
+      qsum = h_bbcqtot[0][irun]->GetBinCenter(ibin);
+      h2_bbcqs_vs_run->Fill( irun, qsum, val );
+
+      val = h_bbcqtot[1][irun]->GetBinContent(ibin);
+      qsum = h_bbcqtot[1][irun]->GetBinCenter(ibin);
+      h2_bbcqn_vs_run->Fill( irun, qsum, val );
     }
 
     for (int ipmt=0; ipmt<128; ipmt++)
@@ -161,22 +258,71 @@ void plot_checks(const char *flistname = "c.list")
   TCanvas *ac[100];
   int icv = 0;
 
-  ac[icv] = new TCanvas("mbdq_vs_run","MBD Q vs Run",800,600);
+  ac[icv] = new TCanvas("mbdq_vs_run2d","MBD Q vs Run",800,600);
   h2_bbcqsum_vs_run->SetMinimum(1e-5);
   h2_bbcqsum_vs_run->DrawCopy("colz");
   gPad->SetLogz(1);
 
-  ac[++icv] = new TCanvas("mbdq_vs_run_low","MBD Q vs Run",1200,800);
+  ac[++icv] = new TCanvas("mbdqs_vs_run2d","MBD Q.S vs Run",800,600);
+  h2_bbcqs_vs_run->SetMinimum(1e-6);
+  h2_bbcqs_vs_run->DrawCopy("colz");
+  gPad->SetLogz(1);
+
+  ac[++icv] = new TCanvas("mbdqn_vs_run2d","MBD Q.N vs Run",800,600);
+  h2_bbcqn_vs_run->SetMinimum(1e-6);
+  h2_bbcqn_vs_run->DrawCopy("colz");
+  gPad->SetLogz(1);
+
+  ac[++icv] = new TCanvas("mbdq_vs_run","MBD Qsum vs Run",800,600);
+  g_meansum = new TGraphErrors(nruns,runindex,bqmeansum,0,bqmeansumerr);
+  name = "q_meansum";
+  title = name;
+  g_meansum->SetName( name );
+  g_meansum->SetTitle( title );
+  g_meansum->SetMarkerStyle(20);
+  g_meansum->Draw("ap");
+
+  ac[++icv] = new TCanvas("mbdqs_vs_run","MBD Q.S vs Run",800,600);
+  g_meantot[0] = new TGraphErrors(nruns,runindex,bqmeantot[0],0,bqmeantoterr[0]);
+  name = "q_meantot0";
+  title = name;
+  g_meantot[0]->SetName( name );
+  g_meantot[0]->SetTitle( title );
+  g_meantot[0]->SetMarkerStyle(20);
+  g_meantot[0]->Draw("ap");
+
+  ac[++icv] = new TCanvas("mbdqn_vs_run","MBD Q.N vs Run",800,600);
+  g_meantot[1] = new TGraphErrors(nruns,runindex,bqmeantot[1],0,bqmeantoterr[1]);
+  name = "q_meantot1";
+  title = name;
+  g_meantot[1]->SetName( name );
+  g_meantot[1]->SetTitle( title );
+  g_meantot[1]->SetMarkerStyle(20);
+  g_meantot[1]->Draw("ap");
+
+  ac[++icv] = new TCanvas("mbdq_vs_run_ch","MBD Q vs Run",1200,800);
   for (int ipmt=0; ipmt<128; ipmt++)
   {
-    //h2_bbcq[ipmt]->GetYaxis()->SetRangeUser(0,4);
     h2_bbcq[ipmt]->Draw("colz");
     gPad->SetLogz(1);
 
-    name = h2_bbcq[ipmt]->GetName(); name += ".png";
-    cout << name << endl;
+    name = dir; name += h2_bbcq[ipmt]->GetName(); name += ".png";
+    //cout << name << endl;
     ac[icv]->Print( name );
   }
+
+  /*
+  ac[++icv] = new TCanvas("mbdq_vs_run_ch_low","MBD Q vs Run, Low",1200,800);
+  for (int ipmt=0; ipmt<128; ipmt++)
+  {
+    h2_bbcq[ipmt]->GetYaxis()->SetRangeUser(0,4);
+    h2_bbcq[ipmt]->Draw("colz");
+
+    name = dir; name += h2_bbcq[ipmt]->GetName(); name += "_low.png";
+    //cout << name << endl;
+    ac[icv]->Print( name );
+  }
+  */
 
   int run1 = 0;
   int run2 = 1;
@@ -187,7 +333,7 @@ void plot_checks(const char *flistname = "c.list")
      h_bbcqsum[run2]->SetLineColor(2); 
      h_bbcqsum[run2]->Draw("histsame"); 
      gPad->SetLogy(1);
-     */
+  */
 
   if ( do_zdc )
   {
@@ -249,7 +395,7 @@ void plot_checks(const char *flistname = "c.list")
   // find gain corrections
   if ( calc_gain_corr )
   {
-    int refrun = 64;  // index of reference run
+    //int refrun = 0;  // index of reference run
     flist.clear();
     flist.seekg(0);
     int irun = 0;
@@ -261,17 +407,18 @@ void plot_checks(const char *flistname = "c.list")
       dir += "/";
       name = "mkdir -p " + dir;
       gSystem->Exec( name );
-      name = dir + "mbd_gaincorr2.calib";
+      name = dir + "mbd_gaincorrmean.calib";
       gaincorr_calfile.open( name );
 
       cout << name << endl;
 
       for (int ipmt=0; ipmt<128; ipmt++)
       {
-        double corr = bqmean[irun][ipmt] / bqmean[refrun][ipmt];
+        double corr = bqmean[ipmt][irun] / runmean[ipmt];
+        //double corr = bqmean[ipmt][irun] / bqmean[refun][ipmt];
         if ( fabs(corr-1.0)>0.01 )
         {
-          cout << irun << "\t" << refrun << "\t" << ipmt << "\t" << corr << endl;
+          cout << irun << "\t" << ipmt << "\t" << corr << endl;
         }
         gaincorr_calfile << ipmt << "\t" << corr << endl;
       }

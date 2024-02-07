@@ -91,7 +91,7 @@ int BbcCheck::Init(PHCompositeNode *topNode)
   {
     name = "h_bbcqtot"; name += iarm;
     title = "bbc charge, arm "; title += iarm;
-    h_bbcqtot[iarm] = new TH1F(name,title,1200,0,120*60); // npe for 1 mip = 120, and up to 30 mips are possible
+    h_bbcqtot[iarm] = new TH1F(name,title,1400,0,1400); // npe for 1 mip = 120, and up to 30 mips are possible
 
     //
     name = "hevt_bbct"; name += iarm;
@@ -99,8 +99,8 @@ int BbcCheck::Init(PHCompositeNode *topNode)
     hevt_bbct[iarm] = new TH1F(name,title,200,7.5,11.5);
     hevt_bbct[iarm]->SetLineColor(4);
   }
-  h_bbcqsum = new TH1F("h_bbcqsum","MBD/BBC north + south charge sum",3000,0,3000);
-  h2_bbcqtot = new TH2F("h2_bbcqtot","north BBCQ vs South BBCQ",300,0,120*900,300,0,120*900);
+  h_bbcqsum = new TH1F("h_bbcqsum","MBD/BBC north + south charge sum",3000,0.,3000.);
+  h2_bbcqsum = new TH2F("h2_bbcqsum","north BBCQ vs South BBCQ",1400,0.,1400.,1400,0.,1400.);
 
   h_zdce = new TH1F("h_zdce","ZDC Energy",820,-50,4050);
   h_zdctimecut = new TH1F("h_zdctimecut", "zdctimecut", 50, -17.5 , 32.5);
@@ -203,6 +203,10 @@ int BbcCheck::End(PHCompositeNode *topNode)
   Double_t nevents = h_bbcqsum->Integral();
   Double_t norm = 1.0/nevents;
   h_bbcqsum->Scale( norm );
+  h2_bbcqsum->Scale( norm );
+
+  h_bbcqtot[0]->Scale( norm );
+  h_bbcqtot[1]->Scale( norm );
 
   for (int ipmt=0; ipmt<BBC_N_PMT; ipmt++)
   {
@@ -263,6 +267,9 @@ void BbcCheck::CheckDST(PHCompositeNode *topNode)
   Float_t r = 1.0;
 
   h_bbcqsum->Fill( (bqn+bqs)*r );
+  h_bbcqtot[0]->Fill( bqs*r );
+  h_bbcqtot[1]->Fill( bqn*r );
+  h2_bbcqsum->Fill( bqn*r, bqs*r );
 
   // Fill info from each PMT
   for (int ipmt=0; ipmt<_bbcpmts->get_npmt(); ipmt++)
