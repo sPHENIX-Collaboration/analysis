@@ -27,7 +27,7 @@ R__LOAD_LIBRARY(libcalo_reco.so)
 R__LOAD_LIBRARY(libffamodules.so)
 R__LOAD_LIBRARY(libHCalCalibTree.so)
 
-void Fun4All_HCalCalib(int nevents = 0, const std::string &fname = "/sphenix/user/hanpuj/HCalCosmicCalib/prdf_file/cosmics-00026818-0000.prdf") {
+void Fun4All_HCalCalib(int nevents = 0, const std::string &fname = "/sphenix/user/hanpuj/HCalCosmicCalib/prdf_file/cosmics-00028508-0000.prdf") {
     Fun4AllServer *se = Fun4AllServer::instance();
     se->Verbosity(0);
     recoConsts *rc = recoConsts::instance();
@@ -48,6 +48,7 @@ void Fun4All_HCalCalib(int nevents = 0, const std::string &fname = "/sphenix/use
     ca2->set_processing_type(CaloWaveformProcessing::TEMPLATE);//TEMPLATE
     ca2->set_builder_type(CaloTowerDefs::kWaveformTowerv2);
     ca2->set_outputNodePrefix("TOWERSV2_");
+    ca2->set_softwarezerosuppression(true, 200);
     se->registerSubsystem(ca2);
 
     CaloTowerBuilder *ca3 = new CaloTowerBuilder();
@@ -56,13 +57,14 @@ void Fun4All_HCalCalib(int nevents = 0, const std::string &fname = "/sphenix/use
     ca3->set_processing_type(CaloWaveformProcessing::TEMPLATE);//TEMPLATE
     ca3->set_builder_type(CaloTowerDefs::kWaveformTowerv2);
     ca3->set_outputNodePrefix("TOWERSV2_");
+    ca3->set_softwarezerosuppression(true, 200);
     se->registerSubsystem(ca3);
 
-    HCalCalibTree *wt2 = new HCalCalibTree("HCalCalib_TREE_2","ihcal_hist.root");
+    HCalCalibTree *wt2 = new HCalCalibTree("HCalCalib_TREE_2","ihcal_hist.root", "TOWERSV2_");
     wt2->Detector("HCALIN");
     se->registerSubsystem(wt2);
 
-    HCalCalibTree *wt3 = new HCalCalibTree("HCalCalib_TREE_3","ohcal_hist.root");
+    HCalCalibTree *wt3 = new HCalCalibTree("HCalCalib_TREE_3","ohcal_hist.root", "TOWERSV2_");
     wt3->Detector("HCALOUT");
     se->registerSubsystem(wt3);
 

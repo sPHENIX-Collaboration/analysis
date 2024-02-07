@@ -31,6 +31,9 @@ public:
     void doAreaSub(bool b = true) { _doAreaSub = b; }
     void doMultSub(bool b = true) { _doMultSub = b; }
     void doTruth(bool b = true) { _doTruth = b; }
+    void doData(bool b = true) { _doData = b; }
+    void doEmbed(bool b = true) { _doEmbed = b;}
+    void doTowerECut(bool b = true) { _doTowerECut = b;}
 
     void setEtaRange(double low, double high)
     {
@@ -45,6 +48,10 @@ public:
     }
 
     void setMinRecoPt(double pt) { _minrecopT = pt; }
+
+    void setVzCut(double cut) { m_vtxZ_cut = cut; }
+
+    void setTowerThreshold(double threshold) { m_towerThreshold = threshold;}
 
     void add_input(JetInput *input) { _inputs.push_back(input); }
     
@@ -73,12 +80,16 @@ private:
     std::pair<double, double> m_etaRange;
     std::pair<double, double> m_ptRange;
     double _minrecopT;
+    double m_vtxZ_cut;
+    double m_towerThreshold;
     std::vector<JetInput *> _inputs;
     bool _doIterative;
     bool _doAreaSub;
     bool _doMultSub;
     bool _doTruth;
-
+    bool _doData;
+    bool _doEmbed;
+    bool _doTowerECut;
 
     //____________________________________________________________________________..
     // output tree variables
@@ -88,8 +99,15 @@ private:
     int m_iter_jets;
     int m_truth_jets;
     int m_centrality;
+    double m_mbd_NS;
     double m_rho_area;
     double m_rho_area_sigma;  
+    double m_rho_area_CEMC;
+    double m_rho_area_sigma_CEMC;  
+    double m_rho_area_IHCAL;
+    double m_rho_area_sigma_IHCAL;  
+    double m_rho_area_OHCAL;
+    double m_rho_area_sigma_OHCAL;  
     double m_rho_mult;
 
     float m_event_leading_truth_pt;
