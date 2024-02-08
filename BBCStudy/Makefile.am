@@ -15,24 +15,29 @@ AM_LDFLAGS = \
   -L$(OFFLINE_MAIN)/lib
 
 include_HEADERS = \
+  BbcCheck.h \
   BBCStudy.h
 
 ROOTDICTS = \
+  BbcCheck_Dict.C \
   BBCStudy_Dict.C
 
 pcmdir = $(libdir)
 nobase_dist_pcm_DATA = \
+  BbcCheck_Dict_rdict.pcm \
   BBCStudy_Dict_rdict.pcm
 
 libBBCStudy_la_SOURCES = \
   $(ROOTDICTS) \
+  BbcCheck.cc \
   BBCStudy.cc
 
 libBBCStudy_la_LIBADD = \
   -lphool \
   -lSubsysReco \
   -lg4detectors \
-  -lbbc_io \
+  -lmbd_io \
+  -lglobalvertex_io \
   -lphg4hit
 
 libBBCStudy_la_LDFLAGS = \
