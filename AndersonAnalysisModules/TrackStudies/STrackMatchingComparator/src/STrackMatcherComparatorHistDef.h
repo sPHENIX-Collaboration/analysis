@@ -3,7 +3,8 @@
 // Derek Anderson
 // 02.01.2024
 //
-// Struct to hold histogram info for 'STrackMatcherComparator' module.
+// Struct to hold histogram defintions/parameters for 'STrackMatcherComparator'
+// module.
 // ----------------------------------------------------------------------------
 
 #ifndef STRACKMATCHERCOMPARATORHISTDEF_H

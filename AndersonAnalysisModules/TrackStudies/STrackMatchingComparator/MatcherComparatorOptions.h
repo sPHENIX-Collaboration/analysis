@@ -12,6 +12,7 @@
 // c++ utilities
 #include <string>
 #include <vector>
+#include <utility>
 // analysis utilities
 #include "/sphenix/user/danderson/install/include/strackmatchercomparator/STrackMatcherComparatorConfig.h"
 #include "/sphenix/user/danderson/install/include/strackmatchercomparator/STrackMatcherComparatorHistDef.h"
@@ -34,13 +35,34 @@ namespace MatcherComparatorOptions {
       "#bf{Only #pi^{-}}"
     };
 
+    // phi sectors
+    const vector<pair<float, float>> cfg_sectors = {
+      make_pair(-2.92, 0.12),
+      make_pair(-2.38, 0.05),
+      make_pair(-1.93, 0.18),
+      make_pair(-1.33, 0.07),
+      make_pair(-0.90, 0.24),
+      make_pair(-0.29, 0.09),
+      make_pair(0.23,  0.11),
+      make_pair(0.73,  0.10),
+      make_pair(1.28,  0.10),
+      make_pair(1.81,  0.08),
+      make_pair(2.23,  0.18),
+      make_pair(2.80,  0.17)
+    };
+
     STrackMatcherComparatorConfig cfg {
-      .outFileName     = "test.hists.root",
-      .newInFileName   = "input/merged/sPhenixG4_oneMatchPerParticle_forCrossCheck_newMatcher.pt10num1evt500pim.d25m1y2024.root",
-      .oldInFileName   = "input/merged/sPhenixG4_oneMatchPerParticle_oldEval_forCrossCheck.pt10num1evt500pim.d25m1y2024.root",
-      .oddPtFrac       = {0.5, 1.50},
+      .outFileName     = "matchComparison.noVtxDistribution_vzM1010.pt10num1evt500pim.d8m2y2024.root",
+      .newInFileName   = "input/merged/sPhenixG4_oneMatchPerParticleAndEmbedScanOn_noVtxDistribution_newMatcher.pt10num1evt500pim.d8m2y2024.root",
+      .oldInFileName   = "input/merged/sPhenixG4_oneMatchPerParticleAndEmbedScanOn_noVtxDistribution_oldEval.pt10num1evt500pim.d8m2y2024.root",
+      .useOnlyPrimTrks = true,
+      .doZVtxCut       = true,
+      .doPhiCut        = true,
+      .oddPtFrac       = {0.5,  1.50},
+      .zVtxRange       = {-10., 10.},
+      .phiSectors      = cfg_sectors,
       .info            = cfg_info,
-      .doIntNorm       = false,
+      .doIntNorm       = true,
       .matchVertScales = true
     };
     return cfg;

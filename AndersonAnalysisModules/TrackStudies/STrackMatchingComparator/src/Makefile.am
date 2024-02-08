@@ -15,7 +15,8 @@ AM_CPPFLAGS = \
 pkginclude_HEADERS = \
   STrackMatcherComparator.h \
   STrackMatcherComparatorConfig.h \
-  STrackMatcherComparatorHistDef.h
+  STrackMatcherComparatorHistDef.h \
+  STrackMatcherComparatorHistContent.h
 
 if ! MAKEROOT6
   ROOT5_DICTS = \

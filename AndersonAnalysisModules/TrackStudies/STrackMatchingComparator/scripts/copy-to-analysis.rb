@@ -27,6 +27,7 @@ to_copy = [
   "src/STrackMatcherComparator.h",
   "src/STrackMatcherComparatorConfig.h",
   "src/STrackMatcherComparatorHistDef.h",
+  "src/STrackMatcherComparatorHistContent.h",
   "src/sphx-build",
   "src/autogen.sh",
   "src/Makefile.am",

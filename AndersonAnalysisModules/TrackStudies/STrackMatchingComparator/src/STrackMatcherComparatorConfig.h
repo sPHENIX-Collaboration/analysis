@@ -56,8 +56,31 @@ struct STrackMatcherComparatorConfig {
     "TuplePlots"
   };
 
-  // cuts
+  // cut options
+  bool useOnlyPrimTrks = true;
+  bool doZVtxCut       = true;
+  bool doPhiCut        = false;
+
+  // cut values
   pair<float, float> oddPtFrac = {0.50, 1.50};
+  pair<float, float> zVtxRange = {-10., 10.};
+
+  // phi cut values
+  float sigCutVal  = 0.75;
+  vector<pair<float, float>> phiSectors = {
+    make_pair(-2.92, 0.12),
+    make_pair(-2.38, 0.05),
+    make_pair(-1.93, 0.18),
+    make_pair(-1.33, 0.07),
+    make_pair(-0.90, 0.24),
+    make_pair(-0.29, 0.09),
+    make_pair(0.23,  0.11),
+    make_pair(0.73,  0.10),
+    make_pair(1.28,  0.10),
+    make_pair(1.81,  0.08),
+    make_pair(2.23,  0.18),
+    make_pair(2.80,  0.17)
+  };
 
   // style options
   pair<uint32_t, uint32_t> fCol = {923, 899};
