@@ -197,6 +197,15 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end) {
         // Load the data for the given tree entry
         T->GetEntry(i);
 
+        // ensure the z vertex is within range
+        if(abs(z) >= z_max) continue;
+
+        // Int_t j = cent_dum_vec->FindBin(totalMBD)-1;
+        Int_t j = cent_dum_vec->FindBin(cent)-1;
+
+        // check if centrality is found in one of the specified bins
+        if(j < 0 || j >= 3) continue;
+
         Event event;
 
         event.Q_S_x = Q_S_x;
@@ -213,19 +222,19 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end) {
     cout << "Events to process: " << end-start+1 << endl;
     // loop over each event
     // first order correction
-    for (Long64_t i = start; i <= end; ++i) {
+    for (Long64_t i = 0; i < events.size(); ++i) {
         if(i%100000 == 0) cout << "Progress: " << (i-start)*100./(end-start) << "%" << endl;
         // Load the data for the given tree entry
         // T->GetEntry(i);
 
         // ensure the z vertex is within range
-        if(abs(events[i].z) >= z_max) continue;
+        // if(abs(events[i].z) >= z_max) continue;
 
         // Int_t j = cent_dum_vec->FindBin(totalMBD)-1;
         Int_t j = cent_dum_vec->FindBin(events[i].cent)-1;
 
         // check if centrality is found in one of the specified bins
-        if(j < 0 || j >= 3) continue;
+        // if(j < 0 || j >= 3) continue;
 
         // need to reverse this index since we want to match cent_key
         j = cent_key.size() - j - 1;
@@ -259,19 +268,19 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end) {
     // loop over each event
     // apply first order correction
     // compute second order correction
-    for (Long64_t i = start; i <= end; ++i) {
+    for (Long64_t i = 0; i < events.size(); ++i) {
         if(i%100000 == 0) cout << "Progress: " << (i-start)*100./(end-start) << "%" << endl;
         // Load the data for the given tree entry
         // T->GetEntry(i);
 
         // ensure the z vertex is within range
-        if(abs(events[i].z) >= z_max) continue;
+        // if(abs(events[i].z) >= z_max) continue;
 
         // Int_t j = cent_dum_vec->FindBin(totalMBD)-1;
         Int_t j = cent_dum_vec->FindBin(events[i].cent)-1;
 
         // check if centrality is found in one of the specified bins
-        if(j < 0 || j >= 3) continue;
+        // if(j < 0 || j >= 3) continue;
 
         // need to reverse this index since we want to match cent_key
         j = cent_key.size() - j - 1;
@@ -339,19 +348,19 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end) {
 
     // loop over each event
     // apply second order correction
-    for (Long64_t i = start; i <= end; ++i) {
+    for (Long64_t i = 0; i < events.size(); ++i) {
         if(i%100000 == 0) cout << "Progress: " << (i-start)*100./(end-start) << "%" << endl;
         // Load the data for the given tree entry
         // T->GetEntry(i);
 
         // ensure the z vertex is within range
-        if(abs(events[i].z) >= z_max) continue;
+        // if(abs(events[i].z) >= z_max) continue;
 
         // Int_t j = cent_dum_vec->FindBin(totalMBD)-1;
         Int_t j = cent_dum_vec->FindBin(events[i].cent)-1;
 
         // check if centrality is found in one of the specified bins
-        if(j < 0 || j >= 3) continue;
+        // if(j < 0 || j >= 3) continue;
 
         // need to reverse this index since we want to match cent_key
         j = cent_key.size() - j - 1;
