@@ -61,6 +61,7 @@ namespace myAnalysis {
 
     map<pair<string,string>, TH2F*> h2DeltaRVsMass;
     map<pair<string,string>, TH2F*> h2AsymVsMass;
+    map<pair<string,string>, TH2F*> h2DeltaRVsAsym;
     map<string, TH1F*>              hDiphotonPt;
     map<string, TH1F*>              hQQ;
     map<pair<string,string>, TH1F*> hqQ;
@@ -375,6 +376,11 @@ void myAnalysis::init_hists() {
                                             bins_pi0_mass, hpi0_mass_min, hpi0_mass_max,
                                             bins_asym, hasym_min, hasym_max);
 
+            h2DeltaRVsAsym[key] = new TH2F(("h2DeltaRVsAsym_"+to_string(idx)).c_str(),
+                                            ("#Delta R vs Cluster Energy Asymmetry, " + suffix_title +"; Energy Asymmetry; #Delta R").c_str(),
+                                            bins_asym, hasym_min, hasym_max,
+                                            bins_deltaR, hdeltaR_min, hdeltaR_max);
+
             hNPi0[key] = new TH1F(("hNPi0_"+to_string(idx)).c_str(), ("#pi_{0} Counts, " + suffix_title +"; # of #pi_{0} per event; Counts").c_str(), bins_npi0, npi0_min, npi0_max);
 
             vector<TH1F*> h;
@@ -567,6 +573,7 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end) {
 
             h2AsymVsMass[key]->Fill(pi0_mass_val, asym_val);
             h2DeltaRVsMass[key]->Fill(pi0_mass_val, deltaR_val);
+            h2DeltaRVsAsym[key]->Fill(asym_val, deltaR_val);
 
             Int_t idx = cent_idx*pt_key.size()+pt_idx;
 
@@ -663,6 +670,7 @@ void myAnalysis::finalize(const string &i_output) {
     output.mkdir("QA/hDiphotonPt");
     output.mkdir("QA/h2DeltaRVsMass");
     output.mkdir("QA/h2AsymVsMass");
+    output.mkdir("QA/h2DeltaRVsAsym");
 
     if(do_vn_calc) {
         output.mkdir("vn/QQ");
@@ -687,10 +695,13 @@ void myAnalysis::finalize(const string &i_output) {
             pair<string,string> key = make_pair(cent, pt);
 
             output.cd("QA/h2DeltaRVsMass");
-            h2DeltaRVsMass[key]    ->Write();
+            h2DeltaRVsMass[key]->Write();
 
             output.cd("QA/h2AsymVsMass");
-            h2AsymVsMass[key]      ->Write();
+            h2AsymVsMass[key]->Write();
+
+            output.cd("QA/h2DeltaRVsAsym");
+            h2DeltaRVsAsym[key]->Write();
 
             if(do_vn_calc) {
                 output.cd("QA/hNPi0");
