@@ -29,6 +29,17 @@ using std::cos;
 namespace myAnalysis {
     TChain* T;
 
+    struct Event {
+        Float_t Q_S_x;
+        Float_t Q_S_y;
+        Float_t Q_N_x;
+        Float_t Q_N_y;
+        Float_t cent;
+        Float_t z;
+    };
+
+    vector<Event> events;
+
     Int_t init(const string &i_input, Long64_t start = 0, Long64_t end = 0);
     Int_t readFiles(const string &i_input, Long64_t start = 0, Long64_t end = 0);
     void init_hists();
@@ -180,19 +191,38 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end) {
 
     end = (end) ? min(end, T->GetEntries()-1) : T->GetEntries()-1;
 
+    cout << "Loading Events" << endl;
+    for (Long64_t i = start; i <= end; ++i) {
+        if(i%100000 == 0) cout << "Progress: " << (i-start)*100./(end-start) << "%" << endl;
+        // Load the data for the given tree entry
+        T->GetEntry(i);
+
+        Event event;
+
+        event.Q_S_x = Q_S_x;
+        event.Q_S_y = Q_S_y;
+        event.Q_N_x = Q_N_x;
+        event.Q_N_y = Q_N_y;
+        event.cent  = cent;
+        event.z     = z;
+
+        events.push_back(event);
+    }
+    cout << "Finished Loading Events" << endl;
+
     cout << "Events to process: " << end-start+1 << endl;
     // loop over each event
     // first order correction
     for (Long64_t i = start; i <= end; ++i) {
         if(i%100000 == 0) cout << "Progress: " << (i-start)*100./(end-start) << "%" << endl;
         // Load the data for the given tree entry
-        T->GetEntry(i);
+        // T->GetEntry(i);
 
         // ensure the z vertex is within range
-        if(abs(z) >= z_max) continue;
+        if(abs(events[i].z) >= z_max) continue;
 
         // Int_t j = cent_dum_vec->FindBin(totalMBD)-1;
-        Int_t j = cent_dum_vec->FindBin(cent)-1;
+        Int_t j = cent_dum_vec->FindBin(events[i].cent)-1;
 
         // check if centrality is found in one of the specified bins
         if(j < 0 || j >= 3) continue;
@@ -202,10 +232,10 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end) {
 
         ++evt_ctr[j];
 
-        Q_S_x_avg[j] += Q_S_x;
-        Q_S_y_avg[j] += Q_S_y;
-        Q_N_x_avg[j] += Q_N_x;
-        Q_N_y_avg[j] += Q_N_y;
+        Q_S_x_avg[j] += events[i].Q_S_x;
+        Q_S_y_avg[j] += events[i].Q_S_y;
+        Q_N_x_avg[j] += events[i].Q_N_x;
+        Q_N_y_avg[j] += events[i].Q_N_y;
     }
 
     cout << endl;
@@ -232,13 +262,13 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end) {
     for (Long64_t i = start; i <= end; ++i) {
         if(i%100000 == 0) cout << "Progress: " << (i-start)*100./(end-start) << "%" << endl;
         // Load the data for the given tree entry
-        T->GetEntry(i);
+        // T->GetEntry(i);
 
         // ensure the z vertex is within range
-        if(abs(z) >= z_max) continue;
+        if(abs(events[i].z) >= z_max) continue;
 
         // Int_t j = cent_dum_vec->FindBin(totalMBD)-1;
-        Int_t j = cent_dum_vec->FindBin(cent)-1;
+        Int_t j = cent_dum_vec->FindBin(events[i].cent)-1;
 
         // check if centrality is found in one of the specified bins
         if(j < 0 || j >= 3) continue;
@@ -247,10 +277,10 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end) {
         j = cent_key.size() - j - 1;
 
         // compute the first order correction
-        Q_S_x_corr[j] = Q_S_x - Q_S_x_avg[j];
-        Q_S_y_corr[j] = Q_S_y - Q_S_y_avg[j];
-        Q_N_x_corr[j] = Q_N_x - Q_N_x_avg[j];
-        Q_N_y_corr[j] = Q_N_y - Q_N_y_avg[j];
+        Q_S_x_corr[j] = events[i].Q_S_x - Q_S_x_avg[j];
+        Q_S_y_corr[j] = events[i].Q_S_y - Q_S_y_avg[j];
+        Q_N_x_corr[j] = events[i].Q_N_x - Q_N_x_avg[j];
+        Q_N_y_corr[j] = events[i].Q_N_y - Q_N_y_avg[j];
 
         // compute averages required for second order correction
         Q2_S_x_avg[j]  += Q_S_x_corr[j]*Q_S_x_corr[j];
@@ -312,13 +342,13 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end) {
     for (Long64_t i = start; i <= end; ++i) {
         if(i%100000 == 0) cout << "Progress: " << (i-start)*100./(end-start) << "%" << endl;
         // Load the data for the given tree entry
-        T->GetEntry(i);
+        // T->GetEntry(i);
 
         // ensure the z vertex is within range
-        if(abs(z) >= z_max) continue;
+        if(abs(events[i].z) >= z_max) continue;
 
         // Int_t j = cent_dum_vec->FindBin(totalMBD)-1;
-        Int_t j = cent_dum_vec->FindBin(cent)-1;
+        Int_t j = cent_dum_vec->FindBin(events[i].cent)-1;
 
         // check if centrality is found in one of the specified bins
         if(j < 0 || j >= 3) continue;
@@ -327,10 +357,10 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end) {
         j = cent_key.size() - j - 1;
 
         // compute first order correction
-        Q_S_x_corr[j] = Q_S_x - Q_S_x_avg[j];
-        Q_S_y_corr[j] = Q_S_y - Q_S_y_avg[j];
-        Q_N_x_corr[j] = Q_N_x - Q_N_x_avg[j];
-        Q_N_y_corr[j] = Q_N_y - Q_N_y_avg[j];
+        Q_S_x_corr[j] = events[i].Q_S_x - Q_S_x_avg[j];
+        Q_S_y_corr[j] = events[i].Q_S_y - Q_S_y_avg[j];
+        Q_N_x_corr[j] = events[i].Q_N_x - Q_N_x_avg[j];
+        Q_N_y_corr[j] = events[i].Q_N_y - Q_N_y_avg[j];
 
         // compute second order correction
         Q_S_x_corr2[j] = X_S[j][0][0]*Q_S_x_corr[j]+X_S[j][0][1]*Q_S_y_corr[j];
@@ -340,11 +370,11 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end) {
 
         // compute Psi
         // no correction
-        Float_t psi = atan2(Q_S_y, Q_S_x);
+        Float_t psi = atan2(events[i].Q_S_y, events[i].Q_S_x);
         // psi = (psi < 0) ? (2*M_PI+psi)/2 : psi/2;
         hPsi_S[j][0]->Fill(psi);
 
-        psi = atan2(Q_N_y, Q_N_x);
+        psi = atan2(events[i].Q_N_y, events[i].Q_N_x);
         // psi = (psi < 0) ? (2*M_PI+psi)/2 : psi/2;
         hPsi_N[j][0]->Fill(psi);
 
