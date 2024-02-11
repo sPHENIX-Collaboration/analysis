@@ -30,9 +30,9 @@ void Fun4All_CaloTreeGen(const string  &inputFile,
                          const string  &qaFile       = "qa.root",
                          const string  &diphotonFile = "diphoton.root",
                          const Bool_t  doPi0Ana      = true,
+                         const Float_t vtx_z_max     = 10, /*cm*/
                          const Float_t clusE_min     = 0.5 /*GeV*/,
                          const Float_t clusChi_max   = 4,
-                         const Float_t vtx_z_max     = 30, /*cm*/
                          const UInt_t  nEvents       = 0) {
   Fun4AllServer *se = Fun4AllServer::instance();
   // recoConsts *rc = recoConsts::instance();
@@ -61,14 +61,14 @@ void Fun4All_CaloTreeGen(const string  &inputFile,
 # ifndef __CINT__
 int main(int argc, char* argv[]) {
     if(argc < 2 || argc > 9){
-        cout << "usage: ./bin/Fun4All_CaloTreeGen inputFile qaFile diphotonFile doPi0Ana clusE_min clusChi_max vtx_z_max events" << endl;
+        cout << "usage: ./bin/Fun4All_CaloTreeGen inputFile qaFile diphotonFile doPi0Ana vtx_z_max clusE_min clusChi_max events" << endl;
         cout << "inputFile: Location of fileList containing dst." << endl;
         cout << "qaFile: name of output file." << endl;
         cout << "diphotonFile: name of output file." << endl;
         cout << "doPi0Ana: Enable pi0 analysis (takes longer). Default: true" << endl;
+        cout << "vtx_z_max: Maximum z-vertex [cm]. Default: 30" << endl;
         cout << "clusE_min: Minimum cluster energy. Default: 0.5 GeV" << endl;
         cout << "clusChi_max: Maximum cluster chi squared. Default: 4" << endl;
-        cout << "vtx_z_max: Maximum z-vertex [cm]. Default: 10" << endl;
         cout << "events: Number of events to analyze. Default: all" << endl;
         return 1;
     }
@@ -77,9 +77,9 @@ int main(int argc, char* argv[]) {
     string qaFile       = "qa.root";
     string diphotonFile = "diphoton.root";
     Bool_t doPi0Ana     = true;
+    Float_t vtx_z_max   = 10;
     Float_t clusE_min   = 0.5;
     Float_t clusChi_max = 4;
-    Float_t vtx_z_max   = 30;
     UInt_t events       = 0;
 
     if(argc >= 2) {
@@ -95,19 +95,19 @@ int main(int argc, char* argv[]) {
         doPi0Ana = atoi(argv[4]);
     }
     if(argc >= 6) {
-        clusE_min = atof(argv[5]);
+        vtx_z_max = atof(argv[5]);
     }
     if(argc >= 7) {
-        clusChi_max = atof(argv[6]);
+        clusE_min = atof(argv[6]);
     }
     if(argc >= 8) {
-        vtx_z_max = atof(argv[7]);
+        clusChi_max = atof(argv[7]);
     }
     if(argc >= 9) {
         events = atoi(argv[8]);
     }
 
-    Fun4All_CaloTreeGen(inputFile, qaFile, diphotonFile, doPi0Ana, clusE_min, clusChi_max, vtx_z_max, events);
+    Fun4All_CaloTreeGen(inputFile, qaFile, diphotonFile, doPi0Ana, vtx_z_max, clusE_min, clusChi_max, events);
 
     cout << "done" << endl;
     return 0;
