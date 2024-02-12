@@ -131,7 +131,7 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
   if(!eventInfo)
   {
     std::cout << PHWHERE << "caloTreeGen::process_event - Fatal Error - EventHeader node is missing. " << std::endl;
-    return 0;
+    return Fun4AllReturnCodes::ABORTEVENT;
   }
 
   event = eventInfo->get_EvtSequence();
@@ -147,7 +147,7 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
   if(!clusterContainer)
   {
     std::cout << PHWHERE << "caloTreeGen::process_event - Fatal Error - CLUSTERINFO_POS_COR_CEMC node is missing. " << std::endl;
-    return 0;
+    return Fun4AllReturnCodes::ABORTEVENT;
   }
   
   //tower information
