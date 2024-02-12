@@ -36,6 +36,18 @@ pi0Ana.add_argument('-d', '--output', type=str, default='test', help='Output Dir
 pi0Ana.add_argument('-s', '--memory', type=int, default=1, help='Memory (units of GB) to request per condor submission. Default: 1 GB.')
 pi0Ana.add_argument('-l', '--log', type=str, default='/tmp/anarde/dump/job-$(ClusterId)-$(Process).log', help='Condor log file.')
 
+mix = subparser.add_parser('mix', help='Create condor submission directory for mixed event vn.')
+
+mix.add_argument('-i', '--ntp-list', type=str, help='List of Ntuples', required=True)
+mix.add_argument('-c', '--cuts', type=str, default='cuts.txt', help='List of cuts. Default: cuts.txt')
+mix.add_argument('-c2', '--Q-vec-corr', type=str, default='Q-vec-corr-z-10.csv', help='CSV file with Q vector corrections. Default: Q-vec-corr-z-10.csv')
+mix.add_argument('-m', '--macro', type=str, default='macro/mixedEvent.C', help='Mixed Event macro. Default: macro/mixedEvent.C')
+mix.add_argument('-e', '--script', type=str, default='genMixedEvent.sh', help='Job script to execute. Default: genMixedEvent.sh')
+mix.add_argument('-b', '--executable', type=str, default='bin/mixedEvent', help='Executable. Default: bin/mixedEvent')
+mix.add_argument('-d', '--output', type=str, default='test', help='Output Directory. Default: ./test')
+mix.add_argument('-s', '--memory', type=int, default=1, help='Memory (units of GB) to request per condor submission. Default: 1 GB.')
+mix.add_argument('-l', '--log', type=str, default='/tmp/anarde/dump/job-$(ClusterId)-$(Process).log', help='Condor log file.')
+
 dummy = subparser.add_parser('dummy', help='Identify events per run from input text file.')
 dummy.add_argument('-i', '--entries', type=str, help='Text file of all runs and events', required=True)
 
@@ -193,11 +205,74 @@ def create_pi0Ana_jobs():
     # print condor submission command
     print(sub)
 
+def create_mixedEvent_jobs():
+    ntp_list   = os.path.realpath(args.ntp_list)
+    cuts       = os.path.realpath(args.cuts)
+    macro      = os.path.realpath(args.macro)
+    Q_vec_corr = os.path.realpath(args.Q_vec_corr)
+    script     = os.path.realpath(args.script)
+    executable = os.path.realpath(args.executable)
+    output_dir = os.path.realpath(args.output)
+    memory     = args.memory
+    log        = args.log
+
+    print(f'Macro: {macro}')
+    print(f'Run List: {ntp_list}')
+    print(f'Cuts: {cuts}')
+    print(f'Q Vector Correction: {Q_vec_corr}')
+    print(f'Script: {script}')
+    print(f'Executable: {executable}')
+    print(f'Output Directory: {output_dir}')
+    print(f'Requested memory per job: {memory}GB')
+    print(f'Condor log file: {log}')
+
+    os.makedirs(output_dir,exist_ok=True)
+    shutil.copy(script, output_dir)
+    shutil.copy(executable, output_dir)
+    shutil.copy(ntp_list, output_dir)
+    shutil.copy(cuts, output_dir)
+    shutil.copy(macro, output_dir)
+    shutil.copy(Q_vec_corr, output_dir)
+
+    cuts       = f'{output_dir}/{os.path.basename(cuts)}'
+    Q_vec_corr = f'{output_dir}/{os.path.basename(Q_vec_corr)}'
+
+    sub = ''
+    with open(ntp_list) as file:
+        for line in file:
+            line = line.rstrip() # remove \n from the end of the string
+            run = os.path.splitext(os.path.basename(line))[0] # extract the run number from the file name
+
+            print(f'Run: {run}')
+            os.makedirs(f'{output_dir}/{run}/stdout',exist_ok=True)
+            os.makedirs(f'{output_dir}/{run}/error',exist_ok=True)
+            os.makedirs(f'{output_dir}/{run}/output',exist_ok=True)
+
+            # shutil.copy(line, f'{output_dir}/{run}')
+            with open(f'{output_dir}/{run}/{run}.list', mode='w') as file2:
+                file2.write(f'{line}\n')
+
+            with open(f'{output_dir}/{run}/genMixedEvent.sub', mode="w") as file2:
+                file2.write(f'executable     = ../{os.path.basename(script)}\n')
+                file2.write(f'arguments      = {output_dir}/{os.path.basename(executable)} $(input_ntp) {cuts} {Q_vec_corr} output/test.root\n')
+                file2.write(f'log            = {log}\n')
+                file2.write( 'output         = stdout/job.out\n')
+                file2.write( 'error          = error/job.err\n')
+                file2.write(f'request_memory = {memory}GB\n')
+                file2.write(f'queue input_ntp from {run}.list')
+
+            sub = f'{sub} cd {output_dir}/{run} && condor_submit genMixedEvent.sub &&'
+
+    # print condor submission command
+    print(sub)
+
 if __name__ == '__main__':
     if(args.command == 'f4a'):
         create_f4a_jobs()
     if(args.command == 'pi0Ana'):
         create_pi0Ana_jobs()
+    if(args.command == 'mix'):
+        create_mixedEvent_jobs()
     if(args.command == 'dummy'):
         process_dummy()
     if(args.command == 'dummy2'):
