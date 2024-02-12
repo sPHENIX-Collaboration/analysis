@@ -191,7 +191,7 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
 
   MinimumBiasInfo *minBiasInfo = findNode::getClass<MinimumBiasInfo>(topNode,"MinimumBiasInfo");
   Bool_t isMinBias = (minBiasInfo) ? minBiasInfo->isAuAuMinimumBias() : false;
-  if(!minBiasInfo || !isMinBias)
+  if(!isMinBias)
   {
     std::cout << PHWHERE << "caloTreeGen::process_event: " << event << " is not MinimumBias" << std::endl;
     return Fun4AllReturnCodes::ABORTEVENT;
