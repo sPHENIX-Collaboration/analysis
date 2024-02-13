@@ -108,6 +108,7 @@ Int_t caloTreeGen::Init(PHCompositeNode *topNode)
   T->Branch("deltaR",    &deltaR_vec);
   T->Branch("ecore_min", &ecore_min_vec);
   T->Branch("chi2_max",  &chi2_max_vec);
+  T->Branch("isFarNorth",&isFarNorth_vec);
 
   //so that the histos actually get written out
   Fun4AllServer *se = Fun4AllServer::instance();
@@ -410,6 +411,9 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
               deltaPhi  = (deltaPhi > M_PI) ? 2*M_PI - deltaPhi : deltaPhi; // ensure that deltaPhi is in [0,pi]
       Float_t deltaR    = sqrt(pow(clus_eta-clus_eta2,2)+pow(deltaPhi,2));
 
+      // check if either cluster has a tower that is in the last IB board: i.e ieta >= 88
+      Bool_t isFarNorth = hasTowerFarNorth(recoCluster) || hasTowerFarNorth(recoCluster2);
+
       pi0_phi_vec.push_back(pi0_phi);
       pi0_eta_vec.push_back(pi0_eta);
       pi0_pt_vec.push_back(pi0_pt);
@@ -418,6 +422,7 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
       deltaR_vec.push_back(deltaR);
       ecore_min_vec.push_back(ecore_min);
       chi2_max_vec.push_back(chi2_max);
+      isFarNorth_vec.push_back(isFarNorth);
     }
   }
 
@@ -443,6 +448,7 @@ Int_t caloTreeGen::ResetEvent(PHCompositeNode *topNode)
   deltaR_vec.clear();
   ecore_min_vec.clear();
   chi2_max_vec.clear();
+  isFarNorth_vec.clear();
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -541,7 +547,22 @@ Float_t caloTreeGen::getMaxTowerE(RawCluster *cluster, TowerInfoContainer *tower
   return tower->get_energy();
 }
 //____________________________________________________________________________..
-std::vector<Int_t> caloTreeGen::returnClusterTowEta(RawCluster *cluster, TowerInfoContainer *towerContainer)
+Bool_t caloTreeGen::hasTowerFarNorth(RawCluster *cluster)
+{
+  RawCluster::TowerConstRange towers = cluster -> get_towers();
+  RawCluster::TowerConstIterator toweriter;
+
+  std::vector<Int_t> towerIDsEta;
+  for(toweriter = towers.first; toweriter != towers.second; toweriter++) {
+    Int_t ieta = RawTowerDefs::decode_index1(toweriter -> first);
+    // check if the tower in part of the last IB
+    if(ieta >= 88) return true;
+  }
+
+  return false;
+}
+//____________________________________________________________________________..
+std::vector<Int_t> caloTreeGen::returnClusterTowEta(RawCluster *cluster)
 {
   RawCluster::TowerConstRange towers = cluster -> get_towers();
   RawCluster::TowerConstIterator toweriter;
@@ -552,7 +573,7 @@ std::vector<Int_t> caloTreeGen::returnClusterTowEta(RawCluster *cluster, TowerIn
   return towerIDsEta;
 }
 //____________________________________________________________________________..
-std::vector<Int_t> caloTreeGen::returnClusterTowPhi(RawCluster *cluster, TowerInfoContainer *towerContainer)
+std::vector<Int_t> caloTreeGen::returnClusterTowPhi(RawCluster *cluster)
 {
   RawCluster::TowerConstRange towers = cluster -> get_towers();
   RawCluster::TowerConstIterator toweriter;
@@ -562,7 +583,7 @@ std::vector<Int_t> caloTreeGen::returnClusterTowPhi(RawCluster *cluster, TowerIn
   return towerIDsPhi;
 }
 //____________________________________________________________________________..
-std::vector<Float_t> caloTreeGen::returnClusterTowE(RawCluster *cluster, TowerInfoContainer *towerContainer)
+std::vector<Float_t> caloTreeGen::returnClusterTowE(RawCluster *cluster)
 {
   RawCluster::TowerConstRange towers = cluster -> get_towers();
   RawCluster::TowerConstIterator toweriter;

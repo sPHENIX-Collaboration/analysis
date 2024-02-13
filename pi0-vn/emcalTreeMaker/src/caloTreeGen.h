@@ -90,13 +90,15 @@ class caloTreeGen : public SubsysReco
     UInt_t getCaloTowerPhiBin(const UInt_t key);
     UInt_t getCaloTowerEtaBin(const UInt_t key);
     Float_t getMaxTowerE(RawCluster *cluster, TowerInfoContainer *towerContainer);
-    std::vector<Float_t> returnClusterTowE(RawCluster *cluster, TowerInfoContainer *towerContainer);
-    std::vector<Int_t> returnClusterTowPhi(RawCluster *cluster, TowerInfoContainer *towerContainer);
-    std::vector<Int_t> returnClusterTowEta(RawCluster *cluster, TowerInfoContainer *towerContainer);
+    std::vector<Float_t> returnClusterTowE(RawCluster *cluster);
+    std::vector<Int_t> returnClusterTowPhi(RawCluster *cluster);
+    std::vector<Int_t> returnClusterTowEta(RawCluster *cluster);
 
     TowerInfo* getTower(RawTowerDefs::keytype key, TowerInfoContainer *towerContainer);
     TowerInfo* getMaxTower(RawCluster *cluster, TowerInfoContainer *towerContainer);
     Float_t    getMaxTowerTime(RawCluster *cluster, TowerInfoContainer *towerContainer);
+
+    Bool_t hasTowerFarNorth(RawCluster *cluster);
 
     Int_t iEvent = 0;
     Float_t avg_goodTowers = 0;
@@ -227,5 +229,6 @@ class caloTreeGen : public SubsysReco
     std::vector<Float_t> deltaR_vec;
     std::vector<Float_t> ecore_min_vec;
     std::vector<Float_t> chi2_max_vec;
+    std::vector<Bool_t>  isFarNorth_vec; // true if either cluster in the diphoton has a tower that is in the last IB board, ieta: 88-95
 };
 #endif
