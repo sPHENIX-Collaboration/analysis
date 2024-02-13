@@ -69,6 +69,7 @@ namespace myAnalysis {
     map<pair<string,string>, TH1F*> hqQ_bg_left;
     map<pair<string,string>, TH1F*> hNPi0;
     map<pair<string,string>, TH2F*> h2Pi0EtaPhi;
+    map<pair<string,string>, TH2F*> h2Pi0EtaPhiv2;
 
     Int_t   bins_pi0_mass = 56;
     Float_t hpi0_mass_min = 0;
@@ -365,6 +366,7 @@ void myAnalysis::init_hists() {
             hqQ_bg_left[key] = new TH1F(("hqQ_bg_left_"+to_string(idx)).c_str(), ("qQ, " + suffix_title + "; qQ; Counts").c_str(), bins_Q, Q_min, Q_max);
 
             h2Pi0EtaPhi[key] = new TH2F(("h2Pi0EtaPhi_"+to_string(idx)).c_str(), ("#pi_{0}, " + suffix_title + "; #eta; #phi").c_str(), bins_eta, eta_min, eta_max, bins_phi, phi_min, phi_max);
+            h2Pi0EtaPhiv2[key] = new TH2F(("h2Pi0EtaPhiv2_"+to_string(idx)).c_str(), ("#pi_{0}, " + suffix_title + "; #eta; #phi").c_str(), bins_eta, eta_min, eta_max, bins_phi, phi_min, phi_max);
 
             h2DeltaRVsMass[key] = new TH2F(("h2DeltaRVsMass_"+to_string(idx)).c_str(),
                                             ("#Delta R vs Diphoton Invariant Mass, " + suffix_title +"; Mass [GeV]; #Delta R").c_str(),
@@ -438,6 +440,7 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end) {
     vector<Float_t>* pi0_deltaR = 0;
     vector<Float_t>* ecore_min  = 0;
     vector<Float_t>* chi2_max   = 0;
+    vector<Bool_t>*  isFarNorth = 0;
 
     Float_t Q_S_x;
     Float_t Q_S_y;
@@ -457,6 +460,7 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end) {
     T->SetBranchAddress("deltaR",     &pi0_deltaR);
     T->SetBranchAddress("ecore_min",  &ecore_min);
     T->SetBranchAddress("chi2_max",   &chi2_max);
+    T->SetBranchAddress("isFarNorth", &isFarNorth);
 
     if(do_vn_calc) {
         T->SetBranchAddress("Q_S_x",   &Q_S_x);
@@ -548,6 +552,7 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end) {
             Float_t deltaR_val    = pi0_deltaR->at(j);
             Float_t ecore_min_val = ecore_min->at(j);
             Float_t chi2_max_val  = chi2_max->at(j);
+            Bool_t isFarNorth_val = isFarNorth->at(j);
 
             Float_t pi0_phi_val = 0;
             Float_t pi0_eta_val = 0;
@@ -607,6 +612,7 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end) {
                         ++pi0_ctr[idx];
                         qQ[idx] += qQ_val;
                         h2Pi0EtaPhi[key]->Fill(pi0_eta_val, pi0_phi_val);
+                        if(!isFarNorth_val) h2Pi0EtaPhiv2[key]->Fill(pi0_eta_val, pi0_phi_val);
                         eta_min = min(eta_min, pi0_eta_val);
                         eta_max = max(eta_max, pi0_eta_val);
                     }
@@ -679,6 +685,7 @@ void myAnalysis::finalize(const string &i_output) {
         output.mkdir("vn/qQ_bg_left");
 
         output.mkdir("QA/h2Pi0EtaPhi");
+        output.mkdir("QA/h2Pi0EtaPhiv2");
         output.mkdir("QA/hNPi0");
     }
 
@@ -718,6 +725,9 @@ void myAnalysis::finalize(const string &i_output) {
 
                 output.cd("QA/h2Pi0EtaPhi");
                 h2Pi0EtaPhi[key]->Write();
+
+                output.cd("QA/h2Pi0EtaPhiv2");
+                h2Pi0EtaPhiv2[key]->Write();
             }
 
             output.mkdir(("results/"+cent+"/"+pt).c_str());
