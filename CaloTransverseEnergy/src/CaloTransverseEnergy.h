@@ -95,6 +95,7 @@ class CaloTransverseEnergy:public SubsysReco
 		float GetTransverseEnergy(float, float);
 		void GetNodes(PHCompositeNode*); 
 		bool ValidateDistro();
+		void findEEC(); 
 		
 	/*	const std::string &prdfnode="PRDF"; //maybe I can add an overload to this? just do either version
 		const std::string &DSTnode="DST";
@@ -125,7 +126,11 @@ class CaloTransverseEnergy:public SubsysReco
 			IHCALE=new TH1F("iHCal", "Total Transverse energy depositied in inner HCal towers; Energy #times percent of towers [GeV]", 400, 0, 2); 
 			OHCALE=new TH1F("oHCal", "Total Transverse energy depositied in outer HCal towers; Energy #times percent oftowers [GeV]", 400, 0,2); 
 			EMCALE=new TH1F("emCal", "Transverse energy depositied in EMCal towers; Energy #times percent of towers [GeV]", 400, 0, 2); 
-			
+			he2=new TH1F("HE2", "EEC as a function of R_L for data run ; R_{L}; EEC", 40, 0, 0.8);	
+			he3=new TH1F("HE3", "E3C as a function of R_L for data run; R_{L}; E3C", 40, 0, 0.8);
+			heec=new TH1F("EEC", "EEC for data Run; EEC; N_{evts}", 40, 0, 1);	
+			h3eec=new TH1F("E3C", "E3C for data Run; E3C; N_{evts}", 40, 0, 1);
+			//jet_like_container=new std::map<std::pair<double, double>, std::map<std::pair<double, double>, float>>();	
 /*			ETOTAL=new TH1F("total", "Total Transverse energy depositied in all Calorimeters; Energy [GeV]", 2500, 0, 2501); 
 			PhiD=new TH1F("phif", "Transverse energy deposited in #varphi; #varphi; Energy [GeV] ", 32, -0.1, 6.30);
 			EtaD=new TH1F("etaf", "Transverse energy depositied in #eta; #eta; Energy [GeV]", 24, -0.5, 23.5);
@@ -154,11 +159,12 @@ class CaloTransverseEnergy:public SubsysReco
 			
 			etabin_hc=new TH1F("hceta", "#eta bin to #delta #eta width HCal; #eta_{bin};#delta #eta", 24, -0.5, 23.5);
 			phibin_hc=new TH1F("hcphi", "#varphi bin to #delta #varphi width HCal; #varphi_{bin}; #delta #varphi", 64, -0.5, 63.5);*/
-			z_vertex=new TH1F("z_vertex", "z vertex position; z [mm]; N_{evts}", 21, -100.5, 100.5);
 			if(inputfile.find("prdf")==std::string::npos) isPRDF=false;
 			std::cout<<"Run number " <<rn <<std::endl;
 			run_number=rn;
 			if(run_number <1000) sim=true;
+			if(!sim) z_vertex=new TH1F("z_vertex", "z vertex position; z [cm]; N_{evts}", 21, -100.5, 100.5);
+			else z_vertex=new TH1F("z_vertex", "z vertex position; z [cm]; N_{evts}", 21, -5.5, 5.5);
 			if(sim) std::cout<<"Found the simulation tag, run is number " <<run_number <<std::endl;
 			else std::cout<<"This is real data, run number " <<run_number <<std::endl;
 			for(int i=0; i<21; i++){
@@ -199,8 +205,10 @@ class CaloTransverseEnergy:public SubsysReco
 		TH1F *ePhiD, *eEtaD, *ephis, *eetas;
 		TH1F *ihPhiD, *ihEtaD, *ohPhiD, *ohEtaD, *hphis, *hetas;
 		TH1F *etabin_em, *phibin_em, *etabin_hc, *phibin_hc;
+		TH1F *he2, *he3, *heec, *h3eec;
 		TH2F *eep, *ohep, *ihep, *eeps, *oheps, *iheps, *tep, *teps;
 		std::map<int, plots*> zPLTS, szPLTS;
+		std::map<std::pair<double,double>, std::map<std::pair<double, double>, float>> jet_like_container;
 		std::vector<int> baryons{2212,2112,2224,2214,2114,1114,3122,3222,3212,3112,
 		      3224,3214,3114,3322,3312,3324,3314,3334,4122,4222,4212,4112,4224,4214,
 		      4114,4232,4312,4324,4314,4332,4334,4412,4422,4414,4424,4432,4434,4444,

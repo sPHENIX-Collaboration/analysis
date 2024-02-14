@@ -20,9 +20,9 @@ class caloplots
 	public: 
 		std::string calo="EMCAL";
 		bool sim=false;
-		TH1F* Energy, *E_phi, *ET, *dET_eta, *ET_phi, *ET_z, *dET, *acceptance_eta, *phi, *eta, *z_val, *timing, *E_f, *E_s, *E_m, *Eta_width;
+		TH1F* Energy, *E_phi, *ET, *dET_eta, *ET_phi, *ET_z, *dET, *acceptance_eta, *phi, *eta, *z_val, *timing, *E_f, *E_s, *E_m, *Eta_width, *top3_behavior, *phi_projections, *dET_eta_top, *dET_eta_bot, *dET_eta_mid, *EMCAL_towering;
 		std::vector<TH1F*> hists_1;
-		TH2F* ET_eta_phi, *E_eta_phi, *ET_z_eta, *Hits2D;
+		TH2F* ET_eta_phi, *E_eta_phi, *ET_z_eta, *Hits2D, *EMCAL_tower_proj;
 		std::vector<TH2F*> hists_2;
 		float acceptance=0.0; 
 		bool ok_phi=false;
@@ -73,18 +73,18 @@ class caloplots
 				}
 				if(live_towers==0) live_towers=1;
 				float pct=(float)live_towers/(float)phibins;
-				std::cout<<"eta bin is " <<dET_eta->GetBinCenter(i+1) <<" with acceptance " <<pct<<std::endl;
+//				std::cout<<"eta bin is " <<dET_eta->GetBinCenter(i+1) <<" with acceptance " <<pct<<std::endl;
 				float bc=(float)dET_eta->GetBinCenter(i+1);
 				acceptance_eta->Fill(bc, pct);
-				std::cout<<"bin content fill is " <<bc <<" but the bin that should be filled has a center at " <<acceptance_eta->GetBinCenter(i) <<std::endl;
-				std::cout<<acceptance_eta->GetBinContent(i+1) <<" should be " <<pct <<std::endl;
+//				std::cout<<"bin content fill is " <<bc <<" but the bin that should be filled has a center at " <<acceptance_eta->GetBinCenter(i) <<std::endl;
+//				std::cout<<acceptance_eta->GetBinContent(i+1) <<" should be " <<pct <<std::endl;
 			}
 			acceptance=acceptance/(float)(phibins*etabins);
 		}
 		void scaleThePlots(int n_evt, std::vector<std::map<std::string, float>>* calo_data){
 			n_evt=1;
 			dET_eta->Scale(1/(float)n_evt);
-			//if(acceptance > 0.0) dET_eta->Divide(acceptance_eta);
+			if(acceptance > 0.0) dET_eta->Divide(acceptance_eta);
 			//else acceptance=1.0;
 			if(acceptance <= 0.0) acceptance=1.0;
 			ET_phi->Scale(1/((float)n_evt*acceptance));
@@ -158,7 +158,7 @@ class caloplots
 			
 			ET_phi=new TH1F(Form("ET_phi_%s_z_%d", calo.c_str(), z_lab), Form("E_{T}(#varphi) in %s with vertex z=%f; #varphi; #E_{T} [GeV]",calo.c_str(),z), phibins, -0.01, 6.3);
 			
-			dET_eta=new TH1F(Form("dET_eta_%s_z_%d", calo.c_str(), z_lab), Form("dE_{T}/d#eta(#eta) in %s with vertex z=%f; #eta; #frac{dE_{T}}{d#eta} [GeV]",calo.c_str(),z), etabins, (float) etamin-0.01, (float)etamax-0.01);
+			dET_eta=new TH1F(Form("dET_eta_%s_z_%d", calo.c_str(), z_lab), Form("dE_{T}/d#eta(#eta) in %s with vertex z=%f; #eta; #frac{dE_{T}}{d#eta} [GeV]",calo.c_str(),z), etabins, (float) etamin-0.02, (float)etamax-0.02);
 			
 			ET_z=new TH1F(Form("ET_z_%s_z_%d", calo.c_str(), z_lab), Form("E_{T}(z) in %s with vertex z=%f; z; #E_{T} [GeV]",calo.c_str(),z), 40, zmin,zmax);
 
@@ -167,16 +167,25 @@ class caloplots
 			phi=new TH1F(Form("phi_%s_z_%d", calo.c_str(), z_lab), Form("Hit distribution in #varphi_{bin} in %s with vertex z=%f; #varphi_{bin}; N_{Hits}", calo.c_str(), z), phibins, -0.5, phibins-0.5);
 			eta=new TH1F(Form("eta_%s_z_%d", calo.c_str(), z_lab), Form("Hit distribution in physical #eta_{bin} in %s with vertex z=%f; #eta_{bin}; N_{Hits}", calo.c_str(), z), etabins, -0.5, etabins-0.5);
 			z_val=new TH1F(Form("z_%s_z_%d", calo.c_str(), z_lab), Form("Hit distribution in z vertex in %s with vertex centered at z=%f; z; N_{events}", calo.c_str(), z), 100, zl, zh);
-			timing=new TH1F(Form("time_%s_z_%d", calo.c_str(), z_lab), Form("Timing distribution precut in %s with vertex centerd at z=%f; time [samples]; N_{evts}",calo.c_str(), z), 20, -10.5, 10.5);
-			E_f=new TH1F(Form("en_%s_z_%d", calo.c_str(), z_lab), Form("Energy distribution pre-timing cut in %s with vertex centerd at z=%f; Energy [GeV]; N_{towers}", calo.c_str(), z), 10000, -20.5, 20.5);  
-			E_m=new TH1F(Form("en_pp_%s_z_%d", calo.c_str(), z_lab), Form("Energy distribution post-energy cut in %s with vertex centerd at z=%f; Energy [GeV]; N_{towers}", calo.c_str(), z), 10000, -20.5, 20.5);  
-			E_s=new TH1F(Form("en_pc_%s_z_%d", calo.c_str(), z_lab), Form("Energy distribution post-timing cut in %s with vertex centerd at z=%f; Energy [GeV]; N_{towers}", calo.c_str(), z), 10000, -20.5, 20.5); 
-			Eta_width=new TH1F(Form("eta_width_%s_z_%d", calo.c_str(), z_lab), Form("Eta bin width in %s with vertex centerd at z=%f; #eta_{bin}; width", calo.c_str(), z), etabins, -0.1, eb); 
+			timing=new TH1F(Form("time_%s_z_%d", calo.c_str(), z_lab), Form("Timing distribution precut in %s with vertex centered at z=%f; time [samples]; N_{evts}",calo.c_str(), z), 20, -10.5, 10.5);
+			E_f=new TH1F(Form("en_%s_z_%d", calo.c_str(), z_lab), Form("Energy distribution pre-timing cut in %s with vertex centered at z=%f; Energy [GeV]; N_{towers}", calo.c_str(), z), 10000, -20.5, 20.5);  
+			E_m=new TH1F(Form("en_pp_%s_z_%d", calo.c_str(), z_lab), Form("Energy distribution post-energy cut in %s with vertex centered at z=%f; Energy [GeV]; N_{towers}", calo.c_str(), z), 10000, -20.5, 20.5);  
+			E_s=new TH1F(Form("en_pc_%s_z_%d", calo.c_str(), z_lab), Form("Energy distribution post-timing cut in %s with vertex centered at z=%f; Energy [GeV]; N_{towers}", calo.c_str(), z), 10000, -20.5, 20.5); 
+			Eta_width=new TH1F(Form("eta_width_%s_z_%d", calo.c_str(), z_lab), Form("Eta bin width in %s with vertex centered at z=%f; #eta_{bin}; width", calo.c_str(), z), etabins, -0.1, eb); 
+			top3_behavior=new TH1F(Form("tow_3_%s_z_%d", calo.c_str(), z_lab), Form("Ratio of the average signal between the top 3 secotors for %s with vertex centered at z=%d in #phi in #eta_{bin} 1,22; #frac{E_{T}^{top}}{E_{T}^{bottom}}", calo.c_str(), z_lab), 100, -0.5, 4.5);
+			phi_projections=new TH1F(Form("phi_proj_%s_z_%d", calo.c_str(), z_lab), Form("Phi in #eta_{bin} = 1,22 in %s with vtx centered z=%d; #phi; E_{T}", calo.c_str(), z_lab), phibins, -0.1, pb);
+			dET_eta_top=new TH1F(Form("dET_eta_top_%s_z_%d", calo.c_str(), z_lab), Form("dE_{T}/d#eta (#eta) for #varphi #in [#frac{7 #pi}{16}, #frac{10 #pi}{16}) in %s with vertex z=%f; #eta; #frac{dE_{T}}{d#eta} [GeV]",calo.c_str(),z), etabins, (float) etamin-0.02, (float)etamax-0.02);
+			dET_eta_bot=new TH1F(Form("dET_eta_bot_%s_z_%d", calo.c_str(), z_lab), Form("dE_{T}/d#eta (#eta) for #varphi #in [#frac{23 #pi}{16}, #frac{26 #pi}{16}) in %s with vertex z=%f; #eta; #frac{dE_{T}}{d#eta} [GeV]",calo.c_str(),z), etabins, (float) etamin-0.02, (float)etamax-0.02);
+			dET_eta_mid=new TH1F(Form("dET_eta_mid_%s_z_%d", calo.c_str(), z_lab), Form("dE_{T}/d#eta (#eta) for #varphi #in [0, #frac{3 #pi}{16}) in %s with vertex z=%f; #eta; #frac{dE_{T}}{d#eta} [GeV]",calo.c_str(),z), etabins, (float) etamin-0.02, (float)etamax-0.02);
+			EMCAL_towering=new TH1F(Form("emct_%s_z_%d", calo.c_str(), z_lab), Form("Retowering towers for EMCal to %s with vertex centerd at z=%f; N_{EM tower}/%s tower", calo.c_str(), z, calo.c_str()), 60, -0.5, 59.5);
 			hists_1.push_back(Energy);
 			hists_1.push_back(ET);
 			hists_1.push_back(E_phi);
 			hists_1.push_back(ET_phi);
 			hists_1.push_back(dET_eta);
+			hists_1.push_back(dET_eta_top);
+			hists_1.push_back(dET_eta_bot);
+			hists_1.push_back(dET_eta_mid);
 			hists_1.push_back(ET_z);
 			hists_1.push_back(dET);
 			hists_1.push_back(acceptance_eta);
@@ -188,14 +197,19 @@ class caloplots
 			hists_1.push_back(E_s);
 			hists_1.push_back(E_m);
 			hists_1.push_back(Eta_width);
+			hists_1.push_back(top3_behavior);
+			hists_1.push_back(phi_projections);
+			if(calo.find("HCAL") != std::string::npos) hists_1.push_back(EMCAL_towering);
 			ET_eta_phi=new TH2F(Form("ET_eta_phi_%s_z_%d", calo.c_str(), z_lab), Form("E_{T}(#eta, #varphi) in %s with vertex z=%f; #eta; #varphi; E_{T} [GeV]", calo.c_str(), z), etabins, etamin, etamax, phibins,-0.1, 6.3);
 		       	E_eta_phi=new TH2F(Form("E_eta_phi_%s_z_%d", calo.c_str(), z_lab), Form("E(#eta, #varphi)	physical binning in %s with vertex centered at z=%f; #eta; #varphi; E [GeV]", calo.c_str(), z), etabins, -0.1, eb, phibins, -0.1, pb);
 			ET_z_eta=new TH2F(Form("ET_z_eta_%s_z_%d", calo.c_str(), z_lab), Form("E_{T}(z_{vertex}, #eta) in %s with vertex centered at z=%f; z_{vertex}; #eta; E_{T} [GeV]", calo.c_str(), z), 40, zl, zh, etabins, etamin, etamax);
 			Hits2D=new TH2F(Form("Hits_2D_%s_z_%d", calo.c_str(), z_lab), Form("Hits in #eta and #varphi in %s with vertex centered at z=%f; #eta; #varphi", calo.c_str(), z), etabins, -0.1, eb, phibins, -0.1, pb);
+			EMCAL_Tower_proj=new TH2F(Form("Tower_proj_%s_z_%d", calo.c_str(), z_lab), Form("EMCAL Retowering towers per %s tower with vertex centered at z=%f; #eta_{bin}, #varphi_{bin}, N_{EMT}", calo.c_str(), z), etabins, -0.1, eb, phibins, -0.1, pb);
 			hists_2.push_back(ET_eta_phi);
 			hists_2.push_back(E_eta_phi);
 			hists_2.push_back(ET_z_eta);
 			hists_2.push_back(Hits2D);
+			if(calo.find("HCAL") != std::string::npos) hists_2.push_back(EMCAL_tower_proj);
 		}
 };
 #endif
