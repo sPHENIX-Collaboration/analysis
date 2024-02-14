@@ -178,9 +178,6 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end) {
     Float_t N_S[3] = {0};
     Float_t N_N[3] = {0};
 
-    Float_t psi_S[3][3] = {0}; // [cent][order of correction]
-    Float_t psi_N[3][3] = {0}; // [cent][order of correction]
-
     T->SetBranchAddress("Q_S_x", &Q_S_x);
     T->SetBranchAddress("Q_S_y", &Q_S_y);
     T->SetBranchAddress("Q_N_x", &Q_N_x);
