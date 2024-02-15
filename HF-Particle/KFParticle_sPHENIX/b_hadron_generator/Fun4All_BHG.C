@@ -140,7 +140,7 @@ int Fun4All_BHG(std::string processID = "0")
   myTrackEff->setDFNodeName("myFinder");
   myTrackEff->triggerOnDecay(1);
   myTrackEff->writeSelectedTrackMap(true);
-  myTrackEff->writeOutputFile(true);
+  myTrackEff->writeOutputFile(false);
   se->registerSubsystem(myTrackEff);
 
   //Output file handling
@@ -149,7 +149,6 @@ int Fun4All_BHG(std::string processID = "0")
   Fun4AllDstOutputManager *out = new Fun4AllDstOutputManager("DSTOUT", FullOutFile);
   out->StripNode("G4HIT_PIPE");
   out->StripNode("G4HIT_SVTXSUPPORT");
-  out->StripNode("PHHepMCGenEventMap");
   out->StripNode("PHG4INEVENT");
   out->StripNode("Sync");
   out->StripNode("myFinder_DecayMap");
