@@ -66,7 +66,7 @@
 #pragma GCC diagnostic pop
 
 //____________________________________________________________________________..
-pythiaEMCalAna::pythiaEMCalAna(const std::string &name, bool isMC, bool hasPythia):
+pythiaEMCalAna::pythiaEMCalAna(const std::string &name, const std::string &oname, bool isMC, bool hasPythia):
 SubsysReco(name),
   clusters_Towers(nullptr),
   truth_particles(nullptr),
@@ -101,7 +101,7 @@ SubsysReco(name),
   m_truthEndVtx_r(0),
   m_truth_all_clusterIDs(0),
   fout(NULL),
-  outname(name),
+  outname(oname),
   getEvent(-9999),
   /* hasHIJING(isAuAu), */
   isMonteCarlo(isMC),
@@ -260,12 +260,12 @@ int pythiaEMCalAna::process_event(PHCompositeNode *topNode)
   RawClusterContainer *clusterContainer = nullptr;
   // Name of node is different in MC and RD
   if (isMonteCarlo) {
-      clusterContainer = findNode::getClass<RawClusterContainer>(topNode,"CLUSTER_CEMC");
-      // clusterContainer = findNode::getClass<RawClusterContainer>(topNode,"CLUSTER_POS_COR_CEMC");
+      /* clusterContainer = findNode::getClass<RawClusterContainer>(topNode,"CLUSTER_CEMC"); */
+      clusterContainer = findNode::getClass<RawClusterContainer>(topNode,"CLUSTER_POS_COR_CEMC");
   }
   else {
-      clusterContainer = findNode::getClass<RawClusterContainer>(topNode,"CLUSTERINFO_CEMC");
-      /* clusterContainer = findNode::getClass<RawClusterContainer>(topNode,"CLUSTERINFO_POS_COR_CEMC"); */
+      /* clusterContainer = findNode::getClass<RawClusterContainer>(topNode,"CLUSTERINFO_CEMC"); */
+      clusterContainer = findNode::getClass<RawClusterContainer>(topNode,"CLUSTERINFO_POS_COR_CEMC");
   }
   if(!clusterContainer)
   {
