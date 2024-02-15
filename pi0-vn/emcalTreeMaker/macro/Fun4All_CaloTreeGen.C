@@ -37,8 +37,10 @@ void Fun4All_CaloTreeGen(const string  &inputFile,
   Fun4AllServer *se = Fun4AllServer::instance();
   // recoConsts *rc = recoConsts::instance();
 
-  caloTreeGen *calo = new caloTreeGen(qaFile.c_str(), diphotonFile.c_str());
+  caloTreeGen *calo = new caloTreeGen("caloTreeGen");
   calo->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
+  calo->set_output_QA(qaFile);
+  calo->set_output_diphoton(diphotonFile);
   calo->set_clusterE_min(clusE_min);
   calo->set_cluster_chi_max(clusChi_max);
   calo->set_do_pi0_ana(doPi0Ana);

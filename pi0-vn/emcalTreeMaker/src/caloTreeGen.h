@@ -24,7 +24,7 @@ class caloTreeGen : public SubsysReco
 {
   public:
 
-    caloTreeGen(const std::string &name = "qa", const std::string &name2 = "diphoton");
+    caloTreeGen(const std::string &name = "caloTreeGen");
 
     ~caloTreeGen() override;
 
@@ -71,6 +71,14 @@ class caloTreeGen : public SubsysReco
 
     void set_vtx_z_max(Float_t vtx_z_max = 10) {
       this->vtx_z_max = vtx_z_max;
+    }
+
+    void set_output_QA(const std::string &Outfile) {
+      this->Outfile = Outfile;
+    }
+
+    void set_output_diphoton(const std::string &Outfile2) {
+      this->Outfile2 = Outfile2;
     }
 
     void set_do_pi0_ana(Bool_t do_pi0_ana = false) {

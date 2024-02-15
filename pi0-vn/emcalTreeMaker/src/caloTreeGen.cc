@@ -47,13 +47,11 @@
 #include <calotrigger/MinimumBiasInfo.h>
 
 //____________________________________________________________________________..
-caloTreeGen::caloTreeGen(const std::string &name, const std::string &name2):
+caloTreeGen::caloTreeGen(const std::string &name):
   SubsysReco(name)
   ,T(nullptr)
   ,out(nullptr)
   ,out2(nullptr)
-  ,Outfile(name)
-  ,Outfile2(name2)
 {
   std::cout << "caloTreeGen::caloTreeGen(const std::string &name) Calling ctor" << std::endl;
 }
