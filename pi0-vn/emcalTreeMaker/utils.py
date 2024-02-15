@@ -25,6 +25,7 @@ f4a.add_argument('-a', '--do-pi0', type=int, default=1, help='Do pi0 Analysis. D
 pi0Ana = subparser.add_parser('pi0Ana', help='Create condor submission directory for pi0Analysis.')
 
 pi0Ana.add_argument('-i', '--ntp-list', type=str, help='List of Ntuples', required=True)
+pi0Ana.add_argument('-i2', '--isDir', type=bool, default=False, help='is fit stats a directory (i.e separate csv for each run?). Default: False')
 pi0Ana.add_argument('-c', '--cuts', type=str, help='List of cuts', required=True)
 pi0Ana.add_argument('-c2', '--csv', type=str, default="", help='CSV file with fitStats. Default: ""')
 pi0Ana.add_argument('-c3', '--Q-vec-corr', type=str, default="", help='CSV file with Q vector corrections. Default: ""')
@@ -47,6 +48,17 @@ mix.add_argument('-b', '--executable', type=str, default='bin/mixedEvent', help=
 mix.add_argument('-d', '--output', type=str, default='test', help='Output Directory. Default: ./test')
 mix.add_argument('-s', '--memory', type=int, default=1, help='Memory (units of GB) to request per condor submission. Default: 1 GB.')
 mix.add_argument('-l', '--log', type=str, default='/tmp/anarde/dump/job-$(ClusterId)-$(Process).log', help='Condor log file.')
+
+QVecCorr = subparser.add_parser('QVecCorr', help='Create condor submission directory for Q Vector Correction.')
+
+QVecCorr.add_argument('-i', '--ntp-list', type=str, help='List of Ntuples', required=True)
+QVecCorr.add_argument('-m', '--macro', type=str, default='macro/Q-vector-correction.C', help='Q Vector Correction macro. Default: macro/Q-vector-correction.C')
+QVecCorr.add_argument('-z', '--vtx-z', type=float, default=10, help='Event z-vertex cut. Default: 10 [cm]')
+QVecCorr.add_argument('-e', '--script', type=str, default='genQVecCorr.sh', help='Job script to execute. Default: genQVecCorr.sh')
+QVecCorr.add_argument('-b', '--executable', type=str, default='bin/Q-vec-corr', help='Executable. Default: bin/Q-vec-corr')
+QVecCorr.add_argument('-d', '--output', type=str, default='test', help='Output Directory. Default: ./test')
+QVecCorr.add_argument('-s', '--memory', type=int, default=1, help='Memory (units of GB) to request per condor submission. Default: 1 GB.')
+QVecCorr.add_argument('-l', '--log', type=str, default='/tmp/anarde/dump/job-$(ClusterId)-$(Process).log', help='Condor log file.')
 
 dummy = subparser.add_parser('dummy', help='Identify events per run from input text file.')
 dummy.add_argument('-i', '--entries', type=str, help='Text file of all runs and events', required=True)
@@ -143,6 +155,7 @@ def create_pi0Ana_jobs():
     cuts       = os.path.realpath(args.cuts)
     macro      = os.path.realpath(args.macro)
     fitStats   = os.path.realpath(args.csv) if(args.csv != '') else ''
+    isDir      = args.isDir
     Q_vec_corr = os.path.realpath(args.Q_vec_corr) if(args.Q_vec_corr != '') else ''
     script     = os.path.realpath(args.script)
     executable = os.path.realpath(args.executable)
@@ -155,6 +168,7 @@ def create_pi0Ana_jobs():
     print(f'Run List: {ntp_list}')
     print(f'Cuts: {cuts}')
     print(f'FitStats: {fitStats}')
+    print(f'isDir: {isDir}')
     print(f'Q Vector Correction: {Q_vec_corr}')
     print(f'Vtx z max: {z} cm')
     print(f'Script: {script}')
@@ -169,14 +183,15 @@ def create_pi0Ana_jobs():
     shutil.copy(ntp_list, output_dir)
     shutil.copy(cuts, output_dir)
     shutil.copy(macro, output_dir)
-    if(fitStats != ''):
+    if(fitStats != '' and not isDir):
         shutil.copy(fitStats, output_dir)
-    if(Q_vec_corr != ''):
+    if(Q_vec_corr != '' and not isDir):
         shutil.copy(Q_vec_corr, output_dir)
 
-    cuts       = f'{output_dir}/{os.path.basename(cuts)}'
-    fitStats   = f'{output_dir}/{os.path.basename(fitStats)}' if(fitStats != '') else r'\"\"'
-    Q_vec_corr = f'{output_dir}/{os.path.basename(Q_vec_corr)}' if(Q_vec_corr != '') else r'\"\"'
+    cuts = f'{output_dir}/{os.path.basename(cuts)}'
+    if(not isDir):
+        fitStats   = f'{output_dir}/{os.path.basename(fitStats)}' if(fitStats != '') else r'\"\"'
+        Q_vec_corr = f'{output_dir}/{os.path.basename(Q_vec_corr)}' if(Q_vec_corr != '') else r'\"\"'
 
     sub = ''
     with open(ntp_list) as file:
@@ -190,10 +205,16 @@ def create_pi0Ana_jobs():
             os.makedirs(f'{output_dir}/{run}/output',exist_ok=True)
 
             shutil.copy(line, f'{output_dir}/{run}')
+            if(isDir):
+                shutil.copy(f'{fitStats}/fit-stats-{run}.csv', f'{output_dir}/{run}')
+                shutil.copy(f'{Q_vec_corr}/Q-vec-corr-{run}.csv', f'{output_dir}/{run}')
 
             with open(f'{output_dir}/{run}/genPi0Ana.sub', mode="w") as file2:
                 file2.write(f'executable     = ../{os.path.basename(script)}\n')
-                file2.write(f'arguments      = {output_dir}/{os.path.basename(executable)} $(input_ntp) {cuts} {fitStats} {Q_vec_corr} output/test-$(Process).root {z}\n')
+                if(not isDir):
+                    file2.write(f'arguments      = {output_dir}/{os.path.basename(executable)} $(input_ntp) {cuts} {fitStats} {Q_vec_corr} output/test-$(Process).root {z}\n')
+                else:
+                    file2.write(f'arguments      = {output_dir}/{os.path.basename(executable)} $(input_ntp) {cuts} {output_dir}/{run}/fit-stats-{run}.csv {output_dir}/{run}/Q-vec-corr-{run}.csv output/test-$(Process).root {z}\n')
                 file2.write(f'log            = {log}\n')
                 file2.write( 'output         = stdout/job-$(Process).out\n')
                 file2.write( 'error          = error/job-$(Process).err\n')
@@ -266,6 +287,60 @@ def create_mixedEvent_jobs():
     # print condor submission command
     print(sub)
 
+def create_QVecCorr_jobs():
+    ntp_list   = os.path.realpath(args.ntp_list)
+    macro      = os.path.realpath(args.macro)
+    script     = os.path.realpath(args.script)
+    executable = os.path.realpath(args.executable)
+    output_dir = os.path.realpath(args.output)
+    memory     = args.memory
+    log        = args.log
+    z          = args.vtx_z
+
+    print(f'Macro: {macro}')
+    print(f'Run List: {ntp_list}')
+    print(f'Vtx z max: {z} cm')
+    print(f'Script: {script}')
+    print(f'Executable: {executable}')
+    print(f'Output Directory: {output_dir}')
+    print(f'Requested memory per job: {memory}GB')
+    print(f'Condor log file: {log}')
+
+    os.makedirs(output_dir,exist_ok=True)
+    shutil.copy(script, output_dir)
+    shutil.copy(executable, output_dir)
+    shutil.copy(ntp_list, output_dir)
+    shutil.copy(macro, output_dir)
+
+    sub = ''
+    with open(ntp_list) as file:
+        for line in file:
+            line = line.rstrip() # remove \n from the end of the string
+            run = os.path.splitext(os.path.basename(line))[0] # extract the run number from the file name
+
+            print(f'Run: {run}')
+            os.makedirs(f'{output_dir}/{run}/stdout',exist_ok=True)
+            os.makedirs(f'{output_dir}/{run}/error',exist_ok=True)
+            os.makedirs(f'{output_dir}/{run}/output',exist_ok=True)
+
+            # shutil.copy(line, f'{output_dir}/{run}')
+            with open(f'{output_dir}/{run}/{run}.list', mode='w') as file2:
+                file2.write(f'{line}\n')
+
+            with open(f'{output_dir}/{run}/genQVecCorr.sub', mode="w") as file2:
+                file2.write(f'executable     = ../{os.path.basename(script)}\n')
+                file2.write(f'arguments      = {output_dir}/{os.path.basename(executable)} $(input_ntp) {z} output/Q-vec-corr-{run}.root output/Q-vec-corr-{run}.csv\n')
+                file2.write(f'log            = {log}\n')
+                file2.write( 'output         = stdout/job.out\n')
+                file2.write( 'error          = error/job.err\n')
+                file2.write(f'request_memory = {memory}GB\n')
+                file2.write(f'queue input_ntp from {run}.list')
+
+            sub = f'{sub} cd {output_dir}/{run} && condor_submit genQVecCorr.sub &&'
+
+    # print condor submission command
+    print(sub)
+
 if __name__ == '__main__':
     if(args.command == 'f4a'):
         create_f4a_jobs()
@@ -273,6 +348,8 @@ if __name__ == '__main__':
         create_pi0Ana_jobs()
     if(args.command == 'mix'):
         create_mixedEvent_jobs()
+    if(args.command == 'QVecCorr'):
+        create_QVecCorr_jobs()
     if(args.command == 'dummy'):
         process_dummy()
     if(args.command == 'dummy2'):

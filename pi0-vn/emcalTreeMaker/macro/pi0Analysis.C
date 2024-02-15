@@ -63,10 +63,17 @@ namespace myAnalysis {
     map<pair<string,string>, TH2F*> h2AsymVsMass;
     map<pair<string,string>, TH2F*> h2DeltaRVsAsym;
     map<string, TH1F*>              hDiphotonPt;
-    map<string, TH1F*>              hQQ;
-    map<pair<string,string>, TH1F*> hqQ;
-    map<pair<string,string>, TH1F*> hqQ_bg;
-    map<pair<string,string>, TH1F*> hqQ_bg_left;
+    // v2
+    map<string, TH1F*>              hQQ2;
+    map<pair<string,string>, TH1F*> hqQ2;
+    map<pair<string,string>, TH1F*> hqQ2_bg;
+    map<pair<string,string>, TH1F*> hqQ2_bg_left;
+    // v3
+    map<string, TH1F*>              hQQ3;
+    map<pair<string,string>, TH1F*> hqQ3;
+    map<pair<string,string>, TH1F*> hqQ3_bg;
+    map<pair<string,string>, TH1F*> hqQ3_bg_left;
+
     map<pair<string,string>, TH1F*> hNPi0;
     map<pair<string,string>, TH2F*> h2Pi0EtaPhi;
     map<pair<string,string>, TH2F*> h2Pi0EtaPhiv2;
@@ -106,14 +113,24 @@ namespace myAnalysis {
     Bool_t do_vn_calc = true;
 
     // First Order Correction
-    Float_t Q_S_x_avg[3] = {0};
-    Float_t Q_S_y_avg[3] = {0};
-    Float_t Q_N_x_avg[3] = {0};
-    Float_t Q_N_y_avg[3] = {0};
+    // v2
+    Float_t Q2_S_x_avg[3] = {0};
+    Float_t Q2_S_y_avg[3] = {0};
+    Float_t Q2_N_x_avg[3] = {0};
+    Float_t Q2_N_y_avg[3] = {0};
+    // v3
+    Float_t Q3_S_x_avg[3] = {0};
+    Float_t Q3_S_y_avg[3] = {0};
+    Float_t Q3_N_x_avg[3] = {0};
+    Float_t Q3_N_y_avg[3] = {0};
 
     // Second Order Correction
-    Float_t X_S[3][2][2] = {0}; // [cent][row][col], off diagonal entries are the same
-    Float_t X_N[3][2][2] = {0}; // [cent][row][col], off diagonal entries are the same
+    // v2
+    Float_t X2_S[3][2][2] = {0}; // [cent][row][col], off diagonal entries are the same
+    Float_t X2_N[3][2][2] = {0}; // [cent][row][col], off diagonal entries are the same
+    // v3
+    Float_t X3_S[3][2][2] = {0}; // [cent][row][col], off diagonal entries are the same
+    Float_t X3_N[3][2][2] = {0}; // [cent][row][col], off diagonal entries are the same
 }
 
 Int_t myAnalysis::init(const string &i_input, const string &i_cuts, const string& fitStats, const string& QVecCorr, Long64_t start, Long64_t end) {
@@ -296,16 +313,26 @@ Int_t myAnalysis::readQVectorCorrection(const string &i_input) {
         string cell;
         char comma;
 
-        if (!(lineStream >> Q_S_x_avg[i] >> comma
-                         >> Q_S_y_avg[i] >> comma
-                         >> Q_N_x_avg[i] >> comma
-                         >> Q_N_y_avg[i] >> comma
-                         >> X_S[i][0][0] >> comma
-                         >> X_S[i][0][1] >> comma
-                         >> X_S[i][1][1] >> comma
-                         >> X_N[i][0][0] >> comma
-                         >> X_N[i][0][1] >> comma
-                         >> X_N[i][1][1])) {
+        if (!(lineStream >> Q2_S_x_avg[i] >> comma
+                         >> Q2_S_y_avg[i] >> comma
+                         >> Q2_N_x_avg[i] >> comma
+                         >> Q2_N_y_avg[i] >> comma
+                         >> X2_S[i][0][0] >> comma
+                         >> X2_S[i][0][1] >> comma
+                         >> X2_S[i][1][1] >> comma
+                         >> X2_N[i][0][0] >> comma
+                         >> X2_N[i][0][1] >> comma
+                         >> X2_N[i][1][1] >> comma
+                         >> Q3_S_x_avg[i] >> comma
+                         >> Q3_S_y_avg[i] >> comma
+                         >> Q3_N_x_avg[i] >> comma
+                         >> Q3_N_y_avg[i] >> comma
+                         >> X3_S[i][0][0] >> comma
+                         >> X3_S[i][0][1] >> comma
+                         >> X3_S[i][1][1] >> comma
+                         >> X3_N[i][0][0] >> comma
+                         >> X3_N[i][0][1] >> comma
+                         >> X3_N[i][1][1])) {
 
             cerr << "Failed to parse line: " << line << endl;
             return 1;
@@ -316,29 +343,44 @@ Int_t myAnalysis::readQVectorCorrection(const string &i_input) {
     // Close the file
     file.close();
 
-    cout << "Q Vector Corr Factors" << endl;
+    cout << "Q2 Vector Corr Factors" << endl;
     for(Int_t j = 0; j < i; ++j) {
         cout << "Cent: " << cent_key[j] << endl;
-        cout << left << "Q_S_x_avg: "   << setw(8) << Q_S_x_avg[j]
-                     << ", Q_S_y_avg: " << setw(8) << Q_S_y_avg[j] << endl;
+        cout << left << "Q2_S_x_avg: "   << setw(8) << Q2_S_x_avg[j]
+                     << ", Q2_S_y_avg: " << setw(8) << Q2_S_y_avg[j] << endl;
 
-        cout << left << "Q_N_x_avg: "   << setw(8) << Q_N_x_avg[j]
-                     << ", Q_N_y_avg: " << setw(8) << Q_N_y_avg[j] << endl;
+        cout << left << "Q2_N_x_avg: "   << setw(8) << Q2_N_x_avg[j]
+                     << ", Q2_N_y_avg: " << setw(8) << Q2_N_y_avg[j] << endl;
 
-        cout << left << "X_S_00: "   << setw(8) << X_S[j][0][0]
-                     << ", X_S_01: " << setw(8) << X_S[j][0][1]
-                     << ", X_S_11: " << setw(8) << X_S[j][1][1] << endl;
+        cout << left << "X2_S_00: "   << setw(8) << X2_S[j][0][0]
+                     << ", X2_S_01: " << setw(8) << X2_S[j][0][1]
+                     << ", X2_S_11: " << setw(8) << X2_S[j][1][1] << endl;
 
-        cout << left << "X_N_00: "   << setw(8) << X_N[j][0][0]
-                     << ", X_N_01: " << setw(8) << X_N[j][0][1]
-                     << ", X_N_11: " << setw(8) << X_N[j][1][1] << endl;
+        cout << left << "X2_N_00: "   << setw(8) << X2_N[j][0][0]
+                     << ", X2_N_01: " << setw(8) << X2_N[j][0][1]
+                     << ", X2_N_11: " << setw(8) << X2_N[j][1][1] << endl;
+
+        cout << endl;
+
+        cout << left << "Q3_S_x_avg: "   << setw(8) << Q3_S_x_avg[j]
+                     << ", Q3_S_y_avg: " << setw(8) << Q3_S_y_avg[j] << endl;
+
+        cout << left << "Q3_N_x_avg: "   << setw(8) << Q3_N_x_avg[j]
+                     << ", Q3_N_y_avg: " << setw(8) << Q3_N_y_avg[j] << endl;
+
+        cout << left << "X3_S_00: "   << setw(8) << X3_S[j][0][0]
+                     << ", X3_S_01: " << setw(8) << X3_S[j][0][1]
+                     << ", X3_S_11: " << setw(8) << X3_S[j][1][1] << endl;
+
+        cout << left << "X3_N_00: "   << setw(8) << X3_N[j][0][0]
+                     << ", X3_N_01: " << setw(8) << X3_N[j][0][1]
+                     << ", X3_N_11: " << setw(8) << X3_N[j][1][1] << endl;
 
         cout << endl;
     }
 
     return 0;
 }
-
 
 void myAnalysis::init_hists() {
 
@@ -351,7 +393,10 @@ void myAnalysis::init_hists() {
         string suffix_title =  "Centrality: " + cent_key[i] + "%";
         hDiphotonPt[cent_key[i]] = new TH1F(("hDiphotonPt_"+cent_key[i]).c_str(), ("Diphoton p_{T}, " + suffix_title +"; p_{T} [GeV]; Counts").c_str(), bins_pt, hpt_min, hpt_max);
 
-        hQQ[cent_key[i]] = new TH1F(("hQQ_"+cent_key[i]).c_str(), ("QQ, " + suffix_title +"; QQ; Counts").c_str(), bins_Q, Q_min, Q_max);
+        // v2
+        hQQ2[cent_key[i]] = new TH1F(("hQQ2_"+cent_key[i]).c_str(), ("QQ2, " + suffix_title +"; QQ2; Counts").c_str(), bins_Q, Q_min, Q_max);
+        // v3
+        hQQ3[cent_key[i]] = new TH1F(("hQQ3_"+cent_key[i]).c_str(), ("QQ3, " + suffix_title +"; QQ3; Counts").c_str(), bins_Q, Q_min, Q_max);
 
         for(Int_t j = 0; j < pt_key.size(); ++j) {
 
@@ -361,9 +406,15 @@ void myAnalysis::init_hists() {
             string suffix = "_"+cent_key[i]+"_"+pt_key[j];
             suffix_title = "Centrality: " + cent_key[i] + "%, Diphoton p_{T}: " + pt_key[j] + " GeV";
 
-            hqQ[key] = new TH1F(("hqQ_"+to_string(idx)).c_str(), ("qQ, " + suffix_title + "; qQ; Counts").c_str(), bins_Q, Q_min, Q_max);
-            hqQ_bg[key] = new TH1F(("hqQ_bg_"+to_string(idx)).c_str(), ("qQ, " + suffix_title + "; qQ; Counts").c_str(), bins_Q, Q_min, Q_max);
-            hqQ_bg_left[key] = new TH1F(("hqQ_bg_left_"+to_string(idx)).c_str(), ("qQ, " + suffix_title + "; qQ; Counts").c_str(), bins_Q, Q_min, Q_max);
+            // v2
+            hqQ2[key] = new TH1F(("hqQ2_"+to_string(idx)).c_str(), ("qQ2, " + suffix_title + "; qQ2; Counts").c_str(), bins_Q, Q_min, Q_max);
+            hqQ2_bg[key] = new TH1F(("hqQ2_bg_"+to_string(idx)).c_str(), ("qQ2, " + suffix_title + "; qQ2; Counts").c_str(), bins_Q, Q_min, Q_max);
+            hqQ2_bg_left[key] = new TH1F(("hqQ2_bg_left_"+to_string(idx)).c_str(), ("qQ2, " + suffix_title + "; qQ2; Counts").c_str(), bins_Q, Q_min, Q_max);
+
+            // v3
+            hqQ3[key] = new TH1F(("hqQ3_"+to_string(idx)).c_str(), ("qQ3, " + suffix_title + "; qQ3; Counts").c_str(), bins_Q, Q_min, Q_max);
+            hqQ3_bg[key] = new TH1F(("hqQ3_bg_"+to_string(idx)).c_str(), ("qQ3, " + suffix_title + "; qQ3; Counts").c_str(), bins_Q, Q_min, Q_max);
+            hqQ3_bg_left[key] = new TH1F(("hqQ3_bg_left_"+to_string(idx)).c_str(), ("qQ3, " + suffix_title + "; qQ3; Counts").c_str(), bins_Q, Q_min, Q_max);
 
             h2Pi0EtaPhi[key] = new TH2F(("h2Pi0EtaPhi_"+to_string(idx)).c_str(), ("#pi_{0}, " + suffix_title + "; #eta; #phi").c_str(), bins_eta, eta_min, eta_max, bins_phi, phi_min, phi_max);
             h2Pi0EtaPhiv2[key] = new TH2F(("h2Pi0EtaPhiv2_"+to_string(idx)).c_str(), ("#pi_{0}, " + suffix_title + "; #eta; #phi").c_str(), bins_eta, eta_min, eta_max, bins_phi, phi_min, phi_max);
@@ -420,10 +471,15 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end) {
     T->SetBranchStatus("chi2_max",   true);
 
     if(do_vn_calc) {
-        T->SetBranchStatus("Q_S_x",   true);
-        T->SetBranchStatus("Q_S_y",   true);
-        T->SetBranchStatus("Q_N_x",   true);
-        T->SetBranchStatus("Q_N_y",   true);
+        T->SetBranchStatus("Q2_S_x",   true);
+        T->SetBranchStatus("Q2_S_y",   true);
+        T->SetBranchStatus("Q2_N_x",   true);
+        T->SetBranchStatus("Q2_N_y",   true);
+
+        T->SetBranchStatus("Q3_S_x",   true);
+        T->SetBranchStatus("Q3_S_y",   true);
+        T->SetBranchStatus("Q3_N_x",   true);
+        T->SetBranchStatus("Q3_N_y",   true);
 
         T->SetBranchStatus("pi0_phi", true);
         T->SetBranchStatus("pi0_eta", true);
@@ -442,10 +498,14 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end) {
     vector<Float_t>* chi2_max   = 0;
     vector<Bool_t>*  isFarNorth = 0;
 
-    Float_t Q_S_x;
-    Float_t Q_S_y;
-    Float_t Q_N_x;
-    Float_t Q_N_y;
+    Float_t Q2_S_x;
+    Float_t Q2_S_y;
+    Float_t Q2_N_x;
+    Float_t Q2_N_y;
+    Float_t Q3_S_x;
+    Float_t Q3_S_y;
+    Float_t Q3_N_x;
+    Float_t Q3_N_y;
     vector<Float_t>* pi0_phi    = 0;
     vector<Float_t>* pi0_eta    = 0;
 
@@ -463,10 +523,15 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end) {
     T->SetBranchAddress("isFarNorth", &isFarNorth);
 
     if(do_vn_calc) {
-        T->SetBranchAddress("Q_S_x",   &Q_S_x);
-        T->SetBranchAddress("Q_S_y",   &Q_S_y);
-        T->SetBranchAddress("Q_N_x",   &Q_N_x);
-        T->SetBranchAddress("Q_N_y",   &Q_N_y);
+        T->SetBranchAddress("Q2_S_x", &Q2_S_x);
+        T->SetBranchAddress("Q2_S_y", &Q2_S_y);
+        T->SetBranchAddress("Q2_N_x", &Q2_N_x);
+        T->SetBranchAddress("Q2_N_y", &Q2_N_y);
+
+        T->SetBranchAddress("Q3_S_x", &Q3_S_x);
+        T->SetBranchAddress("Q3_S_y", &Q3_S_y);
+        T->SetBranchAddress("Q3_N_x", &Q3_N_x);
+        T->SetBranchAddress("Q3_N_y", &Q3_N_y);
 
         T->SetBranchAddress("pi0_phi", &pi0_phi);
         T->SetBranchAddress("pi0_eta", &pi0_eta);
@@ -476,14 +541,20 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end) {
 
     UInt_t evt_ctr[cent_key.size()] = {0};
 
-    Float_t QQ_min    = 9999;
-    Float_t qQ_min    = 9999;
-    Float_t qQ_bg_min = 9999;
+    Float_t QQ2_min    = 9999;
+    Float_t qQ2_min    = 9999;
+    Float_t qQ2_bg_min = 9999;
+    Float_t QQ3_min    = 9999;
+    Float_t qQ3_min    = 9999;
+    Float_t qQ3_bg_min = 9999;
     Float_t eta_min   = 9999;
     UInt_t  npi0_max  = 0;
-    Float_t QQ_max    = 0;
-    Float_t qQ_max    = 0;
-    Float_t qQ_bg_max = 0;
+    Float_t QQ2_max    = 0;
+    Float_t qQ2_max    = 0;
+    Float_t qQ2_bg_max = 0;
+    Float_t QQ3_max    = 0;
+    Float_t qQ3_max    = 0;
+    Float_t qQ3_bg_max = 0;
     Float_t eta_max   = 0;
 
     cout << "Events to process: " << end-start+1 << endl;
@@ -508,34 +579,60 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end) {
         ++evt_ctr[cent_idx];
 
         if(do_vn_calc) {
+            // v2
             // Apply first and second order correction to the Q vectors
             //============================================
             // compute first order correction
-            Float_t Q_S_x_temp = Q_S_x - Q_S_x_avg[cent_idx];
-            Float_t Q_S_y_temp = Q_S_y - Q_S_y_avg[cent_idx];
-            Float_t Q_N_x_temp = Q_N_x - Q_N_x_avg[cent_idx];
-            Float_t Q_N_y_temp = Q_N_y - Q_N_y_avg[cent_idx];
+            Float_t Q2_S_x_temp = Q2_S_x - Q2_S_x_avg[cent_idx];
+            Float_t Q2_S_y_temp = Q2_S_y - Q2_S_y_avg[cent_idx];
+            Float_t Q2_N_x_temp = Q2_N_x - Q2_N_x_avg[cent_idx];
+            Float_t Q2_N_y_temp = Q2_N_y - Q2_N_y_avg[cent_idx];
 
             // compute second order correction
-            Q_S_x = X_S[cent_idx][0][0]*Q_S_x_temp+X_S[cent_idx][0][1]*Q_S_y_temp;
-            Q_S_y = X_S[cent_idx][0][1]*Q_S_x_temp+X_S[cent_idx][1][1]*Q_S_y_temp;
-            Q_N_x = X_N[cent_idx][0][0]*Q_N_x_temp+X_N[cent_idx][0][1]*Q_N_y_temp;
-            Q_N_y = X_N[cent_idx][0][1]*Q_N_x_temp+X_N[cent_idx][1][1]*Q_N_y_temp;
+            Q2_S_x = X2_S[cent_idx][0][0]*Q2_S_x_temp+X2_S[cent_idx][0][1]*Q2_S_y_temp;
+            Q2_S_y = X2_S[cent_idx][0][1]*Q2_S_x_temp+X2_S[cent_idx][1][1]*Q2_S_y_temp;
+            Q2_N_x = X2_N[cent_idx][0][0]*Q2_N_x_temp+X2_N[cent_idx][0][1]*Q2_N_y_temp;
+            Q2_N_y = X2_N[cent_idx][0][1]*Q2_N_x_temp+X2_N[cent_idx][1][1]*Q2_N_y_temp;
             //============================================
 
-            Float_t QQ = Q_S_x*Q_N_x + Q_S_y*Q_N_y;
-            QQ_min = min(QQ_min, QQ);
-            QQ_max = max(QQ_max, QQ);
+            Float_t QQ2 = Q2_S_x*Q2_N_x + Q2_S_y*Q2_N_y;
+            QQ2_min = min(QQ2_min, QQ2);
+            QQ2_max = max(QQ2_max, QQ2);
 
-            hQQ[cent_key[cent_idx]]->Fill(QQ);
+            hQQ2[cent_key[cent_idx]]->Fill(QQ2);
+
+            // v3
+            // Apply first and second order correction to the Q vectors
+            //============================================
+            // compute first order correction
+            Float_t Q3_S_x_temp = Q3_S_x - Q3_S_x_avg[cent_idx];
+            Float_t Q3_S_y_temp = Q3_S_y - Q3_S_y_avg[cent_idx];
+            Float_t Q3_N_x_temp = Q3_N_x - Q3_N_x_avg[cent_idx];
+            Float_t Q3_N_y_temp = Q3_N_y - Q3_N_y_avg[cent_idx];
+
+            // compute second order correction
+            Q3_S_x = X3_S[cent_idx][0][0]*Q3_S_x_temp+X3_S[cent_idx][0][1]*Q3_S_y_temp;
+            Q3_S_y = X3_S[cent_idx][0][1]*Q3_S_x_temp+X3_S[cent_idx][1][1]*Q3_S_y_temp;
+            Q3_N_x = X3_N[cent_idx][0][0]*Q3_N_x_temp+X3_N[cent_idx][0][1]*Q3_N_y_temp;
+            Q3_N_y = X3_N[cent_idx][0][1]*Q3_N_x_temp+X3_N[cent_idx][1][1]*Q3_N_y_temp;
+            //============================================
+
+            Float_t QQ3 = Q3_S_x*Q3_N_x + Q3_S_y*Q3_N_y;
+            QQ3_min = min(QQ3_min, QQ3);
+            QQ3_max = max(QQ3_max, QQ3);
+
+            hQQ3[cent_key[cent_idx]]->Fill(QQ3);
         }
 
-        UInt_t pi0_ctr[cent_key.size()*pt_key.size()] = {0};
-        UInt_t bg_ctr[cent_key.size()*pt_key.size()]  = {0};
-        UInt_t bg_left_ctr[cent_key.size()*pt_key.size()]  = {0};
-        Float_t qQ[cent_key.size()*pt_key.size()]     = {0};
-        Float_t qQ_bg[cent_key.size()*pt_key.size()]  = {0};
-        Float_t qQ_bg_left[cent_key.size()*pt_key.size()]  = {0};
+        UInt_t pi0_ctr[cent_key.size()*pt_key.size()]       = {0};
+        UInt_t bg_ctr[cent_key.size()*pt_key.size()]        = {0};
+        UInt_t bg_left_ctr[cent_key.size()*pt_key.size()]   = {0};
+        Float_t qQ2[cent_key.size()*pt_key.size()]          = {0};
+        Float_t qQ2_bg[cent_key.size()*pt_key.size()]       = {0};
+        Float_t qQ2_bg_left[cent_key.size()*pt_key.size()]  = {0};
+        Float_t qQ3[cent_key.size()*pt_key.size()]          = {0};
+        Float_t qQ3_bg[cent_key.size()*pt_key.size()]       = {0};
+        Float_t qQ3_bg_left[cent_key.size()*pt_key.size()]  = {0};
         // loop over all diphoton candidates
         for(UInt_t j = 0; j < pi0_mass->size(); ++j) {
             Float_t pi0_pt_val = pi0_pt->at(j);
@@ -557,23 +654,37 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end) {
             Float_t pi0_phi_val = 0;
             Float_t pi0_eta_val = 0;
 
-            Float_t Q_x = 0;
-            Float_t Q_y = 0;
+            Float_t Q2_x = 0;
+            Float_t Q2_y = 0;
 
-            Double_t q_x    = 0;
-            Double_t q_y    = 0;
-            Double_t qQ_val = 0;
+            Float_t Q3_x = 0;
+            Float_t Q3_y = 0;
+
+            Double_t q2_x    = 0;
+            Double_t q2_y    = 0;
+            Double_t qQ2_val = 0;
+
+            Double_t q3_x    = 0;
+            Double_t q3_y    = 0;
+            Double_t qQ3_val = 0;
 
             if(do_vn_calc) {
                 pi0_phi_val   = pi0_phi->at(j);
                 pi0_eta_val   = pi0_eta->at(j);
 
-                Q_x = (pi0_eta_val < 0) ? Q_N_x : Q_S_x;
-                Q_y = (pi0_eta_val < 0) ? Q_N_y : Q_S_y;
+                Q2_x = (pi0_eta_val < 0) ? Q2_N_x : Q2_S_x;
+                Q2_y = (pi0_eta_val < 0) ? Q2_N_y : Q2_S_y;
 
-                q_x = cos(2*pi0_phi_val);
-                q_y = sin(2*pi0_phi_val);
-                qQ_val = q_x*Q_x + q_y*Q_y;
+                q2_x = cos(2*pi0_phi_val);
+                q2_y = sin(2*pi0_phi_val);
+                qQ2_val = q2_x*Q2_x + q2_y*Q2_y;
+
+                Q3_x = (pi0_eta_val < 0) ? Q3_N_x : Q3_S_x;
+                Q3_y = (pi0_eta_val < 0) ? Q3_N_y : Q3_S_y;
+
+                q3_x = cos(3*pi0_phi_val);
+                q3_y = sin(3*pi0_phi_val);
+                qQ3_val = q3_x*Q3_x + q3_y*Q3_y;
             }
 
             h2AsymVsMass[key]->Fill(pi0_mass_val, asym_val);
@@ -598,19 +709,22 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end) {
                     // fill in qQ for the background to the left of the pi0 peak
                     if(k == 0 && do_vn_calc && pi0_mass_val < bg_min) {
                         ++bg_left_ctr[idx];
-                        qQ_bg_left[idx] += qQ_val;
+                        qQ2_bg_left[idx] += qQ2_val;
+                        qQ3_bg_left[idx] += qQ3_val;
                     }
 
                     // fill in qQ for the background
                     if(k == 0 && do_vn_calc && pi0_mass_val >= bg_min && pi0_mass_val < bg_max) {
                         ++bg_ctr[idx];
-                        qQ_bg[idx] += qQ_val;
+                        qQ2_bg[idx] += qQ2_val;
+                        qQ3_bg[idx] += qQ3_val;
                     }
                     // fill in the qQ for the signal+background region
                     // do this for only one of the cuts for which we have signal bound information
                     if(k == 0 && do_vn_calc && pi0_mass_val >= pi0_mass_low && pi0_mass_val < pi0_mass_high) {
                         ++pi0_ctr[idx];
-                        qQ[idx] += qQ_val;
+                        qQ2[idx] += qQ2_val;
+                        qQ3[idx] += qQ3_val;
                         h2Pi0EtaPhi[key]->Fill(pi0_eta_val, pi0_phi_val);
                         if(!isFarNorth_val) h2Pi0EtaPhiv2[key]->Fill(pi0_eta_val, pi0_phi_val);
                         eta_min = min(eta_min, pi0_eta_val);
@@ -630,26 +744,49 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end) {
                     npi0_max = max(npi0_max, pi0_ctr[idx]);
                     if(pi0_ctr[idx]) hNPi0[key]->Fill(pi0_ctr[idx]);
 
+                    // v2
                     // compute qQ for the background to the left of the pi0 peak
-                    qQ_bg_left[idx] = (bg_left_ctr[idx]) ? qQ_bg_left[idx]/bg_left_ctr[idx] : 0;
-                    qQ_bg_min = min(qQ_bg_min, qQ_bg_left[idx]);
-                    qQ_bg_max = max(qQ_bg_max, qQ_bg_left[idx]);
+                    qQ2_bg_left[idx] = (bg_left_ctr[idx]) ? qQ2_bg_left[idx]/bg_left_ctr[idx] : 0;
+                    qQ2_bg_min = min(qQ2_bg_min, qQ2_bg_left[idx]);
+                    qQ2_bg_max = max(qQ2_bg_max, qQ2_bg_left[idx]);
 
-                    if(qQ_bg_left[idx]) hqQ_bg_left[key]->Fill(qQ_bg_left[idx]);
+                    if(qQ2_bg_left[idx]) hqQ2_bg_left[key]->Fill(qQ2_bg_left[idx]);
 
                     // compute qQ for the background
-                    qQ_bg[idx] = (bg_ctr[idx]) ? qQ_bg[idx]/bg_ctr[idx] : 0;
-                    qQ_bg_min = min(qQ_bg_min, qQ_bg[idx]);
-                    qQ_bg_max = max(qQ_bg_max, qQ_bg[idx]);
+                    qQ2_bg[idx] = (bg_ctr[idx]) ? qQ2_bg[idx]/bg_ctr[idx] : 0;
+                    qQ2_bg_min = min(qQ2_bg_min, qQ2_bg[idx]);
+                    qQ2_bg_max = max(qQ2_bg_max, qQ2_bg[idx]);
 
-                    if(qQ_bg[idx]) hqQ_bg[key]->Fill(qQ_bg[idx]);
+                    if(qQ2_bg[idx]) hqQ2_bg[key]->Fill(qQ2_bg[idx]);
 
                     // compute qQ for the pi0 candiates
-                    qQ[idx] = (pi0_ctr[idx]) ? qQ[idx]/pi0_ctr[idx] : 0;
-                    qQ_min = min(qQ_min, qQ[idx]);
-                    qQ_max = max(qQ_max, qQ[idx]);
+                    qQ2[idx] = (pi0_ctr[idx]) ? qQ2[idx]/pi0_ctr[idx] : 0;
+                    qQ2_min = min(qQ2_min, qQ2[idx]);
+                    qQ2_max = max(qQ2_max, qQ2[idx]);
 
-                    if(qQ[idx]) hqQ[key]->Fill(qQ[idx]);
+                    if(qQ2[idx]) hqQ2[key]->Fill(qQ2[idx]);
+
+                    // v3
+                    // compute qQ for the background to the left of the pi0 peak
+                    qQ3_bg_left[idx] = (bg_left_ctr[idx]) ? qQ3_bg_left[idx]/bg_left_ctr[idx] : 0;
+                    qQ3_bg_min = min(qQ3_bg_min, qQ3_bg_left[idx]);
+                    qQ3_bg_max = max(qQ3_bg_max, qQ3_bg_left[idx]);
+
+                    if(qQ3_bg_left[idx]) hqQ3_bg_left[key]->Fill(qQ3_bg_left[idx]);
+
+                    // compute qQ for the background
+                    qQ3_bg[idx] = (bg_ctr[idx]) ? qQ3_bg[idx]/bg_ctr[idx] : 0;
+                    qQ3_bg_min = min(qQ3_bg_min, qQ3_bg[idx]);
+                    qQ3_bg_max = max(qQ3_bg_max, qQ3_bg[idx]);
+
+                    if(qQ3_bg[idx]) hqQ3_bg[key]->Fill(qQ3_bg[idx]);
+
+                    // compute qQ for the pi0 candiates
+                    qQ3[idx] = (pi0_ctr[idx]) ? qQ3[idx]/pi0_ctr[idx] : 0;
+                    qQ3_min = min(qQ3_min, qQ3[idx]);
+                    qQ3_max = max(qQ3_max, qQ3[idx]);
+
+                    if(qQ3[idx]) hqQ3[key]->Fill(qQ3[idx]);
                 }
             }
         }
@@ -661,9 +798,12 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end) {
              << ", Events: " << evt_ctr[i] << endl;
     }
 
-    cout << "QQ min: " << QQ_min << ", QQ max: " << QQ_max << endl;
-    cout << "qQ min: " << qQ_min << ", qQ max: " << qQ_max << endl;
-    cout << "qQ bg min: " << qQ_bg_min << ", qQ bg max: " << qQ_bg_max << endl;
+    cout << "QQ2 min: " << QQ2_min << ", QQ2 max: " << QQ2_max << endl;
+    cout << "qQ2 min: " << qQ2_min << ", qQ2 max: " << qQ2_max << endl;
+    cout << "qQ2 bg min: " << qQ2_bg_min << ", qQ2 bg max: " << qQ2_bg_max << endl;
+    cout << "QQ3 min: " << QQ3_min << ", QQ3 max: " << QQ3_max << endl;
+    cout << "qQ3 min: " << qQ3_min << ", qQ3 max: " << qQ3_max << endl;
+    cout << "qQ3 bg min: " << qQ3_bg_min << ", qQ3 bg max: " << qQ3_bg_max << endl;
     cout << "pi0 eta min: " << eta_min << ", pi0 eta max: " << eta_max << endl;
     cout << "Max Pi0s per event: " << npi0_max << endl;
     cout << "Finish Process Event" << endl;
@@ -679,10 +819,15 @@ void myAnalysis::finalize(const string &i_output) {
     output.mkdir("QA/h2DeltaRVsAsym");
 
     if(do_vn_calc) {
-        output.mkdir("vn/QQ");
-        output.mkdir("vn/qQ");
-        output.mkdir("vn/qQ_bg");
-        output.mkdir("vn/qQ_bg_left");
+        output.mkdir("vn/QQ2");
+        output.mkdir("vn/qQ2");
+        output.mkdir("vn/qQ2_bg");
+        output.mkdir("vn/qQ2_bg_left");
+
+        output.mkdir("vn/QQ3");
+        output.mkdir("vn/qQ3");
+        output.mkdir("vn/qQ3_bg");
+        output.mkdir("vn/qQ3_bg_left");
 
         output.mkdir("QA/h2Pi0EtaPhi");
         output.mkdir("QA/h2Pi0EtaPhiv2");
@@ -694,8 +839,11 @@ void myAnalysis::finalize(const string &i_output) {
         hDiphotonPt[cent]->Write();
 
         if(do_vn_calc) {
-            output.cd("vn/QQ");
-            hQQ[cent]->Write();
+            output.cd("vn/QQ2");
+            hQQ2[cent]->Write();
+
+            output.cd("vn/QQ3");
+            hQQ3[cent]->Write();
         }
 
         for(auto pt : pt_key) {
@@ -714,14 +862,23 @@ void myAnalysis::finalize(const string &i_output) {
                 output.cd("QA/hNPi0");
                 hNPi0[key]->Write();
 
-                output.cd("vn/qQ");
-                hqQ[key]->Write();
+                output.cd("vn/qQ2");
+                hqQ2[key]->Write();
 
-                output.cd("vn/qQ_bg");
-                hqQ_bg[key]->Write();
+                output.cd("vn/qQ2_bg");
+                hqQ2_bg[key]->Write();
 
-                output.cd("vn/qQ_bg_left");
-                hqQ_bg_left[key]->Write();
+                output.cd("vn/qQ2_bg_left");
+                hqQ2_bg_left[key]->Write();
+
+                output.cd("vn/qQ3");
+                hqQ3[key]->Write();
+
+                output.cd("vn/qQ3_bg");
+                hqQ3_bg[key]->Write();
+
+                output.cd("vn/qQ3_bg_left");
+                hqQ3_bg_left[key]->Write();
 
                 output.cd("QA/h2Pi0EtaPhi");
                 h2Pi0EtaPhi[key]->Write();
