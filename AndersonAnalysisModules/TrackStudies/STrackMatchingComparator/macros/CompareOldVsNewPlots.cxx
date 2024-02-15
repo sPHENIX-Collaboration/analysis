@@ -47,9 +47,9 @@ void CompareOldVsNewPlots() {
   // options ------------------------------------------------------------------
 
   // io parameters
-  const string sOutput("oldVsNewComparison_addRatios_withIntNorm_oneMatchPerParticle_odd02120.pt020n5evt500pim.d7m12y2023.root");
-  const string sInOld("oldEvalPlots_oneMatchPerParticle_odd02120s.pt020n5evt500pim.d7m12y2023.root");
-  const string sInNew("newMatcherPlots_oneMatchPerParticle_odd02120.pt020n5evt500pim.d7m12y2023.root");
+  const string sOutput("oldVsNewComparisonWithNoNorm_oneMatchPerParticle_zVtxCutComp_odd05150.pt10n1evt500pim.d1m2y2024.root");
+  const string sInOld("oldEvalPlots_oneMatchPerParticle_embedScanOn_forZVtxCutComp_oddFrac05150.pt10n1evt500pim.d1m2y2024.root");
+  const string sInNew("newMatcherTuplePlots_oneMatchPerParticle_forZVtxCutComp_oddFrac05150.pt10n1evt500pim.d1m2y2024.root");
 
   // style parameters
   const pair<uint32_t, uint32_t> fCol = {923, 899};
@@ -75,12 +75,12 @@ void CompareOldVsNewPlots() {
   const string         sRatio  = "ratio";
   const vector<string> vecTxt  = {
     "#bf{#it{sPHENIX}} Simulation",
-    "5 #pi^{-}/event, p_{T} #in (0, 20) GeV/c",
+    "1 #pi^{-}/event, p_{T} = 10 GeV/c",
     "#bf{Only #pi^{-}}"
   };
 
   // plot parameters
-  const bool doIntNorm       = true;
+  const bool doIntNorm       = false;
   const bool matchVertScales = true;
 
   // histograms to compare
