@@ -30,10 +30,14 @@ namespace myAnalysis {
     TChain* T;
 
     struct Event {
-        Float_t Q_S_x;
-        Float_t Q_S_y;
-        Float_t Q_N_x;
-        Float_t Q_N_y;
+        Float_t Q2_S_x;
+        Float_t Q2_S_y;
+        Float_t Q2_N_x;
+        Float_t Q2_N_y;
+        Float_t Q3_S_x;
+        Float_t Q3_S_y;
+        Float_t Q3_N_x;
+        Float_t Q3_N_y;
         Float_t cent;
         Float_t z;
     };
@@ -51,34 +55,52 @@ namespace myAnalysis {
 
     TH1F* cent_dum_vec = new TH1F("cent_dum_vec","", 3, 0, 0.6);
 
-    TH1F* hPsi_S[3][3]; // [cent][order of correction]
-    TH1F* hPsi_N[3][3]; // [cent][order of correction]
+    TH1F* hPsi2_S[3][3]; // [cent][order of correction]
+    TH1F* hPsi2_N[3][3]; // [cent][order of correction]
+    TH1F* hPsi3_S[3][3]; // [cent][order of correction]
+    TH1F* hPsi3_N[3][3]; // [cent][order of correction]
 
     UInt_t bins_psi  = 100;
     Float_t low_psi  = -M_PI;
     Float_t high_psi = M_PI;
 
     // First Order Correction
-    Float_t Q_S_x_avg[3] = {0};
-    Float_t Q_S_y_avg[3] = {0};
-    Float_t Q_N_x_avg[3] = {0};
-    Float_t Q_N_y_avg[3] = {0};
+    Float_t Q2_S_x_avg[3] = {0};
+    Float_t Q2_S_y_avg[3] = {0};
+    Float_t Q2_N_x_avg[3] = {0};
+    Float_t Q2_N_y_avg[3] = {0};
+
+    Float_t Q3_S_x_avg[3] = {0};
+    Float_t Q3_S_y_avg[3] = {0};
+    Float_t Q3_N_x_avg[3] = {0};
+    Float_t Q3_N_y_avg[3] = {0};
 
     // Second Order Correction
-    Float_t X_S[3][2][2] = {0}; // [cent][row][col]
-    Float_t X_N[3][2][2] = {0}; // [cent][row][col]
+    Float_t X2_S[3][2][2] = {0}; // [cent][row][col]
+    Float_t X2_N[3][2][2] = {0}; // [cent][row][col]
+
+    Float_t X3_S[3][2][2] = {0}; // [cent][row][col]
+    Float_t X3_N[3][2][2] = {0}; // [cent][row][col]
 }
 
 void myAnalysis::init_hists() {
     for (Int_t i = 0; i < cent_key.size(); ++i) {
         for (Int_t j = 0; j < 3; ++j) {
-            string name = "hPsi_S_"+cent_key[i]+"_"+to_string(j);
+            string name = "hPsi2_S_"+cent_key[i]+"_"+to_string(j);
             string title = to_string(j) + "-th Order Corrected 2#Psi_{2}^{S}, Centrality: " + cent_key[i] + "; 2#Psi_{2}^{S}; Counts";
-            hPsi_S[i][j] = new TH1F((name).c_str(), title.c_str(), bins_psi, low_psi, high_psi);
+            hPsi2_S[i][j] = new TH1F((name).c_str(), title.c_str(), bins_psi, low_psi, high_psi);
 
-            name = "hPsi_N_"+cent_key[i]+"_"+to_string(j);
+            name = "hPsi2_N_"+cent_key[i]+"_"+to_string(j);
             title = to_string(j) + "-th Order Corrected 2#Psi_{2}^{N}, Centrality: " + cent_key[i] + "; 2#Psi_{2}^{N}; Counts";
-            hPsi_N[i][j] = new TH1F((name).c_str(), title.c_str(), bins_psi, low_psi, high_psi);
+            hPsi2_N[i][j] = new TH1F((name).c_str(), title.c_str(), bins_psi, low_psi, high_psi);
+
+            name = "hPsi3_S_"+cent_key[i]+"_"+to_string(j);
+            title = to_string(j) + "-th Order Corrected 3#Psi_{3}^{S}, Centrality: " + cent_key[i] + "; 3#Psi_{3}^{S}; Counts";
+            hPsi3_S[i][j] = new TH1F((name).c_str(), title.c_str(), bins_psi, low_psi, high_psi);
+
+            name = "hPsi3_N_"+cent_key[i]+"_"+to_string(j);
+            title = to_string(j) + "-th Order Corrected 3#Psi_{3}^{N}, Centrality: " + cent_key[i] + "; 3#Psi_{3}^{N}; Counts";
+            hPsi3_N[i][j] = new TH1F((name).c_str(), title.c_str(), bins_psi, low_psi, high_psi);
        }
     }
 }
@@ -135,18 +157,26 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end) {
     // Disable everything...
     T->SetBranchStatus("*", false);
     // ...but the branch we need
-    T->SetBranchStatus("Q_S_x",    true);
-    T->SetBranchStatus("Q_S_y",    true);
-    T->SetBranchStatus("Q_N_x",    true);
-    T->SetBranchStatus("Q_N_y",    true);
+    T->SetBranchStatus("Q2_S_x",    true);
+    T->SetBranchStatus("Q2_S_y",    true);
+    T->SetBranchStatus("Q2_N_x",    true);
+    T->SetBranchStatus("Q2_N_y",    true);
+    T->SetBranchStatus("Q3_S_x",    true);
+    T->SetBranchStatus("Q3_S_y",    true);
+    T->SetBranchStatus("Q3_N_x",    true);
+    T->SetBranchStatus("Q3_N_y",    true);
     T->SetBranchStatus("vtx_z",    true);
     // T->SetBranchStatus("totalMBD", true);
     T->SetBranchStatus("centrality", true);
 
-    Float_t Q_S_x;
-    Float_t Q_S_y;
-    Float_t Q_N_x;
-    Float_t Q_N_y;
+    Float_t Q2_S_x;
+    Float_t Q2_S_y;
+    Float_t Q2_N_x;
+    Float_t Q2_N_y;
+    Float_t Q3_S_x;
+    Float_t Q3_S_y;
+    Float_t Q3_N_x;
+    Float_t Q3_N_y;
     Float_t totalMBD;
     Float_t cent;
     Float_t z;
@@ -155,33 +185,59 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end) {
     UInt_t evt_ctr[3] = {0};
 
     // First Order Correction
-    Float_t Q_S_x_corr[3] = {0};
-    Float_t Q_S_y_corr[3] = {0};
-    Float_t Q_N_x_corr[3] = {0};
-    Float_t Q_N_y_corr[3] = {0};
+    Float_t Q2_S_x_corr[3] = {0};
+    Float_t Q2_S_y_corr[3] = {0};
+    Float_t Q2_N_x_corr[3] = {0};
+    Float_t Q2_N_y_corr[3] = {0};
+
+    Float_t Q3_S_x_corr[3] = {0};
+    Float_t Q3_S_y_corr[3] = {0};
+    Float_t Q3_N_x_corr[3] = {0};
+    Float_t Q3_N_y_corr[3] = {0};
 
     // Second Order Correction
-    Float_t Q2_S_x_avg[3]  = {0};
-    Float_t Q2_S_y_avg[3]  = {0};
+    Float_t Q2_S_xx_avg[3]  = {0};
+    Float_t Q2_S_yy_avg[3]  = {0};
     Float_t Q2_S_xy_avg[3] = {0};
-    Float_t Q2_N_x_avg[3]  = {0};
-    Float_t Q2_N_y_avg[3]  = {0};
+    Float_t Q2_N_xx_avg[3]  = {0};
+    Float_t Q2_N_yy_avg[3]  = {0};
     Float_t Q2_N_xy_avg[3] = {0};
 
-    Float_t Q_S_x_corr2[3] = {0};
-    Float_t Q_S_y_corr2[3] = {0};
-    Float_t Q_N_x_corr2[3] = {0};
-    Float_t Q_N_y_corr2[3] = {0};
+    Float_t Q2_S_x_corr2[3] = {0};
+    Float_t Q2_S_y_corr2[3] = {0};
+    Float_t Q2_N_x_corr2[3] = {0};
+    Float_t Q2_N_y_corr2[3] = {0};
 
-    Float_t D_S[3] = {0};
-    Float_t D_N[3] = {0};
-    Float_t N_S[3] = {0};
-    Float_t N_N[3] = {0};
+    Float_t D2_S[3] = {0};
+    Float_t D2_N[3] = {0};
+    Float_t N2_S[3] = {0};
+    Float_t N2_N[3] = {0};
 
-    T->SetBranchAddress("Q_S_x", &Q_S_x);
-    T->SetBranchAddress("Q_S_y", &Q_S_y);
-    T->SetBranchAddress("Q_N_x", &Q_N_x);
-    T->SetBranchAddress("Q_N_y", &Q_N_y);
+    Float_t Q3_S_xx_avg[3]  = {0};
+    Float_t Q3_S_yy_avg[3]  = {0};
+    Float_t Q3_S_xy_avg[3] = {0};
+    Float_t Q3_N_xx_avg[3]  = {0};
+    Float_t Q3_N_yy_avg[3]  = {0};
+    Float_t Q3_N_xy_avg[3] = {0};
+
+    Float_t Q3_S_x_corr2[3] = {0};
+    Float_t Q3_S_y_corr2[3] = {0};
+    Float_t Q3_N_x_corr2[3] = {0};
+    Float_t Q3_N_y_corr2[3] = {0};
+
+    Float_t D3_S[3] = {0};
+    Float_t D3_N[3] = {0};
+    Float_t N3_S[3] = {0};
+    Float_t N3_N[3] = {0};
+
+    T->SetBranchAddress("Q2_S_x", &Q2_S_x);
+    T->SetBranchAddress("Q2_S_y", &Q2_S_y);
+    T->SetBranchAddress("Q2_N_x", &Q2_N_x);
+    T->SetBranchAddress("Q2_N_y", &Q2_N_y);
+    T->SetBranchAddress("Q3_S_x", &Q3_S_x);
+    T->SetBranchAddress("Q3_S_y", &Q3_S_y);
+    T->SetBranchAddress("Q3_N_x", &Q3_N_x);
+    T->SetBranchAddress("Q3_N_y", &Q3_N_y);
     // T->SetBranchAddress("totalMBD",   &totalMBD);
     T->SetBranchAddress("centrality", &cent);
     T->SetBranchAddress("vtx_z", &z);
@@ -205,10 +261,14 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end) {
 
         Event event;
 
-        event.Q_S_x = Q_S_x;
-        event.Q_S_y = Q_S_y;
-        event.Q_N_x = Q_N_x;
-        event.Q_N_y = Q_N_y;
+        event.Q2_S_x = Q2_S_x;
+        event.Q2_S_y = Q2_S_y;
+        event.Q2_N_x = Q2_N_x;
+        event.Q2_N_y = Q2_N_y;
+        event.Q3_S_x = Q3_S_x;
+        event.Q3_S_y = Q3_S_y;
+        event.Q3_N_x = Q3_N_x;
+        event.Q3_N_y = Q3_N_y;
         event.cent  = cent;
         event.z     = z;
 
@@ -238,28 +298,43 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end) {
 
         ++evt_ctr[j];
 
-        Q_S_x_avg[j] += events[i].Q_S_x;
-        Q_S_y_avg[j] += events[i].Q_S_y;
-        Q_N_x_avg[j] += events[i].Q_N_x;
-        Q_N_y_avg[j] += events[i].Q_N_y;
+        Q2_S_x_avg[j] += events[i].Q2_S_x;
+        Q2_S_y_avg[j] += events[i].Q2_S_y;
+        Q2_N_x_avg[j] += events[i].Q2_N_x;
+        Q2_N_y_avg[j] += events[i].Q2_N_y;
+
+        Q3_S_x_avg[j] += events[i].Q3_S_x;
+        Q3_S_y_avg[j] += events[i].Q3_S_y;
+        Q3_N_x_avg[j] += events[i].Q3_N_x;
+        Q3_N_y_avg[j] += events[i].Q3_N_y;
     }
 
     cout << endl;
     cout << "First Order Correction" << endl;
     // normalize to compute the averages
     for (Int_t i = 0; i < cent_key.size(); ++i) {
-        Q_S_x_avg[i] /= evt_ctr[i];
-        Q_S_y_avg[i] /= evt_ctr[i];
-        Q_N_x_avg[i] /= evt_ctr[i];
-        Q_N_y_avg[i] /= evt_ctr[i];
+        Q2_S_x_avg[i] /= evt_ctr[i];
+        Q2_S_y_avg[i] /= evt_ctr[i];
+        Q2_N_x_avg[i] /= evt_ctr[i];
+        Q2_N_y_avg[i] /= evt_ctr[i];
 
         cout << "Cent: " << cent_key[i] << ", Events: " << evt_ctr[i] << endl
-             << "Q_S_x_avg: "   << Q_S_x_avg[i]
-             << ", Q_S_y_avg: " << Q_S_y_avg[i]
-             << ", Q_N_x_avg: " << Q_N_x_avg[i]
-             << ", Q_N_y_avg: " << Q_N_y_avg[i] << endl;
+             << "Q2_S_x_avg: "   << Q2_S_x_avg[i]
+             << ", Q2_S_y_avg: " << Q2_S_y_avg[i]
+             << ", Q2_N_x_avg: " << Q2_N_x_avg[i]
+             << ", Q2_N_y_avg: " << Q2_N_y_avg[i] << endl;
 
         cout << endl;
+
+        Q3_S_x_avg[i] /= evt_ctr[i];
+        Q3_S_y_avg[i] /= evt_ctr[i];
+        Q3_N_x_avg[i] /= evt_ctr[i];
+        Q3_N_y_avg[i] /= evt_ctr[i];
+
+        cout << "Q3_S_x_avg: "   << Q3_S_x_avg[i]
+             << ", Q3_S_y_avg: " << Q3_S_y_avg[i]
+             << ", Q3_N_x_avg: " << Q3_N_x_avg[i]
+             << ", Q3_N_y_avg: " << Q3_N_y_avg[i] << endl;
     }
 
     // loop over each event
@@ -283,63 +358,115 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end) {
         j = cent_key.size() - j - 1;
 
         // compute the first order correction
-        Q_S_x_corr[j] = events[i].Q_S_x - Q_S_x_avg[j];
-        Q_S_y_corr[j] = events[i].Q_S_y - Q_S_y_avg[j];
-        Q_N_x_corr[j] = events[i].Q_N_x - Q_N_x_avg[j];
-        Q_N_y_corr[j] = events[i].Q_N_y - Q_N_y_avg[j];
+        Q2_S_x_corr[j] = events[i].Q2_S_x - Q2_S_x_avg[j];
+        Q2_S_y_corr[j] = events[i].Q2_S_y - Q2_S_y_avg[j];
+        Q2_N_x_corr[j] = events[i].Q2_N_x - Q2_N_x_avg[j];
+        Q2_N_y_corr[j] = events[i].Q2_N_y - Q2_N_y_avg[j];
+
+        Q3_S_x_corr[j] = events[i].Q3_S_x - Q3_S_x_avg[j];
+        Q3_S_y_corr[j] = events[i].Q3_S_y - Q3_S_y_avg[j];
+        Q3_N_x_corr[j] = events[i].Q3_N_x - Q3_N_x_avg[j];
+        Q3_N_y_corr[j] = events[i].Q3_N_y - Q3_N_y_avg[j];
 
         // compute averages required for second order correction
-        Q2_S_x_avg[j]  += Q_S_x_corr[j]*Q_S_x_corr[j];
-        Q2_S_y_avg[j]  += Q_S_y_corr[j]*Q_S_y_corr[j];
-        Q2_S_xy_avg[j] += Q_S_x_corr[j]*Q_S_y_corr[j];
-        Q2_N_x_avg[j]  += Q_N_x_corr[j]*Q_N_x_corr[j];
-        Q2_N_y_avg[j]  += Q_N_y_corr[j]*Q_N_y_corr[j];
-        Q2_N_xy_avg[j] += Q_N_x_corr[j]*Q_N_y_corr[j];
+        Q2_S_xx_avg[j]  += Q2_S_x_corr[j]*Q2_S_x_corr[j];
+        Q2_S_yy_avg[j]  += Q2_S_y_corr[j]*Q2_S_y_corr[j];
+        Q2_S_xy_avg[j] += Q2_S_x_corr[j]*Q2_S_y_corr[j];
+        Q2_N_xx_avg[j]  += Q2_N_x_corr[j]*Q2_N_x_corr[j];
+        Q2_N_yy_avg[j]  += Q2_N_y_corr[j]*Q2_N_y_corr[j];
+        Q2_N_xy_avg[j] += Q2_N_x_corr[j]*Q2_N_y_corr[j];
+
+        Q3_S_xx_avg[j]  += Q3_S_x_corr[j]*Q3_S_x_corr[j];
+        Q3_S_yy_avg[j]  += Q3_S_y_corr[j]*Q3_S_y_corr[j];
+        Q3_S_xy_avg[j] += Q3_S_x_corr[j]*Q3_S_y_corr[j];
+        Q3_N_xx_avg[j]  += Q3_N_x_corr[j]*Q3_N_x_corr[j];
+        Q3_N_yy_avg[j]  += Q3_N_y_corr[j]*Q3_N_y_corr[j];
+        Q3_N_xy_avg[j] += Q3_N_x_corr[j]*Q3_N_y_corr[j];
     }
 
     cout << endl;
     cout << "Second Order Correction" << endl;
     // normalize to compute the averages
     for (Int_t i = 0; i < cent_key.size(); ++i) {
-        Q2_S_x_avg[i]  /= evt_ctr[i];
-        Q2_S_y_avg[i]  /= evt_ctr[i];
+        Q2_S_xx_avg[i]  /= evt_ctr[i];
+        Q2_S_yy_avg[i]  /= evt_ctr[i];
         Q2_S_xy_avg[i] /= evt_ctr[i];
-        Q2_N_x_avg[i]  /= evt_ctr[i];
-        Q2_N_y_avg[i]  /= evt_ctr[i];
+        Q2_N_xx_avg[i]  /= evt_ctr[i];
+        Q2_N_yy_avg[i]  /= evt_ctr[i];
         Q2_N_xy_avg[i] /= evt_ctr[i];
 
-        D_S[i] = sqrt(Q2_S_x_avg[i]*Q2_S_y_avg[i] - Q2_S_xy_avg[i]*Q2_S_xy_avg[i]);
-        D_N[i] = sqrt(Q2_N_x_avg[i]*Q2_N_y_avg[i] - Q2_N_xy_avg[i]*Q2_N_xy_avg[i]);
+        D2_S[i] = sqrt(Q2_S_xx_avg[i]*Q2_S_yy_avg[i] - Q2_S_xy_avg[i]*Q2_S_xy_avg[i]);
+        D2_N[i] = sqrt(Q2_N_xx_avg[i]*Q2_N_yy_avg[i] - Q2_N_xy_avg[i]*Q2_N_xy_avg[i]);
 
-        N_S[i] = D_S[i]*(Q2_S_x_avg[i]+Q2_S_y_avg[i]+2*D_S[i]);
-        N_N[i] = D_N[i]*(Q2_N_x_avg[i]+Q2_N_y_avg[i]+2*D_N[i]);
+        N2_S[i] = D2_S[i]*(Q2_S_xx_avg[i]+Q2_S_yy_avg[i]+2*D2_S[i]);
+        N2_N[i] = D2_N[i]*(Q2_N_xx_avg[i]+Q2_N_yy_avg[i]+2*D2_N[i]);
 
         // Compute matrix elements
-        X_S[i][0][0] = 1/sqrt(N_S[i])*(Q2_S_y_avg[i]+D_S[i]);
-        X_S[i][0][1] = -1/sqrt(N_S[i])*(Q2_S_xy_avg[i]);
-        X_S[i][1][0] = X_S[i][0][1];
-        X_S[i][1][1] = 1/sqrt(N_S[i])*(Q2_S_x_avg[i]+D_S[i]);
+        X2_S[i][0][0] = 1/sqrt(N2_S[i])*(Q2_S_yy_avg[i]+D2_S[i]);
+        X2_S[i][0][1] = -1/sqrt(N2_S[i])*(Q2_S_xy_avg[i]);
+        X2_S[i][1][0] = X2_S[i][0][1];
+        X2_S[i][1][1] = 1/sqrt(N2_S[i])*(Q2_S_xx_avg[i]+D2_S[i]);
 
-        X_N[i][0][0] = 1/sqrt(N_N[i])*(Q2_N_y_avg[i]+D_N[i]);
-        X_N[i][0][1] = -1/sqrt(N_N[i])*(Q2_N_xy_avg[i]);
-        X_N[i][1][0] = X_N[i][0][1];
-        X_N[i][1][1] = 1/sqrt(N_N[i])*(Q2_N_x_avg[i]+D_N[i]);
+        X2_N[i][0][0] = 1/sqrt(N2_N[i])*(Q2_N_yy_avg[i]+D2_N[i]);
+        X2_N[i][0][1] = -1/sqrt(N2_N[i])*(Q2_N_xy_avg[i]);
+        X2_N[i][1][0] = X2_N[i][0][1];
+        X2_N[i][1][1] = 1/sqrt(N2_N[i])*(Q2_N_xx_avg[i]+D2_N[i]);
 
         cout << "Cent: "          << cent_key[i] << ", Events: " << evt_ctr[i] << endl
-             << "Q2_S_x_avg: "    << Q2_S_x_avg[i]
-             << ", Q2_S_y_avg: "  << Q2_S_y_avg[i]
+             << "Q2_S_xx_avg: "    << Q2_S_xx_avg[i]
+             << ", Q2_S_yy_avg: "  << Q2_S_yy_avg[i]
              << ", Q2_S_xy_avg: " << Q2_S_xy_avg[i] << endl
-             << "Q2_N_x_avg: "    << Q2_N_x_avg[i]
-             << ", Q2_N_y_avg: "  << Q2_N_y_avg[i]
+             << "Q2_N_xx_avg: "    << Q2_N_xx_avg[i]
+             << ", Q2_N_yy_avg: "  << Q2_N_yy_avg[i]
              << ", Q2_N_xy_avg: " << Q2_N_xy_avg[i] << endl
-             << "D_S: " << D_S[i] << ", D_N: " << D_N[i] << endl
-             << "N_S: " << N_S[i] << ", N_N: " << N_N[i] << endl
-             << "X_S_00: "   << X_S[i][0][0]
-             << ", X_S_01: " << X_S[i][0][1]
-             << ", X_S_11: " << X_S[i][1][1] << endl
-             << "X_N_00: "   << X_N[i][0][0]
-             << ", X_N_01: " << X_N[i][0][1]
-             << ", X_N_11: " << X_N[i][1][1] << endl;
+             << "D2_S: " << D2_S[i] << ", D2_N: " << D2_N[i] << endl
+             << "N2_S: " << N2_S[i] << ", N2_N: " << N2_N[i] << endl
+             << "X2_S_00: "   << X2_S[i][0][0]
+             << ", X2_S_01: " << X2_S[i][0][1]
+             << ", X2_S_11: " << X2_S[i][1][1] << endl
+             << "X2_N_00: "   << X2_N[i][0][0]
+             << ", X2_N_01: " << X2_N[i][0][1]
+             << ", X2_N_11: " << X2_N[i][1][1] << endl;
+        cout << endl;
+
+        Q3_S_xx_avg[i]  /= evt_ctr[i];
+        Q3_S_yy_avg[i]  /= evt_ctr[i];
+        Q3_S_xy_avg[i] /= evt_ctr[i];
+        Q3_N_xx_avg[i]  /= evt_ctr[i];
+        Q3_N_yy_avg[i]  /= evt_ctr[i];
+        Q3_N_xy_avg[i] /= evt_ctr[i];
+
+        D3_S[i] = sqrt(Q3_S_xx_avg[i]*Q3_S_yy_avg[i] - Q3_S_xy_avg[i]*Q3_S_xy_avg[i]);
+        D3_N[i] = sqrt(Q3_N_xx_avg[i]*Q3_N_yy_avg[i] - Q3_N_xy_avg[i]*Q3_N_xy_avg[i]);
+
+        N3_S[i] = D3_S[i]*(Q3_S_xx_avg[i]+Q3_S_yy_avg[i]+3*D3_S[i]);
+        N3_N[i] = D3_N[i]*(Q3_N_xx_avg[i]+Q3_N_yy_avg[i]+3*D3_N[i]);
+
+        // Compute matrix elements
+        X3_S[i][0][0] = 1/sqrt(N3_S[i])*(Q3_S_yy_avg[i]+D3_S[i]);
+        X3_S[i][0][1] = -1/sqrt(N3_S[i])*(Q3_S_xy_avg[i]);
+        X3_S[i][1][0] = X3_S[i][0][1];
+        X3_S[i][1][1] = 1/sqrt(N3_S[i])*(Q3_S_xx_avg[i]+D3_S[i]);
+
+        X3_N[i][0][0] = 1/sqrt(N3_N[i])*(Q3_N_yy_avg[i]+D3_N[i]);
+        X3_N[i][0][1] = -1/sqrt(N3_N[i])*(Q3_N_xy_avg[i]);
+        X3_N[i][1][0] = X3_N[i][0][1];
+        X3_N[i][1][1] = 1/sqrt(N3_N[i])*(Q3_N_xx_avg[i]+D3_N[i]);
+
+        cout << "Q3_S_xx_avg: "    << Q3_S_xx_avg[i]
+             << ", Q3_S_yy_avg: "  << Q3_S_yy_avg[i]
+             << ", Q3_S_xy_avg: " << Q3_S_xy_avg[i] << endl
+             << "Q3_N_xx_avg: "    << Q3_N_xx_avg[i]
+             << ", Q3_N_yy_avg: "  << Q3_N_yy_avg[i]
+             << ", Q3_N_xy_avg: " << Q3_N_xy_avg[i] << endl
+             << "D3_S: " << D3_S[i] << ", D3_N: " << D3_N[i] << endl
+             << "N3_S: " << N3_S[i] << ", N3_N: " << N3_N[i] << endl
+             << "X3_S_00: "   << X3_S[i][0][0]
+             << ", X3_S_01: " << X3_S[i][0][1]
+             << ", X3_S_11: " << X3_S[i][1][1] << endl
+             << "X3_N_00: "   << X3_N[i][0][0]
+             << ", X3_N_01: " << X3_N[i][0][1]
+             << ", X3_N_11: " << X3_N[i][1][1] << endl;
         cout << endl;
     }
 
@@ -363,44 +490,84 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end) {
         j = cent_key.size() - j - 1;
 
         // compute first order correction
-        Q_S_x_corr[j] = events[i].Q_S_x - Q_S_x_avg[j];
-        Q_S_y_corr[j] = events[i].Q_S_y - Q_S_y_avg[j];
-        Q_N_x_corr[j] = events[i].Q_N_x - Q_N_x_avg[j];
-        Q_N_y_corr[j] = events[i].Q_N_y - Q_N_y_avg[j];
+        Q2_S_x_corr[j] = events[i].Q2_S_x - Q2_S_x_avg[j];
+        Q2_S_y_corr[j] = events[i].Q2_S_y - Q2_S_y_avg[j];
+        Q2_N_x_corr[j] = events[i].Q2_N_x - Q2_N_x_avg[j];
+        Q2_N_y_corr[j] = events[i].Q2_N_y - Q2_N_y_avg[j];
 
         // compute second order correction
-        Q_S_x_corr2[j] = X_S[j][0][0]*Q_S_x_corr[j]+X_S[j][0][1]*Q_S_y_corr[j];
-        Q_S_y_corr2[j] = X_S[j][1][0]*Q_S_x_corr[j]+X_S[j][1][1]*Q_S_y_corr[j];
-        Q_N_x_corr2[j] = X_N[j][0][0]*Q_N_x_corr[j]+X_N[j][0][1]*Q_N_y_corr[j];
-        Q_N_y_corr2[j] = X_N[j][1][0]*Q_N_x_corr[j]+X_N[j][1][1]*Q_N_y_corr[j];
+        Q2_S_x_corr2[j] = X2_S[j][0][0]*Q2_S_x_corr[j]+X2_S[j][0][1]*Q2_S_y_corr[j];
+        Q2_S_y_corr2[j] = X2_S[j][1][0]*Q2_S_x_corr[j]+X2_S[j][1][1]*Q2_S_y_corr[j];
+        Q2_N_x_corr2[j] = X2_N[j][0][0]*Q2_N_x_corr[j]+X2_N[j][0][1]*Q2_N_y_corr[j];
+        Q2_N_y_corr2[j] = X2_N[j][1][0]*Q2_N_x_corr[j]+X2_N[j][1][1]*Q2_N_y_corr[j];
 
         // compute Psi
         // no correction
-        Float_t psi = atan2(events[i].Q_S_y, events[i].Q_S_x);
+        Float_t psi = atan2(events[i].Q2_S_y, events[i].Q2_S_x);
         // psi = (psi < 0) ? (2*M_PI+psi)/2 : psi/2;
-        hPsi_S[j][0]->Fill(psi);
+        hPsi2_S[j][0]->Fill(psi);
 
-        psi = atan2(events[i].Q_N_y, events[i].Q_N_x);
+        psi = atan2(events[i].Q2_N_y, events[i].Q2_N_x);
         // psi = (psi < 0) ? (2*M_PI+psi)/2 : psi/2;
-        hPsi_N[j][0]->Fill(psi);
+        hPsi2_N[j][0]->Fill(psi);
 
         // order 1
-        psi = atan2(Q_S_y_corr[j], Q_S_x_corr[j]);
+        psi = atan2(Q2_S_y_corr[j], Q2_S_x_corr[j]);
         // psi = (psi < 0) ? (2*M_PI+psi)/2 : psi/2;
-        hPsi_S[j][1]->Fill(psi);
+        hPsi2_S[j][1]->Fill(psi);
 
-        psi = atan2(Q_N_y_corr[j], Q_N_x_corr[j]);
+        psi = atan2(Q2_N_y_corr[j], Q2_N_x_corr[j]);
         // psi = (psi < 0) ? (2*M_PI+psi)/2 : psi/2;
-        hPsi_N[j][1]->Fill(psi);
+        hPsi2_N[j][1]->Fill(psi);
 
         // order 2
-        psi = atan2(Q_S_y_corr2[j], Q_S_x_corr2[j]);
+        psi = atan2(Q2_S_y_corr2[j], Q2_S_x_corr2[j]);
         // psi = (psi < 0) ? (2*M_PI+psi)/2 : psi/2;
-        hPsi_S[j][2]->Fill(psi);
+        hPsi2_S[j][2]->Fill(psi);
 
-        psi = atan2(Q_N_y_corr2[j], Q_N_x_corr2[j]);
+        psi = atan2(Q2_N_y_corr2[j], Q2_N_x_corr2[j]);
         // psi = (psi < 0) ? (2*M_PI+psi)/2 : psi/2;
-        hPsi_N[j][2]->Fill(psi);
+        hPsi2_N[j][2]->Fill(psi);
+
+        // compute first order correction
+        Q3_S_x_corr[j] = events[i].Q3_S_x - Q3_S_x_avg[j];
+        Q3_S_y_corr[j] = events[i].Q3_S_y - Q3_S_y_avg[j];
+        Q3_N_x_corr[j] = events[i].Q3_N_x - Q3_N_x_avg[j];
+        Q3_N_y_corr[j] = events[i].Q3_N_y - Q3_N_y_avg[j];
+
+        // compute second order correction
+        Q3_S_x_corr2[j] = X3_S[j][0][0]*Q3_S_x_corr[j]+X3_S[j][0][1]*Q3_S_y_corr[j];
+        Q3_S_y_corr2[j] = X3_S[j][1][0]*Q3_S_x_corr[j]+X3_S[j][1][1]*Q3_S_y_corr[j];
+        Q3_N_x_corr2[j] = X3_N[j][0][0]*Q3_N_x_corr[j]+X3_N[j][0][1]*Q3_N_y_corr[j];
+        Q3_N_y_corr2[j] = X3_N[j][1][0]*Q3_N_x_corr[j]+X3_N[j][1][1]*Q3_N_y_corr[j];
+
+        // compute Psi
+        // no correction
+        psi = atan2(events[i].Q3_S_y, events[i].Q3_S_x);
+        // psi = (psi < 0) ? (2*M_PI+psi)/2 : psi/2;
+        hPsi3_S[j][0]->Fill(psi);
+
+        psi = atan2(events[i].Q3_N_y, events[i].Q3_N_x);
+        // psi = (psi < 0) ? (2*M_PI+psi)/2 : psi/2;
+        hPsi3_N[j][0]->Fill(psi);
+
+        // order 1
+        psi = atan2(Q3_S_y_corr[j], Q3_S_x_corr[j]);
+        // psi = (psi < 0) ? (2*M_PI+psi)/2 : psi/2;
+        hPsi3_S[j][1]->Fill(psi);
+
+        psi = atan2(Q3_N_y_corr[j], Q3_N_x_corr[j]);
+        // psi = (psi < 0) ? (2*M_PI+psi)/2 : psi/2;
+        hPsi3_N[j][1]->Fill(psi);
+
+        // order 2
+        psi = atan2(Q3_S_y_corr2[j], Q3_S_x_corr2[j]);
+        // psi = (psi < 0) ? (2*M_PI+psi)/2 : psi/2;
+        hPsi3_S[j][2]->Fill(psi);
+
+        psi = atan2(Q3_N_y_corr2[j], Q3_N_x_corr2[j]);
+        // psi = (psi < 0) ? (2*M_PI+psi)/2 : psi/2;
+        hPsi3_N[j][2]->Fill(psi);
     }
 
     cout << "Finish Process Event" << endl;
@@ -415,8 +582,10 @@ void myAnalysis::finalize(const string &i_output, const string &i_output_csv) {
         output.cd((cent_key[i]).c_str());
 
         for (Int_t j = 0; j < 3; ++j) {
-            hPsi_S[i][j]->Write();
-            hPsi_N[i][j]->Write();
+            hPsi2_S[i][j]->Write();
+            hPsi2_N[i][j]->Write();
+            hPsi3_S[i][j]->Write();
+            hPsi3_N[i][j]->Write();
        }
     }
     output.Close();
@@ -424,19 +593,31 @@ void myAnalysis::finalize(const string &i_output, const string &i_output_csv) {
     std::ofstream file(i_output_csv.c_str());
 
     // Write header
-    file << "Q_S_x_avg, Q_S_y_avg, Q_N_x_avg, Q_N_y_avg, X_S_00, X_S_01, X_S_11, X_N_00, X_N_01, X_N_11" << endl;
+    file << "Q2_S_x_avg, Q2_S_y_avg, Q2_N_x_avg, Q2_N_y_avg, X2_S_00, X2_S_01, X2_S_11, X2_N_00, X2_N_01, X2_N_11,"
+         << "Q3_S_x_avg, Q3_S_y_avg, Q3_N_x_avg, Q3_N_y_avg, X3_S_00, X3_S_01, X3_S_11, X3_N_00, X3_N_01, X3_N_11" << endl;
 
     for (Int_t i = 0; i < cent_key.size(); ++i) {
-        file << Q_S_x_avg[i] << ","
-             << Q_S_y_avg[i] << ","
-             << Q_N_x_avg[i] << ","
-             << Q_N_y_avg[i] << ","
-             << X_S[i][0][0] << ","
-             << X_S[i][0][1] << ","
-             << X_S[i][1][1] << ","
-             << X_N[i][0][0] << ","
-             << X_N[i][0][1] << ","
-             << X_N[i][1][1] << endl;
+        file << Q2_S_x_avg[i] << ","
+             << Q2_S_y_avg[i] << ","
+             << Q2_N_x_avg[i] << ","
+             << Q2_N_y_avg[i] << ","
+             << X2_S[i][0][0] << ","
+             << X2_S[i][0][1] << ","
+             << X2_S[i][1][1] << ","
+             << X2_N[i][0][0] << ","
+             << X2_N[i][0][1] << ","
+             << X2_N[i][1][1] << ","
+
+             << Q3_S_x_avg[i] << ","
+             << Q3_S_y_avg[i] << ","
+             << Q3_N_x_avg[i] << ","
+             << Q3_N_y_avg[i] << ","
+             << X3_S[i][0][0] << ","
+             << X3_S[i][0][1] << ","
+             << X3_S[i][1][1] << ","
+             << X3_N[i][0][0] << ","
+             << X3_N[i][0][1] << ","
+             << X3_N[i][1][1] << endl;
     }
 
     file.close();
