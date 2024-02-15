@@ -217,10 +217,14 @@ class caloTreeGen : public SubsysReco
     Float_t vtx_z    = 0;
     Float_t totalMBD = 0;
     Float_t cent     = 0;
-    Float_t Q_S_x    = 0;
-    Float_t Q_S_y    = 0;
-    Float_t Q_N_x    = 0;
-    Float_t Q_N_y    = 0;
+    Float_t Q2_S_x   = 0;
+    Float_t Q2_S_y   = 0;
+    Float_t Q2_N_x   = 0;
+    Float_t Q2_N_y   = 0;
+    Float_t Q3_S_x   = 0;
+    Float_t Q3_S_y   = 0;
+    Float_t Q3_N_x   = 0;
+    Float_t Q3_N_y   = 0;
     std::vector<Float_t> pi0_phi_vec;
     std::vector<Float_t> pi0_eta_vec;
     std::vector<Float_t> pi0_pt_vec;

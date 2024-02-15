@@ -96,10 +96,14 @@ Int_t caloTreeGen::Init(PHCompositeNode *topNode)
   T->Branch("totalMBD",  &totalMBD, "totalMBD/F");
   T->Branch("centrality",&cent,     "centrality/F");
   T->Branch("vtx_z",     &vtx_z,    "vtx_z/F");
-  T->Branch("Q_S_x",     &Q_S_x,    "Q_S_x/F");
-  T->Branch("Q_S_y",     &Q_S_y,    "Q_S_y/F");
-  T->Branch("Q_N_x",     &Q_N_x,    "Q_N_x/F");
-  T->Branch("Q_N_y",     &Q_N_y,    "Q_N_y/F");
+  T->Branch("Q2_S_x",    &Q2_S_x,   "Q2_S_x/F");
+  T->Branch("Q2_S_y",    &Q2_S_y,   "Q2_S_y/F");
+  T->Branch("Q2_N_x",    &Q2_N_x,   "Q2_N_x/F");
+  T->Branch("Q2_N_y",    &Q2_N_y,   "Q2_N_y/F");
+  T->Branch("Q3_S_x",    &Q3_S_x,   "Q3_S_x/F");
+  T->Branch("Q3_S_y",    &Q3_S_y,   "Q3_S_y/F");
+  T->Branch("Q3_N_x",    &Q3_N_x,   "Q3_N_x/F");
+  T->Branch("Q3_N_y",    &Q3_N_y,   "Q3_N_y/F");
   T->Branch("pi0_phi",   &pi0_phi_vec);
   T->Branch("pi0_eta",   &pi0_eta_vec);
   T->Branch("pi0_pt",    &pi0_pt_vec);
@@ -231,27 +235,37 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
     Float_t phi       = mbdgeom->get_phi(i); //pmt phi
     Float_t z         = mbdgeom->get_z(i);   //pmt z ~ eta
 
-    Float_t x = charge*std::cos(2*phi);
-    Float_t y = charge*std::sin(2*phi);
+    Float_t x2 = charge*std::cos(2*phi);
+    Float_t y2 = charge*std::sin(2*phi);
+    Float_t x3 = charge*std::cos(3*phi);
+    Float_t y3 = charge*std::sin(3*phi);
 
     if(z < 0) {
-      Q_S_x    += x;
-      Q_S_y    += y;
+      Q2_S_x   += x2;
+      Q2_S_y   += y2;
+      Q3_S_x   += x3;
+      Q3_S_y   += y3;
       charge_S += charge;
     }
     else {
-      Q_N_x    += x;
-      Q_N_y    += y;
+      Q2_N_x   += x2;
+      Q2_N_y   += y2;
+      Q3_N_x   += x3;
+      Q3_N_y   += y3;
       charge_N += charge;
     }
 
     totalMBD += charge;
   }
 
-  Q_S_x = (Q_S_x) ? Q_S_x/charge_S : 0;
-  Q_S_y = (Q_S_y) ? Q_S_y/charge_S : 0;
-  Q_N_x = (Q_N_x) ? Q_N_x/charge_N : 0;
-  Q_N_y = (Q_N_y) ? Q_N_y/charge_N : 0;
+  Q2_S_x = (Q2_S_x) ? Q2_S_x/charge_S : 0;
+  Q2_S_y = (Q2_S_y) ? Q2_S_y/charge_S : 0;
+  Q2_N_x = (Q2_N_x) ? Q2_N_x/charge_N : 0;
+  Q2_N_y = (Q2_N_y) ? Q2_N_y/charge_N : 0;
+  Q3_S_x = (Q3_S_x) ? Q3_S_x/charge_S : 0;
+  Q3_S_y = (Q3_S_y) ? Q3_S_y/charge_S : 0;
+  Q3_N_x = (Q3_N_x) ? Q3_N_x/charge_N : 0;
+  Q3_N_y = (Q3_N_y) ? Q3_N_y/charge_N : 0;
 
   max_totalmbd = std::max(max_totalmbd, totalMBD);
   hTotalMBD->Fill(totalMBD);
@@ -435,10 +449,14 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
 Int_t caloTreeGen::ResetEvent(PHCompositeNode *topNode)
 {
   totalMBD = 0;
-  Q_S_x    = 0;
-  Q_S_y    = 0;
-  Q_N_x    = 0;
-  Q_N_y    = 0;
+  Q2_S_x   = 0;
+  Q2_S_y   = 0;
+  Q2_N_x   = 0;
+  Q2_N_y   = 0;
+  Q3_S_x   = 0;
+  Q3_S_y   = 0;
+  Q3_N_x   = 0;
+  Q3_N_y   = 0;
 
   pi0_phi_vec.clear();
   pi0_eta_vec.clear();
