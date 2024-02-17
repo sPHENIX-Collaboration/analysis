@@ -146,6 +146,7 @@ class caloTreeGen : public SubsysReco
     TH1F* hCentrality;
     TH1F* hTotalCaloE;
     TH1F* hVtxZ;
+    TH1F* hVtxZv2;
 
     TH2F* h2ClusterEtaPhi;
     TH2F* h2ClusterEtaPhiWeighted;
@@ -191,8 +192,8 @@ class caloTreeGen : public SubsysReco
     Float_t high_totalmbd = 3000;
 
     UInt_t  bins_cent = 100;
-    Float_t low_cent  = 0;
-    Float_t high_cent = 1;
+    Float_t low_cent  = -0.005;
+    Float_t high_cent = 0.995;
 
     UInt_t  bins_totalcaloE = 2500;
     Float_t low_totalcaloE  = -500;

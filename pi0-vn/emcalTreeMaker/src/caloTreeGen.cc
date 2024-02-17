@@ -68,6 +68,7 @@ Int_t caloTreeGen::Init(PHCompositeNode *topNode)
   out = new TFile(Outfile.c_str(),"RECREATE");
 
   hVtxZ = new TH1F("hVtxZ", "Event z-vertex; z [cm]; Counts", bins_vtx_z, low_vtx_z, high_vtx_z);
+  hVtxZv2 = new TH1F("hVtxZv2", "Event z-vertex with MinBias only; z [cm]; Counts", bins_vtx_z, low_vtx_z, high_vtx_z);
   hTowE = new TH1F("hTowE", "Tower Energy; Energy [GeV]; Counts", bins_towE, low_towE, high_towE);
   hClusterECore = new TH1F("hClusterECore", "Cluster ECore; Energy [GeV]; Counts", bins_e, low_e, high_e);
   hClusterPt = new TH1F("hClusterPt", "Cluster p_{T}; p_{T} [GeV]; Counts", bins_pt, low_pt, high_pt);
@@ -82,7 +83,7 @@ Int_t caloTreeGen::Init(PHCompositeNode *topNode)
   h2ClusterEtaPhiWeighted = new TH2F("h2ClusterEtaPhiWeighted", "Cluster ECore; #eta; #phi", bins_eta, low_eta, high_eta, bins_phi, low_phi, high_phi);
   h2TowEtaPhiWeighted = new TH2F("h2TowEtaPhiWeighted", "Tower Energy; Towerid #eta; Towerid #phi",  bins_eta, 0, bins_eta, bins_phi, 0, bins_phi);
   h2TotalMBDCaloE = new TH2F("h2TotalMBDCaloE", "Total MBD Charge vs Total EMCAL Energy; Total EMCAL Energy [Arb]; Total MBD Charge [Arb]", 100, 0, 1, 100, 0, 1);
-  h2TotalMBDCentrality = new TH2F("h2TotalMBDCentrality", "Total MBD Charge vs Centrality; Centrality; Total MBD Charge [Arb]", 100, 0, 1, 100, 0, 1);
+  h2TotalMBDCentrality = new TH2F("h2TotalMBDCentrality", "Total MBD Charge vs Centrality; Centrality; Total MBD Charge [Arb]", bins_cent, low_cent, high_cent, 100, 0, 1);
   h2TotalMBDCaloEv2 = new TH2F("h2TotalMBDCaloEv2", "Total MBD Charge vs Total EMCAL Energy; Total EMCAL Energy; Total MBD Charge", bins_totalcaloEv2, low_totalcaloEv2, high_totalcaloEv2,
                                                                                                                                     bins_totalmbdv2, low_totalmbdv2, high_totalmbdv2);
 
@@ -192,14 +193,6 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
   }
   cent = centInfo->get_centile(CentralityInfo::PROP::mbd_NS);
 
-  MinimumBiasInfo *minBiasInfo = findNode::getClass<MinimumBiasInfo>(topNode,"MinimumBiasInfo");
-  Bool_t isMinBias = (minBiasInfo) ? minBiasInfo->isAuAuMinimumBias() : false;
-  if(!isMinBias)
-  {
-    std::cout << PHWHERE << "caloTreeGen::process_event: " << event << " is not MinimumBias" << std::endl;
-    return Fun4AllReturnCodes::ABORTEVENT;
-  }
-
   //----------------------------------vertex------------------------------------------------------//
   GlobalVertexMap* vertexmap = findNode::getClass<GlobalVertexMap>(topNode, "GlobalVertexMap");
   if (!vertexmap)
@@ -221,6 +214,16 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
     }
   }
   //----------------------------------vertex------------------------------------------------------//
+
+  MinimumBiasInfo *minBiasInfo = findNode::getClass<MinimumBiasInfo>(topNode,"MinimumBiasInfo");
+  Bool_t isMinBias = (minBiasInfo) ? minBiasInfo->isAuAuMinimumBias() : false;
+  if(!isMinBias)
+  {
+    std::cout << PHWHERE << "caloTreeGen::process_event: " << event << " is not MinimumBias" << std::endl;
+    return Fun4AllReturnCodes::ABORTEVENT;
+  }
+
+  hVtxZv2->Fill(vtx_z);
 
   Int_t nPMTs = mbdpmts -> get_npmt(); //size (should always be 128)
 
@@ -499,6 +502,7 @@ Int_t caloTreeGen::End(PHCompositeNode *topNode)
   out -> cd();
 
   hVtxZ->Write();
+  hVtxZv2->Write();
   hTotalMBD->Write();
   hCentrality->Write();
   hTotalCaloE->Write();
