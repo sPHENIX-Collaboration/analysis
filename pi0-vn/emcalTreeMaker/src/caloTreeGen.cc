@@ -195,24 +195,18 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
 
   //----------------------------------vertex------------------------------------------------------//
   GlobalVertexMap* vertexmap = findNode::getClass<GlobalVertexMap>(topNode, "GlobalVertexMap");
-  if (!vertexmap)
+  if (!vertexmap || vertexmap->empty() || !(vertexmap->begin()->second))
   {
-    std::cout << PHWHERE << "caloTreeGen::process_event: Could not find node GlobalVertexMap" << std::endl;
+    if(!vertexmap)              std::cout << PHWHERE << "caloTreeGen::process_event: Could not find node GlobalVertexMap" << std::endl;
+    else if(vertexmap->empty()) std::cout << PHWHERE << "caloTreeGen::process_event: GlobalVertexMap is empty" << std::endl;
+    else                        std::cout << PHWHERE << "caloTreeGen::process_event: GlobalVertex is null" << std::endl;
+    return Fun4AllReturnCodes::ABORTEVENT;
   }
-  if (vertexmap && !vertexmap->empty()) {
-    GlobalVertex* vtx = vertexmap->begin()->second;
-    if (vtx) {
-      vtx_z = vtx->get_z();
-    }
-    min_vtx_z = std::min(min_vtx_z, vtx_z);
-    max_vtx_z = std::max(max_vtx_z, vtx_z);
-    hVtxZ->Fill(vtx_z);
-
-    if(abs(vtx_z) >= vtx_z_max) {
-      std::cout << PHWHERE << "|z-vertex| >= " << vtx_z_max << ": " << vtx_z << std::endl;
-      return Fun4AllReturnCodes::ABORTEVENT;
-    }
-  }
+  GlobalVertex* vtx = vertexmap->begin()->second;
+  vtx_z = vtx->get_z();
+  min_vtx_z = std::min(min_vtx_z, vtx_z);
+  max_vtx_z = std::max(max_vtx_z, vtx_z);
+  hVtxZ->Fill(vtx_z);
   //----------------------------------vertex------------------------------------------------------//
 
   MinimumBiasInfo *minBiasInfo = findNode::getClass<MinimumBiasInfo>(topNode,"MinimumBiasInfo");
@@ -224,6 +218,12 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
   }
 
   hVtxZv2->Fill(vtx_z);
+
+  // reject events that do not pass the z-vertex cuts
+  if(abs(vtx_z) >= vtx_z_max) {
+    std::cout << PHWHERE << "|z-vertex| >= " << vtx_z_max << ": " << vtx_z << std::endl;
+    return Fun4AllReturnCodes::ABORTEVENT;
+  }
 
   Int_t nPMTs = mbdpmts -> get_npmt(); //size (should always be 128)
 
