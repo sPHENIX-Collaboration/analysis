@@ -8,7 +8,7 @@ ROOT_CPPFLAGS = `root-config --cflags`
 ROOT_LIBFLAGS = `root-config --libs`
 sPHENIX_CPPFLAGS = -I$(MYINSTALL)/include -I$(OFFLINE_MAIN)/include
 LIBFLAGS = -L$(MYINSTALL)/lib -lcaloTreeGen
-sPHENIX_LIBFLAGS = -L$(OFFLINE_MAIN)/lib -lfun4all
+sPHENIX_LIBFLAGS = -L$(OFFLINE_MAIN)/lib -lfun4all -lg4centrality -lphparameter
 
 all: bin/Fun4All_CaloTreeGen bin/pi0Ana bin/convert bin/Q-vec-corr bin/mixedEvent
 
