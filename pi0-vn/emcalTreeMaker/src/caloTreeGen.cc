@@ -142,11 +142,12 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
   run   = eventInfo->get_RunNumber();
   // std::cout << "Event: " << event->get_EvtSequence() << ", Run: " << event->get_RunNumber() << std::endl;
 
-  if(iEvent%500 == 0) std::cout << "Progress: " << iEvent << std::endl;
+  if(iEvent%20 == 0) std::cout << "Progress: " << iEvent << std::endl;
   iEvent++;
 
   //Information on clusters
-  RawClusterContainer *clusterContainer = findNode::getClass<RawClusterContainer>(topNode,"CLUSTERINFO_POS_COR_CEMC");
+  RawClusterContainer *clusterContainer = (isSim) ? findNode::getClass<RawClusterContainer>(topNode,"CLUSTER_POS_COR_CEMC") :
+                                                    findNode::getClass<RawClusterContainer>(topNode,"CLUSTERINFO_POS_COR_CEMC");
   // RawClusterContainer *clusterContainer = findNode::getClass<RawClusterContainer>(topNode,"CLUSTERINFO_CEMC");
   if(!clusterContainer)
   {
@@ -172,14 +173,14 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
   }
   
   MbdPmtContainer *mbdpmts = findNode::getClass<MbdPmtContainer>(topNode,"MbdPmtContainer"); // mbd info
-  if(!mbdpmts)
+  if(!mbdpmts && !isSim)
   {
     std::cout << PHWHERE << "caloTreeGen::process_event: Could not find node MbdPmtContainer" << std::endl;
     return Fun4AllReturnCodes::ABORTEVENT;
   }
 
   MbdGeom *mbdgeom = findNode::getClass<MbdGeom>(topNode,"MbdGeom"); // mbd geometry
-  if(!mbdgeom)
+  if(!mbdgeom && !isSim)
   {
     std::cout << PHWHERE << "caloTreeGen::process_event: Could not find node MbdGeom" << std::endl;
     return Fun4AllReturnCodes::ABORTEVENT;
@@ -191,7 +192,11 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
     std::cout << PHWHERE << "caloTreeGen::process_event: Could not find node CentralityInfo" << std::endl;
     return Fun4AllReturnCodes::ABORTEVENT;
   }
-  cent = centInfo->get_centile(CentralityInfo::PROP::mbd_NS);
+
+  // simulation gives centrality values in 0 - 100
+  // data gives centrality values in 0 - 1
+  cent = (isSim) ? centInfo->get_centile(CentralityInfo::PROP::mbd_NS)/100. :
+                   centInfo->get_centile(CentralityInfo::PROP::mbd_NS);
 
   //----------------------------------vertex------------------------------------------------------//
   GlobalVertexMap* vertexmap = findNode::getClass<GlobalVertexMap>(topNode, "GlobalVertexMap");
@@ -202,6 +207,7 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
     else                        std::cout << PHWHERE << "caloTreeGen::process_event: GlobalVertex is null" << std::endl;
     return Fun4AllReturnCodes::ABORTEVENT;
   }
+
   GlobalVertex* vtx = vertexmap->begin()->second;
   vtx_z = vtx->get_z();
   min_vtx_z = std::min(min_vtx_z, vtx_z);
@@ -211,7 +217,7 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
 
   MinimumBiasInfo *minBiasInfo = findNode::getClass<MinimumBiasInfo>(topNode,"MinimumBiasInfo");
   Bool_t isMinBias = (minBiasInfo) ? minBiasInfo->isAuAuMinimumBias() : false;
-  if(!isMinBias)
+  if(!isMinBias && !isSim)
   {
     std::cout << PHWHERE << "caloTreeGen::process_event: " << event << " is not MinimumBias" << std::endl;
     return Fun4AllReturnCodes::ABORTEVENT;
@@ -225,40 +231,41 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
     return Fun4AllReturnCodes::ABORTEVENT;
   }
 
-  Int_t nPMTs = mbdpmts -> get_npmt(); //size (should always be 128)
-
   Float_t charge_S = 0;
   Float_t charge_N = 0;
 
-  for(Int_t i = 0; i < nPMTs; ++i) {
-    MbdPmtHit* mbdpmt = mbdpmts->get_pmt(i);
-    Float_t charge    = mbdpmt->get_q();     //pmt charge
-    Float_t phi       = mbdgeom->get_phi(i); //pmt phi
-    Float_t z         = mbdgeom->get_z(i);   //pmt z ~ eta
+  if(!isSim) {
+    Int_t nPMTs = mbdpmts -> get_npmt(); //size (should always be 128)
 
-    Float_t x2 = charge*std::cos(2*phi);
-    Float_t y2 = charge*std::sin(2*phi);
-    Float_t x3 = charge*std::cos(3*phi);
-    Float_t y3 = charge*std::sin(3*phi);
+    for(Int_t i = 0; i < nPMTs; ++i) {
+      MbdPmtHit* mbdpmt = mbdpmts->get_pmt(i);
+      Float_t charge    = mbdpmt->get_q();     //pmt charge
+      Float_t phi       = mbdgeom->get_phi(i); //pmt phi
+      Float_t z         = mbdgeom->get_z(i);   //pmt z ~ eta
 
-    if(z < 0) {
-      Q2_S_x   += x2;
-      Q2_S_y   += y2;
-      Q3_S_x   += x3;
-      Q3_S_y   += y3;
-      charge_S += charge;
+      Float_t x2 = charge*std::cos(2*phi);
+      Float_t y2 = charge*std::sin(2*phi);
+      Float_t x3 = charge*std::cos(3*phi);
+      Float_t y3 = charge*std::sin(3*phi);
+
+      if(z < 0) {
+        Q2_S_x   += x2;
+        Q2_S_y   += y2;
+        Q3_S_x   += x3;
+        Q3_S_y   += y3;
+        charge_S += charge;
+      }
+      else {
+        Q2_N_x   += x2;
+        Q2_N_y   += y2;
+        Q3_N_x   += x3;
+        Q3_N_y   += y3;
+        charge_N += charge;
+      }
+
+      totalMBD += charge;
     }
-    else {
-      Q2_N_x   += x2;
-      Q2_N_y   += y2;
-      Q3_N_x   += x3;
-      Q3_N_y   += y3;
-      charge_N += charge;
-    }
-
-    totalMBD += charge;
   }
-
   Q2_S_x = (Q2_S_x) ? Q2_S_x/charge_S : 0;
   Q2_S_y = (Q2_S_y) ? Q2_S_y/charge_S : 0;
   Q2_N_x = (Q2_N_x) ? Q2_N_x/charge_N : 0;
@@ -306,7 +313,7 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
     // check to make sure that ieta and iphi are in range
     if(ieta >= bins_eta || iphi >= bins_phi) std::cout << "ieta: " << ieta << ", iphi: " << iphi << std::endl;
 
-    h2TowEtaPhiWeighted->Fill(ieta, iphi, energy);
+    if(!isSim || (isSim && ieta >= 8)) h2TowEtaPhiWeighted->Fill(ieta, iphi, energy);
   }
 
   avg_goodTowers += goodTowerCtr*1./tower_range;
@@ -373,6 +380,9 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
 
     if(clusE < clusE_min || clus_chi >= clus_chi_max) continue;
 
+    // in simulation exclude cluster that comes from uninstrumented IB
+    if(isSim && hasTowerFar(recoCluster, isSim)) continue;
+
     // Float_t clus_time = getMaxTowerTime(recoCluster, emcTowerContainer);
 
     hClusterECore->Fill(clusE);
@@ -419,6 +429,9 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
       // saves storage
       if(pi0_mass >= 0.7) continue;
 
+      // in simulation exclude cluster that comes from uninstrumented IB
+      if(isSim && hasTowerFar(recoCluster2, isSim)) continue;
+
       Float_t asym      = abs(clusE-clusE2)/(clusE+clusE2);
       Float_t ecore_min = std::min(clusE, clusE2);
       Float_t chi2_max  = std::max(clus_chi, clus_chi2);
@@ -427,7 +440,7 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
       Float_t deltaR    = sqrt(pow(clus_eta-clus_eta2,2)+pow(deltaPhi,2));
 
       // check if either cluster has a tower that is in the last IB board: i.e ieta >= 88
-      Bool_t isFarNorth = hasTowerFarNorth(recoCluster) || hasTowerFarNorth(recoCluster2);
+      Bool_t isFarNorth = hasTowerFar(recoCluster) || hasTowerFar(recoCluster2);
 
       pi0_phi_vec.push_back(pi0_phi);
       pi0_eta_vec.push_back(pi0_eta);
@@ -567,7 +580,7 @@ Float_t caloTreeGen::getMaxTowerE(RawCluster *cluster, TowerInfoContainer *tower
   return tower->get_energy();
 }
 //____________________________________________________________________________..
-Bool_t caloTreeGen::hasTowerFarNorth(RawCluster *cluster)
+Bool_t caloTreeGen::hasTowerFar(RawCluster *cluster, Bool_t isSim)
 {
   RawCluster::TowerConstRange towers = cluster -> get_towers();
   RawCluster::TowerConstIterator toweriter;
@@ -576,7 +589,8 @@ Bool_t caloTreeGen::hasTowerFarNorth(RawCluster *cluster)
   for(toweriter = towers.first; toweriter != towers.second; toweriter++) {
     Int_t ieta = RawTowerDefs::decode_index1(toweriter -> first);
     // check if the tower in part of the last IB
-    if(ieta >= 88) return true;
+    if(!isSim && ieta >= 88) return true;
+    if(isSim && ieta <= 8) return true;
   }
 
   return false;

@@ -85,6 +85,10 @@ class caloTreeGen : public SubsysReco
       this->do_pi0_ana = do_pi0_ana;
     }
 
+    void set_simulation(Bool_t isSim = false) {
+      this->isSim = isSim;
+    }
+
   private:
 
     TTree *T;
@@ -106,10 +110,11 @@ class caloTreeGen : public SubsysReco
     TowerInfo* getMaxTower(RawCluster *cluster, TowerInfoContainer *towerContainer);
     Float_t    getMaxTowerTime(RawCluster *cluster, TowerInfoContainer *towerContainer);
 
-    Bool_t hasTowerFarNorth(RawCluster *cluster);
+    Bool_t hasTowerFar(RawCluster *cluster, Bool_t isSim = false);
 
     Int_t iEvent = 0;
     Float_t avg_goodTowers = 0;
+    Bool_t isSim = false;
 
     Double_t min_towE        = 9999;
     Float_t min_clusterECore = 9999;
