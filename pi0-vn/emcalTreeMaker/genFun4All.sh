@@ -13,9 +13,12 @@ qa=${3}
 diphoton=${4}
 do_pi0=${5}
 z=${6}
+sim=${7}
+input_global=${8}
+input_g4hits=${9}
 
 # print the environment - needed for debugging
 printenv
 
 mkdir -p output
-$exe $input $qa $diphoton $do_pi0 $z
+$exe $input $qa $diphoton $do_pi0 $z $sim $input_global $input_g4hits
