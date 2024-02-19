@@ -110,7 +110,7 @@ namespace myAnalysis {
     Float_t npi0_min  = 0;
     Float_t npi0_max  = 60;
 
-    Bool_t do_vn_calc = true;
+    Bool_t do_vn_calc = false;
 
     // First Order Correction
     // v2
@@ -901,25 +901,28 @@ void myAnalysis::finalize(const string &i_output) {
 
 void pi0Analysis(const string &i_input,
                  const string &i_cuts,
-                 const string &fitStats = "",
-                 const string &QVecCorr  = "",
-                 const string &i_output = "test.root",
-                 Float_t       z        = 10, /*cm*/
-                 Long64_t      start    = 0,
-                 Long64_t      end      = 0) {
+                 Float_t       z          = 10, /*cm*/
+                 const string &i_output   = "test.root",
+                 Bool_t        do_vn_calc = false,
+                 const string &fitStats   = "",
+                 const string &QVecCorr   = "",
+                 Long64_t      start      = 0,
+                 Long64_t      end        = 0) {
 
     cout << "#############################" << endl;
     cout << "Run Parameters" << endl;
     cout << "inputFile: "  << i_input << endl;
     cout << "Cuts: "       << i_cuts << endl;
+    cout << "z: "          << z << endl;
+    cout << "outputFile: " << i_output << endl;
+    cout << "do_vn_calc: " << do_vn_calc << endl;
     cout << "fitStats: "   << fitStats << endl;
     cout << "QVecCorr: "   << QVecCorr << endl;
-    cout << "outputFile: " << i_output << endl;
-    cout << "z: "          << z << endl;
     cout << "start: "      << start << endl;
     cout << "end: "        << end << endl;
     cout << "#############################" << endl;
 
+    myAnalysis::do_vn_calc = do_vn_calc;
     Int_t ret = myAnalysis::init(i_input, i_cuts, fitStats, QVecCorr, start, end);
     if(ret != 0) return;
 
@@ -929,43 +932,48 @@ void pi0Analysis(const string &i_input,
 
 # ifndef __CINT__
 Int_t main(Int_t argc, char* argv[]) {
-if(argc < 3 || argc > 9){
-        cout << "usage: ./pi0Ana inputFile cuts [fitStats] [QVecCorr] [outputFile] [z] [start] [end] " << endl;
+if(argc < 3 || argc > 10){
+        cout << "usage: ./pi0Ana inputFile cuts [z] [outputFile] [do_vn_calc] [fitStats] [QVecCorr] [start] [end] " << endl;
         cout << "inputFile: containing list of root file paths" << endl;
         cout << "cuts: csv file containing cuts" << endl;
         cout << "fitStats: csv file containing fit stats" << endl;
         cout << "QVecCorr: csv file containing Q vector corrections" << endl;
         cout << "z: z-vertex cut. Default: 10 cm. Range: 0 to 30 cm." << endl;
+        cout << "do_vn_calc: Do vn calculations. Default: False" << endl;
         cout << "outputFile: location of output file. Default: test.root." << endl;
         cout << "start: start event number. Default: 0." << endl;
         cout << "end: end event number. Default: 0. (to run over all entries)." << endl;
         return 1;
     }
 
+    Float_t z         = 10;
+    string outputFile = "test.root";
+    Bool_t do_vn_calc = false;
     string fitStats   = "";
     string QVecCorr   = "";
-    string outputFile = "test.root";
-    Float_t z         = 10;
     Long64_t start    = 0;
     Long64_t end      = 0;
 
     if(argc >= 4) {
-        fitStats = argv[3];
+        z = atof(argv[3]);
     }
     if(argc >= 5) {
-        QVecCorr = argv[4];
+        outputFile = argv[4];
     }
     if(argc >= 6) {
-        outputFile = argv[5];
+        do_vn_calc = atoi(argv[5]);
     }
     if(argc >= 7) {
-        z = atof(argv[6]);
+        fitStats = argv[6];
     }
     if(argc >= 8) {
-        start = atol(argv[7]);
+        QVecCorr = argv[7];
     }
     if(argc >= 9) {
-        end = atol(argv[8]);
+        start = atol(argv[8]);
+    }
+    if(argc >= 10) {
+        end = atol(argv[9]);
     }
 
     // ensure that 0 <= start <= end
@@ -974,7 +982,7 @@ if(argc < 3 || argc > 9){
         return 1;
     }
 
-    pi0Analysis(argv[1], argv[2], fitStats, QVecCorr, outputFile, z, start, end);
+    pi0Analysis(argv[1], argv[2], z, outputFile, do_vn_calc, fitStats, QVecCorr, start, end);
 
     cout << "======================================" << endl;
     cout << "done" << endl;
