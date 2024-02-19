@@ -8,7 +8,7 @@
 /*
  Only set below bool to true if already calculated vN and outputted for one set of cuts to a CSV
  */
-bool Plot_vN_bool = false; // Set this to true or false for vN plotting--IF TRUE, then vN will NOT BE re appended/calculated in the CSV being used
+bool Plot_vN_bool = true; // Set this to true or false for vN plotting--IF TRUE, then vN will NOT BE re appended/calculated in the CSV being used
 
 void ReadPHENIXData(std::string filePath,
                     std::vector<double>& v2_0_10,
@@ -1497,17 +1497,12 @@ void Plot_vN() {
     for (int i = 0; i < ptCenters.size(); ++i) {
         graph_0_20_v3->SetPoint(i, ptCenters[i] - offset, v3_0_20[i]);
     }
-    
     graph_0_20_v3->SetMarkerStyle(20); // circle
     graph_0_20_v3->SetMarkerColor(kRed);
     graph_0_20_v3->SetLineColor(kRed);
-    
     graph_0_20_v3 -> Draw("P SAME");
-    
-
     graph_0_20_v2->SetMarkerColor(kBlue);
     graph_0_20_v2->SetMarkerStyle(21);
-
     // Update the legend for the c4 canvas to include new marker styles
     TLegend *legend_0_20_v2_v3_measured = new TLegend(0.11, 0.11, 0.31, 0.31);
     legend_0_20_v2_v3_measured->SetBorderSize(0);
@@ -1779,34 +1774,34 @@ void vN_calculator_AccumulatedData() {
     std::string baseDirV2 = "/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/qQ_and_QQ_histograms_p009/n_2";
     std::string baseDirV3 = "/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/qQ_and_QQ_histograms_p009/n_3";
 
-    // Process and save QQ and qQ histograms for v2
-    for (const auto& histPath : hist_name_QQ2) {
-        drawAndSaveHist(histPath, baseDirV2);
-    }
-    for (const auto& histPath : hist_name_qQ2) {
-        drawAndSaveHist(histPath, baseDirV2);
-    }
-    for (const auto& histPath : hist_name_qQ2_bg) {
-        drawAndSaveHist(histPath, baseDirV2);
-    }
-    for (const auto& histPath : hist_name_qQ2_bg_left) {
-        drawAndSaveHist(histPath, baseDirV2);
-    }
-    
-    // Process and save QQ and qQ histograms for v3
-    for (const auto& histPath : hist_name_QQ3) {
-        drawAndSaveHist(histPath, baseDirV3);
-    }
-    for (const auto& histPath : hist_name_qQ3) {
-        drawAndSaveHist(histPath, baseDirV3);
-    }
-    for (const auto& histPath : hist_name_qQ3_bg) {
-        drawAndSaveHist(histPath, baseDirV3);
-    }
-    for (const auto& histPath : hist_name_qQ3_bg_left) {
-        drawAndSaveHist(histPath, baseDirV3);
-    }
-    
+//    // Process and save QQ and qQ histograms for v2
+//    for (const auto& histPath : hist_name_QQ2) {
+//        drawAndSaveHist(histPath, baseDirV2);
+//    }
+//    for (const auto& histPath : hist_name_qQ2) {
+//        drawAndSaveHist(histPath, baseDirV2);
+//    }
+//    for (const auto& histPath : hist_name_qQ2_bg) {
+//        drawAndSaveHist(histPath, baseDirV2);
+//    }
+//    for (const auto& histPath : hist_name_qQ2_bg_left) {
+//        drawAndSaveHist(histPath, baseDirV2);
+//    }
+//    
+//    // Process and save QQ and qQ histograms for v3
+//    for (const auto& histPath : hist_name_QQ3) {
+//        drawAndSaveHist(histPath, baseDirV3);
+//    }
+//    for (const auto& histPath : hist_name_qQ3) {
+//        drawAndSaveHist(histPath, baseDirV3);
+//    }
+//    for (const auto& histPath : hist_name_qQ3_bg) {
+//        drawAndSaveHist(histPath, baseDirV3);
+//    }
+//    for (const auto& histPath : hist_name_qQ3_bg_left) {
+//        drawAndSaveHist(histPath, baseDirV3);
+//    }
+//    
     /*
      RETRIEVE MEANS AND ERROR FOR n = 2 histograms
      */
@@ -2013,7 +2008,7 @@ void vN_calculator_AccumulatedData() {
                     float v2_corrected = v2_value * (1 + (1 / SB)) - ((1 / SB) * bg_v2_value);
                     
                     float v2_corrected_error = sqrt(
-                        pow((1 + (1 / SB)) * v2_error, 2) + // Error contribution from v2_signal
+                        (1 + 1 /(SB*SB)) * pow(v2_error, 2) + // Error contribution from v2_signal
                         pow((-1 / SB) * bg_v2_error, 2) +   // Error contribution from v2_bg (note the negative sign is squared, having no effect)
                         pow((-(v2_value - bg_v2_value) / (SB * SB)) * SBerror, 2) // Error contribution from SB
                     );
@@ -2022,8 +2017,6 @@ void vN_calculator_AccumulatedData() {
                     /*
                      CALCULATIONS for v3 measured, left/right background, corrected, with error prop
                      */
-                    
-                    
                     float v3_value = qQ3_mean[idx] / sqrt(QQ3_mean[QQ_index]);
                     float v3_error = abs(v3_value) * sqrt(pow(qQ3_error[idx] / qQ3_mean[idx], 2) + 0.25 * pow(QQ3_error[QQ_index] / QQ3_mean[QQ_index], 2));
                     
@@ -2039,7 +2032,7 @@ void vN_calculator_AccumulatedData() {
                     float v3_corrected = v3_value * (1 + (1 / SB)) - ((1 / SB) * bg_v3_value);
                     
                     float v3_corrected_error = sqrt(
-                        pow((1 + (1 / SB)) * v3_error, 2) + // Error contribution from v3_signal
+                        (1 + 1 /(SB*SB)) * pow(v3_error, 2) + // Error contribution from v3_signal
                         pow((-1 / SB) * bg_v3_error, 2) +   // Error contribution from v3_bg (note the negative sign is squared, having no effect)
                         pow((-(v3_value - bg_v3_value) / (SB * SB)) * SBerror, 2) // Error contribution from SB
                     );
@@ -2077,4 +2070,3 @@ void vN_calculator_AccumulatedData() {
         Plot_vN();
     }
 }
-
