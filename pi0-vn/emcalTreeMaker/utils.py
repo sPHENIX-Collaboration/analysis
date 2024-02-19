@@ -28,6 +28,7 @@ pi0Ana = subparser.add_parser('pi0Ana', help='Create condor submission directory
 pi0Ana.add_argument('-i', '--ntp-list', type=str, help='List of Ntuples', required=True)
 pi0Ana.add_argument('-i2', '--isDir', type=bool, default=False, help='is fit stats a directory (i.e separate csv for each run?). Default: False')
 pi0Ana.add_argument('-c', '--cuts', type=str, help='List of cuts', required=True)
+pi0Ana.add_argument('-p', '--do-vn-calc', type=int, default=0, help='Do vn analysis. Default: False')
 pi0Ana.add_argument('-c2', '--csv', type=str, default="", help='CSV file with fitStats. Default: ""')
 pi0Ana.add_argument('-c3', '--Q-vec-corr', type=str, default="", help='CSV file with Q vector corrections. Default: ""')
 pi0Ana.add_argument('-z', '--vtx-z', type=float, default=10, help='Event z-vertex cut. Default: 10 [cm]')
@@ -193,10 +194,12 @@ def create_pi0Ana_jobs():
     memory     = args.memory
     z          = args.vtx_z
     log        = args.log
+    do_vn_calc = args.do_vn_calc
 
     print(f'Macro: {macro}')
     print(f'Run List: {ntp_list}')
     print(f'Cuts: {cuts}')
+    print(f'Do vn calc: {do_vn_calc}')
     print(f'FitStats: {fitStats}')
     print(f'isDir: {isDir}')
     print(f'Q Vector Correction: {Q_vec_corr}')
@@ -213,15 +216,13 @@ def create_pi0Ana_jobs():
     shutil.copy(ntp_list, output_dir)
     shutil.copy(cuts, output_dir)
     shutil.copy(macro, output_dir)
-    if(fitStats != '' and not isDir):
+    if(do_vn_calc and not isDir):
         shutil.copy(fitStats, output_dir)
-    if(Q_vec_corr != '' and not isDir):
         shutil.copy(Q_vec_corr, output_dir)
+        fitStats   = f'{output_dir}/{os.path.basename(fitStats)}'
+        Q_vec_corr = f'{output_dir}/{os.path.basename(Q_vec_corr)}'
 
     cuts = f'{output_dir}/{os.path.basename(cuts)}'
-    if(not isDir):
-        fitStats   = f'{output_dir}/{os.path.basename(fitStats)}' if(fitStats != '') else r'\"\"'
-        Q_vec_corr = f'{output_dir}/{os.path.basename(Q_vec_corr)}' if(Q_vec_corr != '') else r'\"\"'
 
     sub = ''
     with open(ntp_list) as file:
@@ -242,9 +243,12 @@ def create_pi0Ana_jobs():
             with open(f'{output_dir}/{run}/genPi0Ana.sub', mode="w") as file2:
                 file2.write(f'executable     = ../{os.path.basename(script)}\n')
                 if(not isDir):
-                    file2.write(f'arguments      = {output_dir}/{os.path.basename(executable)} $(input_ntp) {cuts} {fitStats} {Q_vec_corr} output/test-$(Process).root {z}\n')
+                    if(do_vn_calc):
+                        file2.write(f'arguments      = {output_dir}/{os.path.basename(executable)} $(input_ntp) {cuts} {z} output/test-$(Process).root {do_vn_calc} {fitStats} {Q_vec_corr}\n')
+                    else:
+                        file2.write(f'arguments      = {output_dir}/{os.path.basename(executable)} $(input_ntp) {cuts} {z} output/test-$(Process).root\n')
                 else:
-                    file2.write(f'arguments      = {output_dir}/{os.path.basename(executable)} $(input_ntp) {cuts} {output_dir}/{run}/fit-stats-{run}.csv {output_dir}/{run}/Q-vec-corr-{run}.csv output/test-$(Process).root {z}\n')
+                    file2.write(f'arguments      = {output_dir}/{os.path.basename(executable)} $(input_ntp) {cuts} {z} output/test-$(Process).root {do_vn_calc} {output_dir}/{run}/fit-stats-{run}.csv {output_dir}/{run}/Q-vec-corr-{run}.csv \n')
                 file2.write(f'log            = {log}\n')
                 file2.write( 'output         = stdout/job-$(Process).out\n')
                 file2.write( 'error          = error/job-$(Process).err\n')
