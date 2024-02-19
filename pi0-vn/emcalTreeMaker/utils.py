@@ -17,7 +17,7 @@ f4a.add_argument('-m', '--macro', type=str, default='macro/Fun4All_CaloTreeGen.C
 f4a.add_argument('-m2', '--src', type=str, default='src', help='Directory Containing src files. Default: src')
 f4a.add_argument('-b', '--f4a', type=str, default='bin/Fun4All_CaloTreeGen', help='Fun4All executable. Default: bin/Fun4All_CaloTreeGen')
 f4a.add_argument('-d', '--output', type=str, default='test', help='Output Directory. Default: ./test')
-f4a.add_argument('-s', '--memory', type=int, default=1, help='Memory (units of GB) to request per condor submission. Default: 2 GB.')
+f4a.add_argument('-s', '--memory', type=float, default=1, help='Memory (units of GB) to request per condor submission. Default: 2 GB.')
 f4a.add_argument('-l', '--log', type=str, default='/tmp/anarde/dump/job-$(ClusterId)-$(Process).log', help='Condor log file.')
 f4a.add_argument('-z', '--vtx-z', type=float, default=30, help='Event z-vertex cut. Default: 30 [cm]')
 f4a.add_argument('-a', '--do-pi0', type=int, default=1, help='Do pi0 Analysis. Default: True')
@@ -36,7 +36,7 @@ pi0Ana.add_argument('-m', '--macro', type=str, default='macro/pi0Analysis.C', he
 pi0Ana.add_argument('-e', '--script', type=str, default='genPi0Ana.sh', help='Job script to execute. Default: genPi0Ana.sh')
 pi0Ana.add_argument('-b', '--executable', type=str, default='bin/pi0Ana', help='Executable. Default: bin/pi0Ana')
 pi0Ana.add_argument('-d', '--output', type=str, default='test', help='Output Directory. Default: ./test')
-pi0Ana.add_argument('-s', '--memory', type=int, default=1, help='Memory (units of GB) to request per condor submission. Default: 1 GB.')
+pi0Ana.add_argument('-s', '--memory', type=float, default=1, help='Memory (units of GB) to request per condor submission. Default: 1 GB.')
 pi0Ana.add_argument('-l', '--log', type=str, default='/tmp/anarde/dump/job-$(ClusterId)-$(Process).log', help='Condor log file.')
 
 mix = subparser.add_parser('mix', help='Create condor submission directory for mixed event vn.')
@@ -48,7 +48,7 @@ mix.add_argument('-m', '--macro', type=str, default='macro/mixedEvent.C', help='
 mix.add_argument('-e', '--script', type=str, default='genMixedEvent.sh', help='Job script to execute. Default: genMixedEvent.sh')
 mix.add_argument('-b', '--executable', type=str, default='bin/mixedEvent', help='Executable. Default: bin/mixedEvent')
 mix.add_argument('-d', '--output', type=str, default='test', help='Output Directory. Default: ./test')
-mix.add_argument('-s', '--memory', type=int, default=1, help='Memory (units of GB) to request per condor submission. Default: 1 GB.')
+mix.add_argument('-s', '--memory', type=float, default=1, help='Memory (units of GB) to request per condor submission. Default: 1 GB.')
 mix.add_argument('-l', '--log', type=str, default='/tmp/anarde/dump/job-$(ClusterId)-$(Process).log', help='Condor log file.')
 
 QVecCorr = subparser.add_parser('QVecCorr', help='Create condor submission directory for Q Vector Correction.')
@@ -59,7 +59,7 @@ QVecCorr.add_argument('-z', '--vtx-z', type=float, default=10, help='Event z-ver
 QVecCorr.add_argument('-e', '--script', type=str, default='genQVecCorr.sh', help='Job script to execute. Default: genQVecCorr.sh')
 QVecCorr.add_argument('-b', '--executable', type=str, default='bin/Q-vec-corr', help='Executable. Default: bin/Q-vec-corr')
 QVecCorr.add_argument('-d', '--output', type=str, default='test', help='Output Directory. Default: ./test')
-QVecCorr.add_argument('-s', '--memory', type=int, default=1, help='Memory (units of GB) to request per condor submission. Default: 1 GB.')
+QVecCorr.add_argument('-s', '--memory', type=float, default=1, help='Memory (units of GB) to request per condor submission. Default: 1 GB.')
 QVecCorr.add_argument('-l', '--log', type=str, default='/tmp/anarde/dump/job-$(ClusterId)-$(Process).log', help='Condor log file.')
 
 dummy = subparser.add_parser('dummy', help='Identify events per run from input text file.')
