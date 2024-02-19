@@ -8,7 +8,7 @@
 /*
  Only set below bool to true if already calculated vN and outputted for one set of cuts to a CSV
  */
-bool Plot_vN_bool = true; // Set this to true or false for vN plotting--IF TRUE, then vN will NOT BE re appended/calculated in the CSV being used
+bool Plot_vN_bool = false; // Set this to true or false for vN plotting--IF TRUE, then vN will NOT BE re appended/calculated in the CSV being used
 
 void ReadPHENIXData(std::string filePath,
                     std::vector<double>& v2_0_10,
@@ -1463,7 +1463,7 @@ void vN_calculator_RunByRun_Final() {
                         float v2_corrected = v2_value * (1 + (1 / SB)) - ((1 / SB) * bg_v2_value);
                         
                         float v2_corrected_error = sqrt(
-                            pow((1 + (1 / SB)) * v2_error, 2) + // Error contribution from v2_signal
+                            (1 + 1 /(SB*SB)) * pow(v2_error, 2) + // Error contribution from v2_signal
                             pow((-1 / SB) * bg_v2_error, 2) +   // Error contribution from v2_bg (note the negative sign is squared, having no effect)
                             pow((-(v2_value - bg_v2_value) / (SB * SB)) * SBerror, 2) // Error contribution from SB
                         );
@@ -1484,7 +1484,7 @@ void vN_calculator_RunByRun_Final() {
                         float v3_corrected = v3_value * (1 + (1 / SB)) - ((1 / SB) * bg_v3_value);
                         
                         float v3_corrected_error = sqrt(
-                            pow((1 + (1 / SB)) * v3_error, 2) + // Error contribution from v3_signal
+                            (1 + 1 /(SB*SB)) * pow(v2_error, 2) + // Error contribution from v3_signal
                             pow((-1 / SB) * bg_v3_error, 2) +   // Error contribution from v3_bg (note the negative sign is squared, having no effect)
                             pow((-(v3_value - bg_v3_value) / (SB * SB)) * SBerror, 2) // Error contribution from SB
                         );
