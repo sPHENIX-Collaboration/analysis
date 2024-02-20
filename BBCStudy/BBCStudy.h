@@ -11,7 +11,9 @@ class PHCompositeNode;
 class PHG4HitContainer;
 class PHG4TruthInfoContainer;
 class EventHeader;
-class BbcOut;
+class MbdOut;
+class MbdPmtContainer;
+class MbdGeom;
 class TFile;
 class TTree;
 class TDatabasePDG;
@@ -22,7 +24,7 @@ class TF1;
 class TCanvas;
 
 
-//Brief: basic ntuple and histogram creation for sim evaluation
+//Brief: basic TTree and histogram creation for sim evaluation
 class BBCStudy: public SubsysReco
 {
 public: 
@@ -100,6 +102,9 @@ private:
   PHG4TruthInfoContainer* _truth_container;
   PHG4HitContainer* _bbchits;
   EventHeader* _evtheader;
+  MbdOut* _bbcout;
+  MbdPmtContainer* _bbcpmts;
+  MbdGeom* _bbcgeom;
 
 };
 

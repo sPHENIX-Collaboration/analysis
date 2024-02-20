@@ -12,6 +12,7 @@ class TTree;
 class TH2F;
 class TH1F;
 class TH1;
+class TProfile2D;
 
 class CaloAna : public SubsysReco
 {
@@ -35,6 +36,7 @@ class CaloAna : public SubsysReco
   int process_g4cells(PHCompositeNode *);
   int process_towers(PHCompositeNode *);
   int process_clusters(PHCompositeNode *);
+
 
   void Detector(const std::string &name) { detector = name; }
   void set_timing_cut_width(const int &t) { _range = t;}
@@ -62,6 +64,18 @@ class CaloAna : public SubsysReco
   TH2F* h_hcalin_etaphi_wQA = nullptr;
   TH2F* h_hcalout_etaphi_wQA = nullptr;
   TH1* h_totalzdc_e;
+
+  TProfile2D*    h_cemc_etaphi_time = nullptr;
+  TProfile2D*  h_hcalin_etaphi_time = nullptr;
+  TProfile2D* h_hcalout_etaphi_time = nullptr;
+
+  TH2F* h_cemc_e_chi2 = nullptr;
+  TH2F* h_ohcal_e_chi2 = nullptr;
+  TH2F* h_ihcal_e_chi2 = nullptr;
+
+  TProfile2D* h_cemc_etaphi_badChi2 = nullptr;
+  TProfile2D* h_hcalin_etaphi_badChi2 = nullptr;
+  TProfile2D* h_hcalout_etaphi_badChi2 = nullptr;
 
   TH1* hzdctime;
   TH1* hmbdtime;
@@ -118,6 +132,7 @@ class CaloAna : public SubsysReco
   int _range = 1;
   float _vz = 0.;
   bool m_vtxCut = false;
+  bool dynMaskClus = true;
 };
 
 #endif

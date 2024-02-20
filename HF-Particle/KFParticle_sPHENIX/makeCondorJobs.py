@@ -3,15 +3,16 @@ from os import environ
 import argparse
 
 parser = argparse.ArgumentParser(description='sPHENIX MDC2 Reco Job Creator')
-parser.add_argument('-i', '--inputType', default="HF_CHARM", help='Input type: PYTHIA8_PP_MB, HIJING_[0-20/0-4P88], HF_CHARM[D0], HF_BOTTOM[D0], JET_[10GEV/30GEV/PHOTON], SINGLE_PARTICLE')
+parser.add_argument('-i', '--inputType', default="PYTHIA8_PP_MB", help='Input type: PYTHIA8_PP_MB, HIJING_[0-20/0-4P88], HF_CHARM[D0], HF_BOTTOM[D0], JET_[10GEV/30GEV/PHOTON], SINGLE_PARTICLE')
 parser.add_argument('-f', '--nFilesPerJob', default=5, type=int, help='Number of input files to pass to each job')
 parser.add_argument('-t', '--nTotEvents', default=-1, type=int, help='Total number of events to run over')
-parser.add_argument('-r', '--run', default=7, type=int, help='Production run to use')
+parser.add_argument('-r', '--run', default=11, type=int, help='Production run to use')
 parser.add_argument('--nopileup', help='Get data without pileup', action="store_true")
 parser.add_argument('--truth', help='Enable truth DST reading', action="store_true")
 parser.add_argument('--calo', help='Enable calo DST reading', action="store_true")
 parser.add_argument('--trkr_hit', help='Enable tracker hit DST reading', action="store_true")
-parser.add_argument('--bbc_g4hit', help='Enable BBC G4 hit DST reading', action="store_true")
+parser.add_argument('--mbd', help='Enable MBD/ZDC DST reading', action="store_true")
+parser.add_argument('--mbd_g4hit', help='Enable MBD G4 hit DST reading', action="store_true")
 parser.add_argument('--g4hit', help='Enable G4 hit DST reading', action="store_true")
 parser.add_argument('--truth_table', help='Use DSTs for running tracking and making the truth/reco table', action="store_true")
 
@@ -26,7 +27,7 @@ if inputType not in types:
   sys.exit()
 
 
-dstSets = ['DST_TRACKS', 'DST_BBC_EPD']#, 'DST_VERTEX']
+dstSets = ['DST_TRACKS', 'DST_GLOBAL']
 if args.truth: 
     args.g4hit = False
     dstSets.append('DST_TRUTH')
@@ -36,7 +37,9 @@ if args.truth:
     dstSets.append('DST_TRKR_CLUSTER')
 if args.calo: dstSets.append('DST_CALO_CLUSTER')
 if args.trkr_hit: dstSets.append('DST_TRKR_HIT')
-if args.bbc_g4hit:
+if args.mbd:
+    dstSets.append('DST_MBD_EPD')
+if args.mbd_g4hit:
     args.g4hit = False
     dstSets.append('DST_BBC_G4HIT')
 if args.g4hit: dstSets.append('G4Hits')
@@ -50,7 +53,7 @@ if myShell not in goodShells:
     print("Your shell {} was not recognised".format(myShell))
     sys.exit()
 
-memory = 12 if inputType == "HIJING" else 6
+memory = 8
 
 def makeCondorJob():
     print("Creating condor submission files for {} production".format(inputType))

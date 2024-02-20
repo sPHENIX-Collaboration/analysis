@@ -5,7 +5,7 @@
 
 #include <fun4all/SubsysReco.h>
 
-#include <jetbase/JetMapv1.h>
+#include <jetbase/JetContainerv1.h>
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
@@ -66,7 +66,7 @@ class BuildResonanceJetTaggingTree : public SubsysReco
 
  private:
 
-  JetMapv1* getJetMapFromNode(PHCompositeNode *topNode, const std::string &name);
+  JetContainerv1* getJetContainerFromNode(PHCompositeNode *topNode, const std::string &name);
   KFParticle_Container* getKFParticleContainerFromNode(PHCompositeNode *topNode, const std::string &name);
   HepMC::GenEvent* getGenEventFromNode(PHCompositeNode *topNode, const std::string &name);
   /// String to contain the outfile name containing the trees
@@ -74,8 +74,8 @@ class BuildResonanceJetTaggingTree : public SubsysReco
   std::string m_tagcontainer_name;
   std::string m_jetcontainer_name;
   std::string m_truth_jetcontainer_name;
-  JetMapv1* m_taggedJetMap;
-  JetMapv1* m_truth_taggedJetMap;
+  JetContainerv1* m_taggedJetContainer;
+  JetContainerv1* m_truth_taggedJetContainer;
   bool m_dorec;
   bool m_dotruth;
   int m_nDaughters;

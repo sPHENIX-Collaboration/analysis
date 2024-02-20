@@ -1,0 +1,27 @@
+#
+# Descriptor: [B_s0 -> {J/psi -> e^+ e^-} {K_S0 -> pi^+ pi^-}]cc
+#
+# Adapted from LHCb
+# TG: HF
+# Responsible: Cameron Dean
+# Email: cdean@bnl.gov
+# Date: 20240212
+#
+Alias      MyJ/psi  J/psi
+ChargeConj MyJ/psi  MyJ/psi
+Alias      MyKs     K_S0
+ChargeConj MyKs     MyKs
+#
+Decay B_s0
+  1.000    MyJ/psi  MyKs     SVS;
+Enddecay
+CDecay anti-B_s0
+#
+Decay MyJ/psi
+  1.000         e+       e-            PHOTOS VLL;
+Enddecay
+#
+Decay MyKs
+  1.000         pi+       pi-            PHSP;
+Enddecay
+End
