@@ -113,6 +113,7 @@ class caloTreeGen : public SubsysReco
     Bool_t hasTowerFar(RawCluster *cluster, Bool_t isSim = false);
 
     Int_t iEvent = 0;
+    Int_t iEventGood = 0;
     Float_t avg_goodTowers = 0;
     Bool_t isSim = false;
 

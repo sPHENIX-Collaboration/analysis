@@ -456,6 +456,7 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
 
   T->Fill();
 
+  ++iEventGood;
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
@@ -496,6 +497,7 @@ Int_t caloTreeGen::EndRun(const Int_t runnumber)
 Int_t caloTreeGen::End(PHCompositeNode *topNode)
 {
 
+  std::cout << "Total Events: " << iEvent << ", Accepted Events: " << iEventGood << ", " << iEventGood*100./iEvent << " %" << std::endl;
   std::cout << "min z-vertex: " << min_vtx_z << ", max z-vertex: " << max_vtx_z << std::endl;
   std::cout << "min centrality: " << min_cent << ", max centrality: " << max_cent << std::endl;
   std::cout << "min totalCaloE: " << min_totalCaloE << ", max totalCaloE: " << max_totalCaloE << std::endl;
@@ -507,7 +509,7 @@ Int_t caloTreeGen::End(PHCompositeNode *topNode)
   std::cout << "min clusterPt: " << min_clusterPt << ", max clusterPt: " << max_clusterPt << std::endl;
   std::cout << "min clusterChi: " << min_clusterChi << ", max clusterChi: " << max_clusterChi << std::endl;
   std::cout << "max NClusters: " << max_NClusters << std::endl;
-  std::cout << "avg_goodTowers: " << avg_goodTowers*100./iEvent << " %" << std::endl;
+  std::cout << "avg_goodTowers: " << avg_goodTowers*100./iEventGood << " %" << std::endl;
   std::cout << "pi0 cuts: cluster minimum energy: " << clusE_min << ", cluster maximum chi2: " << clus_chi_max << std::endl;
 
   std::cout << "caloTreeGen::End(PHCompositeNode *topNode) This is the End..." << std::endl;
