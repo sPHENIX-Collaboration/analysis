@@ -22,6 +22,7 @@
 // #include <phool/recoConsts.h>
 
 #include <calotreegen/caloTreeGen.h>
+#include <calotrigger/MinimumBiasClassifier.h>
 
 using std::cout;
 using std::endl;
@@ -43,9 +44,24 @@ void Fun4All_CaloTreeGen(const string  &inputFile,
   Fun4AllServer *se = Fun4AllServer::instance();
   // recoConsts *rc = recoConsts::instance();
 
+  // //! Quiet mode. Only output critical messages. Intended for batch production mode.
+  // VERBOSITY_QUIET = 0,
+
+  // //! Output some useful messages during manual command line running
+  // VERBOSITY_SOME = 1,
+
+  // //! Output more messages
+  // VERBOSITY_MORE = 2,
+
+  // //! Output even more messages
+  // VERBOSITY_EVEN_MORE = 3,
+
+  // //! Output a lot of messages
+  // VERBOSITY_A_LOT = 4,
+
   if(isSim) {
     PHG4CentralityReco *cent = new PHG4CentralityReco();
-    cent->Verbosity(0);
+    cent->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
     cent->GetCalibrationParameters().ReadFromFile("centrality", "xml", 0, 0, string(getenv("CALIBRATIONROOT")) + string("/Centrality/"));
     se->registerSubsystem(cent);
 
@@ -57,6 +73,10 @@ void Fun4All_CaloTreeGen(const string  &inputFile,
     in3->AddFile(g4Hits.c_str());
     se->registerInputManager(in3);
   }
+
+  MinimumBiasClassifier *minimumbiasclassifier = new MinimumBiasClassifier();
+  // minimumbiasclassifier->Verbosity(Fun4AllBase::VERBOSITY_SOME);
+  // se->registerSubsystem(minimumbiasclassifier);
 
   caloTreeGen *calo = new caloTreeGen("caloTreeGen");
   calo->Verbosity(Fun4AllBase::VERBOSITY_QUIET);

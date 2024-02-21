@@ -19,7 +19,7 @@ f4a.add_argument('-b', '--f4a', type=str, default='bin/Fun4All_CaloTreeGen', hel
 f4a.add_argument('-d', '--output', type=str, default='test', help='Output Directory. Default: ./test')
 f4a.add_argument('-s', '--memory', type=float, default=1, help='Memory (units of GB) to request per condor submission. Default: 2 GB.')
 f4a.add_argument('-l', '--log', type=str, default='/tmp/anarde/dump/job-$(ClusterId)-$(Process).log', help='Condor log file.')
-f4a.add_argument('-z', '--vtx-z', type=float, default=30, help='Event z-vertex cut. Default: 30 [cm]')
+f4a.add_argument('-z', '--vtx-z', type=float, default=10, help='Event z-vertex cut. Default: 10 [cm]')
 f4a.add_argument('-a', '--do-pi0', type=int, default=1, help='Do pi0 Analysis. Default: True')
 f4a.add_argument('-s2', '--isSim', type=int, default=0, help='Type Simulation. Default: False')
 
