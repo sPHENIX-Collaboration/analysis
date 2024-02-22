@@ -350,7 +350,7 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
   {
     RawCluster *recoCluster = clusterIter -> second;
 
-    CLHEP::Hep3Vector vertex(0,0,0);
+    CLHEP::Hep3Vector vertex(0,0,vtx_z);
     CLHEP::Hep3Vector E_vec_cluster = RawClusterUtility::GetECoreVec(*recoCluster, vertex);
     // CLHEP::Hep3Vector E_vec_cluster_Full = RawClusterUtility::GetEVec(*recoCluster, vertex);
 
@@ -402,7 +402,7 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
 
       RawCluster *recoCluster2 = clusterIter2 -> second;
 
-      CLHEP::Hep3Vector vertex2(0,0,0);
+      CLHEP::Hep3Vector vertex2(0,0,vtx_z);
       CLHEP::Hep3Vector E_vec_cluster2 = RawClusterUtility::GetECoreVec(*recoCluster2, vertex2);
 
       Float_t clusE2 = E_vec_cluster2.mag();
