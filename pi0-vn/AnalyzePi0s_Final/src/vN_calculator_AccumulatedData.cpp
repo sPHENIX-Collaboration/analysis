@@ -9,7 +9,6 @@
  Only set below bool to true if already calculated vN and outputted for one set of cuts to a CSV
  */
 bool Plot_vN_bool = true; // Set this to true or false for vN plotting--IF TRUE, then vN will NOT BE re appended/calculated in the CSV being used
-
 void ReadPHENIXData(std::string filePath,
                     std::vector<double>& v2_0_10,
                     std::vector<double>& v2_0_10_Errors,
@@ -86,6 +85,66 @@ void ReadPHENIXData(std::string filePath,
     }
     file.close();
 }
+struct AccumulatedData {
+    std::vector<double> corrected_v2_0_20_accumulated, corrected_v2_20_40_accumulated, corrected_v2_40_60_accumulated;
+    std::vector<double> corrected_v2_0_20_Errors_accumulated, corrected_v2_20_40_Errors_accumulated, corrected_v2_40_60_Errors_accumulated;
+    
+    std::vector<double> corrected_v3_0_20_accumulated, corrected_v3_40_60_accumulated;
+    std::vector<double> corrected_v3_0_20_Errors_accumulated, corrected_v3_40_60_Errors_accumulated;
+};
+void Read_Accumulated_CSV(const std::string& filePath, AccumulatedData& data) {
+    std::ifstream file(filePath);
+    if (!file.is_open()) {
+        std::cerr << "Failed to open file: " << filePath << std::endl;
+        return;
+    }
+
+    std::string line;
+    std::getline(file, line); // Skip the header line
+
+    while (std::getline(file, line)) {
+        std::stringstream ss(line);
+        std::vector<std::string> rowData;
+        std::string cell;
+
+        while (std::getline(ss, cell, ',')) {
+            rowData.push_back(cell);
+        }
+        
+        double v2_corrected = std::stod(rowData.at(rowData.size() - 10));
+        double v2_error_corrected = std::stod(rowData.at(rowData.size() - 9));
+        double v3_corrected = std::stod(rowData.at(rowData.size() - 2));
+        double v3_error_corrected = std::stod(rowData.back());
+
+        int index = std::stoi(rowData[0]);
+        if (index >= 0 && index <= 5) {
+            data.corrected_v2_40_60_accumulated.push_back(v2_corrected);
+            data.corrected_v2_40_60_Errors_accumulated.push_back(v2_error_corrected);
+
+            
+            data.corrected_v3_40_60_accumulated.push_back(v3_corrected);
+            data.corrected_v3_40_60_Errors_accumulated.push_back(v3_error_corrected);
+
+            
+        } else if (index >= 6 && index <= 11) {
+            data.corrected_v2_20_40_accumulated.push_back(v2_corrected);
+            data.corrected_v2_20_40_Errors_accumulated.push_back(v2_error_corrected);
+
+            
+
+        } else if (index >= 12 && index <= 17) {
+            data.corrected_v2_0_20_accumulated.push_back(v2_corrected);
+            data.corrected_v2_0_20_Errors_accumulated.push_back(v2_error_corrected);
+
+            
+            data.corrected_v3_0_20_accumulated.push_back(v3_corrected);
+            data.corrected_v3_0_20_Errors_accumulated.push_back(v3_error_corrected);
+        }
+    }
+    file.close();
+}
+
+
 void printOverlayData(const std::vector<double>& ptCenters,
                       const std::vector<double>& data1, const std::vector<double>& error1,
                       const std::vector<double>& data2, const std::vector<double>& error2,
@@ -113,8 +172,8 @@ void PrintVectorContents(const std::vector<double>& vec, const std::vector<doubl
     }
     std::cout << std::endl;
 }
-void Plot_vN() {
-    std::string filePath = "/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/I_O_Accumulated_PlotByPlotOutput/UpdatedCSV_AccumulatedDists_p009.csv";
+void Plot_vN(const AccumulatedData& data) {
+    std::string filePath = "/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/I_O_Accumulated_PlotByPlotOutput/UpdatedCSV_AccumulatedDists_p010.csv";
 
     std::ifstream file(filePath);
     std::string line;
@@ -1465,8 +1524,8 @@ void Plot_vN() {
 
     // Update the legend for the c4 canvas to include new marker styles
     TLegend *legend_40_60_measured_corrected_v3 = new TLegend(0.1, 0.7, 0.3, 0.9);
-    legend_40_60_measured_corrected_v3->AddEntry(graph_40_60_v3, "0-20%, v_{3}^{M}", "p");
-    legend_40_60_measured_corrected_v3->AddEntry(corrected_graph_40_60_v3, "0-20%, v_{3}^{#pi^{0}}", "p");
+    legend_40_60_measured_corrected_v3->AddEntry(graph_40_60_v3, "20-40%, v_{3}^{M}", "p");
+    legend_40_60_measured_corrected_v3->AddEntry(corrected_graph_40_60_v3, "20-40%, v_{3}^{#pi^{0}}", "p");
 
     legend_40_60_measured_corrected_v3->Draw();
 
@@ -1679,6 +1738,196 @@ void Plot_vN() {
     c_40_60_v2_v3_corrected->Modified();
     c_40_60_v2_v3_corrected->Update();
     c_40_60_v2_v3_corrected->SaveAs("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/vN_Plot_Output/v2_v3_Corrected_Overlay_40_60.png");
+    
+    const auto& corrected_v2_0_20_accumulated = data.corrected_v2_0_20_accumulated;
+    const auto& corrected_v2_20_40_accumulated = data.corrected_v2_20_40_accumulated;
+    const auto& corrected_v2_40_60_accumulated = data.corrected_v2_40_60_accumulated;
+    const auto& corrected_v2_0_20_Errors_accumulated = data.corrected_v2_0_20_Errors_accumulated;
+    const auto& corrected_v2_20_40_Errors_accumulated = data.corrected_v2_20_40_Errors_accumulated;
+    const auto& corrected_v2_40_60_Errors_accumulated = data.corrected_v2_40_60_Errors_accumulated;
+
+    const auto& corrected_v3_0_20_accumulated = data.corrected_v3_0_20_accumulated;
+    const auto& corrected_v3_40_60_accumulated = data.corrected_v3_40_60_accumulated;
+    const auto& corrected_v3_0_20_Errors_accumulated = data.corrected_v3_0_20_Errors_accumulated;
+    const auto& corrected_v3_40_60_Errors_accumulated = data.corrected_v3_40_60_Errors_accumulated;
+    
+    PrintVectorContents(corrected_v2_40_60_accumulated, corrected_v2_40_60_Errors_accumulated, "corrected_v2_40_60_accumulated");
+    PrintVectorContents(corrected_v3_40_60_accumulated, corrected_v3_40_60_Errors_accumulated, "corrected_v3_40_60_accumulated");
+    PrintVectorContents(corrected_v2_20_40_accumulated, corrected_v2_20_40_Errors_accumulated, "corrected_v2_20_40_accumulated");
+    PrintVectorContents(corrected_v2_0_20_accumulated, corrected_v2_0_20_Errors_accumulated, "corrected_v2_0_20_accumulated");
+    PrintVectorContents(corrected_v3_0_20_accumulated, corrected_v3_0_20_Errors_accumulated, "corrected_v3_0_20_accumulated");
+    
+    
+    /*
+     Overlay PRE AND POST z_vertex fit 0-20 percent v2
+     */
+
+    TCanvas *c_p009_p010_Overlay_0_20_v2_corrected = new TCanvas("c_p009_p010_Overlay_0_20_v2_corrected", "#pi^{0} #it{v}_{2} Overlay, Before (p009)/After (p010) z-vertex fix vs #it{p}_{T} 0-20% Centrality", 800, 600);
+    corrected_graph_0_20_v2->Draw("AP");  // This will be the base graph
+    corrected_graph_0_20_v2->SetTitle("#pi^{0} #it{v}_{2} Overlay, Before (p009) and After (p010) z-vertex fix vs #it{p}_{T} 0-20% Centrality; #it{p}_{T} [GeV]; #it{v}_{2}");
+    corrected_graph_0_20_v2->SetMinimum(-1.0); // Set the minimum y value
+    corrected_graph_0_20_v2->SetMaximum(1.5); // Set the maximum y value
+    for (int i = 0; i < ptCenters.size(); ++i) {
+        corrected_graph_0_20_v2->SetPoint(i, ptCenters[i] - offset, corrected_v2_0_20[i]);
+    }
+    TGraphErrors *corrected_v2_0_20_accumulated_graph = new TGraphErrors(ptCenters.size(), &ptCenters[0], &corrected_v2_0_20_accumulated[0], 0, &corrected_v2_0_20_Errors_accumulated[0]);
+    
+    corrected_v2_0_20_accumulated_graph->SetMarkerStyle(20); // circle
+    corrected_v2_0_20_accumulated_graph->SetMarkerColor(kRed);
+    corrected_v2_0_20_accumulated_graph->SetLineColor(kRed);
+    corrected_v2_0_20_accumulated_graph -> Draw("P SAME");
+    
+    corrected_graph_0_20_v2->SetMarkerColor(kBlue);
+    corrected_graph_0_20_v2->SetMarkerStyle(21);
+    
+    graph_0_10->SetMarkerColor(kGreen + 3);
+    graph_0_10->SetMarkerStyle(22);
+    graph_0_10->SetMarkerSize(1.5);
+    graph_10_20->SetMarkerColor(kBlack);
+    graph_10_20->SetMarkerStyle(22);
+    graph_10_20->SetMarkerSize(1.5);
+    for (int i = 0; i < ptCenters.size(); ++i) {
+        graph_0_10->SetPoint(i, ptCenters[i] - offset * 2.0, v2_0_10[i]);
+        graph_10_20->SetPoint(i, ptCenters[i] + offset, v2_10_20[i]);
+    }
+    graph_0_10->Draw("P SAME");
+    graph_10_20->Draw("P SAME");
+    
+    // Update the legend for the c4 canvas to include new marker styles
+    TLegend *legend_p009_p010_Overlay_0_20_v2_corrected = new TLegend(0.11, 0.69, 0.31, 0.89);
+    legend_p009_p010_Overlay_0_20_v2_corrected->SetBorderSize(0);
+    legend_p009_p010_Overlay_0_20_v2_corrected->SetTextSize(0.03);
+    legend_p009_p010_Overlay_0_20_v2_corrected->AddEntry(corrected_v2_0_20_accumulated_graph, "0-20%, v_{2}^{#pi^{0}, p09 Data} Before z-vertex Fix", "pe");
+    legend_p009_p010_Overlay_0_20_v2_corrected->AddEntry(corrected_graph_0_20_v2, "0-20%, v_{2}^{#pi^{0}, p010 Data} After z-vertex Fix", "pe");
+    legend_p009_p010_Overlay_0_20_v2_corrected->AddEntry(graph_0_10, "0-10%, #bf{PHENIX} 2010", "pe");
+    legend_p009_p010_Overlay_0_20_v2_corrected->AddEntry(graph_10_20, "10-20%, #bf{PHENIX} 2010", "pe");
+    legend_p009_p010_Overlay_0_20_v2_corrected->Draw();
+    c_p009_p010_Overlay_0_20_v2_corrected->Update();
+    // Draw a dashed line at y = 0
+    double x_min_p009_p010_Overlay_0_20_v2_corrected = c_p009_p010_Overlay_0_20_v2_corrected->GetUxmin(); // Get the minimum x-value from the canvas
+    double x_max_p009_p010_Overlay_0_20_v2_corrected = c_p009_p010_Overlay_0_20_v2_corrected->GetUxmax(); // Get the maximum x-value from the canvas
+    TLine *zeroLine_Overlay_0_20_v2_corrected = new TLine(x_min_p009_p010_Overlay_0_20_v2_corrected, 0, x_max_p009_p010_Overlay_0_20_v2_corrected, 0);
+    zeroLine_Overlay_0_20_v2_corrected->SetLineStyle(2); // 2 corresponds to a dashed line
+    zeroLine_Overlay_0_20_v2_corrected->Draw("SAME"); // Draw the line on the same canvas as your plot
+    c_p009_p010_Overlay_0_20_v2_corrected->Modified();
+    c_p009_p010_Overlay_0_20_v2_corrected->Update();
+    c_p009_p010_Overlay_0_20_v2_corrected->SaveAs("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/vN_Plot_Output/p009_p010_Corrected_Overlay_0_20.png");
+    
+    
+    
+    
+    /*
+     20-40 Overlay p009 p010 corrected v2
+     */
+    
+    TCanvas *c_p009_p010_Overlay_20_40_v2_corrected = new TCanvas("c_p009_p010_Overlay_20_40_v2_corrected", "#pi^{0} #it{v}_{2} Overlay, Before (p009)/After (p010) z-vertex fix vs #it{p}_{T} 20-40% Centrality", 800, 600);
+    corrected_graph_20_40_v2->Draw("AP");  // This will be the base graph
+    corrected_graph_20_40_v2->SetTitle("#pi^{0} #it{v}_{2} Overlay, Before (p009) and After (p010) z-vertex fix vs #it{p}_{T} 20-40% Centrality; #it{p}_{T} [GeV]; #it{v}_{2}");
+    corrected_graph_20_40_v2->SetMinimum(-1.0); // Set the minimum y value
+    corrected_graph_20_40_v2->SetMaximum(1.5); // Set the maximum y value
+    for (int i = 0; i < ptCenters.size(); ++i) {
+        corrected_graph_20_40_v2->SetPoint(i, ptCenters[i] - offset, corrected_v2_20_40[i]);
+    }
+    TGraphErrors *corrected_v2_20_40_accumulated_graph = new TGraphErrors(ptCenters.size(), &ptCenters[0], &corrected_v2_20_40_accumulated[0], 0, &corrected_v2_20_40_Errors_accumulated[0]);
+    
+    corrected_v2_20_40_accumulated_graph->SetMarkerStyle(20); // circle
+    corrected_v2_20_40_accumulated_graph->SetMarkerColor(kRed);
+    corrected_v2_20_40_accumulated_graph->SetLineColor(kRed);
+    corrected_v2_20_40_accumulated_graph -> Draw("P SAME");
+    
+    corrected_graph_20_40_v2->SetMarkerColor(kBlue);
+    corrected_graph_20_40_v2->SetMarkerStyle(21);
+    
+    graph_20_30->SetMarkerColor(kGreen + 3);
+    graph_20_30->SetLineColor(kGreen + 3);
+    graph_20_30->SetMarkerStyle(22);
+    graph_20_30->SetMarkerSize(1.5);
+    graph_30_40->SetMarkerColor(kBlack);
+    graph_30_40->SetMarkerStyle(22);
+    graph_30_40->SetMarkerSize(1.5);
+    for (int i = 0; i < ptCenters.size(); ++i) {
+        graph_20_30->SetPoint(i, ptCenters[i] - offset * 2.0, v2_20_30[i]);
+        graph_30_40->SetPoint(i, ptCenters[i] + offset, v2_30_40[i]);
+    }
+    graph_20_30->Draw("P SAME");
+    graph_30_40->Draw("P SAME");
+    
+    // Update the legend for the c4 canvas to include new marker styles
+    TLegend *legend_p009_p010_Overlay_20_40_v2_corrected = new TLegend(0.11, 0.69, 0.31, 0.89);
+    legend_p009_p010_Overlay_20_40_v2_corrected->SetBorderSize(0);
+    legend_p009_p010_Overlay_20_40_v2_corrected->SetTextSize(0.03);
+    legend_p009_p010_Overlay_20_40_v2_corrected->AddEntry(corrected_v2_20_40_accumulated_graph, "20-40%, v_{2}^{#pi^{0}, p09 Data} Before z-vertex Fix", "pe");
+    legend_p009_p010_Overlay_20_40_v2_corrected->AddEntry(corrected_graph_20_40_v2, "20-40%, v_{2}^{#pi^{0}, p010 Data} After z-vertex Fix", "pe");
+    legend_p009_p010_Overlay_20_40_v2_corrected->AddEntry(graph_20_30, "20-30%, #bf{PHENIX} 2010", "pe");
+    legend_p009_p010_Overlay_20_40_v2_corrected->AddEntry(graph_30_40, "30-40%, #bf{PHENIX} 2010", "pe");
+    legend_p009_p010_Overlay_20_40_v2_corrected->Draw();
+    c_p009_p010_Overlay_20_40_v2_corrected->Update();
+    // Draw a dashed line at y = 0
+    double x_min_p009_p010_Overlay_20_40_v2_corrected = c_p009_p010_Overlay_20_40_v2_corrected->GetUxmin(); // Get the minimum x-value from the canvas
+    double x_max_p009_p010_Overlay_20_40_v2_corrected = c_p009_p010_Overlay_20_40_v2_corrected->GetUxmax(); // Get the maximum x-value from the canvas
+    TLine *zeroLine_Overlay_20_40_v2_corrected = new TLine(x_min_p009_p010_Overlay_20_40_v2_corrected, 0, x_max_p009_p010_Overlay_20_40_v2_corrected, 0);
+    zeroLine_Overlay_20_40_v2_corrected->SetLineStyle(2); // 2 corresponds to a dashed line
+    zeroLine_Overlay_20_40_v2_corrected->Draw("SAME"); // Draw the line on the same canvas as your plot
+    c_p009_p010_Overlay_20_40_v2_corrected->Modified();
+    c_p009_p010_Overlay_20_40_v2_corrected->Update();
+    c_p009_p010_Overlay_20_40_v2_corrected->SaveAs("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/vN_Plot_Output/p009_p010_Corrected_Overlay_20_40.png");
+
+    
+    /*
+     40-60 Overlay p009 p010 corrected v2
+     */
+    
+    TCanvas *c_p009_p010_Overlay_40_60_v2_corrected = new TCanvas("c_p009_p010_Overlay_40_60_v2_corrected", "#pi^{0} #it{v}_{2} Overlay, Before (p009)/After (p010) z-vertex fix vs #it{p}_{T} 40-60% Centrality", 800, 600);
+    corrected_graph_40_60_v2->Draw("AP");  // This will be the base graph
+    corrected_graph_40_60_v2->SetTitle("#pi^{0} #it{v}_{2} Overlay, Before (p009) and After (p010) z-vertex fix vs #it{p}_{T} 40-60% Centrality; #it{p}_{T} [GeV]; #it{v}_{2}");
+    corrected_graph_40_60_v2->SetMinimum(-1.0); // Set the minimum y value
+    corrected_graph_40_60_v2->SetMaximum(1.5); // Set the maximum y value
+    for (int i = 0; i < ptCenters.size(); ++i) {
+        corrected_graph_40_60_v2->SetPoint(i, ptCenters[i] - offset, corrected_v2_40_60[i]);
+    }
+    TGraphErrors *corrected_v2_40_60_accumulated_graph = new TGraphErrors(ptCenters.size(), &ptCenters[0], &corrected_v2_40_60_accumulated[0], 0, &corrected_v2_40_60_Errors_accumulated[0]);
+    
+    corrected_v2_40_60_accumulated_graph->SetMarkerStyle(20); // circle
+    corrected_v2_40_60_accumulated_graph->SetMarkerColor(kRed);
+    corrected_v2_40_60_accumulated_graph->SetLineColor(kRed);
+    corrected_v2_40_60_accumulated_graph -> Draw("P SAME");
+    
+    corrected_graph_40_60_v2->SetMarkerColor(kBlue);
+    corrected_graph_40_60_v2->SetMarkerStyle(21);
+    
+    graph_40_50->SetMarkerColor(kGreen + 3);
+    graph_40_50->SetLineColor(kGreen + 3);
+    graph_40_50->SetMarkerStyle(22);
+    graph_40_50->SetMarkerSize(1.5);
+    graph_50_60->SetMarkerColor(kBlack);
+    graph_50_60->SetMarkerStyle(22);
+    graph_50_60->SetMarkerSize(1.5);
+    for (int i = 0; i < ptCenters.size(); ++i) {
+        graph_40_50->SetPoint(i, ptCenters[i] - offset * 2.0, v2_40_50[i]);
+        graph_50_60->SetPoint(i, ptCenters[i] + offset, v2_50_60[i]);
+    }
+    graph_40_50->Draw("P SAME");
+    graph_50_60->Draw("P SAME");
+    
+    // Update the legend for the c4 canvas to include new marker styles
+    TLegend *legend_p009_p010_Overlay_40_60_v2_corrected = new TLegend(0.11, 0.69, 0.31, 0.89);
+    legend_p009_p010_Overlay_40_60_v2_corrected->SetBorderSize(0);
+    legend_p009_p010_Overlay_40_60_v2_corrected->SetTextSize(0.03);
+    legend_p009_p010_Overlay_40_60_v2_corrected->AddEntry(corrected_v2_40_60_accumulated_graph, "40-60%, v_{2}^{#pi^{0}, p09 Data} Before z-vertex Fix", "pe");
+    legend_p009_p010_Overlay_40_60_v2_corrected->AddEntry(corrected_graph_40_60_v2, "40-60%, v_{2}^{#pi^{0}, p010 Data} After z-vertex Fix", "pe");
+    legend_p009_p010_Overlay_40_60_v2_corrected->AddEntry(graph_40_50, "40-50%, #bf{PHENIX} 2010", "pe");
+    legend_p009_p010_Overlay_40_60_v2_corrected->AddEntry(graph_50_60, "50-60%, #bf{PHENIX} 2010", "pe");
+    legend_p009_p010_Overlay_40_60_v2_corrected->Draw();
+    c_p009_p010_Overlay_40_60_v2_corrected->Update();
+    // Draw a dashed line at y = 0
+    double x_min_p009_p010_Overlay_40_60_v2_corrected = c_p009_p010_Overlay_40_60_v2_corrected->GetUxmin(); // Get the minimum x-value from the canvas
+    double x_max_p009_p010_Overlay_40_60_v2_corrected = c_p009_p010_Overlay_40_60_v2_corrected->GetUxmax(); // Get the maximum x-value from the canvas
+    TLine *zeroLine_Overlay_40_60_v2_corrected = new TLine(x_min_p009_p010_Overlay_40_60_v2_corrected, 0, x_max_p009_p010_Overlay_40_60_v2_corrected, 0);
+    zeroLine_Overlay_40_60_v2_corrected->SetLineStyle(2); // 2 corresponds to a dashed line
+    zeroLine_Overlay_40_60_v2_corrected->Draw("SAME"); // Draw the line on the same canvas as your plot
+    c_p009_p010_Overlay_40_60_v2_corrected->Modified();
+    c_p009_p010_Overlay_40_60_v2_corrected->Update();
+    c_p009_p010_Overlay_40_60_v2_corrected->SaveAs("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/vN_Plot_Output/p009_p010_Corrected_Overlay_40_60.png");
 
     
     
@@ -1696,7 +1945,7 @@ void printCalculationDetails(const std::string& type, int index, const std::stri
 
 void vN_calculator_AccumulatedData() {
     // Open the ROOT file
-    TFile *file = new TFile("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/testRootFiles_ByProduction/p009/test.root", "READ");
+    TFile *file = new TFile("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/testRootFiles_ByProduction/p010/test-MB-trigger.root", "READ");
     if (!file || file->IsZombie()) {
         std::cerr << "Error opening file or file is not a valid ROOT file" << std::endl;
         return;
@@ -1771,8 +2020,8 @@ void vN_calculator_AccumulatedData() {
     };
 
     // Define the base directories for v2 and v3 histograms
-    std::string baseDirV2 = "/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/qQ_and_QQ_histograms_p009/n_2";
-    std::string baseDirV3 = "/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/qQ_and_QQ_histograms_p009/n_3";
+    std::string baseDirV2 = "/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/qQ_and_QQ_histograms_p010/n_2";
+    std::string baseDirV3 = "/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/qQ_and_QQ_histograms_p010/n_3";
 
 //    // Process and save QQ and qQ histograms for v2
 //    for (const auto& histPath : hist_name_QQ2) {
@@ -1801,7 +2050,7 @@ void vN_calculator_AccumulatedData() {
 //    for (const auto& histPath : hist_name_qQ3_bg_left) {
 //        drawAndSaveHist(histPath, baseDirV3);
 //    }
-//    
+    
     /*
      RETRIEVE MEANS AND ERROR FOR n = 2 histograms
      */
@@ -1943,8 +2192,8 @@ void vN_calculator_AccumulatedData() {
     float userDeltaR = 0;
 
     if (!Plot_vN_bool) {
-        std::ifstream inFile("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/I_O_Accumulated_PlotByPlotOutput/PlotByPlotOutput_2_15_24_cleaned.csv");
-        std::ofstream outFile("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/I_O_Accumulated_PlotByPlotOutput/UpdatedCSV_AccumulatedDists_p009.csv");
+        std::ifstream inFile("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/dataOutput_From_Fits_ByProd/p010/PlotByPlotOutput_2_23_24.csv");
+        std::ofstream outFile("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/I_O_Accumulated_PlotByPlotOutput/UpdatedCSV_AccumulatedDists_p010.csv");
 
         std::string line;
         int lineIndex = 0;
@@ -2067,6 +2316,11 @@ void vN_calculator_AccumulatedData() {
     
     // Check and execute Plot_vN
     if (Plot_vN_bool) {
-        Plot_vN();
+        AccumulatedData data;
+        std::string Accumulated_Data_Path = "/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/I_O_Accumulated_PlotByPlotOutput/UpdatedCSV_AccumulatedDists_p009.csv";
+
+        Read_Accumulated_CSV(Accumulated_Data_Path, data);
+        Plot_vN(data);
     }
 }
+
