@@ -49,7 +49,7 @@ void myHeavyFlavorReco()
   kfparticle->saveParticleContainer(false);
 
   bool fixToPV = true;
-  bool useFakePV = true;
+  bool useFakePV = false;
 
   if (useFakePV)
   {
