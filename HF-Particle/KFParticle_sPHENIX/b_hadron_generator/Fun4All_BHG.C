@@ -140,7 +140,9 @@ int Fun4All_BHG(std::string processID = "0")
   myTrackEff->setDFNodeName("myFinder");
   myTrackEff->triggerOnDecay(1);
   myTrackEff->writeSelectedTrackMap(true);
-  myTrackEff->writeOutputFile(false);
+  myTrackEff->writeOutputFile(true);
+  std::string outputHFEffFile = "./outputHFTrackEff_" + processID + ".root";
+  myTrackEff->setOutputFileName(outputHFEffFile);
   se->registerSubsystem(myTrackEff);
 
   //Output file handling
