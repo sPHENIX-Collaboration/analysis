@@ -32,10 +32,8 @@ void ReadPHENIXData(std::string filePath,
     std::string line;
     double v2, error_pos, error_neg;
     int rowCounter = 0;
-
     // Skip the header line
     std::getline(file, line);
-
     while (std::getline(file, line)) {
         std::stringstream ss(line);
         std::string cell;
@@ -43,11 +41,9 @@ void ReadPHENIXData(std::string filePath,
         while (std::getline(ss, cell, ',')) {
             rowData.push_back(cell);
         }
-
         v2 = std::stod(rowData.at(2));
         error_pos = std::stod(rowData.at(rowData.size() - 2)); // stat. +
         error_neg = std::stod(rowData.back()); // stat. -
-        
         // Assigning to the correct centrality vector based on row count
         if (rowCounter < 6) { // 0-10%
             v2_0_10.push_back(v2);
@@ -80,25 +76,23 @@ void ReadPHENIXData(std::string filePath,
             v2_50_60_Errors_Negative.push_back(fabs(error_neg));
             std::cout << "\033[1mData read in for v2_50_60:\033[0m " << v2 << " \u00B1 " << error_pos << std::endl;
         }
-
         rowCounter++;
     }
     file.close();
 }
-struct AccumulatedData {
-    std::vector<double> corrected_v2_0_20_accumulated, corrected_v2_20_40_accumulated, corrected_v2_40_60_accumulated;
-    std::vector<double> corrected_v2_0_20_Errors_accumulated, corrected_v2_20_40_Errors_accumulated, corrected_v2_40_60_Errors_accumulated;
+struct AdditionalData {
+    std::vector<double> corrected_v2_0_20_Additional, corrected_v2_20_40_Additional, corrected_v2_40_60_Additional;
+    std::vector<double> corrected_v2_0_20_Errors_Additional, corrected_v2_20_40_Errors_Additional, corrected_v2_40_60_Errors_Additional;
     
-    std::vector<double> corrected_v3_0_20_accumulated, corrected_v3_40_60_accumulated;
-    std::vector<double> corrected_v3_0_20_Errors_accumulated, corrected_v3_40_60_Errors_accumulated;
+    std::vector<double> corrected_v3_0_20_Additional, corrected_v3_40_60_Additional;
+    std::vector<double> corrected_v3_0_20_Errors_Additional, corrected_v3_40_60_Errors_Additional;
 };
-void Read_Accumulated_CSV(const std::string& filePath, AccumulatedData& data) {
+void Read_Additonal_DataSet(const std::string& filePath, AdditionalData& data) {
     std::ifstream file(filePath);
     if (!file.is_open()) {
         std::cerr << "Failed to open file: " << filePath << std::endl;
         return;
     }
-
     std::string line;
     std::getline(file, line); // Skip the header line
 
@@ -110,7 +104,6 @@ void Read_Accumulated_CSV(const std::string& filePath, AccumulatedData& data) {
         while (std::getline(ss, cell, ',')) {
             rowData.push_back(cell);
         }
-        
         double v2_corrected = std::stod(rowData.at(rowData.size() - 10));
         double v2_error_corrected = std::stod(rowData.at(rowData.size() - 9));
         double v3_corrected = std::stod(rowData.at(rowData.size() - 2));
@@ -118,49 +111,27 @@ void Read_Accumulated_CSV(const std::string& filePath, AccumulatedData& data) {
 
         int index = std::stoi(rowData[0]);
         if (index >= 0 && index <= 5) {
-            data.corrected_v2_40_60_accumulated.push_back(v2_corrected);
-            data.corrected_v2_40_60_Errors_accumulated.push_back(v2_error_corrected);
-
+            data.corrected_v2_40_60_Additional.push_back(v2_corrected);
+            data.corrected_v2_40_60_Errors_Additional.push_back(v2_error_corrected);
             
-            data.corrected_v3_40_60_accumulated.push_back(v3_corrected);
-            data.corrected_v3_40_60_Errors_accumulated.push_back(v3_error_corrected);
-
+            data.corrected_v3_40_60_Additional.push_back(v3_corrected);
+            data.corrected_v3_40_60_Errors_Additional.push_back(v3_error_corrected);
             
         } else if (index >= 6 && index <= 11) {
-            data.corrected_v2_20_40_accumulated.push_back(v2_corrected);
-            data.corrected_v2_20_40_Errors_accumulated.push_back(v2_error_corrected);
-
-            
+            data.corrected_v2_20_40_Additional.push_back(v2_corrected);
+            data.corrected_v2_20_40_Errors_Additional.push_back(v2_error_corrected);
 
         } else if (index >= 12 && index <= 17) {
-            data.corrected_v2_0_20_accumulated.push_back(v2_corrected);
-            data.corrected_v2_0_20_Errors_accumulated.push_back(v2_error_corrected);
+            data.corrected_v2_0_20_Additional.push_back(v2_corrected);
+            data.corrected_v2_0_20_Errors_Additional.push_back(v2_error_corrected);
 
-            
-            data.corrected_v3_0_20_accumulated.push_back(v3_corrected);
-            data.corrected_v3_0_20_Errors_accumulated.push_back(v3_error_corrected);
+            data.corrected_v3_0_20_Additional.push_back(v3_corrected);
+            data.corrected_v3_0_20_Errors_Additional.push_back(v3_error_corrected);
         }
     }
     file.close();
 }
-
-
-void printOverlayData(const std::vector<double>& ptCenters,
-                      const std::vector<double>& data1, const std::vector<double>& error1,
-                      const std::vector<double>& data2, const std::vector<double>& error2,
-                      const std::vector<double>& data3, const std::vector<double>& error3) {
-    std::cout << std::left << std::setw(10) << "pT" << std::setw(15) << "lowCen" << std::setw(15) << "lowCenErr"
-              << std::setw(15) << "HighCen" << std::setw(15) << "HighCenErr"
-              << std::setw(15) << "sPHEN" << std::setw(15) << "sPHENerr" << std::endl;
-    std::cout << std::fixed << std::setprecision(5); // Apply fixed-point notation and set precision
-    for (size_t i = 0; i < ptCenters.size(); ++i) {
-        std::cout << std::setw(10) << ptCenters[i]
-                  << std::setw(15) << data1[i] << std::setw(15) << error1[i]
-                  << std::setw(15) << data2[i] << std::setw(15) << error2[i]
-                  << std::setw(15) << data3[i] << std::setw(15) << error3[i] << std::endl;
-    }
-}
-// Call this function after you've populated your vectors
+// Call this function after vectors populated
 void PrintVectorContents(const std::vector<double>& vec, const std::vector<double>& vecErrors, const std::string& name) {
     std::cout << "\033[1m\033[31m" // Red and bold text
               << "Contents of " << name << " and its Errors:" << "\033[0m" << std::endl; // Reset formatting at the end
@@ -172,25 +143,38 @@ void PrintVectorContents(const std::vector<double>& vec, const std::vector<doubl
     }
     std::cout << std::endl;
 }
-void Plot_vN(const AccumulatedData& data) {
+void DrawZeroLine(TCanvas* canvas) {
+    if (!canvas) return;
+    canvas->Update(); // Make sure the canvas is up-to-date to get correct axis limits
+    double x_min = canvas->GetUxmin(); // Get the minimum x-value from the canvas
+    double x_max = canvas->GetUxmax(); // Get the maximum x-value from the canvas
+    // Create and draw a dashed line at y = 0
+    TLine* zeroLine = new TLine(x_min, 0, x_max, 0);
+    zeroLine->SetLineStyle(2);
+    zeroLine->Draw("SAME");
+    canvas->Modified();
+    canvas->Update();
+}
+// Function to create and return a TGraphErrors pointer
+TGraphErrors* CreateGraph(const std::vector<double>& ptCenters, const std::vector<double>& values, const std::vector<double>& errors) {
+    return new TGraphErrors(ptCenters.size(), &ptCenters[0], &values[0], nullptr, &errors[0]);
+}
+void Plot_vN(const AdditionalData& data) {
     std::string filePath = "/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/I_O_Accumulated_PlotByPlotOutput/UpdatedCSV_AccumulatedDists_p010.csv";
+    std::string phenixFilePath = "/Users/patsfan753/Desktop/FinalCleanedPhenix.csv";
+    std::vector<double> ptCenters = {2.25, 2.75, 3.25, 3.75, 4.25, 4.75}; // Mid-points of pT ranges
+    std::vector<double> v2_0_20, v2_0_20_Errors, v2_20_40, v2_20_40_Errors, v2_40_60, v2_40_60_Errors, bg_v2_0_20, bg_v2_0_20_Errors, bg_v2_20_40, bg_v2_20_40_Errors, bg_v2_40_60, bg_v2_40_60_Errors, bg_v2_left_0_20, bg_v2_left_0_20_Errors, bg_v2_left_20_40, bg_v2_left_20_40_Errors, bg_v2_left_40_60, bg_v2_left_40_60_Errors, corrected_v2_0_20, corrected_v2_0_20_Errors, corrected_v2_20_40, corrected_v2_20_40_Errors, corrected_v2_40_60, corrected_v2_40_60_Errors, v3_0_20, v3_0_20_Errors, v3_20_40, v3_20_40_Errors, v3_40_60, v3_40_60_Errors, bg_v3_0_20, bg_v3_0_20_Errors, bg_v3_20_40, bg_v3_20_40_Errors, bg_v3_40_60, bg_v3_40_60_Errors, bg_v3_left_0_20, bg_v3_left_0_20_Errors, bg_v3_left_20_40, bg_v3_left_20_40_Errors, bg_v3_left_40_60, bg_v3_left_40_60_Errors, corrected_v3_0_20, corrected_v3_0_20_Errors, corrected_v3_20_40, corrected_v3_20_40_Errors, corrected_v3_40_60, corrected_v3_40_60_Errors;;
+
+    double v2, v2_error, bg_v2, bg_v2_error, bg_v2_left, bg_v2_error_left, v2_corrected, v2_error_corrected;
+    double v3, v3_error, bg_v3, bg_v3_error, bg_v3_left, bg_v3_error_left, v3_corrected, v3_error_corrected;
+    
+    //vectors for PHENIX data
+    std::vector<double> v2_0_10, v2_0_10_Errors, v2_0_10_Errors_Negative, v2_10_20, v2_10_20_Errors, v2_10_20_Errors_Negative, v2_20_30, v2_20_30_Errors, v2_20_30_Errors_Negative, v2_30_40, v2_30_40_Errors, v2_30_40_Errors_Negative, v2_40_50, v2_40_50_Errors, v2_40_50_Errors_Negative, v2_50_60, v2_50_60_Errors, v2_50_60_Errors_Negative;
 
     std::ifstream file(filePath);
     std::string line;
-    std::vector<double> ptCenters = {2.25, 2.75, 3.25, 3.75, 4.25, 4.75}; // Mid-points of pT ranges
-    std::vector<double> v2_0_20, v2_20_40, v2_40_60, bg_v2_0_20, bg_v2_20_40, bg_v2_40_60, bg_v2_left_0_20, bg_v2_left_20_40, bg_v2_left_40_60, corrected_v2_0_20, corrected_v2_20_40, corrected_v2_40_60;
-    std::vector<double> v2_0_20_Errors, v2_20_40_Errors, v2_40_60_Errors, bg_v2_0_20_Errors, bg_v2_20_40_Errors, bg_v2_40_60_Errors, bg_v2_left_0_20_Errors, bg_v2_left_20_40_Errors, bg_v2_left_40_60_Errors, corrected_v2_0_20_Errors, corrected_v2_20_40_Errors, corrected_v2_40_60_Errors;
-    double v2, v2_error, bg_v2, bg_v2_error, bg_v2_left, bg_v2_error_left, v2_corrected, v2_error_corrected;
-    
-    
-    std::vector<double> v3_0_20, v3_20_40, v3_40_60, bg_v3_0_20, bg_v3_20_40, bg_v3_40_60, bg_v3_left_0_20, bg_v3_left_20_40, bg_v3_left_40_60, corrected_v3_0_20, corrected_v3_20_40, corrected_v3_40_60; // v3 values for different centralities
-    std::vector<double> v3_0_20_Errors, v3_20_40_Errors, v3_40_60_Errors, bg_v3_0_20_Errors, bg_v3_20_40_Errors, bg_v3_40_60_Errors, bg_v3_left_0_20_Errors, bg_v3_left_20_40_Errors, bg_v3_left_40_60_Errors, corrected_v3_0_20_Errors, corrected_v3_20_40_Errors, corrected_v3_40_60_Errors; // Errors for v3 values
-    double v3, v3_error, bg_v3, bg_v3_error, bg_v3_left, bg_v3_error_left, v3_corrected, v3_error_corrected;
-
     // Skip the header line
     std::getline(file, line);
-
-    // Reading the file
     while (std::getline(file, line)) {
         std::stringstream ss(line);
         std::string cell;
@@ -198,27 +182,16 @@ void Plot_vN(const AccumulatedData& data) {
         while (std::getline(ss, cell, ',')) {
             rowData.push_back(cell);
         }
-
-        // Converting string to double for v2 and its error
         v2 = std::stod(rowData.at(rowData.size() - 16));
         v2_error = std::stod(rowData.at(rowData.size() - 15));
-        // Converting string to double for v2 and its error
         bg_v2 = std::stod(rowData.at(rowData.size() - 14));
         bg_v2_error = std::stod(rowData.at(rowData.size() - 13));
-        // Converting string to double for v2 and its error
         bg_v2_left = std::stod(rowData.at(rowData.size() - 12));
         bg_v2_error_left = std::stod(rowData.at(rowData.size() - 11));
-        
         v2_corrected = std::stod(rowData.at(rowData.size() - 10));
         v2_error_corrected = std::stod(rowData.at(rowData.size() - 9));
-        
-        
-        
-        
-        // Converting string to double for v2 and its error
         v3 = std::stod(rowData.at(rowData.size() - 8)); // 8th last column is v3
         v3_error = std::stod(rowData.at(rowData.size() - 7)); // 7th last column is v3
-        // Converting string to double for v2 and its error
         bg_v3 = std::stod(rowData.at(rowData.size() - 6)); // 6th last column is v3
         bg_v3_error = std::stod(rowData.at(rowData.size() - 5)); // 5th last column is v3 error
         bg_v3_left = std::stod(rowData.at(rowData.size() - 4)); // 6th last column is v3
@@ -232,530 +205,148 @@ void Plot_vN(const AccumulatedData& data) {
             // 40-60% centrality
             v2_40_60.push_back(v2);
             v2_40_60_Errors.push_back(v2_error);
-            
             bg_v2_40_60.push_back(bg_v2);
             bg_v2_40_60_Errors.push_back(bg_v2_error);
-            
             bg_v2_left_40_60.push_back(bg_v2_left);
             bg_v2_left_40_60_Errors.push_back(bg_v2_error_left);
-            
             corrected_v2_40_60.push_back(v2_corrected);
             corrected_v2_40_60_Errors.push_back(v2_error_corrected);
-            
-            // 40-60% centrality
             v3_40_60.push_back(v3);
             v3_40_60_Errors.push_back(v3_error);
-            
             bg_v3_40_60.push_back(bg_v3);
             bg_v3_40_60_Errors.push_back(bg_v3_error);
-            
             bg_v3_left_40_60.push_back(bg_v3_left);
             bg_v3_left_40_60_Errors.push_back(bg_v3_error_left);
-            
             corrected_v3_40_60.push_back(v3_corrected);
             corrected_v3_40_60_Errors.push_back(v3_error_corrected);
-            
-            
         } else if (index >= 6 && index <= 11) {
             // 20-40% centrality
             v2_20_40.push_back(v2);
             v2_20_40_Errors.push_back(v2_error);
-
             bg_v2_20_40.push_back(bg_v2);
             bg_v2_20_40_Errors.push_back(bg_v2_error);
-            
             bg_v2_left_20_40.push_back(bg_v2_left);
             bg_v2_left_20_40_Errors.push_back(bg_v2_error_left);
-            
             corrected_v2_20_40.push_back(v2_corrected);
             corrected_v2_20_40_Errors.push_back(v2_error_corrected);
-            
-            // 20-40% centrality
             v3_20_40.push_back(v3);
             v3_20_40_Errors.push_back(v3_error);
-
             bg_v3_20_40.push_back(bg_v3);
             bg_v3_20_40_Errors.push_back(bg_v3_error);
-            
             bg_v3_left_20_40.push_back(bg_v3_left);
             bg_v3_left_20_40_Errors.push_back(bg_v3_error_left);
-            
             corrected_v3_20_40.push_back(v3_corrected);
             corrected_v3_20_40_Errors.push_back(v3_error_corrected);
-            
-            
         } else if (index >= 12 && index <= 17) {
             // 0-20% centrality
             v2_0_20.push_back(v2);
             v2_0_20_Errors.push_back(v2_error);
-            
             bg_v2_0_20.push_back(bg_v2);
             bg_v2_0_20_Errors.push_back(bg_v2_error);
-            
             bg_v2_left_0_20.push_back(bg_v2_left);
             bg_v2_left_0_20_Errors.push_back(bg_v2_error_left);
-            PrintVectorContents(bg_v2_left_0_20, bg_v2_left_0_20_Errors, "bg_v2_left_0_20");
-            
             corrected_v2_0_20.push_back(v2_corrected);
             corrected_v2_0_20_Errors.push_back(v2_error_corrected);
-            
-            // 0-20% centrality
             v3_0_20.push_back(v3);
             v3_0_20_Errors.push_back(v3_error);
-            
             bg_v3_0_20.push_back(bg_v3);
             bg_v3_0_20_Errors.push_back(bg_v3_error);
-            
             bg_v3_left_0_20.push_back(bg_v3_left);
             bg_v3_left_0_20_Errors.push_back(bg_v3_error_left);
-            
             corrected_v3_0_20.push_back(v3_corrected);
             corrected_v3_0_20_Errors.push_back(v3_error_corrected);
         }
     }
-
-    // Close the file as we have finished reading the data
     file.close();
     
-    /*
-     Plot Measured v2 for 0-20% centrality
-     */
-    TCanvas *c1 = new TCanvas("c1", "v2 vs pT 0-20%", 800, 600);
-    TGraphErrors *graph_0_20_v2 = new TGraphErrors(ptCenters.size(), &ptCenters[0], &v2_0_20[0], 0, &v2_0_20_Errors[0]);
-    graph_0_20_v2->SetMarkerColor(kBlue);
-    graph_0_20_v2->SetMarkerStyle(21);
-    graph_0_20_v2->SetMarkerSize(1.1);
-    graph_0_20_v2->SetTitle("Diphoton #it{v}_{2} vs #it{p}_{T} 0-20% Centrality; #it{p}_{T} [GeV]; #it{v}_{2}");
-    graph_0_20_v2->Draw("AP");
-    graph_0_20_v2->GetXaxis()->SetLimits(2.0, 5.0);
-    graph_0_20_v2->GetXaxis()->SetNdivisions(010);
-    graph_0_20_v2->SetMinimum(0.0); // Set the minimum y value
-    graph_0_20_v2->SetMaximum(0.25); // Set the maximum y value
-
-    c1->SetTicks();
-    //Output cut information
-    TLatex latex020;
-    latex020.SetTextSize(0.03);
-    latex020.SetTextAlign(12);
-    latex020.SetNDC();
-    latex020.DrawLatex(0.13, 0.86, "Cuts (Inclusive):");
-    latex020.DrawLatex(0.13, 0.82, "#bf{Asymmetry < 0.5}");
-    latex020.DrawLatex(0.13, 0.78, "#bf{#chi^{2} < 4.0}");
-    latex020.DrawLatex(0.13, 0.74, "#bf{Cluster E #geq 0.5 GeV}");
-    latex020.DrawLatex(0.13, 0.7, "#bf{Mass Range of Calculation: (#mu - 2*#sigma, #mu + 2*#sigma) GeV}");
-    c1->Modified();
-    c1->Update();
-    c1->SaveAs("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/vN_Plot_Output/v2/0_20/v2_measured_vs_pT_0_20.png");
-
-    
-    
-    /*
-     Plot Measured v2 for 20-40% centrality
-     */
-    TCanvas *c2 = new TCanvas("c2", "v2 vs pT 20-40%", 800, 600);
-    TGraphErrors *graph_20_40_v2 = new TGraphErrors(ptCenters.size(), &ptCenters[0], &v2_20_40[0], 0, &v2_20_40_Errors[0]);
-    graph_20_40_v2->SetMarkerColor(kBlue);
-    graph_20_40_v2->SetMarkerStyle(21);
-    graph_20_40_v2->SetMarkerSize(1.1);
-    graph_20_40_v2->SetTitle("Diphoton #it{v}_{2} vs #it{p}_{T} 20-40% Centrality; #it{p}_{T} [GeV]; #it{v}_{2}");
-    graph_20_40_v2->Draw("AP");
-    graph_20_40_v2->GetXaxis()->SetLimits(2.0, 5.0);
-    graph_20_40_v2->GetXaxis()->SetNdivisions(010);
-    graph_20_40_v2->SetMinimum(0.0); // Set the minimum y value
-    graph_20_40_v2->SetMaximum(0.5); // Set the maximum y value
-    c2->SetTicks();
-    TLatex latex2040;
-    latex2040.SetTextSize(0.03);
-    latex2040.SetTextAlign(12);
-    latex2040.SetNDC();
-    latex2040.DrawLatex(0.13, 0.86, "Cuts (Inclusive):");
-    latex2040.DrawLatex(0.13, 0.82, "#bf{Asymmetry < 0.5}");
-    latex2040.DrawLatex(0.13, 0.78, "#bf{#chi^{2} < 4.0}");
-    latex2040.DrawLatex(0.13, 0.74, "#bf{Cluster E #geq 0.5 GeV}");
-    c2->Modified();
-    c2->Update();
-    c2->SaveAs("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/vN_Plot_Output/v2/20_40/v2_measured_vs_pT_20_40.png");
-
-    
-    
-    /*
-     Plot Measured v2 for 0-20% centrality
-     */
-    TCanvas *c3 = new TCanvas("c3", "v2 vs pT 40-60%", 800, 600);
-    TGraphErrors *graph_40_60_v2 = new TGraphErrors(ptCenters.size(), &ptCenters[0], &v2_40_60[0], 0, &v2_40_60_Errors[0]);
-    graph_40_60_v2->SetMarkerColor(kBlue);
-    graph_40_60_v2->SetMarkerStyle(21);
-    graph_40_60_v2->SetMarkerSize(1.1);
-    graph_40_60_v2->SetTitle("Diphoton #it{v}_{2} vs #it{p}_{T} 40-60% Centrality; #it{p}_{T} [GeV]; #it{v}_{2}");
-    graph_40_60_v2->Draw("AP");
-    graph_40_60_v2->GetXaxis()->SetLimits(2.0, 5.0);
-    graph_40_60_v2->GetXaxis()->SetNdivisions(010);
-    graph_40_60_v2->SetMinimum(0.0); // Set the minimum y value
-    graph_40_60_v2->SetMaximum(0.25); // Set the maximum y value
-    graph_40_60_v2->SetMinimum(-0.2); // Set the minimum y value
-    graph_40_60_v2->SetMaximum(0.7); // Set the maximum y value
-    c3->SetTicks();
-    TLatex latex4060;
-    latex4060.SetTextSize(0.03);
-    latex4060.SetTextAlign(12);
-    latex4060.SetNDC();
-    latex2040.DrawLatex(0.13, 0.86, "Cuts (Inclusive):");
-    latex2040.DrawLatex(0.13, 0.82, "#bf{Asymmetry < 0.5}");
-    latex2040.DrawLatex(0.13, 0.78, "#bf{#chi^{2} < 4.0}");
-    latex2040.DrawLatex(0.13, 0.74, "#bf{Cluster E #geq 0.5 GeV}");
-    c3->Modified();
-    c3->Update();
-    c3->SaveAs("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/vN_Plot_Output/v2/40_60/v2_measured_vs_pT_40_60.png");
-    
-    
-    
-    
-    /*
-     Plot RIGHT OF BACKGROUND v2 for 0 - 20 percent centrality
-     */
-    TCanvas *c4 = new TCanvas("c4", "Background v2 vs pT 0-20%", 800, 600);
-    TGraphErrors *bg_graph_0_20_v2 = new TGraphErrors(ptCenters.size(), &ptCenters[0], &bg_v2_0_20[0], 0, &bg_v2_0_20_Errors[0]);
-    bg_graph_0_20_v2->SetMarkerColor(kBlue);
-    bg_graph_0_20_v2->SetMarkerStyle(21);
-    bg_graph_0_20_v2->SetMarkerSize(1.1);
-    bg_graph_0_20_v2->SetTitle("Background #it{v}_{2} vs #it{p}_{T} 0-20% Centrality; #it{p}_{T} [GeV]; #it{v}_{2}");
-    bg_graph_0_20_v2->Draw("AP");
-    
-    bg_graph_0_20_v2->GetXaxis()->SetLimits(2.0, 5.0);
-    bg_graph_0_20_v2->GetXaxis()->SetNdivisions(010);
-    bg_graph_0_20_v2->SetMinimum(0); // Set the minimum y value
-    bg_graph_0_20_v2->SetMaximum(0.3); // Set the maximum y value
-    c4->SetTicks();
-    TLatex latex020_bg;
-    latex020_bg.SetTextSize(0.03);
-    latex020_bg.SetTextAlign(12);
-    latex020_bg.SetNDC();
-    latex020_bg.DrawLatex(0.13, 0.86, "Cuts (Inclusive):");
-    latex020_bg.DrawLatex(0.13, 0.82, "#bf{Asymmetry < 0.5}");
-    latex020_bg.DrawLatex(0.13, 0.78, "#bf{#chi^{2} < 4.0}");
-    latex020_bg.DrawLatex(0.13, 0.74, "#bf{Cluster E #geq 0.5 GeV}");
-    latex020_bg.DrawLatex(0.13, 0.7, "#bf{Mass Range of Calculation: (#mu + 3*#sigma, 0.5) GeV}");
-    
-    c4->Update();
-    // Draw a dashed line at y = 0
-    double x_min_bg_0_20_v2 = c4->GetUxmin(); // Get the minimum x-value from the canvas
-    double x_max_bg_0_20_v2 = c4->GetUxmax(); // Get the maximum x-value from the canvas
-    TLine *zeroLine_0_20_bg_v2 = new TLine(x_min_bg_0_20_v2, 0, x_max_bg_0_20_v2, 0);
-    zeroLine_0_20_bg_v2->SetLineStyle(2); // 2 corresponds to a dashed line
-    zeroLine_0_20_bg_v2->Draw("SAME"); // Draw the line on the same canvas as your plot
-
-    
-    
-    c4->Modified();
-    c4->Update();
-    c4->SaveAs("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/vN_Plot_Output/v2/0_20/bg_v2_vs_pT_0_20.png");
-
-    
-    
-    /*
-     OVERLAY BACKGROUND v2 TO LEFT AND RIGHT OF SIGNAL REGION for 0-20%
-     */
-    TCanvas *c_0_20_Left_Right_bg_Overlay_v2 = new TCanvas("c_0_20_Left_Right_bg_Overlay_v2", "Sideband #v_2 Overlay, 0-20% Centrality", 800, 600);
-    TGraphErrors *graph_0_20_bg_left_v2 = new TGraphErrors(ptCenters.size(), &ptCenters[0], &bg_v2_left_0_20[0], 0, &bg_v2_left_0_20_Errors[0]);
-    
-    graph_0_20_bg_left_v2->SetMarkerStyle(20); // Circle
-    graph_0_20_bg_left_v2->SetMarkerColor(kRed); // Changed to red for visibility
-    graph_0_20_bg_left_v2->SetLineColor(kRed);
-    // Draw the right background graph as the base graph
-    bg_graph_0_20_v2->Draw("AP");
-    
-    // Apply jitter to x values for graph_40_50 and graph_50_60
-    for (int i = 0; i < ptCenters.size(); ++i) {
-        graph_0_20_bg_left_v2->SetPoint(i, ptCenters[i] - .06, bg_v2_left_0_20[i]);
-    }
-    
-    bg_graph_0_20_v2->SetTitle("Sideband #it{v}_{2} to Left and Right of Signal Region vs #it{p}_{T} 0-20% Centrality; #it{p}_{T} [GeV]; #it{v}_{2}");
-    bg_graph_0_20_v2->SetMinimum(0.0); // Set the minimum y value
-    bg_graph_0_20_v2->SetMaximum(0.25); // Set the maximum y value
-    graph_0_20_bg_left_v2->Draw("P SAME");
-
-    // Create a legend to distinguish between the two graphs
-    TLegend *legend_leftRightbg_overlay_0_20_v2 = new TLegend(0.11, 0.11, 0.31, 0.31);
-    legend_leftRightbg_overlay_0_20_v2->SetBorderSize(0);
-    legend_leftRightbg_overlay_0_20_v2->SetTextSize(0.028);
-    legend_leftRightbg_overlay_0_20_v2->AddEntry(bg_graph_0_20_v2, "0-20%, v_{2}^{bg} right of signal region in range (#mu + 3*#sigma, 0.5) GeV", "p");
-    legend_leftRightbg_overlay_0_20_v2->AddEntry(graph_0_20_bg_left_v2, "0-20%, v_{2}^{bg} left of signal region in range (0, #mu - 2*#sigma) GeV", "p");
-    legend_leftRightbg_overlay_0_20_v2->Draw();
-    
-    c_0_20_Left_Right_bg_Overlay_v2->Modified();
-    c_0_20_Left_Right_bg_Overlay_v2->Update();
-    c_0_20_Left_Right_bg_Overlay_v2->SaveAs("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/vN_Plot_Output/v2/0_20/bg_v2_Left_Right_Overlay_0_20.png");
-
-    
-    
-    
-    /*
-     Plot RIGHT OF BACKGROUND v2 for 20 - 40 percent centrality
-     */
-    TCanvas *c5 = new TCanvas("c5", "Background v2 vs pT 20-40%", 800, 600);
-    TGraphErrors *bg_graph_20_40_v2 = new TGraphErrors(ptCenters.size(), &ptCenters[0], &bg_v2_20_40[0], 0, &bg_v2_20_40_Errors[0]);
-    bg_graph_20_40_v2->SetMarkerColor(kBlue);
-    bg_graph_20_40_v2->SetMarkerStyle(21);
-    bg_graph_20_40_v2->SetMarkerSize(1.1);
-    bg_graph_20_40_v2->SetTitle("Background #it{v}_{2} vs #it{p}_{T} 20-40% Centrality; #it{p}_{T} [GeV]; #it{v}_{2}");
-    bg_graph_20_40_v2->Draw("AP");
-    bg_graph_20_40_v2->GetXaxis()->SetLimits(2.0, 5.0);
-    bg_graph_20_40_v2->GetXaxis()->SetNdivisions(010);
-    bg_graph_20_40_v2->SetMinimum(0.0); // Set the minimum y value
-    bg_graph_20_40_v2->SetMaximum(0.5); // Set the maximum y value
-    c5->SetTicks();
-    
-    //Output cut information
-    TLatex latex2040_bg;
-    latex2040_bg.SetTextSize(0.03);
-    latex2040_bg.SetTextAlign(12);
-    latex2040_bg.SetNDC();
-
-    latex2040_bg.DrawLatex(0.13, 0.86, "Cuts (Inclusive):");
-    latex2040_bg.DrawLatex(0.13, 0.82, "#bf{Asymmetry < 0.5}");
-    latex2040_bg.DrawLatex(0.13, 0.78, "#bf{#chi^{2} < 4.0}");
-    latex2040_bg.DrawLatex(0.13, 0.74, "#bf{Cluster E #geq 0.5 GeV}");
-
-    
-    c5->Modified();
-    c5->Update();
-    c5->SaveAs("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/vN_Plot_Output/v2/20_40/bg_v2_vs_pT_20_40.png");
-
-    
-    /*
-     OVERLAY BACKGROUND v2 TO LEFT AND RIGHT OF SIGNAL REGION for 20-40%
-     */
-    TCanvas *c_20_40_Left_Right_bg_Overlay_v2 = new TCanvas("c_20_40_Left_Right_bg_Overlay_v2", "Sideband #v_2 Overlay, 20-40% Centrality", 800, 600);
-    TGraphErrors *graph_20_40_bg_left_v2 = new TGraphErrors(ptCenters.size(), &ptCenters[0], &bg_v2_left_20_40[0], 0, &bg_v2_left_20_40_Errors[0]);
-    
-    graph_20_40_bg_left_v2->SetMarkerStyle(20); // Circle
-    graph_20_40_bg_left_v2->SetMarkerColor(kRed); // Changed to red for visibility
-    graph_20_40_bg_left_v2->SetLineColor(kRed);
-    // Draw the right background graph as the base graph
-    bg_graph_20_40_v2->Draw("AP");
-    
-    // Apply jitter to x values for graph_40_50 and graph_50_60
-    for (int i = 0; i < ptCenters.size(); ++i) {
-        graph_20_40_bg_left_v2->SetPoint(i, ptCenters[i] - .06, bg_v2_left_20_40[i]);
-    }
-    
-    bg_graph_20_40_v2->SetTitle("Sideband #it{v}_{2} to Left and Right of Signal Region vs #it{p}_{T} 20-40% Centrality; #it{p}_{T} [GeV]; #it{v}_{2}");
-    bg_graph_20_40_v2->SetMinimum(0); // Set the minimum y value
-    bg_graph_20_40_v2->SetMaximum(0.55); // Set the maximum y value
-    graph_20_40_bg_left_v2->Draw("P SAME");
-
-    // Create a legend to distinguish between the two graphs
-    TLegend *legend_leftRightbg_overlay_20_40_v2 = new TLegend(0.12, 0.65, 0.32, 0.85);
-    legend_leftRightbg_overlay_20_40_v2->SetBorderSize(0);
-    legend_leftRightbg_overlay_20_40_v2->SetTextSize(0.024);
-    legend_leftRightbg_overlay_20_40_v2->AddEntry(bg_graph_20_40_v2, "20-40%, v_{2}^{bg} right of signal region in range (#mu + 3*#sigma, 0.5) GeV", "p");
-    legend_leftRightbg_overlay_20_40_v2->AddEntry(graph_20_40_bg_left_v2, "20-40%, v_{2}^{bg} left of signal region in range (0, #mu - 2*#sigma) GeV", "p");
-    legend_leftRightbg_overlay_20_40_v2->Draw();
-
-    c_20_40_Left_Right_bg_Overlay_v2->Modified();
-    c_20_40_Left_Right_bg_Overlay_v2->Update();
-    c_20_40_Left_Right_bg_Overlay_v2->SaveAs("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/vN_Plot_Output/v2/20_40/bg_v2_Left_Right_Overlay_20_40.png");
-
-    
-    
-    
-    
-    /*
-     Plot RIGHT OF BACKGROUND v2 for 40 - 60 percent centrality
-     */
-    TCanvas *c6 = new TCanvas("c3", "Background v2 vs pT 40-60%", 800, 600);
-    TGraphErrors *bg_graph_40_60_v2 = new TGraphErrors(ptCenters.size(), &ptCenters[0], &bg_v2_40_60[0], 0, &bg_v2_40_60_Errors[0]);
-    bg_graph_40_60_v2->SetMarkerColor(kBlue);
-    bg_graph_40_60_v2->SetMarkerStyle(21);
-    bg_graph_40_60_v2->SetMarkerSize(1.1);
-    bg_graph_40_60_v2->SetTitle("Background #it{v}_{2} vs #it{p}_{T} 40-60% Centrality; #it{p}_{T} [GeV]; #it{v}_{2}");
-    bg_graph_40_60_v2->Draw("AP");
-    bg_graph_40_60_v2->GetXaxis()->SetLimits(2.0, 5.0);
-    bg_graph_40_60_v2->GetXaxis()->SetNdivisions(010);
-    bg_graph_40_60_v2->SetMinimum(0.0); // Set the minimum y value
-    bg_graph_40_60_v2->SetMaximum(0.25); // Set the maximum y value
-    bg_graph_40_60_v2->SetMinimum(-0.2); // Set the minimum y value
-    bg_graph_40_60_v2->SetMaximum(0.7); // Set the maximum y value
-    c6->SetTicks();
-    TLatex latex4060_bg;
-    latex4060_bg.SetTextSize(0.03);
-    latex4060_bg.SetTextAlign(12);
-    latex4060_bg.SetNDC();
-    latex4060_bg.DrawLatex(0.13, 0.86, "Cuts (Inclusive):");
-    latex4060_bg.DrawLatex(0.13, 0.82, "#bf{Asymmetry < 0.5}");
-    latex4060_bg.DrawLatex(0.13, 0.78, "#bf{#chi^{2} < 4.0}");
-    latex4060_bg.DrawLatex(0.13, 0.74, "#bf{Cluster E #geq 0.5 GeV}");
-    c6->Modified();
-    c6->Update();
-    c6->SaveAs("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/vN_Plot_Output/v2/40_60/bg_v2_vs_pT_40_60.png");
-    
-    
-    /*
-     OVERLAY BACKGROUND v2 TO LEFT AND RIGHT OF SIGNAL REGION for 40-60%
-     */
-    TCanvas *c_40_60_Left_Right_bg_Overlay_v2 = new TCanvas("c_40_60_Left_Right_bg_Overlay_v2", "Sideband #v_2 Overlay, 40-60% Centrality", 800, 600);
-    TGraphErrors *graph_40_60_bg_left_v2 = new TGraphErrors(ptCenters.size(), &ptCenters[0], &bg_v2_left_40_60[0], 0, &bg_v2_left_40_60_Errors[0]);
-    
-    graph_40_60_bg_left_v2->SetMarkerStyle(20); // Circle
-    graph_40_60_bg_left_v2->SetMarkerColor(kRed); // Changed to red for visibility
-    graph_40_60_bg_left_v2->SetLineColor(kRed);
-    // Draw the right background graph as the base graph
-    bg_graph_40_60_v2->Draw("AP");
-    
-    // Apply jitter to x values for graph_40_50 and graph_50_60
-    for (int i = 0; i < ptCenters.size(); ++i) {
-        graph_40_60_bg_left_v2->SetPoint(i, ptCenters[i] - .06, bg_v2_left_40_60[i]);
-    }
-    
-    bg_graph_40_60_v2->SetTitle("Sideband #it{v}_{2} to Left and Right of Signal Region vs #it{p}_{T} 40-60% Centrality; #it{p}_{T} [GeV]; #it{v}_{2}");
-    bg_graph_40_60_v2->SetMinimum(-0.2); // Set the minimum y value
-    bg_graph_40_60_v2->SetMaximum(.75); // Set the maximum y value
-    graph_40_60_bg_left_v2->Draw("P SAME");
-
-    // Create a legend to distinguish between the two graphs
-    TLegend *legend_leftRightbg_overlay_40_60_v2 = new TLegend(0.11, 0.69, 0.31, 0.89);
-    legend_leftRightbg_overlay_40_60_v2->SetBorderSize(0);
-    legend_leftRightbg_overlay_40_60_v2->SetTextSize(0.03);
-    legend_leftRightbg_overlay_40_60_v2->AddEntry(bg_graph_40_60_v2, "40-60%, v_{2}^{bg} right of signal region in range (#mu + 3*#sigma, 0.5) GeV", "p");
-    legend_leftRightbg_overlay_40_60_v2->AddEntry(graph_40_60_bg_left_v2, "40-60%, v_{2}^{bg} left of signal region in range (0, #mu - 2*#sigma) GeV", "p");
-    legend_leftRightbg_overlay_40_60_v2->Draw();
-
-    c_40_60_Left_Right_bg_Overlay_v2->Modified();
-    c_40_60_Left_Right_bg_Overlay_v2->Update();
-    c_40_60_Left_Right_bg_Overlay_v2->SaveAs("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/vN_Plot_Output/v2/40_60/bg_v2_Left_Right_Overlay_40_60.png");
-
-    
-    
-    
-    
-    /*
-     Plot Corrected v2 By itself for 0-20 centrality
-     */
-    TCanvas *c7 = new TCanvas("c7", "Corrected v2 vs pT 0-20%", 800, 600);
-    TGraphErrors *corrected_graph_0_20_v2 = new TGraphErrors(ptCenters.size(), &ptCenters[0], &corrected_v2_0_20[0], 0, &corrected_v2_0_20_Errors[0]);
-    corrected_graph_0_20_v2->SetMarkerColor(kBlue);
-    corrected_graph_0_20_v2->SetMarkerStyle(21);
-    corrected_graph_0_20_v2->SetMarkerSize(1.1);
-    corrected_graph_0_20_v2->SetTitle("Corrected #it{v}_{2} vs #it{p}_{T} 0-20% Centrality; #it{p}_{T} [GeV]; #it{v}_{2}");
-    corrected_graph_0_20_v2->Draw("AP");
-    corrected_graph_0_20_v2->GetXaxis()->SetLimits(2.0, 5.0);
-    corrected_graph_0_20_v2->GetXaxis()->SetNdivisions(010);
-    corrected_graph_0_20_v2->SetMinimum(-1.35); // Set the minimum y value
-    corrected_graph_0_20_v2->SetMaximum(2.5); // Set the maximum y value
-    c7->SetTicks();
-    TLatex latex020_correct;
-    latex020_correct.SetTextSize(0.03);
-    latex020_correct.SetTextAlign(12);
-    latex020_correct.SetNDC();
-    latex020_correct.DrawLatex(0.13, 0.86, "Cuts (Inclusive):");
-    latex020_correct.DrawLatex(0.13, 0.82, "#bf{Asymmetry < 0.5}");
-    latex020_correct.DrawLatex(0.13, 0.78, "#bf{#chi^{2} < 4.0}");
-    latex020_correct.DrawLatex(0.13, 0.74, "#bf{Cluster E #geq 0.5 GeV}");
-    
-    c7->Update();
-    // Draw a dashed line at y = 0
-    double x_min_0_20_corr_v2 = c7->GetUxmin(); // Get the minimum x-value from the canvas
-    double x_max_0_20_corr_v2 = c7->GetUxmax(); // Get the maximum x-value from the canvas
-    TLine *zeroLine_0_20_corr_v2 = new TLine(x_min_0_20_corr_v2, 0, x_max_0_20_corr_v2, 0);
-    zeroLine_0_20_corr_v2->SetLineStyle(2); // 2 corresponds to a dashed line
-    zeroLine_0_20_corr_v2->Draw("SAME"); // Draw the line on the same canvas as your plot
-
-    
-    c7->Modified();
-    c7->Update();
-    c7->SaveAs("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/vN_Plot_Output/v2/0_20/Corrected_v2_vs_pT_0_20_correctedPointsOnly.png");
-
-    
-    /*
-     Plot Corrected v2 By itself for 20-40 centrality
-     */
-
-    TCanvas *c8 = new TCanvas("c8", "Corrected v2 vs pT 20-40%", 800, 600);
-    TGraphErrors *corrected_graph_20_40_v2 = new TGraphErrors(ptCenters.size(), &ptCenters[0], &corrected_v2_20_40[0], 0, &corrected_v2_20_40_Errors[0]);
-    corrected_graph_20_40_v2->SetMarkerColor(kBlue);
-    corrected_graph_20_40_v2->SetMarkerStyle(21);
-    corrected_graph_20_40_v2->SetMarkerSize(1.1);
-    corrected_graph_20_40_v2->SetTitle("Corrected #it{v}_{2} vs #it{p}_{T} 20-40% Centrality; #it{p}_{T} [GeV]; #it{v}_{2}");
-    corrected_graph_20_40_v2->Draw("AP");
-    corrected_graph_20_40_v2->GetXaxis()->SetLimits(2.0, 5.0);
-    corrected_graph_20_40_v2->GetXaxis()->SetNdivisions(010);
-    corrected_graph_20_40_v2->SetMinimum(-0.8); // Set the minimum y value
-    corrected_graph_20_40_v2->SetMaximum(1.0); // Set the maximum y value
-    c8->SetTicks();
-    TLatex latex2040_corr;
-    latex2040_corr.SetTextSize(0.03);
-    latex2040_corr.SetTextAlign(12);
-    latex2040_corr.SetNDC();
-    latex2040_corr.DrawLatex(0.13, 0.86, "Cuts (Inclusive):");
-    latex2040_corr.DrawLatex(0.13, 0.82, "#bf{Asymmetry < 0.5}");
-    latex2040_corr.DrawLatex(0.13, 0.78, "#bf{#chi^{2} < 4.0}");
-    latex2040_corr.DrawLatex(0.13, 0.74, "#bf{Cluster E #geq 0.5 GeV}");
-    
-    c8->Update();
-    // Draw a dashed line at y = 0
-    double x_min_20_40_corr_v2 = c8->GetUxmin(); // Get the minimum x-value from the canvas
-    double x_max_20_40_corr_v2 = c8->GetUxmax(); // Get the maximum x-value from the canvas
-    TLine *zeroLine_20_40_corr_v2 = new TLine(x_min_20_40_corr_v2, 0, x_max_20_40_corr_v2, 0);
-    zeroLine_20_40_corr_v2->SetLineStyle(2); // 2 corresponds to a dashed line
-    zeroLine_20_40_corr_v2->Draw("SAME"); // Draw the line on the same canvas as your plot
-
-    c8->Modified();
-    c8->Update();
-    c8->SaveAs("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/vN_Plot_Output/v2/20_40/Corrected_v2_vs_pT_20_40_correctedPointsOnly.png.png");
-
-    /*
-     Plot Corrected v2 By itself for 40-60 centrality
-     */
-    TCanvas *c9 = new TCanvas("c9", "Corrected v2 vs pT 40-60%", 800, 600);
-    TGraphErrors *corrected_graph_40_60_v2 = new TGraphErrors(ptCenters.size(), &ptCenters[0], &corrected_v2_40_60[0], 0, &corrected_v2_40_60_Errors[0]);
-    corrected_graph_40_60_v2->SetMarkerColor(kBlue);
-    corrected_graph_40_60_v2->SetMarkerStyle(21);
-    corrected_graph_40_60_v2->SetMarkerSize(1.1);
-    corrected_graph_40_60_v2->SetTitle("Corrected #it{v}_{2} vs #it{p}_{T} 40-60% Centrality; #it{p}_{T} [GeV]; #it{v}_{2}");
-    corrected_graph_40_60_v2->Draw("AP");
-    corrected_graph_40_60_v2->GetXaxis()->SetLimits(2.0, 5.0);
-    corrected_graph_40_60_v2->GetXaxis()->SetNdivisions(010);
-    corrected_graph_40_60_v2->SetMinimum(0.0); // Set the minimum y value
-    corrected_graph_40_60_v2->SetMaximum(0.25); // Set the maximum y value
-    corrected_graph_40_60_v2->SetMinimum(-0.2); // Set the minimum y value
-    corrected_graph_40_60_v2->SetMaximum(0.7); // Set the maximum y value
-    c9->SetTicks();
-    TLatex latex4060_corr;
-    latex4060_corr.SetTextSize(0.03);
-    latex4060_corr.SetTextAlign(12);
-    latex4060_corr.SetNDC();
-    latex4060_corr.DrawLatex(0.3, 0.86, "Cuts (Inclusive):");
-    latex4060_corr.DrawLatex(0.3, 0.82, "#bf{Asymmetry < 0.5}");
-    latex4060_corr.DrawLatex(0.3, 0.78, "#bf{#chi^{2} < 4.0}");
-    latex4060_corr.DrawLatex(0.3, 0.74, "#bf{Cluster E #geq 0.5 GeV}");
-    
-    c9->Update();
-    // Draw a dashed line at y = 0
-    double x_min_40_60_corr_v2 = c9->GetUxmin(); // Get the minimum x-value from the canvas
-    double x_max_40_60_corr_v2 = c9->GetUxmax(); // Get the maximum x-value from the canvas
-    TLine *zeroLine_40_60_corr_v2 = new TLine(x_min_40_60_corr_v2, 0, x_max_40_60_corr_v2, 0);
-    zeroLine_40_60_corr_v2->SetLineStyle(2); // 2 corresponds to a dashed line
-    zeroLine_40_60_corr_v2->Draw("SAME"); // Draw the line on the same canvas as your plot
-    
-    c9->Modified();
-    c9->Update();
-    c9->SaveAs("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/vN_Plot_Output/v2/40_60/Corrected_v2_vs_pT_40_60_correctedPointsOnly.png");
-    
-    
-    
-    // Define the offsets for jitter
+    // Define the offsets for jitter in Overlays
     double offset = 0.06;
     
-
+    // Define the marker styles and colors for clarity
+    int markerStyle_sPHENIX = 21;
+    int color_sPHENIX = kBlue;
     
-    /*
-     Read in Data from PHENIX CSV to plot overlay v2 with PHENIX 0-10 and 10-20
-     */
-    std::string phenixFilePath = "/Users/patsfan753/Desktop/FinalCleanedPhenix.csv";
-    std::vector<double> v2_0_10, v2_10_20, v2_20_30, v2_30_40, v2_40_50, v2_50_60;
-    std::vector<double> v2_0_10_Errors, v2_10_20_Errors, v2_20_30_Errors, v2_30_40_Errors, v2_40_50_Errors, v2_50_60_Errors;
-    std::vector<double> v2_0_10_Errors_Negative, v2_10_20_Errors_Negative, v2_20_30_Errors_Negative, v2_30_40_Errors_Negative, v2_40_50_Errors_Negative, v2_50_60_Errors_Negative;
+    TGraphErrors* graph_0_20_v2 = CreateGraph(ptCenters, v2_0_20, v2_0_20_Errors);
+    graph_0_20_v2->SetMarkerColor(color_sPHENIX);
+    graph_0_20_v2->SetLineColor(color_sPHENIX);
+    graph_0_20_v2->SetMarkerStyle(markerStyle_sPHENIX);
+    
+    TGraphErrors* graph_0_20_v3 = CreateGraph(ptCenters, v3_0_20, v3_0_20_Errors);
+    graph_0_20_v3->SetMarkerColor(color_sPHENIX);
+    graph_0_20_v3->SetLineColor(color_sPHENIX);
+    graph_0_20_v3->SetMarkerStyle(markerStyle_sPHENIX);
 
+    TGraphErrors* graph_20_40_v2 = CreateGraph(ptCenters, v2_20_40, v2_20_40_Errors);
+    graph_20_40_v2->SetMarkerColor(color_sPHENIX);
+    graph_20_40_v2->SetLineColor(color_sPHENIX);
+    graph_20_40_v2->SetMarkerStyle(markerStyle_sPHENIX);
+    
+    TGraphErrors* graph_20_40_v3 = CreateGraph(ptCenters, v3_20_40, v3_20_40_Errors);
+    graph_20_40_v3->SetMarkerColor(color_sPHENIX);
+    graph_20_40_v3->SetLineColor(color_sPHENIX);
+    graph_20_40_v3->SetMarkerStyle(markerStyle_sPHENIX);
+
+    TGraphErrors* graph_40_60_v2 = CreateGraph(ptCenters, v2_40_60, v2_40_60_Errors);
+    graph_40_60_v2->SetMarkerColor(color_sPHENIX);
+    graph_40_60_v2->SetLineColor(color_sPHENIX);
+    graph_40_60_v2->SetMarkerStyle(markerStyle_sPHENIX);
+    
+    TGraphErrors* graph_40_60_v3 = CreateGraph(ptCenters, v3_40_60, v3_40_60_Errors);
+    graph_40_60_v3->SetMarkerColor(color_sPHENIX);
+    graph_40_60_v3->SetLineColor(color_sPHENIX);
+    graph_40_60_v3->SetMarkerStyle(markerStyle_sPHENIX);
+
+    TGraphErrors* bg_graph_0_20_v2 = CreateGraph(ptCenters, bg_v2_0_20, bg_v2_0_20_Errors);
+    TGraphErrors* bg_graph_0_20_v3 = CreateGraph(ptCenters, bg_v3_0_20, bg_v3_0_20_Errors);
+
+    TGraphErrors* bg_graph_20_40_v2 = CreateGraph(ptCenters, bg_v2_20_40, bg_v2_20_40_Errors);
+    TGraphErrors* bg_graph_20_40_v3 = CreateGraph(ptCenters, bg_v3_20_40, bg_v3_20_40_Errors);
+
+    TGraphErrors* bg_graph_40_60_v2 = CreateGraph(ptCenters, bg_v2_40_60, bg_v2_40_60_Errors);
+    TGraphErrors* bg_graph_40_60_v3 = CreateGraph(ptCenters, bg_v3_40_60, bg_v3_40_60_Errors);
+
+    TGraphErrors* graph_0_20_bg_left_v2 = CreateGraph(ptCenters, bg_v2_left_0_20, bg_v2_left_0_20_Errors);
+    TGraphErrors* graph_0_20_bg_left_v3 = CreateGraph(ptCenters, bg_v3_left_0_20, bg_v3_left_0_20_Errors);
+
+    TGraphErrors* graph_20_40_bg_left_v2 = CreateGraph(ptCenters, bg_v2_left_20_40, bg_v2_left_20_40_Errors);
+    TGraphErrors* graph_20_40_bg_left_v3 = CreateGraph(ptCenters, bg_v3_left_20_40, bg_v3_left_20_40_Errors);
+
+    TGraphErrors* graph_40_60_bg_left_v2 = CreateGraph(ptCenters, bg_v2_left_40_60, bg_v2_left_40_60_Errors);
+    TGraphErrors* graph_40_60_bg_left_v3 = CreateGraph(ptCenters, bg_v3_left_40_60, bg_v3_left_40_60_Errors);
+
+    TGraphErrors* corrected_graph_0_20_v2 = CreateGraph(ptCenters, corrected_v2_0_20, corrected_v2_0_20_Errors);
+    corrected_graph_0_20_v2->SetMarkerColor(color_sPHENIX);
+    corrected_graph_0_20_v2->SetLineColor(color_sPHENIX);
+    corrected_graph_0_20_v2->SetMarkerStyle(markerStyle_sPHENIX);
+    
+    TGraphErrors* corrected_graph_0_20_v3 = CreateGraph(ptCenters, corrected_v3_0_20, corrected_v3_0_20_Errors);
+    corrected_graph_0_20_v3->SetMarkerColor(color_sPHENIX);
+    corrected_graph_0_20_v3->SetLineColor(color_sPHENIX);
+    corrected_graph_0_20_v3->SetMarkerStyle(markerStyle_sPHENIX);
+
+    TGraphErrors* corrected_graph_20_40_v2 = CreateGraph(ptCenters, corrected_v2_20_40, corrected_v2_20_40_Errors);
+    corrected_graph_20_40_v2->SetMarkerColor(color_sPHENIX);
+    corrected_graph_20_40_v2->SetLineColor(color_sPHENIX);
+    corrected_graph_20_40_v2->SetMarkerStyle(markerStyle_sPHENIX);
+    
+    TGraphErrors* corrected_graph_20_40_v3 = CreateGraph(ptCenters, corrected_v3_20_40, corrected_v3_20_40_Errors);
+    corrected_graph_20_40_v3->SetMarkerColor(color_sPHENIX);
+    corrected_graph_20_40_v3->SetLineColor(color_sPHENIX);
+    corrected_graph_20_40_v3->SetMarkerStyle(markerStyle_sPHENIX);
+
+    TGraphErrors* corrected_graph_40_60_v2 = CreateGraph(ptCenters, corrected_v2_40_60, corrected_v2_40_60_Errors);
+    corrected_graph_40_60_v2->SetMarkerColor(color_sPHENIX);
+    corrected_graph_40_60_v2->SetLineColor(color_sPHENIX);
+    corrected_graph_40_60_v2->SetMarkerStyle(markerStyle_sPHENIX);
+    
+    TGraphErrors* corrected_graph_40_60_v3 = CreateGraph(ptCenters, corrected_v3_40_60, corrected_v3_40_60_Errors);
+    corrected_graph_40_60_v3->SetMarkerColor(color_sPHENIX);
+    corrected_graph_40_60_v3->SetLineColor(color_sPHENIX);
+    corrected_graph_40_60_v3->SetMarkerStyle(markerStyle_sPHENIX);
+
+    /*
+     PHENIX data graph pointers
+     */
     // Read in the data and errors
     ReadPHENIXData(phenixFilePath, v2_0_10, v2_0_10_Errors, v2_0_10_Errors_Negative,
                    v2_10_20, v2_10_20_Errors, v2_10_20_Errors_Negative,
@@ -763,282 +354,331 @@ void Plot_vN(const AccumulatedData& data) {
                    v2_30_40, v2_30_40_Errors, v2_30_40_Errors_Negative,
                    v2_40_50, v2_40_50_Errors, v2_40_50_Errors_Negative,
                    v2_50_60, v2_50_60_Errors, v2_50_60_Errors_Negative);
-
     
-    // Define the marker styles and colors for clarity
-    int markerStyle_sPHENIX = 21; // Square for 40-60%
-    int markerStyle_PHENIX = 20; // Circle for 40-50%
-
-    // Define colors for each centrality range
-    int color_sPHENIX = kBlue;    // Red for 40-60%
-    int color_PHENIX_low = kRed;   // Blue for 40-50%
-    int color_PHENIX_high= kGreen+3;// Dark Green for 50-60%
-
+    int markerStyle_PHENIX = 22;
+    int color_PHENIX_low = kBlack;
+    int color_PHENIX_high= kGreen+3;
+    
+    TGraphErrors* graph_0_10 = CreateGraph(ptCenters, v2_0_10, v2_0_10_Errors);
+    graph_0_10->SetMarkerColor(color_PHENIX_low);
+    graph_0_10->SetLineColor(color_PHENIX_low);
+    graph_0_10->SetMarkerStyle(markerStyle_PHENIX);
+    graph_0_10->SetMarkerSize(1.5);
+    
+    TGraphErrors* graph_10_20 = CreateGraph(ptCenters, v2_10_20, v2_10_20_Errors);
+    graph_10_20->SetMarkerColor(color_PHENIX_high);
+    graph_10_20->SetLineColor(color_PHENIX_high);
+    graph_10_20->SetMarkerStyle(markerStyle_PHENIX);
+    graph_10_20->SetMarkerSize(1.5);
+    
+    TGraphErrors* graph_20_30 = CreateGraph(ptCenters, v2_20_30, v2_20_30_Errors);
+    graph_20_30->SetMarkerColor(color_PHENIX_low);
+    graph_20_30->SetLineColor(color_PHENIX_low);
+    graph_20_30->SetMarkerStyle(markerStyle_PHENIX);
+    graph_20_30->SetMarkerSize(1.5);
+    
+    TGraphErrors* graph_30_40 = CreateGraph(ptCenters, v2_30_40, v2_30_40_Errors);
+    graph_30_40->SetMarkerColor(color_PHENIX_high);
+    graph_30_40->SetLineColor(color_PHENIX_high);
+    graph_30_40->SetMarkerStyle(markerStyle_PHENIX);
+    graph_30_40->SetMarkerSize(1.5);
+    
+    TGraphErrors* graph_40_50 = CreateGraph(ptCenters, v2_40_50, v2_40_50_Errors);
+    graph_40_50->SetMarkerColor(color_PHENIX_low);
+    graph_40_50->SetLineColor(color_PHENIX_low);
+    graph_40_50->SetMarkerStyle(markerStyle_PHENIX);
+    graph_40_50->SetMarkerSize(1.5);
+    
+    TGraphErrors* graph_50_60 = CreateGraph(ptCenters, v2_50_60, v2_50_60_Errors);
+    graph_50_60->SetMarkerColor(color_PHENIX_high);
+    graph_50_60->SetLineColor(color_PHENIX_high);
+    graph_50_60->SetMarkerStyle(markerStyle_PHENIX);
+    graph_50_60->SetMarkerSize(1.5);
+    
     /*
-     Overlay measured v2 data with PHENIX pi0 data--0 to 20 percent centrality
+     Additional Data Read in for Comparison
      */
-    TCanvas *c10 = new TCanvas("c10", "Overlay 0-20%", 800, 600);
-    graph_0_20_v2->Draw("AP");  // This will be the base graph
-    TGraphErrors *graph_0_10 = new TGraphErrors(ptCenters.size(), &ptCenters[0], &v2_0_10[0], 0, &v2_10_20_Errors[0]);
-    TGraphErrors *graph_10_20 = new TGraphErrors(ptCenters.size(), &ptCenters[0], &v2_0_10[0], 0, &v2_10_20_Errors[0]);
+    const auto& corrected_v2_0_20_Additional = data.corrected_v2_0_20_Additional;
+    const auto& corrected_v2_20_40_Additional = data.corrected_v2_20_40_Additional;
+    const auto& corrected_v2_40_60_Additional = data.corrected_v2_40_60_Additional;
+    const auto& corrected_v2_0_20_Errors_Additional = data.corrected_v2_0_20_Errors_Additional;
+    const auto& corrected_v2_20_40_Errors_Additional = data.corrected_v2_20_40_Errors_Additional;
+    const auto& corrected_v2_40_60_Errors_Additional = data.corrected_v2_40_60_Errors_Additional;
+    const auto& corrected_v3_0_20_Additional = data.corrected_v3_0_20_Additional;
+    const auto& corrected_v3_40_60_Additional = data.corrected_v3_40_60_Additional;
+    const auto& corrected_v3_0_20_Errors_Additional = data.corrected_v3_0_20_Errors_Additional;
+    const auto& corrected_v3_40_60_Errors_Additional = data.corrected_v3_40_60_Errors_Additional;
     
-    // Apply jitter to x values for graph_40_50 and graph_50_60
+    int markerStyle_sPHENIX_AdditionalData = 20;
+    int color_sPHENIX_AdditionalData = kRed;
+    
+    TGraphErrors* corrected_v2_0_20_Additional_graph = CreateGraph(ptCenters, corrected_v2_0_20_Additional, corrected_v2_0_20_Errors_Additional);
+    corrected_v2_0_20_Additional_graph->SetMarkerColor(color_sPHENIX_AdditionalData);
+    corrected_v2_0_20_Additional_graph->SetLineColor(color_sPHENIX_AdditionalData);
+    corrected_v2_0_20_Additional_graph->SetMarkerStyle(markerStyle_sPHENIX_AdditionalData);
+    
+    TGraphErrors* corrected_v2_20_40_Additional_graph = CreateGraph(ptCenters, corrected_v2_20_40_Additional, corrected_v2_20_40_Errors_Additional);
+    corrected_v2_20_40_Additional_graph->SetMarkerColor(color_sPHENIX_AdditionalData);
+    corrected_v2_20_40_Additional_graph->SetLineColor(color_sPHENIX_AdditionalData);
+    corrected_v2_20_40_Additional_graph->SetMarkerStyle(markerStyle_sPHENIX_AdditionalData);
+    
+    TGraphErrors* corrected_v2_40_60_Additional_graph = CreateGraph(ptCenters, corrected_v2_40_60_Additional, corrected_v2_40_60_Errors_Additional);
+    corrected_v2_40_60_Additional_graph->SetMarkerColor(color_sPHENIX_AdditionalData);
+    corrected_v2_40_60_Additional_graph->SetLineColor(color_sPHENIX_AdditionalData);
+    corrected_v2_40_60_Additional_graph->SetMarkerStyle(markerStyle_sPHENIX_AdditionalData);
+    
+    /*
+     Overlay PRE AND POST z_vertex fit 0-20 percent v2
+     */
+    TCanvas *c_p009_p010_Overlay_0_20_v2_corrected = new TCanvas("c_p009_p010_Overlay_0_20_v2_corrected", "#pi^{0} #it{v}_{2} Overlay, Before (p009)/After (p010) z-vertex fix vs #it{p}_{T} 0-20% Centrality", 800, 600);
+    corrected_graph_0_20_v2->Draw("AP");  // This will be the base graph
+    corrected_graph_0_20_v2->SetTitle("#pi^{0} #it{v}_{2} Overlay, Before (p009) and After (p010) z-vertex fix vs #it{p}_{T} 0-20% Centrality; #it{p}_{T} [GeV]; #it{v}_{2}");
+    corrected_graph_0_20_v2->SetMinimum(-1.0); // Set the minimum y value
+    corrected_graph_0_20_v2->SetMaximum(1.5); // Set the maximum y value
+    for (int i = 0; i < ptCenters.size(); ++i) {
+        corrected_graph_0_20_v2->SetPoint(i, ptCenters[i] - offset, corrected_v2_0_20[i]);
+        graph_0_10->SetPoint(i, ptCenters[i] - offset * 2.0, v2_0_10[i]);
+        graph_10_20->SetPoint(i, ptCenters[i] + offset, v2_10_20[i]);
+    }
+    corrected_v2_0_20_Additional_graph -> Draw("P SAME");
+    graph_0_10->Draw("P SAME");
+    graph_10_20->Draw("P SAME");
+    TLegend *legend_p009_p010_Overlay_0_20_v2_corrected = new TLegend(0.11, 0.69, 0.31, 0.89);
+    legend_p009_p010_Overlay_0_20_v2_corrected->SetBorderSize(0);
+    legend_p009_p010_Overlay_0_20_v2_corrected->SetTextSize(0.03);
+    legend_p009_p010_Overlay_0_20_v2_corrected->AddEntry(corrected_v2_0_20_Additional_graph, "0-20%, v_{2}^{#pi^{0}, p09 Data} Before z-vertex Fix", "pe");
+    legend_p009_p010_Overlay_0_20_v2_corrected->AddEntry(corrected_graph_0_20_v2, "0-20%, v_{2}^{#pi^{0}, p010 Data} After z-vertex Fix", "pe");
+    legend_p009_p010_Overlay_0_20_v2_corrected->AddEntry(graph_0_10, "0-10%, #bf{PHENIX} 2010", "pe");
+    legend_p009_p010_Overlay_0_20_v2_corrected->AddEntry(graph_10_20, "10-20%, #bf{PHENIX} 2010", "pe");
+    legend_p009_p010_Overlay_0_20_v2_corrected->Draw();
+    DrawZeroLine(c_p009_p010_Overlay_0_20_v2_corrected);
+    c_p009_p010_Overlay_0_20_v2_corrected->Modified();
+    c_p009_p010_Overlay_0_20_v2_corrected->Update();
+    c_p009_p010_Overlay_0_20_v2_corrected->SaveAs("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/vN_Plot_Output/p009_p010_Corrected_Overlay_0_20.png");
+
+    
+    /*
+     20-40 Overlay p009 p010 corrected v2
+     */
+    TCanvas *c_p009_p010_Overlay_20_40_v2_corrected = new TCanvas("c_p009_p010_Overlay_20_40_v2_corrected", "#pi^{0} #it{v}_{2} Overlay, Before (p009)/After (p010) z-vertex fix vs #it{p}_{T} 20-40% Centrality", 800, 600);
+    corrected_graph_20_40_v2->Draw("AP");  // This will be the base graph
+    corrected_graph_20_40_v2->SetTitle("#pi^{0} #it{v}_{2} Overlay, Before (p009) and After (p010) z-vertex fix vs #it{p}_{T} 20-40% Centrality; #it{p}_{T} [GeV]; #it{v}_{2}");
+    corrected_graph_20_40_v2->SetMinimum(-1.0); // Set the minimum y value
+    corrected_graph_20_40_v2->SetMaximum(1.5); // Set the maximum y value
+    for (int i = 0; i < ptCenters.size(); ++i) {
+        corrected_graph_20_40_v2->SetPoint(i, ptCenters[i] - offset, corrected_v2_20_40[i]);
+        graph_20_30->SetPoint(i, ptCenters[i] - offset * 2.0, v2_20_30[i]);
+        graph_30_40->SetPoint(i, ptCenters[i] + offset, v2_30_40[i]);
+    }
+    corrected_v2_20_40_Additional_graph -> Draw("P SAME");
+    graph_20_30->Draw("P SAME");
+    graph_30_40->Draw("P SAME");
+    TLegend *legend_p009_p010_Overlay_20_40_v2_corrected = new TLegend(0.11, 0.69, 0.31, 0.89);
+    legend_p009_p010_Overlay_20_40_v2_corrected->SetBorderSize(0);
+    legend_p009_p010_Overlay_20_40_v2_corrected->SetTextSize(0.03);
+    legend_p009_p010_Overlay_20_40_v2_corrected->AddEntry(corrected_v2_20_40_Additional_graph, "20-40%, v_{2}^{#pi^{0}, p09 Data} Before z-vertex Fix", "pe");
+    legend_p009_p010_Overlay_20_40_v2_corrected->AddEntry(corrected_graph_20_40_v2, "20-40%, v_{2}^{#pi^{0}, p010 Data} After z-vertex Fix", "pe");
+    legend_p009_p010_Overlay_20_40_v2_corrected->AddEntry(graph_20_30, "20-30%, #bf{PHENIX} 2010", "pe");
+    legend_p009_p010_Overlay_20_40_v2_corrected->AddEntry(graph_30_40, "30-40%, #bf{PHENIX} 2010", "pe");
+    legend_p009_p010_Overlay_20_40_v2_corrected->Draw();
+    DrawZeroLine(c_p009_p010_Overlay_20_40_v2_corrected);
+    c_p009_p010_Overlay_20_40_v2_corrected->Modified();
+    c_p009_p010_Overlay_20_40_v2_corrected->Update();
+    c_p009_p010_Overlay_20_40_v2_corrected->SaveAs("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/vN_Plot_Output/p009_p010_Corrected_Overlay_20_40.png");
+
+    
+    /*
+     40-60 Overlay p009 p010 corrected v2
+     */
+    TCanvas *c_p009_p010_Overlay_40_60_v2_corrected = new TCanvas("c_p009_p010_Overlay_40_60_v2_corrected", "#pi^{0} #it{v}_{2} Overlay, Before (p009)/After (p010) z-vertex fix vs #it{p}_{T} 40-60% Centrality", 800, 600);
+    corrected_graph_40_60_v2->Draw("AP");  // This will be the base graph
+    corrected_graph_40_60_v2->SetTitle("#pi^{0} #it{v}_{2} Overlay, Before (p009) and After (p010) z-vertex fix vs #it{p}_{T} 40-60% Centrality; #it{p}_{T} [GeV]; #it{v}_{2}");
+    for (int i = 0; i < ptCenters.size(); ++i) {
+        corrected_graph_40_60_v2->SetPoint(i, ptCenters[i] - offset, corrected_v2_40_60[i]);
+        graph_40_50->SetPoint(i, ptCenters[i] - offset * 2.0, v2_40_50[i]);
+        graph_50_60->SetPoint(i, ptCenters[i] + offset, v2_50_60[i]);
+    }
+    corrected_graph_40_60_v2->SetMinimum(-1.0); // Set the minimum y value
+    corrected_graph_40_60_v2->SetMaximum(1.5); // Set the maximum y value
+    corrected_v2_40_60_Additional_graph -> Draw("P SAME");
+    graph_40_50->Draw("P SAME");
+    graph_50_60->Draw("P SAME");
+    TLegend *legend_p009_p010_Overlay_40_60_v2_corrected = new TLegend(0.11, 0.69, 0.31, 0.89);
+    legend_p009_p010_Overlay_40_60_v2_corrected->SetBorderSize(0);
+    legend_p009_p010_Overlay_40_60_v2_corrected->SetTextSize(0.03);
+    legend_p009_p010_Overlay_40_60_v2_corrected->AddEntry(corrected_v2_40_60_Additional_graph, "40-60%, v_{2}^{#pi^{0}, p09 Data} Before z-vertex Fix", "pe");
+    legend_p009_p010_Overlay_40_60_v2_corrected->AddEntry(corrected_graph_40_60_v2, "40-60%, v_{2}^{#pi^{0}, p010 Data} After z-vertex Fix", "pe");
+    legend_p009_p010_Overlay_40_60_v2_corrected->AddEntry(graph_40_50, "40-50%, #bf{PHENIX} 2010", "pe");
+    legend_p009_p010_Overlay_40_60_v2_corrected->AddEntry(graph_50_60, "50-60%, #bf{PHENIX} 2010", "pe");
+    legend_p009_p010_Overlay_40_60_v2_corrected->Draw();
+    DrawZeroLine(c_p009_p010_Overlay_40_60_v2_corrected);
+    c_p009_p010_Overlay_40_60_v2_corrected->Modified();
+    c_p009_p010_Overlay_40_60_v2_corrected->Update();
+    c_p009_p010_Overlay_40_60_v2_corrected->SaveAs("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/vN_Plot_Output/p009_p010_Corrected_Overlay_40_60.png");
+    
+    /*
+     Overlay measured v2 data with PHENIX pi0 data-0 to 20 percent centrality
+     */
+    TCanvas *c_measured_v2_Overlay_0_20_PHENIX = new TCanvas("c_measured_v2_Overlay_0_20_PHENIX", "Overlay 0-20%", 800, 600);
+    //base graph
+    graph_0_20_v2->Draw("AP");
     for (int i = 0; i < ptCenters.size(); ++i) {
         graph_0_10->SetPoint(i, ptCenters[i] - offset, v2_0_10[i]);
         graph_10_20->SetPoint(i, ptCenters[i] + offset, v2_10_20[i]);
     }
-    graph_0_20_v2->SetMarkerColor(color_sPHENIX);
-    graph_0_20_v2->SetMarkerStyle(markerStyle_sPHENIX);
     graph_0_20_v2->SetMinimum(0); // Set the minimum y value
     graph_0_20_v2->SetMaximum(0.26); // Set the maximum y value
-    
-    graph_0_10->SetMarkerColor(color_PHENIX_low);
-    graph_0_10->SetMarkerStyle(markerStyle_PHENIX);
-    graph_10_20->SetMarkerColor(color_PHENIX_high);
-    graph_10_20->SetMarkerStyle(markerStyle_PHENIX);
-
     graph_0_10->Draw("P SAME");
     graph_10_20->Draw("P SAME");
+    TLegend *legend_measured_v2_Overlay_0_20_PHENIX  = new TLegend(0.11, 0.69, 0.31, 0.89);
+    legend_measured_v2_Overlay_0_20_PHENIX->SetBorderSize(0);
+    legend_measured_v2_Overlay_0_20_PHENIX->SetTextSize(0.028);
+    legend_measured_v2_Overlay_0_20_PHENIX->AddEntry(graph_0_20_v2, "0-20%, #bf{sPHENIX}", "pe");
+    legend_measured_v2_Overlay_0_20_PHENIX->AddEntry(graph_0_10, "0-10%, #bf{PHENIX} 2010", "pe");
+    legend_measured_v2_Overlay_0_20_PHENIX->AddEntry(graph_10_20, "10-20%, #bf{PHENIX} 2010", "pe");
+    legend_measured_v2_Overlay_0_20_PHENIX->Draw();
+    c_measured_v2_Overlay_0_20_PHENIX->Modified();
+    c_measured_v2_Overlay_0_20_PHENIX->Update();
+    c_measured_v2_Overlay_0_20_PHENIX->SaveAs("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/vN_Plot_Output/v2/0_20/v2_vs_pT_0_20_Overlay.png");
 
-    printOverlayData(ptCenters,
-                     v2_0_10, v2_0_10_Errors,
-                     v2_10_20, v2_10_20_Errors,
-                     v2_0_20, v2_0_20_Errors);
-
-    TLegend *legend1 = new TLegend(0.11, 0.69, 0.31, 0.89);
-    legend1->SetBorderSize(0);
-    legend1->SetTextSize(0.028);
-    legend1->AddEntry(graph_0_20_v2, "0-20%, #bf{sPHENIX}", "p");
-    legend1->AddEntry(graph_0_10, "0-10%, #bf{PHENIX} 2010", "p");
-    legend1->AddEntry(graph_10_20, "10-20%, #bf{PHENIX} 2010", "p");
-    legend1->Draw();
-
-    c10->Modified();
-    c10->Update();
-    c10->SaveAs("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/vN_Plot_Output/v2/0_20/v2_vs_pT_0_20_Overlay.png");
-
-    
-    
     
     /*
      Overlay 20-40 measured v2 data with PHENIX 20-30 and 30-40
      */
-    TCanvas *c11 = new TCanvas("c11", "Overlay 20-40%", 800, 600);
+    TCanvas *c_measured_v2_Overlay_20_40_PHENIX = new TCanvas("c_measured_v2_Overlay_20_40_PHENIX", "Overlay 20-40%", 800, 600);
     graph_20_40_v2->Draw("AP");
-    TGraphErrors *graph_20_30 = new TGraphErrors(ptCenters.size(), &ptCenters[0], &v2_20_30[0], 0, &v2_20_30_Errors[0]);
-    TGraphErrors *graph_30_40 = new TGraphErrors(ptCenters.size(), &ptCenters[0], &v2_30_40[0], 0, &v2_30_40_Errors[0]);
     for (int i = 0; i < ptCenters.size(); ++i) {
         graph_20_30->SetPoint(i, ptCenters[i] - offset, v2_20_30[i]);
         graph_30_40->SetPoint(i, ptCenters[i] + offset, v2_30_40[i]);
     }
-    graph_20_40_v2->SetMarkerColor(color_sPHENIX);
-    graph_20_40_v2->SetLineColor(color_sPHENIX);
-    graph_20_40_v2->SetMarkerStyle(markerStyle_sPHENIX);
     graph_20_40_v2->SetMinimum(0); // Set the minimum y value
     graph_20_40_v2->SetMaximum(0.45); // Set the maximum y value
-    
-    graph_20_30->SetMarkerColor(color_PHENIX_low);
-    graph_20_30->SetMarkerStyle(markerStyle_PHENIX);
-    graph_30_40->SetMarkerColor(color_PHENIX_high);
-    graph_30_40->SetMarkerStyle(markerStyle_PHENIX);
-    
     graph_20_30->Draw("P SAME");
     graph_30_40->Draw("P SAME");
-    printOverlayData(ptCenters,
-                     v2_20_30, v2_20_30_Errors,
-                     v2_30_40, v2_30_40_Errors,
-                     v2_20_40, v2_20_40_Errors);
-
-    TLegend *legend2 = new TLegend(0.11, 0.69, 0.31, 0.89);
-    legend2->SetBorderSize(0);
-    legend2->SetTextSize(0.028);
-    legend2->AddEntry(graph_20_40_v2, "20-40%, #bf{sPHENIX}", "p");
-    legend2->AddEntry(graph_20_30, "20-30%, #bf{PHENIX} 2010", "p");
-    legend2->AddEntry(graph_30_40, "30-40%, #bf{PHENIX} 2010", "p");
-    legend2->Draw();
-
-    c11->Modified();
-    c11->Update();
-    c11->SaveAs("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/vN_Plot_Output/v2/20_40/v2_vs_pT_20_40_Overlay.png");
-    
-    
-    
-    
+    TLegend *legend_measured_v2_Overlay_20_40_PHENIX = new TLegend(0.11, 0.69, 0.31, 0.89);
+    legend_measured_v2_Overlay_20_40_PHENIX->SetBorderSize(0);
+    legend_measured_v2_Overlay_20_40_PHENIX->SetTextSize(0.028);
+    legend_measured_v2_Overlay_20_40_PHENIX->AddEntry(graph_20_40_v2, "20-40%, #bf{sPHENIX}", "pe");
+    legend_measured_v2_Overlay_20_40_PHENIX->AddEntry(graph_20_30, "20-30%, #bf{PHENIX} 2010", "pe");
+    legend_measured_v2_Overlay_20_40_PHENIX->AddEntry(graph_30_40, "30-40%, #bf{PHENIX} 2010", "pe");
+    legend_measured_v2_Overlay_20_40_PHENIX->Draw();
+    c_measured_v2_Overlay_20_40_PHENIX->Modified();
+    c_measured_v2_Overlay_20_40_PHENIX->Update();
+    c_measured_v2_Overlay_20_40_PHENIX->SaveAs("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/vN_Plot_Output/v2/20_40/v2_vs_pT_20_40_Overlay.png");
 
     /*
      Overlay 40-60 measured v2 data with PHENIX 40-50 and 50-60
      */
-    TCanvas *c12 = new TCanvas("c12", "Overlay 40-60%", 800, 600);
+    TCanvas *c_measured_v2_Overlay_40_60_PHENIX = new TCanvas("c_measured_v2_Overlay_40_60_PHENIX", "Overlay 40-60%", 800, 600);
     graph_40_60_v2->Draw("AP");  // This will be the base graph
-    TGraphErrors *graph_40_50 = new TGraphErrors(ptCenters.size(), &ptCenters[0], &v2_40_50[0], 0, &v2_40_50_Errors[0]);
-    TGraphErrors *graph_50_60 = new TGraphErrors(ptCenters.size(), &ptCenters[0], &v2_50_60[0], 0, &v2_50_60_Errors[0]);
     for (int i = 0; i < ptCenters.size(); ++i) {
         graph_40_50->SetPoint(i, ptCenters[i] - offset, v2_40_50[i]);
         graph_50_60->SetPoint(i, ptCenters[i] + offset, v2_50_60[i]);
     }
-    graph_40_60_v2->SetMarkerColor(color_sPHENIX);
-    graph_40_60_v2->SetLineColor(color_sPHENIX);
-    graph_40_60_v2->SetMarkerStyle(markerStyle_sPHENIX);
-    graph_40_50->SetMarkerColor(color_PHENIX_low);
-    graph_40_50->SetMarkerStyle(markerStyle_PHENIX);
-    graph_50_60->SetMarkerColor(color_PHENIX_high);
-    graph_50_60->SetMarkerStyle(markerStyle_PHENIX);
     graph_40_60_v2->SetMinimum(0); // Set the minimum y value
     graph_40_60_v2->SetMaximum(0.6); // Set the maximum y value
     graph_40_50->Draw("P SAME");
     graph_50_60->Draw("P SAME");
-    printOverlayData(ptCenters,
-                     v2_40_50, v2_40_50_Errors,
-                     v2_50_60, v2_50_60_Errors,
-                     v2_40_60, v2_40_60_Errors);
-    TLegend *legend3 = new TLegend(0.11, 0.69, 0.31, 0.89);
-    legend3->SetBorderSize(0);
-    legend3->SetTextSize(0.028);
-    legend3->AddEntry(graph_40_60_v2, "40-60%, #bf{sPHENIX}", "p");
-    legend3->AddEntry(graph_40_50, "40-50%, #bf{PHENIX} 2010", "p");
-    legend3->AddEntry(graph_50_60, "50-60%, #bf{PHENIX} 2010", "p");
-    legend3->Draw();
-    c12->Modified();
-    c12->Update();
-    c12->SaveAs("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/vN_Plot_Output/v2/40_60/v2_vs_pT_40_60_Overlay.png");
-    
-
-    
-    
-    
-    /*
-     Overlay Just the Corrected v2 data for 0-20 percent centrality with the PHENIX DATA
-     */
-    TCanvas *c13 = new TCanvas("c13", "Corrected Overlay 0-20%", 800, 600);
-    corrected_graph_0_20_v2->Draw("AP");  // This will be the base graph
-
-    for (int i = 0; i < ptCenters.size(); ++i) {
-        graph_0_10->SetPoint(i, ptCenters[i] - offset, v2_0_10[i]);
-        graph_10_20->SetPoint(i, ptCenters[i] + offset, v2_10_20[i]);
-    }
-
-    corrected_graph_0_20_v2->SetMarkerColor(color_sPHENIX);
-    corrected_graph_0_20_v2->SetMarkerStyle(markerStyle_sPHENIX);
-
-    graph_0_10->SetMarkerColor(color_PHENIX_low);
-    graph_0_10->SetMarkerStyle(markerStyle_PHENIX);
-    graph_10_20->SetMarkerColor(color_PHENIX_high);
-    graph_10_20->SetMarkerStyle(markerStyle_PHENIX);
-
-    graph_0_10->Draw("P SAME");
-    graph_10_20->Draw("P SAME");
-
-    printOverlayData(ptCenters,
-                     v2_0_10, v2_0_10_Errors,
-                     v2_10_20, v2_10_20_Errors,
-                     corrected_v2_0_20, corrected_v2_0_20_Errors);
-    TLegend *legend4 = new TLegend(0.5, 0.7, 0.9, 0.9);
-    legend4->AddEntry(graph_0_20_v2, "0-20%, #bf{sPHENIX}", "p");
-    legend4->AddEntry(graph_0_10, "0-10%, #bf{PHENIX} 2010", "p");
-    legend4->AddEntry(graph_10_20, "10-20%, #bf{PHENIX} 2010", "p");
-    legend4->Draw();
-    c13->Modified();
-    c13->Update();
-    c13->SaveAs("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/vN_Plot_Output/v2/0_20/v2_vs_pT_0_20_Overlay_corrected.png");
-
-    
-    
-    /*
-     Overlay Just the Corrected v2 data for 20-40 percent centrality with the PHENIX DATA
-     */
-    TCanvas *c14 = new TCanvas("c14", "Corrected Overlay 20-40%", 800, 600);
-    corrected_graph_20_40_v2->Draw("AP");  // This will be the base graph
-    for (int i = 0; i < ptCenters.size(); ++i) {
-        graph_20_30->SetPoint(i, ptCenters[i] - offset, v2_20_30[i]);
-        graph_30_40->SetPoint(i, ptCenters[i] + offset, v2_30_40[i]);
-    }
-    corrected_graph_20_40_v2->SetMarkerColor(color_sPHENIX);
-    corrected_graph_20_40_v2->SetMarkerStyle(markerStyle_sPHENIX);
-    graph_20_30->SetMarkerColor(color_PHENIX_low);
-    graph_20_30->SetMarkerStyle(markerStyle_PHENIX);
-    graph_30_40->SetMarkerColor(color_PHENIX_high);
-    graph_30_40->SetMarkerStyle(markerStyle_PHENIX);
-
-    graph_20_30->Draw("P SAME");
-    graph_30_40->Draw("P SAME");
-    
-    printOverlayData(ptCenters,
-                     v2_20_30, v2_20_30_Errors,
-                     v2_30_40, v2_30_40_Errors,
-                     corrected_v2_20_40, corrected_v2_20_40_Errors);
-
-    // Create a legend for the first overlay plot
-    TLegend *legend5 = new TLegend(0.5, 0.7, 0.9, 0.9);
-    legend5->AddEntry(graph_20_40_v2, "20-40%, #bf{sPHENIX}", "p");
-    legend5->AddEntry(graph_20_30, "20-30%, #bf{PHENIX} 2010", "p");
-    legend5->AddEntry(graph_30_40, "30-40%, #bf{PHENIX} 2010", "p");
-    legend5->Draw();
-
-    c14->Modified();
-    c14->Update();
-    c14->SaveAs("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/vN_Plot_Output/v2/20_40/v2_vs_pT_20_40_Overlay_corrected.png");
-    
-    
-    
+    TLegend *legend_measured_v2_Overlay_40_60_PHENIX = new TLegend(0.11, 0.69, 0.31, 0.89);
+    legend_measured_v2_Overlay_40_60_PHENIX->SetBorderSize(0);
+    legend_measured_v2_Overlay_40_60_PHENIX->SetTextSize(0.028);
+    legend_measured_v2_Overlay_40_60_PHENIX->AddEntry(graph_40_60_v2, "40-60%, #bf{sPHENIX}", "pe");
+    legend_measured_v2_Overlay_40_60_PHENIX->AddEntry(graph_40_50, "40-50%, #bf{PHENIX} 2010", "pe");
+    legend_measured_v2_Overlay_40_60_PHENIX->AddEntry(graph_50_60, "50-60%, #bf{PHENIX} 2010", "pe");
+    legend_measured_v2_Overlay_40_60_PHENIX->Draw();
+    c_measured_v2_Overlay_40_60_PHENIX->Modified();
+    c_measured_v2_Overlay_40_60_PHENIX->Update();
+    c_measured_v2_Overlay_40_60_PHENIX->SaveAs("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/vN_Plot_Output/v2/40_60/v2_vs_pT_40_60_Overlay.png");
     
 
     /*
-     Overlay Just the Corrected v2 data for 40-60 percent centrality with the PHENIX DATA
+     OVERLAY BACKGROUND v2 TO LEFT AND RIGHT OF SIGNAL REGION for 0-20%
      */
-    TCanvas *c15 = new TCanvas("c15", "Corrected Overlay 40-60%", 800, 600);
-    corrected_graph_40_60_v2->Draw("AP");  // This will be the base graph
-
-    
-    // Apply jitter to x values for graph_40_50 and graph_50_60
+    TCanvas *c_0_20_Left_Right_bg_Overlay_v2 = new TCanvas("c_0_20_Left_Right_bg_Overlay_v2", "Sideband #v_2 Overlay, 0-20% Centrality", 800, 600);
+    graph_0_20_bg_left_v2->SetMarkerStyle(20); // Circle
+    graph_0_20_bg_left_v2->SetMarkerColor(kRed); // Changed to red for visibility
+    graph_0_20_bg_left_v2->SetLineColor(kRed);
+    // Draw the right background graph as the base graph
+    bg_graph_0_20_v2->Draw("AP");
     for (int i = 0; i < ptCenters.size(); ++i) {
-        graph_40_50->SetPoint(i, ptCenters[i] - offset, v2_40_50[i]);
-        graph_50_60->SetPoint(i, ptCenters[i] + offset, v2_50_60[i]);
+        graph_0_20_bg_left_v2->SetPoint(i, ptCenters[i] - .06, bg_v2_left_0_20[i]);
     }
-    // Adjust the color and style for the 40-60% plot
-    corrected_graph_40_60_v2->SetMarkerColor(color_sPHENIX);
-    corrected_graph_40_60_v2->SetMarkerStyle(markerStyle_sPHENIX); // Star marker style for 40-60%
+    bg_graph_0_20_v2->SetTitle("Sideband #it{v}_{2} to Left and Right of Signal Region vs #it{p}_{T} 0-20% Centrality; #it{p}_{T} [GeV]; #it{v}_{2}");
+    bg_graph_0_20_v2->SetMinimum(0.0);
+    bg_graph_0_20_v2->SetMaximum(0.25);
+    graph_0_20_bg_left_v2->Draw("P SAME");
+    TLegend *legend_leftRightbg_overlay_0_20_v2 = new TLegend(0.11, 0.11, 0.31, 0.31);
+    legend_leftRightbg_overlay_0_20_v2->SetBorderSize(0);
+    legend_leftRightbg_overlay_0_20_v2->SetTextSize(0.028);
+    legend_leftRightbg_overlay_0_20_v2->AddEntry(bg_graph_0_20_v2, "0-20%, v_{2}^{bg} right of signal region in range (#mu + 3*#sigma, 0.5) GeV", "pe");
+    legend_leftRightbg_overlay_0_20_v2->AddEntry(graph_0_20_bg_left_v2, "0-20%, v_{2}^{bg} left of signal region in range (0, #mu - 2*#sigma) GeV", "pe");
+    legend_leftRightbg_overlay_0_20_v2->Draw();
+    c_0_20_Left_Right_bg_Overlay_v2->Modified();
+    c_0_20_Left_Right_bg_Overlay_v2->Update();
+    c_0_20_Left_Right_bg_Overlay_v2->SaveAs("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/vN_Plot_Output/v2/0_20/bg_v2_Left_Right_Overlay_0_20.png");
 
-    // Set the styles and colors for the additional graphs
-    graph_40_50->SetMarkerColor(color_PHENIX_low);
-    graph_40_50->SetMarkerStyle(markerStyle_PHENIX);
-    graph_50_60->SetMarkerColor(color_PHENIX_high);
-    graph_50_60->SetMarkerStyle(markerStyle_PHENIX);
 
-    // Draw the additional graphs with the new styles and colors
-    graph_40_50->Draw("P SAME");
-    graph_50_60->Draw("P SAME");
+    /*
+     OVERLAY BACKGROUND v2 TO LEFT AND RIGHT OF SIGNAL REGION for 20-40%
+     */
+    TCanvas *c_20_40_Left_Right_bg_Overlay_v2 = new TCanvas("c_20_40_Left_Right_bg_Overlay_v2", "Sideband #v_2 Overlay, 20-40% Centrality", 800, 600);
+    graph_20_40_bg_left_v2->SetMarkerStyle(20); // Circle
+    graph_20_40_bg_left_v2->SetMarkerColor(kRed);
+    graph_20_40_bg_left_v2->SetLineColor(kRed);
+    bg_graph_20_40_v2->Draw("AP");
+    for (int i = 0; i < ptCenters.size(); ++i) {
+        graph_20_40_bg_left_v2->SetPoint(i, ptCenters[i] - .06, bg_v2_left_20_40[i]);
+    }
+    bg_graph_20_40_v2->SetTitle("Sideband #it{v}_{2} to Left and Right of Signal Region vs #it{p}_{T} 20-40% Centrality; #it{p}_{T} [GeV]; #it{v}_{2}");
+    bg_graph_20_40_v2->SetMinimum(0);
+    bg_graph_20_40_v2->SetMaximum(0.55);
+    graph_20_40_bg_left_v2->Draw("P SAME");
+    TLegend *legend_leftRightbg_overlay_20_40_v2 = new TLegend(0.12, 0.65, 0.32, 0.85);
+    legend_leftRightbg_overlay_20_40_v2->SetBorderSize(0);
+    legend_leftRightbg_overlay_20_40_v2->SetTextSize(0.024);
+    legend_leftRightbg_overlay_20_40_v2->AddEntry(bg_graph_20_40_v2, "20-40%, v_{2}^{bg} right of signal region in range (#mu + 3*#sigma, 0.5) GeV", "pe");
+    legend_leftRightbg_overlay_20_40_v2->AddEntry(graph_20_40_bg_left_v2, "20-40%, v_{2}^{bg} left of signal region in range (0, #mu - 2*#sigma) GeV", "pe");
+    legend_leftRightbg_overlay_20_40_v2->Draw();
+    c_20_40_Left_Right_bg_Overlay_v2->Modified();
+    c_20_40_Left_Right_bg_Overlay_v2->Update();
+    c_20_40_Left_Right_bg_Overlay_v2->SaveAs("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/vN_Plot_Output/v2/20_40/bg_v2_Left_Right_Overlay_20_40.png");
 
-    printOverlayData(ptCenters,
-                     v2_40_50, v2_40_50_Errors,
-                     v2_50_60, v2_50_60_Errors,
-                     corrected_v2_40_60, corrected_v2_40_60_Errors);
+    /*
+     OVERLAY BACKGROUND v2 TO LEFT AND RIGHT OF SIGNAL REGION for 40-60%
+     */
+    TCanvas *c_40_60_Left_Right_bg_Overlay_v2 = new TCanvas("c_40_60_Left_Right_bg_Overlay_v2", "Sideband #v_2 Overlay, 40-60% Centrality", 800, 600);
+    graph_40_60_bg_left_v2->SetMarkerStyle(20); // Circle
+    graph_40_60_bg_left_v2->SetMarkerColor(kRed); // Changed to red for visibility
+    graph_40_60_bg_left_v2->SetLineColor(kRed);
+    bg_graph_40_60_v2->Draw("AP");
+    for (int i = 0; i < ptCenters.size(); ++i) {
+        graph_40_60_bg_left_v2->SetPoint(i, ptCenters[i] - .06, bg_v2_left_40_60[i]);
+    }
+    bg_graph_40_60_v2->SetTitle("Sideband #it{v}_{2} to Left and Right of Signal Region vs #it{p}_{T} 40-60% Centrality; #it{p}_{T} [GeV]; #it{v}_{2}");
+    bg_graph_40_60_v2->SetMinimum(-0.2);
+    bg_graph_40_60_v2->SetMaximum(.75);
+    graph_40_60_bg_left_v2->Draw("P SAME");
+    TLegend *legend_leftRightbg_overlay_40_60_v2 = new TLegend(0.11, 0.69, 0.31, 0.89);
+    legend_leftRightbg_overlay_40_60_v2->SetBorderSize(0);
+    legend_leftRightbg_overlay_40_60_v2->SetTextSize(0.03);
+    legend_leftRightbg_overlay_40_60_v2->AddEntry(bg_graph_40_60_v2, "40-60%, v_{2}^{bg} right of signal region in range (#mu + 3*#sigma, 0.5) GeV", "pe");
+    legend_leftRightbg_overlay_40_60_v2->AddEntry(graph_40_60_bg_left_v2, "40-60%, v_{2}^{bg} left of signal region in range (0, #mu - 2*#sigma) GeV", "pe");
+    legend_leftRightbg_overlay_40_60_v2->Draw();
+    c_40_60_Left_Right_bg_Overlay_v2->Modified();
+    c_40_60_Left_Right_bg_Overlay_v2->Update();
+    c_40_60_Left_Right_bg_Overlay_v2->SaveAs("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/vN_Plot_Output/v2/40_60/bg_v2_Left_Right_Overlay_40_60.png");
 
-    TLegend *legend6 = new TLegend(0.5, 0.7, 0.9, 0.9);
-    legend6->SetBorderSize(0);
-    legend6->SetTextSize(0.024);
-    legend6->AddEntry(graph_40_60_v2, "40-60%, #bf{sPHENIX}", "p");
-    legend6->AddEntry(graph_40_50, "40-50%, #bf{PHENIX} 2010", "p");
-    legend6->AddEntry(graph_50_60, "50-60%, #bf{PHENIX} 2010", "p");
-    legend6->Draw();
-
-    c15->Modified();
-    c15->Update();
-    c15->SaveAs("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/vN_Plot_Output/v2/40_60/v2_vs_pT_40_60_Overlay_corrected.png");
-
-    
-    
     /*
      Overlay with PHENIX, measured v2, and corrected v2, for 0-20 percent centrality
      */
     TCanvas *c_v2_corr_unc_overlay_w_phenix0_20 = new TCanvas("c_v2_corr_unc_overlay_w_phenix0_20", "Overlay 0-20% Corr/UnCorr", 800, 600);
     corrected_graph_0_20_v2->Draw("AP");  // This will be the base graph
     double offsetNew = 0.03;
-    // Jitter points for clarity
     for (int i = 0; i < ptCenters.size(); ++i) {
         double pt = ptCenters[i];
-        graph_0_10->SetPoint(i, pt - offsetNew * 3.5, v2_0_10[i]); // Shift leftmost
-        graph_0_20_v2->SetPoint(i, pt - offsetNew * 1.3, v2_0_20[i]); // Shift slightly left
-        graph_10_20->SetPoint(i, pt + offsetNew * 3.5, v2_10_20[i]); // Shift slightly right
+        graph_0_10->SetPoint(i, pt - offsetNew * 3.5, v2_0_10[i]);
+        graph_0_20_v2->SetPoint(i, pt - offsetNew * 1.3, v2_0_20[i]);
+        graph_10_20->SetPoint(i, pt + offsetNew * 3.5, v2_10_20[i]);
     }
     graph_0_20_v2->SetMarkerStyle(21); // square for uncorrected
     graph_0_20_v2->SetMarkerColor(kBlue);
@@ -1059,7 +699,7 @@ void Plot_vN(const AccumulatedData& data) {
     graph_0_20_v2->Draw("P SAME");
     graph_0_10->Draw("P SAME");
     graph_10_20->Draw("P SAME");
-
+    
     TLegend* legend0_20_corr_uncorr_overlay_v2 = new TLegend(0.11, 0.68, 0.31, 0.88);
     legend0_20_corr_uncorr_overlay_v2->SetBorderSize(0);
     legend0_20_corr_uncorr_overlay_v2->SetTextFont(42);
@@ -1069,16 +709,8 @@ void Plot_vN(const AccumulatedData& data) {
     legend0_20_corr_uncorr_overlay_v2->AddEntry(graph_0_10, "0-10% #bf{PHENIX} 2010", "pe");
     legend0_20_corr_uncorr_overlay_v2->AddEntry(graph_10_20, "10-20% #bf{PHENIX} 2010", "pe");
     legend0_20_corr_uncorr_overlay_v2->Draw();
-
     c_v2_corr_unc_overlay_w_phenix0_20->Update();
-    // Draw a dashed line at y = 0
-    double x_min_0_20_corr_uncorr_overal = c_v2_corr_unc_overlay_w_phenix0_20->GetUxmin(); // Get the minimum x-value from the canvas
-    double x_max_0_20_corr_uncorr_overal = c_v2_corr_unc_overlay_w_phenix0_20->GetUxmax(); // Get the maximum x-value from the canvas
-    TLine *zeroLine_0_20_corr_uncorr_overal = new TLine(x_min_0_20_corr_uncorr_overal, 0, x_max_0_20_corr_uncorr_overal, 0);
-    zeroLine_0_20_corr_uncorr_overal->SetLineStyle(2); // 2 corresponds to a dashed line
-    zeroLine_0_20_corr_uncorr_overal->Draw("SAME"); // Draw the line on the same canvas as your plot
-
-    
+    DrawZeroLine(c_v2_corr_unc_overlay_w_phenix0_20);
     c_v2_corr_unc_overlay_w_phenix0_20->Modified();
     c_v2_corr_unc_overlay_w_phenix0_20->Update();
     c_v2_corr_unc_overlay_w_phenix0_20->SaveAs("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/vN_Plot_Output/v2/0_20/vN_vs_pT_0_20_corr_uncorr_overal.png");
@@ -1089,66 +721,47 @@ void Plot_vN(const AccumulatedData& data) {
      */
     TCanvas *c_v2_corr_unc_overlay_w_phenix20_40 = new TCanvas("c_v2_corr_unc_overlay_w_phenix20_40", "Overlay 20-40% Corr/UnCorr", 800, 600);
     corrected_graph_20_40_v2->Draw("AP");  // This will be the base graph
-
     for (int i = 0; i < ptCenters.size(); ++i) {
         double pt = ptCenters[i];
-        graph_20_30->SetPoint(i, pt - offsetNew * 3.5, v2_20_30[i]); // Shift leftmost
-        graph_20_40_v2->SetPoint(i, pt - offsetNew * 1.3, v2_20_40[i]); // Shift slightly left
-        graph_30_40->SetPoint(i, pt + offsetNew * 3.5, v2_30_40[i]); // Shift slightly right
+        graph_20_30->SetPoint(i, pt - offsetNew * 3.5, v2_20_30[i]);
+        graph_20_40_v2->SetPoint(i, pt - offsetNew * 1.3, v2_20_40[i]);
+        graph_30_40->SetPoint(i, pt + offsetNew * 3.5, v2_30_40[i]);
     }
     graph_20_40_v2->SetMarkerStyle(21);
     graph_20_40_v2->SetMarkerColor(kBlue);
     graph_20_40_v2->SetLineColor(kBlue);
-
-    corrected_graph_20_40_v2->SetMarkerStyle(22); // triangle for corrected
-    corrected_graph_20_40_v2->SetMarkerSize(1.3); // triangle for corrected
-    corrected_graph_20_40_v2->SetMarkerColor(kBlack); // you choose
+    corrected_graph_20_40_v2->SetMarkerStyle(22); //triangle
+    corrected_graph_20_40_v2->SetMarkerSize(1.3);
+    corrected_graph_20_40_v2->SetMarkerColor(kBlack);
     corrected_graph_20_40_v2->SetLineColor(kBlack);
-
     graph_20_30->SetMarkerStyle(20); // circle
     graph_20_30->SetMarkerColor(kRed);
     graph_20_30->SetLineColor(kRed);
-
     graph_30_40->SetMarkerStyle(20); // circle
     graph_30_40->SetMarkerColor(kGreen+3);
     graph_30_40->SetLineColor(kGreen+3);
-
-    // Draw the additional graphs with the new styles and colors
     graph_20_40_v2->Draw("P SAME");
     graph_20_30->Draw("P SAME");
     graph_30_40->Draw("P SAME");
-
     TLegend* legend20_40_corr_uncorr_overlay_v2 = new TLegend(0.11, 0.68, 0.31, 0.88);
     legend20_40_corr_uncorr_overlay_v2->SetBorderSize(0);
     legend20_40_corr_uncorr_overlay_v2->SetTextFont(42);
     legend20_40_corr_uncorr_overlay_v2->SetTextSize(0.03);
-    
-    legend20_40_corr_uncorr_overlay_v2->AddEntry(graph_20_40_v2, "#bf{v_{2}^{M}} (Uncorrected)", "p");
-    legend20_40_corr_uncorr_overlay_v2->AddEntry(corrected_graph_20_40_v2, "#bf{v_{2}^{#pi^{0}}} (Corrected)", "p");
-    legend20_40_corr_uncorr_overlay_v2->AddEntry(graph_20_30, "20-30% #bf{PHENIX} 2010", "p");
-    legend20_40_corr_uncorr_overlay_v2->AddEntry(graph_30_40, "30-40% #bf{PHENIX} 2010", "p");
+    legend20_40_corr_uncorr_overlay_v2->AddEntry(graph_20_40_v2, "#bf{v_{2}^{M}} (Uncorrected)", "pe");
+    legend20_40_corr_uncorr_overlay_v2->AddEntry(corrected_graph_20_40_v2, "#bf{v_{2}^{#pi^{0}}} (Corrected)", "pe");
+    legend20_40_corr_uncorr_overlay_v2->AddEntry(graph_20_30, "20-30% #bf{PHENIX} 2010", "pe");
+    legend20_40_corr_uncorr_overlay_v2->AddEntry(graph_30_40, "30-40% #bf{PHENIX} 2010", "pe");
     legend20_40_corr_uncorr_overlay_v2->Draw();
-
-    c_v2_corr_unc_overlay_w_phenix20_40->Update();
-    // Draw a dashed line at y = 0
-    double x_min_20_40_corr_uncorr_overal = c_v2_corr_unc_overlay_w_phenix20_40->GetUxmin(); // Get the minimum x-value from the canvas
-    double x_max_20_40_corr_uncorr_overal = c_v2_corr_unc_overlay_w_phenix20_40->GetUxmax(); // Get the maximum x-value from the canvas
-    TLine *zeroLine_20_40_corr_uncorr_overal = new TLine(x_min_20_40_corr_uncorr_overal, 0, x_max_20_40_corr_uncorr_overal, 0);
-    zeroLine_20_40_corr_uncorr_overal->SetLineStyle(2); // 2 corresponds to a dashed line
-    zeroLine_20_40_corr_uncorr_overal->Draw("SAME"); // Draw the line on the same canvas as your plot
-    
+    DrawZeroLine(c_v2_corr_unc_overlay_w_phenix20_40);
     c_v2_corr_unc_overlay_w_phenix20_40->Modified();
     c_v2_corr_unc_overlay_w_phenix20_40->Update();
     c_v2_corr_unc_overlay_w_phenix20_40->SaveAs("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/vN_Plot_Output/v2/20_40/vN_vs_pT_20_40_corr_uncorr_overal.png");
-    
-    
     
     /*
      Overlay with PHENIX, measured v2, and corrected v2, for 40-60 percent centrality
      */
     TCanvas *c_v2_corr_unc_overlay_w_phenix40_60 = new TCanvas("c_v2_corr_unc_overlay_w_phenix40_60", "Overlay 40-60% Corr/UnCorr", 800, 600);
     corrected_graph_40_60_v2->Draw("AP");  // This will be the base graph
-
     for (int i = 0; i < ptCenters.size(); ++i) {
         double pt = ptCenters[i];
         graph_40_50->SetPoint(i, pt - offsetNew * 3.5, v2_40_50[i]);
@@ -1158,347 +771,114 @@ void Plot_vN(const AccumulatedData& data) {
     graph_40_60_v2->SetMarkerStyle(21); // square for uncorrected
     graph_40_60_v2->SetMarkerColor(kBlue);
     graph_40_60_v2->SetLineColor(kBlue);
-
     corrected_graph_40_60_v2->SetMarkerStyle(22); // triangle for corrected
     corrected_graph_40_60_v2->SetMarkerSize(1.3); // triangle for corrected
     corrected_graph_40_60_v2->SetMarkerColor(kBlack);
     corrected_graph_40_60_v2->SetLineColor(kBlack);
-    
-    corrected_graph_40_60_v2->SetMinimum(-0.25); // Set the minimum y value
-    corrected_graph_40_60_v2->SetMaximum(0.75); // Set the maximum y value
-    
+    corrected_graph_40_60_v2->SetMinimum(-0.25);
+    corrected_graph_40_60_v2->SetMaximum(0.75);
     graph_40_50->SetMarkerStyle(20); // circle
     graph_40_50->SetMarkerColor(kRed);
     graph_40_50->SetLineColor(kRed);
-
     graph_50_60->SetMarkerStyle(20); // circle
     graph_50_60->SetMarkerColor(kGreen+3);
     graph_50_60->SetLineColor(kGreen+3);
-
-    // Draw the additional graphs with the new styles and colors
     graph_40_60_v2->Draw("P SAME");
     graph_40_50->Draw("P SAME");
     graph_50_60->Draw("P SAME");
-
-    // Legend
     TLegend* legend40_60_corr_uncorr_overlay_v2 = new TLegend(0.28, 0.69, 0.38, 0.89);
     legend40_60_corr_uncorr_overlay_v2->SetBorderSize(0);
     legend40_60_corr_uncorr_overlay_v2->SetTextFont(42);
     legend40_60_corr_uncorr_overlay_v2->SetTextSize(0.033);
-    legend40_60_corr_uncorr_overlay_v2->AddEntry(graph_40_60_v2, "#bf{v_{2}^{M}} (Uncorrected)", "p");
-    legend40_60_corr_uncorr_overlay_v2->AddEntry(corrected_graph_40_60_v2, "#bf{v_{2}^{#pi^{0}}} (Corrected)", "p");
-    legend40_60_corr_uncorr_overlay_v2->AddEntry(graph_40_50, "40-50% #bf{PHENIX} 2010", "p");
-    legend40_60_corr_uncorr_overlay_v2->AddEntry(graph_50_60, "50-60% #bf{PHENIX} 2010", "p");
+    legend40_60_corr_uncorr_overlay_v2->AddEntry(graph_40_60_v2, "#bf{v_{2}^{M}} (Uncorrected)", "pe");
+    legend40_60_corr_uncorr_overlay_v2->AddEntry(corrected_graph_40_60_v2, "#bf{v_{2}^{#pi^{0}}} (Corrected)", "pe");
+    legend40_60_corr_uncorr_overlay_v2->AddEntry(graph_40_50, "40-50% #bf{PHENIX} 2010", "pe");
+    legend40_60_corr_uncorr_overlay_v2->AddEntry(graph_50_60, "50-60% #bf{PHENIX} 2010", "pe");
     legend40_60_corr_uncorr_overlay_v2->Draw();
-    
-    c_v2_corr_unc_overlay_w_phenix40_60->Update();
-    // Draw a dashed line at y = 0
-    double x_min_40_60_corr_uncorr_overal = c_v2_corr_unc_overlay_w_phenix20_40->GetUxmin(); // Get the minimum x-value from the canvas
-    double x_max_40_60_corr_uncorr_overal = c_v2_corr_unc_overlay_w_phenix20_40->GetUxmax(); // Get the maximum x-value from the canvas
-    TLine *zeroLine_40_60_corr_uncorr_overal = new TLine(x_min_20_40_corr_uncorr_overal, 0, x_max_20_40_corr_uncorr_overal, 0);
-    zeroLine_40_60_corr_uncorr_overal->SetLineStyle(2); // 2 corresponds to a dashed line
-    zeroLine_40_60_corr_uncorr_overal->Draw("SAME"); // Draw the line on the same canvas as your plot
-    
-    
+    DrawZeroLine(c_v2_corr_unc_overlay_w_phenix40_60);
     c_v2_corr_unc_overlay_w_phenix40_60->Modified();
     c_v2_corr_unc_overlay_w_phenix40_60->Update();
     c_v2_corr_unc_overlay_w_phenix40_60->SaveAs("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/vN_Plot_Output/v2/40_60/vN_vs_pT_40_60_corr_uncorr_overal.png");
     
-    
-    
-    
-    
-    
-    /*
-     Plot Measured v3 Data for 0-20 centrality
-     */
-    TCanvas *c16 = new TCanvas("c16", "v3 vs pT 0-20%", 800, 600);
-    TGraphErrors *graph_0_20_v3 = new TGraphErrors(ptCenters.size(), &ptCenters[0], &v3_0_20[0], 0, &v3_0_20_Errors[0]);
-    graph_0_20_v3->SetMarkerColor(kBlue);
-    graph_0_20_v3->SetMarkerStyle(21);
-    graph_0_20_v3->SetMarkerSize(1.1);
-    graph_0_20_v3->SetTitle("Diphoton #it{v}_{3} vs #it{p}_{T} 0-20% Centrality; #it{p}_{T} [GeV]; #it{v}_{3}");
-    graph_0_20_v3->Draw("AP");
-    graph_0_20_v3->GetXaxis()->SetLimits(2.0, 5.0);
-    graph_0_20_v3->GetXaxis()->SetNdivisions(010);
-    graph_0_20_v3->SetMinimum(-0.45); // Set the minimum y value
-    graph_0_20_v3->SetMaximum(0.45); // Set the maximum y value
-    c16->SetTicks();
-    TLatex latex020_v3;
-    latex020_v3.SetTextSize(0.03);
-    latex020_v3.SetTextAlign(12);
-    latex020_v3.SetNDC();
-    latex020_v3.DrawLatex(0.13, 0.86, "Cuts (Inclusive):");
-    latex020_v3.DrawLatex(0.13, 0.82, "#bf{Asymmetry < 0.5}");
-    latex020_v3.DrawLatex(0.13, 0.78, "#bf{#chi^{2} < 4.0}");
-    latex020_v3.DrawLatex(0.13, 0.74, "#bf{Cluster E #geq 0.5 GeV}");
-    c16->Modified();
-    c16->Update();
-    c16->SaveAs("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/vN_Plot_Output/v3/0_20/measured_v3_vs_pT_0_20.png");
-
-  
-    
-    /*
-     Plot Measured v3 Data for 40-60 centrality -- Skipping 20-40 due to NaN values in CSV
-     */
-    TCanvas *c17 = new TCanvas("c17", "v3 vs pT 40-60%", 800, 600);
-    TGraphErrors *graph_40_60_v3 = new TGraphErrors(ptCenters.size(), &ptCenters[0], &v3_40_60[0], 0, &v3_40_60_Errors[0]);
-    graph_40_60_v3->SetMarkerColor(kBlue);
-    graph_40_60_v3->SetMarkerStyle(21);
-    graph_40_60_v3->SetMarkerSize(1.1);
-    graph_40_60_v3->SetTitle("Diphoton #it{v}_{3} vs #it{p}_{T} 40-60% Centrality; #it{p}_{T} [GeV]; #it{v}_{2}");
-    graph_40_60_v3->Draw("AP");
-    graph_40_60_v3->GetXaxis()->SetLimits(2.0, 5.0);
-    graph_40_60_v3->GetXaxis()->SetNdivisions(010);
-    graph_40_60_v3->SetMinimum(-2); // Set the minimum y value
-    graph_40_60_v3->SetMaximum(2); // Set the maximum y value
-    c17->SetTicks();
-    TLatex latex4060_v3;
-    latex4060_v3.SetTextSize(0.03);
-    latex4060_v3.SetTextAlign(12);
-    latex4060_v3.SetNDC();
-    latex4060_v3.DrawLatex(0.13, 0.86, "Cuts (Inclusive):");
-    latex4060_v3.DrawLatex(0.13, 0.82, "#bf{Asymmetry < 0.5}");
-    latex4060_v3.DrawLatex(0.13, 0.78, "#bf{#chi^{2} < 4.0}");
-    latex4060_v3.DrawLatex(0.13, 0.74, "#bf{Cluster E #geq 0.5 GeV}");
-    
-    c17->Modified();
-    c17->Update();
-    c17->SaveAs("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/vN_Plot_Output/v3/40_60/measured_v3_vs_pT_40_60.png");
-    
-
-    
-    /*
-     Plot Background v3 Data for 0-20 percent centrality
-     */
-    TCanvas *c18 = new TCanvas("c18", "Background v3 vs pT 0-20%", 800, 600);
-    TGraphErrors *bg_graph_0_20_v3 = new TGraphErrors(ptCenters.size(), &ptCenters[0], &bg_v3_0_20[0], 0, &bg_v3_0_20_Errors[0]);
-    bg_graph_0_20_v3->SetMarkerColor(kBlue);
-    bg_graph_0_20_v3->SetMarkerStyle(21);
-    bg_graph_0_20_v3->SetMarkerSize(1.1);
-    bg_graph_0_20_v3->SetTitle("Background #it{v}_{3} vs #it{p}_{T} 0-20% Centrality; #it{p}_{T} [GeV]; #it{v}_{3}");
-    bg_graph_0_20_v3->Draw("AP");
-    bg_graph_0_20_v3->GetXaxis()->SetLimits(2.0, 5.0);
-    bg_graph_0_20_v3->GetXaxis()->SetNdivisions(010);
-    bg_graph_0_20_v3->SetMinimum(-0.2); // Set the minimum y value
-    bg_graph_0_20_v3->SetMaximum(0.28); // Set the maximum y value
-    c18->SetTicks();
-    TLatex latex020_bg_v3;
-    latex020_bg_v3.SetTextSize(0.03);
-    latex020_bg_v3.SetTextAlign(12);
-    latex020_bg_v3.SetNDC();
-    latex020_bg_v3.DrawLatex(0.13, 0.86, "Cuts (Inclusive):");
-    latex020_bg_v3.DrawLatex(0.13, 0.82, "#bf{Asymmetry < 0.5}");
-    latex020_bg_v3.DrawLatex(0.13, 0.78, "#bf{#chi^{2} < 4.0}");
-    latex020_bg_v3.DrawLatex(0.13, 0.74, "#bf{Cluster E #geq 0.5 GeV}");
-    c18->Modified();
-    c18->Update();
-    c18->SaveAs("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/vN_Plot_Output/v3/0_20/bg_v3_vs_pT_0_20.png");
-    
-
-    /*
-     Plot Background v3 Data for 40-60 percent centrality
-     */
-    TCanvas *c19 = new TCanvas("c19", "Background v3 vs pT 40-60%", 800, 600);
-    TGraphErrors *bg_graph_40_60_v3 = new TGraphErrors(ptCenters.size(), &ptCenters[0], &bg_v3_40_60[0], 0, &bg_v3_40_60_Errors[0]);
-    bg_graph_40_60_v3->SetMarkerColor(kBlue);
-    bg_graph_40_60_v3->SetMarkerStyle(21);
-    bg_graph_40_60_v3->SetMarkerSize(1.1);
-    bg_graph_40_60_v3->SetTitle("Background #it{v}_{3} vs #it{p}_{T} 40-60% Centrality; #it{p}_{T} [GeV]; #it{v}_{2}");
-    bg_graph_40_60_v3->Draw("AP");
-    bg_graph_40_60_v3->GetXaxis()->SetLimits(2.0, 5.0);
-    bg_graph_40_60_v3->GetXaxis()->SetNdivisions(010);
-    bg_graph_40_60_v3->SetMinimum(-1.0); // Set the minimum y value
-    bg_graph_40_60_v3->SetMaximum(0.7); // Set the maximum y value
-    c19->SetTicks();
-    //Output cut information
-    TLatex latex4060_bg_v3;
-    latex4060_bg_v3.SetTextSize(0.03);
-    latex4060_bg_v3.SetTextAlign(12);
-    latex4060_bg_v3.SetNDC();
-    latex4060_bg_v3.DrawLatex(0.13, 0.86, "Cuts (Inclusive):");
-    latex4060_bg_v3.DrawLatex(0.13, 0.82, "#bf{Asymmetry < 0.5}");
-    latex4060_bg_v3.DrawLatex(0.13, 0.78, "#bf{#chi^{2} < 4.0}");
-    latex4060_bg_v3.DrawLatex(0.13, 0.74, "#bf{Cluster E #geq 0.5 GeV}");
-    c19->Modified();
-    c19->Update();
-    c19->SaveAs("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/vN_Plot_Output/v3/40_60/bg_v3_vs_pT_40_60.png");
-
     /*
      OVERLAY BACKGROUND v3 TO LEFT AND RIGHT OF SIGNAL REGION for 0-20%
      */
     TCanvas *c_0_20_Left_Right_bg_Overlay_v3 = new TCanvas("c_0_20_Left_Right_bg_Overlay_v3", "Sideband #v_3 Overlay, 0-20% Centrality", 800, 600);
-    TGraphErrors *graph_0_20_bg_left_v3 = new TGraphErrors(ptCenters.size(), &ptCenters[0], &bg_v3_left_0_20[0], 0, &bg_v3_left_0_20_Errors[0]);
-    
     graph_0_20_bg_left_v3->SetMarkerStyle(20); // Circle
     graph_0_20_bg_left_v3->SetMarkerColor(kRed); // Changed to red for visibility
     graph_0_20_bg_left_v3->SetLineColor(kRed);
-    // Draw the right background graph as the base graph
     bg_graph_0_20_v3->Draw("AP");
-    
-    // Apply jitter to x values for graph_40_50 and graph_50_60
     for (int i = 0; i < ptCenters.size(); ++i) {
         graph_0_20_bg_left_v3->SetPoint(i, ptCenters[i] - .06, bg_v3_left_0_20[i]);
     }
-    
     bg_graph_0_20_v3->SetTitle("Sideband #it{v}_{3} to Left and Right of Signal Region vs #it{p}_{T} 0-20% Centrality; #it{p}_{T} [GeV]; #it{v}_{2}");
     bg_graph_0_20_v3->SetMinimum(-0.25); // Set the minimum y value
     bg_graph_0_20_v3->SetMaximum(0.3); // Set the maximum y value
     graph_0_20_bg_left_v3->Draw("P SAME");
-
-    // Create a legend to distinguish between the two graphs
     TLegend *legend_leftRightbg_overlay_0_20_v3 = new TLegend(0.12, 0.65, 0.32, 0.85);
     legend_leftRightbg_overlay_0_20_v3->SetBorderSize(0);
     legend_leftRightbg_overlay_0_20_v3->SetTextSize(0.03);
-    legend_leftRightbg_overlay_0_20_v3->AddEntry(bg_graph_0_20_v3, "0-20%, v_{3}^{bg} right of signal region in range (#mu + 3*#sigma, 0.5) GeV", "p");
-    legend_leftRightbg_overlay_0_20_v3->AddEntry(graph_0_20_bg_left_v3, "0-20%, v_{3}^{bg} left of signal region in range (0, #mu - 2*#sigma) GeV", "p");
+    legend_leftRightbg_overlay_0_20_v3->AddEntry(bg_graph_0_20_v3, "0-20%, v_{3}^{bg} right of signal region in range (#mu + 3*#sigma, 0.5) GeV", "pe");
+    legend_leftRightbg_overlay_0_20_v3->AddEntry(graph_0_20_bg_left_v3, "0-20%, v_{3}^{bg} left of signal region in range (0, #mu - 2*#sigma) GeV", "pe");
     legend_leftRightbg_overlay_0_20_v3->Draw();
-
     c_0_20_Left_Right_bg_Overlay_v3->Modified();
     c_0_20_Left_Right_bg_Overlay_v3->Update();
     c_0_20_Left_Right_bg_Overlay_v3->SaveAs("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/vN_Plot_Output/v3/0_20/bg_v3_Left_Right_Overlay_0_20.png");
 
-    
-    
     /*
      OVERLAY BACKGROUND v3 TO LEFT AND RIGHT OF SIGNAL REGION for 40-60%
      */
     TCanvas *c_40_60_Left_Right_bg_Overlay_v3 = new TCanvas("c_40_60_Left_Right_bg_Overlay_v3", "Sideband #v_3 Overlay, 40-60% Centrality", 800, 600);
-    TGraphErrors *graph_40_60_bg_left_v3 = new TGraphErrors(ptCenters.size(), &ptCenters[0], &bg_v3_left_40_60[0], 0, &bg_v3_left_40_60_Errors[0]);
-    
     graph_40_60_bg_left_v3->SetMarkerStyle(20); // Circle
     graph_40_60_bg_left_v3->SetMarkerColor(kRed); // Changed to red for visibility
     graph_40_60_bg_left_v3->SetLineColor(kRed);
     // Draw the right background graph as the base graph
     bg_graph_40_60_v3->Draw("AP");
-    
-    // Apply jitter to x values for graph_40_50 and graph_50_60
     for (int i = 0; i < ptCenters.size(); ++i) {
         graph_40_60_bg_left_v3->SetPoint(i, ptCenters[i] - .06, bg_v3_left_40_60[i]);
     }
-    
     bg_graph_40_60_v3->SetTitle("Sideband #it{v}_{3} to Left and Right of Signal Region vs #it{p}_{T} 40-60% Centrality; #it{p}_{T} [GeV]; #it{v}_{2}");
     bg_graph_40_60_v3->SetMinimum(-2); // Set the minimum y value
     bg_graph_40_60_v3->SetMaximum(2); // Set the maximum y value
     graph_40_60_bg_left_v3->Draw("P SAME");
-
-    // Create a legend to distinguish between the two graphs
     TLegend *legend_leftRightbg_overlay_40_60_v3 = new TLegend(0.12, 0.65, 0.32, 0.85);
     legend_leftRightbg_overlay_40_60_v3->SetBorderSize(0);
     legend_leftRightbg_overlay_40_60_v3->SetTextSize(0.024);
-    legend_leftRightbg_overlay_40_60_v3->AddEntry(bg_graph_40_60_v3, "40-60%, v_{3}^{bg} right of signal region in range (#mu + 3*#sigma, 0.5) GeV", "p");
-    legend_leftRightbg_overlay_40_60_v3->AddEntry(graph_40_60_bg_left_v3, "40-60%, v_{3}^{bg} left of signal region in range (0, #mu - 2*#sigma) GeV", "p");
+    legend_leftRightbg_overlay_40_60_v3->AddEntry(bg_graph_40_60_v3, "40-60%, v_{3}^{bg} right of signal region in range (#mu + 3*#sigma, 0.5) GeV", "pe");
+    legend_leftRightbg_overlay_40_60_v3->AddEntry(graph_40_60_bg_left_v3, "40-60%, v_{3}^{bg} left of signal region in range (0, #mu - 2*#sigma) GeV", "pe");
     legend_leftRightbg_overlay_40_60_v3->Draw();
-
     c_40_60_Left_Right_bg_Overlay_v3->Modified();
     c_40_60_Left_Right_bg_Overlay_v3->Update();
     c_40_60_Left_Right_bg_Overlay_v3->SaveAs("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/vN_Plot_Output/v3/40_60/bg_v3_Left_Right_Overlay_40_60.png");
 
-    
-    
-    
-    
     /*
-     Plot corrected v3 data for 0-20 percent centrality
-     */
-    TCanvas *c20 = new TCanvas("c20", "Corrected v3 vs pT 0-20%", 800, 600);
-    TGraphErrors *corrected_graph_0_20_v3 = new TGraphErrors(ptCenters.size(), &ptCenters[0], &corrected_v3_0_20[0], 0, &corrected_v3_0_20_Errors[0]);
-    corrected_graph_0_20_v3->SetMarkerColor(kBlue);
-    corrected_graph_0_20_v3->SetMarkerStyle(21);
-    corrected_graph_0_20_v3->SetMarkerSize(1.1);
-    corrected_graph_0_20_v3->SetTitle("Corrected #it{v}_{3} vs #it{p}_{T} 0-20% Centrality; #it{p}_{T} [GeV]; #it{v}_{2}");
-    corrected_graph_0_20_v3->Draw("AP");
-    corrected_graph_0_20_v3->GetXaxis()->SetLimits(2.0, 5.0);
-    corrected_graph_0_20_v3->GetXaxis()->SetNdivisions(010);
-    corrected_graph_0_20_v3->SetMinimum(-0.4); // Set the minimum y value
-    corrected_graph_0_20_v3->SetMaximum(2.5); // Set the maximum y value
-    c20->SetTicks();
-    //Output cut information
-    TLatex latex020_correct_v3;
-    latex020_correct_v3.SetTextSize(0.03);
-    latex020_correct_v3.SetTextAlign(12);
-    latex020_correct_v3.SetNDC();
-    latex020_correct_v3.DrawLatex(0.13, 0.86, "Cuts (Inclusive):");
-    latex020_correct_v3.DrawLatex(0.13, 0.82, "#bf{Asymmetry < 0.5}");
-    latex020_correct_v3.DrawLatex(0.13, 0.78, "#bf{#chi^{2} < 4.0}");
-    latex020_correct_v3.DrawLatex(0.13, 0.74, "#bf{Cluster E #geq 0.5 GeV}");
-    c20->Modified();
-    c20->Update();
-    c20->SaveAs("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/vN_Plot_Output/v3/0_20/v3_vs_pT_0_20_corrected.png");
-
-    
-    /*
-     Plot corrected v3 data for 40-60 percent centrality
-     */
-    TCanvas *c21 = new TCanvas("c21", "Corrected v3 vs pT 40-60%", 800, 600);
-    TGraphErrors *corrected_graph_40_60_v3 = new TGraphErrors(ptCenters.size(), &ptCenters[0], &corrected_v3_40_60[0], 0, &corrected_v3_40_60_Errors[0]);
-    corrected_graph_40_60_v3->SetMarkerColor(kBlue);
-    corrected_graph_40_60_v3->SetMarkerStyle(21);
-    corrected_graph_40_60_v3->SetMarkerSize(1.1);
-    corrected_graph_40_60_v3->SetTitle("Corrected #it{v}_{3} vs #it{p}_{T} 40-60% Centrality; #it{p}_{T} [GeV]; #it{v}_{2}");
-    corrected_graph_40_60_v3->Draw("AP");
-    corrected_graph_40_60_v3->GetXaxis()->SetLimits(2.0, 5.0);
-    corrected_graph_40_60_v3->GetXaxis()->SetNdivisions(010);
-    corrected_graph_40_60_v3->SetMinimum(0.0); // Set the minimum y value
-    corrected_graph_40_60_v3->SetMaximum(0.25); // Set the maximum y value
-    corrected_graph_40_60_v3->SetMinimum(-0.2); // Set the minimum y value
-    corrected_graph_40_60_v3->SetMaximum(0.7); // Set the maximum y value
-
-    c21->SetTicks();
-    
-    //Output cut information
-    TLatex latex4060_corr_v3;
-    latex4060_corr_v3.SetTextSize(0.03);
-    latex4060_corr_v3.SetTextAlign(12);
-    latex4060_corr_v3.SetNDC();
-
-    latex4060_corr_v3.DrawLatex(0.13, 0.86, "Cuts (Inclusive):");
-    latex4060_corr_v3.DrawLatex(0.13, 0.82, "#bf{Asymmetry < 0.5}");
-    latex4060_corr_v3.DrawLatex(0.13, 0.78, "#bf{#chi^{2} < 4.0}");
-    latex4060_corr_v3.DrawLatex(0.13, 0.74, "#bf{Cluster E #geq 0.5 GeV}");
-
-    
-    c21->Modified();
-    c21->Update();
-    c21->SaveAs("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/vN_Plot_Output/v3/40_60/v3_vs_pT_40_60_corrected.png");
-    
-    
-    /*
-     Overlay Measured and Corrected v3 Output
+     Overlay Measured and Corrected v3 Output 0-20%
      */
     TCanvas *c_0_20_measured_corrected_v3 = new TCanvas("c_0_20_measured_corrected_v3", "Measured and Corrected #v_3 Overlay, 0-20% Centrality", 800, 600);
     corrected_graph_0_20_v3->Draw("AP");  // This will be the base graph
     corrected_graph_0_20_v3->SetTitle("Measured #it{v}_{3} and #pi^{0} #it{v}_{3} vs #it{p}_{T} 0-20% Centrality; #it{p}_{T} [GeV]; #it{v}_{3}");
     corrected_graph_0_20_v3->SetMinimum(-2.0); // Set the minimum y value
     corrected_graph_0_20_v3->SetMaximum(2.0); // Set the maximum y value
-    
     graph_0_20_v3->SetMarkerStyle(20); // circle
     graph_0_20_v3->SetMarkerColor(kBlue);
     graph_0_20_v3->SetLineColor(kBlue);
-    
     for (int i = 0; i < ptCenters.size(); ++i) {
         graph_0_20_v3->SetPoint(i, ptCenters[i] - offset, v3_0_20[i]);
     }
-    
     graph_0_20_v3 -> Draw("P SAME");
-
     corrected_graph_0_20_v3->SetMarkerColor(kRed);
     corrected_graph_0_20_v3->SetLineColor(kRed);
     corrected_graph_0_20_v3->SetMarkerStyle(21);
 
-    // Update the legend for the c4 canvas to include new marker styles
     TLegend *legend_0_20_measured_corrected_v3 = new TLegend(0.1, 0.7, 0.3, 0.9);
-    legend_0_20_measured_corrected_v3->AddEntry(corrected_graph_0_20_v3, "0-20%, v_{3}^{#pi^{0}}", "p");
-    legend_0_20_measured_corrected_v3->AddEntry(graph_0_20_v3, "0-20%, v_{3}^{M}", "p");
-
-
+    legend_0_20_measured_corrected_v3->AddEntry(corrected_graph_0_20_v3, "0-20%, v_{3}^{#pi^{0}}", "pe");
+    legend_0_20_measured_corrected_v3->AddEntry(graph_0_20_v3, "0-20%, v_{3}^{M}", "pe");
     legend_0_20_measured_corrected_v3->Draw();
 
     c_0_20_measured_corrected_v3->Modified();
     c_0_20_measured_corrected_v3->Update();
     c_0_20_measured_corrected_v3->SaveAs("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/vN_Plot_Output/v3/0_20/v3_measured_corrected_overal_0_20.png");
-    
-    
+
     /*
      Overlay Measured and Corrected v3 Output 40 - 60 percent centrality
      */
@@ -1507,25 +887,21 @@ void Plot_vN(const AccumulatedData& data) {
     corrected_graph_40_60_v3->SetTitle("Measured #it{v}_{3} and #pi^{0} #it{v}_{3} vs #it{p}_{T} 40-60% Centrality; #it{p}_{T} [GeV]; #it{v}_{3}");
     corrected_graph_40_60_v3->SetMinimum(-2.0); // Set the minimum y value
     corrected_graph_40_60_v3->SetMaximum(2.0); // Set the maximum y value
-    
     graph_40_60_v3->SetMarkerStyle(20); // circle
     graph_40_60_v3->SetMarkerColor(kRed);
     graph_40_60_v3->SetLineColor(kRed);
-    
     for (int i = 0; i < ptCenters.size(); ++i) {
         graph_40_60_v3->SetPoint(i, ptCenters[i] - offset, v3_40_60[i]);
     }
-    
     graph_40_60_v3 -> Draw("P SAME");
 
     corrected_graph_40_60_v3->SetMarkerColor(kBlue);
     corrected_graph_40_60_v3->SetLineColor(kBlue);
     corrected_graph_40_60_v3->SetMarkerStyle(21);
 
-    // Update the legend for the c4 canvas to include new marker styles
     TLegend *legend_40_60_measured_corrected_v3 = new TLegend(0.1, 0.7, 0.3, 0.9);
-    legend_40_60_measured_corrected_v3->AddEntry(graph_40_60_v3, "20-40%, v_{3}^{M}", "p");
-    legend_40_60_measured_corrected_v3->AddEntry(corrected_graph_40_60_v3, "20-40%, v_{3}^{#pi^{0}}", "p");
+    legend_40_60_measured_corrected_v3->AddEntry(graph_40_60_v3, "20-40%, v_{3}^{M}", "pe");
+    legend_40_60_measured_corrected_v3->AddEntry(corrected_graph_40_60_v3, "20-40%, v_{3}^{#pi^{0}}", "pe");
 
     legend_40_60_measured_corrected_v3->Draw();
 
@@ -1533,126 +909,7 @@ void Plot_vN(const AccumulatedData& data) {
     c_40_60_measured_corrected_v3->Update();
     c_40_60_measured_corrected_v3->SaveAs("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/vN_Plot_Output/v3/40_60/v3_measured_corrected_overal_40_60.png");
     
-    
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    /*
-     Overlay v2 and v3 measured Output
-     */
-    TCanvas *c_0_20_v2_v3_measured = new TCanvas("c_0_20_v2_v3_measured", "Measured #v_2, #v_3 Overlay, 0-20% Centrality", 800, 600);
-    graph_0_20_v2->Draw("AP");  // This will be the base graph
-    graph_0_20_v2->SetTitle("Diphoton #it{v}_{2} and #it{v}_{3} Overlay vs #it{p}_{T} 0-20% Centrality; #it{p}_{T} [GeV]; #it{v}_{N}");
-    graph_0_20_v2->SetMinimum(-0.4); // Set the minimum y value
-    graph_0_20_v2->SetMaximum(0.4); // Set the maximum y value
-    for (int i = 0; i < ptCenters.size(); ++i) {
-        graph_0_20_v3->SetPoint(i, ptCenters[i] - offset, v3_0_20[i]);
-    }
-    graph_0_20_v3->SetMarkerStyle(20); // circle
-    graph_0_20_v3->SetMarkerColor(kRed);
-    graph_0_20_v3->SetLineColor(kRed);
-    graph_0_20_v3 -> Draw("P SAME");
-    graph_0_20_v2->SetMarkerColor(kBlue);
-    graph_0_20_v2->SetMarkerStyle(21);
-    // Update the legend for the c4 canvas to include new marker styles
-    TLegend *legend_0_20_v2_v3_measured = new TLegend(0.11, 0.11, 0.31, 0.31);
-    legend_0_20_v2_v3_measured->SetBorderSize(0);
-    legend_0_20_v2_v3_measured->SetTextSize(0.03);
-    legend_0_20_v2_v3_measured->AddEntry(graph_0_20_v2, "0-20%, v_{2}^{M}", "p");
-    legend_0_20_v2_v3_measured->AddEntry(graph_0_20_v3, "0-20%, v_{3}^{M}", "p");
-
-    legend_0_20_v2_v3_measured->Draw();
-    
-    TLatex latex_0_20_v2_v3_measured;
-    latex_0_20_v2_v3_measured.SetTextSize(0.03);
-    latex_0_20_v2_v3_measured.SetTextAlign(12);
-    latex_0_20_v2_v3_measured.SetNDC();
-    latex_0_20_v2_v3_measured.DrawLatex(0.13, 0.86, "Cuts (Inclusive):");
-    latex_0_20_v2_v3_measured.DrawLatex(0.13, 0.82, "#bf{Asymmetry < 0.5}");
-    latex_0_20_v2_v3_measured.DrawLatex(0.13, 0.78, "#bf{#chi^{2} < 4.0}");
-    latex_0_20_v2_v3_measured.DrawLatex(0.13, 0.74, "#bf{Cluster E #geq 0.5 GeV}");
-    
-    
-    c_0_20_v2_v3_measured->Update();
-    // Draw a dashed line at y = 0
-    double x_min_v2_v3_measured_0_20 = c_0_20_v2_v3_measured->GetUxmin(); // Get the minimum x-value from the canvas
-    double x_max_v2_v3_measured_0_20 = c_0_20_v2_v3_measured->GetUxmax(); // Get the maximum x-value from the canvas
-    TLine *zeroLine_v2_v3_measured_0_20 = new TLine(x_min_v2_v3_measured_0_20, 0, x_max_v2_v3_measured_0_20, 0);
-    zeroLine_v2_v3_measured_0_20->SetLineStyle(2); // 2 corresponds to a dashed line
-    zeroLine_v2_v3_measured_0_20->Draw("SAME"); // Draw the line on the same canvas as your plot
-
-    
-
-    c_0_20_v2_v3_measured->Modified();
-    c_0_20_v2_v3_measured->Update();
-    c_0_20_v2_v3_measured->SaveAs("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/vN_Plot_Output/v2_v3_Measured_Overlay_0_20.png");
-    
-    
-    
-    /*
-     Overlay Measured v2 and v3 40-60 percent centrality
-     */
-    
-    TCanvas *c_40_60_v2_v3_measured = new TCanvas("c_40_60_v2_v3_measured", "Measured #v_2, #v_3 Overlay, 40-60% Centrality", 800, 600);
-    graph_40_60_v2->Draw("AP");  // This will be the base graph
-    graph_40_60_v2->SetTitle("Diphoton #it{v}_{2} and #it{v}_{3} Overlay vs #it{p}_{T} 40-60% Centrality; #it{p}_{T} [GeV]; #it{v}_{N}");
-    graph_40_60_v2->SetMinimum(-1.5); // Set the minimum y value
-    graph_40_60_v2->SetMaximum(1.5); // Set the maximum y value
-    for (int i = 0; i < ptCenters.size(); ++i) {
-        graph_40_60_v3->SetPoint(i, ptCenters[i] - .08, v3_40_60[i]);
-    }
-    
-    graph_40_60_v3->SetMarkerStyle(20); // circle
-    graph_40_60_v3->SetMarkerColor(kRed);
-    graph_40_60_v3->SetLineColor(kRed);
-    
-    graph_40_60_v3 -> Draw("P SAME");
-
-    graph_40_60_v2->SetMarkerColor(kBlue);
-    graph_40_60_v2->SetMarkerStyle(21);
-
-    // Update the legend for the c4 canvas to include new marker styles
-    TLegend *legend_40_60_v2_v3_measured = new TLegend(0.11, 0.11, 0.31, 0.31);
-    legend_40_60_v2_v3_measured->SetBorderSize(0);
-    legend_40_60_v2_v3_measured->SetTextSize(0.03);
-    legend_40_60_v2_v3_measured->AddEntry(graph_40_60_v2, "0-20%, v_{2}^{M}", "p");
-    legend_40_60_v2_v3_measured->AddEntry(graph_40_60_v3, "0-20%, v_{3}^{M}", "p");
-
-    legend_40_60_v2_v3_measured->Draw();
-    
-    TLatex latex__40_60_v2_v3_measured;
-    latex__40_60_v2_v3_measured.SetTextSize(0.03);
-    latex__40_60_v2_v3_measured.SetTextAlign(12);
-    latex__40_60_v2_v3_measured.SetNDC();
-    latex__40_60_v2_v3_measured.DrawLatex(0.13, 0.86, "Cuts (Inclusive):");
-    latex__40_60_v2_v3_measured.DrawLatex(0.13, 0.82, "#bf{Asymmetry < 0.5}");
-    latex__40_60_v2_v3_measured.DrawLatex(0.13, 0.78, "#bf{#chi^{2} < 4.0}");
-    latex__40_60_v2_v3_measured.DrawLatex(0.13, 0.74, "#bf{Cluster E #geq 0.5 GeV}");
-    
-    c_40_60_v2_v3_measured->Update();
-    // Draw a dashed line at y = 0
-    double x_min_v2_v3_measured_40_60 = c_40_60_v2_v3_measured->GetUxmin(); // Get the minimum x-value from the canvas
-    double x_max_v2_v3_measured_40_60 = c_40_60_v2_v3_measured->GetUxmax(); // Get the maximum x-value from the canvas
-    TLine *zeroLine_v2_v3_measured_40_60 = new TLine(x_min_v2_v3_measured_40_60, 0, x_max_v2_v3_measured_40_60, 0);
-    zeroLine_v2_v3_measured_40_60->SetLineStyle(2); // 2 corresponds to a dashed line
-    zeroLine_v2_v3_measured_40_60->Draw("SAME"); // Draw the line on the same canvas as your plot
-
-    c_40_60_v2_v3_measured->Modified();
-    c_40_60_v2_v3_measured->Update();
-    c_40_60_v2_v3_measured->SaveAs("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/vN_Plot_Output/v2_v3_Measured_Overlay_40_60.png");
-    
-    
-    
-    
-    
     /*
      Overlay for v2 v3 Corrected Output
      */
@@ -1664,38 +921,24 @@ void Plot_vN(const AccumulatedData& data) {
     for (int i = 0; i < ptCenters.size(); ++i) {
         corrected_graph_0_20_v2->SetPoint(i, ptCenters[i] - offset, v2_0_20[i]);
     }
-    
     corrected_graph_0_20_v3->SetMarkerStyle(20); // circle
     corrected_graph_0_20_v3->SetMarkerColor(kRed);
     corrected_graph_0_20_v3->SetLineColor(kRed);
     
     corrected_graph_0_20_v3 -> Draw("P SAME");
-
     corrected_graph_0_20_v2->SetMarkerColor(kBlue);
     corrected_graph_0_20_v2->SetMarkerStyle(21);
-
-    // Update the legend for the c4 canvas to include new marker styles
+    
     TLegend *legend_0_20_v2_v3_corrected = new TLegend(0.11, 0.11, 0.31, 0.31);
     legend_0_20_v2_v3_corrected->SetBorderSize(0);
     legend_0_20_v2_v3_corrected->SetTextSize(0.03);
-    legend_0_20_v2_v3_corrected->AddEntry(corrected_graph_0_20_v2, "0-20%, v_{2}^{#pi^{0}}", "p");
-    legend_0_20_v2_v3_corrected->AddEntry(corrected_graph_0_20_v3, "0-20%, v_{3}^{#pi^{0}}", "p");
-
+    legend_0_20_v2_v3_corrected->AddEntry(corrected_graph_0_20_v2, "0-20%, v_{2}^{#pi^{0}}", "pe");
+    legend_0_20_v2_v3_corrected->AddEntry(corrected_graph_0_20_v3, "0-20%, v_{3}^{#pi^{0}}", "pe");
     legend_0_20_v2_v3_corrected->Draw();
-    
-    c_0_20_v2_v3_corrected->Update();
-    // Draw a dashed line at y = 0
-    double x_min_v2_v3_corrected_0_20 = c_0_20_v2_v3_corrected->GetUxmin(); // Get the minimum x-value from the canvas
-    double x_max_v2_v3_corrected_0_20 = c_0_20_v2_v3_corrected->GetUxmax(); // Get the maximum x-value from the canvas
-    TLine *zeroLine_v2_v3_corrected_0_20 = new TLine(x_min_v2_v3_corrected_0_20, 0, x_max_v2_v3_corrected_0_20, 0);
-    zeroLine_v2_v3_corrected_0_20->SetLineStyle(2); // 2 corresponds to a dashed line
-    zeroLine_v2_v3_corrected_0_20->Draw("SAME"); // Draw the line on the same canvas as your plot
-
+    DrawZeroLine(c_0_20_v2_v3_corrected);
     c_0_20_v2_v3_corrected->Modified();
     c_0_20_v2_v3_corrected->Update();
     c_0_20_v2_v3_corrected->SaveAs("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/vN_Plot_Output/v2_v3_Corrected_Overlay_0_20.png");
-    
-    
     
     /*
      Make plot corrected v2 overlay with v3 for 40-60 centrality
@@ -1708,229 +951,24 @@ void Plot_vN(const AccumulatedData& data) {
     for (int i = 0; i < ptCenters.size(); ++i) {
         corrected_graph_40_60_v2->SetPoint(i, ptCenters[i] - offset, v2_40_60[i]);
     }
-    
     corrected_graph_40_60_v3->SetMarkerStyle(20); // circle
     corrected_graph_40_60_v3->SetMarkerColor(kRed);
     corrected_graph_40_60_v3->SetLineColor(kRed);
     
     corrected_graph_40_60_v3 -> Draw("P SAME");
-
     corrected_graph_40_60_v2->SetMarkerColor(kBlue);
     corrected_graph_40_60_v2->SetMarkerStyle(21);
-
-    // Update the legend for the c4 canvas to include new marker styles
+    
     TLegend *legend_40_60_v2_v3_corrected = new TLegend(0.11, 0.11, 0.31, 0.31);
     legend_40_60_v2_v3_corrected->SetBorderSize(0);
     legend_40_60_v2_v3_corrected->SetTextSize(0.03);
-    legend_40_60_v2_v3_corrected->AddEntry(corrected_graph_40_60_v2, "40-60%, v_{2}^{#pi^{0}}", "p");
-    legend_40_60_v2_v3_corrected->AddEntry(corrected_graph_40_60_v3, "40-60%, v_{3}^{#pi^{0}}", "p");
-
+    legend_40_60_v2_v3_corrected->AddEntry(corrected_graph_40_60_v2, "40-60%, v_{2}^{#pi^{0}}", "pe");
+    legend_40_60_v2_v3_corrected->AddEntry(corrected_graph_40_60_v3, "40-60%, v_{3}^{#pi^{0}}", "pe");
     legend_40_60_v2_v3_corrected->Draw();
-    
-    c_40_60_v2_v3_corrected->Update();
-    // Draw a dashed line at y = 0
-    double x_min_v2_v3_corrected_40_60 = c_40_60_v2_v3_corrected->GetUxmin(); // Get the minimum x-value from the canvas
-    double x_max_v2_v3_corrected_40_60 = c_40_60_v2_v3_corrected->GetUxmax(); // Get the maximum x-value from the canvas
-    TLine *zeroLine_v2_v3_corrected_40_60 = new TLine(x_min_v2_v3_corrected_40_60, 0, x_max_v2_v3_corrected_40_60, 0);
-    zeroLine_v2_v3_corrected_40_60->SetLineStyle(2); // 2 corresponds to a dashed line
-    zeroLine_v2_v3_corrected_40_60->Draw("SAME"); // Draw the line on the same canvas as your plot
-
+    DrawZeroLine(c_40_60_v2_v3_corrected);
     c_40_60_v2_v3_corrected->Modified();
     c_40_60_v2_v3_corrected->Update();
     c_40_60_v2_v3_corrected->SaveAs("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/vN_Plot_Output/v2_v3_Corrected_Overlay_40_60.png");
-    
-    const auto& corrected_v2_0_20_accumulated = data.corrected_v2_0_20_accumulated;
-    const auto& corrected_v2_20_40_accumulated = data.corrected_v2_20_40_accumulated;
-    const auto& corrected_v2_40_60_accumulated = data.corrected_v2_40_60_accumulated;
-    const auto& corrected_v2_0_20_Errors_accumulated = data.corrected_v2_0_20_Errors_accumulated;
-    const auto& corrected_v2_20_40_Errors_accumulated = data.corrected_v2_20_40_Errors_accumulated;
-    const auto& corrected_v2_40_60_Errors_accumulated = data.corrected_v2_40_60_Errors_accumulated;
-
-    const auto& corrected_v3_0_20_accumulated = data.corrected_v3_0_20_accumulated;
-    const auto& corrected_v3_40_60_accumulated = data.corrected_v3_40_60_accumulated;
-    const auto& corrected_v3_0_20_Errors_accumulated = data.corrected_v3_0_20_Errors_accumulated;
-    const auto& corrected_v3_40_60_Errors_accumulated = data.corrected_v3_40_60_Errors_accumulated;
-    
-    PrintVectorContents(corrected_v2_40_60_accumulated, corrected_v2_40_60_Errors_accumulated, "corrected_v2_40_60_accumulated");
-    PrintVectorContents(corrected_v3_40_60_accumulated, corrected_v3_40_60_Errors_accumulated, "corrected_v3_40_60_accumulated");
-    PrintVectorContents(corrected_v2_20_40_accumulated, corrected_v2_20_40_Errors_accumulated, "corrected_v2_20_40_accumulated");
-    PrintVectorContents(corrected_v2_0_20_accumulated, corrected_v2_0_20_Errors_accumulated, "corrected_v2_0_20_accumulated");
-    PrintVectorContents(corrected_v3_0_20_accumulated, corrected_v3_0_20_Errors_accumulated, "corrected_v3_0_20_accumulated");
-    
-    
-    /*
-     Overlay PRE AND POST z_vertex fit 0-20 percent v2
-     */
-
-    TCanvas *c_p009_p010_Overlay_0_20_v2_corrected = new TCanvas("c_p009_p010_Overlay_0_20_v2_corrected", "#pi^{0} #it{v}_{2} Overlay, Before (p009)/After (p010) z-vertex fix vs #it{p}_{T} 0-20% Centrality", 800, 600);
-    corrected_graph_0_20_v2->Draw("AP");  // This will be the base graph
-    corrected_graph_0_20_v2->SetTitle("#pi^{0} #it{v}_{2} Overlay, Before (p009) and After (p010) z-vertex fix vs #it{p}_{T} 0-20% Centrality; #it{p}_{T} [GeV]; #it{v}_{2}");
-    corrected_graph_0_20_v2->SetMinimum(-1.0); // Set the minimum y value
-    corrected_graph_0_20_v2->SetMaximum(1.5); // Set the maximum y value
-    for (int i = 0; i < ptCenters.size(); ++i) {
-        corrected_graph_0_20_v2->SetPoint(i, ptCenters[i] - offset, corrected_v2_0_20[i]);
-    }
-    TGraphErrors *corrected_v2_0_20_accumulated_graph = new TGraphErrors(ptCenters.size(), &ptCenters[0], &corrected_v2_0_20_accumulated[0], 0, &corrected_v2_0_20_Errors_accumulated[0]);
-    
-    corrected_v2_0_20_accumulated_graph->SetMarkerStyle(20); // circle
-    corrected_v2_0_20_accumulated_graph->SetMarkerColor(kRed);
-    corrected_v2_0_20_accumulated_graph->SetLineColor(kRed);
-    corrected_v2_0_20_accumulated_graph -> Draw("P SAME");
-    
-    corrected_graph_0_20_v2->SetMarkerColor(kBlue);
-    corrected_graph_0_20_v2->SetMarkerStyle(21);
-    
-    graph_0_10->SetMarkerColor(kGreen + 3);
-    graph_0_10->SetMarkerStyle(22);
-    graph_0_10->SetMarkerSize(1.5);
-    graph_10_20->SetMarkerColor(kBlack);
-    graph_10_20->SetMarkerStyle(22);
-    graph_10_20->SetMarkerSize(1.5);
-    for (int i = 0; i < ptCenters.size(); ++i) {
-        graph_0_10->SetPoint(i, ptCenters[i] - offset * 2.0, v2_0_10[i]);
-        graph_10_20->SetPoint(i, ptCenters[i] + offset, v2_10_20[i]);
-    }
-    graph_0_10->Draw("P SAME");
-    graph_10_20->Draw("P SAME");
-    
-    // Update the legend for the c4 canvas to include new marker styles
-    TLegend *legend_p009_p010_Overlay_0_20_v2_corrected = new TLegend(0.11, 0.69, 0.31, 0.89);
-    legend_p009_p010_Overlay_0_20_v2_corrected->SetBorderSize(0);
-    legend_p009_p010_Overlay_0_20_v2_corrected->SetTextSize(0.03);
-    legend_p009_p010_Overlay_0_20_v2_corrected->AddEntry(corrected_v2_0_20_accumulated_graph, "0-20%, v_{2}^{#pi^{0}, p09 Data} Before z-vertex Fix", "pe");
-    legend_p009_p010_Overlay_0_20_v2_corrected->AddEntry(corrected_graph_0_20_v2, "0-20%, v_{2}^{#pi^{0}, p010 Data} After z-vertex Fix", "pe");
-    legend_p009_p010_Overlay_0_20_v2_corrected->AddEntry(graph_0_10, "0-10%, #bf{PHENIX} 2010", "pe");
-    legend_p009_p010_Overlay_0_20_v2_corrected->AddEntry(graph_10_20, "10-20%, #bf{PHENIX} 2010", "pe");
-    legend_p009_p010_Overlay_0_20_v2_corrected->Draw();
-    c_p009_p010_Overlay_0_20_v2_corrected->Update();
-    // Draw a dashed line at y = 0
-    double x_min_p009_p010_Overlay_0_20_v2_corrected = c_p009_p010_Overlay_0_20_v2_corrected->GetUxmin(); // Get the minimum x-value from the canvas
-    double x_max_p009_p010_Overlay_0_20_v2_corrected = c_p009_p010_Overlay_0_20_v2_corrected->GetUxmax(); // Get the maximum x-value from the canvas
-    TLine *zeroLine_Overlay_0_20_v2_corrected = new TLine(x_min_p009_p010_Overlay_0_20_v2_corrected, 0, x_max_p009_p010_Overlay_0_20_v2_corrected, 0);
-    zeroLine_Overlay_0_20_v2_corrected->SetLineStyle(2); // 2 corresponds to a dashed line
-    zeroLine_Overlay_0_20_v2_corrected->Draw("SAME"); // Draw the line on the same canvas as your plot
-    c_p009_p010_Overlay_0_20_v2_corrected->Modified();
-    c_p009_p010_Overlay_0_20_v2_corrected->Update();
-    c_p009_p010_Overlay_0_20_v2_corrected->SaveAs("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/vN_Plot_Output/p009_p010_Corrected_Overlay_0_20.png");
-    
-    
-    
-    
-    /*
-     20-40 Overlay p009 p010 corrected v2
-     */
-    
-    TCanvas *c_p009_p010_Overlay_20_40_v2_corrected = new TCanvas("c_p009_p010_Overlay_20_40_v2_corrected", "#pi^{0} #it{v}_{2} Overlay, Before (p009)/After (p010) z-vertex fix vs #it{p}_{T} 20-40% Centrality", 800, 600);
-    corrected_graph_20_40_v2->Draw("AP");  // This will be the base graph
-    corrected_graph_20_40_v2->SetTitle("#pi^{0} #it{v}_{2} Overlay, Before (p009) and After (p010) z-vertex fix vs #it{p}_{T} 20-40% Centrality; #it{p}_{T} [GeV]; #it{v}_{2}");
-    corrected_graph_20_40_v2->SetMinimum(-1.0); // Set the minimum y value
-    corrected_graph_20_40_v2->SetMaximum(1.5); // Set the maximum y value
-    for (int i = 0; i < ptCenters.size(); ++i) {
-        corrected_graph_20_40_v2->SetPoint(i, ptCenters[i] - offset, corrected_v2_20_40[i]);
-    }
-    TGraphErrors *corrected_v2_20_40_accumulated_graph = new TGraphErrors(ptCenters.size(), &ptCenters[0], &corrected_v2_20_40_accumulated[0], 0, &corrected_v2_20_40_Errors_accumulated[0]);
-    
-    corrected_v2_20_40_accumulated_graph->SetMarkerStyle(20); // circle
-    corrected_v2_20_40_accumulated_graph->SetMarkerColor(kRed);
-    corrected_v2_20_40_accumulated_graph->SetLineColor(kRed);
-    corrected_v2_20_40_accumulated_graph -> Draw("P SAME");
-    
-    corrected_graph_20_40_v2->SetMarkerColor(kBlue);
-    corrected_graph_20_40_v2->SetMarkerStyle(21);
-    
-    graph_20_30->SetMarkerColor(kGreen + 3);
-    graph_20_30->SetLineColor(kGreen + 3);
-    graph_20_30->SetMarkerStyle(22);
-    graph_20_30->SetMarkerSize(1.5);
-    graph_30_40->SetMarkerColor(kBlack);
-    graph_30_40->SetMarkerStyle(22);
-    graph_30_40->SetMarkerSize(1.5);
-    for (int i = 0; i < ptCenters.size(); ++i) {
-        graph_20_30->SetPoint(i, ptCenters[i] - offset * 2.0, v2_20_30[i]);
-        graph_30_40->SetPoint(i, ptCenters[i] + offset, v2_30_40[i]);
-    }
-    graph_20_30->Draw("P SAME");
-    graph_30_40->Draw("P SAME");
-    
-    // Update the legend for the c4 canvas to include new marker styles
-    TLegend *legend_p009_p010_Overlay_20_40_v2_corrected = new TLegend(0.11, 0.69, 0.31, 0.89);
-    legend_p009_p010_Overlay_20_40_v2_corrected->SetBorderSize(0);
-    legend_p009_p010_Overlay_20_40_v2_corrected->SetTextSize(0.03);
-    legend_p009_p010_Overlay_20_40_v2_corrected->AddEntry(corrected_v2_20_40_accumulated_graph, "20-40%, v_{2}^{#pi^{0}, p09 Data} Before z-vertex Fix", "pe");
-    legend_p009_p010_Overlay_20_40_v2_corrected->AddEntry(corrected_graph_20_40_v2, "20-40%, v_{2}^{#pi^{0}, p010 Data} After z-vertex Fix", "pe");
-    legend_p009_p010_Overlay_20_40_v2_corrected->AddEntry(graph_20_30, "20-30%, #bf{PHENIX} 2010", "pe");
-    legend_p009_p010_Overlay_20_40_v2_corrected->AddEntry(graph_30_40, "30-40%, #bf{PHENIX} 2010", "pe");
-    legend_p009_p010_Overlay_20_40_v2_corrected->Draw();
-    c_p009_p010_Overlay_20_40_v2_corrected->Update();
-    // Draw a dashed line at y = 0
-    double x_min_p009_p010_Overlay_20_40_v2_corrected = c_p009_p010_Overlay_20_40_v2_corrected->GetUxmin(); // Get the minimum x-value from the canvas
-    double x_max_p009_p010_Overlay_20_40_v2_corrected = c_p009_p010_Overlay_20_40_v2_corrected->GetUxmax(); // Get the maximum x-value from the canvas
-    TLine *zeroLine_Overlay_20_40_v2_corrected = new TLine(x_min_p009_p010_Overlay_20_40_v2_corrected, 0, x_max_p009_p010_Overlay_20_40_v2_corrected, 0);
-    zeroLine_Overlay_20_40_v2_corrected->SetLineStyle(2); // 2 corresponds to a dashed line
-    zeroLine_Overlay_20_40_v2_corrected->Draw("SAME"); // Draw the line on the same canvas as your plot
-    c_p009_p010_Overlay_20_40_v2_corrected->Modified();
-    c_p009_p010_Overlay_20_40_v2_corrected->Update();
-    c_p009_p010_Overlay_20_40_v2_corrected->SaveAs("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/vN_Plot_Output/p009_p010_Corrected_Overlay_20_40.png");
-
-    
-    /*
-     40-60 Overlay p009 p010 corrected v2
-     */
-    
-    TCanvas *c_p009_p010_Overlay_40_60_v2_corrected = new TCanvas("c_p009_p010_Overlay_40_60_v2_corrected", "#pi^{0} #it{v}_{2} Overlay, Before (p009)/After (p010) z-vertex fix vs #it{p}_{T} 40-60% Centrality", 800, 600);
-    corrected_graph_40_60_v2->Draw("AP");  // This will be the base graph
-    corrected_graph_40_60_v2->SetTitle("#pi^{0} #it{v}_{2} Overlay, Before (p009) and After (p010) z-vertex fix vs #it{p}_{T} 40-60% Centrality; #it{p}_{T} [GeV]; #it{v}_{2}");
-    corrected_graph_40_60_v2->SetMinimum(-1.0); // Set the minimum y value
-    corrected_graph_40_60_v2->SetMaximum(1.5); // Set the maximum y value
-    for (int i = 0; i < ptCenters.size(); ++i) {
-        corrected_graph_40_60_v2->SetPoint(i, ptCenters[i] - offset, corrected_v2_40_60[i]);
-    }
-    TGraphErrors *corrected_v2_40_60_accumulated_graph = new TGraphErrors(ptCenters.size(), &ptCenters[0], &corrected_v2_40_60_accumulated[0], 0, &corrected_v2_40_60_Errors_accumulated[0]);
-    
-    corrected_v2_40_60_accumulated_graph->SetMarkerStyle(20); // circle
-    corrected_v2_40_60_accumulated_graph->SetMarkerColor(kRed);
-    corrected_v2_40_60_accumulated_graph->SetLineColor(kRed);
-    corrected_v2_40_60_accumulated_graph -> Draw("P SAME");
-    
-    corrected_graph_40_60_v2->SetMarkerColor(kBlue);
-    corrected_graph_40_60_v2->SetMarkerStyle(21);
-    
-    graph_40_50->SetMarkerColor(kGreen + 3);
-    graph_40_50->SetLineColor(kGreen + 3);
-    graph_40_50->SetMarkerStyle(22);
-    graph_40_50->SetMarkerSize(1.5);
-    graph_50_60->SetMarkerColor(kBlack);
-    graph_50_60->SetMarkerStyle(22);
-    graph_50_60->SetMarkerSize(1.5);
-    for (int i = 0; i < ptCenters.size(); ++i) {
-        graph_40_50->SetPoint(i, ptCenters[i] - offset * 2.0, v2_40_50[i]);
-        graph_50_60->SetPoint(i, ptCenters[i] + offset, v2_50_60[i]);
-    }
-    graph_40_50->Draw("P SAME");
-    graph_50_60->Draw("P SAME");
-    
-    // Update the legend for the c4 canvas to include new marker styles
-    TLegend *legend_p009_p010_Overlay_40_60_v2_corrected = new TLegend(0.11, 0.69, 0.31, 0.89);
-    legend_p009_p010_Overlay_40_60_v2_corrected->SetBorderSize(0);
-    legend_p009_p010_Overlay_40_60_v2_corrected->SetTextSize(0.03);
-    legend_p009_p010_Overlay_40_60_v2_corrected->AddEntry(corrected_v2_40_60_accumulated_graph, "40-60%, v_{2}^{#pi^{0}, p09 Data} Before z-vertex Fix", "pe");
-    legend_p009_p010_Overlay_40_60_v2_corrected->AddEntry(corrected_graph_40_60_v2, "40-60%, v_{2}^{#pi^{0}, p010 Data} After z-vertex Fix", "pe");
-    legend_p009_p010_Overlay_40_60_v2_corrected->AddEntry(graph_40_50, "40-50%, #bf{PHENIX} 2010", "pe");
-    legend_p009_p010_Overlay_40_60_v2_corrected->AddEntry(graph_50_60, "50-60%, #bf{PHENIX} 2010", "pe");
-    legend_p009_p010_Overlay_40_60_v2_corrected->Draw();
-    c_p009_p010_Overlay_40_60_v2_corrected->Update();
-    // Draw a dashed line at y = 0
-    double x_min_p009_p010_Overlay_40_60_v2_corrected = c_p009_p010_Overlay_40_60_v2_corrected->GetUxmin(); // Get the minimum x-value from the canvas
-    double x_max_p009_p010_Overlay_40_60_v2_corrected = c_p009_p010_Overlay_40_60_v2_corrected->GetUxmax(); // Get the maximum x-value from the canvas
-    TLine *zeroLine_Overlay_40_60_v2_corrected = new TLine(x_min_p009_p010_Overlay_40_60_v2_corrected, 0, x_max_p009_p010_Overlay_40_60_v2_corrected, 0);
-    zeroLine_Overlay_40_60_v2_corrected->SetLineStyle(2); // 2 corresponds to a dashed line
-    zeroLine_Overlay_40_60_v2_corrected->Draw("SAME"); // Draw the line on the same canvas as your plot
-    c_p009_p010_Overlay_40_60_v2_corrected->Modified();
-    c_p009_p010_Overlay_40_60_v2_corrected->Update();
-    c_p009_p010_Overlay_40_60_v2_corrected->SaveAs("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/vN_Plot_Output/p009_p010_Corrected_Overlay_40_60.png");
-
-    
-    
 }
 
 void printCalculationDetails(const std::string& type, int index, const std::string& numeratorPath, const std::string& denominatorPath, float value, float error) {
@@ -2316,10 +1354,10 @@ void vN_calculator_AccumulatedData() {
     
     // Check and execute Plot_vN
     if (Plot_vN_bool) {
-        AccumulatedData data;
+        AdditionalData data;
         std::string Accumulated_Data_Path = "/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/I_O_Accumulated_PlotByPlotOutput/UpdatedCSV_AccumulatedDists_p009.csv";
 
-        Read_Accumulated_CSV(Accumulated_Data_Path, data);
+        Read_Additonal_DataSet(Accumulated_Data_Path, data);
         Plot_vN(data);
     }
 }
