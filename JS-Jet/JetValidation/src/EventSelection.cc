@@ -1,0 +1,137 @@
+#include "EventSelection.h"
+
+#include <fun4all/Fun4AllReturnCodes.h>
+#include <fun4all/PHTFileServer.h>
+
+#include <phool/PHCompositeNode.h>
+#include <phool/getClass.h>
+
+#include <jetbase/Jet.h>
+#include <jetbase/JetMap.h>
+#include <jetbase/Jetv1.h>
+#include <jetbase/JetAlgo.h>
+#include <jetbase/FastJetAlgo.h>
+#include <jetbase/JetInput.h>
+#include <jetbase/TowerJetInput.h>
+#include <jetbase/JetMapv1.h>
+#include <jetbase/JetContainer.h>
+#include <jetbase/JetContainerv1.h>
+#include <jetbase/Jetv2.h>
+
+#include <globalvertex/GlobalVertexMap.h>
+#include <globalvertex/GlobalVertexMapv1.h>
+
+#include <cmath>
+#include <map>
+#include <utility>
+#include <cstdlib>  // for exit
+#include <iostream>
+#include <memory>  // for allocator_traits<>::value_type
+#include <vector>
+
+#include <TTree.h>
+
+
+EventSelection::EventSelection(const double jet_R, const std::string& outputfilename)
+ : SubsysReco("EventSelection")
+ , m_jet_R(jet_R)
+ , m_outputfilename(outputfilename)
+ , m_vtxZ_cut(10.0)
+ , m_event(-1)
+{}
+
+
+EventSelection::~EventSelection()
+{
+  for (auto & _input : _inputs)
+  {
+    delete _input;
+  }
+  _inputs.clear();
+}
+
+int EventSelection::Init(PHCompositeNode *topNode)
+{
+  // set up jet inputs
+  if(_doTruth)
+  {
+      m_truth_input = "AntiKt_Truth_r0" + std::to_string((int) (m_jet_R * 10));
+  }
+  // if(_doAreaSub)
+  // {
+  //   // these jets don't exist yet on the node tree
+  // }
+  if(_doMultSub){
+    // raw jet input
+    m_raw_input = "AntiKt_Tower_r0" + std::to_string((int) (m_jet_R * 10));
+  }
+  if(_doIterative)
+  {
+    m_iter_input = "AntiKt_Tower_r0" + std::to_string((int) (m_jet_R * 10))+ "_Sub1";
+  }
+
+
+  // create output tree
+  PHTFileServer::get().open(m_outputfilename, "RECREATE");
+  m_tree = new TTree("T", "EventSelection");
+  m_tree->Branch("event", &m_event, "event/I");
+
+  std::cout << "EventSelection::Init(PHCompositeNode *topNode) Settings:" << std::endl;
+  std::cout << "EventSelection::Init(PHCompositeNode *topNode) Output file: " << m_outputfilename << std::endl;
+  std::cout << "EventSelection::Init(PHCompositeNode *topNode) Output tree: " << m_tree->GetName() << std::endl;
+
+  return Fun4AllReturnCodes::EVENT_OK;
+}
+
+int EventSelection::process_event(PHCompositeNode *topNode)
+{
+  //std::cout << "EventSelection::process_event(PHCompositeNode *topNode) Processing event " << m_event << std::endl;
+  ++m_event;
+
+  GlobalVertexMap *vtxMap = findNode::getClass<GlobalVertexMapv1>(topNode,"GlobalVertexMap");
+  if (!vtxMap)
+    {
+      if(Verbosity()) std::cout << "EventSelection::processEvent(PHCompositeNode *topNode) Could not find global vertex map node" << std::endl;
+      exit(-1);
+    }
+  if (!vtxMap->get(0))
+    {
+      if(Verbosity()) std::cout << "no vertex found" << std::endl;
+      return Fun4AllReturnCodes::ABORTEVENT;
+    }
+  if (fabs(vtxMap->get(0)->get_z()) > m_vtxZ_cut)
+    {
+      if(Verbosity()) std::cout << "vertex not in range" << std::endl;
+      return Fun4AllReturnCodes::ABORTEVENT;
+    }
+  // If the event passes the z vertex selection, fill the output tree
+  m_event++;
+  
+  //==================================
+  // Fill tree
+  //==================================
+  m_tree->Fill();
+
+
+  return Fun4AllReturnCodes::EVENT_OK;
+}
+
+int EventSelection::End(PHCompositeNode *topNode)
+{
+  std::cout << "EventSelection::End - Output to " << m_outputfilename << std::endl;
+
+  // Write tree to file
+  PHTFileServer::get().cd(m_outputfilename);
+  m_tree->Write();
+
+  // Write file 
+  PHTFileServer::get().write(m_outputfilename);
+
+  std::cout << "EventSelection::End(PHCompositeNode *topNode) This is the End..." << std::endl;
+
+  return Fun4AllReturnCodes::EVENT_OK;
+}
+
+
+
+

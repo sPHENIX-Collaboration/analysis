@@ -1,0 +1,46 @@
+// Tell emacs that this is a C++ source
+//  -*- C++ -*-.
+#ifndef EVENTSELECTION_H
+#define EVENTSELECTION_H
+
+#include <fun4all/SubsysReco.h>
+#include <jetbase/Jetv1.h>
+
+#include <memory>
+#include <string>
+#include <utility>  // std::pair, std::make_pair
+#include <vector>
+
+class PHCompositeNode;
+class TTree;
+
+class EventSelection : public SubsysReco
+{
+public:
+    // constructor
+    EventSelection(const double jet_R = 0.4,
+            const std::string &outputfilename = "selectiontree.root");
+
+    ~EventSelection() override; // destructor
+
+    void setVzCut(double cut) { m_vtxZ_cut = cut; }
+    
+    // Standard Fun4All functions
+    int Init(PHCompositeNode *topNode) override;
+    int process_event(PHCompositeNode *topNode) override;
+
+private:
+
+    // private variables
+    double m_vtxZ_cut;
+
+    //____________________________________________________________________________..
+    // output tree variables
+    int m_event;
+     // output trees
+    TTree *m_tree;
+    std::vector<float> m_vertex_z;
+    
+};
+
+#endif // EVENTSELECTION_H
