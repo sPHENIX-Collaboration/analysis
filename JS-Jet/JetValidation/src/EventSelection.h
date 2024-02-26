@@ -24,16 +24,20 @@ public:
     ~EventSelection() override; // destructor
 
     void setVzCut(double cut) { m_vtxZ_cut = cut; }
+    //    void add_input(JetInput *input) { _inputs.push_back(input); }
     
     // Standard Fun4All functions
     int Init(PHCompositeNode *topNode) override;
     int process_event(PHCompositeNode *topNode) override;
+    int End(PHCompositeNode *topNode) override;
 
 private:
 
     // private variables
+    double m_jet_R;
+    std::string m_outputfilename;
     double m_vtxZ_cut;
-
+    // std::vector<JetInput *> _inputs;
     //____________________________________________________________________________..
     // output tree variables
     int m_event;

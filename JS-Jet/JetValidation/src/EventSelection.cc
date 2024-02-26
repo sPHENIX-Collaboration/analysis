@@ -31,6 +31,7 @@
 
 #include <TTree.h>
 
+using namespace std;
 
 EventSelection::EventSelection(const double jet_R, const std::string& outputfilename)
  : SubsysReco("EventSelection")
@@ -40,36 +41,8 @@ EventSelection::EventSelection(const double jet_R, const std::string& outputfile
  , m_event(-1)
 {}
 
-
-EventSelection::~EventSelection()
-{
-  for (auto & _input : _inputs)
-  {
-    delete _input;
-  }
-  _inputs.clear();
-}
-
+/////////////////////
 int EventSelection::Init(PHCompositeNode *topNode)
-{
-  // set up jet inputs
-  if(_doTruth)
-  {
-      m_truth_input = "AntiKt_Truth_r0" + std::to_string((int) (m_jet_R * 10));
-  }
-  // if(_doAreaSub)
-  // {
-  //   // these jets don't exist yet on the node tree
-  // }
-  if(_doMultSub){
-    // raw jet input
-    m_raw_input = "AntiKt_Tower_r0" + std::to_string((int) (m_jet_R * 10));
-  }
-  if(_doIterative)
-  {
-    m_iter_input = "AntiKt_Tower_r0" + std::to_string((int) (m_jet_R * 10))+ "_Sub1";
-  }
-
 
   // create output tree
   PHTFileServer::get().open(m_outputfilename, "RECREATE");
@@ -105,7 +78,6 @@ int EventSelection::process_event(PHCompositeNode *topNode)
       return Fun4AllReturnCodes::ABORTEVENT;
     }
   // If the event passes the z vertex selection, fill the output tree
-  m_event++;
   
   //==================================
   // Fill tree
@@ -123,9 +95,6 @@ int EventSelection::End(PHCompositeNode *topNode)
   // Write tree to file
   PHTFileServer::get().cd(m_outputfilename);
   m_tree->Write();
-
-  // Write file 
-  PHTFileServer::get().write(m_outputfilename);
 
   std::cout << "EventSelection::End(PHCompositeNode *topNode) This is the End..." << std::endl;
 
