@@ -46,7 +46,7 @@ EventSelection::~EventSelection()
 {}
 /////////////////////
 int EventSelection::Init(PHCompositeNode *topNode)
-  // create output tree
+{  // create output tree
   PHTFileServer::get().open(m_outputfilename, "RECREATE");
   m_tree = new TTree("T", "EventSelection");
 
