@@ -20,6 +20,8 @@ f4a.add_argument('-d', '--output', type=str, default='test', help='Output Direct
 f4a.add_argument('-s', '--memory', type=float, default=1, help='Memory (units of GB) to request per condor submission. Default: 2 GB.')
 f4a.add_argument('-l', '--log', type=str, default='/tmp/anarde/dump/job-$(ClusterId)-$(Process).log', help='Condor log file.')
 f4a.add_argument('-z', '--vtx-z', type=float, default=10, help='Event z-vertex cut. Default: 10 [cm]')
+f4a.add_argument('-e2', '--clus-e-min', type=float, default=0.5, help='Minimum Cluster ECore. Default: 0.5 [GeV]')
+f4a.add_argument('-c', '--clus-chi-max', type=float, default=4, help='Maximum Cluster Chi Squared. Default: 4')
 f4a.add_argument('-a', '--do-pi0', type=int, default=1, help='Do pi0 Analysis. Default: True')
 f4a.add_argument('-s2', '--isSim', type=int, default=0, help='Type Simulation. Default: False')
 
@@ -110,12 +112,16 @@ def create_f4a_jobs():
     do_pi0       = args.do_pi0
     z            = args.vtx_z
     isSim        = args.isSim
+    clus_e       = args.clus_e_min
+    clus_chi     = args.clus_chi_max
 
     print(f'Simulation : {isSim}')
     print(f'Fun4All : {macro}')
     print(f'src: {src}')
     print(f'Do pi0 Analysis: {do_pi0}')
     print(f'Vtx z max: {z} cm')
+    print(f'Cluster Minimum ECore: {clus_e} GeV')
+    print(f'Cluster Maximum Chi2: {clus_chi} GeV')
     print(f'Run List Directory: {run_list_dir}')
     print(f'Output Directory: {output_dir}')
     print(f'Bin: {f4a}')
@@ -145,7 +151,7 @@ def create_f4a_jobs():
 
                 with open(f'{job_dir}/genFun4All.sub', mode="w") as file:
                     file.write(f'executable             = ../{os.path.basename(executable)}\n')
-                    file.write(f'arguments              = {output_dir}/{os.path.basename(f4a)} $(input_dst) output/qa-$(Process).root output/diphoton-$(Process).root {do_pi0} {z} {isSim} $(input_global) $(input_g4hits)\n')
+                    file.write(f'arguments              = {output_dir}/{os.path.basename(f4a)} $(input_dst) output/qa-$(Process).root output/diphoton-$(Process).root {do_pi0} {z} {clus_e} {clus_chi} {isSim} $(input_global) $(input_g4hits)\n')
                     file.write(f'log                    = {log}\n')
                     file.write('output                  = stdout/job-$(Process).out\n')
                     file.write('error                   = error/job-$(Process).err\n')
@@ -171,7 +177,7 @@ def create_f4a_jobs():
 
                 with open(f'{job_dir}/genFun4All.sub', mode="w") as file:
                     file.write(f'executable             = ../{os.path.basename(executable)}\n')
-                    file.write(f'arguments              = {output_dir}/{os.path.basename(f4a)} $(input_dst) output/qa-$(Process).root output/diphoton-$(Process).root {do_pi0} {z}\n')
+                    file.write(f'arguments              = {output_dir}/{os.path.basename(f4a)} $(input_dst) output/qa-$(Process).root output/diphoton-$(Process).root {do_pi0} {z} {clus_e} {clus_chi}\n')
                     file.write(f'log                    = {log}\n')
                     file.write('output                  = stdout/job-$(Process).out\n')
                     file.write('error                   = error/job-$(Process).err\n')

@@ -35,11 +35,11 @@ void Fun4All_CaloTreeGen(const string  &inputFile,
                          const string  &diphotonFile = "diphoton.root",
                          const Bool_t  doPi0Ana      = true,
                          const Float_t vtx_z_max     = 10, /*cm*/
+                         const Float_t clusE_min     = 0.5 /*GeV*/,
+                         const Float_t clusChi_max   = 4,
                          const Bool_t  isSim         = false,
                          const string  &dstGlobal    = "",
                          const string  &g4Hits       = "",
-                         const Float_t clusE_min     = 0.5 /*GeV*/,
-                         const Float_t clusChi_max   = 4,
                          const UInt_t  nEvents       = 0) {
   Fun4AllServer *se = Fun4AllServer::instance();
   // recoConsts *rc = recoConsts::instance();
@@ -105,17 +105,17 @@ void Fun4All_CaloTreeGen(const string  &inputFile,
 # ifndef __CINT__
 int main(int argc, char* argv[]) {
     if(argc < 2 || argc > 12){
-        cout << "usage: ./bin/Fun4All_CaloTreeGen inputFile qaFile diphotonFile doPi0Ana vtx_z_max isSim DSTglobal g4Hits clusE_min clusChi_max events" << endl;
+        cout << "usage: ./bin/Fun4All_CaloTreeGen inputFile qaFile diphotonFile doPi0Ana vtx_z_max clusE_min clusChi_max isSim DSTglobal g4Hits events" << endl;
         cout << "inputFile: Location of fileList containing dst." << endl;
         cout << "qaFile: name of output file." << endl;
         cout << "diphotonFile: name of output file." << endl;
         cout << "doPi0Ana: Enable pi0 analysis (takes longer). Default: true" << endl;
         cout << "vtx_z_max: Maximum z-vertex [cm]. Default: 10" << endl;
+        cout << "clusE_min: Minimum cluster energy. Default: 0.5 GeV" << endl;
+        cout << "clusChi_max: Maximum cluster chi squared. Default: 4" << endl;
         cout << "isSim: Analysis simulation?. Default: false" << endl;
         cout << "DSTglobal: DSTglobal. " << endl;
         cout << "g4Hits: g4Hits. " << endl;
-        cout << "clusE_min: Minimum cluster energy. Default: 0.5 GeV" << endl;
-        cout << "clusChi_max: Maximum cluster chi squared. Default: 4" << endl;
         cout << "events: Number of events to analyze. Default: all" << endl;
         return 1;
     }
@@ -125,11 +125,11 @@ int main(int argc, char* argv[]) {
     string diphotonFile = "diphoton.root";
     Bool_t doPi0Ana     = true;
     Float_t vtx_z_max   = 10;
+    Float_t clusE_min   = 0.5;
+    Float_t clusChi_max = 4;
     Bool_t isSim        = false;
     string dstGlobal    = "";
     string g4Hits       = "";
-    Float_t clusE_min   = 0.5;
-    Float_t clusChi_max = 4;
     UInt_t events       = 0;
 
     if(argc >= 2) {
@@ -148,25 +148,25 @@ int main(int argc, char* argv[]) {
         vtx_z_max = atof(argv[5]);
     }
     if(argc >= 7) {
-        isSim = atoi(argv[6]);
+        clusE_min = atof(argv[6]);
     }
     if(argc >= 8) {
-        dstGlobal = argv[7];
+        clusChi_max = atof(argv[7]);
     }
     if(argc >= 9) {
-        g4Hits = argv[8];
+        isSim = atoi(argv[8]);
     }
     if(argc >= 10) {
-        clusE_min = atof(argv[9]);
+        dstGlobal = argv[9];
     }
     if(argc >= 11) {
-        clusChi_max = atof(argv[10]);
+        g4Hits = argv[10];
     }
     if(argc >= 12) {
         events = atoi(argv[11]);
     }
 
-    Fun4All_CaloTreeGen(inputFile, qaFile, diphotonFile, doPi0Ana, vtx_z_max, isSim, dstGlobal, g4Hits, clusE_min, clusChi_max, events);
+    Fun4All_CaloTreeGen(inputFile, qaFile, diphotonFile, doPi0Ana, vtx_z_max, clusE_min, clusChi_max, isSim, dstGlobal, g4Hits, events);
 
     cout << "done" << endl;
     return 0;
