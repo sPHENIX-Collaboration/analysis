@@ -146,8 +146,8 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
   iEvent++;
 
   //Information on clusters
-  RawClusterContainer *clusterContainer = (isSim) ? findNode::getClass<RawClusterContainer>(topNode,"CLUSTER_POS_COR_CEMC") :
-                                                    findNode::getClass<RawClusterContainer>(topNode,"CLUSTERINFO_POS_COR_CEMC");
+  RawClusterContainer *clusterContainer = (isSim) ? findNode::getClass<RawClusterContainer>(topNode,"CLUSTER_CEMC") :
+                                                    findNode::getClass<RawClusterContainer>(topNode,"CLUSTERINFO_CEMC");
   // RawClusterContainer *clusterContainer = findNode::getClass<RawClusterContainer>(topNode,"CLUSTERINFO_CEMC");
   if(!clusterContainer)
   {
@@ -345,12 +345,12 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
   RawClusterContainer::ConstIterator clusterIter;
   RawClusterContainer::ConstIterator clusterIter2;
 
+  CLHEP::Hep3Vector vertex(0,0,vtx_z);
   // loop over all clusters in event
   for(clusterIter = clusterEnd.first; clusterIter != clusterEnd.second; clusterIter++)
   {
     RawCluster *recoCluster = clusterIter -> second;
 
-    CLHEP::Hep3Vector vertex(0,0,vtx_z);
     CLHEP::Hep3Vector E_vec_cluster = RawClusterUtility::GetECoreVec(*recoCluster, vertex);
     // CLHEP::Hep3Vector E_vec_cluster_Full = RawClusterUtility::GetEVec(*recoCluster, vertex);
 
@@ -402,8 +402,7 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
 
       RawCluster *recoCluster2 = clusterIter2 -> second;
 
-      CLHEP::Hep3Vector vertex2(0,0,vtx_z);
-      CLHEP::Hep3Vector E_vec_cluster2 = RawClusterUtility::GetECoreVec(*recoCluster2, vertex2);
+      CLHEP::Hep3Vector E_vec_cluster2 = RawClusterUtility::GetECoreVec(*recoCluster2, vertex);
 
       Float_t clusE2 = E_vec_cluster2.mag();
       Float_t clus_eta2 = E_vec_cluster2.pseudoRapidity();
