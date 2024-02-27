@@ -30,6 +30,7 @@
 #include <vector>
 
 #include <TTree.h>
+#include <TFile.h>
 
 using namespace std;
 
@@ -40,7 +41,9 @@ EventSelection::EventSelection(const double jet_R, const std::string& outputfile
  , m_vtxZ_cut(10.0)
  , m_event(-1)
  , m_tree(nullptr) // Initialize m_tree to nullptr
-{}
+
+{std::cout << "Output file path: " << m_outputfilename << std::endl;
+}
 
 EventSelection::~EventSelection()
 {}
@@ -48,6 +51,7 @@ EventSelection::~EventSelection()
 int EventSelection::Init(PHCompositeNode *topNode)
 {  // create output tree
   PHTFileServer::get().open(m_outputfilename, "RECREATE");
+  outFile = new TFile(m_outputfilename.c_str(), "RECREATE");
   m_tree = new TTree("T", "EventSelection");
 
   std::cout << "EventSelection::Init(PHCompositeNode *topNode) Initialization successful" << std::endl;
@@ -89,6 +93,7 @@ int EventSelection::process_event(PHCompositeNode *topNode)
 
 int EventSelection::End(PHCompositeNode *topNode)
 {
+  PHTFileServer::get().cd(m_outputfilename);
   std::cout << "EventSelection::End - Output to " << m_outputfilename << std::endl;
 
   // Write tree to file
@@ -99,7 +104,10 @@ int EventSelection::End(PHCompositeNode *topNode)
     std::cerr << "EventSelection::End - Error: TTree not initialized" << std::endl;
     return Fun4AllReturnCodes::ABORTEVENT;
   }
-
+  outFile->cd();
+  outFile->Write();
+  outFile->Close();
+  
   std::cout << "EventSelection::End(PHCompositeNode *topNode) This is the End..." << std::endl;
 
   return Fun4AllReturnCodes::EVENT_OK;
