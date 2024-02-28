@@ -33,7 +33,7 @@
 
 
 
-#include <randomconeana/RandomConeAna.h>
+// #include <randomconeana/RandomConeAna.h>
 
 R__LOAD_LIBRARY(libfun4all.so)
 R__LOAD_LIBRARY(libg4jets.so)
@@ -45,7 +45,7 @@ R__LOAD_LIBRARY(libRandomConeTree.so)
 R__LOAD_LIBRARY(libtowerrho.so)
 R__LOAD_LIBRARY(librandomcones.so)
 
-R__LOAD_LIBRARY(libRandomConeAna.so)
+// R__LOAD_LIBRARY(libRandomConeAna.so)
 
 #endif
 
@@ -63,11 +63,11 @@ void Fun4All(
   // global
   bool do_centrality = true;
   double eta_max = 1.1;
-  double cone_jet_eta_max = 0.6;
+  double cone_jet_eta_max = 0.65;
 
   double tower_pT_min = 0.0;
-  double tower_threshold = 0.00;
-  bool do_tower_cut = false;
+  double tower_threshold = 0.05;
+  bool do_tower_cut = true;
 
   Enable::HIJETS_TRUTH=false;
 
@@ -217,8 +217,8 @@ void Fun4All(
   rcr->set_input_max_abs_eta(eta_max); // default (max eta for input towers)
   rcr->set_cone_max_abs_eta(cone_jet_eta_max); //max eta for random cone (default is input_max_abs_eta - cone_radius)
   rcr->set_input_min_pT(tower_pT_min); // default (min pT for input towers)
-  rcr->do_tower_cut(do_tower_cut); // (default is false)
-  rcr->set_tower_threshold(tower_threshold); // default (threshold for input towers)
+  rcr->do_tower_cut(false); // (default is false)
+  rcr->set_tower_threshold(0.0); // default (threshold for input towers)
   rcr->do_basic_reconstruction(do_basic_reconstruction); // (default is true)
   rcr->do_randomize_etaphi(do_randomize_etaphi); //  (default is false)
   if(do_avoid_leading_jet)
@@ -252,18 +252,18 @@ void Fun4All(
 
 
   // manual reco
-  RandomConeAna *myJetTree = new RandomConeAna(outputfile_debug);
-  myJetTree->add_input(new TowerJetInput(Jet::CEMC_TOWERINFO_RETOWER));
-  myJetTree->add_input(new TowerJetInput(Jet::HCALIN_TOWERINFO));
-  myJetTree->add_input(new TowerJetInput(Jet::HCALOUT_TOWERINFO));
-  myJetTree->add_iter_input(new TowerJetInput(Jet::CEMC_TOWERINFO_SUB1));
-  myJetTree->add_iter_input(new TowerJetInput(Jet::HCALIN_TOWERINFO_SUB1));
-  myJetTree->add_iter_input(new TowerJetInput(Jet::HCALOUT_TOWERINFO_SUB1));
-  myJetTree->set_user_seed(42);
-  // myJetTree->setEventSelection(30,1000);
-  // myJetTree->addWeight(2.178e-9);
-  myJetTree->Verbosity(verbosity);
-  se->registerSubsystem(myJetTree);
+  // RandomConeAna *myJetTree = new RandomConeAna(outputfile_debug);
+  // myJetTree->add_input(new TowerJetInput(Jet::CEMC_TOWERINFO_RETOWER));
+  // myJetTree->add_input(new TowerJetInput(Jet::HCALIN_TOWERINFO));
+  // myJetTree->add_input(new TowerJetInput(Jet::HCALOUT_TOWERINFO));
+  // myJetTree->add_iter_input(new TowerJetInput(Jet::CEMC_TOWERINFO_SUB1));
+  // myJetTree->add_iter_input(new TowerJetInput(Jet::HCALIN_TOWERINFO_SUB1));
+  // myJetTree->add_iter_input(new TowerJetInput(Jet::HCALOUT_TOWERINFO_SUB1));
+  // myJetTree->set_user_seed(42);
+  // // myJetTree->setEventSelection(30,1000);
+  // // myJetTree->addWeight(2.178e-9);
+  // myJetTree->Verbosity(verbosity);
+  // se->registerSubsystem(myJetTree);
 
 
 
