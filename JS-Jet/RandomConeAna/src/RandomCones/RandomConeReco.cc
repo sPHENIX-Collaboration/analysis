@@ -583,21 +583,21 @@ std::vector<fastjet::PseudoJet> RandomConeReco::JetsToPseudojets(const std::vect
     float this_py = particles[ipart]->get_py();
     float this_pz = particles[ipart]->get_pz();
 
-    // // cut zero energy particles
-    // if(m_do_tower_cut)
-    // {
-    //   if(this_e < m_tower_threshold) continue;
-    //   if(this_e < 0)
-    //   {
-    //     // make energy +1 MeV for clustering purposes
-    //     float e_ratio = 0.001 / this_e;
-	  //     this_e  = this_e * e_ratio;
-	  //     this_px = this_px * e_ratio;
-	  //     this_py = this_py * e_ratio;
-	  //     this_pz = this_pz * e_ratio;
-    //   }
+    // cut zero energy particles
+    if(m_do_tower_cut)
+    {
+      if(this_e < m_tower_threshold) continue;
+      if(this_e < 0)
+      {
+        // make energy +1 MeV for clustering purposes
+        float e_ratio = 0.001 / this_e;
+	      this_e  = this_e * e_ratio;
+	      this_px = this_px * e_ratio;
+	      this_py = this_py * e_ratio;
+	      this_pz = this_pz * e_ratio;
+      }
     
-    // }
+    }
 
     // create pseudojet
     fastjet::PseudoJet pseudojet(this_px, this_py, this_pz, this_e);
