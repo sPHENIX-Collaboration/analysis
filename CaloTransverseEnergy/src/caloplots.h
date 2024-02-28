@@ -29,6 +29,7 @@ class caloplots
 		float z=0., zl, zh, zmin=1., zmax=1., rcalo=93.5;
 		int phibins=256, etabins=96;
 		float etamin=-1.13, etamax=1.13;
+		bool filled_em_cal=false;
 		caloplots(std::string caloname="EMCAL", float zlow=-30., float zhigh=30., bool simul=false){
 			zl=zlow; 
 			zh=zhigh;
@@ -137,7 +138,7 @@ class caloplots
 			etamax=sinh(etamax)*(float)rcalo+(float)zh;
 			etamax=asinh(etamax/(float)rcalo);
 			etamin=asinh(sinh(etamin)+(float)zl/(float)rcalo);
-			std::cout<<"eta is [" <<etamin <<"," <<etamax <<"]" <<std::endl;
+		//	std::cout<<"eta is [" <<etamin <<"," <<etamax <<"]" <<std::endl;
 		}
 		void MakePlots(){
 			if(calo.find("HCAL") != std::string::npos || calo.find("ALL") != std::string::npos){
@@ -204,7 +205,7 @@ class caloplots
 		       	E_eta_phi=new TH2F(Form("E_eta_phi_%s_z_%d", calo.c_str(), z_lab), Form("E(#eta, #varphi)	physical binning in %s with vertex centered at z=%f; #eta; #varphi; E [GeV]", calo.c_str(), z), etabins, -0.1, eb, phibins, -0.1, pb);
 			ET_z_eta=new TH2F(Form("ET_z_eta_%s_z_%d", calo.c_str(), z_lab), Form("E_{T}(z_{vertex}, #eta) in %s with vertex centered at z=%f; z_{vertex}; #eta; E_{T} [GeV]", calo.c_str(), z), 40, zl, zh, etabins, etamin, etamax);
 			Hits2D=new TH2F(Form("Hits_2D_%s_z_%d", calo.c_str(), z_lab), Form("Hits in #eta and #varphi in %s with vertex centered at z=%f; #eta; #varphi", calo.c_str(), z), etabins, -0.1, eb, phibins, -0.1, pb);
-			EMCAL_Tower_proj=new TH2F(Form("Tower_proj_%s_z_%d", calo.c_str(), z_lab), Form("EMCAL Retowering towers per %s tower with vertex centered at z=%f; #eta_{bin}, #varphi_{bin}, N_{EMT}", calo.c_str(), z), etabins, -0.1, eb, phibins, -0.1, pb);
+			EMCAL_tower_proj=new TH2F(Form("Tower_proj_%s_z_%d", calo.c_str(), z_lab), Form("EMCAL Retowering towers per %s tower with vertex centered at z=%f; #eta_{bin}; #varphi_{bin}; N_{EMT}", calo.c_str(), z), etabins, -0.1, eb, phibins, -0.1, pb);
 			hists_2.push_back(ET_eta_phi);
 			hists_2.push_back(E_eta_phi);
 			hists_2.push_back(ET_z_eta);

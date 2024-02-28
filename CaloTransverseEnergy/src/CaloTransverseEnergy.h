@@ -19,7 +19,10 @@
 //#include <omp.h>
 #include <vector>
 #include <string>
+#include <stdexcept>
+#include <exception>
 #include <utility>
+#include <map>
 #include "caloplots.h"
 #include "plots.h" 
 
@@ -96,7 +99,7 @@ class CaloTransverseEnergy:public SubsysReco
 		void GetNodes(PHCompositeNode*); 
 		bool ValidateDistro();
 		void findEEC(); 
-		
+		void countTheTowers(std::map<std::pair<std::pair<int, int>, std::pair<std::pair<double, double>, std::pair<double, double>>>, int>*, bool, double, double, double, double,int, int, TH2F* oht=NULL, TH2F* iht=NULL, bool first=false);
 	/*	const std::string &prdfnode="PRDF"; //maybe I can add an overload to this? just do either version
 		const std::string &DSTnode="DST";
 		const std::string &iHCALnode="HCALIN";
@@ -123,6 +126,15 @@ class CaloTransverseEnergy:public SubsysReco
 			:SubsysReco(name)
 		{
 			std::cout<<"Starting to process input file " <<inputfile <<std::endl;
+			//ih_em=NULL;
+			//oh_em=NULL;
+			std::map<std::pair<int, int>, int> chmap;
+			std::cout<<"Trying to interface with these fun containers"<<std::endl;
+			std::pair<int, int> te {0,1};
+			std::cout<<"Have the setting pair "<<te.first <<te.second <<std::endl;
+			chmap[te];
+			std::cout<<"The map now has " <<chmap.size() <<" entries" <<std::endl;
+			ih_em.clear();	
 			IHCALE=new TH1F("iHCal", "Total Transverse energy depositied in inner HCal towers; Energy #times percent of towers [GeV]", 400, 0, 2); 
 			OHCALE=new TH1F("oHCal", "Total Transverse energy depositied in outer HCal towers; Energy #times percent oftowers [GeV]", 400, 0,2); 
 			EMCALE=new TH1F("emCal", "Transverse energy depositied in EMCal towers; Energy #times percent of towers [GeV]", 400, 0, 2); 
@@ -130,35 +142,7 @@ class CaloTransverseEnergy:public SubsysReco
 			he3=new TH1F("HE3", "E3C as a function of R_L for data run; R_{L}; E3C", 40, 0, 0.8);
 			heec=new TH1F("EEC", "EEC for data Run; EEC; N_{evts}", 40, 0, 1);	
 			h3eec=new TH1F("E3C", "E3C for data Run; E3C; N_{evts}", 40, 0, 1);
-			//jet_like_container=new std::map<std::pair<double, double>, std::map<std::pair<double, double>, float>>();	
-/*			ETOTAL=new TH1F("total", "Total Transverse energy depositied in all Calorimeters; Energy [GeV]", 2500, 0, 2501); 
-			PhiD=new TH1F("phif", "Transverse energy deposited in #varphi; #varphi; Energy [GeV] ", 32, -0.1, 6.30);
-			EtaD=new TH1F("etaf", "Transverse energy depositied in #eta; #eta; Energy [GeV]", 24, -0.5, 23.5);
-			phis=new TH1F("phis", "N events in #varphi; #varphi", 32, -0.1, 6.31); 
-			etas=new TH1F("etas", "N events in #eta; #eta", 24, -1.1, 1.1);
-			ePhiD=new TH1F("emCal_phif", "Transverse energy deposited per active towers in #varphi EmCal; #varphi; Energy/Tower hits [GeV/N] ", 256, 0, 6.30);
-			eEtaD=new TH1F("emCal_etaf", "Transverse energy in #eta EmCal, two tower binning; #eta; #frac{1}{N_{Events}} #frac{dE_{T}}{d#eta} [GeV]", 48, -1.134, 1.134);
-			ephis=new TH1F("emcal_phis", "N events in #varphi EMCal; #varphi", 32, 0, 6.31); 
-			eetas=new TH1F("emcal_etas", "N events in #eta EMCal ; #eta", 24, -1.1, 1.1);
-			ohPhiD=new TH1F("ohcal_phif", "Transverse energy deposited in #varphi outer HCal; #varphi; #frac{d E_{T}}{d #eta} [GeV] ", 64, 0, 6.30);
-			ohEtaD=new TH1F("ohcal_etaf", "Transverse energy depositied in #eta outer HCal; #eta_{bin}; #frac{dE_{T}}{d #eta}[GeV]", 24, -0.5, 23.5);
-			ihPhiD=new TH1F("ihcal_phif", "Transverse energy deposited in #varphi inner HCal; #varphi; #frac{d E_{T}}{d #eta} [GeV] ", 64, 0, 6.30);
-			ihEtaD=new TH1F("ihcal_etaf", "Transverse energy depositied in #eta inner HCal; #eta_{bin};#frac{dE_{T}}{d #eta} [GeV]", 24, -0.5, 23.5);
-			hphis=new TH1F("hcal_phis", "N events in #varphi HCal; #varphi", 32, 0, 6.31); 
-			hetas=new TH1F("hcal_etas", "N events in #eta HCal; #eta", 24, -1.1, 1.1);
-			eep=new TH2F("emcal_towers_et", "Transverse energy deposited in each tower in EM Cal; #eta ; #varphi ; E_{T} [GeV]", 96, 0, 95, 256, 0, 255); 
-			ohep=new TH2F("outer_hcal_towers_et", "Transverse energy deposited in each tower in outer HCal; #eta; #varphi; E_{T} [GeV]", 24, -0.5, 23.5, 64, -0.5, 63.5); 
-			ihep=new TH2F("inner_hcal_towers_et", "Transverse energy deposited in each tower in inner HCal; #eta; #varphi; E_{T} [GeV]", 24, -0.5, 23.5, 64, -0.5, 63.5); 
-			eeps=new TH2F("emcal_towers_hits", "Events in each tower in EM Cal; #eta ; #varphi ; N_{events}", 96, -0.5, 95.5, 256, -0.5, 255.5); 
-			oheps=new TH2F("outer_hcal_towers_hits", "Events in each tower in outer HCal; #eta; #varphi; N_{events}", 24, -0.5, 23.5, 64, -0.5, 63.5); 
-			iheps=new TH2F("inner_hcal_towers_hits", "Events in each tower in inner HCal; #eta; #varphi; N_{events}", 24, -0.5, 23.5, 64, 0, 63.5); 
-			tep=new TH2F("total_towers_et", "Transverse energy deposited in each tower binned by HCal; #eta; #varphi; E_{T} [GeV]", 24, -0.5, 23.5, 64, -0.5, 63.5); 
-			teps=new TH2F("total_towers_hits", "Events in each tower in all binned by HCal; #eta ; #varphi ; N_{events}", 24, -1.1, 1.1, 64, -0.1, 6.3); 
-			etabin_em=new TH1F("emeta", "#eta bin to #eta center EmCal; #eta_{bin}; #eta", 96, -0.5, 95.5);
-			phibin_em=new TH1F("emphi", "#varphi bin to #delta #varphi width EmCal; #varphi_{bin}; #delta #varphi", 256, -0.5, 255.5);
-			
-			etabin_hc=new TH1F("hceta", "#eta bin to #delta #eta width HCal; #eta_{bin};#delta #eta", 24, -0.5, 23.5);
-			phibin_hc=new TH1F("hcphi", "#varphi bin to #delta #varphi width HCal; #varphi_{bin}; #delta #varphi", 64, -0.5, 63.5);*/
+			part_mass=new TH1F("part_mass", "Generatred HepMC particle Masses for truth data; m [GeV]", 1000, -0.5, 15);
 			if(inputfile.find("prdf")==std::string::npos) isPRDF=false;
 			std::cout<<"Run number " <<rn <<std::endl;
 			run_number=rn;
@@ -167,6 +151,7 @@ class CaloTransverseEnergy:public SubsysReco
 			else z_vertex=new TH1F("z_vertex", "z vertex position; z [cm]; N_{evts}", 21, -5.5, 5.5);
 			if(sim) std::cout<<"Found the simulation tag, run is number " <<run_number <<std::endl;
 			else std::cout<<"This is real data, run number " <<run_number <<std::endl;
+			//Now setting up the plotting functions with z bins 
 			for(int i=0; i<21; i++){
 				plots* PLT=new plots;
 				plots* sPLT;
@@ -176,12 +161,12 @@ class CaloTransverseEnergy:public SubsysReco
 				if(sim) sPLT->ohcal->setSimulation(rs);
 				if(sim) sPLT->em->setSimulation(rs);
 				if(sim) sPLT->total->setSimulation(rs);
-				int zb=10*i-100; 
-				int zl=zb-30, zh=zb+30;
-				PLT->zl=zb-30;
-				PLT->zh=zb+30;
-				if(sim){sPLT->zh=zb+30;
-				sPLT->zl=zb-30;}
+				int zb=2*i-20; 
+				int zl=zb-6, zh=zb+6;
+				PLT->zl=zl;
+				PLT->zh=zh;
+				if(sim){sPLT->zh=zh;
+				sPLT->zl=zl;}
 				PLT->em->UpdateZ(zl, zh);
 				PLT->ihcal->UpdateZ(zl, zh);
 				PLT->ohcal->UpdateZ(zl, zh);
@@ -205,10 +190,11 @@ class CaloTransverseEnergy:public SubsysReco
 		TH1F *ePhiD, *eEtaD, *ephis, *eetas;
 		TH1F *ihPhiD, *ihEtaD, *ohPhiD, *ohEtaD, *hphis, *hetas;
 		TH1F *etabin_em, *phibin_em, *etabin_hc, *phibin_hc;
-		TH1F *he2, *he3, *heec, *h3eec;
+		TH1F *he2, *he3, *heec, *h3eec, *part_mass;
 		TH2F *eep, *ohep, *ihep, *eeps, *oheps, *iheps, *tep, *teps;
 		std::map<int, plots*> zPLTS, szPLTS;
 		std::map<std::pair<double,double>, std::map<std::pair<double, double>, float>> jet_like_container;
+		std::map<std::pair<std::pair<int, int>, std::pair<std::pair<double, double>, std::pair<double, double>>>, int> oh_em, ih_em;
 		std::vector<int> baryons{2212,2112,2224,2214,2114,1114,3122,3222,3212,3112,
 		      3224,3214,3114,3322,3312,3324,3314,3334,4122,4222,4212,4112,4224,4214,
 		      4114,4232,4312,4324,4314,4332,4334,4412,4422,4414,4424,4432,4434,4444,

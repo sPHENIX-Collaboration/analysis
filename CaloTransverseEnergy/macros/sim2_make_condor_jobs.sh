@@ -6,7 +6,7 @@ SUBMIT=${3:-'test'}
 i=0
 echo "Submitting first $NFILES"
 while [[ $i -le $NFILES ]]; do 
-	for infile in  `more dst_calo_cluster.list`; do 
+	for infile in  `more dst_calo_cluster.txt`; do 
 		if [[ $i -gt $NFILES ]]; then
 			break
 		fi
