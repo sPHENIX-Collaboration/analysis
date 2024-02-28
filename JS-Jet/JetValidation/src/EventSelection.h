@@ -11,6 +11,7 @@
 #include <utility>  // std::pair, std::make_pair
 #include <vector>
 
+#include <TFile.h>
 class PHCompositeNode;
 class TTree;
 
@@ -19,7 +20,7 @@ class EventSelection : public SubsysReco
 public:
     // constructor
     EventSelection(const double jet_R = 0.4,
-            const std::string &outputfilename = "selectiontree.root");
+            const std::string &outputfilename = "/Run23745_ana399_DSTs/selectiontree.root");
 
     ~EventSelection() override; // destructor
 
@@ -43,6 +44,7 @@ private:
     int m_event;
      // output trees
     TTree *m_tree;
+    TFile* outFile;
     std::vector<float> m_vertex_z;
     
 };

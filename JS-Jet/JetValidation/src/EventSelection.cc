@@ -47,14 +47,21 @@ EventSelection::EventSelection(const double jet_R, const std::string& outputfile
 
 EventSelection::~EventSelection()
 {}
+
 /////////////////////
 int EventSelection::Init(PHCompositeNode *topNode)
 {  // create output tree
+
+  std::cout << "Output file path (Init): " << m_outputfilename << std::endl;
   PHTFileServer::get().open(m_outputfilename, "RECREATE");
   outFile = new TFile(m_outputfilename.c_str(), "RECREATE");
   m_tree = new TTree("T", "EventSelection");
+  m_tree->Branch("m_jet_R", &m_jet_R, "jet_R");
+  m_tree->Branch("m_vtxZ_cut", &m_vtxZ_cut);
+  m_tree->Branch("m_event", &m_event, "event/I");
 
   std::cout << "EventSelection::Init(PHCompositeNode *topNode) Initialization successful" << std::endl;
+  std::cout << "EventSelection::Init(PHCompositeNode *topNode) Output tree: " << m_tree->GetName() << std::endl;
 
   return Fun4AllReturnCodes::EVENT_OK; // Ensure that this return statement is within the function body
 }
@@ -95,15 +102,13 @@ int EventSelection::End(PHCompositeNode *topNode)
 {
   PHTFileServer::get().cd(m_outputfilename);
   std::cout << "EventSelection::End - Output to " << m_outputfilename << std::endl;
+  std::cout << "EventSelection::End - Output to " << m_outputfilename << std::endl;
+  // write tree to file
+  PHTFileServer::get().cd(m_outputfilename);
+  // m_tree->Write();
+  // write file to disk
+  PHTFileServer::get().write(m_outputfilename);
 
-  // Write tree to file
-  if (m_tree) {
-    PHTFileServer::get().cd(m_outputfilename);
-    m_tree->Write();
-  } else {
-    std::cerr << "EventSelection::End - Error: TTree not initialized" << std::endl;
-    return Fun4AllReturnCodes::ABORTEVENT;
-  }
   outFile->cd();
   outFile->Write();
   outFile->Close();
