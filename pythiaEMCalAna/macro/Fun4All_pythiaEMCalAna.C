@@ -40,7 +40,7 @@ void Fun4All_pythiaEMCalAna(
       se -> registerInputManager(inTruth);
   }
 
-  pythiaEMCalAna *eval = new pythiaEMCalAna(outname.c_str(), isMC, hasPythia);
+  pythiaEMCalAna *eval = new pythiaEMCalAna("pythiaEMCalAna", outname.c_str(), isMC, hasPythia);
   eval -> setGenEvent(1);
   se -> registerSubsystem(eval);
   

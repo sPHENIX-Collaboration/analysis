@@ -164,10 +164,25 @@ int Fun4All_RunNewTruthMatcher(
   // add the settings for other with [1], next with [2]...
 
   // TEST [Derek, 09.05.2023]
-  const UInt_t   nPerEvt(5);
+  const UInt_t   nPerEvt(1);
   const TString  sParticle("pi-");
-  const Double_t ptParMin(0.1);
-  const Double_t ptParMax(20.);
+  const Double_t ptParMin(10.);
+  const Double_t ptParMax(10.);
+
+  // TEST [Derek, 02.06.2024]
+  const Bool_t   doGausVertex(false);
+  const Double_t meanVtxXG(0.);
+  const Double_t meanVtxYG(0.);
+  const Double_t meanVtxZG(0.);
+  const Double_t meanVtxXU(0.);
+  const Double_t meanVtxYU(0.);
+  const Double_t meanVtxZU(0.);
+  const Double_t widthVtxXG(0.01);
+  const Double_t widthVtxYG(0.01);
+  const Double_t widthVtxZG(5.);
+  const Double_t widthVtxXU(0.);
+  const Double_t widthVtxYU(0.);
+  const Double_t widthVtxZU(0.);
 
   if (Input::SIMPLE)
   {
@@ -179,11 +194,23 @@ int Fun4All_RunNewTruthMatcher(
     }
     else
     {
-      INPUTGENERATOR::SimpleEventGenerator[0]->set_vertex_distribution_function(PHG4SimpleEventGenerator::Gaus,
-                                                                                PHG4SimpleEventGenerator::Gaus,
-                                                                                PHG4SimpleEventGenerator::Gaus);
-      INPUTGENERATOR::SimpleEventGenerator[0]->set_vertex_distribution_mean(0., 0., 0.);
-      INPUTGENERATOR::SimpleEventGenerator[0]->set_vertex_distribution_width(0.01, 0.01, 5.);
+      if (doGausVertex) {
+        INPUTGENERATOR::SimpleEventGenerator[0] -> set_vertex_distribution_function(
+          PHG4SimpleEventGenerator::Gaus,
+          PHG4SimpleEventGenerator::Gaus,
+          PHG4SimpleEventGenerator::Gaus
+        );
+        INPUTGENERATOR::SimpleEventGenerator[0] -> set_vertex_distribution_mean(meanVtxXG, meanVtxYG, meanVtxZG);
+        INPUTGENERATOR::SimpleEventGenerator[0] -> set_vertex_distribution_width(widthVtxXG, widthVtxYG, widthVtxZG);
+      } else {
+        INPUTGENERATOR::SimpleEventGenerator[0] -> set_vertex_distribution_function(
+          PHG4SimpleEventGenerator::Uniform,
+          PHG4SimpleEventGenerator::Uniform,
+          PHG4SimpleEventGenerator::Uniform
+        );
+        INPUTGENERATOR::SimpleEventGenerator[0] -> set_vertex_distribution_mean(meanVtxXU, meanVtxYU, meanVtxZU);
+        INPUTGENERATOR::SimpleEventGenerator[0] -> set_vertex_distribution_width(widthVtxXU, widthVtxYU, widthVtxZU);
+      }
     }
     INPUTGENERATOR::SimpleEventGenerator[0]->set_eta_range(-1, 1);
     INPUTGENERATOR::SimpleEventGenerator[0]->set_phi_range(-M_PI, M_PI);
@@ -302,7 +329,7 @@ int Fun4All_RunNewTruthMatcher(
   //======================
 
   // QA, main switch
-  Enable::QA = true;
+  Enable::QA = false;
 
   // Global options (enabled for all enables subsystems - if implemented)
   //  Enable::ABSORBER = true;
@@ -643,7 +670,7 @@ int Fun4All_RunNewTruthMatcher(
     eval->do_track_match(true);
     eval->set_use_initial_vertex(G4TRACKING::g4eval_use_initial_vertex);
 
-    bool embed_scan = false;
+    bool embed_scan = true;
     if(TRACKING::pp_mode) {
       embed_scan = false;
     }
@@ -697,7 +724,8 @@ int Fun4All_RunNewTruthMatcher(
 
   if (Enable::TRACKING_QA && Enable::CEMC_QA && Enable::HCALIN_QA && Enable::HCALOUT_QA) QA_G4CaloTracking();
 
-  if (Enable::TRACK_MATCHING) {
+  //if (Enable::TRACK_MATCHING) {
+  if (true) {
 
     // initialize track matcher
     TrkrClusterIsMatcher* ismatcher = new TrkrClusterIsMatcher();

@@ -17,6 +17,9 @@
 #include <g4main/PHG4VtxPoint.h>
 #include <phool/getClass.h>
 
+#include <g4detectors/PHG4CylinderGeomContainer.h>
+#include <intt/CylinderGeomIntt.h>
+
 #include <centrality/CentralityInfo.h>
 #include <phool/getClass.h>
 #include <trackbase/ActsGeometry.h>
@@ -103,6 +106,7 @@ class dNdEtaINTT : public SubsysReco
     void ResetVectors();
     void GetTruthPVInfo(PHCompositeNode *topNode);
     void GetRecoClusterInfo(PHCompositeNode *topNode);
+    void GetTruthClusterInfo(PHCompositeNode *topNode);
     void GetCentralityInfo(PHCompositeNode *topNode);
     void GetTrkrHitInfo(PHCompositeNode *topNode);
     PHG4Particle *GetG4PAncestor(PHG4Particle *p);
@@ -133,12 +137,21 @@ class dNdEtaINTT : public SubsysReco
     std::vector<float> ClusPhiSize_, ClusZSize_;
     std::vector<uint8_t> ClusLadderZId_, ClusLadderPhiId_;
     std::vector<uint32_t> ClusTrkrHitSetKey_;
+    std::vector<int> ClusTruthCKeys_;
+    std::vector<int> TruthClusPhiSize_;
+    std::vector<int> TruthClusZSize_;
+    std::vector<int> PrimaryTruthClusPhiSize_;
+    std::vector<int> PrimaryTruthClusZSize_;
+    std::vector<int> ClusNG4Particles_;
+    std::vector<int> ClusNPrimaryG4Particles_;
+    std::vector<int> TruthClusNRecoClus_;
+    std::vector<int> PrimaryTruthClusNRecoClus_;
     // TrkrHit information
     int NTrkrhits_;
     std::vector<uint16_t> TrkrHitRow_, TrkrHitColumn_, TrkrHitADC_;
     std::vector<uint8_t> TrkrHitLadderZId_, TrkrHitLadderPhiId_, TrkrHitLayer_;
     // G4 information Matching for simulation
-    int NGenPart_;
+    int NGenPart_, NTruthLayers_;
     std::vector<float> UniqueAncG4P_Pt_, UniqueAncG4P_Eta_, UniqueAncG4P_Phi_, UniqueAncG4P_E_;
     std::vector<int> UniqueAncG4P_PID_;
 
@@ -153,6 +166,7 @@ class dNdEtaINTT : public SubsysReco
     TrkrClusterHitAssoc *clusterhitmap = nullptr;
     TrkrHitSetContainer *hitsets = nullptr;
     ActsGeometry *_tgeometry = nullptr;
+    PHG4CylinderGeomContainer *_intt_geom_container = nullptr;
     PHG4TruthInfoContainer *m_truth_info = nullptr;
     CentralityInfo *m_CentInfo = nullptr;
 };

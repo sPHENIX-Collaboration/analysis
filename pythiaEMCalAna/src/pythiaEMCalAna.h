@@ -22,7 +22,7 @@ class pythiaEMCalAna : public SubsysReco
 {
  public:
 
-  pythiaEMCalAna(const std::string &name = "pythiaEMCalAna", bool isMC = true, bool hasPythia = true);
+  pythiaEMCalAna(const std::string &name = "pythiaEMCalAna", const std::string &oname = "pythiaEMCalAnaTrees.root", bool isMC = true, bool hasPythia = true);
 
   ~pythiaEMCalAna() override;
 

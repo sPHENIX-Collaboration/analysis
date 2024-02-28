@@ -11,22 +11,20 @@ AM_LDFLAGS = \
   -L$(OFFLINE_MAIN)/lib64
 
 pkginclude_HEADERS = \
-  pythiaEMCalAna.h
+  MBDinfo.h
 
 lib_LTLIBRARIES = \
-  libpythiaEMCalAna.la
+  libMBDinfo.la
 
-libpythiaEMCalAna_la_SOURCES = \
-  pythiaEMCalAna.cc
+libMBDinfo_la_SOURCES = \
+  MBDinfo.cc
 
-libpythiaEMCalAna_la_LIBADD = \
+libMBDinfo_la_LIBADD = \
   -lphool \
   -lSubsysReco \
-  -lHepMC \
-  -lCLHEP \
-  -lcalo_io \
-  -lg4eval \
-  -lg4jets
+  -lcentrality_io \
+  -lg4dst \
+  -lg4eval
 
 BUILT_SOURCES = testexternals.cc
 
@@ -34,7 +32,7 @@ noinst_PROGRAMS = \
   testexternals
 
 testexternals_SOURCES = testexternals.cc
-testexternals_LDADD   = libpythiaEMCalAna.la
+testexternals_LDADD   = libMBDinfo.la
 
 testexternals.cc:
 	echo "//*** this is a generated file. Do not commit, do not edit" > $@

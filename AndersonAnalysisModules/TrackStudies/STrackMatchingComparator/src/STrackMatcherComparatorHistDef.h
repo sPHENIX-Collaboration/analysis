@@ -3,7 +3,8 @@
 // Derek Anderson
 // 02.01.2024
 //
-// Struct to hold histogram info for 'STrackMatcherComparator' module.
+// Struct to hold histogram defintions/parameters for 'STrackMatcherComparator'
+// module.
 // ----------------------------------------------------------------------------
 
 #ifndef STRACKMATCHERCOMPARATORHISTDEF_H
@@ -70,9 +71,9 @@ struct STrackMatcherComparatorHistDef {
     "#deltap_{T} / p_{T}^{reco}",
     "#delta#eta / #eta^{reco}",
     "#delta#varphi / #varphi^{reco}",
-    "#Deltap_{T} / p_{T}^{true}",
-    "#Delta#eta / #eta^{true}",
-    "#Delta#varphi / #varphi^{true}"
+    "|p_{T}^{reco} - p_{T}^{true}| / p_{T}^{true}",
+    "|#eta^{reco} - #eta^{true}| / #eta^{true}",
+    "|#varphi^{reco} - #varphi^{true}| / #varphi^{true}"
   };
   vector<string> vecVsAxisVars = {
     "p_{T}^{true} [GeV/c]",
