@@ -294,7 +294,7 @@ vtx -0.000921115 0.00567926 2.26759*/
     m_container[input]->primaryVertex.push_back(primary);
   }
 
-    int nrecojet = 0;
+    int nrecojet = -1;
 
     Jet::PROPERTY recojet_area_index = jets->property_index(Jet::PROPERTY::prop_area);
 
@@ -389,7 +389,8 @@ vtx -0.000921115 0.00567926 2.26759*/
         }
       } // end for (const auto& comp : jet->get_comp_vec())
 
-      recojet.id = jet->get_id();
+      //recojet.id = jet->get_id();
+      recojet.id = nrecojet;
       recojet.area = jet->get_property(recojet_area_index);
       recojet.num_Constituents = static_cast<int>(jet->get_comp_vec().size());
       recojet.num_ChConstituents = nChtracks;
@@ -404,13 +405,13 @@ vtx -0.000921115 0.00567926 2.26759*/
 
       m_container[input]->recojets.push_back(recojet);
     } // end for (Jet* jet : *jets)
-    m_container[input]->reco_jet_n = static_cast<int>(nrecojet);
+    m_container[input]->reco_jet_n = static_cast<int>(nrecojet+1);
 
 
   
     //get truth jets
     if(m_doTruthJets){
-      int ntruthjet = 0;
+      int ntruthjet = -1;
       TruthJets mtruthjet;
       Jet::PROPERTY truthjet_area_index = jetsMC->property_index(Jet::PROPERTY::prop_area);
 
@@ -426,7 +427,8 @@ vtx -0.000921115 0.00567926 2.26759*/
         ntruthjet++;
 
 
-        mtruthjet.id = truthjet->get_id();
+        //mtruthjet.id = truthjet->get_id();
+        mtruthjet.id = ntruthjet;
         mtruthjet.area = truthjet->get_property(truthjet_area_index);
         mtruthjet.num_Constituents = truthjet->size_comp();
         mtruthjet.px = truthjet->get_px();
@@ -483,7 +485,7 @@ vtx -0.000921115 0.00567926 2.26759*/
         mtruthjet.num_ChConstituents = nChTrackstruth ;
         m_container[input]->truthjets.push_back(mtruthjet);
       }// end jet loop
-      m_container[input]->truth_jet_n = static_cast<int>(ntruthjet);
+      m_container[input]->truth_jet_n = static_cast<int>(ntruthjet+1);
     }//end if do truth
     //fill tree
     m_T[input]->Fill();
