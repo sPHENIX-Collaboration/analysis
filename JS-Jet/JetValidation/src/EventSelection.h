@@ -19,13 +19,12 @@ class EventSelection : public SubsysReco
 {
 public:
     // constructor
-    EventSelection(const double jet_R = 0.4,
-            const std::string &outputfilename = "/Run23745_ana399_DSTs/selectiontree.root");
+  EventSelection( const std::string &truthjetname = "AntiKt_Truth_r04",
+		   const std::string &outputfilename = "selecteventtest.root");
 
     ~EventSelection() override; // destructor
 
     void setVzCut(double cut) { m_vtxZ_cut = cut; }
-    //    void add_input(JetInput *input) { _inputs.push_back(input); }
     
     // Standard Fun4All functions
     int Init(PHCompositeNode *topNode) override;
@@ -35,17 +34,15 @@ public:
 private:
 
     // private variables
-    double m_jet_R;
+    
     std::string m_outputfilename;
-    double m_vtxZ_cut;
-    // std::vector<JetInput *> _inputs;
-    //____________________________________________________________________________..
-    // output tree variables
-    int m_event;
-     // output trees
+
+    TFile *outFile;
     TTree *m_tree;
-    TFile* outFile;
-    std::vector<float> m_vertex_z;
+
+    double m_vtxZ_cut;
+    int m_event;
+    float m_vertex_z;
     
 };
 

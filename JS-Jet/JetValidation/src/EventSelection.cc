@@ -34,14 +34,14 @@
 
 using namespace std;
 
-EventSelection::EventSelection(const double jet_R, const std::string& outputfilename)
+EventSelection::EventSelection(const std::string& truthjetname, const std::string& outputfilename)
  : SubsysReco("EventSelection")
- , m_jet_R(jet_R)
  , m_outputfilename(outputfilename)
- , m_vtxZ_cut(10.0)
- , m_event(-1)
+ , outFile(nullptr)
  , m_tree(nullptr) // Initialize m_tree to nullptr
-
+ , m_vtxZ_cut(1000.0)
+ , m_event(-1)
+   // , m_vertex_z()
 {std::cout << "Output file path: " << m_outputfilename << std::endl;
 }
 
@@ -53,11 +53,13 @@ int EventSelection::Init(PHCompositeNode *topNode)
 {  // create output tree
 
   std::cout << "Output file path (Init): " << m_outputfilename << std::endl;
-  PHTFileServer::get().open(m_outputfilename, "RECREATE");
   outFile = new TFile(m_outputfilename.c_str(), "RECREATE");
+  if (!outFile || outFile->IsZombie()) {
+    std::cerr << "Error: Could not open output file " << m_outputfilename << std::endl;
+    return Fun4AllReturnCodes::ABORTRUN;
+  }
   m_tree = new TTree("T", "EventSelection");
-  m_tree->Branch("m_jet_R", &m_jet_R, "jet_R");
-  m_tree->Branch("m_vtxZ_cut", &m_vtxZ_cut);
+  m_tree->Branch("m_vertex_z", &m_vertex_z);
   m_tree->Branch("m_event", &m_event, "event/I");
 
   std::cout << "EventSelection::Init(PHCompositeNode *topNode) Initialization successful" << std::endl;
@@ -82,7 +84,9 @@ int EventSelection::process_event(PHCompositeNode *topNode)
       if(Verbosity()) std::cout << "no vertex found" << std::endl;
       return Fun4AllReturnCodes::ABORTEVENT;
     }
-  if (fabs(vtxMap->get(0)->get_z()) > m_vtxZ_cut)
+  double m_vertex_z=vtxMap->get(0)->get_z();
+
+  if (fabs(m_vertex_z) > m_vtxZ_cut)
     {
       if(Verbosity()) std::cout << "vertex not in range" << std::endl;
       return Fun4AllReturnCodes::ABORTEVENT;
@@ -100,17 +104,9 @@ int EventSelection::process_event(PHCompositeNode *topNode)
 
 int EventSelection::End(PHCompositeNode *topNode)
 {
-  PHTFileServer::get().cd(m_outputfilename);
-  std::cout << "EventSelection::End - Output to " << m_outputfilename << std::endl;
-  std::cout << "EventSelection::End - Output to " << m_outputfilename << std::endl;
-  // write tree to file
-  PHTFileServer::get().cd(m_outputfilename);
-  // m_tree->Write();
-  // write file to disk
-  PHTFileServer::get().write(m_outputfilename);
 
   outFile->cd();
-  outFile->Write();
+  m_tree->Write();
   outFile->Close();
   
   std::cout << "EventSelection::End(PHCompositeNode *topNode) This is the End..." << std::endl;
