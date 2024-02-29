@@ -1,3 +1,0 @@
-Index 0: Mean: 0.13783, Mean Error: 0.0011621
-Index 0: Mean: 0.13783, Mean Error: 0.0011621
-Index 0: Mean: 0.13783, Mean Error: 0.0011621
