@@ -160,13 +160,15 @@ TGraphErrors* CreateGraph(const std::vector<double>& ptCenters, const std::vecto
     return new TGraphErrors(ptCenters.size(), &ptCenters[0], &values[0], nullptr, &errors[0]);
 }
 void Plot_vN(const AdditionalData& data) {
-    std::string filePath = "/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/I_O_Accumulated_PlotByPlotOutput/UpdatedCSV_AccumulatedDists_p010.csv";
-    std::string phenixFilePath = "/Users/patsfan753/Desktop/FinalCleanedPhenix.csv";
+    std::string filePath = "/Users/patsfan753/Desktop/vN_AnalysisFinal/data/vN_Appended_Data/UpdatedCSV_AccumulatedDists_p011_withZvertex_noPDC.csv";
+    std::string phenixFilePath = "/Users/patsfan753/Desktop/vN_AnalysisFinal/data/PHENIX_Data_Overlayed/FinalCleanedPhenix.csv";
     std::vector<double> ptCenters = {2.25, 2.75, 3.25, 3.75, 4.25, 4.75}; // Mid-points of pT ranges
     std::vector<double> v2_0_20, v2_0_20_Errors, v2_20_40, v2_20_40_Errors, v2_40_60, v2_40_60_Errors, bg_v2_0_20, bg_v2_0_20_Errors, bg_v2_20_40, bg_v2_20_40_Errors, bg_v2_40_60, bg_v2_40_60_Errors, bg_v2_left_0_20, bg_v2_left_0_20_Errors, bg_v2_left_20_40, bg_v2_left_20_40_Errors, bg_v2_left_40_60, bg_v2_left_40_60_Errors, corrected_v2_0_20, corrected_v2_0_20_Errors, corrected_v2_20_40, corrected_v2_20_40_Errors, corrected_v2_40_60, corrected_v2_40_60_Errors, v3_0_20, v3_0_20_Errors, v3_20_40, v3_20_40_Errors, v3_40_60, v3_40_60_Errors, bg_v3_0_20, bg_v3_0_20_Errors, bg_v3_20_40, bg_v3_20_40_Errors, bg_v3_40_60, bg_v3_40_60_Errors, bg_v3_left_0_20, bg_v3_left_0_20_Errors, bg_v3_left_20_40, bg_v3_left_20_40_Errors, bg_v3_left_40_60, bg_v3_left_40_60_Errors, corrected_v3_0_20, corrected_v3_0_20_Errors, corrected_v3_20_40, corrected_v3_20_40_Errors, corrected_v3_40_60, corrected_v3_40_60_Errors;;
 
     double v2, v2_error, bg_v2, bg_v2_error, bg_v2_left, bg_v2_error_left, v2_corrected, v2_error_corrected;
     double v3, v3_error, bg_v3, bg_v3_error, bg_v3_left, bg_v3_error_left, v3_corrected, v3_error_corrected;
+    
+    std::string BasePlotOutputPath = "/Users/patsfan753/Desktop/vN_AnalysisFinal/plotOutput/vN_Plot_Output";
     
     //vectors for PHENIX data
     std::vector<double> v2_0_10, v2_0_10_Errors, v2_0_10_Errors_Negative, v2_10_20, v2_10_20_Errors, v2_10_20_Errors_Negative, v2_20_30, v2_20_30_Errors, v2_20_30_Errors_Negative, v2_30_40, v2_30_40_Errors, v2_30_40_Errors_Negative, v2_40_50, v2_40_50_Errors, v2_40_50_Errors_Negative, v2_50_60, v2_50_60_Errors, v2_50_60_Errors_Negative;
@@ -430,9 +432,9 @@ void Plot_vN(const AdditionalData& data) {
     /*
      Overlay PRE AND POST z_vertex fit 0-20 percent v2
      */
-    TCanvas *c_p009_p010_Overlay_0_20_v2_corrected = new TCanvas("c_p009_p010_Overlay_0_20_v2_corrected", "#pi^{0} #it{v}_{2} Overlay, Before (p009)/After (p010) z-vertex fix vs #it{p}_{T} 0-20% Centrality", 800, 600);
+    TCanvas *c_p009_p010_Overlay_0_20_v2_corrected = new TCanvas("c_p009_p010_Overlay_0_20_v2_corrected", "#pi^{0} #it{v}_{2}, p011 Data, Without PDC, Overlay of vertex = (0, 0, 0) and vertex = (0, 0, z) vs #it{p}_{T} 0-20% Centrality", 800, 600);
     corrected_graph_0_20_v2->Draw("AP");  // This will be the base graph
-    corrected_graph_0_20_v2->SetTitle("#pi^{0} #it{v}_{2} Overlay, Before (p009) and After (p010) z-vertex fix vs #it{p}_{T} 0-20% Centrality; #it{p}_{T} [GeV]; #it{v}_{2}");
+    corrected_graph_0_20_v2->SetTitle("#pi^{0} #it{v}_{2}, p011 Data, Without PDC, Overlay of vertex = (0, 0, 0) and vertex = (0, 0, z) vs #it{p}_{T} 0-20% Centrality; #it{p}_{T} [GeV]; #it{v}_{2}");
     corrected_graph_0_20_v2->SetMinimum(-1.0); // Set the minimum y value
     corrected_graph_0_20_v2->SetMaximum(1.5); // Set the maximum y value
     for (int i = 0; i < ptCenters.size(); ++i) {
@@ -446,25 +448,25 @@ void Plot_vN(const AdditionalData& data) {
     TLegend *legend_p009_p010_Overlay_0_20_v2_corrected = new TLegend(0.11, 0.69, 0.31, 0.89);
     legend_p009_p010_Overlay_0_20_v2_corrected->SetBorderSize(0);
     legend_p009_p010_Overlay_0_20_v2_corrected->SetTextSize(0.03);
-    legend_p009_p010_Overlay_0_20_v2_corrected->AddEntry(corrected_v2_0_20_Additional_graph, "0-20%, v_{2}^{#pi^{0}, p09 Data} Before z-vertex Fix", "pe");
-    legend_p009_p010_Overlay_0_20_v2_corrected->AddEntry(corrected_graph_0_20_v2, "0-20%, v_{2}^{#pi^{0}, p010 Data} After z-vertex Fix", "pe");
+    legend_p009_p010_Overlay_0_20_v2_corrected->AddEntry(corrected_graph_0_20_v2, "0-20%, v_{2}^{#pi^{0}} vertex = (0, 0, z), no PDC", "pe");
+    legend_p009_p010_Overlay_0_20_v2_corrected->AddEntry(corrected_v2_0_20_Additional_graph, "0-20%, v_{2}^{#pi^{0}} vertex = (0, 0, 0), no PDC", "pe");
     legend_p009_p010_Overlay_0_20_v2_corrected->AddEntry(graph_0_10, "0-10%, #bf{PHENIX} 2010", "pe");
     legend_p009_p010_Overlay_0_20_v2_corrected->AddEntry(graph_10_20, "10-20%, #bf{PHENIX} 2010", "pe");
     legend_p009_p010_Overlay_0_20_v2_corrected->Draw();
     DrawZeroLine(c_p009_p010_Overlay_0_20_v2_corrected);
     c_p009_p010_Overlay_0_20_v2_corrected->Modified();
     c_p009_p010_Overlay_0_20_v2_corrected->Update();
-    c_p009_p010_Overlay_0_20_v2_corrected->SaveAs("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/vN_Plot_Output/p009_p010_Corrected_Overlay_0_20.png");
+    c_p009_p010_Overlay_0_20_v2_corrected->SaveAs((BasePlotOutputPath + "/p011_withAndWithoutZvtx_Corrected_Overlay_0_20.png").c_str());
 
     
     /*
      20-40 Overlay p009 p010 corrected v2
      */
-    TCanvas *c_p009_p010_Overlay_20_40_v2_corrected = new TCanvas("c_p009_p010_Overlay_20_40_v2_corrected", "#pi^{0} #it{v}_{2} Overlay, Before (p009)/After (p010) z-vertex fix vs #it{p}_{T} 20-40% Centrality", 800, 600);
+    TCanvas *c_p009_p010_Overlay_20_40_v2_corrected = new TCanvas("c_p009_p010_Overlay_20_40_v2_corrected", "#pi^{0} #it{v}_{2}, p011 Data, Without PDC, Overlay of vertex = (0, 0, 0) and vertex = (0, 0, z) vs #it{p}_{T} 20-40% Centrality", 800, 600);
     corrected_graph_20_40_v2->Draw("AP");  // This will be the base graph
-    corrected_graph_20_40_v2->SetTitle("#pi^{0} #it{v}_{2} Overlay, Before (p009) and After (p010) z-vertex fix vs #it{p}_{T} 20-40% Centrality; #it{p}_{T} [GeV]; #it{v}_{2}");
-    corrected_graph_20_40_v2->SetMinimum(-1.0); // Set the minimum y value
-    corrected_graph_20_40_v2->SetMaximum(1.5); // Set the maximum y value
+    corrected_graph_20_40_v2->SetTitle("#pi^{0} #it{v}_{2}, p011 Data, Without PDC, Overlay of vertex = (0, 0, 0) and vertex = (0, 0, z) vs #it{p}_{T} 20-40% Centrality; #it{p}_{T} [GeV]; #it{v}_{2}");
+    corrected_graph_20_40_v2->SetMinimum(-0.5); // Set the minimum y value
+    corrected_graph_20_40_v2->SetMaximum(1.0); // Set the maximum y value
     for (int i = 0; i < ptCenters.size(); ++i) {
         corrected_graph_20_40_v2->SetPoint(i, ptCenters[i] - offset, corrected_v2_20_40[i]);
         graph_20_30->SetPoint(i, ptCenters[i] - offset * 2.0, v2_20_30[i]);
@@ -476,45 +478,46 @@ void Plot_vN(const AdditionalData& data) {
     TLegend *legend_p009_p010_Overlay_20_40_v2_corrected = new TLegend(0.11, 0.69, 0.31, 0.89);
     legend_p009_p010_Overlay_20_40_v2_corrected->SetBorderSize(0);
     legend_p009_p010_Overlay_20_40_v2_corrected->SetTextSize(0.03);
-    legend_p009_p010_Overlay_20_40_v2_corrected->AddEntry(corrected_v2_20_40_Additional_graph, "20-40%, v_{2}^{#pi^{0}, p09 Data} Before z-vertex Fix", "pe");
-    legend_p009_p010_Overlay_20_40_v2_corrected->AddEntry(corrected_graph_20_40_v2, "20-40%, v_{2}^{#pi^{0}, p010 Data} After z-vertex Fix", "pe");
+    legend_p009_p010_Overlay_20_40_v2_corrected->AddEntry(corrected_graph_20_40_v2, "20-40%, v_{2}^{#pi^{0}}, vertex = (0, 0, z), no PDC", "pe");
+    legend_p009_p010_Overlay_20_40_v2_corrected->AddEntry(corrected_v2_20_40_Additional_graph, "20-40%, v_{2}^{#pi^{0}}, vertex = (0, 0, 0), no PDC", "pe");
     legend_p009_p010_Overlay_20_40_v2_corrected->AddEntry(graph_20_30, "20-30%, #bf{PHENIX} 2010", "pe");
     legend_p009_p010_Overlay_20_40_v2_corrected->AddEntry(graph_30_40, "30-40%, #bf{PHENIX} 2010", "pe");
     legend_p009_p010_Overlay_20_40_v2_corrected->Draw();
     DrawZeroLine(c_p009_p010_Overlay_20_40_v2_corrected);
     c_p009_p010_Overlay_20_40_v2_corrected->Modified();
     c_p009_p010_Overlay_20_40_v2_corrected->Update();
-    c_p009_p010_Overlay_20_40_v2_corrected->SaveAs("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/vN_Plot_Output/p009_p010_Corrected_Overlay_20_40.png");
+    c_p009_p010_Overlay_20_40_v2_corrected->SaveAs((BasePlotOutputPath + "/p011_withAndWithoutZvtx_Corrected_Overlay_20_40.png").c_str());
 
     
     /*
      40-60 Overlay p009 p010 corrected v2
      */
-    TCanvas *c_p009_p010_Overlay_40_60_v2_corrected = new TCanvas("c_p009_p010_Overlay_40_60_v2_corrected", "#pi^{0} #it{v}_{2} Overlay, Before (p009)/After (p010) z-vertex fix vs #it{p}_{T} 40-60% Centrality", 800, 600);
+    TCanvas *c_p009_p010_Overlay_40_60_v2_corrected = new TCanvas("c_p009_p010_Overlay_40_60_v2_corrected", "#pi^{0} #it{v}_{2}, p011 Data, Without PDC, Overlay of vertex = (0, 0, 0) and vertex = (0, 0, z) vs #it{p}_{T} 40-60% Centrality", 800, 600);
     corrected_graph_40_60_v2->Draw("AP");  // This will be the base graph
-    corrected_graph_40_60_v2->SetTitle("#pi^{0} #it{v}_{2} Overlay, Before (p009) and After (p010) z-vertex fix vs #it{p}_{T} 40-60% Centrality; #it{p}_{T} [GeV]; #it{v}_{2}");
+    corrected_graph_40_60_v2->SetTitle("#pi^{0} #it{v}_{2}, p011 Data, Without PDC, Overlay of vertex = (0, 0, 0) and vertex = (0, 0, z) vs #it{p}_{T} 40-60% Centrality; #it{p}_{T} [GeV]; #it{v}_{2}");
+    corrected_graph_40_60_v2->SetTitleSize(0.05, "t");
     for (int i = 0; i < ptCenters.size(); ++i) {
         corrected_graph_40_60_v2->SetPoint(i, ptCenters[i] - offset, corrected_v2_40_60[i]);
         graph_40_50->SetPoint(i, ptCenters[i] - offset * 2.0, v2_40_50[i]);
         graph_50_60->SetPoint(i, ptCenters[i] + offset, v2_50_60[i]);
     }
-    corrected_graph_40_60_v2->SetMinimum(-1.0); // Set the minimum y value
-    corrected_graph_40_60_v2->SetMaximum(1.5); // Set the maximum y value
+    corrected_graph_40_60_v2->SetMinimum(-0.5); // Set the minimum y value
+    corrected_graph_40_60_v2->SetMaximum(0.8); // Set the maximum y value
     corrected_v2_40_60_Additional_graph -> Draw("P SAME");
     graph_40_50->Draw("P SAME");
     graph_50_60->Draw("P SAME");
     TLegend *legend_p009_p010_Overlay_40_60_v2_corrected = new TLegend(0.11, 0.69, 0.31, 0.89);
     legend_p009_p010_Overlay_40_60_v2_corrected->SetBorderSize(0);
     legend_p009_p010_Overlay_40_60_v2_corrected->SetTextSize(0.03);
-    legend_p009_p010_Overlay_40_60_v2_corrected->AddEntry(corrected_v2_40_60_Additional_graph, "40-60%, v_{2}^{#pi^{0}, p09 Data} Before z-vertex Fix", "pe");
-    legend_p009_p010_Overlay_40_60_v2_corrected->AddEntry(corrected_graph_40_60_v2, "40-60%, v_{2}^{#pi^{0}, p010 Data} After z-vertex Fix", "pe");
+    legend_p009_p010_Overlay_40_60_v2_corrected->AddEntry(corrected_graph_40_60_v2, "40-60%, v_{2}^{#pi^{0}} vertex = (0, 0, z), no PDC", "pe");
+    legend_p009_p010_Overlay_40_60_v2_corrected->AddEntry(corrected_v2_40_60_Additional_graph, "40-60%, v_{2}^{#pi^{0}} vertex = (0, 0, 0), no PDC", "pe");
     legend_p009_p010_Overlay_40_60_v2_corrected->AddEntry(graph_40_50, "40-50%, #bf{PHENIX} 2010", "pe");
     legend_p009_p010_Overlay_40_60_v2_corrected->AddEntry(graph_50_60, "50-60%, #bf{PHENIX} 2010", "pe");
     legend_p009_p010_Overlay_40_60_v2_corrected->Draw();
     DrawZeroLine(c_p009_p010_Overlay_40_60_v2_corrected);
     c_p009_p010_Overlay_40_60_v2_corrected->Modified();
     c_p009_p010_Overlay_40_60_v2_corrected->Update();
-    c_p009_p010_Overlay_40_60_v2_corrected->SaveAs("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/vN_Plot_Output/p009_p010_Corrected_Overlay_40_60.png");
+    c_p009_p010_Overlay_40_60_v2_corrected->SaveAs((BasePlotOutputPath + "/p011_withAndWithoutZvtx_Corrected_Overlay_40_60.png").c_str());
     
     /*
      Overlay measured v2 data with PHENIX pi0 data-0 to 20 percent centrality
@@ -539,7 +542,7 @@ void Plot_vN(const AdditionalData& data) {
     legend_measured_v2_Overlay_0_20_PHENIX->Draw();
     c_measured_v2_Overlay_0_20_PHENIX->Modified();
     c_measured_v2_Overlay_0_20_PHENIX->Update();
-    c_measured_v2_Overlay_0_20_PHENIX->SaveAs("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/vN_Plot_Output/v2/0_20/v2_vs_pT_0_20_Overlay.png");
+    c_measured_v2_Overlay_0_20_PHENIX->SaveAs((BasePlotOutputPath + "/v2/0_20/v2_vs_pT_0_20_Overlay.png").c_str());
 
     
     /*
@@ -564,7 +567,7 @@ void Plot_vN(const AdditionalData& data) {
     legend_measured_v2_Overlay_20_40_PHENIX->Draw();
     c_measured_v2_Overlay_20_40_PHENIX->Modified();
     c_measured_v2_Overlay_20_40_PHENIX->Update();
-    c_measured_v2_Overlay_20_40_PHENIX->SaveAs("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/vN_Plot_Output/v2/20_40/v2_vs_pT_20_40_Overlay.png");
+    c_measured_v2_Overlay_20_40_PHENIX->SaveAs((BasePlotOutputPath + "/v2/20_40/v2_vs_pT_20_40_Overlay.png").c_str());
 
     /*
      Overlay 40-60 measured v2 data with PHENIX 40-50 and 50-60
@@ -588,7 +591,7 @@ void Plot_vN(const AdditionalData& data) {
     legend_measured_v2_Overlay_40_60_PHENIX->Draw();
     c_measured_v2_Overlay_40_60_PHENIX->Modified();
     c_measured_v2_Overlay_40_60_PHENIX->Update();
-    c_measured_v2_Overlay_40_60_PHENIX->SaveAs("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/vN_Plot_Output/v2/40_60/v2_vs_pT_40_60_Overlay.png");
+    c_measured_v2_Overlay_40_60_PHENIX->SaveAs((BasePlotOutputPath + "/v2/40_60/v2_vs_pT_40_60_Overlay.png").c_str());
     
 
     /*
@@ -615,7 +618,7 @@ void Plot_vN(const AdditionalData& data) {
     legend_leftRightbg_overlay_0_20_v2->Draw();
     c_0_20_Left_Right_bg_Overlay_v2->Modified();
     c_0_20_Left_Right_bg_Overlay_v2->Update();
-    c_0_20_Left_Right_bg_Overlay_v2->SaveAs("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/vN_Plot_Output/v2/0_20/bg_v2_Left_Right_Overlay_0_20.png");
+    c_0_20_Left_Right_bg_Overlay_v2->SaveAs((BasePlotOutputPath + "/v2/0_20/bg_v2_Left_Right_Overlay_0_20.png").c_str());
 
 
     /*
@@ -641,7 +644,7 @@ void Plot_vN(const AdditionalData& data) {
     legend_leftRightbg_overlay_20_40_v2->Draw();
     c_20_40_Left_Right_bg_Overlay_v2->Modified();
     c_20_40_Left_Right_bg_Overlay_v2->Update();
-    c_20_40_Left_Right_bg_Overlay_v2->SaveAs("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/vN_Plot_Output/v2/20_40/bg_v2_Left_Right_Overlay_20_40.png");
+    c_20_40_Left_Right_bg_Overlay_v2->SaveAs((BasePlotOutputPath + "/v2/20_40/bg_v2_Left_Right_Overlay_20_40.png").c_str());
 
     /*
      OVERLAY BACKGROUND v2 TO LEFT AND RIGHT OF SIGNAL REGION for 40-60%
@@ -666,23 +669,26 @@ void Plot_vN(const AdditionalData& data) {
     legend_leftRightbg_overlay_40_60_v2->Draw();
     c_40_60_Left_Right_bg_Overlay_v2->Modified();
     c_40_60_Left_Right_bg_Overlay_v2->Update();
-    c_40_60_Left_Right_bg_Overlay_v2->SaveAs("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/vN_Plot_Output/v2/40_60/bg_v2_Left_Right_Overlay_40_60.png");
+    c_40_60_Left_Right_bg_Overlay_v2->SaveAs((BasePlotOutputPath + "/v2/40_60/bg_v2_Left_Right_Overlay_40_60.png").c_str());
 
     /*
      Overlay with PHENIX, measured v2, and corrected v2, for 0-20 percent centrality
      */
     TCanvas *c_v2_corr_unc_overlay_w_phenix0_20 = new TCanvas("c_v2_corr_unc_overlay_w_phenix0_20", "Overlay 0-20% Corr/UnCorr", 800, 600);
     corrected_graph_0_20_v2->Draw("AP");  // This will be the base graph
+    corrected_graph_0_20_v2->SetTitle("Measured #it{v}_{2} and Corrected #it{v}_{2} vs #it{p}_{T} 0-20% Centrality; #it{p}_{T} [GeV]; #it{v}_{2}");
     double offsetNew = 0.03;
     for (int i = 0; i < ptCenters.size(); ++i) {
         double pt = ptCenters[i];
         graph_0_10->SetPoint(i, pt - offsetNew * 3.5, v2_0_10[i]);
         graph_0_20_v2->SetPoint(i, pt - offsetNew * 1.3, v2_0_20[i]);
+        corrected_graph_0_20_v2->SetPoint(i, pt + offsetNew * 1.3, corrected_v2_0_20[i]);
         graph_10_20->SetPoint(i, pt + offsetNew * 3.5, v2_10_20[i]);
     }
     graph_0_20_v2->SetMarkerStyle(21); // square for uncorrected
     graph_0_20_v2->SetMarkerColor(kBlue);
     graph_0_20_v2->SetLineColor(kBlue);
+    
     corrected_graph_0_20_v2->SetMarkerStyle(22); // triangle for corrected
     corrected_graph_0_20_v2->SetMarkerSize(1.3); // triangle for corrected
     corrected_graph_0_20_v2->SetMarkerColor(kBlack);
@@ -690,11 +696,13 @@ void Plot_vN(const AdditionalData& data) {
     corrected_graph_0_20_v2->SetMinimum(-0.8); // Set the minimum y value
     corrected_graph_0_20_v2->SetMaximum(1.2); // Set the maximum y value
     graph_0_10->SetMarkerStyle(20); // circle
+    graph_0_10->SetMarkerSize(1.3); // triangle for corrected
     graph_0_10->SetMarkerColor(kRed);
-    graph_0_10->SetLineColor(kBlue);
+    graph_0_10->SetLineColor(kRed);
     graph_10_20->SetMarkerStyle(20); // circle
     graph_10_20->SetMarkerColor(kGreen+3);
     graph_10_20->SetLineColor(kGreen+3);
+    graph_10_20->SetMarkerSize(1.3); // triangle for corrected
 
     graph_0_20_v2->Draw("P SAME");
     graph_0_10->Draw("P SAME");
@@ -713,7 +721,7 @@ void Plot_vN(const AdditionalData& data) {
     DrawZeroLine(c_v2_corr_unc_overlay_w_phenix0_20);
     c_v2_corr_unc_overlay_w_phenix0_20->Modified();
     c_v2_corr_unc_overlay_w_phenix0_20->Update();
-    c_v2_corr_unc_overlay_w_phenix0_20->SaveAs("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/vN_Plot_Output/v2/0_20/vN_vs_pT_0_20_corr_uncorr_overal.png");
+    c_v2_corr_unc_overlay_w_phenix0_20->SaveAs((BasePlotOutputPath + "/v2/0_20/vN_vs_pT_0_20_corr_uncorr_overal.png").c_str());
     
     
     /*
@@ -721,10 +729,12 @@ void Plot_vN(const AdditionalData& data) {
      */
     TCanvas *c_v2_corr_unc_overlay_w_phenix20_40 = new TCanvas("c_v2_corr_unc_overlay_w_phenix20_40", "Overlay 20-40% Corr/UnCorr", 800, 600);
     corrected_graph_20_40_v2->Draw("AP");  // This will be the base graph
+    corrected_graph_20_40_v2->SetTitle("Measured #it{v}_{2} and Corrected #it{v}_{2} vs #it{p}_{T} 20-40% Centrality; #it{p}_{T} [GeV]; #it{v}_{2}");
     for (int i = 0; i < ptCenters.size(); ++i) {
         double pt = ptCenters[i];
         graph_20_30->SetPoint(i, pt - offsetNew * 3.5, v2_20_30[i]);
         graph_20_40_v2->SetPoint(i, pt - offsetNew * 1.3, v2_20_40[i]);
+        corrected_graph_20_40_v2->SetPoint(i, pt + offsetNew * 1.3, corrected_v2_20_40[i]);
         graph_30_40->SetPoint(i, pt + offsetNew * 3.5, v2_30_40[i]);
     }
     graph_20_40_v2->SetMarkerStyle(21);
@@ -736,9 +746,11 @@ void Plot_vN(const AdditionalData& data) {
     corrected_graph_20_40_v2->SetLineColor(kBlack);
     graph_20_30->SetMarkerStyle(20); // circle
     graph_20_30->SetMarkerColor(kRed);
+    graph_20_30->SetMarkerSize(1.3); // triangle for corrected
     graph_20_30->SetLineColor(kRed);
     graph_30_40->SetMarkerStyle(20); // circle
     graph_30_40->SetMarkerColor(kGreen+3);
+    graph_30_40->SetMarkerSize(1.3); // triangle for corrected
     graph_30_40->SetLineColor(kGreen+3);
     graph_20_40_v2->Draw("P SAME");
     graph_20_30->Draw("P SAME");
@@ -755,17 +767,19 @@ void Plot_vN(const AdditionalData& data) {
     DrawZeroLine(c_v2_corr_unc_overlay_w_phenix20_40);
     c_v2_corr_unc_overlay_w_phenix20_40->Modified();
     c_v2_corr_unc_overlay_w_phenix20_40->Update();
-    c_v2_corr_unc_overlay_w_phenix20_40->SaveAs("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/vN_Plot_Output/v2/20_40/vN_vs_pT_20_40_corr_uncorr_overal.png");
+    c_v2_corr_unc_overlay_w_phenix20_40->SaveAs((BasePlotOutputPath + "/v2/20_40/vN_vs_pT_20_40_corr_uncorr_overal.png").c_str());
     
     /*
      Overlay with PHENIX, measured v2, and corrected v2, for 40-60 percent centrality
      */
     TCanvas *c_v2_corr_unc_overlay_w_phenix40_60 = new TCanvas("c_v2_corr_unc_overlay_w_phenix40_60", "Overlay 40-60% Corr/UnCorr", 800, 600);
     corrected_graph_40_60_v2->Draw("AP");  // This will be the base graph
+    corrected_graph_40_60_v2->SetTitle("Measured #it{v}_{2} and Corrected #it{v}_{2} vs #it{p}_{T} 40-60% Centrality; #it{p}_{T} [GeV]; #it{v}_{2}");
     for (int i = 0; i < ptCenters.size(); ++i) {
         double pt = ptCenters[i];
         graph_40_50->SetPoint(i, pt - offsetNew * 3.5, v2_40_50[i]);
         graph_40_60_v2->SetPoint(i, pt - offsetNew * 1.3, v2_40_60[i]);
+        corrected_graph_40_60_v2->SetPoint(i, pt + offsetNew * 1.3, corrected_v2_40_60[i]);
         graph_50_60->SetPoint(i, pt + offsetNew * 3.5, v2_50_60[i]);
     }
     graph_40_60_v2->SetMarkerStyle(21); // square for uncorrected
@@ -778,10 +792,12 @@ void Plot_vN(const AdditionalData& data) {
     corrected_graph_40_60_v2->SetMinimum(-0.25);
     corrected_graph_40_60_v2->SetMaximum(0.75);
     graph_40_50->SetMarkerStyle(20); // circle
+    graph_40_50->SetMarkerSize(1.3); // triangle for corrected
     graph_40_50->SetMarkerColor(kRed);
     graph_40_50->SetLineColor(kRed);
     graph_50_60->SetMarkerStyle(20); // circle
     graph_50_60->SetMarkerColor(kGreen+3);
+    graph_50_60->SetMarkerSize(1.3); // triangle for corrected
     graph_50_60->SetLineColor(kGreen+3);
     graph_40_60_v2->Draw("P SAME");
     graph_40_50->Draw("P SAME");
@@ -798,7 +814,7 @@ void Plot_vN(const AdditionalData& data) {
     DrawZeroLine(c_v2_corr_unc_overlay_w_phenix40_60);
     c_v2_corr_unc_overlay_w_phenix40_60->Modified();
     c_v2_corr_unc_overlay_w_phenix40_60->Update();
-    c_v2_corr_unc_overlay_w_phenix40_60->SaveAs("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/vN_Plot_Output/v2/40_60/vN_vs_pT_40_60_corr_uncorr_overal.png");
+    c_v2_corr_unc_overlay_w_phenix40_60->SaveAs((BasePlotOutputPath + "/v2/40_60/vN_vs_pT_40_60_corr_uncorr_overal.png").c_str());
     
     /*
      OVERLAY BACKGROUND v3 TO LEFT AND RIGHT OF SIGNAL REGION for 0-20%
@@ -823,7 +839,7 @@ void Plot_vN(const AdditionalData& data) {
     legend_leftRightbg_overlay_0_20_v3->Draw();
     c_0_20_Left_Right_bg_Overlay_v3->Modified();
     c_0_20_Left_Right_bg_Overlay_v3->Update();
-    c_0_20_Left_Right_bg_Overlay_v3->SaveAs("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/vN_Plot_Output/v3/0_20/bg_v3_Left_Right_Overlay_0_20.png");
+    c_0_20_Left_Right_bg_Overlay_v3->SaveAs((BasePlotOutputPath + "/v3/0_20/bg_v3_Left_Right_Overlay_0_20.png").c_str());
 
     /*
      OVERLAY BACKGROUND v3 TO LEFT AND RIGHT OF SIGNAL REGION for 40-60%
@@ -849,7 +865,7 @@ void Plot_vN(const AdditionalData& data) {
     legend_leftRightbg_overlay_40_60_v3->Draw();
     c_40_60_Left_Right_bg_Overlay_v3->Modified();
     c_40_60_Left_Right_bg_Overlay_v3->Update();
-    c_40_60_Left_Right_bg_Overlay_v3->SaveAs("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/vN_Plot_Output/v3/40_60/bg_v3_Left_Right_Overlay_40_60.png");
+    c_40_60_Left_Right_bg_Overlay_v3->SaveAs((BasePlotOutputPath + "/v3/40_60/bg_v3_Left_Right_Overlay_40_60.png").c_str());
 
     /*
      Overlay Measured and Corrected v3 Output 0-20%
@@ -877,7 +893,7 @@ void Plot_vN(const AdditionalData& data) {
 
     c_0_20_measured_corrected_v3->Modified();
     c_0_20_measured_corrected_v3->Update();
-    c_0_20_measured_corrected_v3->SaveAs("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/vN_Plot_Output/v3/0_20/v3_measured_corrected_overal_0_20.png");
+    c_0_20_measured_corrected_v3->SaveAs((BasePlotOutputPath + "/v3/0_20/v3_measured_corrected_overal_0_20.png").c_str());
 
     /*
      Overlay Measured and Corrected v3 Output 40 - 60 percent centrality
@@ -907,7 +923,7 @@ void Plot_vN(const AdditionalData& data) {
 
     c_40_60_measured_corrected_v3->Modified();
     c_40_60_measured_corrected_v3->Update();
-    c_40_60_measured_corrected_v3->SaveAs("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/vN_Plot_Output/v3/40_60/v3_measured_corrected_overal_40_60.png");
+    c_40_60_measured_corrected_v3->SaveAs((BasePlotOutputPath + "/v3/40_60/v3_measured_corrected_overal_40_60.png").c_str());
     
 
     /*
@@ -938,7 +954,7 @@ void Plot_vN(const AdditionalData& data) {
     DrawZeroLine(c_0_20_v2_v3_corrected);
     c_0_20_v2_v3_corrected->Modified();
     c_0_20_v2_v3_corrected->Update();
-    c_0_20_v2_v3_corrected->SaveAs("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/vN_Plot_Output/v2_v3_Corrected_Overlay_0_20.png");
+    c_0_20_v2_v3_corrected->SaveAs((BasePlotOutputPath + "/v2_v3_Corrected_Overlay_0_20.png").c_str());
     
     /*
      Make plot corrected v2 overlay with v3 for 40-60 centrality
@@ -968,7 +984,7 @@ void Plot_vN(const AdditionalData& data) {
     DrawZeroLine(c_40_60_v2_v3_corrected);
     c_40_60_v2_v3_corrected->Modified();
     c_40_60_v2_v3_corrected->Update();
-    c_40_60_v2_v3_corrected->SaveAs("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/vN_Plot_Output/v2_v3_Corrected_Overlay_40_60.png");
+    c_40_60_v2_v3_corrected->SaveAs((BasePlotOutputPath + "/v2_v3_Corrected_Overlay_40_60.png").c_str());
 }
 
 void printCalculationDetails(const std::string& type, int index, const std::string& numeratorPath, const std::string& denominatorPath, float value, float error) {
@@ -983,7 +999,7 @@ void printCalculationDetails(const std::string& type, int index, const std::stri
 
 void vN_calculator_AccumulatedData() {
     // Open the ROOT file
-    TFile *file = new TFile("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/testRootFiles_ByProduction/p010/test-MB-trigger.root", "READ");
+    TFile *file = new TFile("/Users/patsfan753/Desktop/vN_AnalysisFinal/data/testRootFiles_ByProduction/p011/No_PDC_withOut_zVertex/test.root", "READ");
     if (!file || file->IsZombie()) {
         std::cerr << "Error opening file or file is not a valid ROOT file" << std::endl;
         return;
@@ -997,6 +1013,11 @@ void vN_calculator_AccumulatedData() {
 
     // Define the histogram names for qQ within the vn/qQ directory
     std::string hist_name_qQ2[18];
+    for (int i = 0; i < 18; ++i) {
+        hist_name_qQ2[i] = "vn/qQ2/hqQ2_" + std::to_string(i);
+    }
+    
+    std::string hist_name_qQ2_QQ2[18];
     for (int i = 0; i < 18; ++i) {
         hist_name_qQ2[i] = "vn/qQ2/hqQ2_" + std::to_string(i);
     }
@@ -1058,8 +1079,8 @@ void vN_calculator_AccumulatedData() {
     };
 
     // Define the base directories for v2 and v3 histograms
-    std::string baseDirV2 = "/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/qQ_and_QQ_histograms_p010/n_2";
-    std::string baseDirV3 = "/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/qQ_and_QQ_histograms_p010/n_3";
+    std::string baseDirV2 = "/Users/patsfan753/Desktop/vN_AnalysisFinal/plotOutput/qQ_QQ_histograms_byProd/p011_withOutZvtx/n_2";
+    std::string baseDirV3 = "/Users/patsfan753/Desktop/vN_AnalysisFinal/plotOutput/qQ_QQ_histograms_byProd/p011_withOutZvtx/n_3";
 
 //    // Process and save QQ and qQ histograms for v2
 //    for (const auto& histPath : hist_name_QQ2) {
@@ -1088,7 +1109,7 @@ void vN_calculator_AccumulatedData() {
 //    for (const auto& histPath : hist_name_qQ3_bg_left) {
 //        drawAndSaveHist(histPath, baseDirV3);
 //    }
-    
+//    
     /*
      RETRIEVE MEANS AND ERROR FOR n = 2 histograms
      */
@@ -1124,6 +1145,18 @@ void vN_calculator_AccumulatedData() {
         int nEntries = h_qQ2->GetEntries();
         qQ2_error[i] = stdDev / sqrt(nEntries);
     }
+//    // Retrieve and calculate covariance from mean of histogram of (qQ)(QQ)
+//    float qQ2_QQ2_mean[18];
+//    for (int i = 0; i < 18; ++i) {
+//        TH1F *h_qQ2_QQ2 = (TH1F*)file->Get(hist_name_qQ2_QQ2[i].c_str());
+//        if (!h_qQ2) {
+//            std::cerr << "Error: qQ histogram " << hist_name_qQ2_QQ2[i] << " not found" << std::endl;
+//            file->Close();
+//            delete file;
+//            return;
+//        }
+//        qQ2_QQ2_mean[i] = h_qQ2_QQ2->GetMean();
+//    }
     
     // Retrieve and calculate background qQ means and their errors
     float qQ2_bg_mean[18], qQ2_bg_error[18];
@@ -1230,8 +1263,8 @@ void vN_calculator_AccumulatedData() {
     float userDeltaR = 0;
 
     if (!Plot_vN_bool) {
-        std::ifstream inFile("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/dataOutput_From_Fits_ByProd/p010/PlotByPlotOutput_2_23_24.csv");
-        std::ofstream outFile("/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/I_O_Accumulated_PlotByPlotOutput/UpdatedCSV_AccumulatedDists_p010.csv");
+        std::ifstream inFile("/Users/patsfan753/Desktop/vN_AnalysisFinal/data/PlotByPlotOutput_FromFits/p011/without_pdc_zVertex/PlotByPlotOutput_p011_noZvertex_noPDC.csv");
+        std::ofstream outFile("/Users/patsfan753/Desktop/vN_AnalysisFinal/data/vN_Appended_Data/UpdatedCSV_AccumulatedDists_p011_noZvertex_noPDC.csv");
 
         std::string line;
         int lineIndex = 0;
@@ -1281,9 +1314,8 @@ void vN_calculator_AccumulatedData() {
                     
                     float v2_value = qQ2_mean[idx] / sqrt(QQ2_mean[QQ_index]);
                     float v2_error = abs(v2_value) * sqrt(pow(qQ2_error[idx] / qQ2_mean[idx], 2) + 0.25 * pow(QQ2_error[QQ_index] / QQ2_mean[QQ_index], 2));
+
                     printCalculationDetails("v2", idx, hist_name_qQ2[idx], hist_name_QQ2[QQ_index], v2_value, v2_error);
-                    
-                    
 
                     float bg_v2_value = qQ2_bg_mean[idx] / sqrt(QQ2_mean[QQ_index]);
                     float bg_v2_error = abs(bg_v2_value) * sqrt(pow(qQ2_bg_error[idx] / qQ2_bg_mean[idx], 2) + 0.25 * pow(QQ2_error[QQ_index] / QQ2_mean[QQ_index], 2));
@@ -1355,10 +1387,9 @@ void vN_calculator_AccumulatedData() {
     // Check and execute Plot_vN
     if (Plot_vN_bool) {
         AdditionalData data;
-        std::string Accumulated_Data_Path = "/Users/patsfan753/Desktop/Desktop/v_N_Analysis_Final-2_15/I_O_Accumulated_PlotByPlotOutput/UpdatedCSV_AccumulatedDists_p009.csv";
+        std::string Accumulated_Data_Path = "/Users/patsfan753/Desktop/vN_AnalysisFinal/data/vN_Appended_Data/UpdatedCSV_AccumulatedDists_p011_noZvertex_noPDC.csv";
 
         Read_Additonal_DataSet(Accumulated_Data_Path, data);
         Plot_vN(data);
     }
 }
-
