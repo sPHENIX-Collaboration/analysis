@@ -21,7 +21,8 @@ libdNdEtaINTT_la_SOURCES = \
 
 libdNdEtaINTT_la_LIBADD = \
   -lphool \
-  -lSubsysReco
+  -lSubsysReco \
+  -lcalotrigger
 
 libdNdEtaINTT_la_LDFLAGS = \
   -L$(libdir) \
