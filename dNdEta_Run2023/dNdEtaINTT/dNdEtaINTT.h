@@ -5,6 +5,9 @@
 
 #include <fun4all/SubsysReco.h>
 
+#include <ffarawobjects/InttRawHit.h>
+#include <ffarawobjects/InttRawHitContainer.h>
+
 #include <ffaobjects/EventHeader.h>
 
 #include <phhepmc/PHHepMCGenEvent.h>
@@ -16,8 +19,8 @@
 #include <HepMC/GenEvent.h>
 #include <HepMC/GenVertex.h>
 #pragma GCC diagnostic pop
-#include <HepMC/HeavyIon.h>  // for HeavyIon
 #include <HepMC/GenParticle.h>
+#include <HepMC/HeavyIon.h> // for HeavyIon
 #include <HepMC/IteratorRange.h>
 #include <HepMC/SimpleVector.h>
 
@@ -34,8 +37,8 @@
 #include <g4detectors/PHG4CylinderGeomContainer.h>
 #include <intt/CylinderGeomIntt.h>
 
-#include <centrality/CentralityInfo.h>
 #include <calotrigger/MinimumBiasInfo.h>
+#include <centrality/CentralityInfo.h>
 #include <phool/getClass.h>
 #include <trackbase/ActsGeometry.h>
 #include <trackbase/InttDefs.h>
@@ -76,7 +79,9 @@ class PHHepMCGenHelper;
 class dNdEtaINTT : public SubsysReco
 {
   public:
-    dNdEtaINTT(const std::string &name = "dNdEtaINTTAnalyzer", const std::string &outputfile = "INTTdNdEta.root", const bool &isData = false);
+    dNdEtaINTT(const std::string &name = "dNdEtaINTTAnalyzer",    //
+               const std::string &outputfile = "INTTdNdEta.root", //
+               const bool &isData = false);
 
     ~dNdEtaINTT() override;
 
@@ -121,10 +126,11 @@ class dNdEtaINTT : public SubsysReco
 
     void GetCentrality(bool b) { _get_centrality = b; }
 
+    void GetInttRawHit(bool b) { _get_inttrawhit = b; }
+
     void GetTrkrHit(bool b) { _get_trkr_hit = b; }
 
     void GetPHG4(bool b) { _get_phg4_info = b; }
-
 
   private:
     void ResetVectors();
@@ -132,6 +138,7 @@ class dNdEtaINTT : public SubsysReco
     void GetRecoClusterInfo(PHCompositeNode *topNode);
     void GetTruthClusterInfo(PHCompositeNode *topNode);
     void GetCentralityInfo(PHCompositeNode *topNode);
+    void GetInttRawHitInfo(PHCompositeNode *topNode);
     void GetTrkrHitInfo(PHCompositeNode *topNode);
     void GetPHG4Info(PHCompositeNode *topNode);
 
@@ -139,6 +146,7 @@ class dNdEtaINTT : public SubsysReco
     bool _get_truth_cluster;
     bool _get_reco_cluster;
     bool _get_centrality;
+    bool _get_inttrawhit;
     bool _get_trkr_hit;
     bool _get_phg4_info;
 
@@ -150,28 +158,49 @@ class dNdEtaINTT : public SubsysReco
 
     TTree *outtree;
     int event_;
-    float centrality_bimp_, centrality_impactparam_, centrality_mbd_, centrality_mbdquantity_;
-    int ncoll_, npart_; // number of collisions and participants
+    float centrality_bimp_;
+    float centrality_impactparam_;
+    float centrality_mbd_;
+    float centrality_mbdquantity_;
+    int ncoll_;
+    int npart_; // number of collisions and participants
     bool IsMinBias_;
 
     // Truth primary vertex information
-    float TruthPV_trig_x_, TruthPV_trig_y_, TruthPV_trig_z_;
+    float TruthPV_trig_x_;
+    float TruthPV_trig_y_;
+    float TruthPV_trig_z_;
     int NTruthVtx_;
 
     // HepMC information - final state particles
     int NHepMCFSPart_;
     int signal_process_id_;
-    std::vector<float> HepMCFSPrtl_Pt_, HepMCFSPrtl_Eta_, HepMCFSPrtl_Phi_, HepMCFSPrtl_E_;
-    std::vector<float> HepMCFSPrtl_prodx_, HepMCFSPrtl_prody_, HepMCFSPrtl_prodz_;
+    std::vector<float> HepMCFSPrtl_Pt_;
+    std::vector<float> HepMCFSPrtl_Eta_;
+    std::vector<float> HepMCFSPrtl_Phi_;
+    std::vector<float> HepMCFSPrtl_E_;
+    std::vector<float> HepMCFSPrtl_prodx_;
+    std::vector<float> HepMCFSPrtl_prody_;
+    std::vector<float> HepMCFSPrtl_prodz_;
     std::vector<int> HepMCFSPrtl_PID_;
 
     // Reconstructed cluster information
-    int NClus_, NClus_Layer1_;
-    std::vector<int> ClusLayer_, ClusHitcount_, ClusTimeBucketId_;
-    std::vector<float> ClusX_, ClusY_, ClusZ_, ClusR_, ClusPhi_, ClusEta_;
+    int NClus_;
+    int NClus_Layer1_;
+    std::vector<int> ClusLayer_;
+    std::vector<int> ClusHitcount_;
+    std::vector<int> ClusTimeBucketId_;
+    std::vector<float> ClusX_;
+    std::vector<float> ClusY_;
+    std::vector<float> ClusZ_;
+    std::vector<float> ClusR_;
+    std::vector<float> ClusPhi_;
+    std::vector<float> ClusEta_;
     std::vector<unsigned int> ClusAdc_;
-    std::vector<float> ClusPhiSize_, ClusZSize_;
-    std::vector<uint8_t> ClusLadderZId_, ClusLadderPhiId_;
+    std::vector<float> ClusPhiSize_;
+    std::vector<float> ClusZSize_;
+    std::vector<uint8_t> ClusLadderZId_;
+    std::vector<uint8_t> ClusLadderPhiId_;
     std::vector<uint32_t> ClusTrkrHitSetKey_;
 
     // Truth cluster information
@@ -186,14 +215,35 @@ class dNdEtaINTT : public SubsysReco
     std::vector<int> TruthClusNRecoClus_;
     std::vector<int> PrimaryTruthClusNRecoClus_;
 
+    // InttRawHit information
+    int NInttRawHits_;
+    std::vector<uint64_t> InttRawHit_bco_;
+    std::vector<uint32_t> InttRawHit_packetid_;
+    std::vector<uint32_t> InttRawHit_word_;
+    std::vector<uint16_t> InttRawHit_fee_;
+    std::vector<uint16_t> InttRawHit_channel_id_;
+    std::vector<uint16_t> InttRawHit_chip_id_;
+    std::vector<uint16_t> InttRawHit_adc_;
+    std::vector<uint16_t> InttRawHit_FPHX_BCO_;
+    std::vector<uint16_t> InttRawHit_full_FPHX_;
+    std::vector<uint16_t> InttRawHit_full_ROC_;
+    std::vector<uint16_t> InttRawHit_amplitude_;
+
     // TrkrHit information
     int NTrkrhits_;
-    std::vector<uint16_t> TrkrHitRow_, TrkrHitColumn_, TrkrHitADC_;
-    std::vector<uint8_t> TrkrHitLadderZId_, TrkrHitLadderPhiId_, TrkrHitLayer_;
+    std::vector<uint16_t> TrkrHitRow_;
+    std::vector<uint16_t> TrkrHitColumn_;
+    std::vector<uint16_t> TrkrHitADC_;
+    std::vector<uint8_t> TrkrHitLadderZId_;
+    std::vector<uint8_t> TrkrHitLadderPhiId_;
+    std::vector<uint8_t> TrkrHitLayer_;
 
     // PHG4 information (from all PHG4Particles)
     int NPrimaryG4P_;
-    std::vector<float> PrimaryG4P_Pt_, PrimaryG4P_Eta_, PrimaryG4P_Phi_,PrimaryG4P_E_;
+    std::vector<float> PrimaryG4P_Pt_;
+    std::vector<float> PrimaryG4P_Eta_;
+    std::vector<float> PrimaryG4P_Phi_;
+    std::vector<float> PrimaryG4P_E_;
     std::vector<int> PrimaryG4P_PID_;
 
     EventHeader *eventheader = nullptr;
@@ -208,6 +258,7 @@ class dNdEtaINTT : public SubsysReco
 
     TrkrClusterContainerv4 *dst_clustermap = nullptr;
     TrkrClusterHitAssoc *clusterhitmap = nullptr;
+    InttRawHitContainer *inttrawhitcontainer = nullptr;
     TrkrHitSetContainer *hitsets = nullptr;
     ActsGeometry *_tgeometry = nullptr;
     PHG4CylinderGeomContainer *_intt_geom_container = nullptr;

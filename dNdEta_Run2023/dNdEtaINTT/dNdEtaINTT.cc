@@ -12,19 +12,22 @@
 //
 // dNdEtaINTT::~dNdEtaINTT()
 // this is called when the Fun4AllServer is deleted at the end of running. Be
-// mindful what you delete - you do loose ownership of object you put on the node tree
+// mindful what you delete - you do loose ownership of object you put on the
+// node tree
 //
 // int dNdEtaINTT::Init(PHCompositeNode *topNode)
-// This method is called when the module is registered with the Fun4AllServer. You
-// can create historgrams here or put objects on the node tree but be aware that
-// modules which haven't been registered yet did not put antyhing on the node tree
+// This method is called when the module is registered with the Fun4AllServer.
+// You can create historgrams here or put objects on the node tree but be aware
+// that modules which haven't been registered yet did not put antyhing on the
+// node tree
 //
 // int dNdEtaINTT::InitRun(PHCompositeNode *topNode)
 // This method is called when the first event is read (or generated). At
 // this point the run number is known (which is mainly interesting for raw data
-// processing). Also all objects are on the node tree in case your module's action
-// depends on what else is around. Last chance to put nodes under the DST Node
-// We mix events during readback if branches are added after the first event
+// processing). Also all objects are on the node tree in case your module's
+// action depends on what else is around. Last chance to put nodes under the DST
+// Node We mix events during readback if branches are added after the first
+// event
 //
 // int dNdEtaINTT::process_event(PHCompositeNode *topNode)
 // called for every event. Return codes trigger actions, you find them in
@@ -33,16 +36,17 @@
 //     return Fun4AllReturnCodes::EVENT_OK
 //   abort event reconstruction, clear everything and process next event:
 //     return Fun4AllReturnCodes::ABORT_EVENT;
-//   proceed but do not save this event in output (needs output manager setting):
+//   proceed but do not save this event in output (needs output manager
+//   setting):
 //     return Fun4AllReturnCodes::DISCARD_EVENT;
 //   abort processing:
 //     return Fun4AllReturnCodes::ABORT_RUN
 // all other integers will lead to an error and abort of processing
 //
 // int dNdEtaINTT::ResetEvent(PHCompositeNode *topNode)
-// If you have internal data structures (arrays, stl containers) which needs clearing
-// after each event, this is the place to do that. The nodes under the DST node are cleared
-// by the framework
+// If you have internal data structures (arrays, stl containers) which needs
+// clearing after each event, this is the place to do that. The nodes under the
+// DST node are cleared by the framework
 //
 // int dNdEtaINTT::EndRun(const int runnumber)
 // This method is called at the end of a run when an event from a new run is
@@ -80,9 +84,32 @@ template <class T> void CleanVec(std::vector<T> &v)
 
 //____________________________________________________________________________..
 dNdEtaINTT::dNdEtaINTT(const std::string &name, const std::string &outputfile, const bool &isData)
-    : SubsysReco(name), _get_hepmc_info(true), _get_truth_cluster(true), _get_reco_cluster(true), _get_centrality(true), _get_trkr_hit(true), _get_phg4_info(true), _outputFile(outputfile), IsData(isData), eventheader(nullptr),
-      m_geneventmap(nullptr), m_genevt(nullptr), svtx_evalstack(nullptr), truth_eval(nullptr), clustereval(nullptr), hiteval(nullptr), dst_clustermap(nullptr), clusterhitmap(nullptr),
-      hitsets(nullptr), _tgeometry(nullptr), _intt_geom_container(nullptr), m_truth_info(nullptr), m_CentInfo(nullptr), Minimumbiasinfo(nullptr)
+    : SubsysReco(name)
+    , _get_hepmc_info(true)
+    , _get_truth_cluster(true)
+    , _get_reco_cluster(true)
+    , _get_centrality(true)
+    , _get_inttrawhit(true)
+    , _get_trkr_hit(true)
+    , _get_phg4_info(true)
+    , _outputFile(outputfile)
+    , IsData(isData)
+    , eventheader(nullptr)
+    , m_geneventmap(nullptr)
+    , m_genevt(nullptr)
+    , svtx_evalstack(nullptr)
+    , truth_eval(nullptr)
+    , clustereval(nullptr)
+    , hiteval(nullptr)
+    , dst_clustermap(nullptr)
+    , clusterhitmap(nullptr)
+    , inttrawhitcontainer(nullptr)
+    , hitsets(nullptr)
+    , _tgeometry(nullptr)
+    , _intt_geom_container(nullptr)
+    , m_truth_info(nullptr)
+    , m_CentInfo(nullptr)
+    , Minimumbiasinfo(nullptr)
 {
     std::cout << "dNdEtaINTT::dNdEtaINTT(const std::string &name) Calling ctor" << std::endl;
 }
@@ -142,8 +169,20 @@ int dNdEtaINTT::Init(PHCompositeNode *topNode)
     }
 
     outtree->Branch("IsMinBias", &IsMinBias_);
-    outtree->Branch("NClus_Layer1", &NClus_Layer1_);
-    outtree->Branch("NClus", &NClus_);
+    // InttRawHit information
+    outtree->Branch("NInttRawHits", &NInttRawHits_);
+    outtree->Branch("InttRawHit_bco", &InttRawHit_bco_);
+    outtree->Branch("InttRawHit_packetid", &InttRawHit_packetid_);
+    outtree->Branch("InttRawHit_word", &InttRawHit_word_);
+    outtree->Branch("InttRawHit_fee", &InttRawHit_fee_);
+    outtree->Branch("InttRawHit_channel_id", &InttRawHit_channel_id_);
+    outtree->Branch("InttRawHit_chip_id", &InttRawHit_chip_id_);
+    outtree->Branch("InttRawHit_adc", &InttRawHit_adc_);
+    outtree->Branch("InttRawHit_FPHX_BCO", &InttRawHit_FPHX_BCO_);
+    outtree->Branch("InttRawHit_full_FPHX", &InttRawHit_full_FPHX_);
+    outtree->Branch("InttRawHit_full_ROC", &InttRawHit_full_ROC_);
+    outtree->Branch("InttRawHit_amplitude", &InttRawHit_amplitude_);
+    // TrkrHit information
     outtree->Branch("NTrkrhits", &NTrkrhits_);
     outtree->Branch("TrkrHitRow", &TrkrHitRow_);
     outtree->Branch("TrkrHitColumn", &TrkrHitColumn_);
@@ -151,6 +190,9 @@ int dNdEtaINTT::Init(PHCompositeNode *topNode)
     outtree->Branch("TrkrHitLadderPhiId", &TrkrHitLadderPhiId_);
     outtree->Branch("TrkrHitLayer", &TrkrHitLayer_);
     outtree->Branch("TrkrHitADC", &TrkrHitADC_);
+    // TrkrCluster information
+    outtree->Branch("NClus_Layer1", &NClus_Layer1_);
+    outtree->Branch("NClus", &NClus_);
     outtree->Branch("ClusLayer", &ClusLayer_);
     outtree->Branch("ClusX", &ClusX_);
     outtree->Branch("ClusY", &ClusY_);
@@ -179,7 +221,6 @@ int dNdEtaINTT::InitRun(PHCompositeNode *topNode)
 //____________________________________________________________________________..
 int dNdEtaINTT::process_event(PHCompositeNode *topNode)
 {
-    // std::cout << "dNdEtaINTT::process_event(PHCompositeNode *topNode) Processing Event" << InputFileListIndex * NEvtPerFile + eventNum << std::endl;
     std::cout << "dNdEtaINTT::process_event(PHCompositeNode *topNode) Processing Event" << eventNum << std::endl;
 
     PHNodeIterator nodeIter(topNode);
@@ -210,6 +251,9 @@ int dNdEtaINTT::process_event(PHCompositeNode *topNode)
 
     if (_get_centrality)
         GetCentralityInfo(topNode);
+
+    if (_get_inttrawhit)
+        GetInttRawHitInfo(topNode);
 
     if (_get_trkr_hit)
         GetTrkrHitInfo(topNode);
@@ -281,8 +325,8 @@ void dNdEtaINTT::GetHEPMCInfo(PHCompositeNode *topNode)
         for (PHHepMCGenEventMap::ConstIter iter = iter_beg; iter != iter_end; ++iter)
         {
             PHHepMCGenEvent *genevt = iter->second;
-            // HepMC::ThreeVector initv_boostbeta = genevt->get_boost_beta_vector();
-            // HepMC::ThreeVector initv_rotation = genevt->get_rotation_vector();
+            // HepMC::ThreeVector initv_boostbeta = genevt->get_boost_beta_vector(); HepMC::ThreeVector
+            // initv_rotation = genevt->get_rotation_vector();
             // std::cout << "Initial boost beta vector: " << initv_boostbeta.x() << " " << initv_boostbeta.y() << " " << initv_boostbeta.z() << std::endl;
             // std::cout << "Initial rotation vector: " << initv_rotation.x() << " " << initv_rotation.y() << " " << initv_rotation.z() << std::endl;
             // genevt->identify();
@@ -368,8 +412,8 @@ void dNdEtaINTT::GetCentralityInfo(PHCompositeNode *topNode)
 
     // TODO: uncomment this when the minimum bias info is available
     // Minimum bias info
-    // Minimumbiasinfo = findNode::getClass<MinimumBiasInfo>(topNode, "MinimumBiasInfo");
-    // if (!Minimumbiasinfo)
+    // Minimumbiasinfo = findNode::getClass<MinimumBiasInfo>(topNode,
+    // "MinimumBiasInfo"); if (!Minimumbiasinfo)
     // {
     //     std::cout << PHWHERE << "Error, can't find MinimumBias" << std::endl;
     //     return;
@@ -394,12 +438,45 @@ void dNdEtaINTT::GetCentralityInfo(PHCompositeNode *topNode)
     centrality_mbd_ = (m_CentInfo->has_centile(CentralityInfo::PROP::mbd_NS)) ? m_CentInfo->get_centile(CentralityInfo::PROP::mbd_NS) : -999.99;
     centrality_mbdquantity_ = (m_CentInfo->has_quantity(CentralityInfo::PROP::mbd_NS)) ? m_CentInfo->get_quantity(CentralityInfo::PROP::mbd_NS) : -999.99;
 
-    // IsMinBias_ = Minimumbiasinfo->isAuAuMinimumBias(); // TODO: uncomment this when the minimum bias info is available
+    // IsMinBias_ = Minimumbiasinfo->isAuAuMinimumBias(); // TODO: uncomment
+    // this when the minimum bias info is available
 
-    // std::cout << "Is minimum bias? " << IsMinBias_ << std::endl; // TODO: uncomment this when the minimum bias info is available
+    // std::cout << "Is minimum bias? " << IsMinBias_ << std::endl; // TODO:
+    // uncomment this when the minimum bias info is available
     std::cout << "Centrality: (bimp,impactparam) = (" << centrality_bimp_ << ", " << centrality_impactparam_ << "); (mbd,mbdquantity) = (" << centrality_mbd_ << ", " << centrality_mbdquantity_ << ")"
               << std::endl;
     std::cout << "Glauber parameter information: (ncoll,npart) = (" << ncoll_ << ", " << npart_ << ")" << std::endl;
+}
+//____________________________________________________________________________..
+void dNdEtaINTT::GetInttRawHitInfo(PHCompositeNode *topNode)
+{
+    std::cout << "Get InttRawHit info." << std::endl;
+
+    inttrawhitcontainer = findNode::getClass<InttRawHitContainer>(topNode, "INTTRAWHIT");
+    if (!inttrawhitcontainer)
+    {
+        std::cout << PHWHERE << "Error, can't find INTTRAWHIT" << std::endl;
+        return;
+    }
+
+    NInttRawHits_ = inttrawhitcontainer->get_nhits();
+
+    for (unsigned int i = 0; i < inttrawhitcontainer->get_nhits(); i++)
+    {
+        InttRawHit *intthit = inttrawhitcontainer->get_hit(i);
+
+        InttRawHit_bco_.push_back(intthit->get_bco());
+        InttRawHit_packetid_.push_back(intthit->get_packetid());
+        InttRawHit_word_.push_back(intthit->get_word());
+        InttRawHit_fee_.push_back(intthit->get_fee());
+        InttRawHit_channel_id_.push_back(intthit->get_channel_id());
+        InttRawHit_chip_id_.push_back(intthit->get_chip_id());
+        InttRawHit_adc_.push_back(intthit->get_adc());
+        InttRawHit_FPHX_BCO_.push_back(intthit->get_FPHX_BCO());
+        InttRawHit_full_FPHX_.push_back(intthit->get_full_FPHX());
+        InttRawHit_full_ROC_.push_back(intthit->get_full_ROC());
+        InttRawHit_amplitude_.push_back(intthit->get_amplitude());
+    }
 }
 //____________________________________________________________________________..
 void dNdEtaINTT::GetTrkrHitInfo(PHCompositeNode *topNode)
@@ -487,7 +564,8 @@ void dNdEtaINTT::GetRecoClusterInfo(PHCompositeNode *topNode)
             ClusR_.push_back(pos.Perp());
             ClusPhi_.push_back(pos.Phi());
             ClusEta_.push_back(pos.Eta());
-            // ClusPhiSize is a signed char (-127-127), we should convert it to an unsigned char (0-255)
+            // ClusPhiSize is a signed char (-127-127), we should convert it to
+            // an unsigned char (0-255)
             int phisize = cluster->getPhiSize();
             if (phisize <= 0)
                 phisize += 256;
@@ -512,7 +590,8 @@ void dNdEtaINTT::GetRecoClusterInfo(PHCompositeNode *topNode)
                         std::map<TrkrDefs::cluskey, std::shared_ptr<TrkrCluster>> truth_clusters = truth_eval->all_truth_clusters(p);
                         for (auto &c : truth_clusters)
                         {
-                            // only take at most 1 truth cluster per truth particle
+                            // only take at most 1 truth cluster per truth
+                            // particle
                             bool found = false;
                             if (TrkrDefs::getLayer(c.first) == TrkrDefs::getLayer(ckey))
                             {
@@ -578,7 +657,8 @@ void dNdEtaINTT::GetTruthClusterInfo(PHCompositeNode *topNode)
 
         // compute phisize and zsize of truth clusters
         std::set<PHG4Hit *> truth_hits = truth_eval->all_truth_hits(truth_particle);
-        // just as with truth clustering in SvtxTruthEval, cluster together all G4Hits in a given layer
+        // just as with truth clustering in SvtxTruthEval, cluster together all
+        // G4Hits in a given layer
         std::array<std::vector<PHG4Hit *>, 4> clusters;
         for (auto h_iter = truth_hits.begin(); h_iter != truth_hits.end(); ++h_iter)
         {
@@ -591,8 +671,9 @@ void dNdEtaINTT::GetTruthClusterInfo(PHCompositeNode *topNode)
         }
 
         // since SvtxClusterEval doesn't correctly compute cluster size,
-        // and since none of the relevant truth objects store their association with detector elements.
-        // we have to do that association ourselves through CylinderGeomIntt
+        // and since none of the relevant truth objects store their association
+        // with detector elements. we have to do that association ourselves
+        // through CylinderGeomIntt
         std::vector<CylinderGeomIntt *> layergeom;
 
         for (int layer = 3; layer <= 6; layer++)
@@ -602,7 +683,8 @@ void dNdEtaINTT::GetTruthClusterInfo(PHCompositeNode *topNode)
 
         for (int i = 0; i < 4; i++)
         {
-            // we break clusters up by TrkrHitset, in the same way as in InttClusterizer
+            // we break clusters up by TrkrHitset, in the same way as in
+            // InttClusterizer
             std::map<TrkrDefs::hitsetkey, std::vector<PHG4Hit *>> clusters_by_hitset;
 
             for (auto &hit : clusters[i])
@@ -616,8 +698,9 @@ void dNdEtaINTT::GetTruthClusterInfo(PHCompositeNode *topNode)
                 layergeom[i]->find_indices_from_world_location(entry_ladder_z_id, entry_ladder_phi_id, entry_point);
                 layergeom[i]->find_indices_from_world_location(exit_ladder_z_id, exit_ladder_phi_id, exit_point);
 
-                // fix a rounding error where you can sometimes get a phi index out of range,
-                // which causes a segfault when the geometry container can't find a surface
+                // fix a rounding error where you can sometimes get a phi index
+                // out of range, which causes a segfault when the geometry
+                // container can't find a surface
                 if (i == 0 || i == 1)
                 {
                     if (entry_ladder_phi_id == 12)
@@ -637,12 +720,15 @@ void dNdEtaINTT::GetTruthClusterInfo(PHCompositeNode *topNode)
                 TrkrDefs::hitsetkey entry_hskey = InttDefs::genHitSetKey(i + 3, entry_ladder_z_id, entry_ladder_phi_id, 0);
                 TrkrDefs::hitsetkey exit_hskey = InttDefs::genHitSetKey(i + 3, exit_ladder_z_id, exit_ladder_phi_id, 0);
 
-                // if entry and exit ladder z id are different, then we have a truth G4Hit that will be split in reco
-                // (since InttClusterizer cannot cross TrkrHitsets)
-                // for now, just print a warning if this ever happens (should be very rare) and discard that hit
+                // if entry and exit ladder z id are different, then we have a
+                // truth G4Hit that will be split in reco (since InttClusterizer
+                // cannot cross TrkrHitsets) for now, just print a warning if
+                // this ever happens (should be very rare) and discard that hit
                 if (entry_hskey != exit_hskey)
                 {
-                    std::cout << "!!! WARNING !!! PHG4Hit crosses TrkrHitsets, discarding!" << std::endl;
+                    std::cout << "!!! WARNING !!! PHG4Hit crosses TrkrHitsets, "
+                                 "discarding!"
+                              << std::endl;
                     std::cout << "Discarded PHG4Hit info: " << std::endl;
                     std::cout << "entry point: ladder (phi, z) ID = (" << entry_ladder_phi_id << ", " << entry_ladder_z_id << ")" << std::endl;
                     std::cout << "exit point: ladder (phi, z) ID = (" << exit_ladder_phi_id << ", " << exit_ladder_z_id << ")" << std::endl;
@@ -661,7 +747,8 @@ void dNdEtaINTT::GetTruthClusterInfo(PHCompositeNode *topNode)
 
                 int ladder_z_id = InttDefs::getLadderZId(hskey);
 
-                // just as in InttClusterizer, cluster size = number of unique strip IDs
+                // just as in InttClusterizer, cluster size = number of unique
+                // strip IDs
                 std::set<int> phibins;
                 std::set<int> zbins;
 
@@ -676,14 +763,17 @@ void dNdEtaINTT::GetTruthClusterInfo(PHCompositeNode *topNode)
                     TVector3 entry_local = layergeom[i]->get_local_from_world_coords(surface, _tgeometry, entry_point);
                     TVector3 exit_local = layergeom[i]->get_local_from_world_coords(surface, _tgeometry, exit_point);
 
-                    // get strip z and phi id (which we needed local coordinates for)
+                    // get strip z and phi id (which we needed local coordinates
+                    // for)
                     int entry_strip_phi_id, entry_strip_z_id;
                     int exit_strip_phi_id, exit_strip_z_id;
                     layergeom[i]->find_strip_index_values(ladder_z_id, entry_local[1], entry_local[2], entry_strip_phi_id, entry_strip_z_id);
                     layergeom[i]->find_strip_index_values(ladder_z_id, exit_local[1], exit_local[2], exit_strip_phi_id, exit_strip_z_id);
 
-                    // insert one phi and z ID entry for every strip between the entry and exit point
-                    // (this implicitly assumes that there will be a non-negligible amount of energy deposited along the whole path)
+                    // insert one phi and z ID entry for every strip between the
+                    // entry and exit point (this implicitly assumes that there
+                    // will be a non-negligible amount of energy deposited along
+                    // the whole path)
                     int min_z_id = std::min(entry_strip_z_id, exit_strip_z_id);
                     int max_z_id = std::max(entry_strip_z_id, exit_strip_z_id);
                     int min_phi_id = std::min(entry_strip_phi_id, exit_strip_phi_id);
@@ -809,6 +899,17 @@ void dNdEtaINTT::ResetVectors()
     CleanVec(PrimaryTruthClusPhiSize_);
     CleanVec(PrimaryTruthClusZSize_);
     CleanVec(PrimaryTruthClusNRecoClus_);
+    CleanVec(InttRawHit_bco_);
+    CleanVec(InttRawHit_packetid_);
+    CleanVec(InttRawHit_word_);
+    CleanVec(InttRawHit_fee_);
+    CleanVec(InttRawHit_channel_id_);
+    CleanVec(InttRawHit_chip_id_);
+    CleanVec(InttRawHit_adc_);
+    CleanVec(InttRawHit_FPHX_BCO_);
+    CleanVec(InttRawHit_full_FPHX_);
+    CleanVec(InttRawHit_full_ROC_);
+    CleanVec(InttRawHit_amplitude_);
     CleanVec(TrkrHitRow_);
     CleanVec(TrkrHitColumn_);
     CleanVec(TrkrHitLadderZId_);

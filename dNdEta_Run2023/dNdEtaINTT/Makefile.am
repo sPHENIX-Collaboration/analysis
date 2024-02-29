@@ -21,8 +21,12 @@ libdNdEtaINTT_la_SOURCES = \
 
 libdNdEtaINTT_la_LIBADD = \
   -lphool \
+  -lffaobjects \
+  -lffarawobjects \
   -lSubsysReco \
-  -lcalotrigger
+  -lcalotrigger \ 
+  -ltrackbase_historic_io \
+  -ltrack_io
 
 libdNdEtaINTT_la_LDFLAGS = \
   -L$(libdir) \
