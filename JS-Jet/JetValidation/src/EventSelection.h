@@ -28,8 +28,14 @@ public:
     
     // Standard Fun4All functions
     int Init(PHCompositeNode *topNode) override;
+    int InitRun(PHCompositeNode *topNode) override;
     int process_event(PHCompositeNode *topNode) override;
+    int ResetEvent(PHCompositeNode *topNode) override;
+    int EndRun(const int runnumber) override;
     int End(PHCompositeNode *topNode) override;
+    int Reset(PHCompositeNode * /*topNode*/) override;
+
+    void Print(const std::string &what = "ALL") const override;
 
 private:
 

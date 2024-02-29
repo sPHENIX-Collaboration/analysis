@@ -39,7 +39,7 @@ EventSelection::EventSelection(const std::string& truthjetname, const std::strin
  , m_outputfilename(outputfilename)
  , outFile(nullptr)
  , m_tree(nullptr) // Initialize m_tree to nullptr
- , m_vtxZ_cut(1000.0)
+ , m_vtxZ_cut(10.0)
  , m_event(-1)
    // , m_vertex_z()
 {std::cout << "Output file path: " << m_outputfilename << std::endl;
@@ -58,7 +58,7 @@ int EventSelection::Init(PHCompositeNode *topNode)
     std::cerr << "Error: Could not open output file " << m_outputfilename << std::endl;
     return Fun4AllReturnCodes::ABORTRUN;
   }
-  m_tree = new TTree("T", "EventSelection");
+  m_tree = new TTree("Tree", "EventSelection");
   m_tree->Branch("m_vertex_z", &m_vertex_z);
   m_tree->Branch("m_event", &m_event, "event/I");
 
@@ -68,6 +68,14 @@ int EventSelection::Init(PHCompositeNode *topNode)
   return Fun4AllReturnCodes::EVENT_OK; // Ensure that this return statement is within the function body
 }
 
+//////////////////
+int EventSelection::InitRun(PHCompositeNode *topNode)
+{
+  std::cout << "EventSelection::InitRun(PHCompositeNode *topNode) Initializing for Run XXX" << std::endl;
+  return Fun4AllReturnCodes::EVENT_OK;
+}
+
+//////////////////
 int EventSelection::process_event(PHCompositeNode *topNode)
 {
   //std::cout << "EventSelection::process_event(PHCompositeNode *topNode) Processing event " << m_event << std::endl;
@@ -90,6 +98,8 @@ int EventSelection::process_event(PHCompositeNode *topNode)
     {
       if(Verbosity()) std::cout << "vertex not in range" << std::endl;
       return Fun4AllReturnCodes::ABORTEVENT;
+
+      std::cout << "m_vertex_z: " << m_vertex_z << std::endl;
     }
   // If the event passes the z vertex selection, fill the output tree
   
@@ -97,15 +107,33 @@ int EventSelection::process_event(PHCompositeNode *topNode)
   // Fill tree
   //==================================
   m_tree->Fill();
-
+  std::cout << "m_vertex_z after fill: " << m_vertex_z << std::endl;
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
+int EventSelection::ResetEvent(PHCompositeNode *topNode)
+{
+  //std::cout << "EventSelection::ResetEvent(PHCompositeNode *topNode) Resetting internal structures, prepare for next event" << std::endl;
+
+  //clear vectors or arrays here 
+
+
+ return Fun4AllReturnCodes::EVENT_OK;
+
+}
+//____________________________________________________________________________..
+int EventSelection::EndRun(const int runnumber)
+{
+  std::cout << "EventSelection::EndRun(const int runnumber) Ending Run for Run " << runnumber << std::endl;
+  return Fun4AllReturnCodes::EVENT_OK;
+}
+/////////////////_____________________________________________________________..
 int EventSelection::End(PHCompositeNode *topNode)
 {
 
   outFile->cd();
+  //outFile->Write();
   m_tree->Write();
   outFile->Close();
   
@@ -114,5 +142,15 @@ int EventSelection::End(PHCompositeNode *topNode)
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
+//////////////////
+int EventSelection::Reset(PHCompositeNode *topNode)
+{
+  // std::cout << "EventSelection::Reset(PHCompositeNode *topNode) being Reset" << std::endl;
+  return Fun4AllReturnCodes::EVENT_OK;
+}
 
-
+//____________________________________________________________________________..
+void EventSelection::Print(const std::string &what) const
+{
+  std::cout << "EventSelection::Print(const std::string &what) const Printing info for " << what << std::endl;
+}
