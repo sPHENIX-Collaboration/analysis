@@ -999,7 +999,7 @@ void printCalculationDetails(const std::string& type, int index, const std::stri
 
 void vN_calculator_AccumulatedData() {
     // Open the ROOT file
-    TFile *file = new TFile("/Users/patsfan753/Desktop/vN_AnalysisFinal/data/testRootFiles_ByProduction/p011/No_PDC_withOut_zVertex/test.root", "READ");
+    TFile *file = new TFile("/Users/patsfan753/Desktop/vN_AnalysisFinal/data/testRootFiles_ByProduction/p011/No_PDC_withOut_zVertex/E_1_A_0_5_C_4/test.root", "READ");
     if (!file || file->IsZombie()) {
         std::cerr << "Error opening file or file is not a valid ROOT file" << std::endl;
         return;
@@ -1056,9 +1056,11 @@ void vN_calculator_AccumulatedData() {
     }
     
     /*
-     chunk of code below prints ALL HISTOGRAMS funneled through
+     method below prints QQ, qQ histograms for n = 2, n = 3 calculations funneled through
+     * @param histPath The path within the ROOT file to the desired histogram.
+     * @param baseDir The base directory for saving the output PNG image.
+     * @note Requires a global `file` object of a ROOT file containing the histogram.
      */
-    
     auto drawAndSaveHist = [&](const std::string& histPath, const std::string& baseDir) {
         TH1F *hist = (TH1F*)file->Get(histPath.c_str());
         if (!hist) {
@@ -1067,49 +1069,58 @@ void vN_calculator_AccumulatedData() {
         }
         TCanvas *c = new TCanvas();
         c->SetLogy(); // Set logarithmic scale for y-axis
-
         // Determine the appropriate save directory based on the histogram's relation to v2 or v3
         std::string saveDir = baseDir;
-        std::string histFileName = histPath.substr(histPath.find_last_of("/") + 1) + ".png"; // Extract histogram name and append .png
-
-        std::string savePath = saveDir + "/" + histFileName;
+        /*
+         * This line performs three key operations to create the file name for saving the histogram image:
+         * - Locates the last occurrence of '/' in 'histPath'. 
+               -Everything after the last '/' is the actual name of the histogram, not the directories leading to it.
+         * - Extracts the histogram name by using 'substr', which creates a substring starting right after the
+         *   last '/'. 
+                - Isolates the histogram's name from the full path, s.t. the saved image file corresponds directly to the histogram's name within the ROOT file and so it doesn't have to be hard coded what to save as
+         * - Appends ".png" to the extracted name
+         */
+        std::string histFileName = histPath.substr(histPath.find_last_of("/") + 1) + ".png";
+        std::string savePath = saveDir + "/" + histFileName; //construct full file path to save images
         hist->Draw();
         c->SaveAs(savePath.c_str());
         delete c;
     };
-
     // Define the base directories for v2 and v3 histograms
-    std::string baseDirV2 = "/Users/patsfan753/Desktop/vN_AnalysisFinal/plotOutput/qQ_QQ_histograms_byProd/p011_withOutZvtx/n_2";
-    std::string baseDirV3 = "/Users/patsfan753/Desktop/vN_AnalysisFinal/plotOutput/qQ_QQ_histograms_byProd/p011_withOutZvtx/n_3";
-
-//    // Process and save QQ and qQ histograms for v2
-//    for (const auto& histPath : hist_name_QQ2) {
-//        drawAndSaveHist(histPath, baseDirV2);
-//    }
-//    for (const auto& histPath : hist_name_qQ2) {
-//        drawAndSaveHist(histPath, baseDirV2);
-//    }
-//    for (const auto& histPath : hist_name_qQ2_bg) {
-//        drawAndSaveHist(histPath, baseDirV2);
-//    }
-//    for (const auto& histPath : hist_name_qQ2_bg_left) {
-//        drawAndSaveHist(histPath, baseDirV2);
-//    }
-//    
-//    // Process and save QQ and qQ histograms for v3
-//    for (const auto& histPath : hist_name_QQ3) {
-//        drawAndSaveHist(histPath, baseDirV3);
-//    }
-//    for (const auto& histPath : hist_name_qQ3) {
-//        drawAndSaveHist(histPath, baseDirV3);
-//    }
-//    for (const auto& histPath : hist_name_qQ3_bg) {
-//        drawAndSaveHist(histPath, baseDirV3);
-//    }
-//    for (const auto& histPath : hist_name_qQ3_bg_left) {
-//        drawAndSaveHist(histPath, baseDirV3);
-//    }
-//    
+    std::string baseDirV2 = "/Users/patsfan753/Desktop/vN_AnalysisFinal/plotOutput/qQ_QQ_histograms_byProd/qQ_and_QQ_histograms_p011/p011_withZvtx_E_1_A_0_5_C_4/n_2";
+    std::string baseDirV3 = "/Users/patsfan753/Desktop/vN_AnalysisFinal/plotOutput/qQ_QQ_histograms_byProd/qQ_and_QQ_histograms_p011/p011_withZvtx_E_1_A_0_5_C_4/n_3";
+    
+    /*
+     Comment out below if re run macro and already made hists
+     */
+    
+    // Process and save QQ and qQ histograms for v2
+    for (const auto& histPath : hist_name_QQ2) {
+        drawAndSaveHist(histPath, baseDirV2);
+    }
+    for (const auto& histPath : hist_name_qQ2) {
+        drawAndSaveHist(histPath, baseDirV2);
+    }
+    for (const auto& histPath : hist_name_qQ2_bg) {
+        drawAndSaveHist(histPath, baseDirV2);
+    }
+    for (const auto& histPath : hist_name_qQ2_bg_left) {
+        drawAndSaveHist(histPath, baseDirV2);
+    }
+    
+    // Process and save QQ and qQ histograms for v3
+    for (const auto& histPath : hist_name_QQ3) {
+        drawAndSaveHist(histPath, baseDirV3);
+    }
+    for (const auto& histPath : hist_name_qQ3) {
+        drawAndSaveHist(histPath, baseDirV3);
+    }
+    for (const auto& histPath : hist_name_qQ3_bg) {
+        drawAndSaveHist(histPath, baseDirV3);
+    }
+    for (const auto& histPath : hist_name_qQ3_bg_left) {
+        drawAndSaveHist(histPath, baseDirV3);
+    }
     /*
      RETRIEVE MEANS AND ERROR FOR n = 2 histograms
      */
@@ -1128,8 +1139,6 @@ void vN_calculator_AccumulatedData() {
         int nEntries = h_QQ2->GetEntries();
         QQ2_error[i] = stdDev / sqrt(nEntries); // Standard deviation divided by the square root of the number of entries
     }
-    
-    
     // Retrieve and calculate qQ means and their errors
     float qQ2_mean[18], qQ2_error[18];
     for (int i = 0; i < 18; ++i) {
@@ -1145,19 +1154,6 @@ void vN_calculator_AccumulatedData() {
         int nEntries = h_qQ2->GetEntries();
         qQ2_error[i] = stdDev / sqrt(nEntries);
     }
-//    // Retrieve and calculate covariance from mean of histogram of (qQ)(QQ)
-//    float qQ2_QQ2_mean[18];
-//    for (int i = 0; i < 18; ++i) {
-//        TH1F *h_qQ2_QQ2 = (TH1F*)file->Get(hist_name_qQ2_QQ2[i].c_str());
-//        if (!h_qQ2) {
-//            std::cerr << "Error: qQ histogram " << hist_name_qQ2_QQ2[i] << " not found" << std::endl;
-//            file->Close();
-//            delete file;
-//            return;
-//        }
-//        qQ2_QQ2_mean[i] = h_qQ2_QQ2->GetMean();
-//    }
-    
     // Retrieve and calculate background qQ means and their errors
     float qQ2_bg_mean[18], qQ2_bg_error[18];
     for (int i = 0; i < 18; ++i) {
@@ -1171,7 +1167,6 @@ void vN_calculator_AccumulatedData() {
         int nEntries = h_qQ2_bg->GetEntries();
         qQ2_bg_error[i] = stdDev / sqrt(nEntries);
     }
-
     // Retrieve and calculate left background qQ means and their errors
     float qQ2_bg_left_mean[18], qQ2_bg_left_error[18];
     for (int i = 0; i < 18; ++i) {
@@ -1185,14 +1180,9 @@ void vN_calculator_AccumulatedData() {
         int nEntries = h_qQ2_bg_left->GetEntries();
         qQ2_bg_left_error[i] = stdDev / sqrt(nEntries);
     }
-    
-    
-    
-    
     /*
      Do the Same for N = 3 Histograms
      */
-    // Retrieve and calculate QQ means and their errors
     float QQ3_mean[3], QQ3_error[3];
     for (int i = 0; i < 3; ++i) {
         TH1F *h_QQ3 = (TH1F*)file->Get(hist_name_QQ3[i].c_str());
@@ -1207,9 +1197,6 @@ void vN_calculator_AccumulatedData() {
         int nEntries = h_QQ3->GetEntries();
         QQ3_error[i] = stdDev / sqrt(nEntries); // Standard deviation divided by the square root of the number of entries
     }
-    
-    
-    // Retrieve and calculate qQ means and their errors
     float qQ3_mean[18], qQ3_error[18];
     for (int i = 0; i < 18; ++i) {
         TH1F *h_qQ3 = (TH1F*)file->Get(hist_name_qQ3[i].c_str());
@@ -1224,8 +1211,6 @@ void vN_calculator_AccumulatedData() {
         int nEntries = h_qQ3->GetEntries();
         qQ3_error[i] = stdDev / sqrt(nEntries);
     }
-    
-    // Retrieve and calculate background qQ means and their errors
     float qQ3_bg_mean[18], qQ3_bg_error[18];
     for (int i = 0; i < 18; ++i) {
         TH1F *h_qQ3_bg = (TH1F*)file->Get(hist_name_qQ3_bg[i].c_str());
@@ -1238,8 +1223,6 @@ void vN_calculator_AccumulatedData() {
         int nEntries = h_qQ3_bg->GetEntries();
         qQ3_bg_error[i] = stdDev / sqrt(nEntries);
     }
-
-    // Retrieve and calculate left background qQ means and their errors
     float qQ3_bg_left_mean[18], qQ3_bg_left_error[18];
     for (int i = 0; i < 18; ++i) {
         TH1F *h_qQ3_bg_left = (TH1F*)file->Get(hist_name_qQ3_bg_left[i].c_str());
@@ -1252,23 +1235,29 @@ void vN_calculator_AccumulatedData() {
         int nEntries = h_qQ3_bg_left->GetEntries();
         qQ3_bg_left_error[i] = stdDev / sqrt(nEntries);
     }
-    
-    
-    
-    
-    // User-defined cut values
+    /*
+    User-defined cut values, ensures only rows of CSV with cuts below correspond to SB used in calc
+    Also specifies rows of data vN info is appended to
+     */
     float userEnergy = 0.5;
     float userAsymm = 0.5;
     float userChi2 = 4;
     float userDeltaR = 0;
-
+    
+    /*
+     If boolean at top of macro is false, it means run calculation code not plotting, which is all the steps below
+     */
     if (!Plot_vN_bool) {
-        std::ifstream inFile("/Users/patsfan753/Desktop/vN_AnalysisFinal/data/PlotByPlotOutput_FromFits/p011/without_pdc_zVertex/PlotByPlotOutput_p011_noZvertex_noPDC.csv");
-        std::ofstream outFile("/Users/patsfan753/Desktop/vN_AnalysisFinal/data/vN_Appended_Data/UpdatedCSV_AccumulatedDists_p011_noZvertex_noPDC.csv");
-
+        /*
+         CSV data outputted from invariant mass fits
+         */
+        std::ifstream inFile("/Users/patsfan753/Desktop/vN_AnalysisFinal/data/PlotByPlotOutput_FromFits/p011/No_pdc_withZvertex/PlotByPlotOutput_p011_WithZvertex_noPDC_EnergyCut_1_Asym_point5.csv");
+        /*
+         New CSV with vN data appended to it and only the rows with cut values specified above
+         */
+        std::ofstream outFile("/Users/patsfan753/Desktop/vN_AnalysisFinal/data/vN_Appended_Data/UpdatedCSV_AccumulatedDists_p011_withZvertex_noPDC_energyCut1_Asym_0point5_Chi4.csv");
         std::string line;
         int lineIndex = 0;
-
         while (getline(inFile, line)) {
             if (lineIndex == 0) {
                 // Header line
@@ -1280,16 +1269,15 @@ void vN_calculator_AccumulatedData() {
                 while (getline(ss, token, ',')) {
                     values.push_back(std::stof(token));
                 }
-                
-
                 // Check if the row matches the user-defined cut values
                 if (values[1] == userEnergy && values[2] == userAsymm && values[3] == userChi2 && values[4] == userDeltaR) {
                     int idx = static_cast<int>(values[0]); // Index is the first value in the row
-                    
                     float SB = values[9];
                     float SBerror = values[10]; // S/Berror is the 11th column
-
-                    // Determine the QQ_index based on the idx value
+                    
+                    /*
+                     The denominator quantity is by centrality, set QQ index to use proper histogram's mean and error for correct range of indices that correspond to each centrality
+                     */
                     int QQ_index = 0;
                     if (idx >= 0 && idx <= 5) {
                         QQ_index = 0; // 40-60% centrality
@@ -1298,7 +1286,6 @@ void vN_calculator_AccumulatedData() {
                     } else if (idx >= 12 && idx <= 17) {
                         QQ_index = 2; // 0-20% centrality
                     }
-
                     /*
                      CALCULATIONS for v2 measured, left/right background, corrected, with error prop
                      */
@@ -1312,53 +1299,46 @@ void vN_calculator_AccumulatedData() {
                               << "\033[0m" // Reset to default
                               << std::endl;
                     
-                    float v2_value = qQ2_mean[idx] / sqrt(QQ2_mean[QQ_index]);
+                    float v2_value = qQ2_mean[idx] / sqrt(QQ2_mean[QQ_index]); //calculate measured v2 and its corresponding error
                     float v2_error = abs(v2_value) * sqrt(pow(qQ2_error[idx] / qQ2_mean[idx], 2) + 0.25 * pow(QQ2_error[QQ_index] / QQ2_mean[QQ_index], 2));
 
+                    //print what specific  histograms were used for measured v2
                     printCalculationDetails("v2", idx, hist_name_qQ2[idx], hist_name_QQ2[QQ_index], v2_value, v2_error);
 
-                    float bg_v2_value = qQ2_bg_mean[idx] / sqrt(QQ2_mean[QQ_index]);
+                    float bg_v2_value = qQ2_bg_mean[idx] / sqrt(QQ2_mean[QQ_index]); //bg v2 calculation and corresponding error
                     float bg_v2_error = abs(bg_v2_value) * sqrt(pow(qQ2_bg_error[idx] / qQ2_bg_mean[idx], 2) + 0.25 * pow(QQ2_error[QQ_index] / QQ2_mean[QQ_index], 2));
-
-                    // Calculate left background v2 and v2_error
+                    printCalculationDetails("bg v2", idx, hist_name_qQ2_bg[idx], hist_name_qQ2_bg[QQ_index], bg_v2_value, bg_v2_error);
+                    // Calculate left background v2 and left bg v2_error
                     float left_bg_v2_value = qQ2_bg_left_mean[idx] / sqrt(QQ2_mean[QQ_index]);
                     float left_bg_v2_error = abs(left_bg_v2_value) * sqrt(pow(qQ2_bg_left_error[idx] / qQ2_bg_left_mean[idx], 2) + 0.25 * pow(QQ2_error[QQ_index] / QQ2_mean[QQ_index], 2));
 
-                    float v2_corrected = v2_value * (1 + (1 / SB)) - ((1 / SB) * bg_v2_value);
-                    
+                    float v2_corrected = v2_value * (1 + (1 / SB)) - ((1 / SB) * bg_v2_value); //calculate pi0 v2 and its corresponding error
                     float v2_corrected_error = sqrt(
                         (1 + 1 /(SB*SB)) * pow(v2_error, 2) + // Error contribution from v2_signal
                         pow((-1 / SB) * bg_v2_error, 2) +   // Error contribution from v2_bg (note the negative sign is squared, having no effect)
                         pow((-(v2_value - bg_v2_value) / (SB * SB)) * SBerror, 2) // Error contribution from SB
                     );
-                    
-                    
                     /*
-                     CALCULATIONS for v3 measured, left/right background, corrected, with error prop
+                     CALCULATIONS for v3 measured, left/right background, corrected, with error prop, done exactly the same as above but with n = 3 hists
                      */
                     float v3_value = qQ3_mean[idx] / sqrt(QQ3_mean[QQ_index]);
                     float v3_error = abs(v3_value) * sqrt(pow(qQ3_error[idx] / qQ3_mean[idx], 2) + 0.25 * pow(QQ3_error[QQ_index] / QQ3_mean[QQ_index], 2));
-                    
                     printCalculationDetails("v3", idx, hist_name_qQ3[idx], hist_name_QQ3[QQ_index], v3_value, v3_error);
-
                     float bg_v3_value = qQ3_bg_mean[idx] / sqrt(QQ3_mean[QQ_index]);
                     float bg_v3_error = abs(bg_v3_value) * sqrt(pow(qQ3_bg_error[idx] / qQ3_bg_mean[idx], 2) + 0.25 * pow(QQ3_error[QQ_index] / QQ3_mean[QQ_index], 2));
-
-                    // Calculate left background v3 and v3_error
+                    printCalculationDetails("bg v3", idx, hist_name_qQ3_bg[idx], hist_name_qQ3_bg[QQ_index], bg_v3_value, bg_v3_error);
                     float left_bg_v3_value = qQ3_bg_left_mean[idx] / sqrt(QQ3_mean[QQ_index]);
                     float left_bg_v3_error = abs(left_bg_v3_value) * sqrt(pow(qQ3_bg_left_error[idx] / qQ3_bg_left_mean[idx], 2) + 0.25 * pow(QQ3_error[QQ_index] / QQ3_mean[QQ_index], 2));
-
                     float v3_corrected = v3_value * (1 + (1 / SB)) - ((1 / SB) * bg_v3_value);
-                    
                     float v3_corrected_error = sqrt(
                         (1 + 1 /(SB*SB)) * pow(v3_error, 2) + // Error contribution from v3_signal
                         pow((-1 / SB) * bg_v3_error, 2) +   // Error contribution from v3_bg (note the negative sign is squared, having no effect)
                         pow((-(v3_value - bg_v3_value) / (SB * SB)) * SBerror, 2) // Error contribution from SB
                     );
-                    
-
-                    // Inside your function where the line is being constructed
                     std::stringstream ss;
+                    /*
+                     Construct appended data to new CSV
+                     */
                     ss << line << ","
                        << v2_value << "," << v2_error << ","
                        << bg_v2_value << "," << bg_v2_error << ","
@@ -1368,28 +1348,23 @@ void vN_calculator_AccumulatedData() {
                        << bg_v3_value << "," << bg_v3_error << ","
                        << left_bg_v3_value << "," << left_bg_v3_error << ","
                        << v3_corrected << "," << v3_corrected_error;
-
-                    // Output the constructed line to the outFile
                     outFile << ss.str() << std::endl;
 
                 }
             }
             ++lineIndex;
         }
-
         inFile.close();
         outFile.close();
-
         // Clean up
         delete file;
     }
     
-    // Check and execute Plot_vN
+    // Check and execute Plot_vN if boolean is set to true
     if (Plot_vN_bool) {
         AdditionalData data;
-        std::string Accumulated_Data_Path = "/Users/patsfan753/Desktop/vN_AnalysisFinal/data/vN_Appended_Data/UpdatedCSV_AccumulatedDists_p011_noZvertex_noPDC.csv";
-
-        Read_Additonal_DataSet(Accumulated_Data_Path, data);
+        std::string Additional_Data_Path = "/Users/patsfan753/Desktop/vN_AnalysisFinal/data/vN_Appended_Data/UpdatedCSV_AccumulatedDists_p011_withZvertex_noPDC_energyCut0point5_Asym_0point5_Chi4.csv";
+        Read_Additonal_DataSet(Additional_Data_Path, data);
         Plot_vN(data);
     }
 }
