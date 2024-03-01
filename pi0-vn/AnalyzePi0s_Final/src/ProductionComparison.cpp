@@ -13,11 +13,17 @@ struct DataEntry {
     double gaussSigmaError; // Add field for GaussSigmaError
 };
 
-// Function to read CSV and extract data, including errors
 std::vector<DataEntry> readCSV(const std::string& filePath) {
     std::vector<DataEntry> entries;
     std::ifstream file(filePath);
     std::string line;
+
+    if (!file.is_open()) {
+        std::cerr << "Failed to open file at path: " << filePath << std::endl;
+        return entries; // Early return if file can't be opened
+    }
+
+    std::cout << "Reading file: " << filePath << std::endl;
 
     // Skip the header
     std::getline(file, line);
@@ -30,14 +36,15 @@ std::vector<DataEntry> readCSV(const std::string& filePath) {
         while (std::getline(ss, cell, ',')) {
             row.push_back(cell);
         }
+        // Calculate pT range midpoint
+        double pT = 2.0 + 0.5 * (std::stoi(row[0]) % 6) + 0.25;
+        double gaussSigma = std::stod(row[5]);
+        double gaussSigmaError = std::stod(row[6]);
+        entries.push_back({pT, gaussSigma, gaussSigmaError});
+    }
 
-        // Filter for specific combination of cut values
-        if (std::stod(row[1]) == 0.5 && std::stod(row[2]) == 0.5 && std::stod(row[3]) == 4 && std::stod(row[4]) == 0) {
-            double pT = 2.0 + 0.5 * (std::stoi(row[0]) % 6) + 0.25; // Calculate pT range midpoint
-            double gaussSigma = std::stod(row[5]);
-            double gaussSigmaError = std::stod(row[6]);
-            entries.push_back({pT, gaussSigma, gaussSigmaError});
-        }
+    if(entries.empty()) {
+        std::cout << "No entries were added from the file. Please check the file content." << std::endl;
     }
 
     return entries;
@@ -58,35 +65,35 @@ void plotData(const std::vector<DataEntry>& data1, const std::vector<DataEntry>&
     
     
     // Apply jitter to data1
-    std::cout << "Dataset: p009" << std::endl;
+    std::cout << "Dataset: E 0.5" << std::endl;
     for (size_t i = 0; i < data1.size(); ++i) {
         graph1->SetPoint(i, data1[i].pT - jitter, data1[i].gaussSigma); // Apply negative jitter to data1
         graph1->SetPointError(i, 0, data1[i].gaussSigmaError);
         minY = std::min(minY, data1[i].gaussSigma - data1[i].gaussSigmaError);
         maxY = std::max(maxY, data1[i].gaussSigma + data1[i].gaussSigmaError);
-        std::cout << "pT: " << data1[i].pT << ", GaussSigma: " << data1[i].gaussSigma << ", Error: " << data1[i].gaussSigmaError << std::endl;
+        std::cout << "pT: " << data1[i].pT << ", Value: " << data1[i].gaussSigma << ", Error: " << data1[i].gaussSigmaError << std::endl;
     }
     graph1->SetMarkerStyle(21);
     graph1->SetMarkerSize(1.3);
     graph1->SetMarkerColor(kBlue);
 
     // Apply jitter to data2
-    std::cout << "Dataset: p011" << std::endl;
+    std::cout << "Dataset: E 1.0" << std::endl;
     for (size_t i = 0; i < data2.size(); ++i) {
         graph2->SetPoint(i, data2[i].pT + jitter, data2[i].gaussSigma); // Apply positive jitter to data2
         graph2->SetPointError(i, 0, data2[i].gaussSigmaError);
         minY = std::min(minY, data2[i].gaussSigma - data2[i].gaussSigmaError);
         maxY = std::max(maxY, data2[i].gaussSigma + data2[i].gaussSigmaError);
-        std::cout << "pT: " << data2[i].pT << ", GaussSigma: " << data2[i].gaussSigma << ", Error: " << data2[i].gaussSigmaError << std::endl;
+        std::cout << "pT: " << data2[i].pT << ", Value: " << data2[i].gaussSigma << ", Error: " << data2[i].gaussSigmaError << std::endl;
     }
     graph2->SetMarkerStyle(22);
     graph2->SetMarkerSize(1.3);
     graph2->SetMarkerColor(kRed);
 
     auto canvas = new TCanvas(title.c_str(), title.c_str(), 800, 600);
-    graph1->SetTitle("Mean Comparison 0 - 20% Centrality");
+    graph1->SetTitle("Gaussian Mean Comparison 0 - 20% Centrality");
     graph1->GetXaxis()->SetTitle("pT [GeV]");
-    graph1->GetYaxis()->SetTitle("Gaussian Mean [GeV]");
+    graph1->GetYaxis()->SetTitle("S/B");
     // Adjust Y-axis range with a buffer
     double rangeBuffer = 0.6 * (maxY - minY); // 10% buffer
     graph1->GetYaxis()->SetRangeUser(minY - rangeBuffer, maxY + rangeBuffer);
@@ -95,16 +102,16 @@ void plotData(const std::vector<DataEntry>& data1, const std::vector<DataEntry>&
 
     // Adding legend
     auto legend = new TLegend(0.6, 0.7, 0.9, 0.9);
-    legend->AddEntry(graph1, "vertex = (0, 0, z), no PDC, p011", "pe");
-    legend->AddEntry(graph2, "vertex = (0, 0, 0), no PDC, p011", "pe");
+    legend->AddEntry(graph1, "#bf{Cuts}: E #geq 0.5, Asym < 0.5, #chi^{2} < 4", "pe");
+    legend->AddEntry(graph2, "#bf{Cuts}: E #geq 0.5, Asym < 0.5, #chi^{2} < 4", "pe");
     legend->Draw();
     
-    double xMin = graph1->GetXaxis()->GetXmin();
-    double xMax = graph1->GetXaxis()->GetXmax();
-    TLine *line = new TLine(xMin, 0.135, xMax, 0.135); // Create line from xMin to xMax at y = 0.135
-    line->SetLineColor(kGreen + 4); // Set line color (optional)
-    line->SetLineStyle(2); // Set line style (optional, e.g., dashed)
-    line->Draw(); // Draw the line on the same canvas
+//    double xMin = graph1->GetXaxis()->GetXmin();
+//    double xMax = graph1->GetXaxis()->GetXmax();
+//    TLine *line = new TLine(xMin, 0.135, xMax, 0.135); // Create line from xMin to xMax at y = 0.135
+//    line->SetLineColor(kGreen + 4); // Set line color (optional)
+//    line->SetLineStyle(2); // Set line style (optional, e.g., dashed)
+//    line->Draw(); // Draw the line on the same canvas
 
     // Update the path as needed
     std::string savePath = "/Users/patsfan753/Desktop/" + title + ".png"; // Adjust path as necessary
@@ -114,9 +121,9 @@ void plotData(const std::vector<DataEntry>& data1, const std::vector<DataEntry>&
 
 void ProductionComparison() {
     // Update basePath to your actual path
-    const std::string basePath = "/Users/patsfan753/Desktop/vN_AnalysisFinal/data/PlotByPlotOutput_FromFits/p011";
-    const std::string csvPath1 = basePath + "/with_no_pdc_butWithzVertex/PlotByPlotOutput_p011_WithZvertex_noPDC.csv";
-    const std::string csvPath2 = basePath + "/without_pdc_zVertex/PlotByPlotOutput_p011_noZvertex_noPDC.csv";
+    const std::string basePath = "/Users/patsfan753/Desktop/vN_AnalysisFinal/data/PlotByPlotOutput_FromFits/p011/No_pdc_withZvertex";
+    const std::string csvPath1 = basePath + "/PlotByPlotOutput_p011_WithZvertex_noPDC_EnergyCut_point5_Asym_point5.csv";
+    const std::string csvPath2 = basePath + "/PlotByPlotOutput_p011_WithZvertex_noPDC_EnergyCut_1_Asym_point5.csv";
 
     auto data1 = readCSV(csvPath1);
     auto data2 = readCSV(csvPath2);
