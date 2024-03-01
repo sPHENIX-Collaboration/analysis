@@ -39,8 +39,9 @@ EventSelection::EventSelection(const std::string& truthjetname, const std::strin
  , m_outputfilename(outputfilename)
  , outFile(nullptr)
  , m_tree(nullptr) // Initialize m_tree to nullptr
- , m_vtxZ_cut(10.0)
+ , m_vtxZ_cut(1000.0)
  , m_event(-1)
+ , m_vertex_z()
    // , m_vertex_z()
 {std::cout << "Output file path: " << m_outputfilename << std::endl;
 }
@@ -92,22 +93,24 @@ int EventSelection::process_event(PHCompositeNode *topNode)
       if(Verbosity()) std::cout << "no vertex found" << std::endl;
       return Fun4AllReturnCodes::ABORTEVENT;
     }
-  double m_vertex_z=vtxMap->get(0)->get_z();
-
-  if (fabs(m_vertex_z) > m_vtxZ_cut)
+  
+  double mvtxz =vtxMap->get(0)->get_z();
+  
+  if (fabs(mvtxz) > m_vtxZ_cut)
     {
       if(Verbosity()) std::cout << "vertex not in range" << std::endl;
       return Fun4AllReturnCodes::ABORTEVENT;
 
-      std::cout << "m_vertex_z: " << m_vertex_z << std::endl;
     }
+  m_vertex_z.push_back(mvtxz);
+
   // If the event passes the z vertex selection, fill the output tree
   
   //==================================
   // Fill tree
   //==================================
   m_tree->Fill();
-  std::cout << "m_vertex_z after fill: " << m_vertex_z << std::endl;
+  //  std::cout << "m_vertex_z after fill: " << m_vertex_z << std::endl;
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -117,7 +120,7 @@ int EventSelection::ResetEvent(PHCompositeNode *topNode)
   //std::cout << "EventSelection::ResetEvent(PHCompositeNode *topNode) Resetting internal structures, prepare for next event" << std::endl;
 
   //clear vectors or arrays here 
-
+  m_vertex_z.clear();
 
  return Fun4AllReturnCodes::EVENT_OK;
 

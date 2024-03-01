@@ -48,7 +48,7 @@ private:
 
     double m_vtxZ_cut;
     int m_event;
-    float m_vertex_z;
+    std::vector<float> m_vertex_z;
     
 };
 
