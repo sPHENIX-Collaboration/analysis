@@ -1,6 +1,8 @@
 #ifndef MACRO_FUN4ALLG4SPHENIX_C
 #define MACRO_FUN4ALLG4SPHENIX_C
 
+#include <string>
+
 #include <GlobalVariables.C>
 
 #include <G4Setup_sPHENIX.C>
@@ -16,6 +18,9 @@
 #include <g4centrality/PHG4CentralityReco.h>
 #include <trackreco/PHTruthVertexing.h>
 
+#include <centrality/CentralityReco.h>
+#include <calotrigger/MinimumBiasClassifier.h>
+
 #include <dndetaintt/dNdEtaINTT.h>
 
 #include <phool/recoConsts.h>
@@ -25,26 +30,45 @@ R__LOAD_LIBRARY(libffamodules.so)
 R__LOAD_LIBRARY(libdNdEtaINTT.so)
 R__LOAD_LIBRARY(libcentrality_io.so)
 R__LOAD_LIBRARY(libg4centrality.so)
+R__LOAD_LIBRARY(libcentrality.so)
+R__LOAD_LIBRARY(libcalotrigger.so)
 
 int Fun4All_G4_sPHENIX(const bool rundata = true, const string generator = "HIJING", const int nEvents = -1, const string &outputFile = "dataNtuple.root", const int process = 0)
 {
+    bool getINTTData = true;
+    bool getCentralityData = false;
+    if (rundata && getINTTData && getCentralityData)
+    {
+      std::cout << "We currently can't get INTT and Centrality info from the same file for real data, exiting!" << std::endl;
+      exit (1);
+    }
+
+    const int runNumber = 20869;
+    std::string productionTag = "2023p011";//"ProdA_2023";
+
     int skip;
     if (rundata)
-        skip = nEvents * process;
+    {
+      skip = nEvents * process;
+    }
     else
-        skip = 0;
+    {
+      skip = 0;
+    }
+
     Fun4AllServer *se = Fun4AllServer::instance();
-    se->Verbosity(1);
+    se->Verbosity(0);
 
     recoConsts *rc = recoConsts::instance();
 
-    Input::VERBOSITY = INT_MAX;
+    Input::VERBOSITY = 0;
     Input::READHITS = true;
 
     string infile;
-    if (rundata)
+    if (rundata && getINTTData)
     {
-        infile = "/sphenix/tg/tg01/bulk/dNdeta_INTT_run2023/data/data/run_00020869/ana.382/beam_intt_combined-dst-00020869-0000.root";
+        infile = "/gpfs/mnt/gpfs02/sphenix/user/cdean/software/macros/InttProduction/intt-00020869.root";
+        //infile = "/sphenix/tg/tg01/bulk/dNdeta_INTT_run2023/data/data/run_00020869/ana.382/beam_intt_combined-dst-00020869-0000.root";
     }
     else
     {
@@ -61,7 +85,12 @@ int Fun4All_G4_sPHENIX(const bool rundata = true, const string generator = "HIJI
         }
     }
 
-    INPUTREADHITS::filename[0] = infile;
+    //Generate MBD data list with `CreateDstList.pl --run 20869 --build ana403 --cdb 2023p011 DST_CALO`
+    if (rundata && getCentralityData) 
+    {
+      INPUTREADHITS::listfile[0] = "dst_calo-000" + std::to_string(runNumber) + ".list";
+    }
+    else INPUTREADHITS::filename[0] = infile;
     // const vector<string> &filelist = {"/sphenix/user/hjheng/sPHENIXdNdEta/macros/list/dNdEta_INTT/dst_INTTdNdEta_data.list"};
 
     // for (unsigned int i = 0; i < filelist.size(); ++i)
@@ -72,53 +101,79 @@ int Fun4All_G4_sPHENIX(const bool rundata = true, const string generator = "HIJI
     // register all input generators with Fun4All
     // InputRegister();
 
-    Enable::MBD = true;
-    Enable::PIPE = true;
-    Enable::MVTX = true;
-    Enable::INTT = true;
-    Enable::TPC = true;
-    Enable::MICROMEGAS = true;
+    Enable::MBD = getINTTData;
+    Enable::PIPE = getINTTData;
+    Enable::MVTX = getINTTData;
+    Enable::INTT = getINTTData;
+    Enable::TPC = getINTTData;
+    Enable::MICROMEGAS = getINTTData;
 
     //===============
     // conditions DB flags
     //===============
     Enable::CDB = true;
-    Enable::VERBOSITY = 2;
-    // global tag
-    rc->set_StringFlag("CDB_GLOBALTAG", CDB::global_tag);
-    // 64 bit timestamp
-    rc->set_uint64Flag("TIMESTAMP", CDB::timestamp);
+    Enable::VERBOSITY = 0;
+    if (!getCentralityData)
+    {
+      // global tag
+      rc->set_StringFlag("CDB_GLOBALTAG", CDB::global_tag);
+      // 64 bit timestamp
+      rc->set_uint64Flag("TIMESTAMP", CDB::timestamp);
+    }
+    else
+    {
+      rc->set_StringFlag("CDB_GLOBALTAG",productionTag);
+      // 64 bit timestamp                                                                                                                                
+      rc->set_uint64Flag("TIMESTAMP",runNumber);
+    }
 
-    G4Init();
-    G4Setup();
+    if (getINTTData)
+    {
+      G4Init();
+      G4Setup();
 
     // TrkrHit reconstructions
     // Mvtx_Cells();
     // Load ActsGeometry object
-    TrackingInit();
-    // Reco clustering
-    // Mvtx_Clustering();
-    if (rundata)
-        Intt_Clustering();
+      TrackingInit();
+      // Reco clustering
+      // Mvtx_Clustering();
+      if (rundata) Intt_Clustering();
+    }
 
     //-----------------
     // Centrality Determination
     //-----------------
     // Centrality();
-    PHG4CentralityReco *cent = new PHG4CentralityReco();
-    cent->Verbosity(0);
-    cent->GetCalibrationParameters().ReadFromFile("centrality", "xml", 0, 0, string(getenv("CALIBRATIONROOT")) + string("/Centrality/"));
-    se->registerSubsystem(cent);
+    if (!rundata)
+    {
+      PHG4CentralityReco *cent = new PHG4CentralityReco();
+      cent->Verbosity(0);
+      cent->GetCalibrationParameters().ReadFromFile("centrality", "xml", 0, 0, string(getenv("CALIBRATIONROOT")) + string("/Centrality/"));
+      se->registerSubsystem(cent);
 
-    auto vtxing = new PHTruthVertexing;
-    vtxing->associate_tracks(false); // This is set to false because we do not run tracking
-    se->registerSubsystem(vtxing);
+      auto vtxing = new PHTruthVertexing;
+      vtxing->associate_tracks(false); // This is set to false because we do not run tracking
+      se->registerSubsystem(vtxing);    
+    }
+
+    if (getCentralityData)
+    {
+      CentralityReco *cr = new CentralityReco();
+      cr->Verbosity(0);
+      se->registerSubsystem(cr);
+      
+      MinimumBiasClassifier *mb = new MinimumBiasClassifier();
+      mb->Verbosity(0);
+      se->registerSubsystem(mb);
+    }
 
     dNdEtaINTT *myAnalyzer = new dNdEtaINTT("dNdEtaAnalyzer", outputFile, rundata);
-    myAnalyzer->GetTruthPV(true);
-    myAnalyzer->GetRecoCluster(true);
-    myAnalyzer->GetCentrality(true);
-    myAnalyzer->GetTrkrHit(true);
+    myAnalyzer->GetTruthPV(!rundata);
+    myAnalyzer->GetRecoCluster(getINTTData);
+    myAnalyzer->GetTrkrHit(getINTTData);
+    myAnalyzer->GetINTTdata(getINTTData);
+    myAnalyzer->GetCentrality(getCentralityData);
     se->registerSubsystem(myAnalyzer);
 
     //--------------
