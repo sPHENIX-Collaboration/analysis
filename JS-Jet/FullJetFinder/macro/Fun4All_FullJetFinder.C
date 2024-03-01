@@ -46,6 +46,7 @@ R__LOAD_LIBRARY(libg4dst.so)
 R__LOAD_LIBRARY(libcalo_reco.so)
 R__LOAD_LIBRARY(libparticleflow.so)
 R__LOAD_LIBRARY(libglobalvertex.so)
+R__LOAD_LIBRARY(libg4jets.so)
 
 
 //void Fun4All_JetVal(const char *filelisttruth = "dst_truth_jet.list",

@@ -3,31 +3,28 @@ AUTOMAKE_OPTIONS = foreign
 AM_CPPFLAGS = \
   -I$(includedir) \
   -I$(OFFLINE_MAIN)/include \
-  -I`root-config --incdir`
-
-lib_LTLIBRARIES = \
-  libRandomConeTree.la
+  -I$(ROOTSYS)/include
 
 AM_LDFLAGS = \
   -L$(libdir) \
   -L$(OFFLINE_MAIN)/lib \
-  `fastjet-config --libs`
-
-libRandomConeTree_la_LIBADD = \
-  -lfun4all \
-  -lphool \
-  -lSubsysReco \
-  -lg4dst \
-  -lg4eval \
-  -lg4jets \
-  -lrandomcones \
-  -ltowerrho 
-  
-libRandomConeTree_la_SOURCES = \
-  RandomConeTree.cc
+  -L$(OFFLINE_MAIN)/lib64
 
 pkginclude_HEADERS = \
-  RandomConeTree.h
+  MBDinfo.h
+
+lib_LTLIBRARIES = \
+  libMBDinfo.la
+
+libMBDinfo_la_SOURCES = \
+  MBDinfo.cc
+
+libMBDinfo_la_LIBADD = \
+  -lphool \
+  -lSubsysReco \
+  -lcentrality_io \
+  -lg4dst \
+  -lg4eval
 
 BUILT_SOURCES = testexternals.cc
 
@@ -35,7 +32,7 @@ noinst_PROGRAMS = \
   testexternals
 
 testexternals_SOURCES = testexternals.cc
-testexternals_LDADD   = libRandomConeTree.la
+testexternals_LDADD   = libMBDinfo.la
 
 testexternals.cc:
 	echo "//*** this is a generated file. Do not commit, do not edit" > $@

@@ -10,4 +10,4 @@ job_lease_duration = 3600
 #Error              = $(condorDir)/condor.err
 #Log                = $(condorDir)/condor.log
 Arguments          = $INT(Process,%05d) 
-Queue 400
+Queue 150
