@@ -132,7 +132,6 @@ int dNdEtaINTT::Init(PHCompositeNode *topNode)
 
   PHTFileServer::get().open(_outputFile, "RECREATE");
   outtree = new TTree("EventTree", "EventTree");
-  outtree->Branch("event", &event_);
 
   if (_get_centrality)
   {
@@ -143,6 +142,7 @@ int dNdEtaINTT::Init(PHCompositeNode *topNode)
       outtree->Branch("centrality_bimp", &centrality_bimp_);
       outtree->Branch("centrality_impactparam", &centrality_impactparam_);
     }
+    outtree->Branch("event", &event_);
     outtree->Branch("clk", &clk);
     outtree->Branch("femclk", &femclk);
     outtree->Branch("is_min_bias", &is_min_bias);
@@ -165,6 +165,9 @@ int dNdEtaINTT::Init(PHCompositeNode *topNode)
   }
   if (_get_intt_data)
   {
+    outtree->Branch("event_counter", &event_);
+    outtree->Branch("INTT_BCO", &intt_bco);
+
     if (!IsData)
     {
       outtree->Branch("NTruthVtx", &NTruthVtx_);
@@ -203,43 +206,52 @@ int dNdEtaINTT::Init(PHCompositeNode *topNode)
     }
 
     // InttRawHit information
-    outtree->Branch("NInttRawHits", &NInttRawHits_);
-    outtree->Branch("InttRawHit_bco", &InttRawHit_bco_);
-    outtree->Branch("InttRawHit_packetid", &InttRawHit_packetid_);
-    outtree->Branch("InttRawHit_word", &InttRawHit_word_);
-    outtree->Branch("InttRawHit_fee", &InttRawHit_fee_);
-    outtree->Branch("InttRawHit_channel_id", &InttRawHit_channel_id_);
-    outtree->Branch("InttRawHit_chip_id", &InttRawHit_chip_id_);
-    outtree->Branch("InttRawHit_adc", &InttRawHit_adc_);
-    outtree->Branch("InttRawHit_FPHX_BCO", &InttRawHit_FPHX_BCO_);
-    outtree->Branch("InttRawHit_full_FPHX", &InttRawHit_full_FPHX_);
-    outtree->Branch("InttRawHit_full_ROC", &InttRawHit_full_ROC_);
-    outtree->Branch("InttRawHit_amplitude", &InttRawHit_amplitude_);
-    // TrkrHit information
-    outtree->Branch("NTrkrhits", &NTrkrhits_);
-    outtree->Branch("TrkrHitRow", &TrkrHitRow_);
-    outtree->Branch("TrkrHitColumn", &TrkrHitColumn_);
-    outtree->Branch("TrkrHitLadderZId", &TrkrHitLadderZId_);
-    outtree->Branch("TrkrHitLadderPhiId", &TrkrHitLadderPhiId_);
-    outtree->Branch("TrkrHitLayer", &TrkrHitLayer_);
-    outtree->Branch("TrkrHitADC", &TrkrHitADC_);
+    if (_get_inttrawhit)
+    {
+      outtree->Branch("NInttRawHits", &NInttRawHits_);
+      outtree->Branch("InttRawHit_bco", &InttRawHit_bco_);
+      outtree->Branch("InttRawHit_packetid", &InttRawHit_packetid_);
+      outtree->Branch("InttRawHit_word", &InttRawHit_word_);
+      outtree->Branch("InttRawHit_fee", &InttRawHit_fee_);
+      outtree->Branch("InttRawHit_channel_id", &InttRawHit_channel_id_);
+      outtree->Branch("InttRawHit_chip_id", &InttRawHit_chip_id_);
+      outtree->Branch("InttRawHit_adc", &InttRawHit_adc_);
+      outtree->Branch("InttRawHit_FPHX_BCO", &InttRawHit_FPHX_BCO_);
+      outtree->Branch("InttRawHit_full_FPHX", &InttRawHit_full_FPHX_);
+      outtree->Branch("InttRawHit_full_ROC", &InttRawHit_full_ROC_);
+      outtree->Branch("InttRawHit_amplitude", &InttRawHit_amplitude_);
+    }
+    // TrkrHit informatio
+    if (_get_trkr_hit)
+    {
+      outtree->Branch("NTrkrhits", &NTrkrhits_);
+      outtree->Branch("TrkrHitRow", &TrkrHitRow_);
+      outtree->Branch("TrkrHitColumn", &TrkrHitColumn_);
+      outtree->Branch("TrkrHitLadderZId", &TrkrHitLadderZId_);
+      outtree->Branch("TrkrHitLadderPhiId", &TrkrHitLadderPhiId_);
+      outtree->Branch("TrkrHitLayer", &TrkrHitLayer_);
+      outtree->Branch("TrkrHitADC", &TrkrHitADC_);
+    }
     // TrkrCluster information
-    outtree->Branch("NClus_Layer1", &NClus_Layer1_);
-    outtree->Branch("NClus", &NClus_);
-    outtree->Branch("ClusLayer", &ClusLayer_);
-    outtree->Branch("ClusX", &ClusX_);
-    outtree->Branch("ClusY", &ClusY_);
-    outtree->Branch("ClusZ", &ClusZ_);
-    outtree->Branch("ClusR", &ClusR_);
-    outtree->Branch("ClusPhi", &ClusPhi_);
-    outtree->Branch("ClusEta", &ClusEta_);
-    outtree->Branch("ClusAdc", &ClusAdc_);
-    outtree->Branch("ClusPhiSize", &ClusPhiSize_);
-    outtree->Branch("ClusZSize", &ClusZSize_);
-    outtree->Branch("ClusLadderZId", &ClusLadderZId_);
-    outtree->Branch("ClusLadderPhiId", &ClusLadderPhiId_);
-    outtree->Branch("ClusTrkrHitSetKey", &ClusTrkrHitSetKey_);
-    outtree->Branch("ClusTimeBucketId", &ClusTimeBucketId_);
+    if (_get_reco_cluster)
+    {
+      outtree->Branch("NClus_Layer1", &NClus_Layer1_);
+      outtree->Branch("NClus", &NClus_);
+      outtree->Branch("ClusLayer", &ClusLayer_);
+      outtree->Branch("ClusX", &ClusX_);
+      outtree->Branch("ClusY", &ClusY_);
+      outtree->Branch("ClusZ", &ClusZ_);
+      outtree->Branch("ClusR", &ClusR_);
+      outtree->Branch("ClusPhi", &ClusPhi_);
+      outtree->Branch("ClusEta", &ClusEta_);
+      outtree->Branch("ClusAdc", &ClusAdc_);
+      outtree->Branch("ClusPhiSize", &ClusPhiSize_);
+      outtree->Branch("ClusZSize", &ClusZSize_);
+      outtree->Branch("ClusLadderZId", &ClusLadderZId_);
+      outtree->Branch("ClusLadderPhiId", &ClusLadderPhiId_);
+      outtree->Branch("ClusTrkrHitSetKey", &ClusTrkrHitSetKey_);
+      outtree->Branch("ClusTimeBucketId", &ClusTimeBucketId_);
+    }
   }
 
   return Fun4AllReturnCodes::EVENT_OK;
@@ -302,6 +314,17 @@ int dNdEtaINTT::process_event(PHCompositeNode *topNode)
 
     if (_get_reco_cluster)
       GetRecoClusterInfo(topNode);
+  }
+
+  if (IsData)
+  {
+    intteventinfo = findNode::getClass<InttEventInfo>(topNode, "INTTEVENTHEADER");
+    if (!intteventinfo)
+    {
+      std::cout << "The INTT event header is missing, you will have no BCO information fro syncing" << std::endl;
+    }
+    
+    intt_bco = intteventinfo->get_bco_full(); 
   }
 
   if (_get_centrality)
@@ -608,7 +631,7 @@ void dNdEtaINTT::GetTrkrHitInfo(PHCompositeNode *topNode)
 //____________________________________________________________________________..
 void dNdEtaINTT::GetRecoClusterInfo(PHCompositeNode *topNode)
 {
-  std::cout << "Get reconstructed cluster info." << std::endl;
+  if (Verbosity() >= VERBOSITY_MORE) std::cout << "Get reconstructed cluster info." << std::endl;
 
   dst_clustermap = findNode::getClass<TrkrClusterContainerv4>(topNode, "TRKR_CLUSTER");
   if (!dst_clustermap)
@@ -709,7 +732,7 @@ void dNdEtaINTT::GetRecoClusterInfo(PHCompositeNode *topNode)
 
   NClus_ = _NClus[0] + _NClus[1];
   NClus_Layer1_ = _NClus[0];
-  std::cout << "Number of clusters (total,0,1)=(" << NClus_ << "," << _NClus[0] << "," << _NClus[1] << ")" << std::endl;
+  if (Verbosity() >= VERBOSITY_MORE) std::cout << "Number of clusters (total,0,1)=(" << NClus_ << "," << _NClus[0] << "," << _NClus[1] << ")" << std::endl;
 }
 //____________________________________________________________________________..
 void dNdEtaINTT::GetTruthClusterInfo(PHCompositeNode *topNode)

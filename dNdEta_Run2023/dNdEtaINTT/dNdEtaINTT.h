@@ -42,6 +42,7 @@
 #include <phool/getClass.h>
 #include <trackbase/ActsGeometry.h>
 #include <trackbase/InttDefs.h>
+#include <trackbase/InttEventInfo.h>
 #include <trackbase/MvtxDefs.h>
 #include <trackbase/TrkrCluster.h>
 #include <trackbase/TrkrClusterContainerv4.h>
@@ -79,12 +80,13 @@ class PHCompositeNode;
 class SvtxTrack;
 class SvtxTrackMap;
 class TrkrHitSetContainer;
-class TrkrClusterContainer;
-class CentralityInfo;
+class InttEventInfo;
 class MinimumBiasInfo;
 class PHHepMCGenEvent;
 class PHHepMCGenEventMap;
 class PHHepMCGenHelper;
+class TrkrClusterContainer;
+class CentralityInfo;
 class MbdPmtHit;
 class MbdOut;
 class MbdPmtContainer;
@@ -175,6 +177,7 @@ class dNdEtaINTT : public SubsysReco
 
   TTree *outtree;
   int event_;
+  uint64_t intt_bco;
   // Centrality and MBD stuff
   float centrality_bimp_;
   float centrality_impactparam_;
@@ -273,6 +276,7 @@ class dNdEtaINTT : public SubsysReco
   std::vector<int> PrimaryG4P_PID_;
 
   EventHeader *eventheader = nullptr;
+  InttEventInfo *intteventinfo = nullptr;
 
   PHHepMCGenEventMap *m_geneventmap = nullptr;
   PHHepMCGenEvent *m_genevt = nullptr;
