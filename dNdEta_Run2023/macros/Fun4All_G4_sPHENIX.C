@@ -51,8 +51,8 @@ int Fun4All_G4_sPHENIX(                           //
     const int process = 0                         //
 )
 {
-    bool getINTTData = false;
-    bool getCentralityData = true;
+    bool getINTTData = true;
+    bool getCentralityData = !getINTTData;
     if (rundata && getINTTData && getCentralityData)
     {
       std::cout << "We currently can't get INTT and Centrality info from the same file for real data, exiting!" << std::endl;
@@ -87,9 +87,10 @@ int Fun4All_G4_sPHENIX(                           //
     if (rundata && getINTTData)
     {
         // hardcoded for now, fix in the future
+        infile = "/gpfs/mnt/gpfs02/sphenix/user/cdean/software/macros/InttProduction/intt-00020869.root";
         // infile = "/sphenix/tg/tg01/bulk/dNdeta_INTT_run2023/data/data/run_00020869/ana.382/beam_intt_combined-dst-00020869-0000.root";
-        infile = "/sphenix/tg/tg01/bulk/dNdeta_INTT_run2023/data/data/run_" + std::string(TString::Format("%08d", runnumber).Data()) + "/ana.382/beam_intt_combined-dst-" +
-                 std::string(TString::Format("%08d", runnumber).Data()) + "-0000.root";
+        //infile = "/sphenix/tg/tg01/bulk/dNdeta_INTT_run2023/data/data/run_" + std::string(TString::Format("%08d", runnumber).Data()) + "/ana.382/beam_intt_combined-dst-" +
+        //         std::string(TString::Format("%08d", runnumber).Data()) + "-0000.root";
     }
     else
     {
@@ -197,8 +198,8 @@ int Fun4All_G4_sPHENIX(                           //
     myAnalyzer->GetHEPMC(true);
     myAnalyzer->GetRecoCluster(true);
     myAnalyzer->GetCentrality(true);
-    myAnalyzer->GetInttRawHit(true);
-    myAnalyzer->GetTrkrHit(true);
+    myAnalyzer->GetInttRawHit(false);
+    myAnalyzer->GetTrkrHit(false);
     myAnalyzer->GetINTTdata(getINTTData);
     myAnalyzer->GetCentrality(getCentralityData);
     bool getPMTinfo = getCentralityData && false;
