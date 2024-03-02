@@ -73,14 +73,17 @@
 #include <phool/PHCompositeNode.h>
 #include <trackbase/TrkrHitv2.h>
 
+#include <limits>
+
 namespace
 {
-template <class T> void CleanVec(std::vector<T> &v)
-{
+  template <class T>
+  void CleanVec(std::vector<T> &v)
+  {
     std::vector<T>().swap(v);
     v.shrink_to_fit();
-}
-} // namespace
+  }
+}  // namespace
 
 //____________________________________________________________________________..
 dNdEtaINTT::dNdEtaINTT(const std::string &name, const std::string &outputfile, const bool &isData)
@@ -88,7 +91,8 @@ dNdEtaINTT::dNdEtaINTT(const std::string &name, const std::string &outputfile, c
     , _get_hepmc_info(true)
     , _get_truth_cluster(true)
     , _get_reco_cluster(true)
-    , _get_centrality(true)
+    , _get_centrality(false)
+    , _get_intt_data(true)
     , _get_inttrawhit(true)
     , _get_trkr_hit(true)
     , _get_phg4_info(true)
@@ -111,61 +115,77 @@ dNdEtaINTT::dNdEtaINTT(const std::string &name, const std::string &outputfile, c
     , m_CentInfo(nullptr)
     , Minimumbiasinfo(nullptr)
 {
-    std::cout << "dNdEtaINTT::dNdEtaINTT(const std::string &name) Calling ctor" << std::endl;
+  if (Verbosity() >= VERBOSITY_MORE) std::cout << "dNdEtaINTT::dNdEtaINTT(const std::string &name) Calling ctor" << std::endl;
 }
 
 //____________________________________________________________________________..
-dNdEtaINTT::~dNdEtaINTT() { std::cout << "dNdEtaINTT::~dNdEtaINTT() Calling dtor" << std::endl; }
+dNdEtaINTT::~dNdEtaINTT() { if (Verbosity() >= VERBOSITY_MORE) std::cout << "dNdEtaINTT::~dNdEtaINTT() Calling dtor" << std::endl; }
 
 //____________________________________________________________________________..
 int dNdEtaINTT::Init(PHCompositeNode *topNode)
 {
-    std::cout << "dNdEtaINTT::Init(PHCompositeNode *topNode) Initializing" << std::endl << "Running on Data or simulation? -> IsData = " << IsData << std::endl;
+  std::cout << "dNdEtaINTT::Init(PHCompositeNode *topNode) Initializing" << std::endl
+            << "Running on Data or simulation? -> IsData = " << IsData << std::endl;
 
-    PHTFileServer::get().open(_outputFile, "RECREATE");
-    outtree = new TTree("EventTree", "EventTree");
-    outtree->Branch("event", &event_);
+  PHTFileServer::get().open(_outputFile, "RECREATE");
+  outtree = new TTree("EventTree", "EventTree");
+  if (_get_intt_data) outtree->Branch("event", &event_);
+
+  if (_get_centrality)
+  {
     if (!IsData)
     {
-        outtree->Branch("ncoll", &ncoll_);
-        outtree->Branch("npart", &npart_);
-        outtree->Branch("centrality_bimp", &centrality_bimp_);
-        outtree->Branch("centrality_impactparam", &centrality_impactparam_);
-        outtree->Branch("centrality_mbd", &centrality_mbd_);
-        outtree->Branch("centrality_mbdquantity", &centrality_mbdquantity_);
-        outtree->Branch("NTruthVtx", &NTruthVtx_);
-        outtree->Branch("TruthPV_trig_x", &TruthPV_trig_x_);
-        outtree->Branch("TruthPV_trig_y", &TruthPV_trig_y_);
-        outtree->Branch("TruthPV_trig_z", &TruthPV_trig_z_);
-        // HepMC::GenParticle informaiton (final states, after boost and rotation)
-        outtree->Branch("NHepMCFSPart", &NHepMCFSPart_);
-        outtree->Branch("signal_process_id", &signal_process_id_);
-        outtree->Branch("HepMCFSPrtl_Pt", &HepMCFSPrtl_Pt_);
-        outtree->Branch("HepMCFSPrtl_Eta", &HepMCFSPrtl_Eta_);
-        outtree->Branch("HepMCFSPrtl_Phi", &HepMCFSPrtl_Phi_);
-        outtree->Branch("HepMCFSPrtl_E", &HepMCFSPrtl_E_);
-        outtree->Branch("HepMCFSPrtl_PID", &HepMCFSPrtl_PID_);
-        outtree->Branch("HepMCFSPrtl_prodx", &HepMCFSPrtl_prodx_);
-        outtree->Branch("HepMCFSPrtl_prody", &HepMCFSPrtl_prody_);
-        outtree->Branch("HepMCFSPrtl_prodz", &HepMCFSPrtl_prodz_);
-        // Primary PHG4Particle information
-        outtree->Branch("NPrimaryG4P", &NPrimaryG4P_);
-        outtree->Branch("PrimaryG4P_Pt", &PrimaryG4P_Pt_);
-        outtree->Branch("PrimaryG4P_Eta", &PrimaryG4P_Eta_);
-        outtree->Branch("PrimaryG4P_Phi", &PrimaryG4P_Phi_);
-        outtree->Branch("PrimaryG4P_E", &PrimaryG4P_E_);
-        outtree->Branch("PrimaryG4P_PID", &PrimaryG4P_PID_);
-        // Truth cluster information & matching with reco clusters
-        outtree->Branch("NTruthLayers", &NTruthLayers_);
-        outtree->Branch("ClusTruthCKeys", &ClusTruthCKeys_);
-        outtree->Branch("ClusNG4Particles", &ClusNG4Particles_);
-        outtree->Branch("ClusNPrimaryG4Particles", &ClusNPrimaryG4Particles_);
-        outtree->Branch("TruthClusPhiSize", &TruthClusPhiSize_);
-        outtree->Branch("TruthClusZSize", &TruthClusZSize_);
-        outtree->Branch("TruthClusNRecoClus", &TruthClusNRecoClus_);
-        outtree->Branch("PrimaryTruthClusPhiSize", &PrimaryTruthClusPhiSize_);
-        outtree->Branch("PrimaryTruthClusZSize", &PrimaryTruthClusZSize_);
-        outtree->Branch("PrimaryTruthClusNRecoClus", &PrimaryTruthClusNRecoClus_);
+      outtree->Branch("ncoll", &ncoll_);
+      outtree->Branch("npart", &npart_);
+      outtree->Branch("centrality_bimp", &centrality_bimp_);
+      outtree->Branch("centrality_impactparam", &centrality_impactparam_);
+    }
+    outtree->Branch("femclk", &femclk);
+    outtree->Branch("is_min_bias", &is_min_bias);
+    outtree->Branch("MBD_centrality", &centrality_mbd_);
+    outtree->Branch("MBD_z_vtx", &mbd_z_vtx);
+    outtree->Branch("MBD_south_charge_sum", &mbd_south_charge_sum);
+    outtree->Branch("MBD_north_charge_sum", &mbd_north_charge_sum);
+    outtree->Branch("MBD_charge_sum", &mbd_charge_sum);
+    outtree->Branch("MBD_charge_asymm", &mbd_charge_asymm);
+  }
+  if (_get_intt_data)
+  {
+    if (!IsData)
+    {
+      outtree->Branch("NTruthVtx", &NTruthVtx_);
+      outtree->Branch("TruthPV_trig_x", &TruthPV_trig_x_);
+      outtree->Branch("TruthPV_trig_y", &TruthPV_trig_y_);
+      outtree->Branch("TruthPV_trig_z", &TruthPV_trig_z_);
+      // HepMC::GenParticle informaiton (final states, after boost and rotation)
+      outtree->Branch("NHepMCFSPart", &NHepMCFSPart_);
+      outtree->Branch("signal_process_id", &signal_process_id_);
+      outtree->Branch("HepMCFSPrtl_Pt", &HepMCFSPrtl_Pt_);
+      outtree->Branch("HepMCFSPrtl_Eta", &HepMCFSPrtl_Eta_);
+      outtree->Branch("HepMCFSPrtl_Phi", &HepMCFSPrtl_Phi_);
+      outtree->Branch("HepMCFSPrtl_E", &HepMCFSPrtl_E_);
+      outtree->Branch("HepMCFSPrtl_PID", &HepMCFSPrtl_PID_);
+      outtree->Branch("HepMCFSPrtl_prodx", &HepMCFSPrtl_prodx_);
+      outtree->Branch("HepMCFSPrtl_prody", &HepMCFSPrtl_prody_);
+      outtree->Branch("HepMCFSPrtl_prodz", &HepMCFSPrtl_prodz_);
+      // Primary PHG4Particle information
+      outtree->Branch("NPrimaryG4P", &NPrimaryG4P_);
+      outtree->Branch("PrimaryG4P_Pt", &PrimaryG4P_Pt_);
+      outtree->Branch("PrimaryG4P_Eta", &PrimaryG4P_Eta_);
+      outtree->Branch("PrimaryG4P_Phi", &PrimaryG4P_Phi_);
+      outtree->Branch("PrimaryG4P_E", &PrimaryG4P_E_);
+      outtree->Branch("PrimaryG4P_PID", &PrimaryG4P_PID_);
+      // Truth cluster information & matching with reco clusters
+      outtree->Branch("NTruthLayers", &NTruthLayers_);
+      outtree->Branch("ClusTruthCKeys", &ClusTruthCKeys_);
+      outtree->Branch("ClusNG4Particles", &ClusNG4Particles_);
+      outtree->Branch("ClusNPrimaryG4Particles", &ClusNPrimaryG4Particles_);
+      outtree->Branch("TruthClusPhiSize", &TruthClusPhiSize_);
+      outtree->Branch("TruthClusZSize", &TruthClusZSize_);
+      outtree->Branch("TruthClusNRecoClus", &TruthClusNRecoClus_);
+      outtree->Branch("PrimaryTruthClusPhiSize", &PrimaryTruthClusPhiSize_);
+      outtree->Branch("PrimaryTruthClusZSize", &PrimaryTruthClusZSize_);
+      outtree->Branch("PrimaryTruthClusNRecoClus", &PrimaryTruthClusNRecoClus_);
     }
 
     outtree->Branch("IsMinBias", &IsMinBias_);
@@ -207,34 +227,46 @@ int dNdEtaINTT::Init(PHCompositeNode *topNode)
     outtree->Branch("ClusLadderPhiId", &ClusLadderPhiId_);
     outtree->Branch("ClusTrkrHitSetKey", &ClusTrkrHitSetKey_);
     outtree->Branch("ClusTimeBucketId", &ClusTimeBucketId_);
+  }
 
-    return Fun4AllReturnCodes::EVENT_OK;
+  return Fun4AllReturnCodes::EVENT_OK;
 }
 
 //____________________________________________________________________________..
 int dNdEtaINTT::InitRun(PHCompositeNode *topNode)
 {
-    std::cout << "dNdEtaINTT::InitRun(PHCompositeNode *topNode) Initializing for Run XXX" << std::endl;
-    return Fun4AllReturnCodes::EVENT_OK;
+  if (Verbosity() >= VERBOSITY_MORE) std::cout << "dNdEtaINTT::InitRun(PHCompositeNode *topNode) Initializing for Run XXX" << std::endl;
+  return Fun4AllReturnCodes::EVENT_OK;
 }
 
 //____________________________________________________________________________..
 int dNdEtaINTT::process_event(PHCompositeNode *topNode)
 {
-    std::cout << "dNdEtaINTT::process_event(PHCompositeNode *topNode) Processing Event" << eventNum << std::endl;
+  // std::cout << "dNdEtaINTT::process_event(PHCompositeNode *topNode) Processing Event" << InputFileListIndex * NEvtPerFile + eventNum << std::endl;
+  if (Verbosity() >= VERBOSITY_MORE) std::cout << "dNdEtaINTT::process_event(PHCompositeNode *topNode) Processing Event " << eventNum << std::endl;
 
-    PHNodeIterator nodeIter(topNode);
+  PHNodeIterator nodeIter(topNode);
 
+  if (!IsData)
+  {
     if (!svtx_evalstack)
     {
-        svtx_evalstack = new SvtxEvalStack(topNode);
-        clustereval = svtx_evalstack->get_cluster_eval();
-        hiteval = svtx_evalstack->get_hit_eval();
-        truth_eval = svtx_evalstack->get_truth_eval();
+      svtx_evalstack = new SvtxEvalStack(topNode);
+      clustereval = svtx_evalstack->get_cluster_eval();
+      hiteval = svtx_evalstack->get_hit_eval();
+      truth_eval = svtx_evalstack->get_truth_eval();
     }
 
     svtx_evalstack->next_event(topNode);
+  }
 
+  if (_get_centrality)
+  {
+    GetCentralityInfo(topNode);
+  }
+
+  if (_get_intt_data)
+  {
     if (!IsData)
     {
         std::cout << "Running on simulation" << std::endl;
@@ -249,60 +281,58 @@ int dNdEtaINTT::process_event(PHCompositeNode *topNode)
             GetTruthClusterInfo(topNode);
     }
 
-    if (_get_centrality)
-        GetCentralityInfo(topNode);
-
     if (_get_inttrawhit)
         GetInttRawHitInfo(topNode);
 
     if (_get_trkr_hit)
-        GetTrkrHitInfo(topNode);
+      GetTrkrHitInfo(topNode);
 
     if (_get_reco_cluster)
-        GetRecoClusterInfo(topNode);
+      GetRecoClusterInfo(topNode);
+  }
 
-    // event_ = InputFileListIndex * NEvtPerFile + eventNum;
-    event_ = eventNum;
-    outtree->Fill();
-    eventNum++;
+  // event_ = InputFileListIndex * NEvtPerFile + eventNum;
+  event_ = eventNum;
+  outtree->Fill();
+  eventNum++;
 
-    ResetVectors();
+  ResetVectors();
 
-    return Fun4AllReturnCodes::EVENT_OK;
+  return Fun4AllReturnCodes::EVENT_OK;
 }
 
 //____________________________________________________________________________..
 int dNdEtaINTT::ResetEvent(PHCompositeNode *topNode)
 {
-    std::cout << "dNdEtaINTT::ResetEvent(PHCompositeNode *topNode) Resetting internal structures, prepare for next event" << std::endl;
-    return Fun4AllReturnCodes::EVENT_OK;
+  if (Verbosity() >= VERBOSITY_MORE) std::cout << "dNdEtaINTT::ResetEvent(PHCompositeNode *topNode) Resetting internal structures, prepare for next event" << std::endl;
+  return Fun4AllReturnCodes::EVENT_OK;
 }
 
 //____________________________________________________________________________..
 int dNdEtaINTT::EndRun(const int runnumber)
 {
-    std::cout << "dNdEtaINTT::EndRun(const int runnumber) Ending Run for Run " << runnumber << std::endl;
-    return Fun4AllReturnCodes::EVENT_OK;
+  if (Verbosity() >= VERBOSITY_MORE) std::cout << "dNdEtaINTT::EndRun(const int runnumber) Ending Run for Run " << runnumber << std::endl;
+  return Fun4AllReturnCodes::EVENT_OK;
 }
 
 //____________________________________________________________________________..
 int dNdEtaINTT::End(PHCompositeNode *topNode)
 {
-    std::cout << "dNdEtaINTT::End(PHCompositeNode *topNode) This is the End - Output to " << _outputFile << std::endl;
+  if (Verbosity() >= VERBOSITY_MORE) std::cout << "dNdEtaINTT::End(PHCompositeNode *topNode) This is the End - Output to " << _outputFile << std::endl;
 
-    PHTFileServer::get().cd(_outputFile);
-    outtree->Write("", TObject::kOverwrite);
+  PHTFileServer::get().cd(_outputFile);
+  outtree->Write("", TObject::kOverwrite);
 
-    delete svtx_evalstack;
+  delete svtx_evalstack;
 
-    return Fun4AllReturnCodes::EVENT_OK;
+  return Fun4AllReturnCodes::EVENT_OK;
 }
 
 //____________________________________________________________________________..
 int dNdEtaINTT::Reset(PHCompositeNode *topNode)
 {
-    std::cout << "dNdEtaINTT::Reset(PHCompositeNode *topNode) being Reset" << std::endl;
-    return Fun4AllReturnCodes::EVENT_OK;
+  if (Verbosity() >= VERBOSITY_MORE) std::cout << "dNdEtaINTT::Reset(PHCompositeNode *topNode) being Reset" << std::endl;
+  return Fun4AllReturnCodes::EVENT_OK;
 }
 
 //____________________________________________________________________________..
@@ -400,43 +430,44 @@ void dNdEtaINTT::GetHEPMCInfo(PHCompositeNode *topNode)
 //____________________________________________________________________________..
 void dNdEtaINTT::GetCentralityInfo(PHCompositeNode *topNode)
 {
-    std::cout << "Get centrality info." << std::endl;
+  if (Verbosity() >= VERBOSITY_MORE) std::cout << "Get centrality info." << std::endl;
+  
+  m_CentInfo = findNode::getClass<CentralityInfo>(topNode, "CentralityInfo");
+  if (!m_CentInfo)
+  {
+    std::cout << PHWHERE << "Error, can't find CentralityInfov1" << std::endl;
+    return Fun4AllReturnCodes::ABORTEVENT;
+  }
 
-    // Centrality info
-    m_CentInfo = findNode::getClass<CentralityInfo>(topNode, "CentralityInfo");
-    if (!m_CentInfo)
-    {
-        std::cout << PHWHERE << "Error, can't find CentralityInfov1" << std::endl;
-        return;
-    }
+  _minimumbiasinfo = findNode::getClass<MinimumBiasInfo>(topNode, "MinimumBiasInfo");
+  if (!_minimumbiasinfo)
+  {
+    std::cout << "Error, can't find MinimumBiasInfo" << std::endl;
+    return Fun4AllReturnCodes::ABORTRUN;
+  }
 
-    // TODO: uncomment this when the minimum bias info is available
-    // Minimum bias info
-    // Minimumbiasinfo = findNode::getClass<MinimumBiasInfo>(topNode,
-    // "MinimumBiasInfo"); if (!Minimumbiasinfo)
-    // {
-    //     std::cout << PHWHERE << "Error, can't find MinimumBias" << std::endl;
-    //     return;
-    // }
+  m_mbdout = findNode::getClass<MbdOut>(topNode, "MbdOut");
+  if (!m_mbdout)
+  {
+    std::cout << "Error, can't find MbdOut" << std::endl;
+    return Fun4AllReturnCodes::ABORTRUN;
+  }
 
-    if (!IsData)
-    {
-        eventheader = findNode::getClass<EventHeader>(topNode, "EventHeader");
-        if (!eventheader)
-        {
-            std::cout << PHWHERE << "Error, can't find EventHeader" << std::endl;
-            return;
-        }
+  m_glbvtxmap = findNode::getClass<GlobalVertexMap>(topNode, "GlobalVertexMap");
+  if (!m_glbvtxmap)
+  {
+    std::cout << "Error, can't find GlobalVertexMap" << std::endl;
+    return Fun4AllReturnCodes::ABORTRUN;
+  }
 
-        centrality_bimp_ = m_CentInfo->get_centile(CentralityInfo::PROP::bimp);
-        centrality_impactparam_ = m_CentInfo->get_quantity(CentralityInfo::PROP::bimp);
+  if (!IsData)
+  {
+    centrality_bimp_ = m_CentInfo->get_centile(CentralityInfo::PROP::bimp);
+    centrality_impactparam_ = m_CentInfo->get_quantity(CentralityInfo::PROP::bimp);
 
-        // Glauber parameter information
-        ncoll_ = eventheader->get_ncoll();
-        npart_ = eventheader->get_npart();
-    }
-    centrality_mbd_ = (m_CentInfo->has_centile(CentralityInfo::PROP::mbd_NS)) ? m_CentInfo->get_centile(CentralityInfo::PROP::mbd_NS) : -999.99;
-    centrality_mbdquantity_ = (m_CentInfo->has_quantity(CentralityInfo::PROP::mbd_NS)) ? m_CentInfo->get_quantity(CentralityInfo::PROP::mbd_NS) : -999.99;
+    // Glauber parameter information
+    ncoll_ = eventheader->get_ncoll();
+    npart_ = eventheader->get_npart();
 
     // IsMinBias_ = Minimumbiasinfo->isAuAuMinimumBias(); // TODO: uncomment
     // this when the minimum bias info is available
@@ -446,6 +477,36 @@ void dNdEtaINTT::GetCentralityInfo(PHCompositeNode *topNode)
     std::cout << "Centrality: (bimp,impactparam) = (" << centrality_bimp_ << ", " << centrality_impactparam_ << "); (mbd,mbdquantity) = (" << centrality_mbd_ << ", " << centrality_mbdquantity_ << ")"
               << std::endl;
     std::cout << "Glauber parameter information: (ncoll,npart) = (" << ncoll_ << ", " << npart_ << ")" << std::endl;
+  }
+
+  femclk = m_mbdout->get_femclock();
+  mbd_south_charge_sum = m_mbdout->get_q(0);
+  mbd_north_charge_sum = m_mbdout->get_q(1);
+  mbd_charge_sum = mbd_south_charge_sum + mbd_north_charge_sum;
+  mbd_charge_asymm = mbd_charge_sum == 0 ? std::numeric_limits<float>::quiet_NaN() : (float) (mbd_south_charge_sum - mbd_north_charge_sum) / mbd_charge_sum;
+  centrality_mbd_ = m_CentInfo->has_centile(CentralityInfo::PROP::mbd_NS) ? m_CentInfo->get_centile(CentralityInfo::PROP::mbd_NS) : std::numeric_limits<float>::quiet_NaN();
+  is_min_bias = _minimumbiasinfo->isAuAuMinimumBias();
+
+  mbd_z_vtx = std::numeric_limits<float>::quiet_NaN();
+  //Now get MBD z vertex value
+  for (GlobalVertexMap::ConstIter iter = m_glbvtxmap->begin(); iter != m_glbvtxmap->end(); ++iter)
+  {
+    m_glbvtx = iter->second;
+    auto mbdvtxiter = m_glbvtx->find_vertexes(GlobalVertex::MBD);
+    // check that it contains a track vertex
+    if (mbdvtxiter == m_glbvtx->end_vertexes())
+    {
+      continue;
+    }
+
+    auto mbdvertexvector = mbdvtxiter->second;
+
+    for (auto &vertex : mbdvertexvector)
+    {
+      mbd_z_vtx = vertex->get_z();
+      //m_mbdvtx = m_dst_vertexmap->find(vertex->get_id())->second;
+    }
+  }
 }
 //____________________________________________________________________________..
 void dNdEtaINTT::GetInttRawHitInfo(PHCompositeNode *topNode)
@@ -481,7 +542,7 @@ void dNdEtaINTT::GetInttRawHitInfo(PHCompositeNode *topNode)
 //____________________________________________________________________________..
 void dNdEtaINTT::GetTrkrHitInfo(PHCompositeNode *topNode)
 {
-    std::cout << "Get TrkrHit info." << std::endl;
+  if (Verbosity() >= VERBOSITY_MORE) std::cout << "Get TrkrHit info." << std::endl;
 
     hitsets = findNode::getClass<TrkrHitSetContainer>(topNode, "TRKR_HITSET");
     if (!hitsets)
@@ -493,21 +554,18 @@ void dNdEtaINTT::GetTrkrHitInfo(PHCompositeNode *topNode)
     TrkrHitSetContainer::ConstRange hitset_range = hitsets->getHitSets(TrkrDefs::TrkrId::inttId);
     for (TrkrHitSetContainer::ConstIterator hitset_iter = hitset_range.first; hitset_iter != hitset_range.second; ++hitset_iter)
     {
-        TrkrHitSet::ConstRange hit_range = hitset_iter->second->getHits();
-        for (TrkrHitSet::ConstIterator hit_iter = hit_range.first; hit_iter != hit_range.second; ++hit_iter)
-        {
-            TrkrDefs::hitkey hitKey = hit_iter->first;
-            TrkrDefs::hitsetkey hitSetKey = hitset_iter->first;
+      TrkrDefs::hitkey hitKey = hit_iter->first;
+      TrkrDefs::hitsetkey hitSetKey = hitset_iter->first;
 
-            TrkrHitRow_.push_back(InttDefs::getRow(hitKey));
-            TrkrHitColumn_.push_back(InttDefs::getCol(hitKey));
-            TrkrHitLadderZId_.push_back(InttDefs::getLadderZId(hitSetKey));
-            TrkrHitLadderPhiId_.push_back(InttDefs::getLadderPhiId(hitSetKey));
-            TrkrHitLayer_.push_back(TrkrDefs::getLayer(hitSetKey));
-            TrkrHitADC_.push_back(hit_iter->second->getAdc());
-        }
+      TrkrHitRow_.push_back(InttDefs::getRow(hitKey));
+      TrkrHitColumn_.push_back(InttDefs::getCol(hitKey));
+      TrkrHitLadderZId_.push_back(InttDefs::getLadderZId(hitSetKey));
+      TrkrHitLadderPhiId_.push_back(InttDefs::getLadderPhiId(hitSetKey));
+      TrkrHitLayer_.push_back(TrkrDefs::getLayer(hitSetKey));
+      TrkrHitADC_.push_back(hit_iter->second->getAdc());
     }
-    NTrkrhits_ = TrkrHitRow_.size();
+  }
+  NTrkrhits_ = TrkrHitRow_.size();
 }
 //____________________________________________________________________________..
 void dNdEtaINTT::GetRecoClusterInfo(PHCompositeNode *topNode)
@@ -537,20 +595,54 @@ void dNdEtaINTT::GetRecoClusterInfo(PHCompositeNode *topNode)
     // for (const auto &hitsetkey : dst_clustermap->getHitSetKeys())
     for (const auto &hitsetkey : dst_clustermap->getHitSetKeys(TrkrDefs::inttId))
     {
-        auto range = dst_clustermap->getClusters(hitsetkey);
-        for (auto iter = range.first; iter != range.second; ++iter)
+      // std::cout << "----------" << std::endl;
+      TrkrDefs::cluskey ckey = iter->first;
+      TrkrCluster *cluster = dst_clustermap->findCluster(ckey);
+
+      unsigned int trkrId = TrkrDefs::getTrkrId(ckey);
+      if (trkrId != TrkrDefs::inttId)
+        continue;  // we want only INTT clusters
+
+      int layer = (TrkrDefs::getLayer(ckey) == 3 || TrkrDefs::getLayer(ckey) == 4) ? 0 : 1;
+      _NClus[layer]++;
+      if (cluster == nullptr)
+      {
+        std::cout << "cluster is nullptr, ckey=" << ckey << std::endl;
+      }
+      auto globalpos = _tgeometry->getGlobalPosition(ckey, cluster);
+      ClusLayer_.push_back(TrkrDefs::getLayer(ckey));
+      ClusX_.push_back(globalpos(0));
+      ClusY_.push_back(globalpos(1));
+      ClusZ_.push_back(globalpos(2));
+      ClusAdc_.push_back(cluster->getAdc());
+      TVector3 pos(globalpos(0), globalpos(1), globalpos(2));
+      ClusR_.push_back(pos.Perp());
+      ClusPhi_.push_back(pos.Phi());
+      ClusEta_.push_back(pos.Eta());
+      // ClusPhiSize is a signed char (-127-127), we should convert it to an unsigned char (0-255)
+      int phisize = cluster->getPhiSize();
+      if (phisize <= 0) phisize += 256;
+      ClusPhiSize_.push_back(phisize);
+      ClusZSize_.push_back(cluster->getZSize());
+      ClusLadderZId_.push_back(InttDefs::getLadderZId(ckey));
+      ClusLadderPhiId_.push_back(InttDefs::getLadderPhiId(ckey));
+      ClusTrkrHitSetKey_.push_back(hitsetkey);
+      ClusTimeBucketId_.push_back(InttDefs::getTimeBucketId(ckey));
+
+      if (!IsData)
+      {
+        // truth cluster association
+        std::vector<int32_t> truth_ckeys;
+        std::set<PHG4Particle *> truth_particles = clustereval->all_truth_particles(ckey);
+        int Nprimary = 0;
+        for (auto &p : truth_particles)
         {
-            // std::cout << "----------" << std::endl;
-            TrkrDefs::cluskey ckey = iter->first;
-            TrkrCluster *cluster = dst_clustermap->findCluster(ckey);
-
-            unsigned int trkrId = TrkrDefs::getTrkrId(ckey);
-            if (trkrId != TrkrDefs::inttId)
-                continue; // we want only INTT clusters
-
-            int layer = (TrkrDefs::getLayer(ckey) == 3 || TrkrDefs::getLayer(ckey) == 4) ? 0 : 1;
-            _NClus[layer]++;
-            if (cluster == nullptr)
+          // must be primary truth particle
+          if (p->get_parent_id() == 0)
+          {
+            Nprimary++;
+            std::map<TrkrDefs::cluskey, std::shared_ptr<TrkrCluster>> truth_clusters = truth_eval->all_truth_clusters(p);
+            for (auto &c : truth_clusters)
             {
                 std::cout << "cluster is nullptr, ckey=" << ckey << std::endl;
             }
@@ -608,8 +700,11 @@ void dNdEtaINTT::GetRecoClusterInfo(PHCompositeNode *topNode)
                 ClusNG4Particles_.push_back(truth_particles.size());
                 ClusNPrimaryG4Particles_.push_back(Nprimary);
             }
+          }
         }
-    }
+        ClusTruthCKeys_.push_back(truth_ckeys.size());
+        ClusNG4Particles_.push_back(truth_particles.size());
+        ClusNPrimaryG4Particles_.push_back(Nprimary);
 
     NClus_ = _NClus[0] + _NClus[1];
     NClus_Layer1_ = _NClus[0];
@@ -735,8 +830,10 @@ void dNdEtaINTT::GetTruthClusterInfo(PHCompositeNode *topNode)
                     continue;
                 }
 
-                clusters_by_hitset[entry_hskey].push_back(hit);
-            }
+      for (auto chs_iter = clusters_by_hitset.begin(); chs_iter != clusters_by_hitset.end(); chs_iter++)
+      {
+        TrkrDefs::hitsetkey hskey = chs_iter->first;
+        std::vector<PHG4Hit *> hits = chs_iter->second;
 
             for (auto chs_iter = clusters_by_hitset.begin(); chs_iter != clusters_by_hitset.end(); chs_iter++)
             {
@@ -804,7 +901,15 @@ void dNdEtaINTT::GetTruthClusterInfo(PHCompositeNode *topNode)
                     PrimaryTruthClusNRecoClus_.push_back(associated_reco_clusters.size());
             }
         }
+        if (phibins.size() > 0) TruthClusPhiSize_.push_back(phibins.size());
+        if (phibins.size() > 0 && truth_particle->get_parent_id() == 0) PrimaryTruthClusPhiSize_.push_back(phibins.size());
+        if (zbins.size() > 0) TruthClusZSize_.push_back(zbins.size());
+        if (zbins.size() > 0 && truth_particle->get_parent_id() == 0) PrimaryTruthClusZSize_.push_back(zbins.size());
+        TruthClusNRecoClus_.push_back(associated_reco_clusters.size());
+        if (truth_particle->get_parent_id() == 0) PrimaryTruthClusNRecoClus_.push_back(associated_reco_clusters.size());
+      }
     }
+  }
 }
 //____________________________________________________________________________..
 void dNdEtaINTT::GetPHG4Info(PHCompositeNode *topNode)
@@ -840,9 +945,18 @@ void dNdEtaINTT::GetPHG4Info(PHCompositeNode *topNode)
                 NTruthPV_Embeded0++;
             }
 
-            NTruthPV++;
-        }
+    if (point)
+    {
+      if (m_truth_info->isEmbededVtx(point_id) == 0)
+      {
+        TruthPV_trig_x_ = point->get_x();
+        TruthPV_trig_y_ = point->get_y();
+        TruthPV_trig_z_ = point->get_z();
+      }
+
+      NTruthPV++;
     }
+  }
 
     // print out the truth vertex information
     std::cout << "Number of truth vertices: " << NTruthPV << std::endl;

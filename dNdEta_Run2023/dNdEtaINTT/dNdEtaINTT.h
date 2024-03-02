@@ -54,10 +54,18 @@
 #include <trackbase_historic/SvtxTrack.h>
 #include <trackbase_historic/SvtxTrackMap.h>
 
+#include <calotrigger/MinimumBiasInfo.h>
+#include <centrality/CentralityInfo.h>
+#include <globalvertex/GlobalVertex.h>
+#include <globalvertex/GlobalVertexMap.h>
+#include <globalvertex/MbdVertex.h>
+#include <globalvertex/MbdVertexMap.h>
+#include <mbd/MbdOut.h>
+
+#include <math.h>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
-#include <math.h>
 #include <string>
 
 #include <TFile.h>
@@ -75,6 +83,7 @@ class MinimumBiasInfo;
 class PHHepMCGenEvent;
 class PHHepMCGenEventMap;
 class PHHepMCGenHelper;
+class MbdOut;
 
 class dNdEtaINTT : public SubsysReco
 {
@@ -119,11 +128,13 @@ class dNdEtaINTT : public SubsysReco
     void Print(const std::string &what = "ALL") const override;
 
     void GetHEPMC(bool b) { _get_hepmc_info = b; }
-
-    void GetTruthCluster(bool b) { _get_truth_cluster = b; }
-
+    
+    void GetTruthPV(bool b) { _get_truth_pv = b; }
+    
     void GetRecoCluster(bool b) { _get_reco_cluster = b; }
-
+ 
+    void GetINTTdata(bool b) { _get_intt_data = b; }
+ 
     void GetCentrality(bool b) { _get_centrality = b; }
 
     void GetInttRawHit(bool b) { _get_inttrawhit = b; }
@@ -138,7 +149,6 @@ class dNdEtaINTT : public SubsysReco
     void GetRecoClusterInfo(PHCompositeNode *topNode);
     void GetTruthClusterInfo(PHCompositeNode *topNode);
     void GetCentralityInfo(PHCompositeNode *topNode);
-    void GetInttRawHitInfo(PHCompositeNode *topNode);
     void GetTrkrHitInfo(PHCompositeNode *topNode);
     void GetPHG4Info(PHCompositeNode *topNode);
 
@@ -146,6 +156,7 @@ class dNdEtaINTT : public SubsysReco
     bool _get_truth_cluster;
     bool _get_reco_cluster;
     bool _get_centrality;
+    bool _get_intt_data
     bool _get_inttrawhit;
     bool _get_trkr_hit;
     bool _get_phg4_info;
@@ -158,13 +169,20 @@ class dNdEtaINTT : public SubsysReco
 
     TTree *outtree;
     int event_;
+    // Centrality and MBD stuff
     float centrality_bimp_;
     float centrality_impactparam_;
-    float centrality_mbd_;
+    float centrality_mbd_
     float centrality_mbdquantity_;
-    int ncoll_;
-    int npart_; // number of collisions and participants
-    bool IsMinBias_;
+    UShort_t femclk;
+    float mbd_south_charge_sum;
+    float mbd_north_charge_sum;
+    float mbd_charge_sum;
+    float mbd_charge_asymm;
+    float mbd_z_vtx;
+    // std::set<std::pair<int, float>> m_pmt_q;
+    bool is_min_bias;
+    
 
     // Truth primary vertex information
     float TruthPV_trig_x_;
@@ -264,7 +282,10 @@ class dNdEtaINTT : public SubsysReco
     PHG4CylinderGeomContainer *_intt_geom_container = nullptr;
     PHG4TruthInfoContainer *m_truth_info = nullptr;
     CentralityInfo *m_CentInfo = nullptr;
-    MinimumBiasInfo *Minimumbiasinfo = nullptr;
+    MinimumBiasInfo *_minimumbiasinfo = nullptr;
+    MbdOut *m_mbdout = nullptr;
+    GlobalVertexMap *m_glbvtxmap = nullptr;
+    GlobalVertex *m_glbvtx = nullptr;
 };
 
-#endif // DNDETAINTT_H
+#endif  // DNDETAINTT_H
