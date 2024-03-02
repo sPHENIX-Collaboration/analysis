@@ -51,8 +51,8 @@ int Fun4All_G4_sPHENIX(                           //
     const int process = 0                         //
 )
 {
-    bool getINTTData = true;
-    bool getCentralityData = false;
+    bool getINTTData = false;
+    bool getCentralityData = true;
     if (rundata && getINTTData && getCentralityData)
     {
       std::cout << "We currently can't get INTT and Centrality info from the same file for real data, exiting!" << std::endl;
@@ -73,7 +73,7 @@ int Fun4All_G4_sPHENIX(                           //
     }
 
     Fun4AllServer *se = Fun4AllServer::instance();
-    se->Verbosity(0);
+    se->Verbosity(1);
 
     recoConsts *rc = recoConsts::instance();
     rc->set_StringFlag("CDB_GLOBALTAG", "ProdA_2023");
@@ -195,13 +195,14 @@ int Fun4All_G4_sPHENIX(                           //
 
     dNdEtaINTT *myAnalyzer = new dNdEtaINTT("dNdEtaAnalyzer", outputFile, rundata);
     myAnalyzer->GetHEPMC(true);
-    myAnalyzer->GetTruthCluster(true);
     myAnalyzer->GetRecoCluster(true);
     myAnalyzer->GetCentrality(true);
     myAnalyzer->GetInttRawHit(true);
     myAnalyzer->GetTrkrHit(true);
     myAnalyzer->GetINTTdata(getINTTData);
     myAnalyzer->GetCentrality(getCentralityData);
+    bool getPMTinfo = getCentralityData && false;
+    myAnalyzer->GetPMTInfo(getPMTinfo);
     myAnalyzer->GetPHG4(true);
 
     se->registerSubsystem(myAnalyzer);
