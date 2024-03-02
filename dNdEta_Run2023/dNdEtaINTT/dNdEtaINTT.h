@@ -129,8 +129,6 @@ class dNdEtaINTT : public SubsysReco
 
     void GetHEPMC(bool b) { _get_hepmc_info = b; }
     
-    void GetTruthPV(bool b) { _get_truth_pv = b; }
-    
     void GetRecoCluster(bool b) { _get_reco_cluster = b; }
  
     void GetINTTdata(bool b) { _get_intt_data = b; }
@@ -149,6 +147,7 @@ class dNdEtaINTT : public SubsysReco
     void GetRecoClusterInfo(PHCompositeNode *topNode);
     void GetTruthClusterInfo(PHCompositeNode *topNode);
     void GetCentralityInfo(PHCompositeNode *topNode);
+    void GetInttRawHitInfo(PHCompositeNode *topNode);
     void GetTrkrHitInfo(PHCompositeNode *topNode);
     void GetPHG4Info(PHCompositeNode *topNode);
 
@@ -156,7 +155,7 @@ class dNdEtaINTT : public SubsysReco
     bool _get_truth_cluster;
     bool _get_reco_cluster;
     bool _get_centrality;
-    bool _get_intt_data
+    bool _get_intt_data;
     bool _get_inttrawhit;
     bool _get_trkr_hit;
     bool _get_phg4_info;
@@ -172,8 +171,10 @@ class dNdEtaINTT : public SubsysReco
     // Centrality and MBD stuff
     float centrality_bimp_;
     float centrality_impactparam_;
-    float centrality_mbd_
+    float centrality_mbd_;
     float centrality_mbdquantity_;
+    int ncoll_;
+    int npart_; 
     UShort_t femclk;
     float mbd_south_charge_sum;
     float mbd_north_charge_sum;
