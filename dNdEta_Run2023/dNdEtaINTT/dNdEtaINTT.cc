@@ -113,7 +113,6 @@ dNdEtaINTT::dNdEtaINTT(const std::string &name, const std::string &outputfile, c
     , _intt_geom_container(nullptr)
     , m_truth_info(nullptr)
     , m_CentInfo(nullptr)
-    , Minimumbiasinfo(nullptr)
 {
   if (Verbosity() >= VERBOSITY_MORE) std::cout << "dNdEtaINTT::dNdEtaINTT(const std::string &name) Calling ctor" << std::endl;
 }
@@ -188,7 +187,6 @@ int dNdEtaINTT::Init(PHCompositeNode *topNode)
       outtree->Branch("PrimaryTruthClusNRecoClus", &PrimaryTruthClusNRecoClus_);
     }
 
-    outtree->Branch("IsMinBias", &IsMinBias_);
     // InttRawHit information
     outtree->Branch("NInttRawHits", &NInttRawHits_);
     outtree->Branch("InttRawHit_bco", &InttRawHit_bco_);
@@ -436,28 +434,28 @@ void dNdEtaINTT::GetCentralityInfo(PHCompositeNode *topNode)
   if (!m_CentInfo)
   {
     std::cout << PHWHERE << "Error, can't find CentralityInfov1" << std::endl;
-    return Fun4AllReturnCodes::ABORTEVENT;
+    return;
   }
 
   _minimumbiasinfo = findNode::getClass<MinimumBiasInfo>(topNode, "MinimumBiasInfo");
   if (!_minimumbiasinfo)
   {
     std::cout << "Error, can't find MinimumBiasInfo" << std::endl;
-    return Fun4AllReturnCodes::ABORTRUN;
+    return;
   }
 
   m_mbdout = findNode::getClass<MbdOut>(topNode, "MbdOut");
   if (!m_mbdout)
   {
     std::cout << "Error, can't find MbdOut" << std::endl;
-    return Fun4AllReturnCodes::ABORTRUN;
+    return;
   }
 
   m_glbvtxmap = findNode::getClass<GlobalVertexMap>(topNode, "GlobalVertexMap");
   if (!m_glbvtxmap)
   {
     std::cout << "Error, can't find GlobalVertexMap" << std::endl;
-    return Fun4AllReturnCodes::ABORTRUN;
+    return;
   }
 
   if (!IsData)
@@ -554,18 +552,20 @@ void dNdEtaINTT::GetTrkrHitInfo(PHCompositeNode *topNode)
     TrkrHitSetContainer::ConstRange hitset_range = hitsets->getHitSets(TrkrDefs::TrkrId::inttId);
     for (TrkrHitSetContainer::ConstIterator hitset_iter = hitset_range.first; hitset_iter != hitset_range.second; ++hitset_iter)
     {
-      TrkrDefs::hitkey hitKey = hit_iter->first;
-      TrkrDefs::hitsetkey hitSetKey = hitset_iter->first;
-
-      TrkrHitRow_.push_back(InttDefs::getRow(hitKey));
-      TrkrHitColumn_.push_back(InttDefs::getCol(hitKey));
-      TrkrHitLadderZId_.push_back(InttDefs::getLadderZId(hitSetKey));
-      TrkrHitLadderPhiId_.push_back(InttDefs::getLadderPhiId(hitSetKey));
-      TrkrHitLayer_.push_back(TrkrDefs::getLayer(hitSetKey));
-      TrkrHitADC_.push_back(hit_iter->second->getAdc());
+        TrkrHitSet::ConstRange hit_range = hitset_iter->second->getHits();
+        for (TrkrHitSet::ConstIterator hit_iter = hit_range.first; hit_iter != hit_range.second; ++hit_iter)
+        {
+            TrkrDefs::hitkey hitKey = hit_iter->first;
+            TrkrDefs::hitsetkey hitSetKey = hitset_iter->first;
+            TrkrHitRow_.push_back(InttDefs::getRow(hitKey));
+            TrkrHitColumn_.push_back(InttDefs::getCol(hitKey));
+            TrkrHitLadderZId_.push_back(InttDefs::getLadderZId(hitSetKey));
+            TrkrHitLadderPhiId_.push_back(InttDefs::getLadderPhiId(hitSetKey));
+            TrkrHitLayer_.push_back(TrkrDefs::getLayer(hitSetKey));
+            TrkrHitADC_.push_back(hit_iter->second->getAdc());
+        }
     }
-  }
-  NTrkrhits_ = TrkrHitRow_.size();
+    NTrkrhits_ = TrkrHitRow_.size();
 }
 //____________________________________________________________________________..
 void dNdEtaINTT::GetRecoClusterInfo(PHCompositeNode *topNode)
@@ -595,54 +595,18 @@ void dNdEtaINTT::GetRecoClusterInfo(PHCompositeNode *topNode)
     // for (const auto &hitsetkey : dst_clustermap->getHitSetKeys())
     for (const auto &hitsetkey : dst_clustermap->getHitSetKeys(TrkrDefs::inttId))
     {
-      // std::cout << "----------" << std::endl;
-      TrkrDefs::cluskey ckey = iter->first;
-      TrkrCluster *cluster = dst_clustermap->findCluster(ckey);
-
-      unsigned int trkrId = TrkrDefs::getTrkrId(ckey);
-      if (trkrId != TrkrDefs::inttId)
-        continue;  // we want only INTT clusters
-
-      int layer = (TrkrDefs::getLayer(ckey) == 3 || TrkrDefs::getLayer(ckey) == 4) ? 0 : 1;
-      _NClus[layer]++;
-      if (cluster == nullptr)
-      {
-        std::cout << "cluster is nullptr, ckey=" << ckey << std::endl;
-      }
-      auto globalpos = _tgeometry->getGlobalPosition(ckey, cluster);
-      ClusLayer_.push_back(TrkrDefs::getLayer(ckey));
-      ClusX_.push_back(globalpos(0));
-      ClusY_.push_back(globalpos(1));
-      ClusZ_.push_back(globalpos(2));
-      ClusAdc_.push_back(cluster->getAdc());
-      TVector3 pos(globalpos(0), globalpos(1), globalpos(2));
-      ClusR_.push_back(pos.Perp());
-      ClusPhi_.push_back(pos.Phi());
-      ClusEta_.push_back(pos.Eta());
-      // ClusPhiSize is a signed char (-127-127), we should convert it to an unsigned char (0-255)
-      int phisize = cluster->getPhiSize();
-      if (phisize <= 0) phisize += 256;
-      ClusPhiSize_.push_back(phisize);
-      ClusZSize_.push_back(cluster->getZSize());
-      ClusLadderZId_.push_back(InttDefs::getLadderZId(ckey));
-      ClusLadderPhiId_.push_back(InttDefs::getLadderPhiId(ckey));
-      ClusTrkrHitSetKey_.push_back(hitsetkey);
-      ClusTimeBucketId_.push_back(InttDefs::getTimeBucketId(ckey));
-
-      if (!IsData)
-      {
-        // truth cluster association
-        std::vector<int32_t> truth_ckeys;
-        std::set<PHG4Particle *> truth_particles = clustereval->all_truth_particles(ckey);
-        int Nprimary = 0;
-        for (auto &p : truth_particles)
+        auto range = dst_clustermap->getClusters(hitsetkey);
+        for (auto iter = range.first; iter != range.second; ++iter)
         {
-          // must be primary truth particle
-          if (p->get_parent_id() == 0)
-          {
-            Nprimary++;
-            std::map<TrkrDefs::cluskey, std::shared_ptr<TrkrCluster>> truth_clusters = truth_eval->all_truth_clusters(p);
-            for (auto &c : truth_clusters)
+            // std::cout << "----------" << std::endl;
+            TrkrDefs::cluskey ckey = iter->first;
+            TrkrCluster *cluster = dst_clustermap->findCluster(ckey);
+            unsigned int trkrId = TrkrDefs::getTrkrId(ckey);
+            if (trkrId != TrkrDefs::inttId)
+                continue; // we want only INTT clusters
+            int layer = (TrkrDefs::getLayer(ckey) == 3 || TrkrDefs::getLayer(ckey) == 4) ? 0 : 1;
+            _NClus[layer]++;
+            if (cluster == nullptr)
             {
                 std::cout << "cluster is nullptr, ckey=" << ckey << std::endl;
             }
@@ -656,6 +620,7 @@ void dNdEtaINTT::GetRecoClusterInfo(PHCompositeNode *topNode)
             ClusR_.push_back(pos.Perp());
             ClusPhi_.push_back(pos.Phi());
             ClusEta_.push_back(pos.Eta());
+            // ClusPhiSize is a signed char (-127-127), we should convert it to an unsigned char (0-255)
             // ClusPhiSize is a signed char (-127-127), we should convert it to
             // an unsigned char (0-255)
             int phisize = cluster->getPhiSize();
@@ -682,6 +647,7 @@ void dNdEtaINTT::GetRecoClusterInfo(PHCompositeNode *topNode)
                         std::map<TrkrDefs::cluskey, std::shared_ptr<TrkrCluster>> truth_clusters = truth_eval->all_truth_clusters(p);
                         for (auto &c : truth_clusters)
                         {
+                            // only take at most 1 truth cluster per truth particle
                             // only take at most 1 truth cluster per truth
                             // particle
                             bool found = false;
@@ -700,11 +666,8 @@ void dNdEtaINTT::GetRecoClusterInfo(PHCompositeNode *topNode)
                 ClusNG4Particles_.push_back(truth_particles.size());
                 ClusNPrimaryG4Particles_.push_back(Nprimary);
             }
-          }
         }
-        ClusTruthCKeys_.push_back(truth_ckeys.size());
-        ClusNG4Particles_.push_back(truth_particles.size());
-        ClusNPrimaryG4Particles_.push_back(Nprimary);
+    }
 
     NClus_ = _NClus[0] + _NClus[1];
     NClus_Layer1_ = _NClus[0];
@@ -830,15 +793,13 @@ void dNdEtaINTT::GetTruthClusterInfo(PHCompositeNode *topNode)
                     continue;
                 }
 
-      for (auto chs_iter = clusters_by_hitset.begin(); chs_iter != clusters_by_hitset.end(); chs_iter++)
-      {
-        TrkrDefs::hitsetkey hskey = chs_iter->first;
-        std::vector<PHG4Hit *> hits = chs_iter->second;
+                clusters_by_hitset[entry_hskey].push_back(hit);
+            }
 
             for (auto chs_iter = clusters_by_hitset.begin(); chs_iter != clusters_by_hitset.end(); chs_iter++)
             {
-                TrkrDefs::hitsetkey hskey = chs_iter->first;
-                std::vector<PHG4Hit *> hits = chs_iter->second;
+              TrkrDefs::hitsetkey hskey = chs_iter->first;
+              std::vector<PHG4Hit *> hits = chs_iter->second;
 
                 auto surface = _tgeometry->maps().getSiliconSurface(hskey);
 
@@ -899,14 +860,6 @@ void dNdEtaINTT::GetTruthClusterInfo(PHCompositeNode *topNode)
                 TruthClusNRecoClus_.push_back(associated_reco_clusters.size());
                 if (truth_particle->get_parent_id() == 0)
                     PrimaryTruthClusNRecoClus_.push_back(associated_reco_clusters.size());
-            }
-        }
-        if (phibins.size() > 0) TruthClusPhiSize_.push_back(phibins.size());
-        if (phibins.size() > 0 && truth_particle->get_parent_id() == 0) PrimaryTruthClusPhiSize_.push_back(phibins.size());
-        if (zbins.size() > 0) TruthClusZSize_.push_back(zbins.size());
-        if (zbins.size() > 0 && truth_particle->get_parent_id() == 0) PrimaryTruthClusZSize_.push_back(zbins.size());
-        TruthClusNRecoClus_.push_back(associated_reco_clusters.size());
-        if (truth_particle->get_parent_id() == 0) PrimaryTruthClusNRecoClus_.push_back(associated_reco_clusters.size());
       }
     }
   }
@@ -915,23 +868,19 @@ void dNdEtaINTT::GetTruthClusterInfo(PHCompositeNode *topNode)
 void dNdEtaINTT::GetPHG4Info(PHCompositeNode *topNode)
 {
     std::cout << "Get PHG4 info.: truth primary vertex" << std::endl;
-
     m_truth_info = findNode::getClass<PHG4TruthInfoContainer>(topNode, "G4TruthInfo");
     if (!m_truth_info)
     {
         std::cout << PHWHERE << "Error, can't find G4TruthInfo" << std::endl;
         return;
     }
-
     // Truth vertex
     auto vrange = m_truth_info->GetPrimaryVtxRange();
-
     int NTruthPV = 0, NTruthPV_Embeded0 = 0;
     for (auto iter = vrange.first; iter != vrange.second; ++iter) // process all primary vertices
     {
         const int point_id = iter->first;
         PHG4VtxPoint *point = iter->second;
-
         if (point)
         {
             if (m_truth_info->isEmbededVtx(point_id) == 0)
@@ -939,35 +888,20 @@ void dNdEtaINTT::GetPHG4Info(PHCompositeNode *topNode)
                 TruthPV_trig_x_ = point->get_x();
                 TruthPV_trig_y_ = point->get_y();
                 TruthPV_trig_z_ = point->get_z();
-
                 // std::cout << "TruthVtx " << NTruthPV_Embeded0 << ", vertex: (x,y,z,t)=(" << point->get_x() << "," << point->get_y() << "," << point->get_z() << "," << point->get_t() << ")" <<
                 // std::endl;
                 NTruthPV_Embeded0++;
             }
-
-    if (point)
-    {
-      if (m_truth_info->isEmbededVtx(point_id) == 0)
-      {
-        TruthPV_trig_x_ = point->get_x();
-        TruthPV_trig_y_ = point->get_y();
-        TruthPV_trig_z_ = point->get_z();
-      }
-
-      NTruthPV++;
+            NTruthPV++;
+        }
     }
-  }
-
     // print out the truth vertex information
     std::cout << "Number of truth vertices: " << NTruthPV << std::endl;
     std::cout << "Number of truth vertices with isEmbededVtx=0: " << NTruthPV_Embeded0 << std::endl;
     std::cout << "Final truth vertex: (x,y,z)=(" << TruthPV_trig_x_ << "," << TruthPV_trig_y_ << "," << TruthPV_trig_z_ << ")" << std::endl;
-
     NTruthVtx_ = NTruthPV;
-
     // PHG4Particle
     std::cout << "Get PHG4 info.: truth primary G4Particle" << std::endl;
-
     const auto prange = m_truth_info->GetPrimaryParticleRange();
     // const auto prange = m_truth_info->GetParticleRange();
     for (auto iter = prange.first; iter != prange.second; ++iter)
