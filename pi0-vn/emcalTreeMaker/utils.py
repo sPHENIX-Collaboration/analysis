@@ -28,7 +28,6 @@ f4a.add_argument('-s2', '--isSim', type=int, default=0, help='Type Simulation. D
 pi0Ana = subparser.add_parser('pi0Ana', help='Create condor submission directory for pi0Analysis.')
 
 pi0Ana.add_argument('-i', '--ntp-list', type=str, help='List of Ntuples', required=True)
-pi0Ana.add_argument('-i2', '--isDir', type=bool, default=False, help='is fit stats a directory (i.e separate csv for each run?). Default: False')
 pi0Ana.add_argument('-c', '--cuts', type=str, help='List of cuts', required=True)
 pi0Ana.add_argument('-p', '--do-vn-calc', type=int, default=0, help='Do vn analysis. Default: False')
 pi0Ana.add_argument('-c2', '--csv', type=str, default="", help='CSV file with fitStats. Default: ""')
@@ -38,6 +37,8 @@ pi0Ana.add_argument('-m', '--macro', type=str, default='macro/pi0Analysis.C', he
 pi0Ana.add_argument('-e', '--script', type=str, default='genPi0Ana.sh', help='Job script to execute. Default: genPi0Ana.sh')
 pi0Ana.add_argument('-b', '--executable', type=str, default='bin/pi0Ana', help='Executable. Default: bin/pi0Ana')
 pi0Ana.add_argument('-d', '--output', type=str, default='test', help='Output Directory. Default: ./test')
+pi0Ana.add_argument('-u', '--subsamples', type=int, default=20, help='Number of subsamples for vn analysis. Default: 20')
+pi0Ana.add_argument('-t', '--cut-num', type=int, default=0, help='Specific cut to use for vn analysis. Default: 0')
 pi0Ana.add_argument('-s', '--memory', type=float, default=1, help='Memory (units of GB) to request per condor submission. Default: 1 GB.')
 pi0Ana.add_argument('-l', '--log', type=str, default='/tmp/anarde/dump/job-$(ClusterId)-$(Process).log', help='Condor log file.')
 
@@ -192,7 +193,6 @@ def create_pi0Ana_jobs():
     cuts       = os.path.realpath(args.cuts)
     macro      = os.path.realpath(args.macro)
     fitStats   = os.path.realpath(args.csv) if(args.csv != '') else ''
-    isDir      = args.isDir
     Q_vec_corr = os.path.realpath(args.Q_vec_corr) if(args.Q_vec_corr != '') else ''
     script     = os.path.realpath(args.script)
     executable = os.path.realpath(args.executable)
@@ -201,13 +201,16 @@ def create_pi0Ana_jobs():
     z          = args.vtx_z
     log        = args.log
     do_vn_calc = args.do_vn_calc
+    samples    = args.subsamples
+    cut_num    = args.cut_num
 
     print(f'Macro: {macro}')
     print(f'Run List: {ntp_list}')
     print(f'Cuts: {cuts}')
     print(f'Do vn calc: {do_vn_calc}')
+    print(f'Samples: {samples}')
+    print(f'Cut num: {cut_num}')
     print(f'FitStats: {fitStats}')
-    print(f'isDir: {isDir}')
     print(f'Q Vector Correction: {Q_vec_corr}')
     print(f'Vtx z max: {z} cm')
     print(f'Script: {script}')
@@ -222,7 +225,7 @@ def create_pi0Ana_jobs():
     shutil.copy(ntp_list, output_dir)
     shutil.copy(cuts, output_dir)
     shutil.copy(macro, output_dir)
-    if(do_vn_calc and not isDir):
+    if(do_vn_calc):
         shutil.copy(fitStats, output_dir)
         shutil.copy(Q_vec_corr, output_dir)
         fitStats   = f'{output_dir}/{os.path.basename(fitStats)}'
@@ -242,19 +245,13 @@ def create_pi0Ana_jobs():
             os.makedirs(f'{output_dir}/{run}/output',exist_ok=True)
 
             shutil.copy(line, f'{output_dir}/{run}')
-            if(isDir):
-                shutil.copy(f'{fitStats}/fit-stats-{run}.csv', f'{output_dir}/{run}')
-                shutil.copy(f'{Q_vec_corr}/Q-vec-corr-{run}.csv', f'{output_dir}/{run}')
 
             with open(f'{output_dir}/{run}/genPi0Ana.sub', mode="w") as file2:
                 file2.write(f'executable     = ../{os.path.basename(script)}\n')
-                if(not isDir):
-                    if(do_vn_calc):
-                        file2.write(f'arguments      = {output_dir}/{os.path.basename(executable)} $(input_ntp) {cuts} {z} output/test-$(Process).root {do_vn_calc} {fitStats} {Q_vec_corr}\n')
-                    else:
-                        file2.write(f'arguments      = {output_dir}/{os.path.basename(executable)} $(input_ntp) {cuts} {z} output/test-$(Process).root\n')
+                if(do_vn_calc):
+                    file2.write(f'arguments      = {output_dir}/{os.path.basename(executable)} $(input_ntp) {cuts} {z} output/test-$(Process).root {do_vn_calc} {fitStats} {Q_vec_corr} {samples} {cut_num}\n')
                 else:
-                    file2.write(f'arguments      = {output_dir}/{os.path.basename(executable)} $(input_ntp) {cuts} {z} output/test-$(Process).root {do_vn_calc} {output_dir}/{run}/fit-stats-{run}.csv {output_dir}/{run}/Q-vec-corr-{run}.csv \n')
+                    file2.write(f'arguments      = {output_dir}/{os.path.basename(executable)} $(input_ntp) {cuts} {z} output/test-$(Process).root\n')
                 file2.write(f'log            = {log}\n')
                 file2.write( 'output         = stdout/job-$(Process).out\n')
                 file2.write( 'error          = error/job-$(Process).err\n')
