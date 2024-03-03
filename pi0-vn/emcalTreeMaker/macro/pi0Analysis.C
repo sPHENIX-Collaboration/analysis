@@ -64,15 +64,15 @@ namespace myAnalysis {
     map<pair<string,string>, TH2F*> h2DeltaRVsAsym;
     map<string, TH1F*>              hDiphotonPt;
     // v2
-    map<string, TH1F*>              hQQ2;
-    map<pair<string,string>, TH1F*> hqQ2;
-    map<pair<string,string>, TH1F*> hqQ2_bg;
-    map<pair<string,string>, TH1F*> hqQ2_bg_left;
+    vector<map<string, TH1F*>>              hQQ2;
+    vector<map<pair<string,string>, TH1F*>> hqQ2;
+    vector<map<pair<string,string>, TH1F*>> hqQ2_bg;
+    vector<map<pair<string,string>, TH1F*>> hqQ2_bg_left;
     // v3
-    map<string, TH1F*>              hQQ3;
-    map<pair<string,string>, TH1F*> hqQ3;
-    map<pair<string,string>, TH1F*> hqQ3_bg;
-    map<pair<string,string>, TH1F*> hqQ3_bg_left;
+    vector<map<string, TH1F*>>              hQQ3;
+    vector<map<pair<string,string>, TH1F*>> hqQ3;
+    vector<map<pair<string,string>, TH1F*>> hqQ3_bg;
+    vector<map<pair<string,string>, TH1F*>> hqQ3_bg_left;
 
     map<pair<string,string>, TH1F*> hNPi0;
     map<pair<string,string>, TH2F*> h2Pi0EtaPhi;
@@ -111,6 +111,8 @@ namespace myAnalysis {
     Float_t npi0_max  = 60;
 
     Bool_t do_vn_calc = false;
+    Int_t cut_num = 0;
+    Int_t subsamples  = 1;
 
     // First Order Correction
     // v2
@@ -224,11 +226,17 @@ Int_t myAnalysis::readCuts(const string &i_cuts) {
     file.close();
 
     cout << "Cuts" << endl;
+    UInt_t i = 0;
     for(auto cut : cuts) {
+        if(i == cut_num) cout << "################################################################" << endl;
+
         cout << left << "e: "        << setw(8) << cut.e
                      << ", e_asym: " << setw(8) << cut.e_asym
                      << ", deltaR: " << setw(8) << cut.deltaR
                      << ", chi: "    << setw(8) << cut.chi << endl;
+
+        if(i == cut_num) cout << "################################################################" << endl;
+        ++i;
     }
 
     return 0;
@@ -393,11 +401,6 @@ void myAnalysis::init_hists() {
         string suffix_title =  "Centrality: " + cent_key[i] + "%";
         hDiphotonPt[cent_key[i]] = new TH1F(("hDiphotonPt_"+cent_key[i]).c_str(), ("Diphoton p_{T}, " + suffix_title +"; p_{T} [GeV]; Counts").c_str(), bins_pt, hpt_min, hpt_max);
 
-        // v2
-        hQQ2[cent_key[i]] = new TH1F(("hQQ2_"+cent_key[i]).c_str(), ("QQ2, " + suffix_title +"; QQ2; Counts").c_str(), bins_Q, Q_min, Q_max);
-        // v3
-        hQQ3[cent_key[i]] = new TH1F(("hQQ3_"+cent_key[i]).c_str(), ("QQ3, " + suffix_title +"; QQ3; Counts").c_str(), bins_Q, Q_min, Q_max);
-
         for(Int_t j = 0; j < pt_key.size(); ++j) {
 
             Int_t idx = i*pt_key.size()+j;
@@ -405,16 +408,6 @@ void myAnalysis::init_hists() {
             pair<string,string> key = make_pair(cent_key[i],pt_key[j]);
             string suffix = "_"+cent_key[i]+"_"+pt_key[j];
             suffix_title = "Centrality: " + cent_key[i] + "%, Diphoton p_{T}: " + pt_key[j] + " GeV";
-
-            // v2
-            hqQ2[key] = new TH1F(("hqQ2_"+to_string(idx)).c_str(), ("qQ2, " + suffix_title + "; qQ2; Counts").c_str(), bins_Q, Q_min, Q_max);
-            hqQ2_bg[key] = new TH1F(("hqQ2_bg_"+to_string(idx)).c_str(), ("qQ2, " + suffix_title + "; qQ2; Counts").c_str(), bins_Q, Q_min, Q_max);
-            hqQ2_bg_left[key] = new TH1F(("hqQ2_bg_left_"+to_string(idx)).c_str(), ("qQ2, " + suffix_title + "; qQ2; Counts").c_str(), bins_Q, Q_min, Q_max);
-
-            // v3
-            hqQ3[key] = new TH1F(("hqQ3_"+to_string(idx)).c_str(), ("qQ3, " + suffix_title + "; qQ3; Counts").c_str(), bins_Q, Q_min, Q_max);
-            hqQ3_bg[key] = new TH1F(("hqQ3_bg_"+to_string(idx)).c_str(), ("qQ3, " + suffix_title + "; qQ3; Counts").c_str(), bins_Q, Q_min, Q_max);
-            hqQ3_bg_left[key] = new TH1F(("hqQ3_bg_left_"+to_string(idx)).c_str(), ("qQ3, " + suffix_title + "; qQ3; Counts").c_str(), bins_Q, Q_min, Q_max);
 
             h2Pi0EtaPhi[key] = new TH2F(("h2Pi0EtaPhi_"+to_string(idx)).c_str(), ("#pi_{0}, " + suffix_title + "; #eta; #phi").c_str(), bins_eta, eta_min, eta_max, bins_phi, phi_min, phi_max);
             h2Pi0EtaPhiv2[key] = new TH2F(("h2Pi0EtaPhiv2_"+to_string(idx)).c_str(), ("#pi_{0}, " + suffix_title + "; #eta; #phi").c_str(), bins_eta, eta_min, eta_max, bins_phi, phi_min, phi_max);
@@ -446,6 +439,56 @@ void myAnalysis::init_hists() {
                 h.push_back(new TH1F(s.str().c_str(), t.str().c_str(), bins_pi0_mass, hpi0_mass_min, hpi0_mass_max));
             }
             hPi0Mass[key] = h;
+        }
+    }
+
+    if(do_vn_calc) {
+        for(Int_t k = 0; k < subsamples; ++k) {
+            map<string, TH1F*> hQQ2_dummy;
+            map<pair<string,string>, TH1F*> hqQ2_dummy;
+            map<pair<string,string>, TH1F*> hqQ2_bg_dummy;
+            map<pair<string,string>, TH1F*> hqQ2_bg_left_dummy;
+
+            map<string, TH1F*> hQQ3_dummy;
+            map<pair<string,string>, TH1F*> hqQ3_dummy;
+            map<pair<string,string>, TH1F*> hqQ3_bg_dummy;
+            map<pair<string,string>, TH1F*> hqQ3_bg_left_dummy;
+
+            for(Int_t i = 0; i < cent_key.size(); ++i) {
+
+                string suffix_title =  "Centrality: " + cent_key[i] + "%";
+                // v2
+                hQQ2_dummy[cent_key[i]] = new TH1F(("hQQ2_"+to_string(k)+"_"+cent_key[i]).c_str(), ("QQ2, " + suffix_title +"; QQ2; Counts").c_str(), bins_Q, Q_min, Q_max);
+
+                // v3
+                hQQ3_dummy[cent_key[i]] = new TH1F(("hQQ3_"+to_string(k)+"_"+cent_key[i]).c_str(), ("QQ3, " + suffix_title +"; QQ3; Counts").c_str(), bins_Q, Q_min, Q_max);
+
+                for(Int_t j = 0; j < pt_key.size(); ++j) {
+                    Int_t idx = i*pt_key.size()+j;
+
+                    pair<string,string> key = make_pair(cent_key[i],pt_key[j]);
+                    string suffix = "_"+cent_key[i]+"_"+pt_key[j];
+                    suffix_title = "Centrality: " + cent_key[i] + "%, Diphoton p_{T}: " + pt_key[j] + " GeV";
+
+                    hqQ2_dummy[key]         = new TH1F(("hqQ2_"+to_string(k)+"_"+to_string(idx)).c_str(), ("qQ2, " + suffix_title + "; qQ2; Counts").c_str(), bins_Q, Q_min, Q_max);
+                    hqQ2_bg_dummy[key]      = new TH1F(("hqQ2_bg_"+to_string(k)+"_"+to_string(idx)).c_str(), ("qQ2, " + suffix_title + "; qQ2; Counts").c_str(), bins_Q, Q_min, Q_max);
+                    hqQ2_bg_left_dummy[key] = new TH1F(("hqQ2_bg_left_"+to_string(k)+"_"+to_string(idx)).c_str(), ("qQ2, " + suffix_title + "; qQ2; Counts").c_str(), bins_Q, Q_min, Q_max);
+
+                    hqQ3_dummy[key]         = new TH1F(("hqQ3_"+to_string(k)+"_"+to_string(idx)).c_str(), ("qQ3, " + suffix_title + "; qQ3; Counts").c_str(), bins_Q, Q_min, Q_max);
+                    hqQ3_bg_dummy[key]      = new TH1F(("hqQ3_bg_"+to_string(k)+"_"+to_string(idx)).c_str(), ("qQ3, " + suffix_title + "; qQ3; Counts").c_str(), bins_Q, Q_min, Q_max);
+                    hqQ3_bg_left_dummy[key] = new TH1F(("hqQ3_bg_left_"+to_string(k)+"_"+to_string(idx)).c_str(), ("qQ3, " + suffix_title + "; qQ3; Counts").c_str(), bins_Q, Q_min, Q_max);
+                }
+            }
+
+            hQQ2.push_back(hQQ2_dummy);
+            hqQ2.push_back(hqQ2_dummy);
+            hqQ2_bg.push_back(hqQ2_bg_dummy);
+            hqQ2_bg_left.push_back(hqQ2_bg_left_dummy);
+
+            hQQ3.push_back(hQQ3_dummy);
+            hqQ3.push_back(hqQ3_dummy);
+            hqQ3_bg.push_back(hqQ3_bg_dummy);
+            hqQ3_bg_left.push_back(hqQ3_bg_left_dummy);
         }
     }
 }
@@ -558,6 +601,7 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end) {
     Float_t eta_max   = 0;
 
     cout << "Events to process: " << end-start+1 << endl;
+
     // loop over each event
     for (Long64_t i = start; i <= end; ++i) {
         if(i%100 == 0) cout << "Progress: " << (i-start)*100./(end-start) << "%" << endl;
@@ -575,6 +619,9 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end) {
 
         // need to reverse this index since we want to match cent_key
         cent_idx = cent_key.size() - cent_idx - 1;
+
+        // assign each event to a sample
+        UInt_t k = evt_ctr[cent_idx]%subsamples;
 
         ++evt_ctr[cent_idx];
 
@@ -599,7 +646,7 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end) {
             QQ2_min = min(QQ2_min, QQ2);
             QQ2_max = max(QQ2_max, QQ2);
 
-            hQQ2[cent_key[cent_idx]]->Fill(QQ2);
+            hQQ2[k][cent_key[cent_idx]]->Fill(QQ2);
 
             // v3
             // Apply first and second order correction to the Q vectors
@@ -621,7 +668,7 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end) {
             QQ3_min = min(QQ3_min, QQ3);
             QQ3_max = max(QQ3_max, QQ3);
 
-            hQQ3[cent_key[cent_idx]]->Fill(QQ3);
+            hQQ3[k][cent_key[cent_idx]]->Fill(QQ3);
         }
 
         UInt_t pi0_ctr[cent_key.size()*pt_key.size()]       = {0};
@@ -633,6 +680,7 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end) {
         Float_t qQ3[cent_key.size()*pt_key.size()]          = {0};
         Float_t qQ3_bg[cent_key.size()*pt_key.size()]       = {0};
         Float_t qQ3_bg_left[cent_key.size()*pt_key.size()]  = {0};
+
         // loop over all diphoton candidates
         for(UInt_t j = 0; j < pi0_mass->size(); ++j) {
             Float_t pi0_pt_val = pi0_pt->at(j);
@@ -701,27 +749,27 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end) {
             Float_t bg_min = pi0_mass_mu_sigma[idx].first+3*pi0_mass_mu_sigma[idx].second;
             Float_t bg_max = 0.5; // setting max at 0.5 GeV to avoid the eta
 
-            for(Int_t k = 0; k < cuts.size(); ++k) {
-                if(ecore_min_val >= cuts[k].e      && asym_val     < cuts[k].e_asym &&
-                   deltaR_val    >= cuts[k].deltaR && chi2_max_val < cuts[k].chi) {
-                    hPi0Mass[key][k]->Fill(pi0_mass_val);
+            for(Int_t c = 0; c < cuts.size(); ++c) {
+                if(ecore_min_val >= cuts[c].e      && asym_val     < cuts[c].e_asym &&
+                   deltaR_val    >= cuts[c].deltaR && chi2_max_val < cuts[c].chi) {
+                    hPi0Mass[key][c]->Fill(pi0_mass_val);
 
                     // fill in qQ for the background to the left of the pi0 peak
-                    if(k == 0 && do_vn_calc && pi0_mass_val < bg_min) {
+                    if(c == cut_num && do_vn_calc && pi0_mass_val < bg_min) {
                         ++bg_left_ctr[idx];
                         qQ2_bg_left[idx] += qQ2_val;
                         qQ3_bg_left[idx] += qQ3_val;
                     }
 
                     // fill in qQ for the background
-                    if(k == 0 && do_vn_calc && pi0_mass_val >= bg_min && pi0_mass_val < bg_max) {
+                    if(c == cut_num && do_vn_calc && pi0_mass_val >= bg_min && pi0_mass_val < bg_max) {
                         ++bg_ctr[idx];
                         qQ2_bg[idx] += qQ2_val;
                         qQ3_bg[idx] += qQ3_val;
                     }
                     // fill in the qQ for the signal+background region
                     // do this for only one of the cuts for which we have signal bound information
-                    if(k == 0 && do_vn_calc && pi0_mass_val >= pi0_mass_low && pi0_mass_val < pi0_mass_high) {
+                    if(c == cut_num && do_vn_calc && pi0_mass_val >= pi0_mass_low && pi0_mass_val < pi0_mass_high) {
                         ++pi0_ctr[idx];
                         qQ2[idx] += qQ2_val;
                         qQ3[idx] += qQ3_val;
@@ -734,76 +782,83 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end) {
             }
         }
 
-        // loop over each centrality and pT bin
-        for(UInt_t j = 0; j < cent_key.size(); ++j) {
-            for(UInt_t k = 0; k < pt_key.size(); ++k) {
-                Int_t idx = j*pt_key.size()+k;
-                pair<string,string> key = make_pair(cent_key[j], pt_key[k]);
+        if (do_vn_calc) {
+          // loop over each centrality and pT bin
+          for (UInt_t j = 0; j < cent_key.size(); ++j) {
+            for (UInt_t p = 0; p < pt_key.size(); ++p) {
+              Int_t idx = j * pt_key.size() + p;
+              pair<string, string> key = make_pair(cent_key[j], pt_key[p]);
 
-                if(do_vn_calc) {
-                    npi0_max = max(npi0_max, pi0_ctr[idx]);
-                    if(pi0_ctr[idx]) hNPi0[key]->Fill(pi0_ctr[idx]);
+              npi0_max = max(npi0_max, pi0_ctr[idx]);
+              if (pi0_ctr[idx]) hNPi0[key]->Fill(pi0_ctr[idx]);
 
-                    // v2
-                    // compute qQ for the background to the left of the pi0 peak
-                    qQ2_bg_left[idx] = (bg_left_ctr[idx]) ? qQ2_bg_left[idx]/bg_left_ctr[idx] : 0;
-                    qQ2_bg_min = min(qQ2_bg_min, qQ2_bg_left[idx]);
-                    qQ2_bg_max = max(qQ2_bg_max, qQ2_bg_left[idx]);
+              // v2
+              // compute qQ for the background to the left of the pi0 peak
+              qQ2_bg_left[idx] = (bg_left_ctr[idx]) ? qQ2_bg_left[idx] / bg_left_ctr[idx] : 0;
+              qQ2_bg_min = min(qQ2_bg_min, qQ2_bg_left[idx]);
+              qQ2_bg_max = max(qQ2_bg_max, qQ2_bg_left[idx]);
 
-                    if(qQ2_bg_left[idx]) hqQ2_bg_left[key]->Fill(qQ2_bg_left[idx]);
+              if (qQ2_bg_left[idx]) hqQ2_bg_left[k][key]->Fill(qQ2_bg_left[idx], bg_left_ctr[idx]);
 
-                    // compute qQ for the background
-                    qQ2_bg[idx] = (bg_ctr[idx]) ? qQ2_bg[idx]/bg_ctr[idx] : 0;
-                    qQ2_bg_min = min(qQ2_bg_min, qQ2_bg[idx]);
-                    qQ2_bg_max = max(qQ2_bg_max, qQ2_bg[idx]);
+              // compute qQ for the background
+              qQ2_bg[idx] = (bg_ctr[idx]) ? qQ2_bg[idx] / bg_ctr[idx] : 0;
+              qQ2_bg_min = min(qQ2_bg_min, qQ2_bg[idx]);
+              qQ2_bg_max = max(qQ2_bg_max, qQ2_bg[idx]);
 
-                    if(qQ2_bg[idx]) hqQ2_bg[key]->Fill(qQ2_bg[idx]);
+              if (qQ2_bg[idx]) hqQ2_bg[k][key]->Fill(qQ2_bg[idx], bg_ctr[idx]);
 
-                    // compute qQ for the pi0 candiates
-                    qQ2[idx] = (pi0_ctr[idx]) ? qQ2[idx]/pi0_ctr[idx] : 0;
-                    qQ2_min = min(qQ2_min, qQ2[idx]);
-                    qQ2_max = max(qQ2_max, qQ2[idx]);
+              // compute qQ for the pi0 candiates
+              qQ2[idx] = (pi0_ctr[idx]) ? qQ2[idx] / pi0_ctr[idx] : 0;
+              qQ2_min = min(qQ2_min, qQ2[idx]);
+              qQ2_max = max(qQ2_max, qQ2[idx]);
 
-                    if(qQ2[idx]) hqQ2[key]->Fill(qQ2[idx]);
+              if (qQ2[idx]) hqQ2[k][key]->Fill(qQ2[idx], pi0_ctr[idx]);
 
-                    // v3
-                    // compute qQ for the background to the left of the pi0 peak
-                    qQ3_bg_left[idx] = (bg_left_ctr[idx]) ? qQ3_bg_left[idx]/bg_left_ctr[idx] : 0;
-                    qQ3_bg_min = min(qQ3_bg_min, qQ3_bg_left[idx]);
-                    qQ3_bg_max = max(qQ3_bg_max, qQ3_bg_left[idx]);
+              // v3
+              // compute qQ for the background to the left of the pi0 peak
+              qQ3_bg_left[idx] = (bg_left_ctr[idx]) ? qQ3_bg_left[idx] / bg_left_ctr[idx] : 0;
+              qQ3_bg_min = min(qQ3_bg_min, qQ3_bg_left[idx]);
+              qQ3_bg_max = max(qQ3_bg_max, qQ3_bg_left[idx]);
 
-                    if(qQ3_bg_left[idx]) hqQ3_bg_left[key]->Fill(qQ3_bg_left[idx]);
+              if (qQ3_bg_left[idx]) hqQ3_bg_left[k][key]->Fill(qQ3_bg_left[idx], bg_left_ctr[idx]);
 
-                    // compute qQ for the background
-                    qQ3_bg[idx] = (bg_ctr[idx]) ? qQ3_bg[idx]/bg_ctr[idx] : 0;
-                    qQ3_bg_min = min(qQ3_bg_min, qQ3_bg[idx]);
-                    qQ3_bg_max = max(qQ3_bg_max, qQ3_bg[idx]);
+              // compute qQ for the background
+              qQ3_bg[idx] = (bg_ctr[idx]) ? qQ3_bg[idx] / bg_ctr[idx] : 0;
+              qQ3_bg_min = min(qQ3_bg_min, qQ3_bg[idx]);
+              qQ3_bg_max = max(qQ3_bg_max, qQ3_bg[idx]);
 
-                    if(qQ3_bg[idx]) hqQ3_bg[key]->Fill(qQ3_bg[idx]);
+              if (qQ3_bg[idx]) hqQ3_bg[k][key]->Fill(qQ3_bg[idx], bg_ctr[idx]);
 
-                    // compute qQ for the pi0 candiates
-                    qQ3[idx] = (pi0_ctr[idx]) ? qQ3[idx]/pi0_ctr[idx] : 0;
-                    qQ3_min = min(qQ3_min, qQ3[idx]);
-                    qQ3_max = max(qQ3_max, qQ3[idx]);
+              // compute qQ for the pi0 candiates
+              qQ3[idx] = (pi0_ctr[idx]) ? qQ3[idx] / pi0_ctr[idx] : 0;
+              qQ3_min = min(qQ3_min, qQ3[idx]);
+              qQ3_max = max(qQ3_max, qQ3[idx]);
 
-                    if(qQ3[idx]) hqQ3[key]->Fill(qQ3[idx]);
-                }
+              if (qQ3[idx]) hqQ3[k][key]->Fill(qQ3[idx], pi0_ctr[idx]);
             }
+          }
         }
     }
 
     cout << endl;
+    UInt_t events = 0;
     for(Int_t i = 0; i < cent_key.size(); ++i) {
         cout << "Cent: "     << cent_key[i]
              << ", Events: " << evt_ctr[i] << endl;
+        events += evt_ctr[i];
     }
 
+    cout << endl;
+    cout << "Events Processed: " << events << ", " << events*100./(end-start) << " %" << endl;
+    cout << endl;
     cout << "QQ2 min: " << QQ2_min << ", QQ2 max: " << QQ2_max << endl;
     cout << "qQ2 min: " << qQ2_min << ", qQ2 max: " << qQ2_max << endl;
     cout << "qQ2 bg min: " << qQ2_bg_min << ", qQ2 bg max: " << qQ2_bg_max << endl;
+    cout << endl;
     cout << "QQ3 min: " << QQ3_min << ", QQ3 max: " << QQ3_max << endl;
     cout << "qQ3 min: " << qQ3_min << ", qQ3 max: " << qQ3_max << endl;
     cout << "qQ3 bg min: " << qQ3_bg_min << ", qQ3 bg max: " << qQ3_bg_max << endl;
+    cout << endl;
     cout << "pi0 eta min: " << eta_min << ", pi0 eta max: " << eta_max << endl;
     cout << "Max Pi0s per event: " << npi0_max << endl;
     cout << "Finish Process Event" << endl;
@@ -819,15 +874,20 @@ void myAnalysis::finalize(const string &i_output) {
     output.mkdir("QA/h2DeltaRVsAsym");
 
     if(do_vn_calc) {
-        output.mkdir("vn/QQ2");
-        output.mkdir("vn/qQ2");
-        output.mkdir("vn/qQ2_bg");
-        output.mkdir("vn/qQ2_bg_left");
 
-        output.mkdir("vn/QQ3");
-        output.mkdir("vn/qQ3");
-        output.mkdir("vn/qQ3_bg");
-        output.mkdir("vn/qQ3_bg_left");
+        for(Int_t k = 0; k < subsamples; ++k) {
+            string prefix = "vn/"+to_string(k);
+
+            output.mkdir((prefix+"/QQ2").c_str());
+            output.mkdir((prefix+"/qQ2").c_str());
+            output.mkdir((prefix+"/qQ2_bg").c_str());
+            output.mkdir((prefix+"/qQ2_bg_left").c_str());
+
+            output.mkdir((prefix+"/QQ3").c_str());
+            output.mkdir((prefix+"/qQ3").c_str());
+            output.mkdir((prefix+"/qQ3_bg").c_str());
+            output.mkdir((prefix+"/qQ3_bg_left").c_str());
+        }
 
         output.mkdir("QA/h2Pi0EtaPhi");
         output.mkdir("QA/h2Pi0EtaPhiv2");
@@ -839,11 +899,14 @@ void myAnalysis::finalize(const string &i_output) {
         hDiphotonPt[cent]->Write();
 
         if(do_vn_calc) {
-            output.cd("vn/QQ2");
-            hQQ2[cent]->Write();
+            for(Int_t k = 0; k < subsamples; ++k) {
+                string prefix = "vn/"+to_string(k);
+                output.cd((prefix+"/QQ2").c_str());
+                hQQ2[k][cent]->Write();
 
-            output.cd("vn/QQ3");
-            hQQ3[cent]->Write();
+                output.cd((prefix+"/QQ3").c_str());
+                hQQ3[k][cent]->Write();
+            }
         }
 
         for(auto pt : pt_key) {
@@ -859,26 +922,29 @@ void myAnalysis::finalize(const string &i_output) {
             h2DeltaRVsAsym[key]->Write();
 
             if(do_vn_calc) {
+                for(Int_t k = 0; k < subsamples; ++k) {
+                    string prefix = "vn/"+to_string(k);
+
+                    output.cd((prefix+"/qQ2").c_str());
+                    hqQ2[k][key]->Write();
+
+                    output.cd((prefix+"/qQ2_bg").c_str());
+                    hqQ2_bg[k][key]->Write();
+
+                    output.cd((prefix+"/qQ2_bg_left").c_str());
+                    hqQ2_bg_left[k][key]->Write();
+
+                    output.cd((prefix+"/qQ3").c_str());
+                    hqQ3[k][key]->Write();
+
+                    output.cd((prefix+"/qQ3_bg").c_str());
+                    hqQ3_bg[k][key]->Write();
+
+                    output.cd((prefix+"/qQ3_bg_left").c_str());
+                    hqQ3_bg_left[k][key]->Write();
+                }
                 output.cd("QA/hNPi0");
                 hNPi0[key]->Write();
-
-                output.cd("vn/qQ2");
-                hqQ2[key]->Write();
-
-                output.cd("vn/qQ2_bg");
-                hqQ2_bg[key]->Write();
-
-                output.cd("vn/qQ2_bg_left");
-                hqQ2_bg_left[key]->Write();
-
-                output.cd("vn/qQ3");
-                hqQ3[key]->Write();
-
-                output.cd("vn/qQ3_bg");
-                hqQ3_bg[key]->Write();
-
-                output.cd("vn/qQ3_bg_left");
-                hqQ3_bg_left[key]->Write();
 
                 output.cd("QA/h2Pi0EtaPhi");
                 h2Pi0EtaPhi[key]->Write();
@@ -901,28 +967,35 @@ void myAnalysis::finalize(const string &i_output) {
 
 void pi0Analysis(const string &i_input,
                  const string &i_cuts,
-                 Float_t       z          = 10, /*cm*/
-                 const string &i_output   = "test.root",
-                 Bool_t        do_vn_calc = false,
-                 const string &fitStats   = "",
-                 const string &QVecCorr   = "",
-                 Long64_t      start      = 0,
-                 Long64_t      end        = 0) {
+                 Float_t       z           = 10, /*cm*/
+                 const string &i_output    = "test.root",
+                 Bool_t        do_vn_calc  = false,
+                 const string &fitStats    = "",
+                 const string &QVecCorr    = "",
+                 Int_t         subsamples  = 1,
+                 Int_t         cut_num     = 0,
+                 Long64_t      start       = 0,
+                 Long64_t      end         = 0) {
 
     cout << "#############################" << endl;
     cout << "Run Parameters" << endl;
-    cout << "inputFile: "  << i_input << endl;
-    cout << "Cuts: "       << i_cuts << endl;
-    cout << "z: "          << z << endl;
-    cout << "outputFile: " << i_output << endl;
-    cout << "do_vn_calc: " << do_vn_calc << endl;
-    cout << "fitStats: "   << fitStats << endl;
-    cout << "QVecCorr: "   << QVecCorr << endl;
-    cout << "start: "      << start << endl;
-    cout << "end: "        << end << endl;
+    cout << "inputFile: "   << i_input << endl;
+    cout << "Cuts: "        << i_cuts << endl;
+    cout << "z: "           << z << endl;
+    cout << "outputFile: "  << i_output << endl;
+    cout << "do_vn_calc: "  << do_vn_calc << endl;
+    cout << "fitStats: "    << fitStats << endl;
+    cout << "QVecCorr: "    << QVecCorr << endl;
+    cout << "Subsamples: "  << subsamples << endl;
+    cout << "cut_num: " << cut_num << endl;
+    cout << "start: "       << start << endl;
+    cout << "end: "         << end << endl;
     cout << "#############################" << endl;
 
     myAnalysis::do_vn_calc = do_vn_calc;
+    myAnalysis::cut_num = cut_num;
+    myAnalysis::subsamples = subsamples;
+
     Int_t ret = myAnalysis::init(i_input, i_cuts, fitStats, QVecCorr, start, end);
     if(ret != 0) return;
 
@@ -932,27 +1005,31 @@ void pi0Analysis(const string &i_input,
 
 # ifndef __CINT__
 Int_t main(Int_t argc, char* argv[]) {
-if(argc < 3 || argc > 10){
-        cout << "usage: ./pi0Ana inputFile cuts [z] [outputFile] [do_vn_calc] [fitStats] [QVecCorr] [start] [end] " << endl;
+if(argc < 3 || argc > 12){
+        cout << "usage: ./pi0Ana inputFile cuts [z] [outputFile] [do_vn_calc] [fitStats] [QVecCorr] [subsamples] [cut_num] [start] [end] " << endl;
         cout << "inputFile: containing list of root file paths" << endl;
         cout << "cuts: csv file containing cuts" << endl;
+        cout << "z: z-vertex cut. Default: 10 cm. Range: 0 to 30 cm." << endl;
+        cout << "outputFile: location of output file. Default: test.root." << endl;
+        cout << "do_vn_calc: Do vn calculations. Default: False" << endl;
         cout << "fitStats: csv file containing fit stats" << endl;
         cout << "QVecCorr: csv file containing Q vector corrections" << endl;
-        cout << "z: z-vertex cut. Default: 10 cm. Range: 0 to 30 cm." << endl;
-        cout << "do_vn_calc: Do vn calculations. Default: False" << endl;
-        cout << "outputFile: location of output file. Default: test.root." << endl;
+        cout << "subsamples: number of subsamples for the vn analysis" << endl;
+        cout << "cut_num: the specific diphoton cut to use for the vn analysis" << endl;
         cout << "start: start event number. Default: 0." << endl;
         cout << "end: end event number. Default: 0. (to run over all entries)." << endl;
         return 1;
     }
 
-    Float_t z         = 10;
-    string outputFile = "test.root";
-    Bool_t do_vn_calc = false;
-    string fitStats   = "";
-    string QVecCorr   = "";
-    Long64_t start    = 0;
-    Long64_t end      = 0;
+    Float_t  z           = 10;
+    string   outputFile  = "test.root";
+    Bool_t   do_vn_calc  = false;
+    string   fitStats    = "";
+    string   QVecCorr    = "";
+    Int_t    subsamples  = 1;
+    Int_t    cut_num     = 0;
+    Long64_t start       = 0;
+    Long64_t end         = 0;
 
     if(argc >= 4) {
         z = atof(argv[3]);
@@ -970,10 +1047,16 @@ if(argc < 3 || argc > 10){
         QVecCorr = argv[7];
     }
     if(argc >= 9) {
-        start = atol(argv[8]);
+        subsamples = atoi(argv[8]);
     }
     if(argc >= 10) {
-        end = atol(argv[9]);
+        cut_num = atoi(argv[9]);
+    }
+    if(argc >= 11) {
+        start = atol(argv[10]);
+    }
+    if(argc >= 12) {
+        end = atol(argv[11]);
     }
 
     // ensure that 0 <= start <= end
@@ -982,7 +1065,7 @@ if(argc < 3 || argc > 10){
         return 1;
     }
 
-    pi0Analysis(argv[1], argv[2], z, outputFile, do_vn_calc, fitStats, QVecCorr, start, end);
+    pi0Analysis(argv[1], argv[2], z, outputFile, do_vn_calc, fitStats, QVecCorr, subsamples, cut_num, start, end);
 
     cout << "======================================" << endl;
     cout << "done" << endl;
