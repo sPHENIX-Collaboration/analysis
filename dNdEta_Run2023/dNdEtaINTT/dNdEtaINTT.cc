@@ -318,13 +318,16 @@ int dNdEtaINTT::process_event(PHCompositeNode *topNode)
 
   if (IsData)
   {
-    intteventinfo = findNode::getClass<InttEventInfo>(topNode, "INTTEVENTHEADER");
-    if (!intteventinfo)
+    if (_get_intt_data)
     {
-      std::cout << "The INTT event header is missing, you will have no BCO information fro syncing" << std::endl;
+      intteventinfo = findNode::getClass<InttEventInfo>(topNode, "INTTEVENTHEADER");
+      if (!intteventinfo)
+      {
+        std::cout << "The INTT event header is missing, you will have no BCO information fro syncing" << std::endl;
+      }
+      
+      intt_bco = intteventinfo->get_bco_full();
     }
-    
-    intt_bco = intteventinfo->get_bco_full(); 
   }
 
   if (_get_centrality)
