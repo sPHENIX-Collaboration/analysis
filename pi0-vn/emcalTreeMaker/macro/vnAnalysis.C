@@ -123,12 +123,17 @@ Int_t myAnalysis::readFitStats(const string &fitStats) {
 
 void myAnalysis::process_event(Int_t samples, const string &outputCSV) {
 
-    vector<Float_t> sum_w(cent_key.size()*pt_key.size());
-    vector<Float_t> sum_w2(cent_key.size()*pt_key.size());
+    vector<Float_t> sum_w_v2(cent_key.size()*pt_key.size());
+    vector<Float_t> sum_w2_v2(cent_key.size()*pt_key.size());
+
+    vector<Float_t> sum_w_v3(cent_key.size()*pt_key.size());
+    vector<Float_t> sum_w2_v3(cent_key.size()*pt_key.size());
 
     vector<vector<Float_t>> v2_vec(samples, vector<Float_t>(cent_key.size()*pt_key.size()));
+    vector<vector<Float_t>>  w_v2(samples, vector<Float_t>(cent_key.size()*pt_key.size()));
+
     vector<vector<Float_t>> v3_vec(samples, vector<Float_t>(cent_key.size()*pt_key.size()));
-    vector<vector<Float_t>>  w(samples, vector<Float_t>(cent_key.size()*pt_key.size()));
+    vector<vector<Float_t>>  w_v3(samples, vector<Float_t>(cent_key.size()*pt_key.size()));
 
     Float_t v2_min  = 9999;
     Float_t v3_min  = 9999;
@@ -149,27 +154,27 @@ void myAnalysis::process_event(Int_t samples, const string &outputCSV) {
             Float_t QQ2 = hQQ2->GetMean();
             Float_t QQ3 = hQQ3->GetMean();
 
-            if(QQ2 <= 0) cout << "ERROR Sample: " << k << ", centrality: " << cent_key[i] << ", QQ2: " << QQ2 << endl;
-            if(QQ3 <= 0) cout << "ERROR Sample: " << k << ", centrality: " << cent_key[i] << ", QQ3: " << QQ3 << endl;
+            if(QQ2 <= 0) cout << endl << "ERROR Sample: " << k << ", centrality: " << cent_key[i] << ", QQ2: " << QQ2 << endl << endl;
+            if(QQ3 <= 0) cout << endl << "ERROR Sample: " << k << ", centrality: " << cent_key[i] << ", QQ3: " << QQ3 << endl << endl;
 
             cout << "Centrality: " << cent_key[i] << ", QQ Events: " << hQQ2->GetEntries() << endl;
 
             for(UInt_t j = 0; j < pt_key.size(); ++j) {
                 Int_t idx = i*pt_key.size()+j;
 
-                path = "vn/"+to_string(k)+"/qQ2/hqQ2_"+to_string(k)+"_"+to_string(idx);
-                auto hqQ2 = (TH1F*)input->Get(path.c_str());
-
-                Float_t qQ2    = hqQ2->GetMean();
-                Float_t nPi0s  = hqQ2->GetSumOfWeights();
-
-                sum_w[idx]  += nPi0s;
-                sum_w2[idx] += nPi0s*nPi0s;
-                w[k][idx]    = nPi0s;
-
-                cout << "pT: " << pt_key[j] << ", qQ Events: " << hqQ2->GetEntries() << ", " << hqQ2->GetEntries()*100./hQQ2->GetEntries() << " %" << endl;
-
                 if(QQ2 > 0) {
+                    path = "vn/"+to_string(k)+"/qQ2/hqQ2_"+to_string(k)+"_"+to_string(idx);
+                    auto hqQ2 = (TH1F*)input->Get(path.c_str());
+
+                    Float_t qQ2    = hqQ2->GetMean();
+                    Float_t nPi0s  = hqQ2->GetSumOfWeights();
+
+                    sum_w_v2[idx]  += nPi0s;
+                    sum_w2_v2[idx] += nPi0s*nPi0s;
+                    w_v2[k][idx]    = nPi0s;
+
+                    cout << "pT: " << pt_key[j] << ", qQ Events: " << hqQ2->GetEntries() << ", " << hqQ2->GetEntries()*100./hQQ2->GetEntries() << " %" << endl;
+
                     path = "vn/"+to_string(k)+"/qQ2_bg/hqQ2_bg_"+to_string(k)+"_"+to_string(idx);
                     auto hqQ2_bg = (TH1F*)input->Get(path.c_str());
                     Float_t qQ2_bg = hqQ2_bg->GetMean();
@@ -196,6 +201,10 @@ void myAnalysis::process_event(Int_t samples, const string &outputCSV) {
                     Float_t qQ3_bg = hqQ3_bg->GetMean();
                     Float_t nPi0s  = hqQ3->GetSumOfWeights();
 
+                    sum_w_v3[idx]  += nPi0s;
+                    sum_w2_v3[idx] += nPi0s*nPi0s;
+                    w_v3[k][idx]    = nPi0s;
+
                     Float_t v3_diphoton = qQ3/sqrt(QQ3);
                     Float_t v3_bg       = qQ3_bg/sqrt(QQ3);
 
@@ -207,11 +216,11 @@ void myAnalysis::process_event(Int_t samples, const string &outputCSV) {
                     v3_max = max(v3_max, v3);
                 }
             }
+            cout << endl;
         }
         cout << endl;
     }
 
-    cout << endl;
     cout << "v2_min: " << v2_min << ", v2_max: " << v2_max << endl;
     cout << "v3_min: " << v3_min << ", v3_max: " << v3_max << endl;
     cout << endl;
@@ -227,34 +236,37 @@ void myAnalysis::process_event(Int_t samples, const string &outputCSV) {
         for(UInt_t j = 0; j < pt_key.size(); ++j) {
             Int_t idx = i*pt_key.size()+j;
 
-            if(!sum_w2[idx]) {
-                cout << "ERROR Cent: " << cent_key[i] << ", pT: " << pt_key[j] << ", No Pi0s" << endl;
-                continue;
-            }
-
-            Float_t Keff = sum_w[idx]*sum_w[idx]/sum_w2[idx];
-
-            if(Keff <= 1) {
-                cout << "ERROR Cent: " << cent_key[i] << ", pT: " << pt_key[j] << ", Keff: " << Keff << endl;
-                continue;
-            }
-
             Float_t v2 = hv2[idx]->GetMean();
-            Float_t v3 = hv3[idx]->GetMean();
+            Float_t Keff_v2 = (sum_w2_v2[idx]) ? sum_w_v2[idx]*sum_w_v2[idx]/sum_w2_v2[idx] : 0;
+            Float_t v2_err  = 0;
 
-            Float_t sum_v2_err = 0;
-            Float_t sum_v3_err = 0;
+            if(Keff_v2 > 1) {
+                Float_t sum_v2_err = 0;
 
-            for(UInt_t k = 0; k < samples; ++k) {
-                sum_v2_err += w[k][idx] * pow(v2_vec[k][idx]-v2, 2);
-                sum_v3_err += w[k][idx] * pow(v3_vec[k][idx]-v3, 2);
+                for(UInt_t k = 0; k < samples; ++k) {
+                    sum_v2_err += w_v2[k][idx] * pow(v2_vec[k][idx]-v2, 2);
+                }
+
+                Float_t v2_err2 = (sum_v2_err/sum_w_v2[idx]) * Keff_v2/(Keff_v2-1);
+                v2_err  = sqrt(v2_err2/Keff_v2);
             }
+            else cout << "Idx: " << idx << ", Keff_v2: " << Keff_v2 << endl;
 
-            Float_t v2_err2 = (sum_v2_err/sum_w[idx]) * Keff/(Keff-1);
-            Float_t v2_err  = sqrt(v2_err2/Keff);
+            Float_t v3 = hv3[idx]->GetMean();
+            Float_t Keff_v3 = (sum_w2_v3[idx]) ? sum_w_v3[idx]*sum_w_v3[idx]/sum_w2_v3[idx] : 0;
+            Float_t v3_err  = 0;
 
-            Float_t v3_err2 = (sum_v3_err/sum_w[idx]) * Keff/(Keff-1);
-            Float_t v3_err  = sqrt(v3_err2/Keff);
+            if(Keff_v3 > 1) {
+                Float_t sum_v3_err = 0;
+
+                for(UInt_t k = 0; k < samples; ++k) {
+                    sum_v3_err += w_v3[k][idx] * pow(v3_vec[k][idx]-v3, 2);
+                }
+
+                Float_t v3_err2 = (sum_v3_err/sum_w_v3[idx]) * Keff_v3/(Keff_v3-1);
+                v3_err  = sqrt(v3_err2/Keff_v3);
+            }
+            else cout << "Idx: " << idx << ", Keff_v3: " << Keff_v3 << endl;
 
             s.str("");
 
