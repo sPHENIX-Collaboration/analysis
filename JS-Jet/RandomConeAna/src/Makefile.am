@@ -6,27 +6,28 @@ AM_CPPFLAGS = \
   -I`root-config --incdir`
 
 lib_LTLIBRARIES = \
-  libRandomConeAna.la
+  libRandomConeTree.la
 
 AM_LDFLAGS = \
   -L$(libdir) \
   -L$(OFFLINE_MAIN)/lib \
   `fastjet-config --libs`
 
-libRandomConeAna_la_LIBADD = \
+libRandomConeTree_la_LIBADD = \
   -lfun4all \
-  -lg4dst \
-  -lg4eval \
   -lphool \
   -lSubsysReco \
-  -lg4jets
-
-
-libRandomConeAna_la_SOURCES = \
-  RandomConeAna.cc
+  -lg4dst \
+  -lg4eval \
+  -lg4jets \
+  -lrandomcones \
+  -ltowerrho 
+  
+libRandomConeTree_la_SOURCES = \
+  RandomConeTree.cc
 
 pkginclude_HEADERS = \
-  RandomConeAna.h
+  RandomConeTree.h
 
 BUILT_SOURCES = testexternals.cc
 
@@ -34,7 +35,7 @@ noinst_PROGRAMS = \
   testexternals
 
 testexternals_SOURCES = testexternals.cc
-testexternals_LDADD   = libRandomConeAna.la
+testexternals_LDADD   = libRandomConeTree.la
 
 testexternals.cc:
 	echo "//*** this is a generated file. Do not commit, do not edit" > $@

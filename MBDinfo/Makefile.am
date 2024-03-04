@@ -11,32 +11,20 @@ AM_LDFLAGS = \
   -L$(OFFLINE_MAIN)/lib64
 
 pkginclude_HEADERS = \
-  dNdEtaINTT.h
+  MBDinfo.h
 
 lib_LTLIBRARIES = \
-  libdNdEtaINTT.la
+  libMBDinfo.la
 
-libdNdEtaINTT_la_SOURCES = \
-  dNdEtaINTT.cc
+libMBDinfo_la_SOURCES = \
+  MBDinfo.cc
 
-libdNdEtaINTT_la_LIBADD = \
+libMBDinfo_la_LIBADD = \
   -lphool \
-  -lffaobjects \
-  -lffarawobjects \
   -lSubsysReco \
-  -lcentrality \
-  -lcalotrigger \ 
-  -ltrackbase_historic_io \
-  -ltrack_io \
-  -lmbd_io
-
-libdNdEtaINTT_la_LDFLAGS = \
-  -L$(libdir) \
-  -L$(OFFLINE_MAIN)/lib \
-  -I$(ROOTSYS)/include \
-  -lfun4all \
-  -lg4eval \
-  -lcentrality_io
+  -lcentrality_io \
+  -lg4dst \
+  -lg4eval
 
 BUILT_SOURCES = testexternals.cc
 
@@ -44,7 +32,7 @@ noinst_PROGRAMS = \
   testexternals
 
 testexternals_SOURCES = testexternals.cc
-testexternals_LDADD   = libdNdEtaINTT.la
+testexternals_LDADD   = libMBDinfo.la
 
 testexternals.cc:
 	echo "//*** this is a generated file. Do not commit, do not edit" > $@
