@@ -36,9 +36,13 @@
 // Minimum Bias
 #include <calotrigger/MinimumBiasInfo.h>
 
+
+#include <ffaobjects/EventHeader.h>
+#include <ffaobjects/EventHeaderv1.h>
+
 //____________________________________________________________________________..
 mbdAnalysis::mbdAnalysis(const std::string &name):
- SubsysReco(name)
+ SubsysReco("poo")
     ,T(nullptr)
     ,Outfile(name)
 {
@@ -67,6 +71,7 @@ int mbdAnalysis::Init(PHCompositeNode *topNode)
   T -> Branch("pmtphi",&pmtphi);
   T -> Branch("vertex",&vertex);
   T->Branch("cent",&cent);
+  T -> Branch("evtPlaneAngle",&evtPlaneAngle);
   
   
   return Fun4AllReturnCodes::EVENT_OK;
@@ -103,6 +108,14 @@ int mbdAnalysis::process_event(PHCompositeNode *topNode)
       return Fun4AllReturnCodes::ABORTEVENT;
     }
 
+  //Truth Informaiton 
+  EventHeader *evtHeader = findNode::getClass<EventHeader>(topNode,"EventHeader"); 
+  if(!evtHeader)
+    {
+      std::cout << "makeMBDTrees::process_event: Could not find EventHeader, aborting" << std::endl;
+      return Fun4AllReturnCodes::ABORTEVENT;
+    }
+/*
   CentralityInfo *centInfo = findNode::getClass<CentralityInfo>(topNode,"CentralityInfo");
   if(!centInfo)
     {
@@ -110,7 +123,8 @@ int mbdAnalysis::process_event(PHCompositeNode *topNode)
       return Fun4AllReturnCodes::ABORTEVENT;
     }
   cent = centInfo->get_centile(CentralityInfo::PROP::mbd_NS);
-
+*/
+/*
   MinimumBiasInfo *minBiasInfo = findNode::getClass<MinimumBiasInfo>(topNode,"MinimumBiasInfo");
   Bool_t isMinBias = (minBiasInfo) ? minBiasInfo->isAuAuMinimumBias() : false;
   if(!minBiasInfo || !isMinBias)
@@ -118,7 +132,7 @@ int mbdAnalysis::process_event(PHCompositeNode *topNode)
     std::cout << PHWHERE << "caloTreeGen::process_event: is not MinimumBias" << std::endl;
     return Fun4AllReturnCodes::ABORTEVENT;
   }
-  
+  */
   //pmg geometry information
   MbdGeom *mbdgeom = findNode::getClass<MbdGeom>(topNode, "MbdGeom");
   if(!mbdgeom)
@@ -127,8 +141,22 @@ int mbdAnalysis::process_event(PHCompositeNode *topNode)
       return Fun4AllReturnCodes::ABORTEVENT;
     }
 
-  int nPMTs = bbcpmts -> get_npmt();        //size (should always be 128)
+  //int nPMTs = bbcpmts -> get_npmt();        //size (should always be 128)
+  int nPMTs = 128;        //size (should always be 128)
   vertex = mbdout->get_zvtx();
+  std::cout << "NPMTS: "<< nPMTs << std::endl;
+  evtPlaneAngle = evtHeader -> get_EventPlaneAngle();
+  double m_cent = evtHeader->get_ImpactParameter();
+  if(m_cent >= 0 && m_cent < 4.88) cent = 0.05;
+  if(m_cent >= 4.88 && m_cent < 6.81) cent = 0.15;
+  if(m_cent >= 6.81 && m_cent < 8.40) cent = 0.25;
+  if(m_cent >= 8.40 && m_cent < 9.71) cent = 0.35;
+  if(m_cent >= 9.71 && m_cent < 10.81) cent = 0.45;
+  if(m_cent >= 10.81 && m_cent < 11.84) cent = 0.55;
+  if(m_cent >= 11.84 && m_cent < 12.76) cent = 0.65;
+  if(m_cent >= 12.76 && m_cent < 13.68) cent = 0.75;
+  if(m_cent >= 13.68 && m_cent < 14.65) cent = 0.85;
+
   for(int i = 0; i < nPMTs; i++)
     {
       MbdPmtHit* mbdpmt = bbcpmts -> get_pmt(i);        // grab ith pmt (changed from pmtID)
