@@ -16,7 +16,7 @@ The python code requires at least 5 arguments
 5. <mbd_tree_name>
 6. <N_event>: this is optional, if it's not given, then all events of the file will be included
 
-To run the code: python3 intt_mbd_evt_combiner_v1.py <outfile_full_directory> <intt_file_full_directory> <intt_tree_name> <mbd_file_in_full_directory> <mbd_tree_name> <N_event>
+# To run the code: python3 intt_mbd_evt_combiner_v1.py <outfile_full_directory> <intt_file_full_directory> <intt_tree_name> <mbd_file_in_full_directory> <mbd_tree_name> <N_event>
 
 Histogram (intt_mbd_bco and intt_mbd_bco_1D) kept in the output root file can be checked once the process is done.
 The plot "intt_mbd_bco" shows the clock difference as a function of event ID. If the synchronization is performed correctly, it is expected to see a horizental line across events. Like the example given in the folder.
