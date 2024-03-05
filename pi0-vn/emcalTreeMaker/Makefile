@@ -41,3 +41,4 @@ clean:
 	rm bin/pi0Ana
 	rm bin/convert
 	rm bin/Q-vec-corr
+	rm bin/vnAna
