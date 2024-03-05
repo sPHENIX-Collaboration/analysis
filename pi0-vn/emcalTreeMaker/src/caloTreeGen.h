@@ -87,6 +87,15 @@ class caloTreeGen : public SubsysReco
 
     void set_simulation(Bool_t isSim = false) {
       this->isSim = isSim;
+
+      if(isSim) {
+        bins_totalmbd = 500;
+        high_totalmbd = 3e5;
+
+        bins_totalmbdv2 = bins_totalmbd;
+        high_totalmbdv2 = high_totalmbd;
+
+      }
     }
 
   private:

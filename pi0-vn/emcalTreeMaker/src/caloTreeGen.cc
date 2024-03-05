@@ -173,14 +173,14 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
   }
   
   MbdPmtContainer *mbdpmts = findNode::getClass<MbdPmtContainer>(topNode,"MbdPmtContainer"); // mbd info
-  if(!mbdpmts && !isSim)
+  if(!mbdpmts)
   {
     std::cout << PHWHERE << "caloTreeGen::process_event: Could not find node MbdPmtContainer" << std::endl;
     return Fun4AllReturnCodes::ABORTEVENT;
   }
 
   MbdGeom *mbdgeom = findNode::getClass<MbdGeom>(topNode,"MbdGeom"); // mbd geometry
-  if(!mbdgeom && !isSim)
+  if(!mbdgeom)
   {
     std::cout << PHWHERE << "caloTreeGen::process_event: Could not find node MbdGeom" << std::endl;
     return Fun4AllReturnCodes::ABORTEVENT;
@@ -234,38 +234,37 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
   Float_t charge_S = 0;
   Float_t charge_N = 0;
 
-  if(!isSim) {
-    Int_t nPMTs = mbdpmts -> get_npmt(); //size (should always be 128)
+  Int_t nPMTs = (!isSim) ? mbdpmts -> get_npmt() : 128; //size (should always be 128)
 
-    for(Int_t i = 0; i < nPMTs; ++i) {
-      MbdPmtHit* mbdpmt = mbdpmts->get_pmt(i);
-      Float_t charge    = mbdpmt->get_q();     //pmt charge
-      Float_t phi       = mbdgeom->get_phi(i); //pmt phi
-      Float_t z         = mbdgeom->get_z(i);   //pmt z ~ eta
+  for(Int_t i = 0; i < nPMTs; ++i) {
+    MbdPmtHit* mbdpmt = mbdpmts->get_pmt(i);
+    Float_t charge    = mbdpmt->get_q();     //pmt charge
+    Float_t phi       = mbdgeom->get_phi(i); //pmt phi
+    Float_t z         = mbdgeom->get_z(i);   //pmt z ~ eta
 
-      Float_t x2 = charge*std::cos(2*phi);
-      Float_t y2 = charge*std::sin(2*phi);
-      Float_t x3 = charge*std::cos(3*phi);
-      Float_t y3 = charge*std::sin(3*phi);
+    Float_t x2 = charge*std::cos(2*phi);
+    Float_t y2 = charge*std::sin(2*phi);
+    Float_t x3 = charge*std::cos(3*phi);
+    Float_t y3 = charge*std::sin(3*phi);
 
-      if(z < 0) {
-        Q2_S_x   += x2;
-        Q2_S_y   += y2;
-        Q3_S_x   += x3;
-        Q3_S_y   += y3;
-        charge_S += charge;
-      }
-      else {
-        Q2_N_x   += x2;
-        Q2_N_y   += y2;
-        Q3_N_x   += x3;
-        Q3_N_y   += y3;
-        charge_N += charge;
-      }
-
-      totalMBD += charge;
+    if(z < 0) {
+      Q2_S_x   += x2;
+      Q2_S_y   += y2;
+      Q3_S_x   += x3;
+      Q3_S_y   += y3;
+      charge_S += charge;
     }
+    else {
+      Q2_N_x   += x2;
+      Q2_N_y   += y2;
+      Q3_N_x   += x3;
+      Q3_N_y   += y3;
+      charge_N += charge;
+    }
+
+    totalMBD += charge;
   }
+
   Q2_S_x = (Q2_S_x) ? Q2_S_x/charge_S : 0;
   Q2_S_y = (Q2_S_y) ? Q2_S_y/charge_S : 0;
   Q2_N_x = (Q2_N_x) ? Q2_N_x/charge_N : 0;
