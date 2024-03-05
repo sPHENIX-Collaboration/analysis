@@ -18,7 +18,7 @@ The python code requires at least 5 arguments
 
 ## To run the code: 
 ```bash
-python3 intt_mbd_evt_combiner_v1.py <outfile_full_directory> <intt_file_full_directory> <intt_tree_name> <mbd_file_in_full_directory> <mbd_tree_name> <N_event>
+python3 intt_mbd_evt_combiner_v1.py outfile_full_directory intt_file_full_directory intt_tree_name mbd_file_in_full_directory mbd_tree_name N_event
 ```
 
 
