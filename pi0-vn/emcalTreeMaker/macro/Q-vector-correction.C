@@ -654,6 +654,7 @@ if(argc < 2 || argc > 7){
         cout << "inputFile: containing list of root file paths" << endl;
         cout << "z: z-vertex cut. Default: 10 cm. Range: 0 to 30 cm." << endl;
         cout << "outputFile: location of output file. Default: test.root." << endl;
+        cout << "outputCSV: location of output csv. Default: test.csv." << endl;
         cout << "start: start event number. Default: 0." << endl;
         cout << "end: end event number. Default: 0. (to run over all entries)." << endl;
         return 1;
