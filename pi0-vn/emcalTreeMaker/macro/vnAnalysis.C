@@ -46,9 +46,9 @@ namespace myAnalysis {
     vector<TH1F*> hv2;
     vector<TH1F*> hv3;
 
-    Int_t   bins_v2 = 280;
-    Float_t v2_min  = -7;
-    Float_t v2_max  = 7;
+    Int_t   bins_v2 = 400;
+    Float_t v2_min  = -11;
+    Float_t v2_max  = 11;
 
     Int_t   bins_v3 = 600;
     Float_t v3_min  = -15;
@@ -154,10 +154,10 @@ void myAnalysis::process_event(Int_t samples, const string &outputCSV) {
             Float_t QQ2 = hQQ2->GetMean();
             Float_t QQ3 = hQQ3->GetMean();
 
-            if(QQ2 <= 0) cout << endl << "ERROR Sample: " << k << ", centrality: " << cent_key[i] << ", QQ2: " << QQ2 << endl << endl;
-            if(QQ3 <= 0) cout << endl << "ERROR Sample: " << k << ", centrality: " << cent_key[i] << ", QQ3: " << QQ3 << endl << endl;
+            if(QQ2 <= 0) cout << "ERROR Sample: " << k << ", centrality: " << cent_key[i] << ", QQ2: " << QQ2 << endl;
+            if(QQ3 <= 0) cout << "ERROR Sample: " << k << ", centrality: " << cent_key[i] << ", QQ3: " << QQ3 << endl;
 
-            cout << "Centrality: " << cent_key[i] << ", QQ Events: " << hQQ2->GetEntries() << endl;
+            // cout << "Centrality: " << cent_key[i] << ", QQ Events: " << hQQ2->GetEntries() << endl;
 
             for(UInt_t j = 0; j < pt_key.size(); ++j) {
                 Int_t idx = i*pt_key.size()+j;
@@ -173,7 +173,7 @@ void myAnalysis::process_event(Int_t samples, const string &outputCSV) {
                     sum_w2_v2[idx] += nPi0s*nPi0s;
                     w_v2[k][idx]    = nPi0s;
 
-                    cout << "pT: " << pt_key[j] << ", qQ Events: " << hqQ2->GetEntries() << ", " << hqQ2->GetEntries()*100./hQQ2->GetEntries() << " %" << endl;
+                    // cout << "pT: " << pt_key[j] << ", qQ Events: " << hqQ2->GetEntries() << ", " << hqQ2->GetEntries()*100./hQQ2->GetEntries() << " %" << endl;
 
                     path = "vn/"+to_string(k)+"/qQ2_bg/hqQ2_bg_"+to_string(k)+"_"+to_string(idx);
                     auto hqQ2_bg = (TH1F*)input->Get(path.c_str());
@@ -216,7 +216,7 @@ void myAnalysis::process_event(Int_t samples, const string &outputCSV) {
                     v3_max = max(v3_max, v3);
                 }
             }
-            cout << endl;
+            // cout << endl;
         }
         cout << endl;
     }
