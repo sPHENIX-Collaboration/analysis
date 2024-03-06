@@ -39,7 +39,7 @@ EventSelection::EventSelection(const std::string& truthjetname, const std::strin
  , m_outputfilename(outputfilename)
  , outFile(nullptr)
  , m_tree(nullptr) // Initialize m_tree to nullptr
- , m_vtxZ_cut(1000.0)
+ , m_vtxZ_cut(10.0)
  , m_event(-1)
  , m_vertex_z()
    // , m_vertex_z()
@@ -102,7 +102,7 @@ int EventSelection::process_event(PHCompositeNode *topNode)
       return Fun4AllReturnCodes::ABORTEVENT;
 
     }
-  m_vertex_z.push_back(mvtxz);
+  m_vertex_z = (float) mvtxz;
 
   // If the event passes the z vertex selection, fill the output tree
   
@@ -120,7 +120,7 @@ int EventSelection::ResetEvent(PHCompositeNode *topNode)
   //std::cout << "EventSelection::ResetEvent(PHCompositeNode *topNode) Resetting internal structures, prepare for next event" << std::endl;
 
   //clear vectors or arrays here 
-  m_vertex_z.clear();
+  //m_vertex_z.clear();
 
  return Fun4AllReturnCodes::EVENT_OK;
 

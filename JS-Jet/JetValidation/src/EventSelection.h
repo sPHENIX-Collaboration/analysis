@@ -19,7 +19,7 @@ class EventSelection : public SubsysReco
 {
 public:
     // constructor
-  EventSelection( const std::string &truthjetname = "AntiKt_Truth_r04",
+  EventSelection( const std::string &recojetname = "AntiKt_Tower_r04_Sub1",
 		   const std::string &outputfilename = "selecteventtest.root");
 
     ~EventSelection() override; // destructor
@@ -48,7 +48,7 @@ private:
 
     double m_vtxZ_cut;
     int m_event;
-    std::vector<float> m_vertex_z;
+    float m_vertex_z;
     
 };
 
