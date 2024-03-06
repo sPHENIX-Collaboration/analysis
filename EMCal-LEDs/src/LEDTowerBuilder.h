@@ -25,29 +25,23 @@ class LEDTowerBuilder : public SubsysReco {
     LEDTowerBuilder(const std::string &name = "LEDTowerBuilder");
     ~LEDTowerBuilder() override;
 
-    int InitRun(PHCompositeNode *topNode) override;
-    int process_event(PHCompositeNode *topNode) override;
-    int End(PHCompositeNode *topNode) override;
+    Int_t InitRun(PHCompositeNode *topNode) override;
+    Int_t process_event(PHCompositeNode *topNode) override;
+    Int_t End(PHCompositeNode *topNode) override;
 
     enum DetectorSystem {
-    CEMC = 0,
-    HCALIN = 1,
-    HCALOUT = 2,
-    EPD = 3
-  };
+      CEMC = 0,
+      HCALIN = 1,
+      HCALOUT = 2,
+      EPD = 3
+    };
 
-    void set_detector_type(LEDTowerBuilder::DetectorSystem dettype) {
-      m_dettype = dettype;
-      return;
+    void set_output(const std::string &m_outputFilename) {
+      this->m_outputFilename = m_outputFilename;
     }
 
-    void set_nsamples(int _nsamples) {
-      m_nsamples = _nsamples;
-      return;
-    }
-    void set_dataflag(bool flag) {
-      m_isdata = flag;
-      return;
+    void set_skip(Int_t skip) {
+      this->skip = skip;
     }
 
   private:
@@ -55,19 +49,18 @@ class LEDTowerBuilder : public SubsysReco {
     CaloWaveformProcessing* WaveformProcessing = new CaloWaveformProcessing();
     LEDTowerBuilder::DetectorSystem m_dettype;
     std::string m_detector;
-    int m_packet_low;
-    int m_packet_high;
-    int m_nsamples;
-    int m_nchannels;
-    bool m_isdata;
-    int m_event;
-
+    Int_t m_packet_low;
+    Int_t m_packet_high;
+    Int_t m_nsamples;
+    Int_t iEvent;
+    Int_t skip;
+  
     TTree *tOut;
-    std::vector<float> m_adc;
-    std::vector<float> m_ped;
-    std::vector<float> m_time;
-    std::vector<int> m_chan;
-    std::vector<std::vector<float>> m_waveforms;
+    std::vector<Float_t> m_adc;
+    std::vector<Float_t> m_ped;
+    std::vector<Float_t> m_time;
+    std::vector<Int_t> m_chan;
+    std::vector<std::vector<Float_t>> m_waveforms;
     std::string m_outputFilename;
 };
 

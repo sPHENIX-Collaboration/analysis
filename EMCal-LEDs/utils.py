@@ -9,18 +9,22 @@ parser = argparse.ArgumentParser()
 subparser = parser.add_subparsers(dest='command')
 
 create  = subparser.add_parser('create', help='Create file lists.')
-run     = subparser.add_parser('run', help='Run LEDTowerBuilder on the given file list.')
+run     = subparser.add_parser('run', help='Run LEDTowerBuilder on the given file.')
 evtDisp = subparser.add_parser('evtDisp', help='Create event display (json) given prdf and event number.')
 
 create.add_argument('-i', '--run-list', type=str, nargs='+' , help='List of run numbers.')
 create.add_argument('-p', '--prdf-dir', type=str, default='/direct/sphenix+lustre01/sphnxpro/rawdata/commissioning/emcal/calib', help='Directory containing the prdf files. Default: /direct/sphenix+lustre01/sphnxpro/rawdata/commissioning/emcal/calib')
 create.add_argument('-o', '--output-dir', type=str, default='files', help='Directory to store the file lists. Default: files')
 
-run.add_argument('-i', '--file-list', type=str, help='File list containing prdfs to analyze.', required=True)
-run.add_argument('-n', '--nevents', type=int, default = -1, help='Number of events to analyze. Default: -1 (analyze all)')
-run.add_argument('-s', '--skip', type=int, default = 0, help='Number of events to skip. Default: 0 (no skip)')
-run.add_argument('-o', '--output', type=str, default = 'data/LEDTowerBuilder.root', help='Output root file. Default: data/LEDTowerBuilder.root')
-run.add_argument('-m', '--max', type=int, default = 10000, help='Maximum number of events to analyze at once. Default: 10000')
+run.add_argument('-i', '--input-file', type=str, help='PRDF file to analyze', required=True)
+run.add_argument('-n', '--nevents', type=int, help='Total number of events to process', required=True)
+run.add_argument('-j', '--events-per-job', type=int, default=100, help='Total number of events per job to process. Default: 100')
+run.add_argument('-m', '--macro', type=str, default='macro/Fun4All_LEDTowerBuilder.C', help='LEDTowerBuilder macro. Default: macro/Fun4All_LEDTowerBuilder.C')
+run.add_argument('-e', '--script', type=str, default='genLEDAna.sh', help='Job script to execute. Default: genLEDAna.sh')
+run.add_argument('-b', '--executable', type=str, default='bin/Fun4All_LEDTowerBuilder', help='Executable. Default: bin/Fun4All_LEDTowerBuilder')
+run.add_argument('-d', '--output', type=str, default='test', help='Output Directory. Default: ./test')
+run.add_argument('-s', '--memory', type=float, default=0.5, help='Memory (units of GB) to request per condor submission. Default: 0.5 GB.')
+run.add_argument('-l', '--log', type=str, default='/tmp/anarde/dump/job-$(ClusterId)-$(Process).log', help='Condor log file.')
 
 evtDisp.add_argument('-i', '--prdf', type=str, help='Prdfs to analyze.', required=True)
 evtDisp.add_argument('-r', '--run', type=str, help='Run number.', required=True)
@@ -48,69 +52,49 @@ def create_file_list():
             fw.write(result.stdout)
 
 def run_analysis():
-    file_list          = os.path.abspath(args.file_list)
-    nevents            = args.nevents
-    output             = args.output
-    skip               = args.skip
-    max_events_per_run = args.max
+    input_file     = os.path.realpath(args.input_file)
+    macro          = os.path.realpath(args.macro)
+    script         = os.path.realpath(args.script)
+    executable     = os.path.realpath(args.executable)
+    output_dir         = os.path.realpath(args.output)
+    nevents        = args.nevents
+    events_per_job = args.events_per_job
+    memory         = args.memory
+    log            = args.log
 
-    print(f'file list: {file_list}')
-    print(f'output: {output}')
+    print(f'input: {input_file}')
+    print(f'nevents: {nevents}')
+    print(f'Events per job: {events_per_job}')
+    print(f'macro: {macro}')
+    print(f'script: {script}')
+    print(f'executable: {executable}')
+    print(f'output: {output_dir}')
+    print(f'memory: {memory}')
 
-    total_events = 0
-    # Find total number of events in the file list
-    with open(file_list) as f:
-        for line in f:
-            line = line.strip()
-            command = f'dpipe -d n -s f -i {line}'
-            dpipe_process = subprocess.run(command.split(), stdout=subprocess.PIPE)
-            events = subprocess.run(['wc','-l'], input=dpipe_process.stdout, stdout=subprocess.PIPE)
-            events = int(events.stdout.decode('utf-8'))
+    os.makedirs(output_dir,exist_ok=True)
+    shutil.copy(macro, output_dir)
+    shutil.copy(script, output_dir)
+    shutil.copy(executable, output_dir)
 
-            total_events += events
-            print(f'prdf: {line}, events: {events}')
-            if(total_events > nevents+skip and nevents >= 0):
-                break
+    os.makedirs(f'{output_dir}/stdout',exist_ok=True)
+    os.makedirs(f'{output_dir}/error',exist_ok=True)
+    os.makedirs(f'{output_dir}/output',exist_ok=True)
 
-    nevents = total_events if nevents == -1 else nevents
-    print(f'total events: {total_events}')
-    if(nevents != total_events):
-        print(f'events to analyze: {nevents}')
-    print(f'skip: {skip}')
+    jobs = nevents // events_per_job if (nevents % events_per_job == 0) else nevents // events_per_job + 1
+    skip = 0
+    with open(f'{output_dir}/jobs.list', mode='w') as file:
+        for i in range(jobs):
+            file.write(f'{skip}\n')
+            skip += events_per_job
 
-    runs = int(np.ceil((nevents+skip) / max_events_per_run))
-    max_events_per_run = min(max_events_per_run, nevents)
-
-    log = os.path.basename(output).split('.')[0]
-    output_dir = os.path.dirname(output)
-    process_events = max_events_per_run
-
-    if(runs > 1):
-        print(f'Runs: {runs}')
-        print(f'Max events per run: {max_events_per_run}')
-
-        merge_files = []
-        for i in range(runs):
-            subprocess.run(['echo', f'Run: {i}'])
-            command = f'./bin/Fun4All_LEDTowerBuilder {process_events} {skip} {file_list} {output_dir}/test-{i}.root &> {output_dir}/log/log-test-{i}.txt &'
-            print(command)
-            skip += max_events_per_run
-            process_events = min(max_events_per_run, nevents-(i+1)*max_events_per_run)
-            merge_files.append(f'{output_dir}/test-{i}.root')
-
-        print('hadd command: ')
-        merge_files = ' '.join(merge_files)
-        print(f'hadd -n 50 {output} {merge_files}')
-
-    else:
-        command = f'./bin/Fun4All_LEDTowerBuilder {process_events} {skip} {file_list} {output} &> {output_dir}/log/log-{log}.txt &'
-        print(command)
-
-
-    # command = f"root -b -l -q 'macro/Fun4All_LEDTowerBuilder.C({nevents}, \"{file_list}\", \"{output}\")'"
-    # command = f"./bin/Fun4All_LEDTowerBuilder {nevents} {file_list} {output} &> data/log/log-{log}.txt &"
-    # print(command)
-    # subprocess.run(['root','-b','-l','-q',f'macro/Fun4All_LEDTowerBuilder.C({nevents}, \"{file_list}\", \"{output}\")'])
+    with open(f'{output_dir}/genFun4All.sub', mode="w") as file:
+        file.write(f'executable     = {os.path.basename(script)}\n')
+        file.write(f'arguments      = {os.path.basename(executable)} {input_file} output/test-$(Process).root {events_per_job} $(skip)\n')
+        file.write(f'log            = {log}\n')
+        file.write('output          = stdout/job-$(Process).out\n')
+        file.write('error           = error/job-$(Process).err\n')
+        file.write(f'request_memory = {memory}GB\n')
+        file.write(f'queue skip from jobs.list')
 
 def event_display():
     prdf_input   = os.path.abspath(args.prdf)

@@ -11,7 +11,7 @@ sPHENIX_CPPFLAGS = -I$(MYINSTALL)/include -I$(OFFLINE_MAIN)/include
 # root-config --libs
 # LIBFLAGS = -L$(MYINSTALL)/lib `root-config --libs`
 LIBFLAGS = -L$(MYINSTALL)/lib `root-config --libs` -lledtowerbuilder
-sPHENIX_LIBFLAGS = -L$(OFFLINE_MAIN)/lib -lcalo_io -lfun4all -lfun4allraw -lcalo_reco -lg4dst
+sPHENIX_LIBFLAGS = -L$(OFFLINE_MAIN)/lib -lfun4all -lfun4allraw -lcalo_io
 
 all: bin/read-LEDs bin/Fun4All_LEDTowerBuilder bin/event-display
 
