@@ -99,6 +99,7 @@ class JetValidation : public SubsysReco
   int m_doSeeds;
   int m_doUnsubJet;
 
+
   //! Output Tree variables
   TTree *m_T;
 

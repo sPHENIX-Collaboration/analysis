@@ -31,7 +31,7 @@
 #include <cmath>
 #include <vector>
 #include "fastjet/ClusterSequence.hh"
-#include "fastjet/contrib/SoftDrop.hh" // In external code, this should be fastjet/contrib/SoftDrop.hh                                                                                                      
+#include "fastjet/contrib/SoftDrop.hh" // In external code, this should be fastjet/contrib/SoftDrop.hh                                                                                                 
 
 using namespace fastjet;
 
@@ -96,6 +96,7 @@ JetValidation::~JetValidation()
 }
 
 //____________________________________________________________________________..
+//____________________________________________________________________________..
 int JetValidation::Init(PHCompositeNode *topNode)
 {
   std::cout << "JetValidation::Init(PHCompositeNode *topNode) Initializing" << std::endl;
@@ -143,7 +144,7 @@ int JetValidation::Init(PHCompositeNode *topNode)
     m_T->Branch("subseedE", &m_e_subseed);
     m_T->Branch("subseedCut", &m_subseed_cut);
   }
-
+  
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
@@ -151,13 +152,14 @@ int JetValidation::Init(PHCompositeNode *topNode)
 int JetValidation::InitRun(PHCompositeNode *topNode)
 {
   std::cout << "JetValidation::InitRun(PHCompositeNode *topNode) Initializing for Run XXX" << std::endl;
+  
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
 //____________________________________________________________________________..
 int JetValidation::process_event(PHCompositeNode *topNode)
 {
-  std::cout << "JetValidation::process_event(PHCompositeNode *topNode) Processing Event" << std::endl;
+  //  std::cout << "JetValidation::process_event(PHCompositeNode *topNode) Processing Event" << std::endl;
   ++m_event;
 
   // interface to reco jets
@@ -208,11 +210,6 @@ int JetValidation::process_event(PHCompositeNode *topNode)
         << std::endl;
       exit(-1);
     }
-  
-  //zvertex
-  GlobalVertexMap *vertexmap = findNode::getClass<GlobalVertexMap>(topNode, "GlobalVertexMap");
-  GlobalVertex *vtx = vertexmap->begin()->second;
-  m_zvtx = vtx->get_z();
   
 
   //calorimeter towers
@@ -414,7 +411,7 @@ int JetValidation::process_event(PHCompositeNode *topNode)
   
   //fill the tree
   m_T->Fill();
-  
+
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
