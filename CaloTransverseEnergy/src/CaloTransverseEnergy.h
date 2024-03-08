@@ -99,7 +99,7 @@ class CaloTransverseEnergy:public SubsysReco
 		void GetNodes(PHCompositeNode*); 
 		bool ValidateDistro();
 		void findEEC(); 
-		void countTheTowers(std::map<std::pair<std::pair<int, int>, std::pair<std::pair<double, double>, std::pair<double, double>>>, int>*, bool, double, double, double, double,int, int, TH2F* oht=NULL, TH2F* iht=NULL, bool first=false);
+		int countTheTowers(plots*, double, double, double, double);
 	/*	const std::string &prdfnode="PRDF"; //maybe I can add an overload to this? just do either version
 		const std::string &DSTnode="DST";
 		const std::string &iHCALnode="HCALIN";
@@ -134,7 +134,6 @@ class CaloTransverseEnergy:public SubsysReco
 			std::cout<<"Have the setting pair "<<te.first <<te.second <<std::endl;
 			chmap[te];
 			std::cout<<"The map now has " <<chmap.size() <<" entries" <<std::endl;
-			ih_em.clear();	
 			IHCALE=new TH1F("iHCal", "Total Transverse energy depositied in inner HCal towers; Energy #times percent of towers [GeV]", 400, 0, 2); 
 			OHCALE=new TH1F("oHCal", "Total Transverse energy depositied in outer HCal towers; Energy #times percent oftowers [GeV]", 400, 0,2); 
 			EMCALE=new TH1F("emCal", "Transverse energy depositied in EMCal towers; Energy #times percent of towers [GeV]", 400, 0, 2); 
@@ -147,7 +146,7 @@ class CaloTransverseEnergy:public SubsysReco
 			std::cout<<"Run number " <<rn <<std::endl;
 			run_number=rn;
 			if(run_number <1000) sim=true;
-			if(!sim) z_vertex=new TH1F("z_vertex", "z vertex position; z [cm]; N_{evts}", 21, -100.5, 100.5);
+			if(!sim) z_vertex=new TH1F("z_vertex", "z vertex position; z [cm]; N_{evts}", 21, -20.5, 19.5);
 			else z_vertex=new TH1F("z_vertex", "z vertex position; z [cm]; N_{evts}", 21, -5.5, 5.5);
 			if(sim) std::cout<<"Found the simulation tag, run is number " <<run_number <<std::endl;
 			else std::cout<<"This is real data, run number " <<run_number <<std::endl;
@@ -194,7 +193,6 @@ class CaloTransverseEnergy:public SubsysReco
 		TH2F *eep, *ohep, *ihep, *eeps, *oheps, *iheps, *tep, *teps;
 		std::map<int, plots*> zPLTS, szPLTS;
 		std::map<std::pair<double,double>, std::map<std::pair<double, double>, float>> jet_like_container;
-		std::map<std::pair<std::pair<int, int>, std::pair<std::pair<double, double>, std::pair<double, double>>>, int> oh_em, ih_em;
 		std::vector<int> baryons{2212,2112,2224,2214,2114,1114,3122,3222,3212,3112,
 		      3224,3214,3114,3322,3312,3324,3314,3334,4122,4222,4212,4112,4224,4214,
 		      4114,4232,4312,4324,4314,4332,4334,4412,4422,4414,4424,4432,4434,4444,

@@ -92,11 +92,11 @@ int CaloTransverseEnergy::process_event(PHCompositeNode *topNode)
 			if(mbdvtx) z_vtx=mbdvtx->get_z();
 		}
 		std::cout<<"Getting Energies around vertex " <<z_vtx <<std::endl;
-		int z_bin=z_vtx;
-		z_bin=2*(z_bin/2);
+		int z_bin=rint(z_vtx);
+		z_bin=2*(rint(z_bin)/2);
 //		if(z_bin % 3 == 1) z_bin=z_bin-1;
 //		if(z_bin % 3 == 2) z_bin=z_bin-2;
-		if(z_bin<-20) z_bin=-100;
+		if(z_bin<-20) z_bin=-20;
 		else if(z_bin > 20) z_bin = 20;
 		zbin=z_bin;
 		std::cout<<"z bin is " <<z_bin <<std::endl;
@@ -442,14 +442,20 @@ void CaloTransverseEnergy::processDST(TowerInfoContainerv1* calo_event, TowerInf
 		eta=asinh(z/radius);
 		etabounds.first= asinh(z_vtx/radius+sinh(etabounds.first));
 		etabounds.second=asinh(radius*z_vtx+sinh(etabounds.second));
-		if(hcalorem && n_evt==1){
-			if(inner)countTheTowers(&ih_em, true, etabounds.first, etabounds.second, phibounds.first, phibounds.second, etabin, phibin); 
-			else countTheTowers(&oh_em, true, etabounds.first, etabounds.second, phibounds.first, phibounds.second,etabin, phibin); 
+		if(hcalorem){
+			if(inner && PLTS->ihcal->counter==false)
+			{
+				std::pair<int, int> iedge {etabin, phibin}; 
+				PLTS->ihcal->tower_edges[iedge]=std::make_pair(etabounds, phibounds);
+				
+			}
+			else if (!inner && PLTS->ohcal->counter==false){
+				std::pair<int, int> iedge {etabin, phibin};
+				PLTS->ohcal->tower_edges[iedge]=std::make_pair(etabounds, phibounds);
+			}
 		}
-		if(!hcalorem && n_evt>1 ){
-			bool first=false;
-			if(n_evt==2) first=true;
-			countTheTowers(&oh_em, false, etabounds.first, etabounds.second, phibounds.first, phibounds.second, etabin, phibin, PLTS->ohcal->EMCAL_tower_proj, PLTS->ihcal->EMCAL_tower_proj, first);
+		if(!hcalorem && PLTS->ihcal->counter && PLTS->ohcal->counter){
+			if(PLTS->ihcal->filled_em_cal==false || PLTS->ohcal->filled_em_cal==false) countTheTowers(PLTS, etabounds.first,etabounds.second, phibounds.first, phibounds.second);
 		}
 		if(hcalorem && !inner){
 		if(n_evt==1){
@@ -595,9 +601,25 @@ void CaloTransverseEnergy::processDST(TowerInfoContainerv1* calo_event, TowerInf
 	catch (std::exception& e){std::cout<<"Exception found " <<e.what() <<std::endl;}
 	//if(n_evt==10) std::cout<<"Calorimeter " <<caloid <<" max: etabin: " <<maxeta <<", phibin: " <<maxphi <<std::endl;
 //	std::cout<<"Had " <<ntowers <<" total towers, but only " <<n_live_towers <<" passed the energy cut and " <<n_time <<" even got to the  cut" <<std::endl;
-	if (n_evt==21 && !hcalorem){
-			for(auto a:oh_em) PLTS->ohcal->EMCAL_towering->Fill(a.second);
-			for(auto a:ih_em) PLTS->ihcal->EMCAL_towering->Fill(a.second);
+	if (!hcalorem && PLTS->ohcal->filled_em_cal && PLTS->ohcal->counter){
+		for(auto a:PLTS->ohcal->n_emcaltowers){
+			PLTS->ohcal->EMCAL_towering->Fill(a.second);
+		}
+	}
+	if (!hcalorem && PLTS->ihcal->filled_em_cal && PLTS->ihcal->counter){
+		for (auto a:PLTS->ihcal->n_emcaltowers){
+				PLTS->ihcal->EMCAL_towering->Fill(a.second);
+			}
+		}
+	
+	if(hcalorem){
+		if(inner && PLTS->ihcal->tower_edges.size() > 0) PLTS->ihcal->counter=true;
+		if(!inner && PLTS->ohcal->tower_edges.size() > 0) PLTS->ohcal->counter=true;
+	}
+	if(!hcalorem){
+		if(PLTS->ihcal->counter && PLTS->ihcal->n_emcaltowers.size() > 0 ) PLTS->ihcal->filled_em_cal=true;
+		if(PLTS->ohcal->counter && PLTS->ohcal->n_emcaltowers.size() > 0 ) PLTS->ohcal->filled_em_cal=true;
+		std::cout<<"Have done the first filling of the thing" <<std::endl;
 	}
 }
 void CaloTransverseEnergy::processDST(TowerInfoContainerv2* calo_event, TowerInfoContainerv2* calo_key, std::vector<float>* energies, RawTowerGeomContainer_Cylinderv1* geom, bool hcalorem, bool inner, RawTowerDefs::CalorimeterId caloid, float z_vtx, plots* PLTS)
@@ -685,7 +707,7 @@ void CaloTransverseEnergy::processDST(TowerInfoContainerv2* calo_event, TowerInf
 		eta=asinh(z/radius);
 		etabounds.first= asinh(z_vtx/radius+sinh(etabounds.first));
 		etabounds.second=asinh(radius*z_vtx+sinh(etabounds.second));
-		if(hcalorem && (oh_em.size() == 0 || ih_em.size() == 0)  ){
+		if(hcalorem ){
 		/*	try{
 				std::cout<<"The calorimeter load in has size " <<oh_em.empty() <<std::endl;
 			}
@@ -693,24 +715,30 @@ void CaloTransverseEnergy::processDST(TowerInfoContainerv2* calo_event, TowerInf
 			std::cerr<<"Found an exception when trying to access the container "<<e1.what() <<std::endl;}
 			std::cout<<"ok moving forwards" <<std::endl;*/
 	//	std::cout<<"Trying to fill map info. OHCAL map has size " <<oh_em.size() <<" IHmap has size " <<ih_em.size() <<std::endl;	
-		if(inner)countTheTowers(&ih_em, true, etabounds.first, etabounds.second, phibounds.first, phibounds.second, etabin, phibin); 
-			else countTheTowers(&oh_em, true, etabounds.first, etabounds.second, phibounds.first, phibounds.second,etabin, phibin); 
+			if(inner && PLTS->ihcal->counter==false)
+			{
+				std::pair<int, int> iedge {etabin, phibin}; 
+				PLTS->ihcal->tower_edges[iedge]=std::make_pair(etabounds, phibounds);
+				
+			}
+			else if (!inner && PLTS->ohcal->counter==false){
+				std::pair<int, int> iedge {etabin, phibin};
+				PLTS->ohcal->tower_edges[iedge]=std::make_pair(etabounds, phibounds);
+			}
 		}
-		if(!hcalorem && oh_em.size() > 0 && ih_em.size() > 0  ){
-			bool first=false;
-			if(PLTS->ihcal->filled_em_cal==true) first=true;
-			countTheTowers(&oh_em, false, etabounds.first, etabounds.second, phibounds.first, phibounds.second, etabin, phibin, PLTS->ohcal->EMCAL_tower_proj, PLTS->ihcal->EMCAL_tower_proj, first);
+		if(!hcalorem && PLTS->ihcal->counter && PLTS->ohcal->counter){
+			if(PLTS->ihcal->filled_em_cal==false || PLTS->ohcal->filled_em_cal==false) countTheTowers(PLTS, etabounds.first,etabounds.second, phibounds.first, phibounds.second);
 		}
 		if(!status) continue;
 		if(hcalorem && !inner){
-		if(n_evt< 22 && jet_like_container.size() < 10 ){
+		if(jet_like_container.size() < 10 ){
 			std::cout<<"trying the seeds"<<std::endl;
 			std::map<std::pair<double, double>, float> c;
 			c[std::make_pair(-10.0, -10.0)] =energy1;
 			jet_like_container[std::make_pair(eta, phi)]=c;
 			std::cout<<"have a jet cont with n seeds " <<jet_like_container.size()<<std::endl;
 			}
-		if(n_evt==22){
+		else if( jet_like_container[std::make_pair(eta,phi)].size() == 1 ){
 			for(auto t:jet_like_container){
 				std::pair<double, double> p=t.first;
 				float DP2=phi-p.second;
@@ -841,25 +869,30 @@ void CaloTransverseEnergy::processDST(TowerInfoContainerv2* calo_event, TowerInf
 	}
 	}
 	catch (std::exception& e){std::cerr<<"Exception found " <<e.what() <<std::endl;}
-	if (n_evt==2 && hcalorem && !inner ) std::cout<<"The number of towers in the jet like thing is " <<jet_like_container.begin()->second.size() <<std::endl;
+	if (jet_like_container.size() > 10 &&  hcalorem && !inner ) std::cout<<"The number of towers in the jet like thing is " <<jet_like_container.begin()->second.size() <<std::endl;
 	//if(n_evt==10) std::cout<<"Calorimeter " <<caloid <<" max: etabin: " <<maxeta <<", phibin: " <<maxphi <<std::endl;
 //	std::cout<<"Had " <<ntowers <<" total towers, but only " <<n_live_towers <<" passed the energy cut and " <<n_time <<" even got to the  cut" <<std::endl;
-	if (PLTS->ihcal->filled_em_cal==true && !hcalorem){
-			for (int i=0; i<PLTS->ohcal->EMCAL_tower_proj->GetNbinsX(); ++i){
-	for (int j=0; j<PLTS->ohcal->EMCAL_tower_proj->GetNbinsY(); ++j){
-			float a=PLTS->ohcal->EMCAL_tower_proj->GetBinContent(i,j);
-			PLTS->ohcal->EMCAL_towering->Fill(a);
+	if (!hcalorem && PLTS->ohcal->filled_em_cal && PLTS->ohcal->counter){
+		for(auto a:PLTS->ohcal->n_emcaltowers){
+			PLTS->ohcal->EMCAL_towering->Fill(a.second);
 		}
 	}
-			for (int i=0; i<PLTS->ihcal->EMCAL_tower_proj->GetNbinsX(); ++i){
-	for (int j=0; j<PLTS->ihcal->EMCAL_tower_proj->GetNbinsY(); ++j){
-			float a=PLTS->ihcal->EMCAL_tower_proj->GetBinContent(i,j);
-			PLTS->ihcal->EMCAL_towering->Fill(a);
+	if (!hcalorem && PLTS->ihcal->filled_em_cal && PLTS->ihcal->counter){
+		for (auto a:PLTS->ihcal->n_emcaltowers){
+				PLTS->ihcal->EMCAL_towering->Fill(a.second);
+			}
+		}
+	
+	if(hcalorem){
+		if(inner && PLTS->ihcal->tower_edges.size() > 0) PLTS->ihcal->counter=true;
+		if(!inner && PLTS->ohcal->tower_edges.size() > 0) PLTS->ohcal->counter=true;
 	}
+	if(!hcalorem){
+		if(PLTS->ihcal->counter && PLTS->ihcal->n_emcaltowers.size() > 0 ) PLTS->ihcal->filled_em_cal=true;
+		if(PLTS->ohcal->counter && PLTS->ohcal->n_emcaltowers.size() > 0 ) PLTS->ohcal->filled_em_cal=true;
+		std::cout<<"Have done the first filling of the thing" <<std::endl;
 	}
-	}
-	int n=PLTS->ihcal->EMCAL_tower_proj->GetEntries();
-	if(n > 10) PLTS->ihcal->filled_em_cal=true;
+	
 }
 void CaloTransverseEnergy::processPacket(int packet, Event * e, std::vector<float>* energy, bool HorE)
 {
@@ -951,65 +984,58 @@ float CaloTransverseEnergy::GetTotalEnergy(std::vector<float> caloenergy, float 
 	//std::cout<<"There are " <<caloenergy.size() <<"active towers in this run with energy " <<total_energy <<std::endl;
 	return total_energy; 
 }
-void CaloTransverseEnergy::countTheTowers(std::map<std::pair<std::pair<int, int>, std::pair<std::pair<double, double>, std::pair<double, double>>>, int>* calo, bool isHC, double etamin, double etamax, double phimin, double phimax, int etabin, int phibin,TH2F* oht/*=NULL*/, TH2F* iht/*=NULL*/, bool first/*=false*/)
+int CaloTransverseEnergy::countTheTowers(plots* PLTS, double etamin, double etamax, double phimin, double phimax)
 {
-	//This just counts the number of towers in the retowering
-	//Just a cross check on the edge cases seen in the jet group
-	if(isHC){
-		//std::cout<<"filling in the tower bounds" <<std::endl;
-		std::pair<int, int> bins {etabin, phibin};
-		std::pair<double, double> eta {etamin, etamax}, phi {phimin, phimax};
-	//	std::cout<<"Made the pairs " <<std::endl;	
-		std::pair<std::pair<int, int>, std::pair<std::pair<double, double>, std::pair<double, double>>> bin_pair {bins, std::make_pair(eta, phi)};
-	//	std::cout<<"Have the full index pair setup, now loading into the calo"<<std::endl;
-		(*calo)[bin_pair]=0;
-		//std::cout<<"The Calorimeter tower container has a setup " <<calo->size() <<std::endl;
-	//	std::cout<<"The calorimeter tower map has size " <<calo->size() <<std::endl;
-	}
-	else{
-		int n_tow=0;
-		std::cout<<"Testing against the emcal towering now" <<std::endl;
-		std::cout<<"The hcal bins have size " <<(&oh_em)->size() <<" and ihcal " <<(&ih_em)->size() <<std::endl;
-
-		for(auto a:(*calo)){
-			double emin=a.first.second.first.first, emax=a.first.second.first.second;
-			double phmin=a.first.second.second.first, phmax=a.first.second.second.second;
-			std::pair<int, int> key=a.first.first;
-			bool goodeta=false, goodphi=false;
-			if((etamin >= emin && etamin <=emax)  || (etamax >=emin && etamax <=emax)) goodeta=true;
-			if((phimin >= phmin && phimin <=phmax)  || (phimax >= phmin && phimax <=phmax)) goodphi=true;
-			//std::cout<<"Check bin with eta bounds " <<etamin <<etamax <<" phi " <<phimin <<phimax <<"compared to the bin edges etamin: " <<emin <<" etamax: " <<emax <<" phimin: "<< phmin <<" phimax: " <<phmax <<std::endl;
-			if( goodeta && goodphi){
-				std::cout<<"The tower is sitting in atleast one bin" <<std::endl;
-				n_tow++;
-				if(first || !first ){ (&oh_em)->at(a.first)++;
-				oht->Fill(key.first, key.second, 1);}
-			}
-		}
-		//std::cout<<"The towers has been found in " <<n_tow<<" ohcal towers" <<std::endl;
-		n_tow=0;
-		for(auto a:ih_em){
-			double temin=a.first.second.first.second, temax=a.first.second.first.first;
-			double tphmin=a.first.second.second.second, tphmax=a.first.second.second.first;
-			std::pair<int, int> key=a.first.first;
-			bool goodeta=false, goodphi=false;
-			double emin=std::min(temin, temax), emax=std::max(temin, temax);
-			double phmin=std::min(tphmin, tphmax), phmax=std::max(tphmin, tphmax);
-			if((etamin >= emin && etamin <=emax)  || (etamax >=emin && etamax <=emax)) goodeta=true;
-			if((phimin >= phmin && phimin <=phmax)  || (phimax >= phmin && phimax <=phmax)) goodphi=true;
-			if(goodphi) std::cout<<"The truth values are " <<goodeta <<" for eta and for phi " <<goodphi <<std::endl;
-			if(goodeta){
-				if(goodphi){
-					n_tow++;
-					if(first ){ (&a)->second++;
-					iht->Fill(key.first, key.second, 1);}
+	int n_tow=0; 
+	if(!PLTS->ohcal->filled_em_cal){
+		if(PLTS->ohcal->counter){
+			bool goodphi=false, goodeta=false;
+			for(auto a:PLTS->ohcal->tower_edges){
+				std::pair<double,double> etab=a.second.first;
+				std::pair<double, double> phib=a.second.second;
+				double emi=std::min(etab.first, etab.second);
+				double emx=std::max(etab.first, etab.second);
+				double pmi=std::min(phib.first, phib.second);
+				double pmx=std::max(phib.first, phib.second);
+				if(etamin >= emi && etamin <=emx) goodeta=true;
+				else if (etamax >= emi && etamax <= emx) goodeta=true;
+				if(phimin >= pmi && phimin <= pmx) goodphi=true;
+				else if (phimax >= pmi && phimax <=pmx ) goodphi=true;
+				if(goodeta && goodphi){
+					int ieta=a.first.first, iphi=a.first.second;
+					int chann=ieta*100+iphi;
+					PLTS->ohcal->EMCAL_tower_proj->Fill(ieta, iphi);
+					PLTS->ohcal->n_emcaltowers[chann]++;
 				}
 			}
 		}
-	     std::cout<<"The tower has been compared to " <<n_tow <<"ihcal towers" <<std::endl;
 	}
-	return;
-}			
+	if(!PLTS->ihcal->filled_em_cal){
+		if(PLTS->ihcal->counter){
+			bool goodphi=false, goodeta=false;
+			for(auto a:PLTS->ihcal->tower_edges){
+				std::pair<double,double> etab=a.second.first;
+				std::pair<double, double> phib=a.second.second;
+				double emi=std::min(etab.first, etab.second);
+				double emx=std::max(etab.first, etab.second);
+				double pmi=std::min(phib.first, phib.second);
+				double pmx=std::max(phib.first, phib.second);
+				if(etamin >= emi && etamin <=emx) goodeta=true;
+				else if (etamax >= emi && etamax <= emx) goodeta=true;
+				if(phimin >= pmi && phimin <= pmx) goodphi=true;
+				else if (phimax >= pmi && phimax <=pmx ) goodphi=true;
+				if(goodeta && goodphi){
+					int ieta=a.first.first, iphi=a.first.second;
+					int chann=ieta*100+iphi;
+					PLTS->ihcal->EMCAL_tower_proj->Fill(ieta, iphi);
+					PLTS->ihcal->n_emcaltowers[chann]++;
+					n_tow++;
+				}
+			}
+		}
+	}
+	return n_tow;
+}
 float CaloTransverseEnergy::EMCaltoHCalRatio(float em, float hcal)
 {
 	//this is to project over to phenix data

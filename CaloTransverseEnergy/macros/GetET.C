@@ -62,6 +62,8 @@ int GetET(std::string filename="/sphenix/tg/tg01/jets/ahodges/run23_production/2
 		if(substr.find("run")!=std::string::npos) is_input=1; 
 		if(substr.find("TRUTH")!=std::string::npos) truth=true;
 	}
+	if(filename.find("epos")!= std::string::npos) run_number=123;
+	if(filename.find("ampt") != std::string::npos) run_number=321;
 	CaloTransverseEnergy* cte=new CaloTransverseEnergy(filename, run_number, "CaloET");
 	cte->run_number=run_number;
 	cte->DST_Segment=DST_Segment;

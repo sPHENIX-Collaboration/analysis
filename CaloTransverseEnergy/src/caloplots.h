@@ -24,12 +24,15 @@ class caloplots
 		std::vector<TH1F*> hists_1;
 		TH2F* ET_eta_phi, *E_eta_phi, *ET_z_eta, *Hits2D, *EMCAL_tower_proj;
 		std::vector<TH2F*> hists_2;
+		std::map<std::pair<int, int>, std::pair<std::pair<double, double>, std::pair<double, double>>> tower_edges;
+		std::map<int, int> n_emcaltowers;
 		float acceptance=0.0; 
 		bool ok_phi=false;
 		float z=0., zl, zh, zmin=1., zmax=1., rcalo=93.5;
 		int phibins=256, etabins=96;
 		float etamin=-1.13, etamax=1.13;
 		bool filled_em_cal=false;
+		bool counter=false;
 		caloplots(std::string caloname="EMCAL", float zlow=-30., float zhigh=30., bool simul=false){
 			zl=zlow; 
 			zh=zhigh;
