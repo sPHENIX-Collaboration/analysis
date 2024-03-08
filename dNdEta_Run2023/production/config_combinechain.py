@@ -1,5 +1,6 @@
 import os
 import pwd
+
 username = pwd.getpwuid(os.getuid())[0]
 softwarebasedir = '/sphenix/user/{}/software'.format(username)
 _productiondir = os.getcwd()
@@ -9,10 +10,10 @@ macrorepo = 'https://github.com/sPHENIX-Collaboration/macros.git'
 
 runnumber = 20869
 
-InttUnpacker_nEvt = 1
-runTrkrHits = True
-runTkrkClus = True
-stripRawHit = True
+inttdstproduction_InttUnpacker_nEvt = -1
+inttdstproduction_runTrkrHits = True
+inttdstproduction_runTkrkClus = True
+inttdstproduction_stripRawHit = True
 
 inttntupleproduction_productionTag = '2023p011'
 inttntupleproduction_InttNtupleDir = 'Data_NtupleIntt_Run{}'.format(runnumber)

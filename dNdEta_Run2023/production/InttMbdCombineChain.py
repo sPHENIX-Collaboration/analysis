@@ -56,18 +56,17 @@ if __name__ == '__main__':
             os.system('cd {} && git pull'.format(config.macrodir))
             
         os.chdir('{}/InttProduction'.format(config.macrodir))
-        print(os.getcwd())
         
-        if config.runTrkrHits:
+        if config.inttdstproduction_runTrkrHits:
             replacetext('Fun4All_Intt_Combiner.C', 'bool runTrkrHits = false', 'bool runTrkrHits = true')
-        if config.runTkrkClus:
+        if config.inttdstproduction_runTkrkClus:
             replacetext('Fun4All_Intt_Combiner.C', 'bool runTkrkClus = false', 'bool runTkrkClus = true')
-        if config.stripRawHit:
+        if config.inttdstproduction_stripRawHit:
             replacetext('Fun4All_Intt_Combiner.C', 'bool stripRawHit = false', 'bool stripRawHit = true')
         
         cmdlist = ['chmod 755 intt_makelist.sh',
                    'intt_makelist.sh {}'.format(config.runnumber), 
-                   'root -l -b -q Fun4All_Intt_Combiner.C\({}\)'.format(config.InttUnpacker_nEvt)] 
+                   'root -l -b -q Fun4All_Intt_Combiner.C\({}\)'.format(config.inttdstproduction_InttUnpacker_nEvt)] 
 
         cmdstr = ' && '.join(cmdlist)
         os.system(cmdstr)
