@@ -6,6 +6,7 @@
 #include <ffamodules/HeadReco.h>
 #include <ffamodules/SyncReco.h>
 #include <string>
+#include <filesystem>
 
 #include <GlobalVariables.C>
 
@@ -46,6 +47,7 @@ int Fun4All_G4_sPHENIX(                           //
     const bool rundata = true,                    //
     const bool getINTTData = true,                //
     const int runnumber = 20869,                  //
+    const string productionTag = "2023p011",      //
     const string generator = "HIJING",            // only relevant for simulation
     const int nEvents = 1,                        //
     const string &outputFile = "testNtuple.root", //
@@ -60,7 +62,7 @@ int Fun4All_G4_sPHENIX(                           //
         exit(1);
     }
 
-    std::string productionTag = "2023p011"; //"ProdA_2023";
+    // std::string productionTag = "2023p011"; //"ProdA_2023";
 
     int skip;
     if (rundata)
@@ -84,11 +86,13 @@ int Fun4All_G4_sPHENIX(                           //
         if (getINTTData)
         {
             // Check if the file exists. If not, just use the one that Cameron produced
-            infile = "./production/intt-" + std::string(TString::Format("%08d", runnumber).Data()) + ".root";
+            std::filesystem::path productiondir = std::filesystem::current_path().parent_path() / "production/";
+            infile = productiondir.string() + "intt-" + std::string(TString::Format("%08d", runnumber).Data()) + ".root";
             FILE *file;
             file = fopen(infile.c_str(), "r");
             if (file == NULL)
             {
+                std::cout << "File: " << infile << " does not exist. Use the pre-generated file" << std::endl;
                 infile = "/gpfs/mnt/gpfs02/sphenix/user/cdean/software/macros/InttProduction/intt-" + std::string(TString::Format("%08d", runnumber).Data()) + ".root";
             }
             else

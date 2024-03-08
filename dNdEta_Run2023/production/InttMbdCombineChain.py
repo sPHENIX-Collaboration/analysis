@@ -35,31 +35,27 @@ if __name__ == '__main__':
     centmbntuple = opt.centmbntuple
     runcombiner = opt.runcombiner
     
-    # get the current directory -> set as the analysisdir
-    analysisdir = os.getcwd()
-    print('analysisdir: {}'.format(analysisdir))
+    # To fix the production directory
+    productiondir = config._productiondir 
+    
+    print('username: {}'.format(config.username))
+    print('softwarebasedir: {}'.format(config.softwarebasedir))
+    print('productiondir: {}'.format(productiondir))
+    print('macrodir: {}'.format(config.macrodir))
+    print('macro repository: {}'.format(config.macrorepo))
 
-    username = pwd.getpwuid(os.getuid())[0]
-    softwarebasedir = '/sphenix/user/{}/software'.format(username)
-    macrodir = '/sphenix/user/{}/software/macros'.format(username)
-    # analysisdir = '/sphenix/user/{}/software/analysis'.format(username)
-    macrorepo = 'https://github.com/sPHENIX-Collaboration/macros.git'
-    # analysisrepo = 'https://github.com/sPHENIX-Collaboration/analysis.git'
-
-    os.makedirs(softwarebasedir, exist_ok=True)
-
-    print (config.runnumber)
+    os.makedirs(config.softwarebasedir, exist_ok=True)
 
     if inttdst:
         print('Run INTT DST production')
-        if not os.path.exists(macrodir):
-            print('Directory {} does not exist'.format(macrodir))
-            os.system('cd {} && git clone {}'.format(softwarebasedir, macrorepo))
+        if not os.path.exists(config.macrodir):
+            print('Directory {} does not exist'.format(config.macrodir))
+            os.system('cd {} && git clone {}'.format(config.softwarebasedir, config.macrorepo))
         else:
-            print('Directory {} exists. git pull to update'.format(macrodir))
-            os.system('cd {} && git pull'.format(macrodir))
+            print('Directory {} exists. git pull to update'.format(config.macrodir))
+            os.system('cd {} && git pull'.format(config.macrodir))
             
-        os.chdir('{}/InttProduction'.format(macrodir))
+        os.chdir('{}/InttProduction'.format(config.macrodir))
         print(os.getcwd())
         
         if config.runTrkrHits:
@@ -71,63 +67,71 @@ if __name__ == '__main__':
         
         cmdlist = ['chmod 755 intt_makelist.sh',
                    'intt_makelist.sh {}'.format(config.runnumber), 
-                   'root -l -b -q Fun4All_Intt_Combiner.C'] 
+                   'root -l -b -q Fun4All_Intt_Combiner.C\({}\)'.format(config.InttUnpacker_nEvt)] 
 
         cmdstr = ' && '.join(cmdlist)
         os.system(cmdstr)
         
-        print ('Done INTT DST production')
-        os.makedirs('{}/production'.format(analysisdir), exist_ok=True)
-        os.system('cp intt-{:08d}.root {}/production/'.format(config.runnumber,analysisdir))
+        print ('Done INTT DST production, move the file to the production directory and clean up')
+        os.system('rm intt*.list && mv intt-{:08d}.root {}'.format(config.runnumber,productiondir))
 
 
     if inttntuple:
         print('Run INTT ntuple production')
         # Check if the intt dst exists in the production directory
-        if not os.path.isfile('./production/intt-{:08d}.root'.format(int(config.runnumber))):
+        if not os.path.isfile('{}/intt-{:08d}.root'.format(productiondir,int(config.runnumber))):
             # try to copy from /gpfs/mnt/gpfs02/sphenix/user/cdean/software/macros/InttProduction/intt-00020869.root , otherwise exit
             if not os.path.isfile('/gpfs/mnt/gpfs02/sphenix/user/cdean/software/macros/InttProduction/intt-{:08d}.root'.format(int(config.runnumber))):
                 print('Intt DST does not exist. Exit')
                 sys.exit(1)
             else:
                 print('Pre-generated Intt DST exists -> Copy it to the production directory')
-                os.system('cp /gpfs/mnt/gpfs02/sphenix/user/cdean/software/macros/InttProduction/intt-{:08d}.root ./production/'.format(int(config.runnumber),analysisdir))
+                os.system('cp /gpfs/mnt/gpfs02/sphenix/user/cdean/software/macros/InttProduction/intt-{:08d}.root {}'.format(int(config.runnumber),productiondir))
         
-        os.chdir('./condor/')
+        os.chdir('{}/condor/'.format(config.dndetamacrodir))
         cmdlist = ['chmod 755 runCondor.py',
-                   'python runCondor.py --data --runInttData --generator none --eventPerJob 1000 --nJob 551 --outputdir {} --softwareversion {} {}'.format(config.InttNtupleDir, config.softwareversion, '--submitcondor' if config.submitcondor_InttNtupleProduction else '')]
+                   'python runCondor.py --data --runInttData --runnumber {} --productiontag {} --generator none --eventPerJob {} --nJob {} --outputdir {} --softwareversion {} {}'.format(config.runnumber, 
+                                                                                                                                                                                          config.inttntupleproduction_productionTag,
+                                                                                                                                                                                          config.inttntupleproduction_eventPerJob, 
+                                                                                                                                                                                          config.inttntupleproduction_nJob, 
+                                                                                                                                                                                          productiondir+'/'+config.inttntupleproduction_InttNtupleDir, 
+                                                                                                                                                                                          config.inttntupleproduction_softwareversion, 
+                                                                                                                                                                                          '--submitcondor' if config.inttntupleproduction_submitcondor else '')]
         cmdstr = ' && '.join(cmdlist)
         os.system(cmdstr)
         
 
     if centmbntuple:
-        print('Run Centrality&MB ntuple production')
-        os.system('CreateDstList.pl --run 20869 --build ana403 --cdb 2023p011 DST_CALO')
-        os.chdir('./condor/')
+        print('Run Centrality&Minimum-bias ntuple production')
+        os.chdir('{}'.format(config.dndetamacrodir))
+        os.system('CreateDstList.pl --run {} --build {} --cdb {} DST_CALO'.format(config.runnumber, config.centntupleproduction_softwareversion.replace('.', ''), config.centntupleproduction_productionTag))
+        os.chdir('{}/condor/'.format(config.dndetamacrodir))
         cmdlist = ['chmod 755 runCondor.py',
-                   'python runCondor.py --data --generator none --eventPerJob -1 --nJob 1 --outputdir {} --softwareversion {} {}'.format(config.CentralityNtupleDir, config.softwareversion, '--submitcondor' if config.submitcondor_CentralityNtupleProduction else '')]
+                   'python runCondor.py --data --runnumber {} --productiontag {} --generator none --eventPerJob {} --nJob {} --outputdir {} --softwareversion {} {}'.format(config.runnumber,
+                                                                                                                                                                            config.centntupleproduction_productionTag,
+                                                                                                                                                                            config.centntupleproduction_eventPerJob,
+                                                                                                                                                                            config.centntupleproduction_nJob,
+                                                                                                                                                                            productiondir+'/'+config.centntupleproduction_CentralityNtupleDir,
+                                                                                                                                                                            config.centntupleproduction_softwareversion, 
+                                                                                                                                                                            '--submitcondor' if config.centntupleproduction_submitcondor else '')]
         cmdstr = ' && '.join(cmdlist)
         os.system(cmdstr)
 
+
     if runcombiner:
         print('Run INTT event combiner')
-        os.chdir('{}/production/{}'.format(analysisdir,config.InttNtupleDir))
-        if not os.path.isfile('ntuple_merged.root'):
-            os.system('hadd -f ntuple_merged.root ntuple_*.root')
-        
-        os.chdir('{}/production/{}'.format(analysisdir,config.CentralityNtupleDir))
+        os.chdir('{}/{}'.format(productiondir,config.inttntupleproduction_InttNtupleDir))
         if not os.path.isfile('ntuple_merged.root'):
             os.system('hadd -f ntuple_merged.root ntuple_*.root')
             
         # cd to two directories up
-        os.chdir('{}/INTT_MBD_evt_combiner'.format(os.path.abspath(os.path.join(analysisdir, os.path.pardir, os.path.pardir))))
-        print(os.getcwd())
-        os.system('python intt_mbd_evt_combiner_v1.py {}/production/{} {}/production/{}/ntuple_merged.root EventTree {}/production/{}/ntuple_merged.root EventTree'.format(analysisdir, 
-                                                                                                                                                                           config.combinedNtupleName, 
-                                                                                                                                                                           analysisdir,
-                                                                                                                                                                           config.InttNtupleDir,
-                                                                                                                                                                           analysisdir,
-                                                                                                                                                                           config.CentralityNtupleDir)) 
+        os.chdir('{}/INTT_MBD_evt_combiner'.format(os.path.abspath(os.path.join(productiondir, os.path.pardir, os.path.pardir))))
+        os.system('python intt_mbd_evt_combiner_v1.py {}/{} {}/{}/ntuple_merged.root EventTree {}/{}/ntuple_00000.root EventTree'.format(productiondir,
+                                                                                                                                         config.inttmbdcombine_combinedNtupleName,
+                                                                                                                                         productiondir,
+                                                                                                                                         config.inttntupleproduction_InttNtupleDir,
+                                                                                                                                         productiondir,
+                                                                                                                                         config.centntupleproduction_CentralityNtupleDir)) 
         
             
         
