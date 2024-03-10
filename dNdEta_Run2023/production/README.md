@@ -13,12 +13,12 @@ Options:
   -c, --runcombiner   Run INTT event combiner
 ```
 
-The configuration `config_combinechain.py` contains the parameters for the INTT DST production, INTT ntuple production, and the INTT-MBD event combiner. The current parameters are as follows:
+The configuration `config_combinechain.py` contains the parameters for the INTT DST production, INTT ntuple production, and the INTT-MBD event combiner. To show the parameters, run `InttMbdCombineChain.py` with the `--printparam` option.
 ```python
 username = pwd.getpwuid(os.getuid())[0]
 softwarebasedir = '/sphenix/user/{}/software'.format(username)
-_productiondir = os.getcwd()
-dndetamacrodir = '{}/macros'.format(os.path.abspath(os.path.join(_productiondir, os.path.pardir)))
+productiondir = os.path.dirname(os.path.abspath(__file__))
+dndetamacrodir = '{}/macros'.format(os.path.abspath(os.path.join(productiondir, os.path.pardir)))
 macrodir = '{}/macros'.format(softwarebasedir,username)
 macrorepo = 'https://github.com/sPHENIX-Collaboration/macros.git'
 
