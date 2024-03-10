@@ -53,7 +53,7 @@ if myShell not in goodShells:
     print("Your shell {} was not recognised".format(myShell))
     sys.exit()
 
-memory = 6 if inputType == "HIJING" else 4
+memory = 8
 
 def makeCondorJob():
     print("Creating condor submission files for {} production".format(inputType))

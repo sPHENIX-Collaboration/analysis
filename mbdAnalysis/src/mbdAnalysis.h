@@ -9,6 +9,7 @@
 
 class PHCompositeNode;
 class TTree;
+class EventHeader;
 
 class mbdAnalysis : public SubsysReco
 {
@@ -53,8 +54,7 @@ class mbdAnalysis : public SubsysReco
 
  private:
 
-  TFile *out;
-  TTree *T = nullptr;
+  TTree *T;
   //std::vector<float> adc;
   //std::vector<float> tdc0;
   //std::vector<float> tdc1;
@@ -65,6 +65,12 @@ class mbdAnalysis : public SubsysReco
   std::vector<float> pmtz;
   std::vector<float> pmtr;
   std::vector<float> pmtphi;
+  float cent;
+  float vertex;
+  float evtPlaneAngle;
+
+  TFile *out;
+  std::string Outfile = "commissioning.root";
 
 };
 

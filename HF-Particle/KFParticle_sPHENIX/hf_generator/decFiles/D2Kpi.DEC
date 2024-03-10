@@ -1,0 +1,14 @@
+#
+# Descriptor: D2Kpi 
+#
+# TG: HF
+# Responsible: Cameron Dean
+# Email: cdean@bnl.gov
+# Date: 20240226
+#
+Decay D0
+  0.0397         K-       pi+            PHSP;
+  0.00015        K+       pi-            PHSP;
+Enddecay
+CDecay anti-D0
+End

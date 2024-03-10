@@ -131,6 +131,10 @@ AM_V_lt = $(am__v_lt_$(V))
 am__v_lt_ = $(am__v_lt_$(AM_DEFAULT_VERBOSITY))
 am__v_lt_0 = --silent
 am__v_lt_1 = 
+libmbdAnalysis_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX \
+	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CXXLD) \
+	$(AM_CXXFLAGS) $(CXXFLAGS) $(libmbdAnalysis_la_LDFLAGS) \
+	$(LDFLAGS) -o $@
 PROGRAMS = $(noinst_PROGRAMS)
 am_testexternals_OBJECTS = testexternals.$(OBJEXT)
 testexternals_OBJECTS = $(am_testexternals_OBJECTS)
@@ -343,7 +347,9 @@ AM_CPPFLAGS = \
 AM_LDFLAGS = \
   -L$(libdir) \
   -L$(OFFLINE_MAIN)/lib \
-  -L$(OFFLINE_MAIN)/lib64 
+  -L$(OFFLINE_MAIN)/lib64 \
+  -lcentrality_io \
+  -lcalotrigger_io
 
 pkginclude_HEADERS = \
   mbdAnalysis.h
@@ -358,6 +364,14 @@ libmbdAnalysis_la_LIBADD = \
   -lphool \
   -lmbd_io \
   -lSubsysReco
+
+libmbdAnalysis_la_LDFLAGS = \
+  -L$(libdir) \
+  -L$(OFFLINE_MAIN)/lib \
+  -lfun4all \
+  -lg4detectors_io \
+  -lphg4hit \
+  -lcentrality_io 
 
 BUILT_SOURCES = testexternals.cc
 testexternals_SOURCES = testexternals.cc
@@ -438,7 +452,7 @@ clean-libLTLIBRARIES:
 	}
 
 libmbdAnalysis.la: $(libmbdAnalysis_la_OBJECTS) $(libmbdAnalysis_la_DEPENDENCIES) $(EXTRA_libmbdAnalysis_la_DEPENDENCIES) 
-	$(AM_V_CXXLD)$(CXXLINK) -rpath $(libdir) $(libmbdAnalysis_la_OBJECTS) $(libmbdAnalysis_la_LIBADD) $(LIBS)
+	$(AM_V_CXXLD)$(libmbdAnalysis_la_LINK) -rpath $(libdir) $(libmbdAnalysis_la_OBJECTS) $(libmbdAnalysis_la_LIBADD) $(LIBS)
 
 clean-noinstPROGRAMS:
 	@list='$(noinst_PROGRAMS)'; test -n "$$list" || exit 0; \
