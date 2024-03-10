@@ -21,6 +21,7 @@ if __name__ == '__main__':
     parser.add_option("-n", "--inttntuple", action="store_true", default=False, help="Run INTT ntuple production") 
     parser.add_option("-m", "--centmbntuple", action="store_true", default=False, help="Run Centrality&MB ntuple production")
     parser.add_option("-c", "--runcombiner", action="store_true", default=False, help="Run INTT event combiner")
+    parser.add_option("-p", "--printparam", action="store_true", default=False, help="Print parameters in config_combinechain.py")
 
     (opt, args) = parser.parse_args()
     print('opt: {}'.format(opt))
@@ -30,21 +31,20 @@ if __name__ == '__main__':
         parser.error("More than 1 steps to be run. Please run one step at a time")
         sys.exit(1)
         
+        
     inttdst = opt.inttdst
     inttntuple = opt.inttntuple
     centmbntuple = opt.centmbntuple
     runcombiner = opt.runcombiner
+    printparam = opt.printparam
     
-    # To fix the production directory
-    productiondir = config._productiondir 
-    
-    print('username: {}'.format(config.username))
-    print('softwarebasedir: {}'.format(config.softwarebasedir))
-    print('productiondir: {}'.format(productiondir))
-    print('macrodir: {}'.format(config.macrodir))
-    print('macro repository: {}'.format(config.macrorepo))
-
     os.makedirs(config.softwarebasedir, exist_ok=True)
+    
+    if printparam:
+        for name, value in vars(config).items():
+            if not name.startswith('__') and not 'module' in str(getattr(config, name)):
+                print('{:50} : {}'.format(name, value))
+                
 
     if inttdst:
         print('Run INTT DST production')
