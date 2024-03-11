@@ -157,6 +157,9 @@ SubsysReco(name),
   m_cluster_chi2(0),
   m_cluster_prob(0),
   m_cluster_nTowers(0),
+  m_cluster_allTowersE(0),
+  m_cluster_allTowersEta(0),
+  m_cluster_allTowersPhi(0),
   m_cluster_nParticles(0),
   m_cluster_maxEParticlePid(0),
   m_cluster_primaryParticlePid(0),
@@ -291,6 +294,9 @@ int pythiaEMCalAna::Init(PHCompositeNode *topNode)
   clusters_Towers -> Branch("clusterChi2",&m_cluster_chi2);
   clusters_Towers -> Branch("clusterProb",&m_cluster_prob);
   clusters_Towers -> Branch("clusterNTowers",&m_cluster_nTowers);
+  clusters_Towers -> Branch("clusterAllTowersE",&m_cluster_allTowersE);
+  clusters_Towers -> Branch("clusterAllTowersEta",&m_cluster_allTowersEta);
+  clusters_Towers -> Branch("clusterAllTowersPhi",&m_cluster_allTowersPhi);
   if (isMonteCarlo) {
       clusters_Towers -> Branch("clusterNParticles",&m_cluster_nParticles);
       clusters_Towers -> Branch("clusterMaxEParticlePid",&m_cluster_maxEParticlePid);
@@ -588,8 +594,8 @@ int pythiaEMCalAna::process_event(PHCompositeNode *topNode)
 	      unsigned int towerkey = towerInfoContainer->encode_key(iter);
 	      unsigned int etabin = towerInfoContainer->getTowerEtaBin(towerkey);
 	      unsigned int phibin = towerInfoContainer->getTowerPhiBin(towerkey);
-	      double phi = towergeom -> get_phicenter(phibin);
 	      double eta = towergeom -> get_etacenter(etabin);
+	      double phi = towergeom -> get_phicenter(phibin);
 
 	      TowerInfo* tower = towerInfoContainer->get_tower_at_channel(iter);
 	      // check if tower is good
@@ -644,6 +650,29 @@ int pythiaEMCalAna::process_event(PHCompositeNode *topNode)
 	  m_cluster_chi2.push_back(recoCluster -> get_chi2());
 	  m_cluster_prob.push_back(recoCluster -> get_prob());
 	  m_cluster_nTowers.push_back(recoCluster -> getNTowers());
+	  // get all the towers in this cluster
+	  std::vector<float> allE;
+	  std::vector<float> allEta;
+	  std::vector<float> allPhi;
+	  RawCluster::TowerConstRange tower_range = recoCluster->get_towers();
+	  RawCluster::TowerConstIterator tower_iter;
+	  for (tower_iter = tower_range.first; tower_iter != tower_range.second; tower_iter++) {
+	      double E = tower_iter->second;
+	      allE.push_back(E);
+	      unsigned int towerkey = tower_iter->first;
+	      /* unsigned int etabin = towerInfoContainer->getTowerEtaBin(towerkey); */
+	      unsigned int etabin = RawTowerDefs::decode_index1(towerkey);
+	      /* unsigned int phibin = towerInfoContainer->getTowerPhiBin(towerkey); */
+	      unsigned int phibin = RawTowerDefs::decode_index2(towerkey);
+	      double eta = towergeom -> get_etacenter(etabin);
+	      double phi = towergeom -> get_phicenter(phibin);
+	      allEta.push_back(eta);
+	      allPhi.push_back(phi);
+	  }
+	  m_cluster_allTowersE.push_back(allE);
+	  m_cluster_allTowersEta.push_back(allEta);
+	  m_cluster_allTowersPhi.push_back(allPhi);
+	  
 
 	  if (isMonteCarlo) {
 	      /* std::cout << "\nEntering cluster isMonteCarlo for cluster "; */
@@ -1180,6 +1209,9 @@ int pythiaEMCalAna::ResetEvent(PHCompositeNode *topNode)
   m_cluster_chi2.clear();
   m_cluster_prob.clear();
   m_cluster_nTowers.clear();
+  m_cluster_allTowersE.clear();
+  m_cluster_allTowersEta.clear();
+  m_cluster_allTowersPhi.clear();
   m_cluster_nParticles.clear();
   m_cluster_maxEParticlePid.clear();
   m_cluster_primaryParticlePid.clear();
@@ -2124,7 +2156,7 @@ PHG4VtxPoint* pythiaEMCalAna::getG4EndVtx(int id) {
 	    }
 	}
     }
-    std::cout << "In getG4EndVtx: returning end_vtx = " << end_vtx << "\n";
+    /* std::cout << "In getG4EndVtx: returning end_vtx = " << end_vtx << "\n"; */
     return end_vtx;
 }
 
