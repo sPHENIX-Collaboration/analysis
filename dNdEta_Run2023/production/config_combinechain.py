@@ -3,8 +3,8 @@ import pwd
 
 username = pwd.getpwuid(os.getuid())[0]
 softwarebasedir = '/sphenix/user/{}/software'.format(username)
-_productiondir = os.getcwd()
-dndetamacrodir = '{}/macros'.format(os.path.abspath(os.path.join(_productiondir, os.path.pardir)))
+productiondir = os.path.dirname(os.path.abspath(__file__))
+dndetamacrodir = '{}/macros'.format(os.path.abspath(os.path.join(productiondir, os.path.pardir)))
 macrodir = '{}/macros'.format(softwarebasedir,username)
 macrorepo = 'https://github.com/sPHENIX-Collaboration/macros.git'
 
