@@ -1973,33 +1973,33 @@ void pythiaEMCalAna::GetBestDaughters(PHG4Particle* parent, PHG4Particle* &decay
 void pythiaEMCalAna::FillDecay(std::string which, PHG4Particle* decay, PHG4Particle* parent) {
     /* std::cout << "Entering FillDecay(" << which << ")\n"; */
     FillTruthParticle(which, decay);
-    std::vector<float> TotalNClusters;
-    std::vector<float> BestClusterID;
-    std::vector<float> BestClusterEfraction;
+    std::vector<float>* TotalNClusters = nullptr;
+    std::vector<float>* BestClusterID = nullptr;
+    std::vector<float>* BestClusterEfraction = nullptr;
     /* std::vector<std::vector<float>> AllClusterIDs; */
     /* std::vector<std::vector<float>> AllClusterEnergyFractions; */
     if (which == "decay1") {
-	TotalNClusters = m_truth_Decay1_TotalNClusters;
-	BestClusterID = m_truth_Decay1_BestClusterID;
-	BestClusterEfraction = m_truth_Decay1_BestClusterEfraction;
+	TotalNClusters = &m_truth_Decay1_TotalNClusters;
+	BestClusterID = &m_truth_Decay1_BestClusterID;
+	BestClusterEfraction = &m_truth_Decay1_BestClusterEfraction;
 	/* AllClusterIDs = m_truth_Decay1_AllClusterIDs; */
 	/* AllClusterEnergyFractions = m_truth_Decay1_AllClusterEnergyFractions; */
     }
     if (which == "decay2") {
-	TotalNClusters = m_truth_Decay2_TotalNClusters;
-	BestClusterID = m_truth_Decay2_BestClusterID;
-	BestClusterEfraction = m_truth_Decay2_BestClusterEfraction;
+	TotalNClusters = &m_truth_Decay2_TotalNClusters;
+	BestClusterID = &m_truth_Decay2_BestClusterID;
+	BestClusterEfraction = &m_truth_Decay2_BestClusterEfraction;
 	/* AllClusterIDs = m_truth_Decay2_AllClusterIDs; */
 	/* AllClusterEnergyFractions = m_truth_Decay2_AllClusterEnergyFractions; */
     }
     if (!decay) {
-	TotalNClusters.push_back(0);
-	BestClusterID.push_back(-9999);
-	BestClusterEfraction.push_back(-9999);
+	TotalNClusters->push_back(0);
+	BestClusterID->push_back(-9999);
+	BestClusterEfraction->push_back(-9999);
 	/* std::vector<float> allIDs; */
 	/* std::vector<float> allEfractions; */
-	/* AllClusterIDs.push_back(allIDs); */
-	/* AllClusterEnergyFractions.push_back(allEfractions); */
+	/* AllClusterIDs->push_back(allIDs); */
+	/* AllClusterEnergyFractions->push_back(allEfractions); */
 	return;
     }
 
@@ -2007,10 +2007,10 @@ void pythiaEMCalAna::FillDecay(std::string which, PHG4Particle* decay, PHG4Parti
     if (cl_set.empty()) {
 	/* std::cout << "Greg info: in FillDecay, cl_set is empty. Decay is " << decay << ":\n"; */
 	/* decay->identify(); */
-	TotalNClusters.push_back(-9999);
+	TotalNClusters->push_back(-9999);
     }
     else {
-	TotalNClusters.push_back(cl_set.size());
+	TotalNClusters->push_back(cl_set.size());
     }
     RawCluster* best_cl = m_clusterEval->best_cluster_from(decay);
     if (!best_cl) {
@@ -2020,8 +2020,8 @@ void pythiaEMCalAna::FillDecay(std::string which, PHG4Particle* decay, PHG4Parti
 	if (parent) best_cl = FindBestCluster(decay, parent);
 	else {
 	    /* std::cout << "No parent given, and best_cluster_from failed!\n"; */
-	    BestClusterID.push_back(-9999);
-	    BestClusterEfraction.push_back(-9999);
+	    BestClusterID->push_back(-9999);
+	    BestClusterEfraction->push_back(-9999);
 	    return;
 	}
 	/* std::cout << "Result of FindBestCluster is "; */
@@ -2032,23 +2032,23 @@ void pythiaEMCalAna::FillDecay(std::string which, PHG4Particle* decay, PHG4Parti
     else {
 	/* std::cout << "Greg info: in FillDecay, best_cluster_from succeeded\n"; */
     }
-    BestClusterID.push_back(best_cl->get_id());
-    BestClusterEfraction.push_back(best_cl->get_ecore()/decay->get_e());
+    BestClusterID->push_back(best_cl->get_id());
+    BestClusterEfraction->push_back(best_cl->get_ecore()/decay->get_e());
 
     /* std::vector<float> allIDs; */
     /* std::vector<float> allEfractions; */
     /* if (cl_set.empty()) { */
-	/* allIDs.push_back(best_cl->get_id()); */
-	/* allEfractions.push_back(best_cl->get_ecore()/decay->get_e()); */
+	/* allIDs->push_back(best_cl->get_id()); */
+	/* allEfractions->push_back(best_cl->get_ecore()/decay->get_e()); */
     /* } */
     /* else { */
 	/* for (auto& cl : cl_set) { */
-	    /* allIDs.push_back(cl->get_id()); */
-	    /* allEfractions.push_back(cl->get_ecore()/decay->get_e()); */
+	    /* allIDs->push_back(cl->get_id()); */
+	    /* allEfractions->push_back(cl->get_ecore()/decay->get_e()); */
 	/* } */
     /* } */
-    /* AllClusterIDs.push_back(allIDs); */
-    /* AllClusterEnergyFractions.push_back(allEfractions); */
+    /* AllClusterIDs->push_back(allIDs); */
+    /* AllClusterEnergyFractions->push_back(allEfractions); */
 }
 
 RawCluster* pythiaEMCalAna::FindBestCluster(PHG4Particle* decay, PHG4Particle* parent) {
