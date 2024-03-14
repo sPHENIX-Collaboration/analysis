@@ -57,6 +57,7 @@
 //truth information
 #include <g4main/PHG4TruthInfoContainer.h>
 #include <g4main/PHG4Particle.h>
+#include <g4main/PHG4Shower.h>
 #include <g4main/PHG4VtxPoint.h>
 #include <phhepmc/PHHepMCGenEvent.h>
 #include <phhepmc/PHHepMCGenEventMap.h>
@@ -161,7 +162,6 @@ SubsysReco(name),
   m_cluster_allTowersEta(0),
   m_cluster_allTowersPhi(0),
   m_cluster_nParticles(0),
-  m_cluster_maxEParticlePid(0),
   m_cluster_primaryParticlePid(0),
   m_cluster_allSecondaryPids(0),
   /* m_cluster_maxE_trackID(0), */
@@ -299,7 +299,6 @@ int pythiaEMCalAna::Init(PHCompositeNode *topNode)
   clusters_Towers -> Branch("clusterAllTowersPhi",&m_cluster_allTowersPhi);
   if (isMonteCarlo) {
       clusters_Towers -> Branch("clusterNParticles",&m_cluster_nParticles);
-      clusters_Towers -> Branch("clusterMaxEParticlePid",&m_cluster_maxEParticlePid);
       clusters_Towers -> Branch("clusterPrimaryParticlePid",&m_cluster_primaryParticlePid);
       clusters_Towers -> Branch("clusterAllParticlePids",&m_cluster_allSecondaryPids, 32000, 0);
       /* clusters_Towers -> Branch("clusterMaxE_trackID",&m_cluster_maxE_trackID); */
@@ -691,7 +690,6 @@ int pythiaEMCalAna::process_event(PHCompositeNode *topNode)
 		  /* std::vector<float> all_cluster_trackIDs; */
 		  /* m_cluster_all_trackIDs.push_back(all_cluster_trackIDs); */
 		  m_cluster_nParticles.push_back(-9999);
-		  m_cluster_maxEParticlePid.push_back(-9999);
 		  m_cluster_primaryParticlePid.push_back(-9999);
 		  std::vector<float> allPids;
 		  m_cluster_allSecondaryPids.push_back(allPids);
@@ -707,21 +705,11 @@ int pythiaEMCalAna::process_event(PHCompositeNode *topNode)
 		  m_theEvent = genEvent -> getEvent();
 		  /* std::cout << "maxE_part is "; */
 		  /* maxE_part->identify(); */
-		  m_cluster_maxEParticlePid.push_back(maxE_part->get_pid());
 		  if (maxE_part->get_pid() == 22) {
 		      // "primary" is a photon
 		      if (isDirectPhoton(maxE_part)) {
 			  /* std::cout << "maxE_part is a direct photon, adding primary ID\n"; */
 			  m_cluster_primaryParticlePid.push_back(22);
-			  // in this case just assume all_parts has the right contents
-			  // otherwise we'd need to check every secondary in the event
-			  // to see if it might have contributed to this cluster
-			  for (auto& part : all_parts) {
-			      allPids.push_back(part->get_pid());
-			  }
-			  /* std::cout << "Adding " << allPids.size() << " secondary IDs\n"; */
-			  m_cluster_nParticles.push_back(allPids.size());
-			  m_cluster_allSecondaryPids.push_back(allPids);
 		      }
 		      else {
 			  // it's a decay photon, get the parent form pythia
@@ -730,65 +718,26 @@ int pythiaEMCalAna::process_event(PHCompositeNode *topNode)
 			  /* std::cout << "Parent is "; */
 			  /* parent->print(); */
 			  m_cluster_primaryParticlePid.push_back(parent->pdg_id());
-			  // all_parts has the true secondaries
-			  /* std::cout << "In cluster association, maxE_part is a decay photon. Getting all secondary particles from caloEvalStack\n"; */
-			  for (auto& part : all_parts) {
-			      allPids.push_back(part->get_pid());
-			  }
-			  /* std::cout << "Adding " << allPids.size() << " secondary IDs\n"; */
-			  m_cluster_nParticles.push_back(allPids.size());
-			  m_cluster_allSecondaryPids.push_back(allPids);
 		      }
 		  } // end photon check
 		  else {
 		      // if it's not a photon, add the PID directly
 		      /* std::cout << "maxE_part is not a photon, adding it as primary\n"; */
 		      m_cluster_primaryParticlePid.push_back(maxE_part->get_pid());
-		      // Geant decay. Need to find which daughter(s) produced the cluster
-		      std::vector<PHG4Particle*> daughters = GetAllDaughters(maxE_part);
-		      CLHEP::Hep3Vector cl3vec = recoCluster->get_position();
-		      float max_dR = 0.05;
-		      /* std::cout << "In cluster association, maxE_part is"; */
-		      /* maxE_part->identify(); */
-		      /* std::cout << "maxE_part has " << daughters.size() << " daughters\n"; */
-		      float min_dR = 9999;
-		      for (auto& daughter : daughters) {
-			  /* std::cout << "\tDaughter is "; */
-			  /* daughter->identify(); */
-			  // below does not work when we can't find the end vertex
-			  /* PHG4VtxPoint* end_vtx = getG4EndVtx(daughter->get_track_id()); */
-			  /* std::cout << "\tEnd vertex is " << end_vtx << ": "; */
-			  /* end_vtx->identify(); */
-			  /* CLHEP::Hep3Vector part3vec(end_vtx->get_x(), end_vtx->get_y(), end_vtx->get_z()); */
-			  /* float dR = cl3vec.deltaR(part3vec); */
-			  // alternative -- use the particle momentum rather than the end vertex
-			  TLorentzVector daughter_vec;
-			  daughter_vec.SetPxPyPzE(daughter->get_px(), daughter->get_py(), daughter->get_pz(), daughter->get_e());
-			  TLorentzVector cl_vec;
-			  CLHEP::Hep3Vector cl3vec = recoCluster->get_position();
-			  cl_vec.SetPtEtaPhiM(cl3vec.perp(), cl3vec.pseudoRapidity(), cl3vec.phi(), 0);
-			  float dR = daughter_vec.DeltaR(cl_vec);
-			  min_dR = std::min(min_dR, dR);
-			  /* if (dR == min_dR) std::cout << "\tnew min deltaR = " << dR << "\n"; */
-			  if (dR < max_dR) {
-			      /* std::cout << "\tAdding to list\n"; */
-			      allPids.push_back(daughter->get_pid());
-			  }
-		      }
-		      /* std::cout << "Adding " << allPids.size() << " secondary IDs\n"; */
-		      m_cluster_nParticles.push_back(allPids.size());
-		      m_cluster_allSecondaryPids.push_back(allPids);
 		  }
+		  // now get the secondaries that produced the shower(s)
+		  std::set<PHG4Shower*> showers = m_clusterEval->all_truth_primary_showers(recoCluster);
+		  /* std::cout << "Cluster " << recoCluster << " has " << showers.size() << " showers\n"; */
+		  m_cluster_nParticles.push_back(showers.size());
+		  for (auto& shower : showers) {
+		      int parent_id = shower->get_parent_particle_id();
+		      PHG4Particle* par = m_truthInfo->GetParticle(parent_id);
+		      /* std::cout << "Shower-producing particle is "; */
+		      /* par->identify(); */
+		      allPids.push_back(par->get_pid());
+		  }
+		  m_cluster_allSecondaryPids.push_back(allPids);
 
-		  /* m_cluster_maxE_trackID.push_back(maxE_part->get_track_id()); */
-		  /* m_cluster_maxE_PID.push_back(maxE_part->get_pid()); */
-		  // next we want a vector with all the tracks contributing to this cluster
-		  /* std::vector<float> all_cluster_trackIDs; */
-		  /* for (auto& part : all_parts) { */
-		  /*     all_cluster_trackIDs.push_back(part->get_track_id()); */
-		  /*     allTrackIDs.insert(part->get_track_id()); */
-		  /* } */
-		  /* m_cluster_all_trackIDs.push_back(all_cluster_trackIDs); */
 	      } // end case where all_parts isn't empty
 	  } // end MC-specific stuff
       } // end loop over clusters
@@ -1213,7 +1162,6 @@ int pythiaEMCalAna::ResetEvent(PHCompositeNode *topNode)
   m_cluster_allTowersEta.clear();
   m_cluster_allTowersPhi.clear();
   m_cluster_nParticles.clear();
-  m_cluster_maxEParticlePid.clear();
   m_cluster_primaryParticlePid.clear();
   m_cluster_allSecondaryPids.clear();
   /* m_cluster_maxE_trackID.clear(); */

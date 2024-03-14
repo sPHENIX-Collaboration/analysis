@@ -90,7 +90,6 @@ class pythiaEMCalAna : public SubsysReco
   std::vector<std::vector<float>> m_cluster_allTowersEta;
   std::vector<std::vector<float>> m_cluster_allTowersPhi;
   std::vector<float> m_cluster_nParticles;
-  std::vector<float> m_cluster_maxEParticlePid;
   std::vector<float> m_cluster_primaryParticlePid;
   std::vector<std::vector<float>> m_cluster_allSecondaryPids;
   /* std::vector<float> m_cluster_maxE_trackID; */
