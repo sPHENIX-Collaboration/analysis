@@ -365,6 +365,7 @@ void CEMC_Eval(const std::string &outputfile)
   eval->set_do_gpoint_eval(false);
   eval->set_do_gshower_eval(false);
   eval->set_do_tower_eval(false);
+  eval->set_do_cluster_eval(true);
   // set minimum cluster energy
   eval->set_reco_tracing_energy_threshold(0.5);
   se->registerSubsystem(eval);
