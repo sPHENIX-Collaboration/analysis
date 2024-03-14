@@ -76,10 +76,10 @@ int Fun4All_G4_sPHENIX(
     const string &outputFile = "G4sPHENIX.root",
     const Double_t eta_min = -1.152,
     const Double_t eta_max = 1.152,
-    const Double_t phi_min = -M_PI,
-    const Double_t phi_max = M_PI,
-    const Double_t p_min = 20,
-    const Double_t p_max = 21,
+    const Double_t phi_min = -M_PI/32,
+    const Double_t phi_max = M_PI/32,
+    const Double_t p_min = 1,
+    const Double_t p_max = 2,
     const string &inputFile = "https://www.phenix.bnl.gov/WWW/publish/phnxbld/sPHENIX/files/sPHENIX_G4Hits_sHijing_9-11fm_00000_00010.root",
     const string &embed_input_file = "https://www.phenix.bnl.gov/WWW/publish/phnxbld/sPHENIX/files/sPHENIX_G4Hits_sHijing_9-11fm_00000_00010.root",
     const int skip = 0)
@@ -226,7 +226,7 @@ int Fun4All_G4_sPHENIX(
                                                                                 PHG4SimpleEventGenerator::Gaus,
                                                                                 PHG4SimpleEventGenerator::Gaus);
       INPUTGENERATOR::SimpleEventGenerator[0]->set_vertex_distribution_mean(0., 0., 0.);
-      INPUTGENERATOR::SimpleEventGenerator[0]->set_vertex_distribution_width(0.01, 0.01, 5.);
+      // INPUTGENERATOR::SimpleEventGenerator[0]->set_vertex_distribution_width(0, 0, 0);
     }
     INPUTGENERATOR::SimpleEventGenerator[0]->set_eta_range(eta_min, eta_max);
     INPUTGENERATOR::SimpleEventGenerator[0]->set_phi_range(phi_min, phi_max);
@@ -772,7 +772,7 @@ int Fun4All_G4_sPHENIX(
   }
 
   se->skip(skip);
-  se->run(nEvents);
+  se->run(nEvents+1); // first event is skipped
   //  se->PrintTimer();
 
   //-----
@@ -819,10 +819,10 @@ int main(int argc, char* argv[]) {
      string outputFile = "G4sPHENIX.root";
      Double_t eta_min = -1.152;
      Double_t eta_max = 1.152;
-     Double_t phi_min = -M_PI;
-     Double_t phi_max = M_PI;
-     Double_t p_min = 20;
-     Double_t p_max = 21;
+     Double_t phi_min = -M_PI/32;
+     Double_t phi_max = M_PI/32;
+     Double_t p_min = 1;
+     Double_t p_max = 2;
      string inputFile = "https://www.phenix.bnl.gov/WWW/publish/phnxbld/sPHENIX/files/sPHENIX_G4Hits_sHijing_9-11fm_00000_00010.root";
      string embed_input_file = "https://www.phenix.bnl.gov/WWW/publish/phnxbld/sPHENIX/files/sPHENIX_G4Hits_sHijing_9-11fm_00000_00010.root";
      int skip = 0;
