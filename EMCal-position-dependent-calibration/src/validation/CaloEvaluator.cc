@@ -100,11 +100,8 @@ int CaloEvaluator::Init(PHCompositeNode* /*topNode*/)
   if (_do_cluster_eval)
   {
     _ntp_cluster = new TNtuple("ntp_cluster", "cluster => max truth primary",
-                                              "event:clusterID:ntowers:eta_detector:eta:x:y:z:phi:e:e_calib:ecore:ecore_calib:"
-                                              "gparticleID:gflavor:gnhits:"
-                                              "geta:gphi:ge:gpt:gvx:gvy:gvz:"
-                                              "gembed:gedep:"
-                                              "efromtruth");
+                                              "event:z:ntowers:eta_detector:eta:phi:avgeta:avgphi:e:e_calib:ecore:ecore_calib:"
+                                              "ge:gpt");
   }
 
   return Fun4AllReturnCodes::EVENT_OK;
@@ -113,7 +110,8 @@ int CaloEvaluator::Init(PHCompositeNode* /*topNode*/)
 int CaloEvaluator::process_event(PHCompositeNode* topNode)
 {
   // show progress
-  if(_ievent % 200 == 0) std::cout << "Progress: " << _ievent << std::endl;
+  if(_ievent % 10 == 0) std::cout << "Progress: " << _ievent << std::endl;
+  ++_ievent;
 
   if (!_caloevalstack)
   {
@@ -144,7 +142,6 @@ int CaloEvaluator::process_event(PHCompositeNode* topNode)
 
   printOutputInfo(topNode);
 
-  ++_ievent;
   ++m_EvtCounter;
 
   return Fun4AllReturnCodes::EVENT_OK;
@@ -393,6 +390,60 @@ void CaloEvaluator::printOutputInfo(PHCompositeNode* topNode)
 
   return;
 }
+
+static float getAvgEta(const std::vector<float> &toweretas, const std::vector<float> &towerenergies) {
+      float etamult = 0;
+      float etasum = 0;
+
+      for (UInt_t j = 0; j < towerenergies.size(); j++) {
+        float energymult = towerenergies.at(j) * toweretas.at(j);
+        etamult += energymult;
+        etasum += towerenergies.at(j);
+      }
+
+      return etamult / etasum;
+}
+
+static float getAvgPhi(const std::vector<float> &towerphis, const std::vector<float> &towerenergies, Int_t nphibin) {
+    float phimult = 0;
+    float phisum  = 0;
+
+    for (UInt_t j = 0; j < towerenergies.size(); j++) {
+        int phibin = towerphis.at(j);
+
+        if (phibin - towerphis.at(0) < -nphibin / 2.0) {
+            phibin += nphibin;
+        }
+        else if (phibin - towerphis.at(0) > +nphibin / 2.0) {
+            phibin -= nphibin;
+        }
+        assert(std::abs(phibin - towerphis.at(0)) <= nphibin / 2.0);
+
+        float energymult = towerenergies.at(j) * phibin;
+        phimult += energymult;
+        phisum += towerenergies.at(j);
+    }
+
+    float avgphi = phimult / phisum;
+
+    // ensure that avgphi is in [0, 256)
+    if (avgphi < 0) {
+      avgphi += nphibin;
+    }
+
+    // ensure that 256 gets mapped to 0
+    avgphi = fmod(avgphi, nphibin);
+
+    // ensure that [255.5, 256) gets mapped to [-0.5, 0)
+    if (avgphi >= 255.5) {
+      avgphi -= nphibin;
+    }
+
+    avgphi = fmod(avgphi + 0.5, 8) - 0.5;  // wrapping [-0.5, 255.5] to [-0.5, 7.5]
+
+    return avgphi;
+}
+
 
 void CaloEvaluator::fillOutputNtuples(PHCompositeNode* topNode)
 {
@@ -792,6 +843,25 @@ void CaloEvaluator::fillOutputNtuples(PHCompositeNode* topNode)
       exit(-1);
     }
 
+    std::string towerinfoNodename = "TOWERINFO_CALIB_" + _caloname;
+
+    TowerInfoContainer* _towerinfos = findNode::getClass<TowerInfoContainer>(topNode, towerinfoNodename);
+    if (!_towerinfos) {
+      std::cerr << Name() << "::" << _caloname << "::" << __PRETTY_FUNCTION__
+                << " " << towerinfoNodename << " Node missing, doing bail out!"
+                << std::endl;
+
+      exit(-1);
+    }
+
+    std::string towergeomnodename = "TOWERGEOM_" + _caloname;
+    RawTowerGeomContainer *towergeom = findNode::getClass<RawTowerGeomContainer>(topNode, towergeomnodename);
+    if (!towergeom) {
+      std::cout << PHWHERE << ": Could not find node " << towergeomnodename << std::endl;
+      exit(-1);
+    }
+    const int nphibin = towergeom->get_phibins();
+
     // for every cluster
     // iterate over uncalibrated and calibrated clusters simultaneously
 
@@ -802,20 +872,55 @@ void CaloEvaluator::fillOutputNtuples(PHCompositeNode* topNode)
       RawCluster* cluster = iterator->second;
       RawCluster* cluster_calib = iterator_calib->second;
 
-      //    for (unsigned int icluster = 0; icluster < clusters->size(); icluster++)
-      //    {
-      //      RawCluster* cluster = clusters->getCluster(icluster);
-
       if (cluster->get_energy() < _reco_e_threshold)
       {
         continue;
       }
 
-      float clusterID = cluster->get_id();
+      std::vector<float> toweretas;
+      std::vector<float> towerphis;
+      std::vector<float> towerenergies;
+
+      // loop over the towers in the cluster
+      RawCluster::TowerConstRange towers = cluster->get_towers();
+      RawCluster::TowerConstIterator toweriter;
+      bool hasUninstrumentedTower = false;
+      for (toweriter = towers.first; toweriter != towers.second; ++toweriter) {
+        int iphi = RawTowerDefs::decode_index2(toweriter->first);  // index2 is phi in CYL
+        int ieta = RawTowerDefs::decode_index1(toweriter->first);  // index1 is eta in CYL
+
+        if(ieta < 8) {
+          hasUninstrumentedTower = true;
+          break;
+        }
+        unsigned int towerkey = iphi + (ieta << 16U);
+
+        unsigned int towerindex = _towerinfos->decode_key(towerkey);
+
+        TowerInfo* towinfo = _towerinfos->get_tower_at_channel(towerindex);
+
+        double towerenergy = towinfo->get_energy();
+
+        // put the eta, phi, energy into corresponding vectors
+        toweretas.push_back(ieta);
+        towerphis.push_back(iphi);
+        towerenergies.push_back(towerenergy);
+      }
+
+      // skip cluster if it contains a tower in the uninstrumented region
+      if(hasUninstrumentedTower) continue;
+
+      float avgeta = getAvgEta(toweretas, towerenergies);
+
+      float avgphi = getAvgPhi(towerphis, towerenergies, nphibin);
+
+      std::cout << "Event: " << _ievent << ", avgeta: " << avgeta << ", avgphi: " << avgphi << std::endl;
+
+      // float clusterID = cluster->get_id();
       float ntowers = cluster->getNTowers();
-      float x = cluster->get_x();
-      float y = cluster->get_y();
-      float z = cluster->get_z();
+      // float x = cluster->get_x();
+      // float y = cluster->get_y();
+      // float z = cluster->get_z();
       float eta = NAN;
       float eta_detector = RawClusterUtility::GetPseudorapidity(*cluster, CLHEP::Hep3Vector(0,0,0));
       float phi = cluster->get_phi();
@@ -823,6 +928,7 @@ void CaloEvaluator::fillOutputNtuples(PHCompositeNode* topNode)
       float ecore = cluster->get_ecore();
       float e_calib = cluster_calib->get_energy();
       float ecore_calib = cluster_calib->get_ecore();
+      float vtx_z = 9999;
 
       // require vertex for cluster eta calculation
       if (vertexmap)
@@ -832,35 +938,42 @@ void CaloEvaluator::fillOutputNtuples(PHCompositeNode* topNode)
           GlobalVertex* vertex = (vertexmap->begin()->second);
 
           eta = RawClusterUtility::GetPseudorapidity(*cluster, CLHEP::Hep3Vector(vertex->get_x(), vertex->get_y(), vertex->get_z()));
+          vtx_z = vertex->get_z();
         }
       }
 
       PHG4Particle* primary = clustereval->max_truth_primary_particle_by_energy(cluster);
 
-      float gparticleID = NAN;
-      float gflavor = NAN;
+      // float gparticleID = NAN;
+      // float gflavor = NAN;
 
-      float gnhits = NAN;
+      // float gnhits = NAN;
       float gpx = NAN;
       float gpy = NAN;
-      float gpz = NAN;
+      // float gpz = NAN;
       float ge = NAN;
 
       float gpt = NAN;
-      float geta = NAN;
-      float gphi = NAN;
+      // float geta = NAN;
+      // float gphi = NAN;
 
-      float gvx = NAN;
-      float gvy = NAN;
-      float gvz = NAN;
+      // float gvx = NAN;
+      // float gvy = NAN;
+      // float gvz = NAN;
 
-      float gembed = NAN;
-      float gedep = NAN;
+      // float gembed = NAN;
+      // float gedep = NAN;
 
-      float efromtruth = NAN;
+      // float efromtruth = NAN;
 
       if (primary)
       {
+        ge = primary->get_e();
+        gpx = primary->get_px();
+        gpy = primary->get_py();
+        gpt = std::sqrt(gpx * gpx + gpy * gpy);
+
+        /*
         gparticleID = primary->get_track_id();
         gflavor = primary->get_pid();
 
@@ -873,12 +986,7 @@ void CaloEvaluator::fillOutputNtuples(PHCompositeNode* topNode)
         {
           gnhits = 0.0;
         }
-        gpx = primary->get_px();
-        gpy = primary->get_py();
         gpz = primary->get_pz();
-        ge = primary->get_e();
-
-        gpt = std::sqrt(gpx * gpx + gpy * gpy);
         if (gpt != 0.0)
         {
           geta = std::asinh(gpz / gpt);
@@ -899,34 +1007,23 @@ void CaloEvaluator::fillOutputNtuples(PHCompositeNode* topNode)
 
         efromtruth = clustereval->get_energy_contribution(cluster,
                                                           primary);
+        */
       }
 
       float cluster_data[] = {(float) _ievent,
-                              clusterID,
+                              vtx_z,
                               ntowers,
                               eta_detector,
                               eta,
-                              x,
-                              y,
-                              z,
                               phi,
+                              avgeta,
+                              avgphi,
                               e,
                               e_calib,
                               ecore,
                               ecore_calib,
-                              gparticleID,
-                              gflavor,
-                              gnhits,
-                              geta,
-                              gphi,
                               ge,
-                              gpt,
-                              gvx,
-                              gvy,
-                              gvz,
-                              gembed,
-                              gedep,
-                              efromtruth};
+                              gpt};
 
       _ntp_cluster->Fill(cluster_data);
     }
