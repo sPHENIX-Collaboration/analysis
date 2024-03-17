@@ -141,6 +141,128 @@ void Read_Additonal_DataSet(const std::string& filePath, AdditionalData& data) {
 }
 
 
+struct AdditionalData_2 {
+    std::vector<double> corrected_v2_0_20_Additional_2, corrected_v2_20_40_Additional_2, corrected_v2_40_60_Additional_2;
+    std::vector<double> corrected_v2_0_20_Errors_Additional_2, corrected_v2_20_40_Errors_Additional_2, corrected_v2_40_60_Errors_Additional_2;
+    
+    std::vector<double> corrected_v3_0_20_Additional_2, corrected_v3_40_60_Additional_2;
+    std::vector<double> corrected_v3_0_20_Errors_Additional_2, corrected_v3_40_60_Errors_Additional_2;
+};
+void Read_Additonal_DataSet_2(const std::string& filePath, AdditionalData_2& data_2) {
+    std::ifstream file(filePath);
+    if (!file.is_open()) {
+        std::cerr << "Failed to open file: " << filePath << std::endl;
+        return;
+    }
+    std::string line;
+    std::getline(file, line); // Skip the header line
+
+    while (std::getline(file, line)) {
+        std::stringstream ss(line);
+        std::vector<std::string> rowData;
+        std::string cell;
+
+        while (std::getline(ss, cell, ',')) {
+            rowData.push_back(cell);
+        }
+        double v2_corrected = std::stod(rowData.at(rowData.size() - 4));
+        double v2_error_corrected = std::stod(rowData.at(rowData.size() - 3));
+        double v3_corrected = std::stod(rowData.at(rowData.size() - 2));
+        double v3_error_corrected = std::stod(rowData.back());
+        
+        /*
+         BELOW CODE IS IF READING in PlotByPlotOutput format:
+         */
+//        double v2_corrected = std::stod(rowData.at(rowData.size() - 10));
+//        double v2_error_corrected = std::stod(rowData.at(rowData.size() - 9));
+//        double v3_corrected = std::stod(rowData.at(rowData.size() - 2));
+//        double v3_error_corrected = std::stod(rowData.back());
+
+        int index = std::stoi(rowData[0]);
+        if (index >= 0 && index <= 5) {
+            data_2.corrected_v2_40_60_Additional_2.push_back(v2_corrected);
+            data_2.corrected_v2_40_60_Errors_Additional_2.push_back(v2_error_corrected);
+            
+            data_2.corrected_v3_40_60_Additional_2.push_back(v3_corrected);
+            data_2.corrected_v3_40_60_Errors_Additional_2.push_back(v3_error_corrected);
+            
+        } else if (index >= 6 && index <= 11) {
+            data_2.corrected_v2_20_40_Additional_2.push_back(v2_corrected);
+            data_2.corrected_v2_20_40_Errors_Additional_2.push_back(v2_error_corrected);
+
+        } else if (index >= 12 && index <= 17) {
+            data_2.corrected_v2_0_20_Additional_2.push_back(v2_corrected);
+            data_2.corrected_v2_0_20_Errors_Additional_2.push_back(v2_error_corrected);
+
+            data_2.corrected_v3_0_20_Additional_2.push_back(v3_corrected);
+            data_2.corrected_v3_0_20_Errors_Additional_2.push_back(v3_error_corrected);
+        }
+    }
+    file.close();
+}
+
+struct AdditionalData_3 {
+    std::vector<double> corrected_v2_0_20_Additional_3, corrected_v2_20_40_Additional_3, corrected_v2_40_60_Additional_3;
+    std::vector<double> corrected_v2_0_20_Errors_Additional_3, corrected_v2_20_40_Errors_Additional_3, corrected_v2_40_60_Errors_Additional_3;
+    
+    std::vector<double> corrected_v3_0_20_Additional_3, corrected_v3_40_60_Additional_3;
+    std::vector<double> corrected_v3_0_20_Errors_Additional_3, corrected_v3_40_60_Errors_Additional_3;
+};
+void Read_Additonal_DataSet_3(const std::string& filePath, AdditionalData_3& data_3) {
+    std::ifstream file(filePath);
+    if (!file.is_open()) {
+        std::cerr << "Failed to open file: " << filePath << std::endl;
+        return;
+    }
+    std::string line;
+    std::getline(file, line); // Skip the header line
+
+    while (std::getline(file, line)) {
+        std::stringstream ss(line);
+        std::vector<std::string> rowData;
+        std::string cell;
+
+        while (std::getline(ss, cell, ',')) {
+            rowData.push_back(cell);
+        }
+        double v2_corrected = std::stod(rowData.at(rowData.size() - 4));
+        double v2_error_corrected = std::stod(rowData.at(rowData.size() - 3));
+        double v3_corrected = std::stod(rowData.at(rowData.size() - 2));
+        double v3_error_corrected = std::stod(rowData.back());
+        
+        /*
+         BELOW CODE IS IF READING in PlotByPlotOutput format:
+         */
+//        double v2_corrected = std::stod(rowData.at(rowData.size() - 10));
+//        double v2_error_corrected = std::stod(rowData.at(rowData.size() - 9));
+//        double v3_corrected = std::stod(rowData.at(rowData.size() - 2));
+//        double v3_error_corrected = std::stod(rowData.back());
+
+        int index = std::stoi(rowData[0]);
+        if (index >= 0 && index <= 5) {
+            data_3.corrected_v2_40_60_Additional_3.push_back(v2_corrected);
+            data_3.corrected_v2_40_60_Errors_Additional_3.push_back(v2_error_corrected);
+            
+            data_3.corrected_v3_40_60_Additional_3.push_back(v3_corrected);
+            data_3.corrected_v3_40_60_Errors_Additional_3.push_back(v3_error_corrected);
+            
+        } else if (index >= 6 && index <= 11) {
+            data_3.corrected_v2_20_40_Additional_3.push_back(v2_corrected);
+            data_3.corrected_v2_20_40_Errors_Additional_3.push_back(v2_error_corrected);
+
+        } else if (index >= 12 && index <= 17) {
+            data_3.corrected_v2_0_20_Additional_3.push_back(v2_corrected);
+            data_3.corrected_v2_0_20_Errors_Additional_3.push_back(v2_error_corrected);
+
+            data_3.corrected_v3_0_20_Additional_3.push_back(v3_corrected);
+            data_3.corrected_v3_0_20_Errors_Additional_3.push_back(v3_error_corrected);
+        }
+    }
+    file.close();
+}
+
+
+
 // Call this function after vectors populated
 void PrintVectorContents(const std::vector<double>& vec, const std::vector<double>& vecErrors, const std::string& name) {
     std::cout << "\033[1m\033[31m" // Red and bold text
@@ -169,8 +291,8 @@ void DrawZeroLine(TCanvas* canvas) {
 TGraphErrors* CreateGraph(const std::vector<double>& ptCenters, const std::vector<double>& values, const std::vector<double>& errors) {
     return new TGraphErrors(ptCenters.size(), &ptCenters[0], &values[0], nullptr, &errors[0]);
 }
-void Plot_vN(const AdditionalData& data) {
-    std::string filePath = "/Users/patsfan753/Desktop/vN_AnalysisFinal/data/vN_Appended_Data/20_SubSampleBySub_p011_withZvtx_NoPDC_E_0_5/vN_calculated_subSamples_p011_NoPDC_withZvtx_E_0_5.csv";
+void Plot_vN(const AdditionalData& data, const AdditionalData_2& data_2, const AdditionalData_3& data_3) {
+    std::string filePath = "/Users/patsfan753/Desktop/30_samples_vN_calculated_subSamples_p011_NoPDC_withZvtx_No_ZDCrequired_E_1.csv";
     std::string phenixFilePath = "/Users/patsfan753/Desktop/vN_AnalysisFinal/data/PHENIX_Data_Overlayed/FinalCleanedPhenix.csv";
     std::vector<double> ptCenters = {2.25, 2.75, 3.25, 3.75, 4.25, 4.75}; // Mid-points of pT ranges
     std::vector<double> corrected_v2_0_20, corrected_v2_0_20_Errors, corrected_v2_20_40, corrected_v2_20_40_Errors, corrected_v2_40_60, corrected_v2_40_60_Errors, corrected_v3_0_20, corrected_v3_0_20_Errors, corrected_v3_20_40, corrected_v3_20_40_Errors, corrected_v3_40_60, corrected_v3_40_60_Errors;;
@@ -195,10 +317,20 @@ void Plot_vN(const AdditionalData& data) {
             rowData.push_back(cell);
         }
         v2_corrected = std::stod(rowData.at(rowData.size() - 4));
+
+        
         v2_error_corrected = std::stod(rowData.at(rowData.size() - 3));
 
         v3_corrected = std::stod(rowData.at(rowData.size() - 2)); // Second last column is v3 corrected
         v3_error_corrected = std::stod(rowData.back()); // Last column is v2 corrected error
+        
+        /*
+         BELOW CODE IS IF READING in PlotByPlotOutput format:
+         */
+//        double v2_corrected = std::stod(rowData.at(rowData.size() - 10));
+//        double v2_error_corrected = std::stod(rowData.at(rowData.size() - 9));
+//        double v3_corrected = std::stod(rowData.at(rowData.size() - 2));
+//        double v3_error_corrected = std::stod(rowData.back());
 
         // Mapping index to centrality and pT
         int index = std::stoi(rowData[0]);
@@ -285,6 +417,7 @@ void Plot_vN(const AdditionalData& data) {
     graph_0_10->SetMarkerStyle(markerStyle_PHENIX);
     graph_0_10->SetMarkerSize(1.5);
     
+    
     TGraphErrors* graph_10_20 = CreateGraph(ptCenters, v2_10_20, v2_10_20_Errors);
     graph_10_20->SetMarkerColor(color_PHENIX_high);
     graph_10_20->SetLineColor(color_PHENIX_high);
@@ -347,32 +480,114 @@ void Plot_vN(const AdditionalData& data) {
     corrected_v2_40_60_Additional_graph->SetLineColor(color_sPHENIX_AdditionalData);
     corrected_v2_40_60_Additional_graph->SetMarkerStyle(markerStyle_sPHENIX_AdditionalData);
     
+    
+    
+    /*
+     Additional Data 2 Read in for Comparison
+     */
+    const auto& corrected_v2_0_20_Additional_2 = data_2.corrected_v2_0_20_Additional_2;
+    const auto& corrected_v2_20_40_Additional_2 = data_2.corrected_v2_20_40_Additional_2;
+    const auto& corrected_v2_40_60_Additional_2 = data_2.corrected_v2_40_60_Additional_2;
+    const auto& corrected_v2_0_20_Errors_Additional_2 = data_2.corrected_v2_0_20_Errors_Additional_2;
+    const auto& corrected_v2_20_40_Errors_Additional_2 = data_2.corrected_v2_20_40_Errors_Additional_2;
+    const auto& corrected_v2_40_60_Errors_Additional_2 = data_2.corrected_v2_40_60_Errors_Additional_2;
+    const auto& corrected_v3_0_20_Additional_2 = data_2.corrected_v3_0_20_Additional_2;
+    const auto& corrected_v3_40_60_Additional_2 = data_2.corrected_v3_40_60_Additional_2;
+    const auto& corrected_v3_0_20_Errors_Additional_2 = data_2.corrected_v3_0_20_Errors_Additional_2;
+    const auto& corrected_v3_40_60_Errors_Additional_2 = data_2.corrected_v3_40_60_Errors_Additional_2;
+    
+    int markerStyle_sPHENIX_AdditionalData_2 = 22;
+    int color_sPHENIX_AdditionalData_2 = kBlack;
+    
+    TGraphErrors* corrected_v2_0_20_Additional_graph_2 = CreateGraph(ptCenters, corrected_v2_0_20_Additional_2, corrected_v2_0_20_Errors_Additional_2);
+    corrected_v2_0_20_Additional_graph_2->SetMarkerColor(color_sPHENIX_AdditionalData_2);
+    corrected_v2_0_20_Additional_graph_2->SetLineColor(color_sPHENIX_AdditionalData_2);
+    corrected_v2_0_20_Additional_graph_2->SetMarkerStyle(markerStyle_sPHENIX_AdditionalData_2);
+    
+    TGraphErrors* corrected_v2_20_40_Additional_graph_2 = CreateGraph(ptCenters, corrected_v2_20_40_Additional_2, corrected_v2_20_40_Errors_Additional_2);
+    corrected_v2_20_40_Additional_graph_2->SetMarkerColor(color_sPHENIX_AdditionalData_2);
+    corrected_v2_20_40_Additional_graph_2->SetLineColor(color_sPHENIX_AdditionalData_2);
+    corrected_v2_20_40_Additional_graph_2->SetMarkerStyle(markerStyle_sPHENIX_AdditionalData_2);
+    
+    TGraphErrors* corrected_v2_40_60_Additional_graph_2 = CreateGraph(ptCenters, corrected_v2_40_60_Additional_2, corrected_v2_40_60_Errors_Additional_2);
+    corrected_v2_40_60_Additional_graph_2->SetMarkerColor(color_sPHENIX_AdditionalData_2);
+    corrected_v2_40_60_Additional_graph_2->SetLineColor(color_sPHENIX_AdditionalData_2);
+    corrected_v2_40_60_Additional_graph_2->SetMarkerStyle(markerStyle_sPHENIX_AdditionalData_2);
+    
+    
+    /*
+     Additional Data 3 Read in for Comparison
+     */
+    const auto& corrected_v2_0_20_Additional_3 = data_3.corrected_v2_0_20_Additional_3;
+    const auto& corrected_v2_20_40_Additional_3 = data_3.corrected_v2_20_40_Additional_3;
+    const auto& corrected_v2_40_60_Additional_3 = data_3.corrected_v2_40_60_Additional_3;
+    const auto& corrected_v2_0_20_Errors_Additional_3 = data_3.corrected_v2_0_20_Errors_Additional_3;
+    const auto& corrected_v2_20_40_Errors_Additional_3 = data_3.corrected_v2_20_40_Errors_Additional_3;
+    const auto& corrected_v2_40_60_Errors_Additional_3 = data_3.corrected_v2_40_60_Errors_Additional_3;
+    const auto& corrected_v3_0_20_Additional_3 = data_3.corrected_v3_0_20_Additional_3;
+    const auto& corrected_v3_40_60_Additional_3 = data_3.corrected_v3_40_60_Additional_3;
+    const auto& corrected_v3_0_20_Errors_Additional_3 = data_3.corrected_v3_0_20_Errors_Additional_3;
+    const auto& corrected_v3_40_60_Errors_Additional_3 = data_3.corrected_v3_40_60_Errors_Additional_3;
+    
+    int markerStyle_sPHENIX_AdditionalData_3 = 23;
+    int color_sPHENIX_AdditionalData_3 = kGreen+3;
+    
+    TGraphErrors* corrected_v2_0_20_Additional_graph_3 = CreateGraph(ptCenters, corrected_v2_0_20_Additional_3, corrected_v2_0_20_Errors_Additional_3);
+    corrected_v2_0_20_Additional_graph_3->SetMarkerColor(color_sPHENIX_AdditionalData_3);
+    corrected_v2_0_20_Additional_graph_3->SetLineColor(color_sPHENIX_AdditionalData_3);
+    corrected_v2_0_20_Additional_graph_3->SetMarkerStyle(markerStyle_sPHENIX_AdditionalData_3);
+    
+    TGraphErrors* corrected_v2_20_40_Additional_graph_3 = CreateGraph(ptCenters, corrected_v2_20_40_Additional_3, corrected_v2_20_40_Errors_Additional_3);
+    corrected_v2_20_40_Additional_graph_3->SetMarkerColor(color_sPHENIX_AdditionalData_3);
+    corrected_v2_20_40_Additional_graph_3->SetLineColor(color_sPHENIX_AdditionalData_3);
+    corrected_v2_20_40_Additional_graph_3->SetMarkerStyle(markerStyle_sPHENIX_AdditionalData_3);
+    
+    TGraphErrors* corrected_v2_40_60_Additional_graph_3 = CreateGraph(ptCenters, corrected_v2_40_60_Additional_3, corrected_v2_40_60_Errors_Additional_3);
+    corrected_v2_40_60_Additional_graph_3->SetMarkerColor(color_sPHENIX_AdditionalData_3);
+    corrected_v2_40_60_Additional_graph_3->SetLineColor(color_sPHENIX_AdditionalData_3);
+    corrected_v2_40_60_Additional_graph_3->SetMarkerStyle(markerStyle_sPHENIX_AdditionalData_3);
+    
+    
+    
     /*
      0-20 percent v2
      */
     TCanvas *c_p009_p010_Overlay_0_20_v2_corrected = new TCanvas("c_p009_p010_Overlay_0_20_v2_corrected", "#pi^{0} #it{v}_{2}, p011 Data, Without PDC, vertex = (0, 0, z), Energy Cut of 0.5 and 1 GeV  vs #it{p}_{T} 0-20% Centrality", 800, 600);
     corrected_graph_0_20_v2->Draw("AP");  // This will be the base graph
-    corrected_graph_0_20_v2->SetTitle("#pi^{0} #it{v}_{2}, p011 Data, Without PDC, w/ z vtx, E #geq 0.5, 20 vs 30 samples vs #it{p}_{T} 0-20% Centrality");
+    corrected_graph_0_20_v2->SetTitle("#pi^{0} #it{v}_{2}, MB/MB+Central Triggered Events, 30 samples, E #geq 1.0 GeV vs #it{p}_{T} 0-20% Centrality");
     corrected_graph_0_20_v2->GetXaxis()->SetTitle("p_{T}");
     corrected_graph_0_20_v2->GetYaxis()->SetTitle("v_{2}");
     
-    corrected_graph_0_20_v2->SetMinimum(-1.0); // Set the minimum y value
-    corrected_graph_0_20_v2->SetMaximum(1.5); // Set the maximum y value
+    corrected_graph_0_20_v2->SetMinimum(-0.5); // Set the minimum y value
+    corrected_graph_0_20_v2->SetMaximum(0.8); // Set the maximum y value
     for (int i = 0; i < ptCenters.size(); ++i) {
         corrected_graph_0_20_v2->SetPoint(i, ptCenters[i] - offset, corrected_v2_0_20[i]);
-        graph_0_10->SetPoint(i, ptCenters[i] - offset * 2.0, v2_0_10[i]);
-        graph_10_20->SetPoint(i, ptCenters[i] + offset, v2_10_20[i]);
+//        corrected_v2_0_20_Additional_graph_2->SetPoint(i, ptCenters[i] + offset, corrected_v2_0_20_Additional_2[i]);
+//        corrected_v2_0_20_Additional_graph_3->SetPoint(i, ptCenters[i] + offset*2.0, corrected_v2_0_20_Additional_3[i]);
+        
+//        graph_0_10->SetPoint(i, ptCenters[i] - offset * 2.0, v2_0_10[i]);
+//        graph_10_20->SetPoint(i, ptCenters[i] + offset, v2_10_20[i]);
+        
     }
     corrected_v2_0_20_Additional_graph -> Draw("P SAME");
-    graph_0_10->Draw("P SAME");
-    graph_10_20->Draw("P SAME");
+//    corrected_v2_0_20_Additional_graph_2-> Draw("P SAME");
+//    corrected_v2_0_20_Additional_graph_3-> Draw("P SAME");
+    
+//    graph_0_10->Draw("P SAME");
+//    graph_10_20->Draw("P SAME");
+    
     TLegend *legend_p009_p010_Overlay_0_20_v2_corrected = new TLegend(0.11, 0.69, 0.31, 0.89);
     legend_p009_p010_Overlay_0_20_v2_corrected->SetBorderSize(0);
     legend_p009_p010_Overlay_0_20_v2_corrected->SetTextSize(0.03);
-    legend_p009_p010_Overlay_0_20_v2_corrected->AddEntry(corrected_graph_0_20_v2, "0-20%, v_{2}^{#pi^{0}} E #geq 0.5 GeV, 20 samples", "pe");
-    legend_p009_p010_Overlay_0_20_v2_corrected->AddEntry(corrected_v2_0_20_Additional_graph, "0-20%, v_{2}^{#pi^{0}} E #geq 0.5 GeV, 30 samples", "pe");
-    legend_p009_p010_Overlay_0_20_v2_corrected->AddEntry(graph_0_10, "0-10%, #bf{PHENIX} 2010", "pe");
-    legend_p009_p010_Overlay_0_20_v2_corrected->AddEntry(graph_10_20, "10-20%, #bf{PHENIX} 2010", "pe");
+    legend_p009_p010_Overlay_0_20_v2_corrected->AddEntry(corrected_graph_0_20_v2, "0-20%, v_{2}^{#pi^{0}} MB", "pe");
+    legend_p009_p010_Overlay_0_20_v2_corrected->AddEntry(corrected_v2_0_20_Additional_graph, "0-20%, v_{2}^{#pi^{0}} MB+Central", "pe");
+    
+//    legend_p009_p010_Overlay_0_20_v2_corrected->AddEntry(corrected_v2_0_20_Additional_graph_2, "0-20%, v_{2}^{#pi^{0}} Central Triggered Only", "pe");
+//    legend_p009_p010_Overlay_0_20_v2_corrected->AddEntry(corrected_v2_0_20_Additional_graph_3, "0-20%, v_{2}^{#pi^{0}} MB+Central Triggered", "pe");
+    
+//    legend_p009_p010_Overlay_0_20_v2_corrected->AddEntry(graph_0_10, "0-10%, #bf{PHENIX} 2010", "pe");
+//    legend_p009_p010_Overlay_0_20_v2_corrected->AddEntry(graph_10_20, "10-20%, #bf{PHENIX} 2010", "pe");
+    
     legend_p009_p010_Overlay_0_20_v2_corrected->Draw();
     DrawZeroLine(c_p009_p010_Overlay_0_20_v2_corrected);
     c_p009_p010_Overlay_0_20_v2_corrected->Modified();
@@ -385,26 +600,37 @@ void Plot_vN(const AdditionalData& data) {
      */
     TCanvas *c_p009_p010_Overlay_20_40_v2_corrected = new TCanvas("c_p009_p010_Overlay_20_40_v2_corrected", "#pi^{0} #it{v}_{2}, p011 Data, Without PDC, vertex = (0, 0, z), Energy Cut of 0.5 and 1 GeV vs #it{p}_{T} 20-40% Centrality", 800, 600);
     corrected_graph_20_40_v2->Draw("AP");  // This will be the base graph
-    corrected_graph_20_40_v2->SetTitle("#pi^{0} #it{v}_{2}, p011 Data, Without PDC, w/ z vtx, E #geq 0.5, 20 vs 30 samplesvs #it{p}_{T} 20-40% Centrality");
+    corrected_graph_20_40_v2->SetTitle("#pi^{0} #it{v}_{2}, MB/MB+Central Triggered Events, 30 samples, E #geq 1.0 GeV vs #it{p}_{T} 20-40% Centrality");
     corrected_graph_20_40_v2->GetXaxis()->SetTitle("p_{T}");
     corrected_graph_20_40_v2->GetYaxis()->SetTitle("v_{2}");
     corrected_graph_20_40_v2->SetMinimum(-0.5); // Set the minimum y value
-    corrected_graph_20_40_v2->SetMaximum(1.0); // Set the maximum y value
+    corrected_graph_20_40_v2->SetMaximum(0.8); // Set the maximum y value
     for (int i = 0; i < ptCenters.size(); ++i) {
         corrected_graph_20_40_v2->SetPoint(i, ptCenters[i] - offset, corrected_v2_20_40[i]);
-        graph_20_30->SetPoint(i, ptCenters[i] - offset * 2.0, v2_20_30[i]);
-        graph_30_40->SetPoint(i, ptCenters[i] + offset, v2_30_40[i]);
+//        corrected_v2_20_40_Additional_graph_2->SetPoint(i, ptCenters[i] + offset, corrected_v2_20_40_Additional_2[i]);
+//        corrected_v2_20_40_Additional_graph_3->SetPoint(i, ptCenters[i] + offset*2.0, corrected_v2_20_40_Additional_3[i]);
+//        graph_20_30->SetPoint(i, ptCenters[i] - offset * 2.0, v2_20_30[i]);
+//        graph_30_40->SetPoint(i, ptCenters[i] + offset, v2_30_40[i]);
     }
     corrected_v2_20_40_Additional_graph -> Draw("P SAME");
-    graph_20_30->Draw("P SAME");
-    graph_30_40->Draw("P SAME");
+//    corrected_v2_20_40_Additional_graph_2-> Draw("P SAME");
+//    corrected_v2_20_40_Additional_graph_3 -> Draw("P SAME");
+    
+//    graph_20_30->Draw("P SAME");
+//    graph_30_40->Draw("P SAME");
+    
     TLegend *legend_p009_p010_Overlay_20_40_v2_corrected = new TLegend(0.11, 0.69, 0.31, 0.89);
     legend_p009_p010_Overlay_20_40_v2_corrected->SetBorderSize(0);
     legend_p009_p010_Overlay_20_40_v2_corrected->SetTextSize(0.03);
-    legend_p009_p010_Overlay_20_40_v2_corrected->AddEntry(corrected_graph_20_40_v2, "20-40%, v_{2}^{#pi^{0}}, E #geq 0.5 GeV, 20 samples", "pe");
-    legend_p009_p010_Overlay_20_40_v2_corrected->AddEntry(corrected_v2_20_40_Additional_graph, "20-40%, v_{2}^{#pi^{0}}, E #geq 0.5 GeV, 30 samples", "pe");
-    legend_p009_p010_Overlay_20_40_v2_corrected->AddEntry(graph_20_30, "20-30%, #bf{PHENIX} 2010", "pe");
-    legend_p009_p010_Overlay_20_40_v2_corrected->AddEntry(graph_30_40, "30-40%, #bf{PHENIX} 2010", "pe");
+    legend_p009_p010_Overlay_20_40_v2_corrected->AddEntry(corrected_graph_20_40_v2, "20-40%, v_{2}^{#pi^{0}}, MB", "pe");
+    legend_p009_p010_Overlay_20_40_v2_corrected->AddEntry(corrected_v2_20_40_Additional_graph, "20-40%, v_{2}^{#pi^{0}}, MB+Central", "pe");
+    
+//    legend_p009_p010_Overlay_20_40_v2_corrected->AddEntry(corrected_v2_20_40_Additional_graph_2, "20-40%, v_{2}^{#pi^{0}} Central Triggered Only", "pe");
+//    legend_p009_p010_Overlay_20_40_v2_corrected->AddEntry(corrected_v2_20_40_Additional_graph_3, "20-40%, v_{2}^{#pi^{0}} MB+Central Triggered", "pe");
+
+//    legend_p009_p010_Overlay_20_40_v2_corrected->AddEntry(graph_20_30, "20-30%, #bf{PHENIX} 2010", "pe");
+//    legend_p009_p010_Overlay_20_40_v2_corrected->AddEntry(graph_30_40, "30-40%, #bf{PHENIX} 2010", "pe");
+    
     legend_p009_p010_Overlay_20_40_v2_corrected->Draw();
     DrawZeroLine(c_p009_p010_Overlay_20_40_v2_corrected);
     c_p009_p010_Overlay_20_40_v2_corrected->Modified();
@@ -417,27 +643,40 @@ void Plot_vN(const AdditionalData& data) {
      */
     TCanvas *c_p009_p010_Overlay_40_60_v2_corrected = new TCanvas("c_p009_p010_Overlay_40_60_v2_corrected", "#pi^{0} #it{v}_{2}, p011 Data, Without PDC, vertex = (0, 0, z), Energy Cut of 0.5 and 1 GeV  vs #it{p}_{T} 40-60% Centrality", 800, 600);
     corrected_graph_40_60_v2->Draw("AP");  // This will be the base graph
-    corrected_graph_40_60_v2->SetTitle("#pi^{0} #it{v}_{2}, p011 Data, Without PDC, w/ z vtx, E #geq 0.5, 20 vs 30 samples vs #it{p}_{T} 40-60% Centrality");
+    corrected_graph_40_60_v2->SetTitle("#pi^{0} #it{v}_{2}, MB/MB+Central Triggered Events, 30 samples, E #geq 1.0 GeV vs #it{p}_{T} 40-60% Centrality");
     corrected_graph_40_60_v2->GetXaxis()->SetTitle("p_{T}");
     corrected_graph_40_60_v2->GetYaxis()->SetTitle("v_{2}");
 
     for (int i = 0; i < ptCenters.size(); ++i) {
         corrected_graph_40_60_v2->SetPoint(i, ptCenters[i] - offset, corrected_v2_40_60[i]);
-        graph_40_50->SetPoint(i, ptCenters[i] - offset * 2.0, v2_40_50[i]);
-        graph_50_60->SetPoint(i, ptCenters[i] + offset, v2_50_60[i]);
+//        corrected_v2_40_60_Additional_graph_2->SetPoint(i, ptCenters[i] + offset, corrected_v2_40_60_Additional_2[i]);
+//        corrected_v2_40_60_Additional_graph_3->SetPoint(i, ptCenters[i] + offset*2.0, corrected_v2_40_60_Additional_3[i]);
+//        graph_40_50->SetPoint(i, ptCenters[i] - offset * 2.0, v2_40_50[i]);
+//        graph_50_60->SetPoint(i, ptCenters[i] + offset, v2_50_60[i]);
     }
     corrected_graph_40_60_v2->SetMinimum(-0.5); // Set the minimum y value
     corrected_graph_40_60_v2->SetMaximum(0.8); // Set the maximum y value
+    
     corrected_v2_40_60_Additional_graph -> Draw("P SAME");
-    graph_40_50->Draw("P SAME");
-    graph_50_60->Draw("P SAME");
+    
+//    corrected_v2_40_60_Additional_graph_2 -> Draw("P SAME");
+//    corrected_v2_40_60_Additional_graph_3-> Draw("P SAME");
+    
+//    graph_40_50->Draw("P SAME");
+//    graph_50_60->Draw("P SAME");
+
     TLegend *legend_p009_p010_Overlay_40_60_v2_corrected = new TLegend(0.11, 0.69, 0.31, 0.89);
     legend_p009_p010_Overlay_40_60_v2_corrected->SetBorderSize(0);
     legend_p009_p010_Overlay_40_60_v2_corrected->SetTextSize(0.03);
-    legend_p009_p010_Overlay_40_60_v2_corrected->AddEntry(corrected_graph_40_60_v2, "40-60%, v_{2}^{#pi^{0}}, E #geq 0.5 GeV, 20 samples", "pe");
-    legend_p009_p010_Overlay_40_60_v2_corrected->AddEntry(corrected_v2_40_60_Additional_graph, "40-60%, v_{2}^{#pi^{0}}, E #geq 0.5 GeV, 30 samples", "pe");
-    legend_p009_p010_Overlay_40_60_v2_corrected->AddEntry(graph_40_50, "40-50%, #bf{PHENIX} 2010", "pe");
-    legend_p009_p010_Overlay_40_60_v2_corrected->AddEntry(graph_50_60, "50-60%, #bf{PHENIX} 2010", "pe");
+    legend_p009_p010_Overlay_40_60_v2_corrected->AddEntry(corrected_graph_40_60_v2, "40-60%, v_{2}^{#pi^{0}}, MB", "pe");
+    legend_p009_p010_Overlay_40_60_v2_corrected->AddEntry(corrected_v2_40_60_Additional_graph, "40-60%, v_{2}^{#pi^{0}}, MB+Central", "pe");
+    
+//    legend_p009_p010_Overlay_40_60_v2_corrected->AddEntry(corrected_v2_20_40_Additional_graph_2, "40-60%, v_{2}^{#pi^{0}} Central Triggered Only", "pe");
+//    legend_p009_p010_Overlay_40_60_v2_corrected->AddEntry(corrected_v2_20_40_Additional_graph_3, "40-60%, v_{2}^{#pi^{0}} MB+Central Triggered", "pe");
+    
+//    legend_p009_p010_Overlay_40_60_v2_corrected->AddEntry(graph_40_50, "40-50%, #bf{PHENIX} 2010", "pe");
+//    legend_p009_p010_Overlay_40_60_v2_corrected->AddEntry(graph_50_60, "50-60%, #bf{PHENIX} 2010", "pe");
+//    
     legend_p009_p010_Overlay_40_60_v2_corrected->Draw();
     DrawZeroLine(c_p009_p010_Overlay_40_60_v2_corrected);
     c_p009_p010_Overlay_40_60_v2_corrected->Modified();
@@ -525,9 +764,26 @@ void PrintSkippedRunsSummary(const std::map<int, int>& skippedCounts) {
 }
 
 void vN_calculator_AccumulatedData() {
+    int subSampleSize = 30;//CHANGE TO SUB SAMPLES LOOPED THROUGH
+    std::string baseProjectFolder = "/Users/patsfan753/Desktop/vN_AnalysisFinal/";
+    /*
+     Relevant Paths Set
+     */
+    //path to root file with QQ, qQ histograms to be analyzed
+    std::string test_RootFilePath = (baseProjectFolder + "data/testRootFiles_ByProduction/p011/No_PDC_with_zVertex/CENTRALonly-energyCut_0_5_30samples/test.root").c_str();
     
-    const int num_v2 = 18; // Number of histograms for v2
-    const int num_v3 = 18; // Number of histograms for v3
+    
+    //path to CSV file read in with S/B information for vn calculation
+    /*
+     Remember to change cut value being read in below depending on CSV choice below
+     */
+    std::string PlotByPlotOutput_OriginalPath = (baseProjectFolder + "data/PlotByPlotOutput_FromFits/p011/No_pdc_withZvertex/CENTRALonly_noZDC/PlotByPlotOutput_p011_CentralTriggeredOnly_noZDC.csv").c_str();
+    
+    //path for final CSV output and sample by sample calculation output
+    std::string outputBasePathCSVs = (baseProjectFolder + "data/vN_Appended_Data/CENTRALonly-energyCut_0_5_30samples/").c_str();
+    
+    const int num_v2 = 18;
+    const int num_v3 = 18;
     
     // Initialize vectors to hold weighted sums and weights for each index
     std::vector<double> totalWeightedV2Corrected(num_v2, 0.0);
@@ -555,12 +811,12 @@ void vN_calculator_AccumulatedData() {
     
     std::vector<std::pair<std::string, int>> skippedIndices; // To store sub samples and indices skipped due to negative values
     
-    std::string outputBasePathCSVs = "/Users/patsfan753/Desktop/vN_AnalysisFinal/data/vN_Appended_Data/30_SubSample_p011_withZvtx_NoPDC_E_1_0/";
+    
     
     std::map<std::string, std::vector<int>> eventsPerCentralityQQ;
     std::map<std::string, std::vector<int>> eventsPerqQ;
 
-    std::ofstream logFile("/Users/patsfan753/Desktop/30_samples_histogram_entries_log_energy_1_0_p011_noPDC_withZ.txt");
+    std::ofstream logFile("/Users/patsfan753/Desktop/30_samples_histogram_entries_log_energy_1_p011_noPDC_withZ_noZDC.txt");
     if (!logFile) {
         std::cerr << "Error: Unable to open log file." << std::endl;
         return; // Or handle the error appropriately
@@ -568,8 +824,12 @@ void vN_calculator_AccumulatedData() {
     logFile << "Processing Data\n========================\n";
 
     
-    // Loop over sub-samples
-    for (int subSampleIndex = 0; subSampleIndex < 30; ++subSampleIndex) {
+    std::vector<int> subsampleIndices;
+    std::vector<float> v3CorrectedValues, wk3Values, QQ3MeanValues;
+    std::vector<bool> isQQ3MeanNegative;
+
+    // Loop over sub-samples --CHANGE SAMPLE SIZE
+    for (int subSampleIndex = 0; subSampleIndex < subSampleSize; ++subSampleIndex) {
         std::cout << "-----------------------------------------\n";
         std::cout << "Processing Sub-Sample: " << subSampleIndex << std::endl;
         std::cout << "-----------------------------------------\n";
@@ -581,7 +841,7 @@ void vN_calculator_AccumulatedData() {
         logFile << "-----------------------------------------\n";
         
         
-        TFile *file = new TFile("/Users/patsfan753/Desktop/vN_AnalysisFinal/data/testRootFiles_ByProduction/p011/No_PDC_with_zVertex/30_samples_E_1_A_0_5_C_4/test.root", "READ");
+        TFile *file = new TFile(test_RootFilePath.c_str(), "READ");
         if (!file || file->IsZombie()) {
             std::cerr << "Error opening file or file is not a valid ROOT file" << std::endl;
             return;
@@ -656,9 +916,13 @@ void vN_calculator_AccumulatedData() {
             c->SaveAs(savePath.c_str());
             delete c;
         };
+        
+        /*
+         If want to output all QQ, qQ histograms used, SHOULD USE THE CODE BELOW SETTING PATHS OF WHERE TO FUNNEL SUCH DATA
+         */
         // Define the base directories for v2 and v3 histograms
-        std::string baseDirV2 = "/Users/patsfan753/Desktop/vN_AnalysisFinal/plotOutput/qQ_QQ_histograms_byProd/qQ_and_QQ_histograms_p011/p011_withZvtx_E_0_5_A_0_5_C_4/n_2";
-        std::string baseDirV3 = "/Users/patsfan753/Desktop/vN_AnalysisFinal/plotOutput/qQ_QQ_histograms_byProd/qQ_and_QQ_histograms_p011/p011_withZvtx_E_0_5_A_0_5_C_4/n_3";
+        std::string baseDirV2 = (baseProjectFolder + "plotOutput/qQ_QQ_histograms_byProd/qQ_and_QQ_histograms_p011/30_samples_p011_withZvtx_NO_ZDC_E_1/n_2").c_str();
+        std::string baseDirV3 = (baseProjectFolder + "plotOutput/qQ_QQ_histograms_byProd/qQ_and_QQ_histograms_p011/30_samples_p011_withZvtx_NO_ZDC_E_1/n_3").c_str();
         
         /*
          Comment out below if re run macro and already made hists
@@ -674,10 +938,10 @@ void vN_calculator_AccumulatedData() {
 //        for (const auto& histPath : hist_name_qQ2_bg) {
 //            drawAndSaveHist(histPath, baseDirV2);
 //        }
-//        for (const auto& histPath : hist_name_qQ2_bg_left) {
-//            drawAndSaveHist(histPath, baseDirV2);
-//        }
-//        
+////        for (const auto& histPath : hist_name_qQ2_bg_left) {
+////            drawAndSaveHist(histPath, baseDirV2);
+////        }
+////        
 //        // Process and save QQ and qQ histograms for v3
 //        for (const auto& histPath : hist_name_QQ3) {
 //            drawAndSaveHist(histPath, baseDirV3);
@@ -688,10 +952,10 @@ void vN_calculator_AccumulatedData() {
 //        for (const auto& histPath : hist_name_qQ3_bg) {
 //            drawAndSaveHist(histPath, baseDirV3);
 //        }
-//        for (const auto& histPath : hist_name_qQ3_bg_left) {
-//            drawAndSaveHist(histPath, baseDirV3);
-//        }
-        
+////        for (const auto& histPath : hist_name_qQ3_bg_left) {
+////            drawAndSaveHist(histPath, baseDirV3);
+////        }
+//        
         /*
          RETRIEVE MEANS AND ERROR FOR n = 2 histograms
          */
@@ -838,9 +1102,6 @@ void vN_calculator_AccumulatedData() {
                 return;
             }
             w_k_3[i] = h_qQ3->GetSumOfWeights();
-
-            // Print the difference between w_k_2[i] and w_k_3[i] for each i
-            std::cout << "Difference between w_k_2 and w_k_3 for index " << i << ": " << (w_k_2[i] - w_k_3[i]) << std::endl;
         }
 
         
@@ -872,7 +1133,7 @@ void vN_calculator_AccumulatedData() {
         User-defined cut values, ensures only rows of CSV with cuts below correspond to SB used in calc
         Also specifies rows of data vN info is appended to
          */
-        float userEnergy = 1.0; //switch to which ever cut
+        float userEnergy = 0.5; //switch to which ever cut
         float userAsymm = 0.5;
         float userChi2 = 4;
         float userDeltaR = 0;
@@ -884,7 +1145,7 @@ void vN_calculator_AccumulatedData() {
             /*
              CSV data outputted from invariant mass fits
              */
-            std::ifstream inFile("/Users/patsfan753/Desktop/vN_AnalysisFinal/data/PlotByPlotOutput_FromFits/p011/No_pdc_withZvertex/PlotByPlotOutput_p011_WithZvertex_noPDC_EnergyCut_1_Asym_point5.csv");
+            std::ifstream inFile(PlotByPlotOutput_OriginalPath.c_str());
             // Open the new CSV file for this run for writing
             std::string writeCSVFilePath = outputBasePathCSVs + "PlotByPlot-" + std::to_string(subSampleIndex) + "_updated.csv";
             std::ofstream outFile(writeCSVFilePath, std::ios::out);
@@ -943,10 +1204,16 @@ void vN_calculator_AccumulatedData() {
                         
                         float v3_corrected = v3_value * (1 + (1 / SB)) - ((1 / SB) * bg_v3_value);
                         
-                        
+                        if (idx == 0) { // Only for the first index
+                            subsampleIndices.push_back(subSampleIndex);
+                            v3CorrectedValues.push_back(v3_corrected);
+                            wk3Values.push_back(w_k_3[idx]);
+                            QQ3MeanValues.push_back(QQ3_mean[QQ_index]);
+                            isQQ3MeanNegative.push_back(QQ3_mean[QQ_index] < 0);
+                        }
                         
                         // Check for negative QQ2 or QQ3 values
-                        if (QQ2_mean[QQ_index] >= 0) {
+                        if (QQ2_mean[QQ_index] > 0) {
                             totalWeightedV2Corrected[idx] += v2_corrected * w_k_2[idx];
                             totalWeights_2[idx] += w_k_2[idx];
                             
@@ -961,19 +1228,11 @@ void vN_calculator_AccumulatedData() {
                             std::cout << std::endl;
                         }
                         // Only fill hV3Corrected if QQ3_mean[QQ_index] is not negative
-                        if (QQ3_mean[QQ_index] >= 0) {
+                        if (QQ3_mean[QQ_index] > 0) {
                             totalWeightedV3Corrected[idx] += v3_corrected * w_k_3[idx];
                             totalWeights_3[idx] += w_k_3[idx];
                             
                             sum_wk_xk_3[idx] += w_k_3[idx] * v3_corrected * v3_corrected; // Accumulate the weighted square of corrected v3
-                        
-                        
-                            std::cout << std::left << std::setw(20) << subSampleIndex
-                                      << std::setw(10) << idx // 'idx' value
-                                      << std::setw(20) << w_k_3[idx] // Weight from histogram for v3
-                                      << std::setw(20) << v3_corrected // Calculated corrected v3 value
-                                      << std::endl;
-                            
                             
                             sum_wk_3_squared[idx] += w_k_3[idx] * w_k_3[idx]; // Accumulate the square of weights for v3
                             
@@ -984,7 +1243,6 @@ void vN_calculator_AccumulatedData() {
                             skippedQQ3Counts[QQ_index]++;
                             std::cout << std::endl; // And another extra line break here
                         }
-
                         std::stringstream ss;
                         /*
                          Construct appended data to new CSV
@@ -1009,9 +1267,27 @@ void vN_calculator_AccumulatedData() {
     // Check and execute Plot_vN if boolean is set to true
     if (Plot_vN_bool) {
         AdditionalData data;
-        std::string Additional_Data_Path = "/Users/patsfan753/Desktop/vN_AnalysisFinal/data/vN_Appended_Data/30_SubSample_p011_withZvtx_NoPDC_E_0_5/30_samples_vN_calculated_subSamples_p011_NoPDC_withZvtx_E_0_5.csv";
+        /*
+         Path to DATASET TO OVERALAY with whatever is plotted in Plot_vN method above
+         */
+        std::string Additional_Data_Path = "/Users/patsfan753/Desktop/30_samples_vN_calculated_p011_NoPDC_withZvtx_MBplusCentralTriggered_E_1.csv";
         Read_Additonal_DataSet(Additional_Data_Path, data);
-        Plot_vN(data);
+        
+        AdditionalData_2 data_2;
+        /*
+         Path to DATASET TO OVERALAY with whatever is plotted in Plot_vN method above
+         */
+        std::string Additional_Data_Path_2 = "/Users/patsfan753/Desktop/30_samples_vN_calculated_p011_CentralTriggeredOnly_E_1.csv";
+        Read_Additonal_DataSet_2(Additional_Data_Path_2, data_2);
+
+        
+        AdditionalData_3 data_3;
+        /*
+         Path to DATASET TO OVERALAY with whatever is plotted in Plot_vN method above
+         */
+        std::string Additional_Data_Path_3 = "/Users/patsfan753/Desktop/30_samples_vN_calculated_p011_NoPDC_withZvtx_MBplusCentralTriggered_E_1.csv";
+        Read_Additonal_DataSet_3(Additional_Data_Path_3, data_3);
+        Plot_vN(data, data_2, data_3);
     }
     else {
         // After processing all sub-samples, calculate final corrected values
@@ -1055,20 +1331,20 @@ void vN_calculator_AccumulatedData() {
         }
 
         for (int idx = 0; idx < num_v3; ++idx) {
-
-            // Calculate effective sample size for v2
-            K_eff_3[idx] = (totalWeights_3[idx] * totalWeights_3[idx]) / sum_wk_3_squared[idx];
-            
-
-            S2_v3[idx] = ((sum_wk_xk_3[idx] - (2 * totalWeightedV3Corrected[idx]  * finalCorrectedV3[idx]) + (totalWeights_3[idx] * finalCorrectedV3[idx] * finalCorrectedV3[idx]))/ totalWeights_3[idx])* (K_eff_2[idx] / (K_eff_2[idx] - 1));
-
-            // Calculate error for v3
-            error_v3[idx] = sqrt(S2_v3[idx] / K_eff_2[idx]);
-            
+            if (totalWeights_3[idx] > 0) {
+                // Calculate effective sample size for v2
+                K_eff_3[idx] = (totalWeights_3[idx] * totalWeights_3[idx]) / sum_wk_3_squared[idx];
+                
+                
+                S2_v3[idx] = ((sum_wk_xk_3[idx] - (2 * totalWeightedV3Corrected[idx]  * finalCorrectedV3[idx]) + (totalWeights_3[idx] * finalCorrectedV3[idx] * finalCorrectedV3[idx]))/ totalWeights_3[idx])* (K_eff_3[idx] / (K_eff_3[idx] - 1));
+                
+                // Calculate error for v3
+                error_v3[idx] = sqrt(S2_v3[idx] / K_eff_3[idx]);
+            }
         }
             
         // Output to CSV
-        std::ofstream outFile("/Users/patsfan753/Desktop/vN_AnalysisFinal/data/vN_Appended_Data/30_SubSample_p011_withZvtx_NoPDC_E_1_0/30_samples_vN_calculated_subSamples_p011_NoPDC_withZvtx_E_1_0.csv");
+        std::ofstream outFile((outputBasePathCSVs + "30_samples_vN_calculated_p011_CentralTriggeredOnly_E_0_5.csv").c_str());
         outFile << "Index,WeightedMeanV2Corrected,v2_error,WeightedMeanV3Corrected,v3_error\n";
         for (int idx = 0; idx < num_v2; ++idx) {
             outFile << idx << "," << finalCorrectedV2[idx] << "," << error_v2[idx] << "," << finalCorrectedV3[idx] << "," << error_v3[idx] << "\n";
@@ -1083,5 +1359,27 @@ void vN_calculator_AccumulatedData() {
 
         std::cout << "\nQQ3 Skipped Runs by Centrality:\n";
         PrintSkippedRunsSummary(skippedQQ3Counts);
+        
+        std::cout << std::left
+                  << std::setw(15) << "SubSample"
+                  << std::setw(15) << "v3_corrected"
+                  << std::setw(15) << "w_k_3"
+                  << std::setw(15) << "QQ3_mean"
+                  << std::endl;
+        std::cout << "-------------------------------------------------------------------" << std::endl;
+
+        for (size_t i = 0; i < subsampleIndices.size(); ++i) {
+            if (isQQ3MeanNegative[i]) {
+                std::cout << "\033[31m"; // Start red text for negative QQ3_mean
+            }
+            std::cout << std::left
+                      << std::setw(15) << subsampleIndices[i]
+                      << std::setw(15) << v3CorrectedValues[i]
+                      << std::setw(15) << wk3Values[i]
+                      << std::setw(15) << QQ3MeanValues[i]
+                      << "\033[0m" // Reset text color
+                      << std::endl;
+        }
+
     }
 }
