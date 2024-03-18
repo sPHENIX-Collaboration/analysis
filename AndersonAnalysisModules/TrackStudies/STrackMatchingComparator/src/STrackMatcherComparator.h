@@ -21,6 +21,7 @@
 // analysis utilities
 #include "STrackMatcherComparatorConfig.h"
 #include "STrackMatcherComparatorHistDef.h"
+#include "STrackMatcherComparatorHistContent.h"
 
 // make common namespaces implicit
 using namespace std;
@@ -33,6 +34,44 @@ class PHCompositeNode;
 // STrackMatcherComparator definition -----------------------------------------
 
 class STrackMatcherComparator {
+
+  // accessors
+  enum Src {
+    NewTree,
+    NewTuple,
+    OldTuple
+  };
+  enum Var {
+    NTot,
+    NIntt,
+    NMvtx,
+    NTpc,
+    RTot,
+    RIntt,
+    RMvtx,
+    RTpc,
+    Phi,
+    Eta,
+    Pt,
+    Frac,
+    Qual,
+    PtErr,
+    EtaErr,
+    PhiErr,
+    PtRes,
+    EtaRes,
+    PhiRes
+  };
+  enum Type {
+    Truth,
+    Track,
+    Weird,
+    Normal
+  };
+  enum Comp {
+    VsTruthPt,
+    VsNumTpc
+  };
 
   public:
 
@@ -66,6 +105,11 @@ class STrackMatcherComparator {
     void SaveHistograms();
     void CloseInput();
     void CloseOutput();
+
+    // helper functions
+    void FillHistogram1D(const STrackMatcherComparatorHistContent& content, const Type type, const vector<vector<TH1D*>> vecHist1D);
+    void FillHistogram2D(const STrackMatcherComparatorHistContent& content, const Type type, const Comp comparison, const double value, const vector<vector<vector<TH2D*>>> vecHist2D);
+    bool IsNearSector(const float phi);
 
     // configuration & histogram info
     STrackMatcherComparatorConfig  m_config;
@@ -111,45 +155,8 @@ class STrackMatcherComparator {
       size_t nVtx;
       size_t nSide;
       size_t nAxes;
-    } m_const = {3, 2, 2, 4, 4, 3};
-
-    // accessors
-    enum Src {
-      NewTree,
-      NewTuple,
-      OldTuple
-    };
-    enum Var {
-      NTot,
-      NIntt,
-      NMvtx,
-      NTpc,
-      RTot,
-      RIntt,
-      RMvtx,
-      RTpc,
-      Phi,
-      Eta,
-      Pt,
-      Frac,
-      Qual,
-      PtErr,
-      EtaErr,
-      PhiErr,
-      PtRes,
-      EtaRes,
-      PhiRes
-    };
-    enum Type {
-      Truth,
-      Track,
-      Weird,
-      Normal
-    };
-    enum Comp {
-      VsTruthPt,
-      VsNumTpc
-    };
+      size_t nSectors;
+    } m_const = {3, 2, 2, 4, 4, 3, 12};
 
 };
 

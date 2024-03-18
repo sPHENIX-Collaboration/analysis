@@ -157,7 +157,7 @@ int JetValidation::InitRun(PHCompositeNode *topNode)
 //____________________________________________________________________________..
 int JetValidation::process_event(PHCompositeNode *topNode)
 {
-  std::cout << "JetValidation::process_event(PHCompositeNode *topNode) Processing Event" << std::endl;
+  //  std::cout << "JetValidation::process_event(PHCompositeNode *topNode) Processing Event" << std::endl;
   ++m_event;
 
   // interface to reco jets
@@ -211,7 +211,22 @@ int JetValidation::process_event(PHCompositeNode *topNode)
   
   //zvertex
   GlobalVertexMap *vertexmap = findNode::getClass<GlobalVertexMap>(topNode, "GlobalVertexMap");
-  GlobalVertex *vtx = vertexmap->begin()->second;
+  if (!vertexmap)
+    {
+      std::cout
+        << "MyJetAnalysis::process_event - Error can not find global vertex  node "
+        << std::endl;
+      exit(-1);
+    }
+  if (vertexmap->empty())
+    {
+      std::cout
+        << "MyJetAnalysis::process_event - global vertex node is empty "
+        << std::endl;
+      return Fun4AllReturnCodes::ABORTEVENT;
+    }
+
+    GlobalVertex *vtx = vertexmap->begin()->second;
   m_zvtx = vtx->get_z();
   
 

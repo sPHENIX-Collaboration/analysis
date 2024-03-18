@@ -15,7 +15,7 @@
 #include <g4centrality/PHG4CentralityReco.h>
 
 #include <HIJetReco.C>
-#include </sphenix/user/jamesj3j3/analysis/JS-Jet/JetValidation/src/JetValidation.h>
+#include <JetValidation.h>
 
 R__LOAD_LIBRARY(libfun4all.so)
 R__LOAD_LIBRARY(libg4jets.so)
@@ -43,7 +43,7 @@ void Fun4All_JetVal(const char *filelisttruth = "dst_truth_jet.list",
   cent->Verbosity(0);
   cent->GetCalibrationParameters().ReadFromFile("centrality", "xml", 0, 0, string(getenv("CALIBRATIONROOT")) + string("/Centrality/"));
   se->registerSubsystem( cent );
-
+  Enable::VERBOSITY = verbosity;
   HIJetReco();
 
   JetValidation *myJetVal = new JetValidation("AntiKt_Tower_r04_Sub1", "AntiKt_Truth_r04", outname);
