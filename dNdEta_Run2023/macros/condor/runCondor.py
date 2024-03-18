@@ -11,6 +11,9 @@ def dir_empty(dir_path):
 if __name__ == '__main__':
     parser = OptionParser(usage="usage: %prog ver [options -h]")
     parser.add_option("-d", "--data", dest="data", action="store_true", default=False, help="Is data or simulation")
+    parser.add_option("-i", "--runInttData", dest="runInttData", action="store_true", default=False, help="Run INTT data (MBD data otherwise)")
+    parser.add_option("-r", "--runnumber", dest="runnumber", default=20869, help="Run number")
+    parser.add_option("-p", "--productiontag", dest="productiontag", default="2023p011", help="Production tag")
     parser.add_option("-g", "--generator", dest="generator", default="HIJING", help="Generator type (HIJING, EPOS, AMPT)")
     parser.add_option("-n", "--eventPerJob", dest="eventPerJob", default=200, help="Number of events per job")
     parser.add_option("-j", "--nJob", dest="nJob", default=400, help="Number of jobs (queues)")
@@ -22,18 +25,18 @@ if __name__ == '__main__':
     print('opt: {}'.format(opt))
 
     data = opt.data
+    runInttData = opt.runInttData
+    runnumber = int(opt.runnumber)
+    productiontag = opt.productiontag
     generator = opt.generator
     eventPerJob = int(opt.eventPerJob)
     nJob = int(opt.nJob)
     outputdir = opt.outputdir
     softwareversion = opt.softwareversion
     submitcondor = opt.submitcondor
-    username = pwd.getpwuid(os.getuid())[0]
-    # print ('username: {}'.format(username))
-    # subdir = 'data' if data else 'sim/{}'.format(generator)
-    ntupledest = '/sphenix/user/{}/TrackletAna/data/INTT/{}'.format(username,outputdir)
-    os.makedirs(ntupledest, exist_ok=True)
-
+    
+    parentdir = os.path.abspath(os.path.join(os.getcwd(), os.pardir))
+    os.makedirs(outputdir, exist_ok=True)
     os.makedirs('./condorLog/', exist_ok=True)
     if not dir_empty('./condorLog/'):
         os.system('rm ./condorLog/*')
@@ -41,20 +44,25 @@ if __name__ == '__main__':
     condorFileName = "submitCondor_process{}.job".format('Data' if data else 'Sim{}'.format(generator))
     condorFile = open("{}".format(condorFileName), "w")
     condorFile.write("Universe           = vanilla\n")
-    # condorFile.write("initialDir         = /sphenix/user/{}/sPHENIXdNdEta/macros/\n".format(username))
-    condorFile.write("Executable         = production_INTT.sh\n")
+    condorFile.write("initialDir         = {}\n".format(parentdir))
+    condorFile.write("Executable         = $(initialDir)/production_INTT.sh\n".format(parentdir))
     condorFile.write("PeriodicHold       = (NumJobStarts>=1 && JobStatus == 1)\n")
     condorFile.write("request_memory     = 4GB\n")
     condorFile.write("Priority           = 20\n")
     condorFile.write("job_lease_duration = 3600\n")
     condorFile.write("runData            = {}\n".format(1 if data else 0))
+    condorFile.write("runInttData        = {}\n".format(1 if runInttData else 0))
+    condorFile.write("runnumber          = {}\n".format(runnumber))
+    condorFile.write("productiontag      = {}\n".format(productiontag))
     condorFile.write("generator          = {}\n".format(generator))
     condorFile.write("nEvents            = {}\n".format(eventPerJob))
-    condorFile.write("filename           = {}/ntuple_$(Process).root\n".format(ntupledest))
-    condorFile.write("Output             = ./condor_INTT/condorLog/process{}_$(Process).out\n".format('Data' if data else 'Sim{}'.format(generator)))
-    condorFile.write("Error              = ./condor_INTT/condorLog/process{}_$(Process).err\n".format('Data' if data else 'Sim{}'.format(generator)))
-    condorFile.write("Log                = ./condor_INTT/condorLog/process{}_$(Process).log\n".format('Data' if data else 'Sim{}'.format(generator)))
-    condorFile.write("Arguments          = \"$(runData) $(generator) $(nEvents) $(filename) $(Process) $(softwareversion)\"\n")
+    condorFile.write("Myindex            = $(Process)\n")
+    condorFile.write("Extension          = $INT(Myindex,%05d)\n")
+    condorFile.write("filename           = {}/ntuple_$(Extension).root\n".format(outputdir))
+    condorFile.write("Output             = $(initialDir)/condor/condorLog/process{}_$(Process).out\n".format('Data' if data else 'Sim{}'.format(generator)))
+    condorFile.write("Error              = $(initialDir)/condor/condorLog/process{}_$(Process).err\n".format('Data' if data else 'Sim{}'.format(generator)))
+    condorFile.write("Log                = $(initialDir)/condor/condorLog/process{}_$(Process).log\n".format('Data' if data else 'Sim{}'.format(generator)))
+    condorFile.write("Arguments          = \"$(runData) $(runInttData) $(runnumber) $(productiontag) $(generator) $(nEvents) $(filename) $(Process) $(softwareversion)\"\n")
     condorFile.write("Queue {}\n".format(nJob))
     condorFile.close() # Close the file before submitting the job
 

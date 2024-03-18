@@ -17,6 +17,10 @@
 class PHCompositeNode;
 class TFile;
 class TTree;
+namespace HepMC {
+    class GenEvent;
+}
+class RawClusterContainer;
 
 class pythiaEMCalAna : public SubsysReco
 {
@@ -65,6 +69,10 @@ class pythiaEMCalAna : public SubsysReco
 
   TTree *clusters_Towers;
   TTree *truth_particles;
+  PHG4TruthInfoContainer* m_truthInfo;
+  HepMC::GenEvent* m_theEvent;
+  RawClusterContainer* m_clusterContainer;
+  CaloRawClusterEval* m_clusterEval;
 
   //stuff for towers and clusters
   std::vector<float> m_tower_energy;
@@ -78,27 +86,108 @@ class pythiaEMCalAna : public SubsysReco
   std::vector<float> m_cluster_chi2;
   std::vector<float> m_cluster_prob;
   std::vector<float> m_cluster_nTowers;
-  std::vector<float> m_cluster_maxE_trackID;
-  std::vector<float> m_cluster_maxE_PID;
-  std::vector<std::vector<float>> m_cluster_all_trackIDs;
+  std::vector<std::vector<float>> m_cluster_allTowersE;
+  std::vector<std::vector<float>> m_cluster_allTowersEta;
+  std::vector<std::vector<float>> m_cluster_allTowersPhi;
+  std::vector<float> m_cluster_nParticles;
+  std::vector<float> m_cluster_primaryParticlePid;
+  std::vector<std::vector<float>> m_cluster_allSecondaryPids;
+  /* std::vector<float> m_cluster_maxE_trackID; */
+  /* std::vector<float> m_cluster_maxE_PID; */
+  /* std::vector<std::vector<float>> m_cluster_all_trackIDs; */
   
   //truth particle information
-  /* std::vector<std::pair<int, int>> m_truthBarcode; */
-  /* std::vector<std::pair<int, int>> m_truthParentBarcode; */
-  std::vector<float> m_truthIsPrimary;
-  std::vector<float> m_truthTrackID;
-  std::vector<float> m_truthPid;
-  std::vector<float> m_truthE;
-  std::vector<float> m_truthEta;
-  std::vector<float> m_truthPhi;
-  std::vector<float> m_truthPt;
-  std::vector<float> m_truthMass;
-  std::vector<float> m_truthEndVtx_x;
-  std::vector<float> m_truthEndVtx_y;
-  std::vector<float> m_truthEndVtx_z;
-  std::vector<float> m_truthEndVtx_t;
-  std::vector<float> m_truthEndVtx_r;
-  std::vector<std::vector<float>> m_truth_all_clusterIDs;
+  /* std::vector<float> m_truthIsPrimary; */
+  /* std::vector<float> m_truthTrackID; */
+  /* std::vector<float> m_truthPid; */
+  /* std::vector<float> m_truthE; */
+  /* std::vector<float> m_truthEta; */
+  /* std::vector<float> m_truthPhi; */
+  /* std::vector<float> m_truthPt; */
+  /* std::vector<float> m_truthMass; */
+  /* std::vector<float> m_truthEndVtx_x; */
+  /* std::vector<float> m_truthEndVtx_y; */
+  /* std::vector<float> m_truthEndVtx_z; */
+  /* std::vector<float> m_truthEndVtx_t; */
+  /* std::vector<float> m_truthEndVtx_r; */
+  /* std::vector<std::vector<float>> m_truth_all_clusterIDs; */
+
+  // V3
+  std::vector<float> m_truth_Parent_Barcode;
+  std::vector<float> m_truth_Parent_Pid;
+  std::vector<float> m_truth_Parent_M;
+  std::vector<float> m_truth_Parent_E;
+  std::vector<float> m_truth_Parent_Eta;
+  std::vector<float> m_truth_Parent_Phi;
+  std::vector<float> m_truth_Parent_Pt;
+  std::vector<float> m_truth_Parent_xF;
+  std::vector<float> m_truth_Parent_EndVtx_x;
+  std::vector<float> m_truth_Parent_EndVtx_y;
+  std::vector<float> m_truth_Parent_EndVtx_z;
+  /* std::vector<float> m_truth_Parent_EndVtx_t; */
+  std::vector<float> m_truth_Parent_EndVtx_r;
+  /* std::vector<float> m_truth_Parent_TotalNDaughters; */
+  /* std::vector<std::vector<float>> m_truth_Parent_AllDaughterPids; */
+  /* std::vector<std::vector<float>> m_truth_Parent_AllDaughterEnergyFractions; */
+  std::vector<float> m_truth_Parent_TotalNClusters;
+  std::vector<std::vector<float>> m_truth_Parent_AllClusterIDs;
+  std::vector<std::vector<float>> m_truth_Parent_AllClusterEnergyFractions;
+  std::vector<float> m_truth_Decay1_Barcode;
+  std::vector<float> m_truth_Decay1_Pid;
+  std::vector<float> m_truth_Decay1_M;
+  std::vector<float> m_truth_Decay1_E;
+  std::vector<float> m_truth_Decay1_Eta;
+  std::vector<float> m_truth_Decay1_Phi;
+  std::vector<float> m_truth_Decay1_Pt;
+  std::vector<float> m_truth_Decay1_xF;
+  std::vector<float> m_truth_Decay1_EndVtx_x;
+  std::vector<float> m_truth_Decay1_EndVtx_y;
+  std::vector<float> m_truth_Decay1_EndVtx_z;
+  /* std::vector<float> m_truth_Decay1_EndVtx_t; */
+  std::vector<float> m_truth_Decay1_EndVtx_r;
+  std::vector<float> m_truth_Decay1_TotalNClusters;
+  std::vector<float> m_truth_Decay1_BestClusterID;
+  std::vector<float> m_truth_Decay1_BestClusterEfraction;
+  /* std::vector<std::vector<float>> m_truth_Decay1_AllClusterIDs; */
+  /* std::vector<std::vector<float>> m_truth_Decay1_AllClusterEnergyFractions; */
+  std::vector<float> m_truth_Decay2_Barcode;
+  std::vector<float> m_truth_Decay2_Pid;
+  std::vector<float> m_truth_Decay2_M;
+  std::vector<float> m_truth_Decay2_E;
+  std::vector<float> m_truth_Decay2_Eta;
+  std::vector<float> m_truth_Decay2_Phi;
+  std::vector<float> m_truth_Decay2_Pt;
+  std::vector<float> m_truth_Decay2_xF;
+  std::vector<float> m_truth_Decay2_EndVtx_x;
+  std::vector<float> m_truth_Decay2_EndVtx_y;
+  std::vector<float> m_truth_Decay2_EndVtx_z;
+  /* std::vector<float> m_truth_Decay2_EndVtx_t; */
+  std::vector<float> m_truth_Decay2_EndVtx_r;
+  std::vector<float> m_truth_Decay2_TotalNClusters;
+  std::vector<float> m_truth_Decay2_BestClusterID;
+  std::vector<float> m_truth_Decay2_BestClusterEfraction;
+  /* std::vector<std::vector<float>> m_truth_Decay2_AllClusterIDs; */
+  /* std::vector<std::vector<float>> m_truth_Decay2_AllClusterEnergyFractions; */
+  /* std::vector<float> m_truth_Cluster1_Id; */
+  /* std::vector<float> m_truth_Cluster1_E; */
+  /* std::vector<float> m_truth_Cluster1_Ecore; */
+  /* std::vector<float> m_truth_Cluster1_Eta; */
+  /* std::vector<float> m_truth_Cluster1_Phi; */
+  /* std::vector<float> m_truth_Cluster1_Pt; */
+  /* std::vector<float> m_truth_Cluster1_xF; */
+  /* std::vector<float> m_truth_Cluster1_Chi2; */
+  /* std::vector<float> m_truth_Cluster1_Decay1EnergyFraction; */
+  /* std::vector<float> m_truth_Cluster1_Decay2EnergyFraction; */
+  /* std::vector<float> m_truth_Cluster2_Id; */
+  /* std::vector<float> m_truth_Cluster2_E; */
+  /* std::vector<float> m_truth_Cluster2_Ecore; */
+  /* std::vector<float> m_truth_Cluster2_Eta; */
+  /* std::vector<float> m_truth_Cluster2_Phi; */
+  /* std::vector<float> m_truth_Cluster2_Pt; */
+  /* std::vector<float> m_truth_Cluster2_xF; */
+  /* std::vector<float> m_truth_Cluster2_Chi2; */
+  /* std::vector<float> m_truth_Cluster2_Decay1EnergyFraction; */
+  /* std::vector<float> m_truth_Cluster2_Decay2EnergyFraction; */
 
   TFile *fout;
   std::string outname;
@@ -106,6 +195,12 @@ class pythiaEMCalAna : public SubsysReco
   /* bool hasHIJING; // needed to handle HIJING embedded samples correctly */
   bool isMonteCarlo; // if input is RD we obviously need to skip the truth info
   bool hasPYTHIA; // used to determine if primary photons are truly direct photons
+  // counters for events
+  long int n_events_total;
+  long int n_events_minbias;
+  long int n_events_with_vertex;
+  long int n_events_with_good_vertex;
+  long int n_events_positiveCaloE;
   // counters for each primary particle type
   long int n_primaries;
   long int n_primary_photons;
@@ -118,65 +213,29 @@ class pythiaEMCalAna : public SubsysReco
   long int n_charged_hadrons_geant;
   long int n_charged_hadrons_pythia;
   long int n_pythia_decayed_hadrons;
-  /* long int n_direct_photons_in_acceptance; */
-  /* long int n_pythia_direct_photons; */
-  /* long int n_decay_photons; */
-  /* long int n_decay_photons_in_acceptance; */
-  /* long int n_pythia_decays; */
-  /* long int n_pythia_decays_in_acceptance; */
-  /* long int n_geant_decays; */
-  /* long int n_geant_decays_in_acceptance; */
-  /* long int n_primary_in_acceptance; */
-  /* long int n_pythia_decay_photons; */
-  /* long int n_pythia_decay_photons_in_acceptance; */
-  /* long int n_pythia_decayed_pi0s; */
-  /* long int n_pythia_decayed_pi0s_in_acceptance; */
-  /* long int n_pythia_nondecayed_hadrons; */
-  /* long int n_pythia_nondecayed_hadrons_in_acceptance; */
-  /* long int n_pythia_nondecayed_pi0s; */
-  /* long int n_pythia_nondecayed_pi0s_in_acceptance; */
-  /* long int n_geant_decay_photons; */
-  /* long int n_geant_decay_photons_in_acceptance; */
-  /* long int n_geant_primary_hadrons; */
-  /* long int n_geant_primary_hadrons_in_acceptance; */
-  /* long int n_geant_primary_pi0s; */
-  /* long int n_geant_primary_pi0s_in_acceptance; */
-  /* std::vector<std::pair<int,int>> pythia_primary_barcodes; */
   std::set<int> allTrackIDs; // keep track of all truth particles that produced a shower
-  std::set<int> pythiaBarcodes; // keep track of all PYTHIA-decayed primaries
+  std::set<int> primaryBarcodes; // keep track of all PYTHIA-decayed primaries
 
   /* std::vector<std::pair<int,int>> primaryBarcodes; */
   /* std::vector<std::pair<int,int>> secondaryBarcodes; */
-  HepMC::GenParticle* getGenParticle(int barcode, HepMC::GenEvent* theEvent);
+  HepMC::GenParticle* getGenParticle(int barcode);
+  PHG4Particle* getG4Particle(int barcode);
   bool withinAcceptance(PHG4Particle* part);
   bool withinAcceptance(HepMC::GenParticle* part);
-  PHG4VtxPoint* getG4EndVtx(int id, PHG4TruthInfoContainer* truthInfo);
-  bool isDirectPhoton(PHG4Particle* part, HepMC::GenEvent* theEvent);
-  void addPrimaryFromGeant(PHG4Particle* part, PHG4TruthInfoContainer* truthInfo, CaloRawClusterEval* caloEval, HepMC::GenEvent* theEvent);
-  void addPrimaryFromPythia(HepMC::GenParticle* part);
-  /* bool vector_contains(std::pair<int,int> val, std::vector<std::pair<int,int>> vec); */
-  /* // case 1: primary that geant knows about, decay handled by geant */
-  /* void addPrimaryFromGeant(PHG4Particle* part, PHG4TruthInfoContainer* truthInfo); */
-  /* // case 2: primary that geant doesn't know about, decay handled by pythia */
+  PHG4VtxPoint* getG4EndVtx(int id);
+  bool isDirectPhoton(PHG4Particle* part);
+  /* void addPrimaryFromGeant(PHG4Particle* part); */
   /* void addPrimaryFromPythia(HepMC::GenParticle* part); */
-  /* // case 3: secondary that geant knows about */
-  /* void addSecondary(PHG4Particle* part, PHG4TruthInfoContainer* truthInfo); */
-  /* // edge case: geant knows about secondary, but not its parent */
-  /* void addSecondaryWithoutParent(PHG4Particle* part, PHG4TruthInfoContainer* truthInfo, HepMC::GenParticle* genParent); */
-
-  // case 1: pythia handles decay
-  /* void addPrimaryFromPythia(HepMC::GenParticle* part); */
-  /* void addSecondaryFromPythia(HepMC::GenParticle* part, HepMC::GenParticle* parent); */
-  /* void addPrimaryFromGeant(PHG4Particle* part, PHG4TruthInfoContainer* truthInfo); */
-  /* void addSecondaryFromGeant(PHG4Particle* part, PHG4TruthInfoContainer* truthInfo); */
-
-
-  /* bool isDirectPhoton(PHG4Particle* part, HepMC::GenEvent* theEvent); */
-  /* void addDirectPhoton(PHG4Particle* part, PHG4TruthInfoContainer* truthInfo); */
-  /* void addDecayPhoton(PHG4Particle* part, PHG4TruthInfoContainer* truthInfo, HepMC::GenEvent* theEvent); */
-  /* void addPrimaryHadronFromPythia(HepMC::GenParticle* part, int embedID); */
-  /* void addPrimaryHadronFromGeant(PHG4Particle* part, PHG4TruthInfoContainer* truthInfo); */
-  /* void addPrimaryFromGeant(PHG4Particle* part, PHG4TruthInfoContainer* truthInfo, CaloRawClusterEval* caloEval, HepMC::GenEvent* theEvent); */
+  void PrintParent(PHG4Particle* par);
+  void FillTruthParticle(std::string which, PHG4Particle* par);
+  void FillAllClustersFromParent(PHG4Particle* par);
+  void FillParent(PHG4Particle* par);
+  HepMC::GenParticle* GetHepMCParent(PHG4Particle* par);
+  void FillTruth(HepMC::GenParticle* par);
+  std::vector<PHG4Particle*> GetAllDaughters(PHG4Particle* parent);
+  void GetBestDaughters(PHG4Particle* parent, PHG4Particle* &decay1, PHG4Particle* &decay2);
+  void FillDecay(std::string which, PHG4Particle* decay, PHG4Particle* parent);
+  RawCluster* FindBestCluster(PHG4Particle* decay, PHG4Particle* parent);
 };
 
 #endif // ISOCLUSTER_H
