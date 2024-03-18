@@ -7,6 +7,11 @@
 #include <fun4all/Fun4AllOutputManager.h>
 #include <fun4all/Fun4AllServer.h>
 
+#include <jetbase/FastJetAlgo.h>
+#include <jetbase/JetReco.h>
+#include <g4jets/TruthJetInput.h>
+#include <jetbackground/RetowerCEMC.h>
+
 #include <phool/PHRandomSeed.h>
 #include <phool/recoConsts.h>
 
@@ -15,7 +20,7 @@
 #include <g4centrality/PHG4CentralityReco.h>
 #include <string>
 
-#include "HIJetReco.C"
+//#include "HIJetReco.C"
 
 #include <caloreco/RawClusterBuilderTopo.h>
 #include <particleflowreco/ParticleFlowReco.h>
@@ -41,6 +46,7 @@ R__LOAD_LIBRARY(libg4dst.so)
 R__LOAD_LIBRARY(libcalo_reco.so)
 R__LOAD_LIBRARY(libparticleflow.so)
 R__LOAD_LIBRARY(libglobalvertex.so)
+R__LOAD_LIBRARY(libg4jets.so)
 
 
 //void Fun4All_JetVal(const char *filelisttruth = "dst_truth_jet.list",
@@ -171,12 +177,12 @@ void Fun4All_FullJetFinder(std::string outDir = "./", std::vector<std::string> m
   if(whichR[5])towerjetreco->add_algo(new FastJetAlgo(Jet::ANTIKT, 0.7, verbosity), "AntiKt_reco_r07");
   if(whichR[6])towerjetreco->add_algo(new FastJetAlgo(Jet::ANTIKT, 0.8, verbosity), "AntiKt_reco_r08");*/
   if(whichR[0])towerjetreco->add_algo(new FastJetAlgo({{Jet::ANTIKT, JET_R, 0.2, VERBOSITY, verbosity, CALC_AREA}}), "AntiKt_reco_r02");
-  if(whichR[1])towerjetreco->add_algo(new FastJetAlgo({{Jet::ANTIKT, JET_R, 0.2, VERBOSITY, verbosity, CALC_AREA}}), "AntiKt_reco_r03");
-  if(whichR[2])towerjetreco->add_algo(new FastJetAlgo({{Jet::ANTIKT, JET_R, 0.2, VERBOSITY, verbosity, CALC_AREA}}), "AntiKt_reco_r04");
-  if(whichR[3])towerjetreco->add_algo(new FastJetAlgo({{Jet::ANTIKT, JET_R, 0.2, VERBOSITY, verbosity, CALC_AREA}}), "AntiKt_reco_r05");
-  if(whichR[4])towerjetreco->add_algo(new FastJetAlgo({{Jet::ANTIKT, JET_R, 0.2, VERBOSITY, verbosity, CALC_AREA}}), "AntiKt_reco_r06");
-  if(whichR[5])towerjetreco->add_algo(new FastJetAlgo({{Jet::ANTIKT, JET_R, 0.2, VERBOSITY, verbosity, CALC_AREA}}), "AntiKt_reco_r07");
-  if(whichR[6])towerjetreco->add_algo(new FastJetAlgo({{Jet::ANTIKT, JET_R, 0.2, VERBOSITY, verbosity, CALC_AREA}}), "AntiKt_reco_r08");
+  if(whichR[1])towerjetreco->add_algo(new FastJetAlgo({{Jet::ANTIKT, JET_R, 0.3, VERBOSITY, verbosity, CALC_AREA}}), "AntiKt_reco_r03");
+  if(whichR[2])towerjetreco->add_algo(new FastJetAlgo({{Jet::ANTIKT, JET_R, 0.4, VERBOSITY, verbosity, CALC_AREA}}), "AntiKt_reco_r04");
+  if(whichR[3])towerjetreco->add_algo(new FastJetAlgo({{Jet::ANTIKT, JET_R, 0.5, VERBOSITY, verbosity, CALC_AREA}}), "AntiKt_reco_r05");
+  if(whichR[4])towerjetreco->add_algo(new FastJetAlgo({{Jet::ANTIKT, JET_R, 0.6, VERBOSITY, verbosity, CALC_AREA}}), "AntiKt_reco_r06");
+  if(whichR[5])towerjetreco->add_algo(new FastJetAlgo({{Jet::ANTIKT, JET_R, 0.7, VERBOSITY, verbosity, CALC_AREA}}), "AntiKt_reco_r07");
+  if(whichR[6])towerjetreco->add_algo(new FastJetAlgo({{Jet::ANTIKT, JET_R, 0.8, VERBOSITY, verbosity, CALC_AREA}}), "AntiKt_reco_r08");
   towerjetreco->set_algo_node("ANTIKT");
   towerjetreco->set_input_node("INCLUSIVE_RECO");
   towerjetreco->Verbosity(verbosity);

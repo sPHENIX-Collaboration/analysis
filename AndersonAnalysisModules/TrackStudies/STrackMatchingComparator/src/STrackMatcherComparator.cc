@@ -8,6 +8,7 @@
 // ----------------------------------------------------------------------------
 
 // c++ utilities
+#include <cmath>
 #include <array>
 #include <string>
 #include <vector>
@@ -30,6 +31,7 @@
 #include "STrackMatcherComparator.h"
 #include "STrackMatcherComparatorConfig.h"
 #include "STrackMatcherComparatorHistDef.h"
+#include "STrackMatcherComparatorHistContent.h"
 
 // make common namespaces implicit
 using namespace std;
@@ -486,48 +488,36 @@ void STrackMatcherComparator::GetNewTreeHists() {
     }
 
     // select truth particles
+    //   - FIXME add cuts
     if (!tru_is_G4track) continue;
 
-    // fill truth 1D histograms
-    m_vecTreeHists1D[Var::NTot][Type::Truth]  -> Fill(tru_nclus);
-    m_vecTreeHists1D[Var::NIntt][Type::Truth] -> Fill(tru_nclusintt);
-    m_vecTreeHists1D[Var::NMvtx][Type::Truth] -> Fill(tru_nclusmvtx);
-    m_vecTreeHists1D[Var::NTpc][Type::Truth]  -> Fill(tru_nclustpc);
-    m_vecTreeHists1D[Var::RTot][Type::Truth]  -> Fill(1.);
-    m_vecTreeHists1D[Var::RIntt][Type::Truth] -> Fill(1.);
-    m_vecTreeHists1D[Var::RMvtx][Type::Truth] -> Fill(1.);
-    m_vecTreeHists1D[Var::RTpc][Type::Truth]  -> Fill(1.);
-    m_vecTreeHists1D[Var::Phi][Type::Truth]   -> Fill(tru_trkphi);
-    m_vecTreeHists1D[Var::Eta][Type::Truth]   -> Fill(tru_trketa);
-    m_vecTreeHists1D[Var::Pt][Type::Truth]    -> Fill(tru_trkpt);
-    m_vecTreeHists1D[Var::Frac][Type::Truth]  -> Fill(1.);
+    // bundle histogram values to fill
+    const STrackMatcherComparatorHistContent content {
+      (double) tru_nclus,
+      (double) tru_nclusintt,
+      (double) tru_nclusmvtx,
+      (double) tru_nclustpc,
+      1.,
+      1.,
+      1.,
+      1.,
+      tru_trkphi,
+      tru_trketa,
+      tru_trkpt,
+      1.,
+      1.,
+      1.,
+      1.,
+      1.,
+      1.,
+      1.,
+      1.
+    };
 
-    // fill truth 2D histograms
-    m_vecTreeHists2D[Var::NTot][Type::Truth][Comp::VsTruthPt]  -> Fill(tru_trkpt, tru_nclus);
-    m_vecTreeHists2D[Var::NIntt][Type::Truth][Comp::VsTruthPt] -> Fill(tru_trkpt, tru_nclusintt);
-    m_vecTreeHists2D[Var::NMvtx][Type::Truth][Comp::VsTruthPt] -> Fill(tru_trkpt, tru_nclusmvtx);
-    m_vecTreeHists2D[Var::NTpc][Type::Truth][Comp::VsTruthPt]  -> Fill(tru_trkpt, tru_nclustpc);
-    m_vecTreeHists2D[Var::RTot][Type::Truth][Comp::VsTruthPt]  -> Fill(tru_trkpt, 1.);
-    m_vecTreeHists2D[Var::RIntt][Type::Truth][Comp::VsTruthPt] -> Fill(tru_trkpt, 1.);
-    m_vecTreeHists2D[Var::RMvtx][Type::Truth][Comp::VsTruthPt] -> Fill(tru_trkpt, 1.);
-    m_vecTreeHists2D[Var::RTpc][Type::Truth][Comp::VsTruthPt]  -> Fill(tru_trkpt, 1.);
-    m_vecTreeHists2D[Var::Phi][Type::Truth][Comp::VsTruthPt]   -> Fill(tru_trkpt, tru_trkphi);
-    m_vecTreeHists2D[Var::Eta][Type::Truth][Comp::VsTruthPt]   -> Fill(tru_trkpt, tru_trketa);
-    m_vecTreeHists2D[Var::Pt][Type::Truth][Comp::VsTruthPt]    -> Fill(tru_trkpt, tru_trkpt);
-    m_vecTreeHists2D[Var::Frac][Type::Truth][Comp::VsTruthPt]  -> Fill(tru_trkpt, 1.);
-
-    m_vecTreeHists2D[Var::NTot][Type::Truth][Comp::VsNumTpc]  -> Fill(tru_nclustpc, tru_nclus);
-    m_vecTreeHists2D[Var::NIntt][Type::Truth][Comp::VsNumTpc] -> Fill(tru_nclustpc, tru_nclusintt);
-    m_vecTreeHists2D[Var::NMvtx][Type::Truth][Comp::VsNumTpc] -> Fill(tru_nclustpc, tru_nclusmvtx);
-    m_vecTreeHists2D[Var::NTpc][Type::Truth][Comp::VsNumTpc]  -> Fill(tru_nclustpc, tru_nclustpc);
-    m_vecTreeHists2D[Var::RTot][Type::Truth][Comp::VsNumTpc]  -> Fill(tru_nclustpc, 1.);
-    m_vecTreeHists2D[Var::RIntt][Type::Truth][Comp::VsNumTpc] -> Fill(tru_nclustpc, 1.);
-    m_vecTreeHists2D[Var::RMvtx][Type::Truth][Comp::VsNumTpc] -> Fill(tru_nclustpc, 1.);
-    m_vecTreeHists2D[Var::RTpc][Type::Truth][Comp::VsNumTpc]  -> Fill(tru_nclustpc, 1.);
-    m_vecTreeHists2D[Var::Phi][Type::Truth][Comp::VsNumTpc]   -> Fill(tru_nclustpc, tru_trkphi);
-    m_vecTreeHists2D[Var::Eta][Type::Truth][Comp::VsNumTpc]   -> Fill(tru_nclustpc, tru_trketa);
-    m_vecTreeHists2D[Var::Pt][Type::Truth][Comp::VsNumTpc]    -> Fill(tru_nclustpc, tru_trkpt);
-    m_vecTreeHists2D[Var::Frac][Type::Truth][Comp::VsNumTpc]  -> Fill(tru_nclustpc, 1.);
+    // fill truth histograms
+    FillHistogram1D(content, Type::Truth, m_vecTreeHists1D);
+    FillHistogram2D(content, Type::Truth, Comp::VsTruthPt, tru_trkpt,    m_vecTreeHists2D);
+    FillHistogram2D(content, Type::Truth, Comp::VsNumTpc,  tru_nclustpc, m_vecTreeHists2D);
   }  // end truth particle loop
 
   // announce next entry loop
@@ -536,7 +526,7 @@ void STrackMatcherComparator::GetNewTreeHists() {
        << endl;
 
   // loop over reco tracks
-  // TODO identify matched truth particles
+  //   - TODO identify matched truth particles
   int64_t nRecoBytes = 0;
   for (int64_t iRecoEntry = 0; iRecoEntry < nRecoEntries; iRecoEntry++) {
 
@@ -557,132 +547,51 @@ void STrackMatcherComparator::GetNewTreeHists() {
     }
 
     // select only tracks matched to truth particle
+    //   - FIXME add cuts
     if (!rec_is_matched || !rec_is_Svtrack) continue;
 
-    // fill all matched reco 1D histograms
-    // FIXME actually calculate pt fraction
-    m_vecTreeHists1D[Var::NTot][Type::Track]  -> Fill(rec_nclus);
-    m_vecTreeHists1D[Var::NIntt][Type::Track] -> Fill(rec_nclusintt);
-    m_vecTreeHists1D[Var::NMvtx][Type::Track] -> Fill(rec_nclusmvtx);
-    m_vecTreeHists1D[Var::NTpc][Type::Track]  -> Fill(rec_nclustpc);
-    m_vecTreeHists1D[Var::RTot][Type::Track]  -> Fill(rec_matchrat);
-    m_vecTreeHists1D[Var::RIntt][Type::Track] -> Fill(rec_matchrat_intt);
-    m_vecTreeHists1D[Var::RMvtx][Type::Track] -> Fill(rec_matchrat_mvtx);
-    m_vecTreeHists1D[Var::RTpc][Type::Track]  -> Fill(rec_matchrat_tpc);
-    m_vecTreeHists1D[Var::Phi][Type::Track]   -> Fill(rec_trkphi);
-    m_vecTreeHists1D[Var::Eta][Type::Track]   -> Fill(rec_trketa);
-    m_vecTreeHists1D[Var::Pt][Type::Track]    -> Fill(rec_trkpt);
-    m_vecTreeHists1D[Var::Frac][Type::Track]  -> Fill(1.);
+    // bundle histogram values to fill
+    //   - FIXME actually calculate pt fraction
+    //   - FIXME include quality, errors, and resolutions
+    const STrackMatcherComparatorHistContent content {
+      (double) rec_nclus,
+      (double) rec_nclusintt,
+      (double) rec_nclusmvtx,
+      (double) rec_nclustpc,
+      rec_matchrat,
+      rec_matchrat_intt,
+      rec_matchrat_mvtx,
+      rec_matchrat_tpc,
+      rec_trkphi,
+      rec_trketa,
+      rec_trkpt,
+      1.,
+      1.,
+      1.,
+      1.,
+      1.,
+      1.,
+      1.,
+      1.
+    };
 
-    // fill all matched reco 2D histograms
-    // FIXME use actual truth pt & ntpc of matched particle
-    m_vecTreeHists2D[Var::NTot][Type::Track][Comp::VsTruthPt]  -> Fill(rec_trkpt, rec_nclus);
-    m_vecTreeHists2D[Var::NIntt][Type::Track][Comp::VsTruthPt] -> Fill(rec_trkpt, rec_nclusintt);
-    m_vecTreeHists2D[Var::NMvtx][Type::Track][Comp::VsTruthPt] -> Fill(rec_trkpt, rec_nclusmvtx);
-    m_vecTreeHists2D[Var::NTpc][Type::Track][Comp::VsTruthPt]  -> Fill(rec_trkpt, rec_nclustpc);
-    m_vecTreeHists2D[Var::RTot][Type::Track][Comp::VsTruthPt]  -> Fill(rec_trkpt, rec_matchrat);
-    m_vecTreeHists2D[Var::RIntt][Type::Track][Comp::VsTruthPt] -> Fill(rec_trkpt, rec_matchrat_intt);
-    m_vecTreeHists2D[Var::RMvtx][Type::Track][Comp::VsTruthPt] -> Fill(rec_trkpt, rec_matchrat_mvtx);
-    m_vecTreeHists2D[Var::RTpc][Type::Track][Comp::VsTruthPt]  -> Fill(rec_trkpt, rec_matchrat_tpc);
-    m_vecTreeHists2D[Var::Phi][Type::Track][Comp::VsTruthPt]   -> Fill(rec_trkpt, rec_trkphi);
-    m_vecTreeHists2D[Var::Eta][Type::Track][Comp::VsTruthPt]   -> Fill(rec_trkpt, rec_trketa);
-    m_vecTreeHists2D[Var::Pt][Type::Track][Comp::VsTruthPt]    -> Fill(rec_trkpt, rec_trkpt);
-    m_vecTreeHists2D[Var::Frac][Type::Track][Comp::VsTruthPt]  -> Fill(rec_trkpt, 1.);
-
-    m_vecTreeHists2D[Var::NTot][Type::Track][Comp::VsNumTpc]  -> Fill(rec_nclustpc, rec_nclus);
-    m_vecTreeHists2D[Var::NIntt][Type::Track][Comp::VsNumTpc] -> Fill(rec_nclustpc, rec_nclusintt);
-    m_vecTreeHists2D[Var::NMvtx][Type::Track][Comp::VsNumTpc] -> Fill(rec_nclustpc, rec_nclusmvtx);
-    m_vecTreeHists2D[Var::NTpc][Type::Track][Comp::VsNumTpc]  -> Fill(rec_nclustpc, rec_nclustpc);
-    m_vecTreeHists2D[Var::RTot][Type::Track][Comp::VsNumTpc]  -> Fill(rec_nclustpc, rec_matchrat);
-    m_vecTreeHists2D[Var::RIntt][Type::Track][Comp::VsNumTpc] -> Fill(rec_nclustpc, rec_matchrat_intt);
-    m_vecTreeHists2D[Var::RMvtx][Type::Track][Comp::VsNumTpc] -> Fill(rec_nclustpc, rec_matchrat_mvtx);
-    m_vecTreeHists2D[Var::RTpc][Type::Track][Comp::VsNumTpc]  -> Fill(rec_nclustpc, rec_matchrat_tpc);
-    m_vecTreeHists2D[Var::Phi][Type::Track][Comp::VsNumTpc]   -> Fill(rec_nclustpc, rec_trkphi);
-    m_vecTreeHists2D[Var::Eta][Type::Track][Comp::VsNumTpc]   -> Fill(rec_nclustpc, rec_trketa);
-    m_vecTreeHists2D[Var::Pt][Type::Track][Comp::VsNumTpc]    -> Fill(rec_nclustpc, rec_trkpt);
-    m_vecTreeHists2D[Var::Frac][Type::Track][Comp::VsNumTpc]  -> Fill(rec_nclustpc, 1.);
+    // fill all matched reco histograms
+    //   - FIXME use actual truth pt & ntpc of matched particle
+    FillHistogram1D(content, Type::Track, m_vecTreeHists1D);
+    FillHistogram2D(content, Type::Track, Comp::VsTruthPt, rec_trkpt,    m_vecTreeHists2D);
+    FillHistogram2D(content, Type::Track, Comp::VsTruthPt, rec_nclustpc, m_vecTreeHists2D);
 
     // fill weird and normal matched reco 1D histograms
-    // FIXME actually check if is a weird track
+    //   - FIXME actually check if is a weird track
     const bool isWeirdTrack = true;
     if (isWeirdTrack) {
-      m_vecTreeHists1D[Var::NTot][Type::Weird]  -> Fill(rec_nclus);
-      m_vecTreeHists1D[Var::NIntt][Type::Weird] -> Fill(rec_nclusintt);
-      m_vecTreeHists1D[Var::NMvtx][Type::Weird] -> Fill(rec_nclusmvtx);
-      m_vecTreeHists1D[Var::NTpc][Type::Weird]  -> Fill(rec_nclustpc);
-      m_vecTreeHists1D[Var::RTot][Type::Weird]  -> Fill(rec_matchrat);
-      m_vecTreeHists1D[Var::RIntt][Type::Weird] -> Fill(rec_matchrat_intt);
-      m_vecTreeHists1D[Var::RMvtx][Type::Weird] -> Fill(rec_matchrat_mvtx);
-      m_vecTreeHists1D[Var::RTpc][Type::Weird]  -> Fill(rec_matchrat_tpc);
-      m_vecTreeHists1D[Var::Phi][Type::Weird]   -> Fill(rec_trkphi);
-      m_vecTreeHists1D[Var::Eta][Type::Weird]   -> Fill(rec_trketa);
-      m_vecTreeHists1D[Var::Pt][Type::Weird]    -> Fill(rec_trkpt);
-      m_vecTreeHists1D[Var::Frac][Type::Weird]  -> Fill(1.);
-
-      m_vecTreeHists2D[Var::NTot][Type::Weird][Comp::VsTruthPt]  -> Fill(rec_trkpt, rec_nclus);
-      m_vecTreeHists2D[Var::NIntt][Type::Weird][Comp::VsTruthPt] -> Fill(rec_trkpt, rec_nclusintt);
-      m_vecTreeHists2D[Var::NMvtx][Type::Weird][Comp::VsTruthPt] -> Fill(rec_trkpt, rec_nclusmvtx);
-      m_vecTreeHists2D[Var::NTpc][Type::Weird][Comp::VsTruthPt]  -> Fill(rec_trkpt, rec_nclustpc);
-      m_vecTreeHists2D[Var::RTot][Type::Weird][Comp::VsTruthPt]  -> Fill(rec_trkpt, rec_matchrat);
-      m_vecTreeHists2D[Var::RIntt][Type::Weird][Comp::VsTruthPt] -> Fill(rec_trkpt, rec_matchrat_intt);
-      m_vecTreeHists2D[Var::RMvtx][Type::Weird][Comp::VsTruthPt] -> Fill(rec_trkpt, rec_matchrat_mvtx);
-      m_vecTreeHists2D[Var::RTpc][Type::Weird][Comp::VsTruthPt]  -> Fill(rec_trkpt, rec_matchrat_tpc);
-      m_vecTreeHists2D[Var::Phi][Type::Weird][Comp::VsTruthPt]   -> Fill(rec_trkpt, rec_trkphi);
-      m_vecTreeHists2D[Var::Eta][Type::Weird][Comp::VsTruthPt]   -> Fill(rec_trkpt, rec_trketa);
-      m_vecTreeHists2D[Var::Pt][Type::Weird][Comp::VsTruthPt]    -> Fill(rec_trkpt, rec_trkpt);
-      m_vecTreeHists2D[Var::Frac][Type::Weird][Comp::VsTruthPt]  -> Fill(rec_trkpt, 1.);
-
-      m_vecTreeHists2D[Var::NTot][Type::Weird][Comp::VsNumTpc]  -> Fill(rec_nclustpc, rec_nclus);
-      m_vecTreeHists2D[Var::NIntt][Type::Weird][Comp::VsNumTpc] -> Fill(rec_nclustpc, rec_nclusintt);
-      m_vecTreeHists2D[Var::NMvtx][Type::Weird][Comp::VsNumTpc] -> Fill(rec_nclustpc, rec_nclusmvtx);
-      m_vecTreeHists2D[Var::NTpc][Type::Weird][Comp::VsNumTpc]  -> Fill(rec_nclustpc, rec_nclustpc);
-      m_vecTreeHists2D[Var::RTot][Type::Weird][Comp::VsNumTpc]  -> Fill(rec_nclustpc, rec_matchrat);
-      m_vecTreeHists2D[Var::RIntt][Type::Weird][Comp::VsNumTpc] -> Fill(rec_nclustpc, rec_matchrat_intt);
-      m_vecTreeHists2D[Var::RMvtx][Type::Weird][Comp::VsNumTpc] -> Fill(rec_nclustpc, rec_matchrat_mvtx);
-      m_vecTreeHists2D[Var::RTpc][Type::Weird][Comp::VsNumTpc]  -> Fill(rec_nclustpc, rec_matchrat_tpc);
-      m_vecTreeHists2D[Var::Phi][Type::Weird][Comp::VsNumTpc]   -> Fill(rec_nclustpc, rec_trkphi);
-      m_vecTreeHists2D[Var::Eta][Type::Weird][Comp::VsNumTpc]   -> Fill(rec_nclustpc, rec_trketa);
-      m_vecTreeHists2D[Var::Pt][Type::Weird][Comp::VsNumTpc]    -> Fill(rec_nclustpc, rec_trkpt);
-      m_vecTreeHists2D[Var::Frac][Type::Weird][Comp::VsNumTpc]  -> Fill(rec_nclustpc, 1.);
+      FillHistogram1D(content, Type::Weird, m_vecTreeHists1D);
+      FillHistogram2D(content, Type::Weird, Comp::VsTruthPt, rec_trkpt,    m_vecTreeHists2D);
+      FillHistogram2D(content, Type::Weird, Comp::VsNumTpc,  rec_nclustpc, m_vecTreeHists2D);
     } else {
-      m_vecTreeHists1D[Var::NTot][Type::Normal]  -> Fill(rec_nclus);
-      m_vecTreeHists1D[Var::NIntt][Type::Normal] -> Fill(rec_nclusintt);
-      m_vecTreeHists1D[Var::NMvtx][Type::Normal] -> Fill(rec_nclusmvtx);
-      m_vecTreeHists1D[Var::NTpc][Type::Normal]  -> Fill(rec_nclustpc);
-      m_vecTreeHists1D[Var::RTot][Type::Normal]  -> Fill(rec_matchrat);
-      m_vecTreeHists1D[Var::RIntt][Type::Normal] -> Fill(rec_matchrat_intt);
-      m_vecTreeHists1D[Var::RMvtx][Type::Normal] -> Fill(rec_matchrat_mvtx);
-      m_vecTreeHists1D[Var::RTpc][Type::Normal]  -> Fill(rec_matchrat_tpc);
-      m_vecTreeHists1D[Var::Phi][Type::Normal]   -> Fill(rec_trkphi);
-      m_vecTreeHists1D[Var::Eta][Type::Normal]   -> Fill(rec_trketa);
-      m_vecTreeHists1D[Var::Pt][Type::Normal]    -> Fill(rec_trkpt);
-      m_vecTreeHists1D[Var::Frac][Type::Normal]  -> Fill(1.);
-
-      m_vecTreeHists2D[Var::NTot][Type::Normal][Comp::VsTruthPt]  -> Fill(rec_trkpt, rec_nclus);
-      m_vecTreeHists2D[Var::NIntt][Type::Normal][Comp::VsTruthPt] -> Fill(rec_trkpt, rec_nclusintt);
-      m_vecTreeHists2D[Var::NMvtx][Type::Normal][Comp::VsTruthPt] -> Fill(rec_trkpt, rec_nclusmvtx);
-      m_vecTreeHists2D[Var::NTpc][Type::Normal][Comp::VsTruthPt]  -> Fill(rec_trkpt, rec_nclustpc);
-      m_vecTreeHists2D[Var::RTot][Type::Normal][Comp::VsTruthPt]  -> Fill(rec_trkpt, rec_matchrat);
-      m_vecTreeHists2D[Var::RIntt][Type::Normal][Comp::VsTruthPt] -> Fill(rec_trkpt, rec_matchrat_intt);
-      m_vecTreeHists2D[Var::RMvtx][Type::Normal][Comp::VsTruthPt] -> Fill(rec_trkpt, rec_matchrat_mvtx);
-      m_vecTreeHists2D[Var::RTpc][Type::Normal][Comp::VsTruthPt]  -> Fill(rec_trkpt, rec_matchrat_tpc);
-      m_vecTreeHists2D[Var::Phi][Type::Normal][Comp::VsTruthPt]   -> Fill(rec_trkpt, rec_trkphi);
-      m_vecTreeHists2D[Var::Eta][Type::Normal][Comp::VsTruthPt]   -> Fill(rec_trkpt, rec_trketa);
-      m_vecTreeHists2D[Var::Pt][Type::Normal][Comp::VsTruthPt]    -> Fill(rec_trkpt, rec_trkpt);
-      m_vecTreeHists2D[Var::Frac][Type::Normal][Comp::VsTruthPt]  -> Fill(rec_trkpt, 1.);
-
-      m_vecTreeHists2D[Var::NTot][Type::Normal][Comp::VsNumTpc]  -> Fill(rec_nclustpc, rec_nclus);
-      m_vecTreeHists2D[Var::NIntt][Type::Normal][Comp::VsNumTpc] -> Fill(rec_nclustpc, rec_nclusintt);
-      m_vecTreeHists2D[Var::NMvtx][Type::Normal][Comp::VsNumTpc] -> Fill(rec_nclustpc, rec_nclusmvtx);
-      m_vecTreeHists2D[Var::NTpc][Type::Normal][Comp::VsNumTpc]  -> Fill(rec_nclustpc, rec_nclustpc);
-      m_vecTreeHists2D[Var::RTot][Type::Normal][Comp::VsNumTpc]  -> Fill(rec_nclustpc, rec_matchrat);
-      m_vecTreeHists2D[Var::RIntt][Type::Normal][Comp::VsNumTpc] -> Fill(rec_nclustpc, rec_matchrat_intt);
-      m_vecTreeHists2D[Var::RMvtx][Type::Normal][Comp::VsNumTpc] -> Fill(rec_nclustpc, rec_matchrat_mvtx);
-      m_vecTreeHists2D[Var::RTpc][Type::Normal][Comp::VsNumTpc]  -> Fill(rec_nclustpc, rec_matchrat_tpc);
-      m_vecTreeHists2D[Var::Phi][Type::Normal][Comp::VsNumTpc]   -> Fill(rec_nclustpc, rec_trkphi);
-      m_vecTreeHists2D[Var::Eta][Type::Normal][Comp::VsNumTpc]   -> Fill(rec_nclustpc, rec_trketa);
-      m_vecTreeHists2D[Var::Pt][Type::Normal][Comp::VsNumTpc]    -> Fill(rec_nclustpc, rec_trkpt);
-      m_vecTreeHists2D[Var::Frac][Type::Normal][Comp::VsNumTpc]  -> Fill(rec_nclustpc, 1.);
+      FillHistogram1D(content, Type::Normal, m_vecTreeHists1D);
+      FillHistogram2D(content, Type::Normal, Comp::VsTruthPt, rec_trkpt,    m_vecTreeHists2D);
+      FillHistogram2D(content, Type::Normal, Comp::VsNumTpc,  rec_nclustpc, m_vecTreeHists2D);
     }
   }  // end reco track loop
 
@@ -731,7 +640,8 @@ void STrackMatcherComparator::GetNewTupleHists() {
   float tru_gphi;
   float tru_gnmvtxclust_trkmatcher;
   float tru_gninttclust_trkmatcher;
-  float tru_gntpclust_trkmatchergnmvtxclust_manual;
+  float tru_gntpclust_trkmatcher;
+  float tru_gnmvtxclust_manual;
   float tru_gninttclust_manual;
   float tru_gntpcclust_manual;
   float tru_gnmvtxlayer;
@@ -779,7 +689,8 @@ void STrackMatcherComparator::GetNewTupleHists() {
   float rec_gphi;
   float rec_gnmvtxclust_trkmatcher;
   float rec_gninttclust_trkmatcher;
-  float rec_gntpclust_trkmatchergnmvtxclust_manual;
+  float rec_gntpclust_trkmatcher;
+  float rec_gnmvtxclust_manual;
   float rec_gninttclust_manual;
   float rec_gntpcclust_manual;
   float rec_gnmvtxlayer;
@@ -799,101 +710,103 @@ void STrackMatcherComparator::GetNewTupleHists() {
   float rec_fracntpcmatched;
  
   // set branch addresses
-  m_ntTupleTrue -> SetBranchAddress("evtid",                                  &tru_evtid);
-  m_ntTupleTrue -> SetBranchAddress("trkid",                                  &tru_trkid);
-  m_ntTupleTrue -> SetBranchAddress("pt",                                     &tru_pt);
-  m_ntTupleTrue -> SetBranchAddress("eta",                                    &tru_eta);
-  m_ntTupleTrue -> SetBranchAddress("phi",                                    &tru_phi);
-  m_ntTupleTrue -> SetBranchAddress("nmvtxclust_trkmatcher",                  &tru_nmvtxclust_trkmatcher);
-  m_ntTupleTrue -> SetBranchAddress("ninttclust_trkmatcher",                  &tru_ninttclust_trkmatcher);
-  m_ntTupleTrue -> SetBranchAddress("ntpclust_trkmatcher",                    &tru_ntpclust_trkmatcher);
-  m_ntTupleTrue -> SetBranchAddress("nmvtxclust_manual",                      &tru_nmvtxclust_manual);
-  m_ntTupleTrue -> SetBranchAddress("ninttclust_manual",                      &tru_ninttclust_manual);
-  m_ntTupleTrue -> SetBranchAddress("ntpcclust_manual",                       &tru_ntpcclust_manual);
-  m_ntTupleTrue -> SetBranchAddress("nmvtxlayer_",                            &tru_nmvtxlayer_);
-  m_ntTupleTrue -> SetBranchAddress("ninttlayer",                             &tru_ninttlayer);
-  m_ntTupleTrue -> SetBranchAddress("ntpclayer",                              &tru_ntpclayer);
-  m_ntTupleTrue -> SetBranchAddress("deltapt",                                &tru_deltapt);
-  m_ntTupleTrue -> SetBranchAddress("quality",                                &tru_quality);
-  m_ntTupleTrue -> SetBranchAddress("dcaxy",                                  &tru_dcaxy);
-  m_ntTupleTrue -> SetBranchAddress("dcaz",                                   &tru_dcaz);
-  m_ntTupleTrue -> SetBranchAddress("sigmadcaxy",                             &tru_sigmadcaxy);
-  m_ntTupleTrue -> SetBranchAddress("sigmadacz",                              &tru_sigmadacz);
-  m_ntTupleTrue -> SetBranchAddress("vx",                                     &tru_vx);
-  m_ntTupleTrue -> SetBranchAddress("vy",                                     &tru_vy);
-  m_ntTupleTrue -> SetBranchAddress("vz",                                     &tru_vz);
-  m_ntTupleTrue -> SetBranchAddress("gtrkid",                                 &tru_gtrkid);
-  m_ntTupleTrue -> SetBranchAddress("gpt",                                    &tru_gpt);
-  m_ntTupleTrue -> SetBranchAddress("geta",                                   &tru_geta);
-  m_ntTupleTrue -> SetBranchAddress("gphi",                                   &tru_gphi);
-  m_ntTupleTrue -> SetBranchAddress("gnmvtxclust_trkmatcher",                 &tru_gnmvtxclust_trkmatcher);
-  m_ntTupleTrue -> SetBranchAddress("gninttclust_trkmatcher",                 &tru_gninttclust_trkmatcher);
-  m_ntTupleTrue -> SetBranchAddress("gntpclust_trkmatchergnmvtxclust_manual", &tru_gntpclust_trkmatchergnmvtxclust_manual);
-  m_ntTupleTrue -> SetBranchAddress("gninttclust_manual",                     &tru_gninttclust_manual);
-  m_ntTupleTrue -> SetBranchAddress("gntpcclust_manual",                      &tru_gntpcclust_manual);
-  m_ntTupleTrue -> SetBranchAddress("gnmvtxlayer",                            &tru_gnmvtxlayer);
-  m_ntTupleTrue -> SetBranchAddress("gninttlayer",                            &tru_gninttlayer);
-  m_ntTupleTrue -> SetBranchAddress("gntpclayer",                             &tru_gntpclayer);
-  m_ntTupleTrue -> SetBranchAddress("gdeltapt",                               &tru_gdeltapt);
-  m_ntTupleTrue -> SetBranchAddress("gquality",                               &tru_gquality);
-  m_ntTupleTrue -> SetBranchAddress("gdcaxy",                                 &tru_gdcaxy);
-  m_ntTupleTrue -> SetBranchAddress("gdcaz",                                  &tru_gdcaz);
-  m_ntTupleTrue -> SetBranchAddress("gsigmadcaxy",                            &tru_gsigmadcaxy);
-  m_ntTupleTrue -> SetBranchAddress("gsigmadacz",                             &tru_gsigmadacz);
-  m_ntTupleTrue -> SetBranchAddress("gvx",                                    &tru_gvx);
-  m_ntTupleTrue -> SetBranchAddress("gvy",                                    &tru_gvy);
-  m_ntTupleTrue -> SetBranchAddress("gvz",                                    &tru_gvz);
-  m_ntTupleTrue -> SetBranchAddress("fracnmvtxmatched",                       &tru_fracnmvtxmatched);
-  m_ntTupleTrue -> SetBranchAddress("fracninttmatched",                       &tru_fracninttmatched);
-  m_ntTupleTrue -> SetBranchAddress("fracntpcmatched",                        &tru_fracntpcmatched);
+  m_ntTupleTrue -> SetBranchAddress("evtid",                 &tru_evtid);
+  m_ntTupleTrue -> SetBranchAddress("trkid",                 &tru_trkid);
+  m_ntTupleTrue -> SetBranchAddress("pt",                    &tru_pt);
+  m_ntTupleTrue -> SetBranchAddress("eta",                   &tru_eta);
+  m_ntTupleTrue -> SetBranchAddress("phi",                   &tru_phi);
+  m_ntTupleTrue -> SetBranchAddress("nmvtxclust_trkmatcher", &tru_nmvtxclust_trkmatcher);
+  m_ntTupleTrue -> SetBranchAddress("ninttclust_trkmatcher", &tru_ninttclust_trkmatcher);
+  m_ntTupleTrue -> SetBranchAddress("ntpclust_trkmatcher",   &tru_ntpclust_trkmatcher);
+  m_ntTupleTrue -> SetBranchAddress("nmvtxclust_manual",     &tru_nmvtxclust_manual);
+  m_ntTupleTrue -> SetBranchAddress("ninttclust_manual",     &tru_ninttclust_manual);
+  m_ntTupleTrue -> SetBranchAddress("ntpcclust_manual",      &tru_ntpcclust_manual);
+  m_ntTupleTrue -> SetBranchAddress("nmvtxlayer_",           &tru_nmvtxlayer_);
+  m_ntTupleTrue -> SetBranchAddress("ninttlayer",            &tru_ninttlayer);
+  m_ntTupleTrue -> SetBranchAddress("ntpclayer",             &tru_ntpclayer);
+  m_ntTupleTrue -> SetBranchAddress("deltapt",               &tru_deltapt);
+  m_ntTupleTrue -> SetBranchAddress("quality",               &tru_quality);
+  m_ntTupleTrue -> SetBranchAddress("dcaxy",                 &tru_dcaxy);
+  m_ntTupleTrue -> SetBranchAddress("dcaz",                  &tru_dcaz);
+  m_ntTupleTrue -> SetBranchAddress("sigmadcaxy",            &tru_sigmadcaxy);
+  m_ntTupleTrue -> SetBranchAddress("sigmadacz",             &tru_sigmadacz);
+  m_ntTupleTrue -> SetBranchAddress("vx",                    &tru_vx);
+  m_ntTupleTrue -> SetBranchAddress("vy",                    &tru_vy);
+  m_ntTupleTrue -> SetBranchAddress("vz",                    &tru_vz);
+  m_ntTupleTrue -> SetBranchAddress("gtrkid",                &tru_gtrkid);
+  m_ntTupleTrue -> SetBranchAddress("gpt",                   &tru_gpt);
+  m_ntTupleTrue -> SetBranchAddress("geta",                  &tru_geta);
+  m_ntTupleTrue -> SetBranchAddress("gphi",                  &tru_gphi);
+  m_ntTupleTrue -> SetBranchAddress("gnmvtxclust_trkmatcher",&tru_gnmvtxclust_trkmatcher);
+  m_ntTupleTrue -> SetBranchAddress("gninttclust_trkmatcher",&tru_gninttclust_trkmatcher);
+  m_ntTupleTrue -> SetBranchAddress("gntpclust_trkmatcher",  &tru_gntpclust_trkmatcher);
+  m_ntTupleTrue -> SetBranchAddress("gnmvtxclust_manual",    &tru_gnmvtxclust_manual);
+  m_ntTupleTrue -> SetBranchAddress("gninttclust_manual",    &tru_gninttclust_manual);
+  m_ntTupleTrue -> SetBranchAddress("gntpcclust_manual",     &tru_gntpcclust_manual);
+  m_ntTupleTrue -> SetBranchAddress("gnmvtxlayer",           &tru_gnmvtxlayer);
+  m_ntTupleTrue -> SetBranchAddress("gninttlayer",           &tru_gninttlayer);
+  m_ntTupleTrue -> SetBranchAddress("gntpclayer",            &tru_gntpclayer);
+  m_ntTupleTrue -> SetBranchAddress("gdeltapt",              &tru_gdeltapt);
+  m_ntTupleTrue -> SetBranchAddress("gquality",              &tru_gquality);
+  m_ntTupleTrue -> SetBranchAddress("gdcaxy",                &tru_gdcaxy);
+  m_ntTupleTrue -> SetBranchAddress("gdcaz",                 &tru_gdcaz);
+  m_ntTupleTrue -> SetBranchAddress("gsigmadcaxy",           &tru_gsigmadcaxy);
+  m_ntTupleTrue -> SetBranchAddress("gsigmadacz",            &tru_gsigmadacz);
+  m_ntTupleTrue -> SetBranchAddress("gvx",                   &tru_gvx);
+  m_ntTupleTrue -> SetBranchAddress("gvy",                   &tru_gvy);
+  m_ntTupleTrue -> SetBranchAddress("gvz",                   &tru_gvz);
+  m_ntTupleTrue -> SetBranchAddress("fracnmvtxmatched",      &tru_fracnmvtxmatched);
+  m_ntTupleTrue -> SetBranchAddress("fracninttmatched",      &tru_fracninttmatched);
+  m_ntTupleTrue -> SetBranchAddress("fracntpcmatched",       &tru_fracntpcmatched);
 
-  m_ntTupleReco -> SetBranchAddress("evtid",                                  &rec_evtid);
-  m_ntTupleReco -> SetBranchAddress("trkid",                                  &rec_trkid);
-  m_ntTupleReco -> SetBranchAddress("pt",                                     &rec_pt);
-  m_ntTupleReco -> SetBranchAddress("eta",                                    &rec_eta);
-  m_ntTupleReco -> SetBranchAddress("phi",                                    &rec_phi);
-  m_ntTupleReco -> SetBranchAddress("nmvtxclust_trkmatcher",                  &rec_nmvtxclust_trkmatcher);
-  m_ntTupleReco -> SetBranchAddress("ninttclust_trkmatcher",                  &rec_ninttclust_trkmatcher);
-  m_ntTupleReco -> SetBranchAddress("ntpclust_trkmatcher",                    &rec_ntpclust_trkmatcher);
-  m_ntTupleReco -> SetBranchAddress("nmvtxclust_manual",                      &rec_nmvtxclust_manual);
-  m_ntTupleReco -> SetBranchAddress("ninttclust_manual",                      &rec_ninttclust_manual);
-  m_ntTupleReco -> SetBranchAddress("ntpcclust_manual",                       &rec_ntpcclust_manual);
-  m_ntTupleReco -> SetBranchAddress("nmvtxlayer_",                            &rec_nmvtxlayer_);
-  m_ntTupleReco -> SetBranchAddress("ninttlayer",                             &rec_ninttlayer);
-  m_ntTupleReco -> SetBranchAddress("ntpclayer",                              &rec_ntpclayer);
-  m_ntTupleReco -> SetBranchAddress("deltapt",                                &rec_deltapt);
-  m_ntTupleReco -> SetBranchAddress("quality",                                &rec_quality);
-  m_ntTupleReco -> SetBranchAddress("dcaxy",                                  &rec_dcaxy);
-  m_ntTupleReco -> SetBranchAddress("dcaz",                                   &rec_dcaz);
-  m_ntTupleReco -> SetBranchAddress("sigmadcaxy",                             &rec_sigmadcaxy);
-  m_ntTupleReco -> SetBranchAddress("sigmadacz",                              &rec_sigmadacz);
-  m_ntTupleReco -> SetBranchAddress("vx",                                     &rec_vx);
-  m_ntTupleReco -> SetBranchAddress("vy",                                     &rec_vy);
-  m_ntTupleReco -> SetBranchAddress("vz",                                     &rec_vz);
-  m_ntTupleReco -> SetBranchAddress("gtrkid",                                 &rec_gtrkid);
-  m_ntTupleReco -> SetBranchAddress("gpt",                                    &rec_gpt);
-  m_ntTupleReco -> SetBranchAddress("geta",                                   &rec_geta);
-  m_ntTupleReco -> SetBranchAddress("gphi",                                   &rec_gphi);
-  m_ntTupleReco -> SetBranchAddress("gnmvtxclust_trkmatcher",                 &rec_gnmvtxclust_trkmatcher);
-  m_ntTupleReco -> SetBranchAddress("gninttclust_trkmatcher",                 &rec_gninttclust_trkmatcher);
-  m_ntTupleReco -> SetBranchAddress("gntpclust_trkmatchergnmvtxclust_manual", &rec_gntpclust_trkmatchergnmvtxclust_manual);
-  m_ntTupleReco -> SetBranchAddress("gninttclust_manual",                     &rec_gninttclust_manual);
-  m_ntTupleReco -> SetBranchAddress("gntpcclust_manual",                      &rec_gntpcclust_manual);
-  m_ntTupleReco -> SetBranchAddress("gnmvtxlayer",                            &rec_gnmvtxlayer);
-  m_ntTupleReco -> SetBranchAddress("gninttlayer",                            &rec_gninttlayer);
-  m_ntTupleReco -> SetBranchAddress("gntpclayer",                             &rec_gntpclayer);
-  m_ntTupleReco -> SetBranchAddress("gdeltapt",                               &rec_gdeltapt);
-  m_ntTupleReco -> SetBranchAddress("gquality",                               &rec_gquality);
-  m_ntTupleReco -> SetBranchAddress("gdcaxy",                                 &rec_gdcaxy);
-  m_ntTupleReco -> SetBranchAddress("gdcaz",                                  &rec_gdcaz);
-  m_ntTupleReco -> SetBranchAddress("gsigmadcaxy",                            &rec_gsigmadcaxy);
-  m_ntTupleReco -> SetBranchAddress("gsigmadacz",                             &rec_gsigmadacz);
-  m_ntTupleReco -> SetBranchAddress("gvx",                                    &rec_gvx);
-  m_ntTupleReco -> SetBranchAddress("gvy",                                    &rec_gvy);
-  m_ntTupleReco -> SetBranchAddress("gvz",                                    &rec_gvz);
-  m_ntTupleReco -> SetBranchAddress("fracnmvtxmatched",                       &rec_fracnmvtxmatched);
-  m_ntTupleReco -> SetBranchAddress("fracninttmatched",                       &rec_fracninttmatched);
-  m_ntTupleReco -> SetBranchAddress("fracntpcmatched",                        &rec_fracntpcmatched);
+  m_ntTupleReco -> SetBranchAddress("evtid",                  &rec_evtid);
+  m_ntTupleReco -> SetBranchAddress("trkid",                  &rec_trkid);
+  m_ntTupleReco -> SetBranchAddress("pt",                     &rec_pt);
+  m_ntTupleReco -> SetBranchAddress("eta",                    &rec_eta);
+  m_ntTupleReco -> SetBranchAddress("phi",                    &rec_phi);
+  m_ntTupleReco -> SetBranchAddress("nmvtxclust_trkmatcher",  &rec_nmvtxclust_trkmatcher);
+  m_ntTupleReco -> SetBranchAddress("ninttclust_trkmatcher",  &rec_ninttclust_trkmatcher);
+  m_ntTupleReco -> SetBranchAddress("ntpclust_trkmatcher",    &rec_ntpclust_trkmatcher);
+  m_ntTupleReco -> SetBranchAddress("nmvtxclust_manual",      &rec_nmvtxclust_manual);
+  m_ntTupleReco -> SetBranchAddress("ninttclust_manual",      &rec_ninttclust_manual);
+  m_ntTupleReco -> SetBranchAddress("ntpcclust_manual",       &rec_ntpcclust_manual);
+  m_ntTupleReco -> SetBranchAddress("nmvtxlayer_",            &rec_nmvtxlayer_);
+  m_ntTupleReco -> SetBranchAddress("ninttlayer",             &rec_ninttlayer);
+  m_ntTupleReco -> SetBranchAddress("ntpclayer",              &rec_ntpclayer);
+  m_ntTupleReco -> SetBranchAddress("deltapt",                &rec_deltapt);
+  m_ntTupleReco -> SetBranchAddress("quality",                &rec_quality);
+  m_ntTupleReco -> SetBranchAddress("dcaxy",                  &rec_dcaxy);
+  m_ntTupleReco -> SetBranchAddress("dcaz",                   &rec_dcaz);
+  m_ntTupleReco -> SetBranchAddress("sigmadcaxy",             &rec_sigmadcaxy);
+  m_ntTupleReco -> SetBranchAddress("sigmadacz",              &rec_sigmadacz);
+  m_ntTupleReco -> SetBranchAddress("vx",                     &rec_vx);
+  m_ntTupleReco -> SetBranchAddress("vy",                     &rec_vy);
+  m_ntTupleReco -> SetBranchAddress("vz",                     &rec_vz);
+  m_ntTupleReco -> SetBranchAddress("gtrkid",                 &rec_gtrkid);
+  m_ntTupleReco -> SetBranchAddress("gpt",                    &rec_gpt);
+  m_ntTupleReco -> SetBranchAddress("geta",                   &rec_geta);
+  m_ntTupleReco -> SetBranchAddress("gphi",                   &rec_gphi);
+  m_ntTupleReco -> SetBranchAddress("gnmvtxclust_trkmatcher", &rec_gnmvtxclust_trkmatcher);
+  m_ntTupleReco -> SetBranchAddress("gninttclust_trkmatcher", &rec_gninttclust_trkmatcher);
+  m_ntTupleReco -> SetBranchAddress("gntpclust_trkmatcher",   &rec_gntpclust_trkmatcher);
+  m_ntTupleReco -> SetBranchAddress("gnmvtxclust_manual",     &rec_gnmvtxclust_manual);
+  m_ntTupleReco -> SetBranchAddress("gninttclust_manual",     &rec_gninttclust_manual);
+  m_ntTupleReco -> SetBranchAddress("gntpcclust_manual",      &rec_gntpcclust_manual);
+  m_ntTupleReco -> SetBranchAddress("gnmvtxlayer",            &rec_gnmvtxlayer);
+  m_ntTupleReco -> SetBranchAddress("gninttlayer",            &rec_gninttlayer);
+  m_ntTupleReco -> SetBranchAddress("gntpclayer",             &rec_gntpclayer);
+  m_ntTupleReco -> SetBranchAddress("gdeltapt",               &rec_gdeltapt);
+  m_ntTupleReco -> SetBranchAddress("gquality",               &rec_gquality);
+  m_ntTupleReco -> SetBranchAddress("gdcaxy",                 &rec_gdcaxy);
+  m_ntTupleReco -> SetBranchAddress("gdcaz",                  &rec_gdcaz);
+  m_ntTupleReco -> SetBranchAddress("gsigmadcaxy",            &rec_gsigmadcaxy);
+  m_ntTupleReco -> SetBranchAddress("gsigmadacz",             &rec_gsigmadacz);
+  m_ntTupleReco -> SetBranchAddress("gvx",                    &rec_gvx);
+  m_ntTupleReco -> SetBranchAddress("gvy",                    &rec_gvy);
+  m_ntTupleReco -> SetBranchAddress("gvz",                    &rec_gvz);
+  m_ntTupleReco -> SetBranchAddress("fracnmvtxmatched",       &rec_fracnmvtxmatched);
+  m_ntTupleReco -> SetBranchAddress("fracninttmatched",       &rec_fracninttmatched);
+  m_ntTupleReco -> SetBranchAddress("fracntpcmatched",        &rec_fracntpcmatched);
   cout << "        Set input branches." << endl;
 
   // grab no. of entries
@@ -921,49 +834,47 @@ void STrackMatcherComparator::GetNewTupleHists() {
       cout << "          Processing entry " << iTrueProg << "/" << nTrueEntries << "...\r" << flush;
     }
 
+    // check if near sector
+    bool isNearSector = false;
+    if (m_config.doPhiCut) {
+      isNearSector = IsNearSector(tru_gphi);
+    }
+
+    // apply cuts
+    const bool isInZVtxCut = ((tru_gvz >= m_config.zVtxRange.first) && (tru_gvz <= m_config.zVtxRange.second));
+    if (m_config.doZVtxCut && !isInZVtxCut) continue;
+    if (m_config.doPhiCut  && isNearSector) continue;
+
     // run calculations
-    const float tru_gnclust = tru_gnmvtxclust_trkmatcher + tru_gninttclust_trkmatcher + tru_gntpcclust_manual;
+    const float tru_gnclust = tru_gnmvtxclust_trkmatcher + tru_gninttclust_trkmatcher + tru_gntpclust_trkmatcher;
 
-    // fill truth 1D histograms
-    m_vecTupleHists1D[Var::NTot][Type::Truth]  -> Fill(tru_gnclust);
-    m_vecTupleHists1D[Var::NIntt][Type::Truth] -> Fill(tru_gninttclust_trkmatcher);
-    m_vecTupleHists1D[Var::NMvtx][Type::Truth] -> Fill(tru_gnmvtxclust_trkmatcher);
-    m_vecTupleHists1D[Var::NTpc][Type::Truth]  -> Fill(tru_gntpcclust_manual);
-    m_vecTupleHists1D[Var::RTot][Type::Truth]  -> Fill(1.);
-    m_vecTupleHists1D[Var::RIntt][Type::Truth] -> Fill(1.);
-    m_vecTupleHists1D[Var::RMvtx][Type::Truth] -> Fill(1.);
-    m_vecTupleHists1D[Var::RTpc][Type::Truth]  -> Fill(1.);
-    m_vecTupleHists1D[Var::Phi][Type::Truth]   -> Fill(tru_gphi);
-    m_vecTupleHists1D[Var::Eta][Type::Truth]   -> Fill(tru_geta);
-    m_vecTupleHists1D[Var::Pt][Type::Truth]    -> Fill(tru_gpt);
-    m_vecTupleHists1D[Var::Frac][Type::Truth]  -> Fill(1.);
+    // bundle histogram values to fill
+    STrackMatcherComparatorHistContent content {
+      tru_gnclust,
+      tru_gninttclust_trkmatcher,
+      tru_gnmvtxclust_trkmatcher,
+      tru_gntpclust_trkmatcher,
+      1.,
+      1.,
+      1.,
+      1.,
+      tru_gphi,
+      tru_geta,
+      tru_gpt,
+      1.,
+      1.,
+      1.,
+      1.,
+      1.,
+      1.,
+      1.,
+      1.
+    };
 
-    // fill truth 2D histograms
-    m_vecTupleHists2D[Var::NTot][Type::Truth][Comp::VsTruthPt]  -> Fill(tru_gpt, tru_gnclust);
-    m_vecTupleHists2D[Var::NIntt][Type::Truth][Comp::VsTruthPt] -> Fill(tru_gpt, tru_gninttclust_trkmatcher);
-    m_vecTupleHists2D[Var::NMvtx][Type::Truth][Comp::VsTruthPt] -> Fill(tru_gpt, tru_gnmvtxclust_trkmatcher);
-    m_vecTupleHists2D[Var::NTpc][Type::Truth][Comp::VsTruthPt]  -> Fill(tru_gpt, tru_gntpcclust_manual);
-    m_vecTupleHists2D[Var::RTot][Type::Truth][Comp::VsTruthPt]  -> Fill(tru_gpt, 1.);
-    m_vecTupleHists2D[Var::RIntt][Type::Truth][Comp::VsTruthPt] -> Fill(tru_gpt, 1.);
-    m_vecTupleHists2D[Var::RMvtx][Type::Truth][Comp::VsTruthPt] -> Fill(tru_gpt, 1.);
-    m_vecTupleHists2D[Var::RTpc][Type::Truth][Comp::VsTruthPt]  -> Fill(tru_gpt, 1.);
-    m_vecTupleHists2D[Var::Phi][Type::Truth][Comp::VsTruthPt]   -> Fill(tru_gpt, tru_gphi);
-    m_vecTupleHists2D[Var::Eta][Type::Truth][Comp::VsTruthPt]   -> Fill(tru_gpt, tru_geta);
-    m_vecTupleHists2D[Var::Pt][Type::Truth][Comp::VsTruthPt]    -> Fill(tru_gpt, tru_gpt);
-    m_vecTupleHists2D[Var::Frac][Type::Truth][Comp::VsTruthPt]  -> Fill(tru_gpt, 1.);
-
-    m_vecTupleHists2D[Var::NTot][Type::Truth][Comp::VsNumTpc]  -> Fill(tru_ntpclust_trkmatcher, tru_gnclust);
-    m_vecTupleHists2D[Var::NIntt][Type::Truth][Comp::VsNumTpc] -> Fill(tru_ntpclust_trkmatcher, tru_gninttclust_trkmatcher);
-    m_vecTupleHists2D[Var::NMvtx][Type::Truth][Comp::VsNumTpc] -> Fill(tru_ntpclust_trkmatcher, tru_gnmvtxclust_trkmatcher);
-    m_vecTupleHists2D[Var::NTpc][Type::Truth][Comp::VsNumTpc]  -> Fill(tru_ntpclust_trkmatcher, tru_gntpcclust_manual);
-    m_vecTupleHists2D[Var::RTot][Type::Truth][Comp::VsNumTpc]  -> Fill(tru_ntpclust_trkmatcher, 1.);
-    m_vecTupleHists2D[Var::RIntt][Type::Truth][Comp::VsNumTpc] -> Fill(tru_ntpclust_trkmatcher, 1.);
-    m_vecTupleHists2D[Var::RMvtx][Type::Truth][Comp::VsNumTpc] -> Fill(tru_ntpclust_trkmatcher, 1.);
-    m_vecTupleHists2D[Var::RTpc][Type::Truth][Comp::VsNumTpc]  -> Fill(tru_ntpclust_trkmatcher, 1.);
-    m_vecTupleHists2D[Var::Phi][Type::Truth][Comp::VsNumTpc]   -> Fill(tru_ntpclust_trkmatcher, tru_gphi);
-    m_vecTupleHists2D[Var::Eta][Type::Truth][Comp::VsNumTpc]   -> Fill(tru_ntpclust_trkmatcher, tru_geta);
-    m_vecTupleHists2D[Var::Pt][Type::Truth][Comp::VsNumTpc]    -> Fill(tru_ntpclust_trkmatcher, tru_gpt);
-    m_vecTupleHists2D[Var::Frac][Type::Truth][Comp::VsNumTpc]  -> Fill(tru_ntpclust_trkmatcher, 1.);
+    // fill truth histograms
+    FillHistogram1D(content, Type::Truth, m_vecTupleHists1D);
+    FillHistogram2D(content, Type::Truth, Comp::VsTruthPt, tru_gpt,                 m_vecTupleHists2D);
+    FillHistogram2D(content, Type::Truth, Comp::VsNumTpc,  tru_ntpclust_trkmatcher, m_vecTupleHists2D);
   }  // end truth particle loop
 
   // announce next entry loop
@@ -991,7 +902,19 @@ void STrackMatcherComparator::GetNewTupleHists() {
       cout << "          Processing entry " << iRecoProg << "/" << nRecoEntries << "...\r" << flush;
     }
 
+    // check if near sector
+    bool isNearSector = false;
+    if (m_config.doPhiCut) {
+      isNearSector = IsNearSector(rec_phi);
+    }
+
+    // apply cuts
+    const bool isInZVtxCut = ((rec_vz >= m_config.zVtxRange.first) && (rec_vz <= m_config.zVtxRange.second));
+    if (m_config.doZVtxCut && !isInZVtxCut) continue;
+    if (m_config.doPhiCut  && isNearSector) continue;
+
     // run calculations
+    //   - FIXME add other errors
     const double rec_nclus  = rec_ninttclust_trkmatcher + rec_nmvtxclust_trkmatcher + rec_ntpclust_trkmatcher;
     const double rec_gnclus = rec_gninttclust_trkmatcher + rec_gnmvtxclust_trkmatcher + rec_gntpcclust_manual;
     const double rec_rnclus = rec_nclus / rec_gnclus;
@@ -999,128 +922,51 @@ void STrackMatcherComparator::GetNewTupleHists() {
     const double rec_rmaps  = rec_nmvtxclust_trkmatcher / rec_gnmvtxclust_trkmatcher;
     const double rec_rtpc   = rec_ntpclust_trkmatcher / rec_gntpcclust_manual;
     const double rec_ptfrac = rec_pt / rec_gpt;
+    const double rec_ptper  = rec_deltapt / rec_pt;
+    const double rec_etaper = 1.;
+    const double rec_phiper = 1.;
+    const double rec_ptres  = abs(rec_pt - rec_gpt) / rec_gpt;
+    const double rec_etares = abs(rec_eta - rec_geta) / rec_geta;
+    const double rec_phires = abs(rec_phi - rec_gphi) / rec_gphi;
 
-    // fill all matched reco 1D histograms
-    m_vecTupleHists1D[Var::NTot][Type::Track]  -> Fill(rec_nclus);
-    m_vecTupleHists1D[Var::NIntt][Type::Track] -> Fill(rec_ninttclust_trkmatcher);
-    m_vecTupleHists1D[Var::NMvtx][Type::Track] -> Fill(rec_nmvtxclust_trkmatcher);
-    m_vecTupleHists1D[Var::NTpc][Type::Track]  -> Fill(rec_ntpclust_trkmatcher);
-    m_vecTupleHists1D[Var::RTot][Type::Track]  -> Fill(rec_rnclus);
-    m_vecTupleHists1D[Var::RIntt][Type::Track] -> Fill(rec_rintt);
-    m_vecTupleHists1D[Var::RMvtx][Type::Track] -> Fill(rec_rmaps);
-    m_vecTupleHists1D[Var::RTpc][Type::Track]  -> Fill(rec_rtpc);
-    m_vecTupleHists1D[Var::Phi][Type::Track]   -> Fill(rec_phi);
-    m_vecTupleHists1D[Var::Eta][Type::Track]   -> Fill(rec_eta);
-    m_vecTupleHists1D[Var::Pt][Type::Track]    -> Fill(rec_pt);
-    m_vecTupleHists1D[Var::Frac][Type::Track]  -> Fill(rec_ptfrac);
+    // bundle histogram values to fill
+    const STrackMatcherComparatorHistContent content {
+      rec_nclus,
+      rec_ninttclust_trkmatcher,
+      rec_nmvtxclust_trkmatcher,
+      rec_ntpclust_trkmatcher,
+      rec_rnclus,
+      rec_rintt,
+      rec_rmaps,
+      rec_rtpc,
+      rec_phi,
+      rec_eta,
+      rec_pt,
+      rec_ptfrac,
+      rec_quality,
+      rec_ptper,
+      rec_etaper,
+      rec_phiper,
+      rec_ptres,
+      rec_etares,
+      rec_phires
+    };
 
-    // fill all matched reco 2D histograms
-    m_vecTupleHists2D[Var::NTot][Type::Track][Comp::VsTruthPt]  -> Fill(rec_gpt, rec_nclus);
-    m_vecTupleHists2D[Var::NIntt][Type::Track][Comp::VsTruthPt] -> Fill(rec_gpt, rec_ninttclust_trkmatcher);
-    m_vecTupleHists2D[Var::NMvtx][Type::Track][Comp::VsTruthPt] -> Fill(rec_gpt, rec_nmvtxclust_trkmatcher);
-    m_vecTupleHists2D[Var::NTpc][Type::Track][Comp::VsTruthPt]  -> Fill(rec_gpt, rec_ntpclust_trkmatcher);
-    m_vecTupleHists2D[Var::RTot][Type::Track][Comp::VsTruthPt]  -> Fill(rec_gpt, rec_rnclus);
-    m_vecTupleHists2D[Var::RIntt][Type::Track][Comp::VsTruthPt] -> Fill(rec_gpt, rec_rintt);
-    m_vecTupleHists2D[Var::RMvtx][Type::Track][Comp::VsTruthPt] -> Fill(rec_gpt, rec_rmaps);
-    m_vecTupleHists2D[Var::RTpc][Type::Track][Comp::VsTruthPt]  -> Fill(rec_gpt, rec_rtpc);
-    m_vecTupleHists2D[Var::Phi][Type::Track][Comp::VsTruthPt]   -> Fill(rec_gpt, rec_phi);
-    m_vecTupleHists2D[Var::Eta][Type::Track][Comp::VsTruthPt]   -> Fill(rec_gpt, rec_eta);
-    m_vecTupleHists2D[Var::Pt][Type::Track][Comp::VsTruthPt]    -> Fill(rec_gpt, rec_pt);
-    m_vecTupleHists2D[Var::Frac][Type::Track][Comp::VsTruthPt]  -> Fill(rec_gpt, rec_ptfrac);
-
-    m_vecTupleHists2D[Var::NTot][Type::Track][Comp::VsNumTpc]  -> Fill(rec_ntpclust_trkmatcher, rec_nclus);
-    m_vecTupleHists2D[Var::NIntt][Type::Track][Comp::VsNumTpc] -> Fill(rec_ntpclust_trkmatcher, rec_ninttclust_trkmatcher);
-    m_vecTupleHists2D[Var::NMvtx][Type::Track][Comp::VsNumTpc] -> Fill(rec_ntpclust_trkmatcher, rec_nmvtxclust_trkmatcher);
-    m_vecTupleHists2D[Var::NTpc][Type::Track][Comp::VsNumTpc]  -> Fill(rec_ntpclust_trkmatcher, rec_ntpclust_trkmatcher);
-    m_vecTupleHists2D[Var::RTot][Type::Track][Comp::VsNumTpc]  -> Fill(rec_ntpclust_trkmatcher, rec_rnclus);
-    m_vecTupleHists2D[Var::RIntt][Type::Track][Comp::VsNumTpc] -> Fill(rec_ntpclust_trkmatcher, rec_rintt);
-    m_vecTupleHists2D[Var::RMvtx][Type::Track][Comp::VsNumTpc] -> Fill(rec_ntpclust_trkmatcher, rec_rmaps);
-    m_vecTupleHists2D[Var::RTpc][Type::Track][Comp::VsNumTpc]  -> Fill(rec_ntpclust_trkmatcher, rec_rtpc);
-    m_vecTupleHists2D[Var::Phi][Type::Track][Comp::VsNumTpc]   -> Fill(rec_ntpclust_trkmatcher, rec_phi);
-    m_vecTupleHists2D[Var::Eta][Type::Track][Comp::VsNumTpc]   -> Fill(rec_ntpclust_trkmatcher, rec_eta);
-    m_vecTupleHists2D[Var::Pt][Type::Track][Comp::VsNumTpc]    -> Fill(rec_ntpclust_trkmatcher, rec_pt);
-    m_vecTupleHists2D[Var::Frac][Type::Track][Comp::VsNumTpc]  -> Fill(rec_ntpclust_trkmatcher, rec_ptfrac);
+    // fill all matched reco histograms
+    FillHistogram1D(content, Type::Track, m_vecTupleHists1D);
+    FillHistogram2D(content, Type::Track, Comp::VsTruthPt, rec_gpt,                 m_vecTupleHists2D);
+    FillHistogram2D(content, Type::Track, Comp::VsNumTpc,  rec_ntpclust_trkmatcher, m_vecTupleHists2D);
 
     // fill weird and normal matched reco 1D histograms
     const bool isNormalTrack = ((rec_ptfrac >= m_config.oddPtFrac.first) && (rec_ptfrac <= m_config.oddPtFrac.second));
     if (isNormalTrack) {
-      m_vecTupleHists1D[Var::NTot][Type::Normal]  -> Fill(rec_nclus);
-      m_vecTupleHists1D[Var::NIntt][Type::Normal] -> Fill(rec_ninttclust_trkmatcher);
-      m_vecTupleHists1D[Var::NMvtx][Type::Normal] -> Fill(rec_nmvtxclust_trkmatcher);
-      m_vecTupleHists1D[Var::NTpc][Type::Normal]  -> Fill(rec_ntpclust_trkmatcher);
-      m_vecTupleHists1D[Var::RTot][Type::Normal]  -> Fill(rec_rnclus);
-      m_vecTupleHists1D[Var::RIntt][Type::Normal] -> Fill(rec_rintt);
-      m_vecTupleHists1D[Var::RMvtx][Type::Normal] -> Fill(rec_rmaps);
-      m_vecTupleHists1D[Var::RTpc][Type::Normal]  -> Fill(rec_rtpc);
-      m_vecTupleHists1D[Var::Phi][Type::Normal]   -> Fill(rec_phi);
-      m_vecTupleHists1D[Var::Eta][Type::Normal]   -> Fill(rec_eta);
-      m_vecTupleHists1D[Var::Pt][Type::Normal]    -> Fill(rec_pt);
-      m_vecTupleHists1D[Var::Frac][Type::Normal]  -> Fill(rec_ptfrac);
-
-      m_vecTupleHists2D[Var::NTot][Type::Normal][Comp::VsTruthPt]  -> Fill(rec_gpt, rec_nclus);
-      m_vecTupleHists2D[Var::NIntt][Type::Normal][Comp::VsTruthPt] -> Fill(rec_gpt, rec_ninttclust_trkmatcher);
-      m_vecTupleHists2D[Var::NMvtx][Type::Normal][Comp::VsTruthPt] -> Fill(rec_gpt, rec_nmvtxclust_trkmatcher);
-      m_vecTupleHists2D[Var::NTpc][Type::Normal][Comp::VsTruthPt]  -> Fill(rec_gpt, rec_ntpclust_trkmatcher);
-      m_vecTupleHists2D[Var::RTot][Type::Normal][Comp::VsTruthPt]  -> Fill(rec_gpt, rec_rnclus);
-      m_vecTupleHists2D[Var::RIntt][Type::Normal][Comp::VsTruthPt] -> Fill(rec_gpt, rec_rintt);
-      m_vecTupleHists2D[Var::RMvtx][Type::Normal][Comp::VsTruthPt] -> Fill(rec_gpt, rec_rmaps);
-      m_vecTupleHists2D[Var::RTpc][Type::Normal][Comp::VsTruthPt]  -> Fill(rec_gpt, rec_rtpc);
-      m_vecTupleHists2D[Var::Phi][Type::Normal][Comp::VsTruthPt]   -> Fill(rec_gpt, rec_phi);
-      m_vecTupleHists2D[Var::Eta][Type::Normal][Comp::VsTruthPt]   -> Fill(rec_gpt, rec_eta);
-      m_vecTupleHists2D[Var::Pt][Type::Normal][Comp::VsTruthPt]    -> Fill(rec_gpt, rec_pt);
-      m_vecTupleHists2D[Var::Frac][Type::Normal][Comp::VsTruthPt]  -> Fill(rec_gpt, rec_ptfrac);
-
-      m_vecTupleHists2D[Var::NTot][Type::Normal][Comp::VsNumTpc]  -> Fill(rec_ntpclust_trkmatcher, rec_nclus);
-      m_vecTupleHists2D[Var::NIntt][Type::Normal][Comp::VsNumTpc] -> Fill(rec_ntpclust_trkmatcher, rec_ninttclust_trkmatcher);
-      m_vecTupleHists2D[Var::NMvtx][Type::Normal][Comp::VsNumTpc] -> Fill(rec_ntpclust_trkmatcher, rec_nmvtxclust_trkmatcher);
-      m_vecTupleHists2D[Var::NTpc][Type::Normal][Comp::VsNumTpc]  -> Fill(rec_ntpclust_trkmatcher, rec_ntpclust_trkmatcher);
-      m_vecTupleHists2D[Var::RTot][Type::Normal][Comp::VsNumTpc]  -> Fill(rec_ntpclust_trkmatcher, rec_rnclus);
-      m_vecTupleHists2D[Var::RIntt][Type::Normal][Comp::VsNumTpc] -> Fill(rec_ntpclust_trkmatcher, rec_rintt);
-      m_vecTupleHists2D[Var::RMvtx][Type::Normal][Comp::VsNumTpc] -> Fill(rec_ntpclust_trkmatcher, rec_rmaps);
-      m_vecTupleHists2D[Var::RTpc][Type::Normal][Comp::VsNumTpc]  -> Fill(rec_ntpclust_trkmatcher, rec_rtpc);
-      m_vecTupleHists2D[Var::Phi][Type::Normal][Comp::VsNumTpc]   -> Fill(rec_ntpclust_trkmatcher, rec_phi);
-      m_vecTupleHists2D[Var::Eta][Type::Normal][Comp::VsNumTpc]   -> Fill(rec_ntpclust_trkmatcher, rec_eta);
-      m_vecTupleHists2D[Var::Pt][Type::Normal][Comp::VsNumTpc]    -> Fill(rec_ntpclust_trkmatcher, rec_pt);
-      m_vecTupleHists2D[Var::Frac][Type::Normal][Comp::VsNumTpc]  -> Fill(rec_ntpclust_trkmatcher, rec_ptfrac);
+      FillHistogram1D(content, Type::Normal, m_vecTupleHists1D);
+      FillHistogram2D(content, Type::Normal, Comp::VsTruthPt, rec_gpt,                 m_vecTupleHists2D);
+      FillHistogram2D(content, Type::Normal, Comp::VsNumTpc,  rec_ntpclust_trkmatcher, m_vecTupleHists2D);
     } else {
-      m_vecTupleHists1D[Var::NTot][Type::Weird]  -> Fill(rec_nclus);
-      m_vecTupleHists1D[Var::NIntt][Type::Weird] -> Fill(rec_ninttclust_trkmatcher);
-      m_vecTupleHists1D[Var::NMvtx][Type::Weird] -> Fill(rec_nmvtxclust_trkmatcher);
-      m_vecTupleHists1D[Var::NTpc][Type::Weird]  -> Fill(rec_ntpclust_trkmatcher);
-      m_vecTupleHists1D[Var::RTot][Type::Weird]  -> Fill(rec_rnclus);
-      m_vecTupleHists1D[Var::RIntt][Type::Weird] -> Fill(rec_rintt);
-      m_vecTupleHists1D[Var::RMvtx][Type::Weird] -> Fill(rec_rmaps);
-      m_vecTupleHists1D[Var::RTpc][Type::Weird]  -> Fill(rec_rtpc);
-      m_vecTupleHists1D[Var::Phi][Type::Weird]   -> Fill(rec_phi);
-      m_vecTupleHists1D[Var::Eta][Type::Weird]   -> Fill(rec_eta);
-      m_vecTupleHists1D[Var::Pt][Type::Weird]    -> Fill(rec_pt);
-      m_vecTupleHists1D[Var::Frac][Type::Weird]  -> Fill(rec_ptfrac);
-
-      m_vecTupleHists2D[Var::NTot][Type::Weird][Comp::VsTruthPt]  -> Fill(rec_gpt, rec_nclus);
-      m_vecTupleHists2D[Var::NIntt][Type::Weird][Comp::VsTruthPt] -> Fill(rec_gpt, rec_ninttclust_trkmatcher);
-      m_vecTupleHists2D[Var::NMvtx][Type::Weird][Comp::VsTruthPt] -> Fill(rec_gpt, rec_nmvtxclust_trkmatcher);
-      m_vecTupleHists2D[Var::NTpc][Type::Weird][Comp::VsTruthPt]  -> Fill(rec_gpt, rec_ntpclust_trkmatcher);
-      m_vecTupleHists2D[Var::RTot][Type::Weird][Comp::VsTruthPt]  -> Fill(rec_gpt, rec_rnclus);
-      m_vecTupleHists2D[Var::RIntt][Type::Weird][Comp::VsTruthPt] -> Fill(rec_gpt, rec_rintt);
-      m_vecTupleHists2D[Var::RMvtx][Type::Weird][Comp::VsTruthPt] -> Fill(rec_gpt, rec_rmaps);
-      m_vecTupleHists2D[Var::RTpc][Type::Weird][Comp::VsTruthPt]  -> Fill(rec_gpt, rec_rtpc);
-      m_vecTupleHists2D[Var::Phi][Type::Weird][Comp::VsTruthPt]   -> Fill(rec_gpt, rec_phi);
-      m_vecTupleHists2D[Var::Eta][Type::Weird][Comp::VsTruthPt]   -> Fill(rec_gpt, rec_eta);
-      m_vecTupleHists2D[Var::Pt][Type::Weird][Comp::VsTruthPt]    -> Fill(rec_gpt, rec_pt);
-      m_vecTupleHists2D[Var::Frac][Type::Weird][Comp::VsTruthPt]  -> Fill(rec_gpt, rec_ptfrac);
-
-      m_vecTupleHists2D[Var::NTot][Type::Weird][Comp::VsNumTpc]  -> Fill(rec_ntpclust_trkmatcher, rec_nclus);
-      m_vecTupleHists2D[Var::NIntt][Type::Weird][Comp::VsNumTpc] -> Fill(rec_ntpclust_trkmatcher, rec_ninttclust_trkmatcher);
-      m_vecTupleHists2D[Var::NMvtx][Type::Weird][Comp::VsNumTpc] -> Fill(rec_ntpclust_trkmatcher, rec_nmvtxclust_trkmatcher);
-      m_vecTupleHists2D[Var::NTpc][Type::Weird][Comp::VsNumTpc]  -> Fill(rec_ntpclust_trkmatcher, rec_ntpclust_trkmatcher);
-      m_vecTupleHists2D[Var::RTot][Type::Weird][Comp::VsNumTpc]  -> Fill(rec_ntpclust_trkmatcher, rec_rnclus);
-      m_vecTupleHists2D[Var::RIntt][Type::Weird][Comp::VsNumTpc] -> Fill(rec_ntpclust_trkmatcher, rec_rintt);
-      m_vecTupleHists2D[Var::RMvtx][Type::Weird][Comp::VsNumTpc] -> Fill(rec_ntpclust_trkmatcher, rec_rmaps);
-      m_vecTupleHists2D[Var::RTpc][Type::Weird][Comp::VsNumTpc]  -> Fill(rec_ntpclust_trkmatcher, rec_rtpc);
-      m_vecTupleHists2D[Var::Phi][Type::Weird][Comp::VsNumTpc]   -> Fill(rec_ntpclust_trkmatcher, rec_phi);
-      m_vecTupleHists2D[Var::Eta][Type::Weird][Comp::VsNumTpc]   -> Fill(rec_ntpclust_trkmatcher, rec_eta);
-      m_vecTupleHists2D[Var::Pt][Type::Weird][Comp::VsNumTpc]    -> Fill(rec_ntpclust_trkmatcher, rec_pt);
-      m_vecTupleHists2D[Var::Frac][Type::Weird][Comp::VsNumTpc]  -> Fill(rec_ntpclust_trkmatcher, rec_ptfrac);
+      FillHistogram1D(content, Type::Weird, m_vecTupleHists1D);
+      FillHistogram2D(content, Type::Weird, Comp::VsTruthPt, rec_gpt,                 m_vecTupleHists2D);
+      FillHistogram2D(content, Type::Weird, Comp::VsNumTpc,  rec_ntpclust_trkmatcher, m_vecTupleHists2D);
     }
   }  // end reco track loop
 
@@ -1657,53 +1503,52 @@ void STrackMatcherComparator::GetOldTupleHists() {
       cout << "          Processing entry " << iTrueProg << "/" << nTrueEntries << "...\r" << flush;
     }
 
-    // select only primary truth particles
-    const bool isPrimary = ((tru_gprimary == 1) && !isnan(tru_trackID));
-    if (!isPrimary) continue;
+    // skip nan's
+    if (isnan(tru_trackID)) continue;
+
+    // check if near sector
+    bool isNearSector = false;
+    if (m_config.doPhiCut) {
+      isNearSector = IsNearSector(tru_gphi);
+    }
+
+    // apply cuts
+    const bool isPrimary   = (tru_gprimary == 1);
+    const bool isInZVtxCut = ((tru_gvz > m_config.zVtxRange.first) && (tru_gvz < m_config.zVtxRange.second));
+    if (m_config.useOnlyPrimTrks && !isPrimary)   continue;
+    if (m_config.doZVtxCut       && !isInZVtxCut) continue;
+    if (m_config.doPhiCut        && isNearSector) continue;
 
     // run calculations
     const double tru_gntot = tru_gnintt + tru_gnmaps + tru_gntpc;
 
-    // fill truth 1D histograms
-    m_vecOldHists1D[Var::NTot][Type::Truth]  -> Fill(tru_gntot);
-    m_vecOldHists1D[Var::NIntt][Type::Truth] -> Fill(tru_gnintt);
-    m_vecOldHists1D[Var::NMvtx][Type::Truth] -> Fill(tru_gnmaps);
-    m_vecOldHists1D[Var::NTpc][Type::Truth]  -> Fill(tru_gntpc);
-    m_vecOldHists1D[Var::RTot][Type::Truth]  -> Fill(1.);
-    m_vecOldHists1D[Var::RIntt][Type::Truth] -> Fill(1.);
-    m_vecOldHists1D[Var::RMvtx][Type::Truth] -> Fill(1.);
-    m_vecOldHists1D[Var::RTpc][Type::Truth]  -> Fill(1.);
-    m_vecOldHists1D[Var::Phi][Type::Truth]   -> Fill(tru_gphi);
-    m_vecOldHists1D[Var::Eta][Type::Truth]   -> Fill(tru_geta);
-    m_vecOldHists1D[Var::Pt][Type::Truth]    -> Fill(tru_gpt);
-    m_vecOldHists1D[Var::Frac][Type::Truth]  -> Fill(1.);
+    // bundle histogram values to fill
+    STrackMatcherComparatorHistContent content {
+      tru_gntot,
+      tru_gnintt,
+      tru_gnmaps,
+      tru_gntpc,
+      1.,
+      1.,
+      1.,
+      1.,
+      tru_gphi,
+      tru_geta,
+      tru_gpt,
+      1.,
+      1.,
+      1.,
+      1.,
+      1.,
+      1.,
+      1.,
+      1.
+    };
 
-    // fill truth 2D histograms
-    m_vecOldHists2D[Var::NTot][Type::Truth][Comp::VsTruthPt]  -> Fill(tru_gpt, tru_gntot);
-    m_vecOldHists2D[Var::NIntt][Type::Truth][Comp::VsTruthPt] -> Fill(tru_gpt, tru_gnintt);
-    m_vecOldHists2D[Var::NMvtx][Type::Truth][Comp::VsTruthPt] -> Fill(tru_gpt, tru_gnmaps);
-    m_vecOldHists2D[Var::NTpc][Type::Truth][Comp::VsTruthPt]  -> Fill(tru_gpt, tru_gntpc);
-    m_vecOldHists2D[Var::RTot][Type::Truth][Comp::VsTruthPt]  -> Fill(tru_gpt, 1.);
-    m_vecOldHists2D[Var::RIntt][Type::Truth][Comp::VsTruthPt] -> Fill(tru_gpt, 1.);
-    m_vecOldHists2D[Var::RMvtx][Type::Truth][Comp::VsTruthPt] -> Fill(tru_gpt, 1.);
-    m_vecOldHists2D[Var::RTpc][Type::Truth][Comp::VsTruthPt]  -> Fill(tru_gpt, 1.);
-    m_vecOldHists2D[Var::Phi][Type::Truth][Comp::VsTruthPt]   -> Fill(tru_gpt, tru_gphi);
-    m_vecOldHists2D[Var::Eta][Type::Truth][Comp::VsTruthPt]   -> Fill(tru_gpt, tru_geta);
-    m_vecOldHists2D[Var::Pt][Type::Truth][Comp::VsTruthPt]    -> Fill(tru_gpt, tru_gpt);
-    m_vecOldHists2D[Var::Frac][Type::Truth][Comp::VsTruthPt]  -> Fill(tru_gpt, 1.);
-
-    m_vecOldHists2D[Var::NTot][Type::Truth][Comp::VsNumTpc]  -> Fill(tru_gntpc, tru_gntot);
-    m_vecOldHists2D[Var::NIntt][Type::Truth][Comp::VsNumTpc] -> Fill(tru_gntpc, tru_gnintt);
-    m_vecOldHists2D[Var::NMvtx][Type::Truth][Comp::VsNumTpc] -> Fill(tru_gntpc, tru_gnmaps);
-    m_vecOldHists2D[Var::NTpc][Type::Truth][Comp::VsNumTpc]  -> Fill(tru_gntpc, tru_gntpc);
-    m_vecOldHists2D[Var::RTot][Type::Truth][Comp::VsNumTpc]  -> Fill(tru_gntpc, 1.);
-    m_vecOldHists2D[Var::RIntt][Type::Truth][Comp::VsNumTpc] -> Fill(tru_gntpc, 1.);
-    m_vecOldHists2D[Var::RMvtx][Type::Truth][Comp::VsNumTpc] -> Fill(tru_gntpc, 1.);
-    m_vecOldHists2D[Var::RTpc][Type::Truth][Comp::VsNumTpc]  -> Fill(tru_gntpc, 1.);
-    m_vecOldHists2D[Var::Phi][Type::Truth][Comp::VsNumTpc]   -> Fill(tru_gntpc, tru_gphi);
-    m_vecOldHists2D[Var::Eta][Type::Truth][Comp::VsNumTpc]   -> Fill(tru_gntpc, tru_geta);
-    m_vecOldHists2D[Var::Pt][Type::Truth][Comp::VsNumTpc]    -> Fill(tru_gntpc, tru_gpt);
-    m_vecOldHists2D[Var::Frac][Type::Truth][Comp::VsNumTpc]  -> Fill(tru_gntpc, 1.);
+    // fill truth histograms
+    FillHistogram1D(content, Type::Truth, m_vecOldHists1D);
+    FillHistogram2D(content, Type::Truth, Comp::VsTruthPt, tru_gpt,   m_vecOldHists2D);
+    FillHistogram2D(content, Type::Truth, Comp::VsNumTpc,  tru_gntpc, m_vecOldHists2D);
   }  // end truth particle loop
 
   // announce next entry loop
@@ -1732,8 +1577,20 @@ void STrackMatcherComparator::GetOldTupleHists() {
     }
 
     // skip nan's
-    //   TODO also add option to filter out non-primary tracks
     if (isnan(rec_gpt)) continue;
+
+    // check if near sector
+    bool isNearSector = false;
+    if (m_config.doPhiCut) {
+      isNearSector = IsNearSector(rec_phi);
+    }
+
+    // apply cuts
+    const bool isPrimary   = (rec_gprimary == 1);
+    const bool isInZVtxCut = ((rec_vz > m_config.zVtxRange.first) && (rec_vz < m_config.zVtxRange.second));
+    if (m_config.useOnlyPrimTrks && !isPrimary)   continue;
+    if (m_config.doZVtxCut       && !isInZVtxCut) continue;
+    if (m_config.doPhiCut        && isNearSector) continue;
 
     // run calculations
     const double rec_ntot   = rec_nintt + rec_nmaps + rec_ntpc;
@@ -1743,128 +1600,51 @@ void STrackMatcherComparator::GetOldTupleHists() {
     const double rec_rmaps  = rec_nmaps / rec_gnmaps;
     const double rec_rtpc   = rec_ntpc / rec_gntpc;
     const double rec_ptfrac = rec_pt / rec_gpt;
+    const double rec_ptper  = rec_deltapt / rec_pt;
+    const double rec_etaper = rec_deltaeta / rec_eta;
+    const double rec_phiper = rec_deltaphi / rec_phi;
+    const double rec_ptres  = abs(rec_pt - rec_gpt) / rec_gpt;
+    const double rec_etares = abs(rec_eta - rec_geta) / rec_geta;
+    const double rec_phires = abs(rec_phi - rec_gphi) / rec_gphi;
 
-    // fill all matched reco 1D histograms
-    m_vecOldHists1D[Var::NTot][Type::Track]  -> Fill(rec_ntot);
-    m_vecOldHists1D[Var::NIntt][Type::Track] -> Fill(rec_nintt);
-    m_vecOldHists1D[Var::NMvtx][Type::Track] -> Fill(rec_nmaps);
-    m_vecOldHists1D[Var::NTpc][Type::Track]  -> Fill(rec_ntpc);
-    m_vecOldHists1D[Var::RTot][Type::Track]  -> Fill(rec_rtot);
-    m_vecOldHists1D[Var::RIntt][Type::Track] -> Fill(rec_rintt);
-    m_vecOldHists1D[Var::RMvtx][Type::Track] -> Fill(rec_rmaps);
-    m_vecOldHists1D[Var::RTpc][Type::Track]  -> Fill(rec_rtpc);
-    m_vecOldHists1D[Var::Phi][Type::Track]   -> Fill(rec_phi);
-    m_vecOldHists1D[Var::Eta][Type::Track]   -> Fill(rec_eta);
-    m_vecOldHists1D[Var::Pt][Type::Track]    -> Fill(rec_pt);
-    m_vecOldHists1D[Var::Frac][Type::Track]  -> Fill(rec_ptfrac);
+    // bundle histogram values to fill
+    STrackMatcherComparatorHistContent content {
+      rec_ntot,
+      rec_nintt,
+      rec_nmaps,
+      rec_ntpc,
+      rec_rtot,
+      rec_rintt,
+      rec_rmaps,
+      rec_rtpc,
+      rec_phi,
+      rec_eta,
+      rec_pt,
+      rec_ptfrac,
+      rec_quality,
+      rec_ptper,
+      rec_etaper,
+      rec_phiper,
+      rec_ptres,
+      rec_etares,
+      rec_phires
+    };
 
-    // fill all matched reco 2D histograms
-    m_vecOldHists2D[Var::NTot][Type::Track][Comp::VsTruthPt]  -> Fill(rec_gpt, rec_ntot);
-    m_vecOldHists2D[Var::NIntt][Type::Track][Comp::VsTruthPt] -> Fill(rec_gpt, rec_nintt);
-    m_vecOldHists2D[Var::NMvtx][Type::Track][Comp::VsTruthPt] -> Fill(rec_gpt, rec_nmaps);
-    m_vecOldHists2D[Var::NTpc][Type::Track][Comp::VsTruthPt]  -> Fill(rec_gpt, rec_ntpc);
-    m_vecOldHists2D[Var::RTot][Type::Track][Comp::VsTruthPt]  -> Fill(rec_gpt, rec_rtot);
-    m_vecOldHists2D[Var::RIntt][Type::Track][Comp::VsTruthPt] -> Fill(rec_gpt, rec_rintt);
-    m_vecOldHists2D[Var::RMvtx][Type::Track][Comp::VsTruthPt] -> Fill(rec_gpt, rec_rmaps);
-    m_vecOldHists2D[Var::RTpc][Type::Track][Comp::VsTruthPt]  -> Fill(rec_gpt, rec_rtpc);
-    m_vecOldHists2D[Var::Phi][Type::Track][Comp::VsTruthPt]   -> Fill(rec_gpt, rec_phi);
-    m_vecOldHists2D[Var::Eta][Type::Track][Comp::VsTruthPt]   -> Fill(rec_gpt, rec_eta);
-    m_vecOldHists2D[Var::Pt][Type::Track][Comp::VsTruthPt]    -> Fill(rec_gpt, rec_pt);
-    m_vecOldHists2D[Var::Frac][Type::Track][Comp::VsTruthPt]  -> Fill(rec_gpt, rec_ptfrac);
-
-    m_vecOldHists2D[Var::NTot][Type::Track][Comp::VsNumTpc]  -> Fill(rec_gntpc, rec_ntot);
-    m_vecOldHists2D[Var::NIntt][Type::Track][Comp::VsNumTpc] -> Fill(rec_gntpc, rec_nintt);
-    m_vecOldHists2D[Var::NMvtx][Type::Track][Comp::VsNumTpc] -> Fill(rec_gntpc, rec_nmaps);
-    m_vecOldHists2D[Var::NTpc][Type::Track][Comp::VsNumTpc]  -> Fill(rec_gntpc, rec_ntpc);
-    m_vecOldHists2D[Var::RTot][Type::Track][Comp::VsNumTpc]  -> Fill(rec_gntpc, rec_rtpc);
-    m_vecOldHists2D[Var::RIntt][Type::Track][Comp::VsNumTpc] -> Fill(rec_gntpc, rec_rintt);
-    m_vecOldHists2D[Var::RMvtx][Type::Track][Comp::VsNumTpc] -> Fill(rec_gntpc, rec_rmaps);
-    m_vecOldHists2D[Var::RTpc][Type::Track][Comp::VsNumTpc]  -> Fill(rec_gntpc, rec_rtpc);
-    m_vecOldHists2D[Var::Phi][Type::Track][Comp::VsNumTpc]   -> Fill(rec_gntpc, rec_phi);
-    m_vecOldHists2D[Var::Eta][Type::Track][Comp::VsNumTpc]   -> Fill(rec_gntpc, rec_eta);
-    m_vecOldHists2D[Var::Pt][Type::Track][Comp::VsNumTpc]    -> Fill(rec_gntpc, rec_pt);
-    m_vecOldHists2D[Var::Frac][Type::Track][Comp::VsNumTpc]  -> Fill(rec_gntpc, rec_ptfrac);
+    // fill all matched reco histograms
+    FillHistogram1D(content, Type::Track, m_vecOldHists1D);
+    FillHistogram2D(content, Type::Track, Comp::VsTruthPt, rec_gpt,   m_vecOldHists2D);
+    FillHistogram2D(content, Type::Track, Comp::VsNumTpc,  rec_gntpc, m_vecOldHists2D);
 
     // fill weird and normal matched reco 1D histograms
     const bool isNormalTrack = ((rec_ptfrac >= m_config.oddPtFrac.first) && (rec_ptfrac <= m_config.oddPtFrac.second));
     if (isNormalTrack) {
-      m_vecOldHists1D[Var::NTot][Type::Normal]  -> Fill(rec_ntot);
-      m_vecOldHists1D[Var::NIntt][Type::Normal] -> Fill(rec_nintt);
-      m_vecOldHists1D[Var::NMvtx][Type::Normal] -> Fill(rec_nmaps);
-      m_vecOldHists1D[Var::NTpc][Type::Normal]  -> Fill(rec_ntpc);
-      m_vecOldHists1D[Var::RTot][Type::Normal]  -> Fill(rec_rtot);
-      m_vecOldHists1D[Var::RIntt][Type::Normal] -> Fill(rec_rintt);
-      m_vecOldHists1D[Var::RMvtx][Type::Normal] -> Fill(rec_rmaps);
-      m_vecOldHists1D[Var::RTpc][Type::Normal]  -> Fill(rec_rtpc);
-      m_vecOldHists1D[Var::Phi][Type::Normal]   -> Fill(rec_phi);
-      m_vecOldHists1D[Var::Eta][Type::Normal]   -> Fill(rec_eta);
-      m_vecOldHists1D[Var::Pt][Type::Normal]    -> Fill(rec_pt);
-      m_vecOldHists1D[Var::Frac][Type::Normal]  -> Fill(rec_ptfrac);
-
-      m_vecOldHists2D[Var::NTot][Type::Normal][Comp::VsTruthPt]  -> Fill(rec_gpt, rec_ntot);
-      m_vecOldHists2D[Var::NIntt][Type::Normal][Comp::VsTruthPt] -> Fill(rec_gpt, rec_nintt);
-      m_vecOldHists2D[Var::NMvtx][Type::Normal][Comp::VsTruthPt] -> Fill(rec_gpt, rec_nmaps);
-      m_vecOldHists2D[Var::NTpc][Type::Normal][Comp::VsTruthPt]  -> Fill(rec_gpt, rec_ntpc);
-      m_vecOldHists2D[Var::RTot][Type::Normal][Comp::VsTruthPt]  -> Fill(rec_gpt, rec_rtot);
-      m_vecOldHists2D[Var::RIntt][Type::Normal][Comp::VsTruthPt] -> Fill(rec_gpt, rec_rintt);
-      m_vecOldHists2D[Var::RMvtx][Type::Normal][Comp::VsTruthPt] -> Fill(rec_gpt, rec_rmaps);
-      m_vecOldHists2D[Var::RTpc][Type::Normal][Comp::VsTruthPt]  -> Fill(rec_gpt, rec_rtpc);
-      m_vecOldHists2D[Var::Phi][Type::Normal][Comp::VsTruthPt]   -> Fill(rec_gpt, rec_phi);
-      m_vecOldHists2D[Var::Eta][Type::Normal][Comp::VsTruthPt]   -> Fill(rec_gpt, rec_eta);
-      m_vecOldHists2D[Var::Pt][Type::Normal][Comp::VsTruthPt]    -> Fill(rec_gpt, rec_pt);
-      m_vecOldHists2D[Var::Frac][Type::Normal][Comp::VsTruthPt]  -> Fill(rec_gpt, rec_ptfrac);
-
-      m_vecOldHists2D[Var::NTot][Type::Normal][Comp::VsNumTpc]  -> Fill(rec_gntpc, rec_ntot);
-      m_vecOldHists2D[Var::NIntt][Type::Normal][Comp::VsNumTpc] -> Fill(rec_gntpc, rec_nintt);
-      m_vecOldHists2D[Var::NMvtx][Type::Normal][Comp::VsNumTpc] -> Fill(rec_gntpc, rec_nmaps);
-      m_vecOldHists2D[Var::NTpc][Type::Normal][Comp::VsNumTpc]  -> Fill(rec_gntpc, rec_ntpc);
-      m_vecOldHists2D[Var::RTot][Type::Normal][Comp::VsNumTpc]  -> Fill(rec_gntpc, rec_rtot);
-      m_vecOldHists2D[Var::RIntt][Type::Normal][Comp::VsNumTpc] -> Fill(rec_gntpc, rec_rintt);
-      m_vecOldHists2D[Var::RMvtx][Type::Normal][Comp::VsNumTpc] -> Fill(rec_gntpc, rec_rmaps);
-      m_vecOldHists2D[Var::RTpc][Type::Normal][Comp::VsNumTpc]  -> Fill(rec_gntpc, rec_rtpc);
-      m_vecOldHists2D[Var::Phi][Type::Normal][Comp::VsNumTpc]   -> Fill(rec_gntpc, rec_phi);
-      m_vecOldHists2D[Var::Eta][Type::Normal][Comp::VsNumTpc]   -> Fill(rec_gntpc, rec_eta);
-      m_vecOldHists2D[Var::Pt][Type::Normal][Comp::VsNumTpc]    -> Fill(rec_gntpc, rec_pt);
-      m_vecOldHists2D[Var::Frac][Type::Normal][Comp::VsNumTpc]  -> Fill(rec_gntpc, rec_ptfrac);
+      FillHistogram1D(content, Type::Normal, m_vecOldHists1D);
+      FillHistogram2D(content, Type::Normal, Comp::VsTruthPt, rec_gpt,   m_vecOldHists2D);
+      FillHistogram2D(content, Type::Normal, Comp::VsNumTpc,  rec_gntpc, m_vecOldHists2D);
     } else {
-      m_vecOldHists1D[Var::NTot][Type::Weird]  -> Fill(rec_ntot);
-      m_vecOldHists1D[Var::NIntt][Type::Weird] -> Fill(rec_nintt);
-      m_vecOldHists1D[Var::NMvtx][Type::Weird] -> Fill(rec_nmaps);
-      m_vecOldHists1D[Var::NTpc][Type::Weird]  -> Fill(rec_ntpc);
-      m_vecOldHists1D[Var::RTot][Type::Weird]  -> Fill(rec_rtot);
-      m_vecOldHists1D[Var::RIntt][Type::Weird] -> Fill(rec_rintt);
-      m_vecOldHists1D[Var::RMvtx][Type::Weird] -> Fill(rec_rmaps);
-      m_vecOldHists1D[Var::RTpc][Type::Weird]  -> Fill(rec_rtpc);
-      m_vecOldHists1D[Var::Phi][Type::Weird]   -> Fill(rec_phi);
-      m_vecOldHists1D[Var::Eta][Type::Weird]   -> Fill(rec_eta);
-      m_vecOldHists1D[Var::Pt][Type::Weird]    -> Fill(rec_pt);
-      m_vecOldHists1D[Var::Frac][Type::Weird]  -> Fill(rec_ptfrac);
-
-      m_vecOldHists2D[Var::NTot][Type::Weird][Comp::VsTruthPt]  -> Fill(rec_gpt, rec_ntot);
-      m_vecOldHists2D[Var::NIntt][Type::Weird][Comp::VsTruthPt] -> Fill(rec_gpt, rec_nintt);
-      m_vecOldHists2D[Var::NMvtx][Type::Weird][Comp::VsTruthPt] -> Fill(rec_gpt, rec_nmaps);
-      m_vecOldHists2D[Var::NTpc][Type::Weird][Comp::VsTruthPt]  -> Fill(rec_gpt, rec_ntpc);
-      m_vecOldHists2D[Var::RTot][Type::Weird][Comp::VsTruthPt]  -> Fill(rec_gpt, rec_rtot);
-      m_vecOldHists2D[Var::RIntt][Type::Weird][Comp::VsTruthPt] -> Fill(rec_gpt, rec_rintt);
-      m_vecOldHists2D[Var::RMvtx][Type::Weird][Comp::VsTruthPt] -> Fill(rec_gpt, rec_rmaps);
-      m_vecOldHists2D[Var::RTpc][Type::Weird][Comp::VsTruthPt]  -> Fill(rec_gpt, rec_rtpc);
-      m_vecOldHists2D[Var::Phi][Type::Weird][Comp::VsTruthPt]   -> Fill(rec_gpt, rec_phi);
-      m_vecOldHists2D[Var::Eta][Type::Weird][Comp::VsTruthPt]   -> Fill(rec_gpt, rec_eta);
-      m_vecOldHists2D[Var::Pt][Type::Weird][Comp::VsTruthPt]    -> Fill(rec_gpt, rec_pt);
-      m_vecOldHists2D[Var::Frac][Type::Weird][Comp::VsTruthPt]  -> Fill(rec_gpt, rec_ptfrac);
-
-      m_vecOldHists2D[Var::NTot][Type::Weird][Comp::VsNumTpc]  -> Fill(rec_gntpc, rec_ntot);
-      m_vecOldHists2D[Var::NIntt][Type::Weird][Comp::VsNumTpc] -> Fill(rec_gntpc, rec_nintt);
-      m_vecOldHists2D[Var::NMvtx][Type::Weird][Comp::VsNumTpc] -> Fill(rec_gntpc, rec_nmaps);
-      m_vecOldHists2D[Var::NTpc][Type::Weird][Comp::VsNumTpc]  -> Fill(rec_gntpc, rec_ntpc);
-      m_vecOldHists2D[Var::RTot][Type::Weird][Comp::VsNumTpc]  -> Fill(rec_gntpc, rec_rtpc);
-      m_vecOldHists2D[Var::RIntt][Type::Weird][Comp::VsNumTpc] -> Fill(rec_gntpc, rec_rintt);
-      m_vecOldHists2D[Var::RMvtx][Type::Weird][Comp::VsNumTpc] -> Fill(rec_gntpc, rec_rmaps);
-      m_vecOldHists2D[Var::RTpc][Type::Weird][Comp::VsNumTpc]  -> Fill(rec_gntpc, rec_rtpc);
-      m_vecOldHists2D[Var::Phi][Type::Weird][Comp::VsNumTpc]   -> Fill(rec_gntpc, rec_phi);
-      m_vecOldHists2D[Var::Eta][Type::Weird][Comp::VsNumTpc]   -> Fill(rec_gntpc, rec_eta);
-      m_vecOldHists2D[Var::Pt][Type::Weird][Comp::VsNumTpc]    -> Fill(rec_gntpc, rec_pt);
-      m_vecOldHists2D[Var::Frac][Type::Weird][Comp::VsNumTpc]  -> Fill(rec_gntpc, rec_ptfrac);
+      FillHistogram1D(content, Type::Weird, m_vecOldHists1D);
+      FillHistogram2D(content, Type::Weird, Comp::VsTruthPt, rec_gpt,   m_vecOldHists2D);
+      FillHistogram2D(content, Type::Weird, Comp::VsNumTpc,  rec_gntpc, m_vecOldHists2D);
     }
   }  // end reco track loop
 
@@ -2644,5 +2424,92 @@ void STrackMatcherComparator::CloseOutput() {
   return;
 
 }  // end 'CloseOutput()'
+
+
+
+// helper functions -----------------------------------------------------------
+
+void STrackMatcherComparator::FillHistogram1D(
+  const STrackMatcherComparatorHistContent& content,
+  const Type type,
+  const vector<vector<TH1D*>> vecHist1D
+) {
+
+  vecHist1D.at(Var::NTot).at(type)   -> Fill(content.nTot);
+  vecHist1D.at(Var::NIntt).at(type)  -> Fill(content.nIntt);
+  vecHist1D.at(Var::NMvtx).at(type)  -> Fill(content.nMvtx);
+  vecHist1D.at(Var::NTpc).at(type)   -> Fill(content.nTpc);
+  vecHist1D.at(Var::RTot).at(type)   -> Fill(content.rTot);
+  vecHist1D.at(Var::RIntt).at(type)  -> Fill(content.rIntt);
+  vecHist1D.at(Var::RMvtx).at(type)  -> Fill(content.rMvtx);
+  vecHist1D.at(Var::RTpc).at(type)   -> Fill(content.rTpc);
+  vecHist1D.at(Var::Phi).at(type)    -> Fill(content.phi);
+  vecHist1D.at(Var::Eta).at(type)    -> Fill(content.eta);
+  vecHist1D.at(Var::Pt).at(type)     -> Fill(content.pt);
+  vecHist1D.at(Var::Frac).at(type)   -> Fill(content.ptFrac);
+  vecHist1D.at(Var::Qual).at(type)   -> Fill(content.quality);
+  vecHist1D.at(Var::PtErr).at(type)  -> Fill(content.ptErr);
+  vecHist1D.at(Var::EtaErr).at(type) -> Fill(content.etaErr);
+  vecHist1D.at(Var::PhiErr).at(type) -> Fill(content.phiErr);
+  vecHist1D.at(Var::PtRes).at(type)  -> Fill(content.ptRes);
+  vecHist1D.at(Var::EtaRes).at(type) -> Fill(content.etaRes);
+  vecHist1D.at(Var::PhiRes).at(type) -> Fill(content.phiRes);
+  return;
+
+}  // end 'FillHistogram1D(STrackMatcherComparatorHistContent&, int, vector<vector<TH1D*>>)'
+
+
+
+
+void STrackMatcherComparator::FillHistogram2D(
+  const STrackMatcherComparatorHistContent& content,
+  const Type type,
+  const Comp comparison,
+  const double value,
+  const vector<vector<vector<TH2D*>>> vecHist2D
+
+) {
+
+  vecHist2D.at(Var::NTot).at(type).at(comparison)   -> Fill(value, content.nTot);
+  vecHist2D.at(Var::NIntt).at(type).at(comparison)  -> Fill(value, content.nIntt);
+  vecHist2D.at(Var::NMvtx).at(type).at(comparison)  -> Fill(value, content.nMvtx);
+  vecHist2D.at(Var::NTpc).at(type).at(comparison)   -> Fill(value, content.nTpc);
+  vecHist2D.at(Var::RTot).at(type).at(comparison)   -> Fill(value, content.rTot);
+  vecHist2D.at(Var::RIntt).at(type).at(comparison)  -> Fill(value, content.rIntt);
+  vecHist2D.at(Var::RMvtx).at(type).at(comparison)  -> Fill(value, content.rMvtx);
+  vecHist2D.at(Var::RTpc).at(type).at(comparison)   -> Fill(value, content.rTpc);
+  vecHist2D.at(Var::Phi).at(type).at(comparison)    -> Fill(value, content.phi);
+  vecHist2D.at(Var::Eta).at(type).at(comparison)    -> Fill(value, content.eta);
+  vecHist2D.at(Var::Pt).at(type).at(comparison)     -> Fill(value, content.pt);
+  vecHist2D.at(Var::Frac).at(type).at(comparison)   -> Fill(value, content.ptFrac);
+  vecHist2D.at(Var::Qual).at(type).at(comparison)   -> Fill(value, content.quality);
+  vecHist2D.at(Var::PtErr).at(type).at(comparison)  -> Fill(value, content.ptErr);
+  vecHist2D.at(Var::EtaErr).at(type).at(comparison) -> Fill(value, content.etaErr);
+  vecHist2D.at(Var::PhiErr).at(type).at(comparison) -> Fill(value, content.phiErr);
+  vecHist2D.at(Var::PtRes).at(type).at(comparison)  -> Fill(value, content.ptRes);
+  vecHist2D.at(Var::EtaRes).at(type).at(comparison) -> Fill(value, content.etaRes);
+  vecHist2D.at(Var::PhiRes).at(type).at(comparison) -> Fill(value, content.phiRes);
+  return;
+
+}  // end 'FillVsHistogram2D(STrackMatcherComparator&, int, int, double, vector<vector<vector<TH2D*>>>)'
+
+
+
+bool STrackMatcherComparator::IsNearSector(const float phi) {
+
+  bool isNearSector = false;
+  for (size_t iSector = 0; iSector < m_const.nSectors; iSector++) {
+    const float cutVal = m_config.sigCutVal * m_config.phiSectors[iSector].second;
+    const float minPhi = m_config.phiSectors[iSector].first - cutVal;
+    const float maxPhi = m_config.phiSectors[iSector].first + cutVal;
+    const bool  isNear = ((phi >= minPhi) && (phi <= maxPhi));
+    if (isNear) {
+      isNearSector = true;
+      break;
+    }
+  }  // end sector loop
+  return isNearSector;
+
+}  // end 'IsNearSector(float)'
 
 // end ------------------------------------------------------------------------

@@ -20,16 +20,18 @@ R__LOAD_LIBRARY(libmbd_io.so)
 R__LOAD_LIBRARY(libmbd.so)
 #endif
 
-void Fun4All_MBDTreeGen(const int nEvents = 100, const char *listFile = "mbdFileList.list")
+void Fun4All_MBDTreeGen(const int nEvents = 0, const char *listFile = "mbdFileList.list", const char *inName = "commissioning.root")
 {
+  gSystem->Load("libg4dst");
   Fun4AllServer *se = Fun4AllServer::instance();
   recoConsts *rc = recoConsts::instance();
 
-  mbdAnalysis *mbdAnalysis_pls = new mbdAnalysis("derp");
+  mbdAnalysis *mbdAnalysis_pls = new mbdAnalysis(inName);
   se->registerSubsystem(mbdAnalysis_pls);
 
   Fun4AllInputManager *in = new Fun4AllDstInputManager("DSTcalo");
-  in->AddListFile(listFile);
+  //in->AddListFile(listFile);
+  in->AddFile(listFile);
   //in -> AddFile("/sphenix/lustre01/sphnxpro/zfs/rucio/group/sphenix/bd/1e/DST_CALOR_ana383_2023p002-00021598-0000.root");
   se->registerInputManager(in);
 
