@@ -100,8 +100,8 @@ bool PPG04EventSelector::badChi2_cut(PHCompositeNode *topNode)
 	      if(Verbosity())
 		{
 		  std::cout << "PPG04EventSelector::badChi2_cut(PHCompositeNode *topNode) Tower has bad chi2" << std::endl;
-		  return false;
 		}
+	      return false;
 	    }
 	}
     }
