@@ -36,6 +36,13 @@ class PPG04EventSelector : public SubsysReco
         // bad chi2
         void do_badChi2_cut(bool doCut) { m_do_badChi2_cut = doCut; }
 
+        / Do event selection on leading R=0.4 truth jet pT range
+        void do_MC_event_select_lead_truth_jet(float low, float high)
+        {
+            m_MC_do_event_select = true;
+            m_MC_event_select_jetpT_range.first = low;
+            m_MC_event_select_jetpT_range.second = high;
+        }
 
     private:
 
@@ -44,9 +51,14 @@ class PPG04EventSelector : public SubsysReco
         double m_A_cut{0};
         bool A_cut(PHCompositeNode *topNode);
 
-        // global vertex cut
+        // chi2 cut
         bool m_do_badChi2_cut{false};
         bool badChi2_cut(PHCompositeNode *topNode);
+
+        // event trigger (for simulation)
+        bool m_MC_do_event_select{false};
+        std::pair<float, float> m_MC_event_select_jetpT_range{-1,1000};
+        bool MC_event_select(PHCompositeNode *topNode);
 
 };
 
