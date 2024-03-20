@@ -74,12 +74,14 @@ int Fun4All_G4_sPHENIX(
     const string &outdir = ".",
     const string &tag = "0",
     const string &outputFile = "G4sPHENIX.root",
+    const Double_t z       = 0,
+    const Double_t z_width = 0,
     const Double_t eta_min = -1.152,
     const Double_t eta_max = 1.152,
     const Double_t phi_min = -M_PI/32,
     const Double_t phi_max = M_PI/32,
-    const Double_t p_min = 1,
-    const Double_t p_max = 2,
+    const Double_t p_min   = 1,
+    const Double_t p_max   = 2,
     const string &inputFile = "https://www.phenix.bnl.gov/WWW/publish/phnxbld/sPHENIX/files/sPHENIX_G4Hits_sHijing_9-11fm_00000_00010.root",
     const string &embed_input_file = "https://www.phenix.bnl.gov/WWW/publish/phnxbld/sPHENIX/files/sPHENIX_G4Hits_sHijing_9-11fm_00000_00010.root",
     const int skip = 0)
@@ -90,6 +92,8 @@ int Fun4All_G4_sPHENIX(
   std::cout << "outDir: " << outdir << std::endl;
   std::cout << "tag: " << tag << std::endl;
   std::cout << "outputFile: " << outputFile << std::endl;
+  std::cout << "z: "       << z << std::endl;
+  std::cout << "z_width: " << z_width << std::endl;
   std::cout << "eta_min: " << eta_min << std::endl;
   std::cout << "eta_max: " << eta_max << std::endl;
   std::cout << "phi_min: " << phi_min << std::endl;
@@ -222,11 +226,11 @@ int Fun4All_G4_sPHENIX(
     }
     else
     {
-      INPUTGENERATOR::SimpleEventGenerator[0]->set_vertex_distribution_function(PHG4SimpleEventGenerator::Gaus,
-                                                                                PHG4SimpleEventGenerator::Gaus,
-                                                                                PHG4SimpleEventGenerator::Gaus);
-      INPUTGENERATOR::SimpleEventGenerator[0]->set_vertex_distribution_mean(0., 0., 0.);
-      // INPUTGENERATOR::SimpleEventGenerator[0]->set_vertex_distribution_width(0, 0, 0);
+      INPUTGENERATOR::SimpleEventGenerator[0]->set_vertex_distribution_function(PHG4SimpleEventGenerator::Uniform,
+                                                                                PHG4SimpleEventGenerator::Uniform,
+                                                                                PHG4SimpleEventGenerator::Uniform);
+      INPUTGENERATOR::SimpleEventGenerator[0]->set_vertex_distribution_mean(0, 0, z);
+      INPUTGENERATOR::SimpleEventGenerator[0]->set_vertex_distribution_width(0, 0, z_width);
     }
     INPUTGENERATOR::SimpleEventGenerator[0]->set_eta_range(eta_min, eta_max);
     INPUTGENERATOR::SimpleEventGenerator[0]->set_phi_range(phi_min, phi_max);
@@ -800,8 +804,8 @@ int Fun4All_G4_sPHENIX(
 
 # ifndef __CINT__
 int main(int argc, char* argv[]) {
-    if(argc < 1 || argc > 15){
-        cout << "usage: ./bin/Fun4All_G4_sPHENIX nEvents seed outdir tag outputFile eta_min eta_max phi_min phi_max p_min p_max inputFile embed_input_file skip" << endl;
+    if(argc < 1 || argc > 17){
+        cout << "usage: ./bin/Fun4All_G4_sPHENIX nEvents seed outdir tag outputFile z z_width eta_min eta_max phi_min phi_max p_min p_max inputFile embed_input_file skip" << endl;
         cout << "nEvents: Number of events to generate. Default: 1." << endl;
         cout << "seed: random seed to use for reproducibility. Default: 0" << endl;
         cout << "outdir: Location of output directory. Default: ." << endl;
@@ -817,6 +821,8 @@ int main(int argc, char* argv[]) {
      string outdir = ".";
      string tag = "0";
      string outputFile = "G4sPHENIX.root";
+     Double_t z       = 0;
+     Double_t z_width = 0;
      Double_t eta_min = -1.152;
      Double_t eta_max = 1.152;
      Double_t phi_min = -M_PI/32;
@@ -843,31 +849,37 @@ int main(int argc, char* argv[]) {
         outputFile = argv[5];
     }
     if(argc >= 7) {
-        eta_min = atof(argv[6]);
+        z = atof(argv[6]);
     }
     if(argc >= 8) {
-        eta_max = atof(argv[7]);
+        z_width = atof(argv[7]);
     }
     if(argc >= 9) {
-        phi_min = atof(argv[8]);
+        eta_min = atof(argv[8]);
     }
     if(argc >= 10) {
-        phi_max = atof(argv[9]);
+        eta_max = atof(argv[9]);
     }
     if(argc >= 11) {
-        p_min = atof(argv[10]);
+        phi_min = atof(argv[10]);
     }
     if(argc >= 12) {
-        p_max = atof(argv[11]);
+        phi_max = atof(argv[11]);
     }
     if(argc >= 13) {
-        inputFile = argv[12];
+        p_min = atof(argv[12]);
     }
     if(argc >= 14) {
-        embed_input_file = argv[13];
+        p_max = atof(argv[13]);
     }
     if(argc >= 15) {
-        skip = atoi(argv[14]);
+        inputFile = argv[14];
+    }
+    if(argc >= 16) {
+        embed_input_file = argv[15];
+    }
+    if(argc >= 17) {
+        skip = atoi(argv[16]);
     }
 
     Fun4All_G4_sPHENIX(nEvents,
@@ -875,6 +887,8 @@ int main(int argc, char* argv[]) {
                        outdir,
                        tag,
                        outputFile,
+                       z,
+                       z_width,
                        eta_min,
                        eta_max,
                        phi_min,

@@ -13,9 +13,11 @@ seed=${3}
 outDir=${4}
 tag=${5}
 outputFile=${6}
+z=${7}
+z_width=${8}
 
 # print the environment - needed for debugging
 printenv
 
 mkdir -p $outDir
-$exe $events $seed $outDir $tag $outputFile
+$exe $events $seed $outDir $tag $outputFile $z $z_width

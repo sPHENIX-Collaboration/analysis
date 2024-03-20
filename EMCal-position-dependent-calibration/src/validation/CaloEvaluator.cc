@@ -914,8 +914,6 @@ void CaloEvaluator::fillOutputNtuples(PHCompositeNode* topNode)
 
       float avgphi = getAvgPhi(towerphis, towerenergies, nphibin);
 
-      std::cout << "Event: " << _ievent << ", avgeta: " << avgeta << ", avgphi: " << avgphi << std::endl;
-
       // float clusterID = cluster->get_id();
       float ntowers = cluster->getNTowers();
       // float x = cluster->get_x();
@@ -941,6 +939,8 @@ void CaloEvaluator::fillOutputNtuples(PHCompositeNode* topNode)
           vtx_z = vertex->get_z();
         }
       }
+
+      std::cout << "Event: " << _ievent << ", z: " << vtx_z << ", avgeta: " << avgeta << ", avgphi: " << avgphi << std::endl;
 
       PHG4Particle* primary = clustereval->max_truth_primary_particle_by_energy(cluster);
 

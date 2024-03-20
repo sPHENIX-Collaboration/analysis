@@ -22,6 +22,8 @@ f4a.add_argument('-b', '--f4a', type=str, default='bin/Fun4All_G4_sPHENIX', help
 f4a.add_argument('-d', '--output', type=str, default='test', help='Output Directory. Default: ./test')
 f4a.add_argument('-s', '--memory', type=float, default=3, help='Memory (units of GB) to request per condor submission. Default: 3 GB.')
 f4a.add_argument('-l', '--log', type=str, default='/tmp/anarde/dump/job-$(ClusterId)-$(Process).log', help='Condor log file.')
+f4a.add_argument('-z', '--vtx-z', type=float, default=0, help='Z-vertex. Default: 0.')
+f4a.add_argument('-z2', '--vtx-z-width', type=float, default=0, help='Z-vertex width. Default: 0.')
 
 status.add_argument('-d','--condor-dir', type=str, help='Condor submission directory.', required=True)
 
@@ -51,6 +53,8 @@ def f4a_jobs():
     macro          = os.path.realpath(args.macro)
     src            = os.path.realpath(args.src)
     jobs           = events // events_per_job
+    z              = args.vtx_z
+    z_width        = args.vtx_z_width
 
     print(f'Jobs: {jobs}')
     print(f'Events per job: {events_per_job}')
@@ -62,6 +66,8 @@ def f4a_jobs():
     print(f'Condor log file: {log}')
     print(f'src: {src}')
     print(f'macro: {macro}')
+    print(f'z: {z}')
+    print(f'z_width: {z_width}')
 
     os.makedirs(output_dir,exist_ok=True)
     shutil.copy(executable, output_dir)
@@ -82,6 +88,8 @@ def f4a_jobs():
         file.write(f'Condor log file: {log}\n')
         file.write(f'src: {src}\n')
         file.write(f'macro: {macro}\n')
+        file.write(f'z: {z}\n')
+        file.write(f'z_width: {z_width}\n')
 
     for i in range(submissions):
         os.makedirs(f'{output_dir}/{i}',exist_ok=True)
@@ -91,7 +99,7 @@ def f4a_jobs():
 
         with open(f'{output_dir}/{i}/genFun4All.sub', mode="w") as file:
             file.write(f'executable     = ../{os.path.basename(executable)}\n')
-            file.write(f'arguments      = {output_dir}/{os.path.basename(f4a)} {events_per_job} 0 output $(Process) test.root\n')
+            file.write(f'arguments      = {output_dir}/{os.path.basename(f4a)} {events_per_job} 0 output $(Process) test.root {z} {z_width}\n')
             file.write(f'log            = {log}\n')
             file.write( 'output         = stdout/job-$(Process).out\n')
             file.write( 'error          = error/job-$(Process).err\n')
