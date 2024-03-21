@@ -4,6 +4,7 @@
 #include <TLorentzVector.h>
 #include <g4main/PHG4Hit.h>
 #include <g4main/PHG4HitContainer.h>
+#include <g4main/PHG4Particle.h>
 
 // G4Cells includes
 #include <g4detectors/PHG4Cell.h>
@@ -62,6 +63,8 @@
 #include <ffamodules/CDBInterface.h>
 #include <phool/recoConsts.h>
 
+#include <g4main/PHG4TruthInfoContainer.h>
+
 R__LOAD_LIBRARY(libLiteCaloEvalTowSlope.so)
 
 using namespace std;
@@ -91,12 +94,16 @@ int CaloAna::Init(PHCompositeNode*)
   outfile = new TFile(outfilename.c_str(), "RECREATE");
 
   // correlation plots
-  for (int i = 0; i < 96; i++) h_mass_eta_lt[i] = new TH1F(Form("h_mass_eta_lt%d", i), "", 50, 0, 0.5);
+  for (int i = 0; i < 96; i++)
+  {
+    h_mass_eta_lt[i] = new TH1F(Form("h_mass_eta_lt%d", i), "", 50, 0, 0.5);
+    h_pt_eta[i] = new TH1F(Form("h_pt_eta%d", i), "", 100, 0, 10);
+  }
 
   h_cemc_etaphi = new TH2F("h_cemc_etaphi", "", 96, 0, 96, 256, 0, 256);
 
   // 1D distributions
-  h_InvMass = new TH1F("h_InvMass", "Invariant Mass", 120, 0, 1.2);
+  h_InvMass = new TH1F("h_InvMass", "Invariant Mass", 500, 0, 1.0);
   h_InvMassMix = new TH1F("h_InvMassMix", "Invariant Mass", 120, 0, 1.2);
 
   // cluster QA
@@ -110,6 +117,9 @@ int CaloAna::Init(PHCompositeNode*)
 
   h_nclusters = new TH1F("h_nclusters", "", 1000, 0, 1000);
 
+  h_truth_eta = new TH1F("h_truth_eta", "", 100, -1.2, 1.2);
+  h_truth_e = new TH1F("h_truth_e", "", 100, 0, 10);
+  h_truth_pt = new TH1F("h_truth_pt", "", 100, 0, 10);
 
   return 0;
 }
@@ -140,23 +150,25 @@ int CaloAna::process_towers(PHCompositeNode* topNode)
 
   //----------------------------------get vertex------------------------------------------------------//
 
-  GlobalVertexMap* vertexmap = findNode::getClass<GlobalVertexMap>(topNode, "GlobalVertexMap");
-  if (!vertexmap)
-  {
-    // std::cout << PHWHERE << " Fatal Error - GlobalVertexMap node is missing"<< std::endl;
-    std::cout << "CaloAna GlobalVertexMap node is missing" << std::endl;
-    // return Fun4AllReturnCodes::ABORTRUN;
-  }
   float vtx_z = 0;
-  if (vertexmap && !vertexmap->empty())
+  if (getVtx)
   {
-    GlobalVertex* vtx = vertexmap->begin()->second;
-    if (vtx)
+    GlobalVertexMap* vertexmap = findNode::getClass<GlobalVertexMap>(topNode, "GlobalVertexMap");
+    if (!vertexmap)
     {
-      vtx_z = vtx->get_z();
+      // std::cout << PHWHERE << " Fatal Error - GlobalVertexMap node is missing"<< std::endl;
+      std::cout << "CaloAna GlobalVertexMap node is missing" << std::endl;
+      // return Fun4AllReturnCodes::ABORTRUN;
+    }
+    if (vertexmap && !vertexmap->empty())
+    {
+      GlobalVertex* vtx = vertexmap->begin()->second;
+      if (vtx)
+      {
+        vtx_z = vtx->get_z();
+      }
     }
   }
-
   vector<float> ht_eta;
   vector<float> ht_phi;
 
@@ -187,7 +199,7 @@ int CaloAna::process_towers(PHCompositeNode* topNode)
     }
   }
 
-  RawClusterContainer* clusterContainer = findNode::getClass<RawClusterContainer>(topNode, "CLUSTERINFO_CEMC2");
+  RawClusterContainer* clusterContainer = findNode::getClass<RawClusterContainer>(topNode, "CLUSTER_POS_COR_CEMC");
   if (!clusterContainer)
   {
     std::cout << PHWHERE << "funkyCaloStuff::process_event - Fatal Error - CLUSTER_CEMC node is missing. " << std::endl;
@@ -230,8 +242,10 @@ int CaloAna::process_towers(PHCompositeNode* topNode)
 
   if (nClusCount > max_nClusCount) return Fun4AllReturnCodes::EVENT_OK;
 
-  float pt1ClusCut = 2;  // 1.3
-  float pt2ClusCut = 1.3;  // 0.7
+  float ptMaxCut = 3;
+
+  float pt1ClusCut = 1.3;  // 1.3
+  float pt2ClusCut = 0.7;  // 0.7
 
   if (nClusCount > 30)
   {
@@ -286,6 +300,10 @@ int CaloAna::process_towers(PHCompositeNode* topNode)
           hotClus = true;
     }
 
+    if (lt_eta > 95) continue;
+
+    h_pt_eta[lt_eta]->Fill(clus_pt);
+
     if (dynMaskClus && hotClus == true) continue;
 
     h_etaphi_clus->Fill(clus_eta, clus_phi);
@@ -293,69 +311,89 @@ int CaloAna::process_towers(PHCompositeNode* topNode)
     TLorentzVector photon1;
     photon1.SetPtEtaPhiE(clus_pt, clus_eta, clus_phi, clusE);
 
-  
+    if (clus_pt < pt1ClusCut || clus_pt > ptMaxCut) continue;
 
-  if (clus_pt < pt1ClusCut) continue;
-
-  for (clusterIter2 = clusterEnd.first; clusterIter2 != clusterEnd.second; clusterIter2++)
-  {
-    if (clusterIter == clusterIter2)
+    for (clusterIter2 = clusterEnd.first; clusterIter2 != clusterEnd.second; clusterIter2++)
     {
-      continue;
-    }
-    RawCluster* recoCluster2 = clusterIter2->second;
-
-    CLHEP::Hep3Vector E_vec_cluster2 = RawClusterUtility::GetECoreVec(*recoCluster2, vertex);
-
-    float clus2E = E_vec_cluster2.mag();
-    float clus2_eta = E_vec_cluster2.pseudoRapidity();
-    float clus2_phi = E_vec_cluster2.phi();
-    float clus2_pt = E_vec_cluster2.perp();
-    float clus2_chisq = recoCluster2->get_chi2();
-
-    if (clus2_pt < pt2ClusCut) continue;
-    if (clus2_chisq > clus_chisq_cut) continue;
-
-    // loop over the towers in the cluster
-    RawCluster::TowerConstRange towerCR2 = recoCluster2->get_towers();
-    RawCluster::TowerConstIterator toweriter2;
-    bool hotClus2 = false;
-    for (toweriter2 = towerCR2.first; toweriter2 != towerCR2.second; ++toweriter2)
-    {
-      int towereta = m_geometry->get_tower_geometry(toweriter2->first)->get_bineta();
-      int towerphi = m_geometry->get_tower_geometry(toweriter2->first)->get_binphi();
-
-      for (size_t i = 0; i < ht_eta.size(); i++)
+      if (clusterIter == clusterIter2)
       {
-        if (towerphi == ht_phi[i] && towereta == ht_phi[i]) hotClus2 = true;
+        continue;
       }
+      RawCluster* recoCluster2 = clusterIter2->second;
+
+      CLHEP::Hep3Vector E_vec_cluster2 = RawClusterUtility::GetECoreVec(*recoCluster2, vertex);
+
+      float clus2E = E_vec_cluster2.mag();
+      float clus2_eta = E_vec_cluster2.pseudoRapidity();
+      float clus2_phi = E_vec_cluster2.phi();
+      float clus2_pt = E_vec_cluster2.perp();
+      float clus2_chisq = recoCluster2->get_chi2();
+
+      if (clus2_pt < pt2ClusCut || clus2_pt > ptMaxCut) continue;
+      if (clus2_chisq > clus_chisq_cut) continue;
+
+      // loop over the towers in the cluster
+      RawCluster::TowerConstRange towerCR2 = recoCluster2->get_towers();
+      RawCluster::TowerConstIterator toweriter2;
+      bool hotClus2 = false;
+      for (toweriter2 = towerCR2.first; toweriter2 != towerCR2.second; ++toweriter2)
+      {
+        int towereta = m_geometry->get_tower_geometry(toweriter2->first)->get_bineta();
+        int towerphi = m_geometry->get_tower_geometry(toweriter2->first)->get_binphi();
+
+        for (size_t i = 0; i < ht_eta.size(); i++)
+        {
+          if (towerphi == ht_phi[i] && towereta == ht_phi[i]) hotClus2 = true;
+        }
+      }
+      if (dynMaskClus && hotClus2 == true) continue;
+
+      TLorentzVector photon2;
+      photon2.SetPtEtaPhiE(clus2_pt, clus2_eta, clus2_phi, clus2E);
+
+      if (fabs(clusE - clus2E) / (clusE + clus2E) > maxAlpha) continue;
+
+      if (photon1.DeltaR(photon2) > maxDr) continue;
+
+      TLorentzVector pi0 = photon1 + photon2;
+      if (pi0.Pt() < pi0ptcut) continue;
+
+      h_pt1->Fill(photon1.Pt());
+      h_pt2->Fill(photon2.Pt());
+      h_InvMass->Fill(pi0.M());
+      h_mass_eta_lt[lt_eta]->Fill(pi0.M());
     }
-    if (dynMaskClus && hotClus2 == true) continue;
+  }  // clus1 loop
 
-    TLorentzVector photon2;
-    photon2.SetPtEtaPhiE(clus2_pt, clus2_eta, clus2_phi, clus2E);
+  /////////////////////////////////////////////////
+  //// Truth info
+  float wieght = 1;
+  PHG4TruthInfoContainer* truthinfo = findNode::getClass<PHG4TruthInfoContainer>(topNode, "G4TruthInfo");
+  if (truthinfo)
+  {
+    PHG4TruthInfoContainer::Range range = truthinfo->GetPrimaryParticleRange();
+    for (PHG4TruthInfoContainer::ConstIterator iter = range.first; iter != range.second; ++iter)
+    {
+      // Get truth particle
+      const PHG4Particle* truth = iter->second;
+      if (!truthinfo->is_primary(truth)) continue;
+      TLorentzVector myVector;
+      myVector.SetXYZM(truth->get_px(), truth->get_py(), truth->get_pz(), 0.13497);
 
-    if (fabs(clusE - clus2E) / (clusE + clus2E) > maxAlpha) continue;
+      float energy = myVector.E();
+      h_truth_eta->Fill(myVector.Eta());
+      h_truth_e->Fill(energy, wieght);
+      h_truth_pt->Fill(myVector.Pt());
 
-    if (photon1.DeltaR(photon2) > maxDr) continue;
-
-    TLorentzVector pi0 = photon1 + photon2;
-    if (pi0.Pt() < pi0ptcut) continue;
-
-    h_pt1->Fill(photon1.Pt());
-    h_pt2->Fill(photon2.Pt());
-    h_InvMass->Fill(pi0.M());
-    if (lt_eta > 95) continue;
-    h_mass_eta_lt[lt_eta]->Fill(pi0.M());
+      // int id =  truth->get_pid();
+      // std::cout << "id=" << id << "   E=" << energy << "  pt=" << myVector.Pt() << "  eta=" << myVector.Eta() << std::endl;
+    }
   }
-}  // clus1 loop
 
+  ht_phi.clear();
+  ht_eta.clear();
 
-
-ht_phi.clear();
-ht_eta.clear();
-
-return Fun4AllReturnCodes::EVENT_OK;
+  return Fun4AllReturnCodes::EVENT_OK;
 }
 
 int CaloAna::End(PHCompositeNode* /*topNode*/)

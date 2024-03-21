@@ -21,14 +21,21 @@ libdNdEtaINTT_la_SOURCES = \
 
 libdNdEtaINTT_la_LIBADD = \
   -lphool \
-  -lSubsysReco
+  -lffaobjects \
+  -lffarawobjects \
+  -lSubsysReco \
+  -lcentrality \
+  -lcalotrigger \ 
+  -ltrackbase_historic_io \
+  -ltrack_io \
+  -lmbd_io
 
 libdNdEtaINTT_la_LDFLAGS = \
   -L$(libdir) \
   -L$(OFFLINE_MAIN)/lib \
   -I$(ROOTSYS)/include \
   -lfun4all \
-  -lg4eval \ 
+  -lg4eval \
   -lcentrality_io
 
 BUILT_SOURCES = testexternals.cc
