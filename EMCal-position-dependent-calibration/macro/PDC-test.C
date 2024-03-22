@@ -3,6 +3,7 @@
 #include <strings.h>
 #include <vector>
 #include <sstream>
+#include <fstream>
 
 // -- root includes --
 #include <TH2D.h>
@@ -10,8 +11,10 @@
 #include <TFile.h>
 #include <TMath.h>
 #include <TNtuple.h>
+#include <TChain.h>
 
 using std::cout;
+using std::cerr;
 using std::endl;
 using std::string;
 using std::to_string;
@@ -21,13 +24,13 @@ using std::max;
 using std::stringstream;
 
 namespace myAnalysis {
-    TFile* input;
     TFile* calib;
-    TNtuple* ntp;
+    TChain* ntp;
 
-    void init(const string &i_input, const string &i_calib);
+    Int_t init(const string &i_input, const string &i_calib, Long64_t start = 0, Long64_t end = 0);
     void init_hists();
-    void process_event(UInt_t events = 0);
+    Int_t readFiles(const string &i_input, Long64_t start = 0, Long64_t end = 0);
+    void process_event(Long64_t start = 0, Long64_t end = 0);
     void finalize(const string &i_output);
 
     TH1F* hClusECore;
@@ -126,35 +129,71 @@ void myAnalysis::init_hists() {
     cout << "finished init hists" << endl;
 }
 
-void myAnalysis::init(const string &i_input, const string &i_calib) {
+Int_t myAnalysis::init(const string &i_input, const string &i_calib, Long64_t start, Long64_t end) {
     cout << "----------------------" << endl;
     cout << "starting init" << endl;
-    input   = TFile::Open(i_input.c_str());
     calib   = TFile::Open(i_calib.c_str());
-    ntp     = (TNtuple*)input->Get("ntp_cluster");
     h2Calib = (TH2F*)calib->Get("h2Response");
 
-    // Disable everything...
+    Int_t ret = readFiles(i_input, start, end);
+    if(ret) return ret;
+
+    //Disable everything...
     ntp->SetBranchStatus("*", false);
-    // ...but the branch we need
+    //...but the branch we need
     ntp->SetBranchStatus("ecore", true);
-    // ntp->SetBranchStatus("ecore_calib", true);
     ntp->SetBranchStatus("ge", true);
     ntp->SetBranchStatus("gpt", true);
     ntp->SetBranchStatus("eta_detector", true);
     ntp->SetBranchStatus("phi", true);
     ntp->SetBranchStatus("avgeta", true);
     ntp->SetBranchStatus("avgphi", true);
-    // ntp->SetBranchStatus("geta", true);
 
     init_hists();
     cout << "finished init" << endl;
+    return ret;
 }
 
-void myAnalysis::process_event(UInt_t events) {
+Int_t myAnalysis::readFiles(const string &i_input, Long64_t start, Long64_t end) {
+    ntp = new TChain("ntp_cluster");
+
+    // Create an input stream
+    std::ifstream file(i_input);
+
+    // Check if the file was successfully opened
+    if (!file.is_open()) {
+        cerr << "Failed to open root file list: " << i_input << endl;
+        return 1;
+    }
+
+    cout << "Reading in TNtuples" << endl;
+    cout << "======================================" << endl;
+    string line;
+    ULong_t entries = 0;
+    while (std::getline(file, line)) {
+        // Process each line here
+        ntp->Add(line.c_str());
+
+        cout << line << ", entries: " << ntp->GetEntries()-entries << endl;
+        entries = ntp->GetEntries();
+
+        if(end && entries > end) break;
+    }
+    cout << "======================================" << endl;
+    cout << "Total Entries: " << ntp->GetEntries() << endl;
+    cout << "======================================" << endl;
+
+    // Close the file
+    file.close();
+
+    return 0;
+}
+
+void myAnalysis::process_event(Long64_t start, Long64_t end) {
     cout << "----------------------" << endl;
     cout << "starting process event" << endl;
-    events = (events) ? events : ntp->GetEntries();
+    end = (end) ? min(end, ntp->GetEntries()-1) : ntp->GetEntries()-1;
+    Long64_t events = end-start+1;
     cout << "events: " << events << endl;
 
     Float_t ecore; // cluster ecore
@@ -164,7 +203,6 @@ void myAnalysis::process_event(UInt_t events) {
     Float_t phi; // cluster phi
     Float_t avgeta;
     Float_t avgphi;
-    // Float_t ecore_calib; // PDC calibrated cluster ecore
 
     ntp->SetBranchAddress("ecore",        &ecore);
     ntp->SetBranchAddress("ge",           &ge);
@@ -173,8 +211,6 @@ void myAnalysis::process_event(UInt_t events) {
     ntp->SetBranchAddress("phi",          &phi);
     ntp->SetBranchAddress("avgeta",       &avgeta);
     ntp->SetBranchAddress("avgphi",       &avgphi);
-    // ntp->SetBranchAddress("geta",         &geta);
-    // ntp->SetBranchAddress("ecore_calib",  &ecore_calib);
 
     Float_t ecore_min          = 9999;
     Float_t ge_min             = 9999;
@@ -200,7 +236,7 @@ void myAnalysis::process_event(UInt_t events) {
 
     UInt_t ctr = 0;
 
-    for (UInt_t i = 0; i < events; ++i) {
+    for (Long64_t i = start; i <= end; ++i) {
 
         ntp->GetEntry(i);
 
@@ -309,7 +345,6 @@ void myAnalysis::finalize(const string &i_output) {
     }
 
     // Close root file
-    input->Close();
     output.Close();
     cout << "finished finalize" << endl;
 }
@@ -317,43 +352,52 @@ void myAnalysis::finalize(const string &i_output) {
 void PDC_test(const string &input,
               const string &calib,
               const string &output = "test.root",
-              UInt_t        events   = 0) {
+              Long64_t      start    = 0,
+              Long64_t      end      = 0) {
     cout << "#############################" << endl;
     cout << "Run Parameters" << endl;
     cout << "inputFile: "  << input << endl;
     cout << "calib: "      << calib << endl;
     cout << "outputFile: " << output << endl;
+    cout << "start: "      << start << endl;
+    cout << "end: "        << end << endl;
     cout << "#############################" << endl;
 
-    myAnalysis::init(input, calib);
+    Int_t ret = myAnalysis::init(input, calib, start, end);
+    if(ret) return;
 
-    myAnalysis::process_event(events);
+    myAnalysis::process_event(start, end);
 
     myAnalysis::finalize(output);
 }
 
 # ifndef __CINT__
 int main(int argc, char* argv[]) {
-    if(argc < 3 || argc > 5){
-        cout << "usage: ./bin/PDC-Analysis inputFile calib [outputFile] [ntp_cluster_entries]" << endl;
+    if(argc < 3 || argc > 6){
+        cout << "usage: ./bin/PDC-Analysis inputFile calib [outputFile] [start] [end]" << endl;
         cout << "inputFile: train sample root file. Required." << endl;
         cout << "calib: calibration root file. Required." << endl;
         cout << "outputFile: location of output file. Default: test.root." << endl;
-        cout << "ntp_cluster_entries: Number of events to analyze. Default: 0 (to run over all entries)." << endl;
+        cout << "start: start event number. Default: 0." << endl;
+        cout << "end: end event number. Default: 0. (to run over all entries)." << endl;
         return 1;
     }
 
-    string outputFile          = "test.root";
-    UInt_t ntp_cluster_entries = 0;
+    string outputFile = "test.root";
+    Long64_t start    = 0;
+    Long64_t end      = 0;
 
     if(argc >= 4) {
         outputFile = argv[3];
     }
     if(argc >= 5) {
-        ntp_cluster_entries = atoi(argv[4]);
+        start = atol(argv[4]);
+    }
+    if(argc >= 6) {
+        end = atol(argv[5]);
     }
 
-    PDC_test(argv[1], argv[2], outputFile, ntp_cluster_entries);
+    PDC_test(argv[1], argv[2], outputFile, start, end);
 
     cout << "done" << endl;
     return 0;
