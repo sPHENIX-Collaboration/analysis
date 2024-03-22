@@ -74,6 +74,9 @@ dummy2.add_argument('-d', '--directory', type=str, default='.', help='output dir
 dummy2.add_argument('-e', '--input-dir', type=str, default='.', help='Directory containing the <run>.list files. Default: .')
 dummy2.add_argument('-j', '--jobs', type=str, default=999, help='Number of jobs. Default: 999')
 
+sigmaCheck = subparser.add_parser('sigmaCheck', help='Ensure sigma is increasing across the different types.')
+sigmaCheck.add_argument('-i', '--fit-stats', type=str, help='List of Fit Stats', required=True)
+
 args = parser.parse_args()
 
 def process_dummy2():
@@ -91,7 +94,6 @@ def process_dummy2():
         for line in file:
             print(f'./utils.py pi0Ana -i {input_dir}/{line.split()[0]}.list -c cuts.txt -n {line.split()[1]} -j {jobs} -d {output}/{line.split()[0]} && ', end='')
 
-
 def process_dummy():
     entries = os.path.realpath(args.entries)
 
@@ -100,6 +102,34 @@ def process_dummy():
     df = pd.read_csv(entries, delimiter=':', names=['run','entries'])
     df.run = df.run.apply(lambda x: x.split('/')[6])
     print(df.groupby(by='run').sum())
+
+def process_sigmaCheck():
+    fitStats = os.path.realpath(args.fit_stats)
+
+    print(f'fitStats : {fitStats}')
+
+    with open(fitStats) as file:
+        fit_type = 'A'
+        # Create an empty dataframe
+        df = pd.DataFrame()
+
+        ctr = 0
+
+        for line in file:
+            line = line.rstrip() # remove \n from the end of the string
+            print(f'type: {fit_type}, {line}')
+
+            df1 = pd.read_csv(line,usecols=['GaussSigma'])
+
+            df[fit_type] = df1
+
+            fit_type = chr(ord(fit_type)+1)
+
+            if(ctr):
+                print(df[df.iloc[:,ctr] < df.iloc[:,ctr-1]].iloc[:,[ctr-1,ctr]])
+
+            ctr += 1
+
 
 def create_f4a_jobs():
     run_list_dir = os.path.realpath(args.run_list_dir)
@@ -391,3 +421,5 @@ if __name__ == '__main__':
         process_dummy()
     if(args.command == 'dummy2'):
         process_dummy2()
+    if(args.command == 'sigmaCheck'):
+        process_sigmaCheck()
