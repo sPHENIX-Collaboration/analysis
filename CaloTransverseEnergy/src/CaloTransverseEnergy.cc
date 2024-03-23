@@ -170,7 +170,7 @@ int CaloTransverseEnergy::process_event(PHCompositeNode *topNode)
 			n_evt--;
 			return 1;}
 		}
-		z_vertex->Fill(z_vtx);	
+		if(!truth) z_vertex->Fill(z_vtx);	
 //		std::cout<<"Found energy"<<std::endl;
 		if(sim && truth){
 			phi_top=0; 
@@ -186,7 +186,9 @@ int CaloTransverseEnergy::process_event(PHCompositeNode *topNode)
 					if(hpev && hpev->get_embedding_id() == 0){
 						HepMC::GenEvent *truthevent =hpev->getEvent();		
 						PHHepMCGenEvent *phe=phg->get(0);
+						float zvtx=phe->get_collision_vertex().z();
 						hep_map["VTX_Z"].push_back(phe->get_collision_vertex().z());
+						z_vertex->Fill(zvtx);
 						if(!truthevent) return 1;
 						for(HepMC::GenEvent::particle_const_iterator iter = truthevent->particles_begin(); iter != truthevent ->particles_end(); ++iter){
 							if(!(*iter)->end_vertex() && (*iter)->status() ==1){
