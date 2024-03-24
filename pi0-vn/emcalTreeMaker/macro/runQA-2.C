@@ -26,6 +26,8 @@ using std::setw;
 using std::stringstream;
 using std::sin;
 using std::cos;
+using std::setprecision;
+using std::fixed;
 
 namespace myAnalysis {
     vector<pair<string,TFile*>> inputs; // run, file
@@ -107,6 +109,14 @@ void myAnalysis::process_event() {
         auto h2 = (TH1F*)((inputs2[i].second->Get("hVtxZv2"))->Clone("hVtxZv2_2"));
         auto h3 = (TH1F*)((inputs2[i].second->Get("hVtxZv2"))->Clone("hVtxZv2_3"));
 
+        Int_t low = h1->FindBin(-10);
+        Int_t high = h1->FindBin(10)-1;
+
+        Int_t events1 = h1->Integral(low, high);
+        Int_t events2 = h2->Integral(low, high);
+
+        Float_t ratio = (events1-events2)*1./events1;
+
         // Tests
         // cout << "h1: " << h1->GetName() << ", h2: " << h2->GetName() << endl;
 
@@ -171,10 +181,8 @@ void myAnalysis::process_event() {
 
         h3->GetYaxis()->SetTitle("Ratio");
 
-        h3->GetYaxis()->SetRangeUser(0,1.1);
+        h3->GetYaxis()->SetRangeUser(0.8,1.1);
         h3->GetXaxis()->SetRangeUser(-20,20);
-
-        // h3->SetLineColor(kBlack);
 
         h3->GetYaxis()->SetLabelSize(0.08);
         h3->GetYaxis()->SetTitleSize(0.08);
@@ -185,7 +193,12 @@ void myAnalysis::process_event() {
 
         h3->Draw();
 
-        l1.DrawLatexNDC(0.4,0.7,("Run: " + inputs[i].first).c_str());
+        l1.DrawLatexNDC(0.4,0.85,("Run: " + inputs[i].first).c_str());
+
+        stringstream t;
+        t.str("");
+        t << "#scale[0.7]{Missing fraction: " << fixed << setprecision(3) << ratio << "}" << endl;
+        l1.DrawLatexNDC(0.3,0.75,t.str().c_str());
 
         auto f1 = new TF1("f1","1",-20,20);
 
@@ -202,148 +215,6 @@ void myAnalysis::process_event() {
     c4->Print(output4.c_str(), "pdf portrait");
     c4->Print("Z-vtx-ratio.png");
 }
-
-/*
-void myAnalysis::process_event() {
-
-    TCanvas* c1 = new TCanvas();
-
-    c1->SetTickx();
-    c1->SetTicky();
-
-    c1->SetCanvasSize(1500, 1000);
-    c1->SetLeftMargin(.09);
-    c1->SetRightMargin(.13);
-
-    TCanvas* c2 = new TCanvas();
-
-    c2->SetCanvasSize(2000, 1000);
-    c2->Divide(7,4,0.00005,0.0005);
-
-    c2->SetTickx();
-    c2->SetTicky();
-
-    TCanvas* c3 = new TCanvas();
-
-    // gStyle->SetPadLeftMargin(0.05);
-    // gStyle->SetPadRightMargin(0.1);
-    c3->SetCanvasSize(3000, 1500);
-    c3->Divide(7,4,0.005,0.005);
-
-    // auto pad1 = new TPad("pad1", "pad1", 0.01, 0.01, 1, 1);
-    // pad1->Divide(7,4,0.01,0.01);
-    // pad1->Draw();
-
-    // c3->SetLeftMargin(0.05);
-    // c3->SetRightMargin(.02);
-
-    string output1 = "test.pdf";
-    string output2 = "ClusterECore-2D.pdf";
-    string output3 = "ClusterECore-1D.pdf";
-
-    c1->Print((output1 + "[").c_str(), "pdf portrait");
-
-    UInt_t ctr[2] = {0};
-    Int_t i = 1;
-    // loop over each file
-    TLatex l1;
-    l1.SetTextSize(0.1);
-
-    for(auto input : inputs) {
-        cout << "Run: " << input.first << endl;
-        auto h = (TH1F*)(input.second->Get("hVtxZ"));
-        Int_t low = h->FindBin(-10);
-        Int_t high = h->FindBin(10)-1;
-
-        Int_t events = h->Integral(low, high);
-
-        h = (TH1F*)(input.second->Get("hVtxZv2"));
-        Int_t events_mb = h->Integral(low, high);
-
-        cout << "Events |z| < 10: " << events << ", Events: |z| < 10 and MB: " << events_mb << endl;
-
-        ctr[0] += events;
-        ctr[1] += events_mb;
-
-        c1->cd();
-
-        auto h2 = (TH2F*)(input.second->Get("h2ClusterEtaPhiWeighted")->Clone());
-
-        h2->SetTitle(("Cluster E_{Core}, Run: " + input.first).c_str());
-        h2->SetStats(0);
-        h2->Draw("COLZ1");
-
-        c1->Print(output1.c_str(), "pdf portrait");
-
-        h = (TH1F*)h2->ProjectionX()->Clone();
-        h->SetTitle(("Cluster E_{Core}, Run: " + input.first).c_str());
-        h->Draw("HIST");
-
-        c1->Print(output1.c_str(), "pdf portrait");
-        // c1->Print((outDir + "/qa-PhotonGE.png").c_str());
-
-        c2->cd(i);
-        h2->SetTitle("");
-        // h2->SetTitleSize(0.1);
-        h2->GetYaxis()->SetLabelSize(0.08);
-        h2->GetYaxis()->SetTitleSize(0.08);
-        h2->GetYaxis()->SetTitleOffset(0.7);
-        h2->GetYaxis()->SetLabelOffset(0.01);
-        h2->GetXaxis()->SetLabelSize(0.08);
-        h2->GetXaxis()->SetTitleSize(0.08);
-        h2->GetZaxis()->SetLabelSize(0.04);
-        // h2->GetZaxis()->SetTitleSize(0.08);
-        h2->Draw("COLZ1");
-
-        gPad->SetRightMargin(0.15);
-        gPad->SetLeftMargin(0.15);
-        gPad->SetBottomMargin(0.15);
-        gPad->SetTopMargin(0.1);
-
-        l1.DrawLatexNDC(0.3,0.93,("Run: " + input.first).c_str());
-
-        c3->cd(i);
-        gPad->SetRightMargin(0.01);
-        gPad->SetLeftMargin(0.25);
-        gPad->SetBottomMargin(0.15);
-        // gPad->SetBottomMargin(2);
-
-        // gPad->SetLeftMargin(1);
-        // gPad->SetRightMargin(1);
-        // pad1->cd(i);
-        // gPad->SetTickx();
-        // gPad->SetTicky();
-
-        h->SetTitle("");
-        // h->SetTitle(("Cluster E_{Core}, Run: " + input.first).c_str());
-        // gPad->GetYaxis()->SetTitleOffset(1);
-        h->SetStats(0);
-        h->GetYaxis()->SetTitle("Cluster E_{Core} [GeV]");
-        h->GetYaxis()->SetLabelSize(0.08);
-        h->GetYaxis()->SetTitleSize(0.08);
-        h->GetXaxis()->SetLabelSize(0.08);
-        h->GetXaxis()->SetTitleSize(0.08);
-
-        h->Draw("HIST");
-
-        // l1->SetTextFont(42);
-        l1.DrawLatexNDC(0.4,0.8,("Run: " + input.first).c_str());
-
-        cout << endl;
-        ++i;
-    }
-
-    c1->Print((output1 + "]").c_str(), "pdf portrait");
-
-    c2->Print(output2.c_str(), "pdf portrait");
-    c2->Print("ClusterECore-2D.png");
-    c3->Print(output3.c_str(), "pdf portrait");
-    c3->Print("ClusterECore-1D.png");
-
-    cout << "Total" << endl;
-    cout << "Events |z| < 10: " << ctr[0] << ", Events: |z| < 10 and MB: " << ctr[1] << endl;
-}
-*/
 
 void myAnalysis::finalize() {}
 
