@@ -37,7 +37,7 @@ pi0Ana.add_argument('-m', '--macro', type=str, default='macro/pi0Analysis.C', he
 pi0Ana.add_argument('-e', '--script', type=str, default='genPi0Ana.sh', help='Job script to execute. Default: genPi0Ana.sh')
 pi0Ana.add_argument('-b', '--executable', type=str, default='bin/pi0Ana', help='Executable. Default: bin/pi0Ana')
 pi0Ana.add_argument('-d', '--output', type=str, default='test', help='Output Directory. Default: ./test')
-pi0Ana.add_argument('-u', '--subsamples', type=int, default=20, help='Number of subsamples for vn analysis. Default: 20')
+pi0Ana.add_argument('-u', '--subsamples', type=int, default=30, help='Number of subsamples for vn analysis. Default: 30')
 pi0Ana.add_argument('-t', '--cut-num', type=int, default=0, help='Specific cut to use for vn analysis. Default: 0')
 pi0Ana.add_argument('-s', '--memory', type=float, default=1, help='Memory (units of GB) to request per condor submission. Default: 1 GB.')
 pi0Ana.add_argument('-l', '--log', type=str, default='/tmp/anarde/dump/job-$(ClusterId)-$(Process).log', help='Condor log file.')
@@ -76,6 +76,9 @@ dummy2.add_argument('-j', '--jobs', type=str, default=999, help='Number of jobs.
 
 sigmaCheck = subparser.add_parser('sigmaCheck', help='Ensure sigma is increasing across the different types.')
 sigmaCheck.add_argument('-i', '--fit-stats', type=str, help='List of Fit Stats', required=True)
+
+vn = subparser.add_parser('vn', help='vn Combine')
+vn.add_argument('-i', '--vn-files', type=str, help='List of vn files', required=True)
 
 args = parser.parse_args()
 
@@ -129,6 +132,51 @@ def process_sigmaCheck():
                 print(df[df.iloc[:,ctr] < df.iloc[:,ctr-1]].iloc[:,[ctr-1,ctr]])
 
             ctr += 1
+
+def process_vn():
+    vn_files = os.path.realpath(args.vn_files)
+
+    print(f'vn : {vn_files}')
+
+    indices = 18
+
+    vn_err_array = [9999]*indices
+    vn_val_array = [0]*indices
+    vn_type      = ['A']*indices
+
+    with open(vn_files) as file:
+        fit_type = 'A'
+
+        for line in file:
+            line = line.rstrip() # remove \n from the end of the string
+
+            with open(line) as file2:
+
+                ctr = 0
+                for line2 in file2:
+                    if(ctr == 0):
+                        ctr += 1
+                        continue
+
+                    ctr += 1
+
+                    line2 = line2.rstrip() # remove \n from the end of the string
+                    vn_idx = int(line2.split(',')[0])
+                    vn_val = float(line2.split(',')[1])
+                    vn_err = float(line2.split(',')[2])
+
+                    if(vn_err < vn_err_array[vn_idx]):
+                       vn_err_array[vn_idx] = vn_err
+                       vn_val_array[vn_idx] = vn_val
+                       vn_type[vn_idx]    = fit_type
+
+                       # print(vn_idx, vn_val, vn_err)
+
+            fit_type = chr(ord(fit_type)+1)
+
+    print('Type,v2,v2_err')
+    for i in range(indices):
+        print(f'{vn_type[i]},{vn_val_array[i]},{vn_err_array[i]}')
 
 
 def create_f4a_jobs():
@@ -423,3 +471,5 @@ if __name__ == '__main__':
         process_dummy2()
     if(args.command == 'sigmaCheck'):
         process_sigmaCheck()
+    if(args.command == 'vn'):
+        process_vn()
