@@ -111,7 +111,7 @@ void myAnalysis::process_event() {
     string output2 = "ClusterECore-2D.pdf";
     string output3 = "ClusterECore-1D.pdf";
 
-    c1->Print((output1 + "[").c_str(), "pdf portrait");
+    // c1->Print((output1 + "[").c_str(), "pdf portrait");
 
     UInt_t ctr[2] = {0};
     Int_t i = 1;
@@ -120,7 +120,6 @@ void myAnalysis::process_event() {
     l1.SetTextSize(0.1);
 
     for(auto input : inputs) {
-        cout << "Run: " << input.first << endl;
         auto h = (TH1F*)(input.second->Get("hVtxZ"));
         Int_t low = h->FindBin(-10);
         Int_t high = h->FindBin(10)-1;
@@ -130,7 +129,7 @@ void myAnalysis::process_event() {
         h = (TH1F*)(input.second->Get("hVtxZv2"));
         Int_t events_mb = h->Integral(low, high);
 
-        cout << "Events |z| < 10: " << events << ", Events: |z| < 10 and MB: " << events_mb << endl;
+        cout << "Run: " << input.first << ", Events |z| < 10: " << events << ", Events: |z| < 10 and MB: " << events_mb << endl;
 
         ctr[0] += events;
         ctr[1] += events_mb;
@@ -143,13 +142,13 @@ void myAnalysis::process_event() {
         h2->SetStats(0);
         h2->Draw("COLZ1");
 
-        c1->Print(output1.c_str(), "pdf portrait");
+        // c1->Print(output1.c_str(), "pdf portrait");
 
         h = (TH1F*)h2->ProjectionX()->Clone();
         h->SetTitle(("Cluster E_{Core}, Run: " + input.first).c_str());
         h->Draw("HIST");
 
-        c1->Print(output1.c_str(), "pdf portrait");
+        // c1->Print(output1.c_str(), "pdf portrait");
         // c1->Print((outDir + "/qa-PhotonGE.png").c_str());
 
         c2->cd(i);
@@ -199,16 +198,16 @@ void myAnalysis::process_event() {
         // l1->SetTextFont(42);
         l1.DrawLatexNDC(0.4,0.8,("Run: " + input.first).c_str());
 
-        cout << endl;
+        // cout << endl;
         ++i;
     }
 
-    c1->Print((output1 + "]").c_str(), "pdf portrait");
+    // c1->Print((output1 + "]").c_str(), "pdf portrait");
 
-    c2->Print(output2.c_str(), "pdf portrait");
-    c2->Print("ClusterECore-2D.png");
-    c3->Print(output3.c_str(), "pdf portrait");
-    c3->Print("ClusterECore-1D.png");
+    // c2->Print(output2.c_str(), "pdf portrait");
+    // c2->Print("ClusterECore-2D.png");
+    // c3->Print(output3.c_str(), "pdf portrait");
+    // c3->Print("ClusterECore-1D.png");
 
     cout << "Total" << endl;
     cout << "Events |z| < 10: " << ctr[0] << ", Events: |z| < 10 and MB: " << ctr[1] << endl;

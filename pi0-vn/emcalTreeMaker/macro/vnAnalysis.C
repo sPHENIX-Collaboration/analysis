@@ -334,7 +334,7 @@ if(argc < 3 || argc > 6){
         return 1;
     }
 
-    Int_t  samples     = 20;
+    Int_t  samples     = 30;
     string outputCSV   = "vn.csv";
     string outputFile  = "vn.root";
 

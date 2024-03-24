@@ -365,7 +365,7 @@ void runQA_2(const string &i_input, const string &i_input2) {
 # ifndef __CINT__
 Int_t main(Int_t argc, char* argv[]) {
 if(argc < 3 || argc > 3){
-        cout << "usage: ./runQA inputFile inputFile2" << endl;
+        cout << "usage: ./runQA-2 inputFile inputFile2" << endl;
         cout << "inputFile: containing list of root file paths" << endl;
         return 1;
     }
