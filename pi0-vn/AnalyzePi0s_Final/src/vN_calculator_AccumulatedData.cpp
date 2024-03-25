@@ -208,6 +208,7 @@ struct AdditionalData_3 {
     std::vector<double> corrected_v3_0_20_Additional_3, corrected_v3_40_60_Additional_3;
     std::vector<double> corrected_v3_0_20_Errors_Additional_3, corrected_v3_40_60_Errors_Additional_3;
 };
+
 void Read_Additonal_DataSet_3(const std::string& filePath, AdditionalData_3& data_3) {
     std::ifstream file(filePath);
     if (!file.is_open()) {
@@ -261,6 +262,253 @@ void Read_Additonal_DataSet_3(const std::string& filePath, AdditionalData_3& dat
     file.close();
 }
 
+struct AdditionalData_4 {
+    std::vector<double> corrected_v2_0_20_Additional_4, corrected_v2_20_40_Additional_4, corrected_v2_40_60_Additional_4;
+    std::vector<double> corrected_v2_0_20_Errors_Additional_4, corrected_v2_20_40_Errors_Additional_4, corrected_v2_40_60_Errors_Additional_4;
+    
+    std::vector<double> corrected_v3_0_20_Additional_4, corrected_v3_40_60_Additional_4;
+    std::vector<double> corrected_v3_0_20_Errors_Additional_4, corrected_v3_40_60_Errors_Additional_4;
+};
+
+void Read_Additonal_DataSet_4(const std::string& filePath, AdditionalData_4& data_4) {
+    std::ifstream file(filePath);
+    if (!file.is_open()) {
+        std::cerr << "Failed to open file: " << filePath << std::endl;
+        return;
+    }
+    std::string line;
+    std::getline(file, line); // Skip the header line
+
+    while (std::getline(file, line)) {
+        std::stringstream ss(line);
+        std::vector<std::string> rowData;
+        std::string cell;
+
+        while (std::getline(ss, cell, ',')) {
+            rowData.push_back(cell);
+        }
+        double v2_corrected = std::stod(rowData.at(rowData.size() - 4));
+        double v2_error_corrected = std::stod(rowData.at(rowData.size() - 3));
+        double v3_corrected = std::stod(rowData.at(rowData.size() - 2));
+        double v3_error_corrected = std::stod(rowData.back());
+        
+        /*
+         BELOW CODE IS IF READING in PlotByPlotOutput format:
+         */
+//        double v2_corrected = std::stod(rowData.at(rowData.size() - 10));
+//        double v2_error_corrected = std::stod(rowData.at(rowData.size() - 9));
+//        double v3_corrected = std::stod(rowData.at(rowData.size() - 2));
+//        double v3_error_corrected = std::stod(rowData.back());
+
+        int index = std::stoi(rowData[0]);
+        if (index >= 0 && index <= 5) {
+            data_4.corrected_v2_40_60_Additional_4.push_back(v2_corrected);
+            data_4.corrected_v2_40_60_Errors_Additional_4.push_back(v2_error_corrected);
+            
+            data_4.corrected_v3_40_60_Additional_4.push_back(v3_corrected);
+            data_4.corrected_v3_40_60_Errors_Additional_4.push_back(v3_error_corrected);
+            
+        } else if (index >= 6 && index <= 11) {
+            data_4.corrected_v2_20_40_Additional_4.push_back(v2_corrected);
+            data_4.corrected_v2_20_40_Errors_Additional_4.push_back(v2_error_corrected);
+
+        } else if (index >= 12 && index <= 17) {
+            data_4.corrected_v2_0_20_Additional_4.push_back(v2_corrected);
+            data_4.corrected_v2_0_20_Errors_Additional_4.push_back(v2_error_corrected);
+
+            data_4.corrected_v3_0_20_Additional_4.push_back(v3_corrected);
+            data_4.corrected_v3_0_20_Errors_Additional_4.push_back(v3_error_corrected);
+        }
+    }
+    file.close();
+}
+
+struct AdditionalData_5 {
+    std::vector<double> corrected_v2_0_20_Additional_5, corrected_v2_20_40_Additional_5, corrected_v2_40_60_Additional_5;
+    std::vector<double> corrected_v2_0_20_Errors_Additional_5, corrected_v2_20_40_Errors_Additional_5, corrected_v2_40_60_Errors_Additional_5;
+    
+    std::vector<double> corrected_v3_0_20_Additional_5, corrected_v3_40_60_Additional_5;
+    std::vector<double> corrected_v3_0_20_Errors_Additional_5, corrected_v3_40_60_Errors_Additional_5;
+};
+
+void Read_Additonal_DataSet_5(const std::string& filePath, AdditionalData_5& data_5) {
+    std::ifstream file(filePath);
+    if (!file.is_open()) {
+        std::cerr << "Failed to open file: " << filePath << std::endl;
+        return;
+    }
+    std::string line;
+    std::getline(file, line); // Skip the header line
+
+    while (std::getline(file, line)) {
+        std::stringstream ss(line);
+        std::vector<std::string> rowData;
+        std::string cell;
+
+        while (std::getline(ss, cell, ',')) {
+            rowData.push_back(cell);
+        }
+        double v2_corrected = std::stod(rowData.at(rowData.size() - 4));
+        double v2_error_corrected = std::stod(rowData.at(rowData.size() - 3));
+        double v3_corrected = std::stod(rowData.at(rowData.size() - 2));
+        double v3_error_corrected = std::stod(rowData.back());
+        
+        /*
+         BELOW CODE IS IF READING in PlotByPlotOutput format:
+         */
+//        double v2_corrected = std::stod(rowData.at(rowData.size() - 10));
+//        double v2_error_corrected = std::stod(rowData.at(rowData.size() - 9));
+//        double v3_corrected = std::stod(rowData.at(rowData.size() - 2));
+//        double v3_error_corrected = std::stod(rowData.back());
+
+        int index = std::stoi(rowData[0]);
+        if (index >= 0 && index <= 5) {
+            data_5.corrected_v2_40_60_Additional_5.push_back(v2_corrected);
+            data_5.corrected_v2_40_60_Errors_Additional_5.push_back(v2_error_corrected);
+            
+            data_5.corrected_v3_40_60_Additional_5.push_back(v3_corrected);
+            data_5.corrected_v3_40_60_Errors_Additional_5.push_back(v3_error_corrected);
+            
+        } else if (index >= 6 && index <= 11) {
+            data_5.corrected_v2_20_40_Additional_5.push_back(v2_corrected);
+            data_5.corrected_v2_20_40_Errors_Additional_5.push_back(v2_error_corrected);
+
+        } else if (index >= 12 && index <= 17) {
+            data_5.corrected_v2_0_20_Additional_5.push_back(v2_corrected);
+            data_5.corrected_v2_0_20_Errors_Additional_5.push_back(v2_error_corrected);
+
+            data_5.corrected_v3_0_20_Additional_5.push_back(v3_corrected);
+            data_5.corrected_v3_0_20_Errors_Additional_5.push_back(v3_error_corrected);
+        }
+    }
+    file.close();
+}
+
+
+
+struct AdditionalData_6 {
+    std::vector<double> corrected_v2_0_20_Additional_6, corrected_v2_20_40_Additional_6, corrected_v2_40_60_Additional_6;
+    std::vector<double> corrected_v2_0_20_Errors_Additional_6, corrected_v2_20_40_Errors_Additional_6, corrected_v2_40_60_Errors_Additional_6;
+    
+    std::vector<double> corrected_v3_0_20_Additional_6, corrected_v3_40_60_Additional_6;
+    std::vector<double> corrected_v3_0_20_Errors_Additional_6, corrected_v3_40_60_Errors_Additional_6;
+};
+
+void Read_Additonal_DataSet_6(const std::string& filePath, AdditionalData_6& data_6) {
+    std::ifstream file(filePath);
+    if (!file.is_open()) {
+        std::cerr << "Failed to open file: " << filePath << std::endl;
+        return;
+    }
+    std::string line;
+    std::getline(file, line); // Skip the header line
+
+    while (std::getline(file, line)) {
+        std::stringstream ss(line);
+        std::vector<std::string> rowData;
+        std::string cell;
+
+        while (std::getline(ss, cell, ',')) {
+            rowData.push_back(cell);
+        }
+        double v2_corrected = std::stod(rowData.at(rowData.size() - 4));
+        double v2_error_corrected = std::stod(rowData.at(rowData.size() - 3));
+        double v3_corrected = std::stod(rowData.at(rowData.size() - 2));
+        double v3_error_corrected = std::stod(rowData.back());
+        
+        /*
+         BELOW CODE IS IF READING in PlotByPlotOutput format:
+         */
+//        double v2_corrected = std::stod(rowData.at(rowData.size() - 10));
+//        double v2_error_corrected = std::stod(rowData.at(rowData.size() - 9));
+//        double v3_corrected = std::stod(rowData.at(rowData.size() - 2));
+//        double v3_error_corrected = std::stod(rowData.back());
+
+        int index = std::stoi(rowData[0]);
+        if (index >= 0 && index <= 5) {
+            data_6.corrected_v2_40_60_Additional_6.push_back(v2_corrected);
+            data_6.corrected_v2_40_60_Errors_Additional_6.push_back(v2_error_corrected);
+            
+            data_6.corrected_v3_40_60_Additional_6.push_back(v3_corrected);
+            data_6.corrected_v3_40_60_Errors_Additional_6.push_back(v3_error_corrected);
+            
+        } else if (index >= 6 && index <= 11) {
+            data_6.corrected_v2_20_40_Additional_6.push_back(v2_corrected);
+            data_6.corrected_v2_20_40_Errors_Additional_6.push_back(v2_error_corrected);
+
+        } else if (index >= 12 && index <= 17) {
+            data_6.corrected_v2_0_20_Additional_6.push_back(v2_corrected);
+            data_6.corrected_v2_0_20_Errors_Additional_6.push_back(v2_error_corrected);
+
+            data_6.corrected_v3_0_20_Additional_6.push_back(v3_corrected);
+            data_6.corrected_v3_0_20_Errors_Additional_6.push_back(v3_error_corrected);
+        }
+    }
+    file.close();
+}
+
+
+struct AdditionalData_7 {
+    std::vector<double> corrected_v2_0_20_Additional_7, corrected_v2_20_40_Additional_7, corrected_v2_40_60_Additional_7;
+    std::vector<double> corrected_v2_0_20_Errors_Additional_7, corrected_v2_20_40_Errors_Additional_7, corrected_v2_40_60_Errors_Additional_7;
+    
+    std::vector<double> corrected_v3_0_20_Additional_7, corrected_v3_40_60_Additional_7;
+    std::vector<double> corrected_v3_0_20_Errors_Additional_7, corrected_v3_40_60_Errors_Additional_7;
+};
+
+void Read_Additonal_DataSet_7(const std::string& filePath, AdditionalData_7& data_7) {
+    std::ifstream file(filePath);
+    if (!file.is_open()) {
+        std::cerr << "Failed to open file: " << filePath << std::endl;
+        return;
+    }
+    std::string line;
+    std::getline(file, line); // Skip the header line
+
+    while (std::getline(file, line)) {
+        std::stringstream ss(line);
+        std::vector<std::string> rowData;
+        std::string cell;
+
+        while (std::getline(ss, cell, ',')) {
+            rowData.push_back(cell);
+        }
+        double v2_corrected = std::stod(rowData.at(rowData.size() - 4));
+        double v2_error_corrected = std::stod(rowData.at(rowData.size() - 3));
+        double v3_corrected = std::stod(rowData.at(rowData.size() - 2));
+        double v3_error_corrected = std::stod(rowData.back());
+        
+        /*
+         BELOW CODE IS IF READING in PlotByPlotOutput format:
+         */
+//        double v2_corrected = std::stod(rowData.at(rowData.size() - 10));
+//        double v2_error_corrected = std::stod(rowData.at(rowData.size() - 9));
+//        double v3_corrected = std::stod(rowData.at(rowData.size() - 2));
+//        double v3_error_corrected = std::stod(rowData.back());
+
+        int index = std::stoi(rowData[0]);
+        if (index >= 0 && index <= 5) {
+            data_7.corrected_v2_40_60_Additional_7.push_back(v2_corrected);
+            data_7.corrected_v2_40_60_Errors_Additional_7.push_back(v2_error_corrected);
+            
+            data_7.corrected_v3_40_60_Additional_7.push_back(v3_corrected);
+            data_7.corrected_v3_40_60_Errors_Additional_7.push_back(v3_error_corrected);
+            
+        } else if (index >= 6 && index <= 11) {
+            data_7.corrected_v2_20_40_Additional_7.push_back(v2_corrected);
+            data_7.corrected_v2_20_40_Errors_Additional_7.push_back(v2_error_corrected);
+
+        } else if (index >= 12 && index <= 17) {
+            data_7.corrected_v2_0_20_Additional_7.push_back(v2_corrected);
+            data_7.corrected_v2_0_20_Errors_Additional_7.push_back(v2_error_corrected);
+
+            data_7.corrected_v3_0_20_Additional_7.push_back(v3_corrected);
+            data_7.corrected_v3_0_20_Errors_Additional_7.push_back(v3_error_corrected);
+        }
+    }
+    file.close();
+}
+
 
 
 // Call this function after vectors populated
@@ -291,11 +539,20 @@ void DrawZeroLine(TCanvas* canvas) {
 TGraphErrors* CreateGraph(const std::vector<double>& ptCenters, const std::vector<double>& values, const std::vector<double>& errors) {
     return new TGraphErrors(ptCenters.size(), &ptCenters[0], &values[0], nullptr, &errors[0]);
 }
-void Plot_vN(const AdditionalData& data, const AdditionalData_2& data_2, const AdditionalData_3& data_3) {
-    std::string filePath = "/Users/patsfan753/Desktop/30_samples_vN_calculated_subSamples_p011_NoPDC_withZvtx_No_ZDCrequired_E_1.csv";
+void Plot_vN(const AdditionalData& data, const AdditionalData_2& data_2, const AdditionalData_3& data_3, const AdditionalData_4& data_4, const AdditionalData_5& data_5, const AdditionalData_6& data_6, const AdditionalData_7& data_7) {
+    /*
+     Path to non 'Additional' datasets, top data set in legend plotted
+     */
+    std::string filePath = "/Users/patsfan753/Desktop/combined_lowest_v2_errors.csv";
+    
+    /*
+     Path to CSV data cleaned to be read in by method above
+     */
     std::string phenixFilePath = "/Users/patsfan753/Desktop/vN_AnalysisFinal/data/PHENIX_Data_Overlayed/FinalCleanedPhenix.csv";
+    
     std::vector<double> ptCenters = {2.25, 2.75, 3.25, 3.75, 4.25, 4.75}; // Mid-points of pT ranges
-    std::vector<double> corrected_v2_0_20, corrected_v2_0_20_Errors, corrected_v2_20_40, corrected_v2_20_40_Errors, corrected_v2_40_60, corrected_v2_40_60_Errors, corrected_v3_0_20, corrected_v3_0_20_Errors, corrected_v3_20_40, corrected_v3_20_40_Errors, corrected_v3_40_60, corrected_v3_40_60_Errors;;
+    
+    std::vector<double> corrected_v2_0_20, corrected_v2_0_20_Errors, corrected_v2_20_40, corrected_v2_20_40_Errors, corrected_v2_40_60, corrected_v2_40_60_Errors, corrected_v3_0_20, corrected_v3_0_20_Errors, corrected_v3_20_40, corrected_v3_20_40_Errors, corrected_v3_40_60, corrected_v3_40_60_Errors;
 
     double v2_corrected, v2_error_corrected;
     double v3_corrected, v3_error_corrected;
@@ -360,15 +617,18 @@ void Plot_vN(const AdditionalData& data, const AdditionalData_2& data_2, const A
     file.close();
     
     // Define the offsets for jitter in Overlays
-    double offset = 0.06;
+    double offset = 0.03;
     
     // Define the marker styles and colors for clarity
-    int markerStyle_sPHENIX = 21;
-    int color_sPHENIX = kBlue;
+    int markerStyle_sPHENIX = 20;
+    
+    //kOrange + 1 used in fit variations
+    int color_sPHENIX = kRed;
     
     TGraphErrors* corrected_graph_0_20_v2 = CreateGraph(ptCenters, corrected_v2_0_20, corrected_v2_0_20_Errors);
     corrected_graph_0_20_v2->SetMarkerColor(color_sPHENIX);
     corrected_graph_0_20_v2->SetLineColor(color_sPHENIX);
+    //corrected_graph_0_20_v2->SetMarkerSize(0.75);
     corrected_graph_0_20_v2->SetMarkerStyle(markerStyle_sPHENIX);
     
     TGraphErrors* corrected_graph_0_20_v3 = CreateGraph(ptCenters, corrected_v3_0_20, corrected_v3_0_20_Errors);
@@ -379,6 +639,7 @@ void Plot_vN(const AdditionalData& data, const AdditionalData_2& data_2, const A
     TGraphErrors* corrected_graph_20_40_v2 = CreateGraph(ptCenters, corrected_v2_20_40, corrected_v2_20_40_Errors);
     corrected_graph_20_40_v2->SetMarkerColor(color_sPHENIX);
     corrected_graph_20_40_v2->SetLineColor(color_sPHENIX);
+    //corrected_graph_20_40_v2->SetMarkerSize(0.75);
     corrected_graph_20_40_v2->SetMarkerStyle(markerStyle_sPHENIX);
     
     TGraphErrors* corrected_graph_20_40_v3 = CreateGraph(ptCenters, corrected_v3_20_40, corrected_v3_20_40_Errors);
@@ -389,11 +650,13 @@ void Plot_vN(const AdditionalData& data, const AdditionalData_2& data_2, const A
     TGraphErrors* corrected_graph_40_60_v2 = CreateGraph(ptCenters, corrected_v2_40_60, corrected_v2_40_60_Errors);
     corrected_graph_40_60_v2->SetMarkerColor(color_sPHENIX);
     corrected_graph_40_60_v2->SetLineColor(color_sPHENIX);
+    //corrected_graph_40_60_v2->SetMarkerSize(0.75);
     corrected_graph_40_60_v2->SetMarkerStyle(markerStyle_sPHENIX);
     
     TGraphErrors* corrected_graph_40_60_v3 = CreateGraph(ptCenters, corrected_v3_40_60, corrected_v3_40_60_Errors);
     corrected_graph_40_60_v3->SetMarkerColor(color_sPHENIX);
     corrected_graph_40_60_v3->SetLineColor(color_sPHENIX);
+    corrected_graph_40_60_v3->SetMarkerSize(0.8);
     corrected_graph_40_60_v3->SetMarkerStyle(markerStyle_sPHENIX);
 
     /*
@@ -448,6 +711,8 @@ void Plot_vN(const AdditionalData& data, const AdditionalData_2& data_2, const A
     graph_50_60->SetMarkerStyle(markerStyle_PHENIX);
     graph_50_60->SetMarkerSize(1.5);
     
+    
+    
     /*
      Additional Data Read in for Comparison
      */
@@ -463,22 +728,30 @@ void Plot_vN(const AdditionalData& data, const AdditionalData_2& data_2, const A
     const auto& corrected_v3_40_60_Errors_Additional = data.corrected_v3_40_60_Errors_Additional;
     
     int markerStyle_sPHENIX_AdditionalData = 20;
+    //color_sPHENIX_AdditionalData = 6; used in fit variations
+//    int color_sPHENIX_AdditionalData = kGreen+3;
     int color_sPHENIX_AdditionalData = kRed;
+    
     
     TGraphErrors* corrected_v2_0_20_Additional_graph = CreateGraph(ptCenters, corrected_v2_0_20_Additional, corrected_v2_0_20_Errors_Additional);
     corrected_v2_0_20_Additional_graph->SetMarkerColor(color_sPHENIX_AdditionalData);
     corrected_v2_0_20_Additional_graph->SetLineColor(color_sPHENIX_AdditionalData);
+    //corrected_v2_0_20_Additional_graph->SetMarkerSize(0.75);
     corrected_v2_0_20_Additional_graph->SetMarkerStyle(markerStyle_sPHENIX_AdditionalData);
     
     TGraphErrors* corrected_v2_20_40_Additional_graph = CreateGraph(ptCenters, corrected_v2_20_40_Additional, corrected_v2_20_40_Errors_Additional);
     corrected_v2_20_40_Additional_graph->SetMarkerColor(color_sPHENIX_AdditionalData);
     corrected_v2_20_40_Additional_graph->SetLineColor(color_sPHENIX_AdditionalData);
+    //corrected_v2_20_40_Additional_graph->SetMarkerSize(0.75);
     corrected_v2_20_40_Additional_graph->SetMarkerStyle(markerStyle_sPHENIX_AdditionalData);
     
     TGraphErrors* corrected_v2_40_60_Additional_graph = CreateGraph(ptCenters, corrected_v2_40_60_Additional, corrected_v2_40_60_Errors_Additional);
     corrected_v2_40_60_Additional_graph->SetMarkerColor(color_sPHENIX_AdditionalData);
     corrected_v2_40_60_Additional_graph->SetLineColor(color_sPHENIX_AdditionalData);
+    //corrected_v2_40_60_Additional_graph->SetMarkerSize(0.75);
     corrected_v2_40_60_Additional_graph->SetMarkerStyle(markerStyle_sPHENIX_AdditionalData);
+    
+    
     
     
     
@@ -497,22 +770,28 @@ void Plot_vN(const AdditionalData& data, const AdditionalData_2& data_2, const A
     const auto& corrected_v3_40_60_Errors_Additional_2 = data_2.corrected_v3_40_60_Errors_Additional_2;
     
     int markerStyle_sPHENIX_AdditionalData_2 = 22;
-    int color_sPHENIX_AdditionalData_2 = kBlack;
+    int color_sPHENIX_AdditionalData_2 = kViolet - 3;
     
     TGraphErrors* corrected_v2_0_20_Additional_graph_2 = CreateGraph(ptCenters, corrected_v2_0_20_Additional_2, corrected_v2_0_20_Errors_Additional_2);
     corrected_v2_0_20_Additional_graph_2->SetMarkerColor(color_sPHENIX_AdditionalData_2);
     corrected_v2_0_20_Additional_graph_2->SetLineColor(color_sPHENIX_AdditionalData_2);
+    //corrected_v2_0_20_Additional_graph_2->SetMarkerSize(0.75);
     corrected_v2_0_20_Additional_graph_2->SetMarkerStyle(markerStyle_sPHENIX_AdditionalData_2);
     
     TGraphErrors* corrected_v2_20_40_Additional_graph_2 = CreateGraph(ptCenters, corrected_v2_20_40_Additional_2, corrected_v2_20_40_Errors_Additional_2);
     corrected_v2_20_40_Additional_graph_2->SetMarkerColor(color_sPHENIX_AdditionalData_2);
     corrected_v2_20_40_Additional_graph_2->SetLineColor(color_sPHENIX_AdditionalData_2);
+    //corrected_v2_20_40_Additional_graph_2->SetMarkerSize(0.75);
     corrected_v2_20_40_Additional_graph_2->SetMarkerStyle(markerStyle_sPHENIX_AdditionalData_2);
     
     TGraphErrors* corrected_v2_40_60_Additional_graph_2 = CreateGraph(ptCenters, corrected_v2_40_60_Additional_2, corrected_v2_40_60_Errors_Additional_2);
     corrected_v2_40_60_Additional_graph_2->SetMarkerColor(color_sPHENIX_AdditionalData_2);
     corrected_v2_40_60_Additional_graph_2->SetLineColor(color_sPHENIX_AdditionalData_2);
+    //corrected_v2_40_60_Additional_graph_2->SetMarkerSize(0.75);
     corrected_v2_40_60_Additional_graph_2->SetMarkerStyle(markerStyle_sPHENIX_AdditionalData_2);
+    
+    
+    
     
     
     /*
@@ -530,22 +809,174 @@ void Plot_vN(const AdditionalData& data, const AdditionalData_2& data_2, const A
     const auto& corrected_v3_40_60_Errors_Additional_3 = data_3.corrected_v3_40_60_Errors_Additional_3;
     
     int markerStyle_sPHENIX_AdditionalData_3 = 23;
-    int color_sPHENIX_AdditionalData_3 = kGreen+3;
+    int color_sPHENIX_AdditionalData_3 = kRed;
     
     TGraphErrors* corrected_v2_0_20_Additional_graph_3 = CreateGraph(ptCenters, corrected_v2_0_20_Additional_3, corrected_v2_0_20_Errors_Additional_3);
     corrected_v2_0_20_Additional_graph_3->SetMarkerColor(color_sPHENIX_AdditionalData_3);
     corrected_v2_0_20_Additional_graph_3->SetLineColor(color_sPHENIX_AdditionalData_3);
+    corrected_v2_0_20_Additional_graph_3->SetMarkerSize(0.75);
     corrected_v2_0_20_Additional_graph_3->SetMarkerStyle(markerStyle_sPHENIX_AdditionalData_3);
     
     TGraphErrors* corrected_v2_20_40_Additional_graph_3 = CreateGraph(ptCenters, corrected_v2_20_40_Additional_3, corrected_v2_20_40_Errors_Additional_3);
     corrected_v2_20_40_Additional_graph_3->SetMarkerColor(color_sPHENIX_AdditionalData_3);
     corrected_v2_20_40_Additional_graph_3->SetLineColor(color_sPHENIX_AdditionalData_3);
+    corrected_v2_20_40_Additional_graph_3->SetMarkerSize(0.75);
     corrected_v2_20_40_Additional_graph_3->SetMarkerStyle(markerStyle_sPHENIX_AdditionalData_3);
     
     TGraphErrors* corrected_v2_40_60_Additional_graph_3 = CreateGraph(ptCenters, corrected_v2_40_60_Additional_3, corrected_v2_40_60_Errors_Additional_3);
     corrected_v2_40_60_Additional_graph_3->SetMarkerColor(color_sPHENIX_AdditionalData_3);
     corrected_v2_40_60_Additional_graph_3->SetLineColor(color_sPHENIX_AdditionalData_3);
+    corrected_v2_40_60_Additional_graph_3->SetMarkerSize(0.75);
     corrected_v2_40_60_Additional_graph_3->SetMarkerStyle(markerStyle_sPHENIX_AdditionalData_3);
+    
+    
+    
+    /*
+     Additional Data 4 Read in for Comparison
+     */
+    const auto& corrected_v2_0_20_Additional_4 = data_4.corrected_v2_0_20_Additional_4;
+    const auto& corrected_v2_20_40_Additional_4 = data_4.corrected_v2_20_40_Additional_4;
+    const auto& corrected_v2_40_60_Additional_4 = data_4.corrected_v2_40_60_Additional_4;
+    const auto& corrected_v2_0_20_Errors_Additional_4 = data_4.corrected_v2_0_20_Errors_Additional_4;
+    const auto& corrected_v2_20_40_Errors_Additional_4 = data_4.corrected_v2_20_40_Errors_Additional_4;
+    const auto& corrected_v2_40_60_Errors_Additional_4 = data_4.corrected_v2_40_60_Errors_Additional_4;
+    const auto& corrected_v3_0_20_Additional_4 = data_4.corrected_v3_0_20_Additional_4;
+    const auto& corrected_v3_40_60_Additional_4 = data_4.corrected_v3_40_60_Additional_4;
+    const auto& corrected_v3_0_20_Errors_Additional_4 = data_4.corrected_v3_0_20_Errors_Additional_4;
+    const auto& corrected_v3_40_60_Errors_Additional_4 = data_4.corrected_v3_40_60_Errors_Additional_4;
+    
+    int markerStyle_sPHENIX_AdditionalData_4 = 25;
+    int color_sPHENIX_AdditionalData_4 = kOrange - 3;
+    
+    TGraphErrors* corrected_v2_0_20_Additional_graph_4 = CreateGraph(ptCenters, corrected_v2_0_20_Additional_4, corrected_v2_0_20_Errors_Additional_4);
+    corrected_v2_0_20_Additional_graph_4->SetMarkerColor(color_sPHENIX_AdditionalData_4);
+    corrected_v2_0_20_Additional_graph_4->SetLineColor(color_sPHENIX_AdditionalData_4);
+    corrected_v2_0_20_Additional_graph_4->SetMarkerSize(0.75);
+    corrected_v2_0_20_Additional_graph_4->SetMarkerStyle(markerStyle_sPHENIX_AdditionalData_4);
+    
+    TGraphErrors* corrected_v2_20_40_Additional_graph_4 = CreateGraph(ptCenters, corrected_v2_20_40_Additional_4, corrected_v2_20_40_Errors_Additional_4);
+    corrected_v2_20_40_Additional_graph_4->SetMarkerColor(color_sPHENIX_AdditionalData_4);
+    corrected_v2_20_40_Additional_graph_4->SetLineColor(color_sPHENIX_AdditionalData_4);
+    corrected_v2_20_40_Additional_graph_4->SetMarkerSize(0.75);
+    corrected_v2_20_40_Additional_graph_4->SetMarkerStyle(markerStyle_sPHENIX_AdditionalData_4);
+    
+    TGraphErrors* corrected_v2_40_60_Additional_graph_4 = CreateGraph(ptCenters, corrected_v2_40_60_Additional_4, corrected_v2_40_60_Errors_Additional_4);
+    corrected_v2_40_60_Additional_graph_4->SetMarkerColor(color_sPHENIX_AdditionalData_4);
+    corrected_v2_40_60_Additional_graph_4->SetLineColor(color_sPHENIX_AdditionalData_4);
+    corrected_v2_40_60_Additional_graph_4->SetMarkerSize(0.75);
+    corrected_v2_40_60_Additional_graph_4->SetMarkerStyle(markerStyle_sPHENIX_AdditionalData_4);
+    
+    
+    
+    const auto& corrected_v2_0_20_Additional_5 = data_5.corrected_v2_0_20_Additional_5;
+    const auto& corrected_v2_20_40_Additional_5 = data_5.corrected_v2_20_40_Additional_5;
+    const auto& corrected_v2_40_60_Additional_5 = data_5.corrected_v2_40_60_Additional_5;
+    const auto& corrected_v2_0_20_Errors_Additional_5 = data_5.corrected_v2_0_20_Errors_Additional_5;
+    const auto& corrected_v2_20_40_Errors_Additional_5 = data_5.corrected_v2_20_40_Errors_Additional_5;
+    const auto& corrected_v2_40_60_Errors_Additional_5 = data_5.corrected_v2_40_60_Errors_Additional_5;
+    const auto& corrected_v3_0_20_Additional_5 = data_5.corrected_v3_0_20_Additional_5;
+    const auto& corrected_v3_40_60_Additional_5 = data_5.corrected_v3_40_60_Additional_5;
+    const auto& corrected_v3_0_20_Errors_Additional_5 = data_5.corrected_v3_0_20_Errors_Additional_5;
+    const auto& corrected_v3_40_60_Errors_Additional_5 = data_5.corrected_v3_40_60_Errors_Additional_5;
+    
+    int markerStyle_sPHENIX_AdditionalData_5 = 24;
+    int color_sPHENIX_AdditionalData_5 = kSpring + 4;
+    
+    TGraphErrors* corrected_v2_0_20_Additional_graph_5 = CreateGraph(ptCenters, corrected_v2_0_20_Additional_5, corrected_v2_0_20_Errors_Additional_5);
+    corrected_v2_0_20_Additional_graph_5->SetMarkerColor(color_sPHENIX_AdditionalData_5);
+    corrected_v2_0_20_Additional_graph_5->SetLineColor(color_sPHENIX_AdditionalData_5);
+    corrected_v2_0_20_Additional_graph_5->SetMarkerSize(0.75);
+    corrected_v2_0_20_Additional_graph_5->SetMarkerStyle(markerStyle_sPHENIX_AdditionalData_5);
+    
+    TGraphErrors* corrected_v2_20_40_Additional_graph_5 = CreateGraph(ptCenters, corrected_v2_20_40_Additional_5, corrected_v2_20_40_Errors_Additional_5);
+    corrected_v2_20_40_Additional_graph_5->SetMarkerColor(color_sPHENIX_AdditionalData_5);
+    corrected_v2_20_40_Additional_graph_5->SetLineColor(color_sPHENIX_AdditionalData_5);
+    corrected_v2_20_40_Additional_graph_5->SetMarkerSize(0.75);
+    corrected_v2_20_40_Additional_graph_5->SetMarkerStyle(markerStyle_sPHENIX_AdditionalData_5);
+    
+    TGraphErrors* corrected_v2_40_60_Additional_graph_5 = CreateGraph(ptCenters, corrected_v2_40_60_Additional_5, corrected_v2_40_60_Errors_Additional_5);
+    corrected_v2_40_60_Additional_graph_5->SetMarkerColor(color_sPHENIX_AdditionalData_5);
+    corrected_v2_40_60_Additional_graph_5->SetLineColor(color_sPHENIX_AdditionalData_5);
+    corrected_v2_40_60_Additional_graph_5->SetMarkerSize(0.75);
+    corrected_v2_40_60_Additional_graph_5->SetMarkerStyle(markerStyle_sPHENIX_AdditionalData_5);
+    
+    
+    
+    
+    
+    
+    const auto& corrected_v2_0_20_Additional_6 = data_6.corrected_v2_0_20_Additional_6;
+    const auto& corrected_v2_20_40_Additional_6 = data_6.corrected_v2_20_40_Additional_6;
+    const auto& corrected_v2_40_60_Additional_6 = data_6.corrected_v2_40_60_Additional_6;
+    const auto& corrected_v2_0_20_Errors_Additional_6 = data_6.corrected_v2_0_20_Errors_Additional_6;
+    const auto& corrected_v2_20_40_Errors_Additional_6 = data_6.corrected_v2_20_40_Errors_Additional_6;
+    const auto& corrected_v2_40_60_Errors_Additional_6 = data_6.corrected_v2_40_60_Errors_Additional_6;
+    const auto& corrected_v3_0_20_Additional_6 = data_6.corrected_v3_0_20_Additional_6;
+    const auto& corrected_v3_40_60_Additional_6 = data_6.corrected_v3_40_60_Additional_6;
+    const auto& corrected_v3_0_20_Errors_Additional_6 = data_6.corrected_v3_0_20_Errors_Additional_6;
+    const auto& corrected_v3_40_60_Errors_Additional_6 = data_6.corrected_v3_40_60_Errors_Additional_6;
+    
+    int markerStyle_sPHENIX_AdditionalData_6 = 34;
+    int color_sPHENIX_AdditionalData_6 = kPink + 7;
+    
+    TGraphErrors* corrected_v2_0_20_Additional_graph_6 = CreateGraph(ptCenters, corrected_v2_0_20_Additional_6, corrected_v2_0_20_Errors_Additional_6);
+    corrected_v2_0_20_Additional_graph_6->SetMarkerColor(color_sPHENIX_AdditionalData_6);
+    corrected_v2_0_20_Additional_graph_6->SetLineColor(color_sPHENIX_AdditionalData_6);
+    corrected_v2_0_20_Additional_graph_6->SetMarkerSize(0.75);
+    corrected_v2_0_20_Additional_graph_6->SetMarkerStyle(markerStyle_sPHENIX_AdditionalData_6);
+    
+    TGraphErrors* corrected_v2_20_40_Additional_graph_6 = CreateGraph(ptCenters, corrected_v2_20_40_Additional_6, corrected_v2_20_40_Errors_Additional_6);
+    corrected_v2_20_40_Additional_graph_6->SetMarkerColor(color_sPHENIX_AdditionalData_6);
+    corrected_v2_20_40_Additional_graph_6->SetLineColor(color_sPHENIX_AdditionalData_6);
+    corrected_v2_20_40_Additional_graph_6->SetMarkerSize(0.75);
+    corrected_v2_20_40_Additional_graph_6->SetMarkerStyle(markerStyle_sPHENIX_AdditionalData_6);
+    
+    TGraphErrors* corrected_v2_40_60_Additional_graph_6 = CreateGraph(ptCenters, corrected_v2_40_60_Additional_6, corrected_v2_40_60_Errors_Additional_6);
+    corrected_v2_40_60_Additional_graph_6->SetMarkerColor(color_sPHENIX_AdditionalData_6);
+    corrected_v2_40_60_Additional_graph_6->SetLineColor(color_sPHENIX_AdditionalData_6);
+    corrected_v2_40_60_Additional_graph_6->SetMarkerSize(0.75);
+    corrected_v2_40_60_Additional_graph_6->SetMarkerStyle(markerStyle_sPHENIX_AdditionalData_6);
+    
+    
+    
+    
+    
+    const auto& corrected_v2_0_20_Additional_7 = data_7.corrected_v2_0_20_Additional_7;
+    const auto& corrected_v2_20_40_Additional_7 = data_7.corrected_v2_20_40_Additional_7;
+    const auto& corrected_v2_40_60_Additional_7 = data_7.corrected_v2_40_60_Additional_7;
+    const auto& corrected_v2_0_20_Errors_Additional_7 = data_7.corrected_v2_0_20_Errors_Additional_7;
+    const auto& corrected_v2_20_40_Errors_Additional_7 = data_7.corrected_v2_20_40_Errors_Additional_7;
+    const auto& corrected_v2_40_60_Errors_Additional_7 = data_7.corrected_v2_40_60_Errors_Additional_7;
+    const auto& corrected_v3_0_20_Additional_7 = data_7.corrected_v3_0_20_Additional_7;
+    const auto& corrected_v3_40_60_Additional_7 = data_7.corrected_v3_40_60_Additional_7;
+    const auto& corrected_v3_0_20_Errors_Additional_7 = data_7.corrected_v3_0_20_Errors_Additional_7;
+    const auto& corrected_v3_40_60_Errors_Additional_7 = data_7.corrected_v3_40_60_Errors_Additional_7;
+    
+    int markerStyle_sPHENIX_AdditionalData_7 = 47;
+    int color_sPHENIX_AdditionalData_7 = kCyan + 1;
+    
+    TGraphErrors* corrected_v2_0_20_Additional_graph_7 = CreateGraph(ptCenters, corrected_v2_0_20_Additional_7, corrected_v2_0_20_Errors_Additional_7);
+    corrected_v2_0_20_Additional_graph_7->SetMarkerColor(color_sPHENIX_AdditionalData_7);
+    corrected_v2_0_20_Additional_graph_7->SetLineColor(color_sPHENIX_AdditionalData_7);
+    corrected_v2_0_20_Additional_graph_7->SetMarkerSize(0.75);
+    corrected_v2_0_20_Additional_graph_7->SetMarkerStyle(markerStyle_sPHENIX_AdditionalData_7);
+    
+    TGraphErrors* corrected_v2_20_40_Additional_graph_7 = CreateGraph(ptCenters, corrected_v2_20_40_Additional_7, corrected_v2_20_40_Errors_Additional_7);
+    corrected_v2_20_40_Additional_graph_7->SetMarkerColor(color_sPHENIX_AdditionalData_7);
+    corrected_v2_20_40_Additional_graph_7->SetLineColor(color_sPHENIX_AdditionalData_7);
+    corrected_v2_20_40_Additional_graph_7->SetMarkerSize(0.75);
+    corrected_v2_20_40_Additional_graph_7->SetMarkerStyle(markerStyle_sPHENIX_AdditionalData_7);
+    
+    TGraphErrors* corrected_v2_40_60_Additional_graph_7 = CreateGraph(ptCenters, corrected_v2_40_60_Additional_7, corrected_v2_40_60_Errors_Additional_7);
+    corrected_v2_40_60_Additional_graph_7->SetMarkerColor(color_sPHENIX_AdditionalData_7);
+    corrected_v2_40_60_Additional_graph_7->SetLineColor(color_sPHENIX_AdditionalData_7);
+    corrected_v2_40_60_Additional_graph_7->SetMarkerSize(0.75);
+    corrected_v2_40_60_Additional_graph_7->SetMarkerStyle(markerStyle_sPHENIX_AdditionalData_7);
+    
+    
+    
+    
+    
     
     
     
@@ -554,41 +985,66 @@ void Plot_vN(const AdditionalData& data, const AdditionalData_2& data_2, const A
      */
     TCanvas *c_p009_p010_Overlay_0_20_v2_corrected = new TCanvas("c_p009_p010_Overlay_0_20_v2_corrected", "#pi^{0} #it{v}_{2}, p011 Data, Without PDC, vertex = (0, 0, z), Energy Cut of 0.5 and 1 GeV  vs #it{p}_{T} 0-20% Centrality", 800, 600);
     corrected_graph_0_20_v2->Draw("AP");  // This will be the base graph
-    corrected_graph_0_20_v2->SetTitle("#pi^{0} #it{v}_{2}, MB/MB+Central Triggered Events, 30 samples, E #geq 1.0 GeV vs #it{p}_{T} 0-20% Centrality");
+    corrected_graph_0_20_v2->SetTitle("#pi^{0} #it{v}_{2} vs #it{p}_{T} 0-20% Centrality");
     corrected_graph_0_20_v2->GetXaxis()->SetTitle("p_{T}");
     corrected_graph_0_20_v2->GetYaxis()->SetTitle("v_{2}");
     
-    corrected_graph_0_20_v2->SetMinimum(-0.5); // Set the minimum y value
-    corrected_graph_0_20_v2->SetMaximum(0.8); // Set the maximum y value
+
     for (int i = 0; i < ptCenters.size(); ++i) {
-        corrected_graph_0_20_v2->SetPoint(i, ptCenters[i] - offset, corrected_v2_0_20[i]);
-//        corrected_v2_0_20_Additional_graph_2->SetPoint(i, ptCenters[i] + offset, corrected_v2_0_20_Additional_2[i]);
-//        corrected_v2_0_20_Additional_graph_3->SetPoint(i, ptCenters[i] + offset*2.0, corrected_v2_0_20_Additional_3[i]);
+        //corrected_graph_0_20_v2->SetPoint(i, ptCenters[i] - 2.0 * offset, corrected_v2_0_20[i]); //uncomment if use additional points
+        
+        //corrected_v2_0_20_Additional_graph->SetPoint(i, ptCenters[i] + 2.0 * offset, corrected_v2_0_20_Additional[i]);
+        
+        //corrected_v2_0_20_Additional_graph_2->SetPoint(i, ptCenters[i] + 2.0 * offset, corrected_v2_0_20_Additional_2[i]);
+//        //corrected_v2_0_20_Additional_graph_3->SetPoint(i, ptCenters[i] - 0.0 * offset, corrected_v2_0_20_Additional_3[i]);
+//        corrected_v2_0_20_Additional_graph_4->SetPoint(i, ptCenters[i] + 1.3 * offset, corrected_v2_0_20_Additional_4[i]);
+//        corrected_v2_0_20_Additional_graph_5->SetPoint(i, ptCenters[i] + 2.8 * offset, corrected_v2_0_20_Additional_5[i]);
+//        corrected_v2_0_20_Additional_graph_6->SetPoint(i, ptCenters[i] + 3.9 * offset, corrected_v2_0_20_Additional_6[i]);
+//        corrected_v2_0_20_Additional_graph_7->SetPoint(i, ptCenters[i] + 5.1 * offset, corrected_v2_0_20_Additional_7[i]);
+        
         
 //        graph_0_10->SetPoint(i, ptCenters[i] - offset * 2.0, v2_0_10[i]);
 //        graph_10_20->SetPoint(i, ptCenters[i] + offset, v2_10_20[i]);
         
     }
-    corrected_v2_0_20_Additional_graph -> Draw("P SAME");
-//    corrected_v2_0_20_Additional_graph_2-> Draw("P SAME");
+//    corrected_v2_0_20_Additional_graph -> Draw("P SAME");
+    //corrected_v2_0_20_Additional_graph_2-> Draw("P SAME");
+    
+    corrected_graph_0_20_v2->SetMinimum(-.1); // Set the minimum y value
+    corrected_graph_0_20_v2->SetMaximum(0.4); // Set the maximum y value
+//
 //    corrected_v2_0_20_Additional_graph_3-> Draw("P SAME");
+//    corrected_v2_0_20_Additional_graph_4-> Draw("P SAME");
+//    corrected_v2_0_20_Additional_graph_5-> Draw("P SAME");
+//    corrected_v2_0_20_Additional_graph_6-> Draw("P SAME");
+//    corrected_v2_0_20_Additional_graph_7-> Draw("P SAME");
+    
     
 //    graph_0_10->Draw("P SAME");
 //    graph_10_20->Draw("P SAME");
-    
-    TLegend *legend_p009_p010_Overlay_0_20_v2_corrected = new TLegend(0.11, 0.69, 0.31, 0.89);
-    legend_p009_p010_Overlay_0_20_v2_corrected->SetBorderSize(0);
-    legend_p009_p010_Overlay_0_20_v2_corrected->SetTextSize(0.03);
-    legend_p009_p010_Overlay_0_20_v2_corrected->AddEntry(corrected_graph_0_20_v2, "0-20%, v_{2}^{#pi^{0}} MB", "pe");
-    legend_p009_p010_Overlay_0_20_v2_corrected->AddEntry(corrected_v2_0_20_Additional_graph, "0-20%, v_{2}^{#pi^{0}} MB+Central", "pe");
-    
-//    legend_p009_p010_Overlay_0_20_v2_corrected->AddEntry(corrected_v2_0_20_Additional_graph_2, "0-20%, v_{2}^{#pi^{0}} Central Triggered Only", "pe");
-//    legend_p009_p010_Overlay_0_20_v2_corrected->AddEntry(corrected_v2_0_20_Additional_graph_3, "0-20%, v_{2}^{#pi^{0}} MB+Central Triggered", "pe");
-    
-//    legend_p009_p010_Overlay_0_20_v2_corrected->AddEntry(graph_0_10, "0-10%, #bf{PHENIX} 2010", "pe");
-//    legend_p009_p010_Overlay_0_20_v2_corrected->AddEntry(graph_10_20, "10-20%, #bf{PHENIX} 2010", "pe");
-    
-    legend_p009_p010_Overlay_0_20_v2_corrected->Draw();
+//    
+//    TLegend *legend_p009_p010_Overlay_0_20_v2_corrected = new TLegend(0.11, 0.64, 0.51, 0.89);
+//    //legend_p009_p010_Overlay_0_20_v2_corrected->SetNColumns(2);
+//
+//    legend_p009_p010_Overlay_0_20_v2_corrected->SetBorderSize(0);
+//    legend_p009_p010_Overlay_0_20_v2_corrected->SetTextSize(0.03);
+////    legend_p009_p010_Overlay_0_20_v2_corrected->AddEntry(corrected_graph_0_20_v2, "0-20%, v_{2}^{#pi^{0}}, p013", "pe");
+////    legend_p009_p010_Overlay_0_20_v2_corrected->AddEntry(corrected_v2_0_20_Additional_graph, "0-20%, v_{2}^{#pi^{0}}, p013", "pe");
+////
+////    legend_p009_p010_Overlay_0_20_v2_corrected->AddEntry(corrected_v2_0_20_Additional_graph_2, "0-20%, v_{2}^{#pi^{0}}, Type C", "pe");
+////    legend_p009_p010_Overlay_0_20_v2_corrected->AddEntry(corrected_v2_0_20_Additional_graph_3, "0-20%, v_{2}^{#pi^{0}}, Type D", "pe");
+////    legend_p009_p010_Overlay_0_20_v2_corrected->AddEntry(corrected_v2_0_20_Additional_graph_4, "0-20%, v_{2}^{#pi^{0}}, Type E", "pe");
+////    legend_p009_p010_Overlay_0_20_v2_corrected->AddEntry(corrected_v2_0_20_Additional_graph_5, "0-20%, v_{2}^{#pi^{0}}, Type F", "pe");
+////    legend_p009_p010_Overlay_0_20_v2_corrected->AddEntry(corrected_v2_0_20_Additional_graph_6, "0-20%, v_{2}^{#pi^{0}}, Type G", "pe");
+////    legend_p009_p010_Overlay_0_20_v2_corrected->AddEntry(corrected_v2_0_20_Additional_graph_7, "0-20%, v_{2}^{#pi^{0}}, Type H", "pe");
+//    
+//    
+//    
+////
+////    legend_p009_p010_Overlay_0_20_v2_corrected->AddEntry(graph_0_10, "0-10%, #bf{PHENIX} 2010", "pe");
+////    legend_p009_p010_Overlay_0_20_v2_corrected->AddEntry(graph_10_20, "10-20%, #bf{PHENIX} 2010", "pe");
+//    
+//    legend_p009_p010_Overlay_0_20_v2_corrected->Draw();
     DrawZeroLine(c_p009_p010_Overlay_0_20_v2_corrected);
     c_p009_p010_Overlay_0_20_v2_corrected->Modified();
     c_p009_p010_Overlay_0_20_v2_corrected->Update();
@@ -596,92 +1052,143 @@ void Plot_vN(const AdditionalData& data, const AdditionalData_2& data_2, const A
 
     
     /*
-     20-40 corrected v2
+     20-40 percent v2
      */
-    TCanvas *c_p009_p010_Overlay_20_40_v2_corrected = new TCanvas("c_p009_p010_Overlay_20_40_v2_corrected", "#pi^{0} #it{v}_{2}, p011 Data, Without PDC, vertex = (0, 0, z), Energy Cut of 0.5 and 1 GeV vs #it{p}_{T} 20-40% Centrality", 800, 600);
+    TCanvas *c_p009_p010_Overlay_20_40_v2_corrected = new TCanvas("c_p009_p010_Overlay_20_40_v2_corrected", "#pi^{0} #it{v}_{2}, p011 Data, Without PDC, vertex = (0, 0, z), Energy Cut of 0.5 and 1 GeV  vs #it{p}_{T} 20-40% Centrality", 800, 600);
     corrected_graph_20_40_v2->Draw("AP");  // This will be the base graph
-    corrected_graph_20_40_v2->SetTitle("#pi^{0} #it{v}_{2}, MB/MB+Central Triggered Events, 30 samples, E #geq 1.0 GeV vs #it{p}_{T} 20-40% Centrality");
+    corrected_graph_20_40_v2->SetTitle("#pi^{0} #it{v}_{2} vs #it{p}_{T} 20-40% Centrality");
     corrected_graph_20_40_v2->GetXaxis()->SetTitle("p_{T}");
     corrected_graph_20_40_v2->GetYaxis()->SetTitle("v_{2}");
-    corrected_graph_20_40_v2->SetMinimum(-0.5); // Set the minimum y value
-    corrected_graph_20_40_v2->SetMaximum(0.8); // Set the maximum y value
+    
     for (int i = 0; i < ptCenters.size(); ++i) {
-        corrected_graph_20_40_v2->SetPoint(i, ptCenters[i] - offset, corrected_v2_20_40[i]);
-//        corrected_v2_20_40_Additional_graph_2->SetPoint(i, ptCenters[i] + offset, corrected_v2_20_40_Additional_2[i]);
-//        corrected_v2_20_40_Additional_graph_3->SetPoint(i, ptCenters[i] + offset*2.0, corrected_v2_20_40_Additional_3[i]);
-//        graph_20_30->SetPoint(i, ptCenters[i] - offset * 2.0, v2_20_30[i]);
-//        graph_30_40->SetPoint(i, ptCenters[i] + offset, v2_30_40[i]);
+//        corrected_graph_20_40_v2->SetPoint(i, ptCenters[i] - 4.3 * offset, corrected_v2_20_40[i]); //uncomment if use additional points
+        
+ //       corrected_v2_20_40_Additional_graph->SetPoint(i, ptCenters[i] + 2.0 * offset, corrected_v2_20_40_Additional[i]);
+        
+//        corrected_v2_20_40_Additional_graph_2->SetPoint(i, ptCenters[i] - 1.5 * offset, corrected_v2_20_40_Additional_2[i]);
+//        //corrected_v2_20_40_Additional_graph_3->SetPoint(i, ptCenters[i] - 0.0 * offset, corrected_v2_20_40_Additional_3[i]);
+//        corrected_v2_20_40_Additional_graph_4->SetPoint(i, ptCenters[i] + 1.3 * offset, corrected_v2_20_40_Additional_4[i]);
+//        corrected_v2_20_40_Additional_graph_5->SetPoint(i, ptCenters[i] + 2.8 * offset, corrected_v2_20_40_Additional_5[i]);
+//        corrected_v2_20_40_Additional_graph_6->SetPoint(i, ptCenters[i] + 3.9 * offset, corrected_v2_20_40_Additional_6[i]);
+//        corrected_v2_20_40_Additional_graph_7->SetPoint(i, ptCenters[i] + 5.1 * offset, corrected_v2_20_40_Additional_7[i]);
+        
+        
+//        graph_0_10->SetPoint(i, ptCenters[i] - offset * 2.0, v2_0_10[i]);
+//        graph_10_20->SetPoint(i, ptCenters[i] + offset, v2_10_20[i]);
+        
     }
-    corrected_v2_20_40_Additional_graph -> Draw("P SAME");
+//    corrected_v2_20_40_Additional_graph -> Draw("P SAME");
+    corrected_graph_20_40_v2->SetMinimum(-.1); // Set the minimum y value
+    corrected_graph_20_40_v2->SetMaximum(0.4); // Set the maximum y value
+//
 //    corrected_v2_20_40_Additional_graph_2-> Draw("P SAME");
-//    corrected_v2_20_40_Additional_graph_3 -> Draw("P SAME");
+//    corrected_v2_20_40_Additional_graph_3-> Draw("P SAME");
+//    corrected_v2_20_40_Additional_graph_4-> Draw("P SAME");
+//    corrected_v2_20_40_Additional_graph_5-> Draw("P SAME");
+//    corrected_v2_20_40_Additional_graph_6-> Draw("P SAME");
+//    corrected_v2_20_40_Additional_graph_7-> Draw("P SAME");
     
-//    graph_20_30->Draw("P SAME");
-//    graph_30_40->Draw("P SAME");
     
-    TLegend *legend_p009_p010_Overlay_20_40_v2_corrected = new TLegend(0.11, 0.69, 0.31, 0.89);
-    legend_p009_p010_Overlay_20_40_v2_corrected->SetBorderSize(0);
-    legend_p009_p010_Overlay_20_40_v2_corrected->SetTextSize(0.03);
-    legend_p009_p010_Overlay_20_40_v2_corrected->AddEntry(corrected_graph_20_40_v2, "20-40%, v_{2}^{#pi^{0}}, MB", "pe");
-    legend_p009_p010_Overlay_20_40_v2_corrected->AddEntry(corrected_v2_20_40_Additional_graph, "20-40%, v_{2}^{#pi^{0}}, MB+Central", "pe");
-    
-//    legend_p009_p010_Overlay_20_40_v2_corrected->AddEntry(corrected_v2_20_40_Additional_graph_2, "20-40%, v_{2}^{#pi^{0}} Central Triggered Only", "pe");
-//    legend_p009_p010_Overlay_20_40_v2_corrected->AddEntry(corrected_v2_20_40_Additional_graph_3, "20-40%, v_{2}^{#pi^{0}} MB+Central Triggered", "pe");
-
-//    legend_p009_p010_Overlay_20_40_v2_corrected->AddEntry(graph_20_30, "20-30%, #bf{PHENIX} 2010", "pe");
-//    legend_p009_p010_Overlay_20_40_v2_corrected->AddEntry(graph_30_40, "30-40%, #bf{PHENIX} 2010", "pe");
-    
-    legend_p009_p010_Overlay_20_40_v2_corrected->Draw();
+//    graph_0_10->Draw("P SAME");
+//    graph_10_20->Draw("P SAME");
+//
+//    TLegend *legend_p009_p010_Overlay_20_40_v2_corrected = new TLegend(0.11, 0.64, 0.51, 0.89);
+//    //legend_p009_p010_Overlay_20_40_v2_corrected->SetNColumns(2);
+//
+//    legend_p009_p010_Overlay_20_40_v2_corrected->SetBorderSize(0);
+//    legend_p009_p010_Overlay_20_40_v2_corrected->SetTextSize(0.025);
+////    legend_p009_p010_Overlay_20_40_v2_corrected->AddEntry(corrected_graph_20_40_v2, "20-40%, v_{2}^{#pi^{0}}, p011", "pe");
+////    legend_p009_p010_Overlay_20_40_v2_corrected->AddEntry(corrected_v2_20_40_Additional_graph, "20-40%, v_{2}^{#pi^{0}}, p013", "pe");
+//    
+////    legend_p009_p010_Overlay_20_40_v2_corrected->AddEntry(corrected_v2_20_40_Additional_graph_2, "20-40%, v_{2}^{#pi^{0}}, Type C", "pe");
+////    legend_p009_p010_Overlay_20_40_v2_corrected->AddEntry(corrected_v2_20_40_Additional_graph_3, "20-40%, v_{2}^{#pi^{0}}, Type D", "pe");
+////    legend_p009_p010_Overlay_20_40_v2_corrected->AddEntry(corrected_v2_20_40_Additional_graph_4, "20-40%, v_{2}^{#pi^{0}}, Type E", "pe");
+////    legend_p009_p010_Overlay_20_40_v2_corrected->AddEntry(corrected_v2_20_40_Additional_graph_5, "20-40%, v_{2}^{#pi^{0}}, Type F", "pe");
+////    legend_p009_p010_Overlay_20_40_v2_corrected->AddEntry(corrected_v2_20_40_Additional_graph_6, "20-40%, v_{2}^{#pi^{0}}, Type G", "pe");
+////    legend_p009_p010_Overlay_20_40_v2_corrected->AddEntry(corrected_v2_20_40_Additional_graph_7, "20-40%, v_{2}^{#pi^{0}}, Type H", "pe");
+//    
+//    
+//    
+////
+////    legend_p009_p010_Overlay_0_20_v2_corrected->AddEntry(graph_0_10, "0-10%, #bf{PHENIX} 2010", "pe");
+////    legend_p009_p010_Overlay_0_20_v2_corrected->AddEntry(graph_10_20, "10-20%, #bf{PHENIX} 2010", "pe");
+//    
+//    legend_p009_p010_Overlay_20_40_v2_corrected->Draw();
     DrawZeroLine(c_p009_p010_Overlay_20_40_v2_corrected);
     c_p009_p010_Overlay_20_40_v2_corrected->Modified();
     c_p009_p010_Overlay_20_40_v2_corrected->Update();
     c_p009_p010_Overlay_20_40_v2_corrected->SaveAs((BasePlotOutputPath + "/p011_withAndWithoutZvtx_Corrected_Overlay_20_40.png").c_str());
 
     
-    /*
-     40-60 Overlay
-     */
-    TCanvas *c_p009_p010_Overlay_40_60_v2_corrected = new TCanvas("c_p009_p010_Overlay_40_60_v2_corrected", "#pi^{0} #it{v}_{2}, p011 Data, Without PDC, vertex = (0, 0, z), Energy Cut of 0.5 and 1 GeV  vs #it{p}_{T} 40-60% Centrality", 800, 600);
+    
+    
+    
+   TCanvas *c_p009_p010_Overlay_40_60_v2_corrected = new TCanvas("c_p009_p010_Overlay_40_60_v2_corrected", "#pi^{0} #it{v}_{2}, p011 Data, Without PDC, vertex = (0, 0, z), Energy Cut of 0.5 and 1 GeV  vs #it{p}_{T} 40-60% Centrality", 800, 600);
     corrected_graph_40_60_v2->Draw("AP");  // This will be the base graph
-    corrected_graph_40_60_v2->SetTitle("#pi^{0} #it{v}_{2}, MB/MB+Central Triggered Events, 30 samples, E #geq 1.0 GeV vs #it{p}_{T} 40-60% Centrality");
+    corrected_graph_40_60_v2->SetTitle("#pi^{0} #it{v}_{2} vs #it{p}_{T} 40-60% Centrality");
     corrected_graph_40_60_v2->GetXaxis()->SetTitle("p_{T}");
     corrected_graph_40_60_v2->GetYaxis()->SetTitle("v_{2}");
-
-    for (int i = 0; i < ptCenters.size(); ++i) {
-        corrected_graph_40_60_v2->SetPoint(i, ptCenters[i] - offset, corrected_v2_40_60[i]);
-//        corrected_v2_40_60_Additional_graph_2->SetPoint(i, ptCenters[i] + offset, corrected_v2_40_60_Additional_2[i]);
-//        corrected_v2_40_60_Additional_graph_3->SetPoint(i, ptCenters[i] + offset*2.0, corrected_v2_40_60_Additional_3[i]);
-//        graph_40_50->SetPoint(i, ptCenters[i] - offset * 2.0, v2_40_50[i]);
-//        graph_50_60->SetPoint(i, ptCenters[i] + offset, v2_50_60[i]);
-    }
-    corrected_graph_40_60_v2->SetMinimum(-0.5); // Set the minimum y value
-    corrected_graph_40_60_v2->SetMaximum(0.8); // Set the maximum y value
     
-    corrected_v2_40_60_Additional_graph -> Draw("P SAME");
     
-//    corrected_v2_40_60_Additional_graph_2 -> Draw("P SAME");
+   for (int i = 0; i < ptCenters.size(); ++i) {
+//       corrected_graph_40_60_v2->SetPoint(i, ptCenters[i] - 4.3 * offset, corrected_v2_40_60[i]); //uncomment if use additional points
+       
+//       corrected_v2_40_60_Additional_graph->SetPoint(i, ptCenters[i] + 2.0 * offset, corrected_v2_40_60_Additional[i]);
+       
+//       corrected_v2_40_60_Additional_graph_2->SetPoint(i, ptCenters[i] - 1.5 * offset, corrected_v2_40_60_Additional_2[i]);
+//       //corrected_v2_40_60_Additional_graph_3->SetPoint(i, ptCenters[i] - 0.0 * offset, corrected_v2_40_60_Additional_3[i]);
+//       corrected_v2_40_60_Additional_graph_4->SetPoint(i, ptCenters[i] + 1.3 * offset, corrected_v2_40_60_Additional_4[i]);
+//       corrected_v2_40_60_Additional_graph_5->SetPoint(i, ptCenters[i] + 2.8 * offset, corrected_v2_40_60_Additional_5[i]);
+//       corrected_v2_40_60_Additional_graph_6->SetPoint(i, ptCenters[i] + 3.9 * offset, corrected_v2_40_60_Additional_6[i]);
+//       corrected_v2_40_60_Additional_graph_7->SetPoint(i, ptCenters[i] + 5.1 * offset, corrected_v2_40_60_Additional_7[i]);
+       
+       
+//        graph_0_10->SetPoint(i, ptCenters[i] - offset * 2.0, v2_0_10[i]);
+//        graph_10_20->SetPoint(i, ptCenters[i] + offset, v2_10_20[i]);
+       
+   }
+//   corrected_v2_40_60_Additional_graph -> Draw("P SAME");
+   corrected_graph_40_60_v2->SetMinimum(-.1); // Set the minimum y value
+   corrected_graph_40_60_v2->SetMaximum(0.4); // Set the maximum y value
+   
+//   corrected_v2_40_60_Additional_graph_2-> Draw("P SAME");
 //    corrected_v2_40_60_Additional_graph_3-> Draw("P SAME");
-    
-//    graph_40_50->Draw("P SAME");
-//    graph_50_60->Draw("P SAME");
+//   corrected_v2_40_60_Additional_graph_4-> Draw("P SAME");
+//   corrected_v2_40_60_Additional_graph_5-> Draw("P SAME");
+//   corrected_v2_40_60_Additional_graph_6-> Draw("P SAME");
+//   corrected_v2_40_60_Additional_graph_7-> Draw("P SAME");
+   
+   
+//    graph_0_10->Draw("P SAME");
+//    graph_10_20->Draw("P SAME");
+//
+//   TLegend *legend_p009_p010_Overlay_40_60_v2_corrected = new TLegend(0.11, 0.64, 0.51, 0.89);
+//   //legend_p009_p010_Overlay_40_60_v2_corrected->SetNColumns(2);
+//
+//   legend_p009_p010_Overlay_40_60_v2_corrected->SetBorderSize(0);
+//   legend_p009_p010_Overlay_40_60_v2_corrected->SetTextSize(0.025);
+////   legend_p009_p010_Overlay_40_60_v2_corrected->AddEntry(corrected_graph_40_60_v2, "40-60%, v_{2}^{#pi^{0}}, p011", "pe");
+////   legend_p009_p010_Overlay_40_60_v2_corrected->AddEntry(corrected_v2_40_60_Additional_graph, "40-60%, v_{2}^{#pi^{0}}, p013", "pe");
+//   
+////   legend_p009_p010_Overlay_40_60_v2_corrected->AddEntry(corrected_v2_40_60_Additional_graph_2, "40-60%, v_{2}^{#pi^{0}}, Type C", "pe");
+////   legend_p009_p010_Overlay_40_60_v2_corrected->AddEntry(corrected_v2_40_60_Additional_graph_3, "40-60%, v_{2}^{#pi^{0}}, Type D", "pe");
+////   legend_p009_p010_Overlay_40_60_v2_corrected->AddEntry(corrected_v2_40_60_Additional_graph_4, "40-60%, v_{2}^{#pi^{0}}, Type E", "pe");
+////   legend_p009_p010_Overlay_40_60_v2_corrected->AddEntry(corrected_v2_40_60_Additional_graph_5, "40-60%, v_{2}^{#pi^{0}}, Type F", "pe");
+////   legend_p009_p010_Overlay_40_60_v2_corrected->AddEntry(corrected_v2_40_60_Additional_graph_6, "40-60%, v_{2}^{#pi^{0}}, Type G", "pe");
+////   legend_p009_p010_Overlay_40_60_v2_corrected->AddEntry(corrected_v2_40_60_Additional_graph_7, "40-60%, v_{2}^{#pi^{0}}, Type H", "pe");
+//   
+//   
+//   
+////
+////    legend_p009_p010_Overlay_0_20_v2_corrected->AddEntry(graph_0_10, "0-10%, #bf{PHENIX} 2010", "pe");
+////    legend_p009_p010_Overlay_0_20_v2_corrected->AddEntry(graph_10_20, "10-20%, #bf{PHENIX} 2010", "pe");
+//   
+//   legend_p009_p010_Overlay_40_60_v2_corrected->Draw();
+   DrawZeroLine(c_p009_p010_Overlay_40_60_v2_corrected);
+   c_p009_p010_Overlay_40_60_v2_corrected->Modified();
+   c_p009_p010_Overlay_40_60_v2_corrected->Update();
+   c_p009_p010_Overlay_40_60_v2_corrected->SaveAs((BasePlotOutputPath + "/p011_withAndWithoutZvtx_Corrected_Overlay_40_60.png").c_str());
 
-    TLegend *legend_p009_p010_Overlay_40_60_v2_corrected = new TLegend(0.11, 0.69, 0.31, 0.89);
-    legend_p009_p010_Overlay_40_60_v2_corrected->SetBorderSize(0);
-    legend_p009_p010_Overlay_40_60_v2_corrected->SetTextSize(0.03);
-    legend_p009_p010_Overlay_40_60_v2_corrected->AddEntry(corrected_graph_40_60_v2, "40-60%, v_{2}^{#pi^{0}}, MB", "pe");
-    legend_p009_p010_Overlay_40_60_v2_corrected->AddEntry(corrected_v2_40_60_Additional_graph, "40-60%, v_{2}^{#pi^{0}}, MB+Central", "pe");
-    
-//    legend_p009_p010_Overlay_40_60_v2_corrected->AddEntry(corrected_v2_20_40_Additional_graph_2, "40-60%, v_{2}^{#pi^{0}} Central Triggered Only", "pe");
-//    legend_p009_p010_Overlay_40_60_v2_corrected->AddEntry(corrected_v2_20_40_Additional_graph_3, "40-60%, v_{2}^{#pi^{0}} MB+Central Triggered", "pe");
-    
-//    legend_p009_p010_Overlay_40_60_v2_corrected->AddEntry(graph_40_50, "40-50%, #bf{PHENIX} 2010", "pe");
-//    legend_p009_p010_Overlay_40_60_v2_corrected->AddEntry(graph_50_60, "50-60%, #bf{PHENIX} 2010", "pe");
-//    
-    legend_p009_p010_Overlay_40_60_v2_corrected->Draw();
-    DrawZeroLine(c_p009_p010_Overlay_40_60_v2_corrected);
-    c_p009_p010_Overlay_40_60_v2_corrected->Modified();
-    c_p009_p010_Overlay_40_60_v2_corrected->Update();
-    c_p009_p010_Overlay_40_60_v2_corrected->SaveAs((BasePlotOutputPath + "/p011_withAndWithoutZvtx_Corrected_Overlay_40_60.png").c_str());
     
 
 
@@ -765,22 +1272,23 @@ void PrintSkippedRunsSummary(const std::map<int, int>& skippedCounts) {
 
 void vN_calculator_AccumulatedData() {
     int subSampleSize = 30;//CHANGE TO SUB SAMPLES LOOPED THROUGH
-    std::string baseProjectFolder = "/Users/patsfan753/Desktop/vN_AnalysisFinal/";
+    
+    std::string baseProjectFolder = "/Users/patsfan753/Desktop/Fit_varsFina3_23/";
     /*
      Relevant Paths Set
      */
     //path to root file with QQ, qQ histograms to be analyzed
-    std::string test_RootFilePath = (baseProjectFolder + "data/testRootFiles_ByProduction/p011/No_PDC_with_zVertex/CENTRALonly-energyCut_0_5_30samples/test.root").c_str();
+    std::string test_RootFilePath = (baseProjectFolder + "TypeH/test.root").c_str();
     
     
     //path to CSV file read in with S/B information for vn calculation
     /*
      Remember to change cut value being read in below depending on CSV choice below
      */
-    std::string PlotByPlotOutput_OriginalPath = (baseProjectFolder + "data/PlotByPlotOutput_FromFits/p011/No_pdc_withZvertex/CENTRALonly_noZDC/PlotByPlotOutput_p011_CentralTriggeredOnly_noZDC.csv").c_str();
+    std::string PlotByPlotOutput_OriginalPath = (baseProjectFolder + "TypeH/TypeHplotOutput.csv").c_str();
     
     //path for final CSV output and sample by sample calculation output
-    std::string outputBasePathCSVs = (baseProjectFolder + "data/vN_Appended_Data/CENTRALonly-energyCut_0_5_30samples/").c_str();
+    std::string outputBasePathCSVs = (baseProjectFolder + "TypeH/SampleWise_vN_data/").c_str();
     
     const int num_v2 = 18;
     const int num_v3 = 18;
@@ -812,11 +1320,10 @@ void vN_calculator_AccumulatedData() {
     std::vector<std::pair<std::string, int>> skippedIndices; // To store sub samples and indices skipped due to negative values
     
     
-    
     std::map<std::string, std::vector<int>> eventsPerCentralityQQ;
     std::map<std::string, std::vector<int>> eventsPerqQ;
 
-    std::ofstream logFile("/Users/patsfan753/Desktop/30_samples_histogram_entries_log_energy_1_p011_noPDC_withZ_noZDC.txt");
+    std::ofstream logFile("/Users/patsfan753/Desktop/Fit_varsFina3_23/TypeH/logFile_30_samples_histogram_entries_TypeH.txt");
     if (!logFile) {
         std::cerr << "Error: Unable to open log file." << std::endl;
         return; // Or handle the error appropriately
@@ -1133,7 +1640,7 @@ void vN_calculator_AccumulatedData() {
         User-defined cut values, ensures only rows of CSV with cuts below correspond to SB used in calc
         Also specifies rows of data vN info is appended to
          */
-        float userEnergy = 0.5; //switch to which ever cut
+        float userEnergy = 1.0; //switch to which ever cut
         float userAsymm = 0.5;
         float userChi2 = 4;
         float userDeltaR = 0;
@@ -1270,14 +1777,14 @@ void vN_calculator_AccumulatedData() {
         /*
          Path to DATASET TO OVERALAY with whatever is plotted in Plot_vN method above
          */
-        std::string Additional_Data_Path = "/Users/patsfan753/Desktop/30_samples_vN_calculated_p011_NoPDC_withZvtx_MBplusCentralTriggered_E_1.csv";
+        std::string Additional_Data_Path = "/Users/patsfan753/Desktop/combined_lowest_v2_errors.csv";
         Read_Additonal_DataSet(Additional_Data_Path, data);
         
         AdditionalData_2 data_2;
         /*
          Path to DATASET TO OVERALAY with whatever is plotted in Plot_vN method above
          */
-        std::string Additional_Data_Path_2 = "/Users/patsfan753/Desktop/30_samples_vN_calculated_p011_CentralTriggeredOnly_E_1.csv";
+        std::string Additional_Data_Path_2 = "/Users/patsfan753/Desktop/Fit_varsFina3_23/TypeH/vN_averaged_TypeH_MBplusCentral_noZDC_E_1.csv";
         Read_Additonal_DataSet_2(Additional_Data_Path_2, data_2);
 
         
@@ -1285,9 +1792,44 @@ void vN_calculator_AccumulatedData() {
         /*
          Path to DATASET TO OVERALAY with whatever is plotted in Plot_vN method above
          */
-        std::string Additional_Data_Path_3 = "/Users/patsfan753/Desktop/30_samples_vN_calculated_p011_NoPDC_withZvtx_MBplusCentralTriggered_E_1.csv";
+        std::string Additional_Data_Path_3 = "/Users/patsfan753/Desktop/Fit_varsFina3_23/TypeD/vN_averaged_TypeD_MBplusCentral_noZDC_E_1.csv";
         Read_Additonal_DataSet_3(Additional_Data_Path_3, data_3);
-        Plot_vN(data, data_2, data_3);
+        
+        
+        AdditionalData_4 data_4;
+        /*
+         Path to DATASET TO OVERALAY with whatever is plotted in Plot_vN method above
+         */
+        std::string Additional_Data_Path_4 = "/Users/patsfan753/Desktop/Fit_varsFina3_23/TypeE/vN_averaged_TypeE_MBplusCentral_noZDC_E_1.csv";
+        Read_Additonal_DataSet_4(Additional_Data_Path_4, data_4);
+        
+        
+        
+        AdditionalData_5 data_5;
+        /*
+         Path to DATASET TO OVERALAY with whatever is plotted in Plot_vN method above
+         */
+        std::string Additional_Data_Path_5 = "/Users/patsfan753/Desktop/Fit_varsFina3_23/TypeF/vN_averaged_TypeF_MBplusCentral_noZDC_E_1.csv";
+        Read_Additonal_DataSet_5(Additional_Data_Path_5, data_5);
+        
+        
+        AdditionalData_6 data_6;
+        /*
+         Path to DATASET TO OVERALAY with whatever is plotted in Plot_vN method above
+         */
+        std::string Additional_Data_Path_6 = "/Users/patsfan753/Desktop/Fit_varsFina3_23/TypeG/vN_averaged_TypeG_MBplusCentral_noZDC_E_1.csv";
+        Read_Additonal_DataSet_6(Additional_Data_Path_6, data_6);
+        
+        
+        AdditionalData_7 data_7;
+        /*
+         Path to DATASET TO OVERALAY with whatever is plotted in Plot_vN method above
+         */
+        std::string Additional_Data_Path_7 = "/Users/patsfan753/Desktop/Fit_varsFina3_23/TypeH/vN_averaged_TypeH_MBplusCentral_noZDC_E_1.csv";
+        Read_Additonal_DataSet_7(Additional_Data_Path_7, data_7);
+        
+        
+        Plot_vN(data, data_2, data_3, data_4, data_5, data_6, data_7);
     }
     else {
         // After processing all sub-samples, calculate final corrected values
@@ -1344,7 +1886,7 @@ void vN_calculator_AccumulatedData() {
         }
             
         // Output to CSV
-        std::ofstream outFile((outputBasePathCSVs + "30_samples_vN_calculated_p011_CentralTriggeredOnly_E_0_5.csv").c_str());
+        std::ofstream outFile((baseProjectFolder + "TypeH/vN_averaged_TypeH_MBplusCentral_noZDC_E_1.csv").c_str());
         outFile << "Index,WeightedMeanV2Corrected,v2_error,WeightedMeanV3Corrected,v3_error\n";
         for (int idx = 0; idx < num_v2; ++idx) {
             outFile << idx << "," << finalCorrectedV2[idx] << "," << error_v2[idx] << "," << finalCorrectedV3[idx] << "," << error_v3[idx] << "\n";
