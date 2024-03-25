@@ -9,6 +9,8 @@
 #include <TMath.h>
 #include <TCanvas.h>
 #include <TLatex.h>
+#include <TLegend.h>
+#include <TF1.h>
 
 using std::cout;
 using std::cerr;
