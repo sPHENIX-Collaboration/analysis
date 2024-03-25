@@ -1,65 +1,7 @@
-//____________________________________________________________________________..
-//
-// This is a template for a Fun4All SubsysReco module with all methods from the
-// $OFFLINE_MAIN/include/fun4all/SubsysReco.h baseclass
-// You do not have to implement all of them, you can just remove unused methods
-// here and in HCalJetPhiShift.h.
-//
-// HCalJetPhiShift(const std::string &name = "HCalJetPhiShift")
-// everything is keyed to HCalJetPhiShift, duplicate names do work but it makes
-// e.g. finding culprits in logs difficult or getting a pointer to the module
-// from the command line
-//
-// HCalJetPhiShift::~HCalJetPhiShift()
-// this is called when the Fun4AllServer is deleted at the end of running. Be
-// mindful what you delete - you do loose ownership of object you put on the node tree
-//
-// int HCalJetPhiShift::Init(PHCompositeNode *topNode)
-// This method is called when the module is registered with the Fun4AllServer. You
-// can create historgrams here or put objects on the node tree but be aware that
-// modules which haven't been registered yet did not put antyhing on the node tree
-//
-// int HCalJetPhiShift::InitRun(PHCompositeNode *topNode)
-// This method is called when the first event is read (or generated). At
-// this point the run number is known (which is mainly interesting for raw data
-// processing). Also all objects are on the node tree in case your module's action
-// depends on what else is around. Last chance to put nodes under the DST Node
-// We mix events during readback if branches are added after the first event
-//
-// int HCalJetPhiShift::process_event(PHCompositeNode *topNode)
-// called for every event. Return codes trigger actions, you find them in
-// $OFFLINE_MAIN/include/fun4all/Fun4AllReturnCodes.h
-//   everything is good:
-//     return Fun4AllReturnCodes::EVENT_OK
-//   abort event reconstruction, clear everything and process next event:
-//     return Fun4AllReturnCodes::ABORT_EVENT; 
-//   proceed but do not save this event in output (needs output manager setting):
-//     return Fun4AllReturnCodes::DISCARD_EVENT; 
-//   abort processing:
-//     return Fun4AllReturnCodes::ABORT_RUN
-// all other integers will lead to an error and abort of processing
-//
-// int HCalJetPhiShift::ResetEvent(PHCompositeNode *topNode)
-// If you have internal data structures (arrays, stl containers) which needs clearing
-// after each event, this is the place to do that. The nodes under the DST node are cleared
-// by the framework
-//
-// int HCalJetPhiShift::EndRun(const int runnumber)
-// This method is called at the end of a run when an event from a new run is
-// encountered. Useful when analyzing multiple runs (raw data). Also called at
-// the end of processing (before the End() method)
-//
-// int HCalJetPhiShift::End(PHCompositeNode *topNode)
-// This is called at the end of processing. It needs to be called by the macro
-// by Fun4AllServer::End(), so do not forget this in your macro
-//
-// int HCalJetPhiShift::Reset(PHCompositeNode *topNode)
-// not really used - it is called before the dtor is called
-//
-// void HCalJetPhiShift::Print(const std::string &what) const
-// Called from the command line - useful to print information when you need it
-//
-//____________________________________________________________________________..
+//_________________________________________________________________________________..
+//  Veronica Verkest, June 2023
+//  module for performing an analysis on the phi shift between truth and calo jets
+//_________________________________________________________________________________..
 
 #include "HCalJetPhiShift.h"
 
@@ -72,6 +14,12 @@
 #include <g4main/PHG4Shower.h>
 #include <g4main/PHG4TruthInfoContainer.h>
 #include <g4main/PHG4VtxPoint.h>
+
+//#include <g4detectors/PHG4CellContainer.h>
+//#include <g4detectors/PHG4CylinderCellGeomContainer.h>
+//#include <g4detectors/PHG4CylinderGeomContainer.h>
+//#include <g4detectors/PHG4Cell.h>
+//#include <g4detectors/PHG4CylinderCellGeom.h>
 
 #include <fun4all/Fun4AllReturnCodes.h>
 #include <fun4all/PHTFileServer.h>
@@ -97,6 +45,7 @@ m_T(nullptr),
 m_event(-1),
 m_nTow_in(0),
 m_nTow_out(0),
+m_nTow_emc(0),
 m_eta(),
 m_phi(),
 m_e(),
@@ -114,7 +63,13 @@ m_eta_out(),
 m_phi_out(),
 m_e_out(),
 m_ieta_out(),
-m_iphi_out()
+m_iphi_out(),
+m_eta_emc(),
+m_phi_emc(),
+m_e_emc(),
+m_ieta_emc(),
+m_iphi_emc()
+
 {
   std::cout << "HCalJetPhiShift::HCalJetPhiShift(const std::string &name) Calling ctor" << std::endl;
 }
@@ -155,6 +110,13 @@ int HCalJetPhiShift::Init(PHCompositeNode* /*topNode*/)
   m_T->Branch("e_out", &m_e_out);
   m_T->Branch("ieta_out", &m_ieta_out);
   m_T->Branch("iphi_out", &m_iphi_out);
+  m_T->Branch("nTow_emc", &m_nTow_emc);
+  m_T->Branch("eta_emc", &m_eta_emc);
+  m_T->Branch("phi_emc", &m_phi_emc);
+  m_T->Branch("e_emc", &m_e_emc);
+  m_T->Branch("ieta_emc", &m_ieta_emc);
+  m_T->Branch("iphi_emc", &m_iphi_emc);
+
   
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -184,6 +146,7 @@ int HCalJetPhiShift::ResetEvent(PHCompositeNode *topNode)
   //  std::cout << "HCalJetPhiShift::ResetEvent(PHCompositeNode *topNode) Resetting internal structures, prepare for next event" << std::endl;
   m_nTow_in = 0;
   m_nTow_out = 0;
+  m_nTow_emc = 0;
   m_id.clear();
   m_eta_in.clear();
   m_phi_in.clear();
@@ -196,6 +159,13 @@ int HCalJetPhiShift::ResetEvent(PHCompositeNode *topNode)
   m_e_out.clear();
   m_ieta_out.clear();
   m_iphi_out.clear();
+
+  m_eta_emc.clear();
+  m_phi_emc.clear();
+  m_e_emc.clear();
+  m_ieta_emc.clear();
+  m_iphi_emc.clear();
+  
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
@@ -277,23 +247,29 @@ int HCalJetPhiShift::FillTTree(PHCompositeNode *topNode)
   //calorimeter towers
   TowerInfoContainer *towersIH3 = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALIN");
   TowerInfoContainer *towersOH3 = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALOUT");
+//  TowerInfoContainer *towersEM3 = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_CEMC");
+  TowerInfoContainer *towersEM3 = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_RAW_CEMC");
   RawTowerGeomContainer *tower_geomIH = findNode::getClass<RawTowerGeomContainer>(topNode, "TOWERGEOM_HCALIN");
   RawTowerGeomContainer *tower_geomOH = findNode::getClass<RawTowerGeomContainer>(topNode, "TOWERGEOM_HCALOUT");
-  if(!towersIH3 || !towersOH3){
+  RawTowerGeomContainer *tower_geomEM = findNode::getClass<RawTowerGeomContainer>(topNode, "TOWERGEOM_CEMC");
+  if(!towersIH3 || !towersOH3 || !towersEM3){
     std::cout
-    <<"MyJetAnalysis::process_event - Error cannot find raw tower node "
+    <<"HCalJetPhiShift::process_event - Error cannot find raw tower node "
+
     << std::endl;
     exit(-1);
   }
   
-  if(!tower_geomIH || !tower_geomOH){
+  if(!tower_geomIH || !tower_geomOH || !tower_geomEM){
     std::cout
-    <<"MyJetAnalysis::process_event - Error cannot find raw tower geometry "
+    <<"HCalJetPhiShift::process_event - Error cannot find raw tower geometry "
+
     << std::endl;
     exit(-1);
   }
   
-  TowerInfo *tower_in, *tower_out;
+  TowerInfo *tower_in, *tower_out;//, *tower_emc;
+
   const int n_channels_IH = (int) towersIH3->size();
   
   // Inner HCal
@@ -338,6 +314,41 @@ int HCalJetPhiShift::FillTTree(PHCompositeNode *topNode)
     }
 
   }
+  
+  const int n_channels_EM = (int) towersEM3->size();
+  for (int i_chan=0; i_chan<n_channels_EM; ++i_chan) {
+    // EMCal
+//    tower_emc = towersEM3->get_tower_at_channel(i_chan);
+    TowerInfo *tower_emc = towersEM3->get_tower_at_channel(i_chan);
+    if (tower_emc->get_energy()>0.) {
+      ++m_nTow_emc;
+      
+      unsigned int calokey = towersEM3->encode_key(i_chan);
+      int ieta = towersEM3->getTowerEtaBin(calokey);
+      int iphi = towersEM3->getTowerPhiBin(calokey);
+
+      const RawTowerDefs::keytype key = RawTowerDefs::encode_towerid(RawTowerDefs::CalorimeterId::CEMC, ieta, iphi);
+      RawTowerGeom *tower_geom = tower_geomEM->get_tower_geometry(key);
+      float tower_phi = tower_geom->get_phi();
+      float tower_eta = tower_geom->get_eta();
+      
+//      unsigned int calokey = towersEM3->encode_key(i_chan);
+//      int ieta = towersEM3->getTowerEtaBin(calokey);
+//      int iphi = towersEM3->getTowerPhiBin(calokey);
+//
+//      const RawTowerDefs::keytype key = RawTowerDefs::encode_towerid(RawTowerDefs::CalorimeterId::CEMC, ieta, iphi);
+//      float tower_phi = tower_geomEM->get_tower_geometry(key)->get_phi();
+//      float tower_eta = tower_geomEM->get_tower_geometry(key)->get_eta();
+      
+      m_eta_emc.push_back(tower_eta);
+      m_phi_emc.push_back(tower_phi);
+      m_e_emc.push_back(tower_emc->get_energy());
+      m_ieta_emc.push_back(ieta);
+      m_iphi_emc.push_back(iphi);
+    }
+
+  }
+
 
   m_T->Fill();
 

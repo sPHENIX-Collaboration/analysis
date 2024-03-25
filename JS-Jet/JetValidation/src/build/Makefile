@@ -124,13 +124,16 @@ am__uninstall_files_from_dir = { \
   }
 am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(pkgincludedir)"
 LTLIBRARIES = $(lib_LTLIBRARIES)
-libJetValidation_la_DEPENDENCIES =
-am_libJetValidation_la_OBJECTS = JetValidation.lo
-libJetValidation_la_OBJECTS = $(am_libJetValidation_la_OBJECTS)
+libEMJetVal_la_DEPENDENCIES =
+am_libEMJetVal_la_OBJECTS = EMJetVal.lo
+libEMJetVal_la_OBJECTS = $(am_libEMJetVal_la_OBJECTS)
 AM_V_lt = $(am__v_lt_$(V))
 am__v_lt_ = $(am__v_lt_$(AM_DEFAULT_VERBOSITY))
 am__v_lt_0 = --silent
 am__v_lt_1 = 
+libJetValidation_la_DEPENDENCIES =
+am_libJetValidation_la_OBJECTS = JetValidation.lo
+libJetValidation_la_OBJECTS = $(am_libJetValidation_la_OBJECTS)
 PROGRAMS = $(noinst_PROGRAMS)
 am_testexternals_OBJECTS = testexternals.$(OBJEXT)
 testexternals_OBJECTS = $(am_testexternals_OBJECTS)
@@ -169,8 +172,10 @@ AM_V_CXXLD = $(am__v_CXXLD_$(V))
 am__v_CXXLD_ = $(am__v_CXXLD_$(AM_DEFAULT_VERBOSITY))
 am__v_CXXLD_0 = @echo "  CXXLD   " $@;
 am__v_CXXLD_1 = 
-SOURCES = $(libJetValidation_la_SOURCES) $(testexternals_SOURCES)
-DIST_SOURCES = $(libJetValidation_la_SOURCES) $(testexternals_SOURCES)
+SOURCES = $(libEMJetVal_la_SOURCES) $(libJetValidation_la_SOURCES) \
+	$(testexternals_SOURCES)
+DIST_SOURCES = $(libEMJetVal_la_SOURCES) \
+	$(libJetValidation_la_SOURCES) $(testexternals_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -323,7 +328,7 @@ mandir = ${datarootdir}/man
 mkdir_p = $(MKDIR_P)
 oldincludedir = /usr/include
 pdfdir = ${docdir}
-prefix = /sphenix/user/sgross/analysis/JS-Jet/JetValidation/src/build/install
+prefix = /sphenix/user/sgross/sphenix_analysis/JS-Jet/JetValidation/src/build/install
 program_transform_name = s,x,x,
 psdir = ${docdir}
 sbindir = ${exec_prefix}/sbin
@@ -346,10 +351,12 @@ AM_LDFLAGS = \
   -L$(OFFLINE_MAIN)/lib64
 
 pkginclude_HEADERS = \
-  JetValidation.h
+  JetValidation.h \
+  EMJetVal.h 
 
 lib_LTLIBRARIES = \
-  libJetValidation.la
+  libJetValidation.la \
+  libEMJetVal.la
 
 libJetValidation_la_SOURCES = \
   JetValidation.cc
@@ -360,6 +367,19 @@ libJetValidation_la_LIBADD = \
   -lfun4all \
   -lg4dst \
   -lg4eval \
+  -lg4jets
+
+libEMJetVal_la_SOURCES = \
+  EMJetVal.cc
+
+libEMJetVal_la_LIBADD = \
+  -lphool \
+  -lSubsysReco \
+  -lfun4all \
+  -lg4dst \
+  -lg4eval \
+  -lg4jets
+
 BUILT_SOURCES = testexternals.cc
 testexternals_SOURCES = testexternals.cc
 testexternals_LDADD = libJetValidation.la
@@ -438,6 +458,9 @@ clean-libLTLIBRARIES:
 	  rm -f $${locs}; \
 	}
 
+libEMJetVal.la: $(libEMJetVal_la_OBJECTS) $(libEMJetVal_la_DEPENDENCIES) $(EXTRA_libEMJetVal_la_DEPENDENCIES) 
+	$(AM_V_CXXLD)$(CXXLINK) -rpath $(libdir) $(libEMJetVal_la_OBJECTS) $(libEMJetVal_la_LIBADD) $(LIBS)
+
 libJetValidation.la: $(libJetValidation_la_OBJECTS) $(libJetValidation_la_DEPENDENCIES) $(EXTRA_libJetValidation_la_DEPENDENCIES) 
 	$(AM_V_CXXLD)$(CXXLINK) -rpath $(libdir) $(libJetValidation_la_OBJECTS) $(libJetValidation_la_LIBADD) $(LIBS)
 
@@ -460,6 +483,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+include ./$(DEPDIR)/EMJetVal.Plo
 include ./$(DEPDIR)/JetValidation.Plo
 include ./$(DEPDIR)/testexternals.Po
 

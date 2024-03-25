@@ -1,19 +1,18 @@
 //module for producing a TTree with jet information for doing jet validation studies
 // for questions/bugs please contact Virginia Bailey vbailey13@gsu.edu
-
+#include <fun4all/Fun4AllBase.h>
 #include "JetValidation.h"
-
 #include <fun4all/Fun4AllReturnCodes.h>
 #include <fun4all/PHTFileServer.h>
-
 #include <phool/PHCompositeNode.h>
 #include <phool/getClass.h>
-
 #include <jetbase/JetMap.h>
+#include <jetbase/JetContainer.h>
+#include <jetbase/Jetv2.h>
 #include <jetbase/Jetv1.h>
-
 #include <centrality/CentralityInfo.h>
-
+#include <globalvertex/GlobalVertex.h>
+#include <globalvertex/GlobalVertexMap.h>
 #include <calobase/RawTower.h>
 #include <calobase/RawTowerContainer.h>
 #include <calobase/RawTowerGeom.h>
@@ -21,48 +20,71 @@
 #include <calobase/TowerInfoContainer.h>
 #include <calobase/TowerInfo.h>
 
+#include <Pythia8/Pythia.h> // Include the Pythia header                                                                                                                                             
 #include <jetbackground/TowerBackground.h>
 
+#include <TTree.h>
+#include <iostream>
+#include <fastjet/PseudoJet.hh>
+#include <sstream>
+#include <iomanip>
+#include <cmath>
+#include <vector>
+#include "fastjet/ClusterSequence.hh"
+#include "fastjet/contrib/SoftDrop.hh" // In external code, this should be fastjet/contrib/SoftDrop.hh                                                                                                      
+
+using namespace fastjet;
+
+// ROOT, for histogramming.                                                                                                                                                                                 
+#include "TH1.h"
+#include "TH2.h"
+
+// ROOT, for interactive graphics.                                                                                                                                                                          
+#include "TVirtualPad.h"
+#include "TApplication.h"
+
+// ROOT, for saving file.                                                                                                                                                                                   
+#include "TFile.h"
 #include <TTree.h>
 
 //____________________________________________________________________________..
 JetValidation::JetValidation(const std::string& recojetname, const std::string& truthjetname, const std::string& outputfilename):
- SubsysReco("JetValidation_" + recojetname + "_" + truthjetname)
- , m_recoJetName(recojetname)
- , m_truthJetName(truthjetname)
- , m_outputFileName(outputfilename)
- , m_etaRange(-1, 1)
- , m_ptRange(5, 100)
- , m_doTruthJets(0)
- , m_doSeeds(0)
- , m_doUnsubJet(0)
- , m_T(nullptr)
- , m_event(-1)
- , m_nTruthJet(-1)
- , m_nJet(-1)
- , m_id()
- , m_nComponent()
- , m_eta()
- , m_phi()
- , m_e()
- , m_pt()
- , m_sub_et()
- , m_truthID()
- , m_truthNComponent()
- , m_truthEta()
- , m_truthPhi()
- , m_truthE()
- , m_truthPt()
- , m_eta_rawseed()
- , m_phi_rawseed()
- , m_pt_rawseed()
- , m_e_rawseed()
- , m_rawseed_cut()
- , m_eta_subseed()
- , m_phi_subseed()
- , m_pt_subseed()
- , m_e_subseed()
- , m_subseed_cut()
+  SubsysReco("JetValidation_" + recojetname + "_" + truthjetname)
+  , m_recoJetName(recojetname)
+  , m_truthJetName(truthjetname)
+  , m_outputFileName(outputfilename)
+  , m_etaRange(-1, 1)
+  , m_ptRange(5, 100)
+  , m_doTruthJets(0)
+  , m_doSeeds(0)
+  , m_doUnsubJet(0)
+  , m_T(nullptr)
+  , m_event(-1)
+  , m_nTruthJet(-1)
+  , m_nJet(-1)
+  , m_id()
+  , m_nComponent()
+  , m_eta()
+  , m_phi()
+  , m_e()
+  , m_pt()
+  , m_sub_et()
+  , m_truthID()
+  , m_truthNComponent()
+  , m_truthEta()
+  , m_truthPhi()
+  , m_truthE()
+  , m_truthPt()
+  , m_eta_rawseed()
+  , m_phi_rawseed()
+  , m_pt_rawseed()
+  , m_e_rawseed()
+  , m_rawseed_cut()
+  , m_eta_subseed()
+  , m_phi_subseed()
+  , m_pt_subseed()
+  , m_e_subseed()
+  , m_subseed_cut()
 {
   std::cout << "JetValidation::JetValidation(const std::string &name) Calling ctor" << std::endl;
 }
@@ -85,6 +107,7 @@ int JetValidation::Init(PHCompositeNode *topNode)
   m_T->Branch("m_event", &m_event, "event/I");
   m_T->Branch("nJet", &m_nJet, "nJet/I");
   m_T->Branch("cent", &m_centrality);
+  m_T->Branch("zvtx", &m_zvtx);
   m_T->Branch("b", &m_impactparam);
   m_T->Branch("id", &m_id);
   m_T->Branch("nComponent", &m_nComponent);
@@ -134,15 +157,15 @@ int JetValidation::InitRun(PHCompositeNode *topNode)
 //____________________________________________________________________________..
 int JetValidation::process_event(PHCompositeNode *topNode)
 {
-  //std::cout << "JetValidation::process_event(PHCompositeNode *topNode) Processing Event" << std::endl;
+  //  std::cout << "JetValidation::process_event(PHCompositeNode *topNode) Processing Event" << std::endl;
   ++m_event;
 
   // interface to reco jets
-  JetMap* jets = findNode::getClass<JetMap>(topNode, m_recoJetName);
+  JetContainer* jets = findNode::getClass<JetContainer>(topNode, m_recoJetName);
   if (!jets)
     {
       std::cout
-	<< "MyJetAnalysis::process_event - Error can not find DST Reco JetMap node "
+	<< "MyJetAnalysis::process_event - Error can not find DST Reco JetContainer node "
 	<< m_recoJetName << std::endl;
       exit(-1);
     }
@@ -158,7 +181,7 @@ int JetValidation::process_event(PHCompositeNode *topNode)
     }
   
   // interface to jet seeds
-  JetMap* seedjetsraw = findNode::getClass<JetMap>(topNode, "AntiKt_TowerInfo_HIRecoSeedsRaw_r02");
+  JetContainer* seedjetsraw = findNode::getClass<JetContainer>(topNode, "AntiKt_TowerInfo_HIRecoSeedsRaw_r02");
   if (!seedjetsraw && m_doSeeds)
     {
       std::cout
@@ -167,7 +190,7 @@ int JetValidation::process_event(PHCompositeNode *topNode)
       exit(-1);
     }
 
-  JetMap* seedjetssub = findNode::getClass<JetMap>(topNode, "AntiKt_TowerInfo_HIRecoSeedsSub_r02");
+  JetContainer* seedjetssub = findNode::getClass<JetContainer>(topNode, "AntiKt_TowerInfo_HIRecoSeedsSub_r02");
   if (!seedjetssub && m_doSeeds)
     {
       std::cout
@@ -185,11 +208,32 @@ int JetValidation::process_event(PHCompositeNode *topNode)
         << std::endl;
       exit(-1);
     }
+  
+  //zvertex
+  GlobalVertexMap *vertexmap = findNode::getClass<GlobalVertexMap>(topNode, "GlobalVertexMap");
+  if (!vertexmap)
+    {
+      std::cout
+        << "MyJetAnalysis::process_event - Error can not find global vertex  node "
+        << std::endl;
+      exit(-1);
+    }
+  if (vertexmap->empty())
+    {
+      std::cout
+        << "MyJetAnalysis::process_event - global vertex node is empty "
+        << std::endl;
+      return Fun4AllReturnCodes::ABORTEVENT;
+    }
+
+    GlobalVertex *vtx = vertexmap->begin()->second;
+  m_zvtx = vtx->get_z();
+  
 
   //calorimeter towers
-  TowerInfoContainer *towersEM3 = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_CEMC_RETOWER");
-  TowerInfoContainer *towersIH3 = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALIN");
-  TowerInfoContainer *towersOH3 = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALOUT");
+  TowerInfoContainer *towersEM3 = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_CEMC_RETOWER_SUB1");//_SUB1
+  TowerInfoContainer *towersIH3 = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALIN_SUB1");//_SUB1
+  TowerInfoContainer *towersOH3 = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALOUT_SUB1");//_SUB1 added at the ends but I am removing them for now
   RawTowerGeomContainer *tower_geom = findNode::getClass<RawTowerGeomContainer>(topNode, "TOWERGEOM_HCALIN");
   RawTowerGeomContainer *tower_geomOH = findNode::getClass<RawTowerGeomContainer>(topNode, "TOWERGEOM_HCALOUT");
   if(!towersEM3 || !towersIH3 || !towersOH3){
@@ -226,10 +270,9 @@ int JetValidation::process_event(PHCompositeNode *topNode)
       background_v2 = background->get_v2();
       background_Psi2 = background->get_Psi2();
     }
-  for (JetMap::Iter iter = jets->begin(); iter != jets->end(); ++iter)
+  /* for (JetMap::Iter iter = jets->begin(); iter != jets->end(); ++iter) */
+  for (auto jet : *jets)
     {
-
-      Jet* jet = iter->second;
 
       if(jet->get_pt() < 1) continue; // to remove noise jets
 
@@ -239,99 +282,103 @@ int JetValidation::process_event(PHCompositeNode *topNode)
       m_phi.push_back(jet->get_phi());
       m_e.push_back(jet->get_e());
       m_pt.push_back(jet->get_pt());
-
+      /*
       if(m_doUnsubJet)
 	{
 	  Jet* unsubjet = new Jetv1();
-	  float totalPx = 0;
-	  float totalPy = 0;
-	  float totalPz = 0;
-	  float totalE = 0;
-	  int nconst = 0;
-
-	  for (Jet::ConstIter comp = jet->begin_comp(); comp != jet->end_comp(); ++comp)
+      */
+      float totalPx = 0;
+      float totalPy = 0;
+      float totalPz = 0;
+      float totalE = 0;
+      int nconst = 0;
+      
+      // for (Jet::ConstIter comp = jet->begin_comp(); comp != jet->end_comp(); ++comp)
+      for (auto comp: jet->get_comp_vec())
+	{
+	  TowerInfo *tower;
+	  nconst++;
+	  unsigned int channel = comp.second;
+	  
+	  if (comp.first == 15 ||  comp.first == 30)
 	    {
-	      TowerInfo *tower;
-	      nconst++;
-	      unsigned int channel = (*comp).second;
-	      
-	      if ((*comp).first == 15 ||  (*comp).first == 30)
-		{
-		  tower = towersIH3->get_tower_at_channel(channel);
-		  if(!tower || !tower_geom){
-		    continue;
-		  }
-		  unsigned int calokey = towersIH3->encode_key(channel);
-		  int ieta = towersIH3->getTowerEtaBin(calokey);
-		  int iphi = towersIH3->getTowerPhiBin(calokey);
-		  const RawTowerDefs::keytype key = RawTowerDefs::encode_towerid(RawTowerDefs::CalorimeterId::HCALIN, ieta, iphi);
-		  float UE = background->get_UE(1).at(ieta);
-		  float tower_phi = tower_geom->get_tower_geometry(key)->get_phi();
-		  float tower_eta = tower_geom->get_tower_geometry(key)->get_eta();
+	      tower = towersIH3->get_tower_at_channel(channel);
+	      if(!tower || !tower_geom){
+		continue;
+	      }
+	      unsigned int calokey = towersIH3->encode_key(channel);
+	      int ieta = towersIH3->getTowerEtaBin(calokey);
+	      int iphi = towersIH3->getTowerPhiBin(calokey);
+	      const RawTowerDefs::keytype key = RawTowerDefs::encode_towerid(RawTowerDefs::CalorimeterId::HCALIN, ieta, iphi);
+	      float UE = background->get_UE(1).at(ieta);
+	      float tower_phi = tower_geom->get_tower_geometry(key)->get_phi();
+	      float tower_eta = tower_geom->get_tower_geometry(key)->get_eta();
 
-		  UE = UE * (1 + 2 * background_v2 * cos(2 * (tower_phi - background_Psi2)));
-		  totalE += tower->get_energy() + UE;
-		  double pt = tower->get_energy() / cosh(tower_eta);
-		  totalPx += pt * cos(tower_phi);
-		  totalPy += pt * sin(tower_phi);
-		  totalPz += pt * sinh(tower_eta);
-		}
-	      else if ((*comp).first == 16 || (*comp).first == 31)
-		{
-		  tower = towersOH3->get_tower_at_channel(channel);
-		  if(!tower || !tower_geomOH)
-		    {
-		      continue;
-		    }
-		  
-		  unsigned int calokey = towersOH3->encode_key(channel);
-		  int ieta = towersOH3->getTowerEtaBin(calokey);
-		  int iphi = towersOH3->getTowerPhiBin(calokey);
-		  const RawTowerDefs::keytype key = RawTowerDefs::encode_towerid(RawTowerDefs::CalorimeterId::HCALOUT, ieta, iphi);
-		  float UE = background->get_UE(2).at(ieta);
-		  float tower_phi = tower_geomOH->get_tower_geometry(key)->get_phi();
-		  float tower_eta = tower_geomOH->get_tower_geometry(key)->get_eta();
-
-		  UE = UE * (1 + 2 * background_v2 * cos(2 * (tower_phi - background_Psi2)));
-		  totalE +=tower->get_energy() + UE;
-		  double pt = tower->get_energy() / cosh(tower_eta);
-		  totalPx += pt * cos(tower_phi);
-		  totalPy += pt * sin(tower_phi);
-		  totalPz += pt * sinh(tower_eta);
-		}
-	      else if ((*comp).first == 14 || (*comp).first == 29)
-		{
-		  tower = towersEM3->get_tower_at_channel(channel);
-		  if(!tower || !tower_geom)
-		    {
-		      continue;
-		    }
-
-		  unsigned int calokey = towersEM3->encode_key(channel);
-		  int ieta = towersEM3->getTowerEtaBin(calokey);
-		  int iphi = towersEM3->getTowerPhiBin(calokey);
-		  const RawTowerDefs::keytype key = RawTowerDefs::encode_towerid(RawTowerDefs::CalorimeterId::HCALIN, ieta, iphi);
-		  float UE = background->get_UE(0).at(ieta);
-		  float tower_phi = tower_geom->get_tower_geometry(key)->get_phi();
-		  float tower_eta = tower_geom->get_tower_geometry(key)->get_eta();
-
-		  UE = UE * (1 + 2 * background_v2 * cos(2 * (tower_phi - background_Psi2)));
-		  totalE +=tower->get_energy() + UE;
-		  double pt = tower->get_energy() / cosh(tower_eta);
-		  totalPx += pt * cos(tower_phi);
-		  totalPy += pt * sin(tower_phi);
-		  totalPz += pt * sinh(tower_eta);
-		}
+	      UE = UE * (1 + 2 * background_v2 * cos(2 * (tower_phi - background_Psi2)));
+	      totalE += tower->get_energy() + UE;
+	      double pt = (tower->get_energy() + UE) / cosh(tower_eta);
+	      totalPx += pt * cos(tower_phi);
+	      totalPy += pt * sin(tower_phi);
+	      totalPz += pt * sinh(tower_eta);
 	    }
-	  //get unsubtracted jet
-	  unsubjet->set_px(totalPx);
-	  unsubjet->set_py(totalPy);
-	  unsubjet->set_pz(totalPz);
-	  unsubjet->set_e(totalE);
-	  m_unsub_pt.push_back(unsubjet->get_pt());
-	  m_sub_et.push_back(unsubjet->get_et() - jet->get_et());
-	}
+	  else if (comp.first == 16 || comp.first == 31)
+	    {
+	      tower = towersOH3->get_tower_at_channel(channel);
+	      if(!tower || !tower_geomOH)
+		{
+		  continue;
+		}
+		    
+	      unsigned int calokey = towersOH3->encode_key(channel);
+	      int ieta = towersOH3->getTowerEtaBin(calokey);
+	      int iphi = towersOH3->getTowerPhiBin(calokey);
+	      const RawTowerDefs::keytype key = RawTowerDefs::encode_towerid(RawTowerDefs::CalorimeterId::HCALOUT, ieta, iphi);
+	      float UE = background->get_UE(2).at(ieta);
+	      float tower_phi = tower_geomOH->get_tower_geometry(key)->get_phi();
+	      float tower_eta = tower_geomOH->get_tower_geometry(key)->get_eta();
 
+	      UE = UE * (1 + 2 * background_v2 * cos(2 * (tower_phi - background_Psi2)));
+	      totalE +=tower->get_energy() + UE;
+	      double pt = (tower->get_energy() + UE) / cosh(tower_eta);
+	      totalPx += pt * cos(tower_phi);
+	      totalPy += pt * sin(tower_phi);
+	      totalPz += pt * sinh(tower_eta);
+	    }
+	  else if (comp.first == 14 || comp.first == 29)
+	    {
+	      tower = towersEM3->get_tower_at_channel(channel);
+	      if(!tower || !tower_geom)
+		{
+		  continue;
+		}
+
+	      unsigned int calokey = towersEM3->encode_key(channel);
+	      int ieta = towersEM3->getTowerEtaBin(calokey);
+	      int iphi = towersEM3->getTowerPhiBin(calokey);
+	      const RawTowerDefs::keytype key = RawTowerDefs::encode_towerid(RawTowerDefs::CalorimeterId::HCALIN, ieta, iphi);
+	      float UE = background->get_UE(0).at(ieta);
+	      float tower_phi = tower_geom->get_tower_geometry(key)->get_phi();
+	      float tower_eta = tower_geom->get_tower_geometry(key)->get_eta();
+
+	      UE = UE * (1 + 2 * background_v2 * cos(2 * (tower_phi - background_Psi2)));
+	      totalE +=tower->get_energy() + UE;
+	      double pt = (tower->get_energy() + UE) / cosh(tower_eta);
+	      totalPx += pt * cos(tower_phi);
+	      totalPy += pt * sin(tower_phi);
+	      totalPz += pt * sinh(tower_eta);
+		  
+	    }
+	}
+      /*      //get unsubtracted jet
+      unsubjet->set_px(totalPx);
+      unsubjet->set_py(totalPy);
+      unsubjet->set_pz(totalPz);
+      unsubjet->set_e(totalE);
+      m_unsub_pt.push_back(unsubjet->get_pt());
+      m_sub_et.push_back(unsubjet->get_et() - jet->get_et());
+      */
+   
+  
       m_nJet++;
     }
 
@@ -342,7 +389,7 @@ int JetValidation::process_event(PHCompositeNode *topNode)
       for (JetMap::Iter iter = jetsMC->begin(); iter != jetsMC->end(); ++iter)
 	{
 	  Jet* truthjet = iter->second;
-
+	  
 	  bool eta_cut = (truthjet->get_eta() >= m_etaRange.first) and (truthjet->get_eta() <= m_etaRange.second);
 	  bool pt_cut = (truthjet->get_pt() >= m_ptRange.first) and (truthjet->get_pt() <= m_ptRange.second);
 	  if ((not eta_cut) or (not pt_cut)) continue;
@@ -355,13 +402,12 @@ int JetValidation::process_event(PHCompositeNode *topNode)
 	  m_nTruthJet++;
 	}
     }
-
+  
   //get seed jets
   if(m_doSeeds)
     {
-      for (JetMap::Iter iter = seedjetsraw->begin(); iter != seedjetsraw->end(); ++iter)
+      for (auto jet : *seedjetsraw)
 	{
-	  Jet* jet = iter->second;
 	  int passesCut = jet->get_property(Jet::PROPERTY::prop_SeedItr);
 	  m_eta_rawseed.push_back(jet->get_eta());
 	  m_phi_rawseed.push_back(jet->get_phi());
@@ -369,10 +415,9 @@ int JetValidation::process_event(PHCompositeNode *topNode)
 	  m_pt_rawseed.push_back(jet->get_pt());
 	  m_rawseed_cut.push_back(passesCut);
 	}
-
-      for (JetMap::Iter iter = seedjetssub->begin(); iter != seedjetssub->end(); ++iter)
+      
+      for (auto jet : *seedjetssub) //JetMap::Iter iter = seedjetssub->begin(); iter != seedjetssub->end(); ++iter)
 	{
-	  Jet* jet = iter->second;
 	  int passesCut = jet->get_property(Jet::PROPERTY::prop_SeedItr);
 	  m_eta_subseed.push_back(jet->get_eta());
 	  m_phi_subseed.push_back(jet->get_phi());
@@ -384,7 +429,7 @@ int JetValidation::process_event(PHCompositeNode *topNode)
   
   //fill the tree
   m_T->Fill();
-
+  
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
@@ -444,7 +489,7 @@ int JetValidation::End(PHCompositeNode *topNode)
 //____________________________________________________________________________..
 int JetValidation::Reset(PHCompositeNode *topNode)
 {
- std::cout << "JetValidation::Reset(PHCompositeNode *topNode) being Reset" << std::endl;
+  std::cout << "JetValidation::Reset(PHCompositeNode *topNode) being Reset" << std::endl;
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
@@ -453,4 +498,3 @@ void JetValidation::Print(const std::string &what) const
 {
   std::cout << "JetValidation::Print(const std::string &what) const Printing info for " << what << std::endl;
 }
-

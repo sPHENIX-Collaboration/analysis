@@ -56,8 +56,8 @@ std::vector<TH1F*> get_spectras(TChain *data, TFile* f, string generator)
   TH1F* jet_pt=new TH1F(Form("jet_pt_%s", generator.c_str()),Form("Jet Truth p_{T} from %s generator with 30 GeV trigger; Jet p_{T} (GeV)", generator.c_str()), nbins, trigger, 60); 
   TH1F* jet_e=new TH1F(Form("jet_e_%s", generator.c_str()),Form("Jet Truth E from %s generator with 30 GeV p_{T} trigger; Jet E (GeV)", generator.c_str()), 50, 25, 75); 
   TH1F* jet_m=new TH1F(Form("jet_m_%s", generator.c_str()),Form("Jet Truth mass from %s generator with 30 GeV p_{T} trigger;Jet Mass (GeV)", generator.c_str()), 50, 0, 15); 
-  TH1F* jet_eta=new TH1F(Form("jet_eta_%s", generator.c_str()),Form("Jet Truth #eta from %s generator with 30 GeV p_{T} trigger; #eta", generator.c_str()), 50, -1, 1); 
-  TH1F* jet_phi=new TH1F(Form("jet_phi_%s", generator.c_str()),Form("Jet Truth #phi from %s generator with 30 GeV p_{T} trigger; #phi", generator.c_str()), 50, -TMath::Pi(), TMath::Pi()); 
+  TH1F* jet_eta=new TH1F(Form("jet_eta_%s", generator.c_str()),Form("Jet Truth #eta from %s generator with 30 GeV p_{T} trigger; #eta", generator.c_str()), 50, -1.11, 1.11); 
+  TH1F* jet_phi=new TH1F(Form("jet_phi_%s", generator.c_str()),Form("Jet Truth #phi from %s generator with 30 GeV p_{T} trigger; #phi", generator.c_str()), 50, -TMath::Pi()+0.01, TMath::Pi()+0.01); 
   TH1F* dijet_pt=new TH1F(Form("dijet_pt_%s", generator.c_str()),Form("Dijet Truth p_{T} from %s generator with 30 GeV trigger; p_{T, jj}", generator.c_str()), nbins, trigger, 80); 
   TH1F* dijet_e=new TH1F(Form("dijet_e_%s", generator.c_str()),Form("Dijet Truth E from %s generator with 30 GeV p_{T} trigger; E_{jj}", generator.c_str()), 100, 0, 100); 
   TH1F* dijet_m=new TH1F(Form("dijet_m_%s", generator.c_str()),Form("Dijet Truth mass from %s generator with 30 GeV p_{T} trigger; m_{jj}", generator.c_str()), 50, 50, 120); 
