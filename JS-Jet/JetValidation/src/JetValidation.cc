@@ -157,7 +157,8 @@ int JetValidation::process_event(PHCompositeNode *topNode)
     }
 
   //interface to truth jets
-  JetMap* jetsMC = findNode::getClass<JetMap>(topNode, m_truthJetName);
+  //JetMap* jetsMC = findNode::getClass<JetMap>(topNode, m_truthJetName);
+  JetContainer* jetsMC = findNode::getClass<JetContainer>(topNode, m_truthJetName);
   if (!jetsMC && m_doTruthJets)
     {
       std::cout
@@ -371,9 +372,10 @@ int JetValidation::process_event(PHCompositeNode *topNode)
   if(m_doTruthJets)
     {
       m_nTruthJet = 0;
-      for (JetMap::Iter iter = jetsMC->begin(); iter != jetsMC->end(); ++iter)
+      //for (JetMap::Iter iter = jetsMC->begin(); iter != jetsMC->end(); ++iter)
+      for (auto truthjet : *jetsMC)	
 	{
-	  Jet* truthjet = iter->second;
+	  //Jet* truthjet = iter->second;
 	  
 	  bool eta_cut = (truthjet->get_eta() >= m_etaRange.first) and (truthjet->get_eta() <= m_etaRange.second);
 	  bool pt_cut = (truthjet->get_pt() >= m_ptRange.first) and (truthjet->get_pt() <= m_ptRange.second);
