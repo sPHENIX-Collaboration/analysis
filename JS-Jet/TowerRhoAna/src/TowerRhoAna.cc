@@ -49,7 +49,7 @@ int TowerRhoAna::Init(PHCompositeNode *topNode)
   Double_t N_rho_mult_bins[N_rho_mult+1];
   for (int i = 0; i <= N_rho_mult; i++)
   {
-    N_rho_mult_bins[i] = (1.0/200.0)*i;
+    N_rho_mult_bins[i] = (0.3/200.0)*i;
   }
 
   const int N_rho_area = 200;
