@@ -10,15 +10,11 @@
 #include <string>
 /*
  Fitting method, when called in the main method, if argument setFitManual is true, can use manual parameters, otherwise fit dynamically
- 
- Top of code for easy scrolling
  */
 // Global variables
-std::string globalFilename = "/Users/patsfan753/Desktop/Fit_varsFina3_23/hPi0Mass_E1_Asym0point5_Delr0_Chi4.root";
-/*
- Control flage below not really needed anymore since have new interactive analysis code, but can think about how this will work more as we go
- */
-bool CreateSignalandGaussParPlots = false; //control flag for plotting signal and signal error and gaussian parameters
+std::string globalFilename = "/Users/patsfan753/Desktop/hPi0Mass_E1_Asym0point5_Delr0point08_Chi4.root";
+
+bool CreateSignalandGaussParPlots = false; //control flag for plotting signal and signal error and gaussian parameters (done in different macro now)
 // Global variable for setFitManual
 bool globalSetFitManual = false;
 // Global variable for setting dynamic parameters automatically
@@ -33,9 +29,9 @@ struct ParameterSet {
     double SigmaParScale;
 };
 
-// Function to read the CSV file and find the parameters for the given histIndex to auto set the dynamic fitting process, using the previous fit parameters from last set of cuts analyzed, this has been working really well
+// Function to read the CSV file and find the parameters for the given histIndex to auto set the dynamic fitting process, using the previous fit parameters from last set of cuts analyzed
 
-//Doing it this way means if there is a big change in needed parameter sets for the fit, you can change it once, and set that in the CSV, then that change will propagate since should check incremental changes of cuts, makes further fits after finding the first good one take no time at all
+//BETTER to not use this and go by automated method set up in TFitResultPtr PerformFitting function
 ParameterSet ReadParametersFromCSV(const std::string& filename, int histIndex) {
     std::ifstream file(filename);
     std::string line;
@@ -93,19 +89,19 @@ double globalNumEntries;
 
 // Global variable
 std::string globalDataPath = "/Users/patsfan753/Desktop/";
-std::string csvFilePath = "/Users/patsfan753/Desktop/AdditionalOuptut_MBplusCentral_Index14.csv";
+std::string csvFilePath = "/Users/patsfan753/Desktop/AdditionalParameters_deltaVariations.csv";
 
 /*
  Set which histogram index is being analyzed, make sure to switch after finishing previous fit
  */
 
-int histIndex = 14;
+int histIndex = 17;
 
-double globalYAxisRange[2] = {0, 450000}; // Lower and upper limits
+double globalYAxisRange[2] = {0, 6000}; // Lower and upper limits
 /*
  set height of black vertical line output below
  */
-double globalLineHeight = 0.45 * globalYAxisRange[1];
+double globalLineHeight = 0.4 * globalYAxisRange[1];
 
 TFitResultPtr PerformFitting(TH1F* hPi0Mass, bool setFitManual, TF1*& totalFit, double& fitStart, double& fitEnd) {
     // Assign the setFitManual value to the global variable
@@ -122,13 +118,8 @@ TFitResultPtr PerformFitting(TH1F* hPi0Mass, bool setFitManual, TF1*& totalFit, 
         }
     }
     /*
-     MAYBE CAN DO SOMETHING LIKE
-     
-     IF SEE A PEAK, SO INCREASING AND DECREASING VALUES BEFORE .1, set fit start manual
-     
-     If all increasing values before .1, set fit automatic
+     Based on boolean setFitManual, this method would read in the parameters set in the CSV for the fit Start, fit end, sigma estimate implemented in setPar(2, est) and the mean estimate set in 'setParMean(1, 0)
      */
-    // Set fitting end point and other parameters
     if (!setFitManual && globalSetDynamicParsAuto) {
         // Read parameters from CSV file
         ParameterSet params = ReadParametersFromCSV(csvFilePath, histIndex);
@@ -143,29 +134,72 @@ TFitResultPtr PerformFitting(TH1F* hPi0Mass, bool setFitManual, TF1*& totalFit, 
         globalSigmaEstimate = params.SigmaEstimate;
         globalSigmaParScale = params.SigmaParScale;
 
-        // Print out the parameters set dynamically
-        std::cout << "\033[1;32m" // Set text color to bright green
+        // Print out the parameters set automatically from CSV infromation
+        std::cout << "\033[1;32m"
                   << "Previous Parameters Set: "
                     << "\nFitStart: " << fitStart
                   << "\nFitEnd: " << fitEnd
                   << "\nFindBin2: " << globalFindBin2Value
                   << "\nSigmaEstimate: " << globalSigmaEstimate
                   << "\nSigmaParScale: " << globalSigmaParScale
-                  << "\033[0m" // Reset text color
+                  << "\033[0m"
                   << std::endl;
     } else {
-        // Set global variables for additional parameters (manual setting)
+        /*
+         This uses automated fit start calculated from first time a change of bin content is greater then threshold = 1, looping from 0 to the right
+         */
         fitStart = hPi0Mass->GetBinLowEdge(firstBinAboveThreshold);
         
-        fitStart = 0.025;
-        
-        fitEnd = 0.4;
+        //fitStart = 0.095;
+        fitEnd = 0.3;
         globalFitStart = fitStart;
         globalFitEnd = fitEnd;
         globalFindBin1Value = 0.12; // Value in FindBin for bin1
         globalFindBin2Value = 0.18; // Value in FindBin for bin2
-        globalSigmaEstimate = 0.025; // sigmaEstimate value
-        globalSigmaEstimate = globalSigmaEstimate + X * globalSigmaEstimate;
+        
+        /*
+         Uncomment below to hard code sigma estimate that is funneled into totalFit->SetParameter(2, sigmaEstimate);
+         */
+        //globalSigmaEstimate = 0.025; // sigmaEstimate value
+        //globalSigmaEstimate = globalSigmaEstimate + X * globalSigmaEstimate;
+        
+        
+        // Estimate the Full Width at Half Maximum (FWHM) for the peak region
+        // Find the bins corresponding to the signal bounds
+        int bin1 = hPi0Mass->GetXaxis()->FindBin(globalFindBin1Value);
+        int bin2 = hPi0Mass->GetXaxis()->FindBin(globalFindBin2Value);
+        
+        // Find the bin with the maximum content within the signal bounds
+        int maxBin = bin1;
+        double maxBinContent = hPi0Mass->GetBinContent(bin1);
+        for (int i = bin1 + 1; i <= bin2; ++i) {
+            if (hPi0Mass->GetBinContent(i) > maxBinContent) {
+                maxBinContent = hPi0Mass->GetBinContent(i);
+                maxBin = i;
+            }
+        }
+
+        // Estimate the FWHM within the signal bounds
+        double halfMax = maxBinContent / 2.0;
+        int binLeft = maxBin;
+        int binRight = maxBin;
+
+        // Make sure we do not go outside the signal bounds
+        while (binLeft > bin1 && hPi0Mass->GetBinContent(binLeft) > halfMax) {
+            binLeft--;
+        }
+
+        while (binRight < bin2 && hPi0Mass->GetBinContent(binRight) > halfMax) {
+            binRight++;
+        }
+
+        // Calculate FWHM and estimate sigma
+        double fwhm = hPi0Mass->GetBinCenter(binRight) - hPi0Mass->GetBinCenter(binLeft);
+        double sigmaEstimate = fwhm / 2.355;
+
+        
+        globalSigmaEstimate = sigmaEstimate;
+        
         
         // Check if SetParLimits is used for sigma
         if (!setFitManual) {
@@ -196,6 +230,10 @@ TFitResultPtr PerformFitting(TH1F* hPi0Mass, bool setFitManual, TF1*& totalFit, 
         totalFit->SetParLimits(1, 0.13, 0.15);
         totalFit->SetParLimits(2, 0.01, 0.03);
     } else {
+        
+        /*
+         Automated finding of mean and amplitude funneled into initial parameters set below
+         */
         int bin1 = hPi0Mass->GetXaxis()->FindBin(globalFindBin1Value);
         int bin2 = hPi0Mass->GetXaxis()->FindBin(globalFindBin2Value);
         int maxBin = bin1;
@@ -216,16 +254,28 @@ TFitResultPtr PerformFitting(TH1F* hPi0Mass, bool setFitManual, TF1*& totalFit, 
         
         totalFit->SetParameter(2, sigmaEstimate);
         
-        totalFit->SetParLimits(1, maxBinCenter - sigmaEstimate, maxBinCenter + sigmaEstimate);
+        /*
+         Setting par limits of mean and sigm
+         */
+        
+        totalFit->SetParLimits(1, maxBinCenter - sigmaEstimate, maxBinCenter + sigmaEstimate); //set mean parameter limits to +/- sigma estimate that is set
         
         totalFit->SetParLimits(2, sigmaEstimate - globalSigmaParScale*sigmaEstimate, sigmaEstimate + globalSigmaParScale*sigmaEstimate);
         
     }
 
     // Apply the fit
+    /*
+     "S" stands for save that indicated the fitting function should return a TFitResultPtr allowing access to fit stats, parameters, covariance matrix, etc
+     
+     "R" means use range specified in the function, telling ROOT to restrict the fit range to the range that has been predefined in the fitting function--ignoring data that falls outside of this range
+     
+     "+" -- . By default a fit command deletes the previously fitted function in the histogram object. You can specify the option + in the second parameter to add the newly fitted function to the existing list of functions for the histogram.
+     */
     TFitResultPtr fitResult = hPi0Mass->Fit("totalFit", "SR+");
     return fitResult; // Return the fit result
 }
+
 // Define a structure to hold cut values
 struct CutValues {
     float deltaR;     // Cut value for delta R
@@ -301,7 +351,7 @@ struct Range {
     double ptLow, ptHigh, mbdLow, mbdHigh;
 };
 /*
- Automatic printing of MBD values onto canvas of invar mass histograms, switches when histIndex is swithced in main method at bottom of macro
+ Automatic printing of MBD values onto canvas of invar mass histograms, switches when histIndex is switched, located above the Fitting Function above
  */
 Range ranges[] = {
     //40-60 percent centrality
@@ -602,9 +652,6 @@ void GenerateSignalAndGaussParPlots(const CutValues& cutValues) {
     hDummy->SetTitle("#pi^{0} Signal Yield");
     hDummy->GetXaxis()->SetTitle("#pi^{0} p_{T} [GeV]");
     hDummy->GetXaxis()->SetTitleOffset(1.1);
-    /*
-     CHANGE 1.5 BACK TO 2 IF FIX XPOINTS
-     */
     hDummy->GetXaxis()->SetLimits(1.5, 5); // This sets the user-defined limits for the axis
     hDummy->GetXaxis()->SetLabelSize(0.04); // You can adjust the size as needed
     // Manually setting the x-axis labels
@@ -771,8 +818,6 @@ void GenerateSignalAndGaussParPlots(const CutValues& cutValues) {
     meanLine->SetLineWidth(1); // Set a thinner line width
     meanLine->Draw();
 
-
-    // Add label for the line
     TLatex label;
     label.SetNDC();
     label.SetTextSize(0.03);
@@ -812,11 +857,11 @@ void GenerateSignalAndGaussParPlots(const CutValues& cutValues) {
     hDummyGausSigma->SetTitle("Gaussian Sigma");
     hDummyGausSigma->GetXaxis()->SetTitle("Diphoton p_{T} [GeV]");
     hDummyGausSigma->GetXaxis()->SetTitleOffset(1.1);
-    hDummyGausSigma->GetXaxis()->SetLimits(1.5, 5); // This sets the user-defined limits for the axis
-    hDummyGausSigma->GetXaxis()->SetLabelSize(0.04); // You can adjust the size as needed
+    hDummyGausSigma->GetXaxis()->SetLimits(1.5, 5);
+    hDummyGausSigma->GetXaxis()->SetLabelSize(0.04);
     hDummyGausSigma->GetXaxis()->SetNdivisions(004); // This will create four primary divisions (2, 3, 4, 5)
-    hDummyGausSigma->SetMinimum(0); // Replace yourMinValue with the desired minimum value
-    hDummyGausSigma->SetMaximum(.07); // Replace yourMaxValue with the desired maximum value
+    hDummyGausSigma->SetMinimum(0);
+    hDummyGausSigma->SetMaximum(.07);
     hDummyGausSigma->SetStats(0); // Remove the statistics box
     hDummyGausSigma->GetYaxis()->SetTitle("Gaussian Sigma [GeV]");
     hDummyGausSigma->Draw(); // Draw the dummy histogram to define axis ranges
@@ -843,7 +888,6 @@ void GenerateSignalAndGaussParPlots(const CutValues& cutValues) {
         }
     }
     TLegend *legGaussSigma = new TLegend(0.11, 0.68, 0.31, 0.88);
-    // Set the header with a bigger, bolder font
     legGaussSigma->SetHeader("Centrality:");
     legGaussSigma->SetMargin(0.15);
     legGaussSigma->SetBorderSize(0);
@@ -873,9 +917,10 @@ void DrawCanvasText(TLatex& latex, const Range& selectedRange, double fitMean, d
     latex.DrawLatex(0.13, 0.86, "Cuts (Inclusive):");
     latex.DrawLatex(0.13, 0.82, Form("Asymmetry < %.3f", globalCutValues.asymmetry));
     latex.DrawLatex(0.13, 0.78, Form("#chi^{2} < %.3f", globalCutValues.chi));
-    latex.DrawLatex(0.13, 0.74, mbdStream.str().c_str());
-    latex.DrawLatex(0.13, 0.70, ptStream.str().c_str());
-    latex.DrawLatex(0.13, 0.655, Form("Cluster E #geq %.3f GeV", globalCutValues.clusE));
+    latex.DrawLatex(0.13, 0.74, Form("Cluster E #geq %.3f GeV", globalCutValues.clusE));
+    latex.DrawLatex(0.13, 0.7, Form("#Delta R #geq %.3f", globalCutValues.deltaR));
+    latex.DrawLatex(0.13, 0.66, mbdStream.str().c_str());
+    latex.DrawLatex(0.13, 0.62, ptStream.str().c_str());
 
     // Drawing text related to Gaussian parameters and S/B ratio
     latex.SetTextSize(0.036);
@@ -893,7 +938,7 @@ void WriteDataToCSV(int histIndex, const CutValues& cutValues, double fitMean, d
         return;
     }
 
-    std::string filename = globalDataPath + "PlotByPlotOutput_MBplusCentral_Index14.csv";
+    std::string filename = globalDataPath + "PlotByPlotOutput_DeltaRvariations.csv";
     std::ifstream checkFile(filename);
     bool fileIsEmpty = checkFile.peek() == std::ifstream::traits_type::eof();
     checkFile.close();
@@ -984,7 +1029,7 @@ void AnalyzePi0() {
     // Load the root file
     TFile *file = new TFile(globalFilename.c_str(), "READ");
     // Initialize global cut values
-    globalCutValues = parqseFileName();
+    globalCutValues = parseFileName();
     // User interaction to set global isFitGood
     char userInput;
     std::cout << "Is fit ready to be finalized? (Y/N): ";
@@ -1046,14 +1091,9 @@ void AnalyzePi0() {
     TLatex latex;
     latex.SetNDC();
 
-
-
-    // Ensure you are passing the correct histogram (hPi0Mass) to the function
     double signalToBackgroundError;
     double signalToBackgroundRatio = CalculateSignalToBackgroundRatio(hPi0Mass, polyFit, fitMean, fitSigma, signalToBackgroundError);
 
-
-    // Call the new method to draw text on the canvas
     DrawCanvasText(latex, ranges[histIndex], fitMean, fitSigma, signalToBackgroundRatio, signalToBackgroundError);
 
     double amplitude = totalFit->GetParameter(0);
@@ -1061,6 +1101,8 @@ void AnalyzePi0() {
     // Calculate lowerSignalBound and upperSignalBound
     double lowerSignalBound = fitMean - 2 * fitSigma;
     double upperSignalBound = fitMean + 2 * fitSigma;
+    
+    double chi2 = fitResult->Chi2(); // to retrieve the fit chi2
     
     // ANSI escape code for bold red text
     const char* redBold = "\033[1;31m";
@@ -1070,7 +1112,8 @@ void AnalyzePi0() {
     // Printing the calculated values in bold red
     std::cout << redBold;
     std::cout << "lowerSignalBound: " << lowerSignalBound << std::endl;
-    std::cout << "upperSignalBound: " << upperSignalBound << reset << std::endl;
+    std::cout << "upperSignalBound: " << upperSignalBound << std::endl;
+    std::cout << "Chi2: " << chi2 << reset << std::endl;
     
     TLine *line1 = new TLine(fitMean + 2*fitSigma, 0, fitMean + 2*fitSigma, amplitude+globalLineHeight);
     TLine *line2 = new TLine(fitMean - 2*fitSigma, 0, fitMean - 2*fitSigma, amplitude+globalLineHeight);
