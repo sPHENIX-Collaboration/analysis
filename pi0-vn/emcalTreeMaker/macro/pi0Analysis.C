@@ -436,7 +436,9 @@ void myAnalysis::init_hists() {
                 s << "hPi0Mass" << suffix << "_" << cut.e << "_" << cut.e_asym << "_" << cut.deltaR << "_" << cut.chi;
                 t << "Diphoton: E #geq " << cut.e << ", Asym < " << cut.e_asym << ", #Delta R #geq " << cut.deltaR
                   << ", #chi^{2} < " << cut.chi << "; Invariant Mass [GeV]; Counts";
-                h.push_back(new TH1F(s.str().c_str(), t.str().c_str(), bins_pi0_mass, hpi0_mass_min, hpi0_mass_max));
+                auto hist = new TH1F(s.str().c_str(), t.str().c_str(), bins_pi0_mass, hpi0_mass_min, hpi0_mass_max);
+                hist->Sumw2();
+                h.push_back(hist);
             }
             hPi0Mass[key] = h;
         }
