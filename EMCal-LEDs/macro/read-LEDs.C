@@ -58,21 +58,21 @@ namespace myAnalysis {
     Float_t time_min     = 0-0.5;
     Float_t time_max     = 32-0.5;
 
-    UInt_t  ADC_bins     = 1200;
+    UInt_t  ADC_bins     = 1800;
     Float_t ADC_min      = 0;
-    Float_t ADC_max      = 12000;
+    Float_t ADC_max      = 18000;
 
-    UInt_t  adc_bins     = 1320;
+    UInt_t  adc_bins     = 1800;
     Float_t adc_min      = 0;
-    Float_t adc_max      = 13200;
+    Float_t adc_max      = 18000;
 
-    UInt_t  ped_bins     = 60;
-    Float_t ped_min      = 1300;
-    Float_t ped_max      = 1900;
+    UInt_t  ped_bins     = 1650;
+    Float_t ped_min      = 0;
+    Float_t ped_max      = 16500;
 
-    UInt_t channels_bins = 1600;
+    UInt_t channels_bins = 24576;
     UInt_t channels_min  = 0;
-    UInt_t channels_max  = 1600;
+    UInt_t channels_max  = 24576;
 }
 
 void myAnalysis::init(const string& inputFile) {
@@ -85,7 +85,7 @@ void myAnalysis::init(const string& inputFile) {
     hADC = new TH1F("hADC", "ADC; ADC; Counts", ADC_bins, ADC_min, ADC_max);
     hadc = new TH1F("hadc", "adc; adc; Counts", adc_bins, adc_min, adc_max);
     hPed = new TH1F("hPed", "Ped; Ped; Counts", ped_bins, ped_min, ped_max);
-    hChannels = new TH1F("hChannels", "Channels per Event; Channels; Counts", channels_bins, channels_min, channels_max);
+    hChannels = new TH1F("hChannels", "Channels; Channel; Counts", channels_bins, channels_min, channels_max);
 
     // 2D correlations
 
@@ -105,61 +105,78 @@ void myAnalysis::init(const string& inputFile) {
     h2ADCVsTime_scat = new TH2F("h2ADCVsTime_scat", "ADC vs Peak Location; Time Sample; ADC", time_bins, time_min, time_max, ADC_bins, ADC_min, ADC_max);
     h2PedVsTime_scat = new TH2F("h2PedVsTime_scat", "Ped vs Peak Location; Time Sample; Ped", time_bins, time_min, time_max, ped_bins, ped_min, ped_max);
     h2ADCVsPed_scat = new TH2F("h2ADCVsPed_scat", "ADC vs Ped; Ped; ADC", ped_bins, ped_min, ped_max, ADC_bins, ADC_min, ADC_max);
+
+    for (UInt_t i = 0; i < channels_bins; ++i) {
+        h2adcVsTime.push_back(new TH2F(("h2adcVsTime_" + to_string(i)).c_str(),
+                                         "adc vs Time Sample; Time Sample; adc",
+                                         time_bins, time_min, time_max,
+                                         50, adc_min, adc_max));
+    }
 }
 
 void myAnalysis::analyze(UInt_t nevents) {
     vector<Float_t>* time              = 0;
     vector<Float_t>* ADC               = 0;
     vector<Float_t>* ped               = 0;
+    vector<Int_t>* chan                = 0;
     vector<vector<Float_t>>* waveforms = 0; // 2D: channel x time sample
 
     led_tree->SetBranchAddress("time",&time);
     led_tree->SetBranchAddress("adc",&ADC);
     led_tree->SetBranchAddress("ped",&ped);
+    led_tree->SetBranchAddress("chan",&chan);
     led_tree->SetBranchAddress("waveforms",&waveforms);
 
     // if nevents is 0 then use all events otherwise use the set number of events
     nevents = (nevents) ? nevents : led_tree->GetEntries();
 
+    Int_t counter_event[24576] = {0};
+    // maximum waveforms to overlap per channel
+    Int_t events_max = 100;
     for(UInt_t i = 0; i < nevents; ++i) {
         if(i%100 == 0) cout << "Progress: " << i*100./nevents << " %" << endl;
 
         led_tree->GetEntry(i);
+
         UInt_t nchannels = time->size();
-        hChannels->Fill(nchannels);
         channels_max = max(channels_max,nchannels);
 
-        for(UInt_t channel = 0; channel < nchannels; ++channel) {
-            Float_t time_val = time->at(channel);
-            Float_t ADC_val  = ADC->at(channel);
-            Float_t ped_val  = ped->at(channel);
+        for(UInt_t j = 0; j < nchannels; ++j) {
+            Float_t time_val = time->at(j);
+            Float_t ADC_val  = ADC->at(j);
+            Float_t ped_val  = ped->at(j);
+            Int_t channel    = chan->at(j);
+            if(channel >= 24576) {
+                cout << "invalid channel number: " << channel << ", event: " << i << endl;
+                continue;
+            }
+
+            UInt_t key    = TowerInfoDefs::encode_emcal(channel);
+            UInt_t etabin = TowerInfoDefs::getCaloTowerEtaBin(key);
+            UInt_t phibin = TowerInfoDefs::getCaloTowerPhiBin(key);
 
             Int_t time_bin    = hTime->FindBin(time_val);
             Int_t ADC_bin     = hADC->FindBin(ADC_val);
             Int_t ped_bin     = hPed->FindBin(ped_val);
             Int_t channel_bin = hChannels->FindBin(channel);
 
-            // UInt_t key    = TowerInfoDefs::encode_emcal(channel);
-            // UInt_t etabin = TowerInfoDefs::getCaloTowerEtaBin(key);
-            // UInt_t phibin = TowerInfoDefs::getCaloTowerPhiBin(key);
-
-            if(h2adcVsTime.size() < channel+1) {
-                h2adcVsTime.push_back(new TH2F(("h2adcVsTime_" + to_string(channel)).c_str(),
-                                                   "adc vs Time Sample; Time Sample; adc",
-                                                   time_bins, time_min, time_max,
-                                                   adc_bins, adc_min, adc_max));
-            }
-
             for (UInt_t sample = 0; sample < time_bins; ++sample) {
-                Float_t adc_val = waveforms->at(channel).at(sample);
-                Int_t adc_bin   = hadc->FindBin(adc_val);
+                Float_t adc_val = waveforms->at(j).at(sample);
+                // Int_t adc_bin   = h2adcVsTime[channel]->GetYaxis()->FindBin(adc_val);
 
                 hadc->Fill(adc_val);
-                h2adcVsTime[channel]->SetBinContent(sample+1, adc_bin, 1);
+                // overlay at most #n events of waveforms for each channel
+                if(counter_event[channel] < events_max) {
+                    // h2adcVsTime[channel]->SetBinContent(sample+1, adc_bin, 1);
+                    h2adcVsTime[channel]->Fill(sample, adc_val);
+                }
 
                 adc_min = min(adc_min, adc_val);
                 adc_max = max(adc_max, adc_val);
             }
+            ++counter_event[channel];
+
+            hChannels->Fill(channel);
 
             hTime->Fill(time_val);
             hADC->Fill(ADC_val);
@@ -192,6 +209,7 @@ void myAnalysis::analyze(UInt_t nevents) {
         }
     }
 
+    cout << "events processed: " << nevents << endl;
     cout << "max channels per event: " << channels_max << endl;
     cout << "time_min: " << time_min << " time_max: " << time_max << endl;
     cout << "ADC_min: " << ADC_min << " ADC_max: " << ADC_max << endl;
@@ -232,7 +250,9 @@ void myAnalysis::finalize(const string& outputFile) {
 
     output.mkdir("adcVsTime");
     output.cd("adcVsTime");
-    for(auto h2 : h2adcVsTime) h2->Write();
+    for(auto h2 : h2adcVsTime) {
+        if(h2->GetEntries()) h2->Write();
+    }
 
     // Close root file
     input->Close();

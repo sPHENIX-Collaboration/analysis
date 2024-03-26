@@ -69,8 +69,8 @@
 
 #include <fun4all/Fun4AllReturnCodes.h>
 
-#include <g4vertex/GlobalVertex.h>
-#include <g4vertex/GlobalVertexMap.h>
+#include <globalvertex/GlobalVertex.h>
+#include <globalvertex/GlobalVertexMap.h>
 
 #include <phool/PHCompositeNode.h>
 #include <phool/getClass.h>

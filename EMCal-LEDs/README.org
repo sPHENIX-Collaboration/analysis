@@ -53,7 +53,7 @@ make
 #+begin_src bash
 ./bin/Fun4All_LEDTowerBuilder <events> <fListname> <outputFile>
 #+end_src
- - <events>: Number of events to analyze from the prdfs. Default = 10.
+ - <events>: Number of events to analyze from the prdfs. Default = 1.
  - <fListname>: Location of the file list which contains the prdfs. Default = data/fileList.list.
  - <outputFile>: Location of the analyzed prdfs root file. Default: data/LEDTowerBuilder.root.
 
@@ -65,7 +65,33 @@ make
 - <output>: output root file. Default = output/test.root.
 - <events>: Number of events to analyze. Default = 0 (meaning all events).
 
+Example:
+#+begin_src bash
+./bin/read-LEDs data/LEDTowerBuilder-<run>.root output/runs/<run>/test.root &> output/runs/<run>/log-read-LEDs.txt &
+#+end_src
+
 5) Plotting macro:
 #+begin_src bash
 root -b -l -q macro/display.C
+#+end_src
+
+Example:
+#+begin_src bash
+root -b -l -q 'macro/display.C("output/runs/<run>/test.root", "output/runs/<run>", "<run>")' &> output/runs/<run>/log-display.txt &
+#+end_src
+
+* Useful commands
+- Find the number of events within each prdf that matches some pattern.
+#+begin_src bash
+fd <pattern> /direct/sphenix+lustre01/sphnxpro/commissioning/emcal/calib | xargs -t -I % sh -c "dpipe -d n -s f -i % | wc -l"
+#+end_src
+
+- Find the packets present within each prdf that matches some pattern.
+#+begin_src bash
+fd <pattern> /direct/sphenix+lustre01/sphnxpro/commissioning/emcal/calib | xargs -t -I % dlist -i -f %
+#+end_src
+
+- Select a range of events from the prdf:
+#+begin_src bash
+eventcombiner -v -i -e <start-event> -n <nevents> -f -p <output.prdf> <input.prdf>
 #+end_src

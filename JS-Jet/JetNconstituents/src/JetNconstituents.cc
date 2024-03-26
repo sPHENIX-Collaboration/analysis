@@ -1,626 +1,355 @@
-//____________________________________________________________________________..
-
 #include "JetNconstituents.h"
 
+// fun4all includes
 #include <fun4all/Fun4AllReturnCodes.h>
 #include <fun4all/PHTFileServer.h>
 
+// phool includes
 #include <phool/PHCompositeNode.h>
 #include <phool/getClass.h>
 
-#include <g4jets/JetMap.h>
-#include <g4jets/Jetv1.h>
+// jet includes
+#include <jetbase/Jet.h>
+#include <jetbase/Jetv2.h>
+#include <jetbase/JetContainer.h>
+#include <jetbase/JetContainerv1.h>
 
-#include <centrality/CentralityInfo.h>
-
+// calobase includes
 #include <calobase/RawTower.h>
 #include <calobase/RawTowerContainer.h>
 #include <calobase/RawTowerGeom.h>
 #include <calobase/RawTowerGeomContainer.h>
+#include <calobase/TowerInfoContainer.h>
+#include <calobase/TowerInfo.h>
 
+// jetbackground includes
 #include <jetbackground/TowerBackground.h>
 
 #include <TH2D.h>
 #include <TH1D.h>
-#include <TStyle.h>
-#include <TCanvas.h>
-#include <TLegend.h>
-#include <TLine.h>
+
 #include <iostream>
 #include <string>
 #include <vector>
 
-//____________________________________________________________________________..
-JetNconstituents::JetNconstituents(const std::string &recojetnameR02, const std::string &recojetnameR04, const std::string &recojetnameR06, const std::string &outputfilename):
-
- SubsysReco("JetNconstituents_AllR")
-  , m_recojetnameR02(recojetnameR02)
-  , m_recojetnameR04(recojetnameR04) 
+JetNconstituents::JetNconstituents(const std::string &outputfilename)
+  : SubsysReco("JetNconstituents")
   , m_outputFileName(outputfilename)
+  // these are all initialized but included here for clarity
   , m_etaRange(-1.1, 1.1)
-  , m_ptRange(5, 100)
+  , m_ptRange(1.0, 1000)
+  , m_recoJetName("AntiKt_Tower_r04")
+  , h1_jetNconstituents_total(nullptr)
+  , h1_jetNconstituents_IHCAL(nullptr)
+  , h1_jetNconstituents_OHCAL(nullptr)
+  , h1_jetNconstituents_CEMC(nullptr)
+  , h2_jetNconstituents_vs_caloLayer(nullptr)
+  , h1_jetFracE_IHCAL(nullptr)
+  , h1_jetFracE_OHCAL(nullptr)
+  , h1_jetFracE_CEMC(nullptr)
+  , h2_jetFracE_vs_caloLayer(nullptr)
 {
-  std::cout << "JetNconstituents::JetNconstituents(const std::string& recojetname, const std::string& outputfilename) Calling ctor" << std::endl;
 }
 
-//____________________________________________________________________________..
-JetNconstituents::~JetNconstituents()
-{
-  std::cout << "JetNconstituents::~JetNconstituents() Calling dtor" << std::endl;
-}
 
-
-//____________________________________________________________________________..
 int JetNconstituents::Init(PHCompositeNode *topNode)
 {
-  std::cout << "JetNconstituents::Init(PHCompositeNode *topNode) Initializing" << std::endl;
+  if (Verbosity() > 0)
+  {
+    std::cout << "JetNconstituents::Init - Output to " << m_outputFileName << std::endl;
+  } 
+
+  // create output file
   PHTFileServer::get().open(m_outputFileName, "RECREATE");
-  std::cout << "JetValidation::Init - Output to " << m_outputFileName << std::endl;
 
-  // configure Tree
-  h2d_nConstituent_vs_R = new TH2D("h2d_nConstituent_vs_R", "h2d_nConstituent_vs_R",2,0,2, 300, 0, 300);
-  h2d_nConstituent_vs_R->GetXaxis()->SetTitle("Jet Radius");
-  h2d_nConstituent_vs_R->GetYaxis()->SetTitle("Number of Constituents");
-  // change the bin labels
-  h2d_nConstituent_vs_R->GetXaxis()->SetBinLabel(1, "0.2");
-  h2d_nConstituent_vs_R->GetXaxis()->SetBinLabel(2, "0.4");
 
-  h2d_SumEnergyDebug_vs_R = new TH2D("h2d_SumEnergyDebug_vs_R", "h2d_SumEnergyDebug_vs_R",2,0,2, 300, 0, 300);
-  h2d_SumEnergyDebug_vs_R->GetXaxis()->SetTitle("Jet Radius");
-  h2d_SumEnergyDebug_vs_R->GetYaxis()->SetTitle("Sum Energy");
-  // change the bin labels
-  h2d_SumEnergyDebug_vs_R->GetXaxis()->SetBinLabel(1, "0.2");
-  h2d_SumEnergyDebug_vs_R->GetXaxis()->SetBinLabel(2, "0.4");
+  // Initialize histograms
+  const int N_const = 200;
+  Double_t N_const_bins[N_const+1];
+  for (int i = 0; i <= N_const; i++)
+  {
+    N_const_bins[i] = 1.0*i;
+  }
 
-  std::vector<float> m_jet_radii = {0.2, 0.4};
+  const int N_frac = 100;
+  double frac_max = 1.0;
+  Double_t frac_bins[N_frac+1];
+  for (int i = 0; i <= N_frac; i++)
+  {
+    frac_bins[i] = (frac_max/N_frac)*i;
+  }
 
-  h2d_FracEnergy_vs_CaloLayer_R02 = new TH2D("h2d_FracEnergy_vs_CaloLayer_R02", "h2d_FracEnergy_vs_CaloLayer_R02", 3, 0, 3, 100, 0, 1);
-  h2d_FracEnergy_vs_CaloLayer_R02->GetXaxis()->SetTitle("Calorimeter Layer ID");
-  h2d_FracEnergy_vs_CaloLayer_R02->GetYaxis()->SetTitle("Fraction of Jet Energy");
-  h2d_FracEnergy_vs_CaloLayer_R02->GetXaxis()->SetBinLabel(1, "EMCal");
-  h2d_FracEnergy_vs_CaloLayer_R02->GetXaxis()->SetBinLabel(2, "HCalIn");
-  h2d_FracEnergy_vs_CaloLayer_R02->GetXaxis()->SetBinLabel(3, "HCalOut");
+  const int N_calo_layers = 3;
+  Double_t calo_layers_bins[N_calo_layers+1] = {0.5, 1.5, 2.5, 3.5}; // emcal, ihcal, ohcal
 
-  h2d_FracEnergy_vs_CaloLayer_R04 = new TH2D("h2d_FracEnergy_vs_CaloLayer_R04", "h2d_FracEnergy_vs_CaloLayer_R04", 3, 0, 3, 100, 0, 1);
-  h2d_FracEnergy_vs_CaloLayer_R04->GetXaxis()->SetTitle("Calorimeter Layer ID");
-  h2d_FracEnergy_vs_CaloLayer_R04->GetYaxis()->SetTitle("Fraction of Jet Energy");
-  h2d_FracEnergy_vs_CaloLayer_R04->GetXaxis()->SetBinLabel(1, "EMCal");
-  h2d_FracEnergy_vs_CaloLayer_R04->GetXaxis()->SetBinLabel(2, "HCalIn");
-  h2d_FracEnergy_vs_CaloLayer_R04->GetXaxis()->SetBinLabel(3, "HCalOut");
+  h1_jetNconstituents_total = new TH1D("h1_jetNconstituents_total", "Jet N constituents", N_const, N_const_bins);
+  h1_jetNconstituents_IHCAL = new TH1D("h1_jetNconstituents_IHCAL", "Jet N constituents in IHCal", N_const, N_const_bins);
+  h1_jetNconstituents_OHCAL = new TH1D("h1_jetNconstituents_OHCAL", "Jet N constituents in OHCal", N_const, N_const_bins);
+  h1_jetNconstituents_CEMC = new TH1D("h1_jetNconstituents_CEMC", "Jet N constituents in CEMC", N_const, N_const_bins);
+  h2_jetNconstituents_vs_caloLayer = new TH2D("h2_jetNconstituents_vs_caloLayer", "Jet N constituents vs Calo Layer", N_calo_layers, calo_layers_bins, N_const, N_const_bins);
 
-  h1d_nConstituent_R02 = new TH1D("h1d_nConstituent_R02", "h1d_nConstituent_R02", 200, 0, 200);
-  h1d_nConstituent_R02->GetXaxis()->SetTitle("Number of Constituents");
-  h1d_nConstituent_R02->GetYaxis()->SetTitle("Probability Density");
-  h1d_nConstituent_R02->SetLineColor(kRed-1);
-  h1d_nConstituent_R02->SetLineWidth(2);
-  h1d_nConstituent_R02->SetFillColor(kRed-1);
-  h1d_nConstituent_R02->SetFillStyle(3001);
-  h1d_nConstituent_R02->SetMarkerColor(kRed-1);
-  h1d_nConstituent_R02->SetMarkerStyle(kFullCircle);
-  h1d_nConstituent_R02->SetMarkerSize(1.5);
+  h1_jetFracE_IHCAL = new TH1D("h1_jetFracE_IHCAL", "Jet E fraction in IHCal", N_frac, frac_bins);
+  h1_jetFracE_OHCAL = new TH1D("h1_jetFracE_OHCAL", "Jet E fraction in OHCal", N_frac, frac_bins);
+  h1_jetFracE_CEMC = new TH1D("h1_jetFracE_CEMC", "Jet E fraction in CEMC", N_frac, frac_bins);
+  h2_jetFracE_vs_caloLayer = new TH2D("h2_jetFracE_vs_caloLayer", "Jet E fraction vs Calo Layer", N_calo_layers, calo_layers_bins, N_frac, frac_bins);
 
-  h1d_nConstituent_R04 = new TH1D("h1d_nConstituent_R04", "h1d_nConstituent_R04", 200, 0, 200);
-  h1d_nConstituent_R04->GetXaxis()->SetTitle("Number of Constituents");
-  h1d_nConstituent_R04->GetYaxis()->SetTitle("Probability Density");
-  h1d_nConstituent_R04->SetLineColor(kAzure+2);
-  h1d_nConstituent_R04->SetLineWidth(2);
-  h1d_nConstituent_R04->SetFillColor(kAzure+2);
-  h1d_nConstituent_R04->SetFillStyle(3001);
-  h1d_nConstituent_R04->SetMarkerColor(kAzure+2);
-  h1d_nConstituent_R04->SetMarkerStyle(kFullSquare);
-  h1d_nConstituent_R04->SetMarkerSize(1.5);
-
-  h1d_nConstituent_IHCal_R02 = new TH1D("h1d_nConstituent_IHCal_R02", "h1d_nConstituent_IHCal_R02", 200,0,200);
-  h1d_nConstituent_IHCal_R02->GetXaxis()->SetTitle("Fraction of Jet Energy");
-  h1d_nConstituent_IHCal_R02->GetYaxis()->SetTitle("Probability Density");
-  h1d_nConstituent_IHCal_R02->SetLineColor(kRed-1);
-  h1d_nConstituent_IHCal_R02->SetLineWidth(2);
-  h1d_nConstituent_IHCal_R02->SetFillColor(kRed-1);
-  h1d_nConstituent_IHCal_R02->SetFillStyle(3001);
-  h1d_nConstituent_IHCal_R02->SetMarkerColor(kRed-1);
-  h1d_nConstituent_IHCal_R02->SetMarkerStyle(kFullCircle);
-  h1d_nConstituent_IHCal_R02->SetMarkerSize(1.5);
-
-  h1d_nConstituent_IHCal_R04 = new TH1D("h1d_nConstituent_IHCal_R04", "h1d_nConstituent_IHCal_R04", 200,0,200);
-  h1d_nConstituent_IHCal_R04->GetXaxis()->SetTitle("Fraction of Jet Energy");
-  h1d_nConstituent_IHCal_R04->GetYaxis()->SetTitle("Probability Density");
-  h1d_nConstituent_IHCal_R04->SetLineColor(kAzure+2);
-  h1d_nConstituent_IHCal_R04->SetLineWidth(2);
-  h1d_nConstituent_IHCal_R04->SetFillColor(kAzure+2);
-  h1d_nConstituent_IHCal_R04->SetFillStyle(3001);
-  h1d_nConstituent_IHCal_R04->SetMarkerColor(kAzure+2);
-  h1d_nConstituent_IHCal_R04->SetMarkerStyle(kFullSquare);
-  h1d_nConstituent_IHCal_R04->SetMarkerSize(1.5);
-
-  h1d_nConstituent_OHCal_R02 = new TH1D("h1d_nConstituent_OHCal_R02", "h1d_nConstituent_OHCal_R02", 200,0,200);
-  h1d_nConstituent_OHCal_R02->GetXaxis()->SetTitle("Fraction of Jet Energy");
-  h1d_nConstituent_OHCal_R02->GetYaxis()->SetTitle("Probability Density");
-  h1d_nConstituent_OHCal_R02->SetLineColor(kRed-1);
-  h1d_nConstituent_OHCal_R02->SetLineWidth(2);
-  h1d_nConstituent_OHCal_R02->SetFillColor(kRed-1);
-  h1d_nConstituent_OHCal_R02->SetFillStyle(3001);
-  h1d_nConstituent_OHCal_R02->SetMarkerColor(kRed-1);
-  h1d_nConstituent_OHCal_R02->SetMarkerStyle(kFullCircle);
-  h1d_nConstituent_OHCal_R02->SetMarkerSize(1.5);
-
-  h1d_nConstituent_OHCal_R04 = new TH1D("h1d_nConstituent_OHCal_R04", "h1d_nConstituent_OHCal_R04", 200,0,200);
-  h1d_nConstituent_OHCal_R04->GetXaxis()->SetTitle("Fraction of Jet Energy");
-  h1d_nConstituent_OHCal_R04->GetYaxis()->SetTitle("Probability Density");
-  h1d_nConstituent_OHCal_R04->SetLineColor(kAzure+2);
-  h1d_nConstituent_OHCal_R04->SetLineWidth(2);
-  h1d_nConstituent_OHCal_R04->SetFillColor(kAzure+2);
-  h1d_nConstituent_OHCal_R04->SetFillStyle(3001);
-  h1d_nConstituent_OHCal_R04->SetMarkerColor(kAzure+2);
-  h1d_nConstituent_OHCal_R04->SetMarkerStyle(kFullSquare);
-  h1d_nConstituent_OHCal_R04->SetMarkerSize(1.5);
-  
-  h1d_nConstituent_EMCal_R02 = new TH1D("h1d_nConstituent_EMCal_R02", "h1d_nConstituent_EMCal_R02", 200,0,200);
-  h1d_nConstituent_EMCal_R02->GetXaxis()->SetTitle("Fraction of Jet Energy");
-  h1d_nConstituent_EMCal_R02->GetYaxis()->SetTitle("Probability Density");
-  h1d_nConstituent_EMCal_R02->SetLineColor(kRed-1);
-  h1d_nConstituent_EMCal_R02->SetLineWidth(2);
-  h1d_nConstituent_EMCal_R02->SetFillColor(kRed-1);
-  h1d_nConstituent_EMCal_R02->SetFillStyle(3001);
-  h1d_nConstituent_EMCal_R02->SetMarkerColor(kRed-1);
-  h1d_nConstituent_EMCal_R02->SetMarkerStyle(kFullCircle);
-  h1d_nConstituent_EMCal_R02->SetMarkerSize(1.5);
-  
-  h1d_nConstituent_EMCal_R04 = new TH1D("h1d_nConstituent_EMCal_R04", "h1d_nConstituent_EMCal_R04", 200,0,200);
-  h1d_nConstituent_EMCal_R04->GetXaxis()->SetTitle("Fraction of Jet Energy");
-  h1d_nConstituent_EMCal_R04->GetYaxis()->SetTitle("Probability Density");
-  h1d_nConstituent_EMCal_R04->SetLineColor(kAzure+2);
-  h1d_nConstituent_EMCal_R04->SetLineWidth(2);
-  h1d_nConstituent_EMCal_R04->SetFillColor(kAzure+2);
-  h1d_nConstituent_EMCal_R04->SetFillStyle(3001);
-  h1d_nConstituent_EMCal_R04->SetMarkerColor(kAzure+2);
-  h1d_nConstituent_EMCal_R04->SetMarkerStyle(kFullSquare);
-  h1d_nConstituent_EMCal_R04->SetMarkerSize(1.5);
-
-  h1d_FracEnergy_IHCal_R02 = new TH1D("h1d_FracEnergy_IHCal_R02", "h1d_FracEnergy_IHCal_R02", 100, 0, 1);
-  h1d_FracEnergy_IHCal_R02->GetXaxis()->SetTitle("Fraction of Jet Energy");
-  h1d_FracEnergy_IHCal_R02->GetYaxis()->SetTitle("Probability Density");
-  h1d_FracEnergy_IHCal_R02->SetLineColor(kRed-1);
-  h1d_FracEnergy_IHCal_R02->SetLineWidth(2);
-  h1d_FracEnergy_IHCal_R02->SetFillColor(kRed-1);
-  h1d_FracEnergy_IHCal_R02->SetFillStyle(3001);
-  h1d_FracEnergy_IHCal_R02->SetMarkerColor(kRed-1);
-  h1d_FracEnergy_IHCal_R02->SetMarkerStyle(kFullCircle);
-  h1d_FracEnergy_IHCal_R02->SetMarkerSize(1.5);
-
-  h1d_FracEnergy_IHCal_R04 = new TH1D("h1d_FracEnergy_IHCal_R04", "h1d_FracEnergy_IHCal_R04", 100, 0, 1);
-  h1d_FracEnergy_IHCal_R04->GetXaxis()->SetTitle("Fraction of Jet Energy");
-  h1d_FracEnergy_IHCal_R04->GetYaxis()->SetTitle("Probability Density");
-  h1d_FracEnergy_IHCal_R04->SetLineColor(kAzure+2);
-  h1d_FracEnergy_IHCal_R04->SetLineWidth(2);
-  h1d_FracEnergy_IHCal_R04->SetFillColor(kAzure+2);
-  h1d_FracEnergy_IHCal_R04->SetFillStyle(3001);
-  h1d_FracEnergy_IHCal_R04->SetMarkerColor(kAzure+2);
-  h1d_FracEnergy_IHCal_R04->SetMarkerStyle(kFullSquare);
-  h1d_FracEnergy_IHCal_R04->SetMarkerSize(1.5);
-
-  h1d_FracEnergy_OHCal_R02 = new TH1D("h1d_FracEnergy_OHCal_R02", "h1d_FracEnergy_OHCal_R02", 100, 0, 1);
-  h1d_FracEnergy_OHCal_R02->GetXaxis()->SetTitle("Fraction of Jet Energy");
-  h1d_FracEnergy_OHCal_R02->GetYaxis()->SetTitle("Probability Density");
-  h1d_FracEnergy_OHCal_R02->SetLineColor(kRed-1);
-  h1d_FracEnergy_OHCal_R02->SetLineWidth(2);
-  h1d_FracEnergy_OHCal_R02->SetFillColor(kRed-1);
-  h1d_FracEnergy_OHCal_R02->SetFillStyle(3001);
-  h1d_FracEnergy_OHCal_R02->SetMarkerColor(kRed-1);
-  h1d_FracEnergy_OHCal_R02->SetMarkerStyle(kFullCircle);
-  h1d_FracEnergy_OHCal_R02->SetMarkerSize(1.5);
-
-  h1d_FracEnergy_OHCal_R04 = new TH1D("h1d_FracEnergy_OHCal_R04", "h1d_FracEnergy_OHCal_R04", 100, 0, 1);
-  h1d_FracEnergy_OHCal_R04->GetXaxis()->SetTitle("Fraction of Jet Energy");
-  h1d_FracEnergy_OHCal_R04->GetYaxis()->SetTitle("Probability Density");
-  h1d_FracEnergy_OHCal_R04->SetLineColor(kAzure+2);
-  h1d_FracEnergy_OHCal_R04->SetLineWidth(2);
-  h1d_FracEnergy_OHCal_R04->SetFillColor(kAzure+2);
-  h1d_FracEnergy_OHCal_R04->SetFillStyle(3001);
-  h1d_FracEnergy_OHCal_R04->SetMarkerColor(kAzure+2);
-  h1d_FracEnergy_OHCal_R04->SetMarkerStyle(kFullSquare);
-  h1d_FracEnergy_OHCal_R04->SetMarkerSize(1.5);
-  
-  h1d_FracEnergy_EMCal_R02 = new TH1D("h1d_FracEnergy_EMCal_R02", "h1d_FracEnergy_EMCal_R02", 100, 0, 1);
-  h1d_FracEnergy_EMCal_R02->GetXaxis()->SetTitle("Fraction of Jet Energy");
-  h1d_FracEnergy_EMCal_R02->GetYaxis()->SetTitle("Probability Density");
-  h1d_FracEnergy_EMCal_R02->SetLineColor(kRed-1);
-  h1d_FracEnergy_EMCal_R02->SetLineWidth(2);
-  h1d_FracEnergy_EMCal_R02->SetFillColor(kRed-1);
-  h1d_FracEnergy_EMCal_R02->SetFillStyle(3001);
-  h1d_FracEnergy_EMCal_R02->SetMarkerColor(kRed-1);
-  h1d_FracEnergy_EMCal_R02->SetMarkerStyle(kFullCircle);
-  h1d_FracEnergy_EMCal_R02->SetMarkerSize(1.5);
-  
-  h1d_FracEnergy_EMCal_R04 = new TH1D("h1d_FracEnergy_EMCal_R04", "h1d_FracEnergy_EMCal_R04", 100, 0, 1);
-  h1d_FracEnergy_EMCal_R04->GetXaxis()->SetTitle("Fraction of Jet Energy");
-  h1d_FracEnergy_EMCal_R04->GetYaxis()->SetTitle("Probability Density");
-  h1d_FracEnergy_EMCal_R04->SetLineColor(kAzure+2);
-  h1d_FracEnergy_EMCal_R04->SetLineWidth(2);
-  h1d_FracEnergy_EMCal_R04->SetFillColor(kAzure+2);
-  h1d_FracEnergy_EMCal_R04->SetFillStyle(3001);
-  h1d_FracEnergy_EMCal_R04->SetMarkerColor(kAzure+2);
-  h1d_FracEnergy_EMCal_R04->SetMarkerStyle(kFullSquare);
-  h1d_FracEnergy_EMCal_R04->SetMarkerSize(1.5);
-  
-  h1d_FracEnergy_IHCal_R02->Sumw2();
-  h1d_FracEnergy_OHCal_R02->Sumw2();
-  h1d_FracEnergy_EMCal_R02->Sumw2();
-  h1d_FracEnergy_IHCal_R04->Sumw2();
-  h1d_FracEnergy_OHCal_R04->Sumw2();
-  h1d_FracEnergy_EMCal_R04->Sumw2();
-
-  c_emcal = new TCanvas("c_emcal", "c_emcal", 800, 600);
-  c_ihcal = new TCanvas("c_ihcal", "c_ihcal", 800, 600);
-  c_ohcal = new TCanvas("c_ohcal", "c_ohcal", 800, 600);
-  c_nconst = new TCanvas("c_nconst", "c_nconst", 800, 600);
-
-  c_nconst_emcal = new TCanvas("c_nconst_emcal", "c_nconst_emcal", 800, 600);
-  c_nconst_ihcal = new TCanvas("c_nconst_ihcal", "c_nconst_ihcal", 800, 600);
-  c_nconst_ohcal = new TCanvas("c_nconst_ohcal", "c_nconst_ohcal", 800, 600);
+  if(Verbosity() > 0)
+  {
+    std::cout << "JetNconstituents::Init - Histograms created" << std::endl;
+  }
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
-//____________________________________________________________________________..
-int JetNconstituents::InitRun(PHCompositeNode *topNode)
-{
-  std::cout << "JetNconstituents::InitRun(PHCompositeNode *topNode) Initializing for Run XXX" << std::endl;
-  return Fun4AllReturnCodes::EVENT_OK;
-}
-
-//____________________________________________________________________________..
 int JetNconstituents::process_event(PHCompositeNode *topNode)
 {
-  //std::cout << "JetValidation::process_event(PHCompositeNode *topNode) Processing Event" << std::endl;
-  std::vector<std::string> m_recojetname_string = {m_recojetnameR02, m_recojetnameR04};
-  std::vector<float> m_jet_radii = {0.2, 0.4};
-  int n_radii = m_jet_radii.size();
-  RawTowerContainer *towersEM3 = findNode::getClass<RawTowerContainer>(topNode, "TOWER_CALIB_CEMC_RETOWER_SUB1");
-  RawTowerContainer *towersIH3 = findNode::getClass<RawTowerContainer>(topNode, "TOWER_CALIB_HCALIN_SUB1");
-  RawTowerContainer *towersOH3 = findNode::getClass<RawTowerContainer>(topNode, "TOWER_CALIB_HCALOUT_SUB1");
-  RawTowerGeomContainer *tower_geom = findNode::getClass<RawTowerGeomContainer>(topNode, "TOWERGEOM_HCALIN");
-  RawTowerGeomContainer *tower_geomOH = findNode::getClass<RawTowerGeomContainer>(topNode, "TOWERGEOM_HCALOUT");
-
-  if(!towersEM3 || !towersIH3 || !towersOH3){
-    std::cout
-      <<"MyJetAnalysis::process_event - Error can not find raw tower node "
-      << std::endl;
-    exit(-1);
-  }
   
-  if(!tower_geom || !tower_geomOH){
-    std::cout
-      <<"MyJetAnalysis::process_event - Error can not find raw tower geometry "
-      << std::endl;
-    exit(-1);
+  if(Verbosity() > 1)
+  {
+    std::cout << "JetNconstituents::process_event - Process event..." << std::endl;
   }
 
-  for(int i_radii =0; i_radii<n_radii; i_radii++){
-    // get reco jet name
-    std::string recojetname = m_recojetname_string[i_radii];
-    //std::cout << recojetname << std::endl;
-    // get DST reco jet map
-    JetMap* jets = findNode::getClass<JetMap>(topNode, recojetname);
-    if(!jets){
-      std::cout << "JetNconstituents::process_event - Error can not find DST Reco JetMap node " << recojetname << std::endl;
-      continue;
-    }
-    // loop over jets
-    for(JetMap::Iter iter = jets->begin(); iter != jets->end(); ++iter){
-      // get jet object 
+  // get the jets
+  JetContainer* jets = findNode::getClass<JetContainer>(topNode, m_recoJetName);
+  if(!jets)
+  {
+    std::cout <<"JetNconstituents::process_event - Error can not find jet node " << m_recoJetName << std::endl;
+    exit(-1); // fatal
+  }
+
+  // get unsub towers
+  TowerInfoContainer *towersEM3 = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_CEMC_RETOWER");
+  TowerInfoContainer *towersIH3 = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALIN");
+  TowerInfoContainer *towersOH3 = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALOUT"); 
+  if(!towersEM3 || !towersIH3 || !towersOH3)
+  {
+    std::cout <<"JetNconstituents::process_event - Error can not find tower node " << std::endl;
+    exit(-1); // fatal
+  }
+
+  // get tower geometry
+  RawTowerGeomContainer *tower_geomIH = findNode::getClass<RawTowerGeomContainer>(topNode, "TOWERGEOM_HCALIN");
+  RawTowerGeomContainer *tower_geomOH = findNode::getClass<RawTowerGeomContainer>(topNode, "TOWERGEOM_HCALOUT");
+  if(!tower_geomIH || !tower_geomOH)
+  {
+    std::cout <<"JetNconstituents::process_event - Error can not find tower geometry node " << std::endl;
+    exit(-1); // fatal
+  }
+
+  // get underlying event
+  float background_v2 = 0;
+  float background_Psi2 = 0;
+  bool has_tower_background = false;
+  TowerBackground *towBack = findNode::getClass<TowerBackground>(topNode, "TowerInfoBackground_Sub2");
+  if(!towBack)
+  {
+    std::cout <<"JetNconstituents::process_event - Error can not find tower background node " << std::endl;  
+  }
+  else
+  {
+    has_tower_background = true;
+    background_v2 = towBack->get_v2();
+    background_Psi2 = towBack->get_Psi2();
+  }
+
+ 
+  // loop over jets
+  for (auto jet : *jets)
+  {    
+
+    // remove noise
+    if(jet->get_pt() < 1) continue;
+
+    // apply eta and pt cuts
+    bool eta_cut = (jet->get_eta() >= m_etaRange.first) and (jet->get_eta() <= m_etaRange.second);
+    bool pt_cut = (jet->get_pt() >= m_ptRange.first) and (jet->get_pt() <= m_ptRange.second);
+    if ((not eta_cut) or (not pt_cut)) continue;
+  
+
+    // zero out counters
+    int n_comp_total = 0;
+    int n_comp_ihcal = 0;
+    int n_comp_ohcal = 0;
+    int n_comp_emcal = 0;
+
+    float jet_total_eT = 0;
+    float eFrac_ihcal = 0;
+    float eFrac_ohcal = 0;
+    float eFrac_emcal = 0;
+    
+    // loop over jet constituents
+    for (auto comp: jet->get_comp_vec())
+	  {
+
+      // get tower
+      unsigned int channel = comp.second;
+      TowerInfo *tower;
       
-      Jet* jet = iter->second;
-      // apply eta and pt cuts
-      bool eta_cut = (jet->get_eta() >= m_etaRange.first) and (jet->get_eta() <= m_etaRange.second);
-	    bool pt_cut = (jet->get_pt() >= m_ptRange.first) and (jet->get_pt() <= m_ptRange.second);
-      if ((not eta_cut) or (not pt_cut)) continue;
-      // to remove noise jets
-      if(jet->get_pt() < 1) continue; 
+      float tower_eT = 0;
 
-      // fill nConstituent vs R
-      if(i_radii==0) h2d_nConstituent_vs_R->Fill(0., jet->size_comp());
-      else if(i_radii==1) h2d_nConstituent_vs_R->Fill(1., jet->size_comp());
-   
-    
-      if(i_radii==0) h1d_nConstituent_R02->Fill(jet->size_comp());
-      else if(i_radii==1) h1d_nConstituent_R04->Fill(jet->size_comp());
-      float ohcal_energy_sum = 0;
-      float ihcal_energy_sum = 0;
-      float emcal_energy_sum = 0;
-      float jet_energy = jet->get_e();
-      int n_constituents_emcal = 0;
-      int n_constituents_ihcal = 0;
-      int n_constituents_ohcal = 0;
-      for (Jet::ConstIter comp = jet->begin_comp(); comp != jet->end_comp(); ++comp)
-      {
-        RawTower *tower;
-        if ((*comp).first == 15){
-          tower = towersIH3->getTower((*comp).second);
-          if(!tower || !tower_geom){
-            continue;
-          }
-          ihcal_energy_sum += tower->get_energy();
-          n_constituents_ihcal++;
-        }
-        else if ((*comp).first == 16){
-          tower = towersOH3->getTower((*comp).second);
-		      if(!tower || !tower_geomOH)
-          {
-            continue;
-          } 
-          ohcal_energy_sum += tower->get_energy();
-          n_constituents_ohcal++;
-        }
-        else if ((*comp).first == 14){
-          tower = towersEM3->getTower((*comp).second);
-          if(!tower || !tower_geom){
-            continue;
-          }
-          emcal_energy_sum += tower->get_energy();
-          n_constituents_emcal++;
-        }
-    
-      }
-      float o_hcal_sum = ohcal_energy_sum/jet_energy;
-      float i_hcal_sum = ihcal_energy_sum/jet_energy;
-      float emcal_sum = emcal_energy_sum/jet_energy;
-      if(i_radii==0) {
-        h2d_FracEnergy_vs_CaloLayer_R02->Fill(2., o_hcal_sum);
-        h2d_FracEnergy_vs_CaloLayer_R02->Fill(0., emcal_sum);
-        h2d_FracEnergy_vs_CaloLayer_R02->Fill(1., i_hcal_sum);
-        h1d_FracEnergy_EMCal_R02->Fill(emcal_sum);
-        h1d_FracEnergy_IHCal_R02->Fill(i_hcal_sum);
-        h1d_FracEnergy_OHCal_R02->Fill(o_hcal_sum);
-        h1d_nConstituent_IHCal_R02->Fill(1.0*n_constituents_ihcal);
-        h1d_nConstituent_OHCal_R02->Fill(1.0*n_constituents_ohcal);
-        h1d_nConstituent_EMCal_R02->Fill(1.0*n_constituents_emcal);
-        h2d_SumEnergyDebug_vs_R->Fill(0., emcal_energy_sum+ihcal_energy_sum+ohcal_energy_sum);
-      }
-      else if(i_radii==1) {
-        h2d_FracEnergy_vs_CaloLayer_R04->Fill(2., o_hcal_sum);
-        h2d_FracEnergy_vs_CaloLayer_R04->Fill(0., emcal_sum);
-        h2d_FracEnergy_vs_CaloLayer_R04->Fill(1., i_hcal_sum);
-        h1d_FracEnergy_EMCal_R04->Fill(emcal_sum);
-        h1d_FracEnergy_IHCal_R04->Fill(i_hcal_sum);
-        h1d_FracEnergy_OHCal_R04->Fill(o_hcal_sum);
-        h1d_nConstituent_IHCal_R04->Fill(1.0*n_constituents_ihcal);
-        h1d_nConstituent_OHCal_R04->Fill(1.0*n_constituents_ohcal);
-        h1d_nConstituent_EMCal_R04->Fill(1.0*n_constituents_emcal);
-        h2d_SumEnergyDebug_vs_R->Fill(0., emcal_energy_sum+ihcal_energy_sum+ohcal_energy_sum);
+      // get tower info
+      if(comp.first == 26 || comp.first == 30)
+      { // IHcal 
 
-
-      }
+        tower = towersIH3->get_tower_at_channel(channel);
         
+        if(!tower || !tower_geomIH){ continue; }
+        
+        unsigned int calokey = towersIH3->encode_key(channel);
+        int ieta = towersIH3->getTowerEtaBin(calokey);
+	      int iphi = towersIH3->getTowerPhiBin(calokey);
+	      const RawTowerDefs::keytype key = RawTowerDefs::encode_towerid(RawTowerDefs::CalorimeterId::HCALIN, ieta, iphi);
+	      float tower_phi = tower_geomIH->get_tower_geometry(key)->get_phi();
+	      float tower_eta = tower_geomIH->get_tower_geometry(key)->get_eta();
+        tower_eT = tower->get_energy()/cosh(tower_eta);
+
+        if(comp.first == 30)
+        { // is sub1
+          if(has_tower_background)
+          {
+            float UE = towBack->get_UE(1).at(ieta);
+            float tower_UE = UE *( 1 + 2 * background_v2 * cos(2 * (tower_phi - background_Psi2)));
+            tower_eT = (tower->get_energy() - tower_UE)/cosh(tower_eta);
+          }
+        }
+
+        eFrac_ihcal+= tower_eT;
+        jet_total_eT += tower_eT;
+        n_comp_ihcal++;
+        n_comp_total++;
+        
+      }
+      else if(comp.first == 27 || comp.first == 31)
+      { // OHcal 
+       
+        tower = towersOH3->get_tower_at_channel(channel);
+       
+        if(!tower || !tower_geomOH){ continue; }
+
+        unsigned int calokey = towersOH3->encode_key(channel);
+        int ieta = towersOH3->getTowerEtaBin(calokey);
+        int iphi = towersOH3->getTowerPhiBin(calokey);
+        const RawTowerDefs::keytype key = RawTowerDefs::encode_towerid(RawTowerDefs::CalorimeterId::HCALOUT, ieta, iphi);
+        float tower_phi = tower_geomOH->get_tower_geometry(key)->get_phi();
+        float tower_eta = tower_geomOH->get_tower_geometry(key)->get_eta();
+        tower_eT = tower->get_energy()/cosh(tower_eta);
+
+        if(comp.first == 31)
+        { // is sub1
+          if(has_tower_background)
+          {
+            float UE = towBack->get_UE(2).at(ieta);
+            float tower_UE = UE *( 1 + 2 * background_v2 * cos(2 * (tower_phi - background_Psi2)));
+            tower_eT = (tower->get_energy() - tower_UE)/cosh(tower_eta);
+          }
+        }
+
+        eFrac_ohcal+= tower_eT;
+        jet_total_eT += tower_eT;
+        n_comp_ohcal++;
+        n_comp_total++;
+
+      }
+      else if(comp.first == 28 || comp.first == 29)
+      { // EMCal (retowered)
+       
+        tower = towersEM3->get_tower_at_channel(channel);
+        
+        if(!tower || !tower_geomIH){ continue; }
+      
+
+        unsigned int calokey = towersEM3->encode_key(channel);
+        int ieta = towersEM3->getTowerEtaBin(calokey);
+        int iphi = towersEM3->getTowerPhiBin(calokey);
+        const RawTowerDefs::keytype key = RawTowerDefs::encode_towerid(RawTowerDefs::CalorimeterId::HCALIN, ieta, iphi);
+        float tower_phi = tower_geomIH->get_tower_geometry(key)->get_phi();
+        float tower_eta = tower_geomIH->get_tower_geometry(key)->get_eta();
+        tower_eT = tower->get_energy()/cosh(tower_eta);
+
+        if(comp.first == 29)
+        { // is sub1
+          if(has_tower_background)
+          {
+            float UE = towBack->get_UE(0).at(ieta);
+            float tower_UE = UE *( 1 + 2 * background_v2 * cos(2 * (tower_phi - background_Psi2)));
+            tower_eT = (tower->get_energy() - tower_UE)/cosh(tower_eta);
+          }
+        }
+
+        eFrac_emcal+= tower_eT;
+        jet_total_eT += tower_eT;
+        n_comp_emcal++;
+        n_comp_total++;
+      }
+
+
     }
 
+    // normalize energy fractions
+    eFrac_ihcal/= jet_total_eT;
+    eFrac_ohcal/= jet_total_eT;
+    eFrac_emcal/= jet_total_eT;
+
+    // fill histograms
+    h1_jetNconstituents_total->Fill(1.0*n_comp_total);
+    h1_jetNconstituents_IHCAL->Fill(1.0*n_comp_ihcal);
+    h1_jetNconstituents_OHCAL->Fill(1.0*n_comp_ohcal);
+    h1_jetNconstituents_CEMC->Fill(1.0*n_comp_emcal);
+    h2_jetNconstituents_vs_caloLayer->Fill(1.0, 1.0*n_comp_emcal);
+    h2_jetNconstituents_vs_caloLayer->Fill(2.0, 1.0*n_comp_ihcal);
+    h2_jetNconstituents_vs_caloLayer->Fill(3.0, 1.0*n_comp_ohcal);
+
+    h1_jetFracE_IHCAL->Fill(eFrac_ihcal);
+    h1_jetFracE_OHCAL->Fill(eFrac_ohcal);
+    h1_jetFracE_CEMC->Fill(eFrac_emcal);
+
+    h2_jetFracE_vs_caloLayer->Fill(1.0, eFrac_emcal);
+    h2_jetFracE_vs_caloLayer->Fill(2.0, eFrac_ihcal);
+    h2_jetFracE_vs_caloLayer->Fill(3.0, eFrac_ohcal);
+
+
+
+
+  }
+
+  if(Verbosity() > 1)
+  {
+    std::cout << "JetNconstituents::process_event - Event processed" << std::endl;
   }
  
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
-//____________________________________________________________________________..
-int JetNconstituents::ResetEvent(PHCompositeNode *topNode)
-{
- // std::cout << "JetNconstituents::ResetEvent(PHCompositeNode *topNode) Resetting internal structures, prepare for next event" << std::endl;
-
-  return Fun4AllReturnCodes::EVENT_OK;
-}
-
-//____________________________________________________________________________..
-int JetNconstituents::EndRun(const int runnumber)
-{
-  std::cout << "JetNconstituents::EndRun(const int runnumber) Ending Run for Run " << runnumber << std::endl;
-  std::cout << "JetValidation::End - Output to " << m_outputFileName << std::endl;
-  PHTFileServer::get().cd(m_outputFileName);
-  float ptmin = m_ptRange.first;
-  float ptmax = m_ptRange.second;
-
-  h2d_nConstituent_vs_R->Write();
-  h1d_nConstituent_R02->Write();
-  h1d_nConstituent_R04->Write();
-  h2d_FracEnergy_vs_CaloLayer_R02->Write();
-  h2d_FracEnergy_vs_CaloLayer_R04->Write();
-  h1d_FracEnergy_EMCal_R02->Write();
-  h1d_FracEnergy_IHCal_R02->Write();
-  h1d_FracEnergy_OHCal_R02->Write();
-  h1d_FracEnergy_EMCal_R04->Write();
-  h1d_FracEnergy_IHCal_R04->Write();
-  h1d_FracEnergy_OHCal_R04->Write();
-  h1d_nConstituent_IHCal_R02->Write();
-  h1d_nConstituent_OHCal_R02->Write();
-  h1d_nConstituent_EMCal_R02->Write();
-  h1d_nConstituent_IHCal_R04->Write();
-  h1d_nConstituent_OHCal_R04->Write();
-  h1d_nConstituent_EMCal_R04->Write();
-  h2d_SumEnergyDebug_vs_R->Write();
-
-
-
-  c_emcal->cd();
-  h1d_FracEnergy_EMCal_R02->SetTitle(Form("EMCal Energy Fraction, (%.1f < p_{T} < %.1f GeV/c)",ptmin,ptmax));
-  h1d_FracEnergy_EMCal_R02->SetStats(0);
-  h1d_FracEnergy_EMCal_R02->GetXaxis()->CenterTitle();
-  h1d_FracEnergy_EMCal_R02->GetYaxis()->CenterTitle();
-  h1d_FracEnergy_EMCal_R02->Scale(1./h1d_FracEnergy_EMCal_R02->Integral());
-  h1d_FracEnergy_EMCal_R02->GetYaxis()->SetRangeUser(0.,0.5);
-  h1d_FracEnergy_EMCal_R02->Draw("hist");
-  h1d_FracEnergy_EMCal_R04->Scale(1./h1d_FracEnergy_EMCal_R04->Integral());
-  h1d_FracEnergy_EMCal_R04->SetStats(0);  
-  h1d_FracEnergy_EMCal_R04->Draw("hist same");
-  TLegend *leg = new TLegend(0.7,0.7,0.9,0.9);
-  leg->SetFillStyle(0);
-  leg->SetBorderSize(0);
-  leg->AddEntry(h1d_FracEnergy_EMCal_R02,"R=0.2","lf");
-  leg->AddEntry(h1d_FracEnergy_EMCal_R04,"R=0.4","lf");
-  leg->Draw();
-  c_emcal->Update();
-  c_emcal->Write();
-
-  c_ihcal->cd();
-  h1d_FracEnergy_IHCal_R02->SetTitle(Form("IHCal Energy Fraction, (%.1f < p_{T} < %.1f GeV/c)",ptmin,ptmax));
-  h1d_FracEnergy_IHCal_R02->SetStats(0);
-  h1d_FracEnergy_IHCal_R02->GetXaxis()->CenterTitle();
-  h1d_FracEnergy_IHCal_R02->GetYaxis()->CenterTitle();
-  h1d_FracEnergy_IHCal_R02->Scale(1./h1d_FracEnergy_IHCal_R02->Integral());
-  h1d_FracEnergy_IHCal_R02->GetYaxis()->SetRangeUser(0.,0.5);
-  h1d_FracEnergy_IHCal_R02->Draw("hist");
-  h1d_FracEnergy_IHCal_R04->Scale(1./h1d_FracEnergy_IHCal_R04->Integral());
-  h1d_FracEnergy_IHCal_R04->SetStats(0);
-  h1d_FracEnergy_IHCal_R04->Draw("hist same");
-  TLegend *leg2 = new TLegend(0.7,0.7,0.9,0.9);
-  leg2->SetFillStyle(0);
-  leg2->SetBorderSize(0);
-  leg2->AddEntry(h1d_FracEnergy_IHCal_R02,"R=0.2","lf");
-  leg2->AddEntry(h1d_FracEnergy_IHCal_R04,"R=0.4","lf");
-  leg2->Draw();
-  c_ihcal->Update();
-  c_ihcal->Write();
-
-  c_ohcal->cd();
-  h1d_FracEnergy_OHCal_R02->SetTitle(Form("OHCal Energy Fraction, (%.1f < p_{T} < %.1f GeV/c)",ptmin,ptmax));
-  h1d_FracEnergy_OHCal_R02->SetStats(0);
-  h1d_FracEnergy_OHCal_R02->GetXaxis()->CenterTitle();
-  h1d_FracEnergy_OHCal_R02->GetYaxis()->CenterTitle();
-  h1d_FracEnergy_OHCal_R02->Scale(1./h1d_FracEnergy_OHCal_R02->Integral());
-  h1d_FracEnergy_OHCal_R02->GetYaxis()->SetRangeUser(0.,0.5);
-  h1d_FracEnergy_OHCal_R02->Draw("hist");
-  h1d_FracEnergy_OHCal_R04->Scale(1./h1d_FracEnergy_OHCal_R04->Integral());
-  h1d_FracEnergy_OHCal_R04->SetStats(0);
-  h1d_FracEnergy_OHCal_R04->Draw("hist same");
-  TLegend *leg3 = new TLegend(0.7,0.7,0.9,0.9);
-  leg3->SetFillStyle(0);
-  leg3->SetBorderSize(0);
-  leg3->AddEntry(h1d_FracEnergy_OHCal_R02,"R=0.2","lf");
-  leg3->AddEntry(h1d_FracEnergy_OHCal_R04,"R=0.4","lf");
-  leg3->Draw();
-  c_ohcal->Update();
-  c_ohcal->Write();
-
-  c_nconst->cd();
-  h1d_nConstituent_R02->SetTitle(Form("Number of Constituents (%.1f < p_{T} < %.1f GeV/c)",ptmin,ptmax));
-  h1d_nConstituent_R02->SetStats(0);
-  h1d_nConstituent_R02->GetXaxis()->CenterTitle();
-  h1d_nConstituent_R02->GetYaxis()->CenterTitle();
-  h1d_nConstituent_R02->Scale(1./h1d_nConstituent_R02->Integral());
-  h1d_nConstituent_R02->GetYaxis()->SetRangeUser(0.,0.5);
-  h1d_nConstituent_R02->Draw("hist");
-  h1d_nConstituent_R04->Scale(1./h1d_nConstituent_R04->Integral());
-  h1d_nConstituent_R04->SetStats(0);
-  h1d_nConstituent_R04->Draw("hist same");
-  TLegend *leg4 = new TLegend(0.7,0.7,0.9,0.9);
-  leg4->SetFillStyle(0);
-  leg4->SetBorderSize(0);
-  leg4->AddEntry(h1d_nConstituent_R02,"R=0.2","lf");
-  leg4->AddEntry(h1d_nConstituent_R04,"R=0.4","lf");
-  leg4->Draw();
-  c_nconst->Update();
-  c_nconst->Write();
-
-  c_nconst_emcal->cd();
-  h1d_nConstituent_EMCal_R02->SetTitle(Form("Number of Constituents in EMCal (%.1f < p_{T} < %.1f GeV/c)",ptmin,ptmax));
-  h1d_nConstituent_EMCal_R02->SetStats(0);
-  h1d_nConstituent_EMCal_R02->GetXaxis()->CenterTitle();
-  h1d_nConstituent_EMCal_R02->GetYaxis()->CenterTitle();
-  h1d_nConstituent_EMCal_R02->Scale(1./h1d_nConstituent_EMCal_R02->Integral());
-  h1d_nConstituent_EMCal_R02->GetYaxis()->SetRangeUser(0.,0.5);
-  h1d_nConstituent_EMCal_R02->Draw("hist");
-  h1d_nConstituent_EMCal_R04->Scale(1./h1d_nConstituent_EMCal_R04->Integral());
-  h1d_nConstituent_EMCal_R04->SetStats(0);
-  h1d_nConstituent_EMCal_R04->Draw("hist same");
-  TLegend *leg5 = new TLegend(0.7,0.7,0.9,0.9);
-  leg5->SetFillStyle(0);
-  leg5->SetBorderSize(0);
-  leg5->AddEntry(h1d_nConstituent_EMCal_R02,"R=0.2","lf");
-  leg5->AddEntry(h1d_nConstituent_EMCal_R04,"R=0.4","lf");
-  leg5->Draw();
-  c_nconst_emcal->Update();
-  c_nconst_emcal->Write();
-
-  c_nconst_emcal->cd();
-  h1d_nConstituent_EMCal_R02->SetTitle(Form("Number of Constituents in EMCal (%.1f < p_{T} < %.1f GeV/c)",ptmin,ptmax));
-  h1d_nConstituent_EMCal_R02->SetStats(0);
-  h1d_nConstituent_EMCal_R02->GetXaxis()->CenterTitle();
-  h1d_nConstituent_EMCal_R02->GetYaxis()->CenterTitle();
-  h1d_nConstituent_EMCal_R02->Scale(1./h1d_nConstituent_EMCal_R02->Integral());
-  h1d_nConstituent_EMCal_R02->GetYaxis()->SetRangeUser(0.,0.5);
-  h1d_nConstituent_EMCal_R02->Draw("hist");
-  h1d_nConstituent_EMCal_R04->Scale(1./h1d_nConstituent_EMCal_R04->Integral());
-  h1d_nConstituent_EMCal_R04->SetStats(0);
-  h1d_nConstituent_EMCal_R04->Draw("hist same");
-  TLegend *leg51 = new TLegend(0.7,0.7,0.9,0.9);
-  leg51->SetFillStyle(0);
-  leg51->SetBorderSize(0);
-  leg51->AddEntry(h1d_nConstituent_EMCal_R02,"R=0.2","lf");
-  leg51->AddEntry(h1d_nConstituent_EMCal_R04,"R=0.4","lf");
-  leg51->Draw();
-  c_nconst_emcal->Update();
-  c_nconst_emcal->Write();
-
-  c_nconst_ihcal->cd();
-  h1d_nConstituent_IHCal_R02->SetTitle(Form("Number of Constituents in IHCal (%.1f < p_{T} < %.1f GeV/c)",ptmin,ptmax));
-  h1d_nConstituent_IHCal_R02->SetStats(0);
-  h1d_nConstituent_IHCal_R02->GetXaxis()->CenterTitle();
-  h1d_nConstituent_IHCal_R02->GetYaxis()->CenterTitle();
-  h1d_nConstituent_IHCal_R02->Scale(1./h1d_nConstituent_IHCal_R02->Integral());
-  h1d_nConstituent_IHCal_R02->GetYaxis()->SetRangeUser(0.,0.5);
-  h1d_nConstituent_IHCal_R02->Draw("hist");
-  h1d_nConstituent_IHCal_R04->Scale(1./h1d_nConstituent_IHCal_R04->Integral());
-  h1d_nConstituent_IHCal_R04->SetStats(0);
-  h1d_nConstituent_IHCal_R04->Draw("hist same");
-  TLegend *leg16 = new TLegend(0.7,0.7,0.9,0.9);
-  leg16->SetFillStyle(0);
-  leg16->SetBorderSize(0);
-  leg16->AddEntry(h1d_nConstituent_IHCal_R02,"R=0.2","lf");
-  leg16->AddEntry(h1d_nConstituent_IHCal_R04,"R=0.4","lf");
-  leg16->Draw();
-  c_nconst_ihcal->Update();
-  c_nconst_ihcal->Write();
-
-  c_nconst_ohcal->cd();
-  h1d_nConstituent_OHCal_R02->SetTitle(Form("Number of Constituents in OHCal (%.1f < p_{T} < %.1f GeV/c)",ptmin,ptmax));
-  h1d_nConstituent_OHCal_R02->SetStats(0);
-  h1d_nConstituent_OHCal_R02->GetXaxis()->CenterTitle();
-  h1d_nConstituent_OHCal_R02->GetYaxis()->CenterTitle();
-  h1d_nConstituent_OHCal_R02->Scale(1./h1d_nConstituent_OHCal_R02->Integral());
-  h1d_nConstituent_OHCal_R02->GetYaxis()->SetRangeUser(0.,0.5);
-  h1d_nConstituent_OHCal_R02->Draw("hist");
-  h1d_nConstituent_OHCal_R04->Scale(1./h1d_nConstituent_OHCal_R04->Integral());
-  h1d_nConstituent_OHCal_R04->SetStats(0);
-  h1d_nConstituent_OHCal_R04->Draw("hist same");
-  TLegend *leg17 = new TLegend(0.7,0.7,0.9,0.9);
-  leg17->SetFillStyle(0);
-  leg17->SetBorderSize(0);
-  leg17->AddEntry(h1d_nConstituent_OHCal_R02,"R=0.2","lf");
-  leg17->AddEntry(h1d_nConstituent_OHCal_R04,"R=0.4","lf");
-  leg17->Draw();
-  c_nconst_ohcal->Update();
-  c_nconst_ohcal->Write();
-  
-  
-
-
-    
-  std::cout << "JetValidation::End(PHCompositeNode *topNode) This is the End..." << std::endl;
-
-  return Fun4AllReturnCodes::EVENT_OK;
-}
 
 //____________________________________________________________________________..
 int JetNconstituents::End(PHCompositeNode *topNode)
 {
-  std::cout << "JetNconstituents::End(PHCompositeNode *topNode) This is the End..." << std::endl;
+  
+  if(Verbosity() > 0)
+  {
+    std::cout << "JetNconstituents::EndRun - End run " << std::endl;
+    std::cout << "JetNconstituents::EndRun - Writing to " << m_outputFileName << std::endl;
+  }
+
+  PHTFileServer::get().cd(m_outputFileName);
+  
+  // write histograms to root file
+  h1_jetNconstituents_total->Write();
+  h1_jetNconstituents_IHCAL->Write();
+  h1_jetNconstituents_OHCAL->Write();
+  h1_jetNconstituents_CEMC->Write();
+  h2_jetNconstituents_vs_caloLayer->Write();
+
+  h1_jetFracE_IHCAL->Write();
+  h1_jetFracE_OHCAL->Write();
+  h1_jetFracE_CEMC->Write();
+  h2_jetFracE_vs_caloLayer->Write();  
+ 
+  if(Verbosity() > 0)
+  {
+    std::cout << "JetNconstituents::EndRun - Done" << std::endl;
+  }
+
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
-//____________________________________________________________________________..
-int JetNconstituents::Reset(PHCompositeNode *topNode)
-{
- //std::cout << "JetNconstituents::Reset(PHCompositeNode *topNode) being Reset" << std::endl;
-  return Fun4AllReturnCodes::EVENT_OK;
-}
-
-//____________________________________________________________________________..
-void JetNconstituents::Print(const std::string &what) const
-{
-  std::cout << "JetNconstituents::Print(const std::string &what) const Printing info for " << what << std::endl;
-}

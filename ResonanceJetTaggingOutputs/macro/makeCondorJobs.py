@@ -6,7 +6,7 @@ parser = argparse.ArgumentParser(description='sPHENIX MDC2 Reco Job Creator')
 parser.add_argument('-i', '--inputType', default="HF_CHARM", help='Input type: PYTHIA8_PP_MB, HIJING_[0-20/0-4P88], HF_CHARM[D0], HF_BOTTOM[D0], JET_[10GEV/30GEV/PHOTON], SINGLE_PARTICLE')
 parser.add_argument('-f', '--nFilesPerJob', default=5, type=int, help='Number of input files to pass to each job')
 parser.add_argument('-t', '--nTotEvents', default=-1, type=int, help='Total number of events to run over')
-parser.add_argument('-r', '--run', default=40, type=int, help='Production run to use')
+parser.add_argument('-r', '--run', default=6, type=int, help='Production run to use')
 parser.add_argument('--nopileup', help='Get data without pileup', action="store_true")
 parser.add_argument('--truth', help='Enable truth DST reading', action="store_true")
 parser.add_argument('--calo', help='Enable calo DST reading', action="store_true")
@@ -20,23 +20,23 @@ args = parser.parse_args()
 inputType = args.inputType.upper()
 
 types = {'PYTHIA8_PP_MB' : 3, 'HIJING_0-20' : 4, 'HIJING_0-4P88' : 6, 'HF_CHARM' : 7, 'HF_BOTTOM' : 8, 'HF_CHARMD0' : 9, 'HF_BOTTOMD0' : 10
-        , 'JET_30GEV' : 11, 'JET_10GEV' : 12, 'JET_PHOTON' : 13, 'SINGLE_PARTICLE' : 14 , 'D0JETS' : 16}
+        , 'JET_30GEV' : 11, 'JET_10GEV' : 12, 'JET_PHOTON' : 13, 'SINGLE_PARTICLE' : 14 , 'D0JETS' : 16, 'D0JETS_5GEV' : 17, 'D0JETS_12GEV' : 18}
 if inputType not in types:
   print("The argument, {}, was not known. Use --help to see available types".format(args.inputType))
   sys.exit()
 
 
-dstSets = ['DST_TRACKS', 'DST_VERTEX']
+dstSets = ['DST_TRACKS']
 if args.truth:
-    args.g4hit = False
+    #args.g4hit = False
     dstSets.append('DST_TRUTH')
-    dstSets.append('DST_TRKR_G4HIT')
+    #dstSets.append('DST_TRKR_G4HIT')
     dstSets.append('DST_TRACKSEEDS')
     dstSets.append('DST_TRKR_CLUSTER')
 if args.calo: dstSets.append('DST_CALO_CLUSTER')
 if args.trkr_hit: dstSets.append('DST_TRKR_HIT')
 if args.bbc_g4hit:
-    args.g4hit = False
+    #args.g4hit = False
     dstSets.append('DST_BBC_G4HIT')
 if args.g4hit: dstSets.append('G4Hits')
 if args.truth_table:
@@ -90,14 +90,14 @@ def makeCondorJob():
     condorOutputInfo = "$(condorDir)/log/condor-{0}-$INT(Process,%05d)".format(inputType)
     condorFile.write("Output             = {0}.out\n".format(condorOutputInfo))
     condorFile.write("Error              = {0}.err\n".format(condorOutputInfo))
-    condorFile.write("Log                = {0}.log\n".format(condorOutputInfo))
+    condorFile.write("Log                = /tmp/condor-{0}-$INT(Process,%05d).log\n".format(inputType))
     condorFile.write("Arguments          = \"{}\"\n".format(' '.join(listFileGeneric)))
     condorFile.write("Queue {}\n".format(nJob))
     print("Submission setup complete!")
     print("This setup will submit {} subjobs".format(nJob))
     print("You can submit your job with the script:\n{}".format(condorFileName))
 
-catalogCommand = "CreateFileList.pl -run {0} -type {1} {2}".format(args.run, types[inputType], ' '.join(dstSets))
+catalogCommand = "CreateFileList.pl -run {0} -nop -type {1} {2}".format(args.run, types[inputType], ' '.join(dstSets))
 if args.nTotEvents != -1: catalogCommand += " -n {}".format(args.nTotEvents)
 if args.nopileup: catalogCommand += " -nopileup"
 os.system(catalogCommand)

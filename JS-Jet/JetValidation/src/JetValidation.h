@@ -4,10 +4,16 @@
 #define JETVALIDATION_H
 
 #include <fun4all/SubsysReco.h>
-#include <g4jets/Jetv1.h>
+#include <jetbase/Jetv1.h>
+#include <jetbase/Jetv2.h>
 
 #include <string>
 #include <vector>
+
+#include <TFile.h>
+#include <TH1F.h>
+#include <TH2D.h>
+
 
 class PHCompositeNode;
 class TTree;
@@ -102,6 +108,7 @@ class JetValidation : public SubsysReco
   float m_totalCalo;
   int m_centrality;
   float m_impactparam;
+  float m_zvtx;
 
   //! reconstructed jets
   std::vector<int> m_id;

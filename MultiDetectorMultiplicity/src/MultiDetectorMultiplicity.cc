@@ -11,8 +11,8 @@
 #include <phool/phool.h>
 
 // Vertex includes
-#include <g4vertex/GlobalVertex.h>
-#include <g4vertex/GlobalVertexMap.h>
+#include <globalvertex/GlobalVertex.h>
+#include <globalvertex/GlobalVertexMap.h>
 
 // Tracking includes
 #include <trackbase_historic/SvtxTrack.h>
