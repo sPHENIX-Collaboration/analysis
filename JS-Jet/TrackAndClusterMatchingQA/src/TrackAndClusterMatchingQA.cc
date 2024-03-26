@@ -98,7 +98,7 @@ int TrackAndClusterMatchingQA::Init(PHCompositeNode *topNode)
 
   _outfile = new TFile(_outfilename.c_str(), "RECREATE");
 
-  _h2trackPt_vs_clusterEt = new TH2F("h2trackPt_vs_clusterEt", ";#it{p}_{T} (GeV/#it{c});EMCal cluster #it{E}_{T}", 40, 0., 20., 40, 0., 20.);
+  _h2trackPt_vs_clusterEt = new TH2F("h2trackPt_vs_clusterEt", ";track #it{p}_{T} (GeV/#it{c});EMCal cluster #it{E}_{T}", 40, 0., 20., 40, 0., 20.);
   _h1EMCal_TowerEnergy = new TH1F("_h1EMCal_TowerEnergy", ";EMCal tower #it{E};Entries", 40, 0., 20.);
   _h1EMCal_TowerEnergy_Retowered = new TH1F("_h1EMCal_TowerEnergy_Retowered", ";EMCal retorewed tower #it{E};Entries", 40, 0., 20.);
   _h1HCalIN_TowerEnergy = new TH1F("_h1HCalIN_TowerEnergy", ";HCalIN tower #it{E};Entries", 40, 0., 20.);
