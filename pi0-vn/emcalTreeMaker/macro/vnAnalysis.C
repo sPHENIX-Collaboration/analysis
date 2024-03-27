@@ -44,11 +44,13 @@ namespace myAnalysis {
     vector<Float_t> SB;
 
     vector<TH1F*> hv2;
+    vector<TH1F*> hv2_m;
+    vector<TH1F*> hv2_bg;
     vector<TH1F*> hv3;
 
-    Int_t   bins_v2 = 400;
-    Float_t v2_min  = -11;
-    Float_t v2_max  = 11;
+    Int_t   bins_v2 = 200;
+    Float_t v2_min  = -5;
+    Float_t v2_max  = 5;
 
     Int_t   bins_v3 = 600;
     Float_t v3_min  = -15;
@@ -66,6 +68,16 @@ Bool_t myAnalysis::init(const string &i_input, const string &fitStats) {
             string name = "v2_"+to_string(idx);
 
             hv2.push_back(new TH1F(name.c_str(), title.c_str(), bins_v2, v2_min, v2_max));
+
+            title = "v_{2} Measured " + suffix_title + "; v_{2}; Counts";
+            name  = "v2_m_"+to_string(idx);
+
+            hv2_m.push_back(new TH1F(name.c_str(), title.c_str(), bins_v2, v2_min, v2_max));
+
+            title = "v_{2} Background " + suffix_title + "; v_{2}; Counts";
+            name  = "v2_bg_"+to_string(idx);
+
+            hv2_bg.push_back(new TH1F(name.c_str(), title.c_str(), bins_v2, v2_min, v2_max));
 
             title = "v_{3} " + suffix_title + "; v_{3}; Counts";
             name = "v3_"+to_string(idx);
@@ -123,23 +135,36 @@ Int_t myAnalysis::readFitStats(const string &fitStats) {
 
 void myAnalysis::process_event(Int_t samples, const string &outputCSV) {
 
+    // corrected and measured v2
     vector<Float_t> sum_w_v2(cent_key.size()*pt_key.size());
     vector<Float_t> sum_w2_v2(cent_key.size()*pt_key.size());
+
+    // background v2
+    vector<Float_t> sum_w_v2_bg(cent_key.size()*pt_key.size());
+    vector<Float_t> sum_w2_v2_bg(cent_key.size()*pt_key.size());
 
     vector<Float_t> sum_w_v3(cent_key.size()*pt_key.size());
     vector<Float_t> sum_w2_v3(cent_key.size()*pt_key.size());
 
-    vector<vector<Float_t>> v2_vec(samples, vector<Float_t>(cent_key.size()*pt_key.size()));
-    vector<vector<Float_t>>  w_v2(samples, vector<Float_t>(cent_key.size()*pt_key.size()));
+    vector<vector<Float_t>> v2_vec(samples, vector<Float_t>(cent_key.size()*pt_key.size())); // corrected v2
+    vector<vector<Float_t>> v2_m_vec(samples, vector<Float_t>(cent_key.size()*pt_key.size())); // measured v2
+    vector<vector<Float_t>> v2_bg_vec(samples, vector<Float_t>(cent_key.size()*pt_key.size())); // background v2
+
+    vector<vector<Float_t>>  w_v2(samples, vector<Float_t>(cent_key.size()*pt_key.size())); // corrected and measured v2
+    vector<vector<Float_t>>  w_v2_bg(samples, vector<Float_t>(cent_key.size()*pt_key.size())); // background v2
 
     vector<vector<Float_t>> v3_vec(samples, vector<Float_t>(cent_key.size()*pt_key.size()));
     vector<vector<Float_t>>  w_v3(samples, vector<Float_t>(cent_key.size()*pt_key.size()));
 
-    Float_t v2_min  = 9999;
-    Float_t v3_min  = 9999;
+    Float_t v2_min    = 9999;
+    Float_t v2_m_min  = 9999;
+    Float_t v2_bg_min = 9999;
+    Float_t v3_min    = 9999;
 
-    Float_t v2_max  = 0;
-    Float_t v3_max  = 0;
+    Float_t v2_max    = 0;
+    Float_t v2_m_max  = 0;
+    Float_t v2_bg_max = 0;
+    Float_t v3_max    = 0;
 
     // compute v2 and v3 for the pi0 candidates for each subsample
     for(UInt_t k = 0; k < samples; ++k) {
@@ -163,6 +188,8 @@ void myAnalysis::process_event(Int_t samples, const string &outputCSV) {
                 Int_t idx = i*pt_key.size()+j;
 
                 if(QQ2 > 0) {
+
+                    // measured v2
                     path = "vn/"+to_string(k)+"/qQ2/hqQ2_"+to_string(k)+"_"+to_string(idx);
                     auto hqQ2 = (TH1F*)input->Get(path.c_str());
 
@@ -175,19 +202,38 @@ void myAnalysis::process_event(Int_t samples, const string &outputCSV) {
 
                     // cout << "pT: " << pt_key[j] << ", qQ Events: " << hqQ2->GetEntries() << ", " << hqQ2->GetEntries()*100./hQQ2->GetEntries() << " %" << endl;
 
+                    // background v2
                     path = "vn/"+to_string(k)+"/qQ2_bg/hqQ2_bg_"+to_string(k)+"_"+to_string(idx);
                     auto hqQ2_bg = (TH1F*)input->Get(path.c_str());
-                    Float_t qQ2_bg = hqQ2_bg->GetMean();
+
+                    Float_t qQ2_bg  = hqQ2_bg->GetMean();
+                    Float_t nBGs    = hqQ2_bg->GetSumOfWeights();
+
+                    sum_w_v2_bg[idx]  += nBGs;
+                    sum_w2_v2_bg[idx] += nBGs*nBGs;
+                    w_v2_bg[k][idx]    = nBGs;
 
                     Float_t v2_diphoton = qQ2/sqrt(QQ2);
                     Float_t v2_bg       = qQ2_bg/sqrt(QQ2);
 
                     Float_t v2 = v2_diphoton + (v2_diphoton - v2_bg)/SB[idx];
+
                     hv2[idx]->Fill(v2, nPi0s);
-                    v2_vec[k][idx] = v2;
+                    hv2_m[idx]->Fill(v2_diphoton, nPi0s);
+                    hv2_bg[idx]->Fill(v2_bg, nBGs);
+
+                    v2_vec[k][idx]    = v2;
+                    v2_m_vec[k][idx]  = v2_diphoton;
+                    v2_bg_vec[k][idx] = v2_bg;
 
                     v2_min = min(v2_min, v2);
                     v2_max = max(v2_max, v2);
+
+                    v2_m_min = min(v2_m_min, v2_diphoton);
+                    v2_m_max = max(v2_m_max, v2_diphoton);
+
+                    v2_bg_min = min(v2_bg_min, v2_bg);
+                    v2_bg_max = max(v2_bg_max, v2_bg);
                 }
 
                 if(QQ3 > 0) {
@@ -222,6 +268,8 @@ void myAnalysis::process_event(Int_t samples, const string &outputCSV) {
     }
 
     cout << "v2_min: " << v2_min << ", v2_max: " << v2_max << endl;
+    cout << "v2_m_min: " << v2_m_min << ", v2_m_max: " << v2_m_max << endl;
+    cout << "v2_bg_min: " << v2_bg_min << ", v2_bg_max: " << v2_bg_max << endl;
     cout << "v3_min: " << v3_min << ", v3_max: " << v3_max << endl;
     cout << endl;
 
@@ -229,32 +277,52 @@ void myAnalysis::process_event(Int_t samples, const string &outputCSV) {
     ofstream output(outputCSV.c_str());
 
     // write header
-    output << "Index,v2,v2_err,v3,v3_err" << endl;
+    output << "Index,v2,v2_err,v3,v3_err,v2_m,v2_m_err,v2_bg,v2_bg_err" << endl;
 
     stringstream s;
     for(UInt_t i = 0; i < cent_key.size(); ++i) {
         for(UInt_t j = 0; j < pt_key.size(); ++j) {
             Int_t idx = i*pt_key.size()+j;
 
-            Float_t v2 = hv2[idx]->GetMean();
-            Float_t Keff_v2 = (sum_w2_v2[idx]) ? sum_w_v2[idx]*sum_w_v2[idx]/sum_w2_v2[idx] : 0;
-            Float_t v2_err  = 0;
+            Float_t v2       = hv2[idx]->GetMean();
+            Float_t v2_m     = hv2_m[idx]->GetMean();
+            Float_t v2_bg    = hv2_bg[idx]->GetMean();
+            Float_t Keff_v2  = (sum_w2_v2[idx]) ? sum_w_v2[idx]*sum_w_v2[idx]/sum_w2_v2[idx] : 0;
+            Float_t Keff_v2_bg  = (sum_w2_v2_bg[idx]) ? sum_w_v2_bg[idx]*sum_w_v2_bg[idx]/sum_w2_v2_bg[idx] : 0;
+            Float_t v2_err   = -9999;
+            Float_t v2_m_err = -9999;
+            Float_t v2_bg_err = -9999;
 
             if(Keff_v2 > 1) {
-                Float_t sum_v2_err = 0;
+                Float_t sum_v2_err   = 0;
+                Float_t sum_v2_m_err = 0;
 
                 for(UInt_t k = 0; k < samples; ++k) {
-                    sum_v2_err += w_v2[k][idx] * pow(v2_vec[k][idx]-v2, 2);
+                    sum_v2_err    += w_v2[k][idx] * pow(v2_vec[k][idx]-v2, 2);
+                    sum_v2_m_err  += w_v2[k][idx] * pow(v2_m_vec[k][idx]-v2_m, 2);
                 }
 
-                Float_t v2_err2 = (sum_v2_err/sum_w_v2[idx]) * Keff_v2/(Keff_v2-1);
-                v2_err  = sqrt(v2_err2/Keff_v2);
+                Float_t v2_err2    = (sum_v2_err/sum_w_v2[idx]) * Keff_v2/(Keff_v2-1);
+                Float_t v2_m_err2  = (sum_v2_m_err/sum_w_v2[idx]) * Keff_v2/(Keff_v2-1);
+                v2_err    = sqrt(v2_err2/Keff_v2);
+                v2_m_err  = sqrt(v2_m_err2/Keff_v2);
             }
             else cout << "Idx: " << idx << ", Keff_v2: " << Keff_v2 << endl;
 
+            if(Keff_v2_bg > 1) {
+                Float_t sum_v2_bg_err = 0;
+
+                for(UInt_t k = 0; k < samples; ++k) {
+                    sum_v2_bg_err += w_v2_bg[k][idx] * pow(v2_bg_vec[k][idx]-v2_bg, 2);
+                }
+
+                Float_t v2_bg_err2 = (sum_v2_bg_err/sum_w_v2_bg[idx]) * Keff_v2_bg/(Keff_v2_bg-1);
+                v2_bg_err = sqrt(v2_bg_err2/Keff_v2_bg);
+            }
+
             Float_t v3 = hv3[idx]->GetMean();
             Float_t Keff_v3 = (sum_w2_v3[idx]) ? sum_w_v3[idx]*sum_w_v3[idx]/sum_w2_v3[idx] : 0;
-            Float_t v3_err  = 0;
+            Float_t v3_err  = -9999;
 
             if(Keff_v3 > 1) {
                 Float_t sum_v3_err = 0;
@@ -270,7 +338,10 @@ void myAnalysis::process_event(Int_t samples, const string &outputCSV) {
 
             s.str("");
 
-            s << idx << "," << v2 << "," << v2_err << "," << v3 << "," << v3_err << endl;
+            s << idx << "," << v2 << "," << v2_err << ","
+                            << v3 << "," << v3_err << ","
+                            << v2_m << "," << v2_m_err << ","
+                            << v2_bg << "," << v2_bg_err << endl;
 
             output << s.str();
         }
@@ -283,14 +354,23 @@ void myAnalysis::finalize(const string &outputFile) {
     TFile output(outputFile.c_str(),"recreate");
 
     output.mkdir("v2");
+    output.mkdir("v2/pi0");
+    output.mkdir("v2/measured");
+    output.mkdir("v2/background");
     output.mkdir("v3");
 
     for(UInt_t i = 0; i < cent_key.size(); ++i) {
         for(UInt_t j = 0; j < pt_key.size(); ++j) {
             Int_t idx = i*pt_key.size()+j;
 
-            output.cd("v2");
+            output.cd("v2/pi0");
             hv2[idx]->Write();
+
+            output.cd("v2/measured");
+            hv2_m[idx]->Write();
+
+            output.cd("v2/background");
+            hv2_bg[idx]->Write();
 
             output.cd("v3");
             hv3[idx]->Write();
@@ -303,7 +383,7 @@ void myAnalysis::finalize(const string &outputFile) {
 
 void vnAnalysis(const string &i_input,
                 const string &fitStats,
-                Int_t         samples  = 20,
+                Int_t         samples  = 30,
                 const string &outputCSV = "vn.csv",
                 const string &outputFile = "vn.root") {
 
