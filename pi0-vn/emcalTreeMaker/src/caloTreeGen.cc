@@ -432,11 +432,8 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
       if(isSim && hasTowerFar(recoCluster2, isSim)) continue;
 
       Float_t asym      = abs(clusE-clusE2)/(clusE+clusE2);
-      Float_t ecore_min = std::min(clusE, clusE2);
       Float_t chi2_max  = std::max(clus_chi, clus_chi2);
-      Float_t deltaPhi  = abs(clus_phi-clus_phi2);
-              deltaPhi  = (deltaPhi > M_PI) ? 2*M_PI - deltaPhi : deltaPhi; // ensure that deltaPhi is in [0,pi]
-      Float_t deltaR    = sqrt(pow(clus_eta-clus_eta2,2)+pow(deltaPhi,2));
+      Float_t deltaR    = E_vec_cluster.deltaR(E_vec_cluster2);
 
       // check if either cluster has a tower that is in the last IB board: i.e ieta >= 88
       Bool_t isFarNorth = hasTowerFar(recoCluster) || hasTowerFar(recoCluster2);
