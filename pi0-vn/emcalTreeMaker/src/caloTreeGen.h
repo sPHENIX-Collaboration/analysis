@@ -255,7 +255,8 @@ class caloTreeGen : public SubsysReco
     std::vector<Float_t> pi0_mass_vec;
     std::vector<Float_t> asym_vec;
     std::vector<Float_t> deltaR_vec;
-    std::vector<Float_t> ecore_min_vec;
+    std::vector<Float_t> ecore1_vec;
+    std::vector<Float_t> ecore2_vec;
     std::vector<Float_t> chi2_max_vec;
     std::vector<Bool_t>  isFarNorth_vec; // true if either cluster in the diphoton has a tower that is in the last IB board, ieta: 88-95
 };

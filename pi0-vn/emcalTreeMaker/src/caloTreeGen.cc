@@ -109,7 +109,8 @@ Int_t caloTreeGen::Init(PHCompositeNode *topNode)
   T->Branch("pi0_mass",  &pi0_mass_vec);
   T->Branch("asym",      &asym_vec);
   T->Branch("deltaR",    &deltaR_vec);
-  T->Branch("ecore_min", &ecore_min_vec);
+  T->Branch("ecore1",    &ecore1_vec);
+  T->Branch("ecore2",    &ecore2_vec);
   T->Branch("chi2_max",  &chi2_max_vec);
   T->Branch("isFarNorth",&isFarNorth_vec);
 
@@ -446,7 +447,8 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
       pi0_mass_vec.push_back(pi0_mass);
       asym_vec.push_back(asym);
       deltaR_vec.push_back(deltaR);
-      ecore_min_vec.push_back(ecore_min);
+      ecore1_vec.push_back(clusE);
+      ecore2_vec.push_back(clusE2);
       chi2_max_vec.push_back(chi2_max);
       isFarNorth_vec.push_back(isFarNorth);
     }
@@ -477,7 +479,8 @@ Int_t caloTreeGen::ResetEvent(PHCompositeNode *topNode)
   pi0_mass_vec.clear();
   asym_vec.clear();
   deltaR_vec.clear();
-  ecore_min_vec.clear();
+  ecore1_vec.clear();
+  ecore2_vec.clear();
   chi2_max_vec.clear();
   isFarNorth_vec.clear();
 
