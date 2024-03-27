@@ -30,10 +30,12 @@ namespace myAnalysis {
     TChain* T;
 
     struct Cut {
-        Float_t e;      // min cluster energy
-        Float_t e_asym;   // max cluster pair energy asymmetry: |E1-E2|/(E1+E2), where E1 and E2 is cluster ecore
-        Float_t deltaR; // min cluster pair deltaR
-        Float_t chi;    // max cluster chi2
+        Float_t e1;         // min cluster energy
+        Float_t e2;         // min cluster 2 energy
+        Float_t asym;       // max cluster pair energy asymmetry: |E1-E2|/(E1+E2), where E1 and E2 is cluster ecore
+        Float_t deltaR_min; // min cluster pair deltaR
+        Float_t deltaR_max; // max cluster pair deltaR
+        Float_t chi;        // max cluster chi2
     };
 
     vector<Cut> cuts;
@@ -203,6 +205,10 @@ Int_t myAnalysis::readCuts(const string &i_cuts) {
     }
 
     string line;
+
+    // skip header
+    std::getline(file, line);
+
     while (std::getline(file, line)) {
         std::istringstream lineStream(line);
         string cell;
@@ -210,9 +216,11 @@ Int_t myAnalysis::readCuts(const string &i_cuts) {
 
         Cut cut;
 
-        if (lineStream >> cut.e      >> comma
-                       >> cut.e_asym >> comma
-                       >> cut.deltaR >> comma
+        if (lineStream >> cut.e1         >> comma
+                       >> cut.e2         >> comma
+                       >> cut.asym       >> comma
+                       >> cut.deltaR_min >> comma
+                       >> cut.deltaR_max >> comma
                        >> cut.chi) {
             cuts.push_back(cut);
         }
@@ -230,10 +238,12 @@ Int_t myAnalysis::readCuts(const string &i_cuts) {
     for(auto cut : cuts) {
         if(i == cut_num) cout << "################################################################" << endl;
 
-        cout << left << "e: "        << setw(8) << cut.e
-                     << ", e_asym: " << setw(8) << cut.e_asym
-                     << ", deltaR: " << setw(8) << cut.deltaR
-                     << ", chi: "    << setw(8) << cut.chi << endl;
+        cout << left << "e1: "           << setw(8) << cut.e1
+                     << ", e2: "         << setw(8) << cut.e2
+                     << ", asym: "       << setw(8) << cut.asym
+                     << ", deltaR_min: " << setw(8) << cut.deltaR_min
+                     << ", deltaR_max: " << setw(8) << cut.deltaR_max
+                     << ", chi: "        << setw(8) << cut.chi << endl;
 
         if(i == cut_num) cout << "################################################################" << endl;
         ++i;
@@ -433,8 +443,9 @@ void myAnalysis::init_hists() {
             for (auto cut : cuts) {
                 s.str("");
                 t.str("");
-                s << "hPi0Mass" << suffix << "_" << cut.e << "_" << cut.e_asym << "_" << cut.deltaR << "_" << cut.chi;
-                t << "Diphoton: E #geq " << cut.e << ", Asym < " << cut.e_asym << ", #Delta R #geq " << cut.deltaR
+                s << "hPi0Mass" << suffix << "_" << cut.e1 << "_" << cut.e2 << "_" << cut.asym << "_" << cut.deltaR_min << "_" << cut.deltaR_max << "_" << cut.chi;
+                t << "Diphoton: E_{1} #geq " << cut.e1 << ", E_{2} #geq " << cut.e2 << ", Asym < " << cut.asym
+                  << ", " << cut.deltaR_min << " #leq #Delta R < " << cut.deltaR_max
                   << ", #chi^{2} < " << cut.chi << "; Invariant Mass [GeV]; Counts";
                 auto hist = new TH1F(s.str().c_str(), t.str().c_str(), bins_pi0_mass, hpi0_mass_min, hpi0_mass_max);
                 hist->Sumw2();
@@ -512,7 +523,8 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end) {
     T->SetBranchStatus("pi0_pt",     true);
     T->SetBranchStatus("asym",       true);
     T->SetBranchStatus("deltaR",     true);
-    T->SetBranchStatus("ecore_min",  true);
+    T->SetBranchStatus("ecore1",  true);
+    T->SetBranchStatus("ecore2",  true);
     T->SetBranchStatus("chi2_max",   true);
 
     if(do_vn_calc) {
@@ -539,7 +551,8 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end) {
     vector<Float_t>* pi0_pt     = 0;
     vector<Float_t>* pi0_asym   = 0;
     vector<Float_t>* pi0_deltaR = 0;
-    vector<Float_t>* ecore_min  = 0;
+    vector<Float_t>* ecore1     = 0;
+    vector<Float_t>* ecore2     = 0;
     vector<Float_t>* chi2_max   = 0;
     vector<Bool_t>*  isFarNorth = 0;
 
@@ -563,7 +576,8 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end) {
     T->SetBranchAddress("pi0_pt",     &pi0_pt);
     T->SetBranchAddress("asym",       &pi0_asym);
     T->SetBranchAddress("deltaR",     &pi0_deltaR);
-    T->SetBranchAddress("ecore_min",  &ecore_min);
+    T->SetBranchAddress("ecore1",     &ecore1);
+    T->SetBranchAddress("ecore2",     &ecore2);
     T->SetBranchAddress("chi2_max",   &chi2_max);
     T->SetBranchAddress("isFarNorth", &isFarNorth);
 
@@ -694,12 +708,13 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end) {
 
             pair<string,string> key = make_pair(cent_key[cent_idx], pt_key[pt_idx]);
 
-            Float_t pi0_mass_val  = pi0_mass->at(j);
-            Float_t asym_val      = pi0_asym->at(j);
-            Float_t deltaR_val    = pi0_deltaR->at(j);
-            Float_t ecore_min_val = ecore_min->at(j);
-            Float_t chi2_max_val  = chi2_max->at(j);
-            Bool_t isFarNorth_val = isFarNorth->at(j);
+            Float_t pi0_mass_val   = pi0_mass->at(j);
+            Float_t asym_val       = pi0_asym->at(j);
+            Float_t deltaR_val     = pi0_deltaR->at(j);
+            Float_t ecore1_val     = min(ecore1->at(j), ecore2->at(j));
+            Float_t ecore2_val     = max(ecore1->at(j), ecore2->at(j));
+            Float_t chi2_max_val   = chi2_max->at(j);
+            Bool_t  isFarNorth_val = isFarNorth->at(j);
 
             Float_t pi0_phi_val = 0;
             Float_t pi0_eta_val = 0;
@@ -752,8 +767,8 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end) {
             Float_t bg_max = 0.5; // setting max at 0.5 GeV to avoid the eta
 
             for(Int_t c = 0; c < cuts.size(); ++c) {
-                if(ecore_min_val >= cuts[c].e      && asym_val     < cuts[c].e_asym &&
-                   deltaR_val    >= cuts[c].deltaR && chi2_max_val < cuts[c].chi) {
+                if(ecore1_val >= cuts[c].e1         && ecore2_val >= cuts[c].e2        && asym_val     < cuts[c].asym &&
+                   deltaR_val >= cuts[c].deltaR_min && deltaR_val < cuts[c].deltaR_max && chi2_max_val < cuts[c].chi) {
                     hPi0Mass[key][c]->Fill(pi0_mass_val);
 
                     // fill in qQ for the background to the left of the pi0 peak
