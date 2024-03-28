@@ -401,6 +401,7 @@ void myAnalysis::process_event(Int_t samples, const string &outputCSV) {
                     sum_v2_err        += w_v2[k][idx] * pow(v2_vec[k][idx]-v2, 2);
                     sum_v2_type_3_err += w_v2[k][idx] * pow(v2_type_3_vec[k][idx]-v2_type_3, 2);
                     sum_v2_type_4_err += w_v2[k][idx] * pow(v2_type_4_vec[k][idx]-v2_type_4, 2);
+                    sum_v2_m_err      += w_v2[k][idx] * pow(v2_m_vec[k][idx]-v2_m, 2);
                 }
 
                 Float_t v2_err2        = (sum_v2_err/sum_w_v2[idx]) * Keff_v2/(Keff_v2-1);
