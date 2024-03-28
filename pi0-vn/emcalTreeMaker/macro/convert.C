@@ -17,10 +17,12 @@ using std::stringstream;
 
 namespace myAnalysis {
     struct Cut {
-        Float_t e;      // min cluster energy
-        Float_t e_asym;   // max cluster pair energy asymmetry: |E1-E2|/(E1+E2), where E1 and E2 is cluster ecore
-        Float_t deltaR; // min cluster pair deltaR
-        Float_t chi;    // max cluster chi2
+        Float_t e1;         // min cluster energy
+        Float_t e2;         // min cluster 2 energy
+        Float_t asym;       // max cluster pair energy asymmetry: |E1-E2|/(E1+E2), where E1 and E2 is cluster ecore
+        Float_t deltaR_min; // min cluster pair deltaR
+        Float_t deltaR_max; // max cluster pair deltaR
+        Float_t chi;        // max cluster chi2
     };
 
     vector<Cut> cuts;
@@ -43,6 +45,8 @@ Int_t myAnalysis::readCuts(const string &i_cuts) {
     }
 
     string line;
+    // skip header
+    std::getline(file, line);
     while (std::getline(file, line)) {
         std::istringstream lineStream(line);
         string cell;
@@ -50,9 +54,11 @@ Int_t myAnalysis::readCuts(const string &i_cuts) {
 
         Cut cut;
 
-        if (lineStream >> cut.e      >> comma
-                       >> cut.e_asym >> comma
-                       >> cut.deltaR >> comma
+        if (lineStream >> cut.e1         >> comma
+                       >> cut.e2         >> comma
+                       >> cut.asym       >> comma
+                       >> cut.deltaR_min >> comma
+                       >> cut.deltaR_max >> comma
                        >> cut.chi) {
             cuts.push_back(cut);
         }
@@ -98,11 +104,13 @@ void convert(const string &i_input,
     stringstream s;
     TH1F* h;
     for(auto cut : myAnalysis::cuts) {
-        string outfname = i_outputDir + "/hPi0Mass_E" + myAnalysis::parseFloat(cut.e) +
-                       "_Asym"      + myAnalysis::parseFloat(cut.e_asym) +
-                       "_Delr"      + myAnalysis::parseFloat(cut.deltaR) +
-                       "_Chi"       + myAnalysis::parseFloat(cut.chi) +
-                       ".root";
+        string outfname = i_outputDir + "/hPi0Mass_EA" + myAnalysis::parseFloat(cut.e1) +
+                                         "_EB"         + myAnalysis::parseFloat(cut.e2) +
+                                         "_Asym"       + myAnalysis::parseFloat(cut.asym) +
+                                         "_DelrMin"    + myAnalysis::parseFloat(cut.deltaR_min) +
+                                         "_DelrMax"    + myAnalysis::parseFloat(cut.deltaR_max) +
+                                         "_Chi"        + myAnalysis::parseFloat(cut.chi) +
+                                         ".root";
         Int_t index = 0;
 
         TFile output(outfname.c_str(),"recreate");
@@ -112,7 +120,8 @@ void convert(const string &i_input,
                 s.str("");
                 s << "results/" << cent << "/" << pt << "/"
                   << "hPi0Mass_" << cent << "_" << pt << "_"
-                  << cut.e << "_" << cut.e_asym << "_" << cut.deltaR << "_" << cut.chi;
+                  << cut.e1 << "_" << cut.e2 << "_" << cut.asym << "_"
+                  << cut.deltaR_min << "_" << cut.deltaR_max << "_" << cut.chi;
 
                 h = (TH1F*)input.Get(s.str().c_str());
                 if(h) {
