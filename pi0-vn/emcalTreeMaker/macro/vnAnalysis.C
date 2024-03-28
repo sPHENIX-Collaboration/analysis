@@ -530,17 +530,17 @@ void myAnalysis::finalize(const string &outputFile) {
 
 void vnAnalysis(const string &i_input,
                 const string &fitStats,
-                Int_t         samples  = 30,
-                const string &outputCSV = "vn.csv",
-                const string &outputFile = "vn.root") {
+                const string &outputCSV  = "vn.csv",
+                const string &outputFile = "vn.root",
+                Int_t         samples    = 30) {
 
     cout << "#############################" << endl;
     cout << "Run Parameters" << endl;
     cout << "inputFile: "   << i_input << endl;
     cout << "fitStats: "    << fitStats << endl;
-    cout << "Samples: "     << samples << endl;
     cout << "outputCSV: "   << outputCSV << endl;
     cout << "outputFile: "  << outputFile << endl;
+    cout << "Samples: "     << samples << endl;
     cout << "#############################" << endl;
 
     if(myAnalysis::init(i_input, fitStats)) return;
@@ -552,30 +552,30 @@ void vnAnalysis(const string &i_input,
 # ifndef __CINT__
 Int_t main(Int_t argc, char* argv[]) {
 if(argc < 3 || argc > 6){
-        cout << "usage: ./vnAna inputFile fitStats [samples] [outputCSV] [outputFile]" << endl;
+        cout << "usage: ./vnAna inputFile fitStats [outputCSV] [outputFile] [samples]" << endl;
         cout << "inputFile: containing list of root file paths" << endl;
         cout << "fitStats: csv file containing fit stats" << endl;
-        cout << "samples: number of samples for the vn analysis" << endl;
+        cout << "samples: number of samples for the vn analysis. Default: 30." << endl;
         cout << "outputCSV: location of output CSV. Default: vn.csv." << endl;
         cout << "outputFile: location of output file. Default: vn.root." << endl;
         return 1;
     }
 
-    Int_t  samples     = 30;
     string outputCSV   = "vn.csv";
     string outputFile  = "vn.root";
+    Int_t  samples     = 30;
 
     if(argc >= 4) {
-        samples = atoi(argv[3]);
+        outputCSV = argv[3];
     }
     if(argc >= 5) {
-        outputCSV = argv[4];
+        outputFile = argv[4];
     }
     if(argc >= 6) {
-        outputFile = argv[5];
+        samples = atoi(argv[5]);
     }
 
-    vnAnalysis(argv[1], argv[2], samples, outputCSV, outputFile);
+    vnAnalysis(argv[1], argv[2], outputCSV, outputFile, samples);
 
     cout << "======================================" << endl;
     cout << "done" << endl;
