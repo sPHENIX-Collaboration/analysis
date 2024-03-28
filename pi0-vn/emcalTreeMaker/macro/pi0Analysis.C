@@ -262,9 +262,9 @@ Int_t myAnalysis::readFitStats(const string &fitStats) {
         return 1;
     }
 
-    // 5: mu
-    // 7: sigma
-    Int_t col[2] = {5,7};
+    // 7: mu
+    // 9: sigma
+    Int_t col[2] = {7,9};
 
     std::string line;
     Int_t idx = 0;
@@ -523,20 +523,20 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end) {
     T->SetBranchStatus("pi0_pt",     true);
     T->SetBranchStatus("asym",       true);
     T->SetBranchStatus("deltaR",     true);
-    T->SetBranchStatus("ecore1",  true);
-    T->SetBranchStatus("ecore2",  true);
+    T->SetBranchStatus("ecore1",     true);
+    T->SetBranchStatus("ecore2",     true);
     T->SetBranchStatus("chi2_max",   true);
 
     if(do_vn_calc) {
-        T->SetBranchStatus("Q2_S_x",   true);
-        T->SetBranchStatus("Q2_S_y",   true);
-        T->SetBranchStatus("Q2_N_x",   true);
-        T->SetBranchStatus("Q2_N_y",   true);
+        T->SetBranchStatus("Q2_S_x",  true);
+        T->SetBranchStatus("Q2_S_y",  true);
+        T->SetBranchStatus("Q2_N_x",  true);
+        T->SetBranchStatus("Q2_N_y",  true);
 
-        T->SetBranchStatus("Q3_S_x",   true);
-        T->SetBranchStatus("Q3_S_y",   true);
-        T->SetBranchStatus("Q3_N_x",   true);
-        T->SetBranchStatus("Q3_N_y",   true);
+        T->SetBranchStatus("Q3_S_x",  true);
+        T->SetBranchStatus("Q3_S_y",  true);
+        T->SetBranchStatus("Q3_N_x",  true);
+        T->SetBranchStatus("Q3_N_y",  true);
 
         T->SetBranchStatus("pi0_phi", true);
         T->SetBranchStatus("pi0_eta", true);
@@ -1031,8 +1031,8 @@ if(argc < 3 || argc > 12){
         cout << "do_vn_calc: Do vn calculations. Default: False" << endl;
         cout << "fitStats: csv file containing fit stats" << endl;
         cout << "QVecCorr: csv file containing Q vector corrections" << endl;
-        cout << "subsamples: number of subsamples for the vn analysis" << endl;
-        cout << "cut_num: the specific diphoton cut to use for the vn analysis" << endl;
+        cout << "subsamples: number of subsamples for the vn analysis. Default: 1." << endl;
+        cout << "cut_num: the specific diphoton cut to use for the vn analysis. Default: 0." << endl;
         cout << "start: start event number. Default: 0." << endl;
         cout << "end: end event number. Default: 0. (to run over all entries)." << endl;
         return 1;
