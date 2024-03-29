@@ -49,8 +49,20 @@ class DijetQA : public SubsysReco
   int Reset(PHCompositeNode * /*topNode*/) override;
 
   void Print(const std::string &what = "ALL") const override;
-
+	float XJ, AJ; 
+	//These are the interesting variables, definitions for them are 
+	//////////////////////////////////////////////////////////////
+	//							    //
+	//        X_j = (p_(T, 1))/(p_(T,2))			    //
+	//        A_j = (p_(T, 1) -p_(T,2))/P_T			    //
+	//							    //
+	//////////////////////////////////////////////////////////////
  private:
+	float DeltaPhiOne=3.141529694/32.; //cut on the opening angle of phi for the identified jets
+				//Should set to integer multilple of hcal phi tower size ->Pi/32 
+	int ntowers_opening=1;
+	float DeltaPhi=ntowers_opening*DeltaPhiOne; 
+		//use the above single tower width and tunable parameter to keep things more saefly defined
 };
 
 #endif // DIJETQA_H
