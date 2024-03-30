@@ -36,8 +36,8 @@ TFitResultPtr PerformFitting(TH1F* hPi0Mass, TF1*& totalFit) {
     double fitStart = 0.1;
     double fitEnd = 0.35;
 
-    double findBin1Value = 0.1; // Value in FindBin for bin1
-    double findBin2Value = 0.2; // Value in FindBin for bin2
+    double lowerSignalBoundEstimate = 0.1;
+    double upperSignalBoundEstimate = 0.2;
 
     double sigmaEstimate = 0.024; // sigmaEstimate value
 
@@ -45,8 +45,13 @@ TFitResultPtr PerformFitting(TH1F* hPi0Mass, TF1*& totalFit) {
     // Define totalFit
     totalFit = new TF1("totalFit", "gaus(0) + pol2(3)", fitStart, fitEnd);
 
-    int bin1 = hPi0Mass->GetXaxis()->FindBin(findBin1Value);
-    int bin2 = hPi0Mass->GetXaxis()->FindBin(findBin2Value);
+    /*
+     Give overestimation for amplitude to help fit converge on correct value in correct region
+     
+     Set mean estimate to this values bin center
+     */
+    int bin1 = hPi0Mass->GetXaxis()->FindBin(lowerSignalBoundEstimate);
+    int bin2 = hPi0Mass->GetXaxis()->FindBin(upperSignalBoundEstimate);
     int maxBin = bin1;
     double maxBinContent = hPi0Mass->GetBinContent(bin1);
     for (int i = bin1 + 1; i <= bin2; ++i) {
@@ -67,7 +72,7 @@ TFitResultPtr PerformFitting(TH1F* hPi0Mass, TF1*& totalFit) {
     return fitResult; // Return the fit result
 }
 /*
- Function to parse the filename and extract cut values
+ Function to parse the filename and extract cut values to be propagated throughout macro for automation of cut variation analysis
  */
 CutValues parseFileName(const std::string& filename) {
     CutValues cuts = {0, 0, 0, 0}; // Initialize cut values to zero
@@ -102,12 +107,12 @@ CutValues parseFileName(const std::string& filename) {
         for (size_t i = 1; i < match.size(); ++i) {
             std::cout << "Match[" << i << "]: " << match[i].str() << " --> " << convert(match[i].str()) << std::endl;
         }
-        cuts.clusEA = convert(match[1].str());
-        cuts.clusEB = convert(match[2].str());
-        cuts.asymmetry = convert(match[3].str());
-        cuts.deltaRMin = convert(match[4].str());
-        cuts.deltaRMax = convert(match[5].str());
-        cuts.chi = convert(match[6].str());
+        cuts.clusEA = convert(match[1].str()); //minimum cluster energy cut 1
+        cuts.clusEB = convert(match[2].str()); //minimum cluster energy cut 2
+        cuts.asymmetry = convert(match[3].str()); //Asym Cut
+        cuts.deltaRMin = convert(match[4].str()); //Delta R cut minimum
+        cuts.deltaRMax = convert(match[5].str()); //Delta R cut max --really just is 1
+        cuts.chi = convert(match[6].str()); //chi2 cut
     } else {
         // If regex does not match, log an error message
         std::cout << "Regex did not match the filename: " << filename << std::endl;
@@ -119,6 +124,9 @@ bool isFitGood; // No initial value needed here
 struct Range {
     double ptLow, ptHigh, mbdLow, mbdHigh;
 };
+/*
+ For automatic labelling of pT and centrality bins
+ */
 Range ranges[] = {
     //40-60 percent centrality
     {2.0, 2.5, 40, 60},       // index 0
@@ -146,7 +154,7 @@ Range ranges[] = {
 
 };
 /*
- Signal to background ratio calculation and terminal output
+ Signal to background ratio calculation
  */
 double CalculateSignalToBackgroundRatio(TH1F* hPi0Mass, TF1* polyFit, double fitMean, double fitSigma, double& signalToBackgroundError) {
     // Cloning histograms for signal and background
@@ -212,7 +220,8 @@ double CalculateSignalYieldAndError(TH1F* hPi0Mass, TF1* polyFit, double fitMean
 }
 
 /*
- Draws on canvas for invariant mass histograms, no need for manual input automatically updates according to root file and plot generated
+ Automatic update of canvas cut values, fit information, and analysis bin
+ */
  */
 void DrawCanvasText(TLatex& latex, const Range& selectedRange, double fitMean, double fitSigma, double signalToBackgroundRatio, double signalToBackgroundRatioError) {
     // Drawing text related to the range and cuts
@@ -243,7 +252,7 @@ void DrawCanvasText(TLatex& latex, const Range& selectedRange, double fitMean, d
     latex.DrawLatex(0.43, 0.76, Form("S/B Ratio: %.4f #pm %.4f", signalToBackgroundRatio, signalToBackgroundRatioError));
 }
 /*
- method to globally keep track of parameters as you go index by index and switch between root files with different cuts
+Track Relevant Output in CSV tracking via indices and unique cut combinations
  */
 void WriteDataToCSV(int histIndex, const CutValues& cutValues, double fitMean, double fitMeanError, double fitSigma, double fitSigmaError, double signalToBackgroundRatio, double signalToBackgroundError, double signalYield, double signalError, double numEntries, double chi2) {
     // Check if the fit is good before proceeding
@@ -325,11 +334,11 @@ double CalculateDynamicYAxisMax(TH1F* h, double& lineHeight, bool& isBackgroundH
     // Use empirical margin factors and buffers to avoid overlapping
     if (isBackgroundHigher) {
         chosenMax = backgroundValue;
-        marginFactor = 0.005; // Tight margin for background
+        marginFactor = 0.005; //  margin for background
         yAxisMaxBuffer = 1.5; // Buffer to fit under the stats box
     } else {
         chosenMax = peakMaxValue;
-        marginFactor = 0.3; // Increased margin for peak
+        marginFactor = 0.3; //  margin for peak
         yAxisMaxBuffer = 1.5; // Buffer to provide space above TLatex
     }
 
@@ -346,7 +355,6 @@ bool directoryExists(const std::string& dirPath) {
     else
         return (info.st_mode & S_IFDIR) != 0;
 }
-
 // Function to create a directory
 void createDirectory(const std::string& dirPath) {
     const int dir_err = mkdir(dirPath.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
@@ -355,8 +363,7 @@ void createDirectory(const std::string& dirPath) {
         exit(1);
     }
 }
-bool runForAllFiles = false; // Global flag to indicate running for all files without further input
-
+bool runForAllFiles = false; // Global flag to indicate running for all hPi0Mass files in some given folder
 
 void RunCode(const std::string& filename) {
     
