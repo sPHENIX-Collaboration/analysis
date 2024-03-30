@@ -59,12 +59,16 @@ python runCondor.py --generator AMPT --eventPerJob 800 --nJob 100 --outputdir AM
 ```
 
 ## Analysis codes & scripts
-The analysis codes are located in the `analysis_INTT` directory.
+The analysis codes are located in the `analysis_INTT` and `analysis_INTT_CW` directory.
 
+### for `analysis_INTT`:
 First, make the executables by
 ```bash
 make
 ```
 which (for now) should produce the executables `TrackletAna`, `plotTracklets`, `plotCluster`, `BeamspotReco`, `INTTVtxZ`, and `Corrections`. 
+
+### for `analysis_INTT_CW`
+It is detailed in the folder
 
 
