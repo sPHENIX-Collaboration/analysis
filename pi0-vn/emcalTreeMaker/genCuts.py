@@ -16,11 +16,11 @@ if __name__ == '__main__':
     output = os.path.realpath(args.output)
     print(f'Output: {output}')
 
-    e          = [1]
-    e2         = [1, 1.25]
-    asym       = [0.3, 0.4, 0.5, 0.8]
+    e          = getRange(1,3,0.25)
+    e2         = getRange(1,3,0.25)
+    asym       = [0.5]
     deltaR     = [0]
-    deltaR_max = [0.5, 1, 2, 3]
+    deltaR_max = [1]
     chi        = [4]
 
     print(f'Cluster E:               {e}')
@@ -34,6 +34,9 @@ if __name__ == '__main__':
         file.write(f'E1_min,E2_min,asym_max,deltaR_min,deltaR_max,chi_max\n')
         for i1 in e:
             for i2 in e2:
+                # ensure e < e2
+                if(i1 > i2):
+                    continue
                 for i3 in asym:
                     for i4 in deltaR:
                         for i5 in deltaR_max:
