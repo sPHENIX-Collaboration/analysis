@@ -156,13 +156,14 @@ Range ranges[] = {
 /*
  Signal to background ratio calculation
  */
-double CalculateSignalToBackgroundRatio(TH1F* hPi0Mass, TF1* polyFit, double fitMean, double fitSigma, double& signalToBackgroundError) {
+double CalculateSignalToBackgroundRatio(TH1F* hPi0Mass, TF1* polyFit, double fitMean, double fitSigma, double& signalToBackgroundError, double fitStart, double fitEnd) {
     // Cloning histograms for signal and background
     TH1F *hSignal = (TH1F*)hPi0Mass->Clone("hSignal");
     TH1F *hBackground = (TH1F*)hPi0Mass->Clone("hBackground");
 
-    int firstBinSignal = hPi0Mass->FindBin(fitMean - 2*fitSigma);
-    int lastBinSignal = hPi0Mass->FindBin(fitMean + 2*fitSigma);
+    //Constraints are set to make sure lower signal bound doesn't include past fit start, with noisy region in low centralities
+    int firstBinSignal = hPi0Mass->FindBin(std::max(fitMean - 2*fitSigma, fitStart));
+    int lastBinSignal  = hPi0Mass->FindBin(std::min(fitMean + 2*fitSigma, fitEnd));
 
     double binCenter, binContent, bgContent, binError;
     for (int i = firstBinSignal; i <= lastBinSignal; ++i) {
@@ -362,7 +363,7 @@ void createDirectory(const std::string& dirPath) {
         exit(1);
     }
 }
-bool runForAllFiles = false; // Global flag to indicate running for all hPi0Mass files in some given folder
+bool runForAllFiles = false; // Global flag to indicate running for all hPi0Mass files
 
 void RunCode(const std::string& filename) {
     
@@ -480,7 +481,7 @@ void RunCode(const std::string& filename) {
         latex.SetNDC();
         
         double signalToBackgroundError;
-        double signalToBackgroundRatio = CalculateSignalToBackgroundRatio(hPi0Mass, polyFit, fitMean, fitSigma, signalToBackgroundError);
+        double signalToBackgroundRatio = CalculateSignalToBackgroundRatio(hPi0Mass, polyFit, fitMean, fitSigma, signalToBackgroundError, fitStart, fitEnd);
         
         DrawCanvasText(latex, ranges[currentIndex], fitMean, fitSigma, signalToBackgroundRatio, signalToBackgroundError);
         
