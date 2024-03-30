@@ -80,6 +80,9 @@ void ReadPHENIXData(std::string filePath,
     }
     file.close();
 }
+/*
+ For seperating a CSV file to be overlayed
+ */
 struct AdditionalData {
     std::vector<double> corrected_v2_0_20_Additional, corrected_v2_20_40_Additional, corrected_v2_40_60_Additional;
     std::vector<double> corrected_v2_0_20_Errors_Additional, corrected_v2_20_40_Errors_Additional, corrected_v2_40_60_Errors_Additional;
@@ -128,13 +131,6 @@ void Read_Additonal_DataSet(const std::string& filePath, AdditionalData& data) {
         double v2_bg = std::stod(rowData.at(rowData.size() - 2)); // Second last column is v3 corrected
         double v2_error_bg = std::stod(rowData.back()); // Last column is v2 corrected error
         
-        /*
-         BELOW CODE IS IF READING in PlotByPlotOutput format:
-         */
-//        double v2_corrected = std::stod(rowData.at(rowData.size() - 10));
-//        double v2_error_corrected = std::stod(rowData.at(rowData.size() - 9));
-//        double v3_corrected = std::stod(rowData.at(rowData.size() - 2));
-//        double v3_error_corrected = std::stod(rowData.back());
 
         int index = std::stoi(rowData[0]);
         if (index >= 0 && index <= 5) {
@@ -177,10 +173,18 @@ void Read_Additonal_DataSet(const std::string& filePath, AdditionalData& data) {
     file.close();
 }
 
-
+/*
+ For seperating a second CSV file to be overlayed
+ */
 struct AdditionalData_2 {
     std::vector<double> corrected_v2_0_20_Additional_2, corrected_v2_20_40_Additional_2, corrected_v2_40_60_Additional_2;
     std::vector<double> corrected_v2_0_20_Errors_Additional_2, corrected_v2_20_40_Errors_Additional_2, corrected_v2_40_60_Errors_Additional_2;
+    
+    std::vector<double> signal_v2_0_20_Additional_2, signal_v2_20_40_Additional_2, signal_v2_40_60_Additional_2;
+    std::vector<double> signal_v2_0_20_Errors_Additional_2, signal_v2_20_40_Errors_Additional_2, signal_v2_40_60_Errors_Additional_2;
+    
+    std::vector<double> bg_v2_0_20_Additional_2, bg_v2_20_40_Additional_2, bg_v2_40_60_Additional_2;
+    std::vector<double> bg_v2_0_20_Errors_Additional_2, bg_v2_20_40_Errors_Additional_2, bg_v2_40_60_Errors_Additional_2;
     
     std::vector<double> corrected_v3_0_20_Additional_2, corrected_v3_40_60_Additional_2;
     std::vector<double> corrected_v3_0_20_Errors_Additional_2, corrected_v3_40_60_Errors_Additional_2;
@@ -202,10 +206,23 @@ void Read_Additonal_DataSet_2(const std::string& filePath, AdditionalData_2& dat
         while (std::getline(ss, cell, ',')) {
             rowData.push_back(cell);
         }
-        double v2_corrected = std::stod(rowData.at(rowData.size() - 4));
-        double v2_error_corrected = std::stod(rowData.at(rowData.size() - 3));
-        double v3_corrected = std::stod(rowData.at(rowData.size() - 2));
-        double v3_error_corrected = std::stod(rowData.back());
+//        double v2_corrected = std::stod(rowData.at(rowData.size() - 4));
+//        double v2_error_corrected = std::stod(rowData.at(rowData.size() - 3));
+//        double v3_corrected = std::stod(rowData.at(rowData.size() - 2));
+//        double v3_error_corrected = std::stod(rowData.back());
+        
+        double v2_corrected = std::stod(rowData.at(rowData.size() - 8));
+        double v2_error_corrected = std::stod(rowData.at(rowData.size() - 7));
+
+        double v3_corrected = std::stod(rowData.at(rowData.size() - 6)); // Second last column is v3 corrected
+        double v3_error_corrected = std::stod(rowData.at(rowData.size() - 5)); // Last column is v2 corrected error
+        
+        
+        double v2_signal = std::stod(rowData.at(rowData.size() - 4)); // Second last column is v3 corrected
+        double v2_error_signal = std::stod(rowData.at(rowData.size() - 3)); // Last column is v2 corrected error
+        
+        double v2_bg = std::stod(rowData.at(rowData.size() - 2)); // Second last column is v3 corrected
+        double v2_error_bg = std::stod(rowData.back()); // Last column is v2 corrected error
         
         /*
          BELOW CODE IS IF READING in PlotByPlotOutput format:
@@ -220,16 +237,34 @@ void Read_Additonal_DataSet_2(const std::string& filePath, AdditionalData_2& dat
             data_2.corrected_v2_40_60_Additional_2.push_back(v2_corrected);
             data_2.corrected_v2_40_60_Errors_Additional_2.push_back(v2_error_corrected);
             
+            data_2.signal_v2_40_60_Additional_2.push_back(v2_signal);
+            data_2.signal_v2_40_60_Errors_Additional_2.push_back(v2_error_signal);
+            
+            data_2.bg_v2_40_60_Additional_2.push_back(v2_bg);
+            data_2.bg_v2_40_60_Errors_Additional_2.push_back(v2_error_bg);
+            
             data_2.corrected_v3_40_60_Additional_2.push_back(v3_corrected);
             data_2.corrected_v3_40_60_Errors_Additional_2.push_back(v3_error_corrected);
             
         } else if (index >= 6 && index <= 11) {
             data_2.corrected_v2_20_40_Additional_2.push_back(v2_corrected);
             data_2.corrected_v2_20_40_Errors_Additional_2.push_back(v2_error_corrected);
+            
+            data_2.signal_v2_20_40_Additional_2.push_back(v2_signal);
+            data_2.signal_v2_20_40_Errors_Additional_2.push_back(v2_error_signal);
+            
+            data_2.bg_v2_20_40_Additional_2.push_back(v2_bg);
+            data_2.bg_v2_20_40_Errors_Additional_2.push_back(v2_error_bg);
 
         } else if (index >= 12 && index <= 17) {
             data_2.corrected_v2_0_20_Additional_2.push_back(v2_corrected);
             data_2.corrected_v2_0_20_Errors_Additional_2.push_back(v2_error_corrected);
+            
+            data_2.signal_v2_0_20_Additional_2.push_back(v2_signal);
+            data_2.signal_v2_0_20_Errors_Additional_2.push_back(v2_error_signal);
+            
+            data_2.bg_v2_0_20_Additional_2.push_back(v2_bg);
+            data_2.bg_v2_0_20_Errors_Additional_2.push_back(v2_error_bg);
 
             data_2.corrected_v3_0_20_Additional_2.push_back(v3_corrected);
             data_2.corrected_v3_0_20_Errors_Additional_2.push_back(v3_error_corrected);
@@ -237,6 +272,7 @@ void Read_Additonal_DataSet_2(const std::string& filePath, AdditionalData_2& dat
     }
     file.close();
 }
+
 
 struct AdditionalData_3 {
     std::vector<double> corrected_v2_0_20_Additional_3, corrected_v2_20_40_Additional_3, corrected_v2_40_60_Additional_3;
@@ -580,7 +616,7 @@ void Plot_vN(const AdditionalData& data, const AdditionalData_2& data_2, const A
     /*
      Path to non 'Additional' datasets, top data set in legend plotted
      */
-    std::string filePath = "/Users/patsfan753/Desktop/Poly4/vN_averaged_poly4.csv";
+    std::string filePath = "/Users/patsfan753/Desktop/Hopefully_Final_v2_3_28_24/Asymmetry_0_3/vN_averaged_Asymmetry_0_3.csv";
     
     /*
      Path to CSV data cleaned to be read in by method above
@@ -716,6 +752,7 @@ void Plot_vN(const AdditionalData& data, const AdditionalData_2& data_2, const A
     corrected_graph_0_20_v2->SetLineColor(color_sPHENIX);
     //corrected_graph_0_20_v2->SetMarkerSize(0.75);
     corrected_graph_0_20_v2->SetMarkerStyle(markerStyle_sPHENIX);
+
     
     
     TGraphErrors* signal_graph_0_20_v2 = CreateGraph(ptCenters, signal_v2_0_20, signal_v2_0_20_Errors);
@@ -725,10 +762,11 @@ void Plot_vN(const AdditionalData& data, const AdditionalData_2& data_2, const A
     signal_graph_0_20_v2->SetMarkerStyle(21);
     
     
+    
     TGraphErrors* bg_graph_0_20_v2 = CreateGraph(ptCenters, bg_v2_0_20, bg_v2_0_20_Errors);
     bg_graph_0_20_v2->SetMarkerColor(kGreen + 4);
     bg_graph_0_20_v2->SetLineColor(kGreen + 4);
-    //bg_graph_0_20_v2->SetMarkerSize(0.75);
+    bg_graph_0_20_v2->SetMarkerSize(1.35);
     bg_graph_0_20_v2->SetMarkerStyle(22);
     
 
@@ -745,6 +783,7 @@ void Plot_vN(const AdditionalData& data, const AdditionalData_2& data_2, const A
     corrected_graph_20_40_v2->SetLineColor(color_sPHENIX);
     //corrected_graph_20_40_v2->SetMarkerSize(0.75);
     corrected_graph_20_40_v2->SetMarkerStyle(markerStyle_sPHENIX);
+
     
     TGraphErrors* signal_graph_20_40_v2 = CreateGraph(ptCenters, signal_v2_20_40, signal_v2_20_40_Errors);
     signal_graph_20_40_v2->SetMarkerColor(kBlue);
@@ -756,7 +795,7 @@ void Plot_vN(const AdditionalData& data, const AdditionalData_2& data_2, const A
     TGraphErrors* bg_graph_20_40_v2 = CreateGraph(ptCenters, bg_v2_20_40, bg_v2_20_40_Errors);
     bg_graph_20_40_v2->SetMarkerColor(kGreen + 4);
     bg_graph_20_40_v2->SetLineColor(kGreen + 4);
-    //bg_graph_20_40_v2->SetMarkerSize(0.75);
+    bg_graph_20_40_v2->SetMarkerSize(1.35);
     bg_graph_20_40_v2->SetMarkerStyle(22);
     
     TGraphErrors* corrected_graph_20_40_v3 = CreateGraph(ptCenters, corrected_v3_20_40, corrected_v3_20_40_Errors);
@@ -769,6 +808,7 @@ void Plot_vN(const AdditionalData& data, const AdditionalData_2& data_2, const A
     corrected_graph_40_60_v2->SetLineColor(color_sPHENIX);
     //corrected_graph_40_60_v2->SetMarkerSize(0.75);
     corrected_graph_40_60_v2->SetMarkerStyle(markerStyle_sPHENIX);
+
     
     TGraphErrors* signal_graph_40_60_v2 = CreateGraph(ptCenters, signal_v2_40_60, signal_v2_40_60_Errors);
     signal_graph_40_60_v2->SetMarkerColor(kBlue);
@@ -780,7 +820,7 @@ void Plot_vN(const AdditionalData& data, const AdditionalData_2& data_2, const A
     TGraphErrors* bg_graph_40_60_v2 = CreateGraph(ptCenters, bg_v2_40_60, bg_v2_40_60_Errors);
     bg_graph_40_60_v2->SetMarkerColor(kGreen + 4);
     bg_graph_40_60_v2->SetLineColor(kGreen + 4);
-    //bg_graph_40_60_v2->SetMarkerSize(0.75);
+    bg_graph_40_60_v2->SetMarkerSize(1.35);
     bg_graph_40_60_v2->SetMarkerStyle(22);
     
     TGraphErrors* corrected_graph_40_60_v3 = CreateGraph(ptCenters, corrected_v3_40_60, corrected_v3_40_60_Errors);
@@ -874,10 +914,10 @@ void Plot_vN(const AdditionalData& data, const AdditionalData_2& data_2, const A
     const auto& corrected_v3_0_20_Errors_Additional = data.corrected_v3_0_20_Errors_Additional;
     const auto& corrected_v3_40_60_Errors_Additional = data.corrected_v3_40_60_Errors_Additional;
     
-    int markerStyle_sPHENIX_AdditionalData = 21;
+    int markerStyle_sPHENIX_AdditionalData = 20;
     //color_sPHENIX_AdditionalData = 6; used in fit variations
 //    int color_sPHENIX_AdditionalData = kGreen+3;
-    int color_sPHENIX_AdditionalData = kBlue;
+    int color_sPHENIX_AdditionalData = kRed;
     
     
     TGraphErrors* corrected_v2_0_20_Additional_graph = CreateGraph(ptCenters, corrected_v2_0_20_Additional, corrected_v2_0_20_Errors_Additional);
@@ -939,10 +979,8 @@ void Plot_vN(const AdditionalData& data, const AdditionalData_2& data_2, const A
     
     
     
-    
-    
     /*
-     Additional Data 2 Read in for Comparison
+     Additional 2 Data Read in for Comparison
      */
     const auto& corrected_v2_0_20_Additional_2 = data_2.corrected_v2_0_20_Additional_2;
     const auto& corrected_v2_20_40_Additional_2 = data_2.corrected_v2_20_40_Additional_2;
@@ -950,31 +988,90 @@ void Plot_vN(const AdditionalData& data, const AdditionalData_2& data_2, const A
     const auto& corrected_v2_0_20_Errors_Additional_2 = data_2.corrected_v2_0_20_Errors_Additional_2;
     const auto& corrected_v2_20_40_Errors_Additional_2 = data_2.corrected_v2_20_40_Errors_Additional_2;
     const auto& corrected_v2_40_60_Errors_Additional_2 = data_2.corrected_v2_40_60_Errors_Additional_2;
+    
+    
+    const auto& signal_v2_0_20_Additional_2 = data_2.signal_v2_0_20_Additional_2;
+    const auto& signal_v2_20_40_Additional_2 = data_2.signal_v2_20_40_Additional_2;
+    const auto& signal_v2_40_60_Additional_2 = data_2.signal_v2_40_60_Additional_2;
+    const auto& signal_v2_0_20_Errors_Additional_2 = data_2.signal_v2_0_20_Errors_Additional_2;
+    const auto& signal_v2_20_40_Errors_Additional_2 = data_2.signal_v2_20_40_Errors_Additional_2;
+    const auto& signal_v2_40_60_Errors_Additional_2 = data_2.signal_v2_40_60_Errors_Additional_2;
+    
+    const auto& bg_v2_0_20_Additional_2 = data_2.bg_v2_0_20_Additional_2;
+    const auto& bg_v2_20_40_Additional_2 = data_2.bg_v2_20_40_Additional_2;
+    const auto& bg_v2_40_60_Additional_2 = data_2.bg_v2_40_60_Additional_2;
+    const auto& bg_v2_0_20_Errors_Additional_2 = data_2.bg_v2_0_20_Errors_Additional_2;
+    const auto& bg_v2_20_40_Errors_Additional_2 = data_2.bg_v2_20_40_Errors_Additional_2;
+    const auto& bg_v2_40_60_Errors_Additional_2 = data_2.bg_v2_40_60_Errors_Additional_2;
+    
+    
     const auto& corrected_v3_0_20_Additional_2 = data_2.corrected_v3_0_20_Additional_2;
     const auto& corrected_v3_40_60_Additional_2 = data_2.corrected_v3_40_60_Additional_2;
     const auto& corrected_v3_0_20_Errors_Additional_2 = data_2.corrected_v3_0_20_Errors_Additional_2;
     const auto& corrected_v3_40_60_Errors_Additional_2 = data_2.corrected_v3_40_60_Errors_Additional_2;
     
-    int markerStyle_sPHENIX_AdditionalData_2 = 22;
-    int color_sPHENIX_AdditionalData_2 = kViolet - 3;
+    int markerStyle_sPHENIX_Additional_2Data = 21;
+    //color_sPHENIX_Additional_2Data = 6; used in fit variations
+//    int color_sPHENIX_Additional_2Data = kGreen+3;
+    int color_sPHENIX_Additional_2Data = kBlue;
     
-    TGraphErrors* corrected_v2_0_20_Additional_graph_2 = CreateGraph(ptCenters, corrected_v2_0_20_Additional_2, corrected_v2_0_20_Errors_Additional_2);
-    corrected_v2_0_20_Additional_graph_2->SetMarkerColor(color_sPHENIX_AdditionalData_2);
-    corrected_v2_0_20_Additional_graph_2->SetLineColor(color_sPHENIX_AdditionalData_2);
-    //corrected_v2_0_20_Additional_graph_2->SetMarkerSize(0.75);
-    corrected_v2_0_20_Additional_graph_2->SetMarkerStyle(markerStyle_sPHENIX_AdditionalData_2);
     
-    TGraphErrors* corrected_v2_20_40_Additional_graph_2 = CreateGraph(ptCenters, corrected_v2_20_40_Additional_2, corrected_v2_20_40_Errors_Additional_2);
-    corrected_v2_20_40_Additional_graph_2->SetMarkerColor(color_sPHENIX_AdditionalData_2);
-    corrected_v2_20_40_Additional_graph_2->SetLineColor(color_sPHENIX_AdditionalData_2);
-    //corrected_v2_20_40_Additional_graph_2->SetMarkerSize(0.75);
-    corrected_v2_20_40_Additional_graph_2->SetMarkerStyle(markerStyle_sPHENIX_AdditionalData_2);
+    TGraphErrors* corrected_v2_0_20_Additional_2_graph = CreateGraph(ptCenters, corrected_v2_0_20_Additional_2, corrected_v2_0_20_Errors_Additional_2);
+    corrected_v2_0_20_Additional_2_graph->SetMarkerColor(color_sPHENIX_Additional_2Data);
+    corrected_v2_0_20_Additional_2_graph->SetLineColor(color_sPHENIX_Additional_2Data);
+    //corrected_v2_0_20_Additional_2_graph->SetMarkerSize(0.75);
+    corrected_v2_0_20_Additional_2_graph->SetMarkerStyle(markerStyle_sPHENIX_Additional_2Data);
     
-    TGraphErrors* corrected_v2_40_60_Additional_graph_2 = CreateGraph(ptCenters, corrected_v2_40_60_Additional_2, corrected_v2_40_60_Errors_Additional_2);
-    corrected_v2_40_60_Additional_graph_2->SetMarkerColor(color_sPHENIX_AdditionalData_2);
-    corrected_v2_40_60_Additional_graph_2->SetLineColor(color_sPHENIX_AdditionalData_2);
-    //corrected_v2_40_60_Additional_graph_2->SetMarkerSize(0.75);
-    corrected_v2_40_60_Additional_graph_2->SetMarkerStyle(markerStyle_sPHENIX_AdditionalData_2);
+    TGraphErrors* corrected_v2_20_40_Additional_2_graph = CreateGraph(ptCenters, corrected_v2_20_40_Additional_2, corrected_v2_20_40_Errors_Additional_2);
+    corrected_v2_20_40_Additional_2_graph->SetMarkerColor(color_sPHENIX_Additional_2Data);
+    corrected_v2_20_40_Additional_2_graph->SetLineColor(color_sPHENIX_Additional_2Data);
+    //corrected_v2_20_40_Additional_2_graph->SetMarkerSize(0.75);
+    corrected_v2_20_40_Additional_2_graph->SetMarkerStyle(markerStyle_sPHENIX_Additional_2Data);
+    
+    TGraphErrors* corrected_v2_40_60_Additional_2_graph = CreateGraph(ptCenters, corrected_v2_40_60_Additional_2, corrected_v2_40_60_Errors_Additional_2);
+    corrected_v2_40_60_Additional_2_graph->SetMarkerColor(color_sPHENIX_Additional_2Data);
+    corrected_v2_40_60_Additional_2_graph->SetLineColor(color_sPHENIX_Additional_2Data);
+    //corrected_v2_40_60_Additional_2_graph->SetMarkerSize(0.75);
+    corrected_v2_40_60_Additional_2_graph->SetMarkerStyle(markerStyle_sPHENIX_Additional_2Data);
+    
+    
+    
+    TGraphErrors* signal_v2_0_20_Additional_2_graph = CreateGraph(ptCenters, signal_v2_0_20_Additional_2, signal_v2_0_20_Errors_Additional_2);
+    signal_v2_0_20_Additional_2_graph->SetMarkerColor(color_sPHENIX_Additional_2Data);
+    signal_v2_0_20_Additional_2_graph->SetLineColor(color_sPHENIX_Additional_2Data);
+    //signal_v2_0_20_Additional_2_graph->SetMarkerSize(0.75);
+    signal_v2_0_20_Additional_2_graph->SetMarkerStyle(markerStyle_sPHENIX_Additional_2Data);
+    
+    TGraphErrors* signal_v2_20_40_Additional_2_graph = CreateGraph(ptCenters, signal_v2_20_40_Additional_2, signal_v2_20_40_Errors_Additional_2);
+    signal_v2_20_40_Additional_2_graph->SetMarkerColor(color_sPHENIX_Additional_2Data);
+    signal_v2_20_40_Additional_2_graph->SetLineColor(color_sPHENIX_Additional_2Data);
+    //signal_v2_20_40_Additional_2_graph->SetMarkerSize(0.75);
+    signal_v2_20_40_Additional_2_graph->SetMarkerStyle(markerStyle_sPHENIX_Additional_2Data);
+    
+    TGraphErrors* signal_v2_40_60_Additional_2_graph = CreateGraph(ptCenters, signal_v2_40_60_Additional_2, signal_v2_40_60_Errors_Additional_2);
+    signal_v2_40_60_Additional_2_graph->SetMarkerColor(color_sPHENIX_Additional_2Data);
+    signal_v2_40_60_Additional_2_graph->SetLineColor(color_sPHENIX_Additional_2Data);
+    //signal_v2_40_60_Additional_2_graph->SetMarkerSize(0.75);
+    signal_v2_40_60_Additional_2_graph->SetMarkerStyle(markerStyle_sPHENIX_Additional_2Data);
+    
+    
+    TGraphErrors* bg_v2_0_20_Additional_2_graph = CreateGraph(ptCenters, bg_v2_0_20_Additional_2, bg_v2_0_20_Errors_Additional_2);
+    bg_v2_0_20_Additional_2_graph->SetMarkerColor(color_sPHENIX_Additional_2Data);
+    bg_v2_0_20_Additional_2_graph->SetLineColor(color_sPHENIX_Additional_2Data);
+    //bg_v2_0_20_Additional_2_graph->SetMarkerSize(0.75);
+    bg_v2_0_20_Additional_2_graph->SetMarkerStyle(markerStyle_sPHENIX_Additional_2Data);
+    
+    TGraphErrors* bg_v2_20_40_Additional_2_graph = CreateGraph(ptCenters, bg_v2_20_40_Additional_2, bg_v2_20_40_Errors_Additional_2);
+    bg_v2_20_40_Additional_2_graph->SetMarkerColor(color_sPHENIX_Additional_2Data);
+    bg_v2_20_40_Additional_2_graph->SetLineColor(color_sPHENIX_Additional_2Data);
+    //bg_v2_20_40_Additional_2_graph->SetMarkerSize(0.75);
+    bg_v2_20_40_Additional_2_graph->SetMarkerStyle(markerStyle_sPHENIX_Additional_2Data);
+    
+    TGraphErrors* bg_v2_40_60_Additional_2_graph = CreateGraph(ptCenters, bg_v2_40_60_Additional_2, bg_v2_40_60_Errors_Additional_2);
+    bg_v2_40_60_Additional_2_graph->SetMarkerColor(color_sPHENIX_Additional_2Data);
+    bg_v2_40_60_Additional_2_graph->SetLineColor(color_sPHENIX_Additional_2Data);
+    //bg_v2_40_60_Additional_2_graph->SetMarkerSize(0.75);
+    bg_v2_40_60_Additional_2_graph->SetMarkerStyle(markerStyle_sPHENIX_Additional_2Data);
     
     
     
@@ -1171,17 +1268,20 @@ void Plot_vN(const AdditionalData& data, const AdditionalData_2& data_2, const A
      */
     TCanvas *c_p009_p010_Overlay_0_20_v2_corrected = new TCanvas("c_p009_p010_Overlay_0_20_v2_corrected", "#pi^{0} #it{v}_{2}, p011 Data, Without PDC, vertex = (0, 0, z), Energy Cut of 0.5 and 1 GeV  vs #it{p}_{T} 0-20% Centrality", 800, 600);
     bg_graph_0_20_v2->Draw("AP");  // This will be the base graph
-    bg_graph_0_20_v2->SetTitle("#it{v}_{2} vs #it{p}_{T} 0-20% Centrality, Poly2 with corrected, signal, bg Overlayed");
+    bg_graph_0_20_v2->SetTitle("#it{v}_{2} vs #it{p}_{T} 0-20% Centrality, Asymmetry Cut 0.3, Sideband to 0.5 GeV");
     bg_graph_0_20_v2->GetXaxis()->SetTitle("p_{T}");
     bg_graph_0_20_v2->GetYaxis()->SetTitle("v_{2}");
-    
 
     for (int i = 0; i < ptCenters.size(); ++i) {
+//        corrected_v2_0_20_Additional_graph->SetPoint(i, ptCenters[i] - 2.2 * offset, corrected_v2_0_20_Additional[i]);
+//        corrected_v2_0_20_Additional_2_graph->SetPoint(i, ptCenters[i] + 2.2 * offset, corrected_v2_0_20_Additional_2[i]);
+        
         //corrected_graph_0_20_v2->SetPoint(i, ptCenters[i] - 2.0 * offset, corrected_v2_0_20[i]); //uncomment if use additional points
         
-        signal_graph_0_20_v2->SetPoint(i, ptCenters[i] - 2.0 * offset, signal_v2_0_20[i]);
+        signal_graph_0_20_v2->SetPoint(i, ptCenters[i] - 2.2 * offset, signal_v2_0_20[i]);
+        corrected_graph_0_20_v2->SetPoint(i, ptCenters[i] + 2.2 * offset, corrected_v2_0_20[i]);
         
-        corrected_graph_0_20_v2->SetPoint(i, ptCenters[i] + 2.0 * offset, corrected_v2_0_20[i]);
+        //corrected_graph_0_20_v2->SetPoint(i, ptCenters[i] + 2.2 * offset, corrected_v2_0_20[i]);
         
         //corrected_v2_0_20_Additional_graph_2->SetPoint(i, ptCenters[i] + 2.0 * offset, corrected_v2_0_20_Additional_2[i]);
 //        //corrected_v2_0_20_Additional_graph_3->SetPoint(i, ptCenters[i] - 0.0 * offset, corrected_v2_0_20_Additional_3[i]);
@@ -1199,8 +1299,8 @@ void Plot_vN(const AdditionalData& data, const AdditionalData_2& data_2, const A
     corrected_graph_0_20_v2 -> Draw("P SAME");
     //corrected_v2_0_20_Additional_graph_2-> Draw("P SAME");
     
-    bg_graph_0_20_v2->SetMinimum(-0.65); // Set the minimum y value
-    bg_graph_0_20_v2->SetMaximum(0.8); // Set the maximum y value
+    bg_graph_0_20_v2->SetMinimum(-0.35); // Set the minimum y value
+    bg_graph_0_20_v2->SetMaximum(0.6); // Set the maximum y value
 //
 //    corrected_v2_0_20_Additional_graph_3-> Draw("P SAME");
 //    corrected_v2_0_20_Additional_graph_4-> Draw("P SAME");
@@ -1212,15 +1312,15 @@ void Plot_vN(const AdditionalData& data, const AdditionalData_2& data_2, const A
 //    graph_0_10->Draw("P SAME");
 //    graph_10_20->Draw("P SAME");
 //    
-    TLegend *legend_p009_p010_Overlay_0_20_v2_corrected = new TLegend(0.11, 0.69, 0.81, 0.89);
+    TLegend *legend_p009_p010_Overlay_0_20_v2_corrected = new TLegend(0.11, 0.69, 0.41, 0.89);
     legend_p009_p010_Overlay_0_20_v2_corrected->SetNColumns(2);
 
     legend_p009_p010_Overlay_0_20_v2_corrected->SetBorderSize(0);
     legend_p009_p010_Overlay_0_20_v2_corrected->SetTextSize(0.03);
 
-    legend_p009_p010_Overlay_0_20_v2_corrected->AddEntry(signal_graph_0_20_v2, "0-20%, v_{2}^{signal}, poly4 Fit Data", "pe");
-    legend_p009_p010_Overlay_0_20_v2_corrected->AddEntry(bg_graph_0_20_v2, "0-20%, v_{2}^{bg}, poly4 Fit Data", "pe");
-    legend_p009_p010_Overlay_0_20_v2_corrected->AddEntry(corrected_graph_0_20_v2, "0-20%, v_{2}^{#pi^{0}}, poly4 Fit Data", "pe");
+    legend_p009_p010_Overlay_0_20_v2_corrected->AddEntry(signal_graph_0_20_v2, "0-20%, v_{2}^{signal}", "pe");
+    legend_p009_p010_Overlay_0_20_v2_corrected->AddEntry(bg_graph_0_20_v2, "0-20%, v_{2}^{bg}", "pe");
+    legend_p009_p010_Overlay_0_20_v2_corrected->AddEntry(corrected_graph_0_20_v2, "0-20%, v_{2}^{#pi^{0}}", "pe");
 ////
 ////    legend_p009_p010_Overlay_0_20_v2_corrected->AddEntry(corrected_v2_0_20_Additional_graph_2, "0-20%, v_{2}^{#pi^{0}}, Type C", "pe");
 ////    legend_p009_p010_Overlay_0_20_v2_corrected->AddEntry(corrected_v2_0_20_Additional_graph_3, "0-20%, v_{2}^{#pi^{0}}, Type D", "pe");
@@ -1247,16 +1347,17 @@ void Plot_vN(const AdditionalData& data, const AdditionalData_2& data_2, const A
      */
     TCanvas *c_p009_p010_Overlay_20_40_v2_corrected = new TCanvas("c_p009_p010_Overlay_20_40_v2_corrected", "#pi^{0} #it{v}_{2}, p011 Data, Without PDC, vertex = (0, 0, z), Energy Cut of 0.5 and 1 GeV  vs #it{p}_{T} 20-40% Centrality", 800, 600);
     bg_graph_20_40_v2->Draw("AP");  // This will be the base graph
-    bg_graph_20_40_v2->SetTitle("#it{v}_{2} vs #it{p}_{T} 20-40% Centrality, Poly2 with corrected, signal, bg Overlayed");
+    bg_graph_20_40_v2->SetTitle("#it{v}_{2} vs #it{p}_{T} 20-40% Centrality, Asymmetry Cut 0.3, Sideband to 0.5 GeV");
     bg_graph_20_40_v2->GetXaxis()->SetTitle("p_{T}");
     bg_graph_20_40_v2->GetYaxis()->SetTitle("v_{2}");
     
     for (int i = 0; i < ptCenters.size(); ++i) {
 //        corrected_graph_20_40_v2->SetPoint(i, ptCenters[i] - 4.3 * offset, corrected_v2_20_40[i]); //uncomment if use additional points
-        signal_graph_20_40_v2->SetPoint(i, ptCenters[i] - 2.0 * offset, signal_v2_20_40[i]);
-        corrected_graph_20_40_v2->SetPoint(i, ptCenters[i] + 2.0 * offset, corrected_v2_20_40[i]);
         
-//        corrected_v2_20_40_Additional_graph_2->SetPoint(i, ptCenters[i] - 1.5 * offset, corrected_v2_20_40_Additional_2[i]);
+        signal_graph_20_40_v2->SetPoint(i, ptCenters[i] - 2.2 * offset, signal_v2_20_40[i]);
+        corrected_graph_20_40_v2->SetPoint(i, ptCenters[i] + 2.2 * offset, corrected_v2_20_40[i]);
+//
+        //bg_v2_20_40_Additional_graph ->SetPoint(i, ptCenters[i] - 1.5 * offset, corrected_v2_20_40_Additional [i]);
 //        //corrected_v2_20_40_Additional_graph_3->SetPoint(i, ptCenters[i] - 0.0 * offset, corrected_v2_20_40_Additional_3[i]);
 //        corrected_v2_20_40_Additional_graph_4->SetPoint(i, ptCenters[i] + 1.3 * offset, corrected_v2_20_40_Additional_4[i]);
 //        corrected_v2_20_40_Additional_graph_5->SetPoint(i, ptCenters[i] + 2.8 * offset, corrected_v2_20_40_Additional_5[i]);
@@ -1270,8 +1371,8 @@ void Plot_vN(const AdditionalData& data, const AdditionalData_2& data_2, const A
     }
     signal_graph_20_40_v2 -> Draw("P SAME");
     corrected_graph_20_40_v2 -> Draw("P SAME");
-    bg_graph_20_40_v2->SetMinimum(-.65); // Set the minimum y value
-    bg_graph_20_40_v2->SetMaximum(0.8); // Set the maximum y value
+    bg_graph_20_40_v2->SetMinimum(-0.35); // Set the minimum y value
+    bg_graph_20_40_v2->SetMaximum(0.6); // Set the maximum y value
 //
 //    corrected_v2_20_40_Additional_graph_2-> Draw("P SAME");
 //    corrected_v2_20_40_Additional_graph_3-> Draw("P SAME");
@@ -1284,15 +1385,15 @@ void Plot_vN(const AdditionalData& data, const AdditionalData_2& data_2, const A
 //    graph_0_10->Draw("P SAME");
 //    graph_10_20->Draw("P SAME");
 //
-    TLegend *legend_p009_p010_Overlay_20_40_v2_corrected = new TLegend(0.11, 0.69, 0.81, 0.89);
+    TLegend *legend_p009_p010_Overlay_20_40_v2_corrected = new TLegend(0.11, 0.69, 0.41, 0.89);
     legend_p009_p010_Overlay_20_40_v2_corrected->SetNColumns(2);
 
     legend_p009_p010_Overlay_20_40_v2_corrected->SetBorderSize(0);
-    legend_p009_p010_Overlay_20_40_v2_corrected->SetTextSize(0.025);
+    legend_p009_p010_Overlay_20_40_v2_corrected->SetTextSize(0.03);
 
-    legend_p009_p010_Overlay_20_40_v2_corrected->AddEntry(signal_graph_20_40_v2, "20-40%, v_{2}^{signal}, poly4 Fit Data", "pe");
-    legend_p009_p010_Overlay_20_40_v2_corrected->AddEntry(bg_graph_20_40_v2, "20-40%, v_{2}^{bg}, poly4 Fit Data", "pe");
-    legend_p009_p010_Overlay_20_40_v2_corrected->AddEntry(corrected_graph_20_40_v2, "20-40%, v_{2}^{#pi^{0}}, poly4 Fit Data", "pe");
+    legend_p009_p010_Overlay_20_40_v2_corrected->AddEntry(signal_graph_20_40_v2, "20-40%, v_{2}^{signal}", "pe");
+    legend_p009_p010_Overlay_20_40_v2_corrected->AddEntry(bg_graph_20_40_v2, "20-40%, v_{2}^{bg}", "pe");
+    legend_p009_p010_Overlay_20_40_v2_corrected->AddEntry(corrected_graph_20_40_v2, "20-40%, v_{2}^{#pi^{0}}", "pe");
 //
 ////    legend_p009_p010_Overlay_20_40_v2_corrected->AddEntry(corrected_v2_20_40_Additional_graph_2, "20-40%, v_{2}^{#pi^{0}}, Type C", "pe");
 ////    legend_p009_p010_Overlay_20_40_v2_corrected->AddEntry(corrected_v2_20_40_Additional_graph_3, "20-40%, v_{2}^{#pi^{0}}, Type D", "pe");
@@ -1319,16 +1420,18 @@ void Plot_vN(const AdditionalData& data, const AdditionalData_2& data_2, const A
     
    TCanvas *c_p009_p010_Overlay_40_60_v2_corrected = new TCanvas("c_p009_p010_Overlay_40_60_v2_corrected", "#pi^{0} #it{v}_{2}, p011 Data, Without PDC, vertex = (0, 0, z), Energy Cut of 0.5 and 1 GeV  vs #it{p}_{T} 40-60% Centrality", 800, 600);
     bg_graph_40_60_v2->Draw("AP");  // This will be the base graph
-    bg_graph_40_60_v2->SetTitle("#it{v}_{2} vs #it{p}_{T} 40-60% Centrality, Poly2 with corrected, signal, bg Overlayed");
+    bg_graph_40_60_v2->SetTitle("#it{v}_{2} vs #it{p}_{T} 40-60% Centrality, Asymmetry Cut 0.3, Sideband to 0.5 GeV");
     bg_graph_40_60_v2->GetXaxis()->SetTitle("p_{T}");
     bg_graph_40_60_v2->GetYaxis()->SetTitle("v_{2}");
     
     
    for (int i = 0; i < ptCenters.size(); ++i) {
+//       corrected_graph_40_60_v2->SetPoint(i, ptCenters[i] - 2.2 * offset, corrected_v2_40_60[i]);
+//       corrected_v2_40_60_Additional_2_graph->SetPoint(i, ptCenters[i] + 2.2 * offset, corrected_v2_40_60_Additional_2[i]);
 //       corrected_graph_40_60_v2->SetPoint(i, ptCenters[i] - 4.3 * offset, corrected_v2_40_60[i]); //uncomment if use additional points
        
-       signal_graph_40_60_v2->SetPoint(i, ptCenters[i] - 2.0 * offset, signal_v2_40_60[i]);
-       corrected_graph_40_60_v2->SetPoint(i, ptCenters[i] + 2.0 * offset, corrected_v2_40_60[i]);
+       signal_graph_40_60_v2->SetPoint(i, ptCenters[i] - 2.2 * offset, signal_v2_40_60[i]);
+       corrected_graph_40_60_v2->SetPoint(i, ptCenters[i] + 2.2 * offset, corrected_v2_40_60[i]);
        
 //       corrected_v2_40_60_Additional_graph_2->SetPoint(i, ptCenters[i] - 1.5 * offset, corrected_v2_40_60_Additional_2[i]);
 //       //corrected_v2_40_60_Additional_graph_3->SetPoint(i, ptCenters[i] - 0.0 * offset, corrected_v2_40_60_Additional_3[i]);
@@ -1344,8 +1447,8 @@ void Plot_vN(const AdditionalData& data, const AdditionalData_2& data_2, const A
    }
     signal_graph_40_60_v2 -> Draw("P SAME");
     corrected_graph_40_60_v2 -> Draw("P SAME");
-    bg_graph_40_60_v2->SetMinimum(-.65); // Set the minimum y value
-    bg_graph_40_60_v2->SetMaximum(0.8); // Set the maximum y value
+    bg_graph_40_60_v2->SetMinimum(-0.3); // Set the minimum y value
+    bg_graph_40_60_v2->SetMaximum(0.6); // Set the maximum y value
    
 //   corrected_v2_40_60_Additional_graph_2-> Draw("P SAME");
 //    corrected_v2_40_60_Additional_graph_3-> Draw("P SAME");
@@ -1358,15 +1461,15 @@ void Plot_vN(const AdditionalData& data, const AdditionalData_2& data_2, const A
 //    graph_0_10->Draw("P SAME");
 //    graph_10_20->Draw("P SAME");
 //
-   TLegend *legend_p009_p010_Overlay_40_60_v2_corrected = new TLegend(0.11, 0.69, 0.81, 0.89);
+   TLegend *legend_p009_p010_Overlay_40_60_v2_corrected = new TLegend(0.11, 0.69, 0.41, 0.89);
    legend_p009_p010_Overlay_40_60_v2_corrected->SetNColumns(2);
 
    legend_p009_p010_Overlay_40_60_v2_corrected->SetBorderSize(0);
    legend_p009_p010_Overlay_40_60_v2_corrected->SetTextSize(0.025);
-   legend_p009_p010_Overlay_40_60_v2_corrected->AddEntry(signal_graph_40_60_v2, "40-60%, v_{2}^{signal}, poly4 Fit Data", "pe");
-   legend_p009_p010_Overlay_40_60_v2_corrected->AddEntry(bg_graph_40_60_v2, "40-60%, v_{2}^{bg}, poly4 Fit Data", "pe");
-    legend_p009_p010_Overlay_40_60_v2_corrected->AddEntry(corrected_graph_40_60_v2, "40-60%, v_{2}^{#pi^{0}}, poly4 Fit Data", "pe");
-//
+    legend_p009_p010_Overlay_40_60_v2_corrected->AddEntry(signal_graph_40_60_v2, "40-60%, v_{2}^{signal}", "pe");
+    legend_p009_p010_Overlay_40_60_v2_corrected->AddEntry(bg_graph_40_60_v2, "40-60%, v_{2}^{bg}", "pe");
+    legend_p009_p010_Overlay_40_60_v2_corrected->AddEntry(corrected_graph_40_60_v2, "40-60%, v_{2}^{#pi^{0}}", "pe");
+    
 ////   legend_p009_p010_Overlay_40_60_v2_corrected->AddEntry(corrected_v2_40_60_Additional_graph_2, "40-60%, v_{2}^{#pi^{0}}, Type C", "pe");
 ////   legend_p009_p010_Overlay_40_60_v2_corrected->AddEntry(corrected_v2_40_60_Additional_graph_3, "40-60%, v_{2}^{#pi^{0}}, Type D", "pe");
 ////   legend_p009_p010_Overlay_40_60_v2_corrected->AddEntry(corrected_v2_40_60_Additional_graph_4, "40-60%, v_{2}^{#pi^{0}}, Type E", "pe");
@@ -1470,27 +1573,27 @@ void PrintSkippedRunsSummary(const std::map<int, int>& skippedCounts) {
 void vN_calculator_AccumulatedData() {
     int subSampleSize = 30;//CHANGE TO SUB SAMPLES LOOPED THROUGH
     
-    std::string baseProjectFolder = "/Users/patsfan753/Desktop/";
+    std::string baseProjectFolder = "/Users/patsfan753/Desktop/Hopefully_Final_v2_3_28_24/";
     /*
      Relevant Paths Set
      */
     //path to root file with QQ, qQ histograms to be analyzed
-    std::string test_RootFilePath = (baseProjectFolder + "Poly4/test.root").c_str();
+    std::string test_RootFilePath = (baseProjectFolder + "Asymmetry_0_3/test.root").c_str();
     
     
     //path to CSV file read in with S/B information for vn calculation
     /*
      Remember to change cut value being read in below depending on CSV choice below
      */
-    std::string PlotByPlotOutput_OriginalPath = (baseProjectFolder + "Poly4/PlotByPlotOutput_poly4_FitStartPoint01_FitEndPoint3.csv").c_str();
+    std::string PlotByPlotOutput_OriginalPath = (baseProjectFolder + "Asymmetry_0_3/fit-stats-MB-central-asym-0_3.csv").c_str();
     
     //path for final CSV output and sample by sample calculation output
-    std::string outputBasePathCSVs = (baseProjectFolder + "Poly4/SampleWise_vN_data/").c_str();
+    std::string outputBasePathCSVs = (baseProjectFolder + "Asymmetry_0_3_sidebandToPoint4/SampleWise_vN_data/").c_str();
     
     const int num_v2 = 18;
     const int num_v3 = 18;
     
-    // Initialize vectors to hold weighted sums and weights for each index
+    // Initialize vectors to hold weighted sums and weights for each index.
     std::vector<double> totalWeightedV2Corrected(num_v2, 0.0);
     std::vector<double> totalWeightedV2_signal(num_v2, 0.0);
     std::vector<double> totalWeightedV2_bg(num_v2, 0.0);
@@ -1527,7 +1630,7 @@ void vN_calculator_AccumulatedData() {
     
     std::map<std::string, std::vector<int>> eventsPerCentralityQQ;
 
-    std::ofstream logFile("/Users/patsfan753/Desktop/Fit_varsFina3_23/TypeH/logFile_30_samples_histogram_entries_TypeH.txt");
+    std::ofstream logFile("/Users/patsfan753/Desktop/logFile_30_samples_histogram_entries_asym_0_3.txt");
     if (!logFile) {
         std::cerr << "Error: Unable to open log file." << std::endl;
         return; // Or handle the error appropriately
@@ -1577,7 +1680,7 @@ void vN_calculator_AccumulatedData() {
         
         std::string hist_name_qQ2_bg[18];
         for (int i = 0; i < 18; ++i) {
-            hist_name_qQ2_bg[i] = "vn/" + std::to_string(subSampleIndex) + "/qQ2_bg/hqQ2_bg_" + std::to_string(subSampleIndex) + "_" + std::to_string(i);
+            hist_name_qQ2_bg[i] = "vn/" + std::to_string(subSampleIndex) + "/qQ2_bg_4/hqQ2_bg_4_" + std::to_string(subSampleIndex) + "_" + std::to_string(i);
         }
 
         std::string hist_name_qQ2_bg_left[18];
@@ -1636,8 +1739,9 @@ void vN_calculator_AccumulatedData() {
         std::string baseDirV3 = (baseProjectFolder + "plotOutput/qQ_QQ_histograms_byProd/qQ_and_QQ_histograms_p011/30_samples_p011_withZvtx_NO_ZDC_E_1/n_3").c_str();
         
         /*
-         Comment out below if re run macro and already made hists
+         Comment out below if want QQ, qQ histograms being processed to output as CSV's automatically to specified folders above
          */
+        
         
 //        // Process and save QQ and qQ histograms for v2
 //        for (const auto& histPath : hist_name_QQ2) {
@@ -1690,7 +1794,7 @@ void vN_calculator_AccumulatedData() {
         // Retrieve and calculate qQ means and their errors
         std::string currentCentrality = ""; // Track the current centrality to know when it changes
         float qQ2_mean[18], qQ2_error[18];
-        double w_k_2[18];
+        double w_k_2[18]; //to track weights for subsampling averaging
         for (int i = 0; i < 18; ++i) {
             TH1F *h_qQ2 = (TH1F*)file->Get(hist_name_qQ2[i].c_str());
             if (!h_qQ2) {
@@ -1736,7 +1840,7 @@ void vN_calculator_AccumulatedData() {
         
         // Retrieve and calculate background qQ means and their errors
         float qQ2_bg_mean[18], qQ2_bg_error[18];
-        double w_k_2_bg[18];
+        double w_k_2_bg[18]; //track weights for subsampling averaging of background v2
         for (int i = 0; i < 18; ++i) {
             TH1F *h_qQ2_bg = (TH1F*)file->Get(hist_name_qQ2_bg[i].c_str());
             if (!h_qQ2_bg) {
@@ -1798,7 +1902,7 @@ void vN_calculator_AccumulatedData() {
         }
         
         // After calculating w_k_2[i] and w_k_3[i] for each i
-        for (int i = 0; i < 18; ++i) { // Assuming 18 is the loop count for both v2 and v3 histograms as indicated by num_v2 and num_v3
+        for (int i = 0; i < 18; ++i) {
             TH1F *h_qQ2 = (TH1F*)file->Get(hist_name_qQ2[i].c_str());
             if (!h_qQ2) {
                 std::cerr << "Error: qQ histogram " << hist_name_qQ2[i] << " not found" << std::endl;
@@ -1847,10 +1951,12 @@ void vN_calculator_AccumulatedData() {
         User-defined cut values, ensures only rows of CSV with cuts below correspond to SB used in calc
         Also specifies rows of data vN info is appended to
          */
-        float userEnergy = 1.0; //switch to which ever cut
-        float userAsymm = 0.5;
+        float userEnergyA = 1.0; //switch to which ever cut
+        float userEnergyB = 1.0; //switch to which ever cut
+        float userAsymm = 0.3;
         float userChi2 = 4;
-        float userDeltaR = 0;
+        float userDeltaR_min = 0;
+        float userDeltaR_max = 3;
         
         /*
          If boolean at top of macro is false, it means run calculation code not plotting, which is all the steps below
@@ -1882,11 +1988,11 @@ void vN_calculator_AccumulatedData() {
                         values.push_back(std::stof(token));
                     }
                     // Check if the row matches the user-defined cut values
-                    if (values[1] == userEnergy && values[2] == userAsymm && values[3] == userChi2 && values[4] == userDeltaR) {
+                    if (values[1] == userEnergyA && values[2] == userEnergyB && values[3] == userAsymm && values[4] == userChi2 && values[5] == userDeltaR_min && values[6] == userDeltaR_max) {
                         int idx = static_cast<int>(values[0]); // Index is the first value in the row
                         
-                        float SB = values[9];
-                        float SBerror = values[10]; // S/Berror is the 11th column
+                        float SB = values[11];
+                        float SBerror = values[12];
                         
                         /*
                          The denominator quantity is by centrality, set QQ index to use proper histogram's mean and error for correct range of indices that correspond to each centrality
@@ -2003,14 +2109,14 @@ void vN_calculator_AccumulatedData() {
         /*
          Path to DATASET TO OVERALAY with whatever is plotted in Plot_vN method above
          */
-        std::string Additional_Data_Path = "/Users/patsfan753/Desktop/Poly4/vN_averaged_Poly4.csv";
+        std::string Additional_Data_Path = "/Users/patsfan753/Desktop/Hopefully_Final_v2_3_28_24/Asymmetry_0_5/vN_averaged_Asymmetry_0_5.csv";
         Read_Additonal_DataSet(Additional_Data_Path, data);
         
         AdditionalData_2 data_2;
         /*
          Path to DATASET TO OVERALAY with whatever is plotted in Plot_vN method above
          */
-        std::string Additional_Data_Path_2 = "/Users/patsfan753/Desktop/Fit_varsFina3_23/TypeH/vN_averaged_TypeH_MBplusCentral_noZDC_E_1.csv";
+        std::string Additional_Data_Path_2 = "/Users/patsfan753/Desktop//Hopefully_Final_v2_3_28_24/Asymmetry_0_5/vN_averaged_Asymmetry_0_5.csv";
         Read_Additonal_DataSet_2(Additional_Data_Path_2, data_2);
 
         
@@ -2018,7 +2124,7 @@ void vN_calculator_AccumulatedData() {
         /*
          Path to DATASET TO OVERALAY with whatever is plotted in Plot_vN method above
          */
-        std::string Additional_Data_Path_3 = "/Users/patsfan753/Desktop/Fit_varsFina3_23/TypeD/vN_averaged_TypeD_MBplusCentral_noZDC_E_1.csv";
+        std::string Additional_Data_Path_3 = "/Users/patsfan753/Desktop/Fit_varsFina3_23/combined_lowest_v2_errors.csv";
         Read_Additonal_DataSet_3(Additional_Data_Path_3, data_3);
         
         
@@ -2145,7 +2251,7 @@ void vN_calculator_AccumulatedData() {
         }
             
         // Output to CSV
-        std::ofstream outFile((baseProjectFolder + "Poly4/vN_averaged_Poly4.csv").c_str());
+        std::ofstream outFile((baseProjectFolder + "Asymmetry_0_3_sidebandToPoint4/vN_averaged_Asymmetry_0_3_sidebandToPoint4.csv").c_str());
         outFile << "Index,WeightedMeanV2Corrected,v2_error,WeightedMeanV3Corrected,v3_error,signal_v2,signal_v2_error,bg_v2,bg_v2_error\n";
         for (int idx = 0; idx < num_v2; ++idx) {
             outFile << idx << "," << finalCorrectedV2[idx] << "," << error_v2[idx] << "," << finalCorrectedV3[idx] << "," << error_v3[idx] << "," << final_signalV2[idx] << "," << error_v2_signal[idx] << "," << final_bgV2[idx] << "," << error_v2_bg[idx] << "\n";
