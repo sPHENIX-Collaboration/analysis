@@ -64,6 +64,7 @@ namespace myAnalysis {
     map<pair<string,string>, TH2F*> h2DeltaRVsMass;
     map<pair<string,string>, TH2F*> h2AsymVsMass;
     map<pair<string,string>, TH2F*> h2DeltaRVsAsym;
+    map<pair<string,string>, TH2F*> h2ECore2VsECore1;
     map<string, TH1F*>              hDiphotonPt;
     // v2
     vector<map<string, TH1F*>>              hQQ2;
@@ -89,6 +90,10 @@ namespace myAnalysis {
     Int_t   bins_pt = 500;
     Float_t hpt_min = 0;
     Float_t hpt_max = 20;
+
+    Int_t   bins_ecore = 80;
+    Float_t hecore_min = 1;
+    Float_t hecore_max = 5;
 
     Int_t   bins_deltaR = 100;
     Float_t hdeltaR_min = 0;
@@ -439,6 +444,11 @@ void myAnalysis::init_hists() {
                                             bins_asym, hasym_min, hasym_max,
                                             bins_deltaR, hdeltaR_min, hdeltaR_max);
 
+            h2ECore2VsECore1[key] = new TH2F(("h2ECore2VsECore1_"+to_string(idx)).c_str(),
+                                             ("E_{Core} 2 vs E_{Core} 1, " + suffix_title +"; E_{Core} 1; E_{Core} 2").c_str(),
+                                            bins_ecore, hecore_min, hecore_max,
+                                            bins_ecore, hecore_min, hecore_max);
+
             hNPi0[key] = new TH1F(("hNPi0_"+to_string(idx)).c_str(), ("#pi_{0} Counts, " + suffix_title +"; # of #pi_{0} per event; Counts").c_str(), bins_npi0, npi0_min, npi0_max);
 
             vector<TH1F*> h;
@@ -614,15 +624,18 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end) {
     Float_t QQ3_min    = 9999;
     Float_t qQ3_min    = 9999;
     Float_t qQ3_bg_min = 9999;
-    Float_t eta_min   = 9999;
-    UInt_t  npi0_max  = 0;
+    Float_t eta_min    = 9999;
+    Float_t ecore_min  = 9999;
+
+    UInt_t  npi0_max   = 0;
     Float_t QQ2_max    = 0;
     Float_t qQ2_max    = 0;
     Float_t qQ2_bg_max = 0;
     Float_t QQ3_max    = 0;
     Float_t qQ3_max    = 0;
     Float_t qQ3_bg_max = 0;
-    Float_t eta_max   = 0;
+    Float_t eta_max    = 0;
+    Float_t ecore_max  = 0;
 
     cout << "Events to process: " << end-start+1 << endl;
 
@@ -767,6 +780,7 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end) {
             h2AsymVsMass[key]->Fill(pi0_mass_val, asym_val);
             h2DeltaRVsMass[key]->Fill(pi0_mass_val, deltaR_val);
             h2DeltaRVsAsym[key]->Fill(asym_val, deltaR_val);
+            h2ECore2VsECore1[key]->Fill(ecore1_val, ecore2_val);
 
             Int_t idx = cent_idx*pt_key.size()+pt_idx;
 
@@ -784,6 +798,9 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end) {
                 if(ecore1_val >= cuts[c].e1         && ecore2_val >= cuts[c].e2        && asym_val     < cuts[c].asym &&
                    deltaR_val >= cuts[c].deltaR_min && deltaR_val < cuts[c].deltaR_max && chi2_max_val < cuts[c].chi) {
                     hPi0Mass[key][c]->Fill(pi0_mass_val);
+
+                    ecore_min = min(ecore_min, ecore1_val);
+                    ecore_max = max(ecore_max, ecore2_val);
 
                     // fill in qQ for the background to the left of the pi0 peak
                     if(c == cut_num && do_vn_calc && pi0_mass_val < bg_min) {
@@ -905,6 +922,8 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end) {
     cout << endl;
     cout << "Events Processed: " << events << ", " << events*100./(end-start) << " %" << endl;
     cout << endl;
+    cout << "ECore min: " << ecore_min << ", ECore max: " << ecore_max << endl;
+    cout << endl;
     cout << "QQ2 min: " << QQ2_min << ", QQ2 max: " << QQ2_max << endl;
     cout << "qQ2 min: " << qQ2_min << ", qQ2 max: " << qQ2_max << endl;
     cout << "qQ2 bg min: " << qQ2_bg_min << ", qQ2 bg max: " << qQ2_bg_max << endl;
@@ -926,6 +945,7 @@ void myAnalysis::finalize(const string &i_output) {
     output.mkdir("QA/h2DeltaRVsMass");
     output.mkdir("QA/h2AsymVsMass");
     output.mkdir("QA/h2DeltaRVsAsym");
+    output.mkdir("QA/h2ECore2VsECore1");
 
     if(do_vn_calc) {
 
@@ -976,6 +996,9 @@ void myAnalysis::finalize(const string &i_output) {
 
             output.cd("QA/h2DeltaRVsAsym");
             h2DeltaRVsAsym[key]->Write();
+
+            output.cd("QA/h2ECore2VsECore1");
+            h2ECore2VsECore1[key]->Write();
 
             if(do_vn_calc) {
                 for(Int_t k = 0; k < subsamples; ++k) {
