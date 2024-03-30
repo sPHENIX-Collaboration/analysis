@@ -222,7 +222,6 @@ double CalculateSignalYieldAndError(TH1F* hPi0Mass, TF1* polyFit, double fitMean
 /*
  Automatic update of canvas cut values, fit information, and analysis bin
  */
- */
 void DrawCanvasText(TLatex& latex, const Range& selectedRange, double fitMean, double fitSigma, double signalToBackgroundRatio, double signalToBackgroundRatioError) {
     // Drawing text related to the range and cuts
     std::ostringstream mbdStream, ptStream;
