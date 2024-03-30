@@ -8,289 +8,100 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-/*
- Fitting method, when called in the main method, if argument setFitManual is true, can use manual parameters, otherwise fit dynamically
- */
-// Global variables
-std::string globalFilename = "/Users/patsfan753/Desktop/hPi0Mass_E1_Asym0point5_Delr0point08_Chi4.root";
+#include "TSystem.h"
+#include "TSystemDirectory.h"
+#include "TList.h"
+#include "TSystemFile.h"
 
-bool CreateSignalandGaussParPlots = false; //control flag for plotting signal and signal error and gaussian parameters (done in different macro now)
-// Global variable for setFitManual
-bool globalSetFitManual = false;
-// Global variable for setting dynamic parameters automatically
-bool globalSetDynamicParsAuto = false;  // Set this as needed in your code
+void RunCode(const std::string& filename); // Forward declaration
 
-
-struct ParameterSet {
-    double FitStart;
-    double FitEnd;
-    double FindBin2;
-    double SigmaEstimate;
-    double SigmaParScale;
+struct CutValues {
+    float clusEA, clusEB, asymmetry, deltaRMin, deltaRMax, chi;
 };
 
-// Function to read the CSV file and find the parameters for the given histIndex to auto set the dynamic fitting process, using the previous fit parameters from last set of cuts analyzed
-
-//BETTER to not use this and go by automated method set up in TFitResultPtr PerformFitting function
-ParameterSet ReadParametersFromCSV(const std::string& filename, int histIndex) {
-    std::ifstream file(filename);
-    std::string line;
-    std::vector<std::string> rows;
-    ParameterSet params = {0.0, 0.0, 0.0, 0.0};
-    
-    if (!file.is_open()) {
-        std::cerr << "Unable to open CSV file." << std::endl;
-        return params;
-    }
-    
-    // Read the file into a vector line by line
-    while (std::getline(file, line)) {
-        rows.push_back(line);
-    }
-
-    // Search from the bottom for the histIndex and parse the parameters
-    for (auto it = rows.rbegin(); it != rows.rend(); ++it) {
-        std::istringstream iss(*it);
-        std::string token;
-        std::getline(iss, token, ','); // This is the Index
-        int currentIndex = std::stoi(token);
-        if (currentIndex == histIndex) {
-            // Parse the necessary parameters
-            std::getline(iss, token, ','); // Skip Energy
-            std::getline(iss, token, ','); // Skip Asymmetry
-            std::getline(iss, token, ','); // Skip Chi2
-            std::getline(iss, token, ','); // Skip DeltaR
-            std::getline(iss, token, ','); // FitStart
-            params.FitStart = std::stod(token);
-            std::getline(iss, token, ','); // FitEnd
-            params.FitEnd = std::stod(token);
-            std::getline(iss, token, ','); // Skip FindBin1
-            std::getline(iss, token, ','); // FindBin2
-            params.FindBin2 = std::stod(token);
-            std::getline(iss, token, ','); // SigmaEstimate
-            params.SigmaEstimate = std::stod(token);
-            std::getline(iss, token, ','); // SigmaParScale
-            params.SigmaParScale = std::stod(token);
-            break;
-        }
-    }
-
-    file.close();
-    return params;
-}
-// Global variables for additional parameters
-double globalFitStart;
-double globalFitEnd;
-double globalFindBin1Value;
-double globalFindBin2Value;
-double globalSigmaEstimate;
-double globalSigmaParScale;
 double globalNumEntries;
 
 // Global variable
-std::string globalDataPath = "/Users/patsfan753/Desktop/";
-std::string csvFilePath = "/Users/patsfan753/Desktop/AdditionalParameters_deltaVariations.csv";
+std::string globalDataPath = "/Users/patsfan753/Desktop/Analysis_3_29/CSVoutput/";
 
-/*
- Set which histogram index is being analyzed, make sure to switch after finishing previous fit
- */
 
-int histIndex = 17;
+int histIndex = 0;
 
-double globalYAxisRange[2] = {0, 6000}; // Lower and upper limits
-/*
- set height of black vertical line output below
- */
-double globalLineHeight = 0.4 * globalYAxisRange[1];
-
-TFitResultPtr PerformFitting(TH1F* hPi0Mass, bool setFitManual, TF1*& totalFit, double& fitStart, double& fitEnd) {
-    // Assign the setFitManual value to the global variable
-    globalSetFitManual = setFitManual;
+std::vector<std::tuple<double, double, double>> globalYAxisRanges = {
+    // Format: {y-axis min, y-axis max, lineHeight scale factor}
+    {0, 175000, 0.4},  // Index 0
+    {0, 54000, 0.35},   // Index 1
+    {0, 19000, 0.25},   // Index 2
+    {0, 7000, 0.25},    // Index 3
+    {0, 2750, 0.2},    // Index 4
+    {0, 1200, 0.2},    // Index 5
     
-    // Define the start of the fit
-    int binThreshold = 1;
-    int firstBinAboveThreshold = 0;
-    for (int i = 1; i <= hPi0Mass->GetNbinsX() - 1; ++i) {
-        double derivative = hPi0Mass->GetBinContent(i + 1) - hPi0Mass->GetBinContent(i);
-        if (derivative > binThreshold && firstBinAboveThreshold == 0) {
-            firstBinAboveThreshold = i;
-            break;
-        }
-    }
-    /*
-     Based on boolean setFitManual, this method would read in the parameters set in the CSV for the fit Start, fit end, sigma estimate implemented in setPar(2, est) and the mean estimate set in 'setParMean(1, 0)
-     */
-    if (!setFitManual && globalSetDynamicParsAuto) {
-        // Read parameters from CSV file
-        ParameterSet params = ReadParametersFromCSV(csvFilePath, histIndex);
-        fitStart = params.FitStart;
-        
-        //fitStart = hPi0Mass->GetBinLowEdge(firstBinAboveThreshold);
-        
-        fitEnd = params.FitEnd;
-        globalFitStart = fitStart;
-        globalFitEnd = fitEnd;
-        globalFindBin2Value = params.FindBin2;
-        globalSigmaEstimate = params.SigmaEstimate;
-        globalSigmaParScale = params.SigmaParScale;
+    {0, 1200000, 0.4},  // Index 6
+    {0, 375000, 0.4},   // Index 7
+    {0, 100000, 0.4},   // Index 8
+    {0, 25000, 0.35},    // Index 9
+    {0, 8500, 0.3},    // Index 10
+    {0, 3500, 0.28},    // Index 11
+    
+    {0, 85000, 0.5},  // Index 12
+    {0, 160000, 0.45},   // Index 13
+    {0, 54000, 0.45},   // Index 14
+    {0, 24000, 0.4},    // Index 15
+    {0, 10000, 0.4},    // Index 16
+    {0, 3800, 0.4}     // Index 17
+};
 
-        // Print out the parameters set automatically from CSV infromation
-        std::cout << "\033[1;32m"
-                  << "Previous Parameters Set: "
-                    << "\nFitStart: " << fitStart
-                  << "\nFitEnd: " << fitEnd
-                  << "\nFindBin2: " << globalFindBin2Value
-                  << "\nSigmaEstimate: " << globalSigmaEstimate
-                  << "\nSigmaParScale: " << globalSigmaParScale
-                  << "\033[0m"
-                  << std::endl;
-    } else {
-        /*
-         This uses automated fit start calculated from first time a change of bin content is greater then threshold = 1, looping from 0 to the right
-         */
-        fitStart = hPi0Mass->GetBinLowEdge(firstBinAboveThreshold);
-        
-        //fitStart = 0.095;
-        fitEnd = 0.3;
-        globalFitStart = fitStart;
-        globalFitEnd = fitEnd;
-        globalFindBin1Value = 0.12; // Value in FindBin for bin1
-        globalFindBin2Value = 0.18; // Value in FindBin for bin2
-        
-        /*
-         Uncomment below to hard code sigma estimate that is funneled into totalFit->SetParameter(2, sigmaEstimate);
-         */
-        //globalSigmaEstimate = 0.025; // sigmaEstimate value
-        //globalSigmaEstimate = globalSigmaEstimate + X * globalSigmaEstimate;
-        
-        
-        // Estimate the Full Width at Half Maximum (FWHM) for the peak region
-        // Find the bins corresponding to the signal bounds
-        int bin1 = hPi0Mass->GetXaxis()->FindBin(globalFindBin1Value);
-        int bin2 = hPi0Mass->GetXaxis()->FindBin(globalFindBin2Value);
-        
-        // Find the bin with the maximum content within the signal bounds
-        int maxBin = bin1;
-        double maxBinContent = hPi0Mass->GetBinContent(bin1);
-        for (int i = bin1 + 1; i <= bin2; ++i) {
-            if (hPi0Mass->GetBinContent(i) > maxBinContent) {
-                maxBinContent = hPi0Mass->GetBinContent(i);
-                maxBin = i;
-            }
-        }
 
-        // Estimate the FWHM within the signal bounds
-        double halfMax = maxBinContent / 2.0;
-        int binLeft = maxBin;
-        int binRight = maxBin;
+double globalYAxisRange[2];  // This will store the current y-axis range
+double globalLineHeight;     // This will store the current line height based on histIndex
 
-        // Make sure we do not go outside the signal bounds
-        while (binLeft > bin1 && hPi0Mass->GetBinContent(binLeft) > halfMax) {
-            binLeft--;
-        }
+TFitResultPtr PerformFitting(TH1F* hPi0Mass, TF1*& totalFit) {
+    double fitStart = 0.1;
+    double fitEnd = 0.35;
 
-        while (binRight < bin2 && hPi0Mass->GetBinContent(binRight) > halfMax) {
-            binRight++;
-        }
+    double findBin1Value = 0.1; // Value in FindBin for bin1
+    double findBin2Value = 0.2; // Value in FindBin for bin2
 
-        // Calculate FWHM and estimate sigma
-        double fwhm = hPi0Mass->GetBinCenter(binRight) - hPi0Mass->GetBinCenter(binLeft);
-        double sigmaEstimate = fwhm / 2.355;
+    double sigmaEstimate = 0.024; // sigmaEstimate value
 
-        
-        globalSigmaEstimate = sigmaEstimate;
-        
-        
-        // Check if SetParLimits is used for sigma
-        if (!setFitManual) {
-            globalSigmaParScale = .01; // Scale factor used in SetParLimits
-        } else {
-            globalSigmaParScale = 0.0; // No SetParLimits used
-        }
-
-        // Print out the parameters set manually
-        std::cout << "\033[1;34m" // Set text color to bright blue
-                  << "Manual Parameters Set: "
-                  << "\nFitEnd: " << fitEnd
-                  << "\nFindBin1: " << globalFindBin1Value
-                  << "\nFindBin2: " << globalFindBin2Value
-                  << "\nSigmaEstimate: " << globalSigmaEstimate
-                  << "\nSigmaParScale: " << globalSigmaParScale
-                  << "\033[0m" // Reset text color
-                  << std::endl;
-    }
+    
     // Define totalFit
-    totalFit = new TF1("totalFit", "gaus(0) + pol4(3)", fitStart, fitEnd);
+    totalFit = new TF1("totalFit", "gaus(0) + pol2(3)", fitStart, fitEnd);
 
-    // Set fitting parameters
-    if (setFitManual) {
-        totalFit->SetParameter(0, 45000);
-        totalFit->SetParameter(1, 0.147);
-        totalFit->SetParameter(2, 0.007);
-        totalFit->SetParLimits(1, 0.13, 0.15);
-        totalFit->SetParLimits(2, 0.01, 0.03);
-    } else {
-        
-        /*
-         Automated finding of mean and amplitude funneled into initial parameters set below
-         */
-        int bin1 = hPi0Mass->GetXaxis()->FindBin(globalFindBin1Value);
-        int bin2 = hPi0Mass->GetXaxis()->FindBin(globalFindBin2Value);
-        int maxBin = bin1;
-        double maxBinContent = hPi0Mass->GetBinContent(bin1);
-        for (int i = bin1 + 1; i <= bin2; ++i) {
-            if (hPi0Mass->GetBinContent(i) > maxBinContent) {
-                maxBinContent = hPi0Mass->GetBinContent(i);
-                maxBin = i;
-            }
+    int bin1 = hPi0Mass->GetXaxis()->FindBin(findBin1Value);
+    int bin2 = hPi0Mass->GetXaxis()->FindBin(findBin2Value);
+    int maxBin = bin1;
+    double maxBinContent = hPi0Mass->GetBinContent(bin1);
+    for (int i = bin1 + 1; i <= bin2; ++i) {
+        if (hPi0Mass->GetBinContent(i) > maxBinContent) {
+            maxBinContent = hPi0Mass->GetBinContent(i);
+            maxBin = i;
         }
-        double maxBinCenter = hPi0Mass->GetXaxis()->GetBinCenter(maxBin);
-        
-        totalFit->SetParameter(0, maxBinContent);
-        
-        totalFit->SetParameter(1, maxBinCenter);
-        
-        double sigmaEstimate = globalSigmaEstimate;
-        
-        totalFit->SetParameter(2, sigmaEstimate);
-        
-        /*
-         Setting par limits of mean and sigm
-         */
-        
-        totalFit->SetParLimits(1, maxBinCenter - sigmaEstimate, maxBinCenter + sigmaEstimate); //set mean parameter limits to +/- sigma estimate that is set
-        
-        totalFit->SetParLimits(2, sigmaEstimate - globalSigmaParScale*sigmaEstimate, sigmaEstimate + globalSigmaParScale*sigmaEstimate);
-        
     }
+    double maxBinCenter = hPi0Mass->GetXaxis()->GetBinCenter(maxBin);
+    
+    totalFit->SetParameter(0, maxBinContent);
+    
+    totalFit->SetParameter(1, maxBinCenter);
+    
+    totalFit->SetParameter(2, sigmaEstimate);
 
-    // Apply the fit
-    /*
-     "S" stands for save that indicated the fitting function should return a TFitResultPtr allowing access to fit stats, parameters, covariance matrix, etc
-     
-     "R" means use range specified in the function, telling ROOT to restrict the fit range to the range that has been predefined in the fitting function--ignoring data that falls outside of this range
-     
-     "+" -- . By default a fit command deletes the previously fitted function in the histogram object. You can specify the option + in the second parameter to add the newly fitted function to the existing list of functions for the histogram.
-     */
     TFitResultPtr fitResult = hPi0Mass->Fit("totalFit", "SR+");
     return fitResult; // Return the fit result
 }
 
-// Define a structure to hold cut values
-struct CutValues {
-    float deltaR;     // Cut value for delta R
-    float asymmetry;  // Cut value for asymmetry
-    float chi;        // Cut value for chi
-    float clusE;      // Cut value for cluster energy
-};
+
 CutValues globalCutValues;
 /*
  Function to parse the filename and extract cut values
  */
-CutValues parseFileName() {
+CutValues parseFileName(const std::string& filename) {
     CutValues cuts = {0, 0, 0, 0}; // Initialize cut values to zero
+    
+    std::regex re("hPi0Mass_EA([0-9]+(?:point[0-9]*)?)_EB([0-9]+(?:point[0-9]*)?)_Asym([0-9]+(?:point[0-9]*)?)_DelrMin([0-9]+(?:point[0-9]*)?)_DelrMax([0-9]+(?:point[0-9]*)?)_Chi([0-9]+(?:point[0-9]*)?)\\.root");
+
     // Regular expression to match the filename pattern and extract cut values
-    std::regex re("hPi0Mass_E([0-9]+(?:point[0-9]*)?)_Asym([0-9]+(?:point[0-9]*)?)_Delr([0-9]+(?:point[0-9]*)?)_Chi([0-9]+(?:point[0-9]*)?)\\.root");
+    //std::regex re("hPi0Mass_E([0-9]+(?:point[0-9]*)?)_Asym([0-9]+(?:point[0-9]*)?)_Delr([0-9]+(?:point[0-9]*)?)_Chi([0-9]+(?:point[0-9]*)?)\\.root");
     std::smatch match; // Object to store the results of regex search
     
     // Perform a regex (Regular Expression) search on the global filename.
@@ -304,11 +115,11 @@ CutValues parseFileName() {
         - "[0-9]+" matches one or more digits.
         - "(?:point[0-9]*)?" is a non-capturing group matching the word 'point' followed by any number of digits, making 'point' optional.
       - "\\root" matches the file extension.
-     The 'regex_search' function scans 'globalFilename' to find these patterns.
+     The 'regex_search' function scans 'filename' to find these patterns.
      If a match is found, the 'match' object holds the extracted values (e.g., numeric parts of 'E', 'Asym', etc.).
      These are then converted into floating-point values representing the cut parameters (e.g., energy cut, asymmetry).
      */
-    if (std::regex_search(globalFilename, match, re) && match.size() > 4) {
+    if (std::regex_search(filename, match, re) && match.size() > 4) {
         // Lambda function to convert a string with 'point' to a float
         auto convert = [](const std::string& input) -> float {
             // Create a temporary string to hold the modified input
@@ -330,18 +141,19 @@ CutValues parseFileName() {
         };
 
         // Diagnostic prints
-        std::cout << "Matched Filename: " << globalFilename << std::endl;
+        std::cout << "Matched Filename: " << filename << std::endl;
         for (size_t i = 1; i < match.size(); ++i) {
             std::cout << "Match[" << i << "]: " << match[i].str() << " --> " << convert(match[i].str()) << std::endl;
         }
-        // Assign the extracted values to the respective fields in the cuts structure
-        cuts.clusE = convert(match[1].str());
-        cuts.asymmetry = convert(match[2].str());
-        cuts.deltaR = convert(match[3].str());
-        cuts.chi = convert(match[4].str());
+        cuts.clusEA = convert(match[1].str());
+        cuts.clusEB = convert(match[2].str());
+        cuts.asymmetry = convert(match[3].str());
+        cuts.deltaRMin = convert(match[4].str());
+        cuts.deltaRMax = convert(match[5].str());
+        cuts.chi = convert(match[6].str());
     } else {
         // If regex does not match, log an error message
-        std::cout << "Regex did not match the filename: " << globalFilename << std::endl;
+        std::cout << "Regex did not match the filename: " << filename << std::endl;
     }
 
     return cuts;// Return the populated cuts structure
@@ -407,18 +219,15 @@ double CalculateSignalToBackgroundRatio(TH1F* hPi0Mass, TF1* polyFit, double fit
         hBackground->SetBinError(i, sqrt(bgContent)); // Error for background (Poisson statistics)
     }
 
-    double signalYield, signalError, backgroundYield, backgroundError;
-    signalYield = hSignal->IntegralAndError(firstBinSignal, lastBinSignal, signalError, "");
+    double signalYield_, signalError_, backgroundYield, backgroundError;
+    signalYield_ = hSignal->IntegralAndError(firstBinSignal, lastBinSignal, signalError_, "");
     backgroundYield = hBackground->IntegralAndError(firstBinSignal, lastBinSignal, backgroundError, "");
 
-    double signalToBackgroundRatio = signalYield / backgroundYield;
+    double signalToBackgroundRatio = signalYield_ / backgroundYield;
 
     // Error propagation for division
-    signalToBackgroundError = signalToBackgroundRatio * sqrt(pow(signalError / signalYield, 2) + pow(backgroundError / backgroundYield, 2));
+    signalToBackgroundError = signalToBackgroundRatio * sqrt(pow(signalError_ / signalYield_, 2) + pow(backgroundError / backgroundYield, 2));
 
-    std::cout << "Signal Yield: " << signalYield << " +/- " << signalError << std::endl;
-    std::cout << "Background Yield: " << backgroundYield << " +/- " << backgroundError << std::endl;
-    std::cout << "Signal-to-Background Ratio: " << signalToBackgroundRatio << " +/- " << signalToBackgroundError << std::endl;
 
     // Cleanup
     delete hSignal;
@@ -426,47 +235,10 @@ double CalculateSignalToBackgroundRatio(TH1F* hPi0Mass, TF1* polyFit, double fit
 
     return signalToBackgroundRatio;
 }
-
-
-/*
- Fill text file with gaussian mean, gaussian mean error, gaussian sigma, gaussian sigma error when happy with fit (user input 'y' in terminal upon running code)
- */
-void WriteGaussianParametersToFile(int histIndex, double fitMean, double fitMeanError, double fitSigma, double fitSigmaError, const CutValues& cutValues) {
-    if (isFitGood) {
-        // Generate unique file names based on cut values
-        std::ostringstream meanFilenameStream;
-        meanFilenameStream << globalDataPath << "GaussianMean_"
-                           << "E" << cutValues.clusE << "_Asym" << cutValues.asymmetry
-                           << "_Chi" << cutValues.chi << "_DeltaR" << cutValues.deltaR << ".txt";
-        std::string meanFilename = meanFilenameStream.str();
-
-        std::ostringstream errorFilenameStream;
-        errorFilenameStream << globalDataPath << "GaussianError_"
-                            << "E" << cutValues.clusE << "_Asym" << cutValues.asymmetry
-                            << "_Chi" << cutValues.chi << "_DeltaR" << cutValues.deltaR << ".txt";
-        std::string errorFilename = errorFilenameStream.str();
-
-        std::ofstream meanFile(meanFilename, std::ios::app);
-        std::ofstream gaussianErrorFile(errorFilename, std::ios::app);
-
-        if (meanFile.is_open() && gaussianErrorFile.is_open()) {
-            meanFile << "Index " << histIndex << ": Mean: " << fitMean << ", Mean Error: " << fitMeanError << std::endl;
-            gaussianErrorFile << "Index " << histIndex << ": Sigma: " << fitSigma << ", Sigma Error: " << fitSigmaError << std::endl;
-        } else {
-            std::cerr << "Unable to open file(s) for writing Gaussian parameters." << std::endl;
-        }
-
-        meanFile.close();
-        gaussianErrorFile.close();
-        std::cout << "Fit good. Added Gaussian parameters to files for Index " << histIndex << std::endl;
-    } else {
-        std::cout << "Fit not good for Index " << histIndex << ". No Gaussian parameters added to files." << std::endl;
-    }
-}
 /*
  Calculation for signal yield and error, simiarly to above method outputs to text file upon user input in terminal when happy with fit
  */
-void CalculateSignalYieldAndError(TH1F* hPi0Mass, TF1* polyFit, double fitMean, double fitSigma, int histIndex, const CutValues& cutValues) {
+double CalculateSignalYieldAndError(TH1F* hPi0Mass, TF1* polyFit, double fitMean, double fitSigma, double& signalError) {
     TH1F *hSignal = (TH1F*)hPi0Mass->Clone("hSignal");
     double binCenter, binContent, bgContent, binError;
     int firstBinSignal = hPi0Mass->FindBin(fitMean - 2*fitSigma);
@@ -480,430 +252,11 @@ void CalculateSignalYieldAndError(TH1F* hPi0Mass, TF1* polyFit, double fitMean, 
         hSignal->SetBinContent(i, binContent - bgContent);
         hSignal->SetBinError(i, binError);
     }
-    double signalYield, signalError;
-    signalYield = hSignal->IntegralAndError(firstBinSignal, lastBinSignal, signalError, "");
-    std::cout << "\033[1m" // Bold start
-              << "isFitGood status before appending to array: "
-              << (isFitGood ? "\033[31mtrue" : "\033[34mfalse") // Red for true, blue for false
-              << "\033[0m" // Reset to default at the end
-              << std::endl;
-
-    if (isFitGood) {
-        // Generate unique file names based on cut values
-        std::ostringstream yieldFilenameStream, errorFilenameStream;
-        yieldFilenameStream << globalDataPath << "signalYield_"
-                            << "E" << cutValues.clusE << "_Asym" << cutValues.asymmetry
-                            << "_Chi" << cutValues.chi << "_DeltaR" << cutValues.deltaR << ".txt";
-        std::string yieldFilename = yieldFilenameStream.str();
-
-        errorFilenameStream << globalDataPath << "signalError_"
-                            << "E" << cutValues.clusE << "_Asym" << cutValues.asymmetry
-                            << "_Chi" << cutValues.chi << "_DeltaR" << cutValues.deltaR << ".txt";
-        std::string errorFilename = errorFilenameStream.str();
-
-        std::ofstream yieldFile(yieldFilename, std::ios::app);
-        std::ofstream errorFile(errorFilename, std::ios::app);
-
-        if (yieldFile.is_open() && errorFile.is_open()) {
-            yieldFile << "Index " << histIndex << ": " << signalYield << std::endl;
-            errorFile << "Index " << histIndex << ": " << signalError << std::endl;
-        } else {
-            std::cerr << "Unable to open file(s) for writing." << std::endl;
-        }
-
-        yieldFile.close();
-        errorFile.close();
-        std::cout << "Fit good. Added to files for Index " << histIndex << " - Signal Yield: " << signalYield << ", Signal Error: " << signalError << std::endl;
-    } else {
-        std::cout << "Fit not good for Index " << histIndex << ". No values added to files." << std::endl;
-    }
-    std::cout << "Signal Yield: " << signalYield << " +/- " << signalError << std::endl;
+    double signalYield = hSignal->IntegralAndError(firstBinSignal, lastBinSignal, signalError, "");
+    delete hSignal; // Clean up
+    return signalYield; // Return the yield
 }
-/*
- Output for canvas of signal yield, signal error, gauss mean, gauss signal plots, which are over centralities which is why no MBD print statement or pT statement (since this is x axis)
- NOTE: NO need to edit anything, automatically gets updated according to name of root file globally set
- */
-void DrawCanvasTextSignalAndGaussPlots(TLatex& latex){
-    latex.SetTextSize(0.03);
-    latex.DrawLatex(0.68, 0.86, "Cuts (Inclusive):");
-    latex.DrawLatex(0.68, 0.82, Form("Asymmetry < %.3f", globalCutValues.asymmetry));
-    latex.DrawLatex(0.68, 0.78, Form("#chi^{2} < %.3f", globalCutValues.chi));
-    latex.DrawLatex(0.68, 0.74, Form("Cluster E #geq %.3f GeV", globalCutValues.clusE));
-}
-/*
- Plot generation for for plots that summarize the 12 plots for one range of cuts, uses the text files generated and only generates plots when boolean set to true (CreateSignalandGaussParPlots)
- */
-void GenerateSignalAndGaussParPlots(const CutValues& cutValues) {
-    const int nPoints = 12; // Total number of points in each file
-    double yield[nPoints], error[nPoints];
-    // Additional arrays to store Gaussian Mean and Sigma values
-    double gaussianMean[nPoints], gaussianMeanError[nPoints];
-    double gaussianSigma[nPoints], gaussianSigmaError[nPoints];
-    // Define a small jitter amount for horizontal offset of points
-    const double jitterAmount = 0.05;
-    const double jitterAmountGaussMean = 0.05;
-    
-    double xPoints[nPoints] = {2.5, 3.5, 4.5, 2.5, 3.5, 4.5, 2.5, 3.5, 4.5, 2.5, 3.5, 4.5};
-    
 
-    // Construct file names based on cut values for yield and error
-    std::ostringstream yieldFilenameStream, errorFilenameStream;
-    yieldFilenameStream << globalDataPath << "signalYield_"
-                        << "E" << cutValues.clusE << "_Asym" << cutValues.asymmetry
-                        << "_Chi" << cutValues.chi << "_DeltaR" << cutValues.deltaR << ".txt";
-    std::string yieldFilename = yieldFilenameStream.str();
-
-    errorFilenameStream << globalDataPath << "signalError_"
-                        << "E" << cutValues.clusE << "_Asym" << cutValues.asymmetry
-                        << "_Chi" << cutValues.chi << "_DeltaR" << cutValues.deltaR << ".txt";
-    std::string errorFilename = errorFilenameStream.str();
-
-    // Printing the filenames for verification
-    std::cout << "Reading yield data from: " << yieldFilename << std::endl;
-    std::cout << "Reading error data from: " << errorFilename << std::endl;
-
-    // Open the files using the constructed names for yield and error
-    std::ifstream yieldFile(yieldFilename);
-    std::ifstream errorFile(errorFilename);
-    std::string line;
-    int index;
-    double value, errorValue;
-    if (!yieldFile.is_open() || !errorFile.is_open()) {
-        std::cerr << "Error opening files." << std::endl;
-        return;
-    }
-    while (getline(yieldFile, line)) {
-        sscanf(line.c_str(), "Index %d: %lf", &index, &value);
-        yield[index] = value;
-    }
-    while (getline(errorFile, line)) {
-        sscanf(line.c_str(), "Index %d: %lf", &index, &value);
-        error[index] = value;
-    }
-    yieldFile.close();
-    errorFile.close();
-    
-    
-    // Define the filename stream and generate the filename based on cut values
-    std::ostringstream gaussianMeanFilenameStream;
-    gaussianMeanFilenameStream << globalDataPath << "GaussianMean_"
-                               << "E" << cutValues.clusE << "_Asym" << cutValues.asymmetry
-                               << "_Chi" << cutValues.chi << "_DeltaR" << cutValues.deltaR << ".txt";
-    std::string gaussianMeanFilename = gaussianMeanFilenameStream.str();
-
-    std::cout << "Reading Gaussian Mean data from: " << gaussianMeanFilename << std::endl;
-    // Open the Gaussian Mean file using the constructed filename
-    std::ifstream gaussianMeanFile(gaussianMeanFilename);
-    if (!gaussianMeanFile.is_open()) {
-        std::cerr << "Error opening file: " << gaussianMeanFilename << std::endl;
-        return;
-    }
-
-    // Read the Gaussian Mean values from the file
-    while (getline(gaussianMeanFile, line)) {
-        sscanf(line.c_str(), "Index %d: Mean: %lf, Mean Error: %lf", &index, &value, &errorValue);
-        // Ensure that the index is within the bounds of the array
-        if (index >= 0 && index < nPoints) {
-            gaussianMean[index] = value;
-            gaussianMeanError[index] = errorValue;
-        }
-    }
-
-    // Close the file after reading
-    gaussianMeanFile.close();
-
-    // Reading Gaussian Sigma values
-    std::ostringstream gaussianSigmaFilenameStream;
-    gaussianSigmaFilenameStream << globalDataPath << "GaussianError_"
-                                << "E" << cutValues.clusE << "_Asym" << cutValues.asymmetry
-                                << "_Chi" << cutValues.chi << "_DeltaR" << cutValues.deltaR << ".txt";
-    std::string gaussianSigmaFilename = gaussianSigmaFilenameStream.str();
-    
-    std::cout << "Reading Gaussian Sigma data from: " << gaussianSigmaFilename << std::endl;
-    std::ifstream gaussianSigmaFile(gaussianSigmaFilename);
-    if (!gaussianSigmaFile.is_open()) {
-        std::cerr << "Error opening file: " << gaussianSigmaFilename << std::endl;
-        return;
-    }
-    while (getline(gaussianSigmaFile, line)) {
-        sscanf(line.c_str(), "Index %d: Sigma: %lf, Sigma Error: %lf", &index, &value, &errorValue);
-        // Check if the index is within bounds before accessing the arrays
-        if (index >= 0 && index < nPoints) {
-            gaussianSigma[index] = value;
-            gaussianSigmaError[index] = errorValue;
-        }
-    }
-    gaussianSigmaFile.close();
-    
-    
-    TGraphErrors *graphs[4];
-    int indices[4][3] = {{0, 1, 2}, {3, 4, 5}, {6, 7, 8}, {9, 10, 11}};
-    int colors[4] = {kRed, kBlue, kGreen, kMagenta}; // Colors for different graphs
-    const char* labels[] = {
-        "60-100%",
-        "40-60%",
-        "20-40%",
-        "0-20 %"
-    };
-    
-    TH1F *hDummy = new TH1F("hDummy", "", 4, 1.5, 5.5);
-    hDummy->GetYaxis()->SetTitle("Signal Yield");
-    hDummy->GetXaxis()->CenterTitle(true);
-    hDummy->SetTitle("#pi^{0} Signal Yield");
-    hDummy->GetXaxis()->SetTitle("#pi^{0} p_{T} [GeV]");
-    hDummy->GetXaxis()->SetTitleOffset(1.1);
-    hDummy->GetXaxis()->SetLimits(1.5, 5); // This sets the user-defined limits for the axis
-    hDummy->GetXaxis()->SetLabelSize(0.04); // You can adjust the size as needed
-    // Manually setting the x-axis labels
-    hDummy->GetXaxis()->SetNdivisions(004); // This will create four primary divisions (2, 3, 4, 5)
-    
-    for (int i = 0; i < 4; ++i) {
-        graphs[i] = new TGraphErrors(3);
-        for (int j = 0; j < 3; ++j) {
-            int idx = indices[i][j];
-            double adjustedX = xPoints[idx] + (i - 1.5) * jitterAmount; // Apply jittering
-            graphs[i]->SetPoint(j, adjustedX, yield[idx]);
-            graphs[i]->SetPointError(j, 0, error[idx]);
-            graphs[i]->SetLineColor(colors[i]);
-            graphs[i]->SetMarkerColor(colors[i]);
-            graphs[i]->SetMarkerSize(1.2);
-            
-            // Print statement for verification
-            std::cout << "Graph " << i << ", Point " << j << ": "
-                      << "Index = " << idx << ", "
-                      << "X = " << xPoints[idx] << ", "
-                      << "Yield = " << yield[idx] << ", "
-                      << "Error = " << error[idx] << std::endl;
-            
-        }
-    }
-    TCanvas *c = new TCanvas("c", "Overlayed Curves", 800, 600);
-    c->cd(); // Ensure we are drawing on the canvas
-    c->SetLogy();
-    double maxYield = *std::max_element(yield, yield + nPoints);
-    double minYield = *std::min_element(yield, yield + nPoints); // Find the minimum yield
-    double minError = *std::min_element(error, error + nPoints); // Find the smallest error
-    hDummy->SetMaximum(maxYield * 10); // Set to 10 times the max for log scale buffer
-    hDummy->SetMinimum(minYield / 10); // Set to 1/10th of the min for log scale buffer
-    hDummy->SetMinimum(0.1); // Set a non-zero minimum for log scale
-    hDummy->SetStats(0); // Remove the statistics box
-    hDummy->GetYaxis()->SetTitle("#pi^{0} Signal Yield");
-    hDummy->Draw(); // Draw the dummy histogram to define axis ranges
-    TLegend *leg = new TLegend(0.14, 0.14, 0.34, 0.34);
-    // Set the header with a bigger, bolder font
-    leg->SetHeader("Centrality:");
-    leg->SetMargin(0.15);
-    leg->SetBorderSize(0);
-    leg->SetTextSize(0.04);
-    for (int i = 0; i < 4; ++i) {
-        graphs[i]->SetMarkerStyle(20 + i);
-        graphs[i]->Draw("P SAME");
-        leg->AddEntry(graphs[i], labels[i], "ep");
-    }
-    leg->Draw();
-    TLatex latex;
-    latex.SetNDC();
-    DrawCanvasTextSignalAndGaussPlots(latex);
-    c->Update(); // Update the canvas
-    //c->SaveAs("/Users/patsfan753/Desktop/Desktop/AnalyzePi0s_Final/plotOutput/signal/signalYield.pdf");
-    
-    TCanvas *cError = new TCanvas("cError", "Signal Error Plot", 800, 600);
-    cError->cd(); // Ensure we are drawing on the new canvas
-    TH1F *hDummyError = new TH1F("hDummyError", "", 4, 1.5, 5.5);
-    hDummyError->GetYaxis()->SetTitle("Relative Error = Signal Error / Signal Yield");
-    hDummyError->GetXaxis()->CenterTitle(true);
-    hDummyError->GetXaxis()->SetTitle("#pi^{0} p_{T} [GeV]");
-    hDummyError->GetXaxis()->SetTitleOffset(1.1); // Adjust this value as needed to position the title
-    hDummyError->SetTitle("Relative Error of #pi^{0} Signal Yield");
-    hDummyError->GetXaxis()->SetLimits(1.5, 5); // This sets the user-defined limits for the axis
-    hDummyError->GetXaxis()->SetLabelSize(0.04); // You can adjust the size as needed
-    hDummyError->GetXaxis()->SetNdivisions(004); // This will create four primary divisions (2, 3, 4, 5)
-    hDummyError->SetMaximum(.8); // Adjust if necessary for your error values
-    hDummyError->SetMinimum(0); // The minimum is 0
-    hDummyError->SetStats(0); // Remove the statistics box
-    hDummyError->Draw(); // Draw the dummy histogram to define axis ranges
-    
-    std::vector<double> relativeErrors(nPoints);
-    for (int i = 0; i < nPoints; ++i) {
-        if (yield[i] != 0) {
-            relativeErrors[i] = error[i] / yield[i];
-        } else {
-            relativeErrors[i] = 0;
-        }
-    }
-    TGraph *errorGraphs[4];
-    for (int i = 0; i < 4; ++i) {
-        errorGraphs[i] = new TGraph(3);
-        for (int j = 0; j < 3; ++j) {
-            int idx = indices[i][j];
-            double adjustedX = xPoints[idx] + (i - 1.5) * jitterAmount; // Apply jittering
-            errorGraphs[i]->SetPoint(j, adjustedX, relativeErrors[idx]);
-            errorGraphs[i]->SetLineColor(colors[i]);
-            errorGraphs[i]->SetMarkerColor(colors[i]);
-            errorGraphs[i]->SetMarkerSize(1.2); // Smaller marker size
-            errorGraphs[i]->SetMarkerStyle(20 + i); // Different marker style for error plot
-            errorGraphs[i]->Draw("P SAME"); // Draw graphs with points
-            
-            // Print statement for verification
-            std::cout << "Error Graph " << i << ", Point " << j << ": "
-                      << "Index = " << idx << ", "
-                      << "X = " << xPoints[idx] << ", "
-                      << "Relative Error = " << relativeErrors[idx] << std::endl;
-        }
-    }
-    TLegend *legError = new TLegend(0.12, 0.68, 0.32, 0.88); // Use the same coordinates for consistency
-    legError->SetHeader("Centrality:","C"); // 'C' option centers the header
-    legError->SetMargin(0.4);
-    legError->SetBorderSize(0);
-    legError->SetTextSize(0.04);
-    for (int i = 0; i < 4; ++i) {
-        errorGraphs[i]->SetMarkerStyle(20 + i);
-        errorGraphs[i]->Draw("P SAME");
-        legError->AddEntry(errorGraphs[i], labels[i], "p");
-    }
-    legError->Draw();
-    TLatex latexError;
-    latexError.SetNDC();
-    DrawCanvasTextSignalAndGaussPlots(latexError);
-
-    
-    cError->Update();
-    //cError->SaveAs("/Users/patsfan753/Desktop/Desktop/AnalyzePi0s_Final/plotOutput/signal/signalError_curve.pdf");
-    
-    
-    TCanvas *cGaussMean = new TCanvas("cGaussMean", "Gaussian Mean", 800, 600);
-    cGaussMean->cd(); // Ensure we are drawing on the canvas
-    
-    TH1F *hDummyGausMean = new TH1F("hDummyGausMean", "", 4, 1.5, 5.5);
-    hDummyGausMean->GetYaxis()->SetTitle("Gaussian Mean");
-    hDummyGausMean->GetXaxis()->CenterTitle(true);
-    hDummyGausMean->SetTitle("Gaussian Mean");
-    hDummyGausMean->GetXaxis()->SetTitle("Diphoton p_{T} [GeV]");
-    hDummyGausMean->GetXaxis()->SetTitleOffset(1.1);
-    hDummyGausMean->GetXaxis()->SetLimits(1.5, 5); // This sets the user-defined limits for the axis
-    hDummyGausMean->GetXaxis()->SetLabelSize(0.04); // You can adjust the size as needed
-    hDummyGausMean->GetXaxis()->SetNdivisions(004); // This will create four primary divisions (2, 3, 4, 5)
-    hDummyGausMean->SetMinimum(.06); // Replace yourMinValue with the desired minimum value
-    hDummyGausMean->SetMaximum(.35); // Replace yourMaxValue with the desired maximum value
-    hDummyGausMean->SetStats(0); // Remove the statistics box
-    hDummyGausMean->GetYaxis()->SetTitle("Gaussian Mean [GeV]");
-    hDummyGausMean->Draw(); // Draw the dummy histogram to define axis ranges
-
-    TGraphErrors *GaussMeanGraphs[4];
-    for (int i = 0; i < 4; ++i) {
-        GaussMeanGraphs[i] = new TGraphErrors(3);
-        for (int j = 0; j < 3; ++j) {
-            int idx = indices[i][j];
-            double adjustedX = xPoints[idx] + (i - 1.5) * jitterAmountGaussMean; // Apply jittering
-            GaussMeanGraphs[i]->SetPoint(j, adjustedX, gaussianMean[idx]);
-            GaussMeanGraphs[i]->SetPointError(j, 0, gaussianMeanError[idx]);
-            GaussMeanGraphs[i]->SetLineColor(colors[i]);
-            GaussMeanGraphs[i]->SetMarkerColor(colors[i]);
-            GaussMeanGraphs[i]->SetMarkerSize(1.3);
-            
-            // Print statement for verification
-            std::cout << "Graph " << i << ", Point " << j << ": "
-                      << "Index = " << idx << ", "
-                      << "X = " << xPoints[idx] << ", "
-                      << "Gaussian Mean = " << gaussianMean[idx] << ", "
-                      << "Gaussian Mean Error = " << gaussianMeanError[idx] << std::endl;
-            
-        }
-    }
-    // Draw the horizontal line at y = 0.135
-    double linePosition = 0.135;
-    TLine *meanLine = new TLine(hDummyGausMean->GetXaxis()->GetXmin(), linePosition, hDummyGausMean->GetXaxis()->GetXmax(), linePosition);
-    meanLine->SetLineColor(kRed); // Choose a color that stands out
-    meanLine->SetLineStyle(2); // Set line style to dashed (2)
-    meanLine->SetLineWidth(1); // Set a thinner line width
-    meanLine->Draw();
-
-    TLatex label;
-    label.SetNDC();
-    label.SetTextSize(0.03);
-    label.SetTextColor(kRed); // Match the line color
-    // Position the label near the line, adjust the coordinates as necessary
-    label.DrawLatex(0.82, 0.32, "#pi^{0} mass");
-
-    // Position the legend in the top-left corner
-    TLegend *legGaussMean = new TLegend(0.11, 0.68, 0.31, 0.88);
-    // Set the header with a bigger, bolder font
-    legGaussMean->SetHeader("Centrality:");
-    legGaussMean->SetMargin(0.15);
-    legGaussMean->SetBorderSize(0);
-    legGaussMean->SetTextSize(0.04);
-    for (int i = 0; i < 4; ++i) {
-        GaussMeanGraphs[i]->SetMarkerStyle(20 + i);
-        GaussMeanGraphs[i]->Draw("P SAME");
-        legGaussMean->AddEntry(graphs[i], labels[i], "ep");
-    }
-    legGaussMean->Draw();
-    // Position the cuts text in the top-right corner
-    
-    TLatex latexGaussMean;
-    latexGaussMean.SetNDC();
-    DrawCanvasTextSignalAndGaussPlots(latexGaussMean);
-    
-    cGaussMean->Update(); // Update the canvas
-    //cGaussMean->SaveAs("/Users/patsfan753/Desktop/Desktop/AnalyzePi0s_Final/plotOutput/gaussPars/mean.pdf");
-    
-    
-    TCanvas *cGaussSigma = new TCanvas("cGaussSigma", "Gaussian Sigma", 800, 600);
-    cGaussSigma->cd(); // Ensure we are drawing on the canvas
-
-    TH1F *hDummyGausSigma = new TH1F("hDummyGausSigma", "", 4, 1.5, 5.5);
-    hDummyGausSigma->GetYaxis()->SetTitle("Gaussian Sigma");
-    hDummyGausSigma->GetXaxis()->CenterTitle(true);
-    hDummyGausSigma->SetTitle("Gaussian Sigma");
-    hDummyGausSigma->GetXaxis()->SetTitle("Diphoton p_{T} [GeV]");
-    hDummyGausSigma->GetXaxis()->SetTitleOffset(1.1);
-    hDummyGausSigma->GetXaxis()->SetLimits(1.5, 5);
-    hDummyGausSigma->GetXaxis()->SetLabelSize(0.04);
-    hDummyGausSigma->GetXaxis()->SetNdivisions(004); // This will create four primary divisions (2, 3, 4, 5)
-    hDummyGausSigma->SetMinimum(0);
-    hDummyGausSigma->SetMaximum(.07);
-    hDummyGausSigma->SetStats(0); // Remove the statistics box
-    hDummyGausSigma->GetYaxis()->SetTitle("Gaussian Sigma [GeV]");
-    hDummyGausSigma->Draw(); // Draw the dummy histogram to define axis ranges
-
-    TGraphErrors *GaussSigmaGraphs[4];
-    for (int i = 0; i < 4; ++i) {
-        GaussSigmaGraphs[i] = new TGraphErrors(3);
-        for (int j = 0; j < 3; ++j) {
-            int idx = indices[i][j];
-            double adjustedX = xPoints[idx] + (i - 1.5) * jitterAmount; // Apply jittering
-            GaussSigmaGraphs[i]->SetPoint(j, adjustedX, gaussianSigma[idx]);
-            GaussSigmaGraphs[i]->SetPointError(j, 0, gaussianSigmaError[idx]);
-            GaussSigmaGraphs[i]->SetLineColor(colors[i]);
-            GaussSigmaGraphs[i]->SetMarkerColor(colors[i]);
-            GaussSigmaGraphs[i]->SetMarkerSize(1.2);
-            
-            // Print statement for verification
-            std::cout << "Graph " << i << ", Point " << j << ": "
-                      << "Index = " << idx << ", "
-                      << "X = " << xPoints[idx] << ", "
-                      << "Gaussian Sigma = " << gaussianSigma[idx] << ", "
-                      << "Gaussian Sigma Error = " << gaussianSigmaError[idx] << std::endl;
-            
-        }
-    }
-    TLegend *legGaussSigma = new TLegend(0.11, 0.68, 0.31, 0.88);
-    legGaussSigma->SetHeader("Centrality:");
-    legGaussSigma->SetMargin(0.15);
-    legGaussSigma->SetBorderSize(0);
-    legGaussSigma->SetTextSize(0.04);
-    for (int i = 0; i < 4; ++i) {
-        GaussSigmaGraphs[i]->SetMarkerStyle(20 + i);
-        GaussSigmaGraphs[i]->Draw("P SAME");
-        legGaussSigma->AddEntry(GaussSigmaGraphs[i], labels[i], "ep");
-    }
-    legGaussSigma->Draw();
-    TLatex latexGaussSigma;
-    latexGaussSigma.SetNDC();
-    DrawCanvasTextSignalAndGaussPlots(latexGaussSigma);
-    cGaussSigma->Update(); // Update the canvas
-    //cGaussSigma->SaveAs("/Users/patsfan753/Desktop/Desktop/AnalyzePi0s_Final/plotOutput/gaussPars/sigma.pdf");
-}
 /*
  Draws on canvas for invariant mass histograms, no need for manual input automatically updates according to root file and plot generated
  */
@@ -913,14 +266,21 @@ void DrawCanvasText(TLatex& latex, const Range& selectedRange, double fitMean, d
     mbdStream << std::fixed << std::setprecision(0) << "Centrality: " << selectedRange.mbdLow << " - " << selectedRange.mbdHigh << "%";
     ptStream << std::fixed << std::setprecision(2) << selectedRange.ptLow << " #leq Diphoton p_{T} < " << selectedRange.ptHigh << " GeV";
 
-    latex.SetTextSize(0.035);
+    latex.SetTextSize(0.03);
     latex.DrawLatex(0.13, 0.86, "Cuts (Inclusive):");
     latex.DrawLatex(0.13, 0.82, Form("Asymmetry < %.3f", globalCutValues.asymmetry));
     latex.DrawLatex(0.13, 0.78, Form("#chi^{2} < %.3f", globalCutValues.chi));
-    latex.DrawLatex(0.13, 0.74, Form("Cluster E #geq %.3f GeV", globalCutValues.clusE));
-    latex.DrawLatex(0.13, 0.7, Form("#Delta R #geq %.3f", globalCutValues.deltaR));
-    latex.DrawLatex(0.13, 0.66, mbdStream.str().c_str());
-    latex.DrawLatex(0.13, 0.62, ptStream.str().c_str());
+//    latex.DrawLatex(0.13, 0.74, Form("Cluster E #geq %.3f GeV", globalCutValues.clusE));
+    
+    // Updating to display both Cluster EA and EB cuts
+    latex.DrawLatex(0.13, 0.74, Form("Cluster E_{A} #geq %.3f GeV", globalCutValues.clusEA));
+    latex.DrawLatex(0.13, 0.70, Form("Cluster E_{B} #geq %.3f GeV", globalCutValues.clusEB));
+//    latex.DrawLatex(0.13, 0.7, Form("#Delta R #geq %.3f", globalCutValues.deltaR));
+    
+    // Displaying minimum and maximum Delta R cuts in a single line
+    latex.DrawLatex(0.13, 0.66, Form("%.3f < #Delta R #leq %.3f", globalCutValues.deltaRMin, globalCutValues.deltaRMax));
+    latex.DrawLatex(0.13, 0.62, mbdStream.str().c_str());
+    latex.DrawLatex(0.13, 0.58, ptStream.str().c_str());
 
     // Drawing text related to Gaussian parameters and S/B ratio
     latex.SetTextSize(0.036);
@@ -931,19 +291,19 @@ void DrawCanvasText(TLatex& latex, const Range& selectedRange, double fitMean, d
 /*
  method to globally keep track of parameters as you go index by index and switch between root files with different cuts
  */
-void WriteDataToCSV(int histIndex, const CutValues& cutValues, double fitMean, double fitMeanError, double fitSigma, double fitSigmaError, double signalToBackgroundRatio, double signalToBackgroundError, double signalYield, double signalError) {
+void WriteDataToCSV(int histIndex, const CutValues& cutValues, double fitMean, double fitMeanError, double fitSigma, double fitSigmaError, double signalToBackgroundRatio, double signalToBackgroundError, double signalYield, double signalError, double numEntries, double chi2) {
     // Check if the fit is good before proceeding
     if (!isFitGood) {
         std::cout << "Fit is not good. Skipping CSV write." << std::endl;
         return;
     }
 
-    std::string filename = globalDataPath + "PlotByPlotOutput_DeltaRvariations.csv";
-    std::ifstream checkFile(filename);
+    std::string csv_filename = globalDataPath + "PlotByPlotOutput_3_29.csv";
+    std::ifstream checkFile(csv_filename);
     bool fileIsEmpty = checkFile.peek() == std::ifstream::traits_type::eof();
     checkFile.close();
 
-    std::ofstream file(filename, std::ios::app); // Open the file in append mode
+    std::ofstream file(csv_filename, std::ios::app); // Open the file in append mode
 
     if (!file.is_open()) {
         std::cerr << "Unable to open CSV file for writing." << std::endl;
@@ -952,7 +312,7 @@ void WriteDataToCSV(int histIndex, const CutValues& cutValues, double fitMean, d
 
     // Write column headers if file is empty
     if (fileIsEmpty) {
-        file << "Index,Energy,Asymmetry,Chi2,DeltaR,GaussMean,GaussMeanError,GaussSigma,GaussSigmaError,S/B,S/Berror,NumEntry,Yield,YieldError,RelativeSignalError,LowerSignalBound,UpperSignalBound\n";
+        file << "Index,EnergyA,EnergyB,Asymmetry,Chi2,DeltaRMin,DeltaRMax,GaussMean,GaussMeanError,GaussSigma,GaussSigmaError,S/B,S/Berror,NumEntry,Yield,YieldError,RelativeSignalError,chi2,LowerSignalBound,UpperSignalBound\n";
     }
 
     // Calculate relativeSignalError (ensure we don't divide by zero)
@@ -963,233 +323,275 @@ void WriteDataToCSV(int histIndex, const CutValues& cutValues, double fitMean, d
     double upperSignalBound = fitMean + 2 * fitSigma;
     
     
-    // Write data to CSV
-    file << histIndex << ",";
-    file << cutValues.clusE << ",";
-    file << cutValues.asymmetry << ",";
-    file << cutValues.chi << ",";
-    file << cutValues.deltaR << ",";
-    file << fitMean << ",";
-    file << fitMeanError << ",";
-    file << fitSigma << ",";
-    file << fitSigmaError << ",";
-    file << signalToBackgroundRatio << ",";
-    file << signalToBackgroundError << ",";
-    file << globalNumEntries << ",";
-    file << signalYield << ",";
-    file << signalError << ",";
-    file << relativeSignalError << ",";
-    file << lowerSignalBound << ",";
-    file << upperSignalBound << "\n";
-
-
-    file.close();
-}
-void WriteAdditionalParametersToCSV(int histIndex, const CutValues& cutValues) {
-    if (!isFitGood || globalSetFitManual) {
-        return; // Do not write to CSV if conditions are not met
-    }
-
-    // Open file in append mode
-    std::ofstream file(csvFilePath, std::ios::app);
-    if (!file.is_open()) {
-        std::cerr << "Unable to open CSV file for writing additional parameters." << std::endl;
-        return;
-    }
-
-    // Check if file is empty and write headers
-    file.seekp(0, std::ios::end); // Go to the end of file
-    if (file.tellp() == 0) { // If file position is at the beginning, file is empty
-        file << "Index,Energy,Asymmetry,Chi2,DeltaR,FitStart,FitEnd,FindBin1,FindBin2,SigmaEstimate,SigmaParScale,NumEntries,YAxisLower,YAxisUpper\n";
-    }
-
-    // Write data to CSV
+    // Updated data writing to include clusEB and deltaRMax
     file << histIndex << ","
-         << cutValues.clusE << ","
+         << cutValues.clusEA << ","  // Note: Assuming clusE is now clusEA
+         << cutValues.clusEB << ","  // New value
          << cutValues.asymmetry << ","
          << cutValues.chi << ","
-         << cutValues.deltaR << ","
-         << globalFitStart << ","
-         << globalFitEnd << ","
-         << globalFindBin1Value << ","
-         << globalFindBin2Value << ","
-         << globalSigmaEstimate << ","
-         << globalSigmaParScale << ","
-         << globalNumEntries << ","
-         << globalYAxisRange[0] << ","
-         << globalYAxisRange[1] << "\n";
+         << cutValues.deltaRMin << ","  // Note: Assuming deltaR is now deltaRMin
+         << cutValues.deltaRMax << ","  // New value
+         << fitMean << ","
+         << fitMeanError << ","
+         << fitSigma << ","
+         << fitSigmaError << ","
+         << signalToBackgroundRatio << ","
+         << signalToBackgroundError << ","
+         << numEntries << ","
+         << signalYield << ","
+         << signalError << ","
+         << relativeSignalError << ","
+         << chi2 << ","
+         << lowerSignalBound << ","
+         << upperSignalBound << "\n";
+
 
     file.close();
 }
 
-/*
- main method
- */
+void RunCode(const std::string& filename) {
+    
+    // Open a log file for skipped histograms
+    std::ofstream logFile("/Users/patsfan753/Desktop/Analysis_3_29/SkippedHistogramsLog.txt", std::ios::app);
+    if (!logFile.is_open()) {
+        std::cerr << "Failed to open log file for writing skipped histogram info." << std::endl;
+        return; // Optionally handle more gracefully
+    }
+    
+    char runOption;
+    std::cout << "Run for all indices? (A) or Single Index? (S): ";
+    std::cin >> runOption;
+
+
+    std::vector<int> indices;
+    bool isBatchRun = false; // Flag to check if it's a batch run
+
+    if (runOption == 'A' || runOption == 'a') {
+        isBatchRun = true; // Set flag to true for batch run
+        for (int i = 0; i <= 17; ++i) {
+            indices.push_back(i);
+        }
+    } else {
+        indices.push_back(histIndex); // Current functionality for a single index
+    }
+
+    for (int currentIndex : indices) {
+        
+        
+        TFile *file = new TFile(filename.c_str(), "READ");
+        if (!file || file->IsZombie()) {
+            std::cerr << "Failed to open file: " << filename << std::endl;
+            continue; // Skip this file
+        }
+        // Initialize global cut values
+        globalCutValues = parseFileName(filename);
+        // User interaction to set global isFitGood
+        char userInput;
+        
+        // For batch run, set isFitGood to true without asking the user
+        if (isBatchRun) {
+            isFitGood = true;
+        } else {
+            std::cout << "Is fit ready to be finalized? (Y/N): ";
+            std::cin >> userInput;
+            isFitGood = (userInput == 'Y' || userInput == 'y'); // Directly setting the global variable
+        }
+                    
+        // Validate histIndex is within the range of defined y-axis ranges
+        if (currentIndex < 0 || currentIndex >= globalYAxisRanges.size()) {
+            std::cerr << "Error: histIndex is out of range. Valid index range is 0 to "
+            << globalYAxisRanges.size() - 1 << "." << std::endl;
+            return; // Exit the function or handle error as appropriate
+        }
+        
+        // Extracting y-axis range and scale factor for the current histIndex
+        auto selectedRange = globalYAxisRanges[currentIndex];
+        globalYAxisRange[0] = std::get<0>(selectedRange); // y-axis min, though always 0 in your setup
+        globalYAxisRange[1] = std::get<1>(selectedRange); // y-axis max
+        double scaleFactor = std::get<2>(selectedRange);  // scale factor for lineHeight
+        
+        // Calculating globalLineHeight based on the extracted scale factor
+        globalLineHeight = scaleFactor * globalYAxisRange[1];
+        
+        // Fetch histogram based on index
+        std::string histName = "hPi0Mass_" + std::to_string(currentIndex);
+        TH1F *hPi0Mass = (TH1F*)file->Get(histName.c_str());
+        if (!hPi0Mass) {
+            std::cerr << "Histogram not found in file: " << filename << std::endl;
+            continue; // Skip this histogram
+        }
+        if (!hPi0Mass || hPi0Mass->GetEntries() <= 20) {
+            std::cerr << "Skipping due to empty or missing histogram: " << histName << " in file: " << filename << std::endl;
+            logFile << "Skipped histogram: " << histName << " from file: " << filename << std::endl;
+            continue; // Skip this histogram
+        }
+        
+        hPi0Mass->GetYaxis()->SetRangeUser(globalYAxisRange[0], globalYAxisRange[1]); // Use global variable for Y-axis range
+        
+        
+        hPi0Mass->SetTitle("Reconstructed Diphoton, MB + Central Events");
+        
+        // Declare variables for fit parameters
+        TF1 *totalFit;
+        double fitStart, fitEnd;
+        
+        // Call PerformFitting to execute the fitting procedure
+        TFitResultPtr fitResult = PerformFitting(hPi0Mass, totalFit);
+        
+        std::string canvasName = "canvas_" + std::to_string(currentIndex);
+        TCanvas *canvas = new TCanvas(canvasName.c_str(), "Pi0 Mass Distribution", 900, 600);
+        hPi0Mass->SetMarkerStyle(20);
+        hPi0Mass->SetMarkerSize(1.0);
+        hPi0Mass->SetMarkerColor(kBlack);
+        hPi0Mass->Draw("PE");
+        
+        double fitMean = totalFit->GetParameter(1);
+        double fitMeanError = totalFit->GetParError(1);
+        double fitSigma = totalFit->GetParameter(2);
+        double fitSigmaError = totalFit->GetParError(2);
+        double numEntries = hPi0Mass->GetEntries();
+        
+        
+        TF1 *gaussFit = new TF1("gaussFit", "gaus", fitStart, .3);
+        TF1 *polyFit = new TF1("polyFit", "pol2", 0, .3);
+        gaussFit->SetParameter(0, totalFit->GetParameter(0));
+        gaussFit->SetParameter(1, totalFit->GetParameter(1));
+        gaussFit->SetParameter(2, totalFit->GetParameter(2));
+        
+        for (int i = 3; i < 6; i++) {
+            polyFit->SetParameter(i - 3, totalFit->GetParameter(i));
+            polyFit->SetParError(i - 3, totalFit->GetParError(i));
+        }
+        
+        gaussFit->SetLineColor(kOrange+2);
+        gaussFit->SetLineStyle(2);
+        gaussFit->Draw("SAME");
+        polyFit->SetLineColor(kBlue);
+        polyFit->SetLineWidth(3);
+        polyFit->SetLineStyle(2);
+        polyFit->Draw("SAME");
+        
+        
+        TLatex latex;
+        latex.SetNDC();
+        
+        double signalToBackgroundError;
+        double signalToBackgroundRatio = CalculateSignalToBackgroundRatio(hPi0Mass, polyFit, fitMean, fitSigma, signalToBackgroundError);
+        
+        DrawCanvasText(latex, ranges[currentIndex], fitMean, fitSigma, signalToBackgroundRatio, signalToBackgroundError);
+        
+        double amplitude = totalFit->GetParameter(0);
+        
+        // Calculate lowerSignalBound and upperSignalBound
+        double lowerSignalBound = fitMean - 2 * fitSigma;
+        double upperSignalBound = fitMean + 2 * fitSigma;
+        
+        double chi2 = fitResult->Chi2(); // to retrieve the fit chi2
+        
+        // Draw chi2 value on the canvas
+        TLatex chi2Text;
+        chi2Text.SetNDC(); // Set coordinates to normalized
+        chi2Text.SetTextSize(0.05); // Set text size (you can adjust as necessary)
+        chi2Text.DrawLatex(0.55, 0.2, Form("Chi2/NDF: %.2f / %d", chi2, fitResult->Ndf())); // Adjust the position and text as needed
+
+        
+        // ANSI escape code for bold red text
+        const char* redBold = "\033[1;31m";
+        // ANSI escape code to reset formatting
+        const char* reset = "\033[0m";
+        
+        // Printing the calculated values in bold red
+        std::cout << redBold;
+        std::cout << "lowerSignalBound: " << lowerSignalBound << std::endl;
+        std::cout << "upperSignalBound: " << upperSignalBound << std::endl;
+        std::cout << "Chi2: " << chi2 << reset << std::endl;
+        
+        TLine *line1 = new TLine(fitMean + 2*fitSigma, 0, fitMean + 2*fitSigma, amplitude+globalLineHeight);
+        TLine *line2 = new TLine(fitMean - 2*fitSigma, 0, fitMean - 2*fitSigma, amplitude+globalLineHeight);
+        line1->SetLineColor(kBlack);
+        line1->SetLineStyle(1);
+        line2->SetLineColor(kBlack);
+        line2->SetLineStyle(1);
+        line1->Draw("same");
+        line2->Draw("same");
+
+        // Check if currentIndex is within the desired range before saving as PNG
+        if (currentIndex >= 12 && currentIndex <= 17) {
+            // Constructing the filename for the PNG file dynamically
+            std::ostringstream pngFilenameStream;
+            pngFilenameStream << "/Users/patsfan753/Desktop/Analysis_3_29/Plots/LabeledByCuts_ByHighestS_Boutput/EA1point5_EB1point75/"
+                              << "hPi0Mass_"
+                              << "EA" << globalCutValues.clusEA
+                              << "_EB" << globalCutValues.clusEB
+                              << "_Asym" << globalCutValues.asymmetry
+                              << "_DelrMin" << globalCutValues.deltaRMin
+                              << "_DelrMax" << globalCutValues.deltaRMax
+                              << "_Chi" << globalCutValues.chi
+                              << "_Index" << currentIndex // Adding the current index to the filename
+                              << "_fit.png"; // Extension for PNG files
+            std::string pngFilename = pngFilenameStream.str();
+
+            // Save the canvas to the constructed filename
+            canvas->SaveAs(pngFilename.c_str());
+        }
+
+        
+        delete canvas;
+        
+        double signalError; // Declare once outside the function call, ensuring it's not redeclared in the local scope where it's used
+        double signalYield = CalculateSignalYieldAndError(hPi0Mass, polyFit, fitMean, fitSigma, signalError);
+        
+        
+        
+        // Call the new method to write to CSV if the fit is good
+        WriteDataToCSV(currentIndex, globalCutValues, fitMean, fitMeanError, fitSigma, fitSigmaError, signalToBackgroundRatio, signalToBackgroundError, signalYield, signalError, numEntries, chi2);
+        
+        // After finishing with the file
+        if (file) {
+            file->Close();
+            delete file; // Also consider deleting the pointer if you're done with the file
+        }
+
+        
+    }
+}
 void AnalyzePi0() {
-    // Load the root file
-    TFile *file = new TFile(globalFilename.c_str(), "READ");
-    // Initialize global cut values
-    globalCutValues = parseFileName();
-    // User interaction to set global isFitGood
-    char userInput;
-    std::cout << "Is fit ready to be finalized? (Y/N): ";
-    std::cin >> userInput;
-    isFitGood = (userInput == 'Y' || userInput == 'y'); // Directly setting the global variable
+    char runOption;
+    std::cout << "Run for all files? (Y/N): ";
+    std::cin >> runOption;
+
+    std::string folderPath = "/Users/patsfan753/Desktop/Analysis_3_29/RootFiles";
 
     
-    // Fetch histogram based on index
-    std::string histName = "hPi0Mass_" + std::to_string(histIndex);
-    TH1F *hPi0Mass = (TH1F*)file->Get(histName.c_str());
-    globalNumEntries = hPi0Mass->GetEntries(); // Set global variable for number of entries
-    hPi0Mass->GetYaxis()->SetRangeUser(globalYAxisRange[0], globalYAxisRange[1]); // Use global variable for Y-axis range
+    if (runOption == 'Y' || runOption == 'y') {
+        TSystemDirectory dir("dir", folderPath.c_str());
+        TList* files = dir.GetListOfFiles();
+        if (files) {
+            TSystemFile* file;
+            TString fname;
+            TIter next(files);
+            std::cout << "Processing files:" << std::endl; // Indicates the start of processing files
+            while ((file=(TSystemFile*)next())) {
+                fname = file->GetName();
+                if (!file->IsDirectory() && fname.EndsWith(".root") && fname.BeginsWith("hPi0Mass")) {
+                    TString fullPath = TString(folderPath.c_str()) + "/" + fname;
+                    std::cout << "Opening file: " << fullPath << std::endl;
+                    TFile *file = TFile::Open(fullPath.Data(), "READ");
+                    if (!file || file->IsZombie()) {
+                        std::cerr << "Failed to open file or file is corrupted: " << fullPath << std::endl;
+                        continue; // Skip this file
+                    }
+                    isFitGood = true;
+                    RunCode(std::string(fullPath.Data())); // Ensure RunCode can accept a TString or std::string
 
-
-    hPi0Mass->SetTitle("Reconstructed Diphoton, MB + Central Events");
-
-    // Declare variables for fit parameters
-    TF1 *totalFit;
-    double fitStart, fitEnd;
-
-    // Call PerformFitting to execute the fitting procedure
-    TFitResultPtr fitResult = PerformFitting(hPi0Mass, globalSetFitManual, totalFit, fitStart, fitEnd);
-    
-    
-    TCanvas *canvas = new TCanvas("canvas", "Pi0 Mass Distribution", 900, 600);
-    hPi0Mass->SetMarkerStyle(20);
-    hPi0Mass->SetMarkerSize(1.0);
-    hPi0Mass->SetMarkerColor(kBlack);
-    hPi0Mass->Draw("PE");
-
-    double fitMean = totalFit->GetParameter(1);
-    double fitMeanError = totalFit->GetParError(1);
-    double fitSigma = totalFit->GetParameter(2);
-    double fitSigmaError = totalFit->GetParError(2);
-    
-    WriteGaussianParametersToFile(histIndex, fitMean, fitMeanError, fitSigma, fitSigmaError, globalCutValues);
-
-    
-    TF1 *gaussFit = new TF1("gaussFit", "gaus", fitStart, fitMean + 2*fitSigma + .02);
-    TF1 *polyFit = new TF1("polyFit", "pol4", fitStart, fitMean + 2*fitSigma + .05);
-    gaussFit->SetParameter(0, totalFit->GetParameter(0));
-    gaussFit->SetParameter(1, totalFit->GetParameter(1));
-    gaussFit->SetParameter(2, totalFit->GetParameter(2));
-
-    for (int i = 3; i < 8; i++) {
-        polyFit->SetParameter(i - 3, totalFit->GetParameter(i));
-        polyFit->SetParError(i - 3, totalFit->GetParError(i));
-    }
-
-    gaussFit->SetLineColor(kOrange+2);
-    gaussFit->SetLineStyle(2);
-    gaussFit->Draw("SAME");
-    polyFit->SetLineColor(kBlue);
-    polyFit->SetLineWidth(3);
-    polyFit->SetLineStyle(2);
-    polyFit->Draw("SAME");
-
-    
-    TLatex latex;
-    latex.SetNDC();
-
-    double signalToBackgroundError;
-    double signalToBackgroundRatio = CalculateSignalToBackgroundRatio(hPi0Mass, polyFit, fitMean, fitSigma, signalToBackgroundError);
-
-    DrawCanvasText(latex, ranges[histIndex], fitMean, fitSigma, signalToBackgroundRatio, signalToBackgroundError);
-
-    double amplitude = totalFit->GetParameter(0);
-    
-    // Calculate lowerSignalBound and upperSignalBound
-    double lowerSignalBound = fitMean - 2 * fitSigma;
-    double upperSignalBound = fitMean + 2 * fitSigma;
-    
-    double chi2 = fitResult->Chi2(); // to retrieve the fit chi2
-    
-    // ANSI escape code for bold red text
-    const char* redBold = "\033[1;31m";
-    // ANSI escape code to reset formatting
-    const char* reset = "\033[0m";
-
-    // Printing the calculated values in bold red
-    std::cout << redBold;
-    std::cout << "lowerSignalBound: " << lowerSignalBound << std::endl;
-    std::cout << "upperSignalBound: " << upperSignalBound << std::endl;
-    std::cout << "Chi2: " << chi2 << reset << std::endl;
-    
-    TLine *line1 = new TLine(fitMean + 2*fitSigma, 0, fitMean + 2*fitSigma, amplitude+globalLineHeight);
-    TLine *line2 = new TLine(fitMean - 2*fitSigma, 0, fitMean - 2*fitSigma, amplitude+globalLineHeight);
-    line1->SetLineColor(kBlack);
-    line1->SetLineStyle(1);
-    line2->SetLineColor(kBlack);
-    line2->SetLineStyle(1);
-    line1->Draw("same");
-    line2->Draw("same");
-    if (isFitGood) {
-        std::ostringstream filenameStream;
-        filenameStream << "/Users/patsfan753/Desktop/vN_AnalysisFinal/plotOutput/InvMassPlots/hPi0Mass_"
-                       << histIndex << "_E" << globalCutValues.clusE
-                       << "_Asym" << globalCutValues.asymmetry
-                       << "_Chi" << globalCutValues.chi
-                       << "_DeltaR" << globalCutValues.deltaR << "_fit.pdf";
-        std::string imageName = filenameStream.str();
-        canvas->SaveAs(imageName.c_str());
-    }
-    std::string imageName2 = "/Users/patsfan753/Desktop/vN_AnalysisFinal/plotOutput/InvMassPlotsNoCutSpecified/" + histName + "_fit.png";
-    canvas->SaveAs(imageName2.c_str());
-    CalculateSignalYieldAndError(hPi0Mass, polyFit, fitMean, fitSigma, histIndex, globalCutValues);
-    // Read the signal yield and error from text files so can be transferred to CSV input
-    double signalYield = 0.0, signalError = 0.0;
-    if (isFitGood) {
-        // Construct file names based on cut values
-        std::ostringstream yieldFilenameStream, errorFilenameStream;
-        yieldFilenameStream << globalDataPath << "signalYield_"
-                            << "E" << globalCutValues.clusE << "_Asym" << globalCutValues.asymmetry
-                            << "_Chi" << globalCutValues.chi << "_DeltaR" << globalCutValues.deltaR << ".txt";
-        std::string yieldFilename = yieldFilenameStream.str();
-
-        errorFilenameStream << globalDataPath << "signalError_"
-                            << "E" << globalCutValues.clusE << "_Asym" << globalCutValues.asymmetry
-                            << "_Chi" << globalCutValues.chi << "_DeltaR" << globalCutValues.deltaR << ".txt";
-        std::string errorFilename = errorFilenameStream.str();
-
-        // Open the files using the constructed names
-        std::ifstream yieldFile(yieldFilename);
-        std::ifstream errorFile(errorFilename);
-        std::string line;
-
-        // Reading signal yield
-        while (getline(yieldFile, line)) {
-            if (line.find("Index " + std::to_string(histIndex) + ":") != std::string::npos) {
-                std::istringstream iss(line.substr(line.find(':') + 1));
-                iss >> signalYield;
-                break;
+            
+                }
             }
+        } else {
+            std::cerr << "No files found in directory: " << folderPath << std::endl;
         }
-
-        // Reading signal error
-        while (getline(errorFile, line)) {
-            if (line.find("Index " + std::to_string(histIndex) + ":") != std::string::npos) {
-                std::istringstream iss(line.substr(line.find(':') + 1));
-                iss >> signalError;
-                break;
-            }
-        }
-
-        yieldFile.close();
-        errorFile.close();
-
-        std::cout << "For Index " << histIndex << " - Signal Yield: " << signalYield
-                  << ", Signal Error: " << signalError << std::endl;
-    }
-
-
-    // Call the new method to write to CSV if the fit is good
-    WriteDataToCSV(histIndex, globalCutValues, fitMean, fitMeanError, fitSigma, fitSigmaError, signalToBackgroundRatio, signalToBackgroundError, signalYield, signalError);
-    
-    WriteAdditionalParametersToCSV(histIndex, globalCutValues);
-    
-    
-    // Conditional plotting
-    if (CreateSignalandGaussParPlots) {
-        GenerateSignalAndGaussParPlots(globalCutValues);
+    } else {
+        // If 'N', call RunCode with the global filename or ask for a specific file
+        RunCode("/Users/patsfan753/Desktop/Analysis_3_29/RootFiles/hPi0Mass_EA1point5_EB1point75_Asym0point5_DelrMin0_DelrMax1_Chi4.root");
     }
 }
