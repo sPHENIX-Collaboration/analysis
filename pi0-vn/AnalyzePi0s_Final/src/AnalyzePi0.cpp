@@ -12,48 +12,25 @@
 #include "TSystemDirectory.h"
 #include "TList.h"
 #include "TSystemFile.h"
-
+#include <sys/stat.h>
+/*
+ when compiling this code, SCROLL TO BOTTOM, see you can either select 'Y' for run code over all hPi0Mass root files in your path, where folders auto generate with the cut value combiantion for each index
+--can also select no and use hard coded file path
+ */
 void RunCode(const std::string& filename); // Forward declaration
 
 struct CutValues {
     float clusEA, clusEB, asymmetry, deltaRMin, deltaRMax, chi;
 };
 
-double globalNumEntries;
+CutValues globalCutValues;
 
 // Global variable
 std::string globalDataPath = "/Users/patsfan753/Desktop/Analysis_3_29/CSVoutput/";
+std::string globalPlotOutput = "/Users/patsfan753/Desktop/Analysis_3_29/Plots/"; //Note: Folder auto created with name of cut variation to this
 
 
 int histIndex = 0;
-
-std::vector<std::tuple<double, double, double>> globalYAxisRanges = {
-    // Format: {y-axis min, y-axis max, lineHeight scale factor}
-    {0, 175000, 0.4},  // Index 0
-    {0, 54000, 0.35},   // Index 1
-    {0, 19000, 0.25},   // Index 2
-    {0, 7000, 0.25},    // Index 3
-    {0, 2750, 0.2},    // Index 4
-    {0, 1200, 0.2},    // Index 5
-    
-    {0, 1200000, 0.4},  // Index 6
-    {0, 375000, 0.4},   // Index 7
-    {0, 100000, 0.4},   // Index 8
-    {0, 25000, 0.35},    // Index 9
-    {0, 8500, 0.3},    // Index 10
-    {0, 3500, 0.28},    // Index 11
-    
-    {0, 85000, 0.5},  // Index 12
-    {0, 160000, 0.45},   // Index 13
-    {0, 54000, 0.45},   // Index 14
-    {0, 24000, 0.4},    // Index 15
-    {0, 10000, 0.4},    // Index 16
-    {0, 3800, 0.4}     // Index 17
-};
-
-
-double globalYAxisRange[2];  // This will store the current y-axis range
-double globalLineHeight;     // This will store the current line height based on histIndex
 
 TFitResultPtr PerformFitting(TH1F* hPi0Mass, TF1*& totalFit) {
     double fitStart = 0.1;
@@ -89,9 +66,6 @@ TFitResultPtr PerformFitting(TH1F* hPi0Mass, TF1*& totalFit) {
     TFitResultPtr fitResult = hPi0Mass->Fit("totalFit", "SR+");
     return fitResult; // Return the fit result
 }
-
-
-CutValues globalCutValues;
 /*
  Function to parse the filename and extract cut values
  */
@@ -100,25 +74,8 @@ CutValues parseFileName(const std::string& filename) {
     
     std::regex re("hPi0Mass_EA([0-9]+(?:point[0-9]*)?)_EB([0-9]+(?:point[0-9]*)?)_Asym([0-9]+(?:point[0-9]*)?)_DelrMin([0-9]+(?:point[0-9]*)?)_DelrMax([0-9]+(?:point[0-9]*)?)_Chi([0-9]+(?:point[0-9]*)?)\\.root");
 
-    // Regular expression to match the filename pattern and extract cut values
-    //std::regex re("hPi0Mass_E([0-9]+(?:point[0-9]*)?)_Asym([0-9]+(?:point[0-9]*)?)_Delr([0-9]+(?:point[0-9]*)?)_Chi([0-9]+(?:point[0-9]*)?)\\.root");
     std::smatch match; // Object to store the results of regex search
-    
-    // Perform a regex (Regular Expression) search on the global filename.
-    /*
-     Regex is a method used for matching text patterns.
-     --- Here, it is used to parse the filename and extract numerical values representing cut values.
-     The pattern defined in 're' looks for sequences in the filename that match the expected format (e.g., 'E1point25', 'Asym0point5').
-      In the pattern:
-      - "hPi0Mass_E" etc., are literal texts to match.
-      - "([0-9]+(?:point[0-9]*)?)" is a regex pattern where:
-        - "[0-9]+" matches one or more digits.
-        - "(?:point[0-9]*)?" is a non-capturing group matching the word 'point' followed by any number of digits, making 'point' optional.
-      - "\\root" matches the file extension.
-     The 'regex_search' function scans 'filename' to find these patterns.
-     If a match is found, the 'match' object holds the extracted values (e.g., numeric parts of 'E', 'Asym', etc.).
-     These are then converted into floating-point values representing the cut parameters (e.g., energy cut, asymmetry).
-     */
+
     if (std::regex_search(filename, match, re) && match.size() > 4) {
         // Lambda function to convert a string with 'point' to a float
         auto convert = [](const std::string& input) -> float {
@@ -162,9 +119,6 @@ bool isFitGood; // No initial value needed here
 struct Range {
     double ptLow, ptHigh, mbdLow, mbdHigh;
 };
-/*
- Automatic printing of MBD values onto canvas of invar mass histograms, switches when histIndex is switched, located above the Fitting Function above
- */
 Range ranges[] = {
     //40-60 percent centrality
     {2.0, 2.5, 40, 60},       // index 0
@@ -279,8 +233,8 @@ void DrawCanvasText(TLatex& latex, const Range& selectedRange, double fitMean, d
     
     // Displaying minimum and maximum Delta R cuts in a single line
     latex.DrawLatex(0.13, 0.66, Form("%.3f < #Delta R #leq %.3f", globalCutValues.deltaRMin, globalCutValues.deltaRMax));
-    latex.DrawLatex(0.13, 0.62, mbdStream.str().c_str());
-    latex.DrawLatex(0.13, 0.58, ptStream.str().c_str());
+    latex.DrawLatex(0.64, 0.22, mbdStream.str().c_str());
+    latex.DrawLatex(0.64, 0.18, ptStream.str().c_str());
 
     // Drawing text related to Gaussian parameters and S/B ratio
     latex.SetTextSize(0.036);
@@ -348,6 +302,61 @@ void WriteDataToCSV(int histIndex, const CutValues& cutValues, double fitMean, d
 
     file.close();
 }
+/*
+ Sets y axis depending on if background is highest or signal is highest
+ */
+double CalculateDynamicYAxisMax(TH1F* h, double& lineHeight, bool& isBackgroundHigher) {
+    // Get the max value in the peak region
+    double peakMaxValue = 0;
+    for (int i = h->FindBin(0.1); i <= h->FindBin(0.2); ++i) {
+        peakMaxValue = std::max(peakMaxValue, h->GetBinContent(i));
+    }
+
+    // Get the content at the far right to simulate the background noise level
+    double backgroundValue = h->GetBinContent(h->FindBin(0.6));
+
+    // Determine if the background noise level is higher than the signal peak
+    isBackgroundHigher = (backgroundValue > peakMaxValue);
+
+    double chosenMax;
+    double yAxisMaxBuffer;
+    double marginFactor;
+
+    // Use empirical margin factors and buffers to avoid overlapping
+    if (isBackgroundHigher) {
+        chosenMax = backgroundValue;
+        marginFactor = 0.005; // Tight margin for background
+        yAxisMaxBuffer = 1.5; // Buffer to fit under the stats box
+    } else {
+        chosenMax = peakMaxValue;
+        marginFactor = 0.3; // Increased margin for peak
+        yAxisMaxBuffer = 1.5; // Buffer to provide space above TLatex
+    }
+
+    lineHeight = chosenMax * (1 + marginFactor);
+    
+    // Return the y-axis max, scaled with an additional buffer
+    return lineHeight * yAxisMaxBuffer;
+}
+// Function to check if a directory exists for plot funneling
+bool directoryExists(const std::string& dirPath) {
+    struct stat info;
+    if(stat(dirPath.c_str(), &info) != 0)
+        return false;
+    else
+        return (info.st_mode & S_IFDIR) != 0;
+}
+
+// Function to create a directory
+void createDirectory(const std::string& dirPath) {
+    const int dir_err = mkdir(dirPath.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    if (dir_err == -1) {
+        std::cerr << "Error creating directory!" << std::endl;
+        exit(1);
+    }
+}
+bool runForAllFiles = false; // Global flag to indicate running for all files without further input
+
 
 void RunCode(const std::string& filename) {
     
@@ -359,8 +368,12 @@ void RunCode(const std::string& filename) {
     }
     
     char runOption;
-    std::cout << "Run for all indices? (A) or Single Index? (S): ";
-    std::cin >> runOption;
+    if (!runForAllFiles) { // Only ask if not in run for all files mode
+        std::cout << "Run for all indices? (A) or Single Index? (S): ";
+        std::cin >> runOption;
+    } else {
+        runOption = 'A'; // Automatically consider 'A' when running for all files
+    }
 
 
     std::vector<int> indices;
@@ -385,34 +398,18 @@ void RunCode(const std::string& filename) {
         }
         // Initialize global cut values
         globalCutValues = parseFileName(filename);
-        // User interaction to set global isFitGood
+
         char userInput;
         
         // For batch run, set isFitGood to true without asking the user
-        if (isBatchRun) {
+        if (isBatchRun || runForAllFiles) {
             isFitGood = true;
         } else {
             std::cout << "Is fit ready to be finalized? (Y/N): ";
             std::cin >> userInput;
             isFitGood = (userInput == 'Y' || userInput == 'y'); // Directly setting the global variable
         }
-                    
-        // Validate histIndex is within the range of defined y-axis ranges
-        if (currentIndex < 0 || currentIndex >= globalYAxisRanges.size()) {
-            std::cerr << "Error: histIndex is out of range. Valid index range is 0 to "
-            << globalYAxisRanges.size() - 1 << "." << std::endl;
-            return; // Exit the function or handle error as appropriate
-        }
-        
-        // Extracting y-axis range and scale factor for the current histIndex
-        auto selectedRange = globalYAxisRanges[currentIndex];
-        globalYAxisRange[0] = std::get<0>(selectedRange); // y-axis min, though always 0 in your setup
-        globalYAxisRange[1] = std::get<1>(selectedRange); // y-axis max
-        double scaleFactor = std::get<2>(selectedRange);  // scale factor for lineHeight
-        
-        // Calculating globalLineHeight based on the extracted scale factor
-        globalLineHeight = scaleFactor * globalYAxisRange[1];
-        
+
         // Fetch histogram based on index
         std::string histName = "hPi0Mass_" + std::to_string(currentIndex);
         TH1F *hPi0Mass = (TH1F*)file->Get(histName.c_str());
@@ -425,9 +422,11 @@ void RunCode(const std::string& filename) {
             logFile << "Skipped histogram: " << histName << " from file: " << filename << std::endl;
             continue; // Skip this histogram
         }
-        
-        hPi0Mass->GetYaxis()->SetRangeUser(globalYAxisRange[0], globalYAxisRange[1]); // Use global variable for Y-axis range
-        
+        bool isBackgroundHigher;
+        double lineHeight;
+        double dynamicYAxisMax = CalculateDynamicYAxisMax(hPi0Mass, lineHeight, isBackgroundHigher);
+
+        hPi0Mass->GetYaxis()->SetRangeUser(0, dynamicYAxisMax);
         
         hPi0Mass->SetTitle("Reconstructed Diphoton, MB + Central Events");
         
@@ -471,7 +470,6 @@ void RunCode(const std::string& filename) {
         polyFit->SetLineStyle(2);
         polyFit->Draw("SAME");
         
-        
         TLatex latex;
         latex.SetNDC();
         
@@ -491,23 +489,11 @@ void RunCode(const std::string& filename) {
         // Draw chi2 value on the canvas
         TLatex chi2Text;
         chi2Text.SetNDC(); // Set coordinates to normalized
-        chi2Text.SetTextSize(0.05); // Set text size (you can adjust as necessary)
-        chi2Text.DrawLatex(0.55, 0.2, Form("Chi2/NDF: %.2f / %d", chi2, fitResult->Ndf())); // Adjust the position and text as needed
-
+        chi2Text.SetTextSize(0.03); // Set text size (you can adjust as necessary)
+        chi2Text.DrawLatex(0.64, 0.14, Form("Chi2: %.2f", chi2)); // Adjust the position and text as needed
         
-        // ANSI escape code for bold red text
-        const char* redBold = "\033[1;31m";
-        // ANSI escape code to reset formatting
-        const char* reset = "\033[0m";
-        
-        // Printing the calculated values in bold red
-        std::cout << redBold;
-        std::cout << "lowerSignalBound: " << lowerSignalBound << std::endl;
-        std::cout << "upperSignalBound: " << upperSignalBound << std::endl;
-        std::cout << "Chi2: " << chi2 << reset << std::endl;
-        
-        TLine *line1 = new TLine(fitMean + 2*fitSigma, 0, fitMean + 2*fitSigma, amplitude+globalLineHeight);
-        TLine *line2 = new TLine(fitMean - 2*fitSigma, 0, fitMean - 2*fitSigma, amplitude+globalLineHeight);
+        TLine *line1 = new TLine(fitMean + 2*fitSigma, 0, fitMean + 2*fitSigma, lineHeight);
+        TLine *line2 = new TLine(fitMean - 2*fitSigma, 0, fitMean - 2*fitSigma, lineHeight);
         line1->SetLineColor(kBlack);
         line1->SetLineStyle(1);
         line2->SetLineColor(kBlack);
@@ -515,20 +501,28 @@ void RunCode(const std::string& filename) {
         line1->Draw("same");
         line2->Draw("same");
 
-        // Check if currentIndex is within the desired range before saving as PNG
-        if (currentIndex >= 12 && currentIndex <= 17) {
-            // Constructing the filename for the PNG file dynamically
+        if (currentIndex >= 0 && currentIndex <= 17) {
+            std::ostringstream dirPathStream;
+            dirPathStream << globalPlotOutput // Use the global variable here
+                          << "EA" << globalCutValues.clusEA
+                          << "_EB" << globalCutValues.clusEB
+                          << "_Asym" << globalCutValues.asymmetry
+                          << "_DelrMin" << globalCutValues.deltaRMin
+                          << "_DelrMax" << globalCutValues.deltaRMax
+                          << "_Chi" << globalCutValues.chi;
+            std::string dirPath = dirPathStream.str();
+
+
+            // Check if the directory exists, if not, create it
+            if (!directoryExists(dirPath)) {
+                createDirectory(dirPath);
+            }
+
+            // Now construct the filename
             std::ostringstream pngFilenameStream;
-            pngFilenameStream << "/Users/patsfan753/Desktop/Analysis_3_29/Plots/LabeledByCuts_ByHighestS_Boutput/EA1point5_EB1point75/"
-                              << "hPi0Mass_"
-                              << "EA" << globalCutValues.clusEA
-                              << "_EB" << globalCutValues.clusEB
-                              << "_Asym" << globalCutValues.asymmetry
-                              << "_DelrMin" << globalCutValues.deltaRMin
-                              << "_DelrMax" << globalCutValues.deltaRMax
-                              << "_Chi" << globalCutValues.chi
-                              << "_Index" << currentIndex // Adding the current index to the filename
-                              << "_fit.png"; // Extension for PNG files
+            pngFilenameStream << dirPath << "/hPi0Mass_"
+                              << "Index" << currentIndex
+                              << "_fit.png"; // You can adjust this naming scheme
             std::string pngFilename = pngFilenameStream.str();
 
             // Save the canvas to the constructed filename
@@ -564,6 +558,7 @@ void AnalyzePi0() {
 
     
     if (runOption == 'Y' || runOption == 'y') {
+        runForAllFiles = true; // Set the flag when running for all files
         TSystemDirectory dir("dir", folderPath.c_str());
         TList* files = dir.GetListOfFiles();
         if (files) {
@@ -591,6 +586,7 @@ void AnalyzePi0() {
             std::cerr << "No files found in directory: " << folderPath << std::endl;
         }
     } else {
+        runForAllFiles = false; // Ensure the flag is false when not running for all files
         // If 'N', call RunCode with the global filename or ask for a specific file
         RunCode("/Users/patsfan753/Desktop/Analysis_3_29/RootFiles/hPi0Mass_EA1point5_EB1point75_Asym0point5_DelrMin0_DelrMax1_Chi4.root");
     }
