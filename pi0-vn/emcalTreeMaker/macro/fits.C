@@ -2,6 +2,7 @@
 #include <iostream>
 #include <iomanip>
 #include <fstream>
+#include <filesystem>
 
 // -- root includes --
 #include <TH1F.h>
@@ -179,10 +180,29 @@ void fits(const string &i_input,
     Int_t ret = myAnalysis::readCuts(i_cuts);
     if(ret != 0) return;
 
+    if (std::filesystem::exists(outputDir))
+    {
+        std::cout << "Directory '" << outputDir << "' already exists." << std::endl;
+    }
+    else
+    {
+        try
+        {
+        std::filesystem::create_directory(outputDir);
+        std::cout << "Directory '" << outputDir << "' created successfully." << std::endl;
+        }
+        catch (const std::filesystem::filesystem_error &e)
+        {
+        // Handle other potential errors
+        std::cerr << "Error creating directory: " << e.what() << std::endl;
+        }
+    }
+
     TFile input(i_input.c_str());
 
     stringstream s;
     stringstream t;
+    stringstream u;
 
     TCanvas* c1 = new TCanvas();
     c1->SetTickx();
@@ -199,10 +219,33 @@ void fits(const string &i_input,
     output << "Index,mean,sigma,S/B,chi2,EA,EB" << endl;
 
     for(auto cut : myAnalysis::cuts) {
+        Int_t index = 0;
+
         t.str("");
         t << outputDir << "/" << cut.e1 << "_" << cut.e2;
-        c1->Print((t.str() + ".pdf[").c_str(), "pdf portrait");
-        Int_t index = 0;
+
+        if (std::filesystem::exists(t.str()))
+        {
+          std::cout << "Directory '" << t.str() << "' already exists." << std::endl;
+        }
+        else
+        {
+          try
+          {
+            std::filesystem::create_directory(t.str());
+            std::cout << "Directory '" << t.str() << "' created successfully." << std::endl;
+          }
+          catch (const std::filesystem::filesystem_error &e)
+          {
+            // Handle other potential errors
+            std::cerr << "Error creating directory: " << e.what() << std::endl;
+          }
+        }
+
+        u.str("");
+        u << t.str() << "/" << cut.e1 << "_" << cut.e2;
+        c1->Print((u.str() + ".pdf[").c_str(), "pdf portrait");
+
         for(auto cent : myAnalysis::centrality) {
             for(auto pt : myAnalysis::pt) {
                 s.str("");
@@ -263,22 +306,38 @@ void fits(const string &i_input,
                 chi2                    = (Int_t)(chi2*1e2)/1e2;
 
                 c1->cd();
+                h->SetTitle("Reconstructed Diphoton, MB + Central Events");
+                h->SetMarkerStyle(kFullDotLarge);
                 h->Draw();
                 h->SetStats();
 
                 s.str("");
-                s << "Centrality: " << cent << "%"
-                  << ", p_{T}: " << pt << " GeV";
+                s << "Centrality: " << cent << "%, "
+                  << 2+fmod(index,6)*0.5 << " #leq p_{T} < " << 2.5+fmod(index,6)*0.5 << " GeV";
 
                 l1.DrawLatexNDC(0.15,0.83, s.str().c_str());
+                l1.SetTextSize(0.04);
 
                 s.str("");
-                s << "#splitline{#mu: " << fitMean << " GeV}"
+                s << "#splitline{Cuts (inclusive):}"
+                  << "{#splitline{Asymmetry < " << cut.asym << "}"
+                  << "{#splitline{#chi^{2} < " << cut.chi << "}"
+                  << "{#splitline{Cluster E_{A} #geq " << cut.e1 << " GeV}"
+                  << "{#splitline{Cluster E_{B} #geq " << cut.e2 << " GeV}"
+                  << "{" << cut.deltaR_min << " #leq #Delta R < " << cut.deltaR_max << "}"
+                  << "}}}}";
+
+                l1.DrawLatexNDC(0.15,0.75, s.str().c_str());
+
+                s.str("");
+                s << "#splitline{Fit:}"
+                  << "{#splitline{#mu: " << fitMean << " GeV}"
                   << "{#splitline{#sigma: " << fitSigma << " GeV}"
                   << "{#splitline{S/B: " << signalToBackgroundRatio << "}"
-                  << "{#chi^{2} / ndf: " << chi2 << "/" << ndf << "}}}";
+                  << "{#chi^{2} / ndf: " << chi2 << "/" << ndf << "}"
+                  << "}}}";
 
-                l1.DrawLatexNDC(0.15,0.70, s.str().c_str());
+                l1.DrawLatexNDC(0.45,0.75, s.str().c_str());
 
                 Double_t y = h->GetBinContent(h->FindBin(fitMean));
 
@@ -304,11 +363,15 @@ void fits(const string &i_input,
                 polyFit->SetLineStyle(2);
                 polyFit->Draw("SAME");
 
-                c1->Print((t.str() + ".pdf").c_str(), "pdf portrait");
+                s.str("");
+                s << t.str() << "/" << cent << "_" << pt;
+
+                c1->Print((s.str() + ".png").c_str());
+                c1->Print((u.str() + ".pdf").c_str(), "pdf portrait");
                 ++index;
             }
         }
-        c1->Print((t.str() + ".pdf]").c_str(), "pdf portrait");
+        c1->Print((u.str() + ".pdf]").c_str(), "pdf portrait");
     }
 
     output.close();
