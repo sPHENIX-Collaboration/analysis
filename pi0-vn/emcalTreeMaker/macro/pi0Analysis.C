@@ -122,6 +122,8 @@ namespace myAnalysis {
     Bool_t do_vn_calc = false;
     Int_t cut_num = 0;
     Int_t subsamples  = 1;
+    Float_t fitStart = 0.1;
+    Float_t fitEnd   = 0.35;
 
     // First Order Correction
     // v2
@@ -269,9 +271,9 @@ Int_t myAnalysis::readFitStats(const string &fitStats) {
         return 1;
     }
 
-    // 7: mu
-    // 9: sigma
-    Int_t col[2] = {7,9};
+    // 1: mu
+    // 2: sigma
+    Int_t col[2] = {1,2};
 
     std::string line;
     Int_t idx = 0;
@@ -785,8 +787,8 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end) {
             Int_t idx = cent_idx*pt_key.size()+pt_idx;
 
             // compute mu+-2*sd of the pi0 mass to select diphotons as pi0 candidates
-            Float_t pi0_mass_low  = pi0_mass_mu_sigma[idx].first-2*pi0_mass_mu_sigma[idx].second;
-            Float_t pi0_mass_high = pi0_mass_mu_sigma[idx].first+2*pi0_mass_mu_sigma[idx].second;
+            Float_t pi0_mass_low  = max(pi0_mass_mu_sigma[idx].first-2*pi0_mass_mu_sigma[idx].second, fitStart);
+            Float_t pi0_mass_high = min(pi0_mass_mu_sigma[idx].first+2*pi0_mass_mu_sigma[idx].second, fitEnd);
 
             // compute mu+3*sd of the pi0 mass to select background diphotons
             Float_t bg_min = pi0_mass_mu_sigma[idx].first+3*pi0_mass_mu_sigma[idx].second;
