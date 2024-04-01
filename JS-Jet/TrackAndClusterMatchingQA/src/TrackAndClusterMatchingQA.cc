@@ -120,6 +120,11 @@ int TrackAndClusterMatchingQA::Init(PHCompositeNode *topNode)
   _h1Track_Pt_beforeSelections = new TH1F("_h1Track_Pt_beforeSelections", ";track #it{p}_{T};Entries", 100, 0., 50);
   _h1Track_Pt_afterSelections = new TH1F("_h1Track_Pt_afterSelections", ";track #it{p}_{T};Entries", 100, 0., 50);
 
+  _h1Track_TPC_Hits_Selected = new TH1F("_h1Track_TPC_Hits_Selected", ";Number of TPC hits;Entries", 50, -0.5, 49.5);
+  _h2Track_TPC_Hits_vs_Phi = new TH2F("_h2Track_TPC_Hits_vs_Phi", ";Number of TPC hits;track #phi", 50, -0.5, 49.5, 63, -M_PI, M_PI);
+  _h2Track_TPC_Hits_vs_Eta = new TH2F("_h2Track_TPC_Hits_vs_Eta", ";Number of TPC hits;track #eta", 50, -0.5, 49.5, 22, -1.1, 1.1);
+  _h2Track_TPC_Hits_vs_Pt = new TH2F("_h2Track_TPC_Hits_vs_Pt", ";Number of TPC hits;track #it{p}_{T} (GeV/#it{c})", 50, -0.5, 49.5, 40, 0., 20);
+
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
@@ -215,6 +220,11 @@ int TrackAndClusterMatchingQA::process_event(PHCompositeNode *topNode)
     track = iter->second;
 
     if(!track) continue;
+
+    if(track->get_pt() < _track_min_pt)
+    {
+      continue;
+    }
 
     _h1Track_Pt_beforeSelections->Fill(track->get_pt());
 
@@ -486,6 +496,9 @@ bool TrackAndClusterMatchingQA::IsAcceptableTrack(SvtxTrack *track, GlobalVertex
   }
 
   _h1Track_TPC_Hits->Fill(nTPChits);
+  _h2Track_TPC_Hits_vs_Phi->Fill(nTPChits, track->get_phi());
+  _h2Track_TPC_Hits_vs_Eta->Fill(nTPChits, track->get_eta());
+  _h2Track_TPC_Hits_vs_Pt->Fill(nTPChits, track->get_pt());
   _h1Track_Silicon_Hits->Fill(nsiliconhits);
 
   if(quality > _track_quality) return false;
@@ -496,8 +509,12 @@ bool TrackAndClusterMatchingQA::IsAcceptableTrack(SvtxTrack *track, GlobalVertex
   //std::cout << "DCAz: " << dcaz << std::endl;
   if(std::fabs(dcaz) > _track_max_dcaz) return false; // will accept everything, need to check units (microns?)
 
-  if(nTPChits < _track_min_tpc_hits) return false;
   if (nsiliconhits < _track_min_silicon_hits) return false;
+
+  _h1Track_TPC_Hits_Selected->Fill(nTPChits);
+
+  if(nTPChits < _track_min_tpc_hits) return false;
+
 
   return true;
 }

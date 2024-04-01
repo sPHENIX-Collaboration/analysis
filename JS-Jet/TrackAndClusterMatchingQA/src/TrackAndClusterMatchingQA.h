@@ -63,6 +63,9 @@ class TrackAndClusterMatchingQA : public SubsysReco
   void set_ApplyTowerSelection(bool b) { _apply_tower_selection = b; }
   bool get_ApplyTowerSelection() { return _apply_tower_selection; }
 
+  void set_TrackMinPt(float f) { _track_min_pt = f; }
+  float get_TrackMinPt() { return _track_min_pt; }
+
   void set_TrackQuality(float f) { _track_quality = f; }
   float get_TrackQuality() { return _track_quality; }
 
@@ -93,6 +96,7 @@ class TrackAndClusterMatchingQA : public SubsysReco
   bool _apply_tower_selection = true;
 
   //Track selection
+  float _track_min_pt = 0.5;
   float _track_quality = 6.;
   float _track_max_dcaxy = 0.02;
   float _track_max_dcaz = 0.01;
@@ -126,6 +130,12 @@ class TrackAndClusterMatchingQA : public SubsysReco
   TH1 *_h1Track_Silicon_Hits;
   TH1 *_h1Track_Pt_beforeSelections;
   TH1 *_h1Track_Pt_afterSelections;
+
+  TH1 *_h1Track_TPC_Hits_Selected;
+  TH2 *_h2Track_TPC_Hits_vs_Phi;
+  TH2 *_h2Track_TPC_Hits_vs_Eta;
+  TH2 *_h2Track_TPC_Hits_vs_Pt;
+
 
 
   /// TFile to hold the following TTrees and histograms
