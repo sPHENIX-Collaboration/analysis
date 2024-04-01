@@ -123,8 +123,8 @@ Int_t myAnalysis::readFitStats(const string &fitStats) {
         return 1;
     }
 
-    // 11: S/B
-    Int_t col = 11;
+    // 3: S/B
+    Int_t col = 3;
 
     std::string line;
 
