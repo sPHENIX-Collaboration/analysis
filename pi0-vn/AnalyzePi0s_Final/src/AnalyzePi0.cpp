@@ -17,7 +17,6 @@
  when compiling this code, SCROLL TO BOTTOM, see you can either select 'Y' for run code over all hPi0Mass root files in your path, where folders auto generate with the cut value combiantion for each index
 --can also select no and use hard coded file path
  */
-void RunCode(const std::string& filename); // Forward declaration
 
 struct CutValues {
     float clusEA, clusEB, asymmetry, deltaRMin, deltaRMax, chi;
@@ -28,13 +27,18 @@ CutValues globalCutValues;
 // Global variable
 std::string globalDataPath = "/Users/patsfan753/Desktop/Analysis_3_29/CSVoutput/";
 std::string globalPlotOutput = "/Users/patsfan753/Desktop/Analysis_3_29/Plots/"; //Note: Folder auto created with name of cut variation to this
-
+std::string globalFilename = "/Users/patsfan753/Desktop/Analysis_3_29/RootFiles/hPi0Mass_EA1_EB1_Asym0point5_DelrMin0_DelrMax1_Chi4.root";
 
 int histIndex = 0;
+double globalFitStart;
+double globalFitEnd;
 
-TFitResultPtr PerformFitting(TH1F* hPi0Mass, TF1*& totalFit) {
-    double fitStart = 0.1;
-    double fitEnd = 0.35;
+TFitResultPtr PerformFitting(TH1F* hPi0Mass, TF1*& totalFit, double& fitStart, double& fitEnd) {
+    fitStart = 0.1;
+    fitEnd = 0.35;
+    
+    globalFitStart = fitStart;
+    globalFitEnd = fitEnd;
 
     double lowerSignalBoundEstimate = 0.1;
     double upperSignalBoundEstimate = 0.2;
@@ -74,14 +78,13 @@ TFitResultPtr PerformFitting(TH1F* hPi0Mass, TF1*& totalFit) {
 /*
  Function to parse the filename and extract cut values to be propagated throughout macro for automation of cut variation analysis
  */
-CutValues parseFileName(const std::string& filename) {
+CutValues parseFileName() {
     CutValues cuts = {0, 0, 0, 0}; // Initialize cut values to zero
-    
     std::regex re("hPi0Mass_EA([0-9]+(?:point[0-9]*)?)_EB([0-9]+(?:point[0-9]*)?)_Asym([0-9]+(?:point[0-9]*)?)_DelrMin([0-9]+(?:point[0-9]*)?)_DelrMax([0-9]+(?:point[0-9]*)?)_Chi([0-9]+(?:point[0-9]*)?)\\.root");
 
     std::smatch match; // Object to store the results of regex search
 
-    if (std::regex_search(filename, match, re) && match.size() > 4) {
+    if (std::regex_search(globalFilename, match, re) && match.size() > 4) {
         // Lambda function to convert a string with 'point' to a float
         auto convert = [](const std::string& input) -> float {
             // Create a temporary string to hold the modified input
@@ -101,9 +104,8 @@ CutValues parseFileName(const std::string& filename) {
                 return 0.0f;
             }
         };
-
         // Diagnostic prints
-        std::cout << "Matched Filename: " << filename << std::endl;
+        std::cout << "Matched Filename: " << globalFilename << std::endl;
         for (size_t i = 1; i < match.size(); ++i) {
             std::cout << "Match[" << i << "]: " << match[i].str() << " --> " << convert(match[i].str()) << std::endl;
         }
@@ -115,12 +117,12 @@ CutValues parseFileName(const std::string& filename) {
         cuts.chi = convert(match[6].str()); //chi2 cut
     } else {
         // If regex does not match, log an error message
-        std::cout << "Regex did not match the filename: " << filename << std::endl;
+        std::cout << "Regex did not match the filename: " << globalFilename << std::endl;
     }
 
     return cuts;// Return the populated cuts structure
 }
-bool isFitGood; // No initial value needed here
+
 struct Range {
     double ptLow, ptHigh, mbdLow, mbdHigh;
 };
@@ -161,23 +163,20 @@ struct SignalBackgroundRatio {
     std::map<double, double> errors;
 };
 SignalBackgroundRatio CalculateSignalToBackgroundRatio(TH1F* hPi0Mass, TF1* polyFit, double fitMean, double fitSigma, double fitStart, double fitEnd) {
-    
     std::vector<double> sigmaMultipliers = {1.25, 1.5, 1.75, 2.0, 2.25};
     SignalBackgroundRatio sbRatios;
-
-    // Move the cloning and cleanup of histograms outside the sigmaMultipliers loop
-    TH1F *hSignal = (TH1F*)hPi0Mass->Clone("hSignal");
-    TH1F *hBackground = (TH1F*)hPi0Mass->Clone("hBackground");
+    std::cout << "\033[1;31mEntering CalculateSignalToBackgroundRatio\033[0m" << std::endl;
+    std::cout << "\033[1;31mfitMean: " << fitMean << ", fitSigma: " << fitSigma << ", fitStart: " << fitStart << ", fitEnd: " << fitEnd << "\033[0m" << std::endl;
+    
     
     
     for (double multiplier : sigmaMultipliers) {
-        hSignal->Reset("ICES"); // ICES option clears the histogram and resets statistics
-        hBackground->Reset("ICES");
+        // Move the cloning and cleanup of histograms outside the sigmaMultipliers loop
+        TH1F *hSignal = (TH1F*)hPi0Mass->Clone("hSignal");
+        TH1F *hBackground = (TH1F*)hPi0Mass->Clone("hBackground");
+        
         int firstBinSignal = hPi0Mass->FindBin(std::max(fitMean - multiplier * fitSigma, fitStart));
         int lastBinSignal = hPi0Mass->FindBin(std::min(fitMean + multiplier * fitSigma, fitEnd));
-
-        double signalYield = 0.0, signalError = 0.0, backgroundYield = 0.0, backgroundError = 0.0;
-
         
         std::cout << "Multiplier: " << multiplier << ", First bin: " << firstBinSignal << ", Last bin: " << lastBinSignal << std::endl;
 
@@ -196,6 +195,7 @@ SignalBackgroundRatio CalculateSignalToBackgroundRatio(TH1F* hPi0Mass, TF1* poly
             hSignal->SetBinError(i, binError); // Error for signal
             hBackground->SetBinError(i, sqrt(bgContent)); // Error for background (Poisson statistics)
         }
+        double signalYield, signalError, backgroundYield, backgroundError;
         signalYield = hSignal->IntegralAndError(firstBinSignal, lastBinSignal, signalError, "");// Option "" means error is computed using sqrt(N) for each bin
         backgroundYield = hBackground->IntegralAndError(firstBinSignal, lastBinSignal, backgroundError, "");
 
@@ -212,11 +212,12 @@ SignalBackgroundRatio CalculateSignalToBackgroundRatio(TH1F* hPi0Mass, TF1* poly
         
         sbRatios.ratios[multiplier] = signalToBackgroundRatio;
         sbRatios.errors[multiplier] = signalToBackgroundError;
+        delete hSignal;
+        delete hBackground;
+        
         
     }
-    delete hSignal;
-    delete hBackground;
-    
+    std::cout << "\033[1;31mExiting CalculateSignalToBackgroundRatio\033[0m" << std::endl;
     return sbRatios;
 }
 /*
@@ -271,17 +272,14 @@ void DrawCanvasText(TLatex& latex, const Range& selectedRange, double fitMean, d
     latex.SetTextSize(0.036);
     latex.DrawLatex(0.43, 0.86, Form("Mean of Gaussian: %.4f GeV", fitMean));
     latex.DrawLatex(0.43, 0.81, Form("Std. Dev. of Gaussian: %.4f GeV", fitSigma));
-    latex.DrawLatex(0.43, 0.76, Form("S/B Ratio (2.0σ): %.4f #pm %.4f", ratioFor2Sigma, errorFor2Sigma));
+    latex.DrawLatex(0.43, 0.76, Form("S/B Ratio: %.4f #pm %.4f", ratioFor2Sigma, errorFor2Sigma));
 }
 /*
 Track Relevant Output in CSV tracking via indices and unique cut combinations
  */
 void WriteDataToCSV(int histIndex, const CutValues& cutValues, double fitMean, double fitMeanError, double fitSigma, double fitSigmaError, const SignalBackgroundRatio& sbRatios, double signalYield, double signalError, double numEntries, double chi2) {
-    // Check if the fit is good before proceeding
-    if (!isFitGood) {
-        std::cout << "Fit is not good. Skipping CSV write." << std::endl;
-        return;
-    }
+
+
     std::string csv_filename = globalDataPath + "PlotByPlotOutput_4_2_variedSignalBounds.csv";
     std::ifstream checkFile(csv_filename);
     bool fileIsEmpty = checkFile.peek() == std::ifstream::traits_type::eof();
@@ -377,86 +375,23 @@ double CalculateDynamicYAxisMax(TH1F* h, double& lineHeight, bool& isBackgroundH
     // Return the y-axis max, scaled with an additional buffer
     return lineHeight * yAxisMaxBuffer;
 }
-// Function to check if a directory exists for plot funneling
-bool directoryExists(const std::string& dirPath) {
-    struct stat info;
-    if(stat(dirPath.c_str(), &info) != 0)
-        return false;
-    else
-        return (info.st_mode & S_IFDIR) != 0;
-}
-// Function to create a directory
-void createDirectory(const std::string& dirPath) {
-    const int dir_err = mkdir(dirPath.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-    if (dir_err == -1) {
-        std::cerr << "Error creating directory!" << std::endl;
-        exit(1);
-    }
-}
-bool runForAllFiles = false; // Global flag to indicate running for all hPi0Mass files
 
-void RunCode(const std::string& filename) {
-    
-    // Open a log file for skipped histograms
-    std::ofstream logFile("/Users/patsfan753/Desktop/Analysis_3_29/SkippedHistogramsLog.txt", std::ios::app);
-    if (!logFile.is_open()) {
-        std::cerr << "Failed to open log file for writing skipped histogram info." << std::endl;
-        return; // Optionally handle more gracefully
-    }
-    
-    char runOption;
-    if (!runForAllFiles) { // Only ask if not in run for all files mode
-        std::cout << "Run for all indices? (A) or Single Index? (S): ";
-        std::cin >> runOption;
-    } else {
-        runOption = 'A'; // Automatically consider 'A' when running for all files
-    }
-
+void AnalyzePi0() {
+    // Open the ROOT file once
+    TFile *file = new TFile(globalFilename.c_str(), "READ");
+    // Initialize global cut values from the file name
+    globalCutValues = parseFileName();
 
     std::vector<int> indices;
-    bool isBatchRun = false; // Flag to check if it's a batch run
-
-    if (runOption == 'A' || runOption == 'a') {
-        isBatchRun = true; // Set flag to true for batch run
-        for (int i = 0; i <= 17; ++i) {
-            indices.push_back(i);
-        }
-    } else {
-        indices.push_back(histIndex); // Current functionality for a single index
+    for (int i = 0; i <= 17; ++i) {
+        indices.push_back(i);
     }
 
     for (int currentIndex : indices) {
-        
-        
-        TFile *file = new TFile(filename.c_str(), "READ");
-        if (!file || file->IsZombie()) {
-            std::cerr << "Failed to open file: " << filename << std::endl;
-            continue; // Skip this file
-        }
-        // Initialize global cut values
-        globalCutValues = parseFileName(filename);
-
-        char userInput;
-        
-        // For batch run, set isFitGood to true without asking the user
-        if (isBatchRun || runForAllFiles) {
-            isFitGood = true;
-        } else {
-            std::cout << "Is fit ready to be finalized? (Y/N): ";
-            std::cin >> userInput;
-            isFitGood = (userInput == 'Y' || userInput == 'y'); // Directly setting the global variable
-        }
-
         // Fetch histogram based on index
         std::string histName = "hPi0Mass_" + std::to_string(currentIndex);
         TH1F *hPi0Mass = (TH1F*)file->Get(histName.c_str());
         if (!hPi0Mass) {
-            std::cerr << "Histogram not found in file: " << filename << std::endl;
-            continue; // Skip this histogram
-        }
-        if (!hPi0Mass || hPi0Mass->GetEntries() <= 20) {
-            std::cerr << "Skipping due to empty or missing histogram: " << histName << " in file: " << filename << std::endl;
-            logFile << "Skipped histogram: " << histName << " from file: " << filename << std::endl;
             continue; // Skip this histogram
         }
         bool isBackgroundHigher;
@@ -469,10 +404,12 @@ void RunCode(const std::string& filename) {
         
         // Declare variables for fit parameters
         TF1 *totalFit;
+        
         double fitStart, fitEnd;
         
         // Call PerformFitting to execute the fitting procedure
-        TFitResultPtr fitResult = PerformFitting(hPi0Mass, totalFit);
+        TFitResultPtr fitResult = PerformFitting(hPi0Mass, totalFit, fitStart, fitEnd);
+    
         
         std::string canvasName = "canvas_" + std::to_string(currentIndex);
         TCanvas *canvas = new TCanvas(canvasName.c_str(), "Pi0 Mass Distribution", 900, 600);
@@ -498,6 +435,7 @@ void RunCode(const std::string& filename) {
             polyFit->SetParameter(i - 3, totalFit->GetParameter(i));
             polyFit->SetParError(i - 3, totalFit->GetParError(i));
         }
+        SignalBackgroundRatio sbRatios = CalculateSignalToBackgroundRatio(hPi0Mass, polyFit, fitMean, fitSigma, fitStart, fitEnd);
         
         gaussFit->SetLineColor(kOrange+2);
         gaussFit->SetLineStyle(2);
@@ -510,9 +448,6 @@ void RunCode(const std::string& filename) {
         TLatex latex;
         latex.SetNDC();
         
-        SignalBackgroundRatio sbRatios = CalculateSignalToBackgroundRatio(hPi0Mass, polyFit, fitMean, fitSigma, fitStart, fitEnd);
-        
-        DrawCanvasText(latex, ranges[currentIndex], fitMean, fitSigma, sbRatios);
         
         double amplitude = totalFit->GetParameter(0);
         
@@ -521,7 +456,13 @@ void RunCode(const std::string& filename) {
         double upperSignalBound = fitMean + 2 * fitSigma;
         
         double chi2 = fitResult->Chi2(); // to retrieve the fit chi2
+        double signalError_; // Declare once outside the function call, ensuring it's not redeclared in the local scope where it's used
+        double signalYield_ = CalculateSignalYieldAndError(hPi0Mass, polyFit, fitMean, fitSigma, signalError_);
         
+        DrawCanvasText(latex, ranges[currentIndex], fitMean, fitSigma, sbRatios);
+        
+        // Call the new method to write to CSV if the fit is good
+        WriteDataToCSV(currentIndex, globalCutValues, fitMean, fitMeanError, fitSigma, fitSigmaError, sbRatios, signalYield_, signalError_, numEntries, chi2);
         // Draw chi2 value on the canvas
         TLatex chi2Text;
         chi2Text.SetNDC(); // Set coordinates to normalized
@@ -549,14 +490,9 @@ void RunCode(const std::string& filename) {
             std::string dirPath = dirPathStream.str();
 
 
-            // Check if the directory exists, if not, create it
-            if (!directoryExists(dirPath)) {
-                createDirectory(dirPath);
-            }
-
             // Now construct the filename
             std::ostringstream pngFilenameStream;
-            pngFilenameStream << dirPath << "/hPi0Mass_"
+            pngFilenameStream << globalPlotOutput << "/hPi0Mass_"
                               << "Index" << currentIndex
                               << "_fit.png"; // You can adjust this naming scheme
             std::string pngFilename = pngFilenameStream.str();
@@ -564,66 +500,5 @@ void RunCode(const std::string& filename) {
             // Save the canvas to the constructed filename
             canvas->SaveAs(pngFilename.c_str());
         }
-
-        
-        delete canvas;
-        
-        double signalError; // Declare once outside the function call, ensuring it's not redeclared in the local scope where it's used
-        double signalYield = CalculateSignalYieldAndError(hPi0Mass, polyFit, fitMean, fitSigma, signalError);
-        
-        
-        
-        // Call the new method to write to CSV if the fit is good
-        WriteDataToCSV(currentIndex, globalCutValues, fitMean, fitMeanError, fitSigma, fitSigmaError, sbRatios, signalYield, signalError, numEntries, chi2);
-        
-        // After finishing with the file
-        if (file) {
-            file->Close();
-            delete file; // Also consider deleting the pointer if you're done with the file
-        }
-
-        
-    }
-}
-void AnalyzePi0() {
-    char runOption;
-    std::cout << "Run for all files? (Y/N): ";
-    std::cin >> runOption;
-
-    std::string folderPath = "/Users/patsfan753/Desktop/Analysis_3_29/RootFiles";
-
-    
-    if (runOption == 'Y' || runOption == 'y') {
-        runForAllFiles = true; // Set the flag when running for all files
-        TSystemDirectory dir("dir", folderPath.c_str());
-        TList* files = dir.GetListOfFiles();
-        if (files) {
-            TSystemFile* file;
-            TString fname;
-            TIter next(files);
-            std::cout << "Processing files:" << std::endl; // Indicates the start of processing files
-            while ((file=(TSystemFile*)next())) {
-                fname = file->GetName();
-                if (!file->IsDirectory() && fname.EndsWith(".root") && fname.BeginsWith("hPi0Mass")) {
-                    TString fullPath = TString(folderPath.c_str()) + "/" + fname;
-                    std::cout << "Opening file: " << fullPath << std::endl;
-                    TFile *file = TFile::Open(fullPath.Data(), "READ");
-                    if (!file || file->IsZombie()) {
-                        std::cerr << "Failed to open file or file is corrupted: " << fullPath << std::endl;
-                        continue; // Skip this file
-                    }
-                    isFitGood = true;
-                    RunCode(std::string(fullPath.Data())); // Ensure RunCode can accept a TString or std::string
-
-            
-                }
-            }
-        } else {
-            std::cerr << "No files found in directory: " << folderPath << std::endl;
-        }
-    } else {
-        runForAllFiles = false; // Ensure the flag is false when not running for all files
-        // If 'N', call RunCode with the global filename or ask for a specific file
-        RunCode("/Users/patsfan753/Desktop/Analysis_3_29/RootFiles/hPi0Mass_EA1_EB1_Asym0point5_DelrMin0_DelrMax1_Chi4.root");
     }
 }
