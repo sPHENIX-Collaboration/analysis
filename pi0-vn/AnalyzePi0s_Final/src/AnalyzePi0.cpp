@@ -171,11 +171,13 @@ SignalBackgroundRatio CalculateSignalToBackgroundRatio(TH1F* hPi0Mass, TF1* poly
     
     
     for (double multiplier : sigmaMultipliers) {
-        hSignal->Reset();
-        hBackground->Reset();
-        //Constraints are set to make sure lower signal bound doesn't include past fit start, with noisy region in low centralities
-        int firstBinSignal = hPi0Mass->FindBin(std::min(fitMean - multiplier*fitSigma, fitStart));
-        int lastBinSignal  = hPi0Mass->FindBin(std::max(fitMean + multiplier*fitSigma, fitEnd));
+        hSignal->Reset("ICES"); // ICES option clears the histogram and resets statistics
+        hBackground->Reset("ICES");
+        int firstBinSignal = hPi0Mass->FindBin(std::max(fitMean - multiplier * fitSigma, fitStart));
+        int lastBinSignal = hPi0Mass->FindBin(std::min(fitMean + multiplier * fitSigma, fitEnd));
+
+        double signalYield = 0.0, signalError = 0.0, backgroundYield = 0.0, backgroundError = 0.0;
+
         
         std::cout << "Multiplier: " << multiplier << ", First bin: " << firstBinSignal << ", Last bin: " << lastBinSignal << std::endl;
 
@@ -194,16 +196,17 @@ SignalBackgroundRatio CalculateSignalToBackgroundRatio(TH1F* hPi0Mass, TF1* poly
             hSignal->SetBinError(i, binError); // Error for signal
             hBackground->SetBinError(i, sqrt(bgContent)); // Error for background (Poisson statistics)
         }
-        double signalYield, signalError, backgroundYield, backgroundError;
-        signalYield = hSignal->IntegralAndError(firstBinSignal, lastBinSignal, signalError, "");
+        signalYield = hSignal->IntegralAndError(firstBinSignal, lastBinSignal, signalError, "");// Option "" means error is computed using sqrt(N) for each bin
         backgroundYield = hBackground->IntegralAndError(firstBinSignal, lastBinSignal, backgroundError, "");
 
-        std::cout << "Signal yield: " << signalYield << ", Background yield: " << backgroundYield << std::endl;
-        
-        double signalToBackgroundRatio = signalYield / backgroundYield;
-        
+        // Protect against division by zero
+        double signalToBackgroundRatio = backgroundYield > 0 ? signalYield / backgroundYield : 0;
+        double signalToBackgroundError = signalToBackgroundRatio > 0 ? signalToBackgroundRatio * sqrt(pow(signalError / signalYield, 2) + pow(backgroundError / backgroundYield, 2)) : 0;
 
-        double signalToBackgroundError = signalToBackgroundRatio * sqrt(pow(signalError / signalYield, 2) + pow(backgroundError / backgroundYield, 2));
+        sbRatios.ratios[multiplier] = signalToBackgroundRatio;
+        sbRatios.errors[multiplier] = signalToBackgroundError;
+
+        std::cout << "Signal yield: " << signalYield << ", Background yield: " << backgroundYield << std::endl;
         
         std::cout << "S/B Ratio: " << signalToBackgroundRatio << ", Error: " << signalToBackgroundError << std::endl;
         
