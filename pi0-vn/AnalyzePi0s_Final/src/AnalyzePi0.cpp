@@ -156,47 +156,65 @@ Range ranges[] = {
 /*
  Signal to background ratio calculation
  */
-double CalculateSignalToBackgroundRatio(TH1F* hPi0Mass, TF1* polyFit, double fitMean, double fitSigma, double& signalToBackgroundError, double fitStart, double fitEnd) {
-    // Cloning histograms for signal and background
+struct SignalBackgroundRatio {
+    std::map<double, double> ratios;
+    std::map<double, double> errors;
+};
+SignalBackgroundRatio CalculateSignalToBackgroundRatio(TH1F* hPi0Mass, TF1* polyFit, double fitMean, double fitSigma, double fitStart, double fitEnd) {
+    
+    std::vector<double> sigmaMultipliers = {1.25, 1.5, 1.75, 2.0, 2.25};
+    SignalBackgroundRatio sbRatios;
+
+    // Move the cloning and cleanup of histograms outside the sigmaMultipliers loop
     TH1F *hSignal = (TH1F*)hPi0Mass->Clone("hSignal");
     TH1F *hBackground = (TH1F*)hPi0Mass->Clone("hBackground");
+    
+    
+    for (double multiplier : sigmaMultipliers) {
+        hSignal->Reset();
+        hBackground->Reset();
+        //Constraints are set to make sure lower signal bound doesn't include past fit start, with noisy region in low centralities
+        int firstBinSignal = hPi0Mass->FindBin(std::min(fitMean - multiplier*fitSigma, fitStart));
+        int lastBinSignal  = hPi0Mass->FindBin(std::max(fitMean + multiplier*fitSigma, fitEnd));
+        
+        std::cout << "Multiplier: " << multiplier << ", First bin: " << firstBinSignal << ", Last bin: " << lastBinSignal << std::endl;
 
-    //Constraints are set to make sure lower signal bound doesn't include past fit start, with noisy region in low centralities
-    int firstBinSignal = hPi0Mass->FindBin(std::max(fitMean - 2*fitSigma, fitStart));
-    int lastBinSignal  = hPi0Mass->FindBin(std::min(fitMean + 2*fitSigma, fitEnd));
+        double binCenter, binContent, bgContent, binError;
+        for (int i = firstBinSignal; i <= lastBinSignal; ++i) {
+            binCenter = hPi0Mass->GetBinCenter(i);
+            binContent = hPi0Mass->GetBinContent(i);
+            binError = hPi0Mass->GetBinError(i);
+            bgContent = polyFit->Eval(binCenter);
+            bgContent = std::max(bgContent, 0.0);
+            
+            // Setting signal and background contents
+            hSignal->SetBinContent(i, binContent - bgContent);
+            hBackground->SetBinContent(i, bgContent);
+            // Set bin errors
+            hSignal->SetBinError(i, binError); // Error for signal
+            hBackground->SetBinError(i, sqrt(bgContent)); // Error for background (Poisson statistics)
+        }
+        double signalYield, signalError, backgroundYield, backgroundError;
+        signalYield = hSignal->IntegralAndError(firstBinSignal, lastBinSignal, signalError, "");
+        backgroundYield = hBackground->IntegralAndError(firstBinSignal, lastBinSignal, backgroundError, "");
 
-    double binCenter, binContent, bgContent, binError;
-    for (int i = firstBinSignal; i <= lastBinSignal; ++i) {
-        binCenter = hPi0Mass->GetBinCenter(i);
-        binContent = hPi0Mass->GetBinContent(i);
-        binError = hPi0Mass->GetBinError(i);
-        bgContent = polyFit->Eval(binCenter);
-        bgContent = std::max(bgContent, 0.0);
+        std::cout << "Signal yield: " << signalYield << ", Background yield: " << backgroundYield << std::endl;
+        
+        double signalToBackgroundRatio = signalYield / backgroundYield;
+        
 
-        // Setting signal and background contents
-        hSignal->SetBinContent(i, binContent - bgContent);
-        hBackground->SetBinContent(i, bgContent);
-
-        // Set bin errors
-        hSignal->SetBinError(i, binError); // Error for signal
-        hBackground->SetBinError(i, sqrt(bgContent)); // Error for background (Poisson statistics)
+        double signalToBackgroundError = signalToBackgroundRatio * sqrt(pow(signalError / signalYield, 2) + pow(backgroundError / backgroundYield, 2));
+        
+        std::cout << "S/B Ratio: " << signalToBackgroundRatio << ", Error: " << signalToBackgroundError << std::endl;
+        
+        sbRatios.ratios[multiplier] = signalToBackgroundRatio;
+        sbRatios.errors[multiplier] = signalToBackgroundError;
+        
     }
-
-    double signalYield_, signalError_, backgroundYield, backgroundError;
-    signalYield_ = hSignal->IntegralAndError(firstBinSignal, lastBinSignal, signalError_, "");
-    backgroundYield = hBackground->IntegralAndError(firstBinSignal, lastBinSignal, backgroundError, "");
-
-    double signalToBackgroundRatio = signalYield_ / backgroundYield;
-
-    // Error propagation for division
-    signalToBackgroundError = signalToBackgroundRatio * sqrt(pow(signalError_ / signalYield_, 2) + pow(backgroundError / backgroundYield, 2));
-
-
-    // Cleanup
     delete hSignal;
     delete hBackground;
-
-    return signalToBackgroundRatio;
+    
+    return sbRatios;
 }
 /*
  Calculation for signal yield and error, simiarly to above method outputs to text file upon user input in terminal when happy with fit
@@ -223,7 +241,7 @@ double CalculateSignalYieldAndError(TH1F* hPi0Mass, TF1* polyFit, double fitMean
 /*
  Automatic update of canvas cut values, fit information, and analysis bin
  */
-void DrawCanvasText(TLatex& latex, const Range& selectedRange, double fitMean, double fitSigma, double signalToBackgroundRatio, double signalToBackgroundRatioError) {
+void DrawCanvasText(TLatex& latex, const Range& selectedRange, double fitMean, double fitSigma, const SignalBackgroundRatio& sbRatios) {
     // Drawing text related to the range and cuts
     std::ostringstream mbdStream, ptStream;
     mbdStream << std::fixed << std::setprecision(0) << "Centrality: " << selectedRange.mbdLow << " - " << selectedRange.mbdHigh << "%";
@@ -245,23 +263,23 @@ void DrawCanvasText(TLatex& latex, const Range& selectedRange, double fitMean, d
     latex.DrawLatex(0.64, 0.22, mbdStream.str().c_str());
     latex.DrawLatex(0.64, 0.18, ptStream.str().c_str());
 
-    // Drawing text related to Gaussian parameters and S/B ratio
+    double ratioFor2Sigma = sbRatios.ratios.at(2.0);
+    double errorFor2Sigma = sbRatios.errors.at(2.0);
     latex.SetTextSize(0.036);
     latex.DrawLatex(0.43, 0.86, Form("Mean of Gaussian: %.4f GeV", fitMean));
     latex.DrawLatex(0.43, 0.81, Form("Std. Dev. of Gaussian: %.4f GeV", fitSigma));
-    latex.DrawLatex(0.43, 0.76, Form("S/B Ratio: %.4f #pm %.4f", signalToBackgroundRatio, signalToBackgroundRatioError));
+    latex.DrawLatex(0.43, 0.76, Form("S/B Ratio (2.0σ): %.4f #pm %.4f", ratioFor2Sigma, errorFor2Sigma));
 }
 /*
 Track Relevant Output in CSV tracking via indices and unique cut combinations
  */
-void WriteDataToCSV(int histIndex, const CutValues& cutValues, double fitMean, double fitMeanError, double fitSigma, double fitSigmaError, double signalToBackgroundRatio, double signalToBackgroundError, double signalYield, double signalError, double numEntries, double chi2) {
+void WriteDataToCSV(int histIndex, const CutValues& cutValues, double fitMean, double fitMeanError, double fitSigma, double fitSigmaError, const SignalBackgroundRatio& sbRatios, double signalYield, double signalError, double numEntries, double chi2) {
     // Check if the fit is good before proceeding
     if (!isFitGood) {
         std::cout << "Fit is not good. Skipping CSV write." << std::endl;
         return;
     }
-
-    std::string csv_filename = globalDataPath + "PlotByPlotOutput_3_29.csv";
+    std::string csv_filename = globalDataPath + "PlotByPlotOutput_4_2_variedSignalBounds.csv";
     std::ifstream checkFile(csv_filename);
     bool fileIsEmpty = checkFile.peek() == std::ifstream::traits_type::eof();
     checkFile.close();
@@ -272,43 +290,52 @@ void WriteDataToCSV(int histIndex, const CutValues& cutValues, double fitMean, d
         std::cerr << "Unable to open CSV file for writing." << std::endl;
         return;
     }
-
-    // Write column headers if file is empty
+    // Define the sigma multipliers
+    std::vector<double> sigmaMultipliers = {1.25, 1.5, 1.75, 2.0, 2.25};
+    // Write column headers if file is empty, including signal bounds headers at the correct position
     if (fileIsEmpty) {
-        file << "Index,EnergyA,EnergyB,Asymmetry,Chi2,DeltaRMin,DeltaRMax,GaussMean,GaussMeanError,GaussSigma,GaussSigmaError,S/B,S/Berror,NumEntry,Yield,YieldError,RelativeSignalError,chi2,LowerSignalBound,UpperSignalBound\n";
+        file << "Index,EnergyA,EnergyB,Asymmetry,Chi2,DeltaRMin,DeltaRMax,GaussMean,GaussMeanError,GaussSigma,GaussSigmaError";
+        for (const auto& pair : sbRatios.ratios) {
+            file << ",S/B_" << pair.first << "sigma,S/BError_" << pair.first << "sigma";
+        }
+        file << ",NumEntry,Yield,YieldError,RelativeSignalError,chi2";
+        for (double multiplier : sigmaMultipliers) {
+            file << ",LowerBound_" << multiplier << "sigma,UpperBound_" << multiplier << "sigma";
+        }
+        file << "\n";
     }
-
-    // Calculate relativeSignalError (ensure we don't divide by zero)
     double relativeSignalError = signalYield != 0 ? signalError / signalYield : 0;
 
-    // Calculate lowerSignalBound and upperSignalBound
-    double lowerSignalBound = fitMean - 2 * fitSigma;
-    double upperSignalBound = fitMean + 2 * fitSigma;
-    
-    
-    // Updated data writing to include clusEB and deltaRMax
     file << histIndex << ","
-         << cutValues.clusEA << ","  // Note: Assuming clusE is now clusEA
-         << cutValues.clusEB << ","  // New value
+         << cutValues.clusEA << ","
+         << cutValues.clusEB << ","
          << cutValues.asymmetry << ","
          << cutValues.chi << ","
-         << cutValues.deltaRMin << ","  // Note: Assuming deltaR is now deltaRMin
-         << cutValues.deltaRMax << ","  // New value
+         << cutValues.deltaRMin << ","
+         << cutValues.deltaRMax << ","
          << fitMean << ","
          << fitMeanError << ","
          << fitSigma << ","
-         << fitSigmaError << ","
-         << signalToBackgroundRatio << ","
-         << signalToBackgroundError << ","
-         << numEntries << ","
+         << fitSigmaError;
+
+    // Iterating over each signal to background ratio
+    for (const auto& pair : sbRatios.ratios) {
+        file << "," << pair.second << "," << sbRatios.errors.at(pair.first);
+    }
+
+    file << "," << numEntries << ","
          << signalYield << ","
          << signalError << ","
          << relativeSignalError << ","
-         << chi2 << ","
-         << lowerSignalBound << ","
-         << upperSignalBound << "\n";
-
-
+         << chi2;
+    
+    // Output lower and upper bounds for each sigma multiplier
+    for (double multiplier : sigmaMultipliers) {
+        double lowerBound = fitMean - multiplier * fitSigma;
+        double upperBound = fitMean + multiplier * fitSigma;
+        file << "," << lowerBound << "," << upperBound;
+    }
+    file << "\n";
     file.close();
 }
 /*
@@ -480,10 +507,9 @@ void RunCode(const std::string& filename) {
         TLatex latex;
         latex.SetNDC();
         
-        double signalToBackgroundError;
-        double signalToBackgroundRatio = CalculateSignalToBackgroundRatio(hPi0Mass, polyFit, fitMean, fitSigma, signalToBackgroundError, fitStart, fitEnd);
+        SignalBackgroundRatio sbRatios = CalculateSignalToBackgroundRatio(hPi0Mass, polyFit, fitMean, fitSigma, fitStart, fitEnd);
         
-        DrawCanvasText(latex, ranges[currentIndex], fitMean, fitSigma, signalToBackgroundRatio, signalToBackgroundError);
+        DrawCanvasText(latex, ranges[currentIndex], fitMean, fitSigma, sbRatios);
         
         double amplitude = totalFit->GetParameter(0);
         
@@ -545,7 +571,7 @@ void RunCode(const std::string& filename) {
         
         
         // Call the new method to write to CSV if the fit is good
-        WriteDataToCSV(currentIndex, globalCutValues, fitMean, fitMeanError, fitSigma, fitSigmaError, signalToBackgroundRatio, signalToBackgroundError, signalYield, signalError, numEntries, chi2);
+        WriteDataToCSV(currentIndex, globalCutValues, fitMean, fitMeanError, fitSigma, fitSigmaError, sbRatios, signalYield, signalError, numEntries, chi2);
         
         // After finishing with the file
         if (file) {
@@ -595,6 +621,6 @@ void AnalyzePi0() {
     } else {
         runForAllFiles = false; // Ensure the flag is false when not running for all files
         // If 'N', call RunCode with the global filename or ask for a specific file
-        RunCode("/Users/patsfan753/Desktop/Analysis_3_29/RootFiles/hPi0Mass_EA1point5_EB1point75_Asym0point5_DelrMin0_DelrMax1_Chi4.root");
+        RunCode("/Users/patsfan753/Desktop/Analysis_3_29/RootFiles/hPi0Mass_EA1_EB1_Asym0point5_DelrMin0_DelrMax1_Chi4.root");
     }
 }
