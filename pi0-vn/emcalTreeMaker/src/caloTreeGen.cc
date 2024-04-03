@@ -148,20 +148,20 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
 
   //Information on clusters
   RawClusterContainer *clusterContainer = (isSim) ? findNode::getClass<RawClusterContainer>(topNode,"CLUSTER_CEMC") :
-                                                    findNode::getClass<RawClusterContainer>(topNode,"CLUSTERINFO_CEMC");
-  // RawClusterContainer *clusterContainer = findNode::getClass<RawClusterContainer>(topNode,"CLUSTERINFO_CEMC");
+                                                    findNode::getClass<RawClusterContainer>(topNode,clusterNode.c_str());
+
   if(!clusterContainer)
   {
-    std::cout << PHWHERE << "caloTreeGen::process_event - Fatal Error - CLUSTERINFO_POS_COR_CEMC node is missing. " << std::endl;
+    std::cout << PHWHERE << "caloTreeGen::process_event Could not find node: " <<  clusterNode << std::endl;
     return Fun4AllReturnCodes::ABORTEVENT;
   }
   
   //tower information
   TowerInfoContainer *emcTowerContainer;
-  emcTowerContainer = findNode::getClass<TowerInfoContainer>(topNode,"TOWERINFO_CALIB_CEMC");
+  emcTowerContainer = findNode::getClass<TowerInfoContainer>(topNode,towerNode.c_str());
   if(!emcTowerContainer)
   {
-    std::cout << PHWHERE << "caloTreeGen::process_event Could not find node TOWERS_CEMC"  << std::endl;
+    std::cout << PHWHERE << "caloTreeGen::process_event Could not find node: " <<  towerNode << std::endl;
     return Fun4AllReturnCodes::ABORTEVENT;
   }
 

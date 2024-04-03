@@ -98,6 +98,14 @@ class caloTreeGen : public SubsysReco
       }
     }
 
+    void set_clusterNode(const std::string &clusterNode) {
+      this->clusterNode = clusterNode;
+    }
+
+    void set_towerNode(const std::string &towerNode) {
+      this->towerNode = towerNode;
+    }
+
   private:
 
     TTree *T;
@@ -105,8 +113,10 @@ class caloTreeGen : public SubsysReco
     TFile *out;
     TFile *out2;
     //Fun4AllHistoManager *hm = nullptr;
-    std::string Outfile  = "qa.root";
-    std::string Outfile2 = "diphoton.root";
+    std::string Outfile     = "qa.root";
+    std::string Outfile2    = "diphoton.root";
+    std::string clusterNode = "CLUSTERINFO_CEMC";
+    std::string towerNode   = "TOWERINFO_CALIB_CEMC";
 
     UInt_t getCaloTowerPhiBin(const UInt_t key);
     UInt_t getCaloTowerEtaBin(const UInt_t key);
