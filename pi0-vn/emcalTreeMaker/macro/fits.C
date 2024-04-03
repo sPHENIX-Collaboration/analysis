@@ -167,14 +167,16 @@ Double_t myAnalysis::CalculateSignalToBackgroundRatio(TH1F* hPi0Mass, TF1* polyF
 void fits(const string &i_input,
           const string &i_cuts,
           const string &outputCSV = "fitStats.csv",
-          const string &outputDir = ".") {
+          const string &outputDir = ".",
+          const string &tag = "test") {
 
     cout << "#############################" << endl;
     cout << "Run Parameters" << endl;
-    cout << "inputFile: "  << i_input << endl;
-    cout << "Cuts: "       << i_cuts << endl;
-    cout << "output csv: " << outputCSV << endl;
+    cout << "inputFile: "        << i_input << endl;
+    cout << "Cuts: "             << i_cuts << endl;
+    cout << "output csv: "       << outputCSV << endl;
     cout << "output directory: " << outputDir << endl;
+    cout << "tag: "              << tag << endl;
     cout << "#############################" << endl;
 
     Int_t ret = myAnalysis::readCuts(i_cuts);
@@ -222,7 +224,7 @@ void fits(const string &i_input,
         Int_t index = 0;
 
         t.str("");
-        t << outputDir << "/" << cut.e1 << "_" << cut.e2;
+        t << outputDir << "/" << tag << "_" << cut.e1 << "_" << cut.e2;
 
         if (std::filesystem::exists(t.str()))
         {
@@ -380,17 +382,19 @@ void fits(const string &i_input,
 
 # ifndef __CINT__
 Int_t main(Int_t argc, char* argv[]) {
-if(argc < 3 || argc > 5){
-        cout << "usage: ./fits inputFile cuts [fitStats] [outputDir]" << endl;
+if(argc < 3 || argc > 6){
+        cout << "usage: ./fits inputFile cuts [fitStats] [outputDir] [tag]" << endl;
         cout << "inputFile: input root file" << endl;
         cout << "cuts: csv file containing cuts" << endl;
         cout << "fitStats: csv file containing fit Stats" << endl;
         cout << "outputDir: location of output directory. Default: current directory." << endl;
+        cout << "tag: tag for the output folder. Default: test." << endl;
         return 1;
     }
 
     string fitStats  = "fitStats.csv";
     string outputDir = ".";
+    string tag = "test";
 
     if(argc >= 4) {
         fitStats = argv[3];
@@ -398,8 +402,11 @@ if(argc < 3 || argc > 5){
     if(argc >= 5) {
         outputDir = argv[4];
     }
+    if(argc >= 6) {
+        tag = argv[5];
+    }
 
-    fits(argv[1], argv[2], fitStats, outputDir);
+    fits(argv[1], argv[2], fitStats, outputDir, tag);
 
     cout << "======================================" << endl;
     cout << "done" << endl;
