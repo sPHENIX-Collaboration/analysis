@@ -6,9 +6,9 @@
 
 ROOT_CPPFLAGS = `root-config --cflags`
 ROOT_LIBFLAGS = `root-config --libs`
-sPHENIX_CPPFLAGS = -I$(MYINSTALL)/include -I$(OFFLINE_MAIN)/include
+sPHENIX_CPPFLAGS = -I$(MYINSTALL)/include -I$(OFFLINE_MAIN)/include -I$(OFFLINE_MAIN)/rootmacros
 LIBFLAGS = -L$(MYINSTALL)/lib -lcaloTreeGen
-sPHENIX_LIBFLAGS = -L$(OFFLINE_MAIN)/lib -lfun4all -lg4centrality -lphparameter -lcalotrigger
+sPHENIX_LIBFLAGS = -L$(OFFLINE_MAIN)/lib -lfun4all -lg4centrality -lphparameter -lcalotrigger -lcalo_reco -lphool
 
 all: bin/Fun4All_CaloTreeGen bin/pi0Ana bin/convert bin/Q-vec-corr bin/mixedEvent bin/vnAna bin/runQA bin/runQA-2 bin/fits bin/plot-vn
 

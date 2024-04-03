@@ -14,25 +14,31 @@
 #include <fun4all/Fun4AllDstOutputManager.h>
 #include <fun4all/Fun4AllOutputManager.h>
 #include <fun4all/Fun4AllServer.h>
+#include <fun4all/Fun4AllUtils.h>
 
 // simulation centrality module
 #include <g4centrality/PHG4CentralityReco.h>
 
 // #include <phool/PHRandomSeed.h>
-// #include <phool/recoConsts.h>
+#include <phool/recoConsts.h>
 
 #include <calotreegen/caloTreeGen.h>
 #include <calotrigger/MinimumBiasClassifier.h>
 
+#include "Sys_Calo.C"
+
 using std::cout;
 using std::endl;
 using std::string;
+using std::vector;
+using std::pair;
 
 R__LOAD_LIBRARY(libcaloTreeGen.so)
 
 void Fun4All_CaloTreeGen(const string  &inputFile,
                          const string  &qaFile       = "qa.root",
                          const string  &diphotonFile = "diphoton.root",
+                         const string  &systematic   = "none",
                          const Bool_t  doPi0Ana      = true,
                          const Float_t vtx_z_max     = 10, /*cm*/
                          const Float_t clusE_min     = 0.5 /*GeV*/,
@@ -42,7 +48,13 @@ void Fun4All_CaloTreeGen(const string  &inputFile,
                          const string  &g4Hits       = "",
                          const UInt_t  nEvents       = 0) {
   Fun4AllServer *se = Fun4AllServer::instance();
-  // recoConsts *rc = recoConsts::instance();
+  recoConsts *rc = recoConsts::instance();
+
+  rc->set_StringFlag("CDB_GLOBALTAG", "ProdA_2023");
+
+  pair<Int_t, Int_t> runseg = Fun4AllUtils::GetRunSegment(inputFile);
+  Int_t runnumber = runseg.first;
+  rc->set_uint64Flag("TIMESTAMP", runnumber);
 
   // //! Quiet mode. Only output critical messages. Intended for batch production mode.
   // VERBOSITY_QUIET = 0,
@@ -74,6 +86,11 @@ void Fun4All_CaloTreeGen(const string  &inputFile,
     se->registerInputManager(in3);
   }
 
+  Fun4AllInputManager *in = new Fun4AllDstInputManager("DSTcalo");
+  // in->AddListFile(inputFile.c_str());
+  in->AddFile(inputFile.c_str());
+  se->registerInputManager(in);
+
   MinimumBiasClassifier *minimumbiasclassifier = new MinimumBiasClassifier();
   minimumbiasclassifier->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
   se->registerSubsystem(minimumbiasclassifier);
@@ -87,28 +104,56 @@ void Fun4All_CaloTreeGen(const string  &inputFile,
   calo->set_cluster_chi_max(clusChi_max);
   calo->set_do_pi0_ana(doPi0Ana);
   calo->set_vtx_z_max(vtx_z_max);
-  se->registerSubsystem(calo);
 
-  Fun4AllInputManager *in = new Fun4AllDstInputManager("DSTcalo");
-  // in->AddListFile(inputFile.c_str());
-  in->AddFile(inputFile.c_str());
-  se->registerInputManager(in);
+ /**
+  * Systematic Node options:
+    SYST1CEMC
+    SYST2CEMC
+    SYST3UCEMC
+    SYST3DCEMC
+    SYST4CEMC
+  */
+  if(systematic != "none") {
+
+    string towerNode = "TOWERINFO_CALIB_"+systematic;
+    string clusterNode = "CLUSTERINFO_CEMC_"+systematic;
+    // Add Systematic Nodes
+    Register_Tower_sys();
+
+    // Clusters
+    auto ClusterBuilder = new RawClusterBuilderTemplate(("EmcRawClusterBuilderTemplate_"+systematic).c_str());
+    ClusterBuilder->Detector("CEMC");
+    ClusterBuilder->set_threshold_energy(0.030);  // for when using basic calibration
+    string emc_prof = getenv("CALIBRATIONROOT");
+    emc_prof += "/EmcProfile/CEMCprof_Thresh30MeV.root";
+    ClusterBuilder->LoadProfile(emc_prof);
+    ClusterBuilder->set_UseTowerInfo(1);  // to use towerinfo objects rather than old RawTower
+    ClusterBuilder->setInputTowerNodeName(towerNode.c_str());
+    ClusterBuilder->setOutputClusterNodeName(clusterNode.c_str());
+    se->registerSubsystem(ClusterBuilder);
+
+    calo->set_towerNode(towerNode);
+    calo->set_clusterNode(clusterNode);
+  }
+
+  se->registerSubsystem(calo);
 
   se->run(nEvents);
   se->End();
   se->PrintTimer();
-  std::cout << "All done!" << std::endl;
+  cout << "All done!" << endl;
 
   gSystem->Exit(0);
 }
 
 # ifndef __CINT__
 int main(int argc, char* argv[]) {
-    if(argc < 2 || argc > 12){
-        cout << "usage: ./bin/Fun4All_CaloTreeGen inputFile qaFile diphotonFile doPi0Ana vtx_z_max clusE_min clusChi_max isSim DSTglobal g4Hits events" << endl;
+    if(argc < 2 || argc > 13){
+        cout << "usage: ./bin/Fun4All_CaloTreeGen inputFile [qaFile] [diphotonFile] [systematic] [doPi0Ana] [vtx_z_max] [clusE_min] [clusChi_max] [isSim] [DSTglobal] [g4Hits] [events]" << endl;
         cout << "inputFile: Location of fileList containing dst." << endl;
-        cout << "qaFile: name of output file." << endl;
-        cout << "diphotonFile: name of output file." << endl;
+        cout << "qaFile: name of output file. Default: qa.root" << endl;
+        cout << "diphotonFile: name of output file. Default: diphoton.root" << endl;
+        cout << "systematic: name of systematic node. Default: none " << endl;
         cout << "doPi0Ana: Enable pi0 analysis (takes longer). Default: true" << endl;
         cout << "vtx_z_max: Maximum z-vertex [cm]. Default: 10" << endl;
         cout << "clusE_min: Minimum cluster energy. Default: 0.5 GeV" << endl;
@@ -123,6 +168,7 @@ int main(int argc, char* argv[]) {
     string inputFile;
     string qaFile       = "qa.root";
     string diphotonFile = "diphoton.root";
+    string systematic   = "none";
     Bool_t doPi0Ana     = true;
     Float_t vtx_z_max   = 10;
     Float_t clusE_min   = 0.5;
@@ -142,31 +188,34 @@ int main(int argc, char* argv[]) {
         diphotonFile = argv[3];
     }
     if(argc >= 5) {
-        doPi0Ana = atoi(argv[4]);
+        systematic = argv[4];
     }
     if(argc >= 6) {
-        vtx_z_max = atof(argv[5]);
+        doPi0Ana = atoi(argv[5]);
     }
     if(argc >= 7) {
-        clusE_min = atof(argv[6]);
+        vtx_z_max = atof(argv[6]);
     }
     if(argc >= 8) {
-        clusChi_max = atof(argv[7]);
+        clusE_min = atof(argv[7]);
     }
     if(argc >= 9) {
-        isSim = atoi(argv[8]);
+        clusChi_max = atof(argv[8]);
     }
     if(argc >= 10) {
-        dstGlobal = argv[9];
+        isSim = atoi(argv[9]);
     }
     if(argc >= 11) {
-        g4Hits = argv[10];
+        dstGlobal = argv[10];
     }
     if(argc >= 12) {
-        events = atoi(argv[11]);
+        g4Hits = argv[11];
+    }
+    if(argc >= 13) {
+        events = atoi(argv[12]);
     }
 
-    Fun4All_CaloTreeGen(inputFile, qaFile, diphotonFile, doPi0Ana, vtx_z_max, clusE_min, clusChi_max, isSim, dstGlobal, g4Hits, events);
+    Fun4All_CaloTreeGen(inputFile, qaFile, diphotonFile, systematic, doPi0Ana, vtx_z_max, clusE_min, clusChi_max, isSim, dstGlobal, g4Hits, events);
 
     cout << "done" << endl;
     return 0;
