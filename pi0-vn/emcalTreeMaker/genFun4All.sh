@@ -11,16 +11,17 @@ exe=${1}
 input=${2}
 qa=${3}
 diphoton=${4}
-do_pi0=${5}
-z=${6}
-e=${7}
-chi=${8}
-sim=${9}
-input_global=${10}
-input_g4hits=${11}
+systematics=${5}
+do_pi0=${6}
+z=${7}
+e=${8}
+chi=${9}
+sim=${10}
+input_global=${11}
+input_g4hits=${12}
 
 # print the environment - needed for debugging
 printenv
 
 mkdir -p output
-$exe $input $qa $diphoton $do_pi0 $z $e $chi $sim $input_global $input_g4hits
+$exe $input $qa $diphoton $systematics $do_pi0 $z $e $chi $sim $input_global $input_g4hits

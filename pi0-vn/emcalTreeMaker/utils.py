@@ -24,6 +24,7 @@ f4a.add_argument('-e2', '--clus-e-min', type=float, default=0.5, help='Minimum C
 f4a.add_argument('-c', '--clus-chi-max', type=float, default=4, help='Maximum Cluster Chi Squared. Default: 4')
 f4a.add_argument('-a', '--do-pi0', type=int, default=1, help='Do pi0 Analysis. Default: True')
 f4a.add_argument('-s2', '--isSim', type=int, default=0, help='Type Simulation. Default: False')
+f4a.add_argument('-y', '--systematics', type=str, default='none', help='Systematics. Default: none')
 
 pi0Ana = subparser.add_parser('pi0Ana', help='Create condor submission directory for pi0Analysis.')
 
@@ -193,6 +194,7 @@ def create_f4a_jobs():
     isSim        = args.isSim
     clus_e       = args.clus_e_min
     clus_chi     = args.clus_chi_max
+    systematics  = args.systematics
 
     print(f'Simulation : {isSim}')
     print(f'Fun4All : {macro}')
@@ -202,6 +204,7 @@ def create_f4a_jobs():
     print(f'Cluster Minimum ECore: {clus_e} GeV')
     print(f'Cluster Maximum Chi2: {clus_chi} GeV')
     print(f'Run List Directory: {run_list_dir}')
+    print(f'Systematics: {systematics}')
     print(f'Output Directory: {output_dir}')
     print(f'Bin: {f4a}')
     print(f'Executable: {executable}')
@@ -214,57 +217,39 @@ def create_f4a_jobs():
     shutil.copytree(src, f'{output_dir}/src', dirs_exist_ok=True)
     shutil.copy(executable, output_dir)
 
-    if(isSim):
-        for filename in os.listdir(run_list_dir):
-            if(filename.endswith('list')):
-                f = os.path.join(run_list_dir, filename)
-                run = int(filename.split('-')[-1].split('.')[0])
-                job_dir = f'{output_dir}/{run}'
+    for filename in os.listdir(run_list_dir):
+        if(filename.endswith('list')):
+            f = os.path.join(run_list_dir, filename)
+            run = int(filename.split('-')[-1].split('.')[0])
+            job_dir = f'{output_dir}/{run}'
 
-                os.makedirs(job_dir,exist_ok=True)
-                os.makedirs(f'{job_dir}/stdout',exist_ok=True)
-                os.makedirs(f'{job_dir}/error',exist_ok=True)
-                os.makedirs(f'{job_dir}/output',exist_ok=True)
+            os.makedirs(job_dir,exist_ok=True)
+            os.makedirs(f'{job_dir}/stdout',exist_ok=True)
+            os.makedirs(f'{job_dir}/error',exist_ok=True)
+            os.makedirs(f'{job_dir}/output',exist_ok=True)
 
-                shutil.copy(f, job_dir)
+            shutil.copy(f, job_dir)
 
-                with open(f'{job_dir}/genFun4All.sub', mode="w") as file:
-                    file.write(f'executable             = ../{os.path.basename(executable)}\n')
-                    file.write(f'arguments              = {output_dir}/{os.path.basename(f4a)} $(input_dst) output/qa-$(Process).root output/diphoton-$(Process).root {do_pi0} {z} {clus_e} {clus_chi} {isSim} $(input_global) $(input_g4hits)\n')
-                    file.write(f'log                    = {log}\n')
-                    file.write('output                  = stdout/job-$(Process).out\n')
-                    file.write('error                   = error/job-$(Process).err\n')
-                    file.write(f'request_memory         = {memory}GB\n')
+            with open(f'{job_dir}/genFun4All.sub', mode="w") as file:
+                file.write(f'executable     = ../{os.path.basename(executable)}\n')
+                # simulation
+                if(isSim):
+                    file.write(f'arguments  = {output_dir}/{os.path.basename(f4a)} $(input_dst) output/qa-$(Process).root output/diphoton-$(Process).root {do_pi0} {z} {clus_e} {clus_chi} {isSim} $(input_global) $(input_g4hits)\n')
+                # data
+                else:
+                    file.write(f'arguments  = {output_dir}/{os.path.basename(f4a)} $(input_dst) output/qa-$(Process).root output/diphoton-$(Process).root {systematics} {do_pi0} {z} {clus_e} {clus_chi}\n')
+
+                file.write(f'log            = {log}\n')
+                file.write('output          = stdout/job-$(Process).out\n')
+                file.write('error           = error/job-$(Process).err\n')
+                file.write(f'request_memory = {memory}GB\n')
+                if(isSim):
                     file.write(f'queue input_dst, input_global, input_g4hits from {filename}')
-
-                print(f'cd {job_dir} && condor_submit genFun4All.sub && ', end='')
-        print()
-
-    else:
-        for filename in os.listdir(run_list_dir):
-            if(filename.endswith('list')):
-                f = os.path.join(run_list_dir, filename)
-                run = int(filename.split('-')[1].split('.')[0])
-                job_dir = f'{output_dir}/{run}'
-
-                os.makedirs(job_dir,exist_ok=True)
-                os.makedirs(f'{job_dir}/stdout',exist_ok=True)
-                os.makedirs(f'{job_dir}/error',exist_ok=True)
-                os.makedirs(f'{job_dir}/output',exist_ok=True)
-
-                shutil.copy(f, job_dir)
-
-                with open(f'{job_dir}/genFun4All.sub', mode="w") as file:
-                    file.write(f'executable             = ../{os.path.basename(executable)}\n')
-                    file.write(f'arguments              = {output_dir}/{os.path.basename(f4a)} $(input_dst) output/qa-$(Process).root output/diphoton-$(Process).root {do_pi0} {z} {clus_e} {clus_chi}\n')
-                    file.write(f'log                    = {log}\n')
-                    file.write('output                  = stdout/job-$(Process).out\n')
-                    file.write('error                   = error/job-$(Process).err\n')
-                    file.write(f'request_memory         = {memory}GB\n')
+                else:
                     file.write(f'queue input_dst from {filename}')
 
-                print(f'cd {job_dir} && condor_submit genFun4All.sub && ', end='')
-        print()
+            print(f'cd {job_dir} && condor_submit genFun4All.sub && ', end='')
+    print()
 
 def create_pi0Ana_jobs():
     ntp_list   = os.path.realpath(args.ntp_list)
