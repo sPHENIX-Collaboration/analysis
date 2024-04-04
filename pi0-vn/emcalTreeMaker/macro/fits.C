@@ -45,6 +45,7 @@ namespace myAnalysis {
 
     Double_t fitStart = 0.1;
     Double_t fitEnd   = 0.35;
+    Double_t sigmaMult = 2;
 }
 
 Int_t myAnalysis::readCuts(const string &i_cuts) {
@@ -129,8 +130,8 @@ Double_t myAnalysis::CalculateSignalToBackgroundRatio(TH1F* hPi0Mass, TF1* polyF
     TH1F *hSignal = (TH1F*)hPi0Mass->Clone("hSignal");
     TH1F *hBackground = (TH1F*)hPi0Mass->Clone("hBackground");
 
-    Double_t low  = max(fitMean - 2*fitSigma, myAnalysis::fitStart);
-    Double_t high = min(fitMean + 2*fitSigma, myAnalysis::fitEnd);
+    Double_t low  = max(fitMean - sigmaMult*fitSigma, myAnalysis::fitStart);
+    Double_t high = min(fitMean + sigmaMult*fitSigma, myAnalysis::fitEnd);
 
     Int_t firstBinSignal = hPi0Mass->FindBin(low);
     Int_t lastBinSignal  = hPi0Mass->FindBin(high);
@@ -168,7 +169,8 @@ void fits(const string &i_input,
           const string &i_cuts,
           const string &outputCSV = "fitStats.csv",
           const string &outputDir = ".",
-          const string &tag = "test") {
+          const string &tag = "test",
+          const Float_t sigmaMult = 2) {
 
     cout << "#############################" << endl;
     cout << "Run Parameters" << endl;
@@ -177,8 +179,10 @@ void fits(const string &i_input,
     cout << "output csv: "       << outputCSV << endl;
     cout << "output directory: " << outputDir << endl;
     cout << "tag: "              << tag << endl;
+    cout << "sigmaMult: "        << sigmaMult << endl;
     cout << "#############################" << endl;
 
+    myAnalysis::sigmaMult = sigmaMult;
     Int_t ret = myAnalysis::readCuts(i_cuts);
     if(ret != 0) return;
 
@@ -345,8 +349,8 @@ void fits(const string &i_input,
 
                 if(y > 0) h->GetYaxis()->SetRangeUser(0,2.5*y);
 
-                Double_t signal_low  = max(fitMean-2*fitSigma, myAnalysis::fitStart);
-                Double_t signal_high = min(fitMean+2*fitSigma, myAnalysis::fitEnd);
+                Double_t signal_low  = max(fitMean-sigmaMult*fitSigma, myAnalysis::fitStart);
+                Double_t signal_high = min(fitMean+sigmaMult*fitSigma, myAnalysis::fitEnd);
 
                 TLine *line1 = new TLine(signal_low, 0, signal_low, 1.2*y);
                 TLine *line2 = new TLine(signal_high, 0, signal_high, 1.2*y);
@@ -382,19 +386,21 @@ void fits(const string &i_input,
 
 # ifndef __CINT__
 Int_t main(Int_t argc, char* argv[]) {
-if(argc < 3 || argc > 6){
-        cout << "usage: ./fits inputFile cuts [fitStats] [outputDir] [tag]" << endl;
+if(argc < 3 || argc > 7){
+        cout << "usage: ./fits inputFile cuts [fitStats] [outputDir] [tag] [sigmaMult]" << endl;
         cout << "inputFile: input root file" << endl;
         cout << "cuts: csv file containing cuts" << endl;
         cout << "fitStats: csv file containing fit Stats" << endl;
         cout << "outputDir: location of output directory. Default: current directory." << endl;
         cout << "tag: tag for the output folder. Default: test." << endl;
+        cout << "sigmaMult: controls the signal bounds. Default: 2." << endl;
         return 1;
     }
 
     string fitStats  = "fitStats.csv";
     string outputDir = ".";
     string tag = "test";
+    Float_t sigmaMult = 2;
 
     if(argc >= 4) {
         fitStats = argv[3];
@@ -405,8 +411,11 @@ if(argc < 3 || argc > 6){
     if(argc >= 6) {
         tag = argv[5];
     }
+    if(argc >= 7) {
+        sigmaMult = atof(argv[6]);
+    }
 
-    fits(argv[1], argv[2], fitStats, outputDir, tag);
+    fits(argv[1], argv[2], fitStats, outputDir, tag, sigmaMult);
 
     cout << "======================================" << endl;
     cout << "done" << endl;
