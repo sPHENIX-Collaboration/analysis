@@ -62,8 +62,7 @@
 using namespace std;
 
 /**
- * TrackAndClusterMatchingQA is a class developed to reconstruct jets containing a D-meson
- * The class can be adapted to tag jets using any kind of particle
+ * TrackAndClusterMatchingQA is a class developed jet QA
  * Author: Antonio Silva (antonio.sphenix@gmail.com)
  */
 
