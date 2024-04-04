@@ -17,9 +17,10 @@ fitStats=${7}
 Q_vec_corr=${8}
 samples=${9}
 cut_num=${10}
+sigma=${11}
 
 # print the environment - needed for debugging
 printenv
 
 mkdir -p output
-$exe $input $cuts $z $output $do_vn_calc $fitStats $Q_vec_corr $samples $cut_num
+$exe $input $cuts $z $output $do_vn_calc $fitStats $Q_vec_corr $samples $cut_num $sigma

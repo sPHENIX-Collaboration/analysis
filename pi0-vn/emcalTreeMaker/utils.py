@@ -40,6 +40,7 @@ pi0Ana.add_argument('-b', '--executable', type=str, default='bin/pi0Ana', help='
 pi0Ana.add_argument('-d', '--output', type=str, default='test', help='Output Directory. Default: ./test')
 pi0Ana.add_argument('-u', '--subsamples', type=int, default=30, help='Number of subsamples for vn analysis. Default: 30')
 pi0Ana.add_argument('-t', '--cut-num', type=int, default=0, help='Specific cut to use for vn analysis. Default: 0')
+pi0Ana.add_argument('-g', '--sigma', type=float, default=2, help='Signal Window size in units of sigma. Default: 2')
 pi0Ana.add_argument('-s', '--memory', type=float, default=1, help='Memory (units of GB) to request per condor submission. Default: 1 GB.')
 pi0Ana.add_argument('-l', '--log', type=str, default='/tmp/anarde/dump/job-$(ClusterId)-$(Process).log', help='Condor log file.')
 
@@ -266,6 +267,7 @@ def create_pi0Ana_jobs():
     do_vn_calc = args.do_vn_calc
     samples    = args.subsamples
     cut_num    = args.cut_num
+    sigma      = args.sigma
 
     print(f'Macro: {macro}')
     print(f'Run List: {ntp_list}')
@@ -273,6 +275,7 @@ def create_pi0Ana_jobs():
     print(f'Do vn calc: {do_vn_calc}')
     print(f'Samples: {samples}')
     print(f'Cut num: {cut_num}')
+    print(f'sigma: {sigma}')
     print(f'FitStats: {fitStats}')
     print(f'Q Vector Correction: {Q_vec_corr}')
     print(f'Vtx z max: {z} cm')
@@ -312,7 +315,7 @@ def create_pi0Ana_jobs():
             with open(f'{output_dir}/{run}/genPi0Ana.sub', mode="w") as file2:
                 file2.write(f'executable     = ../{os.path.basename(script)}\n')
                 if(do_vn_calc):
-                    file2.write(f'arguments      = {output_dir}/{os.path.basename(executable)} $(input_ntp) {cuts} {z} output/test-$(Process).root {do_vn_calc} {fitStats} {Q_vec_corr} {samples} {cut_num}\n')
+                    file2.write(f'arguments      = {output_dir}/{os.path.basename(executable)} $(input_ntp) {cuts} {z} output/test-$(Process).root {do_vn_calc} {fitStats} {Q_vec_corr} {samples} {cut_num} {sigma}\n')
                 else:
                     file2.write(f'arguments      = {output_dir}/{os.path.basename(executable)} $(input_ntp) {cuts} {z} output/test-$(Process).root\n')
                 file2.write(f'log            = {log}\n')
