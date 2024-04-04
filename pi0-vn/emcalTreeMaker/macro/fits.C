@@ -39,9 +39,10 @@ namespace myAnalysis {
     Int_t readCuts(const string &i_cuts);
     TFitResultPtr PerformFitting(TH1F* hPi0Mass, TF1** totalFit);
     Double_t CalculateSignalToBackgroundRatio(TH1F* hPi0Mass, TF1* polyFit, Double_t fitMean, Double_t fitSigma, Double_t &signalToBackgroundError);
+    void process_fits(const string &i_input, const string &outputCSV, const string &outputDir, const string &tag, const Float_t sigmaMult);
 
     vector<string> centrality = {"40-60","20-40","0-20"};
-    vector<string> pt         = {"2-2.5","2.5-3","3-3.5","3.5-4","4-4.5","4.5-5"};
+    vector<string> pts         = {"2-2.5","2.5-3","3-3.5","3.5-4","4-4.5","4.5-5"};
 
     Double_t fitStart = 0.1;
     Double_t fitEnd   = 0.35;
@@ -130,8 +131,8 @@ Double_t myAnalysis::CalculateSignalToBackgroundRatio(TH1F* hPi0Mass, TF1* polyF
     TH1F *hSignal = (TH1F*)hPi0Mass->Clone("hSignal");
     TH1F *hBackground = (TH1F*)hPi0Mass->Clone("hBackground");
 
-    Double_t low  = max(fitMean - sigmaMult*fitSigma, myAnalysis::fitStart);
-    Double_t high = min(fitMean + sigmaMult*fitSigma, myAnalysis::fitEnd);
+    Double_t low  = max(fitMean - sigmaMult*fitSigma, fitStart);
+    Double_t high = min(fitMean + sigmaMult*fitSigma, fitEnd);
 
     Int_t firstBinSignal = hPi0Mass->FindBin(low);
     Int_t lastBinSignal  = hPi0Mass->FindBin(high);
@@ -165,45 +166,11 @@ Double_t myAnalysis::CalculateSignalToBackgroundRatio(TH1F* hPi0Mass, TF1* polyF
     return signalToBackgroundRatio;
 }
 
-void fits(const string &i_input,
-          const string &i_cuts,
-          const string &outputCSV = "fitStats.csv",
-          const string &outputDir = ".",
-          const string &tag = "test",
-          const Float_t sigmaMult = 2) {
-
-    cout << "#############################" << endl;
-    cout << "Run Parameters" << endl;
-    cout << "inputFile: "        << i_input << endl;
-    cout << "Cuts: "             << i_cuts << endl;
-    cout << "output csv: "       << outputCSV << endl;
-    cout << "output directory: " << outputDir << endl;
-    cout << "tag: "              << tag << endl;
-    cout << "sigmaMult: "        << sigmaMult << endl;
-    cout << "#############################" << endl;
-
-    myAnalysis::sigmaMult = sigmaMult;
-    Int_t ret = myAnalysis::readCuts(i_cuts);
-    if(ret != 0) return;
-
-    if (std::filesystem::exists(outputDir))
-    {
-        std::cout << "Directory '" << outputDir << "' already exists." << std::endl;
-    }
-    else
-    {
-        try
-        {
-        std::filesystem::create_directory(outputDir);
-        std::cout << "Directory '" << outputDir << "' created successfully." << std::endl;
-        }
-        catch (const std::filesystem::filesystem_error &e)
-        {
-        // Handle other potential errors
-        std::cerr << "Error creating directory: " << e.what() << std::endl;
-        }
-    }
-
+void myAnalysis::process_fits(const string &i_input,
+                              const string &outputCSV,
+                              const string &outputDir,
+                              const string &tag,
+                              const Float_t sigmaMult) {
     TFile input(i_input.c_str());
 
     stringstream s;
@@ -224,7 +191,7 @@ void fits(const string &i_input,
     ofstream output((outputDir + "/" + outputCSV).c_str());
     output << "Index,mean,sigma,S/B,chi2,EA,EB" << endl;
 
-    for(auto cut : myAnalysis::cuts) {
+    for(auto cut : cuts) {
         Int_t index = 0;
 
         t.str("");
@@ -252,8 +219,8 @@ void fits(const string &i_input,
         u << t.str() << "/" << cut.e1 << "_" << cut.e2;
         c1->Print((u.str() + ".pdf[").c_str(), "pdf portrait");
 
-        for(auto cent : myAnalysis::centrality) {
-            for(auto pt : myAnalysis::pt) {
+        for(auto cent : centrality) {
+            for(auto pt : pts) {
                 s.str("");
                 s << "results/" << cent << "/" << pt << "/"
                     << "hPi0Mass_" << cent << "_" << pt << "_"
@@ -261,7 +228,7 @@ void fits(const string &i_input,
                     << cut.deltaR_min << "_" << cut.deltaR_max << "_" << cut.chi;
 
                 auto h = (TH1F*)input.Get(s.str().c_str());
-                Double_t numEntries = h->Integral(h->FindBin(myAnalysis::fitStart), h->FindBin(myAnalysis::fitEnd));
+                Double_t numEntries = h->Integral(h->FindBin(fitStart), h->FindBin(fitEnd));
 
                 // ensure there are enough entries before fitting
                 if(numEntries < 20){
@@ -272,7 +239,7 @@ void fits(const string &i_input,
                 TF1 *totalFit;
 
                 // Call PerformFitting to execute the fitting procedure
-                TFitResultPtr fitResult = myAnalysis::PerformFitting(h, &totalFit);
+                TFitResultPtr fitResult = PerformFitting(h, &totalFit);
 
                 Double_t fitMean       = totalFit->GetParameter(1);
                 Double_t fitMeanError  = totalFit->GetParError(1);
@@ -286,8 +253,8 @@ void fits(const string &i_input,
                     continue;
                 }
 
-                TF1 *gaussFit = new TF1("gaussFit", "gaus", myAnalysis::fitStart, myAnalysis::fitEnd);
-                TF1 *polyFit  = new TF1("polyFit", "pol2",  myAnalysis::fitStart, myAnalysis::fitEnd);
+                TF1 *gaussFit = new TF1("gaussFit", "gaus", fitStart, fitEnd);
+                TF1 *polyFit  = new TF1("polyFit", "pol2",  fitStart, fitEnd);
                 gaussFit->SetParameter(0, totalFit->GetParameter(0));
                 gaussFit->SetParameter(1, totalFit->GetParameter(1));
                 gaussFit->SetParameter(2, totalFit->GetParameter(2));
@@ -298,7 +265,7 @@ void fits(const string &i_input,
                 }
 
                 Double_t signalToBackgroundError;
-                Double_t signalToBackgroundRatio = myAnalysis::CalculateSignalToBackgroundRatio(h, polyFit, fitMean, fitSigma, signalToBackgroundError);
+                Double_t signalToBackgroundRatio = CalculateSignalToBackgroundRatio(h, polyFit, fitMean, fitSigma, signalToBackgroundError);
 
                 s.str("");
                 s << index << "," << fitMean << "," << fitSigma << "," << signalToBackgroundRatio << "," << chi2 << "," << cut.e1 << "," << cut.e2 << endl;
@@ -349,8 +316,8 @@ void fits(const string &i_input,
 
                 if(y > 0) h->GetYaxis()->SetRangeUser(0,2.5*y);
 
-                Double_t signal_low  = max(fitMean-sigmaMult*fitSigma, myAnalysis::fitStart);
-                Double_t signal_high = min(fitMean+sigmaMult*fitSigma, myAnalysis::fitEnd);
+                Double_t signal_low  = max(fitMean-sigmaMult*fitSigma, fitStart);
+                Double_t signal_high = min(fitMean+sigmaMult*fitSigma, fitEnd);
 
                 TLine *line1 = new TLine(signal_low, 0, signal_low, 1.2*y);
                 TLine *line2 = new TLine(signal_high, 0, signal_high, 1.2*y);
@@ -382,6 +349,48 @@ void fits(const string &i_input,
 
     output.close();
     input.Close();
+}
+
+void fits(const string &i_input,
+          const string &i_cuts,
+          const string &outputCSV = "fitStats.csv",
+          const string &outputDir = ".",
+          const string &tag = "test",
+          const Float_t sigmaMult = 2) {
+
+    cout << "#############################" << endl;
+    cout << "Run Parameters" << endl;
+    cout << "inputFile: "        << i_input << endl;
+    cout << "Cuts: "             << i_cuts << endl;
+    cout << "output csv: "       << outputCSV << endl;
+    cout << "output directory: " << outputDir << endl;
+    cout << "tag: "              << tag << endl;
+    cout << "sigmaMult: "        << sigmaMult << endl;
+    cout << "#############################" << endl;
+
+    myAnalysis::sigmaMult = sigmaMult;
+    Int_t ret = myAnalysis::readCuts(i_cuts);
+    if(ret != 0) return;
+
+    if (std::filesystem::exists(outputDir))
+    {
+        std::cout << "Directory '" << outputDir << "' already exists." << std::endl;
+    }
+    else
+    {
+        try
+        {
+        std::filesystem::create_directory(outputDir);
+        std::cout << "Directory '" << outputDir << "' created successfully." << std::endl;
+        }
+        catch (const std::filesystem::filesystem_error &e)
+        {
+        // Handle other potential errors
+        std::cerr << "Error creating directory: " << e.what() << std::endl;
+        }
+    }
+
+    myAnalysis::process_fits(i_input, outputCSV, outputDir, tag, sigmaMult);
 }
 
 # ifndef __CINT__
