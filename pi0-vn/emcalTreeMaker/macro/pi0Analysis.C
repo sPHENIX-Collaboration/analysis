@@ -47,7 +47,7 @@ namespace myAnalysis {
     Int_t readQVectorCorrection(const string &i_input);
     void init_hists();
 
-    void process_event(Float_t z_max = 10, Long64_t start = 0, Long64_t end = 0);
+    void process_event(Float_t z_max = 10, Long64_t start = 0, Long64_t end = 0, Float_t sigmaMult = 2);
     void finalize(const string &i_output = "test.root");
 
     vector<string> cent_key = {"40-60", "20-40", "0-20"};
@@ -526,7 +526,7 @@ void myAnalysis::init_hists() {
     }
 }
 
-void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end) {
+void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end, Float_t sigmaMult) {
     cout << "======================================" << endl;
     cout << "Begin Process Event" << endl;
     cout << "======================================" << endl;
@@ -787,8 +787,8 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end) {
             Int_t idx = cent_idx*pt_key.size()+pt_idx;
 
             // compute mu+-2*sd of the pi0 mass to select diphotons as pi0 candidates
-            Float_t pi0_mass_low  = max(pi0_mass_mu_sigma[idx].first-2*pi0_mass_mu_sigma[idx].second, fitStart);
-            Float_t pi0_mass_high = min(pi0_mass_mu_sigma[idx].first+2*pi0_mass_mu_sigma[idx].second, fitEnd);
+            Float_t pi0_mass_low  = max(pi0_mass_mu_sigma[idx].first-sigmaMult*pi0_mass_mu_sigma[idx].second, fitStart);
+            Float_t pi0_mass_high = min(pi0_mass_mu_sigma[idx].first+sigmaMult*pi0_mass_mu_sigma[idx].second, fitEnd);
 
             // compute mu+3*sd of the pi0 mass to select background diphotons
             Float_t bg_min = pi0_mass_mu_sigma[idx].first+3*pi0_mass_mu_sigma[idx].second;
@@ -1061,6 +1061,7 @@ void pi0Analysis(const string &i_input,
                  const string &QVecCorr    = "",
                  Int_t         subsamples  = 1,
                  Int_t         cut_num     = 0,
+                 Float_t       sigmaMult   = 2,
                  Long64_t      start       = 0,
                  Long64_t      end         = 0) {
 
@@ -1074,7 +1075,8 @@ void pi0Analysis(const string &i_input,
     cout << "fitStats: "    << fitStats << endl;
     cout << "QVecCorr: "    << QVecCorr << endl;
     cout << "Subsamples: "  << subsamples << endl;
-    cout << "cut_num: " << cut_num << endl;
+    cout << "cut_num: "     << cut_num << endl;
+    cout << "sigmaMult: "   << sigmaMult << endl;
     cout << "start: "       << start << endl;
     cout << "end: "         << end << endl;
     cout << "#############################" << endl;
@@ -1086,14 +1088,14 @@ void pi0Analysis(const string &i_input,
     Int_t ret = myAnalysis::init(i_input, i_cuts, fitStats, QVecCorr, start, end);
     if(ret != 0) return;
 
-    myAnalysis::process_event(z, start, end);
+    myAnalysis::process_event(z, start, end, sigmaMult);
     myAnalysis::finalize(i_output);
 }
 
 # ifndef __CINT__
 Int_t main(Int_t argc, char* argv[]) {
-if(argc < 3 || argc > 12){
-        cout << "usage: ./pi0Ana inputFile cuts [z] [outputFile] [do_vn_calc] [fitStats] [QVecCorr] [subsamples] [cut_num] [start] [end] " << endl;
+if(argc < 3 || argc > 13){
+        cout << "usage: ./pi0Ana inputFile cuts [z] [outputFile] [do_vn_calc] [fitStats] [QVecCorr] [subsamples] [cut_num] [sigmaMult] [start] [end] " << endl;
         cout << "inputFile: containing list of root file paths" << endl;
         cout << "cuts: csv file containing cuts" << endl;
         cout << "z: z-vertex cut. Default: 10 cm. Range: 0 to 30 cm." << endl;
@@ -1103,6 +1105,7 @@ if(argc < 3 || argc > 12){
         cout << "QVecCorr: csv file containing Q vector corrections" << endl;
         cout << "subsamples: number of subsamples for the vn analysis. Default: 1." << endl;
         cout << "cut_num: the specific diphoton cut to use for the vn analysis. Default: 0." << endl;
+        cout << "sigmaMult: Sigma multiplier for the signal window. Default: 2." << endl;
         cout << "start: start event number. Default: 0." << endl;
         cout << "end: end event number. Default: 0. (to run over all entries)." << endl;
         return 1;
@@ -1115,6 +1118,7 @@ if(argc < 3 || argc > 12){
     string   QVecCorr    = "";
     Int_t    subsamples  = 1;
     Int_t    cut_num     = 0;
+    Float_t  sigmaMult   = 2;
     Long64_t start       = 0;
     Long64_t end         = 0;
 
@@ -1140,10 +1144,13 @@ if(argc < 3 || argc > 12){
         cut_num = atoi(argv[9]);
     }
     if(argc >= 11) {
-        start = atol(argv[10]);
+        sigmaMult = atof(argv[10]);
     }
     if(argc >= 12) {
-        end = atol(argv[11]);
+        start = atol(argv[11]);
+    }
+    if(argc >= 13) {
+        end = atol(argv[12]);
     }
 
     // ensure that 0 <= start <= end
@@ -1152,7 +1159,7 @@ if(argc < 3 || argc > 12){
         return 1;
     }
 
-    pi0Analysis(argv[1], argv[2], z, outputFile, do_vn_calc, fitStats, QVecCorr, subsamples, cut_num, start, end);
+    pi0Analysis(argv[1], argv[2], z, outputFile, do_vn_calc, fitStats, QVecCorr, subsamples, cut_num, sigmaMult, start, end);
 
     cout << "======================================" << endl;
     cout << "done" << endl;
