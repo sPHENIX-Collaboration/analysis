@@ -53,7 +53,7 @@ std::vector<TH1F*> get_spectras(TChain *data, TFile* f, string generator)
   
   const int trigger=30; 
   const int nbins=(60-trigger)/3;
-  TH1F* jet_pt=new TH1F(Form("jet_pt_%s", generator.c_str()),Form("Jet Truth p_{T} from %s generator with 30 GeV trigger; Jet p_{T} (GeV)", generator.c_str()), nbins, trigger, 60); 
+  TH1F* jet_pt=new TH1F(Form("jet_pt_%s", generator.c_str()),Form("Jet Truth p_{T} from %s generator with 30 GeV trigger; Jet p_{T} (GeV)", generator.c_str()), nbins, 0, 60); 
   TH1F* jet_e=new TH1F(Form("jet_e_%s", generator.c_str()),Form("Jet Truth E from %s generator with 30 GeV p_{T} trigger; Jet E (GeV)", generator.c_str()), 50, 25, 75); 
   TH1F* jet_m=new TH1F(Form("jet_m_%s", generator.c_str()),Form("Jet Truth mass from %s generator with 30 GeV p_{T} trigger;Jet Mass (GeV)", generator.c_str()), 50, 0, 15); 
   TH1F* jet_eta=new TH1F(Form("jet_eta_%s", generator.c_str()),Form("Jet Truth #eta from %s generator with 30 GeV p_{T} trigger; #eta", generator.c_str()), 50, -1.11, 1.11); 
