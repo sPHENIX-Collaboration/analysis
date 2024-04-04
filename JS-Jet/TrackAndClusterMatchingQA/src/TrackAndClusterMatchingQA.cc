@@ -62,7 +62,7 @@
 using namespace std;
 
 /**
- * TrackAndClusterMatchingQA is a class developed jet QA
+ * TrackAndClusterMatchingQA is a class developed for jet QA
  * Author: Antonio Silva (antonio.sphenix@gmail.com)
  */
 
