@@ -68,8 +68,27 @@
 #include <phool/PHCompositeNode.h>
 
 //____________________________________________________________________________..
-DijetQA::DijetQA(const std::string &name):
+DijetQA::DijetQA(const std::string &name, const std::string &outputfilename, int phismear/*=0*/): 
  SubsysReco(name)
+ , m_outputFileName(outputfilename)
+ , m_etaRange(-1.1, 1.1)
+ , m_ptRange(0, 100)
+ , m_T(nullptr)
+ , m_event(-1)
+ , m_nJet(-1)
+ , m_nJetPair(-1)
+ , m_centrality(-1)
+ , m_zvtx(-1)
+ , m_impactparam(-1)
+ , m_Ajj(-1)
+ , m_xj(-1)
+ , m_ptl(-1)
+ , m_ptsl(-1)
+ , m_phil(-1)
+ , m_dphi(-1)
+ , m_etal(-1)
+ , m_etasl(-1)
+ , m_deltaeta(-1)
 {
   std::cout << "DijetQA::DijetQA(const std::string &name) Calling ctor" << std::endl;
 }
@@ -83,8 +102,25 @@ DijetQA::~DijetQA()
 //____________________________________________________________________________..
 int DijetQA::Init(PHCompositeNode *topNode)
 {
-  std::cout << "DijetQA::Init(PHCompositeNode *topNode) Initializing" << std::endl;
-  return Fun4AllReturnCodes::EVENT_OK;
+  	std::cout << "DijetQA::Init(PHCompositeNode *topNode) Initializing" << std::endl;
+ 	
+	m_T=new TTree("T", "Dijet QA Tree");
+	m_T->Branch("m_event", &m_event, "event/I");
+	m_T->Branch("nJet", &m_nJet, "nJet/I");
+	m_T->Branch("nJetPair", &m_nJetPair, "nJetPair/I");
+	m_T->Branch("cent", &m_centrality);
+	m_T->Branch("zvtx", &m_zvtx);
+	m_T->Branch("b", &m_impactparam);
+	m_T->Branch("A_{jj}", &m_Ajj);
+	m_T->Branch("x_{j}", &m_xj);
+	m_T->Branch("p_{T, l}", &m_ptl);
+	m_T->Branch("p_{T, sl}", &m_ptsl);
+	m_T->Branch("#phi_{l}", &m_phil);
+	m_T->Branch("#Delta #phi", &m_dphi);
+	m_T->Branch("#eta_{l}", &m_etal);
+	m_T->Branch("#eta_{sl}", &m_etasl);
+	m_T->Branch("#Delta #eta", &m_deltaeta);
+	return Fun4AllReturnCodes::EVENT_OK;
 }
 
 //____________________________________________________________________________..
@@ -94,11 +130,46 @@ int DijetQA::InitRun(PHCompositeNode *topNode)
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
-//____________________________________________________________________________..
+//This method actually does the event processing. The way that this is accessed is by going over JetContianers, identifying a leading jet and then the acommpamying pair 
 int DijetQA::process_event(PHCompositeNode *topNode)
 {
-  std::cout << "DijetQA::process_event(PHCompositeNode *topNode) Processing Event" << std::endl;
-  return Fun4AllReturnCodes::EVENT_OK;
+	std::cout << "DijetQA::process_event(PHCompositeNode *topNode) Processing Event" << std::endl;
+	++m_event;  
+	//Setup the node search
+	JetContainer* jets=findNode::getClass<JetContainer>(topNode);
+	if(!jets){
+		std::cout<<"No jet continer found" <<std::endl;
+		--m_event;
+		return -1; 
+	}
+	CentralityInfo* cent_node = findNode::getClass<CentralityInfo>(topNode, "CentralityInfo");
+	if(!cent_node){
+		std::cout<<"No centrality info found" <<std::endl;
+		--m_event;
+		return -1;
+	}
+	GlobalVertex *vtx=NULL;
+	GlobalVertexMap *vtxmap = findNode::GetClass<GlobalVertexMap>(topNode, "GlobalVertexMap");
+	if(!vtxmap || vtxmap->empty())
+	{
+		std::cout<<"No vertex map found, assuming the vertex has z=0" <<std::endl;
+		m_zvtx=0;
+	}	
+	else{
+		vtx=vtxmap->begin()->second;
+		m_zvtx=vtx->get_z();
+	}
+	TowerInfoContainer *EMTowers = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_CEMC_RETOWER");
+	TowerInfoContainer *IHTowers = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALIN");
+	TowerInfoContainer *OHTowers = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALOUT");
+	RawTowerGeomContainer *ihtower_geom = findNode::getClass<RawTowerGeomContainer>(topNode, "TOWERGEOM_HCALIN");
+	RawTowerGeomContainer *ohtower_geom = findNode::getClass<RawTowerGeomContainer>(topNode, "TOWERGEOM_HCALOUT");
+	if( !EMTowers || !IHTowers || !OHTowers){
+		std::cout<<"Could not find the calo towers" <<std::endl;
+		--m_event;
+		return -1;
+	}
+	return Fun4AllReturnCodes::EVENT_OK;
 }
 
 //____________________________________________________________________________..

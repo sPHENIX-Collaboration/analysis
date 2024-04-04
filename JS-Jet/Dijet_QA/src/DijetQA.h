@@ -5,7 +5,9 @@
 
 #include <fun4all/SubsysReco.h>
 
+
 #include <string>
+#include <vector>
 
 class PHCompositeNode;
 
@@ -34,21 +36,21 @@ class DijetQA : public SubsysReco
   /** Called for each event.
       This is where you do the real work.
    */
-  int process_event(PHCompositeNode *topNode) override;
+  	int process_event(PHCompositeNode *topNode) override;
 
   /// Clean up internals after each event.
-  int ResetEvent(PHCompositeNode *topNode) override;
+  	int ResetEvent(PHCompositeNode *topNode) override;
 
   /// Called at the end of each run.
-  int EndRun(const int runnumber) override;
+  	int EndRun(const int runnumber) override;
 
   /// Called at the end of all processing.
-  int End(PHCompositeNode *topNode) override;
+  	int End(PHCompositeNode *topNode) override;
 
   /// Reset
-  int Reset(PHCompositeNode * /*topNode*/) override;
+  	int Reset(PHCompositeNode * /*topNode*/) override;
 
-  void Print(const std::string &what = "ALL") const override;
+  	void Print(const std::string &what = "ALL") const override;
 	float XJ, AJ; 
 	//These are the interesting variables, definitions for them are 
 	//////////////////////////////////////////////////////////////
