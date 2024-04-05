@@ -1,4 +1,4 @@
-AC_INIT(JetVertexTagging,[1.00])
+AC_INIT(FullJetFinder,[1.00])
 AC_CONFIG_SRCDIR([configure.ac])
 
 AM_INIT_AUTOMAKE

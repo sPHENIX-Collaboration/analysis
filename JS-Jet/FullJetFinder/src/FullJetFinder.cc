@@ -139,6 +139,7 @@ int FullJetFinder::InitRun(PHCompositeNode *topNode)
 //____________________________________________________________________________..
 int FullJetFinder::process_event(PHCompositeNode *topNode)
 {  
+  //std::cout<<"NEW Fun4All EVENT"<<std::endl<<std::endl;
   m_stat->Fill(0);
   //centrality
   CentralityInfo* cent_node = findNode::getClass<CentralityInfo>(topNode, "CentralityInfo");
@@ -175,24 +176,6 @@ int FullJetFinder::process_event(PHCompositeNode *topNode)
   }
 
   m_stat->Fill(2);
-
-
-//std::cout<<"processing event "<<std::endl;
-/*
-new event
-A -0.000921115 0.00567926 2.26759 0 0
-source 400
-vtx -0.000921115 0.00567926 2.26759
-
-A 0 0 -11.2419 1 1
-source 300
-vtx 0 0 -11.2419
-
-A -0.000921115 0.00567926 2.26759 2 2
-source 400
-vtx -0.000921115 0.00567926 2.26759*/
-
-
 
   PHG4TruthInfoContainer *truthinfo = findNode::getClass<PHG4TruthInfoContainer>(topNode, "G4TruthInfo");
   if (!truthinfo)
@@ -264,8 +247,10 @@ vtx -0.000921115 0.00567926 2.26759*/
           << std::endl;
       return -1;
     }
+    std::cout<<"EVENT"<<std::endl;
 
     for(auto vertex : *vertexmap){
+    std::cout<<"map entry"<<std::endl;
     PrimaryVertex primary;
     std::vector<GlobalVertex::VTXTYPE> source;
     source.clear();
@@ -279,22 +264,26 @@ vtx -0.000921115 0.00567926 2.26759*/
     primary.chisq = vertex.second->get_chisq();
     primary.ndf = vertex.second->get_ndof();
     
-     //std::cout<<std::endl<<"A "<<vertex.second->get_x()<<" "<<vertex.second->get_y()<<" "<<vertex.second->get_z()<<" "<<vertex.second->get_id()<<" "<<vertex.first<<std::endl;
-    for (auto iter = vertex.second->begin_vertexes();   iter != vertex.second->end_vertexes();   ++iter){
+     std::cout<<std::endl<<"A "<<vertex.second->get_x()<<" "<<vertex.second->get_y()<<" "<<vertex.second->get_z()<<" "<<vertex.second->get_id()<<" "<<vertex.first<<std::endl;
+     for(auto vx :vertex.second->begin_vertexes()->second){
+        std::cout<<"vx "<<vx->get_x()<<" "<<vx->get_y()<<" "<<vx->get_z()<<" "<<vx->get_chisq()<<std::endl;
+     }
+
+    /*for (auto iter = vertex.second->begin_vertexes();   iter != vertex.second->end_vertexes();   ++iter){
       source.push_back(iter->first);
       GlobalVertex::VertexVector vtx = iter->second;
-      //std::cout<<"source "<<iter->first<<std::endl;
-     // for(auto vx :vtx){
-        //std::cout<<"vtx "<<vx->get_x()<<" "<<vx->get_y()<<" "<<vx->get_z()<<" "<<vx->get_chisq()<<std::endl;
-      //}
-    }
+      std::cout<<"vertex source "<<iter->first<<std::endl;
+      for(auto vx :vtx){
+        std::cout<<"vx "<<vx->get_x()<<" "<<vx->get_y()<<" "<<vx->get_z()<<" "<<vx->get_chisq()<<std::endl;
+      }
+    }*/
     if((std::find(source.begin(), source.end(), GlobalVertex::VTXTYPE::SVTX) != source.end()) && (std::find(source.begin(), source.end(), GlobalVertex::VTXTYPE::MBD) != source.end())) primary.vtxtype = GlobalVertex::VTXTYPE::SVTX_MBD;
     else if(std::find(source.begin(), source.end(), GlobalVertex::VTXTYPE::SVTX) != source.end()) primary.vtxtype = GlobalVertex::VTXTYPE::SVTX;
     else if(std::find(source.begin(), source.end(), GlobalVertex::VTXTYPE::MBD) != source.end()) primary.vtxtype = GlobalVertex::VTXTYPE::MBD;
     m_container[input]->primaryVertex.push_back(primary);
   }
 
-    int nrecojet = 0;
+    int nrecojet = -1;
 
     Jet::PROPERTY recojet_area_index = jets->property_index(Jet::PROPERTY::prop_area);
 
@@ -327,9 +316,13 @@ vtx -0.000921115 0.00567926 2.26759*/
           nChtracks++;
 
           float DCA_xy, DCA_xy_unc;
-          GetDistanceFromVertexXY(pflow->get_track(),vtx,DCA_xy,DCA_xy_unc); //rerutn DCA_XY vector, val ||DCA|| + unc DCA
+          float DCA_3d, chi2_3d;
+          GetDistanceFromVertex(pflow->get_track(),vtx,DCA_xy,DCA_xy_unc,DCA_3d,chi2_3d); //rerutn DCA_XY vector, val ||DCA|| + unc DCA
           double dot = (pflow->get_track()->get_x() - vtx->get_x()) * jet->get_px() + (pflow->get_track()->get_y() - vtx->get_y()) * jet->get_py();
           double sign = int(dot/std::abs(dot));
+
+          double dot_3d = (pflow->get_track()->get_x() - vtx->get_x()) * jet->get_px() + (pflow->get_track()->get_y() - vtx->get_y()) * jet->get_py() + (pflow->get_track()->get_z() - vtx->get_z()) * jet->get_pz();
+          double sign_3d = int(dot_3d/std::abs(dot_3d));
 
           //tarcking team way - no uncertainty of vertex in DCA calculation
           /*Acts::Vector3 vtxActs(vtx->get_x(), vtx->get_y(), vtx->get_z());
@@ -371,6 +364,8 @@ vtx -0.000921115 0.00567926 2.26759*/
           track_properties.DCA_xy = DCA_xy;
           track_properties.DCA_xy_unc = DCA_xy_unc;
           track_properties.sDCA_xy = sign*std::abs(DCA_xy/DCA_xy_unc);
+          track_properties.DCA3d = DCA_3d;
+          track_properties.sDCA3d = sign_3d*std::sqrt(chi2_3d);
           track_properties.n_mvtx = n_mvtx_hits;
           track_properties.n_intt = n_intt_hits;
           track_properties.n_tpc = n_tpc_hits;
@@ -389,7 +384,8 @@ vtx -0.000921115 0.00567926 2.26759*/
         }
       } // end for (const auto& comp : jet->get_comp_vec())
 
-      recojet.id = jet->get_id();
+      //recojet.id = jet->get_id();
+      recojet.id = nrecojet;
       recojet.area = jet->get_property(recojet_area_index);
       recojet.num_Constituents = static_cast<int>(jet->get_comp_vec().size());
       recojet.num_ChConstituents = nChtracks;
@@ -404,13 +400,13 @@ vtx -0.000921115 0.00567926 2.26759*/
 
       m_container[input]->recojets.push_back(recojet);
     } // end for (Jet* jet : *jets)
-    m_container[input]->reco_jet_n = static_cast<int>(nrecojet);
+    m_container[input]->reco_jet_n = static_cast<int>(nrecojet+1);
 
 
   
     //get truth jets
     if(m_doTruthJets){
-      int ntruthjet = 0;
+      int ntruthjet = -1;
       TruthJets mtruthjet;
       Jet::PROPERTY truthjet_area_index = jetsMC->property_index(Jet::PROPERTY::prop_area);
 
@@ -418,15 +414,19 @@ vtx -0.000921115 0.00567926 2.26759*/
       
       //truth jet loop
       //for (JetMap::Iter iter = jetsMC->begin(); iter != jetsMC->end(); ++iter){   
+      
       for (Jet* truthjet : *jetsMC){
+        
         //Jet* truthjet = iter->second;
         if(truthjet->get_pt() < m_ptRangeTruth.first || truthjet->get_pt() > m_ptRangeTruth.second) continue;
         if (not (std::abs(truthjet->get_eta()) <= 1.1 - (doFiducial?jetR.at(input):0))) continue;
         if(truthjet->get_pt() < 10.0) continue;
         ntruthjet++;
+        //std::cout<<"new Truth Jet "<<std::endl;
 
 
-        mtruthjet.id = truthjet->get_id();
+        //mtruthjet.id = truthjet->get_id();
+        mtruthjet.id = ntruthjet;
         mtruthjet.area = truthjet->get_property(truthjet_area_index);
         mtruthjet.num_Constituents = truthjet->size_comp();
         mtruthjet.px = truthjet->get_px();
@@ -446,7 +446,9 @@ vtx -0.000921115 0.00567926 2.26759*/
 
         //loop over jet constituents
         //for(auto citer = truthjet->begin_comp(); citer != truthjet->end_comp(); ++citer){
+          
         for (const auto& comp : truthjet->get_comp_vec()){
+          //std::cout<<"constituent: "<<std::endl;
           //PHG4Particle *g4part = truthinfo->GetPrimaryParticle(citer->second);
           PHG4Particle *g4part = truthinfo->GetPrimaryParticle(comp.second);       
 	        HepMC::GenParticle* constituent = hepMCGenEvent->barcode_to_particle(g4part->get_barcode());
@@ -454,36 +456,67 @@ vtx -0.000921115 0.00567926 2.26759*/
 
           //mother track tagged, stop search
           if (std::find(std::begin(taggedPDGIDs), std::end(taggedPDGIDs), TString((TDatabasePDG::Instance()->GetParticle((constituent)->pdg_id()))->ParticleClass())) != std::end(taggedPDGIDs)){
+            //std::cout<<"mother tagged, pushing pdg id: "<<(constituent)->pdg_id()<<std::endl;
               mtruthjet.constituents_PDG_ID.push_back((constituent)->pdg_id());
-              continue;
+              //continue; keep searching
           }
-
+          //std::cout<<"recursive search: "<<std::endl;
+          int i = -1;
           //not yet tagged, begin history search
     	    while (!constituent->is_beam()){
+            i++;
+            //std::cout<<"i: "<<i<<std::endl;
             bool breakOut = false;
             bool taggedHF = false;
             for (HepMC::GenVertex::particle_iterator mother = constituent->production_vertex()->particles_begin(HepMC::parents); mother != constituent->production_vertex()->particles_end(HepMC::parents); ++mother){
+              //std::cout<<"inside for"<<std::endl;
               //found HF in parent tree
               if (std::find(std::begin(taggedPDGIDs), std::end(taggedPDGIDs), TString((TDatabasePDG::Instance()->GetParticle((*mother)->pdg_id()))->ParticleClass())) != std::end(taggedPDGIDs)){
-                taggedHF = true;
+                //taggedHF = true;
+                //std::cout<<"taggedHF, pushing pdg id: "<<(*mother)->pdg_id()<<std::endl;
                 mtruthjet.constituents_PDG_ID.push_back((*mother)->pdg_id());
-                break;
+                //break;
               }
               //reached partonic level, break search
               if (std::find(std::begin(forbiddenPDGIDs), std::end(forbiddenPDGIDs), abs((*mother)->pdg_id())) != std::end(forbiddenPDGIDs)){
+                //std::cout<<"partonic reached, pdg id: "<<(*mother)->pdg_id()<<std::endl;
+                //(*mother)->production_vertex()->print();
+                /*for (HepMC::GenVertex::particle_iterator mother2 = (*mother)->production_vertex()->particles_begin(HepMC::parents); mother2 != constituent->production_vertex()->particles_end(HepMC::parents); ++mother2){
+                    (*mother2)->production_vertex()->print();
+                }*/
+                if(abs((*mother)->pdg_id()) == 4 || abs((*mother)->pdg_id()) == 5){
+                  quark HFquark;
+                  HFquark.vtx_barcode = (*mother)->production_vertex()->barcode();
+                  HFquark.pdgid = (*mother)->pdg_id();  
+                  HFquark.px = (*mother)->momentum().px(); 
+                  HFquark.py = (*mother)->momentum().py(); 
+                  HFquark.pz = (*mother)->momentum().pz(); 
+                  HFquark.e = (*mother)->momentum().e(); 
+                  mtruthjet.constituents_origin_quark.push_back(HFquark);
+                //(*mother)->production_vertex()->print();
+                //(*mother)->print();
+                //std::cout<<"v "<<(*mother)->production_vertex()->barcode()<<" "<<(*mother)->momentum().e()<<" "<<(*mother)->momentum().px()<<" "<<(*mother)->momentum().py()<<" "<<(*mother)->momentum().pz()<<std::endl;
+                }
                 breakOut = true;
                 break;
               }
+              //if(constituent->is_beam()) break;
+              //std::cout<<"no HF or partonic, pdgid: "<<(*mother)->pdg_id()<<" continue search in history"<<std::endl;
+              
               constituent = *mother;
             }
-            if (breakOut || taggedHF) break;
+            //if (taggedHF)std::cout<<"TAGGED HF"<<std::endl;
+            if (breakOut || taggedHF){
+              //std::cout<<"breaking breakOut: "<<(breakOut?"true":"false")<<" taggedHF "<<(taggedHF?"true":"false")<<std::endl;
+              break;
+            } 
           }
         }// end loop over constituents
 
         mtruthjet.num_ChConstituents = nChTrackstruth ;
         m_container[input]->truthjets.push_back(mtruthjet);
       }// end jet loop
-      m_container[input]->truth_jet_n = static_cast<int>(ntruthjet);
+      m_container[input]->truth_jet_n = static_cast<int>(ntruthjet+1);
     }//end if do truth
     //fill tree
     m_T[input]->Fill();
@@ -547,7 +580,7 @@ void FullJetFinder::Print(const std::string &what) const
   std::cout << "FullJetFinder::Print(const std::string &what) const Printing info for " << what << std::endl;
 }
 
-void FullJetFinder::GetDistanceFromVertexXY(SvtxTrack *m_dst_track, GlobalVertex *m_dst_vertex,float &val, float &err){
+void FullJetFinder::GetDistanceFromVertex(SvtxTrack *m_dst_track, GlobalVertex *m_dst_vertex,float &val_xy, float &err_xy, float &val_3d, float &chi2_3d){
  
   KFParticle::SetField(1.4e1);
 
@@ -591,6 +624,8 @@ void FullJetFinder::GetDistanceFromVertexXY(SvtxTrack *m_dst_track, GlobalVertex
   kfp_vertex.Create(f_vertexParameters, f_vertexCovariance, 0, -1);
   kfp_vertex.NDF() = m_dst_vertex->get_ndof();
   kfp_vertex.Chi2() = m_dst_vertex->get_chisq();
-  kfp_particle.GetDistanceFromVertexXY(kfp_vertex,val,err);
+  kfp_particle.GetDistanceFromVertexXY(kfp_vertex,val_xy,err_xy);
+  val_3d = kfp_particle.GetDistanceFromVertex(kfp_vertex);
+  chi2_3d = kfp_particle.GetDeviationFromVertex(kfp_vertex);
 }
 

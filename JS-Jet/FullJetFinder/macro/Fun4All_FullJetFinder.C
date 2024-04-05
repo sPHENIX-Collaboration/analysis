@@ -46,6 +46,7 @@ R__LOAD_LIBRARY(libg4dst.so)
 R__LOAD_LIBRARY(libcalo_reco.so)
 R__LOAD_LIBRARY(libparticleflow.so)
 R__LOAD_LIBRARY(libglobalvertex.so)
+R__LOAD_LIBRARY(libg4jets.so)
 
 
 //void Fun4All_JetVal(const char *filelisttruth = "dst_truth_jet.list",
@@ -57,7 +58,7 @@ void Fun4All_FullJetFinder(std::string outDir = "./", std::vector<std::string> m
   Fun4AllServer *se = Fun4AllServer::instance();
   int verbosity = 0;
 
-  bool whichR[7] = {true, false, true,false, true, false, false};
+  bool whichR[7] = {false, false, true,false, false, false, false};
 
   //std::string outDir = "./";
 
@@ -196,8 +197,8 @@ void Fun4All_FullJetFinder(std::string outDir = "./", std::vector<std::string> m
   if(whichR[5])myJetVal->add_input("AntiKt_reco_r07", "C_AntiKt_Truth_r07","AntiKt_r07");
   if(whichR[6])myJetVal->add_input("AntiKt_reco_r08", "C_AntiKt_Truth_r08","AntiKt_r08");
   myJetVal->doFiducialAcceptance(true);
-  myJetVal->setPtRangeReco(5, 100);
-  myJetVal->setPtRangeTruth(10, 100);
+  myJetVal->setPtRangeReco(10, 100);
+  myJetVal->setPtRangeTruth(30, 100);
   myJetVal->doTruth(true);
   se->registerSubsystem(myJetVal);
 

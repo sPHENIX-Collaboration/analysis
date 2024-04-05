@@ -4,89 +4,79 @@
 #define JETNCONSTITUENTS_H
 
 #include <fun4all/SubsysReco.h>
-#include <jetbase/Jetv1.h>
-#include <TH2D.h>
-#include <TH1D.h>
+#include <jetbase/Jet.h>
 
 #include <string>
+#include <utility>  // std::pair, std::make_pair
 #include <vector>
+
+class PHCompositeNode;
 
 class TH1;
 class TH2;
-class PHCompositeNode;
+class JetInput;
 
+
+/// \class JetNconstituents
+/// \brief SubsysReco module that plots the number of constituents in the reco jets per calorimeter layer and the energy fraction of the reco jets per calorimeter layer
+/// \author: Tanner Mengel
 
 class JetNconstituents : public SubsysReco
 {
- public:
 
-  JetNconstituents(const std::string &recojetname = "AntiKt_Tower_r04",
-   const std::string &outputfilename = "JetNconstituents.root");
+    public:
 
-  ~JetNconstituents() override;
+        JetNconstituents(const std::string &outputfilename = "JetNconstituents.root");
+        ~JetNconstituents() override {};
 
-    void setEtaRange(double low, double high)
-    {
-        m_etaRange.first = low;
-        m_etaRange.second = high;
-    }
-    void setPtRange(double low, double high)
-    {
-        m_ptRange.first = low;
-        m_ptRange.second = high;
-    }
-  /** Called during initialization.
-      Typically this is where you can book histograms, and e.g.
-      register them to Fun4AllServer (so they can be output to file
-      using Fun4AllServer::dumpHistos() method).
-   */
-  int Init(PHCompositeNode *topNode) override;
+        void setEtaRange(double low, double high)
+        { // set the eta range for the reco jets
+            m_etaRange.first = low;
+            m_etaRange.second = high;
+        }
 
-  /** Called for first event when run number is known.
-      Typically this is where you may want to fetch data from
-      database, because you know the run number. A place
-      to book histograms which have to know the run number.
-   */
-  int InitRun(PHCompositeNode *topNode) override;
+        void setPtRange(double low, double high)
+        { // set the pt range for the reco jets
+            m_ptRange.first = low;
+            m_ptRange.second = high;
+        }
 
-  /** Called for each event.
-      This is where you do the real work.
-   */
-  int process_event(PHCompositeNode *topNode) override;
+        void setRecoJetNodeName(const std::string &name)
+        { // set the name of the node containing the reco jets
+            m_recoJetName = name;
+        }
 
-  /// Clean up internals after each event.
-  int ResetEvent(PHCompositeNode *topNode) override;
+        // standard Fun4All functions
+        int Init(PHCompositeNode *topNode) override;
+        int process_event(PHCompositeNode *topNode) override;
+        int End(PHCompositeNode *topNode) override;
 
-  /// Called at the end of each run.
-  int EndRun(const int runnumber) override;
 
-  /// Called at the end of all processing.
-  int End(PHCompositeNode *topNode) override;
+    private:
 
-  /// Reset
-  int Reset(PHCompositeNode * /*topNode*/) override;
+        //! Input Node strings
+        std::string m_outputFileName{ "JetNconstituents.root"};
 
-  void Print(const std::string &what = "ALL") const override;
 
- private:
-    //! Input Node pointers
-    std::string m_recoJetName;
-    std::string m_outputFileName;
-    std::pair<double, double> m_etaRange;
-    std::pair<double, double> m_ptRange;
-    //! Output Histos variables
+        // ! Kinematic cuts and reco jet node name
+        std::pair<double, double> m_etaRange = std::make_pair(-1.1, 1.1);
+        std::pair<double, double> m_ptRange = std::make_pair(1.0, 1000.0);
+        std::string m_recoJetName { "AntiKt_Tower_r04"};
 
-    TH1 * h1d_nConsituents = nullptr;
-    TH1 * h1d_nConsituents_IHCal = nullptr;
-    TH1 * h1d_nConsituents_OHCal = nullptr;
-    TH1 * h1d_nConsituents_EMCal = nullptr;
-    TH1 * h1d_FracEnergy_EMCal = nullptr;
-    TH1 * h1d_FracEnergy_IHCal = nullptr;
-    TH1 * h1d_FracEnergy_OHCal = nullptr;
-    
+        // Jet N constituents
+        TH1 * h1_jetNconstituents_total{nullptr};
+        TH1 * h1_jetNconstituents_IHCAL{nullptr};
+        TH1 * h1_jetNconstituents_OHCAL{nullptr};
+        TH1 * h1_jetNconstituents_CEMC{nullptr};
+        TH2 * h2_jetNconstituents_vs_caloLayer{nullptr};
 
-    TH2 * h2d_FracEnergy_vs_CaloLayer = nullptr;
-    TH2 * h2d_nConstituent_vs_CaloLayer = nullptr;
+        // Jet E fraction
+        TH1 * h1_jetFracE_IHCAL{nullptr};
+        TH1 * h1_jetFracE_OHCAL{nullptr};
+        TH1 * h1_jetFracE_CEMC{nullptr};
+        TH2 * h2_jetFracE_vs_caloLayer{nullptr};
+
+
 
 };
 
