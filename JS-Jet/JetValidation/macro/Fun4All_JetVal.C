@@ -15,8 +15,8 @@
 #include <g4centrality/PHG4CentralityReco.h>
 
 #include <HIJetReco.C>
-#include </sphenix/user/jamesj3j3/analysis/JS-Jet/JetValidation/src/JetValidation.h>
-#include </sphenix/user/jamesj3j3/analysis/JS-Jet/JetValidation/src/EventSelection.h>
+#include <jetvalidation/JetValidation.h>
+//#include </sphenix/user/jamesj3j3/analysis/JS-Jet/JetValidation/src/EventSelection.h>
 
 R__LOAD_LIBRARY(libfun4all.so)
 R__LOAD_LIBRARY(libg4jets.so)
@@ -44,11 +44,11 @@ void Fun4All_JetVal(const char *filelisttruth = "dst_truth_jet.list",
   recoConsts *rc = recoConsts::instance();
 
   string outnameStr = outname;
-  string outnameEvent = outnameStr.substr(0,outnameStr.length()-5) + "_eventSelect.root";
 
-  EventSelection *myEventSelection = new EventSelection(outnameEvent); // Assuming you want to pass a double and an empty string                                                          
-  myEventSelection->setVzCut(10.0);
-  se->registerSubsystem(myEventSelection);
+  //  string outnameEvent = outnameStr.substr(0,outnameStr.length()-5) + "_eventSelect.root";
+  //  EventSelection *myEventSelection = new EventSelection(outnameEvent); // Assuming you want to pass a double and an empty string                                                         
+  //  myEventSelection->setVzCut(10.0);
+  //  se->registerSubsystem(myEventSelection);
 
 
   PHG4CentralityReco *cent = new PHG4CentralityReco();
@@ -69,18 +69,20 @@ void Fun4All_JetVal(const char *filelisttruth = "dst_truth_jet.list",
   se->registerSubsystem(myJetVal);
  
   Fun4AllInputManager *intrue = new Fun4AllDstInputManager("DSTtruth");
-  // intrue->AddListFile(filelisttruth,1);
-  //se->registerInputManager(intrue);
+  //turn off for running data
+  intrue->AddListFile(filelisttruth,1);
+  se->registerInputManager(intrue);
 
   Fun4AllInputManager *in2 = new Fun4AllDstInputManager("DSTcalo");
   in2->AddListFile(filelistcalo,1);
   se->registerInputManager(in2);
 
   Fun4AllInputManager *in3 = new Fun4AllDstInputManager("DSTglobal");
-  //in3->AddListFile(filelistglobal,1);
-  //se->registerInputManager(in3);
+  //turn off for running data
+  in3->AddListFile(filelistglobal,1);
+  se->registerInputManager(in3);
   
-  se->run(-1);
+  se->run(100);
   se->End();
 
   gSystem->Exit(0);
