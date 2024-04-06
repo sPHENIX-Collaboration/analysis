@@ -189,13 +189,13 @@ void myAnalysis::process_fits(const string &i_input,
     l1.SetTextSize(0.05);
 
     ofstream output((outputDir + "/" + outputCSV).c_str());
-    output << "Index,mean,sigma,S/B,chi2,EA,EB" << endl;
+    output << "Index,mean,sigma,S/B,chi2,EA,EB,asym" << endl;
 
     for(auto cut : cuts) {
         Int_t index = 0;
 
         t.str("");
-        t << outputDir << "/" << tag << "_" << cut.e1 << "_" << cut.e2;
+        t << outputDir << "/" << tag << "_" << cut.e1 << "_" << cut.e2 << "_" << cut.asym << "_" << cut.deltaR_min << "_" << cut.deltaR_max << "_" << cut.chi;
 
         if (std::filesystem::exists(t.str()))
         {
@@ -216,7 +216,7 @@ void myAnalysis::process_fits(const string &i_input,
         }
 
         u.str("");
-        u << t.str() << "/" << cut.e1 << "_" << cut.e2;
+        u << t.str() << "/" << cut.e1 << "_" << cut.e2 << "_" << cut.asym << "_" << cut.deltaR_min << "_" << cut.deltaR_max << "_" << cut.chi;
         c1->Print((u.str() + ".pdf[").c_str(), "pdf portrait");
 
         for(auto cent : centrality) {
@@ -268,7 +268,7 @@ void myAnalysis::process_fits(const string &i_input,
                 Double_t signalToBackgroundRatio = CalculateSignalToBackgroundRatio(h, polyFit, fitMean, fitSigma, signalToBackgroundError);
 
                 s.str("");
-                s << index << "," << fitMean << "," << fitSigma << "," << signalToBackgroundRatio << "," << chi2 << "," << cut.e1 << "," << cut.e2 << endl;
+                s << index << "," << fitMean << "," << fitSigma << "," << signalToBackgroundRatio << "," << chi2 << "," << cut.e1 << "," << cut.e2 << "," << cut.asym << endl;
 
                 output << s.str();
 
