@@ -20,6 +20,8 @@
 #include <jetbase/JetMap.h>
 #include <jetbase/Jetv1.h>
 #include <jetbase/JetMapv1.h>
+#include <jetbase/JetContainer.h>
+#include <jetbase/JetContainerv1.h>
 
 int PPG04EventSelector::process_event(PHCompositeNode *topNode)
 {
@@ -131,7 +133,7 @@ bool PPG04EventSelector::badChi2_cut(PHCompositeNode *topNode)
 bool PPG04EventSelector::MC_event_select(PHCompositeNode *topNode)
 {
   // get truth jet nodes
-  JetMap *truthjets = findNode::getClass<JetMap>(topNode, "AntiKt_Truth_r04");
+  JetContainer *truthjets = findNode::getClass<JetContainer>(topNode, "AntiKt_Truth_r04");
   if(!truthjets) 
   {
     std::cout << "EventSelector::MC_event_select(PHCompositeNode *topNode) Could not find truth jet nodes" << std::endl;
@@ -140,9 +142,11 @@ bool PPG04EventSelector::MC_event_select(PHCompositeNode *topNode)
 
   // get leading truth jet pT
   float leading_truth_pt = -1;
-  for(JetMap::Iter iter = truthjets->begin(); iter != truthjets->end(); ++iter)
+  // for(JetMap::Iter iter = truthjets->begin(); iter != truthjets->end(); ++iter)
+  // {
+    // Jet *jet = iter->second;
+  for(auto jet: *truthjets)
   {
-    Jet *jet = iter->second;
     if(jet->get_pt() > leading_truth_pt) leading_truth_pt = jet->get_pt();
   }
 
