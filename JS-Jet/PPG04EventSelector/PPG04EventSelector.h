@@ -36,7 +36,7 @@ class PPG04EventSelector : public SubsysReco
         // bad chi2
         void do_badChi2_cut(bool doCut) { m_do_badChi2_cut = doCut; }
 
-        / Do event selection on leading R=0.4 truth jet pT range
+        // Do event selection on leading R=0.4 truth jet pT range
         void do_MC_event_select_lead_truth_jet(float low, float high)
         {
             m_MC_do_event_select = true;

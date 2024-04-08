@@ -7,7 +7,7 @@
 #include <phool/getClass.h>
 
 // tower info
-#include <calobase/TowerInfo,h>
+#include <calobase/TowerInfo.h>
 #include <calobase/TowerInfoContainer.h>
 
 // standard includes
@@ -67,7 +67,7 @@ bool PPG04EventSelector::A_cut(PHCompositeNode *topNode)
   while(false)
   {
     // suppress unused variable warning since we aren't actually doing anything
-    std::cout << "TopNode: " << topNode->GetName() << std::endl;
+    std::cout << "TopNode: " << topNode->getName() << std::endl;
     double cut_value_from_the_node = 0; 
 
     if(cut_value_from_the_node < m_A_cut) return false;
@@ -147,7 +147,7 @@ bool PPG04EventSelector::MC_event_select(PHCompositeNode *topNode)
   }
 
   // check if event passes selection
-  if( (leading_truth_pt < m_MC_event_selection_jetpT_range.first) || (leading_truth_pt > m_MC_event_selection_jetpT_range.second))
+  if( (leading_truth_pt < m_MC_event_select_jetpT_range.first) || (leading_truth_pt > m_MC_event_select_jetpT_range.second))
   {
     if(Verbosity() > 0) std::cout << "EventSelector::MC_event_select(PHCompositeNode *topNode) Event failed MC event selection" << std::endl;
     return false; 
