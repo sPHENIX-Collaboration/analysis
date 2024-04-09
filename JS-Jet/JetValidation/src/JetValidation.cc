@@ -28,6 +28,14 @@
 #include <iomanip>
 #include <cmath>
 #include <vector>
+
+#include "fastjet/ClusterSequence.hh"
+#include "fastjet/contrib/SoftDrop.hh"                                                                                          
+
+using namespace fastjet;
+
+// ROOT, for histogramming.                                                                                                                                                                                 
+
 #include "TH1.h"
 #include "TH2.h"
 #include "TFile.h"
@@ -82,6 +90,7 @@ JetValidation::~JetValidation()
 }
 
 //____________________________________________________________________________..
+//____________________________________________________________________________..
 int JetValidation::Init(PHCompositeNode *topNode)
 {
   std::cout << "JetValidation::Init(PHCompositeNode *topNode) Initializing" << std::endl;
@@ -129,7 +138,7 @@ int JetValidation::Init(PHCompositeNode *topNode)
     m_T->Branch("subseedE", &m_e_subseed);
     m_T->Branch("subseedCut", &m_subseed_cut);
   }
-
+  
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
@@ -137,6 +146,7 @@ int JetValidation::Init(PHCompositeNode *topNode)
 int JetValidation::InitRun(PHCompositeNode *topNode)
 {
   std::cout << "JetValidation::InitRun(PHCompositeNode *topNode) Initializing for Run XXX" << std::endl;
+  
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
@@ -216,7 +226,7 @@ int JetValidation::process_event(PHCompositeNode *topNode)
     GlobalVertex *vtx = vertexmap->begin()->second;
   m_zvtx = vtx->get_z();
   
-
+ 
   //calorimeter towers
   TowerInfoContainer *towersEM3 = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_CEMC_RETOWER_SUB1");
   TowerInfoContainer *towersIH3 = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALIN_SUB1");
@@ -416,7 +426,7 @@ int JetValidation::process_event(PHCompositeNode *topNode)
   
   //fill the tree
   m_T->Fill();
-  
+
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
