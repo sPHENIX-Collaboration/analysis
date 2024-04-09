@@ -26,7 +26,7 @@
 //#include <jetbackground/SubtractTowers.h>
 //#include <jetbackground/SubtractTowersCS.h>
 
-#include <jetvalidation/JetValidation.h>
+//#include <jetvalidation/JetValidation.h>
 #include <jetseedcount/JetSeedCount.h>
 
 R__LOAD_LIBRARY(libfun4all.so)
@@ -52,10 +52,11 @@ namespace G4HIJETS
 #endif
 
 
-void Fun4All_JetSeedCount(const char *filelisthit = "g4hit_test.list",
-                     const char *filelistcalo = "dst_calo_test.list",  
+void Fun4All_JetSeedCount(const char *filelisttruth = "dst_truth_jet.list",
+                     const char *filelistcalo = "dst_calo_test.list",
+                     const char *filelistglobal = "dst_global.list",  
                      const char *outname = "SeedCountoutput.root",
-                     int n_skip = 100,
+                     int n_skip = 1,
                      int n_event = 1000)
 {
 
@@ -142,8 +143,8 @@ void Fun4All_JetSeedCount(const char *filelisthit = "g4hit_test.list",
   se->registerSubsystem(myJetVal);
   
   
-  Fun4AllInputManager *intrue = new Fun4AllDstInputManager("DSThits");
-  intrue->AddListFile(filelisthit,1);
+  Fun4AllInputManager *intrue = new Fun4AllDstInputManager("DSTtruth");
+  intrue->AddListFile(filelisttruth,1);
   se->registerInputManager(intrue);
  
 
@@ -151,6 +152,9 @@ void Fun4All_JetSeedCount(const char *filelisthit = "g4hit_test.list",
   in2->AddListFile(filelistcalo,1);
   se->registerInputManager(in2);
 
+  Fun4AllInputManager *in3 = new Fun4AllDstInputManager("DSTglobal");
+  in3->AddListFile(filelistglobal,1);
+  se->registerInputManager(in3);
   
   //se->run(-1);
   se->run(n_event);

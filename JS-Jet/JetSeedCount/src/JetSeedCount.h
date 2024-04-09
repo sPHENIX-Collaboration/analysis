@@ -4,10 +4,16 @@
 #define JETSEEDCOUNT_H
 
 #include <fun4all/SubsysReco.h>
-#include <g4jets/Jetv1.h>
+#include <jetbase/Jetv1.h>
+#include <jetbase/Jetv2.h>
+#include <fastjet/PseudoJet.hh>
 
 #include <string>
 #include <vector>
+
+#include <TFile.h>
+#include <TH1F.h>
+#include <TH2D.h>
 
 class PHCompositeNode;
 class TTree;
@@ -36,16 +42,8 @@ class JetSeedCount : public SubsysReco
 
   int Init(PHCompositeNode *topNode) override;
 
-  /** Called for first event when run number is known.
-      Typically this is where you may want to fetch data from
-      database, because you know the run number. A place
-      to book histograms which have to know the run number.
-   */
   int InitRun(PHCompositeNode *topNode) override;
 
-  /** Called for each event.
-      This is where you do the real work.
-   */
   int process_event(PHCompositeNode *topNode) override;
 
   /// Clean up internals after each event.
@@ -68,14 +66,23 @@ class JetSeedCount : public SubsysReco
    std::string m_outputFileName;
    std::pair<double, double> m_etaRange;
    std::pair<double, double> m_ptRange;
+   std::vector<double> m_RawEta;
+   std::vector<double> m_RawPhi;
+   std::vector<double> m_SubEta;
+   std::vector<double> m_SubPhi;
    std::vector<int> m_centrality;
    std::vector<int> m_centrality_diff;
 
    int m_event = 0;
    int m_seed_sub;
    int m_seed_raw;
+   double z_vtx;  
    std::vector<int> m_raw_counts;
    std::vector<int> m_sub_counts;
+   std::vector<double> m_rawpt;
+   std::vector<double> m_subpt;
+   std::vector<double> m_rawpt_all;
+   std::vector<double> m_subpt_all;
    std::vector<double> m_rawenergy;
    std::vector<double> m_subenergy;
    std::vector<double> m_rawcent;

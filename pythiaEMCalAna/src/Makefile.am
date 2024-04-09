@@ -26,7 +26,8 @@ libpythiaEMCalAna_la_LIBADD = \
   -lCLHEP \
   -lcalo_io \
   -lg4eval \
-  -lg4jets
+  -lg4jets \
+  -lcalotrigger_io
 
 BUILT_SOURCES = testexternals.cc
 
