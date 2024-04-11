@@ -351,7 +351,7 @@ int JetValidation::process_event(PHCompositeNode *topNode)
 		  
 	    }
 	}
-      /*      //get unsubtracted jet
+      /*        //get unsubtracted jet
       unsubjet->set_px(totalPx);
       unsubjet->set_py(totalPy);
       unsubjet->set_pz(totalPz);
@@ -359,7 +359,6 @@ int JetValidation::process_event(PHCompositeNode *topNode)
       m_unsub_pt.push_back(unsubjet->get_pt());
       m_sub_et.push_back(unsubjet->get_et() - jet->get_et());
       */
-   
   
       m_nJet++;
     }
