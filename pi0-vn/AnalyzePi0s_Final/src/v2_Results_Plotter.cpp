@@ -159,7 +159,7 @@ void Read_DataSet(const std::string& filePath, Data& data) {
 
 void DrawZeroLine(TCanvas* canvas) {
     if (!canvas) return;
-    canvas->Update(); // Make sure the canvas is up-to-date to get correct axis limits
+    canvas->Update();
     double x_min = canvas->GetUxmin(); // Get the minimum x-value from the canvas
     double x_max = canvas->GetUxmax(); // Get the maximum x-value from the canvas
     // Create and draw a dashed line at y = 0
@@ -173,14 +173,13 @@ void DrawZeroLine(TCanvas* canvas) {
 // Function to create and return a TGraphAsymmErrors pointer
 TGraphErrors* CreateSystematicGraph(const std::vector<double>& ptCenters,
                                     const std::vector<double>& values,
-                                    const std::vector<double>& statErrors, // Not used here
+                                    const std::vector<double>& statErrors,
                                     const std::vector<double>& sysErrors) {
-    // Create an array of zero values for the X error since we want vertical boxes only
-    std::vector<double> sysx(ptCenters.size(), 0.1); // Replace 0.1 with actual systematic error width if needed
+
+    std::vector<double> sysx(ptCenters.size(), 0.1);
     auto* graph = new TGraphErrors(ptCenters.size(), &ptCenters[0], &values[0], &sysx[0], &sysErrors[0]);
     
-    // Set the fill style and color for systematic errors (shaded area)
-    graph->SetFillColorAlpha(kRed, 0.35); // Adjust color and transparency as needed
+    graph->SetFillColorAlpha(kRed, 0.35);
     
     return graph;
 }
