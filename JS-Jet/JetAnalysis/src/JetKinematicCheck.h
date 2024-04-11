@@ -4,36 +4,39 @@
 #define JETKINEMATICCHECK_H
 
 #include <fun4all/SubsysReco.h>
-#include <g4jets/Jetv1.h>
-#include <g4eval/PHG4DstCompressReco.h>
 
 #include <string>
+
+// New headers
+
+
 #include <vector>
 
-class PHCompositeNode;
 class TH1;
 class TH2;
 class TH3;
 
+class PHCompositeNode;
+
 class JetKinematicCheck : public SubsysReco
 {
-
  public:
 
   JetKinematicCheck(const std::string &recojetnameR02 = "AntiKt_Tower_r02",
+		    const std::string &recojetnameR03 = "AntiKt_Tower_r03",
 		    const std::string &recojetnameR04 = "AntiKt_Tower_r04",
 		    const std::string &outputfilename = "JetKinematicCheck");
 
   ~JetKinematicCheck() override;
 
- // set eta range
+  // set eta range
   void setEtaRange(double low, double high)
   {
     m_etaRange.first = low;
     m_etaRange.second = high;
   }
 
- // set pt range
+  // set pt range
   void setPtRange(double low, double high)
   {
     m_ptRange.first = low;
@@ -41,8 +44,12 @@ class JetKinematicCheck : public SubsysReco
   }
 
 
-  std::vector<std::string>GetCentLabels();
-  std::vector<int>GetMarkerColors();
+
+  // std::vector<std::string>GetCentLabels();
+  //std::vector<int>GetMarkerColors();
+
+
+
 
   /** Called during initialization.
       Typically this is where you can book histograms, and e.g.
@@ -77,41 +84,41 @@ class JetKinematicCheck : public SubsysReco
 
   void Print(const std::string &what = "ALL") const override;
 
-
  private:
 
+
   std::string m_recoJetNameR02;
+  std::string m_recoJetNameR03;
   std::string m_recoJetNameR04;
   std::string m_outputFileName;
   std::pair<double, double> m_etaRange;
   std::pair<double, double> m_ptRange;
-  int cent_N;
-
-
-  // eventwise quantities
-  int m_nJet;
-  int m_centrality;
-  float m_impactparam;
-  int ncent;
 
   // reconstructed jets
-  std::vector<int> m_id;
-  std::vector<int> m_nComponent;
   std::vector<float> m_eta;
   std::vector<float> m_phi;
   std::vector<float> m_pt;
   std::vector<float> m_radii;
 
   // output histograms
-  TH2 *jet_spectra_r02 = nullptr;
-  TH1 *jet_spectra_r02_proj[11] = {nullptr};
-  TH2 *jet_spectra_r04 = nullptr;
-  TH1 *jet_spectra_r04_proj[11] = {nullptr};
-  TH3 *jet_eta_phi_r02 = nullptr;
-  TH2 *jet_eta_phi_r02_proj[11] = {nullptr};
-  TH3 *jet_eta_phi_r04 = nullptr;
-  TH2 *jet_eta_phi_r04_proj[11] = {nullptr};
-
+  TH1 *jet_spectra_r02 = nullptr;
+  TH1 *jet_spectra_r03 = nullptr;
+  TH1 *jet_spectra_r04 = nullptr;
+  TH2 *jet_eta_phi_r02 = nullptr;
+  TH2 *jet_eta_phi_r03 = nullptr;
+  TH2 *jet_eta_phi_r04 = nullptr;
+  TH2 *jet_mass_pt_r02 = nullptr;
+  TH1 *jet_mass_pt_1D_r02 = nullptr;
+  TH2 *jet_mass_pt_r03 = nullptr;
+  TH1 *jet_mass_pt_1D_r03 = nullptr;
+  TH2 *jet_mass_pt_r04 = nullptr;
+  TH1 *jet_mass_pt_1D_r04 = nullptr;
+  TH2 *jet_mass_eta_r02 = nullptr;
+  TH1 *jet_mass_eta_1D_r02 = nullptr;
+  TH2 *jet_mass_eta_r03 = nullptr;
+  TH1 *jet_mass_eta_1D_r03 = nullptr;
+  TH2 *jet_mass_eta_r04 = nullptr;
+  TH1 *jet_mass_eta_1D_r04 = nullptr;
 
 };
 

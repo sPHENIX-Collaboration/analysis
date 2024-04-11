@@ -74,7 +74,7 @@ class FullJetFinder : public SubsysReco {
 
   void Print(const std::string &what = "ALL") const override;
 
-  void GetDistanceFromVertexXY(SvtxTrack *m_dst_track, GlobalVertex *m_dst_vertex,float &val, float &err);
+  void GetDistanceFromVertex(SvtxTrack *m_dst_track, GlobalVertex *m_dst_vertex,float &val_xy, float &err_xy, float &val_3d, float &chi2_3d);
 
   void add_input(const std::string &recojetname = "AntiKt_Tower_r04", const std::string &truthjetname = "AntiKt_Truth_r04", const std::string &outputtreename = "AntiKt_r04"){
       m_recoJetName.push_back(recojetname);
@@ -114,6 +114,8 @@ class FullJetFinder : public SubsysReco {
     float DCA_xy;
     float DCA_xy_unc;
     float sDCA_xy;
+    float DCA3d;
+    float sDCA3d;
     int n_mvtx;
     int n_intt;
     int n_tpc;
@@ -142,6 +144,15 @@ class FullJetFinder : public SubsysReco {
     using List = std::vector<RecoJets>;
   };
 
+   struct quark{
+    int vtx_barcode;
+    int pdgid;
+    float px;
+    float py;
+    float pz;
+    float e;
+  } ;
+
   //! truth jets
   class TruthJets{
     public:
@@ -158,6 +169,7 @@ class FullJetFinder : public SubsysReco {
       float m;
       float e;
       std::vector<int> constituents_PDG_ID;
+      std::vector<quark> constituents_origin_quark;
 
     using List = std::vector<TruthJets>;
   };

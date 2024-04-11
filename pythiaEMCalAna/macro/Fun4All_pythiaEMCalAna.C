@@ -24,6 +24,7 @@ void Fun4All_pythiaEMCalAna(
   // this convenience library knows all our i/o objects so you don't
   // have to figure out what is in each dst type
   gSystem->Load("libg4dst.so");
+  /* gSystem->Load("libpythiaEMCalAna.so"); */
 
   Fun4AllServer *se = Fun4AllServer::instance();
   se->Verbosity(0);  // set it to 1 if you want event printouts

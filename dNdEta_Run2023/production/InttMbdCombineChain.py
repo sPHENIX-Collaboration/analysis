@@ -21,6 +21,7 @@ if __name__ == '__main__':
     parser.add_option("-n", "--inttntuple", action="store_true", default=False, help="Run INTT ntuple production") 
     parser.add_option("-m", "--centmbntuple", action="store_true", default=False, help="Run Centrality&MB ntuple production")
     parser.add_option("-c", "--runcombiner", action="store_true", default=False, help="Run INTT event combiner")
+    parser.add_option("-p", "--printparam", action="store_true", default=False, help="Print parameters in config_combinechain.py")
 
     (opt, args) = parser.parse_args()
     print('opt: {}'.format(opt))
@@ -30,21 +31,20 @@ if __name__ == '__main__':
         parser.error("More than 1 steps to be run. Please run one step at a time")
         sys.exit(1)
         
+        
     inttdst = opt.inttdst
     inttntuple = opt.inttntuple
     centmbntuple = opt.centmbntuple
     runcombiner = opt.runcombiner
+    printparam = opt.printparam
     
-    # To fix the production directory
-    productiondir = config._productiondir 
-    
-    print('username: {}'.format(config.username))
-    print('softwarebasedir: {}'.format(config.softwarebasedir))
-    print('productiondir: {}'.format(productiondir))
-    print('macrodir: {}'.format(config.macrodir))
-    print('macro repository: {}'.format(config.macrorepo))
-
     os.makedirs(config.softwarebasedir, exist_ok=True)
+    
+    if printparam:
+        for name, value in vars(config).items():
+            if not name.startswith('__') and not 'module' in str(getattr(config, name)):
+                print('{:50} : {}'.format(name, value))
+                
 
     if inttdst:
         print('Run INTT DST production')
@@ -72,20 +72,20 @@ if __name__ == '__main__':
         os.system(cmdstr)
         
         print ('Done INTT DST production, move the file to the production directory and clean up')
-        os.system('rm intt*.list && mv intt-{:08d}.root {}'.format(config.runnumber,productiondir))
+        os.system('rm intt*.list && mv intt-{:08d}.root {}'.format(config.runnumber,config.productiondir))
 
 
     if inttntuple:
         print('Run INTT ntuple production')
         # Check if the intt dst exists in the production directory
-        if not os.path.isfile('{}/intt-{:08d}.root'.format(productiondir,int(config.runnumber))):
+        if not os.path.isfile('{}/intt-{:08d}.root'.format(config.productiondir,int(config.runnumber))):
             # try to copy from /gpfs/mnt/gpfs02/sphenix/user/cdean/software/macros/InttProduction/intt-00020869.root , otherwise exit
             if not os.path.isfile('/gpfs/mnt/gpfs02/sphenix/user/cdean/software/macros/InttProduction/intt-{:08d}.root'.format(int(config.runnumber))):
                 print('Intt DST does not exist. Exit')
                 sys.exit(1)
             else:
                 print('Pre-generated Intt DST exists -> Copy it to the production directory')
-                os.system('cp /gpfs/mnt/gpfs02/sphenix/user/cdean/software/macros/InttProduction/intt-{:08d}.root {}'.format(int(config.runnumber),productiondir))
+                os.system('cp /gpfs/mnt/gpfs02/sphenix/user/cdean/software/macros/InttProduction/intt-{:08d}.root {}'.format(int(config.runnumber),config.productiondir))
         
         os.chdir('{}/condor/'.format(config.dndetamacrodir))
         cmdlist = ['chmod 755 runCondor.py',
@@ -93,7 +93,7 @@ if __name__ == '__main__':
                                                                                                                                                                                           config.inttntupleproduction_productionTag,
                                                                                                                                                                                           config.inttntupleproduction_eventPerJob, 
                                                                                                                                                                                           config.inttntupleproduction_nJob, 
-                                                                                                                                                                                          productiondir+'/'+config.inttntupleproduction_InttNtupleDir, 
+                                                                                                                                                                                          config.productiondir+'/'+config.inttntupleproduction_InttNtupleDir, 
                                                                                                                                                                                           config.inttntupleproduction_softwareversion, 
                                                                                                                                                                                           '--submitcondor' if config.inttntupleproduction_submitcondor else '')]
         cmdstr = ' && '.join(cmdlist)
@@ -110,7 +110,7 @@ if __name__ == '__main__':
                                                                                                                                                                             config.centntupleproduction_productionTag,
                                                                                                                                                                             config.centntupleproduction_eventPerJob,
                                                                                                                                                                             config.centntupleproduction_nJob,
-                                                                                                                                                                            productiondir+'/'+config.centntupleproduction_CentralityNtupleDir,
+                                                                                                                                                                            config.productiondir+'/'+config.centntupleproduction_CentralityNtupleDir,
                                                                                                                                                                             config.centntupleproduction_softwareversion, 
                                                                                                                                                                             '--submitcondor' if config.centntupleproduction_submitcondor else '')]
         cmdstr = ' && '.join(cmdlist)
@@ -119,17 +119,17 @@ if __name__ == '__main__':
 
     if runcombiner:
         print('Run INTT event combiner')
-        os.chdir('{}/{}'.format(productiondir,config.inttntupleproduction_InttNtupleDir))
+        os.chdir('{}/{}'.format(config.productiondir,config.inttntupleproduction_InttNtupleDir))
         if not os.path.isfile('ntuple_merged.root'):
             os.system('hadd -f ntuple_merged.root ntuple_*.root')
             
         # cd to two directories up
-        os.chdir('{}/INTT_MBD_evt_combiner'.format(os.path.abspath(os.path.join(productiondir, os.path.pardir, os.path.pardir))))
-        os.system('python intt_mbd_evt_combiner_v1.py {}/{} {}/{}/ntuple_merged.root EventTree {}/{}/ntuple_00000.root EventTree'.format(productiondir,
+        os.chdir('{}/INTT_MBD_evt_combiner'.format(os.path.abspath(os.path.join(config.productiondir, os.path.pardir, os.path.pardir))))
+        os.system('python intt_mbd_evt_combiner_v1.py {}/{} {}/{}/ntuple_merged.root EventTree {}/{}/ntuple_00000.root EventTree'.format(config.productiondir,
                                                                                                                                          config.inttmbdcombine_combinedNtupleName,
-                                                                                                                                         productiondir,
+                                                                                                                                         config.productiondir,
                                                                                                                                          config.inttntupleproduction_InttNtupleDir,
-                                                                                                                                         productiondir,
+                                                                                                                                         config.productiondir,
                                                                                                                                          config.centntupleproduction_CentralityNtupleDir)) 
         
             

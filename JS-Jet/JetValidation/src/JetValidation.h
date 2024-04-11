@@ -6,7 +6,6 @@
 #include <fun4all/SubsysReco.h>
 #include <jetbase/Jetv1.h>
 #include <jetbase/Jetv2.h>
-#include <fastjet/PseudoJet.hh>
 
 #include <string>
 #include <vector>
