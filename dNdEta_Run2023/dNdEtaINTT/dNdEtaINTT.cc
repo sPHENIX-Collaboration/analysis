@@ -90,7 +90,7 @@ namespace
 dNdEtaINTT::dNdEtaINTT(const std::string &name, const std::string &outputfile, const bool &isData)
   : SubsysReco(name)
   , _get_hepmc_info(true)
-  , _get_truth_cluster(true)
+  , _get_truth_cluster(false)
   , _get_reco_cluster(true)
   , _get_centrality(false)
   , _get_intt_data(true)
