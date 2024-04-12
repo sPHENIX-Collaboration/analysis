@@ -82,6 +82,10 @@ sigmaCheck.add_argument('-i', '--fit-stats', type=str, help='List of Fit Stats',
 vn = subparser.add_parser('vn', help='vn Combine')
 vn.add_argument('-i', '--vn-files', type=str, help='List of vn files', required=True)
 
+systematics = subparser.add_parser('systematics', help='Systematics Calculations')
+systematics.add_argument('-i', '--files', type=str, help='List of vn files', required=True)
+systematics.add_argument('-o', '--output', type=str, default='.', help='Output directory for the systematics csv. Default: .')
+
 args = parser.parse_args()
 
 def process_dummy2():
@@ -134,6 +138,66 @@ def process_sigmaCheck():
                 print(df[df.iloc[:,ctr] < df.iloc[:,ctr-1]].iloc[:,[ctr-1,ctr]])
 
             ctr += 1
+
+def process_systematics():
+    files  = os.path.realpath(args.files)
+    output = args.output
+
+    print(f'input: {files}')
+    print(f'outputDir: {output}')
+
+    df = pd.read_csv(files)
+
+    df_vn  = pd.DataFrame()
+    df_rel = pd.DataFrame()
+    df_abs = pd.DataFrame()
+
+    # load each vn into a df
+    for index, row in df.iterrows():
+        # add v2 column to the df
+        df_vn[row['tag']] = pd.read_csv(row['file'], usecols=['v2'])
+
+        # add reference values
+        # add v2 bg column
+        if(row['tag'] == 'reference'):
+            df_rel['v2']    = df_vn['reference']
+            df_abs['v2']    = df_vn['reference']
+            df_vn['bg-0.4'] = pd.read_csv(row['file'], usecols=['v2_type_4'])
+            continue
+
+        # relative uncertainty
+        df_rel[row['tag']] = ((df_vn['reference']-df_vn[row['tag']])/df_vn['reference']).abs()
+
+        # absolute uncertainty
+        df_abs[row['tag']] = df_rel[row['tag']]*df_vn['reference'].abs()
+
+    df_vn = df_vn[['reference','SYST1CEMC','SYST2CEMC','SYST3DCEMC','SYST3UCEMC','SYST4CEMC','sigma-1.5','bg-0.4']]
+
+    # background systematic
+    df_rel['bg-0.4'] = ((df_vn['reference']-df_vn['bg-0.4'])/df_vn['reference']).abs()
+    df_abs['bg-0.4'] = df_rel['bg-0.4']*df_vn['reference'].abs()
+
+    # compute total EMCal systematic by adding each column in quadrature
+    df_rel['EMCal'] = df_rel.pow(2).iloc[:,1:6].sum(1).pow(0.5)
+    df_abs['EMCal'] = df_abs.pow(2).iloc[:,1:6].sum(1).pow(0.5)
+
+    # compute total systematic by adding each column in quadrature
+    df_rel['total'] = df_rel.pow(2).iloc[:,1:8].sum(1).pow(0.5)
+    df_abs['total'] = df_abs.pow(2).iloc[:,1:8].sum(1).pow(0.5)
+
+    print('v2')
+    print(df_vn)
+
+    print('Relative')
+    print(df_rel)
+
+    print('Absolute')
+    print(df_abs)
+
+    # write dataframes to csv
+    df_vn.to_csv(f'{output}/vn.csv', index=False)
+    df_rel.round(5).to_csv(f'{output}/vn-relative.csv', index=False)
+    df_abs.round(5).to_csv(f'{output}/vn-absolute.csv', index=False)
 
 def process_vn():
     vn_files = os.path.realpath(args.vn_files)
@@ -461,3 +525,5 @@ if __name__ == '__main__':
         process_sigmaCheck()
     if(args.command == 'vn'):
         process_vn()
+    if(args.command == 'systematics'):
+        process_systematics()
