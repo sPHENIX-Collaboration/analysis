@@ -1,3 +1,7 @@
+#include "sPhenixStyle.h"
+#include "sPhenixStyle.C"
+#include <TROOT.h>
+#include <TColor.h>
 #include <TCanvas.h>
 #include <TFile.h>
 #include <TH1F.h>
@@ -13,10 +17,6 @@
 #include "TList.h"
 #include "TSystemFile.h"
 #include <sys/stat.h>
-/*
- when compiling this code, SCROLL TO BOTTOM, see you can either select 'Y' for run code over all hPi0Mass root files in your path, where folders auto generate with the cut value combiantion for each index
---can also select no and use hard coded file path
- */
 
 struct CutValues {
     float clusEA, clusEB, asymmetry, deltaRMin, deltaRMax, chi;
@@ -25,9 +25,9 @@ struct CutValues {
 CutValues globalCutValues;
 
 // Global variable
-std::string globalDataPath = "/Users/patsfan753/Desktop/Analysis_3_29/CSVoutput/";
-std::string globalPlotOutput = "/Users/patsfan753/Desktop/Analysis_3_29/Plots/"; //Note: Folder auto created with name of cut variation to this
-std::string globalFilename = "/Users/patsfan753/Desktop/Analysis_3_29/RootFiles/hPi0Mass_EA1_EB1_Asym0point5_DelrMin0_DelrMax1_Chi4.root";
+std::string globalDataPath = "/Users/patsfan753/Desktop/p014_Analysis4_15/CSV/";
+std::string globalPlotOutput = "/Users/patsfan753/Desktop/p014_Analysis4_15/Plots/"; //Note: Folder auto created with name of cut variation to this
+std::string globalFilename = "/Users/patsfan753/Desktop/p014_Analysis4_15/hPi0Mass_EA1_EB1_Asym0point5_DelrMin0_DelrMax1_Chi4.root";
 
 int histIndex = 0;
 double globalFitStart;
@@ -43,12 +43,12 @@ TFitResultPtr PerformFitting(TH1F* hPi0Mass, TF1*& totalFit, double& fitStart, d
     double lowerSignalBoundEstimate = 0.1;
     double upperSignalBoundEstimate = 0.2;
 
-    double sigmaEstimate = 0.024; // sigmaEstimate value
+    double sigmaEstimate = 0.025; // sigmaEstimate value
 
     
     // Define totalFit
     totalFit = new TF1("totalFit", "gaus(0) + pol2(3)", fitStart, fitEnd);
-
+    totalFit->SetLineColor(kRed);
     /*
      Give overestimation for amplitude to help fit converge on correct value in correct region
      
@@ -64,11 +64,13 @@ TFitResultPtr PerformFitting(TH1F* hPi0Mass, TF1*& totalFit, double& fitStart, d
             maxBin = i;
         }
     }
+    
     double maxBinCenter = hPi0Mass->GetXaxis()->GetBinCenter(maxBin);
     
-    totalFit->SetParameter(0, maxBinContent);
+    double amplitudeEstimate = hPi0Mass->GetBinContent(hPi0Mass->GetXaxis()->FindBin(.2));
+    totalFit->SetParameter(0, amplitudeEstimate);
     
-    totalFit->SetParameter(1, maxBinCenter);
+    totalFit->SetParameter(1, .2);
     
     totalFit->SetParameter(2, sigmaEstimate);
 
@@ -223,11 +225,11 @@ SignalBackgroundRatio CalculateSignalToBackgroundRatio(TH1F* hPi0Mass, TF1* poly
 /*
  Calculation for signal yield and error, simiarly to above method outputs to text file upon user input in terminal when happy with fit
  */
-double CalculateSignalYieldAndError(TH1F* hPi0Mass, TF1* polyFit, double fitMean, double fitSigma, double& signalError) {
+double CalculateSignalYieldAndError(TH1F* hPi0Mass, TF1* polyFit, double fitMean, double fitSigma, double& signalError, double fitStart, double fitEnd) {
     TH1F *hSignal = (TH1F*)hPi0Mass->Clone("hSignal");
     double binCenter, binContent, bgContent, binError;
-    int firstBinSignal = hPi0Mass->FindBin(fitMean - 2*fitSigma);
-    int lastBinSignal = hPi0Mass->FindBin(fitMean + 2*fitSigma);
+    int firstBinSignal = hPi0Mass->FindBin(std::max(fitMean - 2 * fitSigma, fitStart));
+    int lastBinSignal = hPi0Mass->FindBin(std::min(fitMean + 2 * fitSigma, fitEnd));
     for (int i = firstBinSignal; i <= lastBinSignal; ++i) {
         binCenter = hPi0Mass->GetBinCenter(i);
         binContent = hPi0Mass->GetBinContent(i);
@@ -245,34 +247,33 @@ double CalculateSignalYieldAndError(TH1F* hPi0Mass, TF1* polyFit, double fitMean
 /*
  Automatic update of canvas cut values, fit information, and analysis bin
  */
-void DrawCanvasText(TLatex& latex, const Range& selectedRange, double fitMean, double fitSigma, const SignalBackgroundRatio& sbRatios) {
+void DrawCanvasText(TLatex& latex, const Range& selectedRange, double fitMean, double fitSigma, const SignalBackgroundRatio& sbRatios, double signalYield, double signalYieldError, double numEntries) {
     // Drawing text related to the range and cuts
     std::ostringstream mbdStream, ptStream;
     mbdStream << std::fixed << std::setprecision(0) << "Centrality: " << selectedRange.mbdLow << " - " << selectedRange.mbdHigh << "%";
     ptStream << std::fixed << std::setprecision(2) << selectedRange.ptLow << " #leq Diphoton p_{T} < " << selectedRange.ptHigh << " GeV";
 
-    latex.SetTextSize(0.03);
-    latex.DrawLatex(0.13, 0.86, "Cuts (Inclusive):");
-    latex.DrawLatex(0.13, 0.82, Form("Asymmetry < %.3f", globalCutValues.asymmetry));
-    latex.DrawLatex(0.13, 0.78, Form("#chi^{2} < %.3f", globalCutValues.chi));
-//    latex.DrawLatex(0.13, 0.74, Form("Cluster E #geq %.3f GeV", globalCutValues.clusE));
+    latex.SetTextSize(0.038);
+    latex.DrawLatex(0.55, 0.76, mbdStream.str().c_str());
+    latex.DrawLatex(0.55, 0.71, ptStream.str().c_str());
+    latex.DrawLatex(0.55, 0.66, Form("Entries = %.0f", numEntries));
     
-    // Updating to display both Cluster EA and EB cuts
-    latex.DrawLatex(0.13, 0.74, Form("Cluster E_{A} #geq %.3f GeV", globalCutValues.clusEA));
-    latex.DrawLatex(0.13, 0.70, Form("Cluster E_{B} #geq %.3f GeV", globalCutValues.clusEB));
-//    latex.DrawLatex(0.13, 0.7, Form("#Delta R #geq %.3f", globalCutValues.deltaR));
-    
-    // Displaying minimum and maximum Delta R cuts in a single line
-    latex.DrawLatex(0.13, 0.66, Form("%.3f < #Delta R #leq %.3f", globalCutValues.deltaRMin, globalCutValues.deltaRMax));
-    latex.DrawLatex(0.64, 0.22, mbdStream.str().c_str());
-    latex.DrawLatex(0.64, 0.18, ptStream.str().c_str());
+    latex.DrawLatex(0.2, 0.9, Form("Asymmetry < %.2f", globalCutValues.asymmetry));
+    latex.DrawLatex(0.2, 0.85, Form("Cluster #chi^{2} < %.2f", globalCutValues.chi));
+    latex.DrawLatex(0.2, 0.8, Form("Cluster E_{A} #geq %.2f GeV", globalCutValues.clusEA));
+    latex.DrawLatex(0.2, 0.75, Form("Cluster E_{B} #geq %.2f GeV", globalCutValues.clusEB));
+    latex.DrawLatex(0.2, 0.7, Form("%.2f #leq #Delta R < %.2f", globalCutValues.deltaRMin, globalCutValues.deltaRMax));
 
     double ratioFor2Sigma = sbRatios.ratios.at(2.0);
     double errorFor2Sigma = sbRatios.errors.at(2.0);
-    latex.SetTextSize(0.036);
-    latex.DrawLatex(0.43, 0.86, Form("Mean of Gaussian: %.4f GeV", fitMean));
-    latex.DrawLatex(0.43, 0.81, Form("Std. Dev. of Gaussian: %.4f GeV", fitSigma));
-    latex.DrawLatex(0.43, 0.76, Form("S/B Ratio: %.4f #pm %.4f", ratioFor2Sigma, errorFor2Sigma));
+//    latex.DrawLatex(0.67, 0.45, Form("#mu_{Gaussian} = %.2f GeV", fitMean));
+//    latex.DrawLatex(0.67, 0.4, Form("#sigma_{Gaussian} = %.2f GeV", fitSigma));
+//    latex.DrawLatex(0.67, 0.35, Form("S/B = %.2f", ratioFor2Sigma));
+//    latex.DrawLatex(0.67, 0.3, Form("Signal Yield = %.2f", signalYield));
+    latex.DrawLatex(0.45, 0.54, Form("#mu_{Gaussian} = %.2f GeV", fitMean));
+    latex.DrawLatex(0.45, 0.49, Form("#sigma_{Gaussian} = %.2f GeV", fitSigma));
+    latex.DrawLatex(0.67, 0.57, Form("S/B = %.2f", ratioFor2Sigma));
+    latex.DrawLatex(0.67, 0.52, Form("Signal Yield = %.2f", signalYield));
 }
 /*
 Track Relevant Output in CSV tracking via indices and unique cut combinations
@@ -377,6 +378,8 @@ double CalculateDynamicYAxisMax(TH1F* h, double& lineHeight, bool& isBackgroundH
 }
 
 void AnalyzePi0() {
+    gROOT->LoadMacro("sPhenixStyle.C");
+    SetsPhenixStyle();
     // Open the ROOT file once
     TFile *file = new TFile(globalFilename.c_str(), "READ");
     // Initialize global cut values from the file name
@@ -400,7 +403,7 @@ void AnalyzePi0() {
 
         hPi0Mass->GetYaxis()->SetRangeUser(0, dynamicYAxisMax);
         
-        hPi0Mass->SetTitle("Reconstructed Diphoton, MB + Central Events");
+        hPi0Mass->SetTitle("Reconstructed Diphotons");
         
         // Declare variables for fit parameters
         TF1 *totalFit;
@@ -416,6 +419,7 @@ void AnalyzePi0() {
         hPi0Mass->SetMarkerStyle(20);
         hPi0Mass->SetMarkerSize(1.0);
         hPi0Mass->SetMarkerColor(kBlack);
+        hPi0Mass->SetStats(0);
         hPi0Mass->Draw("PE");
         
         double fitMean = totalFit->GetParameter(1);
@@ -425,7 +429,7 @@ void AnalyzePi0() {
         double numEntries = hPi0Mass->GetEntries();
         
         
-        TF1 *gaussFit = new TF1("gaussFit", "gaus", fitStart, .3);
+        TF1 *gaussFit = new TF1("gaussFit", "gaus", fitStart, .25);
         TF1 *polyFit = new TF1("polyFit", "pol2", 0, .3);
         gaussFit->SetParameter(0, totalFit->GetParameter(0));
         gaussFit->SetParameter(1, totalFit->GetParameter(1));
@@ -452,25 +456,37 @@ void AnalyzePi0() {
         double amplitude = totalFit->GetParameter(0);
         
         // Calculate lowerSignalBound and upperSignalBound
-        double lowerSignalBound = fitMean - 2 * fitSigma;
-        double upperSignalBound = fitMean + 2 * fitSigma;
-        
+        double lowerSignalBound = std::max(fitMean - 2 * fitSigma, fitStart);
+        double upperSignalBound = std::min(fitMean + 2 * fitSigma, fitEnd);
+   
         double chi2 = fitResult->Chi2(); // to retrieve the fit chi2
-        double signalError_; // Declare once outside the function call, ensuring it's not redeclared in the local scope where it's used
-        double signalYield_ = CalculateSignalYieldAndError(hPi0Mass, polyFit, fitMean, fitSigma, signalError_);
         
-        DrawCanvasText(latex, ranges[currentIndex], fitMean, fitSigma, sbRatios);
+        double NDF = fitResult->Ndf(); // to retrieve the fit chi2
         
-        // Call the new method to write to CSV if the fit is good
-        WriteDataToCSV(currentIndex, globalCutValues, fitMean, fitMeanError, fitSigma, fitSigmaError, sbRatios, signalYield_, signalError_, numEntries, chi2);
         // Draw chi2 value on the canvas
         TLatex chi2Text;
         chi2Text.SetNDC(); // Set coordinates to normalized
-        chi2Text.SetTextSize(0.03); // Set text size (you can adjust as necessary)
-        chi2Text.DrawLatex(0.64, 0.14, Form("Chi2: %.2f", chi2)); // Adjust the position and text as needed
+        chi2Text.SetTextSize(0.035); // Set text size (you can adjust as necessary)
+        chi2Text.DrawLatex(0.67, 0.47, Form("Fit #chi^{2}/NDF: %.2f/%.0f", chi2, NDF));
         
-        TLine *line1 = new TLine(fitMean + 2*fitSigma, 0, fitMean + 2*fitSigma, lineHeight);
-        TLine *line2 = new TLine(fitMean - 2*fitSigma, 0, fitMean - 2*fitSigma, lineHeight);
+        
+        TLegend *leg = new TLegend(0.55,.82,0.75,.92);
+        leg->SetFillStyle(0);
+        leg->AddEntry("","#it{#bf{sPHENIX}} Internal","");
+        leg->AddEntry("","Au+Au #sqrt{s_{NN}} = 200 GeV","");
+        leg->Draw("same");
+        
+        double signalError_; // Declare once outside the function call, ensuring it's not redeclared in the local scope where it's used
+        double signalYield_ = CalculateSignalYieldAndError(hPi0Mass, polyFit, fitMean, fitSigma, signalError_, fitStart, fitEnd);
+        
+        
+        DrawCanvasText(latex, ranges[currentIndex], fitMean, fitSigma, sbRatios, signalYield_, signalError_, numEntries);
+        
+        // Call the new method to write to CSV if the fit is good
+        WriteDataToCSV(currentIndex, globalCutValues, fitMean, fitMeanError, fitSigma, fitSigmaError, sbRatios, signalYield_, signalError_, numEntries, chi2);
+        
+        TLine *line1 = new TLine(upperSignalBound, 0, upperSignalBound, lineHeight);
+        TLine *line2 = new TLine(lowerSignalBound, 0, lowerSignalBound, lineHeight);
         line1->SetLineColor(kBlack);
         line1->SetLineStyle(1);
         line2->SetLineColor(kBlack);
