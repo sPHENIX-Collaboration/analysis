@@ -74,9 +74,9 @@ Int_t myAnalysis::readFiles(const string &i_input) {
 
 void myAnalysis::process_event() {
 
-    UInt_t ctr[2] = {0};
+    UInt_t ctr[3] = {0};
 
-    cout << "Run,Events |z| < 10,Events: |z| < 10 and MB" << endl;
+    cout << "Run,Events |z| < 10,Events: |z| < 10 and MB, Events: |z| < 10 and MB and totalCaloE > 0" << endl;
     for(auto input : inputs) {
         auto h = (TH1F*)(input.second->Get("hVtxZ"));
         Int_t low = h->FindBin(-10);
@@ -87,14 +87,21 @@ void myAnalysis::process_event() {
         h = (TH1F*)(input.second->Get("hVtxZv2"));
         Int_t events_mb = h->Integral(low, high);
 
-        cout << input.first << "," << events << "," << events_mb << endl;
+        auto h2 = (TH2F*)(input.second->Get("h2TotalMBDCaloE"));
+        Int_t events_mb_caloE = h2->GetEntries();
+
+        cout << input.first << "," << events << "," << events_mb << "," << events_mb_caloE << endl;
 
         ctr[0] += events;
         ctr[1] += events_mb;
+        ctr[2] += events_mb_caloE;
     }
 
     cout << "Total" << endl;
-    cout << "Events |z| < 10: " << ctr[0] << ", Events: |z| < 10 and MB: " << ctr[1] << endl;
+    cout << "Events |z| < 10: " << ctr[0]
+         << ", Events: |z| < 10 and MB: " << ctr[1]
+         << ", Events: |z| < 10 and MB and totalCaloE > 0: " << ctr[2]
+         << endl;
 }
 
 void myAnalysis::finalize() {}
