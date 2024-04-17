@@ -244,7 +244,7 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
     Float_t charge    = mbdpmt->get_q();     //pmt charge
 
     // skip PMT if the charge is nan
-    if(charge != charge) {
+    if(std::isnan(charge)) {
       ++badPMTs;
       badPMTEvent = true;
       continue;
