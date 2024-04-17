@@ -161,6 +161,8 @@ class caloTreeGen : public SubsysReco
     Float_t  max_vtx_z        = 0;
     Float_t  max_cent         = 0;
 
+    Int_t    badPMTs = 0;
+
     TH1F* hTowE;
     TH1F* hClusterECore;
     TH1F* hClusterPt;

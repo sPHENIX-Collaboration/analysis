@@ -237,9 +237,19 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
 
   Int_t nPMTs = (!isSim) ? mbdpmts -> get_npmt() : 128; //size (should always be 128)
 
+  Bool_t badPMTEvent = false;
+
   for(Int_t i = 0; i < nPMTs; ++i) {
     MbdPmtHit* mbdpmt = mbdpmts->get_pmt(i);
     Float_t charge    = mbdpmt->get_q();     //pmt charge
+
+    // skip PMT if the charge is nan
+    if(charge != charge) {
+      ++badPMTs;
+      badPMTEvent = true;
+      continue;
+    }
+
     Float_t phi       = mbdgeom->get_phi(i); //pmt phi
     Float_t z         = mbdgeom->get_z(i);   //pmt z ~ eta
 
@@ -266,14 +276,18 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
     totalMBD += charge;
   }
 
-  Q2_S_x = (Q2_S_x) ? Q2_S_x/charge_S : 0;
-  Q2_S_y = (Q2_S_y) ? Q2_S_y/charge_S : 0;
-  Q2_N_x = (Q2_N_x) ? Q2_N_x/charge_N : 0;
-  Q2_N_y = (Q2_N_y) ? Q2_N_y/charge_N : 0;
-  Q3_S_x = (Q3_S_x) ? Q3_S_x/charge_S : 0;
-  Q3_S_y = (Q3_S_y) ? Q3_S_y/charge_S : 0;
-  Q3_N_x = (Q3_N_x) ? Q3_N_x/charge_N : 0;
-  Q3_N_y = (Q3_N_y) ? Q3_N_y/charge_N : 0;
+  if(badPMTEvent) {
+    std::cout << "Bad PMT in Event: " << iEvent << std::endl;
+  }
+
+  Q2_S_x = (charge_S) ? Q2_S_x/charge_S : 0;
+  Q2_S_y = (charge_S) ? Q2_S_y/charge_S : 0;
+  Q2_N_x = (charge_N) ? Q2_N_x/charge_N : 0;
+  Q2_N_y = (charge_N) ? Q2_N_y/charge_N : 0;
+  Q3_S_x = (charge_S) ? Q3_S_x/charge_S : 0;
+  Q3_S_y = (charge_S) ? Q3_S_y/charge_S : 0;
+  Q3_N_x = (charge_N) ? Q3_N_x/charge_N : 0;
+  Q3_N_y = (charge_N) ? Q3_N_y/charge_N : 0;
 
   max_totalmbd = std::max(max_totalmbd, totalMBD);
   hTotalMBD->Fill(totalMBD);
@@ -496,6 +510,7 @@ Int_t caloTreeGen::End(PHCompositeNode *topNode)
 {
 
   std::cout << "Total Events: " << iEvent << ", Accepted Events: " << iEventGood << ", " << iEventGood*100./iEvent << " %" << std::endl;
+  std::cout << "Bad PMTs: " << badPMTs << std::endl;
   std::cout << "min z-vertex: " << min_vtx_z << ", max z-vertex: " << max_vtx_z << std::endl;
   std::cout << "min centrality: " << min_cent << ", max centrality: " << max_cent << std::endl;
   std::cout << "min totalCaloE: " << min_totalCaloE << ", max totalCaloE: " << max_totalCaloE << std::endl;
