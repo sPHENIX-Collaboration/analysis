@@ -709,6 +709,127 @@ void plotting(const Data& data1) {
     
     
     
+    std::vector<TH1F*> histograms_20_40_RelativeUncertainty; // Vector to hold histogram pointers for legend
+    
+    TCanvas *c_Overlay_20_40_Systematics_RelativeUncertainty = new TCanvas("c_Overlay_20_40_Systematics_RelativeUncertainty", "#pi^{0} #it{v}_{2} vs #it{p}_{T} 0-20% Centrality", 800, 600);
+    TH1F *frame_20_40_RelativeUncertainty = c_Overlay_20_40_Systematics_RelativeUncertainty->DrawFrame(2.0, 0, 5.0, 1.1);
+    
+    frame_20_40_RelativeUncertainty->GetYaxis()->SetTitle("Systematic Uncertainty");
+    frame_20_40_RelativeUncertainty->GetXaxis()->SetTitle("p_{T} [GeV]");
+    
+    for (size_t i = 0; i < ptCenters.size(); ++i) {
+        /*
+         UNCOMMENT LINE BELOW TO HIDE LARGE UNCERTAINTY IF WANT TO ZOOM IN
+         */
+//        if (std::abs(ptCenters[i] - 3.75) < EPSILON) {
+//            continue;  // Skip the rest of the loop for this pT center
+//        }
+        double x = ptCenters[i] - (2.5 * barWidth); // Starting x position for the bars
+        
+        std::vector<double> values_RelativeUncertainty_20_40 = {
+            data1.quad_sum_EMCal_syst_20_40[i],
+            data1.signal_window_syst_20_40[i],
+            data1.background_window_syst_20_40[i],
+            data1.unWeighted_stat_uncertainties_20_40[i]
+        };
+        
+        
+        for (size_t j = 0; j < values_RelativeUncertainty_20_40.size(); ++j) {
+            double xj = x + j * barWidth; // Adjust x position for each bar
+            TH1F *h_20_40_RelativeUncertainty = new TH1F(Form("h_20_40_RelativeUncertainty_%zu_%zu", i, j), "", 1, xj, xj + barWidth);
+            h_20_40_RelativeUncertainty->SetBinContent(1, values_RelativeUncertainty_20_40[j]);
+            h_20_40_RelativeUncertainty->SetFillColor(colors[j]);
+            h_20_40_RelativeUncertainty->Draw("SAME");
+            histograms_20_40_RelativeUncertainty.push_back(h_20_40_RelativeUncertainty); // Save the histogram pointer for the legend
+        }
+        
+    }
+
+    TLegend *legend_20_40_bars_RelativeUncertainty = new TLegend(0.58, 0.54, 0.78, 0.74);
+    legend_20_40_bars_RelativeUncertainty->SetTextSize(0.027);
+    legend_20_40_bars_RelativeUncertainty->SetHeader("Relative Systematic Uncertainties", "L");
+    // Add histograms to legend using the pointers stored in the vector
+    legend_20_40_bars_RelativeUncertainty->AddEntry(histograms_20_40_RelativeUncertainty[0], "EMCal Variations", "f");
+    legend_20_40_bars_RelativeUncertainty->AddEntry(histograms_20_40_RelativeUncertainty[1], "Signal Window Variation", "f");
+    legend_20_40_bars_RelativeUncertainty->AddEntry(histograms_20_40_RelativeUncertainty[2], "Background Window Variation", "f");
+    legend_20_40_bars_RelativeUncertainty->AddEntry(histograms_20_40_RelativeUncertainty[3], "Final Systematic Uncertainty", "f");
+    legend_20_40_bars_RelativeUncertainty->Draw();
+    
+    
+    TLegend *leg20_40_overlay_RelativeUncertainty = new TLegend(0.52, 0.76, 0.72, 0.92);
+    leg20_40_overlay_RelativeUncertainty->SetFillStyle(0);
+    leg20_40_overlay_RelativeUncertainty->AddEntry("", "#it{#bf{sPHENIX}} Internal", "");
+    leg20_40_overlay_RelativeUncertainty->AddEntry("", "Au+Au #sqrt{s_{NN}} = 200 GeV", "");
+    leg20_40_overlay_RelativeUncertainty->AddEntry("", "20-40% Centrality", "");
+    leg20_40_overlay_RelativeUncertainty->Draw("same");
+    c_Overlay_20_40_Systematics_RelativeUncertainty->Modified();
+    c_Overlay_20_40_Systematics_RelativeUncertainty->Update();
+    
+    
+    c_Overlay_20_40_Systematics_RelativeUncertainty->SaveAs((BasePlotOutputPath + "/RelativeSystUncertainty_Overlay_20_40.png").c_str());
+    
+    
+    
+    
+    std::vector<TH1F*> histograms_40_60_RelativeUncertainty; // Vector to hold histogram pointers for legend
+    
+    TCanvas *c_Overlay_40_60_Systematics_RelativeUncertainty = new TCanvas("c_Overlay_40_60_Systematics_RelativeUncertainty", "#pi^{0} #it{v}_{2} vs #it{p}_{T} 0-20% Centrality", 800, 600);
+    TH1F *frame_40_60_RelativeUncertainty = c_Overlay_40_60_Systematics_RelativeUncertainty->DrawFrame(2.0, 0, 5.0, 1.1);
+    
+    frame_40_60_RelativeUncertainty->GetYaxis()->SetTitle("Systematic Uncertainty");
+    frame_40_60_RelativeUncertainty->GetXaxis()->SetTitle("p_{T} [GeV]");
+    
+    for (size_t i = 0; i < ptCenters.size(); ++i) {
+        /*
+         UNCOMMENT LINE BELOW TO HIDE LARGE UNCERTAINTY IF WANT TO ZOOM IN
+         */
+//        if (std::abs(ptCenters[i] - 3.75) < EPSILON) {
+//            continue;  // Skip the rest of the loop for this pT center
+//        }
+        double x = ptCenters[i] - (2.5 * barWidth); // Starting x position for the bars
+        
+        std::vector<double> values_RelativeUncertainty_40_60 = {
+            data1.quad_sum_EMCal_syst_40_60[i],
+            data1.signal_window_syst_40_60[i],
+            data1.background_window_syst_40_60[i],
+            data1.unWeighted_stat_uncertainties_40_60[i]
+        };
+        
+        
+        for (size_t j = 0; j < values_RelativeUncertainty_40_60.size(); ++j) {
+            double xj = x + j * barWidth; // Adjust x position for each bar
+            TH1F *h_40_60_RelativeUncertainty = new TH1F(Form("h_40_60_RelativeUncertainty_%zu_%zu", i, j), "", 1, xj, xj + barWidth);
+            h_40_60_RelativeUncertainty->SetBinContent(1, values_RelativeUncertainty_40_60[j]);
+            h_40_60_RelativeUncertainty->SetFillColor(colors[j]);
+            h_40_60_RelativeUncertainty->Draw("SAME");
+            histograms_40_60_RelativeUncertainty.push_back(h_40_60_RelativeUncertainty); // Save the histogram pointer for the legend
+        }
+        
+    }
+
+    TLegend *legend_40_60_bars_RelativeUncertainty = new TLegend(0.58, 0.54, 0.78, 0.74);
+    legend_40_60_bars_RelativeUncertainty->SetTextSize(0.027);
+    legend_40_60_bars_RelativeUncertainty->SetHeader("Relative Systematic Uncertainties", "L");
+    // Add histograms to legend using the pointers stored in the vector
+    legend_40_60_bars_RelativeUncertainty->AddEntry(histograms_40_60_RelativeUncertainty[0], "EMCal Variations", "f");
+    legend_40_60_bars_RelativeUncertainty->AddEntry(histograms_40_60_RelativeUncertainty[1], "Signal Window Variation", "f");
+    legend_40_60_bars_RelativeUncertainty->AddEntry(histograms_40_60_RelativeUncertainty[2], "Background Window Variation", "f");
+    legend_40_60_bars_RelativeUncertainty->AddEntry(histograms_40_60_RelativeUncertainty[3], "Final Systematic Uncertainty", "f");
+    legend_40_60_bars_RelativeUncertainty->Draw();
+    
+    
+    TLegend *leg40_60_overlay_RelativeUncertainty = new TLegend(0.52, 0.76, 0.72, 0.92);
+    leg40_60_overlay_RelativeUncertainty->SetFillStyle(0);
+    leg40_60_overlay_RelativeUncertainty->AddEntry("", "#it{#bf{sPHENIX}} Internal", "");
+    leg40_60_overlay_RelativeUncertainty->AddEntry("", "Au+Au #sqrt{s_{NN}} = 200 GeV", "");
+    leg40_60_overlay_RelativeUncertainty->AddEntry("", "40-60% Centrality", "");
+    leg40_60_overlay_RelativeUncertainty->Draw("same");
+    c_Overlay_40_60_Systematics_RelativeUncertainty->Modified();
+    c_Overlay_40_60_Systematics_RelativeUncertainty->Update();
+    
+    
+    c_Overlay_40_60_Systematics_RelativeUncertainty->SaveAs((BasePlotOutputPath + "/RelativeSystUncertainty_Overlay_40_60.png").c_str());
+    
     
     
     /*
@@ -767,6 +888,123 @@ void plotting(const Data& data1) {
     
     
     c_Overlay_0_20_AbsoluteUncertainty->SaveAs((BasePlotOutputPath + "/AbsoluteSystUncertainty_Overlay_0_20_v2.png").c_str());
+    
+    
+    
+    
+    
+    
+    
+    std::vector<TH1F*> histograms_20_40_AbsoluteUncertainty; // Vector to hold histogram pointers for legend
+    
+    TCanvas *c_Overlay_20_40_AbsoluteUncertainty = new TCanvas("c_Overlay_20_40_AbsoluteUncertainty", "#pi^{0} #it{v}_{2} vs #it{p}_{T} 0-20% Centrality", 800, 600);
+    TH1F *frame_20_40_AbsoluteUncertainty = c_Overlay_20_40_AbsoluteUncertainty->DrawFrame(2.0, 0, 5.0, 1.1);
+    
+    frame_20_40_AbsoluteUncertainty->GetYaxis()->SetTitle("Systematic Uncertainty");
+    frame_20_40_AbsoluteUncertainty->GetXaxis()->SetTitle("p_{T} [GeV]");
+
+    for (size_t i = 0; i < ptCenters.size(); ++i) {
+        double x = ptCenters[i] - (2.5 * barWidth); // Starting x position for the bars
+        double v2_value = data1.corrected_v2_20_40[i];
+        
+        std::vector<double> values_AbsoluteSyst = {
+            data1.quad_sum_EMCal_syst_20_40[i] * v2_value,
+            data1.signal_window_syst_20_40[i] * v2_value,
+            data1.background_window_syst_20_40[i] * v2_value,
+            data1.stat_uncertainties_20_40[i]
+        };
+        
+        for (size_t j = 0; j < values_AbsoluteSyst.size(); ++j) {
+            double xj = x + j * barWidth; // Adjust x position for each bar
+            TH1F *h_20_40_AbsoluteSyst = new TH1F(Form("h_20_40_AbsoluteSyst_%zu_%zu", i, j), "", 1, xj, xj + barWidth);
+            h_20_40_AbsoluteSyst->SetBinContent(1, values_AbsoluteSyst[j]);
+            h_20_40_AbsoluteSyst->SetFillColor(colors[j]);
+            h_20_40_AbsoluteSyst->Draw("SAME");
+            histograms_20_40_AbsoluteUncertainty.push_back(h_20_40_AbsoluteSyst); // Save the histogram pointer for the legend
+        }
+        
+    }
+
+    TLegend *legend_20_40_bars_AbsoluteSyst = new TLegend(0.58, 0.54, 0.78, 0.74);
+    legend_20_40_bars_AbsoluteSyst->SetTextSize(0.027);
+    legend_20_40_bars_AbsoluteSyst->SetHeader("Absolute Systematic Uncertainties", "L");
+    // Add histograms to legend using the pointers stored in the vector
+    legend_20_40_bars_AbsoluteSyst->AddEntry(histograms_20_40_AbsoluteUncertainty[0], "EMCal Variations", "f");
+    legend_20_40_bars_AbsoluteSyst->AddEntry(histograms_20_40_AbsoluteUncertainty[1], "Signal Window Variation", "f");
+    legend_20_40_bars_AbsoluteSyst->AddEntry(histograms_20_40_AbsoluteUncertainty[2], "Background Window Variation", "f");
+    legend_20_40_bars_AbsoluteSyst->AddEntry(histograms_20_40_AbsoluteUncertainty[3], "Final Systematic Uncertainty", "f");
+    legend_20_40_bars_AbsoluteSyst->Draw();
+    
+    
+    TLegend *leg20_40_overlay_AbsoluteSyst = new TLegend(0.52, 0.76, 0.72, 0.92);
+    leg20_40_overlay_AbsoluteSyst->SetFillStyle(0);
+    leg20_40_overlay_AbsoluteSyst->AddEntry("", "#it{#bf{sPHENIX}} Internal", "");
+    leg20_40_overlay_AbsoluteSyst->AddEntry("", "Au+Au #sqrt{s_{NN}} = 200 GeV", "");
+    leg20_40_overlay_AbsoluteSyst->AddEntry("", "20-40% Centrality", "");
+    leg20_40_overlay_AbsoluteSyst->Draw("same");
+    c_Overlay_20_40_AbsoluteUncertainty->Modified();
+    c_Overlay_20_40_AbsoluteUncertainty->Update();
+    
+    
+    c_Overlay_20_40_AbsoluteUncertainty->SaveAs((BasePlotOutputPath + "/AbsoluteSystUncertainty_Overlay_20_40_v2.png").c_str());
+    
+    
+    
+    
+    
+    
+    std::vector<TH1F*> histograms_40_60_AbsoluteUncertainty; // Vector to hold histogram pointers for legend
+    
+    TCanvas *c_Overlay_40_60_AbsoluteUncertainty = new TCanvas("c_Overlay_40_60_AbsoluteUncertainty", "#pi^{0} #it{v}_{2} vs #it{p}_{T} 0-20% Centrality", 800, 600);
+    TH1F *frame_40_60_AbsoluteUncertainty = c_Overlay_40_60_AbsoluteUncertainty->DrawFrame(2.0, 0, 5.0, 1.1);
+    
+    frame_40_60_AbsoluteUncertainty->GetYaxis()->SetTitle("Systematic Uncertainty");
+    frame_40_60_AbsoluteUncertainty->GetXaxis()->SetTitle("p_{T} [GeV]");
+
+    for (size_t i = 0; i < ptCenters.size(); ++i) {
+        double x = ptCenters[i] - (2.5 * barWidth); // Starting x position for the bars
+        double v2_value = data1.corrected_v2_40_60[i];
+        
+        std::vector<double> values_AbsoluteSyst = {
+            data1.quad_sum_EMCal_syst_40_60[i] * v2_value,
+            data1.signal_window_syst_40_60[i] * v2_value,
+            data1.background_window_syst_40_60[i] * v2_value,
+            data1.stat_uncertainties_40_60[i]
+        };
+        
+        for (size_t j = 0; j < values_AbsoluteSyst.size(); ++j) {
+            double xj = x + j * barWidth; // Adjust x position for each bar
+            TH1F *h_40_60_AbsoluteSyst = new TH1F(Form("h_40_60_AbsoluteSyst_%zu_%zu", i, j), "", 1, xj, xj + barWidth);
+            h_40_60_AbsoluteSyst->SetBinContent(1, values_AbsoluteSyst[j]);
+            h_40_60_AbsoluteSyst->SetFillColor(colors[j]);
+            h_40_60_AbsoluteSyst->Draw("SAME");
+            histograms_40_60_AbsoluteUncertainty.push_back(h_40_60_AbsoluteSyst); // Save the histogram pointer for the legend
+        }
+        
+    }
+
+    TLegend *legend_40_60_bars_AbsoluteSyst = new TLegend(0.58, 0.54, 0.78, 0.74);
+    legend_40_60_bars_AbsoluteSyst->SetTextSize(0.027);
+    legend_40_60_bars_AbsoluteSyst->SetHeader("Absolute Systematic Uncertainties", "L");
+    // Add histograms to legend using the pointers stored in the vector
+    legend_40_60_bars_AbsoluteSyst->AddEntry(histograms_40_60_AbsoluteUncertainty[0], "EMCal Variations", "f");
+    legend_40_60_bars_AbsoluteSyst->AddEntry(histograms_40_60_AbsoluteUncertainty[1], "Signal Window Variation", "f");
+    legend_40_60_bars_AbsoluteSyst->AddEntry(histograms_40_60_AbsoluteUncertainty[2], "Background Window Variation", "f");
+    legend_40_60_bars_AbsoluteSyst->AddEntry(histograms_40_60_AbsoluteUncertainty[3], "Final Systematic Uncertainty", "f");
+    legend_40_60_bars_AbsoluteSyst->Draw();
+    
+    
+    TLegend *leg40_60_overlay_AbsoluteSyst = new TLegend(0.52, 0.76, 0.72, 0.92);
+    leg40_60_overlay_AbsoluteSyst->SetFillStyle(0);
+    leg40_60_overlay_AbsoluteSyst->AddEntry("", "#it{#bf{sPHENIX}} Internal", "");
+    leg40_60_overlay_AbsoluteSyst->AddEntry("", "Au+Au #sqrt{s_{NN}} = 200 GeV", "");
+    leg40_60_overlay_AbsoluteSyst->AddEntry("", "40-60% Centrality", "");
+    leg40_60_overlay_AbsoluteSyst->Draw("same");
+    c_Overlay_40_60_AbsoluteUncertainty->Modified();
+    c_Overlay_40_60_AbsoluteUncertainty->Update();
+    
+    
+    c_Overlay_40_60_AbsoluteUncertainty->SaveAs((BasePlotOutputPath + "/AbsoluteSystUncertainty_Overlay_40_60_v2.png").c_str());
 
     
     
