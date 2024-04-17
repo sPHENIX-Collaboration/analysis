@@ -37,7 +37,7 @@ namespace myAnalysis {
     vector<Cut> cuts;
 
     Int_t readCuts(const string &i_cuts);
-    TFitResultPtr PerformFitting(TH1F* hPi0Mass, TF1** totalFit);
+    TFitResultPtr PerformFitting(TH1F* hPi0Mass, TF1** totalFit, Int_t index);
     Double_t CalculateSignalToBackgroundRatio(TH1F* hPi0Mass, TF1* polyFit, Double_t fitMean, Double_t fitSigma, Double_t &signalToBackgroundError);
     void process_fits(const string &i_input, const string &outputCSV, const string &outputDir, const string &tag, const Float_t sigmaMult);
 
@@ -47,6 +47,8 @@ namespace myAnalysis {
     Double_t fitStart = 0.1;
     Double_t fitEnd   = 0.35;
     Double_t sigmaMult = 2;
+    Double_t sigmaEstimate = 0.025;
+    Double_t meanEstimate = 0.2;
 }
 
 Int_t myAnalysis::readCuts(const string &i_cuts) {
@@ -89,35 +91,18 @@ Int_t myAnalysis::readCuts(const string &i_cuts) {
     return 0;
 }
 
-TFitResultPtr myAnalysis::PerformFitting(TH1F* hPi0Mass, TF1** totalFit) {
-
-    Double_t lowerSignalBoundEstimate = 0.1;
-    Double_t upperSignalBoundEstimate = 0.2;
-
-    Double_t sigmaEstimate = 0.024; // sigmaEstimate value
-
+TFitResultPtr myAnalysis::PerformFitting(TH1F* hPi0Mass, TF1** totalFit, Int_t index) {
     // Define totalFit
     *totalFit = new TF1("totalFit", "gaus(0) + pol2(3)", fitStart, fitEnd);
 
-    /*
-     Give overestimation for amplitude to help fit converge on correct value in correct region
-     Set mean estimate to this values bin center
-     */
-    Int_t bin1 = hPi0Mass->GetXaxis()->FindBin(lowerSignalBoundEstimate);
-    Int_t bin2 = hPi0Mass->GetXaxis()->FindBin(upperSignalBoundEstimate);
-    Int_t maxBin = bin1;
-    Double_t maxBinContent = hPi0Mass->GetBinContent(bin1);
-    for (Int_t i = bin1 + 1; i <= bin2; ++i) {
-        if (hPi0Mass->GetBinContent(i) > maxBinContent) {
-            maxBinContent = hPi0Mass->GetBinContent(i);
-            maxBin = i;
-        }
-    }
-    Double_t maxBinCenter = hPi0Mass->GetXaxis()->GetBinCenter(maxBin);
+    if(index == 7) meanEstimate = 0.19;
+    else           meanEstimate = 0.2;
 
-    (*totalFit)->SetParameter(0, maxBinContent);
+    Double_t amplitudeEstimate = hPi0Mass->GetBinContent(hPi0Mass->GetXaxis()->FindBin(meanEstimate));
 
-    (*totalFit)->SetParameter(1, maxBinCenter);
+    (*totalFit)->SetParameter(0, amplitudeEstimate);
+
+    (*totalFit)->SetParameter(1, meanEstimate);
 
     (*totalFit)->SetParameter(2, sigmaEstimate);
 
@@ -239,7 +224,7 @@ void myAnalysis::process_fits(const string &i_input,
                 TF1 *totalFit;
 
                 // Call PerformFitting to execute the fitting procedure
-                TFitResultPtr fitResult = PerformFitting(h, &totalFit);
+                TFitResultPtr fitResult = PerformFitting(h, &totalFit, index);
 
                 Double_t fitMean       = totalFit->GetParameter(1);
                 Double_t fitMeanError  = totalFit->GetParError(1);
@@ -248,10 +233,6 @@ void myAnalysis::process_fits(const string &i_input,
                 Double_t chi2          = fitResult->Chi2();
                 Int_t    ndf           = fitResult->Ndf();
 
-                if(fitMean < 0) {
-                    ++index;
-                    continue;
-                }
 
                 TF1 *gaussFit = new TF1("gaussFit", "gaus", fitStart, fitEnd);
                 TF1 *polyFit  = new TF1("polyFit", "pol2",  fitStart, fitEnd);
