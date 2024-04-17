@@ -26,6 +26,119 @@ struct Data {
     std::vector<double> signal_window_syst_0_20, signal_window_syst_20_40, signal_window_syst_40_60;
     std::vector<double> background_window_syst_0_20, background_window_syst_20_40, background_window_syst_40_60;
 };
+struct PHENIX_data {
+    std::vector<double> v2_0_20_PHENIX;
+    std::vector<double> v2_0_20_Errors_PHENIX;
+    std::vector<double> v2_20_40_PHENIX;
+    std::vector<double> v2_20_40_Errors_PHENIX;
+    std::vector<double> v2_40_60_PHENIX;
+    std::vector<double> v2_40_60_Errors_PHENIX;
+};
+
+void ReadPHENIXData(std::string filePath,
+                    std::vector<double>& v2_0_10,
+                    std::vector<double>& v2_0_10_Errors,
+                    std::vector<double>& v2_0_10_Errors_Negative,
+                    std::vector<double>& v2_10_20,
+                    std::vector<double>& v2_10_20_Errors,
+                    std::vector<double>& v2_10_20_Errors_Negative,
+                    std::vector<double>& v2_20_30,
+                    std::vector<double>& v2_20_30_Errors,
+                    std::vector<double>& v2_20_30_Errors_Negative,
+                    std::vector<double>& v2_30_40,
+                    std::vector<double>& v2_30_40_Errors,
+                    std::vector<double>& v2_30_40_Errors_Negative,
+                    std::vector<double>& v2_40_50,
+                    std::vector<double>& v2_40_50_Errors,
+                    std::vector<double>& v2_40_50_Errors_Negative,
+                    std::vector<double>& v2_50_60,
+                    std::vector<double>& v2_50_60_Errors,
+                    std::vector<double>& v2_50_60_Errors_Negative) {
+    std::ifstream file(filePath);
+    std::string line;
+    double v2, error_pos, error_neg;
+    int rowCounter = 0;
+    // Skip the header line
+    std::getline(file, line);
+    while (std::getline(file, line)) {
+        std::stringstream ss(line);
+        std::string cell;
+        std::vector<std::string> rowData;
+        while (std::getline(ss, cell, ',')) {
+            rowData.push_back(cell);
+        }
+        v2 = std::stod(rowData.at(2));
+        error_pos = std::stod(rowData.at(rowData.size() - 2)); // stat. +
+        error_neg = std::stod(rowData.back()); // stat. -
+        // Assigning to the correct centrality vector based on row count
+        if (rowCounter < 6) { // 0-10%
+            v2_0_10.push_back(v2);
+            v2_0_10_Errors.push_back(error_pos);
+            v2_0_10_Errors_Negative.push_back(fabs(error_neg));
+            std::cout << "\033[1mData read in for v2_0_10:\033[0m " << v2 << " \u00B1 " << error_pos << std::endl;
+        } else if (rowCounter < 12) { // 10-20%
+            v2_10_20.push_back(v2);
+            v2_10_20_Errors.push_back(error_pos);
+            v2_10_20_Errors_Negative.push_back(fabs(error_neg));
+            std::cout << "\033[1mData read in for v2_10_20:\033[0m " << v2 << " \u00B1 " << error_pos << std::endl;
+        } else if (rowCounter < 18) { // 20-30%
+            v2_20_30.push_back(v2);
+            v2_20_30_Errors.push_back(error_pos);
+            v2_20_30_Errors_Negative.push_back(fabs(error_neg));
+            std::cout << "\033[1mData read in for v2_20_30:\033[0m " << v2 << " \u00B1 " << error_pos << std::endl;
+        } else if (rowCounter < 24) { // 30-40%
+            v2_30_40.push_back(v2);
+            v2_30_40_Errors.push_back(error_pos);
+            v2_30_40_Errors_Negative.push_back(fabs(error_neg));
+            std::cout << "\033[1mData read in for v2_30_40:\033[0m " << v2 << " \u00B1 " << error_pos << std::endl;
+        } else if (rowCounter < 30) { // 40-50%
+            v2_40_50.push_back(v2);
+            v2_40_50_Errors.push_back(error_pos);
+            v2_40_50_Errors_Negative.push_back(fabs(error_neg));
+            std::cout << "\033[1mData read in for v2_40_50:\033[0m " << v2 << " \u00B1 " << error_pos << std::endl;
+        } else { // 50-60%
+            v2_50_60.push_back(v2);
+            v2_50_60_Errors.push_back(error_pos);
+            v2_50_60_Errors_Negative.push_back(fabs(error_neg));
+            std::cout << "\033[1mData read in for v2_50_60:\033[0m " << v2 << " \u00B1 " << error_pos << std::endl;
+        }
+        rowCounter++;
+    }
+    file.close();
+}
+void CombineCentralityData(const std::vector<double>& v2_0_10, const std::vector<double>& v2_0_10_Errors,
+                           const std::vector<double>& v2_10_20, const std::vector<double>& v2_10_20_Errors,
+                           std::vector<double>& v2_0_20_PHENIX, std::vector<double>& v2_0_20_Errors_PHENIX
+                           const std::vector<double>& v2_20_30, const std::vector<double>& v2_20_30_Errors,
+                           const std::vector<double>& v2_30_40, const std::vector<double>& v2_30_40_Errors,
+                           std::vector<double>& v2_20_40_PHENIX, std::vector<double>& v2_20_40_Errors_PHENIX,
+                           const std::vector<double>& v2_40_50, const std::vector<double>& v2_40_50_Errors,
+                           const std::vector<double>& v2_50_60, const std::vector<double>& v2_50_60_Errors,
+                           std::vector<double>& v2_40_60_PHENIX, std::vector<double>& v2_40_60_Errors_PHENIX) {
+    for (size_t i = 0; i < v2_0_10.size(); ++i) {
+        // Compute average v2
+        double avg_v2 = (v2_0_10[i] + v2_10_20[i]) / 2.0;
+        v2_0_20_PHENIX.push_back(avg_v2);
+
+        // Propagate error assuming statistical independence
+        double combined_error = sqrt(pow(v2_0_10_Errors[i], 2) + pow(v2_10_20_Errors[i], 2)) / 2.0;
+        v2_0_20_Errors_PHENIX.push_back(combined_error);
+    }
+    
+    for (size_t i = 0; i < v2_20_30.size(); ++i) {
+        double avg_v2_20_40 = (v2_20_30[i] + v2_30_40[i]) / 2.0;
+        v2_20_40_PHENIX.push_back(avg_v2_20_40);
+        double combined_error_20_40 = sqrt(pow(v2_20_30_Errors[i], 2) + pow(v2_30_40_Errors[i], 2)) / 2.0;
+        v2_20_40_Errors_PHENIX.push_back(combined_error_20_40);
+    }
+    
+    for (size_t i = 0; i < v2_40_50.size(); ++i) {
+        double avg_v2_40_60 = (v2_40_50[i] + v2_50_60[i]) / 2.0;
+        v2_40_60_PHENIX.push_back(avg_v2_40_60);
+        double combined_error_40_60 = sqrt(pow(v2_40_50_Errors[i], 2) + pow(v2_50_60_Errors[i], 2)) / 2.0;
+        v2_40_60_Errors_PHENIX.push_back(combined_error_40_60);
+    }
+}
 
 void ReadStatUncertainties(const std::string& filePath, Data& data) {
     std::ifstream file(filePath);
@@ -219,380 +332,439 @@ void plotting(const Data& data1) {
     TGraphErrors* corrected_v2_40_60_graph_1 = CreateGraph(ptCenters, data1.corrected_v2_40_60, data1.corrected_v2_40_60_Errors);
     
 
-    TGraphErrors* sys_v2_0_20_graph_1 = CreateSystematicGraph(ptCenters, data1.corrected_v2_0_20, data1.corrected_v2_0_20_Errors, data1.stat_uncertainties_0_20);
-    TGraphErrors* sys_v2_20_40_graph_1 = CreateSystematicGraph(ptCenters, data1.corrected_v2_20_40, data1.corrected_v2_20_40_Errors, data1.stat_uncertainties_20_40);
-    TGraphErrors* sys_v2_40_60_graph_1 = CreateSystematicGraph(ptCenters, data1.corrected_v2_40_60, data1.corrected_v2_40_60_Errors, data1.stat_uncertainties_40_60);
-    
-    TGraphErrors* EMCal_syst_0_20_graph = CreateSystematicGraph(ptCenters, data1.corrected_v2_0_20, data1.corrected_v2_0_20_Errors, data1.quad_sum_EMCal_syst_0_20);
-    TGraphErrors* EMCal_syst_20_40_graph = CreateSystematicGraph(ptCenters, data1.corrected_v2_20_40, data1.corrected_v2_20_40_Errors, data1.quad_sum_EMCal_syst_20_40);
-    TGraphErrors* EMCal_syst_40_60_graph = CreateSystematicGraph(ptCenters, data1.corrected_v2_40_60, data1.corrected_v2_40_60_Errors, data1.quad_sum_EMCal_syst_40_60);
-    
-    TGraphErrors* signal_window_syst_0_20_graph = CreateSystematicGraph(ptCenters, data1.corrected_v2_0_20, data1.corrected_v2_0_20_Errors, data1.signal_window_syst_0_20);
-    TGraphErrors* signal_window_syst_20_40_graph = CreateSystematicGraph(ptCenters, data1.corrected_v2_20_40, data1.corrected_v2_20_40_Errors, data1.signal_window_syst_20_40);
-    TGraphErrors* signal_window_syst_40_60_graph = CreateSystematicGraph(ptCenters, data1.corrected_v2_40_60, data1.corrected_v2_40_60_Errors, data1.signal_window_syst_40_60);
-    
-    TGraphErrors* background_window_syst_0_20_graph = CreateSystematicGraph(ptCenters, data1.corrected_v2_0_20, data1.corrected_v2_0_20_Errors, data1.background_window_syst_0_20);
-    TGraphErrors* background_window_syst_20_40_graph = CreateSystematicGraph(ptCenters, data1.corrected_v2_20_40, data1.corrected_v2_20_40_Errors, data1.background_window_syst_20_40);
-    TGraphErrors* background_window_syst_40_60_graph = CreateSystematicGraph(ptCenters, data1.corrected_v2_40_60, data1.corrected_v2_40_60_Errors, data1.background_window_syst_40_60);
-
 
     
     double minYaxis_correctedComparisons = -0.2;
     double maxYaxis_correctedComparisons = 0.45;
     double TLatexSize = 0.025;
-    // Define the offsets for jitter in Overlays
-    double offset = 0.05;
-    
+
     int markerColor_1 = kBlack;
     int markerStyle_1 = 20;
     double markerSize_1 = 1.0;
-    
     
     corrected_v2_0_20_graph_1->SetMarkerColor(markerColor_1);
     corrected_v2_0_20_graph_1->SetLineColor(markerColor_1);
     corrected_v2_0_20_graph_1->SetMarkerSize(markerSize_1);
     corrected_v2_0_20_graph_1->SetMarkerStyle(markerStyle_1);
     
-    
-    
     corrected_v2_20_40_graph_1->SetMarkerColor(markerColor_1);
     corrected_v2_20_40_graph_1->SetLineColor(markerColor_1);
     corrected_v2_20_40_graph_1->SetMarkerSize(markerSize_1);
     corrected_v2_20_40_graph_1->SetMarkerStyle(markerStyle_1);
-    
     
     corrected_v2_40_60_graph_1->SetMarkerColor(markerColor_1);
     corrected_v2_40_60_graph_1->SetLineColor(markerColor_1);
     corrected_v2_40_60_graph_1->SetMarkerSize(markerSize_1);
     corrected_v2_40_60_graph_1->SetMarkerStyle(markerStyle_1);
     
+    TGraphErrors* sys_v2_0_20_graph_1 = CreateSystematicGraph(ptCenters, data1.corrected_v2_0_20, data1.corrected_v2_0_20_Errors, data1.stat_uncertainties_0_20);
+    TGraphErrors* sys_v2_20_40_graph_1 = CreateSystematicGraph(ptCenters, data1.corrected_v2_20_40, data1.corrected_v2_20_40_Errors, data1.stat_uncertainties_20_40);
+    TGraphErrors* sys_v2_40_60_graph_1 = CreateSystematicGraph(ptCenters, data1.corrected_v2_40_60, data1.corrected_v2_40_60_Errors, data1.stat_uncertainties_40_60);
     
-//    sys_v2_0_20_graph_1->SetFillColor(kGray+1); // Gray color
-//    sys_v2_0_20_graph_1->SetFillStyle(3001); // Semi-transparent fill
-//    
-//    sys_v2_20_40_graph_1->SetFillColor(kGray+1); // Gray color
-//    sys_v2_20_40_graph_1->SetFillStyle(3001); // Semi-transparent fill
-//
-//    sys_v2_40_60_graph_1->SetFillColor(kGray+1); // Gray color
-//    sys_v2_40_60_graph_1->SetFillStyle(3001); // Semi-transparent fill
-//    
-//    
-//    
-//    
-//
-//    TCanvas *c_Overlay_1 = new TCanvas("c_Overlay_1", "#pi^{0} #it{v}_{2} vs #it{p}_{T} 0-20% Centrality", 800, 600);
-//    sys_v2_0_20_graph_1->Draw("A2"); // Draw systematic errors first as a shaded area
-//    corrected_v2_0_20_graph_1->Draw("P SAME"); // Then draw the statistical errors on top
-//    
-//    sys_v2_0_20_graph_1->SetTitle("#it{v}_{2}^{#pi^{0}} vs #it{p}_{T} 0-20% Centrality");
-//    sys_v2_0_20_graph_1->GetXaxis()->SetTitle("p_{T} [GeV]");
-//    sys_v2_0_20_graph_1->GetYaxis()->SetTitle("v_{2}^{#pi^{0}}");
-//    sys_v2_0_20_graph_1->SetMinimum(-0.35); // Set the minimum y value
-//    sys_v2_0_20_graph_1->SetMaximum(0.45); // Set the maximum y value
-//
-//    DrawZeroLine(c_Overlay_1);
-//    TLegend *leg1 = new TLegend(0.14,.19,0.34,.39);
-//    leg1->SetFillStyle(0);
-//    leg1->AddEntry("","#it{#bf{sPHENIX}} Internal","");
-//    leg1->AddEntry("","Au+Au #sqrt{s_{NN}} = 200 GeV","");
-//    leg1->AddEntry("","0-20% Centrality","");
-//    leg1->Draw("same");
-//    
-//    TLegend *leg_uncertainty_0_20 = new TLegend(0.67,.19,0.87,.34);
-//    leg_uncertainty_0_20->SetTextSize(0.029);
-//    leg_uncertainty_0_20->AddEntry(corrected_v2_0_20_graph_1, "Statistical Uncertainty", "pe"); // "lep" for line and marker
-//    leg_uncertainty_0_20->AddEntry(sys_v2_0_20_graph_1, "Systematic Uncertainty", "pf"); // "f" for a filled object
-//    leg_uncertainty_0_20->Draw("same");
-//    
-//    
-//    c_Overlay_1->SaveAs((BasePlotOutputPath + "/Final_v2_withSyst_0_20.png").c_str());
-//    
-//    
-//    
-//
-//    TCanvas *c_Overlay_2 = new TCanvas("c_Overlay_2", "#pi^{0} #it{v}_{2} vs #it{p}_{T} 20-40% Centrality", 800, 600);
-//    sys_v2_20_40_graph_1->Draw("A2");
-//    sys_v2_20_40_graph_1->SetTitle("#it{v}_{2}^{#pi^{0}} vs #it{p}_{T} 20-40% Centrality");
-//    sys_v2_20_40_graph_1->GetXaxis()->SetTitle("p_{T} [GeV]");
-//    sys_v2_20_40_graph_1->GetYaxis()->SetTitle("v_{2}^{#pi^{0}}");
-//    sys_v2_20_40_graph_1->SetMinimum(-0.35); // Set the minimum y value
-//    sys_v2_20_40_graph_1->SetMaximum(0.45); // Set the maximum y value
-//    
-//    corrected_v2_20_40_graph_1->Draw("P SAME");
-//    
-//    DrawZeroLine(c_Overlay_2);
-//    TLegend *leg2 = new TLegend(0.14,.19,0.34,.39);
-//    leg2->SetFillStyle(0);
-//    leg2->AddEntry("","#it{#bf{sPHENIX}} Internal","");
-//    leg2->AddEntry("","Au+Au #sqrt{s_{NN}} = 200 GeV","");
-//    leg2->AddEntry("","20-40% Centrality","");
-//    leg2->Draw("same");
-//    
-//    TLegend *leg_uncertainty_20_40 = new TLegend(0.67,.19,0.87,.34);
-//    leg_uncertainty_20_40->SetTextSize(0.029);
-//    leg_uncertainty_20_40->AddEntry(corrected_v2_0_20_graph_1, "Statistical Uncertainty", "pe"); // "lep" for line and marker
-//    leg_uncertainty_20_40->AddEntry(sys_v2_0_20_graph_1, "Systematic Uncertainty", "pf"); // "f" for a filled object
-//    leg_uncertainty_20_40->Draw("same");
-//    
-//    
-//    c_Overlay_2->SaveAs((BasePlotOutputPath + "/Final_v2_withSyst_20_40.png").c_str());
-//    
-//    
-//    
-//    
-//
-//    TCanvas *c_Overlay_3 = new TCanvas("c_Overlay_3", "#pi^{0} #it{v}_{2} vs #it{p}_{T} 40-60% Centrality", 800, 600);
-//    sys_v2_40_60_graph_1->Draw("A2");
-//    sys_v2_40_60_graph_1->SetTitle("#it{v}_{2}^{#pi^{0}} vs #it{p}_{T} 40-60% Centrality");
-//    sys_v2_40_60_graph_1->GetXaxis()->SetTitle("p_{T} [GeV]");
-//    sys_v2_40_60_graph_1->GetYaxis()->SetTitle("v_{2}^{#pi^{0}}");
-//    sys_v2_40_60_graph_1->SetMinimum(-0.35); // Set the minimum y value
-//    sys_v2_40_60_graph_1->SetMaximum(0.45); // Set the maximum y value
-//    
-//    corrected_v2_40_60_graph_1->Draw("P SAME");
-//    
-//    DrawZeroLine(c_Overlay_3);
-//    TLegend *leg3 = new TLegend(0.14,.19,0.34,.39);
-//    leg3->SetFillStyle(0);
-//    leg3->AddEntry("","#it{#bf{sPHENIX}} Internal","");
-//    leg3->AddEntry("","Au+Au #sqrt{s_{NN}} = 200 GeV","");
-//    leg3->AddEntry("","40-60% Centrality","");
-//    leg3->Draw("same");
-//    
-//    TLegend *leg_uncertainty_40_60 = new TLegend(0.67,.19,0.87,.34);
-//    leg_uncertainty_40_60->SetTextSize(0.029);
-//    leg_uncertainty_40_60->AddEntry(corrected_v2_0_20_graph_1, "Statistical Uncertainty", "pe"); // "lep" for line and marker
-//    leg_uncertainty_40_60->AddEntry(sys_v2_0_20_graph_1, "Systematic Uncertainty", "pf"); // "f" for a filled object
-//    leg_uncertainty_40_60->Draw("same");
-//
-//    c_Overlay_3->SaveAs((BasePlotOutputPath + "/Final_v2_withSyst_40_60.png").c_str());
+    
+    sys_v2_0_20_graph_1->SetFillColor(kGray+1); // Gray color
+    sys_v2_0_20_graph_1->SetFillStyle(3001); // Semi-transparent fill
+    
+    sys_v2_20_40_graph_1->SetFillColor(kGray+1); // Gray color
+    sys_v2_20_40_graph_1->SetFillStyle(3001); // Semi-transparent fill
+
+    sys_v2_40_60_graph_1->SetFillColor(kGray+1); // Gray color
+    sys_v2_40_60_graph_1->SetFillStyle(3001); // Semi-transparent fill
+    
+    
+    
+    
+/*
+ FINAL RESULTS WITH SYSTEMATIC UNCERTAINTY
+ */
+    TCanvas *c_Overlay_1_finalResults = new TCanvas("c_Overlay_1_finalResults", "#pi^{0} #it{v}_{2} vs #it{p}_{T} 0-20% Centrality", 800, 600);
+    sys_v2_0_20_graph_1->Draw("A2"); // Draw systematic errors first as a shaded area
+    corrected_v2_0_20_graph_1->Draw("P SAME"); // Then draw the statistical errors on top
+    
+    sys_v2_0_20_graph_1->SetTitle("#it{v}_{2}^{#pi^{0}} vs #it{p}_{T} 0-20% Centrality");
+    sys_v2_0_20_graph_1->GetXaxis()->SetTitle("p_{T} [GeV]");
+    sys_v2_0_20_graph_1->GetYaxis()->SetTitle("v_{2}^{#pi^{0}}");
+    sys_v2_0_20_graph_1->SetMinimum(-0.35); // Set the minimum y value
+    sys_v2_0_20_graph_1->SetMaximum(0.45); // Set the maximum y value
+
+    DrawZeroLine(c_Overlay_1_finalResults);
+    TLegend *leg0_20_FinalResults = new TLegend(0.14,.19,0.34,.39);
+    leg0_20_FinalResults->SetFillStyle(0);
+    leg0_20_FinalResults->AddEntry("","#it{#bf{sPHENIX}} Internal","");
+    leg0_20_FinalResults->AddEntry("","Au+Au #sqrt{s_{NN}} = 200 GeV","");
+    leg0_20_FinalResults->AddEntry("","0-20% Centrality","");
+    leg0_20_FinalResults->Draw("same");
+    
+    TLegend *leg_uncertainty_0_20 = new TLegend(0.67,.19,0.87,.34);
+    leg_uncertainty_0_20->SetTextSize(0.029);
+    leg_uncertainty_0_20->AddEntry(corrected_v2_0_20_graph_1, "Statistical Uncertainty", "pe"); // "lep" for line and marker
+    leg_uncertainty_0_20->AddEntry(sys_v2_0_20_graph_1, "Systematic Uncertainty", "pf"); // "f" for a filled object
+    leg_uncertainty_0_20->Draw("same");
+    
+    
+    c_Overlay_1_finalResults->SaveAs((BasePlotOutputPath + "/Final_v2_withSyst_0_20.png").c_str());
+    
+    
+    
+
+    TCanvas *c_Overlay_2_finalResults = new TCanvas("c_Overlay_2_finalResults", "#pi^{0} #it{v}_{2} vs #it{p}_{T} 20-40% Centrality", 800, 600);
+    sys_v2_20_40_graph_1->Draw("A2");
+    sys_v2_20_40_graph_1->SetTitle("#it{v}_{2}^{#pi^{0}} vs #it{p}_{T} 20-40% Centrality");
+    sys_v2_20_40_graph_1->GetXaxis()->SetTitle("p_{T} [GeV]");
+    sys_v2_20_40_graph_1->GetYaxis()->SetTitle("v_{2}^{#pi^{0}}");
+    sys_v2_20_40_graph_1->SetMinimum(-0.35); // Set the minimum y value
+    sys_v2_20_40_graph_1->SetMaximum(0.45); // Set the maximum y value
+    
+    corrected_v2_20_40_graph_1->Draw("P SAME");
+    
+    DrawZeroLine(c_Overlay_2_finalResults);
+    TLegend *leg20_40_FinalResults = new TLegend(0.14,.19,0.34,.39);
+    leg20_40_FinalResults->SetFillStyle(0);
+    leg20_40_FinalResults->AddEntry("","#it{#bf{sPHENIX}} Internal","");
+    leg20_40_FinalResults->AddEntry("","Au+Au #sqrt{s_{NN}} = 200 GeV","");
+    leg20_40_FinalResults->AddEntry("","20-40% Centrality","");
+    leg20_40_FinalResults->Draw("same");
+    
+    TLegend *leg_uncertainty_20_40 = new TLegend(0.67,.19,0.87,.34);
+    leg_uncertainty_20_40->SetTextSize(0.029);
+    leg_uncertainty_20_40->AddEntry(corrected_v2_0_20_graph_1, "Statistical Uncertainty", "pe"); // "lep" for line and marker
+    leg_uncertainty_20_40->AddEntry(sys_v2_0_20_graph_1, "Systematic Uncertainty", "pf"); // "f" for a filled object
+    leg_uncertainty_20_40->Draw("same");
+    
+    
+    c_Overlay_2_finalResults->SaveAs((BasePlotOutputPath + "/Final_v2_withSyst_20_40.png").c_str());
+    
+    
+    
+    
+
+    TCanvas *c_Overlay_3_finalResults = new TCanvas("c_Overlay_3_finalResults", "#pi^{0} #it{v}_{2} vs #it{p}_{T} 40-60% Centrality", 800, 600);
+    sys_v2_40_60_graph_1->Draw("A2");
+    sys_v2_40_60_graph_1->SetTitle("#it{v}_{2}^{#pi^{0}} vs #it{p}_{T} 40-60% Centrality");
+    sys_v2_40_60_graph_1->GetXaxis()->SetTitle("p_{T} [GeV]");
+    sys_v2_40_60_graph_1->GetYaxis()->SetTitle("v_{2}^{#pi^{0}}");
+    sys_v2_40_60_graph_1->SetMinimum(-0.35); // Set the minimum y value
+    sys_v2_40_60_graph_1->SetMaximum(0.45); // Set the maximum y value
+    
+    corrected_v2_40_60_graph_1->Draw("P SAME");
+    
+    DrawZeroLine(c_Overlay_3_finalResults);
+    TLegend *leg40_60_FinalResults = new TLegend(0.14,.19,0.34,.39);
+    leg40_60_FinalResults->SetFillStyle(0);
+    leg40_60_FinalResults->AddEntry("","#it{#bf{sPHENIX}} Internal","");
+    leg40_60_FinalResults->AddEntry("","Au+Au #sqrt{s_{NN}} = 200 GeV","");
+    leg40_60_FinalResults->AddEntry("","40-60% Centrality","");
+    leg40_60_FinalResults->Draw("same");
+    
+    TLegend *leg_uncertainty_40_60 = new TLegend(0.67,.19,0.87,.34);
+    leg_uncertainty_40_60->SetTextSize(0.029);
+    leg_uncertainty_40_60->AddEntry(corrected_v2_0_20_graph_1, "Statistical Uncertainty", "pe"); // "lep" for line and marker
+    leg_uncertainty_40_60->AddEntry(sys_v2_0_20_graph_1, "Systematic Uncertainty", "pf"); // "f" for a filled object
+    leg_uncertainty_40_60->Draw("same");
+
+    c_Overlay_3_finalResults->SaveAs((BasePlotOutputPath + "/Final_v2_withSyst_40_60.png").c_str());
+    
+    
 
     
     
-    TCanvas *c_Overlay_0_20_Systematics = new TCanvas("c_Overlay_0_20_Systematics", "#pi^{0} #it{v}_{2} vs #it{p}_{T} 0-20% Centrality", 800, 600);
+    /*
+     OVERLAYING WITH PHENIX DATA FINAL RESULTS
+     */
+    
+    std::string phenixFilePath = "/Users/patsfan753/Desktop/vN_AnalysisFinal/data/PHENIX_Data_Overlayed/FinalCleanedPhenix.csv";
+    //vectors for PHENIX data
+    std::vector<double> v2_0_10, v2_0_10_Errors, v2_0_10_Errors_Negative, v2_10_20, v2_10_20_Errors, v2_10_20_Errors_Negative, v2_20_30, v2_20_30_Errors, v2_20_30_Errors_Negative, v2_30_40, v2_30_40_Errors, v2_30_40_Errors_Negative, v2_40_50, v2_40_50_Errors, v2_40_50_Errors_Negative, v2_50_60, v2_50_60_Errors, v2_50_60_Errors_Negative;
+    
+    // Read in the data and errors
+    ReadPHENIXData(phenixFilePath, v2_0_10, v2_0_10_Errors, v2_0_10_Errors_Negative,
+                   v2_10_20, v2_10_20_Errors, v2_10_20_Errors_Negative,
+                   v2_20_30, v2_20_30_Errors, v2_20_30_Errors_Negative,
+                   v2_30_40, v2_30_40_Errors, v2_30_40_Errors_Negative,
+                   v2_40_50, v2_40_50_Errors, v2_40_50_Errors_Negative,
+                   v2_50_60, v2_50_60_Errors, v2_50_60_Errors_Negative);
+    
+    int markerStyle_PHENIX = 22;
+    int color_PHENIX_low = kBlack;
+    int color_PHENIX_high= kGreen+3;
+    
+    // Combine data for 0-20%
+    PHENIX_data combinedData;
+    CombineCentralityData(v2_0_10, v2_0_10_Errors, v2_10_20, v2_10_20_Errors,
+                          combinedData.v2_0_20_PHENIX, combinedData.v2_0_20_Errors_PHENIX, 
+                          v2_20_30, v2_20_30_Errors, v2_30_40, v2_30_40_Errors,
+                          combinedData.v2_20_40_PHENIX, combinedData.v2_20_40_Errors_PHENIX,
+                          v2_20_30, v2_20_30_Errors, v2_30_40, v2_30_40_Errors,
+                          combinedData.v2_20_40_PHENIX, combinedData.v2_20_40_Errors_PHENIX);
 
-    // Create TGraph for systematic uncertainties as points
-    TGraph* EMCal_syst_0_20_points = new TGraph(ptCenters.size());
-    TGraph* signal_window_syst_0_20_points = new TGraph(ptCenters.size());
-    TGraph* background_window_syst_0_20_points = new TGraph(ptCenters.size());
-    TGraph* sys_v2_0_20_graph_points = new TGraph(ptCenters.size());
+    // Create graph for combined data
+    TGraphErrors* graph_0_20_PHENIXdataAveraged = CreateGraph(ptCenters, combinedData.v2_0_20_PHENIX, combinedData.v2_0_20_Errors_PHENIX);
+    graph_0_20_PHENIXdataAveraged->SetMarkerColor(kBlue);
+    graph_0_20_PHENIXdataAveraged->SetLineColor(kBlue);
+    graph_0_20_PHENIXdataAveraged->SetMarkerStyle(20);
+    graph_0_20_PHENIXdataAveraged->SetMarkerSize(1.0);
+    
+    
+    
+    TCanvas *c_Overlay_ResultsWithPHENIX_0_20 = new TCanvas("c_Overlay_ResultsWithPHENIX_0_20", "#pi^{0} #it{v}_{2} vs #it{p}_{T} 0-20% Centrality", 800, 600);
+    for (int i = 0; i < ptCenters.size(); ++i) {
+        sys_v2_0_20_graph_1->SetPoint(i, ptCenters[i] - .1, data1.corrected_v2_0_20[i]);
+        corrected_v2_0_20_graph_1->SetPoint(i, ptCenters[i] - .1, data1.corrected_v2_0_20[i]);
+    }
+    sys_v2_0_20_graph_1->Draw("A2"); // Draw systematic errors first as a shaded area
+    corrected_v2_0_20_graph_1->Draw("P SAME"); // Then draw the statistical errors on top
     
     for (int i = 0; i < ptCenters.size(); ++i) {
+        graph_0_20_PHENIXdataAveraged->SetPoint(i, ptCenters[i] + .1, combinedData.v2_0_20_PHENIX[i]);
+    }
+    graph_0_20_PHENIXdataAveraged->Draw("P SAME");
+    
+    sys_v2_0_20_graph_1->SetTitle("#it{v}_{2}^{#pi^{0}} vs #it{p}_{T} 0-20% Centrality");
+    sys_v2_0_20_graph_1->GetXaxis()->SetTitle("p_{T} [GeV]");
+    sys_v2_0_20_graph_1->GetYaxis()->SetTitle("v_{2}^{#pi^{0}}");
+    sys_v2_0_20_graph_1->SetMinimum(-0.35); // Set the minimum y value
+    sys_v2_0_20_graph_1->SetMaximum(0.45); // Set the maximum y value
+
+    DrawZeroLine(c_Overlay_ResultsWithPHENIX_0_20);
+    TLegend *leg1_PHENIXoverlay = new TLegend(0.14,.19,0.34,.39);
+    leg1_PHENIXoverlay->SetFillStyle(0);
+    leg1_PHENIXoverlay->AddEntry("","#it{#bf{sPHENIX}} Internal","");
+    leg1_PHENIXoverlay->AddEntry("","Au+Au #sqrt{s_{NN}} = 200 GeV","");
+    leg1_PHENIXoverlay->AddEntry("","0-20% Centrality","");
+    leg1_PHENIXoverlay->Draw("same");
+    
+    TLegend *leg_uncertainty_0_20_forPHENIXoverlay = new TLegend(0.67,.19,0.87,.4);
+    leg_uncertainty_0_20_forPHENIXoverlay->SetTextSize(0.029);
+    leg_uncertainty_0_20_forPHENIXoverlay->AddEntry(graph_0_20_PHENIXdataAveraged, "PHENIX, 2010 Data", "pe");
+    leg_uncertainty_0_20_forPHENIXoverlay->AddEntry(corrected_v2_0_20_graph_1, "Statistical Uncertainty", "pe"); // "lep" for line and marker
+    leg_uncertainty_0_20_forPHENIXoverlay->AddEntry(sys_v2_0_20_graph_1, "Systematic Uncertainty", "pf"); // "f" for a filled object
+    leg_uncertainty_0_20_forPHENIXoverlay->Draw("same");
+    
+    
+    c_Overlay_ResultsWithPHENIX_0_20->SaveAs((BasePlotOutputPath + "/Final_v2_withSyst_0_20_OverlayedWithPHENIX.png").c_str());
+    
+    
+    
+
+    TCanvas *c_Overlay_ResultsWithPHENIX_20_40 = new TCanvas("c_Overlay_ResultsWithPHENIX_20_40", "#pi^{0} #it{v}_{2} vs #it{p}_{T} 0-20% Centrality", 800, 600);
+    for (int i = 0; i < ptCenters.size(); ++i) {
+        sys_v2_20_40_graph_1->SetPoint(i, ptCenters[i] - .1, data1.corrected_v2_20_40[i]);
+        corrected_v2_20_40_graph_1->SetPoint(i, ptCenters[i] - .1, data1.corrected_v2_20_40[i]);
+    }
+    sys_v2_20_40_graph_1->Draw("A2"); // Draw systematic errors first as a shaded area
+    corrected_v2_20_40_graph_1->Draw("P SAME"); // Then draw the statistical errors on top
+    
+    for (int i = 0; i < ptCenters.size(); ++i) {
+        graph_20_40_PHENIXdataAveraged->SetPoint(i, ptCenters[i] + .1, combinedData.v2_20_40_PHENIX[i]);
+    }
+    graph_20_40_PHENIXdataAveraged->Draw("P SAME");
+    
+    sys_v2_20_40_graph_1->SetTitle("#it{v}_{2}^{#pi^{0}} vs #it{p}_{T} 0-20% Centrality");
+    sys_v2_20_40_graph_1->GetXaxis()->SetTitle("p_{T} [GeV]");
+    sys_v2_20_40_graph_1->GetYaxis()->SetTitle("v_{2}^{#pi^{0}}");
+    sys_v2_20_40_graph_1->SetMinimum(-0.35); // Set the minimum y value
+    sys_v2_20_40_graph_1->SetMaximum(0.45); // Set the maximum y value
+
+    DrawZeroLine(c_Overlay_ResultsWithPHENIX_20_40);
+    TLegend *leg1_PHENIXoverlay = new TLegend(0.14,.19,0.34,.39);
+    leg1_PHENIXoverlay->SetFillStyle(0);
+    leg1_PHENIXoverlay->AddEntry("","#it{#bf{sPHENIX}} Internal","");
+    leg1_PHENIXoverlay->AddEntry("","Au+Au #sqrt{s_{NN}} = 200 GeV","");
+    leg1_PHENIXoverlay->AddEntry("","20-40% Centrality","");
+    leg1_PHENIXoverlay->Draw("same");
+    
+    TLegend *leg_uncertainty_20_40_forPHENIXoverlay = new TLegend(0.67,.19,0.87,.4);
+    leg_uncertainty_20_40_forPHENIXoverlay->SetTextSize(0.029);
+    leg_uncertainty_20_40_forPHENIXoverlay->AddEntry(graph_20_40_PHENIXdataAveraged, "PHENIX, 2010 Data", "pe");
+    leg_uncertainty_20_40_forPHENIXoverlay->AddEntry(corrected_v2_20_40_graph_1, "Statistical Uncertainty", "pe"); // "lep" for line and marker
+    leg_uncertainty_20_40_forPHENIXoverlay->AddEntry(sys_v2_20_40_graph_1, "Systematic Uncertainty", "pf"); // "f" for a filled object
+    leg_uncertainty_20_40_forPHENIXoverlay->Draw("same");
+    
+    
+    c_Overlay_ResultsWithPHENIX_20_40->SaveAs((BasePlotOutputPath + "/Final_v2_withSyst_20_40_OverlayedWithPHENIX.png").c_str());
+    
+    
+    TCanvas *c_Overlay_ResultsWithPHENIX_40_60 = new TCanvas("c_Overlay_ResultsWithPHENIX_40_60", "#pi^{0} #it{v}_{2} vs #it{p}_{T} 0-20% Centrality", 800, 600);
+    for (int i = 0; i < ptCenters.size(); ++i) {
+        sys_v2_40_60_graph_1->SetPoint(i, ptCenters[i] - .1, data1.corrected_v2_40_60[i]);
+        corrected_v2_40_60_graph_1->SetPoint(i, ptCenters[i] - .1, data1.corrected_v2_40_60[i]);
+    }
+    sys_v2_40_60_graph_1->Draw("A2"); // Draw systematic errors first as a shaded area
+    corrected_v2_40_60_graph_1->Draw("P SAME"); // Then draw the statistical errors on top
+    
+    for (int i = 0; i < ptCenters.size(); ++i) {
+        graph_40_60_PHENIXdataAveraged->SetPoint(i, ptCenters[i] + .1, combinedData.v2_40_60_PHENIX[i]);
+    }
+    graph_40_60_PHENIXdataAveraged->Draw("P SAME");
+    
+    sys_v2_40_60_graph_1->SetTitle("#it{v}_{2}^{#pi^{0}} vs #it{p}_{T} 0-20% Centrality");
+    sys_v2_40_60_graph_1->GetXaxis()->SetTitle("p_{T} [GeV]");
+    sys_v2_40_60_graph_1->GetYaxis()->SetTitle("v_{2}^{#pi^{0}}");
+    sys_v2_40_60_graph_1->SetMinimum(-0.35); // Set the minimum y value
+    sys_v2_40_60_graph_1->SetMaximum(0.45); // Set the maximum y value
+
+    DrawZeroLine(c_Overlay_ResultsWithPHENIX_40_60);
+    TLegend *leg1_PHENIXoverlay = new TLegend(0.14,.19,0.34,.39);
+    leg1_PHENIXoverlay->SetFillStyle(0);
+    leg1_PHENIXoverlay->AddEntry("","#it{#bf{sPHENIX}} Internal","");
+    leg1_PHENIXoverlay->AddEntry("","Au+Au #sqrt{s_{NN}} = 200 GeV","");
+    leg1_PHENIXoverlay->AddEntry("","40-60% Centrality","");
+    leg1_PHENIXoverlay->Draw("same");
+    
+    TLegend *leg_uncertainty_40_60_forPHENIXoverlay = new TLegend(0.67,.19,0.87,.4);
+    leg_uncertainty_40_60_forPHENIXoverlay->SetTextSize(0.029);
+    leg_uncertainty_40_60_forPHENIXoverlay->AddEntry(graph_40_60_PHENIXdataAveraged, "PHENIX, 2010 Data", "pe");
+    leg_uncertainty_40_60_forPHENIXoverlay->AddEntry(corrected_v2_40_60_graph_1, "Statistical Uncertainty", "pe"); // "lep" for line and marker
+    leg_uncertainty_40_60_forPHENIXoverlay->AddEntry(sys_v2_40_60_graph_1, "Systematic Uncertainty", "pf"); // "f" for a filled object
+    leg_uncertainty_40_60_forPHENIXoverlay->Draw("same");
+    
+    
+    c_Overlay_ResultsWithPHENIX_40_60->SaveAs((BasePlotOutputPath + "/Final_v2_withSyst_40_60_OverlayedWithPHENIX.png").c_str());
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+    double barWidth = 0.05; // Width of each bar
+    int colors[] = {kRed, kBlue, kGreen+1, kGray+1}; // Colors for the bars
+    const double EPSILON = 1e-6; //used to hid a pT bin if want to zoom in and large uncertainty in a specific bin
+    
+    std::vector<TH1F*> histograms_0_20_RelativeUncertainty; // Vector to hold histogram pointers for legend
+    
+    TCanvas *c_Overlay_0_20_Systematics_RelativeUncertainty = new TCanvas("c_Overlay_0_20_Systematics_RelativeUncertainty", "#pi^{0} #it{v}_{2} vs #it{p}_{T} 0-20% Centrality", 800, 600);
+    TH1F *frame_0_20_RelativeUncertainty = c_Overlay_0_20_Systematics_RelativeUncertainty->DrawFrame(2.0, 0, 5.0, 1.1);
+    
+    frame_0_20_RelativeUncertainty->GetYaxis()->SetTitle("Systematic Uncertainty");
+    frame_0_20_RelativeUncertainty->GetXaxis()->SetTitle("p_{T} [GeV]");
+    
+    for (size_t i = 0; i < ptCenters.size(); ++i) {
+        /*
+         UNCOMMENT LINE BELOW TO HIDE LARGE UNCERTAINTY IF WANT TO ZOOM IN
+         */
+//        if (std::abs(ptCenters[i] - 3.75) < EPSILON) {
+//            continue;  // Skip the rest of the loop for this pT center
+//        }
+        double x = ptCenters[i] - (2.5 * barWidth); // Starting x position for the bars
+        
+        std::vector<double> values_RelativeUncertainty_0_20 = {
+            data1.quad_sum_EMCal_syst_0_20[i],
+            data1.signal_window_syst_0_20[i],
+            data1.background_window_syst_0_20[i],
+            data1.unWeighted_stat_uncertainties_0_20[i]
+        };
+        
+        
+        for (size_t j = 0; j < values_RelativeUncertainty_0_20.size(); ++j) {
+            double xj = x + j * barWidth; // Adjust x position for each bar
+            TH1F *h_0_20_RelativeUncertainty = new TH1F(Form("h_0_20_RelativeUncertainty_%zu_%zu", i, j), "", 1, xj, xj + barWidth);
+            h_0_20_RelativeUncertainty->SetBinContent(1, values_RelativeUncertainty_0_20[j]);
+            h_0_20_RelativeUncertainty->SetFillColor(colors[j]);
+            h_0_20_RelativeUncertainty->Draw("SAME");
+            histograms_0_20_RelativeUncertainty.push_back(h_0_20_RelativeUncertainty); // Save the histogram pointer for the legend
+        }
+        
+    }
+
+    TLegend *legend_0_20_bars_RelativeUncertainty = new TLegend(0.58, 0.54, 0.78, 0.74);
+    legend_0_20_bars_RelativeUncertainty->SetTextSize(0.027);
+    legend_0_20_bars_RelativeUncertainty->SetHeader("Relative Systematic Uncertainties", "L");
+    // Add histograms to legend using the pointers stored in the vector
+    legend_0_20_bars_RelativeUncertainty->AddEntry(histograms_0_20_RelativeUncertainty[0], "EMCal Variations", "f");
+    legend_0_20_bars_RelativeUncertainty->AddEntry(histograms_0_20_RelativeUncertainty[1], "Signal Window Variation", "f");
+    legend_0_20_bars_RelativeUncertainty->AddEntry(histograms_0_20_RelativeUncertainty[2], "Background Window Variation", "f");
+    legend_0_20_bars_RelativeUncertainty->AddEntry(histograms_0_20_RelativeUncertainty[3], "Final Systematic Uncertainty", "f");
+    legend_0_20_bars_RelativeUncertainty->Draw();
+    
+    
+    TLegend *leg0_20_overlay_RelativeUncertainty = new TLegend(0.52, 0.76, 0.72, 0.92);
+    leg0_20_overlay_RelativeUncertainty->SetFillStyle(0);
+    leg0_20_overlay_RelativeUncertainty->AddEntry("", "#it{#bf{sPHENIX}} Internal", "");
+    leg0_20_overlay_RelativeUncertainty->AddEntry("", "Au+Au #sqrt{s_{NN}} = 200 GeV", "");
+    leg0_20_overlay_RelativeUncertainty->AddEntry("", "0-20% Centrality", "");
+    leg0_20_overlay_RelativeUncertainty->Draw("same");
+    c_Overlay_0_20_Systematics_RelativeUncertainty->Modified();
+    c_Overlay_0_20_Systematics_RelativeUncertainty->Update();
+    
+    
+    c_Overlay_0_20_Systematics_RelativeUncertainty->SaveAs((BasePlotOutputPath + "/RelativeSystUncertainty_Overlay_0_20.png").c_str());
+    
+    
+    
+    
+    
+    
+    
+    /*
+     ABSOLUTE SYSTEMATIC UNCERTAINTIES PLOTTING
+     */
+    
+    std::vector<TH1F*> histograms_0_20_AbsoluteUncertainty; // Vector to hold histogram pointers for legend
+    
+    TCanvas *c_Overlay_0_20_AbsoluteUncertainty = new TCanvas("c_Overlay_0_20_AbsoluteUncertainty", "#pi^{0} #it{v}_{2} vs #it{p}_{T} 0-20% Centrality", 800, 600);
+    TH1F *frame_0_20_AbsoluteUncertainty = c_Overlay_0_20_AbsoluteUncertainty->DrawFrame(2.0, 0, 5.0, 1.1);
+    
+    frame_0_20_AbsoluteUncertainty->GetYaxis()->SetTitle("Systematic Uncertainty");
+    frame_0_20_AbsoluteUncertainty->GetXaxis()->SetTitle("p_{T} [GeV]");
+
+    for (size_t i = 0; i < ptCenters.size(); ++i) {
+        double x = ptCenters[i] - (2.5 * barWidth); // Starting x position for the bars
         double v2_value = data1.corrected_v2_0_20[i];
-        // Set the point at the y-value plus the scaled systematic error
-        EMCal_syst_0_20_points->SetPoint(i, ptCenters[i] - .075, data1.quad_sum_EMCal_syst_0_20[i] * v2_value);
-        signal_window_syst_0_20_points->SetPoint(i, ptCenters[i] - .025, data1.signal_window_syst_0_20[i] * v2_value);
-        background_window_syst_0_20_points->SetPoint(i, ptCenters[i] + .025, data1.background_window_syst_0_20[i] * v2_value);
-        sys_v2_0_20_graph_points->SetPoint(i, ptCenters[i] + .075, data1.stat_uncertainties_0_20[i]);
         
-//        
-//        EMCal_syst_0_20_points->SetPoint(i, ptCenters[i] - .075, data1.quad_sum_EMCal_syst_0_20[i]);
-//        signal_window_syst_0_20_points->SetPoint(i, ptCenters[i] - .025, data1.signal_window_syst_0_20[i]);
-//        background_window_syst_0_20_points->SetPoint(i, ptCenters[i] + .025, data1.background_window_syst_0_20[i]);
-//        unWeighted_sys_v2_0_20_graph_points->SetPoint(i, ptCenters[i] + .075, data1.unWeighted_stat_uncertainties_0_20[i]);
+        std::vector<double> values_AbsoluteSyst = {
+            data1.quad_sum_EMCal_syst_0_20[i] * v2_value,
+            data1.signal_window_syst_0_20[i] * v2_value,
+            data1.background_window_syst_0_20[i] * v2_value,
+            data1.stat_uncertainties_0_20[i]
+        };
+        
+        for (size_t j = 0; j < values_AbsoluteSyst.size(); ++j) {
+            double xj = x + j * barWidth; // Adjust x position for each bar
+            TH1F *h_0_20_AbsoluteSyst = new TH1F(Form("h_0_20_AbsoluteSyst_%zu_%zu", i, j), "", 1, xj, xj + barWidth);
+            h_0_20_AbsoluteSyst->SetBinContent(1, values_AbsoluteSyst[j]);
+            h_0_20_AbsoluteSyst->SetFillColor(colors[j]);
+            h_0_20_AbsoluteSyst->Draw("SAME");
+            histograms_0_20_AbsoluteUncertainty.push_back(h_0_20_AbsoluteSyst); // Save the histogram pointer for the legend
+        }
         
     }
 
-    // Customize the markers
-    EMCal_syst_0_20_points->SetMarkerStyle(21);
-    EMCal_syst_0_20_points->SetMarkerColor(kMagenta+1);
-    signal_window_syst_0_20_points->SetMarkerStyle(21);
-    signal_window_syst_0_20_points->SetMarkerColor(kAzure+10);
-    background_window_syst_0_20_points->SetMarkerStyle(21);
-    background_window_syst_0_20_points->SetMarkerColor(kYellow+2);
-    sys_v2_0_20_graph_points->SetMarkerStyle(21);
-    sys_v2_0_20_graph_points->SetMarkerColor(kGray+1);
-
-    sys_v2_0_20_graph_points->Draw("AP"); // Draw the final systematic uncertainties
-    EMCal_syst_0_20_points->Draw("P SAME");
-    signal_window_syst_0_20_points->Draw("P SAME");
-    background_window_syst_0_20_points->Draw("P SAME");
+    TLegend *legend_0_20_bars_AbsoluteSyst = new TLegend(0.58, 0.54, 0.78, 0.74);
+    legend_0_20_bars_AbsoluteSyst->SetTextSize(0.027);
+    legend_0_20_bars_AbsoluteSyst->SetHeader("Absolute Systematic Uncertainties", "L");
+    // Add histograms to legend using the pointers stored in the vector
+    legend_0_20_bars_AbsoluteSyst->AddEntry(histograms_0_20_AbsoluteUncertainty[0], "EMCal Variations", "f");
+    legend_0_20_bars_AbsoluteSyst->AddEntry(histograms_0_20_AbsoluteUncertainty[1], "Signal Window Variation", "f");
+    legend_0_20_bars_AbsoluteSyst->AddEntry(histograms_0_20_AbsoluteUncertainty[2], "Background Window Variation", "f");
+    legend_0_20_bars_AbsoluteSyst->AddEntry(histograms_0_20_AbsoluteUncertainty[3], "Final Systematic Uncertainty", "f");
+    legend_0_20_bars_AbsoluteSyst->Draw();
     
-
-    // Set the ranges for the x-axis and y-axis
-    sys_v2_0_20_graph_points->GetXaxis()->SetLimits(2.0, 5.0); // pT range
-    sys_v2_0_20_graph_points->GetYaxis()->SetRangeUser(0, 0.35); // Systematic uncertainty range
-
-    // Titles
-    sys_v2_0_20_graph_points->SetTitle("#pi^{0} #it{v}_{2} Systematic Uncertainties; #it{p}_{T} [GeV/c]; Systematic Uncertainty");
-
-    TLegend *legend_Overlay_0_20 = new TLegend(0.2, 0.55, 0.4, 0.75);
-    legend_Overlay_0_20->SetHeader("Absolute Systematic Uncertainties", "R");
-    legend_Overlay_0_20->SetTextSize(0.028);
-    legend_Overlay_0_20->AddEntry(EMCal_syst_0_20_points, "EMCal Variations", "p");
-    legend_Overlay_0_20->AddEntry(signal_window_syst_0_20_points, "Signal Window Variation", "p");
-    legend_Overlay_0_20->AddEntry(background_window_syst_0_20_points, "Background Window Variation", "p");
-    legend_Overlay_0_20->AddEntry(sys_v2_0_20_graph_points, "Final Systematic Uncertainty", "p");
-    legend_Overlay_0_20->Draw();
+    
+    TLegend *leg0_20_overlay_AbsoluteSyst = new TLegend(0.52, 0.76, 0.72, 0.92);
+    leg0_20_overlay_AbsoluteSyst->SetFillStyle(0);
+    leg0_20_overlay_AbsoluteSyst->AddEntry("", "#it{#bf{sPHENIX}} Internal", "");
+    leg0_20_overlay_AbsoluteSyst->AddEntry("", "Au+Au #sqrt{s_{NN}} = 200 GeV", "");
+    leg0_20_overlay_AbsoluteSyst->AddEntry("", "0-20% Centrality", "");
+    leg0_20_overlay_AbsoluteSyst->Draw("same");
+    c_Overlay_0_20_AbsoluteUncertainty->Modified();
+    c_Overlay_0_20_AbsoluteUncertainty->Update();
+    
+    
+    c_Overlay_0_20_AbsoluteUncertainty->SaveAs((BasePlotOutputPath + "/AbsoluteSystUncertainty_Overlay_0_20_v2.png").c_str());
 
     
-    DrawZeroLine(c_Overlay_0_20_Systematics);
     
-    TLegend *leg0_20_overlay = new TLegend(0.14,.77,0.34,.92);
-    leg0_20_overlay->SetFillStyle(0);
-    leg0_20_overlay->AddEntry("","#it{#bf{sPHENIX}} Internal","");
-    leg0_20_overlay->AddEntry("","Au+Au #sqrt{s_{NN}} = 200 GeV","");
-    leg0_20_overlay->AddEntry("","0-20% Centrality","");
-    leg0_20_overlay->Draw("same");
-    
-    c_Overlay_0_20_Systematics->Modified();
-    c_Overlay_0_20_Systematics->Update();
-    c_Overlay_0_20_Systematics->SaveAs((BasePlotOutputPath + "/AbsoluteSystUncertainty_Overlay_0_20.png").c_str());
-    
-    
-    
-    
-    
-    // Assuming ptCenters and data1 are defined and filled as in your current code
-    TCanvas *c_Overlay_20_40_Systematics = new TCanvas("c_Overlay_20_40_Systematics", "#pi^{0} #it{v}_{2} vs #it{p}_{T} 0-20% Centrality", 800, 600);
-
-    // Create TGraph for systematic uncertainties as points
-    TGraph* EMCal_syst_20_40_points = new TGraph(ptCenters.size());
-    TGraph* signal_window_syst_20_40_points = new TGraph(ptCenters.size());
-    TGraph* background_window_syst_20_40_points = new TGraph(ptCenters.size());
-    TGraph* sys_v2_20_40_graph_points = new TGraph(ptCenters.size());
-    
-    for (int i = 0; i < ptCenters.size(); ++i) {
-        double v2_value = data1.corrected_v2_20_40[i];
-        // Set the point at the y-value plus the scaled systematic error
-        EMCal_syst_20_40_points->SetPoint(i, ptCenters[i] - .075, data1.quad_sum_EMCal_syst_20_40[i] * v2_value);
-        signal_window_syst_20_40_points->SetPoint(i, ptCenters[i] - .025, data1.signal_window_syst_20_40[i] * v2_value);
-        background_window_syst_20_40_points->SetPoint(i, ptCenters[i] + .025, data1.background_window_syst_20_40[i] * v2_value);
-        sys_v2_20_40_graph_points->SetPoint(i, ptCenters[i] + .075, data1.stat_uncertainties_20_40[i]);
-        
-        
-//        EMCal_syst_20_40_points->SetPoint(i, ptCenters[i] - .075, data1.quad_sum_EMCal_syst_20_40[i]);
-//        signal_window_syst_20_40_points->SetPoint(i, ptCenters[i] - .025, data1.signal_window_syst_20_40[i]);
-//        background_window_syst_20_40_points->SetPoint(i, ptCenters[i] + .025, data1.background_window_syst_20_40[i]);
-//        unWeighted_sys_v2_20_40_graph_points->SetPoint(i, ptCenters[i] + .075, data1.unWeighted_stat_uncertainties_20_40[i]);
-    }
-
-    // Customize the markers
-    EMCal_syst_20_40_points->SetMarkerStyle(21);
-    EMCal_syst_20_40_points->SetMarkerColor(kMagenta+1);
-    signal_window_syst_20_40_points->SetMarkerStyle(21);
-    signal_window_syst_20_40_points->SetMarkerColor(kAzure+10);
-    background_window_syst_20_40_points->SetMarkerStyle(21);
-    background_window_syst_20_40_points->SetMarkerColor(kYellow+2);
-    sys_v2_20_40_graph_points->SetMarkerStyle(21);
-    sys_v2_20_40_graph_points->SetMarkerColor(kGray+1);
-
-    sys_v2_20_40_graph_points->Draw("AP"); // Draw the final systematic uncertainties
-    EMCal_syst_20_40_points->Draw("P SAME");
-    signal_window_syst_20_40_points->Draw("P SAME");
-    background_window_syst_20_40_points->Draw("P SAME");
-    
-
-    // Set the ranges for the x-axis and y-axis
-    sys_v2_20_40_graph_points->GetXaxis()->SetLimits(2.0, 5.0); // pT range
-    sys_v2_20_40_graph_points->GetYaxis()->SetRangeUser(0, 0.12); // Systematic uncertainty range
-
-    // Titles
-    sys_v2_20_40_graph_points->SetTitle("#pi^{0} #it{v}_{2} Systematic Uncertainties; #it{p}_{T} [GeV/c]; Systematic Uncertainty");
-
-    TLegend *legend_Overlay_20_40 = new TLegend(0.2, 0.55, 0.4, 0.75);
-    legend_Overlay_20_40->SetHeader("Absolute Systematic Uncertainties", "R");
-    legend_Overlay_20_40->SetTextSize(0.03);
-    legend_Overlay_20_40->AddEntry(EMCal_syst_20_40_points, "EMCal Variations", "p");
-    legend_Overlay_20_40->AddEntry(signal_window_syst_20_40_points, "Signal Window Variation", "p");
-    legend_Overlay_20_40->AddEntry(background_window_syst_20_40_points, "Background Window Variation", "p");
-    legend_Overlay_20_40->AddEntry(sys_v2_20_40_graph_points, "Final Systematic Uncertainty", "p");
-    legend_Overlay_20_40->Draw();
-
-    
-    DrawZeroLine(c_Overlay_20_40_Systematics);
-    
-    TLegend *leg20_40_overlay = new TLegend(0.14,.77,0.34,.92);
-    leg20_40_overlay->SetFillStyle(0);
-    leg20_40_overlay->AddEntry("","#it{#bf{sPHENIX}} Internal","");
-    leg20_40_overlay->AddEntry("","Au+Au #sqrt{s_{NN}} = 200 GeV","");
-    leg20_40_overlay->AddEntry("","20-40% Centrality","");
-    leg20_40_overlay->Draw("same");
-    
-    c_Overlay_20_40_Systematics->Modified();
-    c_Overlay_20_40_Systematics->Update();
-    c_Overlay_20_40_Systematics->SaveAs((BasePlotOutputPath + "/AbsoluteSystUncertainty_Overlay_20_40.png").c_str());
-    
-    
-    
-    
-    
-    // Assuming ptCenters and data1 are defined and filled as in your current code
-    TCanvas *c_Overlay_40_60_Systematics = new TCanvas("c_Overlay_40_60_Systematics", "#pi^{0} #it{v}_{2} vs #it{p}_{T} 0-20% Centrality", 800, 600);
-
-    // Create TGraph for systematic uncertainties as points
-    TGraph* EMCal_syst_40_60_points = new TGraph(ptCenters.size());
-    TGraph* signal_window_syst_40_60_points = new TGraph(ptCenters.size());
-    TGraph* background_window_syst_40_60_points = new TGraph(ptCenters.size());
-    TGraph* sys_v2_40_60_graph_points = new TGraph(ptCenters.size());
-    
-    for (int i = 0; i < ptCenters.size(); ++i) {
-        double v2_value = data1.corrected_v2_40_60[i];
-//        // Set the point at the y-value plus the scaled systematic error
-        EMCal_syst_40_60_points->SetPoint(i, ptCenters[i] - .075, data1.quad_sum_EMCal_syst_40_60[i] * v2_value);
-        signal_window_syst_40_60_points->SetPoint(i, ptCenters[i] - .025, data1.signal_window_syst_40_60[i] * v2_value);
-        background_window_syst_40_60_points->SetPoint(i, ptCenters[i] + .025, data1.background_window_syst_40_60[i] * v2_value);
-        sys_v2_40_60_graph_points->SetPoint(i, ptCenters[i] + .075, data1.stat_uncertainties_40_60[i]);
-        
-        
-//        EMCal_syst_40_60_points->SetPoint(i, ptCenters[i] - .075, data1.quad_sum_EMCal_syst_40_60[i]);
-//        signal_window_syst_40_60_points->SetPoint(i, ptCenters[i] - .025, data1.signal_window_syst_40_60[i]);
-//        background_window_syst_40_60_points->SetPoint(i, ptCenters[i] + .025, data1.background_window_syst_40_60[i]);
-//        unWeighted_sys_v2_40_60_graph_points->SetPoint(i, ptCenters[i] + .075, data1.unWeighted_stat_uncertainties_40_60[i]);
-    }
-
-    // Customize the markers
-    EMCal_syst_40_60_points->SetMarkerStyle(21);
-    EMCal_syst_40_60_points->SetMarkerColor(kMagenta+1);
-    signal_window_syst_40_60_points->SetMarkerStyle(21);
-    signal_window_syst_40_60_points->SetMarkerColor(kAzure+10);
-    background_window_syst_40_60_points->SetMarkerStyle(21);
-    background_window_syst_40_60_points->SetMarkerColor(kYellow+2);
-    sys_v2_40_60_graph_points->SetMarkerStyle(21);
-    sys_v2_40_60_graph_points->SetMarkerColor(kGray+1);
-
-    sys_v2_40_60_graph_points->Draw("AP"); // Draw the final systematic uncertainties
-    EMCal_syst_40_60_points->Draw("P SAME");
-    signal_window_syst_40_60_points->Draw("P SAME");
-    background_window_syst_40_60_points->Draw("P SAME");
-    
-
-    // Set the ranges for the x-axis and y-axis
-    sys_v2_40_60_graph_points->GetXaxis()->SetLimits(2.0, 5.0); // pT range
-    sys_v2_40_60_graph_points->GetYaxis()->SetRangeUser(0, 0.16); // Systematic uncertainty range
-
-    // Titles
-    sys_v2_40_60_graph_points->SetTitle("#pi^{0} #it{v}_{2} Systematic Uncertainties; #it{p}_{T} [GeV/c]; Systematic Uncertainty");
-
-    TLegend *legend_Overlay_40_60 = new TLegend(0.2, 0.55, 0.4, 0.75);
-    legend_Overlay_40_60->SetHeader("Absolute Systematic Uncertainties", "R");
-    legend_Overlay_40_60->SetTextSize(0.028);
-    legend_Overlay_40_60->AddEntry(EMCal_syst_40_60_points, "EMCal Variations", "p");
-    legend_Overlay_40_60->AddEntry(signal_window_syst_40_60_points, "Signal Window Variation", "p");
-    legend_Overlay_40_60->AddEntry(background_window_syst_40_60_points, "Background Window Variation", "p");
-    legend_Overlay_40_60->AddEntry(sys_v2_40_60_graph_points, "Final Systematic Uncertainty", "p");
-    legend_Overlay_40_60->Draw();
-
-    
-    DrawZeroLine(c_Overlay_40_60_Systematics);
-    
-    TLegend *leg40_60_overlay = new TLegend(0.14,.77,0.34,.92);
-    leg40_60_overlay->SetFillStyle(0);
-    leg40_60_overlay->AddEntry("","#it{#bf{sPHENIX}} Internal","");
-    leg40_60_overlay->AddEntry("","Au+Au #sqrt{s_{NN}} = 200 GeV","");
-    leg40_60_overlay->AddEntry("","40-60% Centrality","");
-    leg40_60_overlay->Draw("same");
-    
-    c_Overlay_40_60_Systematics->Modified();
-    c_Overlay_40_60_Systematics->Update();
-    c_Overlay_40_60_Systematics->SaveAs((BasePlotOutputPath + "/AbsoluteSystUncertainty_Overlay_40_60.png").c_str());
 }
 
 void v2_Results_Plotter() {
     gROOT->LoadMacro("sPhenixStyle.C");
     SetsPhenixStyle();
     
-    std::string filePath1 = "/Users/patsfan753/Desktop/Default_Final_v2_energyCutsFinal.csv";
+    std::string filePath1 = "/Users/patsfan753/Desktop/Default_Final_v2_p013.csv";
 
     Data data1;
 
