@@ -108,7 +108,7 @@ void ReadPHENIXData(std::string filePath,
 }
 void CombineCentralityData(const std::vector<double>& v2_0_10, const std::vector<double>& v2_0_10_Errors,
                            const std::vector<double>& v2_10_20, const std::vector<double>& v2_10_20_Errors,
-                           std::vector<double>& v2_0_20_PHENIX, std::vector<double>& v2_0_20_Errors_PHENIX
+                           std::vector<double>& v2_0_20_PHENIX, std::vector<double>& v2_0_20_Errors_PHENIX,
                            const std::vector<double>& v2_20_30, const std::vector<double>& v2_20_30_Errors,
                            const std::vector<double>& v2_30_40, const std::vector<double>& v2_30_40_Errors,
                            std::vector<double>& v2_20_40_PHENIX, std::vector<double>& v2_20_40_Errors_PHENIX,
@@ -494,8 +494,8 @@ void plotting(const Data& data1) {
                           combinedData.v2_0_20_PHENIX, combinedData.v2_0_20_Errors_PHENIX, 
                           v2_20_30, v2_20_30_Errors, v2_30_40, v2_30_40_Errors,
                           combinedData.v2_20_40_PHENIX, combinedData.v2_20_40_Errors_PHENIX,
-                          v2_20_30, v2_20_30_Errors, v2_30_40, v2_30_40_Errors,
-                          combinedData.v2_20_40_PHENIX, combinedData.v2_20_40_Errors_PHENIX);
+                          v2_40_50, v2_40_50_Errors, v2_50_60, v2_50_60_Errors,
+                          combinedData.v2_40_60_PHENIX, combinedData.v2_40_60_Errors_PHENIX);
 
     // Create graph for combined data
     TGraphErrors* graph_0_20_PHENIXdataAveraged = CreateGraph(ptCenters, combinedData.v2_0_20_PHENIX, combinedData.v2_0_20_Errors_PHENIX);
@@ -503,6 +503,18 @@ void plotting(const Data& data1) {
     graph_0_20_PHENIXdataAveraged->SetLineColor(kBlue);
     graph_0_20_PHENIXdataAveraged->SetMarkerStyle(20);
     graph_0_20_PHENIXdataAveraged->SetMarkerSize(1.0);
+
+    TGraphErrors* graph_20_40_PHENIXdataAveraged = CreateGraph(ptCenters, combinedData.v2_20_40_PHENIX, combinedData.v2_20_40_Errors_PHENIX);
+    graph_20_40_PHENIXdataAveraged->SetMarkerColor(kBlue);
+    graph_20_40_PHENIXdataAveraged->SetLineColor(kBlue);
+    graph_20_40_PHENIXdataAveraged->SetMarkerStyle(20);
+    graph_20_40_PHENIXdataAveraged->SetMarkerSize(1.0);
+
+    TGraphErrors* graph_40_60_PHENIXdataAveraged = CreateGraph(ptCenters, combinedData.v2_40_60_PHENIX, combinedData.v2_40_60_Errors_PHENIX);
+    graph_40_60_PHENIXdataAveraged->SetMarkerColor(kBlue);
+    graph_40_60_PHENIXdataAveraged->SetLineColor(kBlue);
+    graph_40_60_PHENIXdataAveraged->SetMarkerStyle(20);
+    graph_40_60_PHENIXdataAveraged->SetMarkerSize(1.0);
     
     
     
@@ -566,12 +578,12 @@ void plotting(const Data& data1) {
     sys_v2_20_40_graph_1->SetMaximum(0.45); // Set the maximum y value
 
     DrawZeroLine(c_Overlay_ResultsWithPHENIX_20_40);
-    TLegend *leg1_PHENIXoverlay = new TLegend(0.14,.19,0.34,.39);
-    leg1_PHENIXoverlay->SetFillStyle(0);
-    leg1_PHENIXoverlay->AddEntry("","#it{#bf{sPHENIX}} Internal","");
-    leg1_PHENIXoverlay->AddEntry("","Au+Au #sqrt{s_{NN}} = 200 GeV","");
-    leg1_PHENIXoverlay->AddEntry("","20-40% Centrality","");
-    leg1_PHENIXoverlay->Draw("same");
+    TLegend *leg2_PHENIXoverlay = new TLegend(0.14,.19,0.34,.39);
+    leg2_PHENIXoverlay->SetFillStyle(0);
+    leg2_PHENIXoverlay->AddEntry("","#it{#bf{sPHENIX}} Internal","");
+    leg2_PHENIXoverlay->AddEntry("","Au+Au #sqrt{s_{NN}} = 200 GeV","");
+    leg2_PHENIXoverlay->AddEntry("","20-40% Centrality","");
+    leg2_PHENIXoverlay->Draw("same");
     
     TLegend *leg_uncertainty_20_40_forPHENIXoverlay = new TLegend(0.67,.19,0.87,.4);
     leg_uncertainty_20_40_forPHENIXoverlay->SetTextSize(0.029);
@@ -604,12 +616,12 @@ void plotting(const Data& data1) {
     sys_v2_40_60_graph_1->SetMaximum(0.45); // Set the maximum y value
 
     DrawZeroLine(c_Overlay_ResultsWithPHENIX_40_60);
-    TLegend *leg1_PHENIXoverlay = new TLegend(0.14,.19,0.34,.39);
-    leg1_PHENIXoverlay->SetFillStyle(0);
-    leg1_PHENIXoverlay->AddEntry("","#it{#bf{sPHENIX}} Internal","");
-    leg1_PHENIXoverlay->AddEntry("","Au+Au #sqrt{s_{NN}} = 200 GeV","");
-    leg1_PHENIXoverlay->AddEntry("","40-60% Centrality","");
-    leg1_PHENIXoverlay->Draw("same");
+    TLegend *leg3_PHENIXoverlay = new TLegend(0.14,.19,0.34,.39);
+    leg3_PHENIXoverlay->SetFillStyle(0);
+    leg3_PHENIXoverlay->AddEntry("","#it{#bf{sPHENIX}} Internal","");
+    leg3_PHENIXoverlay->AddEntry("","Au+Au #sqrt{s_{NN}} = 200 GeV","");
+    leg3_PHENIXoverlay->AddEntry("","40-60% Centrality","");
+    leg3_PHENIXoverlay->Draw("same");
     
     TLegend *leg_uncertainty_40_60_forPHENIXoverlay = new TLegend(0.67,.19,0.87,.4);
     leg_uncertainty_40_60_forPHENIXoverlay->SetTextSize(0.029);
