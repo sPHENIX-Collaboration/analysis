@@ -125,7 +125,6 @@ int Fun4All_G4_sPHENIX(                           //
 
             INPUTREADHITS::filename[0] = infile;
         }
-
         else if (generator == "AMPT")
         {
             infile = "/sphenix/tg/tg01/bulk/dNdeta_INTT_run2023/data/simulation/new/AMPT/fullSim/magOff/detectorAligned/dstSet_00000/dNdeta-sim-AMPT-000-" +
@@ -133,7 +132,6 @@ int Fun4All_G4_sPHENIX(                           //
 
             INPUTREADHITS::filename[0] = infile;
         }
-
         else
         {
             std::cout << "Generator " << generator << " is not [HIJING, EPOS, AMPT]. Exit" << std::endl;

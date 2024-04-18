@@ -1,6 +1,6 @@
 # dNdEta production chain
 
-This directory contains the python script `InttMbdCombineChain.py` and configuration `config_combinechain.py` to run the dNdEta production chain in a push-button way, per requested by the sPHENIX Collaboration.  
+This directory contains the python script `InttMbdCombineChain.py` and configuration `config_combinechain.py` to run the dNdEta production chain in an automatic, "push-button" way, per requested by the sPHENIX Collaboration.  
 Run the the python script `InttMbdCombineChain.py` with the `--help` option to see the usage.
 ```
 Usage: InttMbdCombineChain.py ver [options -h]
