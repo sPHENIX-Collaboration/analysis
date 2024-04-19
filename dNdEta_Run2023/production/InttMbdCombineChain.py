@@ -72,20 +72,20 @@ if __name__ == '__main__':
         os.system(cmdstr)
         
         print ('Done INTT DST production, move the file to the production directory and clean up')
-        os.system('rm intt*.list && mv intt-{:08d}.root {}'.format(config.runnumber,productiondir))
+        os.system('rm intt*.list && mv intt-{:08d}.root {}'.format(config.runnumber,config.productiondir))
 
 
     if inttntuple:
         print('Run INTT ntuple production')
         # Check if the intt dst exists in the production directory
-        if not os.path.isfile('{}/intt-{:08d}.root'.format(productiondir,int(config.runnumber))):
-            # try to copy from /gpfs/mnt/gpfs02/sphenix/user/cdean/software/macros/InttProduction/intt-00020869.root , otherwise exit
-            if not os.path.isfile('/gpfs/mnt/gpfs02/sphenix/user/cdean/software/macros/InttProduction/intt-{:08d}.root'.format(int(config.runnumber))):
+        if not os.path.isfile('{}/intt-{:08d}.root'.format(config.productiondir,int(config.runnumber))):
+            # try to copy from /sphenix/user/hjheng/sPHENIXRepo/macros/InttProduction/intt-00020869.root , otherwise exit
+            if not os.path.isfile('/sphenix/user/hjheng/sPHENIXRepo/macros/InttProduction/ProdDST-HotDead-ADC-Survey/intt-{:08d}.root'.format(int(config.runnumber))):
                 print('Intt DST does not exist. Exit')
                 sys.exit(1)
             else:
                 print('Pre-generated Intt DST exists -> Copy it to the production directory')
-                os.system('cp /gpfs/mnt/gpfs02/sphenix/user/cdean/software/macros/InttProduction/intt-{:08d}.root {}'.format(int(config.runnumber),productiondir))
+                os.system('cp -r /sphenix/user/hjheng/sPHENIXRepo/macros/InttProduction/ProdDST-HotDead-ADC-Survey {}'.format(config.productiondir))
         
         os.chdir('{}/condor/'.format(config.dndetamacrodir))
         cmdlist = ['chmod 755 runCondor.py',
@@ -93,7 +93,7 @@ if __name__ == '__main__':
                                                                                                                                                                                           config.inttntupleproduction_productionTag,
                                                                                                                                                                                           config.inttntupleproduction_eventPerJob, 
                                                                                                                                                                                           config.inttntupleproduction_nJob, 
-                                                                                                                                                                                          productiondir+'/'+config.inttntupleproduction_InttNtupleDir, 
+                                                                                                                                                                                          config.productiondir+'/'+config.inttntupleproduction_InttNtupleDir, 
                                                                                                                                                                                           config.inttntupleproduction_softwareversion, 
                                                                                                                                                                                           '--submitcondor' if config.inttntupleproduction_submitcondor else '')]
         cmdstr = ' && '.join(cmdlist)
@@ -103,14 +103,14 @@ if __name__ == '__main__':
     if centmbntuple:
         print('Run Centrality&Minimum-bias ntuple production')
         os.chdir('{}'.format(config.dndetamacrodir))
-        os.system('CreateDstList.pl --run {} --build {} --cdb {} DST_CALO'.format(config.runnumber, config.centntupleproduction_softwareversion.replace('.', ''), config.centntupleproduction_productionTag))
+        os.system('CreateDstList.pl --run {} --build {} --cdb {} DST_CALO_run1auau'.format(config.runnumber, config.centntupleproduction_softwareversion.replace('.', ''), config.centntupleproduction_productionTag))
         os.chdir('{}/condor/'.format(config.dndetamacrodir))
         cmdlist = ['chmod 755 runCondor.py',
                    'python runCondor.py --data --runnumber {} --productiontag {} --generator none --eventPerJob {} --nJob {} --outputdir {} --softwareversion {} {}'.format(config.runnumber,
                                                                                                                                                                             config.centntupleproduction_productionTag,
                                                                                                                                                                             config.centntupleproduction_eventPerJob,
                                                                                                                                                                             config.centntupleproduction_nJob,
-                                                                                                                                                                            productiondir+'/'+config.centntupleproduction_CentralityNtupleDir,
+                                                                                                                                                                            config.productiondir+'/'+config.centntupleproduction_CentralityNtupleDir,
                                                                                                                                                                             config.centntupleproduction_softwareversion, 
                                                                                                                                                                             '--submitcondor' if config.centntupleproduction_submitcondor else '')]
         cmdstr = ' && '.join(cmdlist)
@@ -119,17 +119,17 @@ if __name__ == '__main__':
 
     if runcombiner:
         print('Run INTT event combiner')
-        os.chdir('{}/{}'.format(productiondir,config.inttntupleproduction_InttNtupleDir))
+        os.chdir('{}/{}'.format(config.productiondir,config.inttntupleproduction_InttNtupleDir))
         if not os.path.isfile('ntuple_merged.root'):
             os.system('hadd -f ntuple_merged.root ntuple_*.root')
             
         # cd to two directories up
-        os.chdir('{}/INTT_MBD_evt_combiner'.format(os.path.abspath(os.path.join(productiondir, os.path.pardir, os.path.pardir))))
-        os.system('python intt_mbd_evt_combiner_v1.py {}/{} {}/{}/ntuple_merged.root EventTree {}/{}/ntuple_00000.root EventTree'.format(productiondir,
+        os.chdir('{}/INTT_MBD_evt_combiner'.format(os.path.abspath(os.path.join(config.productiondir, os.path.pardir, os.path.pardir))))
+        os.system('python intt_mbd_evt_combiner_v1.py {}/{} {}/{}/ntuple_merged.root EventTree {}/{}/ntuple_00000.root EventTree'.format(config.productiondir,
                                                                                                                                          config.inttmbdcombine_combinedNtupleName,
-                                                                                                                                         productiondir,
+                                                                                                                                         config.productiondir,
                                                                                                                                          config.inttntupleproduction_InttNtupleDir,
-                                                                                                                                         productiondir,
+                                                                                                                                         config.productiondir,
                                                                                                                                          config.centntupleproduction_CentralityNtupleDir)) 
         
             

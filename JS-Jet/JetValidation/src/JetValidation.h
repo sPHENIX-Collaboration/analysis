@@ -6,7 +6,6 @@
 #include <fun4all/SubsysReco.h>
 #include <jetbase/Jetv1.h>
 #include <jetbase/Jetv2.h>
-#include <fastjet/PseudoJet.hh>
 
 #include <string>
 #include <vector>
@@ -98,6 +97,7 @@ class JetValidation : public SubsysReco
   int m_doTruthJets;
   int m_doSeeds;
   int m_doUnsubJet;
+
 
   //! Output Tree variables
   TTree *m_T;

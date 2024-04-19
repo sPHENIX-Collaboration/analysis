@@ -93,7 +93,7 @@ int Fun4All_G4_sPHENIX(                           //
             if (file == NULL)
             {
                 std::cout << "File: " << infile << " does not exist. Use the pre-generated file" << std::endl;
-                infile = "/gpfs/mnt/gpfs02/sphenix/user/cdean/software/macros/InttProduction/intt-" + std::string(TString::Format("%08d", runnumber).Data()) + ".root";
+                infile = "/sphenix/user/hjheng/sPHENIXRepo/macros/InttProduction/ProdDST-HotDead-ADC-Survey/intt-" + std::string(TString::Format("%08d", runnumber).Data()) + ".root";
             }
             else
             {
@@ -102,9 +102,9 @@ int Fun4All_G4_sPHENIX(                           //
 
             INPUTREADHITS::filename[0] = infile;
         }
-        else if (getCentralityData) // Generate MBD data list with `CreateDstList.pl --run 20869 --build ana403 --cdb 2023p011 DST_CALO`
+        else if (getCentralityData) // Generate MBD data list with `CreateDstList.pl --run 20869 --build ana403 --cdb 2023p011 DST_CALO_run1auau`
         {
-            INPUTREADHITS::listfile[0] = "dst_calo-000" + std::to_string(runnumber) + ".list";
+            INPUTREADHITS::listfile[0] = "dst_calo_run1auau-000" + std::to_string(runnumber) + ".list";
         }
     }
     else
@@ -125,7 +125,6 @@ int Fun4All_G4_sPHENIX(                           //
 
             INPUTREADHITS::filename[0] = infile;
         }
-
         else if (generator == "AMPT")
         {
             infile = "/sphenix/tg/tg01/bulk/dNdeta_INTT_run2023/data/simulation/new/AMPT/fullSim/magOff/detectorAligned/dstSet_00000/dNdeta-sim-AMPT-000-" +
@@ -133,7 +132,6 @@ int Fun4All_G4_sPHENIX(                           //
 
             INPUTREADHITS::filename[0] = infile;
         }
-
         else
         {
             std::cout << "Generator " << generator << " is not [HIJING, EPOS, AMPT]. Exit" << std::endl;
@@ -179,8 +177,8 @@ int Fun4All_G4_sPHENIX(                           //
         // Load ActsGeometry object
         TrackingInit();
         // Reco clustering
-        if (rundata)
-            Intt_Clustering();
+        // if (rundata)
+            // Intt_Clustering();
     }
 
     //-----------------
@@ -211,16 +209,15 @@ int Fun4All_G4_sPHENIX(                           //
     }
 
     dNdEtaINTT *myAnalyzer = new dNdEtaINTT("dNdEtaAnalyzer", outputFile, rundata);
-    myAnalyzer->GetHEPMC(true);
-    myAnalyzer->GetRecoCluster(true);
-    myAnalyzer->GetCentrality(true);
-    myAnalyzer->GetInttRawHit(false);
-    myAnalyzer->GetTrkrHit(false);
     myAnalyzer->GetINTTdata(getINTTData);
+    myAnalyzer->GetRecoCluster(getINTTData);
+    myAnalyzer->GetInttRawHit(false);
+    myAnalyzer->GetTrkrHit(getINTTData);
     myAnalyzer->GetCentrality(getCentralityData);
     bool getPMTinfo = getCentralityData && false;
     myAnalyzer->GetPMTInfo(getPMTinfo);
-    myAnalyzer->GetPHG4(true);
+    myAnalyzer->GetPHG4(!rundata);
+    myAnalyzer->GetHEPMC(!rundata);
 
     se->registerSubsystem(myAnalyzer);
 

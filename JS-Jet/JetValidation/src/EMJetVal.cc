@@ -1,9 +1,8 @@
-// Modified version of JetValidation.cc for the purpose of subjet analysis -- Jennifer James jennifer.l.james@vanderbilt.edu
+// Modified version of JetValidation.cc for the purpose of subjet analysis -- Jennifer James jennifer.l.james@vanderbilt.eduuti
 //module for producing a TTree with jet information for doing jet validation studies
 // for questions/bugs please contact Virginia Bailey vbailey13@gsu.edu and myself
-
-#include <fun4all/Fun4AllBase.h>
 #include <EMJetVal.h>
+#include <fun4all/Fun4AllBase.h>
 #include <fun4all/Fun4AllReturnCodes.h>
 #include <fun4all/PHTFileServer.h>
 #include <phool/PHCompositeNode.h>
@@ -12,9 +11,17 @@
 #include <jetbase/JetContainer.h>
 #include <jetbase/Jetv2.h>
 #include <jetbase/Jetv1.h>
+#include <jetbase/Jet.h>
+#include <jetbase/JetAlgo.h>
+#include <jetbase/FastJetAlgo.h>
+#include <jetbase/JetInput.h>
+#include <jetbase/TowerJetInput.h>
+#include <jetbase/JetMapv1.h>
+#include <jetbase/JetContainer.h>
+#include <jetbase/JetContainerv1.h>
 #include <centrality/CentralityInfo.h>
 #include <globalvertex/GlobalVertex.h>
-#include <globalvertex/GlobalVertexMap.h>
+#include <globalvertex/GlobalVertexMapv1.h>
 #include <calobase/RawTower.h>
 #include <calobase/RawTowerContainer.h>
 #include <calobase/RawTowerGeom.h>
@@ -22,6 +29,19 @@
 #include <calobase/TowerInfoContainer.h>
 #include <calobase/TowerInfo.h>
 
+#include <mbd/MbdOut.h>
+#include "fastjet/AreaDefinition.hh"
+#include "fastjet/ClusterSequenceArea.hh"
+#include "fastjet/Selector.hh"
+#include "fastjet/tools/BackgroundEstimatorBase.hh"
+#include "fastjet/tools/JetMedianBackgroundEstimator.hh"
+#include <fastjet/JetDefinition.hh>
+#include "fastjet/ClusterSequence.hh"
+#include "fastjet/contrib/SoftDrop.hh" // In external code, this should be fastjet/contrib/SoftDrop.hh  
+#include <map>
+#include <utility>
+#include <cstdlib>  // for exit                                                                                                                                                                 
+#include <memory>  // for allocator_traits<>::value_type        
 #include <Pythia8/Pythia.h> // Include the Pythia header
 #include <jetbackground/TowerBackground.h>
 
@@ -32,8 +52,6 @@
 #include <iomanip>
 #include <cmath>
 #include <vector>
-#include "fastjet/ClusterSequence.hh"
-#include "fastjet/contrib/SoftDrop.hh" // In external code, this should be fastjet/contrib/SoftDrop.hh
 
 using namespace fastjet;
 
@@ -47,7 +65,8 @@ using namespace fastjet;
 
 // ROOT, for saving file.
 #include "TFile.h"
-#include <TTree.h>
+
+ 
 
 using std::cout;
 using std::endl;
@@ -56,6 +75,7 @@ using std::endl;
 EMJetVal::EMJetVal(const std::string& recojetname, const std::string& truthjetname, const std::string& outputfilename)
   :SubsysReco("EMJetVal_" + recojetname + "_" + truthjetname)
   , m_recoJetName(recojetname)
+  , m_vtxZ_cut(10.0)
   , m_truthJetName(truthjetname)
   , m_outputFileName(outputfilename)
   , m_etaRange(-1, 1)
@@ -104,7 +124,7 @@ EMJetVal::~EMJetVal()
 //____________________________________________________________________________..
 int EMJetVal::Init(PHCompositeNode *topNode)
 {
-  //  std::cout << "EMJetVal::Init(PHCompositeNode *topNode) Initializing" << std::endl;
+  std::cout << "EMJetVal::Init(PHCompositeNode *topNode) Initializing" << std::endl;
   //PHTFileServer::get().open(m_outputFileName, "RECREATE");
   std::cout << "EMJetVal::Init - Output to " << m_outputFileName << std::endl;
   //Analysis hists
@@ -166,7 +186,7 @@ int EMJetVal::Init(PHCompositeNode *topNode)
     m_T->Branch("subseedCut", &m_subseed_cut);
   }
  
-  std::cout << "finished declaring histos" << std::endl;
+  //  std::cout << "finished declaring histos" << std::endl;
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -182,14 +202,14 @@ int EMJetVal::retrieveEvent(const fastjet::PseudoJet& jet) {
 //____________________________________________________________________________..
 int EMJetVal::InitRun(PHCompositeNode *topNode)
 {
-  // std::cout << "EMJetVal::InitRun(PHCompositeNode *topNode) Initializing for Run XXX" << std::endl;
+  std::cout << "EMJetVal::InitRun(PHCompositeNode *topNode) Initializing for Run XXX" << std::endl;
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
 //____________________________________________________________________________..
 int EMJetVal::process_event(PHCompositeNode *topNode)
 {
-  std::cout << "EMJetVal::process_event(PHCompositeNode *topNode) Processing Event " << m_event << std::endl;
+  // std::cout << "EMJetVal::process_event(PHCompositeNode *topNode) Processing Event " << m_event << std::endl;
    ++m_event;
 
   // interface to reco jets
@@ -243,9 +263,9 @@ int EMJetVal::process_event(PHCompositeNode *topNode)
     }
   
   //calorimeter towers
-  TowerInfoContainer *towersEM3 = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_CEMC_RETOWER");
-  TowerInfoContainer *towersIH3 = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALIN");
-  TowerInfoContainer *towersOH3 = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALOUT");
+  TowerInfoContainer *towersEM3 = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_CEMC_RETOWER_SUB1");
+  TowerInfoContainer *towersIH3 = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALIN_SUB1");
+  TowerInfoContainer *towersOH3 = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALOUT_SUB1");
   RawTowerGeomContainer *tower_geom = findNode::getClass<RawTowerGeomContainer>(topNode, "TOWERGEOM_HCALIN");
   RawTowerGeomContainer *tower_geomOH = findNode::getClass<RawTowerGeomContainer>(topNode, "TOWERGEOM_HCALOUT");
   if(!towersEM3 || !towersIH3 || !towersOH3){
@@ -265,7 +285,7 @@ int EMJetVal::process_event(PHCompositeNode *topNode)
   //underlying event
   TowerBackground *background = findNode::getClass<TowerBackground>(topNode, "TowerInfoBackground_Sub2");
   if(!background){
-    std::cout<<"Can't get background. Exiting"<<std::endl;
+    //  std::cout<<"Can't get background. Exiting"<<std::endl;
     return Fun4AllReturnCodes::EVENT_OK;
   }
 
@@ -285,7 +305,7 @@ int EMJetVal::process_event(PHCompositeNode *topNode)
   for (auto jet : *jets)// jets //JetMap::Iter iter = jets->begin(); iter != jets->end(); ++iter)
     {
 
-      std::cout << "working on original jet " << jet->get_id() << " out of " << jets->size() << std::endl;
+      // std::cout << "working on original jet " << jet->get_id() << " out of " << jets->size() << std::endl;
 
       if(jet->get_pt() < 1) continue; // to remove noise jets
 
@@ -395,7 +415,7 @@ int EMJetVal::process_event(PHCompositeNode *topNode)
 		}//end if over sources
 
 	    }//end loop over constituents
-
+	  //Insert jenn's analysis
 		  double radius[5] = {0.05, 0.1, 0.2, 0.4, 0.6}; // jet radius
 		  double pseudorapidity = -999.; // pseudorapidity
 		  double theta_sj = -1.; // delta radius (value describes an unachievable value)
@@ -417,47 +437,47 @@ int EMJetVal::process_event(PHCompositeNode *topNode)
 		  
 		  for (int j = 0; j < (int)sortedJets_R04.size(); j++) {
 		    
-		    std::cout << "working on reclustered jet " << j << " of " << sortedJets_R04.size() << std::endl;
+		    //	    std::cout << "working on reclustered jet " << j << " of " << sortedJets_R04.size() << std::endl;
 
 		    PseudoJet jet_reco = sortedJets_R04.at(j);
 		    if(fabs(jet_reco.eta()) > 0.6)
 		      continue;
       
-		    std::cout << "jet within eta of 0.6" << std::endl; 
+		    // std::cout << "jet within eta of 0.6" << std::endl; 
 
 		    ClusterSequence clustSeq_R01_con(jet_reco.constituents() , jetDefAKT_R01 );
-		    std::cout << "made R=0.1 cluster sequence" << std::endl;
+		    //  std::cout << "made R=0.1 cluster sequence" << std::endl;
 		    std:: vector<PseudoJet> sortedJets_R01_con = sorted_by_pt( clustSeq_R01_con.inclusive_jets() );
-		    std::cout << "ran R=0.1 and sorted by pT" << std::endl;
-		    std::cout << "number of subjets: " << sortedJets_R01_con.size() << std::endl;
+		    //  std::cout << "ran R=0.1 and sorted by pT" << std::endl;
+		    // std::cout << "number of subjets: " << sortedJets_R01_con.size() << std::endl;
 		    // std::cout << "passed here -476 -pseudojet" << std::endl
 		    if (sortedJets_R01_con.size() < 2){
-		      std::cout << "not enough subjets" << std::endl;
+		      //  std::cout << "not enough subjets" << std::endl;
 		      continue;
 		    }		      
 
-		    std:: cout << "at least 2 subjets" << std::endl;
+		    //std:: cout << "at least 2 subjets" << std::endl;
 
 		    PseudoJet sj1 = sortedJets_R01_con.at(0);
 		    PseudoJet sj2 = sortedJets_R01_con.at(1);
 
-		    //  std::cout << "sj1 pt=" << sj1.pt() << std::endl;
+		    // std::cout << "sj1 pt=" << sj1.pt() << std::endl;
 		    // std::cout << "sj2 pt=" << sj2.pt() << std::endl;
 		    if (sj1.pt() < 3 || sj2.pt() < 3 )
 		      continue;
 		    // std::cout << "sj1 pt=" << sj1.pt() << std::endl;
 		    // std::cout << "sj2 pt=" << sj2.pt() << std::endl;
-		     std::cout << "both are above 3" << std::endl;
+		    // std::cout << "both are above 3" << std::endl;
 		    
 		    theta_sj = sj1.delta_R(sj2);
 		    z_sj = sj2.pt()/(sj2.pt()+sj1.pt());
 
-		    std::cout << "theta_sj = " << theta_sj << "   z_sj = " << z_sj << std::endl;
+		    // std::cout << "theta_sj = " << theta_sj << "   z_sj = " << z_sj << std::endl;
 		   
 		    // 10 to 20 pT
 		    if (jet_reco.pt() > 10 && jet_reco.pt() < 20 ){
-		      // cout<<"sorted jets at "<<j<<" the pT = "<<jet.pt()<<endl;
-		      std::cout << "jet pt >10 & <20: " << jet_reco.pt() << std::endl;
+		      // std::cout<<"sorted jets at "<<j<<" the pT = " << jet.pt()<<endl;
+		      // std::cout << "jet pt >10 & <20: " << jet_reco.pt() << std::endl;
 		      _hjetpT_R04->Fill(jet_reco.perp());
 		      pseudorapidity = jet_reco.eta();
 		      _hjeteta_R04->Fill(pseudorapidity);
@@ -466,11 +486,11 @@ int EMJetVal::process_event(PHCompositeNode *topNode)
 		      ClusterSequence clustSeqCA(jet_reco.constituents(), jetDefCA);
 		      std::vector<PseudoJet> cambridgeJets = sorted_by_pt(clustSeqCA.inclusive_jets());
 
-		      std::cout << "have CA sort jets: " << cambridgeJets.size() << std::endl;
+		      // std::cout << "have CA sort jets: " << cambridgeJets.size() << std::endl;
 
 		      // SoftDrop parameters
-		      double z_cut = 0.30;
-		      double beta = 2.0;
+		      double z_cut = 0.10;
+		      double beta = 0.0;
 		      contrib::SoftDrop sd(beta, z_cut);
 		      //! get subjets
 		      if (!isnan(theta_sj) && !isnan(z_sj) && !isinf(theta_sj) && !isinf(z_sj)){
@@ -478,14 +498,14 @@ int EMJetVal::process_event(PHCompositeNode *topNode)
 			  _h_R04_theta_sj_10_20->Fill(theta_sj);
 			}
 		    
-		      std::cout << "filled some histos" << std::endl;
+		      // std::cout << "filled some histos" << std::endl;
 		      // Apply SoftDrop to the jet
 		      PseudoJet sd_jet = sd(jet_reco);
-		      std::cout << "ran sd" << std::endl;
+		      // std::cout << "ran sd" << std::endl;
 		      if (sd_jet == 0)
 
 			continue;
-		      std::cout << "sd jet exists" << std::endl;
+		      // std::cout << "sd jet exists" << std::endl;
 		       double delta_R_subjets = sd_jet.structure_of<contrib::SoftDrop>().delta_R();
 		       double z_subjets = sd_jet.structure_of<contrib::SoftDrop>().symmetry();
 
@@ -507,23 +527,23 @@ int EMJetVal::process_event(PHCompositeNode *topNode)
 		    //filled nEvent in histogram
 		    _hmult_R04->Fill(m_nJet);
 		    
-		    //   std::// cout << "iZ = " << nEvent << std::endl;
-		    std::cout << "finished jet " << j << std::endl;
+		    //		    std::cout << "iZ = " << nEvent << std::endl;
+		    // std::cout << "finished jet " << j << std::endl;
 
 		  }//! event loop ends for pT
 		  
 		  
-		  std::cout << "finished loop over reclustered jets" << std::endl;
+		  //std::cout << "finished loop over reclustered jets" << std::endl;
 
 		  // End of event loop. Statistics. Histograms. Done.
 		  
 		  
 		  m_nJet++;
-		  std::cout << "m_nJet: " << m_nJet << std::endl;
+		  // std::cout << "m_nJet: " << m_nJet << std::endl;
     }
 
-  std::cout << "finised loop over original jets" << std::endl;
-  /*
+  // std::cout << "finised loop over original jets" << std::endl;
+  
 //get truth jets
 if(m_doTruthJets)
   {
@@ -567,11 +587,11 @@ if(m_doTruthJets)
 	  m_subseed_cut.push_back(passesCut);
 	}
     }
-  */
+ 
   //fill the tree
 
   m_T->Fill();
-  std::cout << "filled TTree" << std::endl;
+  //  std::cout << "filled TTree" << std::endl;
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -623,29 +643,11 @@ if(m_doTruthJets)
   int EMJetVal::End(PHCompositeNode *topNode)
   {
 
-    /*
-
-  // Normalize 10-20 hists
-  _h_R04_z_sj_10_20->Scale(1./_h_R04_z_sj_10_20->Integral());
-  _h_R04_theta_sj_10_20->Scale(1./_h_R04_theta_sj_10_20->Integral());
-
-  _h_R04_z_sj_10_20->Scale(1./0.05);
-  _h_R04_theta_sj_10_20->Scale(1./0.05);
-  //SoftDrop Normalization
-  // Normalize 10-20 hists
-  _h_R04_z_g_10_20->Scale(1./_h_R04_z_g_10_20->Integral());
-  _h_R04_theta_g_10_20->Scale(1./_h_R04_theta_g_10_20->Integral());
-
-  _h_R04_z_g_10_20->Scale(1./0.05);
-  _h_R04_theta_g_10_20->Scale(1./0.05);
-    */
-
-
     outFile->cd();
     outFile->Write();
     outFile->Close();
     
-    //std::cout << "EMJetVal::End - Output to " << m_outputFileName << std::endl;
+    std::cout << "EMJetVal::End - Output to " << m_outputFileName << std::endl;
 
 
     // PHTFileServer::get().cd(m_outputFileName);
@@ -658,7 +660,7 @@ if(m_doTruthJets)
   //____________________________________________________________________________..
   int EMJetVal::Reset(PHCompositeNode *topNode)
   {
-    // std::cout << "EMJetVal::Reset(PHCompositeNode *topNode) being Reset" << std::endl;
+    std::cout << "EMJetVal::Reset(PHCompositeNode *topNode) being Reset" << std::endl;
     return Fun4AllReturnCodes::EVENT_OK;
   }
 

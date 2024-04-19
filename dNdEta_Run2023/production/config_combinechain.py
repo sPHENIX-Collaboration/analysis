@@ -16,19 +16,19 @@ inttdstproduction_runTkrkClus = True
 inttdstproduction_stripRawHit = True
 
 inttntupleproduction_productionTag = '2023p011'
-inttntupleproduction_InttNtupleDir = 'Data_NtupleIntt_Run{}'.format(runnumber)
+inttntupleproduction_InttNtupleDir = 'Data_NtupleIntt_Run{}_HotDead_BCO_ADC_Survey'.format(runnumber)
 inttntupleproduction_eventPerJob = 1000
 inttntupleproduction_nJob = 551
-inttntupleproduction_softwareversion = 'ana.405'
-inttntupleproduction_submitcondor = False
+inttntupleproduction_softwareversion = 'new'
+inttntupleproduction_submitcondor = True
 
-centntupleproduction_softwareversion = 'ana.403'
-centntupleproduction_productionTag = '2023p011'
+centntupleproduction_softwareversion = 'ana.410'
+centntupleproduction_productionTag = '2023p014'
 centntupleproduction_CentralityNtupleDir = 'Data_NtupleCentrality_Run{}'.format(runnumber)
 centntupleproduction_eventPerJob = -1
 centntupleproduction_nJob = 1
 centntupleproduction_submitcondor = True
 
-inttmbdcombine_combinedNtupleName = 'Data_CombinedNtuple_Run{}.root'.format(runnumber)
+inttmbdcombine_combinedNtupleName = 'Data_CombinedNtuple_Run{}_HotDead_BCO_ADC_Survey.root'.format(runnumber)
 
 
