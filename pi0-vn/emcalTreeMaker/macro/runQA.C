@@ -24,6 +24,7 @@ using std::setw;
 using std::stringstream;
 using std::sin;
 using std::cos;
+using std::ofstream;
 
 namespace myAnalysis {
     vector<pair<string,TFile*>> inputs; // run, file
@@ -31,7 +32,7 @@ namespace myAnalysis {
     Int_t init(const string &i_input);
     Int_t readFiles(const string &i_input);
 
-    void process_event();
+    void process_event(const string &outputFile);
     void finalize();
 
     vector<string> cent_key = {"40-60", "20-40", "0-20"};
@@ -72,11 +73,16 @@ Int_t myAnalysis::readFiles(const string &i_input) {
     return 0;
 }
 
-void myAnalysis::process_event() {
+void myAnalysis::process_event(const string &outputFile) {
 
-    UInt_t ctr[3] = {0};
+    UInt_t ctr[4] = {0};
 
-    cout << "Run,Events |z| < 10,Events: |z| < 10 and MB, Events: |z| < 10 and MB and totalCaloE > 0" << endl;
+    cout << "Run,|z| < 10,|z| < 10 and MB,|z| < 10 and MB and totalCaloE > 0,Bad PMTs" << endl;
+
+    ofstream output(outputFile);
+    output << "Run,|z| < 10,|z| < 10 and MB,|z| < 10 and MB and totalCaloE > 0,Bad PMTs" << endl;
+    stringstream s;
+
     for(auto input : inputs) {
         auto h = (TH1F*)(input.second->Get("hVtxZ"));
         Int_t low = h->FindBin(-10);
@@ -90,45 +96,67 @@ void myAnalysis::process_event() {
         auto h2 = (TH2F*)(input.second->Get("h2TotalMBDCaloE"));
         Int_t events_mb_caloE = h2->GetEntries();
 
-        cout << input.first << "," << events << "," << events_mb << "," << events_mb_caloE << endl;
+        h = (TH1F*)(input.second->Get("hBadPMTs"));
+
+        Int_t totalBadPMTs = 0;
+        for(UInt_t i = 1; i <= h->GetNbinsX(); ++i) {
+            totalBadPMTs += h->GetBinLowEdge(i)*h->GetBinContent(i);
+        }
+
+        s.str("");
+        s << input.first << "," << events << "," << events_mb << "," << events_mb_caloE << "," << totalBadPMTs << endl;
+        output << s.str();
+        cout << s.str();
 
         ctr[0] += events;
         ctr[1] += events_mb;
         ctr[2] += events_mb_caloE;
+        ctr[3] += totalBadPMTs;
     }
 
+    output.close();
+
     cout << "Total" << endl;
-    cout << "Events |z| < 10: " << ctr[0]
-         << ", Events: |z| < 10 and MB: " << ctr[1]
-         << ", Events: |z| < 10 and MB and totalCaloE > 0: " << ctr[2]
+    cout << "z| < 10: " << ctr[0]
+         << ", |z| < 10 and MB: " << ctr[1]
+         << ", |z| < 10 and MB and totalCaloE > 0: " << ctr[2]
+         << ", Total Bad PMTs: " << ctr[3]
          << endl;
 }
 
 void myAnalysis::finalize() {}
 
-void runQA(const string &i_input) {
+void runQA(const string &i_input,const string &output = "qa.csv") {
 
     cout << "#############################" << endl;
     cout << "Run Parameters" << endl;
     cout << "inputFile: "  << i_input << endl;
+    cout << "outputFile: " << output << endl;
     cout << "#############################" << endl;
 
     Int_t ret = myAnalysis::init(i_input);
     if(ret != 0) return;
 
-    myAnalysis::process_event();
+    myAnalysis::process_event(output);
     myAnalysis::finalize();
 }
 
 # ifndef __CINT__
 Int_t main(Int_t argc, char* argv[]) {
-if(argc < 2 || argc > 2){
-        cout << "usage: ./runQA inputFile" << endl;
+if(argc < 2 || argc > 3){
+        cout << "usage: ./runQA inputFile [outputFile]" << endl;
         cout << "inputFile: containing list of root file paths" << endl;
+        cout << "outputFile: run stats. Default: qa.csv" << endl;
         return 1;
     }
 
-    runQA(argv[1]);
+    string outputFile = "qa.csv";
+
+    if(argc >= 3) {
+       outputFile = argv[2];
+    }
+
+    runQA(argv[1], outputFile);
 
     cout << "======================================" << endl;
     cout << "done" << endl;
