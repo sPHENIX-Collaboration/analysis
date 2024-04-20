@@ -20,7 +20,7 @@ f4a.add_argument('-d', '--output', type=str, default='test', help='Output Direct
 f4a.add_argument('-s', '--memory', type=float, default=1, help='Memory (units of GB) to request per condor submission. Default: 1 GB.')
 f4a.add_argument('-l', '--log', type=str, default='/tmp/anarde/dump/job-$(ClusterId)-$(Process).log', help='Condor log file.')
 f4a.add_argument('-z', '--vtx-z', type=float, default=10, help='Event z-vertex cut. Default: 10 [cm]')
-f4a.add_argument('-e2', '--clus-e-min', type=float, default=0.5, help='Minimum Cluster ECore. Default: 0.5 [GeV]')
+f4a.add_argument('-e2', '--clus-e-min', type=float, default=1, help='Minimum Cluster ECore. Default: 1 [GeV]')
 f4a.add_argument('-c', '--clus-chi-max', type=float, default=4, help='Maximum Cluster Chi Squared. Default: 4')
 f4a.add_argument('-a', '--do-pi0', type=int, default=1, help='Do pi0 Analysis. Default: True')
 f4a.add_argument('-s2', '--isSim', type=int, default=0, help='Type Simulation. Default: False')
