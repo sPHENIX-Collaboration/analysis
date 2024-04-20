@@ -161,8 +161,6 @@ class caloTreeGen : public SubsysReco
     Float_t  max_vtx_z        = 0;
     Float_t  max_cent         = 0;
 
-    Int_t    badPMTs = 0;
-
     TH1F* hTowE;
     TH1F* hClusterECore;
     TH1F* hClusterPt;
@@ -174,6 +172,7 @@ class caloTreeGen : public SubsysReco
     TH1F* hTotalCaloE;
     TH1F* hVtxZ;
     TH1F* hVtxZv2;
+    TH1F* hBadPMTs;
 
     TH2F* h2ClusterEtaPhi;
     TH2F* h2ClusterEtaPhiWeighted;
@@ -205,6 +204,10 @@ class caloTreeGen : public SubsysReco
     UInt_t  bins_chi = 400;
     Float_t low_chi  = 0;
     Float_t high_chi = 100;
+
+    UInt_t  bins_nPMTs = 129;
+    Float_t low_nPMTs  = 0;
+    Float_t high_nPMTs = 129;
 
     // UInt_t  bins_time = 32;
     // Float_t low_time  = 0;

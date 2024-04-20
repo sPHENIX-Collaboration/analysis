@@ -78,6 +78,7 @@ Int_t caloTreeGen::Init(PHCompositeNode *topNode)
   hTotalMBD = new TH1F("hTotalMBD", "MBD Charge; MBD Charge; Counts", bins_totalmbd, low_totalmbd, high_totalmbd);
   hCentrality = new TH1F("hCentrality", "Centrality; Centrality; Counts", bins_cent, low_cent, high_cent);
   hTotalCaloE = new TH1F("hTotalCaloE", "Total Calo E; Total Calo E [GeV]; Counts", bins_totalcaloE, low_totalcaloE, high_totalcaloE);
+  hBadPMTs = new TH1F("hBadPMTs", "PMTs with charge nan; # of nan PMTs per Event; Counts", bins_nPMTs, low_nPMTs, high_nPMTs);
 
   h2ClusterEtaPhi = new TH2F("h2ClusterEtaPhi", "Cluster; #eta; #phi", bins_eta, low_eta, high_eta, bins_phi, low_phi, high_phi);
   h2ClusterEtaPhiWeighted = new TH2F("h2ClusterEtaPhiWeighted", "Cluster ECore; #eta; #phi", bins_eta, low_eta, high_eta, bins_phi, low_phi, high_phi);
@@ -237,8 +238,7 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
 
   Int_t nPMTs = (!isSim) ? mbdpmts -> get_npmt() : 128; //size (should always be 128)
 
-  Bool_t badPMTEvent = false;
-
+  Int_t badPMTs = 0;
   for(Int_t i = 0; i < nPMTs; ++i) {
     MbdPmtHit* mbdpmt = mbdpmts->get_pmt(i);
     Float_t charge    = mbdpmt->get_q();     //pmt charge
@@ -246,7 +246,6 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
     // skip PMT if the charge is nan
     if(std::isnan(charge)) {
       ++badPMTs;
-      badPMTEvent = true;
       continue;
     }
 
@@ -276,7 +275,7 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
     totalMBD += charge;
   }
 
-  if(badPMTEvent) {
+  if(badPMTs) {
     std::cout << "Bad PMT in Event: " << iEvent << std::endl;
   }
 
@@ -346,6 +345,7 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
   h2TotalMBDCaloE->Fill(totalCaloE/high_totalcaloE, totalMBD/high_totalmbd);
   h2TotalMBDCentrality->Fill(cent, totalMBD/high_totalmbd);
   hCentrality->Fill(cent);
+  hBadPMTs->Fill(badPMTs);
 
   min_cent = std::min(min_cent, cent);
   max_cent = std::max(max_cent, cent);
@@ -510,7 +510,7 @@ Int_t caloTreeGen::End(PHCompositeNode *topNode)
 {
 
   std::cout << "Total Events: " << iEvent << ", Accepted Events: " << iEventGood << ", " << iEventGood*100./iEvent << " %" << std::endl;
-  std::cout << "Bad PMTs: " << badPMTs << std::endl;
+  std::cout << "Bad PMT Events: " << hBadPMTs->GetEntries() << std::endl;
   std::cout << "min z-vertex: " << min_vtx_z << ", max z-vertex: " << max_vtx_z << std::endl;
   std::cout << "min centrality: " << min_cent << ", max centrality: " << max_cent << std::endl;
   std::cout << "min totalCaloE: " << min_totalCaloE << ", max totalCaloE: " << max_totalCaloE << std::endl;
@@ -529,6 +529,7 @@ Int_t caloTreeGen::End(PHCompositeNode *topNode)
 
   out -> cd();
 
+  hBadPMTs->Write();
   hVtxZ->Write();
   hVtxZv2->Write();
   hTotalMBD->Write();
