@@ -9,9 +9,15 @@
 #include <TF1.h>
 #include <TFile.h>
 #include <TLine.h>
+#include <TLegend.h>
 #include <TLatex.h>
 #include <TFitResult.h>
 #include <TCanvas.h>
+
+#include <Math/MinimizerOptions.h>
+
+// -- sPHENIX Style
+#include "sPhenixStyle.C"
 
 using std::cout;
 using std::cerr;
@@ -39,7 +45,7 @@ namespace myAnalysis {
     Int_t readCuts(const string &i_cuts);
     TFitResultPtr PerformFitting(TH1F* hPi0Mass, TF1** totalFit, Int_t index);
     Double_t CalculateSignalToBackgroundRatio(TH1F* hPi0Mass, TF1* polyFit, Double_t fitMean, Double_t fitSigma, Double_t &signalToBackgroundError);
-    void process_fits(const string &i_input, const string &outputCSV, const string &outputDir, const string &tag, const Float_t sigmaMult);
+    void process_fits(const string &i_input, const string &outputCSV, const string &outputDir, const string &tag);
 
     vector<string> centrality = {"40-60","20-40","0-20"};
     vector<string> pts         = {"2-2.5","2.5-3","3-3.5","3.5-4","4-4.5","4.5-5"};
@@ -94,6 +100,7 @@ Int_t myAnalysis::readCuts(const string &i_cuts) {
 TFitResultPtr myAnalysis::PerformFitting(TH1F* hPi0Mass, TF1** totalFit, Int_t index) {
     // Define totalFit
     *totalFit = new TF1("totalFit", "gaus(0) + pol2(3)", fitStart, fitEnd);
+    (*totalFit)->SetLineColor(kRed);
 
     if(index == 7) meanEstimate = 0.19;
     else           meanEstimate = 0.2;
@@ -106,7 +113,7 @@ TFitResultPtr myAnalysis::PerformFitting(TH1F* hPi0Mass, TF1** totalFit, Int_t i
 
     (*totalFit)->SetParameter(2, sigmaEstimate);
 
-    TFitResultPtr fitResult = hPi0Mass->Fit("totalFit", "SQR+");
+    TFitResultPtr fitResult = hPi0Mass->Fit("totalFit", "SR+");
 
     return fitResult; // Return the fit result
 }
@@ -154,8 +161,7 @@ Double_t myAnalysis::CalculateSignalToBackgroundRatio(TH1F* hPi0Mass, TF1* polyF
 void myAnalysis::process_fits(const string &i_input,
                               const string &outputCSV,
                               const string &outputDir,
-                              const string &tag,
-                              const Float_t sigmaMult) {
+                              const string &tag) {
     TFile input(i_input.c_str());
 
     stringstream s;
@@ -167,7 +173,7 @@ void myAnalysis::process_fits(const string &i_input,
     c1->SetTicky();
 
     c1->SetCanvasSize(1500, 1000);
-    c1->SetLeftMargin(.12);
+    c1->SetLeftMargin(.13);
     c1->SetRightMargin(.05);
 
     TLatex l1;
@@ -214,6 +220,7 @@ void myAnalysis::process_fits(const string &i_input,
 
                 auto h = (TH1F*)input.Get(s.str().c_str());
                 Double_t numEntries = h->Integral(h->FindBin(fitStart), h->FindBin(fitEnd));
+                Double_t entries = h->GetEntries();
 
                 // ensure there are enough entries before fitting
                 if(numEntries < 20){
@@ -266,22 +273,23 @@ void myAnalysis::process_fits(const string &i_input,
                 h->SetStats();
 
                 s.str("");
-                s << "Centrality: " << cent << "%, "
-                  << 2+fmod(index,6)*0.5 << " #leq p_{T} < " << 2.5+fmod(index,6)*0.5 << " GeV";
+                s << "#splitline{Centrality: " << cent << "%}"
+                  << "{#splitline{" << 2+fmod(index,6)*0.5 << " #leq Diphoton p_{T} < " << 2.5+fmod(index,6)*0.5 << " GeV" << "}"
+                  << "{Entries: " << entries << " }"
+                  << "}";
 
-                l1.DrawLatexNDC(0.15,0.83, s.str().c_str());
                 l1.SetTextSize(0.04);
+                l1.DrawLatexNDC(0.38,0.87, s.str().c_str());
 
                 s.str("");
-                s << "#splitline{Cuts (inclusive):}"
-                  << "{#splitline{Asymmetry < " << cut.asym << "}"
-                  << "{#splitline{#chi^{2} < " << cut.chi << "}"
+                s << "#splitline{Asymmetry < " << cut.asym << "}"
+                  << "{#splitline{Cluster #chi^{2} < " << cut.chi << "}"
                   << "{#splitline{Cluster E_{A} #geq " << cut.e1 << " GeV}"
                   << "{#splitline{Cluster E_{B} #geq " << cut.e2 << " GeV}"
                   << "{" << cut.deltaR_min << " #leq #Delta R < " << cut.deltaR_max << "}"
-                  << "}}}}";
+                  << "}}}";
 
-                l1.DrawLatexNDC(0.15,0.75, s.str().c_str());
+                l1.DrawLatexNDC(0.15,0.87, s.str().c_str());
 
                 s.str("");
                 s << "#splitline{Fit:}"
@@ -291,7 +299,7 @@ void myAnalysis::process_fits(const string &i_input,
                   << "{#chi^{2} / ndf: " << chi2 << "/" << ndf << "}"
                   << "}}}";
 
-                l1.DrawLatexNDC(0.45,0.75, s.str().c_str());
+                l1.DrawLatexNDC(0.7,0.87, s.str().c_str());
 
                 Double_t y = h->GetBinContent(h->FindBin(fitMean));
 
@@ -316,6 +324,12 @@ void myAnalysis::process_fits(const string &i_input,
                 polyFit->SetLineWidth(3);
                 polyFit->SetLineStyle(2);
                 polyFit->Draw("SAME");
+
+                TLegend *leg = new TLegend(0.55,.2,0.75,.3);
+                leg->SetFillStyle(0);
+                leg->AddEntry("","#it{#bf{sPHENIX}} Internal","");
+                leg->AddEntry("","Au+Au #sqrt{s_{NN}} = 200 GeV","");
+                leg->Draw("same");
 
                 s.str("");
                 s << t.str() << "/" << cent << "_" << pt;
@@ -349,6 +363,13 @@ void fits(const string &i_input,
     cout << "sigmaMult: "        << sigmaMult << endl;
     cout << "#############################" << endl;
 
+    ROOT::Math::MinimizerOptions::SetDefaultMaxFunctionCalls(5000);
+    ROOT::Math::MinimizerOptions::SetDefaultMinimizer("Minuit2");
+    ROOT::Math::MinimizerOptions::PrintDefault();
+
+    // set sPHENIX plotting style
+    SetsPhenixStyle();
+
     myAnalysis::sigmaMult = sigmaMult;
     Int_t ret = myAnalysis::readCuts(i_cuts);
     if(ret != 0) return;
@@ -371,7 +392,7 @@ void fits(const string &i_input,
         }
     }
 
-    myAnalysis::process_fits(i_input, outputCSV, outputDir, tag, sigmaMult);
+    myAnalysis::process_fits(i_input, outputCSV, outputDir, tag);
 }
 
 # ifndef __CINT__
