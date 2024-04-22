@@ -453,7 +453,7 @@ TGraphErrors* CreateSystematicGraph(const std::vector<double>& ptCenters,
                                     const std::vector<double>& statErrors,
                                     const std::vector<double>& sysErrors) {
 
-    std::vector<double> sysx(ptCenters.size(), 0.1);
+    std::vector<double> sysx(ptCenters.size(), 0.05);
     auto* graph = new TGraphErrors(ptCenters.size(), &ptCenters[0], &values[0], &sysx[0], &sysErrors[0]);
     
     graph->SetFillColorAlpha(kRed, 0.35);
@@ -473,7 +473,20 @@ void DrawZeroLine(TCanvas* canvas) {
     canvas->Modified();
     canvas->Update();
 }
-void plotting(const Data& data1) {
+void Create_sPHENIX_legend(TCanvas* canvas, float x1, float y1, float x2, float y2, const std::string& centrality) {
+    if (!canvas) return; // Check if canvas is valid
+
+    canvas->cd(); // Switch to the canvas context
+
+    TLegend *leg = new TLegend(x1, y1, x2, y2);
+    leg->SetFillStyle(0);
+    leg->AddEntry("", "#it{#bf{sPHENIX}} Internal", "");
+    leg->AddEntry("", "Au+Au #sqrt{s_{NN}} = 200 GeV", "");
+    leg->AddEntry("", centrality.c_str(), "");
+    leg->Draw("same");
+}
+
+void plotting_Results_andPHENIXoverlay(const Data& data1) {
     double minYaxis_correctedComparisons = -0.35;
     double maxYaxis_correctedComparisons = 0.5;
     double TLatexSize = 0.025;
@@ -530,7 +543,7 @@ void plotting(const Data& data1) {
     sys_v2_0_20_graph_1->GetYaxis()->SetTitle("v_{2}^{#pi^{0}}");
     sys_v2_0_20_graph_1->SetMinimum(minYaxis_correctedComparisons); // Set the minimum y value
     sys_v2_0_20_graph_1->SetMaximum(maxYaxis_correctedComparisons); // Set the maximum y value
-
+    sys_v2_0_20_graph_1->GetXaxis()->SetLimits(2.0, 5.0);
     DrawZeroLine(c_Overlay_1_finalResults);
     TLegend *leg0_20_FinalResults = new TLegend(0.14,.19,0.34,.44);
     leg0_20_FinalResults->SetTextSize(0.04);
@@ -554,7 +567,7 @@ void plotting(const Data& data1) {
     sys_v2_20_40_graph_1->GetYaxis()->SetTitle("v_{2}^{#pi^{0}}");
     sys_v2_20_40_graph_1->SetMinimum(minYaxis_correctedComparisons); // Set the minimum y value
     sys_v2_20_40_graph_1->SetMaximum(maxYaxis_correctedComparisons); // Set the maximum y value
-    
+    sys_v2_20_40_graph_1->GetXaxis()->SetLimits(2.0, 5.0);
     corrected_v2_20_40_graph_1->Draw("P SAME");
     
     DrawZeroLine(c_Overlay_2_finalResults);
@@ -582,7 +595,7 @@ void plotting(const Data& data1) {
     sys_v2_40_60_graph_1->GetYaxis()->SetTitle("v_{2}^{#pi^{0}}");
     sys_v2_40_60_graph_1->SetMinimum(minYaxis_correctedComparisons); // Set the minimum y value
     sys_v2_40_60_graph_1->SetMaximum(maxYaxis_correctedComparisons); // Set the maximum y value
-    
+    sys_v2_40_60_graph_1->GetXaxis()->SetLimits(2.0, 5.0);
     corrected_v2_40_60_graph_1->Draw("P SAME");
     
     DrawZeroLine(c_Overlay_3_finalResults);
@@ -644,11 +657,9 @@ void plotting(const Data& data1) {
     
     std::vector<double> sysErrors_0_20_PHENIX = CalculatePHENIXsystematicError(combinedData.v2_0_20_PHENIX, 0.1, 0.1);
     TGraphErrors* sys_graph_0_20_PHENIX = CreateSystematicGraph(ptCenters, combinedData.v2_0_20_PHENIX, combinedData.v2_0_20_Errors_PHENIX, sysErrors_0_20_PHENIX);
-    sys_graph_0_20_PHENIX->SetFillColor(kBlue); // Gray color
-    sys_graph_0_20_PHENIX->SetFillStyle(3001); // Semi-transparent fill
+    sys_graph_0_20_PHENIX->SetFillColor(kBlue);
+    sys_graph_0_20_PHENIX->SetFillStyle(3001);
 
-    
-    
     TGraphErrors* graph_20_40_PHENIXdataAveraged = CreateGraph(ptCenters, combinedData.v2_20_40_PHENIX, combinedData.v2_20_40_Errors_PHENIX);
     graph_20_40_PHENIXdataAveraged->SetMarkerColor(kBlue);
     graph_20_40_PHENIXdataAveraged->SetLineColor(kBlue);
@@ -657,8 +668,8 @@ void plotting(const Data& data1) {
     
     std::vector<double> sysErrors_20_40_PHENIX = CalculatePHENIXsystematicError(combinedData.v2_20_40_PHENIX, 0.05, 0.03);
     TGraphErrors* sys_graph_20_40_PHENIX = CreateSystematicGraph(ptCenters, combinedData.v2_20_40_PHENIX, combinedData.v2_20_40_Errors_PHENIX, sysErrors_20_40_PHENIX);
-    sys_graph_20_40_PHENIX->SetFillColor(kBlue); // Gray color
-    sys_graph_20_40_PHENIX->SetFillStyle(3001); // Semi-transparent fill
+    sys_graph_20_40_PHENIX->SetFillColor(kBlue);
+    sys_graph_20_40_PHENIX->SetFillStyle(3001);
 
     TGraphErrors* graph_40_60_PHENIXdataAveraged = CreateGraph(ptCenters, combinedData.v2_40_60_PHENIX, combinedData.v2_40_60_Errors_PHENIX);
     graph_40_60_PHENIXdataAveraged->SetMarkerColor(kBlue);
@@ -676,128 +687,92 @@ void plotting(const Data& data1) {
         sys_v2_0_20_graph_1->SetPoint(i, ptCenters[i] - .08, data1.corrected_v2_0_20[i]);
         corrected_v2_0_20_graph_1->SetPoint(i, ptCenters[i] - .08, data1.corrected_v2_0_20[i]);
     }
-    sys_v2_0_20_graph_1->Draw("A2"); // Draw systematic errors first as a shaded area
-    corrected_v2_0_20_graph_1->Draw("P SAME"); // Then draw the statistical errors on top
-    sys_graph_0_20_PHENIX->Draw("2 SAME");  // Draw PHENIX systematic errors
-    
+    sys_v2_0_20_graph_1->Draw("A2");
+    corrected_v2_0_20_graph_1->Draw("P SAME");
+    sys_graph_0_20_PHENIX->Draw("2 SAME");
+    sys_v2_0_20_graph_1->GetXaxis()->SetLimits(2.0, 5.0);
     for (int i = 0; i < ptCenters.size(); ++i) {
         graph_0_20_PHENIXdataAveraged->SetPoint(i, ptCenters[i] + .08, combinedData.v2_0_20_PHENIX[i]);
         sys_graph_0_20_PHENIX->SetPoint(i, ptCenters[i] + .08, combinedData.v2_0_20_PHENIX[i]);
     }
     graph_0_20_PHENIXdataAveraged->Draw("P SAME");
-    
     sys_v2_0_20_graph_1->SetTitle("#it{v}_{2}^{#pi^{0}} vs #it{p}_{T} 0-20% Centrality");
     sys_v2_0_20_graph_1->GetXaxis()->SetTitle("p_{T} [GeV]");
     sys_v2_0_20_graph_1->GetYaxis()->SetTitle("v_{2}^{#pi^{0}}");
-    sys_v2_0_20_graph_1->SetMinimum(minYaxis_correctedComparisons); // Set the minimum y value
-    sys_v2_0_20_graph_1->SetMaximum(maxYaxis_correctedComparisons); // Set the maximum y value
-
+    sys_v2_0_20_graph_1->SetMinimum(minYaxis_correctedComparisons);
+    sys_v2_0_20_graph_1->SetMaximum(maxYaxis_correctedComparisons);
     DrawZeroLine(c_Overlay_ResultsWithPHENIX_0_20);
-    TLegend *leg1_PHENIXoverlay = new TLegend(0.14,.19,0.34,.39);
-    leg1_PHENIXoverlay->SetFillStyle(0);
-    leg1_PHENIXoverlay->AddEntry("","#it{#bf{sPHENIX}} Internal","");
-    leg1_PHENIXoverlay->AddEntry("","Au+Au #sqrt{s_{NN}} = 200 GeV","");
-    leg1_PHENIXoverlay->AddEntry("","0-20% Centrality","");
-    leg1_PHENIXoverlay->Draw("same");
-    
+    Create_sPHENIX_legend(c_Overlay_ResultsWithPHENIX_0_20, 0.14,.19,0.34,.39, "0-20% Centrality");
     TLegend *leg_uncertainty_0_20_forPHENIXoverlay = new TLegend(0.67,.19,0.87,.4);
     leg_uncertainty_0_20_forPHENIXoverlay->SetTextSize(0.029);
     leg_uncertainty_0_20_forPHENIXoverlay->AddEntry(sys_graph_0_20_PHENIX, "PHENIX", "pef");
-    leg_uncertainty_0_20_forPHENIXoverlay->AddEntry(sys_v2_0_20_graph_1, "sPHENIX", "pef"); // "f" for a filled object
+    leg_uncertainty_0_20_forPHENIXoverlay->AddEntry(sys_v2_0_20_graph_1, "sPHENIX", "pef");
     leg_uncertainty_0_20_forPHENIXoverlay->Draw("same");
-    
-    
     c_Overlay_ResultsWithPHENIX_0_20->SaveAs((BasePlotOutputPath + "/Final_v2_withSyst_0_20_OverlayedWithPHENIX.png").c_str());
     
-    
-    
-    
+    //20-40% PHENIX overlay
     TCanvas *c_Overlay_ResultsWithPHENIX_20_40 = new TCanvas("c_Overlay_ResultsWithPHENIX_20_40", "#pi^{0} #it{v}_{2} vs #it{p}_{T} 0-20% Centrality", 800, 600);
     for (int i = 0; i < ptCenters.size(); ++i) {
         sys_v2_20_40_graph_1->SetPoint(i, ptCenters[i] - .08, data1.corrected_v2_20_40[i]);
         corrected_v2_20_40_graph_1->SetPoint(i, ptCenters[i] - .08, data1.corrected_v2_20_40[i]);
     }
-    sys_v2_20_40_graph_1->Draw("A2"); // Draw systematic errors first as a shaded area
-    corrected_v2_20_40_graph_1->Draw("P SAME"); // Then draw the statistical errors on top
-    sys_graph_20_40_PHENIX->Draw("2 SAME");  // Draw PHENIX systematic errors
-    
+    sys_v2_20_40_graph_1->Draw("A2");
+    corrected_v2_20_40_graph_1->Draw("P SAME");
+    sys_graph_20_40_PHENIX->Draw("2 SAME");
+    sys_v2_20_40_graph_1->GetXaxis()->SetLimits(2.0, 5.0);
     for (int i = 0; i < ptCenters.size(); ++i) {
         graph_20_40_PHENIXdataAveraged->SetPoint(i, ptCenters[i] + .08, combinedData.v2_20_40_PHENIX[i]);
         sys_graph_20_40_PHENIX->SetPoint(i, ptCenters[i] + .08, combinedData.v2_20_40_PHENIX[i]);
     }
     graph_20_40_PHENIXdataAveraged->Draw("P SAME");
-    
     sys_v2_20_40_graph_1->SetTitle("#it{v}_{2}^{#pi^{0}} vs #it{p}_{T} 0-20% Centrality");
     sys_v2_20_40_graph_1->GetXaxis()->SetTitle("p_{T} [GeV]");
     sys_v2_20_40_graph_1->GetYaxis()->SetTitle("v_{2}^{#pi^{0}}");
-    sys_v2_20_40_graph_1->SetMinimum(minYaxis_correctedComparisons); // Set the minimum y value
-    sys_v2_20_40_graph_1->SetMaximum(maxYaxis_correctedComparisons); // Set the maximum y value
-
+    sys_v2_20_40_graph_1->SetMinimum(minYaxis_correctedComparisons);
+    sys_v2_20_40_graph_1->SetMaximum(maxYaxis_correctedComparisons);
     DrawZeroLine(c_Overlay_ResultsWithPHENIX_20_40);
-    TLegend *leg2_PHENIXoverlay = new TLegend(0.14,.19,0.34,.39);
-    leg2_PHENIXoverlay->SetFillStyle(0);
-    leg2_PHENIXoverlay->AddEntry("","#it{#bf{sPHENIX}} Internal","");
-    leg2_PHENIXoverlay->AddEntry("","Au+Au #sqrt{s_{NN}} = 200 GeV","");
-    leg2_PHENIXoverlay->AddEntry("","0-20% Centrality","");
-    leg2_PHENIXoverlay->Draw("same");
-    
+    Create_sPHENIX_legend(c_Overlay_ResultsWithPHENIX_20_40, 0.14,.19,0.34,.39, "20-40% Centrality");
     TLegend *leg_uncertainty_20_40_forPHENIXoverlay = new TLegend(0.8,.19,0.92,.4);
     leg_uncertainty_20_40_forPHENIXoverlay->SetTextSize(0.029);
     leg_uncertainty_20_40_forPHENIXoverlay->AddEntry(sys_graph_20_40_PHENIX, "PHENIX", "pef");
     leg_uncertainty_20_40_forPHENIXoverlay->AddEntry(sys_v2_20_40_graph_1, "sPHENIX", "pef"); // "f" for a filled object
     leg_uncertainty_20_40_forPHENIXoverlay->Draw("same");
-    
-    
     c_Overlay_ResultsWithPHENIX_20_40->SaveAs((BasePlotOutputPath + "/Final_v2_withSyst_20_40_OverlayedWithPHENIX.png").c_str());
     
-    
-    
-    
+    //40-60% Centrality PHENIX overlay
     TCanvas *c_Overlay_ResultsWithPHENIX_40_60 = new TCanvas("c_Overlay_ResultsWithPHENIX_40_60", "#pi^{0} #it{v}_{2} vs #it{p}_{T} 0-20% Centrality", 800, 600);
     for (int i = 0; i < ptCenters.size(); ++i) {
         sys_v2_40_60_graph_1->SetPoint(i, ptCenters[i] - .08, data1.corrected_v2_40_60[i]);
         corrected_v2_40_60_graph_1->SetPoint(i, ptCenters[i] - .08, data1.corrected_v2_40_60[i]);
     }
-    sys_v2_40_60_graph_1->Draw("A2"); // Draw systematic errors first as a shaded area
-    corrected_v2_40_60_graph_1->Draw("P SAME"); // Then draw the statistical errors on top
-    sys_graph_40_60_PHENIX->Draw("2 SAME");  // Draw PHENIX systematic errors
-    
+    sys_v2_40_60_graph_1->Draw("A2");
+    corrected_v2_40_60_graph_1->Draw("P SAME");
+    sys_graph_40_60_PHENIX->Draw("2 SAME");
+    sys_v2_40_60_graph_1->GetXaxis()->SetLimits(2.0, 5.0);
     for (int i = 0; i < ptCenters.size(); ++i) {
         graph_40_60_PHENIXdataAveraged->SetPoint(i, ptCenters[i] + .08, combinedData.v2_40_60_PHENIX[i]);
         sys_graph_40_60_PHENIX->SetPoint(i, ptCenters[i] + .08, combinedData.v2_40_60_PHENIX[i]);
     }
     graph_40_60_PHENIXdataAveraged->Draw("P SAME");
-    
     sys_v2_40_60_graph_1->SetTitle("#it{v}_{2}^{#pi^{0}} vs #it{p}_{T} 0-20% Centrality");
     sys_v2_40_60_graph_1->GetXaxis()->SetTitle("p_{T} [GeV]");
     sys_v2_40_60_graph_1->GetYaxis()->SetTitle("v_{2}^{#pi^{0}}");
-    sys_v2_40_60_graph_1->SetMinimum(minYaxis_correctedComparisons); // Set the minimum y value
-    sys_v2_40_60_graph_1->SetMaximum(maxYaxis_correctedComparisons); // Set the maximum y value
-
+    sys_v2_40_60_graph_1->SetMinimum(minYaxis_correctedComparisons);
+    sys_v2_40_60_graph_1->SetMaximum(maxYaxis_correctedComparisons);
     DrawZeroLine(c_Overlay_ResultsWithPHENIX_40_60);
-    TLegend *leg3_PHENIXoverlay = new TLegend(0.14,.19,0.34,.39);
-    leg3_PHENIXoverlay->SetFillStyle(0);
-    leg3_PHENIXoverlay->AddEntry("","#it{#bf{sPHENIX}} Internal","");
-    leg3_PHENIXoverlay->AddEntry("","Au+Au #sqrt{s_{NN}} = 200 GeV","");
-    leg3_PHENIXoverlay->AddEntry("","0-20% Centrality","");
-    leg3_PHENIXoverlay->Draw("same");
-    
+    Create_sPHENIX_legend(c_Overlay_ResultsWithPHENIX_40_60, 0.14, 0.19, 0.34, 0.39, "40-60% Centrality");
     TLegend *leg_uncertainty_40_60_forPHENIXoverlay = new TLegend(0.67,.19,0.87,.4);
     leg_uncertainty_40_60_forPHENIXoverlay->SetTextSize(0.029);
     leg_uncertainty_40_60_forPHENIXoverlay->AddEntry(sys_graph_40_60_PHENIX, "PHENIX", "pef");
     leg_uncertainty_40_60_forPHENIXoverlay->AddEntry(sys_v2_40_60_graph_1, "sPHENIX", "pef"); // "f" for a filled object
     leg_uncertainty_40_60_forPHENIXoverlay->Draw("same");
-    
-    
     c_Overlay_ResultsWithPHENIX_40_60->SaveAs((BasePlotOutputPath + "/Final_v2_withSyst_40_60_OverlayedWithPHENIX.png").c_str());
 }
-
-
+//Next two functions are For automatic y axis scaling of the Systematics Graphs
 double FindMaxValueFromPlottedData(const std::vector<double>& values) {
     double maxVal = *std::max_element(values.begin(), values.end());
     return maxVal;
 }
-
 void AdjustFrameYAxis(TCanvas* canvas, TH1F* frame, double maxYValue) {
     if (frame) {
         frame->GetYaxis()->SetRangeUser(0, maxYValue);
@@ -805,12 +780,11 @@ void AdjustFrameYAxis(TCanvas* canvas, TH1F* frame, double maxYValue) {
         canvas->Update();
     }
 }
-
+//For plotting total systematic uncertainty contributions read in from StatUncertaintyTable_p015.csv
 void plotting_Systematics(const Data& data1) {
     double barWidth = 0.05;
     int colors[] = {kRed, kBlue, kGreen+1, kGray+1};
     const double EPSILON = 1e-6;
-    
     
     std::vector<TH1F*> histograms_0_20_RelativeUncertainty;
     std::vector<double> collect_Values_0_20_Relative;
@@ -830,7 +804,7 @@ void plotting_Systematics(const Data& data1) {
             data1.unWeighted_stat_uncertainties_0_20[i]
         };
         collect_Values_0_20_Relative.insert(collect_Values_0_20_Relative.end(), values_RelativeUncertainty_0_20.begin(), values_RelativeUncertainty_0_20.end());
-        
+
         for (size_t j = 0; j < values_RelativeUncertainty_0_20.size(); ++j) {
             double xj = x + j * barWidth; // Adjust x position for each bar
             TH1F *h_0_20_RelativeUncertainty = new TH1F(Form("h_0_20_RelativeUncertainty_%zu_%zu", i, j), "", 1, xj, xj + barWidth);
@@ -852,25 +826,17 @@ void plotting_Systematics(const Data& data1) {
     legend_0_20_bars_RelativeUncertainty->AddEntry(histograms_0_20_RelativeUncertainty[2], "Background Window", "f");
     legend_0_20_bars_RelativeUncertainty->AddEntry(histograms_0_20_RelativeUncertainty[3], "Final Systematic Uncertainty", "f");
     legend_0_20_bars_RelativeUncertainty->Draw();
-    
-    
-    
     c_Overlay_0_20_Systematics_RelativeUncertainty->SaveAs((BasePlotOutputPath + "/Systematics_Analysis-v2-Checks/RelativeSystUncertainty_Overlay_0_20.png").c_str());
     
-    
-    
-    
-    
+    //Zooming in on data that is harder to see
     std::vector<TH1F*> histograms_0_20_RelativeUncertainty_ZoomedIn;
     std::vector<double> collect_Values_0_20_Relative_ZoomedIn;
-    
     TCanvas *c_Overlay_0_20_Systematics_RelativeUncertainty_ZoomedIn = new TCanvas("c_Overlay_0_20_Systematics_RelativeUncertainty_ZoomedIn", "#pi^{0} #it{v}_{2} vs #it{p}_{T} 0-20% Centrality", 800, 600);
     TH1F *frame_0_20_RelativeUncertainty_ZoomedIn = c_Overlay_0_20_Systematics_RelativeUncertainty_ZoomedIn->DrawFrame(2.0, 0, 5.0, 0.7);
     frame_0_20_RelativeUncertainty_ZoomedIn->GetYaxis()->SetTitle("Systematic Uncertainty");
     frame_0_20_RelativeUncertainty_ZoomedIn->GetXaxis()->SetTitle("p_{T} [GeV]");
-    
     for (size_t i = 0; i < ptCenters.size(); ++i) {
-        
+        //skip data that over powered previous graph
         if (std::abs(ptCenters[i] - 3.75) < EPSILON) {
             continue;
         }
@@ -878,7 +844,6 @@ void plotting_Systematics(const Data& data1) {
             continue;
         }
         double x = ptCenters[i] - (2.5 * barWidth);
-        
         std::vector<double> values_RelativeUncertainty_0_20_ZoomedIn = {
             data1.quad_sum_EMCal_syst_0_20[i],
             data1.signal_window_syst_0_20[i],
@@ -886,7 +851,6 @@ void plotting_Systematics(const Data& data1) {
             data1.unWeighted_stat_uncertainties_0_20[i]
         };
         collect_Values_0_20_Relative_ZoomedIn.insert(collect_Values_0_20_Relative_ZoomedIn.end(), values_RelativeUncertainty_0_20_ZoomedIn.begin(), values_RelativeUncertainty_0_20_ZoomedIn.end());
-        
         for (size_t j = 0; j < values_RelativeUncertainty_0_20_ZoomedIn.size(); ++j) {
             double xj = x + j * barWidth; // Adjust x position for each bar
             TH1F *h_0_20_RelativeUncertainty_ZoomedIn = new TH1F(Form("h_0_20_RelativeUncertainty_ZoomedIn_%zu_%zu", i, j), "", 1, xj, xj + barWidth);
@@ -899,7 +863,6 @@ void plotting_Systematics(const Data& data1) {
     }
     double maxYValue_0_20_Relative_ZoomedIn = FindMaxValueFromPlottedData(collect_Values_0_20_Relative_ZoomedIn);
     AdjustFrameYAxis(c_Overlay_0_20_Systematics_RelativeUncertainty_ZoomedIn, frame_0_20_RelativeUncertainty_ZoomedIn, maxYValue_0_20_Relative_ZoomedIn * 1.05);
-    
     TLegend *legend_0_20_bars_RelativeUncertainty_ZoomedIn = new TLegend(0.55, 0.72, 0.75, 0.92);
     legend_0_20_bars_RelativeUncertainty_ZoomedIn->SetTextSize(0.028);
     legend_0_20_bars_RelativeUncertainty_ZoomedIn->SetHeader("#bf{Relative Systematics, 0-20%}", "L");
@@ -908,17 +871,11 @@ void plotting_Systematics(const Data& data1) {
     legend_0_20_bars_RelativeUncertainty_ZoomedIn->AddEntry(histograms_0_20_RelativeUncertainty_ZoomedIn[2], "Background Window", "f");
     legend_0_20_bars_RelativeUncertainty_ZoomedIn->AddEntry(histograms_0_20_RelativeUncertainty_ZoomedIn[3], "Final Systematic Uncertainty", "f");
     legend_0_20_bars_RelativeUncertainty_ZoomedIn->Draw();
-    
-
-    
     c_Overlay_0_20_Systematics_RelativeUncertainty_ZoomedIn->SaveAs((BasePlotOutputPath + "/Systematics_Analysis-v2-Checks/RelativeSystUncertainty_Overlay_0_20_Zoomed_In.png").c_str());
     
-    
-    
-    
+    //20-40% Centrality
     std::vector<TH1F*> histograms_20_40_RelativeUncertainty;
     std::vector<double> collect_Values_20_40_Relative;
-    
     TCanvas *c_Overlay_20_40_Systematics_RelativeUncertainty = new TCanvas("c_Overlay_20_40_Systematics_RelativeUncertainty", "#pi^{0} #it{v}_{2} vs #it{p}_{T} 20-40% Centrality", 800, 600);
     TH1F *frame_20_40_RelativeUncertainty = c_Overlay_20_40_Systematics_RelativeUncertainty->DrawFrame(2.0, 0, 5.0, 0.7);
     frame_20_40_RelativeUncertainty->GetYaxis()->SetTitle("Systematic Uncertainty");
@@ -936,7 +893,7 @@ void plotting_Systematics(const Data& data1) {
         collect_Values_20_40_Relative.insert(collect_Values_20_40_Relative.end(), values_RelativeUncertainty_20_40.begin(), values_RelativeUncertainty_20_40.end());
         
         for (size_t j = 0; j < values_RelativeUncertainty_20_40.size(); ++j) {
-            double xj = x + j * barWidth; // Adjust x position for each bar
+            double xj = x + j * barWidth;
             TH1F *h_20_40_RelativeUncertainty = new TH1F(Form("h_20_40_RelativeUncertainty_%zu_%zu", i, j), "", 1, xj, xj + barWidth);
             h_20_40_RelativeUncertainty->SetBinContent(1, values_RelativeUncertainty_20_40[j]);
             h_20_40_RelativeUncertainty->SetFillColor(colors[j]);
@@ -947,7 +904,6 @@ void plotting_Systematics(const Data& data1) {
     }
     double maxYValue_20_40_Relative = FindMaxValueFromPlottedData(collect_Values_20_40_Relative);
     AdjustFrameYAxis(c_Overlay_20_40_Systematics_RelativeUncertainty, frame_20_40_RelativeUncertainty, maxYValue_20_40_Relative * 1.05);
-    
     TLegend *legend_20_40_bars_RelativeUncertainty = new TLegend(0.2, 0.72, 0.4, 0.92);
     legend_20_40_bars_RelativeUncertainty->SetTextSize(0.03);
     legend_20_40_bars_RelativeUncertainty->SetHeader("#bf{Relative Systematics, 20-40%}", "L");
@@ -956,26 +912,17 @@ void plotting_Systematics(const Data& data1) {
     legend_20_40_bars_RelativeUncertainty->AddEntry(histograms_20_40_RelativeUncertainty[2], "Background Window", "f");
     legend_20_40_bars_RelativeUncertainty->AddEntry(histograms_20_40_RelativeUncertainty[3], "Final Systematic Uncertainty", "f");
     legend_20_40_bars_RelativeUncertainty->Draw();
-    
-
     c_Overlay_20_40_Systematics_RelativeUncertainty->Modified();
     c_Overlay_20_40_Systematics_RelativeUncertainty->Update();
-    
-    
     c_Overlay_20_40_Systematics_RelativeUncertainty->SaveAs((BasePlotOutputPath + "/Systematics_Analysis-v2-Checks/RelativeSystUncertainty_Overlay_20_40.png").c_str());
     
-    
-    
-    
-    
+    //20-40 Zoomed in
     std::vector<TH1F*> histograms_20_40_RelativeUncertainty_ZoomedIn;
     std::vector<double> collect_Values_20_40_Relative_ZoomedIn;
-    
     TCanvas *c_Overlay_20_40_Systematics_RelativeUncertainty_ZoomedIn = new TCanvas("c_Overlay_20_40_Systematics_RelativeUncertainty_ZoomedIn", "#pi^{0} #it{v}_{2} vs #it{p}_{T} 20-40% Centrality", 800, 600);
     TH1F *frame_20_40_RelativeUncertainty_ZoomedIn = c_Overlay_20_40_Systematics_RelativeUncertainty_ZoomedIn->DrawFrame(2.0, 0, 5.0, 0.7);
     frame_20_40_RelativeUncertainty_ZoomedIn->GetYaxis()->SetTitle("Systematic Uncertainty");
     frame_20_40_RelativeUncertainty_ZoomedIn->GetXaxis()->SetTitle("p_{T} [GeV]");
-    
     for (size_t i = 0; i < ptCenters.size(); ++i) {
         
         if (std::abs(ptCenters[i] - 4.25) < EPSILON) {
@@ -1003,7 +950,6 @@ void plotting_Systematics(const Data& data1) {
     }
     double maxYValue_20_40_Relative_ZoomedIn = FindMaxValueFromPlottedData(collect_Values_20_40_Relative_ZoomedIn);
     AdjustFrameYAxis(c_Overlay_20_40_Systematics_RelativeUncertainty_ZoomedIn, frame_20_40_RelativeUncertainty_ZoomedIn, maxYValue_20_40_Relative_ZoomedIn * 1.05);
-    
     TLegend *legend_20_40_bars_RelativeUncertainty_ZoomedIn = new TLegend(0.65, 0.72, 0.8, 0.9);
     legend_20_40_bars_RelativeUncertainty_ZoomedIn->SetTextSize(0.027);
     legend_20_40_bars_RelativeUncertainty_ZoomedIn->SetHeader("#bf{Relative Systematics, 20-40%}", "L");
@@ -1012,18 +958,13 @@ void plotting_Systematics(const Data& data1) {
     legend_20_40_bars_RelativeUncertainty_ZoomedIn->AddEntry(histograms_20_40_RelativeUncertainty_ZoomedIn[2], "Background Window", "f");
     legend_20_40_bars_RelativeUncertainty_ZoomedIn->AddEntry(histograms_20_40_RelativeUncertainty_ZoomedIn[3], "Final Systematic Uncertainty", "f");
     legend_20_40_bars_RelativeUncertainty_ZoomedIn->Draw();
-
     c_Overlay_20_40_Systematics_RelativeUncertainty_ZoomedIn->Modified();
     c_Overlay_20_40_Systematics_RelativeUncertainty_ZoomedIn->Update();
-    
     c_Overlay_20_40_Systematics_RelativeUncertainty_ZoomedIn->SaveAs((BasePlotOutputPath + "/Systematics_Analysis-v2-Checks/RelativeSystUncertainty_Overlay_20_40_Zoomed_In.png").c_str());
     
-    
-    
-    
+    //40-60 Percent Centrality
     std::vector<TH1F*> histograms_40_60_RelativeUncertainty;
     std::vector<double> collect_Values_40_60_Relative;
-    
     TCanvas *c_Overlay_40_60_Systematics_RelativeUncertainty = new TCanvas("c_Overlay_40_60_Systematics_RelativeUncertainty", "#pi^{0} #it{v}_{2} vs #it{p}_{T} 40-60% Centrality", 800, 600);
     TH1F *frame_40_60_RelativeUncertainty = c_Overlay_40_60_Systematics_RelativeUncertainty->DrawFrame(2.0, 0, 5.0, 0.7);
     frame_40_60_RelativeUncertainty->GetYaxis()->SetTitle("Systematic Uncertainty");
@@ -1052,7 +993,6 @@ void plotting_Systematics(const Data& data1) {
     }
     double maxYValue_40_60_Relative = FindMaxValueFromPlottedData(collect_Values_40_60_Relative);
     AdjustFrameYAxis(c_Overlay_40_60_Systematics_RelativeUncertainty, frame_40_60_RelativeUncertainty, maxYValue_40_60_Relative * 1.05);
-    
     TLegend *legend_40_60_bars_RelativeUncertainty = new TLegend(0.2, 0.72, 0.4, 0.92);
     legend_40_60_bars_RelativeUncertainty->SetTextSize(0.03);
     legend_40_60_bars_RelativeUncertainty->SetHeader("#bf{Relative Systematics, 40-60%}", "L");
@@ -1061,18 +1001,11 @@ void plotting_Systematics(const Data& data1) {
     legend_40_60_bars_RelativeUncertainty->AddEntry(histograms_40_60_RelativeUncertainty[2], "Background Window", "f");
     legend_40_60_bars_RelativeUncertainty->AddEntry(histograms_40_60_RelativeUncertainty[3], "Final Systematic Uncertainty", "f");
     legend_40_60_bars_RelativeUncertainty->Draw();
-    
-
     c_Overlay_40_60_Systematics_RelativeUncertainty->Modified();
     c_Overlay_40_60_Systematics_RelativeUncertainty->Update();
-    
-    
     c_Overlay_40_60_Systematics_RelativeUncertainty->SaveAs((BasePlotOutputPath + "/Systematics_Analysis-v2-Checks/RelativeSystUncertainty_Overlay_40_60.png").c_str());
     
-    
-    
-    
-    
+    //40-60% Centrality Zoomed In
     std::vector<TH1F*> histograms_40_60_RelativeUncertainty_ZoomedIn;
     std::vector<double> collect_Values_40_60_Relative_ZoomedIn;
     
@@ -1098,7 +1031,7 @@ void plotting_Systematics(const Data& data1) {
         collect_Values_40_60_Relative_ZoomedIn.insert(collect_Values_40_60_Relative_ZoomedIn.end(), values_RelativeUncertainty_40_60_ZoomedIn.begin(), values_RelativeUncertainty_40_60_ZoomedIn.end());
         
         for (size_t j = 0; j < values_RelativeUncertainty_40_60_ZoomedIn.size(); ++j) {
-            double xj = x + j * barWidth; // Adjust x position for each bar
+            double xj = x + j * barWidth;
             TH1F *h_40_60_RelativeUncertainty_ZoomedIn = new TH1F(Form("h_40_60_RelativeUncertainty_ZoomedIn_%zu_%zu", i, j), "", 1, xj, xj + barWidth);
             h_40_60_RelativeUncertainty_ZoomedIn->SetBinContent(1, values_RelativeUncertainty_40_60_ZoomedIn[j]);
             h_40_60_RelativeUncertainty_ZoomedIn->SetFillColor(colors[j]);
@@ -1109,7 +1042,6 @@ void plotting_Systematics(const Data& data1) {
     }
     double maxYValue_40_60_Relative_ZoomedIn = FindMaxValueFromPlottedData(collect_Values_40_60_Relative_ZoomedIn);
     AdjustFrameYAxis(c_Overlay_40_60_Systematics_RelativeUncertainty_ZoomedIn, frame_40_60_RelativeUncertainty_ZoomedIn, maxYValue_40_60_Relative_ZoomedIn * 1.05);
-    
     TLegend *legend_40_60_bars_RelativeUncertainty_ZoomedIn = new TLegend(0.52, 0.73, 0.65, 0.92);
     legend_40_60_bars_RelativeUncertainty_ZoomedIn->SetTextSize(0.025);
     legend_40_60_bars_RelativeUncertainty_ZoomedIn->SetHeader("#bf{Relative Systematics, 40-60%}", "L");
@@ -1118,15 +1050,14 @@ void plotting_Systematics(const Data& data1) {
     legend_40_60_bars_RelativeUncertainty_ZoomedIn->AddEntry(histograms_40_60_RelativeUncertainty_ZoomedIn[2], "Background Window", "f");
     legend_40_60_bars_RelativeUncertainty_ZoomedIn->AddEntry(histograms_40_60_RelativeUncertainty_ZoomedIn[3], "Final Systematic Uncertainty", "f");
     legend_40_60_bars_RelativeUncertainty_ZoomedIn->Draw();
-
     c_Overlay_40_60_Systematics_RelativeUncertainty_ZoomedIn->Modified();
     c_Overlay_40_60_Systematics_RelativeUncertainty_ZoomedIn->Update();
-    
     c_Overlay_40_60_Systematics_RelativeUncertainty_ZoomedIn->SaveAs((BasePlotOutputPath + "/Systematics_Analysis-v2-Checks/RelativeSystUncertainty_Overlay_40_60_Zoomed_In.png").c_str());
     
-    
-    
-    
+    /*
+     Absolute Uncertainties are the following 3 graphs below
+     */
+    //0-20% Centrality
     std::vector<TH1F*> histograms_0_20_AbsoluteUncertainty;
     std::vector<double> collect_Values_0_20_Absolute;
     
@@ -1168,16 +1099,12 @@ void plotting_Systematics(const Data& data1) {
     legend_0_20_bars_AbsoluteUncertainty->AddEntry(histograms_0_20_AbsoluteUncertainty[2], "Background Window", "f");
     legend_0_20_bars_AbsoluteUncertainty->AddEntry(histograms_0_20_AbsoluteUncertainty[3], "Final Systematic Uncertainty", "f");
     legend_0_20_bars_AbsoluteUncertainty->Draw();
-    
 
     c_Overlay_0_20_Systematics_AbsoluteUncertainty->Modified();
     c_Overlay_0_20_Systematics_AbsoluteUncertainty->Update();
-    
-    
     c_Overlay_0_20_Systematics_AbsoluteUncertainty->SaveAs((BasePlotOutputPath + "/Systematics_Analysis-v2-Checks/AbsoluteSystUncertainty_Overlay_0_20.png").c_str());
     
-    
-    
+    //20-40% Centrality
     std::vector<TH1F*> histograms_20_40_AbsoluteUncertainty;
     std::vector<double> collect_Values_20_40_Absolute;
     
@@ -1222,12 +1149,9 @@ void plotting_Systematics(const Data& data1) {
    
     c_Overlay_20_40_Systematics_AbsoluteUncertainty->Modified();
     c_Overlay_20_40_Systematics_AbsoluteUncertainty->Update();
-    
-    
     c_Overlay_20_40_Systematics_AbsoluteUncertainty->SaveAs((BasePlotOutputPath + "/Systematics_Analysis-v2-Checks/AbsoluteSystUncertainty_Overlay_20_40.png").c_str());
     
-    
-    
+    //40-60% Centrality
     std::vector<TH1F*> histograms_40_60_AbsoluteUncertainty;
     std::vector<double> collect_Values_40_60_Absolute;
     
@@ -1260,7 +1184,6 @@ void plotting_Systematics(const Data& data1) {
     }
     double maxYValue_40_60_Absolute = FindMaxValueFromPlottedData(collect_Values_40_60_Absolute);
     AdjustFrameYAxis(c_Overlay_40_60_Systematics_AbsoluteUncertainty, frame_40_60_AbsoluteUncertainty, maxYValue_40_60_Absolute * 1.05);
-    
     TLegend *legend_40_60_bars_AbsoluteUncertainty = new TLegend(0.2, 0.72, 0.4, 0.92);
     legend_40_60_bars_AbsoluteUncertainty->SetTextSize(0.03);
     legend_40_60_bars_AbsoluteUncertainty->SetHeader("#bf{Absolute Systematics, 40-60%}", "L");
@@ -1272,13 +1195,8 @@ void plotting_Systematics(const Data& data1) {
     
     c_Overlay_40_60_Systematics_AbsoluteUncertainty->Modified();
     c_Overlay_40_60_Systematics_AbsoluteUncertainty->Update();
-    
-    
     c_Overlay_40_60_Systematics_AbsoluteUncertainty->SaveAs((BasePlotOutputPath + "/Systematics_Analysis-v2-Checks/AbsoluteSystUncertainty_Overlay_40_60.png").c_str());
 }
-
-
-
 void DrawLegend_EMCal_Contributors(double x1, double y1, double x2, double y2, double textSize, const std::string& headerType, const std::vector<TH1F*>& histograms, const std::vector<std::string>& labels) {
     TLegend *legend = new TLegend(x1, y1, x2, y2);
     legend->SetTextSize(textSize);
@@ -1291,18 +1209,12 @@ void DrawLegend_EMCal_Contributors(double x1, double y1, double x2, double y2, d
     }
     legend->Draw();
 }
-
-
 void plotting_EMCal_Syst_Contributors(const EMCal_Systematic_Data& EMCal_Systematic_data1) {
     std::vector<double> ptCenters = {2.25, 2.75, 3.25, 3.75, 4.25, 4.75}; // Mid-points of pT ranges
     double barWidth = 0.05; // Width of each bar
     std::vector<std::string> labels = {"SYST1CEMC", "SYST2CEMC", "SYST3DCEMC", "SYST3UCEMC", "SYST4CEMC", "Quadrature Sum"};
-
-    
     int colors[] = {kRed, kBlue, kGreen+1, kOrange+7, kViolet, kGray+1}; // Colors for the bars
     const double EPSILON = 1e-6;
-    
-    
 
     std::vector<TH1F*> histograms_0_20_Relative; // Vector to hold histogram pointers for legend
     std::vector<double> collect_Values_0_20_Relative;
@@ -1325,8 +1237,6 @@ void plotting_EMCal_Syst_Contributors(const EMCal_Systematic_Data& EMCal_Systema
             EMCal_Systematic_data1.Relative_QuadSum_0_20[i]
         };
         collect_Values_0_20_Relative.insert(collect_Values_0_20_Relative.end(), values_Relative.begin(), values_Relative.end());
-        
-        
         for (size_t j = 0; j < values_Relative.size(); ++j) {
             double xj = x + j * barWidth; // Adjust x position for each bar
             TH1F *h_0_20_Relative = new TH1F(Form("h_0_20_Relative_%zu_%zu", i, j), "", 1, xj, xj + barWidth);
@@ -1338,11 +1248,7 @@ void plotting_EMCal_Syst_Contributors(const EMCal_Systematic_Data& EMCal_Systema
     }
     double maxYValue_0_20_Relative = FindMaxValueFromPlottedData(collect_Values_0_20_Relative);
     AdjustFrameYAxis(c_Overlay_0_20_Systematics_Relative, frame_0_20_Relative, maxYValue_0_20_Relative * 1.05);
-
-    
     DrawLegend_EMCal_Contributors(0.2, 0.56, 0.4, .76, 0.03, "Relative", histograms_0_20_Relative, labels);
-
-
     TLegend *leg0_20_sPHENIXlabel_Relative = new TLegend(0.14, 0.76, 0.32, 0.92);
     leg0_20_sPHENIXlabel_Relative->SetTextSize(0.045);
     leg0_20_sPHENIXlabel_Relative->SetFillStyle(0);
@@ -1353,9 +1259,6 @@ void plotting_EMCal_Syst_Contributors(const EMCal_Systematic_Data& EMCal_Systema
     c_Overlay_0_20_Systematics_Relative->Modified();
     c_Overlay_0_20_Systematics_Relative->Update();
     c_Overlay_0_20_Systematics_Relative->SaveAs((baseDataPath_EmCal_Systematics + "EMCal_SystContributor_Overlay_0_20_RelativeUncertainty.png").c_str());
-    
-    
-    
     
     
     std::vector<TH1F*> histograms_0_20_Relative_Zoomed_In; // Vector to hold histogram pointers for legend
@@ -1415,12 +1318,6 @@ void plotting_EMCal_Syst_Contributors(const EMCal_Systematic_Data& EMCal_Systema
     c_Overlay_0_20_Systematics_Relative_Zoomed_In->Update();
     c_Overlay_0_20_Systematics_Relative_Zoomed_In->SaveAs((baseDataPath_EmCal_Systematics + "EMCal_SystContributor_Overlay_0_20_Relative_Zoomed_In_Uncertainty.png").c_str());
     
-    
-    
-    
-    
-    
-    
     std::vector<TH1F*> histograms_20_40_Relative; // Vector to hold histogram pointers for legend
     std::vector<double> collect_Values_20_40_Relative;
     
@@ -1471,10 +1368,6 @@ void plotting_EMCal_Syst_Contributors(const EMCal_Systematic_Data& EMCal_Systema
     c_Overlay_20_40_Systematics_Relative->Update();
     c_Overlay_20_40_Systematics_Relative->SaveAs((baseDataPath_EmCal_Systematics + "EMCal_SystContributor_Overlay_20_40_RelativeUncertainty.png").c_str());
     
-    
-    
-    
-    
     std::vector<TH1F*> histograms_20_40_Relative_Zoomed_In; // Vector to hold histogram pointers for legend
     std::vector<double> collect_Values_20_40_Relative_Zoomed_In;
     TCanvas *c_Overlay_20_40_Systematics_Relative_Zoomed_In = new TCanvas("c_Overlay_20_40_Systematics_Relative_Zoomed_In", "#pi^{0} #it{v}_{2} vs #it{p}_{T} 20-40% Centrality", 800, 600);
@@ -1513,11 +1406,7 @@ void plotting_EMCal_Syst_Contributors(const EMCal_Systematic_Data& EMCal_Systema
     }
     double maxYValue_20_40_Relative_Zoomed_In = FindMaxValueFromPlottedData(collect_Values_20_40_Relative_Zoomed_In);
     AdjustFrameYAxis(c_Overlay_20_40_Systematics_Relative_Zoomed_In, frame_20_40_Relative_Zoomed_In, maxYValue_20_40_Relative_Zoomed_In * 1.05);
-
-
     DrawLegend_EMCal_Contributors(0.7, 0.7, 0.9, 0.9, 0.03, "Relative", histograms_20_40_Relative_Zoomed_In, labels);
-
-
     TLegend *leg20_40_sPHENIXlabel_Relative_Zoomed_In = new TLegend(0.14, 0.76, 0.32, 0.92);
     leg20_40_sPHENIXlabel_Relative_Zoomed_In->SetTextSize(0.045);
     leg20_40_sPHENIXlabel_Relative_Zoomed_In->SetFillStyle(0);
@@ -1525,18 +1414,9 @@ void plotting_EMCal_Syst_Contributors(const EMCal_Systematic_Data& EMCal_Systema
     leg20_40_sPHENIXlabel_Relative_Zoomed_In->AddEntry("", "Au+Au #sqrt{s_{NN}} = 200 GeV", "");
     leg20_40_sPHENIXlabel_Relative_Zoomed_In->AddEntry("", "20-40% Centrality", "");
     leg20_40_sPHENIXlabel_Relative_Zoomed_In->Draw("same");
-    
     c_Overlay_20_40_Systematics_Relative_Zoomed_In->Modified();
     c_Overlay_20_40_Systematics_Relative_Zoomed_In->Update();
     c_Overlay_20_40_Systematics_Relative_Zoomed_In->SaveAs((baseDataPath_EmCal_Systematics + "EMCal_SystContributor_Overlay_20_40_Relative_Zoomed_In_Uncertainty.png").c_str());
-    
-    
-    
-    
-    
-    
-    
-    
     
     
     std::vector<TH1F*> histograms_40_60_Relative; // Vector to hold histogram pointers for legend
@@ -1576,8 +1456,6 @@ void plotting_EMCal_Syst_Contributors(const EMCal_Systematic_Data& EMCal_Systema
 
     
     DrawLegend_EMCal_Contributors(0.2, 0.56, 0.4, .76, 0.03, "Relative", histograms_40_60_Relative, labels);
-
-
     TLegend *leg40_60_sPHENIXlabel_Relative = new TLegend(0.14, 0.76, 0.32, 0.92);
     leg40_60_sPHENIXlabel_Relative->SetTextSize(0.045);
     leg40_60_sPHENIXlabel_Relative->SetFillStyle(0);
@@ -1588,10 +1466,6 @@ void plotting_EMCal_Syst_Contributors(const EMCal_Systematic_Data& EMCal_Systema
     c_Overlay_40_60_Systematics_Relative->Modified();
     c_Overlay_40_60_Systematics_Relative->Update();
     c_Overlay_40_60_Systematics_Relative->SaveAs((baseDataPath_EmCal_Systematics + "EMCal_SystContributor_Overlay_40_60_RelativeUncertainty.png").c_str());
-    
-    
-    
-    
     
     std::vector<TH1F*> histograms_40_60_Relative_Zoomed_In; // Vector to hold histogram pointers for legend
     std::vector<double> collect_Values_40_60_Relative_Zoomed_In;
@@ -1735,8 +1609,6 @@ void plotting_EMCal_Syst_Contributors(const EMCal_Systematic_Data& EMCal_Systema
 
     
     DrawLegend_EMCal_Contributors(0.18, 0.56, 0.36, .76, 0.028, "Absolute", histograms_20_40_Absolute, labels);
-
-
     TLegend *leg20_40_sPHENIXlabel_Absolute = new TLegend(0.14, 0.76, 0.32, 0.92);
     leg20_40_sPHENIXlabel_Absolute->SetTextSize(0.045);
     leg20_40_sPHENIXlabel_Absolute->SetFillStyle(0);
@@ -1747,7 +1619,6 @@ void plotting_EMCal_Syst_Contributors(const EMCal_Systematic_Data& EMCal_Systema
     c_Overlay_20_40_Systematics_Absolute->Modified();
     c_Overlay_20_40_Systematics_Absolute->Update();
     c_Overlay_20_40_Systematics_Absolute->SaveAs((baseDataPath_EmCal_Systematics + "EMCal_SystContributor_Overlay_20_40_AbsoluteUncertainty.png").c_str());
-    
     
     
     std::vector<TH1F*> histograms_40_60_Absolute; // Vector to hold histogram pointers for legend
@@ -1800,12 +1671,10 @@ void plotting_EMCal_Syst_Contributors(const EMCal_Systematic_Data& EMCal_Systema
     c_Overlay_40_60_Systematics_Absolute->Update();
     c_Overlay_40_60_Systematics_Absolute->SaveAs((baseDataPath_EmCal_Systematics + "EMCal_SystContributor_Overlay_40_60_AbsoluteUncertainty.png").c_str());
 }
-
-
-
-
-
-double offset = 0.05;
+double offset = 0.05; //used to jitter overlayed points within a pT bin to not overlap
+/*
+ Plot overlay of EMCal scale variations v2 values
+ */
 void plot_EMCal_Scale_v2_overlays(const Data& data1, Data& data2, Data& data3, Data& data4, Data& data5, Data& data6) {
     TGraphErrors* corrected_v2_0_20_graph_1 = CreateGraph(ptCenters, data1.corrected_v2_0_20, data1.corrected_v2_0_20_Errors);
     TGraphErrors* corrected_v2_20_40_graph_1 = CreateGraph(ptCenters, data1.corrected_v2_20_40, data1.corrected_v2_20_40_Errors);
@@ -1857,7 +1726,6 @@ void plot_EMCal_Scale_v2_overlays(const Data& data1, Data& data2, Data& data3, D
     int markerColor_6 = kViolet - 2;
     int markerStyle_6 = 20;
     double markerSize_6 = 1.0;
-    
     
     corrected_v2_0_20_graph_1->SetMarkerColor(markerColor_1);
     corrected_v2_0_20_graph_1->SetLineColor(markerColor_1);
@@ -3391,7 +3259,7 @@ void v2_Results_Plotter() {
     std::vector<double> ptCenters = {2.25, 2.75, 3.25, 3.75, 4.25, 4.75}; // Mid-points of pT ranges
 
     
-    plotting(data1);
+    plotting_Results_andPHENIXoverlay(data1);
     plotting_Systematics(data1);
     
     EMCal_Systematic_Data EMCal_Systematic_data1;
