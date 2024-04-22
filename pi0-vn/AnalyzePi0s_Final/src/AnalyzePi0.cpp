@@ -25,23 +25,24 @@ struct CutValues {
 CutValues globalCutValues;
 
 // Global variable
-std::string globalDataPath = "/Users/patsfan753/Desktop/p014_Analysis4_15/CSV/";
-std::string globalPlotOutput = "/Users/patsfan753/Desktop/p014_Analysis4_15/Plots/"; //Note: Folder auto created with name of cut variation to this
-std::string globalFilename = "/Users/patsfan753/Desktop/p014_Analysis4_15/hPi0Mass_EA1_EB1_Asym0point5_DelrMin0_DelrMax1_Chi4.root";
+std::string globalDataPath = "/Users/patsfan753/Desktop/p015/InvMassOutput/CSV/";
+std::string globalPlotOutput = "/Users/patsfan753/Desktop/p015/InvMassOutput/Plots/"; //Note: Folder auto created with name of cut variation to this
+std::string globalFilename = "/Users/patsfan753/Desktop/p015/hPi0Mass_EA1_EB1_Asym0point5_DelrMin0_DelrMax1_Chi4.root";
 
 int histIndex = 0;
 double globalFitStart;
 double globalFitEnd;
 
 TFitResultPtr PerformFitting(TH1F* hPi0Mass, TF1*& totalFit, double& fitStart, double& fitEnd) {
+    ROOT::Math::MinimizerOptions::SetDefaultMinimizer("Minuit2");
+    // Increase number of allowed function calls (e.g., from default 500 to 5000)
+    ROOT::Math::MinimizerOptions::SetDefaultMaxFunctionCalls(5000);
+
     fitStart = 0.1;
     fitEnd = 0.35;
     
     globalFitStart = fitStart;
     globalFitEnd = fitEnd;
-
-    double lowerSignalBoundEstimate = 0.1;
-    double upperSignalBoundEstimate = 0.2;
 
     double sigmaEstimate = 0.025; // sigmaEstimate value
 
@@ -49,28 +50,12 @@ TFitResultPtr PerformFitting(TH1F* hPi0Mass, TF1*& totalFit, double& fitStart, d
     // Define totalFit
     totalFit = new TF1("totalFit", "gaus(0) + pol2(3)", fitStart, fitEnd);
     totalFit->SetLineColor(kRed);
-    /*
-     Give overestimation for amplitude to help fit converge on correct value in correct region
-     
-     Set mean estimate to this values bin center
-     */
-    int bin1 = hPi0Mass->GetXaxis()->FindBin(lowerSignalBoundEstimate);
-    int bin2 = hPi0Mass->GetXaxis()->FindBin(upperSignalBoundEstimate);
-    int maxBin = bin1;
-    double maxBinContent = hPi0Mass->GetBinContent(bin1);
-    for (int i = bin1 + 1; i <= bin2; ++i) {
-        if (hPi0Mass->GetBinContent(i) > maxBinContent) {
-            maxBinContent = hPi0Mass->GetBinContent(i);
-            maxBin = i;
-        }
-    }
+
     
-    double maxBinCenter = hPi0Mass->GetXaxis()->GetBinCenter(maxBin);
-    
-    double amplitudeEstimate = hPi0Mass->GetBinContent(hPi0Mass->GetXaxis()->FindBin(.2));
+    double amplitudeEstimate = hPi0Mass->GetBinContent(hPi0Mass->GetXaxis()->FindBin(0.185));
     totalFit->SetParameter(0, amplitudeEstimate);
     
-    totalFit->SetParameter(1, .2);
+    totalFit->SetParameter(1, 0.185);
     
     totalFit->SetParameter(2, sigmaEstimate);
 
@@ -247,7 +232,7 @@ double CalculateSignalYieldAndError(TH1F* hPi0Mass, TF1* polyFit, double fitMean
 /*
  Automatic update of canvas cut values, fit information, and analysis bin
  */
-void DrawCanvasText(TLatex& latex, const Range& selectedRange, double fitMean, double fitSigma, const SignalBackgroundRatio& sbRatios, double signalYield, double signalYieldError, double numEntries) {
+void DrawCanvasText(TLatex& latex, const Range& selectedRange, double fitMean, double fitSigma, const SignalBackgroundRatio& sbRatios, double signalYield, double signalYieldError, double numEntries, double chi2, double NDF) {
     // Drawing text related to the range and cuts
     std::ostringstream mbdStream, ptStream;
     mbdStream << std::fixed << std::setprecision(0) << "Centrality: " << selectedRange.mbdLow << " - " << selectedRange.mbdHigh << "%";
@@ -266,14 +251,18 @@ void DrawCanvasText(TLatex& latex, const Range& selectedRange, double fitMean, d
 
     double ratioFor2Sigma = sbRatios.ratios.at(2.0);
     double errorFor2Sigma = sbRatios.errors.at(2.0);
-//    latex.DrawLatex(0.67, 0.45, Form("#mu_{Gaussian} = %.2f GeV", fitMean));
-//    latex.DrawLatex(0.67, 0.4, Form("#sigma_{Gaussian} = %.2f GeV", fitSigma));
-//    latex.DrawLatex(0.67, 0.35, Form("S/B = %.2f", ratioFor2Sigma));
-//    latex.DrawLatex(0.67, 0.3, Form("Signal Yield = %.2f", signalYield));
+//    latex.DrawLatex(0.67, 0.4, Form("#mu_{Gaussian} = %.2f GeV", fitMean));
+//    latex.DrawLatex(0.67, 0.35, Form("#sigma_{Gaussian} = %.2f GeV", fitSigma));
+//    latex.DrawLatex(0.67, 0.3, Form("S/B = %.2f", ratioFor2Sigma));
+//    latex.DrawLatex(0.67, 0.25, Form("Signal Yield = %.2f", signalYield));
+//    latex.DrawLatex(0.67, .2, Form("Fit #chi^{2}/NDF: %.2f/%.0f", chi2, NDF));
+    
+    
     latex.DrawLatex(0.45, 0.54, Form("#mu_{Gaussian} = %.2f GeV", fitMean));
     latex.DrawLatex(0.45, 0.49, Form("#sigma_{Gaussian} = %.2f GeV", fitSigma));
     latex.DrawLatex(0.67, 0.57, Form("S/B = %.2f", ratioFor2Sigma));
     latex.DrawLatex(0.67, 0.52, Form("Signal Yield = %.2f", signalYield));
+    latex.DrawLatex(0.67, .47, Form("Fit #chi^{2}/NDF: %.2f/%.0f", chi2, NDF));
 }
 /*
 Track Relevant Output in CSV tracking via indices and unique cut combinations
@@ -429,8 +418,8 @@ void AnalyzePi0() {
         double numEntries = hPi0Mass->GetEntries();
         
         
-        TF1 *gaussFit = new TF1("gaussFit", "gaus", fitStart, .25);
-        TF1 *polyFit = new TF1("polyFit", "pol2", 0, .3);
+        TF1 *gaussFit = new TF1("gaussFit", "gaus", fitStart, fitEnd);
+        TF1 *polyFit = new TF1("polyFit", "pol2", fitStart, fitEnd);
         gaussFit->SetParameter(0, totalFit->GetParameter(0));
         gaussFit->SetParameter(1, totalFit->GetParameter(1));
         gaussFit->SetParameter(2, totalFit->GetParameter(2));
@@ -463,11 +452,6 @@ void AnalyzePi0() {
         
         double NDF = fitResult->Ndf(); // to retrieve the fit chi2
         
-        // Draw chi2 value on the canvas
-        TLatex chi2Text;
-        chi2Text.SetNDC(); // Set coordinates to normalized
-        chi2Text.SetTextSize(0.035); // Set text size (you can adjust as necessary)
-        chi2Text.DrawLatex(0.67, 0.47, Form("Fit #chi^{2}/NDF: %.2f/%.0f", chi2, NDF));
         
         
         TLegend *leg = new TLegend(0.55,.82,0.75,.92);
@@ -480,7 +464,7 @@ void AnalyzePi0() {
         double signalYield_ = CalculateSignalYieldAndError(hPi0Mass, polyFit, fitMean, fitSigma, signalError_, fitStart, fitEnd);
         
         
-        DrawCanvasText(latex, ranges[currentIndex], fitMean, fitSigma, sbRatios, signalYield_, signalError_, numEntries);
+        DrawCanvasText(latex, ranges[currentIndex], fitMean, fitSigma, sbRatios, signalYield_, signalError_, numEntries, chi2, NDF);
         
         // Call the new method to write to CSV if the fit is good
         WriteDataToCSV(currentIndex, globalCutValues, fitMean, fitMeanError, fitSigma, fitSigmaError, sbRatios, signalYield_, signalError_, numEntries, chi2);
@@ -494,7 +478,7 @@ void AnalyzePi0() {
         line1->Draw("same");
         line2->Draw("same");
 
-        if (currentIndex >= 0 && currentIndex <= 17) {
+        if (currentIndex >= 11 && currentIndex <= 11) {
             std::ostringstream dirPathStream;
             dirPathStream << globalPlotOutput // Use the global variable here
                           << "EA" << globalCutValues.clusEA
