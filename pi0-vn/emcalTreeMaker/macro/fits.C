@@ -54,7 +54,7 @@ namespace myAnalysis {
     Double_t fitEnd   = 0.35;
     Double_t sigmaMult = 2;
     Double_t sigmaEstimate = 0.025;
-    Double_t meanEstimate = 0.2;
+    Double_t meanEstimate = 0.185;
 }
 
 Int_t myAnalysis::readCuts(const string &i_cuts) {
@@ -101,9 +101,6 @@ TFitResultPtr myAnalysis::PerformFitting(TH1F* hPi0Mass, TF1** totalFit, Int_t i
     // Define totalFit
     *totalFit = new TF1("totalFit", "gaus(0) + pol2(3)", fitStart, fitEnd);
     (*totalFit)->SetLineColor(kRed);
-
-    if(index == 7) meanEstimate = 0.19;
-    else           meanEstimate = 0.2;
 
     Double_t amplitudeEstimate = hPi0Mass->GetBinContent(hPi0Mass->GetXaxis()->FindBin(meanEstimate));
 
@@ -301,15 +298,15 @@ void myAnalysis::process_fits(const string &i_input,
 
                 l1.DrawLatexNDC(0.7,0.87, s.str().c_str());
 
-                Double_t y = h->GetBinContent(h->FindBin(fitMean));
+                Double_t y = h->GetMaximum();
 
-                if(y > 0) h->GetYaxis()->SetRangeUser(0,2.5*y);
+                if(y > 0) h->GetYaxis()->SetRangeUser(0,1.7*y);
 
                 Double_t signal_low  = max(fitMean-sigmaMult*fitSigma, fitStart);
                 Double_t signal_high = min(fitMean+sigmaMult*fitSigma, fitEnd);
 
-                TLine *line1 = new TLine(signal_low, 0, signal_low, 1.2*y);
-                TLine *line2 = new TLine(signal_high, 0, signal_high, 1.2*y);
+                TLine *line1 = new TLine(signal_low, 0, signal_low, y);
+                TLine *line2 = new TLine(signal_high, 0, signal_high, y);
                 line1->SetLineColor(kBlack);
                 line1->SetLineStyle(1);
                 line2->SetLineColor(kBlack);
@@ -325,7 +322,7 @@ void myAnalysis::process_fits(const string &i_input,
                 polyFit->SetLineStyle(2);
                 polyFit->Draw("SAME");
 
-                TLegend *leg = new TLegend(0.55,.2,0.75,.3);
+                TLegend *leg = new TLegend(0.32,.65,0.52,.75);
                 leg->SetFillStyle(0);
                 leg->AddEntry("","#it{#bf{sPHENIX}} Internal","");
                 leg->AddEntry("","Au+Au #sqrt{s_{NN}} = 200 GeV","");
