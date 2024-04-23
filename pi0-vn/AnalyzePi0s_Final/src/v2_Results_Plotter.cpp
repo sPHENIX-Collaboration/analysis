@@ -9,23 +9,25 @@
 #include <string>
 #include <cmath>
 struct PlotConfig {
-    bool plotSignalWindowVariations;
-    bool plotEMCalScaleVariations;
-    bool plotAsymmetryCutVariations;
-    bool plotSampleSizeVariations;
-    bool plotSigBgCorrAnd_bgWindowVariations;
-    bool plotProduction_Comparisons;
+    bool plotSigBgCorrAnd_bgWindowVariations; //plots overlay of signal, bg, corrected v2 for default data, and bg window v2 variation used in syst calc
+    bool plotSignalWindowVariations; //plots signal window variation overly v2 values used in systematic calc
+    bool plotEMCalScaleVariations; //plots EMCal Scale variation overlay of v2 values used in syst
+    bool plotAsymmetryCutVariations; //plots v2 asymmetry comparison
+    bool plotSampleSizeVariations; //plots v2 sample size comparison
+    bool plotProduction_Comparisons; //plots v2 comparison between p013, p015
 };
-
+/*
+ Set below booleans to true if have CSVs ready to overlay v2 values
+ */
 PlotConfig initializePlotConfig() {
     return {
-        true, // plot Signal Window Variation v2 Overlay
-        false,  // plot EMCal Scale Variations v2 Overlay
-        false, // plot Asymmetry Cut Variation v2 Overlay
-        false, // plot Sample Size Variation v2 Overlay
-        false, // plotProduction_Comparisons
-        
-        true   // plotSigBgCorrAnd_bgWindowVariations (always true since is all within Default data)
+        true,  //signal, bg, corr v2 overlay and background window -- always set true if have default values, only need default CSV
+
+        false,  //signal window -- reads in filePathSignal_Bound_Variation
+        false,  //plot EMCal scale overlay -- reads in filePathEMCal_Syst_SYST variations
+        false,  //plot Asymmetry overlay -- reads in filePath_AsymmetryVariations_45 and filePath_AsymmetryVariations_55
+        false,  //plot sample size -- reads filePathSampleSizeVariation
+        true   //plot production comparison - reads p013_filePath
     };
 }
 
@@ -53,7 +55,7 @@ std::string filePathEMCal_Syst_SYST2CEMC = baseDataPath_EmCal_Systematics + "vn-
 std::string filePathEMCal_Syst_SYST3DCEMC = baseDataPath_EmCal_Systematics + "vn-SYST3DCEMC.csv";
 std::string filePathEMCal_Syst_SYST3UCEMC = baseDataPath_EmCal_Systematics + "vn-SYST3UCEMC.csv";
 std::string filePathEMCal_Syst_SYST4CEMC = baseDataPath_EmCal_Systematics + "vn-SYST4CEMC.csv";
-//not background window variation is embedded in Default v2 CSV file
+//note background window variation is embedded in Default v2 CSV file
 
 //paths to other v2 comparisons
 std::string filePath_AsymmetryVariations_45 = baseDataPath_AsymmetryCutVariations + "vn-asym-0.45.csv";
@@ -1842,6 +1844,8 @@ void plot_AsymmetryCut_Variations(const Data& data1, Data& data2, Data& data3){
             setGraphProperties(graph, prop.markerColor, prop.markerColor, prop.markerSize, prop.markerStyle);
         }
     }
+    std::vector<std::string> descriptions = {"Asym < 0.5 (Default)", "Asym < 0.45", "Asym < 0.55"};
+    logGraphData(allGraphs, descriptions, centralityLabels, ptCenters);
     
     for (int i = 0; i < ptCenters.size(); ++i) {
         corrected_v2_0_20_graph_2->SetPoint(i, ptCenters[i] - .075, data2.corrected_v2_0_20[i]);
@@ -1903,6 +1907,9 @@ void plot_AsymmetryCut_Variations(const Data& data1, Data& data2, Data& data3){
 }
 
 void plot_sigBgCorr_and_bgWindowVariations(const Data& data1){
+    std::array<GraphProperties, 4> properties = {
+        {{kBlack, 20, 1.0}, {kBlue, 20, 1.0}, {kBlue, 20, 1.0}, {kOrange+2, 20, 1.0}}
+    };
     /*
      Reference Data Set
      */
@@ -1913,7 +1920,6 @@ void plot_sigBgCorr_and_bgWindowVariations(const Data& data1){
     /*
      For Varied Sideband Calculation with 0.4 Upper Bound -- Default is set at 0.5 GeV
      */
-    
     TGraphErrors* corrected_v2_0_20_graph_1_type4 = CreateGraph(ptCenters, data1.corrected_v2_0_20_type4, data1.corrected_v2_0_20_Errors_type4);
     TGraphErrors* corrected_v2_20_40_graph_1_type4 = CreateGraph(ptCenters, data1.corrected_v2_20_40_type4, data1.corrected_v2_20_40_Errors_type4);
     TGraphErrors* corrected_v2_40_60_graph_1_type4 = CreateGraph(ptCenters, data1.corrected_v2_40_60_type4, data1.corrected_v2_40_60_Errors_type4);
@@ -1932,12 +1938,6 @@ void plot_sigBgCorr_and_bgWindowVariations(const Data& data1){
     TGraphErrors* bg_v2_20_40_graph_1 = CreateGraph(ptCenters, data1.bg_v2_20_40, data1.bg_v2_20_40_Errors);
     TGraphErrors* bg_v2_40_60_graph_1 = CreateGraph(ptCenters, data1.bg_v2_40_60, data1.bg_v2_40_60_Errors);
     
-
-    std::array<GraphProperties, 4> properties = {
-        {{kBlack, 20, 1.0}, {kBlue, 20, 1.0}, {kBlue, 20, 1.0}, {kOrange+2, 20, 1.0}}
-    };
-
-    
     std::array<std::array<TGraphErrors*, 4>, 3> allGraphs = {{
         {corrected_v2_0_20_graph_1, corrected_v2_0_20_graph_1_type4, bg_v2_0_20_graph_1, signal_v2_0_20_graph_1},
         {corrected_v2_20_40_graph_1, corrected_v2_20_40_graph_1_type4, bg_v2_20_40_graph_1, signal_v2_20_40_graph_1},
@@ -1952,24 +1952,35 @@ void plot_sigBgCorr_and_bgWindowVariations(const Data& data1){
             setGraphProperties(graph, prop.markerColor, prop.markerColor, prop.markerSize, prop.markerStyle);
         }
     }
-  
+    std::vector<std::string> descriptions = {"Default Corrected v2", "Background Window to 0.4 GeV", "Default BG v2", "Default Signal v2"};
+    logGraphData(allGraphs, descriptions, centralityLabels, ptCenters);
+    
+    
+    for (int i = 0; i < ptCenters.size(); ++i) {
+        corrected_v2_0_20_graph_1_type4->SetPoint(i, ptCenters[i] - .05, data1.corrected_v2_0_20_type4[i]);
+        corrected_v2_0_20_graph_1->SetPoint(i, ptCenters[i] + .05, data1.corrected_v2_0_20[i]);
+        
+        corrected_v2_20_40_graph_1_type4->SetPoint(i, ptCenters[i] - .05, data1.corrected_v2_20_40_type4[i]);
+        corrected_v2_20_40_graph_1->SetPoint(i, ptCenters[i] + .05, data1.corrected_v2_20_40[i]);
+        
+        corrected_v2_40_60_graph_1_type4->SetPoint(i, ptCenters[i] - .05, data1.corrected_v2_40_60_type4[i]);
+        corrected_v2_40_60_graph_1->SetPoint(i, ptCenters[i] + .05, data1.corrected_v2_40_60[i]);
+        
+        signal_v2_0_20_graph_1->SetPoint(i, ptCenters[i] - 2.0 * offset, data1.signal_v2_0_20[i]);
+        corrected_v2_0_20_graph_1->SetPoint(i, ptCenters[i] + 2.0 * offset, data1.corrected_v2_0_20[i]);
+        
+        signal_v2_20_40_graph_1->SetPoint(i, ptCenters[i] - 2.0 * offset, data1.signal_v2_20_40[i]);
+        corrected_v2_20_40_graph_1->SetPoint(i, ptCenters[i] + 2.0 * offset, data1.corrected_v2_20_40[i]);
+        
+        signal_v2_40_60_graph_1->SetPoint(i, ptCenters[i] - 2.0 * offset, data1.signal_v2_40_60[i]);
+        corrected_v2_40_60_graph_1->SetPoint(i, ptCenters[i] + 2.0 * offset, data1.corrected_v2_40_60[i]);
+    }
+    
     /*
      Plot Background Window Variations
      */
     //0-20%
     TCanvas *c_Overlay_0_20_bgWindowVariation = new TCanvas("c_Overlay_0_20_bgWindowVariation", "#pi^{0} #it{v}_{2} vs #it{p}_{T} 40-60% Centrality", 800, 600);
-    for (int i = 0; i < ptCenters.size(); ++i) {
-        corrected_v2_0_20_graph_1_type4->SetPoint(i, ptCenters[i] - .05, data1.corrected_v2_0_20_type4[i]);
-        corrected_v2_0_20_graph_1->SetPoint(i, ptCenters[i] + .05, data1.corrected_v2_0_20[i]);
-    }
-    corrected_v2_0_20_graph_1->Draw("AP");
-    corrected_v2_0_20_graph_1_type4->Draw("P SAME");
-    corrected_v2_0_20_graph_1->GetXaxis()->SetLimits(2.0, 5.0);
-    corrected_v2_0_20_graph_1->SetTitle("#it{v}_{2}^{#pi^{0}} vs #it{p}_{T} 40-60% Centrality, Signal Window Variations");
-    corrected_v2_0_20_graph_1->GetXaxis()->SetTitle("p_{T} [GeV]");
-    corrected_v2_0_20_graph_1->GetYaxis()->SetTitle("v_{2}^{#pi^{0}}");
-    corrected_v2_0_20_graph_1->SetMinimum(minYaxis_correctedComparisons);
-    corrected_v2_0_20_graph_1->SetMaximum(maxYaxis_correctedComparisons);
     createAndDraw_2graphEntries(c_Overlay_0_20_bgWindowVariation, corrected_v2_0_20_graph_1, corrected_v2_0_20_graph_1_type4, "Sideband = [#mu + 3#sigma, 0.4] GeV", "Sideband = [#mu + 3#sigma, 0.5] GeV (Default)", 0.2, 0.18, 0.4, 0.33, "0-20% Centrality");
     c_Overlay_0_20_bgWindowVariation->Modified();
     c_Overlay_0_20_bgWindowVariation->Update();
@@ -1978,18 +1989,6 @@ void plot_sigBgCorr_and_bgWindowVariations(const Data& data1){
     
     //20-40%
     TCanvas *c_Overlay_20_40_bgWindowVariation = new TCanvas("c_Overlay_20_40_bgWindowVariation", "#pi^{0} #it{v}_{2} vs #it{p}_{T} 40-60% Centrality", 800, 600);
-    for (int i = 0; i < ptCenters.size(); ++i) {
-        corrected_v2_20_40_graph_1_type4->SetPoint(i, ptCenters[i] - .05, data1.corrected_v2_20_40_type4[i]);
-        corrected_v2_20_40_graph_1->SetPoint(i, ptCenters[i] + .05, data1.corrected_v2_20_40[i]);
-    }
-    corrected_v2_20_40_graph_1->Draw("AP");
-    corrected_v2_20_40_graph_1_type4->Draw("P SAME");
-    corrected_v2_20_40_graph_1->GetXaxis()->SetLimits(2.0, 5.0);
-    corrected_v2_20_40_graph_1->SetTitle("#it{v}_{2}^{#pi^{0}} vs #it{p}_{T} 40-60% Centrality, Signal Window Variations");
-    corrected_v2_20_40_graph_1->GetXaxis()->SetTitle("p_{T} [GeV]");
-    corrected_v2_20_40_graph_1->GetYaxis()->SetTitle("v_{2}^{#pi^{0}}");
-    corrected_v2_20_40_graph_1->SetMinimum(minYaxis_correctedComparisons);
-    corrected_v2_20_40_graph_1->SetMaximum(maxYaxis_correctedComparisons);
     createAndDraw_2graphEntries(c_Overlay_20_40_bgWindowVariation, corrected_v2_20_40_graph_1, corrected_v2_20_40_graph_1_type4, "Sideband = [#mu + 3#sigma, 0.4] GeV", "Sideband = [#mu + 3#sigma, 0.5] GeV (Default)", 0.2, 0.18, 0.4, 0.33, "20-40% Centrality");
     c_Overlay_20_40_bgWindowVariation->Modified();
     c_Overlay_20_40_bgWindowVariation->Update();
@@ -1998,18 +1997,6 @@ void plot_sigBgCorr_and_bgWindowVariations(const Data& data1){
     
     //40-60%
     TCanvas *c_Overlay_40_60_bgWindowVariation = new TCanvas("c_Overlay_40_60_bgWindowVariation", "#pi^{0} #it{v}_{2} vs #it{p}_{T} 40-60% Centrality", 800, 600);
-    for (int i = 0; i < ptCenters.size(); ++i) {
-        corrected_v2_40_60_graph_1_type4->SetPoint(i, ptCenters[i] - .05, data1.corrected_v2_40_60_type4[i]);
-        corrected_v2_40_60_graph_1->SetPoint(i, ptCenters[i] + .05, data1.corrected_v2_40_60[i]);
-    }
-    corrected_v2_40_60_graph_1->Draw("AP");
-    corrected_v2_40_60_graph_1_type4->Draw("P SAME");
-    corrected_v2_40_60_graph_1->GetXaxis()->SetLimits(2.0, 5.0);
-    corrected_v2_40_60_graph_1->SetTitle("#it{v}_{2}^{#pi^{0}} vs #it{p}_{T} 40-60% Centrality, Signal Window Variations");
-    corrected_v2_40_60_graph_1->GetXaxis()->SetTitle("p_{T} [GeV]");
-    corrected_v2_40_60_graph_1->GetYaxis()->SetTitle("v_{2}^{#pi^{0}}");
-    corrected_v2_40_60_graph_1->SetMinimum(minYaxis_correctedComparisons);
-    corrected_v2_40_60_graph_1->SetMaximum(maxYaxis_correctedComparisons);
     createAndDraw_2graphEntries(c_Overlay_40_60_bgWindowVariation, corrected_v2_40_60_graph_1, corrected_v2_40_60_graph_1_type4, "Sideband = [#mu + 3#sigma, 0.4] GeV", "Sideband = [#mu + 3#sigma, 0.5] GeV (Default)", 0.2, 0.18, 0.4, 0.33, "40-60% Centrality");
     c_Overlay_40_60_bgWindowVariation->Modified();
     c_Overlay_40_60_bgWindowVariation->Update();
@@ -2017,6 +2004,13 @@ void plot_sigBgCorr_and_bgWindowVariations(const Data& data1){
     
     
     auto createLegend_sig_bg_corr = [](TCanvas* canvas, TGraphErrors* graph1, TGraphErrors* graph2, TGraphErrors* graph3, const std::string& legendTitle) {
+        graph2->Draw("AP");
+        graph2->GetXaxis()->SetTitle("p_{T}");
+        graph2->GetYaxis()->SetTitle("v_{2}");
+        graph1 -> Draw("P SAME");
+        graph3 -> Draw("P SAME");
+        graph2->SetMinimum(minYaxis_correctedComparisons);
+        graph2->SetMaximum(maxYaxis_correctedComparisons);
         TLegend *legend = new TLegend(0.2, 0.19, 0.4, 0.39);
         legend->SetBorderSize(0);
         legend->SetTextSize(0.032);
@@ -2033,18 +2027,6 @@ void plot_sigBgCorr_and_bgWindowVariations(const Data& data1){
      */
     //0-20%
     TCanvas *c_Overlay_bg_sig_corrOverlay_0_20 = new TCanvas("c_Overlay_bg_sig_corrOverlay_0_20", "#pi^{0} #it{v}_{2} vs #it{p}_{T} 0-20% Centrality", 800, 600);
-    bg_v2_0_20_graph_1->Draw("AP");
-    bg_v2_0_20_graph_1->SetTitle("Measured, Background, Corrected #it{v}_{2} vs #it{p}_{T} 0-20% Centrality");
-    bg_v2_0_20_graph_1->GetXaxis()->SetTitle("p_{T}");
-    bg_v2_0_20_graph_1->GetYaxis()->SetTitle("v_{2}");
-    for (int i = 0; i < ptCenters.size(); ++i) {
-        signal_v2_0_20_graph_1->SetPoint(i, ptCenters[i] - 2.0 * offset, data1.signal_v2_0_20[i]);
-        corrected_v2_0_20_graph_1->SetPoint(i, ptCenters[i] + 2.0 * offset, data1.corrected_v2_0_20[i]);
-    }
-    signal_v2_0_20_graph_1 -> Draw("P SAME");
-    corrected_v2_0_20_graph_1 -> Draw("P SAME");
-    bg_v2_0_20_graph_1->SetMinimum(minYaxis_correctedComparisons);
-    bg_v2_0_20_graph_1->SetMaximum(maxYaxis_correctedComparisons);
     createLegend_sig_bg_corr(c_Overlay_bg_sig_corrOverlay_0_20, signal_v2_0_20_graph_1, bg_v2_0_20_graph_1, corrected_v2_0_20_graph_1, "0-20% Centrality");
     c_Overlay_bg_sig_corrOverlay_0_20->Modified();
     c_Overlay_bg_sig_corrOverlay_0_20->Update();
@@ -2052,38 +2034,13 @@ void plot_sigBgCorr_and_bgWindowVariations(const Data& data1){
     
     //20-40
     TCanvas *c_Overlay_bg_sig_corrOverlay_20_40 = new TCanvas("c_Overlay_bg_sig_corrOverlay_20_40", "#pi^{0} #it{v}_{2} vs #it{p}_{T} 0-20% Centrality", 800, 600);
-    bg_v2_20_40_graph_1->Draw("AP");
-    bg_v2_20_40_graph_1->SetTitle("Measured, Background, Corrected #it{v}_{2} vs #it{p}_{T} 0-20% Centrality");
-    bg_v2_20_40_graph_1->GetXaxis()->SetTitle("p_{T}");
-    bg_v2_20_40_graph_1->GetYaxis()->SetTitle("v_{2}");
-    for (int i = 0; i < ptCenters.size(); ++i) {
-        signal_v2_20_40_graph_1->SetPoint(i, ptCenters[i] - 2.0 * offset, data1.signal_v2_20_40[i]);
-        corrected_v2_20_40_graph_1->SetPoint(i, ptCenters[i] + 2.0 * offset, data1.corrected_v2_20_40[i]);
-    }
-    signal_v2_20_40_graph_1 -> Draw("P SAME");
-    corrected_v2_20_40_graph_1 -> Draw("P SAME");
-    bg_v2_20_40_graph_1->SetMinimum(minYaxis_correctedComparisons);
-    bg_v2_20_40_graph_1->SetMaximum(maxYaxis_correctedComparisons);
     createLegend_sig_bg_corr(c_Overlay_bg_sig_corrOverlay_20_40, signal_v2_20_40_graph_1, bg_v2_20_40_graph_1, corrected_v2_20_40_graph_1, "20-40% Centrality");
     c_Overlay_bg_sig_corrOverlay_20_40->Modified();
     c_Overlay_bg_sig_corrOverlay_20_40->Update();
     c_Overlay_bg_sig_corrOverlay_20_40->SaveAs((BasePlotOutputPath + "/Overlay_20_40_v2_Signal_Back_Correct.png").c_str());
     
-    
     //40-60
     TCanvas *c_Overlay_bg_sig_corrOverlay_40_60 = new TCanvas("c_Overlay_bg_sig_corrOverlay_40_60", "#pi^{0} #it{v}_{2} vs #it{p}_{T} 0-20% Centrality", 800, 600);
-    bg_v2_40_60_graph_1->Draw("AP");
-    bg_v2_40_60_graph_1->SetTitle("Measured, Background, Corrected #it{v}_{2} vs #it{p}_{T} 0-20% Centrality");
-    bg_v2_40_60_graph_1->GetXaxis()->SetTitle("p_{T}");
-    bg_v2_40_60_graph_1->GetYaxis()->SetTitle("v_{2}");
-    for (int i = 0; i < ptCenters.size(); ++i) {
-        signal_v2_40_60_graph_1->SetPoint(i, ptCenters[i] - 2.0 * offset, data1.signal_v2_40_60[i]);
-        corrected_v2_40_60_graph_1->SetPoint(i, ptCenters[i] + 2.0 * offset, data1.corrected_v2_40_60[i]);
-    }
-    signal_v2_40_60_graph_1 -> Draw("P SAME");
-    corrected_v2_40_60_graph_1 -> Draw("P SAME");
-    bg_v2_40_60_graph_1->SetMinimum(minYaxis_correctedComparisons);
-    bg_v2_40_60_graph_1->SetMaximum(maxYaxis_correctedComparisons);
     createLegend_sig_bg_corr(c_Overlay_bg_sig_corrOverlay_40_60, signal_v2_40_60_graph_1, bg_v2_40_60_graph_1, corrected_v2_40_60_graph_1, "40-60% Centrality");
     c_Overlay_bg_sig_corrOverlay_40_60->Modified();
     c_Overlay_bg_sig_corrOverlay_40_60->Update();
@@ -2092,6 +2049,9 @@ void plot_sigBgCorr_and_bgWindowVariations(const Data& data1){
 
 
 void plotProduction_Comparisons(const Data& data1, Data& data2) {
+    std::array<GraphProperties, 6> properties = {
+        {{kBlack, 20, 1.0}, {kBlue, 20, 1.0}, {kBlack, 20, 1.0}, {kBlue, 20, 1.0}, {kBlack, 20, 1.0}, {kBlue, 20, 1.0}}
+      };
     TGraphErrors* corrected_v2_0_20_graph_1 = CreateGraph(ptCenters, data1.corrected_v2_0_20, data1.corrected_v2_0_20_Errors);
     TGraphErrors* corrected_v2_20_40_graph_1 = CreateGraph(ptCenters, data1.corrected_v2_20_40, data1.corrected_v2_20_40_Errors);
     TGraphErrors* corrected_v2_40_60_graph_1 = CreateGraph(ptCenters, data1.corrected_v2_40_60, data1.corrected_v2_40_60_Errors);
@@ -2099,9 +2059,7 @@ void plotProduction_Comparisons(const Data& data1, Data& data2) {
     TGraphErrors* corrected_v2_0_20_graph_2 = CreateGraph(ptCenters, data2.corrected_v2_0_20, data2.corrected_v2_0_20_Errors);
     TGraphErrors* corrected_v2_20_40_graph_2 = CreateGraph(ptCenters, data2.corrected_v2_20_40, data2.corrected_v2_20_40_Errors);
     TGraphErrors* corrected_v2_40_60_graph_2 = CreateGraph(ptCenters, data2.corrected_v2_40_60, data2.corrected_v2_40_60_Errors);
-    /*
-     Measured v2
-     */
+
     TGraphErrors* signal_v2_0_20_graph_1 = CreateGraph(ptCenters, data1.signal_v2_0_20, data1.signal_v2_0_20_Errors);
     TGraphErrors* signal_v2_20_40_graph_1 = CreateGraph(ptCenters, data1.signal_v2_20_40, data1.signal_v2_20_40_Errors);
     TGraphErrors* signal_v2_40_60_graph_1 = CreateGraph(ptCenters, data1.signal_v2_40_60, data1.signal_v2_40_60_Errors);
@@ -2109,10 +2067,7 @@ void plotProduction_Comparisons(const Data& data1, Data& data2) {
     TGraphErrors* signal_v2_0_20_graph_2 = CreateGraph(ptCenters, data2.signal_v2_0_20, data2.signal_v2_0_20_Errors);
     TGraphErrors* signal_v2_20_40_graph_2 = CreateGraph(ptCenters, data2.signal_v2_20_40, data2.signal_v2_20_40_Errors);
     TGraphErrors* signal_v2_40_60_graph_2 = CreateGraph(ptCenters, data2.signal_v2_40_60, data2.signal_v2_40_60_Errors);
-    
-    /*
-     Background v2
-     */
+
     TGraphErrors* bg_v2_0_20_graph_1 = CreateGraph(ptCenters, data1.bg_v2_0_20, data1.bg_v2_0_20_Errors);
     TGraphErrors* bg_v2_20_40_graph_1 = CreateGraph(ptCenters, data1.bg_v2_20_40, data1.bg_v2_20_40_Errors);
     TGraphErrors* bg_v2_40_60_graph_1 = CreateGraph(ptCenters, data1.bg_v2_40_60, data1.bg_v2_40_60_Errors);
@@ -2121,266 +2076,112 @@ void plotProduction_Comparisons(const Data& data1, Data& data2) {
     TGraphErrors* bg_v2_20_40_graph_2 = CreateGraph(ptCenters, data2.bg_v2_20_40, data2.bg_v2_20_40_Errors);
     TGraphErrors* bg_v2_40_60_graph_2 = CreateGraph(ptCenters, data2.bg_v2_40_60, data2.bg_v2_40_60_Errors);
     
-    std::array<GraphProperties, 6> properties = {
-        {{kBlack, 20, 1.0}, {kBlue, 20, 1.0}, {kBlack, 20, 1.0}, {kBlue, 20, 1.0}, {kBlack, 20, 1.0}, {kBlue, 20, 1.0}}
-      };
-
       
-      std::array<std::array<TGraphErrors*, 6>, 3> allGraphs = {{
-          {corrected_v2_0_20_graph_1, corrected_v2_0_20_graph_2, signal_v2_0_20_graph_1, signal_v2_0_20_graph_2, bg_v2_0_20_graph_1, bg_v2_0_20_graph_2},
-          {corrected_v2_20_40_graph_1, corrected_v2_20_40_graph_2, signal_v2_20_40_graph_1, signal_v2_20_40_graph_2, bg_v2_20_40_graph_1, bg_v2_20_40_graph_2},
-          {corrected_v2_40_60_graph_1, corrected_v2_40_60_graph_2, signal_v2_40_60_graph_1, signal_v2_40_60_graph_2, bg_v2_40_60_graph_1, bg_v2_40_60_graph_2}
-      }};
+    std::array<std::array<TGraphErrors*, 6>, 3> allGraphs = {{
+      {corrected_v2_0_20_graph_1, corrected_v2_0_20_graph_2, signal_v2_0_20_graph_1, signal_v2_0_20_graph_2, bg_v2_0_20_graph_1, bg_v2_0_20_graph_2},
+      {corrected_v2_20_40_graph_1, corrected_v2_20_40_graph_2, signal_v2_20_40_graph_1, signal_v2_20_40_graph_2, bg_v2_20_40_graph_1, bg_v2_20_40_graph_2},
+      {corrected_v2_40_60_graph_1, corrected_v2_40_60_graph_2, signal_v2_40_60_graph_1, signal_v2_40_60_graph_2, bg_v2_40_60_graph_1, bg_v2_40_60_graph_2}
+    }};
       
-      
-      for (auto& graphGroup : allGraphs) {
-          for (int i = 0; i < graphGroup.size(); ++i) {
-              TGraph* graph = graphGroup[i];
-              const auto& prop = properties[i];
-              setGraphProperties(graph, prop.markerColor, prop.markerColor, prop.markerSize, prop.markerStyle);
-          }
+    for (auto& graphGroup : allGraphs) {
+      for (int i = 0; i < graphGroup.size(); ++i) {
+          TGraph* graph = graphGroup[i];
+          const auto& prop = properties[i];
+          setGraphProperties(graph, prop.markerColor, prop.markerColor, prop.markerSize, prop.markerStyle);
       }
+    }
     
+    std::vector<std::string> descriptions = {"p015 Corrected v2", "p013 Corrected v2", "p015 Measured v2", "p013 Measured v2", "p015 BG v2", "p013 BG v2"};
+    logGraphData(allGraphs, descriptions, centralityLabels, ptCenters);
     
-    //0-20%
-    TCanvas *c_Overlay_0_20_productionComparisons_corrected = new TCanvas("c_Overlay_0_20_productionComparisons_corrected", "#pi^{0} #it{v}_{2} vs #it{p}_{T} 40-60% Centrality", 800, 600);
     for (int i = 0; i < ptCenters.size(); ++i) {
         corrected_v2_0_20_graph_2->SetPoint(i, ptCenters[i] - .05, data2.corrected_v2_0_20[i]);
         corrected_v2_0_20_graph_1->SetPoint(i, ptCenters[i] + .05, data1.corrected_v2_0_20[i]);
+        
+        corrected_v2_20_40_graph_2->SetPoint(i, ptCenters[i] - .05, data2.corrected_v2_20_40[i]);
+        corrected_v2_20_40_graph_1->SetPoint(i, ptCenters[i] + .05, data1.corrected_v2_20_40[i]);
+        
+        corrected_v2_40_60_graph_2->SetPoint(i, ptCenters[i] - .05, data2.corrected_v2_40_60[i]);
+        corrected_v2_40_60_graph_1->SetPoint(i, ptCenters[i] + .05, data1.corrected_v2_40_60[i]);
+        
+        signal_v2_0_20_graph_2->SetPoint(i, ptCenters[i] - .05, data2.signal_v2_0_20[i]);
+        signal_v2_0_20_graph_1->SetPoint(i, ptCenters[i] + .05, data1.signal_v2_0_20[i]);
+        
+        signal_v2_20_40_graph_2->SetPoint(i, ptCenters[i] - .05, data2.signal_v2_20_40[i]);
+        signal_v2_20_40_graph_1->SetPoint(i, ptCenters[i] + .05, data1.signal_v2_20_40[i]);
+        
+        signal_v2_40_60_graph_2->SetPoint(i, ptCenters[i] - .05, data2.signal_v2_40_60[i]);
+        signal_v2_40_60_graph_1->SetPoint(i, ptCenters[i] + .05, data1.signal_v2_40_60[i]);
+        
+        bg_v2_0_20_graph_2->SetPoint(i, ptCenters[i] - .05, data2.bg_v2_0_20[i]);
+        bg_v2_0_20_graph_1->SetPoint(i, ptCenters[i] + .05, data1.bg_v2_0_20[i]);
+        
+        bg_v2_20_40_graph_2->SetPoint(i, ptCenters[i] - .05, data2.bg_v2_20_40[i]);
+        bg_v2_20_40_graph_1->SetPoint(i, ptCenters[i] + .05, data1.bg_v2_20_40[i]);
+        
+        bg_v2_40_60_graph_2->SetPoint(i, ptCenters[i] - .05, data2.bg_v2_40_60[i]);
+        bg_v2_40_60_graph_1->SetPoint(i, ptCenters[i] + .05, data1.bg_v2_40_60[i]);
     }
-    corrected_v2_0_20_graph_1->Draw("AP");
-    corrected_v2_0_20_graph_2->Draw("P SAME");
-    corrected_v2_0_20_graph_1->GetXaxis()->SetLimits(2.0, 5.0);
-    corrected_v2_0_20_graph_1->SetTitle("#it{v}_{2}^{#pi^{0}} vs #it{p}_{T} 40-60% Centrality, Signal Window Variations");
-    corrected_v2_0_20_graph_1->GetXaxis()->SetTitle("p_{T} [GeV]");
-    corrected_v2_0_20_graph_1->GetYaxis()->SetTitle("v_{2}^{#pi^{0}}");
-    corrected_v2_0_20_graph_1->SetMinimum(minYaxis_correctedComparisons);
-    corrected_v2_0_20_graph_1->SetMaximum(maxYaxis_correctedComparisons);
-    TLegend *legend_Overlay_0_20_v2_corrected_productionComparisons = new TLegend(0.2, 0.18, 0.4, 0.33);
-    legend_Overlay_0_20_v2_corrected_productionComparisons->SetBorderSize(0);
-    legend_Overlay_0_20_v2_corrected_productionComparisons->SetTextSize(0.04);
-    legend_Overlay_0_20_v2_corrected_productionComparisons->AddEntry(corrected_v2_0_20_graph_2, "p013 v_{2}^{#pi^{0}}", "pe");
-    legend_Overlay_0_20_v2_corrected_productionComparisons->AddEntry(corrected_v2_0_20_graph_1, "p015 v_{2}^{#pi^{0}}", "pe");
-    legend_Overlay_0_20_v2_corrected_productionComparisons->Draw();
-    DrawZeroLine(c_Overlay_0_20_productionComparisons_corrected);
-    Create_sPHENIX_legend(c_Overlay_0_20_productionComparisons_corrected, 0.14,.72,0.34,.92, "0-20% Centrality", 0.045);
+    
+    /*
+     Overlay p013, p015 corrected v2
+     */
+    TCanvas *c_Overlay_0_20_productionComparisons_corrected = new TCanvas("c_Overlay_0_20_productionComparisons_corrected", "#pi^{0} #it{v}_{2} vs #it{p}_{T} 40-60% Centrality", 800, 600);
+    createAndDraw_2graphEntries(c_Overlay_0_20_productionComparisons_corrected, corrected_v2_0_20_graph_1, corrected_v2_0_20_graph_2, "p013 v_{2}^{#pi^{0}}", "p015 v_{2}^{#pi^{0}}", 0.2, 0.18, 0.4, 0.33, "0-20% Centrality");
     c_Overlay_0_20_productionComparisons_corrected->Modified();
     c_Overlay_0_20_productionComparisons_corrected->Update();
     c_Overlay_0_20_productionComparisons_corrected->SaveAs((baseDataPath_ProductionComparisons + "Overlay_0_20_v2_p013_p015_correctedV2Comparison.png").c_str());
     
-    
-    
-    
     TCanvas *c_Overlay_20_40_productionComparisons_corrected = new TCanvas("c_Overlay_20_40_productionComparisons_corrected", "#pi^{0} #it{v}_{2} vs #it{p}_{T} 40-60% Centrality", 800, 600);
-    for (int i = 0; i < ptCenters.size(); ++i) {
-        corrected_v2_20_40_graph_2->SetPoint(i, ptCenters[i] - .05, data2.corrected_v2_20_40[i]);
-        corrected_v2_20_40_graph_1->SetPoint(i, ptCenters[i] + .05, data1.corrected_v2_20_40[i]);
-    }
-    corrected_v2_20_40_graph_1->Draw("AP");
-    corrected_v2_20_40_graph_2->Draw("P SAME");
-    corrected_v2_20_40_graph_1->GetXaxis()->SetLimits(2.0, 5.0);
-    corrected_v2_20_40_graph_1->SetTitle("#it{v}_{2}^{#pi^{0}} vs #it{p}_{T} 40-60% Centrality, Signal Window Variations");
-    corrected_v2_20_40_graph_1->GetXaxis()->SetTitle("p_{T} [GeV]");
-    corrected_v2_20_40_graph_1->GetYaxis()->SetTitle("v_{2}^{#pi^{0}}");
-    corrected_v2_20_40_graph_1->SetMinimum(minYaxis_correctedComparisons);
-    corrected_v2_20_40_graph_1->SetMaximum(maxYaxis_correctedComparisons);
-    TLegend *legend_Overlay_20_40_v2_corrected_productionComparisons = new TLegend(0.2, 0.18, 0.4, 0.33);
-    legend_Overlay_20_40_v2_corrected_productionComparisons->SetBorderSize(0);
-    legend_Overlay_20_40_v2_corrected_productionComparisons->SetTextSize(0.04);
-    legend_Overlay_20_40_v2_corrected_productionComparisons->AddEntry(corrected_v2_20_40_graph_2, "p013 v_{2}^{#pi^{0}}", "pe");
-    legend_Overlay_20_40_v2_corrected_productionComparisons->AddEntry(corrected_v2_20_40_graph_1, "p015 v_{2}^{#pi^{0}}", "pe");
-    legend_Overlay_20_40_v2_corrected_productionComparisons->Draw();
-    DrawZeroLine(c_Overlay_20_40_productionComparisons_corrected);
-    Create_sPHENIX_legend(c_Overlay_20_40_productionComparisons_corrected, 0.14,.72,0.34,.92, "20-40% Centrality", 0.045);
+    createAndDraw_2graphEntries(c_Overlay_0_20_productionComparisons_corrected, corrected_v2_20_40_graph_1, corrected_v2_20_40_graph_2, "p013 v_{2}^{#pi^{0}}", "p015 v_{2}^{#pi^{0}}", 0.2, 0.18, 0.4, 0.33, "20-40% Centrality");
     c_Overlay_20_40_productionComparisons_corrected->Modified();
     c_Overlay_20_40_productionComparisons_corrected->Update();
     c_Overlay_20_40_productionComparisons_corrected->SaveAs((baseDataPath_ProductionComparisons + "Overlay_20_40_v2_p013_p015_correctedV2Comparison.png").c_str());
     
-    
-    
-    
     TCanvas *c_Overlay_40_60_productionComparisons_corrected = new TCanvas("c_Overlay_40_60_productionComparisons_corrected", "#pi^{0} #it{v}_{2} vs #it{p}_{T} 40-60% Centrality", 800, 600);
-    for (int i = 0; i < ptCenters.size(); ++i) {
-        corrected_v2_40_60_graph_2->SetPoint(i, ptCenters[i] - .05, data2.corrected_v2_40_60[i]);
-        corrected_v2_40_60_graph_1->SetPoint(i, ptCenters[i] + .05, data1.corrected_v2_40_60[i]);
-    }
-    corrected_v2_40_60_graph_1->Draw("AP");
-    corrected_v2_40_60_graph_2->Draw("P SAME");
-    corrected_v2_40_60_graph_1->GetXaxis()->SetLimits(2.0, 5.0);
-    corrected_v2_40_60_graph_1->SetTitle("#it{v}_{2}^{#pi^{0}} vs #it{p}_{T} 40-60% Centrality, Signal Window Variations");
-    corrected_v2_40_60_graph_1->GetXaxis()->SetTitle("p_{T} [GeV]");
-    corrected_v2_40_60_graph_1->GetYaxis()->SetTitle("v_{2}^{#pi^{0}}");
-    corrected_v2_40_60_graph_1->SetMinimum(minYaxis_correctedComparisons);
-    corrected_v2_40_60_graph_1->SetMaximum(maxYaxis_correctedComparisons);
-    TLegend *legend_Overlay_40_60_v2_corrected_productionComparisons = new TLegend(0.2, 0.18, 0.4, 0.33);
-    legend_Overlay_40_60_v2_corrected_productionComparisons->SetBorderSize(0);
-    legend_Overlay_40_60_v2_corrected_productionComparisons->SetTextSize(0.04);
-    legend_Overlay_40_60_v2_corrected_productionComparisons->AddEntry(corrected_v2_40_60_graph_2, "p013 v_{2}^{#pi^{0}}", "pe");
-    legend_Overlay_40_60_v2_corrected_productionComparisons->AddEntry(corrected_v2_40_60_graph_1, "p015 v_{2}^{#pi^{0}}", "pe");
-    legend_Overlay_40_60_v2_corrected_productionComparisons->Draw();
-    DrawZeroLine(c_Overlay_40_60_productionComparisons_corrected);
-    Create_sPHENIX_legend(c_Overlay_40_60_productionComparisons_corrected, 0.14,.72,0.34,.92, "40-60% Centrality", 0.045);
+    createAndDraw_2graphEntries(c_Overlay_0_20_productionComparisons_corrected, corrected_v2_20_40_graph_1, corrected_v2_20_40_graph_2, "p013 v_{2}^{#pi^{0}}", "p015 v_{2}^{#pi^{0}}", 0.2, 0.18, 0.4, 0.33, "40-60% Centrality");
     c_Overlay_40_60_productionComparisons_corrected->Modified();
     c_Overlay_40_60_productionComparisons_corrected->Update();
     c_Overlay_40_60_productionComparisons_corrected->SaveAs((baseDataPath_ProductionComparisons + "Overlay_40_60_v2_p013_p015_correctedV2Comparison.png").c_str());
     
-    
+    /*
+     Overlay p013, p015 signal v2
+     */
     TCanvas *c_Overlay_0_20_productionComparisons_signal = new TCanvas("c_Overlay_0_20_productionComparisons_signal", "#pi^{0} #it{v}_{2} vs #it{p}_{T} 40-60% Centrality", 800, 600);
-    for (int i = 0; i < ptCenters.size(); ++i) {
-        signal_v2_0_20_graph_2->SetPoint(i, ptCenters[i] - .05, data2.signal_v2_0_20[i]);
-        signal_v2_0_20_graph_1->SetPoint(i, ptCenters[i] + .05, data1.signal_v2_0_20[i]);
-    }
-    signal_v2_0_20_graph_1->Draw("AP");
-    signal_v2_0_20_graph_2->Draw("P SAME");
-    signal_v2_0_20_graph_1->GetXaxis()->SetLimits(2.0, 5.0);
-    signal_v2_0_20_graph_1->SetTitle("#it{v}_{2}^{#pi^{0}} vs #it{p}_{T} 40-60% Centrality, Signal Window Variations");
-    signal_v2_0_20_graph_1->GetXaxis()->SetTitle("p_{T} [GeV]");
-    signal_v2_0_20_graph_1->GetYaxis()->SetTitle("v_{2}^{#pi^{0}}");
-    signal_v2_0_20_graph_1->SetMinimum(minYaxis_correctedComparisons);
-    signal_v2_0_20_graph_1->SetMaximum(maxYaxis_correctedComparisons);
-    TLegend *legend_Overlay_0_20_v2_signal_productionComparisons = new TLegend(0.2, 0.18, 0.4, 0.33);
-    legend_Overlay_0_20_v2_signal_productionComparisons->SetBorderSize(0);
-    legend_Overlay_0_20_v2_signal_productionComparisons->SetTextSize(0.04);
-    legend_Overlay_0_20_v2_signal_productionComparisons->AddEntry(signal_v2_0_20_graph_2, "p013 v_{2}^{measured}", "pe");
-    legend_Overlay_0_20_v2_signal_productionComparisons->AddEntry(signal_v2_0_20_graph_1, "p015 v_{2}^{measured}", "pe");
-    legend_Overlay_0_20_v2_signal_productionComparisons->Draw();
-    DrawZeroLine(c_Overlay_0_20_productionComparisons_signal);
-    Create_sPHENIX_legend(c_Overlay_0_20_productionComparisons_signal, 0.14,.72,0.34,.92, "0-20% Centrality", 0.045);
+    createAndDraw_2graphEntries(c_Overlay_0_20_productionComparisons_signal, signal_v2_0_20_graph_1, signal_v2_0_20_graph_2, "p013 v_{2}^{measured}", "p015 v_{2}^{measured}", 0.2, 0.18, 0.4, 0.33, "0-20% Centrality");
     c_Overlay_0_20_productionComparisons_signal->Modified();
     c_Overlay_0_20_productionComparisons_signal->Update();
     c_Overlay_0_20_productionComparisons_signal->SaveAs((baseDataPath_ProductionComparisons + "Overlay_0_20_v2_p013_p015_signalV2Comparison.png").c_str());
     
-    
-    
-    
     TCanvas *c_Overlay_20_40_productionComparisons_signal = new TCanvas("c_Overlay_20_40_productionComparisons_signal", "#pi^{0} #it{v}_{2} vs #it{p}_{T} 40-60% Centrality", 800, 600);
-    for (int i = 0; i < ptCenters.size(); ++i) {
-        signal_v2_20_40_graph_2->SetPoint(i, ptCenters[i] - .05, data2.signal_v2_20_40[i]);
-        signal_v2_20_40_graph_1->SetPoint(i, ptCenters[i] + .05, data1.signal_v2_20_40[i]);
-    }
-    signal_v2_20_40_graph_1->Draw("AP");
-    signal_v2_20_40_graph_2->Draw("P SAME");
-    signal_v2_20_40_graph_1->GetXaxis()->SetLimits(2.0, 5.0);
-    signal_v2_20_40_graph_1->SetTitle("#it{v}_{2}^{#pi^{0}} vs #it{p}_{T} 40-60% Centrality, Signal Window Variations");
-    signal_v2_20_40_graph_1->GetXaxis()->SetTitle("p_{T} [GeV]");
-    signal_v2_20_40_graph_1->GetYaxis()->SetTitle("v_{2}^{#pi^{0}}");
-    signal_v2_20_40_graph_1->SetMinimum(minYaxis_correctedComparisons);
-    signal_v2_20_40_graph_1->SetMaximum(maxYaxis_correctedComparisons);
-    TLegend *legend_Overlay_20_40_v2_signal_productionComparisons = new TLegend(0.2, 0.18, 0.4, 0.33);
-    legend_Overlay_20_40_v2_signal_productionComparisons->SetBorderSize(0);
-    legend_Overlay_20_40_v2_signal_productionComparisons->SetTextSize(0.04);
-    legend_Overlay_20_40_v2_signal_productionComparisons->AddEntry(signal_v2_20_40_graph_2, "p013 v_{2}^{measured}", "pe");
-    legend_Overlay_20_40_v2_signal_productionComparisons->AddEntry(signal_v2_20_40_graph_1, "p015 v_{2}^{measured}", "pe");
-    legend_Overlay_20_40_v2_signal_productionComparisons->Draw();
-    DrawZeroLine(c_Overlay_20_40_productionComparisons_signal);
-    Create_sPHENIX_legend(c_Overlay_20_40_productionComparisons_signal, 0.14,.72,0.34,.92, "20-40% Centrality", 0.045);
+    createAndDraw_2graphEntries(c_Overlay_20_40_productionComparisons_signal, signal_v2_20_40_graph_1, signal_v2_20_40_graph_2, "p013 v_{2}^{measured}", "p015 v_{2}^{measured}", 0.2, 0.18, 0.4, 0.33, "20-40% Centrality");
     c_Overlay_20_40_productionComparisons_signal->Modified();
     c_Overlay_20_40_productionComparisons_signal->Update();
     c_Overlay_20_40_productionComparisons_signal->SaveAs((baseDataPath_ProductionComparisons + "Overlay_20_40_v2_p013_p015_signalV2Comparison.png").c_str());
     
-    
-    
-    
     TCanvas *c_Overlay_40_60_productionComparisons_signal = new TCanvas("c_Overlay_40_60_productionComparisons_signal", "#pi^{0} #it{v}_{2} vs #it{p}_{T} 40-60% Centrality", 800, 600);
-    for (int i = 0; i < ptCenters.size(); ++i) {
-        signal_v2_40_60_graph_2->SetPoint(i, ptCenters[i] - .05, data2.signal_v2_40_60[i]);
-        signal_v2_40_60_graph_1->SetPoint(i, ptCenters[i] + .05, data1.signal_v2_40_60[i]);
-    }
-    signal_v2_40_60_graph_1->Draw("AP");
-    signal_v2_40_60_graph_2->Draw("P SAME");
-    signal_v2_40_60_graph_1->GetXaxis()->SetLimits(2.0, 5.0);
-    signal_v2_40_60_graph_1->SetTitle("#it{v}_{2}^{#pi^{0}} vs #it{p}_{T} 40-60% Centrality, Signal Window Variations");
-    signal_v2_40_60_graph_1->GetXaxis()->SetTitle("p_{T} [GeV]");
-    signal_v2_40_60_graph_1->GetYaxis()->SetTitle("v_{2}^{#pi^{0}}");
-    signal_v2_40_60_graph_1->SetMinimum(minYaxis_correctedComparisons);
-    signal_v2_40_60_graph_1->SetMaximum(maxYaxis_correctedComparisons);
-    TLegend *legend_Overlay_40_60_v2_signal_productionComparisons = new TLegend(0.2, 0.18, 0.4, 0.33);
-    legend_Overlay_40_60_v2_signal_productionComparisons->SetBorderSize(0);
-    legend_Overlay_40_60_v2_signal_productionComparisons->SetTextSize(0.04);
-    legend_Overlay_40_60_v2_signal_productionComparisons->AddEntry(signal_v2_40_60_graph_2, "p013 v_{2}^{measured}", "pe");
-    legend_Overlay_40_60_v2_signal_productionComparisons->AddEntry(signal_v2_40_60_graph_1, "p015 v_{2}^{measured}", "pe");
-    legend_Overlay_40_60_v2_signal_productionComparisons->Draw();
-    DrawZeroLine(c_Overlay_40_60_productionComparisons_signal);
-    Create_sPHENIX_legend(c_Overlay_40_60_productionComparisons_signal, 0.14,.72,0.34,.92, "40-60% Centrality", 0.045);
+    createAndDraw_2graphEntries(c_Overlay_40_60_productionComparisons_signal, signal_v2_40_60_graph_1, signal_v2_40_60_graph_2, "p013 v_{2}^{measured}", "p015 v_{2}^{measured}", 0.2, 0.18, 0.4, 0.33, "40-60% Centrality");
     c_Overlay_40_60_productionComparisons_signal->Modified();
     c_Overlay_40_60_productionComparisons_signal->Update();
     c_Overlay_40_60_productionComparisons_signal->SaveAs((baseDataPath_ProductionComparisons + "Overlay_40_60_v2_p013_p015_signalV2Comparison.png").c_str());
     
-    
-    
+    /*
+     Overlay p013, p015 bg v2
+     */
     TCanvas *c_Overlay_0_20_productionComparisons_bg = new TCanvas("c_Overlay_0_20_productionComparisons_bg", "#pi^{0} #it{v}_{2} vs #it{p}_{T} 40-60% Centrality", 800, 600);
-    for (int i = 0; i < ptCenters.size(); ++i) {
-        bg_v2_0_20_graph_2->SetPoint(i, ptCenters[i] - .05, data2.bg_v2_0_20[i]);
-        bg_v2_0_20_graph_1->SetPoint(i, ptCenters[i] + .05, data1.bg_v2_0_20[i]);
-    }
-    bg_v2_0_20_graph_1->Draw("AP");
-    bg_v2_0_20_graph_2->Draw("P SAME");
-    bg_v2_0_20_graph_1->GetXaxis()->SetLimits(2.0, 5.0);
-    bg_v2_0_20_graph_1->SetTitle("#it{v}_{2}^{#pi^{0}} vs #it{p}_{T} 40-60% Centrality, bg Window Variations");
-    bg_v2_0_20_graph_1->GetXaxis()->SetTitle("p_{T} [GeV]");
-    bg_v2_0_20_graph_1->GetYaxis()->SetTitle("v_{2}^{#pi^{0}}");
-    bg_v2_0_20_graph_1->SetMinimum(minYaxis_correctedComparisons);
-    bg_v2_0_20_graph_1->SetMaximum(maxYaxis_correctedComparisons);
-    TLegend *legend_Overlay_0_20_v2_bg_productionComparisons = new TLegend(0.2, 0.18, 0.4, 0.33);
-    legend_Overlay_0_20_v2_bg_productionComparisons->SetBorderSize(0);
-    legend_Overlay_0_20_v2_bg_productionComparisons->SetTextSize(0.04);
-    legend_Overlay_0_20_v2_bg_productionComparisons->AddEntry(bg_v2_0_20_graph_2, "p013 v_{2}^{BG}", "pe");
-    legend_Overlay_0_20_v2_bg_productionComparisons->AddEntry(bg_v2_0_20_graph_1, "p015 v_{2}^{BG}", "pe");
-    legend_Overlay_0_20_v2_bg_productionComparisons->Draw();
-    DrawZeroLine(c_Overlay_0_20_productionComparisons_bg);
-    Create_sPHENIX_legend(c_Overlay_0_20_productionComparisons_bg, 0.14,.72,0.34,.92, "0-20% Centrality", 0.045);
+    createAndDraw_2graphEntries(c_Overlay_0_20_productionComparisons_bg, bg_v2_0_20_graph_1, bg_v2_0_20_graph_2, "p013 v_{2}^{BG}", "p015 v_{2}^{BG}", 0.2, 0.18, 0.4, 0.33, "0-20% Centrality");
     c_Overlay_0_20_productionComparisons_bg->Modified();
     c_Overlay_0_20_productionComparisons_bg->Update();
     c_Overlay_0_20_productionComparisons_bg->SaveAs((baseDataPath_ProductionComparisons + "Overlay_0_20_v2_p013_p015_bgV2Comparison.png").c_str());
     
-    
     TCanvas *c_Overlay_20_40_productionComparisons_bg = new TCanvas("c_Overlay_20_40_productionComparisons_bg", "#pi^{0} #it{v}_{2} vs #it{p}_{T} 40-60% Centrality", 800, 600);
-    for (int i = 0; i < ptCenters.size(); ++i) {
-        bg_v2_20_40_graph_2->SetPoint(i, ptCenters[i] - .05, data2.bg_v2_20_40[i]);
-        bg_v2_20_40_graph_1->SetPoint(i, ptCenters[i] + .05, data1.bg_v2_20_40[i]);
-    }
-    bg_v2_20_40_graph_1->Draw("AP");
-    bg_v2_20_40_graph_2->Draw("P SAME");
-    bg_v2_20_40_graph_1->GetXaxis()->SetLimits(2.0, 5.0);
-    bg_v2_20_40_graph_1->SetTitle("#it{v}_{2}^{#pi^{0}} vs #it{p}_{T} 40-60% Centrality, bg Window Variations");
-    bg_v2_20_40_graph_1->GetXaxis()->SetTitle("p_{T} [GeV]");
-    bg_v2_20_40_graph_1->GetYaxis()->SetTitle("v_{2}^{#pi^{0}}");
-    bg_v2_20_40_graph_1->SetMinimum(minYaxis_correctedComparisons);
-    bg_v2_20_40_graph_1->SetMaximum(maxYaxis_correctedComparisons);
-    TLegend *legend_Overlay_20_40_v2_bg_productionComparisons = new TLegend(0.2, 0.18, 0.4, 0.33);
-    legend_Overlay_20_40_v2_bg_productionComparisons->SetBorderSize(0);
-    legend_Overlay_20_40_v2_bg_productionComparisons->SetTextSize(0.04);
-    legend_Overlay_20_40_v2_bg_productionComparisons->AddEntry(bg_v2_20_40_graph_2, "p013 v_{2}^{BG}", "pe");
-    legend_Overlay_20_40_v2_bg_productionComparisons->AddEntry(bg_v2_20_40_graph_1, "p015 v_{2}^{BG}", "pe");
-    legend_Overlay_20_40_v2_bg_productionComparisons->Draw();
-    DrawZeroLine(c_Overlay_20_40_productionComparisons_bg);
-    Create_sPHENIX_legend(c_Overlay_20_40_productionComparisons_bg, 0.14,.72,0.34,.92, "20-40% Centrality", 0.045);
+    createAndDraw_2graphEntries(c_Overlay_20_40_productionComparisons_bg, bg_v2_20_40_graph_1, bg_v2_20_40_graph_2, "p013 v_{2}^{BG}", "p015 v_{2}^{BG}", 0.2, 0.18, 0.4, 0.33, "20-40% Centrality");
     c_Overlay_20_40_productionComparisons_bg->Modified();
     c_Overlay_20_40_productionComparisons_bg->Update();
     c_Overlay_20_40_productionComparisons_bg->SaveAs((baseDataPath_ProductionComparisons + "Overlay_20_40_v2_p013_p015_bgV2Comparison.png").c_str());
     
-    
     TCanvas *c_Overlay_40_60_productionComparisons_bg = new TCanvas("c_Overlay_40_60_productionComparisons_bg", "#pi^{0} #it{v}_{2} vs #it{p}_{T} 40-60% Centrality", 800, 600);
-    for (int i = 0; i < ptCenters.size(); ++i) {
-        bg_v2_40_60_graph_2->SetPoint(i, ptCenters[i] - .05, data2.bg_v2_40_60[i]);
-        bg_v2_40_60_graph_1->SetPoint(i, ptCenters[i] + .05, data1.bg_v2_40_60[i]);
-    }
-    bg_v2_40_60_graph_1->Draw("AP");
-    bg_v2_40_60_graph_2->Draw("P SAME");
-    bg_v2_40_60_graph_1->GetXaxis()->SetLimits(2.0, 5.0);
-    bg_v2_40_60_graph_1->SetTitle("#it{v}_{2}^{#pi^{0}} vs #it{p}_{T} 40-60% Centrality, bg Window Variations");
-    bg_v2_40_60_graph_1->GetXaxis()->SetTitle("p_{T} [GeV]");
-    bg_v2_40_60_graph_1->GetYaxis()->SetTitle("v_{2}^{#pi^{0}}");
-    bg_v2_40_60_graph_1->SetMinimum(minYaxis_correctedComparisons);
-    bg_v2_40_60_graph_1->SetMaximum(maxYaxis_correctedComparisons);
-    TLegend *legend_Overlay_40_60_v2_bg_productionComparisons = new TLegend(0.2, 0.18, 0.4, 0.33);
-    legend_Overlay_40_60_v2_bg_productionComparisons->SetBorderSize(0);
-    legend_Overlay_40_60_v2_bg_productionComparisons->SetTextSize(0.04);
-    legend_Overlay_40_60_v2_bg_productionComparisons->AddEntry(bg_v2_40_60_graph_2, "p013 v_{2}^{BG}", "pe");
-    legend_Overlay_40_60_v2_bg_productionComparisons->AddEntry(bg_v2_40_60_graph_1, "p015 v_{2}^{BG}", "pe");
-    legend_Overlay_40_60_v2_bg_productionComparisons->Draw();
-    DrawZeroLine(c_Overlay_40_60_productionComparisons_bg);
-    Create_sPHENIX_legend(c_Overlay_40_60_productionComparisons_bg, 0.14,.72,0.34,.92, "40-60% Centrality", 0.045);
+    createAndDraw_2graphEntries(c_Overlay_40_60_productionComparisons_bg, bg_v2_40_60_graph_1, bg_v2_40_60_graph_2, "p013 v_{2}^{BG}", "p015 v_{2}^{BG}", 0.2, 0.18, 0.4, 0.33, "40-60% Centrality");
     c_Overlay_40_60_productionComparisons_bg->Modified();
     c_Overlay_40_60_productionComparisons_bg->Update();
     c_Overlay_40_60_productionComparisons_bg->SaveAs((baseDataPath_ProductionComparisons + "Overlay_40_60_v2_p013_p015_bgV2Comparison.png").c_str());
