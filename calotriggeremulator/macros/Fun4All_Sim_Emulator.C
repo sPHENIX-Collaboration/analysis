@@ -27,6 +27,7 @@
 #include <phool/recoConsts.h>
 
 #include <calotrigger/CaloTriggerEmulator.h>
+#include <calovalid/TriggerValid.h>
 #include <CaloEmulatorTreeMaker.h>
 R__LOAD_LIBRARY(libfun4all.so)
 R__LOAD_LIBRARY(libfun4allraw.so)
@@ -34,13 +35,14 @@ R__LOAD_LIBRARY(libCaloWaveformSim.so)
 R__LOAD_LIBRARY(libcalo_reco.so)
 R__LOAD_LIBRARY(libffamodules.so)
 R__LOAD_LIBRARY(libcalotrigger.so)
+R__LOAD_LIBRARY(libtriggervalid.so)
 R__LOAD_LIBRARY(libemulatortreemaker.so)
 #endif
 
 void Fun4All_Sim_Emulator(
-    const int nEvents = 0,
-    const string &inputFile0 = "g4hits.list",
-    const string &inputFile1 = "dst_calo_cluster.list",
+    const int nEvents = 100,
+    const string &inputFile0 = "g4hits_12.list",
+    const string &inputFile1 = "dst_calo_cluster_12.list",
     const string &inputFile2 = "/sphenix/user/shuhangli/noisetree/macro/condor31/OutDir0/pedestalhg.root",
     //const string &inputFile2 = "pedestal.root",
 
@@ -56,7 +58,7 @@ void Fun4All_Sim_Emulator(
 
   Enable::CDB = true;
   rc->set_StringFlag("CDB_GLOBALTAG", cdbtag);
-  rc->set_uint64Flag("TIMESTAMP", CDB::timestamp);
+  rc->set_uint64Flag("TIMESTAMP", 7);
   CDBInterface::instance()->Verbosity(1);
 
   //===============
@@ -99,7 +101,7 @@ void Fun4All_Sim_Emulator(
   caloWaveformSim->set_nsamples(16);
   caloWaveformSim->set_highgain(false);
   caloWaveformSim->set_timewidth(0.2);
-  caloWaveformSim->set_peakpos(4);
+  caloWaveformSim->set_peakpos(6);
   //caloWaveformSim->set_noise_type(CaloWaveformSim::NOISE_NONE);
   se->registerSubsystem(caloWaveformSim);
 
@@ -109,7 +111,7 @@ void Fun4All_Sim_Emulator(
   caloWaveformSim->set_nsamples(16);
   caloWaveformSim->set_highgain(false);
   caloWaveformSim->set_timewidth(0.2);
-  caloWaveformSim->set_peakpos(4);
+  caloWaveformSim->set_peakpos(6);
   //caloWaveformSim->set_noise_type(CaloWaveformSim::NOISE_NONE);
   se->registerSubsystem(caloWaveformSim);
 
@@ -119,7 +121,7 @@ void Fun4All_Sim_Emulator(
   caloWaveformSim->set_nsamples(16);
   caloWaveformSim->set_highgain(true);
   caloWaveformSim->set_timewidth(0.2);
-  caloWaveformSim->set_peakpos(4);
+  caloWaveformSim->set_peakpos(6);
   caloWaveformSim->set_calibName("cemc_pi0_twrSlope_v1_default");
   se->registerSubsystem(caloWaveformSim);
   
@@ -169,11 +171,14 @@ void Fun4All_Sim_Emulator(
   CaloTriggerEmulator *te = new CaloTriggerEmulator("CALOTRIGGEREMULATOR");
   te->setTriggerType("JET");
   te->setNSamples(16);
+  te->setTriggerSample(6);
+  // subrtraction delay of the post and pre sample
+  te->setTriggerDelay(4);
   te->Verbosity(0);
-  te->setThreshold(2, 4, 6, 8);
-  te->useEMCALDefaultLUT(true);
-  te->useHCALINDefaultLUT(true);
-  te->useHCALOUTDefaultLUT(true);
+  te->setThreshold(1, 4, 6, 8);
+  te->setEmcalLUTFile("/sphenix/user/dlis/Projects/macros/CDBTest/emcal_ll1_lut.root");
+  te->setHcalinLUTFile("/sphenix/user/dlis/Projects/macros/CDBTest/hcalin_ll1_lut.root");
+  te->setHcaloutLUTFile("/sphenix/user/dlis/Projects/macros/CDBTest/hcalout_ll1_lut.root");
   se->registerSubsystem(te);
 
 
@@ -184,13 +189,16 @@ void Fun4All_Sim_Emulator(
   hitsin->Repeat();
   se->registerInputManager(hitsin);
 
-  CaloEmulatorTreeMaker *tt1 = new CaloEmulatorTreeMaker("CALOEMULATORTREEMAKER","test.root");
+  CaloEmulatorTreeMaker *tt1 = new CaloEmulatorTreeMaker("CaloEmulatorTreemaker","test1.root");
   tt1->UseCaloTowerBuilder(true);
   tt1->Verbosity(0);
   se->registerSubsystem(tt1);
 
+  TriggerValid *tt2 = new TriggerValid("TriggerValidation","test2.root");
+  se->registerSubsystem(tt2);
+
   
-  se->run(10);
+  se->run(nEvents);
   CDBInterface::instance()->Print();  // print used DB files
   se->End();
   se->PrintTimer();

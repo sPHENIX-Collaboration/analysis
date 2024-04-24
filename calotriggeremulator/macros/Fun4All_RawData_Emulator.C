@@ -5,7 +5,7 @@
 #include <fun4all/Fun4AllServer.h>
 #include <fun4all/Fun4AllInputManager.h>
 #include <fun4allraw/Fun4AllPrdfInputManager.h>
-
+#include <calovalid/TriggerValid.h>
 #include <ffamodules/CDBInterface.h>
 #include <ffamodules/FlagHandler.h>
 #include <CaloEmulatorTreeMaker.h>
@@ -15,6 +15,7 @@
 #include <caloreco/CaloWaveformProcessing.h>
 #include <phool/recoConsts.h>
 R__LOAD_LIBRARY(libcalotrigger.so)
+R__LOAD_LIBRARY(libtriggervalid.so)
 R__LOAD_LIBRARY(libfun4allraw.so)
 R__LOAD_LIBRARY(libfun4all.so)
 R__LOAD_LIBRARY(libemulatortreemaker.so)
@@ -44,7 +45,7 @@ void Fun4All_RawData_Emulator(const int runnumber)
 
   // Get LL1 Data into NodeTree for Jet LL1 board
 
-  LL1PacketGetter *la = new LL1PacketGetter("LL1PACKETGETTER_JET","JET", "EMCAL");
+  LL1PacketGetter *la = new LL1PacketGetter("LL1PACKETGETTER_JET","JET", "HCAL");
   la->Verbosity(verbosity);
   se->registerSubsystem(la);
 
@@ -114,13 +115,21 @@ void Fun4All_RawData_Emulator(const int runnumber)
   char outfile[100];
   sprintf(outfile, "/sphenix/user/dlis/Projects/CaloTriggerEmulator/outputs/cosmicjet-%d.root", runnumber);
 
-  CaloEmulatorTreeMaker *tt1 = new CaloEmulatorTreeMaker("CALOEMULATORTREEMAKER",outfile);
+  char outfile2[100];
+  sprintf(outfile2, "/sphenix/user/dlis/Projects/CaloTriggerEmulator/outputs/histos-%d.root", runnumber);
+
+  CaloEmulatorTreeMaker *tt1 = new CaloEmulatorTreeMaker("CaloEmulatorTreemaker",outfile);
   tt1->UseCaloTowerBuilder(true);
   tt1->Verbosity(verbosity);
   se->registerSubsystem(tt1);
 
+  TriggerValid *tt2 = new TriggerValid("TriggerValid",outfile2);
+  se->registerSubsystem(tt2);
+
+
+
 // Fun4All
 //  se->skip();
-  se->run(5);
+  se->run(10);
   se->End();
 }

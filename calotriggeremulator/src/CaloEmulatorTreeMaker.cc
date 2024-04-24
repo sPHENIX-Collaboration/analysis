@@ -452,6 +452,36 @@ int CaloEmulatorTreeMaker::process_event(PHCompositeNode *topNode)
 	    }
 	}
     }
+  if (_trigger_primitives_raw_trigger)
+    {
+      i = 0;      
+      range = _trigger_primitives_raw_trigger->getTriggerPrimitives();
+      for (TriggerPrimitiveContainerv1::Iter iter = range.first ; iter != range.second ; ++iter)
+	{
+	  _trigger_primitive = (*iter).second;
+	  srange = _trigger_primitive->getSums();
+	  for (TriggerPrimitive::Iter siter = srange.first; siter != srange.second; ++siter)
+	    {
+	      sum = (*siter).second;
+	      it = max_element(sum->begin(), sum->end());
+	      unsigned int summ = 0;
+	      unsigned int sumk = 0;
+	      unsigned int sums = 0;
+	      
+	      if (it != sum->end())
+		{
+		  summ = (*it);
+		  sumk = (*siter).first;
+		  sums = std::distance(sum->begin(), it);
+		}
+	      b_trigger_raw_sum_jet_input[i] = summ;
+	      b_trigger_raw_sumkey_jet_input[i] = sumk;
+	      b_trigger_raw_sum_smpl_jet_input[i] = sums;
+
+	      i++;
+	    }
+	}
+    }
 
   if (_ll1out_raw_trigger)
     {
@@ -491,10 +521,10 @@ int CaloEmulatorTreeMaker::process_event(PHCompositeNode *topNode)
    
    if (useCaloTowerBuilder)
     {
-      _towers = findNode::getClass<TowerInfoContainer>(topNode, "WAVEFORM_HCALIN");
+      _towers = findNode::getClass<TowerInfoContainer>(topNode, "TOWERSWAVEFORM_CALIB_HCALIN");
       if (!_towers)
 	{
-	  cout << "No HCALIN towers..." <<endl;
+	  std::cout << "No HCALIN towers..." << std::endl;
 	  exit(1);	  
 	}
 
@@ -517,10 +547,10 @@ int CaloEmulatorTreeMaker::process_event(PHCompositeNode *topNode)
 	  b_hcalin_phibin.push_back(iphi);
       }
 
-      _towers = findNode::getClass<TowerInfoContainer>(topNode, "WAVEFORM_HCALOUT");
+      _towers = findNode::getClass<TowerInfoContainer>(topNode, "TOWERSWAVEFORM_CALIB_HCALOUT");
       if (!_towers)
 	{
-	  cout << "No HCALOUT towers..." <<endl;
+	  std::cout << "No HCALOUT towers..." << std::endl;
 	  exit(1);	  
 	}
 
@@ -539,10 +569,10 @@ int CaloEmulatorTreeMaker::process_event(PHCompositeNode *topNode)
 	  b_hcalout_etabin.push_back(ieta);
 	  b_hcalout_phibin.push_back(iphi);
       }
-      _towers = findNode::getClass<TowerInfoContainer>(topNode, "WAVEFORM_CEMC");
+      _towers = findNode::getClass<TowerInfoContainer>(topNode, "TOWERSWAVEFORM_CALIB_CEMC");
       if (!_towers)
 	{
-	  cout << "No CEMC towers..." <<endl;
+	  std::cout << "No CEMC towers..." << std::endl;
 	  exit(1);	  
 	}
 
