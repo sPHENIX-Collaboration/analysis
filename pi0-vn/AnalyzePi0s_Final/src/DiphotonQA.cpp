@@ -8,16 +8,16 @@
 #include <TCanvas.h>
 #include <iostream>
 #include <sstream>
-#include <TSystem.h> // For gSystem->AccessPathName
+#include <TSystem.h>
 
 void DiphotonQA() {
     gROOT->SetBatch(kTRUE);
     gSystem->Load("sPhenixStyle.C");
     SetsPhenixStyle();
 
-    const char* rootFilePath = "/Users/patsfan753/Desktop/p014_Analysis4_15/test.root";
+    const char* rootFilePath = "/Users/patsfan753/Desktop/p015/test.root";
     std::cout << "Opening ROOT file: " << rootFilePath << std::endl;
-    const char* outputBasePath = "/Users/patsfan753/Desktop/p014_Analysis4_15/QA/Diphoton/";
+    const char* outputBasePath = "/Users/patsfan753/Desktop/p015/QA/Diphoton/";
 
     TFile* file = TFile::Open(rootFilePath);
     if (!file || file->IsZombie()) {
@@ -83,10 +83,6 @@ void DiphotonQA() {
             hist->Draw("colz1");
             TLegend *leg = new TLegend(0.16,.82,0.26,.92);
             leg->SetFillStyle(0);
-//            leg->AddEntry("","#it{#bf{sPHENIX}} Internal","");
-//            leg->AddEntry("","Au+Au #sqrt{s_{NN}} = 200 GeV","");
-//            leg->Draw("same");
-            // Create TLatex objects to draw text on the canvas
             TLatex latex;
             latex.SetTextSize(0.044);
             latex.SetTextAlign(11); // Align left, bottom
@@ -111,4 +107,3 @@ void DiphotonQA() {
     std::cout << "Finished processing." << std::endl;
     delete file;
 }
-
