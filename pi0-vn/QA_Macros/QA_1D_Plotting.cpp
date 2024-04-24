@@ -1,3 +1,6 @@
+#include "sPhenixStyle.h"
+#include "sPhenixStyle.C"
+
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -22,8 +25,10 @@
 #define WHITE       "\033[37m"
 
 // Global constants
-constexpr char ORGANIZED_QA_PATH[] = "/Users/patsfan753/Desktop/Desktop/Organized_QA/";
-const std::string QA_ROOT_FILES_PATH = ORGANIZED_QA_PATH + std::string("QA_rootFiles_JamiesGoodRuns_12_20/");
+constexpr char ORGANIZED_QA_PATH[] = "/Users/patsfan753/Desktop/Desktop/Organized_QA/"; //for output of Plots
+const std::string QA_ROOT_FILES_PATH = "/Users/patsfan753/Desktop/p015/QA/RootFiles/";  //current QA root Files location
+const std::string NORMALIZE_FILE_PATH = "/Users/patsfan753/Desktop/p015/QA/Central/Normalize.txt";
+
 
 const std::string percentileFileListPath = ORGANIZED_QA_PATH + std::string("AllgoodRuns_MBD_Percentiles.txt");
 
@@ -59,9 +64,9 @@ public:
         if (histName == "hTotalMBD") {
             return basePath + "IndividualPlotOutput/MBD/";
         }
-        if (histName == "hClusterTime") {
-            return basePath + "IndividualPlotOutput/TimingQA/";
-        }
+//        if (histName == "hClusterTime") {
+//            return basePath + "IndividualPlotOutput/TimingQA/";
+//        }
 
         return "";
     }
@@ -155,12 +160,9 @@ public:
         int nRuns = runData_.size();
         
         // Initialize legend settings
-        TLegend *leg = new TLegend(0.5, 0.5, 0.9, 0.9);
+        TLegend *leg = new TLegend(0.72, 0.5, 0.92, 0.92);
         leg->SetNColumns(2);
-        leg->SetFillColorAlpha(0, 0.2);
-        leg->SetBorderSize(1);
-        leg->SetMargin(0.15);
-        leg->SetTextSize(0.025);
+        leg->SetTextSize(0.029);
         
         // Log information header
         std::cout << BOLD << GREEN
@@ -179,7 +181,7 @@ public:
             RunData data = entry.second;  // Extract associated RunData struct
             
             // Construct file path to corresponding 'qa.root' file for the current run
-            std::string filePath = baseDir_ + std::to_string(run) + "/qa.root";
+            std::string filePath = QA_ROOT_FILES_PATH + std::to_string(run) + "/qa-" + std::to_string(run) + ".root";
             // Open the ROOT file
             TFile* file = TFile::Open(filePath.c_str());
             // Retrieve the specific histogram based on histName
@@ -203,6 +205,7 @@ public:
             // Set the line color for the histogram
             hist->SetLineColor(data.color);  // Removed the fallback to `currentColor`
             hist->SetStats(0);  // Remove the statistics box
+
             
             // If this is the first run, draw the histogram; otherwise overlay it
             if (firstRun) {
@@ -212,9 +215,8 @@ public:
             } else {
                 hist->Draw("HIST SAME");  // Overlay plot
             }
-            
-            
-            
+           hist->SetMaximum(hist->GetBinContent(hist->GetMaximumBin()) * 10);
+//            
             
             
             /*
@@ -293,10 +295,21 @@ public:
                 TH1F* clonedHist = (TH1F*)hist->Clone(); // Clone the histogram
                 // Create a new canvas for this specific histogram
                 TCanvas* singleCanvas = new TCanvas();
+                
+                
                 singleCanvas->SetLogy(1);  // Set the y-axis to logarithmic scale
                 clonedHist->SetStats(1);   // Show the statistics box only for single histograms
                 // Draw and save histogram
+                clonedHist->GetYaxis()->SetTitle("Normalized Counts");
+
                 clonedHist->Draw("HIST");
+                TLegend *leg2 = new TLegend(0.55,.74,0.75,.93);
+                leg2->SetFillStyle(0);
+                leg2->AddEntry("","#it{#bf{sPHENIX}} Internal","");
+                leg2->AddEntry("","Au+Au #sqrt{s_{NN}} = 200 GeV","");
+                std::string runEntry = "Run: " + std::to_string(run);
+                leg2->AddEntry("", runEntry.c_str(), "");
+                leg2->Draw("same");
                 std::string updatedTitle = title + " (Run: " + std::to_string(run) + ")";
                 clonedHist->SetTitle(updatedTitle.c_str());
                 singleCanvas->SaveAs((outputPath + "Run_" + std::to_string(run) + "_" + title + ".png").c_str());
@@ -352,8 +365,15 @@ public:
                       << std::setw(20) << maxBinContent << std::endl;
         }
         // Draw legend
+        leg->SetBorderSize(0);
         leg->Draw();
 
+        TLegend *leg1 = new TLegend(0.3,.8,0.5,0.9);
+        leg1->SetFillStyle(0);
+        leg1->AddEntry("","#it{#bf{sPHENIX}} Internal","");
+        leg1->AddEntry("","Au+Au #sqrt{s_{NN}} = 200 GeV","");
+        leg1->Draw("same");
+        
         // Set x-axis and y-axis titles if at least one histogram was processed
         if (firstHist) {
             firstHist->SetTitle(title.c_str());
@@ -386,6 +406,26 @@ private:
     const std::unordered_map<int, RunData>& runData_;
     const std::string baseDir_;
 };
+struct HistogramData {
+    std::string histogramName;
+    std::vector<std::pair<int, double>> sortedRatios;  // Store run number and average ratio
+};
+
+std::map<std::string, HistogramData> globalHistogramData;
+
+// Function to write to CSV
+void writeDataToCSV(const std::string& filename) {
+    std::ofstream csvFile(filename);
+    csvFile << "Histogram,Run Number,Average Ratio\n";
+
+    for (const auto& histData : globalHistogramData) {
+        for (const auto& data : histData.second.sortedRatios) {
+            csvFile << histData.first << "," << data.first << "," << data.second << "\n";
+        }
+    }
+
+    csvFile.close();
+}
 void RatioPlot(const std::unordered_map<int, RunData>& runData_, const std::string& baseDir_, const std::string& histName, std::string& refRun) {
     TCanvas* cRatio = new TCanvas();
 
@@ -399,27 +439,27 @@ void RatioPlot(const std::unordered_map<int, RunData>& runData_, const std::stri
     
     // Initialize legend for ratio plots
     TLegend* ratioLeg;
+    // Initialization of TLatex for displaying max histogram information
+    TLatex latex;
+    latex.SetTextSize(0.05);
+    latex.SetNDC(true);
     if (histName == "hClusterChi") {
         // TLegend(x-axis start, y-axis start, x-axis end, y-axis end)
-        ratioLeg = new TLegend(0.1, 0.6, 0.6, 0.9);
+        ratioLeg = new TLegend(0.2, 0.6, 0.4, 0.92);
         ratioLeg->SetNColumns(4);
     } else if (histName == "hTotalMBD") {
-        ratioLeg = new TLegend(0.1, 0.74, 0.6, 0.9);
+        ratioLeg = new TLegend(0.2, 0.6, 0.4, 0.92);
         ratioLeg->SetNColumns(4);
     } else if (histName =="hTotalCaloE") {
-        ratioLeg = new TLegend(0.3, 0.72, 0.8, 0.9);
+        ratioLeg = new TLegend(0.2, 0.6, 0.4, 0.92);
         ratioLeg->SetNColumns(4);
-    } else if (histName =="hClusterTime") {
-        ratioLeg = new TLegend(0.1, 0.6, 0.4, 0.9);
-        ratioLeg->SetNColumns(2);
     } else {
-        ratioLeg = new TLegend(0.1, 0.6, 0.4, 0.9);
+        ratioLeg = new TLegend(0.2, 0.6, 0.4, 0.92);
         ratioLeg->SetNColumns(2);
     }
 
     ratioLeg->SetNColumns(2);
-    ratioLeg->SetFillColorAlpha(0, 0.2);
-    ratioLeg->SetBorderSize(1);
+    ratioLeg->SetBorderSize(0);
     ratioLeg->SetMargin(0.15);
     ratioLeg->SetTextSize(0.025);
     
@@ -429,11 +469,9 @@ void RatioPlot(const std::unordered_map<int, RunData>& runData_, const std::stri
     if (histName == "hClusterChi") {
         rebinFactor = 10;  // Set your desired rebin factor
     } else if (histName == "hTotalMBD") {
-        rebinFactor = 20;  // Set your desired rebin factor
-    } else if (histName == "hClusterTime") {
-        rebinFactor = 4;  // Set your desired rebin factor
+        rebinFactor = 10;  // Set your desired rebin factor
     } else if (histName == "hTotalCaloE") {
-        rebinFactor = 20;  // Set your desired rebin factor
+        rebinFactor = 50;  // Set your desired rebin factor
     } else if (histName == "hClusterECore") {
         rebinFactor = 1;  // Set your desired rebin factor
     }
@@ -443,7 +481,7 @@ void RatioPlot(const std::unordered_map<int, RunData>& runData_, const std::stri
     if (refRun == "maxHist") {
         for (const auto& entry : runData_) {
             int run = entry.first;
-            std::string filePath = baseDir_ + std::to_string(run) + "/qa.root";
+            std::string filePath = baseDir_ + std::to_string(run) + "/qa-" + std::to_string(run) + ".root";
             TFile* file = TFile::Open(filePath.c_str());
             TH1F* hist = (TH1F*)file->Get(histName.c_str());
             if (!hist) continue;
@@ -456,7 +494,9 @@ void RatioPlot(const std::unordered_map<int, RunData>& runData_, const std::stri
         // Update completeTitle with the actual run number for maxHist
         completeTitle = histName + " Ratio (Reference Run: " + refRun + ")";
     }
-    std::string refFilePath = baseDir_ + refRun + "/qa.root";
+
+    std::cout << "For histogram " << histName << ", the run with maximum integral is Run " << refRun << std::endl;
+    std::string refFilePath = baseDir_ + refRun + "/qa-" + refRun + ".root";
     TFile* refFile = TFile::Open(refFilePath.c_str());
     refHist = (TH1F*)refFile->Get(histName.c_str());
     refHist->SetDirectory(0); // Important to keep histogram when file closes
@@ -464,18 +504,13 @@ void RatioPlot(const std::unordered_map<int, RunData>& runData_, const std::stri
     // Calculate normalization factor for the histogram
     //fetch RunData structure corresponding to reference run from unordered map runData_
     RunData refRunData = runData_.at(std::stoi(refRun));
-    float normalize = 1.0 / (float(refRunData.nEvents) * float(refRunData.acceptance));
+    float normalize; // Declare normalize before the if-else block
+    if (histName == "hTotalMBD") {
+        normalize = 1.0 / float(refRunData.nEvents);
+    } else {
+        normalize = 1.0 / (float(refRunData.nEvents) * float(refRunData.acceptance));
+    }
     refHist->Scale(normalize);
-
-    /*
-     float normalize;
-     if (histName == "hTotalMBD") {
-         normalize = 1.0 / float(refRunData.nEvents);
-     } else {
-         1.0 / (float(refRunData.nEvents) * float(refRunData.acceptance));
-     }
-     refHist->Scale(normalize);
-     */
     
     // Rebin the reference histogram
     refHist->Rebin(rebinFactor);
@@ -491,17 +526,20 @@ void RatioPlot(const std::unordered_map<int, RunData>& runData_, const std::stri
         int run = entry.first;
         RunData data = entry.second;
         // Construct the filepath to the 'qa.root'
-        std::string filePath = baseDir_ + std::to_string(run) + "/qa.root";
+        std::string filePath = baseDir_ + std::to_string(run) + "/qa-" + std::to_string(run) + ".root";
         // Open the ROOT file
         TFile* file = TFile::Open(filePath.c_str());
 
         // Get the specified histogram from the file
         TH1F* hist = (TH1F*)file->Get(histName.c_str());
         if (!hist) continue;
-        
 
-        // Calculate normalization for the current run
-        float normalize_current = 1.0 / (float(data.nEvents) * float(data.acceptance));
+        float normalize_current; // Declare normalize before the if-else block
+        if (histName == "hTotalMBD") {
+            normalize_current = 1.0 / float(refRunData.nEvents);
+        } else {
+            normalize_current = 1.0 / (float(refRunData.nEvents) * float(refRunData.acceptance));
+        }
 
         // Clone the histogram, then normalize it
         TH1F* ratioHist = (TH1F*)hist->Clone();
@@ -523,39 +561,35 @@ void RatioPlot(const std::unordered_map<int, RunData>& runData_, const std::stri
         ratioHist->SetTitle(completeTitle.c_str());  // Set the combined title here
         ratioHist->SetStats(0);
         
+        
         /*
          Change Minimum and Maximum x/y values for outputted ratio histograms
          */
         double lowerChiBound, upperChiBound;
         double lowerMBDbound, upperMBDbound;
         double lowerTimingBound, upperTimingBound;
-        double lowerTotalCaloBound, upperTotalCaloBoound;
+        double lowerTotalCaloBound, upperTotalCaloBound;
         double lowerECoreBound, upperECoreBound;
 
         if (histName == "hClusterChi") {
             lowerChiBound = 0;
-            upperChiBound = 100;
+            upperChiBound = 50;
             ratioHist->GetXaxis()->SetRangeUser(lowerChiBound, upperChiBound);
-            ratioHist->GetYaxis()->SetRangeUser(0, 2.2);  // Set your desired min and max
+            ratioHist->GetYaxis()->SetRangeUser(0, 2.0);  // Set your desired min and max
         } else if (histName == "hTotalMBD") {
             lowerMBDbound = 0;
-            upperMBDbound = 2000;
+            upperMBDbound = 1800;
             ratioHist->GetXaxis()->SetRangeUser(lowerMBDbound, upperMBDbound);
             ratioHist->GetYaxis()->SetRangeUser(0, 2.0);
-        } else if (histName == "hClusterTime") {
-            lowerTimingBound = 0;
-            upperTimingBound = 31;
-            ratioHist->GetXaxis()->SetRangeUser(lowerTimingBound, upperTimingBound);
-            ratioHist->GetYaxis()->SetRangeUser(0, 4.0);
         } else if (histName == "hTotalCaloE") {
-            lowerTotalCaloBound = 500.0;
-            upperTotalCaloBoound = 1050.0;
-            ratioHist->GetXaxis()->SetRangeUser(lowerTotalCaloBound, upperTotalCaloBoound);
+            lowerTotalCaloBound = 400.0;
+            upperTotalCaloBound = 1050.0;
+            ratioHist->GetXaxis()->SetRangeUser(lowerTotalCaloBound, upperTotalCaloBound);
             ratioHist->GetYaxis()->SetRangeUser(0, 2.0);
 
         } else if (histName == "hClusterECore") {
             lowerECoreBound = 0.0;
-            upperECoreBound = 3.0;
+            upperECoreBound = 6.0;
             ratioHist->GetXaxis()->SetRangeUser(lowerECoreBound, upperECoreBound);
             ratioHist->GetYaxis()->SetRangeUser(0, 2.0);
         }
@@ -591,12 +625,9 @@ void RatioPlot(const std::unordered_map<int, RunData>& runData_, const std::stri
             } else if (histName == "hTotalMBD") {
                 binStart = ratioHist->FindBin(lowerMBDbound);
                 binEnd = ratioHist->FindBin(upperMBDbound);
-            } else if (histName == "hClusterTime") {
-                binStart = ratioHist->FindBin(lowerTimingBound);
-                binEnd = ratioHist->FindBin(upperTimingBound);
             } else if (histName == "hTotalCaloE") {
                 binStart = ratioHist->FindBin(lowerTotalCaloBound);
-                binEnd = ratioHist->FindBin(upperTotalCaloBoound);
+                binEnd = ratioHist->FindBin(upperTotalCaloBound);
             } else if (histName == "hClusterECore") {
                 binStart = ratioHist->FindBin(lowerECoreBound);
                 binEnd = ratioHist->FindBin(upperECoreBound);
@@ -625,13 +656,17 @@ void RatioPlot(const std::unordered_map<int, RunData>& runData_, const std::stri
         }
     }
     // Print sorted ratios and corresponding run numbers after the loop
+    HistogramData& hData = globalHistogramData[histName];
+    hData.histogramName = histName;
     for (const auto& entry : sortedRatios) {
         std::cout << "Run: " << entry.second << "\tAverage Ratio: " << entry.first << std::endl;
+        hData.sortedRatios.emplace_back(entry.second, entry.first);
     }
 
     // Draw legend for ratio plots
     ratioLeg->Draw();
-    
+    latex.DrawLatex(0.6, 0.85, ("Reference: Run " + refRun).c_str());
+
     std::string filePathOverlayRatio = std::string(ORGANIZED_QA_PATH) + "OverlayedRatioOutput/" + histName + "_Ratio.png";
     cRatio->SaveAs(filePathOverlayRatio.c_str());
     
@@ -639,10 +674,12 @@ void RatioPlot(const std::unordered_map<int, RunData>& runData_, const std::stri
 }
 // Main function for 1D Quality Assurance (QA) plotting.
 void QA_1D_Plotting() {
+    gROOT->LoadMacro("sPhenixStyle.C");
+    SetsPhenixStyle();
     // Initialize an unordered_map to hold run data.
     std::unordered_map<int, RunData> runData_;
     // Read from Normalize.txt to populate runData_ with run number, number of events, and acceptance.
-    std::ifstream infile(std::string(ORGANIZED_QA_PATH) + "Normalize.txt");
+    std::ifstream infile(NORMALIZE_FILE_PATH);
     
     int run, nEvents, acceptance;
     
@@ -656,44 +693,70 @@ void QA_1D_Plotting() {
     }
     
     // Hardcode colors
-    runData_[23020].color = kBlue;
-    runData_[23671].color = kOrange+7;
-    runData_[23672].color = kBlack;
-    runData_[23676].color = kOrange+2;
-    runData_[23681].color = kRed;
-    runData_[23682].color = kCyan+3;
-    runData_[23687].color = kMagenta;
-    runData_[23690].color = kViolet+1;
-    runData_[23693].color = kMagenta+2;
-    runData_[23694].color = kAzure+4;
-    runData_[23695].color = kAzure+2;
-    runData_[23696].color = kBlue+3;
-    runData_[23697].color = kPink-3;
-    runData_[23699].color = kGray+1;
-    runData_[23702].color = kViolet+8;
-    runData_[23714].color = kSpring+5;
-    //runData_[23718].color = kTeal+3;
-    runData_[23726].color = kAzure+7;
-    runData_[23727].color = kGreen+3;
-    runData_[23728].color = kPink+6;
-    runData_[23735].color = kOrange-7;
-    runData_[23737].color = kCyan-5;
-    runData_[23738].color = kYellow+3;
-    runData_[23739].color = kMagenta-7;
-    runData_[23740].color = kGreen+1;
-    runData_[23743].color = kBlue-7;
-    runData_[23745].color = kRed+1;
-    runData_[23746].color = kViolet-5;
+//    runData_[23020].color = kBlue;
+//    runData_[23671].color = kOrange+7;
+//    runData_[23672].color = kBlack;
+//    runData_[23676].color = kOrange+2;
+//    runData_[23681].color = kRed;
+//    runData_[23682].color = kCyan+3;
+//    runData_[23687].color = kMagenta;
+//    runData_[23690].color = kViolet+1;
+//    runData_[23693].color = kMagenta+2;
+//    runData_[23694].color = kAzure+4;
+//    runData_[23695].color = kAzure+2;
+//    runData_[23696].color = kBlue+3;
+//    runData_[23697].color = kPink-3;
+//    runData_[23699].color = kGray+1;
+//    runData_[23702].color = kViolet+8;
+//    runData_[23714].color = kSpring+5;
+//    runData_[23726].color = kAzure+7;
+//    runData_[23727].color = kGreen+3;
+//    runData_[23728].color = kPink+6;
+//    runData_[23735].color = kOrange-7;
+//    runData_[23737].color = kCyan-5;
+//    runData_[23738].color = kYellow+3;
+//    runData_[23739].color = kMagenta-7;
+//    runData_[23740].color = kGreen+1;
+//    runData_[23743].color = kBlue-7;
+//    runData_[23745].color = kRed+1;
+//    runData_[23746].color = kViolet-5;
+    
+    runData_[23536].color = kBlue;
+    runData_[23539].color = kOrange+7;
+    runData_[23543].color = kBlack;
+    runData_[23547].color = kOrange+2;
+    runData_[23550].color = kRed;
+    runData_[23552].color = kCyan+3;
+    runData_[23557].color = kMagenta;
+    runData_[23558].color = kViolet+1;
+    runData_[23561].color = kMagenta+2;
+    runData_[23562].color = kAzure+4;
+    runData_[23563].color = kAzure+2;
+    runData_[23566].color = kGreen-2;
+    runData_[23568].color = kBlue+3;
+    runData_[23572].color = kPink-3;
+    runData_[23574].color = kGray+1;
+    runData_[23575].color = kViolet+8;
+    runData_[23582].color = kSpring+5;
+    runData_[23590].color = kAzure+7;
+    runData_[23592].color = kGreen+3;
+    runData_[23594].color = kPink+6;
+    runData_[23604].color = kOrange-7;
+    runData_[23605].color = kCyan-5;
+    runData_[23617].color = kYellow+3;
+    runData_[23618].color = kMagenta-7;
+    runData_[23619].color = kGreen+1;
+
 
     
     //INPUT DESIRED DIRECTORY THAT includes folders labelled by run number with the specified qa.root within all of them
     OverlayPlotter overlayPlotter(runData_, QA_ROOT_FILES_PATH);
 
-    overlayPlotter.Overlay("hClusterChi", "Cluster_Chi2_Distribution", "Cluster #chi^{2}", "Counts");
-    overlayPlotter.Overlay("hTotalMBD", "MBD_Charge_Distribution", "MBD Charge", "Counts");
-    overlayPlotter.Overlay("hTotalCaloE", "Total_Calorimeter_Energy_Distribution", "Cluster Energy (GeV)", "Counts");
-    overlayPlotter.Overlay("hClusterECore", "Cluster_ECore_Distribution", "Cluster ECore (GeV)", "Counts");
-    overlayPlotter.Overlay("hClusterTime", "Cluster_Timing_Distribution", "Timing Peak Location", "Counts");
+    overlayPlotter.Overlay("hClusterChi", "Cluster_Chi2_Distribution", "Cluster #chi^{2}", "Normalized Counts");
+    overlayPlotter.Overlay("hTotalMBD", "MBD_Charge_Distribution", "MBD Charge", "Normalized Counts");
+    overlayPlotter.Overlay("hTotalCaloE", "Total_Calorimeter_Energy_Distribution", "Cluster Energy [GeV]", "Normalized Counts");
+    overlayPlotter.Overlay("hClusterECore", "Cluster_ECore_Distribution", "Cluster ECore [GeV]", "Normalized Counts");
+    //overlayPlotter.Overlay("hClusterTime", "Cluster_Timing_Distribution", "Timing Peak Location", "Counts");
     
     
     // Call the new RatioPlot function
@@ -705,7 +768,8 @@ void QA_1D_Plotting() {
     RatioPlot(runData_, QA_ROOT_FILES_PATH, "hTotalMBD", refRun);
     RatioPlot(runData_, QA_ROOT_FILES_PATH, "hTotalCaloE", refRun);
     RatioPlot(runData_, QA_ROOT_FILES_PATH, "hClusterECore", refRun);
-    RatioPlot(runData_, QA_ROOT_FILES_PATH, "hClusterTime", refRun);
+    
+    writeDataToCSV("/Users/patsfan753/Desktop/p015/QA/Central/sorted_ave_ratios.csv");
     
     // For calculating and storing average MBD values
     std::unordered_map<double, std::vector<int>> avgMBDData;
