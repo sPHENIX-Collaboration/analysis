@@ -202,6 +202,7 @@ void Read_DataSet(const std::string& filePath, Data& data) {
     }
     file.close();
 }
+//Writes CSV file for EMCal Scale variations, calculating each contribution to total weighted and unweighted quadrature sum that is funneled into total syst calc
 void WriteComparisonTo_EMcalScale_CSV(const std::vector<Data>& emCalDataSets, const Data& referenceData, const std::string& outputPath) {
     std::ofstream outFile(outputPath);
     
@@ -254,6 +255,9 @@ void WriteComparisonTo_EMcalScale_CSV(const std::vector<Data>& emCalDataSets, co
     }
     outFile.close();
 }
+/*
+ Writes CSV file for total systematic uncertainty and respective contributors -- signal window, background window (read in as corrected_v2_type4), and EMCal Scale Variations
+ */
 void WriteComparisonToCSV(const std::vector<Data>& emCalDataSets, const Data& signalWindowData, const Data& referenceData, const std::string& outputPath) {
     std::ofstream outFile(outputPath);
     outFile << "Index,Reference_v2,Quad_Sum_EMCal_Syst,SignalWindow_Syst,BackgroundWindow_Syst,WeightedQuadratureSum,unWeightedQuadratureSum\n";
@@ -629,7 +633,7 @@ TGraphErrors* CreateSystematicGraph(const std::vector<double>& ptCenters,
     std::vector<double> sysx(ptCenters.size(), 0.05);
     auto* graph = new TGraphErrors(ptCenters.size(), &ptCenters[0], &values[0], &sysx[0], &sysErrors[0]);
     
-    graph->SetFillColorAlpha(kRed, 0.35);
+    graph->SetFillColorAlpha(kRed, 0.35); //just set as place holder
     
     return graph;
 }
@@ -1677,7 +1681,7 @@ void logGraphData(const GraphContainer& graphs,
 void plot_EMCal_Scale_v2_overlays(const Data& data1, Data& data2, Data& data3, Data& data4, Data& data5, Data& data6) {
     logHeader("Starting EMCal Scale Variations v2 Overlay");
     std::array<GraphProperties, 6> properties = {
-        {{kBlack, 20, 1.0}, {kBlue, 20, 1.0}, {kOrange+2, 20, 1.0}, {kGreen+3, 20, 1.0}, {kRed, 20, 1.0}, {kViolet-2, 20, 1.0}}
+        {{kBlack, 20, 1.0}, {kRed, 20, 1.0}, {kBlue, 20, 1.0}, {kGreen+2, 20, 1.0}, {kOrange+7, 20, 1.0}, {kViolet-2, 20, 1.0}}
     };
     TGraphErrors* corrected_v2_0_20_graph_1 = CreateGraph(ptCenters, data1.corrected_v2_0_20, data1.corrected_v2_0_20_Errors);
     TGraphErrors* corrected_v2_20_40_graph_1 = CreateGraph(ptCenters, data1.corrected_v2_20_40, data1.corrected_v2_20_40_Errors);
@@ -2294,20 +2298,24 @@ void FinalizeResults() {
     
     // Read the default data set
     Read_DataSet(ReferenceData, defaultData);
+    // Read v2 values from each EMCal scale variation
     Read_DataSet(filePathEMCal_Syst_SYST1CEMC, data_SYST1CEMC);
     Read_DataSet(filePathEMCal_Syst_SYST2CEMC, data_SYST2CEMC);
     Read_DataSet(filePathEMCal_Syst_SYST3DCEMC, data_SYST3DCEMC);
     Read_DataSet(filePathEMCal_Syst_SYST3UCEMC, data_SYST3UCEMC);
     Read_DataSet(filePathEMCal_Syst_SYST4CEMC, data_SYST4CEMC);
     std::vector<Data> emCalDataSets = {defaultData, data_SYST1CEMC, data_SYST2CEMC, data_SYST3DCEMC, data_SYST3UCEMC, data_SYST4CEMC};
-    Read_DataSet(filePathSignal_Bound_Variation, data_Signal_Bound_Variation);
     
+    //read in data set for v2 values from signal bound variation
+    Read_DataSet(filePathSignal_Bound_Variation, data_Signal_Bound_Variation);
+    //write and read path for CSV of EMCal scale contributors
     std::string statUncertaintyFilePath_EMCal_Contributors = baseDataPath_EmCal_Systematics + "StatUncertaintyTable_EMCalVariationsOnly.csv";
+    //write and read path for CSV of total syst contributors and calculation
     std::string statUncertaintyFilePath = BasePlotOutputPath + "/Systematics_Analysis-v2-Checks/StatUncertaintyTable_p015.csv";
     
-    WriteComparisonTo_EMcalScale_CSV(emCalDataSets, defaultData, statUncertaintyFilePath_EMCal_Contributors);
-    WriteComparisonToCSV(emCalDataSets, data_Signal_Bound_Variation, defaultData, statUncertaintyFilePath);
-    
+    WriteComparisonTo_EMcalScale_CSV(emCalDataSets, defaultData, statUncertaintyFilePath_EMCal_Contributors); //calculate EMCal scale contributors and quadarture sum
+    WriteComparisonToCSV(emCalDataSets, data_Signal_Bound_Variation, defaultData, statUncertaintyFilePath); //calculate total systematic uncertainty
+     
     ReadStatUncertainties(statUncertaintyFilePath, defaultData); //read total systematic uncertainty CSV
 
     plotting_Results_andPHENIXoverlay(defaultData); //plot final results and PHENIX overlay
@@ -2317,7 +2325,7 @@ void FinalizeResults() {
     ReadStatUncertainties_emCalScaleCSV(statUncertaintyFilePath_EMCal_Contributors, EMCal_Systematic_data1); //read EMCal Scale Syst Contributors
     plotting_EMCal_Syst_Contributors(EMCal_Systematic_data1); //plot the above
     
-    PlotConfig config = initializePlotConfig(); //use booleans at top of macro to decide if want to plot v2 overlays wether or not CSV prepped
+    PlotConfig config = initializePlotConfig(); //use booleans at top of macro to decide if want to plot v2 overlays wether or not CSV produced
 
     Data dataP013, dataAsymLow, dataAsymHigh, data_SampleSizeVariation;
 
