@@ -28,6 +28,7 @@ CutValues globalCutValues;
 std::string globalDataPath = "/Users/patsfan753/Desktop/p015/InvMassOutput/CSV/";
 std::string globalPlotOutput = "/Users/patsfan753/Desktop/p015/InvMassOutput/Plots/"; //Note: Folder auto created with name of cut variation to this
 std::string globalFilename = "/Users/patsfan753/Desktop/p015/hPi0Mass_EA1_EB1_Asym0point5_DelrMin0_DelrMax1_Chi4.root";
+std::string csv_filename = globalDataPath + "PlotByPlotOutput_P015.csv";
 
 int histIndex = 0;
 double globalFitStart;
@@ -269,8 +270,6 @@ Track Relevant Output in CSV tracking via indices and unique cut combinations
  */
 void WriteDataToCSV(int histIndex, const CutValues& cutValues, double fitMean, double fitMeanError, double fitSigma, double fitSigmaError, const SignalBackgroundRatio& sbRatios, double signalYield, double signalError, double numEntries, double chi2) {
 
-
-    std::string csv_filename = globalDataPath + "PlotByPlotOutput_4_2_variedSignalBounds.csv";
     std::ifstream checkFile(csv_filename);
     bool fileIsEmpty = checkFile.peek() == std::ifstream::traits_type::eof();
     checkFile.close();
@@ -365,7 +364,257 @@ double CalculateDynamicYAxisMax(TH1F* h, double& lineHeight, bool& isBackgroundH
     // Return the y-axis max, scaled with an additional buffer
     return lineHeight * yAxisMaxBuffer;
 }
+struct Data {
+    std::vector<double> sb_0_20, sb_20_40, sb_40_60;
+    std::vector<double> sb_0_20_Errors, sb_20_40_Errors, sb_40_60_Errors;
+    
+    std::vector<double> gaussMean_0_20, gaussMean_20_40, gaussMean_40_60;
+    std::vector<double> gaussMean_0_20_Errors, gaussMean_20_40_Errors, gaussMean_40_60_Errors;
+    
+    std::vector<double> gaussSigma_0_20, gaussSigma_20_40, gaussSigma_40_60;
+    std::vector<double> gaussSigma_0_20_Errors, gaussSigma_20_40_Errors, gaussSigma_40_60_Errors;
+    
+    std::vector<double> gaussMeanDividedBySigma_0_20, gaussMeanDividedBySigma_20_40, gaussMeanDividedBySigma_40_60;
+    std::vector<double> gaussMeanDividedBySigma_0_20_Errors, gaussMeanDividedBySigma_20_40_Errors, gaussMeanDividedBySigma_40_60_Errors;
+    
+};
 
+double CalculateError(double mean, double sigma, double meanError, double sigmaError) {
+    // Assuming mean and sigma are uncorrelated (no covariance term)
+    double value = mean / sigma;
+    double fractionalErrorMean = meanError / mean;
+    double fractionalErrorSigma = sigmaError / sigma;
+    double error = std::abs(value) * std::sqrt(fractionalErrorMean * fractionalErrorMean + fractionalErrorSigma * fractionalErrorSigma);
+    return error;
+}
+
+void Read_DataSet(const std::string& filePath, Data& data) {
+    std::ifstream file(filePath);
+    if (!file.is_open()) {
+        std::cerr << "Failed to open file: " << filePath << std::endl;
+        return;
+    }
+    std::string line;
+    std::getline(file, line); // Skip the header line
+
+    while (std::getline(file, line)) {
+        std::stringstream ss(line);
+        std::vector<std::string> rowData;
+        std::string cell;
+
+        while (std::getline(ss, cell, ',')) {
+            rowData.push_back(cell);
+        }
+        
+        double sb = std::stod(rowData.at(17));
+        double sbError = std::stod(rowData.at(18));
+        
+        double gaussMean = std::stod(rowData.at(7));
+        double gaussMeanError = std::stod(rowData.at(8));
+
+        double gaussSigma = std::stod(rowData.at(9));
+        double gaussSigmaError = std::stod(rowData.at(10));
+        
+        double value = gaussSigma / gaussMean;
+        double error = CalculateError(gaussMean, gaussSigma, gaussMeanError, gaussSigmaError);
+        
+        int index = std::stoi(rowData[0]);
+        if (index >= 0 && index <= 5) {
+            data.sb_40_60.push_back(sb);
+            data.sb_40_60_Errors.push_back(sbError);
+            
+            data.gaussMean_40_60.push_back(gaussMean);
+            data.gaussMean_40_60_Errors.push_back(gaussMeanError);
+            
+            data.gaussSigma_40_60.push_back(gaussSigma);
+            data.gaussSigma_40_60_Errors.push_back(gaussSigmaError);
+            
+            data.gaussMeanDividedBySigma_40_60.push_back(value);
+            data.gaussMeanDividedBySigma_40_60_Errors.push_back(error);
+            
+            
+        } else if (index >= 6 && index <= 11) {
+            data.sb_20_40.push_back(sb);
+            data.sb_20_40_Errors.push_back(sbError);
+            
+            data.gaussMean_20_40.push_back(gaussMean);
+            data.gaussMean_20_40_Errors.push_back(gaussMeanError);
+            
+            data.gaussSigma_20_40.push_back(gaussSigma);
+            data.gaussSigma_20_40_Errors.push_back(gaussSigmaError);
+            
+            data.gaussMeanDividedBySigma_20_40.push_back(value);
+            data.gaussMeanDividedBySigma_20_40_Errors.push_back(error);
+            
+        } else if (index >= 12 && index <= 17) {
+            data.sb_0_20.push_back(sb);
+            data.sb_0_20_Errors.push_back(sbError);
+            
+            data.gaussMean_0_20.push_back(gaussMean);
+            data.gaussMean_0_20_Errors.push_back(gaussMeanError);
+            
+            data.gaussSigma_0_20.push_back(gaussSigma);
+            data.gaussSigma_0_20_Errors.push_back(gaussSigmaError);
+            
+            data.gaussMeanDividedBySigma_0_20.push_back(value);
+            data.gaussMeanDividedBySigma_0_20_Errors.push_back(error);
+            
+        }
+    }
+    file.close();
+}
+void PrintVectorContents(const std::vector<double>& vec, const std::vector<double>& vecErrors, const std::string& name) {
+    std::cout << "\033[1m\033[31m" // Red and bold text
+              << "Contents of " << name << " and its Errors:" << "\033[0m" << std::endl; // Reset formatting at the end
+    std::cout << std::left << std::setw(20) << "Value"
+              << std::left << std::setw(20) << "Error" << std::endl;
+    for (size_t i = 0; i < vec.size(); ++i) {
+        std::cout << std::left << std::setw(20) << vec[i]
+                  << std::left << std::setw(20) << vecErrors[i] << std::endl;
+    }
+    std::cout << std::endl;
+}
+// Function to create and return a TGraphErrors pointer
+TGraphErrors* CreateGraph(const std::vector<double>& ptCenters, const std::vector<double>& values, const std::vector<double>& errors) {
+    return new TGraphErrors(ptCenters.size(), &ptCenters[0], &values[0], nullptr, &errors[0]);
+}
+void Create_sPHENIX_legend(TCanvas* canvas, float x1, float y1, float x2, float y2, const std::string& centrality, float textSize) {
+    if (!canvas) return; // Check if canvas is valid
+    canvas->cd(); // Switch to the canvas context
+    TLegend *leg = new TLegend(x1, y1, x2, y2);
+    leg->SetFillStyle(0);
+    leg->SetTextSize(textSize);
+    leg->AddEntry("", "#it{#bf{sPHENIX}} Internal", "");
+    leg->AddEntry("", "Au+Au #sqrt{s_{NN}} = 200 GeV", "");
+    leg->AddEntry("", centrality.c_str(), "");
+    leg->Draw("same");
+}
+struct GraphProperties {
+    int markerColor;
+    int markerStyle;
+    double markerSize;
+};
+void setGraphProperties(TGraph* graph, int markerColor, int lineColor, float markerSize, int markerStyle) {
+    graph->SetMarkerColor(markerColor);
+    graph->SetLineColor(lineColor);
+    graph->SetMarkerSize(markerSize);
+    graph->SetMarkerStyle(markerStyle);
+}
+void plot_FitParameterOutput(const Data& data1) {
+    std::vector<double> ptCenters = {2.25, 2.75, 3.25, 3.75, 4.25, 4.75}; // Mid-points of pT ranges for plotting
+    
+    PrintVectorContents(data1.sb_0_20, data1.sb_0_20_Errors, "SB 0-20% Data1");
+    PrintVectorContents(data1.sb_20_40, data1.sb_20_40_Errors, "SB 20-40% Data1");
+    PrintVectorContents(data1.sb_40_60, data1.sb_40_60_Errors, "SB 40-60% Data1");
+    PrintVectorContents(data1.gaussMean_0_20, data1.gaussMean_0_20_Errors, "Gauss Mean 0-20% Data1");
+    PrintVectorContents(data1.gaussMean_20_40, data1.gaussMean_20_40_Errors, "Gauss Mean 20-40% Data1");
+    PrintVectorContents(data1.gaussMean_40_60, data1.gaussMean_40_60_Errors, "Gauss Mean 40-60% Data1");
+    PrintVectorContents(data1.gaussSigma_0_20, data1.gaussSigma_0_20_Errors, "gaussSigma 0-20% Data1");
+    PrintVectorContents(data1.gaussSigma_20_40, data1.gaussSigma_20_40_Errors, "gaussSigma 20-40% Data1");
+    PrintVectorContents(data1.gaussSigma_40_60, data1.gaussSigma_40_60_Errors, "gaussSigma 40-60% Data1");
+    PrintVectorContents(data1.gaussMeanDividedBySigma_0_20, data1.gaussMeanDividedBySigma_0_20_Errors, "gaussMeanDividedBySigma 0-20% Data1");
+    PrintVectorContents(data1.gaussMeanDividedBySigma_20_40, data1.gaussMeanDividedBySigma_20_40_Errors, "gaussMeanDividedBySigma 20-40% Data1");
+    PrintVectorContents(data1.gaussMeanDividedBySigma_40_60, data1.gaussMeanDividedBySigma_40_60_Errors, "gaussMeanDividedBySigma 40-60% Data1");
+    TGraphErrors* sb_0_20_graph = CreateGraph(ptCenters, data1.sb_0_20, data1.sb_0_20_Errors);
+    TGraphErrors* sb_20_40_graph = CreateGraph(ptCenters, data1.sb_20_40, data1.sb_20_40_Errors);
+    TGraphErrors* sb_40_60_graph = CreateGraph(ptCenters, data1.sb_40_60, data1.sb_40_60_Errors);
+
+    TGraphErrors* gaussMean_0_20_graph = CreateGraph(ptCenters, data1.gaussMean_0_20, data1.gaussMean_0_20_Errors);
+    TGraphErrors* gaussMean_20_40_graph = CreateGraph(ptCenters, data1.gaussMean_20_40, data1.gaussMean_20_40_Errors);
+    TGraphErrors* gaussMean_40_60_graph = CreateGraph(ptCenters, data1.gaussMean_40_60, data1.gaussMean_40_60_Errors);
+    
+    TGraphErrors* gaussSigma_0_20_graph = CreateGraph(ptCenters, data1.gaussSigma_0_20, data1.gaussSigma_0_20_Errors);
+    TGraphErrors* gaussSigma_20_40_graph = CreateGraph(ptCenters, data1.gaussSigma_20_40, data1.gaussSigma_20_40_Errors);
+    TGraphErrors* gaussSigma_40_60_graph = CreateGraph(ptCenters, data1.gaussSigma_40_60, data1.gaussSigma_40_60_Errors);
+    
+    TGraphErrors* gaussMeanDividedBySigma_0_20_graph = CreateGraph(ptCenters, data1.gaussMeanDividedBySigma_0_20, data1.gaussMeanDividedBySigma_0_20_Errors);
+    TGraphErrors* gaussMeanDividedBySigma_20_40_graph = CreateGraph(ptCenters, data1.gaussMeanDividedBySigma_20_40, data1.gaussMeanDividedBySigma_20_40_Errors);
+    TGraphErrors* gaussMeanDividedBySigma_40_60_graph = CreateGraph(ptCenters, data1.gaussMeanDividedBySigma_40_60, data1.gaussMeanDividedBySigma_40_60_Errors);
+    
+    setGraphProperties(sb_0_20_graph, kBlack, kBlack, 1.0, 20);
+    setGraphProperties(sb_20_40_graph, kBlack, kBlack, 1.0, 20);
+    setGraphProperties(sb_40_60_graph, kBlack, kBlack, 1.0, 20);
+    
+    setGraphProperties(gaussMean_0_20_graph, kBlack, kBlack, 1.0, 20);
+    setGraphProperties(gaussMean_20_40_graph, kBlack, kBlack, 1.0, 20);
+    setGraphProperties(gaussMean_40_60_graph, kBlack, kBlack, 1.0, 20);
+    
+    setGraphProperties(gaussSigma_0_20_graph, kBlack, kBlack, 1.0, 20);
+    setGraphProperties(gaussSigma_20_40_graph, kBlack, kBlack, 1.0, 20);
+    setGraphProperties(gaussSigma_40_60_graph, kBlack, kBlack, 1.0, 20);
+    
+    // Loop over all points in the graph and set the errors to zero
+    for (int i = 0; i < gaussMeanDividedBySigma_0_20_graph->GetN(); ++i) {
+        gaussMeanDividedBySigma_0_20_graph->SetPointError(i, 0, 0); // Set both x and y errors to 0
+    }
+    // Repeat the process for the other centrality graphs
+    for (int i = 0; i < gaussMeanDividedBySigma_20_40_graph->GetN(); ++i) {
+        gaussMeanDividedBySigma_20_40_graph->SetPointError(i, 0, 0);
+    }
+    for (int i = 0; i < gaussMeanDividedBySigma_40_60_graph->GetN(); ++i) {
+        gaussMeanDividedBySigma_40_60_graph->SetPointError(i, 0, 0); // Set errors to 0
+    }
+    setGraphProperties(gaussMeanDividedBySigma_0_20_graph, kBlack, kBlack, 1.0, 20);
+    setGraphProperties(gaussMeanDividedBySigma_20_40_graph, kBlack, kBlack, 1.0, 20);
+    setGraphProperties(gaussMeanDividedBySigma_40_60_graph, kBlack, kBlack, 1.0, 20);
+
+    auto createGraph = [&data1](
+        TCanvas* canvas,
+        TGraphErrors* graph1,
+        const std::string& centrality,
+        double minYaxis,
+        double maxYaxis,
+        double ndcX1,
+        double ndcY1,
+        double ndcX2,
+        double ndcY2,
+        const std::string& yAxisTitle) {
+        graph1->Draw("AP");
+        graph1->GetXaxis()->SetTitle("p_{T} [GeV]");
+        graph1->GetYaxis()->SetTitle(yAxisTitle.c_str());
+        graph1->SetMinimum(minYaxis);
+        graph1->SetMaximum(maxYaxis);
+        graph1->GetXaxis()->SetLimits(2.0, 5.0);
+        Create_sPHENIX_legend(canvas, ndcX1, ndcY1, ndcX2, ndcY2, centrality.c_str(), 0.045);
+    };
+    
+    TCanvas *c_SBratio_0_20 = new TCanvas("c_SBratio_0_20", "#pi^{0} S/B vs #it{p}_{T} 0-20% Centrality", 800, 600);
+    createGraph(c_SBratio_0_20, sb_0_20_graph, "0-20% Centrality", 0, 1.2, 0.14,.72,0.34,.92, "S/B"); //use lambda function
+    c_SBratio_0_20->SaveAs((globalPlotOutput + "/Overlay_0_20_SB.png").c_str());
+    TCanvas *c_SBratio_20_40 = new TCanvas("c_SBratio_20_40", "#pi^{0} S/B vs #it{p}_{T} 0-20% Centrality", 800, 600);
+    createGraph(c_SBratio_20_40, sb_20_40_graph, "20-40% Centrality", 0, 2.2, 0.14,.72,0.34,.92, "S/B");
+    c_SBratio_20_40->SaveAs((globalPlotOutput + "/Overlay_20_40_SB.png").c_str());
+    TCanvas *c_SBratio_40_60 = new TCanvas("c_SBratio_40_60", "#pi^{0} S/B vs #it{p}_{T} 0-20% Centrality", 800, 600);
+    createGraph(c_SBratio_40_60, sb_40_60_graph, "40-60% Centrality", 0, 6.5, 0.14,.72,0.34,.92, "S/B");
+    c_SBratio_40_60->SaveAs((globalPlotOutput + "/Overlay_40_60_SB.png").c_str());
+    TCanvas *c_gaussMean_0_20 = new TCanvas("c_gaussMean_0_20", "#pi^{0} Gaussian Mean vs #it{p}_{T} 0-20% Centrality", 800, 600);
+    createGraph(c_gaussMean_0_20, gaussMean_0_20_graph, "0-20% Centrality", 0.14, 0.21, 0.16,.7,0.34,.9, "#mu_{Gauss} [GeV]");
+    c_gaussMean_0_20->SaveAs((globalPlotOutput + "/Overlay_0_20_gaussMean.png").c_str());
+    TCanvas *c_gaussMean_20_40 = new TCanvas("c_gaussMean_20_40", "#pi^{0} Gaussian Mean vs #it{p}_{T} 0-20% Centrality", 800, 600);
+    createGraph(c_gaussMean_20_40, gaussMean_20_40_graph, "20-40% Centrality", 0.14, 0.21, 0.16,.7,0.34,.9, "#mu_{Gauss} [GeV]");
+    c_gaussMean_20_40->SaveAs((globalPlotOutput + "/Overlay_20_40_gaussMean.png").c_str());
+    TCanvas *c_gaussMean_40_60 = new TCanvas("c_gaussMean_40_60", "#pi^{0} Gaussian Mean vs #it{p}_{T} 0-20% Centrality", 800, 600);
+    createGraph(c_gaussMean_40_60, gaussMean_40_60_graph, "40-60% Centrality", 0.14, 0.21, 0.16,.7,0.34,.9, "#mu_{Gauss} [GeV]");
+    c_gaussMean_40_60->SaveAs((globalPlotOutput + "/Overlay_40_60_gaussMean.png").c_str());
+    TCanvas *c_gaussSigma_0_20 = new TCanvas("c_gaussSigma_0_20", "#pi^{0} S/B vs #it{p}_{T} 0-20% Centrality", 800, 600);
+    createGraph(c_gaussSigma_0_20, gaussSigma_0_20_graph, "0-20% Centrality", 0.01, 0.04, 0.14,.72,0.34,.92, "#sigma_{Gauss} [GeV]");
+    c_gaussSigma_0_20->SaveAs((globalPlotOutput + "/Overlay_0_20_gaussSigma.png").c_str());
+    TCanvas *c_gaussSigma_20_40 = new TCanvas("c_gaussSigma_20_40", "#pi^{0} S/B vs #it{p}_{T} 0-20% Centrality", 800, 600);
+    createGraph(c_gaussSigma_20_40, gaussSigma_20_40_graph, "20-40% Centrality", 0.01, 0.04, 0.14,.72,0.34,.92, "#sigma_{Gauss} [GeV]");
+    c_gaussSigma_20_40->SaveAs((globalPlotOutput + "/Overlay_20_40_gaussSigma.png").c_str());
+    TCanvas *c_gaussSigma_40_60 = new TCanvas("c_gaussSigma_40_60", "#pi^{0} S/B vs #it{p}_{T} 0-20% Centrality", 800, 600);
+    createGraph(c_gaussSigma_40_60, gaussSigma_40_60_graph, "40-60% Centrality", 0.01, 0.04, 0.14,.72,0.34,.92, "#sigma_{Gauss} [GeV]");
+    c_gaussSigma_40_60->SaveAs((globalPlotOutput + "/Overlay_40_60_gaussSigma.png").c_str());
+    TCanvas *c_gaussMeanDividedBySigma_0_20 = new TCanvas("c_gaussMeanDividedBySigma_0_20", "#pi^{0} S/B vs #it{p}_{T} 0-20% Centrality", 800, 600);
+    createGraph(c_gaussMeanDividedBySigma_0_20, gaussMeanDividedBySigma_0_20_graph, "0-20% Centrality", 0, 0.3, 0.14,.72,0.34,.92, "Resolution");
+    c_gaussMeanDividedBySigma_0_20->SaveAs((globalPlotOutput + "/Overlay_0_20_gaussMeanDividedBySigma.png").c_str());
+    TCanvas *c_gaussMeanDividedBySigma_20_40 = new TCanvas("c_gaussMeanDividedBySigma_20_40", "#pi^{0} S/B vs #it{p}_{T} 0-20% Centrality", 800, 600);
+    createGraph(c_gaussMeanDividedBySigma_20_40, gaussMeanDividedBySigma_20_40_graph, "20-40% Centrality", 0, 0.3, 0.14,.72,0.34,.92, "Resolution");
+    c_gaussMeanDividedBySigma_20_40->SaveAs((globalPlotOutput + "/Overlay_20_40_gaussMeanDividedBySigma.png").c_str());
+    TCanvas *c_gaussMeanDividedBySigma_40_60 = new TCanvas("c_gaussMeanDividedBySigma_40_60", "#pi^{0} S/B vs #it{p}_{T} 0-20% Centrality", 800, 600);
+    createGraph(c_gaussMeanDividedBySigma_40_60, gaussMeanDividedBySigma_40_60_graph, "40-60% Centrality", 0, 0.3, 0.14,.72,0.34,.92, "Resolution");
+    c_gaussMeanDividedBySigma_40_60->SaveAs((globalPlotOutput + "/Overlay_40_60_gaussMeanDividedBySigma.png").c_str());
+}
 void AnalyzePi0() {
     gROOT->LoadMacro("sPhenixStyle.C");
     SetsPhenixStyle();
@@ -478,7 +727,7 @@ void AnalyzePi0() {
         line1->Draw("same");
         line2->Draw("same");
 
-        if (currentIndex >= 11 && currentIndex <= 11) {
+        if (currentIndex >= 0 && currentIndex <= 17) {
             std::ostringstream dirPathStream;
             dirPathStream << globalPlotOutput // Use the global variable here
                           << "EA" << globalCutValues.clusEA
@@ -501,4 +750,9 @@ void AnalyzePi0() {
             canvas->SaveAs(pngFilename.c_str());
         }
     }
+    
+    Data data1;
+    Read_DataSet(csv_filename, data1);
+
+    plot_FitParameterOutput(data1);
 }
