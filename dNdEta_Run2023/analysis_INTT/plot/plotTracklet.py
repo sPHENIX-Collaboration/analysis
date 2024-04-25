@@ -84,8 +84,8 @@ if __name__ == '__main__':
     Draw_1Dhist(hM_dR_reco_altrange, isdata, False, True, 10, 'Reco-tracklet #DeltaR', '', plotdir+'RecoTracklet_dR_altrange')
     Draw_1Dhist(hM_dR_reco_LogX, isdata, True, True, 1.3, 'Reco-tracklet #DeltaR', '', plotdir+'RecoTracklet_dR_logX')
 
-    # Draw_2Dhist(hist, IsData, logz, norm1, rmargin, XaxisName, YaxisName, drawopt, outname):
-    Draw_2Dhist(hM_Eta_vtxZ_proto_incl, isdata, False, False, 0.16, 'Proto-tracklet #eta', 'Primary vertex V_{z} [cm]', 'colz', plotdir+'ProtoTracklet_Eta_vtxZ')
-    Draw_2Dhist(hM_Eta_vtxZ_reco_incl, isdata, False, False, 0.14, 'Reco-tracklet #eta', 'Primary vertex V_{z} [cm]', 'colz', plotdir+'RecoTracklet_Eta_vtxZ')
-    Draw_2Dhist(hM_clusphi_clusphisize, isdata, True, False, 0.16, 'Cluster #phi', 'Cluster #phi size', 'colz', plotdir+'Cluster_Phi_ClusSize')
-    Draw_2Dhist(hM_cluseta_clusphisize, isdata, True, False, 0.14, 'Cluster #eta', 'Cluster #phi size', 'colz', plotdir+'Cluster_Eta_ClusSize')
+    # Draw_2Dhist(hist, IsData, logz, norm1, rmargin, XaxisName, YaxisName, ZaxisName, drawopt, outname)
+    Draw_2Dhist(hM_Eta_vtxZ_proto_incl, isdata, False, False, 0.16, 'Proto-tracklet #eta', 'Primary vertex V_{z} [cm]', 'Entries', 'colz', plotdir+'ProtoTracklet_Eta_vtxZ')
+    Draw_2Dhist(hM_Eta_vtxZ_reco_incl, isdata, False, False, 0.14, 'Reco-tracklet #eta', 'Primary vertex V_{z} [cm]', 'Entries', 'colz', plotdir+'RecoTracklet_Eta_vtxZ')
+    Draw_2Dhist(hM_clusphi_clusphisize, isdata, True, False, 0.16, 'Cluster #phi', 'Cluster #phi size', 'Entries', 'colz', plotdir+'Cluster_Phi_ClusSize')
+    Draw_2Dhist(hM_cluseta_clusphisize, isdata, True, False, 0.14, 'Cluster #eta', 'Cluster #phi size', 'Entries', 'colz', plotdir+'Cluster_Eta_ClusSize')

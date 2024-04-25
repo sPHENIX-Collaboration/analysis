@@ -81,7 +81,7 @@ void makehist(TString infname, TString outfname)
     TTreeIndex *index = (TTreeIndex *)t->GetTreeIndex();
     int event, NClusLayer1, NPrototkl, NRecotkl_Raw, NRecotkl_GenMatched, NGenHadron;
     float PV_z, TruthPV_z;
-    vector<float> *clusphi = 0, *cluseta = 0, *clusphisize = 0;
+    vector<float> *clusPhi = 0, *clusEta = 0, *clusPhiSize = 0;
     vector<float> *prototkl_eta = 0, *prototkl_phi = 0, *prototkl_deta = 0, *prototkl_dphi = 0, *prototkl_dR = 0;
     vector<float> *recotklraw_eta = 0, *recotklraw_phi = 0, *recotklraw_deta = 0, *recotklraw_dphi = 0, *recotklraw_dR = 0;
     t->SetBranchAddress("event", &event);
@@ -90,9 +90,9 @@ void makehist(TString infname, TString outfname)
     t->SetBranchAddress("NRecotkl_Raw", &NRecotkl_Raw);
     t->SetBranchAddress("PV_z", &PV_z);
     t->SetBranchAddress("TruthPV_z", &TruthPV_z);
-    t->SetBranchAddress("clusphi", &clusphi);
-    t->SetBranchAddress("cluseta", &cluseta);
-    t->SetBranchAddress("clusphisize", &clusphisize);
+    t->SetBranchAddress("clusPhi", &clusPhi);
+    t->SetBranchAddress("clusEta", &clusEta);
+    t->SetBranchAddress("clusPhiSize", &clusPhiSize);
     t->SetBranchAddress("prototkl_eta", &prototkl_eta);
     t->SetBranchAddress("prototkl_phi", &prototkl_phi);
     t->SetBranchAddress("prototkl_deta", &prototkl_deta);
@@ -124,13 +124,13 @@ void makehist(TString infname, TString outfname)
         else
             hM_RecoPVz_Nclusgt4000->Fill(PV_z);
 
-        for (size_t j = 0; j < clusphisize->size(); j++)
+        for (size_t j = 0; j < clusPhiSize->size(); j++)
         {
-            hM_clusphi->Fill(clusphi->at(j));
-            hM_cluseta->Fill(cluseta->at(j));
-            hM_clusphisize->Fill(clusphisize->at(j));
-            hM_clusphi_clusphisize->Fill(clusphi->at(j), clusphisize->at(j));
-            hM_cluseta_clusphisize->Fill(cluseta->at(j), clusphisize->at(j));
+            hM_clusphi->Fill(clusPhi->at(j));
+            hM_cluseta->Fill(clusEta->at(j));
+            hM_clusphisize->Fill(clusPhiSize->at(j));
+            hM_clusphi_clusphisize->Fill(clusPhi->at(j), clusPhiSize->at(j));
+            hM_cluseta_clusphisize->Fill(clusEta->at(j), clusPhiSize->at(j));
         }
 
         for (size_t j = 0; j < prototkl_eta->size(); j++)

@@ -93,7 +93,8 @@ def Draw_1Dhist_datasimcomp(hdata, hsims, gpadmargin, norm, logy, ymaxscale, Xax
                   (1-RightMargin)-0.1, (1-TopMargin)-0.03)
     leg.SetTextSize(0.04)
     leg.SetFillStyle(0)
-    prelimtext = 'Preliminary' if prelim else 'Work-in-progress'
+    # prelimtext = 'Preliminary' if prelim else 'Work-in-progress'
+    prelimtext = 'Preliminary' if prelim else 'Internal'
     leg.AddEntry('', '#it{#bf{sPHENIX}} '+prelimtext, '')
     leg.AddEntry('', 'Au+Au #sqrt{s_{NN}}=200 GeV', '')
     leg.AddEntry(hdata, 'Data', "PE1");
@@ -176,7 +177,8 @@ def Draw_1Dhist_datasimcomp_v2(hdata1, hdata2, hsim, gpadmargin, norm, logy, yma
                     (1-RightMargin)-0.1, (1-TopMargin)-0.03)
     leg.SetTextSize(0.04)
     leg.SetFillStyle(0)
-    prelimtext = 'Preliminary' if prelim else 'Work-in-progress'
+    # prelimtext = 'Preliminary' if prelim else 'Work-in-progress'
+    prelimtext = 'Preliminary' if prelim else 'Internal'
     leg.AddEntry('', '#it{#bf{sPHENIX}} '+prelimtext, '')
     leg.AddEntry('', 'Au+Au #sqrt{s_{NN}}=200 GeV', '')
     leg.AddEntry(hdata1, legtext[0], "PE1");
