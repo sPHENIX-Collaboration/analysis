@@ -7,6 +7,23 @@
 #include <sstream>
 #include <string>
 #include <cmath>
+/*
+This macro does the following:
+ --calculates absolute and relative systematic uncertainties from contributions to EMCal Scale variations
+ --calculates absolute and relative systematics from contributions to total systematic ucertainty
+ --plots final v2 results with total systematic uncertainty
+ --plots final v2/v3 results overlay
+ --plots v2 as a function of centrality with systematics
+ --plots v2 results overlayed with PHENIX 2010 data (calculates estimated PHENIX systematics)
+ --plots systematic contributor distributions for both EMCal scale variations and total systematics
+ --plots v2 overlays of:
+ ------EMCal scale variations
+ ------signal bound variations
+ ------backgroundw window variations
+ ------Asymmetry cut variations
+ ------Sample size variations
+ ------p013/p015 overlays
+ */
 
 struct PlotConfig {
     bool plotSigBgCorrAnd_bgWindowVariations; //plots overlay of signal, bg, corrected v2 for default data, and bg window v2 variation used in syst calc
@@ -806,15 +823,15 @@ void plotting_Results_andPHENIXoverlay(const Data& data1) {
     };
     TCanvas *c_Overlay_1_finalResults = new TCanvas("c_Overlay_1_finalResults", "#pi^{0} #it{v}_{2} vs #it{p}_{T} 0-20% Centrality", 800, 600);
     create_sPHENIX_Results(c_Overlay_1_finalResults, sys_v2_0_20_graph_1, corrected_v2_0_20_graph_1, "0-20% Centrality");
-    c_Overlay_1_finalResults->SaveAs((BasePlotOutputPath + "/Corrected_v2_0_20.png").c_str());
+    c_Overlay_1_finalResults->SaveAs((BasePlotOutputPath + "/v2_FinalResults/Corrected_v2_0_20.png").c_str());
     
     TCanvas *c_Overlay_2_finalResults = new TCanvas("c_Overlay_2_finalResults", "#pi^{0} #it{v}_{2} vs #it{p}_{T} 20-40% Centrality", 800, 600);
     create_sPHENIX_Results(c_Overlay_2_finalResults, sys_v2_20_40_graph_1, corrected_v2_20_40_graph_1, "20-40% Centrality");
-    c_Overlay_2_finalResults->SaveAs((BasePlotOutputPath + "/Corrected_v2_20_40.png").c_str());
+    c_Overlay_2_finalResults->SaveAs((BasePlotOutputPath + "/v2_FinalResults/Corrected_v2_20_40.png").c_str());
     
     TCanvas *c_Overlay_3_finalResults = new TCanvas("c_Overlay_3_finalResults", "#pi^{0} #it{v}_{2} vs #it{p}_{T} 40-60% Centrality", 800, 600);
     create_sPHENIX_Results(c_Overlay_3_finalResults, sys_v2_40_60_graph_1, corrected_v2_40_60_graph_1, "40-60% Centrality");
-    c_Overlay_3_finalResults->SaveAs((BasePlotOutputPath + "/Corrected_v2_40_60.png").c_str());
+    c_Overlay_3_finalResults->SaveAs((BasePlotOutputPath + "/v2_FinalResults/Corrected_v2_40_60.png").c_str());
     
     for (int i = 0; i < ptCenters.size(); ++i) {
         corrected_v2_0_20_graph_1->SetPoint(i, ptCenters[i] - .05, data1.corrected_v2_0_20[i]);
@@ -835,11 +852,11 @@ void plotting_Results_andPHENIXoverlay(const Data& data1) {
         graph1->GetXaxis()->SetTitle("p_{T} [GeV]");
         graph1->GetYaxis()->SetTitle("v_{N}^{#pi^{0}}");
         graph1->SetMinimum(-2.5); // Set the minimum y value
-        graph1->SetMaximum(4); // Set the maximum y value
+        graph1->SetMaximum(3); // Set the maximum y value
         graph1->GetXaxis()->SetLimits(2.0, 5.0);
         DrawZeroLine(canvas);
-        Create_sPHENIX_legend_Results(canvas, 0.14, 0.71, 0.34, 0.91, centrality.c_str(), 0.04);
-        TLegend *leg = new TLegend(0.7,.7,0.9,.9);
+        Create_sPHENIX_legend(canvas, 0.14, 0.8, 0.34, 0.92, centrality.c_str(), 0.038);
+        TLegend *leg = new TLegend(0.2,.2,0.4,.4);
         leg->SetTextSize(0.029);
         leg->AddEntry(graph1, "v_{2}^{#pi^{0}}", "pe");
         leg->AddEntry(graph2, "v_{3}^{#pi^{0}}", "pe");
@@ -847,15 +864,91 @@ void plotting_Results_andPHENIXoverlay(const Data& data1) {
     };
     TCanvas *c_Overlay_v3_0_20 = new TCanvas("c_Overlay_v3_0_20", "#pi^{0} #it{v}_{3} vs #it{p}_{T} 0-20% Centrality", 800, 600);
     create_v3_graphs(c_Overlay_v3_0_20, corrected_v2_0_20_graph_1, corrected_v3_0_20_graph_1, "0-20% Centrality");
-    c_Overlay_v3_0_20->SaveAs((BasePlotOutputPath + "/Corrected_vN_0_20.png").c_str());
+    c_Overlay_v3_0_20->SaveAs((BasePlotOutputPath + "/v3_FinalResults/Corrected_vN_0_20.png").c_str());
     
     TCanvas *c_Overlay_v3_20_40 = new TCanvas("c_Overlay_v3_20_40", "#pi^{0} #it{v}_{3} vs #it{p}_{T} 20-40% Centrality", 800, 600);
     create_v3_graphs(c_Overlay_v3_20_40, corrected_v2_20_40_graph_1, corrected_v3_20_40_graph_1, "20-40% Centrality");
-    c_Overlay_v3_20_40->SaveAs((BasePlotOutputPath + "/Corrected_vN_20_40.png").c_str());
+    c_Overlay_v3_20_40->SaveAs((BasePlotOutputPath + "/v3_FinalResults/Corrected_vN_20_40.png").c_str());
     
     TCanvas *c_Overlay_v3_40_60 = new TCanvas("c_Overlay_v3_40_60", "#pi^{0} #it{v}_{3} vs #it{p}_{T} 40-60% Centrality", 800, 600);
     create_v3_graphs(c_Overlay_v3_40_60, corrected_v2_40_60_graph_1, corrected_v3_40_60_graph_1, "40-60% Centrality");
-    c_Overlay_v3_40_60->SaveAs((BasePlotOutputPath + "/Corrected_vN_40_60.png").c_str());
+    c_Overlay_v3_40_60->SaveAs((BasePlotOutputPath + "/v3_FinalResults/Corrected_vN_40_60.png").c_str());
+    
+
+    // Define centrality bins and their labels
+    const int nCentralityBins = 3;
+    const char* centralityLabels[nCentralityBins] = {"0-20%", "20-40%", "40-60%"};
+    double centralityPositions[nCentralityBins] = {1, 2, 3}; // Position on the x-axis for each category
+
+    const int nPtBins = 6;
+    double ptOffsets[nPtBins] = {-0.3, -0.18, -0.06, 0.06, 0.18, 0.3}; // Offset for each pt bin within the centrality category
+
+    TCanvas* c_fun_of_centrality = new TCanvas("c", "v2 vs Centrality", 800, 600);
+    TMultiGraph* mgAll = new TMultiGraph();
+    
+    TLegend* legend = new TLegend(0.3, 0.72, 0.6, 0.92);
+    legend->SetTextSize(0.026);
+    legend->SetNColumns(2);
+
+    const char* ptBinLabels[nPtBins] = {
+        "2.0 #leq p_{T} < 2.5",
+        "2.5 #leq p_{T} < 3.0",
+        "3.0 #leq p_{T} < 3.5",
+        "3.5 #leq p_{T} < 4.0",
+        "4.O #leq p_{T} < 4.5",
+        "4.5 #leq p_{T} < 5.0"
+    };
+
+
+    int colors[nPtBins] = {kRed, kBlue, kBlack, kViolet, kGreen+1, kOrange+7};
+    int markers[nPtBins] = {20, 20, 20, 20, 20, 20};
+
+    for (int iPt = 0; iPt < nPtBins; iPt++) {
+        double v2Values[nCentralityBins] = {data1.corrected_v2_0_20[iPt], data1.corrected_v2_20_40[iPt], data1.corrected_v2_40_60[iPt]};
+        double v2Errors[nCentralityBins] = {data1.corrected_v2_0_20_Errors[iPt], data1.corrected_v2_20_40_Errors[iPt], data1.corrected_v2_40_60_Errors[iPt]};
+        double Systematics[nCentralityBins] = {data1.total_syst_uncertainties_0_20[iPt], data1.total_syst_uncertainties_20_40[iPt], data1.total_syst_uncertainties_40_60[iPt]};
+
+        TGraphAsymmErrors* grSyst = new TGraphAsymmErrors(nCentralityBins);
+        TGraphErrors* grStat = new TGraphErrors(nCentralityBins);
+
+        for (int iCent = 0; iCent < nCentralityBins; iCent++) {
+            grSyst->SetPoint(iCent, centralityPositions[iCent] + ptOffsets[iPt], v2Values[iCent]);
+            grSyst->SetPointError(iCent, 0.05, 0.05, Systematics[iCent], Systematics[iCent]);
+            
+            grStat->SetPoint(iCent, centralityPositions[iCent] + ptOffsets[iPt], v2Values[iCent]);
+            grStat->SetPointError(iCent, 0, v2Errors[iCent]);
+        }
+
+        Color_t colorWithAlpha = TColor::GetColorTransparent(colors[iPt], 0.35);
+        grSyst->SetFillColor(colorWithAlpha);
+        grSyst->SetFillStyle(3001);
+
+        grStat->SetMarkerColor(colors[iPt]);
+        grStat->SetMarkerStyle(markers[iPt]);
+
+        mgAll->Add(grSyst, "2"); // Draw the shaded areas for systematic uncertainties
+        mgAll->Add(grStat, "P"); // Draw the points with error bars for statistical uncertainties
+        legend->AddEntry(grStat, ptBinLabels[iPt], "P");
+    }
+
+    // Draw the combined graph
+    mgAll->Draw("A");
+    mgAll->SetTitle("v2 vs Centrality;Centrality;v_{2}^{#pi^{0}}");
+    mgAll->GetXaxis()->SetLimits(0.5, 3.5);
+    mgAll->GetXaxis()->Set(nCentralityBins, 0.5, 3.5);
+    mgAll->GetXaxis()->SetLabelOffset(0.02);
+    
+
+    for (int i = 1; i <= nCentralityBins; i++) {
+        mgAll->GetXaxis()->SetBinLabel(i, centralityLabels[i-1]);
+    }
+    legend->Draw();
+    DrawZeroLine(c_fun_of_centrality);
+    c_fun_of_centrality->Modified();
+    c_fun_of_centrality->Update();
+
+    c_fun_of_centrality->SaveAs((BasePlotOutputPath + "/v2_FinalResults/v2_AsFunOfCentrality.png").c_str());
+    
     
 
     /*
@@ -953,17 +1046,17 @@ void plotting_Results_andPHENIXoverlay(const Data& data1) {
     
     TCanvas *c_Overlay_ResultsWithPHENIX_0_20 = new TCanvas("c_Overlay_ResultsWithPHENIX_0_20", "#pi^{0} #it{v}_{2} vs #it{p}_{T} 0-20% Centrality", 800, 600);
     create_PHENIX_sPHENIX_graph(c_Overlay_ResultsWithPHENIX_0_20, sys_v2_0_20_graph_1, corrected_v2_0_20_graph_1, sys_graph_0_20_PHENIX, graph_0_20_PHENIXdataAveraged, "0-20% Centrality");
-    c_Overlay_ResultsWithPHENIX_0_20->SaveAs((BasePlotOutputPath + "/Final_v2_withSyst_0_20_OverlayedWithPHENIX.png").c_str());
+    c_Overlay_ResultsWithPHENIX_0_20->SaveAs((BasePlotOutputPath + "/v2_FinalResults/v2_Overlay_withPHENIX/Final_v2_withSyst_0_20_OverlayedWithPHENIX.png").c_str());
     
     //20-40% PHENIX overlay
     TCanvas *c_Overlay_ResultsWithPHENIX_20_40 = new TCanvas("c_Overlay_ResultsWithPHENIX_20_40", "#pi^{0} #it{v}_{2} vs #it{p}_{T} 0-20% Centrality", 800, 600);
     create_PHENIX_sPHENIX_graph(c_Overlay_ResultsWithPHENIX_20_40, sys_v2_20_40_graph_1, corrected_v2_20_40_graph_1, sys_graph_20_40_PHENIX, graph_20_40_PHENIXdataAveraged, "20-40% Centrality");
-    c_Overlay_ResultsWithPHENIX_20_40->SaveAs((BasePlotOutputPath + "/Final_v2_withSyst_20_40_OverlayedWithPHENIX.png").c_str());
+    c_Overlay_ResultsWithPHENIX_20_40->SaveAs((BasePlotOutputPath + "/v2_FinalResults/v2_Overlay_withPHENIX/Final_v2_withSyst_20_40_OverlayedWithPHENIX.png").c_str());
     
     //40-60% Centrality PHENIX overlay
     TCanvas *c_Overlay_ResultsWithPHENIX_40_60 = new TCanvas("c_Overlay_ResultsWithPHENIX_40_60", "#pi^{0} #it{v}_{2} vs #it{p}_{T} 0-20% Centrality", 800, 600);
     create_PHENIX_sPHENIX_graph(c_Overlay_ResultsWithPHENIX_40_60, sys_v2_40_60_graph_1, corrected_v2_40_60_graph_1, sys_graph_40_60_PHENIX, graph_40_60_PHENIXdataAveraged, "40-60% Centrality");
-    c_Overlay_ResultsWithPHENIX_40_60->SaveAs((BasePlotOutputPath + "/Final_v2_withSyst_40_60_OverlayedWithPHENIX.png").c_str());
+    c_Overlay_ResultsWithPHENIX_40_60->SaveAs((BasePlotOutputPath + "/v2_FinalResults/v2_Overlay_withPHENIX/Final_v2_withSyst_40_60_OverlayedWithPHENIX.png").c_str());
 }
 //Next two functions are For automatic y axis scaling of the Systematics Graphs
 double FindMaxValueFromPlottedData(const std::vector<double>& values) {
@@ -2215,21 +2308,21 @@ void plot_sigBgCorr_and_bgWindowVariations(const Data& data1){
     createGraph_sig_bg_corr(c_Overlay_bg_sig_corrOverlay_0_20, signal_v2_0_20_graph_1, bg_v2_0_20_graph_1, corrected_v2_0_20_graph_1, "0-20% Centrality");
     c_Overlay_bg_sig_corrOverlay_0_20->Modified();
     c_Overlay_bg_sig_corrOverlay_0_20->Update();
-    c_Overlay_bg_sig_corrOverlay_0_20->SaveAs((BasePlotOutputPath + "/Overlay_0_20_v2_Signal_Back_Correct.png").c_str());
+    c_Overlay_bg_sig_corrOverlay_0_20->SaveAs((BasePlotOutputPath + "/v2_FinalResults/Overlay_0_20_v2_Signal_Back_Correct.png").c_str());
     
     //20-40
     TCanvas *c_Overlay_bg_sig_corrOverlay_20_40 = new TCanvas("c_Overlay_bg_sig_corrOverlay_20_40", "#pi^{0} #it{v}_{2} vs #it{p}_{T} 0-20% Centrality", 800, 600);
     createGraph_sig_bg_corr(c_Overlay_bg_sig_corrOverlay_20_40, signal_v2_20_40_graph_1, bg_v2_20_40_graph_1, corrected_v2_20_40_graph_1, "20-40% Centrality");
     c_Overlay_bg_sig_corrOverlay_20_40->Modified();
     c_Overlay_bg_sig_corrOverlay_20_40->Update();
-    c_Overlay_bg_sig_corrOverlay_20_40->SaveAs((BasePlotOutputPath + "/Overlay_20_40_v2_Signal_Back_Correct.png").c_str());
+    c_Overlay_bg_sig_corrOverlay_20_40->SaveAs((BasePlotOutputPath + "/v2_FinalResults/Overlay_20_40_v2_Signal_Back_Correct.png").c_str());
     
     //40-60
     TCanvas *c_Overlay_bg_sig_corrOverlay_40_60 = new TCanvas("c_Overlay_bg_sig_corrOverlay_40_60", "#pi^{0} #it{v}_{2} vs #it{p}_{T} 0-20% Centrality", 800, 600);
     createGraph_sig_bg_corr(c_Overlay_bg_sig_corrOverlay_40_60, signal_v2_40_60_graph_1, bg_v2_40_60_graph_1, corrected_v2_40_60_graph_1, "40-60% Centrality");
     c_Overlay_bg_sig_corrOverlay_40_60->Modified();
     c_Overlay_bg_sig_corrOverlay_40_60->Update();
-    c_Overlay_bg_sig_corrOverlay_40_60->SaveAs((BasePlotOutputPath + "/Overlay_40_60_v2_Signal_Back_Correct.png").c_str());
+    c_Overlay_bg_sig_corrOverlay_40_60->SaveAs((BasePlotOutputPath + "/v2_FinalResults/Overlay_40_60_v2_Signal_Back_Correct.png").c_str());
 }
 
 
