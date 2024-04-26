@@ -21,15 +21,15 @@ struct PlotConfig {
  */
 PlotConfig initializePlotConfig() {
     return {
-        true,  //signal, bg, corr v2 overlay and background window -- always set true if have default values, only need default CSV
+        false,  //signal, bg, corr v2 overlay and background window -- always set true if have default values, only need default CSV
         /*
-         The following need additional CSVs prepared
+         The following need additional CSVs prepared -- if want to plot one and can't another, thats what the booleans are used for
          */
-        true,  //signal window -- reads in filePathSignal_Bound_Variation
-        true,  //plot EMCal scale overlay -- reads in filePathEMCal_Syst_SYST variations
-        true,  //plot Asymmetry overlay -- reads in filePath_AsymmetryVariations_45 and filePath_AsymmetryVariations_55
-        true,  //plot sample size -- reads filePathSampleSizeVariation
-        true   //plot production comparison - reads p013_filePath
+        false,  //signal window -- reads in filePathSignal_Bound_Variation
+        false,  //plot EMCal scale overlay -- reads in filePathEMCal_Syst_SYST variations
+        false,  //plot Asymmetry overlay -- reads in filePath_AsymmetryVariations_45 and filePath_AsymmetryVariations_55
+        false,  //plot sample size -- reads filePathSampleSizeVariation
+        false   //plot production comparison - reads p013_filePath
     };
 }
 
@@ -68,6 +68,10 @@ struct Data {
     std::vector<double> corrected_v2_0_20, corrected_v2_0_20_Errors;
     std::vector<double> corrected_v2_20_40, corrected_v2_20_40_Errors;
     std::vector<double> corrected_v2_40_60, corrected_v2_40_60_Errors;
+    
+    std::vector<double> corrected_v3_0_20, corrected_v3_0_20_Errors;
+    std::vector<double> corrected_v3_20_40, corrected_v3_20_40_Errors;
+    std::vector<double> corrected_v3_40_60, corrected_v3_40_60_Errors;
     
     std::vector<double> corrected_v2_0_20_type4, corrected_v2_0_20_Errors_type4;
     std::vector<double> corrected_v2_20_40_type4, corrected_v2_20_40_Errors_type4;
@@ -147,6 +151,9 @@ void Read_DataSet(const std::string& filePath, Data& data) {
         double v2_corrected = std::stod(rowData.at(1));
         double v2_error_corrected = std::stod(rowData.at(2));
         
+        double v3_corrected = std::stod(rowData.at(5));
+        double v3_error_corrected = std::stod(rowData.at(6));
+        
         double v2_corrected_type4 = std::stod(rowData.at(3)); //v2 when upper sideband bound is 0.4 instead of default 0.5 GeV
         double v2_error_corrected_type4 = std::stod(rowData.at(4));
         
@@ -162,6 +169,9 @@ void Read_DataSet(const std::string& filePath, Data& data) {
             data.corrected_v2_40_60.push_back(v2_corrected);
             data.corrected_v2_40_60_Errors.push_back(v2_error_corrected);
             
+            data.corrected_v3_40_60.push_back(v3_corrected);
+            data.corrected_v3_40_60_Errors.push_back(v3_error_corrected);
+            
             data.corrected_v2_40_60_type4.push_back(v2_corrected_type4);
             data.corrected_v2_40_60_Errors_type4.push_back(v2_error_corrected_type4);
             
@@ -174,6 +184,9 @@ void Read_DataSet(const std::string& filePath, Data& data) {
         } else if (index >= 6 && index <= 11) { //indices 6 through 11 are 20-40% Centrality
             data.corrected_v2_20_40.push_back(v2_corrected);
             data.corrected_v2_20_40_Errors.push_back(v2_error_corrected);
+            
+            data.corrected_v3_20_40.push_back(v3_corrected);
+            data.corrected_v3_20_40_Errors.push_back(v3_error_corrected);
             
             data.corrected_v2_20_40_type4.push_back(v2_corrected_type4);
             data.corrected_v2_20_40_Errors_type4.push_back(v2_error_corrected_type4);
@@ -188,6 +201,9 @@ void Read_DataSet(const std::string& filePath, Data& data) {
         } else if (index >= 12 && index <= 17) { //indices 12 through 17 are 0-20% Centrality
             data.corrected_v2_0_20.push_back(v2_corrected);
             data.corrected_v2_0_20_Errors.push_back(v2_error_corrected);
+            
+            data.corrected_v3_0_20.push_back(v3_corrected);
+            data.corrected_v3_0_20_Errors.push_back(v3_error_corrected);
             
             data.corrected_v2_0_20_type4.push_back(v2_corrected_type4);
             data.corrected_v2_0_20_Errors_type4.push_back(v2_error_corrected_type4);
@@ -205,16 +221,26 @@ void Read_DataSet(const std::string& filePath, Data& data) {
 //Writes CSV file for EMCal Scale variations, calculating each contribution to total weighted and unweighted quadrature sum that is funneled into total syst calc
 void WriteComparisonTo_EMcalScale_CSV(const std::vector<Data>& emCalDataSets, const Data& referenceData, const std::string& outputPath) {
     std::ofstream outFile(outputPath);
-    
-    // Updated header to include new columns
+    if (!outFile.is_open()) {
+        std::cerr << "Failed to open the file at: " << outputPath << std::endl;
+        return;
+    }
     outFile << "Index,Reference_v2";
-    std::vector<std::string> dataSetLabels = {"SYST1CEMC", "SYST2CEMC", "SYST3DCEMC", "SYST3UCEMC", "SYST4CEMC"};
+    std::vector<std::string> dataSetLabels = {"SYST1CEMC", "SYST2CEMC", "SYST3DCEMC", "SYST3UCEMC", "SYST4CEMC"}; //used for CSV header writing
     for (const auto& label : dataSetLabels) {
         outFile << ",RelativeUncertainty_" << label << ",AbsoluteUncertainty_" << label;
     }
     // New columns for quadrature sum
     outFile << ",QuadratureSumRelativeUncertainties,QuadratureSumAbsoluteUncertainties\n";
 
+    // Output header for console
+    std::cout << "\033[1mCalculating EMCal Systematics:\033[0m\n";
+    std::cout << "\033[1m" << std::left << std::setw(15) << "DataSet Label"
+              << std::setw(10) << "Index"
+              << std::setw(15) << "Reference v2"
+              << std::setw(22) << "Abs. Uncertainty" << "\033[0m" << std::endl;
+    std::cout << std::string(62, '-') << "\n";
+    
     for (size_t index = 0; index < 18; ++index) {
         double sumSquaredRelative = 0.0;
         double sumSquaredAbsolute = 0.0;
@@ -226,8 +252,9 @@ void WriteComparisonTo_EMcalScale_CSV(const std::vector<Data>& emCalDataSets, co
         if (binIndex < referenceVector.size()) {
             double reference_v2 = referenceVector[binIndex];
             outFile << index << "," << reference_v2;
-
+            // Starting from index 1 to skip the defaultData at index 0, which is used only as a reference for calculations
             for (size_t dataSetIndex = 1; dataSetIndex < emCalDataSets.size(); ++dataSetIndex) {
+                //heres where we grab index 1 of emcaldatasets being SYST1CEMC
                 const auto& currentDataSet = emCalDataSets[dataSetIndex];
                 const auto& v2_vector = index < 6 ? currentDataSet.corrected_v2_40_60 :
                                         index < 12 ? currentDataSet.corrected_v2_20_40 :
@@ -243,8 +270,18 @@ void WriteComparisonTo_EMcalScale_CSV(const std::vector<Data>& emCalDataSets, co
                     sumSquaredAbsolute += pow(absoluteUncertainty, 2);
 
                     outFile << "," << relativeUncertainty << "," << absoluteUncertainty;
+                    
+                    std::cout << std::left << "\033[1m" << std::setw(15) << dataSetLabels[dataSetIndex-1]
+                              << std::setw(10) << index
+                              << std::setw(15) << std::fixed << std::setprecision(6) << v2
+                              << std::setw(22) << absoluteUncertainty << "\033[0m" << std::endl;
+                    
                 } else {
                     outFile << ",,"; // In case there's no data for this dataset at this bin index
+                    std::cout << std::left << "\033[1m" << std::setw(15) << dataSetLabels[dataSetIndex]
+                              << std::setw(10) << index
+                              << std::setw(15) << "No Data"
+                              << std::setw(22) << "N/A" << "\033[0m" << std::endl;
                 }
             }
 
@@ -303,12 +340,6 @@ void WriteComparisonToCSV(const std::vector<Data>& emCalDataSets, const Data& si
         }
 
         double finalQuadratureSum = std::sqrt(quadratureSum);
-        double adjustedQuadratureSum = finalQuadratureSum * std::abs(reference_v2);
-
-        // Output the adjusted quadrature sum to terminal for debugging
-        std::cout << "Index: " << index << " Adjusted Quadrature Sum: " << adjustedQuadratureSum << std::endl;
-
-        
 
         // Calculate relative difference for the signal window dataset
         double signalWindow_v2 = 0.0, signalWindowRelativeDifference = 0.0;
@@ -730,6 +761,10 @@ void plotting_Results_andPHENIXoverlay(const Data& data1) {
     TGraphErrors* corrected_v2_20_40_graph_1 = CreateGraph(ptCenters, data1.corrected_v2_20_40, data1.corrected_v2_20_40_Errors);
     TGraphErrors* corrected_v2_40_60_graph_1 = CreateGraph(ptCenters, data1.corrected_v2_40_60, data1.corrected_v2_40_60_Errors);
     
+    TGraphErrors* corrected_v3_0_20_graph_1 = CreateGraph(ptCenters, data1.corrected_v3_0_20, data1.corrected_v3_0_20_Errors);
+    TGraphErrors* corrected_v3_20_40_graph_1 = CreateGraph(ptCenters, data1.corrected_v3_20_40, data1.corrected_v3_20_40_Errors);
+    TGraphErrors* corrected_v3_40_60_graph_1 = CreateGraph(ptCenters, data1.corrected_v3_40_60, data1.corrected_v3_40_60_Errors);
+    
     TGraphErrors* sys_v2_0_20_graph_1 = CreateSystematicGraph(ptCenters, data1.corrected_v2_0_20, data1.corrected_v2_0_20_Errors, data1.total_syst_uncertainties_0_20);
     TGraphErrors* sys_v2_20_40_graph_1 = CreateSystematicGraph(ptCenters, data1.corrected_v2_20_40, data1.corrected_v2_20_40_Errors, data1.total_syst_uncertainties_20_40);
     TGraphErrors* sys_v2_40_60_graph_1 = CreateSystematicGraph(ptCenters, data1.corrected_v2_40_60, data1.corrected_v2_40_60_Errors, data1.total_syst_uncertainties_40_60);
@@ -741,6 +776,10 @@ void plotting_Results_andPHENIXoverlay(const Data& data1) {
     setGraphProperties(corrected_v2_0_20_graph_1, kBlack, kBlack, 1.0, 20);
     setGraphProperties(corrected_v2_20_40_graph_1, kBlack, kBlack, 1.0, 20);
     setGraphProperties(corrected_v2_40_60_graph_1, kBlack, kBlack, 1.0, 20);
+    
+    setGraphProperties(corrected_v3_0_20_graph_1, kBlue, kBlue, 1.0, 20);
+    setGraphProperties(corrected_v3_20_40_graph_1, kBlue, kBlue, 1.0, 20);
+    setGraphProperties(corrected_v3_40_60_graph_1, kBlue, kBlue, 1.0, 20);
     
     sys_v2_0_20_graph_1->SetFillColor(kGray+1); // Gray color
     sys_v2_0_20_graph_1->SetFillStyle(3001); // Semi-transparent fill
@@ -777,6 +816,48 @@ void plotting_Results_andPHENIXoverlay(const Data& data1) {
     create_sPHENIX_Results(c_Overlay_3_finalResults, sys_v2_40_60_graph_1, corrected_v2_40_60_graph_1, "40-60% Centrality");
     c_Overlay_3_finalResults->SaveAs((BasePlotOutputPath + "/Corrected_v2_40_60.png").c_str());
     
+    for (int i = 0; i < ptCenters.size(); ++i) {
+        corrected_v2_0_20_graph_1->SetPoint(i, ptCenters[i] - .05, data1.corrected_v2_0_20[i]);
+        corrected_v3_0_20_graph_1->SetPoint(i, ptCenters[i] + .05, data1.corrected_v3_0_20[i]);
+        
+        corrected_v2_20_40_graph_1->SetPoint(i, ptCenters[i] - .05, data1.corrected_v2_20_40[i]);
+        corrected_v3_20_40_graph_1->SetPoint(i, ptCenters[i] + .05, data1.corrected_v3_20_40[i]);
+        
+        corrected_v2_40_60_graph_1->SetPoint(i, ptCenters[i] - .05, data1.corrected_v2_40_60[i]);
+        corrected_v3_40_60_graph_1->SetPoint(i, ptCenters[i] + .05, data1.corrected_v3_40_60[i]);
+
+    }
+    
+    //plot v3 versus pT
+    auto create_v3_graphs = [&data1](TCanvas* canvas, TGraphErrors* graph1, TGraphErrors* graph2, const std::string& centrality) {
+        graph1->Draw("AP"); // Draw systematic errors first as a shaded area
+        graph2->Draw("P SAME");
+        graph1->GetXaxis()->SetTitle("p_{T} [GeV]");
+        graph1->GetYaxis()->SetTitle("v_{N}^{#pi^{0}}");
+        graph1->SetMinimum(-2.5); // Set the minimum y value
+        graph1->SetMaximum(4); // Set the maximum y value
+        graph1->GetXaxis()->SetLimits(2.0, 5.0);
+        DrawZeroLine(canvas);
+        Create_sPHENIX_legend_Results(canvas, 0.14, 0.71, 0.34, 0.91, centrality.c_str(), 0.04);
+        TLegend *leg = new TLegend(0.7,.7,0.9,.9);
+        leg->SetTextSize(0.029);
+        leg->AddEntry(graph1, "v_{2}^{#pi^{0}}", "pe");
+        leg->AddEntry(graph2, "v_{3}^{#pi^{0}}", "pe");
+        leg->Draw("same");
+    };
+    TCanvas *c_Overlay_v3_0_20 = new TCanvas("c_Overlay_v3_0_20", "#pi^{0} #it{v}_{3} vs #it{p}_{T} 0-20% Centrality", 800, 600);
+    create_v3_graphs(c_Overlay_v3_0_20, corrected_v2_0_20_graph_1, corrected_v3_0_20_graph_1, "0-20% Centrality");
+    c_Overlay_v3_0_20->SaveAs((BasePlotOutputPath + "/Corrected_vN_0_20.png").c_str());
+    
+    TCanvas *c_Overlay_v3_20_40 = new TCanvas("c_Overlay_v3_20_40", "#pi^{0} #it{v}_{3} vs #it{p}_{T} 20-40% Centrality", 800, 600);
+    create_v3_graphs(c_Overlay_v3_20_40, corrected_v2_20_40_graph_1, corrected_v3_20_40_graph_1, "20-40% Centrality");
+    c_Overlay_v3_20_40->SaveAs((BasePlotOutputPath + "/Corrected_vN_20_40.png").c_str());
+    
+    TCanvas *c_Overlay_v3_40_60 = new TCanvas("c_Overlay_v3_40_60", "#pi^{0} #it{v}_{3} vs #it{p}_{T} 40-60% Centrality", 800, 600);
+    create_v3_graphs(c_Overlay_v3_40_60, corrected_v2_40_60_graph_1, corrected_v3_40_60_graph_1, "40-60% Centrality");
+    c_Overlay_v3_40_60->SaveAs((BasePlotOutputPath + "/Corrected_vN_40_60.png").c_str());
+    
+
     /*
      OVERLAYING WITH PHENIX DATA FINAL RESULTS
      */
@@ -2311,7 +2392,7 @@ void FinalizeResults() {
     //write and read path for CSV of EMCal scale contributors
     std::string statUncertaintyFilePath_EMCal_Contributors = baseDataPath_EmCal_Systematics + "StatUncertaintyTable_EMCalVariationsOnly.csv";
     //write and read path for CSV of total syst contributors and calculation
-    std::string statUncertaintyFilePath = BasePlotOutputPath + "/Systematics_Analysis-v2-Checks/StatUncertaintyTable_p015.csv";
+    std::string statUncertaintyFilePath = SystematicsBasePlotOutput + "StatUncertaintyTable_p015.csv";
     
     WriteComparisonTo_EMcalScale_CSV(emCalDataSets, defaultData, statUncertaintyFilePath_EMCal_Contributors); //calculate EMCal scale contributors and quadarture sum
     WriteComparisonToCSV(emCalDataSets, data_Signal_Bound_Variation, defaultData, statUncertaintyFilePath); //calculate total systematic uncertainty
