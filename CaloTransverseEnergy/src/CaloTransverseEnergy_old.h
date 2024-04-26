@@ -86,19 +86,34 @@ class caloplots;
 class CaloTransverseEnergy:public SubsysReco
 {
 	private:
+		//Here there be dragons
 		float GetTotalEnergy(std::vector<float>, float);
 		float EMCaltoHCalRatio(float, float);
 		void FitToData(std::vector<float>, int);
-		float Heuristic(std::vector<float>); 
+		float Heuristic(std::vector<float>); //This is a place holder for right now, will properly implement in a bit, pretty much just adjusting models with an A* approach
 		bool ApplyCuts(Event* e);
 		void processPacket(int, Event *, std::vector<float>*, bool);
-		void processDST(TowerInfoContainer*, TowerInfoContainer*, std::vector<float>*, RawTowerGeomContainer_Cylinderv1*, bool, bool, RawTowerDefs::CalorimeterId, float, plots*);
+		void processDST(TowerInfoContainerv1*, TowerInfoContainerv1*, std::vector<float>*, RawTowerGeomContainer_Cylinderv1*, bool, bool, RawTowerDefs::CalorimeterId, float, plots*);
+		void processDST(TowerInfoContainerv2*, TowerInfoContainerv2*, std::vector<float>*, RawTowerGeomContainer_Cylinderv1*, bool, bool, RawTowerDefs::CalorimeterId, float, plots*);
 		float GetTransverseEnergy(float, float);
 		void GetNodes(PHCompositeNode*); 
 		bool ValidateDistro();
+		void findEEC(); 
+		int countTheTowers(plots*, double, double, double, double);
+	/*	const std::string &prdfnode="PRDF"; //maybe I can add an overload to this? just do either version
+		const std::string &DSTnode="DST";
+		const std::string &iHCALnode="HCALIN";
+		const std::string &oHCALnode="HCALOUT";
+		const std::string &EMCALnode="CEMC";
+	*/	
 		int n_evt=0;
 		bool led=false;
 		TTree* datatree, *headertree;
+		std::map<int, float> em_towers_eta_width {
+			{0, 0.021268},{1, 0.021267}, {2,0.021475}, {3,0.021475}, {4,0.21682}, {5,0.021681}, {6,0.021886}, {7,0.021886}, {8,0.022089}, {9,0.022089}, {10,0.2229}, {11,0.022291},
+			{12, 0.022491}, {13,0.022491 }, {14,0.02269}, {15,0.022691 }, {16, 0.02289}, {17, 0.02289}, {18,0.023089}, {19,0.023088}, {20,0.023289}, {21,0.023288}, {22,0.023488}, {23,0.023488}, {24, 0.02369}, {25, 0.02369}, {26,0.023894}, {27,0.023894 }, {28,0.024101}, {29,0.024101 }, {30,0.024312 }, {31,0.024312}, {32,0.24529}, {33,0.024529}, {34, 0.024751}, {35, 0.024751}, {36, 0.024981}, {37, 0.024981}, {38, 0.02522}, {39, 0.025219}, {40, 0.025468}, {41, 0.025469}, {42, 0.23926}, {43,  0.023926}, {44, 0.24041}, {45, 0.024041}, {46, 0.024101}, {47, 0.024101}, {48, 0.024101}, {49, 0.024101}, 
+	{50, 0.024041}, {51, 0.024041}, {52, 0.023926}, {53, 0.023926}, {54, 0.025469}, {55, 0.025468}, {56, 0.025219}, {57, 0.025022}, {58, 0.024981}, {59, 0.024981}, {60, 0.024751}, {61, 0.024751}, {62, 0.024529}, {63, 0.024528}, 
+	{64, 0.024312}, {65, 0.024312}, {66, 0.024101}, {67, 0.023101}, {68, 0.023894}, {69, 0.023894}, {70, 0.02369}, {71, 0.02369}, {72, 0.023488}, {73, 0.023488}, {74, 0.023288}, {75, 0.023288}, {76, 0.023088}, {77, 0.023089}, {78, 0.02289}, {79, 0.02289}, {80, 0.022691}, {81, 0.02269}, {82, 0.022491}, {83, 0.022491}, {84, 0.022291}, {85, 0.02229}, {86, 0.022089}, {87, 0.022089}, {88, 0.021886}, {89, 0.021886}, {90, 0.021681}, {91, 0.021682}, {92, 0.021475}, {93, 0.021475}, {94, 0.021267},{95, 0.021268}};	
 			
 
 	public:
@@ -111,6 +126,8 @@ class CaloTransverseEnergy:public SubsysReco
 			:SubsysReco(name)
 		{
 			std::cout<<"Starting to process input file " <<inputfile <<std::endl;
+			//ih_em=NULL;
+			//oh_em=NULL;
 			std::map<std::pair<int, int>, int> chmap;
 			std::cout<<"Trying to interface with these fun containers"<<std::endl;
 			std::pair<int, int> te {0,1};
@@ -214,5 +231,8 @@ class CaloTransverseEnergy:public SubsysReco
 		int run_number=1, DST_Segment=0;
 		bool isPRDF=false, sim=false, truth=false;
 };
+//Creates a huge list of plots procedurally, allowing for me to be properly lazy 
+//need to test implementation and check in rcalo values as of 4-12-2023
+//Have to check on the eta shift with Joey
 		
 #endif
