@@ -10,11 +10,11 @@ source /opt/sphenix/core/bin/setup_local.sh $MYINSTALL
 exe=${1}
 input=${2}
 output=${3}
-evt_per_job=${4}
+events=${4}
 skip=${5}
 
 # print the environment - needed for debugging
 printenv
 
 mkdir -p output
-$exe $input $output $evt_per_job $skip
+$exe $input $output $events $skip
