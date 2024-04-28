@@ -17,7 +17,6 @@ create.add_argument('-p', '--prdf-dir', type=str, default='/direct/sphenix+lustr
 create.add_argument('-o', '--output-dir', type=str, default='files', help='Directory to store the file lists. Default: files')
 
 run.add_argument('-i', '--input-file', type=str, help='PRDF file to analyze', required=True)
-run.add_argument('-n', '--nevents', type=int, help='Total number of events to process', required=True)
 run.add_argument('-j', '--events-per-job', type=int, default=100, help='Total number of events per job to process. Default: 100')
 run.add_argument('-m', '--macro', type=str, default='macro/Fun4All_LEDTowerBuilder.C', help='LEDTowerBuilder macro. Default: macro/Fun4All_LEDTowerBuilder.C')
 run.add_argument('-e', '--script', type=str, default='genLEDAna.sh', help='Job script to execute. Default: genLEDAna.sh')
@@ -56,15 +55,20 @@ def run_analysis():
     macro          = os.path.realpath(args.macro)
     script         = os.path.realpath(args.script)
     executable     = os.path.realpath(args.executable)
-    output_dir         = os.path.realpath(args.output)
-    nevents        = args.nevents
+    output_dir     = os.path.realpath(args.output)
     events_per_job = args.events_per_job
     memory         = args.memory
     log            = args.log
 
+    start  = int(subprocess.run(f'dlist -i -f {input_file}'.split(),capture_output=True).stdout.split(b' ')[3])
+    end    = int(subprocess.run(f'lastEvent {input_file}'.split(),capture_output=True).stdout.split(b' ')[3])
+    events = end-start+1
+    jobs   = events // events_per_job if (events % events_per_job == 0) else events // events_per_job + 1
+
     print(f'input: {input_file}')
-    print(f'nevents: {nevents}')
     print(f'Events per job: {events_per_job}')
+    print(f'events: {events}')
+    print(f'jobs: {jobs}')
     print(f'macro: {macro}')
     print(f'script: {script}')
     print(f'executable: {executable}')
@@ -80,16 +84,13 @@ def run_analysis():
     os.makedirs(f'{output_dir}/error',exist_ok=True)
     os.makedirs(f'{output_dir}/output',exist_ok=True)
 
-    jobs = nevents // events_per_job if (nevents % events_per_job == 0) else nevents // events_per_job + 1
-    skip = 0
-    with open(f'{output_dir}/jobs.list', mode='w') as file:
+    with open(f'{output_dir}/jobs.list',mode='w') as file:
         for i in range(jobs):
-            file.write(f'{skip}\n')
-            skip += events_per_job
+            file.write(f'{i*events_per_job}\n')
 
     with open(f'{output_dir}/genFun4All.sub', mode="w") as file:
         file.write(f'executable     = {os.path.basename(script)}\n')
-        file.write(f'arguments      = {os.path.basename(executable)} {input_file} output/test-$(Process).root {events_per_job} $(skip)\n')
+        file.write(f'arguments      = {output_dir}/{os.path.basename(executable)} {input_file} output/test-$(Process).root {events_per_job} $(skip)\n')
         file.write(f'log            = {log}\n')
         file.write('output          = stdout/job-$(Process).out\n')
         file.write('error           = error/job-$(Process).err\n')
