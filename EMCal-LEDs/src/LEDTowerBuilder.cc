@@ -21,7 +21,6 @@ LEDTowerBuilder::LEDTowerBuilder(const std::string &name):
   tOut -> Branch("time",&m_time);
   tOut -> Branch("adc",&m_adc);
   tOut -> Branch("ped",&m_ped);
-  tOut -> Branch("waveforms",&m_waveforms);
   tOut -> Branch("chan",&m_chan);
 }
 
@@ -71,19 +70,19 @@ Int_t LEDTowerBuilder::process_event(PHCompositeNode *topNode) {
 
   // ensure that we are skipping the specified number of events first
   if(iEvent < skip) {
-    std::cout << "Skipping Event: " << iEvent << std::endl;
+    if(iEvent % 10000 == 0) std::cout << "Skipped: " << iEvent << ", " << iEvent*100./skip << " %" << std::endl;
     iEvent++;
     return Fun4AllReturnCodes::EVENT_OK;
   }
-
-  if((iEvent-skip)%20 == 0) std::cout << "Progress: " << iEvent-skip << std::endl;
-  iEvent++;
 
   Event *_event = findNode::getClass<Event>(topNode, "PRDF");
   if (_event == 0) {
     std::cout << "CaloUnpackPRDF::Process_Event - Event not found" << std::endl;
     return -1;
   }
+
+  std::cout << "Event: " << _event->getEvtSequence() << std::endl;
+
   // special event where we do not read out the calorimeters
   if ( _event->getEvtType() >= 8) {
     std::cout << "Event Type >= 8!!" << std::endl;
