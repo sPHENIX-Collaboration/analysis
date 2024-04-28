@@ -95,3 +95,8 @@ fd <pattern> /direct/sphenix+lustre01/sphnxpro/commissioning/emcal/calib | xargs
 #+begin_src bash
 eventcombiner -v -i -e <start-event> -n <nevents> -f -p <output.prdf> <input.prdf>
 #+end_src
+
+- Get the last event from the prdf:
+#+begin_src bash
+lastEvent -l <prdf>
+#+end_src
