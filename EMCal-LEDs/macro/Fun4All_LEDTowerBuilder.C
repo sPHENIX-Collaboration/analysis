@@ -44,7 +44,7 @@ Int_t main(Int_t argc, char* argv[]) {
     if(argc < 2 || argc > 5){
         cout << "usage: ./bin/Fun4All_LEDTowerBuilder fListname outputFile events skip" << endl;
         cout << "inputFile: Location of input prdf." << endl;
-        cout << "outputFile: output root file. Default = data/LEDTowerBuilder.root." << endl;
+        cout << "outputFile: output root file. Default = LEDTowerBuilder.root." << endl;
         cout << "events: Number of events to analyze. Default = 0 [all]." << endl;
         cout << "skip: Number of events to skip. Default = 0." << endl;
         return 1;
