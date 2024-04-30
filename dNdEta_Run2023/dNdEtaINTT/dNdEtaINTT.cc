@@ -133,7 +133,7 @@ int dNdEtaINTT::Init(PHCompositeNode *topNode)
     PHTFileServer::get().open(_outputFile, "RECREATE");
     outtree = new TTree("EventTree", "EventTree");
     outtree->Branch("event", &event_);
-    outtree->Branch("event_counter", &evt_sequence_);
+    // outtree->Branch("event_counter", &evt_sequence_);
     if (_get_centrality)
     {
         if (!IsData)
@@ -340,7 +340,7 @@ int dNdEtaINTT::process_event(PHCompositeNode *topNode)
 
     // event_ = InputFileListIndex * NEvtPerFile + eventNum;
     event_ = eventNum;
-    evt_sequence_ = (_get_centrality) ? eventheader->get_EvtSequence() : eventNum;
+    // evt_sequence_ = (_get_centrality) ? eventheader->get_EvtSequence() : eventNum;
     outtree->Fill();
     eventNum++;
 

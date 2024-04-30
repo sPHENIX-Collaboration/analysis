@@ -93,7 +93,8 @@ int Fun4All_G4_sPHENIX(                           //
             if (file == NULL)
             {
                 std::cout << "File: " << infile << " does not exist. Use the pre-generated file" << std::endl;
-                infile = "/sphenix/user/hjheng/sPHENIXRepo/macros/InttProduction/ProdDST-HotDead-ADC-Survey/intt-" + std::string(TString::Format("%08d", runnumber).Data()) + ".root";
+                // infile = "/sphenix/user/hjheng/sPHENIXRepo/macros/InttProduction/ProdDST-HotDead-BCO-ADC-Survey/intt-" + std::string(TString::Format("%08d", runnumber).Data()) + ".root";
+                infile = "/sphenix/user/hjheng/sPHENIXRepo/analysis/dNdEta_Run2023/production/ProdDST-HotDead-BCO-ADC-Survey/intt-"+ std::string(TString::Format("%08d", runnumber).Data()) + ".root";
             }
             else
             {
@@ -206,7 +207,7 @@ int Fun4All_G4_sPHENIX(                           //
         se->registerSubsystem(vtxing);
     }
 
-    if (rundata)
+    if (rundata && getCentralityData)
     {
         MinimumBiasClassifier *mb = new MinimumBiasClassifier();
         mb->Verbosity(0);

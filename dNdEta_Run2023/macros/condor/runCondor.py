@@ -17,7 +17,7 @@ if __name__ == '__main__':
     parser.add_option("-g", "--generator", dest="generator", default="HIJING", help="Generator type (HIJING, EPOS, AMPT)")
     parser.add_option("-n", "--eventPerJob", dest="eventPerJob", default=200, help="Number of events per job")
     parser.add_option("-j", "--nJob", dest="nJob", default=400, help="Number of jobs (queues)")
-    parser.add_option("-o", "--outputdir", dest="outputdir", default="HIJING_ana398_zvtx-20cm_dummyAlignParams", help="Output directory")
+    parser.add_option("-o", "--outputdir", dest="outputdir", default="HIJING_ana398_zvtx-20cm_dummyAlignParams", help="Output directory (full path required)")
     parser.add_option("-s", "--softwareversion", dest="softwareversion", default="new", help="Software version (new, ana.3xx)")
     parser.add_option("-c", "--submitcondor", dest="submitcondor", action="store_true", default=False, help="Submit condor jobs")
 
@@ -41,13 +41,18 @@ if __name__ == '__main__':
     if not dir_empty('./condorLog/'):
         os.system('rm ./condorLog/*')
     
-    condorFileName = "submitCondor_process{}.job".format('Data' if data else 'Sim{}'.format(generator))
+    submitfilelabel = ''
+    if data:
+        submitfilelabel = 'DataINTT' if runInttData else 'DataMBD'
+    else:
+        submitfilelabel = 'Sim{}'.format(generator)
+    condorFileName = "submitCondor_process{}.job".format(submitfilelabel)
     condorFile = open("{}".format(condorFileName), "w")
     condorFile.write("Universe           = vanilla\n")
     condorFile.write("initialDir         = {}\n".format(parentdir))
     condorFile.write("Executable         = $(initialDir)/production_INTT.sh\n".format(parentdir))
     condorFile.write("PeriodicHold       = (NumJobStarts>=1 && JobStatus == 1)\n")
-    condorFile.write("request_memory     = 4GB\n")
+    condorFile.write("request_memory     = 8GB\n")
     condorFile.write("Priority           = 20\n")
     condorFile.write("job_lease_duration = 3600\n")
     condorFile.write("runData            = {}\n".format(1 if data else 0))
@@ -58,6 +63,7 @@ if __name__ == '__main__':
     condorFile.write("nEvents            = {}\n".format(eventPerJob))
     condorFile.write("Myindex            = $(Process)\n")
     condorFile.write("Extension          = $INT(Myindex,%05d)\n")
+    condorFile.write("softwareversion    = {}\n".format(softwareversion))
     condorFile.write("filename           = {}/ntuple_$(Extension).root\n".format(outputdir))
     condorFile.write("Output             = $(initialDir)/condor/condorLog/process{}_$(Process).out\n".format('Data' if data else 'Sim{}'.format(generator)))
     condorFile.write("Error              = $(initialDir)/condor/condorLog/process{}_$(Process).err\n".format('Data' if data else 'Sim{}'.format(generator)))
