@@ -439,8 +439,8 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end) {
         D3_S[i] = sqrt(Q3_S_xx_avg[i]*Q3_S_yy_avg[i] - Q3_S_xy_avg[i]*Q3_S_xy_avg[i]);
         D3_N[i] = sqrt(Q3_N_xx_avg[i]*Q3_N_yy_avg[i] - Q3_N_xy_avg[i]*Q3_N_xy_avg[i]);
 
-        N3_S[i] = D3_S[i]*(Q3_S_xx_avg[i]+Q3_S_yy_avg[i]+3*D3_S[i]);
-        N3_N[i] = D3_N[i]*(Q3_N_xx_avg[i]+Q3_N_yy_avg[i]+3*D3_N[i]);
+        N3_S[i] = D3_S[i]*(Q3_S_xx_avg[i]+Q3_S_yy_avg[i]+2*D3_S[i]);
+        N3_N[i] = D3_N[i]*(Q3_N_xx_avg[i]+Q3_N_yy_avg[i]+2*D3_N[i]);
 
         // Compute matrix elements
         X3_S[i][0][0] = 1/sqrt(N3_S[i])*(Q3_S_yy_avg[i]+D3_S[i]);
