@@ -30,8 +30,13 @@ namespace myAnalysis {
     Int_t readCuts(const string &i_cuts);
     string parseFloat(Float_t value);
 
-    vector<string> cent_key = {"40-60","20-40","0-20"};
-    vector<string> pt_key   = {"2-2.5","2.5-3","3-3.5","3.5-4","4-4.5","4.5-5"};
+    vector<string> cent_key;
+    vector<string> cent_key1 = {"40-60","20-40","0-20"};
+    vector<string> cent_key2 = {"50-60", "40-50", "30-40","20-30","10-20","0-10"};
+
+    vector<string> pt_key;
+    vector<string> pt_key1 = {"2-2.5","2.5-3","3-3.5","3.5-4","4-4.5","4.5-5"};
+    vector<string> pt_key2 = {"2-5"};
 }
 
 Int_t myAnalysis::readCuts(const string &i_cuts) {
@@ -87,19 +92,24 @@ string myAnalysis::parseFloat(Float_t value) {
 
 void convert(const string &i_input,
              const string &i_cuts,
-             const string &i_outputDir = ".") {
+             const string &i_outputDir = ".",
+                   Int_t   anaType     = 0) {
 
     cout << "#############################" << endl;
     cout << "Run Parameters" << endl;
-    cout << "inputFile: "  << i_input << endl;
-    cout << "Cuts: "       << i_cuts << endl;
+    cout << "inputFile: "        << i_input << endl;
+    cout << "Cuts: "             << i_cuts << endl;
     cout << "output directory: " << i_outputDir << endl;
+    cout << "anaType:"           << anaType << endl;
     cout << "#############################" << endl;
 
     Int_t ret = myAnalysis::readCuts(i_cuts);
     if(ret != 0) return;
 
     TFile input(i_input.c_str());
+
+    myAnalysis::cent_key = (anaType == 0) ? myAnalysis::cent_key1 : myAnalysis::cent_key2;
+    myAnalysis::pt_key   = (anaType == 0) ? myAnalysis::pt_key1   : myAnalysis::pt_key2;
 
     stringstream s;
     TH1F* h;
@@ -139,21 +149,26 @@ void convert(const string &i_input,
 
 # ifndef __CINT__
 Int_t main(Int_t argc, char* argv[]) {
-if(argc < 3 || argc > 4){
-        cout << "usage: ./convert inputFile cuts [outputDir]" << endl;
+if(argc < 3 || argc > 5){
+        cout << "usage: ./convert inputFile cuts [outputDir] [anaType]" << endl;
         cout << "inputFile: input root file" << endl;
         cout << "cuts: csv file containing cuts" << endl;
         cout << "outputDir: location of output directory. Default: current directory." << endl;
+        cout << "anaType: analysis type. Default: 0." << endl;
         return 1;
     }
 
     string outputDir = ".";
+    Int_t  anaType   = 0;
 
     if(argc >= 4) {
         outputDir = argv[3];
     }
+    if(argc >= 5) {
+        anaType = atoi(argv[4]);
+    }
 
-    convert(argv[1], argv[2], outputDir);
+    convert(argv[1], argv[2], outputDir, anaType);
 
     cout << "======================================" << endl;
     cout << "done" << endl;
