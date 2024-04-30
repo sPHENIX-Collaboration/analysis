@@ -30,8 +30,8 @@ namespace myAnalysis {
     Int_t readCuts(const string &i_cuts);
     string parseFloat(Float_t value);
 
-    vector<string> centrality = {"40-60","20-40","0-20"};
-    vector<string> pt         = {"2-2.5","2.5-3","3-3.5","3.5-4","4-4.5","4.5-5"};
+    vector<string> cent_key = {"40-60","20-40","0-20"};
+    vector<string> pt_key   = {"2-2.5","2.5-3","3-3.5","3.5-4","4-4.5","4.5-5"};
 }
 
 Int_t myAnalysis::readCuts(const string &i_cuts) {
@@ -115,8 +115,8 @@ void convert(const string &i_input,
 
         TFile output(outfname.c_str(),"recreate");
         output.cd();
-        for(auto cent : myAnalysis::centrality) {
-            for(auto pt : myAnalysis::pt) {
+        for(auto cent : myAnalysis::cent_key) {
+            for(auto pt : myAnalysis::pt_key) {
                 s.str("");
                 s << "results/" << cent << "/" << pt << "/"
                   << "hPi0Mass_" << cent << "_" << pt << "_"
