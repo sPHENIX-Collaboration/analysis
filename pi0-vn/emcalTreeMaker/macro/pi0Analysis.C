@@ -50,14 +50,21 @@ namespace myAnalysis {
     void process_event(Float_t z_max = 10, Long64_t start = 0, Long64_t end = 0, Float_t sigmaMult = 2);
     void finalize(const string &i_output = "test.root");
 
-    vector<string> cent_key = {"40-60", "20-40", "0-20"};
-    vector<string> pt_key   = {"2-2.5", "2.5-3", "3-3.5", "3.5-4", "4-4.5", "4.5-5"};
+    Int_t anaType;
 
-    TH1F* pt_dum_vec   = new TH1F("pt_dum_vec","",6,2,5);
-    TH1F* cent_dum_vec = new TH1F("cent_dum_vec","", 3, 0, 0.6);
+    vector<string> cent_key;
+    vector<string> cent_key1 = {"40-60", "20-40", "0-20"};
+    vector<string> cent_key2 = {"50-60", "40-50", "30-40","20-30","10-20","0-10"};
+
+    vector<string> pt_key;
+    vector<string> pt_key1   = {"2-2.5", "2.5-3", "3-3.5", "3.5-4", "4-4.5", "4.5-5"};
+    vector<string> pt_key2   = {"2-5"};
+
+    TH1F* pt_dum_vec;
+    TH1F* cent_dum_vec;
 
     // keep track of low and high pi0 mass values to filter on for the computation of the v2
-    vector<pair<Float_t,Float_t>> pi0_mass_mu_sigma(cent_key.size()*pt_key.size()); // (mu, sigma)
+    vector<pair<Float_t,Float_t>> pi0_mass_mu_sigma; // (mu, sigma)
 
     map<pair<string,string>, vector<TH1F*>> hPi0Mass; // hPi0Mass[make_pair(cent,pt)][i], for accessing diphoton invariant mass hist of i-th cut of cent,pt
 
@@ -126,28 +133,54 @@ namespace myAnalysis {
 
     // First Order Correction
     // v2
-    Float_t Q2_S_x_avg[3] = {0};
-    Float_t Q2_S_y_avg[3] = {0};
-    Float_t Q2_N_x_avg[3] = {0};
-    Float_t Q2_N_y_avg[3] = {0};
+    vector<Float_t> Q2_S_x_avg;
+    vector<Float_t> Q2_S_y_avg;
+    vector<Float_t> Q2_N_x_avg;
+    vector<Float_t> Q2_N_y_avg;
     // v3
-    Float_t Q3_S_x_avg[3] = {0};
-    Float_t Q3_S_y_avg[3] = {0};
-    Float_t Q3_N_x_avg[3] = {0};
-    Float_t Q3_N_y_avg[3] = {0};
+    vector<Float_t> Q3_S_x_avg;
+    vector<Float_t> Q3_S_y_avg;
+    vector<Float_t> Q3_N_x_avg;
+    vector<Float_t> Q3_N_y_avg;
 
     // Second Order Correction
     // v2
-    Float_t X2_S[3][2][2] = {0}; // [cent][row][col], off diagonal entries are the same
-    Float_t X2_N[3][2][2] = {0}; // [cent][row][col], off diagonal entries are the same
+    vector<vector<vector<Float_t>>> X2_S; // [cent][row][col], off diagonal entries are the same
+    vector<vector<vector<Float_t>>> X2_N; // [cent][row][col], off diagonal entries are the same
     // v3
-    Float_t X3_S[3][2][2] = {0}; // [cent][row][col], off diagonal entries are the same
-    Float_t X3_N[3][2][2] = {0}; // [cent][row][col], off diagonal entries are the same
+    vector<vector<vector<Float_t>>> X3_S; // [cent][row][col], off diagonal entries are the same
+    vector<vector<vector<Float_t>>> X3_N; // [cent][row][col], off diagonal entries are the same
 }
 
 Int_t myAnalysis::init(const string &i_input, const string &i_cuts, const string& fitStats, const string& QVecCorr, Long64_t start, Long64_t end) {
     T = new TChain("T");
     T->Add(i_input.c_str());
+
+    cent_key = (anaType == 0) ? cent_key1 : cent_key2;
+    pt_key   = (anaType == 0) ? pt_key1   : pt_key2;
+
+    cent_dum_vec = new TH1F("cent_dum_vec","", cent_key.size(), 0, 0.6);
+    pt_dum_vec   = new TH1F("pt_dum_vec","", pt_key.size(), 2, 5);
+
+    pi0_mass_mu_sigma.resize(cent_key.size()*pt_key.size()); // (mu, sigma)
+
+    // v2
+    Q2_S_x_avg.resize(cent_key.size());
+    Q2_S_y_avg.resize(cent_key.size());
+    Q2_N_x_avg.resize(cent_key.size());
+    Q2_N_y_avg.resize(cent_key.size());
+
+    X2_S.resize(cent_key.size(), vector<vector<Float_t>>(2, vector<Float_t>(2)));
+    X2_N.resize(cent_key.size(), vector<vector<Float_t>>(2, vector<Float_t>(2)));
+
+    // v3
+    Q3_S_x_avg.resize(cent_key.size());
+    Q3_S_y_avg.resize(cent_key.size());
+    Q3_N_x_avg.resize(cent_key.size());
+    Q3_N_y_avg.resize(cent_key.size());
+
+    X3_S.resize(cent_key.size(), vector<vector<Float_t>>(2, vector<Float_t>(2)));
+    X3_N.resize(cent_key.size(), vector<vector<Float_t>>(2, vector<Float_t>(2)));
 
     Int_t ret;
     // ret = readFiles(i_input, start, end);
@@ -650,7 +683,7 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end, Floa
         Int_t cent_idx = cent_dum_vec->FindBin(cent)-1;
 
         // check if centrality is found in one of the specified bins
-        if(cent_idx < 0 || cent_idx >= 3) continue;
+        if(cent_idx < 0 || cent_idx >= cent_key.size()) continue;
 
         // need to reverse this index since we want to match cent_key
         cent_idx = cent_key.size() - cent_idx - 1;
@@ -725,7 +758,7 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end, Floa
 
             hDiphotonPt[cent_key[cent_idx]]->Fill(pi0_pt_val);
             // check if pt is found in one of the specified bins
-            if(pt_idx < 0 || pt_idx >= 6) continue;
+            if(pt_idx < 0 || pt_idx >= pt_key.size()) continue;
 
             pair<string,string> key = make_pair(cent_key[cent_idx], pt_key[pt_idx]);
 
@@ -1034,6 +1067,7 @@ void pi0Analysis(const string &i_input,
                  const string &i_cuts,
                  Float_t       z           = 10, /*cm*/
                  const string &i_output    = "test.root",
+                 Int_t         anaType     = 0,
                  Bool_t        do_vn_calc  = false,
                  const string &fitStats    = "",
                  const string &QVecCorr    = "",
@@ -1049,6 +1083,7 @@ void pi0Analysis(const string &i_input,
     cout << "Cuts: "        << i_cuts << endl;
     cout << "z: "           << z << endl;
     cout << "outputFile: "  << i_output << endl;
+    cout << "anaType:"      << anaType << endl;
     cout << "do_vn_calc: "  << do_vn_calc << endl;
     cout << "fitStats: "    << fitStats << endl;
     cout << "QVecCorr: "    << QVecCorr << endl;
@@ -1060,8 +1095,9 @@ void pi0Analysis(const string &i_input,
     cout << "#############################" << endl;
 
     myAnalysis::do_vn_calc = do_vn_calc;
-    myAnalysis::cut_num = cut_num;
+    myAnalysis::cut_num    = cut_num;
     myAnalysis::subsamples = subsamples;
+    myAnalysis::anaType    = anaType;
 
     Int_t ret = myAnalysis::init(i_input, i_cuts, fitStats, QVecCorr, start, end);
     if(ret != 0) return;
@@ -1072,8 +1108,8 @@ void pi0Analysis(const string &i_input,
 
 # ifndef __CINT__
 Int_t main(Int_t argc, char* argv[]) {
-if(argc < 3 || argc > 13){
-        cout << "usage: ./pi0Ana inputFile cuts [z] [outputFile] [do_vn_calc] [fitStats] [QVecCorr] [subsamples] [cut_num] [sigmaMult] [start] [end] " << endl;
+if(argc < 3 || argc > 14){
+        cout << "usage: ./pi0Ana inputFile cuts [z] [outputFile] [anaType] [do_vn_calc] [fitStats] [QVecCorr] [subsamples] [cut_num] [sigmaMult] [start] [end] " << endl;
         cout << "inputFile: containing list of root file paths" << endl;
         cout << "cuts: csv file containing cuts" << endl;
         cout << "z: z-vertex cut. Default: 10 cm. Range: 0 to 30 cm." << endl;
@@ -1084,6 +1120,7 @@ if(argc < 3 || argc > 13){
         cout << "subsamples: number of subsamples for the vn analysis. Default: 1." << endl;
         cout << "cut_num: the specific diphoton cut to use for the vn analysis. Default: 0." << endl;
         cout << "sigmaMult: Sigma multiplier for the signal window. Default: 2." << endl;
+        cout << "anaType: analysis type. Default: 0." << endl;
         cout << "start: start event number. Default: 0." << endl;
         cout << "end: end event number. Default: 0. (to run over all entries)." << endl;
         return 1;
@@ -1091,6 +1128,7 @@ if(argc < 3 || argc > 13){
 
     Float_t  z           = 10;
     string   outputFile  = "test.root";
+    Int_t    anaType     = 0;
     Bool_t   do_vn_calc  = false;
     string   fitStats    = "";
     string   QVecCorr    = "";
@@ -1107,28 +1145,31 @@ if(argc < 3 || argc > 13){
         outputFile = argv[4];
     }
     if(argc >= 6) {
-        do_vn_calc = atoi(argv[5]);
+        anaType = atoi(argv[5]);
     }
     if(argc >= 7) {
-        fitStats = argv[6];
+        do_vn_calc = atoi(argv[6]);
     }
     if(argc >= 8) {
-        QVecCorr = argv[7];
+        fitStats = argv[7];
     }
     if(argc >= 9) {
-        subsamples = atoi(argv[8]);
+        QVecCorr = argv[8];
     }
     if(argc >= 10) {
-        cut_num = atoi(argv[9]);
+        subsamples = atoi(argv[9]);
     }
     if(argc >= 11) {
-        sigmaMult = atof(argv[10]);
+        cut_num = atoi(argv[10]);
     }
     if(argc >= 12) {
-        start = atol(argv[11]);
+        sigmaMult = atof(argv[11]);
     }
     if(argc >= 13) {
-        end = atol(argv[12]);
+        start = atol(argv[12]);
+    }
+    if(argc >= 14) {
+        end = atol(argv[13]);
     }
 
     // ensure that 0 <= start <= end
@@ -1137,7 +1178,7 @@ if(argc < 3 || argc > 13){
         return 1;
     }
 
-    pi0Analysis(argv[1], argv[2], z, outputFile, do_vn_calc, fitStats, QVecCorr, subsamples, cut_num, sigmaMult, start, end);
+    pi0Analysis(argv[1], argv[2], z, outputFile, anaType, do_vn_calc, fitStats, QVecCorr, subsamples, cut_num, sigmaMult, start, end);
 
     cout << "======================================" << endl;
     cout << "done" << endl;
