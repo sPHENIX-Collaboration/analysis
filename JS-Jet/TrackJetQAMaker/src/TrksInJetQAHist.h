@@ -1,35 +1,29 @@
 // ----------------------------------------------------------------------------
-// 'TrackJetQAMakerHistDef.h'
+// 'TrksInJetQAHist.h'
 // Derek Anderson
 // 03.25.2024
 //
 // Configurable parameters for histograms (like binning, etc.)
-// for the TrackJetQAMaker module.
+// for the TrksInJetQA module.
 // ----------------------------------------------------------------------------
 
-#ifndef TRACKJETQAMAKERHISTDEF_H
-#define TRACKJETQAMAKERHISTDEF_H
+#ifndef TRKSINJETSQAHIST_H
+#define TRKSINJETSQAHIST_H
 
 // c++ utilities
 #include <string>
 #include <utility>
+// module utilities
+#include "TrksInJetQATypes.h"
 
 
 
-// type definitions -----------------------------------------------------------
+// TrksInJetQAHist definition -------------------------------------------------
 
-typedef std::pair<float, float>                 BinRange;
-typedef std::pair<uint32_t, BinRange>           BinDef;
-typedef std::tuple<std::string, BinDef>         HistDef1D;
-typedef std::tuple<std::string, BinDef, BinDef> HistDef2D;
-
-
-
-// TrackJetQAMakerHistDef definition ------------------------------------------
-
-struct TrackJetQAMakerHistDef {
+struct TrksInJetQAHist {
 
   enum Var {
+    Num,
     Adc,
     ZBin,
     PhiBin,
@@ -47,6 +41,7 @@ struct TrackJetQAMakerHistDef {
   //   - FIXME the phi/z bin binning needs
   //     some more thought...
   //   - FIXME same with the ADC...
+  uint32_t nNumBins    = 101;
   uint32_t nAdcBins    = 101;
   uint32_t nZBinBins   = 101;
   uint32_t nPhiBinBins = 101;
@@ -60,6 +55,7 @@ struct TrackJetQAMakerHistDef {
   uint32_t nQualBins   = 22;
 
   // bin ranges
+  BinRange rNumBins    = {-0.5, (float) nNumBins + 0.5};
   BinRange rAdcBins    = {-0.5, (float) nAdcBins + 0.5};
   BinRange rZBinBins   = {-0.5, (float) nZBinBins + 0.5};
   BinRange rPhiBinBins = {-0.5, (float) nPhiBinBins + 0.5};
@@ -76,6 +72,7 @@ struct TrackJetQAMakerHistDef {
   std::vector<BinDef> GetVecHistBins() {
 
     std::vector<BinDef> vecHistBins = {
+      std::make_pair(nNumBins,    rNumBins),
       std::make_pair(nAdcBins,    rAdcBins),
       std::make_pair(nZBinBins,   rZBinBins),
       std::make_pair(nPhiBinBins, rPhiBinBins),
@@ -92,9 +89,8 @@ struct TrackJetQAMakerHistDef {
 
   }  // end 'GetVecHistBins()'
 
-};  // end TrackJetQAMakerHistDef
+};  // end TrksInJetQAHist
 
 #endif
 
 // end ------------------------------------------------------------------------
-

@@ -1,26 +1,33 @@
-# TrackJetQAMaker
+# TrksInJetQA
 
-A Fun4All module to generate QA plots for track jets and related objects. Reads
-in three DSTs (`DST_TRACKS`, `DST_TRKR_HIT`, and `DST_TRKR_CLUSTER`), reconstructs
-anti-kt jets from the tracks, and then generates QA histograms.
+A Fun4All package to generate QA plots for tracks in jets and related objects. Can be
+run as a plain `SubsysReco` module or as a QA module.
+
+The top-level macro included here illustrates both use cases.
 
 ## General Usage
 
-There are four categories of plots it can produce: tracker hits, tracker clusters,
-tracks, and tracks in jets. Each category is then split up into subsystems (MVTX,
-INTT, TPC).
+There are four categories of plots that can be produced -- tracker hits, tracker clusters,
+tracks, and jets -- both inclusively and inside of jets (track, calo, or otherwise).
 
-The actual routines used to fill each histogram are consolidated into four "sub-modules:"
+The most relevant user-configurable options (set in the `Configure` call) are:
 
-  1. `HitQAMaker,` which histograms low-level hit information;
-  2. `ClustQAMaker,` which histograms cluster information; and
-  3. `TrackQAMaker,` which histograms information on tracks (inclusive); and
-  4. `JetQAMaker,` which histograms information on jets and the tracks in them.
+```
+  .verbose     # verbosity
+  .doDebug     # turn on debugging comments
+  .doInclusive # make inclusive plots
+  .doInJet     # make in-jet plots
+  .doHitQA     # make tracker hit plots
+  .doClustQA   # make tracker cluster plots
+  .doTrackQA   # make track plots
+  .doJetQA     # make jet plots
+  .rJet        # resolution parameter of jets analyzed
+  .jetInNode   # DST node with jets to be analyzed
+```
 
-Each sub-module can be turned on or off by setting the options `.doHitQA`, `.doClustQA`,
-`.doTrackQA`, and `.doJetQA` to true/false respectively.
+Where additional configurable options can seen in `src/TracksInJetsQAMakerConfig.h`.
 
-The module is compiled in the usual way:
+Finally, code is compiled in the usual way:
 
 ```
 # in src/
@@ -30,13 +37,24 @@ make -j 4
 make install
 ```
 
-## Further Information
+## Code Structure
 
-Alongside the definitions of the top-level module and its sub-modules, there are a collection
-of helper objects used to streamline the code and centralize related information.
+The code is organized into 3 layers:
 
-  - `TrackJetQAMakerConfig.h:` defines the struct used to collect **all** user-configurable options.
-  - `TrackJetQAMakerHelper.h:` consolidates a variety of useful methods and information (e.g.
-    checks on whether or not a particular hit/cluster is in a given subsystem).
-  - `TrackJetQAMakerHistDef.h:` consoldiates the binning schemes used across all three sub-modules,
-    and defines some useful types for automating histogram creation.
+  1. **Histogram Managers:** the lowest level, which define what histograms are
+     going to be generated and how they're going to be filled for each category
+     (hit, cluster, track, jet).
+  2. **Histogram Fillers:** these call the histogram managers and define the
+     various loops for each mode (inclusive, in-jet).
+  3. **Top Level Modules:** finally, these call the histogram fillers and pass
+     along the generated histograms to the relevant places.
+
+All chunks of code that are common to the 4 managers and 2 fillers are
+consolidated into relevant base classes -- `BaseHistogramManager`, `BaseHistogramFiller`.
+
+Lastly, alongside the core pieces described above, there are a few additional headers with
+things to streamline the code and centralize related information.
+
+  - `TrksInJetQAHist.h:` consoldiates the binning schemes used across all three sub-modules,
+  - `TrksInJetQATypes.h:` defines a variety of commonly-used or clunky types,
+  - `TrksInJetQAConfig.h:` defines a struct used to collect **all** user-configurable options.
