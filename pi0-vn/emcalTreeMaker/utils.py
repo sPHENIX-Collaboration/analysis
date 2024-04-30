@@ -30,6 +30,7 @@ pi0Ana = subparser.add_parser('pi0Ana', help='Create condor submission directory
 
 pi0Ana.add_argument('-i', '--ntp-list', type=str, help='List of Ntuples', required=True)
 pi0Ana.add_argument('-c', '--cuts', type=str, help='List of cuts', required=True)
+pi0Ana.add_argument('-a', '--anaType', type=int, default=0, help='Analysis Type. Default: 0.')
 pi0Ana.add_argument('-p', '--do-vn-calc', type=int, default=0, help='Do vn analysis. Default: False')
 pi0Ana.add_argument('-c2', '--csv', type=str, default="", help='CSV file with fitStats. Default: ""')
 pi0Ana.add_argument('-c3', '--Q-vec-corr', type=str, default="", help='CSV file with Q vector corrections. Default: ""')
@@ -332,6 +333,7 @@ def create_pi0Ana_jobs():
     samples    = args.subsamples
     cut_num    = args.cut_num
     sigma      = args.sigma
+    anaType    = args.anaType
 
     print(f'Macro: {macro}')
     print(f'Run List: {ntp_list}')
@@ -348,6 +350,7 @@ def create_pi0Ana_jobs():
     print(f'Output Directory: {output_dir}')
     print(f'Requested memory per job: {memory}GB')
     print(f'Condor log file: {log}')
+    print(f'Analysis Type: {anaType}')
 
     os.makedirs(output_dir,exist_ok=True)
     shutil.copy(script, output_dir)
@@ -379,9 +382,9 @@ def create_pi0Ana_jobs():
             with open(f'{output_dir}/{run}/genPi0Ana.sub', mode="w") as file2:
                 file2.write(f'executable     = ../{os.path.basename(script)}\n')
                 if(do_vn_calc):
-                    file2.write(f'arguments      = {output_dir}/{os.path.basename(executable)} $(input_ntp) {cuts} {z} output/test-$(Process).root {do_vn_calc} {fitStats} {Q_vec_corr} {samples} {cut_num} {sigma}\n')
+                    file2.write(f'arguments      = {output_dir}/{os.path.basename(executable)} $(input_ntp) {cuts} {z} output/test-$(Process).root {anaType} {do_vn_calc} {fitStats} {Q_vec_corr} {samples} {cut_num} {sigma}\n')
                 else:
-                    file2.write(f'arguments      = {output_dir}/{os.path.basename(executable)} $(input_ntp) {cuts} {z} output/test-$(Process).root\n')
+                    file2.write(f'arguments      = {output_dir}/{os.path.basename(executable)} $(input_ntp) {cuts} {z} output/test-$(Process).root {anaType}\n')
                 file2.write(f'log            = {log}\n')
                 file2.write( 'output         = stdout/job-$(Process).out\n')
                 file2.write( 'error          = error/job-$(Process).err\n')
