@@ -77,7 +77,7 @@ Bool_t myAnalysis::init(const string &i_input, const string &fitStats) {
             hv2.push_back(new TH1F(name.c_str(), title.c_str(), bins_v2, v2_min, v2_max));
 
             title = "v_{2} " + suffix_title + "; v_{2}; Counts";
-            name = "v2_type_4"+to_string(idx);
+            name = "v2_type_4_"+to_string(idx);
 
             hv2_type_4.push_back(new TH1F(name.c_str(), title.c_str(), bins_v2, v2_min, v2_max));
 
@@ -475,7 +475,7 @@ void vnAnalysis(const string &i_input,
     cout << "fitStats: "    << fitStats << endl;
     cout << "outputCSV: "   << outputCSV << endl;
     cout << "outputFile: "  << outputFile << endl;
-    cout << "anaType:"      << anaType << endl;
+    cout << "anaType: "      << anaType << endl;
     cout << "Samples: "     << samples << endl;
     cout << "#############################" << endl;
 
