@@ -276,7 +276,8 @@ void myAnalysis::process_fits(const string &i_input,
 
                 s.str("");
                 s << "#splitline{Centrality: " << cent << "%}"
-                  << "{#splitline{" << 2+fmod(index,6)*0.5 << " #leq Diphoton p_{T} < " << 2.5+fmod(index,6)*0.5 << " GeV" << "}"
+                  // << "{#splitline{" << 2+fmod(index,6)*0.5 << " #leq Diphoton p_{T} < " << 2.5+fmod(index,6)*0.5 << " GeV" << "}"
+                  << "{#splitline{Diphoton p_{T}: " << pt << " GeV" << "}"
                   << "{Entries: " << entries << " }"
                   << "}";
 
