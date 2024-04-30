@@ -38,8 +38,13 @@ namespace myAnalysis {
 
     Int_t readFitStats(const string &fitStats);
 
-    vector<string> cent_key = {"40-60", "20-40", "0-20"};
-    vector<string> pt_key   = {"2-2.5", "2.5-3", "3-3.5", "3.5-4", "4-4.5", "4.5-5"};
+    vector<string> cent_key;
+    vector<string> cent_key1 = {"40-60", "20-40", "0-20"};
+    vector<string> cent_key2 = {"50-60", "40-50", "30-40","20-30","10-20","0-10"};
+
+    vector<string> pt_key;
+    vector<string> pt_key1   = {"2-2.5", "2.5-3", "3-3.5", "3.5-4", "4-4.5", "4.5-5"};
+    vector<string> pt_key2   = {"2-5"};
 
     vector<Float_t> SB;
 
@@ -461,6 +466,7 @@ void vnAnalysis(const string &i_input,
                 const string &fitStats,
                 const string &outputCSV  = "vn.csv",
                 const string &outputFile = "vn.root",
+                Int_t         anaType     = 0,
                 Int_t         samples    = 30) {
 
     cout << "#############################" << endl;
@@ -469,8 +475,12 @@ void vnAnalysis(const string &i_input,
     cout << "fitStats: "    << fitStats << endl;
     cout << "outputCSV: "   << outputCSV << endl;
     cout << "outputFile: "  << outputFile << endl;
+    cout << "anaType:"      << anaType << endl;
     cout << "Samples: "     << samples << endl;
     cout << "#############################" << endl;
+
+    myAnalysis::cent_key = (anaType == 0) ? myAnalysis::cent_key1 : myAnalysis::cent_key2;
+    myAnalysis::pt_key   = (anaType == 0) ? myAnalysis::pt_key1   : myAnalysis::pt_key2;
 
     if(myAnalysis::init(i_input, fitStats)) return;
 
@@ -480,18 +490,20 @@ void vnAnalysis(const string &i_input,
 
 # ifndef __CINT__
 Int_t main(Int_t argc, char* argv[]) {
-if(argc < 3 || argc > 6){
-        cout << "usage: ./vnAna inputFile fitStats [outputCSV] [outputFile] [samples]" << endl;
+if(argc < 3 || argc > 7){
+        cout << "usage: ./vnAna inputFile fitStats [outputCSV] [outputFile] [anaType] [samples]" << endl;
         cout << "inputFile: containing list of root file paths" << endl;
         cout << "fitStats: csv file containing fit stats" << endl;
-        cout << "samples: number of samples for the vn analysis. Default: 30." << endl;
         cout << "outputCSV: location of output CSV. Default: vn.csv." << endl;
         cout << "outputFile: location of output file. Default: vn.root." << endl;
+        cout << "anaType: analysis type. Default: 0." << endl;
+        cout << "samples: number of samples for the vn analysis. Default: 30." << endl;
         return 1;
     }
 
     string outputCSV   = "vn.csv";
     string outputFile  = "vn.root";
+    Int_t  anaType     = 0;
     Int_t  samples     = 30;
 
     if(argc >= 4) {
@@ -501,10 +513,13 @@ if(argc < 3 || argc > 6){
         outputFile = argv[4];
     }
     if(argc >= 6) {
-        samples = atoi(argv[5]);
+        anaType = atoi(argv[5]);
+    }
+    if(argc >= 7) {
+        samples = atoi(argv[6]);
     }
 
-    vnAnalysis(argv[1], argv[2], outputCSV, outputFile, samples);
+    vnAnalysis(argv[1], argv[2], outputCSV, outputFile, anaType, samples);
 
     cout << "======================================" << endl;
     cout << "done" << endl;
