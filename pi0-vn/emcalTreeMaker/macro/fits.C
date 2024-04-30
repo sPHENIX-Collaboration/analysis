@@ -47,8 +47,13 @@ namespace myAnalysis {
     Double_t CalculateSignalToBackgroundRatio(TH1F* hPi0Mass, TF1* polyFit, Double_t fitMean, Double_t fitSigma, Double_t &signalToBackgroundError);
     void process_fits(const string &i_input, const string &outputCSV, const string &outputDir, const string &tag);
 
-    vector<string> centrality = {"40-60","20-40","0-20"};
-    vector<string> pts         = {"2-2.5","2.5-3","3-3.5","3.5-4","4-4.5","4.5-5"};
+    vector<string> centrality;
+    vector<string> centrality1 = {"40-60","20-40","0-20"};
+    vector<string> centrality2 = {"50-60", "40-50", "30-40","20-30","10-20","0-10"};
+
+    vector<string> pts;
+    vector<string> pts1 = {"2-2.5","2.5-3","3-3.5","3.5-4","4-4.5","4.5-5"};
+    vector<string> pts2 = {"2-5"};
 
     Double_t fitStart = 0.1;
     Double_t fitEnd   = 0.35;
@@ -348,6 +353,7 @@ void fits(const string &i_input,
           const string &outputCSV = "fitStats.csv",
           const string &outputDir = ".",
           const string &tag = "test",
+                Int_t  anaType = 0,
           const Float_t sigmaMult = 2) {
 
     cout << "#############################" << endl;
@@ -357,6 +363,7 @@ void fits(const string &i_input,
     cout << "output csv: "       << outputCSV << endl;
     cout << "output directory: " << outputDir << endl;
     cout << "tag: "              << tag << endl;
+    cout << "anaType: "          << anaType << endl;
     cout << "sigmaMult: "        << sigmaMult << endl;
     cout << "#############################" << endl;
 
@@ -366,6 +373,11 @@ void fits(const string &i_input,
 
     // set sPHENIX plotting style
     SetsPhenixStyle();
+
+    myAnalysis::centrality = (anaType == 0) ? myAnalysis::centrality1 : myAnalysis::centrality2;
+    myAnalysis::pts        = (anaType == 0) ? myAnalysis::pts1        : myAnalysis::pts2;
+
+    if(anaType == 1) myAnalysis::meanEstimate = 0.18;
 
     myAnalysis::sigmaMult = sigmaMult;
     Int_t ret = myAnalysis::readCuts(i_cuts);
@@ -394,13 +406,14 @@ void fits(const string &i_input,
 
 # ifndef __CINT__
 Int_t main(Int_t argc, char* argv[]) {
-if(argc < 3 || argc > 7){
-        cout << "usage: ./fits inputFile cuts [fitStats] [outputDir] [tag] [sigmaMult]" << endl;
+if(argc < 3 || argc > 8){
+        cout << "usage: ./fits inputFile cuts [fitStats] [outputDir] [tag] [anaType] [sigmaMult]" << endl;
         cout << "inputFile: input root file" << endl;
         cout << "cuts: csv file containing cuts" << endl;
         cout << "fitStats: csv file containing fit Stats" << endl;
         cout << "outputDir: location of output directory. Default: current directory." << endl;
         cout << "tag: tag for the output folder. Default: test." << endl;
+        cout << "anaType: analysis type. Default: 0." << endl;
         cout << "sigmaMult: controls the signal bounds. Default: 2." << endl;
         return 1;
     }
@@ -408,6 +421,7 @@ if(argc < 3 || argc > 7){
     string fitStats  = "fitStats.csv";
     string outputDir = ".";
     string tag = "test";
+    Int_t  anaType    = 0;
     Float_t sigmaMult = 2;
 
     if(argc >= 4) {
@@ -420,10 +434,13 @@ if(argc < 3 || argc > 7){
         tag = argv[5];
     }
     if(argc >= 7) {
-        sigmaMult = atof(argv[6]);
+        anaType = atoi(argv[6]);
+    }
+    if(argc >= 8) {
+        sigmaMult = atof(argv[7]);
     }
 
-    fits(argv[1], argv[2], fitStats, outputDir, tag, sigmaMult);
+    fits(argv[1], argv[2], fitStats, outputDir, tag, anaType, sigmaMult);
 
     cout << "======================================" << endl;
     cout << "done" << endl;
