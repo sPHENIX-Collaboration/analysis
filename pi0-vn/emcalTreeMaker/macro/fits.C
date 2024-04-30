@@ -47,13 +47,13 @@ namespace myAnalysis {
     Double_t CalculateSignalToBackgroundRatio(TH1F* hPi0Mass, TF1* polyFit, Double_t fitMean, Double_t fitSigma, Double_t &signalToBackgroundError);
     void process_fits(const string &i_input, const string &outputCSV, const string &outputDir, const string &tag);
 
-    vector<string> centrality;
-    vector<string> centrality1 = {"40-60","20-40","0-20"};
-    vector<string> centrality2 = {"50-60", "40-50", "30-40","20-30","10-20","0-10"};
+    vector<string> cent_key;
+    vector<string> cent_key1 = {"40-60","20-40","0-20"};
+    vector<string> cent_key2 = {"50-60", "40-50", "30-40","20-30","10-20","0-10"};
 
-    vector<string> pts;
-    vector<string> pts1 = {"2-2.5","2.5-3","3-3.5","3.5-4","4-4.5","4.5-5"};
-    vector<string> pts2 = {"2-5"};
+    vector<string> pt_key;
+    vector<string> pt_key1 = {"2-2.5","2.5-3","3-3.5","3.5-4","4-4.5","4.5-5"};
+    vector<string> pt_key2 = {"2-5"};
 
     Double_t fitStart = 0.1;
     Double_t fitEnd   = 0.35;
@@ -212,8 +212,8 @@ void myAnalysis::process_fits(const string &i_input,
         u << t.str() << "/" << cut.e1 << "_" << cut.e2 << "_" << cut.asym << "_" << cut.deltaR_min << "_" << cut.deltaR_max << "_" << cut.chi;
         c1->Print((u.str() + ".pdf[").c_str(), "pdf portrait");
 
-        for(auto cent : centrality) {
-            for(auto pt : pts) {
+        for(auto cent : cent_key) {
+            for(auto pt : pt_key) {
                 s.str("");
                 s << "results/" << cent << "/" << pt << "/"
                     << "hPi0Mass_" << cent << "_" << pt << "_"
@@ -374,8 +374,8 @@ void fits(const string &i_input,
     // set sPHENIX plotting style
     SetsPhenixStyle();
 
-    myAnalysis::centrality = (anaType == 0) ? myAnalysis::centrality1 : myAnalysis::centrality2;
-    myAnalysis::pts        = (anaType == 0) ? myAnalysis::pts1        : myAnalysis::pts2;
+    myAnalysis::cent_key = (anaType == 0) ? myAnalysis::cent_key1 : myAnalysis::cent_key2;
+    myAnalysis::pt_key        = (anaType == 0) ? myAnalysis::pt_key1        : myAnalysis::pt_key2;
 
     if(anaType == 1) myAnalysis::meanEstimate = 0.18;
 
