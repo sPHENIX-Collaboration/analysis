@@ -51,36 +51,40 @@ namespace myAnalysis {
     void process_event(Float_t z_max = 10, Long64_t start = 0, Long64_t end = 0);
     void finalize(const string &i_output = "test.root", const string &i_output_csv = "test.csv");
 
-    vector<string> cent_key = {"40-60", "20-40", "0-20"};
+    Int_t anaType;
+    vector<string> cent_key;
+    vector<string> cent_key1 = {"40-60", "20-40", "0-20"};
+    vector<string> cent_key2 = {"50-60", "40-50", "30-40","20-30","10-20","0-10"};
 
-    TH1F* cent_dum_vec = new TH1F("cent_dum_vec","", 3, 0, 0.6);
+    // TH1F* cent_dum_vec = new TH1F("cent_dum_vec","", 3, 0, 0.6);
+    TH1F* cent_dum_vec;
 
-    TH1F* hPsi2_S[3][3]; // [cent][order of correction]
-    TH1F* hPsi2_N[3][3]; // [cent][order of correction]
-    TH1F* hPsi3_S[3][3]; // [cent][order of correction]
-    TH1F* hPsi3_N[3][3]; // [cent][order of correction]
+    vector<vector<TH1F*>> hPsi2_S; // [cent][order of correction]
+    vector<vector<TH1F*>> hPsi2_N; // [cent][order of correction]
+    vector<vector<TH1F*>> hPsi3_S; // [cent][order of correction]
+    vector<vector<TH1F*>> hPsi3_N; // [cent][order of correction]
 
     UInt_t bins_psi  = 100;
     Float_t low_psi  = -M_PI;
     Float_t high_psi = M_PI;
 
     // First Order Correction
-    Float_t Q2_S_x_avg[3] = {0};
-    Float_t Q2_S_y_avg[3] = {0};
-    Float_t Q2_N_x_avg[3] = {0};
-    Float_t Q2_N_y_avg[3] = {0};
+    vector<Float_t> Q2_S_x_avg;
+    vector<Float_t> Q2_S_y_avg;
+    vector<Float_t> Q2_N_x_avg;
+    vector<Float_t> Q2_N_y_avg;
 
-    Float_t Q3_S_x_avg[3] = {0};
-    Float_t Q3_S_y_avg[3] = {0};
-    Float_t Q3_N_x_avg[3] = {0};
-    Float_t Q3_N_y_avg[3] = {0};
+    vector<Float_t> Q3_S_x_avg;
+    vector<Float_t> Q3_S_y_avg;
+    vector<Float_t> Q3_N_x_avg;
+    vector<Float_t> Q3_N_y_avg;
 
     // Second Order Correction
-    Float_t X2_S[3][2][2] = {0}; // [cent][row][col]
-    Float_t X2_N[3][2][2] = {0}; // [cent][row][col]
+    vector<vector<vector<Float_t>>> X2_S; // [cent][row][col]
+    vector<vector<vector<Float_t>>> X2_N; // [cent][row][col]
 
-    Float_t X3_S[3][2][2] = {0}; // [cent][row][col]
-    Float_t X3_N[3][2][2] = {0}; // [cent][row][col]
+    vector<vector<vector<Float_t>>> X3_S; // [cent][row][col]
+    vector<vector<vector<Float_t>>> X3_N; // [cent][row][col]
 }
 
 void myAnalysis::init_hists() {
@@ -108,6 +112,35 @@ void myAnalysis::init_hists() {
 Int_t myAnalysis::init(const string &i_input, Long64_t start, Long64_t end) {
     Int_t ret = readFiles(i_input, start, end);
     if(ret != 0) return ret;
+
+    cent_key = (anaType == 0) ? cent_key1 : cent_key2;
+
+    cent_dum_vec = new TH1F("cent_dum_vec","", cent_key.size(), 0, 0.6);
+
+    X2_S.resize(cent_key.size(), vector<vector<Float_t>>(2, vector<Float_t>(2)));
+
+    hPsi2_S.resize(cent_key.size(), vector<TH1F*>(3)); // [cent][order of correction]
+    hPsi2_N.resize(cent_key.size(), vector<TH1F*>(3)); // [cent][order of correction]
+    hPsi3_S.resize(cent_key.size(), vector<TH1F*>(3)); // [cent][order of correction]
+    hPsi3_N.resize(cent_key.size(), vector<TH1F*>(3)); // [cent][order of correction]
+
+    // First Order Correction
+    Q2_S_x_avg.resize(cent_key.size());
+    Q2_S_y_avg.resize(cent_key.size());
+    Q2_N_x_avg.resize(cent_key.size());
+    Q2_N_y_avg.resize(cent_key.size());
+
+    Q3_S_x_avg.resize(cent_key.size());
+    Q3_S_y_avg.resize(cent_key.size());
+    Q3_N_x_avg.resize(cent_key.size());
+    Q3_N_y_avg.resize(cent_key.size());
+
+    // Second Order Correction
+    X2_S.resize(cent_key.size(), vector<vector<Float_t>>(2, vector<Float_t>(2))); // [cent][row][col]
+    X2_N.resize(cent_key.size(), vector<vector<Float_t>>(2, vector<Float_t>(2))); // [cent][row][col]
+
+    X3_S.resize(cent_key.size(), vector<vector<Float_t>>(2, vector<Float_t>(2))); // [cent][row][col]
+    X3_N.resize(cent_key.size(), vector<vector<Float_t>>(2, vector<Float_t>(2))); // [cent][row][col]
 
     init_hists();
 
@@ -182,53 +215,53 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end) {
     Float_t z;
 
     // event counter
-    UInt_t evt_ctr[3] = {0};
+    vector<UInt_t> evt_ctr(cent_key.size());
 
     // First Order Correction
-    Float_t Q2_S_x_corr[3] = {0};
-    Float_t Q2_S_y_corr[3] = {0};
-    Float_t Q2_N_x_corr[3] = {0};
-    Float_t Q2_N_y_corr[3] = {0};
+    vector<Float_t> Q2_S_x_corr(cent_key.size());
+    vector<Float_t> Q2_S_y_corr(cent_key.size());
+    vector<Float_t> Q2_N_x_corr(cent_key.size());
+    vector<Float_t> Q2_N_y_corr(cent_key.size());
 
-    Float_t Q3_S_x_corr[3] = {0};
-    Float_t Q3_S_y_corr[3] = {0};
-    Float_t Q3_N_x_corr[3] = {0};
-    Float_t Q3_N_y_corr[3] = {0};
+    vector<Float_t> Q3_S_x_corr(cent_key.size());
+    vector<Float_t> Q3_S_y_corr(cent_key.size());
+    vector<Float_t> Q3_N_x_corr(cent_key.size());
+    vector<Float_t> Q3_N_y_corr(cent_key.size());
 
     // Second Order Correction
-    Float_t Q2_S_xx_avg[3]  = {0};
-    Float_t Q2_S_yy_avg[3]  = {0};
-    Float_t Q2_S_xy_avg[3] = {0};
-    Float_t Q2_N_xx_avg[3]  = {0};
-    Float_t Q2_N_yy_avg[3]  = {0};
-    Float_t Q2_N_xy_avg[3] = {0};
+    vector<Float_t> Q2_S_xx_avg(cent_key.size());
+    vector<Float_t> Q2_S_yy_avg(cent_key.size());
+    vector<Float_t> Q2_S_xy_avg(cent_key.size());
+    vector<Float_t> Q2_N_xx_avg(cent_key.size());
+    vector<Float_t> Q2_N_yy_avg(cent_key.size());
+    vector<Float_t> Q2_N_xy_avg(cent_key.size());
 
-    Float_t Q2_S_x_corr2[3] = {0};
-    Float_t Q2_S_y_corr2[3] = {0};
-    Float_t Q2_N_x_corr2[3] = {0};
-    Float_t Q2_N_y_corr2[3] = {0};
+    vector<Float_t> Q2_S_x_corr2(cent_key.size());
+    vector<Float_t> Q2_S_y_corr2(cent_key.size());
+    vector<Float_t> Q2_N_x_corr2(cent_key.size());
+    vector<Float_t> Q2_N_y_corr2(cent_key.size());
 
-    Float_t D2_S[3] = {0};
-    Float_t D2_N[3] = {0};
-    Float_t N2_S[3] = {0};
-    Float_t N2_N[3] = {0};
+    vector<Float_t> D2_S(cent_key.size());
+    vector<Float_t> D2_N(cent_key.size());
+    vector<Float_t> N2_S(cent_key.size());
+    vector<Float_t> N2_N(cent_key.size());
 
-    Float_t Q3_S_xx_avg[3]  = {0};
-    Float_t Q3_S_yy_avg[3]  = {0};
-    Float_t Q3_S_xy_avg[3] = {0};
-    Float_t Q3_N_xx_avg[3]  = {0};
-    Float_t Q3_N_yy_avg[3]  = {0};
-    Float_t Q3_N_xy_avg[3] = {0};
+    vector<Float_t> Q3_S_xx_avg(cent_key.size());
+    vector<Float_t> Q3_S_yy_avg(cent_key.size());
+    vector<Float_t> Q3_S_xy_avg(cent_key.size());
+    vector<Float_t> Q3_N_xx_avg(cent_key.size());
+    vector<Float_t> Q3_N_yy_avg(cent_key.size());
+    vector<Float_t> Q3_N_xy_avg(cent_key.size());
 
-    Float_t Q3_S_x_corr2[3] = {0};
-    Float_t Q3_S_y_corr2[3] = {0};
-    Float_t Q3_N_x_corr2[3] = {0};
-    Float_t Q3_N_y_corr2[3] = {0};
+    vector<Float_t> Q3_S_x_corr2(cent_key.size());
+    vector<Float_t> Q3_S_y_corr2(cent_key.size());
+    vector<Float_t> Q3_N_x_corr2(cent_key.size());
+    vector<Float_t> Q3_N_y_corr2(cent_key.size());
 
-    Float_t D3_S[3] = {0};
-    Float_t D3_N[3] = {0};
-    Float_t N3_S[3] = {0};
-    Float_t N3_N[3] = {0};
+    vector<Float_t> D3_S(cent_key.size());
+    vector<Float_t> D3_N(cent_key.size());
+    vector<Float_t> N3_S(cent_key.size());
+    vector<Float_t> N3_N(cent_key.size());
 
     T->SetBranchAddress("Q2_S_x", &Q2_S_x);
     T->SetBranchAddress("Q2_S_y", &Q2_S_y);
@@ -257,7 +290,7 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end) {
         Int_t j = cent_dum_vec->FindBin(cent)-1;
 
         // check if centrality is found in one of the specified bins
-        if(j < 0 || j >= 3) continue;
+        if(j < 0 || j >= cent_key.size()) continue;
 
         Event event;
 
@@ -388,11 +421,11 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end) {
     cout << "Second Order Correction" << endl;
     // normalize to compute the averages
     for (Int_t i = 0; i < cent_key.size(); ++i) {
-        Q2_S_xx_avg[i]  /= evt_ctr[i];
-        Q2_S_yy_avg[i]  /= evt_ctr[i];
+        Q2_S_xx_avg[i] /= evt_ctr[i];
+        Q2_S_yy_avg[i] /= evt_ctr[i];
         Q2_S_xy_avg[i] /= evt_ctr[i];
-        Q2_N_xx_avg[i]  /= evt_ctr[i];
-        Q2_N_yy_avg[i]  /= evt_ctr[i];
+        Q2_N_xx_avg[i] /= evt_ctr[i];
+        Q2_N_yy_avg[i] /= evt_ctr[i];
         Q2_N_xy_avg[i] /= evt_ctr[i];
 
         D2_S[i] = sqrt(Q2_S_xx_avg[i]*Q2_S_yy_avg[i] - Q2_S_xy_avg[i]*Q2_S_xy_avg[i]);
@@ -429,11 +462,11 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end) {
              << ", X2_N_11: " << X2_N[i][1][1] << endl;
         cout << endl;
 
-        Q3_S_xx_avg[i]  /= evt_ctr[i];
-        Q3_S_yy_avg[i]  /= evt_ctr[i];
+        Q3_S_xx_avg[i] /= evt_ctr[i];
+        Q3_S_yy_avg[i] /= evt_ctr[i];
         Q3_S_xy_avg[i] /= evt_ctr[i];
-        Q3_N_xx_avg[i]  /= evt_ctr[i];
-        Q3_N_yy_avg[i]  /= evt_ctr[i];
+        Q3_N_xx_avg[i] /= evt_ctr[i];
+        Q3_N_yy_avg[i] /= evt_ctr[i];
         Q3_N_xy_avg[i] /= evt_ctr[i];
 
         D3_S[i] = sqrt(Q3_S_xx_avg[i]*Q3_S_yy_avg[i] - Q3_S_xy_avg[i]*Q3_S_xy_avg[i]);
@@ -627,6 +660,7 @@ void Q_vector_correction(const string &i_input,
                          Float_t z                  = 10,
                          const string &i_output     = "test.root",
                          const string &i_output_csv = "test.csv",
+                         Int_t         anaType      = 0,
                          Long64_t      start        = 0,
                          Long64_t      end          = 0) {
 
@@ -636,9 +670,12 @@ void Q_vector_correction(const string &i_input,
     cout << "z: "               << z << endl;
     cout << "outputFile: "      << i_output     << endl;
     cout << "output CSV File: " << i_output_csv << endl;
+    cout << "anaType: "         << anaType        << endl;
     cout << "start: "           << start        << endl;
     cout << "end: "             << end          << endl;
     cout << "#############################"     << endl;
+
+    myAnalysis::anaType = anaType;
 
     Int_t ret = myAnalysis::init(i_input, start, end);
     if(ret != 0) return;
@@ -649,12 +686,13 @@ void Q_vector_correction(const string &i_input,
 
 # ifndef __CINT__
 Int_t main(Int_t argc, char* argv[]) {
-if(argc < 2 || argc > 7){
-        cout << "usage: ./Q-vec-corr inputFile [z] [outputFile] [output_csv] [start] [end] " << endl;
+if(argc < 2 || argc > 8){
+        cout << "usage: ./Q-vec-corr inputFile [z] [outputFile] [output_csv] [anaType] [start] [end] " << endl;
         cout << "inputFile: containing list of root file paths" << endl;
         cout << "z: z-vertex cut. Default: 10 cm. Range: 0 to 30 cm." << endl;
         cout << "outputFile: location of output file. Default: test.root." << endl;
         cout << "outputCSV: location of output csv. Default: test.csv." << endl;
+        cout << "anaType: analysis type. Default: 0." << endl;
         cout << "start: start event number. Default: 0." << endl;
         cout << "end: end event number. Default: 0. (to run over all entries)." << endl;
         return 1;
@@ -663,6 +701,7 @@ if(argc < 2 || argc > 7){
     Float_t z         = 10;
     string outputFile = "test.root";
     string output_csv = "test.csv";
+    Int_t    anaType  = 0;
     Long64_t start    = 0;
     Long64_t end      = 0;
 
@@ -676,10 +715,13 @@ if(argc < 2 || argc > 7){
         output_csv = argv[4];
     }
     if(argc >= 6) {
-        start = atol(argv[5]);
+        anaType = atoi(argv[5]);
     }
     if(argc >= 7) {
-        end = atol(argv[6]);
+        start = atol(argv[6]);
+    }
+    if(argc >= 8) {
+        end = atol(argv[7]);
     }
 
     // ensure that 0 <= start <= end
@@ -688,7 +730,7 @@ if(argc < 2 || argc > 7){
         return 1;
     }
 
-    Q_vector_correction(argv[1], z, outputFile, output_csv, start, end);
+    Q_vector_correction(argv[1], z, outputFile, output_csv, anaType, start, end);
 
     cout << "======================================" << endl;
     cout << "done" << endl;
