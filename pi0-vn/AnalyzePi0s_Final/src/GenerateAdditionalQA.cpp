@@ -14,6 +14,7 @@
  --MBD Charge, centrality correlations
  --1D Centrality Distributions
  --z vertex distributions
+ --Normalized eta-phi 2D cluster energy distributions
  */
 void GenerateAdditionalQA() {
     gROOT->LoadMacro("sPhenixStyle.C");
@@ -216,6 +217,37 @@ void GenerateAdditionalQA() {
             std::string zVtx_OutFilePath = baseDir + category + "/Zvertex/Zvtx_Distribution_" + run + ".png";
             c_zvtx->SaveAs(zVtx_OutFilePath.c_str(), "PNG"); // Save the canvas to a file
             delete c_zvtx; // Cleanup
+        }
+        
+        TH2F* h2ClusterEtaPhiWeighted = static_cast<TH2F*>(file->Get("h2ClusterEtaPhiWeighted"));
+        TH1F* hNClusters = static_cast<TH1F*>(file->Get("hNClusters"));
+        // Validate histograms
+        if (!h2ClusterEtaPhiWeighted || !hNClusters) {
+            std::cerr << "Failed to get histogram for run " << run << '\n';
+            file->Close();
+            return;
+        }
+        // Compute normalization factor
+        int nEvents = hNClusters->GetEntries();
+        h2ClusterEtaPhiWeighted->Scale(1.0 / nEvents);
+        if (h2ClusterEtaPhiWeighted) {
+            TCanvas *c2D = new TCanvas("c2D", "Eta-Phi Cluster Energy Distributions", 800, 600);
+            h2ClusterEtaPhiWeighted->Draw("COLZ1");
+            gPad->SetRightMargin(0.22);
+            h2ClusterEtaPhiWeighted->SetStats(kFALSE);
+            h2ClusterEtaPhiWeighted->GetZaxis()->SetRangeUser(0, 0.01);  // Fixed Z-axis range for Cluster energy
+            h2ClusterEtaPhiWeighted->GetXaxis()->SetTitle("Cluster Id #eta");
+            h2ClusterEtaPhiWeighted->GetYaxis()->SetTitle("Cluster Id #phi");
+            h2ClusterEtaPhiWeighted->GetZaxis()->SetTitle("Cluster Energy/Event [GeV]");
+            h2ClusterEtaPhiWeighted->GetZaxis()->SetTitleOffset(1.3);
+            TLatex latex;
+            latex.SetNDC();
+            latex.SetTextSize(0.045);
+            latex.SetTextAlign(23);
+            latex.DrawLatex(0.28, 0.99, ("Run Number: " + run).c_str()); // Position the text at the top center of the canvas
+            std::string zVtx_OutFilePath = baseDir + category + "/ClusterEnergyDistributions/h2ClusterEtaPhiWeighted_2D_" + run + ".png";
+            c2D->SaveAs(zVtx_OutFilePath.c_str(), "PNG");
+            delete c2D;
         }
         
         delete c1;
