@@ -274,6 +274,8 @@ int main(int argc, char *argv[])
         }
     }
 
+    f->Close();
+
     TFile *fout = new TFile(outfilename, "RECREATE");
     fout->cd();
     hM_ClusX_all->Write();

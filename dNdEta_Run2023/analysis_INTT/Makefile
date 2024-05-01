@@ -1,7 +1,7 @@
 CFLAGS = -g3 -pthread -m64 -Wno-deprecated -I src/ 
 CFLAGS += $(shell root-config --cflags --libs)
 
-all : TrackletAna plotTrkrHit plotTracklets plotCluster BeamspotReco INTTVtxZ
+all : TrackletAna plotTrkrHit plotTracklets plotRecoVtx plotCluster BeamspotReco INTTVtxZ
 
 TrackletAna : src/TrackletAna.cxx src/Hit.h src/Tracklet.h
 	g++ ${CFLAGS} src/TrackletAna.cxx src/Hit.h src/Tracklet.h -o TrackletAna
@@ -11,6 +11,9 @@ plotTrkrHit : src/plotTrkrHit.cxx
 
 plotCluster : src/plotCluster.cxx
 	g++ $(CFLAGS) src/plotCluster.cxx src/Hit.h src/Tracklet.h src/GenHadron.h -o plotCluster
+
+plotRecoVtx : src/plotRecoVtx.cxx
+	g++ $(CFLAGS) src/plotRecoVtx.cxx -o plotRecoVtx
 
 plotTracklets : src/plotTracklets.cxx
 	g++ $(CFLAGS) src/plotTracklets.cxx src/Hit.h src/Tracklet.h src/GenHadron.h -o plotTracklets
@@ -22,4 +25,4 @@ BeamspotReco : src/BeamspotReco.cxx
 	g++ $(CFLAGS) src/BeamspotReco.cxx -I$(OFFLINE_MAIN)/include -o BeamspotReco
 
 clean : 
-	rm TrackletAna plotTrkrHit plotTracklets plotCluster BeamspotReco INTTVtxZ
+	rm TrackletAna plotTrkrHit plotTracklets plotRecoVtx plotCluster BeamspotReco INTTVtxZ
