@@ -222,9 +222,6 @@ void Fun4All_MakeTrksInJetQA(
   f4a -> run(nEvts);
   f4a -> End();
 
-  // TEST
-  std::cout << "TEST nhists in manager = " << QAHistManagerDef::getHistoManager() -> nHistos() << std::endl;
-
   // save qa output and exit
   QAHistManagerDef::saveQARootFile(outQAFile);
   delete f4a;

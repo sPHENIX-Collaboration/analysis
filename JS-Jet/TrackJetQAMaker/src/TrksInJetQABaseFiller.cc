@@ -36,27 +36,7 @@ TrksInJetQABaseFiller::TrksInJetQABaseFiller(
 
 TrksInJetQABaseFiller::~TrksInJetQABaseFiller() {
 
-  // remove dangling pointers
-  if (m_actsGeom) {
-    delete m_actsGeom;
-    m_actsGeom = NULL;
-  }
-  if (m_hitMap) {
-    delete m_hitMap;
-    m_hitMap = NULL;
-  }
-  if (m_clustMap) {
-    delete m_clustMap;
-    m_clustMap = NULL;
-  }
-  if (m_trkMap) {
-    delete m_trkMap;
-    m_trkMap = NULL;
-  }
-  if (m_jetMap) {
-    delete m_jetMap;
-    m_jetMap = NULL;
-  }
+  /* nothing to do */
 
 }  // end dtor
 

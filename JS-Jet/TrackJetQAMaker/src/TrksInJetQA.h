@@ -73,6 +73,7 @@ class TrksInJetQA : public SubsysReco {
     void RegisterHistograms();
 
     // io members
+    //   - FIXME raw pointers should be smart ones!
     TFile*               m_outFile     = NULL;
     std::string          m_outFileName = "tracksInJetsQA.root";
     Fun4AllHistoManager* m_manager     = NULL;

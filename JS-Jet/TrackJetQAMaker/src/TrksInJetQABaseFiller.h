@@ -60,6 +60,7 @@ class TrksInJetQABaseFiller {
     void GetNodes(PHCompositeNode* topNode);
 
     // necessary dst nodes
+    //   - FIXME these should be smart pointers!
     ActsGeometry*         m_actsGeom = NULL;
     TrkrHitSetContainer*  m_hitMap   = NULL;
     TrkrClusterContainer* m_clustMap = NULL;

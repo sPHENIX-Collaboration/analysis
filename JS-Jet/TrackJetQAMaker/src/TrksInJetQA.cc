@@ -32,14 +32,10 @@ TrksInJetQA::~TrksInJetQA() {
   }
 
   // clean up any dangling pointers
+  //   - FIXME use smart pointers instead!
   if (m_outFile) {
     delete m_outFile;
     m_outFile = NULL;
-  }
-
-  if (m_manager) {
-    delete m_manager;
-    m_manager = NULL;
   }
 
 }  // end dtor
