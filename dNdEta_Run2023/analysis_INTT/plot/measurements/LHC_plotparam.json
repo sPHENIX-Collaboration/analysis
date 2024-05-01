@@ -1,0 +1,72 @@
+{
+    "sphenix_auau_200gev":{
+        "markerstyle": 20,
+        "markercolor": "#1A1423",
+        "markersize": 1,
+        "linewidth": 0,
+        "alpha": 0.5,
+        "DrawOption": ["p RX same",""],
+        "Legendtext": "sPHENIX AuAu 200 GeV",
+        "Legendstyle": "pf"
+    },
+    "cms_pbpb_2p76":{
+        "markerstyle": 21,
+        "markercolor": "#035397",
+        "markersize": 1,
+        "linewidth": 0,
+        "alpha": 0.6,
+        "DrawOption": ["3 same","pX same"],
+        "Legendtext": "CMS PbPb 2.76 TeV",
+        "Legendstyle": "pf"
+    },
+    "atlas_pbpb_2p76":{
+        "markerstyle": 22,
+        "markercolor": "#1C82AD",
+        "markersize": 1,
+        "linewidth": 0,
+        "alpha": 0.6,
+        "DrawOption": ["3 RX same","pX RX same"],
+        "Legendtext": "ATLAS PbPb 2.76 TeV",
+        "Legendstyle": "pf"
+    },
+    "alice_pbpb_2p76":{
+        "markerstyle": 23,
+        "markercolor": "#62B6B7",
+        "markersize": 1,
+        "linewidth": 0,
+        "alpha": 0.6,
+        "DrawOption": ["3 same", "pX same"],
+        "Legendtext": "ALICE PbPb 2.76 TeV",
+        "Legendstyle": "pf"
+    },
+    "alice_pbpb_5p02":{
+        "markerstyle": 24,
+        "markercolor": "#205E61",
+        "markersize": 1,
+        "linewidth": 0,
+        "alpha": 0.6,
+        "DrawOption": ["3 same", "pX same"],
+        "Legendtext": "ALICE PbPb 5.02 TeV",
+        "Legendstyle": "pf"
+    },
+    "cms_xexe_5p44":{
+        "markerstyle": 25,
+        "markercolor": "#850E35",
+        "markersize": 1,
+        "linewidth": 0,
+        "alpha": 0.6,
+        "DrawOption": ["3 RX same", "pX RX same"],
+        "Legendtext": "CMS XeXe 5.44 TeV",
+        "Legendstyle": "pf"
+    },
+    "alice_xexe_5p44":{
+        "markerstyle": 26,
+        "markercolor": "#EE6983",
+        "markersize": 1,
+        "linewidth": 0,
+        "alpha": 0.6,
+        "DrawOption": ["3 same", "pX same"],
+        "Legendtext": "ALICE XeXe 5.44 TeV",
+        "Legendstyle": "pf"
+    }
+}

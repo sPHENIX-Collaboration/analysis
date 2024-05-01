@@ -167,11 +167,11 @@ void SetMinitree(TTree *outTree, TrackletData &tkldata)
     outTree->Branch("tklclus2PhiSize", &tkldata.tklclus2phisize);
     outTree->Branch("tklclus1ADC", &tkldata.tklclus1adc);
     outTree->Branch("tklclus2ADC", &tkldata.tklclus2adc);
-    outTree->Branch("prototkl_eta", &tkldata.prototkl_eta);
-    outTree->Branch("prototkl_phi", &tkldata.prototkl_phi);
-    outTree->Branch("prototkl_deta", &tkldata.prototkl_deta);
-    outTree->Branch("prototkl_dphi", &tkldata.prototkl_dphi);
-    outTree->Branch("prototkl_dR", &tkldata.prototkl_dR);
+    // outTree->Branch("prototkl_eta", &tkldata.prototkl_eta);
+    // outTree->Branch("prototkl_phi", &tkldata.prototkl_phi);
+    // outTree->Branch("prototkl_deta", &tkldata.prototkl_deta);
+    // outTree->Branch("prototkl_dphi", &tkldata.prototkl_dphi);
+    // outTree->Branch("prototkl_dR", &tkldata.prototkl_dR);
     outTree->Branch("recotklraw_eta", &tkldata.recotklraw_eta);
     outTree->Branch("recotklraw_phi", &tkldata.recotklraw_phi);
     outTree->Branch("recotklraw_deta", &tkldata.recotklraw_deta);

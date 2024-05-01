@@ -43,15 +43,15 @@ void makehist(TString infname, TString outfname)
     TH2F *hM_tklclus1phi_tklclus1phisize = new TH2F("hM_tklclus1phi_tklclus1phisize", "hM_tklclus1phi_tklclus1phisize", 140, -3.5, 3.5, 80, 0, 80);
     TH2F *hM_tklclus2phi_tklclus2phisize = new TH2F("hM_tklclus2phi_tklclus2phisize", "hM_tklclus2phi_tklclus2phisize", 140, -3.5, 3.5, 80, 0, 80);
 
-    TH1F *hM_dEta_proto = new TH1F("hM_dEta_proto", "hM_dEta_proto", 200, -5, 5);
-    TH1F *hM_dPhi_proto = new TH1F("hM_dPhi_proto", "hM_dPhi_proto", 100, -0.5, 0.5);
-    TH1F *hM_dPhi_proto_altrange = new TH1F("hM_dPhi_proto_altrange", "hM_dPhi_proto_altrange", 100, -0.05, 0.05);
-    TH1F *hM_dR_proto = new TH1F("hM_dR_proto", "hM_dR_proto", 100, 0, 0.5);
-    TH1F *hM_dR_proto_altrange = new TH1F("hM_dR_proto_altrange", "hM_dR_proto_altrange", 50, 0, 0.05);
-    TH1F *hM_dR_proto_LogX = new TH1F("hM_dR_proto_LogX", "hM_dR_proto_LogX", NBins, edges);
-    TH1F *hM_Eta_proto = new TH1F("hM_Eta_proto", "hM_Eta_proto", 160, -4, 4);
-    TH1F *hM_Phi_proto = new TH1F("hM_Phi_proto", "hM_Phi_proto", 140, -3.5, 3.5);
-    TH2F *hM_Eta_vtxZ_proto_incl = new TH2F("hM_Eta_vtxZ_proto_incl", "hM_Eta_vtxZ_proto_incl", 280, -3.5, 3.5, 300, -50, 10);
+    // TH1F *hM_dEta_proto = new TH1F("hM_dEta_proto", "hM_dEta_proto", 200, -5, 5);
+    // TH1F *hM_dPhi_proto = new TH1F("hM_dPhi_proto", "hM_dPhi_proto", 100, -0.5, 0.5);
+    // TH1F *hM_dPhi_proto_altrange = new TH1F("hM_dPhi_proto_altrange", "hM_dPhi_proto_altrange", 100, -0.05, 0.05);
+    // TH1F *hM_dR_proto = new TH1F("hM_dR_proto", "hM_dR_proto", 100, 0, 0.5);
+    // TH1F *hM_dR_proto_altrange = new TH1F("hM_dR_proto_altrange", "hM_dR_proto_altrange", 50, 0, 0.05);
+    // TH1F *hM_dR_proto_LogX = new TH1F("hM_dR_proto_LogX", "hM_dR_proto_LogX", NBins, edges);
+    // TH1F *hM_Eta_proto = new TH1F("hM_Eta_proto", "hM_Eta_proto", 160, -4, 4);
+    // TH1F *hM_Phi_proto = new TH1F("hM_Phi_proto", "hM_Phi_proto", 140, -3.5, 3.5);
+    // TH2F *hM_Eta_vtxZ_proto_incl = new TH2F("hM_Eta_vtxZ_proto_incl", "hM_Eta_vtxZ_proto_incl", 280, -3.5, 3.5, 300, -50, 10);
 
     TH1F *hM_dEta_reco = new TH1F("hM_dEta_reco", "hM_dEta_reco", 200, -3, 3);
     TH1F *hM_dEta_reco_altrange = new TH1F("hM_dEta_reco_altrange", "hM_dEta_reco_altrange", 100, -0.5, 0.5);
@@ -135,7 +135,7 @@ void makehist(TString infname, TString outfname)
     vector<unsigned int> *clusADC = 0;
     vector<float> *tklclus1Phi = 0, *tklclus1Eta = 0, *tklclus1PhiSize = 0, *tklclus2Phi = 0, *tklclus2Eta = 0, *tklclus2PhiSize = 0;
     vector<unsigned int> *tklclus1ADC = 0, *tklclus2ADC = 0;
-    vector<float> *prototkl_eta = 0, *prototkl_phi = 0, *prototkl_deta = 0, *prototkl_dphi = 0, *prototkl_dR = 0;
+    // vector<float> *prototkl_eta = 0, *prototkl_phi = 0, *prototkl_deta = 0, *prototkl_dphi = 0, *prototkl_dR = 0;
     vector<float> *recotklraw_eta = 0, *recotklraw_phi = 0, *recotklraw_deta = 0, *recotklraw_dphi = 0, *recotklraw_dR = 0;
     t->SetBranchAddress("event", &event);
     t->SetBranchAddress("is_min_bias", &is_min_bias);
@@ -163,11 +163,11 @@ void makehist(TString infname, TString outfname)
     t->SetBranchAddress("tklclus2PhiSize", &tklclus2PhiSize);
     t->SetBranchAddress("tklclus1ADC", &tklclus1ADC);
     t->SetBranchAddress("tklclus2ADC", &tklclus2ADC);
-    t->SetBranchAddress("prototkl_eta", &prototkl_eta);
-    t->SetBranchAddress("prototkl_phi", &prototkl_phi);
-    t->SetBranchAddress("prototkl_deta", &prototkl_deta);
-    t->SetBranchAddress("prototkl_dphi", &prototkl_dphi);
-    t->SetBranchAddress("prototkl_dR", &prototkl_dR);
+    // t->SetBranchAddress("prototkl_eta", &prototkl_eta);
+    // t->SetBranchAddress("prototkl_phi", &prototkl_phi);
+    // t->SetBranchAddress("prototkl_deta", &prototkl_deta);
+    // t->SetBranchAddress("prototkl_dphi", &prototkl_dphi);
+    // t->SetBranchAddress("prototkl_dR", &prototkl_dR);
     t->SetBranchAddress("recotklraw_eta", &recotklraw_eta);
     t->SetBranchAddress("recotklraw_phi", &recotklraw_phi);
     t->SetBranchAddress("recotklraw_deta", &recotklraw_deta);
@@ -216,19 +216,19 @@ void makehist(TString infname, TString outfname)
             hM_tklclus2phi_tklclus2phisize->Fill(tklclus2Phi->at(j), tklclus2PhiSize->at(j));
         }
 
-        for (size_t j = 0; j < prototkl_eta->size(); j++)
-        {
-            hM_dEta_proto->Fill(prototkl_deta->at(j));
-            hM_dPhi_proto->Fill(prototkl_dphi->at(j));
-            hM_dPhi_proto_altrange->Fill(prototkl_dphi->at(j));
-            hM_dR_proto->Fill(prototkl_dR->at(j));
-            hM_dR_proto_altrange->Fill(prototkl_dR->at(j));
-            hM_dR_proto_LogX->Fill(prototkl_dR->at(j));
-            hM_Eta_proto->Fill(prototkl_eta->at(j));
-            hM_Phi_proto->Fill(prototkl_phi->at(j));
+        // for (size_t j = 0; j < prototkl_eta->size(); j++)
+        // {
+        //     hM_dEta_proto->Fill(prototkl_deta->at(j));
+        //     hM_dPhi_proto->Fill(prototkl_dphi->at(j));
+        //     hM_dPhi_proto_altrange->Fill(prototkl_dphi->at(j));
+        //     hM_dR_proto->Fill(prototkl_dR->at(j));
+        //     hM_dR_proto_altrange->Fill(prototkl_dR->at(j));
+        //     hM_dR_proto_LogX->Fill(prototkl_dR->at(j));
+        //     hM_Eta_proto->Fill(prototkl_eta->at(j));
+        //     hM_Phi_proto->Fill(prototkl_phi->at(j));
 
-            hM_Eta_vtxZ_proto_incl->Fill(prototkl_eta->at(j), PV_z);
-        }
+        //     hM_Eta_vtxZ_proto_incl->Fill(prototkl_eta->at(j), PV_z);
+        // }
 
         for (size_t j = 0; j < recotklraw_eta->size(); j++)
         {
@@ -304,7 +304,7 @@ void makehist(TString infname, TString outfname)
     hM_NClusLayer1->Write();
     hM_NClusLayer1_clusADCgt35->Write();
     hM_NTklclusLayer1->Write();
-    hM_NPrototkl->Write();
+    // hM_NPrototkl->Write();
     hM_NRecotkl_Raw->Write();
     hM_RecoPVz->Write();
     hM_RecoPVz_MBDAsymLe0p75_VtxZm30tom10->Write();
@@ -320,16 +320,16 @@ void makehist(TString infname, TString outfname)
     hM_tklclus1phisize_tklclus2phisize->Write();
     hM_tklclus1phi_tklclus1phisize->Write();
     hM_tklclus2phi_tklclus2phisize->Write();
-    hM_dEta_proto->Write();
+    // hM_dEta_proto->Write();
     hM_dEta_reco->Write();
-    hM_dEta_proto->Write();
-    hM_dPhi_proto->Write();
-    hM_dPhi_proto_altrange->Write();
-    hM_dR_proto->Write();
-    hM_dR_proto_altrange->Write();
-    hM_dR_proto_LogX->Write();
-    hM_Eta_proto->Write();
-    hM_Phi_proto->Write();
+    // hM_dEta_proto->Write();
+    // hM_dPhi_proto->Write();
+    // hM_dPhi_proto_altrange->Write();
+    // hM_dR_proto->Write();
+    // hM_dR_proto_altrange->Write();
+    // hM_dR_proto_LogX->Write();
+    // hM_Eta_proto->Write();
+    // hM_Phi_proto->Write();
     hM_dEta_reco->Write();
     hM_dEta_reco_altrange->Write();
     hM_dPhi_reco->Write();
@@ -339,7 +339,7 @@ void makehist(TString infname, TString outfname)
     hM_dR_reco_LogX->Write();
     hM_Eta_reco->Write();
     hM_Phi_reco->Write();
-    hM_Eta_vtxZ_proto_incl->Write();
+    // hM_Eta_vtxZ_proto_incl->Write();
     hM_Eta_vtxZ_reco_incl->Write();
     for (size_t i = 0; i < centrality_cut.size() - 1; i++)
     {
