@@ -118,7 +118,9 @@ class TrackletData
     bool pu0_sel, is_min_bias;
     int process; // single diffractive process
 
+    vector<int> cluslayer;
     vector<float> clusphi, cluseta, clusphisize, cluszsize;
+    vector<unsigned int> clusadc;
 
     vector<float> tklclus1phi, tklclus1eta, tklclus2phi, tklclus2eta, tklclus1phisize, tklclus2phisize; // 1=inner, 2=outer
     vector<unsigned int> tklclus1adc, tklclus2adc;
@@ -151,10 +153,12 @@ void SetMinitree(TTree *outTree, TrackletData &tkldata)
     outTree->Branch("PV_y", &tkldata.PV_y);
     outTree->Branch("PV_z", &tkldata.PV_z);
     outTree->Branch("is_min_bias", &tkldata.is_min_bias);
+    outTree->Branch("clusLayer", &tkldata.cluslayer);
     outTree->Branch("clusPhi", &tkldata.clusphi);
     outTree->Branch("clusEta", &tkldata.cluseta);
     outTree->Branch("clusPhiSize", &tkldata.clusphisize);
     outTree->Branch("clusZSize", &tkldata.cluszsize);    
+    outTree->Branch("clusADC", &tkldata.clusadc);
     outTree->Branch("tklclus1Phi", &tkldata.tklclus1phi);
     outTree->Branch("tklclus1Eta", &tkldata.tklclus1eta);
     outTree->Branch("tklclus2Phi", &tkldata.tklclus2phi);
@@ -215,10 +219,12 @@ void ResetVec(TrackletData &tkldata)
     CleanVec(tkldata.prototkl_dphi);
     CleanVec(tkldata.prototkl_dR);
 
+    CleanVec(tkldata.cluslayer);
     CleanVec(tkldata.clusphi);
     CleanVec(tkldata.cluseta);
     CleanVec(tkldata.clusphisize);
     CleanVec(tkldata.cluszsize);
+    CleanVec(tkldata.clusadc);
 
     CleanVec(tkldata.tklclus1phi);
     CleanVec(tkldata.tklclus1eta);

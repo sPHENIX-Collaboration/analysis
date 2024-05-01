@@ -134,14 +134,19 @@ int main(int argc, char *argv[])
                 continue;
             }
 
+            if (ClusAdc->at(ihit) < 35)
+                continue;
+
             int layer = (ClusLayer->at(ihit) == 3 || ClusLayer->at(ihit) == 4) ? 0 : 1;
             // Hit::Hit(float x, float y, float z, float vtxX, float vtxY, float vtxZ, int layer, float phisize, unsigned int clusadc)
             Hit *hit = new Hit(ClusX->at(ihit), ClusY->at(ihit), ClusZ->at(ihit), PV[0], PV[1], PV[2], layer, ClusPhiSize->at(ihit), ClusAdc->at(ihit));
             tkldata.layers[layer].push_back(hit);
+            tkldata.cluslayer.push_back(layer);
             tkldata.clusphi.push_back(hit->Phi());
             tkldata.cluseta.push_back(hit->Eta());
             tkldata.clusphisize.push_back(ClusPhiSize->at(ihit));
             tkldata.cluszsize.push_back(ClusZSize->at(ihit));
+            tkldata.clusadc.push_back(ClusAdc->at(ihit));
         }
 
         tkldata.NClusLayer1 = tkldata.layers[0].size();

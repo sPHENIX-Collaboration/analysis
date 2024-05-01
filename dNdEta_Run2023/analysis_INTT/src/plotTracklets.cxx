@@ -111,6 +111,7 @@ void makehist(TString infname, TString outfname)
     }
 
     TH1F *hM_NClusLayer1 = new TH1F("hM_NClusLayer1", "hM_NClusLayer1", 100, 0, 5000);
+    TH1F *hM_NClusLayer1_clusADCgt35 = new TH1F("hM_NClusLayer1_clusADCgt35", "hM_NClusLayer1_clusADCgt35", 175, 0, 3500);
     TH1F *hM_NTklclusLayer1 = new TH1F("hM_NTklclusLayer1", "hM_NTklclusLayer1", 100, 0, 5000);
     TH1F *hM_NPrototkl = new TH1F("hM_NPrototkl", "hM_NPrototkl", 100, 0, 10000);
     TH1F *hM_NRecotkl_Raw = new TH1F("hM_NRecotkl_Raw", "hM_NRecotkl_Raw", 100, 0, 5000);
@@ -129,7 +130,9 @@ void makehist(TString infname, TString outfname)
     float MBD_centrality;
     float mbd_south_charge_sum, mbd_north_charge_sum, mbd_charge_sum, mbd_charge_asymm, mbd_z_vtx;
     bool is_min_bias;
+    vector<int> *clusLayer = 0;
     vector<float> *clusPhi = 0, *clusEta = 0, *clusPhiSize = 0;
+    vector<unsigned int> *clusADC = 0;
     vector<float> *tklclus1Phi = 0, *tklclus1Eta = 0, *tklclus1PhiSize = 0, *tklclus2Phi = 0, *tklclus2Eta = 0, *tklclus2PhiSize = 0;
     vector<unsigned int> *tklclus1ADC = 0, *tklclus2ADC = 0;
     vector<float> *prototkl_eta = 0, *prototkl_phi = 0, *prototkl_deta = 0, *prototkl_dphi = 0, *prototkl_dR = 0;
@@ -147,9 +150,11 @@ void makehist(TString infname, TString outfname)
     t->SetBranchAddress("NRecotkl_Raw", &NRecotkl_Raw);
     t->SetBranchAddress("PV_z", &PV_z);
     t->SetBranchAddress("TruthPV_z", &TruthPV_z);
+    t->SetBranchAddress("clusLayer", &clusLayer);
     t->SetBranchAddress("clusPhi", &clusPhi);
     t->SetBranchAddress("clusEta", &clusEta);
     t->SetBranchAddress("clusPhiSize", &clusPhiSize);
+    t->SetBranchAddress("clusADC", &clusADC);
     t->SetBranchAddress("tklclus1Phi", &tklclus1Phi);
     t->SetBranchAddress("tklclus1Eta", &tklclus1Eta);
     t->SetBranchAddress("tklclus1PhiSize", &tklclus1PhiSize);
@@ -186,6 +191,8 @@ void makehist(TString infname, TString outfname)
 
         hM_RecoPVz->Fill(PV_z);
 
+        int NClusLayer1_clusADCgt35 = 0;
+
         for (size_t j = 0; j < clusPhiSize->size(); j++)
         {
             hM_clusphi->Fill(clusPhi->at(j));
@@ -193,7 +200,11 @@ void makehist(TString infname, TString outfname)
             hM_clusphisize->Fill(clusPhiSize->at(j));
             hM_clusphi_clusphisize->Fill(clusPhi->at(j), clusPhiSize->at(j));
             hM_cluseta_clusphisize->Fill(clusEta->at(j), clusPhiSize->at(j));
+
+            if (clusADC->at(j) > 35 && clusLayer->at(j) == 0)
+                NClusLayer1_clusADCgt35++;
         }
+        hM_NClusLayer1_clusADCgt35->Fill(NClusLayer1_clusADCgt35);
 
         // clusters of tracklets
         for (size_t j = 0; j < tklclus1PhiSize->size(); j++)
@@ -291,6 +302,7 @@ void makehist(TString infname, TString outfname)
 
     fout->cd();
     hM_NClusLayer1->Write();
+    hM_NClusLayer1_clusADCgt35->Write();
     hM_NTklclusLayer1->Write();
     hM_NPrototkl->Write();
     hM_NRecotkl_Raw->Write();

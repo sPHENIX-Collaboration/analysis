@@ -115,6 +115,7 @@ int main(int argc, char *argv[])
     float mbd_south_charge_sum, mbd_north_charge_sum, mbd_charge_sum, mbd_charge_asymm, mbd_z_vtx;
     vector<int> *ClusLayer = 0;
     vector<float> *ClusX = 0, *ClusY = 0, *ClusZ = 0, *ClusPhiSize = 0, *ClusZSize = 0;
+    vector<unsigned int> *ClusAdc = 0;
     vector<uint8_t> *ClusLadderZId = 0, *ClusLadderPhiId = 0;
     t->SetBranchAddress("event", &event);
     t->SetBranchAddress("INTT_BCO", &INTT_BCO);
@@ -140,6 +141,7 @@ int main(int argc, char *argv[])
     t->SetBranchAddress("ClusZ", &ClusZ);
     t->SetBranchAddress("ClusPhiSize", &ClusPhiSize);
     t->SetBranchAddress("ClusZSize", &ClusZSize);
+    t->SetBranchAddress("ClusAdc", &ClusAdc);
     t->SetBranchAddress("ClusLadderZId", &ClusLadderZId);
     t->SetBranchAddress("ClusLadderPhiId", &ClusLadderPhiId);
 
@@ -158,6 +160,8 @@ int main(int argc, char *argv[])
         CleanVec(INTTlayer1);
         CleanVec(INTTlayer2);
 
+        int NClusLayer1_beforecut = 0;
+
         for (size_t ihit = 0; ihit < ClusLayer->size(); ihit++)
         {
             if ((ClusLayer->at(ihit) < 3 || ClusLayer->at(ihit) > 6) || (ClusLadderZId->at(ihit) < 0 || ClusLadderZId->at(ihit) > 3))
@@ -166,7 +170,13 @@ int main(int argc, char *argv[])
                 exit(1);
             }
 
+            if (ClusLayer->at(ihit) == 3 || ClusLayer->at(ihit) == 4)
+                NClusLayer1_beforecut++;
+
             if (ClusPhiSize->at(ihit) >= 5)
+                continue;
+
+            if (ClusAdc->at(ihit) < 35)
                 continue;
 
             int layer = (ClusLayer->at(ihit) == 3 || ClusLayer->at(ihit) == 4) ? 0 : 1;
@@ -181,7 +191,7 @@ int main(int argc, char *argv[])
                 INTTlayer2.push_back(hit);
         }
 
-        cout << "# of clusters in inner layer (layer ID 3+4, after cluster phi size selection) = " << INTTlayer1.size() << ", outer layer (layer ID 5+6) = " << INTTlayer2.size() << endl;
+        cout << "# of clusters in inner layer (layer ID 3+4, after cluster phi size and adc selection) = " << INTTlayer1.size() << ", outer layer (layer ID 5+6) = " << INTTlayer2.size() << endl;
 
         TH1F *hM_vtxzprojseg = new TH1F(Form("hM_vtxzprojseg_ev%d", ev), Form("hM_vtxzprojseg_ev%d", ev), 2800, -70, 70);
         int goodpaircount = 0;
@@ -307,7 +317,7 @@ int main(int argc, char *argv[])
             vtxdata.Centrality_bimp = centrality_bimp;
             vtxdata.Centrality_impactparam = centrality_impactparam;
         }
-        vtxdata.NClusLayer1 = (int)INTTlayer1.size();
+        vtxdata.NClusLayer1 = NClusLayer1_beforecut;
         vtxdata.PV_x = avgVtxX;
         vtxdata.PV_y = avgVtxY;
         vtxdata.PV_z = mean;

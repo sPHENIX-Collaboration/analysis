@@ -165,6 +165,7 @@ int main(int argc, char **argv)
     std::vector<double> *clusters_z = 0;
     std::vector<int> *clusters_layer = 0;
     std::vector<int> *clusters_phisize = 0;
+    std::vector<unsigned int> *clusters_adc = 0;
 
     events->SetBranchAddress("INTT_BCO", &intt_bco);
     events->SetBranchAddress("NClus", &Nclusters);
@@ -173,6 +174,7 @@ int main(int argc, char **argv)
     events->SetBranchAddress("ClusZ", &clusters_z);
     events->SetBranchAddress("ClusLayer", &clusters_layer);
     events->SetBranchAddress("ClusPhiSize", &clusters_phisize);
+    events->SetBranchAddress("ClusAdc", &clusters_adc);
 
     std::vector<std::pair<std::shared_ptr<Hit>, std::shared_ptr<Hit>>> tracklets;
     std::vector<uint64_t> bcos;
@@ -191,6 +193,9 @@ int main(int argc, char **argv)
 
         for (int j = 0; j < Nclusters; j++)
         {
+            if (clusters_adc->at(j) < 35)
+                continue;
+
             if (clusters_layer->at(j) == 3 || clusters_layer->at(j) == 4)
             {
                 layer1_clusters.push_back(std::make_shared<Hit>(clusters_x->at(j), clusters_y->at(j), clusters_z->at(j), 0., 0., 0., 0, clusters_phisize->at(j)));
@@ -200,6 +205,7 @@ int main(int argc, char **argv)
                 layer2_clusters.push_back(std::make_shared<Hit>(clusters_x->at(j), clusters_y->at(j), clusters_z->at(j), 0., 0., 0., 0, clusters_phisize->at(j)));
             }
         }
+
         for (auto &cluster1 : layer1_clusters)
         {
             for (auto &cluster2 : layer2_clusters)

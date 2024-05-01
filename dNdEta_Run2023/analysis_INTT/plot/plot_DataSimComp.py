@@ -275,6 +275,7 @@ if __name__ == '__main__':
     os.makedirs('./DataSimComp/{}'.format(plotdir), exist_ok=True)
 
     hM_NClusLayer1_data = GetHistogram("{}/hists_merged.root".format(datahistdir), 'hM_NClusLayer1')
+    hM_NClusLayer1_clusADCgt35_data = GetHistogram("{}/hists_merged.root".format(datahistdir), 'hM_NClusLayer1_clusADCgt35')
     hM_NTklclusLayer1_data = GetHistogram("{}/hists_merged.root".format(datahistdir), 'hM_NTklclusLayer1')
     hM_NPrototkl_data = GetHistogram("{}/hists_merged.root".format(datahistdir), 'hM_NPrototkl')
     hM_NRecotkl_Raw_data = GetHistogram("{}/hists_merged.root".format(datahistdir), 'hM_NRecotkl_Raw')
@@ -326,6 +327,7 @@ if __name__ == '__main__':
     hM_clusphi_clusphisize_data = GetHistogram("{}/hists_merged.root".format(datahistdir), 'hM_clusphi_clusphisize')
 
     l_hM_NClusLayer1_sim = []
+    l_hM_NClusLayer1_clusADCgt35_sim = []
     l_hM_NTklclusLayer1_sim = []
     l_hM_NPrototkl_sim = []
     l_hM_NRecotkl_Raw_sim = []
@@ -377,6 +379,7 @@ if __name__ == '__main__':
     l_hM_clusphi_clusphisize_sim = []
     for i, simhistd in enumerate(simhistdir):
         l_hM_NClusLayer1_sim.append(GetHistogram("{}/hists_merged.root".format(simhistd), 'hM_NClusLayer1'))
+        l_hM_NClusLayer1_clusADCgt35_sim.append(GetHistogram("{}/hists_merged.root".format(simhistd), 'hM_NClusLayer1_clusADCgt35'))
         l_hM_NTklclusLayer1_sim.append(GetHistogram("{}/hists_merged.root".format(simhistd), 'hM_NTklclusLayer1'))
         l_hM_NPrototkl_sim.append(GetHistogram("{}/hists_merged.root".format(simhistd), 'hM_NPrototkl'))
         l_hM_NRecotkl_Raw_sim.append(GetHistogram("{}/hists_merged.root".format(simhistd), 'hM_NRecotkl_Raw'))
@@ -432,6 +435,12 @@ if __name__ == '__main__':
     for hM_NClusLayer1_sim in l_hM_NClusLayer1_sim:
         hM_NClusLayer1_sim.GetXaxis().SetMaxDigits(2)
     Draw_1Dhist_datasimcomp(hM_NClusLayer1_data, l_hM_NClusLayer1_sim, [0.1,0.08,0.15,0.13], 'data', True, 10, 'Number of clusters (inner)', '', False, simlegtext, './DataSimComp/{}/NClusLayer1'.format(plotdir))
+
+    hM_NClusLayer1_clusADCgt35_data.GetXaxis().SetMaxDigits(2)
+    for hM_NClusLayer1_clusADCgt35_sim in l_hM_NClusLayer1_clusADCgt35_sim:
+        hM_NClusLayer1_clusADCgt35_sim.GetXaxis().SetMaxDigits(2)
+    Draw_1Dhist_datasimcomp(hM_NClusLayer1_clusADCgt35_data, l_hM_NClusLayer1_clusADCgt35_sim, [0.1,0.08,0.15,0.13], 'data', True, 10, 'Number of clusters (inner)', '', False, simlegtext, './DataSimComp/{}/NClusLayer1_clusADCgt35'.format(plotdir))    
+    
     
     hM_NTklclusLayer1_data.GetXaxis().SetMaxDigits(2)
     for hM_NTklclusLayer1_sim in l_hM_NTklclusLayer1_sim:
