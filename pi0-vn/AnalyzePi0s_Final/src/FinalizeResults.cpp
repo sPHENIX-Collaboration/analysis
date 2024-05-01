@@ -38,15 +38,15 @@ struct PlotConfig {
  */
 PlotConfig initializePlotConfig() {
     return {
-        false,  //signal, bg, corr v2 overlay and background window -- always set true if have default values, only need default CSV
+        true,  //signal, bg, corr v2 overlay and background window -- always set true if have default values, only need default CSV
         /*
          The following need additional CSVs prepared -- if want to plot one and can't another, thats what the booleans are used for
          */
-        false,  //signal window -- reads in filePathSignal_Bound_Variation
-        false,  //plot EMCal scale overlay -- reads in filePathEMCal_Syst_SYST variations
-        false,  //plot Asymmetry overlay -- reads in filePath_AsymmetryVariations_45 and filePath_AsymmetryVariations_55
-        false,  //plot sample size -- reads filePathSampleSizeVariation
-        false   //plot production comparison - reads p013_filePath
+        true,  //signal window -- reads in filePathSignal_Bound_Variation
+        true,  //plot EMCal scale overlay -- reads in filePathEMCal_Syst_SYST variations
+        true,  //plot Asymmetry overlay -- reads in filePath_AsymmetryVariations_45 and filePath_AsymmetryVariations_55
+        true,  //plot sample size -- reads filePathSampleSizeVariation
+        true   //plot production comparison - reads p013_filePath
     };
 }
 
@@ -1930,7 +1930,7 @@ void plot_EMCal_Scale_v2_overlays(const Data& data1, Data& data2, Data& data3, D
      */
     auto create_EMCal_ScaleVariations = [&data1, &data2, &data3, &data4, &data5, &data6](TCanvas* canvas, TGraphErrors* graph1, TGraphErrors* graph2, TGraphErrors* graph3, TGraphErrors* graph4, TGraphErrors* graph5, TGraphErrors* graph6, const std::string& legendTitle) {
         graph4->Draw("AP");
-        graph4->GetXaxis()->SetTitle("p_{T}");
+        graph4->GetXaxis()->SetTitle("p_{T} [GeV]");
         graph4->GetYaxis()->SetTitle("v_{2}^{#pi^{0}}");
         graph1 -> Draw("P SAME");
         graph2 -> Draw("P SAME");
