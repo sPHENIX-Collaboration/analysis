@@ -2287,7 +2287,7 @@ void plot_sigBgCorr_and_bgWindowVariations(const Data& data1){
     
     auto createGraph_sig_bg_corr = [](TCanvas* canvas, TGraphErrors* graph1, TGraphErrors* graph2, TGraphErrors* graph3, const std::string& legendTitle) {
         graph2->Draw("AP");
-        graph2->GetXaxis()->SetTitle("p_{T}");
+        graph2->GetXaxis()->SetTitle("p_{T} [GeV]");
         graph2->GetYaxis()->SetTitle("v_{2}");
         graph1 -> Draw("P SAME");
         graph3 -> Draw("P SAME");
