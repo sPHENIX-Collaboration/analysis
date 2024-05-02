@@ -118,11 +118,9 @@ public:
         c->SetTitle(title.c_str());
         c->SetLogy();
         std::vector<std::pair<int, double>> runMaxBinTable;
-        
         // Flags to identify if it's the first run of the loop
         bool firstRun = true;
         TH1F* firstHist = nullptr; // Reference to first histogram
-        
         // Null pointer to hold sum of histograms for average calculations
         TH1F* accumulatedHist_ = nullptr;
         int nRunsProcessed = 0; // Counter for the number of processed runs
@@ -292,7 +290,6 @@ void RatioPlot(const std::unordered_map<int, RunData>& runData_, const std::stri
     ratioLeg->SetBorderSize(0);
     ratioLeg->SetMargin(0.15);
     ratioLeg->SetTextSize(0.025);
-    
     // Rebinning based on histogram name
     int rebinFactor = 1;  // Default rebin factor
     if (histName == "hClusterChi") {
@@ -326,24 +323,21 @@ void RatioPlot(const std::unordered_map<int, RunData>& runData_, const std::stri
     TFile* refFile = TFile::Open(refFilePath.c_str());
     refHist = (TH1F*)refFile->Get(histName.c_str());
     refHist->SetDirectory(0); // Important to keep histogram when file closes
-    // Calculate normalization factor for the histogram
+    // Calculate normalization factor for ref histogram
     RunData refRunData = runData_.at(std::stoi(refRun));
-    float normalize; // Declare normalize before the if-else block
+    float normalize;
     if (histName == "hTotalMBD") {
         normalize = 1.0 / float(refRunData.nEvents);
     } else {
         normalize = 1.0 / (float(refRunData.nEvents) * float(refRunData.acceptance));
     }
     refHist->Scale(normalize);
-    
     // Rebin the reference histogram
     refHist->Rebin(rebinFactor);
-    
     // Add a header for the table before the loop starts
     std::cout << BOLD << CYAN << "Histogram: " << histName << RESET << std::endl;
     std::cout << BOLD << CYAN << "Sorted Average Ratios--" << RESET << std::endl;
     std::cout << BOLD << CYAN << "Run Number" << "\t" << "Average Ratio" << RESET << std::endl;
-    
     // Iterate over each entry in the runData_ map
     for (const auto& entry : runData_) {
         // Extract the run number and the associated data
@@ -356,13 +350,12 @@ void RatioPlot(const std::unordered_map<int, RunData>& runData_, const std::stri
         TH1F* hist = (TH1F*)file->Get(histName.c_str());
         if (!hist) continue;
 
-        float normalize_current; // Declare normalize before the if-else block
+        float normalize_current;
         if (histName == "hTotalMBD") {
             normalize_current = 1.0 / float(refRunData.nEvents);
         } else {
             normalize_current = 1.0 / (float(refRunData.nEvents) * float(refRunData.acceptance));
         }
-
         // Clone the histogram, then normalize it
         TH1F* ratioHist = (TH1F*)hist->Clone();
         ratioHist->Scale(normalize_current);
@@ -387,12 +380,11 @@ void RatioPlot(const std::unordered_map<int, RunData>& runData_, const std::stri
         double lowerTimingBound, upperTimingBound;
         double lowerTotalCaloBound, upperTotalCaloBound;
         double lowerECoreBound, upperECoreBound;
-
         if (histName == "hClusterChi") {
             lowerChiBound = 0;
             upperChiBound = 50;
             ratioHist->GetXaxis()->SetRangeUser(lowerChiBound, upperChiBound);
-            ratioHist->GetYaxis()->SetRangeUser(0, 2.0);  // Set your desired min and max
+            ratioHist->GetYaxis()->SetRangeUser(0, 2.0);
         } else if (histName == "hTotalMBD") {
             lowerMBDbound = 0;
             upperMBDbound = 1800;
@@ -410,14 +402,10 @@ void RatioPlot(const std::unordered_map<int, RunData>& runData_, const std::stri
             ratioHist->GetXaxis()->SetRangeUser(lowerECoreBound, upperECoreBound);
             ratioHist->GetYaxis()->SetRangeUser(0, 2.0);
         }
-
-        // General aesthetics for the ratio histogram
         ratioHist->SetMarkerStyle(20);
         ratioHist->SetMarkerSize(0.8);
-        ratioHist->SetLineWidth(3);  // Increase line width
-        
-        // If the run number is not the reference run, draw and analyze
-        if (std::to_string(run) != refRun) {
+        ratioHist->SetLineWidth(3);
+        if (std::to_string(run) != refRun) { // make sure run number is not the reference run
             if (firstRatio) {
                 ratioHist->Draw("P0");
                 firstRatio = false;
@@ -427,8 +415,6 @@ void RatioPlot(const std::unordered_map<int, RunData>& runData_, const std::stri
             // Initialize variables for calculating the average ratio
             double sum = 0.0;  // Sum of the bin contents
             int count = 0;     // Number of non-zero bins considered
-            
-            // Set the default bin range to include all bins in the histogram
             int binStart = 0;
             int binEnd = ratioHist->GetNbinsX(); // Default: all bins
             // Customize the bin range based on the specific histogram type.
@@ -445,20 +431,17 @@ void RatioPlot(const std::unordered_map<int, RunData>& runData_, const std::stri
                 binStart = ratioHist->FindBin(lowerECoreBound);
                 binEnd = ratioHist->FindBin(upperECoreBound);
             }
-            // Loop over the specified bin range to calculate the average ratio
             for (int i = binStart; i <= binEnd; ++i) {
                 // Get the content of the current bin
                 double binContent = ratioHist->GetBinContent(i);
                 // Only consider non-zero bins for the average
                 if (binContent != 0) {
-                    sum += binContent;  // Add the bin content to the sum
-                    ++count;            // Increment the count of non-zero bins
+                    sum += binContent;
+                    ++count;
                 }
             }
             //calculation of average for nonzero bins
             double average = (count > 0) ? sum / count : 0;
-            
-            //conditional check if current run is different from reference run
             if (std::to_string(run) != refRun) {
                 // Add the average ratio to the sorted map with average as the key and run as the value
                 sortedRatios[average] = run;
@@ -475,8 +458,6 @@ void RatioPlot(const std::unordered_map<int, RunData>& runData_, const std::stri
         std::cout << "Run: " << entry.second << "\tAverage Ratio: " << entry.first << std::endl;
         hData.sortedRatios.emplace_back(entry.second, entry.first);
     }
-
-    // Draw legend for ratio plots
     ratioLeg->Draw();
     latex.DrawLatex(0.6, 0.85, ("Reference: Run " + refRun).c_str());
 
@@ -492,37 +473,25 @@ void ProcessQA(const std::string& category, const std::unordered_map<int, int>& 
     std::unordered_map<int, RunData> runData_;
     std::ifstream infile(normalizeFilePath);
     int run, nEvents, acceptance;
-
     while (infile >> run >> nEvents >> acceptance) {
         RunData data = {nEvents, acceptance, colorMap.at(run)};  // Use color map to set colors dynamically
         runData_[run] = data;
     }
-
     infile.close();
-
-
-    //INPUT DESIRED DIRECTORY THAT includes folders labelled by run number with the specified qa.root within all of them
     OverlayPlotter overlayPlotter(runData_, QA_ROOT_FILES_PATH, category);
-
     overlayPlotter.Overlay("hClusterChi", "Cluster_Chi2_Distribution", "Cluster #chi^{2}", "Normalized Counts", category);
     overlayPlotter.Overlay("hTotalMBD", "MBD_Charge_Distribution", "MBD Charge", "Normalized Counts", category);
     overlayPlotter.Overlay("hTotalCaloE", "Total_Calorimeter_Energy_Distribution", "Cluster Energy [GeV]", "Normalized Counts", category);
     overlayPlotter.Overlay("hClusterECore", "Cluster_ECore_Distribution", "Cluster ECore [GeV]", "Normalized Counts", category);
-    
-    
-    // Call the new RatioPlot function
-    //INPUT ANY RUN NUMBER, or input 'maxHist' see above for how is calculated
-    std::string refRun = "maxHist";  // Set your reference run number here
-    
+
+    std::string refRun = "maxHist";    //INPUT ANY RUN NUMBER, or input 'maxHist' see above for how is calculated
     RatioPlot(runData_, QA_ROOT_FILES_PATH, "hClusterChi", refRun, category);
     RatioPlot(runData_, QA_ROOT_FILES_PATH, "hTotalMBD", refRun, category);
     RatioPlot(runData_, QA_ROOT_FILES_PATH, "hTotalCaloE", refRun, category);
     RatioPlot(runData_, QA_ROOT_FILES_PATH, "hClusterECore", refRun, category);
-    
     writeDataToCSV(("/Users/patsfan753/Desktop/p015/QA/" + category + "/sorted_ave_ratios.csv").c_str());
 }
-// Main function for 1D Quality Assurance (QA) plotting.
-void QA_1D_Plotting() {
+void QA_1D_Plotting() { //main function
     std::unordered_map<int, int> mbColors = {
         {23020, kBlue},
         {23671, kOrange+7},
