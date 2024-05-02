@@ -2,25 +2,28 @@
 #include <TH1.h>
 #include <TCanvas.h>
 #include <TLegend.h>
-
+#include "sPhenixStyle.h"
+#include "sPhenixStyle.C"
 void QQ_flattness_Overlay() {
+    gROOT->LoadMacro("sPhenixStyle.C");
+    SetsPhenixStyle();
     // Open the ROOT file
-    TFile *file = new TFile("/Users/patsfan753/Desktop/Q-vec-corr-ana402-2023p009-z-10.root");
+    TFile *file = new TFile("/Users/patsfan753/Desktop/p015/Q-vec-corr-ana412-2023p015.root");
 
     // Define the centrality folders
     const char* centralities[] = {"0-20", "20-40", "40-60"};
 
     // Titles for the histograms
     /*
-     Replace 3's with 2's for n = 2 corrections
+     Replace 3's with 2's for n = 2 corrections or vice versa
      */
     const char* titles[] = {
-        "3#Psi_{3}^{S}, Centrality: 0-20%",
-        "3#Psi_{3}^{N}, Centrality: 0-20%",
-        "3#Psi_{3}^{S}, Centrality: 20-40%",
-        "3#Psi_{3}^{N}, Centrality: 20-40%",
-        "3#Psi_{3}^{S}, Centrality: 40-60%",
-        "3#Psi_{3}^{N}, Centrality: 40-60%"
+        "2#Psi_{2}^{S}, Centrality: 0-20%",
+        "2#Psi_{2}^{N}, Centrality: 0-20%",
+        "2#Psi_{2}^{S}, Centrality: 20-40%",
+        "2#Psi_{2}^{N}, Centrality: 20-40%",
+        "2#Psi_{2}^{S}, Centrality: 40-60%",
+        "2#Psi_{2}^{N}, Centrality: 40-60%"
     };
 
     int titleIndex = 0; // Index to access titles
@@ -35,7 +38,7 @@ void QQ_flattness_Overlay() {
             TCanvas *c = new TCanvas(Form("c_%s_%s", centrality, dir), titles[titleIndex], 800, 600);
             c->SetLeftMargin(0.15);
             // Instantiate the legend with coordinates for bottom right corner
-            TLegend *legend = new TLegend(0.74, 0.69, 0.94, 0.89); // Bottom right corner
+            TLegend *legend = new TLegend(0.5, 0.69, 0.7, 0.89); // Bottom right corner
             legend->SetBorderSize(0); // No border
             legend->SetFillStyle(0);  // Transparent
             
@@ -47,7 +50,7 @@ void QQ_flattness_Overlay() {
             // Loop over histogram orders
             for (int i = 0; i < 3; i++) {
                 //replace 3 with 2 for n = 2
-                TH1F *hist = (TH1F*)file->Get(Form("%s/hPsi3_%s_%s_%d", centrality, dir, centrality, i));
+                TH1F *hist = (TH1F*)file->Get(Form("%s/hPsi2_%s_%s_%d", centrality, dir, centrality, i));
                 hist->SetLineColor(colors[i]);
                 hist->SetLineWidth(2);
                 hist->SetStats(false);
