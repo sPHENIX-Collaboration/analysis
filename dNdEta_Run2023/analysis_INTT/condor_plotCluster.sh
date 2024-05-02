@@ -13,6 +13,6 @@ source /opt/sphenix/core/bin/setup_local.sh $MYINSTALL
 
 # print the environment - needed for debugging
 # printenv
-./plotCluster $1 $2 $3 
+./plotCluster $1 $2 $3 $4
 
 echo all done

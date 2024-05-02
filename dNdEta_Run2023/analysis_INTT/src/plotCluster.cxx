@@ -21,9 +21,9 @@
 
 int main(int argc, char *argv[])
 {
-    if (argc != 4)
+    if (argc != 5)
     {
-        std::cout << "Usage: ./plotRecoCluster [EvtVtx_map_filename] [infilename (ntuple)] [outfilename (histogram)]" << std::endl;
+        std::cout << "Usage: ./plotRecoCluster [isdata] [EvtVtx_map_filename] [infilename (ntuple)] [outfilename (histogram)]" << std::endl;
         return 0;
     }
 
@@ -32,34 +32,38 @@ int main(int argc, char *argv[])
         std::cout << "argv[" << i << "] = " << argv[i] << std::endl;
     }
 
-    TString EvtVtx_map_filename = TString(argv[1]);
-    TString infilename = TString(argv[2]);
-    TString outfilename = TString(argv[3]);
+    bool IsData = (TString(argv[1]).Atoi() == 1) ? true : false;
+    TString EvtVtx_map_filename = TString(argv[2]);
+    TString infilename = TString(argv[3]);
+    TString outfilename = TString(argv[4]);
 
-    std::map<int, vector<float>> EvtVtx_map = EvtVtx_map_tklcluster(EvtVtx_map_filename.Data());
+    TString idxstr = (IsData) ? "INTT_BCO" : "event";
 
-    //! TO-DO: add cluster Z size
-    TH1F *hM_ClusX_all = new TH1F("hM_ClusX_all", "hM_ClusX_all", 200, -10, 10);
-    TH1F *hM_ClusX_layer1 = new TH1F("hM_ClusX_layer1", "hM_ClusX_layer1", 200, -10, 10);
-    TH1F *hM_ClusX_layer2 = new TH1F("hM_ClusX_layer2", "hM_ClusX_layer2", 200, -10, 10);
-    TH1F *hM_ClusY_all = new TH1F("hM_ClusY_all", "hM_ClusY_all", 200, -10, 10);
-    TH1F *hM_ClusY_layer1 = new TH1F("hM_ClusY_layer1", "hM_ClusY_layer1", 200, -10, 10);
-    TH1F *hM_ClusY_layer2 = new TH1F("hM_ClusY_layer2", "hM_ClusY_layer2", 200, -10, 10);
+    // std::map<int, vector<float>> EvtVtx_map = EvtVtx_map_tklcluster(EvtVtx_map_filename.Data());
+    std::map<int, vector<float>> EvtVtxMap_event = EvtVtx_map_event(EvtVtx_map_filename.Data()); // use with simulation
+    std::map<uint64_t, vector<float>> EvtVtxMap_inttbco = EvtVtx_map_inttbco(EvtVtx_map_filename.Data()); // use with data
+
+    // TH1F *hM_ClusX_all = new TH1F("hM_ClusX_all", "hM_ClusX_all", 200, -10, 10);
+    // TH1F *hM_ClusX_layer1 = new TH1F("hM_ClusX_layer1", "hM_ClusX_layer1", 200, -10, 10);
+    // TH1F *hM_ClusX_layer2 = new TH1F("hM_ClusX_layer2", "hM_ClusX_layer2", 200, -10, 10);
+    // TH1F *hM_ClusY_all = new TH1F("hM_ClusY_all", "hM_ClusY_all", 200, -10, 10);
+    // TH1F *hM_ClusY_layer1 = new TH1F("hM_ClusY_layer1", "hM_ClusY_layer1", 200, -10, 10);
+    // TH1F *hM_ClusY_layer2 = new TH1F("hM_ClusY_layer2", "hM_ClusY_layer2", 200, -10, 10);
     TH1F *hM_ClusZ_all = new TH1F("hM_ClusZ_all", "hM_ClusZ_all", 200, -25, 25);
     TH1F *hM_ClusZ_layer1 = new TH1F("hM_ClusZ_layer1", "hM_ClusZ_layer1", 200, -25, 25);
     TH1F *hM_ClusZ_layer2 = new TH1F("hM_ClusZ_layer2", "hM_ClusZ_layer2", 200, -25, 25);
-    TH1F *hM_ClusR_all = new TH1F("hM_ClusR_all", "hM_ClusR_all", 120, 4, 7);
-    TH1F *hM_ClusR_layer1 = new TH1F("hM_ClusR_layer1", "hM_ClusR_layer1", 120, 4, 7);
-    TH1F *hM_ClusR_layer2 = new TH1F("hM_ClusR_layer2", "hM_ClusR_layer2", 120, 4, 7);
-    TH1F *hM_ClusEtaOri_all = new TH1F("hM_ClusEtaOri_all", "hM_ClusEtaOri_all", 160, -4, 4);
-    TH1F *hM_ClusEtaOri_layer1 = new TH1F("hM_ClusEtaOri_layer1", "hM_ClusEtaOri_layer1", 160, -4, 4);
-    TH1F *hM_ClusEtaOri_layer2 = new TH1F("hM_ClusEtaOri_layer2", "hM_ClusEtaOri_layer2", 160, -4, 4);
+    // TH1F *hM_ClusR_all = new TH1F("hM_ClusR_all", "hM_ClusR_all", 120, 4, 7);
+    // TH1F *hM_ClusR_layer1 = new TH1F("hM_ClusR_layer1", "hM_ClusR_layer1", 120, 4, 7);
+    // TH1F *hM_ClusR_layer2 = new TH1F("hM_ClusR_layer2", "hM_ClusR_layer2", 120, 4, 7);
+    // TH1F *hM_ClusEtaOri_all = new TH1F("hM_ClusEtaOri_all", "hM_ClusEtaOri_all", 160, -4, 4);
+    // TH1F *hM_ClusEtaOri_layer1 = new TH1F("hM_ClusEtaOri_layer1", "hM_ClusEtaOri_layer1", 160, -4, 4);
+    // TH1F *hM_ClusEtaOri_layer2 = new TH1F("hM_ClusEtaOri_layer2", "hM_ClusEtaOri_layer2", 160, -4, 4);
     TH1F *hM_ClusEtaPV_all = new TH1F("hM_ClusEtaPV_all", "hM_ClusEtaPV_all", 160, -4, 4);
     TH1F *hM_ClusEtaPV_layer1 = new TH1F("hM_ClusEtaPV_layer1", "hM_ClusEtaPV_layer1", 160, -4, 4);
     TH1F *hM_ClusEtaPV_layer2 = new TH1F("hM_ClusEtaPV_layer2", "hM_ClusEtaPV_layer2", 160, -4, 4);
-    TH1F *hM_ClusPhiOri_all = new TH1F("hM_ClusPhiOri_all", "hM_ClusPhiOri_all", 140, -3.5, 3.5);
-    TH1F *hM_ClusPhiOri_layer1 = new TH1F("hM_ClusPhiOri_layer1", "hM_ClusPhiOri_layer1", 140, -3.5, 3.5);
-    TH1F *hM_ClusPhiOri_layer2 = new TH1F("hM_ClusPhiOri_layer2", "hM_ClusPhiOri_layer2", 140, -3.5, 3.5);
+    // TH1F *hM_ClusPhiOri_all = new TH1F("hM_ClusPhiOri_all", "hM_ClusPhiOri_all", 140, -3.5, 3.5);
+    // TH1F *hM_ClusPhiOri_layer1 = new TH1F("hM_ClusPhiOri_layer1", "hM_ClusPhiOri_layer1", 140, -3.5, 3.5);
+    // TH1F *hM_ClusPhiOri_layer2 = new TH1F("hM_ClusPhiOri_layer2", "hM_ClusPhiOri_layer2", 140, -3.5, 3.5);
     TH1F *hM_ClusPhiPV_all = new TH1F("hM_ClusPhiPV_all", "hM_ClusPhiPV_all", 140, -3.5, 3.5);
     TH1F *hM_ClusPhiPV_layer1 = new TH1F("hM_ClusPhiPV_layer1", "hM_ClusPhiPV_layer1", 140, -3.5, 3.5);
     TH1F *hM_ClusPhiPV_layer2 = new TH1F("hM_ClusPhiPV_layer2", "hM_ClusPhiPV_layer2", 140, -3.5, 3.5);
@@ -76,9 +80,9 @@ int main(int argc, char *argv[])
     TH1F *hM_ClusADC_all = new TH1F("hM_ClusADC_all", "hM_ClusADC_all", 1800, 0, 18000);
     TH1F *hM_ClusADC_layer1 = new TH1F("hM_ClusADC_layer1", "hM_ClusADC_layer1", 1800, 0, 18000);
     TH1F *hM_ClusADC_layer2 = new TH1F("hM_ClusADC_layer2", "hM_ClusADC_layer2", 1800, 0, 18000);
-    TH1F *hM_ClusZSize_all = new TH1F("hM_ClusZSize_all", "hM_ClusZSize_all", 20, 0, 20);
-    TH1F *hM_ClusZSize_layer1 = new TH1F("hM_ClusZSize_layer1", "hM_ClusZSize_layer1", 20, 0, 20);
-    TH1F *hM_ClusZSize_layer2 = new TH1F("hM_ClusZSize_layer2", "hM_ClusZSize_layer2", 20, 0, 20);
+    // TH1F *hM_ClusZSize_all = new TH1F("hM_ClusZSize_all", "hM_ClusZSize_all", 20, 0, 20);
+    // TH1F *hM_ClusZSize_layer1 = new TH1F("hM_ClusZSize_layer1", "hM_ClusZSize_layer1", 20, 0, 20);
+    // TH1F *hM_ClusZSize_layer2 = new TH1F("hM_ClusZSize_layer2", "hM_ClusZSize_layer2", 20, 0, 20);
     TH1F *hM_ClusPhiSize_all = new TH1F("hM_ClusPhiSize_all", "hM_ClusPhiSize_all", 100, 0, 100);
     TH1F *hM_ClusPhiSize_layer1 = new TH1F("hM_ClusPhiSize_layer1", "hM_ClusPhiSize_layer1", 100, 0, 100);
     TH1F *hM_ClusPhiSize_layer2 = new TH1F("hM_ClusPhiSize_layer2", "hM_ClusPhiSize_layer2", 100, 0, 100);
@@ -95,18 +99,18 @@ int main(int argc, char *argv[])
     TH2F *hM_ClusZ_ClusPhiPV_all_coarse = new TH2F("hM_ClusZ_ClusPhiPV_all_coarse", "hM_ClusZ_ClusPhiPV_all_coarse", 100, -25, 25, 350, -3.5, 3.5);
     TH2F *hM_ClusZ_ClusPhiPV_all_coarse_weiphisize = new TH2F("hM_ClusZ_ClusPhiPV_all_coarse_weiphisize", "hM_ClusZ_ClusPhiPV_all_coarse_weiphisize", 100, -25, 25, 350, -3.5, 3.5);
     TH2F *hM_ClusZ_ClusPhiPV_all_coarse_weiclusadc = new TH2F("hM_ClusZ_ClusPhiPV_all_coarse_weiclusadc", "hM_ClusZ_ClusPhiPV_all_coarse_weiclusadc", 100, -25, 25, 350, -3.5, 3.5);
-    TH2F *hM_ClusEta_ClusZSize_all = new TH2F("hM_ClusEta_ClusZSize_all", "hM_ClusEta_ClusZSize_all", 160, -4, 4, 20, 0, 20);
-    TH2F *hM_ClusEta_ClusZSize_layer1 = new TH2F("hM_ClusEta_ClusZSize_layer1", "hM_ClusEta_ClusZSize_layer1", 160, -4, 4, 20, 0, 20);
-    TH2F *hM_ClusEta_ClusZSize_layer2 = new TH2F("hM_ClusEta_ClusZSize_layer2", "hM_ClusEta_ClusZSize_layer2", 160, -4, 4, 20, 0, 20);
+    // TH2F *hM_ClusEta_ClusZSize_all = new TH2F("hM_ClusEta_ClusZSize_all", "hM_ClusEta_ClusZSize_all", 160, -4, 4, 20, 0, 20);
+    // TH2F *hM_ClusEta_ClusZSize_layer1 = new TH2F("hM_ClusEta_ClusZSize_layer1", "hM_ClusEta_ClusZSize_layer1", 160, -4, 4, 20, 0, 20);
+    // TH2F *hM_ClusEta_ClusZSize_layer2 = new TH2F("hM_ClusEta_ClusZSize_layer2", "hM_ClusEta_ClusZSize_layer2", 160, -4, 4, 20, 0, 20);
     TH2F *hM_ClusPhiPV_ClusPhiSize_all = new TH2F("hM_ClusPhiPV_ClusPhiSize_all", "hM_ClusPhiPV_ClusPhiSize_all", 140, -3.5, 3.5, 100, 0, 100);
     TH2F *hM_ClusPhiPV_ClusPhiSize_layer1 = new TH2F("hM_ClusPhiPV_ClusPhiSize_layer1", "hM_ClusPhiPV_ClusPhiSize_layer1", 140, -3.5, 3.5, 100, 0, 100);
     TH2F *hM_ClusPhiPV_ClusPhiSize_layer2 = new TH2F("hM_ClusPhiPV_ClusPhiSize_layer2", "hM_ClusPhiPV_ClusPhiSize_layer2", 140, -3.5, 3.5, 100, 0, 100);
     TH2F *hM_ClusPhiPV_ClusADC_all = new TH2F("hM_ClusPhiPV_ClusADC_all", "hM_ClusPhiPV_ClusADC_all", 140, -3.5, 3.5, 180, 0, 18000);
     TH2F *hM_ClusPhiPV_ClusADC_layer1 = new TH2F("hM_ClusPhiPV_ClusADC_layer1", "hM_ClusPhiPV_ClusADC_layer1", 140, -3.5, 3.5, 180, 0, 18000);
     TH2F *hM_ClusPhiPV_ClusADC_layer2 = new TH2F("hM_ClusPhiPV_ClusADC_layer2", "hM_ClusPhiPV_ClusADC_layer2", 140, -3.5, 3.5, 180, 0, 18000);
-    TH2F *hM_ClusZSize_ClusPhiSize_all = new TH2F("hM_ClusZSize_ClusPhiSize_all", "hM_ClusZSize_ClusPhiSize_all", 20, 0, 20, 100, 0, 100);
-    TH2F *hM_ClusZSize_ClusPhiSize_layer1 = new TH2F("hM_ClusZSize_ClusPhiSize_layer1", "hM_ClusZSize_ClusPhiSize_layer1", 20, 0, 20, 100, 0, 100);
-    TH2F *hM_ClusZSize_ClusPhiSize_layer2 = new TH2F("hM_ClusZSize_ClusPhiSize_layer2", "hM_ClusZSize_ClusPhiSize_layer2", 20, 0, 20, 100, 0, 100);
+    // TH2F *hM_ClusZSize_ClusPhiSize_all = new TH2F("hM_ClusZSize_ClusPhiSize_all", "hM_ClusZSize_ClusPhiSize_all", 20, 0, 20, 100, 0, 100);
+    // TH2F *hM_ClusZSize_ClusPhiSize_layer1 = new TH2F("hM_ClusZSize_ClusPhiSize_layer1", "hM_ClusZSize_ClusPhiSize_layer1", 20, 0, 20, 100, 0, 100);
+    // TH2F *hM_ClusZSize_ClusPhiSize_layer2 = new TH2F("hM_ClusZSize_ClusPhiSize_layer2", "hM_ClusZSize_ClusPhiSize_layer2", 20, 0, 20, 100, 0, 100);
     TH2F *hM_ClusEtaPV_ClusADC_all = new TH2F("hM_ClusEtaPV_ClusADC_all", "hM_ClusEtaPV_ClusADC_all", 160, -4, 4, 180, 0, 18000);
     TH2F *hM_ClusEtaPV_ClusADC_layer1 = new TH2F("hM_ClusEtaPV_ClusADC_layer1", "hM_ClusEtaPV_ClusADC_layer1", 160, -4, 4, 180, 0, 18000);
     TH2F *hM_ClusEtaPV_ClusADC_layer2 = new TH2F("hM_ClusEtaPV_ClusADC_layer2", "hM_ClusEtaPV_ClusADC_layer2", 160, -4, 4, 180, 0, 18000);
@@ -128,13 +132,15 @@ int main(int argc, char *argv[])
 
     TFile *f = new TFile(infilename, "READ");
     TTree *t = (TTree *)f->Get("EventTree");
-    t->BuildIndex("event_counter"); // Reference: https://root-forum.cern.ch/t/sort-ttree-entries/13138
+    t->BuildIndex(idxstr); // Reference: https://root-forum.cern.ch/t/sort-ttree-entries/13138
     TTreeIndex *index = (TTreeIndex *)t->GetTreeIndex();
     int event;
+    uint64_t INTT_BCO;
     vector<int> *ClusLayer = 0;
     vector<float> *ClusX = 0, *ClusY = 0, *ClusZ = 0, *ClusR = 0, *ClusPhi = 0, *ClusEta = 0, *ClusPhiSize = 0, *ClusZSize = 0;
     vector<unsigned int> *ClusAdc = 0;
-    t->SetBranchAddress("event_counter", &event);
+    t->SetBranchAddress("event", &event);
+    t->SetBranchAddress("INTT_BCO", &INTT_BCO);
     t->SetBranchAddress("ClusLayer", &ClusLayer);
     t->SetBranchAddress("ClusX", &ClusX);
     t->SetBranchAddress("ClusY", &ClusY);
@@ -150,7 +156,8 @@ int main(int argc, char *argv[])
         Long64_t local = t->LoadTree(index->GetIndex()[ev]);
         t->GetEntry(local);
 
-        vector<float> PV = EvtVtx_map[event];
+        vector<float> PV = (IsData) ? EvtVtxMap_inttbco[INTT_BCO] : EvtVtxMap_event[event];
+
         if (PV.size() != 3)
         {
             cout << "[ERROR] No PV found for event " << event << endl;
@@ -169,13 +176,13 @@ int main(int argc, char *argv[])
 
             Hit *hit = new Hit(ClusX->at(i), ClusY->at(i), ClusZ->at(i), PV[0], PV[1], PV[2], layer);
 
-            hM_ClusX_all->Fill(ClusX->at(i));
-            hM_ClusY_all->Fill(ClusY->at(i));
+            // hM_ClusX_all->Fill(ClusX->at(i));
+            // hM_ClusY_all->Fill(ClusY->at(i));
             hM_ClusZ_all->Fill(ClusZ->at(i));
-            hM_ClusR_all->Fill(ClusR->at(i));
-            hM_ClusEtaOri_all->Fill(ClusEta->at(i));
+            // hM_ClusR_all->Fill(ClusR->at(i));
+            // hM_ClusEtaOri_all->Fill(ClusEta->at(i));
             hM_ClusEtaPV_all->Fill(hit->Eta());
-            hM_ClusPhiOri_all->Fill(ClusPhi->at(i));
+            // hM_ClusPhiOri_all->Fill(ClusPhi->at(i));
             hM_ClusPhiPV_all->Fill(hit->Phi());
             hM_ClusPhiPV_all_fine->Fill(hit->Phi());
             hM_ClusADC_all->Fill(ClusAdc->at(i));
@@ -217,13 +224,13 @@ int main(int argc, char *argv[])
             if (layer == 0)
             {
 
-                hM_ClusX_layer1->Fill(ClusX->at(i));
-                hM_ClusY_layer1->Fill(ClusY->at(i));
+                // hM_ClusX_layer1->Fill(ClusX->at(i));
+                // hM_ClusY_layer1->Fill(ClusY->at(i));
                 hM_ClusZ_layer1->Fill(ClusZ->at(i));
-                hM_ClusR_layer1->Fill(ClusR->at(i));
-                hM_ClusEtaOri_layer1->Fill(ClusEta->at(i));
+                // hM_ClusR_layer1->Fill(ClusR->at(i));
+                // hM_ClusEtaOri_layer1->Fill(ClusEta->at(i));
                 hM_ClusEtaPV_layer1->Fill(hit->Eta());
-                hM_ClusPhiOri_layer1->Fill(ClusPhi->at(i));
+                // hM_ClusPhiOri_layer1->Fill(ClusPhi->at(i));
                 hM_ClusPhiPV_layer1->Fill(hit->Phi());
                 hM_ClusPhiPV_layer1_fine->Fill(hit->Phi());
                 hM_ClusADC_layer1->Fill(ClusAdc->at(i));
@@ -245,13 +252,13 @@ int main(int argc, char *argv[])
             }
             else
             {
-                hM_ClusX_layer2->Fill(ClusX->at(i));
-                hM_ClusY_layer2->Fill(ClusY->at(i));
+                // hM_ClusX_layer2->Fill(ClusX->at(i));
+                // hM_ClusY_layer2->Fill(ClusY->at(i));
                 hM_ClusZ_layer2->Fill(ClusZ->at(i));
-                hM_ClusR_layer2->Fill(ClusR->at(i));
-                hM_ClusEtaOri_layer2->Fill(ClusEta->at(i));
+                // hM_ClusR_layer2->Fill(ClusR->at(i));
+                // hM_ClusEtaOri_layer2->Fill(ClusEta->at(i));
                 hM_ClusEtaPV_layer2->Fill(hit->Eta());
-                hM_ClusPhiOri_layer2->Fill(ClusPhi->at(i));
+                // hM_ClusPhiOri_layer2->Fill(ClusPhi->at(i));
                 hM_ClusPhiPV_layer2->Fill(hit->Phi());
                 hM_ClusPhiPV_layer2_fine->Fill(hit->Phi());
                 hM_ClusADC_layer2->Fill(ClusAdc->at(i));
@@ -278,27 +285,27 @@ int main(int argc, char *argv[])
 
     TFile *fout = new TFile(outfilename, "RECREATE");
     fout->cd();
-    hM_ClusX_all->Write();
-    hM_ClusX_layer1->Write();
-    hM_ClusX_layer2->Write();
-    hM_ClusY_all->Write();
-    hM_ClusY_layer1->Write();
-    hM_ClusY_layer2->Write();
+    // hM_ClusX_all->Write();
+    // hM_ClusX_layer1->Write();
+    // hM_ClusX_layer2->Write();
+    // hM_ClusY_all->Write();
+    // hM_ClusY_layer1->Write();
+    // hM_ClusY_layer2->Write();
     hM_ClusZ_all->Write();
     hM_ClusZ_layer1->Write();
     hM_ClusZ_layer2->Write();
-    hM_ClusR_all->Write();
-    hM_ClusR_layer1->Write();
-    hM_ClusR_layer2->Write();
+    // hM_ClusR_all->Write();
+    // hM_ClusR_layer1->Write();
+    // hM_ClusR_layer2->Write();
     hM_ClusEtaPV_all->Write();
     hM_ClusEtaPV_layer1->Write();
     hM_ClusEtaPV_layer2->Write();
-    hM_ClusEtaOri_all->Write();
-    hM_ClusEtaOri_layer1->Write();
-    hM_ClusEtaOri_layer2->Write();
-    hM_ClusPhiOri_all->Write();
-    hM_ClusPhiOri_layer1->Write();
-    hM_ClusPhiOri_layer2->Write();
+    // hM_ClusEtaOri_all->Write();
+    // hM_ClusEtaOri_layer1->Write();
+    // hM_ClusEtaOri_layer2->Write();
+    // hM_ClusPhiOri_all->Write();
+    // hM_ClusPhiOri_layer1->Write();
+    // hM_ClusPhiOri_layer2->Write();
     hM_ClusPhiPV_all->Write();
     hM_ClusPhiPV_layer1->Write();
     hM_ClusPhiPV_layer2->Write();
