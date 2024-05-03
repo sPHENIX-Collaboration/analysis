@@ -44,9 +44,9 @@ PlotConfig initializePlotConfig() {
          */
         true,  //signal window -- reads in filePathSignal_Bound_Variation
         true,  //plot EMCal scale overlay -- reads in filePathEMCal_Syst_SYST variations
-        true,  //plot Asymmetry overlay -- reads in filePath_AsymmetryVariations_45 and filePath_AsymmetryVariations_55
-        true,  //plot sample size -- reads filePathSampleSizeVariation
-        true   //plot production comparison - reads p013_filePath
+        false,  //plot Asymmetry overlay -- reads in filePath_AsymmetryVariations_45 and filePath_AsymmetryVariations_55
+        false,  //plot sample size -- reads filePathSampleSizeVariation
+        false   //plot production comparison - reads p013_filePath
     };
 }
 std::string userPath;
