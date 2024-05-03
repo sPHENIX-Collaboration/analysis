@@ -17,18 +17,20 @@
 #include "TList.h"
 #include "TSystemFile.h"
 #include <sys/stat.h>
-
 struct CutValues {
     float clusEA, clusEB, asymmetry, deltaRMin, deltaRMax, chi;
 };
 
 CutValues globalCutValues;
-
+std::string userPath;
+std::string basePath;
+std::string globalDataPath;
+std::string globalPlotOutput;
+std::string globalFilename;
+std::string csv_filename;
+//std::string userPath = "/Users/patsfan753/Desktop";
 // Global variable
-std::string globalDataPath = "/Users/patsfan753/Desktop/p015/InvMassOutput/CSV/";
-std::string globalPlotOutput = "/Users/patsfan753/Desktop/p015/InvMassOutput/Plots/"; //Note: Folder auto created with name of cut variation to this
-std::string globalFilename = "/Users/patsfan753/Desktop/p015/hPi0Mass_EA1_EB1_Asym0point5_DelrMin0_DelrMax1_Chi4.root";
-std::string csv_filename = globalDataPath + "PlotByPlotOutput_P015.csv";
+
 
 int histIndex = 0;
 double globalFitStart;
@@ -52,11 +54,12 @@ TFitResultPtr PerformFitting(TH1F* hPi0Mass, TF1*& totalFit, double& fitStart, d
     totalFit = new TF1("totalFit", "gaus(0) + pol2(3)", fitStart, fitEnd);
     totalFit->SetLineColor(kRed);
 
+    double meanEstimate = 0.185;
     
-    double amplitudeEstimate = hPi0Mass->GetBinContent(hPi0Mass->GetXaxis()->FindBin(0.185));
+    double amplitudeEstimate = hPi0Mass->GetBinContent(hPi0Mass->GetXaxis()->FindBin(meanEstimate));
     totalFit->SetParameter(0, amplitudeEstimate);
     
-    totalFit->SetParameter(1, 0.185);
+    totalFit->SetParameter(1, meanEstimate);
     
     totalFit->SetParameter(2, sigmaEstimate);
 
@@ -64,7 +67,7 @@ TFitResultPtr PerformFitting(TH1F* hPi0Mass, TF1*& totalFit, double& fitStart, d
     return fitResult; // Return the fit result
 }
 /*
- Function to parse the filename and extract cut values to be propagated throughout macro for automation of cut variation analysis
+ Function to parse the filename and extract cut values to be propagated throughout macro for automation of cut variation analysis--applies use of regular expressions (regex)
  */
 CutValues parseFileName() {
     CutValues cuts = {0, 0, 0, 0}; // Initialize cut values to zero
@@ -165,8 +168,6 @@ SignalBackgroundRatio CalculateSignalToBackgroundRatio(TH1F* hPi0Mass, TF1* poly
         
         int firstBinSignal = hPi0Mass->FindBin(std::max(fitMean - multiplier * fitSigma, fitStart));
         int lastBinSignal = hPi0Mass->FindBin(std::min(fitMean + multiplier * fitSigma, fitEnd));
-        
-        std::cout << "Multiplier: " << multiplier << ", First bin: " << firstBinSignal << ", Last bin: " << lastBinSignal << std::endl;
 
         double binCenter, binContent, bgContent, binError;
         for (int i = firstBinSignal; i <= lastBinSignal; ++i) {
@@ -193,10 +194,6 @@ SignalBackgroundRatio CalculateSignalToBackgroundRatio(TH1F* hPi0Mass, TF1* poly
 
         sbRatios.ratios[multiplier] = signalToBackgroundRatio;
         sbRatios.errors[multiplier] = signalToBackgroundError;
-
-        std::cout << "Signal yield: " << signalYield << ", Background yield: " << backgroundYield << std::endl;
-        
-        std::cout << "S/B Ratio: " << signalToBackgroundRatio << ", Error: " << signalToBackgroundError << std::endl;
         
         sbRatios.ratios[multiplier] = signalToBackgroundRatio;
         sbRatios.errors[multiplier] = signalToBackgroundError;
@@ -209,7 +206,7 @@ SignalBackgroundRatio CalculateSignalToBackgroundRatio(TH1F* hPi0Mass, TF1* poly
     return sbRatios;
 }
 /*
- Calculation for signal yield and error, simiarly to above method outputs to text file upon user input in terminal when happy with fit
+ Calculation for signal yield and error
  */
 double CalculateSignalYieldAndError(TH1F* hPi0Mass, TF1* polyFit, double fitMean, double fitSigma, double& signalError, double fitStart, double fitEnd) {
     TH1F *hSignal = (TH1F*)hPi0Mass->Clone("hSignal");
@@ -233,7 +230,7 @@ double CalculateSignalYieldAndError(TH1F* hPi0Mass, TF1* polyFit, double fitMean
 /*
  Automatic update of canvas cut values, fit information, and analysis bin
  */
-void DrawCanvasText(TLatex& latex, const Range& selectedRange, double fitMean, double fitSigma, const SignalBackgroundRatio& sbRatios, double signalYield, double signalYieldError, double numEntries, double chi2, double NDF) {
+void DrawCanvasText(TLatex& latex, const Range& selectedRange, double fitMean, double fitSigma, const SignalBackgroundRatio& sbRatios, double signalYield, double signalYieldError, double numEntries, double chi2, double NDF, int currentIndex) {
     // Drawing text related to the range and cuts
     std::ostringstream mbdStream, ptStream;
     mbdStream << std::fixed << std::setprecision(0) << "Centrality: " << selectedRange.mbdLow << " - " << selectedRange.mbdHigh << "%";
@@ -252,18 +249,21 @@ void DrawCanvasText(TLatex& latex, const Range& selectedRange, double fitMean, d
 
     double ratioFor2Sigma = sbRatios.ratios.at(2.0);
     double errorFor2Sigma = sbRatios.errors.at(2.0);
-//    latex.DrawLatex(0.67, 0.4, Form("#mu_{Gaussian} = %.2f GeV", fitMean));
-//    latex.DrawLatex(0.67, 0.35, Form("#sigma_{Gaussian} = %.2f GeV", fitSigma));
-//    latex.DrawLatex(0.67, 0.3, Form("S/B = %.2f", ratioFor2Sigma));
-//    latex.DrawLatex(0.67, 0.25, Form("Signal Yield = %.2f", signalYield));
-//    latex.DrawLatex(0.67, .2, Form("Fit #chi^{2}/NDF: %.2f/%.0f", chi2, NDF));
     
-    
-    latex.DrawLatex(0.45, 0.54, Form("#mu_{Gaussian} = %.2f GeV", fitMean));
-    latex.DrawLatex(0.45, 0.49, Form("#sigma_{Gaussian} = %.2f GeV", fitSigma));
-    latex.DrawLatex(0.67, 0.57, Form("S/B = %.2f", ratioFor2Sigma));
-    latex.DrawLatex(0.67, 0.52, Form("Signal Yield = %.2f", signalYield));
-    latex.DrawLatex(0.67, .47, Form("Fit #chi^{2}/NDF: %.2f/%.0f", chi2, NDF));
+    //change legend depending on background size to not overlap data
+    if (currentIndex == 3 || currentIndex == 4 || currentIndex == 5 || currentIndex == 11) {
+        latex.DrawLatex(0.45, 0.54, Form("#mu_{Gaussian} = %.2f GeV", fitMean));
+        latex.DrawLatex(0.45, 0.49, Form("#sigma_{Gaussian} = %.2f GeV", fitSigma));
+        latex.DrawLatex(0.67, 0.57, Form("S/B = %.2f", ratioFor2Sigma));
+        latex.DrawLatex(0.67, 0.52, Form("Signal Yield = %.2f", signalYield));
+        latex.DrawLatex(0.67, .47, Form("Fit #chi^{2}/NDF: %.2f/%.0f", chi2, NDF));
+    } else {
+        latex.DrawLatex(0.67, 0.4, Form("#mu_{Gaussian} = %.2f GeV", fitMean));
+        latex.DrawLatex(0.67, 0.35, Form("#sigma_{Gaussian} = %.2f GeV", fitSigma));
+        latex.DrawLatex(0.67, 0.3, Form("S/B = %.2f", ratioFor2Sigma));
+        latex.DrawLatex(0.67, 0.25, Form("Signal Yield = %.2f", signalYield));
+        latex.DrawLatex(0.67, .2, Form("Fit #chi^{2}/NDF: %.2f/%.0f", chi2, NDF));
+    }
 }
 /*
 Track Relevant Output in CSV tracking via indices and unique cut combinations
@@ -387,7 +387,7 @@ double CalculateError(double mean, double sigma, double meanError, double sigmaE
     double error = std::abs(value) * std::sqrt(fractionalErrorMean * fractionalErrorMean + fractionalErrorSigma * fractionalErrorSigma);
     return error;
 }
-
+//function to read PlotByPlot output after fits are completed
 void Read_DataSet(const std::string& filePath, Data& data) {
     std::ifstream file(filePath);
     if (!file.is_open()) {
@@ -468,7 +468,7 @@ void PrintVectorContents(const std::vector<double>& vec, const std::vector<doubl
               << "Contents of " << name << " and its Errors:" << "\033[0m" << std::endl; // Reset formatting at the end
     std::cout << std::left << std::setw(20) << "Value"
               << std::left << std::setw(20) << "Error" << std::endl;
-    for (size_t i = 0; i < vec.size(); ++i) {
+    for (size_t i = 0; i < 6; ++i) {
         std::cout << std::left << std::setw(20) << vec[i]
                   << std::left << std::setw(20) << vecErrors[i] << std::endl;
     }
@@ -500,21 +500,26 @@ void setGraphProperties(TGraph* graph, int markerColor, int lineColor, float mar
     graph->SetMarkerSize(markerSize);
     graph->SetMarkerStyle(markerStyle);
 }
+//plots Gaussian Mean, Sigma, S/B, and fit Resolution as a fun of pT
 void plot_FitParameterOutput(const Data& data1) {
     std::vector<double> ptCenters = {2.25, 2.75, 3.25, 3.75, 4.25, 4.75}; // Mid-points of pT ranges for plotting
     
     PrintVectorContents(data1.sb_0_20, data1.sb_0_20_Errors, "SB 0-20% Data1");
     PrintVectorContents(data1.sb_20_40, data1.sb_20_40_Errors, "SB 20-40% Data1");
     PrintVectorContents(data1.sb_40_60, data1.sb_40_60_Errors, "SB 40-60% Data1");
+    
     PrintVectorContents(data1.gaussMean_0_20, data1.gaussMean_0_20_Errors, "Gauss Mean 0-20% Data1");
     PrintVectorContents(data1.gaussMean_20_40, data1.gaussMean_20_40_Errors, "Gauss Mean 20-40% Data1");
     PrintVectorContents(data1.gaussMean_40_60, data1.gaussMean_40_60_Errors, "Gauss Mean 40-60% Data1");
+    
     PrintVectorContents(data1.gaussSigma_0_20, data1.gaussSigma_0_20_Errors, "gaussSigma 0-20% Data1");
     PrintVectorContents(data1.gaussSigma_20_40, data1.gaussSigma_20_40_Errors, "gaussSigma 20-40% Data1");
     PrintVectorContents(data1.gaussSigma_40_60, data1.gaussSigma_40_60_Errors, "gaussSigma 40-60% Data1");
+    
     PrintVectorContents(data1.gaussMeanDividedBySigma_0_20, data1.gaussMeanDividedBySigma_0_20_Errors, "gaussMeanDividedBySigma 0-20% Data1");
     PrintVectorContents(data1.gaussMeanDividedBySigma_20_40, data1.gaussMeanDividedBySigma_20_40_Errors, "gaussMeanDividedBySigma 20-40% Data1");
     PrintVectorContents(data1.gaussMeanDividedBySigma_40_60, data1.gaussMeanDividedBySigma_40_60_Errors, "gaussMeanDividedBySigma 40-60% Data1");
+    
     TGraphErrors* sb_0_20_graph = CreateGraph(ptCenters, data1.sb_0_20, data1.sb_0_20_Errors);
     TGraphErrors* sb_20_40_graph = CreateGraph(ptCenters, data1.sb_20_40, data1.sb_20_40_Errors);
     TGraphErrors* sb_40_60_graph = CreateGraph(ptCenters, data1.sb_40_60, data1.sb_40_60_Errors);
@@ -615,7 +620,18 @@ void plot_FitParameterOutput(const Data& data1) {
     createGraph(c_gaussMeanDividedBySigma_40_60, gaussMeanDividedBySigma_40_60_graph, "40-60% Centrality", 0, 0.3, 0.14,.72,0.34,.92, "Resolution");
     c_gaussMeanDividedBySigma_40_60->SaveAs((globalPlotOutput + "/Overlay_40_60_gaussMeanDividedBySigma.png").c_str());
 }
+void initializePaths() {
+    std::cout << "Please enter the user path: ";
+    std::getline(std::cin, userPath);  // Get user input for the path
+    
+    basePath = userPath + "/p015/InvMass/";
+    globalDataPath = basePath + "CSV/";
+    globalPlotOutput = basePath + "Plots/";
+    globalFilename = basePath + "hPi0Mass_EA1_EB1_Asym0point5_DelrMin0_DelrMax1_Chi4.root";
+    csv_filename = globalDataPath + "PlotByPlotOutput_P015.csv";
+}
 void AnalyzePi0() {
+    initializePaths();
     gROOT->LoadMacro("sPhenixStyle.C");
     SetsPhenixStyle();
     // Open the ROOT file once
@@ -713,7 +729,7 @@ void AnalyzePi0() {
         double signalYield_ = CalculateSignalYieldAndError(hPi0Mass, polyFit, fitMean, fitSigma, signalError_, fitStart, fitEnd);
         
         
-        DrawCanvasText(latex, ranges[currentIndex], fitMean, fitSigma, sbRatios, signalYield_, signalError_, numEntries, chi2, NDF);
+        DrawCanvasText(latex, ranges[currentIndex], fitMean, fitSigma, sbRatios, signalYield_, signalError_, numEntries, chi2, NDF, currentIndex);
         
         // Call the new method to write to CSV if the fit is good
         WriteDataToCSV(currentIndex, globalCutValues, fitMean, fitMeanError, fitSigma, fitSigmaError, sbRatios, signalYield_, signalError_, numEntries, chi2);
@@ -727,30 +743,30 @@ void AnalyzePi0() {
         line1->Draw("same");
         line2->Draw("same");
 
-        if (currentIndex >= 0 && currentIndex <= 17) {
-            std::ostringstream dirPathStream;
-            dirPathStream << globalPlotOutput // Use the global variable here
-                          << "EA" << globalCutValues.clusEA
-                          << "_EB" << globalCutValues.clusEB
-                          << "_Asym" << globalCutValues.asymmetry
-                          << "_DelrMin" << globalCutValues.deltaRMin
-                          << "_DelrMax" << globalCutValues.deltaRMax
-                          << "_Chi" << globalCutValues.chi;
-            std::string dirPath = dirPathStream.str();
+
+        std::ostringstream dirPathStream;
+        dirPathStream << globalPlotOutput // Use the global variable here
+                      << "EA" << globalCutValues.clusEA
+                      << "_EB" << globalCutValues.clusEB
+                      << "_Asym" << globalCutValues.asymmetry
+                      << "_DelrMin" << globalCutValues.deltaRMin
+                      << "_DelrMax" << globalCutValues.deltaRMax
+                      << "_Chi" << globalCutValues.chi;
+        std::string dirPath = dirPathStream.str();
 
 
-            // Now construct the filename
-            std::ostringstream pngFilenameStream;
-            pngFilenameStream << globalPlotOutput << "/hPi0Mass_"
-                              << "Index" << currentIndex
-                              << "_fit.png"; // You can adjust this naming scheme
-            std::string pngFilename = pngFilenameStream.str();
+        // Now construct the filename
+        std::ostringstream pngFilenameStream;
+        pngFilenameStream << globalPlotOutput << "/hPi0Mass_"
+                          << "Index" << currentIndex
+                          << "_fit.png"; // You can adjust this naming scheme
+        std::string pngFilename = pngFilenameStream.str();
 
-            // Save the canvas to the constructed filename
-            canvas->SaveAs(pngFilename.c_str());
-        }
+        // Save the canvas to the constructed filename
+        canvas->SaveAs(pngFilename.c_str());
+        
     }
-    
+    //for fit parameter plots following PlotByPlotOutput
     Data data1;
     Read_DataSet(csv_filename, data1);
 
