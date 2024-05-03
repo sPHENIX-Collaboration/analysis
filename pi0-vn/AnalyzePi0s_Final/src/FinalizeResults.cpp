@@ -2468,7 +2468,7 @@ void initializePaths() {
     ReferenceData = BaseCSVoutput + "/vn-p015.csv";
 
     //Extraneous CSV files for plot output
-    phenixFilePath = userPath + "/PHENIX_Data_OriginalAndCleaned/FinalCleanedPhenix.csv"; //path to cleaned PHENIX data
+    phenixFilePath = userPath + "/FinalCleanedPhenix.csv"; //path to cleaned PHENIX data
     baseDataPath_ProductionComparisons = BasePlotOutputPath + "/ProductionComparisons/";
     p013_filePath = baseDataPath_ProductionComparisons + "Default_Final_v2_p013.csv"; //for production comparison
 
