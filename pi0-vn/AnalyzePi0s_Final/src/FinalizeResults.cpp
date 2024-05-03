@@ -49,37 +49,28 @@ PlotConfig initializePlotConfig() {
         true   //plot production comparison - reads p013_filePath
     };
 }
-
-std::string BasePlotOutputPath = "/Users/patsfan753/Desktop/p015";
-std::string BaseCSVoutput = BasePlotOutputPath + "/vN-CSV-files";
-std::string ReferenceData = BaseCSVoutput + "/vn-p015.csv";
-
-//Extraneous CSV files for plot output
-std::string phenixFilePath = BasePlotOutputPath + "/PHENIX_Data_OriginalAndCleaned/FinalCleanedPhenix.csv"; //path to cleaned PHENIX data
-std::string baseDataPath_ProductionComparisons = BasePlotOutputPath + "/ProductionComparisons/";
-std::string p013_filePath = baseDataPath_ProductionComparisons + "Default_Final_v2_p013.csv"; //for production comparison
-
-
-//paths to data sets for Systematics Calculation and other comparsions
-//EMCal Scale Variations
-std::string filePathEMCal_Syst_SYST1CEMC = BaseCSVoutput + "/vn-SYST1CEMC.csv";
-std::string filePathEMCal_Syst_SYST2CEMC = BaseCSVoutput + "/vn-SYST2CEMC.csv";
-std::string filePathEMCal_Syst_SYST3DCEMC = BaseCSVoutput + "/vn-SYST3DCEMC.csv";
-std::string filePathEMCal_Syst_SYST3UCEMC = BaseCSVoutput + "/vn-SYST3UCEMC.csv";
-std::string filePathEMCal_Syst_SYST4CEMC = BaseCSVoutput + "/vn-SYST4CEMC.csv";
-std::string filePath_AsymmetryVariations_45 = BaseCSVoutput + "/vn-asym-0.45.csv";
-std::string filePath_AsymmetryVariations_55 = BaseCSVoutput + "/vn-asym-0.55.csv";
-std::string filePathSampleSizeVariation = BaseCSVoutput + "/vn-samples-25.csv";
-std::string filePathSignal_Bound_Variation = BaseCSVoutput + "/vn-sigma-1.5.csv"; //varied signal window
-//note background window variation is embedded in Default v2 CSV file
-
-//output folders for systematics plots and v2 comparisons
-std::string SystematicsBasePlotOutput = BasePlotOutputPath + "/Systematics_Analysis-v2-Checks/";
-std::string baseDataPath_EmCal_Systematics = SystematicsBasePlotOutput + "EMCal_systematics/";
-std::string baseDataPath_AsymmetryCutVariations = SystematicsBasePlotOutput + "AsymmetryCutVariations/";
-std::string baseDataPath_SampleSizeVariations = SystematicsBasePlotOutput + "SampleSize_Variation/";
-std::string baseDataPath_SignalWindowVariations = SystematicsBasePlotOutput + "SignalWindow_Variations/";
-std::string baseDataPath_BackgroundWindowVariations = SystematicsBasePlotOutput + "BackgroundWindow_Variations/";
+std::string userPath;
+std::string BasePlotOutputPath;
+std::string BaseCSVoutput;
+std::string ReferenceData;
+std::string phenixFilePath;
+std::string baseDataPath_ProductionComparisons;
+std::string p013_filePath;
+std::string filePathEMCal_Syst_SYST1CEMC;
+std::string filePathEMCal_Syst_SYST2CEMC;
+std::string filePathEMCal_Syst_SYST3DCEMC;
+std::string filePathEMCal_Syst_SYST3UCEMC;
+std::string filePathEMCal_Syst_SYST4CEMC;
+std::string filePath_AsymmetryVariations_45;
+std::string filePath_AsymmetryVariations_55;
+std::string filePathSampleSizeVariation;
+std::string filePathSignal_Bound_Variation;
+std::string SystematicsBasePlotOutput;
+std::string baseDataPath_EmCal_Systematics;
+std::string baseDataPath_AsymmetryCutVariations;
+std::string baseDataPath_SampleSizeVariations;
+std::string baseDataPath_SignalWindowVariations;
+std::string baseDataPath_BackgroundWindowVariations;
 
 
 
@@ -2468,7 +2459,43 @@ void plotProduction_Comparisons(const Data& data1, Data& data2) {
     c_Overlay_40_60_productionComparisons_bg->Update();
     c_Overlay_40_60_productionComparisons_bg->SaveAs((baseDataPath_ProductionComparisons + "Overlay_40_60_v2_p013_p015_bgV2Comparison.png").c_str());
 }
+void initializePaths() {
+    std::cout << "Please enter the user path: ";
+    std::getline(std::cin, userPath);  // Get user input for the path
+    
+    BasePlotOutputPath = userPath + "/p015";
+    BaseCSVoutput = BasePlotOutputPath + "/vN-CSV-files";
+    ReferenceData = BaseCSVoutput + "/vn-p015.csv";
+
+    //Extraneous CSV files for plot output
+    phenixFilePath = userPath + "/PHENIX_Data_OriginalAndCleaned/FinalCleanedPhenix.csv"; //path to cleaned PHENIX data
+    baseDataPath_ProductionComparisons = BasePlotOutputPath + "/ProductionComparisons/";
+    p013_filePath = baseDataPath_ProductionComparisons + "Default_Final_v2_p013.csv"; //for production comparison
+
+
+    //paths to data sets for Systematics Calculation and other comparsions
+    //EMCal Scale Variations
+    filePathEMCal_Syst_SYST1CEMC = BaseCSVoutput + "/vn-SYST1CEMC.csv";
+    filePathEMCal_Syst_SYST2CEMC = BaseCSVoutput + "/vn-SYST2CEMC.csv";
+    filePathEMCal_Syst_SYST3DCEMC = BaseCSVoutput + "/vn-SYST3DCEMC.csv";
+    filePathEMCal_Syst_SYST3UCEMC = BaseCSVoutput + "/vn-SYST3UCEMC.csv";
+    filePathEMCal_Syst_SYST4CEMC = BaseCSVoutput + "/vn-SYST4CEMC.csv";
+    filePath_AsymmetryVariations_45 = BaseCSVoutput + "/vn-asym-0.45.csv";
+    filePath_AsymmetryVariations_55 = BaseCSVoutput + "/vn-asym-0.55.csv";
+    filePathSampleSizeVariation = BaseCSVoutput + "/vn-samples-25.csv";
+    filePathSignal_Bound_Variation = BaseCSVoutput + "/vn-sigma-1.5.csv"; //varied signal window
+    //note background window variation is embedded in Default v2 CSV file
+
+    //output folders for systematics plots and v2 comparisons
+    SystematicsBasePlotOutput = BasePlotOutputPath + "/Systematics_Analysis-v2-Checks/";
+    baseDataPath_EmCal_Systematics = SystematicsBasePlotOutput + "EMCal_systematics/";
+    baseDataPath_AsymmetryCutVariations = SystematicsBasePlotOutput + "AsymmetryCutVariations/";
+    baseDataPath_SampleSizeVariations = SystematicsBasePlotOutput + "SampleSize_Variation/";
+    baseDataPath_SignalWindowVariations = SystematicsBasePlotOutput + "SignalWindow_Variations/";
+    baseDataPath_BackgroundWindowVariations = SystematicsBasePlotOutput + "BackgroundWindow_Variations/";
+}
 void FinalizeResults() {
+    initializePaths();
     gROOT->LoadMacro("sPhenixStyle.C");
     SetsPhenixStyle();
     
