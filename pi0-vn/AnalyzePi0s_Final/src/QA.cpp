@@ -1,6 +1,5 @@
 #include "sPhenixStyle.h"
 #include "sPhenixStyle.C"
-
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -22,9 +21,9 @@
 #define MAGENTA     "\033[35m"
 #define CYAN        "\033[36m"
 #define WHITE       "\033[37m"
+std::string baseDir;
+std::string QA_ROOT_FILES_PATH;
 
-const std::string baseDir = "/Users/patsfan753/Desktop/p015/QA/";
-const std::string QA_ROOT_FILES_PATH = baseDir + "RootFiles/";
 std::vector<std::string> runNumbers_MB =    {
     "23020", "23671", "23672", "23676", "23681", "23682", "23687", "23690", "23693", "23694",
     "23695", "23696", "23697", "23699", "23702", "23714", "23726", "23727", "23728", "23735",
@@ -35,24 +34,19 @@ std::vector<std::string> runNumbers_Central =    {
     "23561", "23562", "23563", "23566", "23568",  "23572",  "23574", "23575", "23582",
     "23590", "23592", "23594", "23604", "23605", "23617", "23618", "23619"
 };
-// Define a class to handle Statistics
+// Define a class to output Normalize.txt with accepted bins and nEvents, as well as pngs of the 1D and 2D histograms this is calculated from
 class EMCalStatistics {
 public:
     // Public member function to process multiple runs
     void ProcessRuns(const std::vector<std::string>& runNumbers, const std::string& category);
-    
     // Public member function to write normalization statistics to a file
     void WriteNormalizationToFile(const std::string& runNumber, int nEvents, double AcceptedBins, const std::string& category);
-
 private:
     // Member function to process a single run
     void ProcessSingleRun(const std::string& runNumber, const std::string& category);
-    
     void DrawAndSaveCanvas(TH2F* h2D, TH1F* h1D, const std::string& runNumber, int nEvents, double mean, double sd, double AcceptedBins, const std::string& category);
-
     // Member function to print various statistics to the terminal
     void PrintStatisticsToTerminal(const std::string& runNumber, int nEvents, TH1F* h1D, const std::string& category);
-    
 };
 // Process all specified runs in the given list
 void EMCalStatistics::ProcessRuns(const std::vector<std::string>& runNumbers, const std::string& category) {
@@ -67,7 +61,6 @@ void EMCalStatistics::PrintStatisticsToTerminal(const std::string& runNumber, in
     double sd = h1D->GetStdDev();
     double BinValue = h1D->FindBin(mean - 3*sd);
     double AcceptedBins = h1D->Integral(BinValue, 120);
-    
     std::cout << "\033[1;32mRun Number: \033[0m" << runNumber << ", Category: " << category << std::endl;
     std::cout << "\033[1;32mnEvents: \033[0m" << nEvents << std::endl;
     std::cout << "Mean - SD: " << std::fixed << std::setprecision(10) << mean - sd << std::endl;
@@ -75,11 +68,8 @@ void EMCalStatistics::PrintStatisticsToTerminal(const std::string& runNumber, in
     std::cout << "Mean - 3*SD: " << std::fixed << std::setprecision(10) << mean - 3*sd << std::endl;
     std::cout << "Bin Value: " << std::fixed << std::setprecision(10) << BinValue << std::endl;
     std::cout << "Accepted Bins: " << std::fixed << std::setprecision(10) << AcceptedBins << std::endl;
-    
     // Write the calculated statistics to a file
     WriteNormalizationToFile(runNumber, nEvents, AcceptedBins, category);
-
-    // Now also write the same information to a separate text file
     static int runCounter = 0;
     std::ofstream statsFile;
     std::string specificDir = (category == "MB") ? "MB/" : "Central/";
@@ -99,21 +89,17 @@ void EMCalStatistics::PrintStatisticsToTerminal(const std::string& runNumber, in
         if(runCounter % 7 == 0) {
             statsFile << "\n\n\n";
         }
-
         statsFile.close();
     } else {
         std::cerr << "Unable to open file for writing.\n";
     }
-
     std::cout << "----------------------------------------" << std::endl;
 }
-// Write the calculated statistics to a file
 void EMCalStatistics::WriteNormalizationToFile(const std::string& runNumber, int nEvents, double AcceptedBins, const std::string& category) {
     // File handling
     std::ofstream outFile;
-    std::string specificDir = (category == "MB") ? "MB/" : "Central/";
+    std::string specificDir = (category == "MB") ? "MB/" : "Central/"; //to keep MB and central runs organized
     std::string outputFilePath = baseDir + specificDir + "Normalize.txt";
-    
     static bool firstRun = true; // Static flag to track first run
     if (firstRun) {
         outFile.open(outputFilePath, std::ios::trunc); // truncate only for the first run
@@ -163,7 +149,6 @@ void EMCalStatistics::ProcessSingleRun(const std::string& runNumber, const std::
     double sd = h1D_TowEtaPhiWeighted->GetStdDev();
     double BinValue = h1D_TowEtaPhiWeighted->FindBin(mean - 3*sd);
     double AcceptedBins = h1D_TowEtaPhiWeighted->Integral(BinValue, 120);
-
     DrawAndSaveCanvas(h2TowEtaPhiWeighted, h1D_TowEtaPhiWeighted, runNumber, nEvents, mean, sd, AcceptedBins, category);
     PrintStatisticsToTerminal(runNumber,nEvents,h1D_TowEtaPhiWeighted, category);
     file->Close();
@@ -927,7 +912,18 @@ void GenerateAdditionalQA() {
     }
     std::cout << std::endl;
 }
+void initializePaths() {
+    std::string userPath;
+    std::cout << "Please enter the path to the p015 folder: ";
+    std::getline(std::cin, userPath);  // Get user input for the path
+
+    baseDir = userPath + "/p015/QA/";
+    QA_ROOT_FILES_PATH = baseDir + "RootFiles/";
+}
+
 void QA() { //main function
+    initializePaths();
+    
     gROOT->LoadMacro("sPhenixStyle.C");
     SetsPhenixStyle();
     
@@ -1002,4 +998,3 @@ void QA() { //main function
     
     GenerateAdditionalQA();
 }
-
