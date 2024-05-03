@@ -2470,7 +2470,7 @@ void initializePaths() {
     //Extraneous CSV files for plot output
     phenixFilePath = userPath + "/FinalCleanedPhenix.csv"; //path to cleaned PHENIX data
     baseDataPath_ProductionComparisons = BasePlotOutputPath + "/ProductionComparisons/";
-    p013_filePath = baseDataPath_ProductionComparisons + "Default_Final_v2_p013.csv"; //for production comparison
+    p013_filePath = userPath + "/Default_Final_v2_p013.csv"; //for production comparison
 
 
     //paths to data sets for Systematics Calculation and other comparsions
