@@ -7,15 +7,21 @@
 void QQ_flattness_Overlay() {
     gROOT->LoadMacro("sPhenixStyle.C");
     SetsPhenixStyle();
-    // Open the ROOT file
-    TFile *file = new TFile("/Users/patsfan753/Desktop/p015/Q-vec-corr-ana412-2023p015.root");
+    // Prompt user for input at the beginning of the function
+    std::string userPath;
+    std::cout << "Enter the path for the data files: ";
+    std::getline(std::cin, userPath);  // Read the full line of input
+
+    // Use the userPath to construct the full path for the file
+    std::string fullPath = userPath + "/p015/Q-vec-corr-ana412-2023p015.root";
+    TFile *file = new TFile(fullPath.c_str(), "READ");
 
     // Define the centrality folders
     const char* centralities[] = {"0-20", "20-40", "40-60"};
 
     // Titles for the histograms
     /*
-     Replace 3's with 2's for n = 2 corrections or vice versa
+     Replace 3's with 2's for n = 2 corrections
      */
     const char* titles[] = {
         "2#Psi_{2}^{S}, Centrality: 0-20%",
@@ -68,7 +74,8 @@ void QQ_flattness_Overlay() {
             }
 
             legend->Draw();
-            c->SaveAs(Form("/Users/patsfan753/Desktop/plot_%s_%s.png", centrality, dir));
+            std::string savePath = userPath + "/p015/QQdistributions/plot_" + centrality + "_" + dir + ".png";
+            c->SaveAs(savePath.c_str());
             
             // Increment title index after each plot
             titleIndex++;
