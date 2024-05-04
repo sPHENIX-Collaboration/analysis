@@ -77,6 +77,7 @@ void makehist(TString infname, TString outfname)
     vector<TH1F *> hM_dPhi_reco_Centrality_MBDAsymLe0p75_VtxZm30tom10;
     vector<TH1F *> hM_dR_reco_Centrality_MBDAsymLe0p75_VtxZm30tom10;
     vector<TH2F *> hM_Eta_vtxZ_reco_Centrality_MBDAsymLe0p75_VtxZm30tom10;
+    vector<TH1F *> hM_Eta_reco_Centrality_MBDAsymLe0p75_VtxZm30tom10;
     for (size_t i = 0; i < centrality_cut.size() - 1; i++)
     {
         hM_dEta_reco_Centrality.push_back(new TH1F(Form("hM_dEta_reco_Centrality_%dto%d", (int)centrality_cut[i], (int)centrality_cut[i + 1]),
@@ -108,6 +109,9 @@ void makehist(TString infname, TString outfname)
         hM_Eta_vtxZ_reco_Centrality_MBDAsymLe0p75_VtxZm30tom10.push_back(
             new TH2F(Form("hM_Eta_vtxZ_reco_Centrality_%dto%d_MBDAsymLe0p75_VtxZm30tom10", (int)centrality_cut[i], (int)centrality_cut[i + 1]),
                      Form("hM_Eta_vtxZ_reco_Centrality_%dto%d_MBDAsymLe0p75_VtxZm30tom10", (int)centrality_cut[i], (int)centrality_cut[i + 1]), 280, -3.5, 3.5, 300, -50, 10));
+        hM_Eta_reco_Centrality_MBDAsymLe0p75_VtxZm30tom10.push_back(
+            new TH1F(Form("hM_Eta_reco_Centrality_%dto%d_MBDAsymLe0p75_VtxZm30tom10", (int)centrality_cut[i], (int)centrality_cut[i + 1]),
+                     Form("hM_Eta_reco_Centrality_%dto%d_MBDAsymLe0p75_VtxZm30tom10", (int)centrality_cut[i], (int)centrality_cut[i + 1]), 160, -4, 4));
     }
 
     TH1F *hM_NClusLayer1 = new TH1F("hM_NClusLayer1", "hM_NClusLayer1", 100, 0, 5000);
@@ -126,7 +130,7 @@ void makehist(TString infname, TString outfname)
     t->BuildIndex("event"); // Reference: https://root-forum.cern.ch/t/sort-ttree-entries/13138
     TTreeIndex *index = (TTreeIndex *)t->GetTreeIndex();
     int event, NClusLayer1, NPrototkl, NRecotkl_Raw, NRecotkl_GenMatched, NGenHadron;
-    float PV_z, TruthPV_z;
+    float PV_z, TruthPV_z, vtxzwei;
     float MBD_centrality;
     float mbd_south_charge_sum, mbd_north_charge_sum, mbd_charge_sum, mbd_charge_asymm, mbd_z_vtx;
     bool is_min_bias;
@@ -149,6 +153,7 @@ void makehist(TString infname, TString outfname)
     t->SetBranchAddress("NPrototkl", &NPrototkl);
     t->SetBranchAddress("NRecotkl_Raw", &NRecotkl_Raw);
     t->SetBranchAddress("PV_z", &PV_z);
+    t->SetBranchAddress("vtxzwei", &vtxzwei);
     t->SetBranchAddress("TruthPV_z", &TruthPV_z);
     t->SetBranchAddress("clusLayer", &clusLayer);
     t->SetBranchAddress("clusPhi", &clusPhi);
@@ -184,36 +189,36 @@ void makehist(TString infname, TString outfname)
 
         cout << "Event=" << event << "; NClusLayer1=" << NClusLayer1 << "; NTklclusLayer1=" << tklclus1Phi->size() << "; NPrototkl=" << NPrototkl << "; NRecotkl_Raw=" << NRecotkl_Raw << endl;
 
-        hM_NClusLayer1->Fill(NClusLayer1);
-        hM_NTklclusLayer1->Fill(tklclus1Phi->size());
-        hM_NPrototkl->Fill(NPrototkl);
-        hM_NRecotkl_Raw->Fill(NRecotkl_Raw);
+        hM_NClusLayer1->Fill(NClusLayer1, vtxzwei);
+        hM_NTklclusLayer1->Fill(tklclus1Phi->size(), vtxzwei);
+        hM_NPrototkl->Fill(NPrototkl, vtxzwei);
+        hM_NRecotkl_Raw->Fill(NRecotkl_Raw, vtxzwei);
 
-        hM_RecoPVz->Fill(PV_z);
+        hM_RecoPVz->Fill(PV_z, vtxzwei);
 
         int NClusLayer1_clusADCgt35 = 0;
 
         for (size_t j = 0; j < clusPhiSize->size(); j++)
         {
-            hM_clusphi->Fill(clusPhi->at(j));
-            hM_cluseta->Fill(clusEta->at(j));
-            hM_clusphisize->Fill(clusPhiSize->at(j));
-            hM_clusphi_clusphisize->Fill(clusPhi->at(j), clusPhiSize->at(j));
-            hM_cluseta_clusphisize->Fill(clusEta->at(j), clusPhiSize->at(j));
+            hM_clusphi->Fill(clusPhi->at(j), vtxzwei);
+            hM_cluseta->Fill(clusEta->at(j), vtxzwei);
+            hM_clusphisize->Fill(clusPhiSize->at(j), vtxzwei);
+            hM_clusphi_clusphisize->Fill(clusPhi->at(j), clusPhiSize->at(j), vtxzwei);
+            hM_cluseta_clusphisize->Fill(clusEta->at(j), clusPhiSize->at(j), vtxzwei);
 
             if (clusADC->at(j) > 35 && clusLayer->at(j) == 0)
                 NClusLayer1_clusADCgt35++;
         }
-        hM_NClusLayer1_clusADCgt35->Fill(NClusLayer1_clusADCgt35);
+        hM_NClusLayer1_clusADCgt35->Fill(NClusLayer1_clusADCgt35, vtxzwei);
 
         // clusters of tracklets
         for (size_t j = 0; j < tklclus1PhiSize->size(); j++)
         {
-            hM_tklclus1phisize->Fill(tklclus1PhiSize->at(j));
-            hM_tklclus2phisize->Fill(tklclus2PhiSize->at(j));
-            hM_tklclus1phisize_tklclus2phisize->Fill(tklclus1PhiSize->at(j), tklclus2PhiSize->at(j));
-            hM_tklclus1phi_tklclus1phisize->Fill(tklclus1Phi->at(j), tklclus1PhiSize->at(j));
-            hM_tklclus2phi_tklclus2phisize->Fill(tklclus2Phi->at(j), tklclus2PhiSize->at(j));
+            hM_tklclus1phisize->Fill(tklclus1PhiSize->at(j), vtxzwei);
+            hM_tklclus2phisize->Fill(tklclus2PhiSize->at(j), vtxzwei);
+            hM_tklclus1phisize_tklclus2phisize->Fill(tklclus1PhiSize->at(j), tklclus2PhiSize->at(j), vtxzwei);
+            hM_tklclus1phi_tklclus1phisize->Fill(tklclus1Phi->at(j), tklclus1PhiSize->at(j), vtxzwei);
+            hM_tklclus2phi_tklclus2phisize->Fill(tklclus2Phi->at(j), tklclus2PhiSize->at(j), vtxzwei);
         }
 
         // for (size_t j = 0; j < prototkl_eta->size(); j++)
@@ -232,16 +237,16 @@ void makehist(TString infname, TString outfname)
 
         for (size_t j = 0; j < recotklraw_eta->size(); j++)
         {
-            hM_dEta_reco->Fill(recotklraw_deta->at(j));
-            hM_dEta_reco_altrange->Fill(recotklraw_deta->at(j));
-            hM_dPhi_reco->Fill(recotklraw_dphi->at(j));
-            hM_dPhi_reco_altrange->Fill(recotklraw_dphi->at(j));
-            hM_dR_reco->Fill(recotklraw_dR->at(j));
-            hM_dR_reco_altrange->Fill(recotklraw_dR->at(j));
-            hM_dR_reco_LogX->Fill(recotklraw_dR->at(j));
-            hM_Eta_reco->Fill(recotklraw_eta->at(j));
-            hM_Phi_reco->Fill(recotklraw_phi->at(j));
-            hM_Eta_vtxZ_reco_incl->Fill(recotklraw_eta->at(j), PV_z);
+            hM_dEta_reco->Fill(recotklraw_deta->at(j), vtxzwei);
+            hM_dEta_reco_altrange->Fill(recotklraw_deta->at(j), vtxzwei);
+            hM_dPhi_reco->Fill(recotklraw_dphi->at(j), vtxzwei);
+            hM_dPhi_reco_altrange->Fill(recotklraw_dphi->at(j), vtxzwei);
+            hM_dR_reco->Fill(recotklraw_dR->at(j), vtxzwei);
+            hM_dR_reco_altrange->Fill(recotklraw_dR->at(j), vtxzwei);
+            hM_dR_reco_LogX->Fill(recotklraw_dR->at(j), vtxzwei);
+            hM_Eta_reco->Fill(recotklraw_eta->at(j), vtxzwei);
+            hM_Phi_reco->Fill(recotklraw_phi->at(j), vtxzwei);
+            hM_Eta_vtxZ_reco_incl->Fill(recotklraw_eta->at(j), PV_z, vtxzwei);
         }
         
         for (size_t i = 0; i < centrality_cut.size() - 1; i++)
@@ -250,10 +255,10 @@ void makehist(TString infname, TString outfname)
             {
                 for (size_t j = 0; j < recotklraw_eta->size(); j++)
                 {
-                    hM_dEta_reco_Centrality[i]->Fill(recotklraw_deta->at(j));
-                    hM_dPhi_reco_Centrality[i]->Fill(recotklraw_dphi->at(j));
-                    hM_dR_reco_Centrality[i]->Fill(recotklraw_dR->at(j));
-                    hM_Eta_vtxZ_reco_Centrality[i]->Fill(recotklraw_eta->at(j), PV_z);
+                    hM_dEta_reco_Centrality[i]->Fill(recotklraw_deta->at(j), vtxzwei);
+                    hM_dPhi_reco_Centrality[i]->Fill(recotklraw_dphi->at(j), vtxzwei);
+                    hM_dR_reco_Centrality[i]->Fill(recotklraw_dR->at(j), vtxzwei);
+                    hM_Eta_vtxZ_reco_Centrality[i]->Fill(recotklraw_eta->at(j), PV_z, vtxzwei);
                 }
             }
         }
@@ -268,10 +273,10 @@ void makehist(TString infname, TString outfname)
                 {
                     for (size_t j = 0; j < recotklraw_eta->size(); j++)
                     {
-                        hM_dEta_reco_Centrality_MBDAsymLe0p75[i]->Fill(recotklraw_deta->at(j));
-                        hM_dPhi_reco_Centrality_MBDAsymLe0p75[i]->Fill(recotklraw_dphi->at(j));
-                        hM_dR_reco_Centrality_MBDAsymLe0p75[i]->Fill(recotklraw_dR->at(j));
-                        hM_Eta_vtxZ_reco_Centrality_MBDAsymLe0p75[i]->Fill(recotklraw_eta->at(j), PV_z);
+                        hM_dEta_reco_Centrality_MBDAsymLe0p75[i]->Fill(recotklraw_deta->at(j), vtxzwei);
+                        hM_dPhi_reco_Centrality_MBDAsymLe0p75[i]->Fill(recotklraw_dphi->at(j), vtxzwei);
+                        hM_dR_reco_Centrality_MBDAsymLe0p75[i]->Fill(recotklraw_dR->at(j), vtxzwei);
+                        hM_Eta_vtxZ_reco_Centrality_MBDAsymLe0p75[i]->Fill(recotklraw_eta->at(j), PV_z, vtxzwei);
                     }
                 }
             }
@@ -279,8 +284,8 @@ void makehist(TString infname, TString outfname)
 
         if (fabs(mbd_charge_asymm) <= 0.75 && (PV_z >= -30 && PV_z <= -10))
         {
-            hM_RecoPVz_MBDAsymLe0p75_VtxZm30tom10->Fill(PV_z);
-            hM_MBDChargeAsymm_Le0p75_VtxZm30tom10->Fill(mbd_charge_asymm);
+            hM_RecoPVz_MBDAsymLe0p75_VtxZm30tom10->Fill(PV_z, vtxzwei);
+            hM_MBDChargeAsymm_Le0p75_VtxZm30tom10->Fill(mbd_charge_asymm, vtxzwei);
 
             for (size_t i = 0; i < centrality_cut.size() - 1; i++)
             {
@@ -288,10 +293,11 @@ void makehist(TString infname, TString outfname)
                 {
                     for (size_t j = 0; j < recotklraw_eta->size(); j++)
                     {
-                        hM_dEta_reco_Centrality_MBDAsymLe0p75_VtxZm30tom10[i]->Fill(recotklraw_deta->at(j));
-                        hM_dPhi_reco_Centrality_MBDAsymLe0p75_VtxZm30tom10[i]->Fill(recotklraw_dphi->at(j));
-                        hM_dR_reco_Centrality_MBDAsymLe0p75_VtxZm30tom10[i]->Fill(recotklraw_dR->at(j));
-                        hM_Eta_vtxZ_reco_Centrality_MBDAsymLe0p75_VtxZm30tom10[i]->Fill(recotklraw_eta->at(j), PV_z);
+                        hM_dEta_reco_Centrality_MBDAsymLe0p75_VtxZm30tom10[i]->Fill(recotklraw_deta->at(j), vtxzwei);
+                        hM_dPhi_reco_Centrality_MBDAsymLe0p75_VtxZm30tom10[i]->Fill(recotklraw_dphi->at(j), vtxzwei);
+                        hM_dR_reco_Centrality_MBDAsymLe0p75_VtxZm30tom10[i]->Fill(recotklraw_dR->at(j), vtxzwei);
+                        hM_Eta_vtxZ_reco_Centrality_MBDAsymLe0p75_VtxZm30tom10[i]->Fill(recotklraw_eta->at(j), PV_z, vtxzwei);
+                        hM_Eta_reco_Centrality_MBDAsymLe0p75_VtxZm30tom10[i]->Fill(recotklraw_eta->at(j), vtxzwei);
                     }
                 }
             }
@@ -355,6 +361,7 @@ void makehist(TString infname, TString outfname)
         hM_dPhi_reco_Centrality_MBDAsymLe0p75_VtxZm30tom10[i]->Write();
         hM_dR_reco_Centrality_MBDAsymLe0p75_VtxZm30tom10[i]->Write();
         hM_Eta_vtxZ_reco_Centrality_MBDAsymLe0p75_VtxZm30tom10[i]->Write();
+        hM_Eta_reco_Centrality_MBDAsymLe0p75_VtxZm30tom10[i]->Write();
     }
 
     fout->Close();

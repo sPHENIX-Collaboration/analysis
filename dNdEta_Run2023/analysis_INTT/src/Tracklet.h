@@ -110,6 +110,8 @@ class TrackletData
     vector<Tracklet *> ProtoTkls, RecoTkls, RecoTkls_GenMatched;
     vector<GenHadron *> GenHadrons;
 
+    float vtxzwei;
+
     int event, NClusLayer1, NPrototkl, NRecotkl_Raw, NRecotkl_GenMatched, NGenHadron;
     uint64_t INTT_BCO;
     float PV_x, PV_y, PV_z, TruthPV_x, TruthPV_y, TruthPV_z;
@@ -152,6 +154,8 @@ void SetMinitree(TTree *outTree, TrackletData &tkldata)
     outTree->Branch("PV_x", &tkldata.PV_x);
     outTree->Branch("PV_y", &tkldata.PV_y);
     outTree->Branch("PV_z", &tkldata.PV_z);
+    outTree->Branch("vtxzwei", &tkldata.vtxzwei);
+
     outTree->Branch("is_min_bias", &tkldata.is_min_bias);
     outTree->Branch("clusLayer", &tkldata.cluslayer);
     outTree->Branch("clusPhi", &tkldata.clusphi);

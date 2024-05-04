@@ -77,17 +77,17 @@ int main(int argc, char *argv[])
     SetsPhenixStyle();
     gStyle->SetPalette(kThermometer);
 
-    bool IsData = (TString(argv[1]).Atoi() == 1) ? true : false;
-    int NevtToRun = TString(argv[2]).Atoi();
-    float avgVtxX = TString(argv[3]).Atof();  // float avgVtxX = -0.0015 (ana.382) / -0.04 (ana.398) /
-    float avgVtxY = TString(argv[4]).Atof();  // avgVtxY = 0.0012 (ana.382) / 0.24 (ana.398) /
-    float dPhi_cut = TString(argv[5]).Atof(); // Example: 0.11 radian; 0.001919862 radian = 0.11 degree
-    float dca_cut = TString(argv[6]).Atof();  // Example: 0.05cm
-    TString infilename = TString(argv[7]);    // /sphenix/user/hjheng/TrackletAna/data/INTT/ana382_zvtx-20cm_dummyAlignParams/sim/INTTRecoClusters_sim_merged.root
-    TString outfilename = TString(argv[8]);   // /sphenix/user/hjheng/TrackletAna/minitree/INTT/VtxEvtMap_ana382_zvtx-20cm_dummyAlignParams
-    TString demoplotpath = TString(argv[9]);  // ./plot/RecoPV_demo/RecoPV_sim/INTTVtxZ_ana382_zvtx-20cm_dummyAlignParams
-    bool debug = (TString(argv[10]).Atoi() == 1) ? true : false;
-    bool makedemoplot = (TString(argv[11]).Atoi() == 1) ? true : false;
+    bool IsData = (TString(argv[1]).Atoi() == 1) ? true : false;        //
+    int NevtToRun = TString(argv[2]).Atoi();                            //
+    float avgVtxX = TString(argv[3]).Atof();                            // float avgVtxX = -0.0015 (ana.382) / -0.04 (ana.398) /
+    float avgVtxY = TString(argv[4]).Atof();                            // avgVtxY = 0.0012 (ana.382) / 0.24 (ana.398) /
+    float dPhi_cut = TString(argv[5]).Atof();                           // Example: 0.11 radian; 0.001919862 radian = 0.11 degree
+    float dca_cut = TString(argv[6]).Atof();                            // Example: 0.05cm
+    TString infilename = TString(argv[7]);                              // /sphenix/user/hjheng/TrackletAna/data/INTT/ana382_zvtx-20cm_dummyAlignParams/sim/INTTRecoClusters_sim_merged.root
+    TString outfilename = TString(argv[8]);                             // /sphenix/user/hjheng/TrackletAna/minitree/INTT/VtxEvtMap_ana382_zvtx-20cm_dummyAlignParams
+    TString demoplotpath = TString(argv[9]);                            // ./plot/RecoPV_demo/RecoPV_sim/INTTVtxZ_ana382_zvtx-20cm_dummyAlignParams
+    bool debug = (TString(argv[10]).Atoi() == 1) ? true : false;        //
+    bool makedemoplot = (TString(argv[11]).Atoi() == 1) ? true : false; //
 
     TString idxstr = (IsData) ? "INTT_BCO" : "event";
 
