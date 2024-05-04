@@ -15,11 +15,16 @@ void DiphotonQA() {
     gSystem->Load("sPhenixStyle.C");
     SetsPhenixStyle();
 
-    const char* rootFilePath = "/Users/patsfan753/Desktop/p015/test.root";
-    std::cout << "Opening ROOT file: " << rootFilePath << std::endl;
-    const char* outputBasePath = "/Users/patsfan753/Desktop/p015/QA/Diphoton/";
+    // Prompt for user input at the start of the function
+    std::string userPath;
+    std::cout << "Enter the path for the data files: ";
+    std::getline(std::cin, userPath);
 
-    TFile* file = TFile::Open(rootFilePath);
+    // Construct the full paths using the userPath
+    std::string rootFilePath = userPath + "/p015/test.root";
+    std::string outputBasePath = userPath + "/p015/QA/Diphoton/";
+
+    TFile* file = TFile::Open(rootFilePath.c_str());
     if (!file || file->IsZombie()) {
         std::cerr << "Error opening file." << std::endl;
         return;
