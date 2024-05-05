@@ -89,12 +89,27 @@ class caloTreeGen : public SubsysReco
       this->isSim = isSim;
 
       if(isSim) {
-        bins_totalmbd = 500;
-        high_totalmbd = 3e5;
+        bins_totalmbd = 400;
+        high_totalmbd = 2e5;
 
         bins_totalmbdv2 = bins_totalmbd;
         high_totalmbdv2 = high_totalmbd;
 
+        bins_vtx_z = 120;
+        low_vtx_z  = -30;
+        high_vtx_z = 30;
+
+        bins_totalcaloE = 2000;
+        low_totalcaloE  = 0;
+        high_totalcaloE = 2e3;
+
+        bins_towE  = 160;
+        low_towE   = 0;
+        high_towE  = 20;
+
+        bins_e = 80;
+        low_e  = 0;
+        high_e = 20;
       }
     }
 
