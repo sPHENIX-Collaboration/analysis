@@ -100,7 +100,7 @@ void convert(const string &i_input,
     cout << "inputFile: "        << i_input << endl;
     cout << "Cuts: "             << i_cuts << endl;
     cout << "output directory: " << i_outputDir << endl;
-    cout << "anaType:"           << anaType << endl;
+    cout << "anaType: "           << anaType << endl;
     cout << "#############################" << endl;
 
     Int_t ret = myAnalysis::readCuts(i_cuts);
