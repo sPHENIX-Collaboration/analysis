@@ -85,9 +85,6 @@ void createDirectories(const std::string& basePath) {
         std::cout << "Subdirectories for MB and Central also created." << std::endl;
     }
 }
-void ConfigureAnalysis() {
-    std::string basePath;
-    std::cout << "Enter the base path: ";
-    std::cin >> basePath;
+void ConfigureAnalysis(const std::string &basePath = ".") {
     createDirectories(basePath);
 }
