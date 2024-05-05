@@ -45,6 +45,7 @@ void Fun4All_CaloTreeGen(const string  &inputFile,
                          const Float_t clusChi_max   = 4,
                          const Bool_t  isSim         = false,
                          const string  &dstGlobal    = "",
+                         const string  &dstMBD       = "",
                          const string  &g4Hits       = "",
                          const UInt_t  nEvents       = 0) {
   Fun4AllServer *se = Fun4AllServer::instance();
@@ -84,6 +85,10 @@ void Fun4All_CaloTreeGen(const string  &inputFile,
     Fun4AllInputManager *in3 = new Fun4AllDstInputManager("G4Hits");
     in3->AddFile(g4Hits.c_str());
     se->registerInputManager(in3);
+
+    Fun4AllInputManager *in4 = new Fun4AllDstInputManager("DSTmbd");
+    in4->AddFile(dstMBD.c_str());
+    se->registerInputManager(in4);
   }
 
   Fun4AllInputManager *in = new Fun4AllDstInputManager("DSTcalo");
@@ -148,8 +153,8 @@ void Fun4All_CaloTreeGen(const string  &inputFile,
 
 # ifndef __CINT__
 int main(int argc, char* argv[]) {
-    if(argc < 2 || argc > 13){
-        cout << "usage: ./bin/Fun4All_CaloTreeGen inputFile [qaFile] [diphotonFile] [systematic] [doPi0Ana] [vtx_z_max] [clusE_min] [clusChi_max] [isSim] [DSTglobal] [g4Hits] [events]" << endl;
+    if(argc < 2 || argc > 14){
+        cout << "usage: ./bin/Fun4All_CaloTreeGen inputFile [qaFile] [diphotonFile] [systematic] [doPi0Ana] [vtx_z_max] [clusE_min] [clusChi_max] [isSim] [DSTglobal] [g4Hits] [DSTmbd] [events]" << endl;
         cout << "inputFile: Location of fileList containing dst." << endl;
         cout << "qaFile: name of output file. Default: qa.root" << endl;
         cout << "diphotonFile: name of output file. Default: diphoton.root" << endl;
@@ -175,6 +180,7 @@ int main(int argc, char* argv[]) {
     Float_t clusChi_max = 4;
     Bool_t isSim        = false;
     string dstGlobal    = "";
+    string dstMBD       = "";
     string g4Hits       = "";
     UInt_t events       = 0;
 
@@ -209,13 +215,16 @@ int main(int argc, char* argv[]) {
         dstGlobal = argv[10];
     }
     if(argc >= 12) {
-        g4Hits = argv[11];
+        dstMBD = argv[11];
     }
     if(argc >= 13) {
-        events = atoi(argv[12]);
+        g4Hits = argv[12];
+    }
+    if(argc >= 14) {
+        events = atoi(argv[13]);
     }
 
-    Fun4All_CaloTreeGen(inputFile, qaFile, diphotonFile, systematic, doPi0Ana, vtx_z_max, clusE_min, clusChi_max, isSim, dstGlobal, g4Hits, events);
+    Fun4All_CaloTreeGen(inputFile, qaFile, diphotonFile, systematic, doPi0Ana, vtx_z_max, clusE_min, clusChi_max, isSim, dstGlobal, dstMBD, g4Hits, events);
 
     cout << "done" << endl;
     return 0;
