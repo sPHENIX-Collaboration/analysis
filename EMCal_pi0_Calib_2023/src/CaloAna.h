@@ -12,8 +12,10 @@ class TTree;
 class TH2F;
 class TH1F;
 class TH1;
+class TF1;
 class TProfile2D;
 class TLorentzVector;
+class TRandom3;
 
 class CaloAna : public SubsysReco
 {
@@ -43,8 +45,10 @@ class CaloAna : public SubsysReco
   void set_vertex_cut(const float &v) { _vz = v;}
   void apply_vertex_cut(bool Vtx_cut) { m_vtxCut = Vtx_cut; }
 
-  std::pair<double, double> fitHistogram(TH1F* h) ;
-  void  fitEtaSlices(std::string infile, std::string outfile,std::string cdbFile);
+  float getWeight(int ieta, float pt);
+
+  TF1* fitHistogram(TH1* h);
+  void fitEtaSlices(const std::string& infile, const std::string& fitOutFile, const std::string& cdbFile);
 
  protected:
   std::string detector;
@@ -59,6 +63,7 @@ class CaloAna : public SubsysReco
   TH2F* h_emcal_zdc_correlation = nullptr;
   
   TH1F* h_InvMass = nullptr;
+  TH1F* h_InvMass_w = nullptr;
   TH1F* h_InvMassMix = nullptr;
 
   TH2F* h_cemc_etaphi = nullptr;
@@ -68,6 +73,7 @@ class CaloAna : public SubsysReco
   TH2F* h_hcalin_etaphi_wQA = nullptr;
   TH2F* h_hcalout_etaphi_wQA = nullptr;
   TH1* h_totalzdc_e;
+  TH1* h_delR_recTrth = nullptr;
 
   TProfile2D*    h_cemc_etaphi_time = nullptr;
   TProfile2D*  h_hcalin_etaphi_time = nullptr;
@@ -133,19 +139,25 @@ class CaloAna : public SubsysReco
   bool m_vtxCut = false;
   bool dynMaskClus = false;
   bool getVtx = false;
+  bool debug = false;
 
   TH1F* h_pt1;
   TH1F* h_pt2;
   TH1F* h_nclusters; 
   TH1F* h_mass_eta_lt[96];
+  TH1F* h_mass_eta_lt_rw[96];
   TH1F* h_pt_eta[96];
+  TH1F* h_pt_eta_rw[96];
   TH1F* h_emcal_e_eta;
   TH1F* h_truth_eta;
   TH1F* h_truth_e;
   TH1F* h_truth_pt;
+  TH1F* h_pt_rw[96];
+  TFile* frw;
+  TH1* h_matched_res;
 
   float target_pi0_mass = 0.145;
-
+  TRandom3* rnd;
 };
 
 #endif
