@@ -300,7 +300,7 @@ def create_f4a_jobs():
                 file.write(f'executable     = ../{os.path.basename(executable)}\n')
                 # simulation
                 if(isSim):
-                    file.write(f'arguments  = {output_dir}/{os.path.basename(f4a)} $(input_dst) output/qa-$(Process).root output/diphoton-$(Process).root {do_pi0} {z} {clus_e} {clus_chi} {isSim} $(input_global) $(input_g4hits)\n')
+                    file.write(f'arguments  = {output_dir}/{os.path.basename(f4a)} $(input_dst) output/qa-$(Process).root output/diphoton-$(Process).root {systematics} {do_pi0} {z} {clus_e} {clus_chi} {isSim} $(input_global) $(input_mbd) $(input_g4hits)\n')
                 # data
                 else:
                     file.write(f'arguments  = {output_dir}/{os.path.basename(f4a)} $(input_dst) output/qa-$(Process).root output/diphoton-$(Process).root {systematics} {do_pi0} {z} {clus_e} {clus_chi}\n')
@@ -310,7 +310,7 @@ def create_f4a_jobs():
                 file.write('error           = error/job-$(Process).err\n')
                 file.write(f'request_memory = {memory}GB\n')
                 if(isSim):
-                    file.write(f'queue input_dst, input_global, input_g4hits from {filename}')
+                    file.write(f'queue input_dst, input_global, input_mbd, input_g4hits from {filename}')
                 else:
                     file.write(f'queue input_dst from {filename}')
 
