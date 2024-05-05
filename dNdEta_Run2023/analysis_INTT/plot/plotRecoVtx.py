@@ -175,6 +175,7 @@ if __name__ == '__main__':
         os.system("hadd {}/hists_merged.root {}/hists_*.root".format(infiledir, infiledir))
     
     hM_INTTVtxZ_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10 = GetHistogram('{}/hists_merged.root'.format(infiledir), 'hM_INTTVtxZ_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10')
+    hM_INTTVtxZ_MBDAsymm_Centrality0to70_Inclusive = GetHistogram('{}/hists_merged.root'.format(infiledir), 'hM_INTTVtxZ_MBDAsymm_Centrality0to70_Inclusive')
     hM_INTTVtxZ_MBDAsymm_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10 = GetHistogram('{}/hists_merged.root'.format(infiledir), 'hM_INTTVtxZ_MBDAsymm_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10')
     
     centrality_cut = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
@@ -192,6 +193,9 @@ if __name__ == '__main__':
     
     l_hM_INTTVtxZ_MBDVtxZ_Centrality = [GetHistogram('{}/hists_merged.root'.format(infiledir), 'hM_INTTVtxZ_MBDVtxZ_Centrality_{:d}to{:d}'.format(centrality_cut[i], centrality_cut[i+1])) for i in range(len(centrality_cut)-1)]
     # Draw_2Dhist(hist, IsData, logz, norm1, rmargin, XaxisName, YaxisName, ZaxisName, drawopt, outname):
+    Draw_2Dhist(hM_INTTVtxZ_MBDAsymm_Centrality0to70_Inclusive, True, False, False, 0.15, 'INTT vtx_{Z} [cm]', 'MBD charge asymmetry', 'Entries', 'colz', '{}/{}/InttVtxz_MbdAsymm_MBDCentrality0to70'.format(plotpath, outdirprefix))
+    Draw_2Dhist(hM_INTTVtxZ_MBDAsymm_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10, True, False, False, 0.15, 'INTT vtx_{Z} [cm]', 'MBD charge asymmetry', 'Entries', 'colz', '{}/{}/InttVtxz_MbdAsymm_MBDCentrality0to70_MBDAsymLe0p75_VtxZm30tom10'.format(plotpath, outdirprefix))
+    
     for i in range(len(centrality_cut)-1):
         # Draw_1Dhist_fitGaussian(hist, norm1, logy, ymaxscale, XaxisName, Ytitle_unit, outname)
         Draw_1Dhist_fitGaussian(l_hM_INTTVtxZ_Centrality_MBDAsymLe0p75_VtxZm30tom10_forfit[i], False, False, 1.3, 'INTT vtx_{Z} [cm]', 'cm', '{}/{}/InttVtxz_MBDCentrality_MBDAsymLe0p75_VtxZm30tom10_{:d}to{:d}_GaussianFit'.format(plotpath, outdirprefix, centrality_cut[i], centrality_cut[i+1]))

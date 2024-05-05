@@ -26,6 +26,35 @@ TopMargin = 0.08
 BottomMargin = 0.13
 FillAlpha = 0.5
 
+def msrmnt_sphenix_rawhijing_auau_200gev():
+    centralitybin = [0, 10, 20, 30, 40, 50, 60, 70] 
+    dNdEta_eta0, Centrality, dNdEta_eta0_err, Centrality_err = [], [], [], []
+    
+    for i in range(len(centralitybin) - 1):
+        hM_dNdEtafinal = GetHistogram('./corrections/HIJING_Baseline/Centrality{}to{}/correction_hists.root'.format(centralitybin[i],centralitybin[i+1]), 'h1WGhadron')
+
+        # nbins = hM_dNdEtafinal_layer12.GetNbinsX()
+        dNdEta_eta0_centrality = (hM_dNdEtafinal.GetBinContent(hM_dNdEtafinal.FindBin(0)) + hM_dNdEtafinal.GetBinContent(hM_dNdEtafinal.FindBin(-0.2)) + hM_dNdEtafinal.GetBinContent(hM_dNdEtafinal.FindBin(0.2))) / 3.
+        # error propagation
+        dNdEta_eta0_err_zero = hM_dNdEtafinal.GetBinError(hM_dNdEtafinal.FindBin(0))
+        dNdEta_eta0_err_neg = hM_dNdEtafinal.GetBinError(hM_dNdEtafinal.FindBin(-0.2))
+        dNdEta_eta0_err_pos = hM_dNdEtafinal.GetBinError(hM_dNdEtafinal.FindBin(0.2))
+        dNdEta_eta0_err_centrality = sqrt((dNdEta_eta0_err_zero/3)**2 + (dNdEta_eta0_err_neg/3)**2 + (dNdEta_eta0_err_pos/3)**2)
+        
+        dNdEta_eta0.append(dNdEta_eta0_centrality)
+        Centrality.append((centralitybin[i] + centralitybin[i+1]) / 2.)
+        dNdEta_eta0_err.append(dNdEta_eta0_err_centrality)
+        Centrality_err.append(0)
+
+    dNdEta_eta0 = array('f', dNdEta_eta0)
+    Centrality = array('f', Centrality)
+    dNdEta_eta0_err = array('f', dNdEta_eta0_err)
+    Centrality_err = array('f', Centrality_err)
+    gsphenix_rawhijing_auau_200gev = TGraphErrors(len(Centrality), Centrality, dNdEta_eta0, Centrality_err, dNdEta_eta0_err)
+
+    return gsphenix_rawhijing_auau_200gev
+
+
 def msrmnt_sphenix_sim_auau_200gev():
     centralitybin = [0, 10, 20, 30, 40, 50, 60, 70] 
     dNdEta_eta0, Centrality, dNdEta_eta0_err, Centrality_err = [], [], [], []
@@ -34,11 +63,12 @@ def msrmnt_sphenix_sim_auau_200gev():
         hM_dNdEtafinal = GetHistogram('./corrections/HIJING_closure/Centrality{}to{}/correction_hists.root'.format(centralitybin[i],centralitybin[i+1]), 'h1WEfinal')
 
         # nbins = hM_dNdEtafinal_layer12.GetNbinsX()
-        dNdEta_eta0_centrality = (hM_dNdEtafinal.GetBinContent(hM_dNdEtafinal.FindBin(0.1))+hM_dNdEtafinal.GetBinContent(hM_dNdEtafinal.FindBin(-0.1))) / 2.
+        dNdEta_eta0_centrality = (hM_dNdEtafinal.GetBinContent(hM_dNdEtafinal.FindBin(0)) + hM_dNdEtafinal.GetBinContent(hM_dNdEtafinal.FindBin(-0.2)) + hM_dNdEtafinal.GetBinContent(hM_dNdEtafinal.FindBin(0.2))) / 3.
         # error propagation
-        dNdEta_eta0_err_neg = hM_dNdEtafinal.GetBinError(hM_dNdEtafinal.FindBin(-0.1))
-        dNdEta_eta0_err_pos = hM_dNdEtafinal.GetBinError(hM_dNdEtafinal.FindBin(0.1))
-        dNdEta_eta0_err_centrality = sqrt(dNdEta_eta0_err_neg**2 + dNdEta_eta0_err_pos**2) / 2.
+        dNdEta_eta0_err_zero = hM_dNdEtafinal.GetBinError(hM_dNdEtafinal.FindBin(0))
+        dNdEta_eta0_err_neg = hM_dNdEtafinal.GetBinError(hM_dNdEtafinal.FindBin(-0.2))
+        dNdEta_eta0_err_pos = hM_dNdEtafinal.GetBinError(hM_dNdEtafinal.FindBin(0.2))
+        dNdEta_eta0_err_centrality = sqrt((dNdEta_eta0_err_zero/3)**2 + (dNdEta_eta0_err_neg/3)**2 + (dNdEta_eta0_err_pos/3)**2)
         
         dNdEta_eta0.append(dNdEta_eta0_centrality)
         Centrality.append((centralitybin[i] + centralitybin[i+1]) / 2.)
@@ -62,11 +92,12 @@ def msrmnt_sphenix_data_auau_200gev():
         hM_dNdEtafinal = GetHistogram('./corrections/Data_Run20869/Centrality{}to{}/correction_hists.root'.format(centralitybin[i],centralitybin[i+1]), 'h1WEfinal')
 
         # nbins = hM_dNdEtafinal_layer12.GetNbinsX()
-        dNdEta_eta0_centrality = (hM_dNdEtafinal.GetBinContent(hM_dNdEtafinal.FindBin(0.1))+hM_dNdEtafinal.GetBinContent(hM_dNdEtafinal.FindBin(-0.1))) / 2.
+        dNdEta_eta0_centrality = (hM_dNdEtafinal.GetBinContent(hM_dNdEtafinal.FindBin(0)) + hM_dNdEtafinal.GetBinContent(hM_dNdEtafinal.FindBin(-0.2)) + hM_dNdEtafinal.GetBinContent(hM_dNdEtafinal.FindBin(0.2))) / 3.
         # error propagation
-        dNdEta_eta0_err_neg = hM_dNdEtafinal.GetBinError(hM_dNdEtafinal.FindBin(-0.1))
-        dNdEta_eta0_err_pos = hM_dNdEtafinal.GetBinError(hM_dNdEtafinal.FindBin(0.1))
-        dNdEta_eta0_err_centrality = sqrt(dNdEta_eta0_err_neg**2 + dNdEta_eta0_err_pos**2) / 2.
+        dNdEta_eta0_err_zero = hM_dNdEtafinal.GetBinError(hM_dNdEtafinal.FindBin(0))
+        dNdEta_eta0_err_neg = hM_dNdEtafinal.GetBinError(hM_dNdEtafinal.FindBin(-0.2))
+        dNdEta_eta0_err_pos = hM_dNdEtafinal.GetBinError(hM_dNdEtafinal.FindBin(0.3))
+        dNdEta_eta0_err_centrality = sqrt((dNdEta_eta0_err_zero/3)**2 + (dNdEta_eta0_err_neg/3)**2 + (dNdEta_eta0_err_pos/3)**2)
         
         dNdEta_eta0.append(dNdEta_eta0_centrality)
         Centrality.append((centralitybin[i] + centralitybin[i+1]) / 2.)
@@ -104,6 +135,7 @@ def msrmnt_dict():
     msrmntdict['phenix_auau_0p0145'] = phenix_auau_0p0145()
     msrmntdict['phenix_auau_0p0077'] = phenix_auau_0p0077()
     msrmntdict['brahms_auau_0p2'] = brahms_auau_0p2()
+    msrmntdict['sphenix_rawhijing_auau_200gev'] = msrmnt_sphenix_rawhijing_auau_200gev()
     msrmntdict['sphenix_sim_auau_200gev'] = msrmnt_sphenix_sim_auau_200gev()
     msrmntdict['sphenix_data_auau_200gev'] = msrmnt_sphenix_data_auau_200gev()
 
@@ -119,7 +151,7 @@ def gstyle(g, mstyle, msize, color, lwidth, alpha):
     g.SetFillColorAlpha(color, alpha)
 
 
-def dNdeta_eta0_Summary(jsonpath, canvname, axisrange = [-1, 101, 1, 3000], canvsize = [800, 500], grlegpos = [0.5, 0.18, 0.9, 0.45], prelimtext='Work-in-progress'):
+def dNdeta_eta0_Summary(jsonpath, canvname, axisrange = [-1, 101, 1, 3000], canvsize = [800, 500], grlegpos = [0.35, 0.18, 0.9, 0.45], prelimtext='Work-in-progress'):
     xmin = axisrange[0]
     xmax = axisrange[1]
     ymin = axisrange[2]

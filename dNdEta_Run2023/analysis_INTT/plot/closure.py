@@ -92,7 +92,7 @@ def Draw_1Dhist_datasimcomp(hdata, hsims, gpadmargin, logy, ymaxscale, XaxisName
     hdata.SetLineColor(1)
     hdata.SetLineWidth(2)
     hdata.Draw('same PE1')
-    shift = 0.45 if prelim else 0.54
+    shift = 0.45 if prelim else 0.75
     legylow = 0.2 + 0.04 * (len(hsims) - 1)
     leg = TLegend((1-RightMargin)-shift, (1-TopMargin)-legylow,
                   (1-RightMargin)-0.1, (1-TopMargin)-0.03)
@@ -137,10 +137,15 @@ if __name__ == '__main__':
 
     h1WEfinal_data = GetHistogram("{}/{}/correction_hists.root".format(datahistdir,centralitydirstr), 'h1WEfinal')
     l_h1WEfinal_sim = []
-    l_h1WGhadron_sim = []
+    # l_h1WGhadron_sim = []
     for i, simhistd in enumerate(simhistdir):
+        tmplegtxt = simlegtext[i]
+        simlegtext[i] = tmplegtxt + ' (reconstructed, closure)'
         l_h1WEfinal_sim.append(GetHistogram("{}/{}/correction_hists.root".format(simhistd,centralitydirstr), 'h1WEfinal'))
-        l_h1WGhadron_sim.append(GetHistogram("{}/{}/correction_hists.root".format(simhistd,centralitydirstr), 'h1WGhadron'))
+        # Raw generated hadron distribution
+        l_h1WEfinal_sim.append(GetHistogram("{}/{}/correction_hists.root".format(simhistd,centralitydirstr), 'h1WGhadron'))
+        simlegtext.append('{} (raw generated hadrons)'.format(tmplegtxt))
 
+    
     # Draw_1Dhist_datasimcomp(hdata, hsims, gpadmargin, logy, ymaxscale, XaxisName, YaxisName, Ytitle_unit, prelim, simlegtex, outname)
-    Draw_1Dhist_datasimcomp(h1WEfinal_data, l_h1WEfinal_sim, [0.06,0.06,0.15,0.13], False, 1.5, '#eta', 'dN_{ch}/d#eta', '', False, simlegtext, './corrections/{}/dNdeta_{}_crosscheck'.format(plotdir,centralitydirstr))
+    Draw_1Dhist_datasimcomp(h1WEfinal_data, l_h1WEfinal_sim, [0.06,0.06,0.15,0.13], False, 1.6, '#eta', 'dN_{ch}/d#eta', '', False, simlegtext, './corrections/{}/dNdeta_{}_crosscheck'.format(plotdir,centralitydirstr))

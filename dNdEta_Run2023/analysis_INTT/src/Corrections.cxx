@@ -696,7 +696,7 @@ void calccorr(const TString infilename, int CentLow = -1, int CentHigh = 10, boo
 
     /* Trigger efficiency */
     ccheck->cd();
-    gPad->SetRightMargin(0.09);
+    gPad->SetRightMargin(0.1);
     gPad->SetLogx(0);
     gPad->SetLogy(0);
     // trigeff->GetXaxis()->SetMoreLogLabels();
@@ -716,7 +716,7 @@ void calccorr(const TString infilename, int CentLow = -1, int CentHigh = 10, boo
 
     /* Single-diffractive fraction */
     ccheck->cd();
-    gPad->SetRightMargin(0.09);
+    gPad->SetRightMargin(0.1);
     gPad->SetLogx(0);
     gPad->SetLogy(0);
     // sdfrac->GetXaxis()->SetMoreLogLabels();

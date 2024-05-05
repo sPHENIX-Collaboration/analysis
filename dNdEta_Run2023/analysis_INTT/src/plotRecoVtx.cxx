@@ -41,6 +41,7 @@ int main(int argc, char *argv[])
     TH1F *hM_INTTVtxZ_MBDAsymLe0p75_VtxZm30tom10 = new TH1F("hM_INTTVtxZ_MBDAsymLe0p75_VtxZm30tom10", "hM_INTTVtxZ_MBDAsymLe0p75_VtxZm30tom10", 220, -31, -9);
     TH1F *hM_INTTVtxZ_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10 = new TH1F("hM_INTTVtxZ_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10", "hM_INTTVtxZ_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10", 220, -31, -9);
     TH1F *hM_INTTVtxZ_Centrality0to70_MBDAsymLe0p75_VtxZm40tom0_coarse = new TH1F("hM_INTTVtxZ_Centrality0to70_MBDAsymLe0p75_VtxZm40tom0_coarse", "hM_INTTVtxZ_Centrality0to70_MBDAsymLe0p75_VtxZm40tom0_coarse", 40, -40, -0);
+    TH2F *hM_INTTVtxZ_MBDAsymm_Centrality0to70_Inclusive = new TH2F("hM_INTTVtxZ_MBDAsymm_Centrality0to70_Inclusive", "hM_INTTVtxZ_MBDAsymm_Centrality0to70_Inclusive", 160, -60, 20, 200, -1, 1);
     TH2F *hM_INTTVtxZ_MBDAsymm_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10 = new TH2F("hM_INTTVtxZ_MBDAsymm_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10", "hM_INTTVtxZ_MBDAsymm_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10", 220, -31, -9, 200, -1, 1);
     vector<float> centrality_cut = {0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100};
     vector<TH1F *> hM_INTTVtxZ_Centrality;
@@ -86,6 +87,12 @@ int main(int argc, char *argv[])
         
         hM_INTTVtxZ_MBDVtxZ_Inclusive->Fill(PV_z, mbd_z_vtx);
         hM_INTTVtxZ_Inclusive->Fill(PV_z);
+
+        if (MBD_centrality >= 0 && MBD_centrality <= 0.7)
+        {
+            hM_INTTVtxZ_MBDAsymm_Centrality0to70_Inclusive->Fill(PV_z, mbd_charge_asymm);
+        }
+
         if (fabs(mbd_charge_asymm) <= 0.75)
         {
             hM_INTTVtxZ_MBDAsymLe0p75->Fill(PV_z);
@@ -135,6 +142,7 @@ int main(int argc, char *argv[])
     hM_INTTVtxZ_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10->Write();
     hM_INTTVtxZ_Centrality0to70_MBDAsymLe0p75_VtxZm40tom0_coarse->Write();
     hM_INTTVtxZ_MBDAsymm_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10->Write();
+    hM_INTTVtxZ_MBDAsymm_Centrality0to70_Inclusive->Write();
     for (int i = 0; i < centrality_cut.size() - 1; i++)
     {
         hM_INTTVtxZ_Centrality[i]->Write();
