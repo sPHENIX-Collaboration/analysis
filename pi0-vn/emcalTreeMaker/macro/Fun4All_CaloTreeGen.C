@@ -98,6 +98,7 @@ void Fun4All_CaloTreeGen(const string  &inputFile,
 
   MinimumBiasClassifier *minimumbiasclassifier = new MinimumBiasClassifier();
   minimumbiasclassifier->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
+  minimumbiasclassifier->set_simulation(isSim);
   se->registerSubsystem(minimumbiasclassifier);
 
   caloTreeGen *calo = new caloTreeGen("caloTreeGen");
