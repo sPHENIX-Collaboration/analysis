@@ -354,6 +354,7 @@ void fits(const string &i_input,
           const string &outputCSV = "fitStats.csv",
           const string &outputDir = ".",
           const string &tag = "test",
+                Int_t  isSim = 0,
                 Int_t  anaType = 0,
           const Float_t sigmaMult = 2) {
 
@@ -364,6 +365,7 @@ void fits(const string &i_input,
     cout << "output csv: "       << outputCSV << endl;
     cout << "output directory: " << outputDir << endl;
     cout << "tag: "              << tag << endl;
+    cout << "isSim: "            << isSim << endl;
     cout << "anaType: "          << anaType << endl;
     cout << "sigmaMult: "        << sigmaMult << endl;
     cout << "#############################" << endl;
@@ -379,6 +381,9 @@ void fits(const string &i_input,
     myAnalysis::pt_key        = (anaType == 0) ? myAnalysis::pt_key1        : myAnalysis::pt_key2;
 
     if(anaType == 1) myAnalysis::meanEstimate = 0.18;
+    if(isSim   == 1) {
+        myAnalysis::meanEstimate = 0.15;
+    }
 
     myAnalysis::sigmaMult = sigmaMult;
     Int_t ret = myAnalysis::readCuts(i_cuts);
@@ -408,20 +413,22 @@ void fits(const string &i_input,
 # ifndef __CINT__
 Int_t main(Int_t argc, char* argv[]) {
 if(argc < 3 || argc > 8){
-        cout << "usage: ./fits inputFile cuts [fitStats] [outputDir] [tag] [anaType] [sigmaMult]" << endl;
+        cout << "usage: ./fits inputFile cuts [fitStats] [outputDir] [tag] [isSim] [anaType] [sigmaMult]" << endl;
         cout << "inputFile: input root file" << endl;
         cout << "cuts: csv file containing cuts" << endl;
         cout << "fitStats: csv file containing fit Stats" << endl;
         cout << "outputDir: location of output directory. Default: current directory." << endl;
         cout << "tag: tag for the output folder. Default: test." << endl;
+        cout << "isSim: Monte Carlo. Default: 0." << endl;
         cout << "anaType: analysis type. Default: 0." << endl;
         cout << "sigmaMult: controls the signal bounds. Default: 2." << endl;
         return 1;
     }
 
-    string fitStats  = "fitStats.csv";
-    string outputDir = ".";
-    string tag = "test";
+    string fitStats   = "fitStats.csv";
+    string outputDir  = ".";
+    string tag        = "test";
+    Int_t  isSim      = 0;
     Int_t  anaType    = 0;
     Float_t sigmaMult = 2;
 
@@ -435,13 +442,16 @@ if(argc < 3 || argc > 8){
         tag = argv[5];
     }
     if(argc >= 7) {
-        anaType = atoi(argv[6]);
+        isSim = atoi(argv[6]);
     }
     if(argc >= 8) {
-        sigmaMult = atof(argv[7]);
+        anaType = atoi(argv[7]);
+    }
+    if(argc >= 9) {
+        sigmaMult = atof(argv[8]);
     }
 
-    fits(argv[1], argv[2], fitStats, outputDir, tag, anaType, sigmaMult);
+    fits(argv[1], argv[2], fitStats, outputDir, tag, isSim, anaType, sigmaMult);
 
     cout << "======================================" << endl;
     cout << "done" << endl;
