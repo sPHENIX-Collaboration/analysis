@@ -18,10 +18,11 @@ e=${8}
 chi=${9}
 sim=${10}
 input_global=${11}
-input_g4hits=${12}
+input_mbd=${12}
+input_g4hits=${13}
 
 # print the environment - needed for debugging
 printenv
 
 mkdir -p output
-$exe $input $qa $diphoton $systematics $do_pi0 $z $e $chi $sim $input_global $input_g4hits
+$exe $input $qa $diphoton $systematics $do_pi0 $z $e $chi $sim $input_global $input_mbd $input_g4hits
