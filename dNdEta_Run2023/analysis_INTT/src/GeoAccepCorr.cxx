@@ -9,6 +9,7 @@
 #include <TTree.h>
 #include <TTreeIndex.h>
 #include <TString.h>
+#include <TLegend.h>
 
 #include <fstream>
 #include <iostream>
@@ -114,15 +115,37 @@ int main(int argc, char *argv[])
     hM_sim_coarse->RebinX(nfeta / neta);
     hM_sim_coarse->RebinY(nfvz / nvz);
 
-    TH2D *hM_ratio = (TH2D *)hM_sim_coarse->Clone("hM_ratio");
-    hM_ratio->Divide(hM_data_coarse);
-    hM_ratio->SetStats(0);
+    // TH2D *hM_ratio = (TH2D *)hM_sim_coarse->Clone("hM_ratio");
+    // hM_ratio->Divide(hM_data_coarse);
+    // hM_ratio->SetStats(0);
+    TH2D *hM_ratio = new TH2D("hM_ratio", "hM_ratio", neta, etamin, etamax, nvz, vzmin, vzmax);
 
     auto ext_accep_map = (TH2D *)hM_ratio->Clone("ext_accep_map");
     for (int i = 1; i <= neta; i++)
     {
         for (int j = 1; j <= nvz; j++)
         {
+            // calculate uncertainty
+            double data = hM_data_coarse->GetBinContent(i, j);
+            double sim = hM_sim_coarse->GetBinContent(i, j);
+            double data_err = hM_data_coarse->GetBinError(i, j);
+            double sim_err = hM_sim_coarse->GetBinError(i, j);
+            double ratio = -1E9;
+            double ratio_err = -1E9;
+            if (data == 0 || sim == 0)
+            {
+                ratio = 0;
+                ratio_err = 0;
+            }
+            else
+            {
+                ratio = sim / data;
+                ratio_err = ratio * sqrt(pow(sim_err / sim, 2) + pow(data_err / data, 2));
+            }
+            hM_ratio->SetBinContent(i, j, ratio);
+            hM_ratio->SetBinError(i, j, ratio_err);
+            std::cout << "data = " << data << " sim = " << sim << " data_err = " << data_err << " sim_err = " << sim_err << " ratio = " << ratio << " ratio_err = " << ratio_err << std::endl;
+
             if (hM_ratio->GetBinContent(i, j) < 0.9 || hM_ratio->GetBinContent(i, j) > 1.1)
             {
                 ext_accep_map->SetBinContent(i, j, 0);
@@ -145,9 +168,6 @@ int main(int argc, char *argv[])
         std::cout << std::endl;
     }
 
-    // strip the string outfilename to get the name of the output file
-    TString plotname = outfilename.ReplaceAll(".root", "");
-
     TCanvas *c = new TCanvas("c", "c", 800, 700);
     gPad->SetRightMargin(0.15);
     c->cd();
@@ -156,9 +176,9 @@ int main(int argc, char *argv[])
     gStyle->SetPaintTextFormat("1.3f");
     hM_ratio->SetContour(1000);
     hM_ratio->SetMarkerSize(0.5);
-    hM_ratio->Draw("colztext45");
+    hM_ratio->Draw("colztexte");
     drawhoutline(ext_accep_map);
-    c->SaveAs(plotname+".pdf");
+    c->SaveAs(outfilename+".pdf");
 
     c->Clear();
     c->cd();
@@ -166,33 +186,47 @@ int main(int argc, char *argv[])
     hM_data->GetYaxis()->SetTitle("v_{z} [cm]");
     hM_data->SetContour(1000);
     hM_data->Draw("colz");
-    c->SaveAs(plotname+"_hM_data.pdf");
+    TLegend *l = new TLegend(0.2, 0.2, 0.4, 0.4);
+    l->SetTextSize(0.04);
+    l->SetFillStyle(0);
+    l->AddEntry("", "Data", "");
+    l->Draw();
+    c->SaveAs(outfilename+"_hM_data.pdf");
 
+    l->Clear();
     c->Clear();
     c->cd();
     hM_sim->GetXaxis()->SetTitle("#eta");
     hM_sim->GetYaxis()->SetTitle("v_{z} [cm]");
     hM_sim->SetContour(1000);
     hM_sim->Draw("colz");
-    c->SaveAs(plotname+"_hM_sim.pdf");
+    l->AddEntry("", "Simulation", "");
+    l->Draw();
+    c->SaveAs(outfilename+"_hM_sim.pdf");
 
+    l->Clear();
     c->Clear();
     c->cd();
     hM_data_coarse->GetXaxis()->SetTitle("#eta");
     hM_data_coarse->GetYaxis()->SetTitle("v_{z} [cm]");
     hM_data_coarse->SetContour(1000);
     hM_data_coarse->Draw("colz");
-    c->SaveAs(plotname+"_hM_data_coarse.pdf");
+    l->AddEntry("", "Data", "");
+    l->Draw();
+    c->SaveAs(outfilename+"_hM_data_coarse.pdf");
 
+    l->Clear();
     c->Clear();
     c->cd();
     hM_sim_coarse->GetXaxis()->SetTitle("#eta");
     hM_sim_coarse->GetYaxis()->SetTitle("v_{z} [cm]");
     hM_sim_coarse->SetContour(1000);
     hM_sim_coarse->Draw("colz");
-    c->SaveAs(plotname+"_hM_sim_coarse.pdf");
+    l->AddEntry("", "Simulation", "");
+    l->Draw();
+    c->SaveAs(outfilename+"_hM_sim_coarse.pdf");
 
-    TFile *fout = new TFile(outfilename, "RECREATE");
+    TFile *fout = new TFile(outfilename+".root", "RECREATE");
     fout->cd();
     c->Write();
     hM_data->Write();

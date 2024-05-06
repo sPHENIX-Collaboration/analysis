@@ -16,7 +16,7 @@ gROOT.SetBatch(True)
 
 
 # def Draw_1Dhist_datasimcomp(hdata, hsims, gpadmargin, norm, logy, ymaxscale, XaxisName, Ytitle_unit, prelim, simlegtex, outname):
-def Draw_1Dhist_datasimcomp(hdata, hsims, gpadmargin, logy, ymaxscale, XaxisName, YaxisName, Ytitle_unit, prelim, simlegtex, outname):
+def Draw_1Dhist_datasimcomp(hdata, hsims, gpadmargin, logy, ymaxscale, XaxisName, YaxisName, Ytitle_unit, prelim, addstr, simlegtex, outname):
     hsimcolor = colorset(len(hsims))
 
     maxbincontent = -1E6
@@ -27,19 +27,6 @@ def Draw_1Dhist_datasimcomp(hdata, hsims, gpadmargin, logy, ymaxscale, XaxisName
         maxbincontent = max(hdata.GetMaximum(), hsim.GetMaximum())
 
     binwidth = hdata.GetXaxis().GetBinWidth(1)
-
-    # if norm == 'unity':
-    #     hdata.Scale(1. / hdata.Integral(-1, -1))
-    #     for hsim in hsims:
-    #         hsim.Scale(1. / hsim.Integral(-1, -1))
-    # elif norm == 'data':
-    #     for hsim in hsims:
-    #         hsim.Scale(hdata.Integral(-1, -1) / hsim.Integral(-1, -1))
-    # else:
-    #     if norm != 'none':
-    #         print('Invalid normalization option: {}'.format(norm))
-    #         sys.exit(1)
-    
 
     c = TCanvas('c', 'c', 800, 700)
     if logy:
@@ -78,32 +65,49 @@ def Draw_1Dhist_datasimcomp(hdata, hsims, gpadmargin, logy, ymaxscale, XaxisName
             hsim.GetYaxis().SetTitleOffset(1.5)
             hsim.SetLineColor(TColor.GetColor(hsimcolor[i]))
             hsim.SetLineWidth(2)
-            hsim.SetMarkerSize(0)
-            hsim.Draw('histe')
+            if 'raw generated hadrons' in simlegtex[i]:
+                hsim.SetMarkerSize(0)
+                hsim.Draw('histe')   
+            else:
+                hsim.SetFillColorAlpha(TColor.GetColor(hsimcolor[i]), 0.3)
+                hsim.SetMarkerSize(0.6)
+                hsim.SetMarkerColor(TColor.GetColor(hsimcolor[i]))
+                hsim.Draw('E5')
         else:
             hsim.SetLineColor(TColor.GetColor(hsimcolor[i]))
             hsim.SetLineWidth(2)
             hsim.SetMarkerSize(0)
-            hsim.Draw('histe same')
+            if 'raw generated hadrons' in simlegtex[i]:
+                hsim.SetMarkerSize(0)
+                hsim.Draw('histe same')   
+            else:
+                hsim.SetFillColorAlpha(TColor.GetColor(hsimcolor[i]), 0.3)
+                hsim.SetMarkerSize(0.6)
+                hsim.SetMarkerColor(TColor.GetColor(hsimcolor[i]))
+                hsim.Draw('E5 same')
 
-    hdata.SetMarkerStyle(20)
-    hdata.SetMarkerSize(1)
-    hdata.SetMarkerColor(1)
+    # hdata.SetMarkerStyle(20)
+    # hdata.SetMarkerSize(1)
+    # hdata.SetMarkerColor(1)
     hdata.SetLineColor(1)
     hdata.SetLineWidth(2)
-    hdata.Draw('same PE1')
+    hdata.SetFillColorAlpha(1, 0.3);
+    hdata.SetMarkerStyle(21);
+    hdata.SetMarkerSize(0.6);
+    hdata.SetMarkerColor(1);
+    hdata.Draw('same E5')
     shift = 0.45 if prelim else 0.75
     legylow = 0.2 + 0.04 * (len(hsims) - 1)
     leg = TLegend((1-RightMargin)-shift, (1-TopMargin)-legylow,
-                  (1-RightMargin)-0.1, (1-TopMargin)-0.03)
+                  (1-RightMargin)-0.1, (1-TopMargin)-0.02)
     leg.SetTextSize(0.04)
     leg.SetFillStyle(0)
     prelimtext = 'Preliminary' if prelim else 'Work-in-progress'
     leg.AddEntry('', '#it{#bf{sPHENIX}} '+prelimtext, '')
     leg.AddEntry('', 'Au+Au #sqrt{s_{NN}}=200 GeV', '')
-    leg.AddEntry(hdata, 'Data', "PE1");
+    leg.AddEntry(hdata, 'Data'+addstr, "lf");
     for i, lt in enumerate(simlegtex):
-        leg.AddEntry(hsims[i], lt, "le");
+        leg.AddEntry(hsims[i], lt, "lf");
     leg.Draw()
     c.RedrawAxis()
     c.Draw()
@@ -147,5 +151,10 @@ if __name__ == '__main__':
         simlegtext.append('{} (raw generated hadrons)'.format(tmplegtxt))
 
     
+    # strip the 'Centrality' and 'to' from the centrality string
+    centstr = centralitydirstr
+    centstr = centralitydirstr.replace('Centrality ', '')
+    centstr = centralitydirstr.replace('to', '-')
+    centstr = ' ('+centstr+'%)'
     # Draw_1Dhist_datasimcomp(hdata, hsims, gpadmargin, logy, ymaxscale, XaxisName, YaxisName, Ytitle_unit, prelim, simlegtex, outname)
-    Draw_1Dhist_datasimcomp(h1WEfinal_data, l_h1WEfinal_sim, [0.06,0.06,0.15,0.13], False, 1.6, '#eta', 'dN_{ch}/d#eta', '', False, simlegtext, './corrections/{}/dNdeta_{}_crosscheck'.format(plotdir,centralitydirstr))
+    Draw_1Dhist_datasimcomp(h1WEfinal_data, l_h1WEfinal_sim, [0.06,0.06,0.15,0.13], False, 1.6, '#eta', 'dN_{ch}/d#eta', '', False, centstr, simlegtext, './corrections/{}/dNdeta_{}_crosscheck'.format(plotdir,centralitydirstr))

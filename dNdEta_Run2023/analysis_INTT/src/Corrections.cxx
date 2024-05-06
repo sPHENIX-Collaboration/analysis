@@ -48,6 +48,10 @@ void calccorr(const TString infilename, int CentLow = -1, int CentHigh = 10, boo
 
     bool IsData = (infilename.Contains("Data")) ? true : false;
 
+    TString legtitle_head = (IsData) ? "Data" : "Simulation, closure test";
+    TString legtitle_centrality = TString::Format("Centrality %d-%d", CentLow, CentHigh) + "%";
+    TString legtitle = legtitle_head + TString::Format(": centrality %d-%d", CentLow, CentHigh) + "%"; 
+
     TFile *finput = new TFile(infilename, "read");
     TTree *tinput = (TTree *)finput->Get("minitree");
 
@@ -203,12 +207,14 @@ void calccorr(const TString infilename, int CentLow = -1, int CentHigh = 10, boo
     //! Not really used (?)
     TH2F *haccepmc = 0;
     TH2F *haccepdata = 0;
+    TH2F *haccepratio = 0;
     // TH2F *hgaccep = 0;
 
     if (applyg)
     {
         haccepmc = (TH2F *)faccep->Get("hM_sim_coarse");
         haccepdata = (TH2F *)faccep->Get("hM_data_coarse");
+        haccepratio = (TH2F *)faccep->Get("hM_ratio");
         // hgaccep = (TH2F *)haccepmc->Clone("hgaccep");
         // hgaccep->Divide(haccepdata);
     }
@@ -434,11 +440,14 @@ void calccorr(const TString infilename, int CentLow = -1, int CentHigh = 10, boo
                 {
                     double gaccepdata = haccepdata->GetBinContent(x, z);
                     double gaccepmc = haccepmc->GetBinContent(x, z);
+                    double gaccepratio = haccepratio->GetBinContent(x, z);
+                    double gaccepratio_err = haccepratio->GetBinError(x, z);
 
                     if (gaccepdata && gaccepmc)
                     {
-                        alpha = alpha * gaccepmc / gaccepdata;
-                        alphaerr = alphaerr * gaccepmc / gaccepdata;
+                        alpha = alpha * gaccepratio;
+                        alphaerr = sqrt(pow(alphaerr, 2) + pow(alpha * gaccepratio_err, 2));
+                        alphaerr = alphaerr * gaccepratio;
                         if (debug)
                             printf("     & apply geo accep: %.3f", gaccepmc / gaccepdata);
                     }
@@ -458,7 +467,8 @@ void calccorr(const TString infilename, int CentLow = -1, int CentHigh = 10, boo
                 h2alpha_multb[y - 1]->SetBinError(x, z, alphaerr);
 
                 double ncorr = raw * alpha;
-                double ncorrerr = rawerr * alpha;
+                // double ncorrerr = rawerr * alpha;
+                double ncorrerr = sqrt(pow(rawerr * alpha, 2) + pow(raw * alphaerr, 2)); // statistical (+) systematic uncertainties
 
                 h3WEcorr->SetBinContent(x, y, z, ncorr);
                 h3WEcorr->SetBinError(x, y, z, ncorrerr);
@@ -587,6 +597,7 @@ void calccorr(const TString infilename, int CentLow = -1, int CentHigh = 10, boo
             {
                 h2WEtcorr->SetBinContent(x, y, h2WEtcorr->GetBinContent(x, y) * totalc);
                 h2WEtcorr->SetBinError(x, y, h2WEtcorr->GetBinError(x, y) * totalc);
+                if (debug) printf("   ^ apply trigger correction: eta: %2i, mult: %2i, trigeff: %.3f, sdfrac: %.3f, totalc: %.3f, h2WEtcorr bin content: %.3f +- %.3f\n", x, y, trigeff, sdfrac, totalc, h2WEtcorr->GetBinContent(x, y), h2WEtcorr->GetBinError(x, y));
                 h2WEttruth->SetBinContent(x, y, h2WEttruth->GetBinContent(x, y) * totalc);
                 h2WEttruth->SetBinError(x, y, h2WEttruth->GetBinError(x, y) * totalc);
             }
@@ -617,16 +628,6 @@ void calccorr(const TString infilename, int CentLow = -1, int CentHigh = 10, boo
     h1WEtcorr->SetName("h1WEtcorr");
     h1WEtcorr->Scale(1., "width");
     h1WEtcorr->Divide(h1accep3xe);
-
-    TH1F *h1WEtcorrxm = (TH1F *)h2WEtcorr->ProjectionY();
-    h1WEtcorrxm->SetName("h1WEtcorrxm");
-    h1WEtcorrxm->Scale(1., "width");
-    h1WEtcorrxm->Divide(h1accep3xm);
-
-    TH1F *h1WEttruth = (TH1F *)h2WEttruth->ProjectionX();
-    h1WEttruth->SetName("h1WEttruth");
-    h1WEttruth->Scale(1., "width");
-    h1WEttruth->Divide(h1accep3xe);
 
     /* Calculate/apply empty correction */
     cout << "[INFO] Calculate and apply the empty correction" << endl;
@@ -755,7 +756,7 @@ void calccorr(const TString infilename, int CentLow = -1, int CentHigh = 10, boo
     h1accep2xe->GetYaxis()->SetRangeUser(0, h1accep2xe->GetMaximum() * 1.2);
     h1accep2xe->SetLineColor(1);
     h1accep2xe->Draw("histtext");
-    t->DrawLatexNDC(0.5, 0.97, h1accep2xe->GetName());
+    t->DrawLatexNDC(0.5, 0.97, legtitle_centrality.Data());
     ccheck->SaveAs(Form("%s/%s.pdf", outdir.Data(), h1accep2xe->GetName()));
     ccheck->Clear();
 
@@ -764,7 +765,7 @@ void calccorr(const TString infilename, int CentLow = -1, int CentHigh = 10, boo
     gPad->SetRightMargin(0.18);
     gPad->SetLeftMargin(0.18);
     gPad->SetLogx(0);
-    gPad->SetLogy(1);
+    gPad->SetLogy(0);
     h2WEtcorr->GetYaxis()->SetMoreLogLabels();
     h2WEtcorr->GetXaxis()->SetTitle("Tracklet #eta");
     h2WEtcorr->GetYaxis()->SetTitle("Multiplicity");
@@ -784,17 +785,9 @@ void calccorr(const TString infilename, int CentLow = -1, int CentHigh = 10, boo
     h1empty->GetYaxis()->SetRangeUser(0, h1empty->GetMaximum() * 1.2);
     h1empty->SetLineColor(1);
     h1empty->Draw("histtext");
-    t->DrawLatexNDC(0.5, 0.97, h1empty->GetName());
+    t->DrawLatexNDC(0.5, 0.97, legtitle_centrality.Data());
     ccheck->SaveAs(Form("%s/%s.pdf", outdir.Data(), h1empty->GetName()));
     ccheck->Clear();
-
-    // for (int i = 0; i < nw * nw; i++)
-    // {
-    //     ccheck->cd(i + 1);
-    //     gPad->SetTickx();
-    //     gPad->SetTicky();
-    // }
-    // ccheck->SaveAs(Form("%s/Check_Intermediate.pdf", outdir.Data()));
 
     /* Draw 1D alpha and fits */
     cout << "[INFO] Making checking plots: 1D alpha and fits" << endl;
@@ -875,6 +868,9 @@ void calccorr(const TString infilename, int CentLow = -1, int CentHigh = 10, boo
     h2alphafinal->SetMarkerSize(0.6);
     h2alphafinal->SetContour(1000);
     h2alphafinal->Draw("colztext45");
+    TLegend *la = new TLegend(0.18, 0.18, 0.4, 0.3);
+    la->SetHeader(legtitle_centrality.Data(), "l");
+    la->Draw();
     calpha->SaveAs(Form("%s/alpha2D_inclTklMult.pdf", outdir.Data()));
 
     for (int k = 0; k < nmult; k++)
@@ -886,20 +882,24 @@ void calccorr(const TString infilename, int CentLow = -1, int CentHigh = 10, boo
         h2alpha_multb[k]->GetYaxis()->SetTitleOffset(1.3);
         h2alpha_multb[k]->GetZaxis()->SetTitle("#alpha (#eta, v_{z})");
         h2alpha_multb[k]->GetZaxis()->SetTitleOffset(1.3);
-        // h2alpha_multb[k]->GetZaxis()->SetRangeUser(h2alphafinal->GetMinimum(0), h2alphafinal->GetMaximum());
-        h2alpha_multb[k]->GetZaxis()->SetRangeUser(0, 3);
+        h2alpha_multb[k]->GetZaxis()->SetRangeUser(alpha_min, alpha_max);
         gStyle->SetPaintTextFormat("1.3f");
         h2alpha_multb[k]->SetMarkerSize(0.6);
         h2alpha_multb[k]->SetContour(1000);
         h2alpha_multb[k]->Draw("colztext45");
+        la->Draw();
         calpha->SaveAs(Form("%s/alpha2D_TklMultb%d.pdf", outdir.Data(), k));
     }
 
     /* Analysis stages - Closure test*/
-    vector<TH1F *> vechist = {h1WGhadron, h1WEraw, h1WErawacc, h1WEcorr, h1WEtcorr, h1WEfinal};
-    vector<const char *> vcolor{"#20262E", "#7209b7", "#D04848", "#1C82AD", "#1F8A70", "#FC7300"};
-    vector<int> vlwidth = {3, 3, 3, 3, 2, 2};
-    vector<int> vstyle = {1, 1, 1, 1, 2, 1};
+    // vector<TH1F *> vechist = {h1WGhadron, h1WEraw, h1WErawacc, h1WEcorr, h1WEtcorr, h1WEfinal};
+    vector<TH1F *> vechist = {h1WGhadron, h1WEraw, h1WEcorr, h1WEtcorr, h1WEfinal};
+    // vector<const char *> vcolor{"#20262E", "#7209b7", "#D04848", "#1C82AD", "#1F8A70", "#FC7300"};
+    vector<const char *> vcolor{"#D04848", "#1C82AD", "#1F8A70", "#FC7300", "#20262E"};
+    // vector<int> vlwidth = {3, 3, 3, 3, 2, 2};
+    vector<int> vlwidth = {3, 3, 3, 3, 3};
+    // vector<int> vstyle = {1, 1, 1, 1, 2, 1};
+    vector<int> vstyle = {1, 1, 1, 1, 1};
     TCanvas *cstage = new TCanvas("cstage", "cstage", CANVASW, CANVASH);
     gPad->SetRightMargin(0.05);
     gPad->SetTopMargin(0.05);
@@ -924,17 +924,27 @@ void calccorr(const TString infilename, int CentLow = -1, int CentHigh = 10, boo
         vechist[i]->SetLineColor(TColor::GetColor(vcolor[i]));
         vechist[i]->SetLineWidth(vlwidth[i]);
         vechist[i]->SetLineStyle(vstyle[i]);
-        vechist[i]->Draw("hist same");
+        if (i == 0)
+            vechist[i]->Draw("hist same");
+        else
+        {
+            vechist[i]->SetFillColorAlpha(TColor::GetColor(vcolor[i]), 0.6);
+            vechist[i]->SetMarkerStyle(21);
+            // vechist[i]->SetMarkerSize(0.6);
+            vechist[i]->SetMarkerColor(TColor::GetColor(vcolor[i]));
+            vechist[i]->Draw("E5 same");
+        }
+            
     }
 
     TLegend *l1 = new TLegend(0.18, 0.68, 0.5, 0.92);
-    l1->SetHeader(Form("Closure test: Centrality %d to %d", CentLow, CentHigh, "l"));
+    l1->SetHeader(legtitle.Data(), "l");
     l1->AddEntry(h1WGhadron, "Truth", "l");
-    l1->AddEntry(h1WEraw, "Reco-tracklets before corrections", "l");
-    l1->AddEntry(h1WErawacc, "Corrected for acceptance", "l");
-    l1->AddEntry(h1WEcorr, "Corrected for accep. & #alpha", "l");
-    l1->AddEntry(h1WEtcorr, "Corrected for accep. & #alpha, trigger & sdf.", "l");
-    l1->AddEntry(h1WEfinal, "Corrected for accep. & #alpha, trigger & sdf. & empty event", "l");
+    l1->AddEntry(h1WEraw, "Reco-tracklets before corrections", "lf");
+    // l1->AddEntry(h1WErawacc, "Corrected for acceptance", "l");
+    l1->AddEntry(h1WEcorr, "Corrected for accep. & #alpha", "lf");
+    l1->AddEntry(h1WEtcorr, "Corrected for accep. & #alpha, trigger & sdf.", "lf");
+    l1->AddEntry(h1WEfinal, "Corrected for accep. & #alpha, trigger & sdf. & empty event", "lf");
     l1->SetTextSize(0.03);
     l1->SetFillStyle(0);
     l1->SetBorderSize(0);
@@ -1000,14 +1010,7 @@ int main(int argc, char *argv[])
     bool debug = (TString(argv[12]).Atoi() == 1) ? true : false;
 
     gStyle->SetPaintTextFormat();
-    // TString input = "/sphenix/user/hjheng/TrackletAna/minitree/INTT/TrackletMinitree_ana398_zvtx-20cm_dummyAlignParams/sim/TrackletAna_minitree_merged.root";
-    // calccorr(input, 5, 95, false, false, false, "", "", "", false);
-    // for (int i = 0; i < 10; i++)
-    // {
-    //     gStyle->SetPaintTextFormat();
-    //     int cent = 5 * (2 * i + 1);
-    //     calccorr(input, cent, cent, false, false, false, "", "", "", false);
-    // }
+    
     const TString aselstring = (asel_string == "null") ? "" : asel_string;
     calccorr(input, CentLow, CentHigh, applyc, applyg, applym, estag, putag, aselstring, correctionfiletag, outfilepath, debug);
 
