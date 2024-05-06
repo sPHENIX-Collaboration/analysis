@@ -380,7 +380,12 @@ void fits(const string &i_input,
     myAnalysis::cent_key = (anaType == 0) ? myAnalysis::cent_key1 : myAnalysis::cent_key2;
     myAnalysis::pt_key        = (anaType == 0) ? myAnalysis::pt_key1        : myAnalysis::pt_key2;
 
-    if(anaType == 1) myAnalysis::meanEstimate = 0.18;
+    if(anaType == 1) {
+        myAnalysis::meanEstimate = 0.18;
+
+        // EMCal Systematics
+        // myAnalysis::meanEstimate = 0.182;
+    }
     if(isSim   == 1) {
         myAnalysis::meanEstimate = 0.15;
     }
