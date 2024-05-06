@@ -627,7 +627,7 @@ void initializePaths() {
     basePath = userPath + "/p015/InvMass/";
     globalDataPath = basePath + "CSV/";
     globalPlotOutput = basePath + "Plots/";
-    globalFilename = basePath + "hPi0Mass_EA1_EB1_Asym0point5_DelrMin0_DelrMax1_Chi4.root";
+    globalFilename = userPath + "/hPi0Mass_EA1_EB1_Asym0point5_DelrMin0_DelrMax1_Chi4.root";
     csv_filename = globalDataPath + "PlotByPlotOutput_P015.csv";
 }
 void AnalyzePi0() {
