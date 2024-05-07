@@ -20,7 +20,7 @@ cyan_hex = '#7FE9DE'
 
 def colorset(i):
     if i == 1:
-        return [black_hex]
+        return [blue_hex]
     elif i == 2:
         return [blue_hex, red_hex]
     elif i == 3:
@@ -204,12 +204,16 @@ def Draw_1DhistsComp(lhist, norm1, logx, logy, ymaxscale, XaxisName, Ytitle_unit
         c = 0
 
 
-def Draw_2Dhist(hist, IsData, logz, norm1, rmargin, XaxisName, YaxisName, drawopt, outname):
+def Draw_2Dhist(hist, IsData, logz, norm1, rmargin, XaxisName, YaxisName, ZaxisName, drawopt, outname):
     c = TCanvas('c', 'c', 800, 700)
     if logz:
         c.SetLogz()
     c.cd()
-    gPad.SetRightMargin(rmargin)
+    if ZaxisName == '':
+        gPad.SetRightMargin(rmargin)
+    else:
+        gPad.SetRightMargin(rmargin+0.03)
+
     gPad.SetTopMargin(TopMargin)
     gPad.SetLeftMargin(LeftMargin)
     gPad.SetBottomMargin(BottomMargin)
@@ -223,6 +227,11 @@ def Draw_2Dhist(hist, IsData, logz, norm1, rmargin, XaxisName, YaxisName, drawop
     hist.GetYaxis().SetTitleSize(AxisTitleSize)
     hist.GetXaxis().SetLabelSize(AxisLabelSize)
     hist.GetYaxis().SetLabelSize(AxisLabelSize)
+    if ZaxisName != '':
+        hist.GetZaxis().SetTitle(ZaxisName)
+        hist.GetZaxis().SetTitleSize(AxisTitleSize)
+        hist.GetZaxis().SetTitleOffset(1.1)
+        
     hist.GetXaxis().SetTitleOffset(1.1)
     hist.GetYaxis().SetTitleOffset(1.3)
     hist.GetZaxis().SetLabelSize(AxisLabelSize)

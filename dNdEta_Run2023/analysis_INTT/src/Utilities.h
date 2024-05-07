@@ -7,6 +7,8 @@
 #include <TFile.h>
 #include <TTree.h>
 
+using namespace std;
+
 template <class T> void CleanVec(std::vector<T> &v)
 {
     std::vector<T>().swap(v);
@@ -52,9 +54,9 @@ template <typename T> std::string number_to_string(T param_)
 }
 
 // MVTX stave position
-vector<tuple<float, float, float, float>> MVTXStavePositionXY()
+std::vector<tuple<float, float, float, float>> MVTXStavePositionXY()
 {
-    vector<tuple<float, float, float, float>> v; // x1, y1, x2, y2
+    std::vector<tuple<float, float, float, float>> v; // x1, y1, x2, y2
     TFile *f = new TFile("./MVTX_geo.root", "READ");
     f->cd();
     TTree *t = (TTree *)f->Get("tree");
