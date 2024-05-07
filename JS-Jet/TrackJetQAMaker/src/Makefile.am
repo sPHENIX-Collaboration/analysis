@@ -1,11 +1,12 @@
 AUTOMAKE_OPTIONS = foreign
 
 lib_LTLIBRARIES = \
-    libtrackjetqamaker.la
+    libtrksinjetqa.la
 
 AM_LDFLAGS = \
   -L$(libdir) \
-  -L$(OFFLINE_MAIN)/lib
+  -L$(OFFLINE_MAIN)/lib \
+  -L$(OFFLINE_MAIN)/lib64
 
 AM_CPPFLAGS = \
   -I$(includedir) \
@@ -13,29 +14,37 @@ AM_CPPFLAGS = \
   -I$(ROOTSYS)/include
 
 pkginclude_HEADERS = \
-  TrackJetQAMaker.h \
-  TrackJetQAMakerConfig.h \
-  TrackJetQAMakerHelper.h \
-  TrackJetQAMakerHistDef.h \
-  HitQAMaker.h \
-  ClustQAMaker.h \
-  TrackQAMaker.h \
-  JetQAMaker.h
+  TrksInJetQA.h \
+  TrksInJetQAHist.h \
+  TrksInJetQATypes.h \
+  TrksInJetQAConfig.h \
+  TrksInJetQABaseFiller.h \
+  TrksInJetQAInJetFiller.h \
+  TrksInJetQAInclusiveFiller.h \
+  TrksInJetQABaseManager.h \
+  TrksInJetQAHitManager.h \
+  TrksInJetQAClustManager.h \
+  TrksInJetQATrkManager.h \
+  TrksInJetQAJetManager.h
 
 if ! MAKEROOT6
   ROOT5_DICTS = \
-    TrackJetQAMaker_Dict.cc
+    TrksInJetQA_Dict.cc
 endif
 
-libtrackjetqamaker_la_SOURCES = \
+libtrksinjetqa_la_SOURCES = \
   $(ROOT5_DICTS) \
-  TrackJetQAMaker.cc \
-  HitQAMaker.cc \
-  ClustQAMaker.cc \
-  TrackQAMaker.cc \
-  JetQAMaker.cc
+  TrksInJetQA.cc \
+  TrksInJetQABaseFiller.cc \
+  TrksInJetQAInJetFiller.cc \
+  TrksInJetQAInclusiveFiller.cc \
+  TrksInJetQABaseManager.cc \
+  TrksInJetQAHitManager.cc \
+  TrksInJetQAClustManager.cc \
+  TrksInJetQATrkManager.cc \
+  TrksInJetQAJetManager.cc
 
-libtrackjetqamaker_la_LDFLAGS = \
+libtrksinjetqa_la_LDFLAGS = \
   -L$(libdir) \
   -L$(OFFLINE_MAIN)/lib \
   -lcalo_io \
@@ -44,6 +53,7 @@ libtrackjetqamaker_la_LDFLAGS = \
   -lphg4hit \
   -lg4dst \
   -lg4eval \
+  -lqautils \
   `fastjet-config --libs`
 
 
@@ -54,7 +64,7 @@ noinst_PROGRAMS = \
   testexternals
 
 testexternals_SOURCES = testexternals.C
-testexternals_LDADD = libtrackjetqamaker.la
+testexternals_LDADD = libtrksinjetqa.la
 
 testexternals.C:
 	echo "//*** this is a generated file. Do not commit, do not edit" > $@

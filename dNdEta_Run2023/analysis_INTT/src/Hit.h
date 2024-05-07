@@ -16,7 +16,8 @@ class Hit : public TObject
   public:
     Hit();
     Hit(float, float, float, float, float, float, int);
-    Hit(float, float, float, float, float, float, int, int);
+    Hit(float, float, float, float, float, float, int, float);
+    Hit(float, float, float, float, float, float, int, float, unsigned int);
     Hit(float, float); // simple construct
     ~Hit();
 
@@ -31,7 +32,8 @@ class Hit : public TObject
     float Phi();
     float R();
     int Layer();
-    int PhiSize() { return _phisize; }
+    float PhiSize() { return _phisize; }
+    unsigned int ClusADC() { return _clusadc;}
     pair<float, float> Edge();
 
     void Update();
@@ -57,7 +59,8 @@ class Hit : public TObject
     float _phi;
     float _R;
     int _layer;
-    int _phisize;
+    float _phisize; 
+    unsigned int _clusadc;
     pair<float, float> _edge;
     bool _matched_tkl;
     TVector3 vechit;
@@ -89,7 +92,7 @@ Hit::Hit(float x, float y, float z, float vtxX, float vtxY, float vtxZ, int laye
     _matched_tkl = false;
 }
 
-Hit::Hit(float x, float y, float z, float vtxX, float vtxY, float vtxZ, int layer, int phisize)
+Hit::Hit(float x, float y, float z, float vtxX, float vtxY, float vtxZ, int layer, float phisize)
 {
     vechit.SetXYZ(x, y, z);
     vecvtx.SetXYZ(vtxX, vtxY, vtxZ);
@@ -101,6 +104,21 @@ Hit::Hit(float x, float y, float z, float vtxX, float vtxY, float vtxZ, int laye
     _R = vecrel.Mag();
     _matched_tkl = false;
 }
+
+Hit::Hit(float x, float y, float z, float vtxX, float vtxY, float vtxZ, int layer, float phisize, unsigned int clusadc)
+{
+    vechit.SetXYZ(x, y, z);
+    vecvtx.SetXYZ(vtxX, vtxY, vtxZ);
+    _layer = layer;
+    _phisize = phisize;
+    _clusadc = clusadc;
+    vecrel = vechit - vecvtx;
+    _eta = vecrel.Eta();
+    _phi = vecrel.Phi();
+    _R = vecrel.Mag();
+    _matched_tkl = false;
+}
+
 
 Hit::Hit(float eta, float phi)
 {
