@@ -41,6 +41,7 @@
 
 #include "TH1.h"
 #include "TH2.h"
+#include "TH2F.h"
 #include <TTree.h>
 #include <TFile.h>
 #include <TH3F.h>
@@ -75,6 +76,9 @@ int TracksInJets::Init(PHCompositeNode *topNode)
   m_h_track_vs_calo_pt = new TH3F("m_h_track_vs_calo_pt","",100,0,100,500,0,100,10,0,100);
   m_h_track_vs_calo_pt->GetXaxis()->SetTitle("Jet p_{T} [GeV]");
   m_h_track_vs_calo_pt->GetYaxis()->SetTitle("Sum track p_{T} [GeV]");
+  m_h_track_pt = new TH2F("m_h_track_pt", "", 100, 0, 100, 100, 0, 100);
+  m_h_track_pt->GetXaxis()->SetTitle("Jet p_{T} [GeV]");
+  m_h_track_pt->GetYaxis()->SetTitle("Sum track p_{T} [GeV]");
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
@@ -166,8 +170,16 @@ int TracksInJets::process_event(PHCompositeNode *topNode)
 
     // Fill histogram for the current jet
     assert(m_h_track_vs_calo_pt);
-    m_h_track_vs_calo_pt->Fill(jet->get_pt(), sumtrk.Perp(), cent);
+    assert(m_h_track_pt);
+    // Fill TH3 histogram for Au+Au collisions
+    if (isAA) {
+      m_h_track_vs_calo_pt->Fill(jet->get_pt(), sumtrk.Perp(), cent);
+    }
 
+    // Fill TH2 histogram for pp collisions
+    else {
+      m_h_track_pt->Fill(jet->get_pt(), sumtrk.Perp());
+    }
     // Reset sumtrk for the next jet
     sumtrk.SetXYZ(0, 0, 0);
   }
@@ -204,7 +216,7 @@ int TracksInJets::End(PHCompositeNode *topNode)
       }
   }
   else {
-    m_h_track_vs_calo_pt->Write();  //if pp, do not project onto centrality bins
+    m_h_track_pt->Write();  //if pp, do not project onto centrality bins
   }
   std::cout << "TracksInJets::End(PHCompositeNode *topNode) This is the End..." << std::endl;  
   return Fun4AllReturnCodes::EVENT_OK;
