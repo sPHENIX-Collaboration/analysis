@@ -25,6 +25,8 @@ f4a.add_argument('-c', '--clus-chi-max', type=float, default=4, help='Maximum Cl
 f4a.add_argument('-a', '--do-pi0', type=int, default=1, help='Do pi0 Analysis. Default: True')
 f4a.add_argument('-s2', '--isSim', type=int, default=0, help='Type Simulation. Default: False')
 f4a.add_argument('-y', '--systematics', type=str, default='none', help='Systematics. Default: none')
+f4a.add_argument('-z1', '--useZDCInfo', type=int, default=0, help='Use ZDC Info for MB classifier. Default: False')
+f4a.add_argument('-z2', '--zdc-cut', type=float, default=40, help='Minimum ZDC Energy. Default: 40 [GeV]')
 
 pi0Ana = subparser.add_parser('pi0Ana', help='Create condor submission directory for pi0Analysis.')
 
@@ -261,12 +263,16 @@ def create_f4a_jobs():
     clus_e       = args.clus_e_min
     clus_chi     = args.clus_chi_max
     systematics  = args.systematics
+    useZDCInfo   = args.useZDCInfo
+    zdc_cut      = args.zdc_cut
 
     print(f'Simulation : {isSim}')
     print(f'Fun4All : {macro}')
     print(f'src: {src}')
     print(f'Do pi0 Analysis: {do_pi0}')
     print(f'Vtx z max: {z} cm')
+    print(f'Use ZDC Info: {useZDCInfo}')
+    print(f'ZDC Cut: {zdc_cut} [GeV]')
     print(f'Cluster Minimum ECore: {clus_e} GeV')
     print(f'Cluster Maximum Chi2: {clus_chi} GeV')
     print(f'Run List Directory: {run_list_dir}')
@@ -300,10 +306,10 @@ def create_f4a_jobs():
                 file.write(f'executable     = ../{os.path.basename(executable)}\n')
                 # simulation
                 if(isSim):
-                    file.write(f'arguments  = {output_dir}/{os.path.basename(f4a)} $(input_dst) output/qa-$(Process).root output/diphoton-$(Process).root {systematics} {do_pi0} {z} {clus_e} {clus_chi} {isSim} $(input_global) $(input_mbd) $(input_g4hits)\n')
+                    file.write(f'arguments  = {output_dir}/{os.path.basename(f4a)} $(input_dst) output/qa-$(Process).root output/diphoton-$(Process).root {systematics} {do_pi0} {z} {useZDCInfo} {zdc_cut} {clus_e} {clus_chi} {isSim} $(input_global) $(input_mbd) $(input_g4hits)\n')
                 # data
                 else:
-                    file.write(f'arguments  = {output_dir}/{os.path.basename(f4a)} $(input_dst) output/qa-$(Process).root output/diphoton-$(Process).root {systematics} {do_pi0} {z} {clus_e} {clus_chi}\n')
+                    file.write(f'arguments  = {output_dir}/{os.path.basename(f4a)} $(input_dst) output/qa-$(Process).root output/diphoton-$(Process).root {systematics} {do_pi0} {z} {useZDCInfo} {zdc_cut} {clus_e} {clus_chi}\n')
 
                 file.write(f'log            = {log}\n')
                 file.write('output          = stdout/job-$(Process).out\n')

@@ -41,6 +41,8 @@ void Fun4All_CaloTreeGen(const string  &inputFile,
                          const string  &systematic   = "none",
                          const Bool_t  doPi0Ana      = true,
                          const Float_t vtx_z_max     = 10, /*cm*/
+                         const Bool_t  useZDCInfo    = false,
+                         const Float_t zdc_cut       = 40, /*GeV*/
                          const Float_t clusE_min     = 1, /*GeV*/
                          const Float_t clusChi_max   = 4,
                          const Bool_t  isSim         = false,
@@ -117,6 +119,8 @@ void Fun4All_CaloTreeGen(const string  &inputFile,
 
   MinimumBiasClassifier *minimumbiasclassifier = new MinimumBiasClassifier();
   minimumbiasclassifier->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
+  minimumbiasclassifier->set_useZDCInfo(useZDCInfo);
+  minimumbiasclassifier->set_zdc_cut(zdc_cut);
   minimumbiasclassifier->set_simulation(isSim);
   se->registerSubsystem(minimumbiasclassifier);
 
@@ -177,18 +181,21 @@ void Fun4All_CaloTreeGen(const string  &inputFile,
 
 # ifndef __CINT__
 int main(int argc, char* argv[]) {
-    if(argc < 2 || argc > 14){
-        cout << "usage: ./bin/Fun4All_CaloTreeGen inputFile [qaFile] [diphotonFile] [systematic] [doPi0Ana] [vtx_z_max] [clusE_min] [clusChi_max] [isSim] [DSTglobal] [g4Hits] [DSTmbd] [events]" << endl;
+    if(argc < 2 || argc > 16){
+        cout << "usage: ./bin/Fun4All_CaloTreeGen inputFile [qaFile] [diphotonFile] [systematic] [doPi0Ana] [vtx_z_max] [useZDCInfo] [zdc_cut] [clusE_min] [clusChi_max] [isSim] [DSTglobal] [DSTmbd] [g4Hits] [events]" << endl;
         cout << "inputFile: Location of fileList containing dst." << endl;
         cout << "qaFile: name of output file. Default: qa.root" << endl;
         cout << "diphotonFile: name of output file. Default: diphoton.root" << endl;
         cout << "systematic: name of systematic node. Default: none " << endl;
         cout << "doPi0Ana: Enable pi0 analysis (takes longer). Default: true" << endl;
         cout << "vtx_z_max: Maximum z-vertex [cm]. Default: 10" << endl;
-        cout << "clusE_min: Minimum cluster energy. Default: 0.5 GeV" << endl;
+        cout << "useZDCInfo: Use ZDC info for MB classifier. Default: false" << endl;
+        cout << "zdc cut: Minimum ZDC energy. Default: 40 GeV" << endl;
+        cout << "clusE_min: Minimum cluster energy. Default: 1 GeV" << endl;
         cout << "clusChi_max: Maximum cluster chi squared. Default: 4" << endl;
         cout << "isSim: Analysis simulation?. Default: false" << endl;
         cout << "DSTglobal: DSTglobal. " << endl;
+        cout << "DSTmbd: DSTmbd. " << endl;
         cout << "g4Hits: g4Hits. " << endl;
         cout << "events: Number of events to analyze. Default: all" << endl;
         return 1;
@@ -200,6 +207,8 @@ int main(int argc, char* argv[]) {
     string systematic   = "none";
     Bool_t doPi0Ana     = true;
     Float_t vtx_z_max   = 10;
+    Bool_t useZDCInfo   = false;
+    Float_t zdc_cut     = 40;
     Float_t clusE_min   = 1;
     Float_t clusChi_max = 4;
     Bool_t isSim        = false;
@@ -227,28 +236,34 @@ int main(int argc, char* argv[]) {
         vtx_z_max = atof(argv[6]);
     }
     if(argc >= 8) {
-        clusE_min = atof(argv[7]);
+        useZDCInfo = atoi(argv[7]);
     }
     if(argc >= 9) {
-        clusChi_max = atof(argv[8]);
+        zdc_cut = atof(argv[8]);
     }
     if(argc >= 10) {
-        isSim = atoi(argv[9]);
+        clusE_min = atof(argv[9]);
     }
     if(argc >= 11) {
-        dstGlobal = argv[10];
+        clusChi_max = atof(argv[10]);
     }
     if(argc >= 12) {
-        dstMBD = argv[11];
+        isSim = atoi(argv[11]);
     }
     if(argc >= 13) {
-        g4Hits = argv[12];
+        dstGlobal = argv[12];
     }
     if(argc >= 14) {
-        events = atoi(argv[13]);
+        dstMBD = argv[13];
+    }
+    if(argc >= 15) {
+        g4Hits = argv[14];
+    }
+    if(argc >= 16) {
+        events = atoi(argv[15]);
     }
 
-    Fun4All_CaloTreeGen(inputFile, qaFile, diphotonFile, systematic, doPi0Ana, vtx_z_max, clusE_min, clusChi_max, isSim, dstGlobal, dstMBD, g4Hits, events);
+    Fun4All_CaloTreeGen(inputFile, qaFile, diphotonFile, systematic, doPi0Ana, vtx_z_max, useZDCInfo, zdc_cut, clusE_min, clusChi_max, isSim, dstGlobal, dstMBD, g4Hits, events);
 
     cout << "done" << endl;
     return 0;
