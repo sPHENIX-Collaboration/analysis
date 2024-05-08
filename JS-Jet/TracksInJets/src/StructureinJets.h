@@ -4,6 +4,11 @@
 #ifndef STRUCTUREINJETS_H
 #define STRUCTUREINJETS_H
 
+// qa utilities
+#include <qautils/QAHistManagerDef.h>
+
+// f4a includes
+#include <fun4all/Fun4AllHistoManager.h>
 #include <fun4all/SubsysReco.h>
 #include "TTree.h"
 #include <string>
