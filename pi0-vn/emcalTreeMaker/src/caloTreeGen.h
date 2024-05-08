@@ -161,6 +161,7 @@ class caloTreeGen : public SubsysReco
     Int_t   min_goodTowers   = 9999;
     Float_t min_vtx_z        = 9999;
     Float_t min_cent         = 9999;
+    Float_t min_b            = 9999;
 
     Double_t max_towE         = 0;
     Float_t  max_clusterECore = 0;
@@ -175,6 +176,7 @@ class caloTreeGen : public SubsysReco
     Int_t    max_goodTowers   = 0;
     Float_t  max_vtx_z        = 0;
     Float_t  max_cent         = 0;
+    Float_t  max_b            = 0;
 
     TH1F* hTowE;
     TH1F* hClusterECore;
@@ -184,6 +186,7 @@ class caloTreeGen : public SubsysReco
     TH1F* hNClusters;
     TH1F* hTotalMBD;
     TH1F* hCentrality;
+    TH1F* hImpactPar;
     TH1F* hTotalCaloE;
     TH1F* hVtxZ;
     TH1F* hVtxZv2;
@@ -194,6 +197,7 @@ class caloTreeGen : public SubsysReco
     TH2F* h2TowEtaPhiWeighted;
     TH2F* h2TotalMBDCaloE;
     TH2F* h2TotalMBDCentrality;
+    TH2F* h2ImpactParCentrality;
     TH2F* h2TotalMBDCaloEv2;
 
     UInt_t bins_towE  = 1200;
@@ -256,6 +260,10 @@ class caloTreeGen : public SubsysReco
     Float_t low_vtx_z  = -100;
     Float_t high_vtx_z = 100;
 
+    UInt_t  bins_b = 320;
+    Float_t low_b  = 0;
+    Float_t high_b = 16;
+
     // Define PI0 Cuts
     Float_t clusE_min    = 1;
     Float_t clus_chi_max = 10;
@@ -271,6 +279,7 @@ class caloTreeGen : public SubsysReco
     Float_t vtx_z    = 0;
     Float_t totalMBD = 0;
     Float_t cent     = 0;
+    Float_t b        = 0; /*Impact Parameter from MC*/
     Float_t Q2_S_x   = 0;
     Float_t Q2_S_y   = 0;
     Float_t Q2_N_x   = 0;

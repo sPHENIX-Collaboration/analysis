@@ -87,6 +87,10 @@ Int_t caloTreeGen::Init(PHCompositeNode *topNode)
   h2TotalMBDCentrality = new TH2F("h2TotalMBDCentrality", "Total MBD Charge vs Centrality; Centrality; Total MBD Charge [Arb]", bins_cent, low_cent, high_cent, 100, 0, 1);
   h2TotalMBDCaloEv2 = new TH2F("h2TotalMBDCaloEv2", "Total MBD Charge vs Total EMCAL Energy; Total EMCAL Energy; Total MBD Charge", bins_totalcaloEv2, low_totalcaloEv2, high_totalcaloEv2,
                                                                                                                                     bins_totalmbdv2, low_totalmbdv2, high_totalmbdv2);
+  if(isSim) {
+    hImpactPar            = new TH1F("hImpactPar", "Impact Parameter; b [fm]; Counts", bins_b, low_b, high_b);
+    h2ImpactParCentrality = new TH2F("h2ImpactParCentrality", "Impact Parameter vs Centrality; Centrality; b [fm]", bins_cent, low_cent, high_cent, bins_b, low_b, high_b);
+  }
 
   out2 = new TFile(Outfile2.c_str(),"RECREATE");
 
@@ -114,6 +118,11 @@ Int_t caloTreeGen::Init(PHCompositeNode *topNode)
   T->Branch("ecore2",    &ecore2_vec);
   T->Branch("chi2_max",  &chi2_max_vec);
   T->Branch("isFarNorth",&isFarNorth_vec);
+
+  // keep track of impact parameter in simulation
+  if(isSim) {
+    T->Branch("b", &b, "b/F");
+  }
 
   //so that the histos actually get written out
   Fun4AllServer *se = Fun4AllServer::instance();
@@ -199,6 +208,11 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
   // data gives centrality values in 0 - 1
   cent = (isSim) ? centInfo->get_centile(CentralityInfo::PROP::mbd_NS)/100. :
                    centInfo->get_centile(CentralityInfo::PROP::mbd_NS);
+
+  // grab impact parameter in MC
+  if(isSim) {
+    b = centInfo->get_quantity(CentralityInfo::PROP::bimp);
+  }
 
   //----------------------------------vertex------------------------------------------------------//
   GlobalVertexMap* vertexmap = findNode::getClass<GlobalVertexMap>(topNode, "GlobalVertexMap");
@@ -341,6 +355,11 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
     return Fun4AllReturnCodes::ABORTEVENT;
   }
 
+  if(isSim) {
+    hImpactPar->Fill(b);
+    h2ImpactParCentrality->Fill(cent, b);
+  }
+
   hTotalCaloE->Fill(totalCaloE);
   h2TotalMBDCaloE->Fill(totalCaloE/high_totalcaloE, totalMBD/high_totalmbd);
   h2TotalMBDCentrality->Fill(cent, totalMBD/high_totalmbd);
@@ -349,6 +368,9 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
 
   min_cent = std::min(min_cent, cent);
   max_cent = std::max(max_cent, cent);
+
+  min_b = std::min(min_b, b);
+  max_b = std::max(max_b, b);
 
   if(cent < 0 || cent > 1) std::cout << "Centrality: " << cent << ", totalMBD: " << totalMBD << std::endl;
 
@@ -513,6 +535,7 @@ Int_t caloTreeGen::End(PHCompositeNode *topNode)
   std::cout << "Bad PMT Events: " << hBadPMTs->Integral(2,bins_nPMTs) << std::endl;
   std::cout << "min z-vertex: " << min_vtx_z << ", max z-vertex: " << max_vtx_z << std::endl;
   std::cout << "min centrality: " << min_cent << ", max centrality: " << max_cent << std::endl;
+  std::cout << "min b [fm]: " << min_b << ", max b [fm]: " << max_b << std::endl;
   std::cout << "min totalCaloE: " << min_totalCaloE << ", max totalCaloE: " << max_totalCaloE << std::endl;
   std::cout << "max totalmbd: " << max_totalmbd << ", max totalmbd (for totalCaloE < 0): " << max_totalmbd2 << std::endl;
   std::cout << "min tower energy: " << min_towE << ", max tower energy: " << max_towE << std::endl;
@@ -534,6 +557,10 @@ Int_t caloTreeGen::End(PHCompositeNode *topNode)
   hVtxZv2->Write();
   hTotalMBD->Write();
   hCentrality->Write();
+  if(isSim) {
+    hImpactPar->Write();
+    h2ImpactParCentrality->Write();
+  }
   hTotalCaloE->Write();
   hTowE->Write();
   hClusterECore->Write();
