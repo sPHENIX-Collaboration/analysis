@@ -339,7 +339,8 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
     // check to make sure that ieta and iphi are in range
     if(ieta >= bins_eta || iphi >= bins_phi) std::cout << "ieta: " << ieta << ", iphi: " << iphi << std::endl;
 
-    if(!isSim || (isSim && ieta >= 8)) h2TowEtaPhiWeighted->Fill(ieta, iphi, energy);
+    // if(!isSim || (isSim && ieta >= 8)) h2TowEtaPhiWeighted->Fill(ieta, iphi, energy);
+    h2TowEtaPhiWeighted->Fill(ieta, iphi, energy);
   }
 
   avg_goodTowers += goodTowerCtr*1./tower_range;
@@ -416,7 +417,7 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
     if(clusE < clusE_min || clus_chi >= clus_chi_max) continue;
 
     // in simulation exclude cluster that comes from uninstrumented IB
-    if(isSim && hasTowerFar(recoCluster, isSim)) continue;
+    // if(isSim && hasTowerFar(recoCluster, isSim)) continue;
 
     // Float_t clus_time = getMaxTowerTime(recoCluster, emcTowerContainer);
 
@@ -464,7 +465,7 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
       if(pi0_mass >= 0.7) continue;
 
       // in simulation exclude cluster that comes from uninstrumented IB
-      if(isSim && hasTowerFar(recoCluster2, isSim)) continue;
+      // if(isSim && hasTowerFar(recoCluster2, isSim)) continue;
 
       Float_t asym      = abs(clusE-clusE2)/(clusE+clusE2);
       Float_t chi2_max  = std::max(clus_chi, clus_chi2);
