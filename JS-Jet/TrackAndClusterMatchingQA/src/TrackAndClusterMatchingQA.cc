@@ -126,6 +126,7 @@ int TrackAndClusterMatchingQA::Init(PHCompositeNode *topNode)
 
   _h1deta = new TH1F("hdeta", "Cluster #deta; #deta; Entries", 20, -0.2, 0.2);    //deta distribution
   _h1dphi  = new TH1F("hdphi", "Cluster #dphi; #dphi; Entries", 50, -0.15, 0.15);   //dphi distribution
+  _h1min_dR  = new TH1F("hdR", "Cluster #dR; #dR; Entries", 100,0.,5.);   //jet delta radius
   _h2phi_vs_deta = new TH2F("_h2phi_vs_deta", ";#dphi; #deta",  50, -0.15, 0.15, 20, -0.2, 0.2); // deta Vs. dphi distribution
 	
   return Fun4AllReturnCodes::EVENT_OK;
