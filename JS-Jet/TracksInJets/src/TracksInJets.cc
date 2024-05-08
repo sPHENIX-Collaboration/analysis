@@ -89,7 +89,6 @@ int TracksInJets::InitRun(PHCompositeNode *topNode)
 int TracksInJets::process_event(PHCompositeNode *topNode)
 {
   //std::cout << "TracksInJets::process_event(PHCompositeNode *topNode) Processing Event" << std::endl;
- 
  // interface to reco jets
   JetContainer* jets = findNode::getClass<JetContainer>(topNode, m_recoJetName);
   if (!jets)
@@ -192,9 +191,14 @@ int TracksInJets::EndRun(const int runnumber)
 //____________________________________________________________________________..
 int TracksInJets::End(PHCompositeNode *topNode)
 {
-  std::cout << "TracksInJets::End(PHCompositeNode *topNode) This is the End..." << std::endl;
+  std::cout << "TracksInJets::End - Output to " << m_outputFileName << std::endl;
   PHTFileServer::get().cd(m_outputFileName);
 
+  bool isAA = false;
+  
+  if (isAA) {
+    isAA = true;
+  
   TH2 *h_proj;
   for(int i = 0; i < m_h_track_vs_calo_pt->GetNbinsZ(); i++)
     {
@@ -202,7 +206,13 @@ int TracksInJets::End(PHCompositeNode *topNode)
       h_proj = (TH2*) m_h_track_vs_calo_pt->Project3D("yx");
       h_proj->Write(Form("h_track_vs_calo_%1.0f",m_h_track_vs_calo_pt->GetZaxis()->GetBinLowEdge(i+1)));
     }
+  }
 
+  if (isAA) {
+    isAA = false;
+    m_h_track_vs_calo_pt->Write();
+  } 
+  std::cout << "TracksInJets::End(PHCompositeNode *topNode) This is the End..." << std::endl;  
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
