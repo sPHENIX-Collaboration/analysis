@@ -41,13 +41,32 @@ void Fun4All_CaloTreeGen(const string  &inputFile,
                          const string  &systematic   = "none",
                          const Bool_t  doPi0Ana      = true,
                          const Float_t vtx_z_max     = 10, /*cm*/
-                         const Float_t clusE_min     = 0.5 /*GeV*/,
+                         const Float_t clusE_min     = 1, /*GeV*/
                          const Float_t clusChi_max   = 4,
                          const Bool_t  isSim         = false,
                          const string  &dstGlobal    = "",
                          const string  &dstMBD       = "",
                          const string  &g4Hits       = "",
                          const UInt_t  nEvents       = 0) {
+
+  cout << "#############################" << endl;
+  cout << "Run Parameters"<< endl;
+  cout << "inputFile: "              << inputFile << endl;
+  cout << "qaFile: "                 << qaFile << endl;
+  cout << "diphotonFile: "           << diphotonFile << endl;
+  cout << "doPi0Ana: "               << doPi0Ana << endl;
+  cout << "vtx_z_max: "              << vtx_z_max << " [cm]" << endl;
+  cout << "useZDCInfo: "             << useZDCInfo << endl;
+  cout << "zdc cut: "                << zdc_cut << " [GeV]" << endl;
+  cout << "Minimum Cluster Energy: " << clusE_min << " [GeV]" << endl;
+  cout << "Maximum Cluster Chi2: "   << clusChi_max << endl;
+  cout << "isSim: "                  << isSim << endl;
+  cout << "dstGlobal: "              << dstGlobal << endl;
+  cout << "dstMBD: "                 << dstMBD << endl;
+  cout << "g4Hits: "                 << g4Hits << endl;
+  cout << "Events: "                 << nEvents << endl;
+  cout << "#############################" << endl;
+
   Fun4AllServer *se = Fun4AllServer::instance();
   recoConsts *rc = recoConsts::instance();
 
@@ -181,7 +200,7 @@ int main(int argc, char* argv[]) {
     string systematic   = "none";
     Bool_t doPi0Ana     = true;
     Float_t vtx_z_max   = 10;
-    Float_t clusE_min   = 0.5;
+    Float_t clusE_min   = 1;
     Float_t clusChi_max = 4;
     Bool_t isSim        = false;
     string dstGlobal    = "";
