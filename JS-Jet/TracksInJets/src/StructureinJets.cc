@@ -81,6 +81,8 @@ int StructureinJets::Init(PHCompositeNode *topNode)
   m_h_track_pt = new TH2F("m_h_track_pt", "", 100, 0, 100, 100, 0, 100);
   m_h_track_pt->GetXaxis()->SetTitle("Jet p_{T} [GeV]");
   m_h_track_pt->GetYaxis()->SetTitle("Sum track p_{T} [GeV]");
+  m_manager->registerHisto(m_h_track_vs_calo_pt);	
+  m_manager->registerHisto(m_h_track_pt);
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
