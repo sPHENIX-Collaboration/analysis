@@ -34,6 +34,8 @@
 #include <fun4all/Fun4AllBase.h>
 #include <fun4all/Fun4AllReturnCodes.h>
 #include <fun4all/PHTFileServer.h>
+#include <qautils/QAHistManagerDef.h>
+#include <fun4all/Fun4AllHistoManager.h>
 
 #include <phool/PHCompositeNode.h>
 #include <phool/getClass.h>
