@@ -205,7 +205,7 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
 
   // simulation gives centrality values in 0 - 100
   // data gives centrality values in 0 - 1
-  cent = (isSim) ? centInfo->get_centile(CentralityInfo::PROP::mbd_NS)/100. :
+  cent = (isSim) ? centInfo->get_centile(CentralityInfo::PROP::bimp)/100. :
                    centInfo->get_centile(CentralityInfo::PROP::mbd_NS);
 
   // grab impact parameter in MC
