@@ -136,6 +136,9 @@ class TrackAndClusterMatchingQA : public SubsysReco
   TH2 *_h2Track_TPC_Hits_vs_Eta;
   TH2 *_h2Track_TPC_Hits_vs_Pt;
 
+  TH1 *_h1min_dR;
+  TH1 *_h2phi_vs_deta;
+
 
 
   /// TFile to hold the following TTrees and histograms
