@@ -157,8 +157,7 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
   iEvent++;
 
   //Information on clusters
-  RawClusterContainer *clusterContainer = (isSim) ? findNode::getClass<RawClusterContainer>(topNode,"CLUSTER_CEMC") :
-                                                    findNode::getClass<RawClusterContainer>(topNode,clusterNode.c_str());
+  RawClusterContainer *clusterContainer = findNode::getClass<RawClusterContainer>(topNode,clusterNode.c_str());
 
   if(!clusterContainer)
   {

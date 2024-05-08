@@ -111,6 +111,10 @@ void Fun4All_CaloTreeGen(const string  &inputFile,
   calo->set_do_pi0_ana(doPi0Ana);
   calo->set_vtx_z_max(vtx_z_max);
 
+  if(isSim) {
+    calo->set_clusterNode("CLUSTER_CEMC");
+  }
+
  /**
   * Systematic Node options:
     SYST1CEMC
