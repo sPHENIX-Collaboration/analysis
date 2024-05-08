@@ -64,6 +64,7 @@ class StructureinJets : public SubsysReco
   std::string m_outputFileName;
   TH3 *m_h_track_vs_calo_pt;
   TH2F *m_h_track_pt;
+  Fun4AllHistoManager* m_manager = NULL;	
 };
 
 #endif // STRUCTUREINJETS_H
