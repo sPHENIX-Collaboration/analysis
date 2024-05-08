@@ -194,24 +194,18 @@ int TracksInJets::End(PHCompositeNode *topNode)
   std::cout << "TracksInJets::End - Output to " << m_outputFileName << std::endl;
   PHTFileServer::get().cd(m_outputFileName);
 
-  bool isAA = false;
-  
   if (isAA) {
-    isAA = true;
-  
-  TH2 *h_proj;
-  for(int i = 0; i < m_h_track_vs_calo_pt->GetNbinsZ(); i++)
-    {
-      m_h_track_vs_calo_pt->GetZaxis()->SetRange(i+1,i+1);
-      h_proj = (TH2*) m_h_track_vs_calo_pt->Project3D("yx");
-      h_proj->Write(Form("h_track_vs_calo_%1.0f",m_h_track_vs_calo_pt->GetZaxis()->GetBinLowEdge(i+1)));
-    }
+    TH2 *h_proj;
+    for(int i = 0; i < m_h_track_vs_calo_pt->GetNbinsZ(); i++)
+      {
+	m_h_track_vs_calo_pt->GetZaxis()->SetRange(i+1,i+1);
+	h_proj = (TH2*) m_h_track_vs_calo_pt->Project3D("yx");
+	h_proj->Write(Form("h_track_vs_calo_%1.0f",m_h_track_vs_calo_pt->GetZaxis()->GetBinLowEdge(i+1)));
+      }
   }
-
-  if (isAA) {
-    isAA = false;
-    m_h_track_vs_calo_pt->Write();
-  } 
+  else {
+    m_h_track_vs_calo_pt->Write();  //if pp, do not project onto centrality bins
+  }
   std::cout << "TracksInJets::End(PHCompositeNode *topNode) This is the End..." << std::endl;  
   return Fun4AllReturnCodes::EVENT_OK;
 }

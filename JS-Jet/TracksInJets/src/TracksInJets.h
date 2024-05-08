@@ -53,6 +53,8 @@ class TracksInJets : public SubsysReco
 
   void Print(const std::string &what = "ALL") const override;
 
+  bool isAA; // Declare isAA as a public member variable
+
  private:
 
   std::string m_recoJetName;
