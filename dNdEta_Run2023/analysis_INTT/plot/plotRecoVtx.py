@@ -175,16 +175,16 @@ if __name__ == '__main__':
         os.system("hadd {}/hists_merged.root {}/hists_*.root".format(infiledir, infiledir))
     
     hM_INTTVtxZ_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10 = GetHistogram('{}/hists_merged.root'.format(infiledir), 'hM_INTTVtxZ_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10')
+    hM_INTTVtxZ_MBDAsymm_Centrality0to70_Inclusive = GetHistogram('{}/hists_merged.root'.format(infiledir), 'hM_INTTVtxZ_MBDAsymm_Centrality0to70_Inclusive')
+    hM_INTTVtxZ_MBDAsymm_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10 = GetHistogram('{}/hists_merged.root'.format(infiledir), 'hM_INTTVtxZ_MBDAsymm_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10')
+    
     centrality_cut = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
     l_hM_INTTVtxZ_Centrality = [GetHistogram('{}/hists_merged.root'.format(infiledir), 'hM_INTTVtxZ_Centrality_{:d}to{:d}'.format(centrality_cut[i], centrality_cut[i+1])) for i in range(len(centrality_cut)-1)]
     l_hM_INTTVtxZ_Centrality_MBDAsymLe0p75 = [GetHistogram('{}/hists_merged.root'.format(infiledir), 'hM_INTTVtxZ_Centrality_{:d}to{:d}_MBDAsymLe0p75'.format(centrality_cut[i], centrality_cut[i+1])) for i in range(len(centrality_cut)-1)]
     l_hM_INTTVtxZ_Centrality_MBDAsymLe0p75_VtxZm30tom10 = [GetHistogram('{}/hists_merged.root'.format(infiledir), 'hM_INTTVtxZ_Centrality_{:d}to{:d}_MBDAsymLe0p75_VtxZm30tom10'.format(centrality_cut[i], centrality_cut[i+1])) for i in range(len(centrality_cut)-1)]
     l_hM_INTTVtxZ_Centrality_MBDAsymLe0p75_VtxZm30tom10_forfit = [GetHistogram('{}/hists_merged.root'.format(infiledir), 'hM_INTTVtxZ_Centrality_{:d}to{:d}_MBDAsymLe0p75_VtxZm30tom10'.format(centrality_cut[i], centrality_cut[i+1])) for i in range(len(centrality_cut)-1)]
+    l_hM_INTTVtxZ_MBDAsymm_Centrality_MBDAsymLe0p75_VtxZm30tom10 = [GetHistogram('{}/hists_merged.root'.format(infiledir), 'hM_INTTVtxZ_MBDAsymm_Centrality_{:d}to{:d}_MBDAsymLe0p75_VtxZm30tom10'.format(centrality_cut[i], centrality_cut[i+1])) for i in range(len(centrality_cut)-1)]
     
-    # colors = ['#A31621', '#AA4857', '#B1798C', '#C3A6B3', '#BEB4C1', '#B8C1CF', '#9BAFC3', '#628CAB', '#4B7898', '#053C5E']
-    # colors = ['#9e0142', '#d53e4f', '#f46d43', '#fdae61', '#fee08b', '#e6f598', '#abdda4', '#66c2a5', '#3288bd', '#5e4fa2']
-    # colors = ['#03071e', '#370617', '#6a040f', '#9d0208', '#d00000', '#dc2f02', '#e85d04', '#f48c06', '#faa307', '#ffba08']
-    # colors = ['#03071e', '#012a4a', '#013a63', '#01497c', '#014f86', '#2a6f97', '#2c7da0', '#468faf', '#61a5c2', '#89c2d9']
     colors = ['#001219','#013a63', '#005f73', '#0a9396', '#94d2bd', '#ee9b00', '#ca6702', '#bb3e03', '#9b2226', '#7b193a']
     # drawcomparison_data(hists, normhist, logy, histcolor, legentry, legposition, xtitle, ytitle, yscale, outname)
     drawcomparison_data(l_hM_INTTVtxZ_Centrality, l_hM_INTTVtxZ_Centrality[0], True, colors, ['Centrality 0-10%', 'Centrality 10-20%', 'Centrality 20-30%', 'Centrality 30-40%', 'Centrality 40-50%', 'Centrality 50-60%', 'Centrality 60-70%', 'Centrality 70-80%', 'Centrality 80-90%', 'Centrality 90-100%'], [0.17, 0.6, 0.42, 0.9], 'INTT vtx_{Z} [cm]', 'Normalized entries', 100, '{}/{}/InttVtxz_MBDCentrality_Comp'.format(plotpath, outdirprefix))
@@ -193,6 +193,9 @@ if __name__ == '__main__':
     
     l_hM_INTTVtxZ_MBDVtxZ_Centrality = [GetHistogram('{}/hists_merged.root'.format(infiledir), 'hM_INTTVtxZ_MBDVtxZ_Centrality_{:d}to{:d}'.format(centrality_cut[i], centrality_cut[i+1])) for i in range(len(centrality_cut)-1)]
     # Draw_2Dhist(hist, IsData, logz, norm1, rmargin, XaxisName, YaxisName, ZaxisName, drawopt, outname):
+    Draw_2Dhist(hM_INTTVtxZ_MBDAsymm_Centrality0to70_Inclusive, True, False, False, 0.15, 'INTT vtx_{Z} [cm]', 'MBD charge asymmetry', 'Entries', 'colz', '{}/{}/InttVtxz_MbdAsymm_MBDCentrality0to70'.format(plotpath, outdirprefix))
+    Draw_2Dhist(hM_INTTVtxZ_MBDAsymm_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10, True, False, False, 0.15, 'INTT vtx_{Z} [cm]', 'MBD charge asymmetry', 'Entries', 'colz', '{}/{}/InttVtxz_MbdAsymm_MBDCentrality0to70_MBDAsymLe0p75_VtxZm30tom10'.format(plotpath, outdirprefix))
+    
     for i in range(len(centrality_cut)-1):
         # Draw_1Dhist_fitGaussian(hist, norm1, logy, ymaxscale, XaxisName, Ytitle_unit, outname)
         Draw_1Dhist_fitGaussian(l_hM_INTTVtxZ_Centrality_MBDAsymLe0p75_VtxZm30tom10_forfit[i], False, False, 1.3, 'INTT vtx_{Z} [cm]', 'cm', '{}/{}/InttVtxz_MBDCentrality_MBDAsymLe0p75_VtxZm30tom10_{:d}to{:d}_GaussianFit'.format(plotpath, outdirprefix, centrality_cut[i], centrality_cut[i+1]))

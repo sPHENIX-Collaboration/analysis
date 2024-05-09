@@ -29,6 +29,8 @@
 #include <string>
 #include <vector>
 
+#include "acceptance.h"
+
 #include "/sphenix/user/hjheng/TrackletAna/analysis/plot/sPHENIXStyle/sPhenixStyle.C"
 
 using namespace std;
@@ -45,6 +47,10 @@ void calccorr(const TString infilename, int CentLow = -1, int CentHigh = 10, boo
     system(Form("mkdir -p %s", outdir.Data()));
 
     bool IsData = (infilename.Contains("Data")) ? true : false;
+
+    TString legtitle_head = (IsData) ? "Data" : "Simulation, closure test";
+    TString legtitle_centrality = TString::Format("Centrality %d-%d", CentLow, CentHigh) + "%";
+    TString legtitle = legtitle_head + TString::Format(": centrality %d-%d", CentLow, CentHigh) + "%"; 
 
     TFile *finput = new TFile(infilename, "read");
     TTree *tinput = (TTree *)finput->Get("minitree");
@@ -66,7 +72,7 @@ void calccorr(const TString infilename, int CentLow = -1, int CentHigh = 10, boo
 
         if (applyg)
         {
-            // faccep = new TFile(Form("output/acceptances/%s/acceptance-%i.root", accepdir, type));
+            faccep = new TFile("./plot/corrections/GeoAccepCorr.root", "READ");
             if (!faccep)
             {
                 cout << "[ERROR] No geometric correction file found - exit" << endl;
@@ -104,15 +110,14 @@ void calccorr(const TString infilename, int CentLow = -1, int CentHigh = 10, boo
     }
 
     // TCut asel = aselstr.Data();
-    TCut asel = "MBD_charge_asymm>=-0.75 && MBD_charge_asymm<=0.75";
-    TCut vsel = "PV_z<=-10 && PV_z>=-30";
-    TCut fsel = vsel && asel;
-    TCut ssel = "";
-    TCut csel = Form("MBD_centrality>=%f && MBD_centrality<=%f", CentLow * 0.01, CentHigh * 0.01);
-    TCut osel = "1";
-    TCut psel = "1"; // single diffractive process (simulation); TO-DO: need to check the process number
-    TCut esel = vsel && csel && osel;
-    TCut gsel = vsel && csel && psel;
+    TCut asel = "MBD_charge_asymm>=-0.75 && MBD_charge_asymm<=0.75";                               // Additional event selection
+    TCut vsel = "PV_z<=-10 && PV_z>=-30";                                                          // Vertex selection
+    TCut ssel = "";                                                                                // Signal range selection
+    TCut csel = Form("MBD_centrality>=%f && MBD_centrality<=%f", CentLow * 0.01, CentHigh * 0.01); // Centrality selection
+    TCut osel = "1";                                                                               // Offline event selection
+    TCut psel = "1";                                                                               // single diffractive process (simulation); TO-DO: need to check the process number
+    TCut esel = asel && vsel && csel && osel;
+    TCut gsel = asel && vsel && csel && psel;
 
     // alpha factor criteria
     float alpha_min = 0.0;
@@ -122,20 +127,11 @@ void calccorr(const TString infilename, int CentLow = -1, int CentHigh = 10, boo
     TH1::SetDefaultSumw2();
 
     /* Setup bins for correction histograms */
-    int neta = 34;
-    float etamin = -3.4;
-    float etamax = 3.4;
-    float etab[neta + 1];
-    for (int i = 0; i <= neta; i++)
-        etab[i] = i * (etamax - etamin) / neta + etamin;
-    int nvz = 20;
-    float vzmin = -30;
-    float vzmax = -10;
-    float vzb[nvz + 1];
-    for (int i = 0; i <= nvz; i++)
-        vzb[i] = i * (vzmax - vzmin) / nvz + vzmin;
-    int nmult = 13; // Tracklet multiplicity
-    float multb[nmult + 1] = {0, 10, 25, 50, 100, 175, 250, 400, 600, 900, 1200, 1500, 2000, 3000};
+
+#define INCLUDE_VZ_BINS
+#define INCLUDE_ETA_BINS
+#define INCLUDE_MULT_BINS
+#include "bins.h"
 
     /* Setup histograms */
     TH3F *h3WEhadron = new TH3F("h3WEhadron", "h3WEhadron", neta, etab, nmult, multb, nvz, vzb); // Gen-hadron - passing event selection
@@ -211,26 +207,26 @@ void calccorr(const TString infilename, int CentLow = -1, int CentHigh = 10, boo
     //! Not really used (?)
     TH2F *haccepmc = 0;
     TH2F *haccepdata = 0;
-    TH2F *hgaccep = 0;
+    TH2F *haccepratio = 0;
+    // TH2F *hgaccep = 0;
 
     if (applyg)
     {
-        haccepmc = (TH2F *)faccep->Get("hmccoarse");
-        haccepdata = (TH2F *)faccep->Get("hdatacoarse");
-        hgaccep = (TH2F *)haccepmc->Clone("hgaccep");
-        hgaccep->Divide(haccepdata);
+        haccepmc = (TH2F *)faccep->Get("hM_sim_coarse");
+        haccepdata = (TH2F *)faccep->Get("hM_data_coarse");
+        haccepratio = (TH2F *)faccep->Get("hM_ratio");
+        // hgaccep = (TH2F *)haccepmc->Clone("hgaccep");
+        // hgaccep->Divide(haccepdata);
     }
     /*------------------------------------------------------------------------------------------------------*/
     /* nevents: for normalization */
     // Number of events passing event selection and gen-level selection
     TH1F *h1WEGevent = new TH1F("h1WEGevent", "", nvz, vzb);
-    // int nWEGentry = tinput->Draw("PV_z>>h1WEGevent", "pu0_sel" * (esel && gsel), "goff");
-    int nWEGentry = tinput->Draw("PV_z>>h1WEGevent", "1" * (esel && gsel), "goff");
+    int nWEGentry = tinput->Draw("PV_z>>h1WEGevent", "vtxzwei" * (esel && gsel), "goff");
     float nWEGevent = h1WEGevent->Integral(-1, -1);
     // Number of events passing gen-level selection
     TH1F *h1WGevent = new TH1F("h1WGevent", "", nvz, vzb);
-    // tinput->Draw("PV_z>>h1WGevent", "pu0_sel" * (gsel), "goff");
-    tinput->Draw("PV_z>>h1WGevent", "1" * (gsel), "goff");
+    tinput->Draw("PV_z>>h1WGevent", "vtxzwei" * (gsel), "goff");
     float nWGevent = h1WGevent->Integral(-1, -1);
 
     cout << "[INFO] weighted events: " << nWEGevent << ", entries: " << nWEGentry << endl;
@@ -242,25 +238,20 @@ void calccorr(const TString infilename, int CentLow = -1, int CentHigh = 10, boo
 
     /* set acceptance maps */
     cout << "[INFO] Setup the acceptance maps" << endl;
-    // tinput->Project("h1WEvz", "PV_z", "pu0_sel" * (esel));
-    // tinput->Project("h2WEvzmult", "NRecotkl_Raw:PV_z", "pu0_sel" * (esel));
-    tinput->Project("h1WEvz", "PV_z", "1" * (esel));
-    tinput->Project("h2WEvzmult", "NRecotkl_Raw:PV_z", "1" * (esel));
+    tinput->Project("h1WEvz", "PV_z", "vtxzwei" * (esel));
+    tinput->Project("h2WEvzmult", "NRecotkl_Raw:PV_z", "vtxzwei" * (esel));
 
     //* TO-DO
     const int *amap = 0;
     if (applym)
     {
-        // amap = ext_accep_map(type);
-        cout << "[ERROR] There is no external acceptance map - exit" << endl;
-        exit(1);
+        amap = ext_accep_map();
     }
 
     for (int i = 1; i <= neta; i++)
     {
         for (int j = 1; j <= nvz; j++)
         {
-            // cout << "[check] setup h2amapxev and h3amapxemv: (nvz - j) * neta + i - 1 = " << (nvz - j) * neta + i - 1 << endl;
             if (!applyc || h2amapxev->GetBinContent(i, j) != 0)
             {
                 if (applym && !amap[(nvz - j) * neta + i - 1])
@@ -285,16 +276,13 @@ void calccorr(const TString infilename, int CentLow = -1, int CentHigh = 10, boo
     h1WEvz->Fit("gaus");
 
     /* generator-level hadrons */
-    // tinput->Project("h3WEhadron", "PV_z:NRecotkl_Raw:GenHadron_eta", "pu0_sel && abs(GenHadron_eta)<4" * (esel));
-    // tinput->Project("h3WGhadron", "PV_z:NRecotkl_Raw:GenHadron_eta", "pu0_sel && abs(GenHadron_eta)<4" * (gsel));
     tinput->Project("h3WEhadron", "PV_z:NRecotkl_Raw:GenHadron_eta", "1 && abs(GenHadron_eta)<4" * (esel));
     tinput->Project("h3WGhadron", "PV_z:NRecotkl_Raw:GenHadron_eta", "1 && abs(GenHadron_eta)<4" * (gsel));
 
     h3WEtruth = (TH3F *)h3WEhadron->Clone("h3WEtruth");
 
     /* reconstructed tracklets */
-    // tinput->Project("h3WEraw", "PV_z:NRecotkl_Raw:recotklraw_eta", "pu0_sel" * (esel));
-    tinput->Project("h3WEraw", "PV_z:NRecotkl_Raw:recotklraw_eta", "1" * (esel));
+    tinput->Project("h3WEraw", "PV_z:NRecotkl_Raw:recotklraw_eta", "vtxzwei" * (esel));
 
     /* calculate alpha corrections */
     if (!applyc)
@@ -375,19 +363,15 @@ void calccorr(const TString infilename, int CentLow = -1, int CentHigh = 10, boo
 
         /* Trigger & offline selection */
         cout << "[INFO] Calculate the trigger & offline selection efficiency" << endl;
-        // tinput->Project("h1WGOXteff", "NRecotkl_Raw", "pu0_sel" * (gsel && osel));
-        // tinput->Project("h1WGXteff", "NRecotkl_Raw", "pu0_sel" * (gsel));
-        tinput->Project("h1WGOXteff", "NRecotkl_Raw", "1" * (gsel && osel));
-        tinput->Project("h1WGXteff", "NRecotkl_Raw", "1" * (gsel));
+        tinput->Project("h1WGOXteff", "NRecotkl_Raw", "vtxzwei" * (gsel && osel));
+        tinput->Project("h1WGXteff", "NRecotkl_Raw", "vtxzwei" * (gsel));
         h1teff = (TH1F *)h1WGOXteff->Clone("h1teff");
         h1teff->Divide(h1WGXteff);
 
         /* Single diffractive event fraction (complement of gen selection) */
         cout << "[INFO] Calculate the single diffractive event fraction" << endl;
-        // tinput->Project("h1WENGsdf", "NRecotkl_Raw", "pu0_sel" * (esel && !gsel));
-        // tinput->Project("h1WEsdf", "NRecotkl_Raw", "pu0_sel" * (esel));
-        tinput->Project("h1WENGsdf", "NRecotkl_Raw", "1" * (esel && !gsel));
-        tinput->Project("h1WEsdf", "NRecotkl_Raw", "1" * (esel));
+        tinput->Project("h1WENGsdf", "NRecotkl_Raw", "vtxzwei" * (esel && !gsel));
+        tinput->Project("h1WEsdf", "NRecotkl_Raw", "vtxzwei" * (esel));
         h1sdf = (TH1F *)h1WENGsdf->Clone("h1sdf");
         h1sdf->Divide(h1WEsdf);
 
@@ -456,11 +440,14 @@ void calccorr(const TString infilename, int CentLow = -1, int CentHigh = 10, boo
                 {
                     double gaccepdata = haccepdata->GetBinContent(x, z);
                     double gaccepmc = haccepmc->GetBinContent(x, z);
+                    double gaccepratio = haccepratio->GetBinContent(x, z);
+                    double gaccepratio_err = haccepratio->GetBinError(x, z);
 
                     if (gaccepdata && gaccepmc)
                     {
-                        alpha = alpha * gaccepmc / gaccepdata;
-                        alphaerr = alphaerr * gaccepmc / gaccepdata;
+                        alpha = alpha * gaccepratio;
+                        alphaerr = sqrt(pow(alphaerr, 2) + pow(alpha * gaccepratio_err, 2));
+                        alphaerr = alphaerr * gaccepratio;
                         if (debug)
                             printf("     & apply geo accep: %.3f", gaccepmc / gaccepdata);
                     }
@@ -480,7 +467,8 @@ void calccorr(const TString infilename, int CentLow = -1, int CentHigh = 10, boo
                 h2alpha_multb[y - 1]->SetBinError(x, z, alphaerr);
 
                 double ncorr = raw * alpha;
-                double ncorrerr = rawerr * alpha;
+                // double ncorrerr = rawerr * alpha;
+                double ncorrerr = sqrt(pow(rawerr * alpha, 2) + pow(raw * alphaerr, 2)); // statistical (+) systematic uncertainties
 
                 h3WEcorr->SetBinContent(x, y, z, ncorr);
                 h3WEcorr->SetBinError(x, y, z, ncorrerr);
@@ -515,9 +503,6 @@ void calccorr(const TString infilename, int CentLow = -1, int CentHigh = 10, boo
                     h3WEcorr->SetBinContent(x, y, z, 0);
                     h3WEcorr->SetBinError(x, y, z, 0);
                 }
-
-                if (faccep)
-                    hgaccep->SetBinContent(x, z, 0);
             }
         }
     }
@@ -527,14 +512,6 @@ void calccorr(const TString infilename, int CentLow = -1, int CentHigh = 10, boo
     h2WEcorr->SetName("h2WEcorr");
     TH2D *h2WEraw = (TH2D *)h3WEraw->Project3D("zx");
     h2WEraw->SetName("h2WEraw");
-
-    /* draw geometric acceptance */
-    if (faccep)
-    {
-        TCanvas *cga = new TCanvas("cga", "", CANVASW, CANVASH);
-        hgaccep->Draw("colz");
-        cga->SaveAs(Form("%s/ga.png", outdir.Data(), CentLow, CentHigh));
-    }
 
     /* project 1d acceptance */
     TH1F *h1accep2xe = (TH1F *)h2amapxev->ProjectionX();
@@ -620,6 +597,7 @@ void calccorr(const TString infilename, int CentLow = -1, int CentHigh = 10, boo
             {
                 h2WEtcorr->SetBinContent(x, y, h2WEtcorr->GetBinContent(x, y) * totalc);
                 h2WEtcorr->SetBinError(x, y, h2WEtcorr->GetBinError(x, y) * totalc);
+                if (debug) printf("   ^ apply trigger correction: eta: %2i, mult: %2i, trigeff: %.3f, sdfrac: %.3f, totalc: %.3f, h2WEtcorr bin content: %.3f +- %.3f\n", x, y, trigeff, sdfrac, totalc, h2WEtcorr->GetBinContent(x, y), h2WEtcorr->GetBinError(x, y));
                 h2WEttruth->SetBinContent(x, y, h2WEttruth->GetBinContent(x, y) * totalc);
                 h2WEttruth->SetBinError(x, y, h2WEttruth->GetBinError(x, y) * totalc);
             }
@@ -651,16 +629,6 @@ void calccorr(const TString infilename, int CentLow = -1, int CentHigh = 10, boo
     h1WEtcorr->Scale(1., "width");
     h1WEtcorr->Divide(h1accep3xe);
 
-    TH1F *h1WEtcorrxm = (TH1F *)h2WEtcorr->ProjectionY();
-    h1WEtcorrxm->SetName("h1WEtcorrxm");
-    h1WEtcorrxm->Scale(1., "width");
-    h1WEtcorrxm->Divide(h1accep3xm);
-
-    TH1F *h1WEttruth = (TH1F *)h2WEttruth->ProjectionX();
-    h1WEttruth->SetName("h1WEttruth");
-    h1WEttruth->Scale(1., "width");
-    h1WEttruth->Divide(h1accep3xe);
-
     /* Calculate/apply empty correction */
     cout << "[INFO] Calculate and apply the empty correction" << endl;
     if (!applyc && !fes)
@@ -684,12 +652,10 @@ void calccorr(const TString infilename, int CentLow = -1, int CentHigh = 10, boo
     cout << "[INFO] Making checking plots: intermediate steps" << endl;
     TGraphAsymmErrors *trigeff = new TGraphAsymmErrors(h1WGXteff, h1WGOXteff);
     TGraphAsymmErrors *sdfrac = new TGraphAsymmErrors(h1WENGsdf, h1WEsdf);
-    // int nw = 3, nh = 3;
     TCanvas *ccheck = new TCanvas("ccheck", "ccheck", 600, 600);
     gPad->SetTopMargin(0.1);
     gPad->SetRightMargin(0.15);
     gPad->SetLeftMargin(0.15);
-    // ccheck->Divide(nw, nh);
     TLatex *t = new TLatex();
     t->SetTextAlign(23);
 
@@ -719,7 +685,7 @@ void calccorr(const TString infilename, int CentLow = -1, int CentHigh = 10, boo
     /* vz v.s tracklet multiplicity distribution passing esel; for 3D acceptance map */
     ccheck->cd();
     gPad->SetLeftMargin(0.18);
-    gPad->SetLogy(1);
+    gPad->SetLogy(0);
     h2WEvzmult->GetYaxis()->SetMoreLogLabels();
     h2WEvzmult->GetXaxis()->SetTitle("v_{z} [cm]");
     h2WEvzmult->GetYaxis()->SetTitle("Multiplicity");
@@ -731,13 +697,14 @@ void calccorr(const TString infilename, int CentLow = -1, int CentHigh = 10, boo
 
     /* Trigger efficiency */
     ccheck->cd();
-    gPad->SetRightMargin(0.09);
-    gPad->SetLogx(1);
+    gPad->SetRightMargin(0.1);
+    gPad->SetLogx(0);
     gPad->SetLogy(0);
-    trigeff->GetXaxis()->SetMoreLogLabels();
+    // trigeff->GetXaxis()->SetMoreLogLabels();
+    trigeff->GetXaxis()->SetMaxDigits(2);
     trigeff->GetXaxis()->SetTitle("Multiplicity");
     trigeff->GetYaxis()->SetTitle("Efficiency");
-    // trigeff->GetXaxis()->SetTitleOffset(1.4);
+    trigeff->GetYaxis()->SetTitleOffset(1.4);
     trigeff->SetMinimum(0);
     trigeff->SetMaximum(1.2);
     trigeff->SetMarkerStyle(20);
@@ -750,13 +717,14 @@ void calccorr(const TString infilename, int CentLow = -1, int CentHigh = 10, boo
 
     /* Single-diffractive fraction */
     ccheck->cd();
-    gPad->SetRightMargin(0.09);
-    gPad->SetLogx(1);
+    gPad->SetRightMargin(0.1);
+    gPad->SetLogx(0);
     gPad->SetLogy(0);
-    sdfrac->GetXaxis()->SetMoreLogLabels();
+    // sdfrac->GetXaxis()->SetMoreLogLabels();
+    sdfrac->GetXaxis()->SetMaxDigits(2);
     sdfrac->GetXaxis()->SetTitle("Multiplicity");
     sdfrac->GetYaxis()->SetTitle("SD event fraction");
-    sdfrac->GetXaxis()->SetTitleOffset(1.4);
+    sdfrac->GetYaxis()->SetTitleOffset(1.4);
     sdfrac->SetMinimum(0);
     sdfrac->SetMaximum(1.2);
     sdfrac->SetMarkerStyle(20);
@@ -788,7 +756,7 @@ void calccorr(const TString infilename, int CentLow = -1, int CentHigh = 10, boo
     h1accep2xe->GetYaxis()->SetRangeUser(0, h1accep2xe->GetMaximum() * 1.2);
     h1accep2xe->SetLineColor(1);
     h1accep2xe->Draw("histtext");
-    t->DrawLatexNDC(0.5, 0.97, h1accep2xe->GetName());
+    t->DrawLatexNDC(0.5, 0.97, legtitle_centrality.Data());
     ccheck->SaveAs(Form("%s/%s.pdf", outdir.Data(), h1accep2xe->GetName()));
     ccheck->Clear();
 
@@ -797,7 +765,7 @@ void calccorr(const TString infilename, int CentLow = -1, int CentHigh = 10, boo
     gPad->SetRightMargin(0.18);
     gPad->SetLeftMargin(0.18);
     gPad->SetLogx(0);
-    gPad->SetLogy(1);
+    gPad->SetLogy(0);
     h2WEtcorr->GetYaxis()->SetMoreLogLabels();
     h2WEtcorr->GetXaxis()->SetTitle("Tracklet #eta");
     h2WEtcorr->GetYaxis()->SetTitle("Multiplicity");
@@ -817,17 +785,9 @@ void calccorr(const TString infilename, int CentLow = -1, int CentHigh = 10, boo
     h1empty->GetYaxis()->SetRangeUser(0, h1empty->GetMaximum() * 1.2);
     h1empty->SetLineColor(1);
     h1empty->Draw("histtext");
-    t->DrawLatexNDC(0.5, 0.97, h1empty->GetName());
+    t->DrawLatexNDC(0.5, 0.97, legtitle_centrality.Data());
     ccheck->SaveAs(Form("%s/%s.pdf", outdir.Data(), h1empty->GetName()));
     ccheck->Clear();
-
-    // for (int i = 0; i < nw * nw; i++)
-    // {
-    //     ccheck->cd(i + 1);
-    //     gPad->SetTickx();
-    //     gPad->SetTicky();
-    // }
-    // ccheck->SaveAs(Form("%s/Check_Intermediate.pdf", outdir.Data()));
 
     /* Draw 1D alpha and fits */
     cout << "[INFO] Making checking plots: 1D alpha and fits" << endl;
@@ -842,7 +802,7 @@ void calccorr(const TString infilename, int CentLow = -1, int CentHigh = 10, boo
         for (int z = 1; z <= nvz; z++)
         {
             cfalphavz->cd(z);
-            gPad->SetLogx();
+            gPad->SetLogx(0);
             gPad->SetTickx();
             gPad->SetTicky();
             h1alpha[x - 1][z - 1]->GetYaxis()->SetRangeUser(0, h1alpha[x - 1][z - 1]->GetMaximum() * 2.5);
@@ -871,7 +831,7 @@ void calccorr(const TString infilename, int CentLow = -1, int CentHigh = 10, boo
         for (int x = 1; x <= neta; x++)
         {
             cfalphaeta->cd(x);
-            gPad->SetLogx();
+            gPad->SetLogx(0);
             gPad->SetTickx();
             gPad->SetTicky();
             h1alpha[x - 1][z - 1]->SetMarkerStyle(20);
@@ -904,10 +864,13 @@ void calccorr(const TString infilename, int CentLow = -1, int CentHigh = 10, boo
     h2alphafinal->GetZaxis()->SetTitle("#alpha (#eta, v_{z})");
     h2alphafinal->GetZaxis()->SetTitleOffset(1.3);
     h2alphafinal->GetZaxis()->SetRangeUser(alpha_min, alpha_max);
-    // gStyle->SetPaintTextFormat("1.3f");
+    gStyle->SetPaintTextFormat("1.3f");
     h2alphafinal->SetMarkerSize(0.6);
     h2alphafinal->SetContour(1000);
-    h2alphafinal->Draw("colz");
+    h2alphafinal->Draw("colztext45");
+    TLegend *la = new TLegend(0.18, 0.18, 0.4, 0.3);
+    la->SetHeader(legtitle_centrality.Data(), "l");
+    la->Draw();
     calpha->SaveAs(Form("%s/alpha2D_inclTklMult.pdf", outdir.Data()));
 
     for (int k = 0; k < nmult; k++)
@@ -916,23 +879,27 @@ void calccorr(const TString infilename, int CentLow = -1, int CentHigh = 10, boo
         calpha->cd();
         h2alpha_multb[k]->GetXaxis()->SetTitle("#eta");
         h2alpha_multb[k]->GetYaxis()->SetTitle("v_{z} [cm]");
-        h2alpha_multb[k]->GetYaxis()->SetTitleOffset(1.1);
+        h2alpha_multb[k]->GetYaxis()->SetTitleOffset(1.3);
         h2alpha_multb[k]->GetZaxis()->SetTitle("#alpha (#eta, v_{z})");
-        h2alpha_multb[k]->GetZaxis()->SetTitleOffset(1.2);
-        // h2alpha_multb[k]->GetZaxis()->SetRangeUser(h2alphafinal->GetMinimum(0), h2alphafinal->GetMaximum());
-        h2alpha_multb[k]->GetZaxis()->SetRangeUser(0, 3);
+        h2alpha_multb[k]->GetZaxis()->SetTitleOffset(1.3);
+        h2alpha_multb[k]->GetZaxis()->SetRangeUser(alpha_min, alpha_max);
         gStyle->SetPaintTextFormat("1.3f");
         h2alpha_multb[k]->SetMarkerSize(0.6);
         h2alpha_multb[k]->SetContour(1000);
-        h2alpha_multb[k]->Draw("colz");
+        h2alpha_multb[k]->Draw("colztext45");
+        la->Draw();
         calpha->SaveAs(Form("%s/alpha2D_TklMultb%d.pdf", outdir.Data(), k));
     }
 
     /* Analysis stages - Closure test*/
+    // vector<TH1F *> vechist = {h1WGhadron, h1WEraw, h1WErawacc, h1WEcorr, h1WEtcorr, h1WEfinal};
     vector<TH1F *> vechist = {h1WGhadron, h1WEraw, h1WEcorr, h1WEtcorr, h1WEfinal};
-    vector<const char *> vcolor{"#20262E", "#D04848", "#1C82AD", "#1F8A70", "#FC7300"};
-    vector<int> vlwidth = {3, 3, 3, 3, 2};
-    vector<int> vstyle = {1, 1, 1, 1, 2};
+    // vector<const char *> vcolor{"#20262E", "#7209b7", "#D04848", "#1C82AD", "#1F8A70", "#FC7300"};
+    vector<const char *> vcolor{"#D04848", "#1C82AD", "#1F8A70", "#FC7300", "#20262E"};
+    // vector<int> vlwidth = {3, 3, 3, 3, 2, 2};
+    vector<int> vlwidth = {3, 3, 3, 3, 3};
+    // vector<int> vstyle = {1, 1, 1, 1, 2, 1};
+    vector<int> vstyle = {1, 1, 1, 1, 1};
     TCanvas *cstage = new TCanvas("cstage", "cstage", CANVASW, CANVASH);
     gPad->SetRightMargin(0.05);
     gPad->SetTopMargin(0.05);
@@ -957,17 +924,27 @@ void calccorr(const TString infilename, int CentLow = -1, int CentHigh = 10, boo
         vechist[i]->SetLineColor(TColor::GetColor(vcolor[i]));
         vechist[i]->SetLineWidth(vlwidth[i]);
         vechist[i]->SetLineStyle(vstyle[i]);
-        vechist[i]->Draw("hist same");
+        if (i == 0)
+            vechist[i]->Draw("hist same");
+        else
+        {
+            vechist[i]->SetFillColorAlpha(TColor::GetColor(vcolor[i]), 0.6);
+            vechist[i]->SetMarkerStyle(21);
+            // vechist[i]->SetMarkerSize(0.6);
+            vechist[i]->SetMarkerColor(TColor::GetColor(vcolor[i]));
+            vechist[i]->Draw("E5 same");
+        }
+            
     }
 
     TLegend *l1 = new TLegend(0.18, 0.68, 0.5, 0.92);
-    l1->SetHeader(Form("Closure test: Centrality %d to %d", CentLow, CentHigh, "l"));
+    l1->SetHeader(legtitle.Data(), "l");
     l1->AddEntry(h1WGhadron, "Truth", "l");
-    l1->AddEntry(h1WEraw, "Reco-tracklets before corrections", "l");
-    // l1->AddEntry(h1WErawacc, "Reco-tracklets before corrections, after acceptance", "l");
-    l1->AddEntry(h1WEcorr, "Corrected for #alpha", "l");
-    l1->AddEntry(h1WEtcorr, "Corrected for #alpha, trigger & sdf", "l");
-    l1->AddEntry(h1WEfinal, "Corrected for #alpha, trigger & sdf, and empty event (final)", "l");
+    l1->AddEntry(h1WEraw, "Reco-tracklets before corrections", "lf");
+    // l1->AddEntry(h1WErawacc, "Corrected for acceptance", "l");
+    l1->AddEntry(h1WEcorr, "Corrected for accep. & #alpha", "lf");
+    l1->AddEntry(h1WEtcorr, "Corrected for accep. & #alpha, trigger & sdf.", "lf");
+    l1->AddEntry(h1WEfinal, "Corrected for accep. & #alpha, trigger & sdf. & empty event", "lf");
     l1->SetTextSize(0.03);
     l1->SetFillStyle(0);
     l1->SetBorderSize(0);
@@ -1033,14 +1010,7 @@ int main(int argc, char *argv[])
     bool debug = (TString(argv[12]).Atoi() == 1) ? true : false;
 
     gStyle->SetPaintTextFormat();
-    // TString input = "/sphenix/user/hjheng/TrackletAna/minitree/INTT/TrackletMinitree_ana398_zvtx-20cm_dummyAlignParams/sim/TrackletAna_minitree_merged.root";
-    // calccorr(input, 5, 95, false, false, false, "", "", "", false);
-    // for (int i = 0; i < 10; i++)
-    // {
-    //     gStyle->SetPaintTextFormat();
-    //     int cent = 5 * (2 * i + 1);
-    //     calccorr(input, cent, cent, false, false, false, "", "", "", false);
-    // }
+    
     const TString aselstring = (asel_string == "null") ? "" : asel_string;
     calccorr(input, CentLow, CentHigh, applyc, applyg, applym, estag, putag, aselstring, correctionfiletag, outfilepath, debug);
 

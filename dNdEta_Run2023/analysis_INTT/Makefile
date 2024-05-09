@@ -1,7 +1,7 @@
 CFLAGS = -g3 -pthread -m64 -Wno-deprecated -I src/ 
 CFLAGS += $(shell root-config --cflags --libs)
 
-all : TrackletAna plotTrkrHit plotTracklets plotRecoVtx plotCluster BeamspotReco INTTVtxZ Corrections
+all : TrackletAna plotTrkrHit plotTracklets plotRecoVtx plotCluster BeamspotReco INTTVtxZ Corrections GeoAccepCorr
 
 TrackletAna : src/TrackletAna.cxx src/Hit.h src/Tracklet.h
 	g++ ${CFLAGS} src/TrackletAna.cxx src/Hit.h src/Tracklet.h -o TrackletAna
@@ -27,5 +27,5 @@ BeamspotReco : src/BeamspotReco.cxx
 Corrections : src/Corrections.cxx
 	g++ $(CFLAGS) src/Corrections.cxx -o Corrections
 
-clean : 
-	rm TrackletAna plotTrkrHit plotTracklets plotRecoVtx plotCluster BeamspotReco INTTVtxZ Corrections
+GeoAccepCorr : src/GeoAccepCorr.cxx
+	g++ $(CFLAGS) src/GeoAccepCorr.cxx -o GeoAccepCorr

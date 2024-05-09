@@ -9,14 +9,24 @@
         "Legendtext": "sPHENIX AuAu 200 GeV - Data",
         "Legendstyle": "pf"
     },
-    "sphenix_sim_auau_200gev":{
+    "sphenix_rawhijing_auau_200gev":{
         "markerstyle": 20,
-        "markercolor": "#96939B",
+        "markercolor": "#EE6983",
         "markersize": 1,
         "linewidth": 0,
         "alpha": 0.5,
         "DrawOption": ["3 RX same","pX RX same"],
-        "Legendtext": "sPHENIX AuAu 200 GeV - Simulation",
+        "Legendtext": "sPHENIX AuAu 200 GeV - HIJING (generator)",
+        "Legendstyle": "pf"
+    },
+    "sphenix_sim_auau_200gev":{
+        "markerstyle": 20,
+        "markercolor": "#850E35",
+        "markersize": 1,
+        "linewidth": 0,
+        "alpha": 0.5,
+        "DrawOption": ["3 RX same","pX RX same"],
+        "Legendtext": "sPHENIX AuAu 200 GeV - HIJING (reconstructed)",
         "Legendstyle": "pf"
     },
     "phobos_auau_0p2":{

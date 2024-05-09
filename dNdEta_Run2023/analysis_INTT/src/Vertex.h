@@ -36,6 +36,7 @@ struct VtxData
     uint64_t INTT_BCO;
     float TruthPV_x, TruthPV_y, TruthPV_z;
     float PV_x, PV_y, PV_z;
+    float PV_z_rand; // For acceptance correction
     float Centrality_bimp, Centrality_impactparam, Centrality_mbd;
     float mbd_south_charge_sum, mbd_north_charge_sum, mbd_charge_sum, mbd_charge_asymm, mbd_z_vtx;
 };
@@ -106,6 +107,16 @@ std::map<uint64_t, vector<float>> EvtVtx_map_inttbco(const char *vtxfname)
     }
 
     return EvtVtx_map;
+}
+
+TH1F *VtxZ_ReweiHist(const char *filename = "/sphenix/user/hjheng/sPHENIXRepo/analysis/dNdEta_Run2023/analysis_INTT/plot/RecoPV_ana/VtxZ_reweight.root")
+{
+    TFile *f = new TFile(filename, "READ");
+    TH1F *h = (TH1F *)f->Get("VtxZ_reweight");
+    h->SetDirectory(0);
+    f->Close();
+    
+    return h;
 }
 
 #endif

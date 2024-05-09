@@ -7,6 +7,7 @@
 #include <fun4all/SubsysReco.h>
 #include "TTree.h"
 #include <string>
+#include "TH2F.h"
 
 class PHCompositeNode;
 class TH3;
@@ -53,6 +54,8 @@ class TracksInJets : public SubsysReco
 
   void Print(const std::string &what = "ALL") const override;
 
+  bool isAA; // Declare isAA as a public member variable
+
  private:
 
   std::string m_recoJetName;
@@ -60,7 +63,7 @@ class TracksInJets : public SubsysReco
   float m_jetRadius;
   std::string m_outputFileName;
   TH3 *m_h_track_vs_calo_pt;
-
+  TH2F *m_h_track_pt;
 };
 
 #endif // TRACKSINJETS_H

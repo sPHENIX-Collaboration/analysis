@@ -80,6 +80,9 @@ int main(int argc, char *argv[])
     TH1F *hM_ClusADC_all = new TH1F("hM_ClusADC_all", "hM_ClusADC_all", 1800, 0, 18000);
     TH1F *hM_ClusADC_layer1 = new TH1F("hM_ClusADC_layer1", "hM_ClusADC_layer1", 1800, 0, 18000);
     TH1F *hM_ClusADC_layer2 = new TH1F("hM_ClusADC_layer2", "hM_ClusADC_layer2", 1800, 0, 18000);
+    TH1F *hM_ClusADC_all_0to500 = new TH1F("hM_ClusADC_all_0to500", "hM_ClusADC_all_0to500", 500, 0, 500);
+    TH1F *hM_ClusADC_layer1_0to500 = new TH1F("hM_ClusADC_layer1_0to500", "hM_ClusADC_layer1_0to500", 500, 0, 500);
+    TH1F *hM_ClusADC_layer2_0to500 = new TH1F("hM_ClusADC_layer2_0to500", "hM_ClusADC_layer2_0to500", 500, 0, 500);
     // TH1F *hM_ClusZSize_all = new TH1F("hM_ClusZSize_all", "hM_ClusZSize_all", 20, 0, 20);
     // TH1F *hM_ClusZSize_layer1 = new TH1F("hM_ClusZSize_layer1", "hM_ClusZSize_layer1", 20, 0, 20);
     // TH1F *hM_ClusZSize_layer2 = new TH1F("hM_ClusZSize_layer2", "hM_ClusZSize_layer2", 20, 0, 20);

@@ -18,16 +18,19 @@
 
 int main(int argc, char *argv[])
 {
-    // Usage: ./TrackletAna [isdata] [evt-vtx map file] [infile] [outfile] [NevtToRun] [skip] [dRCut]
+    // Usage: ./TrackletAna [isdata] [evt-vtx map file] [infile] [outfile] [NevtToRun] [dRCut]
     bool IsData = (TString(argv[1]).Atoi() == 1) ? true : false;
     TString EvtVtx_map_filename = TString(argv[2]);
     TString infilename = TString(argv[3]);
     TString outfilename = TString(argv[4]);
     int NevtToRun_ = TString(argv[5]).Atoi();
     float dRCut = TString(argv[6]).Atof();
+    bool userandomzvtx = (TString(argv[7]).Atoi() == 1) ? true : false;
 
     TString idxstr = (IsData) ? "INTT_BCO" : "event";
-    
+
+    TRandom3 *rnd = new TRandom3(0); // Random number generator
+
     // int iniEvt = skip;
 
     cout << "[Run Info] Event-vertex map file = " << EvtVtx_map_filename << endl
@@ -41,8 +44,11 @@ int main(int argc, char *argv[])
 
     TrackletData tkldata = {};
 
-    std::map<int, vector<float>> EvtVtxMap_event = EvtVtx_map_event(EvtVtx_map_filename.Data()); // use with simulation
+    std::map<int, vector<float>> EvtVtxMap_event = EvtVtx_map_event(EvtVtx_map_filename.Data());          // use with simulation
     std::map<uint64_t, vector<float>> EvtVtxMap_inttbco = EvtVtx_map_inttbco(EvtVtx_map_filename.Data()); // use with data
+
+    // Vertex Z reweighting
+    TH1F *hM_vtxzweight = VtxZ_ReweiHist();
 
     TFile *f = new TFile(infilename, "READ");
     TTree *t = (TTree *)f->Get("EventTree");
@@ -91,7 +97,7 @@ int main(int argc, char *argv[])
     TFile *outfile = new TFile(outfilename, "RECREATE");
     TTree *minitree = new TTree("minitree", "Minitree of Reconstructed Tracklets");
     SetMinitree(minitree, tkldata);
-    
+
     for (int i = 0; i < NevtToRun_; i++)
     {
         Long64_t local = t->LoadTree(index->GetIndex()[i]);
@@ -103,13 +109,29 @@ int main(int argc, char *argv[])
         tkldata.INTT_BCO = INTT_BCO;
         tkldata.PV_x = PV[0];
         tkldata.PV_y = PV[1];
-        tkldata.PV_z = PV[2];
+        // float randomzvtx = rnd->Uniform(-50, 50);
+        float PVz = (userandomzvtx) ? rnd->Uniform(-30, -10) : PV[2];
+        tkldata.PV_z = PVz;
+        
         if (!IsData)
         {
             tkldata.TruthPV_x = TruthPV_trig_x;
             tkldata.TruthPV_y = TruthPV_trig_y;
             tkldata.TruthPV_z = TruthPV_trig_z;
         }
+
+        if (PV[2] < -40 || PV[2] > 0)
+        {
+            tkldata.vtxzwei = 0;
+        }
+        else
+        {
+            if (IsData)
+                tkldata.vtxzwei = 1;
+            else
+                tkldata.vtxzwei = hM_vtxzweight->GetBinContent(hM_vtxzweight->FindBin(PV[2]));
+        }
+
         // Centrality
         tkldata.centrality_mbd = centrality_mbd;
         tkldata.mbd_z_vtx = mbd_z_vtx;
@@ -127,7 +149,7 @@ int main(int argc, char *argv[])
 
         // Prepare clusters
         for (size_t ihit = 0; ihit < ClusLayer->size(); ihit++)
-        {   
+        {
             if (ClusLayer->at(ihit) < 3 || ClusLayer->at(ihit) > 6)
             {
                 cout << "[WARNING] Unknown layer: " << ClusLayer->at(ihit) << endl; // Should not happen
@@ -139,7 +161,7 @@ int main(int argc, char *argv[])
 
             int layer = (ClusLayer->at(ihit) == 3 || ClusLayer->at(ihit) == 4) ? 0 : 1;
             // Hit::Hit(float x, float y, float z, float vtxX, float vtxY, float vtxZ, int layer, float phisize, unsigned int clusadc)
-            Hit *hit = new Hit(ClusX->at(ihit), ClusY->at(ihit), ClusZ->at(ihit), PV[0], PV[1], PV[2], layer, ClusPhiSize->at(ihit), ClusAdc->at(ihit));
+            Hit *hit = new Hit(ClusX->at(ihit), ClusY->at(ihit), ClusZ->at(ihit), PV[0], PV[1], PVz, layer, ClusPhiSize->at(ihit), ClusAdc->at(ihit));
             tkldata.layers[layer].push_back(hit);
             tkldata.cluslayer.push_back(layer);
             tkldata.clusphi.push_back(hit->Phi());
@@ -177,7 +199,8 @@ int main(int argc, char *argv[])
             // cout << "NCluster layer 1 = " << tkldata.NClusLayer1 << "; NRecotkl_Raw = " << tkldata.NRecotkl_Raw << "; NRecotkl_GenMatched = " << tkldata.NRecotkl_GenMatched << endl;
         }
 
-        cout << "Number of total inner clusters = " << tkldata.NClusLayer1 << "; Number of tracklet inner clusters = " << tkldata.tklclus1phi.size() << "; Number of reco-tracklets = " << tkldata.NRecotkl_Raw << ";" << endl;
+        cout << "Number of total inner clusters = " << tkldata.NClusLayer1 << "; Number of tracklet inner clusters = " << tkldata.tklclus1phi.size()
+             << "; Number of reco-tracklets = " << tkldata.NRecotkl_Raw << ";" << endl;
 
         minitree->Fill();
         ResetVec(tkldata);

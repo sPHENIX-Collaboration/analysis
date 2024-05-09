@@ -26,6 +26,7 @@ if __name__ == '__main__':
     parser.add_option("-e", "--nEvents", dest="nEvents", default=200, help="Number of events per job")
     parser.add_option("-j", "--nJob", dest="nJob", default=400, help="nJob")
     parser.add_option("-r", "--drcut", dest="drcut", default=0.5, help="Delta R cut for tracklets")
+    parser.add_option("--randomvtxz", dest="randomvtxz", action="store_true", default=False, help="Randomize vtx z (for geometric acceptance correction)")
     parser.add_option("-s", "--submitcondor", dest="submitcondor", action="store_true", default=False, help="Submit condor jobs")
 
     (opt, args) = parser.parse_args()
@@ -36,6 +37,7 @@ if __name__ == '__main__':
     nEvents = int(opt.nEvents)
     drcut = float(opt.drcut)
     nJob = int(opt.nJob)
+    randomvtxz = opt.randomvtxz
     submitcondor = opt.submitcondor
     username = pwd.getpwuid(os.getuid())[0]
 
@@ -43,7 +45,7 @@ if __name__ == '__main__':
     infiledir = '{}/production/{}'.format(twolevelup, filedesc)
     print ('infiledir: {}'.format(infiledir))
     parentdir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir))
-    finaloutfiledir = '{}/minitree/TrackletMinitree_{}/{}'.format(parentdir, filedesc, 'dRcut'+str(drcut).replace('.', 'p'))
+    finaloutfiledir = '{}/minitree/TrackletMinitree_{}/{}'.format(parentdir, filedesc, 'dRcut'+str(drcut).replace('.', 'p')+('_RandomVtxZ' if randomvtxz else ''))
     print ('finaloutfiledir: {}'.format(finaloutfiledir))
     os.makedirs(finaloutfiledir, exist_ok=True)
 
@@ -51,7 +53,7 @@ if __name__ == '__main__':
     if not dir_empty('./log_recotracklet/'):
         os.system('rm ./log_recotracklet/*')
 
-    condorFileName = "submitCondor_recotracklet_{}.job".format('data' if isdata else 'sim')
+    condorFileName = "submitCondor_recotracklet_{}_{}.job".format('data' if isdata else 'sim', 'RandomVtxZ' if randomvtxz else 'NominalVtxZ')
     condorFile = open("{}".format(condorFileName), "w")
     condorFile.write("Universe           = vanilla\n")
     condorFile.write("InitialDir         = {}\n".format(parentdir))
@@ -68,10 +70,11 @@ if __name__ == '__main__':
     condorFile.write("outfilename        = {}/minitree_$(Extension).root\n".format(finaloutfiledir))
     condorFile.write("nevt               = {}\n".format(nEvents))
     condorFile.write("drcut              = {:.3g}\n".format(drcut))
+    condorFile.write("randomvtxz         = {}\n".format(1 if randomvtxz else 0))
     condorFile.write("Output             = $(Initialdir)/condor/log_recotracklet/condorlog_$(Process).out\n")
     condorFile.write("Error              = $(Initialdir)/condor/log_recotracklet/condorlog_$(Process).err\n")
     condorFile.write("Log                = $(Initialdir)/condor/log_recotracklet/condorlog_$(Process).log\n")
-    condorFile.write("Arguments          = \"$(isdata) $(evtvtxmap) $(infilename) $(outfilename) $(nevt) $(drcut)\"\n")
+    condorFile.write("Arguments          = \"$(isdata) $(evtvtxmap) $(infilename) $(outfilename) $(nevt) $(drcut) $(randomvtxz)\"\n")
     condorFile.write("Queue {}\n".format(nJob))
     condorFile.close() # Close the file before submitting the job
 
