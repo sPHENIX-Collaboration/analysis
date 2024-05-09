@@ -51,6 +51,10 @@ namespace myAnalysis {
     vector<string> cent_key1 = {"40-60","20-40","0-20"};
     vector<string> cent_key2 = {"50-60", "40-50", "30-40","20-30","10-20","0-10"};
 
+    // Impact parameter bin edges taken from: https://wiki.sphenix.bnl.gov/index.php/MDC2_2022
+    vector<string>  b_key    = {"9.71-11.84", "6.81-9.71", "0-6.81"}; /*fm*/
+    vector<Float_t> b_bin    = {0, 6.81, 9.71, 11.84};
+
     vector<string> pt_key;
     vector<string> pt_key1 = {"2-2.5","2.5-3","3-3.5","3.5-4","4-4.5","4.5-5"};
     vector<string> pt_key2 = {"2-5"};
@@ -377,8 +381,8 @@ void fits(const string &i_input,
     // set sPHENIX plotting style
     SetsPhenixStyle();
 
-    myAnalysis::cent_key = (anaType == 0) ? myAnalysis::cent_key1 : myAnalysis::cent_key2;
-    myAnalysis::pt_key        = (anaType == 0) ? myAnalysis::pt_key1        : myAnalysis::pt_key2;
+    myAnalysis::cent_key = (isSim) ? myAnalysis::b_key : (anaType == 0) ? myAnalysis::cent_key1 : myAnalysis::cent_key2;
+    myAnalysis::pt_key   = (anaType == 0) ? myAnalysis::pt_key1   : myAnalysis::pt_key2;
 
     if(anaType == 1) {
         myAnalysis::meanEstimate = 0.18;
@@ -386,7 +390,7 @@ void fits(const string &i_input,
         // EMCal Systematics
         // myAnalysis::meanEstimate = 0.182;
     }
-    if(isSim   == 1) {
+    if(isSim == 1) {
         myAnalysis::meanEstimate = 0.15;
     }
 
