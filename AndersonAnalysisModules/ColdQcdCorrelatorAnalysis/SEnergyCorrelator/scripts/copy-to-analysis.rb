@@ -22,6 +22,7 @@ to_copy = [
   "DoStandaloneCorrelatorCalculation.rb",
   "DoStandaloneCorrelatorCalculationOnCondor.sh",
   "DoStandaloneCorrelatorCalculationOnCondor.job",
+  "EnergyCorrelatorOptions.h",
   "scripts/copy-to-analysis.rb",
   "scripts/wipe-source.sh",
   "src/SEnergyCorrelator.cc",
