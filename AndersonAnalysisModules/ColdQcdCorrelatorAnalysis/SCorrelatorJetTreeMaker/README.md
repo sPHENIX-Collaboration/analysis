@@ -2,7 +2,7 @@
 
 A class to construct a tree of jets from a specified set of events within the sPHENIX software stack.  The produced trees will serve as input for the calculation of N-Point Energy Correlations.  Additional macros and scripts which may be useful can be found in `macros` and `scripts` respectively.
 
-Derived from code by Antonio Silva (thanks!!)
+Initially derived from code by Antonio Silva (thanks!!)
 
 ## Usage
 
@@ -22,7 +22,3 @@ root -b -q Fun4All_RunCorrelatorJetTree.C
 
 ### TODO Items:
   - [Major] Implement jet area calculation
-  - [Major] Refactor for ease-of-maintenance, readability, and organization
-  - [Minor] Wrap source code in relevant namespace
-  - [Minor] Clean up unnecessary includes/members
-  - [Minor] Fix verbosity levels

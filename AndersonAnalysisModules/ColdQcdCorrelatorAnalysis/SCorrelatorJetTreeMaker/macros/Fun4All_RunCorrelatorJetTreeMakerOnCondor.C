@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// 'Fun4All_RunCorrelatorJetTreeOnCondor.C'
+// 'Fun4All_RunCorrelatorJetTreeMakerOnCondor.C'
 // Derek Anderson
 // 01.06.2023
 //
-// Use this to run the SCorrelatorJetTree
+// Use this to run the SCorrelatorJetTreeMaker
 // class via Condor.
 //
 // Derived from code by Cameron Dean and
@@ -45,7 +45,7 @@
 #include <caloreco/RawClusterBuilderTopo.h>
 #include <particleflowreco/ParticleFlowReco.h>
 // user includes
-#include "/sphenix/user/danderson/install/include/scorrelatorjettree/SCorrelatorJetTree.h"
+#include "/sphenix/user/danderson/install/include/scorrelatorjettree/SCorrelatorJetTreeMaker.h"
 
 // load libraries
 R__LOAD_LIBRARY(libg4eval.so)
@@ -59,7 +59,7 @@ using namespace SColdQcdCorrelatorAnalysis;
 
 // global constants
 static const string       SInListDefault   = "test.list";
-static const string       SOutDirDefault   = "/sphenix/user/danderson/eec/SCorrelatorJetTree/submit/ppJet10GeV/output";
+static const string       SOutDirDefault   = "/sphenix/user/danderson/eec/SCorrelatorJetTreeMaker/submit/ppJet10GeV/output";
 static const string       SRecoNameDefault = "CorrelatorJetTree";
 static const int          NEvtDefault      = 10;
 static const int          VerbDefault      = 0;
@@ -96,7 +96,6 @@ void Fun4All_RunCorrelatorJetTreeOnCondor(vector<string> sInputLists = {SInListD
   const bool requireSiSeeds(true);
   const bool useOnlyPrimVtx(true);
   const bool doDcaSigmaCut(false);
-  const bool checkWeirdTrks(false);
   const bool maskTpcSectors(false);
   const bool addTracks(true);
   const bool addECal(false);
@@ -106,8 +105,8 @@ void Fun4All_RunCorrelatorJetTreeOnCondor(vector<string> sInputLists = {SInListD
   // jet tree jet parameters
   const double       jetRes  = 0.4;
   const unsigned int jetType = 0;
-  const auto         jetAlgo = SCorrelatorJetTree::ALGO::ANTIKT;
-  const auto         jetReco = SCorrelatorJetTree::RECOMB::PT_SCHEME;
+  const auto         jetAlgo = SCorrelatorJetTreeMaker::ALGO::ANTIKT;
+  const auto         jetReco = SCorrelatorJetTreeMaker::RECOMB::PT_SCHEME;
 
   // event acceptance
   const pair<double, double> vzEvtRange = {-10., 10.};
@@ -261,7 +260,7 @@ void Fun4All_RunCorrelatorJetTreeOnCondor(vector<string> sInputLists = {SInListD
   }
 
   // create correlator jet tree
-  SCorrelatorJetTree *correlatorJetTree = new SCorrelatorJetTree("SCorrelatorJetTree", outputRecoFile, isMC, isEmbed, doDebug);
+  SCorrelatorJetTreeMaker *correlatorJetTree = new SCorrelatorJetTreeMaker("SCorrelatorJetTreeMaker", outputRecoFile, isMC, isEmbed, doDebug);
   correlatorJetTree -> Verbosity(verbosity);
   correlatorJetTree -> SetDoVertexCut(doVtxCut);
   correlatorJetTree -> SetDoQualityPlots(doQuality);
@@ -279,7 +278,6 @@ void Fun4All_RunCorrelatorJetTreeOnCondor(vector<string> sInputLists = {SInListD
     correlatorJetTree -> SetRequireSiSeeds(requireSiSeeds);
     correlatorJetTree -> SetUseOnlyPrimVtx(useOnlyPrimVtx);
     correlatorJetTree -> SetMaskTpcSectors(maskTpcSectors);
-    correlatorJetTree -> SetCheckWeirdTrks(checkWeirdTrks);
     correlatorJetTree -> SetTrackPtRange(ptTrackRange);
     correlatorJetTree -> SetTrackEtaRange(etaTrackRange);
     correlatorJetTree -> SetTrackQualityRange(qualTrackRange);

@@ -1,11 +1,12 @@
 AUTOMAKE_OPTIONS = foreign
 
 lib_LTLIBRARIES = \
-    libscorrelatorjettree.la
+    libscorrelatorjettreemaker.la
 
 AM_LDFLAGS = \
   -L$(libdir) \
-  -L$(OFFLINE_MAIN)/lib
+  -L$(OFFLINE_MAIN)/lib \
+  $(MYINSTALL)/lib/libscorrelatorutilities.la
 
 AM_CPPFLAGS = \
   -I$(includedir) \
@@ -13,18 +14,20 @@ AM_CPPFLAGS = \
   -I$(ROOTSYS)/include
 
 pkginclude_HEADERS = \
-  SCorrelatorJetTree.h
+  SCorrelatorJetTreeMaker.h \
+  SCorrelatorJetTreeMakerConfig.h \
+  SCorrelatorJetTreeMakerOutput.h
 
 if ! MAKEROOT6
   ROOT5_DICTS = \
-    SCorrelatorJetTree_Dict.cc
+    SCorrelatorJetTreeMaker_Dict.cc
 endif
 
-libscorrelatorjettree_la_SOURCES = \
+libscorrelatorjettreemaker_la_SOURCES = \
   $(ROOT5_DICTS) \
-  SCorrelatorJetTree.cc
+  SCorrelatorJetTreeMaker.cc
 
-libscorrelatorjettree_la_LDFLAGS = \
+libscorrelatorjettreemaker_la_LDFLAGS = \
   -L$(libdir) \
   -L$(OFFLINE_MAIN)/lib \
   -lcalo_io \
@@ -43,7 +46,7 @@ noinst_PROGRAMS = \
   testexternals
 
 testexternals_SOURCES = testexternals.C
-testexternals_LDADD = libscorrelatorjettree.la
+testexternals_LDADD = libscorrelatorjettreemaker.la
 
 testexternals.C:
 	echo "//*** this is a generated file. Do not commit, do not edit" > $@

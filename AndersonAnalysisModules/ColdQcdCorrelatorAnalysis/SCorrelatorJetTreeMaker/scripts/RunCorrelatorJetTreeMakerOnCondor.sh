@@ -1,6 +1,6 @@
 #!/bin/bash
 # -----------------------------------------------------------------------------
-# 'RunCorrelatorJetTreeOnCondor.sh'
+# 'RunCorrelatorJetTreeMakerOnCondor.sh'
 # Derek Anderson
 # 01.06.2022
 #
@@ -28,8 +28,8 @@ inputFiles=${inputFiles::-1}
 inputFiles+="}"
 
 # run script
-echo running: RunCorrelatorJetTreeOnCondor.sh $*
-root -b -q "Fun4All_RunCorrelatorJetTreeOnCondor.C(${inputFiles},$nEvents,$verbose)"
+echo running: RunCorrelatorJetTreeMakerOnCondor.sh $*
+root -b -q "Fun4All_RunCorrelatorJetTreeMakerOnCondor.C(${inputFiles},$nEvents,$verbose)"
 echo Script done
 
 # end -------------------------------------------------------------------------
