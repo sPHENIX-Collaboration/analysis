@@ -1,15 +1,14 @@
 // ----------------------------------------------------------------------------
-// 'SCheckTrackPairs.h'
+// 'SMakeClustQATree.h'
 // Derek Anderson
-// 11.14.2023
+// 01.21.2024
 //
-// SCorrelatorQAMaker plugin to iterate through
-// all pairs of tracks in an event and fill
-// tuples/histograms comparing them.
+// SCorrelatorQAMaker plugin to produce the QA tree
+// for calorimeter clusters.
 // ----------------------------------------------------------------------------
 
-#ifndef SCORRELATORQAMAKER_SCHECKTRACKPAIRS_H
-#define SCORRELATORQAMAKER_SCHECKTRACKPAIRS_H
+#ifndef SCORRELATORQAMAKER_SMAKECLUSTQATREE_H
+#define SCORRELATORQAMAKER_SMAKECLUSTQATREE_H
 
 // c++ utilities
 #include <string>
@@ -17,21 +16,27 @@
 #include <utility>
 // root utilities
 #include <TF1.h>
-#include <TNtuple.h>
+#include <TTree.h>
 #include <Math/Vector3D.h>
 // f4a libraries
 #include <fun4all/SubsysReco.h>
 #include <fun4all/Fun4AllReturnCodes.h>
+#include <fun4all/Fun4AllHistoManager.h>
 // phool libraries
 #include <phool/phool.h>
 #include <phool/getClass.h>
 #include <phool/PHIODataNode.h>
 #include <phool/PHNodeIterator.h>
 #include <phool/PHCompositeNode.h>
-// tracking libraries
-#include <trackbase_historic/SvtxTrack.h>
-#include <trackbase_historic/SvtxTrackMap.h>
-#include <trackbase_historic/TrackAnalysisUtils.h>
+// calo includes
+#include <calobase/RawCluster.h>
+#include <calobase/RawClusterUtility.h>
+#include <calobase/RawClusterContainer.h>
+#include <calobase/RawTower.h>
+#include <calobase/RawTowerGeom.h>
+#include <calobase/RawTowerContainer.h>
+#include <calobase/RawTowerGeomContainer.h>
+#include <calotrigger/CaloTriggerInfo.h>
 // analysis utilities
 #include "/sphenix/user/danderson/install/include/scorrelatorutilities/Tools.h"
 #include "/sphenix/user/danderson/install/include/scorrelatorutilities/Types.h"
@@ -39,7 +44,8 @@
 #include "/sphenix/user/danderson/install/include/scorrelatorutilities/Interfaces.h"
 // plugin definitions
 #include "SBaseQAPlugin.h"
-#include "SCheckTrackPairsConfig.h"
+#include "SMakeClustQATreeConfig.h"
+#include "SMakeClustQATreeOutput.h"
 
 // make common namespaces implicit
 using namespace std;
@@ -48,15 +54,15 @@ using namespace std;
 
 namespace SColdQcdCorrelatorAnalysis {
 
-  // SCheckTrackPairs definition ----------------------------------------------
+  // SMakeClustQATree definition ----------------------------------------------
 
-  class SCheckTrackPairs : public SubsysReco, public SBaseQAPlugin<SCheckTrackPairsConfig> {
+  class SMakeClustQATree : public SubsysReco, public SBaseQAPlugin<SMakeClustQATreeConfig> {
 
     public:
 
       // ctor/dtor
-      SCheckTrackPairs(const string& name = "CheckTrackPairs") : SubsysReco(name) {};
-      ~SCheckTrackPairs() {};
+      SMakeClustQATree(const string& name = "ClustQATree") : SubsysReco(name) {};
+      ~SMakeClustQATree() {};
 
       // F4A methods
       int Init(PHCompositeNode*)          override;
@@ -66,21 +72,18 @@ namespace SColdQcdCorrelatorAnalysis {
     private:
 
       // internal methods
-      void InitTuples();
+      void InitTree();
       void SaveOutput();
-      void ResetVectors();
-      void DoDoubleTrackLoop(PHCompositeNode* topNode);
-      bool IsGoodTrack(SvtxTrack* track, PHCompositeNode* topNode);
+      void DoClustLoop(PHCompositeNode* topNode, const string node);
+      bool IsGoodCluster(const RawCluster* cluster);
 
-      // vector members
-      vector<float>             m_vecTrackPairLeaves;
-      vector<TrkrDefs::cluskey> m_vecClustKeysA;
-      vector<TrkrDefs::cluskey> m_vecClustKeysB;
+      // output
+      SMakeClustQATreeOutput m_output;
 
       // root members
-      TNtuple* m_ntTrackPairs;
+      TTree* m_tClustQA;
 
-  };  // end SCheckTrackPairs
+  };  // end SMakeClustQATree
 
 }  // end SColdQcdCorrelatorAnalysis namespace
 

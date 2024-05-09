@@ -1,15 +1,14 @@
 // ----------------------------------------------------------------------------
-// 'SCheckTrackPairs.h'
+// 'SMakeTrackQATuple.h'
 // Derek Anderson
-// 11.14.2023
+// 12.29.2023
 //
-// SCorrelatorQAMaker plugin to iterate through
-// all pairs of tracks in an event and fill
-// tuples/histograms comparing them.
+// SCorrelatorQAMaker plugin to produce QA tuples
+// for tracks.
 // ----------------------------------------------------------------------------
 
-#ifndef SCORRELATORQAMAKER_SCHECKTRACKPAIRS_H
-#define SCORRELATORQAMAKER_SCHECKTRACKPAIRS_H
+#ifndef SCORRELATORQAMAKER_SMAKETRACKQATUPLE_H
+#define SCORRELATORQAMAKER_SMAKETRACKQATUPLE_H
 
 // c++ utilities
 #include <string>
@@ -22,6 +21,7 @@
 // f4a libraries
 #include <fun4all/SubsysReco.h>
 #include <fun4all/Fun4AllReturnCodes.h>
+#include <fun4all/Fun4AllHistoManager.h>
 // phool libraries
 #include <phool/phool.h>
 #include <phool/getClass.h>
@@ -39,7 +39,7 @@
 #include "/sphenix/user/danderson/install/include/scorrelatorutilities/Interfaces.h"
 // plugin definitions
 #include "SBaseQAPlugin.h"
-#include "SCheckTrackPairsConfig.h"
+#include "SMakeTrackQATupleConfig.h"
 
 // make common namespaces implicit
 using namespace std;
@@ -48,15 +48,15 @@ using namespace std;
 
 namespace SColdQcdCorrelatorAnalysis {
 
-  // SCheckTrackPairs definition ----------------------------------------------
+  // SMakeTrackQATuple definition ----------------------------------------------
 
-  class SCheckTrackPairs : public SubsysReco, public SBaseQAPlugin<SCheckTrackPairsConfig> {
+  class SMakeTrackQATuple : public SubsysReco, public SBaseQAPlugin<SMakeTrackQATupleConfig> {
 
     public:
 
       // ctor/dtor
-      SCheckTrackPairs(const string& name = "CheckTrackPairs") : SubsysReco(name) {};
-      ~SCheckTrackPairs() {};
+      SMakeTrackQATuple(const string& name = "TrackQATuple") : SubsysReco(name) {};
+      ~SMakeTrackQATuple() {};
 
       // F4A methods
       int Init(PHCompositeNode*)          override;
@@ -66,24 +66,21 @@ namespace SColdQcdCorrelatorAnalysis {
     private:
 
       // internal methods
-      void InitTuples();
+      void InitTuple();
       void SaveOutput();
-      void ResetVectors();
-      void DoDoubleTrackLoop(PHCompositeNode* topNode);
+      void DoTrackLoop(PHCompositeNode* topNode);
       bool IsGoodTrack(SvtxTrack* track, PHCompositeNode* topNode);
 
-      // vector members
-      vector<float>             m_vecTrackPairLeaves;
-      vector<TrkrDefs::cluskey> m_vecClustKeysA;
-      vector<TrkrDefs::cluskey> m_vecClustKeysB;
+      // for tuple leaves
+      vector<float> m_vecTrackLeaves;
 
       // root members
-      TNtuple* m_ntTrackPairs;
+      TNtuple* m_ntTrackQA;
 
-  };  // end SCheckTrackPairs
+  };  // end SMakeTrackQATuple
 
 }  // end SColdQcdCorrelatorAnalysis namespace
 
 #endif
 
-// end ------------------------------------------------------------------------
+// end -----------------------------------------------------------------------
