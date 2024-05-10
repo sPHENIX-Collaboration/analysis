@@ -38,9 +38,15 @@ namespace myAnalysis {
 
     Int_t readFitStats(const string &fitStats);
 
+    Bool_t isSim;
+
     vector<string> cent_key;
     vector<string> cent_key1 = {"40-60", "20-40", "0-20"};
     vector<string> cent_key2 = {"50-60", "40-50", "30-40","20-30","10-20","0-10"};
+
+    // Impact parameter bin edges taken from: https://wiki.sphenix.bnl.gov/index.php/MDC2_2022
+    vector<string>  b_key    = {"9.71-11.84", "6.81-9.71", "0-6.81"}; /*fm*/
+    vector<Float_t> b_bin    = {0, 6.81, 9.71, 11.84};
 
     vector<string> pt_key;
     vector<string> pt_key1   = {"2-2.5", "2.5-3", "3-3.5", "3.5-4", "4-4.5", "4.5-5"};
@@ -139,7 +145,14 @@ Int_t myAnalysis::readFitStats(const string &fitStats) {
 
     cout << endl;
     for(Int_t i = 0; i < cent_key.size(); ++i) {
-        cout << "cent: " << cent_key[i] << endl;
+
+        if(isSim) {
+            cout << "b: " << cent_key[i] << " fm" << endl;
+        }
+        else {
+            cout << "cent: " << cent_key[i] << endl;
+        }
+
         for(Int_t j = 0; j < pt_key.size(); ++j) {
             Int_t idx = i*pt_key.size()+j;
             cout << "pt: " << pt_key[j] << ", S/B: " << SB[idx] << endl;
@@ -466,8 +479,9 @@ void vnAnalysis(const string &i_input,
                 const string &fitStats,
                 const string &outputCSV  = "vn.csv",
                 const string &outputFile = "vn.root",
-                Int_t         anaType     = 0,
-                Int_t         samples    = 30) {
+                      Bool_t  isSim      = false,
+                      Int_t   anaType    = 0,
+                      Int_t   samples    = 30) {
 
     cout << "#############################" << endl;
     cout << "Run Parameters" << endl;
@@ -475,11 +489,14 @@ void vnAnalysis(const string &i_input,
     cout << "fitStats: "    << fitStats << endl;
     cout << "outputCSV: "   << outputCSV << endl;
     cout << "outputFile: "  << outputFile << endl;
-    cout << "anaType: "      << anaType << endl;
+    cout << "isSim: "       << isSim << endl;
+    cout << "anaType: "     << anaType << endl;
     cout << "Samples: "     << samples << endl;
     cout << "#############################" << endl;
 
-    myAnalysis::cent_key = (anaType == 0) ? myAnalysis::cent_key1 : myAnalysis::cent_key2;
+    myAnalysis::isSim      = isSim;
+
+    myAnalysis::cent_key = (isSim) ? myAnalysis::b_key : (anaType == 0) ? myAnalysis::cent_key1 : myAnalysis::cent_key2;
     myAnalysis::pt_key   = (anaType == 0) ? myAnalysis::pt_key1   : myAnalysis::pt_key2;
 
     if(myAnalysis::init(i_input, fitStats)) return;
@@ -490,21 +507,23 @@ void vnAnalysis(const string &i_input,
 
 # ifndef __CINT__
 Int_t main(Int_t argc, char* argv[]) {
-if(argc < 3 || argc > 7){
-        cout << "usage: ./vnAna inputFile fitStats [outputCSV] [outputFile] [anaType] [samples]" << endl;
+if(argc < 3 || argc > 8){
+        cout << "usage: ./vnAna inputFile fitStats [outputCSV] [outputFile] [isSim] [anaType] [samples]" << endl;
         cout << "inputFile: containing list of root file paths" << endl;
         cout << "fitStats: csv file containing fit stats" << endl;
         cout << "outputCSV: location of output CSV. Default: vn.csv." << endl;
         cout << "outputFile: location of output file. Default: vn.root." << endl;
+        cout << "isSim: Simulation. Default: False" << endl;
         cout << "anaType: analysis type. Default: 0." << endl;
         cout << "samples: number of samples for the vn analysis. Default: 30." << endl;
         return 1;
     }
 
-    string outputCSV   = "vn.csv";
-    string outputFile  = "vn.root";
-    Int_t  anaType     = 0;
-    Int_t  samples     = 30;
+    string outputCSV  = "vn.csv";
+    string outputFile = "vn.root";
+    Bool_t isSim      = false;
+    Int_t  anaType    = 0;
+    Int_t  samples    = 30;
 
     if(argc >= 4) {
         outputCSV = argv[3];
@@ -513,13 +532,16 @@ if(argc < 3 || argc > 7){
         outputFile = argv[4];
     }
     if(argc >= 6) {
-        anaType = atoi(argv[5]);
+        isSim = atoi(argv[5]);
     }
     if(argc >= 7) {
-        samples = atoi(argv[6]);
+        anaType = atoi(argv[6]);
+    }
+    if(argc >= 8) {
+        samples = atoi(argv[7]);
     }
 
-    vnAnalysis(argv[1], argv[2], outputCSV, outputFile, anaType, samples);
+    vnAnalysis(argv[1], argv[2], outputCSV, outputFile, isSim, anaType, samples);
 
     cout << "======================================" << endl;
     cout << "done" << endl;
