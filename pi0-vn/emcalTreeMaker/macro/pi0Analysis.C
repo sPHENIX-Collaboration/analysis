@@ -58,12 +58,16 @@ namespace myAnalysis {
     vector<string> cent_key2 = {"50-60", "40-50", "30-40","20-30","10-20","0-10"};
 
     // Impact parameter bin edges taken from: https://wiki.sphenix.bnl.gov/index.php/MDC2_2022
-    vector<string>  b_key    = {"9.71-11.84", "6.81-9.71", "0-6.81"}; /*fm*/
-    vector<Float_t> b_bin    = {0, 6.81, 9.71, 11.84};
+    vector<string>  b_key1 = {"9.71-11.84", "6.81-9.71", "0-6.81"}; /*fm*/
+    vector<string>  b_key2 = {"10.81-11.84","9.71-10.81","8.40-9.71","6.81-8.40","4.88-6.81","0-4.88"}; /*fm*/
+
+    vector<Float_t> b_bin;
+    vector<Float_t> b_bin1 = {0, 6.81, 9.71, 11.84};
+    vector<Float_t> b_bin2 = {0, 4.88, 6.81, 8.4, 9.71, 10.81, 11.84};
 
     vector<string> pt_key;
-    vector<string> pt_key1   = {"2-2.5", "2.5-3", "3-3.5", "3.5-4", "4-4.5", "4.5-5"};
-    vector<string> pt_key2   = {"2-5"};
+    vector<string> pt_key1 = {"2-2.5", "2.5-3", "3-3.5", "3.5-4", "4-4.5", "4.5-5"};
+    vector<string> pt_key2 = {"2-5"};
 
     TH1F* pt_dum_vec;
     TH1F* cent_dum_vec;
@@ -161,8 +165,14 @@ Int_t myAnalysis::init(const string &i_input, const string &i_cuts, const string
     T = new TChain("T");
     T->Add(i_input.c_str());
 
-    cent_key = (isSim) ? b_key : (anaType == 0) ? cent_key1 : cent_key2;
-    pt_key   = (anaType == 0) ? pt_key1   : pt_key2;
+    if(isSim) {
+        cent_key = (anaType == 0) ? b_key1 : b_key2;
+        b_bin    = (anaType == 0) ? b_bin1 : b_bin2;
+    }
+    else {
+        cent_key = (anaType == 0) ? cent_key1 : cent_key2;
+    }
+    pt_key = (anaType == 0) ? pt_key1 : pt_key2;
 
     cent_dum_vec = (isSim) ? new TH1F("cent_dum_vec","", cent_key.size(), b_bin.data())
                            : new TH1F("cent_dum_vec","", cent_key.size(), 0, 0.6);
@@ -1154,13 +1164,13 @@ if(argc < 3 || argc > 15){
         cout << "isSim: Simulation. Default: False" << endl;
         cout << "z: z-vertex cut. Default: 10 cm. Range: 0 to 30 cm." << endl;
         cout << "outputFile: location of output file. Default: test.root." << endl;
+        cout << "anaType: analysis type. Default: 0." << endl;
         cout << "do_vn_calc: Do vn calculations. Default: False" << endl;
         cout << "fitStats: csv file containing fit stats" << endl;
         cout << "QVecCorr: csv file containing Q vector corrections" << endl;
         cout << "subsamples: number of subsamples for the vn analysis. Default: 1." << endl;
         cout << "cut_num: the specific diphoton cut to use for the vn analysis. Default: 0." << endl;
         cout << "sigmaMult: Sigma multiplier for the signal window. Default: 2." << endl;
-        cout << "anaType: analysis type. Default: 0." << endl;
         cout << "start: start event number. Default: 0." << endl;
         cout << "end: end event number. Default: 0. (to run over all entries)." << endl;
         return 1;
