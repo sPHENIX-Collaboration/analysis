@@ -16,6 +16,7 @@
 //ROOT stuff
 #include <TH1F.h>
 #include <TH2F.h>
+#include <TH3F.h>
 #include <TFile.h>
 #include <TLorentzVector.h>
 
@@ -45,6 +46,10 @@
 
 // Minimum Bias
 #include <calotrigger/MinimumBiasInfo.h>
+
+// Truth
+#include <g4main/PHG4TruthInfoContainer.h>
+#include <g4main/PHG4Particle.h>
 
 //____________________________________________________________________________..
 caloTreeGen::caloTreeGen(const std::string &name):
@@ -90,6 +95,7 @@ Int_t caloTreeGen::Init(PHCompositeNode *topNode)
   if(isSim) {
     hImpactPar            = new TH1F("hImpactPar", "Impact Parameter; b [fm]; Counts", bins_b, low_b, high_b);
     h2ImpactParCentrality = new TH2F("h2ImpactParCentrality", "Impact Parameter vs Centrality; Centrality; b [fm]", bins_cent, low_cent, high_cent, bins_b, low_b, high_b);
+    h3ImpactParPtEta      = new TH3F("h3ImpactParPtEta", "Impact Parameter vs p_{T} vs #eta; #eta; p_{T} [GeV]; b [fm]", bins_eta, low_eta, high_eta, bins_gpt, low_gpt, high_gpt, bins_b, low_b, high_b);
   }
 
   out2 = new TFile(Outfile2.c_str(),"RECREATE");
@@ -355,6 +361,48 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
     return Fun4AllReturnCodes::ABORTEVENT;
   }
 
+  //----------------------------------Truth------------------------------------------------------//
+
+  PHG4TruthInfoContainer *truthInfo = findNode::getClass<PHG4TruthInfoContainer>(topNode,"G4TruthInfo"); // mbd info
+  if(!truthInfo && isSim)
+  {
+    std::cout << PHWHERE << "caloTreeGen::process_event: Could not find node PHG4TruthInfoContainer" << std::endl;
+    return Fun4AllReturnCodes::ABORTEVENT;
+  }
+
+  if(isSim) {
+    PHG4TruthInfoContainer::Range truthRange = truthInfo->GetPrimaryParticleRange();
+    PHG4TruthInfoContainer::ConstIterator truthIter;
+    // from the HepMC event log
+
+    for (truthIter = truthRange.first; truthIter != truthRange.second; truthIter++) {
+      PHG4Particle *particle = truthIter->second;
+
+      // check if particle is neutral pion
+      if (particle->get_pid() != 111) continue;
+      ++gpi0_ctr;
+
+      Double_t gpx = particle->get_px();
+      Double_t gpy = particle->get_py();
+      Double_t gpz = particle->get_pz();
+      Double_t ge  = particle->get_e();
+
+      TLorentzVector v;
+      v.SetPxPyPzE(gpx, gpy, gpz, ge);
+
+      Double_t geta = v.Eta();
+      Double_t gpt  = v.Pt();
+
+      h3ImpactParPtEta->Fill(geta, gpt, b);
+
+      // Debug
+      // Double_t mass = v.M();
+      // std::cout << "pt: " << pt << ", eta: " << eta << ", mass: " << mass << std::endl;
+    }
+  }
+
+  //----------------------------------Truth------------------------------------------------------//
+
   if(isSim) {
     hImpactPar->Fill(b);
     h2ImpactParCentrality->Fill(cent, b);
@@ -532,6 +580,7 @@ Int_t caloTreeGen::End(PHCompositeNode *topNode)
 {
 
   std::cout << "Total Events: " << iEvent << ", Accepted Events: " << iEventGood << ", " << iEventGood*100./iEvent << " %" << std::endl;
+  if(isSim) std::cout << "Total Truth pi0s: " << gpi0_ctr << ", average per event: " << gpi0_ctr*1./iEventGood << std::endl;
   std::cout << "Bad PMT Events: " << hBadPMTs->Integral(2,bins_nPMTs) << std::endl;
   std::cout << "min z-vertex: " << min_vtx_z << ", max z-vertex: " << max_vtx_z << std::endl;
   std::cout << "min centrality: " << min_cent << ", max centrality: " << max_cent << std::endl;
@@ -560,6 +609,7 @@ Int_t caloTreeGen::End(PHCompositeNode *topNode)
   if(isSim) {
     hImpactPar->Write();
     h2ImpactParCentrality->Write();
+    h3ImpactParPtEta->Write();
   }
   hTotalCaloE->Write();
   hTowE->Write();

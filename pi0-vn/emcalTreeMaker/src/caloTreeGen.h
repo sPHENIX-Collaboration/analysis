@@ -18,6 +18,7 @@ class RawCluster;
 class TowerInfoContainer;
 class TH1F;
 class TH2F;
+class TH3F;
 class TowerInfo;
 
 class caloTreeGen : public SubsysReco
@@ -146,6 +147,7 @@ class caloTreeGen : public SubsysReco
 
     Bool_t hasTowerFar(RawCluster *cluster, Bool_t isSim = false);
 
+    Int_t gpi0_ctr = 0;
     Int_t iEvent = 0;
     Int_t iEventGood = 0;
     Float_t avg_goodTowers = 0;
@@ -199,6 +201,8 @@ class caloTreeGen : public SubsysReco
     TH2F* h2TotalMBDCentrality;
     TH2F* h2ImpactParCentrality;
     TH2F* h2TotalMBDCaloEv2;
+
+    TH3F* h3ImpactParPtEta;
 
     UInt_t bins_towE  = 1200;
     Float_t low_towE  = -50;
@@ -263,6 +267,10 @@ class caloTreeGen : public SubsysReco
     UInt_t  bins_b = 320;
     Float_t low_b  = 0;
     Float_t high_b = 16;
+
+    UInt_t  bins_gpt = 60;
+    Float_t low_gpt  = 2;
+    Float_t high_gpt = 5;
 
     // Define PI0 Cuts
     Float_t clusE_min    = 1;
