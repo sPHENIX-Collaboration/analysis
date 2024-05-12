@@ -1,11 +1,12 @@
 AUTOMAKE_OPTIONS = foreign
 
 lib_LTLIBRARIES = \
-    libcorrelatorqamaker.la
+    libscorrelatorqamaker.la
 
 AM_LDFLAGS = \
   -L$(libdir) \
-  -L$(OFFLINE_MAIN)/lib
+  -L$(OFFLINE_MAIN)/lib \
+  $(MYINSTALL)/lib/libscorrelatorutilities.la
 
 AM_CPPFLAGS = \
   -I$(includedir) \
@@ -13,18 +14,33 @@ AM_CPPFLAGS = \
   -I$(ROOTSYS)/include
 
 pkginclude_HEADERS = \
-  SCorrelatorQAMaker.h
+  SCorrelatorQAMaker.h \
+  SBaseQAPlugin.h \
+  SCheckTrackPairs.h \
+  SCheckTrackPairsConfig.h \
+  SMakeClustQATree.h \
+  SMakeClustQATreeConfig.h \
+  SMakeClustQATreeOutput.h \
+  SMakeTrackQATuple.h \
+  SMakeTrackQATupleConfig.h \
+  SReadLambdaJetTree.h \
+  SReadLambdaJetTreeConfig.h \
+  SReadLambdaJetTreeHistDef.h
 
 if ! MAKEROOT6
   ROOT5_DICTS = \
     SCorrelatorQAMaker_Dict.cc
 endif
 
-libcorrelatorqamaker_la_SOURCES = \
+libscorrelatorqamaker_la_SOURCES = \
   $(ROOT5_DICTS) \
-  SCorrelatorQAMaker.cc 
+  SCorrelatorQAMaker.cc \
+  SCheckTrackPairs.cc \
+  SMakeClustQATree.cc \
+  SMakeTrackQATuple.cc \
+  SReadLambdaJetTree.cc
 
-libcorrelatorqamaker_la_LDFLAGS = \
+libscorrelatorqamaker_la_LDFLAGS = \
   -L$(libdir) \
   -L$(OFFLINE_MAIN)/lib \
   -lcalo_io \
@@ -42,7 +58,7 @@ noinst_PROGRAMS = \
   testexternals
 
 testexternals_SOURCES = testexternals.C
-testexternals_LDADD = libcorrelatorqamaker.la
+testexternals_LDADD = libscorrelatorqamaker.la
 
 testexternals.C:
 	echo "//*** this is a generated file. Do not commit, do not edit" > $@
