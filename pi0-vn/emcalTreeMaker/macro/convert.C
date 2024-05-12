@@ -34,6 +34,10 @@ namespace myAnalysis {
     vector<string> cent_key1 = {"40-60","20-40","0-20"};
     vector<string> cent_key2 = {"50-60", "40-50", "30-40","20-30","10-20","0-10"};
 
+    // Impact parameter bin edges taken from: https://wiki.sphenix.bnl.gov/index.php/MDC2_2022
+    vector<string>  b_key1 = {"9.71-11.84", "6.81-9.71", "0-6.81"}; /*fm*/
+    vector<string>  b_key2 = {"10.81-11.84","9.71-10.81","8.40-9.71","6.81-8.40","4.88-6.81","0-4.88"}; /*fm*/
+
     vector<string> pt_key;
     vector<string> pt_key1 = {"2-2.5","2.5-3","3-3.5","3.5-4","4-4.5","4.5-5"};
     vector<string> pt_key2 = {"2-5"};
@@ -93,6 +97,7 @@ string myAnalysis::parseFloat(Float_t value) {
 void convert(const string &i_input,
              const string &i_cuts,
              const string &i_outputDir = ".",
+                   Bool_t  isSim       = false,
                    Int_t   anaType     = 0) {
 
     cout << "#############################" << endl;
@@ -100,7 +105,8 @@ void convert(const string &i_input,
     cout << "inputFile: "        << i_input << endl;
     cout << "Cuts: "             << i_cuts << endl;
     cout << "output directory: " << i_outputDir << endl;
-    cout << "anaType: "           << anaType << endl;
+    cout << "isSim: "            << isSim << endl;
+    cout << "anaType: "          << anaType << endl;
     cout << "#############################" << endl;
 
     Int_t ret = myAnalysis::readCuts(i_cuts);
@@ -108,7 +114,13 @@ void convert(const string &i_input,
 
     TFile input(i_input.c_str());
 
-    myAnalysis::cent_key = (anaType == 0) ? myAnalysis::cent_key1 : myAnalysis::cent_key2;
+    if(isSim) {
+        myAnalysis::cent_key = (anaType == 0) ? myAnalysis::b_key1 : myAnalysis::b_key2;
+    }
+    else {
+        myAnalysis::cent_key = (anaType == 0) ? myAnalysis::cent_key1 : myAnalysis::cent_key2;
+    }
+
     myAnalysis::pt_key   = (anaType == 0) ? myAnalysis::pt_key1   : myAnalysis::pt_key2;
 
     stringstream s;
@@ -149,26 +161,31 @@ void convert(const string &i_input,
 
 # ifndef __CINT__
 Int_t main(Int_t argc, char* argv[]) {
-if(argc < 3 || argc > 5){
-        cout << "usage: ./convert inputFile cuts [outputDir] [anaType]" << endl;
+if(argc < 3 || argc > 6){
+        cout << "usage: ./convert inputFile cuts [outputDir] [isSim] [anaType]" << endl;
         cout << "inputFile: input root file" << endl;
         cout << "cuts: csv file containing cuts" << endl;
         cout << "outputDir: location of output directory. Default: current directory." << endl;
+        cout << "isSim: Simulation. Default: False" << endl;
         cout << "anaType: analysis type. Default: 0." << endl;
         return 1;
     }
 
     string outputDir = ".";
+    Bool_t isSim     = false;
     Int_t  anaType   = 0;
 
     if(argc >= 4) {
         outputDir = argv[3];
     }
     if(argc >= 5) {
-        anaType = atoi(argv[4]);
+        isSim = atoi(argv[4]);
+    }
+    if(argc >= 6) {
+        anaType = atoi(argv[5]);
     }
 
-    convert(argv[1], argv[2], outputDir, anaType);
+    convert(argv[1], argv[2], outputDir, isSim, anaType);
 
     cout << "======================================" << endl;
     cout << "done" << endl;

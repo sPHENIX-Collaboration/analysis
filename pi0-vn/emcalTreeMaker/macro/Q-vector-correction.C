@@ -60,8 +60,12 @@ namespace myAnalysis {
     vector<string> cent_key2 = {"50-60", "40-50", "30-40","20-30","10-20","0-10"};
 
     // Impact parameter bin edges taken from: https://wiki.sphenix.bnl.gov/index.php/MDC2_2022
-    vector<string>  b_key    = {"9.71-11.84", "6.81-9.71", "0-6.81"}; /*fm*/
-    vector<Float_t> b_bin    = {0, 6.81, 9.71, 11.84};
+    vector<string>  b_key1 = {"9.71-11.84", "6.81-9.71", "0-6.81"}; /*fm*/
+    vector<string>  b_key2 = {"10.81-11.84","9.71-10.81","8.40-9.71","6.81-8.40","4.88-6.81","0-4.88"}; /*fm*/
+
+    vector<Float_t> b_bin;
+    vector<Float_t> b_bin1 = {0, 6.81, 9.71, 11.84};
+    vector<Float_t> b_bin2 = {0, 4.88, 6.81, 8.4, 9.71, 10.81, 11.84};
 
     // TH1F* cent_dum_vec = new TH1F("cent_dum_vec","", 3, 0, 0.6);
     TH1F* cent_dum_vec;
@@ -120,7 +124,13 @@ Int_t myAnalysis::init(const string &i_input, Long64_t start, Long64_t end) {
     Int_t ret = readFiles(i_input, start, end);
     if(ret != 0) return ret;
 
-    cent_key = (isSim) ? b_key : (anaType == 0) ? cent_key1 : cent_key2;
+    if(isSim) {
+        cent_key = (anaType == 0) ? b_key1 : b_key2;
+        b_bin    = (anaType == 0) ? b_bin1 : b_bin2;
+    }
+    else {
+        cent_key = (anaType == 0) ? cent_key1 : cent_key2;
+    }
 
     cent_dum_vec = (isSim) ? new TH1F("cent_dum_vec","", cent_key.size(), b_bin.data())
                            : new TH1F("cent_dum_vec","", cent_key.size(), 0, 0.6);

@@ -47,13 +47,15 @@ namespace myAnalysis {
     Double_t CalculateSignalToBackgroundRatio(TH1F* hPi0Mass, TF1* polyFit, Double_t fitMean, Double_t fitSigma, Double_t &signalToBackgroundError);
     void process_fits(const string &i_input, const string &outputCSV, const string &outputDir, const string &tag);
 
+    Bool_t isSim;
+
     vector<string> cent_key;
     vector<string> cent_key1 = {"40-60","20-40","0-20"};
     vector<string> cent_key2 = {"50-60", "40-50", "30-40","20-30","10-20","0-10"};
 
     // Impact parameter bin edges taken from: https://wiki.sphenix.bnl.gov/index.php/MDC2_2022
-    vector<string>  b_key    = {"9.71-11.84", "6.81-9.71", "0-6.81"}; /*fm*/
-    vector<Float_t> b_bin    = {0, 6.81, 9.71, 11.84};
+    vector<string>  b_key1 = {"9.71-11.84", "6.81-9.71", "0-6.81"}; /*fm*/
+    vector<string>  b_key2 = {"10.81-11.84","9.71-10.81","8.40-9.71","6.81-8.40","4.88-6.81","0-4.88"}; /*fm*/
 
     vector<string> pt_key;
     vector<string> pt_key1 = {"2-2.5","2.5-3","3-3.5","3.5-4","4-4.5","4.5-5"};
@@ -381,7 +383,15 @@ void fits(const string &i_input,
     // set sPHENIX plotting style
     SetsPhenixStyle();
 
-    myAnalysis::cent_key = (isSim) ? myAnalysis::b_key : (anaType == 0) ? myAnalysis::cent_key1 : myAnalysis::cent_key2;
+    myAnalysis::isSim = isSim;
+
+    if(isSim) {
+        myAnalysis::cent_key = (anaType == 0) ? myAnalysis::b_key1 : myAnalysis::b_key2;
+    }
+    else {
+        myAnalysis::cent_key = (anaType == 0) ? myAnalysis::cent_key1 : myAnalysis::cent_key2;
+    }
+
     myAnalysis::pt_key   = (anaType == 0) ? myAnalysis::pt_key1   : myAnalysis::pt_key2;
 
     if(anaType == 1) {
