@@ -281,11 +281,20 @@ void myAnalysis::process_fits(const string &i_input,
                 h->SetStats();
 
                 s.str("");
-                s << "#splitline{Centrality: " << cent << "%}"
-                  // << "{#splitline{" << 2+fmod(index,6)*0.5 << " #leq Diphoton p_{T} < " << 2.5+fmod(index,6)*0.5 << " GeV" << "}"
-                  << "{#splitline{Diphoton p_{T}: " << pt << " GeV" << "}"
-                  << "{Entries: " << entries << " }"
-                  << "}";
+
+                if(isSim) {
+                    s << "#splitline{b: " << cent << " fm}"
+                    << "{#splitline{Diphoton p_{T}: " << pt << " GeV" << "}"
+                    << "{Entries: " << entries << " }"
+                    << "}";
+                }
+                else {
+                    s << "#splitline{Centrality: " << cent << "%}"
+                    << "{#splitline{Diphoton p_{T}: " << pt << " GeV" << "}"
+                    << "{Entries: " << entries << " }"
+                    << "}";
+                }
+
 
                 l1.SetTextSize(0.04);
                 l1.DrawLatexNDC(0.38,0.87, s.str().c_str());
@@ -294,9 +303,8 @@ void myAnalysis::process_fits(const string &i_input,
                 s << "#splitline{Asymmetry < " << cut.asym << "}"
                   << "{#splitline{Cluster #chi^{2} < " << cut.chi << "}"
                   << "{#splitline{Cluster E_{A} #geq " << cut.e1 << " GeV}"
-                  << "{#splitline{Cluster E_{B} #geq " << cut.e2 << " GeV}"
-                  << "{" << cut.deltaR_min << " #leq #Delta R < " << cut.deltaR_max << "}"
-                  << "}}}";
+                  << "{Cluster E_{B} #geq " << cut.e2 << " GeV}"
+                  << "}}";
 
                 l1.DrawLatexNDC(0.15,0.87, s.str().c_str());
 
