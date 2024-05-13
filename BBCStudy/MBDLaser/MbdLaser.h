@@ -58,6 +58,9 @@ private:
   std::string _savefname;
   TFile* _savefile;
    
+  //input file (abdul)
+ // std::string _file;
+ // TFile* _file;
   int nprocessed{0};     // num events processed
 
   //Output
@@ -67,19 +70,28 @@ private:
   Int_t    f_ch;
   Float_t  f_qmean;
   Float_t  f_qmerr;
+  Float_t  f_tmean;
+  Float_t  f_tmerr;
 
+
+  Float_t  f_mbdq[2]; // total charge (currently npe) in each arm
   Float_t  f_mbdt[2]; // time in arm
   Float_t  f_mbdte[2]; // earliest hit time in arm
   Float_t  f_mbdt0;   // start time
 
   TH1 *h_mbdq[128];   // q in each tube
+  TH1* h_mbdt[128];  //  t in ecah tube 
+
+  TH2* h2_mbdbtt;    // Timne vs ch
+  TH2* h2_mbdbq;    // charge vs ch 
+
   TGraphErrors *g_mbdq[128];   // q in each tube
-  
-  
+  TGraphErrors *g_mbdt[128];   // t in each tube
+
+ 
   TCanvas *c_mbdt;    // Canvas to 
   TH1 *hevt_mbdt[2];  // time in each mbd, per event
-  TF1 *gaussian;
-
+ 
   std::map<int,int> _pids;  // PIDs of tracks in the MBD
 
   //
@@ -93,8 +105,10 @@ private:
   EventHeader* _evtheader;
   MbdOut* _mbdout;
   MbdPmtContainer* _mbdpmts;
+ // MbdPmtHit*  _mbdpmthit;
 
 };
 
 #endif //* __MBDLASER_H__ *//
+
 
