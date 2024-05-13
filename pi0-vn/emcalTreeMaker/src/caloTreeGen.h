@@ -164,6 +164,8 @@ class caloTreeGen : public SubsysReco
     Float_t min_vtx_z        = 9999;
     Float_t min_cent         = 9999;
     Float_t min_b            = 9999;
+    Float_t  min_geta         = 9999;
+    Float_t  min_gpt          = 9999;
 
     Double_t max_towE         = 0;
     Float_t  max_clusterECore = 0;
@@ -179,6 +181,8 @@ class caloTreeGen : public SubsysReco
     Float_t  max_vtx_z        = 0;
     Float_t  max_cent         = 0;
     Float_t  max_b            = 0;
+    Float_t  max_geta         = 0;
+    Float_t  max_gpt          = 0;
 
     TH1F* hTowE;
     TH1F* hClusterECore;
@@ -202,6 +206,7 @@ class caloTreeGen : public SubsysReco
     TH2F* h2ImpactParCentrality;
     TH2F* h2TotalMBDCaloEv2;
 
+    TH2F* h2PionPtEta;
     TH3F* h3ImpactParPtEta;
 
     UInt_t bins_towE  = 1200;
@@ -306,5 +311,9 @@ class caloTreeGen : public SubsysReco
     std::vector<Float_t> ecore2_vec;
     std::vector<Float_t> chi2_max_vec;
     std::vector<Bool_t>  isFarNorth_vec; // true if either cluster in the diphoton has a tower that is in the last IB board, ieta: 88-95
+
+    // MC
+    std::vector<Float_t> geta_vec;
+    std::vector<Float_t> gpt_vec;
 };
 #endif

@@ -95,6 +95,7 @@ Int_t caloTreeGen::Init(PHCompositeNode *topNode)
   if(isSim) {
     hImpactPar            = new TH1F("hImpactPar", "Impact Parameter; b [fm]; Counts", bins_b, low_b, high_b);
     h2ImpactParCentrality = new TH2F("h2ImpactParCentrality", "Impact Parameter vs Centrality; Centrality; b [fm]", bins_cent, low_cent, high_cent, bins_b, low_b, high_b);
+    h2PionPtEta           = new TH2F("h2PionPtEta", "Pion p_{T} vs #eta; #eta; p_{T} [GeV]", bins_eta, low_eta, high_eta, bins_gpt, low_gpt, high_gpt);
     h3ImpactParPtEta      = new TH3F("h3ImpactParPtEta", "Impact Parameter vs p_{T} vs #eta; #eta; p_{T} [GeV]; b [fm]", bins_eta, low_eta, high_eta, bins_gpt, low_gpt, high_gpt, bins_b, low_b, high_b);
   }
 
@@ -127,7 +128,9 @@ Int_t caloTreeGen::Init(PHCompositeNode *topNode)
 
   // keep track of impact parameter in simulation
   if(isSim) {
-    T->Branch("b", &b, "b/F");
+    T->Branch("b",    &b, "b/F");
+    T->Branch("geta", &geta_vec);
+    T->Branch("gpt",  &gpt_vec);
   }
 
   //so that the histos actually get written out
@@ -390,10 +393,20 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
       TLorentzVector v;
       v.SetPxPyPzE(gpx, gpy, gpz, ge);
 
-      Double_t geta = v.Eta();
-      Double_t gpt  = v.Pt();
+      Float_t geta = v.Eta();
+      Float_t gpt  = v.Pt();
 
+      min_geta = std::min(min_geta, geta);
+      max_geta = std::max(max_geta, geta);
+
+      min_gpt  = std::min(min_gpt, gpt);
+      max_gpt  = std::max(max_gpt, gpt);
+
+      h2PionPtEta->Fill(geta, gpt);
       h3ImpactParPtEta->Fill(geta, gpt, b);
+
+      geta_vec.push_back(geta);
+      gpt_vec.push_back(gpt);
 
       // Debug
       // Double_t mass = v.M();
@@ -565,6 +578,10 @@ Int_t caloTreeGen::ResetEvent(PHCompositeNode *topNode)
   chi2_max_vec.clear();
   isFarNorth_vec.clear();
 
+  // MC
+  geta_vec.clear();
+  gpt_vec.clear();
+
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
@@ -580,11 +597,15 @@ Int_t caloTreeGen::End(PHCompositeNode *topNode)
 {
 
   std::cout << "Total Events: " << iEvent << ", Accepted Events: " << iEventGood << ", " << iEventGood*100./iEvent << " %" << std::endl;
-  if(isSim) std::cout << "Total Truth pi0s: " << gpi0_ctr << ", average per event: " << gpi0_ctr*1./iEventGood << std::endl;
+  if(isSim) {
+    std::cout << "Total Truth pi0s: " << gpi0_ctr << ", average per event: " << gpi0_ctr*1./iEventGood << std::endl;
+    std::cout << "min b [fm]: " << min_b << ", max b [fm]: " << max_b << std::endl;
+    std::cout << "min geta: " << min_geta << ", max geta: " << max_geta << std::endl;
+    std::cout << "min gpt: " << min_gpt << ", max gpt: " << max_gpt << std::endl;
+  }
   std::cout << "Bad PMT Events: " << hBadPMTs->Integral(2,bins_nPMTs) << std::endl;
   std::cout << "min z-vertex: " << min_vtx_z << ", max z-vertex: " << max_vtx_z << std::endl;
   std::cout << "min centrality: " << min_cent << ", max centrality: " << max_cent << std::endl;
-  std::cout << "min b [fm]: " << min_b << ", max b [fm]: " << max_b << std::endl;
   std::cout << "min totalCaloE: " << min_totalCaloE << ", max totalCaloE: " << max_totalCaloE << std::endl;
   std::cout << "max totalmbd: " << max_totalmbd << ", max totalmbd (for totalCaloE < 0): " << max_totalmbd2 << std::endl;
   std::cout << "min tower energy: " << min_towE << ", max tower energy: " << max_towE << std::endl;
@@ -609,6 +630,7 @@ Int_t caloTreeGen::End(PHCompositeNode *topNode)
   if(isSim) {
     hImpactPar->Write();
     h2ImpactParCentrality->Write();
+    h2PionPtEta->Write();
     h3ImpactParPtEta->Write();
   }
   hTotalCaloE->Write();
