@@ -62,15 +62,15 @@ class caloTreeGen : public SubsysReco
 
     void Print(const std::string &what = "ALL") const override;
 
-    void set_clusterE_min(Float_t clusE_min = 1) {
+    void set_clusterE_min(Float_t clusE_min) {
       this->clusE_min = clusE_min;
     }
 
-    void set_cluster_chi_max(Float_t clus_chi_max = 10) {
+    void set_cluster_chi_max(Float_t clus_chi_max) {
       this->clus_chi_max = clus_chi_max;
     }
 
-    void set_vtx_z_max(Float_t vtx_z_max = 10) {
+    void set_vtx_z_max(Float_t vtx_z_max) {
       this->vtx_z_max = vtx_z_max;
     }
 
@@ -153,17 +153,17 @@ class caloTreeGen : public SubsysReco
     Float_t avg_goodTowers = 0;
     Bool_t isSim = false;
 
-    Double_t min_towE        = 9999;
-    Float_t min_clusterECore = 9999;
-    Float_t min_clusterEta   = 9999;
-    Float_t min_clusterPhi   = 9999;
-    Float_t min_clusterPt    = 9999;
-    Float_t min_clusterChi   = 9999;
-    Float_t min_totalCaloE   = 9999;
-    Int_t   min_goodTowers   = 9999;
-    Float_t min_vtx_z        = 9999;
-    Float_t min_cent         = 9999;
-    Float_t min_b            = 9999;
+    Double_t min_towE         = 9999;
+    Float_t  min_clusterECore = 9999;
+    Float_t  min_clusterEta   = 9999;
+    Float_t  min_clusterPhi   = 9999;
+    Float_t  min_clusterPt    = 9999;
+    Float_t  min_clusterChi   = 9999;
+    Float_t  min_totalCaloE   = 9999;
+    Int_t    min_goodTowers   = 9999;
+    Float_t  min_vtx_z        = 9999;
+    Float_t  min_cent         = 9999;
+    Float_t  min_b            = 9999;
     Float_t  min_geta         = 9999;
     Float_t  min_gpt          = 9999;
 
@@ -279,7 +279,7 @@ class caloTreeGen : public SubsysReco
 
     // Define PI0 Cuts
     Float_t clusE_min    = 1;
-    Float_t clus_chi_max = 10;
+    Float_t clus_chi_max = 4;
 
     Bool_t do_pi0_ana = false;
 
