@@ -1131,7 +1131,7 @@ void pi0Analysis(const string &i_input,
     cout << "isSim: "       << isSim << endl;
     cout << "z: "           << z << endl;
     cout << "outputFile: "  << i_output << endl;
-    cout << "anaType:"      << anaType << endl;
+    cout << "anaType: "     << anaType << endl;
     cout << "do_vn_calc: "  << do_vn_calc << endl;
     cout << "fitStats: "    << fitStats << endl;
     cout << "QVecCorr: "    << QVecCorr << endl;
