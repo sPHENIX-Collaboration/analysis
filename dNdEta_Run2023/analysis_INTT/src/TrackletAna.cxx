@@ -1,6 +1,9 @@
+#include <TDatabasePDG.h>
 #include <TFile.h>
 #include <TMath.h>
 #include <TObjString.h>
+#include <TParticle.h>
+#include <TParticlePDG.h>
 #include <TRandom3.h>
 #include <TTree.h>
 #include <TTreeIndex.h>
@@ -112,7 +115,7 @@ int main(int argc, char *argv[])
         // float randomzvtx = rnd->Uniform(-50, 50);
         float PVz = (userandomzvtx) ? rnd->Uniform(-30, -10) : PV[2];
         tkldata.PV_z = PVz;
-        
+
         if (!IsData)
         {
             tkldata.TruthPV_x = TruthPV_trig_x;
@@ -122,7 +125,8 @@ int main(int argc, char *argv[])
 
         if (PV[2] < -40 || PV[2] > 0)
         {
-            tkldata.vtxzwei = 0;
+            // tkldata.vtxzwei = 0;
+            tkldata.vtxzwei = 1.;
         }
         else
         {
@@ -176,11 +180,40 @@ int main(int argc, char *argv[])
         // Tracklet reconstruction: proto-tracklets -> reco-tracklets
         ProtoTracklets(tkldata, dRCut);
         RecoTracklets(tkldata);
+
         if (!IsData)
         {
+            std::map<int, unsigned int> PrimaryG4PPID_count, absPrimaryG4PPID_count;
+            PrimaryG4PPID_count.clear();
+            absPrimaryG4PPID_count.clear();
+
             // Generated charged hadrons
             for (size_t ihad = 0; ihad < PrimaryG4P_PID->size(); ihad++)
             {
+                TString particleclass = TString(TDatabasePDG::Instance()->GetParticle(PrimaryG4P_PID->at(ihad))->ParticleClass());
+                bool isStable = (TDatabasePDG::Instance()->GetParticle(PrimaryG4P_PID->at(ihad))->Stable() == 1) ? true : false;
+                double charge = TDatabasePDG::Instance()->GetParticle(PrimaryG4P_PID->at(ihad))->Charge();
+                double lifetime = TDatabasePDG::Instance()->GetParticle(PrimaryG4P_PID->at(ihad)) ->Lifetime();               // proper lifetime (https://root.cern.ch/doc/master/classTParticlePDG.html#a10fd025a1e867ec3b27903c1b7d2f899)
+                double decaylength = lifetime * TMath::C() * 1E2; // decay length in cm
+                bool isHadron = (particleclass.Contains("Baryon") || particleclass.Contains("Meson"));
+                bool isChargeHadron = (isStable && (charge != 0) && isHadron);
+                bool isChargeHadron_alt = is_chargedHadron(PrimaryG4P_PID->at(ihad));
+                bool twodefsame = (isChargeHadron == isChargeHadron_alt) ? true : false;
+
+                cout << std::left << std::setw(5) << "PID = " << std::setw(5) << PrimaryG4P_PID->at(ihad);
+                cout << std::left << std::setw(20) << " Particle class = " << std::setw(15) << particleclass;
+                cout << std::left << std::setw(12) << " Stable = " << std::setw(5) << isStable;
+                cout << std::left << std::setw(20) << " Proper lifetime = " << std::setw(15) << lifetime;
+                cout << std::left << std::setw(18) << " Decay length = " << std::setw(15) << decaylength;
+                cout << std::left << std::setw(12) << " Charge = " << std::setw(5) << charge;
+                cout << std::left << std::setw(15) << " Is hadron = " << std::setw(5) << isHadron;
+                cout << std::left << std::setw(23) << " Is charged hadron = " << std::setw(5) << isChargeHadron;
+                cout << std::left << std::setw(30) << " Is charged hadron (alt) = " << std::setw(5) << isChargeHadron_alt;
+                cout << std::left << std::setw(34) << " Two definitions are the same = " << std::setw(5) << twodefsame << endl;
+
+                PrimaryG4PPID_count[PrimaryG4P_PID->at(ihad)]++;
+                absPrimaryG4PPID_count[abs(PrimaryG4P_PID->at(ihad))]++;
+
                 if (is_chargedHadron(PrimaryG4P_PID->at(ihad)) == false)
                     continue;
 
@@ -194,8 +227,23 @@ int main(int argc, char *argv[])
             }
             tkldata.NGenHadron = tkldata.GenHadrons.size();
 
-            // GenMatch_Recotkl(tkldata);
+            // print PrimaryG4PPID_count
+            int NtotalPrimaryG4P = 0;
+            cout << "--------------------------------------------------------------------" << endl;
+            for (auto it = PrimaryG4PPID_count.begin(); it != PrimaryG4PPID_count.end(); it++)
+            {
+                cout << "PID = " << it->first << "; Count = " << it->second << endl;
+                NtotalPrimaryG4P += it->second;
+            }
+            cout << "--------------------------------------------------------------------" << endl;
+            for (auto it = absPrimaryG4PPID_count.begin(); it != absPrimaryG4PPID_count.end(); it++)
+            {
+                cout << "|PID| = " << it->first << "; Count = " << it->second << endl;
+            }
+            cout << "--------------------------------------------------------------------" << endl;
 
+            // GenMatch_Recotkl(tkldata);
+            cout << "NtotalPrimaryG4P = " << NtotalPrimaryG4P << "; NGenHadron = " << tkldata.NGenHadron << endl;
             // cout << "NCluster layer 1 = " << tkldata.NClusLayer1 << "; NRecotkl_Raw = " << tkldata.NRecotkl_Raw << "; NRecotkl_GenMatched = " << tkldata.NRecotkl_GenMatched << endl;
         }
 

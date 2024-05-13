@@ -78,7 +78,7 @@ def Draw_1Dhist(hist, IsData, norm1, logy, ymaxscale, XaxisName, Ytitle_unit, ou
     hist.SetLineColor(1)
     hist.SetLineWidth(2)
     hist.Draw('hist')
-    leg = TLegend((1-RightMargin)-0.45, (1-TopMargin)-0.13,
+    leg = TLegend((1-RightMargin)-0.5, (1-TopMargin)-0.13,
                   (1-RightMargin)-0.1, (1-TopMargin)-0.03)
     leg.SetTextSize(0.04)
     leg.SetFillStyle(0)
@@ -238,15 +238,18 @@ def Draw_2Dhist(hist, IsData, logz, norm1, rmargin, XaxisName, YaxisName, ZaxisN
     hist.SetContour(1000)
     hist.Draw(drawopt)
 
-    # leg = TLegend(LeftMargin, 1-TopMargin*1.1, LeftMargin+0.01, 0.98)
-    # leg.SetFillStyle(0)
-    # if IsData:
-    #     leg.AddEntry("", "#it{#bf{sPHENIX}} Work-in-progress", "")
-    #     leg.AddEntry("", "Au+Au #sqrt{s_{NN}}=200 GeV", "")
-    # else:
-    #     leg.AddEntry("", "#it{#bf{sPHENIX}} Simulation", "")
+    rightshift = 0.09 if IsData else 0.1
+    leg = TLegend((1-RightMargin)-0.5, (1-TopMargin)+0.01, (1-RightMargin)-rightshift, (1-TopMargin)+0.04)
+    leg.SetTextAlign(kHAlignRight+kVAlignBottom)
+    leg.SetTextSize(0.045)
+    leg.SetFillStyle(0)
+    if IsData:
+        leg.AddEntry("", "#it{#bf{sPHENIX}} Work-in-progress", "")
         # leg.AddEntry("", "Au+Au #sqrt{s_{NN}}=200 GeV", "")
-    # leg.Draw()
+    else:
+        leg.AddEntry("", "#it{#bf{sPHENIX}} Simulation", "")
+        # leg.AddEntry("", "Au+Au #sqrt{s_{NN}}=200 GeV", "")
+    leg.Draw()
     c.RedrawAxis()
     c.Draw()
     c.SaveAs(outname+'.pdf')

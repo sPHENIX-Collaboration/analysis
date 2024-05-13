@@ -2229,19 +2229,37 @@ def alice_xexe_5p44():
 # PHOBOS AuAu 0.2 TeV
 phobos_auau_0p2_raw = array('f',[27, 38, 54, 73, 100, 133, 165, 208, 257, 313, 384, 465, 540, 619, 691])
 phobos_auau_0p2_rawerr = array('f',[2, 3, 4, 5, 8, 10, 12, 16, 19, 24, 29, 35, 41, 46, 52])
-phobos_auau_0p2_cent = array('f',[32.5, 37.5, 42.5, 47.5, 52.5, 57.5, 62.5, 67.5, 72.5, 77.5, 82.5, 87.5, 92, 95.5, 98.5])
+# phobos_auau_0p2_cent = array('f', [32.5, 37.5, 42.5, 47.5, 52.5, 57.5, 62.5, 67.5, 72.5, 77.5, 82.5, 87.5, 92, 95.5, 98.5])
+phobos_auau_0p2_cent = array('f',[67.5, 62.5, 57.5, 52.5, 47.5, 42.5, 37.5, 32.5, 27.5, 22.5, 17.5, 12.5, 8, 4.5, 1.5])
 phobos_auau_0p2_npart = array('f',[20, 28, 37, 49, 65, 82, 101, 124, 150, 180, 215, 255, 297, 331, 361])
 phobos_auau_0p2_nparterr = array('f',[3, 3, 4, 5, 6, 6, 6, 6, 6, 7, 7, 8, 9, 10, 11])
+phobos_auau_0p2_dndetadivnpart2 = array('f',[2.68, 2.78, 2.88, 2.98, 3.10, 3.25, 3.25, 3.37, 3.42, 3.47, 3.57, 3.65, 3.64, 3.74, 3.82])
+phobos_auau_0p2_dndetadivnpart2_err = array('f',[0.41, 0.40, 0.39, 0.37, 0.38, 0.34, 0.31, 0.30, 0.29, 0.30, 0.29, 0.30, 0.30, 0.30, 0.31]) 
 phobos_auau_0p2_2a = 394.0
 phobos_auau_0p2_size = len(phobos_auau_0p2_raw)
 def phobos_auau_0p2():
     return measurement_TGE(phobos_auau_0p2_size, 'phobos_auau_0p2', phobos_auau_0p2_cent, phobos_auau_0p2_raw, phobos_auau_0p2_rawerr)
 
+def phobos_auau_0p2_divnpart2():
+    # do error propagation
+    ge = TGraphErrors(phobos_auau_0p2_size)
+    ge.SetName('phobos_auau_0p2_divnpart2')
+    for i in range(phobos_auau_0p2_size):
+        x = phobos_auau_0p2_npart[i]
+        y = phobos_auau_0p2_dndetadivnpart2[i]
+        # error propagation
+        yerr = phobos_auau_0p2_dndetadivnpart2_err[i]
+        ge.SetPoint(i, x, y)
+        ge.SetPointError(i, 0, yerr)
+        
+    return ge
+
 
 # PHOBOS AuAu 0.13 TeV
 phobos_auau_0p13_raw = array('f',[83, 110, 140, 180, 220, 274, 327, 393, 472, 545, 613])
 phobos_auau_0p13_rawerr = array('f',[3, 4, 5, 7, 8, 11, 13, 15, 18, 21, 24])
-phobos_auau_0p13_cent = array('f',[52.5, 57.5, 62.5, 67.5, 72.5, 77.5, 82.5, 87.5, 92, 95.5, 98.5])
+# phobos_auau_0p13_cent = array('f',[52.5, 57.5, 62.5, 67.5, 72.5, 77.5, 82.5, 87.5, 92, 95.5, 98.5])
+phobos_auau_0p13_cent = array('f',[47.5, 42.5, 37.5, 32.5, 27.5, 22.5, 17.5, 12.5, 8, 4.5, 1.5])
 phobos_auau_0p13_npart = array('f',[63, 80, 100, 122, 148, 179, 214, 254, 295, 330, 355])
 phobos_auau_0p13_nparterr = array('f',[4, 5, 5, 6, 6, 7, 8, 8, 9, 10, 12])
 phobos_auau_0p13_2a = 394.0
@@ -2253,7 +2271,8 @@ def phobos_auau_0p13():
 # PHOBOS AuAu 0.0624 TeV
 phobos_auau_0p0624_raw = array('f',[17, 25, 36, 50, 67, 87, 111, 140, 174, 212, 260, 316, 377, 433, 492])
 phobos_auau_0p0624_rawerr = array('f',[1, 2, 3, 4, 5, 6, 8, 10, 13, 15, 19, 23, 28, 32, 36])
-phobos_auau_0p0624_cent = array('f',[32.5, 37.5, 45, 47.5, 52.5, 57.5, 62.5, 67.5, 72.5, 77.5, 82.5, 87.5, 92, 95.5, 98.5])
+# phobos_auau_0p0624_cent = array('f',[32.5, 37.5, 45, 47.5, 52.5, 57.5, 62.5, 67.5, 72.5, 77.5, 82.5, 87.5, 92, 95.5, 98.5])
+phobos_auau_0p0624_cent = array('f',[67.5, 62.5, 55, 52.5, 47.5, 42.5, 37.5, 32.5, 27.5, 22.5, 17.5, 12.5, 8, 4.5, 1.5])
 phobos_auau_0p0624_npart = array('f',[19, 27, 36, 48, 62, 78, 98, 119, 145, 174, 209, 248, 288, 325, 356])
 phobos_auau_0p0624_nparterr = array('f',[3, 3, 4, 5, 6, 6, 7, 7, 7, 7, 7, 8, 9, 10, 11])
 phobos_auau_0p0624_2a = 394.0
@@ -2265,7 +2284,8 @@ def phobos_auau_0p0624():
 # PHOBOS AuAu 0.0196 TeV
 phobos_auau_0p0196_raw = array('f',[78, 97, 121, 148, 181, 216, 260, 297, 331])
 phobos_auau_0p0196_rawerr = array('f',[6, 7, 9, 11, 14, 16, 20, 22, 24])
-phobos_auau_0p0196_cent = array('f',[62.5, 67.5, 72.5, 77.5, 82.5, 87.5, 92, 95.5, 98.5])
+# phobos_auau_0p0196_cent = array('f',[62.5, 67.5, 72.5, 77.5, 82.5, 87.5, 92, 95.5, 98.5])
+phobos_auau_0p0196_cent = array('f',[37.5, 32.5, 27.5, 22.5, 17.5, 12.5, 8, 4.5, 1.5])
 phobos_auau_0p0196_npart = array('f',[95, 117, 142, 171, 206, 247, 286, 322, 351])
 phobos_auau_0p0196_nparterr = array('f',[7, 7, 7, 7, 8, 8, 9, 10, 11])
 phobos_auau_0p0196_2a = 394.0
@@ -2309,13 +2329,39 @@ def phobos_cucu_0p0224():
 # BRAHMS AuAu 0.2 TeV
 brahms_auau_0p2_raw = array('f',[110., 174., 257., 377., 501., 625.])
 brahms_auau_0p2_rawerr = array('f',[10., 16., 23., 33., 44., 55.])
-brahms_auau_0p2_cent = array('f',[55, 65, 75, 85, 92.5, 97.5])
+# brahms_auau_0p2_cent = array('f',[55, 65, 75, 85, 92.5, 97.5])
+brahms_auau_0p2_cent = array('f',[45, 35, 25, 15, 7.5, 2.5])
 brahms_auau_0p2_npart = array('f',[73, 114, 168, 239, 306, 357])
 brahms_auau_0p2_nparterr = array('f',[8, 9, 9, 10, 11, 8])
 brahms_auau_0p2_2a = 394.
 brahms_auau_0p2_size = len(brahms_auau_0p2_raw)
 def brahms_auau_0p2():
     return measurement_TGE(brahms_auau_0p2_size, 'brahms_auau_0p2', brahms_auau_0p2_cent, brahms_auau_0p2_raw, brahms_auau_0p2_rawerr)
+
+def brahms_auau_0p2_divnpart2():
+    # do error propagation
+    ge = TGraphErrors(brahms_auau_0p2_size)
+    ge.SetName('brahms_auau_0p2_divnpart2')
+    for i in range(brahms_auau_0p2_size):
+        x = brahms_auau_0p2_npart[i]
+        y = brahms_auau_0p2_raw[i] / (brahms_auau_0p2_npart[i] / 2)
+        # error propagation
+        yerr = y * sqrt((brahms_auau_0p2_rawerr[i] / brahms_auau_0p2_raw[i])**2 + (brahms_auau_0p2_nparterr[i] / (brahms_auau_0p2_npart[i]))**2)
+        ge.SetPoint(i, x, y)
+        ge.SetPointError(i, 0, yerr)
+        
+    return ge
+    
+# PHYSICAL REVIEW C 71, 034908 (2005), Table XIII
+phenix_auau_0p2_cent = array('f',[32.5, 37.5, 42.5, 47.5, 52.5, 57.5, 62.5, 67.5, 72.5, 77.5, 82.5, 87.5, 92.5, 97.5])
+phenix_auau_0p2_npart = array('f',[22.0, 30.2, 40.2, 52.5, 66.7, 83.3, 103, 125, 151, 181, 215, 254, 300, 353])
+phenix_auau_0p2_nparterr = array('f',[3.4, 3.6, 3.8, 4.1, 4.3, 4.7, 5.1, 5.5, 6.0, 6.6, 7.3, 8.1, 9.0, 10])
+phenix_auau_0p2_dndetadivnpart2 = array('f',[2.33, 2.48, 2.60, 2.70, 2.86, 2.96, 3.05, 3.15, 3.25, 3.34, 3.45, 3.59, 3.73, 3.89])
+phenix_auau_0p2_dndetadivnpart2_err = array('f',[0.55, 0.46, 0.41, 0.36, 0.32, 0.28, 0.26, 0.24, 0.22, 0.21, 0.21, 0.21, 0.22, 0.23])
+phenix_auau_0p2_2a = 394.0
+phenix_auau_0p2_size = len(phenix_auau_0p2_cent)
+def phenix_auau_0p2_divnpart2():
+    return measurement_TGE(phenix_auau_0p2_size, 'phenix_auau_0p2_divnpart2', phenix_auau_0p2_npart, phenix_auau_0p2_dndetadivnpart2, phenix_auau_0p2_dndetadivnpart2_err)
 
 
 def atlas_ppb_5p02():
@@ -2379,6 +2425,14 @@ def atlas_pbpb_2p76():
 def phenix_auau_0p2():
     return msrmnt_TGAE_HEPData('{}/HEPData/HEPData-ins1394433-v1-root.root'.format(thisfiledir), 'Table 8/Graph1D_y3')
 
+# def phenix_auau_0p2_divnpart2():
+#     return msrmnt_TGAE_HEPData('{}/HEPData/HEPData-ins1394433-v1-root.root'.format(thisfiledir), 'Table 8/Graph1D_y4')
+
+# def phenix_auau_0p2_divnpart2():
+#     g = msrmnt_TGAE_HEPData('{}/HEPData/HEPData-ins1394433-v1-root.root'.format(thisfiledir), 'Table 8/Graph1D_y4')
+#     g.Scale(2, 'y')
+#     return g
+
 def phenix_auau_0p13():
     return msrmnt_TGAE_HEPData('{}/HEPData/HEPData-ins1394433-v1-root.root'.format(thisfiledir), 'Table 10/Graph1D_y3')
 
@@ -2399,3 +2453,18 @@ def phenix_auau_0p0145():
 
 def phenix_auau_0p0077():
     return msrmnt_TGAE_HEPData('{}/HEPData/HEPData-ins1394433-v1-root.root'.format(thisfiledir), 'Table 22/Graph1D_y3')
+
+# def brahms_auau_0p2_divnpart2():
+#     return msrmnt_TGAE_HEPData('{}/HEPData/HEPData-ins567754-v1-root.root'.format(thisfiledir), 'Table 5/Graph1D_y1')
+
+#--------------------------------------------------------------------------------
+def sphenix_centrality_interval():
+    # centralitybin = [0, 5, 15, 25, 35, 45, 55, 65, 75] 
+    # centralitybin = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70] 
+    centralitybin = [0, 5, 10, 20, 30, 40, 50, 60, 70]
+    return centralitybin
+
+def sphenix_centralitynpart():
+    centnparttable = [348.0, 290.8, 217.9, 144.7, 91.04, 52.42, 27.77, 13.78]
+    centnparterror = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    return centnparttable, centnparterror

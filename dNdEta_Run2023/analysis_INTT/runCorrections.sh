@@ -1,29 +1,76 @@
 #! /bin/bash
 
-# ./Corrections [infile] [CentLow] [CentHigh] [applyc] [applyg] [applym] [estag] [putag] [aselstring] [correctionfiletag] [outfilepath] [debug]
-./Corrections ./minitree/TrackletMinitree_Sim_Ntuple_HIJING_new_20240424/dRcut0p5/minitree_set1.root 0 70 0 0 0 null null null HIJING_Baseline HIJING_Baseline 1
-./Corrections ./minitree/TrackletMinitree_Sim_Ntuple_HIJING_new_20240424/dRcut0p5/minitree_set1.root 0 10 0 0 0 null null null HIJING_Baseline HIJING_Baseline 1
-./Corrections ./minitree/TrackletMinitree_Sim_Ntuple_HIJING_new_20240424/dRcut0p5/minitree_set1.root 10 20 0 0 0 null null null HIJING_Baseline HIJING_Baseline 1
-./Corrections ./minitree/TrackletMinitree_Sim_Ntuple_HIJING_new_20240424/dRcut0p5/minitree_set1.root 20 30 0 0 0 null null null HIJING_Baseline HIJING_Baseline 1
-./Corrections ./minitree/TrackletMinitree_Sim_Ntuple_HIJING_new_20240424/dRcut0p5/minitree_set1.root 30 40 0 0 0 null null null HIJING_Baseline HIJING_Baseline 1
-./Corrections ./minitree/TrackletMinitree_Sim_Ntuple_HIJING_new_20240424/dRcut0p5/minitree_set1.root 40 50 0 0 0 null null null HIJING_Baseline HIJING_Baseline 1
-./Corrections ./minitree/TrackletMinitree_Sim_Ntuple_HIJING_new_20240424/dRcut0p5/minitree_set1.root 50 60 0 0 0 null null null HIJING_Baseline HIJING_Baseline 1
-./Corrections ./minitree/TrackletMinitree_Sim_Ntuple_HIJING_new_20240424/dRcut0p5/minitree_set1.root 60 70 0 0 0 null null null HIJING_Baseline HIJING_Baseline 1
+centralities_alice=(0 5 10 20 30 40 50 60 70) # ALICE 2010 binnings
+length_alice=${#centralities_alice[@]}
 
-./Corrections ./minitree/TrackletMinitree_Sim_Ntuple_HIJING_new_20240424/dRcut0p5/minitree_set2.root 0 70 1 0 0 null null null HIJING_Baseline HIJING_closure 1
-./Corrections ./minitree/TrackletMinitree_Sim_Ntuple_HIJING_new_20240424/dRcut0p5/minitree_set2.root 0 10 1 0 0 null null null HIJING_Baseline HIJING_closure 1
-./Corrections ./minitree/TrackletMinitree_Sim_Ntuple_HIJING_new_20240424/dRcut0p5/minitree_set2.root 10 20 1 0 0 null null null HIJING_Baseline HIJING_closure 1
-./Corrections ./minitree/TrackletMinitree_Sim_Ntuple_HIJING_new_20240424/dRcut0p5/minitree_set2.root 20 30 1 0 0 null null null HIJING_Baseline HIJING_closure 1
-./Corrections ./minitree/TrackletMinitree_Sim_Ntuple_HIJING_new_20240424/dRcut0p5/minitree_set2.root 30 40 1 0 0 null null null HIJING_Baseline HIJING_closure 1
-./Corrections ./minitree/TrackletMinitree_Sim_Ntuple_HIJING_new_20240424/dRcut0p5/minitree_set2.root 40 50 1 0 0 null null null HIJING_Baseline HIJING_closure 1
-./Corrections ./minitree/TrackletMinitree_Sim_Ntuple_HIJING_new_20240424/dRcut0p5/minitree_set2.root 50 60 1 0 0 null null null HIJING_Baseline HIJING_closure 1
-./Corrections ./minitree/TrackletMinitree_Sim_Ntuple_HIJING_new_20240424/dRcut0p5/minitree_set2.root 60 70 1 0 0 null null null HIJING_Baseline HIJING_closure 1
+# for ((i=0; i<$length_alice-1; i++))
+# do
+#     echo "Processing centrality bin: ${centralities_alice[i]} - ${centralities_alice[i+1]}"
+#     # ./Corrections [infile] [CentLow] [CentHigh] [pvzmin] [pvzmax] [applyc] [applyg] [applym] [estag] [aselstring] [correctionfiletag] [outfilepath] [debug]
+#     echo "Processing HIJING Baseline"
+#     ./Corrections ./minitree/TrackletMinitree_Sim_Ntuple_HIJING_new_20240424/dRcut0p5/minitree_set1.root ${centralities_alice[i]} ${centralities_alice[i+1]} -30 -10 0 0 0 null null HIJING_Baseline HIJING_Baseline 1
+#     ./Corrections ./minitree/TrackletMinitree_Sim_Ntuple_HIJING_new_20240424/dRcut0p5/minitree_set1.root ${centralities_alice[i]} ${centralities_alice[i+1]} -30 -20 0 0 0 null null HIJING_Baseline HIJING_Baseline 1
+#     ./Corrections ./minitree/TrackletMinitree_Sim_Ntuple_HIJING_new_20240424/dRcut0p5/minitree_set1.root ${centralities_alice[i]} ${centralities_alice[i+1]} -20 -10 0 0 0 null null HIJING_Baseline HIJING_Baseline 1
+#     echo "Processing HIJING Closure"
+#     ./Corrections ./minitree/TrackletMinitree_Sim_Ntuple_HIJING_new_20240424/dRcut0p5/minitree_set2.root ${centralities_alice[i]} ${centralities_alice[i+1]} -30 -10 1 0 0 null null HIJING_Baseline HIJING_closure 1
+#     ./Corrections ./minitree/TrackletMinitree_Sim_Ntuple_HIJING_new_20240424/dRcut0p5/minitree_set2.root ${centralities_alice[i]} ${centralities_alice[i+1]} -30 -20 1 0 0 null null HIJING_Baseline HIJING_closure 1
+#     ./Corrections ./minitree/TrackletMinitree_Sim_Ntuple_HIJING_new_20240424/dRcut0p5/minitree_set2.root ${centralities_alice[i]} ${centralities_alice[i+1]} -20 -10 1 0 0 null null HIJING_Baseline HIJING_closure 1
+#     echo "Processing Data Run2023"
+#     ./Corrections ./minitree/TrackletMinitree_Data_CombinedNtuple_Run20869_HotDead_BCO_ADC_Survey/dRcut0p5/minitree_merged.root ${centralities_alice[i]} ${centralities_alice[i+1]} -30 -10 1 1 1 null null HIJING_Baseline Data_Run20869 1
+#     ./Corrections ./minitree/TrackletMinitree_Data_CombinedNtuple_Run20869_HotDead_BCO_ADC_Survey/dRcut0p5/minitree_merged.root ${centralities_alice[i]} ${centralities_alice[i+1]} -30 -20 1 1 1 null null HIJING_Baseline Data_Run20869 1
+#     ./Corrections ./minitree/TrackletMinitree_Data_CombinedNtuple_Run20869_HotDead_BCO_ADC_Survey/dRcut0p5/minitree_merged.root ${centralities_alice[i]} ${centralities_alice[i+1]} -20 -10 1 1 1 null null HIJING_Baseline Data_Run20869 1
+# done
 
-./Corrections ./minitree/TrackletMinitree_Data_CombinedNtuple_Run20869_HotDead_BCO_ADC_Survey/dRcut0p5/minitree_merged.root 0 70 1 1 1 null null null HIJING_Baseline Data_Run20869 1
-./Corrections ./minitree/TrackletMinitree_Data_CombinedNtuple_Run20869_HotDead_BCO_ADC_Survey/dRcut0p5/minitree_merged.root 0 10 1 1 1 null null null HIJING_Baseline Data_Run20869 1
-./Corrections ./minitree/TrackletMinitree_Data_CombinedNtuple_Run20869_HotDead_BCO_ADC_Survey/dRcut0p5/minitree_merged.root 10 20 1 1 1 null null null HIJING_Baseline Data_Run20869 1
-./Corrections ./minitree/TrackletMinitree_Data_CombinedNtuple_Run20869_HotDead_BCO_ADC_Survey/dRcut0p5/minitree_merged.root 20 30 1 1 1 null null null HIJING_Baseline Data_Run20869 1
-./Corrections ./minitree/TrackletMinitree_Data_CombinedNtuple_Run20869_HotDead_BCO_ADC_Survey/dRcut0p5/minitree_merged.root 30 40 1 1 1 null null null HIJING_Baseline Data_Run20869 1
-./Corrections ./minitree/TrackletMinitree_Data_CombinedNtuple_Run20869_HotDead_BCO_ADC_Survey/dRcut0p5/minitree_merged.root 40 50 1 1 1 null null null HIJING_Baseline Data_Run20869 1
-./Corrections ./minitree/TrackletMinitree_Data_CombinedNtuple_Run20869_HotDead_BCO_ADC_Survey/dRcut0p5/minitree_merged.root 50 60 1 1 1 null null null HIJING_Baseline Data_Run20869 1
-./Corrections ./minitree/TrackletMinitree_Data_CombinedNtuple_Run20869_HotDead_BCO_ADC_Survey/dRcut0p5/minitree_merged.root 60 70 1 1 1 null null null HIJING_Baseline Data_Run20869 1
+centralities_phobos=(0 3 6 10 15 20 25 30 35 40 45 50 55 60 65 70) # PHOBOS 2011 binnings
+length_phobos=${#centralities_phobos[@]}
+
+# for ((i=0; i<$length_phobos-1; i++))
+# do
+#     echo "Processing centrality bin: ${centralities_phobos[i]} - ${centralities_phobos[i+1]}"
+#     # ./Corrections [infile] [CentLow] [CentHigh] [pvzmin] [pvzmax] [applyc] [applyg] [applym] [estag] [aselstring] [correctionfiletag] [outfilepath] [debug]
+#     echo "Processing HIJING Baseline"
+#     ./Corrections ./minitree/TrackletMinitree_Sim_Ntuple_HIJING_new_20240424/dRcut0p5/minitree_set1.root ${centralities_phobos[i]} ${centralities_phobos[i+1]} -30 -10 0 0 0 null null HIJING_Baseline HIJING_Baseline 1
+#     ./Corrections ./minitree/TrackletMinitree_Sim_Ntuple_HIJING_new_20240424/dRcut0p5/minitree_set1.root ${centralities_phobos[i]} ${centralities_phobos[i+1]} -30 -20 0 0 0 null null HIJING_Baseline HIJING_Baseline 1
+#     ./Corrections ./minitree/TrackletMinitree_Sim_Ntuple_HIJING_new_20240424/dRcut0p5/minitree_set1.root ${centralities_phobos[i]} ${centralities_phobos[i+1]} -30 -10 0 0 0 null null HIJING_Baseline HIJING_Baseline 1
+#     echo "Processing HIJING Closure"
+#     ./Corrections ./minitree/TrackletMinitree_Sim_Ntuple_HIJING_new_20240424/dRcut0p5/minitree_set2.root ${centralities_phobos[i]} ${centralities_phobos[i+1]} -30 -10 1 0 0 null null HIJING_Baseline HIJING_closure 1
+#     ./Corrections ./minitree/TrackletMinitree_Sim_Ntuple_HIJING_new_20240424/dRcut0p5/minitree_set2.root ${centralities_phobos[i]} ${centralities_phobos[i+1]} -30 -20 1 0 0 null null HIJING_Baseline HIJING_closure 1
+#     ./Corrections ./minitree/TrackletMinitree_Sim_Ntuple_HIJING_new_20240424/dRcut0p5/minitree_set2.root ${centralities_phobos[i]} ${centralities_phobos[i+1]} -20 -10 1 0 0 null null HIJING_Baseline HIJING_closure 1
+#     echo "Processing Data Run2023"
+#     ./Corrections ./minitree/TrackletMinitree_Data_CombinedNtuple_Run20869_HotDead_BCO_ADC_Survey/dRcut0p5/minitree_merged.root ${centralities_phobos[i]} ${centralities_phobos[i+1]} -30 -10 1 1 1 null null HIJING_Baseline Data_Run20869 1
+#     ./Corrections ./minitree/TrackletMinitree_Data_CombinedNtuple_Run20869_HotDead_BCO_ADC_Survey/dRcut0p5/minitree_merged.root ${centralities_phobos[i]} ${centralities_phobos[i+1]} -30 -20 1 1 1 null null HIJING_Baseline Data_Run20869 1
+#     ./Corrections ./minitree/TrackletMinitree_Data_CombinedNtuple_Run20869_HotDead_BCO_ADC_Survey/dRcut0p5/minitree_merged.root ${centralities_phobos[i]} ${centralities_phobos[i+1]} -20 -10 1 1 1 null null HIJING_Baseline Data_Run20869 1
+# done
+
+# echo "Processing centrality bin: 0 - 70"
+# echo "Processing HIJING Baseline"
+# ./Corrections ./minitree/TrackletMinitree_Sim_Ntuple_HIJING_new_20240424/dRcut0p5/minitree_set1.root 0 70 -30 -10 0 0 0 null null HIJING_Baseline HIJING_Baseline 1
+# ./Corrections ./minitree/TrackletMinitree_Sim_Ntuple_HIJING_new_20240424/dRcut0p5/minitree_set1.root 0 70 -30 -20 0 0 0 null null HIJING_Baseline HIJING_Baseline 1
+# ./Corrections ./minitree/TrackletMinitree_Sim_Ntuple_HIJING_new_20240424/dRcut0p5/minitree_set1.root 0 70 -20 -10 0 0 0 null null HIJING_Baseline HIJING_Baseline 1
+# echo "Processing HIJING Closure"
+# ./Corrections ./minitree/TrackletMinitree_Sim_Ntuple_HIJING_new_20240424/dRcut0p5/minitree_set2.root 0 70 -30 -10 1 0 0 null null HIJING_Baseline HIJING_closure 1
+# ./Corrections ./minitree/TrackletMinitree_Sim_Ntuple_HIJING_new_20240424/dRcut0p5/minitree_set2.root 0 70 -30 -20 1 0 0 null null HIJING_Baseline HIJING_closure 1
+# ./Corrections ./minitree/TrackletMinitree_Sim_Ntuple_HIJING_new_20240424/dRcut0p5/minitree_set2.root 0 70 -20 -10 1 0 0 null null HIJING_Baseline HIJING_closure 1
+# echo "Processing Data Run2023"
+# ./Corrections ./minitree/TrackletMinitree_Data_CombinedNtuple_Run20869_HotDead_BCO_ADC_Survey/dRcut0p5/minitree_merged.root 0 70 -30 -10 1 1 1 null null HIJING_Baseline Data_Run20869 1
+# ./Corrections ./minitree/TrackletMinitree_Data_CombinedNtuple_Run20869_HotDead_BCO_ADC_Survey/dRcut0p5/minitree_merged.root 0 70 -30 -20 1 1 1 null null HIJING_Baseline Data_Run20869 1
+# ./Corrections ./minitree/TrackletMinitree_Data_CombinedNtuple_Run20869_HotDead_BCO_ADC_Survey/dRcut0p5/minitree_merged.root 0 70 -20 -10 1 1 1 null null HIJING_Baseline Data_Run20869 1
+
+cd ./plot/
+for ((i=0; i<$length_alice-1; i++))
+do
+    python closure.py --datahistdir ./corrections/Data_Run20869 --simhistdir ./corrections/HIJING_closure --filedesc Centrality${centralities_alice[i]}to${centralities_alice[i+1]}_Zvtxm30p0tom10p0_noasel --plotdir cross-checks
+    # python closure.py --datahistdir ./corrections/Data_Run20869 --simhistdir ./corrections/HIJING_closure --filedesc Centrality${centralities_alice[i]}to${centralities_alice[i+1]}_Zvtxm30p0tom20p0_noasel --plotdir cross-checks
+    # python closure.py --datahistdir ./corrections/Data_Run20869 --simhistdir ./corrections/HIJING_closure --filedesc Centrality${centralities_alice[i]}to${centralities_alice[i+1]}_Zvtxm20p0tom10p0_noasel --plotdir cross-checks
+done
+
+# for ((i=0; i<$length_phobos-1; i++))
+# do
+#     python closure.py --datahistdir ./corrections/Data_Run20869 --simhistdir ./corrections/HIJING_closure --filedesc Centrality${centralities_phobos[i]}to${centralities_phobos[i+1]}_Zvtxm30p0tom10p0_noasel --plotdir cross-checks
+#     python closure.py --datahistdir ./corrections/Data_Run20869 --simhistdir ./corrections/HIJING_closure --filedesc Centrality${centralities_phobos[i]}to${centralities_phobos[i+1]}_Zvtxm30p0tom20p0_noasel --plotdir cross-checks
+#     python closure.py --datahistdir ./corrections/Data_Run20869 --simhistdir ./corrections/HIJING_closure --filedesc Centrality${centralities_phobos[i]}to${centralities_phobos[i+1]}_Zvtxm20p0tom10p0_noasel --plotdir cross-checks
+# done
+
+python closure.py --datahistdir ./corrections/Data_Run20869 --simhistdir ./corrections/HIJING_closure --filedesc Centrality0to70_Zvtxm30p0tom10p0_noasel --plotdir cross-checks
+# python closure.py --datahistdir ./corrections/Data_Run20869 --simhistdir ./corrections/HIJING_closure --filedesc Centrality0to70_Zvtxm30p0tom20p0_noasel --plotdir cross-checks
+# python closure.py --datahistdir ./corrections/Data_Run20869 --simhistdir ./corrections/HIJING_closure --filedesc Centrality0to70_Zvtxm20p0tom10p0_noasel --plotdir cross-checks
