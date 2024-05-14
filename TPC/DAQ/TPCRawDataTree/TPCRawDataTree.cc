@@ -199,7 +199,7 @@ int TPCRawDataTree::process_event(PHCompositeNode *topNode)
       else{ fillHist=R3_hist; fillHist2D=R3_time;}
 
 
-      assert(m_nSamples < (int) m_adcSamples.size());  // no need for movements in memory allocation
+      assert(m_nSamples <= (int) m_adcSamples.size());  // no need for movements in memory allocation
       for (int s = 0; s < m_nSamples; s++)
       {
         m_adcSamples[s] = p->iValue(wf, s);
