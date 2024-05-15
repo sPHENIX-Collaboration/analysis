@@ -39,7 +39,6 @@ namespace myAnalysis {
         Float_t Q3_N_x;
         Float_t Q3_N_y;
         Float_t cent;
-        Float_t b;
         Float_t z;
     };
 
@@ -53,19 +52,18 @@ namespace myAnalysis {
     void finalize(const string &i_output = "test.root", const string &i_output_csv = "test.csv");
 
     Int_t anaType;
-    Bool_t isSim;
 
     vector<string> cent_key;
     vector<string> cent_key1 = {"40-60", "20-40", "0-20"};
     vector<string> cent_key2 = {"50-60", "40-50", "30-40","20-30","10-20","0-10"};
 
     // Impact parameter bin edges taken from: https://wiki.sphenix.bnl.gov/index.php/MDC2_2022
-    vector<string>  b_key1 = {"9.71-11.84", "6.81-9.71", "0-6.81"}; /*fm*/
-    vector<string>  b_key2 = {"10.81-11.84","9.71-10.81","8.40-9.71","6.81-8.40","4.88-6.81","0-4.88"}; /*fm*/
+    // vector<string>  b_key1 = {"9.71-11.84", "6.81-9.71", "0-6.81"}; /*fm*/
+    // vector<string>  b_key2 = {"10.81-11.84","9.71-10.81","8.40-9.71","6.81-8.40","4.88-6.81","0-4.88"}; /*fm*/
 
-    vector<Float_t> b_bin;
-    vector<Float_t> b_bin1 = {0, 6.81, 9.71, 11.84};
-    vector<Float_t> b_bin2 = {0, 4.88, 6.81, 8.4, 9.71, 10.81, 11.84};
+    // vector<Float_t> b_bin;
+    // vector<Float_t> b_bin1 = {0, 6.81, 9.71, 11.84};
+    // vector<Float_t> b_bin2 = {0, 4.88, 6.81, 8.4, 9.71, 10.81, 11.84};
 
     // TH1F* cent_dum_vec = new TH1F("cent_dum_vec","", 3, 0, 0.6);
     TH1F* cent_dum_vec;
@@ -124,16 +122,9 @@ Int_t myAnalysis::init(const string &i_input, Long64_t start, Long64_t end) {
     Int_t ret = readFiles(i_input, start, end);
     if(ret != 0) return ret;
 
-    if(isSim) {
-        cent_key = (anaType == 0) ? b_key1 : b_key2;
-        b_bin    = (anaType == 0) ? b_bin1 : b_bin2;
-    }
-    else {
-        cent_key = (anaType == 0) ? cent_key1 : cent_key2;
-    }
+    cent_key = (anaType == 0) ? cent_key1 : cent_key2;
 
-    cent_dum_vec = (isSim) ? new TH1F("cent_dum_vec","", cent_key.size(), b_bin.data())
-                           : new TH1F("cent_dum_vec","", cent_key.size(), 0, 0.6);
+    cent_dum_vec = new TH1F("cent_dum_vec","", cent_key.size(), 0, 0.6);
 
     X2_S.resize(cent_key.size(), vector<vector<Float_t>>(2, vector<Float_t>(2)));
 
@@ -220,10 +211,6 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end) {
     // T->SetBranchStatus("totalMBD", true);
     T->SetBranchStatus("centrality", true);
 
-    if(isSim) {
-        T->SetBranchStatus("b", true);
-    }
-
     Float_t Q2_S_x;
     Float_t Q2_S_y;
     Float_t Q2_N_x;
@@ -234,7 +221,6 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end) {
     Float_t Q3_N_y;
     Float_t totalMBD;
     Float_t cent;
-    Float_t b;
     Float_t z;
 
     // event counter
@@ -298,10 +284,6 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end) {
     T->SetBranchAddress("centrality", &cent);
     T->SetBranchAddress("vtx_z", &z);
 
-    if(isSim) {
-        T->SetBranchAddress("b", &b);
-    }
-
     end = (end) ? min(end, T->GetEntries()-1) : T->GetEntries()-1;
 
     cout << "Loading Events" << endl;
@@ -314,7 +296,7 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end) {
         if(abs(z) >= z_max) continue;
 
         // Int_t j = cent_dum_vec->FindBin(totalMBD)-1;
-        Int_t j = (isSim) ? cent_dum_vec->FindBin(b)-1 : cent_dum_vec->FindBin(cent)-1;
+        Int_t j = cent_dum_vec->FindBin(cent)-1;
 
         // check if centrality is found in one of the specified bins
         if(j < 0 || j >= cent_key.size()) continue;
@@ -330,7 +312,6 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end) {
         event.Q3_N_x = Q3_N_x;
         event.Q3_N_y = Q3_N_y;
         event.cent  = cent;
-        event.b     = b;
         event.z     = z;
 
         events.push_back(event);
@@ -344,8 +325,7 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end) {
         if(i%100000 == 0) cout << "Progress: " << (i-start)*100./(end-start) << "%" << endl;
 
         // check if centrality is found in one of the specified bins
-        Int_t j = (isSim) ? cent_dum_vec->FindBin(events[i].b)-1
-                          : cent_dum_vec->FindBin(events[i].cent)-1;
+        Int_t j = cent_dum_vec->FindBin(events[i].cent)-1;
 
         // need to reverse this index since we want to match cent_key
         j = cent_key.size() - j - 1;
@@ -398,8 +378,7 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end) {
         if(i%100000 == 0) cout << "Progress: " << (i-start)*100./(end-start) << "%" << endl;
 
         // check if centrality is found in one of the specified bins
-        Int_t j = (isSim) ? cent_dum_vec->FindBin(events[i].b)-1
-                          : cent_dum_vec->FindBin(events[i].cent)-1;
+        Int_t j = cent_dum_vec->FindBin(events[i].cent)-1;
 
         // need to reverse this index since we want to match cent_key
         j = cent_key.size() - j - 1;
@@ -523,8 +502,7 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end) {
         if(i%100000 == 0) cout << "Progress: " << (i-start)*100./(end-start) << "%" << endl;
 
         // check if centrality is found in one of the specified bins
-        Int_t j = (isSim) ? cent_dum_vec->FindBin(events[i].b)-1
-                          : cent_dum_vec->FindBin(events[i].cent)-1;
+        Int_t j = cent_dum_vec->FindBin(events[i].cent)-1;
 
         // need to reverse this index since we want to match cent_key
         j = cent_key.size() - j - 1;
@@ -667,7 +645,6 @@ void Q_vector_correction(const string &i_input,
                          Float_t z                  = 10,
                          const string &i_output     = "test.root",
                          const string &i_output_csv = "test.csv",
-                         Bool_t        isSim        = false,
                          Int_t         anaType      = 0,
                          Long64_t      start        = 0,
                          Long64_t      end          = 0) {
@@ -678,14 +655,12 @@ void Q_vector_correction(const string &i_input,
     cout << "z: "               << z << endl;
     cout << "outputFile: "      << i_output     << endl;
     cout << "output CSV File: " << i_output_csv << endl;
-    cout << "isSim: "           << isSim        << endl;
     cout << "anaType: "         << anaType      << endl;
     cout << "start: "           << start        << endl;
     cout << "end: "             << end          << endl;
     cout << "#############################"     << endl;
 
     myAnalysis::anaType = anaType;
-    myAnalysis::isSim   = isSim;
 
     Int_t ret = myAnalysis::init(i_input, start, end);
     if(ret != 0) return;
@@ -696,13 +671,12 @@ void Q_vector_correction(const string &i_input,
 
 # ifndef __CINT__
 Int_t main(Int_t argc, char* argv[]) {
-if(argc < 2 || argc > 9){
-        cout << "usage: ./Q-vec-corr inputFile [z] [outputFile] [output_csv] [isSim] [anaType] [start] [end] " << endl;
+if(argc < 2 || argc > 8){
+        cout << "usage: ./Q-vec-corr inputFile [z] [outputFile] [output_csv] [anaType] [start] [end] " << endl;
         cout << "inputFile: containing list of root file paths" << endl;
         cout << "z: z-vertex cut. Default: 10 cm. Range: 0 to 30 cm." << endl;
         cout << "outputFile: location of output file. Default: test.root." << endl;
         cout << "outputCSV: location of output csv. Default: test.csv." << endl;
-        cout << "isSim: Simulation. Default: False." << endl;
         cout << "anaType: analysis type. Default: 0." << endl;
         cout << "start: start event number. Default: 0." << endl;
         cout << "end: end event number. Default: 0. (to run over all entries)." << endl;
@@ -712,7 +686,6 @@ if(argc < 2 || argc > 9){
     Float_t z         = 10;
     string outputFile = "test.root";
     string output_csv = "test.csv";
-    Bool_t   isSim    = false;
     Int_t    anaType  = 0;
     Long64_t start    = 0;
     Long64_t end      = 0;
@@ -727,16 +700,13 @@ if(argc < 2 || argc > 9){
         output_csv = argv[4];
     }
     if(argc >= 6) {
-        isSim = atoi(argv[5]);
+        anaType = atoi(argv[5]);
     }
     if(argc >= 7) {
-        anaType = atoi(argv[6]);
+        start = atol(argv[6]);
     }
     if(argc >= 8) {
-        start = atol(argv[7]);
-    }
-    if(argc >= 9) {
-        end = atol(argv[8]);
+        end = atol(argv[7]);
     }
 
     // ensure that 0 <= start <= end
@@ -745,7 +715,7 @@ if(argc < 2 || argc > 9){
         return 1;
     }
 
-    Q_vector_correction(argv[1], z, outputFile, output_csv, isSim, anaType, start, end);
+    Q_vector_correction(argv[1], z, outputFile, output_csv, anaType, start, end);
 
     cout << "======================================" << endl;
     cout << "done" << endl;

@@ -58,12 +58,12 @@ namespace myAnalysis {
     vector<string> cent_key2 = {"50-60", "40-50", "30-40","20-30","10-20","0-10"};
 
     // Impact parameter bin edges taken from: https://wiki.sphenix.bnl.gov/index.php/MDC2_2022
-    vector<string>  b_key1 = {"9.71-11.84", "6.81-9.71", "0-6.81"}; /*fm*/
-    vector<string>  b_key2 = {"10.81-11.84","9.71-10.81","8.40-9.71","6.81-8.40","4.88-6.81","0-4.88"}; /*fm*/
+    // vector<string>  b_key1 = {"9.71-11.84", "6.81-9.71", "0-6.81"}; /*fm*/
+    // vector<string>  b_key2 = {"10.81-11.84","9.71-10.81","8.40-9.71","6.81-8.40","4.88-6.81","0-4.88"}; /*fm*/
 
-    vector<Float_t> b_bin;
-    vector<Float_t> b_bin1 = {0, 6.81, 9.71, 11.84};
-    vector<Float_t> b_bin2 = {0, 4.88, 6.81, 8.4, 9.71, 10.81, 11.84};
+    // vector<Float_t> b_bin;
+    // vector<Float_t> b_bin1 = {0, 6.81, 9.71, 11.84};
+    // vector<Float_t> b_bin2 = {0, 4.88, 6.81, 8.4, 9.71, 10.81, 11.84};
 
     vector<string> pt_key;
     vector<string> pt_key1 = {"2-2.5", "2.5-3", "3-3.5", "3.5-4", "4-4.5", "4.5-5"};
@@ -165,17 +165,10 @@ Int_t myAnalysis::init(const string &i_input, const string &i_cuts, const string
     T = new TChain("T");
     T->Add(i_input.c_str());
 
-    if(isSim) {
-        cent_key = (anaType == 0) ? b_key1 : b_key2;
-        b_bin    = (anaType == 0) ? b_bin1 : b_bin2;
-    }
-    else {
-        cent_key = (anaType == 0) ? cent_key1 : cent_key2;
-    }
-    pt_key = (anaType == 0) ? pt_key1 : pt_key2;
+    cent_key = (anaType == 0) ? cent_key1 : cent_key2;
+    pt_key   = (anaType == 0) ? pt_key1 : pt_key2;
 
-    cent_dum_vec = (isSim) ? new TH1F("cent_dum_vec","", cent_key.size(), b_bin.data())
-                           : new TH1F("cent_dum_vec","", cent_key.size(), 0, 0.6);
+    cent_dum_vec = new TH1F("cent_dum_vec","", cent_key.size(), 0, 0.6);
 
     pt_dum_vec   = new TH1F("pt_dum_vec","", pt_key.size(), 2, 5);
 
@@ -349,12 +342,7 @@ Int_t myAnalysis::readFitStats(const string &fitStats) {
 
     cout << endl;
     for(Int_t i = 0; i < cent_key.size(); ++i) {
-        if(isSim) {
-            cout << "b: " << cent_key[i] << " fm" << endl;
-        }
-        else {
-            cout << "cent: " << cent_key[i] << endl;
-        }
+        cout << "cent: " << cent_key[i] << endl;
 
         for(Int_t j = 0; j < pt_key.size(); ++j) {
             Int_t idx = i*pt_key.size()+j;
@@ -426,12 +414,7 @@ Int_t myAnalysis::readQVectorCorrection(const string &i_input) {
 
     cout << "Q2 Vector Corr Factors" << endl;
     for(Int_t j = 0; j < i; ++j) {
-        if(isSim) {
-            cout << "b: " << cent_key[j] << " fm" << endl;
-        }
-        else {
-            cout << "Cent: " << cent_key[j] << endl;
-        }
+        cout << "Cent: " << cent_key[j] << endl;
 
         cout << left << "Q2_S_x_avg: "   << setw(8) << Q2_S_x_avg[j]
                      << ", Q2_S_y_avg: " << setw(8) << Q2_S_y_avg[j] << endl;
@@ -477,8 +460,7 @@ void myAnalysis::init_hists() {
     // create QA plots for each centrality/pt bin
     for(Int_t i = 0; i < cent_key.size(); ++i) {
 
-        string suffix_title = (isSim) ? "b: " + cent_key[i] + " fm"
-                                      : "Centrality: " + cent_key[i] + "%";
+        string suffix_title = "Centrality: " + cent_key[i] + "%";
 
         hDiphotonPt[cent_key[i]] = new TH1F(("hDiphotonPt_"+cent_key[i]).c_str(), ("Diphoton p_{T}, " + suffix_title +"; p_{T} [GeV]; Counts").c_str(), bins_pt, hpt_min, hpt_max);
 
@@ -488,8 +470,7 @@ void myAnalysis::init_hists() {
 
             pair<string,string> key = make_pair(cent_key[i],pt_key[j]);
             string suffix = "_"+cent_key[i]+"_"+pt_key[j];
-            suffix_title = (isSim) ? "b: "  + cent_key[i] + " fm, Diphoton p_{T}: " + pt_key[j] + " GeV"
-                                   : "Centrality: " + cent_key[i] + "%, Diphoton p_{T}: " + pt_key[j] + " GeV";
+            suffix_title = "Centrality: " + cent_key[i] + "%, Diphoton p_{T}: " + pt_key[j] + " GeV";
 
             h2Pi0EtaPhi[key] = new TH2F(("h2Pi0EtaPhi_"+to_string(idx)).c_str(), ("#pi_{0}, " + suffix_title + "; #eta; #phi").c_str(), bins_eta, eta_min, eta_max, bins_phi, phi_min, phi_max);
             h2Pi0EtaPhiv2[key] = new TH2F(("h2Pi0EtaPhiv2_"+to_string(idx)).c_str(), ("#pi_{0}, " + suffix_title + "; #eta; #phi").c_str(), bins_eta, eta_min, eta_max, bins_phi, phi_min, phi_max);
@@ -547,8 +528,7 @@ void myAnalysis::init_hists() {
 
             for(Int_t i = 0; i < cent_key.size(); ++i) {
 
-                string suffix_title = (isSim) ? "b: " + cent_key[i] + " fm"
-                                              : "Centrality: " + cent_key[i] + "%";
+                string suffix_title = "Centrality: " + cent_key[i] + "%";
                 // v2
                 hQQ2_dummy[cent_key[i]] = new TH1F(("hQQ2_"+to_string(k)+"_"+cent_key[i]).c_str(), ("QQ2, " + suffix_title +"; QQ2; Counts").c_str(), bins_Q, Q_min, Q_max);
 
@@ -560,8 +540,7 @@ void myAnalysis::init_hists() {
 
                     pair<string,string> key = make_pair(cent_key[i],pt_key[j]);
                     string suffix = "_"+cent_key[i]+"_"+pt_key[j];
-                    suffix_title = (isSim) ? "b: "  + cent_key[i] + " fm, Diphoton p_{T}: " + pt_key[j] + " GeV"
-                                           : "Centrality: " + cent_key[i] + "%, Diphoton p_{T}: " + pt_key[j] + " GeV";
+                    suffix_title = "Centrality: " + cent_key[i] + "%, Diphoton p_{T}: " + pt_key[j] + " GeV";
 
                     hqQ2_dummy[key]         = new TH1F(("hqQ2_"+to_string(k)+"_"+to_string(idx)).c_str(), ("qQ2, " + suffix_title + "; qQ2; Counts").c_str(), bins_Q, Q_min, Q_max);
                     hqQ2_bg_dummy[key]      = new TH1F(("hqQ2_bg_"+to_string(k)+"_"+to_string(idx)).c_str(), ("qQ2, " + suffix_title + "; qQ2; Counts").c_str(), bins_Q, Q_min, Q_max);
@@ -623,15 +602,12 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end, Floa
         T->SetBranchStatus("pi0_phi", true);
         T->SetBranchStatus("pi0_eta", true);
     }
-    if(isSim) {
-        T->SetBranchStatus("b", true);
-    }
 
     // Int_t   run;
     // Int_t   event;
     Float_t totalMBD;
     Float_t cent;
-    Float_t b; /*impact parameter in MC*/
+    // Float_t b; /*impact parameter in MC*/
     Float_t z;
     vector<Float_t>* pi0_mass   = 0;
     vector<Float_t>* pi0_pt     = 0;
@@ -682,10 +658,6 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end, Floa
         T->SetBranchAddress("pi0_eta", &pi0_eta);
     }
 
-    if(isSim) {
-        T->SetBranchAddress("b", &b);
-    }
-
     end = (end) ? min(end, T->GetEntries()-1) : T->GetEntries()-1;
 
     UInt_t evt_ctr[cent_key.size()] = {0};
@@ -721,7 +693,7 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end, Floa
         if(abs(z) >= z_max) continue;
 
         // Int_t cent_idx = cent_dum_vec->FindBin(totalMBD)-1;
-        Int_t cent_idx = (isSim) ? cent_dum_vec->FindBin(b)-1 : cent_dum_vec->FindBin(cent)-1;
+        Int_t cent_idx = cent_dum_vec->FindBin(cent)-1;
 
         // check if centrality is found in one of the specified bins
         if(cent_idx < 0 || cent_idx >= cent_key.size()) continue;
@@ -972,12 +944,7 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end, Floa
     cout << endl;
     UInt_t events = 0;
     for(Int_t i = 0; i < cent_key.size(); ++i) {
-        if(isSim) {
-            cout << "b: " << cent_key[i] << " fm, Events: " << evt_ctr[i] << endl;
-        }
-        else {
-            cout << "Cent: " << cent_key[i] << ", Events: " << evt_ctr[i] << endl;
-        }
+        cout << "Cent: " << cent_key[i] << ", Events: " << evt_ctr[i] << endl;
 
         events += evt_ctr[i];
     }
