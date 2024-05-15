@@ -48,6 +48,20 @@ pi0Ana.add_argument('-g', '--sigma', type=float, default=2, help='Signal Window 
 pi0Ana.add_argument('-s', '--memory', type=float, default=1, help='Memory (units of GB) to request per condor submission. Default: 1 GB.')
 pi0Ana.add_argument('-l', '--log', type=str, default='/tmp/anarde/dump/job-$(ClusterId)-$(Process).log', help='Condor log file.')
 
+truthPi0Ana = subparser.add_parser('truthPi0Ana', help='Create condor submission directory for truthPi0Analysis.')
+
+truthPi0Ana.add_argument('-i', '--ntp-list', type=str, help='List of Ntuples', required=True)
+truthPi0Ana.add_argument('-c', '--Q-vec-corr', type=str, help='CSV file with Q vector corrections.', required=True)
+truthPi0Ana.add_argument('-a', '--anaType', type=int, default=1, help='Analysis Type. Default: 1.')
+truthPi0Ana.add_argument('-z', '--vtx-z', type=float, default=10, help='Event z-vertex cut. Default: 10 [cm]')
+truthPi0Ana.add_argument('-m', '--macro', type=str, default='macro/truthPi0Analysis.C', help='pi0Analysis macro. Default: macro/truthPi0Analysis.C')
+truthPi0Ana.add_argument('-e', '--script', type=str, default='genTruthPi0Ana.sh', help='Job script to execute. Default: genTruthPi0Ana.sh')
+truthPi0Ana.add_argument('-b', '--executable', type=str, default='bin/truthPi0Ana', help='Executable. Default: bin/truthPi0Ana')
+truthPi0Ana.add_argument('-d', '--output', type=str, default='test', help='Output Directory. Default: ./test')
+truthPi0Ana.add_argument('-u', '--subsamples', type=int, default=30, help='Number of subsamples for vn analysis. Default: 30')
+truthPi0Ana.add_argument('-s', '--memory', type=float, default=0.5, help='Memory (units of GB) to request per condor submission. Default: 0.5 GB.')
+truthPi0Ana.add_argument('-l', '--log', type=str, default='/tmp/anarde/dump/job-$(ClusterId)-$(Process).log', help='Condor log file.')
+
 mix = subparser.add_parser('mix', help='Create condor submission directory for mixed event vn.')
 
 mix.add_argument('-i', '--ntp-list', type=str, help='List of Ntuples', required=True)
@@ -407,6 +421,67 @@ def create_pi0Ana_jobs():
     # print condor submission command
     print(sub)
 
+def create_truthPi0Ana_jobs():
+    ntp_list   = os.path.realpath(args.ntp_list)
+    macro      = os.path.realpath(args.macro)
+    Q_vec_corr = os.path.realpath(args.Q_vec_corr)
+    script     = os.path.realpath(args.script)
+    executable = os.path.realpath(args.executable)
+    output_dir = os.path.realpath(args.output)
+    memory     = args.memory
+    z          = args.vtx_z
+    log        = args.log
+    samples    = args.subsamples
+    anaType    = args.anaType
+
+    print(f'Macro: {macro}')
+    print(f'Run List: {ntp_list}')
+    print(f'Samples: {samples}')
+    print(f'Q Vector Correction: {Q_vec_corr}')
+    print(f'Vtx z max: {z} cm')
+    print(f'Script: {script}')
+    print(f'Executable: {executable}')
+    print(f'Output Directory: {output_dir}')
+    print(f'Requested memory per job: {memory}GB')
+    print(f'Condor log file: {log}')
+    print(f'Analysis Type: {anaType}')
+
+    os.makedirs(output_dir,exist_ok=True)
+    shutil.copy(script, output_dir)
+    shutil.copy(executable, output_dir)
+    shutil.copy(ntp_list, output_dir)
+    shutil.copy(macro, output_dir)
+    shutil.copy(Q_vec_corr, output_dir)
+    Q_vec_corr = f'{output_dir}/{os.path.basename(Q_vec_corr)}'
+
+    sub = ''
+    with open(ntp_list) as file:
+        for line in file:
+            line = line.rstrip() # remove \n from the end of the string
+            run = os.path.splitext(os.path.basename(line))[0] # extract the run number from the file name
+
+            print(f'Run: {run}')
+            os.makedirs(f'{output_dir}/{run}/stdout',exist_ok=True)
+            os.makedirs(f'{output_dir}/{run}/error',exist_ok=True)
+            os.makedirs(f'{output_dir}/{run}/output',exist_ok=True)
+
+            shutil.copy(line, f'{output_dir}/{run}')
+
+            with open(f'{output_dir}/{run}/genTruthPi0Ana.sub', mode="w") as file2:
+                file2.write(f'executable     = ../{os.path.basename(script)}\n')
+                file2.write(f'arguments      = {output_dir}/{os.path.basename(executable)} $(input_ntp) {Q_vec_corr} {z} output/test-$(Process).root {anaType} {samples}\n')
+                file2.write(f'log            = {log}\n')
+                file2.write( 'output         = stdout/job-$(Process).out\n')
+                file2.write( 'error          = error/job-$(Process).err\n')
+                file2.write(f'request_memory = {memory}GB\n')
+                file2.write('concurrency_limits = CONCURRENCY_LIMIT_DEFAULT:1000\n')
+                file2.write(f'queue input_ntp from {os.path.basename(line)}')
+
+            sub = f'{sub} cd {output_dir}/{run} && condor_submit genTruthPi0Ana.sub &&'
+
+    # print condor submission command
+    print(sub)
+
 def create_mixedEvent_jobs():
     ntp_list   = os.path.realpath(args.ntp_list)
     cuts       = os.path.realpath(args.cuts)
@@ -529,6 +604,8 @@ if __name__ == '__main__':
         create_f4a_jobs()
     if(args.command == 'pi0Ana'):
         create_pi0Ana_jobs()
+    if(args.command == 'truthPi0Ana'):
+        create_truthPi0Ana_jobs()
     if(args.command == 'mix'):
         create_mixedEvent_jobs()
     if(args.command == 'QVecCorr'):
