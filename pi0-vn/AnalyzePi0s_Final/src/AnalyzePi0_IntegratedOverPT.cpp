@@ -53,7 +53,7 @@ TFitResultPtr PerformFitting(TH1F* hPi0Mass, TF1*& totalFit, double& fitStart, d
     totalFit = new TF1("totalFit", "gaus(0) + pol2(3)", fitStart, fitEnd);
     totalFit->SetLineColor(kRed);
 
-    double meanEstimate = 0.15;
+    double meanEstimate = 0.2;
     
     double amplitudeEstimate = hPi0Mass->GetBinContent(hPi0Mass->GetXaxis()->FindBin(meanEstimate));
     totalFit->SetParameter(0, amplitudeEstimate);
@@ -232,19 +232,19 @@ void DrawCanvasText(TLatex& latex, const Range& selectedRange, double fitMean, d
     double errorFor2Sigma = sbRatios.errors.at(2.0);
     
     //change legend depending on background size to not overlap data
-    if (currentIndex == 5) {
-        latex.DrawLatex(0.45, 0.54, Form("#mu_{Gaussian} = %.2f GeV", fitMean));
-        latex.DrawLatex(0.45, 0.49, Form("#sigma_{Gaussian} = %.2f GeV", fitSigma));
-        latex.DrawLatex(0.67, 0.57, Form("S/B = %.2f", ratioFor2Sigma));
-        latex.DrawLatex(0.67, 0.52, Form("Signal Yield = %.2f", signalYield));
-        latex.DrawLatex(0.67, .47, Form("Fit #chi^{2}/NDF: %.2f/%.0f", chi2, NDF));
-    } else {
+//    if (currentIndex == 5) {
+//        latex.DrawLatex(0.45, 0.54, Form("#mu_{Gaussian} = %.2f GeV", fitMean));
+//        latex.DrawLatex(0.45, 0.49, Form("#sigma_{Gaussian} = %.2f GeV", fitSigma));
+//        latex.DrawLatex(0.67, 0.57, Form("S/B = %.2f", ratioFor2Sigma));
+//        latex.DrawLatex(0.67, 0.52, Form("Signal Yield = %.2f", signalYield));
+//        latex.DrawLatex(0.67, .47, Form("Fit #chi^{2}/NDF: %.2f/%.0f", chi2, NDF));
+//    } else {
         latex.DrawLatex(0.67, 0.4, Form("#mu_{Gaussian} = %.2f GeV", fitMean));
         latex.DrawLatex(0.67, 0.35, Form("#sigma_{Gaussian} = %.2f GeV", fitSigma));
         latex.DrawLatex(0.67, 0.3, Form("S/B = %.2f", ratioFor2Sigma));
         latex.DrawLatex(0.67, 0.25, Form("Signal Yield = %.2f", signalYield));
         latex.DrawLatex(0.67, .2, Form("Fit #chi^{2}/NDF: %.2f/%.0f", chi2, NDF));
-    }
+//    }
     
 //    latex.DrawLatex(0.67, 0.4, Form("#mu_{Gaussian} = %.2f GeV", fitMean));
 //    latex.DrawLatex(0.67, 0.35, Form("#sigma_{Gaussian} = %.2f GeV", fitSigma));
@@ -549,7 +549,7 @@ void plotMean(Data& data1, Data& data2) {
     minY -= buffer;
     maxY += buffer;
     
-    graph_1->GetYaxis()->SetRangeUser(minY, maxY);
+    graph_1->GetYaxis()->SetRangeUser(0, 0.2);
 
     // Graph properties
     graph_1->SetMarkerStyle(20);
@@ -578,7 +578,7 @@ void plotMean(Data& data1, Data& data2) {
     TLegend *legend = new TLegend(0.2, 0.18, 0.3, 0.33);
     legend->SetBorderSize(0);
     legend->SetTextSize(0.028);
-    legend->AddEntry(graph_1, "Default", "pe");
+    legend->AddEntry(graph_1, "Data", "pe");
     legend->AddEntry(graph_2, "Hijing", "pe");
 
     legend->Draw("SAME");
@@ -666,7 +666,7 @@ void plotSigma(Data& data1, Data& data2) {
     minY -= buffer;
     maxY += buffer;
     
-    graph_1->GetYaxis()->SetRangeUser(minY, 0.062);
+    graph_1->GetYaxis()->SetRangeUser(0, 0.03);
 
     // Graph properties
     graph_1->SetMarkerStyle(20);
@@ -692,10 +692,10 @@ void plotSigma(Data& data1, Data& data2) {
     c_1GaussSigma->Update();
     graph_1->GetXaxis()->SetRangeUser(0, 70);
     
-    TLegend *legend = new TLegend(0.8, 0.75, 0.9, 0.9);
+    TLegend *legend = new TLegend(0.2, 0.18, 0.3, 0.33);
     legend->SetBorderSize(0);
     legend->SetTextSize(0.028);
-    legend->AddEntry(graph_1, "Default", "pe");
+    legend->AddEntry(graph_1, "Data", "pe");
     legend->AddEntry(graph_2, "Hijing", "pe");
 
     legend->Draw("SAME");
@@ -784,7 +784,7 @@ void plotSB(Data& data1, Data& data2) {
     minY -= buffer;
     maxY += buffer;
     
-    graph_1->GetYaxis()->SetRangeUser(0, 1.23);
+    graph_1->GetYaxis()->SetRangeUser(0, 1.3);
 
     // Graph properties
     graph_1->SetMarkerStyle(20);
@@ -813,7 +813,7 @@ void plotSB(Data& data1, Data& data2) {
     TLegend *legend = new TLegend(0.2, 0.75, 0.3, 0.9);
     legend->SetBorderSize(0);
     legend->SetTextSize(0.028);
-    legend->AddEntry(graph_1, "Default", "pe");
+    legend->AddEntry(graph_1, "Data", "pe");
     legend->AddEntry(graph_2, "Hijing", "pe");
 
     legend->Draw("SAME");
