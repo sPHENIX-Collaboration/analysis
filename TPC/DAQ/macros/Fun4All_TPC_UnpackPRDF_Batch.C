@@ -13,10 +13,10 @@ R__LOAD_LIBRARY(libfun4allraw.so)
 R__LOAD_LIBRARY(libTPCRawDataTree.so)
 
 int Fun4All_TPC_UnpackPRDF_Batch(
-    const int nEvents = 400,
-    const int sector = 11,
-    const int run = 11127,
-    const string &mode = "beam")
+    const int nEvents = 10,
+    const int sector = 0,
+    const int run = 42456,
+    const string &mode = "calib")
 {
   //---------------
   // Fun4All server
@@ -25,10 +25,10 @@ int Fun4All_TPC_UnpackPRDF_Batch(
   se->Verbosity(1);
 
   const string inputFile =
-      Form("/sphenix/lustre01/sphnxpro/commissioning/tpc/%s/TPC_ebdc%02d_%s-000%05d-0000.prdf",
+      Form("/sphenix/lustre01/sphnxpro/commissioning/tpc/%s/TPC_ebdc%02d_%s-000%05d-0000.evt",
            mode.c_str(), sector, mode.c_str(), run);
 
-  string outFile = Form("/phenix/u/jinhuang/links/sPHENIX_work/TPC/commissioning/TPC_ebdc%02d_%s-000%05d-0000.prdf.TPCRawDataTree.root",
+  string outFile = Form("/phenix/u/jinhuang/links/sPHENIX_work/TPC/commissioning/TPC_ebdc%02d_%s-000%05d-0000.evt.TPCRawDataTree.root",
                         sector, mode.c_str(), run);
 
   string fileName = inputFile;
