@@ -33,20 +33,14 @@ namespace myAnalysis {
 
     Bool_t init(const string &i_input, const string &fitStats);
 
-    void process_event(Int_t samples = 30, const string &outputCSV = "vn.csv");
+    void process_event(Int_t samples = 30, const string &outputCSV = "vn.csv", const string &outputCSV2 = "vn-info.csv");
     void finalize(const string &outputFile = "vn.root");
 
     Int_t readFitStats(const string &fitStats);
 
-    Bool_t isSim;
-
     vector<string> cent_key;
     vector<string> cent_key1 = {"40-60", "20-40", "0-20"};
     vector<string> cent_key2 = {"50-60", "40-50", "30-40","20-30","10-20","0-10"};
-
-    // Impact parameter bin edges taken from: https://wiki.sphenix.bnl.gov/index.php/MDC2_2022
-    vector<string>  b_key1 = {"9.71-11.84", "6.81-9.71", "0-6.81"}; /*fm*/
-    vector<string>  b_key2 = {"10.81-11.84","9.71-10.81","8.40-9.71","6.81-8.40","4.88-6.81","0-4.88"}; /*fm*/
 
     vector<string> pt_key;
     vector<string> pt_key1   = {"2-2.5", "2.5-3", "3-3.5", "3.5-4", "4-4.5", "4.5-5"};
@@ -145,13 +139,7 @@ Int_t myAnalysis::readFitStats(const string &fitStats) {
 
     cout << endl;
     for(Int_t i = 0; i < cent_key.size(); ++i) {
-
-        if(isSim) {
-            cout << "b: " << cent_key[i] << " fm" << endl;
-        }
-        else {
             cout << "cent: " << cent_key[i] << endl;
-        }
 
         for(Int_t j = 0; j < pt_key.size(); ++j) {
             Int_t idx = i*pt_key.size()+j;
@@ -163,7 +151,7 @@ Int_t myAnalysis::readFitStats(const string &fitStats) {
     return 0;
 }
 
-void myAnalysis::process_event(Int_t samples, const string &outputCSV) {
+void myAnalysis::process_event(Int_t samples, const string &outputCSV, const string &outputCSV2) {
 
     // corrected and measured v2
     vector<Float_t> sum_w_v2(cent_key.size()*pt_key.size());
@@ -336,9 +324,11 @@ void myAnalysis::process_event(Int_t samples, const string &outputCSV) {
 
     // compute average of v2 and v3 from the above loop
     ofstream output(outputCSV.c_str());
+    ofstream output2(outputCSV2.c_str());
 
     // write header
     output << "Index,v2,v2_err,v2_type_4,v2_type_4_err,v3,v3_err,v2_m,v2_m_err,v2_bg,v2_bg_err,v2_bg_4,v2_bg_4_err" << endl;
+    output2 << "Index,Sample,v2,v2_m,v2_bg,weight" << endl;
 
     stringstream s;
     for(UInt_t i = 0; i < cent_key.size(); ++i) {
@@ -371,6 +361,11 @@ void myAnalysis::process_event(Int_t samples, const string &outputCSV) {
                     sum_v2_err        += w_v2[k][idx] * pow(v2_vec[k][idx]-v2, 2);
                     sum_v2_type_4_err += w_v2[k][idx] * pow(v2_type_4_vec[k][idx]-v2_type_4, 2);
                     sum_v2_m_err      += w_v2[k][idx] * pow(v2_m_vec[k][idx]-v2_m, 2);
+
+                    // write detailed log of v2 per sample to output CSV
+                    s.str("");
+                    s << idx << "," << k << "," << v2_vec[k][idx] << "," << v2_m_vec[k][idx] << "," << v2_bg_vec[k][idx] << "," << w_v2[k][idx] << endl;
+                    output2 << s.str();
                 }
 
                 Float_t v2_err2        = (sum_v2_err/sum_w_v2[idx]) * Keff_v2/(Keff_v2-1);
@@ -433,6 +428,7 @@ void myAnalysis::process_event(Int_t samples, const string &outputCSV) {
         }
     }
     output.close();
+    output2.close();
 }
 
 void myAnalysis::finalize(const string &outputFile) {
@@ -478,8 +474,8 @@ void myAnalysis::finalize(const string &outputFile) {
 void vnAnalysis(const string &i_input,
                 const string &fitStats,
                 const string &outputCSV  = "vn.csv",
+                const string &outputCSV2  = "vn-info.csv",
                 const string &outputFile = "vn.root",
-                      Bool_t  isSim      = false,
                       Int_t   anaType    = 0,
                       Int_t   samples    = 30) {
 
@@ -488,46 +484,38 @@ void vnAnalysis(const string &i_input,
     cout << "inputFile: "   << i_input << endl;
     cout << "fitStats: "    << fitStats << endl;
     cout << "outputCSV: "   << outputCSV << endl;
+    cout << "outputCSV2: "  << outputCSV2 << endl;
     cout << "outputFile: "  << outputFile << endl;
-    cout << "isSim: "       << isSim << endl;
     cout << "anaType: "     << anaType << endl;
     cout << "Samples: "     << samples << endl;
     cout << "#############################" << endl;
 
-    myAnalysis::isSim      = isSim;
-
-    if(isSim) {
-        myAnalysis::cent_key = (anaType == 0) ? myAnalysis::b_key1 : myAnalysis::b_key2;
-    }
-    else {
-        myAnalysis::cent_key = (anaType == 0) ? myAnalysis::cent_key1 : myAnalysis::cent_key2;
-    }
-
+    myAnalysis::cent_key = (anaType == 0) ? myAnalysis::cent_key1 : myAnalysis::cent_key2;
     myAnalysis::pt_key   = (anaType == 0) ? myAnalysis::pt_key1   : myAnalysis::pt_key2;
 
     if(myAnalysis::init(i_input, fitStats)) return;
 
-    myAnalysis::process_event(samples, outputCSV);
+    myAnalysis::process_event(samples, outputCSV, outputCSV2);
     myAnalysis::finalize(outputFile);
 }
 
 # ifndef __CINT__
 Int_t main(Int_t argc, char* argv[]) {
 if(argc < 3 || argc > 8){
-        cout << "usage: ./vnAna inputFile fitStats [outputCSV] [outputFile] [isSim] [anaType] [samples]" << endl;
+        cout << "usage: ./vnAna inputFile fitStats [outputCSV] [outputCSV2] [outputFile] [anaType] [samples]" << endl;
         cout << "inputFile: containing list of root file paths" << endl;
         cout << "fitStats: csv file containing fit stats" << endl;
         cout << "outputCSV: location of output CSV. Default: vn.csv." << endl;
+        cout << "outputCSV2: location of output CSV2. Default: vn-info.csv." << endl;
         cout << "outputFile: location of output file. Default: vn.root." << endl;
-        cout << "isSim: Simulation. Default: False" << endl;
         cout << "anaType: analysis type. Default: 0." << endl;
         cout << "samples: number of samples for the vn analysis. Default: 30." << endl;
         return 1;
     }
 
     string outputCSV  = "vn.csv";
+    string outputCSV2 = "vn-info.csv";
     string outputFile = "vn.root";
-    Bool_t isSim      = false;
     Int_t  anaType    = 0;
     Int_t  samples    = 30;
 
@@ -535,10 +523,10 @@ if(argc < 3 || argc > 8){
         outputCSV = argv[3];
     }
     if(argc >= 5) {
-        outputFile = argv[4];
+        outputCSV2 = argv[4];
     }
     if(argc >= 6) {
-        isSim = atoi(argv[5]);
+        outputFile = argv[5];
     }
     if(argc >= 7) {
         anaType = atoi(argv[6]);
@@ -547,7 +535,7 @@ if(argc < 3 || argc > 8){
         samples = atoi(argv[7]);
     }
 
-    vnAnalysis(argv[1], argv[2], outputCSV, outputFile, isSim, anaType, samples);
+    vnAnalysis(argv[1], argv[2], outputCSV, outputCSV2, outputFile, anaType, samples);
 
     cout << "======================================" << endl;
     cout << "done" << endl;
