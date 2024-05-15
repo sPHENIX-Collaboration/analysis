@@ -23,7 +23,7 @@ void Fun4All_CaloTreeGen(const int nEvents = 0, const char *listFile = "fileList
   Fun4AllServer *se = Fun4AllServer::instance();
   recoConsts *rc = recoConsts::instance();
 
-  caloTreeGen *calo = new caloTreeGen(inName);
+  caloTreeGen *calo = new caloTreeGen("caloTreeGen");
   calo -> setClusters(1);
   calo -> setFineClusters(1);
   se->registerSubsystem(calo);
