@@ -23,6 +23,20 @@ struct Data {
     std::vector<double> corrected_v2_40_50, corrected_v2_40_50_Errors;
     std::vector<double> corrected_v2_50_60, corrected_v2_50_60_Errors;
     
+    std::vector<double> signal_v2_0_10, signal_v2_0_10_Errors;
+    std::vector<double> signal_v2_10_20, signal_v2_10_20_Errors;
+    std::vector<double> signal_v2_20_30, signal_v2_20_30_Errors;
+    std::vector<double> signal_v2_30_40, signal_v2_30_40_Errors;
+    std::vector<double> signal_v2_40_50, signal_v2_40_50_Errors;
+    std::vector<double> signal_v2_50_60, signal_v2_50_60_Errors;
+    
+    std::vector<double> bg_v2_0_10, bg_v2_0_10_Errors;
+    std::vector<double> bg_v2_10_20, bg_v2_10_20_Errors;
+    std::vector<double> bg_v2_20_30, bg_v2_20_30_Errors;
+    std::vector<double> bg_v2_30_40, bg_v2_30_40_Errors;
+    std::vector<double> bg_v2_40_50, bg_v2_40_50_Errors;
+    std::vector<double> bg_v2_50_60, bg_v2_50_60_Errors;
+    
     std::vector<double> corrected_v2_0_10_type4, corrected_v2_0_10_Errors_type4;
     std::vector<double> corrected_v2_10_20_type4, corrected_v2_10_20_Errors_type4;
     std::vector<double> corrected_v2_20_30_type4, corrected_v2_20_30_Errors_type4;
@@ -111,6 +125,12 @@ void Read_DataSet(const std::string& filePath, Data& data) {
         double v2_corrected = std::stod(rowData.at(1));
         double v2_error_corrected = std::stod(rowData.at(2));
         
+        double v2_signal = std::stod(rowData.at(7));
+        double v2_error_signal = std::stod(rowData.at(8));
+        
+        double v2_bg = std::stod(rowData.at(9));
+        double v2_error_bg = std::stod(rowData.at(10));
+        
         double v2_corrected_type4 = std::stod(rowData.at(3));
         double v2_error_corrected_type4 = std::stod(rowData.at(4));
 
@@ -121,12 +141,24 @@ void Read_DataSet(const std::string& filePath, Data& data) {
             data.corrected_v2_50_60.push_back(v2_corrected);
             data.corrected_v2_50_60_Errors.push_back(v2_error_corrected);
             
+            data.signal_v2_50_60.push_back(v2_signal);
+            data.signal_v2_50_60_Errors.push_back(v2_error_signal);
+            
+            data.bg_v2_50_60.push_back(v2_bg);
+            data.bg_v2_50_60_Errors.push_back(v2_error_bg);
+            
             data.corrected_v2_50_60_type4.push_back(v2_corrected_type4);
             data.corrected_v2_50_60_Errors_type4.push_back(v2_error_corrected_type4);
 
         } else if (index == 1) { //index 1 is 40-50
             data.corrected_v2_40_50.push_back(v2_corrected);
             data.corrected_v2_40_50_Errors.push_back(v2_error_corrected);
+            
+            data.signal_v2_40_50.push_back(v2_signal);
+            data.signal_v2_40_50_Errors.push_back(v2_error_signal);
+            
+            data.bg_v2_40_50.push_back(v2_bg);
+            data.bg_v2_40_50_Errors.push_back(v2_error_bg);
             
             data.corrected_v2_40_50_type4.push_back(v2_corrected_type4);
             data.corrected_v2_40_50_Errors_type4.push_back(v2_error_corrected_type4);
@@ -135,11 +167,23 @@ void Read_DataSet(const std::string& filePath, Data& data) {
             data.corrected_v2_30_40.push_back(v2_corrected);
             data.corrected_v2_30_40_Errors.push_back(v2_error_corrected);
             
+            data.signal_v2_30_40.push_back(v2_signal);
+            data.signal_v2_30_40_Errors.push_back(v2_error_signal);
+            
+            data.bg_v2_30_40.push_back(v2_bg);
+            data.bg_v2_30_40_Errors.push_back(v2_error_bg);
+            
             data.corrected_v2_30_40_type4.push_back(v2_corrected_type4);
             data.corrected_v2_30_40_Errors_type4.push_back(v2_error_corrected_type4);
         } else if (index == 3) { //index 3 is 20-30
             data.corrected_v2_20_30.push_back(v2_corrected);
             data.corrected_v2_20_30_Errors.push_back(v2_error_corrected);
+            
+            data.signal_v2_20_30.push_back(v2_signal);
+            data.signal_v2_20_30_Errors.push_back(v2_error_signal);
+            
+            data.bg_v2_20_30.push_back(v2_bg);
+            data.bg_v2_20_30_Errors.push_back(v2_error_bg);
 
             data.corrected_v2_20_30_type4.push_back(v2_corrected_type4);
             data.corrected_v2_20_30_Errors_type4.push_back(v2_error_corrected_type4);
@@ -147,12 +191,24 @@ void Read_DataSet(const std::string& filePath, Data& data) {
             data.corrected_v2_10_20.push_back(v2_corrected);
             data.corrected_v2_10_20_Errors.push_back(v2_error_corrected);
             
+            data.signal_v2_10_20.push_back(v2_signal);
+            data.signal_v2_10_20_Errors.push_back(v2_error_signal);
+            
+            data.bg_v2_10_20.push_back(v2_bg);
+            data.bg_v2_10_20_Errors.push_back(v2_error_bg);
+            
             data.corrected_v2_10_20_type4.push_back(v2_corrected_type4);
             data.corrected_v2_10_20_Errors_type4.push_back(v2_error_corrected_type4);
 
         } else if (index == 5) { //index 5 is 0-10
             data.corrected_v2_0_10.push_back(v2_corrected);
             data.corrected_v2_0_10_Errors.push_back(v2_error_corrected);
+            
+            data.signal_v2_0_10.push_back(v2_signal);
+            data.signal_v2_0_10_Errors.push_back(v2_error_signal);
+            
+            data.bg_v2_0_10.push_back(v2_bg);
+            data.bg_v2_0_10_Errors.push_back(v2_error_bg);
             
             data.corrected_v2_0_10_type4.push_back(v2_corrected_type4);
             data.corrected_v2_0_10_Errors_type4.push_back(v2_error_corrected_type4);
@@ -1681,7 +1737,7 @@ void plot_BackgroundWindowVariation(Data& data1) {
     // Save the canvas
     Background->SaveAs((SystematicsBasePlotOutput + "/v2_BackgroundWindowVariation_integratedOverPT.png").c_str());
 }
-void plotHijingOverlay(Data& data1, Data& data2, Data& data3) {
+void plotHijingOverlay(Data& data1, Data& data2) {
     // Prepare the graph
     TGraphErrors* graph_1 = new TGraphErrors();
     int pointIndex = 0;
@@ -1702,6 +1758,42 @@ void plotHijingOverlay(Data& data1, Data& data2, Data& data3) {
     errors_1.push_back(&data1.corrected_v2_30_40_Errors);
     errors_1.push_back(&data1.corrected_v2_40_50_Errors);
     errors_1.push_back(&data1.corrected_v2_50_60_Errors);
+    
+    TGraphErrors* graph_1_signal = new TGraphErrors();
+    // Initialize values and errors vector lists
+    std::vector<std::vector<double>*> values_signal_1;
+    values_signal_1.push_back(&data1.signal_v2_0_10);
+    values_signal_1.push_back(&data1.signal_v2_10_20);
+    values_signal_1.push_back(&data1.signal_v2_20_30);
+    values_signal_1.push_back(&data1.signal_v2_30_40);
+    values_signal_1.push_back(&data1.signal_v2_40_50);
+    values_signal_1.push_back(&data1.signal_v2_50_60);
+
+    std::vector<std::vector<double>*> errors_signal_1;
+    errors_signal_1.push_back(&data1.signal_v2_0_10_Errors);
+    errors_signal_1.push_back(&data1.signal_v2_10_20_Errors);
+    errors_signal_1.push_back(&data1.signal_v2_20_30_Errors);
+    errors_signal_1.push_back(&data1.signal_v2_30_40_Errors);
+    errors_signal_1.push_back(&data1.signal_v2_40_50_Errors);
+    errors_signal_1.push_back(&data1.signal_v2_50_60_Errors);
+    
+    TGraphErrors* graph_1_bg = new TGraphErrors();
+    // Initialize values and errors vector lists
+    std::vector<std::vector<double>*> values_bg_1;
+    values_bg_1.push_back(&data1.bg_v2_0_10);
+    values_bg_1.push_back(&data1.bg_v2_10_20);
+    values_bg_1.push_back(&data1.bg_v2_20_30);
+    values_bg_1.push_back(&data1.bg_v2_30_40);
+    values_bg_1.push_back(&data1.bg_v2_40_50);
+    values_bg_1.push_back(&data1.bg_v2_50_60);
+
+    std::vector<std::vector<double>*> errors_bg_1;
+    errors_bg_1.push_back(&data1.bg_v2_0_10_Errors);
+    errors_bg_1.push_back(&data1.bg_v2_10_20_Errors);
+    errors_bg_1.push_back(&data1.bg_v2_20_30_Errors);
+    errors_bg_1.push_back(&data1.bg_v2_30_40_Errors);
+    errors_bg_1.push_back(&data1.bg_v2_40_50_Errors);
+    errors_bg_1.push_back(&data1.bg_v2_50_60_Errors);
 
     
     TGraphErrors* graph_2 = new TGraphErrors();
@@ -1722,37 +1814,21 @@ void plotHijingOverlay(Data& data1, Data& data2, Data& data3) {
     errors_2.push_back(&data2.corrected_v2_40_50_Errors);
     errors_2.push_back(&data2.corrected_v2_50_60_Errors);
     
-    TGraphErrors* graph_3 = new TGraphErrors();
-    // Initialize values and errors vector lists
-    std::vector<std::vector<double>*> values_3;
-    values_3.push_back(&data3.corrected_v2_0_10);
-    values_3.push_back(&data3.corrected_v2_10_20);
-    values_3.push_back(&data3.corrected_v2_20_30);
-    values_3.push_back(&data3.corrected_v2_30_40);
-    values_3.push_back(&data3.corrected_v2_40_50);
-    values_3.push_back(&data3.corrected_v2_50_60);
-
-    std::vector<std::vector<double>*> errors_3;
-    errors_3.push_back(&data3.corrected_v2_0_10_Errors);
-    errors_3.push_back(&data3.corrected_v2_10_20_Errors);
-    errors_3.push_back(&data3.corrected_v2_20_30_Errors);
-    errors_3.push_back(&data3.corrected_v2_30_40_Errors);
-    errors_3.push_back(&data3.corrected_v2_40_50_Errors);
-    errors_3.push_back(&data3.corrected_v2_50_60_Errors);
     
-
-
     // Loop over each centrality range
     for (size_t i = 0; i < centralityCenters.size(); ++i) {
         for (size_t j = 0; j < values_1[i]->size(); ++j) {
-            graph_1->SetPoint(pointIndex, centralityCenters[i] - 0.8, (*values_1[i])[j]);
+            graph_1->SetPoint(pointIndex, centralityCenters[i] - 1.5, (*values_1[i])[j]);
             graph_1->SetPointError(pointIndex, 0, (*errors_1[i])[j]);
             
-            graph_2->SetPoint(pointIndex, centralityCenters[i], (*values_2[i])[j]);
-            graph_2->SetPointError(pointIndex, 0, (*errors_2[i])[j]);
+            graph_1_signal->SetPoint(pointIndex, centralityCenters[i] - 0.5, (*values_signal_1[i])[j]);
+            graph_1_signal->SetPointError(pointIndex, 0, (*errors_signal_1[i])[j]);
             
-            graph_3->SetPoint(pointIndex, centralityCenters[i] + 0.8, (*values_3[i])[j]);
-            graph_3->SetPointError(pointIndex, 0, (*errors_3[i])[j]);
+            graph_1_bg->SetPoint(pointIndex, centralityCenters[i] + 0.5, (*values_bg_1[i])[j]);
+            graph_1_bg->SetPointError(pointIndex, 0, (*errors_bg_1[i])[j]);
+            
+            graph_2->SetPoint(pointIndex, centralityCenters[i] + 1.5, (*values_2[i])[j]);
+            graph_2->SetPointError(pointIndex, 0, (*errors_2[i])[j]);
             
             pointIndex++;
         }
@@ -1760,37 +1836,44 @@ void plotHijingOverlay(Data& data1, Data& data2, Data& data3) {
 
     // Graph properties
     graph_1->SetMarkerStyle(20);
-    graph_1->SetMarkerColor(kBlack);
-    graph_1->SetLineColor(kBlack);
+    graph_1->SetMarkerColor(kBlue);
+    graph_1->SetLineColor(kBlue);
     graph_1->GetXaxis()->SetLimits(0, 60.0);
+    
+    graph_1_signal->SetMarkerStyle(20);
+    graph_1_signal->SetMarkerColor(kViolet);
+    graph_1_signal->SetLineColor(kViolet);
+    graph_1_signal->GetXaxis()->SetLimits(0, 60.0);
 
+    graph_1_bg->SetMarkerStyle(20);
+    graph_1_bg->SetMarkerColor(kCyan+2);
+    graph_1_bg->SetLineColor(kCyan+2);
+    graph_1_bg->GetXaxis()->SetLimits(0, 60.0);
     
     graph_2->SetMarkerStyle(20);
     graph_2->SetMarkerColor(kRed);
     graph_2->SetLineColor(kRed);
-    
-    graph_3->SetMarkerStyle(20);
-    graph_3->SetMarkerColor(kBlue);
-    graph_3->SetLineColor(kBlue);
-    
+
     graph_1->GetYaxis()->SetTitle("v_{2}^{#pi^{0}}");
     graph_1->GetXaxis()->SetTitle("Centrality [%]");
     
     // Create canvas
     TCanvas* Hijing = new TCanvas("Hijing", "Centrality Plot", 800, 600);
     graph_1->Draw("AP");
+    graph_1_signal->Draw("P SAME");
+    graph_1_bg->Draw("P SAME");
     graph_2->Draw("P SAME");
-    graph_3->Draw("P SAME");
     
     // Set Y axis range
-    graph_1->GetYaxis()->SetRangeUser(0, 0.5);
+    graph_1->GetYaxis()->SetRangeUser(0, 0.56);
 
-    TLegend *legend = new TLegend(0.7, 0.18, 0.9, 0.33);
+    TLegend *legend = new TLegend(0.55, 0.18, 0.8, 0.4);
     legend->SetBorderSize(0);
     legend->SetTextSize(0.028);
-    legend->AddEntry(graph_1, "Default", "pe");
-    legend->AddEntry(graph_2, "Observed", "pe");
-    legend->AddEntry(graph_3, "Flow Afterburner", "pe");
+    legend->AddEntry(graph_1, "Reconstructed Diphoton: Corrected", "pe");
+    legend->AddEntry(graph_1_signal, "Reconstructed Diphoton: Measured", "pe");
+    legend->AddEntry(graph_1_bg, "Reconstructed Diphoton: Background", "pe");
+    legend->AddEntry(graph_2, "Truth #pi^{0}'s", "pe");
 
     legend->Draw("SAME");
     
@@ -1805,6 +1888,757 @@ void plotHijingOverlay(Data& data1, Data& data2, Data& data3) {
 
     // Save the canvas
     Hijing->SaveAs("/Users/patsfan753/Desktop/v2_HijingOverly.png");
+}
+void plot_Sample_v2(Data& data1, Data& data2, Data& data3, Data& data4, Data& data5, Data& data6, Data& data7, Data& data8, Data& data9, Data& data10, Data& data11, Data& data12, Data& data13, Data& data14, Data& data15, Data& data16, Data& data17, Data& data18, Data& data19, Data& data20, Data& data21, Data& data22, Data& data23, Data& data24, Data& data25, Data& data26, Data& data27, Data& data28, Data& data29, Data& data30) {
+    // Prepare the graph
+    TGraphErrors* graph_1 = new TGraphErrors();
+    int pointIndex = 0;
+
+    // Initialize values and errors vector lists
+    std::vector<std::vector<double>*> values_1;
+    values_1.push_back(&data1.corrected_v2_0_10);
+    values_1.push_back(&data1.corrected_v2_10_20);
+    values_1.push_back(&data1.corrected_v2_20_30);
+    values_1.push_back(&data1.corrected_v2_30_40);
+    values_1.push_back(&data1.corrected_v2_40_50);
+    values_1.push_back(&data1.corrected_v2_50_60);
+
+    
+    TGraphErrors* graph_2 = new TGraphErrors();
+    // Initialize values and errors vector lists
+    std::vector<std::vector<double>*> values_2;
+    values_2.push_back(&data2.corrected_v2_0_10);
+    values_2.push_back(&data2.corrected_v2_10_20);
+    values_2.push_back(&data2.corrected_v2_20_30);
+    values_2.push_back(&data2.corrected_v2_30_40);
+    values_2.push_back(&data2.corrected_v2_40_50);
+    values_2.push_back(&data2.corrected_v2_50_60);
+    
+    
+    TGraphErrors* graph_3 = new TGraphErrors();
+    // Initialize values and errors vector lists
+    std::vector<std::vector<double>*> values_3;
+    values_3.push_back(&data3.corrected_v2_0_10);
+    values_3.push_back(&data3.corrected_v2_10_20);
+    values_3.push_back(&data3.corrected_v2_20_30);
+    values_3.push_back(&data3.corrected_v2_30_40);
+    values_3.push_back(&data3.corrected_v2_40_50);
+    values_3.push_back(&data3.corrected_v2_50_60);
+    
+    
+    TGraphErrors* graph_4 = new TGraphErrors();
+    // Initialize values and errors vector lists
+    std::vector<std::vector<double>*> values_4;
+    values_4.push_back(&data4.corrected_v2_0_10);
+    values_4.push_back(&data4.corrected_v2_10_20);
+    values_4.push_back(&data4.corrected_v2_20_30);
+    values_4.push_back(&data4.corrected_v2_30_40);
+    values_4.push_back(&data4.corrected_v2_40_50);
+    values_4.push_back(&data4.corrected_v2_50_60);
+    
+    
+    TGraphErrors* graph_5 = new TGraphErrors();
+    // Initialize values and errors vector lists
+    std::vector<std::vector<double>*> values_5;
+    values_5.push_back(&data5.corrected_v2_0_10);
+    values_5.push_back(&data5.corrected_v2_10_20);
+    values_5.push_back(&data5.corrected_v2_20_30);
+    values_5.push_back(&data5.corrected_v2_30_40);
+    values_5.push_back(&data5.corrected_v2_40_50);
+    values_5.push_back(&data5.corrected_v2_50_60);
+    
+    
+    TGraphErrors* graph_6 = new TGraphErrors();
+    // Initialize values and errors vector lists
+    std::vector<std::vector<double>*> values_6;
+    values_6.push_back(&data6.corrected_v2_0_10);
+    values_6.push_back(&data6.corrected_v2_10_20);
+    values_6.push_back(&data6.corrected_v2_20_30);
+    values_6.push_back(&data6.corrected_v2_30_40);
+    values_6.push_back(&data6.corrected_v2_40_50);
+    values_6.push_back(&data6.corrected_v2_50_60);
+    
+    
+    TGraphErrors* graph_7 = new TGraphErrors();
+    // Initialize values and errors vector lists
+    std::vector<std::vector<double>*> values_7;
+    values_7.push_back(&data7.corrected_v2_0_10);
+    values_7.push_back(&data7.corrected_v2_10_20);
+    values_7.push_back(&data7.corrected_v2_20_30);
+    values_7.push_back(&data7.corrected_v2_30_40);
+    values_7.push_back(&data7.corrected_v2_40_50);
+    values_7.push_back(&data7.corrected_v2_50_60);
+    
+    TGraphErrors* graph_8 = new TGraphErrors();
+    // Initialize values and errors vector lists
+    std::vector<std::vector<double>*> values_8;
+    values_8.push_back(&data8.corrected_v2_0_10);
+    values_8.push_back(&data8.corrected_v2_10_20);
+    values_8.push_back(&data8.corrected_v2_20_30);
+    values_8.push_back(&data8.corrected_v2_30_40);
+    values_8.push_back(&data8.corrected_v2_40_50);
+    values_8.push_back(&data8.corrected_v2_50_60);
+
+    
+    TGraphErrors* graph_9 = new TGraphErrors();
+    // Initialize values and errors vector lists
+    std::vector<std::vector<double>*> values_9;
+    values_9.push_back(&data9.corrected_v2_0_10);
+    values_9.push_back(&data9.corrected_v2_10_20);
+    values_9.push_back(&data9.corrected_v2_20_30);
+    values_9.push_back(&data9.corrected_v2_30_40);
+    values_9.push_back(&data9.corrected_v2_40_50);
+    values_9.push_back(&data9.corrected_v2_50_60);
+    
+    TGraphErrors* graph_10 = new TGraphErrors();
+    // Initialize values and errors vector lists
+    std::vector<std::vector<double>*> values_10;
+    values_10.push_back(&data10.corrected_v2_0_10);
+    values_10.push_back(&data10.corrected_v2_10_20);
+    values_10.push_back(&data10.corrected_v2_20_30);
+    values_10.push_back(&data10.corrected_v2_30_40);
+    values_10.push_back(&data10.corrected_v2_40_50);
+    values_10.push_back(&data10.corrected_v2_50_60);
+    
+    
+    TGraphErrors* graph_11 = new TGraphErrors();
+    std::vector<std::vector<double>*> values_11;
+    values_11.push_back(&data11.corrected_v2_0_10);
+    values_11.push_back(&data11.corrected_v2_10_20);
+    values_11.push_back(&data11.corrected_v2_20_30);
+    values_11.push_back(&data11.corrected_v2_30_40);
+    values_11.push_back(&data11.corrected_v2_40_50);
+    values_11.push_back(&data11.corrected_v2_50_60);
+    
+    TGraphErrors* graph_12 = new TGraphErrors();
+    std::vector<std::vector<double>*> values_12;
+    values_12.push_back(&data12.corrected_v2_0_10);
+    values_12.push_back(&data12.corrected_v2_10_20);
+    values_12.push_back(&data12.corrected_v2_20_30);
+    values_12.push_back(&data12.corrected_v2_30_40);
+    values_12.push_back(&data12.corrected_v2_40_50);
+    values_12.push_back(&data12.corrected_v2_50_60);
+    
+    
+    TGraphErrors* graph_13 = new TGraphErrors();
+    // Initialize values and errors vector lists
+    std::vector<std::vector<double>*> values_13;
+    values_13.push_back(&data13.corrected_v2_0_10);
+    values_13.push_back(&data13.corrected_v2_10_20);
+    values_13.push_back(&data13.corrected_v2_20_30);
+    values_13.push_back(&data13.corrected_v2_30_40);
+    values_13.push_back(&data13.corrected_v2_40_50);
+    values_13.push_back(&data13.corrected_v2_50_60);
+    
+    TGraphErrors* graph_14 = new TGraphErrors();
+    // Initialize values and errors vector lists
+    std::vector<std::vector<double>*> values_14;
+    values_14.push_back(&data14.corrected_v2_0_10);
+    values_14.push_back(&data14.corrected_v2_10_20);
+    values_14.push_back(&data14.corrected_v2_20_30);
+    values_14.push_back(&data14.corrected_v2_30_40);
+    values_14.push_back(&data14.corrected_v2_40_50);
+    values_14.push_back(&data14.corrected_v2_50_60);
+    
+    
+    TGraphErrors* graph_15 = new TGraphErrors();
+    // Initialize values and errors vector lists
+    std::vector<std::vector<double>*> values_15;
+    values_15.push_back(&data15.corrected_v2_0_10);
+    values_15.push_back(&data15.corrected_v2_10_20);
+    values_15.push_back(&data15.corrected_v2_20_30);
+    values_15.push_back(&data15.corrected_v2_30_40);
+    values_15.push_back(&data15.corrected_v2_40_50);
+    values_15.push_back(&data15.corrected_v2_50_60);
+    
+    
+    TGraphErrors* graph_16 = new TGraphErrors();
+    // Initialize values and errors vector lists
+    std::vector<std::vector<double>*> values_16;
+    values_16.push_back(&data16.corrected_v2_0_10);
+    values_16.push_back(&data16.corrected_v2_10_20);
+    values_16.push_back(&data16.corrected_v2_20_30);
+    values_16.push_back(&data16.corrected_v2_30_40);
+    values_16.push_back(&data16.corrected_v2_40_50);
+    values_16.push_back(&data16.corrected_v2_50_60);
+
+    
+    TGraphErrors* graph_17 = new TGraphErrors();
+    // Initialize values and errors vector lists
+    std::vector<std::vector<double>*> values_17;
+    values_17.push_back(&data17.corrected_v2_0_10);
+    values_17.push_back(&data17.corrected_v2_10_20);
+    values_17.push_back(&data17.corrected_v2_20_30);
+    values_17.push_back(&data17.corrected_v2_30_40);
+    values_17.push_back(&data17.corrected_v2_40_50);
+    values_17.push_back(&data17.corrected_v2_50_60);
+    
+    
+    TGraphErrors* graph_18 = new TGraphErrors();
+    // Initialize values and errors vector lists
+    std::vector<std::vector<double>*> values_18;
+    values_18.push_back(&data18.corrected_v2_0_10);
+    values_18.push_back(&data18.corrected_v2_10_20);
+    values_18.push_back(&data18.corrected_v2_20_30);
+    values_18.push_back(&data18.corrected_v2_30_40);
+    values_18.push_back(&data18.corrected_v2_40_50);
+    values_18.push_back(&data18.corrected_v2_50_60);
+
+    
+    TGraphErrors* graph_19 = new TGraphErrors();
+    // Initialize values and errors vector lists
+    std::vector<std::vector<double>*> values_19;
+    values_19.push_back(&data19.corrected_v2_0_10);
+    values_19.push_back(&data19.corrected_v2_10_20);
+    values_19.push_back(&data19.corrected_v2_20_30);
+    values_19.push_back(&data19.corrected_v2_30_40);
+    values_19.push_back(&data19.corrected_v2_40_50);
+    values_19.push_back(&data19.corrected_v2_50_60);
+    
+    TGraphErrors* graph_20 = new TGraphErrors();
+    // Initialize values and errors vector lists
+    std::vector<std::vector<double>*> values_20;
+    values_20.push_back(&data20.corrected_v2_0_10);
+    values_20.push_back(&data20.corrected_v2_10_20);
+    values_20.push_back(&data20.corrected_v2_20_30);
+    values_20.push_back(&data20.corrected_v2_30_40);
+    values_20.push_back(&data20.corrected_v2_40_50);
+    values_20.push_back(&data20.corrected_v2_50_60);
+    
+    
+    TGraphErrors* graph_21 = new TGraphErrors();
+    // Initialize values and errors vector lists
+    std::vector<std::vector<double>*> values_21;
+    values_21.push_back(&data21.corrected_v2_0_10);
+    values_21.push_back(&data21.corrected_v2_10_20);
+    values_21.push_back(&data21.corrected_v2_20_30);
+    values_21.push_back(&data21.corrected_v2_30_40);
+    values_21.push_back(&data21.corrected_v2_40_50);
+    values_21.push_back(&data21.corrected_v2_50_60);
+    
+    TGraphErrors* graph_22 = new TGraphErrors();
+    // Initialize values and errors vector lists
+    std::vector<std::vector<double>*> values_22;
+    values_22.push_back(&data22.corrected_v2_0_10);
+    values_22.push_back(&data22.corrected_v2_10_20);
+    values_22.push_back(&data22.corrected_v2_20_30);
+    values_22.push_back(&data22.corrected_v2_30_40);
+    values_22.push_back(&data22.corrected_v2_40_50);
+    values_22.push_back(&data22.corrected_v2_50_60);
+    
+    
+    TGraphErrors* graph_23 = new TGraphErrors();
+    // Initialize values and errors vector lists
+    std::vector<std::vector<double>*> values_23;
+    values_23.push_back(&data23.corrected_v2_0_10);
+    values_23.push_back(&data23.corrected_v2_10_20);
+    values_23.push_back(&data23.corrected_v2_20_30);
+    values_23.push_back(&data23.corrected_v2_30_40);
+    values_23.push_back(&data23.corrected_v2_40_50);
+    values_23.push_back(&data23.corrected_v2_50_60);
+    
+    TGraphErrors* graph_24 = new TGraphErrors();
+    // Initialize values and errors vector lists
+    std::vector<std::vector<double>*> values_24;
+    values_24.push_back(&data24.corrected_v2_0_10);
+    values_24.push_back(&data24.corrected_v2_10_20);
+    values_24.push_back(&data24.corrected_v2_20_30);
+    values_24.push_back(&data24.corrected_v2_30_40);
+    values_24.push_back(&data24.corrected_v2_40_50);
+    values_24.push_back(&data24.corrected_v2_50_60);
+    
+    
+    TGraphErrors* graph_25 = new TGraphErrors();
+    // Initialize values and errors vector lists
+    std::vector<std::vector<double>*> values_25;
+    values_25.push_back(&data25.corrected_v2_0_10);
+    values_25.push_back(&data25.corrected_v2_10_20);
+    values_25.push_back(&data25.corrected_v2_20_30);
+    values_25.push_back(&data25.corrected_v2_30_40);
+    values_25.push_back(&data25.corrected_v2_40_50);
+    values_25.push_back(&data25.corrected_v2_50_60);
+    
+    TGraphErrors* graph_26 = new TGraphErrors();
+    // Initialize values and errors vector lists
+    std::vector<std::vector<double>*> values_26;
+    values_26.push_back(&data26.corrected_v2_0_10);
+    values_26.push_back(&data26.corrected_v2_10_20);
+    values_26.push_back(&data26.corrected_v2_20_30);
+    values_26.push_back(&data26.corrected_v2_30_40);
+    values_26.push_back(&data26.corrected_v2_40_50);
+    values_26.push_back(&data26.corrected_v2_50_60);
+    
+    
+    TGraphErrors* graph_27 = new TGraphErrors();
+    // Initialize values and errors vector lists
+    std::vector<std::vector<double>*> values_27;
+    values_27.push_back(&data27.corrected_v2_0_10);
+    values_27.push_back(&data27.corrected_v2_10_20);
+    values_27.push_back(&data27.corrected_v2_20_30);
+    values_27.push_back(&data27.corrected_v2_30_40);
+    values_27.push_back(&data27.corrected_v2_40_50);
+    values_27.push_back(&data27.corrected_v2_50_60);
+    
+    TGraphErrors* graph_28 = new TGraphErrors();
+    // Initialize values and errors vector lists
+    std::vector<std::vector<double>*> values_28;
+    values_28.push_back(&data28.corrected_v2_0_10);
+    values_28.push_back(&data28.corrected_v2_10_20);
+    values_28.push_back(&data28.corrected_v2_20_30);
+    values_28.push_back(&data28.corrected_v2_30_40);
+    values_28.push_back(&data28.corrected_v2_40_50);
+    values_28.push_back(&data28.corrected_v2_50_60);
+    
+    TGraphErrors* graph_29 = new TGraphErrors();
+    // Initialize values and errors vector lists
+    std::vector<std::vector<double>*> values_29;
+    values_29.push_back(&data29.corrected_v2_0_10);
+    values_29.push_back(&data29.corrected_v2_10_20);
+    values_29.push_back(&data29.corrected_v2_20_30);
+    values_29.push_back(&data29.corrected_v2_30_40);
+    values_29.push_back(&data29.corrected_v2_40_50);
+    values_29.push_back(&data29.corrected_v2_50_60);
+
+    
+    TGraphErrors* graph_30 = new TGraphErrors();
+    // Initialize values and errors vector lists
+    std::vector<std::vector<double>*> values_30;
+    values_30.push_back(&data30.corrected_v2_0_10);
+    values_30.push_back(&data30.corrected_v2_10_20);
+    values_30.push_back(&data30.corrected_v2_20_30);
+    values_30.push_back(&data30.corrected_v2_30_40);
+    values_30.push_back(&data30.corrected_v2_40_50);
+    values_30.push_back(&data30.corrected_v2_50_60);
+    
+    std::vector<std::vector<double>*> allValues;
+    allValues.insert(allValues.end(), values_1.begin(), values_1.end());
+    allValues.insert(allValues.end(), values_2.begin(), values_2.end());
+    allValues.insert(allValues.end(), values_3.begin(), values_3.end());
+    allValues.insert(allValues.end(), values_4.begin(), values_4.end());
+    allValues.insert(allValues.end(), values_5.begin(), values_5.end());
+    allValues.insert(allValues.end(), values_6.begin(), values_6.end());
+    allValues.insert(allValues.end(), values_7.begin(), values_7.end());
+    allValues.insert(allValues.end(), values_8.begin(), values_8.end());
+    allValues.insert(allValues.end(), values_9.begin(), values_9.end());
+    allValues.insert(allValues.end(), values_10.begin(), values_10.end());
+    allValues.insert(allValues.end(), values_11.begin(), values_11.end());
+    allValues.insert(allValues.end(), values_12.begin(), values_12.end());
+    allValues.insert(allValues.end(), values_13.begin(), values_13.end());
+    allValues.insert(allValues.end(), values_14.begin(), values_14.end());
+    allValues.insert(allValues.end(), values_15.begin(), values_15.end());
+    allValues.insert(allValues.end(), values_16.begin(), values_16.end());
+    allValues.insert(allValues.end(), values_17.begin(), values_17.end());
+    allValues.insert(allValues.end(), values_18.begin(), values_18.end());
+    allValues.insert(allValues.end(), values_19.begin(), values_19.end());
+    allValues.insert(allValues.end(), values_20.begin(), values_20.end());
+    allValues.insert(allValues.end(), values_21.begin(), values_21.end());
+    allValues.insert(allValues.end(), values_22.begin(), values_22.end());
+    allValues.insert(allValues.end(), values_23.begin(), values_23.end());
+    allValues.insert(allValues.end(), values_24.begin(), values_24.end());
+    allValues.insert(allValues.end(), values_25.begin(), values_25.end());
+    allValues.insert(allValues.end(), values_26.begin(), values_26.end());
+    allValues.insert(allValues.end(), values_27.begin(), values_27.end());
+    allValues.insert(allValues.end(), values_28.begin(), values_28.end());
+    allValues.insert(allValues.end(), values_29.begin(), values_29.end());
+    allValues.insert(allValues.end(), values_30.begin(), values_30.end());
+
+    
+    TCanvas *c_violin = new TCanvas("c_violin", "Violin Plot of v2 vs Centrality", 800, 600);
+
+    // Define the dimensions of the histogram
+    Int_t nx = centralityCenters.size();  // number of centrality bins
+    Double_t xmin = 0.0, xmax = 60.0;     // range of x-axis (0% to 60% centrality)
+    Int_t ny = 1000;                      // granularity on y-axis
+    Double_t ymin = -1.5, ymax = 1.5;     // range of y-axis for v2 values
+
+    // Create a 2D histogram for the violin plot
+    TH2F* hviolin = new TH2F("hviolin", "v2 vs Centrality;Centrality [%];v_{2}^{#pi^{0}}", nx, xmin, xmax, ny, ymin, ymax);
+
+
+    for (int i = 0; i < nx; ++i) {
+        int datasetIndex = i % 6;  // There are 6 bins per dataset
+        for (size_t j = 0; j < allValues.size(); j += 6) {  // Skip every 6 to get the correct dataset
+            std::vector<double>* values = allValues[j + datasetIndex];
+            for (double v : *values) {
+                hviolin->Fill(centralityCenters[i], v);
+            }
+        }
+    }
+    
+    hviolin->SetOption("VIOLIN");
+    hviolin->SetFillColorAlpha(kGray+1, 0.5);
+    hviolin->SetLineWidth(2);
+    hviolin->SetLineColor(kBlack);
+    hviolin->SetStats(0);
+    hviolin->Draw("VIOLIN SAME");
+
+    c_violin->SaveAs("/Users/patsfan753/Desktop/v2_Sample_Violin.png");
+
+    TCanvas *candleCanvas = new TCanvas("candleCanvas", "Candle Plot of v2 vs Centrality", 800, 600);
+    candleCanvas->Divide(1, 1);
+    candleCanvas->cd(1);
+
+    TH2F *hCandle = new TH2F("hCandle", "Candle Plot of v2 vs Centrality;Centrality [%];v_{2}^{#pi^{0}}",
+                             6, 0, 60, 100, -1.5, 1.5);
+
+    for (int i = 0; i < nx; ++i) {
+        int datasetIndex = i % 6;  // There are 6 bins per dataset
+        for (size_t j = 0; j < allValues.size(); j += 6) {  // Skip every 6 to get the correct dataset
+            std::vector<double>* values = allValues[j + datasetIndex];
+            for (double v : *values) {
+                if (centralityCenters[i] >= 0 && centralityCenters[i] <= 60) {
+                    hCandle->Fill(centralityCenters[i], v);
+                }
+            }
+        }
+    }
+    // Loop over each centrality range
+    for (size_t i = 0; i < centralityCenters.size(); ++i) {
+        for (size_t j = 0; j < values_1[i]->size(); ++j) {
+            graph_1->SetPoint(pointIndex, centralityCenters[i], (*values_1[i])[j]);
+            graph_1->SetPointError(pointIndex, 0, 0);
+            
+            graph_1->GetYaxis()->SetRangeUser(-1.4, 1.1);
+            graph_1->GetXaxis()->SetRangeUser(0, 60);
+        
+            graph_2->SetPoint(pointIndex, centralityCenters[i], (*values_2[i])[j]);
+            graph_2->SetPointError(pointIndex, 0, 0);
+            
+            graph_3->SetPoint(pointIndex, centralityCenters[i], (*values_3[i])[j]);
+            graph_3->SetPointError(pointIndex, 0, 0);
+            
+            graph_4->SetPoint(pointIndex, centralityCenters[i], (*values_4[i])[j]);
+            graph_4->SetPointError(pointIndex, 0, 0);
+            
+            graph_5->SetPoint(pointIndex, centralityCenters[i], (*values_5[i])[j]);
+            graph_5->SetPointError(pointIndex, 0, 0);
+            
+            graph_6->SetPoint(pointIndex, centralityCenters[i], (*values_6[i])[j]);
+            graph_6->SetPointError(pointIndex, 0, 0);
+            
+            graph_7->SetPoint(pointIndex, centralityCenters[i], (*values_7[i])[j]);
+            graph_7->SetPointError(pointIndex, 0, 0);
+            
+            graph_8->SetPoint(pointIndex, centralityCenters[i], (*values_8[i])[j]);
+            graph_8->SetPointError(pointIndex, 0, 0);
+            
+            graph_9->SetPoint(pointIndex, centralityCenters[i], (*values_9[i])[j]);
+            graph_9->SetPointError(pointIndex, 0, 0);
+            
+            graph_10->SetPoint(pointIndex, centralityCenters[i], (*values_10[i])[j]);
+            graph_10->SetPointError(pointIndex, 0, 0);
+            
+            graph_11->SetPoint(pointIndex, centralityCenters[i], (*values_11[i])[j]);
+            graph_11->SetPointError(pointIndex, 0, 0);
+            
+            graph_12->SetPoint(pointIndex, centralityCenters[i], (*values_12[i])[j]);
+            graph_12->SetPointError(pointIndex, 0, 0);
+            
+            graph_13->SetPoint(pointIndex, centralityCenters[i], (*values_13[i])[j]);
+            graph_13->SetPointError(pointIndex, 0, 0);
+            
+            graph_14->SetPoint(pointIndex, centralityCenters[i], (*values_14[i])[j]);
+            graph_14->SetPointError(pointIndex, 0, 0);
+            
+            graph_15->SetPoint(pointIndex, centralityCenters[i], (*values_15[i])[j]);
+            graph_15->SetPointError(pointIndex, 0, 0);
+            
+            graph_16->SetPoint(pointIndex, centralityCenters[i], (*values_16[i])[j]);
+            graph_16->SetPointError(pointIndex, 0, 0);
+            
+            graph_17->SetPoint(pointIndex, centralityCenters[i], (*values_17[i])[j]);
+            graph_17->SetPointError(pointIndex, 0, 0);
+            
+            graph_18->SetPoint(pointIndex, centralityCenters[i], (*values_18[i])[j]);
+            graph_18->SetPointError(pointIndex, 0, 0);
+            
+            graph_19->SetPoint(pointIndex, centralityCenters[i], (*values_19[i])[j]);
+            graph_19->SetPointError(pointIndex, 0, 0);
+            
+            graph_20->SetPoint(pointIndex, centralityCenters[i], (*values_20[i])[j]);
+            graph_20->SetPointError(pointIndex, 0, 0);
+            
+            graph_21->SetPoint(pointIndex, centralityCenters[i], (*values_21[i])[j]);
+            graph_21->SetPointError(pointIndex, 0, 0);
+            
+            graph_22->SetPoint(pointIndex, centralityCenters[i], (*values_22[i])[j]);
+            graph_22->SetPointError(pointIndex, 0, 0);
+            
+            graph_23->SetPoint(pointIndex, centralityCenters[i], (*values_23[i])[j]);
+            graph_23->SetPointError(pointIndex, 0, 0);
+            
+            graph_24->SetPoint(pointIndex, centralityCenters[i], (*values_24[i])[j]);
+            graph_24->SetPointError(pointIndex, 0, 0);
+            
+            graph_25->SetPoint(pointIndex, centralityCenters[i], (*values_25[i])[j]);
+            graph_25->SetPointError(pointIndex, 0, 0);
+            
+            graph_26->SetPoint(pointIndex, centralityCenters[i], (*values_26[i])[j]);
+            graph_26->SetPointError(pointIndex, 0, 0);
+            
+            graph_27->SetPoint(pointIndex, centralityCenters[i], (*values_27[i])[j]);
+            graph_27->SetPointError(pointIndex, 0, 0);
+            
+            graph_28->SetPoint(pointIndex, centralityCenters[i], (*values_28[i])[j]);
+            graph_28->SetPointError(pointIndex, 0, 0);
+            
+            graph_29->SetPoint(pointIndex, centralityCenters[i], (*values_29[i])[j]);
+            graph_29->SetPointError(pointIndex, 0, 0);
+            
+            graph_30->SetPoint(pointIndex, centralityCenters[i], (*values_30[i])[j]);
+            graph_30->SetPointError(pointIndex, 0, 0);
+            
+            pointIndex++;
+        }
+    }
+    // This function will handle the printing of values
+    auto printSortedValues = [](const std::vector<std::vector<double>*>& values, const std::string& label) {
+        std::cout << "Data for " << label << ":\n";
+        std::cout << "Bin\tValue\n";
+        for (size_t i = 0; i < values.size(); ++i) {
+            // Sorting the values in each bin
+            std::vector<double> sortedValues = *values[i];  // Make a copy of the values
+            std::sort(sortedValues.begin(), sortedValues.end());  // Sort the values
+            // Print each value
+            for (double value : sortedValues) {
+                std::cout << std::fixed << std::setprecision(2) << i << "\t" << value << "\n";
+            }
+        }
+        std::cout << "\n";  // Extra newline for better separation
+    };
+    printSortedValues(values_1, "Sample 1");
+    printSortedValues(values_2, "Sample 2");
+    printSortedValues(values_3, "Sample 3");
+    printSortedValues(values_4, "Sample 4");
+    printSortedValues(values_5, "Sample 5");
+    printSortedValues(values_6, "Sample 6");
+    printSortedValues(values_7, "Sample 7");
+    printSortedValues(values_8, "Sample 8");
+    printSortedValues(values_9, "Sample 9");
+    printSortedValues(values_10, "Sample 10");
+    printSortedValues(values_11, "Sample 11");
+    printSortedValues(values_12, "Sample 12");
+    printSortedValues(values_13, "Sample 13");
+    printSortedValues(values_14, "Sample 14");
+    printSortedValues(values_15, "Sample 15");
+    printSortedValues(values_16, "Sample 16");
+    printSortedValues(values_17, "Sample 17");
+    printSortedValues(values_18, "Sample 18");
+    printSortedValues(values_19, "Sample 19");
+    printSortedValues(values_20, "Sample 20");
+    printSortedValues(values_21, "Sample 21");
+    printSortedValues(values_22, "Sample 22");
+    printSortedValues(values_23, "Sample 23");
+    printSortedValues(values_24, "Sample 24");
+    printSortedValues(values_25, "Sample 25");
+    printSortedValues(values_26, "Sample 26");
+    printSortedValues(values_27, "Sample 27");
+    printSortedValues(values_28, "Sample 28");
+    printSortedValues(values_29, "Sample 29");
+    printSortedValues(values_30, "Sample 30");
+
+    graph_1->SetMarkerStyle(20);
+    graph_1->SetMarkerColor(kBlack);
+    graph_1->SetLineColor(kBlack);
+
+    graph_2->SetMarkerStyle(20);
+    graph_2->SetMarkerColor(kBlack);
+    graph_2->SetLineColor(kBlack);
+
+    graph_3->SetMarkerStyle(20);
+    graph_3->SetMarkerColor(kBlack);
+    graph_3->SetLineColor(kBlack);
+
+    graph_4->SetMarkerStyle(20);
+    graph_4->SetMarkerColor(kBlack);
+    graph_4->SetLineColor(kBlack);
+
+    graph_5->SetMarkerStyle(20);
+    graph_5->SetMarkerColor(kBlack);
+    graph_5->SetLineColor(kBlack);
+
+    graph_6->SetMarkerStyle(20);
+    graph_6->SetMarkerColor(kBlack);
+    graph_6->SetLineColor(kBlack);
+
+    graph_7->SetMarkerStyle(20);
+    graph_7->SetMarkerColor(kBlack);
+    graph_7->SetLineColor(kBlack);
+
+    graph_8->SetMarkerStyle(20);
+    graph_8->SetMarkerColor(kBlack);
+    graph_8->SetLineColor(kBlack);
+
+    graph_9->SetMarkerStyle(20);
+    graph_9->SetMarkerColor(kBlack);
+    graph_9->SetLineColor(kBlack);
+
+    graph_10->SetMarkerStyle(20);
+    graph_10->SetMarkerColor(kBlack);
+    graph_10->SetLineColor(kBlack);
+
+    graph_11->SetMarkerStyle(20);
+    graph_11->SetMarkerColor(kBlack);
+    graph_11->SetLineColor(kBlack);
+
+    graph_12->SetMarkerStyle(20);
+    graph_12->SetMarkerColor(kBlack);
+    graph_12->SetLineColor(kBlack);
+
+    graph_13->SetMarkerStyle(20);
+    graph_13->SetMarkerColor(kBlack);
+    graph_13->SetLineColor(kBlack);
+
+    graph_14->SetMarkerStyle(20);
+    graph_14->SetMarkerColor(kBlack);
+    graph_14->SetLineColor(kBlack);
+
+    graph_15->SetMarkerStyle(20);
+    graph_15->SetMarkerColor(kBlack);
+    graph_15->SetLineColor(kBlack);
+
+    graph_16->SetMarkerStyle(20);
+    graph_16->SetMarkerColor(kBlack);
+    graph_16->SetLineColor(kBlack);
+
+    graph_17->SetMarkerStyle(20);
+    graph_17->SetMarkerColor(kBlack);
+    graph_17->SetLineColor(kBlack);
+
+    graph_18->SetMarkerStyle(20);
+    graph_18->SetMarkerColor(kBlack);
+    graph_18->SetLineColor(kBlack);
+
+    graph_19->SetMarkerStyle(20);
+    graph_19->SetMarkerColor(kBlack);
+    graph_19->SetLineColor(kBlack);
+
+    graph_20->SetMarkerStyle(20);
+    graph_20->SetMarkerColor(kBlack);
+    graph_20->SetLineColor(kBlack);
+
+    graph_21->SetMarkerStyle(20);
+    graph_21->SetMarkerColor(kBlack);
+    graph_21->SetLineColor(kBlack);
+
+    graph_22->SetMarkerStyle(20);
+    graph_22->SetMarkerColor(kBlack);
+    graph_22->SetLineColor(kBlack);
+
+    graph_23->SetMarkerStyle(20);
+    graph_23->SetMarkerColor(kBlack);
+    graph_23->SetLineColor(kBlack);
+
+    graph_24->SetMarkerStyle(20);
+    graph_24->SetMarkerColor(kBlack);
+    graph_24->SetLineColor(kBlack);
+
+    graph_25->SetMarkerStyle(20);
+    graph_25->SetMarkerColor(kBlack);
+    graph_25->SetLineColor(kBlack);
+
+    graph_26->SetMarkerStyle(20);
+    graph_26->SetMarkerColor(kBlack);
+    graph_26->SetLineColor(kBlack);
+
+    graph_27->SetMarkerStyle(20);
+    graph_27->SetMarkerColor(kBlack);
+    graph_27->SetLineColor(kBlack);
+
+    graph_28->SetMarkerStyle(20);
+    graph_28->SetMarkerColor(kBlack);
+    graph_28->SetLineColor(kBlack);
+
+    graph_29->SetMarkerStyle(20);
+    graph_29->SetMarkerColor(kBlack);
+    graph_29->SetLineColor(kBlack);
+
+    graph_30->SetMarkerStyle(20);
+    graph_30->SetMarkerColor(kBlack);
+    graph_30->SetLineColor(kBlack);
+
+    
+    graph_1->SetMarkerSize(0.8);
+    graph_2->SetMarkerSize(0.8);
+    graph_3->SetMarkerSize(0.8);
+    graph_4->SetMarkerSize(0.8);
+    graph_5->SetMarkerSize(0.8);
+    graph_6->SetMarkerSize(0.8);
+    graph_7->SetMarkerSize(0.8);
+    graph_8->SetMarkerSize(0.8);
+    graph_9->SetMarkerSize(0.8);
+    graph_10->SetMarkerSize(0.8);
+    graph_11->SetMarkerSize(0.8);
+    graph_12->SetMarkerSize(0.8);
+    graph_13->SetMarkerSize(0.8);
+    graph_14->SetMarkerSize(0.8);
+    graph_15->SetMarkerSize(0.8);
+    graph_16->SetMarkerSize(0.8);
+    graph_17->SetMarkerSize(0.8);
+    graph_18->SetMarkerSize(0.8);
+    graph_19->SetMarkerSize(0.8);
+    graph_20->SetMarkerSize(0.8);
+    graph_21->SetMarkerSize(0.8);
+    graph_22->SetMarkerSize(0.8);
+    graph_23->SetMarkerSize(0.8);
+    graph_24->SetMarkerSize(0.8);
+    graph_25->SetMarkerSize(0.8);
+    graph_26->SetMarkerSize(0.8);
+    graph_27->SetMarkerSize(0.8);
+    graph_28->SetMarkerSize(0.8);
+    graph_29->SetMarkerSize(0.8);
+    graph_30->SetMarkerSize(0.8);
+
+    
+    graph_1->GetYaxis()->SetTitle("v_{2}^{#pi^{0}}");
+    graph_1->GetXaxis()->SetTitle("Centrality [%]");
+    graph_1->GetXaxis()->SetLimits(0, 60);
+    
+    // Create canvas
+    TCanvas* canvas = new TCanvas("c1", "Centrality Plot", 800, 600);
+    hCandle->Draw("CANDLEX2");
+    graph_1->Draw("P SAME");
+    graph_2->Draw("P SAME");
+    graph_3->Draw("P SAME");
+    graph_4->Draw("P SAME");
+    graph_5->Draw("P SAME");
+    graph_6->Draw("P SAME");
+    graph_7->Draw("P SAME");
+    graph_8->Draw("P SAME");
+    graph_9->Draw("P SAME");
+    graph_10->Draw("P SAME");
+    graph_11->Draw("P SAME");
+    graph_12->Draw("P SAME");
+    graph_13->Draw("P SAME");
+    graph_14->Draw("P SAME");
+    graph_15->Draw("P SAME");
+    graph_16->Draw("P SAME");
+    graph_17->Draw("P SAME");
+    graph_18->Draw("P SAME");
+    graph_19->Draw("P SAME");
+    graph_20->Draw("P SAME");
+    graph_21->Draw("P SAME");
+    graph_22->Draw("P SAME");
+    graph_23->Draw("P SAME");
+    graph_24->Draw("P SAME");
+    graph_25->Draw("P SAME");
+    graph_26->Draw("P SAME");
+    graph_27->Draw("P SAME");
+    graph_28->Draw("P SAME");
+    graph_29->Draw("P SAME");
+    graph_30->Draw("P SAME");
+
+    canvas->Update();
+
+    // Draw zero line
+    double x_min = canvas->GetUxmin();
+    double x_max = canvas->GetUxmax();
+    TLine* zeroLine = new TLine(x_min, 0, x_max, 0);
+    zeroLine->SetLineStyle(2);
+    zeroLine->Draw("SAME");
+
+    // Save the canvas
+    canvas->SaveAs("/Users/patsfan753/Desktop/v2_Sample_Overlay_sameColor.png");
 }
 void FinalizeResults_IntegratedPT() {
     gROOT->LoadMacro("sPhenixStyle.C");
@@ -1849,9 +2683,80 @@ void FinalizeResults_IntegratedPT() {
     plot_BackgroundWindowVariation(defaultData);
     
     Data HijingData, flowAfterBurner;
-    std::string HijingDataPath = "/Users/patsfan753/Desktop/p015/MonteCarlo/Integrated_OverPT/p015/vN-CSV-files/vn-anaType-1-hijing-0-20fm.csv";
-    std::string FlowAfterBurnerPath = "/Users/patsfan753/Desktop/p015/MonteCarlo/Integrated_OverPT/p015/vN-CSV-files/FlowAfterBurner.csv";
+    std::string HijingDataPath = "/Users/patsfan753/Desktop/p015/MonteCarlo/Integrated_OverPT/p015/vN-CSV-files/ReconstructedDiphotons/vn.csv";
+    std::string FlowAfterBurnerPath = "/Users/patsfan753/Desktop/p015/MonteCarlo/Integrated_OverPT/p015/vN-CSV-files/TruthPi0/TruthPi0.csv";
     Read_DataSet(HijingDataPath, HijingData);
     Read_DataSet(FlowAfterBurnerPath, flowAfterBurner);
-    plotHijingOverlay(defaultData, HijingData, flowAfterBurner);
+    plotHijingOverlay(HijingData, flowAfterBurner);
+        
+    Data sample1, sample2, sample3, sample4, sample5, sample6, sample7, sample8, sample9, sample10,
+         sample11, sample12, sample13, sample14, sample15, sample16, sample17, sample18, sample19, sample20,
+         sample21, sample22, sample23, sample24, sample25, sample26, sample27, sample28, sample29, sample30;
+
+    std::string samplePath1 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_0.csv";
+    std::string samplePath2 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_1.csv";
+    std::string samplePath3 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_2.csv";
+    std::string samplePath4 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_3.csv";
+    std::string samplePath5 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_4.csv";
+    std::string samplePath6 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_5.csv";
+    std::string samplePath7 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_6.csv";
+    std::string samplePath8 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_7.csv";
+    std::string samplePath9 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_8.csv";
+    std::string samplePath10 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_9.csv";
+    std::string samplePath11 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_10.csv";
+    std::string samplePath12 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_11.csv";
+    std::string samplePath13 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_12.csv";
+    std::string samplePath14 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_13.csv";
+    std::string samplePath15 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_14.csv";
+    std::string samplePath16 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_15.csv";
+    std::string samplePath17 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_16.csv";
+    std::string samplePath18 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_17.csv";
+    std::string samplePath19 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_18.csv";
+    std::string samplePath20 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_19.csv";
+    std::string samplePath21 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_20.csv";
+    std::string samplePath22 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_21.csv";
+    std::string samplePath23 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_22.csv";
+    std::string samplePath24 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_23.csv";
+    std::string samplePath25 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_24.csv";
+    std::string samplePath26 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_25.csv";
+    std::string samplePath27 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_26.csv";
+    std::string samplePath28 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_27.csv";
+    std::string samplePath29 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_28.csv";
+    std::string samplePath30 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_29.csv";
+        
+    Read_DataSet(samplePath1, sample1);
+    Read_DataSet(samplePath2, sample2);
+    Read_DataSet(samplePath3, sample3);
+    Read_DataSet(samplePath4, sample4);
+    Read_DataSet(samplePath5, sample5);
+    Read_DataSet(samplePath6, sample6);
+    Read_DataSet(samplePath7, sample7);
+    Read_DataSet(samplePath8, sample8);
+    Read_DataSet(samplePath9, sample9);
+    Read_DataSet(samplePath10, sample10);
+    Read_DataSet(samplePath11, sample11);
+    Read_DataSet(samplePath12, sample12);
+    Read_DataSet(samplePath13, sample13);
+    Read_DataSet(samplePath14, sample14);
+    Read_DataSet(samplePath15, sample15);
+    Read_DataSet(samplePath16, sample16);
+    Read_DataSet(samplePath17, sample17);
+    Read_DataSet(samplePath18, sample18);
+    Read_DataSet(samplePath19, sample19);
+    Read_DataSet(samplePath20, sample20);
+    Read_DataSet(samplePath21, sample21);
+    Read_DataSet(samplePath22, sample22);
+    Read_DataSet(samplePath23, sample23);
+    Read_DataSet(samplePath24, sample24);
+    Read_DataSet(samplePath25, sample25);
+    Read_DataSet(samplePath26, sample26);
+    Read_DataSet(samplePath27, sample27);
+    Read_DataSet(samplePath28, sample28);
+    Read_DataSet(samplePath29, sample29);
+    Read_DataSet(samplePath30, sample30);
+        
+    plot_Sample_v2(sample1, sample2, sample3, sample4, sample5, sample6, sample7, sample8, sample9, sample10,
+                   sample11, sample12, sample13, sample14, sample15, sample16, sample17, sample18, sample19, sample20,
+                   sample21, sample22, sample23, sample24, sample25, sample26, sample27, sample28, sample29, sample30);
+
 }
