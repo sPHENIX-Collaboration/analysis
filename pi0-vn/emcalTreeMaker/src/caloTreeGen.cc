@@ -16,7 +16,7 @@
 //ROOT stuff
 #include <TH1F.h>
 #include <TH2F.h>
-#include <TH3F.h>
+// #include <TH3F.h>
 #include <TFile.h>
 #include <TLorentzVector.h>
 
@@ -92,12 +92,12 @@ Int_t caloTreeGen::Init(PHCompositeNode *topNode)
   h2TotalMBDCentrality = new TH2F("h2TotalMBDCentrality", "Total MBD Charge vs Centrality; Centrality; Total MBD Charge [Arb]", bins_cent, low_cent, high_cent, 100, 0, 1);
   h2TotalMBDCaloEv2 = new TH2F("h2TotalMBDCaloEv2", "Total MBD Charge vs Total EMCAL Energy; Total EMCAL Energy; Total MBD Charge", bins_totalcaloEv2, low_totalcaloEv2, high_totalcaloEv2,
                                                                                                                                     bins_totalmbdv2, low_totalmbdv2, high_totalmbdv2);
-  if(isSim) {
-    hImpactPar            = new TH1F("hImpactPar", "Impact Parameter; b [fm]; Counts", bins_b, low_b, high_b);
-    h2ImpactParCentrality = new TH2F("h2ImpactParCentrality", "Impact Parameter vs Centrality; Centrality; b [fm]", bins_cent, low_cent, high_cent, bins_b, low_b, high_b);
-    h2PionPtEta           = new TH2F("h2PionPtEta", "Pion p_{T} vs #eta; #eta; p_{T} [GeV]", bins_eta, low_eta, high_eta, bins_gpt, low_gpt, high_gpt);
-    h3ImpactParPtEta      = new TH3F("h3ImpactParPtEta", "Impact Parameter vs p_{T} vs #eta; #eta; p_{T} [GeV]; b [fm]", bins_eta, low_eta, high_eta, bins_gpt, low_gpt, high_gpt, bins_b, low_b, high_b);
-  }
+  // if(isSim) {
+  //   hImpactPar            = new TH1F("hImpactPar", "Impact Parameter; b [fm]; Counts", bins_b, low_b, high_b);
+  //   h2ImpactParCentrality = new TH2F("h2ImpactParCentrality", "Impact Parameter vs Centrality; Centrality; b [fm]", bins_cent, low_cent, high_cent, bins_b, low_b, high_b);
+  //   h2PionPtEta           = new TH2F("h2PionPtEta", "Pion p_{T} vs #eta; #eta; p_{T} [GeV]", bins_eta, low_eta, high_eta, bins_gpt, low_gpt, high_gpt);
+  //   h3ImpactParPtEta      = new TH3F("h3ImpactParPtEta", "Impact Parameter vs p_{T} vs #eta; #eta; p_{T} [GeV]; b [fm]", bins_eta, low_eta, high_eta, bins_gpt, low_gpt, high_gpt, bins_b, low_b, high_b);
+  // }
 
   out2 = new TFile(Outfile2.c_str(),"RECREATE");
 
@@ -128,9 +128,10 @@ Int_t caloTreeGen::Init(PHCompositeNode *topNode)
 
   // keep track of impact parameter in simulation
   if(isSim) {
-    T->Branch("b",    &b, "b/F");
-    T->Branch("geta", &geta_vec);
-    T->Branch("gpt",  &gpt_vec);
+    T->Branch("geta",  &geta_vec);
+    T->Branch("gphi",  &gphi_vec);
+    T->Branch("gpt",   &gpt_vec);
+    T->Branch("gmass", &gmass_vec);
   }
 
   //so that the histos actually get written out
@@ -218,9 +219,9 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
                    centInfo->get_centile(CentralityInfo::PROP::mbd_NS);
 
   // grab impact parameter in MC
-  if(isSim) {
-    b = centInfo->get_quantity(CentralityInfo::PROP::bimp);
-  }
+  // if(isSim) {
+  //   b = centInfo->get_quantity(CentralityInfo::PROP::bimp);
+  // }
 
   //----------------------------------vertex------------------------------------------------------//
   GlobalVertexMap* vertexmap = findNode::getClass<GlobalVertexMap>(topNode, "GlobalVertexMap");
@@ -383,7 +384,6 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
 
       // check if particle is neutral pion
       if (particle->get_pid() != 111) continue;
-      ++gpi0_ctr;
 
       Double_t gpx = particle->get_px();
       Double_t gpy = particle->get_py();
@@ -393,33 +393,46 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
       TLorentzVector v;
       v.SetPxPyPzE(gpx, gpy, gpz, ge);
 
-      Float_t geta = v.Eta();
-      Float_t gpt  = v.Pt();
+      Float_t geta  = v.Eta();
+      Float_t gphi  = v.Phi();
+      Float_t gpt   = v.Pt();
+      Float_t gmass = v.M();
+
+      // ensure that the eta of the truth pi0 is within the acceptance of the EMCal
+      if(abs(geta) >= 1.1) continue;
+      ++gpi0_ctr;
 
       min_geta = std::min(min_geta, geta);
       max_geta = std::max(max_geta, geta);
 
+      min_gphi = std::min(min_gphi, gphi);
+      max_gphi = std::max(max_gphi, gphi);
+
       min_gpt  = std::min(min_gpt, gpt);
       max_gpt  = std::max(max_gpt, gpt);
 
-      h2PionPtEta->Fill(geta, gpt);
-      h3ImpactParPtEta->Fill(geta, gpt, b);
+      min_gmass  = std::min(min_gmass, gmass);
+      max_gmass  = std::max(max_gmass, gmass);
+
+      // h2PionPtEta->Fill(geta, gpt);
+      // h3ImpactParPtEta->Fill(geta, gpt, b);
 
       geta_vec.push_back(geta);
+      gphi_vec.push_back(gphi);
       gpt_vec.push_back(gpt);
+      gmass_vec.push_back(gmass);
 
       // Debug
-      // Double_t mass = v.M();
       // std::cout << "pt: " << pt << ", eta: " << eta << ", mass: " << mass << std::endl;
     }
   }
 
   //----------------------------------Truth------------------------------------------------------//
 
-  if(isSim) {
-    hImpactPar->Fill(b);
-    h2ImpactParCentrality->Fill(cent, b);
-  }
+  // if(isSim) {
+  //   hImpactPar->Fill(b);
+  //   h2ImpactParCentrality->Fill(cent, b);
+  // }
 
   hTotalCaloE->Fill(totalCaloE);
   h2TotalMBDCaloE->Fill(totalCaloE/high_totalcaloE, totalMBD/high_totalmbd);
@@ -430,8 +443,8 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
   min_cent = std::min(min_cent, cent);
   max_cent = std::max(max_cent, cent);
 
-  min_b = std::min(min_b, b);
-  max_b = std::max(max_b, b);
+  // min_b = std::min(min_b, b);
+  // max_b = std::max(max_b, b);
 
   if(cent < 0 || cent > 1) std::cout << "Centrality: " << cent << ", totalMBD: " << totalMBD << std::endl;
 
@@ -580,7 +593,9 @@ Int_t caloTreeGen::ResetEvent(PHCompositeNode *topNode)
 
   // MC
   geta_vec.clear();
+  gphi_vec.clear();
   gpt_vec.clear();
+  gmass_vec.clear();
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -599,9 +614,11 @@ Int_t caloTreeGen::End(PHCompositeNode *topNode)
   std::cout << "Total Events: " << iEvent << ", Accepted Events: " << iEventGood << ", " << iEventGood*100./iEvent << " %" << std::endl;
   if(isSim) {
     std::cout << "Total Truth pi0s: " << gpi0_ctr << ", average per event: " << gpi0_ctr*1./iEventGood << std::endl;
-    std::cout << "min b [fm]: " << min_b << ", max b [fm]: " << max_b << std::endl;
+    // std::cout << "min b [fm]: " << min_b << ", max b [fm]: " << max_b << std::endl;
     std::cout << "min geta: " << min_geta << ", max geta: " << max_geta << std::endl;
+    std::cout << "min gphi: " << min_gphi << ", max gphi: " << max_gphi << std::endl;
     std::cout << "min gpt: " << min_gpt << ", max gpt: " << max_gpt << std::endl;
+    std::cout << "min gmass: " << min_gmass << ", max gmass: " << max_gmass << std::endl;
   }
   std::cout << "Bad PMT Events: " << hBadPMTs->Integral(2,bins_nPMTs) << std::endl;
   std::cout << "min z-vertex: " << min_vtx_z << ", max z-vertex: " << max_vtx_z << std::endl;
@@ -627,12 +644,12 @@ Int_t caloTreeGen::End(PHCompositeNode *topNode)
   hVtxZv2->Write();
   hTotalMBD->Write();
   hCentrality->Write();
-  if(isSim) {
-    hImpactPar->Write();
-    h2ImpactParCentrality->Write();
-    h2PionPtEta->Write();
-    h3ImpactParPtEta->Write();
-  }
+  // if(isSim) {
+  //   hImpactPar->Write();
+  //   h2ImpactParCentrality->Write();
+  //   h2PionPtEta->Write();
+  //   h3ImpactParPtEta->Write();
+  // }
   hTotalCaloE->Write();
   hTowE->Write();
   hClusterECore->Write();

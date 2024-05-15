@@ -163,9 +163,11 @@ class caloTreeGen : public SubsysReco
     Int_t    min_goodTowers   = 9999;
     Float_t  min_vtx_z        = 9999;
     Float_t  min_cent         = 9999;
-    Float_t  min_b            = 9999;
+    // Float_t  min_b            = 9999;
     Float_t  min_geta         = 9999;
+    Float_t  min_gphi         = 9999;
     Float_t  min_gpt          = 9999;
+    Float_t  min_gmass        = 9999;
 
     Double_t max_towE         = 0;
     Float_t  max_clusterECore = 0;
@@ -180,9 +182,11 @@ class caloTreeGen : public SubsysReco
     Int_t    max_goodTowers   = 0;
     Float_t  max_vtx_z        = 0;
     Float_t  max_cent         = 0;
-    Float_t  max_b            = 0;
+    // Float_t  max_b            = 0;
     Float_t  max_geta         = 0;
+    Float_t  max_gphi         = 0;
     Float_t  max_gpt          = 0;
+    Float_t  max_gmass        = 0;
 
     TH1F* hTowE;
     TH1F* hClusterECore;
@@ -192,7 +196,7 @@ class caloTreeGen : public SubsysReco
     TH1F* hNClusters;
     TH1F* hTotalMBD;
     TH1F* hCentrality;
-    TH1F* hImpactPar;
+    // TH1F* hImpactPar;
     TH1F* hTotalCaloE;
     TH1F* hVtxZ;
     TH1F* hVtxZv2;
@@ -203,11 +207,11 @@ class caloTreeGen : public SubsysReco
     TH2F* h2TowEtaPhiWeighted;
     TH2F* h2TotalMBDCaloE;
     TH2F* h2TotalMBDCentrality;
-    TH2F* h2ImpactParCentrality;
+    // TH2F* h2ImpactParCentrality;
     TH2F* h2TotalMBDCaloEv2;
 
-    TH2F* h2PionPtEta;
-    TH3F* h3ImpactParPtEta;
+    // TH2F* h2PionPtEta;
+    // TH3F* h3ImpactParPtEta;
 
     UInt_t bins_towE  = 1200;
     Float_t low_towE  = -50;
@@ -314,6 +318,8 @@ class caloTreeGen : public SubsysReco
 
     // MC
     std::vector<Float_t> geta_vec;
+    std::vector<Float_t> gphi_vec;
     std::vector<Float_t> gpt_vec;
+    std::vector<Float_t> gmass_vec;
 };
 #endif
