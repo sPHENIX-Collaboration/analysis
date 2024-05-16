@@ -53,10 +53,6 @@ namespace myAnalysis {
     vector<string> cent_key1 = {"40-60","20-40","0-20"};
     vector<string> cent_key2 = {"50-60", "40-50", "30-40","20-30","10-20","0-10"};
 
-    // Impact parameter bin edges taken from: https://wiki.sphenix.bnl.gov/index.php/MDC2_2022
-    vector<string>  b_key1 = {"9.71-11.84", "6.81-9.71", "0-6.81"}; /*fm*/
-    vector<string>  b_key2 = {"10.81-11.84","9.71-10.81","8.40-9.71","6.81-8.40","4.88-6.81","0-4.88"}; /*fm*/
-
     vector<string> pt_key;
     vector<string> pt_key1 = {"2-2.5","2.5-3","3-3.5","3.5-4","4-4.5","4.5-5"};
     vector<string> pt_key2 = {"2-5"};
@@ -282,19 +278,10 @@ void myAnalysis::process_fits(const string &i_input,
 
                 s.str("");
 
-                if(isSim) {
-                    s << "#splitline{b: " << cent << " fm}"
-                    << "{#splitline{Diphoton p_{T}: " << pt << " GeV" << "}"
-                    << "{Entries: " << entries << " }"
-                    << "}";
-                }
-                else {
-                    s << "#splitline{Centrality: " << cent << "%}"
-                    << "{#splitline{Diphoton p_{T}: " << pt << " GeV" << "}"
-                    << "{Entries: " << entries << " }"
-                    << "}";
-                }
-
+                s << "#splitline{Centrality: " << cent << "%}"
+                << "{#splitline{Diphoton p_{T}: " << pt << " GeV" << "}"
+                << "{Entries: " << entries << " }"
+                << "}";
 
                 l1.SetTextSize(0.04);
                 l1.DrawLatexNDC(0.38,0.87, s.str().c_str());
@@ -369,7 +356,7 @@ void fits(const string &i_input,
           const string &outputDir = ".",
           const string &tag = "test",
                 Int_t  isSim = 0,
-                Int_t  anaType = 0,
+                Int_t  anaType = 1,
           const Float_t sigmaMult = 2) {
 
     cout << "#############################" << endl;
@@ -393,13 +380,7 @@ void fits(const string &i_input,
 
     myAnalysis::isSim = isSim;
 
-    if(isSim) {
-        myAnalysis::cent_key = (anaType == 0) ? myAnalysis::b_key1 : myAnalysis::b_key2;
-    }
-    else {
-        myAnalysis::cent_key = (anaType == 0) ? myAnalysis::cent_key1 : myAnalysis::cent_key2;
-    }
-
+    myAnalysis::cent_key = (anaType == 0) ? myAnalysis::cent_key1 : myAnalysis::cent_key2;
     myAnalysis::pt_key   = (anaType == 0) ? myAnalysis::pt_key1   : myAnalysis::pt_key2;
 
     if(anaType == 1) {
@@ -409,7 +390,7 @@ void fits(const string &i_input,
         // myAnalysis::meanEstimate = 0.182;
     }
     if(isSim == 1) {
-        myAnalysis::meanEstimate = 0.15;
+        myAnalysis::meanEstimate = 0.2;
     }
 
     myAnalysis::sigmaMult = sigmaMult;
@@ -447,7 +428,7 @@ if(argc < 3 || argc > 8){
         cout << "outputDir: location of output directory. Default: current directory." << endl;
         cout << "tag: tag for the output folder. Default: test." << endl;
         cout << "isSim: Monte Carlo. Default: 0." << endl;
-        cout << "anaType: analysis type. Default: 0." << endl;
+        cout << "anaType: analysis type. Default: 1." << endl;
         cout << "sigmaMult: controls the signal bounds. Default: 2." << endl;
         return 1;
     }
@@ -456,7 +437,7 @@ if(argc < 3 || argc > 8){
     string outputDir  = ".";
     string tag        = "test";
     Int_t  isSim      = 0;
-    Int_t  anaType    = 0;
+    Int_t  anaType    = 1;
     Float_t sigmaMult = 2;
 
     if(argc >= 4) {

@@ -476,7 +476,7 @@ void vnAnalysis(const string &i_input,
                 const string &outputCSV  = "vn.csv",
                 const string &outputCSV2  = "vn-info.csv",
                 const string &outputFile = "vn.root",
-                      Int_t   anaType    = 0,
+                      Int_t   anaType    = 1,
                       Int_t   samples    = 30) {
 
     cout << "#############################" << endl;
@@ -508,7 +508,7 @@ if(argc < 3 || argc > 8){
         cout << "outputCSV: location of output CSV. Default: vn.csv." << endl;
         cout << "outputCSV2: location of output CSV2. Default: vn-info.csv." << endl;
         cout << "outputFile: location of output file. Default: vn.root." << endl;
-        cout << "anaType: analysis type. Default: 0." << endl;
+        cout << "anaType: analysis type. Default: 1." << endl;
         cout << "samples: number of samples for the vn analysis. Default: 30." << endl;
         return 1;
     }
@@ -516,7 +516,7 @@ if(argc < 3 || argc > 8){
     string outputCSV  = "vn.csv";
     string outputCSV2 = "vn-info.csv";
     string outputFile = "vn.root";
-    Int_t  anaType    = 0;
+    Int_t  anaType    = 1;
     Int_t  samples    = 30;
 
     if(argc >= 4) {

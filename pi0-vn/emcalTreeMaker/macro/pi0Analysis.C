@@ -50,7 +50,6 @@ namespace myAnalysis {
     void process_event(Float_t z_max = 10, Long64_t start = 0, Long64_t end = 0, Float_t sigmaMult = 2);
     void finalize(const string &i_output = "test.root");
 
-    Bool_t isSim;
     Int_t anaType;
 
     vector<string> cent_key;
@@ -1078,10 +1077,9 @@ void myAnalysis::finalize(const string &i_output) {
 
 void pi0Analysis(const string &i_input,
                  const string &i_cuts,
-                 Bool_t        isSim       = false,
                  Float_t       z           = 10, /*cm*/
                  const string &i_output    = "test.root",
-                 Int_t         anaType     = 0,
+                 Int_t         anaType     = 1,
                  Bool_t        do_vn_calc  = false,
                  const string &fitStats    = "",
                  const string &QVecCorr    = "",
@@ -1095,7 +1093,6 @@ void pi0Analysis(const string &i_input,
     cout << "Run Parameters" << endl;
     cout << "inputFile: "   << i_input << endl;
     cout << "Cuts: "        << i_cuts << endl;
-    cout << "isSim: "       << isSim << endl;
     cout << "z: "           << z << endl;
     cout << "outputFile: "  << i_output << endl;
     cout << "anaType: "     << anaType << endl;
@@ -1113,7 +1110,6 @@ void pi0Analysis(const string &i_input,
     myAnalysis::cut_num    = cut_num;
     myAnalysis::subsamples = subsamples;
     myAnalysis::anaType    = anaType;
-    myAnalysis::isSim      = isSim;
 
     Int_t ret = myAnalysis::init(i_input, i_cuts, fitStats, QVecCorr, start, end);
     if(ret != 0) return;
@@ -1124,14 +1120,14 @@ void pi0Analysis(const string &i_input,
 
 # ifndef __CINT__
 Int_t main(Int_t argc, char* argv[]) {
-if(argc < 3 || argc > 15){
-        cout << "usage: ./pi0Ana inputFile cuts [isSim] [z] [outputFile] [anaType] [do_vn_calc] [fitStats] [QVecCorr] [subsamples] [cut_num] [sigmaMult] [start] [end] " << endl;
+if(argc < 3 || argc > 14){
+        cout << "usage: ./pi0Ana inputFile cuts [z] [outputFile] [anaType] [do_vn_calc] [fitStats] [QVecCorr] [subsamples] [cut_num] [sigmaMult] [start] [end] " << endl;
         cout << "inputFile: containing list of root file paths" << endl;
         cout << "cuts: csv file containing cuts" << endl;
         cout << "isSim: Simulation. Default: False" << endl;
         cout << "z: z-vertex cut. Default: 10 cm. Range: 0 to 30 cm." << endl;
         cout << "outputFile: location of output file. Default: test.root." << endl;
-        cout << "anaType: analysis type. Default: 0." << endl;
+        cout << "anaType: analysis type. Default: 1." << endl;
         cout << "do_vn_calc: Do vn calculations. Default: False" << endl;
         cout << "fitStats: csv file containing fit stats" << endl;
         cout << "QVecCorr: csv file containing Q vector corrections" << endl;
@@ -1143,10 +1139,9 @@ if(argc < 3 || argc > 15){
         return 1;
     }
 
-    Bool_t   isSim       = false;
     Float_t  z           = 10;
     string   outputFile  = "test.root";
-    Int_t    anaType     = 0;
+    Int_t    anaType     = 1;
     Bool_t   do_vn_calc  = false;
     string   fitStats    = "";
     string   QVecCorr    = "";
@@ -1157,40 +1152,37 @@ if(argc < 3 || argc > 15){
     Long64_t end         = 0;
 
     if(argc >= 4) {
-        isSim = atoi(argv[3]);
+        z = atof(argv[3]);
     }
     if(argc >= 5) {
-        z = atof(argv[4]);
+        outputFile = argv[4];
     }
     if(argc >= 6) {
-        outputFile = argv[5];
+        anaType = atoi(argv[5]);
     }
     if(argc >= 7) {
-        anaType = atoi(argv[6]);
+        do_vn_calc = atoi(argv[6]);
     }
     if(argc >= 8) {
-        do_vn_calc = atoi(argv[7]);
+        fitStats = argv[7];
     }
     if(argc >= 9) {
-        fitStats = argv[8];
+        QVecCorr = argv[8];
     }
     if(argc >= 10) {
-        QVecCorr = argv[9];
+        subsamples = atoi(argv[9]);
     }
     if(argc >= 11) {
-        subsamples = atoi(argv[10]);
+        cut_num = atoi(argv[10]);
     }
     if(argc >= 12) {
-        cut_num = atoi(argv[11]);
+        sigmaMult = atof(argv[11]);
     }
     if(argc >= 13) {
-        sigmaMult = atof(argv[12]);
+        start = atol(argv[12]);
     }
     if(argc >= 14) {
-        start = atol(argv[13]);
-    }
-    if(argc >= 15) {
-        end = atol(argv[14]);
+        end = atol(argv[13]);
     }
 
     // ensure that 0 <= start <= end
@@ -1199,7 +1191,7 @@ if(argc < 3 || argc > 15){
         return 1;
     }
 
-    pi0Analysis(argv[1], argv[2], isSim, z, outputFile, anaType, do_vn_calc, fitStats, QVecCorr, subsamples, cut_num, sigmaMult, start, end);
+    pi0Analysis(argv[1], argv[2], z, outputFile, anaType, do_vn_calc, fitStats, QVecCorr, subsamples, cut_num, sigmaMult, start, end);
 
     cout << "======================================" << endl;
     cout << "done" << endl;
