@@ -29,3 +29,6 @@ Corrections : src/Corrections.cxx
 
 GeoAccepCorr : src/GeoAccepCorr.cxx
 	g++ $(CFLAGS) src/GeoAccepCorr.cxx -o GeoAccepCorr
+
+clean :
+	rm TrackletAna plotTrkrHit plotTracklets plotRecoVtx plotCluster BeamspotReco INTTVtxZ Corrections GeoAccepCorr
