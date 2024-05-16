@@ -16,6 +16,7 @@ void JetTrigCorr()
   TChain *ct = new TChain("T");
   ct->Add("../macro/outputJETVAL.root");
 
+  int m_nJet;
   int m_event;
   vector<float> *phi = nullptr;
   vector<float> *eta = nullptr;
@@ -41,14 +42,19 @@ void JetTrigCorr()
   for (Long64_t iEvent = 0; iEvent < nEntries_ct; ++iEvent) {
     ct->GetEntry(iEvent);
 
-    Long64_t cp_event_entry = cp->GetEntryNumberWithIndex(m_event);
-    if (cp_event_entry >= 0) {
-      cp->GetEntry(cp_event_entry);
-      
-      // Loop over jets in the correlation file
-      for (size_t i = 0; i < eta->size(); ++i) {
-	// Loop over jets in the energy file
-	for (size_t j = 0; j < hcalout_energy->size(); ++j) {
+    // Conditionally set m_event based on the number of jets
+    if (m_nJet > 0) {
+      m_event = iEvent; // Set m_event to the event number if there is at least one jet
+      cout << "m_event: " << m_event << endl;
+    }      
+      Long64_t cp_event_entry = cp->GetEntryNumberWithIndex(m_event);
+      if (cp_event_entry >= 0) {
+	cp->GetEntry(cp_event_entry);
+	
+	// Loop over jets in the correlation file
+	for (size_t i = 0; i < eta->size(); ++i) {
+	  // Loop over jets in the energy file
+	  for (size_t j = 0; j < hcalout_energy->size(); ++j) {
 	  float dPhi = (*hcalout_phibin)[j] - (*phi)[i];
 	  float dEta = (*hcalout_etabin)[j] - (*eta)[i];
 	  
@@ -62,18 +68,18 @@ void JetTrigCorr()
 	  
 	  // Calculation of dR
 	  float dR = sqrt(dPhi * dPhi + dEta * dEta);
+	  
 	  dR_hist->Fill(dR);
 	  
 	  // Check if the current jet is leading
 	  if (dR < 0.4 && (*hcalout_energy)[j] > jet_trig_correlation->GetYaxis()->GetXmin()) {
 	    jet_trig_correlation->Fill((*hcalout_energy)[j], (*pt)[i]);
 	  }
+	  }
 	}
       }
     }
   }
-
-
   Int_t ci;      // for color index setting                                                                                                                       
   TColor *color; // for color definition with alpha                                                                                                                   
   TCanvas * canvas = new TCanvas("canvas", " ", 550, 500);
