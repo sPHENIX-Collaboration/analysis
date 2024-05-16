@@ -10,7 +10,7 @@ sPHENIX_CPPFLAGS = -I$(MYINSTALL)/include -I$(OFFLINE_MAIN)/include -I$(OFFLINE_
 LIBFLAGS = -L$(MYINSTALL)/lib -lcaloTreeGen
 sPHENIX_LIBFLAGS = -L$(OFFLINE_MAIN)/lib -lfun4all -lg4centrality -lphparameter -lcalotrigger -lcalo_reco -lphool
 
-all: bin/Fun4All_CaloTreeGen bin/pi0Ana bin/truthPi0Ana bin/convert bin/Q-vec-corr bin/mixedEvent bin/vnAna bin/runQA bin/runQA-2 bin/fits bin/plot-vn
+all: bin/Fun4All_CaloTreeGen bin/pi0Ana bin/truthPi0Ana bin/convert bin/Q-vec-corr bin/mixedEvent bin/vnAna bin/vnAnaMC bin/runQA bin/runQA-2 bin/fits bin/plot-vn
 
 bin/Fun4All_CaloTreeGen: macro/Fun4All_CaloTreeGen.C
 	mkdir -p bin
@@ -25,6 +25,10 @@ bin/truthPi0Ana: macro/truthPi0Analysis.C
 	g++ -o $@ $< $(ROOT_CPPFLAGS) $(ROOT_LIBFLAGS)
 
 bin/vnAna: macro/vnAnalysis.C
+	mkdir -p bin
+	g++ -o $@ $< $(ROOT_CPPFLAGS) $(ROOT_LIBFLAGS)
+
+bin/vnAnaMC: macro/vnAnalysisMC.C
 	mkdir -p bin
 	g++ -o $@ $< $(ROOT_CPPFLAGS) $(ROOT_LIBFLAGS)
 
@@ -63,6 +67,7 @@ clean:
 	rm bin/convert
 	rm bin/Q-vec-corr
 	rm bin/vnAna
+	rm bin/vnAnaMC
 	rm bin/runQA
 	rm bin/fits
 	rm bin/plot-vn
