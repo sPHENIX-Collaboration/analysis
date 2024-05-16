@@ -10,14 +10,16 @@
 
 #define SENERGYCORRELATOR_CC
 
-// user includes
+// analysis definition
 #include "SEnergyCorrelator.h"
 #include "SEnergyCorrelator.io.h"
 #include "SEnergyCorrelator.sys.h"
 #include "SEnergyCorrelator.ana.h"
+#include "SEnergyCorrelatorConfig.h"
 
+// make common namespaces implicit
 using namespace std;
-using namespace fastjet;
+using namespace findNode;
 
 
 
@@ -25,63 +27,44 @@ namespace SColdQcdCorrelatorAnalysis {
 
   // ctor/dtor ----------------------------------------------------------------
 
-  SEnergyCorrelator::SEnergyCorrelator(const string &name, const bool isComplex, const bool doDebug, const bool inBatch) : SubsysReco(name) {
+  SEnergyCorrelator::SEnergyCorrelator(SEnergyCorrelatorConfig& config) : SubsysReco(config.moduleName) {
 
-    // initialize internal variables
+    // set config & initialize internal variables
+    m_config = config;
     InitializeMembers();
 
-    // set standalone/complex mode
-    if (isComplex) {
-      m_inComplexMode    = true;
-      m_inStandaloneMode = false; 
-    } else {
-      m_inComplexMode    = false;
-      m_inStandaloneMode = true;
-    }
+    // announce start of calculation
+    if (m_config.isStandalone) PrintMessage(0);
 
-    // set verbosity in complex mode
-    if (m_inComplexMode) {
-      m_verbosity = Verbosity();
-    }
-
-    // set debug/batch mode & print debug statement
-    m_inDebugMode = doDebug;
-    m_inBatchMode = inBatch;
-    if (m_inDebugMode) PrintDebug(1);
-
-    // set module name & announce start of calculation
-    m_moduleName = name;
-    if (m_inStandaloneMode) PrintMessage(0);
-
-  }  // end ctor(string, bool, bool)
+  }  // end ctor(SEnergyCorrelatorConfig&)
 
 
 
   SEnergyCorrelator::~SEnergyCorrelator() {
 
     // print debug statement
-    if (m_inDebugMode) PrintDebug(14);
+    if (m_config.isDebugOn) PrintDebug(14);
 
     // delete pointers to files
     if (!m_inChain) {
       delete m_outFile;
     }
-    m_inFileNames.clear();
 
     // delete pointers to correlators/histograms
-    for (size_t iPtBin = 0; iPtBin < m_nBinsJetPt; iPtBin++) {
+    for (size_t iPtBin = 0; iPtBin < m_config.ptJetBins.size(); iPtBin++) {
       delete m_eecLongSide.at(iPtBin);
-      delete m_outHistVarDrAxis.at(iPtBin);
-      delete m_outHistErrDrAxis.at(iPtBin);
-      delete m_outHistVarLnDrAxis.at(iPtBin);
-      delete m_outHistErrLnDrAxis.at(iPtBin);
+      delete m_outPackageHistVarDrAxis.at(iPtBin);
+      delete m_outPackageHistErrDrAxis.at(iPtBin);
+      delete m_outPackageHistVarLnDrAxis.at(iPtBin);
+      delete m_outPackageHistErrLnDrAxis.at(iPtBin);
+      delete m_outManualHistErrDrAxis.at(iPtBin);
     }
-    m_ptJetBins.clear();
     m_eecLongSide.clear();
-    m_outHistVarDrAxis.clear();
-    m_outHistErrDrAxis.clear();
-    m_outHistVarLnDrAxis.clear();
-    m_outHistErrLnDrAxis.clear();
+    m_outPackageHistVarDrAxis.clear();
+    m_outPackageHistErrDrAxis.clear();
+    m_outPackageHistVarLnDrAxis.clear();
+    m_outPackageHistErrLnDrAxis.clear();
+    m_outManualHistErrDrAxis.clear();
 
   }  // end dtor
 
@@ -122,14 +105,14 @@ namespace SColdQcdCorrelatorAnalysis {
   void SEnergyCorrelator::Init() {
 
     // print debug statement
-    if (m_inDebugMode) PrintDebug(10);
+    if (m_config.isDebugOn) PrintDebug(10);
 
     // make sure standalone mode is on & open files
-    if (m_inComplexMode) {
-      PrintError(5);
-      assert(m_inStandaloneMode);
-    } else {
+    if (m_config.isStandalone) {
       OpenInputFiles();
+    } else {
+      PrintError(5);
+      assert(m_config.isStandalone);
     }
     OpenOutputFile();
 
@@ -149,16 +132,45 @@ namespace SColdQcdCorrelatorAnalysis {
   void SEnergyCorrelator::Analyze() {
 
     // print debug statement
-    if (m_inDebugMode) PrintDebug(12);
+    if (m_config.isDebugOn) PrintDebug(12);
 
     // make sure standalone mode is on
-    if (m_inComplexMode) {
+    if (!m_config.isStandalone) {
       PrintError(8);
-      assert(m_inStandaloneMode);
+      assert(m_config.isStandalone);
     }
 
-    // loop over events and calculate correlators
-    DoCorrelatorCalculation();
+    // announce start of event loop
+    const uint64_t nEvts = m_inChain -> GetEntriesFast();
+    PrintMessage(7, nEvts);
+
+    // event loop
+    uint64_t nBytes = 0;
+    for (uint64_t iEvt = 0; iEvt < nEvts; iEvt++) {
+
+      const uint64_t entry = Interfaces::LoadTree(m_inChain, iEvt, m_fCurrent);
+      if (entry < 0) break;
+
+      const uint64_t bytes = Interfaces::GetEntry(m_inChain, iEvt);
+      if (bytes < 0) {
+        break;
+      } else {
+        nBytes += bytes;
+        PrintMessage(8, nEvts, iEvt);
+      }
+
+      // if using legacy input, fill container
+      if (m_config.isLegacyInput) {
+        m_legacy.SetCorrelatorInput(m_input, m_config.isInTreeTruth, m_config.isEmbed);
+      }
+ 
+      // run calculations
+      DoLocalCalculation();
+
+    }  // end event loop
+
+    // announce end of event loop
+    PrintMessage(13);
 
     // translate correlators into root hists
     ExtractHistsFromCorr();
@@ -172,20 +184,20 @@ namespace SColdQcdCorrelatorAnalysis {
   void SEnergyCorrelator::End() {
 
     // print debug statement
-    if (m_inDebugMode) PrintDebug(13);
+    if (m_config.isDebugOn) PrintDebug(13);
 
     // make sure standalone mode is on & save output
-    if (m_inComplexMode) {
-      PrintError(9);
-      assert(m_inStandaloneMode);
-    } else {
+    if (m_config.isStandalone) {
       SaveOutput();
+    } else {
+      PrintError(9);
+      assert(m_config.isStandalone);
     }
 
     // close files and announce end
-    if (m_inComplexMode) {
+    if (!m_config.isStandalone) {
       PrintError(15);
-      assert(m_inStandaloneMode);
+      assert(m_config.isStandalone);
     }
     CloseOutputFile();
     PrintMessage(11);

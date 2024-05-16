@@ -75,6 +75,9 @@
 #include <TLorentzVector.h>
 #include <TTree.h>
 #include <TVector3.h>
+#include <TDatabasePDG.h>
+#include <TParticle.h>
+#include <TParticlePDG.h>
 
 class PHCompositeNode;
 class SvtxTrack;
@@ -189,6 +192,8 @@ class dNdEtaINTT : public SubsysReco
     int npart_;
     UShort_t clk;
     UShort_t femclk;
+    Short_t mbd_north_npmt;
+    Short_t mbd_south_npmt;
     float mbd_south_charge_sum;
     float mbd_north_charge_sum;
     float mbd_charge_sum;
@@ -196,6 +201,7 @@ class dNdEtaINTT : public SubsysReco
     float mbd_z_vtx;
     float m_pmt_q[128];
     bool is_min_bias;
+    bool is_min_bias_wozdc;
 
     // Truth primary vertex information
     float TruthPV_trig_x_;
@@ -271,11 +277,16 @@ class dNdEtaINTT : public SubsysReco
 
     // PHG4 information (from all PHG4Particles)
     int NPrimaryG4P_;
+    int NPrimaryG4P_promptChargeHadron_;
     std::vector<float> PrimaryG4P_Pt_;
     std::vector<float> PrimaryG4P_Eta_;
     std::vector<float> PrimaryG4P_Phi_;
     std::vector<float> PrimaryG4P_E_;
     std::vector<int> PrimaryG4P_PID_;
+    std::vector<TString> PrimaryG4P_ParticleClass_;
+    std::vector<bool> PrimaryG4P_isStable_;
+    std::vector<double> PrimaryG4P_Charge_;
+    std::vector<bool> PrimaryG4P_isChargeHadron_;
 
     EventHeader *eventheader = nullptr;
     InttEventInfo *intteventinfo = nullptr;

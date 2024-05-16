@@ -7,8 +7,8 @@
 // module.
 // ----------------------------------------------------------------------------
 
-#ifndef SABSTRACTQAPLUGIN_H
-#define SABSTRACTQAPLUGIN_H
+#ifndef SCORRELATORQAMAKER_SBASEQAPLUGIN_H
+#define SCORRELATORQAMAKER_SBASEQAPLUGIN_H
 
 // c++ utilities
 #include <string>

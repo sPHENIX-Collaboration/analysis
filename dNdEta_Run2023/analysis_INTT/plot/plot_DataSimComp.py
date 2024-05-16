@@ -10,8 +10,8 @@ import math
 import glob
 from plotUtil import *
 
-gROOT.LoadMacro('./sPHENIXStyle/sPhenixStyle.C')
-gROOT.ProcessLine('SetsPhenixStyle()')
+# gROOT.LoadMacro('./sPHENIXStyle/sPhenixStyle.C')
+# gROOT.ProcessLine('SetsPhenixStyle()')
 gROOT.SetBatch(True)
 
 def Draw_1Dhist_datasimcomp(hdata, hsims, gpadmargin, norm, logy, ymaxscale, XaxisName, Ytitle_unit, prelim, simlegtex, evtseltexts, outname):
@@ -255,7 +255,7 @@ def Draw_2Dhist_datasimcomp(hdata, hsim, logz, norm, rmargin, XaxisName, YaxisNa
 
 if __name__ == '__main__':
     parser = OptionParser(usage='usage: %prog ver [options -h]')
-    parser.add_option('-d', '--datahistdir', dest='datahistdir', type='string', default='/sphenix/user/hjheng/TrackletAna/analysis_INTT/plot/hists/data_run20869/Hists_RecoTracklets_merged.root', help='Histogram file name (data)')
+    parser.add_option('-d', '--datahistdir', dest='datahistdir', type='string', default='/sphenix/user/hjheng/TrackletAna/analysis_INTT/plot/hists/data_run20869/', help='Histogram file name (data)')
     parser.add_option('-s', '--simhistdir', action='append', dest='simhistdir', type='string', help='Histogram file name (simulation). Example: /sphenix/user/hjheng/TrackletAna/analysis_INTT/plot/hists/ana382_zvtx-20cm_dummyAlignParams/Hists_RecoTracklets_merged.root')
     parser.add_option('-l', '--simlegtext', action='append', dest='simlegtext', type='string', help='Legend text for simulation. Example: HIJING/EPOS/AMPT)')
     parser.add_option('-p', '--plotdir', dest='plotdir', type='string', default='ana382_zvtx-20cm_dummyAlignParams', help='Plot directory')
@@ -293,7 +293,9 @@ if __name__ == '__main__':
     hM_NRecotkl_Raw_data = GetHistogram("{}/hists_merged.root".format(datahistdir), 'hM_NRecotkl_Raw')
     hM_dEta_reco_data = GetHistogram("{}/hists_merged.root".format(datahistdir), 'hM_dEta_reco') 
     hM_dEta_reco_altrange_data = GetHistogram("{}/hists_merged.root".format(datahistdir), 'hM_dEta_reco_altrange')
-    hM_dEta_reco_Centrality_0to10_MBDAsymLe0p75_VtxZm30tom10_data = GetHistogram("{}/hists_merged.root".format(datahistdir), 'hM_dEta_reco_Centrality_0to10_MBDAsymLe0p75_VtxZm30tom10')
+    hM_dEta_reco_altrange_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10_data = GetHistogram("{}/hists_merged.root".format(datahistdir), 'hM_dEta_reco_altrange_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10')
+    hM_dEta_reco_Centrality_0to5_MBDAsymLe0p75_VtxZm30tom10_data = GetHistogram("{}/hists_merged.root".format(datahistdir), 'hM_dEta_reco_Centrality_0to5_MBDAsymLe0p75_VtxZm30tom10')
+    hM_dEta_reco_Centrality_5to10_MBDAsymLe0p75_VtxZm30tom10_data = GetHistogram("{}/hists_merged.root".format(datahistdir), 'hM_dEta_reco_Centrality_5to10_MBDAsymLe0p75_VtxZm30tom10')
     hM_dEta_reco_Centrality_10to20_MBDAsymLe0p75_VtxZm30tom10_data = GetHistogram("{}/hists_merged.root".format(datahistdir), 'hM_dEta_reco_Centrality_10to20_MBDAsymLe0p75_VtxZm30tom10')
     hM_dEta_reco_Centrality_20to30_MBDAsymLe0p75_VtxZm30tom10_data = GetHistogram("{}/hists_merged.root".format(datahistdir), 'hM_dEta_reco_Centrality_20to30_MBDAsymLe0p75_VtxZm30tom10')
     hM_dEta_reco_Centrality_30to40_MBDAsymLe0p75_VtxZm30tom10_data = GetHistogram("{}/hists_merged.root".format(datahistdir), 'hM_dEta_reco_Centrality_30to40_MBDAsymLe0p75_VtxZm30tom10')
@@ -305,7 +307,9 @@ if __name__ == '__main__':
     hM_dEta_reco_Centrality_90to100_MBDAsymLe0p75_VtxZm30tom10_data = GetHistogram("{}/hists_merged.root".format(datahistdir), 'hM_dEta_reco_Centrality_90to100_MBDAsymLe0p75_VtxZm30tom10')
     hM_dPhi_reco_data = GetHistogram("{}/hists_merged.root".format(datahistdir), 'hM_dPhi_reco')
     hM_dPhi_reco_altrange_data = GetHistogram("{}/hists_merged.root".format(datahistdir), 'hM_dPhi_reco_altrange')
-    hM_dPhi_reco_Centrality_0to10_data = GetHistogram("{}/hists_merged.root".format(datahistdir), 'hM_dPhi_reco_Centrality_0to10')
+    hM_dPhi_reco_altrange_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10_data = GetHistogram("{}/hists_merged.root".format(datahistdir), 'hM_dPhi_reco_altrange_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10')
+    hM_dPhi_reco_Centrality_0to5_data = GetHistogram("{}/hists_merged.root".format(datahistdir), 'hM_dPhi_reco_Centrality_0to5')
+    hM_dPhi_reco_Centrality_5to10_data = GetHistogram("{}/hists_merged.root".format(datahistdir), 'hM_dPhi_reco_Centrality_5to10')
     hM_dPhi_reco_Centrality_10to20_data = GetHistogram("{}/hists_merged.root".format(datahistdir), 'hM_dPhi_reco_Centrality_10to20')
     hM_dPhi_reco_Centrality_20to30_data = GetHistogram("{}/hists_merged.root".format(datahistdir), 'hM_dPhi_reco_Centrality_20to30')
     hM_dPhi_reco_Centrality_30to40_data = GetHistogram("{}/hists_merged.root".format(datahistdir), 'hM_dPhi_reco_Centrality_30to40')
@@ -315,7 +319,8 @@ if __name__ == '__main__':
     hM_dPhi_reco_Centrality_70to80_data = GetHistogram("{}/hists_merged.root".format(datahistdir), 'hM_dPhi_reco_Centrality_70to80')
     hM_dPhi_reco_Centrality_80to90_data = GetHistogram("{}/hists_merged.root".format(datahistdir), 'hM_dPhi_reco_Centrality_80to90')
     hM_dPhi_reco_Centrality_90to100_data = GetHistogram("{}/hists_merged.root".format(datahistdir), 'hM_dPhi_reco_Centrality_90to100')
-    hM_dPhi_reco_Centrality_0to10_MBDAsymLe0p75_data = GetHistogram("{}/hists_merged.root".format(datahistdir), 'hM_dPhi_reco_Centrality_0to10_MBDAsymLe0p75')
+    hM_dPhi_reco_Centrality_0to5_MBDAsymLe0p75_data = GetHistogram("{}/hists_merged.root".format(datahistdir), 'hM_dPhi_reco_Centrality_0to5_MBDAsymLe0p75')
+    hM_dPhi_reco_Centrality_5to10_MBDAsymLe0p75_data = GetHistogram("{}/hists_merged.root".format(datahistdir), 'hM_dPhi_reco_Centrality_5to10_MBDAsymLe0p75')
     hM_dPhi_reco_Centrality_10to20_MBDAsymLe0p75_data = GetHistogram("{}/hists_merged.root".format(datahistdir), 'hM_dPhi_reco_Centrality_10to20_MBDAsymLe0p75')
     hM_dPhi_reco_Centrality_20to30_MBDAsymLe0p75_data = GetHistogram("{}/hists_merged.root".format(datahistdir), 'hM_dPhi_reco_Centrality_20to30_MBDAsymLe0p75')
     hM_dPhi_reco_Centrality_30to40_MBDAsymLe0p75_data = GetHistogram("{}/hists_merged.root".format(datahistdir), 'hM_dPhi_reco_Centrality_30to40_MBDAsymLe0p75')
@@ -325,7 +330,8 @@ if __name__ == '__main__':
     hM_dPhi_reco_Centrality_70to80_MBDAsymLe0p75_data = GetHistogram("{}/hists_merged.root".format(datahistdir), 'hM_dPhi_reco_Centrality_70to80_MBDAsymLe0p75')
     hM_dPhi_reco_Centrality_80to90_MBDAsymLe0p75_data = GetHistogram("{}/hists_merged.root".format(datahistdir), 'hM_dPhi_reco_Centrality_80to90_MBDAsymLe0p75')
     hM_dPhi_reco_Centrality_90to100_MBDAsymLe0p75_data = GetHistogram("{}/hists_merged.root".format(datahistdir), 'hM_dPhi_reco_Centrality_90to100_MBDAsymLe0p75')
-    hM_dPhi_reco_Centrality_0to10_MBDAsymLe0p75_VtxZm30tom10_data = GetHistogram("{}/hists_merged.root".format(datahistdir), 'hM_dPhi_reco_Centrality_0to10_MBDAsymLe0p75_VtxZm30tom10')
+    hM_dPhi_reco_Centrality_0to5_MBDAsymLe0p75_VtxZm30tom10_data = GetHistogram("{}/hists_merged.root".format(datahistdir), 'hM_dPhi_reco_Centrality_0to5_MBDAsymLe0p75_VtxZm30tom10')
+    hM_dPhi_reco_Centrality_5to10_MBDAsymLe0p75_VtxZm30tom10_data = GetHistogram("{}/hists_merged.root".format(datahistdir), 'hM_dPhi_reco_Centrality_5to10_MBDAsymLe0p75_VtxZm30tom10')
     hM_dPhi_reco_Centrality_10to20_MBDAsymLe0p75_VtxZm30tom10_data = GetHistogram("{}/hists_merged.root".format(datahistdir), 'hM_dPhi_reco_Centrality_10to20_MBDAsymLe0p75_VtxZm30tom10')
     hM_dPhi_reco_Centrality_20to30_MBDAsymLe0p75_VtxZm30tom10_data = GetHistogram("{}/hists_merged.root".format(datahistdir), 'hM_dPhi_reco_Centrality_20to30_MBDAsymLe0p75_VtxZm30tom10')
     hM_dPhi_reco_Centrality_30to40_MBDAsymLe0p75_VtxZm30tom10_data = GetHistogram("{}/hists_merged.root".format(datahistdir), 'hM_dPhi_reco_Centrality_30to40_MBDAsymLe0p75_VtxZm30tom10')
@@ -336,8 +342,11 @@ if __name__ == '__main__':
     hM_dPhi_reco_Centrality_80to90_MBDAsymLe0p75_VtxZm30tom10_data = GetHistogram("{}/hists_merged.root".format(datahistdir), 'hM_dPhi_reco_Centrality_80to90_MBDAsymLe0p75_VtxZm30tom10')
     hM_dPhi_reco_Centrality_90to100_MBDAsymLe0p75_VtxZm30tom10_data = GetHistogram("{}/hists_merged.root".format(datahistdir), 'hM_dPhi_reco_Centrality_90to100_MBDAsymLe0p75_VtxZm30tom10')
     hM_dR_reco_data = GetHistogram("{}/hists_merged.root".format(datahistdir), 'hM_dR_reco')
+    hM_dR_reco_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10_data = GetHistogram("{}/hists_merged.root".format(datahistdir), 'hM_dR_reco_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10')
     hM_Eta_reco_data = GetHistogram("{}/hists_merged.root".format(datahistdir), 'hM_Eta_reco')
-    hM_Eta_reco_Centrality_0to10_MBDAsymLe0p75_VtxZm30tom10_data = GetHistogram("{}/hists_merged.root".format(datahistdir), 'hM_Eta_reco_Centrality_0to10_MBDAsymLe0p75_VtxZm30tom10')
+    hM_Eta_reco_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10_data = GetHistogram("{}/hists_merged.root".format(datahistdir), 'hM_Eta_reco_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10')
+    hM_Eta_reco_Centrality_0to5_MBDAsymLe0p75_VtxZm30tom10_data = GetHistogram("{}/hists_merged.root".format(datahistdir), 'hM_Eta_reco_Centrality_0to5_MBDAsymLe0p75_VtxZm30tom10')
+    hM_Eta_reco_Centrality_5to10_MBDAsymLe0p75_VtxZm30tom10_data = GetHistogram("{}/hists_merged.root".format(datahistdir), 'hM_Eta_reco_Centrality_5to10_MBDAsymLe0p75_VtxZm30tom10')
     hM_Eta_reco_Centrality_10to20_MBDAsymLe0p75_VtxZm30tom10_data = GetHistogram("{}/hists_merged.root".format(datahistdir), 'hM_Eta_reco_Centrality_10to20_MBDAsymLe0p75_VtxZm30tom10')
     hM_Eta_reco_Centrality_20to30_MBDAsymLe0p75_VtxZm30tom10_data = GetHistogram("{}/hists_merged.root".format(datahistdir), 'hM_Eta_reco_Centrality_20to30_MBDAsymLe0p75_VtxZm30tom10')
     hM_Eta_reco_Centrality_30to40_MBDAsymLe0p75_VtxZm30tom10_data = GetHistogram("{}/hists_merged.root".format(datahistdir), 'hM_Eta_reco_Centrality_30to40_MBDAsymLe0p75_VtxZm30tom10')
@@ -348,6 +357,7 @@ if __name__ == '__main__':
     hM_Eta_reco_Centrality_80to90_MBDAsymLe0p75_VtxZm30tom10_data = GetHistogram("{}/hists_merged.root".format(datahistdir), 'hM_Eta_reco_Centrality_80to90_MBDAsymLe0p75_VtxZm30tom10')
     hM_Eta_reco_Centrality_90to100_MBDAsymLe0p75_VtxZm30tom10_data = GetHistogram("{}/hists_merged.root".format(datahistdir), 'hM_Eta_reco_Centrality_90to100_MBDAsymLe0p75_VtxZm30tom10')
     hM_Phi_reco_data = GetHistogram("{}/hists_merged.root".format(datahistdir), 'hM_Phi_reco')
+    hM_Phi_reco_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10_data = GetHistogram("{}/hists_merged.root".format(datahistdir), 'hM_Phi_reco_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10') 
     hM_RecoPVz_data = GetHistogram("{}/hists_merged.root".format(datahistdir), 'hM_RecoPVz')
     hM_RecoPVz_MBDAsymLe0p75_VtxZm30tom10_data = GetHistogram("{}/hists_merged.root".format(datahistdir), 'hM_RecoPVz_MBDAsymLe0p75_VtxZm30tom10')
     hM_MBDChargeAsymm_Le0p75_data = GetHistogram("{}/hists_merged.root".format(datahistdir), 'hM_MBDChargeAsymm_Le0p75')
@@ -357,6 +367,7 @@ if __name__ == '__main__':
     hM_cluseta_data = GetHistogram("{}/hists_merged.root".format(datahistdir), 'hM_cluseta')
     hM_cluseta_zvtxwei_data = GetHistogram("{}/hists_merged.root".format(datahistdir), 'hM_cluseta_zvtxwei')
     hM_clusphisize_data = GetHistogram("{}/hists_merged.root".format(datahistdir), 'hM_clusphisize')
+    hM_clusadc_data = GetHistogram("{}/hists_merged.root".format(datahistdir), 'hM_clusadc')
     hM_cluseta_clusphisize_data = GetHistogram("{}/hists_merged.root".format(datahistdir), 'hM_cluseta_clusphisize')
     hM_clusphi_clusphisize_data = GetHistogram("{}/hists_merged.root".format(datahistdir), 'hM_clusphi_clusphisize')
 
@@ -369,7 +380,9 @@ if __name__ == '__main__':
     l_hM_NRecotkl_Raw_sim = []
     l_hM_dEta_reco_sim = []
     l_hM_dEta_reco_altrange_sim = []
-    l_hM_dEta_reco_Centrality_0to10_MBDAsymLe0p75_VtxZm30tom10_sim = []
+    l_hM_dEta_reco_altrange_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10_sim = []
+    l_hM_dEta_reco_Centrality_0to5_MBDAsymLe0p75_VtxZm30tom10_sim = []
+    l_hM_dEta_reco_Centrality_5to10_MBDAsymLe0p75_VtxZm30tom10_sim = []
     l_hM_dEta_reco_Centrality_10to20_MBDAsymLe0p75_VtxZm30tom10_sim = []
     l_hM_dEta_reco_Centrality_20to30_MBDAsymLe0p75_VtxZm30tom10_sim = []
     l_hM_dEta_reco_Centrality_30to40_MBDAsymLe0p75_VtxZm30tom10_sim = []
@@ -381,7 +394,9 @@ if __name__ == '__main__':
     l_hM_dEta_reco_Centrality_90to100_MBDAsymLe0p75_VtxZm30tom10_sim = []
     l_hM_dPhi_reco_sim = []
     l_hM_dPhi_reco_altrange_sim = []
-    l_hM_dPhi_reco_Centrality_0to10_sim = []
+    l_hM_dPhi_reco_altrange_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10_sim = []
+    l_hM_dPhi_reco_Centrality_0to5_sim = []
+    l_hM_dPhi_reco_Centrality_5to10_sim = []
     l_hM_dPhi_reco_Centrality_10to20_sim = []
     l_hM_dPhi_reco_Centrality_20to30_sim = []
     l_hM_dPhi_reco_Centrality_30to40_sim = []
@@ -391,7 +406,8 @@ if __name__ == '__main__':
     l_hM_dPhi_reco_Centrality_70to80_sim = []
     l_hM_dPhi_reco_Centrality_80to90_sim = []
     l_hM_dPhi_reco_Centrality_90to100_sim = []
-    l_hM_dPhi_reco_Centrality_0to10_MBDAsymLe0p75_sim = []
+    l_hM_dPhi_reco_Centrality_0to5_MBDAsymLe0p75_sim = []
+    l_hM_dPhi_reco_Centrality_5to10_MBDAsymLe0p75_sim = []
     l_hM_dPhi_reco_Centrality_10to20_MBDAsymLe0p75_sim = []
     l_hM_dPhi_reco_Centrality_20to30_MBDAsymLe0p75_sim = []
     l_hM_dPhi_reco_Centrality_30to40_MBDAsymLe0p75_sim = []
@@ -401,7 +417,8 @@ if __name__ == '__main__':
     l_hM_dPhi_reco_Centrality_70to80_MBDAsymLe0p75_sim = []
     l_hM_dPhi_reco_Centrality_80to90_MBDAsymLe0p75_sim = []
     l_hM_dPhi_reco_Centrality_90to100_MBDAsymLe0p75_sim = []
-    l_hM_dPhi_reco_Centrality_0to10_MBDAsymLe0p75_VtxZm30tom10_sim = []
+    l_hM_dPhi_reco_Centrality_0to5_MBDAsymLe0p75_VtxZm30tom10_sim = []
+    l_hM_dPhi_reco_Centrality_5to10_MBDAsymLe0p75_VtxZm30tom10_sim = []
     l_hM_dPhi_reco_Centrality_10to20_MBDAsymLe0p75_VtxZm30tom10_sim = []
     l_hM_dPhi_reco_Centrality_20to30_MBDAsymLe0p75_VtxZm30tom10_sim = []
     l_hM_dPhi_reco_Centrality_30to40_MBDAsymLe0p75_VtxZm30tom10_sim = []
@@ -412,8 +429,11 @@ if __name__ == '__main__':
     l_hM_dPhi_reco_Centrality_80to90_MBDAsymLe0p75_VtxZm30tom10_sim = []
     l_hM_dPhi_reco_Centrality_90to100_MBDAsymLe0p75_VtxZm30tom10_sim = []
     l_hM_dR_reco_sim = []
+    l_hM_dR_reco_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10_sim = []
     l_hM_Eta_reco_sim = []
-    l_hM_Eta_reco_Centrality_0to10_MBDAsymLe0p75_VtxZm30tom10_sim = []
+    l_hM_Eta_reco_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10_sim = []
+    l_hM_Eta_reco_Centrality_0to5_MBDAsymLe0p75_VtxZm30tom10_sim = []
+    l_hM_Eta_reco_Centrality_5to10_MBDAsymLe0p75_VtxZm30tom10_sim = []
     l_hM_Eta_reco_Centrality_10to20_MBDAsymLe0p75_VtxZm30tom10_sim = []
     l_hM_Eta_reco_Centrality_20to30_MBDAsymLe0p75_VtxZm30tom10_sim = []
     l_hM_Eta_reco_Centrality_30to40_MBDAsymLe0p75_VtxZm30tom10_sim = []
@@ -424,6 +444,7 @@ if __name__ == '__main__':
     l_hM_Eta_reco_Centrality_80to90_MBDAsymLe0p75_VtxZm30tom10_sim = []
     l_hM_Eta_reco_Centrality_90to100_MBDAsymLe0p75_VtxZm30tom10_sim = []
     l_hM_Phi_reco_sim = []
+    l_hM_Phi_reco_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10_sim = []
     l_hM_RecoPVz_sim = []
     l_hM_RecoPVz_MBDAsymLe0p75_VtxZm30tom10_sim = []
     l_hM_MBDChargeAsymm_Le0p75_sim = []
@@ -433,6 +454,7 @@ if __name__ == '__main__':
     l_hM_cluseta_sim = []
     l_hM_cluseta_zvtxwei_sim = []
     l_hM_clusphisize_sim = []
+    l_hM_clusadc_sim = []
     l_hM_cluseta_clusphisize_sim = []
     l_hM_clusphi_clusphisize_sim = []
     for i, simhistd in enumerate(simhistdir):
@@ -445,7 +467,9 @@ if __name__ == '__main__':
         l_hM_NRecotkl_Raw_sim.append(GetHistogram("{}/hists_merged.root".format(simhistd), 'hM_NRecotkl_Raw'))
         l_hM_dEta_reco_sim.append(GetHistogram("{}/hists_merged.root".format(simhistd), 'hM_dEta_reco'))
         l_hM_dEta_reco_altrange_sim.append(GetHistogram("{}/hists_merged.root".format(simhistd), 'hM_dEta_reco_altrange'))
-        l_hM_dEta_reco_Centrality_0to10_MBDAsymLe0p75_VtxZm30tom10_sim.append(GetHistogram("{}/hists_merged.root".format(simhistd), 'hM_dEta_reco_Centrality_0to10_MBDAsymLe0p75_VtxZm30tom10'))
+        l_hM_dEta_reco_altrange_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10_sim.append(GetHistogram("{}/hists_merged.root".format(simhistd), 'hM_dEta_reco_altrange_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10'))
+        l_hM_dEta_reco_Centrality_0to5_MBDAsymLe0p75_VtxZm30tom10_sim.append(GetHistogram("{}/hists_merged.root".format(simhistd), 'hM_dEta_reco_Centrality_0to5_MBDAsymLe0p75_VtxZm30tom10'))
+        l_hM_dEta_reco_Centrality_5to10_MBDAsymLe0p75_VtxZm30tom10_sim.append(GetHistogram("{}/hists_merged.root".format(simhistd), 'hM_dEta_reco_Centrality_5to10_MBDAsymLe0p75_VtxZm30tom10'))
         l_hM_dEta_reco_Centrality_10to20_MBDAsymLe0p75_VtxZm30tom10_sim.append(GetHistogram("{}/hists_merged.root".format(simhistd), 'hM_dEta_reco_Centrality_10to20_MBDAsymLe0p75_VtxZm30tom10'))
         l_hM_dEta_reco_Centrality_20to30_MBDAsymLe0p75_VtxZm30tom10_sim.append(GetHistogram("{}/hists_merged.root".format(simhistd), 'hM_dEta_reco_Centrality_20to30_MBDAsymLe0p75_VtxZm30tom10'))
         l_hM_dEta_reco_Centrality_30to40_MBDAsymLe0p75_VtxZm30tom10_sim.append(GetHistogram("{}/hists_merged.root".format(simhistd), 'hM_dEta_reco_Centrality_30to40_MBDAsymLe0p75_VtxZm30tom10'))
@@ -457,7 +481,9 @@ if __name__ == '__main__':
         l_hM_dEta_reco_Centrality_90to100_MBDAsymLe0p75_VtxZm30tom10_sim.append(GetHistogram("{}/hists_merged.root".format(simhistd), 'hM_dEta_reco_Centrality_90to100_MBDAsymLe0p75_VtxZm30tom10'))
         l_hM_dPhi_reco_sim.append(GetHistogram("{}/hists_merged.root".format(simhistd), 'hM_dPhi_reco'))
         l_hM_dPhi_reco_altrange_sim.append(GetHistogram("{}/hists_merged.root".format(simhistd), 'hM_dPhi_reco_altrange'))
-        l_hM_dPhi_reco_Centrality_0to10_sim.append(GetHistogram("{}/hists_merged.root".format(simhistd), 'hM_dPhi_reco_Centrality_0to10'))
+        l_hM_dPhi_reco_altrange_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10_sim.append(GetHistogram("{}/hists_merged.root".format(simhistd), 'hM_dPhi_reco_altrange_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10'))
+        l_hM_dPhi_reco_Centrality_0to5_sim.append(GetHistogram("{}/hists_merged.root".format(simhistd), 'hM_dPhi_reco_Centrality_0to5'))
+        l_hM_dPhi_reco_Centrality_5to10_sim.append(GetHistogram("{}/hists_merged.root".format(simhistd), 'hM_dPhi_reco_Centrality_5to10'))
         l_hM_dPhi_reco_Centrality_10to20_sim.append(GetHistogram("{}/hists_merged.root".format(simhistd), 'hM_dPhi_reco_Centrality_10to20'))
         l_hM_dPhi_reco_Centrality_20to30_sim.append(GetHistogram("{}/hists_merged.root".format(simhistd), 'hM_dPhi_reco_Centrality_20to30'))
         l_hM_dPhi_reco_Centrality_30to40_sim.append(GetHistogram("{}/hists_merged.root".format(simhistd), 'hM_dPhi_reco_Centrality_30to40'))
@@ -467,7 +493,8 @@ if __name__ == '__main__':
         l_hM_dPhi_reco_Centrality_70to80_sim.append(GetHistogram("{}/hists_merged.root".format(simhistd), 'hM_dPhi_reco_Centrality_70to80'))
         l_hM_dPhi_reco_Centrality_80to90_sim.append(GetHistogram("{}/hists_merged.root".format(simhistd), 'hM_dPhi_reco_Centrality_80to90'))
         l_hM_dPhi_reco_Centrality_90to100_sim.append(GetHistogram("{}/hists_merged.root".format(simhistd), 'hM_dPhi_reco_Centrality_90to100'))
-        l_hM_dPhi_reco_Centrality_0to10_MBDAsymLe0p75_sim.append(GetHistogram("{}/hists_merged.root".format(simhistd), 'hM_dPhi_reco_Centrality_0to10_MBDAsymLe0p75'))
+        l_hM_dPhi_reco_Centrality_0to5_MBDAsymLe0p75_sim.append(GetHistogram("{}/hists_merged.root".format(simhistd), 'hM_dPhi_reco_Centrality_0to5_MBDAsymLe0p75'))
+        l_hM_dPhi_reco_Centrality_5to10_MBDAsymLe0p75_sim.append(GetHistogram("{}/hists_merged.root".format(simhistd), 'hM_dPhi_reco_Centrality_5to10_MBDAsymLe0p75'))
         l_hM_dPhi_reco_Centrality_10to20_MBDAsymLe0p75_sim.append(GetHistogram("{}/hists_merged.root".format(simhistd), 'hM_dPhi_reco_Centrality_10to20_MBDAsymLe0p75'))
         l_hM_dPhi_reco_Centrality_20to30_MBDAsymLe0p75_sim.append(GetHistogram("{}/hists_merged.root".format(simhistd), 'hM_dPhi_reco_Centrality_20to30_MBDAsymLe0p75'))
         l_hM_dPhi_reco_Centrality_30to40_MBDAsymLe0p75_sim.append(GetHistogram("{}/hists_merged.root".format(simhistd), 'hM_dPhi_reco_Centrality_30to40_MBDAsymLe0p75'))
@@ -477,7 +504,8 @@ if __name__ == '__main__':
         l_hM_dPhi_reco_Centrality_70to80_MBDAsymLe0p75_sim.append(GetHistogram("{}/hists_merged.root".format(simhistd), 'hM_dPhi_reco_Centrality_70to80_MBDAsymLe0p75'))
         l_hM_dPhi_reco_Centrality_80to90_MBDAsymLe0p75_sim.append(GetHistogram("{}/hists_merged.root".format(simhistd), 'hM_dPhi_reco_Centrality_80to90_MBDAsymLe0p75'))
         l_hM_dPhi_reco_Centrality_90to100_MBDAsymLe0p75_sim.append(GetHistogram("{}/hists_merged.root".format(simhistd), 'hM_dPhi_reco_Centrality_90to100_MBDAsymLe0p75'))
-        l_hM_dPhi_reco_Centrality_0to10_MBDAsymLe0p75_VtxZm30tom10_sim.append(GetHistogram("{}/hists_merged.root".format(simhistd), 'hM_dPhi_reco_Centrality_0to10_MBDAsymLe0p75_VtxZm30tom10'))
+        l_hM_dPhi_reco_Centrality_0to5_MBDAsymLe0p75_VtxZm30tom10_sim.append(GetHistogram("{}/hists_merged.root".format(simhistd), 'hM_dPhi_reco_Centrality_0to5_MBDAsymLe0p75_VtxZm30tom10'))
+        l_hM_dPhi_reco_Centrality_5to10_MBDAsymLe0p75_VtxZm30tom10_sim.append(GetHistogram("{}/hists_merged.root".format(simhistd), 'hM_dPhi_reco_Centrality_5to10_MBDAsymLe0p75_VtxZm30tom10'))
         l_hM_dPhi_reco_Centrality_10to20_MBDAsymLe0p75_VtxZm30tom10_sim.append(GetHistogram("{}/hists_merged.root".format(simhistd), 'hM_dPhi_reco_Centrality_10to20_MBDAsymLe0p75_VtxZm30tom10'))
         l_hM_dPhi_reco_Centrality_20to30_MBDAsymLe0p75_VtxZm30tom10_sim.append(GetHistogram("{}/hists_merged.root".format(simhistd), 'hM_dPhi_reco_Centrality_20to30_MBDAsymLe0p75_VtxZm30tom10'))
         l_hM_dPhi_reco_Centrality_30to40_MBDAsymLe0p75_VtxZm30tom10_sim.append(GetHistogram("{}/hists_merged.root".format(simhistd), 'hM_dPhi_reco_Centrality_30to40_MBDAsymLe0p75_VtxZm30tom10'))
@@ -488,8 +516,11 @@ if __name__ == '__main__':
         l_hM_dPhi_reco_Centrality_80to90_MBDAsymLe0p75_VtxZm30tom10_sim.append(GetHistogram("{}/hists_merged.root".format(simhistd), 'hM_dPhi_reco_Centrality_80to90_MBDAsymLe0p75_VtxZm30tom10'))
         l_hM_dPhi_reco_Centrality_90to100_MBDAsymLe0p75_VtxZm30tom10_sim.append(GetHistogram("{}/hists_merged.root".format(simhistd), 'hM_dPhi_reco_Centrality_90to100_MBDAsymLe0p75_VtxZm30tom10'))
         l_hM_dR_reco_sim.append(GetHistogram("{}/hists_merged.root".format(simhistd), 'hM_dR_reco'))
+        l_hM_dR_reco_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10_sim.append(GetHistogram("{}/hists_merged.root".format(simhistd), 'hM_dR_reco_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10'))
         l_hM_Eta_reco_sim.append(GetHistogram("{}/hists_merged.root".format(simhistd), 'hM_Eta_reco'))
-        l_hM_Eta_reco_Centrality_0to10_MBDAsymLe0p75_VtxZm30tom10_sim.append(GetHistogram("{}/hists_merged.root".format(simhistd), 'hM_Eta_reco_Centrality_0to10_MBDAsymLe0p75_VtxZm30tom10'))
+        l_hM_Eta_reco_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10_sim.append(GetHistogram("{}/hists_merged.root".format(simhistd), 'hM_Eta_reco_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10'))
+        l_hM_Eta_reco_Centrality_0to5_MBDAsymLe0p75_VtxZm30tom10_sim.append(GetHistogram("{}/hists_merged.root".format(simhistd), 'hM_Eta_reco_Centrality_0to5_MBDAsymLe0p75_VtxZm30tom10'))
+        l_hM_Eta_reco_Centrality_5to10_MBDAsymLe0p75_VtxZm30tom10_sim.append(GetHistogram("{}/hists_merged.root".format(simhistd), 'hM_Eta_reco_Centrality_5to10_MBDAsymLe0p75_VtxZm30tom10'))
         l_hM_Eta_reco_Centrality_10to20_MBDAsymLe0p75_VtxZm30tom10_sim.append(GetHistogram("{}/hists_merged.root".format(simhistd), 'hM_Eta_reco_Centrality_10to20_MBDAsymLe0p75_VtxZm30tom10'))
         l_hM_Eta_reco_Centrality_20to30_MBDAsymLe0p75_VtxZm30tom10_sim.append(GetHistogram("{}/hists_merged.root".format(simhistd), 'hM_Eta_reco_Centrality_20to30_MBDAsymLe0p75_VtxZm30tom10'))
         l_hM_Eta_reco_Centrality_30to40_MBDAsymLe0p75_VtxZm30tom10_sim.append(GetHistogram("{}/hists_merged.root".format(simhistd), 'hM_Eta_reco_Centrality_30to40_MBDAsymLe0p75_VtxZm30tom10'))
@@ -500,6 +531,7 @@ if __name__ == '__main__':
         l_hM_Eta_reco_Centrality_80to90_MBDAsymLe0p75_VtxZm30tom10_sim.append(GetHistogram("{}/hists_merged.root".format(simhistd), 'hM_Eta_reco_Centrality_80to90_MBDAsymLe0p75_VtxZm30tom10'))
         l_hM_Eta_reco_Centrality_90to100_MBDAsymLe0p75_VtxZm30tom10_sim.append(GetHistogram("{}/hists_merged.root".format(simhistd), 'hM_Eta_reco_Centrality_90to100_MBDAsymLe0p75_VtxZm30tom10'))
         l_hM_Phi_reco_sim.append(GetHistogram("{}/hists_merged.root".format(simhistd), 'hM_Phi_reco'))
+        l_hM_Phi_reco_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10_sim.append(GetHistogram("{}/hists_merged.root".format(simhistd), 'hM_Phi_reco_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10'))
         l_hM_RecoPVz_sim.append(GetHistogram("{}/hists_merged.root".format(simhistd), 'hM_RecoPVz'))
         l_hM_RecoPVz_MBDAsymLe0p75_VtxZm30tom10_sim.append(GetHistogram("{}/hists_merged.root".format(simhistd), 'hM_RecoPVz_MBDAsymLe0p75_VtxZm30tom10'))
         l_hM_MBDChargeAsymm_Le0p75_sim.append(GetHistogram("{}/hists_merged.root".format(simhistd), 'hM_MBDChargeAsymm_Le0p75'))
@@ -509,6 +541,7 @@ if __name__ == '__main__':
         l_hM_cluseta_sim.append(GetHistogram("{}/hists_merged.root".format(simhistd), 'hM_cluseta'))
         l_hM_cluseta_zvtxwei_sim.append(GetHistogram("{}/hists_merged.root".format(simhistd), 'hM_cluseta_zvtxwei'))
         l_hM_clusphisize_sim.append(GetHistogram("{}/hists_merged.root".format(simhistd), 'hM_clusphisize'))
+        l_hM_clusadc_sim.append(GetHistogram("{}/hists_merged.root".format(simhistd), 'hM_clusadc'))
         l_hM_cluseta_clusphisize_sim.append(GetHistogram("{}/hists_merged.root".format(simhistd), 'hM_cluseta_clusphisize'))
         l_hM_clusphi_clusphisize_sim.append(GetHistogram("{}/hists_merged.root".format(simhistd), 'hM_clusphi_clusphisize'))
 
@@ -557,10 +590,18 @@ if __name__ == '__main__':
     Draw_1Dhist_datasimcomp(hM_cluseta_data, l_hM_cluseta_sim, [0.1,0.08,0.15,0.13], 'data', False, 1.8, 'Cluster #eta', '', False, simlegtext, ['Cluster ADC > 35'], './DataSimComp/{}/Cluster_Eta'.format(plotdir))
     Draw_1Dhist_datasimcomp(hM_cluseta_zvtxwei_data, l_hM_cluseta_zvtxwei_sim, [0.1,0.08,0.15,0.13], 'data', False, 1.8, 'Cluster #eta', '', False, simlegtext, ['Cluster ADC > 35'], './DataSimComp/{}/Cluster_Eta_zvtxwei'.format(plotdir))
     Draw_1Dhist_datasimcomp(hM_clusphisize_data, l_hM_clusphisize_sim, [0.1,0.08,0.15,0.13], 'data', True, 100, 'Cluster #phi size', '', False, simlegtext, ['Cluster ADC > 35'], './DataSimComp/{}/Cluster_PhiSize'.format(plotdir))
+    hM_clusadc_data.GetXaxis().SetMaxDigits(3)
+    hM_clusadc_data.GetXaxis().SetNdivisions(-10)
+    for hM_clusadc_sim in l_hM_clusadc_sim:
+        hM_clusadc_sim.GetXaxis().SetMaxDigits(3)
+        hM_clusadc_sim.GetXaxis().SetNdivisions(-10)
+    Draw_1Dhist_datasimcomp(hM_clusadc_data, l_hM_clusadc_sim, [0.1,0.08,0.15,0.13], 'data', True, 100, 'Cluster ADC', '', False, simlegtext, ['Cluster ADC > 35'], './DataSimComp/{}/Cluster_ADC'.format(plotdir))
 
     Draw_1Dhist_datasimcomp(hM_dEta_reco_data, l_hM_dEta_reco_sim, [0.08,0.08,0.15,0.13], 'data', True, 250, 'Reco-tracklet #Delta#eta', '', False, simlegtext, ['Cluster ADC > 35'], './DataSimComp/{}/RecoTracklet_dEta'.format(plotdir))
     Draw_1Dhist_datasimcomp(hM_dEta_reco_altrange_data, l_hM_dEta_reco_altrange_sim, [0.08,0.08,0.15,0.13], 'data', True, 250, 'Reco-tracklet #Delta#eta', '', False, simlegtext, ['Cluster ADC > 35'], './DataSimComp/{}/RecoTracklet_dEta_altrange'.format(plotdir))
-    Draw_1Dhist_datasimcomp(hM_dEta_reco_Centrality_0to10_MBDAsymLe0p75_VtxZm30tom10_data, l_hM_dEta_reco_Centrality_0to10_MBDAsymLe0p75_VtxZm30tom10_sim, [0.08,0.08,0.15,0.13], 'data', True, 250, 'Reco-tracklet #Delta#eta', '', False, simlegtext, ['Centrality 0-10%, Cluster ADC > 35', '|Asymm._{MBD}|#leq0.75, -30#leqZ_{vtx}#leq-10[cm]'], './DataSimComp/{}/RecoTracklet_dEta_Centrality_0to10_MBDAsymLe0p75_VtxZm30tom10'.format(plotdir))
+    Draw_1Dhist_datasimcomp(hM_dEta_reco_altrange_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10_data, l_hM_dEta_reco_altrange_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10_sim, [0.08,0.08,0.15,0.13], 'data', True, 250, 'Reco-tracklet #Delta#eta', '', False, simlegtext, ['Centrality 0-70%, |Asymm._{MBD}|#leq0.75', '-30#leqZ_{vtx}#leq-10[cm]'], './DataSimComp/{}/RecoTracklet_dEta_altrange_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10'.format(plotdir))
+    # Draw_1Dhist_datasimcomp(hM_dEta_reco_Centrality_0to5_MBDAsymLe0p75_VtxZm30tom10_data, l_hM_dEta_reco_Centrality_0to5_MBDAsymLe0p75_VtxZm30tom10_sim, [0.08,0.08,0.15,0.13], 'data', True, 250, 'Reco-tracklet #Delta#eta', '', False, simlegtext, ['Centrality 0-5%, Cluster ADC > 35', '|Asymm._{MBD}|#leq0.75, -30#leqZ_{vtx}#leq-10[cm]'], './DataSimComp/{}/RecoTracklet_dEta_Centrality_0to5_MBDAsymLe0p75_VtxZm30tom10'.format(plotdir))
+    Draw_1Dhist_datasimcomp(hM_dEta_reco_Centrality_5to10_MBDAsymLe0p75_VtxZm30tom10_data, l_hM_dEta_reco_Centrality_5to10_MBDAsymLe0p75_VtxZm30tom10_sim, [0.08,0.08,0.15,0.13], 'data', True, 250, 'Reco-tracklet #Delta#eta', '', False, simlegtext, ['Centrality 5-10%, Cluster ADC > 35', '|Asymm._{MBD}|#leq0.75, -30#leqZ_{vtx}#leq-10[cm]'], './DataSimComp/{}/RecoTracklet_dEta_Centrality_5to10_MBDAsymLe0p75_VtxZm30tom10'.format(plotdir))
     Draw_1Dhist_datasimcomp(hM_dEta_reco_Centrality_10to20_MBDAsymLe0p75_VtxZm30tom10_data, l_hM_dEta_reco_Centrality_10to20_MBDAsymLe0p75_VtxZm30tom10_sim, [0.08,0.08,0.15,0.13], 'data', True, 250, 'Reco-tracklet #Delta#eta', '', False, simlegtext, ['Centrality 10-20%, Cluster ADC > 35', '|Asymm._{MBD}|#leq0.75, -30#leqZ_{vtx}#leq-10[cm]'], './DataSimComp/{}/RecoTracklet_dEta_Centrality_10to20_MBDAsymLe0p75_VtxZm30tom10'.format(plotdir))
     Draw_1Dhist_datasimcomp(hM_dEta_reco_Centrality_20to30_MBDAsymLe0p75_VtxZm30tom10_data, l_hM_dEta_reco_Centrality_20to30_MBDAsymLe0p75_VtxZm30tom10_sim, [0.08,0.08,0.15,0.13], 'data', True, 250, 'Reco-tracklet #Delta#eta', '', False, simlegtext, ['Centrality 20-30%, Cluster ADC > 35', '|Asymm._{MBD}|#leq0.75, -30#leqZ_{vtx}#leq-10[cm]'], './DataSimComp/{}/RecoTracklet_dEta_Centrality_20to30_MBDAsymLe0p75_VtxZm30tom10'.format(plotdir))
     Draw_1Dhist_datasimcomp(hM_dEta_reco_Centrality_30to40_MBDAsymLe0p75_VtxZm30tom10_data, l_hM_dEta_reco_Centrality_30to40_MBDAsymLe0p75_VtxZm30tom10_sim, [0.08,0.08,0.15,0.13], 'data', True, 250, 'Reco-tracklet #Delta#eta', '', False, simlegtext, ['Centrality 30-40%, Cluster ADC > 35', '|Asymm._{MBD}|#leq0.75, -30#leqZ_{vtx}#leq-10[cm]'], './DataSimComp/{}/RecoTracklet_dEta_Centrality_30to40_MBDAsymLe0p75_VtxZm30tom10'.format(plotdir))
@@ -573,7 +614,9 @@ if __name__ == '__main__':
     Draw_1Dhist_datasimcomp(hM_dPhi_reco_data, l_hM_dPhi_reco_sim, [0.08,0.08,0.15,0.13], 'data', True, 500, 'Reco-tracklet #Delta#phi', '', False, simlegtext, ['Cluster ADC > 35'], './DataSimComp/{}/RecoTracklet_dPhi'.format(plotdir))
     
     hM_dPhi_reco_altrange_data.GetXaxis().SetMaxDigits(2)
-    hM_dPhi_reco_Centrality_0to10_data.GetXaxis().SetMaxDigits(2)
+    hM_dPhi_reco_altrange_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10_data.GetXaxis().SetMaxDigits(2)
+    hM_dPhi_reco_Centrality_0to5_data.GetXaxis().SetMaxDigits(2)
+    hM_dPhi_reco_Centrality_5to10_data.GetXaxis().SetMaxDigits(2)
     hM_dPhi_reco_Centrality_10to20_data.GetXaxis().SetMaxDigits(2)
     hM_dPhi_reco_Centrality_20to30_data.GetXaxis().SetMaxDigits(2)
     hM_dPhi_reco_Centrality_30to40_data.GetXaxis().SetMaxDigits(2)
@@ -583,7 +626,8 @@ if __name__ == '__main__':
     hM_dPhi_reco_Centrality_70to80_data.GetXaxis().SetMaxDigits(2)
     hM_dPhi_reco_Centrality_80to90_data.GetXaxis().SetMaxDigits(2)
     hM_dPhi_reco_Centrality_90to100_data.GetXaxis().SetMaxDigits(2)
-    hM_dPhi_reco_Centrality_0to10_MBDAsymLe0p75_data.GetXaxis().SetMaxDigits(2)
+    hM_dPhi_reco_Centrality_0to5_MBDAsymLe0p75_data.GetXaxis().SetMaxDigits(2)
+    hM_dPhi_reco_Centrality_5to10_MBDAsymLe0p75_data.GetXaxis().SetMaxDigits(2)
     hM_dPhi_reco_Centrality_10to20_MBDAsymLe0p75_data.GetXaxis().SetMaxDigits(2)
     hM_dPhi_reco_Centrality_20to30_MBDAsymLe0p75_data.GetXaxis().SetMaxDigits(2)
     hM_dPhi_reco_Centrality_30to40_MBDAsymLe0p75_data.GetXaxis().SetMaxDigits(2)
@@ -593,7 +637,8 @@ if __name__ == '__main__':
     hM_dPhi_reco_Centrality_70to80_MBDAsymLe0p75_data.GetXaxis().SetMaxDigits(2)
     hM_dPhi_reco_Centrality_80to90_MBDAsymLe0p75_data.GetXaxis().SetMaxDigits(2)
     hM_dPhi_reco_Centrality_90to100_MBDAsymLe0p75_data.GetXaxis().SetMaxDigits(2)
-    hM_dPhi_reco_Centrality_0to10_MBDAsymLe0p75_VtxZm30tom10_data.GetXaxis().SetMaxDigits(2)
+    hM_dPhi_reco_Centrality_0to5_MBDAsymLe0p75_VtxZm30tom10_data.GetXaxis().SetMaxDigits(2)
+    hM_dPhi_reco_Centrality_5to10_MBDAsymLe0p75_VtxZm30tom10_data.GetXaxis().SetMaxDigits(2)
     hM_dPhi_reco_Centrality_10to20_MBDAsymLe0p75_VtxZm30tom10_data.GetXaxis().SetMaxDigits(2)
     hM_dPhi_reco_Centrality_20to30_MBDAsymLe0p75_VtxZm30tom10_data.GetXaxis().SetMaxDigits(2)
     hM_dPhi_reco_Centrality_30to40_MBDAsymLe0p75_VtxZm30tom10_data.GetXaxis().SetMaxDigits(2)
@@ -605,7 +650,9 @@ if __name__ == '__main__':
     hM_dPhi_reco_Centrality_90to100_MBDAsymLe0p75_VtxZm30tom10_data.GetXaxis().SetMaxDigits(2)
     for i in range(len(l_hM_dPhi_reco_altrange_sim)):
         l_hM_dPhi_reco_altrange_sim[i].GetXaxis().SetMaxDigits(2)
-        l_hM_dPhi_reco_Centrality_0to10_sim[i].GetXaxis().SetMaxDigits(2)
+        l_hM_dPhi_reco_altrange_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10_sim[i].GetXaxis().SetMaxDigits(2)
+        l_hM_dPhi_reco_Centrality_0to5_sim[i].GetXaxis().SetMaxDigits(2)
+        l_hM_dPhi_reco_Centrality_5to10_sim[i].GetXaxis().SetMaxDigits(2)
         l_hM_dPhi_reco_Centrality_10to20_sim[i].GetXaxis().SetMaxDigits(2)
         l_hM_dPhi_reco_Centrality_20to30_sim[i].GetXaxis().SetMaxDigits(2)
         l_hM_dPhi_reco_Centrality_30to40_sim[i].GetXaxis().SetMaxDigits(2)
@@ -615,7 +662,8 @@ if __name__ == '__main__':
         l_hM_dPhi_reco_Centrality_70to80_sim[i].GetXaxis().SetMaxDigits(2)
         l_hM_dPhi_reco_Centrality_80to90_sim[i].GetXaxis().SetMaxDigits(2)
         l_hM_dPhi_reco_Centrality_90to100_sim[i].GetXaxis().SetMaxDigits(2)
-        l_hM_dPhi_reco_Centrality_0to10_MBDAsymLe0p75_sim[i].GetXaxis().SetMaxDigits(2)
+        l_hM_dPhi_reco_Centrality_0to5_MBDAsymLe0p75_sim[i].GetXaxis().SetMaxDigits(2)
+        l_hM_dPhi_reco_Centrality_5to10_MBDAsymLe0p75_sim[i].GetXaxis().SetMaxDigits(2)
         l_hM_dPhi_reco_Centrality_10to20_MBDAsymLe0p75_sim[i].GetXaxis().SetMaxDigits(2)
         l_hM_dPhi_reco_Centrality_20to30_MBDAsymLe0p75_sim[i].GetXaxis().SetMaxDigits(2)
         l_hM_dPhi_reco_Centrality_30to40_MBDAsymLe0p75_sim[i].GetXaxis().SetMaxDigits(2)
@@ -625,7 +673,8 @@ if __name__ == '__main__':
         l_hM_dPhi_reco_Centrality_70to80_MBDAsymLe0p75_sim[i].GetXaxis().SetMaxDigits(2)
         l_hM_dPhi_reco_Centrality_80to90_MBDAsymLe0p75_sim[i].GetXaxis().SetMaxDigits(2)
         l_hM_dPhi_reco_Centrality_90to100_MBDAsymLe0p75_sim[i].GetXaxis().SetMaxDigits(2)
-        l_hM_dPhi_reco_Centrality_0to10_MBDAsymLe0p75_VtxZm30tom10_sim[i].GetXaxis().SetMaxDigits(2)
+        l_hM_dPhi_reco_Centrality_0to5_MBDAsymLe0p75_VtxZm30tom10_sim[i].GetXaxis().SetMaxDigits(2)
+        l_hM_dPhi_reco_Centrality_5to10_MBDAsymLe0p75_VtxZm30tom10_sim[i].GetXaxis().SetMaxDigits(2)
         l_hM_dPhi_reco_Centrality_10to20_MBDAsymLe0p75_VtxZm30tom10_sim[i].GetXaxis().SetMaxDigits(2)
         l_hM_dPhi_reco_Centrality_20to30_MBDAsymLe0p75_VtxZm30tom10_sim[i].GetXaxis().SetMaxDigits(2)
         l_hM_dPhi_reco_Centrality_30to40_MBDAsymLe0p75_VtxZm30tom10_sim[i].GetXaxis().SetMaxDigits(2)
@@ -637,7 +686,9 @@ if __name__ == '__main__':
         l_hM_dPhi_reco_Centrality_90to100_MBDAsymLe0p75_VtxZm30tom10_sim[i].GetXaxis().SetMaxDigits(2)
         
     Draw_1Dhist_datasimcomp(hM_dPhi_reco_altrange_data, l_hM_dPhi_reco_altrange_sim, [0.1,0.08,0.15,0.13], 'data', True, 100, 'Reco-tracklet #Delta#phi', '', False, simlegtext, ['Centrality 0-100%, Cluster ADC > 35'], './DataSimComp/{}/RecoTracklet_dPhi_altrange'.format(plotdir))
-    Draw_1Dhist_datasimcomp(hM_dPhi_reco_Centrality_0to10_data, l_hM_dPhi_reco_Centrality_0to10_sim, [0.1,0.08,0.15,0.13], 'data', True, 100, 'Reco-tracklet #Delta#phi', '', False, simlegtext, ['Centrality 0-10%, Cluster ADC > 35'], './DataSimComp/{}/RecoTracklet_dPhi_Centrality_0to10'.format(plotdir))
+    Draw_1Dhist_datasimcomp(hM_dPhi_reco_altrange_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10_data, l_hM_dPhi_reco_altrange_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10_sim, [0.1,0.08,0.15,0.13], 'data', True, 100, 'Reco-tracklet #Delta#phi', '', False, simlegtext, ['Centrality 0-70%, |Asymm._{MBD}|#leq0.75', '-30#leqZ_{vtx}#leq-10[cm]'], './DataSimComp/{}/RecoTracklet_dPhi_altrange_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10'.format(plotdir))
+    # Draw_1Dhist_datasimcomp(hM_dPhi_reco_Centrality_0to5_data, l_hM_dPhi_reco_Centrality_0to5_sim, [0.1,0.08,0.15,0.13], 'data', True, 100, 'Reco-tracklet #Delta#phi', '', False, simlegtext, ['Centrality 0-5%, Cluster ADC > 35'], './DataSimComp/{}/RecoTracklet_dPhi_Centrality_0to5'.format(plotdir))
+    Draw_1Dhist_datasimcomp(hM_dPhi_reco_Centrality_5to10_data, l_hM_dPhi_reco_Centrality_5to10_sim, [0.1,0.08,0.15,0.13], 'data', True, 100, 'Reco-tracklet #Delta#phi', '', False, simlegtext, ['Centrality 5-10%, Cluster ADC > 35'], './DataSimComp/{}/RecoTracklet_dPhi_Centrality_5to10'.format(plotdir))
     Draw_1Dhist_datasimcomp(hM_dPhi_reco_Centrality_10to20_data, l_hM_dPhi_reco_Centrality_10to20_sim, [0.1,0.08,0.15,0.13], 'data', True, 100, 'Reco-tracklet #Delta#phi', '', False, simlegtext, ['Centrality 10-20%, Cluster ADC > 35'], './DataSimComp/{}/RecoTracklet_dPhi_Centrality_10to20'.format(plotdir))
     Draw_1Dhist_datasimcomp(hM_dPhi_reco_Centrality_20to30_data, l_hM_dPhi_reco_Centrality_20to30_sim, [0.1,0.08,0.15,0.13], 'data', True, 100, 'Reco-tracklet #Delta#phi', '', False, simlegtext, ['Centrality 20-30%, Cluster ADC > 35'], './DataSimComp/{}/RecoTracklet_dPhi_Centrality_20to30'.format(plotdir))
     Draw_1Dhist_datasimcomp(hM_dPhi_reco_Centrality_30to40_data, l_hM_dPhi_reco_Centrality_30to40_sim, [0.1,0.08,0.15,0.13], 'data', True, 100, 'Reco-tracklet #Delta#phi', '', False, simlegtext, ['Centrality 30-40%, Cluster ADC > 35'], './DataSimComp/{}/RecoTracklet_dPhi_Centrality_30to40'.format(plotdir))
@@ -647,7 +698,8 @@ if __name__ == '__main__':
     Draw_1Dhist_datasimcomp(hM_dPhi_reco_Centrality_70to80_data, l_hM_dPhi_reco_Centrality_70to80_sim, [0.1,0.08,0.15,0.13], 'data', True, 100, 'Reco-tracklet #Delta#phi', '', False, simlegtext, ['Centrality 70-80%, Cluster ADC > 35'], './DataSimComp/{}/RecoTracklet_dPhi_Centrality_70to80'.format(plotdir))
     Draw_1Dhist_datasimcomp(hM_dPhi_reco_Centrality_80to90_data, l_hM_dPhi_reco_Centrality_80to90_sim, [0.1,0.08,0.15,0.13], 'data', True, 100, 'Reco-tracklet #Delta#phi', '', False, simlegtext, ['Centrality 80-90%, Cluster ADC > 35'], './DataSimComp/{}/RecoTracklet_dPhi_Centrality_80to90'.format(plotdir))
     Draw_1Dhist_datasimcomp(hM_dPhi_reco_Centrality_90to100_data, l_hM_dPhi_reco_Centrality_90to100_sim, [0.1,0.08,0.15,0.13], 'data', True, 100, 'Reco-tracklet #Delta#phi', '', False, simlegtext, ['Centrality 90-100%, Cluster ADC > 35'], './DataSimComp/{}/RecoTracklet_dPhi_Centrality_90to100'.format(plotdir))
-    Draw_1Dhist_datasimcomp(hM_dPhi_reco_Centrality_0to10_MBDAsymLe0p75_data, l_hM_dPhi_reco_Centrality_0to10_MBDAsymLe0p75_sim, [0.1,0.08,0.15,0.13], 'data', True, 100, 'Reco-tracklet #Delta#phi', '', False, simlegtext, ['Centrality 0-10%, Cluster ADC > 35','|Asymm._{MBD}|#leq0.75}'], './DataSimComp/{}/RecoTracklet_dPhi_Centrality_0to10_MBDAsymLe0p75'.format(plotdir))
+    # Draw_1Dhist_datasimcomp(hM_dPhi_reco_Centrality_0to5_MBDAsymLe0p75_data, l_hM_dPhi_reco_Centrality_0to5_MBDAsymLe0p75_sim, [0.1,0.08,0.15,0.13], 'data', True, 100, 'Reco-tracklet #Delta#phi', '', False, simlegtext, ['Centrality 0-5%, Cluster ADC > 35','|Asymm._{MBD}|#leq0.75}'], './DataSimComp/{}/RecoTracklet_dPhi_Centrality_0to5_MBDAsymLe0p75'.format(plotdir))
+    Draw_1Dhist_datasimcomp(hM_dPhi_reco_Centrality_5to10_MBDAsymLe0p75_data, l_hM_dPhi_reco_Centrality_5to10_MBDAsymLe0p75_sim, [0.1,0.08,0.15,0.13], 'data', True, 100, 'Reco-tracklet #Delta#phi', '', False, simlegtext, ['Centrality 5-10%, Cluster ADC > 35', '|Asymm._{MBD}|#leq0.75'], './DataSimComp/{}/RecoTracklet_dPhi_Centrality_5to10_MBDAsymLe0p75'.format(plotdir))
     Draw_1Dhist_datasimcomp(hM_dPhi_reco_Centrality_10to20_MBDAsymLe0p75_data, l_hM_dPhi_reco_Centrality_10to20_MBDAsymLe0p75_sim, [0.1,0.08,0.15,0.13], 'data', True, 100, 'Reco-tracklet #Delta#phi', '', False, simlegtext, ['Centrality 10-20%, Cluster ADC > 35', '|Asymm._{MBD}|#leq0.75'], './DataSimComp/{}/RecoTracklet_dPhi_Centrality_10to20_MBDAsymLe0p75'.format(plotdir))
     Draw_1Dhist_datasimcomp(hM_dPhi_reco_Centrality_20to30_MBDAsymLe0p75_data, l_hM_dPhi_reco_Centrality_20to30_MBDAsymLe0p75_sim, [0.1,0.08,0.15,0.13], 'data', True, 100, 'Reco-tracklet #Delta#phi', '', False, simlegtext, ['Centrality 20-30%, Cluster ADC > 35', '|Asymm._{MBD}|#leq0.75'], './DataSimComp/{}/RecoTracklet_dPhi_Centrality_20to30_MBDAsymLe0p75'.format(plotdir))
     Draw_1Dhist_datasimcomp(hM_dPhi_reco_Centrality_30to40_MBDAsymLe0p75_data, l_hM_dPhi_reco_Centrality_30to40_MBDAsymLe0p75_sim, [0.1,0.08,0.15,0.13], 'data', True, 100, 'Reco-tracklet #Delta#phi', '', False, simlegtext, ['Centrality 30-40%, Cluster ADC > 35', '|Asymm._{MBD}|#leq0.75'], './DataSimComp/{}/RecoTracklet_dPhi_Centrality_30to40_MBDAsymLe0p75'.format(plotdir))
@@ -657,20 +709,24 @@ if __name__ == '__main__':
     Draw_1Dhist_datasimcomp(hM_dPhi_reco_Centrality_70to80_MBDAsymLe0p75_data, l_hM_dPhi_reco_Centrality_70to80_MBDAsymLe0p75_sim, [0.1,0.08,0.15,0.13], 'data', True, 100, 'Reco-tracklet #Delta#phi', '', False, simlegtext, ['Centrality 70-80%, Cluster ADC > 35', '|Asymm._{MBD}|#leq0.75'], './DataSimComp/{}/RecoTracklet_dPhi_Centrality_70to80_MBDAsymLe0p75'.format(plotdir))
     Draw_1Dhist_datasimcomp(hM_dPhi_reco_Centrality_80to90_MBDAsymLe0p75_data, l_hM_dPhi_reco_Centrality_80to90_MBDAsymLe0p75_sim, [0.1,0.08,0.15,0.13], 'data', True, 100, 'Reco-tracklet #Delta#phi', '', False, simlegtext, ['Centrality 80-90%, Cluster ADC > 35', '|Asymm._{MBD}|#leq0.75'], './DataSimComp/{}/RecoTracklet_dPhi_Centrality_80to90_MBDAsymLe0p75'.format(plotdir))
     Draw_1Dhist_datasimcomp(hM_dPhi_reco_Centrality_90to100_MBDAsymLe0p75_data, l_hM_dPhi_reco_Centrality_90to100_MBDAsymLe0p75_sim, [0.1,0.08,0.15,0.13], 'data', True, 100, 'Reco-tracklet #Delta#phi', '', False, simlegtext, ['Centrality 90-100%, Cluster ADC > 35', '|Asymm._{MBD}|#leq0.75'], './DataSimComp/{}/RecoTracklet_dPhi_Centrality_90to100_MBDAsymLe0p75'.format(plotdir))
-    Draw_1Dhist_datasimcomp(hM_dPhi_reco_Centrality_0to10_MBDAsymLe0p75_VtxZm30tom10_data, l_hM_dPhi_reco_Centrality_0to10_MBDAsymLe0p75_VtxZm30tom10_sim, [0.1,0.08,0.15,0.13], 'data', True, 100, 'Reco-tracklet #Delta#phi', '', False, simlegtext, ['Centrality 0-10%, Cluster ADC > 35', '|Asymm._{MBD}|#leq0.75, -30#leqZ_{vtx}#leq-10[cm]'], './DataSimComp/{}/RecoTracklet_dPhi_Centrality_0to10_MBDAsymLe0p75_VtxZm30tom10'.format(plotdir))
-    Draw_1Dhist_datasimcomp(hM_dPhi_reco_Centrality_10to20_MBDAsymLe0p75_VtxZm30tom10_data, l_hM_dPhi_reco_Centrality_10to20_MBDAsymLe0p75_VtxZm30tom10_sim, [0.1,0.08,0.15,0.13], 'data', True, 100, 'Reco-tracklet #Delta#phi', '', False, simlegtext, ['Centrality 0-10%, Cluster ADC > 35', '|Asymm._{MBD}|#leq0.75, -30#leqZ_{vtx}#leq-10[cm]'], './DataSimComp/{}/RecoTracklet_dPhi_Centrality_10to20_MBDAsymLe0p75_VtxZm30tom10'.format(plotdir))
-    Draw_1Dhist_datasimcomp(hM_dPhi_reco_Centrality_20to30_MBDAsymLe0p75_VtxZm30tom10_data, l_hM_dPhi_reco_Centrality_20to30_MBDAsymLe0p75_VtxZm30tom10_sim, [0.1,0.08,0.15,0.13], 'data', True, 100, 'Reco-tracklet #Delta#phi', '', False, simlegtext, ['Centrality 0-10%, Cluster ADC > 35', '|Asymm._{MBD}|#leq0.75, -30#leqZ_{vtx}#leq-10[cm]'], './DataSimComp/{}/RecoTracklet_dPhi_Centrality_20to30_MBDAsymLe0p75_VtxZm30tom10'.format(plotdir))
-    Draw_1Dhist_datasimcomp(hM_dPhi_reco_Centrality_30to40_MBDAsymLe0p75_VtxZm30tom10_data, l_hM_dPhi_reco_Centrality_30to40_MBDAsymLe0p75_VtxZm30tom10_sim, [0.1,0.08,0.15,0.13], 'data', True, 100, 'Reco-tracklet #Delta#phi', '', False, simlegtext, ['Centrality 0-10%, Cluster ADC > 35', '|Asymm._{MBD}|#leq0.75, -30#leqZ_{vtx}#leq-10[cm]'], './DataSimComp/{}/RecoTracklet_dPhi_Centrality_30to40_MBDAsymLe0p75_VtxZm30tom10'.format(plotdir))
-    Draw_1Dhist_datasimcomp(hM_dPhi_reco_Centrality_40to50_MBDAsymLe0p75_VtxZm30tom10_data, l_hM_dPhi_reco_Centrality_40to50_MBDAsymLe0p75_VtxZm30tom10_sim, [0.1,0.08,0.15,0.13], 'data', True, 100, 'Reco-tracklet #Delta#phi', '', False, simlegtext, ['Centrality 0-10%, Cluster ADC > 35', '|Asymm._{MBD}|#leq0.75, -30#leqZ_{vtx}#leq-10[cm]'], './DataSimComp/{}/RecoTracklet_dPhi_Centrality_40to50_MBDAsymLe0p75_VtxZm30tom10'.format(plotdir))
-    Draw_1Dhist_datasimcomp(hM_dPhi_reco_Centrality_50to60_MBDAsymLe0p75_VtxZm30tom10_data, l_hM_dPhi_reco_Centrality_50to60_MBDAsymLe0p75_VtxZm30tom10_sim, [0.1,0.08,0.15,0.13], 'data', True, 100, 'Reco-tracklet #Delta#phi', '', False, simlegtext, ['Centrality 0-10%, Cluster ADC > 35', '|Asymm._{MBD}|#leq0.75, -30#leqZ_{vtx}#leq-10[cm]'], './DataSimComp/{}/RecoTracklet_dPhi_Centrality_50to60_MBDAsymLe0p75_VtxZm30tom10'.format(plotdir))
-    Draw_1Dhist_datasimcomp(hM_dPhi_reco_Centrality_60to70_MBDAsymLe0p75_VtxZm30tom10_data, l_hM_dPhi_reco_Centrality_60to70_MBDAsymLe0p75_VtxZm30tom10_sim, [0.1,0.08,0.15,0.13], 'data', True, 100, 'Reco-tracklet #Delta#phi', '', False, simlegtext, ['Centrality 0-10%, Cluster ADC > 35', '|Asymm._{MBD}|#leq0.75, -30#leqZ_{vtx}#leq-10[cm]'], './DataSimComp/{}/RecoTracklet_dPhi_Centrality_60to70_MBDAsymLe0p75_VtxZm30tom10'.format(plotdir))
-    Draw_1Dhist_datasimcomp(hM_dPhi_reco_Centrality_70to80_MBDAsymLe0p75_VtxZm30tom10_data, l_hM_dPhi_reco_Centrality_70to80_MBDAsymLe0p75_VtxZm30tom10_sim, [0.1,0.08,0.15,0.13], 'data', True, 100, 'Reco-tracklet #Delta#phi', '', False, simlegtext, ['Centrality 0-10%, Cluster ADC > 35', '|Asymm._{MBD}|#leq0.75, -30#leqZ_{vtx}#leq-10[cm]'], './DataSimComp/{}/RecoTracklet_dPhi_Centrality_70to80_MBDAsymLe0p75_VtxZm30tom10'.format(plotdir))
-    Draw_1Dhist_datasimcomp(hM_dPhi_reco_Centrality_80to90_MBDAsymLe0p75_VtxZm30tom10_data, l_hM_dPhi_reco_Centrality_80to90_MBDAsymLe0p75_VtxZm30tom10_sim, [0.1,0.08,0.15,0.13], 'data', True, 100, 'Reco-tracklet #Delta#phi', '', False, simlegtext, ['Centrality 0-10%, Cluster ADC > 35', '|Asymm._{MBD}|#leq0.75, -30#leqZ_{vtx}#leq-10[cm]'], './DataSimComp/{}/RecoTracklet_dPhi_Centrality_80to90_MBDAsymLe0p75_VtxZm30tom10'.format(plotdir))
-    Draw_1Dhist_datasimcomp(hM_dPhi_reco_Centrality_90to100_MBDAsymLe0p75_VtxZm30tom10_data, l_hM_dPhi_reco_Centrality_90to100_MBDAsymLe0p75_VtxZm30tom10_sim, [0.1,0.08,0.15,0.13], 'data', True, 100, 'Reco-tracklet #Delta#phi', '', False, simlegtext, ['Centrality 0-10%, Cluster ADC > 35', '|Asymm._{MBD}|#leq0.75, -30#leqZ_{vtx}#leq-10[cm]'], './DataSimComp/{}/RecoTracklet_dPhi_Centrality_90to100_MBDAsymLe0p75_VtxZm30tom10'.format(plotdir))
+    # Draw_1Dhist_datasimcomp(hM_dPhi_reco_Centrality_0to5_MBDAsymLe0p75_VtxZm30tom10_data, l_hM_dPhi_reco_Centrality_0to5_MBDAsymLe0p75_VtxZm30tom10_sim, [0.1,0.08,0.15,0.13], 'data', True, 100, 'Reco-tracklet #Delta#phi', '', False, simlegtext, ['Centrality 0-5%, Cluster ADC > 35', '|Asymm._{MBD}|#leq0.75, -30#leqZ_{vtx}#leq-10[cm]'], './DataSimComp/{}/RecoTracklet_dPhi_Centrality_0to5_MBDAsymLe0p75_VtxZm30tom10'.format(plotdir))
+    Draw_1Dhist_datasimcomp(hM_dPhi_reco_Centrality_5to10_MBDAsymLe0p75_VtxZm30tom10_data, l_hM_dPhi_reco_Centrality_5to10_MBDAsymLe0p75_VtxZm30tom10_sim, [0.1,0.08,0.15,0.13], 'data', True, 100, 'Reco-tracklet #Delta#phi', '', False, simlegtext, ['Centrality 5-10%, Cluster ADC > 35', '|Asymm._{MBD}|#leq0.75, -30#leqZ_{vtx}#leq-10[cm]'], './DataSimComp/{}/RecoTracklet_dPhi_Centrality_5to10_MBDAsymLe0p75_VtxZm30tom10'.format(plotdir))
+    Draw_1Dhist_datasimcomp(hM_dPhi_reco_Centrality_10to20_MBDAsymLe0p75_VtxZm30tom10_data, l_hM_dPhi_reco_Centrality_10to20_MBDAsymLe0p75_VtxZm30tom10_sim, [0.1,0.08,0.15,0.13], 'data', True, 100, 'Reco-tracklet #Delta#phi', '', False, simlegtext, ['Centrality 10-20%, Cluster ADC > 35', '|Asymm._{MBD}|#leq0.75, -30#leqZ_{vtx}#leq-10[cm]'], './DataSimComp/{}/RecoTracklet_dPhi_Centrality_10to20_MBDAsymLe0p75_VtxZm30tom10'.format(plotdir))
+    Draw_1Dhist_datasimcomp(hM_dPhi_reco_Centrality_20to30_MBDAsymLe0p75_VtxZm30tom10_data, l_hM_dPhi_reco_Centrality_20to30_MBDAsymLe0p75_VtxZm30tom10_sim, [0.1,0.08,0.15,0.13], 'data', True, 100, 'Reco-tracklet #Delta#phi', '', False, simlegtext, ['Centrality 20-30%, Cluster ADC > 35', '|Asymm._{MBD}|#leq0.75, -30#leqZ_{vtx}#leq-10[cm]'], './DataSimComp/{}/RecoTracklet_dPhi_Centrality_20to30_MBDAsymLe0p75_VtxZm30tom10'.format(plotdir))
+    Draw_1Dhist_datasimcomp(hM_dPhi_reco_Centrality_30to40_MBDAsymLe0p75_VtxZm30tom10_data, l_hM_dPhi_reco_Centrality_30to40_MBDAsymLe0p75_VtxZm30tom10_sim, [0.1,0.08,0.15,0.13], 'data', True, 100, 'Reco-tracklet #Delta#phi', '', False, simlegtext, ['Centrality 30-40%, Cluster ADC > 35', '|Asymm._{MBD}|#leq0.75, -30#leqZ_{vtx}#leq-10[cm]'], './DataSimComp/{}/RecoTracklet_dPhi_Centrality_30to40_MBDAsymLe0p75_VtxZm30tom10'.format(plotdir))
+    Draw_1Dhist_datasimcomp(hM_dPhi_reco_Centrality_40to50_MBDAsymLe0p75_VtxZm30tom10_data, l_hM_dPhi_reco_Centrality_40to50_MBDAsymLe0p75_VtxZm30tom10_sim, [0.1,0.08,0.15,0.13], 'data', True, 100, 'Reco-tracklet #Delta#phi', '', False, simlegtext, ['Centrality 40-50%, Cluster ADC > 35', '|Asymm._{MBD}|#leq0.75, -30#leqZ_{vtx}#leq-10[cm]'], './DataSimComp/{}/RecoTracklet_dPhi_Centrality_40to50_MBDAsymLe0p75_VtxZm30tom10'.format(plotdir))
+    Draw_1Dhist_datasimcomp(hM_dPhi_reco_Centrality_50to60_MBDAsymLe0p75_VtxZm30tom10_data, l_hM_dPhi_reco_Centrality_50to60_MBDAsymLe0p75_VtxZm30tom10_sim, [0.1,0.08,0.15,0.13], 'data', True, 100, 'Reco-tracklet #Delta#phi', '', False, simlegtext, ['Centrality 50-60%, Cluster ADC > 35', '|Asymm._{MBD}|#leq0.75, -30#leqZ_{vtx}#leq-10[cm]'], './DataSimComp/{}/RecoTracklet_dPhi_Centrality_50to60_MBDAsymLe0p75_VtxZm30tom10'.format(plotdir))
+    Draw_1Dhist_datasimcomp(hM_dPhi_reco_Centrality_60to70_MBDAsymLe0p75_VtxZm30tom10_data, l_hM_dPhi_reco_Centrality_60to70_MBDAsymLe0p75_VtxZm30tom10_sim, [0.1,0.08,0.15,0.13], 'data', True, 100, 'Reco-tracklet #Delta#phi', '', False, simlegtext, ['Centrality 60-70%, Cluster ADC > 35', '|Asymm._{MBD}|#leq0.75, -30#leqZ_{vtx}#leq-10[cm]'], './DataSimComp/{}/RecoTracklet_dPhi_Centrality_60to70_MBDAsymLe0p75_VtxZm30tom10'.format(plotdir))
+    Draw_1Dhist_datasimcomp(hM_dPhi_reco_Centrality_70to80_MBDAsymLe0p75_VtxZm30tom10_data, l_hM_dPhi_reco_Centrality_70to80_MBDAsymLe0p75_VtxZm30tom10_sim, [0.1,0.08,0.15,0.13], 'data', True, 100, 'Reco-tracklet #Delta#phi', '', False, simlegtext, ['Centrality 70-80%, Cluster ADC > 35', '|Asymm._{MBD}|#leq0.75, -30#leqZ_{vtx}#leq-10[cm]'], './DataSimComp/{}/RecoTracklet_dPhi_Centrality_70to80_MBDAsymLe0p75_VtxZm30tom10'.format(plotdir))
+    Draw_1Dhist_datasimcomp(hM_dPhi_reco_Centrality_80to90_MBDAsymLe0p75_VtxZm30tom10_data, l_hM_dPhi_reco_Centrality_80to90_MBDAsymLe0p75_VtxZm30tom10_sim, [0.1,0.08,0.15,0.13], 'data', True, 100, 'Reco-tracklet #Delta#phi', '', False, simlegtext, ['Centrality 80-90%, Cluster ADC > 35', '|Asymm._{MBD}|#leq0.75, -30#leqZ_{vtx}#leq-10[cm]'], './DataSimComp/{}/RecoTracklet_dPhi_Centrality_80to90_MBDAsymLe0p75_VtxZm30tom10'.format(plotdir))
+    Draw_1Dhist_datasimcomp(hM_dPhi_reco_Centrality_90to100_MBDAsymLe0p75_VtxZm30tom10_data, l_hM_dPhi_reco_Centrality_90to100_MBDAsymLe0p75_VtxZm30tom10_sim, [0.1,0.08,0.15,0.13], 'data', True, 100, 'Reco-tracklet #Delta#phi', '', False, simlegtext, ['Centrality 90-10%, Cluster ADC > 35', '|Asymm._{MBD}|#leq0.75, -30#leqZ_{vtx}#leq-10[cm]'], './DataSimComp/{}/RecoTracklet_dPhi_Centrality_90to100_MBDAsymLe0p75_VtxZm30tom10'.format(plotdir))
     
     Draw_1Dhist_datasimcomp(hM_dR_reco_data, l_hM_dR_reco_sim, [0.08,0.08,0.15,0.13], 'data', True, 30, 'Reco-tracklet #DeltaR', '', False, simlegtext, ['Centrality 0-100%, Cluster ADC > 35'], './DataSimComp/{}/RecoTracklet_dR'.format(plotdir))
+    Draw_1Dhist_datasimcomp(hM_dR_reco_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10_data, l_hM_dR_reco_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10_sim, [0.08,0.08,0.15,0.13], 'data', True, 30, 'Reco-tracklet #DeltaR', '', False, simlegtext, ['Centrality 0-70%, |Asymm._{MBD}|#leq0.75', '-30#leqZ_{vtx}#leq-10[cm]'], './DataSimComp/{}/RecoTracklet_dR_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10'.format(plotdir))
     Draw_1Dhist_datasimcomp(hM_Eta_reco_data, l_hM_Eta_reco_sim, [0.08,0.08,0.15,0.13], 'data', False, 1.8, 'Reco-tracklet #eta', '', False, simlegtext, ['Centrality 0-100%, Cluster ADC > 35'], './DataSimComp/{}/RecoTracklet_Eta'.format(plotdir))
-    Draw_1Dhist_datasimcomp(hM_Eta_reco_Centrality_0to10_MBDAsymLe0p75_VtxZm30tom10_data, l_hM_Eta_reco_Centrality_0to10_MBDAsymLe0p75_VtxZm30tom10_sim, [0.08,0.08,0.15,0.13], 'data', False, 1.8, 'Reco-tracklet #eta', '', False, simlegtext, ['Centrality 0-10%, Cluster ADC > 35', '|Asymm._{MBD}|#leq0.75, -30#leqZ_{vtx}#leq-10[cm]'], './DataSimComp/{}/RecoTracklet_Eta_Centrality_0to10_MBDAsymLe0p75_VtxZm30tom10'.format(plotdir))
+    Draw_1Dhist_datasimcomp(hM_Eta_reco_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10_data, l_hM_Eta_reco_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10_sim, [0.08,0.08,0.15,0.13], 'data', False, 1.8, 'Reco-tracklet #eta', '', False, simlegtext, ['Centrality 0-70%, |Asymm._{MBD}|#leq0.75', '-30#leqZ_{vtx}#leq-10[cm]'], './DataSimComp/{}/RecoTracklet_Eta_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10'.format(plotdir))
+    # Draw_1Dhist_datasimcomp(hM_Eta_reco_Centrality_0to5_MBDAsymLe0p75_VtxZm30tom10_data, l_hM_Eta_reco_Centrality_0to5_MBDAsymLe0p75_VtxZm30tom10_sim, [0.08,0.08,0.15,0.13], 'data', False, 1.8, 'Reco-tracklet #eta', '', False, simlegtext, ['Centrality 0-5%, Cluster ADC > 35', '|Asymm._{MBD}|#leq0.75, -30#leqZ_{vtx}#leq-10[cm]'], './DataSimComp/{}/RecoTracklet_Eta_Centrality_0to5_MBDAsymLe0p75_VtxZm30tom10'.format(plotdir))
+    Draw_1Dhist_datasimcomp(hM_Eta_reco_Centrality_5to10_MBDAsymLe0p75_VtxZm30tom10_data, l_hM_Eta_reco_Centrality_5to10_MBDAsymLe0p75_VtxZm30tom10_sim, [0.08,0.08,0.15,0.13], 'data', False, 1.8, 'Reco-tracklet #eta', '', False, simlegtext, ['Centrality 5-10%, Cluster ADC > 35', '|Asymm._{MBD}|#leq0.75, -30#leqZ_{vtx}#leq-10[cm]'], './DataSimComp/{}/RecoTracklet_Eta_Centrality_5to10_MBDAsymLe0p75_VtxZm30tom10'.format(plotdir))
     Draw_1Dhist_datasimcomp(hM_Eta_reco_Centrality_10to20_MBDAsymLe0p75_VtxZm30tom10_data, l_hM_Eta_reco_Centrality_10to20_MBDAsymLe0p75_VtxZm30tom10_sim, [0.08,0.08,0.15,0.13], 'data', False, 1.8, 'Reco-tracklet #eta', '', False, simlegtext, ['Centrality 10-20%, Cluster ADC > 35', '|Asymm._{MBD}|#leq0.75, -30#leqZ_{vtx}#leq-10[cm]'], './DataSimComp/{}/RecoTracklet_Eta_Centrality_10to20_MBDAsymLe0p75_VtxZm30tom10'.format(plotdir))
     Draw_1Dhist_datasimcomp(hM_Eta_reco_Centrality_20to30_MBDAsymLe0p75_VtxZm30tom10_data, l_hM_Eta_reco_Centrality_20to30_MBDAsymLe0p75_VtxZm30tom10_sim, [0.08,0.08,0.15,0.13], 'data', False, 1.8, 'Reco-tracklet #eta', '', False, simlegtext, ['Centrality 20-30%, Cluster ADC > 35', '|Asymm._{MBD}|#leq0.75, -30#leqZ_{vtx}#leq-10[cm]'], './DataSimComp/{}/RecoTracklet_Eta_Centrality_20to30_MBDAsymLe0p75_VtxZm30tom10'.format(plotdir))
     Draw_1Dhist_datasimcomp(hM_Eta_reco_Centrality_30to40_MBDAsymLe0p75_VtxZm30tom10_data, l_hM_Eta_reco_Centrality_30to40_MBDAsymLe0p75_VtxZm30tom10_sim, [0.08,0.08,0.15,0.13], 'data', False, 1.8, 'Reco-tracklet #eta', '', False, simlegtext, ['Centrality 30-40%, Cluster ADC > 35', '|Asymm._{MBD}|#leq0.75, -30#leqZ_{vtx}#leq-10[cm]'], './DataSimComp/{}/RecoTracklet_Eta_Centrality_30to40_MBDAsymLe0p75_VtxZm30tom10'.format(plotdir))
@@ -684,6 +740,7 @@ if __name__ == '__main__':
     for hM_Phi_reco_sim in l_hM_Phi_reco_sim:
         hM_Phi_reco_sim.GetYaxis().SetMaxDigits(2)
     Draw_1Dhist_datasimcomp(hM_Phi_reco_data, l_hM_Phi_reco_sim, [0.08,0.08,0.15,0.13], 'data', False, 1.8, 'Reco-tracklet #phi', '', False, simlegtext, ['Centrality 0-100%, Cluster ADC > 35'], './DataSimComp/{}/RecoTracklet_Phi'.format(plotdir))
+    Draw_1Dhist_datasimcomp(hM_Phi_reco_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10_data, l_hM_Phi_reco_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10_sim, [0.08,0.08,0.15,0.13], 'data', False, 1.8, 'Reco-tracklet #phi', '', False, simlegtext, ['Centrality 0-70%, |Asymm._{MBD}|#leq0.75', '-30#leqZ_{vtx}#leq-10[cm]'], './DataSimComp/{}/RecoTracklet_Phi_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10'.format(plotdir))
     
     # Draw_2Dhist_datasimcomp(hdata, hsim, logz, norm, rmargin, XaxisName, YaxisName, outname)
     Draw_2Dhist_datasimcomp(hM_cluseta_clusphisize_data, l_hM_cluseta_clusphisize_sim[0], False, 'data', 0.1, 'Cluster #eta', 'Cluster #phi size', './DataSimComp/{}/ClusEta_ClusPhiSize'.format(plotdir))

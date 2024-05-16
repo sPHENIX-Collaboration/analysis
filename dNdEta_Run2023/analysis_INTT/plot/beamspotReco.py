@@ -14,12 +14,19 @@ RightMargin = 0.08
 TopMargin = 0.08
 BottomMargin = 0.13
 
-gROOT.LoadMacro('./sPHENIXStyle/sPhenixStyle.C')
-gROOT.ProcessLine('SetsPhenixStyle()')
+# gROOT.LoadMacro('./sPHENIXStyle/sPhenixStyle.C')
+# gROOT.ProcessLine('SetsPhenixStyle()')
 gROOT.SetBatch(True)
 
 # Function to draw TGraphErrors
 def Draw_TGraphErrors(gr, xtitle, ytitle, plotname):
+    
+    data = True if 'BCO' in xtitle else False
+    
+    # Fit a straight line
+    f = TF1('f', 'pol1', gr.GetPointX(0)*0.9997, gr.GetPointX(gr.GetN()-1)*1.0003)
+    gr.Fit('f', 'R')
+    
     # Get the maximal of the Y axis
     ymax = gr.GetY()[0]
     ymin = gr.GetY()[0]
@@ -35,16 +42,14 @@ def Draw_TGraphErrors(gr, xtitle, ytitle, plotname):
     gr.GetXaxis().SetTitle(xtitle)
     gr.GetYaxis().SetTitle(ytitle)
     # Set the range of the Y axis
-    # gr.GetHistogram().SetMaximum(ymax + 0.05)
-    # gr.GetHistogram().SetMinimum(ymin - 0.05)
-    gr.GetHistogram().SetMaximum(gr.GetMean(2)+6*gr.GetRMS(2))
-    gr.GetHistogram().SetMinimum(gr.GetMean(2)-6*gr.GetRMS(2))
+    w = 0.12 if data else 0.05
+    gr.GetHistogram().SetMaximum(gr.GetMean(2)+w)
+    gr.GetHistogram().SetMinimum(gr.GetMean(2)-w)
+    # gr.GetHistogram().SetMaximum(gr.GetMean(2)+6*gr.GetRMS(2))
+    # gr.GetHistogram().SetMinimum(gr.GetMean(2)-6*gr.GetRMS(2))
     gr.SetMarkerStyle(20)
     gr.SetMarkerSize(0.5)
     gr.Draw('AP')
-    # Fit a straight line
-    f = TF1('f', 'pol1', gr.GetPointX(0)*0.9997, gr.GetPointX(gr.GetN()-1)*1.0003)
-    gr.Fit('f', 'R')
     f.SetLineColor(kRed)
     f.Draw('same')
     # print the mean and standard deviation of Y on the plot
@@ -112,5 +117,5 @@ if __name__ == '__main__':
     gr_bs_x = TGraphErrors(len(bs_x), bs_bco_med, bs_x, np.zeros(len(bs_x)), bs_x_err)
     gr_bs_y = TGraphErrors(len(bs_y), bs_bco_med, bs_y, np.zeros(len(bs_y)), bs_y_err)
     
-    Draw_TGraphErrors(gr_bs_x, 'INTT BCO', 'Beamspot x [cm]', './BeamspotReco/{}/beamspot_x'.format(plotdir))
-    Draw_TGraphErrors(gr_bs_y, 'INTT BCO', 'Beamspot y [cm]', './BeamspotReco/{}/beamspot_y'.format(plotdir))
+    Draw_TGraphErrors(gr_bs_x, ('INTT BCO' if isdata else 'Sub-sample index'), 'Beamspot x [cm]', './BeamspotReco/{}/beamspot_x'.format(plotdir))
+    Draw_TGraphErrors(gr_bs_y, ('INTT BCO' if isdata else 'Sub-sample index'), 'Beamspot y [cm]', './BeamspotReco/{}/beamspot_y'.format(plotdir))
