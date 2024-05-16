@@ -7,23 +7,24 @@ void JetTrigCorr()
   SetsPhenixStyle();
   TH1::SetDefaultSumw2();
   TH2::SetDefaultSumw2();
+  
   // TH2D histogram for correlation plot
   TH2D *jet_trig_correlation = new TH2D("jet_trig_correlation", "Jet Calo Correlation;Calo Energy;Jet Energy", 100, 0, 20, 100, 0, 40);
   TH1F* dR_hist = new TH1F("dR_hist", "Distribution of dR", 50, 0, 35.0);
+  
   // TChain for the jet data
   TChain *ct = new TChain("T");
   ct->Add("../macro/outputJETVAL.root");
 
-  vector<float> *m_event = nullptr;
+  int m_event;
   vector<float> *phi = nullptr;
   vector<float> *eta = nullptr;
   vector<float> *pt = nullptr;
   ct->SetBranchAddress("pt", &pt);
   ct->SetBranchAddress("eta", &eta);
   ct->SetBranchAddress("phi", &phi);
-  ct->SetBranchAddress("m_event", &m_event);
-
-  //Int_t m_event;
+  // ct->TTree::SetBranchAddress("m_event", &m_event);
+  // ct->SetBranchAddress("m_event", &m_event); // Correct type
 
   // TChain for the calorimeter energy data
   TChain *cp = new TChain("ttree");
@@ -34,56 +35,44 @@ void JetTrigCorr()
   cp->SetBranchAddress("hcalout_energy", &hcalout_energy);
   cp->SetBranchAddress("hcalout_etabin", &hcalout_etabin);
   cp->SetBranchAddress("hcalout_phibin", &hcalout_phibin);
-  // Initialize leading jet variables
-  float leading_jet_energy = 0.0;
-  float leading_jet_pt = 0.0;
-
-  Long64_t nEntries_ct = ct->GetEntries();
+  
   // Loop over entries in ct TChain
+  Long64_t nEntries_ct = ct->GetEntries();
   for (Long64_t iEvent = 0; iEvent < nEntries_ct; ++iEvent) {
     ct->GetEntry(iEvent);
 
-    // Look for the corresponding event in cp TChain based on event numbers from the vector
-    bool foundMatch = false;
-    for (size_t i = 0; i < m_event->size(); ++i) {
-      Long64_t cp_event_entry = cp->GetEntryNumberWithIndex(static_cast<Long64_t>(m_event[i]));
-      if (cp_event_entry >= 0) {
-	cp->GetEntry(cp_event_entry);
-	foundMatch = true;
-	break;
-      }
-    }
-    if (!foundMatch) {
-      continue;  // Skip this event if not found in cp TChain
-    }
-
-    // Loop over jets in the correlation file
-    for (size_t i = 0; i < eta->size(); ++i) {
-      // Loop over jets in the energy file
-      for (size_t j = 0; j < hcalout_energy->size(); ++j) {
-	float dPhi = (*hcalout_phibin)[j] - (*phi)[i];
-	float dEta = (*hcalout_etabin)[j] - (*eta)[i];
-
-	// Adjust dPhi to ensure it's within (-pi, pi) range
-	while (dPhi > M_PI) {
-	  dPhi -= 2 * M_PI;
-	}
-	while (dPhi <= -M_PI) {
-	  dPhi += 2 * M_PI;
-	}
-
-	float R = 0.4; // Jet radius
-	float dR = sqrt(dPhi * dPhi + dEta * dEta); // Calculation of dR
-	dR_hist->Fill(dR);
-
-	// Check if the current jet is leading
-	if ((*hcalout_energy)[j] > leading_jet_energy) {
-	  leading_jet_energy = (*hcalout_energy)[j];
-	  leading_jet_pt = (*pt)[i];
+    Long64_t cp_event_entry = cp->GetEntryNumberWithIndex(m_event);
+    if (cp_event_entry >= 0) {
+      cp->GetEntry(cp_event_entry);
+      
+      // Loop over jets in the correlation file
+      for (size_t i = 0; i < eta->size(); ++i) {
+	// Loop over jets in the energy file
+	for (size_t j = 0; j < hcalout_energy->size(); ++j) {
+	  float dPhi = (*hcalout_phibin)[j] - (*phi)[i];
+	  float dEta = (*hcalout_etabin)[j] - (*eta)[i];
+	  
+	  // Adjust dPhi to ensure it's within (-pi, pi) range
+	  while (dPhi > M_PI) {
+	    dPhi -= 2 * M_PI;
+	  }
+	  while (dPhi <= -M_PI) {
+	    dPhi += 2 * M_PI;
+	  }
+	  
+	  // Calculation of dR
+	  float dR = sqrt(dPhi * dPhi + dEta * dEta);
+	  dR_hist->Fill(dR);
+	  
+	  // Check if the current jet is leading
+	  if (dR < 0.4 && (*hcalout_energy)[j] > jet_trig_correlation->GetYaxis()->GetXmin()) {
+	    jet_trig_correlation->Fill((*hcalout_energy)[j], (*pt)[i]);
+	  }
 	}
       }
     }
   }
+
 
   Int_t ci;      // for color index setting                                                                                                                       
   TColor *color; // for color definition with alpha                                                                                                                   
