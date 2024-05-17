@@ -56,8 +56,8 @@ namespace myAnalysis {
     vector<TH1F*> hv3;
 
     Int_t   bins_v2 = 200;
-    Float_t v2_min  = -5;
-    Float_t v2_max  = 5;
+    Float_t v2_min  = -1.5;
+    Float_t v2_max  = 1.5;
 
     Int_t   bins_v3 = 600;
     Float_t v3_min  = -15;
@@ -74,32 +74,44 @@ Bool_t myAnalysis::init(const string &i_input, const string &fitStats) {
             string title = "v_{2} " + suffix_title + "; v_{2}; Counts";
             string name = "v2_"+to_string(idx);
 
-            hv2.push_back(new TH1F(name.c_str(), title.c_str(), bins_v2, v2_min, v2_max));
+            auto h = new TH1F(name.c_str(), title.c_str(), bins_v2, v2_min, v2_max);
+            h->Sumw2();
+            hv2.push_back(h);
 
             title = "v_{2} " + suffix_title + "; v_{2}; Counts";
             name = "v2_type_4_"+to_string(idx);
 
-            hv2_type_4.push_back(new TH1F(name.c_str(), title.c_str(), bins_v2, v2_min, v2_max));
+            h = new TH1F(name.c_str(), title.c_str(), bins_v2, v2_min, v2_max);
+            h->Sumw2();
+            hv2_type_4.push_back(h);
 
             title = "v_{2} Measured " + suffix_title + "; v_{2}; Counts";
             name  = "v2_m_"+to_string(idx);
 
-            hv2_m.push_back(new TH1F(name.c_str(), title.c_str(), bins_v2, v2_min, v2_max));
+            h = new TH1F(name.c_str(), title.c_str(), bins_v2, v2_min, v2_max);
+            h->Sumw2();
+            hv2_m.push_back(h);
 
             title = "v_{2} Background " + suffix_title + "; v_{2}; Counts";
             name  = "v2_bg_"+to_string(idx);
 
-            hv2_bg.push_back(new TH1F(name.c_str(), title.c_str(), bins_v2, v2_min, v2_max));
+            h = new TH1F(name.c_str(), title.c_str(), bins_v2, v2_min, v2_max);
+            h->Sumw2();
+            hv2_bg.push_back(h);
 
             title = "v_{2} Background " + suffix_title + "; v_{2}; Counts";
             name  = "v2_bg_4_"+to_string(idx);
 
-            hv2_bg_4.push_back(new TH1F(name.c_str(), title.c_str(), bins_v2, v2_min, v2_max));
+            h = new TH1F(name.c_str(), title.c_str(), bins_v2, v2_min, v2_max);
+            h->Sumw2();
+            hv2_bg_4.push_back(h);
 
             title = "v_{3} " + suffix_title + "; v_{3}; Counts";
             name = "v3_"+to_string(idx);
 
-            hv3.push_back(new TH1F(name.c_str(), title.c_str(), bins_v3, v3_min, v3_max));
+            h = new TH1F(name.c_str(), title.c_str(), bins_v3, v3_min, v3_max);
+            h->Sumw2();
+            hv3.push_back(h);
         }
     }
 
