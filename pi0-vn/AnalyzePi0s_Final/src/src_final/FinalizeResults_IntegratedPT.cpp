@@ -7,6 +7,33 @@
 #include <TAxis.h>
 #include <TLine.h>
 #include <TLegend.h>
+
+/*
+ This code reads in:
+ --vn-anaType-1-p015.csv --bg with upper bound 0.4 for systematic calculation included in this default csv
+ --vn-SYST1CEMC.csv
+ --vn-SYST2CEMC.csv
+ --vn-SYST3DCEMC.csv
+ --vn-SYST3UCEMC.csv
+ --vn-SYST4CEMC.csv
+ --vn-sigma-1.5.csv"
+ -----v2 overlays of 5 EMCal scale calibrations, signal window, and background window outputs from this macro
+It uses the above to calculate the systematic uncertainties, outputting the information to:
+ --StatUncertaintyTable_EMCalVariationsOnly.csv ---> Systematic Uncertainty Contributions to EMCal Scale Calibration
+ --StatUncertaintyTable_p015.csv --> Contributions from EMCal Scale (after quadrature sum), signal variation, background variation, and total systematic uncertainty
+
+Followed by plotting the final v2 distribution with the PHENIX overlay, reading in data from:
+FinalCleanedPhenix.csv
+ 
+ which is organized to read in data corresponding to the 10 percent centrality intervals we use and pT bins 2-5 GeV (data downloaded from https://www.hepdata.net/record/ins858845.com
+ and cleaned via FinalCleanedPhenix.csv found in github
+
+ --weighted averaging over pT for PHENIX data is done via reading in 'test.root' and using FillWeights() function to fill vectors for each centrality with the number of pi0s from our analysis for each corresponding pT bin
+ 
+ Additionally this code outputs overlay of hijing analysis via reading in:
+vN-CSV-files/ReconstructedDiphotons/vn.csv";
+vN-CSV-files/TruthPi0/TruthPi0.csv";
+ */
 std::string BasePlotOutputPath = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/";
 
 std::string BaseCSVoutput = BasePlotOutputPath + "vN-CSV-files";
@@ -892,7 +919,6 @@ void plotting_Results(Data& data) {
         phenixGraph->SetPoint(i, centralityCenters[i] + 1.2, mean);
         phenixGraph->SetPointError(i, 0, error);
         
-        // Set asymmetric errors, if systematics are indeed symmetric, set them the same
         phenixGraph_systematics->SetPoint(i, centralityCenters[i] + 1.2, mean);
         phenixGraph_systematics->SetPointError(i, .75, .75, systematicError, systematicError);
         
@@ -2756,70 +2782,70 @@ void FinalizeResults_IntegratedPT() {
          sample11, sample12, sample13, sample14, sample15, sample16, sample17, sample18, sample19, sample20,
          sample21, sample22, sample23, sample24, sample25, sample26, sample27, sample28, sample29, sample30;
 
-    std::string samplePath1 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_0.csv";
-    std::string samplePath2 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_1.csv";
-    std::string samplePath3 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_2.csv";
-    std::string samplePath4 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_3.csv";
-    std::string samplePath5 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_4.csv";
-    std::string samplePath6 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_5.csv";
-    std::string samplePath7 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_6.csv";
-    std::string samplePath8 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_7.csv";
-    std::string samplePath9 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_8.csv";
-    std::string samplePath10 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_9.csv";
-    std::string samplePath11 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_10.csv";
-    std::string samplePath12 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_11.csv";
-    std::string samplePath13 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_12.csv";
-    std::string samplePath14 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_13.csv";
-    std::string samplePath15 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_14.csv";
-    std::string samplePath16 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_15.csv";
-    std::string samplePath17 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_16.csv";
-    std::string samplePath18 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_17.csv";
-    std::string samplePath19 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_18.csv";
-    std::string samplePath20 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_19.csv";
-    std::string samplePath21 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_20.csv";
-    std::string samplePath22 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_21.csv";
-    std::string samplePath23 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_22.csv";
-    std::string samplePath24 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_23.csv";
-    std::string samplePath25 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_24.csv";
-    std::string samplePath26 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_25.csv";
-    std::string samplePath27 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_26.csv";
-    std::string samplePath28 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_27.csv";
-    std::string samplePath29 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_28.csv";
-    std::string samplePath30 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_29.csv";
-        
-    Read_DataSet(samplePath1, sample1);
-    Read_DataSet(samplePath2, sample2);
-    Read_DataSet(samplePath3, sample3);
-    Read_DataSet(samplePath4, sample4);
-    Read_DataSet(samplePath5, sample5);
-    Read_DataSet(samplePath6, sample6);
-    Read_DataSet(samplePath7, sample7);
-    Read_DataSet(samplePath8, sample8);
-    Read_DataSet(samplePath9, sample9);
-    Read_DataSet(samplePath10, sample10);
-    Read_DataSet(samplePath11, sample11);
-    Read_DataSet(samplePath12, sample12);
-    Read_DataSet(samplePath13, sample13);
-    Read_DataSet(samplePath14, sample14);
-    Read_DataSet(samplePath15, sample15);
-    Read_DataSet(samplePath16, sample16);
-    Read_DataSet(samplePath17, sample17);
-    Read_DataSet(samplePath18, sample18);
-    Read_DataSet(samplePath19, sample19);
-    Read_DataSet(samplePath20, sample20);
-    Read_DataSet(samplePath21, sample21);
-    Read_DataSet(samplePath22, sample22);
-    Read_DataSet(samplePath23, sample23);
-    Read_DataSet(samplePath24, sample24);
-    Read_DataSet(samplePath25, sample25);
-    Read_DataSet(samplePath26, sample26);
-    Read_DataSet(samplePath27, sample27);
-    Read_DataSet(samplePath28, sample28);
-    Read_DataSet(samplePath29, sample29);
-    Read_DataSet(samplePath30, sample30);
-        
-    plot_Sample_v2(sample1, sample2, sample3, sample4, sample5, sample6, sample7, sample8, sample9, sample10,
-                   sample11, sample12, sample13, sample14, sample15, sample16, sample17, sample18, sample19, sample20,
-                   sample21, sample22, sample23, sample24, sample25, sample26, sample27, sample28, sample29, sample30);
+//    std::string samplePath1 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_0.csv";
+//    std::string samplePath2 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_1.csv";
+//    std::string samplePath3 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_2.csv";
+//    std::string samplePath4 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_3.csv";
+//    std::string samplePath5 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_4.csv";
+//    std::string samplePath6 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_5.csv";
+//    std::string samplePath7 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_6.csv";
+//    std::string samplePath8 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_7.csv";
+//    std::string samplePath9 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_8.csv";
+//    std::string samplePath10 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_9.csv";
+//    std::string samplePath11 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_10.csv";
+//    std::string samplePath12 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_11.csv";
+//    std::string samplePath13 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_12.csv";
+//    std::string samplePath14 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_13.csv";
+//    std::string samplePath15 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_14.csv";
+//    std::string samplePath16 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_15.csv";
+//    std::string samplePath17 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_16.csv";
+//    std::string samplePath18 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_17.csv";
+//    std::string samplePath19 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_18.csv";
+//    std::string samplePath20 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_19.csv";
+//    std::string samplePath21 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_20.csv";
+//    std::string samplePath22 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_21.csv";
+//    std::string samplePath23 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_22.csv";
+//    std::string samplePath24 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_23.csv";
+//    std::string samplePath25 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_24.csv";
+//    std::string samplePath26 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_25.csv";
+//    std::string samplePath27 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_26.csv";
+//    std::string samplePath28 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_27.csv";
+//    std::string samplePath29 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_28.csv";
+//    std::string samplePath30 = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/vN-CSV-files/vn-info-anaType-1-p015_sample_29.csv";
+//        
+//    Read_DataSet(samplePath1, sample1);
+//    Read_DataSet(samplePath2, sample2);
+//    Read_DataSet(samplePath3, sample3);
+//    Read_DataSet(samplePath4, sample4);
+//    Read_DataSet(samplePath5, sample5);
+//    Read_DataSet(samplePath6, sample6);
+//    Read_DataSet(samplePath7, sample7);
+//    Read_DataSet(samplePath8, sample8);
+//    Read_DataSet(samplePath9, sample9);
+//    Read_DataSet(samplePath10, sample10);
+//    Read_DataSet(samplePath11, sample11);
+//    Read_DataSet(samplePath12, sample12);
+//    Read_DataSet(samplePath13, sample13);
+//    Read_DataSet(samplePath14, sample14);
+//    Read_DataSet(samplePath15, sample15);
+//    Read_DataSet(samplePath16, sample16);
+//    Read_DataSet(samplePath17, sample17);
+//    Read_DataSet(samplePath18, sample18);
+//    Read_DataSet(samplePath19, sample19);
+//    Read_DataSet(samplePath20, sample20);
+//    Read_DataSet(samplePath21, sample21);
+//    Read_DataSet(samplePath22, sample22);
+//    Read_DataSet(samplePath23, sample23);
+//    Read_DataSet(samplePath24, sample24);
+//    Read_DataSet(samplePath25, sample25);
+//    Read_DataSet(samplePath26, sample26);
+//    Read_DataSet(samplePath27, sample27);
+//    Read_DataSet(samplePath28, sample28);
+//    Read_DataSet(samplePath29, sample29);
+//    Read_DataSet(samplePath30, sample30);
+//        
+//    plot_Sample_v2(sample1, sample2, sample3, sample4, sample5, sample6, sample7, sample8, sample9, sample10,
+//                   sample11, sample12, sample13, sample14, sample15, sample16, sample17, sample18, sample19, sample20,
+//                   sample21, sample22, sample23, sample24, sample25, sample26, sample27, sample28, sample29, sample30);
 
 }
