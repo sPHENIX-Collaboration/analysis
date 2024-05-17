@@ -728,19 +728,74 @@ void DrawZeroLine(TCanvas* canvas) {
     canvas->Update();
 }
 
-void CalculateAverages(const std::vector<double>& v2, const std::vector<double>& errors, double& mean, double& error, double sigma_RP, double v2_raw_syst, double& systematicError) {
-    double sum = 0, sumErrors = 0;
-    for (size_t i = 0; i < v2.size(); i++) {
-        sum += v2[i];
-        sumErrors += errors[i] * errors[i];  // Sum of squares of errors
+void FillWeights(const std::string& filePath, std::vector<double>& weights_40_60, std::vector<double>& weights_20_40, std::vector<double>& weights_0_20) {
+    TFile file(filePath.c_str(), "READ");
+    if (file.IsZombie()) {
+        std::cerr << "Error opening file: " << filePath << std::endl;
+        return;
     }
-    mean = sum / v2.size();
-    error = sqrt(sumErrors) / v2.size();  // Standard deviation of errors
+
+    // Base path for histograms
+    std::string basePath = "/QA/h2Pi0EtaPhi/";
+
+    // Get entries for weights_40_60
+    std::cout << "Filling weights_40_60:" << std::endl;
+    for (int i = 0; i < 6; ++i) {
+        std::string histPath = basePath + "h2Pi0EtaPhi_" + std::to_string(i);
+        TH1* hist = dynamic_cast<TH1*>(file.Get(histPath.c_str()));
+        if (!hist) {
+            std::cerr << "Histogram " << histPath << " not found in file." << std::endl;
+            return;
+        }
+        weights_40_60[i] = hist->GetEntries();
+        std::cout << "Histogram " << histPath << " -> weights_40_60[" << i << "] = " << weights_40_60[i] << std::endl;
+    }
+
+    // Get entries for weights_20_40
+    std::cout << "Filling weights_20_40:" << std::endl;
+    for (int i = 6; i < 12; ++i) {
+        std::string histPath = basePath + "h2Pi0EtaPhi_" + std::to_string(i);
+        TH1* hist = dynamic_cast<TH1*>(file.Get(histPath.c_str()));
+        if (!hist) {
+            std::cerr << "Histogram " << histPath << " not found in file." << std::endl;
+            return;
+        }
+        weights_20_40[i - 6] = hist->GetEntries();
+        std::cout << "Histogram " << histPath << " -> weights_20_40[" << i - 6 << "] = " << weights_20_40[i - 6] << std::endl;
+    }
+
+    // Get entries for weights_0_20
+    std::cout << "Filling weights_0_20:" << std::endl;
+    for (int i = 12; i < 18; ++i) {
+        std::string histPath = basePath + "h2Pi0EtaPhi_" + std::to_string(i);
+        TH1* hist = dynamic_cast<TH1*>(file.Get(histPath.c_str()));
+        if (!hist) {
+            std::cerr << "Histogram " << histPath << " not found in file." << std::endl;
+            return;
+        }
+        weights_0_20[i - 12] = hist->GetEntries();
+        std::cout << "Histogram " << histPath << " -> weights_0_20[" << i - 12 << "] = " << weights_0_20[i - 12] << std::endl;
+    }
+
+    file.Close();
+}
+
+
+void CalculateAverages(const std::vector<double>& v2, const std::vector<double>& errors, double& mean, double& error, double sigma_RP, double v2_raw_syst, double& systematicError, const std::vector<double>& weights) {
+    double sumWeightedValues = 0, sumWeights = 0, sumWeightedErrors = 0;
+    for (size_t i = 0; i < v2.size(); i++) {
+        sumWeightedValues += v2[i] * weights[i];
+        sumWeights += weights[i];
+        sumWeightedErrors += errors[i] * errors[i] * weights[i] * weights[i];  
+    }
+    mean = sumWeightedValues / sumWeights;
+    error = sqrt(sumWeightedErrors) / sumWeights;
     
     double sigma_RP_error = mean * sigma_RP;  // Use the multiplier directly dependent on centrality
     double v2_raw_error = mean * v2_raw_syst;  // Use the multiplier directly dependent on centrality
     systematicError = std::sqrt(sigma_RP_error * sigma_RP_error + v2_raw_error * v2_raw_error);
 }
+
 void plotting_Results(Data& data) {
     // File output path
     std::string phenixFilePath = "/Users/patsfan753/Desktop/FinalCleanedPhenix.csv";
@@ -812,17 +867,25 @@ void plotting_Results(Data& data) {
     systematicsGraph->SetFillColor(kBlue);
     systematicsGraph->SetFillStyle(3001);
     
+    std::string filePathToDiphotonWeights = "/Users/patsfan753/Desktop/p015/test.root";
+    
+    std::vector<double> weights_40_60(6);
+    std::vector<double> weights_20_40(6);
+    std::vector<double> weights_0_20(6);
+    
+    FillWeights(filePathToDiphotonWeights, weights_40_60, weights_20_40, weights_0_20);
+    
     // New graph for PHENIX averages
     TGraphErrors* phenixGraph = new TGraphErrors();
     TGraphAsymmErrors* phenixGraph_systematics = new TGraphAsymmErrors();
     for (size_t i = 0; i < centralityCenters.size(); ++i) {
         double mean, error, systematicError;
-        if (i == 0) CalculateAverages(v2_0_10, v2_0_10_Errors, mean, error, 0.1, 0.1, systematicError);
-        if (i == 1) CalculateAverages(v2_10_20, v2_10_20_Errors, mean, error, 0.1, 0.1, systematicError);
-        if (i == 2) CalculateAverages(v2_20_30, v2_20_30_Errors, mean, error, 0.05, 0.03, systematicError);
-        if (i == 3) CalculateAverages(v2_30_40, v2_30_40_Errors, mean, error, 0.05, 0.03, systematicError);
-        if (i == 4) CalculateAverages(v2_40_50, v2_40_50_Errors, mean, error, 0.1, 0.03, systematicError);
-        if (i == 5) CalculateAverages(v2_50_60, v2_50_60_Errors, mean, error, 0.1, 0.03, systematicError);
+        if (i == 0) CalculateAverages(v2_0_10, v2_0_10_Errors, mean, error, 0.1, 0.1, systematicError, weights_0_20);
+        if (i == 1) CalculateAverages(v2_10_20, v2_10_20_Errors, mean, error, 0.1, 0.1, systematicError, weights_0_20);
+        if (i == 2) CalculateAverages(v2_20_30, v2_20_30_Errors, mean, error, 0.05, 0.03, systematicError, weights_20_40);
+        if (i == 3) CalculateAverages(v2_30_40, v2_30_40_Errors, mean, error, 0.05, 0.03, systematicError, weights_20_40);
+        if (i == 4) CalculateAverages(v2_40_50, v2_40_50_Errors, mean, error, 0.1, 0.03, systematicError, weights_40_60);
+        if (i == 5) CalculateAverages(v2_50_60, v2_50_60_Errors, mean, error, 0.1, 0.03, systematicError, weights_40_60);
 
         std::cout << "Centrality: " << centralityCenters[i] << "% - Average v2: " << mean << " ± " << error << " ± " << systematicError << std::endl;
         
@@ -2406,36 +2469,36 @@ void plot_Sample_v2(Data& data1, Data& data2, Data& data3, Data& data4, Data& da
         }
         std::cout << "\n";  // Extra newline for better separation
     };
-    printSortedValues(values_1, "Sample 1");
-    printSortedValues(values_2, "Sample 2");
-    printSortedValues(values_3, "Sample 3");
-    printSortedValues(values_4, "Sample 4");
-    printSortedValues(values_5, "Sample 5");
-    printSortedValues(values_6, "Sample 6");
-    printSortedValues(values_7, "Sample 7");
-    printSortedValues(values_8, "Sample 8");
-    printSortedValues(values_9, "Sample 9");
-    printSortedValues(values_10, "Sample 10");
-    printSortedValues(values_11, "Sample 11");
-    printSortedValues(values_12, "Sample 12");
-    printSortedValues(values_13, "Sample 13");
-    printSortedValues(values_14, "Sample 14");
-    printSortedValues(values_15, "Sample 15");
-    printSortedValues(values_16, "Sample 16");
-    printSortedValues(values_17, "Sample 17");
-    printSortedValues(values_18, "Sample 18");
-    printSortedValues(values_19, "Sample 19");
-    printSortedValues(values_20, "Sample 20");
-    printSortedValues(values_21, "Sample 21");
-    printSortedValues(values_22, "Sample 22");
-    printSortedValues(values_23, "Sample 23");
-    printSortedValues(values_24, "Sample 24");
-    printSortedValues(values_25, "Sample 25");
-    printSortedValues(values_26, "Sample 26");
-    printSortedValues(values_27, "Sample 27");
-    printSortedValues(values_28, "Sample 28");
-    printSortedValues(values_29, "Sample 29");
-    printSortedValues(values_30, "Sample 30");
+//    printSortedValues(values_1, "Sample 1");
+//    printSortedValues(values_2, "Sample 2");
+//    printSortedValues(values_3, "Sample 3");
+//    printSortedValues(values_4, "Sample 4");
+//    printSortedValues(values_5, "Sample 5");
+//    printSortedValues(values_6, "Sample 6");
+//    printSortedValues(values_7, "Sample 7");
+//    printSortedValues(values_8, "Sample 8");
+//    printSortedValues(values_9, "Sample 9");
+//    printSortedValues(values_10, "Sample 10");
+//    printSortedValues(values_11, "Sample 11");
+//    printSortedValues(values_12, "Sample 12");
+//    printSortedValues(values_13, "Sample 13");
+//    printSortedValues(values_14, "Sample 14");
+//    printSortedValues(values_15, "Sample 15");
+//    printSortedValues(values_16, "Sample 16");
+//    printSortedValues(values_17, "Sample 17");
+//    printSortedValues(values_18, "Sample 18");
+//    printSortedValues(values_19, "Sample 19");
+//    printSortedValues(values_20, "Sample 20");
+//    printSortedValues(values_21, "Sample 21");
+//    printSortedValues(values_22, "Sample 22");
+//    printSortedValues(values_23, "Sample 23");
+//    printSortedValues(values_24, "Sample 24");
+//    printSortedValues(values_25, "Sample 25");
+//    printSortedValues(values_26, "Sample 26");
+//    printSortedValues(values_27, "Sample 27");
+//    printSortedValues(values_28, "Sample 28");
+//    printSortedValues(values_29, "Sample 29");
+//    printSortedValues(values_30, "Sample 30");
 
     graph_1->SetMarkerStyle(20);
     graph_1->SetMarkerColor(kBlack);
