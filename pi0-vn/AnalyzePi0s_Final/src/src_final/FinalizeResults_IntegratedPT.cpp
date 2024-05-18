@@ -907,6 +907,18 @@ void plotting_Results(Data& data) {
     TGraphAsymmErrors* phenixGraph_systematics = new TGraphAsymmErrors();
     for (size_t i = 0; i < centralityCenters.size(); ++i) {
         double mean, error, systematicError;
+        /*
+         Systematics → PHENIX paper (bottom LHS of page 4) specifies the following:
+         “Main sources of systematic uncertainties come from σRP and v2^raw”
+         ---σRP gives “~ 10%” for central and peripheral and “~5%” for mid central
+         ---σv2Raw  estimates 10% for central collisions and 3% for “other collisions”
+         Propagation of systematics done by first multiplying the weighted average v2 in each centrality bin by σRP or σv2Raw
+         --0-20% → σRP = 0.1 and σv2Raw = 0.1
+         --20-40% →  σRP = 0.05, σv2Raw = 0.03
+         --40-60% → σRP  = 0.1 and σv2Raw = 0.03
+         
+         Systematics applied accordingly, with the 5th and 6th argument of the functions below applying the correct sigma value used to multiply the weighted average v2 to get an estimate of the systematic uncertainties
+         */
         if (i == 0) CalculateAverages(v2_0_10, v2_0_10_Errors, mean, error, 0.1, 0.1, systematicError, weights_0_20);
         if (i == 1) CalculateAverages(v2_10_20, v2_10_20_Errors, mean, error, 0.1, 0.1, systematicError, weights_0_20);
         if (i == 2) CalculateAverages(v2_20_30, v2_20_30_Errors, mean, error, 0.05, 0.03, systematicError, weights_20_40);
