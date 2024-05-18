@@ -873,11 +873,11 @@ void plotting_Results(Data& data) {
     // Loop over each centrality range
     for (size_t i = 0; i < centralityCenters.size(); ++i) {
         for (size_t j = 0; j < values[i]->size(); ++j) {
-            graph->SetPoint(pointIndex, centralityCenters[i] - 1.2, (*values[i])[j]);
+            graph->SetPoint(pointIndex, centralityCenters[i] - 0.76, (*values[i])[j]);
             graph->SetPointError(pointIndex, 0, (*errors[i])[j]);
             
             // Set asymmetric errors, if systematics are indeed symmetric, set them the same
-            systematicsGraph->SetPoint(i, centralityCenters[i] - 1.2, (*values[i])[j]);
+            systematicsGraph->SetPoint(i, centralityCenters[i] - 0.76, (*values[i])[j]);
             systematicsGraph->SetPointError(i, .75, .75, (*systematicErrors_sPHENIX[i])[j], (*systematicErrors_sPHENIX[i])[j]);
             
             pointIndex++;
@@ -916,10 +916,10 @@ void plotting_Results(Data& data) {
 
         std::cout << "Centrality: " << centralityCenters[i] << "% - Average v2: " << mean << " ± " << error << " ± " << systematicError << std::endl;
         
-        phenixGraph->SetPoint(i, centralityCenters[i] + 1.2, mean);
+        phenixGraph->SetPoint(i, centralityCenters[i] + 0.76, mean);
         phenixGraph->SetPointError(i, 0, error);
         
-        phenixGraph_systematics->SetPoint(i, centralityCenters[i] + 1.2, mean);
+        phenixGraph_systematics->SetPoint(i, centralityCenters[i] + 0.76, mean);
         phenixGraph_systematics->SetPointError(i, .75, .75, systematicError, systematicError);
         
     }
@@ -927,8 +927,8 @@ void plotting_Results(Data& data) {
     phenixGraph_systematics->SetFillColor(kRed);
     phenixGraph_systematics->SetFillStyle(3001);
     
-    phenixGraph->SetMarkerStyle(20);
-    phenixGraph->SetMarkerSize(1.4);
+    phenixGraph->SetMarkerStyle(22);
+    phenixGraph->SetMarkerSize(1.6);
     phenixGraph->SetMarkerColor(kRed);
     phenixGraph->SetLineColor(kRed);
 
@@ -947,12 +947,13 @@ void plotting_Results(Data& data) {
     phenixGraph->Draw("P SAME");
 
     
-    TLegend *leg = new TLegend(0.58, 0.2, 0.78, 0.4);
+    TLegend *leg = new TLegend(0.48, 0.2, 0.72, 0.45);
     leg->SetFillStyle(0);
     leg->SetTextSize(0.042);
     leg->AddEntry("", "#it{#bf{sPHENIX}} Internal", "");
     leg->AddEntry("", "Au+Au #sqrt{s_{NN}} = 200 GeV", "");
     leg->AddEntry("", "p_{T} Range: [2, 5] GeV", "");
+    leg->AddEntry("", "Data points offset for aesthetics", "");
     leg->Draw("same");
     
     TLegend *leg2 = new TLegend(0.2, 0.8, 0.3, 0.9);
