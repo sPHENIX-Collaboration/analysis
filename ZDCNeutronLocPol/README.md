@@ -25,8 +25,8 @@ Once you have your trees produced, the raw square root asymmetries are calculate
 1) `root.exe`
 2) `.x drawAsym.C(<tree_file>,<storenumber>,<runnumber>)`
 
-`<tree_file>`: root output file from Fun4All 
-`<storenumber>`: storenumber, default: 34485
+`<tree_file>`: root output file from Fun4All  
+`<storenumber>`: storenumber, default: 34485  
 `<runnumber>`: runnumber, default: 42796  
 
 
