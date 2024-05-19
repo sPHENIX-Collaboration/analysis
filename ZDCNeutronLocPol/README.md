@@ -11,7 +11,7 @@ This module calculates the raw square root asymmetries of forward neutrons in th
 `<nEvents>`: Number of events Fun4All will run over, default: 10000  
 
 **Running with condor:**  
-With the large number of events needed to detect a percent level asymmetry it becomes necessary to run over greater than 10^7 events. Each segment of the automatically produced DSTs contain 10000 events so we can utilize condor to speed up our workflow.  
+To detect a percent level asymmetry it becomes necessary to run over greater than 10^7 events. Each segment of the automatically produced DSTs contain 10000 events so we can utilize condor to speed up our workflow.  
 
 1) `cd macros/`
 2) In run_smd.sh, ensure that condor=true and fullrun=true
