@@ -18,8 +18,10 @@ float RMINCUT = 2; // keep above (nominal 2)
 float RMAXCUT = 4; // keep below (nominal 4)
 
 
-void drawAsym(int storenumber = 34485, int runnumber = 42796)
+void drawAsym(const std::string infile = "store34485/42796/smdmerge.root", int storenumber = 34485, int runnumber = 42796)
 {
+
+  TFile *f = new TFile(infile.c_str());
 
   //========================== Hists/Graphs ==============================//
   TString beam[2] = {"Blue", "Yellow"};
@@ -59,9 +61,6 @@ void drawAsym(int storenumber = 34485, int runnumber = 42796)
   //======================================================================//
 
   //========================== SMD Hit Tree ==============================//
-  TFile *f = new TFile(Form("store%d/%d/smdmerge.root", storenumber, runnumber));
-  //TFile *f = new TFile(Form("smdmerge_%d.root", storenumber));
-  //TFile *f = new TFile(Form("offlineSMDTesting_DST_%d_0000.root", runnumber));
   TTree *smdHits = (TTree*)f->Get("smdHits");
   int bunchnumber, bluespin, yellspin;
   float n_x, n_y, s_x, s_y;
@@ -236,8 +235,6 @@ void drawAsym(int storenumber = 34485, int runnumber = 42796)
   for (int i = 0; i < nasymbins; i++)
   {
     float phi = i*(2*TMath::Pi()/nasymbins) - (TMath::Pi() - TMath::Pi()/nasymbins);
-
-    std::cout << phi << std::endl;
 
     int phibin = i; // N_L
     int phibin2 = (phibin + (int)(nasymbins/2.)) % nasymbins; // N_R

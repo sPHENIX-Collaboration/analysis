@@ -3,7 +3,7 @@ This module calculates the raw square root asymmetries of forward neutrons in th
 **Running standalone:** 
 1) `cd macros/`
 2) `root.exe`
-3) `.x Fun4All_ZDCNeutronLocPol.C(<DST_file>,<output_file.root>,<startEvent>,<nEvents>)`
+3) `.x Fun4All_ZDCNeutronLocPol.C(<DST_file>,<output_file>,<startEvent>,<nEvents>)`
 
 `<DST_file>`: use a raw triggered DST found in _/sphenix/lustre01/sphnxpro/commissioning/slurp/calophysics/_  
 `<output_file>`: output root file that contains SMD hit trees  
@@ -21,7 +21,13 @@ With the large number of events needed to detect a percent level asymmetry it be
 6) `condor_submit runsmd.job`
 
 
-Once you have your trees produced, `macros/drawAsym.C` will calculate and draw the asymmetries.
+Once you have your trees produced, the raw square root asymmetries are calculated and drawn by:  
+1) `root.exe`
+2) `.x drawAsym.C(<tree_file>,<storenumber>,<runnumber>)`
+
+`<tree_file>`: root output file from Fun4All 
+`<storenumber>`: storenumber, default: 34485
+`<runnumber>`: runnumber, default: 42796  
 
 
 Contact dloom@umich.edu if you have any questions.
