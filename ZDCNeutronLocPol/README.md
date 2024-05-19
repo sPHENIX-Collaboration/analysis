@@ -14,8 +14,8 @@ This module calculates the raw square root asymmetries of forward neutrons in th
 With the large number of events needed to detect a percent level asymmetry it becomes necessary to run over greater than 10^7 events. Each segment of the automatically produced DSTs contain 10000 events so we can utilize condor to speed up our workflow.  
 
 1) `cd macros/`
-2) In _run_smd.sh_, ensure that condor=true and fullrun=true
-3) In _run_smd.sh_, set fname to the input DST with %04d where the segment number would be e.g. _"/sphenix/lustre01/sphnxpro/commissioning/slurp/calophysics/run_00042700_00042800/DST_TRIGGERED_EVENT_run2pp_new_2024p001-00042797-%04d.root"_
+2) In run_smd.sh, ensure that condor=true and fullrun=true
+3) In run_smd.sh, set fname to the input DST with %04d where the segment number would be e.g. _"/sphenix/lustre01/sphnxpro/commissioning/slurp/calophysics/run_00042700_00042800/DST_TRIGGERED_EVENT_run2pp_new_2024p001-00042797-%04d.root"_
 4) Ensure that the directory to which the output files are being written in ofname1 exists
 5) In runsmd.job, set Queue = <number_of_jobs> in runsmd.job, default <number_of_jobs> = 100 (do not do too many more than this at one time)
 6) `condor_submit runsmd.job`
