@@ -1,8 +1,8 @@
 This module calculates the raw square root asymmetries of forward neutrons in the ZDC/SMD. 
 
 **Running standalone:** 
-1) cd macros/
-2) root.exe
+1) `cd macros/`
+2) `root.exe`
 3) `.x Fun4All_ZDCNeutronLocPol.C(<DST_file>,<output_file.root>,<startEvent>,<nEvents>)`
 
 `<DST_file>`: use a raw triggered DST found in _/sphenix/lustre01/sphnxpro/commissioning/slurp/calophysics/_  
@@ -16,7 +16,7 @@ With the large number of events needed to detect a percent level asymmetry it be
 1) `cd macros/`
 2) In run_smd.sh, ensure that condor=true and fullrun=true
 3) In run_smd.sh, set fname to the input DST with %04d where the segment number would be e.g. _"/sphenix/lustre01/sphnxpro/commissioning/slurp/calophysics/run_00042700_00042800/DST_TRIGGERED_EVENT_run2pp_new_2024p001-00042797-%04d.root"_
-4) Ensure that the directory to which the output files are being written in ofname1 exists
+4) Ensure that the directory in ofname1 exists
 5) In runsmd.job, set Queue = <number_of_jobs> in runsmd.job, default <number_of_jobs> = 100 (do not do too many more than this at one time)
 6) `condor_submit runsmd.job`
 
