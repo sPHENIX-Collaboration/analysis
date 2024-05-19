@@ -17,7 +17,7 @@ With the large number of events needed to detect a percent level asymmetry it be
 2) In run_smd.sh, ensure that condor=true and fullrun=true
 3) In run_smd.sh, set fname to the input DST with %04d where the segment number would be e.g. _"/sphenix/lustre01/sphnxpro/commissioning/slurp/calophysics/run_00042700_00042800/DST_TRIGGERED_EVENT_run2pp_new_2024p001-00042797-%04d.root"_
 4) Ensure that the directory in ofname1 exists
-5) In runsmd.job, set Queue = <number_of_jobs> in runsmd.job, default <number_of_jobs> = 100 (do not do too many more than this at one time)
+5) In runsmd.job, set Queue = <number_of_jobs>, default <number_of_jobs> = 100 (do not do too many more than this at one time)
 6) `condor_submit runsmd.job`
 
 
@@ -26,8 +26,8 @@ Once you have your trees produced, the raw square root asymmetries are calculate
 2) `.x drawAsym.C(<tree_file>,<storenumber>,<runnumber>)`
 
 `<tree_file>`: root output file from Fun4All  
-`<storenumber>`: storenumber, default: 34485  
-`<runnumber>`: runnumber, default: 42796  
+`<storenumber>`: store number, default: 34485  
+`<runnumber>`: run number, default: 42796  
 
 
 Contact dloom@umich.edu if you have any questions.
