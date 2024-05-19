@@ -16,7 +16,7 @@ source ${HOME}/.bash_login
 
 condor=true
 fullrun=true
-fname="/sphenix/lustre01/sphnxpro/commissioning/slurp/calophysics/run_00042700_00042800/DST_TRIGGERED_EVENT_run2pp_new_2024p001-00042797-%04d.root"
+fname="DST_TRIGGERED_EVENT_run2pp_new_2024p001-00042797-%04d.root"
 #fname="/sphenix/tg/tg01/commissioning/INTT/work/jaein/ZDCSMD/DSTProduction/Prdf_to_DST/DST_PRDF-00042797-0000.root"
 ofname1="store34485/42797/offlineSMDTesting_DST_42797_%04d.root"
 ofname2="store34485/42797/offlineSMDTesting_DST_42797_%04d_%04d.root"
@@ -29,10 +29,10 @@ if [ "$condor" = false ]; then
 
     if [ "$fullrun" = true ]; then	
 	outname=$(printf "$ofname1" $index)
-	root -l -q "Fun4All_SMDTesting_DST.C(\"$filename\",\"$outname\")"
+	root -l -q "Fun4All_ZDCNeutronLocPol.C(\"$filename\",\"$outname\")"
     else
 	outname=$(printf "$ofname2" $index $startevent)
-	root -l -q "Fun4All_SMDTesting_DST.C(\"$filename\",\"$outname\", $startevent)"
+	root -l -q "Fun4All_ZDCNeutronLocPol.C(\"$filename\",\"$outname\", $startevent)"
     fi
     #=========================================================#
 
@@ -43,10 +43,10 @@ else
 
     if [ "$fullrun" = true ]; then
 	outname=$(printf "$ofname1" ${1})
-	root -l -q "Fun4All_SMDTesting_DST.C(\"$filename\",\"$outname\")"
+	root -l -q "Fun4All_ZDCNeutronLocPol.C(\"$filename\",\"$outname\")"
     else
 	outname=$(printf "$ofname2" ${1} ${1})
-	root -l -q "Fun4All_SMDTesting_DST.C(\"$filename\",\"$outname\", $startevent)"
+	root -l -q "Fun4All_ZDCNeutronLocPol.C(\"$filename\",\"$outname\", $startevent)"
     fi
     #=========================================================#
 fi

@@ -25,7 +25,7 @@ R__LOAD_LIBRARY(libZDCNeutronLocPol.so)
 
 
 //void Fun4All_ZDCNeutronLocPol(const std::string &fname ="/sphenix/tg/tg01/commissioning/INTT/work/jaein/ZDCSMD/DSTProduction/Prdf_to_DST/42861/DST_PRDF-1M-00042861-0000.root", const std::string &outname = "offlineSMDTesting_DST_42861_0000.root", int startEvent = 0, int nEvents = 100000)
-void Fun4All_ZDCNeutronLocPol(const std::string &fname = "/sphenix/lustre01/sphnxpro/commissioning/slurp/calophysics/run_00042700_00042800/DST_TRIGGERED_EVENT_run2pp_new_2024p001-00042796-0000.root", const std::string &outname = "offlineSMDTesting_DST_42796_0000.root", int startEvent = 0, int nEvents = 10000)
+void Fun4All_ZDCNeutronLocPol(const std::string &fname = "DST_TRIGGERED_EVENT_run2pp_new_2024p001-00042796-0000.root", const std::string &outname = "offlineSMDTesting_DST_42796_0000.root", int startEvent = 0, int nEvents = 10000)
 
 {
 
