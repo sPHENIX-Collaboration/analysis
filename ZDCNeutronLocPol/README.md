@@ -25,7 +25,7 @@ Once you have your trees produced, the raw square root asymmetries are calculate
 1) `root.exe`
 2) `.x drawAsym.C(<tree_file>,<storenumber>,<runnumber>)`
 
-`<tree_file>`: root output file from Fun4All  
+`<tree_file>`: root output file from Fun4All containing SMD hit trees  
 `<storenumber>`: store number, default: 34485  
 `<runnumber>`: run number, default: 42796  
 
