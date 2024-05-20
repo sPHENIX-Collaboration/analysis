@@ -87,6 +87,7 @@ namespace myAnalysis {
     vector<map<pair<string,string>, TH1F*>> hqQ2_bg;
     vector<map<pair<string,string>, TH1F*>> hqQ2_bg_4;
     vector<map<pair<string,string>, TH1F*>> hqQ2_bg_left;
+    vector<map<pair<string,string>, TH1F*>> hqQ2_bg_4sd;
     // v3
     vector<map<string, TH1F*>>              hQQ3;
     vector<map<pair<string,string>, TH1F*>> hqQ3;
@@ -519,6 +520,7 @@ void myAnalysis::init_hists() {
             map<pair<string,string>, TH1F*> hqQ2_bg_dummy;
             map<pair<string,string>, TH1F*> hqQ2_bg_4_dummy;
             map<pair<string,string>, TH1F*> hqQ2_bg_left_dummy;
+            map<pair<string,string>, TH1F*> hqQ2_bg_4sd_dummy;
 
             map<string, TH1F*> hQQ3_dummy;
             map<pair<string,string>, TH1F*> hqQ3_dummy;
@@ -545,6 +547,7 @@ void myAnalysis::init_hists() {
                     hqQ2_bg_dummy[key]      = new TH1F(("hqQ2_bg_"+to_string(k)+"_"+to_string(idx)).c_str(), ("qQ2, " + suffix_title + "; qQ2; Counts").c_str(), bins_Q, Q_min, Q_max);
                     hqQ2_bg_4_dummy[key]    = new TH1F(("hqQ2_bg_4_"+to_string(k)+"_"+to_string(idx)).c_str(), ("qQ2, " + suffix_title + "; qQ2; Counts").c_str(), bins_Q, Q_min, Q_max);
                     hqQ2_bg_left_dummy[key] = new TH1F(("hqQ2_bg_left_"+to_string(k)+"_"+to_string(idx)).c_str(), ("qQ2, " + suffix_title + "; qQ2; Counts").c_str(), bins_Q, Q_min, Q_max);
+                    hqQ2_bg_4sd_dummy[key]  = new TH1F(("hqQ2_bg_4sd_"+to_string(k)+"_"+to_string(idx)).c_str(), ("qQ2, " + suffix_title + "; qQ2; Counts").c_str(), bins_Q, Q_min, Q_max);
 
                     hqQ3_dummy[key]         = new TH1F(("hqQ3_"+to_string(k)+"_"+to_string(idx)).c_str(), ("qQ3, " + suffix_title + "; qQ3; Counts").c_str(), bins_Q, Q_min, Q_max);
                     hqQ3_bg_dummy[key]      = new TH1F(("hqQ3_bg_"+to_string(k)+"_"+to_string(idx)).c_str(), ("qQ3, " + suffix_title + "; qQ3; Counts").c_str(), bins_Q, Q_min, Q_max);
@@ -557,6 +560,7 @@ void myAnalysis::init_hists() {
             hqQ2_bg.push_back(hqQ2_bg_dummy);
             hqQ2_bg_4.push_back(hqQ2_bg_4_dummy);
             hqQ2_bg_left.push_back(hqQ2_bg_left_dummy);
+            hqQ2_bg_4sd.push_back(hqQ2_bg_4sd_dummy);
 
             hQQ3.push_back(hQQ3_dummy);
             hqQ3.push_back(hqQ3_dummy);
@@ -755,10 +759,12 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end, Floa
         UInt_t bg_ctr[cent_key.size()*pt_key.size()]        = {0};
         UInt_t bg_4_ctr[cent_key.size()*pt_key.size()]      = {0};
         UInt_t bg_left_ctr[cent_key.size()*pt_key.size()]   = {0};
+        UInt_t bg_4sd_ctr[cent_key.size()*pt_key.size()]    = {0};
         Float_t qQ2[cent_key.size()*pt_key.size()]          = {0};
         Float_t qQ2_bg[cent_key.size()*pt_key.size()]       = {0};
         Float_t qQ2_bg_4[cent_key.size()*pt_key.size()]     = {0};
         Float_t qQ2_bg_left[cent_key.size()*pt_key.size()]  = {0};
+        Float_t qQ2_bg_4sd[cent_key.size()*pt_key.size()]   = {0};
         Float_t qQ3[cent_key.size()*pt_key.size()]          = {0};
         Float_t qQ3_bg[cent_key.size()*pt_key.size()]       = {0};
         Float_t qQ3_bg_left[cent_key.size()*pt_key.size()]  = {0};
@@ -830,9 +836,10 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end, Floa
             Float_t pi0_mass_high = min(pi0_mass_mu_sigma[idx].first+sigmaMult*pi0_mass_mu_sigma[idx].second, fitEnd);
 
             // compute mu+3*sd of the pi0 mass to select background diphotons
-            Float_t bg_min = pi0_mass_mu_sigma[idx].first+3*pi0_mass_mu_sigma[idx].second;
-            Float_t bg_4_max = 0.4;
-            Float_t bg_max   = 0.5; // setting max at 0.5 GeV to avoid the eta
+            Float_t bg_min     = pi0_mass_mu_sigma[idx].first+3*pi0_mass_mu_sigma[idx].second;
+            Float_t bg_4sd_min = pi0_mass_mu_sigma[idx].first+4*pi0_mass_mu_sigma[idx].second;
+            Float_t bg_4_max   = 0.4;
+            Float_t bg_max     = 0.5; // setting max at 0.5 GeV to avoid the eta
 
             for(Int_t c = 0; c < cuts.size(); ++c) {
                 if(ecore1_val >= cuts[c].e1         && ecore2_val >= cuts[c].e2        && asym_val     < cuts[c].asym &&
@@ -850,14 +857,22 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end, Floa
                     }
 
                     // fill in qQ for the background
+                    // Default range: [mean+3sd,0.5]
                     if(c == cut_num && do_vn_calc && pi0_mass_val >= bg_min && pi0_mass_val < bg_max) {
                         ++bg_ctr[idx];
                         qQ2_bg[idx] += qQ2_val;
                         qQ3_bg[idx] += qQ3_val;
 
+                        // range [mean+3sd, 0.4]
                         if(pi0_mass_val < bg_4_max) {
                             ++bg_4_ctr[idx];
                             qQ2_bg_4[idx] += qQ2_val;
+                        }
+
+                        // range [mean+4sd, 0.5]
+                        if(pi0_mass_val >= bg_4sd_min) {
+                            ++bg_4sd_ctr[idx];
+                            qQ2_bg_4sd[idx] += qQ2_val;
                         }
                     }
                     // fill in the qQ for the signal+background region
@@ -906,6 +921,13 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end, Floa
               qQ2_bg_max = max(qQ2_bg_max, qQ2_bg_4[idx]);
 
               if (qQ2_bg_4[idx]) hqQ2_bg_4[k][key]->Fill(qQ2_bg_4[idx], bg_4_ctr[idx]);
+
+              // compute qQ for the background
+              qQ2_bg_4sd[idx] = (bg_4sd_ctr[idx]) ? qQ2_bg_4sd[idx] / bg_4sd_ctr[idx] : 0;
+              qQ2_bg_min = min(qQ2_bg_min, qQ2_bg_4sd[idx]);
+              qQ2_bg_max = max(qQ2_bg_max, qQ2_bg_4sd[idx]);
+
+              if (qQ2_bg_4sd[idx]) hqQ2_bg_4sd[k][key]->Fill(qQ2_bg_4sd[idx], bg_4sd_ctr[idx]);
 
               // compute qQ for the pi0 candiates
               qQ2[idx] = (pi0_ctr[idx]) ? qQ2[idx] / pi0_ctr[idx] : 0;
@@ -986,6 +1008,7 @@ void myAnalysis::finalize(const string &i_output) {
             output.mkdir((prefix+"/qQ2_bg").c_str());
             output.mkdir((prefix+"/qQ2_bg_4").c_str());
             output.mkdir((prefix+"/qQ2_bg_left").c_str());
+            output.mkdir((prefix+"/qQ2_bg_4sd").c_str());
 
             output.mkdir((prefix+"/QQ3").c_str());
             output.mkdir((prefix+"/qQ3").c_str());
@@ -1043,6 +1066,9 @@ void myAnalysis::finalize(const string &i_output) {
 
                     output.cd((prefix+"/qQ2_bg_left").c_str());
                     hqQ2_bg_left[k][key]->Write();
+
+                    output.cd((prefix+"/qQ2_bg_4sd").c_str());
+                    hqQ2_bg_4sd[k][key]->Write();
 
                     output.cd((prefix+"/qQ3").c_str());
                     hqQ3[k][key]->Write();
