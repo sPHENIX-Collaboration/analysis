@@ -5,21 +5,28 @@
 
 float sqrtasym(float N1, float N2, float N3, float N4);
 float sqrtasymerr(float N1, float N2, float N3, float N4, float E1, float E2, float E3, float E4);
+void FitAsym(TGraphErrors *gAsym, double &eps, double &epserr, double &chi2);
 void DrawAsym(int runnumber, TGraphErrors *gSqrtAsymBlue, TGraphErrors *gSqrtAsymYellow);
 void DrawCanvas(int runnumber, TH2 *hits_up, TH2 *hits_down, TGraphErrors *gRawSimpleAsym, TGraphErrors *gRawSqrtAsym);
 
 
 R__LOAD_LIBRARY(libuspin.so)
 
-float ZDC1CUT = 100; // keep above (nominal 65)
-float ZDC2CUT = 75; // keep above (nominal 25)
-float VETOCUT = 150; // keep below (nominal 150)
-float RMINCUT = 2; // keep above (nominal 2)
+float ZDC1CUT = 65; // keep above (nominal 65)
+float ZDC2CUT = 25; // keep above (nominal 25)
+float VETOCUT = 200; // keep below (nominal 150)
+float RMINCUT = 0.5; // keep above (nominal 2)
 float RMAXCUT = 4; // keep below (nominal 4)
 
 
-void drawAsym(const std::string infile = "store34485/42796/smdmerge.root", int storenumber = 34485, int runnumber = 42796)
+void drawAsym(const std::string infile = "store34485/42797/smdmerge.root", int storenumber = 34485, int runnumber = 42797)
 {
+
+  //TGraphErrors *gAsymByXS = new TGraphErrors();
+  //int ite = 0;
+  //for (int ixs = -5; ixs < 6; ixs++)
+  //{
+
 
   TFile *f = new TFile(infile.c_str());
 
@@ -90,7 +97,10 @@ void drawAsym(const std::string infile = "store34485/42796/smdmerge.root", int s
   spin_out.GetDBContentStore(spin_cont,runnumber);
   
   int crossingshift = spin_cont.GetCrossingShift();
-  //crossingshift = 0;
+  
+  //crossingshift = ixs;
+  //if (ixs < 0){crossingshift = 120+ixs;}
+  std::cout << crossingshift << std::endl;
   
   int bspinpat[120] = {0};
   int yspinpat[120] = {0};
@@ -162,11 +172,22 @@ void drawAsym(const std::string infile = "store34485/42796/smdmerge.root", int s
     //int bspin = bpat[sphenix_cross]; //option B: preset patterns
     //int yspin = ypat[sphenix_cross]; //option B: preset patterns
 
-    // calculate phi such that phi = 0 is to the left of polarized proton going direction (PHENIX convention) 
-    float n_phi = atan2(n_y, n_x) + TMath::Pi();
-    if (n_phi > TMath::Pi()){n_phi -= 2*TMath::Pi();}
-    float s_phi = atan2(s_y, s_x) + TMath::Pi();
-    if (s_phi > TMath::Pi()){s_phi -= 2*TMath::Pi();}
+    
+    //float n_phi = atan2(n_y, n_x) + TMath::Pi();
+    //if (n_phi > TMath::Pi()){n_phi -= 2*TMath::Pi();}
+    //float s_phi = atan2(s_y, s_x) + TMath::Pi();
+    //if (s_phi > TMath::Pi()){s_phi -= 2*TMath::Pi();}
+
+
+    // phi = -pi/2 to the left of polarized proton going direction (PHENIX convention - https://journals.aps.org/prd/pdf/10.1103/PhysRevD.88.032006) 
+    float n_phi = atan2(n_y, -n_x) - TMath::Pi() / 2;
+    if (n_phi < -TMath::Pi()) {n_phi += 2 * TMath::Pi();} 
+    else if (n_phi > TMath::Pi()) {n_phi -= 2 * TMath::Pi();}
+
+    float s_phi = atan2(s_y, -s_x) - TMath::Pi() / 2;
+    if (s_phi < -TMath::Pi()) {s_phi += 2 * TMath::Pi();} 
+    else if (s_phi > TMath::Pi()) {s_phi -= 2 * TMath::Pi();}
+    
 
     if (zdcN1_adc > ZDC1CUT && zdcN2_adc > ZDC2CUT && veto_NF < VETOCUT && veto_NB < VETOCUT)
     {
@@ -273,7 +294,7 @@ void drawAsym(const std::string infile = "store34485/42796/smdmerge.root", int s
   }
 
 
-
+  
   TCanvas *ncall = new TCanvas("ncall","ncall",1200,600);
   //DrawCanvas(runnumber,nxy_hits_up[0],nxy_hits_down[0],gSqrtAsym[0],gSqrtAsym[1]);
   DrawAsym(runnumber,gSqrtAsym[0],gSqrtAsym[1]);
@@ -282,8 +303,27 @@ void drawAsym(const std::string infile = "store34485/42796/smdmerge.root", int s
   //DrawCanvas(runnumber,sxy_hits_up[1],sxy_hits_down[1],gSqrtAsym[2],gSqrtAsym[3]);
   DrawAsym(runnumber,gSqrtAsym[2],gSqrtAsym[3]);
   
+
+
+  /*
+  double epsilon = 0.;
+  double epsilon_err = 0.;
+  double chi2fit = 0.;
+  FitAsym(gSqrtAsym[0], epsilon, epsilon_err, chi2fit);
+  std::cout << ixs << std::endl;
+  gAsymByXS->SetPoint(ite,ixs,epsilon*100);
+  gAsymByXS->SetPointError(ite,0,epsilon_err*100);
+
+  ite++;
   
+  }
   
+  gAsymByXS->GetYaxis()->SetRangeUser(-2,2);
+  gAsymByXS->GetHistogram()->GetXaxis()->SetLimits(-5.5, 5.5);
+  gAsymByXS->SetMarkerStyle(21);
+  gAsymByXS->Draw("ape");
+  */
+
 }
 
 
@@ -305,6 +345,23 @@ float sqrtasymerr(float N1, float N2, float N3, float N4, float E1, float E2, fl
 }
 
 
+void FitAsym(TGraphErrors *gAsym, double &eps, double &epserr, double &chi2)
+{
+  double fitLow = -TMath::Pi()/2;
+  double fitHigh = TMath::Pi()/2;
+  TF1 *sin1 = new TF1("sin1","-[0] * TMath::Sin(x - [1])",fitLow,fitHigh);
+  sin1->SetParLimits(0,0,0.2);
+  sin1->SetParLimits(1,0,0.05);
+
+  gAsym->GetYaxis()->SetRangeUser(-0.03,0.03);
+  gAsym->GetXaxis()->SetRangeUser(fitLow,fitHigh);
+  gAsym->Fit("sin1","MR");
+  eps = sin1->GetParameter(0);
+  epserr = sin1->GetParError(0);
+  chi2 = sin1->GetChisquare();
+}
+
+
 void DrawAsym(int runnumber, TGraphErrors *gSqrtAsymBlue, TGraphErrors *gSqrtAsymYellow)
 {
   TPad *pad1 = new TPad("pad1", "Pad1", 0.0, 0.0, 0.5, 1.0);
@@ -322,24 +379,24 @@ void DrawAsym(int runnumber, TGraphErrors *gSqrtAsymBlue, TGraphErrors *gSqrtAsy
   pad2->Draw();
 
   // only fit in a length pi interval
-  double fitLow = -TMath::Pi();
-  double fitHigh = 0;
+  double fitLow = -TMath::Pi()/2;
+  double fitHigh = TMath::Pi()/2;
   pad1->cd();
 
-  TF1 *cos1 = new TF1("cos1","-[0] * TMath::Cos(x - [1])",fitLow,fitHigh);
-  cos1->SetParLimits(0,0,0.2);
-  //cos1->SetParLimits(1,0,0.2);
+  TF1 *sin1 = new TF1("sin1","-[0] * TMath::Sin(x - [1])",fitLow,fitHigh);
+  sin1->SetParLimits(0,0,0.2);
+  //sin1->SetParLimits(1,0,0.2);
 
   gSqrtAsymBlue->GetXaxis()->SetTitle("#phi, rad");
   gSqrtAsymBlue->GetXaxis()->SetTitleSize(0.045);
   gSqrtAsymBlue->GetXaxis()->SetTitleOffset(0.85);
   gSqrtAsymBlue->GetYaxis()->SetTitle("#epsilon(#phi)");
   gSqrtAsymBlue->GetYaxis()->SetTitleSize(0.045);
-  gSqrtAsymBlue->GetYaxis()->SetTitleOffset(0.85);
+  gSqrtAsymBlue->GetYaxis()->SetTitleOffset(1.35);
   gSqrtAsymBlue->GetYaxis()->SetRangeUser(-0.03,0.03);
   gSqrtAsymBlue->GetXaxis()->SetRangeUser(fitLow,fitHigh);
   gSqrtAsymBlue->SetMarkerStyle(21);
-  gSqrtAsymBlue->Fit("cos1","MR");
+  gSqrtAsymBlue->Fit("sin1","MR");
   gSqrtAsymBlue->Draw("ap");
   
   TLine *line1 = new TLine(fitLow, 0, fitHigh, 0);
@@ -359,27 +416,27 @@ void DrawAsym(int runnumber, TGraphErrors *gSqrtAsymBlue, TGraphErrors *gSqrtAsy
   latexFit->SetTextAlign(13);
 
   
-  latexFit->DrawLatexNDC(0.2, 0.875, "|#epsilon_{raw}|cos(#phi - #phi_{0}) fit:");
-  latexFit->DrawLatexNDC(0.2, 0.825, Form("|#epsilon_{raw}| = %.2f%% #pm %.2f%%", cos1->GetParameter(0)*100, cos1->GetParError(0)*100));
-  latexFit->DrawLatexNDC(0.2, 0.775, Form("#phi_{0} = %.2f #pm %.2f", cos1->GetParameter(1), cos1->GetParError(1)));
-  latexFit->DrawLatexNDC(0.2, 0.715, Form("#chi^{2}/NDF = %.2f/%d", cos1->GetChisquare(), cos1->GetNDF()));
+  latexFit->DrawLatexNDC(0.2, 0.875, "|#epsilon_{raw}|sin(#phi - #phi_{0}) fit:");
+  latexFit->DrawLatexNDC(0.2, 0.825, Form("|#epsilon_{raw}| = %.2f%% #pm %.2f%%", sin1->GetParameter(0)*100, sin1->GetParError(0)*100));
+  latexFit->DrawLatexNDC(0.2, 0.775, Form("#phi_{0} = %.2f #pm %.2f", sin1->GetParameter(1), sin1->GetParError(1)));
+  latexFit->DrawLatexNDC(0.2, 0.715, Form("#chi^{2}/NDF = %.2f/%d", sin1->GetChisquare(), sin1->GetNDF()));
 
 
   pad2->cd();
-  TF1 *cos2 = new TF1("cos2","-[0] * TMath::Cos(x - [1])",fitLow,fitHigh);
-  cos2->SetParLimits(0,0,0.2);
-  //cos2->SetParLimits(1,0,0.2);
+  TF1 *sin2 = new TF1("sin2","-[0] * TMath::Sin(x - [1])",fitLow,fitHigh);
+  sin2->SetParLimits(0,0,0.2);
+  //sin2->SetParLimits(1,0,0.2);
 
   gSqrtAsymYellow->GetXaxis()->SetTitle("#phi, rad");
   gSqrtAsymYellow->GetXaxis()->SetTitleSize(0.045);
   gSqrtAsymYellow->GetXaxis()->SetTitleOffset(0.85);
   gSqrtAsymYellow->GetYaxis()->SetTitle("#epsilon(#phi)");
   gSqrtAsymYellow->GetYaxis()->SetTitleSize(0.045);
-  gSqrtAsymYellow->GetYaxis()->SetTitleOffset(0.85);
+  gSqrtAsymYellow->GetYaxis()->SetTitleOffset(1.35);
   gSqrtAsymYellow->GetYaxis()->SetRangeUser(-0.03,0.03);
   gSqrtAsymYellow->GetXaxis()->SetRangeUser(fitLow,fitHigh);
   gSqrtAsymYellow->SetMarkerStyle(21);
-  gSqrtAsymYellow->Fit("cos2","MR");
+  gSqrtAsymYellow->Fit("sin2","MR");
   gSqrtAsymYellow->Draw("ap");
   
   
@@ -395,10 +452,10 @@ void DrawAsym(int runnumber, TGraphErrors *gSqrtAsymBlue, TGraphErrors *gSqrtAsy
   latexFit2->SetTextAlign(13);
 
   
-  latexFit2->DrawLatexNDC(0.2, 0.875, "|#epsilon_{raw}|cos(#phi - #phi_{0}) fit:");
-  latexFit2->DrawLatexNDC(0.2, 0.825, Form("|#epsilon_{raw}| = %.2f%% #pm %.2f%%", cos2->GetParameter(0)*100, cos2->GetParError(0)*100));
-  latexFit2->DrawLatexNDC(0.2, 0.775, Form("#phi_{0} = %.2f #pm %.2f", cos2->GetParameter(1), cos2->GetParError(1)));
-  latexFit2->DrawLatexNDC(0.2, 0.715, Form("#chi^{2}/NDF = %.2f/%d", cos2->GetChisquare(), cos2->GetNDF()));
+  latexFit2->DrawLatexNDC(0.2, 0.875, "|#epsilon_{raw}|sin(#phi - #phi_{0}) fit:");
+  latexFit2->DrawLatexNDC(0.2, 0.825, Form("|#epsilon_{raw}| = %.2f%% #pm %.2f%%", sin2->GetParameter(0)*100, sin2->GetParError(0)*100));
+  latexFit2->DrawLatexNDC(0.2, 0.775, Form("#phi_{0} = %.2f #pm %.2f", sin2->GetParameter(1), sin2->GetParError(1)));
+  latexFit2->DrawLatexNDC(0.2, 0.715, Form("#chi^{2}/NDF = %.2f/%d", sin2->GetChisquare(), sin2->GetNDF()));
 
 
 }
