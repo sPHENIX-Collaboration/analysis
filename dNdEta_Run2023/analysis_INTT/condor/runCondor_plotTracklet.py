@@ -25,6 +25,7 @@ if __name__ == '__main__':
     parser.add_option("-f", "--filedesc", dest="filedesc", default='HIJING_ana398_xvtx-0p04cm_yvtx0p24cm_zvtx-20cm_dummyAlignParams', help="File description")
     parser.add_option("-j", "--nJob", dest="nJob", default=400, help="nJob")
     parser.add_option("-r", "--drcut", dest="drcut", default=0.5, help="Delta R cut for tracklets")
+    parser.add_option("--randomclusset", dest="randomclusset", default=0, help="Random cluster set (for systematic uncertainty)")
     parser.add_option("-s", "--submitcondor", dest="submitcondor", action="store_true", default=False, help="Submit condor jobs")
 
     (opt, args) = parser.parse_args()
@@ -35,6 +36,7 @@ if __name__ == '__main__':
     nJob = int(opt.nJob)
     submitcondor = opt.submitcondor
     drcut = float(opt.drcut)
+    randomclusset = int(opt.randomclusset)
     username = pwd.getpwuid(os.getuid())[0]
 
     parentdir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir))
@@ -58,7 +60,7 @@ if __name__ == '__main__':
     condorFile.write("Myindex            = $(Process)\n")
     condorFile.write("Extension          = $INT(Myindex,%05d)\n")
     # condorFile.write("isdata             = {}\n".format(1 if isdata else 0))
-    condorFile.write("infilename         = {}/minitree/TrackletMinitree_{}/{}/minitree_$(Extension).root\n".format(parentdir, filedesc, 'dRcut'+str(drcut).replace('.', 'p')))
+    condorFile.write("infilename         = {}/minitree/TrackletMinitree_{}/{}/minitree_$(Extension).root\n".format(parentdir, filedesc, 'dRcut'+str(drcut).replace('.', 'p')++('_RandomClusSet'+str(randomclusset) if randomclusset > 0 else '')))
     condorFile.write("outfilename        = {}/hists_$(Extension).root\n".format(finaloutfiledir))
     condorFile.write("Output             = $(Initialdir)/condor/log_plottracklet/condorlog_$(Process).out\n")
     condorFile.write("Error              = $(Initialdir)/condor/log_plottracklet/condorlog_$(Process).err\n")

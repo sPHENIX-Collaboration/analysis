@@ -19,9 +19,24 @@
 #include "Vertex.h"
 #include "pdgidfunc.h"
 
+bool verbose_debug = false;
+bool useetadepadccut = false;
+
 int main(int argc, char *argv[])
 {
-    // Usage: ./TrackletAna [isdata] [evt-vtx map file] [infile] [outfile] [NevtToRun] [dRCut]
+    if (argc != 9)
+    {
+        cout << "Usage: ./TrackletAna [isdata] [evt-vtx map file] [infile] [outfile] [NevtToRun] [dRCut] [random zvtx] [random cluster set number]" << endl;
+        exit(1);
+    }
+
+    // print out the input parameters
+    for (int i = 0; i < argc; i++)
+    {
+        cout << "argv[" << i << "] = " << argv[i] << endl;
+    }
+
+    // Usage: ./TrackletAna [isdata] [evt-vtx map file] [infile] [outfile] [NevtToRun] [dRCut] [random zvtx] [random cluster set number]
     bool IsData = (TString(argv[1]).Atoi() == 1) ? true : false;
     TString EvtVtx_map_filename = TString(argv[2]);
     TString infilename = TString(argv[3]);
@@ -29,21 +44,11 @@ int main(int argc, char *argv[])
     int NevtToRun_ = TString(argv[5]).Atoi();
     float dRCut = TString(argv[6]).Atof();
     bool userandomzvtx = (TString(argv[7]).Atoi() == 1) ? true : false;
+    int randclusset = TString(argv[8]).Atoi();
 
     TString idxstr = (IsData) ? "INTT_BCO" : "event";
 
     TRandom3 *rnd = new TRandom3(0); // Random number generator
-
-    // int iniEvt = skip;
-
-    cout << "[Run Info] Event-vertex map file = " << EvtVtx_map_filename << endl
-         << "           Input file = " << infilename << endl
-         << "           Output file = " << outfilename << endl
-         << "           Number of events to run = " << NevtToRun_ << endl
-         << "           dRCut = " << dRCut << endl
-         << "-----------" << endl;
-
-    cout << "[Run Info] NevtToRun: " << NevtToRun_ << ", dRCut: " << dRCut << endl;
 
     TrackletData tkldata = {};
 
@@ -52,6 +57,9 @@ int main(int argc, char *argv[])
 
     // Vertex Z reweighting
     TH1F *hM_vtxzweight = VtxZ_ReweiHist();
+
+    // Eta-dependent cluster adc cut
+    TH1F *hM_adccut = ClusADCCut_StepFunc(30, 1);
 
     TFile *f = new TFile(infilename, "READ");
     TTree *t = (TTree *)f->Get("EventTree");
@@ -112,7 +120,6 @@ int main(int argc, char *argv[])
         tkldata.INTT_BCO = INTT_BCO;
         tkldata.PV_x = PV[0];
         tkldata.PV_y = PV[1];
-        // float randomzvtx = rnd->Uniform(-50, 50);
         float PVz = (userandomzvtx) ? rnd->Uniform(-30, -10) : PV[2];
         tkldata.PV_z = PVz;
 
@@ -158,14 +165,16 @@ int main(int argc, char *argv[])
             {
                 cout << "[WARNING] Unknown layer: " << ClusLayer->at(ihit) << endl; // Should not happen
                 continue;
-            }
-
-            if (ClusAdc->at(ihit) < 35)
-                continue;
+            }   
 
             int layer = (ClusLayer->at(ihit) == 3 || ClusLayer->at(ihit) == 4) ? 0 : 1;
             // Hit::Hit(float x, float y, float z, float vtxX, float vtxY, float vtxZ, int layer, float phisize, unsigned int clusadc)
             Hit *hit = new Hit(ClusX->at(ihit), ClusY->at(ihit), ClusZ->at(ihit), PV[0], PV[1], PVz, layer, ClusPhiSize->at(ihit), ClusAdc->at(ihit));
+
+            float adccut = (useetadepadccut) ? hM_adccut->GetBinContent(hM_adccut->FindBin(hit->Eta())) : 35;
+            if (ClusAdc->at(ihit) < adccut)
+                continue;
+
             tkldata.layers[layer].push_back(hit);
             tkldata.cluslayer.push_back(layer);
             tkldata.clusphi.push_back(hit->Phi());
@@ -175,7 +184,29 @@ int main(int argc, char *argv[])
             tkldata.clusadc.push_back(ClusAdc->at(ihit));
         }
 
+        // For systematic: adding random clusters
+        float randclusfrac = RandomHit_fraction(randclusset);
+        if (randclusfrac > 0)
+        {
+            int Nrandclus_inner = (int) randclusfrac * 0.01 * tkldata.layers[0].size();
+            int Nrandclus_outer = (int) randclusfrac * 0.01 * tkldata.layers[1].size();
+
+            // Hit *RandomHit(float vx, float vy, float vz, int layer)
+            for (int irand = 0; irand < Nrandclus_inner; irand++)
+            {
+                Hit *randhit = RandomHit(PV[0], PV[1], PVz, 0);
+                tkldata.layers[0].push_back(randhit);
+            }
+
+            for (int irand = 0; irand < Nrandclus_outer; irand++)
+            {
+                Hit *randhit = RandomHit(PV[0], PV[1], PVz, 1);
+                tkldata.layers[1].push_back(randhit);
+            }
+        }
+
         tkldata.NClusLayer1 = tkldata.layers[0].size();
+        tkldata.NClusLayer2 = tkldata.layers[1].size();
 
         // Tracklet reconstruction: proto-tracklets -> reco-tracklets
         ProtoTracklets(tkldata, dRCut);
@@ -200,16 +231,19 @@ int main(int argc, char *argv[])
                 bool isChargeHadron_alt = is_chargedHadron(PrimaryG4P_PID->at(ihad));
                 bool twodefsame = (isChargeHadron == isChargeHadron_alt) ? true : false;
 
-                cout << std::left << std::setw(5) << "PID = " << std::setw(5) << PrimaryG4P_PID->at(ihad);
-                cout << std::left << std::setw(20) << " Particle class = " << std::setw(15) << particleclass;
-                cout << std::left << std::setw(12) << " Stable = " << std::setw(5) << isStable;
-                cout << std::left << std::setw(20) << " Proper lifetime = " << std::setw(15) << lifetime;
-                cout << std::left << std::setw(18) << " Decay length = " << std::setw(15) << decaylength;
-                cout << std::left << std::setw(12) << " Charge = " << std::setw(5) << charge;
-                cout << std::left << std::setw(15) << " Is hadron = " << std::setw(5) << isHadron;
-                cout << std::left << std::setw(23) << " Is charged hadron = " << std::setw(5) << isChargeHadron;
-                cout << std::left << std::setw(30) << " Is charged hadron (alt) = " << std::setw(5) << isChargeHadron_alt;
-                cout << std::left << std::setw(34) << " Two definitions are the same = " << std::setw(5) << twodefsame << endl;
+                if (verbose_debug)
+                {
+                    cout << std::left << std::setw(5) << "PID = " << std::setw(5) << PrimaryG4P_PID->at(ihad);
+                    cout << std::left << std::setw(20) << " Particle class = " << std::setw(15) << particleclass;
+                    cout << std::left << std::setw(12) << " Stable = " << std::setw(5) << isStable;
+                    cout << std::left << std::setw(20) << " Proper lifetime = " << std::setw(15) << lifetime;
+                    cout << std::left << std::setw(18) << " Decay length = " << std::setw(15) << decaylength;
+                    cout << std::left << std::setw(12) << " Charge = " << std::setw(5) << charge;
+                    cout << std::left << std::setw(15) << " Is hadron = " << std::setw(5) << isHadron;
+                    cout << std::left << std::setw(23) << " Is charged hadron = " << std::setw(5) << isChargeHadron;
+                    cout << std::left << std::setw(30) << " Is charged hadron (alt) = " << std::setw(5) << isChargeHadron_alt;
+                    cout << std::left << std::setw(34) << " Two definitions are the same = " << std::setw(5) << twodefsame << endl;
+                }
 
                 PrimaryG4PPID_count[PrimaryG4P_PID->at(ihad)]++;
                 absPrimaryG4PPID_count[abs(PrimaryG4P_PID->at(ihad))]++;
