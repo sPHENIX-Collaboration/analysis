@@ -17,6 +17,7 @@ class Gl1Packet;
 class CaloPacketContainer;
 class CaloPacket;
 class TH1;
+class TH2;
 class TTree;
 
 class ZDCNeutronLocPol : public SubsysReco
@@ -32,19 +33,28 @@ class ZDCNeutronLocPol : public SubsysReco
   int process_event(PHCompositeNode *topNode) override;
   int End(PHCompositeNode *topNode) override;
 
+  void setGainMatch(const std::string &fname);
   void setFileName(const std::string &fname); 
 
  protected:
   CaloWaveformFitting *WaveformProcessingFast = nullptr;
 
-  TH1 *smd_hor_north_blue_up = nullptr;
-  TH1 *smd_ver_north_blue_up = nullptr;
-  TH1 *smd_hor_north_blue_down = nullptr;
-  TH1 *smd_ver_north_blue_down = nullptr;
-  TH1 *smd_phi_blue_up = nullptr;
-  TH1 *smd_phi_blue_down = nullptr;
+  TH1 *h_rawADC[32] = {nullptr};
+  TH1 *h_pedADC[32] = {nullptr};
+  TH1 *h_signalADC[32] = {nullptr};
+
+  TH2 *h_waveformZDC = nullptr;
+  TH2 *h_waveformSMD_North = nullptr;
+  TH2 *h_waveformSMD_South = nullptr;
+  TH2 *h_waveformVeto_North = nullptr;
+  TH2 *h_waveformVeto_South = nullptr;
+  TH2 *h_waveformAll = nullptr;
 
   TTree *smdHits;
+
+  float gain[32] = {0.0f};
+  float smd_south_rgain[16] = {1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0};
+  float smd_north_rgain[16] = {1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0};
 
   float zdcS1_adc = 0.;
   float zdcS2_adc = 0.;
@@ -69,6 +79,10 @@ class ZDCNeutronLocPol : public SubsysReco
 
   int bunchnumber = 0;
 
+  int showerCutN = 0;
+  int showerCutS = 0;
+
+  void CompSmdAdc();
   void CompSmdPos();
 
   Gl1Packet *p_gl1;

@@ -11,4 +11,4 @@ Initialdir  	= /sphenix/user/dloomis/analysis/ZDCNeutronLocPol/macros
 #request_memory = 4096MB
 # the importance of this PeriodicHold will be explained in the next section
 PeriodicHold = (NumJobStarts>=1 && JobStatus == 1)
-Queue 100
+Queue 500

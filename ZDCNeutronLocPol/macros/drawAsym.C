@@ -12,14 +12,16 @@ void DrawCanvas(int runnumber, TH2 *hits_up, TH2 *hits_down, TGraphErrors *gRawS
 
 R__LOAD_LIBRARY(libuspin.so)
 
-float ZDC1CUT = 65; // keep above (nominal 65)
-float ZDC2CUT = 25; // keep above (nominal 25)
-float VETOCUT = 200; // keep below (nominal 150)
-float RMINCUT = 0.5; // keep above (nominal 2)
+float ZDC1CUT = 100; // keep above (nominal 65)
+float ZDC2CUT = 75; // keep above (nominal 25)
+float VETOCUT = 100; // keep below (nominal 150)
+float RMINCUT = 2; // keep above (nominal 2)
 float RMAXCUT = 4; // keep below (nominal 4)
 
 
-void drawAsym(const std::string infile = "store34485/42797/smdmerge.root", int storenumber = 34485, int runnumber = 42797)
+//void drawAsym(const std::string infile = "fakeAsymmetry/FakeAsymmetry.root", int storenumber = 34485, int runnumber = 42797)
+void drawAsym(const std::string infile = "offlineSMDTesting_DST_42796_0000.root", int storenumber = 34485, int runnumber = 42796)
+//void drawAsym(const std::string infile = "store34485/42797/smdmerge.root", int storenumber = 34485, int runnumber = 42797)
 {
 
   //TGraphErrors *gAsymByXS = new TGraphErrors();
@@ -69,11 +71,13 @@ void drawAsym(const std::string infile = "store34485/42797/smdmerge.root", int s
 
   //========================== SMD Hit Tree ==============================//
   TTree *smdHits = (TTree*)f->Get("smdHits");
-  int bunchnumber, bluespin, yellspin;
+  int bunchnumber, showerCutN, showerCutS;
   float n_x, n_y, s_x, s_y;
   float zdcN1_adc, zdcN2_adc, veto_NF, veto_NB;
   float zdcS1_adc, zdcS2_adc, veto_SF, veto_SB;
   smdHits -> SetBranchAddress ("bunchnumber",       &bunchnumber);
+  smdHits -> SetBranchAddress ("showerCutN",       &showerCutN);
+  smdHits -> SetBranchAddress ("showerCutS",       &showerCutS);
   smdHits -> SetBranchAddress ("n_x",       &n_x);
   smdHits -> SetBranchAddress ("n_y",       &n_y);
   smdHits -> SetBranchAddress ("s_x",       &s_x);
@@ -97,7 +101,7 @@ void drawAsym(const std::string infile = "store34485/42797/smdmerge.root", int s
   spin_out.GetDBContentStore(spin_cont,runnumber);
   
   int crossingshift = spin_cont.GetCrossingShift();
-  
+  //crossingshift = 0;
   //crossingshift = ixs;
   //if (ixs < 0){crossingshift = 120+ixs;}
   std::cout << crossingshift << std::endl;
@@ -109,8 +113,8 @@ void drawAsym(const std::string infile = "store34485/42797/smdmerge.root", int s
     bspinpat[i] = spin_cont.GetSpinPatternBlue(i);
     yspinpat[i] = spin_cont.GetSpinPatternYellow(i);
 
-    bspinpat[i] = -1*bspinpat[i]; // spin pattern at sPHENIX is -1*(CDEV pattern) (from PHENIX)
-    yspinpat[i] = -1*yspinpat[i]; // spin pattern at sPHENIX is -1*(CDEV pattern) (from PHENIX)
+    //bspinpat[i] = -1*bspinpat[i]; // spin pattern at sPHENIX is -1*(CDEV pattern) (from PHENIX)
+    //yspinpat[i] = -1*yspinpat[i]; // spin pattern at sPHENIX is -1*(CDEV pattern) (from PHENIX)
   }
   //======================================================================//
 
@@ -153,8 +157,8 @@ void drawAsym(const std::string infile = "store34485/42797/smdmerge.root", int s
     else if (preset_pattern_yellow[spinpatternNo].at(i) == '-'){ypat[i] = -1;}
     else if (preset_pattern_yellow[spinpatternNo].at(i) == '*'){ypat[i] = 10;}
 
-    bpat[i] = -1*bpat[i]; // spin pattern at sPHENIX is -1*(CDEV pattern) (from PHENIX)
-    ypat[i] = -1*ypat[i]; // spin pattern at sPHENIX is -1*(CDEV pattern) (from PHENIX)
+    //bpat[i] = -1*bpat[i]; // spin pattern at sPHENIX is -1*(CDEV pattern) (from PHENIX)
+    //ypat[i] = -1*ypat[i]; // spin pattern at sPHENIX is -1*(CDEV pattern) (from PHENIX)
   }
   //=====================================================================================//
 
@@ -172,14 +176,9 @@ void drawAsym(const std::string infile = "store34485/42797/smdmerge.root", int s
     //int bspin = bpat[sphenix_cross]; //option B: preset patterns
     //int yspin = ypat[sphenix_cross]; //option B: preset patterns
 
-    
-    //float n_phi = atan2(n_y, n_x) + TMath::Pi();
-    //if (n_phi > TMath::Pi()){n_phi -= 2*TMath::Pi();}
-    //float s_phi = atan2(s_y, s_x) + TMath::Pi();
-    //if (s_phi > TMath::Pi()){s_phi -= 2*TMath::Pi();}
 
-
-    // phi = -pi/2 to the left of polarized proton going direction (PHENIX convention - https://journals.aps.org/prd/pdf/10.1103/PhysRevD.88.032006) 
+    // phi = -pi/2 to the left of polarized proton going direction (PHENIX convention - https://journals.aps.org/prd/pdf/10.1103/PhysRevD.88.032006)
+    // SMD goes from -x to +x from left to right when looking at detector (from perspective of Blue-North, Yellow-South)
     float n_phi = atan2(n_y, -n_x) - TMath::Pi() / 2;
     if (n_phi < -TMath::Pi()) {n_phi += 2 * TMath::Pi();} 
     else if (n_phi > TMath::Pi()) {n_phi -= 2 * TMath::Pi();}
@@ -189,7 +188,7 @@ void drawAsym(const std::string infile = "store34485/42797/smdmerge.root", int s
     else if (s_phi > TMath::Pi()) {s_phi -= 2 * TMath::Pi();}
     
 
-    if (zdcN1_adc > ZDC1CUT && zdcN2_adc > ZDC2CUT && veto_NF < VETOCUT && veto_NB < VETOCUT)
+    if (zdcN1_adc > ZDC1CUT && zdcN2_adc > ZDC2CUT && veto_NF < VETOCUT && veto_NB < VETOCUT && showerCutN == 1)
     {
       if (sqrt(n_x*n_x + n_y*n_y) > RMINCUT && sqrt(n_x*n_x+n_y*n_y) < RMAXCUT)
       {
@@ -219,7 +218,7 @@ void drawAsym(const std::string infile = "store34485/42797/smdmerge.root", int s
     }
 
 
-    if (zdcS1_adc > ZDC1CUT && zdcS2_adc > ZDC2CUT && veto_SF < VETOCUT && veto_SB < VETOCUT)
+    if (zdcS1_adc > ZDC1CUT && zdcS2_adc > ZDC2CUT && veto_SF < VETOCUT && veto_SB < VETOCUT && showerCutS == 1)
     {
       if (sqrt(s_x*s_x + s_y*s_y) > RMINCUT && sqrt(s_x*s_x+s_y*s_y) < RMAXCUT)
       {
@@ -257,8 +256,8 @@ void drawAsym(const std::string infile = "store34485/42797/smdmerge.root", int s
   {
     float phi = i*(2*TMath::Pi()/nasymbins) - (TMath::Pi() - TMath::Pi()/nasymbins);
 
-    int phibin = i; // N_L
-    int phibin2 = (phibin + (int)(nasymbins/2.)) % nasymbins; // N_R
+    int phibin = i; // N_Left
+    int phibin2 = (phibin + (int)(nasymbins/2.)) % nasymbins; // N_Right
     
 
     //== 1: Blue North, 2: Yellow North, 3: Blue South, 4: Yellow South
@@ -297,10 +296,10 @@ void drawAsym(const std::string infile = "store34485/42797/smdmerge.root", int s
   
   TCanvas *ncall = new TCanvas("ncall","ncall",1200,600);
   //DrawCanvas(runnumber,nxy_hits_up[0],nxy_hits_down[0],gSqrtAsym[0],gSqrtAsym[1]);
-  DrawAsym(runnumber,gSqrtAsym[0],gSqrtAsym[1]);
+  //DrawAsym(runnumber,gSqrtAsym[0],gSqrtAsym[1]);
 
   TCanvas *scall = new TCanvas("scall","scall",1200,600);
-  //DrawCanvas(runnumber,sxy_hits_up[1],sxy_hits_down[1],gSqrtAsym[2],gSqrtAsym[3]);
+  ////DrawCanvas(runnumber,sxy_hits_up[1],sxy_hits_down[1],gSqrtAsym[2],gSqrtAsym[3]);
   DrawAsym(runnumber,gSqrtAsym[2],gSqrtAsym[3]);
   
 
@@ -489,8 +488,13 @@ void DrawCanvas(int runnumber, TH2 *hits_up, TH2 *hits_down, TGraphErrors *gSqrt
   hits_down->GetXaxis()->SetTitle("x (cm)");
   hits_down->GetYaxis()->SetTitle("y (cm)");
   
+
+  // only fit in a length pi interval
+  double fitLow = -TMath::Pi()/2;
+  double fitHigh = TMath::Pi()/2;
+
   pad3->cd();
-  TF1 *cos1 = new TF1("cos1","-[0] * TMath::Cos(x - [1])",-3.1415,0);
+  TF1 *cos1 = new TF1("cos1","-[0] * TMath::Cos(x - [1])",fitLow,fitHigh);
   cos1->SetParLimits(0,0,0.1);
 
 
@@ -501,12 +505,13 @@ void DrawCanvas(int runnumber, TH2 *hits_up, TH2 *hits_down, TGraphErrors *gSqrt
   gSqrtAsymBlue->GetYaxis()->SetTitle("#epsilon(#phi)");
   gSqrtAsymBlue->GetYaxis()->SetTitleSize(0.045);
   gSqrtAsymBlue->GetYaxis()->SetTitleOffset(0.85);
-  gSqrtAsymBlue->GetYaxis()->SetRangeUser(-0.03,0.03);
+  gSqrtAsymBlue->GetYaxis()->SetRangeUser(-0.05,0.05);
+  gSqrtAsymBlue->GetXaxis()->SetRangeUser(fitLow,fitHigh);
   gSqrtAsymBlue->SetMarkerStyle(21);
   gSqrtAsymBlue->Fit("cos1","MR");
   gSqrtAsymBlue->Draw("ap");
   
-  TLine *line = new TLine(-3.1415, 0, 0, 0); 
+  TLine *line = new TLine(fitLow, 0, fitHigh, 0); 
   line->SetLineStyle(2);
   line->SetLineWidth(2);
   line->SetLineColor(kBlack);
@@ -532,7 +537,7 @@ void DrawCanvas(int runnumber, TH2 *hits_up, TH2 *hits_down, TGraphErrors *gSqrt
 
   pad4->cd();
 
-  TF1 *cos2 = new TF1("cos2","-[0] * TMath::Cos(x - [1])",-3.1415,0);
+  TF1 *cos2 = new TF1("cos2","-[0] * TMath::Cos(x - [1])",fitLow,fitHigh);
   cos2->SetParLimits(0,0,0.1);
 
 
@@ -543,7 +548,8 @@ void DrawCanvas(int runnumber, TH2 *hits_up, TH2 *hits_down, TGraphErrors *gSqrt
   gSqrtAsymYellow->GetYaxis()->SetTitle("#epsilon(#phi)");
   gSqrtAsymYellow->GetYaxis()->SetTitleSize(0.045);
   gSqrtAsymYellow->GetYaxis()->SetTitleOffset(0.85);
-  gSqrtAsymYellow->GetYaxis()->SetRangeUser(-0.03,0.03);
+  gSqrtAsymYellow->GetYaxis()->SetRangeUser(-0.05,0.05);
+  gSqrtAsymYellow->GetXaxis()->SetRangeUser(fitLow,fitHigh);
   gSqrtAsymYellow->SetMarkerStyle(21);
   gSqrtAsymYellow->Fit("cos2","MR");
   gSqrtAsymYellow->Draw("ap");
