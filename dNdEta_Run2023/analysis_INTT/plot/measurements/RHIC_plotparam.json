@@ -26,7 +26,7 @@
         "linewidth": 0,
         "alpha": 0.5,
         "DrawOption": ["3 RX same","pX RX same"],
-        "Legendtext": "sPHENIX AuAu 200 GeV - HIJING (reconstructed)",
+        "Legendtext": "sPHENIX AuAu 200 GeV - HIJING (closure)",
         "Legendstyle": "pf"
     },
     "phobos_auau_0p2":{
@@ -35,7 +35,7 @@
         "markersize": 1,
         "linewidth": 0,
         "alpha": 0.6,
-        "DrawOption": ["3 same","pX same"],
+        "DrawOption": ["3 RX same","pX RX same"],
         "Legendtext": "PHOBOS AuAu 200 GeV",
         "Legendstyle": "pf"
     },
@@ -55,7 +55,7 @@
         "markersize": 1,
         "linewidth": 0,
         "alpha": 0.7,
-        "DrawOption": ["3 same", "pX same"],
+        "DrawOption": ["3 RX same", "pX RX same"],
         "Legendtext": "BRAHMS AuAu 200 GeV",
         "Legendstyle": "pf"
     }

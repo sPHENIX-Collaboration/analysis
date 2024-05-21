@@ -112,7 +112,7 @@ class TrackletData
 
     float vtxzwei;
 
-    int event, NClusLayer1, NPrototkl, NRecotkl_Raw, NRecotkl_GenMatched, NGenHadron;
+    int event, NClusLayer1, NClusLayer2, NPrototkl, NRecotkl_Raw, NRecotkl_GenMatched, NGenHadron;
     uint64_t INTT_BCO;
     float PV_x, PV_y, PV_z, TruthPV_x, TruthPV_y, TruthPV_z;
     float centrality_mbd;
@@ -143,6 +143,7 @@ void SetMinitree(TTree *outTree, TrackletData &tkldata)
     outTree->Branch("event", &tkldata.event);
     outTree->Branch("INTT_BCO", &tkldata.INTT_BCO);
     outTree->Branch("NClusLayer1", &tkldata.NClusLayer1);
+    outTree->Branch("NClusLayer2", &tkldata.NClusLayer2);
     outTree->Branch("NPrototkl", &tkldata.NPrototkl);
     outTree->Branch("NRecotkl_Raw", &tkldata.NRecotkl_Raw);
     outTree->Branch("MBD_centrality", &tkldata.centrality_mbd);

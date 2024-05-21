@@ -10,6 +10,7 @@
 
 #pragma once
 
+// make common namespaces implicit
 using namespace std;
 using namespace fastjet;
 
@@ -22,17 +23,20 @@ namespace SColdQcdCorrelatorAnalysis {
   void SEnergyCorrelator::InitializeMembers() {
 
     // print debug statement
-    if (m_inDebugMode) PrintDebug(0);
+    if (m_config.isDebugOn) PrintDebug(0);
 
-    m_ptJetBins.clear();
-    m_inFileNames.clear();
-    m_eecLongSide.clear();
-    m_subEvtsToUse.clear();
+    // clear calculation vectors
     m_jetCstVector.clear();
-    m_outHistVarDrAxis.clear();
-    m_outHistErrDrAxis.clear();
-    m_outHistVarLnDrAxis.clear();
-    m_outHistErrLnDrAxis.clear();
+    m_eecLongSide.clear();    
+
+    // clear output histograms
+    m_outPackageHistVarDrAxis.clear();
+    m_outPackageHistErrDrAxis.clear();
+    m_outPackageHistVarLnDrAxis.clear();
+    m_outPackageHistErrLnDrAxis.clear();
+    m_outManualHistErrDrAxis.clear();
+    
+
     return;
 
   }  // end 'InitializeMembers()'
@@ -42,7 +46,7 @@ namespace SColdQcdCorrelatorAnalysis {
   void SEnergyCorrelator::InitializeTree() {
 
     // print debug statement
-    if (m_inDebugMode) PrintDebug(4);
+    if (m_config.isDebugOn) PrintDebug(4);
 
     // check for tree
     if (!m_inChain) {
@@ -53,46 +57,12 @@ namespace SColdQcdCorrelatorAnalysis {
     m_inChain -> SetMakeClass(1);
 
     // set truth vs. reco branch addresses
-    if (m_isInputTreeTruth) {
-      m_inChain -> SetBranchAddress("Parton3_ID",   &m_partonID[0],   &m_brPartonID[0]);
-      m_inChain -> SetBranchAddress("Parton4_ID",   &m_partonID[1],   &m_brPartonID[1]);
-      m_inChain -> SetBranchAddress("Parton3_MomX", &m_partonMomX[0], &m_brPartonMomX[0]);
-      m_inChain -> SetBranchAddress("Parton3_MomY", &m_partonMomY[0], &m_brPartonMomY[0]);
-      m_inChain -> SetBranchAddress("Parton3_MomZ", &m_partonMomZ[0], &m_brPartonMomZ[0]);
-      m_inChain -> SetBranchAddress("Parton4_MomX", &m_partonMomX[1], &m_brPartonMomX[1]);
-      m_inChain -> SetBranchAddress("Parton4_MomY", &m_partonMomY[1], &m_brPartonMomY[1]);
-      m_inChain -> SetBranchAddress("Parton4_MomZ", &m_partonMomZ[1], &m_brPartonMomZ[1]);
-      m_inChain -> SetBranchAddress("EvtSumParEne", &m_evtSumPar,     &m_brEvtSumPar);
-      m_inChain -> SetBranchAddress("CstID",        &m_cstID,         &m_brCstID);
-      m_inChain -> SetBranchAddress("CstEmbedID",   &m_cstEmbedID,    &m_brCstEmbedID);
-    } else {
-      m_inChain -> SetBranchAddress("EvtNumTrks",    &m_evtNumTrks, &m_brEvtNumTrks);
-      m_inChain -> SetBranchAddress("EvtSumECalEne", &m_evtSumECal, &m_brEvtSumECal);
-      m_inChain -> SetBranchAddress("EvtSumHCalEne", &m_evtSumHCal, &m_brEvtSumHCal);
-      m_inChain -> SetBranchAddress("CstMatchID",    &m_cstMatchID, &m_brCstMatchID);
+    if (m_config.isLegacyInput) {
+      m_legacy.SetChainAddresses(m_inChain, m_config.isInTreeTruth);
     }
 
-    // set generic branch addresses
-    m_inChain -> SetBranchAddress("EvtVtxX",    &m_evtVtxX,    &m_brEvtVtxX);
-    m_inChain -> SetBranchAddress("EvtVtxY",    &m_evtVtxY,    &m_brEvtVtxY);
-    m_inChain -> SetBranchAddress("EvtVtxZ",    &m_evtVtxZ,    &m_brEvtVtxZ);
-    m_inChain -> SetBranchAddress("EvtNumJets", &m_evtNumJets, &m_brEvtNumJets);
-    m_inChain -> SetBranchAddress("JetNumCst",  &m_jetNumCst,  &m_brJetNumCst);
-    m_inChain -> SetBranchAddress("JetID",      &m_jetID,      &m_brJetID);
-    m_inChain -> SetBranchAddress("JetEnergy",  &m_jetEnergy,  &m_brJetEnergy);
-    m_inChain -> SetBranchAddress("JetPt",      &m_jetPt,      &m_brJetPt);
-    m_inChain -> SetBranchAddress("JetEta",     &m_jetEta,     &m_brJetEta);
-    m_inChain -> SetBranchAddress("JetPhi",     &m_jetPhi,     &m_brJetPhi);
-    m_inChain -> SetBranchAddress("JetArea",    &m_jetArea,    &m_brJetArea);
-    m_inChain -> SetBranchAddress("CstZ",       &m_cstZ,       &m_brCstZ);
-    m_inChain -> SetBranchAddress("CstDr",      &m_cstDr,      &m_brCstDr);
-    m_inChain -> SetBranchAddress("CstEnergy",  &m_cstEnergy,  &m_brCstEnergy);
-    m_inChain -> SetBranchAddress("CstJt",      &m_cstPt,      &m_brCstPt);
-    m_inChain -> SetBranchAddress("CstEta",     &m_cstEta,     &m_brCstEta);
-    m_inChain -> SetBranchAddress("CstPhi",     &m_cstPhi,     &m_brCstPhi);
-
     // announce tree setting
-    if (m_inStandaloneMode) PrintMessage(2);
+    if (m_config.isStandalone) PrintMessage(2);
     return;
 
   }  // end 'InitializeTree()'
@@ -102,46 +72,35 @@ namespace SColdQcdCorrelatorAnalysis {
   void SEnergyCorrelator::InitializeHists() {
 
     // print debug statement
-    if (m_inDebugMode) PrintDebug(5);
+    if (m_config.isDebugOn) PrintDebug(5);
 
-    for (size_t iPtBin = 0; iPtBin < m_nBinsJetPt; iPtBin++) {
+    vector<double> drBinEdges  = m_eecLongSide[0] -> bin_edges();
+    size_t         nDrBinEdges = drBinEdges.size();
+ 
+    double drBinEdgeArray[nDrBinEdges];
+    for (size_t iDrEdge = 0; iDrEdge < nDrBinEdges; iDrEdge++) {
+      drBinEdgeArray[iDrEdge] = drBinEdges.at(iDrEdge);
+    }
+
+    for (size_t iPtBin = 0; iPtBin < m_config.ptJetBins.size(); iPtBin++) {
       TH1D* hInitialVarDrAxis   = NULL;
       TH1D* hInitialErrDrAxis   = NULL;
       TH1D* hInitialVarLnDrAxis = NULL;
       TH1D* hInitialErrLnDrAxis = NULL;
-      m_outHistVarDrAxis.push_back(hInitialVarDrAxis);
-      m_outHistVarLnDrAxis.push_back(hInitialVarLnDrAxis);
-      m_outHistErrDrAxis.push_back(hInitialErrDrAxis);
-      m_outHistErrLnDrAxis.push_back(hInitialErrLnDrAxis);
-    }
-
-    // for weird cst check
-    if (m_doSecondCstLoop) {
-      vector<double> drBinEdges  = m_eecLongSide[0] -> bin_edges();
-      size_t         nDrBinEdges = drBinEdges.size();
- 
-      double drBinEdgeArray[nDrBinEdges];
-      for (size_t iDrEdge = 0; iDrEdge < nDrBinEdges; iDrEdge++) {
-        drBinEdgeArray[iDrEdge] = drBinEdges.at(iDrEdge);
+      m_outPackageHistVarDrAxis.push_back(hInitialVarDrAxis);
+      m_outPackageHistVarLnDrAxis.push_back(hInitialVarLnDrAxis);
+      m_outPackageHistErrDrAxis.push_back(hInitialErrDrAxis);
+      m_outPackageHistErrLnDrAxis.push_back(hInitialErrLnDrAxis);
+      if(m_config.doManualCalc){      
+	TString weightNameTH1("hManualCorrelatorErrorDrAxis_ptJet");
+	weightNameTH1+=floor(m_config.ptJetBins[iPtBin].first);
+	m_outManualHistErrDrAxis.push_back(new TH1D(weightNameTH1, "", m_config.nBinsDr, drBinEdgeArray));
+	m_outManualHistErrDrAxis[iPtBin]->Sumw2();
       }
-      hCstPtOneVsDr      = new TH2D("hCstPtOneVsDr",      "", m_nBinsDr, drBinEdgeArray, 200,  0.,   100.);
-      hCstPtTwoVsDr      = new TH2D("hCstPtTwoVsDr",      "", m_nBinsDr, drBinEdgeArray, 200,  0.,   100.);
-      hCstPtFracVsDr     = new TH2D("hCstPtFracVsDr",     "", m_nBinsDr, drBinEdgeArray, 500,  0.,   5.);
-      hCstPhiOneVsDr     = new TH2D("hCstPhiOneVsDr",     "", m_nBinsDr, drBinEdgeArray, 360, -3.15, 3.15);;
-      hCstPhiTwoVsDr     = new TH2D("hCstPhiTwoVsDr",     "", m_nBinsDr, drBinEdgeArray, 360, -3.15, 3.15);
-      hCstEtaOneVsDr     = new TH2D("hCstEtaOneVsDr",     "", m_nBinsDr, drBinEdgeArray, 400, -2.,   2.);
-      hCstEtaTwoVsDr     = new TH2D("hCstEtaTwoVsDr",     "", m_nBinsDr, drBinEdgeArray, 400, -2.,   2.);
-      hDeltaPhiOneVsDr   = new TH2D("hDeltaPhiOneVsDr",   "", m_nBinsDr, drBinEdgeArray, 720, -6.30, 6.30);
-      hDeltaPhiTwoVsDr   = new TH2D("hDeltaPhiTwoVsDr",   "", m_nBinsDr, drBinEdgeArray, 720, -6.30, 6.30);
-      hDeltaEtaOneVsDr   = new TH2D("hDeltaEtaOneVsDr",   "", m_nBinsDr, drBinEdgeArray, 800, -4.,   4.);
-      hDeltaEtaTwoVsDr   = new TH2D("hDeltaEtaTwoVsDr",   "", m_nBinsDr, drBinEdgeArray, 800, -4.,   4.);
-      hJetPtFracOneVsDr  = new TH2D("hJetPtFracOneVsDr",  "", m_nBinsDr, drBinEdgeArray, 500, 0.,    5.);
-      hJetPtFracTwoVsDr  = new TH2D("hJetPtFracTwoVsDr",  "", m_nBinsDr, drBinEdgeArray, 500, 0.,    5.);
-      hCstPairWeightVsDr = new TH2D("hCstPairWeightVsDr", "", m_nBinsDr, drBinEdgeArray, 100,  0.,   1.);
     }
 
     // announce histogram initialization
-    if (m_inStandaloneMode) PrintMessage(3);
+    if (m_config.isStandalone) PrintMessage(3);
     return;
 
   }  // end 'InitializeHists()'
@@ -151,15 +110,21 @@ namespace SColdQcdCorrelatorAnalysis {
   void SEnergyCorrelator::InitializeCorrs() {
 
     // print debug statement
-    if (m_inDebugMode) PrintDebug(6);
+    if (m_config.isDebugOn) PrintDebug(6);
 
     // initialize correlator for each jet pt bin
-    for (size_t iPtBin = 0; iPtBin < m_nBinsJetPt; iPtBin++) {
-      m_eecLongSide.push_back(new contrib::eec::EECLongestSide<contrib::eec::hist::axis::log>(m_nPointCorr, m_nBinsDr, {m_drBinRange.first, m_drBinRange.second}));
+    for (size_t iPtBin = 0; iPtBin < m_config.ptJetBins.size(); iPtBin++) {
+      m_eecLongSide.push_back(
+        new contrib::eec::EECLongestSide<contrib::eec::hist::axis::log>(
+          m_config.nPoints.at(0),  // TODO enable multiple n per calculation
+          m_config.nBinsDr,
+          {m_config.drBinRange.first, m_config.drBinRange.second}
+        )
+      );
     }
 
     // announce correlator initialization
-    if (m_inStandaloneMode) PrintMessage(4);
+    if (m_config.isStandalone) PrintMessage(4);
     return;
 
   }  // end 'InitializeCorrs()'
@@ -169,32 +134,32 @@ namespace SColdQcdCorrelatorAnalysis {
   void SEnergyCorrelator::PrintMessage(const uint32_t code, const uint64_t nEvts, const uint64_t event) {
 
     // print debug statement
-    if (m_inDebugMode && (m_verbosity > 5)) PrintDebug(22);
+    if (m_config.isDebugOn && (m_config.verbosity > 5)) PrintDebug(22);
 
     switch (code) {
       case 0:
         cout << "\n  Running standalone correlator calculation...\n"
              << "    Set name & modes:\n"
-             << "      module name      = " << m_moduleName.data() << "\n"
-             << "      complex mode?    = " << m_inComplexMode     << "\n"
-             << "      standalone mode? = " << m_inStandaloneMode  << "\n"
-             << "      debug mode?      = " << m_inDebugMode       << "\n"
-             << "      batch mode?      = " << m_inBatchMode
+             << "      module name      = " << m_config.moduleName.data() << "\n"
+             << "      complex mode?    = " << !m_config.isStandalone     << "\n"
+             << "      standalone mode? = " << m_config.isStandalone      << "\n"
+             << "      debug mode?      = " << m_config.isDebugOn         << "\n"
+             << "      batch mode?      = " << m_config.isBatchOn
              << endl;
         break;
       case 1:
         cout << "    Opened files:\n"
-             << "      output = " << m_outFileName.data() << "\n"
+             << "      output = " << m_config.outFileName.data() << "\n"
              << "      inputs = {"
              << endl;
-        for (const string& inFileName : m_inFileNames) {
+        for (const string& inFileName : m_config.inFileNames) {
           cout << "        " << inFileName.data() << endl;
         }
         cout << "      }" << endl;
         break;
       case 2:
         cout << "    Initialized input chain:\n"
-             << "      tree name = " << m_inTreeName.data()
+             << "      tree name = " << m_config.inTreeName.data()
              << endl;
         break;
       case 3:
@@ -205,25 +170,25 @@ namespace SColdQcdCorrelatorAnalysis {
         break;
       case 5:
         cout << "    Set correlator parameters:\n"
-             << "      n-point = "       << m_nPointCorr       << ", number of dR bins = " << m_nBinsDr           << "\n"
-             << "      dR bin range = (" << m_drBinRange.first << ", "                     << m_drBinRange.second << ")"
+             << "      n-point = "       << m_config.nPoints.at(0)     << ", number of dR bins = " << m_config.nBinsDr           << "\n"
+             << "      dR bin range = (" << m_config.drBinRange.first  << ", "                     << m_config.drBinRange.second << ")"
              << endl;
         break;
       case 6:
         cout << "    Set jet parameters:\n"
-             << "      eta range = (" << m_etaJetRange.first << ", " << m_etaJetRange.second << ")\n"
-             << "      pt range  = (" << m_ptJetRange.first  << ", " << m_ptJetRange.second  << ")\n"
+             << "      eta range = (" << m_config.jetAccept.first.GetEta() << ", " << m_config.jetAccept.second.GetEta() << ")\n"
+             << "      pt range  = (" << m_config.jetAccept.first.GetPT()  << ", " << m_config.jetAccept.second.GetPT()  << ")\n"
              << "    Set pTjet bins:"
              << endl;
-        for (uint32_t iPtBin = 0; iPtBin < m_nBinsJetPt; iPtBin++) {
-          cout << "      bin[" << iPtBin << "] = (" << m_ptJetBins.at(iPtBin).first << ", " << m_ptJetBins.at(iPtBin).second << ")" << endl;
+        for (uint32_t iPtBin = 0; iPtBin < m_config.ptJetBins.size(); iPtBin++) {
+          cout << "      bin[" << iPtBin << "] = (" << m_config.ptJetBins.at(iPtBin).first << ", " << m_config.ptJetBins.at(iPtBin).second << ")" << endl;
         }
         break;
       case 7:
         cout << "    Beginning event loop: " << nEvts << " events to process..." << endl;
         break;
       case 8:
-        if (m_inBatchMode) {
+        if (m_config.isBatchOn) {
           cout << "      processing event " << (event + 1) << "/" << nEvts << "..." << endl;
         } else {
           cout << "      processing event " << (event + 1) << "/" << nEvts << "...\r" << flush;
@@ -241,9 +206,9 @@ namespace SColdQcdCorrelatorAnalysis {
         break;
       case 12:
         cout << "    Set constituent parameters:\n"
-             << "      apply constituent cuts? = " << m_applyCstCuts   << "\n"
-             << "      momentum range = ("         << m_momCstRange.first << ", " << m_momCstRange.second << ")\n"
-             << "      dr range       = ("         << m_drCstRange.first  << ", " << m_drCstRange.second  << ")"
+             << "      apply constituent cuts? = " << m_config.applyCstCuts   << "\n"
+             << "      momentum range = ("         << m_config.cstAccept.first.GetPT() << ", " << m_config.cstAccept.second.GetPT() << ")\n"
+             << "      dr range       = ("         << m_config.cstAccept.first.GetDR() << ", " << m_config.cstAccept.second.GetDR() << ")"
              << endl;
         break;
       case 13:
@@ -254,24 +219,24 @@ namespace SColdQcdCorrelatorAnalysis {
         break;
       case 15:
         cout << "    Set which sub-events to use:" << endl;
-        switch (m_subEvtOpt) {
+        switch (m_config.subEvtOpt) {
           case 1:
-            cout << "      Option " << m_subEvtOpt << ": use only signal event" << endl;
+            cout << "      Option " << m_config.subEvtOpt << ": use only signal event" << endl;
             break;
           case 2:
-            cout << "      Option " << m_subEvtOpt << ": use only background events" << endl;
+            cout << "      Option " << m_config.subEvtOpt << ": use only background events" << endl;
             break;
           case 3:
-            cout << "      Option " << m_subEvtOpt << ": use only primary background event" << endl;
+            cout << "      Option " << m_config.subEvtOpt << ": use only primary background event" << endl;
             break;
           case 4:
-            cout << "      Option " << m_subEvtOpt << ": use only pileup events" << endl;
+            cout << "      Option " << m_config.subEvtOpt << ": use only pileup events" << endl;
             break;
           case 5:
-            cout << "      Option " << m_subEvtOpt << ": use events only with these embedding IDs: ";
-            for (size_t iEvtToUse = 0; iEvtToUse < m_subEvtsToUse.size(); iEvtToUse++) {
-              cout << m_subEvtsToUse[iEvtToUse];
-              if ((iEvtToUse + 1) < m_subEvtsToUse.size()) {
+            cout << "      Option " << m_config.subEvtOpt << ": use events only with these embedding IDs: ";
+            for (size_t iEvtToUse = 0; iEvtToUse < m_config.subEvtsToUse.size(); iEvtToUse++) {
+              cout << m_config.subEvtsToUse[iEvtToUse];
+              if ((iEvtToUse + 1) < m_config.subEvtsToUse.size()) {
                 cout << ", ";
               } else {
                 cout << endl;
@@ -279,7 +244,7 @@ namespace SColdQcdCorrelatorAnalysis {
             }  // end sub-event id loop
             break;
           default:
-            cout << "     Option " << m_subEvtOpt << ": use everything (check what you entered)" << endl;
+            cout << "     Option " << m_config.subEvtOpt << ": use everything (check what you entered)" << endl;
             break;
         }
         break;
@@ -292,7 +257,7 @@ namespace SColdQcdCorrelatorAnalysis {
   void SEnergyCorrelator::PrintDebug(const uint32_t code) {
 
     // print debug statement
-    if (m_inDebugMode && (m_verbosity > 7)) {
+    if (m_config.isDebugOn && (m_config.verbosity > 7)) {
       cout << "SEnergyCorrelator::PrintDebug(uint32_t) printing a debugging statement..." << endl;
     }
 
@@ -391,13 +356,16 @@ namespace SColdQcdCorrelatorAnalysis {
         cout << "SEnergyCorrelator::CloseOutputFile() closing output file..." << endl;
         break;
       case 31:
-        cout << "SEnergyCorrelator::DoCorrelatorCalculation() looping over events and calculating correlators..." << endl;
+        cout << "SEnergyCorrelator::DoLocalCalculation() looping over jets and calculating correlators..." << endl;
         break;
       case 32:
         cout << "SEnergyCorrelator::SetSubEventsToUse(uint16_t, vector<int>) setting sub-events to use..." << endl;
         break;
       case 33:
         cout << "SEnergyCorrelator::CheckIfSubEvtGood(int) checking if sub-event is good..." << endl;
+        break;
+      case 34:
+        cout << "SEnergyCorrelator::DoLocalCalcWitPackagen() running calculation with EEC package..." << endl;
         break;
     }
     return;
@@ -409,114 +377,114 @@ namespace SColdQcdCorrelatorAnalysis {
   void SEnergyCorrelator::PrintError(const uint32_t code, const size_t nDrBinEdges, const size_t iDrBin, const string sInFileName) {
 
     // print debug statement
-    if (m_inDebugMode && (m_verbosity > 5)) PrintDebug(23);
+    if (m_config.isDebugOn && (m_config.verbosity > 5)) PrintDebug(23);
 
     switch (code) {
       case 0:
-        if (m_inComplexMode) {
+        if (!m_config.isStandalone) {
           cerr << "SEnergyCorrelator::Init(PHCompositeNode*) PANIC: calling complex method in standalone mode! Aborting!" << endl;
         } else {
           cerr << "PANIC: calling complex method in standalone mode! Aborting!" << endl;
         }
         break;
       case 1:
-        if (m_inComplexMode) {
-          cerr << "SEnergyCorrelator::GrabInputNode() PANIC: couldn't grab node \"" << m_inNodeName << "\"! Aborting!" << endl;
+        if (!m_config.isStandalone) {
+          cerr << "SEnergyCorrelator::GrabInputNode() PANIC: couldn't grab node \"" << m_config.inNodeName << "\"! Aborting!" << endl;
         } else {
-          cerr << "PANIC: couldn't grab node \"" << m_inNodeName << "\"! Aborting!" << endl;
+          cerr << "PANIC: couldn't grab node \"" << m_config.inNodeName << "\"! Aborting!" << endl;
         }
         break;
       case 2:
-        if (m_inComplexMode) {
-          cerr << "SEnergyCorrelator::GrabInputNode() PANIC: couldn't grab tree \"" << m_inTreeName << "\" from node \"" << m_inNodeName << "\"! Aborting!" << endl;
+        if (!m_config.isStandalone) {
+          cerr << "SEnergyCorrelator::GrabInputNode() PANIC: couldn't grab tree \"" << m_config.inTreeName << "\" from node \"" << m_config.inNodeName << "\"! Aborting!" << endl;
         } else {
-          cerr << "PANIC: couldn't grab tree \"" << m_inTreeName << "\" from node \"" << m_inNodeName << "\"! Aborting!" << endl;
+          cerr << "PANIC: couldn't grab tree \"" << m_config.inTreeName << "\" from node \"" << m_config.inNodeName << "\"! Aborting!" << endl;
         }
         break;
       case 3:
-        if (m_inComplexMode) {
+        if (!m_config.isStandalone) {
           cerr << "SEnergyCorrelator::process_event(PHCompositeNode*) PANIC: calling complex method in standalone mode! Aborting!" << endl;
         } else {
           cerr << "PANIC: calling complex method in standalone mode! Aborting!" << endl;
         }
         break;
       case 4:
-        if (m_inComplexMode) {
+        if (!m_config.isStandalone) {
           cerr << "SEnergyCorrelator::End(PHCompositeNode*) PANIC: calling complex method in standalone mode! Aborting!" << endl;
         } else {
           cerr << "PANIC: calling complex method in standalone mode! Aborting!" << endl;
         }
         break;
       case 5:
-        if (m_inComplexMode) {
+        if (!m_config.isStandalone) {
           cerr << "SEnergyCorrelator::Init() PANIC: calling standalone method in complex mode! Aborting!" << endl;
         } else {
           cerr << "PANIC: calling standalone method in complex mode! Aborting!" << endl;
         }
         break;
       case 6:
-        if (m_inComplexMode) {
+        if (!m_config.isStandalone) {
           cerr << "SEnergyCorrelator::OpenInputFiles() PANIC: couldn't create input TChain! Aborting" << endl;
         } else {
           cerr << "PANIC: couldn't create input TChain! Aborting!" << endl;
         }
         break;
       case 7:
-        if (m_inComplexMode) {
-          cerr << "SEnergyCorrelator::OpenInputFiles() PANIC: couldn't grab tree \"" << m_inTreeName << "\" from file \"" << sInFileName << "\"! Aborting!" << endl;
+        if (!m_config.isStandalone) {
+          cerr << "SEnergyCorrelator::OpenInputFiles() PANIC: couldn't grab tree \"" << m_config.inTreeName << "\" from file \"" << sInFileName << "\"! Aborting!" << endl;
         } else {
-          cerr << "PANIC: couldn't grab tree \"" << m_inTreeName << "\" from file \"" << sInFileName << "\"! Aborting!" << endl;
+          cerr << "PANIC: couldn't grab tree \"" << m_config.inTreeName << "\" from file \"" << sInFileName << "\"! Aborting!" << endl;
         }
         break;
       case 8:
-        if (m_inComplexMode) {
+        if (!m_config.isStandalone) {
           cerr << "SEnergyCorrelator::Analyze() PANIC: calling standalone method in complex mode! Aborting!" << endl;
         } else {
           cerr << "PANIC: calling standalone method in complex mode! Aborting!" << endl;
         }
         break;
       case 9:
-        if (m_inComplexMode) {
+        if (!m_config.isStandalone) {
           cerr << "SEnergyCorrelator::End() PANIC: calling standalone method in complex mode! Aborting!" << endl;
         } else {
           cerr << "PANIC: calling standalone method in complex mode! Aborting!" << endl;
         }
         break;
       case 10:
-        if (m_inComplexMode) {
+        if (!m_config.isStandalone) {
           cerr << "SEnergyCorrelator::InitializeTree() PANIC: no TTree! Aborting!" << endl;
         } else {
           cerr << "PANIC: no TTree! Aborting!" << endl;
         }
         break;
       case 11:
-        if (m_inComplexMode) {
+        if (!m_config.isStandalone) {
           cerr << "SEnergyCorrelator::OpenOutputFile() PANIC: couldn't open output file! Aborting!" << endl;
         } else {
           cerr << "PANIC: couldn't open output file! Aborting!" << endl;
         }
         break;
       case 12:
-        if (m_inComplexMode) {
+        if (!m_config.isStandalone) {
           cerr << "SEnergyCorrelator::ExtraHistsFromCorr() PANIC: number of dR bin edges is no good! Aborting!" << endl;
         } else {
           cerr << "PANIC: number of dR bin edges is no good! Aborting!\n"
-               << "       nDrBinEdges = " << nDrBinEdges << ", nDrBins = " << m_nBinsDr
+               << "       nDrBinEdges = " << nDrBinEdges << ", nDrBins = " << m_config.nBinsDr
                << endl;
         }
         break;
       case 13:
-        if (m_inStandaloneMode) {
+        if (m_config.isStandalone) {
           cerr << "WARNING: dR bin #" << iDrBin << " with variance has a NAN as content or error..." << endl;
         }
         break;
       case 14:
-        if (m_inStandaloneMode) {
+        if (m_config.isStandalone) {
           cerr << "WARNING: dR bin #" << iDrBin << " with statistical error has a NAN as content or error..." << endl;
         }
         break;
       case 15:
-        if (m_inComplexMode) {
+        if (!m_config.isStandalone) {
           cerr << "SEnergyCorrelatorFile::End() PANIC: calling standalone method in complex mode! Aborting!" << endl;
         } else {
           cerr << "PANIC: calling standalone method in complex mode! Aborting!" << endl;
@@ -526,62 +494,6 @@ namespace SColdQcdCorrelatorAnalysis {
     return;
 
   }  // end 'PrintError(unint32_t)'
-
-
-
-  bool SEnergyCorrelator::CheckCriticalParameters() {
-
-    // print debugging statement
-    if (m_inDebugMode) PrintDebug(21); 
-
-    /* TODO checking goes here */
-    return true;
-
-  }  // end 'CheckCriticalParameters()'
-
-
-
-  int64_t SEnergyCorrelator::GetEntry(const uint64_t entry) {
-
-    // print debugging statemet
-    if (m_inDebugMode && (m_verbosity > 5)) PrintDebug(16);
-
-    int64_t entryStatus(-1);
-    if (!m_inChain) {
-      entryStatus = 0;
-    } else {
-      entryStatus = m_inChain -> GetEntry(entry);
-    }
-    return entryStatus;
-
-  }  // end 'GetEntry(uint64_t)'
-
-
-
-  int64_t SEnergyCorrelator::LoadTree(const uint64_t entry) {
-
-    // print debugging statemet
-    if (m_inDebugMode && (m_verbosity > 5)) PrintDebug(17);
-
-    // check for tree & load
-    int     treeNumber(-1);
-    int64_t treeStatus(-1);
-    if (!m_inChain) {
-      treeStatus = -5;
-    } else {
-      treeNumber = m_inChain -> GetTreeNumber();
-      treeStatus = m_inChain -> LoadTree(entry);
-    }
-
-    // update current tree number if need be
-    const bool isTreeStatusGood = (treeStatus >= 0);
-    const bool isNotCurrentTree = (treeNumber != m_fCurrent);
-    if (isTreeStatusGood && isNotCurrentTree) {
-      m_fCurrent = m_inChain -> GetTreeNumber();
-    }
-    return treeStatus;
-
-  }  // end 'LoadTree(uint64_t)'
 
 }  // end SColdQcdCorrelatorAnalysis namespace
 

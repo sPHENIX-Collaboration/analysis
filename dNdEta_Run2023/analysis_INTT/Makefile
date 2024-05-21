@@ -1,5 +1,6 @@
 CFLAGS = -g3 -pthread -m64 -Wno-deprecated -I src/ 
 CFLAGS += $(shell root-config --cflags --libs)
+CFLAGS += -lEG
 
 all : TrackletAna plotTrkrHit plotTracklets plotRecoVtx plotCluster BeamspotReco INTTVtxZ Corrections GeoAccepCorr
 

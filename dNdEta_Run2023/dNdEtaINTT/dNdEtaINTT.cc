@@ -147,8 +147,11 @@ int dNdEtaINTT::Init(PHCompositeNode *topNode)
         outtree->Branch("clk", &clk);
         outtree->Branch("femclk", &femclk);
         outtree->Branch("is_min_bias", &is_min_bias);
+        outtree->Branch("is_min_bias_wozdc", &is_min_bias_wozdc);
         outtree->Branch("MBD_centrality", &centrality_mbd_);
         outtree->Branch("MBD_z_vtx", &mbd_z_vtx);
+        outtree->Branch("MBD_south_npmt", &mbd_south_npmt);
+        outtree->Branch("MBD_north_npmt", &mbd_north_npmt);
         outtree->Branch("MBD_south_charge_sum", &mbd_south_charge_sum);
         outtree->Branch("MBD_north_charge_sum", &mbd_north_charge_sum);
         outtree->Branch("MBD_charge_sum", &mbd_charge_sum);
@@ -193,6 +196,7 @@ int dNdEtaINTT::Init(PHCompositeNode *topNode)
             outtree->Branch("PrimaryG4P_Phi", &PrimaryG4P_Phi_);
             outtree->Branch("PrimaryG4P_E", &PrimaryG4P_E_);
             outtree->Branch("PrimaryG4P_PID", &PrimaryG4P_PID_);
+            outtree->Branch("PrimaryG4P_isChargeHadron", &PrimaryG4P_isChargeHadron_);
             // Truth cluster information & matching with reco clusters
             outtree->Branch("NTruthLayers", &NTruthLayers_);
             outtree->Branch("ClusTruthCKeys", &ClusTruthCKeys_);
@@ -519,40 +523,49 @@ void dNdEtaINTT::GetCentralityInfo(PHCompositeNode *topNode)
         }
     }
 
-    // m_glbvtxmap = findNode::getClass<GlobalVertexMap>(topNode, "GlobalVertexMap");
-    // if (!m_glbvtxmap)
-    // {
-    //     std::cout << "Error, can't find GlobalVertexMap" << std::endl;
-    //     exit(1);
-    // }
-
     m_mbdvtxmap = findNode::getClass<MbdVertexMapv1>(topNode, "MbdVertexMap");
     if (!m_mbdvtxmap)
     {
         std::cout << "Error, can't find MbdVertexMap" << std::endl;
         exit(1);
     }
-    
+
+    mbd_z_vtx = std::numeric_limits<float>::quiet_NaN();
+    std::cout << "MbdVertexMap size: " << m_mbdvtxmap->size() << std::endl;
+    for (MbdVertexMap::ConstIter biter = m_mbdvtxmap->begin(); biter != m_mbdvtxmap->end(); ++biter)
+    {
+        m_mbdvtx = biter->second;
+        mbd_z_vtx = m_mbdvtx->get_z();
+    }
+
     if (!IsData)
     {
-        centrality_bimp_ = m_CentInfo->get_centile(CentralityInfo::PROP::bimp); // FIX ME
+        centrality_bimp_ = m_CentInfo->get_centile(CentralityInfo::PROP::bimp);         // FIX ME
         centrality_impactparam_ = m_CentInfo->get_quantity(CentralityInfo::PROP::bimp); // FIX ME
         // Glauber parameter information
         ncoll_ = eventheader->get_ncoll();
         npart_ = eventheader->get_npart();
-        std::cout << "Centrality: (bimp,impactparam) = (" << centrality_bimp_ << ", " << centrality_impactparam_ << "); (mbd,mbdquantity) = (" << centrality_mbd_ << ", " << centrality_mbdquantity_  << ")" << std::endl;
+        std::cout << "Centrality: (bimp,impactparam) = (" << centrality_bimp_ << ", " << centrality_impactparam_ << "); (mbd,mbdquantity) = (" << centrality_mbd_ << ", " << centrality_mbdquantity_
+                  << ")" << std::endl;
         std::cout << "Glauber parameter information: (ncoll,npart) = (" << ncoll_ << ", " << npart_ << ")" << std::endl;
     }
 
-
     clk = (IsData) ? m_mbdout->get_clock() : 0;
     femclk = (IsData) ? m_mbdout->get_femclock() : 0;
+    mbd_south_npmt = m_mbdout->get_npmt(0);
+    mbd_north_npmt = m_mbdout->get_npmt(1);
     mbd_south_charge_sum = m_mbdout->get_q(0);
     mbd_north_charge_sum = m_mbdout->get_q(1);
     mbd_charge_sum = mbd_south_charge_sum + mbd_north_charge_sum;
     mbd_charge_asymm = mbd_charge_sum == 0 ? std::numeric_limits<float>::quiet_NaN() : (float)(mbd_south_charge_sum - mbd_north_charge_sum) / mbd_charge_sum;
     centrality_mbd_ = m_CentInfo->has_centile(CentralityInfo::PROP::mbd_NS) ? m_CentInfo->get_centile(CentralityInfo::PROP::mbd_NS) : std::numeric_limits<float>::quiet_NaN();
-    is_min_bias = (IsData) ? _minimumbiasinfo->isAuAuMinimumBias() : (npart_ > 0); 
+    is_min_bias = (IsData) ? _minimumbiasinfo->isAuAuMinimumBias() : (npart_ > 0);
+
+    // minimum bias criteria without zdc cut (note: the zdc cut has a 99-100% efficiency for the Level-1 trigger events and 100% for central Au+Au event)
+    bool mbd_ntube = (mbd_south_npmt >= 2 && mbd_north_npmt >= 2) ? true : false;
+    bool mbd_sn_q_imbalence = (mbd_north_charge_sum > 10 || mbd_south_charge_sum < 150) ? true : false;
+    bool mbd_zvtx = (fabs(mbd_z_vtx) < 60) ? true : false;
+    is_min_bias_wozdc = (IsData) ? (mbd_ntube && mbd_sn_q_imbalence && mbd_zvtx) : (npart_ > 0);
 
     if (_get_pmt_info)
     {
@@ -560,33 +573,6 @@ void dNdEtaINTT::GetCentralityInfo(PHCompositeNode *topNode)
         {
             m_pmt_q[i] = m_mbdpmtcontainer->get_pmt(i)->get_q();
         }
-    }
-
-    mbd_z_vtx = std::numeric_limits<float>::quiet_NaN();
-    // Now get MBD z vertex value
-    // for (GlobalVertexMap::ConstIter iter = m_glbvtxmap->begin(); iter != m_glbvtxmap->end(); ++iter)
-    // {
-    //     m_glbvtx = iter->second;
-    //     auto mbdvtxiter = m_glbvtx->find_vertexes(GlobalVertex::MBD);
-    //     // check that it contains a track vertex
-    //     if (mbdvtxiter == m_glbvtx->end_vertexes())
-    //     {
-    //         continue;
-    //     }
-
-    //     auto mbdvertexvector = mbdvtxiter->second;
-
-    //     for (auto &vertex : mbdvertexvector)
-    //     {
-    //         mbd_z_vtx = vertex->get_z();
-    //         // m_mbdvtx = m_dst_vertexmap->find(vertex->get_id())->second;
-    //     }
-    // }
-    std::cout << "MbdVertexMap size: " << m_mbdvtxmap->size() << std::endl;
-    for (MbdVertexMap::ConstIter biter = m_mbdvtxmap->begin(); biter != m_mbdvtxmap->end(); ++biter)
-    {
-        m_mbdvtx = biter->second;
-        mbd_z_vtx = m_mbdvtx->get_z();
     }
 }
 //____________________________________________________________________________..
@@ -986,7 +972,10 @@ void dNdEtaINTT::GetPHG4Info(PHCompositeNode *topNode)
     std::cout << "Number of truth vertices with isEmbededVtx=0: " << NTruthPV_Embeded0 << std::endl;
     std::cout << "Final truth vertex: (x,y,z)=(" << TruthPV_trig_x_ << "," << TruthPV_trig_y_ << "," << TruthPV_trig_z_ << ")" << std::endl;
     NTruthVtx_ = NTruthPV;
+
     // PHG4Particle
+    std::vector<int> tmpv_chargehadron;
+    tmpv_chargehadron.clear();
     std::cout << "Get PHG4 info.: truth primary G4Particle" << std::endl;
     const auto prange = m_truth_info->GetPrimaryParticleRange();
     // const auto prange = m_truth_info->GetParticleRange();
@@ -1003,9 +992,24 @@ void dNdEtaINTT::GetPHG4Info(PHCompositeNode *topNode)
             PrimaryG4P_Pt_.push_back(p.Pt());
             PrimaryG4P_Eta_.push_back(p.Eta());
             PrimaryG4P_Phi_.push_back(p.Phi());
+
+            TString particleclass = TString(TDatabasePDG::Instance()->GetParticle(ptcl->get_pid())->ParticleClass());
+            bool isStable = (TDatabasePDG::Instance()->GetParticle(ptcl->get_pid())->Stable() == 1) ? true : false;
+            double charge = TDatabasePDG::Instance()->GetParticle(ptcl->get_pid())->Charge();
+            bool isHadron = (particleclass.Contains("Baryon") || particleclass.Contains("Meson"));
+            bool isChargeHadron = (isStable && (charge != 0) && isHadron);
+            if (isChargeHadron)
+                tmpv_chargehadron.push_back(ptcl->get_pid());
+
+            PrimaryG4P_ParticleClass_.push_back(particleclass);
+            PrimaryG4P_isStable_.push_back(isStable);
+            PrimaryG4P_Charge_.push_back(charge);
+            PrimaryG4P_isChargeHadron_.push_back(isChargeHadron);
         }
     }
     NPrimaryG4P_ = PrimaryG4P_PID_.size();
+    NPrimaryG4P_promptChargeHadron_ = tmpv_chargehadron.size();
+    CleanVec(tmpv_chargehadron);
 }
 //____________________________________________________________________________..
 void dNdEtaINTT::ResetVectors()
@@ -1063,4 +1067,8 @@ void dNdEtaINTT::ResetVectors()
     CleanVec(PrimaryG4P_Phi_);
     CleanVec(PrimaryG4P_E_);
     CleanVec(PrimaryG4P_PID_);
+    CleanVec(PrimaryG4P_ParticleClass_);
+    CleanVec(PrimaryG4P_isStable_);
+    CleanVec(PrimaryG4P_Charge_);
+    CleanVec(PrimaryG4P_isChargeHadron_);
 }

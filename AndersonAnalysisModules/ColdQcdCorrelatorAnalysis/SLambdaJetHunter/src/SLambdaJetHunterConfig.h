@@ -9,17 +9,8 @@
 #ifndef SLAMBDAJETHUNTERCONFIG_H
 #define SLAMBDAJETHUNTERCONFIG_H
 
-// c++ utilities
-#include <string>
-#include <vector>
-#include <utility>
-// analysis utilities
-#include "/sphenix/user/danderson/install/include/scorrelatorutilities/GenTools.h"
-#include "/sphenix/user/danderson/install/include/scorrelatorutilities/JetTools.h"
-
 // make common namespaces implicit
 using namespace std;
-using namespace SColdQcdCorrelatorAnalysis::SCorrelatorUtilities;
 
 
 
@@ -30,23 +21,27 @@ namespace SColdQcdCorrelatorAnalysis {
   struct SLambdaJetHunterConfig {
 
     // system options
-    int    verbosity     = 0;
-    bool   isDebugOn     = false;
-    bool   isEmbed       = false;
-    string moduleName    = "SLambdaJetHunter";
-    string outFileName   = "";
-    string outTreeName   = "LambdaJetTree";
+    int    verbosity   = 0;
+    bool   isDebugOn   = false;
+    bool   isEmbed     = false;
+    string moduleName  = "SLambdaJetHunter";
+    string outFileName = "";
+    string outTreeName = "LambdaJetTree";
 
     // jet options
-    float    rJet      = 0.4;
-    uint32_t jetAlgo   = 0;
-    uint32_t jetRecomb = 0;
+    int    associator = 0;
+    bool   isCharged  = true;
+    float  rJet       = 0.4;
+    string jetAlgo    = "antikt_algorithm";
+    string jetRecomb  = "pt_scheme";
 
-    // acceptance parameters
-    pair<float,   float>   vzAccept;
-    pair<float,   float>   vrAccept;
-    pair<ParInfo, ParInfo> parAccept;
-    pair<JetInfo, JetInfo> jetAccept;
+    // vertex cuts
+    pair<float, float> vzAccept;
+    pair<float, float> vrAccept;
+
+    // particle & jet cuts
+    pair<Types::ParInfo, Types::ParInfo> parAccept;
+    pair<Types::JetInfo, Types::JetInfo> jetAccept;
 
   };
 

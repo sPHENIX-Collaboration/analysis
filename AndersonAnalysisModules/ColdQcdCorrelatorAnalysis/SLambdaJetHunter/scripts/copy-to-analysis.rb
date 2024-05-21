@@ -20,7 +20,7 @@ to_copy = [
   "README.md",
   "Fun4All_RunLambdaJetHunter.C",
   "LambdaJetHunterOptions.h",
-  "RunLamdbdaJetHunter.rb",
+  "RunLambdaJetHunter.rb",
   "scripts/copy-to-analysis.rb",
   "scripts/wipe-source.sh",
   "src/SLambdaJetHunter.cc",

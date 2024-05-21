@@ -5,7 +5,8 @@ lib_LTLIBRARIES = \
 
 AM_LDFLAGS = \
   -L$(libdir) \
-  -L$(OFFLINE_MAIN)/lib
+  -L$(OFFLINE_MAIN)/lib \
+  $(MYINSTALL)/lib/libscorrelatorutilities.la
 
 AM_CPPFLAGS = \
   -I$(includedir) \

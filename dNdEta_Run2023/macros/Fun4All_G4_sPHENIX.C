@@ -47,7 +47,7 @@ int Fun4All_G4_sPHENIX(                           //
     const bool rundata = true,                    //
     const bool getINTTData = true,                //
     const int runnumber = 20869,                  //
-    const string productionTag = "2023p011",      //
+    const string productionTag = "ProdA_2023",      //
     const string generator = "HIJING",            // only relevant for simulation
     const int nEvents = 1,                        //
     const string &outputFile = "testNtuple.root", //
@@ -112,9 +112,8 @@ int Fun4All_G4_sPHENIX(                           //
     {
         if (generator == "HIJING")
         {
-            infile = "/sphenix/tg/tg01/bulk/dNdeta_INTT_run2023/data/simulation/new/HIJING/fullSim/magOff/detectorMisaligned/dstSet_00000/dNdeta-sim-HIJING-000-" +
-                     std::string(TString::Format("%05d", process).Data()) + ".root";
-            // infile = "/sphenix/user/hjheng/sPHENIXRepo/dNdeta_sPHENIX_simulations/macro/dstSet_00001/G4sPHENIX-000-00000.root";
+            infile = "/sphenix/tg/tg01/bulk/dNdeta_INTT_run2023/data/simulation/ana.413/HIJING/fullSim/magOff/detectorMisaligned/dstSet_00000/dNdeta-sim-HIJING-000-" + std::string(TString::Format("%05d", process).Data()) + ".root";
+            // infile = "/sphenix/user/hjheng/sPHENIXRepo/dNdeta_sPHENIX_simulations/macro/dstSet_00005/G4sPHENIX-000-00000.root";
             INPUTREADHITS::filename[0] = infile;
         }
         else if (generator == "EPOS")
