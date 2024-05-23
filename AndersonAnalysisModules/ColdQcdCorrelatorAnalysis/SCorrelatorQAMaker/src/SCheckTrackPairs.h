@@ -33,10 +33,10 @@
 #include <trackbase_historic/SvtxTrackMap.h>
 #include <trackbase_historic/TrackAnalysisUtils.h>
 // analysis utilities
-#include "/sphenix/user/danderson/install/include/scorrelatorutilities/Tools.h"
-#include "/sphenix/user/danderson/install/include/scorrelatorutilities/Types.h"
-#include "/sphenix/user/danderson/install/include/scorrelatorutilities/Constants.h"
-#include "/sphenix/user/danderson/install/include/scorrelatorutilities/Interfaces.h"
+#include <scorrelatorutilities/Tools.h>
+#include <scorrelatorutilities/Types.h>
+#include <scorrelatorutilities/Constants.h>
+#include <scorrelatorutilities/Interfaces.h>
 // plugin definitions
 #include "SBaseQAPlugin.h"
 #include "SCheckTrackPairsConfig.h"

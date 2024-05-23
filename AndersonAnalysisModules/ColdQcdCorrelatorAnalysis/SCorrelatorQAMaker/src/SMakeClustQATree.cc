@@ -128,7 +128,7 @@ namespace SColdQcdCorrelatorAnalysis {
       if (!isGoodClust) continue;
 
       // grab cluster info
-      Types::ClustInfo clustInfo(cluster, Const::MapNodeOntoIndex()[node]);
+      Types::ClustInfo clustInfo(cluster, ROOT::Math::XYZVector(0., 0., 0.), Const::MapNodeOntoIndex()[node]);
 
       // add to relevant list
       switch (Const::MapNodeOntoIndex()[node]) {

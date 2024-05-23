@@ -14,78 +14,66 @@
 
 #include <g4centrality/PHG4CentralityReco.h>
 
+
 #include <HIJetReco.C>
 
-#include <jetvalidation/JetValidation.h>
-#include <jetvalidation/EventSelection.h>
-#include <JetValidation.h>
+#include <jetunderlyingevent/JetUnderlyingEvent.h>
 
 
 R__LOAD_LIBRARY(libfun4all.so)
 R__LOAD_LIBRARY(libg4jets.so)
+R__LOAD_LIBRARY(libjetbase.so)
 R__LOAD_LIBRARY(libjetbackground.so)
-R__LOAD_LIBRARY(libJetValidation.so)
+R__LOAD_LIBRARY(JetUnderlyingEvent.so)
 R__LOAD_LIBRARY(libg4centrality.so)
 R__LOAD_LIBRARY(libg4dst.so)
 
 
 #endif
-void Fun4All_JetVal(const char *filelisttruth = "dst_truth_jet.list",
-                    const char *filelistcalo = "dst_calo_cluster.list",
-		    const char *filelistglobal = "dst_global.list",
+
+void Fun4All_JetVal(const char *filelisttruth = "dst_03_27/dst_truth_jet.list",
+		    const char *filelistcalo = "dst_03_27/dst_calo_cluster.list",
+		    const char *filelistglobal = "dst_03_27/dst_global.list",
+		    const char *filelistg4hit = "dst_03_27/dst_bbc_g4hit.list",  
 		    const char *outname = "outputest.root")
 {
 
   
   Fun4AllServer *se = Fun4AllServer::instance();
-  int verbosity = 2;
-
-
-  bool do_bbc = true;
+  int verbosity = 0;
 
   se->Verbosity(verbosity);
   recoConsts *rc = recoConsts::instance();
-
-  string outnameStr = outname;
-
-  //  string outnameEvent = outnameStr.substr(0,outnameStr.length()-5) + "_eventSelect.root";
-  //  EventSelection *myEventSelection = new EventSelection(outnameEvent); // Assuming you want to pass a double and an empty string                                                         
-  //  myEventSelection->setVzCut(10.0);
-  //  se->registerSubsystem(myEventSelection);
-
+  rc->set_StringFlag("CDB_GLOBALTAG", "ProdA_2023");  
 
   PHG4CentralityReco *cent = new PHG4CentralityReco();
   cent->Verbosity(0);
   cent->GetCalibrationParameters().ReadFromFile("centrality", "xml", 0, 0, string(getenv("CALIBRATIONROOT")) + string("/Centrality/"));
   se->registerSubsystem( cent );
-  Enable::VERBOSITY = verbosity;
+
   HIJetReco();
-
-
-  JetValidation *myJetVal = new JetValidation("AntiKt_Tower_r04_Sub1", "AntiKt_Truth_r04", outname);
-
-  myJetVal->setPtRange(5, 100);
-  myJetVal->setEtaRange(-1.1, 1.1);
-  myJetVal->doUnsub(1);
-  myJetVal->doTruth(0);
-  myJetVal->doSeeds(0);
-  se->registerSubsystem(myJetVal);
  
+
+  JetUnderlyingEvent *myJetVal = new JetUnderlyingEvent("name",outname);
+  se->registerSubsystem(myJetVal); 
+  
   Fun4AllInputManager *intrue = new Fun4AllDstInputManager("DSTtruth");
-  //turn off for running data
   intrue->AddListFile(filelisttruth,1);
   se->registerInputManager(intrue);
-
+  
   Fun4AllInputManager *in2 = new Fun4AllDstInputManager("DSTcalo");
   in2->AddListFile(filelistcalo,1);
   se->registerInputManager(in2);
-
+  
   Fun4AllInputManager *in3 = new Fun4AllDstInputManager("DSTglobal");
-  //turn off for running data
   in3->AddListFile(filelistglobal,1);
   se->registerInputManager(in3);
   
-  se->run(100);
+  Fun4AllInputManager *in4 = new Fun4AllDstInputManager("DSTbbc");
+  in4->AddListFile(filelistg4hit,1);
+  se->registerInputManager(in4);
+  
+  se->run(5000);
   se->End();
 
   gSystem->Exit(0);

@@ -19,7 +19,7 @@ copy_to   = "/sphenix/user/danderson/sphenix/analysis/AndersonAnalysisModules/Co
 to_copy = [
   "README.md",
   "Fun4All_RunCorrelatorQAModules.C",
-  "RunStandaloneCorrelatorQAModules.C",
+  "RunStandaloneCorrelatorQAModules.cxx",
   "CorrelatorQAMakerOptions.h",
   "RunFun4AllCorrelatorQAModules.rb",
   "RunStandaloneCorrelatorQAModules.rb",

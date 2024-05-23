@@ -1,32 +1,31 @@
 // ----------------------------------------------------------------------------
-// 'RunStandaloneCorrelatorQAModules.C'
+// 'RunStandaloneCorrelatorQAModules.cxx'
 // Derek Anderson
 // 02.19.2024
 //
 // A root macro to run correlator QA modules.
 // ----------------------------------------------------------------------------
 
-#ifndef RUNSTANDALONECORRELATORQAMODULES_C
-#define RUNSTANDALONECORRELATORQAMODULES_C
+#ifndef RUNSTANDALONECORRELATORQAMODULES_CXX
+#define RUNSTANDALONECORRELATORQAMODULES_CXX
 
 // c++ utilities
 #include <string>
 #include <vector>
 #include <iostream>
-// analysis utilities
-#include "CorrelatorQAMakerOptions.h"
-//#include "/sphenix/user/danderson/install/include/scorrelatorqamaker/SCorrelatorQAMaker.h"
-//#include "/sphenix/user/danderson/install/include/scorrelatorqamaker/SReadLambdaJetTree.h"
+// plugin definitions
 #include <scorrelatorqamaker/SCorrelatorQAMaker.h>
 #include <scorrelatorqamaker/SReadLambdaJetTree.h>
+// macro options
+#include "CorrelatorQAMakerOptions.h"
 
 // make common namespaces implicit
 using namespace std;
 using namespace SColdQcdCorrelatorAnalysis;
 
 // load libraries
-R__LOAD_LIBRARY(/sphenix/user/danderson/install/lib/libscorrelatorqamaker.so)
-R__LOAD_LIBRARY(/sphenix/user/danderson/install/lib/libscorrelatorutilities.so)
+R__LOAD_LIBRARY(libscorrelatorqamaker.so)
+R__LOAD_LIBRARY(libscorrelatorutilities.so)
 
 // default input/output 
 static const vector<string> VecInFilesDefault = {
