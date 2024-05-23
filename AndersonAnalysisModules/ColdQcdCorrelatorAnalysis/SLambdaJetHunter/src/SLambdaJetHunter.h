@@ -45,10 +45,10 @@
 #include <g4main/PHG4Particlev2.h>
 #include <g4main/PHG4TruthInfoContainer.h>
 // analysis utilities
-#include "/sphenix/u/danderson/install/include/scorrelatorutilities/Tools.h"
-#include "/sphenix/u/danderson/install/include/scorrelatorutilities/Types.h"
-#include "/sphenix/u/danderson/install/include/scorrelatorutilities/Constants.h"
-#include "/sphenix/u/danderson/install/include/scorrelatorutilities/Interfaces.h"
+#include <scorrelatorutilities/Tools.h>
+#include <scorrelatorutilities/Types.h>
+#include <scorrelatorutilities/Constants.h>
+#include <scorrelatorutilities/Interfaces.h>
 // analysis definitions
 #include "SLambdaJetHunterConfig.h"
 
