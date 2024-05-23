@@ -37,7 +37,7 @@
 
 //____________________________________________________________________________..
 caloTreeGen::caloTreeGen(const std::string &name):
-SubsysReco(name)
+SubsysReco("caloTreeGen")
   ,T(nullptr)
   ,Outfile(name)
   ,doClusters(1)
