@@ -489,7 +489,8 @@ void ZDCNeutronLocPol::setFileName(const std::string &fname)
 void ZDCNeutronLocPol::setGainMatch(const std::string &gainfile)
 {
 //getting gains
-  float col1, col2;
+  float col1;
+  std::string col2;
 //std::string gainfile = gainname;
   std::ifstream gain_infile(gainfile);
 
@@ -499,20 +500,26 @@ void ZDCNeutronLocPol::setGainMatch(const std::string &gainfile)
     return;
   }
 
+  std::cout << "SMD Relative Gains: " << std::endl; 
+  
   for (float &i : gain)
   {
     gain_infile >> col1 >> col2;
     i = col1;
+    
   }
+  
 
   for (int i = 0; i < 16; i++)  // relative gains of SMD north channels
   {
-    smd_south_rgain[i] = gain[i];  // 0-7: y channels, 8-14: x channels, 15: analog sum
+    smd_north_rgain[i] = gain[i];  // 0-7: y channels, 8-14: x channels, 15: analog sum
+    std::cout << "N" << i << " " << gain[i] << std::endl;
   }
 
-  for (int i = 0; i < 16; i++)  // relative gains of SMD north channels
+  for (int i = 0; i < 16; i++)  // relative gains of SMD south channels
   {
-    smd_north_rgain[i] = gain[i + 16];  // 0-7: y channels, 8-14: x channels, 15: analog sum
+    smd_south_rgain[i] = gain[i + 16];  // 0-7: y channels, 8-14: x channels, 15: analog sum
+    std::cout << "S" << i << " " << gain[i] << std::endl;
   }
 
   gain_infile.close();
