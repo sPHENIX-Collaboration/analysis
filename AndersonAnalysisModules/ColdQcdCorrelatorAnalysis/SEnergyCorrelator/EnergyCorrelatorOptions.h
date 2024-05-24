@@ -14,9 +14,10 @@
 #include <utility>
 #include <optional>
 // analysis utilities
-#include "/sphenix/user/atclarke/install/include/scorrelatorutilities/Types.h"
-#include "/sphenix/user/atclarke/install/include/scorrelatorutilities/Constants.h"
-#include "/sphenix/user/atclarke/install/include/senergycorrelator/SEnergyCorrelatorConfig.h"
+#include <scorrelatorutilities/Types.h>
+#include <scorrelatorutilities/Constants.h>
+// module configuration
+#include <senergycorrelator/SEnergyCorrelatorConfig.h>
 
 // make common namespacs implicit
 using namespace std;

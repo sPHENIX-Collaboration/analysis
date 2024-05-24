@@ -14,17 +14,17 @@
 #include <vector>
 #include <cstdlib>
 #include <utility>
-// analysis utilities
-#include "/sphenix/user/danderson/install/include/senergycorrelator/SEnergyCorrelator.h"
-#include "/sphenix/user/danderson/install/include/senergycorrelator/SEnergyCorrelatorConfig.h"
+// module definition
+#include <senergycorrelator/SEnergyCorrelator.h>
+// macro options
 #include "EnergyCorrelatorOptions.h"
 
 using namespace std;
 using namespace SColdQcdCorrelatorAnalysis;
 
 // load libraries
-R__LOAD_LIBRARY(/sphenix/user/danderson/install/lib/libsenergycorrelator.so)
-R__LOAD_LIBRARY(/sphenix/user/danderson/install/lib/libscorrelatorutilities.so)
+R__LOAD_LIBRARY(libsenergycorrelator.so)
+R__LOAD_LIBRARY(libscorrelatorutilities.so)
 
 
 

@@ -138,12 +138,14 @@ void makehist(TString infname, TString outfname)
 
     // not zvtx weighted
     TH1F *hM_NClusLayer1 = new TH1F("hM_NClusLayer1", "hM_NClusLayer1", 70, 0, 3500);
+    TH1F *hM_NClusLayer2 = new TH1F("hM_NClusLayer2", "hM_NClusLayer2", 70, 0, 3500);
     TH1F *hM_NClusLayer1_clusADCgt35 = new TH1F("hM_NClusLayer1_clusADCgt35", "hM_NClusLayer1_clusADCgt35", 175, 0, 3500);
     TH1F *hM_NTklclusLayer1 = new TH1F("hM_NTklclusLayer1", "hM_NTklclusLayer1", 100, 0, 5000);
     TH1F *hM_NPrototkl = new TH1F("hM_NPrototkl", "hM_NPrototkl", 100, 0, 10000);
     TH1F *hM_NRecotkl_Raw = new TH1F("hM_NRecotkl_Raw", "hM_NRecotkl_Raw", 150, 0, 3000);
     // zvtx weighted 
     TH1F *hM_NClusLayer1_zvtxwei = new TH1F("hM_NClusLayer1_zvtxwei", "hM_NClusLayer1_zvtxwei",  70, 0, 3500);
+    TH1F *hM_NClusLayer2_zvtxwei = new TH1F("hM_NClusLayer2_zvtxwei", "hM_NClusLayer2_zvtxwei",  70, 0, 3500);
     TH1F *hM_NClusLayer1_clusADCgt35_zvtxwei = new TH1F("hM_NClusLayer1_clusADCgt35_zvtxwei", "hM_NClusLayer1_clusADCgt35_zvtxwei", 175, 0, 3500);
     TH1F *hM_NTklclusLayer1_zvtxwei = new TH1F("hM_NTklclusLayer1_zvtxwei", "hM_NTklclusLayer1_zvtxwei", 100, 0, 5000);
     TH1F *hM_NPrototkl_zvtxwei = new TH1F("hM_NPrototkl_zvtxwei", "hM_NPrototkl_zvtxwei", 100, 0, 10000);
@@ -158,7 +160,7 @@ void makehist(TString infname, TString outfname)
     TTree *t = (TTree *)f->Get("minitree");
     t->BuildIndex("event"); // Reference: https://root-forum.cern.ch/t/sort-ttree-entries/13138
     TTreeIndex *index = (TTreeIndex *)t->GetTreeIndex();
-    int event, NClusLayer1, NPrototkl, NRecotkl_Raw, NRecotkl_GenMatched, NGenHadron;
+    int event, NClusLayer1, NClusLayer2, NPrototkl, NRecotkl_Raw, NRecotkl_GenMatched, NGenHadron;
     float PV_z, TruthPV_z, vtxzwei;
     float MBD_centrality;
     float mbd_south_charge_sum, mbd_north_charge_sum, mbd_charge_sum, mbd_charge_asymm, mbd_z_vtx;
@@ -179,6 +181,7 @@ void makehist(TString infname, TString outfname)
     t->SetBranchAddress("MBD_charge_sum", &mbd_charge_sum);
     t->SetBranchAddress("MBD_charge_asymm", &mbd_charge_asymm);
     t->SetBranchAddress("NClusLayer1", &NClusLayer1);
+    t->SetBranchAddress("NClusLayer2", &NClusLayer2);
     t->SetBranchAddress("NPrototkl", &NPrototkl);
     t->SetBranchAddress("NRecotkl_Raw", &NRecotkl_Raw);
     t->SetBranchAddress("PV_z", &PV_z);
@@ -219,11 +222,13 @@ void makehist(TString infname, TString outfname)
         cout << "Event=" << event << "; NClusLayer1=" << NClusLayer1 << "; NTklclusLayer1=" << tklclus1Phi->size() << "; NPrototkl=" << NPrototkl << "; NRecotkl_Raw=" << NRecotkl_Raw << endl;
 
         hM_NClusLayer1->Fill(NClusLayer1);
+        hM_NClusLayer2->Fill(NClusLayer2);
         hM_NTklclusLayer1->Fill(tklclus1Phi->size());
         hM_NPrototkl->Fill(NPrototkl);
         hM_NRecotkl_Raw->Fill(NRecotkl_Raw);
 
         hM_NClusLayer1_zvtxwei->Fill(NClusLayer1, vtxzwei);
+        hM_NClusLayer2_zvtxwei->Fill(NClusLayer2, vtxzwei);
         hM_NTklclusLayer1_zvtxwei->Fill(tklclus1Phi->size(), vtxzwei);
         hM_NPrototkl_zvtxwei->Fill(NPrototkl, vtxzwei);
         hM_NRecotkl_Raw_zvtxwei->Fill(NRecotkl_Raw, vtxzwei);
@@ -366,6 +371,7 @@ void makehist(TString infname, TString outfname)
 
     fout->cd();
     hM_NClusLayer1->Write();
+    hM_NClusLayer2->Write();
     hM_NClusLayer1_clusADCgt35->Write();
     hM_NTklclusLayer1->Write();
     // hM_NPrototkl->Write();

@@ -25,9 +25,9 @@
 #include <TChain.h>
 #include <TBranch.h>
 // analysis utilities
-#include "/sphenix/user/danderson/install/include/scorrelatorutilities/Types.h"
-#include "/sphenix/user/danderson/install/include/scorrelatorutilities/Constants.h"
-#include "/sphenix/user/danderson/install/include/scorrelatorutilities/Interfaces.h"
+#include <scorrelatorutilities/Types.h>
+#include <scorrelatorutilities/Constants.h>
+#include <scorrelatorutilities/Interfaces.h>
 // plugin definitions
 #include "SBaseQAPlugin.h"
 #include "SCheckCstPairsConfig.h"

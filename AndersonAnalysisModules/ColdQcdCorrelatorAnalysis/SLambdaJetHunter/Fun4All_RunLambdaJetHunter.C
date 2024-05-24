@@ -16,9 +16,9 @@
 #include <fun4all/Fun4AllServer.h>
 #include <fun4all/Fun4AllDstInputManager.h>
 #include <g4main/Fun4AllDstPileupInputManager.h>
-// analysis specific utilities
-#include "/sphenix/user/danderson/install/include/slambdajethunter/SLambdaJetHunter.h"
-#include "/sphenix/user/danderson/install/include/slambdajethunter/SLambdaJetHunterConfig.h"
+// module definition
+#include <slambdajethunter/SLambdaJetHunter.h>
+// macro options
 #include "LambdaJetHunterOptions.h"
 
 // make common namespaces implicit
@@ -26,8 +26,8 @@ using namespace std;
 using namespace SColdQcdCorrelatorAnalysis;
 
 // load libraries
-R__LOAD_LIBRARY(/sphenix/user/danderson/install/lib/libslambdajethunter.so)
-R__LOAD_LIBRARY(/sphenix/user/danderson/install/lib/libscorrelatorutilities.so)
+R__LOAD_LIBRARY(libslambdajethunter.so)
+R__LOAD_LIBRARY(libscorrelatorutilities.so)
 
 // global constants
 static const int            NEvtDefault = 10;

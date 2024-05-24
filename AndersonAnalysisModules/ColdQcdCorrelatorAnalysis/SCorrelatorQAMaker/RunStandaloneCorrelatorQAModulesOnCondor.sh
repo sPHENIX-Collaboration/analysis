@@ -15,6 +15,6 @@ source /opt/sphenix/core/bin/sphenix_setup.sh
 printenv
 
 # run macro
-root -b -q RunStandaloneCorrelatorQAModules.C
+root -b -q RunStandaloneCorrelatorQAModules.cxx
 
 # end -------------------------------------------------------------------------
