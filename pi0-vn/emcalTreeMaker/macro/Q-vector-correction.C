@@ -47,6 +47,7 @@ namespace myAnalysis {
     Int_t init(const string &i_input, Long64_t start = 0, Long64_t end = 0);
     Int_t readFiles(const string &i_input, Long64_t start = 0, Long64_t end = 0);
     void init_hists();
+    Bool_t isCentral(Int_t run);
 
     void process_event(Float_t z_max = 10, Long64_t start = 0, Long64_t end = 0);
     void finalize(const string &i_output = "test.root", const string &i_output_csv = "test.csv");
@@ -94,6 +95,10 @@ namespace myAnalysis {
 
     vector<vector<vector<Float_t>>> X3_S; // [cent][row][col]
     vector<vector<vector<Float_t>>> X3_N; // [cent][row][col]
+}
+
+Bool_t myAnalysis::isCentral(Int_t run) {
+    return run != 23020 && run <= 23619;
 }
 
 void myAnalysis::init_hists() {
@@ -199,18 +204,20 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end) {
     // Disable everything...
     T->SetBranchStatus("*", false);
     // ...but the branch we need
-    T->SetBranchStatus("Q2_S_x",    true);
-    T->SetBranchStatus("Q2_S_y",    true);
-    T->SetBranchStatus("Q2_N_x",    true);
-    T->SetBranchStatus("Q2_N_y",    true);
-    T->SetBranchStatus("Q3_S_x",    true);
-    T->SetBranchStatus("Q3_S_y",    true);
-    T->SetBranchStatus("Q3_N_x",    true);
-    T->SetBranchStatus("Q3_N_y",    true);
-    T->SetBranchStatus("vtx_z",    true);
+    T->SetBranchStatus("run",    true);
+    T->SetBranchStatus("Q2_S_x", true);
+    T->SetBranchStatus("Q2_S_y", true);
+    T->SetBranchStatus("Q2_N_x", true);
+    T->SetBranchStatus("Q2_N_y", true);
+    T->SetBranchStatus("Q3_S_x", true);
+    T->SetBranchStatus("Q3_S_y", true);
+    T->SetBranchStatus("Q3_N_x", true);
+    T->SetBranchStatus("Q3_N_y", true);
+    T->SetBranchStatus("vtx_z",  true);
     // T->SetBranchStatus("totalMBD", true);
     T->SetBranchStatus("centrality", true);
 
+    Int_t   run;
     Float_t Q2_S_x;
     Float_t Q2_S_y;
     Float_t Q2_N_x;
@@ -272,6 +279,7 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end) {
     vector<Float_t> N3_S(cent_key.size());
     vector<Float_t> N3_N(cent_key.size());
 
+    T->SetBranchAddress("run",    &run);
     T->SetBranchAddress("Q2_S_x", &Q2_S_x);
     T->SetBranchAddress("Q2_S_y", &Q2_S_y);
     T->SetBranchAddress("Q2_N_x", &Q2_N_x);
@@ -299,7 +307,9 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end) {
         Int_t j = cent_dum_vec->FindBin(cent)-1;
 
         // check if centrality is found in one of the specified bins
-        if(j < 0 || j >= cent_key.size()) continue;
+        // do not consider event if it is part of central run and centrality is more than 40%
+        if(j < 0 || j >= cent_key.size() ||
+           (cent >= 0.4 && isCentral(run))) continue;
 
         Event event;
 
@@ -645,7 +655,7 @@ void Q_vector_correction(const string &i_input,
                          Float_t z                  = 10,
                          const string &i_output     = "test.root",
                          const string &i_output_csv = "test.csv",
-                         Int_t         anaType      = 0,
+                         Int_t         anaType      = 1,
                          Long64_t      start        = 0,
                          Long64_t      end          = 0) {
 
@@ -677,7 +687,7 @@ if(argc < 2 || argc > 8){
         cout << "z: z-vertex cut. Default: 10 cm. Range: 0 to 30 cm." << endl;
         cout << "outputFile: location of output file. Default: test.root." << endl;
         cout << "outputCSV: location of output csv. Default: test.csv." << endl;
-        cout << "anaType: analysis type. Default: 0." << endl;
+        cout << "anaType: analysis type. Default: 1." << endl;
         cout << "start: start event number. Default: 0." << endl;
         cout << "end: end event number. Default: 0. (to run over all entries)." << endl;
         return 1;
@@ -686,7 +696,7 @@ if(argc < 2 || argc > 8){
     Float_t z         = 10;
     string outputFile = "test.root";
     string output_csv = "test.csv";
-    Int_t    anaType  = 0;
+    Int_t    anaType  = 1;
     Long64_t start    = 0;
     Long64_t end      = 0;
 

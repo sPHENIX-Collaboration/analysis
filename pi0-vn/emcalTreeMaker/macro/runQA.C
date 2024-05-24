@@ -31,6 +31,7 @@ namespace myAnalysis {
 
     Int_t init(const string &i_input);
     Int_t readFiles(const string &i_input);
+    Bool_t isCentral(Int_t run);
 
     void process_event(const string &outputFile);
     void finalize();
@@ -40,6 +41,10 @@ namespace myAnalysis {
 
     TH1F* pt_dum_vec   = new TH1F("pt_dum_vec","",6,2,5);
     TH1F* cent_dum_vec = new TH1F("cent_dum_vec","", 3, 0, 0.6);
+}
+
+Bool_t myAnalysis::isCentral(Int_t run) {
+    return run != 23020 && run <= 23619;
 }
 
 Int_t myAnalysis::init(const string &i_input) {
@@ -75,12 +80,14 @@ Int_t myAnalysis::readFiles(const string &i_input) {
 
 void myAnalysis::process_event(const string &outputFile) {
 
-    UInt_t ctr[4] = {0};
+    UInt_t ctr[5] = {0};
+    UInt_t events_MB      = 0;
+    UInt_t events_central = 0;
 
-    cout << "Run,|z| < 10,|z| < 10 and MB,|z| < 10 and MB and totalCaloE > 0,Bad PMTs" << endl;
+    cout << "Run,|z| < 10,MB,caloE > 0,centrality,Bad PMTs" << endl;
 
     ofstream output(outputFile);
-    output << "Run,|z| < 10,|z| < 10 and MB,|z| < 10 and MB and totalCaloE > 0,Bad PMTs" << endl;
+    output << "Run,|z| < 10,MB,caloE > 0,centrality,Bad PMTs" << endl;
     stringstream s;
 
     for(auto input : inputs) {
@@ -103,23 +110,43 @@ void myAnalysis::process_event(const string &outputFile) {
             totalBadPMTs += h->GetBinLowEdge(i)*h->GetBinContent(i);
         }
 
+        h = (TH1F*)(input.second->Get("hCentrality"));
+        Int_t high_60 = h->FindBin(0.6)-1;
+        Int_t high_40 = h->FindBin(0.4)-1;
+
+        Int_t run = atoi(input.first.c_str());
+
+        Int_t events_cent = (isCentral(run)) ? h->Integral(1,high_40) : h->Integral(1,high_60);
+        // Int_t events_cent = h->Integral(1,high_40);
+
         s.str("");
-        s << input.first << "," << events << "," << events_mb << "," << events_mb_caloE << "," << totalBadPMTs << endl;
+        s << input.first << "," << events << "," << events_mb << "," << events_mb_caloE << "," << events_cent << "," << totalBadPMTs << endl;
         output << s.str();
         cout << s.str();
+
+        if(isCentral(run)) {
+            events_central += events_cent;
+        }
+        else {
+            events_MB += events_cent;
+        }
 
         ctr[0] += events;
         ctr[1] += events_mb;
         ctr[2] += events_mb_caloE;
         ctr[3] += totalBadPMTs;
+        ctr[4] += events_cent;
     }
 
     output.close();
 
     cout << "Total" << endl;
-    cout << "z| < 10: " << ctr[0]
+    cout << "|z| < 10: " << ctr[0]
          << ", |z| < 10 and MB: " << ctr[1]
          << ", |z| < 10 and MB and totalCaloE > 0: " << ctr[2]
+         << ", cent: " << ctr[4]
+         << ", MB Events: " << events_MB
+         << ", Central Events: " << events_central
          << ", Total Bad PMTs: " << ctr[3]
          << endl;
 }

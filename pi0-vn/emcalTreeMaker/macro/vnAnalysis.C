@@ -57,8 +57,8 @@ namespace myAnalysis {
     vector<TH1F*> hv2_bg_4sd;
     vector<TH1F*> hv3;
 
-    Int_t   bins_v2 = 200;
-    Float_t v2_min  = -1.5;
+    Int_t   bins_v2 = 250;
+    Float_t v2_min  = -2;
     Float_t v2_max  = 1.5;
 
     Int_t   bins_v3 = 600;

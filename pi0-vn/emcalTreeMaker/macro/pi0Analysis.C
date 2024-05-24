@@ -46,6 +46,7 @@ namespace myAnalysis {
     Int_t readFitStats(const string &fitStats);
     Int_t readQVectorCorrection(const string &i_input);
     void init_hists();
+    Bool_t isCentral(Int_t run);
 
     void process_event(Float_t z_max = 10, Long64_t start = 0, Long64_t end = 0, Float_t sigmaMult = 2);
     void finalize(const string &i_output = "test.root");
@@ -159,6 +160,10 @@ namespace myAnalysis {
     // v3
     vector<vector<vector<Float_t>>> X3_S; // [cent][row][col], off diagonal entries are the same
     vector<vector<vector<Float_t>>> X3_N; // [cent][row][col], off diagonal entries are the same
+}
+
+Bool_t myAnalysis::isCentral(Int_t run) {
+    return run != 23020 && run <= 23619;
 }
 
 Int_t myAnalysis::init(const string &i_input, const string &i_cuts, const string& fitStats, const string& QVecCorr, Long64_t start, Long64_t end) {
@@ -578,7 +583,7 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end, Floa
     // Disable everything...
     T->SetBranchStatus("*", false);
     // ...but the branch we need
-    // T->SetBranchStatus("run",       true);
+    T->SetBranchStatus("run",        true);
     // T->SetBranchStatus("event",     true);
     // T->SetBranchStatus("totalMBD",  true);
     T->SetBranchStatus("centrality", true);
@@ -606,7 +611,7 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end, Floa
         T->SetBranchStatus("pi0_eta", true);
     }
 
-    // Int_t   run;
+    Int_t   run;
     // Int_t   event;
     Float_t totalMBD;
     Float_t cent;
@@ -632,7 +637,7 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end, Floa
     vector<Float_t>* pi0_phi    = 0;
     vector<Float_t>* pi0_eta    = 0;
 
-    // T->SetBranchAddress("run",       &run);
+    T->SetBranchAddress("run",       &run);
     // T->SetBranchAddress("event",     &event);
     // T->SetBranchAddress("totalMBD",   &totalMBD);
     T->SetBranchAddress("centrality", &cent);
@@ -699,7 +704,9 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end, Floa
         Int_t cent_idx = cent_dum_vec->FindBin(cent)-1;
 
         // check if centrality is found in one of the specified bins
-        if(cent_idx < 0 || cent_idx >= cent_key.size()) continue;
+        // do not consider event if it is part of central run and centrality is more than 40%
+        if(cent_idx < 0 || cent_idx >= cent_key.size() ||
+           (cent >= 0.4 && isCentral(run))) continue;
 
         // need to reverse this index since we want to match cent_key
         cent_idx = cent_key.size() - cent_idx - 1;
