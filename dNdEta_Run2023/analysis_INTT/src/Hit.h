@@ -194,16 +194,6 @@ void UpdateHits(vector<Hit *> &Hits, vector<float> PV)
     }
 }
 
-// Hit *RandomHit(float etaMin, float etaMax, float phiMin, float phiMax)
-// {
-//     float eta = etaMin + (etaMax - etaMin) * gRandom->Rndm();
-//     float phi = phiMin + (phiMax - phiMin) * gRandom->Rndm();
-//     Hit *randhit = new Hit(eta, phi);
-//     randhit->SetPos(-999., -999., -999.);
-//     randhit->SetVtx(0., 0., 0.);
-//     return randhit;
-// }
-
 float RandomHit_fraction(int set)
 {
     float frac = 0;
@@ -216,9 +206,12 @@ float RandomHit_fraction(int set)
         frac = 1;
         break;
     case 2:
-        frac = 5;
+        frac = 3;
         break;
     case 3:
+        frac = 5;
+        break;
+    case 4:
         frac = 10;
         break;
     }
@@ -228,7 +221,7 @@ float RandomHit_fraction(int set)
 Hit *RandomHit(float vx, float vy, float vz, int layer)
 {
     gRandom->SetSeed(0);
-    // The 26 unique z positions
+    // The 26 unique z positions for INTT
     vector<float> zpos = {-22.57245, -20.57245, -18.57245, -16.57245, -14.57245, -12.57245, -10.97245, -9.372450, -7.772450, -6.172450, -4.572450, -2.972450, -1.372450,
                           0.4275496, 2.0275495, 3.6275494, 5.2275495, 6.8275494, 8.4275493, 10.027549, 11.627549, 13.627549, 15.627549, 17.627550, 19.627550, 21.627550};
     int zpos_idx = gRandom->Integer(26);
@@ -236,20 +229,10 @@ Hit *RandomHit(float vx, float vy, float vz, int layer)
     float layer_radius[4] = {7.453, 8.046, 9.934, 10.569};
     float phiMin = -TMath::Pi();
     float phiMax = TMath::Pi();
-    // First, randomly assign phi (with respect to the vertex). The X and Y are calculated based on the phi
     float phi = phiMin + (phiMax - phiMin) * gRandom->Rndm();
     float x = layer_radius[layer] * cos(phi);
     float y = layer_radius[layer] * sin(phi);
-    // Second, only replace the Z position with the 26 unique z positions
-    float z = zpos[zpos_idx]; // layer_radius[layer] / tan(2 * atan(exp(-eta)));
-    // // Then, calculate the eta and phi
-    // float rx = x - vx;
-    // float ry = y - vy;
-    // float rz = z - vz;
-    // float r2t = rx * rx + ry * ry;
-    // float r2 = r2t + rz * rz;
-    // float costheta = rz / sqrt(r2);
-    // Hit::Hit(float x, float y, float z, float vtxX, float vtxY, float vtxZ, int layer, float phisize, unsigned int clusadc)
+    float z = zpos[zpos_idx];                                 // layer_radius[layer] / tan(2 * atan(exp(-eta)));
     Hit *randhit = new Hit(x, y, z, vx, vy, vz, layer, 1, 1); // assign the phisize and clusadc to 1 for random clusters, which should be ok
 
     return randhit;
@@ -320,6 +303,26 @@ TH1F *ClusADCCut_StepFunc(int constscale, float etascale)
     }
 
     return hm_cut;
+}
+
+int ConstADCCut(int set)
+{
+    float cut = 0;
+    switch (set)
+    {
+    case 0:
+        cut = 35;
+        break;
+    case 1:
+        cut = 50;
+        break;
+    case 2:
+        cut = 66;
+        break;
+    case 3:
+        cut = -1;
+    }
+    return cut;
 }
 
 #endif

@@ -662,6 +662,16 @@ void calccorr(const TString infilename,              //
         h1empty->Divide(h1WEtcorr);
     }
 
+    // The eta bin with an empty correction larger than 1.2 or less than 0.8 should be excluded
+    for (int i = 1; i <= h1empty->GetNbinsX(); i++)
+    {
+        if (h1empty->GetBinContent(i) > 1.2 || h1empty->GetBinContent(i) < 0.8)
+        {
+            h1empty->SetBinContent(i, 0);
+            h1empty->SetBinError(i, 0);
+        }
+    }
+
     TH1F *h1WEprefinal = (TH1F *)h1WEtcorr->Clone("h1WEprefinal");
     h1WEprefinal->Multiply(h1empty);
 
