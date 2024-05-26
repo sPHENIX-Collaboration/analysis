@@ -83,12 +83,14 @@ namespace myAnalysis {
     map<pair<string,string>, TH2F*> h2ECore2VsECore1;
     map<string, TH1F*>              hDiphotonPt;
     // v2
-    vector<map<string, TH1F*>>              hQQ2;
-    vector<map<pair<string,string>, TH1F*>> hqQ2;
-    vector<map<pair<string,string>, TH1F*>> hqQ2_bg;
-    vector<map<pair<string,string>, TH1F*>> hqQ2_bg_4;
-    vector<map<pair<string,string>, TH1F*>> hqQ2_bg_left;
-    vector<map<pair<string,string>, TH1F*>> hqQ2_bg_4sd;
+    vector<map<string, TH1F*>>              hQQ2; // key: subsample, centrality
+    map<string, vector<TH2F*>>              h2Q2N; // key: centrality
+    map<string, vector<TH2F*>>              h2Q2S; // key: centrality
+    vector<map<pair<string,string>, TH1F*>> hqQ2; // key: subsample, centrality, pT
+    vector<map<pair<string,string>, TH1F*>> hqQ2_bg; // key: subsample, centrality, pT
+    vector<map<pair<string,string>, TH1F*>> hqQ2_bg_4; // key: subsample, centrality, pT
+    vector<map<pair<string,string>, TH1F*>> hqQ2_bg_left; // key: subsample, centrality, pT
+    vector<map<pair<string,string>, TH1F*>> hqQ2_bg_4sd; // key: subsample, centrality, pT
     // v3
     vector<map<string, TH1F*>>              hQQ3;
     vector<map<pair<string,string>, TH1F*>> hqQ3;
@@ -519,6 +521,25 @@ void myAnalysis::init_hists() {
     }
 
     if(do_vn_calc) {
+
+        for(Int_t i = 0; i < cent_key.size(); ++i) {
+            vector<TH2F*> h2Q2N_dummy;
+            vector<TH2F*> h2Q2S_dummy;
+
+            string suffix_title = "Centrality: " + cent_key[i] + "%";
+
+            h2Q2N_dummy.push_back(new TH2F(("h2Q2N0_"+cent_key[i]).c_str(), ("Q_{2} North, Order 0, " + suffix_title +"; Q_{2,x}; Q_{2,y}").c_str(), bins_Q, Q_min, Q_max, bins_Q, Q_min, Q_max));
+            h2Q2N_dummy.push_back(new TH2F(("h2Q2N1_"+cent_key[i]).c_str(), ("Q_{2} North, Order 1, " + suffix_title +"; Q_{2,x}; Q_{2,y}").c_str(), bins_Q, Q_min, Q_max, bins_Q, Q_min, Q_max));
+            h2Q2N_dummy.push_back(new TH2F(("h2Q2N2_"+cent_key[i]).c_str(), ("Q_{2} North, Order 2, " + suffix_title +"; Q_{2,x}; Q_{2,y}").c_str(), bins_Q, Q_min, Q_max, bins_Q, Q_min, Q_max));
+
+            h2Q2S_dummy.push_back(new TH2F(("h2Q2S0_"+cent_key[i]).c_str(), ("Q_{2} South, Order 0, " + suffix_title +"; Q_{2,x}; Q_{2,y}").c_str(), bins_Q, Q_min, Q_max, bins_Q, Q_min, Q_max));
+            h2Q2S_dummy.push_back(new TH2F(("h2Q2S1_"+cent_key[i]).c_str(), ("Q_{2} South, Order 1, " + suffix_title +"; Q_{2,x}; Q_{2,y}").c_str(), bins_Q, Q_min, Q_max, bins_Q, Q_min, Q_max));
+            h2Q2S_dummy.push_back(new TH2F(("h2Q2S2_"+cent_key[i]).c_str(), ("Q_{2} South, Order 2, " + suffix_title +"; Q_{2,x}; Q_{2,y}").c_str(), bins_Q, Q_min, Q_max, bins_Q, Q_min, Q_max));
+
+            h2Q2N[cent_key[i]] = h2Q2N_dummy;
+            h2Q2S[cent_key[i]] = h2Q2S_dummy;
+        }
+
         for(Int_t k = 0; k < subsamples; ++k) {
             map<string, TH1F*> hQQ2_dummy;
             map<pair<string,string>, TH1F*> hqQ2_dummy;
@@ -671,6 +692,8 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end, Floa
     UInt_t evt_ctr[cent_key.size()] = {0};
 
     Float_t QQ2_min    = 9999;
+    Float_t Q2_x_min  = 9999;
+    Float_t Q2_y_min  = 9999;
     Float_t qQ2_min    = 9999;
     Float_t qQ2_bg_min = 9999;
     Float_t QQ3_min    = 9999;
@@ -681,6 +704,8 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end, Floa
 
     UInt_t  npi0_max   = 0;
     Float_t QQ2_max    = 0;
+    Float_t Q2_x_max  = 0;
+    Float_t Q2_y_max  = 0;
     Float_t qQ2_max    = 0;
     Float_t qQ2_bg_max = 0;
     Float_t QQ3_max    = 0;
@@ -726,11 +751,38 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end, Floa
             Float_t Q2_N_x_temp = Q2_N_x - Q2_N_x_avg[cent_idx];
             Float_t Q2_N_y_temp = Q2_N_y - Q2_N_y_avg[cent_idx];
 
+            // log min/max
+            Q2_x_min = min(Q2_x_min, min(Q2_S_x, Q2_N_x));
+            Q2_y_min = min(Q2_y_min, min(Q2_S_y, Q2_N_y));
+            Q2_x_max = max(Q2_x_max, max(Q2_S_x, Q2_N_x));
+            Q2_y_max = max(Q2_y_max, max(Q2_S_y, Q2_N_y));
+
+            Q2_x_min = min(Q2_x_min, min(Q2_S_x_temp, Q2_N_x_temp));
+            Q2_y_min = min(Q2_y_min, min(Q2_S_y_temp, Q2_N_y_temp));
+            Q2_x_max = max(Q2_x_max, max(Q2_S_x_temp, Q2_N_x_temp));
+            Q2_y_max = max(Q2_y_max, max(Q2_S_y_temp, Q2_N_y_temp));
+
+            h2Q2N[cent_key[cent_idx]][0]->Fill(Q2_N_x, Q2_N_y);
+            h2Q2S[cent_key[cent_idx]][0]->Fill(Q2_S_x, Q2_S_y);
+
+            h2Q2N[cent_key[cent_idx]][1]->Fill(Q2_N_x_temp, Q2_N_y_temp);
+            h2Q2S[cent_key[cent_idx]][1]->Fill(Q2_S_x_temp, Q2_S_y_temp);
+
             // compute second order correction
             Q2_S_x = X2_S[cent_idx][0][0]*Q2_S_x_temp+X2_S[cent_idx][0][1]*Q2_S_y_temp;
             Q2_S_y = X2_S[cent_idx][0][1]*Q2_S_x_temp+X2_S[cent_idx][1][1]*Q2_S_y_temp;
             Q2_N_x = X2_N[cent_idx][0][0]*Q2_N_x_temp+X2_N[cent_idx][0][1]*Q2_N_y_temp;
             Q2_N_y = X2_N[cent_idx][0][1]*Q2_N_x_temp+X2_N[cent_idx][1][1]*Q2_N_y_temp;
+
+            h2Q2N[cent_key[cent_idx]][2]->Fill(Q2_N_x, Q2_N_y);
+            h2Q2S[cent_key[cent_idx]][2]->Fill(Q2_S_x, Q2_S_y);
+
+            // log min/max
+            Q2_x_min = min(Q2_x_min, min(Q2_S_x, Q2_N_x));
+            Q2_y_min = min(Q2_y_min, min(Q2_S_y, Q2_N_y));
+            Q2_x_max = max(Q2_x_max, max(Q2_S_x, Q2_N_x));
+            Q2_y_max = max(Q2_y_max, max(Q2_S_y, Q2_N_y));
+
             //============================================
 
             Float_t QQ2 = Q2_S_x*Q2_N_x + Q2_S_y*Q2_N_y;
@@ -983,6 +1035,8 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end, Floa
     cout << "ECore min: " << ecore_min << ", ECore max: " << ecore_max << endl;
     cout << endl;
     cout << "QQ2 min: " << QQ2_min << ", QQ2 max: " << QQ2_max << endl;
+    cout << "Q2_x min: " << Q2_x_min << ", Q2_x max: " << Q2_x_max << endl;
+    cout << "Q2_y min: " << Q2_y_min << ", Q2_y may: " << Q2_y_max << endl;
     cout << "qQ2 min: " << qQ2_min << ", qQ2 max: " << qQ2_max << endl;
     cout << "qQ2 bg min: " << qQ2_bg_min << ", qQ2 bg max: " << qQ2_bg_max << endl;
     cout << endl;
@@ -1033,6 +1087,16 @@ void myAnalysis::finalize(const string &i_output) {
         hDiphotonPt[cent]->Write();
 
         if(do_vn_calc) {
+            output.mkdir(("QA/MBD/"+cent).c_str());
+            output.cd(("QA/MBD/"+cent).c_str());
+
+            h2Q2N[cent][0]->Write();
+            h2Q2S[cent][0]->Write();
+            h2Q2N[cent][1]->Write();
+            h2Q2S[cent][1]->Write();
+            h2Q2N[cent][2]->Write();
+            h2Q2S[cent][2]->Write();
+
             for(Int_t k = 0; k < subsamples; ++k) {
                 string prefix = "vn/"+to_string(k);
                 output.cd((prefix+"/QQ2").c_str());
