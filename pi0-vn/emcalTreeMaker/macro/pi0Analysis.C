@@ -92,10 +92,10 @@ namespace myAnalysis {
     vector<map<pair<string,string>, TH1F*>> hqQ2_bg_left; // key: subsample, centrality, pT
     vector<map<pair<string,string>, TH1F*>> hqQ2_bg_4sd; // key: subsample, centrality, pT
     // v3
-    vector<map<string, TH1F*>>              hQQ3;
-    vector<map<pair<string,string>, TH1F*>> hqQ3;
-    vector<map<pair<string,string>, TH1F*>> hqQ3_bg;
-    vector<map<pair<string,string>, TH1F*>> hqQ3_bg_left;
+    // vector<map<string, TH1F*>>              hQQ3;
+    // vector<map<pair<string,string>, TH1F*>> hqQ3;
+    // vector<map<pair<string,string>, TH1F*>> hqQ3_bg;
+    // vector<map<pair<string,string>, TH1F*>> hqQ3_bg_left;
 
     map<pair<string,string>, TH1F*> hNPi0;
     map<pair<string,string>, TH2F*> h2Pi0EtaPhi;
@@ -159,9 +159,9 @@ namespace myAnalysis {
     // v2
     vector<vector<vector<Float_t>>> X2_S; // [cent][row][col], off diagonal entries are the same
     vector<vector<vector<Float_t>>> X2_N; // [cent][row][col], off diagonal entries are the same
-    // v3
-    vector<vector<vector<Float_t>>> X3_S; // [cent][row][col], off diagonal entries are the same
-    vector<vector<vector<Float_t>>> X3_N; // [cent][row][col], off diagonal entries are the same
+    // // v3
+    // vector<vector<vector<Float_t>>> X3_S; // [cent][row][col], off diagonal entries are the same
+    // vector<vector<vector<Float_t>>> X3_N; // [cent][row][col], off diagonal entries are the same
 }
 
 Bool_t myAnalysis::isCentral(Int_t run) {
@@ -190,14 +190,14 @@ Int_t myAnalysis::init(const string &i_input, const string &i_cuts, const string
     X2_S.resize(cent_key.size(), vector<vector<Float_t>>(2, vector<Float_t>(2)));
     X2_N.resize(cent_key.size(), vector<vector<Float_t>>(2, vector<Float_t>(2)));
 
-    // v3
-    Q3_S_x_avg.resize(cent_key.size());
-    Q3_S_y_avg.resize(cent_key.size());
-    Q3_N_x_avg.resize(cent_key.size());
-    Q3_N_y_avg.resize(cent_key.size());
+    // // v3
+    // Q3_S_x_avg.resize(cent_key.size());
+    // Q3_S_y_avg.resize(cent_key.size());
+    // Q3_N_x_avg.resize(cent_key.size());
+    // Q3_N_y_avg.resize(cent_key.size());
 
-    X3_S.resize(cent_key.size(), vector<vector<Float_t>>(2, vector<Float_t>(2)));
-    X3_N.resize(cent_key.size(), vector<vector<Float_t>>(2, vector<Float_t>(2)));
+    // X3_S.resize(cent_key.size(), vector<vector<Float_t>>(2, vector<Float_t>(2)));
+    // X3_N.resize(cent_key.size(), vector<vector<Float_t>>(2, vector<Float_t>(2)));
 
     Int_t ret;
     // ret = readFiles(i_input, start, end);
@@ -384,6 +384,7 @@ Int_t myAnalysis::readQVectorCorrection(const string &i_input) {
     std::getline(file, line);
 
     Int_t i = 0;
+    Float_t temp;
     while (std::getline(file, line)) {
         std::istringstream lineStream(line);
         string cell;
@@ -399,16 +400,26 @@ Int_t myAnalysis::readQVectorCorrection(const string &i_input) {
                          >> X2_N[i][0][0] >> comma
                          >> X2_N[i][0][1] >> comma
                          >> X2_N[i][1][1] >> comma
-                         >> Q3_S_x_avg[i] >> comma
-                         >> Q3_S_y_avg[i] >> comma
-                         >> Q3_N_x_avg[i] >> comma
-                         >> Q3_N_y_avg[i] >> comma
-                         >> X3_S[i][0][0] >> comma
-                         >> X3_S[i][0][1] >> comma
-                         >> X3_S[i][1][1] >> comma
-                         >> X3_N[i][0][0] >> comma
-                         >> X3_N[i][0][1] >> comma
-                         >> X3_N[i][1][1])) {
+                         >> temp >> comma
+                         >> temp >> comma
+                         >> temp >> comma
+                         >> temp >> comma
+                         >> temp >> comma
+                         >> temp >> comma
+                         >> temp >> comma
+                         >> temp >> comma
+                         >> temp >> comma
+                         >> temp)) {
+                         // >> Q3_S_x_avg[i] >> comma
+                         // >> Q3_S_y_avg[i] >> comma
+                         // >> Q3_N_x_avg[i] >> comma
+                         // >> Q3_N_y_avg[i] >> comma
+                         // >> X3_S[i][0][0] >> comma
+                         // >> X3_S[i][0][1] >> comma
+                         // >> X3_S[i][1][1] >> comma
+                         // >> X3_N[i][0][0] >> comma
+                         // >> X3_N[i][0][1] >> comma
+                         // >> X3_N[i][1][1])) {
 
             cerr << "Failed to parse line: " << line << endl;
             return 1;
@@ -439,19 +450,19 @@ Int_t myAnalysis::readQVectorCorrection(const string &i_input) {
 
         cout << endl;
 
-        cout << left << "Q3_S_x_avg: "   << setw(8) << Q3_S_x_avg[j]
-                     << ", Q3_S_y_avg: " << setw(8) << Q3_S_y_avg[j] << endl;
+        // cout << left << "Q3_S_x_avg: "   << setw(8) << Q3_S_x_avg[j]
+        //              << ", Q3_S_y_avg: " << setw(8) << Q3_S_y_avg[j] << endl;
 
-        cout << left << "Q3_N_x_avg: "   << setw(8) << Q3_N_x_avg[j]
-                     << ", Q3_N_y_avg: " << setw(8) << Q3_N_y_avg[j] << endl;
+        // cout << left << "Q3_N_x_avg: "   << setw(8) << Q3_N_x_avg[j]
+        //              << ", Q3_N_y_avg: " << setw(8) << Q3_N_y_avg[j] << endl;
 
-        cout << left << "X3_S_00: "   << setw(8) << X3_S[j][0][0]
-                     << ", X3_S_01: " << setw(8) << X3_S[j][0][1]
-                     << ", X3_S_11: " << setw(8) << X3_S[j][1][1] << endl;
+        // cout << left << "X3_S_00: "   << setw(8) << X3_S[j][0][0]
+        //              << ", X3_S_01: " << setw(8) << X3_S[j][0][1]
+        //              << ", X3_S_11: " << setw(8) << X3_S[j][1][1] << endl;
 
-        cout << left << "X3_N_00: "   << setw(8) << X3_N[j][0][0]
-                     << ", X3_N_01: " << setw(8) << X3_N[j][0][1]
-                     << ", X3_N_11: " << setw(8) << X3_N[j][1][1] << endl;
+        // cout << left << "X3_N_00: "   << setw(8) << X3_N[j][0][0]
+        //              << ", X3_N_01: " << setw(8) << X3_N[j][0][1]
+        //              << ", X3_N_11: " << setw(8) << X3_N[j][1][1] << endl;
 
         cout << endl;
     }
@@ -548,10 +559,10 @@ void myAnalysis::init_hists() {
             map<pair<string,string>, TH1F*> hqQ2_bg_left_dummy;
             map<pair<string,string>, TH1F*> hqQ2_bg_4sd_dummy;
 
-            map<string, TH1F*> hQQ3_dummy;
-            map<pair<string,string>, TH1F*> hqQ3_dummy;
-            map<pair<string,string>, TH1F*> hqQ3_bg_dummy;
-            map<pair<string,string>, TH1F*> hqQ3_bg_left_dummy;
+            // map<string, TH1F*> hQQ3_dummy;
+            // map<pair<string,string>, TH1F*> hqQ3_dummy;
+            // map<pair<string,string>, TH1F*> hqQ3_bg_dummy;
+            // map<pair<string,string>, TH1F*> hqQ3_bg_left_dummy;
 
             for(Int_t i = 0; i < cent_key.size(); ++i) {
 
@@ -560,7 +571,7 @@ void myAnalysis::init_hists() {
                 hQQ2_dummy[cent_key[i]] = new TH1F(("hQQ2_"+to_string(k)+"_"+cent_key[i]).c_str(), ("QQ2, " + suffix_title +"; QQ2; Counts").c_str(), bins_Q, Q_min, Q_max);
 
                 // v3
-                hQQ3_dummy[cent_key[i]] = new TH1F(("hQQ3_"+to_string(k)+"_"+cent_key[i]).c_str(), ("QQ3, " + suffix_title +"; QQ3; Counts").c_str(), bins_Q, Q_min, Q_max);
+                // hQQ3_dummy[cent_key[i]] = new TH1F(("hQQ3_"+to_string(k)+"_"+cent_key[i]).c_str(), ("QQ3, " + suffix_title +"; QQ3; Counts").c_str(), bins_Q, Q_min, Q_max);
 
                 for(Int_t j = 0; j < pt_key.size(); ++j) {
                     Int_t idx = i*pt_key.size()+j;
@@ -575,9 +586,9 @@ void myAnalysis::init_hists() {
                     hqQ2_bg_left_dummy[key] = new TH1F(("hqQ2_bg_left_"+to_string(k)+"_"+to_string(idx)).c_str(), ("qQ2, " + suffix_title + "; qQ2; Counts").c_str(), bins_Q, Q_min, Q_max);
                     hqQ2_bg_4sd_dummy[key]  = new TH1F(("hqQ2_bg_4sd_"+to_string(k)+"_"+to_string(idx)).c_str(), ("qQ2, " + suffix_title + "; qQ2; Counts").c_str(), bins_Q, Q_min, Q_max);
 
-                    hqQ3_dummy[key]         = new TH1F(("hqQ3_"+to_string(k)+"_"+to_string(idx)).c_str(), ("qQ3, " + suffix_title + "; qQ3; Counts").c_str(), bins_Q, Q_min, Q_max);
-                    hqQ3_bg_dummy[key]      = new TH1F(("hqQ3_bg_"+to_string(k)+"_"+to_string(idx)).c_str(), ("qQ3, " + suffix_title + "; qQ3; Counts").c_str(), bins_Q, Q_min, Q_max);
-                    hqQ3_bg_left_dummy[key] = new TH1F(("hqQ3_bg_left_"+to_string(k)+"_"+to_string(idx)).c_str(), ("qQ3, " + suffix_title + "; qQ3; Counts").c_str(), bins_Q, Q_min, Q_max);
+                    // hqQ3_dummy[key]         = new TH1F(("hqQ3_"+to_string(k)+"_"+to_string(idx)).c_str(), ("qQ3, " + suffix_title + "; qQ3; Counts").c_str(), bins_Q, Q_min, Q_max);
+                    // hqQ3_bg_dummy[key]      = new TH1F(("hqQ3_bg_"+to_string(k)+"_"+to_string(idx)).c_str(), ("qQ3, " + suffix_title + "; qQ3; Counts").c_str(), bins_Q, Q_min, Q_max);
+                    // hqQ3_bg_left_dummy[key] = new TH1F(("hqQ3_bg_left_"+to_string(k)+"_"+to_string(idx)).c_str(), ("qQ3, " + suffix_title + "; qQ3; Counts").c_str(), bins_Q, Q_min, Q_max);
                 }
             }
 
@@ -588,10 +599,10 @@ void myAnalysis::init_hists() {
             hqQ2_bg_left.push_back(hqQ2_bg_left_dummy);
             hqQ2_bg_4sd.push_back(hqQ2_bg_4sd_dummy);
 
-            hQQ3.push_back(hQQ3_dummy);
-            hqQ3.push_back(hqQ3_dummy);
-            hqQ3_bg.push_back(hqQ3_bg_dummy);
-            hqQ3_bg_left.push_back(hqQ3_bg_left_dummy);
+            // hQQ3.push_back(hQQ3_dummy);
+            // hqQ3.push_back(hqQ3_dummy);
+            // hqQ3_bg.push_back(hqQ3_bg_dummy);
+            // hqQ3_bg_left.push_back(hqQ3_bg_left_dummy);
         }
     }
 }
@@ -623,10 +634,10 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end, Floa
         T->SetBranchStatus("Q2_N_x",  true);
         T->SetBranchStatus("Q2_N_y",  true);
 
-        T->SetBranchStatus("Q3_S_x",  true);
-        T->SetBranchStatus("Q3_S_y",  true);
-        T->SetBranchStatus("Q3_N_x",  true);
-        T->SetBranchStatus("Q3_N_y",  true);
+        // T->SetBranchStatus("Q3_S_x",  true);
+        // T->SetBranchStatus("Q3_S_y",  true);
+        // T->SetBranchStatus("Q3_N_x",  true);
+        // T->SetBranchStatus("Q3_N_y",  true);
 
         T->SetBranchStatus("pi0_phi", true);
         T->SetBranchStatus("pi0_eta", true);
@@ -651,10 +662,10 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end, Floa
     Float_t Q2_S_y;
     Float_t Q2_N_x;
     Float_t Q2_N_y;
-    Float_t Q3_S_x;
-    Float_t Q3_S_y;
-    Float_t Q3_N_x;
-    Float_t Q3_N_y;
+    // Float_t Q3_S_x;
+    // Float_t Q3_S_y;
+    // Float_t Q3_N_x;
+    // Float_t Q3_N_y;
     vector<Float_t>* pi0_phi    = 0;
     vector<Float_t>* pi0_eta    = 0;
 
@@ -678,10 +689,10 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end, Floa
         T->SetBranchAddress("Q2_N_x", &Q2_N_x);
         T->SetBranchAddress("Q2_N_y", &Q2_N_y);
 
-        T->SetBranchAddress("Q3_S_x", &Q3_S_x);
-        T->SetBranchAddress("Q3_S_y", &Q3_S_y);
-        T->SetBranchAddress("Q3_N_x", &Q3_N_x);
-        T->SetBranchAddress("Q3_N_y", &Q3_N_y);
+        // T->SetBranchAddress("Q3_S_x", &Q3_S_x);
+        // T->SetBranchAddress("Q3_S_y", &Q3_S_y);
+        // T->SetBranchAddress("Q3_N_x", &Q3_N_x);
+        // T->SetBranchAddress("Q3_N_y", &Q3_N_y);
 
         T->SetBranchAddress("pi0_phi", &pi0_phi);
         T->SetBranchAddress("pi0_eta", &pi0_eta);
@@ -696,9 +707,9 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end, Floa
     Float_t Q2_y_min  = 9999;
     Float_t qQ2_min    = 9999;
     Float_t qQ2_bg_min = 9999;
-    Float_t QQ3_min    = 9999;
-    Float_t qQ3_min    = 9999;
-    Float_t qQ3_bg_min = 9999;
+    // Float_t QQ3_min    = 9999;
+    // Float_t qQ3_min    = 9999;
+    // Float_t qQ3_bg_min = 9999;
     Float_t eta_min    = 9999;
     Float_t ecore_min  = 9999;
 
@@ -708,9 +719,9 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end, Floa
     Float_t Q2_y_max  = 0;
     Float_t qQ2_max    = 0;
     Float_t qQ2_bg_max = 0;
-    Float_t QQ3_max    = 0;
-    Float_t qQ3_max    = 0;
-    Float_t qQ3_bg_max = 0;
+    // Float_t QQ3_max    = 0;
+    // Float_t qQ3_max    = 0;
+    // Float_t qQ3_bg_max = 0;
     Float_t eta_max    = 0;
     Float_t ecore_max  = 0;
 
@@ -791,27 +802,27 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end, Floa
 
             hQQ2[k][cent_key[cent_idx]]->Fill(QQ2);
 
-            // v3
-            // Apply first and second order correction to the Q vectors
-            //============================================
-            // compute first order correction
-            Float_t Q3_S_x_temp = Q3_S_x - Q3_S_x_avg[cent_idx];
-            Float_t Q3_S_y_temp = Q3_S_y - Q3_S_y_avg[cent_idx];
-            Float_t Q3_N_x_temp = Q3_N_x - Q3_N_x_avg[cent_idx];
-            Float_t Q3_N_y_temp = Q3_N_y - Q3_N_y_avg[cent_idx];
+            // // v3
+            // // Apply first and second order correction to the Q vectors
+            // //============================================
+            // // compute first order correction
+            // Float_t Q3_S_x_temp = Q3_S_x - Q3_S_x_avg[cent_idx];
+            // Float_t Q3_S_y_temp = Q3_S_y - Q3_S_y_avg[cent_idx];
+            // Float_t Q3_N_x_temp = Q3_N_x - Q3_N_x_avg[cent_idx];
+            // Float_t Q3_N_y_temp = Q3_N_y - Q3_N_y_avg[cent_idx];
 
-            // compute second order correction
-            Q3_S_x = X3_S[cent_idx][0][0]*Q3_S_x_temp+X3_S[cent_idx][0][1]*Q3_S_y_temp;
-            Q3_S_y = X3_S[cent_idx][0][1]*Q3_S_x_temp+X3_S[cent_idx][1][1]*Q3_S_y_temp;
-            Q3_N_x = X3_N[cent_idx][0][0]*Q3_N_x_temp+X3_N[cent_idx][0][1]*Q3_N_y_temp;
-            Q3_N_y = X3_N[cent_idx][0][1]*Q3_N_x_temp+X3_N[cent_idx][1][1]*Q3_N_y_temp;
-            //============================================
+            // // compute second order correction
+            // Q3_S_x = X3_S[cent_idx][0][0]*Q3_S_x_temp+X3_S[cent_idx][0][1]*Q3_S_y_temp;
+            // Q3_S_y = X3_S[cent_idx][0][1]*Q3_S_x_temp+X3_S[cent_idx][1][1]*Q3_S_y_temp;
+            // Q3_N_x = X3_N[cent_idx][0][0]*Q3_N_x_temp+X3_N[cent_idx][0][1]*Q3_N_y_temp;
+            // Q3_N_y = X3_N[cent_idx][0][1]*Q3_N_x_temp+X3_N[cent_idx][1][1]*Q3_N_y_temp;
+            // //============================================
 
-            Float_t QQ3 = Q3_S_x*Q3_N_x + Q3_S_y*Q3_N_y;
-            QQ3_min = min(QQ3_min, QQ3);
-            QQ3_max = max(QQ3_max, QQ3);
+            // Float_t QQ3 = Q3_S_x*Q3_N_x + Q3_S_y*Q3_N_y;
+            // QQ3_min = min(QQ3_min, QQ3);
+            // QQ3_max = max(QQ3_max, QQ3);
 
-            hQQ3[k][cent_key[cent_idx]]->Fill(QQ3);
+            // hQQ3[k][cent_key[cent_idx]]->Fill(QQ3);
         }
 
         UInt_t pi0_ctr[cent_key.size()*pt_key.size()]       = {0};
@@ -824,9 +835,9 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end, Floa
         Float_t qQ2_bg_4[cent_key.size()*pt_key.size()]     = {0};
         Float_t qQ2_bg_left[cent_key.size()*pt_key.size()]  = {0};
         Float_t qQ2_bg_4sd[cent_key.size()*pt_key.size()]   = {0};
-        Float_t qQ3[cent_key.size()*pt_key.size()]          = {0};
-        Float_t qQ3_bg[cent_key.size()*pt_key.size()]       = {0};
-        Float_t qQ3_bg_left[cent_key.size()*pt_key.size()]  = {0};
+        // Float_t qQ3[cent_key.size()*pt_key.size()]          = {0};
+        // Float_t qQ3_bg[cent_key.size()*pt_key.size()]       = {0};
+        // Float_t qQ3_bg_left[cent_key.size()*pt_key.size()]  = {0};
 
         // loop over all diphoton candidates
         for(UInt_t j = 0; j < pi0_mass->size(); ++j) {
@@ -853,16 +864,16 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end, Floa
             Float_t Q2_x = 0;
             Float_t Q2_y = 0;
 
-            Float_t Q3_x = 0;
-            Float_t Q3_y = 0;
+            // Float_t Q3_x = 0;
+            // Float_t Q3_y = 0;
 
             Double_t q2_x    = 0;
             Double_t q2_y    = 0;
             Double_t qQ2_val = 0;
 
-            Double_t q3_x    = 0;
-            Double_t q3_y    = 0;
-            Double_t qQ3_val = 0;
+            // Double_t q3_x    = 0;
+            // Double_t q3_y    = 0;
+            // Double_t qQ3_val = 0;
 
             if(do_vn_calc) {
                 pi0_phi_val   = pi0_phi->at(j);
@@ -875,12 +886,12 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end, Floa
                 q2_y = sin(2*pi0_phi_val);
                 qQ2_val = q2_x*Q2_x + q2_y*Q2_y;
 
-                Q3_x = (pi0_eta_val < 0) ? Q3_N_x : Q3_S_x;
-                Q3_y = (pi0_eta_val < 0) ? Q3_N_y : Q3_S_y;
+                // Q3_x = (pi0_eta_val < 0) ? Q3_N_x : Q3_S_x;
+                // Q3_y = (pi0_eta_val < 0) ? Q3_N_y : Q3_S_y;
 
-                q3_x = cos(3*pi0_phi_val);
-                q3_y = sin(3*pi0_phi_val);
-                qQ3_val = q3_x*Q3_x + q3_y*Q3_y;
+                // q3_x = cos(3*pi0_phi_val);
+                // q3_y = sin(3*pi0_phi_val);
+                // qQ3_val = q3_x*Q3_x + q3_y*Q3_y;
             }
 
             h2AsymVsMass[key]->Fill(pi0_mass_val, asym_val);
@@ -912,7 +923,7 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end, Floa
                     if(c == cut_num && do_vn_calc && pi0_mass_val < bg_min) {
                         ++bg_left_ctr[idx];
                         qQ2_bg_left[idx] += qQ2_val;
-                        qQ3_bg_left[idx] += qQ3_val;
+                        // qQ3_bg_left[idx] += qQ3_val;
                     }
 
                     // fill in qQ for the background
@@ -920,7 +931,7 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end, Floa
                     if(c == cut_num && do_vn_calc && pi0_mass_val >= bg_min && pi0_mass_val < bg_max) {
                         ++bg_ctr[idx];
                         qQ2_bg[idx] += qQ2_val;
-                        qQ3_bg[idx] += qQ3_val;
+                        // qQ3_bg[idx] += qQ3_val;
 
                         // range [mean+3sd, 0.4]
                         if(pi0_mass_val < bg_4_max) {
@@ -939,7 +950,7 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end, Floa
                     if(c == cut_num && do_vn_calc && pi0_mass_val >= pi0_mass_low && pi0_mass_val < pi0_mass_high) {
                         ++pi0_ctr[idx];
                         qQ2[idx] += qQ2_val;
-                        qQ3[idx] += qQ3_val;
+                        // qQ3[idx] += qQ3_val;
                         h2Pi0EtaPhi[key]->Fill(pi0_eta_val, pi0_phi_val);
                         if(!isFarNorth_val) h2Pi0EtaPhiv2[key]->Fill(pi0_eta_val, pi0_phi_val);
                         eta_min = min(eta_min, pi0_eta_val);
@@ -995,27 +1006,27 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end, Floa
 
               if (qQ2[idx]) hqQ2[k][key]->Fill(qQ2[idx], pi0_ctr[idx]);
 
-              // v3
-              // compute qQ for the background to the left of the pi0 peak
-              qQ3_bg_left[idx] = (bg_left_ctr[idx]) ? qQ3_bg_left[idx] / bg_left_ctr[idx] : 0;
-              qQ3_bg_min = min(qQ3_bg_min, qQ3_bg_left[idx]);
-              qQ3_bg_max = max(qQ3_bg_max, qQ3_bg_left[idx]);
+              // // v3
+              // // compute qQ for the background to the left of the pi0 peak
+              // qQ3_bg_left[idx] = (bg_left_ctr[idx]) ? qQ3_bg_left[idx] / bg_left_ctr[idx] : 0;
+              // qQ3_bg_min = min(qQ3_bg_min, qQ3_bg_left[idx]);
+              // qQ3_bg_max = max(qQ3_bg_max, qQ3_bg_left[idx]);
 
-              if (qQ3_bg_left[idx]) hqQ3_bg_left[k][key]->Fill(qQ3_bg_left[idx], bg_left_ctr[idx]);
+              // if (qQ3_bg_left[idx]) hqQ3_bg_left[k][key]->Fill(qQ3_bg_left[idx], bg_left_ctr[idx]);
 
-              // compute qQ for the background
-              qQ3_bg[idx] = (bg_ctr[idx]) ? qQ3_bg[idx] / bg_ctr[idx] : 0;
-              qQ3_bg_min = min(qQ3_bg_min, qQ3_bg[idx]);
-              qQ3_bg_max = max(qQ3_bg_max, qQ3_bg[idx]);
+              // // compute qQ for the background
+              // qQ3_bg[idx] = (bg_ctr[idx]) ? qQ3_bg[idx] / bg_ctr[idx] : 0;
+              // qQ3_bg_min = min(qQ3_bg_min, qQ3_bg[idx]);
+              // qQ3_bg_max = max(qQ3_bg_max, qQ3_bg[idx]);
 
-              if (qQ3_bg[idx]) hqQ3_bg[k][key]->Fill(qQ3_bg[idx], bg_ctr[idx]);
+              // if (qQ3_bg[idx]) hqQ3_bg[k][key]->Fill(qQ3_bg[idx], bg_ctr[idx]);
 
-              // compute qQ for the pi0 candiates
-              qQ3[idx] = (pi0_ctr[idx]) ? qQ3[idx] / pi0_ctr[idx] : 0;
-              qQ3_min = min(qQ3_min, qQ3[idx]);
-              qQ3_max = max(qQ3_max, qQ3[idx]);
+              // // compute qQ for the pi0 candiates
+              // qQ3[idx] = (pi0_ctr[idx]) ? qQ3[idx] / pi0_ctr[idx] : 0;
+              // qQ3_min = min(qQ3_min, qQ3[idx]);
+              // qQ3_max = max(qQ3_max, qQ3[idx]);
 
-              if (qQ3[idx]) hqQ3[k][key]->Fill(qQ3[idx], pi0_ctr[idx]);
+              // if (qQ3[idx]) hqQ3[k][key]->Fill(qQ3[idx], pi0_ctr[idx]);
             }
           }
         }
@@ -1040,9 +1051,9 @@ void myAnalysis::process_event(Float_t z_max, Long64_t start, Long64_t end, Floa
     cout << "qQ2 min: " << qQ2_min << ", qQ2 max: " << qQ2_max << endl;
     cout << "qQ2 bg min: " << qQ2_bg_min << ", qQ2 bg max: " << qQ2_bg_max << endl;
     cout << endl;
-    cout << "QQ3 min: " << QQ3_min << ", QQ3 max: " << QQ3_max << endl;
-    cout << "qQ3 min: " << qQ3_min << ", qQ3 max: " << qQ3_max << endl;
-    cout << "qQ3 bg min: " << qQ3_bg_min << ", qQ3 bg max: " << qQ3_bg_max << endl;
+    // cout << "QQ3 min: " << QQ3_min << ", QQ3 max: " << QQ3_max << endl;
+    // cout << "qQ3 min: " << qQ3_min << ", qQ3 max: " << qQ3_max << endl;
+    // cout << "qQ3 bg min: " << qQ3_bg_min << ", qQ3 bg max: " << qQ3_bg_max << endl;
     cout << endl;
     cout << "pi0 eta min: " << eta_min << ", pi0 eta max: " << eta_max << endl;
     cout << "Max Pi0s per event: " << npi0_max << endl;
@@ -1071,10 +1082,10 @@ void myAnalysis::finalize(const string &i_output) {
             output.mkdir((prefix+"/qQ2_bg_left").c_str());
             output.mkdir((prefix+"/qQ2_bg_4sd").c_str());
 
-            output.mkdir((prefix+"/QQ3").c_str());
-            output.mkdir((prefix+"/qQ3").c_str());
-            output.mkdir((prefix+"/qQ3_bg").c_str());
-            output.mkdir((prefix+"/qQ3_bg_left").c_str());
+            // output.mkdir((prefix+"/QQ3").c_str());
+            // output.mkdir((prefix+"/qQ3").c_str());
+            // output.mkdir((prefix+"/qQ3_bg").c_str());
+            // output.mkdir((prefix+"/qQ3_bg_left").c_str());
         }
 
         output.mkdir("QA/h2Pi0EtaPhi");
@@ -1102,8 +1113,8 @@ void myAnalysis::finalize(const string &i_output) {
                 output.cd((prefix+"/QQ2").c_str());
                 hQQ2[k][cent]->Write();
 
-                output.cd((prefix+"/QQ3").c_str());
-                hQQ3[k][cent]->Write();
+                // output.cd((prefix+"/QQ3").c_str());
+                // hQQ3[k][cent]->Write();
             }
         }
 
@@ -1141,14 +1152,14 @@ void myAnalysis::finalize(const string &i_output) {
                     output.cd((prefix+"/qQ2_bg_4sd").c_str());
                     hqQ2_bg_4sd[k][key]->Write();
 
-                    output.cd((prefix+"/qQ3").c_str());
-                    hqQ3[k][key]->Write();
+                    // output.cd((prefix+"/qQ3").c_str());
+                    // hqQ3[k][key]->Write();
 
-                    output.cd((prefix+"/qQ3_bg").c_str());
-                    hqQ3_bg[k][key]->Write();
+                    // output.cd((prefix+"/qQ3_bg").c_str());
+                    // hqQ3_bg[k][key]->Write();
 
-                    output.cd((prefix+"/qQ3_bg_left").c_str());
-                    hqQ3_bg_left[k][key]->Write();
+                    // output.cd((prefix+"/qQ3_bg_left").c_str());
+                    // hqQ3_bg_left[k][key]->Write();
                 }
                 output.cd("QA/hNPi0");
                 hNPi0[key]->Write();
