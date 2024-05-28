@@ -5,11 +5,11 @@
 #include "TH3.h"
 #include "TCanvas.h"
 #include "TSystem.h"
-#include "sPhenixStyle.h"
-#include "sPhenixStyle.C"
+#include "../utils/sPhenixStyle.h"
+#include "../utils/sPhenixStyle.C"
 
 void QAhijing() {
-    gROOT->LoadMacro("sPhenixStyle.C");
+    gROOT->LoadMacro("../utils/sPhenixStyle.C");
     SetsPhenixStyle();
     
     // Define input and output paths

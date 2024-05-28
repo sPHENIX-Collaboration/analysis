@@ -2,10 +2,10 @@
 #include <TH1.h>
 #include <TCanvas.h>
 #include <TLegend.h>
-#include "sPhenixStyle.h"
-#include "sPhenixStyle.C"
+#include "../utils/sPhenixStyle.h"
+#include "../utils/sPhenixStyle.C"
 void QQ_IntegratedOverPT() {
-    gROOT->LoadMacro("sPhenixStyle.C");
+    gROOT->LoadMacro("../utils/sPhenixStyle.C");
     SetsPhenixStyle();
     // Open the ROOT file
     TFile *file = new TFile("/Users/patsfan753/Desktop/p015/MonteCarlo/Integrated_OverPT/Q-vec-corr-anaType-1-hijing-0-20fm.root");

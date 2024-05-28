@@ -1,5 +1,5 @@
-#include "sPhenixStyle.h"
-#include "sPhenixStyle.C"
+#include "../utils/sPhenixStyle.h"
+#include "../utils/sPhenixStyle.C"
 #include <TFile.h>
 #include <TH1F.h>
 #include <iostream>
@@ -2558,7 +2558,7 @@ void initializePaths() {
 }
 void FinalizeResults() {
     initializePaths();
-    gROOT->LoadMacro("sPhenixStyle.C");
+    gROOT->LoadMacro("../utils/sPhenixStyle.C");
     SetsPhenixStyle();
     
     Data defaultData, data_SYST1CEMC, data_SYST2CEMC, data_SYST3DCEMC, data_SYST3UCEMC, data_SYST4CEMC, data_Signal_Bound_Variation;

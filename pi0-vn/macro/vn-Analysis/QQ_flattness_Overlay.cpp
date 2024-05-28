@@ -2,10 +2,10 @@
 #include <TH1.h>
 #include <TCanvas.h>
 #include <TLegend.h>
-#include "sPhenixStyle.h"
-#include "sPhenixStyle.C"
+#include "../utils/sPhenixStyle.h"
+#include "../utils/sPhenixStyle.C"
 void QQ_flattness_Overlay() {
-    gROOT->LoadMacro("sPhenixStyle.C");
+    gROOT->LoadMacro("../utils/sPhenixStyle.C");
     SetsPhenixStyle();
     // Prompt user for input at the beginning of the function
     std::string userPath;

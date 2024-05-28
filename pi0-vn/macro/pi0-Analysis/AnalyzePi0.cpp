@@ -1,5 +1,5 @@
-#include "sPhenixStyle.h"
-#include "sPhenixStyle.C"
+#include "../utils/sPhenixStyle.h"
+#include "../utils/sPhenixStyle.C"
 #include <TROOT.h>
 #include <TColor.h>
 #include <TCanvas.h>
@@ -624,7 +624,7 @@ void initializePaths() {
 }
 void AnalyzePi0() {
     initializePaths();
-    gROOT->LoadMacro("sPhenixStyle.C");
+    gROOT->LoadMacro("../utils/sPhenixStyle.C");
     SetsPhenixStyle();
     // Open the ROOT file once
     TFile *file = new TFile(globalFilename.c_str(), "READ");

@@ -1,5 +1,5 @@
-#include "sPhenixStyle.h"
-#include "sPhenixStyle.C"
+#include "../utils/sPhenixStyle.h"
+#include "../utils/sPhenixStyle.C"
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -637,7 +637,7 @@ void RatioPlot(const std::unordered_map<int, RunData>& runData_, const std::stri
     delete cRatio;
 }
 void ProcessQA(const std::string& category, const std::unordered_map<int, int>& colorMap) {
-    gROOT->LoadMacro("sPhenixStyle.C");
+    gROOT->LoadMacro("../utils/sPhenixStyle.C");
     SetsPhenixStyle();
     std::string normalizeFilePath = baseDir + category + "/Normalize.txt";
     std::unordered_map<int, RunData> runData_;
@@ -662,7 +662,7 @@ void ProcessQA(const std::string& category, const std::unordered_map<int, int>& 
     writeDataToCSV(("/Users/patsfan753/Desktop/p015/QA/" + category + "/sorted_ave_ratios.csv").c_str());
 }
 void GenerateAdditionalQA() {
-    gROOT->LoadMacro("sPhenixStyle.C");
+    gROOT->LoadMacro("../utils/sPhenixStyle.C");
     SetsPhenixStyle();
     
     double totalEntriesE_MB = 0.0, totalEntriesE_Central = 0.0;
@@ -924,7 +924,7 @@ void initializePaths() {
 void QA() { //main function
     initializePaths();
     
-    gROOT->LoadMacro("sPhenixStyle.C");
+    gROOT->LoadMacro("../utils/sPhenixStyle.C");
     SetsPhenixStyle();
     
     EMCalStatistics plotter;

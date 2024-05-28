@@ -1,5 +1,5 @@
-#include "sPhenixStyle.h"
-#include "sPhenixStyle.C"
+#include "../utils/sPhenixStyle.h"
+#include "../utils/sPhenixStyle.C"
 
 #include <TFile.h>
 #include <TKey.h>
@@ -12,7 +12,7 @@
 
 void DiphotonQA() {
     gROOT->SetBatch(kTRUE);
-    gSystem->Load("sPhenixStyle.C");
+    gSystem->Load("../utils/sPhenixStyle.C");
     SetsPhenixStyle();
 
     // Prompt for user input at the start of the function
