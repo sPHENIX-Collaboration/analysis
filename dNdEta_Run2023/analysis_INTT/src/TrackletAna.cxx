@@ -24,9 +24,9 @@ bool useetadepadccut = false;
 
 int main(int argc, char *argv[])
 {
-    if (argc != 9)
+    if (argc != 10)
     {
-        cout << "Usage: ./TrackletAna [isdata] [evt-vtx map file] [infile] [outfile] [NevtToRun] [dRCut] [random zvtx] [random cluster set number]" << endl;
+        cout << "Usage: ./TrackletAna [isdata] [evt-vtx map file] [infile] [outfile] [NevtToRun] [dRCut] [random zvtx] [random cluster set number] [clusadccutset]" << endl;
         exit(1);
     }
 
@@ -36,7 +36,6 @@ int main(int argc, char *argv[])
         cout << "argv[" << i << "] = " << argv[i] << endl;
     }
 
-    // Usage: ./TrackletAna [isdata] [evt-vtx map file] [infile] [outfile] [NevtToRun] [dRCut] [random zvtx] [random cluster set number]
     bool IsData = (TString(argv[1]).Atoi() == 1) ? true : false;
     TString EvtVtx_map_filename = TString(argv[2]);
     TString infilename = TString(argv[3]);
@@ -45,6 +44,7 @@ int main(int argc, char *argv[])
     float dRCut = TString(argv[6]).Atof();
     bool userandomzvtx = (TString(argv[7]).Atoi() == 1) ? true : false;
     int randclusset = TString(argv[8]).Atoi();
+    int clusadccutset = TString(argv[9]).Atoi();
 
     TString idxstr = (IsData) ? "INTT_BCO" : "event";
 
@@ -58,8 +58,21 @@ int main(int argc, char *argv[])
     // Vertex Z reweighting
     TH1F *hM_vtxzweight = VtxZ_ReweiHist();
 
-    // Eta-dependent cluster adc cut
-    TH1F *hM_adccut = ClusADCCut_StepFunc(30, 1);
+    // Random cluster fraction
+    float randclusfrac = RandomHit_fraction(randclusset);
+
+    // cluster adc cut
+    int clusadccut_pre = ConstADCCut(clusadccutset);
+    TH1F *hM_adccut;
+    if (clusadccut_pre == -1) // eta-dependent adc cut
+    {
+        useetadepadccut = true;
+        hM_adccut = ClusADCCut_StepFunc(30, 1); 
+    }
+    else
+    {
+        useetadepadccut = false;
+    }
 
     TFile *f = new TFile(infilename, "READ");
     TTree *t = (TTree *)f->Get("EventTree");
@@ -171,7 +184,7 @@ int main(int argc, char *argv[])
             // Hit::Hit(float x, float y, float z, float vtxX, float vtxY, float vtxZ, int layer, float phisize, unsigned int clusadc)
             Hit *hit = new Hit(ClusX->at(ihit), ClusY->at(ihit), ClusZ->at(ihit), PV[0], PV[1], PVz, layer, ClusPhiSize->at(ihit), ClusAdc->at(ihit));
 
-            float adccut = (useetadepadccut) ? hM_adccut->GetBinContent(hM_adccut->FindBin(hit->Eta())) : 35;
+            float adccut = (useetadepadccut) ? hM_adccut->GetBinContent(hM_adccut->FindBin(hit->Eta())) : static_cast<float>(clusadccut_pre);
             if (ClusAdc->at(ihit) < adccut)
                 continue;
 
@@ -185,7 +198,7 @@ int main(int argc, char *argv[])
         }
 
         // For systematic: adding random clusters
-        float randclusfrac = RandomHit_fraction(randclusset);
+        // float randclusfrac = RandomHit_fraction(randclusset);
         if (randclusfrac > 0)
         {
             int Nrandclus_inner = (int) randclusfrac * 0.01 * tkldata.layers[0].size();

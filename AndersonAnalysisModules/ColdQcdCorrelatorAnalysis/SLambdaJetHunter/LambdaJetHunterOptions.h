@@ -13,10 +13,11 @@
 #include <string>
 #include <utility>
 // analysis utilities
-#include "/sphenix/user/danderson/install/include/scorrelatorutilities/Types.h"
-#include "/sphenix/user/danderson/install/include/scorrelatorutilities/Constants.h"
-#include "/sphenix/user/danderson/install/include/slambdajethunter/SLambdaJetHunter.h"
-#include "/sphenix/user/danderson/install/include/slambdajethunter/SLambdaJetHunterConfig.h"
+#include <scorrelatorutilities/Types.h>
+#include <scorrelatorutilities/Constants.h>
+// module configuration
+#include <slambdajethunter/SLambdaJetHunter.h>
+#include <slambdajethunter/SLambdaJetHunterConfig.h>
 
 // make common namespacs implicit
 using namespace std;

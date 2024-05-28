@@ -32,12 +32,13 @@
 // calo/pf libraries
 #include <caloreco/RawClusterBuilderTopo.h>
 #include <particleflowreco/ParticleFlowReco.h>
-// analysis utilities
+// plugin definitions
+#include <scorrelatorqamaker/SMakeClustQATree.h>
+#include <scorrelatorqamaker/SCheckTrackPairs.h>
+#include <scorrelatorqamaker/SMakeTrackQATuple.h>
+#include <scorrelatorqamaker/SCorrelatorQAMaker.h>
+// macro options
 #include "CorrelatorQAMakerOptions.h"
-#include "/sphenix/user/danderson/install/include/scorrelatorqamaker/SCorrelatorQAMaker.h"
-#include "/sphenix/user/danderson/install/include/scorrelatorqamaker/SCheckTrackPairs.h"
-#include "/sphenix/user/danderson/install/include/scorrelatorqamaker/SMakeTrackQATuple.h"
-#include "/sphenix/user/danderson/install/include/scorrelatorqamaker/SMakeClustQATree.h"
 
 // make common namespaces implicit
 using namespace std;
@@ -48,8 +49,8 @@ R__LOAD_LIBRARY(libg4eval.so)
 R__LOAD_LIBRARY(libfun4all.so)
 R__LOAD_LIBRARY(libcalo_reco.so)
 R__LOAD_LIBRARY(libparticleflow.so)
-R__LOAD_LIBRARY(/sphenix/user/danderson/install/lib/libscorrelatorqamaker.so)
-R__LOAD_LIBRARY(/sphenix/user/danderson/install/lib/libscorrelatorutilities.so)
+R__LOAD_LIBRARY(libscorrelatorqamaker.so)
+R__LOAD_LIBRARY(libscorrelatorutilities.so)
 
 // default input/output 
 static const vector<string> VecInFilesDefault = {
