@@ -17,7 +17,7 @@
 #include <Math/MinimizerOptions.h>
 
 // -- sPHENIX Style
-#include "sPhenixStyle.C"
+#include "../utils/sPhenixStyle.C"
 
 using std::cout;
 using std::cerr;

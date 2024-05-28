@@ -10,53 +10,49 @@ sPHENIX_CPPFLAGS = -I$(MYINSTALL)/include -I$(OFFLINE_MAIN)/include -I$(OFFLINE_
 LIBFLAGS = -L$(MYINSTALL)/lib -lcaloTreeGen
 sPHENIX_LIBFLAGS = -L$(OFFLINE_MAIN)/lib -lfun4all -lg4centrality -lphparameter -lcalotrigger -lcalo_reco -lphool
 
-all: bin/Fun4All_CaloTreeGen bin/pi0Ana bin/truthPi0Ana bin/convert bin/Q-vec-corr bin/mixedEvent bin/vnAna bin/vnAnaMC bin/runQA bin/runQA-2 bin/fits bin/plot-vn
+all: bin/Fun4All_CaloTreeGen bin/pi0Ana bin/truthPi0Ana bin/convert bin/Q-vec-corr bin/mixedEvent bin/vnAna bin/vnAnaMC bin/runQA bin/runQA-2 bin/fits
 
-bin/Fun4All_CaloTreeGen: macro/Fun4All_CaloTreeGen.C
+bin/Fun4All_CaloTreeGen: macro/Fun4All/Fun4All_CaloTreeGen.C
 	mkdir -p bin
 	g++ -o $@ $< $(ROOT_CPPFLAGS) $(sPHENIX_CPPFLAGS) $(LIBFLAGS) $(ROOT_LIBFLAGS) $(sPHENIX_LIBFLAGS)
 
-bin/pi0Ana: macro/pi0Analysis.C
+bin/pi0Ana: macro/pi0-Analysis/pi0Analysis.C
 	mkdir -p bin
 	g++ -o $@ $< $(ROOT_CPPFLAGS) $(ROOT_LIBFLAGS)
 
-bin/truthPi0Ana: macro/truthPi0Analysis.C
+bin/truthPi0Ana: macro/pi0-Analysis/truthPi0Analysis.C
 	mkdir -p bin
 	g++ -o $@ $< $(ROOT_CPPFLAGS) $(ROOT_LIBFLAGS)
 
-bin/vnAna: macro/vnAnalysis.C
+bin/vnAna: macro/vn-Analysis/vnAnalysis.C
 	mkdir -p bin
 	g++ -o $@ $< $(ROOT_CPPFLAGS) $(ROOT_LIBFLAGS)
 
-bin/vnAnaMC: macro/vnAnalysisMC.C
+bin/vnAnaMC: macro/vn-Analysis/vnAnalysisMC.C
 	mkdir -p bin
 	g++ -o $@ $< $(ROOT_CPPFLAGS) $(ROOT_LIBFLAGS)
 
-bin/runQA: macro/runQA.C
+bin/runQA: macro/QA/runQA.C
 	mkdir -p bin
 	g++ -o $@ $< $(ROOT_CPPFLAGS) $(ROOT_LIBFLAGS)
 
-bin/fits: macro/fits.C
+bin/fits: macro/fit/fits.C
 	mkdir -p bin
 	g++ -o $@ $< $(ROOT_CPPFLAGS) $(ROOT_LIBFLAGS)
 
-bin/runQA-2: macro/runQA-2.C
+bin/runQA-2: macro/QA/runQA-2.C
 	mkdir -p bin
 	g++ -o $@ $< $(ROOT_CPPFLAGS) $(ROOT_LIBFLAGS)
 
-bin/mixedEvent: macro/mixedEvent.C
+bin/mixedEvent: macro/mixed-event/mixedEvent.C
 	mkdir -p bin
 	g++ -o $@ $< $(ROOT_CPPFLAGS) $(ROOT_LIBFLAGS)
 
-bin/Q-vec-corr: macro/Q-vector-correction.C
+bin/Q-vec-corr: macro/vn-Analysis/Q-vector-correction.C
 	mkdir -p bin
 	g++ -o $@ $< $(ROOT_CPPFLAGS) $(ROOT_LIBFLAGS)
 
-bin/convert: macro/convert.C
-	mkdir -p bin
-	g++ -o $@ $< $(ROOT_CPPFLAGS) $(ROOT_LIBFLAGS)
-
-bin/plot-vn: macro/plot-vn.C
+bin/convert: macro/utils/convert.C
 	mkdir -p bin
 	g++ -o $@ $< $(ROOT_CPPFLAGS) $(ROOT_LIBFLAGS)
 
@@ -70,4 +66,3 @@ clean:
 	rm bin/vnAnaMC
 	rm bin/runQA
 	rm bin/fits
-	rm bin/plot-vn
