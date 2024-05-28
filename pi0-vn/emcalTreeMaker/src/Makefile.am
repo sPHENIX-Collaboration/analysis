@@ -18,8 +18,7 @@ AM_LDFLAGS = \
   -lglobalvertex \
   -lglobalvertex_io \
   -lmbd_io \
-  -lcentrality_io \
-  -lcalotrigger_io
+  -lcentrality_io
 
 ROOTDICTS = caloTreeGen_Dict.cc
 

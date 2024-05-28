@@ -16,7 +16,6 @@
 //ROOT stuff
 #include <TH1F.h>
 #include <TH2F.h>
-// #include <TH3F.h>
 #include <TFile.h>
 #include <TLorentzVector.h>
 
@@ -32,6 +31,7 @@
 #include <mbd/MbdPmtContainerV1.h>
 #include <mbd/MbdPmtHit.h>
 #include <mbd/MbdGeom.h>
+#include <mbd/MbdOut.h>
 
 //Tower stuff
 #include <calobase/TowerInfoContainer.h>
@@ -43,9 +43,6 @@
 
 // Centrality
 #include <centrality/CentralityInfo.h>
-
-// Minimum Bias
-#include <calotrigger/MinimumBiasInfo.h>
 
 // Truth
 #include <g4main/PHG4TruthInfoContainer.h>
@@ -206,6 +203,14 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
     return Fun4AllReturnCodes::ABORTEVENT;
   }
 
+  MbdOut* _mbd_out = findNode::getClass<MbdOut>(topNode, "MbdOut");
+
+  if (!_mbd_out)
+  {
+    std::cout << PHWHERE << "caloTreeGen::process_event: Could not find node MbdOut" << std::endl;
+    return Fun4AllReturnCodes::ABORTEVENT;
+  }
+
   CentralityInfo *centInfo = findNode::getClass<CentralityInfo>(topNode,"CentralityInfo");
   if(!centInfo)
   {
@@ -218,18 +223,14 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
   cent = (isSim) ? centInfo->get_centile(CentralityInfo::PROP::bimp)/100. :
                    centInfo->get_centile(CentralityInfo::PROP::mbd_NS);
 
-  // grab impact parameter in MC
-  // if(isSim) {
-  //   b = centInfo->get_quantity(CentralityInfo::PROP::bimp);
-  // }
-
   //----------------------------------vertex------------------------------------------------------//
   GlobalVertexMap* vertexmap = findNode::getClass<GlobalVertexMap>(topNode, "GlobalVertexMap");
-  if (!vertexmap || vertexmap->empty() || !(vertexmap->begin()->second))
+  if (!vertexmap || vertexmap->empty() || !(vertexmap->begin()->second) || !(vertexmap->begin()->second->isValid()))
   {
-    if(!vertexmap)              std::cout << PHWHERE << "caloTreeGen::process_event: Could not find node GlobalVertexMap" << std::endl;
-    else if(vertexmap->empty()) std::cout << PHWHERE << "caloTreeGen::process_event: GlobalVertexMap is empty" << std::endl;
-    else                        std::cout << PHWHERE << "caloTreeGen::process_event: GlobalVertex is null" << std::endl;
+    if(!vertexmap)                         std::cout << PHWHERE << "caloTreeGen::process_event: Could not find node GlobalVertexMap" << std::endl;
+    else if(vertexmap->empty())            std::cout << PHWHERE << "caloTreeGen::process_event: GlobalVertexMap is empty" << std::endl;
+    else if(!(vertexmap->begin()->second)) std::cout << PHWHERE << "caloTreeGen::process_event: GlobalVertex is null" << std::endl;
+    else                                   std::cout << PHWHERE << "caloTreeGen::process_event: GlobalVertex is not valid" << std::endl;
     return Fun4AllReturnCodes::ABORTEVENT;
   }
 
@@ -240,13 +241,34 @@ Int_t caloTreeGen::process_event(PHCompositeNode *topNode)
   hVtxZ->Fill(vtx_z);
   //----------------------------------vertex------------------------------------------------------//
 
-  MinimumBiasInfo *minBiasInfo = findNode::getClass<MinimumBiasInfo>(topNode,"MinimumBiasInfo");
-  Bool_t isMinBias = (minBiasInfo) ? minBiasInfo->isAuAuMinimumBias() : false;
+  //----------------------------------Minimum Bias Classifier------------------------------------------------------//
+  Bool_t isMinBias = true;
+  for (int i = 0; i < 2; i++)
+  {
+    if (_mbd_out->get_npmt(i) < _mbd_tube_cut)
+    {
+      isMinBias = false;
+      std::cout << "i: " << i << ", _mbd_out->get_npmt: " << _mbd_out->get_npmt(i) << std::endl;
+    }
+  }
+
+  if (_mbd_out->get_q(1) < _mbd_north_cut && _mbd_out->get_q(0) > _mbd_south_cut)
+  {
+    isMinBias = false;
+    std::cout << "_mbd_out->get_q(0): "   << _mbd_out->get_q(0)
+              << ", _mbd_out->get_q(1): " << _mbd_out->get_q(1) << std::endl;
+  }
+
+  if(abs(vtx_z) >= _z_vtx_cut) {
+    isMinBias = false;
+  }
+
   if(!isMinBias)
   {
     std::cout << PHWHERE << "caloTreeGen::process_event: " << event << " is not MinimumBias" << std::endl;
     return Fun4AllReturnCodes::ABORTEVENT;
   }
+  //----------------------------------Minimum Bias Classifier------------------------------------------------------//
 
   hVtxZv2->Fill(vtx_z);
 

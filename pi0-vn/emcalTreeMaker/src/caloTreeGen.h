@@ -18,7 +18,6 @@ class RawCluster;
 class TowerInfoContainer;
 class TH1F;
 class TH2F;
-class TH3F;
 class TowerInfo;
 
 class caloTreeGen : public SubsysReco
@@ -289,6 +288,12 @@ class caloTreeGen : public SubsysReco
 
     // Define z-vertex cut
     Float_t vtx_z_max;
+
+    // MB Info Cuts
+    const Int_t   _mbd_tube_cut{2};
+    const Float_t _mbd_north_cut{10.};
+    const Float_t _mbd_south_cut{150};
+    const Float_t _z_vtx_cut{60.};
 
     // branches of T
     Int_t   run      = 0;
