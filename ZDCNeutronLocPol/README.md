@@ -21,7 +21,7 @@ To detect a percent level asymmetry it becomes necessary to run over greater tha
 5) In runsmd.job, set Queue <number_of_jobs>, default <number_of_jobs> = 500 (do not do too many more than this at one time)  
 6) `condor_submit runsmd.job`
 
-**Calculating square root asymmetries:**
+**Square root asymmetries:**  
 Once you have your trees produced, the raw square root asymmetries are calculated and drawn by:  
 1) `root.exe`
 2) `.x drawAsym.C(<tree_file>,<storenumber>,<runnumber>)`
@@ -31,7 +31,7 @@ Once you have your trees produced, the raw square root asymmetries are calculate
 `<runnumber>`: run number, default: 42796  
 
 
-**Example results:**
-The asymmetries from Runs 42796+42797 in store 34485 can be seen in _macros/output_.
+**Example results:**  
+The asymmetries of Runs 42796+42797 from store 34485 can be seen in `macros/output`
 
 Contact dloom@umich.edu if you have any questions.
