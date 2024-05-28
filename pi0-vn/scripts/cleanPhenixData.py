@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import pandas as pd
 
 phenix_data_path = '/Users/patsfan753/Desktop/PHENIX.csv'
