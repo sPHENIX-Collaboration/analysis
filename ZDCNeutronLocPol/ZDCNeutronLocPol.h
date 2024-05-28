@@ -56,10 +56,13 @@ class ZDCNeutronLocPol : public SubsysReco
   float smd_south_rgain[16] = {1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0};
   float smd_north_rgain[16] = {1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0};
 
+
   float zdcS1_adc = 0.;
   float zdcS2_adc = 0.;
+  float zdcS3_adc = 0.;
   float zdcN1_adc = 0.;
   float zdcN2_adc = 0.;
+  float zdcN3_adc = 0.;
 
   float rawADC[32] = {0.0f};
   float pedADC[32] = {0.0f};
@@ -78,6 +81,14 @@ class ZDCNeutronLocPol : public SubsysReco
   float s_y = 0;
 
   int bunchnumber = 0;
+
+
+  //int evtseq_gl1 = 0;
+  //int evtseq_zdc = 0;
+  //uint64_t BCO_gl1 = 0;
+  //uint64_t BCO_zdc = 0;
+
+
 
   int showerCutN = 0;
   int showerCutS = 0;

@@ -54,7 +54,10 @@ void injectAsymmetry()
 
     if (i % 100000 == 0){std::cout << "entry " << i << std::endl;}
     bunchnumber = Rand.Uniform(0,111);
-    n_y = Rand.Gaus(0, 1.5);
+    //n_y = Rand.Gaus(0, 1.5);
+    //s_y = Rand.Gaus(0, 1.5);
+
+    n_y = Rand.Gaus(0.8, 1.5);
     s_y = Rand.Gaus(0, 1.5);
     
     if (bpat[bunchnumber] == 1)

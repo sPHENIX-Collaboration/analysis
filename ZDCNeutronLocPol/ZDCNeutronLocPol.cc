@@ -54,6 +54,10 @@ int ZDCNeutronLocPol::Init(PHCompositeNode * /*topNode*/)
   smdHits  = new TTree("smdHits","smdHits");
   smdHits -> SetDirectory(0);
   smdHits -> Branch("bunchnumber",  &bunchnumber, "bunchnumber/I");
+  //smdHits -> Branch("evtseq_gl1",  &evtseq_gl1, "evtseq_gl1/I");
+  //smdHits -> Branch("evtseq_zdc",  &evtseq_zdc, "evtseq_zdc/I");
+  //smdHits -> Branch("BCO_gl1",  &BCO_gl1, "BCO_gl1/l");
+  //smdHits -> Branch("BCO_zdc",  &BCO_zdc, "BCO_zdc/l");
   smdHits -> Branch("showerCutN",  &showerCutN, "showerCutN/I");
   smdHits -> Branch("showerCutS",  &showerCutS, "showerCutS/I");
   smdHits -> Branch("n_x", &n_x, "n_x/F");
@@ -62,8 +66,10 @@ int ZDCNeutronLocPol::Init(PHCompositeNode * /*topNode*/)
   smdHits -> Branch("s_y", &s_y, "s_y/F");
   smdHits -> Branch("zdcN1_adc", &zdcN1_adc, "zdcN1_adc/F");
   smdHits -> Branch("zdcN2_adc", &zdcN2_adc, "zdcN2_adc/F");
+  smdHits -> Branch("zdcN3_adc", &zdcN3_adc, "zdcN3_adc/F");
   smdHits -> Branch("zdcS1_adc", &zdcS1_adc, "zdcS1_adc/F");
   smdHits -> Branch("zdcS2_adc", &zdcS2_adc, "zdcS2_adc/F");
+  smdHits -> Branch("zdcS3_adc", &zdcS3_adc, "zdcS3_adc/F");
   smdHits -> Branch("veto_NF", &veto_NF, "veto_NF/F");
   smdHits -> Branch("veto_NB", &veto_NB, "veto_NB/F");
   smdHits -> Branch("veto_SF", &veto_SF, "veto_SF/F");
@@ -114,17 +120,23 @@ int ZDCNeutronLocPol::process_event(PHCompositeNode *topNode)
   if (p_gl1)
   {
     bunchnumber = p_gl1->getBunchNumber();
-  
+    if (evtcnt  % 1000 == 0){std::cout << bunchnumber << std::endl;}
     if (zdc_cont->get_npackets() != 1){return Fun4AllReturnCodes::EVENT_OK;}
 
     CaloPacket *p_zdc = zdc_cont->getPacket(0);
-  
+
     if (p_zdc)
     {
       int nThresholdNVer = 0;
       int nThresholdNHor = 0;
       int nThresholdSVer = 0;
       int nThresholdSHor = 0;
+
+      //evtseq_gl1 = p_gl1->getEvtSequence();
+      //evtseq_zdc = p_zdc->getEvtSequence();
+      //BCO_gl1 = p_gl1->getBCO();
+      //BCO_zdc = p_zdc->getBCO();
+
 
       // in this for loop we get: zdc_adc and smd_adc
       for (int c = 0; c < p_zdc->iValue(0, "CHANNELS"); c++)
@@ -209,6 +221,11 @@ int ZDCNeutronLocPol::process_event(PHCompositeNode *topNode)
 	      zdcS2_adc = signalFast;
 	      continue;
 	    }
+	    if (c == 3)
+	    {
+	      zdcS3_adc = signalFast;
+	      continue;
+	    }
 	  }
 	  else if (zdc_side == 1)
 	  {
@@ -220,6 +237,11 @@ int ZDCNeutronLocPol::process_event(PHCompositeNode *topNode)
 	    if (c == 10)
 	    {
 	      zdcN2_adc = signalFast;
+	      continue;
+	    }
+	    if (c == 12)
+	    {
+	      zdcN3_adc = signalFast;
 	      continue;
 	    }
 	  }
@@ -255,8 +277,8 @@ int ZDCNeutronLocPol::process_event(PHCompositeNode *topNode)
 	  h_pedADC[c-48]->Fill(pedFast);
 	  h_signalADC[c-48]->Fill(signalFast);
 
-	  if (c < 56 && signalFast > 100){nThresholdNHor++;}
-	  if (c >= 56 && signalFast > 100){nThresholdNVer++;}
+	  if (c < 56 && signalFast > 5.){nThresholdNHor++;}
+	  if (c >= 56 && signalFast > 5.){nThresholdNVer++;}
 	  continue;
         }
 	//////// end North SMD///////////////
@@ -290,8 +312,8 @@ int ZDCNeutronLocPol::process_event(PHCompositeNode *topNode)
 	  h_pedADC[c-96]->Fill(pedFast);
 	  h_signalADC[c-96]->Fill(signalFast);
 
-	  if (c < 120 && signalFast > 100){nThresholdSHor++;}
-	  if (c >= 120 && signalFast > 100){nThresholdSVer++;}
+	  if (c < 120 && signalFast > 5.){nThresholdSHor++;}
+	  if (c >= 120 && signalFast > 5.){nThresholdSVer++;}
 	  continue;
         }
 	/////// end South SMD //////////////
@@ -400,7 +422,7 @@ void ZDCNeutronLocPol::CompSmdPos()  //computing position with weighted averages
   float w_sum[4];
   memset(w_sum, 0, sizeof(w_sum));
 
-  float smd_threshold = 50.;
+  float smd_threshold = 5.;
 
   // these constants convert the SMD channel number into real dimensions (cm's)
   const float hor_scale = 2.0 * 11.0 / 10.5 * sin(3.1415 / 4);  // from gsl_math.h
