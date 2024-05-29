@@ -259,11 +259,30 @@ Track Relevant Output in CSV tracking via indices and unique cut combinations
  */
 void WriteDataToCSV(int histIndex, const CutValues& cutValues, double fitMean, double fitMeanError, double fitSigma, double fitSigmaError, const SignalBackgroundRatio& sbRatios, double signalYield, double signalError, double numEntries, double chi2) {
 
-    std::ifstream checkFile(csv_filename);
+    // Check if file is empty or if the histIndex already exists in the file
+    std::ifstream checkFile(csv_filename, std::ios::in);
     bool fileIsEmpty = checkFile.peek() == std::ifstream::traits_type::eof();
+    std::string line;
+    bool indexExists = false;
+    
+    while (std::getline(checkFile, line)) {
+        std::stringstream ss(line);
+        std::string value;
+        std::getline(ss, value, ',');  // Get the first value (histIndex)
+        if (!value.empty() && value != "Index" && std::stoi(value) == histIndex) {
+            indexExists = true;
+            break;
+        }
+    }
     checkFile.close();
+    
+    // If the histIndex is already in the file, return without writing
+    if (indexExists) {
+        return;
+    }
 
     std::ofstream file(csv_filename, std::ios::app); // Open the file in append mode
+
 
     if (!file.is_open()) {
         std::cerr << "Unable to open CSV file for writing." << std::endl;
@@ -708,7 +727,7 @@ void plotSigma(Data& data1, Data& data2) {
     c_1GaussSigma->SaveAs("/Users/patsfan753/Desktop/p015/MonteCarlo/Integrated_OverPT/p015/InvMass/Plots/GaussSigma.png");
 }
 
-void plotSB(Data& data1, Data& data2) {
+void plotSB(Data& data1) {
     // Prepare the graph
     TGraphErrors* graph_1 = new TGraphErrors();
     int pointIndex = 0;
@@ -735,12 +754,11 @@ void plotSB(Data& data1, Data& data2) {
     // Loop over each centrality range
     for (size_t i = 0; i < centralityCenters.size(); ++i) {
         for (size_t j = 0; j < values_1[i]->size(); ++j) {
-            double y = (*values_1[i])[j];
-            double error = (*errors_1[i])[j];
-            graph_1->SetPoint(pointIndex, centralityCenters[i], y);
-            graph_1->SetPointError(pointIndex, 0, error);
+            std::cout << "Plotting for graph_1: Centrality Center=" << centralityCenters[i]
+                      << ", SB=" << (*values_1[i])[j] << ", SB_Error =" << (*errors_1[i])[j] << std::endl;
+            graph_1->SetPoint(pointIndex, centralityCenters[i], (*values_1[i])[j]);
+            graph_1->SetPointError(pointIndex, 0, (*errors_1[i])[j]);
         
-            
             pointIndex++;
         }
     }
@@ -907,6 +925,6 @@ void AnalyzePi0_IntegratedOverPT() {
     Read_DataSet(PlotByPlotPath_Simulation, simulationPlotByPlot);
     plotMean(plotByplot, simulationPlotByPlot);
     plotSigma(plotByplot, simulationPlotByPlot);
-    plotSB(plotByplot, simulationPlotByPlot);
+    plotSB(plotByplot);
 }
 
