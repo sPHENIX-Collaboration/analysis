@@ -1,8 +1,1 @@
-* Quick testing commands:
-#+begin_src bash
-./bin/Fun4All_CaloTreeGen files/jamie-ana395-2023p007/dst_calo-00023020.list qa.root ntp.root 0 0.5 4 2>/dev/null 1>log.txt &
-#+end_src
-
-#+begin_src bash
-make install -j8 --directory build-trigger && rm bin/Fun4All_CaloTreeGen && make && ./bin/Fun4All_CaloTreeGen DST_CALO_run1auau_ana403_2023p011-00023020-0100.root a.root b.root 0 2>/dev/null
-#+end_src
+#+title: Pi0 Vn Analysis
