@@ -385,7 +385,7 @@ void myAnalysis::process_event(Int_t samples, const string &outputCSV, const str
 
     // write header
     // output << "Index,v2,v2_err,v2_type_4,v2_type_4_err,v2_type_4sd,v2_type_4sd_err,v3,v3_err,v2_m,v2_m_err,v2_bg,v2_bg_err,v2_bg_4,v2_bg_4_err,v2_bg_4sd,v2_bg_4sd_err" << endl;
-    output << "Index,v2,v2_err,v2_type_4,v2_type_4_err,v2_type_4sd,v2_type_4sd_err,v2_m,v2_m_err,v2_bg,v2_bg_err,v2_bg_4,v2_bg_4_err,v2_bg_4sd,v2_bg_4sd_err" << endl;
+    output << "Index,v2,v2_err,Keff_v2,v2_type_4,v2_type_4_err,v2_type_4sd,v2_type_4sd_err,v2_m,v2_m_err,v2_bg,v2_bg_err,v2_bg_4,v2_bg_4_err,v2_bg_4sd,v2_bg_4sd_err" << endl;
     output2 << "Index,Sample,v2,v2_m,v2_bg,weight" << endl;
 
     stringstream s;
@@ -495,7 +495,7 @@ void myAnalysis::process_event(Int_t samples, const string &outputCSV, const str
 
             s.str("");
 
-            s << idx << "," << v2 << "," << v2_err << ","
+            s << idx << "," << v2 << "," << v2_err << "," << Keff_v2 << ","
                             << v2_type_4 << "," << v2_type_4_err << ","
                             << v2_type_4sd << "," << v2_type_4sd_err << ","
                             // << v3 << "," << v3_err << ","
