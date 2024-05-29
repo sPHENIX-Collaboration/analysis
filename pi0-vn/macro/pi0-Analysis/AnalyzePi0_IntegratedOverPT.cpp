@@ -1,5 +1,5 @@
-#include "../utils/sPhenixStyle.h"
-#include "../utils/sPhenixStyle.C"
+#include "sPhenixStyle.h"
+#include "sPhenixStyle.C"
 #include <TROOT.h>
 #include <TColor.h>
 #include <TCanvas.h>
@@ -25,7 +25,7 @@ struct CutValues {
 CutValues globalCutValues;
 
 // Global variable
-std::string basePath = "/Users/patsfan753/Desktop/p015/MonteCarlo/Integrated_OverPT/p015/InvMass/";
+std::string basePath = "/Users/patsfan753/Desktop/p015/IntegratedOverPt/InvMass/";
 std::string globalDataPath = basePath + "CSV/";
 std::string globalPlotOutput = basePath + "Plots/";
 std::string globalFilename = basePath + "hPi0Mass_EA1_EB1_Asym0point5_DelrMin0_DelrMax1_Chi4.root";
@@ -53,7 +53,7 @@ TFitResultPtr PerformFitting(TH1F* hPi0Mass, TF1*& totalFit, double& fitStart, d
     totalFit = new TF1("totalFit", "gaus(0) + pol2(3)", fitStart, fitEnd);
     totalFit->SetLineColor(kRed);
 
-    double meanEstimate = 0.2;
+    double meanEstimate = 0.18;
     
     double amplitudeEstimate = hPi0Mass->GetBinContent(hPi0Mass->GetXaxis()->FindBin(meanEstimate));
     totalFit->SetParameter(0, amplitudeEstimate);
@@ -214,19 +214,19 @@ double CalculateSignalYieldAndError(TH1F* hPi0Mass, TF1* polyFit, double fitMean
 void DrawCanvasText(TLatex& latex, const Range& selectedRange, double fitMean, double fitSigma, const SignalBackgroundRatio& sbRatios, double signalYield, double signalYieldError, double numEntries, double chi2, double NDF, int currentIndex) {
     // Drawing text related to the range and cuts
     std::ostringstream mbdStream, ptStream;
-    mbdStream << std::fixed << std::setprecision(0) << "Centrality: " << selectedRange.mbdLow << " - " << selectedRange.mbdHigh << "%";
-    ptStream << std::fixed << std::setprecision(2) << selectedRange.ptLow << " #leq Diphoton p_{T} < " << selectedRange.ptHigh << " GeV";
+    mbdStream << std::fixed << std::setprecision(0) << "#bf{Centrality:} " << selectedRange.mbdLow << " - " << selectedRange.mbdHigh << "%";
+    ptStream << std::fixed << std::setprecision(2) << selectedRange.ptLow << " #leq p_{T}^{#gamma#gamma} < " << selectedRange.ptHigh << " GeV";
 
-    latex.SetTextSize(0.038);
-    latex.DrawLatex(0.55, 0.76, mbdStream.str().c_str());
-    latex.DrawLatex(0.55, 0.71, ptStream.str().c_str());
-    latex.DrawLatex(0.55, 0.66, Form("Entries = %.0f", numEntries));
+    latex.SetTextSize(0.046);
+    latex.DrawLatex(0.2, 0.88, mbdStream.str().c_str());
+    latex.DrawLatex(0.2, 0.82, ptStream.str().c_str());
+//    latex.DrawLatex(0.2, 0.77, Form("Asymmetry < %.2f", globalCutValues.asymmetry));
+//    latex.DrawLatex(0.2, 0.71, Form("Cluster E_{Core} #geq %.2f GeV", globalCutValues.clusEA));
     
-    latex.DrawLatex(0.2, 0.9, Form("Asymmetry < %.2f", globalCutValues.asymmetry));
-    latex.DrawLatex(0.2, 0.85, Form("Cluster #chi^{2} < %.2f", globalCutValues.chi));
-    latex.DrawLatex(0.2, 0.8, Form("Cluster E_{A} #geq %.2f GeV", globalCutValues.clusEA));
-    latex.DrawLatex(0.2, 0.75, Form("Cluster E_{B} #geq %.2f GeV", globalCutValues.clusEB));
-    latex.DrawLatex(0.2, 0.7, Form("%.2f #leq #Delta R < %.2f", globalCutValues.deltaRMin, globalCutValues.deltaRMax));
+//    latex.DrawLatex(0.55, 0.66, Form("Entries = %.0f", numEntries));
+//    latex.DrawLatex(0.2, 0.85, Form("Cluster #chi^{2} < %.2f", globalCutValues.chi));
+//    latex.DrawLatex(0.2, 0.75, Form("Cluster E_{B} #geq %.2f GeV", globalCutValues.clusEB));
+//    latex.DrawLatex(0.2, 0.7, Form("%.2f #leq #Delta R < %.2f", globalCutValues.deltaRMin, globalCutValues.deltaRMax));
 
     double ratioFor2Sigma = sbRatios.ratios.at(2.0);
     double errorFor2Sigma = sbRatios.errors.at(2.0);
@@ -239,11 +239,13 @@ void DrawCanvasText(TLatex& latex, const Range& selectedRange, double fitMean, d
 //        latex.DrawLatex(0.67, 0.52, Form("Signal Yield = %.2f", signalYield));
 //        latex.DrawLatex(0.67, .47, Form("Fit #chi^{2}/NDF: %.2f/%.0f", chi2, NDF));
 //    } else {
-        latex.DrawLatex(0.67, 0.4, Form("#mu_{Gaussian} = %.2f GeV", fitMean));
-        latex.DrawLatex(0.67, 0.35, Form("#sigma_{Gaussian} = %.2f GeV", fitSigma));
-        latex.DrawLatex(0.67, 0.3, Form("S/B = %.2f", ratioFor2Sigma));
-        latex.DrawLatex(0.67, 0.25, Form("Signal Yield = %.2f", signalYield));
-        latex.DrawLatex(0.67, .2, Form("Fit #chi^{2}/NDF: %.2f/%.0f", chi2, NDF));
+    
+    latex.DrawLatex(0.68, 0.32, Form("#mu_{Gaussian} = %.2f GeV", fitMean));
+    latex.DrawLatex(0.68, 0.26, Form("#sigma_{Gaussian} = %.2f GeV", fitSigma));
+    latex.DrawLatex(0.68, 0.2, Form("S/B = %.2f", ratioFor2Sigma));
+    
+//        latex.DrawLatex(0.67, 0.24, Form("Signal Yield = %.2f", signalYield));
+//        latex.DrawLatex(0.67, .19, Form("Fit #chi^{2}/NDF: %.2f/%.0f", chi2, NDF));
 //    }
     
 //    latex.DrawLatex(0.67, 0.4, Form("#mu_{Gaussian} = %.2f GeV", fitMean));
@@ -729,60 +731,19 @@ void plotSB(Data& data1, Data& data2) {
     errors_1.push_back(&data1.SBratio_50_60_Errors);
 
     
-    TGraphErrors* graph_2 = new TGraphErrors();
-    // Initialize values and errors vector lists
-    std::vector<std::vector<double>*> values_2;
-    values_2.push_back(&data2.SBratio_0_10);
-    values_2.push_back(&data2.SBratio_10_20);
-    values_2.push_back(&data2.SBratio_20_30);
-    values_2.push_back(&data2.SBratio_30_40);
-    values_2.push_back(&data2.SBratio_40_50);
-    values_2.push_back(&data2.SBratio_50_60);
-
-    std::vector<std::vector<double>*> errors_2;
-    errors_2.push_back(&data2.SBratio_0_10_Errors);
-    errors_2.push_back(&data2.SBratio_10_20_Errors);
-    errors_2.push_back(&data2.SBratio_20_30_Errors);
-    errors_2.push_back(&data2.SBratio_30_40_Errors);
-    errors_2.push_back(&data2.SBratio_40_50_Errors);
-    errors_2.push_back(&data2.SBratio_50_60_Errors);
     
-    double minY = 0, maxY = 0;
-    bool firstPoint = true;
     // Loop over each centrality range
     for (size_t i = 0; i < centralityCenters.size(); ++i) {
         for (size_t j = 0; j < values_1[i]->size(); ++j) {
             double y = (*values_1[i])[j];
             double error = (*errors_1[i])[j];
-            graph_1->SetPoint(pointIndex, centralityCenters[i] - 0.8, y);
+            graph_1->SetPoint(pointIndex, centralityCenters[i], y);
             graph_1->SetPointError(pointIndex, 0, error);
-            
-            
-            double y2 = (*values_2[i])[j];
-            double error2 = (*errors_2[i])[j];
-            
-            graph_2->SetPoint(pointIndex, centralityCenters[i] + 0.8, y2);
-            graph_2->SetPointError(pointIndex, 0, error2);
-
-            if (firstPoint) {
-                minY = y - error;
-                maxY = y + error;
-                firstPoint = false;
-            } else {
-                if (y - error < minY) minY = y - error;
-                if (y + error > maxY) maxY = y + error;
-                if (y2 - error2 < minY) minY = y2 - error2;
-                if (y2 + error2 > maxY) maxY = y2 + error2;
-            }
+        
             
             pointIndex++;
         }
     }
-    double range = maxY - minY;
-    double buffer = range * 0.4; // 15% buffer on each side
-
-    minY -= buffer;
-    maxY += buffer;
     
     graph_1->GetYaxis()->SetRangeUser(0, 1.3);
 
@@ -793,35 +754,16 @@ void plotSB(Data& data1, Data& data2) {
     
     graph_1->GetXaxis()->SetLimits(0.0, 60.0);
     
-    graph_2->SetMarkerStyle(20);
-    graph_2->SetMarkerColor(kRed);
-    graph_2->SetLineColor(kRed);
-
-    
     graph_1->GetYaxis()->SetTitle("S/B");
     graph_1->GetXaxis()->SetTitle("Centrality [%]");
     
-//    graph_1->GetYaxis()->SetRangeUser(0.14, .2);
-    
     // Create canvas
-    TCanvas* c_1GaussSigma = new TCanvas("c_1GaussSigma", "Centrality Plot", 900, 600);
+    TCanvas* c_1_SB = new TCanvas("c_1_SB", "Centrality Plot", 900, 600);
     graph_1->Draw("AP");
-    graph_2->Draw("P SAME");
-    c_1GaussSigma->Update();
-    graph_1->GetXaxis()->SetRangeUser(0, 70);
-    
-    TLegend *legend = new TLegend(0.2, 0.75, 0.3, 0.9);
-    legend->SetBorderSize(0);
-    legend->SetTextSize(0.028);
-    legend->AddEntry(graph_1, "Data", "pe");
-    legend->AddEntry(graph_2, "Hijing", "pe");
 
-    legend->Draw("SAME");
-    
-    c_1GaussSigma->Update();
+    c_1_SB->Update();
 
-    // Save the canvas
-    c_1GaussSigma->SaveAs("/Users/patsfan753/Desktop/p015/MonteCarlo/Integrated_OverPT/p015/InvMass/Plots/SBratio.png");
+    c_1_SB->SaveAs("/Users/patsfan753/Desktop/SBratio.png");
 }
 void AnalyzePi0_IntegratedOverPT() {
     gROOT->LoadMacro("../utils/sPhenixStyle.C");
