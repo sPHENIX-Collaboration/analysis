@@ -78,7 +78,16 @@ int Detinfo::Init(PHCompositeNode *topNode)
 //____________________________________________________________________________..
 int Detinfo::InitRun(PHCompositeNode *topNode)
 {
-
+  std::string sEPDchannelmapdir = "sEPD_mappingv1.root";
+  if(!sEPDchannelmapdir.empty())
+  {
+    cdbttree = new CDBTTree(sEPDchannelmapdir);
+  }
+  else
+  {
+   std::cout<<" No mapping file found " << std::endl;
+    exit(1);
+  } 
    return Fun4AllReturnCodes::EVENT_OK;
 }
 
@@ -180,12 +189,39 @@ int Detinfo::process_event(PHCompositeNode *topNode)
     _f.clear();
 
     _g.clear();
-    
+
+   unsigned int key = 999;
+   std::vector < unsigned int> v;
+   v.clear();
+
+   //ok we are only doing this to allow for flexibility 
+   //between 768 tile DST and 744 tile DST
+   //Production makes 744 tile DST so mask channels with keymap 999
+   // you don't have to use a vector, you can just print out the 
+   //unsigned int keymap into a textfile and read it in if you wish instead 
+   for(int i = 0; i < 768; i++)
+   {
+      int keymap = cdbttree->GetIntValue(i, "epd_channel_map");
+      if(keymap == 999)
+      {
+        continue; //take out masked channels
+      }
+   
+      key = TowerInfoDefs::encode_epd(keymap);
+      v.push_back(key);
+   }
+
+ 
     int nchannels_epd = towerinfosEPD->size();
-    
     float epd_e = 0.; float epd_t = 0.;
     for (int channel = 0; channel < nchannels_epd;channel++)
     {
+     //using epd mapping file 
+      int arm = TowerInfoDefs::get_epd_arm(v[channel]); 
+      int rbin = TowerInfoDefs::get_epd_rbin(v[channel]);
+      int sectorid = TowerInfoDefs::get_epd_sector(v[channel]);
+      int tileid = EPDDefs::get_tileid(v[channel]);
+     
       epd_e = towerinfosEPD->get_tower_at_channel(channel)->get_energy();
       epd_t = towerinfosEPD->get_tower_at_channel(channel)->get_time_float();
       hepdtime->Fill(epd_t); //all channels

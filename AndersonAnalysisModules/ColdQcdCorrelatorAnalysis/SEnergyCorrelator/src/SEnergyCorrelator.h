@@ -40,12 +40,12 @@
 // fastjet libraries
 #include <fastjet/PseudoJet.hh>
 // eec library
-#include "/sphenix/user/danderson/eec/EnergyEnergyCorrelators/eec/include/EECLongestSide.hh"
+#include "eec/EECLongestSide.hh"
 // analysis utilities
-#include "/sphenix/user/atclarke/install/include/scorrelatorutilities/Tools.h"
-#include "/sphenix/user/atclarke/install/include/scorrelatorutilities/Types.h"
-#include "/sphenix/user/atclarke/install/include/scorrelatorutilities/Constants.h"
-#include "/sphenix/user/atclarke/install/include/scorrelatorutilities/Interfaces.h"
+#include <scorrelatorutilities/Tools.h>
+#include <scorrelatorutilities/Types.h>
+#include <scorrelatorutilities/Constants.h>
+#include <scorrelatorutilities/Interfaces.h>
 // analysis definitions
 #include "SEnergyCorrelatorInput.h"
 #include "SEnergyCorrelatorConfig.h"

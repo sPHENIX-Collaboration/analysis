@@ -24,8 +24,7 @@ R__LOAD_LIBRARY(libfun4allraw.so)
 R__LOAD_LIBRARY(libZDCNeutronLocPol.so)
 
 
-//void Fun4All_ZDCNeutronLocPol(const std::string &fname ="/sphenix/tg/tg01/commissioning/INTT/work/jaein/ZDCSMD/DSTProduction/Prdf_to_DST/42861/DST_PRDF-1M-00042861-0000.root", const std::string &outname = "offlineSMDTesting_DST_42861_0000.root", int startEvent = 0, int nEvents = 100000)
-void Fun4All_ZDCNeutronLocPol(const std::string &fname = "DST_TRIGGERED_EVENT_run2pp_new_2024p001-00042796-0000.root", const std::string &outname = "offlineSMDTesting_DST_42796_0000.root", int startEvent = 0, int nEvents = 10000)
+void Fun4All_ZDCNeutronLocPol(const std::string &fname = "DST_TRIGGERED_EVENT_run2pp_new_2024p001-00042797-0000.root", const std::string &outname = "zdcneutronlocpol_42797_0000.root", int startEvent = 0, int nEvents = 10000)
 
 {
 
@@ -39,6 +38,7 @@ void Fun4All_ZDCNeutronLocPol(const std::string &fname = "DST_TRIGGERED_EVENT_ru
   
   ZDCNeutronLocPol *zdcneutronlocpol = new ZDCNeutronLocPol();
   zdcneutronlocpol->setFileName(outname);
+  zdcneutronlocpol->setGainMatch("/sphenix/user/dloomis/analysis/ZDCNeutronLocPol/SMDrelativegains.dat");
   se->registerSubsystem(zdcneutronlocpol);
 
   if (startEvent > 0)

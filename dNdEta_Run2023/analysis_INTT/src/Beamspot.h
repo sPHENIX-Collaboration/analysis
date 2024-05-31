@@ -1,5 +1,6 @@
 #include "TObject.h"
 #include "TH2F.h"
+#include "TProfile.h"
 
 struct Beamspot : TObject
 {
@@ -18,13 +19,15 @@ struct Beamspot : TObject
 
   int Ntracklets;
   TH2F* d0phi0dist;
+  TH2F* d0phi0dist_bkgrm;
+  TProfile* d0phi0dist_bkgrm_prof;
   TH1F* z0dist;
   TH2F* pcadist;
 
   Beamspot() : x(0.),y(0.),z(0.),sigma_x(0.),sigma_y(0.),sigma_z(0.),Ntracklets(0.)
   {
     for(int i=0;i<21;i++) covariance[i] = 1.;
-    d0phi0dist = new TH2F("d0phi0dist","tracklet phi0 vs. d0",200,-M_PI,M_PI,200,-2.,2.);
+    d0phi0dist = new TH2F("d0phi0dist","tracklet phi0 vs. d0;#phi [radian];DCA [cm]",200,-M_PI,M_PI,200,-1.,1.);
     z0dist = new TH1F("z0","z0",200,-40.,40.);
     pcadist = new TH2F("pcadist","PCA",200,-.5,.5,200,-.5,.5);
   }
