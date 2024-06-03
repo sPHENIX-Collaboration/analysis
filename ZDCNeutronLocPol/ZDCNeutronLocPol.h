@@ -93,6 +93,17 @@ class ZDCNeutronLocPol : public SubsysReco
   float smdN6_adc = 0.;
   float smdN7_adc = 0.;
 
+  float smdS1_v_adc = 0.;
+  float smdS2_v_adc = 0.;
+  float smdS7_v_adc = 0.;
+  float smdS8_v_adc = 0.;
+
+  float smdN1_v_adc = 0.;
+  float smdN2_v_adc = 0.;
+  float smdN7_v_adc = 0.;
+  float smdN8_v_adc = 0.;
+
+
   // int evtseq_gl1 = 0;
 
   // int evtseq_zdc = 0;
