@@ -82,6 +82,17 @@ int ZDCNeutronLocPol::Init(PHCompositeNode * /*topNode*/)
   smdHits->Branch("smdN2_adc", &smdN2_adc, "smdN2_adc/F");
   smdHits->Branch("smdN6_adc", &smdN6_adc, "smdN6_adc/F");
   smdHits->Branch("smdN7_adc", &smdN7_adc, "smdN7_adc/F");
+
+  smdHits->Branch("smdS1_v_adc", &smdS1_v_adc, "smdS1_v_adc/F");
+  smdHits->Branch("smdS2_v_adc", &smdS2_v_adc, "smdS2_v_adc/F");
+  smdHits->Branch("smdS7_v_adc", &smdS7_v_adc, "smdS7_v_adc/F");
+  smdHits->Branch("smdS8_v_adc", &smdS8_v_adc, "smdS8_v_adc/F");
+
+  smdHits->Branch("smdN1_v_adc", &smdN1_v_adc, "smdN1_v_adc/F");
+  smdHits->Branch("smdN2_v_adc", &smdN2_v_adc, "smdN2_v_adc/F");
+  smdHits->Branch("smdN7_v_adc", &smdN7_v_adc, "smdN7_v_adc/F");
+  smdHits->Branch("smdN8_v_adc", &smdN8_v_adc, "smdN8_v_adc/F");
+
   // waveform
   h_waveformZDC = new TH2F("h_waveformZDC", "h_waveformZDC", 17, -0.5, 16.5, 512, -500, 20000);
   h_waveformSMD_North = new TH2F("h_waveformSMD_North", "h_waveformSMD_North", 17, -0.5, 16.5, 512, -500, 20000);
@@ -287,6 +298,22 @@ int ZDCNeutronLocPol::process_event(PHCompositeNode *topNode)
           h_rawADC[c - 48]->Fill(signalFast + pedFast);
           h_pedADC[c - 48]->Fill(pedFast);
           h_signalADC[c - 48]->Fill(signalFast);
+          if (c == 48)
+          {
+            smdN1_v_adc = signalFast;
+          }
+          if (c == 49)
+          {
+            smdN2_v_adc = signalFast;
+          }
+          if (c == 54)
+          {
+            smdN7_v_adc = signalFast;
+          }
+          if (c == 55)
+          {
+            smdN8_v_adc = signalFast;
+          }
           if (c == 56)
           {
             smdN1_adc = signalFast;
@@ -329,9 +356,8 @@ int ZDCNeutronLocPol::process_event(PHCompositeNode *topNode)
           continue;
         }
         //////////// end South veto counters /////////
-        std::string
-            //// South SMD ////////
-            if (c >= 112 && c < 127)
+        //// South SMD ////////
+        if (c >= 112 && c < 127)
         {
           signalFast = (7 < timingFast && timingFast < 12) ? signalFast : 0;
           rawADC[c - 96] = signalFast + pedFast;
@@ -341,6 +367,22 @@ int ZDCNeutronLocPol::process_event(PHCompositeNode *topNode)
           h_rawADC[c - 96]->Fill(signalFast + pedFast);
           h_pedADC[c - 96]->Fill(pedFast);
           h_signalADC[c - 96]->Fill(signalFast);
+          if (c == 112)
+          {
+            smdS1_v_adc = signalFast;
+          }
+          if (c == 113)
+          {
+            smdS2_v_adc = signalFast;
+          }
+          if (c == 118)
+          {
+            smdS7_v_adc = signalFast;
+          }
+          if (c == 119)
+          {
+            smdS8_v_adc = signalFast;
+          }
           if (c == 120)
           {
             smdS1_adc = signalFast;
@@ -555,8 +597,9 @@ void ZDCNeutronLocPol::setGainMatch(const std::string &gainfile)
 {
   // getting gains
   float col1;
-  ustd::string col2;
-  // std::string gainfile = gainname;std::ifstream gain_infile(gainfile);
+  std::string col2;
+   //std::string gainfile = gainname;
+   std::ifstream gain_infile(gainfile);
 
   if (!gain_infile)
   {
