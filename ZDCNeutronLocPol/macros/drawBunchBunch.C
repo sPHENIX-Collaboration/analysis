@@ -8,8 +8,8 @@ float ZDC1CUT = 100;  // keep above (nominal 65)
 float ZDC2CUT = 15;   // keep above (nominal 25)
 float VETOCUT = 150;  // keep below (nominal 150)
 bool ismerged = true;
-
-void drawBunchBunch(const std::string infile = "../store34485/store34485-2.root", int storenumber = 34485, int runnumber = 42797)
+bool isflipON = true;
+void drawBunchBunch(const std::string infile = "store34485/store34485-2.root", int storenumber = 34485, int runnumber = 42797)
 {
   SetsPhenixStyle();
   TFile *f = new TFile(infile.c_str());
@@ -99,6 +99,11 @@ void drawBunchBunch(const std::string infile = "../store34485/store34485-2.root"
   {
     bspinpat[i] = spin_cont.GetSpinPatternBlue(i);
     yspinpat[i] = spin_cont.GetSpinPatternYellow(i);
+    if(isflipON)
+    {
+      bspinpat[i]*=-1;
+      yspinpat[i]*=-1;
+    }
   }
   //======================================================================//
 
@@ -444,7 +449,7 @@ void drawBunchBunch(const std::string infile = "../store34485/store34485-2.root"
   TFitResultPtr fit_spindown_blue = graph_spindown_blue->Fit("pol0", "S");
   // Add legend
   TLegend leg1(.20, .70, .60, .90);
-  leg1.AddEntry((TObject *) 0, Form("SMD North / Store %d", storenumber), "");
+  leg1.AddEntry((TObject *) 0, Form("SMD North / Run 42796+42797"), "");
   leg1.AddEntry(graph_spinup_blue, Form("blue #uparrow :  %.5f #pm %.5f", fit_spinup_blue->Parameter(0), fit_spinup_blue->ParError(0)), "LP");
   leg1.AddEntry(graph_spindown_blue, Form("blue #downarrow : %.5f #pm %.5f", fit_spindown_blue->Parameter(0), fit_spindown_blue->ParError(0)), "LP");
   leg1.SetTextSize(0.03);
@@ -464,7 +469,7 @@ void drawBunchBunch(const std::string infile = "../store34485/store34485-2.root"
   TFitResultPtr fit_spinup_blueUD = graph_spinup_blueUD->Fit("pol0", "S");
   TFitResultPtr fit_spindown_blueUD = graph_spindown_blueUD->Fit("pol0", "S");
   TLegend leg2(.20, .70, .60, .90);
-  leg2.AddEntry((TObject *) 0, Form("SMD North / Store %d", storenumber), "");
+  leg2.AddEntry((TObject *) 0, Form("SMD North / Run 42796+42797"), "");
   leg2.AddEntry(graph_spinup_blueUD, Form("blue #uparrow :  %.5f #pm %.5f", fit_spinup_blueUD->Parameter(0), fit_spinup_blueUD->ParError(0)), "LP");
   leg2.AddEntry(graph_spindown_blueUD, Form("blue #downarrow : %.5f #pm %.5f", fit_spindown_blueUD->Parameter(0), fit_spindown_blueUD->ParError(0)), "LP");
   leg2.SetTextSize(0.03);
@@ -475,8 +480,8 @@ void drawBunchBunch(const std::string infile = "../store34485/store34485-2.root"
   graph_spinup_yellow->GetXaxis()->SetLimits(0, 111);
   graph_spinup_yellow->GetYaxis()->SetTitle("(L-R)/(L+R)");
   graph_spinup_yellow->GetXaxis()->SetTitle("Bunch number");
-  graph_spinup_yellow->SetMaximum(0.08);
-  graph_spinup_yellow->SetMinimum(-0.02);
+  graph_spinup_yellow->SetMaximum(0.07);
+  graph_spinup_yellow->SetMinimum(-0.03);
   canvas3->cd();
   graph_spinup_yellow->Draw("AP");
   graph_spindown_yellow->Draw("P SAME");
@@ -484,7 +489,7 @@ void drawBunchBunch(const std::string infile = "../store34485/store34485-2.root"
   TFitResultPtr fit_spinup_yellow = graph_spinup_yellow->Fit("pol0", "S");
   TFitResultPtr fit_spindown_yellow = graph_spindown_yellow->Fit("pol0", "S");
   TLegend leg3(.20, .70, .60, .90);
-  leg3.AddEntry((TObject *) 0, Form("SMD South / Store %d", storenumber), "");
+  leg3.AddEntry((TObject *) 0, Form("SMD South / Run 42796+42797"), "");
   leg3.AddEntry(graph_spinup_yellow, Form("yellow #uparrow :  %.5f #pm %.5f", fit_spinup_yellow->Parameter(0), fit_spinup_yellow->ParError(0)), "LP");
   leg3.AddEntry(graph_spindown_yellow, Form("yellow #downarrow : %.5f #pm %.5f", fit_spindown_yellow->Parameter(0), fit_spindown_yellow->ParError(0)), "LP");
   leg3.SetTextSize(0.03);
@@ -513,9 +518,9 @@ void drawBunchBunch(const std::string infile = "../store34485/store34485-2.root"
   TFitResultPtr fit_spinup_yellowUD = graph_spinup_yellowUD->Fit("pol0", "S");
   TFitResultPtr fit_spindown_yellowUD = graph_spindown_yellowUD->Fit("pol0", "S");
   TLegend leg4(.20, .70, .60, .90);
-  leg4.AddEntry((TObject *) 0, Form("SMD South / Store %d", storenumber), "");
-  leg4.AddEntry(graph_spinup_yellowUD, Form("yellowUD #uparrow :  %.5f #pm %.5f", fit_spinup_yellowUD->Parameter(0), fit_spinup_yellowUD->ParError(0)), "LP");
-  leg4.AddEntry(graph_spindown_yellowUD, Form("yellowUD #downarrow : %.5f #pm %.5f", fit_spindown_yellowUD->Parameter(0), fit_spindown_yellowUD->ParError(0)), "LP");
+  leg4.AddEntry((TObject *) 0, Form("SMD South / Run 42796+42797"), "");
+  leg4.AddEntry(graph_spinup_yellowUD, Form("yellow #uparrow :  %.5f #pm %.5f", fit_spinup_yellowUD->Parameter(0), fit_spinup_yellowUD->ParError(0)), "LP");
+  leg4.AddEntry(graph_spindown_yellowUD, Form("yellow #downarrow : %.5f #pm %.5f", fit_spindown_yellowUD->Parameter(0), fit_spindown_yellowUD->ParError(0)), "LP");
   leg4.SetTextSize(0.03);
   leg4.Draw();
   latex->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{p+p}, 200 GeV #it{#bf{sPHENIX}} internal"));
